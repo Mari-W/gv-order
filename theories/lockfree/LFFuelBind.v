@@ -256,10 +256,7 @@ Proof.
     apply (kinj_elem g π); [done|apply Hdφ; by eapply elem_of_dom_2|by apply Hd1|done].
 Qed.
 
-(** ** The cap in every extension of the world *)
-
-Definition fcap_ext (W : world) (π : gmap cend point) (φ : gmap cend fuel) : Prop :=
-  ∀ W', wbext W W' → fcap W' π φ.
+(** ** The cap in every extension of the world ([fcap_ext], LFFuel.v) *)
 
 Lemma fcap_dom W π φ : fcap W π φ → dom φ ⊆ dom π.
 Proof.
@@ -347,18 +344,24 @@ Lemma farr_wbext (E : nat → epred) (V : nat → vpred) n W W' c t h σ1 σ2 a 
   wbext W W' → farr E V n W c t h σ1 σ2 a π φ body → farr E V n W' c t h σ1 σ2 a π φ body.
 Proof. intros Hb [Hf H]. split; [done|]. intros W'' j φ' v πa φa Hb'. apply H. by eapply wbext_trans. Qed.
 
+Lemma fpts_wbext W W' π : wbext W W' → fpts W π → fpts W' π.
+Proof.
+  intros Hb H o k Hk. destruct (H o k Hk) as [Hkn Hd]. split; [by apply (wbext_known W)|].
+  destruct Hb as [_ Hbud]. by rewrite (proj1 (Hbud (pt_dual k) ltac:(by apply pt_known_dual))).
+Qed.
+
 Lemma Vfuel_wbext n W W' σ π φ w : wbext W W' → Vfuel n W σ π φ w → Vfuel n W' σ π φ w.
 Proof.
   intros Hb. rewrite !Vfuel_eq.
   induction w in σ, π, φ |- *; destruct σ as [τ a]; destruct τ; simpl; try done;
     try (intros (xx & Hw & Hp & Hk & Hf); exists xx; split_and!;
          [done|done|by apply (wbext_known W W')|by apply (pfitpt_wbext W W')]);
-    try (intros (cc & bb & xx & ff & Hw & Hp & Hf & Hc & Ha); exists cc, bb, xx, ff; split_and!;
-         [done|done|by apply (pfits_wbext W W')|done|done]);
-    try (intros [Hp Hf]; split; [done|]; by apply (farr_wbext _ _ _ W W'));
+    try (intros (cc & bb & xx & ff & Hw & Hp & Hf & Hc & Ha & Hq); exists cc, bb, xx, ff; split_and!;
+         [done|done|by apply (pfits_wbext W W')|done|done|by apply (fpts_wbext W W')]);
+    try (intros (Hp & Hq & Hf); split_and!; [done|by apply (fpts_wbext W W')|by apply (farr_wbext _ _ _ W W')]);
     try (intros (π1 & π2 & Hπ & Hd & H1 & H2); exists π1, π2; split_and!; auto; fail);
     auto.
-  intros [Hp H]. split; [done|]. intros W'' j r0 tk0 Hb' Hj Hm. apply H; [|done|done].
+  intros (Hp & Hf & H). split_and!; [done|done|]. intros W'' j r0 tk0 Hb' Hj Hm. apply H; [|done|done].
   by eapply wbext_trans.
 Qed.
 
@@ -442,6 +445,9 @@ Proof.
   - intros o' k Ho'. destruct (proj2 Hπ o' k Ho') as (o & -> & Ho). by apply (Hkn o).
 Qed.
 
+Lemma fpts_rename W (g : chan → chan) π π' : renk g π π' → fpts W π → fpts W π'.
+Proof. intros [_ B] H o' k Hk. destruct (B o' k Hk) as (o & -> & Ho). by apply (H o). Qed.
+
 Section rename.
   (** The closure clause, renamed. The argument is moved out of the way
       of the closure's channels by [sprefix], the body is run there and
@@ -463,7 +469,7 @@ Section rename.
     { intros o Ho. rewrite Hdom in Ho. simpl in Ho. rewrite fchans_fends. apply elem_of_map. by exists o. }
     set (g' := sunfix s g).
     assert (Hg' : ∀ o, o ∈ dom π → g' o.1 = g o.1) by (intros o Ho; by apply sunfix_short, Hshort, Hchan).
-    pose proof (proj1 Hin) as Hdπa. pose proof (proj1 (proj2 Hin)) as Hdφa.
+    pose proof (proj1 (proj2 Hin)) as Hdφa.
     destruct (renk_exists (sprefix s) πa (kinj_sprefix s πa)) as [πa0 Hπa].
     destruct (renk_exists (sprefix s) φa (kinj_sprefix s φa)) as [φa0 Hφa].
     destruct (renk_preimage g π π' φ'' Hπ Hd'') as (φ0 & Hd0 & Hφ0).
@@ -472,16 +478,17 @@ Section rename.
     { intros o1 o2 Ho1 Ho2 ->. rewrite (renk_dom _ _ _ Hπa) in Ho2. unfold kimg in Ho2.
       apply elem_of_map in Ho2 as (o & -> & _). simpl in Ho1. apply Hchan, Hshort in Ho1. simpl in Ho1.
       unfold sprefix in Ho1. rewrite slen_app in Ho1. lia. }
-    assert (Hcap0 : fcap W' π φ0).
-    { intros o f Ho. pose proof (proj1 Hφ0 o f Ho) as Ho'. destruct (Hc'' _ f Ho') as (k & Hk' & Hle).
+    assert (Hcap0 : fcap_ext W' π φ0).
+    { intros W3 Hb3 o f Ho. pose proof (proj1 Hφ0 o f Ho) as Ho'. destruct (Hc'' W3 Hb3 _ f Ho') as (k & Hk' & Hle).
       assert (o ∈ dom π) as [k0 Hk0]%elem_of_dom by (rewrite <-Hd0; by eapply elem_of_dom_2).
       rewrite (proj1 Hπ o k0 Hk0) in Hk'. injection Hk' as <-. by exists k0. }
     assert (HF0 : FuelE j W' σ2 r (π ∪ πa0) (φ0 ∪ φa0) tk c (subst1 (emap (sprefix s) v) eb)).
     { apply (HF W' j φ0 (emap (sprefix s) v) πa0 φa0 Hb Hj Hd0 Hcap0); [| | | |done].
       - intros o f Ho. apply (Hh'' (g o.1, o.2)). by apply (proj1 Hφ0).
       - intros o Ho1 Ho2. by apply (Hapart o o).
-      - apply (fin_ok_rename W' (sprefix s) v πa φa); [apply kinj_sprefix|done|done|done].
-      - apply (IH j Hj W' σ1 πa φa v); [apply kinj_sprefix|by rewrite Hdπa, Hdφa|done|done|done]. }
+      - split_and!; [by rewrite is_val_emap; apply (proj1 Hin)|exact (renk_dom_eq _ _ _ _ _ Hdφa Hπa Hφa)|].
+        exact (fcap_ext_rename _ _ _ _ _ _ (proj2 (proj2 Hin)) Hπa Hφa).
+      - apply (IH j Hj W' σ1 πa φa v); [apply kinj_sprefix|by rewrite Hdφa|done|done|done]. }
     (* rename back *)
     assert (Hkg : kinj g' (π ∪ πa0)).
     { apply kinj_union.
@@ -496,7 +503,7 @@ Section rename.
         + rewrite (renk_dom _ _ _ Hπ). destruct p as [pc pb]. simpl in Heq. rewrite <-Heq.
           by apply elem_of_kimg. }
     assert (Hd0a : dom φ0 ## dom φa0).
-    { rewrite Hd0, (renk_dom _ _ _ Hφa), Hdφa, <-Hdπa, <-(renk_dom _ _ _ Hπa).
+    { rewrite Hd0, (renk_dom _ _ _ Hφa), Hdφa, <-(renk_dom _ _ _ Hπa).
       intros o Ho1 Ho2. by apply (Hapart o o). }
     assert (Hrπ : renk g' (π ∪ πa0) (π' ∪ πa)).
     { apply renk_union; [done| |by apply (renk_ext g)|by apply (renk_inv (sprefix s)); [apply sunfix_prefix|]].
@@ -504,7 +511,7 @@ Section rename.
     assert (Hrφ : renk g' (φ0 ∪ φa0) (φ'' ∪ φa)).
     { apply renk_union; [|done| |by apply (renk_inv (sprefix s)); [apply sunfix_prefix|]].
       - apply (kinj_dom g' (π ∪ πa0)); [|done]. rewrite !dom_union_L, Hd0, (renk_dom _ _ _ Hφa),
-          (renk_dom _ _ _ Hπa), Hdφa, Hdπa. done.
+          (renk_dom _ _ _ Hπa), Hdφa. done.
       - apply (renk_ext g); [|done]. intros o Ho. apply Hg'. by rewrite <-Hd0. }
     pose proof (FuelE_rename j W' σ2 r (π ∪ πa0) (φ0 ∪ φa0) tk c _ g' _ _ Hkg Hrπ Hrφ HF0) as HR.
     rewrite emap_subst1, emap_emap in HR.
@@ -530,11 +537,13 @@ Section rename.
       | (* a point *)
         intros (xx & [= <-] & -> & Hkn & Hf); exists x; split_and!; [done|by apply (renk_empty g)|done|done]
       | (* an end *)
-        intros (cc & bb & xx & ff & [= <- <-] & -> & Hp & Hf & Ha);
-        exists (g c), b, xx, ff; split_and!; [done|by apply (renk_singleton g (c, b) xx)|done|by apply (proj1 Hφ (c, b))|done]
+        intros (cc & bb & xx & ff & [= <- <-] & -> & Hp & Hf & Ha & Hq);
+        exists (g c), b, xx, ff; split_and!; [done|by apply (renk_singleton g (c, b) xx)|done|by apply (proj1 Hφ (c, b))|done
+                                             |by apply (fpts_rename W g {[(c, b) := xx]})]
       | (* a closure *)
-        intros [Hd Hf]; split;
+        intros (Hd & Hq & Hf); split_and!;
         [by rewrite (renk_dom _ _ _ Hπ), Hd, fends_emap
+        |by apply (fpts_rename W g π)
         |by apply (farr_rename n W _ _ _ _ _ _ w π φ g π' φ' IH)]
       | (* a pair *)
         intros (π1 & π2 & -> & Hd & H1 & H2);
@@ -546,11 +555,9 @@ Section rename.
         (apply (renk_mres g (π1 ∪ π2)); [done|done|rewrite dom_union_L; set_solver|done|done])
       | (* an injection *)
         apply IHw; done
-      | (* a constant *)
-        intros [-> [Hfl HF]]; assert (π' = ∅) as -> by (by apply (renk_empty g)); split; [done|]; split;
-        [intros o' f Ho'; destruct (proj2 Hφ o' f Ho') as (o & -> & Ho); by apply (Hfl o)|exact HF]
       | (* a box *)
-        intros [-> H]; split; [by apply (renk_empty g)|];
+        intros (-> & Hfe & H); split; [by apply (renk_empty g)|];
+        split; [rewrite fends_emap, Hfe; unfold kimg; by rewrite set_map_empty|];
         intros W' j r0 tk0 Hb Hj Hm; specialize (H W' j r0 tk0 Hb Hj Hm);
         pose proof (FuelE_rename j W' _ r0 ∅ ∅ tk0 c _ g ∅ ∅ (kinj_nil g) (renk_nil g) (renk_nil g) H) as HR;
         by rewrite emap_subst1 in HR ].
@@ -597,10 +604,10 @@ Proof.
     all: first
       [ intros (xx & Hw & Hp & Hk & Hf); exists xx; split_and!; [done|done|done|];
         by apply (pfitpt_at_cst _ _ _ xx ρ)
-      | intros (cc & bb & xx & ff & Hw & Hp & Hf & Hl & Ha); exists cc, bb, xx, ff;
-        split_and!; [done|done|by apply (pfits_at_cst _ _ _ xx P)|done|by eapply fle_trans]
-      | intros [Hp Hf]; split; [done|]; by eapply Harr
-      | intros [Hp H]; split; [done|]; intros W' j r tk Hb Hj Hm;
+      | intros (cc & bb & xx & ff & Hw & Hp & Hf & Hl & Ha & Hq); exists cc, bb, xx, ff;
+        split_and!; [done|done|by apply (pfits_at_cst _ _ _ xx P)|done|by eapply fle_trans|done]
+      | intros (Hp & Hq & Hf); split_and!; [done|done|]; by eapply Harr
+      | intros (Hp & Hfe & H); split_and!; [done|done|]; intros W' j r tk Hb Hj Hm;
         apply (proj2 (IH j Hj) W' σ0 σ0' r r ∅ ∅ tk tk ca ca'); [done|lia|lia|done|];
         apply H; [done|done|by apply Ht]
       | intros (π1 & π2 & Hπ & Hd & H1 & H2); exists π1, π2; split_and!; [done|done| |];
@@ -701,10 +708,10 @@ Proof.
   induction w in σ, π, φ |- *; destruct σ as [τ a]; destruct τ; simpl; try done.
   all: first
     [ intros H; exact H
-    | intros (cc & bb & xx & ff & Hw & Hp & Hf & Hl & Ha); exists cc, bb, xx, (fminus i ff);
-      split_and!; [done|done|done|by rewrite lookup_fmap, Hl|];
+    | intros (cc & bb & xx & ff & Hw & Hp & Hf & Hl & Ha & Hq); exists cc, bb, xx, (fminus i ff);
+      split_and!; [done|done|done|by rewrite lookup_fmap, Hl| |done];
       destruct a, ff; simpl in *; lia
-    | intros [Hp [Hfl HF]]; split; [done|]; split; [|exact HF];
+    | intros (Hp & Hq & Hfl & HF); split; [done|]; split; [done|]; split; [|exact HF];
       intros o f Ho; apply lookup_fmap_Some in Ho as (f0 & <- & Ho); specialize (Hfl o f0 Ho);
       destruct a, f0; simpl in *; lia
     | intros (π1 & π2 & Hπ & Hd & H1 & H2); exists π1, π2; split_and!; [done|done| |];
@@ -762,10 +769,10 @@ Proof.
     simpl; try done.
   all: first
     [ intros (cc & bb & xx & ff & [=] & _); fail
-    | intros (cc & bb & xx & ff & Hw & Hp & Hf & Hl & Ha); simplify_eq;
+    | intros (cc & bb & xx & ff & Hw & Hp & Hf & Hl & Ha & Hq); simplify_eq;
       assert ((cc, bb) ∈ dom φ') as [f' Hf']%elem_of_dom by (apply Hd; set_solver);
-      exists cc, bb, xx, f'; split_and!; [done|done|done|done|by apply (Hm (cc, bb))]
-    | intros [Hp [Hfl HF]]; split; [done|]; split; [|exact HF];
+      exists cc, bb, xx, f'; split_and!; [done|done|done|done|by apply (Hm (cc, bb))|done]
+    | intros (Hp & Hq & Hfl & HF); split; [done|]; split; [done|]; split; [|exact HF];
       intros o f Ho; specialize (Hm o f Ho); destruct f; simpl in *; lia
     | intros (π1 & π2 & -> & Hd' & Hu & Hv); exists π1, π2; split_and!; [done|done| |];
       [eapply IHw1; [rewrite cadd_0; by apply clow_cadd| | |exact Hu]
@@ -1052,7 +1059,7 @@ Definition fkont (n : nat) (W : world) (σ1 : cta) (r1 : nat) (σ : cta) (r : na
   ∀ W' (g : chan → chan) πK' φK' i j v π1 φ1 tk,
     wbext W W' → kinj g πK → renk g πK πK' → renk g φK φK' →
     fle (Some i) c1 → j ≤ n → is_val v = true → r1 ≤ tk →
-    dom π1 ## dom πK' → dom φ1 = dom π1 → fcap W' π1 φ1 →
+    dom π1 ## dom πK' → dom φ1 = dom π1 → fcap_ext W' π1 φ1 →
     Vfuel j W' σ1 π1 φ1 v →
     FuelE j W' σ r (π1 ∪ πK') (φ1 ∪ (fminus i <$> φK')) tk (fminus i d) (efill (kemap g K) v).
 
@@ -1217,8 +1224,10 @@ Proof.
   destruct (is_val (emap g e)) eqn:Hve.
   - (* the hole returned: the continuation after no action *)
     destruct (Hv1 eq_refl) as [Hr1 HV1].
+    assert (Hc1e : fcap_ext W' π1' φ1').
+    { intros W3 Hb3. destruct (HF W3 g π1' φ1' ltac:(by eapply wbext_trans) Hk1 Rπ1 Rφ1) as [Hc3 _]. exact Hc3. }
     pose proof (Hkont W' g πK' φK' 0 (S n) (emap g e) π1' φ1' tk Hb HkK RπK RφK
-      ltac:(destruct c1; simpl; lia) ltac:(lia) Hve Hr1 Hd' Hd1' Hc1 ltac:(by apply Vfuel_eq)) as HC.
+      ltac:(destruct c1; simpl; lia) ltac:(lia) Hve Hr1 Hd' Hd1' Hc1e ltac:(by apply Vfuel_eq)) as HC.
     rewrite fmap_fminus_0, fminus_0 in HC. by apply fuel_core.
   - split_and!.
     + apply fcap_union; [done|by apply fcap_ext_here|done].
@@ -1275,18 +1284,25 @@ Proof. intros H. destruct (pfits_node _ _ _ _ H) as (_ & _ & _ & Hb). inversion 
 Lemma pfits_sub W x P P' : pfits W x P → cst_pro P P' → pfits W x P'.
 Proof. apply pfits_at_cst. Qed.
 
-(** An end that fits its protocol, with a counter at least its credit. *)
+(** An end that fits its protocol at a known point with a partner of
+    finite budget, with a counter at least its credit. *)
 Lemma Vfuel_end n W P a c b x φ f :
-  pfits W x P → φ !! (c, b) = Some f → fle a f →
+  pfits W x P → pt_known W x → w_bud W (pt_dual x) ≠ None → φ !! (c, b) = Some f → fle a f →
   Vfuel n W (CTa (CEnd P) a) {[(c, b) := x]} φ (Chan c b).
-Proof. intros Hp Hf Ha. apply Vfuel_eq. simpl. by exists c, b, x, f. Qed.
+Proof.
+  intros Hp Hk Hd Hf Ha. apply Vfuel_eq. simpl. exists c, b, x, f. split_and!; try done.
+  intros o k Ho. apply lookup_singleton_Some in Ho as [_ <-]. done.
+Qed.
 
 (** The refill at a node meets its bound: an end refilled to the budget
     of its point is in [Vfuel] at credit n. *)
 Lemma Vfuel_refill j W n bd c b x φ :
   pfits W x (PNode n bd) → φ !! (c, b) = Some (w_bud W x) →
   Vfuel j W (CTa (CEnd (PNode n bd)) (Some n)) {[(c, b) := x]} φ (Chan c b).
-Proof. intros Hp Hf. apply (Vfuel_end _ _ _ _ _ _ _ _ _ Hp Hf). by destruct (pfits_node _ _ _ _ Hp) as (_ & Hn & _). Qed.
+Proof.
+  intros Hp Hf. destruct (pfits_node _ _ _ _ Hp) as (Hk & Hn & [m Hm] & _).
+  apply (Vfuel_end _ _ _ _ _ _ _ _ _ Hp Hk ltac:(by rewrite Hm) Hf Hn).
+Qed.
 
 (** ** Values built from parts *)
 

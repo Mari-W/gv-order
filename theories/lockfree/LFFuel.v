@@ -308,26 +308,42 @@ Proof.
   intros [H12 B12] [H23 B23]. split; [set_solver|]. by apply (wext_bud_trans W1 W2 W3).
 Qed.
 
+(** The cap in every extension of the world. *)
+Definition fcap_ext (W : world) (π : gmap cend point) (φ : gmap cend fuel) : Prop :=
+  ∀ W', wbext W W' → fcap W' π φ.
+
+(** An argument of a closure: a value with counters on exactly its
+    points, under the cap in every extension (plan §19.14). *)
+Definition farg (W : world) (v : expr) (πa : gmap cend point) (φa : gmap cend fuel) : Prop :=
+  is_val v = true ∧ dom φa = dom πa ∧ fcap_ext W πa φa.
+
+(** Ends held by a value sit at points the world knows, and their
+    partners have finite budgets, so they may travel (plan §19.14). *)
+Definition fpts (W : world) (π : gmap cend point) : Prop :=
+  ∀ o k, π !! o = Some k → pt_known W k ∧ w_bud W (pt_dual k) ≠ None.
+
 (** The closure clause of [Vfdef], for the body [body v] after the β
     step (plan §19.3). The captured counters lie at or above h + a. For
     every later world, lower level, counters φ' at or above the floor h
-    under the cap, and argument in V at σ1 whose ends sit at points the
-    world knows, the body satisfies E at σ2 with frame c, for every
-    reserve r and ticket count tk that meet the transformer t. Only the
-    floor check reads the actual counters φ. *)
+    under the cap in every extension, and argument in V at σ1 under the
+    cap in every extension, the body satisfies E at σ2 with frame c, for
+    every reserve r and ticket count tk that meet the transformer t.
+    Only the floor check reads the actual counters φ. The cap premises
+    are what an application can supply (plan §19.14). *)
 Definition farr (E : nat → epred) (V : nat → vpred) (n : nat) (W : world)
     (c : fuel) (t : tix) (h : nat) (σ1 σ2 : cta) (a : fuel)
     (π : gmap cend point) (φ : gmap cend fuel) (body : expr → expr) : Prop :=
   (∀ o f, φ !! o = Some f → fle (fadd (Some h) a) f) ∧
-  ∀ W' j φ' v πa φa, wbext W W' → j < n → dom φ' = dom π → fcap W' π φ' →
+  ∀ W' j φ' v πa φa, wbext W W' → j < n → dom φ' = dom π → fcap_ext W' π φ' →
     (∀ o f, φ' !! o = Some f → fle (Some h) f) →
-    dom πa ## dom π → fin_ok W' v πa φa → V j W' σ1 πa φa v →
+    dom πa ## dom π → farg W' v πa φa → V j W' σ1 πa φa v →
     ∀ r tk, meets t r tk → E j W' σ2 r (π ∪ πa) (φ' ∪ φa) tk c (body v).
 
 (** Values at a cost type, by recursion on the value (plan §19.3). A
-    primitive constant at an arrow type runs its own redex. A pair adds
-    its credit to both components and splits its points into two
-    disjoint parts, one per component (plan §19.13). *)
+    primitive constant is not a value at an arrow type, and a box holds
+    no end (plan §19.14). A pair adds its credit to both components and
+    splits its points into two disjoint parts, one per component (plan
+    §19.13). *)
 Fixpoint Vfdef (E : nat → epred) (V : nat → vpred) (n : nat) (W : world) (σ : cta)
     (π : gmap cend point) (φ : gmap cend fuel) (w : expr) {struct w} : Prop :=
   match σ with
@@ -338,17 +354,16 @@ Fixpoint Vfdef (E : nat → epred) (V : nat → vpred) (n : nat) (W : world) (σ
       | CPt ρ => ∃ x, w = EPt x ∧ π = ∅ ∧ pt_known W x ∧ pfitpt W x ρ
       | CEnd P =>
           ∃ c b x f, w = Chan c b ∧ π = {[(c, b) := x]} ∧ pfits W x P ∧
-            φ !! (c, b) = Some f ∧ fle a f
+            φ !! (c, b) = Some f ∧ fle a f ∧ fpts W π
       | CArr c t h σ1 σ2 =>
           match w with
-          | Lam eb => dom π = fends w ∧ farr E V n W c t h σ1 σ2 a π φ (λ v, subst1 v eb)
-          | Konst k => π = ∅ ∧ farr E V n W c t h σ1 σ2 a π φ (λ v, App (Konst k) v)
+          | Lam eb => dom π = fends w ∧ fpts W π ∧ farr E V n W c t h σ1 σ2 a π φ (λ v, subst1 v eb)
           | _ => False
           end
       | CBox c t σ' =>
           match w with
           | EBox eb =>
-              π = ∅ ∧ ∀ W' j r tk, wbext W W' → j < n → meets t r tk →
+              π = ∅ ∧ fends eb = ∅ ∧ ∀ W' j r tk, wbext W W' → j < n → meets t r tk →
                 E j W' σ' r ∅ ∅ tk c (subst1 (EBox eb) eb)
           | _ => False
           end
@@ -476,7 +491,7 @@ Proof.
     try (by rewrite (farr_ext E1 E2 V1 V2)); try (by rewrite IHw);
     try (split; intros (π1 & π2 & Hπ & Hd & H1 & H2); exists π1, π2; split_and!; try done;
          first [by apply IHw1|by apply IHw2]).
-  all: split; intros [Hp H]; split; try done; intros W' j r0 tk0 Hb Hj Hm;
+  all: split; intros (Hp & Hf & H); split_and!; try done; intros W' j r0 tk0 Hb Hj Hm;
     [rewrite <-HE by done|rewrite HE by done]; auto.
 Qed.
 
@@ -526,9 +541,9 @@ Lemma Vfuel_down m n W σ π φ w : m ≤ n → Vfuel n W σ π φ w → Vfuel m
 Proof.
   intros Hmn. rewrite !Vfuel_eq.
   induction w in σ, π, φ |- *; destruct σ as [τ a]; destruct τ; simpl; try done;
-    try (intros [Hp Hf]; split; [done|]; by apply (farr_down _ _ m n));
+    try (intros (Hp & Hq & Hf); split_and!; [done|done|]; by apply (farr_down _ _ m n));
     try (intros (π1 & π2 & Hπ & Hd & H1 & H2); exists π1, π2; split_and!; auto; fail); auto.
-  all: intros [Hp H]; split; [done|]; intros W' j r0 tk0 Hb Hj; apply H; [done|lia].
+  all: intros (Hp & Hf & H); split_and!; [done|done|]; intros W' j r0 tk0 Hb Hj; apply H; [done|lia].
 Qed.
 
 Lemma FuelE_S_down n W σ r π φ tk d e :

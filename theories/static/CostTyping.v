@@ -230,48 +230,13 @@ Definition ccap_th (h : nat) (a : fuel) (Θ Θ' : cthe) : Prop :=
 Lemma ccap_th_empty h a : ccap_th h a ∅ ∅.
 Proof. intros o. by rewrite lookup_empty. Qed.
 
-(** ** Cost signatures of the primitive constants (C-Konst)
+(** ** Primitive constants
 
-    Each constant is a value at an arrow type with an empty map. The
-    fuel layer reads no table (plan §19.11, 3). Stage H4 proves for each
-    constructor that the constant is in [Vfuel] at its signature. *)
-Inductive konst_cost : konst → cty → Prop :=
-  | KcForce c t σ a :
-      konst_cost KForce (CArr c t 0 (CTa (CBox c t σ) a) σ)
-  | KcNew ρ a P Q n b n' b' :
-      pprof ρ = Some (P, Q) → pnode P = Some (n, b) → pnode Q = Some (n', b') →
-      konst_cost KNew (CArr (Some 0) tid 0 (CTa (CPt ρ) a)
-        (CTa (CProd (CTa (CEnd P) (Some n)) (CTa (CEnd Q) (Some n'))) (Some 0)))
-  | KcPay i ρ a :
-      konst_cost (KPay i) (CArr (Some 0) tid 0 (CTa (CPt ρ) a) (CTa (CPt (pfld ρ i)) None))
-  | KcSucc ρ a :
-      konst_cost KSucc (CArr (Some 0) tid 0 (CTa (CPt ρ) a) (CTa (CPt (psuc ρ)) None))
-  | KcSend σp σp' a a0 P n σ P' n' b' :
-      pnode P = Some (n, PSnd σ P') → pnode P' = Some (n', b') →
-      cagex (Some 1) (cadd a0 σp) σp' → σp' ⊑c σ →
-      konst_cost KSend (CArr (Some 1) tid 0 (CTa (CProd σp (CTa (CEnd P) a)) a0) (CTa (CEnd P') (Some n')))
-  | KcRecv a P n σ P' n' b' :
-      pnode P = Some (n, PRcv σ P') → pnode P' = Some (n', b') →
-      konst_cost KRecv (CArr (Some 1) tid 0 (CTa (CEnd P) a)
-        (CTa (CProd σ (CTa (CEnd P') (Some n'))) (Some 0)))
-  | KcClos a P n :
-      pnode P = Some (n, PCls) →
-      konst_cost KClos (CArr (Some 1) tid 0 (CTa (CEnd P) a) (CTa CVal None))
-  | KcSel (s : bool) a P n P1 P2 n' b' :
-      pnode P = Some (n, PSel P1 P2) → pnode (if s then P2 else P1) = Some (n', b') →
-      konst_cost (ksel s) (CArr (Some 1) tid 0 (CTa (CEnd P) a)
-        (CTa (CEnd (if s then P2 else P1)) (Some n')))
-  | KcBra a P n P1 P2 n1 b1 n2 b2 :
-      pnode P = Some (n, PBra P1 P2) → pnode P1 = Some (n1, b1) → pnode P2 = Some (n2, b2) →
-      konst_cost KBra (CArr (Some 1) tid 0 (CTa (CEnd P) a)
-        (CTa (CSum (CTa (CEnd P1) (Some n1)) (CTa (CEnd P2) (Some n2))) (Some 0)))
-  | KcLink P1 a1 P2 a2 a0 :
-      konst_cost KLink (CArr (Some 0) (tlink tid) 0
-        (CTa (CProd (CTa (CEnd P1) a1) (CTa (CEnd P2) a2)) a0) (CTa CVal None))
-  | KcSpawn c' t' h a1 σ' a :
-      fle (Some 1) a →
-      konst_cost KSpawn (CArr (Some 0) (tspawn (snd t') tid) 0
-        (CTa (CArr c' t' h (CTa CVal a1) σ') a) (CTa CVal None)).
+    A primitive constant is not a value at an arrow type of its own
+    (plan §19.14). Each constant is typed applied, by its own rule
+    (C-Force, C-New, C-Pay, C-Succ, C-Send, C-Recv, C-Close, C-Sel,
+    C-Bra, C-Link, C-Spawn). A constant passed as a function is written
+    λx. k x and typed by C-Abs over the rule of k. *)
 
 (** ** The judgment *)
 
@@ -393,9 +358,6 @@ Inductive ctyped (W : world) : cthe → cenv → expr → cta → fuel → tix �
       cage_th (Some 1) Θ Θ' → cage_env (Some 1) Γ Γ' →
       ctyped W Θ' (Some (CTa CVal a1) :: Γ') e σ' c' t' →
       ctyped W Θ Γ (App ESpawn (Lam e)) (CTa CVal None) (Some 0) (tspawn (snd t') tid)
-  | C_Konst Γ k τ :
-      cunlenv Γ → konst_cost k τ →
-      ctyped W ∅ Γ (Konst k) (CTa τ None) (Some 0) tid
   | C_Sub Θ Γ e σ σ' c c' t t' :
       ctyped W Θ Γ e σ c t → σ ⊑c σ' → fle c c' → tle t t' →
       ctyped W Θ Γ e σ' c' t'
