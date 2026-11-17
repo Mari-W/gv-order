@@ -2096,3 +2096,113 @@ Proof.
     + intros [|x] σ0 Hx Hn; simpl in Hx; [injection Hx as <-; done|].
       apply (freevar_rename e (S (S x)) pred). by apply (H1 (S (S x)) σ0).
 Qed.
+
+(** ** The fundamental theorem of the cost judgment *)
+
+Theorem ctyped_csem W Θ Γ e σ c t : ctyped W Θ Γ e σ c t → csem W Θ Γ e σ c t.
+Proof.
+  induction 1 as [Γ Hu|Γ x ρ Hu Hk Hf|Γ x σ Ho|Γ c b σ Hu
+    |Θ Θh Γ Γh e c t h a σ1 σ2 HcT HcG Hd IH
+    |Θ Θ1 Θ2 Θ2' Γ Γ1 Γ2 Γ2' e1 e2 c t h σ1 σ2 a1 c1 t1 c2 t2 HsT HsG _ IH1 HaT HaG _ IH2 Ha Hok1 Hok2
+    |Θ Θ1 Θ2 Θ2' Γ Γ1 Γ2 Γ2' e1 e2 σ1 σ1' σ2 c1 t1 c2 t2 HsT HsG _ IH1 HaT HaG _ IH2 Hs Hok
+    |Θ Θ1 Θ2 Θ2' Γ Γ1 Γ2 Γ2' e1 e2 a σ c1 t1 c2 t2 HsT HsG _ IH1 HaT HaG _ IH2 Hok
+    |Θ Θ1 Θ2 Θ2' Γ Γ1 Γ2 Γ2' e1 e2 σa σb a σ c1 t1 c2 t2 HsT HsG _ IH1 HaT HaG _ IH2 Hok
+    |Θ Γ e σ1 σ2 c t _ IH|Θ Γ e σ1 σ2 c t _ IH
+    |Θ Θ1 Θ2 Θ2' Γ Γ1 Γ2 Γ2' e e1 e2 σa σb a σ c0 t0 c1 t1 c2 t2 HsT HsG _ IH0 HaT HaG _ IH1 _ IH2 Hok
+    |Γ e c t σ Hu Hd IH
+    |Θ Γ e c t σ a c0 t0 _ IH Hok|Θ Γ e ρ a c0 t0 P Q n b n' b' _ IH H1 H2 H3|Θ Γ e i ρ a c0 t0 _ IH|Θ Γ e ρ a c0 t0 _ IH
+    |Θ Γ e σp σp' a a0 P n σ P' n' b' c0 t0 _ IH H1 H2 H3 H4|Θ Γ e a P n σ P' n' b' c0 t0 _ IH H1 H2
+    |Θ Γ e a P n c0 t0 _ IH H1|s Θ Γ e a P n P1 P2 n' b' c0 t0 _ IH H1 H2
+    |Θ Γ e a P n P1 P2 n1 b1 n2 b2 c0 t0 _ IH H1 H2 H3|Θ Γ e P1 a1 P2 a2 a0 c0 t0 _ IH Hok
+    |Θ Γ e c' t' h a1 σ' a c0 t0 _ IH Ha Hok
+    |Θ Θ' Γ Γ' e a1 σ' c' t' HaT HaG Hd IH
+    |Θ Γ e σ σ' c c' t t' _ IH Hs Hc Ht|Θ Γ' Γ e σ c t Hw _ IH|Θ Γ σ e σ' c t Hf _ IH].
+  - by apply c_unit_sem.
+  - by apply c_pt_sem.
+  - by apply c_var_sem.
+  - by apply c_ch_sem.
+  - apply (c_abs_sem W Θ Θh Γ Γh); [|done|done|done]. apply (ctyped_cfacts W _ _ _ (CTa (CArr c t h σ1 σ2) a) (Some 0) tid).
+    by eapply C_Abs.
+  - eapply c_app_sem; eassumption.
+  - eapply c_pair_sem; eassumption.
+  - eapply c_letu_sem; eassumption.
+  - eapply c_letp_sem; eassumption.
+  - by apply c_inj1_sem.
+  - by apply c_inj2_sem.
+  - eapply c_case_sem; eassumption.
+  - apply c_box_sem; [|done|done]. apply (ctyped_cfacts W _ _ _ (CTa (CBox c t σ) None) (Some 0) tid). by apply C_Box.
+  - eapply c_force_sem; eassumption.
+  - eapply c_new_sem; eassumption.
+  - eapply c_pay_sem; eassumption.
+  - eapply c_succ_sem; eassumption.
+  - eapply c_send_sem; eassumption.
+  - eapply c_recv_sem; eassumption.
+  - eapply c_close_sem; eassumption.
+  - eapply c_sel_sem; eassumption.
+  - eapply c_bra_sem; eassumption.
+  - eapply c_link_sem; eassumption.
+  - eapply c_spawn_sem; eassumption.
+  - apply (c_spawnlam_sem W Θ Θ' Γ Γ' e a1 σ' c' t'); [|done|done|done].
+    pose proof (ctyped_cfacts W _ _ _ _ _ _ (C_SpawnLam W Θ Θ' Γ Γ' e a1 σ' c' t' HaT HaG Hd)) as (F & V & N).
+    split_and!; simpl in *.
+    + rewrite <-F. set_solver.
+    + intros x Hx. apply V. by right.
+    + intros x σ0 Hx Hn. destruct (N x σ0 Hx Hn) as [[]|H]. done.
+  - eapply c_sub_sem; eassumption.
+  - eapply c_weak_sem; eassumption.
+  - by apply c_contract_sem.
+Qed.
+
+(** The ends of a thread's environment fit their cost types: each sits
+    at a known point and, refilled to its budget, is in [Vfuel] at its
+    type at every index. *)
+Definition cfits (W : world) (Θ : cthe) (π : gmap cend point) : Prop :=
+  dom π = dom Θ ∧ ∀ o σ x, Θ !! o = Some σ → π !! o = Some x →
+    pt_known W x ∧ ∀ n, Vfuel n W σ {[o := x]} {[o := w_bud W x]} (Chan o.1 o.2).
+
+(** An end at a known point whose protocol fits there, with credit at
+    most the budget, fits its type. *)
+Lemma cfits_end W o P a x :
+  pfits W x P → pt_known W x → w_bud W (pt_dual x) ≠ None → fle a (w_bud W x) →
+  ∀ n, Vfuel n W (CTa (CEnd P) a) {[o := x]} {[o := w_bud W x]} (Chan o.1 o.2).
+Proof. intros Hp Hk Hd Ha n. destruct o as [c b]. apply (Vfuel_end _ _ _ _ _ _ _ _ (w_bud W x)); try done. by rewrite lookup_singleton_eq. Qed.
+
+Lemma cfits_empty W : cfits W ∅ ∅.
+Proof. split; [by rewrite !dom_empty_L|]. intros o σ x. by rewrite lookup_empty. Qed.
+
+Lemma kimg_id (X : gset cend) : kimg id X = X.
+Proof. apply set_eq. intros [c b]. unfold kimg. rewrite elem_of_map. split; [by intros ([c' b'] & [= -> ->] & H)|]. intros H. by exists (c, b). Qed.
+
+(** A closed thread typed with cost c and transformer t, whose ends sit
+    at known points that fit their cost types, has fuel ([fsem]) in
+    every extension of the world it is typed in. *)
+Theorem ctyped_fsem W0 Θ e σ c t W π :
+  ctyped W0 Θ [] e σ c t → wbext W0 W → cfits W Θ π → fsem W π e.
+Proof.
+  intros Ht Hb [Hdom Hf]. exists (snd t). intros n.
+  set (φ := w_bud W <$> π).
+  assert (Hdφ : dom φ = dom (π ∪ ∅)) by (unfold φ; by rewrite dom_fmap_L, map_union_empty).
+  assert (Hkn : ∀ o x, π !! o = Some x → pt_known W x).
+  { intros o x Hx. assert (o ∈ dom Θ) as [σ1 Hσ]%elem_of_dom by (rewrite <-Hdom; by eapply elem_of_dom_2).
+    by destruct (Hf o σ1 x Hσ Hx). }
+  pose proof (ctyped_csem _ _ _ _ _ _ _ Ht n W id Var π ∅ φ Hb) as H.
+  rewrite emap_id, subst_ids in H.
+  apply (FuelE_thread n W σ 0 π φ (snd t) c). rewrite <-(map_union_empty π) at 1. apply H.
+  - split_and!.
+    + intros [c1 b1] [c2 b2] _ _. unfold tkey. simpl. done.
+    + by rewrite kimg_id.
+    + intros o σ0 Hσ. assert (o ∈ dom π) as [x Hx]%elem_of_dom by (rewrite Hdom; by eapply elem_of_dom_2).
+      exists x. destruct o as [c1 b1]. unfold tkey. simpl. split; [done|].
+      assert (E : mres {[(c1, b1)]} φ = {[(c1, b1) := w_bud W x]}).
+      { apply map_eq. intros o'. destruct (decide (o' = (c1, b1))) as [->|Hne].
+        - rewrite lookup_mres_in by set_solver. unfold φ. by rewrite lookup_fmap, Hx, lookup_singleton_eq.
+        - rewrite lookup_singleton_ne by done. destruct (mres {[(c1, b1)]} φ !! o') eqn:E; [|done].
+          apply lookup_mres_Some in E as [_ ?]. set_solver. }
+      rewrite E. by apply (Hf (c1, b1) σ0 x).
+  - done.
+  - rewrite dom_empty_L. set_solver.
+  - done.
+  - rewrite map_union_empty. apply fcap_ext_known; [|done].
+    intros o f Ho. unfold φ in Ho. apply lookup_fmap_Some in Ho as (x & <- & Hx). exists x. split; [done|apply fle_refl].
+  - by apply meets_zero.
+Qed.
