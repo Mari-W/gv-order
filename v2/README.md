@@ -55,3 +55,27 @@ and run `make` again. The root build of theories/ ignores v2.
 | static/PointSubst.v | point substitution `typed_pinst` |
 | examples/ | the S2 examples, typed in `dftyped` and lifted to N = ∞ |
 | test/TypeNotations.v | the S2 notations, ends and points side by side |
+
+## Stage S3, the generic relation R^κ
+
+One step-indexed relation, parametric in a cost table κ, gives the
+deadlock-freedom relation (`κ_DF`) and the live relation (`κ_L`, also
+written `live`). A step of cost c at level n carries its obligation at
+level n − c, and a step of cost 0 is read inside the least fixpoint of
+the level.
+
+| File | Content |
+|---|---|
+| relation/Sfix.v | `sfix`, the one course-of-values fixpoint on the step index |
+| relation/CostTable.v | cost tables `ctable`, `κ_DF`, `κ_L`, the cost of a thread label (`tcost`) and of an event (`ev_cost`), levels |
+| relation/Readiness.v | readiness `ready _ W(Θ ∣ F, t)` and `ready _ W(Σ, p)`, one entry per end |
+| relation/Relation.v | `v ∈ V[κ]^W _ n⟦Θ ⊢ T⟧`, `e ∈ E[κ]^W _ n⟦Θ ⊢ T⟧^F`, `p ∈ P[κ]^W _ n⟦Σ ⊢ T⟧` (`V^W`, `E^W`, `P^W` for κ_DF), the obligations `o_*` and `q_*` named after the paper's clauses, induction principles and the characteristic equations |
+| relation/Closure.v | values, monotonicity in the world, downward closure, antitonicity in the future |
+| relation/Adequacy.v | `Σ ⊨_W p : T`, `Σ ⊫_W p : T`, `adequacy`, `live_adequacy` |
+| test/RelationNotations.v | the S3 notations |
+
+The environments of the relation are `senv`, an end mapped to a
+session type at a point, with no credit (`tenv_erase` drops the credits
+of a typing environment). The session types keep their annotations, so
+the fuel layer of stage S6 reads each end's cost protocol off the
+environment of the live relation at the same index.

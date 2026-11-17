@@ -1,6 +1,6 @@
 (** * Every main result of v2 is closed under the global context
 
-    Stages S1 and S2. [make check] compiles this file and fails if any line below
+    Stages S1, S2 and S3. [make check] compiles this file and fails if any line below
     reports an axiom. *)
 
 From GV Require Import lang.Harmony lang.ThreadSim lang.ChannelSwap
@@ -8,6 +8,7 @@ From GV Require Import lang.Harmony lang.ThreadSim lang.ChannelSwap
 From GV Require Import static.Conservativity static.Weakening static.Renaming static.PointSubst
   examples.ClientServer examples.Cycle examples.FreshBetween examples.FreshMany
   examples.FactoryEx examples.GrowRing.
+From GV Require Import relation.Adequacy.
 
 (** Language: the redex once, progress, preservation. *)
 Print Assumptions act_offer_sig.
@@ -61,3 +62,41 @@ Print Assumptions fb_typed.
 Print Assumptions fm_typed.
 Print Assumptions fx_typed.
 Print Assumptions rg_typed.
+(** S3. The step-indexed fixpoint. *)
+Print Assumptions sfix_unfold.
+Print Assumptions sfix_below_lt.
+(** S3. Readiness. *)
+Print Assumptions ready_t_future.
+Print Assumptions ready_t_mono.
+Print Assumptions ready_p_mono.
+(** S3. The characteristic equations of R^κ. *)
+Print Assumptions Vrel_unit_iff.
+Print Assumptions Vrel_sess_iff.
+Print Assumptions Vrel_prod_iff.
+Print Assumptions Vrel_sum_iff.
+Print Assumptions Vrel_lolli_iff.
+Print Assumptions Vrel_box_iff.
+Print Assumptions Vrel_ex_iff.
+Print Assumptions Erel_S_iff.
+Print Assumptions Erel_S_ind.
+Print Assumptions Prel_S_iff.
+Print Assumptions Prel_S_ind.
+Print Assumptions Erel_S_step.
+Print Assumptions Prel_S_step.
+Print Assumptions Varr_spawn_iff.
+(** S3. Downward closure and monotonicity. *)
+Print Assumptions Vrel_val.
+Print Assumptions Vrel_Erel.
+Print Assumptions Vrel_mono.
+Print Assumptions Erel_mono.
+Print Assumptions Prel_mono.
+Print Assumptions Vrel_down.
+Print Assumptions Erel_down.
+Print Assumptions Erel_future.
+Print Assumptions Prel_down.
+(** S3. Adequacy. *)
+Print Assumptions adequacy_gen.
+Print Assumptions adequacy.
+Print Assumptions live_adequacy.
+Print Assumptions Prel_done.
+Print Assumptions Erel_beta_unit.

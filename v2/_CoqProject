@@ -34,4 +34,11 @@ examples/FreshBetween.v
 examples/FreshMany.v
 examples/FactoryEx.v
 examples/GrowRing.v
+relation/Sfix.v
+relation/CostTable.v
+relation/Readiness.v
+relation/Relation.v
+relation/Closure.v
+relation/Adequacy.v
+test/RelationNotations.v
 CheckAll.v

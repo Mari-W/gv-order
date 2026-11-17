@@ -3,10 +3,11 @@
 # The lexer test of Appendix A: every token parses (checked by the build)
 # and prints as written (checked here against test/Lexer.expected).
 .PHONY: test
-test: test/Lexer.vo test/LangNotations.vo test/TypeNotations.vo
+test: test/Lexer.vo test/LangNotations.vo test/TypeNotations.vo test/RelationNotations.vo
 	"$(COQBIN)rocq" c $(COQMF_COQLIBS_NOML) test/Lexer.v 2>/dev/null | diff -u test/Lexer.expected -
 	"$(COQBIN)rocq" c $(COQMF_COQLIBS_NOML) test/LangNotations.v 2>/dev/null | diff -u test/LangNotations.expected -
 	"$(COQBIN)rocq" c $(COQMF_COQLIBS_NOML) test/TypeNotations.v 2>/dev/null | diff -u test/TypeNotations.expected -
+	"$(COQBIN)rocq" c $(COQMF_COQLIBS_NOML) test/RelationNotations.v 2>/dev/null | diff -u test/RelationNotations.expected -
 	@echo "notation tests: printed forms match test/*.expected"
 
 # Every result listed in CheckAll.v is closed under the global context.

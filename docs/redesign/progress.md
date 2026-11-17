@@ -9,7 +9,7 @@ The old development in theories/ stays untouched.
 |---|---|---|
 | S1 | language | done |
 | S2 | points, worlds, types | done |
-| S3 | generic relation | open |
+| S3 | generic relation | done |
 | S4 | generic compatibility | open |
 | S5 | static fundamental theorems | open |
 | S6 | fuel | open |
@@ -117,6 +117,71 @@ The old development in theories/ stays untouched.
 - S2, deferred. `seq_sound` for transformers with offset ∞ is stated in
   §2.17 but not used before S7, and S2 does not prove it.
 
+- S3, annotations. R^κ reads no annotation of a type. V at S@x compares
+  session types after erasing their annotations (`seqv S' S` is
+  `sequiv (sty_df S') (sty_df S)`), and costs, transformers, floors and
+  credits are never read. With the exact ≈ of S2 the box clause would
+  have to depend on N. E-Box at N = ∞ types the body only at
+  session instances with the annotations of N = ∞ (`sinsts None`), while
+  E-Force at a finite N instantiates at any hcontractive instance, and
+  `dftyped` converts between types equal up to `ty_df` (D-Conv). An
+  annotation-blind relation serves both. The session types in the
+  environments keep their annotations, so S6 reads each end's cost
+  protocol off the environment of the live relation at the same index.
+  V-Box quantifies over every hcontractive instance.
+- S3, environments. The relation's environments Θ and Σ are `senv`, an
+  end mapped to S@x with no credit. `tenv_erase` drops the credits of a
+  typing environment, for S4 and S5.
+- S3, cost tables. `ctable` carries two side conditions, κ(receive) ≥ 1
+  and κ(β) = 0 → κ(send) ≥ 1. A receive reads V of its payload at the
+  level of its continuation in a negative position, so that level must
+  lie below n, and when β is free V at level n is defined together with
+  E at level n (by fuel on the size of the type), so a free send would
+  read V at level n at a payload of unbounded size. Both tables meet the
+  conditions. The cost of a branch is κ(receive), of select and close
+  κ(send).
+- S3, payload level. A send reads its payload at the level of its
+  continuation, n − κ(send): n in κ_DF, n − 1 in κ_L (§2.8 leaves the
+  level open). Q-Send likewise.
+- S3, spawn. O-Spawn reads the thunk at 1 ⊸ 1 at the parent's level n
+  with the generic arrow clause, whose part at level n itself is read
+  inside the fixpoint (`Varr` with the fixpoint at ∗). In κ_DF that part
+  is empty, so the thunk is in V at level n as §2.8 writes
+  (`Varr_spawn_iff`). In κ_L it is today's `Vspawn`.
+- S3, Kripke. Every unfolding of E and P quantifies over W1 ⊒ W
+  (decision Q9 a). The receive clause has no Kripke quantifier of its
+  own, because the outer one covers it.
+- S3, creation. O-New holds for every generated root g of family ℓ that
+  is the root of no point of Θ (`gfresh`) and asks the new name fresh for
+  Θ (`cfresh`), as the old O-New did. O-NewAt asks the anchor held. Both
+  create the ends at S and `dual S`.
+- S3, the step clause. E and P state one conjunct per label (`Esteps`,
+  `Psteps`), because the inductive fixpoint must occur strictly
+  positively and a `match` on the label hides it. `Eobl` and `Pobl` read
+  the obligation off the label, and `Esteps_iff`, `Psteps_iff` relate
+  the two forms. The obligations carry the paper's names, `o_send`,
+  `q_recv` and so on.
+- S3, process steps. P quantifies over the instrumented steps of every
+  lifting of the soup (`istep`, with events), not over `pspec`. A τ step
+  costs `ev_cost κ ev`, so Q-Admin and Q-Comm are one clause `q_tau`.
+  The external send, receive, close, choice and link clauses port
+  Q-Send (`send_split`), Q-Recv (`recv_ok`, `recv_env`, `recv_back`)
+  and the rest of theories/relation/LogicalRelation.v to one entry per
+  end. They are checked only by S4.
+- S3, readiness. An end is offered when it is a subject of the label and
+  Θ holds it. No shape test picks an entry, because each end has one.
+- S3, futures. The relation's futures are sets of points. The static
+  future of S2, with a future variable and the ⊥ flag, is interpreted by
+  the semantic term judgment, which S4 defines with the bind lemma.
+  S3 defines the semantic process judgments `Σ ⊨_W p : T` and
+  `Σ ⊫_W p : T` (`sem_ptyped κ`).
+- S3, syntax. The `;` of the typing notation of static/Typing.v breaks
+  the record syntax and the tactic forms `pose proof (t); tac` and
+  `exists a; tac` after a term at level 60 or above. Records live in
+  relation/CostTable.v, which does not import static/Typing.v, and
+  proofs write `pose proof t as H` and `(exists a); tac`. stdpp's `∉`
+  sits at level 80, so `x ∉ X ∧ P` is written `(x ∉ X) ∧ P`.
+
 ## Log
 
 - S1.0. Lexer test v2/test/Lexer.v of every judgment and token of
@@ -174,3 +239,20 @@ The old development in theories/ stays untouched.
   caller's future is abstract, and it holds no end to anchor at.
   SegmentInterleave and ChoiceNegative are not ported. CheckAll lists 43
   results, all closed. S2 done.
+- S3.1. `sfix` (v2/relation/Sfix.v), cost tables κ_DF and κ_L
+  (v2/relation/CostTable.v), readiness `ready _ W(Θ ∣ F, t)` and
+  `ready _ W(Σ, p)` (v2/relation/Readiness.v), and the definitions of
+  `V[κ]^W _ n⟦Θ ⊢ T⟧`, `E[κ]^W _ n⟦Θ ⊢ T⟧^F`, `P[κ]^W _ n⟦Σ ⊢ T⟧`
+  (v2/relation/Relation.v).
+- S3.2. Transparent maps of one unfolding and the induction principles
+  `Eind_ind'`, `Pind_ind'`, monotonicity of one unfolding in its readers,
+  fuel independence of V (`Vbody_fuel`), and the characteristic
+  equations `Vrel_*_iff`, `Erel_S_iff`, `Erel_S_ind`, `Prel_S_iff`,
+  `Prel_S_ind`. The arrow reads `Vrel κ j → Erel κ j` at every j with
+  j + κ(β) ≤ n (`Vrel_lolli_iff`).
+- S3.3. Values, monotonicity in the world, downward closure and
+  antitonicity in the future (v2/relation/Closure.v). `adequacy`,
+  `live_adequacy` and the generic `adequacy_gen` (v2/relation/Adequacy.v),
+  with two sanity checks, `Prel_done` and `Erel_beta_unit`.
+- S3.4. Notation test v2/test/RelationNotations.v, README section,
+  CheckAll lists 71 results, all closed. No `Admitted` and no axiom.
