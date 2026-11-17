@@ -1747,3 +1747,201 @@ Proof.
     apply Hc2; [done|apply (thsem_mono _ (S j) W' W'); [lia|apply wbext_refl|done]|by apply Hgs|rewrite dom_union_L in *; set_solver|done|done
                |by apply (meets_mono _ _ r1)].
 Qed.
+
+(** ** Closures and boxes: the map of the value is its ends *)
+
+(** The syntactic facts a derivation gives about its term: its ends are
+    those of Θ, its free variables have entries, and every entry that
+    may hold an end occurs. *)
+Definition cfacts (Θ : cthe) (Γ : cenv) (e : expr) : Prop :=
+  fends e = dom Θ ∧ (∀ x, freevar x e → ∃ σ, Γ !! x = Some (Some σ)) ∧
+  (∀ x σ, Γ !! x = Some (Some σ) → ¬ cfree (cta_ty σ) → freevar x e).
+
+Lemma freevar_emap (g : chan → chan) e : ∀ x, freevar x (emap g e) ↔ freevar x e.
+Proof. induction e; intros y; simpl; rewrite ?IHe, ?IHe1, ?IHe2, ?IHe3; done. Qed.
+
+Lemma upP_of (P Q : nat → Prop) : (∀ x, Q (S x) → P x) → ∀ x, Q x → upP P x.
+Proof. intros H [|x] Hx; simpl; auto. Qed.
+
+Lemma allfv_of_freevar e : ∀ (P : nat → Prop), (∀ x, freevar x e → P x) → allfv P e.
+Proof.
+  induction e; intros P H; simpl in *.
+  - by apply H.
+  - done.
+  - done.
+  - done.
+  - done.
+  - apply IHe. apply (upP_of _ (λ y, freevar y e)). intros x Hx. by apply H.
+  - split; [apply IHe1|apply IHe2]; intros x Hx; apply H; tauto.
+  - split; [apply IHe1|apply IHe2]; intros x Hx; apply H; tauto.
+  - split; [apply IHe1|apply IHe2]; intros x Hx; apply H; tauto.
+  - split; [apply IHe1; intros x Hx; apply H; tauto|].
+    apply IHe2. apply (upP_of _ (λ y, freevar y e2)). apply (upP_of _ (λ y, freevar (S y) e2)).
+    intros x Hx. apply H. tauto.
+  - by apply IHe.
+  - by apply IHe.
+  - split_and!; [apply IHe1; intros x Hx; apply H; tauto| |].
+    + apply IHe2. apply (upP_of _ (λ y, freevar y e2)). intros x Hx. apply H. tauto.
+    + apply IHe3. apply (upP_of _ (λ y, freevar y e3)). intros x Hx. apply H. tauto.
+  - apply IHe. apply (upP_of _ (λ y, freevar y e)). intros x Hx. by apply H.
+Qed.
+
+Lemma fends_subst_eq e γ (D : gset cend) :
+  (∀ x, freevar x e → fends (γ x) ⊆ D) → (∀ o, o ∈ D → ∃ x, freevar x e ∧ o ∈ fends (γ x)) →
+  fends (subst γ e) = fends e ∪ D.
+Proof.
+  intros H1 H2. apply set_eq. intros o. split.
+  - intros Ho. by apply (fends_subst e γ D (allfv_of_freevar e _ H1)).
+  - intros [Ho|Ho]%elem_of_union; [by apply fends_subst_super|].
+    destruct (H2 o Ho) as (x & Hx & Ho'). by apply (fends_subst_free e x γ).
+Qed.
+
+Lemma csem_dom n W Θ Γ e (g : chan → chan) γ πΘ πΓ φ :
+  cfacts Θ Γ e → (∀ x σ, Γ !! x = Some (Some σ) → cheld (cta_ty σ)) →
+  thsem n W Θ g πΘ φ → gsem n W Γ γ πΓ φ → fends (subst γ (emap g e)) = dom (πΘ ∪ πΓ).
+Proof.
+  intros (Hf & Hfv & Hnf) Hh HT HG. destruct (gsem_ends _ _ _ _ _ _ Hh HG) as (A & B & _).
+  rewrite dom_union_L, (thsem_dom _ _ _ _ _ _ HT), <-Hf, <-fends_emap.
+  apply fends_subst_eq.
+  - intros x Hx. apply freevar_emap in Hx. destruct (Hfv x Hx) as [σ Hσ]. exact (A x σ Hσ).
+  - intros o Ho. destruct (B o Ho) as (x & σ & Hx & Hn & Ho'). exists x. split; [|done].
+    apply freevar_emap. by apply (Hnf x σ).
+Qed.
+
+(** The ends of Θ, all of them held by values of types without [CAny]. *)
+Lemma thsem_fpts n W Θ (g : chan → chan) π φ :
+  (∀ o σ, Θ !! o = Some σ → cheld (cta_ty σ)) → thsem n W Θ g π φ → fpts W π.
+Proof.
+  intros Hh HT o' k Hk. destruct (thsem_point _ _ _ _ _ _ _ HT ltac:(by eapply elem_of_dom_2)) as (o & σ & x & -> & Hσ & Hx & HV).
+  rewrite Hk in Hx. injection Hx as <-. destruct σ as [τ a].
+  destruct (Vfuel_held _ _ _ _ _ _ _ (Hh o _ Hσ) HV) as (_ & P & _). apply (P (tkey g o)). by rewrite lookup_singleton_eq.
+Qed.
+
+Lemma fpts_union W π1 π2 : fpts W π1 → fpts W π2 → fpts W (π1 ∪ π2).
+Proof. intros H1 H2 o k Ho. apply lookup_union_Some_raw in Ho as [Ho|[_ Ho]]; [by apply (H1 o)|by apply (H2 o)]. Qed.
+
+Lemma Vfuel_lam_intro n W c t h σ1 σ2 a π φ eb :
+  dom π = fends (Lam eb) → fpts W π → farr FuelE Vfuel n W c t h σ1 σ2 a π φ (λ v, subst1 v eb) →
+  Vfuel n W (CTa (CArr c t h σ1 σ2) a) π φ (Lam eb).
+Proof. intros H1 H2 H3. apply Vfuel_eq. simpl. by split_and!. Qed.
+
+Lemma c_abs_sem W0 Θ Θh Γ Γh e c t h a σ1 σ2 :
+  cfacts Θ Γ (Lam e) → ccap_th h a Θ Θh → ccap_env h a Γ Γh →
+  csem W0 Θh (Some σ1 :: Γh) e σ2 c t →
+  csem W0 Θ Γ (Lam e) (CTa (CArr c t h σ1 σ2) a) (Some 0) tid.
+Proof.
+  intros Hcf HcT HcG Hcs n W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  assert (HhG : ∀ x σ, Γ !! x = Some (Some σ) → cheld (cta_ty σ)).
+  { intros x σ Hx. destruct (ccap_env_lookup _ _ _ _ _ _ HcG Hx) as (σ' & _ & Hs). exact (ccap_cheld _ _ _ _ Hs). }
+  assert (HhT : ∀ o σ, Θ !! o = Some σ → cheld (cta_ty σ)).
+  { intros o σ Ho. destruct (ccap_th_lookup _ _ _ _ _ _ HcT Ho) as (σ' & _ & Hs). exact (ccap_cheld _ _ _ _ Hs). }
+  apply sem_val; [done|done|done|]. cbn [emap subst].
+  apply Vfuel_lam_intro.
+  - symmetry. exact (csem_dom n W Θ Γ (Lam e) g γ πΘ πΓ φ Hcf HhG HT HG).
+  - apply fpts_union; [exact (thsem_fpts n W Θ g πΘ φ HhT HT)|exact (proj2 (proj2 (gsem_ends _ _ _ _ _ _ HhG HG)))].
+  - split.
+    + intros o f Hf. assert (Ho : o ∈ dom (πΘ ∪ πΓ)) by (rewrite <-Hdφ; by eapply elem_of_dom_2).
+      rewrite dom_union_L in Ho. apply elem_of_union in Ho as [Ho|Ho];
+        [exact (thsem_ccap_above _ _ _ _ _ _ _ _ _ HcT HT o f Ho Hf)|exact (gsem_ccap_above _ _ _ _ _ _ _ _ _ HcG HG o f Ho Hf)].
+    + intros W' j φ' v πa φa Hb' Hj Hdφ' Hc' Hh' Hda (Hva & Hdfa & Hcfa) HVa r0 tk0 Hm0.
+      rewrite subst1_subst.
+      rewrite dom_union_L in Hda.
+      assert (Heq : (πΘ ∪ πΓ) ∪ πa = πΘ ∪ (πa ∪ πΓ)).
+      { rewrite <-map_union_assoc. f_equal. apply union_comm_d. set_solver. }
+      rewrite Heq.
+      assert (Hag : ∀ o, o ∈ dom (πΘ ∪ πΓ) → (φ' ∪ φa) !! o = φ' !! o).
+      { intros o Ho. apply lookup_union_l. apply not_elem_of_dom. rewrite Hdfa. rewrite dom_union_L in Ho. set_solver. }
+      assert (Hhm : ∀ o f, o ∈ dom (πΘ ∪ πΓ) → (φ' ∪ φa) !! o = Some f → fle (Some h) f).
+      { intros o f Ho Hf. rewrite Hag in Hf by done. by apply (Hh' o). }
+      apply Hcs; [by eapply wbext_trans| | |rewrite dom_union_L; set_solver| | |done].
+      * apply (thsem_ccap _ _ h a Θ _ _ _ φ); [done| |rewrite dom_union_L, Hdφ', dom_union_L; set_solver|].
+        { intros o f Ho. apply Hhm. rewrite dom_union_L. set_solver. }
+        apply (thsem_mono _ n W W'); [lia|done|done].
+      * exists πa, πΓ. split_and!; [done|set_solver|done| |].
+        { rewrite (mres_disj_r φ' φa πa) by (done || (rewrite Hdφ', dom_union_L; set_solver)). done. }
+        apply (gsem_ccap _ _ h a Γ _ _ _ φ); [done| |rewrite dom_union_L, Hdφ', dom_union_L; set_solver|].
+        { intros o f Ho. apply Hhm. rewrite dom_union_L. set_solver. }
+        apply (gsem_mono _ n W W'); [lia|done|done].
+      * rewrite !dom_union_L, Hdφ', Hdfa, dom_union_L. set_solver.
+      * rewrite <-Heq. apply fcap_ext_union; [done|done|rewrite dom_union_L; set_solver].
+Qed.
+
+Lemma c_box_sem W0 Γ e c t σ :
+  cfacts ∅ Γ (EBox e) → cunlenv Γ → csem W0 ∅ (Some (CTa (CBox c t σ) None) :: Γ) e σ c t →
+  csem W0 ∅ Γ (EBox e) (CTa (CBox c t σ) None) (Some 0) tid.
+Proof.
+  intros Hcf Hu Hcs n W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  assert (HhG : ∀ x σ0, Γ !! x = Some (Some σ0) → cheld (cta_ty σ0)).
+  { intros x σ0 Hx. apply cfree_cheld. clear -Hu Hx. revert x Hx. induction Γ as [|[σ1|] Γ IH]; intros [|x] Hx; simpl in *; try done.
+    - injection Hx as <-. apply Hu. - apply (IH (proj2 Hu) x Hx). - apply (IH (proj2 Hu) x Hx). }
+  pose proof (csem_dom n W ∅ Γ (EBox e) g γ πΘ πΓ φ Hcf HhG HT HG) as Hfe.
+  pose proof (thsem_empty _ _ _ _ _ HT) as ->. pose proof (gsem_unl _ _ _ _ _ _ Hu HG) as ->.
+  rewrite map_empty_union, dom_empty_L in *.
+  apply dom_empty_inv_L in Hdφ as ->. cbn [emap subst] in Hfe |- *.
+  set (eb := subst (up γ) (emap g e)). fold eb in Hfe.
+  apply sem_val; [done|done|done|].
+  assert (Hlob : ∀ m, m ≤ n → ∀ W', wbext W W' → Vfuel m W' (CTa (CBox c t σ) None) ∅ ∅ (EBox eb)).
+  { induction m as [m IH] using lt_wf_ind. intros Hmn W' Hb'. apply Vfuel_eq. simpl. split_and!; [done|done|].
+    intros W'' j r0 tk0 Hb'' Hj Hm0. unfold eb. rewrite subst1_subst.
+    rewrite <-(map_empty_union (∅ : gmap cend point)).
+    apply Hcs; [by do 2 (eapply wbext_trans)|apply thsem_nil| |set_solver|by rewrite map_empty_union|
+                rewrite map_empty_union; apply fcap_ext_empty|done].
+    exists ∅, ∅. rewrite map_empty_union. split_and!; [done|set_solver|done| |].
+    - rewrite dom_empty_L. apply (IH j); [done|lia|]. by eapply wbext_trans.
+    - apply (gsem_mono _ n W W''); [lia|by eapply wbext_trans|done]. }
+  apply (Hlob n); [done|apply wbext_refl].
+Qed.
+
+Lemma c_spawnlam_sem W0 Θ Θ' Γ Γ' e a1 σ' c' t' :
+  cfacts Θ Γ (Lam e) → cage_th (Some 1) Θ Θ' → cage_env (Some 1) Γ Γ' →
+  csem W0 Θ' (Some (CTa CVal a1) :: Γ') e σ' c' t' →
+  csem W0 Θ Γ (App ESpawn (Lam e)) (CTa CVal None) (Some 0) (tspawn (snd t') tid).
+Proof.
+  intros Hcf HaT HaG Hcs n W g γ πΘ πΓ φ Hb HT HG Hd Hdφ Hc r tk Hm.
+  destruct (spawn_split _ _ _ _ Hm) as [Hch Hpar].
+  assert (HhG : ∀ x σ, Γ !! x = Some (Some σ) → cheld (cta_ty σ)).
+  { intros x σ Hx. destruct (cage_env_lookup _ _ _ _ _ HaG Hx) as (σ0 & _ & Hs). exact (cagex_cheld _ _ _ Hs ltac:(done)). }
+  pose proof (csem_dom n W Θ Γ (Lam e) g γ πΘ πΓ φ Hcf HhG HT HG) as Hdom. cbn [emap subst] in Hdom.
+  assert (Hab : ∀ o f, φ !! o = Some f → fle (Some 1) f).
+  { intros o f Hf. assert (Ho : o ∈ dom (πΘ ∪ πΓ)) by (rewrite <-Hdφ; by eapply elem_of_dom_2).
+    rewrite dom_union_L in Ho. apply elem_of_union in Ho as [Ho|Ho];
+      [exact (thsem_above _ _ _ _ _ _ _ _ HaT HT o f Ho Hf)|exact (gsem_above _ _ _ _ _ _ _ _ HaG HG o f Ho Hf)]. }
+  destruct n as [|n]; [apply FuelE_0|]. cbn [emap subst].
+  apply FuelE_redex; [done|done|]. intros W' g' π' φ' Hb' Hk R1 R2.
+  assert (Hdφ' : dom φ' = dom π') by (eapply renk_dom_eq; [exact Hdφ|exact R1|exact R2]).
+  assert (Hc' : fcap_ext W' π' φ') by (apply (fcap_ext_wbext W); [done|]; eapply fcap_ext_rename; eauto).
+  assert (Hdom' : fends (emap g' (Lam (subst (up γ) (emap g e)))) = dom π').
+  { rewrite fends_emap, Hdom. symmetry. apply (renk_dom _ _ _ R1). }
+  cbn [emap] in Hdom' |- *. rewrite emap_subst_up, emap_emap in Hdom' |- *.
+  set (w := Lam (subst (up (λ x, emap g' (γ x))) (emap (g' ∘ g) e))). fold w in Hdom'.
+  destruct (renk_union_split g' πΘ πΓ π' Hk Hd R1) as (πΘ' & πΓ' & Hπ' & R1T & R1G & Hd').
+  split.
+  - intros s0 e' o Hst Ho. apply tstep_app_val in Hst; [|done|done]. inversion Hst.
+  - intros α e' Hst. apply tstep_app_val in Hst; [|done|done].
+    assert (α = LSpawn w ∧ e' = EUnit) as [-> ->] by (inversion Hst; done).
+    unfold Fobl; cbv beta iota. split_and!.
+    + by rewrite Hdom'.
+    + intros o m _ Hom. destruct (proj2 R2 o _ Hom) as (o0 & -> & Ho0). specialize (Hab o0 _ Ho0). simpl in Hab. lia.
+    + unfold fchild. cbn [fst snd]. rewrite Hdom', mres_dom, (mres_dom_eq π' φ' Hdφ').
+      destruct n as [|n0]; [apply FuelE_0|].
+      apply (FuelE_beta n0 W' _ 0 π' (ftick <$> φ') (Nat.div2 (S tk)) None [] _
+        (subst1 EUnit (subst (up (λ x, emap g' (γ x))) (emap (g' ∘ g) e)))); [by apply Forall_nil|by apply HeadApp| |].
+      { apply (fcap_ext_fmap _ _ _ ftick); [apply ftick_le|done]. }
+      rewrite subst1_subst.
+      apply (FuelE_mono _ _ σ' cany 0 0 _ _ (Nat.div2 (S tk)) (Nat.div2 (S tk)) c' None); [apply cst_any|lia|lia|apply fle_None|].
+      assert (Hφt : ftick <$> φ' = fminus 1 <$> φ') by (apply map_fmap_ext; intros; apply ftick_fminus).
+      rewrite Hπ' in Hdφ', Hc' |- *. rewrite Hφt.
+      apply Hcs; [by eapply wbext_trans| | |done|by rewrite dom_fmap_L|apply (fcap_ext_fmap _ _ _ (fminus 1)); [apply fminus_le|done]|by apply meets_zero].
+      * apply (thsem_mono _ (S (S n0)) W' W'); [lia|apply wbext_refl|].
+        apply (thsem_age _ _ (Some 1) 1 Θ); [done|apply fle_refl|].
+        apply (thsem_mono _ (S (S n0)) W W'); [lia|done|].
+        apply (thsem_rename _ _ Θ g g' (πΘ ∪ πΓ) πΘ πΘ' φ φ'); [done|by rewrite Hdφ|rewrite dom_union_L; set_solver|done|done|done].
+      * exists ∅, πΓ'. rewrite map_empty_union. split_and!; [done|set_solver|done|rewrite dom_empty_L; apply Vfuel_unit|].
+        apply (gsem_mono _ (S (S n0)) W' W'); [lia|apply wbext_refl|].
+        apply (gsem_age _ _ (Some 1) 1 Γ); [done|apply fle_refl|].
+        apply (gsem_mono _ (S (S n0)) W W'); [lia|done|].
+        apply (gsem_rename _ _ Γ γ g' (πΘ ∪ πΓ) πΓ πΓ' φ φ'); [done|by rewrite Hdφ|rewrite dom_union_L; set_solver|done|done|done].
+    + unfold fupd. cbn [fst snd]. rewrite (mrem_all _ π') by (by rewrite Hdom').
+      rewrite (mrem_all _ φ') by (by rewrite Hdφ', Hdom').
+      apply sem_val; [done|done|apply fcap_ext_empty|apply Vfuel_unit].
+Qed.
