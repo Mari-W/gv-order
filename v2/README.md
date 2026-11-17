@@ -109,6 +109,6 @@ reads no point, no world and no relation. Every step costs one level.
 | compat/Rules.v | the operator rules over every cost table (`gen_e_*`) and their instances `sem_e_*`, `live_e_*` |
 | compat/LiveDF.v | `live_sub_df`: ∅ ⊫_W p : T ⟹ ∅ ⊨_W p : T at a first-order T |
 | compat/Swap.v | the transposition of channel names on environments (`sswap`) and readiness |
-| compat/Rename.v | decision Q16 for terms: V and E under every map of ends injective on the held ends (`Vrel_rename`, `Erel_rename`, renamed environment `kren`), with the transpositions as instances (`Vrel_swap`, `Erel_swap`) |
-| compat/PSwap.v | the transposition on configurations with thread ids and on events (`istep_qswap`), the external clauses along it, P is invariant (`Prel_swap`) |
+| compat/Rename.v | decision Q16: V and E under every map of ends injective on the held ends (`Vrel_rename`, `Erel_rename`), P by projection of its clause (rename) (`Prel_rename`), the transpositions as instances (`Vrel_swap`, `Erel_swap`), the link substitution as a renaming of the other component (`pren_ok_csub`) |
+| compat/PSwap.v | the transposition on configurations with thread ids and on events (`istep_qswap`), the external clauses along it, P is invariant (`Prel_swap`, an instance of `Prel_rename`) |
 | test/CompatNotations.v | the S4 notations |
