@@ -1,0 +1,41 @@
+λ (N : fuel) (n : nat) (σ : rty) (c : fuel) (r : nat) 
+  (Π : penv) (φ : cenv) (tk : nat) (e : expr),
+  e ∈ F^N _ n⟦σ ▷ c ; r⟧(Π, φ, tk)
+     : fuel → nat → rty → fuel → nat → penv → cenv → nat → expr → Prop
+λ (N : fuel) (n : nat) (σ : rty) (Π : penv) (φ : cenv) (v : expr),
+  v ∈ FV^N _ n⟦σ⟧(Π, φ)
+     : fuel → nat → rty → penv → cenv → expr → Prop
+FuelE_bind
+     : ∀ (n : nat) (N : fuel) (σ1 : rty) (r1 : nat) 
+         (σ : rty) (r : nat) (Π1 : penv) (φ1 : cenv) 
+         (ΠK : penv) (φK : cenv) (tk : nat) (c1 d : fuel) 
+         (K : ectx) (e : expr),
+         ectx_ok K
+         → dom Π1 = dom φ1
+           → dom ΠK = dom φK
+             → dom φ1 ## dom φK
+               → fabove c1 ΠK φK
+                 → fle c1 d
+                   → fkont n N σ1 r1 σ r c1 d ΠK φK K
+                     → e ∈ F^N _ n⟦σ1 ▷ c1 ; r1⟧(Π1, φ1, tk)
+                       → efill K e ∈ F^N _ n⟦σ ▷ d ; r⟧(
+                       Π1 ∪ ΠK, φ1 ∪ φK, tk)
+FuelE_mono
+     : ∀ (n : nat) (N N' : fuel) (σ : rty) (d d' : fuel) 
+         (r r' : nat) (Π : penv) (φ φ' : cenv) (tk tk' : nat) 
+         (e : expr),
+         fle N N'
+         → cle φ φ'
+           → fle d d'
+             → r' ≤ r
+               → tk ≤ tk'
+                 → e ∈ F^N _ n⟦σ ▷ d ; r⟧(Π, φ, tk)
+                   → e ∈ F^N' _ n⟦σ ▷ d' ; r'⟧(Π, φ', tk')
+Vfuel_recount
+     : ∀ (N : fuel) (n : nat) (h a : fuel) (T : ty) 
+         (a0 : fuel) (T' : ty) (a0' : fuel) (Π : penv) 
+         (φ φ' : cenv) (v : expr),
+         tcap h a (T, a0) (T', a0')
+         → dom φ' = dom φ
+           → (∀ (o : cend) (f : fuel), φ' !! o = Some f → fle h f)
+             → v ∈ FV^N _ n⟦RTy T a0⟧(Π, φ) → v ∈ FV^N _ n⟦RTy T' a0'⟧(Π, φ')

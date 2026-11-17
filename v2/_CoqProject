@@ -41,4 +41,10 @@ relation/Relation.v
 relation/Closure.v
 relation/Adequacy.v
 test/RelationNotations.v
+fuel/Fuel.v
+fuel/FuelMono.v
+fuel/FuelValues.v
+fuel/FuelBind.v
+fuel/FuelSub.v
+test/FuelNotations.v
 CheckAll.v

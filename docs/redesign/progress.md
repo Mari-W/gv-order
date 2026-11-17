@@ -12,7 +12,7 @@ The old development in theories/ stays untouched.
 | S3 | generic relation | done |
 | S4 | generic compatibility | open |
 | S5 | static fundamental theorems | open |
-| S6 | fuel | open |
+| S6 | fuel | done |
 | S7 | cost judgment | open |
 | S8 | soup and adequacy | open |
 | S9 | lock-free composition and soundness | open |
@@ -184,6 +184,59 @@ The old development in theories/ stays untouched.
   proofs write `pose proof t as H` and `(exists a); tac`. stdpp's `∉`
   sits at level 80, so `x ∉ X ∧ P` is written `(x ∉ X) ∧ P`.
 
+- S6, one clock (Q10). Q10 (a) asks one clock if the bind lemma
+  survives. It does, because `FuelE_bind` reads no cost of a β step. One clock
+  fails one stage later, at E-Box in S7. The box
+  `!(f = force f)`, forced, types by the merged judgment at cost 0, and
+  its run is β steps forever. With β free and E a least fixpoint over
+  free steps, as in κ_L, FuelE at level 1 has no derivation for it, so
+  `cost_fundamental` is false. With β free and a greatest fixpoint, the
+  term has fuel, but the semantic E-Box lemma has to read the self at
+  the level it proves, with no step in between, and the induction on the
+  index that proves it at two clocks has nothing to recur on. The live
+  relation gets past the same point with the guard. One clock would put
+  `guarded e` into `cost_fundamental` and change A.3. S6 takes the
+  fallback Q10 (b), where every step costs one level, β, new, spawn and link
+  included, as theories/lockfree/LFFuel.v does. Argued, no Rocq. The
+  soup of S8 keeps two clocks (F25).
+- S6, the refill (Q4). FuelE^N and the closure and box clauses of Vfuel
+  hold at every refill N′ ≥ N (Kripke in N), as the old FuelE held in
+  every extension of the budgets (`wbext`). Plain monotonicity in N has
+  no proof. The receive clause takes incoming values at the receiver's
+  refill, and a closure in Vfuel at N′ need not be in Vfuel at N, for
+  instance one that refills an end and then acts N′ − 1 times on other
+  ends while it holds that end. With the quantifier, `FuelE_mono` is
+  monotone in N and in the counters, which is what the maximum at
+  composition needs.
+- S6, protocols (Q11). Π maps an end to its session type (`penv`) and
+  nothing else. FuelE does not take the relation's `senv`, because it
+  reads no point. S8 sets Π to the session types of the live environment
+  A_t at the same index. No cost protocol is chosen and nothing is
+  paired.
+- S6, idle ends (Q5). An end is idle when its session type is Skip
+  (`idle S` is `unfoldS S = SSkip`). No rule acts on Skip, and its dual is
+  Skip. F-Wait (`f_act`) asks the acted end not idle, and F-Tick and the
+  hand-over (`fspare`) skip idle ends. Counters evolve by the one update
+  `refill`, `fhand`, `cnew`, whatever the protocols. S8 still needs
+  `idle S ↔ idle S'` for S' ≃ dual S. The controller (#20) is not typed.
+- S6, counters. Counters, the frame and N range over ℕ ∪ {∞}, like the
+  floors of S2. At N = ∞ every fresh and refilled counter is ∞, and a
+  tick keeps ∞.
+- S6, threads. A thread returns at `RThread`, any value, holding no end
+  (Π = φ = ∅). It replaces `CAny`. `FuelE_thread` turns FuelE at a
+  primitive type into FuelE of a thread.
+- S6, payloads. The send and receive clauses read the payload at the raw
+  type T^b of the session type, with its bound point variables free,
+  not at `payload_at m T x`. Vfuel reads no point (`Vfuel_pinst`), so the
+  two agree.
+- S6, boxes. The box clause of Vfuel quantifies over the session
+  instances `sinsts N′ ss` of E-Box and reads no point instance.
+- S6, renamings. FuelE is closed under end maps `cend → cend` injective on
+  the held ends (`kinj`), because the link substitution `csub` maps ends,
+  not channels.
+- S6, deferred. `seq_sound` with offset ∞ is not used by the bind lemma.
+  S7 proves it with the cost half of the judgment.
+
 ## Log
 
 - S1.0. Lexer test v2/test/Lexer.v of every judgment and token of
@@ -258,3 +311,19 @@ The old development in theories/ stays untouched.
   with two sanity checks, `Prel_done` and `Erel_beta_unit`.
 - S3.4. Notation test v2/test/RelationNotations.v, README section,
   CheckAll lists 71 results, all closed. No `Admitted` and no axiom.
+- S6.1. FuelE^N and Vfuel by credited types (v2/fuel/Fuel.v): the
+  obligations `f_beta` to `f_link`, idle ends, the index-free update, the
+  notations `e ∈ F^N _ n⟦σ ▷ c ; r⟧(Π, φ, tk)` and `v ∈ FV^N _ n⟦σ⟧(Π, φ)`
+  through `sfix`, and the unfolding equations.
+- S6.2. The clauses and the facts at counter 0, downward closure,
+  `FuelE_mono` (refill, counters, frame, tickets, reserve) and
+  `FuelE_rename` (v2/fuel/FuelMono.v).
+- S6.3. `Vfuel_rename`, `FuelE_val`, `FuelE_beta`, `Vfuel_recount` along
+  `tcap`, `Vfuel_age` along `tage`, values from parts, `Vfuel_pinst`,
+  `FuelE_res_mono`, `FuelE_thread` (v2/fuel/FuelValues.v).
+- S6.4. `FuelE_bind` with idle ends, `link_tickets_fall`
+  (v2/fuel/FuelBind.v).
+- S6.5. `Vfuel_teq`, `Vfuel_sub`, `FuelE_sub` (v2/fuel/FuelSub.v).
+- S6.6. Notation test v2/test/FuelNotations.v, README section, CheckAll
+  lists 105 results, all closed. No `Admitted` and no axiom. S6 done.
+

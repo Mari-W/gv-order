@@ -79,3 +79,21 @@ session type at a point, with no credit (`tenv_erase` drops the credits
 of a typing environment). The session types keep their annotations, so
 the fuel layer of stage S6 reads each end's cost protocol off the
 environment of the live relation at the same index.
+
+## Stage S6, fuel
+
+One step-indexed predicate per thread, `e ∈ F^N _ n⟦σ ▷ c ; r⟧(Π, φ, tk)`,
+and its value part `v ∈ FV^N _ n⟦σ⟧(Π, φ)` by the credited type σ. Π
+maps the held ends to their session types (the session-type part of the
+relation's environment), φ to their counters, tk counts link tickets.
+N is the one refill, and deadlock freedom is the instance N = ∞. Fuel
+reads no point, no world and no relation. Every step costs one level.
+
+| File | Content |
+|---|---|
+| fuel/Fuel.v | maps of ends, idle ends, the index-free update (`refill`, `fhand`, `cnew`), the obligations `f_*` named after F-Beta to F-Link, `Vty` by the type, `FuelE` and `Vfuel` through `sfix`, the notations, the unfolding equations |
+| fuel/FuelMono.v | the clauses at index n + 1 (F-Wait, F-Tick, the hand-over, counter 0), downward closure, `FuelE_mono` in the refill, the counters, the frame, the tickets and the reserve, `FuelE_rename` |
+| fuel/FuelValues.v | `Vfuel_rename`, `FuelE_val` (F2), `FuelE_beta` (F3), `Vfuel_recount` along the capture Θ^h and `Vfuel_age` along aging Γ − c (F5), values from their parts and `Vfuel_pinst` (F6), `FuelE_res_mono`, `FuelE_thread` |
+| fuel/FuelBind.v | `FuelE_bind` (F1) and `link_tickets_fall` |
+| fuel/FuelSub.v | `Vfuel_teq`, `Vfuel_sub`, `FuelE_sub` along the subtyping of the merged judgment |
+| test/FuelNotations.v | the S6 notations |
