@@ -67,5 +67,6 @@ compat/Swap.v
 compat/Rename.v
 compat/PSwap.v
 compat/Conv.v
+compat/Connect.v
 test/CompatNotations.v
 CheckAll.v
