@@ -1131,6 +1131,10 @@ first, in stage S2.
   value. Without it Q3 is unsound, see `send_gap` (v2/compat/SendGap.v): a
   closure that mentions an end only in dead code is in V, and no send can
   hand it on. Q3 stays.
+- Q15 (2026-11-17, after S7.1). Vfuel takes the clause of Q14 too: at a λ
+  dom Π = the ends v mentions, at a box no end. The author agreed
+  explicitly. Without it `fsem_of_cost` is false, see `fw_counterexample`
+  (v2/cost/FuelGap.v on redesign-s7).
 - The remaining questions take the recommendations of §5: Q1 (a), Q4 (a),
   Q6 (a), Q7 (a), Q8 (a), Q9 (a), Q10 (a) if the bind lemma survives it,
   Q12 as stated.
