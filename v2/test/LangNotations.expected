@@ -1,0 +1,8 @@
+λ c : chan, (c⁺, c⁻)
+     : chan → cend * cend
+λ c : chan, c⁺‾ = c⁻
+     : chan → Prop
+λ o : cend, o‾‾ = o
+     : cend → Prop
+λ c : chan, Pair (Chan c⁺) (Chan c⁻)
+     : chan → expr

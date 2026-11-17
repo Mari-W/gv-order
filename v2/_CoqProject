@@ -2,3 +2,9 @@
 -arg -w -arg -notation-overridden
 -arg -w -arg -postfix-notation-not-level-1
 test/Lexer.v
+lang/Syntax.v
+lang/Notations.v
+test/LangNotations.v
+lang/Semantics.v
+lang/Process.v
+lang/Safety.v
