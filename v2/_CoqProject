@@ -18,7 +18,9 @@ types/Points.v
 types/Worlds.v
 types/Costs.v
 types/Types.v
+types/Erasure.v
 static/Contexts.v
 static/Typing.v
+static/Conservativity.v
 test/TypeNotations.v
 CheckAll.v

@@ -30,7 +30,16 @@ Definition tsplit (Θ Θ1 Θ2 : tenv) : Prop := Θ1 ##ₘ Θ2 ∧ Θ = Θ1 ∪ �
 
 (** heads(c : S@x) = {x‾}. *)
 Definition tenv_heads (Θ : tenv) : gset point :=
-  map_fold (λ _ e X, {[(te_pt e)‾]} ∪ X) ∅ Θ.
+  ⋃ ((λ oe : cend * tentry, {[(te_pt oe.2)‾]}) <$> map_to_list Θ).
+
+Lemma elem_of_tenv_heads Θ y : y ∈ tenv_heads Θ ↔ ∃ o e, Θ !! o = Some e ∧ y = (te_pt e)‾.
+Proof.
+  unfold tenv_heads. rewrite elem_of_union_list. split.
+  - intros (X & HX & Hy). apply list_elem_of_fmap in HX as ([o e] & -> & Hoe).
+    apply elem_of_map_to_list in Hoe. apply elem_of_singleton in Hy. eauto.
+  - intros (o & e & Hoe & ->). exists {[(te_pt e)‾]}. split; [|set_solver].
+    apply list_elem_of_fmap. exists (o, e). split; [done|]. by apply elem_of_map_to_list.
+Qed.
 
 Definition lenv_empty (Δ : lenv) : Prop := ∀ o, o ∈ Δ → o = None.
 
@@ -263,13 +272,13 @@ Inductive tsub : ty → fuel → ty → fuel → Prop :=
   | sub_sum T1 a1 U a2 T1' a1' U' a2' a a' :
       tsub T1 (fadd a a1) T1' (fadd a' a1') → tsub U (fadd a a2) U' (fadd a' a2') →
       tsub (TSum T1 a1 U a2) a (TSum T1' a1' U' a2') a'
-  | sub_box n k C ub c t U aU c' t' a a' :
-      fle c c' → tle t t' →
-      tsub (TBox n k C ub c t U aU) a (TBox n k C ub c' t' U aU) a'
+  | sub_box n k C ub c t U U' aU c' t' a a' :
+      fle c c' → tle t t' → (match k with 0 => teq U U' | S _ => U = U' end) →
+      tsub (TBox n k C ub c t U aU) a (TBox n k C ub c' t' U' aU) a'
   | sub_sess s s' x a a' :
       sequiv s s' → fle a' a → tsub (TSess s x) a (TSess s' x) a'
-  | sub_ex lb n C T aT aT' a a' :
-      fle (fadd a' aT') (fadd a aT) → tsub (TEx lb n C T aT) a (TEx lb n C T aT') a'.
+  | sub_ex lb n C T T' aT aT' a a' :
+      teq T T' → fle (fadd a' aT') (fadd a aT) → tsub (TEx lb n C T aT) a (TEx lb n C T' aT') a'.
 
 (** ** Instances of session variables
 
