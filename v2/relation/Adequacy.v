@@ -36,7 +36,7 @@ Section adequacy.
   Proof.
     intros HP (q & ev & q' & <- & Hst & <- & Hτ).
     replace (n + S (cmax κ)) with (S (n + cmax κ)) in HP by lia.
-    apply Prel_S_iff in HP. destruct (HP W (wext_refl W)) as (_ & _ & H1 & _).
+    destruct (Prel_S_clauses κ _ _ _ _ _ HP W (wext_refl W)) as (_ & _ & H1 & _).
     destruct (H1 q ev q' eq_refl Hst Hτ) as [A1 A2].
     { rewrite chans_of_empty. apply disjoint_empty_r. }
     pose proof (ev_cost_le κ ev Hτ).
@@ -58,7 +58,7 @@ Section adequacy.
   (** An irreducible closed process in P is terminated. *)
   Lemma Prel_safe n W T p : Prel κ (S n) W ∅ T p → safe p.
   Proof.
-    intros HP. apply Prel_S_iff in HP. destruct (HP W (wext_refl W)) as (Hs & _ & Hst).
+    intros HP. destruct (Prel_S_clauses κ _ _ _ _ _ HP W (wext_refl W)) as (Hs & _ & Hst).
     destruct (proc_progress p) as [Hirr|(π & p' & Hπ)].
     - left. destruct (Hs Hirr) as (v & E & -> & Hv & HE). exists v, E.
       split_and!; [done|by eapply Vrel_val|done].
@@ -97,7 +97,7 @@ Proof.
   cut (∀ W Σ T p, Prel κ_L (S n) W Σ T p → Σ = ∅ → Acc (λ y x, padmin x y) p); [eauto|].
   clear. refine (Prel_S_ind κ_L n (λ W Σ T p, Σ = ∅ → Acc (λ y x, padmin x y) p) _).
   intros W Σ T p H ->. constructor. intros p' (q & ev & q' & Hq & Hst & <- & Had).
-  destruct (H W (wext_refl W)) as (_ & _ & H1 & _).
+  destruct (Pbody_id κ_L _ _ _ _ _ _ _ _ _ H W (wext_refl W)) as (_ & _ & H1 & _).
   assert (ev_tau ev ∧ ev_cost κ_L ev = 0) as [Hτ Hc].
   { destruct ev; simpl in Had; try contradiction; done. }
   destruct (H1 q ev q' Hq Hst Hτ) as [A1 _].
@@ -129,7 +129,8 @@ Qed.
 
 Lemma Prel_done κ n W : Prel κ n W ∅ TUnit (∅, {[+ EUnit +]}).
 Proof.
-  destruct n as [|n]; [apply Prel_0|]. apply Prel_S_iff. intros W1 HW1.
+  destruct n as [|n]; [apply Prel_0|]. apply Prel_S_iff. intros W1 HW1 h Hh.
+  rewrite kren_empty. unfold pmap. cbn [fst snd]. rewrite set_map_empty, emapE_singleton. cbn [emap].
   split; [|split; [|unfold Psteps; split_and!]].
   - intros _. exists EUnit, ∅. split_and!.
     + f_equal. multiset_solver.

@@ -98,6 +98,56 @@ Definition gfresh (ℓ : family) (g : nat) (Θ : senv) : Prop :=
     credits go. *)
 Definition tenv_erase (Θ : tenv) : senv := (λ e, (te_sty e, te_pt e)) <$> Θ.
 
+(** ** Renamings of held ends (decision Q16)
+
+    A map h of ends renames an environment ([kren h Θ], the paper's
+    kmap h Θ, for an h injective on the ends of Θ) and a process
+    ([pmap h p], its restricted channels through [gch h]). P is closed
+    under every h that commutes with duality and is injective on the
+    held ends of the process, the ends of Σ and both ends of every
+    restricted channel ([pren_ok]). *)
+
+(** The channel of the image of c⁺. *)
+Definition gch (g : cend → cend) (c : chan) : chan := ech (g (EPos c)).
+
+(** g commutes with duality. *)
+Definition dcomm (g : cend → cend) : Prop := ∀ o, g (edual o) = edual (g o).
+
+Definition kren (h : cend → cend) (Θ : senv) : senv :=
+  list_to_map ((λ p : cend * (sty * point), (h p.1, p.2)) <$> map_to_list Θ).
+
+Definition pmap (h : cend → cend) (p : proc) : proc := (set_map (gch h) p.1, emapE h p.2).
+
+(** The held ends of a process with interface Σ. *)
+Definition pheld (Σ : senv) (p : proc) (o : cend) : Prop := o ∈ dom Σ ∨ ech o ∈ p.1.
+
+Definition pren_ok (h : cend → cend) (Σ : senv) (p : proc) : Prop :=
+  dcomm h ∧ ∀ o1 o2, pheld Σ p o1 → pheld Σ p o2 → h o1 = h o2 → o1 = o2.
+
+Lemma kren_empty (h : cend → cend) : kren h ∅ = (∅ : senv).
+Proof. unfold kren. by rewrite map_to_list_empty. Qed.
+
+Lemma kren_id_map (Θ : senv) : kren id Θ = Θ.
+Proof.
+  unfold kren. rewrite <-(list_to_map_to_list Θ) at 2. f_equal.
+  etrans; [|apply list_fmap_id]. apply list_fmap_ext. by intros i [o v] _.
+Qed.
+
+Lemma emapE_id_map (E : gmultiset expr) : emapE id E = E.
+Proof.
+  induction E as [|e E IH] using gmultiset_ind; [apply gmultiset_map_empty|].
+  by rewrite emapE_disj_union, emapE_singleton, IH, emap_id.
+Qed.
+
+Lemma pmap_id (p : proc) : pmap id p = p.
+Proof.
+  destruct p as [C E]. unfold pmap. simpl. rewrite emapE_id_map. f_equal.
+  apply set_eq. intros c. rewrite elem_of_map. unfold gch. simpl. split; [by intros (? & -> & ?)|eauto].
+Qed.
+
+Lemma pren_ok_id (Σ : senv) (p : proc) : pren_ok id Σ p.
+Proof. split; [done|]. by intros ? ? _ _. Qed.
+
 (** ** Messages at the process level
 
     Q-Send. Θe holds the ends of restricted channels that leave with the
@@ -395,14 +445,20 @@ Section bodies.
     Qed.
   End qobligations.
 
-  (** One unfolding of P at level n, in every W1 ⊒ W. *)
+  (** The clauses of P at level n in the world W1. *)
+  Definition Pclauses (n : nat) (Vl : nat → vrel) (Pl : nat → prel) (VN : vrel) (X : prel)
+      (W1 : world) (Σ : senv) (T : ty) (p : proc) : Prop :=
+    (pirred p → ∃ v E, p = (∅, {[+ v +]} ⊎ E) ∧ VN W1 Σ T v ∧    (* P-Stop *)
+                       ∀ e, e ∈ E → e = EUnit) ∧
+    (¬ pirred p → ready _ W1(Σ, p)) ∧                           (* P-Ready *)
+    Psteps n Vl Pl VN X W1 Σ T p.                               (* P-Step *)
+
+  (** One unfolding of P at level n, in every W1 ⊒ W and under every
+      renaming of the held ends (decision Q16). *)
   Definition Pbody (n : nat) (Vl : nat → vrel) (Pl : nat → prel) (VN : vrel) (X : prel)
       (W : world) (Σ : senv) (T : ty) (p : proc) : Prop :=
-    ∀ W1, W ⊑ W1 →
-      (pirred p → ∃ v E, p = (∅, {[+ v +]} ⊎ E) ∧ VN W1 Σ T v ∧    (* P-Stop *)
-                         ∀ e, e ∈ E → e = EUnit) ∧
-      (¬ pirred p → ready _ W1(Σ, p)) ∧                           (* P-Ready *)
-      Psteps n Vl Pl VN X W1 Σ T p.                               (* P-Step *)
+    ∀ W1, W ⊑ W1 → ∀ h, pren_ok h Σ p →                        (* (rename) *)
+      Pclauses n Vl Pl VN X W1 (kren h Σ) T (pmap h p).
 
   Inductive Pind (n : nat) (Vl : nat → vrel) (Pl : nat → prel) (VN : vrel) : prel :=
     | PIntro W Σ T p :
@@ -580,8 +636,9 @@ Section maps.
       (f : ∀ W Σ T p, X1 W Σ T p → X2 W Σ T p) W Σ T p :
     Pbody κ n Vl Pl VN X1 W Σ T p → Pbody κ n Vl Pl VN X2 W Σ T p.
   Proof.
-    intros H W1 HW. destruct (H W1 HW) as (A & B & C).
-    split; [exact A|]. split; [exact B|]. exact (Psteps_mapX n Vl Pl VN X1 X2 f W1 Σ T p C).
+    intros H W1 HW h Hh. destruct (H W1 HW h Hh) as (A & B & C).
+    split; [exact A|]. split; [exact B|].
+    exact (Psteps_mapX n Vl Pl VN X1 X2 f W1 (kren h Σ) T (pmap h p) C).
   Defined.
 
   Lemma Pind_ind' n Vl Pl VN (Φ : prel) :
@@ -739,7 +796,7 @@ Section mono.
     (∀ W Σ p, X1 W Σ T p → X2 W Σ T p) →
     Pbody κ n Vl1 Pl1 VN1 X1 W Σ T p → Pbody κ n Vl2 Pl2 VN2 X2 W Σ T p.
   Proof.
-    intros Hn HVl HPl HVN HX H W1 HW. destruct (H W1 HW) as (A & B & C).
+    intros Hn HVl HPl HVN HX H W1 HW h Hh. destruct (H W1 HW h Hh) as (A & B & C).
     split_and!; [|done|by eapply Psteps_mono].
     intros Hirr. destruct (A Hirr) as (v & E & Hp & Hv & HE).
     exists v, E. split_and!; [done|by apply HVN|done].
@@ -1076,4 +1133,16 @@ Section equations.
       |intros ? ? ? ? H; exact H|].
     intros ? ? ? [H1 H2]; split; [exact (proj2 (Prel_unfold (S n) _ _ _ _) H1)|exact H2].
   Qed.
+  (** The clauses at the identity renaming. *)
+  Lemma Pbody_id n Vl Pl VN X W Σ T p :
+    Pbody κ n Vl Pl VN X W Σ T p → ∀ W1, W ⊑ W1 → Pclauses κ n Vl Pl VN X W1 Σ T p.
+  Proof.
+    intros H W1 HW. pose proof (H W1 HW id (pren_ok_id Σ p)) as H'.
+    by rewrite kren_id_map, pmap_id in H'.
+  Qed.
+
+  Lemma Prel_S_clauses n W Σ T p :
+    Prel κ (S n) W Σ T p → ∀ W1, W ⊑ W1 →
+    Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) (Prel κ (S n)) W1 Σ T p.
+  Proof. intros H. apply Pbody_id. by apply Prel_S_iff. Qed.
 End equations.

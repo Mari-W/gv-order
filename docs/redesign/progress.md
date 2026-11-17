@@ -10,7 +10,7 @@ The old development in theories/ stays untouched.
 | S1 | language | done |
 | S2 | points, worlds, types | done |
 | S3 | generic relation | done |
-| S4 | generic compatibility | in progress: S4.4 to S4.6 done, composition open (see S4.7) |
+| S4 | generic compatibility | in progress: Q16 done for V, E, P (S4.11, S4.13), composition open |
 | S5 | static fundamental theorems | open |
 | S6 | fuel | done |
 | S7 | cost judgment | done |
@@ -285,6 +285,27 @@ The old development in theories/ stays untouched.
   E-New reads its constraint at the laws of the world of the judgment,
   so the redex is stated for every subset of the laws of a later world
   (`Erel_new_sub`).
+- S4, Q16 environments. The renamed environment is `kren h Θ`, the
+  map of the paper's `kmap h Θ`. stdpp's `kmap` asks h injective on all
+  ends, and Q16 asks it only on the ends of Θ. `kren` agrees with `kmap`
+  for an injective h (`kren_kmap`). Injectivity on the held ends is the
+  fuel layer's `kinj h Θ`.
+- S4, Q16 for terms. `Vrel_rename` and `Erel_rename` ask no duality
+  condition of h. A term's obligations never compare an end with its
+  partner, and the fresh names at a creation and at an incoming value
+  keep the polarity by construction (`fresh_pull`). The condition is
+  needed only for P, where the restricted channels and the partners of
+  Q-Send and Q-Recv enter.
+- S4, Q16 for P (decision after S4.12). The clause (rename) is a
+  quantifier of `Pbody`, inside the fixpoint. Every unfolding of P holds
+  for `kren h Σ` and `pmap h p` for every h with `pren_ok h Σ p`: h
+  commutes with duality and is injective on the held ends, the ends of Σ
+  and both ends of every restricted channel. `pmap` renames the
+  restricted channels by `gch h`. E carries no such quantifier. Its
+  closure is the theorem `Erel_rename`, so the quantifier would be
+  redundant there, and adding it would make every E lemma re-prove it.
+  The decision text on redesign says the same ("V and E have the lemma
+  as a theorem").
 
 - S7, transformers. `seq_sound` asks `tok t1 t2`, the side condition the
   rules already carry, and covers offset ∞ (v2/cost/Transformers.v). A
@@ -593,3 +614,205 @@ The old development in theories/ stays untouched.
   (v2/cost/CostFund.v), notation test v2/test/CostNotations.v, README
   section. CheckAll lists 173 results, all closed. No `Admitted` and no
   axiom. S7 done.
+- S4.8. Renaming of P (v2/compat/PSwap.v). The transposition a ↔ b on
+  configurations with thread identifiers (`qswap`) and on events
+  (`evswap`). `istep_qswap`: a step of a configuration is the renamed
+  step of the renamed configuration, every rule P-Act-* included, the
+  link through `eswap_csub`. `erase_qswap` relates it to `pswap`. The
+  external clauses move along it (`send_split_swap`, `recv_ok_swap`,
+  `recv_env_swap`, `recv_back_swap`, `chans_of_swap`), and so does
+  readiness (`ready_p_swap`). `Prel_swap`: P is invariant, for every
+  cost table.
+- S4.9. Not done: P-Term, Internalize, P-Connect, P-Join. Found while
+  planning them: the transpositions of S4.6 and S4.8 are not the
+  renaming P-Connect needs. A link P-Act-Link renames every thread by
+  `csub o1 o2`, which sends ō1 to o2 and o1 to ō2, so a link of c⁺ with
+  d⁺ turns the partner's c⁻ into d⁺ (S1 deviation "link"). When o1 is a
+  cut end, the other component is renamed by a map that flips the
+  polarity of a channel, and P-Connect needs P of that renamed
+  component. Two obstacles block a renaming lemma for such maps. (1) A
+  map that flips the polarity of c sends the new pair ⟨c⁺, c⁻⟩ of a
+  creation to ⟨c'⁻, c'⁺⟩, so it commutes with T-Act-New only after the
+  fresh name is chosen anew per step. The renaming lemma has to range
+  over all bijections of ends that commute with the partner map (not
+  only transpositions), with a fresh-name argument at every creation.
+  At the process level the global freshness of P-Act-New gives the
+  fresh name. At the term level O-New asks freshness only for Θ, and a
+  term may mention a fresh name in code it never runs. (2) The relation
+  asks no correspondence between the ends a term mentions and the ends
+  it holds, except at values (Q14). The other component may mention, in
+  code it never runs, an end the link substitution then identifies with
+  one it holds. Such a renaming is not injective on the term, and a
+  proof needs either an invariant that every thread mentions only ends
+  it holds or restricts (typed processes keep it, the relation does
+  not: after a send a term may still mention a sent end), or a
+  simulation argument for code a term never runs. Before this proof
+  goes further, the author should decide which of these to use: a
+  syntactic premise on P-Connect (each component mentions only its own
+  channels, as typing gives), or a renaming lemma over dual-commuting
+  bijections with fresh names chosen per creation. The rest of the plan
+  of S4.7 stands. CheckAll lists 162 results, all closed.
+- S4.10. Decision Q16 (21989f4 on redesign), worked out before
+  proving. Q16 asks invariance under every end bijection that commutes
+  with duality. That lemma is plausible, but it is not the renaming
+  P-Connect needs, and it is not provable by moving each obligation
+  along one bijection. The step that P-Connect needs, and its proof, is
+  the following.
+  (1) The link renaming of the other component is no bijection on the
+  ends it mentions. `csub o1 o2` sends o1‾ and o2 to o2 (`csub_fuses`,
+  v2/compat/PSwap.v). The holder of o1‾ may mention o2 in code it never
+  runs, so after the link two ends of its term are one. No bijection
+  restricted to the mentioned ends gives this term.
+  (2) Re-choosing the fresh name does not save the bijection form. Let
+  g flip the channel c (g c⁺ = c⁻). The renamed term may create c while
+  it mentions c⁺ in code it never runs (O-New asks freshness only for
+  Θ). The renamed continuation then holds the new c⁺ at the place of the
+  old mention. The original continuation, for any name c'' it creates,
+  has the mention g⁻¹(c⁺) apart from the new ends, so the renamed
+  continuation is the image of an original continuation only under a
+  map that sends two ends to c⁺.
+  (3) The sound form is an argument about held ends. Let h be a map of
+  ends that commutes with duality (h ō = (h o)‾) and is injective on the
+  ends of Θ, arbitrary elsewhere. Claim: e ∈ E⟦Θ ⊢ T⟧^F implies
+  emap h e ∈ E⟦kmap h Θ ⊢ T⟧^F, and the same for V and P (for P,
+  injective on the ends of Σ). Why the mentions that h merges do not
+  matter: emap h keeps the shape of a term, so every step of emap h e
+  sits at the place of a step of e, and every action of e is on a held
+  end, because each obligation reads the subject's entry in Θ. A
+  mention that e does not hold is never acted on, sent or spawned on any
+  path, and E quantifies over every received value and every created
+  name, so this holds for every future. The renamed term therefore acts
+  only on images of held ends, where h is injective. Steps with a free
+  choice move by extending h: a creation of c by emap h e is matched by
+  e creating a name c'' fresh for Θ and for the ends e mentions, with h
+  extended by c''± ↦ c± (polarity kept). A received value w with Θin is
+  matched by w' = emap k w with k a right inverse of the extended h that
+  keeps duality and avoids the ends of Θ (k sends the partner of a held
+  end to that held end's partner). The arrow's argument is handled in
+  the same way. A P-Act-Link of o1, o2 is matched by the link of
+  the preimages, with h replaced by h2 ∘ csub = csub' ∘ h, which is
+  defined on the image of csub because h is injective on the two held
+  linked channels. The bijections of Q16 are a special case, so (3) is
+  stronger than Q16 and gives the renaming of the other component at a
+  link directly: csub restricted to the holder's held ends is injective.
+  It also needs Internalize, because after a link the other component
+  may hold both ends of a channel.
+  (4) Nothing found contradicts Q16 or (3). (3) is not proved yet. It
+  replaces the involution argument of compat/Swap.v and PSwap.v by a
+  forward simulation that extends h at every choice. By size it is the
+  largest single lemma of S4. I stopped here so the author can confirm
+  that (3) is acceptable as the form of Q16: maps that commute with
+  duality and are injective on held ends, not bijections of all ends.
+- S4.11. Decision Q16 for V and E, in the held-ends form of S4.10
+  (v2/compat/Rename.v). `Vrel_rename` and `Erel_rename`: for every map
+  h of ends injective on the ends of Θ and every cost table,
+  v ∈ V⟦Θ ⊢ T⟧ gives emap h v ∈ V⟦kren h Θ ⊢ T⟧, and the same for E at
+  every future. The proof is the forward simulation of S4.10 (3). A
+  step of emap h e comes from the redex of e (`act_emap`), and thread
+  steps are deterministic for a fixed label (`tstep_det`), so the two
+  continuations agree up to an extension of h (`tstep_emap_back`). A
+  creation and an incoming value (O-Recv, the argument of a λ) pick
+  fresh channels and extend h to send them back (`fresh_pull`,
+  `pull_value`). Readiness moves along h because every session step of
+  a term in E is on a held end (`Erel_sends`, `ready_rename`). The
+  transposition lemmas `Vrel_swap` and `Erel_swap` are now instances
+  (`Vrel_swap_rename`), and compat/Swap.v keeps only the transposition
+  on environments. No `Admitted` and no axiom.
+- S4.12. Stop at Q16 for P. The renaming of P is not proved, and the
+  route of S4.10 does not reach it. Nothing found makes the lemma
+  false. What breaks is the proof by a forward simulation, which needs
+  the renamed configuration to be the image of the original under one
+  map of ends after every step.
+  (1) For P the held ends are the ends of Σ and both ends of every
+  restricted channel. h has to be injective on all of them, because a
+  τ step meets two threads by the names of their ends. It also has to
+  create no new pair of partners in Σ (o, p in Σ with h p = (h o)‾ only
+  when p = o‾). Otherwise the renamed process has internal steps whose
+  original is a Q-Send followed by a Q-Recv, which is Internalize, not
+  renaming. The link of P-Connect between two cut ends creates such a
+  pair (p2 holds o1‾ and o2‾, and csub sends o1‾ to o2), so that case
+  needs Internalize after the renaming, as S4.10 said.
+  (2) P-Act-Link fixes the link partner o2 from the term, and o2 need
+  not be held. The original links a restricted end with an end it
+  neither holds nor restricts, and h may send that end onto the
+  restricted channel. Example, in v2 terms. C = {c}, Σ = ∅, threads
+  ∗, link ⟨c⁺, z⁺⟩ and (λx. ∗) ⟨c⁻, z⁺⟩, with h sending z± to c± and
+  fixing every other end. h commutes with duality and is injective on
+  c⁺ and c⁻. The original link turns the third thread into
+  (λx. ∗) ⟨z⁺, z⁺⟩. The renamed link is the self link of c⁺, which
+  flips c, and turns it into (λx. ∗) ⟨c⁺, c⁻⟩. Both processes are in P
+  at every level (argued, not in Rocq), but no map of ends takes the
+  first term to the second. The term-level
+  proof never meets this, because O-Link reads both ends from Θ.
+  (3) A condition on h alone repairs (2) only for one step. If h maps
+  no end outside the restricted channels onto a restricted channel
+  (reflection), the h2 of S4.10 exists at every link. Reflection is not
+  preserved by Q-Recv. The renamed process may receive both ends of a
+  channel d that h already uses as the image of an end the original
+  mentions in dead code, and after the receive d is restricted while
+  that end is not.
+  Two ways on, each needing the author. (a) Make E and P closed under
+  held-ends renamings by definition, as FuelE is (F15, `Fdef`
+  quantifies over every g with `kinj`). The renaming lemma is then a
+  projection, and P-Connect has to establish the clause for the
+  composite, by the induction hypothesis on renamed components. (b) A
+  simulation up to dead code, a relation between terms that agree up to
+  h on every end the term will act on. It is semantic and I see no
+  finite form of it. I recommend (a). Not started: P-Term, Internalize,
+  P-Connect, P-Join, all of which wait on this. CheckAll lists 169
+  results, all closed. No `Admitted` and no axiom.
+- S4.13. The clause (rename) in `Pbody` (v2/relation/Relation.v),
+  with `gch`, `dcomm`, `kren`, `pmap`, `pheld`, `pren_ok` moved there
+  from compat/Rename.v. The clauses at one renaming are `Pclauses`, and
+  `Pbody_id` and `Prel_S_clauses` read them at the identity. Closure,
+  adequacy, blindness and `live_sub_df` follow with small changes.
+  `Prel_rename` is the projection: h with `pren_ok h Σ p` gives
+  pmap h p ∈ P⟦kren h Σ ⊢ T⟧, because a renaming of a renaming is the
+  composite (`pmap_pmap`, `pren_ok_compose`). `Prel_swap` is now an
+  instance of it, and the induction of compat/PSwap.v is gone. Adequacy
+  is unchanged, because it reads the clauses at the identity. CheckAll
+  lists 170 results, all closed.
+- S4.14. Checked against P-Connect, not proved. The clause (rename)
+  breaks no decided point and not adequacy (adequacy reads the identity).
+  `pren_ok_csub` (v2/compat/Rename.v): when one component links o1 with
+  o2 and the other holds o1‾ but neither o1 nor o2 (as an interface end
+  or a restricted end), `csub o1 o2` commutes with duality and is
+  injective on the held ends of the other, also when it holds o2‾. So
+  the link case of P-Connect gets P of the renamed component from
+  `Prel_rename`. The plan for the rest, for a successor.
+  (1) Internalize. If Σ holds o at (S, x) and o‾ at (S', x‾) with
+  `sdual S S'` and ech o ∉ p.1, then p ∈ P⟦Σ ⊢ T⟧ gives
+  (p.1 ∪ {ech o}, p.2) ∈ P⟦delete o (delete o‾ Σ) ⊢ T⟧. An internal
+  message on the new channel costs `c_give κ + c_take κ` (`ev_cost` of
+  `EvMsg`), and the original pays the same by Q-Send on o and then
+  Q-Recv on o‾ with Θ2 the ends that leave (Σv ∪ Θe). Close and choice
+  likewise, a link on it by Q-Link. Readiness: an end of the channel
+  waits on its partner, which lies below by `sdual` at dual points.
+  The clause (rename) of the result comes from the clause of p at the
+  same h, because a held-ends renaming of the result is one of p.
+  (2) P-Connect, two worlds. p1 ∈ P^{W1}⟦Σ1 ∪ ΣC ⊢ T⟧,
+  p2 ∈ P^{W2}⟦Σ2 ∪ Σ̄C ⊢ 1⟧, ΣC and Σ̄C dual entry by entry, all domains
+  and restricted sets disjoint, strict (W1 ⊔ W2) give
+  (p1.1 ∪ p2.1 ∪ chans ΣC, p1.2 ⊎ p2.2) ∈ P^{W1 ⊔ W2}⟦Σ1 ∪ Σ2 ⊢ T⟧.
+  Induction on the level, inside it on both least fixpoints. Steps: one
+  side alone (its Q-clauses for its interface, τ otherwise), a message
+  across the cut (Q-Send of one, Q-Recv of the other, cost
+  κ(send) + κ(recv) ≥ 1, so the level drops), a link with a cut end
+  (q_link of the linking side, `Prel_rename` with `pren_ok_csub` on the
+  other, then Internalize when the other held o2‾). Readiness of the
+  composite: a stuck cut end points to its partner's offer below it,
+  a chain that strictly descends in W1 ⊔ W2 and ends at an interface
+  offer by strictness. The clause (rename) for the composite: a
+  held-ends renaming h of the composite restricts to one of each
+  component (cut channels are restricted, so both ends are held), and
+  pmap h of the composite is the composite of pmap h p1 and pmap h p2,
+  so the case is the same statement for the renamed components
+  (`Prel_rename`), which the induction covers if the lemma is stated
+  for all p1 and p2.
+  (3) P-Join by `p_join_iff_connect`. (4) P-Term: a thread in
+  E⟦Θ_B ∪ Σ ⊢ T⟧ with Θ_B the paired dual ends of C0 gives
+  (C0, {t}) ∈ P, by P-Connect of the parent and each spawned thread,
+  with `Erel_rename` for its clause (rename).
+  Not started in Rocq. In size this is theories/liveness/LiveInternalize.v,
+  LiveConnect.v, LivePConnect.v, LivePTerm.v and composition/ReadyChain.v,
+  about 4700 lines.
