@@ -25,7 +25,7 @@
     and from a label only the transfer set M of a send and a spawn
     (decision Q3). Its environments map an end to a session type at a
     point ([senv]) and carry no credit. The relation reads no annotation
-    of a type: a session type is compared after erasing its annotations
+    of a type. A session type is compared after erasing its annotations
     ([seqv]), and costs, transformers, floors and credits are never read.
     The session types of the environments keep their annotations, so the
     fuel layer of stage S6 reads each end's cost protocol from the
@@ -64,7 +64,7 @@ Definition tthunk (ub : option point) (U : ty) : ty :=
 Lemma tsize_tthunk ub U : tsize (tthunk ub U) = 2 + tsize U.
 Proof. simpl. lia. Qed.
 
-(** The thunk a box !e stands for: applied to ∗ it unrolls once. *)
+(** The thunk a box !e stands for. Applied to ∗ it unrolls once. *)
 Definition thunk (e : expr) : expr := Lam (rename S (subst1 (EBox e) e)).
 
 Lemma thunk_app w e : subst1 w (rename S (subst1 (EBox e) e)) = subst1 (EBox e) e.
@@ -94,7 +94,7 @@ Definition cfresh (c : chan) (Θ : senv) : Prop := (EPos c ∉ dom Θ) ∧ (ENeg
 Definition gfresh (ℓ : family) (g : nat) (Θ : senv) : Prop :=
   ∀ o S x, Θ !! o = Some (S, x) → pt_root x ≠ NGen ℓ g.
 
-(** The environment of the relation for a typing environment: the
+(** The environment of the relation for a typing environment. The
     credits go. *)
 Definition tenv_erase (Θ : tenv) : senv := (λ e, (te_sty e, te_pt e)) <$> Θ.
 
@@ -132,8 +132,8 @@ Definition recv_env (Σ Θ2 : senv) : senv :=
     relations at a level j < n, [VN] the value relation at level n
     itself, and [X] the least fixpoint being defined. *)
 
-(** The relation after a step of cost c at level n: X at cost 0, the
-    relation at level n − c otherwise. They are stated as two
+(** The relation after a step of cost c at level n is X at cost 0 and
+    the relation at level n − c otherwise. They are stated as two
     implications, so that X occurs strictly positively. *)
 Definition at_cost_V (n c : nat) (Vl : nat → vrel) (VN : vrel)
     (W : world) (Θ : senv) (T : ty) (v : expr) : Prop :=
@@ -310,7 +310,7 @@ Section bodies.
     Context (n : nat) (Vl : nat → vrel) (Pl : nat → prel) (VN : vrel) (X : prel)
       (W : world) (Σ : senv) (T : ty) (p : proc).
 
-    (** Q-Admin and Q-Comm: a τ step keeps the interface. *)
+    (** Q-Admin and Q-Comm. A τ step keeps the interface. *)
     Definition q_tau (ev : event) (p' : proc) : Prop :=
       p'.1 ## chans_of Σ → at_cost_P n (ev_cost κ ev) Pl X W Σ T p'.
 
@@ -769,7 +769,7 @@ Section mono.
   Qed.
 End mono.
 
-(** ** V at level n: fuel and readers *)
+(** ** Fuel and readers of V at level n *)
 
 Section fuel.
   Context (κ : ctable).

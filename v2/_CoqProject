@@ -34,4 +34,5 @@ relation/Readiness.v
 relation/Relation.v
 relation/Closure.v
 relation/Adequacy.v
+test/RelationNotations.v
 CheckAll.v

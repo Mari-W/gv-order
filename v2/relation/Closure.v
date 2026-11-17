@@ -212,4 +212,34 @@ Section closure.
       destruct (H7 q i os q' Hq Hst) as (o1 & o2 & S1 & S2 & x & A1 & A2 & A3 & A4 & A5 & A6).
       exists o1, o2, S1, S2, x. split_and!; [done..|by apply Hac].
   Qed.
+
+  (** ** The step clauses, read off the label *)
+
+  Lemma Erel_S_step n W W1 Θ T F e α e' :
+    Erel κ (S n) W Θ T F e → W ⊑ W1 → tstep e α e' →
+    Eobl κ (S n) (Vrel κ) (Erel κ) (Vrel κ (S n)) (Erel κ (S n)) W1 Θ T F α e'.
+  Proof.
+    intros HE HW Hst. apply Erel_S_iff in HE. destruct (HE W1 HW) as (_ & _ & H).
+    exact (proj1 (Esteps_iff _ _ _ _ _ _ _ _ _ _ _) H α e' Hst).
+  Qed.
+
+  Lemma Prel_S_step n W W1 Σ T q ev q' :
+    Prel κ (S n) W Σ T (erase q) → W ⊑ W1 → istep q ev q' →
+    Pobl κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) (Prel κ (S n)) W1 Σ T (erase q) ev (erase q').
+  Proof.
+    intros HP HW Hst. apply Prel_S_iff in HP. destruct (HP W1 HW) as (_ & _ & H).
+    exact (proj1 (Psteps_iff _ _ _ _ _ _ _ _ _ _) H q ev q' eq_refl Hst).
+  Qed.
+
+  (** The thunk of O-Spawn is a value at 1 ⊸^ub_lb 1, read at the level
+      of the parent, inside the fixpoint when β is free. *)
+  Lemma Varr_spawn_iff n W Θ ub lb v :
+    Varr κ n (Vrel κ) (Erel κ) (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit)
+      (λ W' Θ' F e, Erel κ n W' Θ' TUnit F e) TUnit TUnit ub lb W Θ v ↔
+    Vrel κ n W Θ (TLolli ub lb None tinf None TUnit None TUnit None) v.
+  Proof.
+    rewrite Vrel_lolli_iff, <-Varr_rel_iff.
+    split; (apply Varr_mono; [intros; done|intros; done| |intros; done]);
+      intros _ W0 Θ0 w; by rewrite Vrel_unit_iff.
+  Qed.
 End closure.

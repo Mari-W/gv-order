@@ -112,3 +112,59 @@ Proof.
   intros q Hq. apply rtc_nsteps_1 in Hq as [m Hm].
   apply (Prel_acc_live 0 W T), (Prel_steps κ_L m W 1 T p q Hm), HP.
 Qed.
+
+(** ** Sanity checks
+
+    The terminated process is in P at every level. *)
+
+Lemma no_istep_done q ev q' : erase q = (∅, {[+ EUnit +]}) → ¬ istep q ev q'.
+Proof.
+  intros Hq Hst. destruct (istep_parts_nonempty _ _ _ Hst) as [t Ht].
+  destruct (istep_parts_some _ _ _ t Hst Ht) as [e He].
+  destruct (istep_actor _ _ _ t e Hst Ht He) as (α & e' & Hs & _).
+  assert (e ∈ soup q.2) as Hin by (apply elem_of_soup; eauto).
+  destruct q as [C M]. injection Hq as _ HM. simpl in Hin. rewrite HM in Hin.
+  apply gmultiset_elem_of_singleton in Hin as ->. by apply (val_no_tstep _ _ _ Hs).
+Qed.
+
+Lemma Prel_done κ n W : Prel κ n W ∅ TUnit (∅, {[+ EUnit +]}).
+Proof.
+  destruct n as [|n]; [apply Prel_0|]. apply Prel_S_iff. intros W1 HW1.
+  split; [|split; [|unfold Psteps; split_and!]].
+  - intros _. exists EUnit, ∅. split_and!.
+    + f_equal. multiset_solver.
+    + by apply Vrel_unit_iff.
+    + intros e He. multiset_solver.
+  - intros Hirr. exfalso. apply Hirr. intros π p' (q & ev & q' & Hq & Hst & _).
+    by eapply no_istep_done.
+  - intros q ev q' Hq Hst. exfalso. by eapply no_istep_done.
+  - intros q i o M w q' Hq Hst. exfalso. by eapply no_istep_done.
+  - intros q i o w q' Hq Hst. exfalso. by eapply no_istep_done.
+  - intros q i o q' Hq Hst. exfalso. by eapply no_istep_done.
+  - intros q i o b q' Hq Hst. exfalso. by eapply no_istep_done.
+  - intros q i o b q' Hq Hst. exfalso. by eapply no_istep_done.
+  - intros q i os q' Hq Hst. exfalso. by eapply no_istep_done.
+Qed.
+
+(** A β-redex takes one step of cost κ(β), read inside the level in κ_L
+    and one level down in κ_DF. *)
+Lemma tstep_beta_unit α e' : tstep (App (Lam EUnit) EUnit) α e' → α = LBeta ∧ e' = EUnit.
+Proof.
+  intros Hst. apply tstep_inv in Hst as [Hh|(f & e0 & e0' & Hf & Heq & -> & Hs)].
+  - inversion Hh; subst. done.
+  - destruct f; simpl in Heq; try discriminate; injection Heq as <- <-;
+      exfalso; apply (val_no_tstep _ _ _ Hs); done.
+Qed.
+
+Lemma Erel_beta_unit κ n W F : Erel κ n W ∅ TUnit F (App (Lam EUnit) EUnit).
+Proof.
+  destruct n as [|n]; [apply Erel_0|]. apply Erel_S_iff. intros W1 HW1.
+  split; [|split; [|unfold Esteps; split_and!]].
+  1: { intros Hirr. exfalso. apply (Hirr LBeta EUnit). apply tstep_head. by apply (t_act_app EUnit). }
+  1: { intros _ Hs. exfalso. destruct (Hs LBeta EUnit) as [σ Hσ]; [|done].
+       apply tstep_head. by apply (t_act_app EUnit). }
+  1: { intros e' Hst. apply tstep_beta_unit in Hst as [_ ->].
+       split; intros; apply Vrel_Erel, Vrel_unit_iff; done. }
+  all: intros; match goal with H : tstep _ _ _ |- _ => apply tstep_beta_unit in H as [? _] end;
+    discriminate.
+Qed.
