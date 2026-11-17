@@ -1105,6 +1105,26 @@ parameter point (FactoryEx, FreshBetween, FreshMany, GuardCex) have to
 anchor at an end or use a fresh root, and their typings are to be checked
 first, in stage S2.
 
+## Decisions taken (author, 2026-11-17)
+
+- Q3. Transfer sets in the labels of send and spawn. The relation reads the
+  moved ends from the label at O-Spawn, O-Send and Q-Send and reads no other
+  syntax.
+- Q2. Family labels. `new_ℓ` carries a label from a finite set, plain `new`
+  when a program has one family. W gives laws per family, and composition
+  renames families apart.
+- Q5. Idle ends now, in the corrected form of §5 Q5 (b). An idle end keeps
+  ticking, its "≥ 1" checks drop, and no thread acts on it. The rewrite
+  builds this into the fuel layer from stage S6 on. One refill N otherwise
+  (Q4).
+- Q11. One judgment for session types and costs,
+  `Θ ; Γ ; Δ ⊢^F_{W,N} e : T^a ▷ c ; ϑ`, with transformer offsets in ℕ ∪ {∞}.
+  Deadlock-freedom typing is the instance N = ∞. The judgment is defined in
+  stage S2, and S7 proves its cost half.
+- The remaining questions take the recommendations of §5: Q1 (a), Q4 (a),
+  Q6 (a), Q7 (a), Q8 (a), Q9 (a), Q10 (a) if the bind lemma survives it,
+  Q12 as stated.
+
 ## 5  Open decisions for the author
 
 **Q1. Placement.** (a) O3 anchors and generated roots. (b) O2 box-bound
