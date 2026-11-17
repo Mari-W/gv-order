@@ -96,6 +96,8 @@ The old development in theories/ stays untouched.
   shaped like E-Let∗. Without it `let (a, a′) = new_ℓ in e` has no
   typing that captures more than one end, because E-Abs bounds all
   captured heads by one lower point.
+  Superseded by decision Q13: S4 adds a primitive let and E-Let types
+  it, so no rule matches the redex shape.
 - S2, points in session types. Point instantiation leaves session types
   alone, and E-Send and E-Recv ask the payload point-closed below its own
   binder (`pscoped m T`), as the old development scoped payloads. The

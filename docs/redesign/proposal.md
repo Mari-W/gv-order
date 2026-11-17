@@ -1121,6 +1121,10 @@ first, in stage S2.
   `Θ ; Γ ; Δ ⊢^F_{W,N} e : T^a ▷ c ; ϑ`, with transformer offsets in ℕ ∪ {∞}.
   Deadlock-freedom typing is the instance N = ∞. The judgment is defined in
   stage S2, and S7 proves its cost half.
+- Q13 (2026-11-17, after S2). A primitive `let x = e1 in e2` with its own
+  τ step replaces the S2 rule that typed the redex (λx. e2) e1 as a let.
+  A let is not a closure, so E-Let carries no lower point and captures
+  every end of its context. No typing rule matches a redex shape.
 - The remaining questions take the recommendations of §5: Q1 (a), Q4 (a),
   Q6 (a), Q7 (a), Q8 (a), Q9 (a), Q10 (a) if the bind lemma survives it,
   Q12 as stated.
