@@ -1,6 +1,6 @@
 (** * Every main result of v2 is closed under the global context
 
-    Stages S1, S2 and S3. [make check] compiles this file and fails if any line below
+    Stages S1, S2, S3 and S6. [make check] compiles this file and fails if any line below
     reports an axiom. *)
 
 From GV Require Import lang.Harmony lang.ThreadSim lang.ChannelSwap
@@ -9,6 +9,7 @@ From GV Require Import static.Conservativity static.Weakening static.Renaming st
   examples.ClientServer examples.Cycle examples.FreshBetween examples.FreshMany
   examples.FactoryEx examples.GrowRing.
 From GV Require Import relation.Adequacy.
+From GV Require Import fuel.FuelSub.
 
 (** Language: the redex once, progress, preservation. *)
 Print Assumptions act_offer_sig.
@@ -100,3 +101,36 @@ Print Assumptions adequacy.
 Print Assumptions live_adequacy.
 Print Assumptions Prel_done.
 Print Assumptions Erel_beta_unit.
+(** S6. Fuel: unfolding and the clauses. *)
+Print Assumptions FuelE_0.
+Print Assumptions FuelE_S.
+Print Assumptions Vfuel_eq.
+Print Assumptions fuel_val.
+Print Assumptions fuel_obl.
+Print Assumptions fuel_wait.
+Print Assumptions fuel_tick.
+Print Assumptions fuel_zero_act.
+Print Assumptions fuel_zero_nospawn.
+Print Assumptions fuel_zero_nosend.
+(** S6. Downward closure, F4 monotonicity, renaming. *)
+Print Assumptions FuelE_down.
+Print Assumptions Vfuel_down.
+Print Assumptions FuelE_mono.
+Print Assumptions Vfuel_mono.
+Print Assumptions FuelE_rename.
+Print Assumptions Vfuel_rename.
+(** S6. F2, F3, F5, F6. *)
+Print Assumptions FuelE_val.
+Print Assumptions FuelE_beta.
+Print Assumptions Vfuel_recount.
+Print Assumptions Vfuel_age.
+Print Assumptions Vfuel_pinst.
+Print Assumptions Vfuel_teq.
+Print Assumptions Vfuel_sub.
+Print Assumptions FuelE_sub.
+Print Assumptions FuelE_res_mono.
+Print Assumptions FuelE_thread.
+Print Assumptions Vfuel_pair.
+(** S6. F1 bind, link loops. *)
+Print Assumptions FuelE_bind.
+Print Assumptions link_tickets_fall.

@@ -46,4 +46,5 @@ fuel/FuelMono.v
 fuel/FuelValues.v
 fuel/FuelBind.v
 fuel/FuelSub.v
+test/FuelNotations.v
 CheckAll.v
