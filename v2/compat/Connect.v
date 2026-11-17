@@ -206,3 +206,244 @@ Proof.
     induction (IH y) as [y _ IHy]. constructor. intros a [Ha Hay].
     apply elem_of_cons in Ha as [->|Ha]; [done|]. by apply IHy.
 Qed.
+
+(** ** Steps of one component inside the composite *)
+
+Lemma new_retarget e ℓ c e' c' : tstep e (LNew ℓ c) e' → ∃ e'', tstep e (LNew ℓ c') e''.
+Proof.
+  intros H. destruct (act_step _ _ _ H) as (a & Ha & Ho). apply offers_new in Ho as ->.
+  by apply (act_offer _ _ _ Ha).
+Qed.
+
+Lemma new_at_retarget e κf o c e' c' : tstep e (LNewAt κf o c) e' → ∃ e'', tstep e (LNewAt κf o c') e''.
+Proof.
+  intros H. destruct (act_step _ _ _ H) as (a & Ha & Ho). apply offers_new_at in Ho as ->.
+  apply (act_offer _ _ _ Ha). by split.
+Qed.
+
+(** Every lifting of a composite splits into liftings of the two
+    components. *)
+Lemma pconn_lift q p1 p2 K : erase q = pconn p1 p2 K →
+  ∃ M1 M2, q = (p1.1 ∪ p2.1 ∪ K, M1 ∪ M2) ∧ M1 ##ₘ M2 ∧ soup M1 = p1.2 ∧ soup M2 = p2.2.
+Proof.
+  destruct q as [C M]. unfold erase, pconn. simpl. intros [= <- HM].
+  destruct (soup_split M _ _ HM) as (M1 & M2 & -> & Hd & H1 & H2). exists M1, M2. done.
+Qed.
+
+Lemma pconn_erase C1 C2 K M1 M2 : M1 ##ₘ M2 →
+  erase (C1 ∪ C2 ∪ K, M1 ∪ M2) = pconn (erase (C1, M1)) (erase (C2, M2)) K.
+Proof. intros Hd. unfold erase, pconn. simpl. by rewrite soup_union. Qed.
+
+(** A τ step of a component is a τ step of the composite, up to the
+    choice of fresh names. *)
+Lemma tau_lift C1 C2 K M1 M2 ev q1' :
+  M1 ##ₘ M2 → istep (C1, M1) ev q1' → ev_tau ev →
+  ∃ ev' q', istep (C1 ∪ C2 ∪ K, M1 ∪ M2) ev' q' ∧ ev_tau ev'.
+Proof.
+  intros Hd Hst Hτ. set (C := C1 ∪ C2 ∪ K).
+  assert (∀ i e, M1 !! i = Some e → (M1 ∪ M2) !! i = Some e) as Hl by (intros; by apply lookup_union_Some_l).
+  inversion Hst; subst; try (exfalso; by unfold ev_tau in Hτ).
+  - eexists _, _. split; [eapply p_act_beta; eauto|done].
+  - destruct (exist_fresh (C ∪ echans (soup (M1 ∪ M2)))) as [c' Hc'].
+    match goal with H : tstep _ (LNew _ _) _ |- _ => destruct (new_retarget _ _ _ _ c' H) as [e'' He''] end.
+    eexists _, _. split; [eapply p_act_new; [eauto|eauto|set_solver|set_solver]|done].
+  - destruct (exist_fresh (C ∪ echans (soup (M1 ∪ M2)))) as [c' Hc'].
+    match goal with H : tstep _ (LNewAt _ _ _) _ |- _ => destruct (new_at_retarget _ _ _ _ _ c' H) as [e'' He''] end.
+    eexists _, _. split; [eapply p_act_new_at; [eauto|eauto|set_solver|set_solver]|done].
+  - destruct (exist_fresh (dom (M1 ∪ M2))) as [j' Hj'].
+    eexists _, _. split; [eapply p_act_spawn; [eauto|eauto|by apply not_elem_of_dom]|done].
+  - eexists _, _. split; [eapply p_act_msg; eauto|done].
+  - eexists _, _. split; [eapply p_act_close; [eauto|eauto|eauto|eauto|eauto|set_solver]|done].
+  - eexists _, _. split; [eapply p_act_choice; eauto|done].
+  - eexists _, _. split; [eapply p_act_link; [eauto|eauto|set_solver]|done].
+Qed.
+
+Lemma stable_pconn_l p1 p2 K : stable_p (pconn p1 p2 K) → stable_p p1.
+Proof.
+  intros Hs p1' (q1 & ev & q1' & Hq1 & Hst & Hq1' & Hτ).
+  destruct (erase_surj (pconn p1 p2 K)) as [q Hq]. destruct (pconn_lift _ _ _ _ Hq) as (M1 & M2 & -> & Hd & H1 & H2).
+  destruct (pstep_lift (p1.1, M1) (ev_plabel ev) p1') as (ev1 & q1'' & Hst1 & Hl1 & _).
+  { unfold erase at 1. simpl. rewrite H1. destruct p1 as [c g]. by exists q1, ev, q1'. }
+  rewrite Hτ in Hl1. destruct (tau_lift p1.1 p2.1 K M1 M2 ev1 q1'' Hd Hst1 Hl1) as (ev' & q' & Hst' & Hτ').
+  apply (Hs (erase q')). rewrite <-Hq. exists (p1.1 ∪ p2.1 ∪ K, M1 ∪ M2), ev', q'. done.
+Qed.
+
+Lemma stable_pconn_r p1 p2 K : stable_p (pconn p1 p2 K) → stable_p p2.
+Proof. rewrite pconn_sym. apply stable_pconn_l. Qed.
+
+(** ** External steps of a component *)
+
+(** The end a session label that is no link acts on. *)
+Definition ssubj (σ : slabel) : option cend :=
+  match σ with
+  | SSend o _ _ | SRecv o _ | SClose o | SSel o _ | SBra o _ => Some o
+  | SLink _ => None
+  end.
+
+(** The head of the session type a label asks. *)
+Definition hd_ok (σ : slabel) (u : sty) : Prop :=
+  match σ with
+  | SSend _ _ _ => ∃ m U b S, u = SSeq (SSnd m U b) S
+  | SRecv _ _ => ∃ m U b S, u = SSeq (SRcv m U b) S
+  | SClose _ => u = SEnd
+  | SSel _ _ => ∃ S1 S2, u = SPlus S1 S2
+  | SBra _ _ => ∃ S1 S2, u = SWith S1 S2
+  | SLink _ => True
+  end.
+
+Section psteps.
+  Context (κ : ctable) (n : nat) (Vl : nat → vrel) (Pl : nat → prel) (VN : vrel) (X : prel)
+    (W : world) (Σ : senv) (T : ty) (p : proc).
+  Context (HP : Psteps κ n Vl Pl VN X W Σ T p).
+
+  Lemma Psteps_sends q i σ q' : erase q = p → istep q (EvSess i σ) q' → sends σ ⊆ dom Σ.
+  Proof.
+    intros Hq Hst. destruct HP as (_ & H2 & H3 & H4 & H5 & H6 & H7).
+    destruct σ as [o M w|o w|o|o b|o b|os]; simpl.
+    - destruct (H2 _ _ _ _ _ _ Hq Hst) as (? & ? & ? & ? & ? & ? & ? & ? & ? & ? & A & _).
+      apply elem_of_dom_2 in A. set_solver.
+    - destruct (H3 _ _ _ _ _ Hq Hst) as (? & ? & ? & ? & ? & ? & A & _). apply elem_of_dom_2 in A. set_solver.
+    - destruct (H4 _ _ _ _ Hq Hst) as (? & ? & A & _). apply elem_of_dom_2 in A. set_solver.
+    - destruct (H5 _ _ _ _ _ Hq Hst) as (? & ? & ? & ? & A & _). apply elem_of_dom_2 in A. set_solver.
+    - destruct (H6 _ _ _ _ _ Hq Hst) as (? & ? & ? & ? & A & _). apply elem_of_dom_2 in A. set_solver.
+    - destruct (H7 _ _ _ _ Hq Hst) as (o1 & o2 & ? & ? & ? & -> & _ & A1 & A2 & _).
+      apply elem_of_dom_2 in A1, A2. set_solver.
+  Qed.
+
+  Lemma Psteps_head q i σ q' o : erase q = p → istep q (EvSess i σ) q' → ssubj σ = Some o →
+    ∃ S0 x, Σ !! o = Some (S0, x) ∧ hd_ok σ (unfoldS S0).
+  Proof.
+    intros Hq Hst Ho. destruct HP as (_ & H2 & H3 & H4 & H5 & H6 & H7).
+    destruct σ as [o' M w|o' w|o'|o' b|o' b|os]; simpl in Ho; injection Ho as <- || discriminate.
+    - destruct (H2 _ _ _ _ _ _ Hq Hst) as (S0 & x & m & U & b & S & ? & ? & ? & ? & A & B & _). exists S0, x. split; [done|simpl; eauto 10].
+    - destruct (H3 _ _ _ _ _ Hq Hst) as (S0 & x & m & U & b & S & A & B & _). exists S0, x. split; [done|simpl; eauto 10].
+    - destruct (H4 _ _ _ _ Hq Hst) as (S0 & x & A & B & _). exists S0, x. split; [done|simpl; eauto 10].
+    - destruct (H5 _ _ _ _ _ Hq Hst) as (S0 & x & S1 & S2 & A & B & _). exists S0, x. split; [done|simpl; eauto 10].
+    - destruct (H6 _ _ _ _ _ Hq Hst) as (S0 & x & S1 & S2 & A & B & _). exists S0, x. split; [done|simpl; eauto 10].
+  Qed.
+End psteps.
+
+(** Two labels on the two ends of a channel, at dual types. *)
+Definition sync (σ1 σ2 : slabel) : Prop :=
+  match σ1, σ2 with
+  | SSend _ _ _, SRecv _ _ | SRecv _ _, SSend _ _ _ | SClose _, SClose _
+  | SSel _ _, SBra _ _ | SBra _ _, SSel _ _ => True
+  | _, _ => False
+  end.
+
+Lemma hd_ok_sync σ1 σ2 S0 S0' :
+  sdual S0 S0' → hd_ok σ1 (unfoldS S0) → hd_ok σ2 (unfoldS S0') →
+  ssubj σ1 ≠ None → ssubj σ2 ≠ None → sync σ1 σ2.
+Proof.
+  intros Hd H1 H2 N1 N2.
+  destruct σ1 as [| | | | |], σ2 as [| | | | |]; simpl in *; try done; try congruence;
+    repeat match goal with H : ∃ _, _ |- _ => destruct H as [? H] end;
+    first
+    [ destruct (sdual_snd _ _ _ _ _ _ Hd H1) as (? & ? & ? & E & _)
+    | destruct (sdual_rcv _ _ _ _ _ _ Hd H1) as (? & ? & ? & E & _)
+    | pose proof (sdual_end _ _ Hd H1) as E
+    | destruct (sdual_plus _ _ _ _ Hd H1) as (? & ? & E & _)
+    | destruct (sdual_with _ _ _ _ Hd H1) as (? & ? & E & _) ];
+    congruence.
+Qed.
+
+Lemma Vrel_prim_empty κ n W Θ T v : prim T → Vrel κ n W Θ T v → Θ = ∅.
+Proof.
+  intros Hp. revert Θ v. induction Hp as [|U a V b HU IHU HV IHV|U a V b HU IHU HV IHV|m k C ub c t U a HU IHU];
+    intros Θ v.
+  - by intros [-> _]%Vrel_unit_iff.
+  - intros (v1 & v2 & Θ1 & Θ2 & -> & _ & -> & H1 & H2)%Vrel_prod_iff.
+    rewrite (IHU _ _ H1), (IHV _ _ H2). by rewrite (left_id_L ∅ (∪)).
+  - intros [(v' & -> & H)|(v' & -> & H)]%Vrel_sum_iff; eauto.
+  - by intros [-> _]%Vrel_box_iff.
+Qed.
+
+(** ** Offers of the composite *)
+
+Section offers.
+  Context (κ : ctable) (n : nat) (W1 : world) (T1 T2 : ty) (X1 X2 : prel).
+  Context (Σ1 ΣC Σ2 ΣD : senv) (q1 q2 : proc) (Hc : conn Σ1 ΣC q1.1 Σ2 ΣD q2.1).
+  Context (H1 : Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X1 W1 (Σ1 ∪ ΣC) T1 q1).
+  Context (H2 : Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X2 W1 (Σ2 ∪ ΣD) T2 q2).
+  Local Notation K := (chans_of ΣC).
+  Local Notation pc := (pconn q1 q2 K).
+
+  Lemma conn_not2 o : o ∈ dom Σ1 → o ∉ dom (Σ2 ∪ ΣD).
+  Proof.
+    destruct Hc as [? ? Hcut ? ? ? H12 H1C _ _ _ _]. rewrite (dom_union_L Σ2 ΣD).
+    intros Ho Ho'. apply elem_of_union in Ho' as [Ho'|Ho'].
+    - apply (H12 (ech o)); by apply elem_of_chans_of.
+    - apply (H1C (ech o)); [by apply elem_of_chans_of|]. rewrite <-(cut_dual_chans _ _ Hcut).
+      by apply elem_of_chans_of.
+  Qed.
+
+  (** A step of the composite on an end of Σ1 comes from p1. *)
+  Lemma offered_c_1 o : o ∈ dom Σ1 → offered_p (Σ1 ∪ Σ2) pc o → offered_p (Σ1 ∪ ΣC) q1 o.
+  Proof.
+    intros HoΣ [_ (σ & p' & Hst & Hoσ)]. split; [rewrite dom_union_L; set_solver|].
+    destruct (erase_surj pc) as [q Hq]. destruct (pconn_lift _ _ _ _ Hq) as (M1 & M2 & -> & Hd & HM1 & HM2).
+    rewrite <-Hq in Hst. destruct (pstep_lift _ _ _ Hst) as (ev & q' & Hi & Hl & _).
+    destruct ev; try discriminate. injection Hl as ->. inversion Hi; subst.
+    match goal with Hlk : (M1 ∪ M2) !! _ = Some _ |- _ => apply (lookup_union_Some _ _ _ _ Hd) in Hlk as [Hlk|Hlk] end.
+    - exists σ, (erase ((q1.1 ∖ sentc σ), <[i := e']> M1)). split; [|done].
+      exists (q1.1, M1), (EvSess i σ), (q1.1 ∖ sentc σ, <[i := e']> M1). split_and!; [|by eapply p_act_session; [eassumption|eassumption|set_solver]|done|done].
+      unfold erase. simpl. rewrite HM1. by destruct q1.
+    - exfalso. apply (conn_not2 o HoΣ).
+      apply (Psteps_sends κ _ _ _ _ _ _ _ _ q2 (proj2 (proj2 H2)) (q2.1, M2) i σ (q2.1 ∖ sentc σ, <[i := e']> M2)).
+      + unfold erase. simpl. rewrite HM2. by destruct q2.
+      + by eapply p_act_session; [eassumption|eassumption|set_solver].
+      + done.
+  Qed.
+
+  Lemma sess_lift M1 M2 i σ q1' :
+    M1 ##ₘ M2 → istep (q1.1, M1) (EvSess i σ) q1' → subjs σ ## q1.1 ∪ q2.1 ∪ K →
+    ∃ q', istep (q1.1 ∪ q2.1 ∪ K, M1 ∪ M2) (EvSess i σ) q'.
+  Proof.
+    intros Hd Hst Hs. inversion Hst; subst. eexists. eapply p_act_session; [|eassumption|done].
+    by apply lookup_union_Some_l.
+  Qed.
+
+  Lemma pc_erase M1 M2 : M1 ##ₘ M2 → soup M1 = q1.2 → soup M2 = q2.2 →
+    erase (q1.1 ∪ q2.1 ∪ K, M1 ∪ M2) = pc.
+  Proof. intros Hd H1' H2'. unfold erase, pconn. simpl. by rewrite soup_union, H1', H2'. Qed.
+
+  (** A link offer of p1 that touches the composite's restricted channels
+      is a τ step of the composite. *)
+  Lemma link_tau M1 M2 i os q1' :
+    M1 ##ₘ M2 → soup M1 = q1.2 → soup M2 = q2.2 →
+    istep (q1.1, M1) (EvSess i (SLink os)) q1' → ¬ (subjs (SLink os) ## q1.1 ∪ q2.1 ∪ K) →
+    ¬ stable_p pc.
+  Proof.
+    intros Hd HM1 HM2 Hst Hs Hstab. inversion Hst; subst.
+    match goal with H : tstep _ (LSess (SLink _)) _ |- _ => rename H into Ht end.
+    destruct (tstep_link_shape _ _ _ Ht) as (o1 & o2 & Hos). rewrite Hos in Ht, Hs.
+    assert (ech o1 ∈ q1.1 ∪ q2.1 ∪ K ∨ ech o2 ∈ q1.1 ∪ q2.1 ∪ K) as Hor.
+    { destruct (decide (ech o1 ∈ q1.1 ∪ q2.1 ∪ K)); [by left|]. destruct (decide (ech o2 ∈ q1.1 ∪ q2.1 ∪ K)); [by right|].
+      exfalso. apply Hs. simpl. rewrite set_map_union_L, !set_map_singleton_L. set_solver. }
+    assert ((M1 ∪ M2) !! i = Some e) as Hi by (by apply lookup_union_Some_l).
+    destruct Hor as [Ho|Ho].
+    - eapply (Hstab _). rewrite <-(pc_erase M1 M2) by done. eexists _, _, _.
+      split; [done|]. split; [by eapply p_act_link|]. split; reflexivity.
+    - eapply (Hstab _). rewrite <-(pc_erase M1 M2) by done. eexists _, _, _.
+      split; [done|]. split; [eapply p_act_link; [done|by rewrite upair_comm|done]|]. split; reflexivity.
+  Qed.
+
+  (** An offer of p1 on an end of Σ1 is an offer of the composite. *)
+  Lemma offered_1_c o : o ∈ dom Σ1 → stable_p pc → offered_p (Σ1 ∪ ΣC) q1 o → offered_p (Σ1 ∪ Σ2) pc o.
+  Proof.
+    intros HoΣ Hstab [_ (σ & p1' & Hst & Hoσ)]. split; [rewrite dom_union_L; set_solver|].
+    destruct (erase_surj pc) as [q Hq]. destruct (pconn_lift _ _ _ _ Hq) as (M1 & M2 & -> & Hd & HM1 & HM2).
+    destruct (pstep_lift (q1.1, M1) (PSess σ) p1') as (ev & q1' & Hi & Hl & _).
+    { unfold erase. simpl. rewrite HM1. by destruct q1. }
+    destruct ev; try discriminate. injection Hl as ->.
+    destruct (decide (subjs σ ## q1.1 ∪ q2.1 ∪ K)) as [Hs|Hs].
+    - destruct (sess_lift M1 M2 i σ q1' Hd Hi Hs) as [q' Hq']. exists σ, (erase q'). split; [|done].
+      rewrite <-Hq. by exists (q1.1 ∪ q2.1 ∪ K, M1 ∪ M2), (EvSess i σ), q'.
+    - exfalso. destruct σ as [o' M w|o' w|o'|o' b|o' b|os].
+      6: by apply (link_tau M1 M2 i os q1').
+      all: simpl in Hoσ; apply elem_of_singleton in Hoσ as ->; apply Hs; simpl;
+        destruct Hc as [? ? Hcut ? ? ? H12 H1C _ _ HC1 HC2];
+        intros c Hc' Hc''; apply elem_of_singleton in Hc' as ->;
+        pose proof (elem_of_chans_of _ _ HoΣ) as Hco; set_solver.
+  Qed.
+End offers.
