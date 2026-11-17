@@ -12,7 +12,9 @@ From GV Require Export lang.Process static.Contexts.
     because their continuation quantifies over the received value, which
     the relation at the current level cannot read negatively. When β is
     free, so that V at level n reads E at level n, a send costs at least
-    one, so that its payload is read below n. *)
+    one, so that its payload is read below n. A give costs at most a
+    take, because a synchronization of two closes costs κ(send) +
+    κ(recv) and composition pays it with two gives. *)
 Record ctable := CTable {
   c_beta : nat;    (* β, let, case, force *)
   c_new : nat;     (* new_ℓ and new_κ *)
@@ -21,13 +23,14 @@ Record ctable := CTable {
   c_give : nat;    (* send, select, close *)
   c_take : nat;    (* receive, branch *)
   c_take_pos : (1 ≤ c_take);
-  c_give_pos : (c_beta = 0 → 1 ≤ c_give)
+  c_give_pos : (c_beta = 0 → 1 ≤ c_give);
+  c_give_take : (c_give ≤ c_take)
 }.
 
 (** κ_DF and κ_L (§2.8). A synchronization costs κ(send) + κ(recv),
     1 in κ_DF and 2 in κ_L. *)
-Definition κ_DF : ctable := CTable 1 1 1 0 0 1 ltac:(lia) ltac:(lia).
-Definition κ_L : ctable := CTable 0 0 0 0 1 1 ltac:(lia) ltac:(lia).
+Definition κ_DF : ctable := CTable 1 1 1 0 0 1 ltac:(lia) ltac:(lia) ltac:(lia).
+Definition κ_L : ctable := CTable 0 0 0 0 1 1 ltac:(lia) ltac:(lia) ltac:(lia).
 Abbreviation live := κ_L.
 
 Definition scost (κ : ctable) (σ : slabel) : nat :=

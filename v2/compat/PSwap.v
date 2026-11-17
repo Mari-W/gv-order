@@ -221,7 +221,10 @@ Proof.
 Qed.
 
 Lemma pren_ok_swap a b Σ p : pren_ok (oswap a b) Σ p.
-Proof. split; [intros o; apply cmap_edual|]. intros o1 o2 _ _. apply oswap_inj. Qed.
+Proof.
+  split_and!; [intros o; apply cmap_edual|intros o1 o2 _ _; apply oswap_inj|].
+  intros o1 o2 _ _ H. apply (oswap_inj a b). by rewrite H, <-cmap_edual.
+Qed.
 
 Lemma Prel_swap κ a b n W Σ T p : Prel κ n W Σ T p ↔ Prel κ n W (sswap a b Σ) T (pswap a b p).
 Proof.

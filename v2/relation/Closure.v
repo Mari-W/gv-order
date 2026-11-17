@@ -181,8 +181,8 @@ Section closure.
     destruct m as [|m]; [apply Prel_0|]. destruct n as [|n]; [lia|].
     revert W Σ T p HP.
     refine (Prel_S_ind κ n (λ W Σ T p, Prel κ (S m) W Σ T p) _).
-    intros W Σ T p H. apply Prel_S_iff. intros W1 HW1 HS1 h Hh.
-    destruct (H W1 HW1 HS1 h Hh) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
+    intros W Σ T p H. apply Prel_S_iff. intros W1 HW1 HS1 h D Hh.
+    destruct (H W1 HW1 HS1 h D Hh) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
     assert (∀ c W Σ T0 p', at_cost_P (S n) c (Prel κ)
         (λ W Σ T p, Prel κ (S n) W Σ T p ∧ Prel κ (S m) W Σ T p) W Σ T0 p' →
       at_cost_P (S m) c (Prel κ) (Prel κ (S m)) W Σ T0 p') as Hac.

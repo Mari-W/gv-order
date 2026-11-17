@@ -10,7 +10,7 @@ The old development in theories/ stays untouched.
 | S1 | language | done |
 | S2 | points, worlds, types | done |
 | S3 | generic relation | done |
-| S4 | generic compatibility | stopped (S4.18): the clause (rename) of P makes P-Connect and P-Term false, repair needs the author |
+| S4 | generic compatibility | in progress: (fuse) in P, Internalize as a projection (S4.19), P-Connect, P-Join, P-Term open |
 | S5 | static fundamental theorems | open |
 | S6 | fuel | done |
 | S7 | cost judgment | done |
@@ -300,6 +300,15 @@ The old development in theories/ stays untouched.
   quantifier of `Pbody` ranges over strict worlds, ∀ W1, W ⊑ W1 →
   strict W1 → … . V and E keep theirs. `adequacy` and `live_adequacy`
   ask `strict W`, because P at a non-strict world is vacuous.
+- S4, fusion (decision 4200d3d, after S4.18). The clause (fuse) of
+  `Pbody` replaces (rename): every unfolding holds for
+  `sdrop D (kren h Σ)` and `pfuse h D p` = (set_map (gch h) p.1 ∪ D,
+  emapE h p.2) whenever `fuse_ok h D Σ p`: h commutes with duality, is
+  injective on the held ends, makes two held ends partners only if they
+  are or if their channel lies in D, D is apart from the renamed
+  restricted channels, and the two ends of every channel of D are a dual
+  pair at dual points of `kren h Σ` (`dpairs`). `pren_ok` asks no new
+  partner pair at all. Cost tables carry `c_give_take : c_give ≤ c_take`.
 - S4, Q16 for P (decision after S4.12). The clause (rename) is a
   quantifier of `Pbody`, inside the fixpoint. Every unfolding of P holds
   for `kren h Σ` and `pmap h p` for every h with `pren_ok h Σ p`: h
@@ -920,3 +929,18 @@ The old development in theories/ stays untouched.
   it, as (rename) was covered for renamed components. I recommend (B).
   Not started: Internalize, P-Connect, P-Join, P-Term. CheckAll lists
   193 results, all closed. No `Admitted` and no axiom.
+- S4.19. The clause (fuse) (decision 4200d3d) in v2/relation/Relation.v:
+  `sdrop`, `pfuse`, `dpairs`, `fuse_ok`, `pren_ok` with the condition
+  "no new partner pair", `fuse_ok_id`, `pren_fuse_ok`,
+  `fuse_ok_empty` (an empty interface admits D = ∅ only). The field
+  `c_give_take` of `ctable`. v2/compat/Rename.v: the held ends of a
+  fusion are the images of the held ends (`pheld_fuse`,
+  `pheld_fuse_inv`), a composite of fusions is a fusion
+  (`fuse_ok_compose`, `fuse_sdrop_compose`, `pfuse_compose`, through
+  `kren_sdrop`), `Prel_fuse` as a projection, `Prel_rename` (D = ∅) and
+  `Prel_internalize` (h = id: `dpairs D Σ → D ## p.1 → p ∈ P⟦Σ⟧ →
+  (p.1 ∪ D, p.2) ∈ P⟦sdrop D Σ⟧`) as instances. `pren_ok_csub` asks in
+  addition that the other component does not hold o2‾; when it does,
+  the link case is a fusion with D = {ech o2}. Closure, Adequacy,
+  Blind, LiveDF, PSwap and Conv follow (`fuse_ok_conv`). CheckAll lists
+  196 results, all closed.

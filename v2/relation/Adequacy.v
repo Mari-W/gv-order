@@ -132,8 +132,8 @@ Qed.
 
 Lemma Prel_done κ n W : Prel κ n W ∅ TUnit (∅, {[+ EUnit +]}).
 Proof.
-  destruct n as [|n]; [apply Prel_0|]. apply Prel_S_iff. intros W1 HW1 HS1 h Hh.
-  rewrite kren_empty. unfold pmap. cbn [fst snd]. rewrite set_map_empty, emapE_singleton. cbn [emap].
+  destruct n as [|n]; [apply Prel_0|]. apply Prel_S_iff. intros W1 HW1 HS1 h D Hh.
+  rewrite (fuse_ok_empty _ _ _ Hh), pfuse_empty, kren_empty, sdrop_empty. unfold pmap. cbn [fst snd]. rewrite set_map_empty, emapE_singleton. cbn [emap].
   split; [|split; [|unfold Psteps; split_and!]].
   - intros _. exists EUnit, ∅. split_and!.
     + f_equal. multiset_solver.

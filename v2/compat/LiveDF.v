@@ -120,10 +120,11 @@ Proof.
   induction n as [n IHn] using lt_wf_ind. intros W T p HT.
   destruct n as [|n]; [intros; apply Prel_0|]. revert W.
   induction p as [p IHp] using (well_founded_induction (well_founded_ltof _ psize)).
-  intros W HL. apply Prel_S_iff. intros W1 HW1 HS1 h Hh.
+  intros W HL. apply Prel_S_iff. intros W1 HW1 HS1 h D Hh.
   assert (∀ m, Pbody κ_L (S m) (Vrel κ_L) (Prel κ_L) (Vrel κ_L (S m)) (Prel κ_L (S m)) W ∅ T p) as HB
     by (intros m; apply Prel_S_iff, HL).
-  pose proof (λ m, HB m W1 HW1 HS1 h Hh) as HC. rewrite kren_empty in HC |- *.
+  pose proof (λ m, HB m W1 HW1 HS1 h D Hh) as HC.
+  rewrite (fuse_ok_empty _ _ _ Hh), pfuse_empty, kren_empty, sdrop_empty in HC |- *.
   destruct (HC 0) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
   split; [|split; [|unfold Psteps; split_and!]].
   - intros Hirr. destruct (Hs Hirr) as (v & E & -> & Hv & HE). exists v, E.

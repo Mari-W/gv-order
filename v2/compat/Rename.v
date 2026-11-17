@@ -827,39 +827,197 @@ Proof.
     by rewrite gch_compose.
 Qed.
 
+Lemma fuse_ok_kinj h D Σ p : fuse_ok h D Σ p → kinj h Σ.
+Proof.
+  intros (_ & Hi & _) o1 o2 v1 v2 H1 H2. apply Hi; left; by eapply elem_of_dom_2.
+Qed.
+
 Lemma pren_ok_kinj h Σ p : pren_ok h Σ p → kinj h Σ.
+Proof. intros H. by eapply fuse_ok_kinj, pren_fuse_ok. Qed.
+
+(** A map of an environment through the drop of channels. *)
+Lemma kren_sdrop (g : cend → cend) (D1 D2 : gset chan) (M : senv) :
+  kinj g M → (∀ o, o ∈ dom M → ech o ∈ D1 ↔ ech (g o) ∈ D2) →
+  kren g (sdrop D1 M) = sdrop D2 (kren g M).
 Proof.
-  intros [_ Hi] o1 o2 v1 v2 H1 H2. apply Hi; left; by eapply elem_of_dom_2.
+  intros Hk HPQ. assert (kinj g (sdrop D1 M)) as Hk'.
+  { eapply kinj_sub; [|exact Hk]. apply dom_filter_subseteq. }
+  apply map_eq. intros o'. apply option_eq. intros v. unfold sdrop at 2. rewrite map_lookup_filter_Some. split.
+  - intros Hl. destruct (kren_lookup_inv _ _ _ _ Hl) as (o & -> & Ho).
+    unfold sdrop in Ho. apply map_lookup_filter_Some in Ho as [Ho HP]. split; [by apply kren_lookup|].
+    simpl in *. rewrite <-HPQ; [done|by eapply elem_of_dom_2].
+  - intros [Hl HQ]. destruct (kren_lookup_inv _ _ _ _ Hl) as (o & -> & Ho).
+    apply kren_lookup; [done|]. unfold sdrop. apply map_lookup_filter_Some. split; [done|].
+    simpl in *. rewrite HPQ; [done|by eapply elem_of_dom_2].
 Qed.
 
-Lemma pheld_map h Σ p o : pren_ok h Σ p → pheld Σ p o → pheld (kren h Σ) (pmap h p) (h o).
+Lemma sdrop_sdrop D1 D2 (Σ : senv) : sdrop D1 (sdrop D2 Σ) = sdrop (D1 ∪ D2) Σ.
 Proof.
-  intros Hok [Ho|Ho]; [left|right].
-  - rewrite kren_dom by (by eapply pren_ok_kinj). apply elem_of_map. by exists o.
-  - unfold pmap. simpl. rewrite ech_gch by apply Hok. apply elem_of_map. by exists (ech o).
+  unfold sdrop. rewrite map_filter_filter. apply map_filter_ext. intros i x _. simpl. set_solver.
 Qed.
 
-Lemma pren_ok_compose g h Σ p :
-  pren_ok h Σ p → pren_ok g (kren h Σ) (pmap h p) → pren_ok (g ∘ h) Σ p.
+Lemma sdrop_lookup D (Σ : senv) o v : sdrop D Σ !! o = Some v ↔ Σ !! o = Some v ∧ ech o ∉ D.
+Proof. unfold sdrop. by rewrite map_lookup_filter_Some. Qed.
+
+Lemma ech_dual_inv (g : cend → cend) o c : dcomm g → ech (g o) = gch g c → o = EPos c ∨ o = ENeg c ∨
+  (g o = g (EPos c) ∨ g o = g (ENeg c)).
 Proof.
-  intros Hh Hg. split.
-  - intros o. simpl. by rewrite (proj1 Hh), (proj1 Hg).
-  - intros o1 o2 H1 H2 Heq. apply (proj2 Hh); [done|done|].
-    apply (proj2 Hg); [by apply pheld_map|by apply pheld_map|done].
+  intros Hd Hc. right; right. unfold gch in Hc. apply ech_eq in Hc as [Hc|Hc].
+  - by left.
+  - right. change (ENeg c) with (edual (EPos c)). by rewrite Hd, Hc, edual_edual.
 Qed.
 
-Lemma kren_kren_ok g h Σ p :
-  pren_ok h Σ p → pren_ok g (kren h Σ) (pmap h p) → kren g (kren h Σ) = kren (g ∘ h) Σ.
-Proof. intros Hh Hg. apply kren_kren; [by eapply pren_ok_kinj|by eapply pren_ok_kinj]. Qed.
+(** The held ends of a fusion are the images of the held ends. *)
+Lemma pheld_fuse h D Σ p o : fuse_ok h D Σ p → pheld Σ p o → pheld (sdrop D (kren h Σ)) (pfuse h D p) (h o).
+Proof.
+  intros Hok [Ho|Ho].
+  - destruct (decide (ech (h o) ∈ D)) as [HD|HD]; [right; simpl; set_solver|left].
+    apply elem_of_dom in Ho as [v Hv]. apply elem_of_dom. exists v. apply sdrop_lookup.
+    split; [|done]. apply kren_lookup; [by eapply fuse_ok_kinj|done].
+  - right. simpl. apply elem_of_union_l. rewrite ech_gch by apply Hok. apply elem_of_map. by exists (ech o).
+Qed.
 
-(** Decision Q16 for P: a projection of the clause (rename). *)
+Lemma pheld_fuse_inv h D Σ p o' : fuse_ok h D Σ p →
+  pheld (sdrop D (kren h Σ)) (pfuse h D p) o' → ∃ o, o' = h o ∧ pheld Σ p o.
+Proof.
+  intros (Hd & Hi & _ & _ & Hp) [Ho|Ho].
+  - apply elem_of_dom in Ho as [v Hv]. apply sdrop_lookup in Hv as [Hv _].
+    destruct (kren_lookup_inv _ _ _ _ Hv) as (o & -> & Ho). exists o. split; [done|left; by eapply elem_of_dom_2].
+  - simpl in Ho. apply elem_of_union in Ho as [Ho|Ho].
+    + apply elem_of_map in Ho as (c & Hc & HcC). unfold gch in Hc. apply ech_eq in Hc as [Hc|Hc].
+      * exists (EPos c). split; [done|by right].
+      * exists (ENeg c). split; [|by right]. change (ENeg c) with (edual (EPos c)). by rewrite Hd, Hc, edual_edual.
+    + destruct (Hp o' Ho) as (S & x & S' & Hl & _).
+      destruct (kren_lookup_inv _ _ _ _ Hl) as (o & -> & Ho'). exists o. split; [done|left; by eapply elem_of_dom_2].
+Qed.
+
+Section fuse_compose.
+  Context (h g : cend → cend) (D D' : gset chan) (Σ : senv) (p : proc).
+  Context (Hh : fuse_ok h D Σ p) (Hg : fuse_ok g D' (sdrop D (kren h Σ)) (pfuse h D p)).
+
+  Local Lemma g_inj o1 o2 : pheld Σ p o1 → pheld Σ p o2 → g (h o1) = g (h o2) → h o1 = h o2.
+  Proof. intros H1 H2. apply Hg; by apply pheld_fuse. Qed.
+
+  Local Lemma dheld o : ech o ∈ D → pheld (sdrop D (kren h Σ)) (pfuse h D p) o.
+  Proof. intros Ho. right. simpl. set_solver. Qed.
+
+  Local Lemma kinj_g : kinj g (kren h Σ).
+  Proof.
+    intros o1 o2 v1 v2 H1 H2. destruct (kren_lookup_inv _ _ _ _ H1) as (a1 & -> & A1).
+    destruct (kren_lookup_inv _ _ _ _ H2) as (a2 & -> & A2). intros Heq.
+    apply (g_inj a1 a2); [left; by eapply elem_of_dom_2|left; by eapply elem_of_dom_2|done].
+  Qed.
+
+  (** g keeps the channels of D apart from the other held channels. *)
+  Local Lemma gch_D o : pheld (sdrop D (kren h Σ)) (pfuse h D p) o → ech o ∉ D →
+    ech (g o) ∉ (set_map (gch g) D : gset chan).
+  Proof.
+    intros Ho HD Hin. apply elem_of_map in Hin as (c & Hc & HcD).
+    destruct (ech_dual_inv g o c (proj1 Hg) Hc) as [->|[->|[E|E]]]; [done|done| |].
+    - apply HD. assert (o = EPos c) as -> by (apply Hg; [done|by apply dheld|done]). done.
+    - apply HD. assert (o = ENeg c) as -> by (apply Hg; [done|by apply dheld|done]). done.
+  Qed.
+
+  Lemma fuse_sdrop_compose :
+    sdrop D' (kren g (sdrop D (kren h Σ))) = sdrop (D' ∪ set_map (gch g) D) (kren (g ∘ h) Σ).
+  Proof.
+    rewrite (kren_sdrop g D (set_map (gch g) D)).
+    - rewrite sdrop_sdrop. rewrite kren_kren; [done|by eapply fuse_ok_kinj|apply kinj_g].
+    - apply kinj_g.
+    - intros o Ho. split.
+      + intros HD. apply elem_of_map. exists (ech o). split; [|done]. by apply ech_gch, Hg.
+      + intros Hin. destruct (decide (ech o ∈ D)) as [|HD]; [done|]. exfalso.
+        apply (gch_D o); [|done|done]. left. apply elem_of_dom in Ho as [v Hv]. apply elem_of_dom.
+        exists v. by apply sdrop_lookup.
+  Qed.
+
+  Lemma pfuse_compose : pfuse g D' (pfuse h D p) = pfuse (g ∘ h) (D' ∪ set_map (gch g) D) p.
+  Proof.
+    destruct p as [C E]. unfold pfuse. simpl. rewrite emapE_emapE. f_equal.
+    assert (∀ y, gch g (gch h y) = gch (g ∘ h) y) as Hgc by (intros y; apply gch_compose, (proj1 Hg)).
+    apply set_eq. intros c. set_unfold. split.
+    - intros [(x & -> & [(y & -> & Hy)|Hx])|Hc].
+      + left. exists y. by rewrite Hgc.
+      + right; right. by exists x.
+      + by right; left.
+    - intros [(y & -> & Hy)|[Hc|(x & -> & Hx)]].
+      + left. exists (gch h y). split; [by rewrite Hgc|]. left. by exists y.
+      + by right.
+      + left. exists x. by split; [|right].
+  Qed.
+
+  Lemma fuse_ok_compose : fuse_ok (g ∘ h) (D' ∪ set_map (gch g) D) Σ p.
+  Proof.
+    destruct Hh as (Hd & Hi & Hn & HD & Hp). destruct Hg as (Gd & Gi & Gn & GD & Gp).
+    split_and!.
+    - intros o. simpl. by rewrite Hd, Gd.
+    - intros o1 o2 H1 H2 Heq. apply Hi; [done|done|]. by apply g_inj.
+    - intros o1 o2 H1 H2 Heq. simpl in Heq.
+      destruct (Gn (h o1) (h o2) (pheld_fuse _ _ _ _ _ Hh H1) (pheld_fuse _ _ _ _ _ Hh H2) Heq) as [E|E].
+      + destruct (Hn o1 o2 H1 H2 E) as [?|E']; [by left|right].
+        apply elem_of_union_r, elem_of_map. exists (ech (h o1)). split; [|done]. simpl. by apply ech_gch.
+      + right. by apply elem_of_union_l.
+    - apply disjoint_union_l. split.
+      + intros c Hc Hc'. apply (GD c Hc). simpl. apply elem_of_map in Hc' as (c1 & -> & Hc1).
+        apply elem_of_map. exists (gch h c1). split; [by rewrite gch_compose|]. apply elem_of_union_l.
+        apply elem_of_map. by exists c1.
+      + intros c Hc Hc'. apply elem_of_map in Hc as (d & -> & HdD).
+        apply elem_of_map in Hc' as (c1 & Hc & Hc1).
+        assert (pheld Σ p (EPos c1)) as Hp1 by (by right).
+        apply (gch_D (h (EPos c1))); [by apply pheld_fuse| |].
+        * intros Hin. apply (HD (ech (h (EPos c1))) Hin). apply elem_of_map. by exists c1.
+        * apply elem_of_map. exists d. split; [|done]. rewrite Hc. reflexivity.
+    - intros o Ho. apply elem_of_union in Ho as [Ho|Ho].
+      + destruct (Gp o Ho) as (S & x & S' & H1 & H2 & Hs). exists S, x, S'.
+        rewrite <-(kren_kren g h Σ (fuse_ok_kinj _ _ _ _ Hh) kinj_g).
+        assert (∀ o v, kren g (sdrop D (kren h Σ)) !! o = Some v → kren g (kren h Σ) !! o = Some v) as Hsub.
+        { intros o0 v Hv. destruct (kren_lookup_inv _ _ _ _ Hv) as (a & -> & Ha).
+          apply sdrop_lookup in Ha as [Ha _]. by apply kren_lookup; [apply kinj_g|]. }
+        split_and!; [by apply Hsub|by apply Hsub|done].
+      + apply elem_of_map in Ho as (c & Hc & HcD).
+        assert (o = g (EPos c) ∨ o = g (ENeg c)) as Ho'.
+        { unfold gch in Hc. apply ech_eq in Hc as [Hc|Hc]; [by left|right].
+          change (ENeg c) with (edual (EPos c)). by rewrite Gd, Hc, edual_edual. }
+        rewrite <-(kren_kren g h Σ (fuse_ok_kinj _ _ _ _ Hh) kinj_g).
+        destruct Ho' as [->| ->].
+        * destruct (Hp (EPos c) HcD) as (S & x & S' & H1 & H2 & Hs). exists S, x, S'.
+          rewrite <-Gd. split_and!; [by apply kren_lookup; [apply kinj_g|]|by apply kren_lookup; [apply kinj_g|]|done].
+        * destruct (Hp (ENeg c) HcD) as (S & x & S' & H1 & H2 & Hs). exists S, x, S'.
+          rewrite <-Gd. split_and!; [by apply kren_lookup; [apply kinj_g|]|by apply kren_lookup; [apply kinj_g|]|done].
+  Qed.
+End fuse_compose.
+
+(** The clause (fuse) as a projection: a fusion of a process in P is in P. *)
+Theorem Prel_fuse κ n W Σ T p h D :
+  fuse_ok h D Σ p → p ∈ P[κ]^W _ n⟦Σ ⊢ T⟧ → pfuse h D p ∈ P[κ]^W _ n⟦sdrop D (kren h Σ) ⊢ T⟧.
+Proof.
+  intros Hh HP. destruct n as [|n]; [apply Prel_0|].
+  apply Prel_S_iff in HP. apply Prel_S_iff. intros W1 HW1 HS1 g D' Hg.
+  rewrite (fuse_sdrop_compose h g D D' Σ p Hh Hg), (pfuse_compose h g D D' Σ p Hh Hg).
+  apply HP; [done|done|]. by apply fuse_ok_compose.
+Qed.
+
+(** Decision Q16 for P, D = ∅. *)
 Theorem Prel_rename κ n W Σ T p h :
   pren_ok h Σ p → p ∈ P[κ]^W _ n⟦Σ ⊢ T⟧ → pmap h p ∈ P[κ]^W _ n⟦kren h Σ ⊢ T⟧.
 Proof.
-  intros Hh HP. destruct n as [|n]; [apply Prel_0|].
-  apply Prel_S_iff in HP. apply Prel_S_iff. intros W1 HW1 HS1 g Hg.
-  rewrite (kren_kren_ok g h Σ p Hh Hg), (pmap_pmap g h p (proj1 Hg)).
-  apply HP; [done|done|]. by apply pren_ok_compose.
+  intros Hh HP. rewrite <-pfuse_empty, <-(sdrop_empty (kren h Σ)). by apply Prel_fuse; [apply pren_fuse_ok|].
+Qed.
+
+(** Internalize, h = id: the channels D, whose two ends Σ holds as dual
+    pairs at dual points, become restricted. *)
+Theorem Prel_internalize κ n W Σ T p D :
+  dpairs D Σ → D ## p.1 →
+  p ∈ P[κ]^W _ n⟦Σ ⊢ T⟧ → (p.1 ∪ D, p.2) ∈ P[κ]^W _ n⟦sdrop D Σ ⊢ T⟧.
+Proof.
+  intros Hp HD HP.
+  assert (fuse_ok id D Σ p) as Hok.
+  { split_and!; [done|by intros ? ? _ _|by intros ? ? _ _ ?; left| |by rewrite kren_id_map].
+    simpl. intros c Hc Hc'. apply elem_of_map in Hc' as (c' & -> & Hc'). unfold gch in Hc. simpl in Hc. set_solver. }
+  pose proof (Prel_fuse κ n W Σ T p id D Hok HP) as H. rewrite kren_id_map in H.
+  unfold pfuse in H. rewrite emapE_id_map in H.
+  replace (set_map (gch id) p.1) with p.1 in H; [done|].
+  apply set_eq. intros c. rewrite elem_of_map. unfold gch. simpl. split; [eauto|by intros (? & -> & ?)].
 Qed.
 
 (** ** The link substitution renames the other component (P-Connect)
@@ -880,16 +1038,23 @@ Proof.
 Qed.
 
 Lemma pren_ok_csub o1 o2 Σ p :
-  ech o2 ≠ ech o1 → ¬ pheld Σ p o1 → ¬ pheld Σ p o2 → pren_ok (csub o1 o2) Σ p.
+  ech o2 ≠ ech o1 → ¬ pheld Σ p o1 → ¬ pheld Σ p o2 → ¬ pheld Σ p (edual o2) → pren_ok (csub o1 o2) Σ p.
 Proof.
-  intros Hne H1 H2. split; [by apply csub_dcomm|].
+  intros Hne H1 H2 H3. split; [by apply csub_dcomm|].
   assert (∀ o, pheld Σ p o → csub o1 o2 o = o ∨ (o = edual o1 ∧ csub o1 o2 o = o2)) as Hc.
   { intros o Ho. unfold csub. destruct (decide (o = edual o1)) as [->|N1]; [by right|].
     rewrite decide_False; [by left|]. intros ->. done. }
-  intros oa ob Ha Hb Heq.
-  destruct (Hc oa Ha) as [Ea|[-> Ea]], (Hc ob Hb) as [Eb|[-> Eb]]; rewrite ?Ea, ?Eb in Heq.
-  - done.
-  - subst oa. by exfalso.
-  - subst ob. by exfalso.
-  - done.
+  split.
+  - intros oa ob Ha Hb Heq.
+    destruct (Hc oa Ha) as [Ea|[-> Ea]], (Hc ob Hb) as [Eb|[-> Eb]]; rewrite ?Ea, ?Eb in Heq.
+    + done.
+    + subst oa. by exfalso.
+    + subst ob. by exfalso.
+    + done.
+  - intros oa ob Ha Hb Heq.
+    destruct (Hc oa Ha) as [Ea|[-> Ea]], (Hc ob Hb) as [Eb|[-> Eb]]; rewrite ?Ea, ?Eb in Heq.
+    + done.
+    + exfalso. apply H3. by rewrite Heq, edual_edual.
+    + exfalso. apply H3. by rewrite <-Heq.
+    + exfalso. apply (edual_ne o2). by symmetry.
 Qed.

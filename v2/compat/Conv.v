@@ -388,11 +388,29 @@ Proof. intros H He. by apply (conv_level κ n T) with Θ. Qed.
 
 (** ** P along ≈ *)
 
-Lemma pren_ok_conv h Σ Σ' p : senv_eqv Σ Σ' → pren_ok h Σ' p → pren_ok h Σ p.
+Lemma pheld_conv Σ Σ' p o : senv_eqv Σ Σ' → pheld Σ p o ↔ pheld Σ' p o.
+Proof. intros H. unfold pheld. by rewrite (senv_eqv_dom _ _ H). Qed.
+
+Lemma dpairs_conv D Σ Σ' : senv_eqv Σ Σ' → dpairs D Σ' → dpairs D Σ.
 Proof.
-  intros H [Hd Hi]. split; [done|]. intros o1 o2 H1 H2. unfold pheld in *.
-  rewrite (senv_eqv_dom _ _ H) in H1, H2. by apply Hi.
+  intros H Hp o Ho. destruct (Hp o Ho) as (S & x & S' & H1 & H2 & Hs).
+  destruct (senv_eqv_lookup_r _ _ _ _ _ H H1) as (S0 & H1' & E1).
+  destruct (senv_eqv_lookup_r _ _ _ _ _ H H2) as (S0' & H2' & E2).
+  exists S0, x, S0'. split_and!; [done|done|]. eapply sdual_conv; [exact Hs|by apply seqv_sym|by apply seqv_sym].
 Qed.
+
+Lemma fuse_ok_conv h D Σ Σ' p : senv_eqv Σ Σ' → fuse_ok h D Σ' p → fuse_ok h D Σ p.
+Proof.
+  intros H (Hd & Hi & Hn & HD & Hp). pose proof (pheld_conv Σ Σ' p) as Hc.
+  split_and!; [done| | |done|].
+  - intros o1 o2 H1 H2. apply Hi; by apply Hc.
+  - intros o1 o2 H1 H2. apply Hn; by apply Hc.
+  - eapply dpairs_conv; [|exact Hp]. apply senv_eqv_kren; [|done].
+    intros o1 o2 v1 v2 H1 H2. apply Hi; left; rewrite <-(senv_eqv_dom _ _ H); by eapply elem_of_dom_2.
+Qed.
+
+Lemma senv_eqv_sdrop D Σ Σ' : senv_eqv Σ Σ' → senv_eqv (sdrop D Σ) (sdrop D Σ').
+Proof. intros H. apply senv_eqv_filter; [by intros|done]. Qed.
 
 Lemma chans_of_conv Σ Σ' : senv_eqv Σ Σ' → chans_of Σ = chans_of Σ'.
 Proof. intros H. unfold chans_of. by rewrite (senv_eqv_dom _ _ H). Qed.
@@ -439,13 +457,15 @@ Section prel.
   Proof.
     induction m as [m IHm] using lt_wf_ind. destruct m as [|n]; [intros; apply Prel_0|].
     refine (Prel_S_ind κ n _ _). intros W Σ T p Hb Σ' HΣ.
-    apply Prel_S_iff. intros W1 HW1 HS1 h Hh.
-    pose proof (pren_ok_conv h Σ Σ' p HΣ Hh) as Hh0.
-    destruct (Hb W1 HW1 HS1 h Hh0) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
-    assert (senv_eqv (kren h Σ) (kren h Σ')) as HΣh by (apply senv_eqv_kren; [by eapply pren_ok_kinj|done]).
+    apply Prel_S_iff. intros W1 HW1 HS1 h D Hh.
+    pose proof (fuse_ok_conv h D Σ Σ' p HΣ Hh) as Hh0.
+    destruct (Hb W1 HW1 HS1 h D Hh0) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
+    assert (senv_eqv (sdrop D (kren h Σ)) (sdrop D (kren h Σ'))) as HΣh
+      by (apply senv_eqv_sdrop, senv_eqv_kren; [by eapply fuse_ok_kinj|done]).
     clear Hb HΣ Hh Hh0.
-    remember (pmap h p) as p0 eqn:Ep. remember (kren h Σ) as Σ0 eqn:EΣ. remember (kren h Σ') as Σ0' eqn:EΣ'.
-    clear Ep EΣ EΣ' p Σ Σ' h. rename p0 into p, Σ0 into Σ, Σ0' into Σ', HΣh into HΣ.
+    remember (pfuse h D p) as p0 eqn:Ep. remember (sdrop D (kren h Σ)) as Σ0 eqn:EΣ.
+    remember (sdrop D (kren h Σ')) as Σ0' eqn:EΣ'.
+    clear Ep EΣ EΣ' p Σ Σ' h D. rename p0 into p, Σ0 into Σ, Σ0' into Σ', HΣh into HΣ.
     assert (∀ c Σa Σb p', senv_eqv Σa Σb →
       at_cost_P (S n) c (Prel κ) (λ W Σ T p, Prel κ (S n) W Σ T p ∧
           (∀ Σ', senv_eqv Σ Σ' → Prel κ (S n) W Σ' T p)) W1 Σa T p' →
