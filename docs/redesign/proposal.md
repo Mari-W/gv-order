@@ -1167,6 +1167,12 @@ first, in stage S2.
   P-Connect proves the clause for the composite. A forward simulation
   breaks at P-Act-Link, whose partner end comes from the term. V and E
   have the lemma as a theorem (`Vrel_rename`, `Erel_rename`).
+- P is Kripke over strict later worlds only (delegated, after S4.15), as
+  the old live relation's `wext` was. With every W1 ⊒ W, Q-Recv can
+  deliver ends at points only a cyclic world orders, each component is
+  ready round the cycle, and P-Connect and Internalize fail (S4.15).
+  V and E keep their quantifiers. `adequacy` and `live_adequacy` gain
+  `strict W`, which `soundness` of A.3 already assumes.
 
 ## 5  Open decisions for the author
 
