@@ -43,6 +43,15 @@ Section own.
     - intros (h & Hh & Ht & <-). exists h. split; [done|]. by apply lookup_kth.
   Qed.
 
+  Lemma lookup_ctrs_None K t o : ctrs K t !! o = None ↔ ¬ ∃ h, K !! o = Some h ∧ h.(h_th) = t.
+  Proof.
+    destruct (ctrs K t !! o) eqn:E.
+    - apply lookup_ctrs in E as (h & ? & ? & _). split; [done|]. intros Hn. exfalso. eauto.
+    - split; [|done]. intros _ (h & Hh & Ht). assert (ctrs K t !! o = Some h.(h_ctr)) as E'.
+      { apply lookup_ctrs. eauto. }
+      congruence.
+  Qed.
+
   Lemma dom_kres {Y : Type} K t (m : gmap cend Y) : dom (kres K t m) = dom m ∩ dom (kth K t).
   Proof.
     apply set_eq. intros o. rewrite elem_of_intersection, !elem_of_dom. split.

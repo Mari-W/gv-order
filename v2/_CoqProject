@@ -83,5 +83,6 @@ soup/Soup.v
 soup/OwnFacts.v
 soup/Sessions.v
 soup/SoupStep.v
+soup/SyncMaps.v
 soup/SoupSync.v
 CheckAll.v
