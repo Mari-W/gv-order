@@ -1154,6 +1154,33 @@ The old development in theories/ stays untouched.
   of the other at cost κ(give) + κ(take), both read off the components'
   clauses at the current level; a link renames or fuses the other side
   by `Prel_fuse`; external steps re-split the interface by channels).
+  Since then (same entry): `Prel_S_ind_fuse` and `Pbody_fuse` (the
+  induction over steps of cost 0 with its predicate closed under
+  fusion, `Φfuse`), `csub_dcomm_all`, `ren_held_id` and `Prel_ren_id`
+  (a renaming that fixes the held ends keeps P), `istep_local` (a step
+  of the composite taken by one side alone is a step of that side),
+  and the section `core` of the step clause. Its context: the clauses
+  of the two components at a strict W1 (fixpoint readers X1, X2 with
+  `X1P`, `X2P`), the lemma at every lower level (`L : ConnL κ j W1 T`),
+  P of every fusion of each component (`HP1`, `HP2`), and the
+  continuations at the same level (`G1` for a continuation of p1 in X1
+  against any p2 in P, `G2` for a continuation of p2 in X2 against any
+  fusion of p1). Proved in `core`: `tau_l1`, `tau_l2` (τ steps of one
+  side, a link of a restricted channel renaming the other side by a map
+  that fixes its held ends), `conn_delete` and `tau_close` (a close
+  across the cut). Open in `core`: a message across the cut (Q-Send of
+  one side, Q-Recv of the other with Θ2 = Σv ∪ Θe, the new cut re-split
+  by the ends of Σ1 ∪ Σ2), a choice across the cut, the links of a cut
+  end (`csub` on the other side: renaming when o2 is an interface end,
+  fusion with D = {ech o2} when o2 is a cut end, `Prel_conv` for the
+  interface type of o2), the links whose removed channel is restricted
+  on the other side (`csub o1 o2 ∘ csub o2 o1 = csub o1 o2`), the
+  contradictions (a side acting externally on an end it does not hold,
+  through `Psteps_sends`), the six external clauses of each side, and
+  the assembly of `Pclauses`. Then the splitting of a fusion of the
+  composite into fusions of the components over a larger cut, and the
+  wrapper. Note: Connect.v compiles in about 3 minutes; set_solver
+  under the big section context is slow, so clear the context first.
   Then the induction: strong induction on the level, inside it
   `Prel_S_ind` on p1 for every p2 and on p2 for every fusion of p1, and
   the clause (fuse) of the composite by splitting a fusion of the
