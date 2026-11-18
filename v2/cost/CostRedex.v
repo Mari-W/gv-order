@@ -6,7 +6,7 @@
     of the typing judgment, which annotates fresh and refilled ends, and
     N ⊒ Nt the refill of FuelE. *)
 
-From GV Require Export cost.CostBind types.Erasure.
+From GV Require Export cost.CostBind types.Erasure types.Duality.
 
 (** ** Maps *)
 
@@ -297,9 +297,14 @@ Proof.
   intros Htk Hr HV. destruct n as [|n]; [apply FuelE_0|].
   eapply FuelE_op; [exact HV|]. intros N' v' Π' φ' HN HV' Hv' α e' Hst.
   destruct (Vfuel_prod_inv _ _ _ _ _ _ _ _ _ _ HV') as (u & w & Π1 & Π2 & φ1 & φ2 & -> & HdΠ & Hdφ & -> & -> & Hu & Hw).
-  destruct (Vfuel_sess_inv _ _ _ _ _ _ _ _ Hu) as (o1 & s1 & f1 & -> & -> & -> & _ & _).
-  destruct (Vfuel_sess_inv _ _ _ _ _ _ _ _ Hw) as (o2 & s2 & f2 & -> & -> & -> & _ & _).
+  destruct (Vfuel_sess_inv _ _ _ _ _ _ _ _ Hu) as (o1 & s1 & f1 & -> & -> & -> & Hs1 & _).
+  destruct (Vfuel_sess_inv _ _ _ _ _ _ _ _ Hw) as (o2 & s2 & f2 & -> & -> & -> & Hs2 & _).
   op_step Hst. inversion Hst; subst. cbn [Fobl]. unfold f_link. split_and!.
+  - exists o1, o2, s1, s2. split_and!; [done| | | |].
+    + intros ->. apply map_disjoint_singleton_l in HdΠ. by rewrite lookup_singleton_eq in HdΠ.
+    + by apply lookup_union_Some_l, lookup_singleton_eq.
+    + apply lookup_union_Some_r; [done|]. by apply lookup_singleton_eq.
+    + eapply sequiv_trans; [exact Hs2|]. apply sequiv_dual, sequiv_sym, Hs1.
   - rewrite dom_union_L, !dom_singleton_L. set_solver.
   - done.
   - assert (∀ {Y} (m : gmap cend Y), dom m = ({[o1]} ∪ {[o2]}) → mrem ({[o1]} ∪ {[o2]}) m = ∅) as Hm.

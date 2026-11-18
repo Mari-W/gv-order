@@ -1194,6 +1194,16 @@ first, in stage S2.
   above u fails for a body that creates a channel at a fresh root and
   blocks on it. V at an arrow gives the body at F = ∅, so `Erel_spawn`
   stays, and P-Term spawns threads at the empty future.
+- F-Link asks the two linked ends to hold dual protocols up to ≈
+  (`plink`, delegated, after S8.3). O-Link compares the ends only up to
+  annotations, so without the clause a credit mismatch at a link breaks
+  the payload credit of a later message in the soup. The clause reads the
+  fuel's protocol environment Π, not the term. E-Link types the ends at
+  S and dual S, so `link_redex` proves it.
+- The soup picks Π per index next to A, with the same ends (delegated,
+  after S8). O-New and F-New choose the session type of a new channel by
+  separate existentials, so Π cannot be read off A. P-Term starts Π at
+  `te_sty <$> Θ`.
 
 ## 5  Open decisions for the author
 
