@@ -277,4 +277,38 @@ Section run.
       + by rewrite act_emap, Ha.
       + simpl. by rewrite Hgo.
   Qed.
+
+  (** ** The measure *)
+
+  Lemma kval_tick (K K' : own) x h m h' :
+    K !! x = Some h → h.(h_ctr) = Some m → 1 ≤ m → K' !! x = Some h' → h'.(h_ctr) = ftick h.(h_ctr) →
+    kval K' x < kval K x.
+  Proof. intros Kh Hm H1 Kh' Hh'. unfold kval. rewrite Kh, Kh', Hh', Hm. simpl. lia. Qed.
+
+  Lemma act_end_of a1 o σ : aend a1 = Some o → offers a1 (LSess σ) → act_end σ = Some o.
+  Proof. destruct a1, σ; simpl; intros [= <-]; try done; intros; destruct_and?; by subst. Qed.
+
+  (** The partner of a pending end is not idle. *)
+  Lemma partner_busy k t e a1 o (A : senv) (Π : penv) U :
+    soup_inv N 1 W ∅ T (ak k) A Π U →
+    (r k).2 !! t = Some e → act e = Some a1 → aend a1 = Some o →
+    ∀ s, owns (s_K (ak k)) (edual o) s → ¬ idle_at (kres (s_K (ak k)) s Π) (edual o).
+  Proof.
+    intros Hs He Ha Ho s (h' & Kh' & Eh'). rewrite <-(ak_q k) in He.
+    pose proof (s_fuel Hs t e He) as HF.
+    destruct (aend_step e a1 o Ha Ho) as (σ & e' & Hst & _).
+    assert (act_end σ = Some o) as Hae.
+    { destruct (act_step _ _ _ Hst) as (a' & Ha' & Hoff). rewrite Ha in Ha'. injection Ha' as <-.
+      exact (act_end_of _ _ _ Ho Hoff). }
+    destruct (fuel_wait _ _ _ _ _ _ HF σ e' o Hst Hae) as [Hni Hdom].
+    rewrite dom_ctrs in Hdom. apply elem_of_dom_kth in Hdom as (h & Kh & Eh).
+    pose proof (s_dom _ _ _ _ _ _ _ _ Hs) as Hd.
+    assert (o ∈ dom Π) as HoΠ by (rewrite Hd; by apply elem_of_dom_2 in Kh).
+    assert (edual o ∈ dom Π) as HoΠ' by (rewrite Hd; by apply elem_of_dom_2 in Kh').
+    apply elem_of_dom in HoΠ as [P HP]. apply elem_of_dom in HoΠ' as [P' HP'].
+    pose proof (s_pdual _ _ _ _ _ _ _ _ Hs o P P' HP HP') as Hpd.
+    intros (S1 & HS1 & Hid). apply lookup_kres in HS1 as [HS1 _]. rewrite HP' in HS1. injection HS1 as <-.
+    apply Hni. exists P. split; [apply lookup_kres; split; [done|eauto]|].
+    by apply (idle_dual P P' Hpd).
+  Qed.
 End run.
