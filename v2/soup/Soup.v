@@ -88,9 +88,9 @@ Definition kmod (f : cend → hold → hold) (K : own) : own := map_imap (λ o h
 
 Definition htick (h : hold) : hold := Hold h.(h_th) h.(h_pt) (ftick h.(h_ctr)).
 
-(** Every entry of the actors i and j ticks. *)
-Definition ktick (i j : nat) (K : own) : own :=
-  kmod (λ _ h, if decide (h.(h_th) = i ∨ h.(h_th) = j) then htick h else h) K.
+(** Every entry of the actors i and j outside the transfer set M ticks. *)
+Definition ktick (i j : nat) (M : gset cend) (K : own) : own :=
+  kmod (λ o h, if decide ((h.(h_th) = i ∨ h.(h_th) = j) ∧ o ∉ M) then htick h else h) K.
 
 (** The ends M move to thread j with one unit less. *)
 Definition khand (M : gset cend) (j : nat) (K : own) : own :=
@@ -119,10 +119,10 @@ Definition own_next (N : nat) (ev : event) (K : own) : own :=
   | EvNewAt i κ o c => knew N i c ((kpt K o)·κ) K
   | EvSpawn i j M => khand M j K
   | EvMsg i j o M =>
-      kact N o i (kpt K o)⁺ (kact N o‾ j (kpt K o‾)⁺ (khand M j (ktick i j K)))
-  | EvClose i j o => ktick i j (delete o (delete o‾ K))
+      kact N o i (kpt K o)⁺ (kact N o‾ j (kpt K o‾)⁺ (khand M j (ktick i j M K)))
+  | EvClose i j o => ktick i j ∅ (delete o (delete o‾ K))
   | EvChoice i j o b =>
-      kact N o i (sel_pt (kpt K o) b) (kact N o‾ j (bra_pt (kpt K o‾) b) (ktick i j K))
+      kact N o i (sel_pt (kpt K o) b) (kact N o‾ j (bra_pt (kpt K o‾) b) (ktick i j ∅ K))
   | EvLink i o1 o2 => kmapr (csub o1 o2) (delete o1 (delete o2 K))
   end.
 

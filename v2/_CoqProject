@@ -82,4 +82,5 @@ soup/State.v
 soup/Soup.v
 soup/OwnFacts.v
 soup/Sessions.v
+soup/SoupStep.v
 CheckAll.v
