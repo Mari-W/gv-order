@@ -104,6 +104,15 @@ aside .placeholder { color: var(--muted); font-size: 0.9rem; }
 .ex pre .com { color: var(--muted); font-style: italic; }
 .ex pre .ty { color: var(--accent); }
 .ex p { margin: 6px 0 0; font-size: 0.9rem; }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 2px; }
+.badge { display: inline-flex; align-items: baseline; gap: 4px; font: 500 0.78rem var(--body); padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); }
+.badge .mark { font-weight: 700; }
+.badge.yes { border-color: var(--accent); background: var(--accent-soft); }
+.badge.yes .mark { color: var(--accent); }
+.badge.no { border-color: var(--hot); background: var(--hot-soft); }
+.badge.no .mark { color: var(--hot); }
+.badge.na { color: var(--muted); }
+.badge .nm { color: var(--muted); }
 .empty-state { color: var(--muted); padding: 30px 0; }
 @media (prefers-reduced-motion: no-preference) { .block, .ex { transition: box-shadow .2s; } }
 </style>
@@ -220,13 +229,25 @@ window.MathJax = {
     if (pinned) markAll(pinned);
   }
 
+  // one badge per judgment: accepted, rejected, or not attempted
+  const JUDG = [['df', '$\\vdash$', 'deadlock free'], ['live', '$\\vdash$ and $\\vdash\\!\\triangleright$', 'live'], ['lf', '$\\Vdash^{N}$', 'lock free']];
+  function badges(acc) {
+    if (!acc) return '';
+    return `<div class="badges">${JUDG.map(([m, sym, name]) => {
+      const a = acc[m]; if (a === undefined) return '';
+      const st = a === true || (a && a.ok) ? 'yes' : a === false || (a && a.ok === false) ? 'no' : 'na';
+      const extra = a && a.N !== undefined ? ` <span class="n">$N = ${esc(a.N)}$</span>` : '';
+      const title = a && a.rocq ? ` title="${esc(a.rocq)}"` : '';
+      return `<span class="badge ${st} ${m}"${title}><span class="mark">${st === 'yes' ? '✓' : st === 'no' ? '✗' : '–'}</span> ${sym} <span class="nm">${name}</span>${extra}</span>`;
+    }).join('')}</div>`;
+  }
   function renderExamples(root) {
     root.insertAdjacentHTML('beforeend', `<p class="intro">Typed programs from v2/examples, each with what it shows and which instance types it.</p>`);
     let shown = 0;
     for (const x of MAP.examples || []) {
       const modes = x.modes && x.modes.length ? x.modes : ['df', 'live', 'lf'];
       if (!modes.includes(mode) || !matches(x.title, x.shows, x.code, x.rocq)) continue;
-      root.insertAdjacentHTML('beforeend', `<article class="ex" id="x-${esc(x.id)}"><h3>${esc(x.title)}${x.rocq ? ` <code>${esc(x.rocq)}</code>` : ''}</h3>${x.code ? `<pre>${hl(x.code)}</pre>` : ''}<p>${prose(x.shows)}</p></article>`);
+      root.insertAdjacentHTML('beforeend', `<article class="ex" id="x-${esc(x.id)}"><h3>${esc(x.title)}${x.rocq ? ` <code>${esc(x.rocq)}</code>` : ''}</h3>${badges(x.accepts)}${x.code ? `<pre>${hl(x.code)}</pre>` : ''}<p>${prose(x.shows)}</p></article>`);
       shown++;
     }
     if (!shown) root.insertAdjacentHTML('beforeend', '<p class="empty-state">No example for this instance matches the filter.</p>');
