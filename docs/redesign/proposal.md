@@ -1220,6 +1220,23 @@ first, in stage S2.
   P-Connect keeps the composite partner-free, because ΣC is cut and
   chans Σ1 ## chans Σ2. This discharges the `pfree` side condition of
   `sem_p_connect` (S4.20, deviation 2) at typed processes.
+- The guard is written as guarded recursion (author, 2026-11-18). It
+  stays a separate judgment `Λ ⊢▷ t` beside typing, with Λ the
+  ▷-marked variables. A box puts its self at ▷, a marked variable
+  cannot be used, and a term that acts ticks the context for what runs
+  after it (▷A becomes A). This is `glive` renamed. Live and lock-free
+  typing ask `∅ ⊢▷ t` in place of `guarded t`, and DF typing does not
+  use it. Rocq changes names and notation only (cleanup stage).
+- The paper states the cut of DF up to annotations and notes that only
+  LF needs the exact cut, which typing gives (author, 2026-11-18).
+- Process results stay `prim` with boxes (author, 2026-11-18). live ⊆ DF
+  stays at box-free results.
+- Recursion that holds an end across a call is rejected by ⊩ even when
+  it terminates. The paper names this and says the system extends with
+  costs that depend on an argument (sized types) or with a points-based
+  reason that nobody waits on the held end. No termination analysis now
+  (author, 2026-11-18). The second option is raised again with the
+  points redesign.
 
 ## 5  Open decisions for the author
 
