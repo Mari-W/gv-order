@@ -356,4 +356,59 @@ Section core.
     - eapply at_cost_down; [apply at_cost_or1, A1|lia].
     - eapply at_cost_down; [apply at_cost_or2, A2|lia].
   Qed.
+  (** A choice across the cut, p2 selecting. *)
+  Lemma tau_choice21 M1 M2 i j o b e e' f f' :
+    M1 ##ₘ M2 → soup M1 = q1.2 → soup M2 = q2.2 →
+    M2 !! i = Some e → M1 !! j = Some f →
+    tstep e (LSess (SSel o b)) e' → tstep f (LSess (SBra (edual o) b)) f' →
+    at_cost_P (S n) (c_give κ + c_take κ) (Prel κ) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T
+      (erase (q1.1 ∪ q2.1 ∪ K, <[j := f']> (<[i := e']> (M1 ∪ M2)))).
+  Proof.
+    intros Hd HM1 HM2 Hi Hj He Hf.
+    pose proof Hc as Hc0. destruct Hc0 as [Hd1 Hd2 Hcut Hf1 Hf2 HfC H12 H1C H2C HCC HC1 HC2].
+    pose proof (cut_dual_chans _ _ Hcut) as HKD.
+    destruct H1 as (_ & _ & (_ & _ & _ & _ & _ & S1c & _)). destruct H2 as (_ & _ & (_ & _ & _ & _ & S2c & _)).
+    assert (ech o ∉ q2.1 → ∃ S0 x S1 S2, (Σ2 ∪ ΣD) !! o = Some (S0, x) ∧ unfoldS S0 = SPlus S1 S2 ∧
+        at_cost_P (S n) (c_give κ) (Prel κ) X2 W1 (<[o := (bsel b S1 S2, sel_pt x b)]> (Σ2 ∪ ΣD)) TUnit
+          (erase (q2.1 ∖ sentc (SSel o b), <[i := e']> M2))) as C2.
+    { intros Hn. eapply (S2c _ _ _ _ _ (Hq2e M2 HM2)). eapply p_act_session; [exact Hi|exact He|simpl; clear -Hn; set_solver]. }
+    assert (ech o ∉ q1.1 → ∃ S0 x S1 S2, (Σ1 ∪ ΣC) !! edual o = Some (S0, x) ∧ unfoldS S0 = SWith S1 S2 ∧
+        at_cost_P (S n) (c_take κ) (Prel κ) X1 W1 (<[edual o := (bsel b S1 S2, bra_pt x b)]> (Σ1 ∪ ΣC)) T
+          (erase (q1.1 ∖ sentc (SBra (edual o) b), <[j := f']> M1))) as C1.
+    { intros Hn. eapply (S1c _ _ _ _ _ (Hq1e M1 HM1)). eapply p_act_session; [exact Hj|exact Hf|simpl; rewrite ech_edual; clear -Hn; set_solver]. }
+    assert (ech o ∉ q1.1) as Hn1.
+    { intros Ho. destruct C2 as (S0 & x & ? & ? & Hl & _); [clear -Ho HCC; set_solver|].
+      apply elem_of_dom_2, elem_of_chans_of in Hl. rewrite chans_of_union, HKD in Hl.
+      clear -Ho Hl HC1. set_solver. }
+    assert (ech o ∉ q2.1) as Hn2.
+    { intros Ho. destruct C1 as (S0 & x & ? & ? & Hl & _); [clear -Ho HCC; set_solver|].
+      apply elem_of_dom_2, elem_of_chans_of in Hl. rewrite chans_of_union, ech_edual in Hl. clear -Ho Hl HC2. set_solver. }
+    destruct C2 as (S0 & x & S1 & S2 & L2 & U2 & A2); [done|].
+    destruct C1 as (S0' & x' & S1' & S2' & L1 & U1 & A1); [done|].
+    assert (ech o ∈ K) as HoK.
+    { destruct (lookup_union_cases _ _ _ _ L1) as [Lc|[_ Lc]]; [|by apply elem_of_dom_2, elem_of_chans_of in Lc; rewrite ech_edual in Lc].
+      exfalso. apply elem_of_dom_2, elem_of_chans_of in Lc. apply elem_of_dom_2, elem_of_chans_of in L2.
+      rewrite ech_edual in Lc. rewrite chans_of_union, HKD in L2. clear -Lc L2 H12 H1C. set_solver. }
+    apply lookup_cut in L1; [|by rewrite ech_edual]. apply lookup_cut2 in L2; [|done].
+    destruct (proj2 Hcut _ _ _ L1) as (S0'' & L2' & Hdu). rewrite edual_edual, L2 in L2'. injection L2' as -> ->.
+    destruct (sdual_with _ _ _ _ Hdu U1) as (T1 & T2 & U2' & D1 & D2). rewrite U2 in U2'. injection U2' as <- <-.
+    assert (edual o ∈ dom ΣC) as HoC' by (by eapply elem_of_dom_2).
+    destruct (conn_update (edual o) (bsel b S1' S2') (bra_pt x' b) (bsel b S1 S2) HoC' (sdual_bsel b _ _ _ _ D1 D2)) as [Hc' HK'].
+    rewrite bra_sel_pt, edual_edual in Hc'.
+    unfold erase in A1, A2. simpl in A1, A2. rewrite difference_empty_L in A1, A2.
+    rewrite insert_union_r in A1 by (apply eq_None_not_Some; intros [? ?]; eapply (disj_lookup Σ1 ΣC); eassumption).
+    rewrite insert_union_r in A2 by (apply eq_None_not_Some; intros [? ?]; eapply (disj_lookup Σ2 ΣD); eassumption).
+    assert (erase (q1.1 ∪ q2.1 ∪ K, <[j := f']> (<[i := e']> (M1 ∪ M2))) =
+      pconn (q1.1, soup (<[j := f']> M1)) (q2.1, soup (<[i := e']> M2)) (chans_of (<[edual o := (bsel b S1' S2', bra_pt x' b)]> ΣC))) as Ee.
+    { assert (M1 !! i = None) as Hi1 by (apply eq_None_not_Some; intros [? ?]; eapply (disj_lookup_n M1 M2); eassumption).
+      assert (M2 !! j = None) as Hj2 by (apply eq_None_not_Some; intros [? ?]; eapply (disj_lookup_n M1 M2); eassumption).
+      unfold erase, pconn. simpl. rewrite HK'. f_equal.
+      rewrite insert_union_r, insert_union_l by (by rewrite ?lookup_insert_ne by (intros ->; congruence)).
+      rewrite soup_union; [done|]. apply map_disjoint_insert_l. split; [by rewrite lookup_insert_ne by (intros ->; congruence)|].
+      apply map_disjoint_insert_r. split; [done|done]. }
+    rewrite Ee. split; [intros Hz; pose proof (c_take_pos κ) as Ht; lia|]. intros _.
+    apply (L (S n - (c_give κ + c_take κ)) ltac:(pose proof (c_take_pos κ) as Ht; lia) Σ1 (<[edual o := (bsel b S1' S2', bra_pt x' b)]> ΣC) Σ2 (<[o := (bsel b S1 S2, sel_pt (x'‾) b)]> ΣD)); [| |exact Hc'].
+    - eapply at_cost_down; [apply at_cost_or1, A1|lia].
+    - eapply at_cost_down; [apply at_cost_or2, A2|lia].
+  Qed.
 End core.

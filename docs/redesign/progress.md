@@ -1189,3 +1189,17 @@ The old development in theories/ stays untouched.
   `Prel_S_ind` on p1 for every p2 and on p2 for every fusion of p1, and
   the clause (fuse) of the composite by splitting a fusion of the
   composite into fusions of the components over a larger cut.
+- S4.21. A choice across the cut with p2 selecting (`tau_choice21`,
+  compat/ConnectSteps.v). A message across the cut in both directions
+  (`tau_msg12`, `tau_msg21`, compat/ConnectCross.v). The receiver takes
+  Θ2 = Σv ∪ Θe, the ends the sender moves. Afterwards the sender holds
+  E1, the receiver E2, and the cut is re-split by the interface Σ1 ∪ Σ2
+  (`fin`, `fout`, compat/ConnectSplit.v). `conn_filter` gives the side
+  conditions of P-Connect for that split from conditions on E1, E2 and
+  Σ alone, and the classes of an end under a cut (`cls_1`, `cls_C`,
+  `cls_2`, `cls_D`, `cls_c1`, `cls_c2`) discharge them. The environment
+  lemmas of a message (`msg_recv_ok`, `msg_conn`, `msg_iface`,
+  `msg_chans`, compat/ConnectMsg.v) read environments and channel sets
+  only, so p2 sending uses them through `conn_sym`. A message whose
+  give and take cost more than the level lands at level 0, where P
+  holds. No deviation.
