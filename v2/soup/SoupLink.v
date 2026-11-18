@@ -178,5 +178,6 @@ Section link.
           pose proof (s_pdual _ _ _ _ _ _ _ _ Hs o1 Pa R1 HB1 H5) as Hd1.
           pose proof (s_pdual _ _ _ _ _ _ _ _ Hs o2 Pb R2 HB2 H6) as Hd2.
           exact (pdual_link Pa Pb R1 R2 Hpab Hd1 Hd2).
+    - apply kfin_kmapr. unfold kdel2. apply kfin_delete, kfin_delete. exact (sp_fin _ _ _ _ _ _ _ _ Hs).
   Qed.
 End link.

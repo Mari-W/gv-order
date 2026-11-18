@@ -24,6 +24,9 @@ Definition ctrs (K : own) (t : nat) : cenv := h_ctr <$> kth K t.
 Definition kres {Y : Type} (K : own) (t : nat) (m : gmap cend Y) : gmap cend Y :=
   filter (λ kv : cend * Y, kv.1 ∈ dom (kth K t)) m.
 
+(** Every counter is finite. *)
+Definition kfin (K : own) : Prop := ∀ o h, K !! o = Some h → is_Some h.(h_ctr).
+
 (** ** The clauses of the soup at one index
 
     [Erl Θ U e] is the relation of a thread at its environment and result
@@ -45,5 +48,6 @@ Record soup_gen (Erl : senv → ty → expr → Prop) (Frl : penv → cenv → n
     ech o ∈ (s_q a).1 → x' = x‾ ∧ sequiv (sty_df S') (sty_df (dual S));
   sp_pdual o P P' : Π !! o = Some P → Π !! edual o = Some P' → ech o ∈ (s_q a).1 →
     sequiv P' (dual P);
-  sp_sig o y : Σ !! o = Some y → A !! o = Some y
+  sp_sig o y : Σ !! o = Some y → A !! o = Some y;
+  sp_fin o h : s_K a !! o = Some h → is_Some h.(h_ctr)
 }.

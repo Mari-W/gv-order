@@ -17,7 +17,7 @@
     ends of A and Π are those of K, the two ends of an internal channel
     are both held, at dual points, at dual session types up to
     annotations in A, and at dual protocols up to ≈ in Π. An end of the
-    interface Σ is held at its entry of Σ. The soup reads no term but
+    interface Σ is held at its entry of Σ. Every counter is finite. The soup reads no term but
     through E[live] and FuelE.
 
     Π is chosen per index next to A and is not read off A. The fuel layer

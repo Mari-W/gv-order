@@ -152,3 +152,42 @@ Proof.
   destruct (proj1 (elem_of_dom m o2) (Hd _ H2)) as [w2 Hw2].
   exact (H o1 o2 w1 w2 Hw1 Hw2).
 Qed.
+
+(** ** Finite counters *)
+
+Lemma ftick_some f : is_Some f → is_Some (ftick f).
+Proof. intros [m ->]. unfold ftick. simpl. by eexists. Qed.
+
+Lemma kfin_insert K o h : is_Some h.(h_ctr) → kfin K → kfin (<[o := h]> K).
+Proof. intros Hh HK o' h' Ho'. apply lookup_insert_Some in Ho' as [[<- <-]|[_ Ho']]; [done|by apply (HK o')]. Qed.
+
+Lemma kfin_delete K o : kfin K → kfin (delete o K).
+Proof. intros HK o' h' Ho'. apply lookup_delete_Some in Ho' as [_ Ho']. by apply (HK o'). Qed.
+
+Lemma kfin_kmod f K : (∀ o h, is_Some h.(h_ctr) → is_Some (f o h).(h_ctr)) → kfin K → kfin (kmod f K).
+Proof.
+  intros Hf HK o h Ho. rewrite lookup_kmod in Ho. apply fmap_Some in Ho as (h0 & Ho & ->).
+  apply Hf. by apply (HK o).
+Qed.
+
+Lemma kfin_kmapr g K : kfin K → kfin (kmapr g K).
+Proof. intros HK o' h Ho'. apply kmapr_lookup_inv in Ho' as (o & -> & Ho). by apply (HK o). Qed.
+
+Lemma kfin_ktick i j M K : kfin K → kfin (ktick i j M K).
+Proof.
+  apply kfin_kmod. intros o h Hh. case_decide; [|done]. unfold htick. simpl. by apply ftick_some.
+Qed.
+
+Lemma kfin_khand M j K : kfin K → kfin (khand M j K).
+Proof.
+  apply kfin_kmod. intros o h Hh. case_decide; [|done]. simpl. by apply ftick_some.
+Qed.
+
+Lemma kfin_ksync N i j o y y' M K : kfin K → kfin (ksync N i j o y y' M K).
+Proof.
+  intros HK. unfold ksync, kact. apply kfin_insert; [by eexists|]. apply kfin_insert; [by eexists|].
+  by apply kfin_khand, kfin_ktick.
+Qed.
+
+Lemma kfin_knew N i c x K : kfin K → kfin (knew N i c x K).
+Proof. intros HK. unfold knew. apply kfin_insert; [by eexists|]. apply kfin_insert; [by eexists|done]. Qed.

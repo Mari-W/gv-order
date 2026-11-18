@@ -299,6 +299,7 @@ Section step.
     - apply (sp_sdual _ _ _ _ _ _ _ _ Hs).
     - apply (sp_pdual _ _ _ _ _ _ _ _ Hs).
     - apply (sp_sig _ _ _ _ _ _ _ _ Hs).
+    - apply (sp_fin _ _ _ _ _ _ _ _ Hs).
   Qed.
 
   (** P-Act-Beta. *)
@@ -324,9 +325,10 @@ Section step.
     (∀ o, o ∈ dom K' → edual o ∈ dom K') →
     (∀ o S x S' x', A' !! o = Some (S, x) → A' !! edual o = Some (S', x') → x' = pt_dual x ∧ sdual S S') →
     (∀ o P P', Π' !! o = Some P → Π' !! edual o = Some P' → sequiv P' (dual P)) →
+    kfin K' →
     soup_inv N n W ∅ T (LFState (C', Mq') K' tk') A' Π' U'.
   Proof.
-    intros Ht Hp Hd Ho Hc Hpr Hsd Hpd. unfold soup_inv. constructor; simpl.
+    intros Ht Hp Hd Ho Hc Hpr Hsd Hpd Hfin. unfold soup_inv. constructor; simpl.
     - apply (sp_prim _ _ _ _ _ _ _ _ Hs).
     - intros t e He. apply (Ht t e He).
     - intros t e He. apply (Ht t e He).
@@ -339,6 +341,7 @@ Section step.
     - intros o S x S' x' H1 H2 _. by apply (Hsd o S x S' x').
     - intros o P P' H1 H2 _. by apply (Hpd o P P').
     - intros o y Hy. by rewrite lookup_empty in Hy.
+    - exact Hfin.
   Qed.
 
   Lemma s_notin_K c : c ∉ C → EPos c ∉ dom K ∧ ENeg c ∉ dom K.
@@ -412,6 +415,7 @@ Section step.
           simplify_eq. apply sequiv_refl.
         * rewrite lookup_insert_eq in H4. rewrite lookup_insert_ne, lookup_insert_eq in H3 by discriminate.
           simplify_eq. rewrite dual_involutive. apply sequiv_refl.
+    - apply kfin_insert; [by eexists|]. apply kfin_insert; [by eexists|]. exact (sp_fin _ _ _ _ _ _ _ _ Hs).
   Qed.
   Lemma s_cfresh i c : c ∉ C → cfresh c (kres K i A).
   Proof.
@@ -521,5 +525,6 @@ Section step.
     - intros o Ho. unfold khand in *. rewrite dom_kmod in Ho |- *. exact (s_pair _ _ _ _ _ _ _ _ Hs o Ho).
     - exact (s_sdual _ _ _ _ _ _ _ _ Hs).
     - exact (s_pdual _ _ _ _ _ _ _ _ Hs).
+    - apply kfin_khand. exact (sp_fin _ _ _ _ _ _ _ _ Hs).
   Qed.
 End step.
