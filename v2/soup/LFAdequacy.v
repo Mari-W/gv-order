@@ -1,0 +1,185 @@
+(** * Adequacy of the lock-free judgment (stage S8, proposal §2.13, A.3)
+
+      lf_adequacy        : lfworld W → ∅ ⊪_W p : T → lock_free p
+      lf_thread_progress : lfworld W → ∅ ⊪_W p : T →
+                           every weakly fair maximal run makes every thread progress
+
+    The proof instantiates [lf_run_criterion] along one weakly fair maximal
+    run r, with the soup at every position and every index at the state
+    the run computes ([lf_run_state]).
+
+    - The dependency [wt k t s]: t is pending on an end o and s owns the
+      partner of o in the ownership K_k. Ownership is fixed outside the
+      index, so the holder is unique.
+    - Local progress: the holder of the partner is enabled, or acts on
+      the partner (then the two redexes fit and t is enabled), or waits on
+      an end below the end of t (readiness). By well-founded induction on
+      the point, ordered by ≺_W.
+    - The rank of t is the point of its end in K_k. A thread that does not
+      step keeps it, a link renames the end and keeps the point.
+    - The measure of t is the pair of the tickets left and the counter of
+      the partner end in K_k, ordered lexicographically. A link spends a
+      ticket. Every other step of the holder on another end ticks the
+      counter, which F-Tick keeps at 1 or more because the partner is not
+      idle (F-Wait of t and [idle_dual]), and a hand-over passes it on
+      with one unit less. Every other step keeps it.
+    - No τ-divergence comes from the soup ([soup_no_tau_divergence]), and
+      restricted links from the live relation of each thread. *)
+
+From stdpp Require Import relations.
+From GV Require Export soup.LFEvents.
+
+Lemma compat_enabled' q t s e es a1 a2 :
+  t ≠ s → q.2 !! t = Some e → q.2 !! s = Some es → act e = Some a1 → act es = Some a2 → compat a1 a2 →
+  (∀ o, a1 = AClose o → ech o ∈ q.1) → tenabled q t.
+Proof. destruct q as [C M]. apply compat_enabled. Qed.
+
+(** ** The measure *)
+
+Definition kval (K : own) (o : cend) : nat :=
+  match K !! o with Some h => default 0 h.(h_ctr) | None => 0 end.
+
+Definition ksum (tk : nat → nat) (q : config) : nat := sum_list_with tk (elements (dom q.2)).
+
+Section run.
+  #[local] Set Default Proof Using "All".
+  Context (N : nat) (W : world) (HW : lfworld W) (T : ty) (a0 : lfstate).
+  Context (Hs0 : ∀ n, a0 ∈ S^{N,W} _ n⟦∅ ⊢ T⟧).
+  Context (r : nat → config) (l : nat → option event).
+  Context (Hr0 : s_q a0 = r 0) (Hmax : maximal r l).
+
+  Local Abbreviation ak k := (lf_run_state N a0 r l k).
+
+  Lemma HWs : types.Worlds.strict W.
+  Proof. exact (proj1 HW). Qed.
+
+  Lemma ak_q k : s_q (ak k) = r k.
+  Proof. by apply lf_run_state_q. Qed.
+
+  Lemma ak_inv k n : ∃ A Π U, soup_inv N n W ∅ T (ak k) A Π U.
+  Proof. exact (lfsoup_run N W T a0 r l Hmax Hr0 Hs0 k n). Qed.
+
+  Definition wt (k t s : nat) : Prop :=
+    pend (r k) t ∧ ∃ o, rend (r k) t = Some o ∧ owns (s_K (ak k)) (edual o) s.
+
+  Definition fu (k t : nat) : nat * nat :=
+    (ksum (s_tk (ak k)) (r k),
+     match rend (r k) t with Some o => kval (s_K (ak k)) (edual o) | None => 0 end).
+
+  Definition we (k t : nat) : point :=
+    match rend (r k) t with Some o => kpt (s_K (ak k)) o | None => pvar 0 end.
+
+  (** A pending thread is a link or acts on one end. *)
+  Lemma pend_cases q t : pend q t →
+    ∃ e a1, q.2 !! t = Some e ∧ act e = Some a1 ∧
+      ((∃ o1 o2, a1 = ALink o1 o2) ∨ ∃ o, aend a1 = Some o ∧ rend q t = Some o).
+  Proof.
+    intros (e & a1 & He & Ha & Hs). exists e, a1. split_and!; [done|done|].
+    destruct a1; simpl in Hs; try (by destruct Hs); eauto.
+    all: right; eexists; split; [done|]; unfold rend; by rewrite He; simpl; rewrite Ha.
+  Qed.
+
+  Lemma npend_end q t : npend q t → ∃ e a1 o, q.2 !! t = Some e ∧ act e = Some a1 ∧ aend a1 = Some o ∧ rend q t = Some o.
+  Proof.
+    intros [Hp Hna]. destruct (pend_cases q t Hp) as (e & a1 & He & Ha & [(o1 & o2 & ->)|(o & Ho & Hr)]).
+    - exfalso. apply Hna. by exists e, (ALink o1 o2).
+    - eauto 10.
+  Qed.
+
+  (** ** Restricted links and no τ-divergence *)
+
+  Lemma lf_links_restricted : links_restricted (erase (r 0)).
+  Proof.
+    intros q E e o1 o2 Hq HE Ha. rewrite <-Hr0 in Hq. destruct (pred_star_lift _ _ Hq) as (q' & Hq' & <-).
+    destruct (lfsoup_isteps N W T a0 q' Hs0 Hq') as (a' & <- & Hs').
+    destruct (Hs' 1) as (A & Π & U & Hs). simpl in HE.
+    assert (e ∈ soup (s_q a').2) as Hin by (rewrite HE; multiset_solver).
+    apply elem_of_soup in Hin as [t Ht]. exact (s_link _ _ _ _ _ _ _ _ Hs HWs t e o1 o2 Ht Ha).
+  Qed.
+
+  Lemma lf_no_tau : no_tau_divergence (erase (r 0)).
+  Proof. rewrite <-Hr0. exact (soup_no_tau_divergence N W T a0 Hs0). Qed.
+
+  (** ** Local progress *)
+
+  Lemma lp_end k : ∀ x t e a1 o, (r k).2 !! t = Some e → act e = Some a1 → aend a1 = Some o →
+    kpt (s_K (ak k)) o = x → ∃ s, rtc (wt k) t s ∧ tenabled (r k) s.
+  Proof.
+    destruct (ak_inv k 1) as (A & Π & U & Hs). pose proof (ak_q k) as Hq.
+    intros x. induction x as [x IH] using (well_founded_ind (proj2 HW)).
+    intros t e a1 o He Ha Ho Hx. rewrite <-Hq in He.
+    destruct (s_partner _ _ _ _ _ _ _ _ Hs HWs t e a1 o He Ha Ho) as (s & es & h' & Kh' & Eh' & Hes & Hst).
+    assert (Hwt : wt k t s).
+    { split; [rewrite <-Hq; exists e, a1; split_and!; [done|done|by apply aend_sess in Ho as [? _]]|].
+      exists o. split; [rewrite <-Hq; unfold rend; by rewrite He; simpl; rewrite Ha|by exists h']. }
+    destruct (s_holder_act _ _ _ _ _ _ _ _ Hs HWs s es (edual o) h' Kh' Eh' Hes) as [a2 Ha2].
+    destruct (action_cases a2) as [Had|(o2 & Ho2)].
+    - exists s. split; [by apply rtc_once|]. rewrite <-Hq.
+      apply (admin_enabled _ s es a2 Hes Ha2 Had). intros o1 o3 ->.
+      exact (s_link _ _ _ _ _ _ _ _ Hs HWs s es o1 o3 Hes Ha2).
+    - destruct (decide (o2 = edual o)) as [->|Hne].
+      + exists t. split; [done|]. rewrite <-Hq.
+        apply (compat_enabled' _ t s e es a1 a2); try done.
+        * exact (s_compat _ _ _ _ _ _ _ _ Hs HWs t e a1 o s es a2 He Ha Ho Hes Ha2 Ho2).
+        * intros o' ->. simpl in Ho. injection Ho as ->.
+          destruct (s_held_end _ _ _ _ _ _ _ _ Hs HWs t e _ o He Ha eq_refl) as (S0 & x0 & Hx0 & _).
+          destruct (owns_of _ _ _ _ _ Hx0) as (h & Kh & _).
+          exact (s_closed _ _ _ _ _ _ _ _ Hs o (elem_of_dom_2 _ _ _ Kh)).
+      + pose proof (s_rank _ _ _ _ _ _ _ _ Hs HWs t e a1 o s es a2 o2 He Ha Ho (ex_intro _ h' (conj Kh' Eh'))
+          Hes Ha2 Ho2 Hne) as Hlt.
+        rewrite Hq in Hes. destruct (IH (kpt (s_K (ak k)) o2) ltac:(by rewrite <-Hx) s es a2 o2 Hes Ha2 Ho2 eq_refl)
+          as (s' & Hch & Hen).
+        exists s'. split; [by eapply rtc_l|done].
+  Qed.
+
+  Lemma lf_local_progress k t : pend (r k) t → ∃ s, rtc (wt k) t s ∧ tenabled (r k) s.
+  Proof.
+    intros Hp. destruct (pend_cases _ _ Hp) as (e & a1 & He & Ha & [(o1 & o2 & ->)|(o & Ho & _)]).
+    - exists t. split; [done|]. destruct (ak_inv k 1) as (A & Π & U & Hs). pose proof (ak_q k) as Hq.
+      apply (admin_enabled _ t e _ He Ha I). intros p1 p2 [= <- <-]. rewrite <-Hq in He |- *.
+      exact (s_link _ _ _ _ _ _ _ _ Hs HWs t e o1 o2 He Ha).
+    - exact (lp_end k _ t e a1 o He Ha Ho eq_refl).
+  Qed.
+
+  (** ** The dependency *)
+
+  Lemma wt_pend k t s : wt k t s → pend (r k) t.
+  Proof. by intros [? _]. Qed.
+
+  Lemma wt_holder k t s : wt k t s → ∃ es, (r k).2 !! s = Some es.
+  Proof.
+    intros (_ & o & _ & h & Kh & <-). destruct (ak_inv k 0) as (A & Π & U & Hs).
+    rewrite <-(ak_q k). exact (sp_owner _ _ _ _ _ _ _ _ Hs _ _ Kh).
+  Qed.
+
+  Lemma wt_uniq k t s s' : npend (r k) t → wt k t s → wt k t s' → s = s'.
+  Proof.
+    intros _ (_ & o & Ho & H1) (_ & o' & Ho' & H2). rewrite Ho in Ho'. injection Ho' as <-.
+    exact (owns_unique _ _ _ _ H1 H2).
+  Qed.
+
+  (** ** The rank *)
+
+  Lemma lf_rank k t s : npend (r k) t → wt k t s → npend (r k) s →
+    tenabled (r k) t ∨ W ⊢ we k s ≺ we k t.
+  Proof.
+    intros Hpt (_ & o & Ho & Hown) Hps.
+    destruct (npend_end _ _ Hpt) as (e & a1 & o' & He & Ha & Ho1 & Hr). rewrite Ho in Hr. injection Hr as <-.
+    destruct (npend_end _ _ Hps) as (es & a2 & o2 & Hes & Ha2 & Ho2 & Hr2).
+    destruct (ak_inv k 1) as (A & Π & U & Hs). pose proof (ak_q k) as Hq.
+    unfold we. rewrite Ho, Hr2.
+    rewrite <-Hq in He, Hes.
+    destruct (decide (o2 = edual o)) as [->|Hne].
+    - left. rewrite <-Hq.
+      assert (t ≠ s) as Hts.
+      { intros <-. rewrite He in Hes. injection Hes as <-. rewrite Ha in Ha2. injection Ha2 as <-.
+        rewrite Ho1 in Ho2. injection Ho2 as Hx. by apply (edual_ne o). }
+      apply (compat_enabled' _ t s e es a1 a2); try done.
+      + exact (s_compat _ _ _ _ _ _ _ _ Hs HWs t e a1 o s es a2 He Ha Ho1 Hes Ha2 Ho2).
+      + intros o' ->. simpl in Ho1. injection Ho1 as ->.
+        destruct (s_held_end _ _ _ _ _ _ _ _ Hs HWs t e _ o He Ha eq_refl) as (S0 & x0 & Hx0 & _).
+        destruct (owns_of _ _ _ _ _ Hx0) as (h & Kh & _).
+        exact (s_closed _ _ _ _ _ _ _ _ Hs o (elem_of_dom_2 _ _ _ Kh)).
+    - right. exact (s_rank _ _ _ _ _ _ _ _ Hs HWs t e a1 o s es a2 o2 He Ha Ho1 Hown Hes Ha2 Ho2 Hne).
+  Qed.
+End run.

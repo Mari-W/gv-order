@@ -91,4 +91,5 @@ soup/SoupRun.v
 soup/SoupTau.v
 soup/LFLocal.v
 soup/LFEvents.v
+soup/LFAdequacy.v
 CheckAll.v
