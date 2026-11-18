@@ -112,3 +112,130 @@ Proof.
   - by destruct (Hall α x' Hst Hα).
   - by apply (proj2 (Hall _ x' Hst I) M v).
 Qed.
+
+(** ** The multiset extension *)
+
+Lemma ms_cancel (M M0 : gmultiset expr) x : M ⊎ {[+ x +]} = M0 ⊎ {[+ x +]} → M0 = M.
+Proof. multiset_solver. Qed.
+Lemma ms_in (M M0 : gmultiset expr) x z : z ≠ x → M ⊎ {[+ x +]} = M0 ⊎ {[+ z +]} → z ∈ M.
+Proof. multiset_solver. Qed.
+Lemma ms_rest (M M0 : gmultiset expr) x z :
+  M ⊎ {[+ x +]} = M0 ⊎ {[+ z +]} → z ≠ x → z ∈ M → M0 = (M ∖ {[+ z +]}) ⊎ {[+ x +]}.
+Proof. multiset_solver. Qed.
+Lemma ms_swap (M Y : gmultiset expr) x : M ⊎ {[+ x +]} ⊎ Y = (M ⊎ Y) ⊎ {[+ x +]}.
+Proof. multiset_solver. Qed.
+Lemma ms_swap' (M Y : gmultiset expr) y : M ⊎ ({[+ y +]} ⊎ Y) = (M ⊎ Y) ⊎ {[+ y +]}.
+Proof. multiset_solver. Qed.
+Lemma ms_split (M : gmultiset expr) z : z ∈ M → M = M ∖ {[+ z +]} ⊎ {[+ z +]}.
+Proof. multiset_solver. Qed.
+Lemma ms_empty (M0 : gmultiset expr) x : (∅ : gmultiset expr) = M0 ⊎ {[+ x +]} → False.
+Proof. multiset_solver. Qed.
+Lemma ms_in_l (Y : gmultiset expr) y : y ∈ {[+ y +]} ⊎ Y.
+Proof. multiset_solver. Qed.
+Lemma ms_in_r (Y : gmultiset expr) y z : z ∈ Y → z ∈ {[+ y +]} ⊎ Y.
+Proof. multiset_solver. Qed.
+
+Section mstep.
+  Context (R : expr → expr → Prop).
+
+  (** One element x is replaced by finitely many smaller ones. *)
+  Definition mstep (M' M : gmultiset expr) : Prop :=
+    ∃ x Y M0, M = M0 ⊎ {[+ x +]} ∧ M' = M0 ⊎ Y ∧ ∀ y, y ∈ Y → R y x.
+
+  Lemma mstep_union_acc (M Y : gmultiset expr) x :
+    (∀ x', R x' x → ∀ M, Acc mstep M → Acc mstep (M ⊎ {[+ x' +]})) →
+    (∀ y, y ∈ Y → R y x) → Acc mstep M → Acc mstep (M ⊎ Y).
+  Proof.
+    intros IH HY HM. induction Y as [|y Y IHY] using gmultiset_ind.
+    - by rewrite (right_id_L ∅ (⊎)).
+    - rewrite ms_swap'. apply (IH y); [apply HY, ms_in_l|]. apply IHY. intros z Hz. by apply HY, ms_in_r.
+  Qed.
+
+  Lemma mstep_acc_add x : Acc R x → ∀ M, Acc mstep M → Acc mstep (M ⊎ {[+ x +]}).
+  Proof.
+    induction 1 as [x _ IHx]. intros M HM. induction HM as [M HMacc IHM].
+    constructor. intros N' (z & Y & M0 & Heq & -> & HY).
+    destruct (decide (z = x)) as [->|Hne].
+    - rewrite (ms_cancel M M0 x Heq).
+      apply (mstep_union_acc M Y x); [exact IHx|exact HY|]. constructor. exact HMacc.
+    - pose proof (ms_in M M0 x z Hne Heq) as Hz.
+      rewrite (ms_rest M M0 x z Heq Hne Hz), ms_swap.
+      apply IHM. exists z, Y, (M ∖ {[+ z +]}). split_and!; [by apply ms_split|done|done].
+  Qed.
+
+  Lemma mstep_acc M : (∀ x, x ∈ M → Acc R x) → Acc mstep M.
+  Proof.
+    induction M as [|x M IH] using gmultiset_ind; intros H.
+    - constructor. intros N' (z & Y & M0 & Heq & _). exfalso. by apply (ms_empty M0 z).
+    - rewrite (comm_L (⊎)). apply mstep_acc_add; [apply H, ms_in_l|].
+      apply IH. intros y Hy. by apply H, ms_in_r.
+  Qed.
+End mstep.
+
+(** ** The τ steps of a soup *)
+
+Definition cmset (E : gmultiset expr) : gmultiset expr := gmultiset_map cerase E.
+
+Lemma cmset_union E1 E2 : cmset (E1 ⊎ E2) = cmset E1 ⊎ cmset E2.
+Proof. apply gmultiset_map_disj_union. Qed.
+Lemma cmset_singleton e : cmset {[+ e +]} = {[+ cerase e +]}.
+Proof. apply gmultiset_map_singleton. Qed.
+
+Lemma cmset_emapE g E : cmset (emapE g E) = cmset E.
+Proof.
+  induction E as [|e E IH] using gmultiset_ind.
+  - unfold emapE. by rewrite gmultiset_map_empty.
+  - by rewrite emapE_disj_union, emapE_singleton, !cmset_union, IH, !cmset_singleton, cerase_emap.
+Qed.
+
+(** A τ step of a soup is a step of the multiset of its erased threads. *)
+Lemma padmin_mstep p p' : padmin p p' → mstep tRs (cmset p'.2) (cmset p.2).
+Proof.
+  intros (q & ev & q' & <- & Hst & <- & Had).
+  destruct Hst as [C M i e e' Hi Hs|C M i e ℓ c e' Hi Hs|C M i e κ o c e' Hi Hs|C M i j e Mv v e' Hi Hs Hj
+    | | | |C M i e o1 o2 e' Hi Hs HC|]; simpl in Had; try contradiction; unfold erase; cbn [fst snd].
+  - rewrite (soup_update M i e e' Hi), (soup_delete M i e Hi), !cmset_union, !cmset_singleton.
+    exists (cerase e), {[+ cerase e' +]}, (cmset (soup (delete i M))). split_and!; [done|done|].
+    intros y Hy. apply gmultiset_elem_of_singleton in Hy as ->. left. by eapply tR_step; [|exact Hs].
+  - rewrite (soup_update M i e e' Hi), (soup_delete M i e Hi), !cmset_union, !cmset_singleton.
+    exists (cerase e), {[+ cerase e' +]}, (cmset (soup (delete i M))). split_and!; [done|done|].
+    intros y Hy. apply gmultiset_elem_of_singleton in Hy as ->. left. by eapply tR_step; [|exact Hs].
+  - rewrite (soup_update M i e e' Hi), (soup_delete M i e Hi), !cmset_union, !cmset_singleton.
+    exists (cerase e), {[+ cerase e' +]}, (cmset (soup (delete i M))). split_and!; [done|done|].
+    intros y Hy. apply gmultiset_elem_of_singleton in Hy as ->. left. by eapply tR_step; [|exact Hs].
+  - assert (i ≠ j) by (intros ->; congruence).
+    rewrite soup_insert by (rewrite lookup_insert_ne; done).
+    rewrite (soup_update M i e e' Hi), (soup_delete M i e Hi), !cmset_union, !cmset_singleton.
+    exists (cerase e), ({[+ cerase e' +]} ⊎ {[+ cerase (App v EUnit) +]}), (cmset (soup (delete i M))).
+    split_and!; [done|by rewrite (assoc_L (⊎))|]. intros y Hy.
+    apply gmultiset_elem_of_disj_union in Hy as [Hy|Hy]; apply gmultiset_elem_of_singleton in Hy as ->.
+    + left. by eapply tR_step; [|exact Hs].
+    + right. destruct (tstep_cerase _ _ _ Hs) as (x' & Hx & _). simpl in Hx.
+      exists (set_map (λ _, EPos "") Mv), (cerase v), x'. split; [done|]. unfold cerase. simpl. by rewrite emap_emap.
+  - rewrite soup_fmap. change (gmultiset_map (emap (csub o1 o2)) (soup (<[i:=e']> M))) with
+      (emapE (csub o1 o2) (soup (<[i:=e']> M))). rewrite cmset_emapE.
+    rewrite (soup_update M i e e' Hi), (soup_delete M i e Hi), !cmset_union, !cmset_singleton.
+    exists (cerase e), {[+ cerase e' +]}, (cmset (soup (delete i M))). split_and!; [done|done|].
+    intros y Hy. apply gmultiset_elem_of_singleton in Hy as ->. left. by eapply tR_step; [|exact Hs].
+Qed.
+
+Lemma padmin_acc (ME : gmultiset expr) :
+  Acc (mstep tRs) ME → ∀ p, cmset p.2 = ME → Acc (λ y x, padmin x y) p.
+Proof.
+  induction 1 as [ME _ IH]. intros p <-. constructor. intros p' Hpa.
+  apply (IH (cmset p'.2)); [by apply padmin_mstep|done].
+Qed.
+
+(** ** No τ-divergence *)
+
+Theorem soup_no_tau_divergence N W T a :
+  (∀ n, a ∈ S^{N,W} _ n⟦∅ ⊢ T⟧) → no_tau_divergence (erase (s_q a)).
+Proof.
+  intros Hs p Hp. destruct (pred_star_lift _ _ Hp) as (q' & Hq' & <-).
+  destruct (lfsoup_isteps N W T a q' Hs Hq') as (a' & <- & Hs').
+  apply (padmin_acc (cmset (soup (s_q a').2))); [|done].
+  apply mstep_acc. intros x Hx. unfold cmset in Hx. apply elem_of_gmultiset_map in Hx as (e & -> & He).
+  apply elem_of_soup in He as [t Ht].
+  destruct (Hs' 1) as (A & Π & U & Hsi).
+  exact (Erel_tacc 0 W _ _ _ e (s_rel Hsi t e Ht)).
+Qed.
