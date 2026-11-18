@@ -237,7 +237,7 @@ window.MathJax = {
     return `<div class="badges">${JUDG.map(([m, sym, name]) => {
       const a = acc[m]; if (a === undefined) return '';
       const st = a === true || (a && a.ok) ? 'yes' : a === false || (a && a.ok === false) ? 'no' : 'na';
-      const extra = a && a.N !== undefined ? ` <span class="n">$N = ${esc(a.N)}$</span>` : '';
+      const extra = (a && a.N !== undefined ? ` <span class="n">${a.N === 'every' ? 'every $N$' : `$N = ${esc(a.N)}$`}</span>` : '') + (a && a.part ? ` <span class="nm">(${esc(a.part)})</span>` : '');
       const title = a && a.rocq ? ` title="${esc(a.rocq)}"` : '';
       return `<span class="badge ${st} ${m}"${title}><span class="mark">${st === 'yes' ? '✓' : st === 'no' ? '✗' : '–'}</span> ${sym} <span class="nm">${name}</span>${extra}</span>`;
     }).join('')}</div>`;
