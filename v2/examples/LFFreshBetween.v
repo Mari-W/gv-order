@@ -142,8 +142,8 @@ Proof.
   Unshelve. all: first [tok_tac | exact None | simpl; done].
 Qed.
 
-Lemma fb_guarded : guarded fb_main.
-Proof. unfold guarded, fb_main, fb_box, let_new. guard_tac. Qed.
+Lemma fb_guarded : ∅ ⊢▷ fb_main.
+Proof. unfold fb_main, fb_box, let_new. guard_tac. Qed.
 
 Theorem fb_lftyped : ∃ N, ∅ ⊩^N _ W_fb (∅, {[+ fb_main +]}) : TUnit.
 Proof.

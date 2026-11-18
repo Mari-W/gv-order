@@ -183,7 +183,6 @@ Section judgments.
   (** names of A.2 and A.3 without notation, as plain identifiers *)
   Definition lfworld (W : A) : Prop := True.
   Definition strict (W : A) : Prop := True.
-  Definition guarded (t : A) : Prop := True.
   Definition prim (T : A) : Prop := True.
   Definition deadlock_free (p : A) : Prop := True.
   Definition no_tau_divergence (p : A) : Prop := True.

@@ -100,8 +100,10 @@ Section wrapper.
       apply (HΦ h' D' Hh' eq_refl Σ1' ΣC' Σ2' ΣD' _ EΣ); [|done].
       rewrite <-EΣ1. apply Pbody_fuse; [done|]. rewrite <-EE1. apply Pbody_fuse; [done|].
       by eapply Pbody_later. }
-    pose proof (pc_clauses κ n W1 HS1 T HT X1 X2 (ConnectSplit.fin Σf E1) (fout Σf E1)
-      (ConnectSplit.fin Σf E2) (fout Σf E2) (pfuse h D1 p1) (pfuse h D2 p2) Hc' C1 C2 L X1P X2P HP1 HP2 G1 G2) as R.
+    pose proof (pc_clauses _ _ _ _ _ _ _ _ _ _ _ _
+      (CCtx κ n W1 T X1 X2 (ConnectSplit.fin Σf E1) (fout Σf E1)
+         (ConnectSplit.fin Σf E2) (fout Σf E2) (pfuse h D1 p1) (pfuse h D2 p2)
+         HS1 HT Hc' C1 C2 L X1P X2P HP1 HP2 G1 G2)) as R.
     by rewrite Hif in R.
   Qed.
 
@@ -143,13 +145,3 @@ Proof.
   - eapply Prel_mono; [apply wext_join_l|done].
   - eapply Prel_mono; [apply wext_join_r|done].
 Qed.
-
-(** P-Join: the same composite. The rules P-Join and P-Connect differ
-    only in their side conditions on worlds, which agree by
-    [p_join_iff_connect], and the semantic lemma asks none of them. *)
-Theorem sem_p_join κ n W1 W2 Σ1 ΣC Σ2 ΣD p1 p2 T :
-  prim T →
-  p1 ∈ P[κ]^W1 _ n⟦Σ1 ∪ ΣC ⊢ T⟧ → p2 ∈ P[κ]^W2 _ n⟦Σ2 ∪ ΣD ⊢ TUnit⟧ →
-  conn Σ1 ΣC p1.1 Σ2 ΣD p2.1 →
-  pconn p1 p2 (chans_of ΣC) ∈ P[κ]^(W1 ⊔ W2) _ n⟦Σ1 ∪ Σ2 ⊢ T⟧.
-Proof. apply sem_p_connect. Qed.

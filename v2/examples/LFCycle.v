@@ -58,8 +58,8 @@ Proof.
   Unshelve. all: first [tok_tac | exact None].
 Qed.
 
-Lemma cy_guarded : guarded cy_main.
-Proof. unfold guarded, cy_main, let_new, cy_thunk. guard_tac. Qed.
+Lemma cy_guarded : ∅ ⊢▷ cy_main.
+Proof. unfold cy_main, let_new, cy_thunk. guard_tac. Qed.
 
 Theorem cy_lftyped : ∃ N, ∅ ⊩^N _ W_cy (∅, {[+ cy_main +]}) : TUnit.
 Proof.

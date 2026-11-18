@@ -245,8 +245,8 @@ Proof.
   Unshelve. all: first [tok_tac | exact None | simpl; lia | simpl; done].
 Qed.
 
-Lemma rg_guarded : guarded rg_main.
-Proof. unfold guarded, rg_main, ring, rg_e, let_new. guard_tac. Qed.
+Lemma rg_guarded : ∅ ⊢▷ rg_main.
+Proof. unfold rg_main, ring, rg_e, let_new. guard_tac. Qed.
 
 Theorem rg_lftyped : ∃ N, ∅ ⊩^N _ W_rg (∅, {[+ rg_main +]}) : TUnit.
 Proof.

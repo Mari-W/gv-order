@@ -16,7 +16,8 @@ From GV Require Import compat.Rules compat.LiveDF compat.Swap compat.Rename comp
 From GV Require Import static.Fundamental static.LiveFundamental examples.GuardEx.
 From GV Require Import soup.LFAdequacy soup.LFCompose soup.LFTyped examples.LFClose.
 From GV Require Import examples.LFTools examples.LFCycle examples.LFFreshBetween
-  examples.LFFreshMany examples.LFClientServer examples.LFFactoryEx examples.LFGrowRing.
+  examples.LFFreshMany examples.LFClientServer examples.LFFactoryEx examples.LFGrowRing
+  examples.LFController.
 
 (** Language: the redex once, progress, preservation. *)
 Print Assumptions act_offer_sig.
@@ -224,11 +225,11 @@ Print Assumptions Prel_fuse.
 Print Assumptions Prel_internalize.
 Print Assumptions fuse_ok_compose.
 Print Assumptions pren_ok_csub.
-(** S4. P-Connect and P-Join. *)
+(** S4. P-Connect, P-Join admissible. *)
 Print Assumptions pc_clauses.
 Print Assumptions fs_conn.
 Print Assumptions sem_p_connect.
-Print Assumptions sem_p_join.
+Print Assumptions p_join.
 (** S4. P-Term. *)
 Print Assumptions Ebody_rename.
 Print Assumptions Erel_S_ind_ren.
@@ -278,10 +279,10 @@ Print Assumptions dftyped_sem.
 Print Assumptions fundamental.
 Print Assumptions fundamental_typed.
 (** S5: the guard, the rules with marks, the live fundamental theorem. *)
-Print Assumptions glive_rename.
+Print Assumptions guard_rename.
 Print Assumptions acts_stable.
 Print Assumptions Erel_bind_acts.
-Print Assumptions sem_later_noL.
+Print Assumptions sem_later_empty.
 Print Assumptions later_bind_acts.
 Print Assumptions later_box.
 Print Assumptions dftyped_later.
@@ -315,10 +316,10 @@ Print Assumptions soup_term.
 Print Assumptions soup_lift.
 Print Assumptions lf_soup_connect.
 Print Assumptions lf_p_connect.
-Print Assumptions lf_p_join.
 Print Assumptions lf_soup_term.
 Print Assumptions lf_p_term.
 Print Assumptions lf_soundness_source.
+Print Assumptions lf_join.
 Print Assumptions lf_fundamental.
 Print Assumptions lf_soundness.
 Print Assumptions lfworld_bare.
@@ -346,3 +347,7 @@ Print Assumptions fx_lock_free.
 Print Assumptions W_rg_lfworld.
 Print Assumptions rg_lftyped.
 Print Assumptions rg_lock_free.
+(** C.6: why the controller does not type under ⊩ (examples/LFController.v). *)
+Print Assumptions sess_ages.
+Print Assumptions idle_credit_falls.
+Print Assumptions sess_sub_credit.

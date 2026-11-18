@@ -1,23 +1,24 @@
-(** * The guard (stage S5, Appendix A.2)
+(** * The guard as guarded recursion (stage S5, Appendix A.2)
 
-      guarded t    [guarded], rules [glive]
+      Λ ⊢▷ t    [lguard], Λ : nat → bool the ▷-marked variables
+      ∅ ⊢▷ t    the guard of a closed thread, asked by live and
+                lock-free typing
 
-    The guard is a restriction on terms, beside the typing judgment. It
-    is no clause of the relation. It keeps the self of a box from being
-    used before the box body has acted on a channel, so that a forced box
-    takes a costly step before it can force itself again. The live table
-    κ_L has β free, and without the guard the box !(f = force f) is
-    typable and τ-divergent (Appendix B #13, #14).
+    The guard is a judgment beside typing. It is no clause of the
+    relation. It keeps the self of a box from being used before the box
+    body has acted on a channel, so that a forced box takes a costly
+    step before it can force itself again. The live table κ_L has β
+    free, and without the guard the box !(f = force f) is typable and
+    τ-divergent (Appendix B #13, #14).
 
-    [glive L e] reads marks L : nat → bool on the variables of e. A
-    marked variable is the self of an enclosing box, or a variable
-    captured from such a scope. It may not occur as such
-    ([glive_var]). A box marks its own self ([glive_box]). A λ keeps the
-    marks of its scope ([glive_lam]), because its body may run at the
-    level where the λ is a value. A term that acts before it returns
-    ([acts], a send, receive, close, select or branch) clears every mark
-    for what runs after it ([glive_app_acts] and its siblings), because
-    the rest runs one level lower, where the selves are in V.
+    The rules read as guarded recursion. Λ marks the variables at ▷,
+    later. A box puts its self at ▷ ([gl_box]). A variable at ▷ cannot
+    be used ([gl_var]). A λ keeps the marks of its scope ([gl_lam]),
+    because its body may run at the level where the λ is a value. A term
+    that acts before it returns ([acts], a send, receive, close, select
+    or branch) ticks the context for what runs after it, ▷A becomes A
+    ([gl_tick_app] and its siblings), because the rest runs one level
+    lower, where the selves are in V.
 
     The rules are those of theories/liveness/GuardRules.v with two
     simplifications. Marks propagate into λ bodies instead of the
@@ -27,7 +28,7 @@
     gone. GuardCex, the counterexample to the unrepaired form of that
     rule (Appendix B #15), no longer has a rule to exploit. *)
 
-From GV Require Export lang.Syntax.
+From GV Require Import lang.Syntax.
 
 (** ** Terms that act before they return *)
 
@@ -54,49 +55,51 @@ Inductive acts : expr → Prop :=
 
 (** ** The rules *)
 
-Definition noL : nat → bool := λ _, false.
+(** No variable at ▷. *)
+Global Instance marks_empty : Empty (nat → bool) := λ _, false.
 
-Inductive glive : (nat → bool) → expr → Prop :=
-  | glive_var L y : L y = false → glive L (Var y)
-  | glive_unit L : glive L EUnit
-  | glive_chan L o : glive L (Chan o)
-  | glive_new L ℓ : glive L (ENew ℓ)
-  | glive_lam L b : glive (false .: L) b → glive L (Lam b)
-  | glive_box L b : glive (true .: L) b → glive L (EBox b)
-  | glive_op L k e : glive L e → glive L (Op k e)
-  | glive_app L e1 e2 : glive L e1 → glive L e2 → glive L (App e1 e2)
-  | glive_app_acts L e1 e2 : glive L e1 → acts e1 → glive noL e2 → glive L (App e1 e2)
-  | glive_pair L e1 e2 : glive L e1 → glive L e2 → glive L (Pair e1 e2)
-  | glive_pair_acts L e1 e2 : glive L e1 → acts e1 → glive noL e2 → glive L (Pair e1 e2)
-  | glive_letu L e1 e2 : glive L e1 → glive L e2 → glive L (LetU e1 e2)
-  | glive_letu_acts L e1 e2 : glive L e1 → acts e1 → glive noL e2 → glive L (LetU e1 e2)
-  | glive_letp L e1 e2 : glive L e1 → glive (false .: false .: L) e2 → glive L (LetP e1 e2)
-  | glive_letp_acts L e1 e2 : glive L e1 → acts e1 → glive noL e2 → glive L (LetP e1 e2)
-  | glive_let L e1 e2 : glive L e1 → glive (false .: L) e2 → glive L (ELet e1 e2)
-  | glive_let_acts L e1 e2 : glive L e1 → acts e1 → glive noL e2 → glive L (ELet e1 e2)
-  | glive_inj1 L e : glive L e → glive L (Inj1 e)
-  | glive_inj2 L e : glive L e → glive L (Inj2 e)
-  | glive_case L e e1 e2 : glive L e → glive (false .: L) e1 → glive (false .: L) e2 →
-      glive L (Case e e1 e2)
-  | glive_case_acts L e e1 e2 : glive L e → acts e → glive noL e1 → glive noL e2 →
-      glive L (Case e e1 e2).
+Reserved Notation "Λ ⊢▷ t" (at level 74, t at level 60, format "Λ  ⊢▷  t").
 
-Definition guarded (t : expr) : Prop := glive noL t.
+Inductive lguard : (nat → bool) → expr → Prop :=
+  | gl_var L y : L y = false → L ⊢▷ (Var y)
+  | gl_unit L : L ⊢▷ EUnit
+  | gl_chan L o : L ⊢▷ (Chan o)
+  | gl_new L ℓ : L ⊢▷ (ENew ℓ)
+  | gl_lam L b : (false .: L) ⊢▷ b → L ⊢▷ (Lam b)
+  | gl_box L b : (true .: L) ⊢▷ b → L ⊢▷ (EBox b)
+  | gl_op L k e : L ⊢▷ e → L ⊢▷ (Op k e)
+  | gl_app L e1 e2 : L ⊢▷ e1 → L ⊢▷ e2 → L ⊢▷ (App e1 e2)
+  | gl_tick_app L e1 e2 : L ⊢▷ e1 → acts e1 → ∅ ⊢▷ e2 → L ⊢▷ (App e1 e2)
+  | gl_pair L e1 e2 : L ⊢▷ e1 → L ⊢▷ e2 → L ⊢▷ (Pair e1 e2)
+  | gl_tick_pair L e1 e2 : L ⊢▷ e1 → acts e1 → ∅ ⊢▷ e2 → L ⊢▷ (Pair e1 e2)
+  | gl_letu L e1 e2 : L ⊢▷ e1 → L ⊢▷ e2 → L ⊢▷ (LetU e1 e2)
+  | gl_tick_letu L e1 e2 : L ⊢▷ e1 → acts e1 → ∅ ⊢▷ e2 → L ⊢▷ (LetU e1 e2)
+  | gl_letp L e1 e2 : L ⊢▷ e1 → (false .: false .: L) ⊢▷ e2 → L ⊢▷ (LetP e1 e2)
+  | gl_tick_letp L e1 e2 : L ⊢▷ e1 → acts e1 → ∅ ⊢▷ e2 → L ⊢▷ (LetP e1 e2)
+  | gl_let L e1 e2 : L ⊢▷ e1 → (false .: L) ⊢▷ e2 → L ⊢▷ (ELet e1 e2)
+  | gl_tick_let L e1 e2 : L ⊢▷ e1 → acts e1 → ∅ ⊢▷ e2 → L ⊢▷ (ELet e1 e2)
+  | gl_inj1 L e : L ⊢▷ e → L ⊢▷ (Inj1 e)
+  | gl_inj2 L e : L ⊢▷ e → L ⊢▷ (Inj2 e)
+  | gl_case L e e1 e2 : L ⊢▷ e → (false .: L) ⊢▷ e1 → (false .: L) ⊢▷ e2 →
+      L ⊢▷ (Case e e1 e2)
+  | gl_tick_case L e e1 e2 : L ⊢▷ e → acts e → ∅ ⊢▷ e1 → ∅ ⊢▷ e2 →
+      L ⊢▷ (Case e e1 e2)
+where "Λ ⊢▷ t" := (lguard Λ t).
 
 (** ** Structure *)
 
-Lemma noL_cons : ∀ x, (false .: noL) x = noL x.
+Lemma marks_empty_cons : ∀ x, (false .: ∅) x = ∅ x.
 Proof. by intros []. Qed.
 
-Lemma glive_ext L L' e : (∀ x, L x = L' x) → glive L e → glive L' e.
+Lemma guard_ext L L' e : (∀ x, L x = L' x) → lguard L e → lguard L' e.
 Proof.
   intros HL H. revert L' HL. induction H; intros L' HL; try (by constructor; auto).
   - constructor. by rewrite <-HL.
-  - constructor. apply IHglive. intros [|x]; simpl; auto.
-  - constructor. apply IHglive. intros [|x]; simpl; auto.
-  - constructor; [auto|]. apply IHglive2. intros [|[|x]]; simpl; auto.
-  - constructor; [auto|]. apply IHglive2. intros [|x]; simpl; auto.
-  - constructor; [auto| |]; [apply IHglive2|apply IHglive3]; intros [|x]; simpl; auto.
+  - constructor. apply IHlguard. intros [|x]; simpl; auto.
+  - constructor. apply IHlguard. intros [|x]; simpl; auto.
+  - constructor; [auto|]. apply IHlguard2. intros [|[|x]]; simpl; auto.
+  - constructor; [auto|]. apply IHlguard2. intros [|x]; simpl; auto.
+  - constructor; [auto| |]; [apply IHlguard2|apply IHlguard3]; intros [|x]; simpl; auto.
 Qed.
 
 Lemma acts_rename_inv e : ∀ r, acts (rename r e) → acts e.
@@ -107,31 +110,31 @@ Qed.
 Local Ltac marks := intros [|[|x]]; simpl; done.
 
 (** A renaming of the variables moves the marks with it. *)
-Lemma glive_rename e : ∀ L r, glive L (rename r e) → glive (λ x, L (r x)) e.
+Lemma guard_rename e : ∀ L r, lguard L (rename r e) → lguard (λ x, L (r x)) e.
 Proof.
   induction e; intros L r H; simpl in H; inversion H; subst.
   all: try (by constructor).
   all: try (by constructor; eauto).
   - (* Lam *)
-    constructor. eapply glive_ext; [|by apply IHe]. marks.
-  - (* App *) apply glive_app_acts; [eauto|by eapply acts_rename_inv|].
-    eapply glive_ext; [|by apply IHe2]. done.
-  - apply glive_pair_acts; [eauto|by eapply acts_rename_inv|].
-    eapply glive_ext; [|by apply IHe2]. done.
-  - apply glive_letu_acts; [eauto|by eapply acts_rename_inv|].
-    eapply glive_ext; [|by apply IHe2]. done.
-  - apply glive_letp; [eauto|]. eapply glive_ext; [|by apply IHe2]. marks.
-  - apply glive_letp_acts; [eauto|by eapply acts_rename_inv|].
-    eapply glive_ext; [|by apply IHe2]. done.
-  - apply glive_let; [eauto|]. eapply glive_ext; [|by apply IHe2]. marks.
-  - apply glive_let_acts; [eauto|by eapply acts_rename_inv|].
-    eapply glive_ext; [|by apply IHe2]. done.
-  - apply glive_case; [eauto| |].
-    + eapply glive_ext; [|by apply IHe2]. marks.
-    + eapply glive_ext; [|by apply IHe3]. marks.
-  - apply glive_case_acts; [eauto|by eapply acts_rename_inv| |].
-    + eapply glive_ext; [|by apply IHe2]. done.
-    + eapply glive_ext; [|by apply IHe3]. done.
+    constructor. eapply guard_ext; [|by apply IHe]. marks.
+  - (* App *) apply gl_tick_app; [eauto|by eapply acts_rename_inv|].
+    eapply guard_ext; [|by apply IHe2]. done.
+  - apply gl_tick_pair; [eauto|by eapply acts_rename_inv|].
+    eapply guard_ext; [|by apply IHe2]. done.
+  - apply gl_tick_letu; [eauto|by eapply acts_rename_inv|].
+    eapply guard_ext; [|by apply IHe2]. done.
+  - apply gl_letp; [eauto|]. eapply guard_ext; [|by apply IHe2]. marks.
+  - apply gl_tick_letp; [eauto|by eapply acts_rename_inv|].
+    eapply guard_ext; [|by apply IHe2]. done.
+  - apply gl_let; [eauto|]. eapply guard_ext; [|by apply IHe2]. marks.
+  - apply gl_tick_let; [eauto|by eapply acts_rename_inv|].
+    eapply guard_ext; [|by apply IHe2]. done.
+  - apply gl_case; [eauto| |].
+    + eapply guard_ext; [|by apply IHe2]. marks.
+    + eapply guard_ext; [|by apply IHe3]. marks.
+  - apply gl_tick_case; [eauto|by eapply acts_rename_inv| |].
+    + eapply guard_ext; [|by apply IHe2]. done.
+    + eapply guard_ext; [|by apply IHe3]. done.
   - (* EBox *)
-    constructor. eapply glive_ext; [|by apply IHe]. marks.
+    constructor. eapply guard_ext; [|by apply IHe]. marks.
 Qed.

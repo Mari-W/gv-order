@@ -177,8 +177,8 @@ Proof.
   Unshelve. all: first [tok_tac | apply tsub_refl | exact None | simpl; done].
 Qed.
 
-Lemma fm_guarded : guarded fm_main.
-Proof. unfold guarded, fm_main, fm_box, fm_e, fm_thunk, let_new. guard_tac. Qed.
+Lemma fm_guarded : ∅ ⊢▷ fm_main.
+Proof. unfold fm_main, fm_box, fm_e, fm_thunk, let_new. guard_tac. Qed.
 
 Theorem fm_lftyped : ∃ N, ∅ ⊩^N _ W_fm (∅, {[+ fm_main +]}) : TUnit.
 Proof.

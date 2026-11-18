@@ -769,11 +769,13 @@ Section recv.
       + assert (o ∈ dom Σ ∪ dom Θ2) as Hd by (apply elem_of_union; left; by eapply elem_of_dom_2).
         pose proof (rcv_back o Hd) as Hb.
         assert (o ∉ dom Θ2) by (by apply not_elem_of_dom).
-        repeat (case_guard; simpl); try done; exfalso; set_solver.
+        repeat (case_guard; simpl); try done; exfalso;
+        clear Hs HC2 Hok HdB HRC HnC HBC EB E1 E2; set_solver.
       + assert (o ∈ dom Σ ∪ dom Θ2) as Hd by (apply elem_of_union; right; by eapply elem_of_dom_2).
         pose proof (rcv_back o Hd) as Hb.
         assert (o ∈ dom Θ2) by (by eapply elem_of_dom_2).
-        repeat (case_guard; simpl); try done; exfalso; set_solver.
+        repeat (case_guard; simpl); try done; exfalso;
+        clear Hs HC2 Hok HdB HRC HnC HBC EB E1 E2; set_solver.
       + done.
     - intros o. rewrite dom_union_L, elem_of_union, (st_dom _ _ _ _ Hs), elem_of_union. unfold rback.
       rewrite elem_of_dom_filter. split; [intros [?|(w & _ & ?)]; auto|].

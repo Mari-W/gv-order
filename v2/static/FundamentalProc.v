@@ -2,24 +2,26 @@
       Appendix A.3)
 
       fundamental_proc      : strict W → Σ ⊢_W p : T → Σ ⊨_W p : T
-      live_fundamental_proc : strict W → Σ ⊢_W p : T → pguarded p → Σ ⊫_W p : T
+      live_fundamental_proc : strict W → Σ ⊢_W p : T → ⊢▷ p → Σ ⊫_W p : T
       soundness             : strict W → ∅ ⊢_W p : T → deadlock_free p
-      live_soundness        : strict W → ∅ ⊢_W p : T → pguarded p →
+      live_soundness        : strict W → ∅ ⊢_W p : T → ⊢▷ p →
                                 deadlock_free p ∧ no_tau_divergence p
       soundness_source      : strict W → prim T → ∅ ; ∅ ; [] ⊢^(∅, None) _ W t : T →
                                 deadlock_free (∅, {[+ t +]})
 
     One induction on [ptyped] for every cost table whose threads satisfy
     the term-level theorem ([proc_gen]): P-Term by [sem_p_term], P-Connect
-    and P-Join by [sem_p_connect] and [sem_p_join], whose side condition
-    [conn] the premises of the rules give ([ptyped_conn]). The results
+    by [sem_p_connect], whose side condition [conn] the premises of the
+    rule give ([ptyped_conn]). The results
     hold at every fuel N, ⊢_W is the instance N = ∞. *)
 
 From GV Require Export compat.PTerm static.LiveFundamental.
 From GV Require Import compat.Conv.
 
-(** Every thread of p is guarded. *)
-Definition pguarded (p : proc) : Prop := ∀ t, t ∈ p.2 → guarded t.
+(** The guard of a process, ⊢▷ p: every thread t of p has ∅ ⊢▷ t. *)
+Definition pguard (p : proc) : Prop := ∀ t, t ∈ p.2 → ∅ ⊢▷ t.
+
+Notation "⊢▷ p" := (pguard p) (at level 74, p at level 60, format "⊢▷  p").
 
 (** ** The side conditions of P-Connect from the typing premises *)
 
@@ -97,8 +99,7 @@ Section proc.
   Proof.
     intros HW Hty. revert HW. induction Hty as
       [W Σ ΘB C0 t T a c ϑ Hp HB HΣ Hpf Hd Ht
-      |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T H1 IH1 H2 IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hw1 Hw2 Hfam HJ
-      |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T H1 IH1 H2 IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hw1 Hw2 Hfam HS1 HS2 HJ];
+      |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T H1 IH1 H2 IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hw1 Hw2 Hfam HJ];
       intros HW HG n; simpl in HG.
     - apply (sem_p_term κ n W _ Σ (tenv_erase ΘB) C0 t T Hp (pterm_sth N Σ ΘB C0 HB HΣ Hpf Hd)).
       assert (G t) as Hg by (apply HG; multiset_solver).
@@ -106,9 +107,6 @@ Section proc.
     - destruct (proj1 (p_join_iff_connect W1 W2 Hw1 Hw2 Hfam) HJ) as (HS1 & HS2 & _).
       pose proof (ptyped_conn _ _ _ _ _ _ _ _ _ _ _ H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2) as Hc.
       refine (sem_p_connect κ n W1 W2 Σ1 ΣC Σ2 (senv_dual ΣC) (C1, E1) (C2, E2) T (ptyped_prim _ _ _ _ _ H1)
-                (IH1 HS1 _ n) (IH2 HS2 _ n) Hc); intros t Ht; apply HG; simpl; multiset_solver.
-    - pose proof (ptyped_conn _ _ _ _ _ _ _ _ _ _ _ H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2) as Hc.
-      refine (sem_p_join κ n W1 W2 Σ1 ΣC Σ2 (senv_dual ΣC) (C1, E1) (C2, E2) T (ptyped_prim _ _ _ _ _ H1)
                 (IH1 HS1 _ n) (IH2 HS2 _ n) Hc); intros t Ht; apply HG; simpl; multiset_solver.
   Qed.
 End proc.
@@ -121,21 +119,21 @@ Proof.
   intros W' N Θ t T' a c ϑ HW' Ht _. exact (fundamental_typed W' N Θ [] (∅, None) t T' a c ϑ HW' Ht).
 Qed.
 
-Theorem live_fundamental_proc W Σ p T : strict W → Σ ⊢_W p : T → pguarded p → Σ ⊫_W p : T.
+Theorem live_fundamental_proc W Σ p T : strict W → Σ ⊢_W p : T → ⊢▷ p → Σ ⊫_W p : T.
 Proof.
-  intros HW Hty Hg. refine (proc_gen κ_L guarded _ None W Σ p T HW Hty Hg).
+  intros HW Hty Hg. refine (proc_gen κ_L (lguard ∅) _ None W Σ p T HW Hty Hg).
   intros W' N Θ t T' a c ϑ HW' Ht Hgt. exact (live_fundamental_typed W' N Θ [] (∅, None) t T' a c ϑ HW' Ht Hgt).
 Qed.
 
 Theorem soundness W p T : strict W → ∅ ⊢_W p : T → deadlock_free p.
 Proof. intros HW Hty. apply (adequacy W T p HW). by apply fundamental_proc. Qed.
 
-Theorem live_soundness W p T : strict W → ∅ ⊢_W p : T → pguarded p →
+Theorem live_soundness W p T : strict W → ∅ ⊢_W p : T → ⊢▷ p →
   deadlock_free p ∧ no_tau_divergence p.
 Proof. intros HW Hty Hg. apply (live_adequacy W T p HW). by apply live_fundamental_proc. Qed.
 
 (** One closed thread of the DF judgment, with no creation constraint. *)
-Theorem soundness_source W t T : strict W → types.Types.prim T → ∅ ; hc_empty ; [] ⊢^(∅, None) _ W t : T →
+Theorem soundness_source W t T : strict W → prim T → ∅ ; hc_empty ; [] ⊢^(∅, None) _ W t : T →
   deadlock_free (∅, {[+ t +]}).
 Proof.
   intros HW HT Ht. apply (adequacy W T _ HW). intros n.

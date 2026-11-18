@@ -443,7 +443,7 @@ Section offers.
       all: simpl in Hoσ; apply elem_of_singleton in Hoσ as ->; apply Hs; simpl;
         destruct Hc as [? ? Hcut ? ? ? H12 H1C _ _ HC1 HC2];
         intros c Hc' Hc''; apply elem_of_singleton in Hc' as ->;
-        pose proof (elem_of_chans_of _ _ HoΣ) as Hco; set_solver.
+        pose proof (elem_of_chans_of _ _ HoΣ) as Hco; clear - Hc'' Hco H1C HC1 HC2; set_solver.
   Qed.
 End offers.
 

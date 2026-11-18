@@ -17,6 +17,7 @@ The old development in theories/ stays untouched.
 | S8 | soup and adequacy | done (S8.34): `lfsoup_step`, `soup_no_tau_divergence`, `lf_adequacy`, `lf_thread_progress`, `idle_dual` |
 | S9 | lock-free composition and soundness | done (S9.9): `⊪` the soup alone, `lfptyped` (LFTyped.v), `lf_p_term`, `lf_p_connect`, `lf_p_join`, `lf_fundamental`, `lf_soundness`, example `cl_lock_free`. S9.10 to S9.12 type the six S2 examples by ⊩ at finite N, all lock free |
 | S10 | paper | open |
+| C | cleanup | done (C.6): `Λ ⊢▷ t`, P-Join admissible, `lf_term` `lf_connect` `lf_join`, `types/Names.v`, `cctx`, controller untypable (aging) |
 
 ## Deviations
 
@@ -1630,3 +1631,96 @@ The old development in theories/ stays untouched.
   deadlock_free p ∧ no_tau_divergence p`,
   `soundness_source : strict W → prim T → ∅ ; ∅ ; [] ⊢^(∅, None) _ W t : T
   → deadlock_free (∅, {[+ t +]})` (strict W kept, as S5.5 explains).
+- C.1. The guard as guarded recursion (decision of 2026-11-18,
+  static/Guard.v). `glive L t` is the judgment `Λ ⊢▷ t` (`lguard`), Λ the
+  ▷-marked variables, `noL` is `∅` (instance `marks_empty`). The rules
+  keep their premises and take the names `gl_var`, `gl_unit`, `gl_chan`,
+  `gl_new`, `gl_lam`, `gl_box`, `gl_op`, `gl_app`, `gl_pair`, `gl_letu`,
+  `gl_letp`, `gl_let`, `gl_inj1`, `gl_inj2`, `gl_case`, and the acting
+  rules `gl_tick_app`, `gl_tick_pair`, `gl_tick_letu`, `gl_tick_letp`,
+  `gl_tick_let`, `gl_tick_case`. `guarded t` is gone, every statement
+  reads `∅ ⊢▷ t`. `pguarded p` is `⊢▷ p` (`pguard`, static/FundamentalProc.v).
+  Lemmas renamed: `glive_ext` to `guard_ext`, `glive_rename` to
+  `guard_rename`, `noL_cons` to `marks_empty_cons`, `GrelL_noL` to
+  `GrelL_unmarked` (`GrelL_empty` was taken), `sem_later_noL` to
+  `sem_later_empty`. The inductive is `lguard`, because stdpp's
+  `guard` (the option monad) shadows a plain `guard`. test/GuardNotations.v
+  prints both notations, `live_fundamental` and `live_soundness`.
+- C.2. P-Join is admissible (static/Typing.v, soup/LFTyped.v). Its
+  premises are those of P-Connect with the strictness of the join split
+  in three, and `p_join_iff_connect` gives the join back. The
+  constructor `p_join` leaves `ptyped` and `lfptyped`, and a lemma
+  `p_join` with the statement of the constructor takes its place in
+  each. `sem_p_join` (compat/ConnectP.v) and `lf_p_join`
+  (soup/LFCompose.v) had no user left beyond the third case of
+  `proc_gen` and `lf_fundamental`, so both are deleted. `sem_p_connect`
+  and `lf_p_connect` cover the rule. CheckAll lists the two `p_join`
+  lemmas in place of the two deleted ones, 298 results, all closed.
+- C.3. The rules of `lfptyped` are named apart from those of `ptyped`
+  (soup/LFTyped.v). `p_term` is `lf_term`, `p_connect` is `lf_connect`,
+  and the lemma `p_join` of C.2 is `lf_join`. `p_term`, `p_connect` and
+  `p_join` now always mean the rules of `⊢_W`, and CheckAll lists
+  `p_join` and `lf_join` without qualification. The naming table A.4
+  lists no constructor of either judgment and stays. The row of A.5 that
+  plans `p_term`, `p_connect`, `p_join` for both judgments is now out of
+  date for `⊩^N_W`.
+- C.4. Shadowed names. stdpp's `strict` (stdpp.base, re-exported by
+  lang/Syntax.v) and the operators `prim` of lang/Syntax.v come back on
+  top of `strict W` and `prim T` whenever a file exports a module of
+  lang/ or lockfree/ after the types. Two places did. static/Guard.v
+  exported lang/Syntax.v and now imports it (examples/GuardEx.v imports
+  it itself), which fixes `prim` for everything after the live
+  fundamental theorem. soup/Soup.v exports lockfree/ThreadProgress.v
+  last, and soup/ needs that order because the end notation `o‾` of
+  lang/ and the point notation `x‾` of types/ share a token. Soup.v now
+  exports types/Names.v after it, a module of two parsing-only
+  abbreviations `strict` and `prim` for the paper's two, which everything
+  after Soup.v inherits. relation/Adequacy.v exports lockfree/TauThread.v
+  before relation/Closure.v and drops its second export of types/Worlds.v.
+  No file qualifies `types.Worlds.strict` or `types.Types.prim` any more
+  (seven files had). The swap files keep their deliberate re-export of
+  lang/ChannelSwap.v, which is about `sren`. 298 results, all closed.
+- C.5. The Connect files. compat/ConnectCtx.v holds `ConnL` (moved from
+  compat/ConnectSteps.v) and `cctx`, one inductive whose twelve named
+  premises are the section context that compat/ConnectSteps.v,
+  ConnectCross.v, ConnectLink.v, ConnectTau.v, ConnectExt.v and
+  ConnectExtMsg.v each repeated (25 lines each). Each section now takes
+  `CC : cctx …` and names the premises by `Let HS := cc_HS CC` and so on,
+  so the proofs keep their hypothesis names. `cctx` is an inductive with
+  projection lemmas, as `sth` in compat/PTerm.v, because a `Record`
+  does not parse after the typing notation `Θ ; Γ ; Δ ⊢ …` makes `;` a
+  term token. ConnectP.v builds the record at its one call of
+  `pc_clauses`. Compile time. `cc_set_solver` clears the nine premises
+  that are no facts about sets before `set_solver`, in place of
+  `set_solver` inside those sections (161 calls). Two hot goals clear
+  their context by hand: the offer lemma `offered_1_c` (compat/Connect.v,
+  11.9 s to 1.9 s for the sentence) and `rcv_sth` (compat/PTerm.v, 33.9 s
+  to 6.1 s). Wall time of `make -j4` after deleting compat/Connect*.vo and
+  compat/PTerm.vo, which rebuilds those 14 files, FundamentalProc.v and
+  CheckAll.v. Before 272.9 s (at 6d5024f, light load) and 559.0 s (at
+  C.4, load 22 on 12 cores), after 235.0 s (load 10 to 15). The 14
+  Connect files sum to 192 s before (light load) and 122 s after.
+  ConnectSteps.v 44.4 s to 24.6 s, ConnectLink.v 36.7 s to 27.9 s,
+  PTerm.v 25.7 s to 11.6 s, Connect.v 25.5 s to 15.0 s, ConnectTau.v
+  13.6 s to 6.3 s. CheckAll.v (116 s before, 139 s after) is now the
+  critical path. No statement changes. 298 results, all closed.
+- C.6. The controller (proposal #20, plan §7) does not type under ⊩ at
+  any finite N, and no rule changes (examples/LFController.v). Server and
+  client loop over ⟨⟨a, b⟩, k⟩ with k one end of ctl at Skip. The rule
+  that fails is the aging of k. Every step a loop body takes while it
+  holds k ages k by the step's cost (`lage` in the premises of E-Let,
+  E-LetP, E-LetU, E-Pair, E-App). An end is no free type
+  (`sess_not_free`), so `tage` ages it by `age_credit`, which lowers its
+  credit by the cost (`sess_ages`, `idle_credit_falls`). Idle ends get no
+  other case. Only an action on an end refills it to N (E-Send, E-Recv),
+  and no thread may act on k. E-Sub never raises a credit
+  (`sess_sub_credit`, rule `sub_sess`). The box type fixes the credit k0
+  of k at the loop's parameter, and the guard asks an action, of cost at
+  least 1, before the self call (rules `gl_tick_*`). So k reaches the
+  self call at k0 − m with m ≥ 1, and ⟨⟨a, b⟩, k⟩ does not have the
+  parameter type. A parameter at credit ∞ is out of reach, because
+  E-New and E-NewAt give N and a payload at ∞ needs a sender at ∞. The
+  fuel layer already drops the "≥ 1" checks of idle ends (Q5 (b),
+  fuel/Fuel.v). The gap is the static aging, which would need a case
+  that ages an idle end for free or truncates it at 0. CheckAll lists
+  the three lemmas, 301 results, all closed.

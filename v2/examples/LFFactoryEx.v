@@ -174,8 +174,8 @@ Proof.
   Unshelve. all: first [tok_tac | exact None | simpl; lia | simpl; done].
 Qed.
 
-Lemma fx_guarded : guarded fx_main.
-Proof. unfold guarded, fx_main, mk0, mk1, mk0_e, mk1_e, worker, let_new, elet. guard_tac. Qed.
+Lemma fx_guarded : ∅ ⊢▷ fx_main.
+Proof. unfold fx_main, mk0, mk1, mk0_e, mk1_e, worker, let_new, elet. guard_tac. Qed.
 
 Theorem fx_lftyped : ∃ N, ∅ ⊩^N _ W_fx (∅, {[+ fx_main +]}) : TUnit.
 Proof.
