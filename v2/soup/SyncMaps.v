@@ -115,3 +115,80 @@ Section sync.
     intros Hti Htj. apply map_eq_some; intros o0 f. rewrite !lookup_ctrs, lookup_ksync. base o0.
   Qed.
 End sync.
+
+Lemma mrem_empty {Y : Type} (m : gmap cend Y) : mrem ∅ m = m.
+Proof. apply map_eq_some. intros o v. rewrite lookup_mrem_Some. set_solver. Qed.
+
+Lemma mres_empty {Y : Type} (m : gmap cend Y) : mres ∅ m = ∅.
+Proof. apply map_eq_some. intros o v. rewrite lookup_mres_Some, lookup_empty. set_solver. Qed.
+
+Lemma fhand_empty (φ : cenv) : fhand ∅ φ = ∅.
+Proof. unfold fhand. by rewrite mres_empty, fmap_empty. Qed.
+
+(** ** A close *)
+
+Section close.
+  #[local] Set Default Proof Using "All".
+  Context (K : own) (i j : nat) (o : cend).
+  Context (Hij : i ≠ j) (Hoi : ∃ h, K !! o = Some h ∧ h.(h_th) = i)
+    (Hoj : ∃ h, K !! edual o = Some h ∧ h.(h_th) = j) (Hoo : o ≠ edual o).
+
+  Local Abbreviation K' := (ktick i j ∅ (delete o (delete (edual o) K))).
+
+  Lemma lookup_kclose o0 :
+    K' !! o0 = if decide (o0 = o ∨ o0 = edual o) then None
+               else (λ h, if decide (h.(h_th) = i ∨ h.(h_th) = j) then htick h else h) <$> K !! o0.
+  Proof.
+    unfold ktick. rewrite lookup_kmod. case_decide as Ho.
+    - destruct Ho as [->| ->]; [by rewrite lookup_delete_eq|].
+      by rewrite lookup_delete_ne, lookup_delete_eq.
+    - rewrite !lookup_delete_ne by naive_solver. destruct (K !! o0); simpl; [|done].
+      f_equal. own_cases; naive_solver.
+  Qed.
+
+  Lemma dom_kclose o0 : o0 ∈ dom K' ↔ o0 ∈ dom K ∧ ¬ (o0 = o ∨ o0 = edual o).
+  Proof. rewrite !elem_of_dom, lookup_kclose. case_decide; [naive_solver|]. rewrite fmap_is_Some. naive_solver. Qed.
+
+  Local Ltac base o0 :=
+    destruct (decide (o0 = o ∨ o0 = edual o)) as [[-> | ->]|H1]; [naive_solver|naive_solver|];
+    destruct (K !! o0) as [h|] eqn:Eh; simpl; [|naive_solver];
+    destruct (decide (h_th h = i ∨ h_th h = j)); naive_solver.
+
+  Lemma close_kres_i {Y : Type} (m : gmap cend Y) :
+    kres K' i (delete o (delete (edual o) m)) = delete o (kres K i m).
+  Proof.
+    apply map_eq_some; intros o0 v0.
+    rewrite lookup_kres, lookup_kclose, !lookup_delete_Some, lookup_kres. base o0.
+  Qed.
+
+  Lemma close_kres_j {Y : Type} (m : gmap cend Y) :
+    kres K' j (delete o (delete (edual o) m)) = delete (edual o) (kres K j m).
+  Proof.
+    apply map_eq_some; intros o0 v0.
+    rewrite lookup_kres, lookup_kclose, !lookup_delete_Some, lookup_kres. base o0.
+  Qed.
+
+  Lemma close_kres_other {Y : Type} t (m : gmap cend Y) :
+    t ≠ i → t ≠ j → kres K' t (delete o (delete (edual o) m)) = kres K t m.
+  Proof.
+    intros Hti Htj. apply map_eq_some; intros o0 v0.
+    rewrite lookup_kres, lookup_kclose, !lookup_delete_Some, lookup_kres. base o0.
+  Qed.
+
+  Lemma close_ctrs_i : ctrs K' i = ftick <$> delete o (ctrs K i).
+  Proof.
+    apply map_eq_some; intros o0 f. rewrite lookup_ctrs, lookup_kclose, lookup_fmap_Some.
+    setoid_rewrite lookup_delete_Some. setoid_rewrite lookup_ctrs. base o0.
+  Qed.
+
+  Lemma close_ctrs_j : ctrs K' j = ftick <$> delete (edual o) (ctrs K j).
+  Proof.
+    apply map_eq_some; intros o0 f. rewrite lookup_ctrs, lookup_kclose, lookup_fmap_Some.
+    setoid_rewrite lookup_delete_Some. setoid_rewrite lookup_ctrs. base o0.
+  Qed.
+
+  Lemma close_ctrs_other t : t ≠ i → t ≠ j → ctrs K' t = ctrs K t.
+  Proof.
+    intros Hti Htj. apply map_eq_some; intros o0 f. rewrite !lookup_ctrs, lookup_kclose. base o0.
+  Qed.
+End close.
