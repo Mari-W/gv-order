@@ -87,6 +87,11 @@ compat/LiveRules.v
 static/LiveFundamental.v
 examples/GuardEx.v
 examples/LFClose.v
+examples/LFTools.v
+examples/LFCycle.v
+examples/LFFreshBetween.v
+examples/LFFreshMany.v
+examples/LFClientServer.v
 test/CompatNotations.v
 soup/Idle.v
 soup/State.v
