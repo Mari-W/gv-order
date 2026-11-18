@@ -1250,3 +1250,20 @@ The old development in theories/ stays untouched.
   composite into fusions of the components over a larger cut, and the
   wrapper (strong induction on the level, `Prel_S_ind_fuse` on each
   side), then P-Join and P-Term. No deviation.
+- S4.26. External steps of the composite, first part
+  (compat/ConnectExt.v). An external step of the composite is a step of
+  the component of its thread on one of its own interface ends
+  (`ext_split`; the subject is no cut end because the composite
+  restricts the cut). Close, select, branch and link change the
+  interface of that component only, so `ext_comp1` and `ext_comp2` (G1
+  or G2 with the identity fusion at cost 0, the lemma at the lower level
+  otherwise) give Q-Close, Q-Select, Q-Branch and Q-Link of the
+  composite (`ext_close`, `ext_select`, `ext_branch`, `ext_link`), with
+  `conn_del_iface1/2` and `conn_retype1/2`. Open in order: Q-Send and
+  Q-Recv of the composite (a send can move cut ends, whose partners
+  then join the interface; a receive can bring ends whose partners lie
+  in the other component, which become cut ends; both re-split the cut
+  as in S4.21), the assembly of `Pclauses` for the composite from
+  `pc_stop`, `pc_ready`, `tau_all` and the six external clauses, the
+  splitting of a fusion of the composite into fusions of the components
+  over a larger cut, the wrapper, then P-Join and P-Term. No deviation.
