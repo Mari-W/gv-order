@@ -85,4 +85,5 @@ soup/Sessions.v
 soup/SoupStep.v
 soup/SyncMaps.v
 soup/SoupSync.v
+soup/LinkMaps.v
 CheckAll.v
