@@ -126,6 +126,64 @@ Lemma lookup_khand M j K o :
   khand M j K !! o = (λ h, if decide (o ∈ M) then Hold j h.(h_pt) (ftick h.(h_ctr)) else h) <$> K !! o.
 Proof. apply lookup_kmod. Qed.
 
+(** ** Parts of an inserted entry *)
+
+Lemma kres_insert {Y : Type} K o h t (m : gmap cend Y) v :
+  kres (<[o := h]> K) t (<[o := v]> m) =
+  if decide (h.(h_th) = t) then <[o := v]> (kres K t m) else delete o (kres K t m).
+Proof.
+  apply map_eq_some. intros o0 w. rewrite lookup_kres.
+  destruct (decide (o0 = o)) as [->|Hne].
+  - rewrite !lookup_insert_eq. case_decide as Ht.
+    + rewrite lookup_insert_eq. split; [by intros [? ?]|intros <-; split; [done|by exists h]].
+    + rewrite lookup_delete_eq. split; [|done]. intros [_ (h' & Hh' & Ht')]. simplify_eq.
+  - rewrite !lookup_insert_ne by done. case_decide.
+    + rewrite lookup_insert_ne by done. by rewrite lookup_kres.
+    + rewrite lookup_delete_ne by done. by rewrite lookup_kres.
+Qed.
+
+Lemma ctrs_insert K o h t :
+  ctrs (<[o := h]> K) t = if decide (h.(h_th) = t) then <[o := h.(h_ctr)]> (ctrs K t) else delete o (ctrs K t).
+Proof.
+  apply map_eq_some. intros o0 f. rewrite lookup_ctrs.
+  destruct (decide (o0 = o)) as [->|Hne].
+  - rewrite lookup_insert_eq. case_decide as Ht.
+    + rewrite lookup_insert_eq. split; [by intros (h' & ? & ? & ?); simplify_eq|intros [= <-]; by exists h].
+    + rewrite lookup_delete_eq. split; [|done]. intros (h' & ? & ? & ?). simplify_eq.
+  - rewrite lookup_insert_ne by done. case_decide.
+    + rewrite lookup_insert_ne by done. by rewrite lookup_ctrs.
+    + rewrite lookup_delete_ne by done. by rewrite lookup_ctrs.
+Qed.
+
+Lemma kres_notin {Y : Type} K t (m : gmap cend Y) o : o ∉ dom K → delete o (kres K t m) = kres K t m.
+Proof.
+  intros Ho. apply delete_id. apply lookup_kres_None. right. intros (h & Hh & _).
+  apply Ho. by apply elem_of_dom_2 in Hh.
+Qed.
+
+Lemma ctrs_notin K t o : o ∉ dom K → delete o (ctrs K t) = ctrs K t.
+Proof.
+  intros Ho. apply delete_id. destruct (ctrs K t !! o) eqn:E; [|done].
+  apply lookup_ctrs in E as (h & Hh & _). exfalso. apply Ho. by apply elem_of_dom_2 in Hh.
+Qed.
+
+(** ** Pairing outside the changed ends *)
+
+Lemma pair_frame {Y : Type} (R : cend → Y → Y → Prop) (m m' : gmap cend Y) (Ch : gset cend) :
+  (∀ o, o ∈ Ch ↔ edual o ∈ Ch) →
+  (∀ o, o ∉ Ch → m' !! o = m !! o) →
+  (∀ o v v', m !! o = Some v → m !! edual o = Some v' → R o v v') →
+  (∀ o v v', o ∈ Ch → m' !! o = Some v → m' !! edual o = Some v' → R o v v') →
+  ∀ o v v', m' !! o = Some v → m' !! edual o = Some v' → R o v v'.
+Proof.
+  intros HCh Hout Hold Hin o v v' H1 H2. destruct (decide (o ∈ Ch)) as [Ho|Ho]; [by apply Hin|].
+  assert (edual o ∉ Ch) as Ho' by (by rewrite <-HCh).
+  rewrite Hout in H1 by done. rewrite Hout in H2 by done. by apply Hold.
+Qed.
+
+Lemma cends_dual (c : chan) o : o ∈ ({[EPos c]} ∪ {[ENeg c]} : gset cend) ↔ edual o ∈ ({[EPos c]} ∪ {[ENeg c]} : gset cend).
+Proof. destruct o; simpl; set_solver. Qed.
+
 (** ** One step, case by case *)
 
 Section step.
@@ -192,5 +250,105 @@ Section step.
     intros t e0 He0. apply lookup_insert_Some in He0 as [[<- <-]|[Hne He0]].
     - split_and!; [eapply at_cost_E_live; [|exact HE]; cbn; lia|exact (s_ty Hs i e He)|exact HF].
     - destruct (s_other t e0 He0) as [H1 H2]. split_and!; [done|exact (s_ty Hs t e0 He0)|done].
+  Qed.
+  (** A new state from its clauses. *)
+  Lemma soup_build C' Mq' K' tk' A' Π' U' :
+    (∀ t e', Mq' !! t = Some e' →
+       e' ∈ E[live]^W _ n⟦kres K' t A' ⊢ U' t⟧^∅ ∧ (U' t = T ∨ U' t = TUnit) ∧
+       e' ∈ F^(Some N) _ n⟦RThread ▷ None ; 0⟧(kres K' t Π', ctrs K' t, tk' t)) →
+    snd <$> A' = h_pt <$> K' → dom Π' = dom K' →
+    (∀ o h, K' !! o = Some h → is_Some (Mq' !! h.(h_th))) →
+    (∀ o, o ∈ dom K' → ech o ∈ C') →
+    (∀ o, o ∈ dom K' → edual o ∈ dom K') →
+    (∀ o S x S' x', A' !! o = Some (S, x) → A' !! edual o = Some (S', x') → x' = x‾ ∧ sdual S S') →
+    (∀ o P P', Π' !! o = Some P → Π' !! edual o = Some P' → sequiv P' (dual P)) →
+    soup_inv N n W ∅ T (LFState (C', Mq') K' tk') A' Π' U'.
+  Proof.
+    intros Ht Hp Hd Ho Hc Hpr Hsd Hpd. unfold soup_inv. constructor; simpl.
+    - apply (sp_prim _ _ _ _ _ _ _ _ Hs).
+    - intros t e He. apply (Ht t e He).
+    - intros t e He. apply (Ht t e He).
+    - intros t e He. apply (Ht t e He).
+    - done.
+    - done.
+    - done.
+    - intros o Ho'. left. by apply Hc.
+    - intros o Ho' _. by apply Hpr.
+    - intros o S x S' x' H1 H2 _. by apply (Hsd o S x S' x').
+    - intros o P P' H1 H2 _. by apply (Hpd o P P').
+    - intros o y Hy. by rewrite lookup_empty in Hy.
+  Qed.
+
+  Lemma s_notin_K c : c ∉ C → EPos c ∉ dom K ∧ ENeg c ∉ dom K.
+  Proof.
+    intros Hc. split; intros Hin; apply Hc; exact (s_closed _ _ _ _ _ _ _ _ Hs _ Hin).
+  Qed.
+
+  Lemma kres_sub_dom {Y : Type} t (m : gmap cend Y) : dom (kres K t m) ⊆ dom K.
+  Proof.
+    intros o Ho. rewrite dom_kres in Ho. apply elem_of_intersection in Ho as [_ Ho].
+    apply elem_of_dom_kth in Ho as (h & Hh & _). by apply elem_of_dom_2 in Hh.
+  Qed.
+
+  Lemma ctrs_sub_dom t : dom (ctrs K t) ⊆ dom K.
+  Proof.
+    intros o Ho. rewrite dom_ctrs in Ho. apply elem_of_dom_kth in Ho as (h & Hh & _).
+    by apply elem_of_dom_2 in Hh.
+  Qed.
+
+  (** A new channel at x, given the obligations of the actor. *)
+  Lemma step_create i e' c x S S' :
+    Mq !! i = Some (default EUnit (Mq !! i)) → c ∉ C →
+    e' ∈ E[live]^W _ n⟦new_env c S x (kres K i A) ⊢ U i⟧^∅ →
+    e' ∈ F^(Some N) _ n⟦RThread ▷ None ; 0⟧(pnew c S' (kres K i Π), cnew (Some N) c (ctrs K i), tk i) →
+    soup_inv N n W ∅ T (LFState (C ∪ {[c]}, <[i := e']> Mq) (knew N i c x K) tk)
+      (new_env c S x A) (pnew c S' Π) U.
+  Proof.
+    intros Hi Hc HE HF. destruct (s_notin_K c Hc) as [Hp Hn].
+    assert (∀ {Y} (m : gmap cend Y) t, t ≠ i → delete (EPos c) (delete (ENeg c) (kres K t m)) = kres K t m)
+      as Hdel.
+    { intros Y m t _. rewrite (kres_notin _ _ _ (ENeg c)) by done. by rewrite kres_notin. }
+    unfold knew, new_env, pnew.
+    apply soup_build.
+    - intros t e0 He0. rewrite !kres_insert, !ctrs_insert. simpl.
+      apply lookup_insert_Some in He0 as [[<- <-]|[Hne He0]].
+      + rewrite !decide_True by done. split_and!; [exact HE| |exact HF].
+        exact (s_ty Hs i _ Hi).
+      + rewrite !decide_False by done. rewrite !Hdel by done.
+        rewrite (ctrs_notin _ _ (ENeg c)), ctrs_notin by done.
+        destruct (s_other t e0 He0) as [H1 H2]. split_and!; [done|exact (s_ty Hs t e0 He0)|done].
+    - rewrite !fmap_insert. simpl. f_equal. f_equal. apply (sp_pts _ _ _ _ _ _ _ _ Hs).
+    - rewrite !dom_insert_L. by rewrite (sp_dom _ _ _ _ _ _ _ _ Hs).
+    - intros o h Ho. apply lookup_insert_Some in Ho as [[<- <-]|[_ Ho]].
+      { simpl. rewrite lookup_insert_eq. by eexists. }
+      apply lookup_insert_Some in Ho as [[<- <-]|[_ Ho]].
+      { simpl. rewrite lookup_insert_eq. by eexists. }
+      rewrite lookup_insert_is_Some'. right. exact (s_owner _ _ _ _ _ _ _ _ Hs o h Ho).
+    - intros o. rewrite !dom_insert_L, !elem_of_union, !elem_of_singleton.
+      intros [->|[->|Ho]]; [set_solver|set_solver|]. pose proof (s_closed _ _ _ _ _ _ _ _ Hs o Ho). set_solver.
+    - intros o. rewrite !dom_insert_L, !elem_of_union, !elem_of_singleton.
+      intros [->|[->|Ho]]; [simpl; tauto|simpl; tauto|]. right; right. exact (s_pair _ _ _ _ _ _ _ _ Hs o Ho).
+    - intros o S0 x0 S0' x0' H1 H2.
+      refine (pair_frame (λ _ (v v' : sty * point), v'.2 = pt_dual v.2 ∧ sdual v.1 v'.1) _ _
+        ({[EPos c]} ∪ {[ENeg c]}) (cends_dual c) _ _ _ o (S0, x0) (S0', x0') H1 H2).
+      + intros o0 Ho. rewrite !lookup_insert_ne by set_solver. done.
+      + intros o0 [S1 x1] [S2 x2] H3 H4. exact (s_sdual _ _ _ _ _ _ _ _ Hs o0 S1 x1 S2 x2 H3 H4).
+      + intros o0 [S1 x1] [S2 x2] Ho H3 H4. simpl.
+        apply elem_of_union in Ho as [Ho|Ho]; apply elem_of_singleton in Ho as ->; simpl in H4.
+        * rewrite lookup_insert_eq in H3. rewrite lookup_insert_ne, lookup_insert_eq in H4 by discriminate.
+          simplify_eq. split; [done|apply seqv_refl].
+        * rewrite lookup_insert_eq in H4. rewrite lookup_insert_ne, lookup_insert_eq in H3 by discriminate.
+          simplify_eq. split; [by rewrite pt_dual_dual|]. unfold sdual. rewrite dual_involutive. apply seqv_refl.
+    - intros o P P' H1 H2.
+      refine (pair_frame (λ _ v v', sequiv v' (dual v)) _ _ ({[EPos c]} ∪ {[ENeg c]}) (cends_dual c)
+        _ _ _ o P P' H1 H2).
+      + intros o0 Ho. rewrite !lookup_insert_ne by set_solver. done.
+      + intros o0 P1 P2 H3 H4. exact (s_pdual _ _ _ _ _ _ _ _ Hs o0 P1 P2 H3 H4).
+      + intros o0 P1 P2 Ho H3 H4.
+        apply elem_of_union in Ho as [Ho|Ho]; apply elem_of_singleton in Ho as ->; simpl in H4.
+        * rewrite lookup_insert_eq in H3. rewrite lookup_insert_ne, lookup_insert_eq in H4 by discriminate.
+          simplify_eq. apply sequiv_refl.
+        * rewrite lookup_insert_eq in H4. rewrite lookup_insert_ne, lookup_insert_eq in H3 by discriminate.
+          simplify_eq. rewrite dual_involutive. apply sequiv_refl.
   Qed.
 End step.
