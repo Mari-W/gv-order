@@ -86,6 +86,8 @@ aside h2 { font-family: var(--display); font-weight: 600; font-size: 1.3rem; mar
 aside dl { margin: 0; display: grid; gap: 10px; }
 aside dt { font: 600 0.72rem var(--body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
 aside dd { margin: 2px 0 0; font-size: 0.9rem; }
+aside dd.sig { overflow-x: auto; }
+aside ul.args { margin: 2px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 0.88rem; }
 aside dd.breaks { border-left: 3px solid var(--hot); padding-left: 8px; }
 aside code, .caption code, .ex code { font-family: var(--mono); font-size: 0.85em; }
 aside .uses { margin-top: 14px; font-size: 0.82rem; color: var(--muted); }
@@ -236,11 +238,12 @@ window.MathJax = {
     const n = MAP.notes[key], aside = $('#note');
     aside.classList.remove('empty');
     if (!n) { aside.innerHTML = `<div class="placeholder">No note for <code>${esc(key)}</code>.</div>`; return; }
+    const args = as => Array.isArray(as) && as.length ? `<div><dt>Arguments</dt><dd><ul class="args">${as.map(x => `<li>$${esc(x.name)}$ ${prose(x.meaning)}</li>`).join('')}</ul></dd></div>` : '';
     const row = (t, v, cls) => v ? `<div><dt>${t}</dt><dd${cls ? ` class="${cls}"` : ''}>${prose(v)}</dd></div>` : '';
     const u = uses[key] ? [...uses[key].entries()] : [];
     aside.innerHTML = `<div class="eyebrow"><span>${isPinned ? 'Pinned' : 'Hover'}</span>${isPinned ? '<button type="button" id="unpin">Unpin</button>' : ''}</div>
       <h2>${esc(n.title || key)}</h2>
-      <dl>${row('What', n.what)}${row('Why', n.why)}${row('Without it', n.breaks, 'breaks')}${row('Example', n.example)}${row('Rocq', n.rocq)}</dl>
+      <dl>${n.sig ? `<div><dt>Type</dt><dd class="sig">$\\displaystyle ${esc(n.sig)}$</dd></div>` : ''}${args(n.args)}${row('What', n.what)}${row('Why', n.why)}${row('Without it', n.breaks, 'breaks')}${row('Example', n.example)}${row('Rocq', n.rocq)}</dl>
       ${u.length > 1 ? `<div class="uses">Also in ${u.map(([id, v]) => `<a href="#${v.sec}" data-jump="${esc(id)}">${esc(v.title)}</a>`).join('')}</div>` : ''}`;
     typeset(aside);
   }
