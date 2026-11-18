@@ -57,7 +57,7 @@ Definition Soup (N : nat) (W : world) (n : nat) (Σ : senv) (T : ty) (a : lfstat
 
 Notation "a ∈ S^{ N , W } '_' n ⟦ Σ ⊢ T ⟧" := (Soup N W n Σ T a)
   (at level 70, N at level 0, W at level 0, n at level 0, Σ at level 60,
-   format "a  ∈  S^{ N ,  W }  '_'  n ⟦ Σ  ⊢  T ⟧").
+   format "a  ∈  S^{ N , W }  '_'  n ⟦ Σ  ⊢  T ⟧").
 
 (** ** The lock-free judgment *)
 

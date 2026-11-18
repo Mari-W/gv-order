@@ -1,0 +1,26 @@
+λ (N : nat) (W : world) (n : nat) (Σ : senv) (T : ty) (a : lfstate),
+  a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧
+     : nat → world → nat → senv → ty → lfstate → Prop
+λ (W : world) (Σ : senv) (p : proc) (T : ty), Σ ⊪_W p : T
+     : world → senv → proc → ty → Prop
+idle_dual
+     : ∀ S S' : sty, sequiv S' (dual S) → idle S ↔ idle S'
+lfsoup_step
+     : ∀ (N : nat) (W : world) (T : ty) (a : lfstate) 
+         (n : nat) (ev : event) (q' : config),
+         a ∈ S^{N,W} _ (S n)⟦∅ ⊢ T⟧
+         → itstep (s_q a) ev q' → lf_next N a ev q' ∈ S^{N,W} _ n⟦∅ ⊢ T⟧
+soup_no_tau_divergence
+     : ∀ (N : nat) (W : world) (T : ty) (a : lfstate),
+         (∀ n : nat, a ∈ S^{N,W} _ n⟦∅ ⊢ T⟧)
+         → no_tau_divergence (erase (s_q a))
+lf_adequacy
+     : ∀ (W : world) (T : ty) (p : proc),
+         lfworld W → ∅ ⊪_W p : T → lock_free p
+lf_thread_progress
+     : ∀ (W : world) (T : ty) (p : proc),
+         lfworld W
+         → ∅ ⊪_W p : T
+           → ∀ (r : nat → config) (l : nat → option event),
+               erase (r 0) = p
+               → maximal r l → wfair r l → thread_progress_run r l

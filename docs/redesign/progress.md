@@ -14,7 +14,7 @@ The old development in theories/ stays untouched.
 | S5 | static fundamental theorems | term part done (S5.7): `fundamental`, `fundamental_typed`, `live_fundamental`, `live_fundamental_typed`; process theorems wait on S4 (targets in S5.5) |
 | S6 | fuel | done |
 | S7 | cost judgment | done |
-| S8 | soup and adequacy | in progress: soup, update, `lfsoup_step` done (S8.19); `soup_no_tau_divergence`, adequacy open |
+| S8 | soup and adequacy | done (S8.34): `lfsoup_step`, `soup_no_tau_divergence`, `lf_adequacy`, `lf_thread_progress`, `idle_dual` |
 | S9 | lock-free composition and soundness | open |
 | S10 | paper | open |
 
@@ -496,6 +496,23 @@ The old development in theories/ stays untouched.
 - S8, the soup with an interface. `Soup` takes Σ (interface clause
   `sp_sig`, closure up to `dom Σ`), but `lfsoup_step` and adequacy are
   stated at Σ = ∅, for closed runs.
+- S8, finite counters. The soup has the clause `sp_fin`: every counter in
+  K is finite. It is index-free and preserved by the update (`kfin_*`).
+  The measure of adequacy reads a counter as a natural number.
+- S8, the process conjunct (Q12, F21). `soup_no_tau_divergence` holds
+  (v2/soup/SoupTau.v), and adequacy reads the soup alone
+  (`lf_adequacy_soup`). `lf_sem` keeps the live process conjunct of the
+  proposal, because Q12 says the conjunct may go once the lemma exists,
+  which is now the author's call. Dropping it changes only `lf_sem` and
+  the statements of S9.
+- S8, liftings. `lf_sem` fixes one lifting of p, lock freedom quantifies
+  over runs from every lifting. `soup_relabel` moves a soup along a
+  bijection of thread identifiers (v2/soup/Relabel.v), as the old
+  `LFsoupAt_relabel` did.
+- S8, the dependency. A pending thread depends on the owner in K of the
+  partner of its end, never on a term that mentions the partner (as in
+  the old adequacy). The criterion is `lf_run_criterion` unchanged, with
+  `npend`, `admin_at` and `pend` of S1.
 ## Log
 
 - S1.0. Lexer test v2/test/Lexer.v of every judgment and token of
@@ -1046,3 +1063,26 @@ The old development in theories/ stays untouched.
   case by case (SoupStep.v: β, new, new_κ, spawn; SoupSync.v: message,
   close, choice; SoupLink.v: link), and `lfsoup_step`, `lfsoup_run`,
   `lfsoup_isteps` (SoupRun.v). No `Admitted`.
+- S8.20, S8.21. `Erel_tacc`: a thread in E[live] at a positive level,
+  with its spawned children, admits no infinite run of administrative
+  steps, because O-Spawn reads the child inside the parent's least
+  fixpoint. The multiset extension of that order is well founded
+  (`mstep_acc`), and a τ step of a soup is one of its steps
+  (`padmin_mstep`). `soup_no_tau_divergence` (v2/soup/SoupTau.v).
+- S8.22. `sp_fin` (deviation "S8, finite counters").
+- S8.23 to S8.31. The facts of one soup (soup/LFLocal.v), steps of a run
+  without the soup and the ends an event touches (LFRunFacts.v,
+  LFEvents.v), and the run-level lemmas of soup/LFAdequacy.v: local
+  progress by well-founded induction on the point of the waited end
+  (`lf_local_progress`), the rank (`lf_rank`, `lf_stab`), persistence of
+  an enabled thread (`lf_pers`), the measure (`lf_fuel`): a link spends a
+  ticket, a step of the holder on another end ticks the partner's
+  counter, which F-Tick keeps at 1 or more because the partner is not
+  idle (F-Wait of the waiter, `partner_busy`, `idle_dual`), a hand-over
+  passes it with one unit less, and every other step keeps it while the
+  holder's step is administrative.
+- S8.32. `relabel_map`, `soup_relabel` (deviation "S8, liftings").
+- S8.33. `lf_adequacy_soup`, `lf_adequacy : lfworld W → ∅ ⊪_W p : T →
+  lock_free p`, `lf_thread_progress` (v2/soup/LFAdequacy.v).
+- S8.34. Notation test v2/test/SoupNotations.v, README section, CheckAll
+  entries. S8 done.

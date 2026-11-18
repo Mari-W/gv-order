@@ -156,3 +156,34 @@ reads the thunk at the empty future with no lower or upper point
 | static/Fundamental.v | `hsat`, instances under binders (`pclose`), `dftyped_sem`, `spawn_lam_valid`, `fundamental`, `fundamental_typed` |
 | static/LiveFundamental.v | `dftyped_later`, `spawn_lam_later_valid`, `live_fundamental`, `live_fundamental_typed` |
 | examples/GuardEx.v | the guard against Appendix B #12 to #15 and #40, and the C2 stage of B.1 #4 |
+
+## Stage S8, the soup and adequacy
+
+A soup state fixes the threads, the ownership K (holder, point and
+counter of every held end) and the tickets outside the index. At each
+index every thread is in E[live] at its part of an environment A and in
+FuelE^N at its part of a protocol map Π, with the two ends of every
+internal channel paired. The update `lf_next` reads only the event.
+`lfsoup_step` goes from index n + 1 to n. The τ steps of a soup admit no
+infinite run (`soup_no_tau_divergence`), so adequacy does not read the
+live process conjunct of `⊪`. `lf_adequacy` instantiates
+`lf_run_criterion` with ownership as the dependency, the point in K as
+the rank and the tickets and the partner's counter as the measure.
+
+| File | Content |
+|---|---|
+| lockfree/Criterion.v | `lf_run_criterion`, ported to the runs of S1 |
+| lockfree/ThreadProgress.v | `thread_progress` |
+| soup/Idle.v | `idle_dual`: S′ ≈ dual S gives idle S ↔ idle S′ |
+| soup/State.v | `hold`, `lfstate`, the parts `kth`, `ctrs`, `kres`, the clauses `soup_gen` |
+| soup/Soup.v | `Soup`, `a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧`, `lf_sem`, `Σ ⊪_W p : T`, the update `own_next`, `tk_next`, `lf_next`, `lf_run_state` |
+| soup/OwnFacts.v, SyncMaps.v, LinkMaps.v | lookups of the parts of a state and of every update, finite counters |
+| soup/Sessions.v | dual session types and protocols along a step and at a link |
+| soup/SoupStep.v, SoupSync.v, SoupLink.v | the soup along each kind of step |
+| soup/SoupRun.v | `lfsoup_step`, `lfsoup_run`, `lfsoup_isteps` |
+| soup/SoupTau.v | `Erel_tacc`, the multiset extension, `soup_no_tau_divergence` |
+| soup/LFLocal.v | the facts of one soup: held ends, readiness, partners, ranks, restricted links, fitting redexes |
+| soup/LFRunFacts.v, LFEvents.v | steps of a run, the ends an event touches, tickets |
+| soup/Relabel.v | the soup at every lifting (`relabel_map`, `soup_relabel`) |
+| soup/LFAdequacy.v | local progress, rank, persistence, `lf_fuel`, `lf_adequacy_soup`, `lf_adequacy`, `lf_thread_progress` |
+| test/SoupNotations.v | the S8 notations |
