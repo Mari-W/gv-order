@@ -87,4 +87,5 @@ soup/SyncMaps.v
 soup/SoupSync.v
 soup/LinkMaps.v
 soup/SoupLink.v
+soup/SoupRun.v
 CheckAll.v
