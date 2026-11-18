@@ -15,7 +15,7 @@ The old development in theories/ stays untouched.
 | S6 | fuel | done |
 | S7 | cost judgment | done |
 | S8 | soup and adequacy | done (S8.34): `lfsoup_step`, `soup_no_tau_divergence`, `lf_adequacy`, `lf_thread_progress`, `idle_dual` |
-| S9 | lock-free composition and soundness | done (S9.9): `⊪` the soup alone, `lfptyped` (LFTyped.v), `lf_p_term`, `lf_p_connect`, `lf_p_join`, `lf_fundamental`, `lf_soundness`, example `cl_lock_free` |
+| S9 | lock-free composition and soundness | done (S9.9): `⊪` the soup alone, `lfptyped` (LFTyped.v), `lf_p_term`, `lf_p_connect`, `lf_p_join`, `lf_fundamental`, `lf_soundness`, example `cl_lock_free`. S9.10 to S9.12 type the six S2 examples by ⊩ at finite N, all lock free |
 | S10 | paper | open |
 
 ## Deviations
@@ -1395,6 +1395,60 @@ The old development in theories/ stays untouched.
   P-Term threads, and `cl_lock_free`. The S2 examples are typed at
   N = ∞ only, and none is retyped at a finite N. Notation test in
   v2/test/SoupNotations.v, CheckAll entries, README. S9 done.
+- S9.10. Tools for lock-free examples (examples/LFTools.v).
+  `lfworld_measure` makes a world a lock-free world when a measure into
+  a well-founded transitive order rises along every generating step of
+  ≺. `lfworld_lex3` instantiates it with lexicographic triples of
+  natural numbers (`lex3`) for a world without facts, built from the
+  field sum, the depth and the offset of a point. `lf_main_typed` and
+  `lf_main` take a closed thread typed at Some N with the empty future,
+  guarded, with `meets ϑ 0 tk`, to `∅ ⊩^N _ W (∅, {[+ t +]}) : T` and
+  to `lock_free`. `lbox` is a box of one arrow with box cost 0 and
+  transformer 1̂. Its arrow costs ∞ and has transformer (∞, 0) (`tz`),
+  which every body with offset 0 meets (`tle_tz`), so a recursive box
+  types at a finite N without a fixpoint of costs. A call of cost ∞
+  ages what is held across it to credit ∞, so in every example a call
+  is the last step of its thread or holds nothing after it.
+  `lbox_typed`, `lbox_force` and `lbox_force_eq` type such a box and its
+  force. `e_let_`, `e_letu_`, `e_letp_`, `e_pair_` and `e_app_` are the
+  rules over Θ = ∅ with the premises in the order a derivation meets
+  them. Cycle, FreshBetween, FreshMany and ClientServer retyped by ⊩
+  (examples/LFCycle.v, LFFreshBetween.v, LFFreshMany.v,
+  LFClientServer.v).
+- S9.11. FactoryEx retyped by ⊩ (examples/LFFactoryEx.v). mk₀ returns
+  c′ packed at credit 2 (`Tresl`), mk₁ takes p at credit 2 and returns p
+  and c′ at credit 2. The first call holds nothing after it and the
+  second holds only what it returns, so both arrows cost ∞.
+- S9.12. GrowRing retyped by ⊩ (examples/LFGrowRing.v). The payload of
+  Sch has credit ∞, and E-Send asks the sent end at the payload credit
+  after aging by 1, which no end of finite credit meets. `Schl` is Sch
+  with payload credit 2. It differs from Sch in an annotation only,
+  which `ty_df` erases. The box takes ⟨x, y⟩ at credits 0 and 1, and the
+  calls pass (0, 1) and (1, 1), lowered to (0, 1) by subtyping
+  (`e_sub_sess2`). The world is a lock-free world by (depth, offset),
+  because the two points of a pair reachable from (ι₁, ι₂) have the same
+  depth (`rreach_depth`). `W_rg_wf` is new.
+
+  Every S2 example that should be lock free is lock free by
+  `lf_soundness`. Each is one P-Term thread over Σ = ∅ at the world of
+  its S2 file.
+
+  | example | ⊢ typed (N = ∞) | ⊩ typed | lock_free | N | measure of `lfworld` | reason if not |
+  |---|---|---|---|---|---|---|
+  | Cycle | `cy_typed` | `cy_lftyped` | `cy_lock_free` | 2 | (field sum, offset, depth) | none |
+  | FreshBetween | `fb_typed` | `fb_lftyped` | `fb_lock_free` | 2 | (field sum, offset, depth) | none |
+  | FreshMany | `fm_typed` | `fm_lftyped` | `fm_lock_free` | 4 | (field sum, offset, depth) | none |
+  | ClientServer | `cs_typed` | `cs_lftyped` | `cs_lock_free` | 3 | (field sum, offset, depth) | none |
+  | FactoryEx | `fx_typed` | `fx_lftyped` | `fx_lock_free` | 2 | (field sum, depth, offset) | none |
+  | GrowRing | `rg_typed` | `rg_lftyped` | `rg_lock_free` | 4 | (depth, offset, 0) | none |
+
+  Cycle is no counterexample. Its laws ρ ≺ (ρ·0)‾ and ρ‾ ≺ ρ·0 are
+  acyclic and both rise in depth, and the program terminates.
+  ClientServer and GrowRing do not terminate and type at a finite N all
+  the same, because each send and receive returns its end at credit N.
+  The ⊩ derivations use the S2 programs and worlds unchanged. Their
+  types differ from the S2 types in annotations only (credits, costs,
+  transformers, and the payload credit of `Schl`).
 
 - S4.21. A choice across the cut with p2 selecting (`tau_choice21`,
   compat/ConnectSteps.v). A message across the cut in both directions

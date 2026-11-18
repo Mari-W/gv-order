@@ -16,7 +16,7 @@ From GV Require Import compat.Rules compat.LiveDF compat.Swap compat.Rename comp
 From GV Require Import static.Fundamental static.LiveFundamental examples.GuardEx.
 From GV Require Import soup.LFAdequacy soup.LFCompose soup.LFTyped examples.LFClose.
 From GV Require Import examples.LFTools examples.LFCycle examples.LFFreshBetween
-  examples.LFFreshMany examples.LFClientServer.
+  examples.LFFreshMany examples.LFClientServer examples.LFFactoryEx examples.LFGrowRing.
 
 (** Language: the redex once, progress, preservation. *)
 Print Assumptions act_offer_sig.
@@ -315,3 +315,9 @@ Print Assumptions fm_lock_free.
 Print Assumptions W_cs_lfworld.
 Print Assumptions cs_lftyped.
 Print Assumptions cs_lock_free.
+Print Assumptions W_fx_lfworld.
+Print Assumptions fx_lftyped.
+Print Assumptions fx_lock_free.
+Print Assumptions W_rg_lfworld.
+Print Assumptions rg_lftyped.
+Print Assumptions rg_lock_free.

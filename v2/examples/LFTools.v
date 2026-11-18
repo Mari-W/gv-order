@@ -169,6 +169,16 @@ Lemma e_app_ W N Γ Δ Δ1 Δ2 Δ2' F e1 e2 ub lb c t h T aT U aU a1 c1 t1 c2 t2
   typed W N ∅ Γ Δ F (App e1 e2) U aU (fadd c1 (fadd c2 c)) (tseq t1 (tseq t2 t)).
 Proof. intros. eapply e_app; eauto using tsplit_empty, thage_empty. Qed.
 
+(** A pair of ends whose credits fall. *)
+Lemma e_sub_sess2 W N Γ Δ F e S1 x S2 y a1 a2 b1 b2 c t :
+  typed W N ∅ Γ Δ F e (TProd (TSess S1 x) a1 (TSess S2 y) a2) (Some 0) c t →
+  fle b1 a1 → fle b2 a2 →
+  typed W N ∅ Γ Δ F e (TProd (TSess S1 x) b1 (TSess S2 y) b2) (Some 0) c t.
+Proof.
+  intros He H1 H2. eapply e_sub; [exact He| |apply fle_refl|apply tle_refl].
+  apply sub_prod; apply sub_sess; rewrite ?fadd_0_l; auto using sequiv_refl.
+Qed.
+
 (** ** Tactics *)
 
 (** Aging a concrete entry: free, by its credit, or by its parts. *)

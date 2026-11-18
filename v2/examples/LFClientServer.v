@@ -29,16 +29,6 @@ Qed.
 Definition csl_T (S1 S2 : sty) : ty := TProd (TSess S1 (pvar 0)) (Some 1) (TSess S2 (pvar 1)) (Some 2).
 Definition csl_box (S1 S2 : sty) : ty := lbox 3 cs_C (Some (pvar 2)) (csl_T S1 S2) (Some 0) TUnit None.
 
-(** A pair of ends whose credits fall. *)
-Lemma e_sub_sess2 W N Γ Δ F e S1 x S2 y a1 a2 b1 b2 c t :
-  typed W N ∅ Γ Δ F e (TProd (TSess S1 x) a1 (TSess S2 y) a2) (Some 0) c t →
-  fle b1 a1 → fle b2 a2 →
-  typed W N ∅ Γ Δ F e (TProd (TSess S1 x) b1 (TSess S2 y) b2) (Some 0) c t.
-Proof.
-  intros He H1 H2. eapply e_sub; [exact He| |apply fle_refl|apply tle_refl].
-  apply sub_prod; apply sub_sess; rewrite ?fadd_0_l; auto using sequiv_refl.
-Qed.
-
 Section body.
   Context (W : world) (Γ : hctx) (n : nat).
   Local Definition Γl : hctx := hc_fvar 1 (Some (pvar 2)) (hc_fvar 0 None (hc_open 3 cs_C Γ)).
