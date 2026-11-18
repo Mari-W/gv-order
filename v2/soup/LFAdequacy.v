@@ -27,7 +27,7 @@
       restricted links from the live relation of each thread. *)
 
 From stdpp Require Import relations.
-From GV Require Export soup.LFEvents.
+From GV Require Export soup.LFEvents soup.LFRunFacts.
 
 Lemma compat_enabled' q t s e es a1 a2 :
   t ≠ s → q.2 !! t = Some e → q.2 !! s = Some es → act e = Some a1 → act es = Some a2 → compat a1 a2 →
@@ -177,5 +177,104 @@ Section run.
         destruct (owns_of _ _ _ _ _ Hx0) as (h & Kh & _).
         exact (s_closed _ _ _ _ _ _ _ _ Hs o (elem_of_dom_2 _ _ _ Kh)).
     - right. exact (s_rank _ _ _ _ _ _ _ _ Hs HWs t e a1 o s es a2 o2 He Ha Ho1 Hown Hes Ha2 Ho2 Hne).
+  Qed.
+
+  (** ** One step of the run *)
+
+  Lemma ak_next k ev : l k = Some ev →
+    s_K (ak (S k)) = own_next N ev (s_K (ak k)) ∧ s_tk (ak (S k)) = tk_next ev (s_tk (ak k)).
+  Proof. intros Hl. simpl. unfold lf_upd. by rewrite Hl. Qed.
+
+  Lemma ak_stutter k : l k = None → s_K (ak (S k)) = s_K (ak k) ∧ s_tk (ak (S k)) = s_tk (ak k).
+  Proof. intros Hl. simpl. unfold lf_upd. by rewrite Hl. Qed.
+
+  Lemma ak_ev_ends k ev : itstep (r k) ev (r (S k)) → ev_ends (s_K (ak k)) ev.
+  Proof.
+    intros [Hst Hτ]. destruct (ak_inv k 1) as (A & Π & U & Hs). pose proof (ak_q k) as Hq.
+    remember (ak k) as a eqn:Ea. clear Ea. destruct a as [[C Mq] K tk]. simpl in Hq |- *. rewrite <-Hq in Hst.
+    exact (s_ev_ends _ _ _ _ _ _ _ _ _ _ _ _ _ Hs HWs Hst Hτ).
+  Qed.
+
+  Lemma rend_emap q t g e a1 o : q.2 !! t = Some (emap g e) → act e = Some a1 → aend a1 = Some o →
+    rend q t = Some (g o).
+  Proof. intros He Ha Ho. unfold rend. rewrite He. simpl. rewrite act_emap, Ha. simpl. by apply aend_amap. Qed.
+
+  Lemma held_at k t e a1 o : (r k).2 !! t = Some e → act e = Some a1 → aend a1 = Some o →
+    owns (s_K (ak k)) o t.
+  Proof.
+    intros He Ha Ho. destruct (ak_inv k 1) as (A & Π & U & Hs). rewrite <-(ak_q k) in He.
+    destruct (s_held_end _ _ _ _ _ _ _ _ Hs HWs t e a1 o He Ha Ho) as (S0 & x & Hx & _).
+    exact (owns_of _ _ _ _ _ Hx).
+  Qed.
+
+  Lemma closed_at k o t : owns (s_K (ak k)) o t → ech o ∈ (r k).1.
+  Proof.
+    intros (h & Kh & _). destruct (ak_inv k 0) as (A & Π & U & Hs). rewrite <-(ak_q k).
+    destruct (sp_closed _ _ _ _ _ _ _ _ Hs o (elem_of_dom_2 _ _ _ Kh)) as [?|Hd]; [done|].
+    by rewrite dom_empty_L in Hd.
+  Qed.
+
+  (** ** The rank is stable *)
+
+  Lemma lf_stab k t : npend (r k) t → t ∉ lparts (l k) → we (S k) t = we k t.
+  Proof.
+    intros Hp Ht. destruct (npend_end _ _ Hp) as (e & a1 & o & He & Ha & Ho & Hr).
+    unfold we. rewrite Hr.
+    destruct (Hmax k) as [(ev & Hl & Hst)|(_ & Heq & Hl)].
+    - rewrite Hl in Ht. simpl in Ht. destruct (ak_next k ev Hl) as [HK _].
+      pose proof (ak_ev_ends k ev Hst) as Hen. destruct (held_at k t e a1 o He Ha Ho) as (h & Kh & Eh).
+      destruct ev as [i|i ℓ c|i κ o' c|i j M|i j o' M|i j o'|i j o' b|u o1 o2|i σ];
+        try (rewrite (rend_emap _ t id e a1 o); [|rewrite emap_id; apply (istep_other_eq _ _ _ t e (proj1 Hst));
+          [done|intros ????; discriminate|done]|done|done]; cbn [id];
+          unfold kpt; rewrite HK, (own_next_keep N _ (s_K (ak k)) t o h); [by rewrite Kh|done|intros ????; discriminate|done|done|done]).
+      simpl in Ht. assert (t ≠ u) as Htu by set_solver.
+      rewrite (rend_emap _ t (csub o1 o2) e a1 o); [|exact (istep_link_other _ _ _ _ _ t e (proj1 Hst) Htu He)|done|done].
+      simpl in Hen. destruct Hen as (H1 & H2 & _).
+      assert (o ≠ o1) by (eapply owns_ne; [exact Kh|exact Eh|exact H1|done]).
+      assert (o ≠ o2) by (eapply owns_ne; [exact Kh|exact Eh|exact H2|done]).
+      unfold kpt. rewrite HK. cbn [own_next]. change (delete o1 (delete o2 (s_K (ak k)))) with (kdel2 o1 o2 (s_K (ak k))).
+      rewrite (kmapr_lookup _ _ o h); [by rewrite Kh|apply kinj_csub|]. by apply lookup_kdel2.
+    - rewrite Heq, Hr. by rewrite (proj1 (ak_stutter k Hl)).
+  Qed.
+
+  (** ** An enabled pending thread stays enabled *)
+
+  Lemma lf_pers k t : npend (r k) t → tenabled (r k) t → t ∉ lparts (l k) → tenabled (r (S k)) t.
+  Proof.
+    intros Hp Hen Ht. destruct (npend_end _ _ Hp) as (e & a1 & o & He & Ha & Ho & Hr).
+    destruct (Hmax k) as [(ev & Hl & Hst)|(_ & Heq & Hl)]; [|by rewrite Heq].
+    rewrite Hl in Ht. simpl in Ht.
+    destruct Hen as (ev0 & q0 & [Hst0 Hτ0] & Ht0).
+    destruct (ev_partner _ _ _ t e a1 o Hst0 Hτ0 Ht0 He Ha Ho) as (s & es & a2 & _ & Hst' & Hes & Ha2 & Ho2 & Hc).
+    assert (Hs : s ∉ ev_parts ev).
+    { intros Hsin. destruct (ev_partner _ _ _ s es a2 (edual o) (proj1 Hst) (proj2 Hst) Hsin Hes Ha2 Ho2)
+        as (p & ep & a3 & Hpin & _ & Hep & Ha3 & Ho3 & _). rewrite edual_edual in Ho3.
+      pose proof (held_at k p ep a3 o Hep Ha3 Ho3) as Hp'. pose proof (held_at k t e a1 o He Ha Ho) as Ht'.
+      rewrite <-(owns_unique _ _ _ _ Ht' Hp') in Hpin. done. }
+    destruct ev as [i|i ℓ c|i κ o' c|i j M|i j o' M|i j o'|i j o' b|u o1 o2|i σ];
+      try (apply (compat_enabled' _ t s e es a1 a2); [done|exact (istep_other_eq _ _ _ t e (proj1 Hst) Ht ltac:(intros ????; discriminate) He)
+        |exact (istep_other_eq _ _ _ s es (proj1 Hst) Hs ltac:(intros ????; discriminate) Hes)|done|done|done|];
+        intros o'' ->; simpl in Ho; injection Ho as ->; apply (closed_at (S k) o t);
+        apply (held_at (S k) t e (AClose o) o); [exact (istep_other_eq _ _ _ t e (proj1 Hst) Ht ltac:(intros ????; discriminate) He)|done|done]).
+    simpl in Ht, Hs. assert (t ≠ u) as Htu by set_solver. assert (s ≠ u) as Hsu by set_solver.
+    pose proof (ak_ev_ends k _ Hst) as Hen. simpl in Hen. destruct Hen as (H1 & H2 & _).
+    destruct (held_at k t e a1 o He Ha Ho) as (h & Kh & Eh).
+    destruct (held_at k s es a2 (edual o) Hes Ha2 Ho2) as (h' & Kh' & Eh').
+    assert (o ≠ o1) by (eapply owns_ne; [exact Kh|exact Eh|exact H1|done]).
+    assert (edual o ≠ o1) by (eapply owns_ne; [exact Kh'|exact Eh'|exact H1|done]).
+    assert (Hgo : csub o1 o2 o = o).
+    { apply csub_eq_off; [|done]. intros Hx. apply H0. by rewrite Hx, edual_edual. }
+    assert (Hgo' : csub o1 o2 (edual o) = edual o).
+    { apply csub_eq_off; [|done]. intros Hx. apply H. by apply edual_inj. }
+    pose proof (istep_link_other _ _ _ _ _ t e (proj1 Hst) Htu He) as He'.
+    pose proof (istep_link_other _ _ _ _ _ s es (proj1 Hst) Hsu Hes) as Hes'.
+    apply (compat_enabled' _ t s _ _ (amap (csub o1 o2) a1) (amap (csub o1 o2) a2) (not_eq_sym Hst') He' Hes').
+    - by rewrite act_emap, Ha.
+    - by rewrite act_emap, Ha2.
+    - exact (compat_amap _ _ _ _ Hc Ho Hgo Hgo').
+    - intros o'' Hc'. destruct a1; simpl in Hc', Ho; try discriminate. injection Ho as ->. injection Hc' as <-.
+      rewrite Hgo. apply (closed_at (S k) o t). apply (held_at (S k) t _ (AClose (csub o1 o2 o)) o He').
+      + by rewrite act_emap, Ha.
+      + simpl. by rewrite Hgo.
   Qed.
 End run.
