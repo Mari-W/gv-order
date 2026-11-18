@@ -228,7 +228,7 @@ Print Assumptions pren_ok_csub.
 Print Assumptions pc_clauses.
 Print Assumptions fs_conn.
 Print Assumptions sem_p_connect.
-Print Assumptions static.Typing.p_join.
+Print Assumptions p_join.
 (** S4. P-Term. *)
 Print Assumptions Ebody_rename.
 Print Assumptions Erel_S_ind_ren.
@@ -318,7 +318,7 @@ Print Assumptions lf_p_connect.
 Print Assumptions lf_soup_term.
 Print Assumptions lf_p_term.
 Print Assumptions lf_soundness_source.
-Print Assumptions soup.LFTyped.p_join.
+Print Assumptions lf_join.
 Print Assumptions lf_fundamental.
 Print Assumptions lf_soundness.
 Print Assumptions lfworld_bare.

@@ -56,7 +56,7 @@ Qed.
 
 Lemma cl_term N o x : {[o := (SEnd, x)]} ⊩^N _ W_cl (∅, {[+ cl o +]}) : TUnit.
 Proof.
-  apply (p_term N W_cl _ ∅ ∅ _ TUnit None (fadd (Some 0) (Some 1)) tid 0).
+  apply (lf_term N W_cl _ ∅ ∅ _ TUnit None (fadd (Some 0) (Some 1)) tid 0).
   - constructor.
   - intros o'. rewrite dom_empty_L. set_solver.
   - set_solver.
@@ -76,7 +76,7 @@ Proof.
   assert (chans_of ΣC = {[c]}) as Ec.
   { unfold chans_of, ΣC. by rewrite dom_singleton_L, set_map_singleton_L. }
   assert (chans_of ∅ = ∅) as E0 by (unfold chans_of; by rewrite dom_empty_L, set_map_empty).
-  pose proof (p_connect N W_cl W_cl ∅ ∅ ΣC ∅ ∅ {[+ cl (c⁺)%cend +]} {[+ cl (c⁻)%cend +]} TUnit) as H.
+  pose proof (lf_connect N W_cl W_cl ∅ ∅ ΣC ∅ ∅ {[+ cl (c⁺)%cend +]} {[+ cl (c⁻)%cend +]} TUnit) as H.
   rewrite Ec, E0, !(left_id_L ∅ (∪)) in H. rewrite Ed in H.
   apply H; clear H.
   - apply cl_term.

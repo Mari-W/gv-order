@@ -17,7 +17,7 @@ The old development in theories/ stays untouched.
 | S8 | soup and adequacy | done (S8.34): `lfsoup_step`, `soup_no_tau_divergence`, `lf_adequacy`, `lf_thread_progress`, `idle_dual` |
 | S9 | lock-free composition and soundness | done (S9.9): `⊪` the soup alone, `lfptyped` (LFTyped.v), `lf_p_term`, `lf_p_connect`, `lf_p_join`, `lf_fundamental`, `lf_soundness`, example `cl_lock_free`. S9.10 to S9.12 type the six S2 examples by ⊩ at finite N, all lock free |
 | S10 | paper | open |
-| C | cleanup | in progress (C.2) |
+| C | cleanup | in progress (C.3) |
 
 ## Deviations
 
@@ -1656,3 +1656,11 @@ The old development in theories/ stays untouched.
   `proc_gen` and `lf_fundamental`, so both are deleted. `sem_p_connect`
   and `lf_p_connect` cover the rule. CheckAll lists the two `p_join`
   lemmas in place of the two deleted ones, 298 results, all closed.
+- C.3. The rules of `lfptyped` are named apart from those of `ptyped`
+  (soup/LFTyped.v). `p_term` is `lf_term`, `p_connect` is `lf_connect`,
+  and the lemma `p_join` of C.2 is `lf_join`. `p_term`, `p_connect` and
+  `p_join` now always mean the rules of `⊢_W`, and CheckAll lists
+  `p_join` and `lf_join` without qualification. The naming table A.4
+  lists no constructor of either judgment and stays. The row of A.5 that
+  plans `p_term`, `p_connect`, `p_join` for both judgments is now out of
+  date for `⊩^N_W`.

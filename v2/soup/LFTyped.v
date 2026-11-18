@@ -8,15 +8,19 @@
     static. P-Term types the thread by the merged judgment at Some N with
     the empty future, and adds [∅ ⊢▷ t] and [meets ϑ 0 tk] for some
     ticket count tk. P-Connect types the cut at exactly dual types
-    ([senv_dual]), and P-Join is admissible as in [ptyped] ([p_join]). No rule renames families. The proof reads
-    fsem^N off the typing through [fsem_of_cost] and the live relation
-    through [live_fundamental_typed], inside [lf_p_term]. *)
+    ([senv_dual]), and P-Join is admissible as in [ptyped] ([lf_join]).
+    No rule renames families. The proof reads fsem^N off the typing
+    through [fsem_of_cost] and the live relation through
+    [live_fundamental_typed], inside [lf_p_term].
+
+    The rules are [lf_term] (P-Term) and [lf_connect] (P-Connect), named
+    apart from [p_term] and [p_connect] of [ptyped]. *)
 
 From GV Require Import soup.LFAdequacy.
 From GV Require Export soup.LFCompose.
 
 Inductive lfptyped (N : nat) : world → senv → proc → ty → Prop :=
-  | p_term W Σ ΘB C0 t T a c ϑ tk :
+  | lf_term W Σ ΘB C0 t T a c ϑ tk :
       types.Types.prim T →
       (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 → pfree Σ →
       (∀ c, c ∈ C0 → ∃ S x, ΘB !! (c⁺)%cend = Some (TE S x (Some N)) ∧
@@ -24,7 +28,7 @@ Inductive lfptyped (N : nat) : world → senv → proc → ty → Prop :=
       typed W (Some N) (tenv_of (Some N) Σ ∪ ΘB) hc_empty [] (∅, None) t T a c ϑ →
       ∅ ⊢▷ t → meets ϑ 0 tk →
       lfptyped N W Σ (C0, {[+ t +]}) T
-  | p_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
+  | lf_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
       lfptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →
       lfptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
       Σ1 ##ₘ ΣC → Σ2 ##ₘ senv_dual ΣC →
@@ -41,7 +45,7 @@ Notation "Σ ⊩^ N '_' W p : T" := (lfptyped N W Σ p T)
 
 (** P-Join is admissible: it is P-Connect with the strictness of the
     join split by [p_join_iff_connect]. *)
-Lemma p_join N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
+Lemma lf_join N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
   lfptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →
   lfptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
   Σ1 ##ₘ ΣC → Σ2 ##ₘ senv_dual ΣC →
@@ -54,7 +58,7 @@ Lemma p_join N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
   lfptyped N (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
 Proof.
   intros H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hw1 Hw2 Hfam HS1 HS2 HS.
-  apply p_connect; try done. by apply p_join_iff_connect.
+  apply lf_connect; try done. by apply p_join_iff_connect.
 Qed.
 
 (** ** The fundamental theorem *)
