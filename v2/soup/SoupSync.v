@@ -106,21 +106,22 @@ Section sync.
     unfold lf_next. cbn [tk_next s_K s_tk s_q].
     assert (Hoi : ∃ h, K !! o = Some h ∧ h.(h_th) = i) by eauto.
     assert (Hoj : ∃ h, K !! edual o = Some h ∧ h.(h_th) = j) by eauto.
-    pose proof (λ Y, @msg_kres_i N K i j o Mv Hij Hoi Hoj HMi Hoo Y) as Ki.
-    pose proof (λ Y, @msg_kres_i' N K i j o Mv Hij Hoi Hoj HMi Hoo Y) as Ki'.
-    pose proof (λ Y, @msg_kres_j N K i j o Mv Hij Hoi Hoj HMi Hoo Y) as Kj.
-    pose proof (λ Y, @msg_kres_j' N K i j o Mv Hij Hoi Hoj HMi Hoo Y) as Kj'.
-    pose proof (λ Y, @msg_kres_other N K i j o Mv Hij Hoi Hoj HMi Hoo Y) as Kt.
-    pose proof (msg_ctrs_i N K i j o Mv Hij Hoi Hoj HMi Hoo) as Ci.
-    pose proof (msg_ctrs_j N K i j o Mv Hij Hoi Hoj HMi Hoo) as Cj.
-    pose proof (msg_ctrs_other N K i j o Mv Hij Hoi Hoj HMi Hoo) as Ct.
-    assert (HK' : ∀ o0, own_next N (EvMsg i j o Mv) K !! o0 =
+    pose proof (λ Y, @sync_kres_i N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) Mv Hij Hoi Hoj HMi Hoo Y) as Ki.
+    pose proof (λ Y, @sync_kres_i' N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) Mv Hij Hoi Hoj HMi Hoo Y) as Ki'.
+    pose proof (λ Y, @sync_kres_j N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) Mv Hij Hoi Hoj HMi Hoo Y) as Kj.
+    pose proof (λ Y, @sync_kres_j' N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) Mv Hij Hoi Hoj HMi Hoo Y) as Kj'.
+    pose proof (λ Y, @sync_kres_other N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) Mv Hij Hoi Hoj HMi Hoo Y) as Kt.
+    pose proof (sync_ctrs_i N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) Mv Hij Hoi Hoj HMi Hoo) as Ci.
+    pose proof (sync_ctrs_j N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) Mv Hij Hoi Hoj HMi Hoo) as Cj.
+    pose proof (sync_ctrs_other N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) Mv Hij Hoi Hoj HMi Hoo) as Ct.
+    cbn [own_next]. rewrite Hkx, Hkx'.
+    assert (HK' : ∀ o0, ksync N i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) Mv K !! o0 =
       if decide (o0 = o) then Some (Hold i (pt_shift 1 x) (Some N))
       else if decide (o0 = edual o) then Some (Hold j (pt_shift 1 (pt_dual x)) (Some N))
       else (λ h, if decide (o0 ∈ Mv) then Hold j h.(h_pt) (ftick h.(h_ctr))
                  else if decide (h.(h_th) = i ∨ h.(h_th) = j) then htick h else h) <$> K !! o0).
-    { intros o0. by rewrite lookup_msg, Hkx, Hkx'. }
-    assert (HdK : dom (own_next N (EvMsg i j o Mv) K) = dom K).
+    { intros o0. by rewrite lookup_ksync. }
+    assert (HdK : dom (ksync N i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) Mv K) = dom K).
     { apply set_eq. intros o0. rewrite !elem_of_dom, HK'.
       destruct (decide (o0 = o)) as [->|]; [split; intros _; [by eexists|done]|].
       destruct (decide (o0 = edual o)) as [->|]; [split; intros _; [by eexists|done]|].

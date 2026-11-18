@@ -109,6 +109,12 @@ Definition kmapr {Y : Type} (g : cend → cend) (m : gmap cend Y) : gmap cend Y 
 Definition tupd (tk : nat → nat) (i : nat) (k : nat) : nat → nat :=
   λ t, if decide (t = i) then k else tk t.
 
+(** A synchronization of thread i on o with thread j on o‾: the actors
+    tick their other ends, the transfer set M moves to j, and the two
+    ends move to y and y′ and refill. *)
+Definition ksync (N i j : nat) (o : cend) (y y' : point) (M : gset cend) (K : own) : own :=
+  kact N o i y (kact N (edual o) j y' (khand M j (ktick i j M K))).
+
 (** The ownership after an event. The actors of a message, a close and
     a choice tick their other ends first, then the acted ends refill and
     the transfer set moves. *)
@@ -118,11 +124,9 @@ Definition own_next (N : nat) (ev : event) (K : own) : own :=
   | EvNew i ℓ c => knew N i c (pgen ℓ (kfresh ℓ K)) K
   | EvNewAt i κ o c => knew N i c ((kpt K o)·κ) K
   | EvSpawn i j M => khand M j K
-  | EvMsg i j o M =>
-      kact N o i (kpt K o)⁺ (kact N o‾ j (kpt K o‾)⁺ (khand M j (ktick i j M K)))
+  | EvMsg i j o M => ksync N i j o (pt_shift 1 (kpt K o)) (pt_shift 1 (kpt K (edual o))) M K
   | EvClose i j o => ktick i j ∅ (delete o (delete o‾ K))
-  | EvChoice i j o b =>
-      kact N o i (sel_pt (kpt K o) b) (kact N o‾ j (bra_pt (kpt K o‾) b) (ktick i j ∅ K))
+  | EvChoice i j o b => ksync N i j o (sel_pt (kpt K o) b) (bra_pt (kpt K (edual o)) b) ∅ K
   | EvLink i o1 o2 => kmapr (csub o1 o2) (delete o1 (delete o2 K))
   end.
 
