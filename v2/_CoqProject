@@ -78,4 +78,6 @@ static/LiveFundamental.v
 examples/GuardEx.v
 test/CompatNotations.v
 soup/Idle.v
+soup/State.v
+soup/Soup.v
 CheckAll.v
