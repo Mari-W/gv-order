@@ -189,18 +189,20 @@ Proof.
   assert (fends w = dom φ1) as Hfw by (rewrite (Vfuel_exact _ _ _ _ _ _ _ Hw); done).
   assert ((Π1 ∪ {[o := s']}) !! o = Some s') as HΠo.
   { apply lookup_union_Some_raw. right. split; [apply not_elem_of_dom; by rewrite HdΠφ|apply lookup_singleton_eq]. }
-  assert (∀ o' f', o' ∈ dom (φ1 ∪ {[o := f]}) ∖ {[o]} → (φ1 ∪ {[o := f]}) !! o' = Some f' → fle (Some 1) f') as Hsp.
-  { intros o' f' Ho' Hf'. rewrite dom_union_L, dom_singleton_L in Ho'.
+  assert (∀ o' f', o' ∈ dom (φ1 ∪ {[o := f]}) ∖ {[o]} → (φ1 ∪ {[o := f]}) !! o' = Some f' →
+            ¬ idle_at (Π1 ∪ {[o := s']}) o' → fle (Some 1) f') as Hsp.
+  { intros o' f' Ho' Hf' Hn. rewrite dom_union_L, dom_singleton_L in Ho'.
     apply lookup_union_Some_raw in Hf' as [Hf'|[_ Hf']]; [|apply lookup_singleton_Some in Hf'; set_solver].
-    exact (Vfuel_age_above _ _ _ _ _ _ _ _ _ _ Ha Hw o' f' Hf'). }
+    apply (Vfuel_age_above _ _ _ _ _ _ _ _ _ _ Ha Hw o' f' Hf').
+    intros (Sq & HSq & Hiq). apply Hn. exists Sq. split; [by apply lookup_union_Some_l|done]. }
   split.
-  { split_and!; [|rewrite dom_union_L, dom_singleton_L; set_solver|intros o' f' Ho' Hf' _; exact (Hsp o' f' Ho' Hf')|done].
+  { split_and!; [|rewrite dom_union_L, dom_singleton_L; set_solver|intros o' f' Ho' Hf' Hn; exact (Hsp o' f' Ho' Hf' Hn)|done].
     intros (S2 & HS2 & Hi). rewrite HΠo in HS2. injection HS2 as <-. unfold idle in Hi. congruence. }
   exists s', m, T', b, S'. split_and!.
   - done.
   - done.
   - rewrite Hfw, dom_union_L, dom_singleton_L. set_solver.
-  - intros o' f' Ho' Hf' _. apply (Hsp o' f'); [|done]. rewrite Hfw in Ho'. rewrite dom_union_L, dom_singleton_L. set_solver.
+  - intros o' f' Ho' Hf' Hn. apply (Hsp o' f'); [|done|done]. rewrite Hfw in Ho'. rewrite dom_union_L, dom_singleton_L. set_solver.
   - rewrite Hfw, <-HdΠφ, mres_union_self by done. unfold fhand. rewrite HdΠφ, mres_union_self by done.
     rewrite ftick_fminus.
     pose proof (Vfuel_age _ _ _ _ _ _ _ _ _ _ Ha Hw) as H1.

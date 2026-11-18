@@ -185,7 +185,8 @@ Definition pent (σ : nat → point) (p : ty * fuel) : ty * fuel := (pinst_ty σ
 
 Lemma tage_pinst c p p' : tage c p p' → ∀ σ, tage c (pent σ p) (pent σ p').
 Proof.
-  induction 1; intros σ; simpl in *; constructor; auto using tfree_pinst.
+  induction 1; intros σ; simpl in *;
+    first [apply age_idle; by unfold pinst_sty | constructor; auto using tfree_pinst].
   - apply (IHtage1 σ).
   - apply (IHtage2 σ).
   - apply (IHtage1 σ).

@@ -17,7 +17,8 @@ The old development in theories/ stays untouched.
 | S8 | soup and adequacy | done (S8.34): `lfsoup_step`, `soup_no_tau_divergence`, `lf_adequacy`, `lf_thread_progress`, `idle_dual` |
 | S9 | lock-free composition and soundness | done (S9.9): `⊪` the soup alone, `lfptyped` (LFTyped.v), `lf_p_term`, `lf_p_connect`, `lf_p_join`, `lf_fundamental`, `lf_soundness`, example `cl_lock_free`. S9.10 to S9.12 type the six S2 examples by ⊩ at finite N, all lock free |
 | S10 | paper | open |
-| C | cleanup | done (C.6): `Λ ⊢▷ t`, P-Join admissible, `lf_term` `lf_connect` `lf_join`, `types/Names.v`, `cctx`, controller untypable (aging) |
+| C | cleanup | done (C.6): `Λ ⊢▷ t`, P-Join admissible, `lf_term` `lf_connect` `lf_join`, `types/Names.v`, `cctx`, controller untypable without `age_idle` |
+| I | idle aging | done (I.3): `age_idle` truncates an idle end, `idle_age_cex`, `ctl_lock_free` at N = 3 |
 
 ## Deviations
 
@@ -1442,6 +1443,7 @@ The old development in theories/ stays untouched.
   | ClientServer | `cs_typed` | `cs_lftyped` | `cs_lock_free` | 3 | (field sum, offset, depth) | none |
   | FactoryEx | `fx_typed` | `fx_lftyped` | `fx_lock_free` | 2 | (field sum, depth, offset) | none |
   | GrowRing | `rg_typed` | `rg_lftyped` | `rg_lock_free` | 4 | (depth, offset, 0) | none |
+  | Controller (I.3) | none | `ctl_lftyped` | `ctl_lock_free` | 3 | (field sum, offset, depth) | none |
 
   Cycle is no counterexample. Its laws ρ ≺ (ρ·0)‾ and ρ‾ ≺ ρ·0 are
   acyclic and both rise in depth, and the program terminates.
@@ -1711,8 +1713,8 @@ The old development in theories/ stays untouched.
   holds k ages k by the step's cost (`lage` in the premises of E-Let,
   E-LetP, E-LetU, E-Pair, E-App). An end is no free type
   (`sess_not_free`), so `tage` ages it by `age_credit`, which lowers its
-  credit by the cost (`sess_ages`, `idle_credit_falls`). Idle ends get no
-  other case. Only an action on an end refills it to N (E-Send, E-Recv),
+  credit by the cost (`sess_ages`, `idle_credit_falls`, both as of C.6,
+  restated or removed in I.3). Idle ends get no other case. Only an action on an end refills it to N (E-Send, E-Recv),
   and no thread may act on k. E-Sub never raises a credit
   (`sess_sub_credit`, rule `sub_sess`). The box type fixes the credit k0
   of k at the loop's parameter, and the guard asks an action, of cost at
@@ -1720,7 +1722,54 @@ The old development in theories/ stays untouched.
   self call at k0 − m with m ≥ 1, and ⟨⟨a, b⟩, k⟩ does not have the
   parameter type. A parameter at credit ∞ is out of reach, because
   E-New and E-NewAt give N and a payload at ∞ needs a sender at ∞. The
-  fuel layer already drops the "≥ 1" checks of idle ends (Q5 (b),
-  fuel/Fuel.v). The gap is the static aging, which would need a case
-  that ages an idle end for free or truncates it at 0. CheckAll lists
-  the three lemmas, 301 results, all closed.
+  fuel layer drops the "≥ 1" checks of idle ends (Q5 (b), fuel/Fuel.v),
+  and their counters still tick at every action. The gap is the static
+  aging, which needs a case that truncates an idle end at 0 (I.1).
+  Aging an idle end for free fails against the fuel (I.2,
+  `idle_age_cex`). CheckAll lists the three lemmas, 301 results, all
+  closed.
+- I.1. Idle ends age by truncation (decision of 2026-11-18, corrected
+  the same day). `tage` gains `age_idle S x a : idle S → tage c (S@x, a)
+  (S@x, a − c)`, with a − c truncated at 0 and no premise `fle c a`
+  (static/Contexts.v). No other typing rule changes, and `thage` on Θ
+  keeps its one case. `idle` moves from fuel/Fuel.v to types/Types.v,
+  because Contexts.v precedes the fuel. `idle_hd` and `idle_sequiv` move
+  with it from soup/Idle.v, and `idle_dual` stays there. Renaming
+  (`tage_gmap`, through `unfoldS_gmap`) and point substitution
+  (`tage_pinst`) carry the new case. Conservativity, weakening and
+  cost/Exact.v go through unchanged.
+- I.2. The fuel supports the truncating form as it stands. F5
+  (`Vty_age`) holds at `age_idle`, because the counter of an idle end
+  and its credit both fall by c truncated at 0 (`fle_fsub_mono`). The
+  kept-credit form fails F5 at c = 1, credit 1 and counter 1
+  (`idle_age_cex`, examples/LFController.v). The counter ticks to 0 and
+  FV asks credit 1 at or below it. One helper changes its statement.
+  `Vty_age_above` said that aging by c leaves every counter of the value
+  at or above c, which an idle end below c breaks. It now concludes
+  `fabove c Π φ` (fuel/FuelBind.v), the same bound for the ends that are
+  not idle, and so do `Vfuel_age_above`, `gfuel_age_above` and
+  `envf_age_above` (cost/CostSem.v, with the new `fabove_union` and
+  `fabove_of`). Every caller asked the bound only of ends that are not
+  idle (F-Tick, the hand-over, the premise `fabove` of `FuelE_bind`). So
+  `csem_bind`, `csem_bind2`, `send_redex` and `cost_e_spawn_lam` pass
+  the idleness hypothesis on in place of dropping it. `cost_fundamental`,
+  `fsem_of_cost` and every relation keep their statements.
+- I.3. The controller types under ⊩ at N = 3 and is lock free
+  (`ctl_typedN`, `ctl_lftyped`, `ctl_lock_free`,
+  examples/LFController.v). The program is ClientServer with a third
+  channel c at the field ρ·2 of the root, made by new_2 on a. C.6 wrote
+  new_1, a second root, which costs a second E-Open and changes nothing
+  else. Both boxes have the type □∀ι κ ζ χ. C. ⟨S1@ι^1 ⊗ S2@κ^2⟩^0 ⊗
+  Skip@χ^0 ⊸^ζ ∗ (`ctl_box`). k stays at credit 0 through every step by
+  `age_idle`, and main lowers c and c′ from 3 to 0 by subtyping
+  (`e_sub_ctl`). The held end k puts its dual point χ‾ into the future of
+  every action of a loop. So C is the constraint of ClientServer with
+  ι+j ≺ χ‾ and κ+j ≺ χ‾ (`ctl_C`), and the world W_ctl adds the laws
+  α+j ≺ γ‾ and β+j ≺ γ‾ for γ the point of c or c′. These rise in the
+  field sum (`W_ctl_lfworld`). Of the C.6 lemmas `sess_not_free` and
+  `sess_sub_credit` stay. `sess_ages` now says that an end that is not
+  idle ages by its credit. `idle_credit_falls` is false under `age_idle`
+  and is gone. `age_tac` (examples/LFTools.v) tries `age_idle` after
+  `age_credit`. CheckAll lists `Vfuel_age`, `Vfuel_age_above`,
+  `idle_age_cex`, `W_ctl_lfworld`, `ctl_lftyped` and `ctl_lock_free` in
+  place of `idle_credit_falls`, 306 results, all closed.

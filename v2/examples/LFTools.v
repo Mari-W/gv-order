@@ -182,10 +182,12 @@ Qed.
 
 (** ** Tactics *)
 
-(** Aging a concrete entry: free, by its credit, or by its parts. *)
+(** Aging a concrete entry: free, by its credit, an idle end by
+    truncation, or by its parts. *)
 Ltac age_tac :=
   first [ solve [apply age_free; repeat constructor]
         | apply age_credit; simpl; lia
+        | apply age_idle; reflexivity
         | apply age_prod; age_tac
         | apply age_ex; age_tac ].
 

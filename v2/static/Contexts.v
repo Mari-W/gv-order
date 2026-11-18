@@ -192,11 +192,12 @@ Definition sf_pinst (σ : nat → point) (F : sfuture) : sfuture := (set_map (pt
 (** ** Aging Γ − c
 
     An entry that holds no end stays. Otherwise its credit covers c and
-    loses c. A product, a sum and an existential age their parts after
+    loses c. An idle end loses c truncated at 0 and need not cover c. A product, a sum and an existential age their parts after
     adding their credit, and keep credit 0. *)
 Inductive tage (c : fuel) : ty * fuel → ty * fuel → Prop :=
   | age_free T a : tfree T → tage c (T, a) (T, a)
   | age_credit T a : fle c a → tage c (T, a) (T, fsub a c)
+  | age_idle S x a : idle S → tage c (TSess S x, a) (TSess S x, fsub a c)
   | age_prod T1 a1 T2 a2 a T1' a1' T2' a2' :
       tage c (T1, fadd a a1) (T1', a1') → tage c (T2, fadd a a2) (T2', a2') →
       tage c (TProd T1 a1 T2 a2, a) (TProd T1' a1' T2' a2', Some 0)

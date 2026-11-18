@@ -590,11 +590,15 @@ Section credits.
     tage c σ σ' → Vty N El Vl n σ.1 σ.2 Π φ v → Vty N El Vl n σ'.1 σ'.2 Π (fminus c <$> φ) v.
   Proof.
     intros Ha. revert Π φ v.
-    induction Ha as [T a Hf|T a Hle|T1 a1 T2 a2 a T1' a1' T2' a2' H1 IH1 H2 IH2
+    induction Ha as [T a Hf|T a Hle|S x a Hi|T1 a1 T2 a2 a T1' a1' T2' a2' H1 IH1 H2 IH2
                     |T1 a1 T2 a2 a T1' a1' T2' a2' H1 IH1 H2 IH2|lb m C T aT a T' aT' H1 IH1];
       intros Π φ v; simpl.
     - intros Hv. destruct (Vty_tfree _ _ _ Hf _ _ _ _ Hv) as (-> & -> & Hv'). by rewrite fmap_empty.
     - by apply Vty_age_credit.
+    - (* age_idle: the credit and the counter fall by c, both truncated
+         at 0, so the credit needs no cover. *)
+      intros (o & S' & f & -> & -> & -> & Hs & Hf). exists o, S', (fminus c f).
+      split_and!; try done; [by rewrite map_fmap_singleton|by apply fle_fsub_mono].
     - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & -> & HdΠ & Hdφ & -> & -> & Hv1 & Hv2).
       exists v1, v2, Π1, Π2, (fminus c <$> φ1), (fminus c <$> φ2). split_and!; try done.
       + by apply map_disjoint_fmap.

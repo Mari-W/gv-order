@@ -47,7 +47,7 @@ and run `make` again. The root build of theories/ ignores v2.
 | types/Costs.v | credits and costs in ℕ ∪ {∞}, ticket transformers with offsets in ℕ ∪ {∞} |
 | types/Types.v | context-free session types and types with credits, costs, transformers and floors, duality, unfolding, ≈, the annotations of N = ∞ (`ty_df`) |
 | types/Erasure.v | `ty_df` commutes with the type operations and preserves ≈ |
-| static/Contexts.v | Θ, Γ, Δ, futures, the fact theory `slt`, aging, capture, subtyping |
+| static/Contexts.v | Θ, Γ, Δ, futures, the fact theory `slt`, aging (an idle end by truncation, `age_idle`), capture, subtyping |
 | static/Typing.v | the merged judgment `typed` (rules `e_*`), its DF projection `dftyped` (rules `d_*`), process typing `ptyped` (`p_term` with `pfree Σ`, `p_connect`, `p_join`), `ptyped_pfree`, `ptyped_chans` |
 | static/Conservativity.v | `typed_dftyped`, `dftyped_typed`, `conservative` |
 | static/Weakening.v | world extension, term-variable renaming and weakening |
@@ -219,3 +219,4 @@ induction on it.
 | examples/LFClientServer.v | the client and server loops at N = 3, `cs_lock_free` |
 | examples/LFFactoryEx.v | the factory at N = 2, `fx_lock_free` |
 | examples/LFGrowRing.v | the growing ring at N = 4 with payload credit 2 (`Schl`), `W_rg_wf`, `rg_lock_free` |
+| examples/LFController.v | the controller at N = 3, its idle end k at credit 0, `W_ctl_lfworld`, `ctl_lock_free`, and `idle_age_cex`, the kept-credit form of `age_idle` against F5 |

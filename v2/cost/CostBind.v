@@ -68,7 +68,7 @@ Proof.
   - by eapply envf_dom.
   - by eapply envf_dom.
   - by apply map_disjoint_dom.
-  - intros o f Hf _. exact (envf_age_above _ _ _ _ _ _ _ _ _ _ _ HaT HaD HE2 o f Hf).
+  - exact (envf_age_above _ _ _ _ _ _ _ _ _ _ _ HaT HaD HE2).
   - done.
   - intros N'' g' ΠK' φK' i j v Πv φv tk' HN' Hk1 Hk2 R1 R2 Hi Hj Hv Hr HdΠ' Hdφ' HV. simpl. rewrite Hfe.
     apply (Hk N'' j (g' ∘ g) (λ x, emap g' (γ x)) ΠK' (fminus (Some i) <$> φK') i v Πv φv tk');
@@ -97,7 +97,7 @@ Proof.
   - by eapply envf_dom.
   - by eapply Vfuel_dom.
   - by apply map_disjoint_dom.
-  - intros o f Hf _. exact (Vfuel_age_above _ _ _ _ _ _ _ _ _ _ Ha HV o f Hf).
+  - exact (Vfuel_age_above _ _ _ _ _ _ _ _ _ _ Ha HV).
   - done.
   - intros N'' g' ΠK' φK' i j u Πu φu tk' HN' Hk1 Hk2 R1 R2 Hi Hj Hu Hr HdΠ' Hdφ' HU. simpl. rewrite Hfe.
     apply (Hk N'' j (emap g' v) ΠK' (fminus (Some i) <$> φK') u Πu φu i tk'); try done.

@@ -351,6 +351,9 @@ Fixpoint sfuel (s : sty) : nat :=
 Definition unfoldS (s : sty) : sty :=
   match unrN (sfuel s) s with Some h => h | None => s end.
 
+(** An idle end: its session type is Skip, so no thread acts on it. *)
+Definition idle (S : sty) : Prop := unfoldS S = SSkip.
+
 Inductive hview :=
   | HSkip
   | HRcv (m : nat) (T : ty) (b : fuel) (s : sty)
@@ -508,6 +511,18 @@ Lemma sequiv_sym s r : sequiv s r → sequiv r s.
 Proof. intros H n. by apply aeq_sym. Qed.
 Lemma sequiv_trans s r t : sequiv s r → sequiv r t → sequiv s t.
 Proof. intros H1 H2 n. by eapply aeq_trans. Qed.
+
+Lemma idle_hd S : idle S ↔ hd S = HSkip.
+Proof.
+  unfold idle, hd. split; [by intros ->|].
+  intros H. rewrite <-(unview_view (unfoldS S)), H. done.
+Qed.
+
+Lemma idle_sequiv S S' : sequiv S S' → idle S ↔ idle S'.
+Proof.
+  intros H. specialize (H 1). simpl in H. unfold eq_step in H. rewrite !idle_hd.
+  destruct (hd S), (hd S'); naive_solver.
+Qed.
 
 Lemma teq_refl T : teq T T.
 Proof. apply eqT_refl, sequiv_refl. Qed.

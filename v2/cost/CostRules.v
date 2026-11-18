@@ -522,7 +522,8 @@ Proof.
   { rewrite (renk_dom _ _ _ R1), (renk_dom _ _ _ R2). by rewrite Hd. }
   rewrite HM. split_and!.
   - by rewrite Hd'.
-  - intros o f _ Ho _. destruct (proj2 R2 o f Ho) as (o0 & -> & Ho0). exact (Hab o0 f Ho0).
+  - intros o f _ Ho Hn. destruct (proj2 R2 o f Ho) as (o0 & -> & Ho0). apply (Hab o0 f Ho0).
+    intros (S0 & HS0 & Hi0). apply Hn. exists S0. split; [by apply (proj1 R1)|done].
   - rewrite mres_self. unfold fhand. rewrite Hd', mres_self.
     destruct n as [|n]; [apply FuelE_0|].
     apply (FuelE_beta _ _ _ _ _ _ _ _ [] _ (subst1 EUnit eb)); [constructor|by constructor|]. simpl.

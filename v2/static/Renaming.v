@@ -378,7 +378,12 @@ Section gmap_types.
   Definition gent (σ : ty * fuel) : ty * fuel := (gmap_ty σ.1, σ.2).
 
   Lemma tage_gmap c σ σ' : tage c σ σ' → tage c (gent σ) (gent σ').
-  Proof. induction 1; simpl in *; constructor; auto using tfree_gmap. Qed.
+  Proof.
+    induction 1; simpl in *;
+      first [ apply age_idle; unfold idle in *; rewrite unfoldS_gmap;
+              match goal with H : unfoldS _ = SSkip |- _ => by rewrite H end
+            | constructor; auto using tfree_gmap ].
+  Qed.
 
   Lemma tcap_gmap h b σ σ' : tcap h b σ σ' → tcap h b (gent σ) (gent σ').
   Proof. induction 1; simpl in *; constructor; auto using tfree_gmap. Qed.

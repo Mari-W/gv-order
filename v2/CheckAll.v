@@ -347,7 +347,13 @@ Print Assumptions fx_lock_free.
 Print Assumptions W_rg_lfworld.
 Print Assumptions rg_lftyped.
 Print Assumptions rg_lock_free.
-(** C.6: why the controller does not type under ⊩ (examples/LFController.v). *)
+(** I.1 to I.3: idle ends age by truncation ([age_idle]), the kept-credit
+    form fails F5, and the controller is lock free (examples/LFController.v). *)
+Print Assumptions Vfuel_age.
+Print Assumptions Vfuel_age_above.
+Print Assumptions idle_age_cex.
 Print Assumptions sess_ages.
-Print Assumptions idle_credit_falls.
 Print Assumptions sess_sub_credit.
+Print Assumptions W_ctl_lfworld.
+Print Assumptions ctl_lftyped.
+Print Assumptions ctl_lock_free.

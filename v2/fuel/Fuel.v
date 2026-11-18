@@ -151,8 +151,7 @@ Proof. intros H [H1 H2]. split; [done|]. intros ->. destruct N'; [done|]. by app
 (** One unit less, truncated at 0. ∞ stays ∞. *)
 Definition ftick (f : fuel) : fuel := fsub f (Some 1).
 
-(** An idle end: its session type is Skip, so no thread acts on it. *)
-Definition idle (S : sty) : Prop := unfoldS S = SSkip.
+(** An idle end ([idle], types/Types.v): its session type is Skip. *)
 
 Definition idle_at (Π : penv) (o : cend) : Prop := ∃ S, Π !! o = Some S ∧ idle S.
 
