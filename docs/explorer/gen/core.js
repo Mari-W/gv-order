@@ -1,0 +1,24 @@
+// Generator core: helpers shared by every part.
+const R = String.raw;
+const h = (k, t) => `\\htmlData{k=${k}}{${t}}`;
+const notes = {};
+const sections = [];
+const examples = [];
+const DEF = 'Nothing. It is a definition.';
+function n(k, title, what, why, breaks, example, rocq) {
+  if (notes[k]) throw new Error('duplicate note ' + k);
+  notes[k] = { title, what, why, breaks, example, rocq };
+}
+function section(id, title, intro) {
+  const s = { id, title, intro, blocks: [] };
+  sections.push(s);
+  return s;
+}
+function block(s, b) {
+  if (!b.modes) b.modes = ['df', 'live', 'lf'];
+  s.blocks.push(b);
+}
+const rule = (name, prem, concl) =>
+  R`\dfrac{${prem}}{${concl}}\;\textsf{${name.replace(/_/g, '\\_')}}`;
+const Q = R`\quad `;
+module.exports = { R, h, n, notes, sections, examples, section, block, rule, Q, DEF };
