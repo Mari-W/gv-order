@@ -1126,3 +1126,35 @@ The old development in theories/ stays untouched.
   (v2/static/LiveFundamental.v). E blind in its environment is left to
   compat/Conv.v of S4 (deviation "S5, E blind in its environment").
   CheckAll lists 201 results, all closed. No `Admitted` and no axiom.
+- S4.20 (in progress). v2/compat/Connect.v, P-Connect. Done:
+  the environments of a cut (`pfree`, `cut_dual`, the side conditions
+  `conn`, symmetric by `conn_sym`), the composite `pconn`, liftings of a
+  composite (`pconn_lift`, `soup_split`), τ steps and session steps of
+  one component inside the composite (`tau_lift`, `sess_lift`,
+  `link_tau`), the offers of the composite (`offered_1_c`,
+  `offered_c_1`), an offer on a cut end meets an offer on its partner
+  (`dual_offers`), a chain of cut ends stops in a strict world
+  (`finite_lt_acc`, needing no decision of ≺), readiness of one
+  component at a primitive type (`comp_ready`), and of the composite
+  (`chain`, `pc_ready`), P-Stop of the composite (`pc_stop`).
+  Deviations found. (1) P-Connect asks the type T of p1 primitive
+  (`prim T`, as `ptyped_prim` gives). Otherwise p1 may stop with a value
+  holding an end while p2 waits, and the composite is not ready.
+  (2) `conn` asks Σ1, Σ2 and ΣC partner-free (`pfree`). A component
+  that holds both ends of a free channel in its interface can hand one
+  end across the cut, and the τ messages of the composite on that free
+  channel then keep the interface at the old types (`q_tau`), so the
+  composite is not in P. S5 has to show that typed interfaces are
+  partner-free, or P-Term has to ask it. (3) `conn` asks the restricted
+  channels of each side apart from its own interface channels as well.
+  Plan for the rest. The step clause of the composite, one lemma per
+  kind of event, over the clauses of the two components (component
+  steps through `q_tau`; a message, close or choice across the cut as
+  Q-Send, Q-Close, Q-Select of one side and Q-Recv, Q-Close, Q-Branch
+  of the other at cost κ(give) + κ(take), both read off the components'
+  clauses at the current level; a link renames or fuses the other side
+  by `Prel_fuse`; external steps re-split the interface by channels).
+  Then the induction: strong induction on the level, inside it
+  `Prel_S_ind` on p1 for every p2 and on p2 for every fusion of p1, and
+  the clause (fuse) of the composite by splitting a fusion of the
+  composite into fusions of the components over a larger cut.

@@ -769,4 +769,45 @@ Section rdy.
         * destruct (chain Hs A1 A2 x2 o2 S2) as (o' & S' & y' & ? & ? & ?); [by right|].
           exists o', S', y'. split_and!; [done|done|by eapply w_lt_trans].
   Qed.
+
+  Lemma pc_stop : T2 = TUnit → pirred pc →
+    ∃ v E, pc = (∅, {[+ v +]} ⊎ E) ∧ Vrel κ (S n) W1 (Σ1 ∪ Σ2) T1 v ∧ ∀ e, e ∈ E → e = EUnit.
+  Proof.
+    intros HTU Hi.
+    assert (stable_p pc) as Hs by (intros p' Hp; by apply (Hi PTau p')).
+    assert (∀ o, ¬ offered_p (Σ1 ∪ Σ2) pc o) as Hno by (intros o [_ (σ & p' & Hp & _)]; by apply (Hi (PSess σ) p')).
+    assert (¬ link_p pc) as Hnl by (intros (os & p' & Hp); by apply (Hi (PSess (SLink os)) p')).
+    pose proof (stable_pconn_l _ _ _ Hs) as Hs1. pose proof (stable_pconn_r _ _ _ Hs) as Hs2.
+    destruct (comp_ready κ n W1 T1 X1 _ _ HT1 H1 Hs1) as [Hl1|[A1 R1]].
+    { exfalso. apply Hnl. by apply (link_p_lift κ n W1 T1 T2 X1 X2 Σ1 ΣC Σ2 ΣD q1 q2 Hc H1 H2). }
+    destruct (comp_ready κ n W1 T2 X2 _ _ HT2 H2 Hs2) as [Hl2|[A2 R2]].
+    { exfalso. apply Hnl. by apply link_p_2. }
+    destruct R1 as (v1 & E1 & Hq1 & Hv1 & HE1).
+    { intros o [Hd Ho]. apply elem_of_dom in Hd as [[S x] L].
+      destruct (lookup_union_cases _ _ _ _ L) as [L'|[_ L']].
+      - apply (Hno o). apply (offered_1_c κ n W1 T1 T2 X1 X2 Σ1 ΣC Σ2 ΣD q1 q2 Hc H1 H2); [by eapply elem_of_dom_2|done|].
+        split; [rewrite dom_union_L; apply elem_of_union_l; by eapply elem_of_dom_2|done].
+      - destruct (chain Hs A1 A2 x o S) as (o' & S' & y' & ? & ? & _); [left; split; [done|by split; [eapply elem_of_dom_2|]]|].
+        by apply (Hno o'). }
+    destruct R2 as (v2 & E2 & Hq2 & Hv2 & HE2).
+    { intros o [Hd Ho]. apply elem_of_dom in Hd as [[S x] L].
+      destruct (lookup_union_cases _ _ _ _ L) as [L'|[_ L']].
+      - apply (Hno o). apply offered_2_c; [by eapply elem_of_dom_2|done|].
+        split; [rewrite dom_union_L; apply elem_of_union_l; by eapply elem_of_dom_2|done].
+      - destruct (chain Hs A1 A2 x o S) as (o' & S' & y' & ? & ? & _); [right; split; [done|by split; [eapply elem_of_dom_2|]]|].
+        by apply (Hno o'). }
+    pose proof (Vrel_prim_empty _ _ _ _ _ _ HT1 Hv1) as HE1'.
+    pose proof (Vrel_prim_empty _ _ _ _ _ _ HT2 Hv2) as HE2'.
+    assert (ΣC = ∅) as HC0.
+    { apply dom_empty_iff_L. apply (f_equal dom) in HE1'. rewrite dom_union_L, dom_empty_L in HE1'. set_solver. }
+    assert (Σ2 = ∅) as H20.
+    { apply dom_empty_iff_L. apply (f_equal dom) in HE2'. rewrite dom_union_L, dom_empty_L in HE2'. set_solver. }
+    rewrite HTU in Hv2. apply Vrel_unit_iff in Hv2 as [_ ->].
+    exists v1, (E1 ⊎ ({[+ EUnit +]} ⊎ E2)). unfold pconn. rewrite Hq1, Hq2. simpl.
+    rewrite HC0. unfold chans_of. rewrite dom_empty_L, set_map_empty. split_and!.
+    - f_equal. multiset_solver.
+    - rewrite H20, (right_id_L ∅ (∪)). rewrite HC0, (right_id_L ∅ (∪)) in Hv1. done.
+    - intros e He. apply gmultiset_elem_of_disj_union in He as [He|He]; [by apply HE1|].
+      apply gmultiset_elem_of_disj_union in He as [He|He]; [by apply gmultiset_elem_of_singleton in He|by apply HE2].
+  Qed.
 End rdy.
