@@ -1213,6 +1213,13 @@ first, in stage S2.
   `meets ϑ 0 tk`. fsem^N is not a premise. The proof gets it from
   `cost_fundamental` and `fsem_of_cost`. P-Connect types the cut at
   exactly dual types. No family renaming (S9.2).
+- P-Term internalizes every pair (author, 2026-11-18). P-Term of `⊢_W`
+  and of `⊩^N_W` asks `pfree Σ`: a channel whose two ends the thread
+  holds goes into C0, never into Σ. The semantic P-Term asks the same.
+  No program is lost, because the channel can always move into C0.
+  P-Connect keeps the composite partner-free, because ΣC is cut and
+  chans Σ1 ## chans Σ2. This discharges the `pfree` side condition of
+  `sem_p_connect` (S4.20, deviation 2) at typed processes.
 
 ## 5  Open decisions for the author
 
