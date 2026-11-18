@@ -81,7 +81,7 @@ Qed.
 (** ** Closed programs *)
 
 Lemma lf_main_typed N W t T a c ϑ tk :
-  types.Types.prim T → typed W (Some N) ∅ hc_empty [] (∅, None) t T a c ϑ →
+  prim T → typed W (Some N) ∅ hc_empty [] (∅, None) t T a c ϑ →
   ∅ ⊢▷ t → meets ϑ 0 tk → ∅ ⊩^N _ W (∅, {[+ t +]}) : T.
 Proof.
   intros Hp Ht Hg Hm. apply (lf_term N W ∅ ∅ ∅ t T a c ϑ tk); [done| | | | |done|done|done].
@@ -92,7 +92,7 @@ Proof.
 Qed.
 
 Lemma lf_main N W t T a c ϑ tk :
-  lfworld W → types.Types.prim T → typed W (Some N) ∅ hc_empty [] (∅, None) t T a c ϑ →
+  lfworld W → prim T → typed W (Some N) ∅ hc_empty [] (∅, None) t T a c ϑ →
   ∅ ⊢▷ t → meets ϑ 0 tk → lock_free (∅, {[+ t +]}).
 Proof. intros HW Hp Ht Hg Hm. eapply (lf_soundness N W _ T HW), lf_main_typed; eauto. Qed.
 

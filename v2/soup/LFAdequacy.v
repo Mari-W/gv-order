@@ -46,7 +46,7 @@ Section run.
 
   Local Abbreviation ak k := (lf_run_state N a0 r l k).
 
-  Lemma HWs : types.Worlds.strict W.
+  Lemma HWs : strict W.
   Proof. exact (proj1 HW). Qed.
 
   Lemma ak_q k : s_q (ak k) = r k.

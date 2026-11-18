@@ -17,7 +17,7 @@ The old development in theories/ stays untouched.
 | S8 | soup and adequacy | done (S8.34): `lfsoup_step`, `soup_no_tau_divergence`, `lf_adequacy`, `lf_thread_progress`, `idle_dual` |
 | S9 | lock-free composition and soundness | done (S9.9): `⊪` the soup alone, `lfptyped` (LFTyped.v), `lf_p_term`, `lf_p_connect`, `lf_p_join`, `lf_fundamental`, `lf_soundness`, example `cl_lock_free`. S9.10 to S9.12 type the six S2 examples by ⊩ at finite N, all lock free |
 | S10 | paper | open |
-| C | cleanup | in progress (C.3) |
+| C | cleanup | in progress (C.4) |
 
 ## Deviations
 
@@ -1664,3 +1664,19 @@ The old development in theories/ stays untouched.
   lists no constructor of either judgment and stays. The row of A.5 that
   plans `p_term`, `p_connect`, `p_join` for both judgments is now out of
   date for `⊩^N_W`.
+- C.4. Shadowed names. stdpp's `strict` (stdpp.base, re-exported by
+  lang/Syntax.v) and the operators `prim` of lang/Syntax.v come back on
+  top of `strict W` and `prim T` whenever a file exports a module of
+  lang/ or lockfree/ after the types. Two places did. static/Guard.v
+  exported lang/Syntax.v and now imports it (examples/GuardEx.v imports
+  it itself), which fixes `prim` for everything after the live
+  fundamental theorem. soup/Soup.v exports lockfree/ThreadProgress.v
+  last, and soup/ needs that order because the end notation `o‾` of
+  lang/ and the point notation `x‾` of types/ share a token. Soup.v now
+  exports types/Names.v after it, a module of two parsing-only
+  abbreviations `strict` and `prim` for the paper's two, which everything
+  after Soup.v inherits. relation/Adequacy.v exports lockfree/TauThread.v
+  before relation/Closure.v and drops its second export of types/Worlds.v.
+  No file qualifies `types.Worlds.strict` or `types.Types.prim` any more
+  (seven files had). The swap files keep their deliberate re-export of
+  lang/ChannelSwap.v, which is about `sren`. 298 results, all closed.

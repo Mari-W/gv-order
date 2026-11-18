@@ -102,7 +102,7 @@ Proof. intros H1 H2 _ _ Hf H12 H1C H2C HC HC1 HC2 _ _ _ _. by apply lf_soup_conn
 (** ** P-Term *)
 
 Theorem lf_soup_term N W Σ ΘB C0 t T tk :
-  types.Types.prim T → (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 →
+  prim T → (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 →
   (∀ c, c ∈ C0 → ∃ S (x : point), ΘB !! (c⁺)%cend = Some (TE S x (Some N)) ∧
                                    ΘB !! (c⁻)%cend = Some (TE (dual S) (pt_dual x) (Some N))) →
   (∀ n, t ∈ E[live]^W _ n⟦tenv_erase (tenv_of (Some N) Σ ∪ ΘB) ⊢ T⟧^∅) →
@@ -134,7 +134,7 @@ Qed.
 (** The rule P-Term: the premises of [p_term] at Some N, a guarded
     thread and a ticket count meeting its transformer, in a strict world. *)
 Theorem lf_p_term W N Σ ΘB C0 t T a c ϑ tk :
-  strict W → types.Types.prim T →
+  strict W → prim T →
   (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 →
   (∀ c, c ∈ C0 → ∃ S (x : point), ΘB !! (c⁺)%cend = Some (TE S x (Some N)) ∧
                                    ΘB !! (c⁻)%cend = Some (TE (dual S) (pt_dual x) (Some N))) →
@@ -160,7 +160,7 @@ Qed.
     A guarded closed thread of primitive type, typed at a finite N, whose
     transformer some ticket count meets, is lock free. *)
 Theorem lf_soundness_source W N t T a c ϑ tk :
-  lfworld W → ∅ ⊢▷ t → types.Types.prim T →
+  lfworld W → ∅ ⊢▷ t → prim T →
   ∅ ; hc_empty ; [] ⊢^(∅, None) _{W,(Some N)} t : T^a ▷ c ; ϑ → meets ϑ 0 tk →
   lock_free (∅, {[+ t +]}).
 Proof.

@@ -133,7 +133,7 @@ Theorem live_soundness W p T : strict W → ∅ ⊢_W p : T → ⊢▷ p →
 Proof. intros HW Hty Hg. apply (live_adequacy W T p HW). by apply live_fundamental_proc. Qed.
 
 (** One closed thread of the DF judgment, with no creation constraint. *)
-Theorem soundness_source W t T : strict W → types.Types.prim T → ∅ ; hc_empty ; [] ⊢^(∅, None) _ W t : T →
+Theorem soundness_source W t T : strict W → prim T → ∅ ; hc_empty ; [] ⊢^(∅, None) _ W t : T →
   deadlock_free (∅, {[+ t +]}).
 Proof.
   intros HW HT Ht. apply (adequacy W T _ HW). intros n.

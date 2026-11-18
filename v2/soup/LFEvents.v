@@ -28,7 +28,7 @@ Lemma owns_of {Y : Type} (K : own) t (m : gmap cend Y) o v : kres K t m !! o = S
 Proof. intros H. apply lookup_kres in H as [_ H]. done. Qed.
 
 Lemma s_ev_ends N n W T C Mq K tk A Π U ev q' :
-  soup_inv N (S n) W ∅ T (LFState (C, Mq) K tk) A Π U → types.Worlds.strict W →
+  soup_inv N (S n) W ∅ T (LFState (C, Mq) K tk) A Π U → strict W →
   istep (C, Mq) ev q' → ev_tau ev → ev_ends K ev.
 Proof.
   intros Hs HW Hst Hτ.

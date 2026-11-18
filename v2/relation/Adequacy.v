@@ -12,10 +12,7 @@
     the least fixpoint of one level, and no state reached admits an
     infinite sequence of them ([live_adequacy]). *)
 
-From GV Require Export relation.Closure lockfree.TauThread.
-(** stdpp's [strict] of relations comes with TauThread, the world's goes
-    on top again. *)
-From GV Require Export types.Worlds.
+From GV Require Export lockfree.TauThread relation.Closure.
 
 Definition sem_ptyped (κ : ctable) (W : world) (Σ : senv) (p : proc) (T : ty) : Prop :=
   ∀ n, Prel κ n W Σ T p.

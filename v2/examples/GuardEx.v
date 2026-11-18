@@ -13,7 +13,7 @@
     receives, creates a channel and spawns the forced self on one end
     ([stage_guarded]). *)
 
-From GV Require Export static.Guard.
+From GV Require Export lang.Syntax static.Guard.
 
 Local Ltac inv_all :=
   repeat match goal with

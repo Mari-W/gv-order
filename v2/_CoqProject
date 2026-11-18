@@ -20,6 +20,7 @@ types/Points.v
 types/Worlds.v
 types/Costs.v
 types/Types.v
+types/Names.v
 types/Erasure.v
 types/Duality.v
 static/Contexts.v

@@ -21,7 +21,7 @@ From GV Require Export soup.LFCompose.
 
 Inductive lfptyped (N : nat) : world → senv → proc → ty → Prop :=
   | lf_term W Σ ΘB C0 t T a c ϑ tk :
-      types.Types.prim T →
+      prim T →
       (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 → pfree Σ →
       (∀ c, c ∈ C0 → ∃ S x, ΘB !! (c⁺)%cend = Some (TE S x (Some N)) ∧
                             ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ (Some N))) →
@@ -36,7 +36,7 @@ Inductive lfptyped (N : nat) : world → senv → proc → ty → Prop :=
       chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
       C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
       world_wf W1 → world_wf W2 → w_fams W1 ## w_fams W2 →
-      types.Worlds.strict (W1 ⊔ W2) →
+      strict (W1 ⊔ W2) →
       lfptyped N (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
 
 Notation "Σ ⊩^ N '_' W p : T" := (lfptyped N W Σ p T)
@@ -53,8 +53,8 @@ Lemma lf_join N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
   chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
   C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
   world_wf W1 → world_wf W2 → w_fams W1 ## w_fams W2 →
-  types.Worlds.strict W1 → types.Worlds.strict W2 →
-  types.Worlds.strict (wrestrict W1 (wshared W1 W2) ⊔ wrestrict W2 (wshared W1 W2)) →
+  strict W1 → strict W2 →
+  strict (wrestrict W1 (wshared W1 W2) ⊔ wrestrict W2 (wshared W1 W2)) →
   lfptyped N (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
 Proof.
   intros H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hw1 Hw2 Hfam HS1 HS2 HS.
@@ -63,7 +63,7 @@ Qed.
 
 (** ** The fundamental theorem *)
 
-Theorem lf_fundamental N W Σ p T : types.Worlds.strict W → Σ ⊩^N _ W p : T → Σ ⊪_W p : T.
+Theorem lf_fundamental N W Σ p T : strict W → Σ ⊩^N _ W p : T → Σ ⊪_W p : T.
 Proof.
   intros HW Hty. revert HW. induction Hty as
     [W Σ ΘB C0 t T a c ϑ tk Hp HB HΣ Hpf Hd Ht Hg Hm

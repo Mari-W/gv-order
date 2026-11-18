@@ -124,7 +124,7 @@ Lemma aend_not_link a o os : aend a = Some o → offers a (LSess (SLink os)) →
 Proof. by destruct a. Qed.
 
 (** V at a primitive type holds no end. *)
-Lemma Vrel_prim_empty κ n W Θ T v : types.Types.prim T → Vrel κ n W Θ T v → Θ = ∅.
+Lemma Vrel_prim_empty κ n W Θ T v : prim T → Vrel κ n W Θ T v → Θ = ∅.
 Proof.
   intros Hp. revert Θ v. induction Hp as [|U a V b HU IHU HV IHV|U a V b HU IHU HV IHV|m k C ub c t U a HU IH];
     intros Θ v.
@@ -140,7 +140,7 @@ Qed.
 Section local.
   #[local] Set Default Proof Using "All".
   Context (N n : nat) (W : world) (T : ty) (a : lfstate) (A : senv) (Π : penv) (U : nat → ty).
-  Context (Hs : soup_inv N (S n) W ∅ T a A Π U) (HW : types.Worlds.strict W).
+  Context (Hs : soup_inv N (S n) W ∅ T a A Π U) (HW : strict W).
 
   Local Abbreviation q := (s_q a).
   Local Abbreviation K := (s_K a).

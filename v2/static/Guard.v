@@ -28,7 +28,7 @@
     gone. GuardCex, the counterexample to the unrepaired form of that
     rule (Appendix B #15), no longer has a rule to exploit. *)
 
-From GV Require Export lang.Syntax.
+From GV Require Import lang.Syntax.
 
 (** ** Terms that act before they return *)
 
