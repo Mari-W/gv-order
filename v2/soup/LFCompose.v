@@ -13,9 +13,11 @@
 
     The live process conjunct ∀ n, p ∈ P[live] waits for P-Term,
     P-Connect and P-Join of stage S4. [lf_sem_term] and [lf_sem_connect]
-    take it as a premise. *)
+    take it as a premise. Adequacy reads the soup alone, so a closed
+    thread is lock free without it ([lf_soundness_source]). *)
 
 From stdpp Require Import relations.
+From GV Require Import soup.LFAdequacy.
 From GV Require Export soup.SoupCompose static.LiveFundamental cost.CostFund.
 From GV Require Import compat.Conv.
 
@@ -173,3 +175,23 @@ Theorem lf_sem_term W N Σ ΘB C0 t T a c ϑ tk :
   (∀ n, (C0, {[+ t +]}) ∈ P[live]^W _ n⟦Σ ⊢ T⟧) →
   Σ ⊪_W (C0, {[+ t +]}) : T.
 Proof. intros. split; [done|]. by eapply lf_soup_term_typed. Qed.
+
+(** ** One closed thread
+
+    A guarded closed thread of primitive type, typed at a finite N, whose
+    transformer some ticket count meets, is lock free. No process
+    conjunct is needed: adequacy reads the soup alone
+    ([lf_adequacy_soup]). *)
+Theorem lf_soundness_source W N t T a c ϑ tk :
+  lfworld W → guarded t → types.Types.prim T →
+  ∅ ; hc_empty ; [] ⊢^(∅, None) _{W,(Some N)} t : T^a ▷ c ; ϑ → meets ϑ 0 tk →
+  lock_free (∅, {[+ t +]}).
+Proof.
+  intros HW Hg Hp Hty Hm.
+  assert (tenv_of (Some N) ∅ ∪ ∅ = (∅ : tenv)) as E by (unfold tenv_of; by rewrite fmap_empty, map_union_empty).
+  rewrite <-E in Hty.
+  assert (∀ o, o ∈ dom (∅ : tenv) ↔ ech o ∈ (∅ : gset chan)) as HB by (intros o; rewrite dom_empty_L; set_solver).
+  destruct (lf_soup_term_typed W N ∅ ∅ ∅ t T a c ϑ tk (proj1 HW) Hg Hp HB
+    ltac:(set_solver) ltac:(set_solver) Hty Hm) as (N' & a' & He & Hs).
+  rewrite <-He. by apply (lf_adequacy_soup N' W T a').
+Qed.

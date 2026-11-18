@@ -15,7 +15,7 @@ The old development in theories/ stays untouched.
 | S6 | fuel | done |
 | S7 | cost judgment | done |
 | S8 | soup and adequacy | done (S8.34): `lfsoup_step`, `soup_no_tau_divergence`, `lf_adequacy`, `lf_thread_progress`, `idle_dual` |
-| S9 | lock-free composition and soundness | in progress (S9.4): soup side done, `soup_connect`, `soup_term`, `lf_soup_connect`, `lf_soup_term_typed`; process conjunct waits on S4 (targets in S9.4) |
+| S9 | lock-free composition and soundness | in progress (S9.5): soup side done, `soup_connect`, `soup_term`, `lf_soup_connect`, `lf_soup_term_typed`, `lf_soundness_source`; process conjunct waits on S4 (targets in S9.5) |
 | S10 | paper | open |
 
 ## Deviations
@@ -1330,4 +1330,44 @@ The old development in theories/ stays untouched.
   `lf_soup_term_typed`, and `lf_sem_term`, `lf_sem_connect` with the
   live process conjunct as a premise. CheckAll lists 248 results, all
   closed.
+- S9.4. `lf_soundness_source : lfworld W → guarded t → prim T →
+  ∅ ; ∅ ; [] ⊢^(∅, None) _{W,N} t : T^a ▷ c ; ϑ (N finite) →
+  meets ϑ 0 tk → lock_free (∅, {[+ t +]})`, from `lf_soup_term_typed`
+  and `lf_adequacy_soup`, with no process conjunct. CheckAll lists 249
+  results, all closed.
+- S9.5. Targets, not proved. Each is the soup lemma of S9.2 and S9.3
+  plus the P lemma named.
+  `lf_p_term : strict W → guarded t → [the premises of p_term at Some N]
+  → meets ϑ 0 tk → Σ ⊪_W (C0, {[+ t +]}) : T` is `lf_sem_term` after
+  the live P-Term `∀ n, (C0, {[+ t +]}) ∈ P[live]^W _ n⟦Σ ⊢ T⟧` from
+  the same premises (S4 P-Term at κ_L, the thread through
+  `typed_live`).
+  `lf_p_connect : (Σ1 ∪ Σ_C) ⊪_{W1} (C1, E1) : T →
+  (Σ2 ∪ Σ̄_C) ⊪_{W2} (C2, E2) : 1 → [the side conditions of p_connect]
+  → (Σ1 ∪ Σ2) ⊪_{W1 ⊔ W2} (C1 ∪ C2 ∪ chans Σ_C, E1 ⊎ E2) : T` is
+  `lf_sem_connect` after the live P-Connect of S4.20 at W1 ⊔ W2. Its
+  inputs: both components moved to W1 ⊔ W2 by `Prel_mono`
+  (`wext_join_l`, `wext_join_r`); `conn Σ1 Σ_C C1 Σ2 Σ̄_C C2`, of which
+  `cut_dual Σ_C Σ̄_C` follows from `senv_dual_lookup` (sdual S (dual S)
+  by reflexivity) and the channel conditions are those of p_connect,
+  but `pfree Σ1` and `pfree Σ2` are not given by p_connect (S4.20,
+  deviation 2: S5 shows typed interfaces partner-free, or the rule asks
+  it); `prim T` from `sp_prim` of the first soup.
+  `lf_p_join`: the same with the live P-Join. Its soup half is
+  `lf_soup_connect` unchanged.
+  `Σ ⊩^N_W p : T` (`lfptyped`) is not defined. The proposal says the
+  lock-free rules add fsem^N to P-Term. With the merged judgment of S7,
+  `fsem_of_cost` gives fsem^N from `meets ϑ 0 tk`, so either premise
+  serves, and a guarded thread is needed for `live_fundamental_typed`.
+  The author chooses the form.
+  `lf_fundamental : strict W → Σ ⊩^N_W p : T → Σ ⊪_W p : T`, with every
+  thread guarded, by induction: P-Term by `lf_p_term`, P-Connect by
+  `lf_p_connect` with strict W1 and strict W2 from `strict_join_iff`,
+  P-Join by `lf_p_join`.
+  `lf_soundness : lfworld W → ∅ ⊩^N_W p : T → lock_free p` is
+  `lf_adequacy` after `lf_fundamental`.
+  If Q12 drops the process conjunct from `⊪`, no P lemma is needed: the
+  same induction runs on `lf_soup` with `lf_soup_term_typed` and
+  `lf_soup_connect`, and `lf_adequacy_soup` closes `lf_soundness`, as in
+  `lf_soundness_source`.
 

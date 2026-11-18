@@ -291,3 +291,4 @@ Print Assumptions lf_sem_connect.
 Print Assumptions lf_soup_term.
 Print Assumptions lf_soup_term_typed.
 Print Assumptions lf_sem_term.
+Print Assumptions lf_soundness_source.

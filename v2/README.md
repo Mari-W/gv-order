@@ -203,4 +203,4 @@ P-Connect and P-Join of S4.
 | File | Content |
 |---|---|
 | soup/SoupCompose.v | `soup_par`, `soup_nu`, `soup_connect`, `soup_term` |
-| soup/LFCompose.v | `lf_soup`, `lf_sem_iff`, `soup_lift`, `lf_soup_connect`, `lf_soup_term`, `lf_soup_term_typed`, `lf_sem_connect`, `lf_sem_term` |
+| soup/LFCompose.v | `lf_soup`, `lf_sem_iff`, `soup_lift`, `lf_soup_connect`, `lf_soup_term`, `lf_soup_term_typed`, `lf_sem_connect`, `lf_sem_term`, `lf_soundness_source` |
