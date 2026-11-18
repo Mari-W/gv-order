@@ -7,10 +7,9 @@
                      thread, a ticket count meeting its transformer
                      ⟹ Σ ⊪_W (C0, {t}) : T
       lf_p_connect : the premises of P-Connect, at ⊪ ⟹ (Σ1 ∪ Σ2) ⊪_{W1 ⊔ W2} …
-      lf_p_join    : the premises of P-Join, at ⊪ ⟹ the same
 
-    P-Connect and P-Join share one soup lemma ([lf_soup_connect]), which
-    reads no strictness of the worlds. The world enters only through
+    P-Connect is one soup lemma ([lf_soup_connect]), which reads no
+    strictness of the worlds. P-Join is admissible in ⊩ (soup/LFTyped.v). The world enters only through
     E[live] at P-Term. A closed thread is lock free
     ([lf_soundness_source]). *)
 
@@ -87,8 +86,8 @@ Proof.
     eexists _, _, _. by apply soup_connect.
 Qed.
 
-(** The rules P-Connect and P-Join, with the premises of [p_connect] and
-    [p_join]. The soup uses the channel conditions only. *)
+(** The rule P-Connect, with the premises of [p_connect]. The soup uses
+    the channel conditions only. *)
 Theorem lf_p_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
   (Σ1 ∪ ΣC) ⊪_W1 (C1, E1) : T → (Σ2 ∪ senv_dual ΣC) ⊪_W2 (C2, E2) : TUnit →
   Σ1 ##ₘ ΣC → Σ2 ##ₘ senv_dual ΣC →
@@ -99,18 +98,6 @@ Theorem lf_p_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
   strict (W1 ⊔ W2) →
   (Σ1 ∪ Σ2) ⊪_(W1 ⊔ W2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) : T.
 Proof. intros H1 H2 _ _ Hf H12 H1C H2C HC HC1 HC2 _ _ _ _. by apply lf_soup_connect. Qed.
-
-Theorem lf_p_join W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
-  (Σ1 ∪ ΣC) ⊪_W1 (C1, E1) : T → (Σ2 ∪ senv_dual ΣC) ⊪_W2 (C2, E2) : TUnit →
-  Σ1 ##ₘ ΣC → Σ2 ##ₘ senv_dual ΣC →
-  (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
-  chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
-  C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
-  world_wf W1 → world_wf W2 → w_fams W1 ## w_fams W2 →
-  strict W1 → strict W2 →
-  strict (wrestrict W1 (wshared W1 W2) ⊔ wrestrict W2 (wshared W1 W2)) →
-  (Σ1 ∪ Σ2) ⊪_(W1 ⊔ W2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) : T.
-Proof. intros H1 H2 _ _ Hf H12 H1C H2C HC HC1 HC2 _ _ _ _ _ _. by apply lf_soup_connect. Qed.
 
 (** ** P-Term *)
 

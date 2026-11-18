@@ -17,7 +17,7 @@ The old development in theories/ stays untouched.
 | S8 | soup and adequacy | done (S8.34): `lfsoup_step`, `soup_no_tau_divergence`, `lf_adequacy`, `lf_thread_progress`, `idle_dual` |
 | S9 | lock-free composition and soundness | done (S9.9): `⊪` the soup alone, `lfptyped` (LFTyped.v), `lf_p_term`, `lf_p_connect`, `lf_p_join`, `lf_fundamental`, `lf_soundness`, example `cl_lock_free`. S9.10 to S9.12 type the six S2 examples by ⊩ at finite N, all lock free |
 | S10 | paper | open |
-| C | cleanup | in progress (C.1) |
+| C | cleanup | in progress (C.2) |
 
 ## Deviations
 
@@ -1646,3 +1646,13 @@ The old development in theories/ stays untouched.
   `sem_later_empty`. The inductive is `lguard`, because stdpp's
   `guard` (the option monad) shadows a plain `guard`. test/GuardNotations.v
   prints both notations, `live_fundamental` and `live_soundness`.
+- C.2. P-Join is admissible (static/Typing.v, soup/LFTyped.v). Its
+  premises are those of P-Connect with the strictness of the join split
+  in three, and `p_join_iff_connect` gives the join back. The
+  constructor `p_join` leaves `ptyped` and `lfptyped`, and a lemma
+  `p_join` with the statement of the constructor takes its place in
+  each. `sem_p_join` (compat/ConnectP.v) and `lf_p_join`
+  (soup/LFCompose.v) had no user left beyond the third case of
+  `proc_gen` and `lf_fundamental`, so both are deleted. `sem_p_connect`
+  and `lf_p_connect` cover the rule. CheckAll lists the two `p_join`
+  lemmas in place of the two deleted ones, 298 results, all closed.

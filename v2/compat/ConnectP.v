@@ -143,13 +143,3 @@ Proof.
   - eapply Prel_mono; [apply wext_join_l|done].
   - eapply Prel_mono; [apply wext_join_r|done].
 Qed.
-
-(** P-Join: the same composite. The rules P-Join and P-Connect differ
-    only in their side conditions on worlds, which agree by
-    [p_join_iff_connect], and the semantic lemma asks none of them. *)
-Theorem sem_p_join κ n W1 W2 Σ1 ΣC Σ2 ΣD p1 p2 T :
-  prim T →
-  p1 ∈ P[κ]^W1 _ n⟦Σ1 ∪ ΣC ⊢ T⟧ → p2 ∈ P[κ]^W2 _ n⟦Σ2 ∪ ΣD ⊢ TUnit⟧ →
-  conn Σ1 ΣC p1.1 Σ2 ΣD p2.1 →
-  pconn p1 p2 (chans_of ΣC) ∈ P[κ]^(W1 ⊔ W2) _ n⟦Σ1 ∪ Σ2 ⊢ T⟧.
-Proof. apply sem_p_connect. Qed.

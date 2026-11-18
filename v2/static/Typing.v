@@ -20,8 +20,8 @@
     the same rules without the cost premises and without aging and
     capture. E-Let types the primitive let x = e1 in e2 (decision Q13).
     A let is no closure, so it captures nothing and needs no lower point,
-    and no rule matches the shape of a redex. [ptyped] is process typing with P-Term, P-Connect and P-Join
-    in the two-world form. *)
+    and no rule matches the shape of a redex. [ptyped] is process typing with P-Term and P-Connect
+    in the two-world form, P-Join is admissible ([p_join]). *)
 
 From GV Require Export static.Contexts.
 
@@ -315,10 +315,11 @@ Inductive dftyped (W : world) : tenv → hctx → lenv → sfuture → expr → 
 
     P-Term types one thread over the interface Σ and the ends Θ_B of the
     restricted channels C0, both ends of each, dual at dual points, with
-    credit N. P-Connect and P-Join compose two components typed at their
-    own worlds, whose families are apart, over the cut Σ_C. P-Connect
-    asks the join strict, P-Join only the restrictions to the shared
-    constants (cleanup R7, [strict_join_iff]). *)
+    credit N. P-Connect composes two components typed at their own
+    worlds, whose families are apart, over the cut Σ_C, and asks the join
+    strict. P-Join asks only the restrictions to the shared constants
+    strict (cleanup R7, [strict_join_iff]). It is a lemma, [p_join],
+    because the two conditions agree ([p_join_iff_connect]). *)
 
 Definition chans_of (Σ : senv) : gset chan := set_map ech (dom Σ).
 
@@ -359,17 +360,6 @@ Inductive ptyped (N : fuel) : world → senv → proc → ty → Prop :=
       C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
       world_wf W1 → world_wf W2 → w_fams W1 ## w_fams W2 →
       strict (W1 ⊔ W2) →
-      ptyped N (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T
-  | p_join W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
-      ptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →
-      ptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
-      Σ1 ##ₘ ΣC → Σ2 ##ₘ senv_dual ΣC →
-      (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
-      chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
-      C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
-      world_wf W1 → world_wf W2 → w_fams W1 ## w_fams W2 →
-      strict W1 → strict W2 →
-      strict (wrestrict W1 (wshared W1 W2) ⊔ wrestrict W2 (wshared W1 W2)) →
       ptyped N (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
 
 (** ** Notations (Appendix A) *)
@@ -395,6 +385,24 @@ Lemma p_join_iff_connect W1 W2 :
   strict (W1 ⊔ W2) ↔
     strict W1 ∧ strict W2 ∧ strict (wrestrict W1 (wshared W1 W2) ⊔ wrestrict W2 (wshared W1 W2)).
 Proof. apply strict_join_iff. Qed.
+
+(** P-Join is admissible: it is P-Connect with the strictness of the
+    join split by [p_join_iff_connect]. *)
+Lemma p_join N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
+  ptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →
+  ptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
+  Σ1 ##ₘ ΣC → Σ2 ##ₘ senv_dual ΣC →
+  (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
+  chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
+  C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
+  world_wf W1 → world_wf W2 → w_fams W1 ## w_fams W2 →
+  strict W1 → strict W2 →
+  strict (wrestrict W1 (wshared W1 W2) ⊔ wrestrict W2 (wshared W1 W2)) →
+  ptyped N (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
+Proof.
+  intros H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hw1 Hw2 Hfam HS1 HS2 HS.
+  apply p_connect; try done. by apply p_join_iff_connect.
+Qed.
 
 Lemma ptyped_prim N W Σ p T : ptyped N W Σ p T → prim T.
 Proof. induction 1; auto. Qed.
@@ -423,6 +431,6 @@ Qed.
 (** A typed process restricts no channel of its interface. *)
 Lemma ptyped_chans N W Σ p T : ptyped N W Σ p T → p.1 ## chans_of Σ.
 Proof.
-  induction 1 as [|? ? ? ? ? ? ? ? ? ? _ IH1 _ IH2 ? ? ? ? ? ? ? ? ?|? ? ? ? ? ? ? ? ? ? _ IH1 _ IH2 ? ? ? ? ? ? ? ? ?];
+  induction 1 as [|? ? ? ? ? ? ? ? ? ? _ IH1 _ IH2 ? ? ? ? ? ? ? ? ?];
     simpl in *; [done|..]; rewrite !chans_of_union' in *; set_solver.
 Qed.

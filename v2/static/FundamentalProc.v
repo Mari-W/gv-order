@@ -11,8 +11,8 @@
 
     One induction on [ptyped] for every cost table whose threads satisfy
     the term-level theorem ([proc_gen]): P-Term by [sem_p_term], P-Connect
-    and P-Join by [sem_p_connect] and [sem_p_join], whose side condition
-    [conn] the premises of the rules give ([ptyped_conn]). The results
+    by [sem_p_connect], whose side condition [conn] the premises of the
+    rule give ([ptyped_conn]). The results
     hold at every fuel N, ⊢_W is the instance N = ∞. *)
 
 From GV Require Export compat.PTerm static.LiveFundamental.
@@ -99,8 +99,7 @@ Section proc.
   Proof.
     intros HW Hty. revert HW. induction Hty as
       [W Σ ΘB C0 t T a c ϑ Hp HB HΣ Hpf Hd Ht
-      |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T H1 IH1 H2 IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hw1 Hw2 Hfam HJ
-      |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T H1 IH1 H2 IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hw1 Hw2 Hfam HS1 HS2 HJ];
+      |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T H1 IH1 H2 IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hw1 Hw2 Hfam HJ];
       intros HW HG n; simpl in HG.
     - apply (sem_p_term κ n W _ Σ (tenv_erase ΘB) C0 t T Hp (pterm_sth N Σ ΘB C0 HB HΣ Hpf Hd)).
       assert (G t) as Hg by (apply HG; multiset_solver).
@@ -108,9 +107,6 @@ Section proc.
     - destruct (proj1 (p_join_iff_connect W1 W2 Hw1 Hw2 Hfam) HJ) as (HS1 & HS2 & _).
       pose proof (ptyped_conn _ _ _ _ _ _ _ _ _ _ _ H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2) as Hc.
       refine (sem_p_connect κ n W1 W2 Σ1 ΣC Σ2 (senv_dual ΣC) (C1, E1) (C2, E2) T (ptyped_prim _ _ _ _ _ H1)
-                (IH1 HS1 _ n) (IH2 HS2 _ n) Hc); intros t Ht; apply HG; simpl; multiset_solver.
-    - pose proof (ptyped_conn _ _ _ _ _ _ _ _ _ _ _ H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2) as Hc.
-      refine (sem_p_join κ n W1 W2 Σ1 ΣC Σ2 (senv_dual ΣC) (C1, E1) (C2, E2) T (ptyped_prim _ _ _ _ _ H1)
                 (IH1 HS1 _ n) (IH2 HS2 _ n) Hc); intros t Ht; apply HG; simpl; multiset_solver.
   Qed.
 End proc.

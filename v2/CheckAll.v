@@ -224,11 +224,11 @@ Print Assumptions Prel_fuse.
 Print Assumptions Prel_internalize.
 Print Assumptions fuse_ok_compose.
 Print Assumptions pren_ok_csub.
-(** S4. P-Connect and P-Join. *)
+(** S4. P-Connect, P-Join admissible. *)
 Print Assumptions pc_clauses.
 Print Assumptions fs_conn.
 Print Assumptions sem_p_connect.
-Print Assumptions sem_p_join.
+Print Assumptions static.Typing.p_join.
 (** S4. P-Term. *)
 Print Assumptions Ebody_rename.
 Print Assumptions Erel_S_ind_ren.
@@ -315,10 +315,10 @@ Print Assumptions soup_term.
 Print Assumptions soup_lift.
 Print Assumptions lf_soup_connect.
 Print Assumptions lf_p_connect.
-Print Assumptions lf_p_join.
 Print Assumptions lf_soup_term.
 Print Assumptions lf_p_term.
 Print Assumptions lf_soundness_source.
+Print Assumptions soup.LFTyped.p_join.
 Print Assumptions lf_fundamental.
 Print Assumptions lf_soundness.
 Print Assumptions lfworld_bare.
