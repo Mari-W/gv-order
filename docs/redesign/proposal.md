@@ -1237,11 +1237,17 @@ first, in stage S2.
   reason that nobody waits on the held end. No termination analysis now
   (author, 2026-11-18). The second option is raised again with the
   points redesign.
-- Idle ends age for free in the typing (author, 2026-11-18). `tage`
-  gains `age_idle`: an end whose session type unfolds to Skip keeps
-  its credit. This matches the fuel, where F-Tick and the hand-over
-  skip idle ends (Q5 b). Without it the controller (#20) types at no
-  finite N (C.6, examples/LFController.v).
+- Idle ends age by truncation in the typing (author, 2026-11-18,
+  corrected the same day). `tage` gains `age_idle`: an end whose session
+  type unfolds to Skip ages without the premise `fle c a`, and its
+  credit falls to max(a − c, 0). The first form, an idle end keeping its
+  credit, was unsound. The fuel skips only the checks "≥ 1" of F-Tick
+  and the hand-over for idle ends, and their counters still tick, so a
+  kept credit exceeds the counter (`idle_age_cex`, a counterexample to
+  the F5 instance at c = 1, credit 1, counter 1). Stopping idle counters
+  in the fuel instead would make counters depend on the index (Q5).
+  Without `age_idle` the controller (#20) types at no finite N (C.6,
+  examples/LFController.v).
 
 ## 5  Open decisions for the author
 
