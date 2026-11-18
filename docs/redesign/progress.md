@@ -1899,3 +1899,19 @@ The old development in theories/ stays untouched.
   table, so the section hypothesis `Hsl` is gone) and `dftyped_tfacts`.
   CheckAll lists `typed_sem` in place of `dftyped_sem` and
   `dftyped_later`.
+- M.2. One copy of the term rules (decision of 2026-11-18, cleanup).
+  After M.1 no proof reads the rules without marks. compat/Rules.v
+  (`sem_op`, the ten operator rules `gen_e_*` and their 20 instances
+  `sem_e_*`, `live_e_*`) and the structural rules of compat/TermRules.v
+  (`gen_e_unit` … `gen_e_pack`, `gen_e_spawn_lam`, `sem_bind`,
+  `sem_frame0`, `sem_typed_at_blind`, the groundings `Grel_only`,
+  `Grel_unl`, `Grel_heads`, `Grel_ends`, `Grel_fends`, `Grel_wk`,
+  `Grel_contract`, `Grel_pick`) are gone, because `later_*` at the empty
+  marks are the same rules (`sem_later_empty`). What remains of
+  TermRules.v (`Vrel_tsub`, `Erel_spawn_thunk`, `lbx_ok`, `beta_det`, the
+  environment lemmas) moves into compat/LiveRules.v, and `gen_e_box`, the
+  one rule without a marked twin (it pays β where `later_box` marks the
+  self), moves there too and reads its grounding through
+  `GrelL_unmarked`. Two files and 760 lines go. CheckAll drops the 20
+  instances and `gen_e_abs`, `gen_e_app`, `gen_e_conv`, `gen_e_pack`,
+  `gen_e_spawn_lam`.

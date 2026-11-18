@@ -1284,7 +1284,9 @@ first, in stage S2.
   the merged judgment at N = ∞ with the annotations of N = ∞, cost ∞
   and transformer (∞, ∞), and D-Unit to D-Open are lemmas. One semantic
   induction on the merged judgment, generic in the cost table and the
-  guard, gives the DF and the live fundamental theorems.
+  guard, gives the DF and the live fundamental theorems. M.2: the
+  semantic rules exist once, with marks, and the rules without marks
+  are their instance at the empty marks.
 
 ## 5  Open decisions for the author
 

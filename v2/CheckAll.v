@@ -12,7 +12,7 @@ From GV Require Import relation.Adequacy.
 From GV Require Import static.FundamentalProc.
 From GV Require Import fuel.FuelSub.
 From GV Require Import cost.Transformers cost.Forwarder cost.Exact cost.CostFund.
-From GV Require Import compat.Rules compat.LiveDF compat.Swap compat.Rename compat.PSwap compat.Conv compat.ConnectP.
+From GV Require Import compat.LiveDF compat.Swap compat.Rename compat.PSwap compat.Conv compat.ConnectP.
 From GV Require Import static.Fundamental examples.GuardEx.
 From GV Require Import soup.LFAdequacy soup.LFCompose soup.LFTyped examples.LFClose.
 From GV Require Import examples.LFTools examples.LFCycle examples.LFFreshBetween
@@ -189,26 +189,6 @@ Print Assumptions Erel_spawn.
 Print Assumptions Erel_new_at.
 Print Assumptions Erel_new.
 Print Assumptions Erel_force.
-Print Assumptions sem_e_send.
-Print Assumptions sem_e_recv.
-Print Assumptions sem_e_close.
-Print Assumptions sem_e_select.
-Print Assumptions sem_e_branch.
-Print Assumptions sem_e_link.
-Print Assumptions sem_e_spawn.
-Print Assumptions sem_e_new_at.
-Print Assumptions sem_e_force.
-Print Assumptions sem_e_new.
-Print Assumptions live_e_send.
-Print Assumptions live_e_recv.
-Print Assumptions live_e_close.
-Print Assumptions live_e_select.
-Print Assumptions live_e_branch.
-Print Assumptions live_e_link.
-Print Assumptions live_e_spawn.
-Print Assumptions live_e_new_at.
-Print Assumptions live_e_force.
-Print Assumptions live_e_new.
 Print Assumptions dual_unfoldS.
 Print Assumptions sequiv_dual.
 Print Assumptions live_sub_df.
@@ -268,13 +248,8 @@ Print Assumptions Prel_conv.
 Print Assumptions Erel_cover.
 Print Assumptions Erel_ty_mono.
 Print Assumptions Vrel_tsub.
-Print Assumptions gen_e_abs.
 Print Assumptions gen_e_box.
-Print Assumptions gen_e_app.
-Print Assumptions gen_e_conv.
-Print Assumptions gen_e_pack.
 (** S5: the fundamental theorem for terms. *)
-Print Assumptions gen_e_spawn_lam.
 Print Assumptions later_spawn_lam.
 Print Assumptions typed_sem.
 Print Assumptions fundamental.

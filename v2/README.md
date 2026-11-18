@@ -106,7 +106,6 @@ reads no point, no world and no relation. Every step costs one level.
 | compat/Blind.v | heads of session types up to ≈ (`seqv_unfold_*`), V, E and P agree at types whose erasures are ≈ (`Vrel_teq`, `Erel_teq_ty`, `Prel_teq`), the blindness lemma `Vrel_blind`, `Erel_blind` |
 | compat/SemTyped.v | groundings `Grel`, the judgment at a set of points `sem_typed_at`, static futures `sf_den`, `Θ ; Δ ⊨^F _ W t : T` and `Θ ; Δ ⊫^F _ W t : T` (`sem_typed κ`) |
 | compat/Redex.v | exact ends and heads of values (`Vrel_exact`, `Vrel_heads`), the β redexes and the redex of every operator (`Erel_send` … `Erel_force`, `Erel_new`) |
-| compat/Rules.v | the operator rules over every cost table (`gen_e_*`) and their instances `sem_e_*`, `live_e_*` |
 | compat/LiveDF.v | `live_sub_df`: ∅ ⊫_W p : T ⟹ ∅ ⊨_W p : T at a prim, box-free T |
 | compat/Swap.v | the transposition of channel names on environments (`sswap`) and readiness |
 | compat/Rename.v | decision Q16: V and E under every map of ends injective on the held ends (`Vrel_rename`, `Erel_rename`), P by projection of its clause (fuse) (`Prel_fuse`), a composite of fusions is a fusion (`fuse_ok_compose`), renaming (`Prel_rename`, D = ∅) and Internalize (`Prel_internalize`, h = id) as instances, the transpositions as instances (`Vrel_swap`, `Erel_swap`), the link substitution as a renaming of the other component (`pren_ok_csub`) |
@@ -157,9 +156,8 @@ point (`Vthunk`), which E-SpawnLam meets (`later_spawn_lam`).
 | File | Content |
 |---|---|
 | compat/EFacts.v | E is closed upwards in its future (`Erel_cover`) and monotone in its type above a world (`Erel_ty_mono`) |
-| compat/TermRules.v | groundings at heads, ends and entries (`Grel_heads`, `Grel_fends`, `Grel_pick`), V along subtyping (`Vrel_tsub`), the structural rules `gen_e_unit` … `gen_e_pack`, E-Box at a positive cost of β, E-SpawnLam (`gen_e_spawn_lam`) |
 | compat/BindActs.v | the bind lemma for a hole that acts before it returns (`Erel_bind_acts`) |
-| compat/LiveRules.v | groundings with marks `GrelL`, `sem_later`, every rule with marks, the box that marks its self (`later_box`), frames that clear the marks (`later_bind_acts`) |
+| compat/LiveRules.v | V along subtyping (`Vrel_tsub`), groundings with marks `GrelL`, `sem_later`, every rule with marks for every cost table (`later_*`), the box that marks its self (`later_box`), the unmarked box at a positive cost of β (`gen_e_box`), frames that clear the marks (`later_bind_acts`) |
 | static/Guard.v | `acts`, the guard `glive` and `guarded`, renaming of marks |
 | static/Fundamental.v | `hsat`, instances under binders (`pclose`), contexts up to annotations (`sem_later_ctx`, `sem_later_undf`), `typed_sem` and its instances `typed_sem_df`, `typed_sem_live`, `fundamental`, `fundamental_typed`, `live_fundamental`, `live_fundamental_typed` |
 | examples/GuardEx.v | the guard against Appendix B #12 to #15 and #40, and the C2 stage of B.1 #4 |

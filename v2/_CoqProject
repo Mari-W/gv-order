@@ -64,7 +64,6 @@ compat/Bind.v
 compat/Blind.v
 compat/SemTyped.v
 compat/Redex.v
-compat/Rules.v
 compat/LiveDF.v
 compat/Swap.v
 compat/Rename.v
@@ -87,7 +86,6 @@ compat/ConnectP.v
 compat/RenameInd.v
 compat/PTerm.v
 compat/EFacts.v
-compat/TermRules.v
 compat/BindActs.v
 static/Fundamental.v
 static/Guard.v

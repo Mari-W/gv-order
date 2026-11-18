@@ -1,4 +1,4 @@
-(** * The rules with marks, for the guard (stage S5)
+(** * The semantic rules, for every cost table (stage S5)
 
     The semantic judgment with marks L, [sem_later κ W Θ Δ L F t T],
     reads a grounding that holds a marked variable of Δ only below the
@@ -6,23 +6,166 @@
     level j < n, with no ends. Marks are the selves of boxes. At L = ∅
     it is [sem_typed_at] ([sem_later_empty]).
 
-    Every rule of compat/Rules.v and compat/TermRules.v holds with
-    marks, because a grounding with marks at level n is one at every
-    level below n ([GrelL_down]). Three rules are new.
+    Every typing rule holds with marks ([later_*]), for every cost
+    table, stated at the set form with the facts of the rule read in W.
+    The fundamental theorems (static/Fundamental.v) reach these forms
+    by instantiating the point variables and the future variables of Γ.
 
-    - A marked variable is not a term of the judgment, and the guard
-      never uses one ([later_var] asks the mark off).
+    - A rule that splits its context binds the first premise in a frame
+      that holds the other part ([later_bind]). The hole runs with the
+      heads of that part in its future ([GrelL_heads], [Erel_cover]).
+    - E-Abs and E-Box build values. A typing derivation gives the ends
+      of the term and an entry for every free variable ([tfacts]), and
+      the values of a grounding are exact ([Vrel_exact]), so the
+      instance of the term mentions exactly the ends of its environment
+      ([GrelL_fends]).
+    - A marked variable is not a term of the judgment ([later_var] asks
+      the mark off).
     - A box marks its self ([later_box]). The thunk of the box at level
       n reads the body at levels j ≤ n − κ(β), where the self is in V
-      below j by induction on the level. No cost of β is asked, so this
-      rule replaces the E-Box of κ_DF too.
+      below j by induction on the level. A box that leaves its self
+      unmarked needs a positive cost of β ([gen_e_box]), true of κ_DF.
     - A hole that acts before it returns clears the marks of its frame
       ([later_bind_acts]). The frame then meets the value strictly below
       n ([Erel_bind_acts], compat/BindActs.v), where every marked value
       is in V ([GrelL_clear]). It needs send, select and close to cost
-      one or more, true of κ_L and false of κ_DF. *)
+      one or more, true of κ_L and false of κ_DF.
+    - E-SpawnLam builds the thunk of O-Spawn, which reads the body at
+      the empty future ([later_spawn_lam]). *)
 
-From GV Require Export static.Guard compat.TermRules compat.BindActs.
+From GV Require Export static.Guard compat.SemTyped compat.Redex compat.EFacts cost.Exact compat.BindActs.
+
+(** ** Environments *)
+
+Lemma senv_heads_erase Θ : senv_heads (tenv_erase Θ) = tenv_heads Θ.
+Proof.
+  apply set_eq. intros y. rewrite elem_of_senv_heads, elem_of_tenv_heads. unfold tenv_erase.
+  setoid_rewrite lookup_fmap. split.
+  - intros (o & S & x & Ho & ->). destruct (Θ !! o) as [e|] eqn:E; simplify_eq/=. eauto.
+  - intros (o & e & Ho & ->). exists o, (te_sty e), (te_pt e). by rewrite Ho.
+Qed.
+
+Lemma dom_tenv_erase Θ : dom (tenv_erase Θ) = dom Θ.
+Proof. unfold tenv_erase. apply dom_fmap_L. Qed.
+
+Lemma tenv_erase_empty : tenv_erase ∅ = ∅.
+Proof. apply fmap_empty. Qed.
+
+Lemma tenv_erase_singleton o S x a : tenv_erase {[o := TE S x a]} = {[o := (S, x)]}.
+Proof. unfold tenv_erase. by rewrite map_fmap_singleton. Qed.
+
+Lemma senv_heads_union Θ1 Θ2 y :
+  y ∈ senv_heads (Θ1 ∪ Θ2) → y ∈ senv_heads Θ1 ∨ y ∈ senv_heads Θ2.
+Proof.
+  rewrite !elem_of_senv_heads. intros (o & S & x & Ho & ->).
+  apply lookup_union_Some_raw in Ho as [Ho|[_ Ho]]; [left|right]; eauto.
+Qed.
+
+Lemma senv_heads_empty_iff Θ : senv_heads Θ = ∅ ↔ Θ = ∅.
+Proof.
+  split; [|intros ->; apply senv_heads_empty].
+  intros H. apply map_empty. intros o. destruct (Θ !! o) as [[S x]|] eqn:E; [|done].
+  exfalso. assert (x‾ ∈ senv_heads Θ) as Hy by (apply elem_of_senv_heads; eauto). set_solver.
+Qed.
+
+(** The two parts of a split typing environment beside the two parts
+    of a split grounding environment. *)
+Lemma env_split Θ Θ1 Θ2 (Θ' Θ1' Θ2' : senv) :
+  tsplit Θ Θ1 Θ2 → Θ1' ##ₘ Θ2' → Θ' = Θ1' ∪ Θ2' → tenv_erase Θ ##ₘ Θ' →
+  tenv_erase Θ1 ##ₘ Θ1' ∧ tenv_erase Θ2 ##ₘ Θ2' ∧
+  (tenv_erase Θ1 ∪ Θ1') ##ₘ (tenv_erase Θ2 ∪ Θ2') ∧
+  tenv_erase Θ ∪ Θ' = (tenv_erase Θ1 ∪ Θ1') ∪ (tenv_erase Θ2 ∪ Θ2').
+Proof.
+  intros [Hd ->] Hd' -> HdΘ. unfold tenv_erase in *. rewrite map_fmap_union in HdΘ |- *.
+  apply map_disjoint_union_l in HdΘ as [Ha Hb].
+  apply map_disjoint_union_r in Ha as [Ha1 Ha2]. apply map_disjoint_union_r in Hb as [Hb1 Hb2].
+  assert ((λ e, (te_sty e, te_pt e)) <$> Θ1 ##ₘ (λ e, (te_sty e, te_pt e)) <$> Θ2) as Hd2
+    by by apply map_disjoint_fmap.
+  split_and!; [done|done| |].
+  - apply map_disjoint_union_l. split; apply map_disjoint_union_r; split; try done; by symmetry.
+  - rewrite !map_union_assoc. f_equal. rewrite <-!map_union_assoc. f_equal.
+    by apply map_union_comm.
+Qed.
+
+Section rules0.
+  Context (κ : ctable).
+
+  (** A spawn of a thunk, in every later world. *)
+  Lemma Erel_spawn_thunk n W Θ F v :
+    is_val v →
+    (∀ W1, W ⊑ W1 → Vthunk κ n (Vrel κ) (Erel κ) (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit)
+                      (λ W' Θ' F e, Erel κ n W' Θ' TUnit F e) W1 Θ v) →
+    Erel κ n W Θ TUnit F (ESpawn v).
+  Proof.
+    intros Hv HT. destruct n as [|n]; [apply Erel_0|].
+    assert (tstep (ESpawn v) (LSpawn v) EUnit) as Hst by (by apply tstep_head, t_act_spawn).
+    assert (∀ α e', tstep (ESpawn v) α e' → α = LSpawn v ∧ e' = EUnit) as Hdet.
+    { intros α e' Hs. apply op_head_only in Hs; [|done]. inversion Hs; by subst. }
+    apply Erel_S_intro.
+    - intros Hi. exact (Hi _ _ Hst).
+    - intros W1 _. eapply ready_tau; [exact Hst|done].
+    - intros W1 α e' HW1 Hs. destruct (Hdet _ _ Hs) as [-> ->]. simpl.
+      pose proof (HT W1 HW1) as HT1.
+      exists Θ, ∅. split_and!.
+      + apply map_disjoint_empty_r.
+      + by rewrite map_union_empty.
+      + exact HT1.
+      + apply at_cost_val. by apply Vrel_unit_iff.
+  Qed.
+
+  (** V is monotone along subtyping. *)
+  Lemma Vrel_tsub T a T' a' : tsub T a T' a' → ∀ n W Θ v, Vrel κ n W Θ T v → Vrel κ n W Θ T' v.
+  Proof.
+    induction 1 as [a a' _
+      |ub lb c t h T1 a1 U a2 c' t' h' T1' a1' U' a2' a a' _ _ _ _ _ IH1 _ IH2
+      |T1 a1 U a2 T1' a1' U' a2' a a' _ IH1 _ IH2
+      |T1 a1 U a2 T1' a1' U' a2' a a' _ IH1 _ IH2
+      |m kk C ub c t U U' aU c' t' a a' _ _ HU
+      |s s' x a a' Hs _
+      |lb m C C' T T' aT aT' a a' Henv Hf Heq _]; intros n W Θ v.
+    - done.
+    - rewrite !Vrel_lolli_iff. intros (e & -> & Hfe & Hlb & H). exists e. split_and!; [done|done|done|].
+      intros W' j Θ' w F HW Hj Hd Hub Hw. eapply Erel_ty_mono; [|apply H; [done..|by apply IH1]].
+      intros m' W2 Θ2 v' _ _. apply IH2.
+    - rewrite !Vrel_prod_iff. intros (v1 & v2 & Θ1 & Θ2 & -> & Hd & -> & H1 & H2).
+      exists v1, v2, Θ1, Θ2. split_and!; auto.
+    - rewrite !Vrel_sum_iff. intros [(v' & -> & H)|(v' & -> & H)]; [left|right]; eauto.
+    - rewrite !Vrel_box_iff. intros (-> & e & -> & Hfe & H). split; [done|]. exists e. split_and!; [done|done|].
+      intros W' xs ss HW Hxs Hss Hsc HC. specialize (H W' xs ss HW Hxs Hss Hsc HC).
+      destruct kk as [|kk]; simpl in HU; [|by subst].
+      destruct ss; [|simpl in Hss; lia]. rewrite !sinst_ty_slist_nil in H |- *.
+      eapply Vrel_teq; [|exact H]. apply teq_thunk. rewrite <-!ty_inst_df. apply teq_pinst. apply teq_df. first [done|by apply teq_sym].
+    - rewrite !Vrel_sess_iff. intros (o & s0 & -> & -> & Hs0). exists o, s0. split_and!; [done|done|].
+      unfold seqv in *. eapply sequiv_trans; [exact Hs0|]. by apply sequiv_df.
+    - rewrite !Vrel_ex_iff. intros (Hlb & xs & Hxs & HC & H). split; [done|].
+      exists xs. split_and!; [done| |].
+      + intros x y (g0 & (f & Hf' & Hsc & ->) & Hg). apply HC.
+        exists (fact_map (pt_inst (pup (length xs) (plist (bc_env C)))) f). split; [|by rewrite Henv].
+        exists f. split_and!; [by apply Hf|by rewrite Henv|by rewrite Henv].
+      + eapply Vrel_teq; [|exact H]. rewrite <-!ty_inst_df. apply teq_pinst. apply teq_df. first [done|by apply teq_sym].
+  Qed.
+
+  (** The lower bound of an existential, read in W. *)
+  Definition lbx_ok (W : world) (lb : lbound) (X : ty) : Prop :=
+    match lb with
+    | LBot => True
+    | LNone => heads X = ∅ ∧ hbot X = false
+    | LPt x => (∀ y, y ∈ heads X → w_le W x y) ∧ hbot X = false
+    end.
+
+  Lemma lbx_ok_mono W W' lb X : W ⊑ W' → lbx_ok W lb X → lbx_ok W' lb X.
+  Proof.
+    intros HW. destruct lb; simpl; try done. intros [H ->]. split; [|done].
+    intros y Hy. eapply w_le_mono; [exact HW|]. by apply H.
+  Qed.
+
+  Lemma beta_det e e' :
+    (∀ α e'', tstep e α e'' → α = LBeta ∧ e'' = e') → tstep e LBeta e' →
+    ∀ n W Θ T F, Erel κ (n - c_beta κ) W Θ T F e' → Erel κ n W Θ T F e.
+  Proof. intros Hd Hs n W Θ T F H. by eapply Erel_beta. Qed.
+
+End rules0.
+
 
 (** ** Acting terms *)
 
@@ -302,6 +445,51 @@ Lemma sem_later_empty κ W Θ Δ F t T : sem_later κ W Θ Δ ∅ F t T ↔ sem_
 Proof.
   split; intros H n W' Θ' γ HW Hd HG; apply H; try done; by apply GrelL_unmarked.
 Qed.
+
+(** A box at a positive cost of β, unmarked. *)
+Lemma gen_e_box κ W Δ F e m kk C ub c t U aU a :
+  1 ≤ c_beta κ → tfacts ∅ Δ (EBox e) → lenv_unl Δ →
+  (∀ W1 xs ss F', W ⊑ W1 → length xs = m → length ss = kk → Forall hcontractive ss →
+     wholds W1 C xs → ub_lt W1 (pt_inst (plist xs) <$> ub) F' →
+     sem_typed_at κ W1 ∅ (Some (TBox m kk C ub c t U aU, a) :: Δ) F' e
+       (sinst_ty (slist ss) (ty_inst xs U))) →
+  sem_typed_at κ W ∅ Δ F (EBox e) (TBox m kk C ub c t U aU).
+Proof.
+  intros Hβ Htf Hu Hbody n W' Θ' γ HW Hd HG.
+  pose proof (GrelL_fends κ _ _ _ _ _ _ _ _ Htf (proj2 (GrelL_unmarked κ _ _ _ _ _) HG)) as Hx.
+  pose proof (GrelL_unl κ _ _ _ _ _ _ Hu (proj2 (GrelL_unmarked κ _ _ _ _ _) HG)) as ->.
+  rewrite tenv_erase_empty, map_union_empty. simpl in Hx. rewrite !dom_empty_L, union_empty_r_L in Hx.
+  set (eb := subst (up γ) e). fold eb in Hx.
+  apply Vrel_Erel.
+  assert (∀ j W2, j ≤ n → W' ⊑ W2 → Vrel κ j W2 ∅ (TBox m kk C ub c t U aU) (EBox eb)) as Hlob.
+  { induction j as [j IH] using lt_wf_ind. intros W2 Hj HW2. apply Vrel_box_iff.
+    split; [done|]. exists eb. split_and!; [done|done|].
+    intros W3 xs ss HW3 Hxs Hss Hsc HC. apply Vrel_lolli_iff.
+    exists (rename S (subst1 (EBox eb) eb)). split_and!.
+    - done.
+    - rewrite dom_empty_L, fends_rename. unfold subst1.
+      assert (fends (subst (EBox eb .: Var) eb) ⊆ fends eb ∪ ∅) as Hsub.
+      { apply fends_subst, allfv_forall. intros [|y]; simpl; [rewrite Hx|]; set_solver. }
+      set_solver.
+    - done.
+    - intros W4 j' Θ'' w F' HW4 Hj' _ Hub Hw.
+      apply Vrel_unit_iff in Hw as [-> ->]. rewrite map_union_empty, thunk_app.
+      unfold eb. rewrite subst1_subst.
+      assert (W ⊑ W4) as HW04.
+      { eapply wext_trans; [exact HW|]. eapply wext_trans; [exact HW2|]. by eapply wext_trans. }
+      assert (W' ⊑ W4) as HW'4.
+      { eapply wext_trans; [exact HW2|]. by eapply wext_trans. }
+      assert (Grel κ j' W4 ∅ (Some (TBox m kk C ub c t U aU, a) :: Δ) (EBox eb .: γ)) as HG'.
+      { exists ∅, ∅. split_and!; [apply map_disjoint_empty_l|by rewrite map_union_empty| |].
+        - apply IH; [lia|lia|done].
+        - eapply Grel_down; [|eapply Grel_mono; [exact HW'4|exact HG]]. lia. }
+      pose proof (Hbody W4 xs ss F' HW04 Hxs Hss Hsc (wholds_mono _ _ _ _ HW4 HC) Hub
+                    j' W4 ∅ (EBox eb .: γ) (wext_refl _)
+                    ltac:(rewrite tenv_erase_empty; apply map_disjoint_empty_l) HG') as Hb.
+      by rewrite tenv_erase_empty, map_union_empty in Hb. }
+  apply Hlob; [lia|apply wext_refl].
+Qed.
+
 
 (** ** The rules *)
 
