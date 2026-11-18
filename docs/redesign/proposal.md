@@ -1507,7 +1507,7 @@ The lock-free rules `⊩^N_W` type threads at `Some N` and add `∅ ⊢▷ t` an
 | `typed W Φ Ψ Θ Δ F e T` | two hypothesis contexts Φ, Ψ, where the paper writes one Γ, and the world in a different position | one Γ, notation `Θ ; Γ ; Δ ⊢^F_W t : T` |
 | `sem_typed W Θ Δ F e T` with `term_wf` at E-Abs, E-Box | the paper states the side predicate wf(Θ ; Δ, t) | no `term_wf` (§2.7), the paper drops wf |
 | `Prel_connect`, `conn_all` | lands in `wjoin W1 W2`, the paper rule P-Connect is one-world and its proof returns by monotonicity | P-Connect is two-world in both |
-| `pt_term`, `pt_connect`, `lf_term`, `lf_connect` (the latter in P-Join form, LFTyped.v) | names and forms differ from P-Term, P-Connect | `p_term`, `p_connect`, `p_join` in `⊢_W` and `⊩^N_W` |
+| `pt_term`, `pt_connect`, `lf_term`, `lf_connect` (the latter in P-Join form, LFTyped.v) | names and forms differ from P-Term, P-Connect | `p_term`, `p_connect` in `⊢_W`, `lf_term`, `lf_connect` in `⊩^N_W`, P-Join an admissible lemma (`p_join`, `lf_join`, C.2, C.3) |
 | `Prel_term`, `LPrel_term`, `LFP_term`, `LFP_connect`, `LFP_join` | names | `sem_p_term`, `live_p_term`, `lf_p_term`, `lf_p_connect`, `lf_p_join` |
 | `LFP_term` premises `lsem_typed`, `tenv_dual (w_eq W) ΘB`, known points | not the premises of P-Term | the premises of P-Term plus `fsem^N` |
 | `soundness_created`, `soundness_source` with a creation constraint | two theorems, a constraint the paper explains at length | one `soundness_source` without a constraint |
