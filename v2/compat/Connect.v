@@ -947,3 +947,94 @@ Lemma conn_C2 Σ1 ΣC C1 Σ2 ΣD C2 C2' :
   conn Σ1 ΣC C1 Σ2 ΣD C2 → C2' ## C1 ∪ chans_of ΣC → C2' ## chans_of Σ1 ∪ chans_of Σ2 →
   conn Σ1 ΣC C1 Σ2 ΣD C2'.
 Proof. intros [] H1 H2. constructor; try done; set_solver. Qed.
+
+(** ** The step clause of the composite *)
+
+Definition ConnL (κ : ctable) (j : nat) (W : world) (T : ty) : Prop :=
+  ∀ Σ1 ΣC Σ2 ΣD p1 p2, Prel κ j W (Σ1 ∪ ΣC) T p1 → Prel κ j W (Σ2 ∪ ΣD) TUnit p2 →
+    conn Σ1 ΣC p1.1 Σ2 ΣD p2.1 → Prel κ j W (Σ1 ∪ Σ2) T (pconn p1 p2 (chans_of ΣC)).
+
+Section core.
+  Context (κ : ctable) (n : nat) (W1 : world) (HS : strict W1) (T : ty) (HT : prim T) (X1 X2 : prel).
+  Context (Σ1 ΣC Σ2 ΣD : senv) (q1 q2 : proc) (Hc : conn Σ1 ΣC q1.1 Σ2 ΣD q2.1).
+  Context (H1 : Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X1 W1 (Σ1 ∪ ΣC) T q1).
+  Context (H2 : Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X2 W1 (Σ2 ∪ ΣD) TUnit q2).
+  Context (L : ∀ j, j < S n → ConnL κ j W1 T).
+  Context (HP1 : ∀ h D, fuse_ok h D (Σ1 ∪ ΣC) q1 →
+    Prel κ (S n) W1 (sdrop D (kren h (Σ1 ∪ ΣC))) T (pfuse h D q1)).
+  Context (HP2 : ∀ h D, fuse_ok h D (Σ2 ∪ ΣD) q2 →
+    Prel κ (S n) W1 (sdrop D (kren h (Σ2 ∪ ΣD))) TUnit (pfuse h D q2)).
+  Context (G1 : ∀ p1' Σa h D Σ1' ΣC' Σ2' ΣD' p2', X1 W1 Σa T p1' → fuse_ok h D Σa p1' →
+    sdrop D (kren h Σa) = Σ1' ∪ ΣC' → Prel κ (S n) W1 (Σ2' ∪ ΣD') TUnit p2' →
+    conn Σ1' ΣC' (pfuse h D p1').1 Σ2' ΣD' p2'.1 →
+    Prel κ (S n) W1 (Σ1' ∪ Σ2') T (pconn (pfuse h D p1') p2' (chans_of ΣC'))).
+  Context (G2 : ∀ p2' Σb h D Σ1' ΣC' Σ2' ΣD' h1 D1, X2 W1 Σb TUnit p2' → fuse_ok h D Σb p2' →
+    sdrop D (kren h Σb) = Σ2' ∪ ΣD' → fuse_ok h1 D1 (Σ1 ∪ ΣC) q1 →
+    sdrop D1 (kren h1 (Σ1 ∪ ΣC)) = Σ1' ∪ ΣC' →
+    conn Σ1' ΣC' (pfuse h1 D1 q1).1 Σ2' ΣD' (pfuse h D p2').1 →
+    Prel κ (S n) W1 (Σ1' ∪ Σ2') T (pconn (pfuse h1 D1 q1) (pfuse h D p2') (chans_of ΣC'))).
+  Local Abbreviation K := (chans_of ΣC).
+  Local Abbreviation pc := (pconn q1 q2 K).
+
+  Local Lemma Hq1e M1 : soup M1 = q1.2 → erase (q1.1, M1) = q1.
+  Proof. intros H. unfold erase. simpl. rewrite H. by destruct q1. Qed.
+  Local Lemma Hq2e M2 : soup M2 = q2.2 → erase (q2.1, M2) = q2.
+  Proof. intros H. unfold erase. simpl. rewrite H. by destruct q2. Qed.
+
+  Local Lemma HP2r g : dcomm g → (∀ o, pheld (Σ2 ∪ ΣD) q2 o → g o = o) →
+    ∀ j, j ≤ S n → Prel κ j W1 (Σ2 ∪ ΣD) TUnit (pmap g q2).
+  Proof.
+    intros Hd Hid j Hj. destruct (ren_held_id g _ _ Hd Hid) as (Hok & Hk & _).
+    pose proof (HP2 g ∅ (pren_fuse_ok _ _ _ Hok)) as H. rewrite sdrop_empty, Hk, pfuse_empty in H.
+    by eapply Prel_down.
+  Qed.
+
+  Local Lemma HP1r g : dcomm g → (∀ o, pheld (Σ1 ∪ ΣC) q1 o → g o = o) →
+    ∀ j, j ≤ S n → Prel κ j W1 (Σ1 ∪ ΣC) T (pmap g q1).
+  Proof.
+    intros Hd Hid j Hj. destruct (ren_held_id g _ _ Hd Hid) as (Hok & Hk & _).
+    pose proof (HP1 g ∅ (pren_fuse_ok _ _ _ Hok)) as H. rewrite sdrop_empty, Hk, pfuse_empty in H.
+    by eapply Prel_down.
+  Qed.
+
+  Local Lemma ev_ren_ok1 ev : (match ev with EvLink _ o1 _ => ech o1 ∈ q1.1 | _ => True end) →
+    dcomm (ev_ren ev) ∧ ∀ o, pheld (Σ2 ∪ ΣD) q2 o → ev_ren ev o = o.
+  Proof.
+    destruct ev; simpl; intros Hl; try (split; [done|done]).
+    split; [apply csub_dcomm_all|]. apply csub_held_id.
+    destruct Hc as [_ _ Hcut _ _ _ _ _ _ HCC HC1 _]. rewrite chans_of_union, (cut_dual_chans _ _ Hcut). set_solver.
+  Qed.
+
+  (** A τ step that p1 takes alone. *)
+  Lemma tau_l1 M1 M2 ev q' :
+    M1 ##ₘ M2 → soup M1 = q1.2 → soup M2 = q2.2 →
+    istep (q1.1 ∪ q2.1 ∪ K, M1 ∪ M2) ev q' → ev_tau ev → ev_local q1.1 M1 ev →
+    q'.1 ## chans_of (Σ1 ∪ Σ2) →
+    at_cost_P (S n) (ev_cost κ ev) (Prel κ) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T (erase q').
+  Proof.
+    intros Hd HM1 HM2 Hst Hτ Hloc Hfr.
+    assert (q1.1 ## q2.1 ∪ K) as HC12 by (destruct Hc; set_solver).
+    destruct (istep_local _ _ _ _ _ _ _ Hd HC12 Hst Hloc) as (q1' & Hst1 & -> & Hsub & Hdj & Hd').
+    destruct (ev_ren_ok1 ev) as [Hgd Hgid].
+    { destruct ev; simpl; try done. by destruct Hloc as [_ ?]. }
+    destruct H1 as (_ & _ & Ht1 & _).
+    destruct (Ht1 (q1.1, M1) ev q1' (Hq1e M1 HM1) Hst1 Hτ) as [A0 A1].
+    { rewrite chans_of_union. simpl in Hfr. rewrite chans_of_union in Hfr. unfold erase. simpl. set_solver. }
+    assert (erase (q1'.1 ∪ q2.1 ∪ K, q1'.2 ∪ (emap (ev_ren ev) <$> M2)) =
+      pconn (erase q1') (pmap (ev_ren ev) q2) K) as He.
+    { unfold erase, pconn, pmap. simpl. rewrite soup_union; [|apply map_disjoint_dom; rewrite dom_fmap_L; by apply map_disjoint_dom].
+      rewrite soup_fmap, HM2. destruct (ren_held_id _ _ _ Hgd Hgid) as (_ & _ & E). unfold pmap in E. simpl in E.
+      by rewrite E. }
+    rewrite He.
+    assert (conn Σ1 ΣC (erase q1').1 Σ2 ΣD (pmap (ev_ren ev) q2).1) as Hc'.
+    { destruct (ren_held_id _ _ _ Hgd Hgid) as (_ & _ & ->). apply (conn_C1 _ _ q1.1); [done| |].
+      - unfold erase. simpl. set_solver.
+      - unfold erase. simpl. rewrite chans_of_union in Hfr. simpl in Hfr. set_solver. }
+    split.
+    - intros Hc0. pose proof (A0 Hc0) as HX.
+      pose proof (G1 (erase q1') (Σ1 ∪ ΣC) id ∅ Σ1 ΣC Σ2 ΣD (pmap (ev_ren ev) q2) HX (fuse_ok_id _ _)) as HG.
+      rewrite sdrop_empty, kren_id_map, pfuse_empty, pmap_id in HG.
+      apply HG; [done|by apply HP2r|done].
+    - intros Hc0. apply (L (S n - ev_cost κ ev) ltac:(lia) Σ1 ΣC Σ2 ΣD); [by apply A1|apply HP2r; [done|done|lia]|done].
+  Qed.
+End core.
