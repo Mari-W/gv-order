@@ -98,6 +98,7 @@ Proof.
   - constructor.
   - intros o'. rewrite dom_empty_L. set_solver.
   - set_solver.
+  - apply pfree_singleton.
   - set_solver.
   - rewrite map_union_empty. unfold tenv_of. rewrite map_fmap_singleton. apply fw_typed.
 Qed.

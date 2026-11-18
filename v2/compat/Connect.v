@@ -20,8 +20,7 @@ From GV Require Import fuel.FuelMono.
 
 (** ** Environments of a cut *)
 
-(** No end of Σ has its partner in Σ. *)
-Definition pfree (Σ : senv) : Prop := ∀ o, o ∈ dom Σ → edual o ∉ dom Σ.
+(** [pfree] lives in static/Typing.v, where P-Term asks it. *)
 
 (** ΣD holds the partners of the ends of ΣC, dual up to ≈ at dual
     points. *)

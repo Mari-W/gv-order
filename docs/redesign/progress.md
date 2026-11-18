@@ -1572,3 +1572,14 @@ The old development in theories/ stays untouched.
   (single-thread lemma, spawn by `sem_p_connect`, the thread at the empty
   future, (fuse) for the restricted C0), then `fundamental_proc`.
   CheckAll lists 253 results, all closed. No `Admitted` and no axiom.
+- S4.31. P-Term asks `pfree Σ` (decision of 2026-11-18), in `ptyped`
+  (static/Typing.v) and in `lfptyped` (soup/LFTyped.v). `pfree` moves
+  from compat/Connect.v to static/Typing.v, with `pfree_empty` and
+  `pfree_singleton`. `ptyped_pfree : ptyped N W Σ p T → pfree Σ` (P-Connect
+  keeps it, because the cut leaves and chans Σ1 ## chans Σ2) and
+  `ptyped_chans : ptyped N W Σ p T → p.1 ## chans_of Σ`. The examples
+  with a P-Term derivation (cost/Forwarder.v, examples/LFClose.v,
+  examples/LFTools.v) discharge the premise at Σ = ∅ or a singleton.
+  `lf_p_term` keeps its statement: the soup does not read `pfree`, and
+  `lf_fundamental` drops the premise there. No other typing rule
+  changes. CheckAll lists 280 results, all closed.

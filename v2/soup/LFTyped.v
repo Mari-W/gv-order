@@ -19,7 +19,7 @@ From GV Require Export soup.LFCompose.
 Inductive lfptyped (N : nat) : world → senv → proc → ty → Prop :=
   | p_term W Σ ΘB C0 t T a c ϑ tk :
       types.Types.prim T →
-      (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 →
+      (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 → pfree Σ →
       (∀ c, c ∈ C0 → ∃ S x, ΘB !! (c⁺)%cend = Some (TE S x (Some N)) ∧
                             ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ (Some N))) →
       typed W (Some N) (tenv_of (Some N) Σ ∪ ΘB) hc_empty [] (∅, None) t T a c ϑ →
@@ -56,7 +56,7 @@ Notation "Σ ⊩^ N '_' W p : T" := (lfptyped N W Σ p T)
 Theorem lf_fundamental N W Σ p T : types.Worlds.strict W → Σ ⊩^N _ W p : T → Σ ⊪_W p : T.
 Proof.
   intros HW Hty. revert HW. induction Hty as
-    [W Σ ΘB C0 t T a c ϑ tk Hp HB HΣ Hd Ht Hg Hm
+    [W Σ ΘB C0 t T a c ϑ tk Hp HB HΣ Hpf Hd Ht Hg Hm
     |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hw1 Hw2 Hfam HJ
     |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hw1 Hw2 Hfam HS1 HS2 HJ];
     intros HW.

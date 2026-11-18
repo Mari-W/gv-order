@@ -329,10 +329,24 @@ Definition senv_dual (Σ : senv) : senv :=
 Global Instance edual_inj : Inj eq eq edual.
 Proof. intros o o'. apply edual_inj. Qed.
 
+(** No end of Σ has its partner in Σ. P-Term asks it of the interface: a
+    channel whose two ends the thread holds is restricted (decision of
+    2026-11-18). *)
+Definition pfree (Σ : senv) : Prop := ∀ o, o ∈ dom Σ → edual o ∉ dom Σ.
+
+Lemma pfree_empty : pfree ∅.
+Proof. intros o. rewrite dom_empty_L. set_solver. Qed.
+
+Lemma pfree_singleton o v : pfree {[o := v]}.
+Proof.
+  intros o'. rewrite dom_singleton_L, !elem_of_singleton. intros Ho H.
+  subst. destruct o; discriminate.
+Qed.
+
 Inductive ptyped (N : fuel) : world → senv → proc → ty → Prop :=
   | p_term W Σ ΘB C0 t T a c ϑ :
       prim T →
-      (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 →
+      (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 → pfree Σ →
       (∀ c, c ∈ C0 → ∃ S x, ΘB !! (c⁺)%cend = Some (TE S x N) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ N)) →
       typed W N (tenv_of N Σ ∪ ΘB) hc_empty [] (∅, None) t T a c ϑ →
       ptyped N W Σ (C0, {[+ t +]}) T
@@ -384,3 +398,31 @@ Proof. apply strict_join_iff. Qed.
 
 Lemma ptyped_prim N W Σ p T : ptyped N W Σ p T → prim T.
 Proof. induction 1; auto. Qed.
+
+Lemma chans_of_union' (Σ1 Σ2 : senv) : chans_of (Σ1 ∪ Σ2) = chans_of Σ1 ∪ chans_of Σ2.
+Proof. unfold chans_of. by rewrite dom_union_L, set_map_union_L. Qed.
+
+Lemma elem_of_chans_of' o (Σ : senv) : o ∈ dom Σ → ech o ∈ chans_of Σ.
+Proof. intros H. unfold chans_of. apply elem_of_map. by exists o. Qed.
+
+(** A typed interface is partner-free: P-Term asks it, and P-Connect
+    keeps it, because the cut leaves and chans Σ1 ## chans Σ2. *)
+Lemma ptyped_pfree N W Σ p T : ptyped N W Σ p T → pfree Σ.
+Proof.
+  assert (∀ Σ1 ΣC Σ2 ΣD : senv, pfree (Σ1 ∪ ΣC) → pfree (Σ2 ∪ ΣD) →
+            chans_of Σ1 ## chans_of Σ2 → pfree (Σ1 ∪ Σ2)) as Hc.
+  { intros Σ1 ΣC Σ2 ΣD H1 H2 H12 o Ho Hd. rewrite dom_union_L in Ho, Hd.
+    apply elem_of_union in Ho as [Ho|Ho]; apply elem_of_union in Hd as [Hd|Hd].
+    - apply (H1 o); rewrite dom_union_L; set_solver.
+    - apply (H12 (ech o)); [by apply elem_of_chans_of'|]. rewrite <-ech_edual. by apply elem_of_chans_of'.
+    - apply (H12 (ech o)); [|by apply elem_of_chans_of']. rewrite <-ech_edual. by apply elem_of_chans_of'.
+    - apply (H2 o); rewrite dom_union_L; set_solver. }
+  induction 1; [done|eauto..].
+Qed.
+
+(** A typed process restricts no channel of its interface. *)
+Lemma ptyped_chans N W Σ p T : ptyped N W Σ p T → p.1 ## chans_of Σ.
+Proof.
+  induction 1 as [|? ? ? ? ? ? ? ? ? ? _ IH1 _ IH2 ? ? ? ? ? ? ? ? ?|? ? ? ? ? ? ? ? ? ? _ IH1 _ IH2 ? ? ? ? ? ? ? ? ?];
+    simpl in *; [done|..]; rewrite !chans_of_union' in *; set_solver.
+Qed.
