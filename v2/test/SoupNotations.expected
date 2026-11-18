@@ -24,3 +24,11 @@ lf_thread_progress
            → ∀ (r : nat → config) (l : nat → option event),
                erase (r 0) = p
                → maximal r l → wfair r l → thread_progress_run r l
+λ (N : nat) (W : world) (Σ : senv) (p : proc) (T : ty), Σ ⊩^N _ W p : T
+     : nat → world → senv → proc → ty → Prop
+lf_fundamental
+     : ∀ (N : nat) (W : world) (Σ : senv) (p : proc) (T : ty),
+         strict W → Σ ⊩^N _ W p : T → Σ ⊪_W p : T
+lf_soundness
+     : ∀ (N : nat) (W : world) (p : proc) (T : ty),
+         lfworld W → ∅ ⊩^N _ W p : T → lock_free p

@@ -168,8 +168,8 @@ index every thread is in E[live] at its part of an environment A and in
 FuelE^N at its part of a protocol map Π, with the two ends of every
 internal channel paired. The update `lf_next` reads only the event.
 `lfsoup_step` goes from index n + 1 to n. The τ steps of a soup admit no
-infinite run (`soup_no_tau_divergence`), so adequacy does not read the
-live process conjunct of `⊪`. `lf_adequacy` instantiates
+infinite run (`soup_no_tau_divergence`), so `⊪` is the soup alone
+(Q12, decided 2026-11-18). `lf_adequacy` instantiates
 `lf_run_criterion` with ownership as the dependency, the point in K as
 the rank and the tickets and the partner's counter as the measure.
 
@@ -189,18 +189,22 @@ the rank and the tickets and the partner's counter as the measure.
 | soup/LFRunFacts.v, LFEvents.v | steps of a run, the ends an event touches, tickets |
 | soup/Relabel.v | the soup at every lifting (`relabel_map`, `soup_relabel`) |
 | soup/LFAdequacy.v | local progress, rank, persistence, `lf_fuel`, `lf_adequacy_soup`, `lf_adequacy`, `lf_thread_progress` |
-| test/SoupNotations.v | the S8 notations |
+| test/SoupNotations.v | the S8 and S9 notations |
 
-## Stage S9, lock-free composition (in progress)
+## Stage S9, lock-free composition and soundness
 
-The soup half of `⊪` composes on its own. A thread typed at a finite N
-gives a soup through `fsem_of_cost` and `live_fundamental_typed`. Two
-soups over the cut of P-Connect give a soup of the composite at
-W1 ⊔ W2 and the larger refill: their union, then the restriction of the
-cut channels. The live process conjunct of `⊪` waits for P-Term,
-P-Connect and P-Join of S4.
+`Σ ⊪_W p : T` is the soup alone. A thread typed at a finite N gives a
+soup through `fsem_of_cost` and `live_fundamental_typed`. Two soups over
+the cut of P-Connect give a soup of the composite at W1 ⊔ W2 and the
+larger refill: their union, then the restriction of the cut channels.
+The judgment `Σ ⊩^N _ W p : T` has the rules of `⊢_W` with static
+premises only. P-Term types the thread at Some N and asks `guarded t`
+and `meets ϑ 0 tk`. `lf_fundamental` and `lf_soundness` follow by
+induction on it.
 
 | File | Content |
 |---|---|
 | soup/SoupCompose.v | `soup_par`, `soup_nu`, `soup_connect`, `soup_term` |
-| soup/LFCompose.v | `lf_soup`, `lf_sem_iff`, `soup_lift`, `lf_soup_connect`, `lf_soup_term`, `lf_soup_term_typed`, `lf_sem_connect`, `lf_sem_term`, `lf_soundness_source` |
+| soup/LFCompose.v | `soup_lift`, `lf_soup_connect`, `lf_p_connect`, `lf_p_join`, `lf_soup_term`, `typed_live`, `lf_p_term`, `lf_soundness_source` |
+| soup/LFTyped.v | `lfptyped`, `Σ ⊩^N _ W p : T` with `p_term`, `p_connect`, `p_join`, `lf_fundamental`, `lf_soundness` |
+| examples/LFClose.v | `lfworld_bare`, two threads closing one channel typed by P-Connect, `cl_lock_free` |

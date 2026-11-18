@@ -86,6 +86,7 @@ static/Guard.v
 compat/LiveRules.v
 static/LiveFundamental.v
 examples/GuardEx.v
+examples/LFClose.v
 test/CompatNotations.v
 soup/Idle.v
 soup/State.v
@@ -106,5 +107,6 @@ soup/LFEvents.v
 soup/LFAdequacy.v
 soup/SoupCompose.v
 soup/LFCompose.v
+soup/LFTyped.v
 test/SoupNotations.v
 CheckAll.v

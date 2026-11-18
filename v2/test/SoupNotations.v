@@ -1,6 +1,6 @@
-(** * The notations of stage S8 parse and print as written *)
+(** * The notations of stages S8 and S9 parse and print as written *)
 
-From GV Require Import soup.LFAdequacy.
+From GV Require Import soup.LFAdequacy soup.LFTyped.
 
 Check (λ N W n Σ T a, a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧).
 Check (λ W Σ p T, Σ ⊪_W p : T).
@@ -9,3 +9,6 @@ Check lfsoup_step.
 Check soup_no_tau_divergence.
 Check lf_adequacy.
 Check lf_thread_progress.
+Check (λ N W Σ p T, Σ ⊩^N _ W p : T).
+Check lf_fundamental.
+Check lf_soundness.

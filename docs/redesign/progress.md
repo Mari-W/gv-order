@@ -15,7 +15,7 @@ The old development in theories/ stays untouched.
 | S6 | fuel | done |
 | S7 | cost judgment | done |
 | S8 | soup and adequacy | done (S8.34): `lfsoup_step`, `soup_no_tau_divergence`, `lf_adequacy`, `lf_thread_progress`, `idle_dual` |
-| S9 | lock-free composition and soundness | in progress (S9.5): soup side done, `soup_connect`, `soup_term`, `lf_soup_connect`, `lf_soup_term_typed`, `lf_soundness_source`; process conjunct waits on S4 (targets in S9.5) |
+| S9 | lock-free composition and soundness | done (S9.9): `⊪` the soup alone, `lfptyped` (LFTyped.v), `lf_p_term`, `lf_p_connect`, `lf_p_join`, `lf_fundamental`, `lf_soundness`, example `cl_lock_free` |
 | S10 | paper | open |
 
 ## Deviations
@@ -514,10 +514,8 @@ The old development in theories/ stays untouched.
   The measure of adequacy reads a counter as a natural number.
 - S8, the process conjunct (Q12, F21). `soup_no_tau_divergence` holds
   (v2/soup/SoupTau.v), and adequacy reads the soup alone
-  (`lf_adequacy_soup`). `lf_sem` keeps the live process conjunct of the
-  proposal, because Q12 says the conjunct may go once the lemma exists,
-  which is now the author's call. Dropping it changes only `lf_sem` and
-  the statements of S9.
+  (`lf_adequacy_soup`). The author dropped the conjunct (Q12,
+  2026-11-18), and `lf_sem` is the soup alone since S9.6.
 - S8, liftings. `lf_sem` fixes one lifting of p, lock freedom quantifies
   over runs from every lifting. `soup_relabel` moves a soup along a
   bijection of thread identifiers (v2/soup/Relabel.v), as the old
@@ -541,12 +539,9 @@ The old development in theories/ stays untouched.
   through E[live], which is monotone in the world (`Erel_mono`,
   `wext_join_l`, `wext_join_r`). The refill is the larger of the two,
   by `FuelE_refill_mono`.
-- S9, the soup half. `lf_soup W Σ p T` is the soup conjunct of `⊪`
-  (`lf_sem_iff`). The composition lemmas are proved for it, and
-  `lf_sem_term` and `lf_sem_connect` take the live process conjunct of
-  the result as a premise until P-Term, P-Connect and P-Join of S4 are
-  proved and the author decides on Q12 (deviation "S8, the process
-  conjunct").
+- S9, the soup half. Until S9.5 `lf_soup W Σ p T` was the soup conjunct
+  of `⊪`. Since S9.6 `⊪` is the soup alone and `lf_soup`, `lf_sem_iff`,
+  `lf_sem_term` and `lf_sem_connect` are gone.
 - S9, P-Term at a finite N. `lf_soup_term_typed` asks `meets ϑ 0 tk`
   for some tk, as `fsem_of_cost` does. `typed` at a finite N does not
   give it, because a transformer offset may be ∞. It also asks
@@ -1370,6 +1365,36 @@ The old development in theories/ stays untouched.
   same induction runs on `lf_soup` with `lf_soup_term_typed` and
   `lf_soup_connect`, and `lf_adequacy_soup` closes `lf_soundness`, as in
   `lf_soundness_source`.
+- S9.6. Q12 (author, 2026-11-18). `lf_sem W Σ p T := ∃ N a,
+  erase (s_q a) = p ∧ ∀ n, a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧` (soup/Soup.v), the
+  notation `Σ ⊪_W p : T` kept. `lf_soup` and `lf_sem_iff` are folded
+  into it. `lf_adequacy : lfworld W → ∅ ⊪_W p : T → lock_free p`
+  unchanged in form.
+- S9.7. The semantic rules (soup/LFCompose.v). `lf_p_term : strict W →
+  [the premises of p_term at Some N] → guarded t → meets ϑ 0 tk →
+  Σ ⊪_W (C0, {[+ t +]}) : T` (formerly `lf_soup_term_typed`).
+  `lf_p_connect` and `lf_p_join` take the premises of `p_connect` and
+  `p_join` at `⊪` and conclude `(Σ1 ∪ Σ2) ⊪_(W1 ⊔ W2) (C1 ∪ C2 ∪
+  chans_of ΣC, E1 ⊎ E2) : T`. Both are `lf_soup_connect`, which reads the
+  channel conditions only. No live P lemma of S4 is needed.
+- S9.8. The judgment `Σ ⊩^N _ W p : T` (`lfptyped`, soup/LFTyped.v)
+  with `p_term`, `p_connect`, `p_join`. The premises are those of
+  `ptyped` at Some N, and P-Term adds `guarded t` and `meets ϑ 0 tk`
+  for a ticket count tk. No premise is semantic, the cut is at
+  `senv_dual ΣC`, and no rule renames families. `lf_fundamental :
+  strict W → Σ ⊩^N _ W p : T → Σ ⊪_W p : T` by induction, with strict W1
+  and strict W2 at P-Connect from `p_join_iff_connect`
+  (`strict_join_iff`). `lf_soundness : lfworld W → ∅ ⊩^N _ W p : T →
+  lock_free p` is `lf_adequacy` after `lf_fundamental`, with strict W
+  the first half of `lfworld W`. The constructors share their names with
+  those of `ptyped`, so a file that imports both qualifies one of them.
+- S9.9. Example (examples/LFClose.v). `lfworld_bare`: a world without
+  facts and families is a lock-free world, because every step of ≺
+  raises the offset. `cl_lftyped : ∅ ⊩^N _ (W_cl ⊔ W_cl) ({[c]},
+  {[+ close c⁺ +]} ⊎ {[+ close c⁻ +]}) : TUnit` by P-Connect over two
+  P-Term threads, and `cl_lock_free`. The S2 examples are typed at
+  N = ∞ only, and none is retyped at a finite N. Notation test in
+  v2/test/SoupNotations.v, CheckAll entries, README. S9 done.
 
 - S4.21. A choice across the cut with p2 selecting (`tau_choice21`,
   compat/ConnectSteps.v). A message across the cut in both directions
