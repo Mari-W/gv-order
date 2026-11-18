@@ -1203,3 +1203,15 @@ The old development in theories/ stays untouched.
   only, so p2 sending uses them through `conn_sym`. A message whose
   give and take cost more than the level lands at level 0, where P
   holds. No deviation.
+- S4.22. Links whose kept end is restricted on the side of the actor
+  (`tau_link_own1`, `tau_link_own2`, compat/ConnectLink.v). The actor
+  takes the link of o2 (the label is unordered), and the composite is
+  that result renamed by csub o1 o2, because csub o1 o2 after
+  csub o2 o1 is csub o1 o2 (`csub_csub`, compat/ConnectRen.v). This
+  covers the removed channel being a cut channel or restricted in the
+  other component. A renaming of the composite that fixes the interface
+  keeps `conn` (`conn_rename`), and `ren_comp1`, `ren_comp2` turn a step
+  of one side into the step clause of the renamed composite (G1 or G2
+  at cost 0, the lemma at the lower level otherwise). `pren_ok_csub_r`:
+  csub o1 o2 is a renaming whenever o2 and o2‾ are not held, whatever
+  happens to o1. No deviation.
