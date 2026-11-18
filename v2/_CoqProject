@@ -77,4 +77,5 @@ compat/LiveRules.v
 static/LiveFundamental.v
 examples/GuardEx.v
 test/CompatNotations.v
+soup/Idle.v
 CheckAll.v
