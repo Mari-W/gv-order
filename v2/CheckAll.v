@@ -13,7 +13,7 @@ From GV Require Import static.FundamentalProc.
 From GV Require Import fuel.FuelSub.
 From GV Require Import cost.Transformers cost.Forwarder cost.Exact cost.CostFund.
 From GV Require Import compat.Rules compat.LiveDF compat.Swap compat.Rename compat.PSwap compat.Conv compat.ConnectP.
-From GV Require Import static.Fundamental static.LiveFundamental examples.GuardEx.
+From GV Require Import static.Fundamental examples.GuardEx.
 From GV Require Import soup.LFAdequacy soup.LFCompose soup.LFTyped examples.LFClose.
 From GV Require Import examples.LFTools examples.LFCycle examples.LFFreshBetween
   examples.LFFreshMany examples.LFClientServer examples.LFFactoryEx examples.LFGrowRing
@@ -276,7 +276,7 @@ Print Assumptions gen_e_pack.
 (** S5: the fundamental theorem for terms. *)
 Print Assumptions gen_e_spawn_lam.
 Print Assumptions later_spawn_lam.
-Print Assumptions dftyped_sem.
+Print Assumptions typed_sem.
 Print Assumptions fundamental.
 Print Assumptions fundamental_typed.
 (** S5: the guard, the rules with marks, the live fundamental theorem. *)
@@ -286,7 +286,6 @@ Print Assumptions Erel_bind_acts.
 Print Assumptions sem_later_empty.
 Print Assumptions later_bind_acts.
 Print Assumptions later_box.
-Print Assumptions dftyped_later.
 Print Assumptions live_fundamental.
 Print Assumptions live_fundamental_typed.
 Print Assumptions div_not_guarded.

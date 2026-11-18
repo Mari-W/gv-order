@@ -13,7 +13,7 @@
       absent entry at any position ([typed_insert_none]), at the head
       ([typed_weaken_head]), exchange and contraction are instances. *)
 
-From GV Require Export static.Typing.
+From GV Require Export static.Conservativity.
 
 (** ** Monotonicity in the world *)
 
@@ -741,87 +741,26 @@ Qed.
 
 (** *** Renaming in the deadlock-freedom projection *)
 
-Local Ltac dren_split Hr :=
-  match goal with
-  | Hs0 : lenv_split _ _ _ |- _ =>
-      destruct (lren_split _ _ _ _ _ Hs0 Hr) as (Δ1r & Δ2r & Hs & Hr1 & Hr2)
-  end.
+Lemma lren_df r Δ Δ' : lren r Δ Δ' → lren r (lenv_df Δ) (lenv_df Δ').
+Proof.
+  intros (H1 & H2 & H3). split_and!.
+  - intros x T a. rewrite !lenv_df_lookup. intros Hx Hu.
+    destruct (Δ !! x) as [[[T0 a0]|]|] eqn:E; unfold ent_df in *; simplify_eq/=.
+    rewrite unlimited_df in Hu. destruct (H1 _ _ _ E Hu) as [a' Ha']. rewrite Ha'. by eexists.
+  - intros x T a. rewrite !lenv_df_lookup. intros Hx Hu.
+    destruct (Δ !! x) as [[[T0 a0]|]|] eqn:E; unfold ent_df in *; simplify_eq/=.
+    rewrite unlimited_df in Hu. by rewrite (H2 _ _ _ E Hu).
+  - intros y T a. rewrite lenv_df_lookup. intros Hy Hu.
+    destruct (Δ' !! y) as [[[T0 a0]|]|] eqn:E; unfold ent_df in *; simplify_eq/=.
+    rewrite unlimited_df in Hu. destruct (H3 _ _ _ E Hu) as (x & Hrx & Hx & Hun).
+    exists x. rewrite !lenv_df_lookup, Hx. split_and!; [done|done|].
+    intros x' σ Hx' Hr'. rewrite lenv_df_lookup in Hx'. destruct (Δ !! x') as [[σ0|]|] eqn:E'; unfold ent_df in *; simplify_eq/=; eapply Hun; eauto.
+Qed.
 
 Theorem dftyped_rename W Θ Γ Δ F e T :
   dftyped W Θ Γ Δ F e T →
   ∀ r Δ', lren r Δ Δ' → dftyped W Θ Γ Δ' F (rename r e) T.
-Proof.
-  induction 1; intros r Δr Hr; simpl.
-  - destruct (lren_empty _ _ _ H Hr) as [Hw He]. eapply d_weak; [exact Hw|]. by apply d_unit.
-  - (* D-Var *)
-    destruct H as [Hx Hun]. pose proof Hr as (H1 & H2 & H3).
-    set (Δk := imap (λ z o, if decide (z = r x) then o else None) Δr).
-    assert (∀ σ, Δr !! r x = Some (Some σ) → lenv_wk Δk Δr ∧ lenv_only Δk (r x) σ) as Hk.
-    { intros σ Hσ. unfold Δk. split.
-      - apply lenv_wk_intro; [by rewrite length_imap|].
-        intros z o0 o Ho0 Ho. rewrite list_lookup_imap, Ho in Ho0. simpl in Ho0.
-        case_decide as Hz; simplify_eq; [by left|]. destruct o as [[U b]|]; [|by left]. right.
-        split; [done|]. destruct (decide (unlimited U)) as [HU|HU]; [eauto|].
-        destruct (H3 _ _ _ Ho HU) as (x' & Hrx' & Hx' & _).
-        destruct (Hun _ _ Hx') as [-> _]. done.
-      - split; [rewrite list_lookup_imap, Hσ; simpl; case_decide; done|].
-        intros y σ' Hy. rewrite list_lookup_imap in Hy.
-        destruct (Δr !! y) eqn:Ey; simpl in Hy; [|done].
-        case_decide; simplify_eq; split; [done|congruence]. }
-    destruct (decide (unlimited T)) as [HU|HU].
-    + destruct (H1 _ _ _ Hx HU) as [a' Ha']. destruct (Hk _ Ha') as [Hw Ho].
-      eapply d_weak; [exact Hw|]. by eapply d_var.
-    + destruct (Hk _ (H2 _ _ _ Hx HU)) as [Hw Ho].
-      eapply d_weak; [exact Hw|]. by eapply d_var.
-  - destruct (lren_empty _ _ _ H Hr) as [Hw He]. eapply d_weak; [exact Hw|]. by apply d_chan.
-  - (* D-Abs *)
-    eapply d_abs; [done| |].
-    + by rewrite (lren_heads _ _ _ Hr), (lren_bot _ _ _ Hr).
-    + by apply IHdftyped, lren_up.
-  - dren_split Hr. eapply d_app; [done|exact Hs|done| |].
-    + rewrite (lren_heads _ _ _ Hr2), (lren_bot _ _ _ Hr2). by apply IHdftyped1.
-    + by apply IHdftyped2.
-  - dren_split Hr. eapply d_pair; [done|exact Hs| |].
-    + rewrite (lren_heads _ _ _ Hr2), (lren_bot _ _ _ Hr2). by apply IHdftyped1.
-    + by apply IHdftyped2.
-  - dren_split Hr. eapply d_letu; [done|exact Hs| |].
-    + rewrite (lren_heads _ _ _ Hr2), (lren_bot _ _ _ Hr2). by apply IHdftyped1.
-    + by apply IHdftyped2.
-  - dren_split Hr. eapply d_letp; [done|exact Hs| |].
-    + rewrite (lren_heads _ _ _ Hr2), (lren_bot _ _ _ Hr2). by apply IHdftyped1.
-    + by apply IHdftyped2, lren_up, lren_up.
-  - by eapply d_inj1, IHdftyped.
-  - by eapply d_inj2, IHdftyped.
-  - dren_split Hr. eapply d_case; [done|exact Hs| | |].
-    + rewrite (lren_heads _ _ _ Hr2), (lren_bot _ _ _ Hr2). by apply IHdftyped1.
-    + by apply IHdftyped2, lren_up.
-    + by apply IHdftyped3, lren_up.
-  - (* D-Box *)
-    eapply d_box; [by eapply lren_unl|done|].
-    intros ss Hk Hss. apply H2; [done|done|]. by apply lren_pinst, lren_up.
-  - eapply d_force; eauto.
-  - eapply d_send; eauto.
-  - eapply d_recv; eauto.
-  - eapply d_close; eauto.
-  - eapply d_select; eauto.
-  - eapply d_branch; eauto.
-  - eapply d_link; eauto.
-  - eapply d_spawn_lam. by apply IHdftyped, lren_up.
-  - eapply d_spawn; eauto.
-  - destruct (lren_empty _ _ _ H Hr) as [Hw He]. eapply d_weak; [exact Hw|]. by apply d_new.
-  - eapply d_new_at; eauto.
-  - eapply d_conv; eauto.
-  - apply IHdftyped. by eapply lren_wk.
-  - (* D-Contract *)
-    rewrite rename_rename. by apply IHdftyped, lren_contract.
-  - eapply d_pack; eauto.
-  - (* D-Open *)
-    pose proof Hr as (_ & Hl2 & _). pose proof (Hl2 _ _ _ H ltac:(simpl; tauto)) as Hri.
-    eapply d_open; [exact Hri|done|]. apply IHdftyped.
-    eapply (lren_insert _ _ _ _ (pinst_ty (pshift m) (TEx lb m C T aT)) a);
-      [by apply lren_pinst| |simpl; tauto|done].
-    by rewrite lenv_pinst_lookup, H.
-Qed.
+Proof. intros H r Δ' Hr. eapply typed_rename; [exact H|]. by apply lren_df. Qed.
 
 Corollary dftyped_weaken_head W Θ Γ Δ F e T :
   dftyped W Θ Γ Δ F e T → dftyped W Θ Γ (None :: Δ) F (rename S e) T.

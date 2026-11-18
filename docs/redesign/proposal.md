@@ -1280,6 +1280,12 @@ first, in stage S2.
   `slt W Γ x (sel_pt x false)`, `slt W Γ x (sel_pt x true)` at branch.
   No semantic lemma reads them.
 
+- Cleanup after L.6 (author, 2026-11-18). M.1: DF typing is defined as
+  the merged judgment at N = ∞ with the annotations of N = ∞, cost ∞
+  and transformer (∞, ∞), and D-Unit to D-Open are lemmas. One semantic
+  induction on the merged judgment, generic in the cost table and the
+  guard, gives the DF and the live fundamental theorems.
+
 ## 5  Open decisions for the author
 
 **Q1. Placement.** (a) O3 anchors and generated roots. (b) O2 box-bound

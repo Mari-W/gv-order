@@ -17,8 +17,10 @@
     rule of its primitive.
 
     [dftyped] is the deadlock-freedom projection, Θ ; Γ ; Δ ⊢^F_W e : T,
-    the same rules without the cost premises and without aging and
-    capture. No rule matches the shape of a redex. let x = e1 in e2 is
+    defined as the instance N = ∞ with the annotations of N = ∞. Its
+    rules [d_*] (static/Conservativity.v) are those of the merged
+    judgment without the cost premises and without aging and capture.
+    No rule matches the shape of a redex. let x = e1 in e2 is
     the derived form [ELet] of lang/Syntax.v, and E-Let and D-Let are
     admissible ([e_let] and [d_let] in static/Weakening.v). [ptyped] is process typing with P-Term and P-Connect
     in the two-world form, P-Join is admissible ([p_join]). *)
@@ -176,125 +178,15 @@ Inductive typed (W : world) (N : fuel) :
         (sf_pinst (pshift m) F) e (pinst_ty (pshift m) U) aU c t →
       typed W N Θ Γ Δ F e U aU c t.
 
-(** ** The deadlock-freedom projection *)
+(** ** The deadlock-freedom projection
 
-Inductive dftyped (W : world) : tenv → hctx → lenv → sfuture → expr → ty → Prop :=
-  | d_unit Γ Δ F :
-      lenv_empty Δ → dftyped W ∅ Γ Δ F EUnit TUnit
-  | d_var Γ Δ F x T a :
-      lenv_only Δ x (T, a) → dftyped W ∅ Γ Δ F (Var x) T
-  | d_chan Γ Δ F o S x a :
-      lenv_empty Δ → dftyped W {[o := TE S x a]} Γ Δ F (Chan o) (TSess S x)
-  | d_abs Θ Γ Δ F e T aT U aU ub lb c t h φ :
-      φ ∉ dom (hc_fv Γ) →
-      lb_below_hb W Γ lb (tenv_heads Θ ∪ lenv_heads Δ) (lenv_bot Δ) →
-      dftyped W Θ (hc_fvar φ ub Γ) (Some (T, aT) :: Δ) (∅, Some (FVar φ)) e U →
-      dftyped W Θ Γ Δ F (Lam e) (TLolli ub lb c t h T aT U aU)
-  | d_app Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e1 e2 ub lb c t h T aT U aU :
-      tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_below_s W Γ ub F →
-      dftyped W Θ1 Γ Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1
-        (TLolli ub lb c t h T aT U aU) →
-      dftyped W Θ2 Γ Δ2 (sf_union F (opt_heads lb)) e2 T →
-      dftyped W Θ Γ Δ F (App e1 e2) U
-  | d_pair Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e1 e2 T1 a1 T2 a2 :
-      tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-      dftyped W Θ1 Γ Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 T1 →
-      dftyped W Θ2 Γ Δ2 (sf_unionb F (heads T1) (hbot T1)) e2 T2 →
-      dftyped W Θ Γ Δ F (Pair e1 e2) (TProd T1 a1 T2 a2)
-  | d_letu Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e1 e2 T :
-      tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-      dftyped W Θ1 Γ Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 TUnit →
-      dftyped W Θ2 Γ Δ2 F e2 T →
-      dftyped W Θ Γ Δ F (LetU e1 e2) T
-  | d_letp Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e1 e2 T1 a1 T2 a2 b1 b2 T :
-      tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-      dftyped W Θ1 Γ Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1
-        (TProd T1 a1 T2 a2) →
-      dftyped W Θ2 Γ (Some (T2, b2) :: Some (T1, b1) :: Δ2) F e2 T →
-      dftyped W Θ Γ Δ F (LetP e1 e2) T
-  | d_inj1 Θ Γ Δ F e T a U b :
-      dftyped W Θ Γ Δ F e T → dftyped W Θ Γ Δ F (Inj1 e) (TSum T a U b)
-  | d_inj2 Θ Γ Δ F e T a U b :
-      dftyped W Θ Γ Δ F e U → dftyped W Θ Γ Δ F (Inj2 e) (TSum T a U b)
-  | d_case Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e e1 e2 T1 a1 T2 a2 b1 b2 T :
-      tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-      dftyped W Θ1 Γ Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e
-        (TSum T1 a1 T2 a2) →
-      dftyped W Θ2 Γ (Some (T1, b1) :: Δ2) F e1 T →
-      dftyped W Θ2 Γ (Some (T2, b2) :: Δ2) F e2 T →
-      dftyped W Θ Γ Δ F (Case e e1 e2) T
-  | d_box Γ Δ F e m k C ub c t U aU a φ :
-      lenv_unl Δ → φ ∉ dom (hc_fv (hc_open m C Γ)) →
-      (∀ ss, length ss = k → sinsts None ss →
-         dftyped W ∅ (hc_fvar φ ub (hc_open m C Γ))
-           (lenv_pinst (pshift m) (Some (TBox m k C ub c t U aU, a) :: Δ))
-           (∅, Some (FVar φ)) e (sinst_ty (slist ss) U)) →
-      dftyped W ∅ Γ Δ F (EBox e) (TBox m k C ub c t U aU)
-  | d_force Θ Γ Δ F e m k C ub c t U aU xs ss :
-      length xs = m → hold_at W Γ C xs → length ss = k → sinsts None ss →
-      ub_below_s W Γ (pt_inst (plist xs) <$> ub) F →
-      dftyped W Θ Γ Δ F e (TBox m k C ub c t U aU) →
-      dftyped W Θ Γ Δ F (EForce e) (sinst_ty (slist ss) (ty_inst xs U))
-  | d_send Θ Γ Δ F e S0 x m T b S ap aS :
-      unfoldS S0 = SSeq (SSnd m T b) S → pscoped m T → hbot T = false →
-      (∀ y, y ∈ heads (payload_at m T x) → slt W Γ x y) →
-      ub_below_s W Γ (Some x) F →
-      dftyped W Θ Γ Δ F e (TProd (payload_at m T x) ap (TSess S0 x) aS) →
-      dftyped W Θ Γ Δ F (ESend e) (TSess S x⁺)
-  | d_recv Θ Γ Δ F e S0 x m T b S b' a' :
-      unfoldS S0 = SSeq (SRcv m T b) S → pscoped m T →
-      ub_below_s W Γ (Some x) F →
-      dftyped W Θ Γ Δ F e (TSess S0 x) →
-      dftyped W Θ Γ Δ F (ERecv e) (TProd (payload_at m T x) b' (TSess S x⁺) a')
-  | d_close Θ Γ Δ F e S0 x :
-      unfoldS S0 = SEnd → ub_below_s W Γ (Some x) F →
-      dftyped W Θ Γ Δ F e (TSess S0 x) →
-      dftyped W Θ Γ Δ F (EClose e) TUnit
-  | d_select (i : bool) Θ Γ Δ F e S0 x S1 S2 :
-      unfoldS S0 = SPlus S1 S2 → ub_below_s W Γ (Some x) F →
-      dftyped W Θ Γ Δ F e (TSess S0 x) →
-      dftyped W Θ Γ Δ F (ESel i e) (TSess (if i then S2 else S1) (sel_pt x i))
-  | d_branch Θ Γ Δ F e S0 x S1 S2 a1 a2 :
-      unfoldS S0 = SWith S1 S2 →
-      ub_below_s W Γ (Some x) F →
-      dftyped W Θ Γ Δ F e (TSess S0 x) →
-      dftyped W Θ Γ Δ F (EBra e) (TSum (TSess S1 (bra_pt x false)) a1 (TSess S2 (bra_pt x true)) a2)
-  | d_link Θ Γ Δ F e S x a1 a2 :
-      dftyped W Θ Γ Δ F e (TProd (TSess S x) a1 (TSess (dual S) x‾) a2) →
-      dftyped W Θ Γ Δ F (ELink e) TUnit
-  | d_spawn_lam Θ Γ Δ F e a1 :
-      dftyped W Θ Γ (Some (TUnit, a1) :: Δ) (∅, None) e TUnit →
-      dftyped W Θ Γ Δ F (ESpawn (Lam e)) TUnit
-  | d_spawn Θ Γ Δ F e ub lb c' t' h a1 aU :
-      dftyped W Θ Γ Δ F e (TLolli ub lb c' t' h TUnit a1 TUnit aU) →
-      dftyped W Θ Γ Δ F (ESpawn e) TUnit
-  | d_new Γ Δ F ℓ S a1 a2 a3 :
-      lenv_empty Δ → ℓ ∈ w_fams W →
-      dftyped W ∅ Γ Δ F (ENew ℓ)
-        (TEx LBot 1 (bcs_of (w_laws W ℓ)) (TProd (TSess S (pvar 0)) a1 (TSess (dual S) (pvar 0)‾) a2) a3)
-  | d_new_at Θ Γ Δ F e κ S0 x S a a1 a2 a3 :
-      dftyped W Θ Γ Δ F e (TSess S0 x) →
-      dftyped W Θ Γ Δ F (ENewAt κ e)
-        (TProd (TSess S0 x) a (TProd (TSess S (x·κ)) a1 (TSess (dual S) (x·κ)‾) a2) a3)
-  | d_conv Θ Γ Δ F e T T' a a' :
-      tsub (ty_df T) a (ty_df T') a' → dftyped W Θ Γ Δ F e T → dftyped W Θ Γ Δ F e T'
-  | d_weak Θ Γ Δ' Δ F e T :
-      lenv_wk Δ' Δ → dftyped W Θ Γ Δ' F e T → dftyped W Θ Γ Δ F e T
-  | d_contract Θ Γ Δ U aU F e T :
-      unlimited U →
-      dftyped W Θ Γ (Some (U, aU) :: Some (U, aU) :: Δ) F e T →
-      dftyped W Θ Γ (Some (U, aU) :: Δ) F (rename pred e) T
-  | d_pack Θ Γ Δ F e lb m C T aT xs :
-      length xs = m → hold_at W Γ C xs →
-      lbx_below_h W Γ lb (heads (ty_inst xs T)) (hbot (ty_inst xs T)) →
-      dftyped W Θ Γ Δ F e (ty_inst xs T) →
-      dftyped W Θ Γ Δ F e (TEx lb m C T aT)
-  | d_open Θ Γ Δ F e i lb m C T aT a b U :
-      Δ !! i = Some (Some (TEx lb m C T aT, a)) → ¬ unlimited T →
-      dftyped W (tenv_pinst (pshift m) Θ) (hc_open m C Γ)
-        (<[i := Some (T, b)]> (lenv_pinst (pshift m) Δ))
-        (sf_pinst (pshift m) F) e (pinst_ty (pshift m) U) →
-      dftyped W Θ Γ Δ F e U.
+    DF typing is the merged judgment at N = ∞ with the annotations of
+    N = ∞, cost ∞ and transformer (∞, ∞). Its rules [d_*] are lemmas
+    (static/Conservativity.v), and [conservative] shows that any
+    derivation at N = ∞ gives one. *)
+
+Definition dftyped (W : world) (Θ : tenv) (Γ : hctx) (Δ : lenv) (F : sfuture) (e : expr) (T : ty) : Prop :=
+  typed W None (tenv_df Θ) Γ (lenv_df Δ) F e (ty_df T) (cr_df T) None tinf.
 
 (** ** Process typing
 

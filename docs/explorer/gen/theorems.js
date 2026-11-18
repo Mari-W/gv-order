@@ -49,7 +49,7 @@ TH('th-lf-adequacy', 'Lock-free adequacy', 'soup/LFAdequacy.v: lf_adequacy, lf_t
     h('th.soup-no-tau', IM(R`\forall n.\ a \in ${SOUP('n')}`, R`${NOTAU}(${h('proc.erase', R`\mathsf{erase}`)}\,${h('th.qa', 'q_a')})`)),
     h('th.lfsoup-step', IM(R`a \in ${SOUP('n+1')} \land q_a \xrightarrow{ev} q'`, R`${h('sp.next', R`\mathsf{lf\_next}`)}\,N\,a\,ev\,q' \in ${SOUP('n')}`))),
   'For $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$, $\\varnothing \\Vvdash_W p : T$ implies lock freedom.');
-TH('th-fund-term', 'Fundamental theorems for terms', 'static/Fundamental.v: fundamental, fundamental_typed; static/LiveFundamental.v: live_fundamental, live_fundamental_typed', ['df', 'live', 'lf'],
+TH('th-fund-term', 'Fundamental theorems for terms', 'static/Fundamental.v: typed_sem, fundamental, fundamental_typed, live_fundamental, live_fundamental_typed', ['df', 'live', 'lf'],
   ROWS(
     h('th.fundamental', IM(R`${STRICT}\,W \land \Theta ; \varnothing ; \Delta \vdash^{F}_{W} t : T`, R`\Theta ; \Delta ${TSEM}^{F}_W t : T`)),
     h('th.fundamental-typed', IM(R`\mathsf{strict}\,W \land \Theta ; \varnothing ; \Delta \vdash^{F}_{W,N} t : T^{a} \triangleright c ; \vartheta`, R`${DF(R`\Theta`)} ; \Delta_{df} \vDash^{F}_W t : T_{df}`)),

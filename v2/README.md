@@ -48,8 +48,8 @@ and run `make` again. The root build of theories/ ignores v2.
 | types/Types.v | context-free session types and types with credits, costs, transformers and floors, duality, unfolding, ≈, the annotations of N = ∞ (`ty_df`) |
 | types/Erasure.v | `ty_df` commutes with the type operations and preserves ≈ |
 | static/Contexts.v | Θ, Γ, Δ, futures, the fact theory `slt`, aging (an idle end by truncation, `age_idle`), capture, subtyping |
-| static/Typing.v | the merged judgment `typed` (rules `e_*`), its DF projection `dftyped` (rules `d_*`), process typing `ptyped` (`p_term` with `pfree Σ`, `p_connect`, `p_join`), `ptyped_pfree`, `ptyped_chans` |
-| static/Conservativity.v | `typed_dftyped`, `dftyped_typed`, `conservative` |
+| static/Typing.v | the merged judgment `typed` (rules `e_*`), its DF projection `dftyped`, defined as the instance N = ∞ with the annotations of N = ∞, process typing `ptyped` (`p_term` with `pfree Σ`, `p_connect`, `p_join`), `ptyped_pfree`, `ptyped_chans` |
+| static/Conservativity.v | the DF rules `d_*` as lemmas, `typed_dftyped`, `dftyped_typed`, `conservative` |
 | static/Weakening.v | world extension, term-variable renaming and weakening |
 | static/Renaming.v | channel renaming, renaming of families and generated roots |
 | static/PointSubst.v | point substitution `typed_pinst` |
@@ -143,14 +143,16 @@ exact (`Vfuel_exact`).
 
 ## Stage S5, static fundamental theorems
 
-One induction on DF derivations instantiates the point variables of Γ
-by σ and its future variables by ρ, in any world where the instantiated
-hypotheses hold (`hsat`), and reads the ⊥ flag as any set B. Each case
-is a `gen_e_*` rule. The live theorem runs the same induction with the
-guard's marks: a marked variable is the self of a box, held by the
-grounding only below the current level (`GrelL`, `sem_later`). O-Spawn
-reads the thunk at the empty future with no lower or upper point
-(`Vthunk`), which D-SpawnLam meets (`gen_e_spawn_lam`).
+One induction on the merged judgment at every N (`typed_sem`)
+instantiates the point variables of Γ by σ and its future variables by
+ρ, in any world where the instantiated hypotheses hold (`hsat`), and
+reads the ⊥ flag as any set B. It is generic in the cost table and in
+the marks a guard admits: a marked variable is the self of a box, held
+by the grounding only below the current level (`GrelL`, `sem_later`).
+Each case is a rule with marks `later_*`. The DF instance takes no
+marks and a box at a positive cost of β, the live instance the guard.
+O-Spawn reads the thunk at the empty future with no lower or upper
+point (`Vthunk`), which E-SpawnLam meets (`later_spawn_lam`).
 
 | File | Content |
 |---|---|
@@ -159,8 +161,7 @@ reads the thunk at the empty future with no lower or upper point
 | compat/BindActs.v | the bind lemma for a hole that acts before it returns (`Erel_bind_acts`) |
 | compat/LiveRules.v | groundings with marks `GrelL`, `sem_later`, every rule with marks, the box that marks its self (`later_box`), frames that clear the marks (`later_bind_acts`) |
 | static/Guard.v | `acts`, the guard `glive` and `guarded`, renaming of marks |
-| static/Fundamental.v | `hsat`, instances under binders (`pclose`), `dftyped_sem`, `spawn_lam_valid`, `fundamental`, `fundamental_typed` |
-| static/LiveFundamental.v | `dftyped_later`, `spawn_lam_later_valid`, `live_fundamental`, `live_fundamental_typed` |
+| static/Fundamental.v | `hsat`, instances under binders (`pclose`), contexts up to annotations (`sem_later_ctx`, `sem_later_undf`), `typed_sem` and its instances `typed_sem_df`, `typed_sem_live`, `fundamental`, `fundamental_typed`, `live_fundamental`, `live_fundamental_typed` |
 | examples/GuardEx.v | the guard against Appendix B #12 to #15 and #40, and the C2 stage of B.1 #4 |
 | static/FundamentalProc.v | the side conditions of P-Connect from the typing premises (`ptyped_conn`), one induction on `ptyped` for every cost table (`proc_gen`), `fundamental_proc`, `live_fundamental_proc` (every thread guarded, `pguarded`), `soundness`, `live_soundness`, `soundness_source` |
 

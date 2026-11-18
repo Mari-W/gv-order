@@ -15,7 +15,7 @@
     rule give ([ptyped_conn]). The results
     hold at every fuel N, ⊢_W is the instance N = ∞. *)
 
-From GV Require Export compat.PTerm static.LiveFundamental.
+From GV Require Export compat.PTerm static.Fundamental.
 From GV Require Import compat.Conv.
 
 (** The guard of a process, ⊢▷ p: every thread t of p has ∅ ⊢▷ t. *)

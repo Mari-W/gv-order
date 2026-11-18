@@ -15,7 +15,7 @@
 
 From stdpp Require Import relations.
 From GV Require Import soup.LFAdequacy.
-From GV Require Export soup.SoupCompose static.LiveFundamental cost.CostFund.
+From GV Require Export soup.SoupCompose static.Fundamental cost.CostFund.
 From GV Require Import compat.Conv.
 
 (** ** Liftings at an interface *)

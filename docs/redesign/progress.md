@@ -1870,3 +1870,32 @@ The old development in theories/ stays untouched.
   conservativity and the intro patterns of the two fundamental
   theorems. No example used the premises. 306 results, all closed.
 
+- M.1. DF typing is a definition (decision of 2026-11-18, cleanup).
+  `dftyped W Θ Γ Δ F e T := typed W None (tenv_df Θ) Γ (lenv_df Δ) F e
+  (ty_df T) (cr_df T) None tinf` (static/Typing.v), the conclusion of the
+  old `dftyped_typed`. The 28 constructors `d_*` are lemmas with the same
+  names and statements (static/Conservativity.v), each the old case of
+  `dftyped_typed`. `dftyped_typed` holds by definition, `typed_dftyped`
+  keeps its proof, `conservative` keeps its statement (the ∃ form of the
+  proposal is its left side). `dftyped_rename` is the projection of
+  `typed_rename` through the new `lren_df` (static/Weakening.v, which
+  now imports Conservativity). The two semantic inductions on `dftyped`
+  are one induction on `typed` at every N (`typed_sem`,
+  static/Fundamental.v), generic in the cost table κ and in a guard
+  predicate G on marks, with one hypothesis per term former that reads
+  the marks of the subterms off G and a box rule at a mark
+  (`box_rule κ L m`). The DF instance (`typed_sem_df`) takes G = no
+  marks and the box rule `gen_e_box` (β costs one), the live instance
+  (`typed_sem_live`) takes G = `lguard` and `later_box`. Every case uses
+  the rules with marks `later_*`. Aging and capture change only
+  annotations, so the cases read the aged contexts through
+  `sem_later_ctx` (V is blind to annotations, `GrelL_df`), and
+  `sem_later_undf` turns the judgment at the erased contexts into the
+  one at the given contexts. `fundamental`, `fundamental_typed`,
+  `live_fundamental` and `live_fundamental_typed` keep their statements
+  and move into one file; static/LiveFundamental.v is gone, with
+  `dftyped_sem`, `dftyped_later`, `spawn_lam_rule`, `spawn_lam_valid`,
+  `spawn_lam_later_valid` (E-SpawnLam is `later_spawn_lam` at every
+  table, so the section hypothesis `Hsl` is gone) and `dftyped_tfacts`.
+  CheckAll lists `typed_sem` in place of `dftyped_sem` and
+  `dftyped_later`.

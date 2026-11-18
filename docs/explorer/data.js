@@ -1286,7 +1286,7 @@ window.MAP = {
     {
      "id": "th-fund-term",
      "title": "Fundamental theorems for terms",
-     "rocq": "static/Fundamental.v: fundamental, fundamental_typed; static/LiveFundamental.v: live_fundamental, live_fundamental_typed",
+     "rocq": "static/Fundamental.v: typed_sem, fundamental, fundamental_typed, live_fundamental, live_fundamental_typed",
      "modes": [
       "df",
       "live",
@@ -6816,7 +6816,7 @@ window.MAP = {
   },
   "tp.vdash": {
    "title": "The term turnstile $\\vdash$",
-   "what": "The least relation closed under E-Unit to E-Open, with erased form $\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W} t : T$ closed under D-Unit to D-Open.",
+   "what": "The least relation closed under E-Unit to E-Open, with erased form $\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W} t : T$, defined as $\\Theta_{df} ; \\Gamma ; \\Delta_{df} \\vdash^{F}_{W,\\infty} t : T_{df}^{a_{df}} \\triangleright \\infty ; (\\infty, \\infty)$ with the annotations of $N = \\infty$. D-Unit to D-Open are lemmas.",
    "why": "One relation carries the session type, the points, the credit, the cost and the transformer of $e$, so every mode reads its premises off one derivation.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\varnothing ; \\varnothing ; \\varnothing \\vdash^{(\\varnothing,\\cdot)}_{W,N} \\ast : \\ast^{\\infty} \\triangleright 0 ; \\hat 1$.",
