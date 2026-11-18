@@ -35,11 +35,11 @@ Qed.
 
 Definition krelabel (f : nat → nat) (K : own) : own := (λ h, Hold (f h.(h_th)) h.(h_pt) h.(h_ctr)) <$> K.
 
-Lemma soup_relabel N n W T C M1 M2 K tk A Π U (f g : nat → nat) :
+Lemma soup_relabel N n W Σ T C M1 M2 K tk A Π U (f g : nat → nat) :
   (∀ t e, M1 !! t = Some e → M2 !! f t = Some e ∧ g (f t) = t) →
   (∀ t' e, M2 !! t' = Some e → M1 !! g t' = Some e ∧ f (g t') = t') →
-  soup_inv N n W ∅ T (LFState (C, M1) K tk) A Π U →
-  soup_inv N n W ∅ T (LFState (C, M2) (krelabel f K) (tk ∘ g)) A Π (U ∘ g).
+  soup_inv N n W Σ T (LFState (C, M1) K tk) A Π U →
+  soup_inv N n W Σ T (LFState (C, M2) (krelabel f K) (tk ∘ g)) A Π (U ∘ g).
 Proof.
   intros H1 H2 Hs.
   assert (Hth : ∀ o h, K !! o = Some h → is_Some (M1 !! h.(h_th))) by apply (sp_owner _ _ _ _ _ _ _ _ Hs).
@@ -79,4 +79,5 @@ Proof.
   - exact (sp_sig _ _ _ _ _ _ _ _ Hs).
   - intros o h Ho. unfold krelabel in Ho. rewrite lookup_fmap in Ho.
     destruct (K !! o) as [h0|] eqn:E; [|done]. simpl in Ho. injection Ho as <-. simpl. by apply ((sp_fin _ _ _ _ _ _ _ _ Hs) o h0).
+  - exact (sp_psig _ _ _ _ _ _ _ _ Hs).
 Qed.

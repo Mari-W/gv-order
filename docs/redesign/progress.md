@@ -1277,3 +1277,8 @@ The old development in theories/ stays untouched.
   lock_free p`, `lf_thread_progress` (v2/soup/LFAdequacy.v).
 - S8.34. Notation test v2/test/SoupNotations.v, README section, CheckAll
   entries. S8 done.
+- S9.1. The soup clause `sp_psig` (v2/soup/State.v): an end of the
+  interface, Σ !! o = Some (S, x), has Π !! o = Some S, the session type
+  of its entry exactly. The S8 step lemmas are at Σ = ∅, where the
+  clause is vacuous (`soup_keep` and the constructor after it in
+  SoupStep.v). `soup_relabel` holds at every Σ.

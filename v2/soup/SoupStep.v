@@ -300,6 +300,8 @@ Section step.
     - apply (sp_pdual _ _ _ _ _ _ _ _ Hs).
     - apply (sp_sig _ _ _ _ _ _ _ _ Hs).
     - apply (sp_fin _ _ _ _ _ _ _ _ Hs).
+
+    - apply (sp_psig _ _ _ _ _ _ _ _ Hs).
   Qed.
 
   (** P-Act-Beta. *)
@@ -342,6 +344,8 @@ Section step.
     - intros o P P' H1 H2 _. by apply (Hpd o P P').
     - intros o y Hy. by rewrite lookup_empty in Hy.
     - exact Hfin.
+
+    - intros o S0 x Hy. by rewrite lookup_empty in Hy.
   Qed.
 
   Lemma s_notin_K c : c ∉ C → EPos c ∉ dom K ∧ ENeg c ∉ dom K.

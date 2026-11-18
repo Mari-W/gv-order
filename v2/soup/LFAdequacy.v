@@ -496,7 +496,7 @@ Proof.
   destruct a as [[C1 M1] K tk], q as [C2 M2]. intros Hs Hq. unfold erase in Hq. simpl in Hq.
   injection Hq as -> HM. destruct (relabel_map M1 M2 (eq_sym HM)) as (f & g & H1 & H2).
   exists (LFState (C1, M2) (krelabel f K) (tk ∘ g)). split; [done|]. intros n.
-  destruct (Hs n) as (A & Π & U & Hsi). exists A, Π, (U ∘ g). exact (soup_relabel _ _ _ _ _ M1 M2 _ _ _ _ _ f g H1 H2 Hsi).
+  destruct (Hs n) as (A & Π & U & Hsi). exists A, Π, (U ∘ g). exact (soup_relabel _ _ _ _ _ _ M1 M2 _ _ _ _ _ f g H1 H2 Hsi).
 Qed.
 
 Lemma soup_links_restricted N W T a :

@@ -32,7 +32,9 @@ Definition kfin (K : own) : Prop := ∀ o h, K !! o = Some h → is_Some h.(h_ct
     [Erl Θ U e] is the relation of a thread at its environment and result
     type, [Frl Π φ tk e] its fuel. soup/Soup.v instantiates them with
     E[live] and FuelE^N at one index. The duality of session types up
-    to annotations is spelled out, [sdual S S'] of relation/Relation.v. *)
+    to annotations is spelled out, [sdual S S'] of relation/Relation.v.
+    An end of the interface Σ is held at its entry of Σ in A and at the
+    session type of that entry in Π ([sp_sig], [sp_psig]). *)
 Record soup_gen (Erl : senv → ty → expr → Prop) (Frl : penv → cenv → nat → expr → Prop)
     (Σ : senv) (T : ty) (a : lfstate) (A : senv) (Π : penv) (U : nat → ty) : Prop := SoupGen {
   sp_prim : prim T;
@@ -49,5 +51,6 @@ Record soup_gen (Erl : senv → ty → expr → Prop) (Frl : penv → cenv → n
   sp_pdual o P P' : Π !! o = Some P → Π !! edual o = Some P' → ech o ∈ (s_q a).1 →
     sequiv P' (dual P);
   sp_sig o y : Σ !! o = Some y → A !! o = Some y;
-  sp_fin o h : s_K a !! o = Some h → is_Some h.(h_ctr)
+  sp_fin o h : s_K a !! o = Some h → is_Some h.(h_ctr);
+  sp_psig o S x : Σ !! o = Some (S, x) → Π !! o = Some S
 }.
