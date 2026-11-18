@@ -116,3 +116,178 @@ Proof.
     + by rewrite edual_edual.
     + simpl. set_solver.
 Qed.
+
+Lemma action_cases a : is_admin a ∨ ∃ o, aend a = Some o.
+Proof. destruct a; simpl; eauto. Qed.
+
+Lemma aend_not_link a o os : aend a = Some o → offers a (LSess (SLink os)) → False.
+Proof. by destruct a. Qed.
+
+(** V at a primitive type holds no end. *)
+Lemma Vrel_prim_empty κ n W Θ T v : types.Types.prim T → Vrel κ n W Θ T v → Θ = ∅.
+Proof.
+  intros Hp. revert Θ v. induction Hp as [|U a V b HU IHU HV IHV|U a V b HU IHU HV IHV|m k C ub c t U a HU IH];
+    intros Θ v.
+  - by intros [-> _]%Vrel_unit_iff.
+  - intros (v1 & v2 & Θ1 & Θ2 & _ & _ & -> & H1 & H2)%Vrel_prod_iff.
+    by rewrite (IHU _ _ H1), (IHV _ _ H2), map_union_empty.
+  - intros [(v' & _ & H)|(v' & _ & H)]%Vrel_sum_iff; [by apply (IHU _ v')|by apply (IHV _ v')].
+  - by intros [-> _]%Vrel_box_iff.
+Qed.
+
+(** ** The facts of one soup *)
+
+Section local.
+  #[local] Set Default Proof Using "All".
+  Context (N n : nat) (W : world) (T : ty) (a : lfstate) (A : senv) (Π : penv) (U : nat → ty).
+  Context (Hs : soup_inv N (S n) W ∅ T a A Π U) (HW : types.Worlds.strict W).
+
+  Local Abbreviation q := (s_q a).
+  Local Abbreviation K := (s_K a).
+
+  Lemma l_E t e : q.2 !! t = Some e → e ∈ E[live]^W _ (S n)⟦kres K t A ⊢ U t⟧^∅.
+  Proof. apply (s_rel Hs). Qed.
+
+  Lemma l_obl t e α e' : q.2 !! t = Some e → tstep e α e' →
+    Eobl live (S n) (Vrel live) (Erel live) (Vrel live (S n)) (Erel live (S n)) W (kres K t A) (U t) ∅ α e'.
+  Proof. intros He Hst. exact (Erel_S_step live n W W _ _ _ _ _ _ (l_E t e He) (wext_refl W) Hst). Qed.
+
+  (** A session redex acts on an end its thread holds, at a session type
+      of the redex's kind. *)
+  Lemma s_held_end t e a1 o : q.2 !! t = Some e → act e = Some a1 → aend a1 = Some o →
+    ∃ S0 x, kres K t A !! o = Some (S0, x) ∧ akind a1 S0.
+  Proof.
+    intros He Ha Ho. destruct a1 as [| | | |o'|o' w|o'|o1 o2|o' b|o']; simpl in Ho; simplify_eq.
+    - destruct (act_offer e (ARecv o) (LSess (SRecv o EUnit)) Ha (conj eq_refl I)) as [e' He'].
+      pose proof (l_obl t e _ e' He He') as H. cbn [Eobl] in H.
+      destruct H as (S0 & x & m & U0 & b & S & Ho & Hu & _). exists S0, x. split; [done|]. simpl. eauto.
+    - destruct (act_offer e (ASend o w) (LSess (SSend o (fends w) w)) Ha (conj eq_refl (conj eq_refl eq_refl)))
+        as [e' He'].
+      pose proof (l_obl t e _ e' He He') as H. cbn [Eobl] in H.
+      destruct H as (S0 & x & m & U0 & b & S & ΘM & Θr & Ho & Hu & _). exists S0, x. split; [done|]. simpl. eauto.
+    - destruct (act_offer e (AClose o) (LSess (SClose o)) Ha eq_refl) as [e' He'].
+      pose proof (l_obl t e _ e' He He') as H. cbn [Eobl] in H.
+      destruct H as (S0 & x & Ho & Hu & _). exists S0, x. done.
+    - destruct (act_offer e (ASel o b) (LSess (SSel o b)) Ha (conj eq_refl eq_refl)) as [e' He'].
+      pose proof (l_obl t e _ e' He He') as H. cbn [Eobl] in H.
+      destruct H as (S0 & x & S1 & S2 & Ho & Hu & _). exists S0, x. split; [done|]. simpl. eauto.
+    - destruct (act_offer e (ABra o) (LSess (SBra o false)) Ha eq_refl) as [e' He'].
+      pose proof (l_obl t e _ e' He He') as H. cbn [Eobl] in H.
+      destruct H as (S0 & x & S1 & S2 & Ho & Hu & _). exists S0, x. split; [done|]. simpl. eauto.
+  Qed.
+
+  Lemma s_owner_of t o v : kres K t A !! o = Some v → ∃ h, K !! o = Some h ∧ h.(h_th) = t.
+  Proof. intros H. apply lookup_kres in H as [_ H]. done. Qed.
+
+  (** A value holds no end. *)
+  Lemma s_value_empty t e : q.2 !! t = Some e → act e = None → kres K t A = ∅.
+  Proof.
+    intros He Ha. pose proof (l_E t e He) as HE. apply Erel_S_iff in HE.
+    destruct (HE W (wext_refl W)) as (Hstop & _ & _).
+    pose proof (Hstop (proj2 (irred_act e) Ha)) as HV.
+    destruct (s_ty Hs t e He) as [Ht|Ht]; rewrite Ht in HV.
+    - exact (Vrel_prim_empty _ _ _ _ _ _ (sp_prim _ _ _ _ _ _ _ _ Hs) HV).
+    - by apply Vrel_unit_iff in HV as [-> _].
+  Qed.
+
+  (** Readiness: the end a thread acts on lies below the partner point of
+      every other end it holds. *)
+  Lemma s_ready t e a1 o S0 x o' S' x' :
+    q.2 !! t = Some e → act e = Some a1 → aend a1 = Some o →
+    kres K t A !! o = Some (S0, x) → kres K t A !! o' = Some (S', x') → o' ≠ o → W ⊢ x ≺ pt_dual x'.
+  Proof.
+    intros He Ha Ho Hx Hx' Hne. pose proof (l_E t e He) as HE. apply Erel_S_iff in HE.
+    destruct (HE W (wext_refl W)) as (_ & Hready & _).
+    assert (¬ irred e) as Hni by (rewrite irred_act, Ha; done).
+    assert (Hsends : ∀ σ e', tstep e (LSess σ) e' → sends σ = {[o]}).
+    { intros σ e' Hst. destruct (act_step _ _ _ Hst) as (a2 & Ha2 & Hoff). rewrite Ha in Ha2. simplify_eq.
+      destruct (aend_offers _ _ _ Ho Hoff) as (σ' & [= <-] & Hs'). done. }
+    assert (stable_t e) as Hst.
+    { intros α e' Hs'. destruct (act_step _ _ _ Hs') as (a2 & Ha2 & Hoff). rewrite Ha in Ha2. simplify_eq.
+      destruct (aend_offers _ _ _ Ho Hoff) as (σ' & -> & _). by exists σ'. }
+    destruct (Hready Hni Hst) as [_ [Hlink|Hbr]].
+    { exfalso. destruct Hlink as (os & e' & Hs'). destruct (act_step _ _ _ Hs') as (a2 & Ha2 & Hoff).
+      rewrite Ha in Ha2. simplify_eq. exact (aend_not_link _ _ _ Ho Hoff). }
+    assert (offered_t (kres K t A) e o) as Hoff.
+    { split; [by apply elem_of_dom_2 in Hx|]. destruct (aend_step e a1 o Ha Ho) as (σ & e' & Hs' & Hσ).
+      exists σ, e'. split; [done|]. rewrite Hσ. set_solver. }
+    destruct (Hbr o S0 x Hoff Hx) as [Hrest _]. apply (Hrest o' S' x' Hx').
+    intros [_ (σ & e' & Hs' & Hin)]. rewrite (Hsends σ e' Hs') in Hin. apply elem_of_singleton in Hin. done.
+  Qed.
+
+  (** The partner of the end a thread acts on is held by another thread. *)
+  Lemma s_partner t e a1 o : q.2 !! t = Some e → act e = Some a1 → aend a1 = Some o →
+    ∃ s es h', K !! edual o = Some h' ∧ h'.(h_th) = s ∧ q.2 !! s = Some es ∧ s ≠ t.
+  Proof.
+    intros He Ha Ho. destruct (s_held_end t e a1 o He Ha Ho) as (S0 & x & Hx & _).
+    destruct (s_owner_of _ _ _ Hx) as (h & Kh & Eh).
+    assert (edual o ∈ dom K) as Hd.
+    { apply (s_pair _ _ _ _ _ _ _ _ Hs). by apply elem_of_dom_2 in Kh. }
+    apply elem_of_dom in Hd as [h' Kh']. destruct (s_owner _ _ _ _ _ _ _ _ Hs _ _ Kh') as [es Hes].
+    exists h'.(h_th), es, h'. split_and!; [done|done|done|]. intros Hst.
+    assert (edual o ∈ dom A) as HdA by (rewrite (s_domA _ _ _ _ _ _ _ _ Hs); by apply elem_of_dom_2 in Kh').
+    apply elem_of_dom in HdA as [[S' x'] HA'].
+    assert (kres K t A !! edual o = Some (S', x')) as Hx'.
+    { apply lookup_kres. split; [done|]. exists h'. split; [done|congruence]. }
+    pose proof (lookup_kres K t A o (S0, x)) as Hk. apply Hk in Hx as [HA _].
+    destruct (s_sdual _ _ _ _ _ _ _ _ Hs o S0 x S' x' HA HA') as [-> _].
+    pose proof (s_ready t e a1 o S0 x (edual o) S' (pt_dual x) He Ha Ho (proj2 (lookup_kres K t A o (S0, x))
+      (conj HA (ex_intro _ h (conj Kh Eh)))) Hx' (edual_ne o)) as Hlt.
+    rewrite pt_dual_dual in Hlt. exact (proj2 HW x Hlt).
+  Qed.
+
+  (** A holder of an end is not a value. *)
+  Lemma s_holder_act s es o h : K !! o = Some h → h.(h_th) = s → q.2 !! s = Some es → ∃ a2, act es = Some a2.
+  Proof.
+    intros Kh Eh Hes. destruct (act es) as [a2|] eqn:Ha; [by eexists|]. exfalso.
+    pose proof (s_value_empty s es Hes Ha) as Hemp.
+    assert (o ∈ dom A) as HdA by (rewrite (s_domA _ _ _ _ _ _ _ _ Hs); by apply elem_of_dom_2 in Kh).
+    apply elem_of_dom in HdA as [v HA].
+    assert (kres K s A !! o = Some v) as Hx by (apply lookup_kres; split; [done|eauto]).
+    by rewrite Hemp, lookup_empty in Hx.
+  Qed.
+
+  (** Two redexes on the two ends of a channel fit. *)
+  Lemma s_compat t e a1 o s es a2 : q.2 !! t = Some e → act e = Some a1 → aend a1 = Some o →
+    q.2 !! s = Some es → act es = Some a2 → aend a2 = Some (edual o) → compat a1 a2.
+  Proof.
+    intros He Ha Ho Hes Ha2 Ho2.
+    destruct (s_held_end t e a1 o He Ha Ho) as (S0 & x & Hx & Hk1).
+    destruct (s_held_end s es a2 (edual o) Hes Ha2 Ho2) as (S0' & x' & Hx' & Hk2).
+    apply lookup_kres in Hx as [HA _]. apply lookup_kres in Hx' as [HA' _].
+    destruct (s_sdual _ _ _ _ _ _ _ _ Hs o S0 x S0' x' HA HA') as [_ Hd].
+    exact (sdual_compat a1 a2 S0 S0' o Hd Hk1 Hk2 Ho Ho2).
+  Qed.
+
+  (** A holder blocked on another end waits on an end below. *)
+  Lemma s_rank t e a1 o s es a2 o2 :
+    q.2 !! t = Some e → act e = Some a1 → aend a1 = Some o →
+    (∃ h', K !! edual o = Some h' ∧ h'.(h_th) = s) →
+    q.2 !! s = Some es → act es = Some a2 → aend a2 = Some o2 → o2 ≠ edual o →
+    W ⊢ kpt K o2 ≺ kpt K o.
+  Proof.
+    intros He Ha Ho (h' & Kh' & Eh') Hes Ha2 Ho2 Hne.
+    destruct (s_held_end t e a1 o He Ha Ho) as (S0 & x & Hx & _).
+    destruct (s_held_end s es a2 o2 Hes Ha2 Ho2) as (S2 & x2 & Hx2 & _).
+    assert (edual o ∈ dom A) as HdA by (rewrite (s_domA _ _ _ _ _ _ _ _ Hs); by apply elem_of_dom_2 in Kh').
+    apply elem_of_dom in HdA as [[S' x'] HA'].
+    assert (kres K s A !! edual o = Some (S', x')) as Hx' by (apply lookup_kres; split; [done|eauto]).
+    pose proof (s_ready s es a2 o2 S2 x2 (edual o) S' x' Hes Ha2 Ho2 Hx2 Hx' (not_eq_sym Hne)) as Hlt.
+    apply lookup_kres in Hx as [HA _]. apply lookup_kres in Hx2 as [HA2 _].
+    destruct (s_sdual _ _ _ _ _ _ _ _ Hs o S0 x S' x' HA HA') as [-> _].
+    rewrite pt_dual_dual in Hlt.
+    rewrite (s_kpt _ _ _ _ _ _ _ _ Hs o2 S2 x2 HA2), (s_kpt _ _ _ _ _ _ _ _ Hs o S0 x HA). done.
+  Qed.
+
+  (** A link redex has a restricted end. *)
+  Lemma s_link t e o1 o2 : q.2 !! t = Some e → act e = Some (ALink o1 o2) → ech o1 ∈ q.1 ∨ ech o2 ∈ q.1.
+  Proof.
+    intros He Ha. destruct (act_offer e (ALink o1 o2) (LSess (SLink ({[o1]} ∪ {[o2]}))) Ha eq_refl) as [e' He'].
+    pose proof (l_obl t e _ e' He He') as H. cbn [Eobl] in H.
+    destruct H as (p1 & p2 & S1 & S2 & x & Hos & _ & Hp1 & _).
+    destruct (s_owner_of _ _ _ Hp1) as (h & Kh & _).
+    assert (ech p1 ∈ q.1) as Hc by (apply (s_closed _ _ _ _ _ _ _ _ Hs); by apply elem_of_dom_2 in Kh).
+    assert (p1 ∈ ({[o1]} ∪ {[o2]} : gset cend)) as Hin by (rewrite Hos; set_solver).
+    apply elem_of_union in Hin as [Hin|Hin]; apply elem_of_singleton in Hin as ->; auto.
+  Qed.
+End local.
