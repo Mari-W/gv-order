@@ -14,7 +14,7 @@ The old development in theories/ stays untouched.
 | S5 | static fundamental theorems | term part done (S5.7): `fundamental`, `fundamental_typed`, `live_fundamental`, `live_fundamental_typed`; process theorems wait on S4 (targets in S5.5) |
 | S6 | fuel | done |
 | S7 | cost judgment | done |
-| S8 | soup and adequacy | open |
+| S8 | soup and adequacy | in progress: soup, update, `lfsoup_step` done (S8.19); `soup_no_tau_divergence`, adequacy open |
 | S9 | lock-free composition and soundness | open |
 | S10 | paper | open |
 
@@ -460,6 +460,42 @@ The old development in theories/ stays untouched.
   definition of E, as Blind.v and Closure.v are. (4) P-Term must start a
   spawned thread at the empty future, which `fundamental` gives at
   F = (∅, None).
+- S8, the protocol map. The soup chooses the protocol map Π of the fuel
+  layer at each index next to the environment A of the relation, with
+  the same ends, and does not read Π off A. O-New and F-New each pick
+  the session type of a new channel by an existential of their own, so
+  no soup can take the one from the other: after a creation E[live]
+  holds at new_env c S x A for some S and FuelE at pnew c S′ Π for some
+  S′, with no relation between S and S′. The soup pairs A up to
+  annotations (`sdual`, as the relation does) and Π up to ≈ with
+  annotations (S′ ≈ dual S), and adequacy reads idleness off Π only.
+  P-Term can still start Π at `te_sty <$> Θ` (S7).
+- S8, F-Link (fuel/Fuel.v). F-Link asks the two linked ends at dual
+  protocols (`plink`), a clause on Π, no syntax. Without it the soup
+  loses the pairing of Π at a link: after linking o1 and o2 the partners
+  of o1 and o2 form one channel, and their protocols are dual only if
+  those of o1 and o2 are. The relation's O-Link compares the two ends
+  only up to annotations, and an annotation mismatch breaks the payload
+  credit of a later message (the sender guarantees credit b, the
+  receiver's FuelE quantifies over credit b′ > b). E-Link types the two
+  ends at S and dual S exactly, so `link_redex` proves the clause; the
+  S6 lemmas change only in their destruct patterns.
+- S8, one clock. A soup step goes from index n + 1 to n, not n + 2 to n
+  (F25). Each thread pays its own side of a synchronization at its own
+  level: the sender κ(send) = 1, the receiver κ(recv) = 1, and FuelE
+  loses one level at every step. The two clocks of the process relation
+  P (a synchronization costs 2) do not reach the soup.
+- S8, ownership. The index-free state is the configuration q, the
+  ownership K (an end to its holder, its point and its counter, `hold`)
+  and the tickets tk (`lfstate`, soup/State.v). Records live in
+  soup/State.v because of the `;` clash of the typing notation (S3); the
+  clauses of the soup are the generic record `soup_gen` there,
+  instantiated in soup/Soup.v with E[live] and FuelE^N.
+- S8, the refill of LF is finite, `N : nat`. The measure of adequacy
+  reads counters as natural numbers, and at N = ∞ every counter is ∞.
+- S8, the soup with an interface. `Soup` takes Σ (interface clause
+  `sp_sig`, closure up to `dom Σ`), but `lfsoup_step` and adequacy are
+  stated at Σ = ∅, for closed runs.
 ## Log
 
 - S1.0. Lexer test v2/test/Lexer.v of every judgment and token of
@@ -998,3 +1034,15 @@ The old development in theories/ stays untouched.
   (v2/static/LiveFundamental.v). E blind in its environment is left to
   compat/Conv.v of S4 (deviation "S5, E blind in its environment").
   CheckAll lists 201 results, all closed. No `Admitted` and no axiom.
+- S8.1. `lf_run_criterion` and `thread_progress` ported to the runs of
+  S1 (v2/lockfree/Criterion.v, ThreadProgress.v), without
+  `lf_criterion`, `fuel_bound`, `rank_bound` and `waits` (quirk A3).
+- S8.2. `idle_dual` (v2/soup/Idle.v): S′ ≈ dual S gives
+  idle S ↔ idle S′, the duality lemma S6 owed.
+- S8.3. F-Link asks `plink` (deviation "S8, F-Link").
+- S8.4 to S8.19. Soup states, `Soup`, `⊪`, the update `lf_next`
+  (v2/soup/State.v, Soup.v), map facts (OwnFacts.v, SyncMaps.v,
+  LinkMaps.v), dual session types along a step (Sessions.v), the step
+  case by case (SoupStep.v: β, new, new_κ, spawn; SoupSync.v: message,
+  close, choice; SoupLink.v: link), and `lfsoup_step`, `lfsoup_run`,
+  `lfsoup_isteps` (SoupRun.v). No `Admitted`.
