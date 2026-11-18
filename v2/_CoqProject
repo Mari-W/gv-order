@@ -81,6 +81,7 @@ soup/Idle.v
 soup/State.v
 soup/Soup.v
 soup/OwnFacts.v
+soup/Relabel.v
 soup/Sessions.v
 soup/SoupStep.v
 soup/SyncMaps.v
