@@ -243,4 +243,111 @@ Section sync.
       apply lookup_delete_Some in H4 as [_ H4]. apply lookup_delete_Some in H4 as [_ H4].
       exact (s_pdual _ _ _ _ _ _ _ _ Hs o0 P1 P2 H3 H4).
   Qed.
+
+  (** P-Act-Choice. *)
+  Lemma step_choice i j e e' f f' o b :
+    i ≠ j → Mq !! i = Some e → Mq !! j = Some f →
+    tstep e (LSess (SSel o b)) e' → tstep f (LSess (SBra (edual o) b)) f' →
+    ∃ A' Π', soup_inv N n W ∅ T
+      (lf_next N (LFState (C, Mq) K tk) (EvChoice i j o b) (C, <[j := f']> (<[i := e']> Mq))) A' Π' U.
+  Proof.
+    intros Hij He Hf Hst Hst'.
+    destruct (s_obl _ _ _ _ _ _ _ _ _ _ _ Hs i e _ e' He Hst) as [HEi HFi].
+    destruct (s_obl _ _ _ _ _ _ _ _ _ _ _ Hs j f _ f' Hf Hst') as [HEj HFj].
+    cbn [Eobl Fobl] in HEi, HFi, HEj, HFj. unfold o_select in HEi. unfold o_branch in HEj.
+    unfold f_select in HFi. unfold f_branch in HFj.
+    destruct HEi as (S0 & x & S1 & S2 & Ho & Hu & HE1).
+    destruct HEj as (S0' & x' & S1' & S2' & Ho' & Hu' & HE2).
+    destruct HFi as (_ & P0 & P1 & P2 & HPo & HPu & HF1).
+    destruct HFj as (_ & P0' & P1' & P2' & HPo' & HPu' & HF2).
+    destruct (owner_of i o _ Ho) as (hi & Khi & Ehi).
+    destruct (owner_of j (edual o) _ Ho') as (hj & Khj & Ehj).
+    pose proof (inA _ _ _ Ho) as HA. pose proof (inA _ _ _ Ho') as HA'.
+    destruct (s_sdual _ _ _ _ _ _ _ _ Hs o S0 x S0' x' HA HA') as [-> Hsd].
+    destruct (sdual_plus _ _ _ _ _ _ Hsd Hu Hu') as [Hd1 Hd2].
+    pose proof (s_pdual _ _ _ _ _ _ _ _ Hs o P0 P0' (inΠ _ _ _ HPo) (inΠ _ _ _ HPo')) as Hpd.
+    destruct (pdual_plus _ _ _ _ _ _ Hpd HPu HPu') as [Hq1 Hq2].
+    pose proof (s_kpt _ _ _ _ _ _ _ _ Hs o S0 x HA) as Hkx. cbn [s_K] in Hkx.
+    pose proof (s_kpt _ _ _ _ _ _ _ _ Hs (edual o) S0' (pt_dual x) HA') as Hkx'. cbn [s_K] in Hkx'.
+    assert (HMi : ∀ o1, o1 ∈ (∅ : gset cend) → ∃ h, K !! o1 = Some h ∧ h.(h_th) = i ∧ o1 ≠ o)
+      by (intros o1 Ho1; by apply elem_of_empty in Ho1).
+    assert (Hoo : o ≠ edual o) by (destruct o; discriminate).
+    unfold ftick in HF1, HF2. rewrite fsub_inf in HF1, HF2.
+    set (y := sel_pt x b). set (y' := bra_pt (pt_dual x) b).
+    exists (<[o := (bsel b S1 S2, y)]> (<[edual o := (bsel b S1' S2', y')]> A)),
+      (<[o := if b then P2 else P1]> (<[edual o := if b then P2' else P1']> Π)).
+    unfold lf_next. cbn [own_next tk_next s_K s_tk s_q]. rewrite Hkx, Hkx'. fold y y'.
+    assert (Hoi : ∃ h, K !! o = Some h ∧ h.(h_th) = i) by eauto.
+    assert (Hoj : ∃ h, K !! edual o = Some h ∧ h.(h_th) = j) by eauto.
+    pose proof (λ Y, @sync_kres_i' N K i j o y y' ∅ Hij Hoi Hoj HMi Hoo Y) as Ki'.
+    pose proof (λ Y, @sync_kres_j' N K i j o y y' ∅ Hij Hoi Hoj HMi Hoo Y) as Kj'.
+    pose proof (λ Y, @sync_kres_other N K i j o y y' ∅ Hij Hoi Hoj HMi Hoo Y) as Kt.
+    pose proof (sync_ctrs_i N K i j o y y' ∅ Hij Hoi Hoj HMi Hoo) as Ci.
+    pose proof (sync_ctrs_j N K i j o y y' ∅ Hij Hoi Hoj HMi Hoo) as Cj.
+    pose proof (sync_ctrs_other N K i j o y y' ∅ Hij Hoi Hoj HMi Hoo) as Ct.
+    rewrite mrem_empty in Ci. rewrite fhand_empty, map_union_empty in Cj.
+    assert (HK' : ∀ o0, ksync N i j o y y' ∅ K !! o0 =
+      if decide (o0 = o) then Some (Hold i y (Some N))
+      else if decide (o0 = edual o) then Some (Hold j y' (Some N))
+      else (λ h, if decide (o0 ∈ (∅ : gset cend)) then Hold j h.(h_pt) (ftick h.(h_ctr))
+                 else if decide (h.(h_th) = i ∨ h.(h_th) = j) then htick h else h) <$> K !! o0).
+    { intros o0. by rewrite lookup_ksync. }
+    assert (HdK : dom (ksync N i j o y y' ∅ K) = dom K).
+    { apply set_eq. intros o0. rewrite !elem_of_dom, HK'.
+      destruct (decide (o0 = o)) as [->|]; [split; intros _; [by eexists|done]|].
+      destruct (decide (o0 = edual o)) as [->|]; [split; intros _; [by eexists|done]|].
+      by rewrite fmap_is_Some. }
+    assert (HCh : ∀ o0, o0 ∈ ({[o]} ∪ {[edual o]} : gset cend) ↔ edual o0 ∈ ({[o]} ∪ {[edual o]} : gset cend)).
+    { intros o0. rewrite !elem_of_union, !elem_of_singleton. split.
+      - intros [-> | ->]; [right|left]; [done|apply edual_edual].
+      - intros [H|H]; [right; by rewrite <-H, edual_edual|left; by apply edual_inj]. }
+    apply (soup_build _ _ _ _ _ _ _ _ _ _ _ Hs).
+    - intros t e1 He1. apply lookup_insert_Some in He1 as [[<- <-]|[Htj He1]].
+      + rewrite Kj', Kj', Cj, !mres_empty, !map_union_empty. split_and!; [|exact (s_ty Hs j f Hf)|exact HF2].
+        eapply at_cost_E_live; [|exact HE2]. cbn; lia.
+      + apply lookup_insert_Some in He1 as [[<- <-]|[Hti He1]].
+        * rewrite Ki', Ki', Ci, !mrem_empty. split_and!; [|exact (s_ty Hs i e He)|exact HF1].
+          eapply at_cost_E_live; [|exact HE1]. cbn; lia.
+        * rewrite !Kt, Ct by done. destruct (s_other _ _ _ _ _ _ _ _ _ _ _ Hs t e1 He1) as [H1 H2].
+          split_and!; [done|exact (s_ty Hs t e1 He1)|done].
+    - apply map_eq. intros o0. rewrite !lookup_fmap, HK'.
+      pose proof (s_pts _ _ _ _ _ _ _ _ Hs o0) as Hp. cbn [s_K] in Hp.
+      destruct (decide (o0 = o)) as [->|]; [by rewrite lookup_insert_eq|].
+      rewrite lookup_insert_ne by done.
+      destruct (decide (o0 = edual o)) as [->|]; [by rewrite lookup_insert_eq|].
+      rewrite lookup_insert_ne by done. rewrite Hp.
+      destruct (K !! o0); simpl; [|done]. by own_cases.
+    - rewrite HdK, !dom_insert_L, (s_dom _ _ _ _ _ _ _ _ Hs). cbn [s_K].
+      apply elem_of_dom_2 in Khi, Khj. clear - Khi Khj. set_solver.
+    - intros o0 h0 Ho0. rewrite HK' in Ho0. rewrite !lookup_insert_is_Some'.
+      destruct (decide (o0 = o)); [simplify_eq; simpl; by right; left|].
+      destruct (decide (o0 = edual o)); [simplify_eq; simpl; by left|].
+      apply fmap_Some in Ho0 as (h1 & Ho1 & ->). pose proof (s_threads _ _ _ _ _ _ _ _ _ _ _ Hs o0 h1 Ho1).
+      own_cases; simpl; auto.
+    - intros o0. rewrite HdK. apply (s_closed _ _ _ _ _ _ _ _ Hs).
+    - intros o0. rewrite HdK. apply (s_pair _ _ _ _ _ _ _ _ Hs).
+    - intros o0 S5 x5 S6 x6 H3 H4.
+      refine (pair_frame (λ _ (v v' : sty * point), v'.2 = pt_dual v.2 ∧ sdual v.1 v'.1) _ _
+        ({[o]} ∪ {[edual o]}) HCh _ _ _ o0 (S5, x5) (S6, x6) H3 H4).
+      + intros o1 Ho1. rewrite !lookup_insert_ne by (clear - Ho1; set_solver). done.
+      + intros o1 [S7 x7] [S8 x8] H5 H6. exact (s_sdual _ _ _ _ _ _ _ _ Hs o1 S7 x7 S8 x8 H5 H6).
+      + assert (y' = pt_dual y) as Hy.
+        { unfold y, y', sel_pt, bra_pt. by rewrite pt_field_dual, pt_dual_dual. }
+        intros o1 [S7 x7] [S8 x8] Ho1 H5 H6. simpl.
+        apply elem_of_union in Ho1 as [Ho1|Ho1]; apply elem_of_singleton in Ho1 as ->.
+        * rewrite lookup_insert_eq in H5. rewrite lookup_insert_ne, lookup_insert_eq in H6 by done.
+          simplify_eq. split; [done|by apply sdual_bsel].
+        * rewrite edual_edual, lookup_insert_eq in H6. rewrite lookup_insert_ne, lookup_insert_eq in H5 by done.
+          simplify_eq. split; [by rewrite Hy, pt_dual_dual|by apply sdual_sym, sdual_bsel].
+    - intros o0 Q1 Q2 H3 H4.
+      refine (pair_frame (λ _ v v', sequiv v' (dual v)) _ _ ({[o]} ∪ {[edual o]}) HCh _ _ _ o0 Q1 Q2 H3 H4).
+      + intros o1 Ho1. rewrite !lookup_insert_ne by (clear - Ho1; set_solver). done.
+      + intros o1 Q5 Q6 H5 H6. exact (s_pdual _ _ _ _ _ _ _ _ Hs o1 Q5 Q6 H5 H6).
+      + intros o1 Q5 Q6 Ho1 H5 H6.
+        apply elem_of_union in Ho1 as [Ho1|Ho1]; apply elem_of_singleton in Ho1 as ->.
+        * rewrite lookup_insert_eq in H5. rewrite lookup_insert_ne, lookup_insert_eq in H6 by done.
+          simplify_eq. by destruct b.
+        * rewrite edual_edual, lookup_insert_eq in H6. rewrite lookup_insert_ne, lookup_insert_eq in H5 by done.
+          simplify_eq. apply pdual_sym. by destruct b.
+  Qed.
 End sync.
