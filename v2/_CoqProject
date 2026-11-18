@@ -71,6 +71,7 @@ compat/Rename.v
 compat/PSwap.v
 compat/Conv.v
 compat/Connect.v
+compat/ConnectCtx.v
 compat/ConnectSteps.v
 compat/ConnectSplit.v
 compat/ConnectMsg.v

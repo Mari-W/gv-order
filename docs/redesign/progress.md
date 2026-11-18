@@ -17,7 +17,7 @@ The old development in theories/ stays untouched.
 | S8 | soup and adequacy | done (S8.34): `lfsoup_step`, `soup_no_tau_divergence`, `lf_adequacy`, `lf_thread_progress`, `idle_dual` |
 | S9 | lock-free composition and soundness | done (S9.9): `⊪` the soup alone, `lfptyped` (LFTyped.v), `lf_p_term`, `lf_p_connect`, `lf_p_join`, `lf_fundamental`, `lf_soundness`, example `cl_lock_free`. S9.10 to S9.12 type the six S2 examples by ⊩ at finite N, all lock free |
 | S10 | paper | open |
-| C | cleanup | in progress (C.4) |
+| C | cleanup | in progress (C.5) |
 
 ## Deviations
 
@@ -1680,3 +1680,27 @@ The old development in theories/ stays untouched.
   No file qualifies `types.Worlds.strict` or `types.Types.prim` any more
   (seven files had). The swap files keep their deliberate re-export of
   lang/ChannelSwap.v, which is about `sren`. 298 results, all closed.
+- C.5. The Connect files. compat/ConnectCtx.v holds `ConnL` (moved from
+  compat/ConnectSteps.v) and `cctx`, one inductive whose twelve named
+  premises are the section context that compat/ConnectSteps.v,
+  ConnectCross.v, ConnectLink.v, ConnectTau.v, ConnectExt.v and
+  ConnectExtMsg.v each repeated (25 lines each). Each section now takes
+  `CC : cctx …` and names the premises by `Let HS := cc_HS CC` and so on,
+  so the proofs keep their hypothesis names. `cctx` is an inductive with
+  projection lemmas, as `sth` in compat/PTerm.v, because a `Record`
+  does not parse after the typing notation `Θ ; Γ ; Δ ⊢ …` makes `;` a
+  term token. ConnectP.v builds the record at its one call of
+  `pc_clauses`. Compile time. `cc_set_solver` clears the nine premises
+  that are no facts about sets before `set_solver`, in place of
+  `set_solver` inside those sections (161 calls). Two hot goals clear
+  their context by hand: the offer lemma `offered_1_c` (compat/Connect.v,
+  11.9 s to 1.9 s for the sentence) and `rcv_sth` (compat/PTerm.v, 33.9 s
+  to 6.1 s). Wall time of `make -j4` after deleting compat/Connect*.vo and
+  compat/PTerm.vo, which rebuilds those 14 files, FundamentalProc.v and
+  CheckAll.v. Before 272.9 s (at 6d5024f, light load) and 559.0 s (at
+  C.4, load 22 on 12 cores), after 235.0 s (load 10 to 15). The 14
+  Connect files sum to 192 s before (light load) and 122 s after.
+  ConnectSteps.v 44.4 s to 24.6 s, ConnectLink.v 36.7 s to 27.9 s,
+  PTerm.v 25.7 s to 11.6 s, Connect.v 25.5 s to 15.0 s, ConnectTau.v
+  13.6 s to 6.3 s. CheckAll.v (116 s before, 139 s after) is now the
+  critical path. No statement changes. 298 results, all closed.

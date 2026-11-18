@@ -10,26 +10,12 @@ From GV Require Export compat.ConnectExt compat.ConnectSendEnv.
 From GV Require Import fuel.FuelMono.
 
 Section extmsg.
-  Context (κ : ctable) (n : nat) (W1 : world) (HS : strict W1) (T : ty) (HT : prim T) (X1 X2 : prel).
-  Context (Σ1 ΣC Σ2 ΣD : senv) (q1 q2 : proc) (Hc : conn Σ1 ΣC q1.1 Σ2 ΣD q2.1).
-  Context (H1 : Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X1 W1 (Σ1 ∪ ΣC) T q1).
-  Context (H2 : Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X2 W1 (Σ2 ∪ ΣD) TUnit q2).
-  Context (L : ∀ j, j < S n → ConnL κ j W1 T).
-  Context (X1P : ∀ W Σ T p, X1 W Σ T p → Prel κ (S n) W Σ T p).
-  Context (X2P : ∀ W Σ T p, X2 W Σ T p → Prel κ (S n) W Σ T p).
-  Context (HP1 : ∀ h D, fuse_ok h D (Σ1 ∪ ΣC) q1 →
-    Prel κ (S n) W1 (sdrop D (kren h (Σ1 ∪ ΣC))) T (pfuse h D q1)).
-  Context (HP2 : ∀ h D, fuse_ok h D (Σ2 ∪ ΣD) q2 →
-    Prel κ (S n) W1 (sdrop D (kren h (Σ2 ∪ ΣD))) TUnit (pfuse h D q2)).
-  Context (G1 : ∀ p1' Σa h D Σ1' ΣC' Σ2' ΣD' p2', X1 W1 Σa T p1' → fuse_ok h D Σa p1' →
-    sdrop D (kren h Σa) = Σ1' ∪ ΣC' → Prel κ (S n) W1 (Σ2' ∪ ΣD') TUnit p2' →
-    conn Σ1' ΣC' (pfuse h D p1').1 Σ2' ΣD' p2'.1 →
-    Prel κ (S n) W1 (Σ1' ∪ Σ2') T (pconn (pfuse h D p1') p2' (chans_of ΣC'))).
-  Context (G2 : ∀ p2' Σb h D Σ1' ΣC' Σ2' ΣD' h1 D1, X2 W1 Σb TUnit p2' → fuse_ok h D Σb p2' →
-    sdrop D (kren h Σb) = Σ2' ∪ ΣD' → fuse_ok h1 D1 (Σ1 ∪ ΣC) q1 →
-    sdrop D1 (kren h1 (Σ1 ∪ ΣC)) = Σ1' ∪ ΣC' →
-    conn Σ1' ΣC' (pfuse h1 D1 q1).1 Σ2' ΣD' (pfuse h D p2').1 →
-    Prel κ (S n) W1 (Σ1' ∪ Σ2') T (pconn (pfuse h1 D1 q1) (pfuse h D p2') (chans_of ΣC'))).
+  Context (κ : ctable) (n : nat) (W1 : world) (T : ty) (X1 X2 : prel).
+  Context (Σ1 ΣC Σ2 ΣD : senv) (q1 q2 : proc) (CC : cctx κ n W1 T X1 X2 Σ1 ΣC Σ2 ΣD q1 q2).
+  Let HS := cc_HS CC. Let HT := cc_HT CC. Let Hc := cc_Hc CC.
+  Let H1 := cc_H1 CC. Let H2 := cc_H2 CC. Let L := cc_L CC.
+  Let X1P := cc_X1P CC. Let X2P := cc_X2P CC. Let HP1 := cc_HP1 CC. Let HP2 := cc_HP2 CC.
+  Let G1 := cc_G1 CC. Let G2 := cc_G2 CC.
   Local Abbreviation K := (chans_of ΣC).
   Local Abbreviation pc := (pconn q1 q2 K).
 
@@ -76,9 +62,9 @@ Section extmsg.
     intros Hq Hst. destruct (pconn_lift _ _ _ _ Hq) as (M1 & M2 & -> & Hd & HM1 & HM2).
     inversion Hst; subst. exists M1, M2, e, e'. split_and!; try done.
     match goal with H : (_ ∪ _) !! i = Some _ |- _ => destruct (side _ _ _ _ H) as [Hi|Hi] end; [left|right]; split_and!; try done.
-    - eapply p_act_session; [exact Hi|done|set_solver].
+    - eapply p_act_session; [exact Hi|done|cc_set_solver].
     - unfold erase. simpl. by rewrite soup1 with (e := e), HM2.
-    - eapply p_act_session; [exact Hi|done|set_solver].
+    - eapply p_act_session; [exact Hi|done|cc_set_solver].
     - unfold erase. simpl. by rewrite soup2 with (e := e), HM1.
   Qed.
   Local Lemma lk12 o v : Σ1 !! o = Some v → (Σ1 ∪ Σ2) !! o = Some v.
@@ -134,7 +120,7 @@ Section extmsg.
     q_send κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T pc o Mv w (erase q').
   Proof.
     intros Hq Hst. destruct (ext_split _ _ _ _ Hq Hst) as (M1 & M2 & e & e' & Hd & HM1 & HM2 & He & Hsub & [(Hi & Hs & Eq)|(Hi & Hs & Eq)]);
-      simpl in Hsub; assert (ech o ∉ K) as HnK by (clear -Hsub; set_solver); rewrite Eq.
+      simpl in Hsub; assert (ech o ∉ K) as HnK by (clear -Hsub; cc_set_solver); rewrite Eq.
     - destruct H1 as (_ & _ & (_ & S1 & _)).
       destruct (S1 _ _ _ _ _ _ (Hq1e M1 HM1) Hs) as (S0 & x & m & U & b & Sc & Σv1 & Σr1 & Θe1 & Σe1 & Lo & Uo & Dvr & Edel & HΘ1 & HM & Hss & AV & AP).
       destruct (iface1 _ _ Lo HnK) as [Lo' Do].
@@ -173,7 +159,7 @@ Section extmsg.
       + done.
       + apply (snd_vr Σ2 ΣD Σ1 ΣC q2.1 q1.1 Hcs o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺)).
       + apply (snd_del Σ2 ΣD Σ1 ΣC q2.1 q1.1 Hcs o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺)).
-      + intros o'. rewrite (HΘ o'). simpl. rewrite HKD. clear. set_solver.
+      + intros o'. rewrite (HΘ o'). simpl. rewrite HKD. clear. cc_set_solver.
       + exact HM'.
       + apply (snd_split Σ2 ΣD Σ1 ΣC q2.1 q1.1 Hcs o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺)).
       + rewrite (snd_payload Σ2 ΣD Σ1 ΣC q2.1 q1.1 Hcs o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺)). exact AV.
@@ -185,11 +171,11 @@ Section extmsg.
         pose proof (cut_dual_chans _ _ Hcut3) as Hch'.
         pose proof (ext_comp2' _ _ _ _ _ _ _ AP (eq_sym (fin_fout Σ' E2)) (eq_sym (fin_fout Σ' (Σ1 ∪ ΣC)))) as R.
         unfold erase in R at 2. simpl in R. specialize (R Hc'').
-        rewrite map_union_comm by (apply chans_disj_map; clear -H123; set_solver).
+        rewrite map_union_comm by (apply chans_disj_map; clear -H123; cc_set_solver).
         refine (eq_rect _ (λ p, at_cost_P (S n) (c_give κ) (Prel κ) (Prel κ (S n)) W1 _ T p) R _ _).
         unfold pconn, erase. simpl. rewrite HM, Hch'. f_equal.
-        rewrite <-HKD. assert (q1.1 ∪ q2.1 ∪ chans_of ΣD = q2.1 ∪ q1.1 ∪ chans_of ΣD) as -> by (clear; set_solver).
-        rewrite Hch. clear. set_solver.
+        rewrite <-HKD. assert (q1.1 ∪ q2.1 ∪ chans_of ΣD = q2.1 ∪ q1.1 ∪ chans_of ΣD) as -> by (clear; cc_set_solver).
+        rewrite Hch. clear. cc_set_solver.
   Qed.
 
   (** Q-Recv of the composite. *)
@@ -197,7 +183,7 @@ Section extmsg.
     q_recv κ (S n) (Vrel κ) (Prel κ) W1 (Σ1 ∪ Σ2) T pc o w (erase q').
   Proof.
     intros Hq Hst. destruct (ext_split _ _ _ _ Hq Hst) as (M1 & M2 & e & e' & Hd & HM1 & HM2 & He & Hsub & [(Hi & Hs & Eq)|(Hi & Hs & Eq)]);
-      simpl in Hsub; assert (ech o ∉ K) as HnK by (clear -Hsub; set_solver); rewrite Eq.
+      simpl in Hsub; assert (ech o ∉ K) as HnK by (clear -Hsub; cc_set_solver); rewrite Eq.
     - destruct H1 as (_ & _ & (_ & _ & R1 & _)).
       destruct (R1 _ _ _ _ _ (Hq1e M1 HM1) Hs) as (S0 & x & m & U & b & Sc & Lo & Uo & AR).
       destruct (iface1 _ _ Lo HnK) as [Lo' Do].
@@ -207,7 +193,7 @@ Section extmsg.
       rewrite insert_union_l in Hok |- *. rewrite insert_union_l in AR.
       assert (set_map ech (dom Θ2) ## q1.1 ∪ q2.1 ∪ chans_of ΣC) as HΘ by exact Hdj.
       pose proof (rcv_ok1 _ ΣC Σ2 ΣD q1.1 q2.1 Hc1 Θ2 HΘ Hok) as Hok1.
-      pose proof (AR j Θ2 Hj ltac:(clear -HΘ; set_solver) Hok1 HV) as P1.
+      pose proof (AR j Θ2 Hj ltac:(clear -HΘ; cc_set_solver) Hok1 HV) as P1.
       pose proof (rcv_conn _ ΣC Σ2 ΣD q1.1 q2.1 Hc1 Θ2 HΘ Hok) as Hc'.
       pose proof (rcv_iface _ ΣC Σ2 ΣD q1.1 q2.1 Hc1 Θ2 HΘ Hok) as Hif.
       pose proof (rcv_chans _ ΣC Σ2 ΣD q1.1 q2.1 Hc1 Θ2 HΘ Hok) as Hch.
@@ -228,9 +214,9 @@ Section extmsg.
       pose proof (conn_retype1 _ _ _ _ _ _ o (Sc, x⁺) Hcs Do) as Hc1.
       rewrite insert_union_l in Hok |- *. rewrite insert_union_l in AR.
       assert (set_map ech (dom Θ2) ## q2.1 ∪ q1.1 ∪ chans_of ΣD) as HΘ.
-      { rewrite HKD. simpl in Hdj. clear -Hdj. set_solver. }
+      { rewrite HKD. simpl in Hdj. clear -Hdj. cc_set_solver. }
       pose proof (rcv_ok1 _ ΣD Σ1 ΣC q2.1 q1.1 Hc1 Θ2 HΘ Hok) as Hok1.
-      pose proof (AR j Θ2 Hj ltac:(clear -HΘ; set_solver) Hok1 HV) as P2.
+      pose proof (AR j Θ2 Hj ltac:(clear -HΘ; cc_set_solver) Hok1 HV) as P2.
       pose proof (rcv_conn _ ΣD Σ1 ΣC q2.1 q1.1 Hc1 Θ2 HΘ Hok) as Hc'.
       pose proof (rcv_iface _ ΣD Σ1 ΣC q2.1 q1.1 Hc1 Θ2 HΘ Hok) as Hif.
       pose proof (rcv_chans _ ΣD Σ1 ΣC q2.1 q1.1 Hc1 Θ2 HΘ Hok) as Hch.
@@ -243,12 +229,12 @@ Section extmsg.
       rewrite <-(fin_fout Σ' E2) in P2.
       pose proof (HP1id j ltac:(lia)) as P1. rewrite <-(fin_fout Σ' (Σ1 ∪ ΣC)) in P1.
       pose proof (L j ltac:(lia) _ _ _ _ _ _ P1 P2 Hc'') as HL.
-      rewrite map_union_comm in HL by (apply chans_disj_map; clear -H123; set_solver).
+      rewrite map_union_comm in HL by (apply chans_disj_map; clear -H123; cc_set_solver).
       rewrite Hif in HL.
       refine (eq_rect _ (λ p, Prel κ j W1 Σ' T p) HL _ _).
       unfold pconn, erase. simpl. rewrite !difference_empty_L, Hch'. f_equal.
-      rewrite <-HKD. assert (q1.1 ∪ q2.1 ∪ chans_of ΣD = q2.1 ∪ q1.1 ∪ chans_of ΣD) as -> by (clear; set_solver).
-      rewrite Hch. clear. set_solver.
+      rewrite <-HKD. assert (q1.1 ∪ q2.1 ∪ chans_of ΣD = q2.1 ∪ q1.1 ∪ chans_of ΣD) as -> by (clear; cc_set_solver).
+      rewrite Hch. clear. cc_set_solver.
   Qed.
 
   (** The clauses of P for the composite. *)

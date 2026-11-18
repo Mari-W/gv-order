@@ -100,8 +100,10 @@ Section wrapper.
       apply (HΦ h' D' Hh' eq_refl Σ1' ΣC' Σ2' ΣD' _ EΣ); [|done].
       rewrite <-EΣ1. apply Pbody_fuse; [done|]. rewrite <-EE1. apply Pbody_fuse; [done|].
       by eapply Pbody_later. }
-    pose proof (pc_clauses κ n W1 HS1 T HT X1 X2 (ConnectSplit.fin Σf E1) (fout Σf E1)
-      (ConnectSplit.fin Σf E2) (fout Σf E2) (pfuse h D1 p1) (pfuse h D2 p2) Hc' C1 C2 L X1P X2P HP1 HP2 G1 G2) as R.
+    pose proof (pc_clauses _ _ _ _ _ _ _ _ _ _ _ _
+      (CCtx κ n W1 T X1 X2 (ConnectSplit.fin Σf E1) (fout Σf E1)
+         (ConnectSplit.fin Σf E2) (fout Σf E2) (pfuse h D1 p1) (pfuse h D2 p2)
+         HS1 HT Hc' C1 C2 L X1P X2P HP1 HP2 G1 G2)) as R.
     by rewrite Hif in R.
   Qed.
 
