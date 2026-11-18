@@ -12,7 +12,7 @@ From GV Require Import static.Conservativity static.Weakening static.Renaming st
 From GV Require Import relation.Adequacy.
 From GV Require Import fuel.FuelSub.
 From GV Require Import cost.Transformers cost.Forwarder cost.Exact cost.CostFund.
-From GV Require Import compat.Rules compat.LiveDF compat.Swap compat.Rename compat.PSwap compat.Conv.
+From GV Require Import compat.Rules compat.LiveDF compat.Swap compat.Rename compat.PSwap compat.Conv compat.ConnectP.
 From GV Require Import static.Fundamental static.LiveFundamental examples.GuardEx.
 From GV Require Import soup.LFAdequacy soup.LFCompose.
 
@@ -222,6 +222,11 @@ Print Assumptions Prel_fuse.
 Print Assumptions Prel_internalize.
 Print Assumptions fuse_ok_compose.
 Print Assumptions pren_ok_csub.
+(** S4. P-Connect and P-Join. *)
+Print Assumptions pc_clauses.
+Print Assumptions fs_conn.
+Print Assumptions sem_p_connect.
+Print Assumptions sem_p_join.
 (** S4. Renaming of P. *)
 Print Assumptions istep_qswap.
 Print Assumptions erase_qswap.
