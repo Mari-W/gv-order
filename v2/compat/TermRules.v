@@ -358,8 +358,8 @@ Section rules.
     Erel κ n W Θ TUnit F (ESpawn v).
   Proof.
     intros Hv HT. destruct n as [|n]; [apply Erel_0|].
-    assert (tstep (ESpawn v) (LSpawn (fends v) v) EUnit) as Hst by (by apply tstep_head, t_act_spawn).
-    assert (∀ α e', tstep (ESpawn v) α e' → α = LSpawn (fends v) v ∧ e' = EUnit) as Hdet.
+    assert (tstep (ESpawn v) (LSpawn v) EUnit) as Hst by (by apply tstep_head, t_act_spawn).
+    assert (∀ α e', tstep (ESpawn v) α e' → α = LSpawn v ∧ e' = EUnit) as Hdet.
     { intros α e' Hs. apply op_head_only in Hs; [|done]. inversion Hs; by subst. }
     apply Erel_S_intro.
     - intros Hi. exact (Hi _ _ Hst).
@@ -369,7 +369,6 @@ Section rules.
       exists Θ, ∅. split_and!.
       + apply map_disjoint_empty_r.
       + by rewrite map_union_empty.
-      + by destruct HT1 as (e & -> & Hfe & _).
       + exact HT1.
       + apply at_cost_val. by apply Vrel_unit_iff.
   Qed.
@@ -511,29 +510,6 @@ Section rules.
         * exists Θa, Θ2'. split_and!; [done|done| |].
           { eapply Vrel_down; [|exact H1]. lia. }
           { eapply Grel_down; [|exact HG2]. lia. }
-  Qed.
-
-  Lemma gen_e_let W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 e2 T1 b1 T :
-    tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-    (∀ B, sem_typed_at κ W Θ1 Δ1 (F ∪ tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ (if lenv_bot Δ2 then B else ∅)) e1 T1) →
-    sem_typed_at κ W Θ2 (Some (T1, b1) :: Δ2) F e2 T →
-    sem_typed_at κ W Θ Δ F (ELet e1 e2) T.
-  Proof.
-    intros Hs Hl He1 He2.
-    apply (sem_bind (λ γ, FLet (subst (up γ) e2)) W Θ Θ1 Θ2 Δ Δ1 Δ2 F e1 _ T1 _ Hs Hl); [done|done|exact He1|].
-    intros W' j Θv v Θ2' γ HW Hd2 HG2 Hdv HV. simpl.
-    pose proof (Vrel_val κ _ _ _ _ _ HV) as Hv.
-    apply (beta_det _ (subst (v .: γ) e2)).
-    - intros α e'' Hst. assert (head_step (ELet v (subst (up γ) e2)) α e'') as Hh by head_only.
-      inversion Hh; subst. split; [done|]. by rewrite subst1_subst.
-    - rewrite <-(subst1_subst v γ e2). by apply tstep_head, t_act_let.
-    - apply map_disjoint_union_r in Hdv as [Hdv1 Hdv2].
-      rewrite map_union_assoc, (map_union_comm Θv (tenv_erase Θ2)), <-map_union_assoc by done.
-      apply He2; [done| |].
-      + apply map_disjoint_union_r. split; [by symmetry|done].
-      + exists Θv, Θ2'. split_and!; [done|done| |].
-        * eapply Vrel_down; [|exact HV]. lia.
-        * eapply Grel_down; [|exact HG2]. lia.
   Qed.
 
   Lemma gen_e_case W Θ Θ1 Θ2 Δ Δ1 Δ2 F e e1 e2 T1 a1 T2 a2 b1 b2 T :

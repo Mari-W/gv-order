@@ -1248,6 +1248,37 @@ first, in stage S2.
   in the fuel instead would make counters depend on the index (Q5).
   Without `age_idle` the controller (#20) types at no finite N (C.6,
   examples/LFController.v).
+- let is a derived form (author, 2026-11-18). This replaces Q13.
+  `let x = e1 in e2` := `let ⟨x, u⟩ = ⟨e1, ∗⟩ in let ∗ = u in e2`
+  (`ELet`, lang/Syntax.v), with e2 renamed by one. The term former, its
+  τ step T-Act-Let, its frame and E-Let, D-Let and the guard rules of
+  let are gone. E-Let, D-Let, the guard rules and `acts` of let are
+  admissible lemmas under their old names. The encoding takes two β
+  steps where the primitive took one, and every cost and transformer
+  stays as it was.
+- live ⊆ DF asks `prim T` and `boxfree T` (author, 2026-11-18). `tshape`
+  is gone. A closed process has a `prim` result, and `boxfree` rules
+  out □, so the result is built from ∗, ⊗ and ⊕.
+- One process judgment (author, 2026-11-18). P-Term of `ptyped` asks
+  `N = None ∨ ∃ tk, meets ϑ 0 tk`, which holds at N = ∞ by its left
+  disjunct. `lfptyped` and its rules are gone, and
+  `Σ ⊩^N _ W p : T` is notation for `ptyped (Some N) W Σ p T ∧ ⊢▷ p`.
+  The guard stays a separate judgment.
+- Modular worlds (author, 2026-11-18). `lfworld` is gone. Lock-free
+  results ask `strict W → wfworld W → …` with `wfworld W :=
+  well_founded (w_lt W)`. DF results keep `strict W` alone.
+- No transfer sets (author, 2026-11-18). This revises Q3. The labels
+  are `LSpawn v` and `SSend o v`, the events `EvSpawn i j v` and
+  `EvMsg i j o v`, and the moved ends are `fends v`. O-Spawn and O-Send
+  lose `dom ΘM = M`: V fixes the domain (Vthunk asks dom ΘM = fends of
+  the body, and `Vrel_exact` gives it for a payload). Q-Send reads
+  `fends w` where it read M, because the extruded part Θe is defined
+  from it. F-Spawn, F-Send and the soup update hand over `fends v`. No
+  clause is added.
+- E-Select, E-Branch, D-Select and D-Branch lose their order premises
+  (author, 2026-11-18): `slt W Γ x (x·(bfield i))` at select and
+  `slt W Γ x (sel_pt x false)`, `slt W Γ x (sel_pt x true)` at branch.
+  No semantic lemma reads them.
 
 ## 5  Open decisions for the author
 

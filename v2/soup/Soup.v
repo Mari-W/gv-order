@@ -29,7 +29,7 @@
     ([lf_next]): a new end starts at a fresh generated root of its family
     or at the field of its anchor with counter N, an action moves the end
     to x⁺ (or to the point of its branch) and refills it to N, every other
-    end of an actor ticks, a transfer set moves to the receiver or the
+    end of an actor ticks, the ends of a sent or spawned value move to the receiver or the
     child with its counters minus one, a close removes both ends, a link
     removes its two ends, spends a ticket and renames the partner of the
     removed channel ([csub]), and a spawn splits the tickets ⌈tk/2⌉ for
@@ -88,7 +88,7 @@ Definition kmod (f : cend → hold → hold) (K : own) : own := map_imap (λ o h
 
 Definition htick (h : hold) : hold := Hold h.(h_th) h.(h_pt) (ftick h.(h_ctr)).
 
-(** Every entry of the actors i and j outside the transfer set M ticks. *)
+(** Every entry of the actors i and j outside the moved ends M ticks. *)
 Definition ktick (i j : nat) (M : gset cend) (K : own) : own :=
   kmod (λ o h, if decide ((h.(h_th) = i ∨ h.(h_th) = j) ∧ o ∉ M) then htick h else h) K.
 
@@ -110,21 +110,21 @@ Definition tupd (tk : nat → nat) (i : nat) (k : nat) : nat → nat :=
   λ t, if decide (t = i) then k else tk t.
 
 (** A synchronization of thread i on o with thread j on o‾: the actors
-    tick their other ends, the transfer set M moves to j, and the two
+    tick their other ends, the ends M of the moved value go to j, and the two
     ends move to y and y′ and refill. *)
 Definition ksync (N i j : nat) (o : cend) (y y' : point) (M : gset cend) (K : own) : own :=
   kact N o i y (kact N (edual o) j y' (khand M j (ktick i j M K))).
 
 (** The ownership after an event. The actors of a message, a close and
     a choice tick their other ends first, then the acted ends refill and
-    the transfer set moves. *)
+    the ends of the moved value move. *)
 Definition own_next (N : nat) (ev : event) (K : own) : own :=
   match ev with
   | EvBeta _ | EvSess _ _ => K
   | EvNew i ℓ c => knew N i c (pgen ℓ (kfresh ℓ K)) K
   | EvNewAt i κ o c => knew N i c ((kpt K o)·κ) K
-  | EvSpawn i j M => khand M j K
-  | EvMsg i j o M => ksync N i j o (pt_shift 1 (kpt K o)) (pt_shift 1 (kpt K (edual o))) M K
+  | EvSpawn i j v => khand (fends v) j K
+  | EvMsg i j o v => ksync N i j o (pt_shift 1 (kpt K o)) (pt_shift 1 (kpt K (edual o))) (fends v) K
   | EvClose i j o => ktick i j ∅ (delete o (delete o‾ K))
   | EvChoice i j o b => ksync N i j o (sel_pt (kpt K o) b) (bra_pt (kpt K (edual o)) b) ∅ K
   | EvLink i o1 o2 => kmapr (csub o1 o2) (delete o1 (delete o2 K))

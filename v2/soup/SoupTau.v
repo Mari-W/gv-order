@@ -19,7 +19,7 @@ From GV Require Export soup.SoupRun.
 (** ** The order of one thread with its children *)
 
 Definition tRs (y x : expr) : Prop :=
-  tR y x ∨ ∃ M v x', tstep x (LSpawn M v) x' ∧ y = cerase (App v EUnit).
+  tR y x ∨ ∃ v x', tstep x (LSpawn v) x' ∧ y = cerase (App v EUnit).
 
 (** A step of the erased term comes from a step of the term, with a new
     name chosen outside X. *)
@@ -27,7 +27,7 @@ Lemma admin_back e α x' (X : gset chan) :
   tstep (cerase e) α x' → admin_lbl α →
   ∃ α0 e0, tstep e α0 e0 ∧ admin_lbl α0 ∧ cerase x' = cerase e0 ∧
     (∀ ℓ c, α0 = LNew ℓ c → c ∉ X) ∧ (∀ κ o c, α0 = LNewAt κ o c → c ∉ X) ∧
-    (∀ M v, α = LSpawn M v → ∃ M0 v0, α0 = LSpawn M0 v0 ∧ cerase (App v EUnit) = cerase (App v0 EUnit)).
+    (∀ v, α = LSpawn v → ∃ v0, α0 = LSpawn v0 ∧ cerase (App v EUnit) = cerase (App v0 EUnit)).
 Proof.
   intros Hst Hα.
   destruct (act_step _ _ _ Hst) as (a' & Ha' & Ho). rewrite act_cerase in Ha'.
@@ -37,7 +37,7 @@ Proof.
     eapply tstep_det_cerase; [exact Hst|exact Hx0|]. by rewrite lerase_idem, Hl. }
   set (c0 := fresh (X ∪ fchans e)). assert (c0 ∉ X ∪ fchans e) as Hc0 by apply is_fresh.
   destruct a as [|ℓ|κ o|v|o|o v|o|o1 o2|o i|o]; simpl in Ho;
-    destruct α as [|ℓ' c1|κ' o' c1|M w|[| | | | |os]]; simpl in Hα; try contradiction.
+    destruct α as [|ℓ' c1|κ' o' c1|w|[| | | | |os]]; simpl in Hα; try contradiction.
   - destruct (act_offer e ABeta LBeta Ha I) as [e0 He0].
     exists LBeta, e0. split_and!; [done|done|by apply (Hdet _ _ He0)|intros; discriminate..].
   - destruct (act_offer e (ANew ℓ) (LNew ℓ c0) Ha eq_refl) as [e0 He0].
@@ -46,11 +46,11 @@ Proof.
   - destruct (act_offer e (ANewAt κ o) (LNewAt κ o c0) Ha (conj eq_refl eq_refl)) as [e0 He0].
     exists (LNewAt κ o c0), e0. split_and!; [done|done| |intros; discriminate|intros ? ? ? [= _ _ <-]; set_solver|intros; discriminate].
     apply (Hdet _ _ He0). simpl in *. destruct Ho. by subst.
-  - destruct (act_offer e (ASpawn v) (LSpawn (fends v) v) Ha (conj eq_refl eq_refl)) as [e0 He0].
-    destruct Ho as [<- ->].
-    exists (LSpawn (fends v) v), e0. split_and!; [done|done| |intros; discriminate|intros; discriminate|].
-    + apply (Hdet _ _ He0). simpl. rewrite fends_emap. fold cerase. by rewrite set_map_erase_idem, cerase_idem.
-    + intros M' v' [= _ <-]. exists (fends v), v. split; [done|]. unfold cerase. simpl. by rewrite emap_emap.
+  - destruct (act_offer e (ASpawn v) (LSpawn v) Ha eq_refl) as [e0 He0].
+    simpl in Ho. subst w.
+    exists (LSpawn v), e0. split_and!; [done|done| |intros; discriminate|intros; discriminate|].
+    + apply (Hdet _ _ He0). simpl. fold cerase. by rewrite cerase_idem.
+    + intros v' [= <-]. exists v. split; [done|]. unfold cerase. simpl. by rewrite emap_emap.
   - destruct (act_offer e (ALink o1 o2) (LSess (SLink ({[o1]} ∪ {[o2]}))) Ha eq_refl) as [e0 He0].
     simpl in Ho. subst os. exists (LSess (SLink ({[o1]} ∪ {[o2]}))), e0.
     split_and!; [done|done| |intros; discriminate|intros; discriminate|intros; discriminate].
@@ -75,28 +75,28 @@ Proof.
   pose proof (proj1 (Esteps_iff _ _ _ _ _ _ _ _ _ _ _) Hsteps) as Hobl. clear H Hsteps.
   constructor. intros y Hy.
   assert (∀ α x', tstep (cerase e) α x' → admin_lbl α → Acc tRs (cerase x') ∧
-            ∀ M v, α = LSpawn M v → Acc tRs (cerase (App v EUnit))) as Hall.
+            ∀ v, α = LSpawn v → Acc tRs (cerase (App v EUnit))) as Hall.
   { intros α x' Hst Hα.
     destruct (admin_back e α x' (set_map ech (dom Θ)) Hst Hα) as (α0 & e0 & Hs0 & Hα0 & -> & Hn1 & Hn2 & Hsp).
     pose proof (Hobl α0 e0 Hs0) as Ho.
-    destruct α0 as [|ℓ c|κ o c|M0 v0|[| | | | |os]]; simpl in Hα0; try contradiction; cbn [Eobl] in Ho.
-    - split; [|intros M1 v1 Hα1; destruct (Hsp M1 v1 Hα1) as (? & ? & Heq & _); discriminate Heq]. by destruct (proj1 Ho eq_refl).
-    - split; [|intros M1 v1 Hα1; destruct (Hsp M1 v1 Hα1) as (? & ? & Heq & _); discriminate Heq]. unfold o_new in Ho.
+    destruct α0 as [|ℓ c|κ o c|v0|[| | | | |os]]; simpl in Hα0; try contradiction; cbn [Eobl] in Ho.
+    - split; [|intros v1 Hα1; destruct (Hsp v1 Hα1) as (? & Heq & _); discriminate Heq]. by destruct (proj1 Ho eq_refl).
+    - split; [|intros v1 Hα1; destruct (Hsp v1 Hα1) as (? & Heq & _); discriminate Heq]. unfold o_new in Ho.
       assert (cfresh c Θ) as Hcf.
       { pose proof (Hn1 ℓ c eq_refl) as Hc. split; intros Hd; apply Hc; apply elem_of_map; [exists (EPos c)|exists (ENeg c)]; done. }
       destruct (gfresh_exists ℓ Θ) as [g Hg]. destruct (Ho Hcf g Hg) as [S HS].
       by destruct (proj1 HS eq_refl).
-    - split; [|intros M1 v1 Hα1; destruct (Hsp M1 v1 Hα1) as (? & ? & Heq & _); discriminate Heq]. unfold o_new_at in Ho.
+    - split; [|intros v1 Hα1; destruct (Hsp v1 Hα1) as (? & Heq & _); discriminate Heq]. unfold o_new_at in Ho.
       assert (cfresh c Θ) as Hcf.
       { pose proof (Hn2 κ o c eq_refl) as Hc. split; intros Hd; apply Hc; apply elem_of_map; [exists (EPos c)|exists (ENeg c)]; done. }
       destruct (Ho Hcf) as (S0 & x & _ & S & HS). by destruct (proj1 HS eq_refl).
-    - unfold o_spawn in Ho. destruct Ho as (ΘM & Θr & _ & _ & _ & Hth & Hpar).
+    - unfold o_spawn in Ho. destruct Ho as (ΘM & Θr & _ & _ & Hth & Hpar).
       split; [by destruct (proj1 Hpar eq_refl)|].
-      intros M v -> . destruct (Hsp M v eq_refl) as (M1 & v1 & [= <- <-] & ->).
+      intros v -> . destruct (Hsp v eq_refl) as (v1 & [= <-] & ->).
       destruct Hth as (eb & -> & _ & Hb).
       destruct (Hb W (S n) ∅ EUnit (wext_refl W) ltac:(cbn; lia) (map_disjoint_empty_r _)) as [_ Hb2].
       destruct (Hb2 eq_refl (conj eq_refl eq_refl)) as [_ Hacc].
-      constructor. intros y' [(α' & x'' & _ & Hs' & ->)|(M' & v' & x'' & Hs' & _)].
+      constructor. intros y' [(α' & x'' & _ & Hs' & ->)|(v' & x'' & Hs' & _)].
       + unfold cerase in Hs'. simpl in Hs'. fold cerase in Hs'.
         apply tstep_inv in Hs' as [Hh|(f & e1 & e1' & Hf & Heq & -> & Hs1)].
         * inversion Hh; subst. rewrite cerase_subst1, cerase_idem. rewrite cerase_subst1 in Hacc. exact Hacc.
@@ -106,11 +106,11 @@ Proof.
         apply tstep_inv in Hs' as [Hh|(f & e1 & e1' & Hf & Heq & -> & Hs1)]; [inversion Hh|].
         destruct f; simpl in Heq; try discriminate; injection Heq as <- <-;
           apply (val_no_tstep _ _ _ Hs1); simpl; rewrite ?is_val_emap; done.
-    - split; [|intros M1 v1 Hα1; destruct (Hsp M1 v1 Hα1) as (? & ? & Heq & _); discriminate Heq]. unfold o_link in Ho.
+    - split; [|intros v1 Hα1; destruct (Hsp v1 Hα1) as (? & Heq & _); discriminate Heq]. unfold o_link in Ho.
       destruct Ho as (o1 & o2 & S1 & S2 & x & _ & _ & _ & _ & _ & Hc). by destruct (proj1 Hc eq_refl). }
-  destruct Hy as [(α & x' & Hα & Hst & ->)|(M & v & x' & Hst & ->)].
+  destruct Hy as [(α & x' & Hα & Hst & ->)|(v & x' & Hst & ->)].
   - by destruct (Hall α x' Hst Hα).
-  - by apply (proj2 (Hall _ x' Hst I) M v).
+  - by apply (proj2 (Hall _ x' Hst I) v).
 Qed.
 
 (** ** The multiset extension *)
@@ -192,7 +192,7 @@ Qed.
 Lemma padmin_mstep p p' : padmin p p' → mstep tRs (cmset p'.2) (cmset p.2).
 Proof.
   intros (q & ev & q' & <- & Hst & <- & Had).
-  destruct Hst as [C M i e e' Hi Hs|C M i e ℓ c e' Hi Hs|C M i e κ o c e' Hi Hs|C M i j e Mv v e' Hi Hs Hj
+  destruct Hst as [C M i e e' Hi Hs|C M i e ℓ c e' Hi Hs|C M i e κ o c e' Hi Hs|C M i j e v e' Hi Hs Hj
     | | | |C M i e o1 o2 e' Hi Hs HC|]; simpl in Had; try contradiction; unfold erase; cbn [fst snd].
   - rewrite (soup_update M i e e' Hi), (soup_delete M i e Hi), !cmset_union, !cmset_singleton.
     exists (cerase e), {[+ cerase e' +]}, (cmset (soup (delete i M))). split_and!; [done|done|].
@@ -211,7 +211,7 @@ Proof.
     apply gmultiset_elem_of_disj_union in Hy as [Hy|Hy]; apply gmultiset_elem_of_singleton in Hy as ->.
     + left. by eapply tR_step; [|exact Hs].
     + right. destruct (tstep_cerase _ _ _ Hs) as (x' & Hx & _). simpl in Hx.
-      exists (set_map (λ _, EPos "") Mv), (cerase v), x'. split; [done|]. unfold cerase. simpl. by rewrite emap_emap.
+      exists (cerase v), x'. split; [done|]. unfold cerase. simpl. by rewrite emap_emap.
   - rewrite soup_fmap. change (gmultiset_map (emap (csub o1 o2)) (soup (<[i:=e']> M))) with
       (emapE (csub o1 o2) (soup (<[i:=e']> M))). rewrite cmset_emapE.
     rewrite (soup_update M i e e' Hi), (soup_delete M i e Hi), !cmset_union, !cmset_singleton.

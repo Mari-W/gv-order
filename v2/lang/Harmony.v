@@ -26,7 +26,6 @@ Inductive head_red : expr → expr → Prop :=
   | HRedApp e v : is_val v → head_red (App (Lam e) v) (subst1 v e)
   | HRedLetU e : head_red (LetU EUnit e) e
   | HRedLetP u v e : is_val u → is_val v → head_red (LetP (Pair u v) e) (subst2 u v e)
-  | HRedLet v e : is_val v → head_red (ELet v e) (subst1 v e)
   | HRedCase1 v e1 e2 : is_val v → head_red (Case (Inj1 v) e1 e2) (subst1 v e1)
   | HRedCase2 v e1 e2 : is_val v → head_red (Case (Inj2 v) e1 e2) (subst1 v e2)
   | HRedForce e : head_red (EForce (EBox e)) (subst1 (EBox e) e).
@@ -160,11 +159,11 @@ Proof.
       apply tstep_fill_decomp in H as (K & eh & eh' & HK & -> & -> & Hh) end.
     inversion Hh; subst. by apply RedNewAt.
   - (* spawn *)
-    match goal with H : tstep _ (LSpawn _ _) _ |- _ =>
+    match goal with H : tstep _ (LSpawn _) _ |- _ =>
       apply tstep_fill_decomp in H as (K & eh & eh' & HK & -> & -> & Hh) end.
     inversion Hh; subst. by apply RedSpawn.
   - (* message *)
-    match goal with H : tstep _ (LSess (SSend _ _ _)) _ |- _ =>
+    match goal with H : tstep _ (LSess (SSend _ _)) _ |- _ =>
       apply tstep_fill_decomp in H as (K & eh & eh' & HK & -> & -> & Hh) end.
     match goal with H : tstep _ (LSess (SRecv _ _)) _ |- _ =>
       apply tstep_fill_decomp in H as (K' & fh & fh' & HK' & -> & -> & Hh') end.

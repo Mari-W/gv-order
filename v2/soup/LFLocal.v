@@ -38,7 +38,7 @@ Lemma aend_step e a o : act e = Some a → aend a = Some o → ∃ σ e', tstep 
 Proof.
   intros Ha Ho. destruct a; simpl in Ho; simplify_eq.
   - destruct (act_offer e (ARecv o) (LSess (SRecv o EUnit)) Ha (conj eq_refl I)) as [e' He']. eauto.
-  - destruct (act_offer e (ASend o v) (LSess (SSend o (fends v) v)) Ha (conj eq_refl (conj eq_refl eq_refl)))
+  - destruct (act_offer e (ASend o v) (LSess (SSend o v)) Ha (conj eq_refl eq_refl))
       as [e' He']. eauto.
   - destruct (act_offer e (AClose o) (LSess (SClose o)) Ha eq_refl) as [e' He']. eauto.
   - destruct (act_offer e (ASel o i) (LSess (SSel o i)) Ha (conj eq_refl eq_refl)) as [e' He']. eauto.
@@ -90,15 +90,15 @@ Proof.
     try done; subst.
   - (* t receives, s sends *)
     pose proof (act_send_val _ _ _ Ha2) as Hv.
-    destruct (act_offer es (ASend (edual o) w') (LSess (SSend (edual o) (fends w') w')) Ha2
-      (conj eq_refl (conj eq_refl eq_refl))) as [es' Hs'].
+    destruct (act_offer es (ASend (edual o) w') (LSess (SSend (edual o) w')) Ha2
+      (conj eq_refl eq_refl)) as [es' Hs'].
     destruct (act_offer e (ARecv o) (LSess (SRecv o w')) Ha1 (conj eq_refl Hv)) as [e' He'].
     eexists _, _. split; [split; [eapply (p_act_msg C M s t (edual o)); [done|done|done|exact Hs'|]|done]|].
     + by rewrite edual_edual.
     + simpl. set_solver.
   - pose proof (act_send_val _ _ _ Ha1) as Hv.
-    destruct (act_offer e (ASend o w) (LSess (SSend o (fends w) w)) Ha1
-      (conj eq_refl (conj eq_refl eq_refl))) as [e' He'].
+    destruct (act_offer e (ASend o w) (LSess (SSend o w)) Ha1
+      (conj eq_refl eq_refl)) as [e' He'].
     destruct (act_offer es (ARecv (edual o)) (LSess (SRecv (edual o) w)) Ha2 (conj eq_refl Hv)) as [es' Hs'].
     eexists _, _. split; [split; [eapply (p_act_msg C M t s o); [done|done|done|exact He'|exact Hs']|done]|].
     simpl. set_solver.
@@ -161,7 +161,7 @@ Section local.
     - destruct (act_offer e (ARecv o) (LSess (SRecv o EUnit)) Ha (conj eq_refl I)) as [e' He'].
       pose proof (l_obl t e _ e' He He') as H. cbn [Eobl] in H.
       destruct H as (S0 & x & m & U0 & b & S & Ho & Hu & _). exists S0, x. split; [done|]. simpl. eauto.
-    - destruct (act_offer e (ASend o w) (LSess (SSend o (fends w) w)) Ha (conj eq_refl (conj eq_refl eq_refl)))
+    - destruct (act_offer e (ASend o w) (LSess (SSend o w)) Ha (conj eq_refl eq_refl))
         as [e' He'].
       pose proof (l_obl t e _ e' He He') as H. cbn [Eobl] in H.
       destruct H as (S0 & x & m & U0 & b & S & ΘM & Θr & Ho & Hu & _). exists S0, x. split; [done|]. simpl. eauto.

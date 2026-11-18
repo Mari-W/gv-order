@@ -143,16 +143,16 @@ Section closure.
       exists S. eapply Hac; [done|exact HS].
     - intros κf o c e' Hst Hc. destruct (H3 κf o c e' Hst Hc) as (S0 & x & Ho & S & HS).
       exists S0, x. split; [done|]. exists S. eapply Hac; [done|exact HS].
-    - intros M v e' Hst. destruct (H4 M v e' Hst) as (ΘM & Θr & A1 & A2 & A3 & A4 & A5).
-      exists ΘM, Θr. split_and!; [done|done|done| |eapply Hac; [done|exact A5]].
+    - intros v e' Hst. destruct (H4 v e' Hst) as (ΘM & Θr & A1 & A2 & A4 & A5).
+      exists ΘM, Θr. split_and!; [done|done| |eapply Hac; [done|exact A5]].
       destruct A4 as (eb & -> & Hfe & A4). exists eb. split_and!; [done|done|].
       intros W' j Θ' w HW Hj Hd. destruct (A4 W' j Θ' w HW ltac:(lia) Hd) as [B1 B2].
       split; [intros Hjm; apply B1; lia|].
       intros -> [-> ->]. destruct (decide (m = n)) as [->|Hne].
       + by apply B2.
       + apply B1; [lia|]. by apply Vrel_unit_iff.
-    - intros o M w e' Hst.
-      destruct (H5 o M w e' Hst) as (S0 & x & m' & U & b & S & ΘM & Θr & A1 & A2 & A3 & A4 & A5 & A6 & A7).
+    - intros o w e' Hst.
+      destruct (H5 o w e' Hst) as (S0 & x & m' & U & b & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
       exists S0, x, m', U, b, S, ΘM, Θr. split_and!; [done..| |eapply Hac; [done|exact A7]].
       eapply at_cost_V_down; [|exact A6]. lia.
     - intros o w e' Hst. destruct (H6 o w e' Hst) as (S0 & x & m' & U & b & S & A1 & A2 & A3).
@@ -194,8 +194,8 @@ Section closure.
       split_and!; [done| |done]. eapply Vrel_down; [|exact Hv]. lia.
     - done.
     - intros q ev q' Hq Hst Hτ Hd. apply Hac. exact (H1 q ev q' Hq Hst Hτ Hd).
-    - intros q i o M w q' Hq Hst.
-      destruct (H2 q i o M w q' Hq Hst)
+    - intros q i o w q' Hq Hst.
+      destruct (H2 q i o w q' Hq Hst)
         as (S0 & x & m' & U & b & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A6 & A7 & A8 & A9).
       exists S0, x, m', U, b, S, Σv, Σr, Θe, Σe. split_and!; [done..| |by apply Hac].
       eapply at_cost_V_down; [|exact A8]. lia.

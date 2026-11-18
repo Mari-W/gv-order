@@ -160,15 +160,15 @@ Qed.
     A guarded closed thread of primitive type, typed at a finite N, whose
     transformer some ticket count meets, is lock free. *)
 Theorem lf_soundness_source W N t T a c ϑ tk :
-  lfworld W → ∅ ⊢▷ t → prim T →
+  strict W → wfworld W → ∅ ⊢▷ t → prim T →
   ∅ ; hc_empty ; [] ⊢^(∅, None) _{W,(Some N)} t : T^a ▷ c ; ϑ → meets ϑ 0 tk →
   lock_free (∅, {[+ t +]}).
 Proof.
-  intros HW Hg Hp Hty Hm.
+  intros HS HW Hg Hp Hty Hm.
   assert (tenv_of (Some N) ∅ ∪ ∅ = (∅ : tenv)) as E by (unfold tenv_of; by rewrite fmap_empty, map_union_empty).
   rewrite <-E in Hty.
   assert (∀ o, o ∈ dom (∅ : tenv) ↔ ech o ∈ (∅ : gset chan)) as HB by (intros o; rewrite dom_empty_L; set_solver).
-  destruct (lf_p_term W N ∅ ∅ ∅ t T a c ϑ tk (proj1 HW) Hp HB
+  destruct (lf_p_term W N ∅ ∅ ∅ t T a c ϑ tk HS Hp HB
     ltac:(set_solver) ltac:(set_solver) Hty Hg Hm) as (N' & a' & He & Hs).
   rewrite <-He. by apply (lf_adequacy_soup N' W T a').
 Qed.

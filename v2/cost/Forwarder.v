@@ -101,4 +101,5 @@ Proof.
   - apply pfree_singleton.
   - set_solver.
   - rewrite map_union_empty. unfold tenv_of. rewrite map_fmap_singleton. apply fw_typed.
+  - right. exists 0. apply fw_tix_met.
 Qed.

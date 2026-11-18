@@ -51,10 +51,10 @@ Section cross.
   Qed.
 
   (** A message across the cut, p1 sending. *)
-  Lemma tau_msg12 M1 M2 i j o Mv w e e' f f' :
+  Lemma tau_msg12 M1 M2 i j o w e e' f f' :
     M1 ##ₘ M2 → soup M1 = q1.2 → soup M2 = q2.2 →
     M1 !! i = Some e → M2 !! j = Some f →
-    tstep e (LSess (SSend o Mv w)) e' → tstep f (LSess (SRecv (edual o) w)) f' →
+    tstep e (LSess (SSend o w)) e' → tstep f (LSess (SRecv (edual o) w)) f' →
     at_cost_P (S n) (c_give κ + c_take κ) (Prel κ) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T
       (erase (q1.1 ∪ q2.1 ∪ K, <[j := f']> (<[i := e']> (M1 ∪ M2)))).
   Proof.
@@ -64,12 +64,12 @@ Section cross.
     destruct H1 as (_ & _ & (_ & S1s & _)). destruct H2 as (_ & _ & (_ & _ & S2r & _)).
     assert (ech o ∉ q1.1 → ∃ S0 x m U b Sc Σv Σr Θe Σe, (Σ1 ∪ ΣC) !! o = Some (S0, x) ∧
         unfoldS S0 = SSeq (SSnd m U b) Sc ∧ Σv ##ₘ Σr ∧ delete o (Σ1 ∪ ΣC) = Σv ∪ Σr ∧
-        (∀ o', o' ∈ dom Θe ↔ o' ∈ Mv ∧ ech o' ∈ q1.1) ∧ Mv = dom Σv ∪ dom Θe ∧
+        (∀ o', o' ∈ dom Θe ↔ o' ∈ (fends w) ∧ ech o' ∈ q1.1) ∧ (fends w) = dom Σv ∪ dom Θe ∧
         send_split (Σ1 ∪ ΣC) Σe Θe ∧
         at_cost_V (S n) (c_give κ) (Vrel κ) (Vrel κ (S n)) W1 (Σv ∪ Θe) (payload_at m U x) w ∧
         at_cost_P (S n) (c_give κ) (Prel κ) X1 W1 (<[o := (Sc, x⁺)]> (Σr ∪ Σe)) T
-          (erase (q1.1 ∖ sentc (SSend o Mv w), <[i := e']> M1))) as C1.
-    { intros Hn. eapply (S1s _ _ _ _ _ _ (Hq1e' M1 HM1)). eapply p_act_session; [exact Hi|exact He|simpl; clear -Hn; cc_set_solver]. }
+          (erase (q1.1 ∖ sentc (SSend o w), <[i := e']> M1))) as C1.
+    { intros Hn. eapply (S1s _ _ _ _ _ (Hq1e' M1 HM1)). eapply p_act_session; [exact Hi|exact He|simpl; clear -Hn; cc_set_solver]. }
     assert (ech o ∉ q2.1 → ∃ S0 x m U b Sc, (Σ2 ∪ ΣD) !! edual o = Some (S0, x) ∧
         unfoldS S0 = SSeq (SRcv m U b) Sc ∧
         ∀ jl Θ2, jl + c_take κ ≤ S n → set_map ech (dom Θ2) ## q2.1 →
@@ -113,7 +113,7 @@ Section cross.
     pose proof (AR jj (Σv ∪ Θe) ltac:(unfold jj; lia) Hdj Hok HV) as P2.
     unfold erase in P2. simpl in P2. rewrite difference_empty_L in P2.
     assert (Prel κ jj W1 (<[o := (Sc, x⁺)]> (Σr ∪ Σe)) T (erase (q1.1 ∖ set_map ech (dom Σv ∪ dom Θe), <[i := e']> M1))) as P1.
-    { simpl in AP. rewrite HMv in AP. eapply (at_cost_lvl X1P); [exact AP|]. unfold jj. lia. }
+    { simpl in AP. unfold fchans in AP. rewrite HMv in AP. eapply (at_cost_lvl X1P); [exact AP|]. unfold jj. lia. }
     pose proof (msg_conn Σ1 ΣC Σ2 ΣD q1.1 q2.1 Hc o S0 x Lc Σv Σr Θe Σe Dvr Edel HΘe' Hss Sc Sc' (x⁺) HdS) as Hc'.
     pose proof (msg_iface Σ1 ΣC Σ2 ΣD q1.1 q2.1 Hc o S0 x Lc Σv Σr Θe Σe Dvr Edel HΘe' Hss Sc Sc' (x⁺) HdS) as Hif.
     pose proof (msg_chans Σ1 ΣC Σ2 ΣD q1.1 q2.1 Hc o S0 x Lc Σv Σr Θe Σe Dvr Edel HΘe' Hss Sc Sc' (x⁺) HdS) as Hch.
@@ -125,10 +125,10 @@ Section cross.
     rewrite Hch. clear. cc_set_solver.
   Qed.
   (** A message across the cut, p2 sending. *)
-  Lemma tau_msg21 M1 M2 i j o Mv w e e' f f' :
+  Lemma tau_msg21 M1 M2 i j o w e e' f f' :
     M1 ##ₘ M2 → soup M1 = q1.2 → soup M2 = q2.2 →
     M2 !! i = Some e → M1 !! j = Some f →
-    tstep e (LSess (SSend o Mv w)) e' → tstep f (LSess (SRecv (edual o) w)) f' →
+    tstep e (LSess (SSend o w)) e' → tstep f (LSess (SRecv (edual o) w)) f' →
     at_cost_P (S n) (c_give κ + c_take κ) (Prel κ) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T
       (erase (q1.1 ∪ q2.1 ∪ K, <[j := f']> (<[i := e']> (M1 ∪ M2)))).
   Proof.
@@ -138,12 +138,12 @@ Section cross.
     destruct H1 as (_ & _ & (_ & _ & S1r & _)). destruct H2 as (_ & _ & (_ & S2s & _)).
     assert (ech o ∉ q2.1 → ∃ S0 x m U b Sc Σv Σr Θe Σe, (Σ2 ∪ ΣD) !! o = Some (S0, x) ∧
         unfoldS S0 = SSeq (SSnd m U b) Sc ∧ Σv ##ₘ Σr ∧ delete o (Σ2 ∪ ΣD) = Σv ∪ Σr ∧
-        (∀ o', o' ∈ dom Θe ↔ o' ∈ Mv ∧ ech o' ∈ q2.1) ∧ Mv = dom Σv ∪ dom Θe ∧
+        (∀ o', o' ∈ dom Θe ↔ o' ∈ (fends w) ∧ ech o' ∈ q2.1) ∧ (fends w) = dom Σv ∪ dom Θe ∧
         send_split (Σ2 ∪ ΣD) Σe Θe ∧
         at_cost_V (S n) (c_give κ) (Vrel κ) (Vrel κ (S n)) W1 (Σv ∪ Θe) (payload_at m U x) w ∧
         at_cost_P (S n) (c_give κ) (Prel κ) X2 W1 (<[o := (Sc, x⁺)]> (Σr ∪ Σe)) TUnit
-          (erase (q2.1 ∖ sentc (SSend o Mv w), <[i := e']> M2))) as C2.
-    { intros Hn. eapply (S2s _ _ _ _ _ _ (Hq2e' M2 HM2)). eapply p_act_session; [exact Hi|exact He|simpl; clear -Hn; cc_set_solver]. }
+          (erase (q2.1 ∖ sentc (SSend o w), <[i := e']> M2))) as C2.
+    { intros Hn. eapply (S2s _ _ _ _ _ (Hq2e' M2 HM2)). eapply p_act_session; [exact Hi|exact He|simpl; clear -Hn; cc_set_solver]. }
     assert (ech o ∉ q1.1 → ∃ S0 x m U b Sc, (Σ1 ∪ ΣC) !! edual o = Some (S0, x) ∧
         unfoldS S0 = SSeq (SRcv m U b) Sc ∧
         ∀ jl Θ2, jl + c_take κ ≤ S n → set_map ech (dom Θ2) ## q1.1 →
@@ -187,7 +187,7 @@ Section cross.
     pose proof (AR jj (Σv ∪ Θe) ltac:(unfold jj; lia) Hdj Hok HV) as P1.
     unfold erase in P1. simpl in P1. rewrite difference_empty_L in P1.
     assert (Prel κ jj W1 (<[o := (Sc, x⁺)]> (Σr ∪ Σe)) TUnit (erase (q2.1 ∖ set_map ech (dom Σv ∪ dom Θe), <[i := e']> M2))) as P2.
-    { simpl in AP. rewrite HMv in AP. eapply (at_cost_lvl X2P); [exact AP|]. unfold jj. lia. }
+    { simpl in AP. unfold fchans in AP. rewrite HMv in AP. eapply (at_cost_lvl X2P); [exact AP|]. unfold jj. lia. }
     pose proof (msg_conn Σ2 ΣD Σ1 ΣC q2.1 q1.1 Hcs o S0 x Ld Σv Σr Θe Σe Dvr Edel HΘe' Hss Sc Sc' (x⁺) HdS) as Hc'.
     pose proof (msg_iface Σ2 ΣD Σ1 ΣC q2.1 q1.1 Hcs o S0 x Ld Σv Σr Θe Σe Dvr Edel HΘe' Hss Sc Sc' (x⁺) HdS) as Hif.
     pose proof (msg_chans Σ2 ΣD Σ1 ΣC q2.1 q1.1 Hcs o S0 x Ld Σv Σr Θe Σe Dvr Edel HΘe' Hss Sc Sc' (x⁺) HdS) as Hch.

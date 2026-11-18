@@ -373,7 +373,6 @@ Definition frame_emap (g : cend → cend) (f : frame) : frame :=
   | FPairR v1 => FPairR (emap g v1)
   | FLetU e2 => FLetU (emap g e2)
   | FLetP e2 => FLetP (emap g e2)
-  | FLet e2 => FLet (emap g e2)
   | FInj1 => FInj1
   | FInj2 => FInj2
   | FCase e1 e2 => FCase (emap g e1) (emap g e2)
@@ -672,7 +671,7 @@ Proof.
   { intros Hval. destruct (Hv Hval) as [Hr HV]. split; [done|].
     apply Vfuel_eq. apply Hσ; [lia|]. by apply Vfuel_eq. }
   intros α e' Hst. specialize (Hs α e' Hst).
-  destruct α as [|ℓ c|κ o c|M v|[o M w|o w|o|o i|o i|os]]; simpl in Hs |- *;
+  destruct α as [|ℓ c|κ o c|v|[o w|o w|o|o i|o i|os]]; simpl in Hs |- *;
     unfold f_beta, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link in *.
   - by apply IHn.
   - intros Hf. destruct (Hs Hf) as [Sn HS]. exists Sn. by apply IHn.

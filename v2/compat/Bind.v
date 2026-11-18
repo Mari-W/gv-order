@@ -33,7 +33,7 @@ Section bind.
     Erel κ (S n) W Θ T F e → tstep e (LSess σ) e' → sends σ ⊆ dom Θ.
   Proof.
     intros HE Hst. pose proof (Erel_S_step κ n W W Θ T F e _ e' HE (wext_refl W) Hst) as H.
-    destruct σ as [o M w|o w|o|o i|o i|os]; simpl in H |- *.
+    destruct σ as [o w|o w|o|o i|o i|os]; simpl in H |- *.
     - destruct H as (? & ? & ? & ? & ? & ? & ? & ? & Ho & _). apply elem_of_dom_2 in Ho. set_solver.
     - destruct H as (? & ? & ? & ? & ? & ? & Ho & _). apply elem_of_dom_2 in Ho. set_solver.
     - destruct H as (? & ? & Ho & _). apply elem_of_dom_2 in Ho. set_solver.
@@ -166,18 +166,17 @@ Section bind.
       apply map_disjoint_insert_l. split; [apply not_elem_of_dom; set_solver|].
       apply map_disjoint_insert_l. split; [apply not_elem_of_dom; set_solver|done].
     - (* O-Spawn *)
-      intros M v E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
-      destruct (H4 M v e' Hst') as (ΘM & Θr & A1 & -> & A3 & A4 & A5).
+      intros v E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
+      destruct (H4 v e' Hst') as (ΘM & Θr & A1 & -> & A4 & A5).
       apply map_disjoint_union_l in Hd as [HdM Hdr].
       exists ΘM, (Θr ∪ Θ2). split_and!.
       + by apply map_disjoint_union_r.
       + by rewrite map_union_assoc.
-      + done.
       + revert A4. apply Vthunk_mono; [by intros|by intros|by intros|]. by intros _ ? ? ? ? [? _].
       + by apply Hac.
     - (* O-Send *)
-      intros o M w E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
-      destruct (H5 o M w e' Hst') as (S0 & x & m & U' & b & S & ΘM & Θr & A1 & A2 & A3 & A4 & A5 & A6 & A7).
+      intros o w E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
+      destruct (H5 o w e' Hst') as (S0 & x & m & U' & b & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
       assert (Θ2 !! o = None) as Ho2 by (eapply map_disjoint_Some_l; eauto).
       assert (ΘM ##ₘ Θ2 ∧ Θr ##ₘ Θ2) as [HdM Hdr].
       { apply map_disjoint_union_l. rewrite <-A4. by apply map_disjoint_delete_l. }

@@ -10,9 +10,9 @@
 
 From GV Require Export examples.LFTools examples.FactoryEx.
 
-Lemma W_fx_lfworld : lfworld W_fx.
+Lemma W_fx_wfworld : wfworld W_fx.
 Proof.
-  apply (lfworld_lex3 W_fx (λ x, (pt_fsum x, pt_depth x, pt_off x))); [apply W_fx_wf|intros f []| |].
+  apply (wfworld_lex3 W_fx (λ x, (pt_fsum x, pt_depth x, pt_off x))); [intros f []| |].
   - intros x. unfold pt_fsum, pt_depth. simpl. lia.
   - intros ℓ g x y _ [E|E]; injection E as -> ->; unfold pt_fsum, pt_depth; simpl; lia.
 Qed.
@@ -186,5 +186,5 @@ Qed.
 Theorem fx_lock_free : lock_free (∅, {[+ fx_main +]}).
 Proof.
   destruct fxl_typedN as (c & ϑ & Ht & Hm).
-  eapply lf_main; [apply W_fx_lfworld|constructor|exact Ht|apply fx_guarded|exact Hm].
+  eapply lf_main; [apply (strict_wfworld _ W_fx_wf W_fx_wfworld)|apply W_fx_wfworld|constructor|exact Ht|apply fx_guarded|exact Hm].
 Qed.

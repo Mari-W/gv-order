@@ -22,8 +22,8 @@
 
     Counters evolve by one update at every index. An action on o
     refills o to N and ticks every other counter of the thread by one
-    (truncated at 0). A send and a spawn hand the ends M of the
-    transfer set on with their counters minus one. New ends start at N.
+    (truncated at 0). A send and a spawn hand the ends of the value they
+    move on with their counters minus one. New ends start at N.
     A link spends a ticket and moves no counter. The checks are F-Tick
     (an action asks every other counter at least 1, and the frame at
     least 1), the hand-over (every handed counter at least 1), and
@@ -157,7 +157,7 @@ Definition idle_at (Π : penv) (o : cend) : Prop := ∃ S, Π !! o = Some S ∧ 
 
 (** The ends X have a unit to spare: every counter on X of an end that is
     not idle is at least 1. F-Tick asks it of the other ends of an action,
-    the hand-over of the transfer set. *)
+    the hand-over of the ends of a sent or spawned value. *)
 Definition fspare (Π : penv) (φ : cenv) (X : gset cend) : Prop :=
   ∀ o f, o ∈ X → φ !! o = Some f → ¬ idle_at Π o → fle (Some 1) f.
 
@@ -211,20 +211,20 @@ Section obligations.
   Definition f_new (c : chan) (e' : expr) : Prop :=
     ffresh c Π φ → ∃ S, El n' N σ d r (pnew c S Π) (cnew N c φ) tk e'.
 
-  (** The child takes the ends M with one unit less and ⌈tk/2⌉ tickets,
-      and runs as a thread. The parent keeps ⌊tk/2⌋. *)
-  Definition f_spawn (M : gset cend) (v e' : expr) : Prop :=
-    M ⊆ dom φ ∧ fspare Π φ M ∧
-    El n' N RThread None 0 (mres M Π) (fhand M φ) (Nat.div2 (S tk)) (App v EUnit) ∧
-    El n' N σ d r (mrem M Π) (mrem M φ) (Nat.div2 tk) e'.
+  (** The child takes the ends of v with one unit less and ⌈tk/2⌉
+      tickets, and runs as a thread. The parent keeps ⌊tk/2⌋. *)
+  Definition f_spawn (v e' : expr) : Prop :=
+    fends v ⊆ dom φ ∧ fspare Π φ (fends v) ∧
+    El n' N RThread None 0 (mres (fends v) Π) (fhand (fends v) φ) (Nat.div2 (S tk)) (App v EUnit) ∧
+    El n' N σ d r (mrem (fends v) Π) (mrem (fends v) φ) (Nat.div2 tk) e'.
 
   (** A send hands on held ends other than its subject, at the payload
       type and credit of the session type, with one unit less. *)
-  Definition f_send (o : cend) (M : gset cend) (w e' : expr) : Prop :=
+  Definition f_send (o : cend) (w e' : expr) : Prop :=
     f_act o ∧ ∃ S0 m T b S, Π !! o = Some S0 ∧ unfoldS S0 = SSeq (SSnd m T b) S ∧
-      M ⊆ dom φ ∖ {[o]} ∧ fspare Π φ M ∧
-      Vl n' N (RTy T b) (mres M Π) (fhand M φ) w ∧
-      El n' N σ (ftick d) r (<[o := S]> (mrem M Π)) (refill N o (mrem M φ)) tk e'.
+      fends w ⊆ dom φ ∖ {[o]} ∧ fspare Π φ (fends w) ∧
+      Vl n' N (RTy T b) (mres (fends w) Π) (fhand (fends w) φ) w ∧
+      El n' N σ (ftick d) r (<[o := S]> (mrem (fends w) Π)) (refill N o (mrem (fends w) φ)) tk e'.
 
   (** A receive continues for every incoming value at the payload type,
       with any protocols and counters it brings. *)
@@ -256,8 +256,8 @@ Section obligations.
     match α with
     | LBeta => f_beta e'                                  (* F-Beta *)
     | LNew _ c | LNewAt _ _ c => f_new c e'               (* F-New *)
-    | LSpawn M v => f_spawn M v e'                        (* F-Spawn *)
-    | LSess (SSend o M w) => f_send o M w e'              (* F-Send *)
+    | LSpawn v => f_spawn v e'                          (* F-Spawn *)
+    | LSess (SSend o w) => f_send o w e'                (* F-Send *)
     | LSess (SRecv o w) => f_recv o w e'                  (* F-Recv *)
     | LSess (SClose o) => f_close o e'                    (* F-Close *)
     | LSess (SSel o i) => f_select o i e'                 (* F-Select *)
@@ -364,7 +364,7 @@ Section ext.
     intros HE HV.
     assert (HE' : ∀ N σ d r Π φ tk e, El1 n' N σ d r Π φ tk e → El2 n' N σ d r Π φ tk e)
       by (intros; apply HE; [lia|done]).
-    destruct α as [|ℓ c|κ o c|M v|[o M w|o w|o|o i|o i|os]]; simpl;
+    destruct α as [|ℓ c|κ o c|v|[o w|o w|o|o i|o i|os]]; simpl;
       unfold f_beta, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link.
     - apply HE'.
     - intros H Hf. destruct (H Hf) as [S HS]. exists S. by apply HE'.

@@ -8,14 +8,15 @@
 
 From stdpp Require Import relations.
 From GV Require Export soup.LFLocal.
+From GV Require Import compat.Redex.
 
 Definition owns (K : own) (o : cend) (t : nat) : Prop := ∃ h, K !! o = Some h ∧ h.(h_th) = t.
 
 Definition ev_ends (K : own) (ev : event) : Prop :=
   match ev with
-  | EvMsg i j o M => owns K o i ∧ owns K (edual o) j ∧ (∀ m, m ∈ M → owns K m i ∧ m ≠ o)
+  | EvMsg i j o v => owns K o i ∧ owns K (edual o) j ∧ (∀ m, m ∈ fends v → owns K m i ∧ m ≠ o)
   | EvClose i j o | EvChoice i j o _ => owns K o i ∧ owns K (edual o) j
-  | EvSpawn i j M => ∀ m, m ∈ M → owns K m i
+  | EvSpawn i j v => ∀ m, m ∈ fends v → owns K m i
   | EvLink u o1 o2 => owns K o1 u ∧ owns K o2 u ∧ o1 ≠ o2
   | EvNew _ _ c | EvNewAt _ _ _ c => (EPos c ∉ dom K) ∧ (ENeg c ∉ dom K)
   | _ => True
@@ -34,19 +35,23 @@ Proof.
   intros Hs HW Hst Hτ.
   pose proof (l_obl _ _ _ _ _ _ _ _ Hs HW) as Hobl. cbn [s_q s_K] in Hobl.
   inversion Hst as [C0 M0 i e e' Hi Hs'|C0 M0 i e ℓ c e' Hi Hs' HC Hc|C0 M0 i e κ o c e' Hi Hs' HC Hc
-    |C0 M0 i j e Mv v e' Hi Hs' Hj
-    |C0 M0 i j o Mv v e e' f f' Hij Hi Hj He Hf|C0 M0 i j o e e' f f' Hij Hi Hj He Hf HC
+    |C0 M0 i j e v e' Hi Hs' Hj
+    |C0 M0 i j o v e e' f f' Hij Hi Hj He Hf|C0 M0 i j o e e' f f' Hij Hi Hj He Hf HC
     |C0 M0 i j o b e e' f f' Hij Hi Hj He Hf|C0 M0 i e o1 o2 e' Hi Hs' HC
     |C0 M0 i e σ e' Hi Hs' HC]; subst; simpl; try done.
   - split; intros Hd; apply HC; exact (s_closed _ _ _ _ _ _ _ _ Hs _ Hd).
   - split; intros Hd; apply HC; exact (s_closed _ _ _ _ _ _ _ _ Hs _ Hd).
   - pose proof (Hobl i e _ e' Hi Hs') as H. cbn [Eobl] in H.
-    destruct H as (ΘM & Θr & Hd & HΘ & HM & _).
+    destruct H as (ΘM & Θr & Hd & HΘ & Hth & _).
+    assert (HM : dom ΘM = fends v) by (destruct Hth as (e1 & -> & Hfe & _); exact Hfe).
     intros m Hm. destruct (split_mres _ _ _ _ Hd HΘ HM) as [-> _].
     rewrite <-HM, dom_mres in Hm. apply elem_of_intersection in Hm as [Hm _].
     apply elem_of_dom in Hm as [v' Hv']. exact (owns_of _ _ _ _ _ Hv').
   - pose proof (Hobl i e _ e' Hi He) as H1. pose proof (Hobl j f _ f' Hj Hf) as H2. cbn [Eobl] in H1, H2.
-    destruct H1 as (S0 & x & m & U0 & b0 & S & ΘM & Θr & Ho & _ & Hd & HΘ & HM & _).
+    destruct H1 as (S0 & x & m & U0 & b0 & S & ΘM & Θr & Ho & _ & Hd & HΘ & HV & _).
+    assert (HM : dom ΘM = fends v).
+    { destruct (decide (c_give live = 0)) as [Hc|Hc];
+        [exact (Vrel_exact _ _ _ _ _ _ (proj1 HV Hc))|exact (Vrel_exact _ _ _ _ _ _ (proj2 HV Hc))]. }
     destruct H2 as (S0' & x' & m' & U0' & b0' & S' & Ho' & _).
     split_and!; [exact (owns_of _ _ _ _ _ Ho)|exact (owns_of _ _ _ _ _ Ho')|].
     intros m1 Hm. destruct (split_mres _ _ _ _ Hd HΘ HM) as [-> _].
@@ -85,7 +90,7 @@ Proof.
     destruct (Hen o Hm) as (h' & Ho' & <-). rewrite Ho in Ho'. simplify_eq. set_solver.
   - destruct Hen as (H1 & H2 & H3).
     assert (o ≠ o') by ne_tac Ho Eh. assert (o ≠ edual o') by ne_tac Ho Eh.
-    assert (o ∉ M) as HoM.
+    assert (o ∉ fends M) as HoM.
     { intros Hm. destruct (H3 o Hm) as [Hm' _]. by apply (owns_ne _ _ _ _ _ _ Ho Eh Hm'); [set_solver|]. }
     rewrite lookup_ksync, !decide_False by done. rewrite Ho. simpl.
     rewrite !decide_False; [done|subst t; set_solver|done].

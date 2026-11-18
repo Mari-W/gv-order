@@ -39,7 +39,6 @@ Section live.
       |Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e1 e2 T1 a1 T2 a2 Hsp Hl H1 IH1 H2 IH2
       |Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e1 e2 T Hsp Hl H1 IH1 H2 IH2
       |Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e1 e2 T1 a1 T2 a2 b1 b2 T Hsp Hl H1 IH1 H2 IH2
-      |Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e1 e2 T1 b1 T Hsp Hl H1 IH1 H2 IH2
       |Θ Γ Δ F e T a U b H IH
       |Θ Γ Δ F e T a U b H IH
       |Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e e1 e2 T1 a1 T2 a2 b1 b2 T Hsp Hl H0 IH0 H1 IH1 H2 IH2
@@ -48,8 +47,8 @@ Section live.
       |Θ Γ Δ F e S0 x m T b S ap aS Hu Hsc Hbot Hh Hub H IH
       |Θ Γ Δ F e S0 x m T b S b' a' Hu Hsc Hub H IH
       |Θ Γ Δ F e S0 x Hu Hub H IH
-      |i Θ Γ Δ F e S0 x S1 S2 Hu Hf Hub H IH
-      |Θ Γ Δ F e S0 x S1 S2 a1 a2 Hu Hf1 Hf2 Hub H IH
+      |i Θ Γ Δ F e S0 x S1 S2 Hu Hub H IH
+      |Θ Γ Δ F e S0 x S1 S2 a1 a2 Hu Hub H IH
       |Θ Γ Δ F e S x a1 a2 H IH
       |Θ Γ Δ F e a1 H IH
       |Θ Γ Δ F e ub lb c' t' h a1 aU H IH
@@ -107,14 +106,6 @@ Section live.
       { inversion Hgl; subst; eexists; split_and!; try done; [by left|by right|].
         eapply guard_ext; [|done]. by intros [|[|x]]. }
       eapply (later_letp κ _ _ _ _ _ _ _ _ _ _ _ _ (pinst_ty σ T1) a1 (pinst_ty σ T2) a2 b1 b2);
-        [exact Hk|by apply tsplit_pinst|by apply lenv_split_pinst| |by apply IH2].
-      intros B'. eapply sem_later_future; [|apply (IH1 L Hg1 W1 σ ρ (B ∪ B') HW Hs)].
-      heads_p. fut.
-    - (* D-Let *)
-      assert (∃ L', kmarks κ L L' e1 ∧ lguard L e1 ∧ lguard (false .: L') e2) as (L' & Hk & Hg1 & Hg2).
-      { inversion Hgl; subst; eexists; split_and!; try done; [by left|by right|].
-        eapply guard_ext; [|done]. by intros [|x]. }
-      eapply (later_let κ _ _ _ _ _ _ _ _ _ _ _ _ (pinst_ty σ T1) b1);
         [exact Hk|by apply tsplit_pinst|by apply lenv_split_pinst| |by apply IH2].
       intros B'. eapply sem_later_future; [|apply (IH1 L Hg1 W1 σ ρ (B ∪ B') HW Hs)].
       heads_p. fut.
@@ -190,7 +181,7 @@ Section live.
       eapply later_link, IH'.
     - (* D-SpawnLam *)
       assert (lguard (false .: L) e) as Hgb.
-      { inversion Hgl as [| | | | | |? ? ? Hgl'| | | | | | | | | | | | | |]; subst.
+      { inversion Hgl as [| | | | | |? ? ? Hgl'| | | | | | | | | | | |]; subst.
         by inversion Hgl'; subst. }
       apply (Hsl W1 _ _ _ _ e a1).
       + apply tfacts_pinst, (tfacts_lam _ (Some (TUnit, a1))). exact (dftyped_tfacts _ _ _ _ _ _ _ H).

@@ -50,7 +50,7 @@
      : A → A → A → A → A → A → A → Prop
 λ N W n Σ T a : A, a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧
      : A → A → A → A → A → A → Prop
-λ W Σ p T : A, lfworld W ∧ strict W ∧ Σ ⊪_W p : T → lock_free p
+λ W Σ p T : A, strict W ∧ wfworld W ∧ Σ ⊪_W p : T → lock_free p
      : A → A → A → A → Prop
 λ Σ W p T : A, Σ ⊫_W p : T → deadlock_free p ∧ no_tau_divergence p
      : A → A → A → A → Prop

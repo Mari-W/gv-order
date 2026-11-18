@@ -148,8 +148,8 @@ Proof.
   destruct q as [C' M]. unfold erase, preduction; simpl. rewrite pstep_iff. intros H.
   remember (C', soup M) as p2 eqn:Hp2. remember PTau as π eqn:Hπ.
   destruct H as [C E e σ e' Hst HC|C E e e' Hst|C E e ℓ c e' Hst HC HcE Hce
-    |C E e κ o c e' Hst HC HcE Hce|C E e Mv v e' Hst
-    |C E o Mv v e e' f f' He Hf|C E o e e' f f' He Hf HC
+    |C E e κ o c e' Hst HC HcE Hce|C E e v e' Hst
+    |C E o v e e' f f' He Hf|C E o e e' f f' He Hf HC
     |C E o b e e' f f' He Hf|C E e o1 o2 e' Hst HC]; try discriminate;
     injection Hp2 as <- HE; symmetry in HE.
   - destruct (soup_extract M E e' HE) as (i & Hi & HEi).
@@ -175,7 +175,7 @@ Proof.
     destruct (soup_extract _ E e' HEj) as (i & Hi & HEi).
     assert (i ≠ j) as Hij by (intros ->; by rewrite lookup_delete_eq in Hi).
     assert (M !! i = Some e') as HiM by (by rewrite lookup_delete_ne in Hi).
-    exists (EvSpawn i j Mv), (C, <[i := e]> (delete j M)). split.
+    exists (EvSpawn i j v), (C, <[i := e]> (delete j M)). split.
     + unfold erase; simpl. by rewrite (soup_update (delete j M) i e' e Hi), HEi.
     + replace (C, M) with (C, <[j := App v EUnit]> (<[i := e']> (<[i := e]> (delete j M)))).
       * split; [|done]. eapply p_act_spawn; [by rewrite lookup_insert_eq|done|].
@@ -185,7 +185,7 @@ Proof.
     destruct (soup_extract _ E e' HEj) as (i & Hi & HEi).
     assert (i ≠ j) as Hij by (intros ->; by rewrite lookup_delete_eq in Hi).
     rewrite lookup_delete_ne in Hi by done.
-    exists (EvMsg i j o Mv), (C, <[j := f]> (<[i := e]> M)). split.
+    exists (EvMsg i j o v), (C, <[j := f]> (<[i := e]> M)). split.
     + unfold erase; simpl. destruct (soup_update2 M i j e' f' e f Hij Hi Hj) as [_ ->].
       by rewrite delete_delete, HEi.
     + replace (C, M) with (C, <[j := f']> (<[i := e']> (<[j := f]> (<[i := e]> M))))

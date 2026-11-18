@@ -18,9 +18,9 @@
 
     [dftyped] is the deadlock-freedom projection, Θ ; Γ ; Δ ⊢^F_W e : T,
     the same rules without the cost premises and without aging and
-    capture. E-Let types the primitive let x = e1 in e2 (decision Q13).
-    A let is no closure, so it captures nothing and needs no lower point,
-    and no rule matches the shape of a redex. [ptyped] is process typing with P-Term and P-Connect
+    capture. No rule matches the shape of a redex. let x = e1 in e2 is
+    the derived form [ELet] of lang/Syntax.v, and E-Let and D-Let are
+    admissible ([e_let] and [d_let] in static/Weakening.v). [ptyped] is process typing with P-Term and P-Connect
     in the two-world form, P-Join is admissible ([p_join]). *)
 
 From GV Require Export static.Contexts.
@@ -72,13 +72,6 @@ Inductive typed (W : world) (N : fuel) :
       typed W N Θ2' Γ (Some (T2, fadd a a2) :: Some (T1, fadd a a1) :: Δ2') F e2 T aT c2 t2 →
       tok t1 t2 →
       typed W N Θ Γ Δ F (LetP e1 e2) T aT (fadd c1 c2) (tseq t1 t2)
-  | e_let Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 T1 a1 T aT c1 t1 c2 t2 :
-      tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-      typed W N Θ1 Γ Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 T1 a1 c1 t1 →
-      thage c1 Θ2 Θ2' → lage c1 Δ2 Δ2' →
-      typed W N Θ2' Γ (Some (T1, a1) :: Δ2') F e2 T aT c2 t2 →
-      tok t1 t2 →
-      typed W N Θ Γ Δ F (ELet e1 e2) T aT (fadd c1 c2) (tseq t1 t2)
   | e_inj1 Θ Γ Δ F e T a U b c t :
       typed W N Θ Γ Δ F e T a c t →
       typed W N Θ Γ Δ F (Inj1 e) (TSum T a U b) (Some 0) c t
@@ -128,14 +121,12 @@ Inductive typed (W : world) (N : fuel) :
       typed W N Θ Γ Δ F (EClose e) TUnit None (fadd c0 (Some 1)) t0
   | e_select (i : bool) Θ Γ Δ F e S0 x S1 S2 a c0 t0 :
       unfoldS S0 = SPlus S1 S2 →
-      slt W Γ x (x·(bfield i)) →
       ub_below_s W Γ (Some x) F →
       typed W N Θ Γ Δ F e (TSess S0 x) a c0 t0 →
       typed W N Θ Γ Δ F (ESel i e) (TSess (if i then S2 else S1) (sel_pt x i)) N
         (fadd c0 (Some 1)) t0
   | e_branch Θ Γ Δ F e S0 x S1 S2 a c0 t0 :
       unfoldS S0 = SWith S1 S2 →
-      slt W Γ x (sel_pt x false) → slt W Γ x (sel_pt x true) →
       ub_below_s W Γ (Some x) F →
       typed W N Θ Γ Δ F e (TSess S0 x) a c0 t0 →
       typed W N Θ Γ Δ F (EBra e)
@@ -221,11 +212,6 @@ Inductive dftyped (W : world) : tenv → hctx → lenv → sfuture → expr → 
         (TProd T1 a1 T2 a2) →
       dftyped W Θ2 Γ (Some (T2, b2) :: Some (T1, b1) :: Δ2) F e2 T →
       dftyped W Θ Γ Δ F (LetP e1 e2) T
-  | d_let Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e1 e2 T1 b1 T :
-      tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-      dftyped W Θ1 Γ Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 T1 →
-      dftyped W Θ2 Γ (Some (T1, b1) :: Δ2) F e2 T →
-      dftyped W Θ Γ Δ F (ELet e1 e2) T
   | d_inj1 Θ Γ Δ F e T a U b :
       dftyped W Θ Γ Δ F e T → dftyped W Θ Γ Δ F (Inj1 e) (TSum T a U b)
   | d_inj2 Θ Γ Δ F e T a U b :
@@ -265,12 +251,11 @@ Inductive dftyped (W : world) : tenv → hctx → lenv → sfuture → expr → 
       dftyped W Θ Γ Δ F e (TSess S0 x) →
       dftyped W Θ Γ Δ F (EClose e) TUnit
   | d_select (i : bool) Θ Γ Δ F e S0 x S1 S2 :
-      unfoldS S0 = SPlus S1 S2 → slt W Γ x (x·(bfield i)) → ub_below_s W Γ (Some x) F →
+      unfoldS S0 = SPlus S1 S2 → ub_below_s W Γ (Some x) F →
       dftyped W Θ Γ Δ F e (TSess S0 x) →
       dftyped W Θ Γ Δ F (ESel i e) (TSess (if i then S2 else S1) (sel_pt x i))
   | d_branch Θ Γ Δ F e S0 x S1 S2 a1 a2 :
       unfoldS S0 = SWith S1 S2 →
-      slt W Γ x (sel_pt x false) → slt W Γ x (sel_pt x true) →
       ub_below_s W Γ (Some x) F →
       dftyped W Θ Γ Δ F e (TSess S0 x) →
       dftyped W Θ Γ Δ F (EBra e) (TSum (TSess S1 (bra_pt x false)) a1 (TSess S2 (bra_pt x true)) a2)
@@ -315,7 +300,9 @@ Inductive dftyped (W : world) : tenv → hctx → lenv → sfuture → expr → 
 
     P-Term types one thread over the interface Σ and the ends Θ_B of the
     restricted channels C0, both ends of each, dual at dual points, with
-    credit N. P-Connect composes two components typed at their own
+    credit N, and at a finite N asks some ticket count to meet the
+    transformer of the thread at 0. At N = ∞ the premise holds by its
+    left disjunct, so ⊢_W is unchanged. P-Connect composes two components typed at their own
     worlds, whose families are apart, over the cut Σ_C, and asks the join
     strict. P-Join asks only the restrictions to the shared constants
     strict (cleanup R7, [strict_join_iff]). It is a lemma, [p_join],
@@ -350,6 +337,7 @@ Inductive ptyped (N : fuel) : world → senv → proc → ty → Prop :=
       (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 → pfree Σ →
       (∀ c, c ∈ C0 → ∃ S x, ΘB !! (c⁺)%cend = Some (TE S x N) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ N)) →
       typed W N (tenv_of N Σ ∪ ΘB) hc_empty [] (∅, None) t T a c ϑ →
+      (N = None ∨ ∃ tk, meets ϑ 0 tk) →
       ptyped N W Σ (C0, {[+ t +]}) T
   | p_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
       ptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →

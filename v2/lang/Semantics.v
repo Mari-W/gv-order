@@ -5,9 +5,9 @@
     evaluation frame at a time.
 
     Labels carry what the relation reads. A send and a spawn carry the
-    transfer set M, the ends that leave the thread with the value. It is
-    the set [fends v] of the value, the same set the process semantics
-    extrudes from the restricted channels at an external send (§2.7). A
+    value v. The ends that leave the thread with it are [fends v], the
+    set the process semantics extrudes from the restricted channels at an
+    external send (§2.7). A
     [new_ℓ] carries its family ℓ and an anchored [new_κ o] its field κ
     and its anchor o, and both carry the name c of the new channel. *)
 
@@ -18,7 +18,7 @@ From GV Require Export lang.Notations.
 
 (** Session labels, offers on ends. *)
 Inductive slabel :=
-  | SSend (o : cend) (M : gset cend) (v : expr)  (* o!v, moving the ends M *)
+  | SSend (o : cend) (v : expr)                  (* o!v, moving the ends of v *)
   | SRecv (o : cend) (v : expr)                  (* o?v *)
   | SClose (o : cend)                            (* o! *)
   | SSel (o : cend) (i : bool)                   (* o◁i *)
@@ -29,7 +29,7 @@ Inductive tlabel :=
   | LBeta                                    (* β, let, case, force *)
   | LNew (ℓ : family) (c : chan)             (* new_ℓ creates c *)
   | LNewAt (κ : field) (o : cend) (c : chan)  (* new_κ o creates c *)
-  | LSpawn (M : gset cend) (v : expr)        (* spawn of the thunk v, moving M *)
+  | LSpawn (v : expr)                        (* spawn of the thunk v, moving its ends *)
   | LSess (σ : slabel).
 
 Global Instance slabel_eq_dec : EqDecision slabel.
@@ -47,10 +47,6 @@ Inductive head_step : expr → tlabel → expr → Prop :=
   | t_act_app e v :                                     (* T-Act-App *)
       is_val v →
       head_step (App (Lam e) v) LBeta (subst1 v e)
-  | t_act_let v e :                                     (* T-Act-Let *)
-      (* a let is no closure: the value goes straight into the body *)
-      is_val v →
-      head_step (ELet v e) LBeta (subst1 v e)
   | t_act_let_unit e :                                  (* T-Act-Let-Unit *)
       head_step (LetU EUnit e) LBeta e
   | t_act_let_pair u v e :                              (* T-Act-Let-Pair *)
@@ -73,10 +69,10 @@ Inductive head_step : expr → tlabel → expr → Prop :=
         (Pair (Chan o) (Pair (Chan c⁺) (Chan c⁻)))
   | t_act_spawn v :                                     (* T-Act-Spawn *)
       is_val v →
-      head_step (ESpawn v) (LSpawn (fends v) v) EUnit
+      head_step (ESpawn v) (LSpawn v) EUnit
   | t_act_send v o :                                    (* T-Act-Send *)
       is_val v →
-      head_step (ESend (Pair v (Chan o))) (LSess (SSend o (fends v) v)) (Chan o)
+      head_step (ESend (Pair v (Chan o))) (LSess (SSend o v)) (Chan o)
   | t_act_recv o v :                                    (* T-Act-Recv *)
       is_val v →
       head_step (ERecv (Chan o)) (LSess (SRecv o v)) (Pair v (Chan o))
@@ -100,7 +96,6 @@ Inductive frame :=
   | FPairR (v1 : expr)
   | FLetU (e2 : expr)
   | FLetP (e2 : expr)
-  | FLet (e2 : expr)
   | FInj1
   | FInj2
   | FCase (e1 e2 : expr)
@@ -114,7 +109,6 @@ Definition fill_frame (f : frame) (e : expr) : expr :=
   | FPairR v1 => Pair v1 e
   | FLetU e2 => LetU e e2
   | FLetP e2 => LetP e e2
-  | FLet e2 => ELet e e2
   | FInj1 => Inj1 e
   | FInj2 => Inj2 e
   | FCase e1 e2 => Case e e1 e2
@@ -157,24 +151,24 @@ Qed.
 (** The subjects of a session label, as channels. *)
 Definition subjs (σ : slabel) : gset chan :=
   match σ with
-  | SSend o _ _ | SRecv o _ | SClose o | SSel o _ | SBra o _ => {[ech o]}
+  | SSend o _ | SRecv o _ | SClose o | SSel o _ | SBra o _ => {[ech o]}
   | SLink os => set_map ech os
   end.
 
-(** The channels an external send extrudes: those of its transfer set. *)
+(** The channels an external send extrudes: those of the ends of its value. *)
 Definition sentc (σ : slabel) : gset chan :=
-  match σ with SSend _ M _ => set_map ech M | _ => ∅ end.
+  match σ with SSend _ v => fchans v | _ => ∅ end.
 
 (** The channels a step can introduce into the thread. *)
 Definition lchans (α : tlabel) : gset chan :=
   match α with
   | LBeta => ∅
   | LSess (SRecv o w) => {[ech o]} ∪ fchans w
-  | LSess (SSend o _ _) | LSess (SClose o) | LSess (SSel o _) | LSess (SBra o _) => {[ech o]}
+  | LSess (SSend o _) | LSess (SClose o) | LSess (SSel o _) | LSess (SBra o _) => {[ech o]}
   | LSess (SLink os) => set_map ech os
   | LNew _ c => {[c]}
   | LNewAt _ o c => {[ech o; c]}
-  | LSpawn _ v => fchans v
+  | LSpawn v => fchans v
   end.
 
 (** ** Basic lemmas *)
@@ -221,21 +215,11 @@ Qed.
 (** Values carried by labels are values. *)
 Definition lval (α : tlabel) : Prop :=
   match α with
-  | LSess (SRecv _ v) | LSess (SSend _ _ v) | LSpawn _ v => is_val v
+  | LSess (SRecv _ v) | LSess (SSend _ v) | LSpawn v => is_val v
   | _ => True
   end.
 
 Lemma tstep_label_val e α e' : tstep e α e' → lval α.
-Proof. induction 1 as [e α e' Hh| ]; [by destruct Hh|done]. Qed.
-
-(** The transfer set of a label is the ends of its value. *)
-Definition ltransfer_ok (α : tlabel) : Prop :=
-  match α with
-  | LSess (SSend _ M v) | LSpawn M v => M = fends v
-  | _ => True
-  end.
-
-Lemma tstep_transfer e α e' : tstep e α e' → ltransfer_ok α.
 Proof. induction 1 as [e α e' Hh| ]; [by destruct Hh|done]. Qed.
 
 (** ** Footprint of a step *)
@@ -252,7 +236,7 @@ Qed.
 
 Lemma fchans_fill f e : fchans (fill_frame f e) =
   fchans e ∪ match f with
-             | FAppL e2 | FAppR e2 | FPairL e2 | FPairR e2 | FLetU e2 | FLetP e2 | FLet e2 => fchans e2
+             | FAppL e2 | FAppR e2 | FPairL e2 | FPairR e2 | FLetU e2 | FLetP e2 => fchans e2
              | FCase e1 e2 => fchans e1 ∪ fchans e2
              | _ => ∅
              end.

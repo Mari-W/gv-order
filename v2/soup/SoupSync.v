@@ -9,6 +9,7 @@
 
 From stdpp Require Import relations.
 From GV Require Export soup.SoupStep soup.SyncMaps.
+From GV Require Import compat.Redex.
 
 Section sync.
   Context (N n : nat) (W : world) (T : ty) (C : gset chan) (Mq : gmap nat expr) (K : own)
@@ -44,18 +45,21 @@ Section sync.
   Local Ltac pw := apply map_eq_some; intros o0 v0.
 
   (** P-Act-Msg. *)
-  Lemma step_msg i j e e' f f' o Mv w :
+  Lemma step_msg i j e e' f f' o w :
     i ≠ j → Mq !! i = Some e → Mq !! j = Some f →
-    tstep e (LSess (SSend o Mv w)) e' → tstep f (LSess (SRecv (edual o) w)) f' →
+    tstep e (LSess (SSend o w)) e' → tstep f (LSess (SRecv (edual o) w)) f' →
     ∃ A' Π', soup_inv N n W ∅ T
-      (lf_next N (LFState (C, Mq) K tk) (EvMsg i j o Mv) (C, <[j := f']> (<[i := e']> Mq))) A' Π' U.
+      (lf_next N (LFState (C, Mq) K tk) (EvMsg i j o w) (C, <[j := f']> (<[i := e']> Mq))) A' Π' U.
   Proof.
     intros Hij He Hf Hst Hst'.
     destruct (s_obl _ _ _ _ _ _ _ _ _ _ _ Hs i e _ e' He Hst) as [HEi HFi].
     destruct (s_obl _ _ _ _ _ _ _ _ _ _ _ Hs j f _ f' Hf Hst') as [HEj HFj].
     cbn [Eobl Fobl] in HEi, HFi, HEj, HFj. unfold o_send in HEi. unfold o_recv in HEj.
     unfold f_send in HFi. unfold f_recv in HFj.
-    destruct HEi as (S0 & x & m & U0 & b & S & ΘM & Θr & Ho & Hu & Hd & HΘ & HM & HV & HE').
+    destruct HEi as (S0 & x & m & U0 & b & S & ΘM & Θr & Ho & Hu & Hd & HΘ & HV & HE').
+    assert (HM : dom ΘM = fends w).
+    { destruct (decide (c_give live = 0)) as [Hc|Hc];
+        [exact (Vrel_exact _ _ _ _ _ _ (proj1 HV Hc))|exact (Vrel_exact _ _ _ _ _ _ (proj2 HV Hc))]. }
     destruct HEj as (S0' & x' & m' & U0' & b' & S' & Ho' & Hu' & HR).
     destruct HFi as (_ & P0 & m2 & T2 & b2 & P & HPo & HPu & HMφ & _ & HVf & HF').
     destruct HFj as (_ & P0' & m3 & T3 & b3 & P' & HPo' & HPu' & HRf).
@@ -69,32 +73,32 @@ Section sync.
     destruct (split_mres _ _ _ _ Hd HΘ HM) as [-> ->].
     pose proof (s_kpt _ _ _ _ _ _ _ _ Hs o S0 x HA) as Hkx. cbn [s_K] in Hkx.
     pose proof (s_kpt _ _ _ _ _ _ _ _ Hs (edual o) S0' (pt_dual x) HA') as Hkx'. cbn [s_K] in Hkx'.
-    assert (HMi : ∀ o1, o1 ∈ Mv → ∃ h, K !! o1 = Some h ∧ h.(h_th) = i ∧ o1 ≠ o).
+    assert (HMi : ∀ o1, o1 ∈ (fends w) → ∃ h, K !! o1 = Some h ∧ h.(h_th) = i ∧ o1 ≠ o).
     { intros o1 Ho1. rewrite <-HM, dom_mres, dom_delete_L in Ho1.
       apply elem_of_intersection in Ho1 as [Ho1 _]. apply elem_of_difference in Ho1 as [Ho1 Hne].
       apply elem_of_dom in Ho1 as [v1 Hv1]. destruct (owner_of i o1 v1 Hv1) as (h & ? & ?).
       exists h. set_solver. }
     assert (Hoo : o ≠ edual o) by (destruct o; discriminate).
-    assert (HoM : edual o ∉ Mv).
+    assert (HoM : edual o ∉ (fends w)).
     { intros Hin. destruct (HMi _ Hin) as (h & Hh & Ht & _). rewrite Khj in Hh. simplify_eq; congruence. }
     (* the receiver *)
-    assert (HVr : Vrel live n W (mres Mv (delete o (kres K i A))) (payload_at m U0' (pt_dual x)) w).
+    assert (HVr : Vrel live n W (mres (fends w) (delete o (kres K i A))) (payload_at m U0' (pt_dual x)) w).
     { rewrite payload_at_dual. apply (Vrel_teq live _ _ _ _ _ _ (payload_teq m U0 U0' x HU)).
       eapply at_cost_V_live; [|exact HV]. cbn; lia. }
-    assert (Hdisj : kres K j A ##ₘ mres Mv (delete o (kres K i A))).
+    assert (Hdisj : kres K j A ##ₘ mres (fends w) (delete o (kres K i A))).
     { apply map_disjoint_spec. intros o1 v1 v2 H1 H2. apply lookup_mres_Some in H2 as [H2 _].
       apply lookup_delete_Some in H2 as [_ H2].
       destruct (owner_of _ _ _ H1) as (h1 & Hh1 & Ht1). destruct (owner_of _ _ _ H2) as (h2 & Hh2 & Ht2).
       simplify_eq; congruence. }
     pose proof (HR n _ ltac:(cbn; lia) Hdisj HVr) as HEr.
-    assert (HVfr : Vfuel (Some N) n (RTy T3 b2) (mres Mv (kres K i Π)) (fhand Mv (ctrs K i)) w).
+    assert (HVfr : Vfuel (Some N) n (RTy T3 b2) (mres (fends w) (kres K i Π)) (fhand (fends w) (ctrs K i)) w).
     { apply (Vfuel_teq n (Some N) T2 T3); [by apply teq_sym|exact HVf]. }
-    assert (Hd1 : mres Mv (kres K i Π) ##ₘ <[edual o := P']> (kres K j Π)).
+    assert (Hd1 : mres (fends w) (kres K i Π) ##ₘ <[edual o := P']> (kres K j Π)).
     { apply map_disjoint_spec. intros o1 v1 v2 H1 H2. apply lookup_mres_Some in H1 as [H1 Hin].
       destruct (owner_ofΠ _ _ _ H1) as (h1 & Hh1 & Ht1).
       apply lookup_insert_Some in H2 as [[<- _]|[_ H2]]; [done|].
       destruct (owner_ofΠ _ _ _ H2) as (h2 & Hh2 & Ht2). simplify_eq; congruence. }
-    assert (Hd2 : fhand Mv (ctrs K i) ##ₘ refill (Some N) (edual o) (ctrs K j)).
+    assert (Hd2 : fhand (fends w) (ctrs K i) ##ₘ refill (Some N) (edual o) (ctrs K j)).
     { apply map_disjoint_spec. intros o1 v1 v2 H1 H2. unfold fhand, refill in *.
       apply lookup_fmap_Some in H1 as (f1 & _ & H1). apply lookup_mres_Some in H1 as [H1 Hin].
       apply lookup_ctrs in H1 as (h1 & Hh1 & Ht1 & _).
@@ -106,22 +110,22 @@ Section sync.
     unfold lf_next. cbn [tk_next s_K s_tk s_q].
     assert (Hoi : ∃ h, K !! o = Some h ∧ h.(h_th) = i) by eauto.
     assert (Hoj : ∃ h, K !! edual o = Some h ∧ h.(h_th) = j) by eauto.
-    pose proof (λ Y, @sync_kres_i N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) Mv Hij Hoi Hoj HMi Hoo Y) as Ki.
-    pose proof (λ Y, @sync_kres_i' N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) Mv Hij Hoi Hoj HMi Hoo Y) as Ki'.
-    pose proof (λ Y, @sync_kres_j N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) Mv Hij Hoi Hoj HMi Hoo Y) as Kj.
-    pose proof (λ Y, @sync_kres_j' N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) Mv Hij Hoi Hoj HMi Hoo Y) as Kj'.
-    pose proof (λ Y, @sync_kres_other N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) Mv Hij Hoi Hoj HMi Hoo Y) as Kt.
-    pose proof (sync_ctrs_i N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) Mv Hij Hoi Hoj HMi Hoo) as Ci.
-    pose proof (sync_ctrs_j N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) Mv Hij Hoi Hoj HMi Hoo) as Cj.
-    pose proof (sync_ctrs_other N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) Mv Hij Hoi Hoj HMi Hoo) as Ct.
+    pose proof (λ Y, @sync_kres_i N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) (fends w) Hij Hoi Hoj HMi Hoo Y) as Ki.
+    pose proof (λ Y, @sync_kres_i' N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) (fends w) Hij Hoi Hoj HMi Hoo Y) as Ki'.
+    pose proof (λ Y, @sync_kres_j N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) (fends w) Hij Hoi Hoj HMi Hoo Y) as Kj.
+    pose proof (λ Y, @sync_kres_j' N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) (fends w) Hij Hoi Hoj HMi Hoo Y) as Kj'.
+    pose proof (λ Y, @sync_kres_other N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) (fends w) Hij Hoi Hoj HMi Hoo Y) as Kt.
+    pose proof (sync_ctrs_i N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) (fends w) Hij Hoi Hoj HMi Hoo) as Ci.
+    pose proof (sync_ctrs_j N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) (fends w) Hij Hoi Hoj HMi Hoo) as Cj.
+    pose proof (sync_ctrs_other N K i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) (fends w) Hij Hoi Hoj HMi Hoo) as Ct.
     cbn [own_next]. rewrite Hkx, Hkx'.
-    assert (HK' : ∀ o0, ksync N i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) Mv K !! o0 =
+    assert (HK' : ∀ o0, ksync N i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) (fends w) K !! o0 =
       if decide (o0 = o) then Some (Hold i (pt_shift 1 x) (Some N))
       else if decide (o0 = edual o) then Some (Hold j (pt_shift 1 (pt_dual x)) (Some N))
-      else (λ h, if decide (o0 ∈ Mv) then Hold j h.(h_pt) (ftick h.(h_ctr))
+      else (λ h, if decide (o0 ∈ (fends w)) then Hold j h.(h_pt) (ftick h.(h_ctr))
                  else if decide (h.(h_th) = i ∨ h.(h_th) = j) then htick h else h) <$> K !! o0).
     { intros o0. by rewrite lookup_ksync. }
-    assert (HdK : dom (ksync N i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) Mv K) = dom K).
+    assert (HdK : dom (ksync N i j o (pt_shift 1 x) (pt_shift 1 (pt_dual x)) (fends w) K) = dom K).
     { apply set_eq. intros o0. rewrite !elem_of_dom, HK'.
       destruct (decide (o0 = o)) as [->|]; [split; intros _; [by eexists|done]|].
       destruct (decide (o0 = edual o)) as [->|]; [split; intros _; [by eexists|done]|].

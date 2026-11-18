@@ -103,7 +103,6 @@ Inductive expr :=
   | LetU (e1 e2 : expr)            (* let ∗ = e1 in e2 *)
   | LetP (e1 e2 : expr)            (* let ⟨a,b⟩ = e1 in e2, binds 2 in e2:
                                       index 1 = a, index 0 = b *)
-  | ELet (e1 e2 : expr)            (* let a = e1 in e2, binds 1 in e2 *)
   | Inj1 (e : expr)
   | Inj2 (e : expr)
   | Case (e e1 e2 : expr)          (* case e (a.e1) (a.e2), each branch
@@ -160,7 +159,6 @@ Proof.
     | Pair e1 e2 => GenNode 3 [go e1; go e2]
     | LetU e1 e2 => GenNode 4 [go e1; go e2]
     | LetP e1 e2 => GenNode 5 [go e1; go e2]
-    | ELet e1 e2 => GenNode 12 [go e1; go e2]
     | Inj1 e => GenNode 6 [go e]
     | Inj2 e => GenNode 7 [go e]
     | Case e e1 e2 => GenNode 8 [go e; go e1; go e2]
@@ -178,7 +176,6 @@ Proof.
     | GenNode 3 [t1; t2] => Pair (go t1) (go t2)
     | GenNode 4 [t1; t2] => LetU (go t1) (go t2)
     | GenNode 5 [t1; t2] => LetP (go t1) (go t2)
-    | GenNode 12 [t1; t2] => ELet (go t1) (go t2)
     | GenNode 6 [t] => Inj1 (go t)
     | GenNode 7 [t] => Inj2 (go t)
     | GenNode 8 [t; t1; t2] => Case (go t) (go t1) (go t2)
@@ -208,7 +205,6 @@ Fixpoint rename (r : nat → nat) (e : expr) : expr :=
   | Pair e1 e2 => Pair (rename r e1) (rename r e2)
   | LetU e1 e2 => LetU (rename r e1) (rename r e2)
   | LetP e1 e2 => LetP (rename r e1) (rename (upren (upren r)) e2)
-  | ELet e1 e2 => ELet (rename r e1) (rename (upren r) e2)
   | Inj1 e => Inj1 (rename r e)
   | Inj2 e => Inj2 (rename r e)
   | Case e e1 e2 =>
@@ -228,7 +224,6 @@ Fixpoint subst (σ : nat → expr) (e : expr) : expr :=
   | Pair e1 e2 => Pair (subst σ e1) (subst σ e2)
   | LetU e1 e2 => LetU (subst σ e1) (subst σ e2)
   | LetP e1 e2 => LetP (subst σ e1) (subst (up (up σ)) e2)
-  | ELet e1 e2 => ELet (subst σ e1) (subst (up σ) e2)
   | Inj1 e => Inj1 (subst σ e)
   | Inj2 e => Inj2 (subst σ e)
   | Case e e1 e2 => Case (subst σ e) (subst (up σ) e1) (subst (up σ) e2)
@@ -240,6 +235,15 @@ Fixpoint subst (σ : nat → expr) (e : expr) : expr :=
     [subst2 u v e] instantiates the two binders of LetP, e[u/a][v/b]. *)
 Definition subst1 (v : expr) (e : expr) : expr := subst (v .: Var) e.
 Definition subst2 (u v : expr) (e : expr) : expr := subst (v .: u .: Var) e.
+
+(** ** let as a derived form
+
+    let x = e1 in e2 := let ⟨x, u⟩ = ⟨e1, ∗⟩ in let ∗ = u in e2. The
+    pair binds x at index 1 and u at index 0, so e2 moves up by one
+    ([rename S]). The encoding takes two β steps where a primitive let
+    takes one. *)
+Definition ELet (e1 e2 : expr) : expr := LetP (Pair e1 EUnit) (LetU (Var 0) (rename S e2)).
+Global Arguments ELet : simpl never.
 
 (** ** The constants of GV as derived λ-values (§3.2) *)
 
@@ -263,7 +267,6 @@ Fixpoint closed_at (n : nat) (e : expr) : bool :=
   | Lam e => closed_at (S n) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => closed_at n e1 && closed_at n e2
   | LetP e1 e2 => closed_at n e1 && closed_at (S (S n)) e2
-  | ELet e1 e2 => closed_at n e1 && closed_at (S n) e2
   | Inj1 e | Inj2 e | Op _ e => closed_at n e
   | Case e e1 e2 => closed_at n e && closed_at (S n) e1 && closed_at (S n) e2
   | EBox e => closed_at (S n) e
@@ -275,7 +278,7 @@ Fixpoint fends (e : expr) : gset cend :=
   | Var _ | EUnit | ENew _ => ∅
   | Chan o => {[o]}
   | Lam e | Inj1 e | Inj2 e | EBox e | Op _ e => fends e
-  | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 | ELet e1 e2 => fends e1 ∪ fends e2
+  | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => fends e1 ∪ fends e2
   | Case e e1 e2 => fends e ∪ fends e1 ∪ fends e2
   end.
 
@@ -374,7 +377,6 @@ Fixpoint allfv (P : nat → Prop) (e : expr) : Prop :=
   | Lam e => allfv (upP P) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => allfv P e1 ∧ allfv P e2
   | LetP e1 e2 => allfv P e1 ∧ allfv (upP (upP P)) e2
-  | ELet e1 e2 => allfv P e1 ∧ allfv (upP P) e2
   | Inj1 e | Inj2 e | Op _ e => allfv P e
   | Case e e1 e2 => allfv P e ∧ allfv (upP P) e1 ∧ allfv (upP P) e2
   | EBox e => allfv (upP P) e
@@ -406,7 +408,6 @@ Fixpoint freevar (x : nat) (e : expr) : Prop :=
   | Lam e => freevar (S x) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => freevar x e1 ∨ freevar x e2
   | LetP e1 e2 => freevar x e1 ∨ freevar (S (S x)) e2
-  | ELet e1 e2 => freevar x e1 ∨ freevar (S x) e2
   | Inj1 e | Inj2 e | Op _ e => freevar x e
   | Case e e1 e2 => freevar x e ∨ freevar (S x) e1 ∨ freevar (S x) e2
   | EBox e => freevar (S x) e
@@ -519,7 +520,6 @@ Fixpoint emap (g : cend → cend) (e : expr) : expr :=
   | Pair e1 e2 => Pair (emap g e1) (emap g e2)
   | LetU e1 e2 => LetU (emap g e1) (emap g e2)
   | LetP e1 e2 => LetP (emap g e1) (emap g e2)
-  | ELet e1 e2 => ELet (emap g e1) (emap g e2)
   | Inj1 e => Inj1 (emap g e)
   | Inj2 e => Inj2 (emap g e)
   | Case e e1 e2 => Case (emap g e) (emap g e1) (emap g e2)

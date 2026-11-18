@@ -27,7 +27,7 @@ and run `make` again. The root build of theories/ ignores v2.
 | test/Lexer.v | every judgment and token of Appendix A, parsed and printed over dummy carriers |
 | lang/Syntax.v | ends `c⁺` `c⁻`, terms with saturated operators `Op k e` and `ENew ℓ`, the constants of GV as λ-values, substitution, the one renaming `emap` with `cmap` and the link substitution `csub` |
 | lang/Notations.v | `c⁺`, `c⁻`, `o‾` (test/LangNotations.v checks them) |
-| lang/Semantics.v | thread steps, the T-Act rules `t_act_*` and the frame rule `t_act_ctx`, labels with transfer sets |
+| lang/Semantics.v | thread steps, the T-Act rules `t_act_*` and the frame rule `t_act_ctx`, labels carry the moved value (no transfer sets) |
 | lang/Process.v | the one instrumented semantics `istep` (thread ids, events, rules `p_act_*`), its erasure `pstep`, the multiset view `pspec` |
 | lang/Safety.v | `act`, `act_offer_sig` once, progress for terms and configurations, closedness preserved |
 | lang/Harmony.v | a label-free reduction semantics and `harmony` |
@@ -43,7 +43,7 @@ and run `make` again. The root build of theories/ ignores v2.
 | File | Content |
 |---|---|
 | types/Points.v | roots (constants, generated roots `NGen ℓ g`, variables), points with the shift `x⁺`, the field `x·κ` and the dual `x‾`, instantiation, renaming of generated roots, facts, box constraints |
-| types/Worlds.v | worlds `(A, ≺_A, L, Λ)`, the order `W ⊢ x ≺ y`, `world_wf`, `strict`, `lfworld`, `⊑`, the join `⊔`, `wrestrict`, R7 `strict_join_iff`, renaming families apart |
+| types/Worlds.v | worlds `(A, ≺_A, L, Λ)`, the order `W ⊢ x ≺ y`, `world_wf`, `strict`, `wfworld`, `strict_wfworld`, `⊑`, the join `⊔`, `wrestrict`, R7 `strict_join_iff`, renaming families apart |
 | types/Costs.v | credits and costs in ℕ ∪ {∞}, ticket transformers with offsets in ℕ ∪ {∞} |
 | types/Types.v | context-free session types and types with credits, costs, transformers and floors, duality, unfolding, ≈, the annotations of N = ∞ (`ty_df`) |
 | types/Erasure.v | `ty_df` commutes with the type operations and preserves ≈ |
@@ -107,7 +107,7 @@ reads no point, no world and no relation. Every step costs one level.
 | compat/SemTyped.v | groundings `Grel`, the judgment at a set of points `sem_typed_at`, static futures `sf_den`, `Θ ; Δ ⊨^F _ W t : T` and `Θ ; Δ ⊫^F _ W t : T` (`sem_typed κ`) |
 | compat/Redex.v | exact ends and heads of values (`Vrel_exact`, `Vrel_heads`), the β redexes and the redex of every operator (`Erel_send` … `Erel_force`, `Erel_new`) |
 | compat/Rules.v | the operator rules over every cost table (`gen_e_*`) and their instances `sem_e_*`, `live_e_*` |
-| compat/LiveDF.v | `live_sub_df`: ∅ ⊫_W p : T ⟹ ∅ ⊨_W p : T at a first-order T |
+| compat/LiveDF.v | `live_sub_df`: ∅ ⊫_W p : T ⟹ ∅ ⊨_W p : T at a prim, box-free T |
 | compat/Swap.v | the transposition of channel names on environments (`sswap`) and readiness |
 | compat/Rename.v | decision Q16: V and E under every map of ends injective on the held ends (`Vrel_rename`, `Erel_rename`), P by projection of its clause (fuse) (`Prel_fuse`), a composite of fusions is a fusion (`fuse_ok_compose`), renaming (`Prel_rename`, D = ∅) and Internalize (`Prel_internalize`, h = id) as instances, the transpositions as instances (`Vrel_swap`, `Erel_swap`), the link substitution as a renaming of the other component (`pren_ok_csub`) |
 | compat/PSwap.v | the transposition on configurations with thread ids and on events (`istep_qswap`), the external clauses along it, P is invariant (`Prel_swap`, an instance of `Prel_rename`) |
@@ -201,22 +201,23 @@ the rank and the tickets and the partner's counter as the measure.
 soup through `fsem_of_cost` and `live_fundamental_typed`. Two soups over
 the cut of P-Connect give a soup of the composite at W1 ⊔ W2 and the
 larger refill: their union, then the restriction of the cut channels.
-The judgment `Σ ⊩^N _ W p : T` has the rules of `⊢_W` with static
-premises only. P-Term types the thread at Some N and asks `guarded t`
-and `meets ϑ 0 tk`. `lf_fundamental` and `lf_soundness` follow by
-induction on it.
+The judgment `Σ ⊩^N _ W p : T` is the notation for `ptyped (Some N) W
+Σ p T ∧ ⊢▷ p`: process typing at Some N, whose P-Term asks a ticket
+count meeting the transformer at 0 when N is finite, and the guard of
+every thread. `lf_fundamental` and `lf_soundness` follow by induction
+on `ptyped`.
 
 | File | Content |
 |---|---|
 | soup/SoupCompose.v | `soup_par`, `soup_nu`, `soup_connect`, `soup_term` |
-| soup/LFCompose.v | `soup_lift`, `lf_soup_connect`, `lf_p_connect`, `lf_p_join`, `lf_soup_term`, `typed_live`, `lf_p_term`, `lf_soundness_source` |
-| soup/LFTyped.v | `lfptyped`, `Σ ⊩^N _ W p : T` with `p_term`, `p_connect`, `p_join`, `lf_fundamental`, `lf_soundness` |
-| examples/LFClose.v | `lfworld_bare`, two threads closing one channel typed by P-Connect, `cl_lock_free` |
-| examples/LFTools.v | `lfworld_measure`, `lfworld_lex3`, `lf_main`, boxes of one arrow at a finite N (`lbox`, `lbox_typed`, `lbox_force`), the rules over Θ = ∅ in derivation order |
+| soup/LFCompose.v | `soup_lift`, `lf_soup_connect`, `lf_p_connect`, `lf_soup_term`, `typed_live`, `lf_p_term`, `lf_soundness_source` |
+| soup/LFTyped.v | the notation `Σ ⊩^N _ W p : T`, `lf_fundamental`, `lf_soundness` |
+| examples/LFClose.v | `wfworld_bare`, two threads closing one channel typed by P-Connect, `cl_lock_free` |
+| examples/LFTools.v | `wfworld_measure`, `wfworld_lex3`, `lf_main`, boxes of one arrow at a finite N (`lbox`, `lbox_typed`, `lbox_force`), the rules over Θ = ∅ in derivation order |
 | examples/LFCycle.v | cycle at N = 2, `cy_lock_free` |
 | examples/LFFreshBetween.v | between at N = 2, `fb_lock_free` |
 | examples/LFFreshMany.v | many at N = 4, `fm_lock_free` |
 | examples/LFClientServer.v | the client and server loops at N = 3, `cs_lock_free` |
 | examples/LFFactoryEx.v | the factory at N = 2, `fx_lock_free` |
 | examples/LFGrowRing.v | the growing ring at N = 4 with payload credit 2 (`Schl`), `W_rg_wf`, `rg_lock_free` |
-| examples/LFController.v | the controller at N = 3, its idle end k at credit 0, `W_ctl_lfworld`, `ctl_lock_free`, and `idle_age_cex`, the kept-credit form of `age_idle` against F5 |
+| examples/LFController.v | the controller at N = 3, its idle end k at credit 0, `W_ctl_wfworld`, `ctl_lock_free`, and `idle_age_cex`, the kept-credit form of `age_idle` against F5 |

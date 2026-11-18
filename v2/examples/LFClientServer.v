@@ -18,9 +18,9 @@ Proof.
   destruct b; destruct Hk as [E|[E|[E|E]]]; injection E as -> ->; done.
 Qed.
 
-Lemma W_cs_lfworld : lfworld W_cs.
+Lemma W_cs_wfworld : wfworld W_cs.
 Proof.
-  apply (lfworld_lex3 W_cs (λ x, (pt_fsum x, pt_off x, pt_depth x))); [apply W_cs_wf|intros f []| |].
+  apply (wfworld_lex3 W_cs (λ x, (pt_fsum x, pt_off x, pt_depth x))); [intros f []| |].
   - intros x. unfold pt_fsum, pt_depth. simpl. lia.
   - intros ℓ g x y _ (k & b & Hk).
     destruct b; destruct Hk as [E|[E|[E|E]]]; injection E as -> ->; unfold pt_fsum, pt_depth; simpl; lia.
@@ -237,5 +237,5 @@ Qed.
 Theorem cs_lock_free : lock_free (∅, {[+ cs_main +]}).
 Proof.
   destruct csl_typedN as (c & ϑ & Ht & Hm).
-  eapply lf_main; [apply W_cs_lfworld|constructor|exact Ht|apply cs_guarded|exact Hm].
+  eapply lf_main; [apply (strict_wfworld _ W_cs_wf W_cs_wfworld)|apply W_cs_wfworld|constructor|exact Ht|apply cs_guarded|exact Hm].
 Qed.

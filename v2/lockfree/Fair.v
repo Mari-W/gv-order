@@ -34,7 +34,7 @@ Definition amap (g : cend → cend) (a : action) : action :=
 
 Lemma act_op_emap g k v : act_op k (emap g v) = amap g <$> act_op k v.
 Proof.
-  destruct k, v as [| | | | |v1 v2| | | | | | | | |]; simpl; try done.
+  destruct k, v as [| | | | |v1 v2| | | | | | | |]; simpl; try done.
   all: destruct v1, v2; done.
 Qed.
 
@@ -45,7 +45,6 @@ Proof.
   - by destruct (is_val e1).
   - destruct (is_val e1); [|done]. by destruct e1.
   - destruct (is_val e1); [|done]. by destruct e1.
-  - by destruct (is_val e1).
   - destruct (is_val e1); [|done]. by destruct e1.
   - destruct (is_val e); [|done]. apply act_op_emap.
 Qed.
@@ -133,7 +132,7 @@ Proof.
     destruct (act_offer e (ANewAt κ o) (LNewAt κ o c) Ha (conj eq_refl eq_refl)) as [e' Hs].
     eexists _, _.
     split; [split; [eapply p_act_new_at; [done|done|set_solver|set_solver]|done]|set_solver].
-  - destruct (act_offer e (ASpawn v) (LSpawn (fends v) v) Ha (conj eq_refl eq_refl)) as [e' Hs].
+  - destruct (act_offer e (ASpawn v) (LSpawn v) Ha eq_refl) as [e' Hs].
     set (j := fresh (dom M)).
     assert (M !! j = None) as Hj by (apply not_elem_of_dom, is_fresh).
     eexists _, _. split; [split; [by eapply p_act_spawn|done]|set_solver].

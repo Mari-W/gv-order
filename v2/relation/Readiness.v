@@ -72,7 +72,7 @@ Proof. intros HW H x y Hxy. eapply w_lt_mono; [done|]. by apply H. Qed.
 (** The ends a session label acts on. *)
 Definition sends (σ : slabel) : gset cend :=
   match σ with
-  | SSend o _ _ | SRecv o _ | SClose o | SSel o _ | SBra o _ => {[o]}
+  | SSend o _ | SRecv o _ | SClose o | SSel o _ | SBra o _ => {[o]}
   | SLink os => os
   end.
 

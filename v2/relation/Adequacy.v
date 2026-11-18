@@ -66,8 +66,8 @@ Section adequacy.
       destruct Hπ as (q & ev & q' & Hq & Hi & Hq' & Hl).
       destruct ev as [| | | | | | | |i σ']; simpl in Hl; try discriminate. injection Hl as ->.
       destruct Hst as (_ & H2 & H3 & H4 & H5 & H6 & H7).
-      destruct σ as [o M w|o w|o|o b|o b|os].
-      + destruct (H2 q i o M w q' Hq Hi) as (? & ? & ? & ? & ? & ? & ? & ? & ? & ? & A & _).
+      destruct σ as [o w|o w|o|o b|o b|os].
+      + destruct (H2 q i o w q' Hq Hi) as (? & ? & ? & ? & ? & ? & ? & ? & ? & ? & A & _).
         by rewrite lookup_empty in A.
       + destruct (H3 q i o w q' Hq Hi) as (? & ? & ? & ? & ? & ? & A & _).
         by rewrite lookup_empty in A.
@@ -139,7 +139,7 @@ Proof.
   - intros Hirr. exfalso. apply Hirr. intros π p' (q & ev & q' & Hq & Hst & _).
     by eapply no_istep_done.
   - intros q ev q' Hq Hst. exfalso. by eapply no_istep_done.
-  - intros q i o M w q' Hq Hst. exfalso. by eapply no_istep_done.
+  - intros q i o w q' Hq Hst. exfalso. by eapply no_istep_done.
   - intros q i o w q' Hq Hst. exfalso. by eapply no_istep_done.
   - intros q i o q' Hq Hst. exfalso. by eapply no_istep_done.
   - intros q i o b q' Hq Hst. exfalso. by eapply no_istep_done.

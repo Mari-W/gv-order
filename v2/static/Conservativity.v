@@ -257,9 +257,6 @@ Proof.
   - eapply e_letp; [by apply tsplit_df|by apply lenv_split_df| |apply thage_df|apply lage_df| |apply tok_inf].
     + heads_df. exact IHdftyped1.
     + rewrite !fadd_0_l. exact IHdftyped2.
-  - eapply e_let; [by apply tsplit_df|by apply lenv_split_df| |apply thage_df|apply lage_df|exact IHdftyped2
-                  |apply tok_inf].
-    heads_df. exact IHdftyped1.
   - by eapply e_inj1.
   - by eapply e_inj2.
   - eapply e_case; [by apply tsplit_df|by apply lenv_split_df| |apply thage_df|apply lage_df| | |apply tok_inf].
@@ -282,8 +279,8 @@ Proof.
     eapply e_recv; [by rewrite unfoldS_df, H|by apply pscoped_df|done|exact IHdftyped].
   - eapply e_close; [by rewrite unfoldS_df, H|done|exact IHdftyped].
   - assert (sty_df (if i then S2 else S1) = if i then sty_df S2 else sty_df S1) as -> by (by destruct i).
-    eapply e_select; [by rewrite unfoldS_df, H| |done|exact IHdftyped]. done.
-  - eapply e_branch; [by rewrite unfoldS_df, H|done|done|done|exact IHdftyped].
+    eapply e_select; [by rewrite unfoldS_df, H|done|exact IHdftyped].
+  - eapply e_branch; [by rewrite unfoldS_df, H|done|exact IHdftyped].
   - assert (typed W None (tenv_df Θ) Γ (lenv_df Δ) F e
               (TProd (TSess (sty_df S) x) None (TSess (dual (sty_df S)) x‾) None) (Some 0) None tinf) as I
       by (rewrite <-sty_df_dual; exact IHdftyped).
@@ -385,9 +382,6 @@ Proof.
   - df_ctx.
     eapply d_letp; [by apply tsplit_df|by apply lenv_split_df| |exact IHtyped2].
     heads_df. exact IHtyped1.
-  - df_ctx.
-    eapply d_let; [by apply tsplit_df|by apply lenv_split_df| |exact IHtyped2].
-    heads_df. exact IHtyped1.
   - by eapply d_inj1.
   - by eapply d_inj2.
   - df_ctx.
@@ -405,8 +399,8 @@ Proof.
   - rewrite <-payload_at_df.
     eapply d_recv with (T := ty_df T); [by rewrite unfoldS_df, H|by apply pscoped_df|done|exact IHtyped].
   - eapply d_close; [by rewrite unfoldS_df, H|done|exact IHtyped].
-  - rewrite ty_df_if. eapply d_select; [by rewrite unfoldS_df, H|done|done|exact IHtyped].
-  - eapply d_branch; [by rewrite unfoldS_df, H|done|done|done|exact IHtyped].
+  - rewrite ty_df_if. eapply d_select; [by rewrite unfoldS_df, H|done|exact IHtyped].
+  - eapply d_branch; [by rewrite unfoldS_df, H|done|exact IHtyped].
   - assert (dftyped W (tenv_df Θ) Γ (lenv_df Δ) F e
               (TProd (TSess (sty_df S) x) None (TSess (dual (sty_df S)) x‾) None)) as I
       by (rewrite <-sty_df_dual; exact IHtyped).

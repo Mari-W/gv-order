@@ -5,7 +5,7 @@
     (static/Conservativity.v). Programs create every channel with
     [new_ℓ] or [new_κ], so Θ is empty throughout. *)
 
-From GV Require Export static.Conservativity.
+From GV Require Export static.Conservativity static.Weakening.
 
 (** let (a, b) = new_ℓ in e, the ∃ of new bound at index 2 and opened. *)
 Definition let_new (ℓ : family) (e : expr) : expr := ELet (ENew ℓ) (LetP (Var 0) e).
@@ -21,7 +21,6 @@ Fixpoint occ (i : nat) (e : expr) : bool :=
   | Lam e | EBox e => occ (S i) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => occ i e1 || occ i e2
   | LetP e1 e2 => occ i e1 || occ (S (S i)) e2
-  | ELet e1 e2 => occ i e1 || occ (S i) e2
   | Inj1 e | Inj2 e | Op _ e => occ i e
   | Case e e1 e2 => occ i e || occ (S i) e1 || occ (S i) e2
   end.

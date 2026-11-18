@@ -15,9 +15,9 @@ Proof.
   destruct Hf as [->|[->|[->|[->| ->]]]]; simpl in E; injection E as -> ->; done.
 Qed.
 
-Lemma W_fb_lfworld : lfworld W_fb.
+Lemma W_fb_wfworld : wfworld W_fb.
 Proof.
-  apply (lfworld_lex3 W_fb (λ x, (pt_fsum x, pt_off x, pt_depth x))); [apply W_fb_wf|intros f []| |].
+  apply (wfworld_lex3 W_fb (λ x, (pt_fsum x, pt_off x, pt_depth x))); [intros f []| |].
   - intros x. unfold pt_fsum, pt_depth. simpl. lia.
   - intros ℓ g x y _ (f & Hf & E).
     destruct Hf as [->|[->|[->|[->| ->]]]]; simpl in E; injection E as -> ->; unfold pt_fsum, pt_depth; simpl; lia.
@@ -154,5 +154,5 @@ Qed.
 Theorem fb_lock_free : lock_free (∅, {[+ fb_main +]}).
 Proof.
   destruct fbl_typedN as (c & ϑ & Ht & Hm).
-  eapply lf_main; [apply W_fb_lfworld|constructor|exact Ht|apply fb_guarded|exact Hm].
+  eapply lf_main; [apply (strict_wfworld _ W_fb_wf W_fb_wfworld)|apply W_fb_wfworld|constructor|exact Ht|apply fb_guarded|exact Hm].
 Qed.

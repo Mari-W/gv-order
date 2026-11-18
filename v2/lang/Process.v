@@ -3,8 +3,8 @@
     A configuration is a set C of restricted channels and a finite map
     from thread identifiers to terms. A step [istep q ev q'] carries an
     event ev that names the threads taking part and what happened: the
-    family or the field and anchor of a creation, the transfer set of a
-    spawn and of a message, the ends of a close, a choice and a link, and
+    family or the field and anchor of a creation, the value of a spawn
+    and of a message, the ends of a close, a choice and a link, and
     the session label of an external offer. The rules are named after
     the paper's P-Act rules.
 
@@ -113,8 +113,8 @@ Inductive event :=
   | EvBeta (i : nat)                                (* P-Act-Beta *)
   | EvNew (i : nat) (ℓ : family) (c : chan)         (* P-Act-New *)
   | EvNewAt (i : nat) (κ : field) (o : cend) (c : chan)  (* P-Act-NewAt *)
-  | EvSpawn (i j : nat) (M : gset cend)             (* P-Act-Spawn: i spawns j, moving M *)
-  | EvMsg (i j : nat) (o : cend) (M : gset cend)    (* P-Act-Msg: i sends on o to j, moving M *)
+  | EvSpawn (i j : nat) (v : expr)                  (* P-Act-Spawn: i spawns the thunk v as j *)
+  | EvMsg (i j : nat) (o : cend) (v : expr)         (* P-Act-Msg: i sends v on o to j *)
   | EvClose (i j : nat) (o : cend)                  (* P-Act-Close: i closes o, j closes o‾ *)
   | EvChoice (i j : nat) (o : cend) (b : bool)      (* P-Act-Choice: i selects b on o *)
   | EvLink (i : nat) (o1 o2 : cend)                 (* P-Act-Link: the channel of o1 goes *)
@@ -167,14 +167,14 @@ Inductive istep : config → event → config → Prop :=
       M !! i = Some e → tstep e (LNewAt κ o c) e' →
       c ∉ C → c ∉ echans (soup M) →
       istep (C, M) (EvNewAt i κ o c) (C ∪ {[c]}, <[i := e']> M)
-  | p_act_spawn C M i j e Mv v e' :                    (* P-Act-Spawn *)
-      M !! i = Some e → tstep e (LSpawn Mv v) e' → M !! j = None →
-      istep (C, M) (EvSpawn i j Mv) (C, <[j := App v EUnit]> (<[i := e']> M))
-  | p_act_msg C M i j o Mv v e e' f f' :               (* P-Act-Msg *)
+  | p_act_spawn C M i j e v e' :                    (* P-Act-Spawn *)
+      M !! i = Some e → tstep e (LSpawn v) e' → M !! j = None →
+      istep (C, M) (EvSpawn i j v) (C, <[j := App v EUnit]> (<[i := e']> M))
+  | p_act_msg C M i j o v e e' f f' :               (* P-Act-Msg *)
       (* a send on o meets a receive on o‾; the channel may be free *)
       i ≠ j → M !! i = Some e → M !! j = Some f →
-      tstep e (LSess (SSend o Mv v)) e' → tstep f (LSess (SRecv o‾ v)) f' →
-      istep (C, M) (EvMsg i j o Mv) (C, <[j := f']> (<[i := e']> M))
+      tstep e (LSess (SSend o v)) e' → tstep f (LSess (SRecv o‾ v)) f' →
+      istep (C, M) (EvMsg i j o v) (C, <[j := f']> (<[i := e']> M))
   | p_act_close C M i j o e e' f f' :                  (* P-Act-Close *)
       i ≠ j → M !! i = Some e → M !! j = Some f →
       tstep e (LSess (SClose o)) e' → tstep f (LSess (SClose o‾)) f' → ech o ∈ C →
@@ -191,7 +191,7 @@ Inductive istep : config → event → config → Prop :=
       M !! i = Some e → tstep e (LSess (SLink {[o1; o2]})) e' → ech o1 ∈ C →
       istep (C, M) (EvLink i o1 o2) (C ∖ {[ech o1]}, emap (csub o1 o2) <$> (<[i := e']> M))
   | p_act_session C M i e σ e' :                       (* P-Act-Session *)
-      (* an offer on free channels; a send extrudes its transfer set *)
+      (* an offer on free channels; a send extrudes the ends of its value *)
       M !! i = Some e → tstep e (LSess σ) e' → subjs σ ## C →
       istep (C, M) (EvSess i σ) (C ∖ sentc σ, <[i := e']> M).
 
@@ -226,11 +226,11 @@ Inductive pspec : proc → plabel → proc → Prop :=
   | ps_new_at C E e κ o c e' :
       tstep e (LNewAt κ o c) e' → c ∉ C → c ∉ echans E → c ∉ fchans e →
       pspec (C, E ⊎ {[+ e +]}) PTau (C ∪ {[c]}, E ⊎ {[+ e' +]})
-  | ps_spawn C E e Mv v e' :
-      tstep e (LSpawn Mv v) e' →
+  | ps_spawn C E e v e' :
+      tstep e (LSpawn v) e' →
       pspec (C, E ⊎ {[+ e +]}) PTau (C, E ⊎ {[+ e' +]} ⊎ {[+ App v EUnit +]})
-  | ps_msg C E o Mv v e e' f f' :
-      tstep e (LSess (SSend o Mv v)) e' → tstep f (LSess (SRecv o‾ v)) f' →
+  | ps_msg C E o v e e' f f' :
+      tstep e (LSess (SSend o v)) e' → tstep f (LSess (SRecv o‾ v)) f' →
       pspec (C, E ⊎ {[+ e +]} ⊎ {[+ f +]}) PTau (C, E ⊎ {[+ e' +]} ⊎ {[+ f' +]})
   | ps_close C E o e e' f f' :
       tstep e (LSess (SClose o)) e' → tstep f (LSess (SClose o‾)) f' → ech o ∈ C →
@@ -246,8 +246,8 @@ Inductive pspec : proc → plabel → proc → Prop :=
 Theorem istep_pspec q ev q' : istep q ev q' → pspec (erase q) (ev_plabel ev) (erase q').
 Proof.
   destruct 1 as [C M i e e' Hi Hst|C M i e ℓ c e' Hi Hst HC Hc|C M i e κ o c e' Hi Hst HC Hc
-    |C M i j e Mv v e' Hi Hst Hj
-    |C M i j o Mv v e e' f f' Hij Hi Hj He Hf|C M i j o e e' f f' Hij Hi Hj He Hf HC
+    |C M i j e v e' Hi Hst Hj
+    |C M i j o v e e' f f' Hij Hi Hj He Hf|C M i j o e e' f f' Hij Hi Hj He Hf HC
     |C M i j o b e e' f f' Hij Hi Hj He Hf|C M i e o1 o2 e' Hi Hst HC
     |C M i e σ e' Hi Hst HC]; unfold erase; simpl.
   - rewrite (soup_delete M i e Hi), (soup_update M i e e' Hi). by apply ps_beta.
@@ -275,8 +275,8 @@ Proof.
   destruct q as [C M]. unfold erase; simpl. intros H.
   remember (C, soup M) as p0 eqn:Hp0.
   destruct H as [C0 E e σ e' Hst HC|C0 E e e' Hst|C0 E e ℓ c e' Hst HC HcE Hce
-    |C0 E e κ o c e' Hst HC HcE Hce|C0 E e Mv v e' Hst
-    |C0 E o Mv v e e' f f' He Hf|C0 E o e e' f f' He Hf HC
+    |C0 E e κ o c e' Hst HC HcE Hce|C0 E e v e' Hst
+    |C0 E o v e e' f f' He Hf|C0 E o e e' f f' He Hf HC
     |C0 E o b e e' f f' He Hf|C0 E e o1 o2 e' Hst HC];
     injection Hp0 as <- HE; symmetry in HE.
   - destruct (soup_extract M E e HE) as (i & Hi & HEi).

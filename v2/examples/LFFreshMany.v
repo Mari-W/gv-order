@@ -15,9 +15,9 @@ Proof.
   destruct Hf as [->|[->|[->|(k & [->| ->])]]]; simpl in E; injection E as -> ->; done.
 Qed.
 
-Lemma W_fm_lfworld : lfworld W_fm.
+Lemma W_fm_wfworld : wfworld W_fm.
 Proof.
-  apply (lfworld_lex3 W_fm (λ x, (pt_fsum x, pt_off x, pt_depth x))); [apply W_fm_wf|intros f []| |].
+  apply (wfworld_lex3 W_fm (λ x, (pt_fsum x, pt_off x, pt_depth x))); [intros f []| |].
   - intros x. unfold pt_fsum, pt_depth. simpl. lia.
   - intros ℓ g x y _ (f & Hf & E).
     destruct Hf as [->|[->|[->|(k & [->| ->])]]]; simpl in E; injection E as -> ->; unfold pt_fsum, pt_depth; simpl; lia.
@@ -189,5 +189,5 @@ Qed.
 Theorem fm_lock_free : lock_free (∅, {[+ fm_main +]}).
 Proof.
   destruct fml_typedN as (c & ϑ & Ht & Hm).
-  eapply lf_main; [apply W_fm_lfworld|constructor|exact Ht|apply fm_guarded|exact Hm].
+  eapply lf_main; [apply (strict_wfworld _ W_fm_wf W_fm_wfworld)|apply W_fm_wfworld|constructor|exact Ht|apply fm_guarded|exact Hm].
 Qed.

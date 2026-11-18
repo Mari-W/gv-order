@@ -1,7 +1,7 @@
 (** * Adequacy of the lock-free judgment (stage S8, proposal §2.13, A.3)
 
-      lf_adequacy        : lfworld W → ∅ ⊪_W p : T → lock_free p
-      lf_thread_progress : lfworld W → ∅ ⊪_W p : T →
+      lf_adequacy        : strict W → wfworld W → ∅ ⊪_W p : T → lock_free p
+      lf_thread_progress : strict W → wfworld W → ∅ ⊪_W p : T →
                            every weakly fair maximal run makes every thread progress
 
     The proof instantiates [lf_run_criterion] along one weakly fair maximal
@@ -39,15 +39,12 @@ Proof. destruct q as [C M]. apply compat_enabled. Qed.
 
 Section run.
   #[local] Set Default Proof Using "All".
-  Context (N : nat) (W : world) (HW : lfworld W) (T : ty) (a0 : lfstate).
+  Context (N : nat) (W : world) (HWs : strict W) (HW : wfworld W) (T : ty) (a0 : lfstate).
   Context (Hs0 : ∀ n, a0 ∈ S^{N,W} _ n⟦∅ ⊢ T⟧).
   Context (r : nat → config) (l : nat → option event).
   Context (Hr0 : s_q a0 = r 0) (Hmax : maximal r l).
 
   Local Abbreviation ak k := (lf_run_state N a0 r l k).
-
-  Lemma HWs : strict W.
-  Proof. exact (proj1 HW). Qed.
 
   Lemma ak_q k : s_q (ak k) = r k.
   Proof. by apply lf_run_state_q. Qed.
@@ -102,7 +99,7 @@ Section run.
     kpt (s_K (ak k)) o = x → ∃ s, rtc (wt k) t s ∧ tenabled (r k) s.
   Proof.
     destruct (ak_inv k 1) as (A & Π & U & Hs). pose proof (ak_q k) as Hq.
-    intros x. induction x as [x IH] using (well_founded_ind (proj2 HW)).
+    intros x. induction x as [x IH] using (well_founded_ind HW).
     intros t e a1 o He Ha Ho Hx. rewrite <-Hq in He.
     destruct (s_partner _ _ _ _ _ _ _ _ Hs HWs t e a1 o He Ha Ho) as (s & es & h' & Kh' & Eh' & Hes & Hst).
     assert (Hwt : wt k t s).
@@ -367,7 +364,7 @@ Section run.
     assert (Hks : (∀ u j M, ev ≠ EvSpawn u j M) → s_tk (ak (S k)) = s_tk (ak k) →
                   ksum (s_tk (ak (S k))) (r (S k)) = ksum (s_tk (ak k)) (r k)).
     { intros Hns Htk'. apply ksum_ext; [exact (istep_dom _ _ _ (proj1 Hst) Hns)|]. intros t0 _. by rewrite Htk'. }
-    destruct ev as [u|u ℓ c|u κ o' c|u j M|i j o' M|i j o'|i j o' b|u o1 o2|u σ].
+    destruct ev as [u|u ℓ c|u κ o' c|u j v|i j o' w|i j o'|i j o' b|u o1 o2|u σ].
     - right. apply Hright; [(apply Hnl; intros ????; discriminate)|(apply Hks; [intros ????; discriminate|by rewrite Htk])|exact Kh'|].
       intros Hsu. exact (istep_admin_actor _ _ _ s (proj1 Hst) I Hsu).
     - right. apply Hright; [(apply Hnl; intros ????; discriminate)|(apply Hks; [intros ????; discriminate|by rewrite Htk])| |].
@@ -378,15 +375,15 @@ Section run.
       + cbn [own_next]. destruct Hen as [Hp1 Hp2]. unfold knew. pose proof (elem_of_dom_2 _ _ _ Kh') as Hd.
         rewrite !lookup_insert_ne; [done|intros Hx; rewrite <-Hx in Hd; done|intros Hx; rewrite <-Hx in Hd; done].
       + intros Hsu. exact (istep_admin_actor _ _ _ s (proj1 Hst) I Hsu).
-    - destruct (istep_spawn_inv _ _ _ _ _ (proj1 Hst)) as (eu & v & e' & Heu & Hsu & Hj & Hdom).
+    - destruct (istep_spawn_inv _ _ _ _ _ (proj1 Hst)) as (eu & e' & Heu & Hsu & Hj & Hdom).
       assert (Hksp : ksum (s_tk (ak (S k))) (r (S k)) = ksum (s_tk (ak k)) (r k)).
       { rewrite Htk. cbn [tk_next]. apply ksum_spawn; [by apply elem_of_dom_2 in Heu|by apply not_elem_of_dom|done]. }
-      destruct (decide (edual o ∈ M)) as [HM|HM].
+      destruct (decide (edual o ∈ fends v)) as [HM|HM].
       + left. apply Hdrop; [(apply Hnl; intros ????; discriminate)|done|].
         assert (s = u) as ->.
         { simpl in Hen. exact (owns_unique _ _ _ _ (ex_intro _ h' (conj Kh' Eh')) (Hen _ HM)). }
         rewrite <-Hq in Heu. pose proof (s_fuel Hs u eu Heu) as HF.
-        destruct (fuel_spawn_hand _ _ _ _ _ _ HF M v e' Hsu) as [_ Hsp].
+        destruct (fuel_spawn_hand _ _ _ _ _ _ HF v e' Hsu) as [_ Hsp].
         pose proof (fspare_one _ _ _ _ _ Hsp HM Hφs Hbusy) as H1.
         apply (kval_tick _ _ _ h' m (Hold j h'.(h_pt) (ftick h'.(h_ctr))) Kh' Hm H1); [|done].
         cbn [own_next]. rewrite lookup_khand, Kh'. simpl. by rewrite decide_True.
@@ -404,7 +401,7 @@ Section run.
         { intros Hx. apply edual_inj in Hx. subst o'.
           rewrite <-(owns_unique _ _ _ _ (ex_intro _ ht (conj Kht Eht)) H1) in Ht. set_solver. }
         set (p := if decide (s = i) then o' else edual o').
-        assert (ev_end (EvMsg i j o' M) s = Some p) as Hp'.
+        assert (ev_end (EvMsg i j o' w) s = Some p) as Hp'.
         { simpl. unfold p. destruct (decide (s = i)); [done|]. rewrite decide_True; [done|]. tauto. }
         assert ((r k).2 !! s = Some es) as Hes2 by (by rewrite <-Hq).
         destruct (istep_sync_step _ _ _ s es p (proj1 Hst) Hp' Hes2) as (σ & es' & Hσ & Hae).
@@ -415,7 +412,7 @@ Section run.
         { apply (fspare_one _ _ _ (edual o) _ Htick); [|done|done]. apply elem_of_difference.
           split; [by apply elem_of_dom_2 in Hφs|by rewrite elem_of_singleton]. }
         cbn [own_next]. destruct (ksync N i j o' (pt_shift 1 (kpt (s_K (ak k)) o'))
-          (pt_shift 1 (kpt (s_K (ak k)) (edual o'))) M (s_K (ak k)) !! edual o) as [h1|] eqn:Eh1.
+          (pt_shift 1 (kpt (s_K (ak k)) (edual o'))) (fends w) (s_K (ak k)) !! edual o) as [h1|] eqn:Eh1.
         * apply (kval_tick _ _ _ h' m h1 Kh' Hm Hm1 Eh1). rewrite lookup_ksync, !decide_False, Kh' in Eh1 by done.
           simpl in Eh1. injection Eh1 as <-. case_decide; [done|]. rewrite decide_True; [done|]. by rewrite Eh'.
         * rewrite lookup_ksync, !decide_False, Kh' in Eh1 by done. done.
@@ -500,48 +497,48 @@ Proof.
 Qed.
 
 Lemma soup_links_restricted N W T a :
-  lfworld W → (∀ n, a ∈ S^{N,W} _ n⟦∅ ⊢ T⟧) → links_restricted (erase (s_q a)).
+  strict W → (∀ n, a ∈ S^{N,W} _ n⟦∅ ⊢ T⟧) → links_restricted (erase (s_q a)).
 Proof.
   intros HW Hs0 q E e o1 o2 Hq HE Ha. destruct (pred_star_lift _ _ Hq) as (q' & Hq' & <-).
   destruct (lfsoup_isteps N W T a q' Hs0 Hq') as (a' & <- & Hs').
   destruct (Hs' 1) as (A & Π & U & Hs). simpl in HE.
   assert (e ∈ soup (s_q a').2) as Hin by (rewrite HE; multiset_solver).
-  apply elem_of_soup in Hin as [t Ht]. exact (s_link _ _ _ _ _ _ _ _ Hs (proj1 HW) t e o1 o2 Ht Ha).
+  apply elem_of_soup in Hin as [t Ht]. exact (s_link _ _ _ _ _ _ _ _ Hs HW t e o1 o2 Ht Ha).
 Qed.
 
 (** ** Adequacy *)
 
 (** The soup alone gives lock freedom. *)
 Theorem lf_adequacy_soup N W T a :
-  lfworld W → (∀ n, a ∈ S^{N,W} _ n⟦∅ ⊢ T⟧) → lock_free (erase (s_q a)).
+  strict W → wfworld W → (∀ n, a ∈ S^{N,W} _ n⟦∅ ⊢ T⟧) → lock_free (erase (s_q a)).
 Proof.
-  intros HW Hs r l Hr0 Hmax Hfair.
+  intros HS HW Hs r l Hr0 Hmax Hfair.
   destruct (soup_lifting N W T a (r 0) Hs Hr0) as (a0 & Ha0 & Hs0).
   refine (lf_run_criterion (erase (s_q a)) r l Hr0 Hmax Hfair (wt N a0 r l) _ _ _ _ _
-    (nat * nat) lexlt (fu N a0 r l) lexlt_wf _ _ _ point (w_lt W) (we N a0 r l) (proj2 HW) _ _).
-  - intros k t s. apply (wt_pend N W HW T a0 Hs0 r l Ha0 Hmax).
-  - intros k t s. apply (wt_holder N W HW T a0 Hs0 r l Ha0 Hmax).
-  - intros k t. apply (lf_local_progress N W HW T a0 Hs0 r l Ha0 Hmax).
+    (nat * nat) lexlt (fu N a0 r l) lexlt_wf _ _ _ point (w_lt W) (we N a0 r l) HW _ _).
+  - intros k t s. apply (wt_pend N W HS HW T a0 Hs0 r l Ha0 Hmax).
+  - intros k t s. apply (wt_holder N W HS HW T a0 Hs0 r l Ha0 Hmax).
+  - intros k t. apply (lf_local_progress N W HS HW T a0 Hs0 r l Ha0 Hmax).
   - exact (soup_no_tau_divergence N W T a Hs).
-  - exact (soup_links_restricted N W T a HW Hs).
-  - intros k t s s'. apply (wt_uniq N W HW T a0 Hs0 r l Ha0 Hmax).
-  - intros k t. apply (lf_pers N W HW T a0 Hs0 r l Ha0 Hmax).
-  - intros k t. apply (lf_fuel N W HW T a0 Hs0 r l Ha0 Hmax).
-  - intros k t. apply (lf_stab N W HW T a0 Hs0 r l Ha0 Hmax).
-  - intros k t s. apply (lf_rank N W HW T a0 Hs0 r l Ha0 Hmax).
+  - exact (soup_links_restricted N W T a HS Hs).
+  - intros k t s s'. apply (wt_uniq N W HS HW T a0 Hs0 r l Ha0 Hmax).
+  - intros k t. apply (lf_pers N W HS HW T a0 Hs0 r l Ha0 Hmax).
+  - intros k t. apply (lf_fuel N W HS HW T a0 Hs0 r l Ha0 Hmax).
+  - intros k t. apply (lf_stab N W HS HW T a0 Hs0 r l Ha0 Hmax).
+  - intros k t s. apply (lf_rank N W HS HW T a0 Hs0 r l Ha0 Hmax).
 Qed.
 
-(** lfworld W ∧ ∅ ⊪_W p : T ⟹ lock_free p. *)
-Theorem lf_adequacy W T p : lfworld W → ∅ ⊪_W p : T → lock_free p.
-Proof. intros HW (N & a & <- & Hs). by apply (lf_adequacy_soup N W T a). Qed.
+(** strict W ∧ wfworld W ∧ ∅ ⊪_W p : T ⟹ lock_free p. *)
+Theorem lf_adequacy W T p : strict W → wfworld W → ∅ ⊪_W p : T → lock_free p.
+Proof. intros HS HW (N & a & <- & Hs). by apply (lf_adequacy_soup N W T a). Qed.
 
-(** lfworld W ∧ ∅ ⊪_W p : T ⟹ every weakly fair maximal run makes every
+(** strict W ∧ wfworld W ∧ ∅ ⊪_W p : T ⟹ every weakly fair maximal run makes every
     thread progress: from every position on, every thread later stops or
     takes part in a channel step. *)
 Theorem lf_thread_progress W T p :
-  lfworld W → ∅ ⊪_W p : T →
+  strict W → wfworld W → ∅ ⊪_W p : T →
   ∀ r l, erase (r 0) = p → maximal r l → wfair r l → thread_progress_run r l.
 Proof.
-  intros HW HP. pose proof (lf_adequacy W T p HW HP) as Hlf. destruct HP as (N & a & <- & Hs).
-  apply thread_progress; [done|exact (soup_no_tau_divergence N W T a Hs)|exact (soup_links_restricted N W T a HW Hs)].
+  intros HS HW HP. pose proof (lf_adequacy W T p HS HW HP) as Hlf. destruct HP as (N & a & <- & Hs).
+  apply thread_progress; [done|exact (soup_no_tau_divergence N W T a Hs)|exact (soup_links_restricted N W T a HS Hs)].
 Qed.

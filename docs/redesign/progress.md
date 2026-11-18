@@ -1773,3 +1773,100 @@ The old development in theories/ stays untouched.
   `age_credit`. CheckAll lists `Vfuel_age`, `Vfuel_age_above`,
   `idle_age_cex`, `W_ctl_lfworld`, `ctl_lftyped` and `ctl_lock_free` in
   place of `idle_credit_falls`, 306 results, all closed.
+- L.1. let is a derived form (decision of 2026-11-18). The constructor
+  `ELet` of `expr` is gone, with T-Act-Let, the frame `FLet`, `HRedLet`,
+  E-Let, D-Let, `gl_let`, `gl_tick_let`, `acts_let1`, `acts_let2` and
+  every case for them (renaming, substitution, closedness, `fends`,
+  `emap`, `relabel`, `act`, safety, the fundamental theorems, cost/Exact.v).
+  `ELet e1 e2` is now the Definition `LetP (Pair e1 EUnit) (LetU (Var 0)
+  (rename S e2))` (lang/Syntax.v, `simpl never`). The old rules are
+  lemmas with the same statements: `e_let` and `d_let`
+  (static/Weakening.v), `gl_let`, `gl_tick_let`, `acts_let1`, `acts_let2`
+  (static/Guard.v). `e_let` gives ⟨e1, ∗⟩ the whole context at E-Pair,
+  ages ∗'s empty context by c1, takes u at E-LetU and renames e2 by
+  `typed_weaken_head`. The costs come out as fadd c1 c2 and tseq t1 t2
+  up to 0 and `tid`. `d_let` needs the new `dftyped_rename` and
+  `dftyped_weaken_head`, the projection of `typed_rename`. The guard
+  needs `guard_rename_fwd` and `acts_rename`, the converses of the
+  existing lemmas. The semantic lemmas of the primitive let,
+  `gen_e_let`, `later_let` and `cost_e_let`, are gone, because the
+  fundamental theorems no longer have the case. `cost_e_let` leaves
+  CheckAll. No example changes its cost or transformer: the encoding
+  takes one more β step at run time, and typing charges β nothing.
+  examples/Tools.v exports static.Weakening for `d_let`.
+- L.2. live ⊆ DF asks `prim T` and `boxfree T` (decision of
+  2026-11-18). `tshape`, `tshape_pinst` and `Vrel_shape` are gone.
+  `boxfree` (compat/LiveDF.v) rules out □ inside ∗, ⊗ and ⊕, and
+  `Vrel_boxfree` is `Vrel_shape` by induction on `prim`.
+  `live_sub_df W T p : prim T → boxfree T → ∅ ⊫_W p : T → ∅ ⊨_W p : T`.
+  CheckAll drops `cost_e_let` and lists `e_let` and `d_let`, 307
+  results, all closed.
+- L.3. One process judgment (decision of 2026-11-18). P-Term of
+  `ptyped` (static/Typing.v) gains the premise `N = None ∨ ∃ tk, meets ϑ
+  0 tk`. At N = ∞ it holds by `left`, so `⊢_W`, `fundamental_proc`,
+  `soundness` and every DF statement are unchanged. `lfptyped`,
+  `lf_term`, `lf_connect` and `lf_join` are gone (soup/LFTyped.v), and
+  `Σ ⊩^N _ W p : T` is the notation for `ptyped (Some N) W Σ p T ∧ ⊢▷ p`,
+  with `pguard` of static/FundamentalProc.v. `lf_fundamental` inducts on
+  `ptyped` with N = Some N and reads the guard of each thread off ⊢▷ p.
+  `lf_soundness` keeps its statement. P-Join of ⊩ is `p_join`. The
+  examples build ⊩ from `p_term` and `p_connect` (examples/LFTools.v,
+  `lf_main_typed`, and examples/LFClose.v), and `fw_ptyped` discharges
+  the new premise by `fw_tix_met`. CheckAll drops `lf_join`, 306
+  results, all closed.
+- L.4. Modular worlds (decision of 2026-11-18). `lfworld` is gone
+  (types/Worlds.v), and `wfworld W := well_founded (w_lt W)` takes its
+  second half. Every lock-free result asks `strict W → wfworld W → …`:
+  `lf_adequacy_soup`, `lf_adequacy`, `lf_thread_progress`
+  (soup/LFAdequacy.v, whose section takes `HWs : strict W` and
+  `HW : wfworld W`), `lf_soundness_source`, `lf_soundness` and `lf_main`.
+  `soup_links_restricted` asks `strict W` alone, the only half it reads.
+  Renamed: `lfworld_wfrename` → `wfworld_wfrename` (now with `strict W`
+  as a premise, which `w_lt_frename_back` needs), `lfworld_measure` →
+  `wfworld_measure` (no `world_wf` premise), `lfworld_lex3` →
+  `wfworld_lex3`, `lfworld_bare` → `wfworld_bare` (world_wf ∧ wfworld),
+  `W_x_lfworld` → `W_x_wfworld` for x ∈ {cy, fb, fm, cs, fx, rg, ctl},
+  and examples/LFClose.v has `W_cl_bare`, `W_cl_wfworld`, `W_cl_strict`.
+  New: `strict_wfworld : world_wf W → wfworld W → strict W` (a
+  well-founded order is irreflexive), which the examples use for the
+  strict premise. test/Lexer.v and test/SoupNotations.expected follow
+  the new names. CheckAll adds `strict_wfworld`, 307 results, all
+  closed.
+- L.5. No transfer sets (decision of 2026-11-18). Labels `LSpawn v`,
+  `SSend o v` and events `EvSpawn i j v`, `EvMsg i j o v` replace the
+  forms with M (lang/Semantics.v, lang/Process.v). `ltransfer_ok` and
+  `tstep_transfer` are gone, and `offers` no longer asks M = fends v.
+  `sentc (SSend _ v) = fchans v`. Relation (relation/Relation.v):
+  `o_spawn v e'` and `o_send o w e'` drop the conjunct `dom ΘM = M`.
+  `q_send o w p'` keeps its two clauses on Θe with `fends w` in place of
+  M: `(∀ o', o' ∈ dom Θe ↔ o' ∈ fends w ∧ ech o' ∈ p.1) ∧ fends w = dom
+  Σv ∪ dom Θe`. Without them Θe, the extruded restricted part, is not
+  determined, and the relation must say which restricted ends leave.
+  The value fixes them, so this reads the label's value, not a new
+  syntactic fact. Fuel (fuel/Fuel.v): `f_spawn v e'` and `f_send o w e'`
+  hand over `fends v`, `fends w`. Soup (soup/Soup.v): `own_next` moves
+  `fends v` at a spawn and a message, `ev_ends` reads `fends v`. Where a
+  proof used `dom ΘM = M`, it now derives `dom ΘM = fends v` from V:
+  from the Vthunk clause at a spawn (soup/SoupStep.v `step_spawn`,
+  soup/LFEvents.v), from `Vrel_exact` at a send (soup/SoupSync.v
+  `step_msg`, soup/LFEvents.v, compat/PTerm.v Q-Send). The soup needed
+  the moved set as a function of the event for its index-free update,
+  which is why the events carry the value v in place of M. Proofs that
+  built the conjunct (`Vrel_exact` bullets in compat/Redex.v, the
+  renaming lemmas, compat/Conv.v, compat/TermRules.v) lose a step.
+  Every theorem keeps its statement except the lemmas on labels:
+  `offers_spawn`, `offers_send`, `fuel_send_hand`, `fuel_spawn_hand`,
+  `fuel_zero_nospawn`, `fuel_zero_nosend`, `istep_spawn_inv`, `step_spawn`,
+  `step_msg`, `tau_msg12`, `tau_msg21`, `ext_send`, `padmin_spawn` drop
+  their M argument and read `fends v`. CheckAll drops `tstep_transfer`,
+  306 results, all closed.
+- L.6. Select and branch without order premises (decision of
+  2026-11-18). `e_select` and `d_select` drop `slt W Γ x (x·(bfield i))`,
+  `e_branch` and `d_branch` drop `slt W Γ x (sel_pt x false)` and
+  `slt W Γ x (sel_pt x true)` (static/Typing.v). `gen_e_select`,
+  `gen_e_branch`, `later_select`, `later_branch`, `cost_e_select` and
+  `cost_e_branch` never took them. Only arity sites change: renaming
+  (static/Renaming.v), point substitution (static/PointSubst.v),
+  conservativity and the intro patterns of the two fundamental
+  theorems. No example used the premises. 306 results, all closed.
+

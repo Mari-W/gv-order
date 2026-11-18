@@ -70,11 +70,11 @@ Section efacts.
     - intros ℓ c e' Hst Hc g Hg. destruct (H2 ℓ c e' Hst Hc g Hg) as [S HS]. exists S. by apply Hac.
     - intros κf o c e' Hst Hc. destruct (H3 κf o c e' Hst Hc) as (S0 & x & Ho & S & HS).
       exists S0, x. split; [done|]. exists S. by apply Hac.
-    - intros M v e' Hst. destruct (H4 M v e' Hst) as (ΘM & Θr & A1 & A2 & A3 & A4 & A5).
-      exists ΘM, Θr. split_and!; [done|done|done| |by apply Hac].
+    - intros v e' Hst. destruct (H4 v e' Hst) as (ΘM & Θr & A1 & A2 & A4 & A5).
+      exists ΘM, Θr. split_and!; [done|done| |by apply Hac].
       revert A4. apply Vthunk_mono; [by intros|by intros|by intros|]. by intros _ ? ? ? ? [? _].
-    - intros o M w e' Hst.
-      destruct (H5 o M w e' Hst) as (S0 & x & m' & U & b & S & ΘM & Θr & A1 & A2 & A3 & A4 & A5 & A6 & A7).
+    - intros o w e' Hst.
+      destruct (H5 o w e' Hst) as (S0 & x & m' & U & b & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
       exists S0, x, m', U, b, S, ΘM, Θr. split_and!; [done..|by apply Hac].
     - intros o w e' Hst. destruct (H6 o w e' Hst) as (S0 & x & m' & U & b & S & A1 & A2 & A3).
       exists S0, x, m', U, b, S. split_and!; [done|done|].
@@ -117,11 +117,11 @@ Section efacts.
     - intros ℓ c e' Hst Hc g Hg. destruct (H2 ℓ c e' Hst Hc g Hg) as [S HS]. exists S. by apply Hac.
     - intros κf o c e' Hst Hc. destruct (H3 κf o c e' Hst Hc) as (S0 & x & Ho & S & HS).
       exists S0, x. split; [done|]. exists S. by apply Hac.
-    - intros M v e' Hst. destruct (H4 M v e' Hst) as (ΘM & Θr & A1 & A2 & A3 & A4 & A5).
-      exists ΘM, Θr. split_and!; [done|done|done| |by apply Hac].
+    - intros v e' Hst. destruct (H4 v e' Hst) as (ΘM & Θr & A1 & A2 & A4 & A5).
+      exists ΘM, Θr. split_and!; [done|done| |by apply Hac].
       revert A4. apply Vthunk_mono; [by intros|by intros|by intros|]. by intros _ ? ? ? ? [? _].
-    - intros o M w e' Hst.
-      destruct (H5 o M w e' Hst) as (S0 & x & m' & U & b & S & ΘM & Θr & A1 & A2 & A3 & A4 & A5 & A6 & A7).
+    - intros o w e' Hst.
+      destruct (H5 o w e' Hst) as (S0 & x & m' & U & b & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
       exists S0, x, m', U, b, S, ΘM, Θr. split_and!; [done..|by apply Hac].
     - intros o w e' Hst. destruct (H6 o w e' Hst) as (S0 & x & m' & U & b & S & A1 & A2 & A3).
       exists S0, x, m', U, b, S. split_and!; [done|done|].

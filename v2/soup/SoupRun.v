@@ -16,15 +16,15 @@ Theorem lfsoup_step N W T a n ev q' :
 Proof.
   destruct a as [[C Mq] K tk]. intros (A & Π & U & Hs) [Hst Hτ]. cbn [s_q] in Hst.
   inversion Hst as [C0 M0 i e e' Hi Hs'|C0 M0 i e ℓ c e' Hi Hs' HC Hc|C0 M0 i e κ o c e' Hi Hs' HC Hc
-    |C0 M0 i j e Mv v e' Hi Hs' Hj
-    |C0 M0 i j o Mv v e e' f f' Hij Hi Hj He Hf|C0 M0 i j o e e' f f' Hij Hi Hj He Hf HC
+    |C0 M0 i j e v e' Hi Hs' Hj
+    |C0 M0 i j o v e e' f f' Hij Hi Hj He Hf|C0 M0 i j o e e' f f' Hij Hi Hj He Hf HC
     |C0 M0 i j o b e e' f f' Hij Hi Hj He Hf|C0 M0 i e o1 o2 e' Hi Hs' HC
     |C0 M0 i e σ e' Hi Hs' HC]; subst.
   - exists A, Π, U. exact (step_beta _ _ _ _ _ _ _ _ _ _ _ Hs i e e' Hi Hs').
   - destruct (step_new _ _ _ _ _ _ _ _ _ _ _ Hs i e ℓ c e' Hi Hs' HC) as (A' & Π' & H). by exists A', Π', U.
   - destruct (step_new_at _ _ _ _ _ _ _ _ _ _ _ Hs i e κ o c e' Hi Hs' HC) as (A' & Π' & H). by exists A', Π', U.
-  - eexists _, _, _. exact (step_spawn _ _ _ _ _ _ _ _ _ _ _ Hs i j e Mv v e' Hi Hs' Hj).
-  - destruct (step_msg _ _ _ _ _ _ _ _ _ _ _ Hs i j e e' f f' o Mv v Hij Hi Hj He Hf) as (A' & Π' & H).
+  - eexists _, _, _. exact (step_spawn _ _ _ _ _ _ _ _ _ _ _ Hs i j e v e' Hi Hs' Hj).
+  - destruct (step_msg _ _ _ _ _ _ _ _ _ _ _ Hs i j e e' f f' o v Hij Hi Hj He Hf) as (A' & Π' & H).
     by exists A', Π', U.
   - destruct (step_close _ _ _ _ _ _ _ _ _ _ _ Hs i j e e' f f' o Hij Hi Hj He Hf) as (A' & Π' & H).
     by exists A', Π', U.
