@@ -533,7 +533,7 @@ Qed.
 
 (** lfworld W ∧ ∅ ⊪_W p : T ⟹ lock_free p. *)
 Theorem lf_adequacy W T p : lfworld W → ∅ ⊪_W p : T → lock_free p.
-Proof. intros HW [_ (N & a & <- & Hs)]. by apply (lf_adequacy_soup N W T a). Qed.
+Proof. intros HW (N & a & <- & Hs). by apply (lf_adequacy_soup N W T a). Qed.
 
 (** lfworld W ∧ ∅ ⊪_W p : T ⟹ every weakly fair maximal run makes every
     thread progress: from every position on, every thread later stops or
@@ -542,6 +542,6 @@ Theorem lf_thread_progress W T p :
   lfworld W → ∅ ⊪_W p : T →
   ∀ r l, erase (r 0) = p → maximal r l → wfair r l → thread_progress_run r l.
 Proof.
-  intros HW HP. pose proof (lf_adequacy W T p HW HP) as Hlf. destruct HP as [_ (N & a & <- & Hs)].
+  intros HW HP. pose proof (lf_adequacy W T p HW HP) as Hlf. destruct HP as (N & a & <- & Hs).
   apply thread_progress; [done|exact (soup_no_tau_divergence N W T a Hs)|exact (soup_links_restricted N W T a HW Hs)].
 Qed.

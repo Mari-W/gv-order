@@ -35,9 +35,9 @@
     removed channel ([csub]), and a spawn splits the tickets ⌈tk/2⌉ for
     the child and ⌊tk/2⌋ for the parent.
 
-    The lock-free judgment keeps the live process conjunct of the
-    proposal (Q12, F21). [soup_no_tau_divergence] (soup/SoupTau.v) shows
-    that adequacy does not need it. *)
+    The lock-free judgment is the soup alone (Q12, decided 2026-11-18).
+    [soup_no_tau_divergence] (soup/SoupTau.v) gives what the live process
+    conjunct of the proposal was kept for. *)
 
 From stdpp Require Import relations.
 From GV Require Export soup.State soup.Idle relation.Adequacy lockfree.ThreadProgress.
@@ -62,7 +62,6 @@ Notation "a ∈ S^{ N , W } '_' n ⟦ Σ ⊢ T ⟧" := (Soup N W n Σ T a)
 (** ** The lock-free judgment *)
 
 Definition lf_sem (W : world) (Σ : senv) (p : proc) (T : ty) : Prop :=
-  (∀ n, p ∈ P[live]^W _ n⟦Σ ⊢ T⟧) ∧
   ∃ N a, erase (s_q a) = p ∧ ∀ n, a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧.
 
 Notation "Σ ⊪_ W p : T" := (lf_sem W Σ p T)

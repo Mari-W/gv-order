@@ -1,33 +1,23 @@
-(** * The lock-free judgment by composition (stage S9, proposal §2.14)
+(** * The semantic composition rules of the lock-free judgment (stage S9,
+      proposal §2.14, A.3)
 
-      lf_soup W Σ p T : ∃ N a, erase (s_q a) = p ∧ ∀ n, a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧
+    Σ ⊪_W p : T is the soup alone (soup/Soup.v). Its rules:
 
-    is the soup half of Σ ⊪_W p : T ([lf_sem_iff]). It composes without
-    the process half:
+      lf_p_term    : strict W, the premises of P-Term at Some N, a guarded
+                     thread, a ticket count meeting its transformer
+                     ⟹ Σ ⊪_W (C0, {t}) : T
+      lf_p_connect : the premises of P-Connect, at ⊪ ⟹ (Σ1 ∪ Σ2) ⊪_{W1 ⊔ W2} …
+      lf_p_join    : the premises of P-Join, at ⊪ ⟹ the same
 
-      lf_soup_term_typed : the premises of P-Term at a finite N, a guarded
-                           thread, a ticket count meeting its transformer
-                           ⟹ lf_soup W Σ (C0, {t}) T
-      lf_soup_connect    : lf_soup in W1 and in W2 over the cut of P-Connect
-                           ⟹ lf_soup in W1 ⊔ W2
-
-    The live process conjunct ∀ n, p ∈ P[live] waits for P-Term,
-    P-Connect and P-Join of stage S4. [lf_sem_term] and [lf_sem_connect]
-    take it as a premise. Adequacy reads the soup alone, so a closed
-    thread is lock free without it ([lf_soundness_source]). *)
+    P-Connect and P-Join share one soup lemma ([lf_soup_connect]), which
+    reads no strictness of the worlds. The world enters only through
+    E[live] at P-Term. A closed thread is lock free
+    ([lf_soundness_source]). *)
 
 From stdpp Require Import relations.
 From GV Require Import soup.LFAdequacy.
 From GV Require Export soup.SoupCompose static.LiveFundamental cost.CostFund.
 From GV Require Import compat.Conv.
-
-(** ** The soup half *)
-
-Definition lf_soup (W : world) (Σ : senv) (p : proc) (T : ty) : Prop :=
-  ∃ N a, erase (s_q a) = p ∧ ∀ n, a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧.
-
-Lemma lf_sem_iff W Σ p T : Σ ⊪_W p : T ↔ (∀ n, p ∈ P[live]^W _ n⟦Σ ⊢ T⟧) ∧ lf_soup W Σ p T.
-Proof. done. Qed.
 
 (** ** Liftings at an interface *)
 
@@ -74,11 +64,11 @@ Qed.
 (** ** P-Connect and P-Join *)
 
 Theorem lf_soup_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
-  lf_soup W1 (Σ1 ∪ ΣC) (C1, E1) T → lf_soup W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
+  (Σ1 ∪ ΣC) ⊪_W1 (C1, E1) : T → (Σ2 ∪ senv_dual ΣC) ⊪_W2 (C2, E2) : TUnit →
   (∀ o, o ∈ dom ΣC → edual o ∉ dom ΣC) →
   chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
   C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
-  lf_soup (wjoin W1 W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
+  (Σ1 ∪ Σ2) ⊪_(wjoin W1 W2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) : T.
 Proof.
   intros (N1 & [[C1' M1] K1 tk1] & He1 & Hs1) (N2 & a2 & He2 & Hs2) Hf H12 H1C H2C HC HC1 HC2.
   unfold erase in He1. simpl in He1. injection He1 as -> <-.
@@ -97,18 +87,30 @@ Proof.
     eexists _, _, _. by apply soup_connect.
 Qed.
 
-(** With the live process conjunct of the composite as a premise. P-Join
-    has the same statement: the soup reads no strictness of the world. *)
-Theorem lf_sem_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
+(** The rules P-Connect and P-Join, with the premises of [p_connect] and
+    [p_join]. The soup uses the channel conditions only. *)
+Theorem lf_p_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
   (Σ1 ∪ ΣC) ⊪_W1 (C1, E1) : T → (Σ2 ∪ senv_dual ΣC) ⊪_W2 (C2, E2) : TUnit →
-  (∀ o, o ∈ dom ΣC → edual o ∉ dom ΣC) →
+  Σ1 ##ₘ ΣC → Σ2 ##ₘ senv_dual ΣC →
+  (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
   chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
   C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
-  (∀ n, (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) ∈ P[live]^(wjoin W1 W2) _ n⟦Σ1 ∪ Σ2 ⊢ T⟧) →
-  (Σ1 ∪ Σ2) ⊪_(wjoin W1 W2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) : T.
-Proof.
-  intros [_ H1] [_ H2] Hf H12 H1C H2C HC HC1 HC2 HP. split; [done|]. by apply lf_soup_connect.
-Qed.
+  world_wf W1 → world_wf W2 → w_fams W1 ## w_fams W2 →
+  strict (W1 ⊔ W2) →
+  (Σ1 ∪ Σ2) ⊪_(W1 ⊔ W2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) : T.
+Proof. intros H1 H2 _ _ Hf H12 H1C H2C HC HC1 HC2 _ _ _ _. by apply lf_soup_connect. Qed.
+
+Theorem lf_p_join W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
+  (Σ1 ∪ ΣC) ⊪_W1 (C1, E1) : T → (Σ2 ∪ senv_dual ΣC) ⊪_W2 (C2, E2) : TUnit →
+  Σ1 ##ₘ ΣC → Σ2 ##ₘ senv_dual ΣC →
+  (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
+  chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
+  C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
+  world_wf W1 → world_wf W2 → w_fams W1 ## w_fams W2 →
+  strict W1 → strict W2 →
+  strict (wrestrict W1 (wshared W1 W2) ⊔ wrestrict W2 (wshared W1 W2)) →
+  (Σ1 ∪ Σ2) ⊪_(W1 ⊔ W2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) : T.
+Proof. intros H1 H2 _ _ Hf H12 H1C H2C HC HC1 HC2 _ _ _ _ _ _. by apply lf_soup_connect. Qed.
 
 (** ** P-Term *)
 
@@ -119,7 +121,7 @@ Theorem lf_soup_term N W Σ ΘB C0 t T tk :
   (∀ n, t ∈ E[live]^W _ n⟦tenv_erase (tenv_of (Some N) Σ ∪ ΘB) ⊢ T⟧^∅) →
   (∀ n, FuelT (Some N) n (te_sty <$> (tenv_of (Some N) Σ ∪ ΘB))
           (const (Some N) <$> (te_sty <$> (tenv_of (Some N) Σ ∪ ΘB))) tk t) →
-  lf_soup W Σ (C0, {[+ t +]}) T.
+  Σ ⊪_W (C0, {[+ t +]}) : T.
 Proof.
   intros Hp HB HΣ Hd He Hf. exists N, (LFState (C0, {[0 := t]}) (kterm N (tenv_of (Some N) Σ ∪ ΘB)) (λ _, tk)).
   split.
@@ -142,16 +144,18 @@ Proof.
   destruct (Θ !! o) as [te|]; constructor. split; [done|]. unfold seqv. simpl. rewrite sty_df_idem. apply sequiv_refl.
 Qed.
 
-Theorem lf_soup_term_typed W N Σ ΘB C0 t T a c ϑ tk :
-  strict W → guarded t → types.Types.prim T →
+(** The rule P-Term: the premises of [p_term] at Some N, a guarded
+    thread and a ticket count meeting its transformer, in a strict world. *)
+Theorem lf_p_term W N Σ ΘB C0 t T a c ϑ tk :
+  strict W → types.Types.prim T →
   (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 →
   (∀ c, c ∈ C0 → ∃ S (x : point), ΘB !! (c⁺)%cend = Some (TE S x (Some N)) ∧
                                    ΘB !! (c⁻)%cend = Some (TE (dual S) (pt_dual x) (Some N))) →
   tenv_of (Some N) Σ ∪ ΘB ; hc_empty ; [] ⊢^(∅, None) _{W,(Some N)} t : T^a ▷ c ; ϑ →
-  meets ϑ 0 tk →
-  lf_soup W Σ (C0, {[+ t +]}) T.
+  guarded t → meets ϑ 0 tk →
+  Σ ⊪_W (C0, {[+ t +]}) : T.
 Proof.
-  intros HW Hg Hp HB HΣ Hd Hty Hm.
+  intros HW Hp HB HΣ Hd Hty Hg Hm.
   assert (∀ o te, (tenv_of (Some N) Σ ∪ ΘB) !! o = Some te → fle (te_cr te) (Some N)) as Hcr.
   { intros o te Hte. apply lookup_union_Some_raw in Hte as [Hte|[_ Hte]].
     - unfold tenv_of in Hte. apply lookup_fmap_Some in Hte as (y & <- & _). apply fle_refl.
@@ -164,24 +168,10 @@ Proof.
   intros n. by eapply typed_live.
 Qed.
 
-(** With the live process conjunct as a premise. *)
-Theorem lf_sem_term W N Σ ΘB C0 t T a c ϑ tk :
-  strict W → guarded t → types.Types.prim T →
-  (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 →
-  (∀ c, c ∈ C0 → ∃ S (x : point), ΘB !! (c⁺)%cend = Some (TE S x (Some N)) ∧
-                                   ΘB !! (c⁻)%cend = Some (TE (dual S) (pt_dual x) (Some N))) →
-  tenv_of (Some N) Σ ∪ ΘB ; hc_empty ; [] ⊢^(∅, None) _{W,(Some N)} t : T^a ▷ c ; ϑ →
-  meets ϑ 0 tk →
-  (∀ n, (C0, {[+ t +]}) ∈ P[live]^W _ n⟦Σ ⊢ T⟧) →
-  Σ ⊪_W (C0, {[+ t +]}) : T.
-Proof. intros. split; [done|]. by eapply lf_soup_term_typed. Qed.
-
 (** ** One closed thread
 
     A guarded closed thread of primitive type, typed at a finite N, whose
-    transformer some ticket count meets, is lock free. No process
-    conjunct is needed: adequacy reads the soup alone
-    ([lf_adequacy_soup]). *)
+    transformer some ticket count meets, is lock free. *)
 Theorem lf_soundness_source W N t T a c ϑ tk :
   lfworld W → guarded t → types.Types.prim T →
   ∅ ; hc_empty ; [] ⊢^(∅, None) _{W,(Some N)} t : T^a ▷ c ; ϑ → meets ϑ 0 tk →
@@ -191,7 +181,7 @@ Proof.
   assert (tenv_of (Some N) ∅ ∪ ∅ = (∅ : tenv)) as E by (unfold tenv_of; by rewrite fmap_empty, map_union_empty).
   rewrite <-E in Hty.
   assert (∀ o, o ∈ dom (∅ : tenv) ↔ ech o ∈ (∅ : gset chan)) as HB by (intros o; rewrite dom_empty_L; set_solver).
-  destruct (lf_soup_term_typed W N ∅ ∅ ∅ t T a c ϑ tk (proj1 HW) Hg Hp HB
-    ltac:(set_solver) ltac:(set_solver) Hty Hm) as (N' & a' & He & Hs).
+  destruct (lf_p_term W N ∅ ∅ ∅ t T a c ϑ tk (proj1 HW) Hp HB
+    ltac:(set_solver) ltac:(set_solver) Hty Hg Hm) as (N' & a' & He & Hs).
   rewrite <-He. by apply (lf_adequacy_soup N' W T a').
 Qed.
