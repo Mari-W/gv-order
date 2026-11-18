@@ -208,7 +208,7 @@ window.MAP = {
      "id": "sem-events",
      "title": "Events",
      "rocq": "lang/Process.v: event, ev_parts, ev_admin, ev_tau",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=ev.event}{\\begin{array}{rl} ev ::= & \\beta_i \\mid \\mathsf{new}_i\\,\\ell\\,c \\mid \\mathsf{newat}_i\\,\\kappa\\,o\\,c \\mid \\mathsf{spawn}_{i,j} \\mid \\mathsf{msg}_{i,j}\\,o \\\\ \\mid & \\mathsf{close}_{i,j}\\,o \\mid \\mathsf{choice}_{i,j}\\,o\\,b \\mid \\mathsf{link}_i\\,o_1\\,o_2 \\mid \\mathsf{sess}_i\\,\\sigma \\end{array}} \\\\\n\\htmlData{k=ev.admin}{\\mathsf{admin} = \\{\\beta, \\mathsf{new}, \\mathsf{newat}, \\mathsf{spawn}, \\mathsf{link}\\}} \\qquad \\htmlData{k=ev.tau}{\\tau = \\text{all but } \\mathsf{sess}} \\qquad \\htmlData{k=se.parts}{\\mathsf{parts}(ev)}\n\\end{array}",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=ev.event}{\\begin{array}{rl} ev ::= & \\beta_i \\mid \\mathsf{new}_i\\,\\ell\\,c \\mid \\mathsf{newat}_i\\,\\kappa\\,o\\,c \\mid \\mathsf{spawn}_{i,j}\\,v \\mid \\mathsf{msg}_{i,j}\\,o\\,v \\\\ \\mid & \\mathsf{close}_{i,j}\\,o \\mid \\mathsf{choice}_{i,j}\\,o\\,b \\mid \\mathsf{link}_i\\,o_1\\,o_2 \\mid \\mathsf{sess}_i\\,\\sigma \\end{array}} \\\\\n\\htmlData{k=ev.admin}{\\mathsf{admin} = \\{\\beta, \\mathsf{new}, \\mathsf{newat}, \\mathsf{spawn}, \\mathsf{link}\\}} \\qquad \\htmlData{k=ev.tau}{\\tau = \\text{all but } \\mathsf{sess}} \\qquad \\htmlData{k=se.parts}{\\mathsf{parts}(ev)}\n\\end{array}",
      "caption": "An event names the threads $\\mathsf{parts}(ev)$ and the family, channel or ends acted on.",
      "modes": [
       "df",
@@ -698,10 +698,10 @@ window.MAP = {
      "id": "r-select",
      "title": "E-Select",
      "rocq": "static/Typing.v: e_select",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)}\\\\ \\htmlData{k=E-Select.order}{\\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec x\\cdot\\kappa_i}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} e : (S_0@x)^{a} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\htmlData{k=prim.select}{\\mathsf{select}}_i\\,e : (S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}})^{\\htmlData{k=act.refill}{N}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 + 1 ; \\vartheta_0}\\;\\textsf{E-Select}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} e : (S_0@x)^{a} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\htmlData{k=prim.select}{\\mathsf{select}}_i\\,e : (S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}})^{\\htmlData{k=act.refill}{N}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 + 1 ; \\vartheta_0}\\;\\textsf{E-Select}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)}\\\\ \\htmlData{k=E-Select.order}{\\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec x\\cdot\\kappa_i}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.select}{\\mathsf{select}}_i\\,e : S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}}}\\;\\textsf{D-Select}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)}\\\\ \\htmlData{k=E-Select.order}{\\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec x\\cdot\\kappa_i}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.select}{\\mathsf{select}}_i\\,e : S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}}}\\;\\textsf{D-Select}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.select}{\\mathsf{select}}_i\\,e : S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}}}\\;\\textsf{D-Select}",
+      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.select}{\\mathsf{select}}_i\\,e : S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}}}\\;\\textsf{D-Select}"
      },
      "caption": "The selecting end continues at $\\overline{x\\cdot\\kappa_i}$, and the rule asks $\\Gamma \\vdash x \\prec x\\cdot\\kappa_i$.",
      "modes": [
@@ -714,10 +714,10 @@ window.MAP = {
      "id": "r-branch",
      "title": "E-Branch",
      "rocq": "static/Typing.v: e_branch",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)}\\\\ \\htmlData{k=E-Branch.order}{\\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec \\overline{x\\cdot\\kappa_1},\\ x \\prec \\overline{x\\cdot\\kappa_2}}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} e : (S_0@x)^{a} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\htmlData{k=prim.branch}{\\mathsf{branch}}\\,e : ((S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1})^{N} \\oplus (S_2@x\\cdot\\kappa_2)^{N})^{0} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 + 1 ; \\vartheta_0}\\;\\textsf{E-Branch}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} e : (S_0@x)^{a} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\htmlData{k=prim.branch}{\\mathsf{branch}}\\,e : ((S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1})^{N} \\oplus (S_2@x\\cdot\\kappa_2)^{N})^{0} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 + 1 ; \\vartheta_0}\\;\\textsf{E-Branch}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)}\\\\ \\htmlData{k=E-Branch.order}{\\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec \\overline{x\\cdot\\kappa_i}}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.branch}{\\mathsf{branch}}\\,e : S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2}\\;\\textsf{D-Branch}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)}\\\\ \\htmlData{k=E-Branch.order}{\\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec \\overline{x\\cdot\\kappa_i}}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.branch}{\\mathsf{branch}}\\,e : S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2}\\;\\textsf{D-Branch}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.branch}{\\mathsf{branch}}\\,e : S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2}\\;\\textsf{D-Branch}",
+      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.branch}{\\mathsf{branch}}\\,e : S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2}\\;\\textsf{D-Branch}"
      },
      "caption": "The branching end continues at $x\\cdot\\kappa_i$, and the rule asks $\\Gamma \\vdash x \\prec \\overline{x\\cdot\\kappa_i}$ for both $i$.",
      "modes": [
@@ -1139,7 +1139,7 @@ window.MAP = {
      "id": "p-obl",
      "title": "Obligations of process steps",
      "rocq": "relation/Relation.v: q_tau, q_send, q_recv, q_close, q_select, q_branch, q_link",
-     "tex": "\\begin{array}{ll}\n\\htmlData{k=Q-Tau}{\\textsf{Q-Tau}} & C' \\cap \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma = \\varnothing \\Rightarrow \\htmlData{k=rel.atcost}{p'\\ \\text{at}}\\ \\Sigma \\text{ after cost } \\htmlData{k=ct.sync}{\\kappa(ev)} \\\\\n\\htmlData{k=Q-Send}{\\textsf{Q-Send}} & \\Sigma(o) = S_0@x \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.send}{!(\\exists^{m}\\bar\\iota.\\ U^{b})}.S \\land \\Sigma \\setminus o = \\Sigma_v \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Sigma_r \\land {} \\\\\n & \\htmlData{k=Q-Send.theta-e}{\\htmlData{k=end.ech}{\\mathsf{ech}}[\\mathrm{dom}\\,\\Theta_e] \\subseteq C} \\land \\htmlData{k=Q-Send.split}{\\mathsf{send\\_split}\\,\\Sigma\\,\\Sigma_e\\,\\Theta_e} \\land w \\in \\htmlData{k=th.Vrel}{V^{W}_{n-\\kappa_{give}}\\llbracket \\Sigma_v \\cup \\Theta_e \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket} \\land {} \\\\\n & \\htmlData{k=rel.atcost}{p'\\ \\text{at}}\\ (\\Sigma_r \\cup \\htmlData{k=Q-Send.sigma-e}{\\Sigma_e})[o \\mapsto S@x^{+}] \\\\\n\\htmlData{k=Q-Recv}{\\textsf{Q-Recv}} & \\Sigma(o) = S_0@x \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.recv}{?(\\exists^{m}\\bar\\iota.\\ U^{b})}.S \\land \\forall j, \\Theta_2.\\ j + \\kappa_{take} \\leq n \\land {} \\\\\n & \\htmlData{k=end.ech}{\\mathsf{ech}}[\\mathrm{dom}\\,\\Theta_2] \\cap C = \\varnothing \\land \\htmlData{k=Q-Recv.ok}{\\mathsf{recv\\_ok}\\,\\Sigma'\\,\\Theta_2} \\land w \\in \\htmlData{k=th.Vrel}{V^{W}_{j}\\llbracket \\Theta_2 \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket} \\Rightarrow {} \\\\\n & \\quad (C' \\cup \\htmlData{k=Q-Recv.back}{\\mathsf{recv\\_back}\\,\\Sigma'\\,\\Theta_2}, E') \\in \\htmlData{k=th.Prel}{P^{W}_{j}\\llbracket \\htmlData{k=Q-Recv.env}{\\mathsf{recv\\_env}\\,\\Sigma'\\,\\Theta_2} \\vdash T \\rrbracket} \\\\\n\\htmlData{k=Q-Link}{\\textsf{Q-Close, Q-Select,}} & \\text{the term obligations with } \\Sigma \\text{ for } \\Theta \\text{ and } P \\text{ for } E \\\\\n\\htmlData{k=Q-Link}{\\textsf{Q-Branch, Q-Link}} & \\text{where } p = (C, E),\\ p' = (C', E'),\\ \\Sigma' = \\Sigma[o \\mapsto S@x^{+}]\n\\end{array}",
+     "tex": "\\begin{array}{ll}\n\\htmlData{k=Q-Tau}{\\textsf{Q-Tau}} & C' \\cap \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma = \\varnothing \\Rightarrow \\htmlData{k=rel.atcost}{p'\\ \\text{at}}\\ \\Sigma \\text{ after cost } \\htmlData{k=ct.sync}{\\kappa(ev)} \\\\\n\\htmlData{k=Q-Send}{\\textsf{Q-Send}} & \\Sigma(o) = S_0@x \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.send}{!(\\exists^{m}\\bar\\iota.\\ U^{b})}.S \\land \\Sigma \\setminus o = \\Sigma_v \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Sigma_r \\land {} \\\\\n & \\htmlData{k=Q-Send.theta-e}{(\\forall o'.\\ o' \\in \\mathrm{dom}\\,\\Theta_e \\iff o' \\in \\htmlData{k=syn.fends}{\\mathsf{fends}}(w) \\land \\htmlData{k=end.ech}{\\mathsf{ech}}(o') \\in C) \\land \\htmlData{k=syn.fends}{\\mathsf{fends}}(w) = \\mathrm{dom}\\,\\Sigma_v \\cup \\mathrm{dom}\\,\\Theta_e} \\land {} \\\\\n & \\htmlData{k=Q-Send.split}{\\mathsf{send\\_split}\\,\\Sigma\\,\\Sigma_e\\,\\Theta_e} \\land w \\in \\htmlData{k=th.Vrel}{V^{W}_{n-\\kappa_{give}}\\llbracket \\Sigma_v \\cup \\Theta_e \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket} \\land {} \\\\\n & \\htmlData{k=rel.atcost}{p'\\ \\text{at}}\\ (\\Sigma_r \\cup \\htmlData{k=Q-Send.sigma-e}{\\Sigma_e})[o \\mapsto S@x^{+}] \\\\\n\\htmlData{k=Q-Recv}{\\textsf{Q-Recv}} & \\Sigma(o) = S_0@x \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.recv}{?(\\exists^{m}\\bar\\iota.\\ U^{b})}.S \\land \\forall j, \\Theta_2.\\ j + \\kappa_{take} \\leq n \\land {} \\\\\n & \\htmlData{k=end.ech}{\\mathsf{ech}}[\\mathrm{dom}\\,\\Theta_2] \\cap C = \\varnothing \\land \\htmlData{k=Q-Recv.ok}{\\mathsf{recv\\_ok}\\,\\Sigma'\\,\\Theta_2} \\land w \\in \\htmlData{k=th.Vrel}{V^{W}_{j}\\llbracket \\Theta_2 \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket} \\Rightarrow {} \\\\\n & \\quad (C' \\cup \\htmlData{k=Q-Recv.back}{\\mathsf{recv\\_back}\\,\\Sigma'\\,\\Theta_2}, E') \\in \\htmlData{k=th.Prel}{P^{W}_{j}\\llbracket \\htmlData{k=Q-Recv.env}{\\mathsf{recv\\_env}\\,\\Sigma'\\,\\Theta_2} \\vdash T \\rrbracket} \\\\\n\\htmlData{k=Q-Link}{\\textsf{Q-Close, Q-Select,}} & \\text{the term obligations with } \\Sigma \\text{ for } \\Theta \\text{ and } P \\text{ for } E \\\\\n\\htmlData{k=Q-Link}{\\textsf{Q-Branch, Q-Link}} & \\text{where } p = (C, E),\\ p' = (C', E'),\\ \\Sigma' = \\Sigma[o \\mapsto S@x^{+}]\n\\end{array}",
      "caption": "Internal steps keep the interface, and external messages move ends between the interface and the restricted channels.",
      "modes": [
       "df",
@@ -5809,29 +5809,6 @@ window.MAP = {
     }
    ]
   },
-  "E-Select.order": {
-   "title": "$\\Gamma \\vdash x \\prec x\\cdot\\kappa_i$",
-   "what": "The partner point $x\\cdot\\kappa_i$ of the continuation $\\overline{x\\cdot\\kappa_i}$ lies above $x$.",
-   "why": "$\\prec_W$ relates no field $x\\cdot\\kappa$ to $x$, so the fact comes from $\\Gamma$. No soundness proof reads the premise, and the semantic select rule holds without it.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{select}_{\\mathsf{false}}$ at $x$ asks $x \\prec x\\cdot 0$.",
-   "rocq": "static/Typing.v: e_select",
-   "sig": "\\Gamma \\vdash x \\prec x \\cdot \\kappa_i",
-   "args": [
-    {
-     "name": "x",
-     "meaning": "the point of the end the action is on"
-    },
-    {
-     "name": "i",
-     "meaning": "the selected branch"
-    },
-    {
-     "name": "x \\cdot \\kappa_i",
-     "meaning": "the partner point of the continuation $\\overline{x\\cdot\\kappa_i}$"
-    }
-   ]
-  },
   "E-Branch.unfold": {
    "title": "Branch head",
    "what": "$\\mathsf{unfold}(S_0) = \\&(S_1, S_2)$.",
@@ -5848,25 +5825,6 @@ window.MAP = {
     {
      "name": "\\mathsf{unfold}",
      "meaning": "the head normal form, which unfolds $\\mu$ and removes leading $\\mathsf{Skip}$"
-    }
-   ]
-  },
-  "E-Branch.order": {
-   "title": "$\\Gamma \\vdash x \\prec \\overline{x\\cdot\\kappa_i}$",
-   "what": "For both $i$, the partner point $\\overline{x\\cdot\\kappa_i}$ of the continuation $x\\cdot\\kappa_i$ lies above $x$.",
-   "why": "It mirrors the select premise for the branching side. No soundness proof reads it, and the semantic branch rule holds without it.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{branch}$ at $x$ asks $x \\prec \\overline{x\\cdot 0}$ and $x \\prec \\overline{x\\cdot 1}$.",
-   "rocq": "static/Typing.v: e_branch",
-   "sig": "\\forall i.\\ \\Gamma \\vdash x \\prec \\overline{x \\cdot \\kappa_i}",
-   "args": [
-    {
-     "name": "x",
-     "meaning": "the point of the end the action is on"
-    },
-    {
-     "name": "i",
-     "meaning": "ranges over both branches"
     }
    ]
   },
@@ -8979,21 +8937,29 @@ window.MAP = {
    ]
   },
   "Q-Send.theta-e": {
-   "title": "$\\mathsf{ech}[\\mathrm{dom}\\,\\Theta_e] \\subseteq C$",
-   "what": "$\\Theta_e$ holds the ends of restricted channels that leave with the payload.",
-   "why": "Exactness of $V$ fixes the payload environment $\\Sigma_v \\cup \\Theta_e$ as the ends of $w$, so $\\Theta_e$ is its restricted part.",
+   "title": "Extruded ends $\\Theta_e$",
+   "what": "$\\mathrm{dom}\\,\\Theta_e = \\{o' \\in \\mathsf{fends}(w) \\mid \\mathsf{ech}(o') \\in C\\}$ and $\\mathsf{fends}(w) = \\mathrm{dom}\\,\\Sigma_v \\cup \\mathrm{dom}\\,\\Theta_e$.",
+   "why": "$\\Theta_e$ is exactly the restricted part of the ends of $w$, and $\\Sigma_v$ the interface part, so the payload carries $\\mathsf{fends}(w)$ and nothing else.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Theta_e = \\{d^{+}\\}$.",
    "rocq": "relation/Relation.v: q_send",
-   "sig": "\\mathsf{ech}[\\mathrm{dom}\\,\\Theta_e] \\subseteq C",
+   "sig": "\\mathrm{dom}\\,\\Theta_e = \\{o' \\in \\mathsf{fends}(w) \\mid \\mathsf{ech}(o') \\in C\\}",
    "args": [
     {
      "name": "\\Theta_e",
      "meaning": "the restricted ends of the payload"
     },
     {
+     "name": "w",
+     "meaning": "the payload"
+    },
+    {
      "name": "C",
      "meaning": "the restricted channels"
+    },
+    {
+     "name": "\\Sigma_v",
+     "meaning": "the interface ends of the payload"
     }
    ]
   },
@@ -11753,7 +11719,7 @@ window.MAP = {
    "why": "A box value carries code, whose relation depends on the cost table. A $\\mathsf{prim}$ type without boxes carries no code.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\ast$ and $\\ast \\otimes \\ast$ contain no box.",
-   "rocq": "types/Types.v: prim",
+   "rocq": "compat/LiveDF.v: boxfree",
    "sig": "\\Box \\notin T",
    "args": [
     {

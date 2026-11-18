@@ -48,7 +48,7 @@ ${h('P-Act-Session', R`M(i) ${step(R`\sigma`)} e',\ ${h('se.subj', R`\mathsf{sub
 block(s, {
   id: 'sem-events', title: 'Events', rocq: 'lang/Process.v: event, ev_parts, ev_admin, ev_tau',
   tex: R`\begin{array}{l}
-${h('ev.event', R`\begin{array}{rl} ev ::= & \beta_i \mid \mathsf{new}_i\,\ell\,c \mid \mathsf{newat}_i\,\kappa\,o\,c \mid \mathsf{spawn}_{i,j} \mid \mathsf{msg}_{i,j}\,o \\ \mid & \mathsf{close}_{i,j}\,o \mid \mathsf{choice}_{i,j}\,o\,b \mid \mathsf{link}_i\,o_1\,o_2 \mid \mathsf{sess}_i\,\sigma \end{array}`)} \\
+${h('ev.event', R`\begin{array}{rl} ev ::= & \beta_i \mid \mathsf{new}_i\,\ell\,c \mid \mathsf{newat}_i\,\kappa\,o\,c \mid \mathsf{spawn}_{i,j}\,v \mid \mathsf{msg}_{i,j}\,o\,v \\ \mid & \mathsf{close}_{i,j}\,o \mid \mathsf{choice}_{i,j}\,o\,b \mid \mathsf{link}_i\,o_1\,o_2 \mid \mathsf{sess}_i\,\sigma \end{array}`)} \\
 ${h('ev.admin', R`\mathsf{admin} = \{\beta, \mathsf{new}, \mathsf{newat}, \mathsf{spawn}, \mathsf{link}\}`)} \qquad ${h('ev.tau', R`\tau = \text{all but } \mathsf{sess}`)} \qquad ${h('se.parts', R`\mathsf{parts}(ev)`)}
 \end{array}`,
   caption: 'An event names the threads $\\mathsf{parts}(ev)$ and the family, channel or ends acted on.'
