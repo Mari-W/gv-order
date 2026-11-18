@@ -9,7 +9,7 @@
     the link substitution at a link ([Erel_rename], [FuelE_rename]). *)
 
 From stdpp Require Import relations.
-From GV Require Export soup.Sessions fuel.FuelSub.
+From GV Require Export soup.Sessions fuel.FuelSub compat.Redex compat.Rename.
 
 (** ** Levels after a step *)
 
@@ -76,7 +76,7 @@ Section soup.
   Proof. intros H. destruct (sp_closed _ _ _ _ _ _ _ _ Hs o H) as [?|Hd]; [done|]. by rewrite dom_empty_L in Hd. Qed.
   Lemma s_pair o : o ∈ dom (s_K a) → (edual o) ∈ dom (s_K a).
   Proof. intros H. apply (sp_pair _ _ _ _ _ _ _ _ Hs o H). by apply s_closed. Qed.
-  Lemma s_sdual o S x S' x' : A !! o = Some (S, x) → A !! (edual o) = Some (S', x') → x' = x‾ ∧ sdual S S'.
+  Lemma s_sdual o S x S' x' : A !! o = Some (S, x) → A !! (edual o) = Some (S', x') → x' = pt_dual x ∧ sdual S S'.
   Proof.
     intros H1 H2. apply (sp_sdual _ _ _ _ _ _ _ _ Hs o S x S' x' H1 H2). apply s_closed.
     rewrite <-s_domA. by apply elem_of_dom_2 in H1.
@@ -322,7 +322,7 @@ Section step.
     (∀ o h, K' !! o = Some h → is_Some (Mq' !! h.(h_th))) →
     (∀ o, o ∈ dom K' → ech o ∈ C') →
     (∀ o, o ∈ dom K' → edual o ∈ dom K') →
-    (∀ o S x S' x', A' !! o = Some (S, x) → A' !! edual o = Some (S', x') → x' = x‾ ∧ sdual S S') →
+    (∀ o S x S' x', A' !! o = Some (S, x) → A' !! edual o = Some (S', x') → x' = pt_dual x ∧ sdual S S') →
     (∀ o P P', Π' !! o = Some P → Π' !! edual o = Some P' → sequiv P' (dual P)) →
     soup_inv N n W ∅ T (LFState (C', Mq') K' tk') A' Π' U'.
   Proof.
@@ -457,5 +457,69 @@ Section step.
     destruct (HF (s_ffresh i c Hc)) as [S' HS'].
     eexists _, _. unfold lf_next. cbn [own_next tk_next s_K s_tk s_q]. rewrite Hk. apply (step_create i e' c _ S S'); [by rewrite He|done| |exact HS'].
     eapply at_cost_E_live; [|exact HS]. cbn; lia.
+  Qed.
+  Lemma s_threads o h : K !! o = Some h → is_Some (Mq !! h.(h_th)).
+  Proof. apply (s_owner _ _ _ _ _ _ _ _ Hs). Qed.
+
+  (** P-Act-Spawn. *)
+  Lemma step_spawn i j e Mv v e' :
+    Mq !! i = Some e → tstep e (LSpawn Mv v) e' → Mq !! j = None →
+    soup_inv N n W ∅ T
+      (lf_next N (LFState (C, Mq) K tk) (EvSpawn i j Mv) (C, <[j := App v EUnit]> (<[i := e']> Mq)))
+      A Π (λ t, if decide (t = j) then TUnit else U t).
+  Proof.
+    intros He Hst Hj. assert (i ≠ j) as Hij by (intros ->; congruence).
+    destruct (s_obl i e _ e' He Hst) as [HE HF]. cbn [Eobl Fobl] in HE, HF.
+    unfold o_spawn in HE. unfold f_spawn in HF.
+    destruct HE as (ΘM & Θr & Hd & HΘ & HM & Hth & Hpar).
+    destruct HF as (HMφ & _ & Hch & Hpar').
+    destruct (split_mres _ _ _ _ Hd HΘ HM) as [-> ->].
+    assert (Hnj : ∀ o h, K !! o = Some h → h.(h_th) ≠ j).
+    { intros o h Ho Heq. destruct (s_threads o h Ho) as [? Hx]. congruence. }
+    assert (HMi : Mv ⊆ dom (kth K i)).
+    { rewrite <-HM, dom_mres, dom_kres. set_solver. }
+    (* the child *)
+    destruct Hth as (e0 & -> & _ & Hb).
+    destruct (Hb W n ∅ EUnit (wext_refl W) ltac:(cbn; lia) (map_disjoint_empty_r _)) as [Hb1 _].
+    pose proof (Hb1 ltac:(lia) (proj2 (Vrel_unit_iff _ _ _ _ _) (conj eq_refl eq_refl))) as Hbody.
+    rewrite map_union_empty in Hbody.
+    assert (Erel live n W (mres Mv (kres K i A)) TUnit ∅ (App (Lam e0) EUnit)) as Hchild.
+    { apply (Erel_beta live n W _ TUnit ∅ _ (subst1 EUnit e0)).
+      - intros α e'' Hs'. assert (head_step (App (Lam e0) EUnit) α e'') as Hh by head_only.
+        inversion Hh; by subst.
+      - by apply tstep_head, t_act_app.
+      - cbn. by rewrite Nat.sub_0_r. }
+    unfold lf_next. cbn [own_next tk_next s_K s_tk s_q].
+    apply soup_build.
+    - intros t e1 He1. apply lookup_insert_Some in He1 as [[<- <-]|[Htj He1]].
+      + rewrite decide_True by done. rewrite (kres_khand_to _ i), (kres_khand_to _ i), (ctrs_khand_to _ i) by done.
+        unfold tupd. rewrite decide_True by done. split_and!; [exact Hchild|by right|exact Hch].
+      + rewrite decide_False by done. rewrite !kres_khand_from, ctrs_khand_from by done.
+        unfold tupd. rewrite decide_False by done.
+        apply lookup_insert_Some in He1 as [[<- <-]|[Hti He1]].
+        * rewrite decide_True by done. split_and!; [|exact (s_ty Hs i e He)|exact Hpar'].
+          eapply at_cost_E_live; [|exact Hpar]. cbn; lia.
+        * rewrite decide_False by done.
+          assert (∀ {Y} (m : gmap cend Y), mrem Mv (kres K t m) = kres K t m) as Hm.
+          { intros Y m. apply map_eq_some. intros o w. rewrite lookup_mrem_Some. split; [tauto|].
+            intros Hw. split; [done|]. intros Ho. pose proof (HMi o Ho) as Hi.
+            apply elem_of_dom_kth in Hi as (h & Hh & Hhi). apply lookup_kres in Hw as [_ (h' & Hh' & Ht)].
+            simplify_eq. }
+          rewrite !Hm. assert (ctrs K t = mrem Mv (ctrs K t)) as <-.
+          { apply map_eq_some. intros o f. rewrite lookup_mrem_Some. split; [|tauto].
+            intros Hf. split; [done|]. intros Ho. pose proof (HMi o Ho) as Hi.
+            apply elem_of_dom_kth in Hi as (h & Hh & Hhi). apply lookup_ctrs in Hf as (h' & Hh' & Ht & _).
+            simplify_eq. }
+          destruct (s_other t e1 He1) as [H1 H2]. split_and!; [done|exact (s_ty Hs t e1 He1)|done].
+    - apply map_eq. intros o. rewrite !lookup_fmap, lookup_khand. pose proof (s_pts _ _ _ _ _ _ _ _ Hs o) as Hp.
+      cbn [s_K] in Hp. rewrite Hp. destruct (K !! o); simpl; [|done]. by case_decide.
+    - unfold khand. rewrite dom_kmod. apply (sp_dom _ _ _ _ _ _ _ _ Hs).
+    - intros o h Ho. rewrite lookup_khand in Ho. apply fmap_Some in Ho as (h0 & Ho & ->).
+      case_decide; simpl; rewrite !lookup_insert_is_Some'; [by left|].
+      destruct (decide (h0.(h_th) = i)); [by right; left|]. right; right. exact (s_threads o h0 Ho).
+    - intros o Ho. unfold khand in Ho. rewrite dom_kmod in Ho. exact (s_closed _ _ _ _ _ _ _ _ Hs o Ho).
+    - intros o Ho. unfold khand in *. rewrite dom_kmod in Ho |- *. exact (s_pair _ _ _ _ _ _ _ _ Hs o Ho).
+    - exact (s_sdual _ _ _ _ _ _ _ _ Hs).
+    - exact (s_pdual _ _ _ _ _ _ _ _ Hs).
   Qed.
 End step.
