@@ -46,7 +46,12 @@ Proof.
   - intros [Hn [H|[_ H]]]; [|done]. exfalso. apply Hn. by eexists.
 Qed.
 
-(** ** The ends of an action are held *)
+(** The entry of an end in its holder's part. *)
+Lemma s_held {Y : Type} (K : own) t (m : gmap cend Y) o v :
+  kres K t m !! o = Some v → ∃ h, K !! o = Some h ∧ h.(h_th) = t ∧ m !! o = Some v.
+Proof. intros H. apply lookup_kres in H as [H (h & Hh & Ht)]. eauto. Qed.
+
+(** ** The clauses of one soup *)
 
 Section soup.
   Context (N n : nat) (W : world) (T : ty) (a : lfstate) (A : senv) (Π : penv) (U : nat → ty).
@@ -82,9 +87,6 @@ Section soup.
     rewrite <-s_dom. by apply elem_of_dom_2 in H1.
   Qed.
 
-  (** The entry of an end in its holder's part. *)
-  Lemma s_held t o v : kres (s_K a) t A !! o = Some v → ∃ h, s_K a !! o = Some h ∧ h.(h_th) = t ∧ A !! o = Some v.
-  Proof. intros H. apply lookup_kres in H as [H (h & Hh & Ht)]. eauto. Qed.
 
   Lemma s_kpt o S x : A !! o = Some (S, x) → kpt (s_K a) o = x.
   Proof.
@@ -350,5 +352,50 @@ Section step.
           simplify_eq. apply sequiv_refl.
         * rewrite lookup_insert_eq in H4. rewrite lookup_insert_ne, lookup_insert_eq in H3 by discriminate.
           simplify_eq. rewrite dual_involutive. apply sequiv_refl.
+  Qed.
+  Lemma s_cfresh i c : c ∉ C → cfresh c (kres K i A).
+  Proof.
+    intros Hc. destruct (s_notin_K c Hc) as [Hp Hn].
+    pose proof (kres_sub_dom i A) as Hd. split; intros Hin; [apply Hp|apply Hn]; by apply Hd.
+  Qed.
+
+  Lemma s_ffresh i c : c ∉ C → ffresh c (kres K i Π) (ctrs K i).
+  Proof.
+    intros Hc. destruct (s_notin_K c Hc) as [Hp Hn].
+    pose proof (kres_sub_dom i Π) as Hd. pose proof (ctrs_sub_dom i) as Hd'.
+    unfold ffresh. split_and!; intros Hin; [apply Hp|apply Hn|apply Hp|apply Hn]; first [by apply Hd|by apply Hd'].
+  Qed.
+
+  (** P-Act-New. *)
+  Lemma step_new i e ℓ c e' :
+    Mq !! i = Some e → tstep e (LNew ℓ c) e' → c ∉ C →
+    ∃ A' Π', soup_inv N n W ∅ T
+      (lf_next N (LFState (C, Mq) K tk) (EvNew i ℓ c) (C ∪ {[c]}, <[i := e']> Mq)) A' Π' U.
+  Proof.
+    intros He Hst Hc. destruct (s_obl i e _ e' He Hst) as [HE HF]. cbn [Eobl Fobl] in HE, HF.
+    unfold o_new in HE. unfold f_new in HF.
+    destruct (HE (s_cfresh i c Hc) (kfresh ℓ K)) as [S HS].
+    { intros o S0 x0 Ho Hr. destruct (s_held K i A o _ Ho) as (h & Hh & _ & HA).
+      pose proof (s_kpt _ _ _ _ _ _ _ _ Hs o S0 x0 HA) as Hk. cbn [s_K] in Hk. unfold kpt in Hk. rewrite Hh in Hk.
+      simpl in Hk. subst x0. exact (kfresh_spec ℓ K o h Hh Hr). }
+    destruct (HF (s_ffresh i c Hc)) as [S' HS'].
+    eexists _, _. unfold lf_next. cbn [own_next tk_next s_K s_tk s_q]. apply (step_create i e' c _ S S'); [by rewrite He|done| |exact HS'].
+    eapply at_cost_E_live; [|exact HS]. cbn; lia.
+  Qed.
+
+  (** P-Act-NewAt. *)
+  Lemma step_new_at i e κf o c e' :
+    Mq !! i = Some e → tstep e (LNewAt κf o c) e' → c ∉ C →
+    ∃ A' Π', soup_inv N n W ∅ T
+      (lf_next N (LFState (C, Mq) K tk) (EvNewAt i κf o c) (C ∪ {[c]}, <[i := e']> Mq)) A' Π' U.
+  Proof.
+    intros He Hst Hc. destruct (s_obl i e _ e' He Hst) as [HE HF]. cbn [Eobl Fobl] in HE, HF.
+    unfold o_new_at in HE. unfold f_new in HF.
+    destruct (HE (s_cfresh i c Hc)) as (S0 & x & Ho & S & HS).
+    destruct (s_held K i A o _ Ho) as (h & Hh & _ & HA).
+    pose proof (s_kpt _ _ _ _ _ _ _ _ Hs o S0 x HA) as Hk. cbn [s_K] in Hk.
+    destruct (HF (s_ffresh i c Hc)) as [S' HS'].
+    eexists _, _. unfold lf_next. cbn [own_next tk_next s_K s_tk s_q]. rewrite Hk. apply (step_create i e' c _ S S'); [by rewrite He|done| |exact HS'].
+    eapply at_cost_E_live; [|exact HS]. cbn; lia.
   Qed.
 End step.
