@@ -128,7 +128,7 @@ aside .placeholder { color: var(--muted); font-size: 0.9rem; }
 <script>
 window.MathJax = {
   loader: { load: ['[tex]/html'] },
-  tex: { packages: { '[+]': ['html'] }, macros: { llbracket: '[\\![', rrbracket: ']\\!]' } },
+  tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], processEscapes: true, packages: { '[+]': ['html'] }, macros: { llbracket: '[\\![', rrbracket: ']\\!]' } },
   svg: { fontCache: 'global' },
   startup: { typeset: false, ready() { MathJax.startup.defaultReady(); MathJax.startup.promise.then(() => window.__mjReady && window.__mjReady()); } }
 };
@@ -212,6 +212,7 @@ window.MathJax = {
       root.appendChild(el); shown++;
     }
     if (!shown) root.insertAdjacentHTML('beforeend', '<p class="empty-state">Nothing in this section matches the filter for this instance.</p>');
+    typeset(root);
     if (pinned) mark(pinned, 'is-pinned');
   }
 
@@ -225,7 +226,11 @@ window.MathJax = {
       shown++;
     }
     if (!shown) root.insertAdjacentHTML('beforeend', '<p class="empty-state">No example for this instance matches the filter.</p>');
+    typeset(root);
   }
+
+  // typeset inline $…$ math in prose (captions, intros, notes)
+  function typeset(el) { if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]).catch(() => {}); }
 
   function showNote(key, isPinned) {
     const n = MAP.notes[key], aside = $('#note');
@@ -237,6 +242,7 @@ window.MathJax = {
       <h2>${esc(n.title || key)}</h2>
       <dl>${row('What', n.what)}${row('Why', n.why)}${row('Without it', n.breaks, 'breaks')}${row('Example', n.example)}${row('Rocq', n.rocq)}</dl>
       ${u.length > 1 ? `<div class="uses">Also in ${u.map(([id, v]) => `<a href="#${v.sec}" data-jump="${esc(id)}">${esc(v.title)}</a>`).join('')}</div>` : ''}`;
+    typeset(aside);
   }
   function clearMarks(cls) { document.querySelectorAll('.' + cls).forEach(e => e.classList.remove(cls)); }
   function mark(key, cls) {
