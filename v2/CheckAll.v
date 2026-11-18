@@ -16,7 +16,8 @@ From GV Require Import compat.Rules compat.LiveDF compat.Swap compat.Rename comp
 From GV Require Import static.Fundamental static.LiveFundamental examples.GuardEx.
 From GV Require Import soup.LFAdequacy soup.LFCompose soup.LFTyped examples.LFClose.
 From GV Require Import examples.LFTools examples.LFCycle examples.LFFreshBetween
-  examples.LFFreshMany examples.LFClientServer examples.LFFactoryEx examples.LFGrowRing.
+  examples.LFFreshMany examples.LFClientServer examples.LFFactoryEx examples.LFGrowRing
+  examples.LFController.
 
 (** Language: the redex once, progress, preservation. *)
 Print Assumptions act_offer_sig.
@@ -346,3 +347,7 @@ Print Assumptions fx_lock_free.
 Print Assumptions W_rg_lfworld.
 Print Assumptions rg_lftyped.
 Print Assumptions rg_lock_free.
+(** C.6: why the controller does not type under ⊩ (examples/LFController.v). *)
+Print Assumptions sess_ages.
+Print Assumptions idle_credit_falls.
+Print Assumptions sess_sub_credit.

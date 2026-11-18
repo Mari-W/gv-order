@@ -17,7 +17,7 @@ The old development in theories/ stays untouched.
 | S8 | soup and adequacy | done (S8.34): `lfsoup_step`, `soup_no_tau_divergence`, `lf_adequacy`, `lf_thread_progress`, `idle_dual` |
 | S9 | lock-free composition and soundness | done (S9.9): `⊪` the soup alone, `lfptyped` (LFTyped.v), `lf_p_term`, `lf_p_connect`, `lf_p_join`, `lf_fundamental`, `lf_soundness`, example `cl_lock_free`. S9.10 to S9.12 type the six S2 examples by ⊩ at finite N, all lock free |
 | S10 | paper | open |
-| C | cleanup | in progress (C.5) |
+| C | cleanup | done (C.6): `Λ ⊢▷ t`, P-Join admissible, `lf_term` `lf_connect` `lf_join`, `types/Names.v`, `cctx`, controller untypable (aging) |
 
 ## Deviations
 
@@ -1704,3 +1704,23 @@ The old development in theories/ stays untouched.
   PTerm.v 25.7 s to 11.6 s, Connect.v 25.5 s to 15.0 s, ConnectTau.v
   13.6 s to 6.3 s. CheckAll.v (116 s before, 139 s after) is now the
   critical path. No statement changes. 298 results, all closed.
+- C.6. The controller (proposal #20, plan §7) does not type under ⊩ at
+  any finite N, and no rule changes (examples/LFController.v). Server and
+  client loop over ⟨⟨a, b⟩, k⟩ with k one end of ctl at Skip. The rule
+  that fails is the aging of k. Every step a loop body takes while it
+  holds k ages k by the step's cost (`lage` in the premises of E-Let,
+  E-LetP, E-LetU, E-Pair, E-App). An end is no free type
+  (`sess_not_free`), so `tage` ages it by `age_credit`, which lowers its
+  credit by the cost (`sess_ages`, `idle_credit_falls`). Idle ends get no
+  other case. Only an action on an end refills it to N (E-Send, E-Recv),
+  and no thread may act on k. E-Sub never raises a credit
+  (`sess_sub_credit`, rule `sub_sess`). The box type fixes the credit k0
+  of k at the loop's parameter, and the guard asks an action, of cost at
+  least 1, before the self call (rules `gl_tick_*`). So k reaches the
+  self call at k0 − m with m ≥ 1, and ⟨⟨a, b⟩, k⟩ does not have the
+  parameter type. A parameter at credit ∞ is out of reach, because
+  E-New and E-NewAt give N and a payload at ∞ needs a sender at ∞. The
+  fuel layer already drops the "≥ 1" checks of idle ends (Q5 (b),
+  fuel/Fuel.v). The gap is the static aging, which would need a case
+  that ages an idle end for free or truncates it at 0. CheckAll lists
+  the three lemmas, 301 results, all closed.
