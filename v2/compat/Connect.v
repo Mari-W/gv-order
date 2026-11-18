@@ -527,3 +527,72 @@ Proof.
     eapply (Hno (EvChoice i2 i1 (edual o) b')); [|done]. eapply p_act_choice; [done|done|done|done|].
     by rewrite edual_edual.
 Qed.
+
+(** ** Readiness of the composite *)
+
+Lemma terminated_pirred p : terminated p → pirred p.
+Proof.
+  intros (v & E & -> & Hv & HE) π p' (q & ev & q' & Hq & Hst & _).
+  destruct (istep_parts_nonempty _ _ _ Hst) as [t Ht].
+  destruct (istep_parts_some _ _ _ t Hst Ht) as [e He].
+  destruct (istep_actor _ _ _ t e Hst Ht He) as (α & e' & Hs & _).
+  assert (e ∈ soup q.2) as Hin by (apply elem_of_soup; eauto).
+  destruct q as [C M]. injection Hq as _ HM. simpl in Hin. rewrite HM in Hin.
+  apply gmultiset_elem_of_disj_union in Hin as [Hin|Hin].
+  - apply gmultiset_elem_of_singleton in Hin as ->. by apply (val_no_tstep _ _ _ Hs).
+  - rewrite (HE e Hin) in Hs. by apply (val_no_tstep _ _ _ Hs).
+Qed.
+
+Lemma chans_disj_map (Σ1 Σ2 : senv) : chans_of Σ1 ## chans_of Σ2 → Σ1 ##ₘ Σ2.
+Proof.
+  intros H. apply map_disjoint_dom. intros o H1 H2.
+  apply (H (ech o)); by apply elem_of_chans_of.
+Qed.
+
+Lemma offered_p_comm (Σ1 Σ2 : senv) p o : offered_p (Σ1 ∪ Σ2) p o ↔ offered_p (Σ2 ∪ Σ1) p o.
+Proof. unfold offered_p. by rewrite !dom_union_L, (comm_L (∪) (dom Σ1)). Qed.
+
+Lemma all_vals_pirred (p : proc) : (∀ e, e ∈ p.2 → is_val e) → pirred p.
+Proof.
+  intros Hv π p' (q & ev & q' & Hq & Hst & _).
+  destruct (istep_parts_nonempty _ _ _ Hst) as [t Ht].
+  destruct (istep_parts_some _ _ _ t Hst Ht) as [e He].
+  destruct (istep_actor _ _ _ t e Hst Ht He) as (α & e' & Hs & _).
+  apply (val_no_tstep _ _ _ Hs). apply Hv. rewrite <-Hq. apply elem_of_soup. eauto.
+Qed.
+
+(** One component, stable and without a link offer, at a primitive
+    type. *)
+Lemma comp_ready κ n W1 T X Σ q :
+  prim T → Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X W1 Σ T q →
+  stable_p q → ¬ link_p q →
+  above_offered W1 Σ (offered_p Σ q) ∧
+  ((∀ o, ¬ offered_p Σ q o) →
+     ∃ v E, q = (∅, {[+ v +]} ⊎ E) ∧ Vrel κ (S n) W1 Σ T v ∧ ∀ e, e ∈ E → e = EUnit).
+Proof.
+  intros HT (Hs & Hr & _) Hstab Hnl.
+  assert (pirred q → Σ = ∅) as HΣ.
+  { intros Hi. destruct (Hs Hi) as (v & E & _ & Hv & _). by eapply Vrel_prim_empty. }
+  split.
+  - intros o S x Ho Hno.
+    assert (¬ pirred q) as Hni by (intros Hi; rewrite (HΣ Hi) in Ho; by rewrite lookup_empty in Ho).
+    destruct (Hr Hni Hstab) as [?|[_ Ha]]; [done|]. by apply (Ha o S x).
+  - intros Hno.
+    destruct (decide (Forall is_val (elements q.2))) as [Hall|Hall].
+    + assert (pirred q) as Hi.
+      { apply all_vals_pirred. intros e He. apply gmultiset_elem_of_elements in He.
+        apply list_elem_of_In in He. by eapply Forall_forall in Hall; [|exact He]. }
+      destruct (Hs Hi) as (v & E & -> & Hv & HE). eauto.
+    + assert (¬ pirred q) as Hni.
+      { intros Hi. destruct (Hs Hi) as (v & E & Hq & Hv & HE). apply Hall. apply Forall_forall.
+        intros e He. apply list_elem_of_In, gmultiset_elem_of_elements in He. rewrite Hq in He. simpl in He.
+        apply gmultiset_elem_of_disj_union in He as [He|He].
+        - apply gmultiset_elem_of_singleton in He as ->. by eapply Vrel_val.
+        - by rewrite (HE e He). }
+      destruct (Hr Hni Hstab) as [?|[Ht _]]; [done|].
+      destruct (Ht Hno) as (v & E & Hq & Hv & HE). exfalso. apply Hall. apply Forall_forall.
+      intros e He. apply list_elem_of_In, gmultiset_elem_of_elements in He. rewrite Hq in He. simpl in He.
+      apply gmultiset_elem_of_disj_union in He as [He|He].
+      * by apply gmultiset_elem_of_singleton in He as ->.
+      * by rewrite (HE e He).
+Qed.
