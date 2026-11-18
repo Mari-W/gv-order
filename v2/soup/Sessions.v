@@ -1,0 +1,109 @@
+(** * Dual session types along a step (stage S8)
+
+    The soup pairs the two ends of an internal channel at dual session
+    types up to annotations in the environment of the relation ([sdual])
+    and at dual protocols up to ≈ in the protocol map of the fuel layer.
+    When the two ends act, their continuations are dual again, and the
+    payload types agree. A link joins the partners of its two ends, which
+    are dual again. *)
+
+From GV Require Export soup.OwnFacts compat.Blind static.PointSubst.
+
+(** ** Up to annotations *)
+
+Lemma seqv_dual s r : seqv s r → seqv (dual s) (dual r).
+Proof. unfold seqv. rewrite !sty_df_dual. apply sequiv_dual. Qed.
+
+Lemma sdual_sym S S' : sdual S S' → sdual S' S.
+Proof.
+  unfold sdual. intros H. apply seqv_dual in H. rewrite dual_involutive in H. by apply seqv_sym.
+Qed.
+
+Lemma sdual_snd S0 S0' m U b S m' U' b' S' :
+  sdual S0 S0' → unfoldS S0 = SSeq (SSnd m U b) S → unfoldS S0' = SSeq (SRcv m' U' b') S' →
+  m' = m ∧ teq (ty_df U') (ty_df U) ∧ sdual S S'.
+Proof.
+  intros Hd Hu Hu'. unfold sdual in Hd.
+  assert (unfoldS (dual S0) = SSeq (SRcv m U b) (dual S)) as Hdu by (by rewrite <-dual_unfoldS, Hu).
+  destruct (seqv_unfold_rcv _ _ _ _ _ _ Hd Hdu) as (U'' & b'' & S'' & Hu'' & HU & HS).
+  rewrite Hu' in Hu''. simplify_eq. done.
+Qed.
+
+Lemma sdual_plus S0 S0' S1 S2 S1' S2' :
+  sdual S0 S0' → unfoldS S0 = SPlus S1 S2 → unfoldS S0' = SWith S1' S2' →
+  sdual S1 S1' ∧ sdual S2 S2'.
+Proof.
+  intros Hd Hu Hu'. unfold sdual in Hd.
+  assert (unfoldS (dual S0) = SWith (dual S1) (dual S2)) as Hdu by (by rewrite <-dual_unfoldS, Hu).
+  destruct (seqv_unfold_with _ _ _ _ Hd Hdu) as (R1 & R2 & Hu'' & H1 & H2).
+  rewrite Hu' in Hu''. simplify_eq. done.
+Qed.
+
+Lemma sdual_bsel i S1 S2 S1' S2' : sdual S1 S1' → sdual S2 S2' → sdual (bsel i S1 S2) (bsel i S1' S2').
+Proof. by destruct i. Qed.
+
+(** A link: the partners R1 of S1 and R2 of S2 are dual when S1 and S2 are. *)
+Lemma sdual_link S1 S2 R1 R2 : sdual S1 S2 → sdual S1 R1 → sdual S2 R2 → sdual R1 R2.
+Proof.
+  unfold sdual. intros H12 H1 H2.
+  apply seqv_dual in H12, H1. rewrite dual_involutive in H12, H1.
+  eapply seqv_trans; [exact H2|]. eapply seqv_trans; [exact H12|]. by apply seqv_sym.
+Qed.
+
+Lemma payload_teq m U U' x :
+  teq (ty_df U') (ty_df U) → teq (ty_df (payload_at m U x)) (ty_df (payload_at m U' x)).
+Proof.
+  intros H. rewrite <-!payload_at_df. unfold payload_at, ty_inst. apply teq_pinst. by apply teq_sym.
+Qed.
+
+(** ** Up to ≈, with annotations *)
+
+Lemma sequiv_unfold_rcv s S0 m U b S :
+  sequiv s S0 → unfoldS S0 = SSeq (SRcv m U b) S →
+  ∃ U' S', unfoldS s = SSeq (SRcv m U' b) S' ∧ teq U' U ∧ sequiv S' S.
+Proof.
+  intros Hq Hu. apply sequiv_step in Hq. unfold eq_step in Hq. rewrite (hd_of _ _ Hu) in Hq.
+  simpl in Hq. destruct (hd s) eqn:Hs; simpl in Hq; try done. destruct_and!; subst.
+  eexists _, _. split_and!; [|done|done]. by rewrite unfoldS_unview, Hs.
+Qed.
+
+Lemma sequiv_unfold_with s S0 S1 S2 :
+  sequiv s S0 → unfoldS S0 = SWith S1 S2 →
+  ∃ S1' S2', unfoldS s = SWith S1' S2' ∧ sequiv S1' S1 ∧ sequiv S2' S2.
+Proof.
+  intros Hq Hu. apply sequiv_step in Hq. unfold eq_step in Hq. rewrite (hd_of _ _ Hu) in Hq.
+  simpl in Hq. destruct (hd s) eqn:Hs; simpl in Hq; try done. destruct_and!.
+  eexists _, _. split_and!; [|done|done]. by rewrite unfoldS_unview, Hs.
+Qed.
+
+Lemma pdual_snd P0 P0' m T b P m' T' b' P' :
+  sequiv P0' (dual P0) → unfoldS P0 = SSeq (SSnd m T b) P → unfoldS P0' = SSeq (SRcv m' T' b') P' →
+  m' = m ∧ b' = b ∧ teq T' T ∧ sequiv P' (dual P).
+Proof.
+  intros Hd Hu Hu'.
+  assert (unfoldS (dual P0) = SSeq (SRcv m T b) (dual P)) as Hdu by (by rewrite <-dual_unfoldS, Hu).
+  destruct (sequiv_unfold_rcv _ _ _ _ _ _ Hd Hdu) as (T'' & P'' & Hu'' & HT & HP).
+  rewrite Hu' in Hu''. simplify_eq. done.
+Qed.
+
+Lemma pdual_plus P0 P0' P1 P2 P1' P2' :
+  sequiv P0' (dual P0) → unfoldS P0 = SPlus P1 P2 → unfoldS P0' = SWith P1' P2' →
+  sequiv P1' (dual P1) ∧ sequiv P2' (dual P2).
+Proof.
+  intros Hd Hu Hu'.
+  assert (unfoldS (dual P0) = SWith (dual P1) (dual P2)) as Hdu by (by rewrite <-dual_unfoldS, Hu).
+  destruct (sequiv_unfold_with _ _ _ _ Hd Hdu) as (R1 & R2 & Hu'' & H1 & H2).
+  rewrite Hu' in Hu''. simplify_eq. done.
+Qed.
+
+Lemma pdual_sym P P' : sequiv P' (dual P) → sequiv P (dual P').
+Proof.
+  intros H. apply sequiv_dual in H. rewrite dual_involutive in H. by apply sequiv_sym.
+Qed.
+
+Lemma pdual_link P1 P2 R1 R2 :
+  sequiv P2 (dual P1) → sequiv R1 (dual P1) → sequiv R2 (dual P2) → sequiv R2 (dual R1).
+Proof.
+  intros H12 H1 H2. apply sequiv_dual in H12, H1. rewrite dual_involutive in H12, H1.
+  eapply sequiv_trans; [exact H2|]. eapply sequiv_trans; [exact H12|]. by apply sequiv_sym.
+Qed.

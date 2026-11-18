@@ -80,4 +80,6 @@ test/CompatNotations.v
 soup/Idle.v
 soup/State.v
 soup/Soup.v
+soup/OwnFacts.v
+soup/Sessions.v
 CheckAll.v
