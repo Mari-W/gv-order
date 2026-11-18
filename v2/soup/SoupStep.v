@@ -186,6 +186,66 @@ Qed.
 Lemma cends_dual (c : chan) o : o ∈ ({[EPos c]} ∪ {[ENeg c]} : gset cend) ↔ edual o ∈ ({[EPos c]} ∪ {[ENeg c]} : gset cend).
 Proof. destruct o; simpl; set_solver. Qed.
 
+(** ** Parts after a hand-over and a tick *)
+
+Lemma split_mres {Y : Type} (Θ ΘM Θr : gmap cend Y) (M : gset cend) :
+  ΘM ##ₘ Θr → Θ = ΘM ∪ Θr → dom ΘM = M → ΘM = mres M Θ ∧ Θr = mrem M Θ.
+Proof.
+  intros Hd HΘ HM. split; apply map_eq_some; intros o v;
+    rewrite ?lookup_mres_Some, ?lookup_mrem_Some; destruct (split_lookup Θ ΘM Θr M o v Hd HΘ HM) as [H1 H2];
+    [rewrite H1|rewrite H2]; tauto.
+Qed.
+
+Lemma kres_khand_from {Y : Type} M j K t (m : gmap cend Y) :
+  j ≠ t → kres (khand M j K) t m = mrem M (kres K t m).
+Proof.
+  intros Hjt. apply map_eq_some. intros o v. rewrite lookup_mrem_Some, !lookup_kres, lookup_khand.
+  destruct (K !! o) as [h|]; simpl; [|naive_solver]. case_decide; naive_solver.
+Qed.
+
+Lemma kres_khand_to {Y : Type} M i j K (m : gmap cend Y) :
+  (∀ o h, K !! o = Some h → h.(h_th) ≠ j) → M ⊆ dom (kth K i) →
+  kres (khand M j K) j m = mres M (kres K i m).
+Proof.
+  intros Hj HM. apply map_eq_some. intros o v. rewrite lookup_mres_Some, !lookup_kres, lookup_khand.
+  destruct (K !! o) as [h|] eqn:E; simpl; [|naive_solver]. case_decide as Ho.
+  - pose proof (HM o Ho) as Hi. apply elem_of_dom_kth in Hi as (h0 & Hh0 & Hi). rewrite E in Hh0.
+    injection Hh0 as <-. naive_solver.
+  - pose proof (Hj o h E). naive_solver.
+Qed.
+
+Lemma ctrs_khand_from M j K t : j ≠ t → ctrs (khand M j K) t = mrem M (ctrs K t).
+Proof.
+  intros Hjt. apply map_eq_some. intros o f. rewrite lookup_mrem_Some, !lookup_ctrs, lookup_khand.
+  destruct (K !! o) as [h|]; simpl; [|naive_solver]. case_decide; naive_solver.
+Qed.
+
+Lemma ctrs_khand_to M i j K :
+  (∀ o h, K !! o = Some h → h.(h_th) ≠ j) → M ⊆ dom (kth K i) →
+  ctrs (khand M j K) j = fhand M (ctrs K i).
+Proof.
+  intros Hj HM. apply map_eq_some. intros o f. unfold fhand.
+  rewrite lookup_fmap, lookup_ctrs, lookup_khand. destruct (mres M (ctrs K i) !! o) eqn:E'.
+  - apply lookup_mres_Some in E' as [E' Ho]. apply lookup_ctrs in E' as (h & Hh & Hi & <-).
+    rewrite Hh. simpl. rewrite decide_True by done. split; [intros (h' & ? & _ & <-); by simplify_eq|].
+    intros [= <-]. by eexists.
+  - simpl. destruct (K !! o) as [h|] eqn:E; simpl; [|split; [intros (? & ? & _); done|done]].
+    case_decide as Ho.
+    + exfalso. pose proof (HM o Ho) as Hi. apply elem_of_dom_kth in Hi as (h' & Hh' & Hi).
+      rewrite E in Hh'. simplify_eq. assert (mres M (ctrs K h'.(h_th)) !! o = Some h'.(h_ctr)) as X.
+      { apply lookup_mres_Some. split; [|done]. apply lookup_ctrs. by eexists. }
+      congruence.
+    + split; [|done]. intros (h' & ? & Ht & _). simplify_eq. by destruct (Hj o h' E).
+Qed.
+
+Lemma kres_ktick {Y : Type} i j M K t (m : gmap cend Y) : kres (ktick i j M K) t m = kres K t m.
+Proof.
+  apply kres_ext.
+  - intros o. rewrite lookup_ktick. destruct (K !! o) as [h|]; simpl; [|naive_solver].
+    case_decide; split; intros (h' & ? & ?); simplify_eq; simpl in *; eauto.
+  - intros o h Hh _. done.
+Qed.
+
 (** ** One step, case by case *)
 
 Section step.
