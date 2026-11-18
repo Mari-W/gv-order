@@ -1,6 +1,6 @@
 (** * Every main result of v2 is closed under the global context
 
-    Stages S1, S2, S3, S6, S7 and S8, the part of S4 done so far and the
+    Stages S1, S2, S3, S6, S7 and S8, the parts of S4 and S9 done so far and the
     term part of S5 (docs/redesign/progress.md). [make check] compiles this file and fails if any line below
     reports an axiom. *)
 
@@ -14,7 +14,7 @@ From GV Require Import fuel.FuelSub.
 From GV Require Import cost.Transformers cost.Forwarder cost.Exact cost.CostFund.
 From GV Require Import compat.Rules compat.LiveDF compat.Swap compat.Rename compat.PSwap compat.Conv.
 From GV Require Import static.Fundamental static.LiveFundamental examples.GuardEx.
-From GV Require Import soup.LFAdequacy.
+From GV Require Import soup.LFAdequacy soup.LFCompose.
 
 (** Language: the redex once, progress, preservation. *)
 Print Assumptions act_offer_sig.
@@ -281,3 +281,13 @@ Print Assumptions lf_fuel.
 Print Assumptions lf_adequacy_soup.
 Print Assumptions lf_adequacy.
 Print Assumptions lf_thread_progress.
+Print Assumptions soup_par.
+Print Assumptions soup_nu.
+Print Assumptions soup_connect.
+Print Assumptions soup_term.
+Print Assumptions soup_lift.
+Print Assumptions lf_soup_connect.
+Print Assumptions lf_sem_connect.
+Print Assumptions lf_soup_term.
+Print Assumptions lf_soup_term_typed.
+Print Assumptions lf_sem_term.

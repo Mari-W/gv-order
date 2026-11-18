@@ -97,5 +97,7 @@ soup/LFLocal.v
 soup/LFRunFacts.v
 soup/LFEvents.v
 soup/LFAdequacy.v
+soup/SoupCompose.v
+soup/LFCompose.v
 test/SoupNotations.v
 CheckAll.v

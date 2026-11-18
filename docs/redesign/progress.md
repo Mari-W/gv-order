@@ -15,7 +15,7 @@ The old development in theories/ stays untouched.
 | S6 | fuel | done |
 | S7 | cost judgment | done |
 | S8 | soup and adequacy | done (S8.34): `lfsoup_step`, `soup_no_tau_divergence`, `lf_adequacy`, `lf_thread_progress`, `idle_dual` |
-| S9 | lock-free composition and soundness | open |
+| S9 | lock-free composition and soundness | in progress (S9.4): soup side done, `soup_connect`, `soup_term`, `lf_soup_connect`, `lf_soup_term_typed`; process conjunct waits on S4 (targets in S9.4) |
 | S10 | paper | open |
 
 ## Deviations
@@ -526,6 +526,31 @@ The old development in theories/ stays untouched.
   partner of its end, never on a term that mentions the partner (as in
   the old adequacy). The criterion is `lf_run_criterion` unchanged, with
   `npend`, `admin_at` and `pend` of S1.
+- S9, the exact cut. `soup_connect` takes the cut at Σ̄_C (`senv_dual`),
+  the partners at exactly the dual session type, as `p_connect` types
+  them, and not at `cut_dual` of compat/Connect.v (dual up to
+  annotations). The soup pairs the protocols of a restricted channel up
+  to ≈ with annotations (`sp_pdual`), and `sp_psig` puts an interface
+  end into Π at the session type of its entry. A cut dual only up to
+  annotations gives no such pairing, for the reason of "S8, F-Link".
+  The clause is on environments. A semantic P-Connect with `cut_dual`
+  composes with the soup only for cuts that are exact.
+- S9, families. The proposal (§2.14) renames families apart at LF-Connect.
+  The soup compares no points of two threads, so `soup_connect` needs
+  no renaming and no disjointness of families. The world enters only
+  through E[live], which is monotone in the world (`Erel_mono`,
+  `wext_join_l`, `wext_join_r`). The refill is the larger of the two,
+  by `FuelE_refill_mono`.
+- S9, the soup half. `lf_soup W Σ p T` is the soup conjunct of `⊪`
+  (`lf_sem_iff`). The composition lemmas are proved for it, and
+  `lf_sem_term` and `lf_sem_connect` take the live process conjunct of
+  the result as a premise until P-Term, P-Connect and P-Join of S4 are
+  proved and the author decides on Q12 (deviation "S8, the process
+  conjunct").
+- S9, P-Term at a finite N. `lf_soup_term_typed` asks `meets ϑ 0 tk`
+  for some tk, as `fsem_of_cost` does. `typed` at a finite N does not
+  give it, because a transformer offset may be ∞. It also asks
+  `guarded t` and `strict W` for `live_fundamental_typed`.
 ## Log
 
 - S1.0. Lexer test v2/test/Lexer.v of every judgment and token of
@@ -1282,3 +1307,27 @@ The old development in theories/ stays untouched.
   of its entry exactly. The S8 step lemmas are at Σ = ∅, where the
   clause is vacuous (`soup_keep` and the constructor after it in
   SoupStep.v). `soup_relabel` holds at every Σ.
+- S9.2. Soup composition (v2/soup/SoupCompose.v). `soup_par`: soups
+  over Σa and Σb with disjoint thread ids, dom Σa ## dom Σb, C1 ## C2,
+  C1 ## chans Σb and C2 ## chans Σa give a soup of (C1 ∪ C2, M1 ∪ M2)
+  over Σa ∪ Σb at W1 ⊔ W2 and refill max N1 N2, with K, A, Π the unions
+  and tk, U split by `tsel (dom M1)`. `soup_nu`: a soup over Σ ∪ Σ_R,
+  where Σ_R holds both ends of each of its channels at dual session
+  types and points, C ## chans Σ_R and chans Σ ## chans Σ_R, gives a
+  soup of (C ∪ chans Σ_R, M) over Σ. `soup_connect` is `soup_nu` after
+  `soup_par` under exactly the side conditions of `p_connect` (the
+  map disjointness of Σ1, Σ_C and of Σ2, Σ̄_C follows from the channel
+  conditions). P-Join has the same soup. `soup_term`: one thread 0
+  holding every end of Θ = Σ at credit N ∪ Θ_B, with counter N
+  (`kterm`), in E[live] at `tenv_erase Θ` and in FuelE at
+  `te_sty <$> Θ`, gives a soup of (C0, {0 ↦ t}) over Σ. No `Admitted`.
+- S9.3. The soup half of `⊪` (v2/soup/LFCompose.v). `lf_soup`,
+  `lf_sem_iff`, `soup_lift` (the soup at every lifting, at every Σ),
+  `lf_soup_connect` (the second component's thread ids shifted past
+  those of the first, `tshift`), `lf_soup_term`, `typed_live` (a guarded
+  thread typed at a finite N is in E[live] at its environment, through
+  `live_fundamental_typed`, `Erel_conv` and `Erel_blind`),
+  `lf_soup_term_typed`, and `lf_sem_term`, `lf_sem_connect` with the
+  live process conjunct as a premise. CheckAll lists 248 results, all
+  closed.
+

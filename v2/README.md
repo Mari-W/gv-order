@@ -190,3 +190,17 @@ the rank and the tickets and the partner's counter as the measure.
 | soup/Relabel.v | the soup at every lifting (`relabel_map`, `soup_relabel`) |
 | soup/LFAdequacy.v | local progress, rank, persistence, `lf_fuel`, `lf_adequacy_soup`, `lf_adequacy`, `lf_thread_progress` |
 | test/SoupNotations.v | the S8 notations |
+
+## Stage S9, lock-free composition (in progress)
+
+The soup half of `⊪` composes on its own. A thread typed at a finite N
+gives a soup through `fsem_of_cost` and `live_fundamental_typed`. Two
+soups over the cut of P-Connect give a soup of the composite at
+W1 ⊔ W2 and the larger refill: their union, then the restriction of the
+cut channels. The live process conjunct of `⊪` waits for P-Term,
+P-Connect and P-Join of S4.
+
+| File | Content |
+|---|---|
+| soup/SoupCompose.v | `soup_par`, `soup_nu`, `soup_connect`, `soup_term` |
+| soup/LFCompose.v | `lf_soup`, `lf_sem_iff`, `soup_lift`, `lf_soup_connect`, `lf_soup_term`, `lf_soup_term_typed`, `lf_sem_connect`, `lf_sem_term` |
