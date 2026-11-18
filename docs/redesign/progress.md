@@ -1233,3 +1233,20 @@ The old development in theories/ stays untouched.
   o2, G2 needs the fusion of p1 to land exactly on Σ1' ∪ ΣC', so Σ1'
   keeps o2 at the type of o1‾ (`conn_retype1`), and `Prel_conv` brings
   the composite back to Σ1 ∪ Σ2 at the end. No deviation.
+- S4.25. Every τ step of the composite (`tau_all`, compat/ConnectTau.v).
+  β, new, spawn and steps whose threads all lie in one component are
+  steps of that component (`tau_l1`, `tau_l2`). A message, close or
+  choice across the components is one of `tau_msg12`, `tau_msg21`,
+  `tau_close` (both orders, through edual), `tau_choice12`,
+  `tau_choice21`. A close of two threads of one component on a channel
+  it does not restrict contradicts its Q-Close clauses, because both
+  ends would lie in its partner-free interface (`close_same1`,
+  `close_same2`). A link is local, or `tau_link_own1/2`, or
+  `tau_link_ext1/2`. So the τ clause of P-Step holds for the composite
+  over the clauses of the two components. Open in order: the six
+  external clauses of each side (Q-Send and Q-Recv of the composite
+  re-split the cut like the message case), the assembly of `Pclauses`
+  with `pc_stop` and `pc_ready`, the splitting of a fusion of the
+  composite into fusions of the components over a larger cut, and the
+  wrapper (strong induction on the level, `Prel_S_ind_fuse` on each
+  side), then P-Join and P-Term. No deviation.

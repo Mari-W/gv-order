@@ -74,6 +74,7 @@ compat/ConnectMsg.v
 compat/ConnectCross.v
 compat/ConnectRen.v
 compat/ConnectLink.v
+compat/ConnectTau.v
 compat/EFacts.v
 compat/TermRules.v
 compat/BindActs.v
