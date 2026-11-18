@@ -863,3 +863,33 @@ Proof.
   - eexists (_, _). split; [eapply p_act_link; [apply Hlk; [eassumption|set_solver]|eassumption|done]|].
     simpl. split; [f_equal; [set_solver|by rewrite insert_union_l, map_fmap_union]|]. set_solver.
 Qed.
+
+(** ** Induction over the steps of cost 0, closed under fusion *)
+
+Definition Φfuse (Φ : prel) : prel :=
+  λ W Σ T p, ∀ h D, fuse_ok h D Σ p → Φ W (sdrop D (kren h Σ)) T (pfuse h D p).
+
+Lemma Pbody_fuse κ n Vl Pl VN X W Σ T p h D :
+  fuse_ok h D Σ p → Pbody κ n Vl Pl VN X W Σ T p → Pbody κ n Vl Pl VN X W (sdrop D (kren h Σ)) T (pfuse h D p).
+Proof.
+  intros Hh HP W1 HW1 HS1 g D' Hg.
+  rewrite (fuse_sdrop_compose h g D D' Σ p Hh Hg), (pfuse_compose h g D D' Σ p Hh Hg).
+  apply HP; [done|done|]. by apply fuse_ok_compose.
+Qed.
+
+Lemma Prel_S_ind_fuse κ n (Φ : prel) :
+  (∀ W Σ T p,
+     Pbody κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n))
+       (λ W Σ T p, Prel κ (S n) W Σ T p ∧ Φfuse Φ W Σ T p) W Σ T p →
+     Φ W Σ T p) →
+  ∀ W Σ T p, Prel κ (S n) W Σ T p → Φfuse Φ W Σ T p.
+Proof.
+  intros Hind. refine (Prel_S_ind κ n _ _). intros W Σ T p Hb h D Hh.
+  apply Hind. by apply Pbody_fuse.
+Qed.
+
+Lemma Φfuse_id (Φ : prel) W Σ T p : Φfuse Φ W Σ T p → Φ W Σ T p.
+Proof.
+  intros H. pose proof (H id ∅ (fuse_ok_id Σ p)) as H'.
+  by rewrite sdrop_empty, kren_id_map, pfuse_empty, pmap_id in H'.
+Qed.
