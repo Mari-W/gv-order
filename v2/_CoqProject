@@ -78,6 +78,8 @@ compat/ConnectRen.v
 compat/ConnectLink.v
 compat/ConnectTau.v
 compat/ConnectExt.v
+compat/ConnectSendEnv.v
+compat/ConnectExtMsg.v
 compat/EFacts.v
 compat/TermRules.v
 compat/BindActs.v

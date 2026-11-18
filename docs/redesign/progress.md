@@ -1449,3 +1449,19 @@ The old development in theories/ stays untouched.
   `pc_stop`, `pc_ready`, `tau_all` and the six external clauses, the
   splitting of a fusion of the composite into fusions of the components
   over a larger cut, the wrapper, then P-Join and P-Term. No deviation.
+- S4.27. Q-Send and Q-Recv of the composite (`ext_send`, `ext_recv`,
+  compat/ConnectExtMsg.v) over the environment lemmas of
+  compat/ConnectSendEnv.v. A send of p1 on its interface end moves Σv1
+  and Θe1. In the composite the moved cut ends of Σv1 are restricted,
+  so they leave with Θe = fout Σ Σv1 ∪ Θe1, and their partners in p2
+  join the interface with Σe = Σe1 ∪ ΣDm (`snd_vr`, `snd_del`,
+  `snd_split`, `snd_payload`, `snd_moved`). The cut after the send is
+  re-split by the composite's new interface (`snd_conn`, `snd_iface`,
+  `snd_chans`). A receive of p1 is a receive of p1 at the same Θ2
+  (`rcv_ok1`), and an end of Θ2 whose partner lies in Σ2 becomes a cut
+  end (`rcv_conn`, `rcv_iface`, `rcv_chans`). p2 acting uses the same
+  lemmas through `conn_sym`. `ext_comp1'`, `ext_comp2'` give the step
+  clause of a component step over a re-split cut. No deviation.
+- S4.28. The clauses of P for the composite (`pc_clauses`,
+  compat/ConnectExtMsg.v) from `pc_stop`, `pc_ready`, `tau_all` and the
+  six external clauses. No deviation.
