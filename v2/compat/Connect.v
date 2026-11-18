@@ -811,3 +811,55 @@ Section rdy.
       apply gmultiset_elem_of_disj_union in He as [He|He]; [by apply gmultiset_elem_of_singleton in He|by apply HE2].
   Qed.
 End rdy.
+
+(** ** Steps of the composite that one component takes alone *)
+
+Definition ev_local (C1 : gset chan) (M1 : gmap nat expr) (ev : event) : Prop :=
+  ev_parts ev ⊆ dom M1 ∧
+  match ev with
+  | EvClose _ _ o => ech o ∈ C1
+  | EvLink _ o1 _ => ech o1 ∈ C1
+  | EvSess _ _ => False
+  | _ => True
+  end.
+
+Definition ev_ren (ev : event) : cend → cend :=
+  match ev with EvLink _ o1 o2 => csub o1 o2 | _ => id end.
+
+Lemma fmap_emap_id (M : gmap nat expr) : emap id <$> M = M.
+Proof. apply map_eq. intros i. rewrite lookup_fmap. destruct (M !! i); simpl; [by rewrite emap_id|done]. Qed.
+
+Lemma istep_local C1 C2 K M1 M2 ev q' :
+  M1 ##ₘ M2 → C1 ## C2 ∪ K → istep (C1 ∪ C2 ∪ K, M1 ∪ M2) ev q' → ev_local C1 M1 ev →
+  ∃ q1', istep (C1, M1) ev q1' ∧ q' = (q1'.1 ∪ C2 ∪ K, q1'.2 ∪ (emap (ev_ren ev) <$> M2)) ∧
+    q1'.1 ⊆ q'.1 ∧ q1'.1 ## C2 ∪ K.
+Proof.
+  intros Hd HC Hst [Hp Hl].
+  assert (∀ i e, (M1 ∪ M2) !! i = Some e → i ∈ dom M1 → M1 !! i = Some e) as Hlk.
+  { intros i e H Hi. apply elem_of_dom in Hi as [e' He']. rewrite (lookup_union_Some_l _ _ _ _ He') in H. congruence. }
+  assert (∀ i, i ∈ dom M1 → M2 !! i = None) as Hn2.
+  { intros i Hi. apply elem_of_dom in Hi as [e He]. apply eq_None_not_Some. intros [e' He'].
+    eapply (disj_lookup_n M1 M2); eassumption. }
+  inversion Hst; subst; simpl in Hp, Hl; try done.
+  - eexists (_, _). split; [eapply p_act_beta; [apply Hlk; [eassumption|set_solver]|eassumption]|]. simpl.
+    rewrite fmap_emap_id. split; [by rewrite insert_union_l|]. set_solver.
+  - eexists (_, _). split; [eapply p_act_new; [apply Hlk; [eassumption|set_solver]|eassumption|set_solver|]|]. 
+    { intros Hc. match goal with H : c ∉ echans _ |- _ => apply H end. rewrite soup_union by done.
+      rewrite echans_disj_union. set_solver. }
+    simpl. rewrite fmap_emap_id. split; [f_equal; [set_solver|by rewrite insert_union_l]|]. set_solver.
+  - eexists (_, _). split; [eapply p_act_new_at; [apply Hlk; [eassumption|set_solver]|eassumption|set_solver|]|].
+    { intros Hc. match goal with H : c ∉ echans _ |- _ => apply H end. rewrite soup_union by done.
+      rewrite echans_disj_union. set_solver. }
+    simpl. rewrite fmap_emap_id. split; [f_equal; [set_solver|by rewrite insert_union_l]|]. set_solver.
+  - eexists (_, _). split; [eapply p_act_spawn; [apply Hlk; [eassumption|set_solver]|eassumption|]|].
+    { match goal with H : (M1 ∪ M2) !! j = None |- _ => apply lookup_union_None in H as [? _]; done end. }
+    simpl. rewrite fmap_emap_id. split; [by rewrite !insert_union_l|]. set_solver.
+  - eexists (_, _). split; [eapply p_act_msg; [done|apply Hlk; [eassumption|set_solver]|apply Hlk; [eassumption|set_solver]|eassumption|eassumption]|].
+    simpl. rewrite fmap_emap_id. split; [by rewrite !insert_union_l|]. set_solver.
+  - eexists (_, _). split; [eapply p_act_close; [done|apply Hlk; [eassumption|set_solver]|apply Hlk; [eassumption|set_solver]|eassumption|eassumption|done]|].
+    simpl. rewrite fmap_emap_id. split; [f_equal; [set_solver|by rewrite !insert_union_l]|]. set_solver.
+  - eexists (_, _). split; [eapply p_act_choice; [done|apply Hlk; [eassumption|set_solver]|apply Hlk; [eassumption|set_solver]|eassumption|eassumption]|].
+    simpl. rewrite fmap_emap_id. split; [by rewrite !insert_union_l|]. set_solver.
+  - eexists (_, _). split; [eapply p_act_link; [apply Hlk; [eassumption|set_solver]|eassumption|done]|].
+    simpl. split; [f_equal; [set_solver|by rewrite insert_union_l, map_fmap_union]|]. set_solver.
+Qed.
