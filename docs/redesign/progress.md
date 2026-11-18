@@ -10,7 +10,7 @@ The old development in theories/ stays untouched.
 | S1 | language | done |
 | S2 | points, worlds, types | done |
 | S3 | generic relation | done |
-| S4 | generic compatibility | in progress: (fuse) in P, Internalize as a projection (S4.19), P-Connect, P-Join, P-Term open |
+| S4 | generic compatibility | in progress: P-Connect and P-Join done (S4.30, `sem_p_connect`, `sem_p_join`); P-Term open |
 | S5 | static fundamental theorems | term part done (S5.7): `fundamental`, `fundamental_typed`, `live_fundamental`, `live_fundamental_typed`; process theorems wait on S4 (targets in S5.5) |
 | S6 | fuel | done |
 | S7 | cost judgment | done |
@@ -1474,3 +1474,47 @@ The old development in theories/ stays untouched.
   `pc_stop`, `pc_ready`, `tau_all` and the six external clauses, the
   splitting of a fusion of the composite into fusions of the components
   over a larger cut, the wrapper, then P-Join and P-Term. No deviation.
+- S4.27. Q-Send and Q-Recv of the composite (`ext_send`, `ext_recv`,
+  compat/ConnectExtMsg.v) over the environment lemmas of
+  compat/ConnectSendEnv.v. A send of p1 on its interface end moves Σv1
+  and Θe1. In the composite the moved cut ends of Σv1 are restricted,
+  so they leave with Θe = fout Σ Σv1 ∪ Θe1, and their partners in p2
+  join the interface with Σe = Σe1 ∪ ΣDm (`snd_vr`, `snd_del`,
+  `snd_split`, `snd_payload`, `snd_moved`). The cut after the send is
+  re-split by the composite's new interface (`snd_conn`, `snd_iface`,
+  `snd_chans`). A receive of p1 is a receive of p1 at the same Θ2
+  (`rcv_ok1`), and an end of Θ2 whose partner lies in Σ2 becomes a cut
+  end (`rcv_conn`, `rcv_iface`, `rcv_chans`). p2 acting uses the same
+  lemmas through `conn_sym`. `ext_comp1'`, `ext_comp2'` give the step
+  clause of a component step over a re-split cut. No deviation.
+- S4.28. The clauses of P for the composite (`pc_clauses`,
+  compat/ConnectExtMsg.v) from `pc_stop`, `pc_ready`, `tau_all` and the
+  six external clauses. No deviation.
+- S4.29. A fusion of the composite is a composite of fusions
+  (compat/ConnectFuse.v). For a fusion (h, D) of the composite with
+  interface Σ1 ∪ Σ2, p1 fuses by (h, D1) with D1 = `dside h Σ1 D` (the
+  channels of D whose two ends come from Σ1), p2 by (h, D2), and a
+  channel of D with an end on each side becomes a cut channel
+  (`fs_ok1`, used for p2 through `conn_sym` and `fs_sym`). The new cut
+  is re-split by the fused interface Σf = sdrop D (kren h (Σ1 ∪ Σ2))
+  from E1 = sdrop D1 (kren h (Σ1 ∪ ΣC)) and E2 = sdrop D2 (kren h
+  (Σ2 ∪ ΣD)) (`fs_conn`, `fs_iface`, `fs_chans`). The new cut channels
+  are set_map (gch h) K ∪ D12, as `chans_of (fout Σf E1)`. No deviation.
+- S4.30. P-Connect and P-Join (compat/ConnectP.v). `conn_all : prim T →
+  ∀ j W, ConnL κ j W T` by strong induction on the level. At S n,
+  `Prel_S_ind_fuse` on p1 with Φ1 (every split of its interface, every
+  p2 in P at the same world), and inside it on p2 with Φ2 (every p1
+  whose unfolding carries Φ1 at the same world); a later world W1 of
+  p1's unfolding comes from `Pbody_later`. The step (`step`) splits a
+  fusion of the composite by S4.29 and applies `pc_clauses`.
+  `sem_p_connect : prim T → p1 ∈ P[κ]^W1 _ n⟦Σ1 ∪ ΣC ⊢ T⟧ →
+  p2 ∈ P[κ]^W2 _ n⟦Σ2 ∪ ΣD ⊢ 1⟧ → conn Σ1 ΣC p1.1 Σ2 ΣD p2.1 →
+  pconn p1 p2 (chans_of ΣC) ∈ P[κ]^(W1 ⊔ W2) _ n⟦Σ1 ∪ Σ2 ⊢ T⟧`, both
+  components moved to W1 ⊔ W2 by `Prel_mono`. `sem_p_join` has the same
+  statement: P-Join and P-Connect differ only in the side conditions on
+  worlds (`p_join_iff_connect`), and the semantic lemma asks none.
+  Deviations of S4.20 stand: `prim T`, and `conn` asks Σ1, Σ2, ΣC
+  partner-free, which the typing rules do not give (S9.5). Open: P-Term
+  (single-thread lemma, spawn by `sem_p_connect`, the thread at the empty
+  future, (fuse) for the restricted C0), then `fundamental_proc`.
+  CheckAll lists 253 results, all closed. No `Admitted` and no axiom.
