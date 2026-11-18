@@ -55,7 +55,7 @@ nav.tabs a { flex: none; font: 500 0.85rem var(--body); color: var(--muted); tex
 nav.tabs a[aria-current="page"] { color: var(--fg); border-bottom-color: var(--accent); }
 a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 24px; max-width: 2200px; margin: 0 auto; padding-block: 20px 60px; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) 460px; gap: 24px; max-width: 2200px; margin: 0 auto; padding-block: 20px 60px; }
 @media (max-width: 900px) { main { grid-template-columns: minmax(0, 1fr); } }
 .intro { font-family: var(--display); font-size: 1.12rem; line-height: 1.55; max-width: 68ch; margin: 0 0 18px; color: var(--fg); }
 .legend { font-size: 0.8rem; color: var(--muted); margin: -8px 0 18px; }
@@ -83,10 +83,12 @@ aside { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 112px); alig
 @media (max-width: 900px) { aside { position: fixed; left: 0; right: 0; bottom: 0; top: auto; max-height: 46vh; border-radius: 12px 12px 0 0; z-index: 6; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); box-shadow: 0 -6px 24px rgba(0,0,0,.12); } aside.empty { display: none; } main { padding-bottom: 50vh; } }
 aside .eyebrow { font: 600 0.7rem var(--body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
 aside .eyebrow button { font: 500 0.75rem var(--body); border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 4px; padding: 2px 8px; cursor: pointer; }
+.block h3[data-block], .ex h3[data-ex] { cursor: help; }
 aside h2 { font-family: var(--display); font-weight: 600; font-size: 1.3rem; margin: 6px 0 10px; text-wrap: balance; }
 aside dl { margin: 0; display: grid; gap: 10px; }
 aside dt { font: 600 0.72rem var(--body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
-aside dd { margin: 2px 0 0; font-size: 0.9rem; }
+aside dd { margin: 2px 0 0; font-size: 0.95rem; line-height: 1.55; }
+aside mjx-container { font-size: 105%; }
 aside dd.sig { overflow-x: auto; }
 aside ul.args { margin: 2px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 0.88rem; }
 aside dd.breaks { border-left: 3px solid var(--hot); padding-left: 8px; }
@@ -133,7 +135,7 @@ aside .placeholder { color: var(--muted); font-size: 0.9rem; }
 <main class="wrap">
   <section id="content" aria-live="polite"><p class="empty-state">Loading definitions…</p></section>
   <aside id="note" class="empty" aria-label="Explanation">
-    <div class="placeholder">Hover over any coloured-on-hover part of a formula to see what it does, why it is there and what breaks without it. Click to keep it here.</div>
+    <div class="placeholder">Point at a formula part or a title.</div>
   </aside>
 </main>
 
@@ -209,7 +211,7 @@ window.MathJax = {
     if (cur === 'examples') return renderExamples(root);
     const s = MAP.sections.find(x => x.id === cur);
     if (!s) { root.innerHTML = '<p class="empty-state">No definitions loaded.</p>'; return; }
-    root.insertAdjacentHTML('beforeend', `<p class="intro">${prose(s.intro)}</p><p class="legend">Showing the <b>${MODES[mode]}</b> instance. Parts that change colour on hover carry an explanation.</p>`);
+    idle({ title: s.title, what: s.intro });
     let shown = 0;
     for (const b of s.blocks) {
       const modes = b.modes && b.modes.length ? b.modes : ['df', 'live', 'lf'];
@@ -218,9 +220,8 @@ window.MathJax = {
       if (!tex || !matches(b.title, b.caption, b.rocq, tex)) continue;
       const el = document.createElement('article'); el.className = 'block'; el.id = 'b-' + b.id;
       const tags = modes.length === 3 ? '' : `<span class="tags">${modes.map(m => `<span class="tag ${m}">${m === 'df' ? 'DF' : m === 'live' ? 'live' : 'LF'}</span>`).join('')}</span>`;
-      el.innerHTML = `<h3>${esc(b.title)}${b.rocq ? ` <code>${esc(b.rocq)}</code>` : ''}${tags}</h3>`;
+      el.innerHTML = `<h3 data-block="${esc(b.id)}" tabindex="0">${esc(b.title)}${tags}</h3>`;
       el.appendChild(math(tex));
-      if (b.caption) el.insertAdjacentHTML('beforeend', `<p class="caption">${prose(b.caption)}</p>`);
       root.appendChild(el); shown++;
     }
     if (!shown) root.insertAdjacentHTML('beforeend', '<p class="empty-state">Nothing in this section matches the filter for this instance.</p>');
@@ -242,12 +243,12 @@ window.MathJax = {
     }).join('')}</div>`;
   }
   function renderExamples(root) {
-    root.insertAdjacentHTML('beforeend', `<p class="intro">Typed programs from v2/examples, each with what it shows and which instance types it.</p>`);
+    idle({ title: 'Examples', what: 'Typed programs. The badges show which judgments accept each one. Point at a title for what it demonstrates.' });
     let shown = 0;
     for (const x of MAP.examples || []) {
       const modes = x.modes && x.modes.length ? x.modes : ['df', 'live', 'lf'];
       if (!modes.includes(mode) || !matches(x.title, x.shows, x.code, x.rocq)) continue;
-      root.insertAdjacentHTML('beforeend', `<article class="ex" id="x-${esc(x.id)}"><h3>${esc(x.title)}${x.rocq ? ` <code>${esc(x.rocq)}</code>` : ''}</h3>${badges(x.accepts)}${x.code ? `<pre>${hl(x.code)}</pre>` : ''}<p>${prose(x.shows)}</p></article>`);
+      root.insertAdjacentHTML('beforeend', `<article class="ex" id="x-${esc(x.id)}"><h3 data-ex="${esc(x.id)}" tabindex="0">${esc(x.title)}</h3>${badges(x.accepts)}${x.code ? `<pre>${hl(x.code)}</pre>` : ''}</article>`);
       shown++;
     }
     if (!shown) root.insertAdjacentHTML('beforeend', '<p class="empty-state">No example for this instance matches the filter.</p>');
@@ -268,9 +269,19 @@ window.MathJax = {
     body.innerHTML = `<h2>${esc(n.title || key)}</h2>
       <dl>${n.sig ? `<div><dt>Type</dt><dd class="sig">$\\displaystyle ${esc(n.sig)}$</dd></div>` : ''}${args(n.args)}${row('What', n.what)}${row('Why', n.why)}${row('Without it', n.breaks, 'breaks')}${row('Example', n.example)}${row('Rocq', n.rocq)}</dl>
       ${u.length > 1 ? `<div class="uses">Also in ${u.map(([id, v]) => `<a href="#${v.sec}" data-jump="${esc(id)}">${esc(v.title)}</a>`).join('')}</div>` : ''}`;
-    typeset(body);
     noteCache.set(key, body);
+    body.dataset.fresh = '1';
     return body;
+  }
+  // a note built from a block's caption, an example's description, or a section intro
+  function pseudo(id, n) {
+    if (!MAP.notes['@' + id]) MAP.notes['@' + id] = n;
+    return '@' + id;
+  }
+  function idle(n) {
+    if (pinned || matchMedia('(max-width: 900px)').matches) return;
+    const k = pseudo('sec-' + (n.title || ''), n);
+    shownKey = null; showNote(k, false);
   }
   let shownKey = null, shownPinned = null;
   function showNote(key, isPinned) {
@@ -280,7 +291,8 @@ window.MathJax = {
     aside.classList.remove('empty');
     aside.replaceChildren();
     aside.insertAdjacentHTML('beforeend', `<div class="eyebrow"><span>${isPinned ? 'Pinned' : 'Hover'}</span>${isPinned ? '<button type="button" id="unpin">Unpin</button>' : ''}</div>`);
-    aside.appendChild(noteBody(key));
+    const body = noteBody(key); aside.appendChild(body);
+    if (body.dataset.fresh) { delete body.dataset.fresh; typeset(body); }
   }
   // a light box behind an entry, drawn inside its own coordinate system
   function boxOn(el, cls) {
@@ -308,6 +320,12 @@ window.MathJax = {
 
   const content = $('#content');
   content.addEventListener('mouseover', e => {
+    const h = e.target.closest && e.target.closest('h3[data-block], h3[data-ex]');
+    if (h && !pinned) {
+      if (h.dataset.block) { const b = MAP.sections.flatMap(x => x.blocks).find(x => x.id === h.dataset.block); if (b) showNote(pseudo('b-' + b.id, { title: b.title, what: b.caption, rocq: b.rocq }), false); }
+      else { const x = (MAP.examples || []).find(x => x.id === h.dataset.ex); if (x) showNote(pseudo('x-' + x.id, { title: x.title, what: x.shows, rocq: x.rocq }), false); }
+      return;
+    }
     const t = e.target.closest && e.target.closest('[class*="k-"]'); if (!t) return;
     const k = keyOf(t); if (!k) return;
     hot(t); if (!pinned) showNote(k, false);
