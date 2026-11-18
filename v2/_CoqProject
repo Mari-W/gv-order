@@ -82,6 +82,8 @@ compat/ConnectSendEnv.v
 compat/ConnectExtMsg.v
 compat/ConnectFuse.v
 compat/ConnectP.v
+compat/RenameInd.v
+compat/PTerm.v
 compat/EFacts.v
 compat/TermRules.v
 compat/BindActs.v
@@ -89,6 +91,7 @@ static/Fundamental.v
 static/Guard.v
 compat/LiveRules.v
 static/LiveFundamental.v
+static/FundamentalProc.v
 examples/GuardEx.v
 examples/LFClose.v
 examples/LFTools.v

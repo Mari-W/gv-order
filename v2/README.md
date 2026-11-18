@@ -48,7 +48,7 @@ and run `make` again. The root build of theories/ ignores v2.
 | types/Types.v | context-free session types and types with credits, costs, transformers and floors, duality, unfolding, ≈, the annotations of N = ∞ (`ty_df`) |
 | types/Erasure.v | `ty_df` commutes with the type operations and preserves ≈ |
 | static/Contexts.v | Θ, Γ, Δ, futures, the fact theory `slt`, aging, capture, subtyping |
-| static/Typing.v | the merged judgment `typed` (rules `e_*`), its DF projection `dftyped` (rules `d_*`), process typing `ptyped` (`p_term`, `p_connect`, `p_join`) |
+| static/Typing.v | the merged judgment `typed` (rules `e_*`), its DF projection `dftyped` (rules `d_*`), process typing `ptyped` (`p_term` with `pfree Σ`, `p_connect`, `p_join`), `ptyped_pfree`, `ptyped_chans` |
 | static/Conservativity.v | `typed_dftyped`, `dftyped_typed`, `conservative` |
 | static/Weakening.v | world extension, term-variable renaming and weakening |
 | static/Renaming.v | channel renaming, renaming of families and generated roots |
@@ -97,7 +97,7 @@ reads no point, no world and no relation. Every step costs one level.
 | fuel/FuelBind.v | `FuelE_bind` (F1) and `link_tickets_fall` |
 | fuel/FuelSub.v | `Vfuel_teq`, `Vfuel_sub`, `FuelE_sub` along the subtyping of the merged judgment |
 | test/FuelNotations.v | the S6 notations |
-## Stage S4, generic compatibility (in progress)
+## Stage S4, generic compatibility
 
 | File | Content |
 |---|---|
@@ -112,8 +112,11 @@ reads no point, no world and no relation. Every step costs one level.
 | compat/Rename.v | decision Q16: V and E under every map of ends injective on the held ends (`Vrel_rename`, `Erel_rename`), P by projection of its clause (fuse) (`Prel_fuse`), a composite of fusions is a fusion (`fuse_ok_compose`), renaming (`Prel_rename`, D = ∅) and Internalize (`Prel_internalize`, h = id) as instances, the transpositions as instances (`Vrel_swap`, `Erel_swap`), the link substitution as a renaming of the other component (`pren_ok_csub`) |
 | compat/PSwap.v | the transposition on configurations with thread ids and on events (`istep_qswap`), the external clauses along it, P is invariant (`Prel_swap`, an instance of `Prel_rename`) |
 | compat/Conv.v | environments up to ≈ (`senv_eqv`): V, E and P transport along them (`Vrel_conv`, `Erel_conv`, `Prel_conv`) |
-| compat/Connect.v | P-Connect in progress: environments of a cut (`pfree`, `cut_dual`, `conn`), the composite `pconn`, liftings, offers of the composite, the chain of cut ends (`finite_lt_acc`), readiness (`pc_ready`) and P-Stop (`pc_stop`) of the composite, `Prel_S_ind_fuse` |
-| compat/ConnectSteps.v | P-Connect in progress: the step clause of the composite, one lemma per kind of step (`tau_l1`, `tau_l2`, `tau_close`, `tau_choice12`) |
+| compat/Connect.v | P-Connect: environments of a cut (`cut_dual`, `conn`; `pfree` lives in static/Typing.v), the composite `pconn`, liftings, offers of the composite, the chain of cut ends (`finite_lt_acc`), readiness (`pc_ready`) and P-Stop (`pc_stop`) of the composite, `Prel_S_ind_fuse` |
+| compat/ConnectSteps.v | P-Connect: the step clause of the composite, one lemma per kind of step (`tau_l1`, `tau_l2`, `tau_close`, `tau_choice12`) |
+| compat/ConnectP.v | P-Connect and P-Join (`conn_all`, `sem_p_connect`, `sem_p_join`) |
+| compat/RenameInd.v | one unfolding of E under a renaming, for any reader closed under renaming (`Ebody_rename`), and the induction over the steps of cost 0 with its predicate closed under renaming (`Erel_S_ind_ren`) |
+| compat/PTerm.v | P-Term: the environments of a single thread (`sth`), its steps (`istep_single`), the split at a spawn (`spawn_split`), a fusion (`sth_fuse`), the environments after Q-Send, Q-Recv and a link of a restricted channel (`snd_sth`, `rcv_sth`, `lk_res`), the clauses (`core`), the spawned thread composed by P-Connect (`spawn_case`), `sem_p_term` |
 | test/CompatNotations.v | the S4 notations |
 
 ## Stage S7, cost half of the merged judgment
@@ -138,7 +141,7 @@ exact (`Vfuel_exact`).
 | cost/CostFund.v | `cost_fundamental`, `fsem_of_cost`, `fw_fsem` |
 | test/CostNotations.v | the S7 notation |
 
-## Stage S5, static fundamental theorems (term part)
+## Stage S5, static fundamental theorems
 
 One induction on DF derivations instantiates the point variables of Γ
 by σ and its future variables by ρ, in any world where the instantiated
@@ -159,6 +162,7 @@ reads the thunk at the empty future with no lower or upper point
 | static/Fundamental.v | `hsat`, instances under binders (`pclose`), `dftyped_sem`, `spawn_lam_valid`, `fundamental`, `fundamental_typed` |
 | static/LiveFundamental.v | `dftyped_later`, `spawn_lam_later_valid`, `live_fundamental`, `live_fundamental_typed` |
 | examples/GuardEx.v | the guard against Appendix B #12 to #15 and #40, and the C2 stage of B.1 #4 |
+| static/FundamentalProc.v | the side conditions of P-Connect from the typing premises (`ptyped_conn`), one induction on `ptyped` for every cost table (`proc_gen`), `fundamental_proc`, `live_fundamental_proc` (every thread guarded, `pguarded`), `soundness`, `live_soundness`, `soundness_source` |
 
 ## Stage S8, the soup and adequacy
 

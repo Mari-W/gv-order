@@ -10,8 +10,8 @@ The old development in theories/ stays untouched.
 | S1 | language | done |
 | S2 | points, worlds, types | done |
 | S3 | generic relation | done |
-| S4 | generic compatibility | in progress: P-Connect and P-Join done (S4.30, `sem_p_connect`, `sem_p_join`); P-Term open |
-| S5 | static fundamental theorems | term part done (S5.7): `fundamental`, `fundamental_typed`, `live_fundamental`, `live_fundamental_typed`; process theorems wait on S4 (targets in S5.5) |
+| S4 | generic compatibility | done (S4.33): P-Connect and P-Join (S4.30, `sem_p_connect`, `sem_p_join`), P-Term (`sem_p_term`) |
+| S5 | static fundamental theorems | done (S5.8): `fundamental`, `fundamental_typed`, `live_fundamental`, `live_fundamental_typed`, `fundamental_proc`, `live_fundamental_proc`, `soundness`, `live_soundness`, `soundness_source` |
 | S6 | fuel | done |
 | S7 | cost judgment | done |
 | S8 | soup and adequacy | done (S8.34): `lfsoup_step`, `soup_no_tau_divergence`, `lf_adequacy`, `lf_thread_progress`, `idle_dual` |
@@ -1583,3 +1583,50 @@ The old development in theories/ stays untouched.
   `lf_p_term` keeps its statement: the soup does not read `pfree`, and
   `lf_fundamental` drops the premise there. No other typing rule
   changes. CheckAll lists 280 results, all closed.
+- S4.32. One unfolding of E under a renaming (compat/RenameInd.v).
+  `Ebody_rename` is the forward simulation of `E_step` (compat/Rename.v)
+  stated for any reader X closed under renaming (`erel_ren`), and
+  `Erel_S_ind_ren` is the induction over the steps of cost 0 whose
+  predicate holds at every renaming (`Φren`). The clause (fuse) of P
+  needs it: a fusion of a single thread is the renamed thread, whose
+  derivation is not a subderivation of the thread's. No deviation.
+- S4.33. P-Term (compat/PTerm.v). `sth Θ Σ ΘB C` packs the conditions
+  on the environments of a single thread: Θ = Σ ∪ ΘB, the ends of ΘB
+  are those of C, chans Σ ## C, `pfree Σ`, `dpairs C ΘB`.
+  `sem_p_term : prim T → sth Θ Σ ΘB C → t ∈ E[κ]^W _ n⟦Θ ⊢ T⟧^∅ →
+  (C, {[+ t +]}) ∈ P[κ]^W _ n⟦Σ ⊢ T⟧` for every κ, by strong induction on
+  the level and `Erel_S_ind_ren` inside it. A fusion (h, D) of (C, {t})
+  is (gch h C ∪ D, {emap h t}) over sdrop D (kren h Σ) (`sth_fuse`).
+  The clauses (`core`): a single thread steps by an administrative step,
+  a link of a restricted channel (τ) or an offer on free channels
+  (`istep_single`). P-Stop and P-Ready read E's (ready) at the empty
+  future: an offer on a restricted end is impossible in a strict world,
+  because the thread holds the partner unoffered at the dual point
+  (`offered_free`). Q-Send splits the moved ends into interface ends and
+  restricted ends whose partners stay (`snd_sth`, `snd_send_split`),
+  Q-Recv restricts the channels it brings back (`rcv_sth`), a link of a
+  restricted channel renames the holder of o1‾ by `csub o1 o2` and the
+  interface moves along ≈ (`lk_res`, `Prel_conv`). A spawn splits Θ by
+  O-Spawn: channels with both ends on one side stay restricted there,
+  the others become the cut (`spawn_split`), and `conn_all` composes the
+  parent with the spawned thread (`child`, `spawn_case`). The thunk's
+  body enters at the empty future, so no premise on the child is added.
+  Deviation: none; `prim T` as for P-Connect.
+- S5.8. The process theorems (static/FundamentalProc.v). `ptyped_conn`
+  gives `conn` from the premises of P-Connect: `cut_dual ΣC (senv_dual
+  ΣC)` (`senv_dual_cut`), `pfree` of both sides from `ptyped_pfree`, the
+  restricted channels apart from the interfaces from `ptyped_chans`.
+  `proc_gen` is one induction on `ptyped` at every fuel N for any cost
+  table whose threads satisfy the term theorem: P-Term by `sem_p_term`
+  (`pterm_sth`, the thread through `fundamental_typed` or
+  `live_fundamental_typed` and `Erel_blind`, `Erel_conv` as in
+  `typed_live`), P-Connect by `sem_p_connect` with strict W1, strict W2
+  from `p_join_iff_connect`, P-Join by `sem_p_join`.
+  `fundamental_proc : strict W → Σ ⊢_W p : T → Σ ⊨_W p : T`,
+  `live_fundamental_proc : strict W → Σ ⊢_W p : T → pguarded p →
+  Σ ⊫_W p : T` (`pguarded p`: every thread of p guarded),
+  `soundness : strict W → ∅ ⊢_W p : T → deadlock_free p`,
+  `live_soundness : strict W → ∅ ⊢_W p : T → pguarded p →
+  deadlock_free p ∧ no_tau_divergence p`,
+  `soundness_source : strict W → prim T → ∅ ; ∅ ; [] ⊢^(∅, None) _ W t : T
+  → deadlock_free (∅, {[+ t +]})` (strict W kept, as S5.5 explains).
