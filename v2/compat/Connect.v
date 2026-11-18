@@ -711,4 +711,62 @@ Section rdy.
         { left. by split. }
         exists o', S3, y'. split_and!; [done|done|by eapply w_lt_trans].
   Qed.
+
+  Lemma pc_ready : T2 = TUnit → ready _ W1(Σ1 ∪ Σ2, pc).
+  Proof.
+    intros HTU Hs. pose proof (stable_pconn_l _ _ _ Hs) as Hs1. pose proof (stable_pconn_r _ _ _ Hs) as Hs2.
+    destruct (comp_ready κ n W1 T1 X1 _ _ HT1 H1 Hs1) as [Hl1|[A1 R1]].
+    { left. by apply (link_p_lift κ n W1 T1 T2 X1 X2 Σ1 ΣC Σ2 ΣD q1 q2 Hc H1 H2). }
+    destruct (comp_ready κ n W1 T2 X2 _ _ HT2 H2 Hs2) as [Hl2|[A2 R2]].
+    { left. by apply link_p_2. }
+    assert (∀ o, offered_p (Σ1 ∪ ΣC) q1 o → offered_p (Σ1 ∪ Σ2) pc o ∨
+              ∃ o' S' y', offered_p (Σ1 ∪ Σ2) pc o' ∧ (Σ1 ∪ Σ2) !! o' = Some (S', y')) as F1.
+    { intros o Ho. destruct Ho as [Hd Ho']. apply elem_of_dom in Hd as [[S x] L].
+      destruct (lookup_union_cases _ _ _ _ L) as [L'|[_ L']].
+      - left. apply (offered_1_c κ n W1 T1 T2 X1 X2 Σ1 ΣC Σ2 ΣD q1 q2 Hc H1 H2); [by eapply elem_of_dom_2|done|].
+        split; [rewrite dom_union_L; apply elem_of_union_l; by eapply elem_of_dom_2|done].
+      - right. destruct (chain Hs A1 A2 x o S) as (o' & S' & y' & ? & ? & _); [left; split; [done|by split; [eapply elem_of_dom_2|]]|].
+        eauto. }
+    assert (∀ o, offered_p (Σ2 ∪ ΣD) q2 o → offered_p (Σ1 ∪ Σ2) pc o ∨
+              ∃ o' S' y', offered_p (Σ1 ∪ Σ2) pc o' ∧ (Σ1 ∪ Σ2) !! o' = Some (S', y')) as F2.
+    { intros o Ho. destruct Ho as [Hd Ho']. apply elem_of_dom in Hd as [[S x] L].
+      destruct (lookup_union_cases _ _ _ _ L) as [L'|[_ L']].
+      - left. apply offered_2_c; [by eapply elem_of_dom_2|done|].
+        split; [rewrite dom_union_L; apply elem_of_union_l; by eapply elem_of_dom_2|done].
+      - right. destruct (chain Hs A1 A2 x o S) as (o' & S' & y' & ? & ? & _); [right; split; [done|by split; [eapply elem_of_dom_2|]]|].
+        eauto. }
+    right. split.
+    - intros Hno.
+      destruct (R1) as (v1 & E1 & Hq1 & Hv1 & HE1).
+      { intros o Ho. destruct (F1 o Ho) as [?|(o' & _ & _ & ? & _)]; by eapply Hno. }
+      destruct (R2) as (v2 & E2 & Hq2 & Hv2 & HE2).
+      { intros o Ho. destruct (F2 o Ho) as [?|(o' & _ & _ & ? & _)]; by eapply Hno. }
+      pose proof (Vrel_prim_empty _ _ _ _ _ _ HT1 Hv1) as HE1'.
+      assert (ΣC = ∅) as HC0.
+      { apply dom_empty_iff_L. apply (f_equal dom) in HE1'. rewrite dom_union_L, dom_empty_L in HE1'. set_solver. }
+      rewrite HTU in Hv2. apply Vrel_unit_iff in Hv2 as [_ ->].
+      exists v1, (E1 ⊎ ({[+ EUnit +]} ⊎ E2)). unfold pconn. rewrite Hq1, Hq2. simpl.
+      rewrite HC0. unfold chans_of. rewrite dom_empty_L, set_map_empty. split_and!.
+      + f_equal. multiset_solver.
+      + by eapply Vrel_val.
+      + intros e He. apply gmultiset_elem_of_disj_union in He as [He|He]; [by apply HE1|].
+        apply gmultiset_elem_of_disj_union in He as [He|He]; [by apply gmultiset_elem_of_singleton in He|by apply HE2].
+    - intros o S x Ho Hno. destruct (lookup_union_cases _ _ _ _ Ho) as [L|[Ln L]].
+      + destruct (A1 o S x) as (o1 & S1 & x1 & Ho1 & L1 & Hlt).
+        { by apply lookup_union_Some_l. }
+        { intros Hof. apply Hno. apply (offered_1_c κ n W1 T1 T2 X1 X2 Σ1 ΣC Σ2 ΣD q1 q2 Hc H1 H2); [by eapply elem_of_dom_2|done|done]. }
+        destruct (lookup_union_cases _ _ _ _ L1) as [L1'|[_ L1']].
+        * exists o1, S1, x1. split_and!; [|by apply lookup_union_Some_l|done].
+          apply (offered_1_c κ n W1 T1 T2 X1 X2 Σ1 ΣC Σ2 ΣD q1 q2 Hc H1 H2); [by eapply elem_of_dom_2|done|done].
+        * destruct (chain Hs A1 A2 x1 o1 S1) as (o' & S' & y' & ? & ? & ?); [by left|].
+          exists o', S', y'. split_and!; [done|done|by eapply w_lt_trans].
+      + destruct (A2 o S x) as (o2 & S2 & x2 & Ho2 & L2 & Hlt).
+        { by apply lookup_union_Some_l. }
+        { intros Hof. apply Hno. apply offered_2_c; [by eapply elem_of_dom_2|done|done]. }
+        destruct (lookup_union_cases _ _ _ _ L2) as [L2'|[_ L2']].
+        * exists o2, S2, x2. split_and!; [apply offered_2_c; [by eapply elem_of_dom_2|done|done]| |done].
+          by apply lookup_union_disj_r; [apply HΣ12|].
+        * destruct (chain Hs A1 A2 x2 o2 S2) as (o' & S' & y' & ? & ? & ?); [by right|].
+          exists o', S', y'. split_and!; [done|done|by eapply w_lt_trans].
+  Qed.
 End rdy.
