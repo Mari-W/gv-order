@@ -3,8 +3,8 @@
     The semantic judgment with marks L, [sem_later κ W Θ Δ L F t T],
     reads a grounding that holds a marked variable of Δ only below the
     current level ([GrelL]): at level n a marked value is in V at every
-    level j < n, with no ends. Marks are the selves of boxes. At L = noL
-    it is [sem_typed_at] ([sem_later_noL]).
+    level j < n, with no ends. Marks are the selves of boxes. At L = ∅
+    it is [sem_typed_at] ([sem_later_empty]).
 
     Every rule of compat/Rules.v and compat/TermRules.v holds with
     marks, because a grounding with marks at level n is one at every
@@ -86,7 +86,7 @@ Section groundL.
     - apply IH; intros; simpl; auto.
   Qed.
 
-  Lemma GrelL_noL n W Θ Δ γ : GrelL κ n W Θ Δ noL γ ↔ Grel κ n W Θ Δ γ.
+  Lemma GrelL_unmarked n W Θ Δ γ : GrelL κ n W Θ Δ ∅ γ ↔ Grel κ n W Θ Δ γ.
   Proof.
     revert Θ γ. induction Δ as [|[[T a]|] Δ IH]; intros Θ γ; simpl; [done| |apply IH].
     split; intros (Θ1 & Θ2 & Hd & -> & HV & HG); exists Θ1, Θ2; split_and!; try done; by apply IH.
@@ -111,7 +111,7 @@ Section groundL.
   Qed.
 
   (** Below the level, a marked value is in V. *)
-  Lemma GrelL_clear n j W Θ Δ L γ : j < n → GrelL κ n W Θ Δ L γ → GrelL κ j W Θ Δ noL γ.
+  Lemma GrelL_clear n j W Θ Δ L γ : j < n → GrelL κ n W Θ Δ L γ → GrelL κ j W Θ Δ ∅ γ.
   Proof.
     intros Hj. revert Θ L γ. induction Δ as [|[[T a]|] Δ IH]; intros Θ L γ; simpl; [done| |].
     - destruct (L 0).
@@ -298,9 +298,9 @@ Section groundL.
   Qed.
 End groundL.
 
-Lemma sem_later_noL κ W Θ Δ F t T : sem_later κ W Θ Δ noL F t T ↔ sem_typed_at κ W Θ Δ F t T.
+Lemma sem_later_empty κ W Θ Δ F t T : sem_later κ W Θ Δ ∅ F t T ↔ sem_typed_at κ W Θ Δ F t T.
 Proof.
-  split; intros H n W' Θ' γ HW Hd HG; apply H; try done; by apply GrelL_noL.
+  split; intros H n W' Θ' γ HW Hd HG; apply H; try done; by apply GrelL_unmarked.
 Qed.
 
 (** ** The rules *)
@@ -349,7 +349,7 @@ Section later.
     tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
     (∀ γ, subst γ t = fill_frame (mk γ) (subst γ e)) → (∀ γ, frame_val (mk γ)) →
     (∀ B, sem_later κ W Θ1 Δ1 L (F ∪ tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ (if lenv_bot Δ2 then B else ∅)) e T) →
-    (∀ W' j Θv v Θ2' γ, W ⊑ W' → tenv_erase Θ2 ##ₘ Θ2' → GrelL κ j W' Θ2' Δ2 noL γ →
+    (∀ W' j Θv v Θ2' γ, W ⊑ W' → tenv_erase Θ2 ##ₘ Θ2' → GrelL κ j W' Θ2' Δ2 ∅ γ →
        Θv ##ₘ tenv_erase Θ2 ∪ Θ2' → Vrel κ j W' Θv T v →
        fill_frame (mk γ) v ∈ E[κ]^W' _ j⟦Θv ∪ (tenv_erase Θ2 ∪ Θ2') ⊢ U⟧^F) →
     sem_later κ W Θ Δ L F t U.
@@ -502,7 +502,7 @@ Section later.
 
   (** The marks of the frame: L itself, or none when the hole acts. *)
   Definition kmarks (L L' : nat → bool) (e : expr) : Prop :=
-    L' = L ∨ (L' = noL ∧ 1 ≤ c_give κ ∧ acts e).
+    L' = L ∨ (L' = ∅ ∧ 1 ≤ c_give κ ∧ acts e).
 
   Lemma later_bind_gen (mk : (nat → expr) → frame) W Θ Θ1 Θ2 Δ Δ1 Δ2 L L' F e t T U :
     kmarks L L' e →

@@ -1,10 +1,10 @@
 (** * The live fundamental theorem for guarded terms (stage S5, Appendix A.3)
 
-      strict W ∧ Θ ; ∅ ; Δ ⊢^F_W t : T ∧ guarded t  ⟹  Θ ; Δ ⊫^F_W t : T
+      strict W ∧ Θ ; ∅ ; Δ ⊢^F_W t : T ∧ ∅ ⊢▷ t  ⟹  Θ ; Δ ⊫^F_W t : T
                                                           [live_fundamental]
 
     The induction of static/Fundamental.v, with the guard's marks. For
-    every L that the guard admits for the term ([glive L t]) the term is
+    every L that the guard admits for the term ([lguard L t]) the term is
     in the judgment with marks L ([sem_later], compat/LiveRules.v). A
     rule of the guard picks the semantic rule: a frame keeps the marks or
     clears them after an acting hole ([kmarks]), a box marks its self, a
@@ -27,7 +27,7 @@ Section live.
 
   Theorem dftyped_later W Θ Γ Δ F e T :
     world_wf W → Θ ; Γ ; Δ ⊢^F _ W e : T →
-    ∀ L, glive L e → ∀ W1 σ ρ B, W ⊑ W1 → hsat W1 σ ρ Γ →
+    ∀ L, lguard L e → ∀ W1 σ ρ B, W ⊑ W1 → hsat W1 σ ρ Γ →
     sem_later κ W1 (tenv_pinst σ Θ) (lenv_pinst σ Δ) L (sf_den ρ B (sf_pinst σ F)) e (pinst_ty σ T).
   Proof.
     intros Hwf. induction 1 as
@@ -68,7 +68,7 @@ Section live.
     - (* D-Chan *)
       by apply later_chan, lenv_empty_pinst.
     - (* D-Abs *)
-      assert (glive (false .: L) e) as Hgb by (inversion Hgl; subst; done).
+      assert (lguard (false .: L) e) as Hgb by (inversion Hgl; subst; done).
       destruct (lb_sem W W1 Hwf HW σ ρ Γ _ _ _ Hs Hlb) as [Hbot Hlb'].
       apply later_abs.
       + apply tfacts_pinst, (tfacts_lam _ (Some (T, aT))). exact (dftyped_tfacts _ _ _ _ _ _ _ Hb).
@@ -79,7 +79,7 @@ Section live.
                       (hsat_fvar _ _ _ _ _ _ _ Hφ (hsat_mono _ _ _ _ _ HW2 Hs) Hub')) as Hb'.
         rewrite den_nil, den_fresh in Hb'. exact Hb'.
     - (* D-App *)
-      assert (∃ L', kmarks κ L L' e1 ∧ glive L e1 ∧ glive L' e2) as (L' & Hk & Hg1 & Hg2).
+      assert (∃ L', kmarks κ L L' e1 ∧ lguard L e1 ∧ lguard L' e2) as (L' & Hk & Hg1 & Hg2).
       { inversion Hgl; subst; eexists; split_and!; try done; [by left|by right]. }
       eapply later_app; [exact Hk|by apply tsplit_pinst|by apply lenv_split_pinst
                         |exact (ub_sem W W1 Hwf HW σ ρ B Γ ub F Hs Hub)| |].
@@ -88,7 +88,7 @@ Section live.
       + eapply sem_later_future; [|apply (IH2 L' Hg2 W1 σ ρ B HW Hs)].
         rewrite den_union, opt_heads_pinst. done.
     - (* D-Pair *)
-      assert (∃ L', kmarks κ L L' e1 ∧ glive L e1 ∧ glive L' e2) as (L' & Hk & Hg1 & Hg2).
+      assert (∃ L', kmarks κ L L' e1 ∧ lguard L e1 ∧ lguard L' e2) as (L' & Hk & Hg1 & Hg2).
       { inversion Hgl; subst; eexists; split_and!; try done; [by left|by right]. }
       eapply later_pair; [exact Hk|by apply tsplit_pinst|by apply lenv_split_pinst| |].
       + intros B'. eapply sem_later_future; [|apply (IH1 L Hg1 W1 σ ρ (B ∪ B') HW Hs)].
@@ -96,24 +96,24 @@ Section live.
       + intros B'. eapply sem_later_future; [|apply (IH2 L' Hg2 W1 σ ρ (B ∪ B') HW Hs)].
         heads_p. fut.
     - (* D-LetU *)
-      assert (∃ L', kmarks κ L L' e1 ∧ glive L e1 ∧ glive L' e2) as (L' & Hk & Hg1 & Hg2).
+      assert (∃ L', kmarks κ L L' e1 ∧ lguard L e1 ∧ lguard L' e2) as (L' & Hk & Hg1 & Hg2).
       { inversion Hgl; subst; eexists; split_and!; try done; [by left|by right]. }
       eapply later_letu; [exact Hk|by apply tsplit_pinst|by apply lenv_split_pinst| |by apply IH2].
       intros B'. eapply sem_later_future; [|apply (IH1 L Hg1 W1 σ ρ (B ∪ B') HW Hs)].
       heads_p. fut.
     - (* D-LetP *)
-      assert (∃ L', kmarks κ L L' e1 ∧ glive L e1 ∧ glive (false .: false .: L') e2)
+      assert (∃ L', kmarks κ L L' e1 ∧ lguard L e1 ∧ lguard (false .: false .: L') e2)
         as (L' & Hk & Hg1 & Hg2).
       { inversion Hgl; subst; eexists; split_and!; try done; [by left|by right|].
-        eapply glive_ext; [|done]. by intros [|[|x]]. }
+        eapply guard_ext; [|done]. by intros [|[|x]]. }
       eapply (later_letp κ _ _ _ _ _ _ _ _ _ _ _ _ (pinst_ty σ T1) a1 (pinst_ty σ T2) a2 b1 b2);
         [exact Hk|by apply tsplit_pinst|by apply lenv_split_pinst| |by apply IH2].
       intros B'. eapply sem_later_future; [|apply (IH1 L Hg1 W1 σ ρ (B ∪ B') HW Hs)].
       heads_p. fut.
     - (* D-Let *)
-      assert (∃ L', kmarks κ L L' e1 ∧ glive L e1 ∧ glive (false .: L') e2) as (L' & Hk & Hg1 & Hg2).
+      assert (∃ L', kmarks κ L L' e1 ∧ lguard L e1 ∧ lguard (false .: L') e2) as (L' & Hk & Hg1 & Hg2).
       { inversion Hgl; subst; eexists; split_and!; try done; [by left|by right|].
-        eapply glive_ext; [|done]. by intros [|x]. }
+        eapply guard_ext; [|done]. by intros [|x]. }
       eapply (later_let κ _ _ _ _ _ _ _ _ _ _ _ _ (pinst_ty σ T1) b1);
         [exact Hk|by apply tsplit_pinst|by apply lenv_split_pinst| |by apply IH2].
       intros B'. eapply sem_later_future; [|apply (IH1 L Hg1 W1 σ ρ (B ∪ B') HW Hs)].
@@ -123,16 +123,16 @@ Section live.
     - (* D-Inj2 *)
       inversion Hgl; subst. by apply later_inj2, IH.
     - (* D-Case *)
-      assert (∃ L', kmarks κ L L' e ∧ glive L e ∧ glive (false .: L') e1 ∧ glive (false .: L') e2)
+      assert (∃ L', kmarks κ L L' e ∧ lguard L e ∧ lguard (false .: L') e1 ∧ lguard (false .: L') e2)
         as (L' & Hk & Hg0 & Hg1 & Hg2).
       { inversion Hgl; subst; eexists; split_and!; try done; [by left|by right| |];
-          (eapply glive_ext; [|done]; by intros [|x]). }
+          (eapply guard_ext; [|done]; by intros [|x]). }
       eapply (later_case κ _ _ _ _ _ _ _ _ _ _ _ _ _ (pinst_ty σ T1) a1 (pinst_ty σ T2) a2 b1 b2);
         [exact Hk|by apply tsplit_pinst|by apply lenv_split_pinst| |by apply IH1|by apply IH2].
       intros B'. eapply sem_later_future; [|apply (IH0 L Hg0 W1 σ ρ (B ∪ B') HW Hs)].
       heads_p. fut.
     - (* D-Box *)
-      assert (glive (true .: L) e) as Hgb by (inversion Hgl; subst; done).
+      assert (lguard (true .: L) e) as Hgb by (inversion Hgl; subst; done).
       destruct (slist_witness_inf k) as [ss0 [Hl0 Hs0]].
       pose proof (dftyped_tfacts _ _ _ _ _ _ _ (Hb ss0 Hl0 Hs0)) as Htf.
       rewrite <-(tenv_pinst_empty (pshift m)) in Htf.
@@ -154,7 +154,7 @@ Section live.
       rewrite !ty_df_sinst_map, <-list_fmap_compose.
       f_equal. f_equal. apply list_fmap_ext. intros _ s _. apply sty_df_idem.
     - (* D-Force *)
-      assert (glive L e) as Hge by (inversion Hgl; subst; done).
+      assert (lguard L e) as Hge by (inversion Hgl; subst; done).
       subst m. rewrite pinst_sinst, pinst_ty_inst.
       eapply (later_force κ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (pt_inst σ <$> xs));
         [by rewrite length_fmap|done|exact (proj1 Hsi)|exact (hold_sem W W1 Hwf HW σ ρ Γ C xs Hs HC)| |by apply IH].
@@ -189,7 +189,7 @@ Section live.
       pose proof (IH L ltac:(done) W1 σ ρ B HW Hs) as IH'. cbn [pinst_ty] in IH'. rewrite pt_inst_dual in IH'.
       eapply later_link, IH'.
     - (* D-SpawnLam *)
-      assert (glive (false .: L) e) as Hgb.
+      assert (lguard (false .: L) e) as Hgb.
       { inversion Hgl as [| | | | | |? ? ? Hgl'| | | | | | | | | | | | | |]; subst.
         by inversion Hgl'; subst. }
       apply (Hsl W1 _ _ _ _ e a1).
@@ -213,7 +213,7 @@ Section live.
     - (* D-Contract *)
       change (lenv_pinst σ (Some (U, aU) :: Δ)) with (Some (pinst_ty σ U, aU) :: lenv_pinst σ Δ).
       apply later_contract; [by apply unlimited_pinst|].
-      exact (IH _ (glive_rename e L pred Hgl) W1 σ ρ B HW Hs).
+      exact (IH _ (guard_rename e L pred Hgl) W1 σ ρ B HW Hs).
     - (* D-Pack *)
       subst m. eapply (later_pack κ _ _ _ _ _ _ _ _ _ _ _ (pt_inst σ <$> xs));
         [by rewrite length_fmap|exact (hold_sem W W1 Hwf HW σ ρ Γ C xs Hs HC)| |].
@@ -240,17 +240,17 @@ Lemma spawn_lam_later_valid κ : spawn_lam_later κ.
 Proof. intros W Θ Δ L F e a1. apply later_spawn_lam. Qed.
 
 Theorem live_fundamental W Θ Δ F t T :
-  strict W → Θ ; hc_empty ; Δ ⊢^F _ W t : T → guarded t → Θ ; Δ ⊫^F _ W t : T.
+  strict W → Θ ; hc_empty ; Δ ⊢^F _ W t : T → ∅ ⊢▷ t → Θ ; Δ ⊫^F _ W t : T.
 Proof.
-  intros HW Ht Hgd ρ B. apply sem_later_noL.
+  intros HW Ht Hgd ρ B. apply sem_later_empty.
   pose proof (dftyped_later κ_L ltac:(simpl; lia) (spawn_lam_later_valid κ_L) W Θ hc_empty Δ F t T
-                (proj1 HW) Ht noL Hgd
+                (proj1 HW) Ht ∅ Hgd
                 W pvar ρ B (wext_refl _) (hsat_empty _ _ _)) as H.
   rewrite tenv_pinst_pvar, lenv_pinst_pvar, sf_pinst_pvar, pinst_ty_pvar in H. exact H.
 Qed.
 
 Theorem live_fundamental_typed W N Θ Δ F t T a c ϑ :
-  strict W → Θ ; hc_empty ; Δ ⊢^F _{W,N} t : T ^ a ▷ c ; ϑ → guarded t →
+  strict W → Θ ; hc_empty ; Δ ⊢^F _{W,N} t : T ^ a ▷ c ; ϑ → ∅ ⊢▷ t →
   tenv_df Θ ; lenv_df Δ ⊫^F _ W t : ty_df T.
 Proof.
   intros HW Ht Hgd. apply live_fundamental; [done| |done].

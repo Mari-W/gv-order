@@ -278,10 +278,10 @@ Print Assumptions dftyped_sem.
 Print Assumptions fundamental.
 Print Assumptions fundamental_typed.
 (** S5: the guard, the rules with marks, the live fundamental theorem. *)
-Print Assumptions glive_rename.
+Print Assumptions guard_rename.
 Print Assumptions acts_stable.
 Print Assumptions Erel_bind_acts.
-Print Assumptions sem_later_noL.
+Print Assumptions sem_later_empty.
 Print Assumptions later_bind_acts.
 Print Assumptions later_box.
 Print Assumptions dftyped_later.

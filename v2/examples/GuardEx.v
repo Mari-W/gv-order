@@ -17,7 +17,7 @@ From GV Require Export static.Guard.
 
 Local Ltac inv_all :=
   repeat match goal with
-  | H : glive _ _ |- _ => inversion H; subst; clear H
+  | H : lguard _ _ |- _ => inversion H; subst; clear H
   | H : acts _ |- _ => inversion H; subst; clear H
   | H : sprim _ |- _ => simpl in H; done
   end.
@@ -25,36 +25,36 @@ Local Ltac inv_all :=
 (** !(f = force f) *)
 Definition div_box : expr := EBox (EForce (Var 0)).
 
-Lemma div_not_guarded : ¬ guarded div_box.
-Proof. intros H. unfold guarded, div_box in H. inv_all. done. Qed.
+Lemma div_not_guarded : ¬ ∅ ⊢▷ div_box.
+Proof. intros H. unfold div_box in H. inv_all. done. Qed.
 
 (** !(f = λx. (force f) x) *)
 Definition pn_fix : expr := EBox (Lam (App (EForce (Var 1)) (Var 0))).
 
-Lemma pn_fix_not_guarded : ¬ guarded pn_fix.
-Proof. intros H. unfold guarded, pn_fix in H. inv_all; done. Qed.
+Lemma pn_fix_not_guarded : ¬ ∅ ⊢▷ pn_fix.
+Proof. intros H. unfold pn_fix in H. inv_all; done. Qed.
 
 (** !(f = let ∗ = (force f) ∗ in λy. y) *)
 Definition cx_box : expr := EBox (LetU (App (EForce (Var 0)) EUnit) (Lam (Var 0))).
 
-Lemma cx_not_guarded : ¬ guarded cx_box.
-Proof. intros H. unfold guarded, cx_box in H. inv_all; done. Qed.
+Lemma cx_not_guarded : ¬ ∅ ⊢▷ cx_box.
+Proof. intros H. unfold cx_box in H. inv_all; done. Qed.
 
 (** !(f = λc. spawn (λ_. (force f) c)) *)
 Definition spawn_loop : expr := EBox (Lam (ESpawn (Lam (App (EForce (Var 2)) (Var 1))))).
 
-Lemma spawn_loop_not_guarded : ¬ guarded spawn_loop.
-Proof. intros H. unfold guarded, spawn_loop in H. inv_all; done. Qed.
+Lemma spawn_loop_not_guarded : ¬ ∅ ⊢▷ spawn_loop.
+Proof. intros H. unfold spawn_loop in H. inv_all; done. Qed.
 
 (** !(f = λx. let ⟨v, x'⟩ = recv x in (force f) x') *)
 Definition loop : expr := EBox (Lam (LetP (ERecv (Var 0)) (App (EForce (Var 3)) (Var 0)))).
 
-Lemma loop_guarded : guarded loop.
+Lemma loop_guarded : ∅ ⊢▷ loop.
 Proof.
-  apply glive_box, glive_lam, glive_letp_acts.
-  - apply glive_op, glive_var. done.
+  apply gl_box, gl_lam, gl_tick_letp.
+  - apply gl_op, gl_var. done.
   - by apply acts_op.
-  - apply glive_app; [apply glive_op|]; by apply glive_var.
+  - apply gl_app; [apply gl_op|]; by apply gl_var.
 Qed.
 
 (** The stage of B.1 #4:
@@ -67,12 +67,12 @@ Definition stage : expr :=
         (LetU (ESpawn (Lam (App (EForce (Var 6)) (Var 1))))
           (EClose (ESend (Pair (Var 3) (Var 1))))))))).
 
-Lemma stage_guarded : guarded stage.
+Lemma stage_guarded : ∅ ⊢▷ stage.
 Proof.
-  apply glive_box, glive_lam, glive_letp_acts; [apply glive_op, glive_var; done|by apply acts_op|].
-  apply glive_letu; [apply glive_op, glive_var; done|].
-  apply glive_letp; [apply glive_new|].
-  apply glive_letu.
-  - apply glive_op, glive_lam, glive_app; [apply glive_op|]; by apply glive_var.
-  - apply glive_op, glive_op, glive_pair; by apply glive_var.
+  apply gl_box, gl_lam, gl_tick_letp; [apply gl_op, gl_var; done|by apply acts_op|].
+  apply gl_letu; [apply gl_op, gl_var; done|].
+  apply gl_letp; [apply gl_new|].
+  apply gl_letu.
+  - apply gl_op, gl_lam, gl_app; [apply gl_op|]; by apply gl_var.
+  - apply gl_op, gl_op, gl_pair; by apply gl_var.
 Qed.

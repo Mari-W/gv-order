@@ -6,7 +6,7 @@
 
     The rules are those of Σ ⊢_W p : T ([ptyped]) with every premise
     static. P-Term types the thread by the merged judgment at Some N with
-    the empty future, and adds [guarded t] and [meets ϑ 0 tk] for some
+    the empty future, and adds [∅ ⊢▷ t] and [meets ϑ 0 tk] for some
     ticket count tk. P-Connect types the cut at exactly dual types
     ([senv_dual]), and P-Join is P-Connect with the strictness of the join
     replaced as in [ptyped]. No rule renames families. The proof reads
@@ -23,7 +23,7 @@ Inductive lfptyped (N : nat) : world → senv → proc → ty → Prop :=
       (∀ c, c ∈ C0 → ∃ S x, ΘB !! (c⁺)%cend = Some (TE S x (Some N)) ∧
                             ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ (Some N))) →
       typed W (Some N) (tenv_of (Some N) Σ ∪ ΘB) hc_empty [] (∅, None) t T a c ϑ →
-      guarded t → meets ϑ 0 tk →
+      ∅ ⊢▷ t → meets ϑ 0 tk →
       lfptyped N W Σ (C0, {[+ t +]}) T
   | p_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
       lfptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →

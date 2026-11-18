@@ -1,0 +1,19 @@
+λ (L : nat → bool) (t : expr), L ⊢▷ t
+     : (nat → bool) → expr → Prop
+λ t : expr, ∅ ⊢▷ t
+     : expr → Prop
+λ p : proc, ⊢▷ p
+     : proc → Prop
+gl_box
+     : ∀ (L : nat → bool) (b : expr), true .: L ⊢▷ b → L ⊢▷ EBox b
+gl_tick_app
+     : ∀ (L : nat → bool) (e1 e2 : expr),
+         L ⊢▷ e1 → acts e1 → ∅ ⊢▷ e2 → L ⊢▷ App e1 e2
+live_fundamental
+     : ∀ (W : world) (Θ : tenv) (Δ : lenv) (F : sfuture) (t : expr) (T : ty),
+         strict W
+         → Θ ; hc_empty ; Δ ⊢^F _ W t : T → ∅ ⊢▷ t → Θ ; Δ ⊫^F _ W t : T
+live_soundness
+     : ∀ (W : world) (p : proc) (T : ty),
+         strict W
+         → ∅ ⊢_W p : T → ⊢▷ p → deadlock_free p ∧ no_tau_divergence p

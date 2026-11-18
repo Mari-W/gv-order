@@ -1431,7 +1431,7 @@ lex is replaced in both places at once, never in one.
 | readiness | `ready_W(Θ ∣ F, t)`, `ready_W(Σ, p)` | `ready_t`, `ready_p` |
 | static term typing | `Θ ; Γ ; Δ ⊢^F_W t : T` | `typed` (Γ the facts and future hypotheses) |
 | static process typing | `Σ ⊢_W p : T` | `ptyped` |
-| guard | `guarded t` | `guarded` (rules `glive`) |
+| guard | `Λ ⊢▷ t`, `∅ ⊢▷ t`, for processes `⊢▷ p` | `lguard` (rules `gl_*`, acting rules `gl_tick_*`), `pguard` |
 | cost typing | `Θ ; Γ ⊩^N e : σ ▷ c ; t` | `ctyped` |
 | lock-free process typing | `Σ ⊩^N_W p : T` | `lfptyped` |
 | value relation | `v ∈ V[κ]^W_n⟦Θ ⊢ T⟧`, `[κ]` omitted for κ_DF | `Vrel κ n W Θ T v` |
@@ -1451,9 +1451,9 @@ lex is replaced in both places at once, never in one.
 | `∅ ⊫_W p : T  ⟹  deadlock_free p ∧ no_tau_divergence p` | `live_adequacy` |
 | `strict W ∧ Θ ; ∅ ; Δ ⊢^F_W t : T  ⟹  Θ ; Δ ⊨^F_W t : T` | `fundamental` |
 | `strict W ∧ Σ ⊢_W p : T  ⟹  Σ ⊨_W p : T` | `fundamental_proc` |
-| `… ∧ guarded t  ⟹  Θ ; Δ ⊫^F_W t : T`, and for processes | `live_fundamental`, `live_fundamental_proc` |
+| `… ∧ ∅ ⊢▷ t  ⟹  Θ ; Δ ⊫^F_W t : T`, and for processes | `live_fundamental`, `live_fundamental_proc` |
 | `strict W ∧ ∅ ⊢_W p : T  ⟹  deadlock_free p` | `soundness` |
-| `strict W ∧ ∅ ⊢_W p : T ∧ guarded p  ⟹  deadlock_free p ∧ no_tau_divergence p` | `live_soundness` |
+| `strict W ∧ ∅ ⊢_W p : T ∧ ⊢▷ p  ⟹  deadlock_free p ∧ no_tau_divergence p` | `live_soundness` |
 | `prim T ∧ ∅ ; ∅ ; ∅ ⊢^∅_W t : T  ⟹  (∅, {t}) deadlock free`, no creation constraint | `soundness_source` |
 | `Θ ; Γ ⊩^N e : σ ▷ c ; t  ⟹  Θ ; Γ ⊨^N e : σ ▷ c ; t` | `cost_fundamental` |
 | `lfworld W ∧ ∅ ⊪_W p : T  ⟹  lock_free p` | `lf_adequacy` |
@@ -1477,7 +1477,7 @@ P-Join     as P-Connect, with strict (W1 ⊔ W2) replaced by the strictness of t
            join of the two worlds restricted to their shared names
 ```
 
-The lock-free rules `⊩^N_W` type threads at `Some N` and add `guarded t` and
+The lock-free rules `⊩^N_W` type threads at `Some N` and add `∅ ⊢▷ t` and
 `meets ϑ 0 tk` to P-Term, all static. P-Connect and P-Join are those of
 `⊢_W` (decision of 2026-11-18, section 4).
 

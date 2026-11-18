@@ -225,8 +225,8 @@ Proof.
   Unshelve. all: first [tok_tac | exact None | simpl; lia | simpl; done].
 Qed.
 
-Lemma cs_guarded : guarded cs_main.
-Proof. unfold guarded, cs_main, cli, srv, let_new, elet. guard_tac. Qed.
+Lemma cs_guarded : ∅ ⊢▷ cs_main.
+Proof. unfold cs_main, cli, srv, let_new, elet. guard_tac. Qed.
 
 Theorem cs_lftyped : ∃ N, ∅ ⊩^N _ W_cs (∅, {[+ cs_main +]}) : TUnit.
 Proof.

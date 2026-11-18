@@ -82,7 +82,7 @@ Qed.
 
 Lemma lf_main_typed N W t T a c ϑ tk :
   types.Types.prim T → typed W (Some N) ∅ hc_empty [] (∅, None) t T a c ϑ →
-  guarded t → meets ϑ 0 tk → ∅ ⊩^N _ W (∅, {[+ t +]}) : T.
+  ∅ ⊢▷ t → meets ϑ 0 tk → ∅ ⊩^N _ W (∅, {[+ t +]}) : T.
 Proof.
   intros Hp Ht Hg Hm. apply (p_term N W ∅ ∅ ∅ t T a c ϑ tk); [done| | | | |done|done|done].
   - intros o. rewrite dom_empty_L. set_solver.
@@ -93,7 +93,7 @@ Qed.
 
 Lemma lf_main N W t T a c ϑ tk :
   lfworld W → types.Types.prim T → typed W (Some N) ∅ hc_empty [] (∅, None) t T a c ϑ →
-  guarded t → meets ϑ 0 tk → lock_free (∅, {[+ t +]}).
+  ∅ ⊢▷ t → meets ϑ 0 tk → lock_free (∅, {[+ t +]}).
 Proof. intros HW Hp Ht Hg Hm. eapply (lf_soundness N W _ T HW), lf_main_typed; eauto. Qed.
 
 (** ** Rules of the merged judgment with weakening built in *)
@@ -206,16 +206,16 @@ Ltac acts_tac :=
 
 (** The guard: an operand that acts clears the marks for the rest. *)
 Ltac guard_tac :=
-  first [ apply glive_var; reflexivity | apply glive_unit | apply glive_chan | apply glive_new
-        | apply glive_lam; guard_tac | apply glive_box; guard_tac
-        | apply glive_op; guard_tac
-        | apply glive_app_acts; [guard_tac|acts_tac|guard_tac] | apply glive_app; guard_tac
-        | apply glive_pair_acts; [guard_tac|acts_tac|guard_tac] | apply glive_pair; guard_tac
-        | apply glive_letu_acts; [guard_tac|acts_tac|guard_tac] | apply glive_letu; guard_tac
-        | apply glive_letp_acts; [guard_tac|acts_tac|guard_tac] | apply glive_letp; guard_tac
-        | apply glive_let_acts; [guard_tac|acts_tac|guard_tac] | apply glive_let; guard_tac
-        | apply glive_inj1; guard_tac | apply glive_inj2; guard_tac
-        | apply glive_case; guard_tac ].
+  first [ apply gl_var; reflexivity | apply gl_unit | apply gl_chan | apply gl_new
+        | apply gl_lam; guard_tac | apply gl_box; guard_tac
+        | apply gl_op; guard_tac
+        | apply gl_tick_app; [guard_tac|acts_tac|guard_tac] | apply gl_app; guard_tac
+        | apply gl_tick_pair; [guard_tac|acts_tac|guard_tac] | apply gl_pair; guard_tac
+        | apply gl_tick_letu; [guard_tac|acts_tac|guard_tac] | apply gl_letu; guard_tac
+        | apply gl_tick_letp; [guard_tac|acts_tac|guard_tac] | apply gl_letp; guard_tac
+        | apply gl_tick_let; [guard_tac|acts_tac|guard_tac] | apply gl_let; guard_tac
+        | apply gl_inj1; guard_tac | apply gl_inj2; guard_tac
+        | apply gl_case; guard_tac ].
 
 Ltac meets_tac := unfold meets; simpl; lia.
 

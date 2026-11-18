@@ -2,9 +2,9 @@
       Appendix A.3)
 
       fundamental_proc      : strict W → Σ ⊢_W p : T → Σ ⊨_W p : T
-      live_fundamental_proc : strict W → Σ ⊢_W p : T → pguarded p → Σ ⊫_W p : T
+      live_fundamental_proc : strict W → Σ ⊢_W p : T → ⊢▷ p → Σ ⊫_W p : T
       soundness             : strict W → ∅ ⊢_W p : T → deadlock_free p
-      live_soundness        : strict W → ∅ ⊢_W p : T → pguarded p →
+      live_soundness        : strict W → ∅ ⊢_W p : T → ⊢▷ p →
                                 deadlock_free p ∧ no_tau_divergence p
       soundness_source      : strict W → prim T → ∅ ; ∅ ; [] ⊢^(∅, None) _ W t : T →
                                 deadlock_free (∅, {[+ t +]})
@@ -18,8 +18,10 @@
 From GV Require Export compat.PTerm static.LiveFundamental.
 From GV Require Import compat.Conv.
 
-(** Every thread of p is guarded. *)
-Definition pguarded (p : proc) : Prop := ∀ t, t ∈ p.2 → guarded t.
+(** The guard of a process, ⊢▷ p: every thread t of p has ∅ ⊢▷ t. *)
+Definition pguard (p : proc) : Prop := ∀ t, t ∈ p.2 → ∅ ⊢▷ t.
+
+Notation "⊢▷ p" := (pguard p) (at level 74, p at level 60, format "⊢▷  p").
 
 (** ** The side conditions of P-Connect from the typing premises *)
 
@@ -121,16 +123,16 @@ Proof.
   intros W' N Θ t T' a c ϑ HW' Ht _. exact (fundamental_typed W' N Θ [] (∅, None) t T' a c ϑ HW' Ht).
 Qed.
 
-Theorem live_fundamental_proc W Σ p T : strict W → Σ ⊢_W p : T → pguarded p → Σ ⊫_W p : T.
+Theorem live_fundamental_proc W Σ p T : strict W → Σ ⊢_W p : T → ⊢▷ p → Σ ⊫_W p : T.
 Proof.
-  intros HW Hty Hg. refine (proc_gen κ_L guarded _ None W Σ p T HW Hty Hg).
+  intros HW Hty Hg. refine (proc_gen κ_L (lguard ∅) _ None W Σ p T HW Hty Hg).
   intros W' N Θ t T' a c ϑ HW' Ht Hgt. exact (live_fundamental_typed W' N Θ [] (∅, None) t T' a c ϑ HW' Ht Hgt).
 Qed.
 
 Theorem soundness W p T : strict W → ∅ ⊢_W p : T → deadlock_free p.
 Proof. intros HW Hty. apply (adequacy W T p HW). by apply fundamental_proc. Qed.
 
-Theorem live_soundness W p T : strict W → ∅ ⊢_W p : T → pguarded p →
+Theorem live_soundness W p T : strict W → ∅ ⊢_W p : T → ⊢▷ p →
   deadlock_free p ∧ no_tau_divergence p.
 Proof. intros HW Hty Hg. apply (live_adequacy W T p HW). by apply live_fundamental_proc. Qed.
 

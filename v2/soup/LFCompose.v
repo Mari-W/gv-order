@@ -131,7 +131,7 @@ Qed.
 
 (** The thread of P-Term, typed at a finite N and guarded, in E[live]. *)
 Lemma typed_live W N Θ t T a c ϑ n :
-  strict W → guarded t → Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} t : T^a ▷ c ; ϑ →
+  strict W → ∅ ⊢▷ t → Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} t : T^a ▷ c ; ϑ →
   t ∈ E[live]^W _ n⟦tenv_erase Θ ⊢ T⟧^∅.
 Proof.
   intros HW Hg Hty. pose proof (live_fundamental_typed _ _ _ _ _ _ _ _ _ _ HW Hty Hg (λ _, ∅) ∅
@@ -152,7 +152,7 @@ Theorem lf_p_term W N Σ ΘB C0 t T a c ϑ tk :
   (∀ c, c ∈ C0 → ∃ S (x : point), ΘB !! (c⁺)%cend = Some (TE S x (Some N)) ∧
                                    ΘB !! (c⁻)%cend = Some (TE (dual S) (pt_dual x) (Some N))) →
   tenv_of (Some N) Σ ∪ ΘB ; hc_empty ; [] ⊢^(∅, None) _{W,(Some N)} t : T^a ▷ c ; ϑ →
-  guarded t → meets ϑ 0 tk →
+  ∅ ⊢▷ t → meets ϑ 0 tk →
   Σ ⊪_W (C0, {[+ t +]}) : T.
 Proof.
   intros HW Hp HB HΣ Hd Hty Hg Hm.
@@ -173,7 +173,7 @@ Qed.
     A guarded closed thread of primitive type, typed at a finite N, whose
     transformer some ticket count meets, is lock free. *)
 Theorem lf_soundness_source W N t T a c ϑ tk :
-  lfworld W → guarded t → types.Types.prim T →
+  lfworld W → ∅ ⊢▷ t → types.Types.prim T →
   ∅ ; hc_empty ; [] ⊢^(∅, None) _{W,(Some N)} t : T^a ▷ c ; ϑ → meets ϑ 0 tk →
   lock_free (∅, {[+ t +]}).
 Proof.

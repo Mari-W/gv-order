@@ -17,6 +17,7 @@ The old development in theories/ stays untouched.
 | S8 | soup and adequacy | done (S8.34): `lfsoup_step`, `soup_no_tau_divergence`, `lf_adequacy`, `lf_thread_progress`, `idle_dual` |
 | S9 | lock-free composition and soundness | done (S9.9): `⊪` the soup alone, `lfptyped` (LFTyped.v), `lf_p_term`, `lf_p_connect`, `lf_p_join`, `lf_fundamental`, `lf_soundness`, example `cl_lock_free`. S9.10 to S9.12 type the six S2 examples by ⊩ at finite N, all lock free |
 | S10 | paper | open |
+| C | cleanup | in progress (C.1) |
 
 ## Deviations
 
@@ -1630,3 +1631,18 @@ The old development in theories/ stays untouched.
   deadlock_free p ∧ no_tau_divergence p`,
   `soundness_source : strict W → prim T → ∅ ; ∅ ; [] ⊢^(∅, None) _ W t : T
   → deadlock_free (∅, {[+ t +]})` (strict W kept, as S5.5 explains).
+- C.1. The guard as guarded recursion (decision of 2026-11-18,
+  static/Guard.v). `glive L t` is the judgment `Λ ⊢▷ t` (`lguard`), Λ the
+  ▷-marked variables, `noL` is `∅` (instance `marks_empty`). The rules
+  keep their premises and take the names `gl_var`, `gl_unit`, `gl_chan`,
+  `gl_new`, `gl_lam`, `gl_box`, `gl_op`, `gl_app`, `gl_pair`, `gl_letu`,
+  `gl_letp`, `gl_let`, `gl_inj1`, `gl_inj2`, `gl_case`, and the acting
+  rules `gl_tick_app`, `gl_tick_pair`, `gl_tick_letu`, `gl_tick_letp`,
+  `gl_tick_let`, `gl_tick_case`. `guarded t` is gone, every statement
+  reads `∅ ⊢▷ t`. `pguarded p` is `⊢▷ p` (`pguard`, static/FundamentalProc.v).
+  Lemmas renamed: `glive_ext` to `guard_ext`, `glive_rename` to
+  `guard_rename`, `noL_cons` to `marks_empty_cons`, `GrelL_noL` to
+  `GrelL_unmarked` (`GrelL_empty` was taken), `sem_later_noL` to
+  `sem_later_empty`. The inductive is `lguard`, because stdpp's
+  `guard` (the option monad) shadows a plain `guard`. test/GuardNotations.v
+  prints both notations, `live_fundamental` and `live_soundness`.
