@@ -176,6 +176,11 @@ Definition cnew (N : fuel) (c : chan) (φ : cenv) : cenv := <[EPos c := N]> (<[E
 Definition ffresh (c : chan) (Π : penv) (φ : cenv) : Prop :=
   (EPos c ∉ dom Π) ∧ (ENeg c ∉ dom Π) ∧ (EPos c ∉ dom φ) ∧ (ENeg c ∉ dom φ).
 
+(** The two ends of a link label, held at dual protocols. *)
+Definition plink (Π : penv) (os : gset cend) : Prop :=
+  ∃ o1 o2 S1 S2, os = {[o1]} ∪ {[o2]} ∧ o1 ≠ o2 ∧ Π !! o1 = Some S1 ∧ Π !! o2 = Some S2 ∧
+    sequiv S2 (dual S1).
+
 (** ** Result types and readers *)
 
 (** The credited type T^a of a returned value, or a thread, which
@@ -242,9 +247,11 @@ Section obligations.
     f_act o ∧ ∃ S0 S1 S2, Π !! o = Some S0 ∧ unfoldS S0 = SWith S1 S2 ∧
       El n' N σ (ftick d) r (<[o := if i then S2 else S1]> Π) (refill N o φ) tk e'.
 
-  (** A link forwards held ends and spends a ticket. *)
+  (** A link forwards held ends whose protocols are dual and spends a
+      ticket. The soup reads the duality: after the link the partners of
+      the two ends form one channel (stage S8). *)
   Definition f_link (os : gset cend) (e' : expr) : Prop :=
-    os ⊆ dom φ ∧ 1 ≤ tk ∧ El n' N σ d r (mrem os Π) (mrem os φ) (tk - 1) e'.
+    plink Π os ∧ os ⊆ dom φ ∧ 1 ≤ tk ∧ El n' N σ d r (mrem os Π) (mrem os φ) (tk - 1) e'.
 
   Definition Fobl (α : tlabel) (e' : expr) : Prop :=
     match α with
@@ -374,7 +381,7 @@ Section ext.
       exists S0, S1, S2. split_and!; [done|done|by apply HE'].
     - intros (Ha & S0 & S1 & S2 & H1 & H2 & H3). split; [done|].
       exists S0, S1, S2. split_and!; [done|done|by apply HE'].
-    - intros (H1 & H2 & H3). split_and!; [done|done|by apply HE'].
+    - intros (H0 & H1 & H2 & H3). split_and!; [done|done|done|by apply HE'].
   Qed.
 
   Lemma Vty_ext_1 N n T a Π φ v :

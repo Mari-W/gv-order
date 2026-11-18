@@ -419,7 +419,11 @@ Section clauses.
 
   (** A link needs a ticket. *)
   Lemma fuel_link os e' : tstep e (LSess (SLink os)) e' → 1 ≤ tk ∧ os ⊆ dom φ.
-  Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (H1 & H2 & _). Qed.
+  Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (_ & H1 & H2 & _). Qed.
+
+  (** A link forwards two ends at dual protocols. *)
+  Lemma fuel_link_dual os e' : tstep e (LSess (SLink os)) e' → plink Π os.
+  Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (H & _). Qed.
 
   (** ** At counter 0 *)
 
@@ -476,7 +480,7 @@ Proof.
   - destruct Hs as (Ha & S0 & H1 & H2 & H3). split; [done|]. exists S0. split_and!; auto.
   - destruct Hs as (Ha & S0 & S1 & S2 & H1 & H2 & H3). split; [done|]. exists S0, S1, S2. split_and!; auto.
   - destruct Hs as (Ha & S0 & S1 & S2 & H1 & H2 & H3). split; [done|]. exists S0, S1, S2. split_and!; auto.
-  - destruct Hs as (H1 & H2 & H3). split_and!; auto.
+  - destruct Hs as (H0 & H1 & H2 & H3). split_and!; auto.
 Qed.
 
 Lemma FuelE_down N m n σ d r Π φ tk e :
@@ -558,7 +562,7 @@ Proof.
   - destruct Hs as (Ha & S0 & S1 & S2 & H1 & H2 & H3). split; [by apply Hact|].
     exists S0, S1, S2. split_and!; try done.
     eapply IHn; [lia|done|done|done|by apply cle_refill|exact H3].
-  - destruct Hs as (H1 & H2 & H3). split_and!.
+  - destruct Hs as (H0 & H1 & H2 & H3). split_and!; [done| | |].
     + by rewrite <-(cle_dom _ _ Hc0).
     + lia.
     + eapply (IHn n); [lia|exact Hd|exact Hr| |by apply cle_mrem|exact H3]. lia.

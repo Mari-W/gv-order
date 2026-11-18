@@ -304,8 +304,11 @@ Section obl_bind.
       + rewrite dom_insert_L, dom_refill, HdΠ1. done.
       + rewrite dom_refill. set_solver.
       + intros _. by destruct Ha as (_ & _ & _ & ?).
-    - intros (Hos & Htk & H3). assert (HoK : os ## dom φK) by set_solver.
-      split_and!; [rewrite dom_union_L; set_solver|done|].
+    - intros (Hpl & Hos & Htk & H3). assert (HoK : os ## dom φK) by set_solver.
+      split_and!; [|rewrite dom_union_L; set_solver|done|].
+      { destruct Hpl as (o1 & o2 & S1 & S2 & -> & Hne & H1 & H2 & Hdu).
+        exists o1, o2, S1, S2. split_and!; [done|done|by apply lookup_union_Some_l|
+          by apply lookup_union_Some_l|done]. }
       rewrite mrem_union_l, (mrem_union_l _ φ1) by (rewrite ?HdΠK; done).
       apply (Hcont (LSess (SLink os)) n); [lia| | |intros H; exfalso; by apply H|exact H3].
       + by rewrite !dom_mrem, HdΠ1.
@@ -383,6 +386,6 @@ Lemma link_tickets_fall N σ d r (Q : penv → cenv → expr → Prop) :
 Proof.
   intros HQ tk. induction tk as [|tk IH]; intros Π φ e Hq HF;
     destruct (HQ Π φ e Hq) as (os & e' & Hst & Hq');
-    pose proof (fuel_obl _ _ _ _ _ _ HF _ _ Hst) as (_ & H1 & H2); [simpl in H1; lia|].
+    pose proof (fuel_obl _ _ _ _ _ _ HF _ _ Hst) as (_ & _ & H1 & H2); [simpl in H1; lia|].
   simpl in H2. rewrite Nat.sub_0_r in H2. exact (IH _ _ _ Hq' H2).
 Qed.

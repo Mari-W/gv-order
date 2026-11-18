@@ -683,7 +683,7 @@ Proof.
   - destruct Hs as (Ha & S0 & H1 & H2 & H3). split; [done|]. exists S0. split_and!; auto.
   - destruct Hs as (Ha & S0 & S1 & S2 & H1 & H2 & H3). split; [done|]. exists S0, S1, S2. split_and!; auto.
   - destruct Hs as (Ha & S0 & S1 & S2 & H1 & H2 & H3). split; [done|]. exists S0, S1, S2. split_and!; auto.
-  - destruct Hs as (H1 & H2 & H3). split_and!; auto.
+  - destruct Hs as (H0 & H1 & H2 & H3). split_and!; auto.
 Qed.
 
 Lemma prim_tfree T : prim T → tfree T.
