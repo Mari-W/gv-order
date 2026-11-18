@@ -9,9 +9,9 @@
 
 From GV Require Export examples.LFTools examples.Cycle.
 
-Lemma W_cy_lfworld : lfworld W_cy.
+Lemma W_cy_wfworld : wfworld W_cy.
 Proof.
-  apply (lfworld_lex3 W_cy (λ x, (pt_fsum x, pt_off x, pt_depth x))); [apply W_cy_wf|intros f []| |].
+  apply (wfworld_lex3 W_cy (λ x, (pt_fsum x, pt_off x, pt_depth x))); [intros f []| |].
   - intros x. unfold pt_fsum, pt_depth. simpl. lia.
   - intros ℓ g x y _ [E|E]; injection E as -> ->; unfold pt_fsum, pt_depth; simpl; lia.
 Qed.
@@ -70,5 +70,5 @@ Qed.
 Theorem cy_lock_free : lock_free (∅, {[+ cy_main +]}).
 Proof.
   destruct cy_typedN as (c & ϑ & Ht & Hm).
-  eapply lf_main; [apply W_cy_lfworld|constructor|exact Ht|apply cy_guarded|exact Hm].
+  eapply lf_main; [apply (strict_wfworld _ W_cy_wf W_cy_wfworld)|apply W_cy_wfworld|constructor|exact Ht|apply cy_guarded|exact Hm].
 Qed.

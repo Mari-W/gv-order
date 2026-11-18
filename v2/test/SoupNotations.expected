@@ -16,14 +16,15 @@ soup_no_tau_divergence
          → no_tau_divergence (erase (s_q a))
 lf_adequacy
      : ∀ (W : world) (T : ty) (p : proc),
-         lfworld W → ∅ ⊪_W p : T → lock_free p
+         strict W → wfworld W → ∅ ⊪_W p : T → lock_free p
 lf_thread_progress
      : ∀ (W : world) (T : ty) (p : proc),
-         lfworld W
-         → ∅ ⊪_W p : T
-           → ∀ (r : nat → config) (l : nat → option event),
-               erase (r 0) = p
-               → maximal r l → wfair r l → thread_progress_run r l
+         strict W
+         → wfworld W
+           → ∅ ⊪_W p : T
+             → ∀ (r : nat → config) (l : nat → option event),
+                 erase (r 0) = p
+                 → maximal r l → wfair r l → thread_progress_run r l
 λ (N : nat) (W : world) (Σ : senv) (p : proc) (T : ty), Σ ⊩^N _ W p : T
      : nat → world → senv → proc → ty → Prop
 lf_fundamental
@@ -31,4 +32,4 @@ lf_fundamental
          strict W → Σ ⊩^N _ W p : T → Σ ⊪_W p : T
 lf_soundness
      : ∀ (N : nat) (W : world) (p : proc) (T : ty),
-         lfworld W → ∅ ⊩^N _ W p : T → lock_free p
+         strict W → wfworld W → ∅ ⊩^N _ W p : T → lock_free p

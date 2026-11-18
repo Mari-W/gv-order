@@ -66,8 +66,15 @@ Record world_wf (W : world) : Prop := {
 
 Definition strict (W : world) : Prop := world_wf W ∧ ∀ x, ¬ W ⊢ x ≺ x.
 
-(** The lock-free world: strict and well founded, one record. *)
-Definition lfworld (W : world) : Prop := strict W ∧ well_founded (w_lt W).
+(** A well-founded world: ≺ has no infinite descending chain. Lock
+    freedom asks it beside [strict]. *)
+Definition wfworld (W : world) : Prop := well_founded (w_lt W).
+
+(** A well-founded world is irreflexive, so a well-formed one is strict. *)
+Lemma strict_wfworld W : world_wf W → wfworld W → strict W.
+Proof.
+  intros Hwf HW. split; [done|]. intros x. induction (HW x) as [x _ IH]. intros Hx. exact (IH x Hx Hx).
+Qed.
 
 Lemma w_lt_trans W x y z : W ⊢ x ≺ y → W ⊢ y ≺ z → W ⊢ x ≺ z.
 Proof. apply tc_transitive. Qed.
@@ -502,9 +509,9 @@ Proof.
   apply (HS (pt_gmap (frename f') x)). by eapply w_lt_frename_back.
 Qed.
 
-Lemma lfworld_wfrename f f' W : (∀ ℓ, f' (f ℓ) = ℓ) → lfworld W → lfworld (wfrename f W).
+Lemma wfworld_wfrename f f' W : (∀ ℓ, f' (f ℓ) = ℓ) → strict W → wfworld W → wfworld (wfrename f W).
 Proof.
-  intros Hf [HS Hwf]. split; [by apply (strict_wfrename f f')|].
+  intros Hf HS Hwf.
   apply (wf_projected (w_lt W) (pt_gmap (frename f'))); [|done].
   intros x y H. by apply (w_lt_frename_back W f f'); [apply HS|done|].
 Qed.

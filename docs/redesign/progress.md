@@ -1814,4 +1814,22 @@ The old development in theories/ stays untouched.
   `lf_main_typed`, and examples/LFClose.v), and `fw_ptyped` discharges
   the new premise by `fw_tix_met`. CheckAll drops `lf_join`, 306
   results, all closed.
+- L.4. Modular worlds (decision of 2026-11-18). `lfworld` is gone
+  (types/Worlds.v), and `wfworld W := well_founded (w_lt W)` takes its
+  second half. Every lock-free result asks `strict W → wfworld W → …`:
+  `lf_adequacy_soup`, `lf_adequacy`, `lf_thread_progress`
+  (soup/LFAdequacy.v, whose section takes `HWs : strict W` and
+  `HW : wfworld W`), `lf_soundness_source`, `lf_soundness` and `lf_main`.
+  `soup_links_restricted` asks `strict W` alone, the only half it reads.
+  Renamed: `lfworld_wfrename` → `wfworld_wfrename` (now with `strict W`
+  as a premise, which `w_lt_frename_back` needs), `lfworld_measure` →
+  `wfworld_measure` (no `world_wf` premise), `lfworld_lex3` →
+  `wfworld_lex3`, `lfworld_bare` → `wfworld_bare` (world_wf ∧ wfworld),
+  `W_x_lfworld` → `W_x_wfworld` for x ∈ {cy, fb, fm, cs, fx, rg, ctl},
+  and examples/LFClose.v has `W_cl_bare`, `W_cl_wfworld`, `W_cl_strict`.
+  New: `strict_wfworld : world_wf W → wfworld W → strict W` (a
+  well-founded order is irreflexive), which the examples use for the
+  strict premise. test/Lexer.v and test/SoupNotations.expected follow
+  the new names. CheckAll adds `strict_wfworld`, 307 results, all
+  closed.
 

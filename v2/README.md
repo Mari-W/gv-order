@@ -43,7 +43,7 @@ and run `make` again. The root build of theories/ ignores v2.
 | File | Content |
 |---|---|
 | types/Points.v | roots (constants, generated roots `NGen ℓ g`, variables), points with the shift `x⁺`, the field `x·κ` and the dual `x‾`, instantiation, renaming of generated roots, facts, box constraints |
-| types/Worlds.v | worlds `(A, ≺_A, L, Λ)`, the order `W ⊢ x ≺ y`, `world_wf`, `strict`, `lfworld`, `⊑`, the join `⊔`, `wrestrict`, R7 `strict_join_iff`, renaming families apart |
+| types/Worlds.v | worlds `(A, ≺_A, L, Λ)`, the order `W ⊢ x ≺ y`, `world_wf`, `strict`, `wfworld`, `strict_wfworld`, `⊑`, the join `⊔`, `wrestrict`, R7 `strict_join_iff`, renaming families apart |
 | types/Costs.v | credits and costs in ℕ ∪ {∞}, ticket transformers with offsets in ℕ ∪ {∞} |
 | types/Types.v | context-free session types and types with credits, costs, transformers and floors, duality, unfolding, ≈, the annotations of N = ∞ (`ty_df`) |
 | types/Erasure.v | `ty_df` commutes with the type operations and preserves ≈ |
@@ -212,12 +212,12 @@ on `ptyped`.
 | soup/SoupCompose.v | `soup_par`, `soup_nu`, `soup_connect`, `soup_term` |
 | soup/LFCompose.v | `soup_lift`, `lf_soup_connect`, `lf_p_connect`, `lf_soup_term`, `typed_live`, `lf_p_term`, `lf_soundness_source` |
 | soup/LFTyped.v | the notation `Σ ⊩^N _ W p : T`, `lf_fundamental`, `lf_soundness` |
-| examples/LFClose.v | `lfworld_bare`, two threads closing one channel typed by P-Connect, `cl_lock_free` |
-| examples/LFTools.v | `lfworld_measure`, `lfworld_lex3`, `lf_main`, boxes of one arrow at a finite N (`lbox`, `lbox_typed`, `lbox_force`), the rules over Θ = ∅ in derivation order |
+| examples/LFClose.v | `wfworld_bare`, two threads closing one channel typed by P-Connect, `cl_lock_free` |
+| examples/LFTools.v | `wfworld_measure`, `wfworld_lex3`, `lf_main`, boxes of one arrow at a finite N (`lbox`, `lbox_typed`, `lbox_force`), the rules over Θ = ∅ in derivation order |
 | examples/LFCycle.v | cycle at N = 2, `cy_lock_free` |
 | examples/LFFreshBetween.v | between at N = 2, `fb_lock_free` |
 | examples/LFFreshMany.v | many at N = 4, `fm_lock_free` |
 | examples/LFClientServer.v | the client and server loops at N = 3, `cs_lock_free` |
 | examples/LFFactoryEx.v | the factory at N = 2, `fx_lock_free` |
 | examples/LFGrowRing.v | the growing ring at N = 4 with payload credit 2 (`Schl`), `W_rg_wf`, `rg_lock_free` |
-| examples/LFController.v | the controller at N = 3, its idle end k at credit 0, `W_ctl_lfworld`, `ctl_lock_free`, and `idle_age_cex`, the kept-credit form of `age_idle` against F5 |
+| examples/LFController.v | the controller at N = 3, its idle end k at credit 0, `W_ctl_wfworld`, `ctl_lock_free`, and `idle_age_cex`, the kept-credit form of `age_idle` against F5 |

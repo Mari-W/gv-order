@@ -2,7 +2,7 @@
       proposal §2.12, A.3)
 
       lf_fundamental : strict W → Σ ⊩^N _ W p : T → Σ ⊪_W p : T
-      lf_soundness   : lfworld W → ∅ ⊩^N _ W p : T → lock_free p
+      lf_soundness   : strict W → wfworld W → ∅ ⊩^N _ W p : T → lock_free p
 
     Σ ⊩^N _ W p : T is process typing [ptyped] at Some N together with
     the guard of every thread, ⊢▷ p. P-Term of [ptyped] asks at a finite
@@ -38,7 +38,7 @@ Qed.
 
 (** ** Soundness *)
 
-Theorem lf_soundness N W p T : lfworld W → ∅ ⊩^N _ W p : T → lock_free p.
+Theorem lf_soundness N W p T : strict W → wfworld W → ∅ ⊩^N _ W p : T → lock_free p.
 Proof.
-  intros HW Hty. apply (lf_adequacy W T p HW). exact (lf_fundamental N W ∅ p T (proj1 HW) Hty).
+  intros HS HW Hty. apply (lf_adequacy W T p HS HW). exact (lf_fundamental N W ∅ p T HS Hty).
 Qed.

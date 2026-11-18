@@ -49,7 +49,8 @@ Print Assumptions run_reach.
 (** S2. Worlds: R7, renaming families apart, renaming generated roots. *)
 Print Assumptions strict_join_iff.
 Print Assumptions strict_wfrename.
-Print Assumptions lfworld_wfrename.
+Print Assumptions wfworld_wfrename.
+Print Assumptions strict_wfworld.
 Print Assumptions w_lt_grename.
 Print Assumptions p_join_iff_connect.
 (** S2. The merged judgment: conservativity over DF typing. *)
@@ -322,29 +323,29 @@ Print Assumptions lf_p_term.
 Print Assumptions lf_soundness_source.
 Print Assumptions lf_fundamental.
 Print Assumptions lf_soundness.
-Print Assumptions lfworld_bare.
+Print Assumptions wfworld_bare.
 Print Assumptions cl_lftyped.
 Print Assumptions cl_lock_free.
-Print Assumptions lfworld_measure.
-Print Assumptions lfworld_lex3.
+Print Assumptions wfworld_measure.
+Print Assumptions wfworld_lex3.
 Print Assumptions lf_main.
 Print Assumptions lbox_typed.
-Print Assumptions W_cy_lfworld.
+Print Assumptions W_cy_wfworld.
 Print Assumptions cy_lftyped.
 Print Assumptions cy_lock_free.
-Print Assumptions W_fb_lfworld.
+Print Assumptions W_fb_wfworld.
 Print Assumptions fb_lftyped.
 Print Assumptions fb_lock_free.
-Print Assumptions W_fm_lfworld.
+Print Assumptions W_fm_wfworld.
 Print Assumptions fm_lftyped.
 Print Assumptions fm_lock_free.
-Print Assumptions W_cs_lfworld.
+Print Assumptions W_cs_wfworld.
 Print Assumptions cs_lftyped.
 Print Assumptions cs_lock_free.
-Print Assumptions W_fx_lfworld.
+Print Assumptions W_fx_wfworld.
 Print Assumptions fx_lftyped.
 Print Assumptions fx_lock_free.
-Print Assumptions W_rg_lfworld.
+Print Assumptions W_rg_wfworld.
 Print Assumptions rg_lftyped.
 Print Assumptions rg_lock_free.
 (** I.1 to I.3: idle ends age by truncation ([age_idle]), the kept-credit
@@ -354,6 +355,6 @@ Print Assumptions Vfuel_age_above.
 Print Assumptions idle_age_cex.
 Print Assumptions sess_ages.
 Print Assumptions sess_sub_credit.
-Print Assumptions W_ctl_lfworld.
+Print Assumptions W_ctl_wfworld.
 Print Assumptions ctl_lftyped.
 Print Assumptions ctl_lock_free.

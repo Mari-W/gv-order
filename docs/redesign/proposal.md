@@ -1264,6 +1264,9 @@ first, in stage S2.
   disjunct. `lfptyped` and its rules are gone, and
   `Σ ⊩^N _ W p : T` is notation for `ptyped (Some N) W Σ p T ∧ ⊢▷ p`.
   The guard stays a separate judgment.
+- Modular worlds (author, 2026-11-18). `lfworld` is gone. Lock-free
+  results ask `strict W → wfworld W → …` with `wfworld W :=
+  well_founded (w_lt W)`. DF results keep `strict W` alone.
 
 ## 5  Open decisions for the author
 

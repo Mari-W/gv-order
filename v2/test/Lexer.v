@@ -181,12 +181,12 @@ Section judgments.
   Check (λ N W n Σ T a, a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧).
 
   (** names of A.2 and A.3 without notation, as plain identifiers *)
-  Definition lfworld (W : A) : Prop := True.
+  Definition wfworld (W : A) : Prop := True.
   Definition strict (W : A) : Prop := True.
   Definition prim (T : A) : Prop := True.
   Definition deadlock_free (p : A) : Prop := True.
   Definition no_tau_divergence (p : A) : Prop := True.
   Definition lock_free (p : A) : Prop := True.
-  Check (λ W Σ p T, lfworld W ∧ strict W ∧ Σ ⊪_W p : T → lock_free p).
+  Check (λ W Σ p T, strict W ∧ wfworld W ∧ Σ ⊪_W p : T → lock_free p).
   Check (λ Σ W p T, Σ ⊫_W p : T → deadlock_free p ∧ no_tau_divergence p).
 End judgments.

@@ -2,11 +2,12 @@
 
     A closed program t is lock free by [lf_soundness] when it types at a
     finite refill N with the empty future, is guarded, meets its ticket
-    transformer at 0 and lives in a lock-free world ([lf_main]).
+    transformer at 0 and lives in a strict, well-founded world ([lf_main]).
 
-    A world is a lock-free world when some measure into a well-founded
+    A world is well founded when some measure into a well-founded
     transitive order rises along every generating step of ≺
-    ([lfworld_measure]). The measures of the examples are lexicographic
+    ([wfworld_measure]), and a well-formed well-founded world is strict
+    ([strict_wfworld]). The measures of the examples are lexicographic
     triples ([lex3]) of the field sum, the depth and the offset of a
     point. *)
 
@@ -15,20 +16,17 @@ From GV Require Export soup.LFTyped.
 
 (** ** Lock-free worlds by a measure *)
 
-Lemma lfworld_measure {A} (R : relation A) (m : point → A) W :
-  world_wf W → well_founded R → Transitive R →
-  (∀ x y, wstep W x y → R (m x) (m y)) → lfworld W.
+Lemma wfworld_measure {A} (R : relation A) (m : point → A) W :
+  well_founded R → Transitive R →
+  (∀ x y, wstep W x y → R (m x) (m y)) → wfworld W.
 Proof.
-  intros Hwf HR HT Hs.
+  intros HR HT Hs.
   assert (∀ x y, W ⊢ x ≺ y → R (m x) (m y)) as Hlt.
   { induction 1 as [x y H|x z y H _ IH]; [by apply Hs|]. apply Hs in H. by transitivity (m z). }
-  split; [split; [done|]|].
-  - intros x H. apply Hlt in H. revert H. generalize (m x) as a. intros a.
-    induction (HR a) as [a _ IH]. intros Ha. exact (IH a Ha Ha).
-  - assert (∀ a x, m x = a → Acc (w_lt W) x) as Hacc.
-    { intros a. induction (HR a) as [a _ IH]. intros x <-. constructor.
-      intros y Hy. eapply IH; [apply Hlt, Hy|done]. }
-    intros x. by apply (Hacc (m x)).
+  assert (∀ a x, m x = a → Acc (w_lt W) x) as Hacc.
+  { intros a. induction (HR a) as [a _ IH]. intros x <-. constructor.
+    intros y Hy. eapply IH; [apply Hlt, Hy|done]. }
+  intros x. by apply (Hacc (m x)).
 Qed.
 
 (** The lexicographic order on triples of natural numbers. *)
@@ -64,13 +62,13 @@ Proof. intros [->| ->]; simpl; split; [done|lia|done|lia]. Qed.
 
 (** A measure that rises on the laws and on x ≺ x⁺, x ≺ x‾⁺ through the
     offset, for a world without facts. *)
-Lemma lfworld_lex3 W (m : point → nat * nat * nat) :
-  world_wf W → (∀ f, ¬ w_facts W f) →
+Lemma wfworld_lex3 W (m : point → nat * nat * nat) :
+  (∀ f, ¬ w_facts W f) →
   (∀ x, lex3 (m x) (m x⁺) ∧ lex3 (m x) (m x‾⁺)) →
   (∀ ℓ g x y, ℓ ∈ w_fams W → w_laws W ℓ (FLt x y) → lex3 (m (law_inst ℓ g x)) (m (law_inst ℓ g y))) →
-  lfworld W.
+  wfworld W.
 Proof.
-  intros Hwf Hf Hpo Hlaw. apply (lfworld_measure lex3 m W Hwf lex3_wf _).
+  intros Hf Hpo Hlaw. apply (wfworld_measure lex3 m W lex3_wf _).
   intros x y H. destruct H as [x y H|ℓ g x y Hℓ Hl|x|x].
   - by destruct (Hf _ H).
   - by apply Hlaw.
@@ -94,9 +92,9 @@ Proof.
 Qed.
 
 Lemma lf_main N W t T a c ϑ tk :
-  lfworld W → prim T → typed W (Some N) ∅ hc_empty [] (∅, None) t T a c ϑ →
+  strict W → wfworld W → prim T → typed W (Some N) ∅ hc_empty [] (∅, None) t T a c ϑ →
   ∅ ⊢▷ t → meets ϑ 0 tk → lock_free (∅, {[+ t +]}).
-Proof. intros HW Hp Ht Hg Hm. eapply (lf_soundness N W _ T HW), lf_main_typed; eauto. Qed.
+Proof. intros HS HW Hp Ht Hg Hm. eapply (lf_soundness N W _ T HS HW), lf_main_typed; eauto. Qed.
 
 (** ** Rules of the merged judgment with weakening built in *)
 

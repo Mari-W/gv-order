@@ -48,9 +48,9 @@ Proof.
     split; apply Hr; rewrite ?pt_root_shift, ?pt_root_dual, ?pt_root_field; auto.
 Qed.
 
-Lemma W_rg_lfworld : lfworld W_rg.
+Lemma W_rg_wfworld : wfworld W_rg.
 Proof.
-  apply (lfworld_lex3 W_rg (λ x, (pt_depth x, pt_off x, 0))); [apply W_rg_wf|intros f []| |].
+  apply (wfworld_lex3 W_rg (λ x, (pt_depth x, pt_off x, 0))); [intros f []| |].
   - intros x. unfold pt_depth. simpl. lia.
   - intros ℓ g x y _ (f & (X & Y & HR & HF) & E).
     pose proof (rreach_depth X Y HR) as HD.
@@ -257,5 +257,5 @@ Qed.
 Theorem rg_lock_free : lock_free (∅, {[+ rg_main +]}).
 Proof.
   destruct rgl_typedN as (c & ϑ & Ht & Hm).
-  eapply lf_main; [apply W_rg_lfworld|constructor|exact Ht|apply rg_guarded|exact Hm].
+  eapply lf_main; [apply (strict_wfworld _ W_rg_wf W_rg_wfworld)|apply W_rg_wfworld|constructor|exact Ht|apply rg_guarded|exact Hm].
 Qed.
