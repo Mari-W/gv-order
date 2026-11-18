@@ -275,14 +275,14 @@ Proof. rewrite pconn_sym. apply stable_pconn_l. Qed.
 (** The end a session label that is no link acts on. *)
 Definition ssubj (σ : slabel) : option cend :=
   match σ with
-  | SSend o _ _ | SRecv o _ | SClose o | SSel o _ | SBra o _ => Some o
+  | SSend o _ | SRecv o _ | SClose o | SSel o _ | SBra o _ => Some o
   | SLink _ => None
   end.
 
 (** The head of the session type a label asks. *)
 Definition hd_ok (σ : slabel) (u : sty) : Prop :=
   match σ with
-  | SSend _ _ _ => ∃ m U b S, u = SSeq (SSnd m U b) S
+  | SSend _ _ => ∃ m U b S, u = SSeq (SSnd m U b) S
   | SRecv _ _ => ∃ m U b S, u = SSeq (SRcv m U b) S
   | SClose _ => u = SEnd
   | SSel _ _ => ∃ S1 S2, u = SPlus S1 S2
@@ -298,8 +298,8 @@ Section psteps.
   Lemma Psteps_sends q i σ q' : erase q = p → istep q (EvSess i σ) q' → sends σ ⊆ dom Σ.
   Proof.
     intros Hq Hst. destruct HP as (_ & H2 & H3 & H4 & H5 & H6 & H7).
-    destruct σ as [o M w|o w|o|o b|o b|os]; simpl.
-    - destruct (H2 _ _ _ _ _ _ Hq Hst) as (? & ? & ? & ? & ? & ? & ? & ? & ? & ? & A & _).
+    destruct σ as [o w|o w|o|o b|o b|os]; simpl.
+    - destruct (H2 _ _ _ _ _ Hq Hst) as (? & ? & ? & ? & ? & ? & ? & ? & ? & ? & A & _).
       apply elem_of_dom_2 in A. set_solver.
     - destruct (H3 _ _ _ _ _ Hq Hst) as (? & ? & ? & ? & ? & ? & A & _). apply elem_of_dom_2 in A. set_solver.
     - destruct (H4 _ _ _ _ Hq Hst) as (? & ? & A & _). apply elem_of_dom_2 in A. set_solver.
@@ -313,8 +313,8 @@ Section psteps.
     ∃ S0 x, Σ !! o = Some (S0, x) ∧ hd_ok σ (unfoldS S0).
   Proof.
     intros Hq Hst Ho. destruct HP as (_ & H2 & H3 & H4 & H5 & H6 & H7).
-    destruct σ as [o' M w|o' w|o'|o' b|o' b|os]; simpl in Ho; injection Ho as <- || discriminate.
-    - destruct (H2 _ _ _ _ _ _ Hq Hst) as (S0 & x & m & U & b & S & ? & ? & ? & ? & A & B & _). exists S0, x. split; [done|simpl; eauto 10].
+    destruct σ as [o' w|o' w|o'|o' b|o' b|os]; simpl in Ho; injection Ho as <- || discriminate.
+    - destruct (H2 _ _ _ _ _ Hq Hst) as (S0 & x & m & U & b & S & ? & ? & ? & ? & A & B & _). exists S0, x. split; [done|simpl; eauto 10].
     - destruct (H3 _ _ _ _ _ Hq Hst) as (S0 & x & m & U & b & S & A & B & _). exists S0, x. split; [done|simpl; eauto 10].
     - destruct (H4 _ _ _ _ Hq Hst) as (S0 & x & A & B & _). exists S0, x. split; [done|simpl; eauto 10].
     - destruct (H5 _ _ _ _ _ Hq Hst) as (S0 & x & S1 & S2 & A & B & _). exists S0, x. split; [done|simpl; eauto 10].
@@ -325,7 +325,7 @@ End psteps.
 (** Two labels on the two ends of a channel, at dual types. *)
 Definition sync (σ1 σ2 : slabel) : Prop :=
   match σ1, σ2 with
-  | SSend _ _ _, SRecv _ _ | SRecv _ _, SSend _ _ _ | SClose _, SClose _
+  | SSend _ _, SRecv _ _ | SRecv _ _, SSend _ _ | SClose _, SClose _
   | SSel _ _, SBra _ _ | SBra _ _, SSel _ _ => True
   | _, _ => False
   end.
@@ -438,7 +438,7 @@ Section offers.
     destruct (decide (subjs σ ## q1.1 ∪ q2.1 ∪ K)) as [Hs|Hs].
     - destruct (sess_lift M1 M2 i σ q1' Hd Hi Hs) as [q' Hq']. exists σ, (erase q'). split; [|done].
       rewrite <-Hq. by exists (q1.1 ∪ q2.1 ∪ K, M1 ∪ M2), (EvSess i σ), q'.
-    - exfalso. destruct σ as [o' M w|o' w|o'|o' b|o' b|os].
+    - exfalso. destruct σ as [o' w|o' w|o'|o' b|o' b|os].
       6: by apply (link_tau M1 M2 i os q1').
       all: simpl in Hoσ; apply elem_of_singleton in Hoσ as ->; apply Hs; simpl;
         destruct Hc as [? ? Hcut ? ? ? H12 H1C _ _ HC1 HC2];
@@ -512,12 +512,12 @@ Proof.
   assert ((M1 ∪ M2) !! i2 = Some f) as Hl2 by (by apply lookup_union_Some_r).
   assert (i1 ≠ i2) as Hne by (intros ->; eapply (disj_lookup_n M1 M2); eassumption).
   assert (ech o ∈ q1.1 ∪ q2.1 ∪ K) as HoC' by set_solver.
-  destruct σ1 as [o1 M w|o1 w|o1|o1 b|o1 b|os], σ2 as [o2 M' w'|o2 w'|o2|o2 b'|o2 b'|os'];
+  destruct σ1 as [o1 w|o1 w|o1|o1 b|o1 b|os], σ2 as [o2 w'|o2 w'|o2|o2 b'|o2 b'|os'];
     simpl in Hsy; try done; simpl in E1, E2; injection E1 as ->; injection E2 as ->.
   - pose proof (tstep_label_val _ _ _ He) as Hw. destruct (recv_retarget _ _ _ _ w Hf Hw) as [f2 Hf2].
-    eapply (Hno (EvMsg i1 i2 o M)); [|done]. by eapply p_act_msg.
+    eapply (Hno (EvMsg i1 i2 o w)); [|done]. by eapply p_act_msg.
   - pose proof (tstep_label_val _ _ _ Hf) as Hw. destruct (recv_retarget _ _ _ _ w' He Hw) as [e2 He2].
-    eapply (Hno (EvMsg i2 i1 (edual o) M')); [|done]. eapply p_act_msg; [done|done|done|done|].
+    eapply (Hno (EvMsg i2 i1 (edual o) w')); [|done]. eapply p_act_msg; [done|done|done|done|].
     by rewrite edual_edual.
   - eapply (Hno (EvClose i1 i2 o)); [|done]. by eapply p_act_close.
   - destruct (bra_retarget _ _ _ _ b Hf) as [f2 Hf2].

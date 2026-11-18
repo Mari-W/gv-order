@@ -73,8 +73,8 @@ Proof.
   - done.
 Qed.
 
-Lemma padmin_spawn C E e Mv v e' :
-  tstep e (LSpawn Mv v) e' →
+Lemma padmin_spawn C E e v e' :
+  tstep e (LSpawn v) e' →
   padmin (C, E ⊎ {[+ e +]}) (C, E ⊎ {[+ e' +]} ⊎ {[+ App v EUnit +]}).
 Proof.
   intros Hs. destruct (lift_thread C E e) as (M & i & Hi & HM & Hq).
@@ -82,7 +82,7 @@ Proof.
     by (exists (fresh (dom (<[i := e]> M))); apply not_elem_of_dom, is_fresh).
   assert (i ≠ j) as Hij by (intros ->; by rewrite lookup_insert_eq in Hj).
   assert (M !! j = None) as HjM by (by rewrite lookup_insert_ne in Hj).
-  exists (C, <[i := e]> M), (EvSpawn i j Mv),
+  exists (C, <[i := e]> M), (EvSpawn i j v),
     (C, <[j := App v EUnit]> (<[i := e']> (<[i := e]> M))). split_and!.
   - done.
   - eapply p_act_spawn; [by rewrite lookup_insert_eq|done|done].
@@ -121,7 +121,7 @@ Proof. apply emap_subst2. Qed.
 
 Definition serase (σ : slabel) : slabel :=
   match σ with
-  | SSend _ M v => SSend (EPos "") (set_map (λ _, EPos "") M) (cerase v)
+  | SSend _ v => SSend (EPos "") (cerase v)
   | SRecv _ v => SRecv (EPos "") (cerase v)
   | SClose _ => SClose (EPos "")
   | SSel _ i => SSel (EPos "") i
@@ -134,7 +134,7 @@ Definition lerase (α : tlabel) : tlabel :=
   | LBeta => LBeta
   | LNew ℓ _ => LNew ℓ ""
   | LNewAt κ _ _ => LNewAt κ (EPos "") ""
-  | LSpawn M v => LSpawn (set_map (λ _, EPos "") M) (cerase v)
+  | LSpawn v => LSpawn (cerase v)
   | LSess σ => LSess (serase σ)
   end.
 
@@ -288,11 +288,10 @@ Proof.
       ltac:(set_solver)) as Hpa.
     exact (IH _ Hpa (Hr' _ Hpa) E e' eq_refl).
   - (* spawn *)
-    destruct (act_offer e (ASpawn v) (LSpawn (fends v) v) Ha (conj eq_refl eq_refl)) as [e' He'].
-    destruct Ho as [<- ->].
-    rewrite (Hdet _ _ He' ltac:(simpl; rewrite fends_emap; fold cerase;
-                                by rewrite set_map_erase_idem, cerase_idem)).
-    pose proof (padmin_spawn C E e (fends v) v e' He') as Hpa.
+    destruct (act_offer e (ASpawn v) (LSpawn v) Ha eq_refl) as [e' He'].
+    simpl in Ho. subst.
+    rewrite (Hdet _ _ He' ltac:(simpl; fold cerase; by rewrite cerase_idem)).
+    pose proof (padmin_spawn C E e v e' He') as Hpa.
     apply (IH _ Hpa (Hr' _ Hpa) (E ⊎ {[+ App v EUnit +]}) e'). simpl. multiset_solver.
   - (* link, at a restricted end *)
     destruct (act_offer e (ALink o1 o2) (LSess (SLink {[o1; o2]})) Ha eq_refl) as [e' He'].

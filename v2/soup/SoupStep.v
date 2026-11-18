@@ -29,7 +29,7 @@ Proof.
   - replace n with (S n - c) by lia. exact (H1 Hne).
 Qed.
 
-(** ** Splitting an environment by a transfer set *)
+(** ** Splitting an environment by the moved ends *)
 
 Lemma split_lookup {Y : Type} (Θ ΘM Θr : gmap cend Y) (M : gset cend) o0 v :
   ΘM ##ₘ Θr → Θ = ΘM ∪ Θr → dom ΘM = M →
@@ -470,28 +470,29 @@ Section step.
   Proof. apply (s_owner _ _ _ _ _ _ _ _ Hs). Qed.
 
   (** P-Act-Spawn. *)
-  Lemma step_spawn i j e Mv v e' :
-    Mq !! i = Some e → tstep e (LSpawn Mv v) e' → Mq !! j = None →
+  Lemma step_spawn i j e v e' :
+    Mq !! i = Some e → tstep e (LSpawn v) e' → Mq !! j = None →
     soup_inv N n W ∅ T
-      (lf_next N (LFState (C, Mq) K tk) (EvSpawn i j Mv) (C, <[j := App v EUnit]> (<[i := e']> Mq)))
+      (lf_next N (LFState (C, Mq) K tk) (EvSpawn i j v) (C, <[j := App v EUnit]> (<[i := e']> Mq)))
       A Π (λ t, if decide (t = j) then TUnit else U t).
   Proof.
     intros He Hst Hj. assert (i ≠ j) as Hij by (intros ->; congruence).
     destruct (s_obl i e _ e' He Hst) as [HE HF]. cbn [Eobl Fobl] in HE, HF.
     unfold o_spawn in HE. unfold f_spawn in HF.
-    destruct HE as (ΘM & Θr & Hd & HΘ & HM & Hth & Hpar).
+    destruct HE as (ΘM & Θr & Hd & HΘ & Hth & Hpar).
+    assert (HM : dom ΘM = fends v) by (destruct Hth as (e1 & -> & Hfe & _); exact Hfe).
     destruct HF as (HMφ & _ & Hch & Hpar').
     destruct (split_mres _ _ _ _ Hd HΘ HM) as [-> ->].
     assert (Hnj : ∀ o h, K !! o = Some h → h.(h_th) ≠ j).
     { intros o h Ho Heq. destruct (s_threads o h Ho) as [? Hx]. congruence. }
-    assert (HMi : Mv ⊆ dom (kth K i)).
+    assert (HMi : (fends v) ⊆ dom (kth K i)).
     { rewrite <-HM, dom_mres, dom_kres. set_solver. }
     (* the child *)
     destruct Hth as (e0 & -> & _ & Hb).
     destruct (Hb W n ∅ EUnit (wext_refl W) ltac:(cbn; lia) (map_disjoint_empty_r _)) as [Hb1 _].
     pose proof (Hb1 ltac:(lia) (proj2 (Vrel_unit_iff _ _ _ _ _) (conj eq_refl eq_refl))) as Hbody.
     rewrite map_union_empty in Hbody.
-    assert (Erel live n W (mres Mv (kres K i A)) TUnit ∅ (App (Lam e0) EUnit)) as Hchild.
+    assert (Erel live n W (mres (fends (Lam e0)) (kres K i A)) TUnit ∅ (App (Lam e0) EUnit)) as Hchild.
     { apply (Erel_beta live n W _ TUnit ∅ _ (subst1 EUnit e0)).
       - intros α e'' Hs'. assert (head_step (App (Lam e0) EUnit) α e'') as Hh by head_only.
         inversion Hh; by subst.
@@ -508,12 +509,12 @@ Section step.
         * rewrite decide_True by done. split_and!; [|exact (s_ty Hs i e He)|exact Hpar'].
           eapply at_cost_E_live; [|exact Hpar]. cbn; lia.
         * rewrite decide_False by done.
-          assert (∀ {Y} (m : gmap cend Y), mrem Mv (kres K t m) = kres K t m) as Hm.
+          assert (∀ {Y} (m : gmap cend Y), mrem (fends (Lam e0)) (kres K t m) = kres K t m) as Hm.
           { intros Y m. apply map_eq_some. intros o w. rewrite lookup_mrem_Some. split; [tauto|].
             intros Hw. split; [done|]. intros Ho. pose proof (HMi o Ho) as Hi.
             apply elem_of_dom_kth in Hi as (h & Hh & Hhi). apply lookup_kres in Hw as [_ (h' & Hh' & Ht)].
             simplify_eq. }
-          rewrite !Hm. assert (ctrs K t = mrem Mv (ctrs K t)) as <-.
+          rewrite !Hm. assert (ctrs K t = mrem (fends (Lam e0)) (ctrs K t)) as <-.
           { apply map_eq_some. intros o f. rewrite lookup_mrem_Some. split; [|tauto].
             intros Hf. split; [done|]. intros Ho. pose proof (HMi o Ho) as Hi.
             apply elem_of_dom_kth in Hi as (h & Hh & Hhi). apply lookup_ctrs in Hf as (h' & Hh' & Ht & _).

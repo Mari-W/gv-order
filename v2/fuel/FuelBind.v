@@ -220,7 +220,7 @@ Section obl_bind.
     Fobl N El Vl n σ d r (Π1 ∪ ΠK) (φ1 ∪ φK) tk α (efill K e3).
   Proof.
     unfold El, Vl.
-    destruct α as [|ℓ c|κ o0 c|M v|[o M w|o w|o|o i|o i|os]]; simpl;
+    destruct α as [|ℓ c|κ o0 c|v|[o w|o w|o|o i|o i|os]]; simpl;
       unfold f_beta, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link.
     - intros H. apply (Hcont LBeta n tk Π1 φ1 e3); [lia|done|done|by intros []|exact H].
     - intros H Hf. destruct H as [S HS].
@@ -237,18 +237,18 @@ Section obl_bind.
       unfold pnew, cnew in *. rewrite !insert_union_l. apply HC; [| |by intros []|exact HS].
       + rewrite !dom_insert_L. set_solver.
       + rewrite !dom_insert_L. set_solver.
-    - intros (HM & Hs & Hch & Hpar). assert (HMK : M ## dom φK) by set_solver.
+    - intros (HM & Hs & Hch & Hpar). assert (HMK : fends v ## dom φK) by set_solver.
       split_and!.
       + rewrite dom_union_L. set_solver.
       + by apply fspare_bind.
       + unfold fhand. rewrite mres_union_l, (mres_union_l _ φ1) by (rewrite ?HdΠK; done). exact Hch.
       + rewrite mrem_union_l, (mrem_union_l _ φ1) by (rewrite ?HdΠK; done).
-        apply (Hcont (LSpawn M v) n); [lia| | |by intros []|exact Hpar].
+        apply (Hcont (LSpawn v) n); [lia| | |by intros []|exact Hpar].
         * by rewrite !dom_mrem, HdΠ1.
         * rewrite dom_mrem. set_solver.
     - intros (Ha & S0 & m & T & b & Sc & H1 & H2 & H3 & H4 & H5 & H6).
       assert (Ho : o ∈ dom φ1) by (by destruct Ha as (_ & Ho & _)).
-      destruct (not_in_K o Ho) as [HoΠ HoK]. assert (HMK : M ## dom φK) by set_solver.
+      destruct (not_in_K o Ho) as [HoΠ HoK]. assert (HMK : fends w ## dom φK) by set_solver.
       split; [by apply f_act_bind|]. exists S0, m, T, b, Sc. split_and!.
       + by rewrite lookup_union_l'.
       + done.
@@ -257,7 +257,7 @@ Section obl_bind.
       + unfold fhand. rewrite mres_union_l, (mres_union_l _ φ1) by (rewrite ?HdΠK; done). exact H5.
       + rewrite mrem_union_l, (mrem_union_l _ φ1) by (rewrite ?HdΠK; done).
         rewrite refill_union by done. rewrite insert_union_l.
-        apply (Hcont (LSess (SSend o M w)) n); [lia| | | |exact H6].
+        apply (Hcont (LSess (SSend o w)) n); [lia| | | |exact H6].
         * rewrite dom_insert_L, dom_refill, !dom_mrem, HdΠ1. done.
         * rewrite dom_refill, dom_mrem. set_solver.
         * intros _. by destruct Ha as (_ & _ & _ & ?).

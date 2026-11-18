@@ -378,7 +378,7 @@ Section clauses.
   (** The end of a session action, and whether the action ticks. *)
   Definition act_end (s : slabel) : option cend :=
     match s with
-    | SSend o _ _ | SRecv o _ | SClose o | SSel o _ | SBra o _ => Some o
+    | SSend o _ | SRecv o _ | SClose o | SSel o _ | SBra o _ => Some o
     | SLink _ => None
     end.
 
@@ -406,15 +406,15 @@ Section clauses.
   Proof. intros Hst Ho. by destruct (fuel_act s e' o Hst Ho) as (_ & _ & _ & H). Qed.
 
   (** A send hands on held ends other than its subject, with a unit to spare. *)
-  Lemma fuel_send_hand o M w e' :
-    tstep e (LSess (SSend o M w)) e' → M ⊆ dom φ ∖ {[o]} ∧ fspare Π φ M.
+  Lemma fuel_send_hand o w e' :
+    tstep e (LSess (SSend o w)) e' → fends w ⊆ dom φ ∖ {[o]} ∧ fspare Π φ (fends w).
   Proof.
     intros Hst. pose proof (fuel_obl _ _ Hst) as (_ & S0 & m & T & b & Sc & _ & _ & H1 & H2 & _).
     done.
   Qed.
 
   (** A spawn hands on held ends with a unit to spare. *)
-  Lemma fuel_spawn_hand M v e' : tstep e (LSpawn M v) e' → M ⊆ dom φ ∧ fspare Π φ M.
+  Lemma fuel_spawn_hand v e' : tstep e (LSpawn v) e' → fends v ⊆ dom φ ∧ fspare Π φ (fends v).
   Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (H1 & H2 & _). Qed.
 
   (** A link needs a ticket. *)
@@ -440,17 +440,17 @@ Section clauses.
   Qed.
 
   (** It does not hand the end at 0 on, unless that end is idle. *)
-  Lemma fuel_zero_nospawn o M v e' :
-    φ !! o = Some (Some 0) → ¬ idle_at Π o → tstep e (LSpawn M v) e' → o ∉ M.
+  Lemma fuel_zero_nospawn o v e' :
+    φ !! o = Some (Some 0) → ¬ idle_at Π o → tstep e (LSpawn v) e' → o ∉ fends v.
   Proof.
-    intros H0 Hi Hst Hin. destruct (fuel_spawn_hand _ _ _ Hst) as [_ H].
+    intros H0 Hi Hst Hin. destruct (fuel_spawn_hand _ _ Hst) as [_ H].
     specialize (H o _ Hin H0 Hi). simpl in H. lia.
   Qed.
 
-  Lemma fuel_zero_nosend o o1 M w e' :
-    φ !! o = Some (Some 0) → ¬ idle_at Π o → tstep e (LSess (SSend o1 M w)) e' → o ∉ M.
+  Lemma fuel_zero_nosend o o1 w e' :
+    φ !! o = Some (Some 0) → ¬ idle_at Π o → tstep e (LSess (SSend o1 w)) e' → o ∉ fends w.
   Proof.
-    intros H0 Hi Hst Hin. destruct (fuel_send_hand _ _ _ _ Hst) as [_ H].
+    intros H0 Hi Hst Hin. destruct (fuel_send_hand _ _ _ Hst) as [_ H].
     specialize (H o _ Hin H0 Hi). simpl in H. lia.
   Qed.
 End clauses.
@@ -466,7 +466,7 @@ Proof.
   { intros Hval. destruct (Hv Hval) as [Hr HV]. split; [done|].
     apply Vfuel_eq. apply (Vfuel_down _ (S n) (S (S n))); [lia|]. by apply Vfuel_eq. }
   intros α e' Hst. specialize (Hs α e' Hst).
-  destruct α as [|ℓ c|κ o c|M v|[o M w|o w|o|o i|o i|os]]; simpl in Hs |- *;
+  destruct α as [|ℓ c|κ o c|v|[o w|o w|o|o i|o i|os]]; simpl in Hs |- *;
     unfold f_beta, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link in *.
   - by apply IH.
   - intros Hf. destruct (Hs Hf) as [Sn HS]. exists Sn. by apply IH.
@@ -529,7 +529,7 @@ Proof.
   assert (Hact : ∀ o, f_act d Π' φ0 o → f_act d' Π' φ' o).
   { intros o (H1 & H2 & H3 & H4). split_and!; [done|by rewrite <-(cle_dom _ _ Hc0)| |by eapply fle_trans].
     rewrite <-(cle_dom _ _ Hc0). by eapply fspare_mono. }
-  destruct α as [|ℓ c|κ o c|M v|[o M w|o w|o|o i|o i|os]]; simpl in Hs |- *;
+  destruct α as [|ℓ c|κ o c|v|[o w|o w|o|o i|o i|os]]; simpl in Hs |- *;
     unfold f_beta, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link in *.
   - eapply IHn; [lia|done..].
   - intros Hf. destruct (Hs (ffresh_cle _ _ _ _ Hc0 Hf)) as [Sn HS]. exists Sn.

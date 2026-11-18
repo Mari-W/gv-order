@@ -24,8 +24,8 @@ Proof.
   simpl in He. by rewrite He.
 Qed.
 
-Lemma offers_send a o M v : offers a (LSess (SSend o M v)) → a = ASend o v.
-Proof. destruct a; simpl; try done. intros (-> & -> & _). done. Qed.
+Lemma offers_send a o v : offers a (LSess (SSend o v)) → a = ASend o v.
+Proof. destruct a; simpl; try done. intros (-> & ->). done. Qed.
 Lemma offers_recv a o v : offers a (LSess (SRecv o v)) → a = ARecv o.
 Proof. destruct a; simpl; try done. intros (-> & _). done. Qed.
 Lemma offers_close a o : offers a (LSess (SClose o)) → a = AClose o.
@@ -49,8 +49,8 @@ Proof.
   assert (Hof : ∀ α e', tstep e α e' → offers a1 α).
   { intros α e' Hs. destruct (act_step _ _ _ Hs) as (a' & Ha' & Hoff). rewrite Ha in Ha'. by simplify_eq. }
   destruct Hst as [C M i e0 e0' Hi Hs|C M i e0 ℓ c e0' Hi Hs|C M i e0 κ o' c e0' Hi Hs
-    |C M i j e0 Mv v e0' Hi Hs Hj
-    |C M i j o' Mv v e0 e0' f f' Hij Hi Hj He0 Hf|C M i j o' e0 e0' f f' Hij Hi Hj He0 Hf HC
+    |C M i j e0 v e0' Hi Hs Hj
+    |C M i j o' v e0 e0' f f' Hij Hi Hj He0 Hf|C M i j o' e0 e0' f f' Hij Hi Hj He0 Hf HC
     |C M i j o' b e0 e0' f f' Hij Hi Hj He0 Hf|C M i e0 o1 o2 e0' Hi Hs HC
     |C M i e0 σ e0' Hi Hs HC]; simpl in Ht, He |- *.
   - apply elem_of_singleton in Ht as ->. rewrite He in Hi. injection Hi as <-.
@@ -165,18 +165,18 @@ Qed.
 
 Lemma istep_dom q ev q' : istep q ev q' → (∀ u j M, ev ≠ EvSpawn u j M) → dom q'.2 = dom q.2.
 Proof.
-  destruct 1 as [C M i e e' Hi|C M i e ℓ c e' Hi|C M i e κ o c e' Hi|C M i j e Mv v e' Hi Hs Hj
-    |C M i j o Mv v e e' f f' Hij Hi Hj|C M i j o e e' f f' Hij Hi Hj|C M i j o b e e' f f' Hij Hi Hj
+  destruct 1 as [C M i e e' Hi|C M i e ℓ c e' Hi|C M i e κ o c e' Hi|C M i j e v e' Hi Hs Hj
+    |C M i j o v e e' f f' Hij Hi Hj|C M i j o e e' f f' Hij Hi Hj|C M i j o b e e' f f' Hij Hi Hj
     |C M i e o1 o2 e' Hi|C M i e σ e' Hi]; simpl; intros Hns.
   all: try (exfalso; by eapply Hns).
   all: rewrite ?dom_fmap_L, ?dom_insert_L.
   all: apply elem_of_dom_2 in Hi; try (apply elem_of_dom_2 in Hj); set_solver.
 Qed.
 
-Lemma istep_spawn_inv q u j M q' : istep q (EvSpawn u j M) q' →
-  ∃ eu v e', q.2 !! u = Some eu ∧ tstep eu (LSpawn M v) e' ∧ q.2 !! j = None ∧ dom q'.2 = {[j]} ∪ dom q.2.
+Lemma istep_spawn_inv q u j v q' : istep q (EvSpawn u j v) q' →
+  ∃ eu e', q.2 !! u = Some eu ∧ tstep eu (LSpawn v) e' ∧ q.2 !! j = None ∧ dom q'.2 = {[j]} ∪ dom q.2.
 Proof.
-  intros Hst. inversion Hst; subst. simpl. exists e, v, e'. split_and!; [done|done|done|].
+  intros Hst. inversion Hst; subst. simpl. exists e, e'. split_and!; [done|done|done|].
   rewrite !dom_insert_L. apply elem_of_dom_2 in H3. set_solver.
 Qed.
 
@@ -195,8 +195,8 @@ Lemma istep_admin_actor q ev q' u :
   istep q ev q' → ev_admin ev → u ∈ ev_parts ev → admin_at q u.
 Proof.
   intros Hst Had Hu.
-  destruct Hst as [C M i e e' Hi Hs|C M i e ℓ c e' Hi Hs|C M i e κ o c e' Hi Hs|C M i j e Mv v e' Hi Hs Hj
-    |C M i j o Mv v e e' f f' Hij Hi Hj|C M i j o e e' f f' Hij Hi Hj|C M i j o b e e' f f' Hij Hi Hj
+  destruct Hst as [C M i e e' Hi Hs|C M i e ℓ c e' Hi Hs|C M i e κ o c e' Hi Hs|C M i j e v e' Hi Hs Hj
+    |C M i j o v e e' f f' Hij Hi Hj|C M i j o e e' f f' Hij Hi Hj|C M i j o b e e' f f' Hij Hi Hj
     |C M i e o1 o2 e' Hi Hs|C M i e σ e' Hi]; simpl in Had, Hu; try contradiction;
     apply elem_of_singleton in Hu as ->; destruct (admin_of_step _ _ _ Hs I) as (a & Ha & Had');
     by exists e, a.
@@ -215,8 +215,8 @@ Lemma istep_sync_step q ev q' s es p :
   ∃ σ es', tstep es (LSess σ) es' ∧ act_end σ = Some p.
 Proof.
   intros Hst Hp Hes.
-  destruct Hst as [C M i e e' Hi|C M i e ℓ c e' Hi|C M i e κ o c e' Hi|C M i j e Mv v e' Hi Hs Hj
-    |C M i j o Mv v e e' f f' Hij Hi Hj He Hf|C M i j o e e' f f' Hij Hi Hj He Hf HC
+  destruct Hst as [C M i e e' Hi|C M i e ℓ c e' Hi|C M i e κ o c e' Hi|C M i j e v e' Hi Hs Hj
+    |C M i j o v e e' f f' Hij Hi Hj He Hf|C M i j o e e' f f' Hij Hi Hj He Hf HC
     |C M i j o b e e' f f' Hij Hi Hj He Hf|C M i e o1 o2 e' Hi|C M i e σ e' Hi]; simpl in Hp, Hes; try done.
   all: destruct (decide (s = i)) as [->|Hsi]; [injection Hp as <-; rewrite Hi in Hes; injection Hes as <-; eauto|].
   all: destruct (decide (s = j)) as [->|Hsj]; [injection Hp as <-; rewrite Hj in Hes; injection Hes as <-; eauto|done].

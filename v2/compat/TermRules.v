@@ -358,8 +358,8 @@ Section rules.
     Erel κ n W Θ TUnit F (ESpawn v).
   Proof.
     intros Hv HT. destruct n as [|n]; [apply Erel_0|].
-    assert (tstep (ESpawn v) (LSpawn (fends v) v) EUnit) as Hst by (by apply tstep_head, t_act_spawn).
-    assert (∀ α e', tstep (ESpawn v) α e' → α = LSpawn (fends v) v ∧ e' = EUnit) as Hdet.
+    assert (tstep (ESpawn v) (LSpawn v) EUnit) as Hst by (by apply tstep_head, t_act_spawn).
+    assert (∀ α e', tstep (ESpawn v) α e' → α = LSpawn v ∧ e' = EUnit) as Hdet.
     { intros α e' Hs. apply op_head_only in Hs; [|done]. inversion Hs; by subst. }
     apply Erel_S_intro.
     - intros Hi. exact (Hi _ _ Hst).
@@ -369,7 +369,6 @@ Section rules.
       exists Θ, ∅. split_and!.
       + apply map_disjoint_empty_r.
       + by rewrite map_union_empty.
-      + by destruct HT1 as (e & -> & Hfe & _).
       + exact HT1.
       + apply at_cost_val. by apply Vrel_unit_iff.
   Qed.

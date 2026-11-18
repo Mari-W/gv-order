@@ -159,11 +159,11 @@ Proof.
       apply tstep_fill_decomp in H as (K & eh & eh' & HK & -> & -> & Hh) end.
     inversion Hh; subst. by apply RedNewAt.
   - (* spawn *)
-    match goal with H : tstep _ (LSpawn _ _) _ |- _ =>
+    match goal with H : tstep _ (LSpawn _) _ |- _ =>
       apply tstep_fill_decomp in H as (K & eh & eh' & HK & -> & -> & Hh) end.
     inversion Hh; subst. by apply RedSpawn.
   - (* message *)
-    match goal with H : tstep _ (LSess (SSend _ _ _)) _ |- _ =>
+    match goal with H : tstep _ (LSess (SSend _ _)) _ |- _ =>
       apply tstep_fill_decomp in H as (K & eh & eh' & HK & -> & -> & Hh) end.
     match goal with H : tstep _ (LSess (SRecv _ _)) _ |- _ =>
       apply tstep_fill_decomp in H as (K' & fh & fh' & HK' & -> & -> & Hh') end.

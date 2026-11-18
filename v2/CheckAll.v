@@ -27,7 +27,6 @@ Print Assumptions tstep_progress.
 Print Assumptions istep_progress.
 Print Assumptions proc_progress.
 Print Assumptions itstep_closed.
-Print Assumptions tstep_transfer.
 (** One instrumented semantics and its erasure. *)
 Print Assumptions istep_pspec.
 Print Assumptions pspec_lift.

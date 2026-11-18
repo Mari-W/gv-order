@@ -13,7 +13,7 @@ From GV Require Export lang.Safety.
 
 Definition sren (h : chan → chan) (σ : slabel) : slabel :=
   match σ with
-  | SSend o M v => SSend (cmap h o) (set_map (cmap h) M) (emap (cmap h) v)
+  | SSend o v => SSend (cmap h o) (emap (cmap h) v)
   | SRecv o v => SRecv (cmap h o) (emap (cmap h) v)
   | SClose o => SClose (cmap h o)
   | SSel o i => SSel (cmap h o) i
@@ -26,7 +26,7 @@ Definition lren (h : chan → chan) (α : tlabel) : tlabel :=
   | LBeta => LBeta
   | LNew ℓ c => LNew ℓ (h c)
   | LNewAt κ o c => LNewAt κ (cmap h o) (h c)
-  | LSpawn M v => LSpawn (set_map (cmap h) M) (emap (cmap h) v)
+  | LSpawn v => LSpawn (emap (cmap h) v)
   | LSess σ => LSess (sren h σ)
   end.
 
@@ -152,7 +152,7 @@ Proof.
 Qed.
 
 Lemma sentc_sren a b σ : sentc (sren (cswap a b) σ) = gswap a b (sentc σ).
-Proof. destruct σ; simpl; rewrite ?gswap_empty; try done. apply set_map_ech_oswap. Qed.
+Proof. destruct σ; simpl; rewrite ?gswap_empty; try done. apply fchans_eswap. Qed.
 
 (** The link substitution commutes with a transposition. *)
 Lemma oswap_csub a b o1 o2 o :

@@ -35,7 +35,7 @@ Abbreviation live := κ_L.
 
 Definition scost (κ : ctable) (σ : slabel) : nat :=
   match σ with
-  | SSend _ _ _ | SClose _ | SSel _ _ => c_give κ
+  | SSend _ _ | SClose _ | SSel _ _ => c_give κ
   | SRecv _ _ | SBra _ _ => c_take κ
   | SLink _ => c_link κ
   end.
@@ -44,7 +44,7 @@ Definition tcost (κ : ctable) (α : tlabel) : nat :=
   match α with
   | LBeta => c_beta κ
   | LNew _ _ | LNewAt _ _ _ => c_new κ
-  | LSpawn _ _ => c_spawn κ
+  | LSpawn _ => c_spawn κ
   | LSess σ => scost κ σ
   end.
 

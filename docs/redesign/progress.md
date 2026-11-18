@@ -1832,4 +1832,32 @@ The old development in theories/ stays untouched.
   strict premise. test/Lexer.v and test/SoupNotations.expected follow
   the new names. CheckAll adds `strict_wfworld`, 307 results, all
   closed.
+- L.5. No transfer sets (decision of 2026-11-18). Labels `LSpawn v`,
+  `SSend o v` and events `EvSpawn i j v`, `EvMsg i j o v` replace the
+  forms with M (lang/Semantics.v, lang/Process.v). `ltransfer_ok` and
+  `tstep_transfer` are gone, and `offers` no longer asks M = fends v.
+  `sentc (SSend _ v) = fchans v`. Relation (relation/Relation.v):
+  `o_spawn v e'` and `o_send o w e'` drop the conjunct `dom ΘM = M`.
+  `q_send o w p'` keeps its two clauses on Θe with `fends w` in place of
+  M: `(∀ o', o' ∈ dom Θe ↔ o' ∈ fends w ∧ ech o' ∈ p.1) ∧ fends w = dom
+  Σv ∪ dom Θe`. Without them Θe, the extruded restricted part, is not
+  determined, and the relation must say which restricted ends leave.
+  The value fixes them, so this reads the label's value, not a new
+  syntactic fact. Fuel (fuel/Fuel.v): `f_spawn v e'` and `f_send o w e'`
+  hand over `fends v`, `fends w`. Soup (soup/Soup.v): `own_next` moves
+  `fends v` at a spawn and a message, `ev_ends` reads `fends v`. Where a
+  proof used `dom ΘM = M`, it now derives `dom ΘM = fends v` from V:
+  from the Vthunk clause at a spawn (soup/SoupStep.v `step_spawn`,
+  soup/LFEvents.v), from `Vrel_exact` at a send (soup/SoupSync.v
+  `step_msg`, soup/LFEvents.v, compat/PTerm.v Q-Send). The soup needed
+  the moved set as a function of the event for its index-free update,
+  which is why the events carry the value v in place of M. Proofs that
+  built the conjunct (`Vrel_exact` bullets in compat/Redex.v, the
+  renaming lemmas, compat/Conv.v, compat/TermRules.v) lose a step.
+  Every theorem keeps its statement except the lemmas on labels:
+  `offers_spawn`, `offers_send`, `fuel_send_hand`, `fuel_spawn_hand`,
+  `fuel_zero_nospawn`, `fuel_zero_nosend`, `istep_spawn_inv`, `step_spawn`,
+  `step_msg`, `tau_msg12`, `tau_msg21`, `ext_send`, `padmin_spawn` drop
+  their M argument and read `fends v`. CheckAll drops `tstep_transfer`,
+  306 results, all closed.
 

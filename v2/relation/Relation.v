@@ -23,8 +23,10 @@
     are monotone in the world by definition.
 
     The relation reads no syntax of a term but the labels of its steps,
-    and from a label only the transfer set M of a send and a spawn
-    (decision Q3). Its environments map an end to a session type at a
+    and from a label only the value a send or a spawn moves. V fixes the
+    ends of that value (Q14), so O-Spawn and O-Send read no transfer set,
+    and Q-Send reads the ends [fends w] of the value it extrudes. Its
+    environments map an end to a session type at a
     point ([senv]) and carry no credit. The relation reads no annotation
     of a type. A session type is compared after erasing its annotations
     ([seqv]), and costs, transformers, floors and credits are never read.
@@ -294,15 +296,15 @@ Section bodies.
       cfresh c Θ → ∃ S0 x, Θ !! o = Some (S0, x) ∧
         ∃ S, at_cost_E n (c_new κ) El X W (new_env c S (x·κf) Θ) T F e'.
 
-    Definition o_spawn (M : gset cend) (v e' : expr) : Prop :=
-      ∃ ΘM Θr, ΘM ##ₘ Θr ∧ Θ = ΘM ∪ Θr ∧ dom ΘM = M ∧
+    Definition o_spawn (v e' : expr) : Prop :=
+      ∃ ΘM Θr, ΘM ##ₘ Θr ∧ Θ = ΘM ∪ Θr ∧
         Vthunk n Vl El (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit) (λ W' Θ' F' e0, X W' Θ' TUnit F' e0)
           W ΘM v ∧
         at_cost_E n (c_spawn κ) El X W Θr T F e'.
 
-    Definition o_send (o : cend) (M : gset cend) (w e' : expr) : Prop :=
+    Definition o_send (o : cend) (w e' : expr) : Prop :=
       ∃ S0 x m U b S ΘM Θr, Θ !! o = Some (S0, x) ∧ unfoldS S0 = SSeq (SSnd m U b) S ∧
-        ΘM ##ₘ Θr ∧ delete o Θ = ΘM ∪ Θr ∧ dom ΘM = M ∧
+        ΘM ##ₘ Θr ∧ delete o Θ = ΘM ∪ Θr ∧
         at_cost_V n (c_give κ) Vl VN W ΘM (payload_at m U x) w ∧
         at_cost_E n (c_give κ) El X W (<[o := (S, x⁺)]> Θr) T F e'.
 
@@ -335,8 +337,8 @@ Section bodies.
       | LBeta => o_beta e'
       | LNew ℓ c => o_new ℓ c e'
       | LNewAt κf o c => o_new_at κf o c e'
-      | LSpawn M v => o_spawn M v e'
-      | LSess (SSend o M w) => o_send o M w e'
+      | LSpawn v => o_spawn v e'
+      | LSess (SSend o w) => o_send o w e'
       | LSess (SRecv o w) => o_recv o w e'
       | LSess (SClose o) => o_close o e'
       | LSess (SSel o i) => o_select o i e'
@@ -350,8 +352,8 @@ Section bodies.
       (∀ e', tstep e LBeta e' → o_beta e') ∧                          (* O-Beta *)
       (∀ ℓ c e', tstep e (LNew ℓ c) e' → o_new ℓ c e') ∧              (* O-New *)
       (∀ κf o c e', tstep e (LNewAt κf o c) e' → o_new_at κf o c e') ∧ (* O-NewAt *)
-      (∀ M v e', tstep e (LSpawn M v) e' → o_spawn M v e') ∧          (* O-Spawn *)
-      (∀ o M w e', tstep e (LSess (SSend o M w)) e' → o_send o M w e') ∧ (* O-Send *)
+      (∀ v e', tstep e (LSpawn v) e' → o_spawn v e') ∧              (* O-Spawn *)
+      (∀ o w e', tstep e (LSess (SSend o w)) e' → o_send o w e') ∧  (* O-Send *)
       (∀ o w e', tstep e (LSess (SRecv o w)) e' → o_recv o w e') ∧    (* O-Recv *)
       (∀ o e', tstep e (LSess (SClose o)) e' → o_close o e') ∧        (* O-Close *)
       (∀ o i e', tstep e (LSess (SSel o i)) e' → o_select o i e') ∧   (* O-Select *)
@@ -362,7 +364,7 @@ Section bodies.
     Proof.
       split.
       - intros (H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10) α e' Hst.
-        destruct α as [|ℓ c|κf o c|M v|[o M w|o w|o|o i|o i|os]]; simpl; eauto.
+        destruct α as [|ℓ c|κf o c|v|[o w|o w|o|o i|o i|os]]; simpl; eauto.
       - intros H. split_and!; intros; match goal with Hs : tstep _ ?α ?e' |- _ => exact (H α e' Hs) end.
     Qed.
   End obligations.
@@ -428,11 +430,11 @@ Section bodies.
     Definition q_tau (ev : event) (p' : proc) : Prop :=
       p'.1 ## chans_of Σ → at_cost_P n (ev_cost κ ev) Pl X W Σ T p'.
 
-    Definition q_send (o : cend) (M : gset cend) (w : expr) (p' : proc) : Prop :=
+    Definition q_send (o : cend) (w : expr) (p' : proc) : Prop :=
       ∃ S0 x m U b S Σv Σr Θe Σe, Σ !! o = Some (S0, x) ∧
         unfoldS S0 = SSeq (SSnd m U b) S ∧
         Σv ##ₘ Σr ∧ delete o Σ = Σv ∪ Σr ∧
-        (∀ o', o' ∈ dom Θe ↔ o' ∈ M ∧ ech o' ∈ p.1) ∧ M = dom Σv ∪ dom Θe ∧
+        (∀ o', o' ∈ dom Θe ↔ o' ∈ fends w ∧ ech o' ∈ p.1) ∧ fends w = dom Σv ∪ dom Θe ∧
         send_split Σ Σe Θe ∧
         at_cost_V n (c_give κ) Vl VN W (Σv ∪ Θe) (payload_at m U x) w ∧
         at_cost_P n (c_give κ) Pl X W (<[o := (S, x⁺)]> (Σr ∪ Σe)) T p'.
@@ -464,7 +466,7 @@ Section bodies.
     (** All of them, read off the event. *)
     Definition Pobl (ev : event) (p' : proc) : Prop :=
       match ev with
-      | EvSess _ (SSend o M w) => q_send o M w p'
+      | EvSess _ (SSend o w) => q_send o w p'
       | EvSess _ (SRecv o w) => q_recv o w p'
       | EvSess _ (SClose o) => q_close o p'
       | EvSess _ (SSel o i) => q_select o i p'
@@ -476,8 +478,8 @@ Section bodies.
     (** The step clause, one conjunct per kind of step. *)
     Definition Psteps : Prop :=
       (∀ q ev q', erase q = p → istep q ev q' → ev_tau ev → q_tau ev (erase q')) ∧
-      (∀ q i o M w q', erase q = p → istep q (EvSess i (SSend o M w)) q' →
-         q_send o M w (erase q')) ∧                                    (* Q-Send *)
+      (∀ q i o w q', erase q = p → istep q (EvSess i (SSend o w)) q' →
+         q_send o w (erase q')) ∧                                    (* Q-Send *)
       (∀ q i o w q', erase q = p → istep q (EvSess i (SRecv o w)) q' →
          q_recv o w (erase q')) ∧                                      (* Q-Recv *)
       (∀ q i o q', erase q = p → istep q (EvSess i (SClose o)) q' →
@@ -494,12 +496,12 @@ Section bodies.
     Proof.
       split.
       - intros (H1 & H2 & H3 & H4 & H5 & H6 & H7) q ev q' Hq Hst.
-        destruct ev as [| | | | | | | |i [o M w|o w|o|o b|o b|os]]; simpl;
+        destruct ev as [| | | | | | | |i [o w|o w|o|o b|o b|os]]; simpl;
           first [eapply H1; [exact Hq|exact Hst|reflexivity] | eauto].
       - intros H. split_and!.
         + intros q ev q' Hq Hst Hτ. specialize (H q ev q' Hq Hst).
           destruct ev; try done; by unfold ev_tau in Hτ.
-        + intros q i o M w q' Hq Hst. exact (H _ _ _ Hq Hst).
+        + intros q i o w q' Hq Hst. exact (H _ _ _ Hq Hst).
         + intros q i o w q' Hq Hst. exact (H _ _ _ Hq Hst).
         + intros q i o q' Hq Hst. exact (H _ _ _ Hq Hst).
         + intros q i o b q' Hq Hst. exact (H _ _ _ Hq Hst).
@@ -622,15 +624,15 @@ Section maps.
       exists S0, x. split; [exact Ho|]. exists S.
       exact (at_cost_E_map _ _ _ _ _ _ _ _ _ _ (f _ _ _ _ _) HS). }
     split.
-    { intros M v e' Hs. destruct (H4 M v e' Hs) as (ΘM & Θr & A1 & A2 & A3 & A4 & A5).
-      exists ΘM, Θr. split; [exact A1|]. split; [exact A2|]. split; [exact A3|].
+    { intros v e' Hs. destruct (H4 v e' Hs) as (ΘM & Θr & A1 & A2 & A4 & A5).
+      exists ΘM, Θr. split; [exact A1|]. split; [exact A2|].
       split; [exact (Vthunk_mapB _ _ _ _ _ _ (λ W Θ F e, f W Θ TUnit F e) _ _ _ A4)|].
       exact (at_cost_E_map _ _ _ _ _ _ _ _ _ _ (f _ _ _ _ _) A5). }
     split.
-    { intros o M w e' Hs.
-      destruct (H5 o M w e' Hs) as (S0 & x & m & U & b & S & ΘM & Θr & A1 & A2 & A3 & A4 & A5 & A6 & A7).
+    { intros o w e' Hs.
+      destruct (H5 o w e' Hs) as (S0 & x & m & U & b & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
       exists S0, x, m, U, b, S, ΘM, Θr. split; [exact A1|]. split; [exact A2|].
-      split; [exact A3|]. split; [exact A4|]. split; [exact A5|]. split; [exact A6|].
+      split; [exact A3|]. split; [exact A4|]. split; [exact A6|].
       exact (at_cost_E_map _ _ _ _ _ _ _ _ _ _ (f _ _ _ _ _) A7). }
     split; [exact H6|].
     split.
@@ -679,8 +681,8 @@ Section maps.
     { intros q ev q' Hq Hs Hτ Hd.
       exact (at_cost_P_map _ _ _ _ _ _ _ _ _ (f _ _ _ _) (H1 q ev q' Hq Hs Hτ Hd)). }
     split.
-    { intros q i o M w q' Hq Hs.
-      destruct (H2 q i o M w q' Hq Hs)
+    { intros q i o w q' Hq Hs.
+      destruct (H2 q i o w q' Hq Hs)
         as (S0 & x & m & U & b & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A6 & A7 & A8 & A9).
       exists S0, x, m, U, b, S, Σv, Σr, Θe, Σe. split; [exact A1|]. split; [exact A2|].
       split; [exact A3|]. split; [exact A4|]. split; [exact A5|]. split; [exact A6|].
@@ -813,15 +815,15 @@ Section mono.
     - intros ℓ c e' Hs Hc g Hg. destruct (H2 ℓ c e' Hs Hc g Hg) as [S HS]. exists S. by apply Hac.
     - intros κf o c e' Hs Hc. destruct (H3 κf o c e' Hs Hc) as (S0 & x & Ho & S & HS).
       exists S0, x. split; [done|]. exists S. by apply Hac.
-    - intros M v e' Hs. destruct (H4 M v e' Hs) as (ΘM & Θr & A1 & A2 & A3 & A4 & A5).
-      exists ΘM, Θr. split_and!; [done|done|done| |by apply Hac].
+    - intros v e' Hs. destruct (H4 v e' Hs) as (ΘM & Θr & A1 & A2 & A4 & A5).
+      exists ΘM, Θr. split_and!; [done|done| |by apply Hac].
       revert A4. apply Vthunk_mono.
       + intros j Hj W0 Θ0 T0 v0. by apply HVl.
       + intros j Hj. by apply HEl.
       + by intros.
       + intros _ W0 Θ0 F0 e0. apply HXu.
-    - intros o M w e' Hs.
-      destruct (H5 o M w e' Hs) as (S0 & x & m & U & b & S & ΘM & Θr & A1 & A2 & A3 & A4 & A5 & A6 & A7).
+    - intros o w e' Hs.
+      destruct (H5 o w e' Hs) as (S0 & x & m & U & b & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
       exists S0, x, m, U, b, S, ΘM, Θr. split_and!; [done..| |by apply Hac].
       eapply at_cost_V_mono; [done| |intros; by apply HVN|exact A6].
       intros j Hj. by apply HVl.
@@ -866,8 +868,8 @@ Section mono.
     { intros c W0 Σ0 p0. apply at_cost_P_mono; [done| |apply HX]. intros j Hj. by apply HPl. }
     split_and!.
     - intros q ev q' Hq Hs Hτ Hd. apply Hac. exact (H1 q ev q' Hq Hs Hτ Hd).
-    - intros q i o M w q' Hq Hs.
-      destruct (H2 q i o M w q' Hq Hs)
+    - intros q i o w q' Hq Hs.
+      destruct (H2 q i o w q' Hq Hs)
         as (S0 & x & m & U & b & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A6 & A7 & A8 & A9).
       exists S0, x, m, U, b, S, Σv, Σr, Θe, Σe. split_and!; [done..| |by apply Hac].
       eapply at_cost_V_mono; [done| |intros; by apply HVN|exact A8].

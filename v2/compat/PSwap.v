@@ -26,8 +26,8 @@ Section qswap.
     | EvBeta i => EvBeta i
     | EvNew i ℓ c => EvNew i ℓ (cw c)
     | EvNewAt i κ o c => EvNewAt i κ (ow o) (cw c)
-    | EvSpawn i j M => EvSpawn i j (set_map ow M)
-    | EvMsg i j o M => EvMsg i j (ow o) (set_map ow M)
+    | EvSpawn i j v => EvSpawn i j (ew v)
+    | EvMsg i j o v => EvMsg i j (ow o) (ew v)
     | EvClose i j o => EvClose i j (ow o)
     | EvChoice i j o bb => EvChoice i j (ow o) bb
     | EvLink i o1 o2 => EvLink i (ow o1) (ow o2)
@@ -52,8 +52,8 @@ Section qswap.
   Lemma istep_qswap q ev q' : istep q ev q' → istep (qswap q) (evswap ev) (qswap q').
   Proof.
     destruct 1 as [C M i e e' Hi Hst|C M i e ℓ c e' Hi Hst HC Hc|C M i e κ o c e' Hi Hst HC Hc
-      |C M i j e Mv v e' Hi Hst Hj
-      |C M i j o Mv v e e' f f' Hij Hi Hj He Hf|C M i j o e e' f f' Hij Hi Hj He Hf HC
+      |C M i j e v e' Hi Hst Hj
+      |C M i j o v e e' f f' Hij Hi Hj He Hf|C M i j o e e' f f' Hij Hi Hj He Hf HC
       |C M i j o bb e e' f f' Hij Hi Hj He Hf|C M i e o1 o2 e' Hi Hst HC
       |C M i e σ e' Hi Hst HC]; unfold qswap; simpl; rewrite ?fmap_insert.
     - eapply p_act_beta; [by rewrite lookup_fmap, Hi|by apply (tstep_eswap a b) in Hst].
@@ -96,7 +96,7 @@ Section qswap.
   Lemma evswap_involutive ev : evswap (evswap ev) = ev.
   Proof.
     destruct ev as [| | | | | | | |i σ]; simpl; rewrite ?oswap_involutive, ?cswap_involutive,
-      ?set_map_oswap_inv; try done.
+      ?set_map_oswap_inv, ?eswap_involutive; try done.
     destruct σ; simpl; rewrite ?oswap_involutive, ?set_map_oswap_inv, ?eswap_involutive; done.
   Qed.
 

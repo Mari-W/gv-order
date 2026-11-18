@@ -1267,6 +1267,14 @@ first, in stage S2.
 - Modular worlds (author, 2026-11-18). `lfworld` is gone. Lock-free
   results ask `strict W → wfworld W → …` with `wfworld W :=
   well_founded (w_lt W)`. DF results keep `strict W` alone.
+- No transfer sets (author, 2026-11-18). This revises Q3. The labels
+  are `LSpawn v` and `SSend o v`, the events `EvSpawn i j v` and
+  `EvMsg i j o v`, and the moved ends are `fends v`. O-Spawn and O-Send
+  lose `dom ΘM = M`: V fixes the domain (Vthunk asks dom ΘM = fends of
+  the body, and `Vrel_exact` gives it for a payload). Q-Send reads
+  `fends w` where it read M, because the extruded part Θe is defined
+  from it. F-Spawn, F-Send and the soup update hand over `fends v`. No
+  clause is added.
 
 ## 5  Open decisions for the author
 

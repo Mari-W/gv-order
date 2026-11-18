@@ -130,7 +130,7 @@ Lemma istep_single q ev q' C e :
      erase q' = (C ∪ {[c]}, {[+ e' +]})) ∨
   (∃ i κf o c e', ev = EvNewAt i κf o c ∧ tstep e (LNewAt κf o c) e' ∧ c ∉ C ∧ c ∉ fchans e ∧
      erase q' = (C ∪ {[c]}, {[+ e' +]})) ∨
-  (∃ i j M v e', ev = EvSpawn i j M ∧ tstep e (LSpawn M v) e' ∧
+  (∃ i j v e', ev = EvSpawn i j v ∧ tstep e (LSpawn v) e' ∧
      erase q' = (C, {[+ e' +]} ⊎ {[+ App v EUnit +]})) ∨
   (∃ i o1 o2 e', ev = EvLink i o1 o2 ∧ tstep e (LSess (SLink ({[o1]} ∪ {[o2]}))) e' ∧ ech o1 ∈ C ∧
      erase q' = (C ∖ {[ech o1]}, {[+ emap (csub o1 o2) e' +]})) ∨
@@ -148,7 +148,7 @@ Proof.
   - left. eexists _, _. split_and!; [done|done|]. by erewrite soup_single_upd.
   - right; left. eexists _, _, _, _. split_and!; [done|done|done|done|]. by erewrite soup_single_upd.
   - do 2 right; left. eexists _, _, _, _, _. split_and!; [done|done|done|done|]. by erewrite soup_single_upd.
-  - do 3 right; left. eexists _, _, _, _, _. split_and!; [done|done|].
+  - do 3 right; left. eexists _, _, _, _. split_and!; [done|done|].
     match goal with H : M !! ?j = None |- _ => rename H into Hj end.
     rewrite soup_insert; [by erewrite soup_single_upd|].
     rewrite lookup_insert_ne; [done|]. intros ->. congruence.
@@ -499,7 +499,7 @@ Qed.
 (** A non-session step of the thread is a τ step of (C, {e}). *)
 Lemma single_tau C e α e' : tstep e α e' → (∀ σ, α ≠ LSess σ) → ∃ p', preduction (C, {[+ e +]}) p'.
 Proof.
-  intros Hs Hα. destruct α as [|ℓ c|κf o c|M v|σ].
+  intros Hs Hα. destruct α as [|ℓ c|κf o c|v|σ].
   - eexists. exists (q1 C e), (EvBeta 0), (C, <[0 := e']> {[0 := e]}). split_and!; [apply erase_q1| |done|done].
     eapply p_act_beta; [by rewrite lookup_singleton_eq|done].
   - set (c' := fresh (C ∪ fchans e)). pose proof (is_fresh (C ∪ fchans e)) as Hf. fold c' in Hf.
@@ -512,7 +512,7 @@ Proof.
     eexists. exists (q1 C e), (EvNewAt 0 κf o c'), (C ∪ {[c']}, <[0 := e'']> {[0 := e]}). split_and!; [apply erase_q1| |done|done].
     eapply p_act_new_at; [by rewrite lookup_singleton_eq|done|set_solver|].
     rewrite soup_q1, echans_singleton. set_solver.
-  - eexists. exists (q1 C e), (EvSpawn 0 1 M), (C, <[1 := App v EUnit]> (<[0 := e']> {[0 := e]})).
+  - eexists. exists (q1 C e), (EvSpawn 0 1 v), (C, <[1 := App v EUnit]> (<[0 := e']> {[0 := e]})).
     split_and!; [apply erase_q1| |done|done].
     eapply p_act_spawn; [by rewrite lookup_singleton_eq|done|by rewrite lookup_singleton_ne].
   - by destruct (Hα σ).
@@ -979,7 +979,7 @@ Lemma istep_single_sess q i σ q' C e : erase q = (C, {[+ e +]}) → istep q (Ev
 Proof.
   intros Hq Hst.
   destruct (istep_single _ _ _ _ _ Hq Hst) as [(?&?&Heq&_)|[(?&?&?&?&Heq&_)|[(?&?&?&?&?&Heq&_)|
-    [(?&?&?&?&?&Heq&_)|[(?&?&?&?&Heq&_)|(?&?&?&Heq&?&?&?)]]]]]; try discriminate.
+    [(?&?&?&?&Heq&_)|[(?&?&?&?&Heq&_)|(?&?&?&Heq&?&?&?)]]]]]; try discriminate.
   injection Heq as <- <-. eauto.
 Qed.
 
@@ -1028,7 +1028,7 @@ Section core.
 
   Lemma core W Θ T e Σ ΘB C : prim T → sth Θ Σ ΘB C → Erel κ (S n) W Θ T ∅ e →
     Ebody κ (S n) (Vrel κ) (Erel κ) (Vrel κ (S n)) X W Θ T ∅ e →
-    (∀ W1, W ⊑ W1 → ∀ M v e', tstep e (LSpawn M v) e' →
+    (∀ W1, W ⊑ W1 → ∀ v e', tstep e (LSpawn v) e' →
        at_cost_P (S n) (c_spawn κ) (Prel κ) (Prel κ (S n)) W1 Σ T (C, {[+ e' +]} ⊎ {[+ App v EUnit +]})) →
     ∀ W1, W ⊑ W1 → strict W1 →
     Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) (Prel κ (S n)) W1 Σ T (C, {[+ e +]}).
@@ -1055,7 +1055,7 @@ Section core.
     assert (∀ π p', pstep (C, {[+ e +]}) π p' → ¬ irred e) as Hps.
     { intros π p' (q & ev & q' & Hq & Hst & _) Hi.
       destruct (istep_single _ _ _ _ _ Hq Hst) as [(?&?&_&Hs'&_)|[(?&?&?&?&_&Hs'&_)|[(?&?&?&?&?&_&Hs'&_)|
-        [(?&?&?&?&?&_&Hs'&_)|[(?&?&?&?&_&Hs'&_)|(?&?&?&_&Hs'&_)]]]]]; by eapply Hi. }
+        [(?&?&?&?&_&Hs'&_)|[(?&?&?&?&_&Hs'&_)|(?&?&?&_&Hs'&_)]]]]]; by eapply Hi. }
     split; [|split; [|unfold Psteps; split_and!]].
     - (* P-Stop *)
       intros Hpi. destruct (act e) as [a|] eqn:Ha.
@@ -1089,7 +1089,7 @@ Section core.
     - (* Q-Admin and Q-Comm *)
       intros q ev q' Hq Hst Hτ.
       destruct (istep_single _ _ _ _ _ Hq Hst) as [(i & e' & -> & Hs' & ->)|[(i & ℓ & c & e' & -> & Hs' & HcC & Hce & ->)|
-        [(i & κf & o & c & e' & -> & Hs' & HcC & Hce & ->)|[(i & j & M & v & e' & -> & Hs' & ->)|
+        [(i & κf & o & c & e' & -> & Hs' & HcC & Hce & ->)|[(i & j & v & e' & -> & Hs' & ->)|
         [(i & o1 & o2 & e' & -> & Hs' & Hc1 & ->)|(i & σ & e' & -> & _)]]]]]; cbn [fst ev_cost]; intros Hdisj.
       + eapply ac_EP; [done|exact Hs|]. by apply H1.
       + cbn [fst] in Hdisj. assert (c ∉ chans_of Σ) as HcΣ by (clear -Hdisj; set_solver).
@@ -1099,7 +1099,7 @@ Section core.
       + cbn [fst] in Hdisj. assert (c ∉ chans_of Σ) as HcΣ by (clear -Hdisj; set_solver).
         destruct (H3 κf o c e' Hs' (sth_cfresh _ _ _ _ Hs c HcC HcΣ)) as (S0 & x & _ & S & HS).
         eapply ac_EP; [done|by apply sth_new|exact HS].
-      + by apply (Hsp W1 HW1 M v e').
+      + by apply (Hsp W1 HW1 v e').
       + destruct (H10 _ _ Hs') as (p1 & p2 & S1 & S2 & x & Hos & Hne & L1 & L2 & Hd & HA).
         destruct (link_norm Θ o1 o2 p1 p2 S1 S2 x Hos Hne L1 L2 Hd) as (A1 & A2 & y & Hne' & K1 & K2 & Hd' & Edel).
         rewrite <-Edel in HA.
@@ -1113,8 +1113,11 @@ Section core.
         * intros Hc. eapply Prel_conv; [exact Heqv|by apply B2].
       + exfalso. unfold ev_tau in Hτ. simpl in Hτ. discriminate.
     - (* Q-Send *)
-      intros q i o M w q' Hq Hst. destruct (istep_single_sess _ _ _ _ _ _ Hq Hst) as (e' & Hs' & Hsub & ->).
-      destruct (H5 _ _ _ _ Hs') as (S0 & x & m & U & b & S & ΘM & Θr & Ho & Hu & Hd & HΘ & HM & HV & HA).
+      intros q i o w q' Hq Hst. destruct (istep_single_sess _ _ _ _ _ _ Hq Hst) as (e' & Hs' & Hsub & ->).
+      destruct (H5 _ _ _ Hs') as (S0 & x & m & U & b & S & ΘM & Θr & Ho & Hu & Hd & HΘ & HV & HA).
+      assert (HM : dom ΘM = fends w).
+      { destruct (decide (c_give κ = 0)) as [Hc0|Hc0];
+          [exact (Vrel_exact _ _ _ _ _ _ (proj1 HV Hc0))|exact (Vrel_exact _ _ _ _ _ _ (proj2 HV Hc0))]. }
       assert (ech o ∉ C) as Hc by (simpl in Hsub; intros Hc'; apply (Hsub (ech o)); [by apply elem_of_singleton|done]).
       destruct (snd_split Θ Σ ΘB C Hs o ΘM Θr Hd HΘ) as [Hd' HΣ].
       exists S0, x, m, U, b, S, (rout C ΘM), (rout C Θr), (rin C ΘM), (rpart C ΘM Θr). split_and!.
@@ -1128,7 +1131,7 @@ Section core.
       + by rewrite <-dom_union_L, (snd_ΘM C ΘM).
       + exact (snd_send_split Θ Σ ΘB C Hs o S0 x Ho Hc ΘM Θr Hd HΘ).
       + by rewrite (snd_ΘM C ΘM).
-      + simpl. rewrite <-HM. eapply ac_EP; [done|exact (snd_sth Θ Σ ΘB C Hs o S0 x Ho Hc ΘM Θr Hd HΘ _)|exact HA].
+      + simpl. unfold fchans. rewrite <-HM. eapply ac_EP; [done|exact (snd_sth Θ Σ ΘB C Hs o S0 x Ho Hc ΘM Θr Hd HΘ _)|exact HA].
     - (* Q-Recv *)
       intros q i o w q' Hq Hst. destruct (istep_single_sess _ _ _ _ _ _ Hq Hst) as (e' & Hs' & Hsub & ->).
       destruct (H6 _ _ _ Hs') as (S0 & x & m & U & b & S & Ho & Hu & HR).
@@ -1205,7 +1208,7 @@ Section node.
   (** The fusions of a single thread, given its spawns. *)
   Lemma node_gen W Θ T e :
     Ebody κ (S n) (Vrel κ) (Erel κ) (Vrel κ (S n)) Xt W Θ T ∅ e →
-    (∀ h Σ ΘB C, kinj h Θ → prim T → sth (kren h Θ) Σ ΘB C → ∀ W1, W ⊑ W1 → ∀ M v e', tstep (emap h e) (LSpawn M v) e' →
+    (∀ h Σ ΘB C, kinj h Θ → prim T → sth (kren h Θ) Σ ΘB C → ∀ W1, W ⊑ W1 → ∀ v e', tstep (emap h e) (LSpawn v) e' →
        at_cost_P (S n) (c_spawn κ) (Prel κ) (Prel κ (S n)) W1 Σ T (C, {[+ e' +]} ⊎ {[+ App v EUnit +]})) →
     Φt W Θ T ∅ e.
   Proof.
@@ -1222,7 +1225,7 @@ Section node.
   Lemma node_beta W Θ T e : act e = Some ABeta →
     Ebody κ (S n) (Vrel κ) (Erel κ) (Vrel κ (S n)) Xt W Θ T ∅ e → Φt W Θ T ∅ e.
   Proof.
-    intros Ha Hb. apply node_gen; [done|]. intros h Σ ΘB C _ _ _ W1 _ M v e' Hs. exfalso.
+    intros Ha Hb. apply node_gen; [done|]. intros h Σ ΘB C _ _ _ W1 _ v e' Hs. exfalso.
     destruct (act_step _ _ _ Hs) as (a & Ha' & Hoff). rewrite act_emap, Ha in Ha'. simpl in Ha'.
     injection Ha' as <-. done.
   Qed.
@@ -1265,12 +1268,12 @@ Section node.
       channels with one end on each side (P-Connect). *)
   Lemma spawn_case W Θ T e Σ ΘB C : prim T → sth Θ Σ ΘB C →
     Ebody κ (S n) (Vrel κ) (Erel κ) (Vrel κ (S n)) Xt W Θ T ∅ e →
-    ∀ W1, W ⊑ W1 → ∀ M v e', tstep e (LSpawn M v) e' →
+    ∀ W1, W ⊑ W1 → ∀ v e', tstep e (LSpawn v) e' →
       at_cost_P (S n) (c_spawn κ) (Prel κ) (Prel κ (S n)) W1 Σ T (C, {[+ e' +]} ⊎ {[+ App v EUnit +]}).
   Proof.
-    intros HT Hs Hb W1 HW1 M v e' Hst.
+    intros HT Hs Hb W1 HW1 v e' Hst.
     destruct (Hb W1 HW1) as (_ & _ & _ & _ & _ & H4 & _).
-    destruct (H4 _ _ _ Hst) as (ΘM & Θr & Hd & HΘ & _ & Hth & HA).
+    destruct (H4 _ _ Hst) as (ΘM & Θr & Hd & HΘ & Hth & HA).
     destruct (spawn_split Θ Σ ΘB C ΘM Θr Hs Hd HΘ) as (Hr & HM & Hc & HΣ & HC).
     pose proof (ac_EP κ n IH Xt Xt_P W1 Θr T e' _ _ _ _ HT Hr HA) as [P1 P2].
     assert (∀ m, m ≤ S n → Prel κ m W1 (s_if C Θr ∪ s_cut C Θr) T (s_ch C Θr, {[+ e' +]}) →
@@ -1288,9 +1291,9 @@ Section node.
 
   Lemma node W Θ T e : Ebody κ (S n) (Vrel κ) (Erel κ) (Vrel κ (S n)) Xt W Θ T ∅ e → Φt W Θ T ∅ e.
   Proof.
-    intros Hb. apply node_gen; [done|]. intros h Σ ΘB C Hk HT Hs W1 HW1 M v e' Hst.
+    intros Hb. apply node_gen; [done|]. intros h Σ ΘB C Hk HT Hs W1 HW1 v e' Hst.
     pose proof (Xt_E _ _ _ _ _ Hb) as HE.
-    refine (spawn_case W (kren h Θ) T (emap h e) Σ ΘB C HT Hs _ W1 HW1 M v e' Hst). by apply Ebody_rename; [apply Xt_ren| | |].
+    refine (spawn_case W (kren h Θ) T (emap h e) Σ ΘB C HT Hs _ W1 HW1 v e' Hst). by apply Ebody_rename; [apply Xt_ren| | |].
   Qed.
 End node.
 

@@ -9,7 +9,7 @@
     Two facts about V carry the proofs. The environment of a value in V
     holds exactly the ends the value mentions ([Vrel_exact], decision
     Q14), so a send and a spawn hand over the environment of the value,
-    as O-Send and O-Spawn ask with the transfer set. The heads of the
+    which O-Send and O-Spawn therefore need not state. The heads of the
     environment of a value lie above the heads of its type when its type
     has no ⊥ flag ([Vrel_heads]), so readiness of a send follows from
     the payload premises of E-Send. *)
@@ -195,10 +195,10 @@ Section redex.
     destruct (seqv_unfold_snd _ _ _ _ _ _ Hs' Hu) as (U' & b' & S' & Hu' & HU & HS).
     pose proof (Vrel_val κ _ _ _ _ _ Hw) as Hwv.
     assert (Θw !! o = None) as Hwo by (eapply map_disjoint_Some_r; [exact Hd|apply lookup_singleton_eq]).
-    assert (tstep (ESend (Pair w (Chan o))) (LSess (SSend o (fends w) w)) (Chan o)) as Hst
+    assert (tstep (ESend (Pair w (Chan o))) (LSess (SSend o w)) (Chan o)) as Hst
       by (by apply tstep_head, t_act_send).
     assert (∀ α e', tstep (ESend (Pair w (Chan o))) α e' →
-              α = LSess (SSend o (fends w) w) ∧ e' = Chan o) as Hdet.
+              α = LSess (SSend o w) ∧ e' = Chan o) as Hdet.
     { intros α e' Hs. apply op_head_only in Hs; [|simpl; by rewrite andb_True].
       inversion Hs; by subst. }
     apply Erel_S_intro.
@@ -219,7 +219,6 @@ Section redex.
       + apply map_disjoint_empty_r.
       + rewrite map_union_empty, delete_union, delete_singleton_eq, map_union_empty.
         by apply delete_id.
-      + by apply (Vrel_exact κ _ _ _ _ _ Hw).
       + apply (at_cost_payload _ _ _ _ (payload_at m U x)).
         * rewrite <-!payload_at_df. unfold payload_at. apply teq_pinst. by apply teq_sym.
         * by eapply Vrel_mono.
@@ -389,8 +388,8 @@ Section redex.
   Proof.
     intros HV. destruct n as [|n]; [apply Erel_0|].
     pose proof (Vrel_val κ _ _ _ _ _ HV) as Hv.
-    assert (tstep (ESpawn v) (LSpawn (fends v) v) EUnit) as Hst by (by apply tstep_head, t_act_spawn).
-    assert (∀ α e', tstep (ESpawn v) α e' → α = LSpawn (fends v) v ∧ e' = EUnit) as Hdet.
+    assert (tstep (ESpawn v) (LSpawn v) EUnit) as Hst by (by apply tstep_head, t_act_spawn).
+    assert (∀ α e', tstep (ESpawn v) α e' → α = LSpawn v ∧ e' = EUnit) as Hdet.
     { intros α e' Hs. apply op_head_only in Hs; [|done]. inversion Hs; by subst. }
     apply Erel_S_intro.
     - intros Hi. exact (Hi _ _ Hst).
@@ -399,7 +398,6 @@ Section redex.
       exists Θ, ∅. split_and!.
       + apply map_disjoint_empty_r.
       + by rewrite map_union_empty.
-      + by apply (Vrel_exact κ _ _ _ _ _ HV).
       + eapply Vthunk_of_Vrel, Vrel_mono; [exact HW1|exact HV].
       + apply at_cost_val. by apply Vrel_unit_iff.
   Qed.

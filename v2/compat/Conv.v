@@ -303,9 +303,9 @@ Section rel.
     - intros κf o c e' Hst Hc. destruct (H3 κf o c e' Hst (senv_eqv_cfresh _ _ _ HΘ Hc)) as (S0 & x & Ho & S & HS).
       destruct (senv_eqv_lookup _ _ _ _ _ HΘ Ho) as (S0' & Ho' & _).
       exists S0', x. split; [done|]. exists S. eapply Hac; [|exact HS]. by apply senv_eqv_new_env.
-    - intros M v e' Hst. destruct (H4 M v e' Hst) as (ΘM & Θr & A1 & -> & A3 & A4 & A5).
+    - intros v e' Hst. destruct (H4 v e' Hst) as (ΘM & Θr & A1 & -> & A4 & A5).
       destruct (senv_eqv_split _ _ _ HΘ A1) as (ΘM' & Θr' & -> & Hd' & EM & Er).
-      exists ΘM', Θr'. split_and!; [done|done|by rewrite <-(senv_eqv_dom _ _ EM)| |by eapply Hac].
+      exists ΘM', Θr'. split_and!; [done|done| |by eapply Hac].
       destruct A4 as (e1 & -> & Hfe & HA). exists e1.
       split_and!; [done|by rewrite <-(senv_eqv_dom _ _ EM)|].
       intros W' j Θ0 w HW Hj Hd.
@@ -316,13 +316,13 @@ Section rel.
         * by apply B1.
       + intros -> Hw. destruct (B2 eq_refl Hw) as [_ B3]. apply B3; [by right|].
         apply senv_eqv_union; [done|apply senv_eqv_refl].
-    - intros o M w e' Hst.
-      destruct (H5 o M w e' Hst) as (S0 & x & m & U & b & S & ΘM & Θr & A1 & A2 & A3 & A4 & A5 & A6 & A7).
+    - intros o w e' Hst.
+      destruct (H5 o w e' Hst) as (S0 & x & m & U & b & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
       destruct (senv_eqv_lookup _ _ _ _ _ HΘ A1) as (S0' & A1' & Hs0).
       destruct (seqv_unfold_snd S0' S0 m U b S (seqv_sym _ _ Hs0) A2) as (U' & b' & S' & A2' & HU & HS).
       assert (senv_eqv (ΘM ∪ Θr) (delete o Θ')) as Hdel by (rewrite <-A4; by apply senv_eqv_delete).
       destruct (senv_eqv_split _ _ _ Hdel A3) as (ΘM' & Θr' & Hdel' & Hd' & EM & Er).
-      exists S0', x, m, U', b', S', ΘM', Θr'. split_and!; [done|done|done|done|by rewrite <-(senv_eqv_dom _ _ EM)| |].
+      exists S0', x, m, U', b', S', ΘM', Θr'. split_and!; [done|done|done|done| |].
       + destruct A6 as [B1 B2]. split.
         * intros Hc. apply (proj2 (Vrel_teq κ _ _ _ _ _ _ (teq_payload m U U' x HU))).
           apply (HVP Hc _ _ ΘM); [done|by apply B1].
@@ -479,8 +479,8 @@ Section prel.
     - intros Hni. eapply ready_p_conv; [exact HΣ|]. by apply Hr.
     - intros q ev q' Hq Hst Hτ Hd. apply (Hac _ Σ); [done|]. apply (H1 q ev q' Hq Hst Hτ).
       by rewrite (chans_of_conv _ _ HΣ).
-    - intros q i o M w q' Hq Hst.
-      destruct (H2 q i o M w q' Hq Hst)
+    - intros q i o w q' Hq Hst.
+      destruct (H2 q i o w q' Hq Hst)
         as (S0 & x & m & U & b & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A6 & A7 & A8 & A9).
       destruct (senv_eqv_lookup _ _ _ _ _ HΣ A1) as (S0' & A1' & Hs0).
       destruct (seqv_unfold_snd S0' S0 m U b S (seqv_sym _ _ Hs0) A2) as (U' & b' & S' & A2' & HU & HS).

@@ -27,7 +27,7 @@ and run `make` again. The root build of theories/ ignores v2.
 | test/Lexer.v | every judgment and token of Appendix A, parsed and printed over dummy carriers |
 | lang/Syntax.v | ends `c⁺` `c⁻`, terms with saturated operators `Op k e` and `ENew ℓ`, the constants of GV as λ-values, substitution, the one renaming `emap` with `cmap` and the link substitution `csub` |
 | lang/Notations.v | `c⁺`, `c⁻`, `o‾` (test/LangNotations.v checks them) |
-| lang/Semantics.v | thread steps, the T-Act rules `t_act_*` and the frame rule `t_act_ctx`, labels with transfer sets |
+| lang/Semantics.v | thread steps, the T-Act rules `t_act_*` and the frame rule `t_act_ctx`, labels carry the moved value (no transfer sets) |
 | lang/Process.v | the one instrumented semantics `istep` (thread ids, events, rules `p_act_*`), its erasure `pstep`, the multiset view `pspec` |
 | lang/Safety.v | `act`, `act_offer_sig` once, progress for terms and configurations, closedness preserved |
 | lang/Harmony.v | a label-free reduction semantics and `harmony` |

@@ -33,7 +33,7 @@ From GV Require Import fuel.FuelMono.
 
 Definition smap (g : cend → cend) (σ : slabel) : slabel :=
   match σ with
-  | SSend o M v => SSend (g o) (set_map g M) (emap g v)
+  | SSend o v => SSend (g o) (emap g v)
   | SRecv o v => SRecv (g o) (emap g v)
   | SClose o => SClose (g o)
   | SSel o i => SSel (g o) i
@@ -46,7 +46,7 @@ Definition lmap (g : cend → cend) (α : tlabel) : tlabel :=
   | LBeta => LBeta
   | LNew ℓ c => LNew ℓ (gch g c)
   | LNewAt κf o c => LNewAt κf (g o) (gch g c)
-  | LSpawn M v => LSpawn (set_map g M) (emap g v)
+  | LSpawn v => LSpawn (emap g v)
   | LSess σ => LSess (smap g σ)
   end.
 
@@ -624,19 +624,17 @@ Section rel.
       { intros o1 Ho1. by apply K4, HXd. }
       rewrite <-Heq. by apply Hac.
     - (* O-Spawn *)
-      intros M w x Hst. destruct (tstep_emap_act _ _ _ _ Hst) as (a & Ha & Ho).
-      destruct a as [| | |v| | | | | |]; simpl in Ho; try contradiction. destruct Ho as [<- ->].
-      destruct (act_offer e (ASpawn v) (LSpawn (fends v) v) Ha (conj eq_refl eq_refl)) as [e0 He0].
-      assert (lmap h (LSpawn (fends v) v) = LSpawn (fends (emap h v)) (emap h v)) as Hl
-        by (simpl; by rewrite fends_emap).
+      intros w x Hst. destruct (tstep_emap_act _ _ _ _ Hst) as (a & Ha & Ho).
+      destruct a as [| | |v| | | | | |]; simpl in Ho; try contradiction. subst w.
+      destruct (act_offer e (ASpawn v) (LSpawn v) Ha eq_refl) as [e0 He0].
+      assert (lmap h (LSpawn v) = LSpawn (emap h v)) as Hl by reflexivity.
       rewrite (tstep_emap_back h h e _ x _ e0 Hst He0 I Hl eq_refl).
-      destruct (H4 _ _ _ He0) as (ΘM & Θr & A1 & -> & A3 & A4 & A5).
+      destruct (H4 _ _ He0) as (ΘM & Θr & A1 & -> & A4 & A5).
       assert (kinj h ΘM) as KM by (eapply kinj_sub; [|exact Hk]; rewrite dom_union_L; set_solver).
       assert (kinj h Θr) as Kr by (eapply kinj_sub; [|exact Hk]; rewrite dom_union_L; set_solver).
       exists (kren h ΘM), (kren h Θr). split_and!.
       + by apply kren_disjoint.
       + by apply kren_union.
-      + by rewrite kren_dom, A3, fends_emap.
       + destruct A4 as (e1 & -> & Hfe & HA). exists (emap h e1).
         split_and!; [done|by rewrite kren_dom, fends_emap, Hfe|].
         intros W' j Θ' w' HW Hj Hd. split.
@@ -650,14 +648,13 @@ Section rel.
           change EUnit with (emap h EUnit). rewrite <-emap_subst1. apply B3; [by right|done].
       + by apply Hac.
     - (* O-Send *)
-      intros o' M w x Hst. destruct (tstep_emap_act _ _ _ _ Hst) as (a & Ha & Ho).
-      destruct a as [| | | | |o v| | | |]; simpl in Ho; try contradiction. destruct Ho as (<- & <- & ->).
-      destruct (act_offer e (ASend o v) (LSess (SSend o (fends v) v)) Ha
-        (conj eq_refl (conj eq_refl eq_refl))) as [e0 He0].
-      assert (lmap h (LSess (SSend o (fends v) v)) = LSess (SSend (h o) (fends (emap h v)) (emap h v))) as Hl
-        by (simpl; by rewrite fends_emap).
+      intros o' w x Hst. destruct (tstep_emap_act _ _ _ _ Hst) as (a & Ha & Ho).
+      destruct a as [| | | | |o v| | | |]; simpl in Ho; try contradiction. destruct Ho as (<- & <-).
+      destruct (act_offer e (ASend o v) (LSess (SSend o v)) Ha
+        (conj eq_refl eq_refl)) as [e0 He0].
+      assert (lmap h (LSess (SSend o v)) = LSess (SSend (h o) (emap h v))) as Hl by reflexivity.
       rewrite (tstep_emap_back h h e _ x _ e0 Hst He0 I Hl eq_refl).
-      destruct (H5 _ _ _ _ He0) as (S0 & x0 & m' & U & b' & S & ΘM & Θr & A1 & A2 & A3 & A4 & A5 & A6 & A7).
+      destruct (H5 _ _ _ He0) as (S0 & x0 & m' & U & b' & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
       assert (dom ΘM ∪ dom Θr ⊆ dom Θ ∖ {[o]}) as Hdd by (rewrite <-dom_union_L, <-A4, dom_delete_L; done).
       assert (kinj h (ΘM ∪ Θr)) as KMr by (rewrite <-A4; apply Hkdel).
       assert (kinj h ΘM) as KM by (eapply kinj_sub; [|exact Hk]; set_solver).
@@ -668,7 +665,6 @@ Section rel.
       + done.
       + by apply kren_disjoint.
       + rewrite <-kren_union by done. rewrite <-A4. rewrite kren_delete; [done|done|by eapply elem_of_dom_2].
-      + by rewrite kren_dom, A5, fends_emap.
       + destruct A6 as [B1 B2]. split.
         * intros Hc. apply HVP; [done|done|]. by apply B1.
         * intros Hc. apply (proj1 (IHl (Datatypes.S n - c_give κ) ltac:(lia) _)); [done|]. by apply B2.

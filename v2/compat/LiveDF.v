@@ -131,8 +131,8 @@ Proof.
       unfold ltof. replace (psize p) with (psize (pmap h p)) by (unfold psize, pmap, emapE; simpl; apply msize_emap).
       rewrite <-Hq. by eapply psize_link.
     + intros Hc. eapply (IHn (S n - _)); [lia|done|done|]. intros m. apply HL'.
-  - intros q i o M w q' Hq Hst. exfalso.
-    destruct (H2 q i o M w q' Hq Hst) as (? & ? & ? & ? & ? & ? & ? & ? & ? & ? & A & _).
+  - intros q i o w q' Hq Hst. exfalso.
+    destruct (H2 q i o w q' Hq Hst) as (? & ? & ? & ? & ? & ? & ? & ? & ? & ? & A & _).
     by rewrite lookup_empty in A.
   - intros q i o w q' Hq Hst. exfalso.
     destruct (H3 q i o w q' Hq Hst) as (? & ? & ? & ? & ? & ? & A & _). by rewrite lookup_empty in A.
