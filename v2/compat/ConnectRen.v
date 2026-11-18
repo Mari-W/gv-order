@@ -187,3 +187,120 @@ Proof.
     | H : ?a = ?b |- _ => apply (f_equal ech) in H; rewrite ?ech_edual in H; congruence
     end.
 Qed.
+
+(** ** Environments after a link of a cut end *)
+
+Lemma kren_csub_eq o1 o2 (Θ : senv) v :
+  Θ !! edual o1 = Some v → o1 ∉ dom Θ → o2 ∉ dom Θ → ech o2 ≠ ech o1 →
+  kren (csub o1 o2) Θ = <[o2 := v]> (delete (edual o1) Θ).
+Proof.
+  intros Hv H1 H2 Hne.
+  assert (kinj (csub o1 o2) Θ) as Hk.
+  { intros a b va vb Ha Hb E.
+    destruct (csub_cases o1 o2 a) as [(Ea & Ra)|[(Ea & Ra)|(Na1 & Na2 & Ra)]];
+    destruct (csub_cases o1 o2 b) as [(Eb & Rb)|[(Eb & Rb)|(Nb1 & Nb2 & Rb)]];
+    rewrite Ra, Rb in E; subst; try done;
+    first [ by destruct (edual_ne o2) | (exfalso; apply (edual_ne o2); by symmetry)
+          | (exfalso; apply H1; by eapply elem_of_dom_2)
+          | (exfalso; apply H2; by eapply elem_of_dom_2) ]. }
+  rewrite <-(insert_delete_id Θ (edual o1) v) at 1 by done.
+  rewrite kren_insert by (by rewrite insert_delete_id).
+  unfold csub at 1. rewrite decide_True by done. f_equal. apply kren_id.
+  intros o Ho. apply elem_of_dom in Ho as [w Hw]. apply lookup_delete_Some in Hw as [Hne' Hw].
+  destruct (csub_cases o1 o2 o) as [(Eo & _)|[(Eo & _)|(_ & _ & ->)]]; [done| |done].
+  exfalso. subst. apply H1. by eapply elem_of_dom_2.
+Qed.
+
+Lemma conn_del Σ1 ΣC C1 Σ2 ΣD C2 o :
+  conn Σ1 ΣC C1 Σ2 ΣD C2 → o ∈ dom ΣC →
+  conn Σ1 (delete o ΣC) C1 Σ2 (delete (edual o) ΣD) C2 ∧ chans_of (delete o ΣC) = chans_of ΣC ∖ {[ech o]}.
+Proof.
+  intros Hc Ho. destruct Hc as [Hd1 Hd2 [Hcd Hct] Hf1 Hf2 HfC H12 H1C H2C HCC HC1 HC2].
+  assert (chans_of (delete o ΣC) = chans_of ΣC ∖ {[ech o]}) as HK.
+  { unfold chans_of. rewrite dom_delete_L. apply set_eq. intros c. rewrite elem_of_difference, !elem_of_map.
+    split.
+    - intros (o' & -> & Ho'). apply elem_of_difference in Ho' as [Ho1 Ho2]. split; [eauto|].
+      intros He%elem_of_singleton. apply ech_eq in He as [->| ->]; [set_solver|]. apply (HfC _ Ho). by rewrite edual_edual.
+    - intros [(o' & -> & Ho') Hn]. exists o'. split; [done|]. apply elem_of_difference. split; [done|].
+      intros ->%elem_of_singleton. by apply Hn, elem_of_singleton. }
+  split; [|done]. constructor.
+  - by apply map_disjoint_delete_r.
+  - by apply map_disjoint_delete_r.
+  - split.
+    + intros o'. rewrite !dom_delete_L, !elem_of_difference, Hcd, !elem_of_singleton.
+      split; intros [? Hn]; split; try done; intros E; apply Hn; [by rewrite <-E, edual_edual|by rewrite E, edual_edual].
+    + intros o' S x Hl. apply lookup_delete_Some in Hl as [Hne Hl]. destruct (Hct _ _ _ Hl) as (S' & ? & ?).
+      exists S'. split; [|done]. rewrite lookup_delete_ne; [done|]. intros E. by apply Hne, edual_inj.
+  - done.
+  - done.
+  - intros o' Ho'. rewrite !dom_delete_L in Ho' |- *. set_solver.
+  - done.
+  - rewrite HK. clear -H1C. set_solver.
+  - rewrite HK. clear -H2C. set_solver.
+  - done.
+  - rewrite HK. clear -HC1. set_solver.
+  - rewrite HK. clear -HC2. set_solver.
+Qed.
+
+(** A link of a cut end o1 with an interface end o2 of the same side. *)
+Lemma conn_link_iface Σ1 ΣC C1 Σ2 ΣD C2 o1 o2 S2 y :
+  conn Σ1 ΣC C1 Σ2 ΣD C2 → o1 ∈ dom ΣC → Σ1 !! o2 = Some (S2, y) →
+  conn (delete o2 Σ1) (delete o1 ΣC) C1 (<[o2 := (S2, y)]> Σ2) (delete (edual o1) ΣD) C2.
+Proof.
+  intros Hc Ho1 Ho2. assert (o2 ∈ dom Σ1) as D2 by (by eapply elem_of_dom_2).
+  pose proof (cls_1 _ _ _ _ _ _ Hc o2 D2) as (N1 & N2 & N3 & N4 & N5 & N6 & N7 & N8 & N9).
+  destruct (conn_del _ _ _ _ _ _ o1 Hc Ho1) as [Hc' HK].
+  destruct Hc' as [Hd1 Hd2 Hcut Hf1 Hf2 HfC H12 H1C H2C HCC HC1 HC2].
+  assert (ech o2 ∈ chans_of Σ1) as Ec by (by apply elem_of_chans_of).
+  assert (chans_of (delete o2 Σ1) ⊆ chans_of Σ1) as S1 by (apply chans_of_mono; rewrite dom_delete_L; set_solver).
+  assert (chans_of (<[o2 := (S2, y)]> Σ2) = {[ech o2]} ∪ chans_of Σ2) as E2.
+  { unfold chans_of. rewrite dom_insert_L, set_map_union_L, set_map_singleton_L. done. }
+  assert (ech o2 ∉ chans_of (delete o2 Σ1)) as Nd.
+  { intros (o' & Ho' & E)%elem_of_chans_of_iff. rewrite dom_delete_L in Ho'. apply elem_of_difference in Ho' as [Ho' Hn].
+    apply ech_eq in E as [->| ->]; [set_solver|]. rewrite edual_edual in N6. done. }
+  assert (ech o2 ∉ chans_of (delete o1 ΣC)) as Nc.
+  { rewrite HK. intros [Hin _]%elem_of_difference. destruct Hc as [_ _ _ _ _ _ _ H1C' _ _ _ _]. by apply (H1C' (ech o2)). }
+  constructor.
+  - apply map_disjoint_delete_l. apply map_disjoint_delete_r. by destruct Hc.
+  - apply map_disjoint_insert_l. split; [|done]. apply not_elem_of_dom. rewrite dom_delete_L. set_solver.
+  - done.
+  - apply (pfree_sub _ Σ1); [rewrite dom_delete_L; set_solver|by destruct Hc].
+  - intros o Ho Ho'. rewrite dom_insert_L in Ho, Ho'. apply elem_of_union in Ho as [Ho|Ho], Ho' as [Ho'|Ho'].
+    + apply elem_of_singleton in Ho, Ho'. subst. by destruct (edual_ne o2).
+    + apply elem_of_singleton in Ho. subst. done.
+    + apply elem_of_singleton in Ho'. rewrite <-Ho', edual_edual in N8. done.
+    + by apply (Hf2 o).
+  - done.
+  - rewrite E2. clear -H12 S1 Nd. set_solver.
+  - clear -H1C S1. set_solver.
+  - rewrite E2. clear -H2C Nc. set_solver.
+  - done.
+  - rewrite E2. clear -HC1 S1 Ec. set_solver.
+  - rewrite E2. clear -HC2 S1 Ec. set_solver.
+Qed.
+
+(** A link of two cut ends of one side fuses the other side on the
+    channel of the kept end. *)
+Lemma fuse_ok_csub_cut o1 o2 Σ p :
+  ech o2 ≠ ech o1 → ¬ pheld Σ p o1 → ¬ pheld Σ p o2 → dpairs {[ech o2]} (kren (csub o1 o2) Σ) →
+  fuse_ok (csub o1 o2) {[ech o2]} Σ p.
+Proof.
+  intros Hne H1 H2 Hdp. split_and!; [by apply csub_dcomm| | | |done].
+  - intros a b Ha Hb E;
+    destruct (csub_cases o1 o2 a) as [(Ea & Ra)|[(Ea & Ra)|(Na1 & Na2 & Ra)]];
+    destruct (csub_cases o1 o2 b) as [(Eb & Rb)|[(Eb & Rb)|(Nb1 & Nb2 & Rb)]];
+    rewrite Ra, Rb in E; subst; try done;
+    first [ by destruct (edual_ne o2) | (exfalso; apply (edual_ne o2); by symmetry) | tauto ].
+  - intros a b Ha Hb E;
+    destruct (csub_cases o1 o2 a) as [(Ea & Ra)|[(Ea & Ra)|(Na1 & Na2 & Ra)]];
+    destruct (csub_cases o1 o2 b) as [(Eb & Rb)|[(Eb & Rb)|(Nb1 & Nb2 & Rb)]];
+    rewrite Ra, Rb in E; rewrite ?Ra; subst; rewrite ?edual_edual in *; try tauto;
+    first [ (right; apply elem_of_singleton; first [done | by rewrite ech_edual | (rewrite E; by rewrite ?ech_edual)
+                                                  | (rewrite <-E; by rewrite ?ech_edual)])
+          | (left; first [done | by rewrite E, ?edual_edual | by rewrite <-E, ?edual_edual]) ].
+  - intros c Hc (c0 & -> & Hc0)%elem_of_map. apply elem_of_singleton in Hc. revert Hc.
+    unfold gch. destruct (csub_cases o1 o2 (EPos c0)) as [(E & ->)|[(E & ->)|(_ & _ & ->)]]; intros Hc.
+    + apply H1. right. rewrite <-(ech_edual o1), <-E. done.
+    + apply H1. right. rewrite <-E. done.
+    + apply H2. right. simpl in Hc. by rewrite <-Hc.
+Qed.

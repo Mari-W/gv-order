@@ -1215,3 +1215,16 @@ The old development in theories/ stays untouched.
   at cost 0, the lemma at the lower level otherwise). `pren_ok_csub_r`:
   csub o1 o2 is a renaming whenever o2 and o2‾ are not held, whatever
   happens to o1. No deviation.
+- S4.23. Links of p1 on two ends it does not restrict (`tau_link_ext1`,
+  compat/ConnectLink.v): Q-Link of p1. The removed end o1 is then a cut
+  end. If the kept end o2 is an interface end of p1, the holder of o1‾
+  in p2 now holds o2, at the type of o1‾, which `Prel_conv` brings to
+  the interface type of o2 (`sdual_trans_l`), and o2 moves from Σ1 to
+  Σ2 (`conn_link_iface`). If o2 is a cut end, p2 holds both ends of the
+  channel of o2 afterwards, a fusion with D = {ech o2}
+  (`fuse_ok_csub_cut`, `kren_csub_eq`, `conn_del`, compat/ConnectRen.v).
+  The order of the two ends in the label is free (`pair_eq`). Note for
+  successors: `tauto` and `set_solver` under the section context of
+  `links` are slow when the goal mixes many unions; split the goal and
+  `clear` first (one `set_solver` took 28 s and failed before the
+  split). No deviation.
