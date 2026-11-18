@@ -832,7 +832,7 @@ Proof. apply map_eq. intros i. rewrite lookup_fmap. destruct (M !! i); simpl; [b
 Lemma istep_local C1 C2 K M1 M2 ev q' :
   M1 ##ₘ M2 → C1 ## C2 ∪ K → istep (C1 ∪ C2 ∪ K, M1 ∪ M2) ev q' → ev_local C1 M1 ev →
   ∃ q1', istep (C1, M1) ev q1' ∧ q' = (q1'.1 ∪ C2 ∪ K, q1'.2 ∪ (emap (ev_ren ev) <$> M2)) ∧
-    q1'.1 ⊆ q'.1 ∧ q1'.1 ## C2 ∪ K.
+    q1'.1 ⊆ q'.1 ∧ q1'.1 ## C2 ∪ K ∧ q1'.2 ##ₘ M2.
 Proof.
   intros Hd HC Hst [Hp Hl].
   assert (∀ i e, (M1 ∪ M2) !! i = Some e → i ∈ dom M1 → M1 !! i = Some e) as Hlk.
@@ -842,26 +842,26 @@ Proof.
     eapply (disj_lookup_n M1 M2); eassumption. }
   inversion Hst; subst; simpl in Hp, Hl; try done.
   - eexists (_, _). split; [eapply p_act_beta; [apply Hlk; [eassumption|set_solver]|eassumption]|]. simpl.
-    rewrite fmap_emap_id. split; [by rewrite insert_union_l|]. set_solver.
+    rewrite fmap_emap_id. split; [by rewrite insert_union_l|]. split; [set_solver|]. split; [set_solver|]. apply map_disjoint_dom; rewrite ?dom_fmap_L, ?dom_insert_L; apply map_disjoint_dom in Hd; repeat match goal with H : (M1 ∪ M2) !! _ = None |- _ => apply lookup_union_None in H as [? ?] end; repeat match goal with H : _ !! _ = None |- _ => apply not_elem_of_dom in H end; set_solver.
   - eexists (_, _). split; [eapply p_act_new; [apply Hlk; [eassumption|set_solver]|eassumption|set_solver|]|]. 
     { intros Hc. match goal with H : c ∉ echans _ |- _ => apply H end. rewrite soup_union by done.
       rewrite echans_disj_union. set_solver. }
-    simpl. rewrite fmap_emap_id. split; [f_equal; [set_solver|by rewrite insert_union_l]|]. set_solver.
+    simpl. rewrite fmap_emap_id. split; [f_equal; [set_solver|by rewrite insert_union_l]|]. split; [set_solver|]. split; [set_solver|]. apply map_disjoint_dom; rewrite ?dom_fmap_L, ?dom_insert_L; apply map_disjoint_dom in Hd; repeat match goal with H : (M1 ∪ M2) !! _ = None |- _ => apply lookup_union_None in H as [? ?] end; repeat match goal with H : _ !! _ = None |- _ => apply not_elem_of_dom in H end; set_solver.
   - eexists (_, _). split; [eapply p_act_new_at; [apply Hlk; [eassumption|set_solver]|eassumption|set_solver|]|].
     { intros Hc. match goal with H : c ∉ echans _ |- _ => apply H end. rewrite soup_union by done.
       rewrite echans_disj_union. set_solver. }
-    simpl. rewrite fmap_emap_id. split; [f_equal; [set_solver|by rewrite insert_union_l]|]. set_solver.
+    simpl. rewrite fmap_emap_id. split; [f_equal; [set_solver|by rewrite insert_union_l]|]. split; [set_solver|]. split; [set_solver|]. apply map_disjoint_dom; rewrite ?dom_fmap_L, ?dom_insert_L; apply map_disjoint_dom in Hd; repeat match goal with H : (M1 ∪ M2) !! _ = None |- _ => apply lookup_union_None in H as [? ?] end; repeat match goal with H : _ !! _ = None |- _ => apply not_elem_of_dom in H end; set_solver.
   - eexists (_, _). split; [eapply p_act_spawn; [apply Hlk; [eassumption|set_solver]|eassumption|]|].
     { match goal with H : (M1 ∪ M2) !! j = None |- _ => apply lookup_union_None in H as [? _]; done end. }
-    simpl. rewrite fmap_emap_id. split; [by rewrite !insert_union_l|]. set_solver.
+    simpl. rewrite fmap_emap_id. split; [by rewrite !insert_union_l|]. split; [set_solver|]. split; [set_solver|]. apply map_disjoint_dom; rewrite ?dom_fmap_L, ?dom_insert_L; apply map_disjoint_dom in Hd; repeat match goal with H : (M1 ∪ M2) !! _ = None |- _ => apply lookup_union_None in H as [? ?] end; repeat match goal with H : _ !! _ = None |- _ => apply not_elem_of_dom in H end; set_solver.
   - eexists (_, _). split; [eapply p_act_msg; [done|apply Hlk; [eassumption|set_solver]|apply Hlk; [eassumption|set_solver]|eassumption|eassumption]|].
-    simpl. rewrite fmap_emap_id. split; [by rewrite !insert_union_l|]. set_solver.
+    simpl. rewrite fmap_emap_id. split; [by rewrite !insert_union_l|]. split; [set_solver|]. split; [set_solver|]. apply map_disjoint_dom; rewrite ?dom_fmap_L, ?dom_insert_L; apply map_disjoint_dom in Hd; repeat match goal with H : (M1 ∪ M2) !! _ = None |- _ => apply lookup_union_None in H as [? ?] end; repeat match goal with H : _ !! _ = None |- _ => apply not_elem_of_dom in H end; set_solver.
   - eexists (_, _). split; [eapply p_act_close; [done|apply Hlk; [eassumption|set_solver]|apply Hlk; [eassumption|set_solver]|eassumption|eassumption|done]|].
-    simpl. rewrite fmap_emap_id. split; [f_equal; [set_solver|by rewrite !insert_union_l]|]. set_solver.
+    simpl. rewrite fmap_emap_id. split; [f_equal; [set_solver|by rewrite !insert_union_l]|]. split; [set_solver|]. split; [set_solver|]. apply map_disjoint_dom; rewrite ?dom_fmap_L, ?dom_insert_L; apply map_disjoint_dom in Hd; repeat match goal with H : (M1 ∪ M2) !! _ = None |- _ => apply lookup_union_None in H as [? ?] end; repeat match goal with H : _ !! _ = None |- _ => apply not_elem_of_dom in H end; set_solver.
   - eexists (_, _). split; [eapply p_act_choice; [done|apply Hlk; [eassumption|set_solver]|apply Hlk; [eassumption|set_solver]|eassumption|eassumption]|].
-    simpl. rewrite fmap_emap_id. split; [by rewrite !insert_union_l|]. set_solver.
+    simpl. rewrite fmap_emap_id. split; [by rewrite !insert_union_l|]. split; [set_solver|]. split; [set_solver|]. apply map_disjoint_dom; rewrite ?dom_fmap_L, ?dom_insert_L; apply map_disjoint_dom in Hd; repeat match goal with H : (M1 ∪ M2) !! _ = None |- _ => apply lookup_union_None in H as [? ?] end; repeat match goal with H : _ !! _ = None |- _ => apply not_elem_of_dom in H end; set_solver.
   - eexists (_, _). split; [eapply p_act_link; [apply Hlk; [eassumption|set_solver]|eassumption|done]|].
-    simpl. split; [f_equal; [set_solver|by rewrite insert_union_l, map_fmap_union]|]. set_solver.
+    simpl. split; [f_equal; [set_solver|by rewrite insert_union_l, map_fmap_union]|]. split; [set_solver|]. split; [set_solver|]. apply map_disjoint_dom; rewrite ?dom_fmap_L, ?dom_insert_L; apply map_disjoint_dom in Hd; repeat match goal with H : (M1 ∪ M2) !! _ = None |- _ => apply lookup_union_None in H as [? ?] end; repeat match goal with H : _ !! _ = None |- _ => apply not_elem_of_dom in H end; set_solver.
 Qed.
 
 (** ** Induction over the steps of cost 0, closed under fusion *)
@@ -893,3 +893,57 @@ Proof.
   intros H. pose proof (H id ∅ (fuse_ok_id Σ p)) as H'.
   by rewrite sdrop_empty, kren_id_map, pfuse_empty, pmap_id in H'.
 Qed.
+
+(** ** Renamings that fix every held end *)
+
+Lemma csub_dcomm_all o1 o2 : dcomm (csub o1 o2).
+Proof.
+  destruct (decide (ech o2 = ech o1)) as [He|He]; [|by apply csub_dcomm].
+  symmetry in He. apply ech_eq in He as [->| ->]; intros o; unfold csub;
+    repeat case_decide; subst; rewrite ?edual_edual in *; try done;
+    repeat match goal with
+    | H : edual ?a = ?a |- _ => by destruct (edual_ne a)
+    | H : ?a = edual ?a |- _ => by destruct (edual_ne a)
+    | H : edual ?a = edual ?b |- _ => apply edual_inj in H; subst
+    | H : ?a ≠ ?a |- _ => by destruct H
+    end; congruence.
+Qed.
+
+Lemma ren_held_id (g : cend → cend) (Σ : senv) (p : proc) :
+  dcomm g → (∀ o, pheld Σ p o → g o = o) →
+  pren_ok g Σ p ∧ kren g Σ = Σ ∧ (pmap g p).1 = p.1.
+Proof.
+  intros Hd Hid. split_and!.
+  - split_and!; [done| |].
+    + intros o1 o2 H1 H2. by rewrite (Hid o1 H1), (Hid o2 H2).
+    + intros o1 o2 H1 H2. by rewrite (Hid o1 H1), (Hid o2 H2).
+  - apply kren_id. intros o Ho. apply Hid. by left.
+  - unfold pmap. simpl. apply set_eq. intros c. rewrite elem_of_map. split.
+    + intros (c' & -> & Hc'). unfold gch. rewrite Hid; [done|by right].
+    + intros Hc. exists c. split; [|done]. unfold gch. rewrite Hid; [done|by right].
+Qed.
+
+Lemma csub_held_id o1 o2 (Σ : senv) (p : proc) :
+  ech o1 ∉ chans_of Σ ∪ p.1 → ∀ o, pheld Σ p o → csub o1 o2 o = o.
+Proof.
+  intros Hn o [Ho|Ho]; apply csub_ne; intros He; apply Hn; rewrite <-He; [apply elem_of_union_l; by apply elem_of_chans_of|set_solver].
+Qed.
+
+(** A renaming that fixes the held ends keeps a process in P at its
+    interface. *)
+Lemma Prel_ren_id κ m W Σ T p g :
+  dcomm g → (∀ o, pheld Σ p o → g o = o) → Prel κ m W Σ T p → Prel κ m W Σ T (pmap g p).
+Proof.
+  intros Hd Hid HP. destruct (ren_held_id g Σ p Hd Hid) as (Hok & Hk & _).
+  rewrite <-Hk at 1. by apply Prel_rename.
+Qed.
+
+Lemma conn_C1 Σ1 ΣC C1 Σ2 ΣD C2 C1' :
+  conn Σ1 ΣC C1 Σ2 ΣD C2 → C1' ## C2 ∪ chans_of ΣC → C1' ## chans_of Σ1 ∪ chans_of Σ2 →
+  conn Σ1 ΣC C1' Σ2 ΣD C2.
+Proof. intros [] H1 H2. constructor; try done; set_solver. Qed.
+
+Lemma conn_C2 Σ1 ΣC C1 Σ2 ΣD C2 C2' :
+  conn Σ1 ΣC C1 Σ2 ΣD C2 → C2' ## C1 ∪ chans_of ΣC → C2' ## chans_of Σ1 ∪ chans_of Σ2 →
+  conn Σ1 ΣC C1 Σ2 ΣD C2'.
+Proof. intros [] H1 H2. constructor; try done; set_solver. Qed.
