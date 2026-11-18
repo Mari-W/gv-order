@@ -36,10 +36,6 @@ Proof. destruct q as [C M]. apply compat_enabled. Qed.
 
 (** ** The measure *)
 
-Definition kval (K : own) (o : cend) : nat :=
-  match K !! o with Some h => default 0 h.(h_ctr) | None => 0 end.
-
-Definition ksum (tk : nat → nat) (q : config) : nat := sum_list_with tk (elements (dom q.2)).
 
 Section run.
   #[local] Set Default Proof Using "All".

@@ -90,6 +90,7 @@ soup/SoupLink.v
 soup/SoupRun.v
 soup/SoupTau.v
 soup/LFLocal.v
+soup/LFRunFacts.v
 soup/LFEvents.v
 soup/LFAdequacy.v
 CheckAll.v
