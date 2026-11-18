@@ -121,14 +121,12 @@ Inductive typed (W : world) (N : fuel) :
       typed W N Θ Γ Δ F (EClose e) TUnit None (fadd c0 (Some 1)) t0
   | e_select (i : bool) Θ Γ Δ F e S0 x S1 S2 a c0 t0 :
       unfoldS S0 = SPlus S1 S2 →
-      slt W Γ x (x·(bfield i)) →
       ub_below_s W Γ (Some x) F →
       typed W N Θ Γ Δ F e (TSess S0 x) a c0 t0 →
       typed W N Θ Γ Δ F (ESel i e) (TSess (if i then S2 else S1) (sel_pt x i)) N
         (fadd c0 (Some 1)) t0
   | e_branch Θ Γ Δ F e S0 x S1 S2 a c0 t0 :
       unfoldS S0 = SWith S1 S2 →
-      slt W Γ x (sel_pt x false) → slt W Γ x (sel_pt x true) →
       ub_below_s W Γ (Some x) F →
       typed W N Θ Γ Δ F e (TSess S0 x) a c0 t0 →
       typed W N Θ Γ Δ F (EBra e)
@@ -253,12 +251,11 @@ Inductive dftyped (W : world) : tenv → hctx → lenv → sfuture → expr → 
       dftyped W Θ Γ Δ F e (TSess S0 x) →
       dftyped W Θ Γ Δ F (EClose e) TUnit
   | d_select (i : bool) Θ Γ Δ F e S0 x S1 S2 :
-      unfoldS S0 = SPlus S1 S2 → slt W Γ x (x·(bfield i)) → ub_below_s W Γ (Some x) F →
+      unfoldS S0 = SPlus S1 S2 → ub_below_s W Γ (Some x) F →
       dftyped W Θ Γ Δ F e (TSess S0 x) →
       dftyped W Θ Γ Δ F (ESel i e) (TSess (if i then S2 else S1) (sel_pt x i))
   | d_branch Θ Γ Δ F e S0 x S1 S2 a1 a2 :
       unfoldS S0 = SWith S1 S2 →
-      slt W Γ x (sel_pt x false) → slt W Γ x (sel_pt x true) →
       ub_below_s W Γ (Some x) F →
       dftyped W Θ Γ Δ F e (TSess S0 x) →
       dftyped W Θ Γ Δ F (EBra e) (TSum (TSess S1 (bra_pt x false)) a1 (TSess S2 (bra_pt x true)) a2)

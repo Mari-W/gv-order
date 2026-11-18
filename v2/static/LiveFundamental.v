@@ -47,8 +47,8 @@ Section live.
       |Θ Γ Δ F e S0 x m T b S ap aS Hu Hsc Hbot Hh Hub H IH
       |Θ Γ Δ F e S0 x m T b S b' a' Hu Hsc Hub H IH
       |Θ Γ Δ F e S0 x Hu Hub H IH
-      |i Θ Γ Δ F e S0 x S1 S2 Hu Hf Hub H IH
-      |Θ Γ Δ F e S0 x S1 S2 a1 a2 Hu Hf1 Hf2 Hub H IH
+      |i Θ Γ Δ F e S0 x S1 S2 Hu Hub H IH
+      |Θ Γ Δ F e S0 x S1 S2 a1 a2 Hu Hub H IH
       |Θ Γ Δ F e S x a1 a2 H IH
       |Θ Γ Δ F e a1 H IH
       |Θ Γ Δ F e ub lb c' t' h a1 aU H IH

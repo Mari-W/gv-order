@@ -1275,6 +1275,10 @@ first, in stage S2.
   `fends w` where it read M, because the extruded part Θe is defined
   from it. F-Spawn, F-Send and the soup update hand over `fends v`. No
   clause is added.
+- E-Select, E-Branch, D-Select and D-Branch lose their order premises
+  (author, 2026-11-18): `slt W Γ x (x·(bfield i))` at select and
+  `slt W Γ x (sel_pt x false)`, `slt W Γ x (sel_pt x true)` at branch.
+  No semantic lemma reads them.
 
 ## 5  Open decisions for the author
 

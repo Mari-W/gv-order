@@ -574,14 +574,11 @@ Proof.
   - (* E-Select *)
     rewrite pt_inst_sel.
     eapply e_select with (x := pt_inst σ x);
-      [done| |by apply (ub_below_s_pinst W Hwf σ Γ Γ' (Some x))|by apply IHtyped].
-    rewrite <-pt_inst_field. by eapply slt_pinst.
+      [done|by apply (ub_below_s_pinst W Hwf σ Γ Γ' (Some x))|by apply IHtyped].
   - (* E-Branch *)
     rewrite !pt_inst_bra.
     eapply e_branch with (x := pt_inst σ x);
-      [done| | |by apply (ub_below_s_pinst W Hwf σ Γ Γ' (Some x))|by apply IHtyped].
-    + rewrite <-pt_inst_sel. by eapply slt_pinst.
-    + rewrite <-pt_inst_sel. by eapply slt_pinst.
+      [done|by apply (ub_below_s_pinst W Hwf σ Γ Γ' (Some x))|by apply IHtyped].
   - (* E-Link *)
     specialize (IHtyped σ Γ' Hi). cbn [pinst_ty] in IHtyped. rewrite pt_inst_dual in IHtyped.
     eapply e_link; [exact IHtyped|done].

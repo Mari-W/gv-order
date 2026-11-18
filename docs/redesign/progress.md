@@ -1860,4 +1860,13 @@ The old development in theories/ stays untouched.
   `step_msg`, `tau_msg12`, `tau_msg21`, `ext_send`, `padmin_spawn` drop
   their M argument and read `fends v`. CheckAll drops `tstep_transfer`,
   306 results, all closed.
+- L.6. Select and branch without order premises (decision of
+  2026-11-18). `e_select` and `d_select` drop `slt W Γ x (x·(bfield i))`,
+  `e_branch` and `d_branch` drop `slt W Γ x (sel_pt x false)` and
+  `slt W Γ x (sel_pt x true)` (static/Typing.v). `gen_e_select`,
+  `gen_e_branch`, `later_select`, `later_branch`, `cost_e_select` and
+  `cost_e_branch` never took them. Only arity sites change: renaming
+  (static/Renaming.v), point substitution (static/PointSubst.v),
+  conservativity and the intro patterns of the two fundamental
+  theorems. No example used the premises. 306 results, all closed.
 

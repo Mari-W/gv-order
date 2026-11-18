@@ -822,11 +822,9 @@ Section gmap_typed.
     - (* E-Select *)
       assert (gmap_sty r (if i then S2 else S1) = if i then gmap_sty r S2 else gmap_sty r S1) as ->
         by (by destruct i).
-      eapply e_select with (x := pt_gmap r x); [by rewrite unfoldS_gmap, H|by apply (slt_gmap W f r Hwf Hr _ x (x·(bfield i)))
+      eapply e_select with (x := pt_gmap r x); [by rewrite unfoldS_gmap, H
                        |by apply (ub_below_s_gmap W f r Hwf Hr _ (Some x))|exact IHtyped].
     - eapply e_branch with (x := pt_gmap r x); [by rewrite unfoldS_gmap, H
-                       |by apply (slt_gmap W f r Hwf Hr _ x (sel_pt x false))
-                       |by apply (slt_gmap W f r Hwf Hr _ x (sel_pt x true))
                        |by apply (ub_below_s_gmap W f r Hwf Hr _ (Some x))|exact IHtyped].
     - eapply e_link with (x := pt_gmap r x); [|done]. rewrite <-gmap_dual. exact IHtyped.
     - eapply e_spawn_lam; [by apply thage_gmap|by apply lage_gmap|].
