@@ -34,7 +34,7 @@ Definition amap (g : cend → cend) (a : action) : action :=
 
 Lemma act_op_emap g k v : act_op k (emap g v) = amap g <$> act_op k v.
 Proof.
-  destruct k, v as [| | | | |v1 v2| | | | | | | | |]; simpl; try done.
+  destruct k, v as [| | | | |v1 v2| | | | | | | |]; simpl; try done.
   all: destruct v1, v2; done.
 Qed.
 
@@ -45,7 +45,6 @@ Proof.
   - by destruct (is_val e1).
   - destruct (is_val e1); [|done]. by destruct e1.
   - destruct (is_val e1); [|done]. by destruct e1.
-  - by destruct (is_val e1).
   - destruct (is_val e1); [|done]. by destruct e1.
   - destruct (is_val e); [|done]. apply act_op_emap.
 Qed.

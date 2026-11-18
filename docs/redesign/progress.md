@@ -1773,3 +1773,31 @@ The old development in theories/ stays untouched.
   `age_credit`. CheckAll lists `Vfuel_age`, `Vfuel_age_above`,
   `idle_age_cex`, `W_ctl_lfworld`, `ctl_lftyped` and `ctl_lock_free` in
   place of `idle_credit_falls`, 306 results, all closed.
+- L.1. let is a derived form (decision of 2026-11-18). The constructor
+  `ELet` of `expr` is gone, with T-Act-Let, the frame `FLet`, `HRedLet`,
+  E-Let, D-Let, `gl_let`, `gl_tick_let`, `acts_let1`, `acts_let2` and
+  every case for them (renaming, substitution, closedness, `fends`,
+  `emap`, `relabel`, `act`, safety, the fundamental theorems, cost/Exact.v).
+  `ELet e1 e2` is now the Definition `LetP (Pair e1 EUnit) (LetU (Var 0)
+  (rename S e2))` (lang/Syntax.v, `simpl never`). The old rules are
+  lemmas with the same statements: `e_let` and `d_let`
+  (static/Weakening.v), `gl_let`, `gl_tick_let`, `acts_let1`, `acts_let2`
+  (static/Guard.v). `e_let` gives ⟨e1, ∗⟩ the whole context at E-Pair,
+  ages ∗'s empty context by c1, takes u at E-LetU and renames e2 by
+  `typed_weaken_head`. The costs come out as fadd c1 c2 and tseq t1 t2
+  up to 0 and `tid`. `d_let` needs the new `dftyped_rename` and
+  `dftyped_weaken_head`, the projection of `typed_rename`. The guard
+  needs `guard_rename_fwd` and `acts_rename`, the converses of the
+  existing lemmas. The semantic lemmas of the primitive let,
+  `gen_e_let`, `later_let` and `cost_e_let`, are gone, because the
+  fundamental theorems no longer have the case. `cost_e_let` leaves
+  CheckAll. No example changes its cost or transformer: the encoding
+  takes one more β step at run time, and typing charges β nothing.
+  examples/Tools.v exports static.Weakening for `d_let`.
+- L.2. live ⊆ DF asks `prim T` and `boxfree T` (decision of
+  2026-11-18). `tshape`, `tshape_pinst` and `Vrel_shape` are gone.
+  `boxfree` (compat/LiveDF.v) rules out □ inside ∗, ⊗ and ⊕, and
+  `Vrel_boxfree` is `Vrel_shape` by induction on `prim`.
+  `live_sub_df W T p : prim T → boxfree T → ∅ ⊫_W p : T → ∅ ⊨_W p : T`.
+  CheckAll drops `cost_e_let` and lists `e_let` and `d_let`, 307
+  results, all closed.

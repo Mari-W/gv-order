@@ -74,8 +74,6 @@ Section emap.
       by rewrite tenv_heads_kmap.
     - eapply e_letp; [by apply tsplit_kmap|done| |by apply thage_kmap|done|done|done].
       by rewrite tenv_heads_kmap.
-    - eapply e_let; [by apply tsplit_kmap|done| |by apply thage_kmap|done|done|done].
-      by rewrite tenv_heads_kmap.
     - by eapply e_inj1.
     - by eapply e_inj2.
     - eapply e_case; [by apply tsplit_kmap|done| |by apply thage_kmap|done|done|done|done].
@@ -728,7 +726,6 @@ Fixpoint relabel (f : family → family) (e : expr) : expr :=
   | Pair e1 e2 => Pair (relabel f e1) (relabel f e2)
   | LetU e1 e2 => LetU (relabel f e1) (relabel f e2)
   | LetP e1 e2 => LetP (relabel f e1) (relabel f e2)
-  | ELet e1 e2 => ELet (relabel f e1) (relabel f e2)
   | Inj1 e => Inj1 (relabel f e)
   | Inj2 e => Inj2 (relabel f e)
   | Case e e1 e2 => Case (relabel f e) (relabel f e1) (relabel f e2)
@@ -786,9 +783,6 @@ Section gmap_typed.
                      |by apply lage_gmap| |done].
       + heads_g. exact IHtyped1.
       + exact IHtyped2.
-    - eapply e_let; [by apply tsplit_gmap|by apply lenv_split_gmap| |by apply thage_gmap
-                    |by apply lage_gmap|exact IHtyped2|done].
-      heads_g. exact IHtyped1.
     - by eapply e_inj1.
     - by eapply e_inj2.
     - eapply e_case; [by apply tsplit_gmap|by apply lenv_split_gmap| |by apply thage_gmap

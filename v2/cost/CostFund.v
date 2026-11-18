@@ -23,7 +23,6 @@ Proof.
   - by eapply cost_e_pair.
   - by eapply cost_e_letu.
   - by eapply cost_e_letp.
-  - by eapply cost_e_let.
   - by apply cost_e_inj1.
   - by apply cost_e_inj2.
   - by eapply cost_e_case.

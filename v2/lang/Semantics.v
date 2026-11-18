@@ -47,10 +47,6 @@ Inductive head_step : expr → tlabel → expr → Prop :=
   | t_act_app e v :                                     (* T-Act-App *)
       is_val v →
       head_step (App (Lam e) v) LBeta (subst1 v e)
-  | t_act_let v e :                                     (* T-Act-Let *)
-      (* a let is no closure: the value goes straight into the body *)
-      is_val v →
-      head_step (ELet v e) LBeta (subst1 v e)
   | t_act_let_unit e :                                  (* T-Act-Let-Unit *)
       head_step (LetU EUnit e) LBeta e
   | t_act_let_pair u v e :                              (* T-Act-Let-Pair *)
@@ -100,7 +96,6 @@ Inductive frame :=
   | FPairR (v1 : expr)
   | FLetU (e2 : expr)
   | FLetP (e2 : expr)
-  | FLet (e2 : expr)
   | FInj1
   | FInj2
   | FCase (e1 e2 : expr)
@@ -114,7 +109,6 @@ Definition fill_frame (f : frame) (e : expr) : expr :=
   | FPairR v1 => Pair v1 e
   | FLetU e2 => LetU e e2
   | FLetP e2 => LetP e e2
-  | FLet e2 => ELet e e2
   | FInj1 => Inj1 e
   | FInj2 => Inj2 e
   | FCase e1 e2 => Case e e1 e2
@@ -252,7 +246,7 @@ Qed.
 
 Lemma fchans_fill f e : fchans (fill_frame f e) =
   fchans e ∪ match f with
-             | FAppL e2 | FAppR e2 | FPairL e2 | FPairR e2 | FLetU e2 | FLetP e2 | FLet e2 => fchans e2
+             | FAppL e2 | FAppR e2 | FPairL e2 | FPairR e2 | FLetU e2 | FLetP e2 => fchans e2
              | FCase e1 e2 => fchans e1 ∪ fchans e2
              | _ => ∅
              end.

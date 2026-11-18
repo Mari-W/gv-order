@@ -373,7 +373,6 @@ Definition frame_emap (g : cend → cend) (f : frame) : frame :=
   | FPairR v1 => FPairR (emap g v1)
   | FLetU e2 => FLetU (emap g e2)
   | FLetP e2 => FLetP (emap g e2)
-  | FLet e2 => FLet (emap g e2)
   | FInj1 => FInj1
   | FInj2 => FInj2
   | FCase e1 e2 => FCase (emap g e1) (emap g e2)

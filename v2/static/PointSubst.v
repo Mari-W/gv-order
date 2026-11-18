@@ -536,9 +536,6 @@ Proof.
   - eapply e_letp; [by apply tsplit_pinst|by apply lenv_split_pinst| |by apply thage_pinst
                    |by apply lage_pinst|by apply IHtyped2|done].
     heads_p. by apply IHtyped1.
-  - eapply e_let; [by apply tsplit_pinst|by apply lenv_split_pinst| |by apply thage_pinst
-                  |by apply lage_pinst|by apply IHtyped2|done].
-    heads_p. by apply IHtyped1.
   - by eapply e_inj1, IHtyped.
   - by eapply e_inj2, IHtyped.
   - eapply e_case; [by apply tsplit_pinst|by apply lenv_split_pinst| |by apply thage_pinst

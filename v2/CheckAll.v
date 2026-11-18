@@ -60,6 +60,8 @@ Print Assumptions conservative.
 Print Assumptions typed_wext.
 Print Assumptions typed_rename.
 Print Assumptions typed_insert_none.
+Print Assumptions e_let.
+Print Assumptions d_let.
 Print Assumptions typed_emap.
 Print Assumptions typed_gmap.
 Print Assumptions typed_grename.
@@ -158,7 +160,6 @@ Print Assumptions cost_e_app.
 Print Assumptions cost_e_abs.
 Print Assumptions cost_e_box.
 Print Assumptions cost_e_spawn_lam.
-Print Assumptions cost_e_let.
 Print Assumptions cost_fundamental.
 Print Assumptions fsem_of_cost.
 Print Assumptions fw_fsem.

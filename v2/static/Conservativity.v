@@ -257,9 +257,6 @@ Proof.
   - eapply e_letp; [by apply tsplit_df|by apply lenv_split_df| |apply thage_df|apply lage_df| |apply tok_inf].
     + heads_df. exact IHdftyped1.
     + rewrite !fadd_0_l. exact IHdftyped2.
-  - eapply e_let; [by apply tsplit_df|by apply lenv_split_df| |apply thage_df|apply lage_df|exact IHdftyped2
-                  |apply tok_inf].
-    heads_df. exact IHdftyped1.
   - by eapply e_inj1.
   - by eapply e_inj2.
   - eapply e_case; [by apply tsplit_df|by apply lenv_split_df| |apply thage_df|apply lage_df| | |apply tok_inf].
@@ -384,9 +381,6 @@ Proof.
     heads_df. exact IHtyped1.
   - df_ctx.
     eapply d_letp; [by apply tsplit_df|by apply lenv_split_df| |exact IHtyped2].
-    heads_df. exact IHtyped1.
-  - df_ctx.
-    eapply d_let; [by apply tsplit_df|by apply lenv_split_df| |exact IHtyped2].
     heads_df. exact IHtyped1.
   - by eapply d_inj1.
   - by eapply d_inj2.

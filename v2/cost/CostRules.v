@@ -377,32 +377,6 @@ Proof.
   - apply map_disjoint_union_l. split; [by apply map_disjoint_sym|done].
 Qed.
 
-Lemma cost_e_let N Θ Θ1 Θ2 Θ2' Δ Δ1 Δ2 Δ2' e1 e2 T1 a1 T aT c1 t1 c2 t2 :
-  tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-  csem N Θ1 Δ1 e1 T1 a1 c1 t1 → thage c1 Θ2 Θ2' → lage c1 Δ2 Δ2' →
-  csem N Θ2' (Some (T1, a1) :: Δ2') e2 T aT c2 t2 → tok t1 t2 →
-  csem N Θ Δ (ELet e1 e2) T aT (fadd c1 c2) (tseq t1 t2).
-Proof.
-  intros Hs Hl Hc1 HaT HaD Hc2 Hok N' n g γ Π φ r tk HN HE Hm.
-  destruct (envf_split _ _ _ _ _ _ _ _ _ _ _ _ Hs Hl HE) as (Π1 & Π2 & φ1 & φ2 & HdΠ & Hdφ & -> & -> & HE1 & HE2).
-  destruct (seq_sound _ _ _ _ Hok Hm) as (r1 & Hm1 & Hm2).
-  change (subst γ (emap g (ELet e1 e2))) with
-    (fill_frame ((λ γ g, FLet (subst (up γ) (emap g e2))) γ g) (subst γ (emap g e1))).
-  eapply (csem_bind1 N Θ1 Δ1 e1 T1 a1 c1 t1 Θ2 Θ2' Δ2 Δ2' (λ γ g, FLet (subst (up γ) (emap g e2))) _ _ r
-    N' n g γ Π1 φ1 Π2 φ2 tk r1);
-    [intros g' γ0 g0; simpl; by rewrite emap_subst_up|done|exact Hc1|done|done|apply fle_fadd_l'
-    |done|done|done|done|done|exact Hm1|].
-  intros N'' j g' γ' Π' φ' i v Πv φv tk' HN' Hj Hi Hv Hr HE' HV HdΠ' Hdφ'. simpl.
-  destruct j as [|j]; [apply FuelE_0|].
-  apply (FuelE_beta _ _ _ _ _ _ _ _ [] _ (subst1 v (subst (up γ') (emap g' e2))));
-    [constructor|by constructor|]. simpl. rewrite subst1_subst.
-  rewrite (map_union_comm Πv Π'), (map_union_comm φv φ') by done.
-  eapply FuelE_frame_mono; [by apply fle_frame_seq|].
-  apply Hc2; [by eapply rle_trans| |by eapply meets_mono].
-  apply envf_cons; [(eapply envf_down; [|exact HE']; lia)|(eapply Vfuel_down; [|exact HV]; lia)
-                   |by apply map_disjoint_sym|by apply map_disjoint_sym].
-Qed.
-
 Lemma meets_tmax t1 t2 r tk : meets (tmax t1 t2) r tk → meets t1 r tk ∧ meets t2 r tk.
 Proof.
   destruct t1 as [[s1|] [b1|]], t2 as [[s2|] [b2|]]; unfold meets, tmax, tapp, fmax; simpl; try done.

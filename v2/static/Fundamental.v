@@ -334,7 +334,6 @@ Section fund.
       |Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e1 e2 T1 a1 T2 a2 Hsp Hl H1 IH1 H2 IH2
       |Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e1 e2 T Hsp Hl H1 IH1 H2 IH2
       |Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e1 e2 T1 a1 T2 a2 b1 b2 T Hsp Hl H1 IH1 H2 IH2
-      |Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e1 e2 T1 b1 T Hsp Hl H1 IH1 H2 IH2
       |Θ Γ Δ F e T a U b H IH
       |Θ Γ Δ F e T a U b H IH
       |Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e e1 e2 T1 a1 T2 a2 b1 b2 T Hsp Hl H0 IH0 H1 IH1 H2 IH2
@@ -391,11 +390,6 @@ Section fund.
       heads_p. fut.
     - (* D-LetP *)
       eapply (gen_e_letp _ _ _ _ _ _ _ _ _ _ _ (pinst_ty σ T1) a1 (pinst_ty σ T2) a2 b1 b2);
-        [by apply tsplit_pinst|by apply lenv_split_pinst| |by apply IH2].
-      intros B'. eapply sem_typed_at_future; [|apply (IH1 W1 σ ρ (B ∪ B') HW Hs)].
-      heads_p. fut.
-    - (* D-Let *)
-      eapply (gen_e_let _ _ _ _ _ _ _ _ _ _ _ (pinst_ty σ T1) b1);
         [by apply tsplit_pinst|by apply lenv_split_pinst| |by apply IH2].
       intros B'. eapply sem_typed_at_future; [|apply (IH1 W1 σ ρ (B ∪ B') HW Hs)].
       heads_p. fut.

@@ -1248,6 +1248,17 @@ first, in stage S2.
   in the fuel instead would make counters depend on the index (Q5).
   Without `age_idle` the controller (#20) types at no finite N (C.6,
   examples/LFController.v).
+- let is a derived form (author, 2026-11-18). This replaces Q13.
+  `let x = e1 in e2` := `let ⟨x, u⟩ = ⟨e1, ∗⟩ in let ∗ = u in e2`
+  (`ELet`, lang/Syntax.v), with e2 renamed by one. The term former, its
+  τ step T-Act-Let, its frame and E-Let, D-Let and the guard rules of
+  let are gone. E-Let, D-Let, the guard rules and `acts` of let are
+  admissible lemmas under their old names. The encoding takes two β
+  steps where the primitive took one, and every cost and transformer
+  stays as it was.
+- live ⊆ DF asks `prim T` and `boxfree T` (author, 2026-11-18). `tshape`
+  is gone. A closed process has a `prim` result, and `boxfree` rules
+  out □, so the result is built from ∗, ⊗ and ⊕.
 
 ## 5  Open decisions for the author
 

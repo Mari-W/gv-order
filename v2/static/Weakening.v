@@ -70,7 +70,6 @@ Proof.
   - eapply e_pair; eauto.
   - eapply e_letu; eauto.
   - eapply e_letp; eauto.
-  - eapply e_let; eauto.
   - by eapply e_inj1.
   - by eapply e_inj2.
   - eapply e_case; eauto.
@@ -692,11 +691,6 @@ Proof.
     eapply e_letp; [done|exact Hs| |done|exact Ha| |done].
     + rewrite (lren_heads _ _ _ Hr2), (lren_bot _ _ _ Hr2). by apply IHtyped1.
     + by apply IHtyped2, lren_up, lren_up.
-  - (* E-Let *)
-    ren_split Hr.
-    eapply e_let; [done|exact Hs| |done|exact Ha| |done].
-    + rewrite (lren_heads _ _ _ Hr2), (lren_bot _ _ _ Hr2). by apply IHtyped1.
-    + by apply IHtyped2, lren_up.
   - by eapply e_inj1, IHtyped.
   - by eapply e_inj2, IHtyped.
   - ren_split Hr.
@@ -744,3 +738,201 @@ Proof.
   intros H. eapply typed_rename; [exact H|]. apply lren_inj; [done|by intros ?? [=]|].
   intros [|y] σ Hy; [done|]. by exists y.
 Qed.
+
+(** *** Renaming in the deadlock-freedom projection *)
+
+Local Ltac dren_split Hr :=
+  match goal with
+  | Hs0 : lenv_split _ _ _ |- _ =>
+      destruct (lren_split _ _ _ _ _ Hs0 Hr) as (Δ1r & Δ2r & Hs & Hr1 & Hr2)
+  end.
+
+Theorem dftyped_rename W Θ Γ Δ F e T :
+  dftyped W Θ Γ Δ F e T →
+  ∀ r Δ', lren r Δ Δ' → dftyped W Θ Γ Δ' F (rename r e) T.
+Proof.
+  induction 1; intros r Δr Hr; simpl.
+  - destruct (lren_empty _ _ _ H Hr) as [Hw He]. eapply d_weak; [exact Hw|]. by apply d_unit.
+  - (* D-Var *)
+    destruct H as [Hx Hun]. pose proof Hr as (H1 & H2 & H3).
+    set (Δk := imap (λ z o, if decide (z = r x) then o else None) Δr).
+    assert (∀ σ, Δr !! r x = Some (Some σ) → lenv_wk Δk Δr ∧ lenv_only Δk (r x) σ) as Hk.
+    { intros σ Hσ. unfold Δk. split.
+      - apply lenv_wk_intro; [by rewrite length_imap|].
+        intros z o0 o Ho0 Ho. rewrite list_lookup_imap, Ho in Ho0. simpl in Ho0.
+        case_decide as Hz; simplify_eq; [by left|]. destruct o as [[U b]|]; [|by left]. right.
+        split; [done|]. destruct (decide (unlimited U)) as [HU|HU]; [eauto|].
+        destruct (H3 _ _ _ Ho HU) as (x' & Hrx' & Hx' & _).
+        destruct (Hun _ _ Hx') as [-> _]. done.
+      - split; [rewrite list_lookup_imap, Hσ; simpl; case_decide; done|].
+        intros y σ' Hy. rewrite list_lookup_imap in Hy.
+        destruct (Δr !! y) eqn:Ey; simpl in Hy; [|done].
+        case_decide; simplify_eq; split; [done|congruence]. }
+    destruct (decide (unlimited T)) as [HU|HU].
+    + destruct (H1 _ _ _ Hx HU) as [a' Ha']. destruct (Hk _ Ha') as [Hw Ho].
+      eapply d_weak; [exact Hw|]. by eapply d_var.
+    + destruct (Hk _ (H2 _ _ _ Hx HU)) as [Hw Ho].
+      eapply d_weak; [exact Hw|]. by eapply d_var.
+  - destruct (lren_empty _ _ _ H Hr) as [Hw He]. eapply d_weak; [exact Hw|]. by apply d_chan.
+  - (* D-Abs *)
+    eapply d_abs; [done| |].
+    + by rewrite (lren_heads _ _ _ Hr), (lren_bot _ _ _ Hr).
+    + by apply IHdftyped, lren_up.
+  - dren_split Hr. eapply d_app; [done|exact Hs|done| |].
+    + rewrite (lren_heads _ _ _ Hr2), (lren_bot _ _ _ Hr2). by apply IHdftyped1.
+    + by apply IHdftyped2.
+  - dren_split Hr. eapply d_pair; [done|exact Hs| |].
+    + rewrite (lren_heads _ _ _ Hr2), (lren_bot _ _ _ Hr2). by apply IHdftyped1.
+    + by apply IHdftyped2.
+  - dren_split Hr. eapply d_letu; [done|exact Hs| |].
+    + rewrite (lren_heads _ _ _ Hr2), (lren_bot _ _ _ Hr2). by apply IHdftyped1.
+    + by apply IHdftyped2.
+  - dren_split Hr. eapply d_letp; [done|exact Hs| |].
+    + rewrite (lren_heads _ _ _ Hr2), (lren_bot _ _ _ Hr2). by apply IHdftyped1.
+    + by apply IHdftyped2, lren_up, lren_up.
+  - by eapply d_inj1, IHdftyped.
+  - by eapply d_inj2, IHdftyped.
+  - dren_split Hr. eapply d_case; [done|exact Hs| | |].
+    + rewrite (lren_heads _ _ _ Hr2), (lren_bot _ _ _ Hr2). by apply IHdftyped1.
+    + by apply IHdftyped2, lren_up.
+    + by apply IHdftyped3, lren_up.
+  - (* D-Box *)
+    eapply d_box; [by eapply lren_unl|done|].
+    intros ss Hk Hss. apply H2; [done|done|]. by apply lren_pinst, lren_up.
+  - eapply d_force; eauto.
+  - eapply d_send; eauto.
+  - eapply d_recv; eauto.
+  - eapply d_close; eauto.
+  - eapply d_select; eauto.
+  - eapply d_branch; eauto.
+  - eapply d_link; eauto.
+  - eapply d_spawn_lam. by apply IHdftyped, lren_up.
+  - eapply d_spawn; eauto.
+  - destruct (lren_empty _ _ _ H Hr) as [Hw He]. eapply d_weak; [exact Hw|]. by apply d_new.
+  - eapply d_new_at; eauto.
+  - eapply d_conv; eauto.
+  - apply IHdftyped. by eapply lren_wk.
+  - (* D-Contract *)
+    rewrite rename_rename. by apply IHdftyped, lren_contract.
+  - eapply d_pack; eauto.
+  - (* D-Open *)
+    pose proof Hr as (_ & Hl2 & _). pose proof (Hl2 _ _ _ H ltac:(simpl; tauto)) as Hri.
+    eapply d_open; [exact Hri|done|]. apply IHdftyped.
+    eapply (lren_insert _ _ _ _ (pinst_ty (pshift m) (TEx lb m C T aT)) a);
+      [by apply lren_pinst| |simpl; tauto|done].
+    by rewrite lenv_pinst_lookup, H.
+Qed.
+
+Corollary dftyped_weaken_head W Θ Γ Δ F e T :
+  dftyped W Θ Γ Δ F e T → dftyped W Θ Γ (None :: Δ) F (rename S e) T.
+Proof.
+  intros H. eapply dftyped_rename; [exact H|]. apply lren_inj; [done|by intros ?? [=]|].
+  intros [|y] σ Hy; [done|]. by exists y.
+Qed.
+
+(** *** let x = e1 in e2 is admissible
+
+    [ELet] is ⟨e1, ∗⟩ split by LetP, then u matched by LetU. E-Pair
+    gives e1 the whole context and ∗ none, aging by 0 leaves every
+    entry as it is, and E-LetU consumes u. Costs and transformers come
+    out as fadd c1 c2 and tseq t1 t2 up to the units 0 and [tid]. *)
+
+Section let_admissible.
+  Local Abbreviation lnone Δ := ((λ _ : option (ty * fuel), None) <$> Δ).
+
+  Local Lemma lsplit_all Δ : lenv_split Δ Δ (lnone Δ).
+  Proof. induction Δ as [|[σ|] Δ IH]; simpl; constructor; done. Qed.
+  Local Lemma lsplit_allr Δ : lenv_split Δ (lnone Δ) Δ.
+  Proof. induction Δ as [|[σ|] Δ IH]; simpl; constructor; done. Qed.
+  Local Lemma lempty_lnone Δ : lenv_empty (lnone Δ).
+  Proof. intros o Ho. by apply list_elem_of_fmap in Ho as (? & -> & _). Qed.
+  Local Lemma lnone_lookup (Δ : lenv) (y : nat) (σ : ty * fuel) : lnone Δ !! y = Some (Some σ) → False.
+  Proof. revert y. induction Δ as [|o Δ IH]; intros [|y]; simpl; [done|done|congruence|apply IH]. Qed.
+  Local Lemma lnone_lookup_S o (Δ : lenv) (y : nat) (σ : ty * fuel) :
+    (o :: lnone Δ) !! S y = Some (Some σ) → False.
+  Proof. apply lnone_lookup. Qed.
+  Local Lemma lheads_lnone Δ : lenv_heads (lnone Δ) = ∅.
+  Proof. by induction Δ. Qed.
+  Local Lemma lbot_lnone Δ : lenv_bot (lnone Δ) = false.
+  Proof. by induction Δ. Qed.
+  Local Lemma lage_lnone c Δ : lage c (lnone Δ) (lnone Δ).
+  Proof. induction Δ; simpl; constructor; done. Qed.
+  Local Lemma fsub_0 a : fsub a (Some 0) = a.
+  Proof. destruct a as [[|m]|]; done. Qed.
+  Local Lemma fle_0 a : fle (Some 0) a.
+  Proof. destruct a; simpl; lia. Qed.
+  Local Lemma tage_0 σ : tage (Some 0) σ σ.
+  Proof. destruct σ as [T a]. rewrite <-(fsub_0 a) at 2. apply age_credit, fle_0. Qed.
+  Local Lemma lage_0 Δ : lage (Some 0) Δ Δ.
+  Proof. induction Δ as [|[σ|] Δ IH]; constructor; auto using tage_0. Qed.
+  Local Lemma thage_0 Θ : thage (Some 0) Θ Θ.
+  Proof.
+    intros o. destruct (Θ !! o) as [[S x a]|]; [|done]. simpl. split_and!; [done|done|apply fle_0|by rewrite fsub_0].
+  Qed.
+  Local Lemma thage_nil c : thage c ∅ ∅.
+  Proof. intros o. by rewrite lookup_empty. Qed.
+  Local Lemma tsplit_l Θ : tsplit Θ Θ ∅.
+  Proof. split; [apply map_disjoint_empty_r|by rewrite map_union_empty]. Qed.
+  Local Lemma tsplit_r Θ : tsplit Θ ∅ Θ.
+  Proof. split; [apply map_disjoint_empty_l|by rewrite map_empty_union]. Qed.
+  Local Lemma fadd_0_r a : fadd a (Some 0) = a.
+  Proof. destruct a as [m|]; [simpl; by rewrite Nat.add_0_r|done]. Qed.
+  Local Lemma tseq_tid_r t : tseq t tid = t.
+  Proof. destruct t as [[s|] [b|]]; unfold tseq, tid, fmul; simpl; rewrite ?Nat.add_0_r, ?Nat.mul_0_r; done. Qed.
+  Local Lemma tseq_tid_l t : tseq tid t = t.
+  Proof. destruct t as [[s|] [b|]]; unfold tseq, tid, fmul; simpl; rewrite ?Nat.add_0_r; done. Qed.
+  Local Lemma sf_union_nil F : sf_unionb F (tenv_heads ∅ ∪ ∅) false = F.
+  Proof.
+    destruct F as [X o]. unfold sf_unionb, sf_union. simpl. f_equal.
+    apply set_eq. intros y. rewrite elem_of_union, elem_of_union, elem_of_tenv_heads.
+    setoid_rewrite lookup_empty. set_solver.
+  Qed.
+
+  (** E-Let *)
+  Lemma e_let W N Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 T1 a1 T aT c1 t1 c2 t2 :
+    tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
+    typed W N Θ1 Γ Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 T1 a1 c1 t1 →
+    thage c1 Θ2 Θ2' → lage c1 Δ2 Δ2' →
+    typed W N Θ2' Γ (Some (T1, a1) :: Δ2') F e2 T aT c2 t2 →
+    tok t1 t2 →
+    typed W N Θ Γ Δ F (ELet e1 e2) T aT (fadd c1 c2) (tseq t1 t2).
+  Proof.
+    intros Hs Hl H1 Ht Ha H2 Hok. unfold ELet.
+    enough (typed W N Θ Γ Δ F (LetP (Pair e1 EUnit) (LetU (Var 0) (rename S e2))) T aT
+              (fadd (fadd c1 (Some 0)) (fadd (Some 0) c2)) (tseq (tseq t1 tid) (tseq tid t2))) as H.
+    { by rewrite fadd_0_r, fadd_0_l, tseq_tid_r, tseq_tid_l in H. }
+    eapply e_letp; [exact Hs|exact Hl| |by rewrite fadd_0_r|by rewrite fadd_0_r| |].
+    - eapply e_pair; [apply tsplit_l|apply lsplit_all| |apply thage_nil|apply lage_lnone| |apply tage_0|].
+      + by rewrite lheads_lnone, lbot_lnone, sf_union_nil.
+      + apply e_unit, lempty_lnone.
+      + left. done.
+    - rewrite (fadd_0_l a1).
+      eapply e_letu; [apply tsplit_r|apply lsplit_l, lsplit_allr| |apply thage_0|apply lage_0| |].
+      + apply e_var. split; [done|]. intros y σ' Hy. destruct y.
+        * simpl in Hy. by simplify_eq.
+        * by destruct (lnone_lookup_S _ _ _ _ Hy).
+      + simpl. by apply typed_weaken_head.
+      + right. left. done.
+    - rewrite tseq_tid_r, tseq_tid_l. exact Hok.
+  Qed.
+
+  (** D-Let *)
+  Lemma d_let W Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e1 e2 T1 b1 T :
+    tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
+    dftyped W Θ1 Γ Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 T1 →
+    dftyped W Θ2 Γ (Some (T1, b1) :: Δ2) F e2 T →
+    dftyped W Θ Γ Δ F (ELet e1 e2) T.
+  Proof.
+    intros Hs Hl H1 H2. unfold ELet.
+    eapply (d_letp _ _ _ _ _ _ _ _ _ _ _ T1 b1 TUnit None b1 None);
+      [exact Hs|exact Hl| |].
+    - eapply d_pair; [apply tsplit_l|apply lsplit_all| |].
+      + by rewrite lheads_lnone, lbot_lnone, sf_union_nil.
+      + apply d_unit, lempty_lnone.
+    - eapply d_letu; [apply tsplit_r|apply lsplit_l, lsplit_allr| |].
+      + eapply (d_var _ _ _ _ _ _ None). split; [done|]. intros y σ' Hy. destruct y.
+        * simpl in Hy. by simplify_eq.
+        * by destruct (lnone_lookup_S _ _ _ _ Hy).
+      + by apply dftyped_weaken_head.
+  Qed.
+End let_admissible.

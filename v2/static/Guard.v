@@ -46,8 +46,6 @@ Inductive acts : expr → Prop :=
   | acts_letu2 e1 e2 : acts e2 → acts (LetU e1 e2)
   | acts_letp1 e1 e2 : acts e1 → acts (LetP e1 e2)
   | acts_letp2 e1 e2 : acts e2 → acts (LetP e1 e2)
-  | acts_let1 e1 e2 : acts e1 → acts (ELet e1 e2)
-  | acts_let2 e1 e2 : acts e2 → acts (ELet e1 e2)
   | acts_inj1 e : acts e → acts (Inj1 e)
   | acts_inj2 e : acts e → acts (Inj2 e)
   | acts_case e e1 e2 : acts e → acts (Case e e1 e2)
@@ -76,8 +74,6 @@ Inductive lguard : (nat → bool) → expr → Prop :=
   | gl_tick_letu L e1 e2 : L ⊢▷ e1 → acts e1 → ∅ ⊢▷ e2 → L ⊢▷ (LetU e1 e2)
   | gl_letp L e1 e2 : L ⊢▷ e1 → (false .: false .: L) ⊢▷ e2 → L ⊢▷ (LetP e1 e2)
   | gl_tick_letp L e1 e2 : L ⊢▷ e1 → acts e1 → ∅ ⊢▷ e2 → L ⊢▷ (LetP e1 e2)
-  | gl_let L e1 e2 : L ⊢▷ e1 → (false .: L) ⊢▷ e2 → L ⊢▷ (ELet e1 e2)
-  | gl_tick_let L e1 e2 : L ⊢▷ e1 → acts e1 → ∅ ⊢▷ e2 → L ⊢▷ (ELet e1 e2)
   | gl_inj1 L e : L ⊢▷ e → L ⊢▷ (Inj1 e)
   | gl_inj2 L e : L ⊢▷ e → L ⊢▷ (Inj2 e)
   | gl_case L e e1 e2 : L ⊢▷ e → (false .: L) ⊢▷ e1 → (false .: L) ⊢▷ e2 →
@@ -98,7 +94,6 @@ Proof.
   - constructor. apply IHlguard. intros [|x]; simpl; auto.
   - constructor. apply IHlguard. intros [|x]; simpl; auto.
   - constructor; [auto|]. apply IHlguard2. intros [|[|x]]; simpl; auto.
-  - constructor; [auto|]. apply IHlguard2. intros [|x]; simpl; auto.
   - constructor; [auto| |]; [apply IHlguard2|apply IHlguard3]; intros [|x]; simpl; auto.
 Qed.
 
@@ -126,9 +121,6 @@ Proof.
   - apply gl_letp; [eauto|]. eapply guard_ext; [|by apply IHe2]. marks.
   - apply gl_tick_letp; [eauto|by eapply acts_rename_inv|].
     eapply guard_ext; [|by apply IHe2]. done.
-  - apply gl_let; [eauto|]. eapply guard_ext; [|by apply IHe2]. marks.
-  - apply gl_tick_let; [eauto|by eapply acts_rename_inv|].
-    eapply guard_ext; [|by apply IHe2]. done.
   - apply gl_case; [eauto| |].
     + eapply guard_ext; [|by apply IHe2]. marks.
     + eapply guard_ext; [|by apply IHe3]. marks.
@@ -137,4 +129,50 @@ Proof.
     + eapply guard_ext; [|by apply IHe3]. done.
   - (* EBox *)
     constructor. eapply guard_ext; [|by apply IHe]. marks.
+Qed.
+
+Lemma acts_rename e r : acts e → acts (rename r e).
+Proof. intros H. revert r. induction H; intros r; simpl; eauto using acts. Qed.
+
+(** The converse of [guard_rename]. *)
+Lemma guard_rename_fwd L' e : lguard L' e → ∀ L r, (∀ x, L' x = L (r x)) → lguard L (rename r e).
+Proof.
+  induction 1; intros L0 r HL; simpl.
+  - constructor. by rewrite <-HL.
+  - constructor.
+  - constructor.
+  - constructor.
+  - constructor. apply IHlguard. intros [|x]; simpl; auto.
+  - constructor. apply IHlguard. intros [|x]; simpl; auto.
+  - constructor. eauto.
+  - apply gl_app; eauto.
+  - apply gl_tick_app; [eauto|by apply acts_rename|by apply IHlguard2].
+  - apply gl_pair; eauto.
+  - apply gl_tick_pair; [eauto|by apply acts_rename|by apply IHlguard2].
+  - apply gl_letu; eauto.
+  - apply gl_tick_letu; [eauto|by apply acts_rename|by apply IHlguard2].
+  - apply gl_letp; [eauto|]. apply IHlguard2. intros [|[|x]]; simpl; auto.
+  - apply gl_tick_letp; [eauto|by apply acts_rename|by apply IHlguard2].
+  - apply gl_inj1; eauto.
+  - apply gl_inj2; eauto.
+  - apply gl_case; [eauto| |]; [apply IHlguard2|apply IHlguard3]; intros [|x]; simpl; auto.
+  - apply gl_tick_case; [eauto|by apply acts_rename| |]; [apply IHlguard2|apply IHlguard3]; done.
+Qed.
+
+(** ** let x = e1 in e2, the derived form [ELet] *)
+
+Lemma acts_let1 e1 e2 : acts e1 → acts (ELet e1 e2).
+Proof. intros H. by apply acts_letp1, acts_pair1. Qed.
+Lemma acts_let2 e1 e2 : acts e2 → acts (ELet e1 e2).
+Proof. intros H. by apply acts_letp2, acts_letu2, acts_rename. Qed.
+
+Lemma gl_let L e1 e2 : L ⊢▷ e1 → (false .: L) ⊢▷ e2 → L ⊢▷ (ELet e1 e2).
+Proof.
+  intros H1 H2. apply gl_letp; [by apply gl_pair; [|apply gl_unit]|].
+  apply gl_letu; [by apply gl_var|]. eapply guard_rename_fwd; [exact H2|]. by intros [|x].
+Qed.
+Lemma gl_tick_let L e1 e2 : L ⊢▷ e1 → acts e1 → ∅ ⊢▷ e2 → L ⊢▷ (ELet e1 e2).
+Proof.
+  intros H1 Ha H2. apply gl_tick_letp; [by apply gl_pair; [|apply gl_unit]|by apply acts_pair1|].
+  apply gl_letu; [by apply gl_var|]. by eapply guard_rename_fwd; [exact H2|].
 Qed.
