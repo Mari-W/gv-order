@@ -15,6 +15,8 @@ From GV Require Import cost.Transformers cost.Forwarder cost.Exact cost.CostFund
 From GV Require Import compat.Rules compat.LiveDF compat.Swap compat.Rename compat.PSwap compat.Conv compat.ConnectP.
 From GV Require Import static.Fundamental static.LiveFundamental examples.GuardEx.
 From GV Require Import soup.LFAdequacy soup.LFCompose soup.LFTyped examples.LFClose.
+From GV Require Import examples.LFTools examples.LFCycle examples.LFFreshBetween
+  examples.LFFreshMany examples.LFClientServer examples.LFFactoryEx examples.LFGrowRing.
 
 (** Language: the redex once, progress, preservation. *)
 Print Assumptions act_offer_sig.
@@ -302,3 +304,25 @@ Print Assumptions lf_soundness.
 Print Assumptions lfworld_bare.
 Print Assumptions cl_lftyped.
 Print Assumptions cl_lock_free.
+Print Assumptions lfworld_measure.
+Print Assumptions lfworld_lex3.
+Print Assumptions lf_main.
+Print Assumptions lbox_typed.
+Print Assumptions W_cy_lfworld.
+Print Assumptions cy_lftyped.
+Print Assumptions cy_lock_free.
+Print Assumptions W_fb_lfworld.
+Print Assumptions fb_lftyped.
+Print Assumptions fb_lock_free.
+Print Assumptions W_fm_lfworld.
+Print Assumptions fm_lftyped.
+Print Assumptions fm_lock_free.
+Print Assumptions W_cs_lfworld.
+Print Assumptions cs_lftyped.
+Print Assumptions cs_lock_free.
+Print Assumptions W_fx_lfworld.
+Print Assumptions fx_lftyped.
+Print Assumptions fx_lock_free.
+Print Assumptions W_rg_lfworld.
+Print Assumptions rg_lftyped.
+Print Assumptions rg_lock_free.

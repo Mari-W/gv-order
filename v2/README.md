@@ -208,3 +208,10 @@ induction on it.
 | soup/LFCompose.v | `soup_lift`, `lf_soup_connect`, `lf_p_connect`, `lf_p_join`, `lf_soup_term`, `typed_live`, `lf_p_term`, `lf_soundness_source` |
 | soup/LFTyped.v | `lfptyped`, `Σ ⊩^N _ W p : T` with `p_term`, `p_connect`, `p_join`, `lf_fundamental`, `lf_soundness` |
 | examples/LFClose.v | `lfworld_bare`, two threads closing one channel typed by P-Connect, `cl_lock_free` |
+| examples/LFTools.v | `lfworld_measure`, `lfworld_lex3`, `lf_main`, boxes of one arrow at a finite N (`lbox`, `lbox_typed`, `lbox_force`), the rules over Θ = ∅ in derivation order |
+| examples/LFCycle.v | cycle at N = 2, `cy_lock_free` |
+| examples/LFFreshBetween.v | between at N = 2, `fb_lock_free` |
+| examples/LFFreshMany.v | many at N = 4, `fm_lock_free` |
+| examples/LFClientServer.v | the client and server loops at N = 3, `cs_lock_free` |
+| examples/LFFactoryEx.v | the factory at N = 2, `fx_lock_free` |
+| examples/LFGrowRing.v | the growing ring at N = 4 with payload credit 2 (`Schl`), `W_rg_wf`, `rg_lock_free` |
