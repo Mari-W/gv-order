@@ -137,3 +137,59 @@ Proof.
     - rewrite (csub_eq_off o1 o2 b Hb3 Hb1) in Hb. done. }
   exact (Hold a v v' Ha Hb').
 Qed.
+
+Lemma kmapr_id_ext {Y : Type} (g : cend → cend) (m : gmap cend Y) : (∀ a, g a = a) → kmapr g m = m.
+Proof.
+  intros Hg. assert (kinj g m) as Hk by (intros a b ? ? _ _ Heq; by rewrite !Hg in Heq).
+  apply map_eq_some. intros o v. rewrite kmapr_lookup_iff by done. split.
+  - intros (a & -> & Ha). by rewrite Hg.
+  - intros Ho. exists o. by rewrite Hg.
+Qed.
+
+Lemma elem_of_dom_kdel2 {Y : Type} (m : gmap cend Y) o1 o2 a :
+  a ∈ dom (kdel2 o1 o2 m) ↔ a ≠ o1 ∧ a ≠ o2 ∧ a ∈ dom m.
+Proof. unfold kdel2. rewrite !dom_delete_L, !elem_of_difference, !elem_of_singleton. naive_solver. Qed.
+
+(** The channels after a link: the linked channel of o1 goes. *)
+Lemma link_dom_closed {Y : Type} (m : gmap cend Y) (C : gset chan) o1 o2 :
+  o1 ≠ o2 → o2 ∈ dom m → (∀ a, a ∈ dom m → ech a ∈ C) →
+  ∀ o', o' ∈ dom (kmapr (csub o1 o2) (kdel2 o1 o2 m)) → ech o' ∈ C ∖ {[ech o1]}.
+Proof.
+  intros H12 Ho2 Hc o' Ho'. rewrite dom_kmapr in Ho' by apply kinj_csub.
+  apply elem_of_map in Ho' as (a & -> & Ha). apply elem_of_dom_kdel2 in Ha as (Ha1 & Ha2 & Ha).
+  apply elem_of_difference. rewrite elem_of_singleton.
+  destruct (decide (a = edual o1)) as [->|Ha3].
+  - assert (csub o1 o2 (edual o1) = o2) as -> by (unfold csub; by rewrite decide_True).
+    split; [by apply Hc|]. intros He. destruct (ech_eq _ _ He) as [-> | ->]; [done|].
+    by rewrite edual_edual in Ha2.
+  - rewrite (csub_eq_off o1 o2 a Ha3 Ha1). split; [by apply Hc|].
+    intros He. destruct (ech_eq _ _ He) as [-> | ->]; [by apply Ha1|apply Ha3; by rewrite edual_edual].
+Qed.
+
+(** The ends after a link are paired again. *)
+Lemma link_dom_pair {Y : Type} (m : gmap cend Y) o1 o2 :
+  o1 ≠ o2 → o2 ≠ edual o1 → (∀ a, a ∈ dom m → edual a ∈ dom m) → o1 ∈ dom m → o2 ∈ dom m →
+  ∀ o', o' ∈ dom (kmapr (csub o1 o2) (kdel2 o1 o2 m)) →
+    edual o' ∈ dom (kmapr (csub o1 o2) (kdel2 o1 o2 m)).
+Proof.
+  intros H12 Hns Hp Ho1 Ho2 o' Ho'. rewrite dom_kmapr in Ho' |- * by apply kinj_csub.
+  apply elem_of_map in Ho' as (a & -> & Ha). apply elem_of_dom_kdel2 in Ha as (Ha1 & Ha2 & Ha).
+  apply elem_of_map.
+  assert (Hc1 : csub o1 o2 (edual o1) = o2) by (unfold csub; by rewrite decide_True).
+  assert (Hd2 : edual o2 ≠ o1) by (intros Hx; apply Hns; by rewrite <-Hx, edual_edual).
+  assert (Hd2' : edual o2 ≠ edual o1) by (intros Hx; apply H12; by apply edual_inj).
+  assert (Hd1 : edual o1 ≠ o2) by (intros Hx; apply Hns; by rewrite <-Hx).
+  destruct (decide (a = edual o1)) as [->|Ha3].
+  { exists (edual o2). rewrite Hc1, (csub_eq_off o1 o2 (edual o2) Hd2' Hd2). split; [done|].
+    apply elem_of_dom_kdel2. split_and!; [done|apply edual_ne|by apply Hp]. }
+  rewrite (csub_eq_off o1 o2 a Ha3 Ha1).
+  destruct (decide (a = edual o2)) as [->|Ha4].
+  { exists (edual o1). rewrite Hc1, edual_edual. split; [done|].
+    apply elem_of_dom_kdel2. split_and!; [apply edual_ne|done|by apply Hp]. }
+  exists (edual a). rewrite csub_eq_off.
+  - split; [done|]. apply elem_of_dom_kdel2. split_and!; [| |by apply Hp].
+    + intros Hx. apply Ha3. by rewrite <-Hx, edual_edual.
+    + intros Hx. apply Ha4. by rewrite <-Hx, edual_edual.
+  - intros Hx. apply Ha1. by apply edual_inj.
+  - intros Hx. apply Ha3. by rewrite <-Hx, edual_edual.
+Qed.
