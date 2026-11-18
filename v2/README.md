@@ -201,16 +201,17 @@ the rank and the tickets and the partner's counter as the measure.
 soup through `fsem_of_cost` and `live_fundamental_typed`. Two soups over
 the cut of P-Connect give a soup of the composite at W1 ⊔ W2 and the
 larger refill: their union, then the restriction of the cut channels.
-The judgment `Σ ⊩^N _ W p : T` has the rules of `⊢_W` with static
-premises only. P-Term types the thread at Some N and asks `guarded t`
-and `meets ϑ 0 tk`. `lf_fundamental` and `lf_soundness` follow by
-induction on it.
+The judgment `Σ ⊩^N _ W p : T` is the notation for `ptyped (Some N) W
+Σ p T ∧ ⊢▷ p`: process typing at Some N, whose P-Term asks a ticket
+count meeting the transformer at 0 when N is finite, and the guard of
+every thread. `lf_fundamental` and `lf_soundness` follow by induction
+on `ptyped`.
 
 | File | Content |
 |---|---|
 | soup/SoupCompose.v | `soup_par`, `soup_nu`, `soup_connect`, `soup_term` |
-| soup/LFCompose.v | `soup_lift`, `lf_soup_connect`, `lf_p_connect`, `lf_p_join`, `lf_soup_term`, `typed_live`, `lf_p_term`, `lf_soundness_source` |
-| soup/LFTyped.v | `lfptyped`, `Σ ⊩^N _ W p : T` with `p_term`, `p_connect`, `p_join`, `lf_fundamental`, `lf_soundness` |
+| soup/LFCompose.v | `soup_lift`, `lf_soup_connect`, `lf_p_connect`, `lf_soup_term`, `typed_live`, `lf_p_term`, `lf_soundness_source` |
+| soup/LFTyped.v | the notation `Σ ⊩^N _ W p : T`, `lf_fundamental`, `lf_soundness` |
 | examples/LFClose.v | `lfworld_bare`, two threads closing one channel typed by P-Connect, `cl_lock_free` |
 | examples/LFTools.v | `lfworld_measure`, `lfworld_lex3`, `lf_main`, boxes of one arrow at a finite N (`lbox`, `lbox_typed`, `lbox_force`), the rules over Θ = ∅ in derivation order |
 | examples/LFCycle.v | cycle at N = 2, `cy_lock_free` |

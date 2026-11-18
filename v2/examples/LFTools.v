@@ -84,11 +84,13 @@ Lemma lf_main_typed N W t T a c ϑ tk :
   prim T → typed W (Some N) ∅ hc_empty [] (∅, None) t T a c ϑ →
   ∅ ⊢▷ t → meets ϑ 0 tk → ∅ ⊩^N _ W (∅, {[+ t +]}) : T.
 Proof.
-  intros Hp Ht Hg Hm. apply (lf_term N W ∅ ∅ ∅ t T a c ϑ tk); [done| | | | |done|done|done].
-  - intros o. rewrite dom_empty_L. set_solver.
-  - set_solver.
-  - apply pfree_empty.
-  - set_solver.
+  intros Hp Ht Hg Hm. split.
+  - apply (p_term (Some N) W ∅ ∅ ∅ t T a c ϑ); [done| | | | |done|by right; exists tk].
+    + intros o. rewrite dom_empty_L. set_solver.
+    + set_solver.
+    + apply pfree_empty.
+    + set_solver.
+  - intros t' Ht'. simpl in Ht'. apply gmultiset_elem_of_singleton in Ht' as ->. done.
 Qed.
 
 Lemma lf_main N W t T a c ϑ tk :

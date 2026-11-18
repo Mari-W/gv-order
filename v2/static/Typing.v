@@ -303,7 +303,9 @@ Inductive dftyped (W : world) : tenv → hctx → lenv → sfuture → expr → 
 
     P-Term types one thread over the interface Σ and the ends Θ_B of the
     restricted channels C0, both ends of each, dual at dual points, with
-    credit N. P-Connect composes two components typed at their own
+    credit N, and at a finite N asks some ticket count to meet the
+    transformer of the thread at 0. At N = ∞ the premise holds by its
+    left disjunct, so ⊢_W is unchanged. P-Connect composes two components typed at their own
     worlds, whose families are apart, over the cut Σ_C, and asks the join
     strict. P-Join asks only the restrictions to the shared constants
     strict (cleanup R7, [strict_join_iff]). It is a lemma, [p_join],
@@ -338,6 +340,7 @@ Inductive ptyped (N : fuel) : world → senv → proc → ty → Prop :=
       (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 → pfree Σ →
       (∀ c, c ∈ C0 → ∃ S x, ΘB !! (c⁺)%cend = Some (TE S x N) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ N)) →
       typed W N (tenv_of N Σ ∪ ΘB) hc_empty [] (∅, None) t T a c ϑ →
+      (N = None ∨ ∃ tk, meets ϑ 0 tk) →
       ptyped N W Σ (C0, {[+ t +]}) T
   | p_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
       ptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →

@@ -1259,6 +1259,11 @@ first, in stage S2.
 - live ⊆ DF asks `prim T` and `boxfree T` (author, 2026-11-18). `tshape`
   is gone. A closed process has a `prim` result, and `boxfree` rules
   out □, so the result is built from ∗, ⊗ and ⊕.
+- One process judgment (author, 2026-11-18). P-Term of `ptyped` asks
+  `N = None ∨ ∃ tk, meets ϑ 0 tk`, which holds at N = ∞ by its left
+  disjunct. `lfptyped` and its rules are gone, and
+  `Σ ⊩^N _ W p : T` is notation for `ptyped (Some N) W Σ p T ∧ ⊢▷ p`.
+  The guard stays a separate judgment.
 
 ## 5  Open decisions for the author
 

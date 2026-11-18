@@ -320,7 +320,6 @@ Print Assumptions lf_p_connect.
 Print Assumptions lf_soup_term.
 Print Assumptions lf_p_term.
 Print Assumptions lf_soundness_source.
-Print Assumptions lf_join.
 Print Assumptions lf_fundamental.
 Print Assumptions lf_soundness.
 Print Assumptions lfworld_bare.

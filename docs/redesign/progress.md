@@ -1801,3 +1801,17 @@ The old development in theories/ stays untouched.
   `live_sub_df W T p : prim T → boxfree T → ∅ ⊫_W p : T → ∅ ⊨_W p : T`.
   CheckAll drops `cost_e_let` and lists `e_let` and `d_let`, 307
   results, all closed.
+- L.3. One process judgment (decision of 2026-11-18). P-Term of
+  `ptyped` (static/Typing.v) gains the premise `N = None ∨ ∃ tk, meets ϑ
+  0 tk`. At N = ∞ it holds by `left`, so `⊢_W`, `fundamental_proc`,
+  `soundness` and every DF statement are unchanged. `lfptyped`,
+  `lf_term`, `lf_connect` and `lf_join` are gone (soup/LFTyped.v), and
+  `Σ ⊩^N _ W p : T` is the notation for `ptyped (Some N) W Σ p T ∧ ⊢▷ p`,
+  with `pguard` of static/FundamentalProc.v. `lf_fundamental` inducts on
+  `ptyped` with N = Some N and reads the guard of each thread off ⊢▷ p.
+  `lf_soundness` keeps its statement. P-Join of ⊩ is `p_join`. The
+  examples build ⊩ from `p_term` and `p_connect` (examples/LFTools.v,
+  `lf_main_typed`, and examples/LFClose.v), and `fw_ptyped` discharges
+  the new premise by `fw_tix_met`. CheckAll drops `lf_join`, 306
+  results, all closed.
+

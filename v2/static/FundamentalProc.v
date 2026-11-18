@@ -98,7 +98,7 @@ Section proc.
   Lemma proc_gen N W Σ p T : strict W → ptyped N W Σ p T → (∀ t, t ∈ p.2 → G t) → sem_ptyped κ W Σ p T.
   Proof.
     intros HW Hty. revert HW. induction Hty as
-      [W Σ ΘB C0 t T a c ϑ Hp HB HΣ Hpf Hd Ht
+      [W Σ ΘB C0 t T a c ϑ Hp HB HΣ Hpf Hd Ht _
       |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T H1 IH1 H2 IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hw1 Hw2 Hfam HJ];
       intros HW HG n; simpl in HG.
     - apply (sem_p_term κ n W _ Σ (tenv_erase ΘB) C0 t T Hp (pterm_sth N Σ ΘB C0 HB HΣ Hpf Hd)).

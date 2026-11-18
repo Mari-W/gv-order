@@ -54,17 +54,16 @@ Proof.
   - apply e_chan. intros ? Hin. inversion Hin.
 Qed.
 
-Lemma cl_term N o x : {[o := (SEnd, x)]} ⊩^N _ W_cl (∅, {[+ cl o +]}) : TUnit.
+Lemma cl_term N o x : ptyped (Some N) W_cl {[o := (SEnd, x)]} (∅, {[+ cl o +]}) TUnit.
 Proof.
-  apply (lf_term N W_cl _ ∅ ∅ _ TUnit None (fadd (Some 0) (Some 1)) tid 0).
+  apply (p_term (Some N) W_cl _ ∅ ∅ _ TUnit None (fadd (Some 0) (Some 1)) tid).
   - constructor.
   - intros o'. rewrite dom_empty_L. set_solver.
   - set_solver.
   - apply pfree_singleton.
   - set_solver.
   - rewrite map_union_empty. unfold tenv_of. rewrite map_fmap_singleton. apply cl_typed.
-  - repeat constructor.
-  - unfold meets, tid. simpl. lia.
+  - right. exists 0. unfold meets, tid. simpl. lia.
 Qed.
 
 Theorem cl_lftyped N c (x : point) :
@@ -76,7 +75,9 @@ Proof.
   assert (chans_of ΣC = {[c]}) as Ec.
   { unfold chans_of, ΣC. by rewrite dom_singleton_L, set_map_singleton_L. }
   assert (chans_of ∅ = ∅) as E0 by (unfold chans_of; by rewrite dom_empty_L, set_map_empty).
-  pose proof (lf_connect N W_cl W_cl ∅ ∅ ΣC ∅ ∅ {[+ cl (c⁺)%cend +]} {[+ cl (c⁻)%cend +]} TUnit) as H.
+  split; [|intros t Ht; simpl in Ht; apply gmultiset_elem_of_disj_union in Ht as [Ht|Ht];
+             apply gmultiset_elem_of_singleton in Ht as ->; repeat constructor].
+  pose proof (p_connect (Some N) W_cl W_cl ∅ ∅ ΣC ∅ ∅ {[+ cl (c⁺)%cend +]} {[+ cl (c⁻)%cend +]} TUnit) as H.
   rewrite Ec, E0, !(left_id_L ∅ (∪)) in H. rewrite Ed in H.
   apply H; clear H.
   - apply cl_term.
