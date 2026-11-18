@@ -68,6 +68,7 @@ compat/Rename.v
 compat/PSwap.v
 compat/Conv.v
 compat/Connect.v
+compat/ConnectSteps.v
 compat/EFacts.v
 compat/TermRules.v
 compat/BindActs.v

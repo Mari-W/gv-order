@@ -1168,7 +1168,11 @@ The old development in theories/ stays untouched.
   fusion of p1). Proved in `core`: `tau_l1`, `tau_l2` (τ steps of one
   side, a link of a restricted channel renaming the other side by a map
   that fixes its held ends), `conn_delete` and `tau_close` (a close
-  across the cut). Open in `core`: a message across the cut (Q-Send of
+  across the cut), `conn_update` and `tau_choice12` (a choice across the
+  cut, p1 selecting). The section `core` now lives in
+  v2/compat/ConnectSteps.v, so that Connect.v does not recompile.
+  Open in `core`: a choice across the cut with p2 selecting (the mirror
+  of `tau_choice12`, `conn_update` at edual o), a message across the cut (Q-Send of
   one side, Q-Recv of the other with Θ2 = Σv ∪ Θe, the new cut re-split
   by the ends of Σ1 ∪ Σ2), a choice across the cut, the links of a cut
   end (`csub` on the other side: renaming when o2 is an interface end,

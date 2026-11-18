@@ -112,6 +112,8 @@ reads no point, no world and no relation. Every step costs one level.
 | compat/Rename.v | decision Q16: V and E under every map of ends injective on the held ends (`Vrel_rename`, `Erel_rename`), P by projection of its clause (fuse) (`Prel_fuse`), a composite of fusions is a fusion (`fuse_ok_compose`), renaming (`Prel_rename`, D = ∅) and Internalize (`Prel_internalize`, h = id) as instances, the transpositions as instances (`Vrel_swap`, `Erel_swap`), the link substitution as a renaming of the other component (`pren_ok_csub`) |
 | compat/PSwap.v | the transposition on configurations with thread ids and on events (`istep_qswap`), the external clauses along it, P is invariant (`Prel_swap`, an instance of `Prel_rename`) |
 | compat/Conv.v | environments up to ≈ (`senv_eqv`): V, E and P transport along them (`Vrel_conv`, `Erel_conv`, `Prel_conv`) |
+| compat/Connect.v | P-Connect in progress: environments of a cut (`pfree`, `cut_dual`, `conn`), the composite `pconn`, liftings, offers of the composite, the chain of cut ends (`finite_lt_acc`), readiness (`pc_ready`) and P-Stop (`pc_stop`) of the composite, `Prel_S_ind_fuse` |
+| compat/ConnectSteps.v | P-Connect in progress: the step clause of the composite, one lemma per kind of step (`tau_l1`, `tau_l2`, `tau_close`, `tau_choice12`) |
 | test/CompatNotations.v | the S4 notations |
 
 ## Stage S7, cost half of the merged judgment
