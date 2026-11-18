@@ -1371,3 +1371,81 @@ The old development in theories/ stays untouched.
   `lf_soup_connect`, and `lf_adequacy_soup` closes `lf_soundness`, as in
   `lf_soundness_source`.
 
+- S4.21. A choice across the cut with p2 selecting (`tau_choice21`,
+  compat/ConnectSteps.v). A message across the cut in both directions
+  (`tau_msg12`, `tau_msg21`, compat/ConnectCross.v). The receiver takes
+  Θ2 = Σv ∪ Θe, the ends the sender moves. Afterwards the sender holds
+  E1, the receiver E2, and the cut is re-split by the interface Σ1 ∪ Σ2
+  (`fin`, `fout`, compat/ConnectSplit.v). `conn_filter` gives the side
+  conditions of P-Connect for that split from conditions on E1, E2 and
+  Σ alone, and the classes of an end under a cut (`cls_1`, `cls_C`,
+  `cls_2`, `cls_D`, `cls_c1`, `cls_c2`) discharge them. The environment
+  lemmas of a message (`msg_recv_ok`, `msg_conn`, `msg_iface`,
+  `msg_chans`, compat/ConnectMsg.v) read environments and channel sets
+  only, so p2 sending uses them through `conn_sym`. A message whose
+  give and take cost more than the level lands at level 0, where P
+  holds. No deviation.
+- S4.22. Links whose kept end is restricted on the side of the actor
+  (`tau_link_own1`, `tau_link_own2`, compat/ConnectLink.v). The actor
+  takes the link of o2 (the label is unordered), and the composite is
+  that result renamed by csub o1 o2, because csub o1 o2 after
+  csub o2 o1 is csub o1 o2 (`csub_csub`, compat/ConnectRen.v). This
+  covers the removed channel being a cut channel or restricted in the
+  other component. A renaming of the composite that fixes the interface
+  keeps `conn` (`conn_rename`), and `ren_comp1`, `ren_comp2` turn a step
+  of one side into the step clause of the renamed composite (G1 or G2
+  at cost 0, the lemma at the lower level otherwise). `pren_ok_csub_r`:
+  csub o1 o2 is a renaming whenever o2 and o2‾ are not held, whatever
+  happens to o1. No deviation.
+- S4.23. Links of p1 on two ends it does not restrict (`tau_link_ext1`,
+  compat/ConnectLink.v): Q-Link of p1. The removed end o1 is then a cut
+  end. If the kept end o2 is an interface end of p1, the holder of o1‾
+  in p2 now holds o2, at the type of o1‾, which `Prel_conv` brings to
+  the interface type of o2 (`sdual_trans_l`), and o2 moves from Σ1 to
+  Σ2 (`conn_link_iface`). If o2 is a cut end, p2 holds both ends of the
+  channel of o2 afterwards, a fusion with D = {ech o2}
+  (`fuse_ok_csub_cut`, `kren_csub_eq`, `conn_del`, compat/ConnectRen.v).
+  The order of the two ends in the label is free (`pair_eq`). Note for
+  successors: `tauto` and `set_solver` under the section context of
+  `links` are slow when the goal mixes many unions; split the goal and
+  `clear` first (one `set_solver` took 28 s and failed before the
+  split). No deviation.
+- S4.24. The mirror `tau_link_ext2` (a link of p2 on two ends it does
+  not restrict). When p2 links its cut end o1 with its interface end
+  o2, G2 needs the fusion of p1 to land exactly on Σ1' ∪ ΣC', so Σ1'
+  keeps o2 at the type of o1‾ (`conn_retype1`), and `Prel_conv` brings
+  the composite back to Σ1 ∪ Σ2 at the end. No deviation.
+- S4.25. Every τ step of the composite (`tau_all`, compat/ConnectTau.v).
+  β, new, spawn and steps whose threads all lie in one component are
+  steps of that component (`tau_l1`, `tau_l2`). A message, close or
+  choice across the components is one of `tau_msg12`, `tau_msg21`,
+  `tau_close` (both orders, through edual), `tau_choice12`,
+  `tau_choice21`. A close of two threads of one component on a channel
+  it does not restrict contradicts its Q-Close clauses, because both
+  ends would lie in its partner-free interface (`close_same1`,
+  `close_same2`). A link is local, or `tau_link_own1/2`, or
+  `tau_link_ext1/2`. So the τ clause of P-Step holds for the composite
+  over the clauses of the two components. Open in order: the six
+  external clauses of each side (Q-Send and Q-Recv of the composite
+  re-split the cut like the message case), the assembly of `Pclauses`
+  with `pc_stop` and `pc_ready`, the splitting of a fusion of the
+  composite into fusions of the components over a larger cut, and the
+  wrapper (strong induction on the level, `Prel_S_ind_fuse` on each
+  side), then P-Join and P-Term. No deviation.
+- S4.26. External steps of the composite, first part
+  (compat/ConnectExt.v). An external step of the composite is a step of
+  the component of its thread on one of its own interface ends
+  (`ext_split`; the subject is no cut end because the composite
+  restricts the cut). Close, select, branch and link change the
+  interface of that component only, so `ext_comp1` and `ext_comp2` (G1
+  or G2 with the identity fusion at cost 0, the lemma at the lower level
+  otherwise) give Q-Close, Q-Select, Q-Branch and Q-Link of the
+  composite (`ext_close`, `ext_select`, `ext_branch`, `ext_link`), with
+  `conn_del_iface1/2` and `conn_retype1/2`. Open in order: Q-Send and
+  Q-Recv of the composite (a send can move cut ends, whose partners
+  then join the interface; a receive can bring ends whose partners lie
+  in the other component, which become cut ends; both re-split the cut
+  as in S4.21), the assembly of `Pclauses` for the composite from
+  `pc_stop`, `pc_ready`, `tau_all` and the six external clauses, the
+  splitting of a fusion of the composite into fusions of the components
+  over a larger cut, the wrapper, then P-Join and P-Term. No deviation.
