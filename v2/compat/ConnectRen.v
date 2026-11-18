@@ -304,3 +304,15 @@ Proof.
     + apply H1. right. rewrite <-E. done.
     + apply H2. right. simpl in Hc. by rewrite <-Hc.
 Qed.
+
+(** The type of an interface end does not matter to [conn]. *)
+Lemma conn_retype1 Σ1 ΣC C1 Σ2 ΣD C2 o v :
+  conn Σ1 ΣC C1 Σ2 ΣD C2 → o ∈ dom Σ1 → conn (<[o := v]> Σ1) ΣC C1 Σ2 ΣD C2.
+Proof.
+  intros [Hd1 Hd2 Hcut Hf1 Hf2 HfC H12 H1C H2C HCC HC1 HC2] Ho.
+  assert (dom (<[o := v]> Σ1) = dom Σ1) as Ed by (rewrite dom_insert_L; set_solver).
+  assert (chans_of (<[o := v]> Σ1) = chans_of Σ1) as Ec by (unfold chans_of; by rewrite Ed).
+  constructor; rewrite ?Ec; try done.
+  - apply map_disjoint_dom. rewrite Ed. by apply map_disjoint_dom.
+  - intros o' Ho'. rewrite Ed in Ho' |- *. by apply Hf1.
+Qed.

@@ -1228,3 +1228,8 @@ The old development in theories/ stays untouched.
   `links` are slow when the goal mixes many unions; split the goal and
   `clear` first (one `set_solver` took 28 s and failed before the
   split). No deviation.
+- S4.24. The mirror `tau_link_ext2` (a link of p2 on two ends it does
+  not restrict). When p2 links its cut end o1 with its interface end
+  o2, G2 needs the fusion of p1 to land exactly on Σ1' ∪ ΣC', so Σ1'
+  keeps o2 at the type of o1‾ (`conn_retype1`), and `Prel_conv` brings
+  the composite back to Σ1 ∪ Σ2 at the end. No deviation.

@@ -422,4 +422,178 @@ Section links.
         * eapply Prel_down; [|exact P2]. lia.
         * rewrite Hc1'. unfold pfuse, p1', erase. simpl. by rewrite G2e.
   Qed.
+  (** The mirror, a link of p2 on two ends it does not restrict. *)
+  Lemma tau_link_ext2 M1 M2 i e e' o1 o2 :
+    M1 ##ₘ M2 → soup M1 = q1.2 → soup M2 = q2.2 → M2 !! i = Some e →
+    tstep e (LSess (SLink ({[o1]} ∪ {[o2]}))) e' → ech o1 ∈ q1.1 ∪ q2.1 ∪ K → ech o1 ∉ q2.1 → ech o2 ∉ q2.1 →
+    at_cost_P (S n) (c_link κ) (Prel κ) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T
+      (erase ((q1.1 ∪ q2.1 ∪ K) ∖ {[ech o1]}, emap (csub o1 o2) <$> (<[i := e']> (M1 ∪ M2)))).
+  Proof.
+    intros Hd HM1 HM2 Hi He HoC Hn1 Hn2.
+    pose proof Hc as Hc0. destruct Hc0 as [Hd1 Hd2 Hcut Hf1 Hf2 HfC H12 H1C H2C HCC HC1 HC2].
+    pose proof KD as HKD. pose proof (conn_sym _ _ _ _ _ _ Hc) as Hcs.
+    assert (istep (q2.1, M2) (EvSess i (SLink ({[o1]} ∪ {[o2]}))) (q2.1 ∖ sentc (SLink ({[o1]} ∪ {[o2]})), <[i := e']> M2)) as Hst2.
+    { eapply p_act_session; [exact Hi|exact He|]. simpl. rewrite set_map_union_L, !set_map_singleton_L. clear -Hn1 Hn2. set_solver. }
+    pose proof H2 as H2'. destruct H2' as (_ & _ & (_ & _ & _ & _ & _ & _ & Hl2)).
+    destruct (Hl2 _ _ _ _ (Hq2e M2 HM2) Hst2) as (oa & ob & Sa & Sb & x & Eab & Nab & La & Lb & Hab & A).
+    simpl in A. rewrite difference_empty_L in A.
+    assert (∃ S1 S2 y, (Σ2 ∪ ΣD) !! o1 = Some (S1, y) ∧ (Σ2 ∪ ΣD) !! o2 = Some (S2, y‾) ∧ sdual S1 S2 ∧ o1 ≠ o2 ∧
+      at_cost_P (S n) (c_link κ) (Prel κ) X2 W1 (delete o1 (delete o2 (Σ2 ∪ ΣD))) TUnit (erase (q2.1, <[i := e']> M2)))
+      as (S1 & S2 & y & L1 & L2 & H12' & No & A').
+    { destruct (pair_eq _ _ _ _ Eab Nab) as [[-> ->]|[-> ->]].
+      - exists Sa, Sb, x. done.
+      - exists Sb, Sa, (x‾). rewrite pt_dual_dual. split_and!; [done|done|by apply sdual_sym|done|].
+        by rewrite delete_delete. }
+    clear Eab Nab La Lb Hab A oa ob Sa Sb x.
+    pose proof (pfree_1C _ _ _ _ _ _ Hcs) as Hpf.
+    assert (o1 ∈ dom ΣD) as D1.
+    { destruct (lookup_1C _ _ _ _ L1) as [[_ D]|[_ D]]; [|done]. exfalso.
+      apply elem_of_chans_of in D. clear -D HoC H12 H2C HC1 HC2 HKD. rewrite <-HKD in HoC. set_solver. }
+    pose proof (cls_C _ _ _ _ _ _ Hcs o1 D1) as Co1.
+    assert (ΣD !! o1 = Some (S1, y)) as L1c by (destruct (lookup_1C _ _ _ _ L1) as [[_ D]|[? _]]; [tauto|done]).
+    assert (ech o1 ≠ ech o2) as Hne.
+    { intros E. apply ech_eq in E as [E|E]; [done|]. apply (Hpf o1); [by eapply elem_of_dom_2|rewrite <-E; by eapply elem_of_dom_2]. }
+    destruct (proj2 (cut_dual_sym _ _ HfC Hcut) _ _ _ L1c) as (S1' & L1d & Hd1').
+    assert (ech o1 ∉ q1.1) as Hn1' by tauto.
+    set (h := csub o1 o2).
+    set (p2' := erase (q2.1, <[i := e']> M2)) in A'.
+    assert (∀ o, pheld (delete o1 (delete o2 (Σ2 ∪ ΣD))) p2' o → h o = o) as Hfix2.
+    { intros o [Ho|Ho]; apply csub_ne.
+      - rewrite !dom_delete_L in Ho. intros E. apply ech_eq in E as [E|E]; [set_solver|].
+        apply elem_of_difference in Ho as [Ho _]. apply elem_of_difference in Ho as [Ho _].
+        rewrite dom_union_L, elem_of_union in Ho. subst. rewrite edual_edual in Co1. tauto.
+      - simpl in Ho. intros E. rewrite E in Ho. done. }
+    destruct (ren_held_id h _ _ (csub_dcomm _ _ (not_eq_sym Hne)) Hfix2) as (Hok2 & Hk2 & Hc2').
+    assert (set_map (gch h) q1.1 = q1.1) as G1e by (unfold h; rewrite set_map_gch_csub, decide_False by done; set_solver).
+    assert (set_map (gch h) q2.1 = q2.1) as G2e by (unfold h; rewrite set_map_gch_csub, decide_False by done; set_solver).
+    assert (soup (emap h <$> (<[i := e']> (M1 ∪ M2))) = emapE h q1.2 ⊎ (pmap h p2').2) as Es.
+    { rewrite soup_ins_fmap2 by eauto. unfold pmap, p2', erase. simpl. by rewrite HM1. }
+    destruct (conn_del _ _ _ _ _ _ o1 Hcs D1) as [_ HK1].
+    destruct (lookup_1C _ _ _ _ L2) as [[L2' D2]|[L2' D2]].
+    - (* o2 is an interface end of p2 *)
+      pose proof (cls_1 _ _ _ _ _ _ Hcs o2 D2) as Co2.
+      assert (kren h (Σ1 ∪ ΣC) = <[o2 := (S1', y‾)]> (Σ1 ∪ delete (edual o1) ΣC)) as Kh.
+      { unfold h. rewrite (kren_csub_eq _ _ _ (S1', y‾)).
+        - rewrite delete_union, (delete_id Σ1); [done|apply not_elem_of_dom; tauto].
+        - by apply (lookup_1C_C Σ1 ΣC Σ2 ΣD q1.1 q2.1).
+        - rewrite dom_union_L. clear -Co1. set_solver.
+        - rewrite dom_union_L. clear -Co2. set_solver.
+        - by apply not_eq_sym. }
+      assert (pren_ok h (Σ1 ∪ ΣC) q1) as Hok1.
+      { apply pren_ok_csub; [by apply not_eq_sym| | |]; intros [H|H]; rewrite ?dom_union_L in H; simpl in H;
+          rewrite ?ech_edual in H; clear -H Co1 Co2 Hn1'; set_solver. }
+      set (Σ1' := <[o2 := (S1', y‾)]> Σ1).
+      assert (Prel κ (S n) W1 (Σ1' ∪ delete (edual o1) ΣC) T (pmap h q1)) as P1.
+      { pose proof (HP1 h ∅ (pren_fuse_ok _ _ _ Hok1)) as P. rewrite sdrop_empty, pfuse_empty, Kh in P.
+        unfold Σ1'. by rewrite <-insert_union_l. }
+      assert (delete o1 (delete o2 (Σ2 ∪ ΣD)) = delete o2 Σ2 ∪ delete o1 ΣD) as E2.
+      { rewrite !delete_union. rewrite (delete_id (delete o2 Σ2) o1), (delete_id ΣD o2); [done| |].
+        - apply not_elem_of_dom. tauto.
+        - apply not_elem_of_dom. rewrite dom_delete_L. clear -Co1. set_solver. }
+      assert (senv_eqv (Σ1' ∪ delete o2 Σ2) (Σ1 ∪ Σ2)) as EI.
+      { assert (Σ1 ∪ Σ2 = <[o2 := (S2, y‾)]> Σ1 ∪ delete o2 Σ2) as ->.
+        { rewrite <-insert_union_l. rewrite <-(delete_id Σ1 o2) at 2 by (apply not_elem_of_dom; tauto).
+          rewrite <-delete_union. symmetry. apply insert_delete_id. apply lookup_union_Some_raw. right. split; [apply not_elem_of_dom; tauto|done]. }
+        apply senv_eqv_union; [|apply senv_eqv_refl]. apply senv_eqv_insert; [apply senv_eqv_refl|].
+        eapply sdual_trans_l; [exact Hd1'|exact H12']. }
+      pose proof (conn_link_iface _ _ _ _ _ _ o1 o2 S2 (y‾) Hcs D1 L2') as Hcn0.
+      assert (conn Σ1' (delete (edual o1) ΣC) q1.1 (delete o2 Σ2) (delete o1 ΣD) q2.1) as Hcn.
+      { apply conn_sym in Hcn0. unfold Σ1'. rewrite <-(insert_insert_eq Σ1 o2 (S1', y‾) (S2, y‾)).
+        apply conn_retype1; [done|]. rewrite dom_insert_L. set_solver. }
+      pose proof (cut_dual_chans _ _ (match Hcn with Conn _ _ _ _ _ _ _ _ c _ _ _ _ _ _ _ _ _ => c end)) as HKc.
+      assert (erase ((q1.1 ∪ q2.1 ∪ K) ∖ {[ech o1]}, emap h <$> (<[i := e']> (M1 ∪ M2))) =
+        pconn (pmap h q1) (pmap h p2') (chans_of (delete (edual o1) ΣC))) as ->.
+      { unfold erase, pconn. cbn [fst snd]. rewrite Es. f_equal. unfold pmap. simpl. rewrite G1e, G2e, <-HKc, HK1, HKD.
+        clear -Hn1 Hn1'. set_solver. }
+      revert EI. generalize (Σ1 ∪ Σ2). intros Σx EI. destruct A' as [A0 A1]. split.
+      + intros Hz. apply (Prel_conv _ _ _ _ _ _ _ EI).
+        pose proof (G2 p2' _ h ∅ Σ1' (delete (edual o1) ΣC) (delete o2 Σ2) (delete o1 ΣD) h ∅ (A0 Hz) (pren_fuse_ok _ _ _ Hok2)) as HG.
+        rewrite !sdrop_empty, !pfuse_empty, Hk2, Kh in HG. apply HG; [exact E2|by apply pren_fuse_ok|unfold Σ1'; by rewrite insert_union_l|].
+        rewrite Hc2'. unfold pmap, p2', erase. simpl. by rewrite G1e.
+      + intros Hz. apply (Prel_conv _ _ _ _ _ _ _ EI).
+        apply (L (S n - c_link κ) ltac:(lia) Σ1' (delete (edual o1) ΣC) (delete o2 Σ2) (delete o1 ΣD)).
+        * eapply Prel_down; [|exact P1]. lia.
+        * rewrite <-E2, <-Hk2. apply Prel_rename; [done|by apply A1].
+        * rewrite Hc2'. unfold pmap, p2', erase. simpl. by rewrite G1e.
+    - (* o2 is a cut end of p2 *)
+      pose proof (cls_C _ _ _ _ _ _ Hcs o2 D2) as Co2.
+      destruct (proj2 (cut_dual_sym _ _ HfC Hcut) _ _ _ L2') as (S2' & L2d & Hd2'). rewrite pt_dual_dual in L2d.
+      assert (o2 ≠ edual o1) as No' by (intros ->; tauto).
+      assert (kren h (Σ1 ∪ ΣC) = <[o2 := (S1', y‾)]> (delete (edual o1) (Σ1 ∪ ΣC))) as Kh.
+      { unfold h. apply kren_csub_eq.
+        - by apply (lookup_1C_C Σ1 ΣC Σ2 ΣD q1.1 q2.1).
+        - rewrite dom_union_L. clear -Co1. set_solver.
+        - rewrite dom_union_L. clear -Co2. set_solver.
+        - by apply not_eq_sym. }
+      assert (fuse_ok h {[ech o2]} (Σ1 ∪ ΣC) q1) as Hok1.
+      { apply fuse_ok_csub_cut; [by apply not_eq_sym| | |].
+        - intros [H|H]; rewrite ?dom_union_L in H; simpl in H; clear -H Co1 Hn1'; set_solver.
+        - intros [H|H]; rewrite ?dom_union_L in H; simpl in H; clear -H Co2; set_solver.
+        - fold h. rewrite Kh. intros o Ho. apply elem_of_singleton in Ho. apply ech_eq in Ho as [Eo|Eo].
+          + subst o. exists S1', (y‾), S2'. rewrite lookup_insert_eq, lookup_insert_ne by first [apply ne_edual|apply edual_ne].
+            rewrite lookup_delete_ne by (intros E; apply No; by apply edual_inj).
+            split_and!; [done| |].
+            * rewrite pt_dual_dual. by apply (lookup_1C_C Σ1 ΣC Σ2 ΣD q1.1 q2.1).
+            * by apply (sdual_dual_dual S1 S1' S2 S2').
+          + assert (o = edual o2) as -> by (rewrite Eo, edual_edual; done). exists S2', y, S1'. rewrite edual_edual, lookup_insert_eq, lookup_insert_ne by first [apply ne_edual|apply edual_ne].
+            rewrite lookup_delete_ne by (intros E; apply No; by apply edual_inj).
+            split_and!; [by apply (lookup_1C_C Σ1 ΣC Σ2 ΣD q1.1 q2.1)|done|].
+            apply sdual_sym. by apply (sdual_dual_dual S1 S1' S2 S2'). }
+      assert (sdrop {[ech o2]} (kren h (Σ1 ∪ ΣC)) = Σ1 ∪ delete (edual o1) (delete (edual o2) ΣC)) as ES.
+      { rewrite Kh. apply map_eq. intros o. destruct (decide (ech o = ech o2)) as [Eo|Eo].
+        - assert (sdrop {[ech o2]} (<[o2 := (S1', y‾)]> (delete (edual o1) (Σ1 ∪ ΣC))) !! o = None) as ->.
+          { apply eq_None_not_Some. intros [v Hv]. apply sdrop_lookup in Hv as [_ Hv]. apply Hv. rewrite Eo. by apply elem_of_singleton. }
+          symmetry. apply lookup_union_None.
+          apply ech_eq in Eo as [Eo|Eo]; [subst o|assert (o = edual o2) as -> by (rewrite Eo, edual_edual; done)]; split.
+          + apply not_elem_of_dom. tauto.
+          + rewrite lookup_delete_ne by (intros E; apply No'; by rewrite E). rewrite lookup_delete_ne by apply edual_ne.
+            apply not_elem_of_dom. tauto.
+          + apply not_elem_of_dom. tauto.
+          + rewrite lookup_delete_ne by (intros E; apply edual_inj in E; by apply No). by rewrite lookup_delete_eq.
+        - destruct (sdrop {[ech o2]} (<[o2 := (S1', y‾)]> (delete (edual o1) (Σ1 ∪ ΣC))) !! o) as [v|] eqn:Ev.
+          + apply sdrop_lookup in Ev as [Ev _]. rewrite lookup_insert_ne in Ev by (intros ->; done).
+            apply lookup_delete_Some in Ev as [Ne Ev]. symmetry.
+            rewrite <-(delete_id Σ1 (edual o1)) by (apply not_elem_of_dom; tauto).
+            rewrite <-delete_union, lookup_delete_ne by done.
+            rewrite <-(delete_id Σ1 (edual o2)) at 1 by (apply not_elem_of_dom; tauto).
+            rewrite <-delete_union, lookup_delete_ne by (intros <-; apply Eo; by rewrite ech_edual). done.
+          + symmetry. apply eq_None_not_Some. intros [v Hv].
+            assert (sdrop {[ech o2]} (<[o2 := (S1', y‾)]> (delete (edual o1) (Σ1 ∪ ΣC))) !! o = Some v) as Hc'; [|congruence].
+            apply sdrop_lookup. split; [|by intros ?%elem_of_singleton]. rewrite lookup_insert_ne by (intros ->; done).
+            apply lookup_union_Some_raw in Hv as [Hv|[Nv Hv]].
+            * rewrite lookup_delete_ne by (intros <-; apply elem_of_dom_2 in Hv; tauto).
+              by apply lookup_union_Some_l.
+            * apply lookup_delete_Some in Hv as [N1 Hv]. apply lookup_delete_Some in Hv as [N2 Hv].
+              rewrite lookup_delete_ne by done. apply lookup_union_Some_raw. by right. }
+      assert (delete o1 (delete o2 (Σ2 ∪ ΣD)) = Σ2 ∪ delete o1 (delete o2 ΣD)) as E2.
+      { rewrite !delete_union. rewrite (delete_id Σ2 o2), (delete_id Σ2 o1); [done|apply not_elem_of_dom; tauto|apply not_elem_of_dom; tauto]. }
+      destruct (conn_del _ _ _ _ _ _ o2 Hcs D2) as [Hca HKa].
+      destruct (conn_del _ _ _ _ _ _ o1 Hca) as [Hcb HKb]; [rewrite dom_delete_L; clear -D1 No; set_solver|].
+      assert (conn Σ2 (delete o1 (delete o2 ΣD)) q2.1 Σ1 (delete (edual o1) (delete (edual o2) ΣC)) (q1.1 ∪ {[ech o2]})) as Hcn0.
+      { assert (ech o2 ∉ q2.1) as N2 by (destruct Co2 as (_ & _ & _ & ? & _); done).
+        assert (ech o2 ∈ K) as Ek by (rewrite <-HKD; by apply elem_of_chans_of).
+        apply (conn_C2 _ _ _ _ _ q1.1); [done| |]; rewrite ?HKb, ?HKa.
+        - apply disjoint_union_l. split.
+          + rewrite HKD. clear -HCC HC1. set_solver.
+          + apply disjoint_singleton_l. clear -N2. set_solver.
+        - apply disjoint_union_l. split.
+          + clear -HC1. set_solver.
+          + apply disjoint_singleton_l. clear -Ek H1C H2C. set_solver. }
+      pose proof (conn_sym _ _ _ _ _ _ Hcn0) as Hcn.
+      pose proof (cut_dual_chans _ _ (match Hcn with Conn _ _ _ _ _ _ _ _ c _ _ _ _ _ _ _ _ _ => c end)) as HKc.
+      assert (erase ((q1.1 ∪ q2.1 ∪ K) ∖ {[ech o1]}, emap h <$> (<[i := e']> (M1 ∪ M2))) =
+        pconn (pfuse h {[ech o2]} q1) (pmap h p2') (chans_of (delete (edual o1) (delete (edual o2) ΣC)))) as ->.
+      { unfold erase, pconn. cbn [fst snd]. rewrite Es. f_equal. unfold pmap, pfuse. simpl. rewrite G1e, G2e, <-HKc, HKb, HKa, HKD.
+        apply elem_of_chans_of in D1, D2. rewrite HKD in D1, D2. clear -Hn1 Hn1' D1 D2 Hne. apply set_eq. intros c.
+        destruct (decide (c = ech o2)) as [->|?]; set_solver. }
+      pose proof (HP1 h {[ech o2]} Hok1) as P1. rewrite ES in P1.
+      destruct A' as [A0 A1]. split.
+      + intros Hz. pose proof (G2 p2' _ h ∅ Σ1 (delete (edual o1) (delete (edual o2) ΣC)) Σ2 (delete o1 (delete o2 ΣD)) h {[ech o2]} (A0 Hz) (pren_fuse_ok _ _ _ Hok2)) as HG.
+        rewrite sdrop_empty, pfuse_empty, Hk2 in HG. apply HG; [exact E2|exact Hok1|exact ES|].
+        rewrite Hc2'. unfold pfuse, p2', erase. simpl. by rewrite G1e.
+      + intros Hz. apply (L (S n - c_link κ) ltac:(lia) Σ1 (delete (edual o1) (delete (edual o2) ΣC)) Σ2 (delete o1 (delete o2 ΣD))).
+        * eapply Prel_down; [|exact P1]. lia.
+        * rewrite <-E2, <-Hk2. apply Prel_rename; [done|by apply A1].
+        * rewrite Hc2'. unfold pfuse, p2', erase. simpl. by rewrite G1e.
+  Qed.
 End links.
