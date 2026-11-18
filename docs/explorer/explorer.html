@@ -76,8 +76,8 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 24px; ma
 
 /* hover targets inside formulas */
 .math [class*="k-"] { cursor: help; }
-.math .is-hot, .math .is-pinned { color: var(--hot); }
-.math .is-pinned { text-decoration: underline; }
+.math rect.lr-box { fill: var(--hot-soft); stroke: var(--hot); stroke-width: 18; pointer-events: none; }
+.math rect.lr-box.pin { stroke-width: 36; }
 
 aside { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 112px); align-self: start; max-height: calc(100vh - 130px); overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
 @media (max-width: 900px) { aside { position: fixed; left: 0; right: 0; bottom: 0; top: auto; max-height: 46vh; border-radius: 12px 12px 0 0; z-index: 6; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); box-shadow: 0 -6px 24px rgba(0,0,0,.12); } aside.empty { display: none; } main { padding-bottom: 50vh; } }
@@ -216,7 +216,8 @@ window.MathJax = {
     }
     if (!shown) root.insertAdjacentHTML('beforeend', '<p class="empty-state">Nothing in this section matches the filter for this instance.</p>');
     typeset(root);
-    if (pinned) mark(pinned, 'is-pinned');
+    hotEl = null;
+    if (pinned) markAll(pinned);
   }
 
   function renderExamples(root) {
@@ -235,40 +236,69 @@ window.MathJax = {
   // typeset inline $…$ math in prose (captions, intros, notes)
   function typeset(el) { if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]).catch(() => {}); }
 
-  function showNote(key, isPinned) {
-    const n = MAP.notes[key], aside = $('#note');
-    aside.classList.remove('empty');
-    if (!n) { aside.innerHTML = `<div class="placeholder">No note for <code>${esc(key)}</code>.</div>`; return; }
+  const noteCache = new Map();
+  function noteBody(key) {
+    if (noteCache.has(key)) return noteCache.get(key);
+    const n = MAP.notes[key], body = document.createElement('div');
+    if (!n) { body.innerHTML = `<div class="placeholder">No note for <code>${esc(key)}</code>.</div>`; noteCache.set(key, body); return body; }
     const args = as => Array.isArray(as) && as.length ? `<div><dt>Arguments</dt><dd><ul class="args">${as.map(x => `<li>$${esc(x.name)}$ ${prose(x.meaning)}</li>`).join('')}</ul></dd></div>` : '';
     const row = (t, v, cls) => v ? `<div><dt>${t}</dt><dd${cls ? ` class="${cls}"` : ''}>${prose(v)}</dd></div>` : '';
     const u = uses[key] ? [...uses[key].entries()] : [];
-    aside.innerHTML = `<div class="eyebrow"><span>${isPinned ? 'Pinned' : 'Hover'}</span>${isPinned ? '<button type="button" id="unpin">Unpin</button>' : ''}</div>
-      <h2>${esc(n.title || key)}</h2>
+    body.innerHTML = `<h2>${esc(n.title || key)}</h2>
       <dl>${n.sig ? `<div><dt>Type</dt><dd class="sig">$\\displaystyle ${esc(n.sig)}$</dd></div>` : ''}${args(n.args)}${row('What', n.what)}${row('Why', n.why)}${row('Without it', n.breaks, 'breaks')}${row('Example', n.example)}${row('Rocq', n.rocq)}</dl>
       ${u.length > 1 ? `<div class="uses">Also in ${u.map(([id, v]) => `<a href="#${v.sec}" data-jump="${esc(id)}">${esc(v.title)}</a>`).join('')}</div>` : ''}`;
-    typeset(aside);
+    typeset(body);
+    noteCache.set(key, body);
+    return body;
   }
-  function clearMarks(cls) { document.querySelectorAll('.' + cls).forEach(e => e.classList.remove(cls)); }
-  function mark(key, cls) {
-    clearMarks(cls);
+  let shownKey = null, shownPinned = null;
+  function showNote(key, isPinned) {
+    if (key === shownKey && isPinned === shownPinned) return;
+    shownKey = key; shownPinned = isPinned;
+    const aside = $('#note');
+    aside.classList.remove('empty');
+    aside.replaceChildren();
+    aside.insertAdjacentHTML('beforeend', `<div class="eyebrow"><span>${isPinned ? 'Pinned' : 'Hover'}</span>${isPinned ? '<button type="button" id="unpin">Unpin</button>' : ''}</div>`);
+    aside.appendChild(noteBody(key));
+  }
+  // a light box behind an entry, drawn inside its own coordinate system
+  function boxOn(el, cls) {
+    let b; try { b = el.getBBox(); } catch (e) { return; }
+    if (!b || !b.width) return;
+    const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    const pad = 60;
+    r.setAttribute('x', b.x - pad); r.setAttribute('y', b.y - pad);
+    r.setAttribute('width', b.width + 2 * pad); r.setAttribute('height', b.height + 2 * pad);
+    r.setAttribute('rx', 80); r.setAttribute('class', 'lr-box ' + cls);
+    el.insertBefore(r, el.firstChild);
+  }
+  function boxesOff(cls) { document.querySelectorAll('.math rect.lr-box.' + cls).forEach(r => r.remove()); }
+  function markAll(key) {
+    boxesOff('pin');
     const c = 'k-' + key.replace(/\./g, '__');
-    document.querySelectorAll('.math .' + CSS.escape(c)).forEach(e => e.classList.add(cls));
+    document.querySelectorAll('.math .' + CSS.escape(c)).forEach(e => boxOn(e, 'pin'));
+  }
+  let hotEl = null;
+  function hot(el) {
+    if (el === hotEl) return;
+    boxesOff('hot'); hotEl = el;
+    if (el) boxOn(el, 'hot');
   }
 
   const content = $('#content');
   content.addEventListener('mouseover', e => {
     const t = e.target.closest && e.target.closest('[class*="k-"]'); if (!t) return;
     const k = keyOf(t); if (!k) return;
-    mark(k, 'is-hot'); if (!pinned) showNote(k, false);
+    hot(t); if (!pinned) showNote(k, false);
   });
-  content.addEventListener('mouseout', e => { if (!e.relatedTarget || !content.contains(e.relatedTarget)) clearMarks('is-hot'); });
+  content.addEventListener('mouseout', e => { if (!e.relatedTarget || !content.contains(e.relatedTarget) || !e.relatedTarget.closest('[class*="k-"]')) hot(null); });
   content.addEventListener('click', e => {
     const t = e.target.closest && e.target.closest('[class*="k-"]'); if (!t) return;
     const k = keyOf(t); if (!k) return;
-    pinned = k; mark(k, 'is-pinned'); showNote(k, true);
+    pinned = k; markAll(k); showNote(k, true);
   });
   $('#note').addEventListener('click', e => {
-    if (e.target.id === 'unpin') { pinned = null; clearMarks('is-pinned'); $('#note').classList.add('empty'); $('#note').innerHTML = '<div class="placeholder">Hover over a part of a formula.</div>'; }
+    if (e.target.id === 'unpin') { pinned = null; shownKey = null; boxesOff('pin'); $('#note').classList.add('empty'); $('#note').innerHTML = '<div class="placeholder">Hover over a part of a formula.</div>'; }
     const j = e.target.dataset && e.target.dataset.jump;
     if (j) setTimeout(() => { const el = document.getElementById('b-' + j); if (el) { el.scrollIntoView({ block: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1400); } }, 60);
   });
