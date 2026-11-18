@@ -27,7 +27,7 @@
       restricted links from the live relation of each thread. *)
 
 From stdpp Require Import relations.
-From GV Require Export soup.LFEvents soup.LFRunFacts.
+From GV Require Export soup.LFEvents soup.LFRunFacts soup.Relabel.
 
 Lemma compat_enabled' q t s e es a1 a2 :
   t ≠ s → q.2 !! t = Some e → q.2 !! s = Some es → act e = Some a1 → act es = Some a2 → compat a1 a2 →
@@ -487,3 +487,61 @@ Section run.
     - exfalso. by destruct Hst as [_ Hτ].
   Qed.
 End run.
+(** ** The soup at every lifting *)
+
+Lemma soup_lifting N W T a q :
+  (∀ n, a ∈ S^{N,W} _ n⟦∅ ⊢ T⟧) → erase q = erase (s_q a) →
+  ∃ a', s_q a' = q ∧ ∀ n, a' ∈ S^{N,W} _ n⟦∅ ⊢ T⟧.
+Proof.
+  destruct a as [[C1 M1] K tk], q as [C2 M2]. intros Hs Hq. unfold erase in Hq. simpl in Hq.
+  injection Hq as -> HM. destruct (relabel_map M1 M2 (eq_sym HM)) as (f & g & H1 & H2).
+  exists (LFState (C1, M2) (krelabel f K) (tk ∘ g)). split; [done|]. intros n.
+  destruct (Hs n) as (A & Π & U & Hsi). exists A, Π, (U ∘ g). exact (soup_relabel _ _ _ _ _ M1 M2 _ _ _ _ _ f g H1 H2 Hsi).
+Qed.
+
+Lemma soup_links_restricted N W T a :
+  lfworld W → (∀ n, a ∈ S^{N,W} _ n⟦∅ ⊢ T⟧) → links_restricted (erase (s_q a)).
+Proof.
+  intros HW Hs0 q E e o1 o2 Hq HE Ha. destruct (pred_star_lift _ _ Hq) as (q' & Hq' & <-).
+  destruct (lfsoup_isteps N W T a q' Hs0 Hq') as (a' & <- & Hs').
+  destruct (Hs' 1) as (A & Π & U & Hs). simpl in HE.
+  assert (e ∈ soup (s_q a').2) as Hin by (rewrite HE; multiset_solver).
+  apply elem_of_soup in Hin as [t Ht]. exact (s_link _ _ _ _ _ _ _ _ Hs (proj1 HW) t e o1 o2 Ht Ha).
+Qed.
+
+(** ** Adequacy *)
+
+(** The soup alone gives lock freedom. *)
+Theorem lf_adequacy_soup N W T a :
+  lfworld W → (∀ n, a ∈ S^{N,W} _ n⟦∅ ⊢ T⟧) → lock_free (erase (s_q a)).
+Proof.
+  intros HW Hs r l Hr0 Hmax Hfair.
+  destruct (soup_lifting N W T a (r 0) Hs Hr0) as (a0 & Ha0 & Hs0).
+  refine (lf_run_criterion (erase (s_q a)) r l Hr0 Hmax Hfair (wt N a0 r l) _ _ _ _ _
+    (nat * nat) lexlt (fu N a0 r l) lexlt_wf _ _ _ point (w_lt W) (we N a0 r l) (proj2 HW) _ _).
+  - intros k t s. apply (wt_pend N W HW T a0 Hs0 r l Ha0 Hmax).
+  - intros k t s. apply (wt_holder N W HW T a0 Hs0 r l Ha0 Hmax).
+  - intros k t. apply (lf_local_progress N W HW T a0 Hs0 r l Ha0 Hmax).
+  - exact (soup_no_tau_divergence N W T a Hs).
+  - exact (soup_links_restricted N W T a HW Hs).
+  - intros k t s s'. apply (wt_uniq N W HW T a0 Hs0 r l Ha0 Hmax).
+  - intros k t. apply (lf_pers N W HW T a0 Hs0 r l Ha0 Hmax).
+  - intros k t. apply (lf_fuel N W HW T a0 Hs0 r l Ha0 Hmax).
+  - intros k t. apply (lf_stab N W HW T a0 Hs0 r l Ha0 Hmax).
+  - intros k t s. apply (lf_rank N W HW T a0 Hs0 r l Ha0 Hmax).
+Qed.
+
+(** lfworld W ∧ ∅ ⊪_W p : T ⟹ lock_free p. *)
+Theorem lf_adequacy W T p : lfworld W → ∅ ⊪_W p : T → lock_free p.
+Proof. intros HW [_ (N & a & <- & Hs)]. by apply (lf_adequacy_soup N W T a). Qed.
+
+(** lfworld W ∧ ∅ ⊪_W p : T ⟹ every weakly fair maximal run makes every
+    thread progress: from every position on, every thread later stops or
+    takes part in a channel step. *)
+Theorem lf_thread_progress W T p :
+  lfworld W → ∅ ⊪_W p : T →
+  ∀ r l, erase (r 0) = p → maximal r l → wfair r l → thread_progress_run r l.
+Proof.
+  intros HW HP. pose proof (lf_adequacy W T p HW HP) as Hlf. destruct HP as [_ (N & a & <- & Hs)].
+  apply thread_progress; [done|exact (soup_no_tau_divergence N W T a Hs)|exact (soup_links_restricted N W T a HW Hs)].
+Qed.
