@@ -1204,6 +1204,15 @@ first, in stage S2.
   after S8). O-New and F-New choose the session type of a new channel by
   separate existentials, so Π cannot be read off A. P-Term starts Π at
   `te_sty <$> Θ`.
+- Q12 resolved (author, 2026-11-18). LF drops the process conjunct.
+  `Σ ⊪_W p : T := ∃ N a, erase (s_q a) = p ∧ ∀ n, a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧`.
+  `soup_no_tau_divergence` (S8) gives what the conjunct was kept for.
+- The lock-free judgment `Σ ⊩^N_W p : T` has static premises only
+  (author, 2026-11-18: no semantic statement in the static world).
+  P-Term asks the merged judgment at `Some N`, `guarded t` and
+  `meets ϑ 0 tk`. fsem^N is not a premise. The proof gets it from
+  `cost_fundamental` and `fsem_of_cost`. P-Connect types the cut at
+  exactly dual types. No family renaming (S9.2).
 
 ## 5  Open decisions for the author
 
@@ -1444,8 +1453,9 @@ P-Join     as P-Connect, with strict (W1 ⊔ W2) replaced by the strictness of t
            join of the two worlds restricted to their shared names
 ```
 
-The lock-free rules `⊩^N_W` add `fsem^N` to P-Term and nothing to P-Connect
-and P-Join beyond renaming families apart.
+The lock-free rules `⊩^N_W` type threads at `Some N` and add `guarded t` and
+`meets ϑ 0 tk` to P-Term, all static. P-Connect and P-Join are those of
+`⊢_W` (decision of 2026-11-18, section 4).
 
 ### A.4  Naming rules
 
