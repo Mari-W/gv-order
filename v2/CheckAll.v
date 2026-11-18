@@ -1,7 +1,6 @@
 (** * Every main result of v2 is closed under the global context
 
-    Stages S1, S2, S3, S6, S7, S8 and S9, the parts of S4 done so far and the
-    term part of S5 (docs/redesign/progress.md). [make check] compiles this file and fails if any line below
+    Stages S1 to S9 (docs/redesign/progress.md). [make check] compiles this file and fails if any line below
     reports an axiom. *)
 
 From GV Require Import lang.Harmony lang.ThreadSim lang.ChannelSwap
@@ -10,6 +9,7 @@ From GV Require Import static.Conservativity static.Weakening static.Renaming st
   examples.ClientServer examples.Cycle examples.FreshBetween examples.FreshMany
   examples.FactoryEx examples.GrowRing.
 From GV Require Import relation.Adequacy.
+From GV Require Import static.FundamentalProc.
 From GV Require Import fuel.FuelSub.
 From GV Require Import cost.Transformers cost.Forwarder cost.Exact cost.CostFund.
 From GV Require Import compat.Rules compat.LiveDF compat.Swap compat.Rename compat.PSwap compat.Conv compat.ConnectP.
@@ -229,6 +229,26 @@ Print Assumptions pc_clauses.
 Print Assumptions fs_conn.
 Print Assumptions sem_p_connect.
 Print Assumptions sem_p_join.
+(** S4. P-Term. *)
+Print Assumptions Ebody_rename.
+Print Assumptions Erel_S_ind_ren.
+Print Assumptions istep_single.
+Print Assumptions spawn_split.
+Print Assumptions sth_fuse.
+Print Assumptions snd_sth.
+Print Assumptions rcv_sth.
+Print Assumptions lk_res.
+Print Assumptions core.
+Print Assumptions sem_p_term.
+(** S5. The process theorems. *)
+Print Assumptions ptyped_pfree.
+Print Assumptions ptyped_chans.
+Print Assumptions ptyped_conn.
+Print Assumptions fundamental_proc.
+Print Assumptions live_fundamental_proc.
+Print Assumptions soundness.
+Print Assumptions live_soundness.
+Print Assumptions soundness_source.
 (** S4. Renaming of P. *)
 Print Assumptions istep_qswap.
 Print Assumptions erase_qswap.
