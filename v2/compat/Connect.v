@@ -565,34 +565,150 @@ Qed.
     type. *)
 Lemma comp_ready κ n W1 T X Σ q :
   prim T → Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X W1 Σ T q →
-  stable_p q → ¬ link_p q →
-  above_offered W1 Σ (offered_p Σ q) ∧
-  ((∀ o, ¬ offered_p Σ q o) →
-     ∃ v E, q = (∅, {[+ v +]} ⊎ E) ∧ Vrel κ (S n) W1 Σ T v ∧ ∀ e, e ∈ E → e = EUnit).
+  stable_p q →
+  link_p q ∨
+  (above_offered W1 Σ (offered_p Σ q) ∧
+   ((∀ o, ¬ offered_p Σ q o) →
+      ∃ v E, q = (∅, {[+ v +]} ⊎ E) ∧ Vrel κ (S n) W1 Σ T v ∧ ∀ e, e ∈ E → e = EUnit)).
 Proof.
-  intros HT (Hs & Hr & _) Hstab Hnl.
+  intros HT (Hs & Hr & _) Hstab.
   assert (pirred q → Σ = ∅) as HΣ.
   { intros Hi. destruct (Hs Hi) as (v & E & _ & Hv & _). by eapply Vrel_prim_empty. }
-  split.
-  - intros o S x Ho Hno.
-    assert (¬ pirred q) as Hni by (intros Hi; rewrite (HΣ Hi) in Ho; by rewrite lookup_empty in Ho).
-    destruct (Hr Hni Hstab) as [?|[_ Ha]]; [done|]. by apply (Ha o S x).
-  - intros Hno.
-    destruct (decide (Forall is_val (elements q.2))) as [Hall|Hall].
-    + assert (pirred q) as Hi.
-      { apply all_vals_pirred. intros e He. apply gmultiset_elem_of_elements in He.
-        apply list_elem_of_In in He. by eapply Forall_forall in Hall; [|exact He]. }
-      destruct (Hs Hi) as (v & E & -> & Hv & HE). eauto.
-    + assert (¬ pirred q) as Hni.
-      { intros Hi. destruct (Hs Hi) as (v & E & Hq & Hv & HE). apply Hall. apply Forall_forall.
-        intros e He. apply list_elem_of_In, gmultiset_elem_of_elements in He. rewrite Hq in He. simpl in He.
-        apply gmultiset_elem_of_disj_union in He as [He|He].
-        - apply gmultiset_elem_of_singleton in He as ->. by eapply Vrel_val.
-        - by rewrite (HE e He). }
-      destruct (Hr Hni Hstab) as [?|[Ht _]]; [done|].
-      destruct (Ht Hno) as (v & E & Hq & Hv & HE). exfalso. apply Hall. apply Forall_forall.
+  destruct (decide (Forall is_val (elements q.2))) as [Hall|Hall].
+  - assert (pirred q) as Hi.
+    { apply all_vals_pirred. intros e He. apply gmultiset_elem_of_elements in He.
+      apply list_elem_of_In in He. by eapply Forall_forall in Hall; [|exact He]. }
+    right. split.
+    + intros o S x Ho. by rewrite (HΣ Hi), lookup_empty in Ho.
+    + intros _. destruct (Hs Hi) as (v & E & -> & Hv & HE). eauto.
+  - assert (¬ pirred q) as Hni.
+    { intros Hi. destruct (Hs Hi) as (v & E & Hq & Hv & HE). apply Hall. apply Forall_forall.
       intros e He. apply list_elem_of_In, gmultiset_elem_of_elements in He. rewrite Hq in He. simpl in He.
       apply gmultiset_elem_of_disj_union in He as [He|He].
-      * by apply gmultiset_elem_of_singleton in He as ->.
-      * by rewrite (HE e He).
+      - apply gmultiset_elem_of_singleton in He as ->. by eapply Vrel_val.
+      - by rewrite (HE e He). }
+    destruct (Hr Hni Hstab) as [?|[Ht Ha]]; [by left|right]. split; [done|].
+    intros Hno. destruct (Ht Hno) as (v & E & Hq & Hv & HE). exfalso. apply Hall. apply Forall_forall.
+    intros e He. apply list_elem_of_In, gmultiset_elem_of_elements in He. rewrite Hq in He. simpl in He.
+    apply gmultiset_elem_of_disj_union in He as [He|He].
+    + by apply gmultiset_elem_of_singleton in He as ->.
+    + by rewrite (HE e He).
 Qed.
+
+Lemma link_p_lift κ n W1 T1 T2 X1 X2 Σ1 ΣC Σ2 ΣD q1 q2 :
+  conn Σ1 ΣC q1.1 Σ2 ΣD q2.1 →
+  Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X1 W1 (Σ1 ∪ ΣC) T1 q1 →
+  Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X2 W1 (Σ2 ∪ ΣD) T2 q2 →
+  link_p q1 → stable_p (pconn q1 q2 (chans_of ΣC)) → link_p (pconn q1 q2 (chans_of ΣC)).
+Proof.
+  intros Hc H1 H2 (os & p1' & Hst) Hs. set (K := chans_of ΣC).
+  destruct (erase_surj (pconn q1 q2 K)) as [q Hq]. destruct (pconn_lift _ _ _ _ Hq) as (M1 & M2 & -> & Hd & HM1 & HM2).
+  destruct (pstep_lift (q1.1, M1) (PSess (SLink os)) p1') as (ev & q1' & Hi & Hl & _).
+  { unfold erase. simpl. rewrite HM1. by destruct q1. }
+  destruct ev; try discriminate. injection Hl as ->.
+  destruct (decide (subjs (SLink os) ## q1.1 ∪ q2.1 ∪ K)) as [Hsj|Hsj].
+  - destruct (sess_lift ΣC q1 q2 M1 M2 i _ q1' Hd Hi Hsj) as [q' Hq'].
+    exists os, (erase q'). rewrite <-Hq. by exists (q1.1 ∪ q2.1 ∪ K, M1 ∪ M2), (EvSess i (SLink os)), q'.
+  - exfalso. by apply (link_tau κ n W1 T1 T2 X1 X2 Σ1 ΣC Σ2 ΣD q1 q2 Hc H1 H2 M1 M2 i os q1' Hd HM1 HM2 Hi).
+Qed.
+
+Definition pts (Σ : senv) : list point := (λ kv : cend * (sty * point), kv.2.2) <$> map_to_list Σ.
+
+Lemma pts_elem (Σ : senv) o S x : Σ !! o = Some (S, x) → x ∈ pts Σ.
+Proof. intros H. apply list_elem_of_fmap. exists (o, (S, x)). split; [done|]. by apply elem_of_map_to_list. Qed.
+
+Lemma lookup_union_cases (m1 m2 : senv) o v :
+  (m1 ∪ m2) !! o = Some v → m1 !! o = Some v ∨ (m1 !! o = None ∧ m2 !! o = Some v).
+Proof. rewrite lookup_union_Some_raw. done. Qed.
+
+Lemma lookup_union_disj_r (m1 m2 : senv) o v : m1 ##ₘ m2 → m2 !! o = Some v → (m1 ∪ m2) !! o = Some v.
+Proof. intros Hd H. by apply lookup_union_Some_r. Qed.
+
+Section rdy.
+  Context (κ : ctable) (n : nat) (W1 : world) (HS : strict W1) (T1 T2 : ty) (X1 X2 : prel).
+  Context (Σ1 ΣC Σ2 ΣD : senv) (q1 q2 : proc) (Hc : conn Σ1 ΣC q1.1 Σ2 ΣD q2.1).
+  Context (H1 : Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X1 W1 (Σ1 ∪ ΣC) T1 q1).
+  Context (H2 : Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X2 W1 (Σ2 ∪ ΣD) T2 q2).
+  Context (HT1 : prim T1) (HT2 : prim T2).
+  Local Abbreviation K := (chans_of ΣC).
+  Local Abbreviation pc := (pconn q1 q2 K).
+
+  Local Lemma Hc' : conn Σ2 ΣD q2.1 Σ1 ΣC q1.1.
+  Proof. by apply conn_sym. Qed.
+
+  Local Lemma HKD : chans_of ΣD = K.
+  Proof. apply cut_dual_chans. by destruct Hc. Qed.
+
+  Local Lemma pc_sym : pconn q2 q1 (chans_of ΣD) = pc.
+  Proof. by rewrite HKD, pconn_sym. Qed.
+
+  Local Lemma HΣ12 : Σ1 ##ₘ Σ2.
+  Proof. apply chans_disj_map. by destruct Hc. Qed.
+
+  Lemma offered_2_c o : o ∈ dom Σ2 → stable_p pc → offered_p (Σ2 ∪ ΣD) q2 o → offered_p (Σ1 ∪ Σ2) pc o.
+  Proof.
+    intros Ho Hs H. apply offered_p_comm. rewrite <-pc_sym.
+    apply (offered_1_c κ n W1 T2 T1 X2 X1 Σ2 ΣD Σ1 ΣC q2 q1 Hc' H2 H1); [done| |done].
+    by rewrite pc_sym.
+  Qed.
+
+  Lemma link_p_2 : link_p q2 → stable_p pc → link_p pc.
+  Proof.
+    intros Hl Hs. rewrite <-pc_sym.
+    apply (link_p_lift κ n W1 T2 T1 X2 X1 Σ2 ΣD Σ1 ΣC q2 q1 Hc' H2 H1); [done|by rewrite pc_sym].
+  Qed.
+
+  Lemma not_offered_dual_1 o : o ∈ dom ΣC → stable_p pc → offered_p (Σ1 ∪ ΣC) q1 o →
+    ¬ offered_p (Σ2 ∪ ΣD) q2 (edual o).
+  Proof. intros Ho Hs H1o H2o. by apply (dual_offers κ n W1 T1 T2 X1 X2 Σ1 ΣC Σ2 ΣD q1 q2 o Hc H1 H2 Ho H1o H2o). Qed.
+
+  Lemma not_offered_dual_2 o : o ∈ dom ΣD → stable_p pc → offered_p (Σ2 ∪ ΣD) q2 o →
+    ¬ offered_p (Σ1 ∪ ΣC) q1 (edual o).
+  Proof.
+    intros Ho Hs H2o H1o. rewrite <-pc_sym in Hs.
+    by apply (dual_offers κ n W1 T2 T1 X2 X1 Σ2 ΣD Σ1 ΣC q2 q1 o Hc' H2 H1 Ho H2o H1o).
+  Qed.
+
+  Local Lemma HdC : Σ1 ##ₘ ΣC.
+  Proof. by destruct Hc. Qed.
+  Local Lemma HdD : Σ2 ##ₘ ΣD.
+  Proof. by destruct Hc. Qed.
+
+  Lemma chain (Hs : stable_p pc)
+      (A1 : above_offered W1 (Σ1 ∪ ΣC) (offered_p (Σ1 ∪ ΣC) q1))
+      (A2 : above_offered W1 (Σ2 ∪ ΣD) (offered_p (Σ2 ∪ ΣD) q2)) :
+    ∀ y e S, (ΣC !! e = Some (S, y) ∧ offered_p (Σ1 ∪ ΣC) q1 e) ∨
+             (ΣD !! e = Some (S, y) ∧ offered_p (Σ2 ∪ ΣD) q2 e) →
+    ∃ o' S' y', offered_p (Σ1 ∪ Σ2) pc o' ∧ (Σ1 ∪ Σ2) !! o' = Some (S', y') ∧ W1 ⊢ y' ≺ y.
+  Proof.
+    intros y. induction (finite_lt_acc W1 (pts ΣC ++ pts ΣD) HS y) as [y _ IH].
+    pose proof Hc as Hc0. destruct Hc0 as [_ _ Hcut ? ? HfC ? ? ? ? ? ?].
+    pose proof (cut_dual_sym _ _ HfC Hcut) as Hcut'.
+    intros e S [[He Ho]|[He Ho]].
+    - destruct (proj2 Hcut _ _ _ He) as (S' & He' & _).
+      destruct (A2 (edual e) S' y‾) as (o2 & S2 & x2 & Ho2 & L2 & Hlt).
+      { by apply lookup_union_disj_r; [apply HdD|]. }
+      { by apply not_offered_dual_1; [eapply elem_of_dom_2|..]. }
+      rewrite pt_dual_dual in Hlt.
+      destruct (lookup_union_cases _ _ _ _ L2) as [L|[_ L]].
+      + exists o2, S2, x2. split_and!; [apply offered_2_c; [by eapply elem_of_dom_2|done|done]| |done].
+        by apply lookup_union_disj_r; [apply HΣ12|].
+      + destruct (IH x2) with o2 S2 as (o' & S3 & y' & H1' & H2' & H3').
+        { split; [apply elem_of_app; right; by eapply pts_elem|done]. }
+        { right. by split. }
+        exists o', S3, y'. split_and!; [done|done|by eapply w_lt_trans].
+    - destruct (proj2 Hcut' _ _ _ He) as (S' & He' & _).
+      destruct (A1 (edual e) S' y‾) as (o1 & S1 & x1 & Ho1 & L1 & Hlt).
+      { by apply lookup_union_disj_r; [apply HdC|]. }
+      { by apply not_offered_dual_2; [eapply elem_of_dom_2|..]. }
+      rewrite pt_dual_dual in Hlt.
+      destruct (lookup_union_cases _ _ _ _ L1) as [L|[_ L]].
+      + exists o1, S1, x1. split_and!; [apply (offered_1_c κ n W1 T1 T2 X1 X2 Σ1 ΣC Σ2 ΣD q1 q2 Hc H1 H2);
+          [by eapply elem_of_dom_2|done|done]| |done].
+        by apply lookup_union_Some_l.
+      + destruct (IH x1) with o1 S1 as (o' & S3 & y' & H1' & H2' & H3').
+        { split; [apply elem_of_app; left; by eapply pts_elem|done]. }
+        { left. by split. }
+        exists o', S3, y'. split_and!; [done|done|by eapply w_lt_trans].
+  Qed.
+End rdy.
