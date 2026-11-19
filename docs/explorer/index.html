@@ -283,7 +283,18 @@ window.MathJax = {
     shownKey = null; showNote(k, false);
   }
   let shownKey = null, shownPinned = null;
+  // tell the local server (serve.sh) what the reader points at, so the assistant can follow along
+  let lastBlock = null, reportTimer = null;
+  function report(extra) {
+    if (!/^https?:$/.test(location.protocol)) return;
+    clearTimeout(reportTimer);
+    reportTimer = setTimeout(() => {
+      const st = { t: new Date().toISOString(), section: current(), mode, block: lastBlock, pinned, ...extra };
+      fetch('cursor', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(st) }).catch(() => {});
+    }, 250);
+  }
   function showNote(key, isPinned) {
+    report({ key, title: (MAP.notes[key] || {}).title || null, how: isPinned ? 'pin' : 'hover' });
     if (key === shownKey && isPinned === shownPinned) return;
     shownKey = key; shownPinned = isPinned;
     const aside = $('#note');
@@ -319,6 +330,7 @@ window.MathJax = {
 
   const content = $('#content');
   content.addEventListener('mouseover', e => {
+    const art = e.target.closest && e.target.closest('article'); if (art) lastBlock = art.id;
     const h = e.target.closest && e.target.closest('h3[data-block], h3[data-ex]');
     if (h && !pinned) {
       if (h.dataset.block) { const b = MAP.sections.flatMap(x => x.blocks).find(x => x.id === h.dataset.block); if (b) showNote(pseudo('b-' + b.id, { title: b.title, what: b.caption, rocq: b.rocq }), false); }
@@ -342,10 +354,11 @@ window.MathJax = {
   });
   document.querySelectorAll('.modes button').forEach(b => b.addEventListener('click', () => {
     mode = b.dataset.mode; try { localStorage.setItem('lrmap-mode', mode); } catch (e) {}
+    report({ how: 'mode' });
     renderModes(); renderSection();
   }));
   $('#q').addEventListener('input', e => { query = e.target.value.trim().toLowerCase(); renderSection(); });
-  window.addEventListener('hashchange', () => { renderTabs(); renderSection(); window.scrollTo(0, 0); });
+  window.addEventListener('hashchange', () => { renderTabs(); renderSection(); window.scrollTo(0, 0); report({ how: 'section' }); });
 
   function start() { renderTabs(); renderModes(); renderSection(); }
   if (window.MathJax && MathJax.tex2svg) start(); else window.__mjReady = start;
