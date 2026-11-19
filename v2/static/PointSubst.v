@@ -207,9 +207,6 @@ Proof.
   induction 1 as [| | [T a] | [T a] |]; simpl; constructor; try done. by apply unlimited_pinst.
 Qed.
 
-Lemma lenv_wk_pinst σ Δ' Δ : lenv_wk Δ' Δ → lenv_wk (lenv_pinst σ Δ') (lenv_pinst σ Δ).
-Proof. induction 1; simpl; constructor; try done. by apply unlimited_pinst. Qed.
-
 Lemma lenv_unl_pinst σ Δ : lenv_unl Δ → lenv_unl (lenv_pinst σ Δ).
 Proof.
   intros H o Ho. unfold lenv_pinst in Ho. apply list_elem_of_fmap in Ho as (o' & -> & Ho').

@@ -354,17 +354,6 @@ Qed.
 
 (** *** Weakening, emptiness, unlimited contexts *)
 
-Lemma lenv_wk_intro Δ0 Δ :
-  length Δ0 = length Δ →
-  (∀ x o0 o, Δ0 !! x = Some o0 → Δ !! x = Some o →
-     o0 = o ∨ (o0 = None ∧ ∃ U a, o = Some (U, a) ∧ unlimited U)) →
-  lenv_wk Δ0 Δ.
-Proof.
-  revert Δ0. induction Δ as [|o Δ IH]; intros [|o0 Δ0] Hl H; simpl in *; try lia; [constructor|].
-  assert (lenv_wk Δ0 Δ) by (apply IH; [lia|]; intros x; apply (H (S x))).
-  destruct (H 0 o0 o eq_refl eq_refl) as [->|(-> & U & a & -> & HU)]; by constructor.
-Qed.
-
 Lemma lenv_wk_sub Δ0 Δ x σ : lenv_wk Δ0 Δ → Δ0 !! x = Some (Some σ) → Δ !! x = Some (Some σ).
 Proof.
   intros H. revert x. induction H as [|o Δ0 Δ _ IH|U a Δ0 Δ _ _ IH]; intros [|x] Hx; simpl in *; auto.

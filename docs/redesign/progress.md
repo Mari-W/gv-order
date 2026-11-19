@@ -2092,3 +2092,27 @@ The old development in theories/ stays untouched.
   futures: `sf_union F X` is gone, E-App and D-App write `sf_unionb F X
   false`, and `sf_den_union`, `sf_pinst_union`, `sf_gmap_union` go with
   it. The section hypothesis `Hsl` went in M.1.
+- M.8b. Second dead-code pass after M.3 to M.9: `GrelL_wk`,
+  `GrelL_contract`, `later_weak`, `later_contract` (compat/LiveRules.v),
+  `lwk_lsame`, `freevar_rename`, `freevar_rename_inv` (cost/Exact.v),
+  `lenv_empty` (static/Contexts.v), `acts_rename_inv`, `kmarks_rename`,
+  `guard_rename` (static/Guard.v), `lenv_wk_pinst` (static/PointSubst.v),
+  `lenv_wk_intro` (static/Weakening.v). Weakening and contraction are
+  admissible (M.3), so their semantic rules have no caller.
+- M.12. Readiness checked, nothing changed (decision of 2026-11-18,
+  cleanup). Process readiness does not follow from term readiness per
+  thread and the interface, so neither is defined from the other. The two
+  differ in shape: `below_rest` says that every offered end lies below
+  the partner point of every held end it does not offer and below F,
+  `above_offered` says that every interface end not offered has some
+  offered interface end below its partner point. For one thread the
+  second follows from the first once some interface end is offered. In a
+  composite the thread that holds a waiting interface end may itself
+  offer only a restricted end, which is no offer of the process, and the
+  offered interface end below it is found only by following the cut
+  through the other component, by well-foundedness of the order of the
+  joined world (`finite_lt_acc` and `pc_ready`, compat/Connect.v). Process
+  readiness also asks termination when nothing is offered and is read
+  under the absence of τ steps of the whole configuration, which no
+  thread sees. So the process clause carries information that the term
+  clauses of the threads do not, and the duplication is only apparent.

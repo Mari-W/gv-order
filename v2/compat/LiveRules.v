@@ -388,34 +388,6 @@ Section groundL.
       + intros HG. exact (IH Θ (λ y, L (S y)) (λ y, γ (S y)) x (conj Hx Hy') HL HG).
   Qed.
 
-  Lemma GrelL_wk n W Θ Δ' Δ L γ : lenv_wk Δ' Δ → GrelL κ n W Θ Δ L γ → GrelL κ n W Θ Δ' L γ.
-  Proof.
-    intros Hwk. revert Θ L γ. induction Hwk as [|o Δ' Δ Hwk IH|U a Δ' Δ Hu Hwk IH]; intros Θ L γ; simpl.
-    - done.
-    - destruct o as [[T a]|]; [|apply IH]. destruct (L 0).
-      + intros [HV HG]. split; [done|auto].
-      + intros (Θ1 & Θ2 & Hd & -> & HV & HG). exists Θ1, Θ2. split_and!; auto.
-    - destruct (L 0).
-      + intros [_ HG]. by apply IH.
-      + intros (Θ1 & Θ2 & Hd & -> & HV & HG).
-        rewrite (Vrel_unl_empty κ _ _ _ _ _ Hu HV), map_empty_union. by apply IH.
-  Qed.
-
-  Lemma GrelL_contract n W Θ U a Δ L γ :
-    unlimited U → GrelL κ n W Θ (Some (U, a) :: Δ) L γ →
-    GrelL κ n W Θ (Some (U, a) :: Some (U, a) :: Δ) (λ x, L (pred x)) (λ x, γ (pred x)).
-  Proof.
-    intros Hu HG. simpl in HG |- *. destruct (L 0) eqn:HL0.
-    - destruct HG as [HV HG]. split; [done|]. split; [done|].
-      eapply GrelL_ext; [| |exact HG]; by intros [|x].
-    - destruct HG as (Θ1 & Θ2 & Hd & -> & HV & HG).
-      pose proof (Vrel_unl_empty κ _ _ _ _ _ Hu HV) as ->.
-      rewrite map_empty_union.
-      exists ∅, Θ2. split_and!; [apply map_disjoint_empty_l|by rewrite map_empty_union|done|].
-      exists ∅, Θ2. split_and!; [apply map_disjoint_empty_l|by rewrite map_empty_union|done|].
-      eapply GrelL_ext; [| |exact HG]; by intros [|x].
-  Qed.
-
   Lemma GrelL_pick n W Θ Δ L γ i T1 a :
     Δ !! i = Some (Some (T1, a)) → ¬ unlimited T1 → GrelL κ n W Θ Δ L γ →
     ∃ Θi, Vrel κ n W Θi T1 (γ i) ∧
@@ -864,18 +836,6 @@ Section later.
   Qed.
 
   (** *** Structure *)
-
-  Lemma later_weak W Θ Δ' Δ L F e T :
-    lenv_wk Δ' Δ → sem_later κ W Θ Δ' L F e T → sem_later κ W Θ Δ L F e T.
-  Proof. intros Hwk He n W' Θ' γ HW Hd HG. apply He; [done|done|]. by eapply GrelL_wk. Qed.
-
-  Lemma later_contract W Θ Δ U aU L F e T :
-    unlimited U → sem_later κ W Θ (Some (U, aU) :: Some (U, aU) :: Δ) (λ x, L (pred x)) F e T →
-    sem_later κ W Θ (Some (U, aU) :: Δ) L F (rename pred e) T.
-  Proof.
-    intros Hu He n W' Θ' γ HW Hd HG. rewrite subst_rename.
-    apply He; [done|done|]. by apply GrelL_contract.
-  Qed.
 
   Lemma later_conv W Θ Δ L F e T T' a a' :
     tsub (ty_df T) a (ty_df T') a' → sem_later κ W Θ Δ L F e T → sem_later κ W Θ Δ L F e T'.

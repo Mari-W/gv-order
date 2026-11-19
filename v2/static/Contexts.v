@@ -41,8 +41,6 @@ Proof.
     apply list_elem_of_fmap. exists (o, e). split; [done|]. by apply elem_of_map_to_list.
 Qed.
 
-Definition lenv_empty (Δ : lenv) : Prop := ∀ o, o ∈ Δ → o = None.
-
 (** x holds σ, and every other entry is absent or unlimited. *)
 Definition lenv_only (Δ : lenv) (x : nat) (σ : ty * fuel) : Prop :=
   Δ !! x = Some (Some σ) ∧ ∀ y σ', y ≠ x → Δ !! y = Some (Some σ') → unlimited σ'.1.

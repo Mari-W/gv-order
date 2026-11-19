@@ -93,13 +93,6 @@ Proof.
     by rewrite (tage_unl _ _ _ _ _ Hc).
 Qed.
 
-Lemma lwk_lsame Δ' Δ : lenv_wk Δ' Δ → lsame Δ Δ'.
-Proof.
-  induction 1 as [|o Δ' Δ _ IH|U a Δ' Δ Hu _ IH]; [apply lsame_nil| |].
-  - apply lsame_cons; [eauto|eauto|done].
-  - apply lsame_cons; [done|intros U' a' [= -> ->] Hu'; done|done].
-Qed.
-
 Lemma lsame_pinst σ Δ : lsame Δ (lenv_pinst σ Δ).
 Proof.
   intros x. rewrite lenv_pinst_lookup. split.
@@ -119,43 +112,6 @@ Proof.
 Qed.
 
 (** ** Renaming of variables *)
-
-Lemma freevar_rename e : ∀ x (r : nat → nat), freevar x e → freevar (r x) (rename r e).
-Proof.
-  induction e; intros y r H; simpl in *; try done.
-  - by subst.
-  - apply (IHe (S y) (upren r) H).
-  - destruct H as [H|H]; [left; auto|right; auto].
-  - destruct H as [H|H]; [left; auto|right; auto].
-  - destruct H as [H|H]; [left; auto|right; auto].
-  - destruct H as [H|H]; [left; auto|right; apply (IHe2 (S (S y)) (upren (upren r)) H)].
-  - auto.
-  - destruct H as [H|[H|H]]; [left; auto|right; left; apply (IHe2 (S y) (upren r) H)
-                              |right; right; apply (IHe3 (S y) (upren r) H)].
-  - apply (IHe (S y) (upren r) H).
-  - auto.
-Qed.
-
-Lemma freevar_rename_inv e : ∀ x (r : nat → nat), freevar x (rename r e) → ∃ y, freevar y e ∧ r y = x.
-Proof.
-  induction e; intros y r H; simpl in *; try done.
-  - subst. by eexists.
-  - destruct (IHe (S y) (upren r) H) as ([|z] & Hz & E); [done|]. simpl in E. injection E as <-. by exists z.
-  - destruct H as [H|H]; [destruct (IHe1 y r H) as (z & ? & ?)|destruct (IHe2 y r H) as (z & ? & ?)]; exists z; tauto.
-  - destruct H as [H|H]; [destruct (IHe1 y r H) as (z & ? & ?)|destruct (IHe2 y r H) as (z & ? & ?)]; exists z; tauto.
-  - destruct H as [H|H]; [destruct (IHe1 y r H) as (z & ? & ?)|destruct (IHe2 y r H) as (z & ? & ?)]; exists z; tauto.
-  - destruct H as [H|H]; [destruct (IHe1 y r H) as (z & ? & ?); exists z; tauto|].
-    destruct (IHe2 (S (S y)) (upren (upren r)) H) as ([|[|z]] & Hz & E); try done. simpl in E.
-    injection E as <-. exists z. tauto.
-  - eauto.
-  - destruct H as [H|[H|H]]; [destruct (IHe1 y r H) as (z & ? & ?); exists z; tauto| |].
-    + destruct (IHe2 (S y) (upren r) H) as ([|z] & Hz & E); try done. simpl in E.
-      injection E as <-. exists z. tauto.
-    + destruct (IHe3 (S y) (upren r) H) as ([|z] & Hz & E); try done. simpl in E.
-      injection E as <-. exists z. tauto.
-  - destruct (IHe (S y) (upren r) H) as ([|z] & Hz & E); [done|]. simpl in E. injection E as <-. by exists z.
-  - eauto.
-Qed.
 
 (** ** The facts of a derivation *)
 

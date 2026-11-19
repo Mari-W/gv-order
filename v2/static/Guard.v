@@ -120,52 +120,14 @@ Proof.
   intros H1 Ha H2. apply (gl_letp _ ∅); [done|by right|]. eapply guard_ext; [|exact H2]. by intros [|[|x]].
 Qed.
 
-Lemma acts_rename_inv e : ∀ r, acts (rename r e) → acts e.
-Proof.
-  induction e; intros r H; simpl in H; inversion H; subst; try (by constructor; eauto); by apply acts_branches; eauto.
-Qed.
-
 Lemma acts_rename e r : acts e → acts (rename r e).
 Proof. intros H. revert r. induction H; intros r; simpl; eauto using acts. Qed.
-
-Lemma kmarks_rename L L1 r e : kmarks L L1 (rename r e) →
-  ∃ L2, kmarks (λ x, L (r x)) L2 e ∧ ∀ x, L1 (r x) = L2 x.
-Proof.
-  intros [->|[-> Ha]]; [exists (λ x, L (r x)); split; [by left|done]|].
-  exists ∅. split; [right; split; [done|by eapply acts_rename_inv]|done].
-Qed.
 
 Lemma kmarks_rename_fwd L' L1 L r e : kmarks L' L1 e → (∀ x, L' x = L (r x)) →
   ∃ L2, kmarks L L2 (rename r e) ∧ ∀ x, L1 x = L2 (r x).
 Proof.
   intros [->|[-> Ha]] HL; [exists L; split; [by left|done]|].
   exists ∅. split; [right; split; [done|by apply acts_rename]|done].
-Qed.
-
-(** A renaming of the variables moves the marks with it. *)
-Lemma guard_rename e : ∀ L r, lguard L (rename r e) → lguard (λ x, L (r x)) e.
-Proof.
-  induction e; intros L r H; simpl in H; inversion H; subst.
-  all: try (by constructor).
-  all: try (by constructor; eauto).
-  - (* Lam *)
-    constructor. eapply guard_ext; [|by apply IHe]. by intros [|x].
-  - (* App *)
-    match goal with Hk : kmarks _ _ _ |- _ => destruct (kmarks_rename _ _ _ _ Hk) as (L2 & Hk' & HL2) end.
-    eapply gl_app; [eauto|exact Hk'|]. eapply guard_ext; [|by apply IHe2]. done.
-  - match goal with Hk : kmarks _ _ _ |- _ => destruct (kmarks_rename _ _ _ _ Hk) as (L2 & Hk' & HL2) end.
-    eapply gl_pair; [eauto|exact Hk'|]. eapply guard_ext; [|by apply IHe2]. done.
-  - match goal with Hk : kmarks _ _ _ |- _ => destruct (kmarks_rename _ _ _ _ Hk) as (L2 & Hk' & HL2) end.
-    eapply gl_letu; [eauto|exact Hk'|]. eapply guard_ext; [|by apply IHe2]. done.
-  - match goal with Hk : kmarks _ _ _ |- _ => destruct (kmarks_rename _ _ _ _ Hk) as (L2 & Hk' & HL2) end.
-    eapply gl_letp; [eauto|exact Hk'|]. eapply guard_ext; [|by apply IHe2].
-    intros [|[|x]]; simpl; try done; unfold compose; simpl; apply HL2.
-  - match goal with Hk : kmarks _ _ _ |- _ => destruct (kmarks_rename _ _ _ _ Hk) as (L2 & Hk' & HL2) end.
-    eapply gl_case; [eauto|exact Hk'| |].
-    + eapply guard_ext; [|by apply IHe2]. intros [|x]; simpl; try done; unfold compose; simpl; apply HL2.
-    + eapply guard_ext; [|by apply IHe3]. intros [|x]; simpl; try done; unfold compose; simpl; apply HL2.
-  - (* EBox *)
-    constructor. eapply guard_ext; [|by apply IHe]. by intros [|x].
 Qed.
 
 (** The converse of [guard_rename]. *)
