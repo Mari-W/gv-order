@@ -1297,6 +1297,14 @@ first, in stage S2.
   restricted ends leave. M.9: each helper proved once, one lower-bound
   predicate, one union of futures. M.12: process readiness stays its own
   clause (it does not follow from the threads' term readiness).
+- P-Term asks `tfree T` instead of `prim T` (author, 2026-11-19). The
+  proofs read the result type only through the fact that a value at it
+  holds no end, which holds at `tfree`, so strictly more processes type.
+  This supersedes M.6.
+- No binder form of spawn (author, 2026-11-19). Spawn stays a primitive
+  applied to a thunk value, with E-SpawnLam and E-Spawn. The binder form
+  would need O-Spawn to state the ends of the child's term as a clause
+  about a term, an extension of the Q14 exception the author declined.
 
 ## 5  Open decisions for the author
 
