@@ -129,6 +129,16 @@ must do, open questions.
    run. Also replace heads(H) by a lighter notation (proposal: H̄, the
    points the partners of H wait at, with S@x ↦ x̄, closures and ∃ ↦ their
    lower point l, boxes ↦ ∅).
+   Map done 2026-11-19: every typing rule uses the notation, one form per
+   rule with the lock-free parts marked (no separate D- rules on the map),
+   and the draft blocks are gone. Heads: no H̄, because an overline on a
+   context already means the dual interface (P-Connect). Instead heads
+   hide inside `∥ H`, and the two places that still need them lift the
+   order to types and contexts, `x ≺ T` (E-Send) and `l ≼ Δ` (E-Abs,
+   E-Pack). The typing rules also follow entry 6 (credits only on ends and
+   closures, aging and capture structural, E-Send asks `T' − 1 ≤ T[x·i]`,
+   no outer credits on results). Process rules and the semantic-typing and
+   theorem sections still use the old judgment (entry 9).
 
 9. **Readable semantic typing (to design).** Same treatment as entry 8 for
    V, E, P, the obligations, readiness, fuel and the soup: show the relation
