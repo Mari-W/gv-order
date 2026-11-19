@@ -46,6 +46,7 @@ h1 small { font-family: var(--body); font-weight: 400; font-size: 0.8rem; color:
 .modes button[data-mode="df"][aria-pressed="true"] { background: var(--df); }
 .ann { fill: var(--lf); color: var(--lf); }
 .block.lfonly { background: var(--lf-soft); border-color: var(--lf); }
+.block.lfonly .ann { fill: currentColor; color: inherit; }
 .flip { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; font: 500 0.66rem var(--body); letter-spacing: 0.04em; }
 .flip button { border: 0; background: transparent; color: var(--muted); padding: 1px 6px; cursor: pointer; font: inherit; }
 .flip button[aria-pressed="true"][data-m="df"] { background: var(--df); color: #fff; }

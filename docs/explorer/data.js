@@ -1704,14 +1704,33 @@ window.MAP = {
      }
     },
     {
+     "id": "fu-why",
+     "title": "Where fuel is needed",
+     "rocq": "cost/CostFund.v: fsem_of_cost; soup/LFTyped.v: lf_fundamental; soup/LFAdequacy.v: lf_adequacy",
+     "modes": [
+      "lf"
+     ],
+     "tex": "\\begin{array}{rcl}\n\\varnothing ; \\Delta \\vdash^{\\varnothing}_{W\\annot{,N}} e : T\\ !\\ (c, \\vartheta) & \\overset{\\htmlData{k=th.fsem-of-cost}{\\textsf{fsem\\_of\\_cost}}}{\\Longrightarrow} & \\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\Pi\\,e} \\\\[4pt]\n\\text{every thread } t \\text{ live and } \\mathsf{fsem}\\,N\\,\\Pi_t\\,e_t & \\overset{\\htmlData{k=th.lf-fundamental}{\\textsf{lf\\_fundamental}}}{\\Longrightarrow} & a \\in \\htmlData{k=th.soup}{S^{N,W}_n} \\text{ with } \\htmlData{k=sp.fuel}{q_a(t) \\in F^N_n} \\text{ for all } n \\\\[4pt]\n\\htmlData{k=fu.measure}{\\mu(t) = \\big(\\textstyle\\sum_s tk_s,\\ \\varphi(\\overline{o})\\big)} & \\overset{\\htmlData{k=th.lf-adequacy}{\\textsf{lf\\_adequacy}}}{\\Longrightarrow} & \\text{the holder of } \\overline{o} \\text{ acts on } \\overline{o} \\text{ in finitely many steps}\n\\end{array}",
+     "caption": "Fuel is what makes a deadlock-free program lock free. Cost typing gives each thread fuel, the soup asks every thread fueled at every level, and lock-free adequacy reads the counters and tickets the soup records. A thread $t$ waits on $o$. Every step of the holder of $\\overline{o}$ on another end ticks $\\varphi(\\overline{o})$ by F-Tick, every link spends a ticket, and F-Tick forbids a tick of $\\varphi(\\overline{o})$ at $0$. So $\\mu(t)$ falls lexicographically until the holder acts on $\\overline{o}$.",
+     "about": {
+      "why": "Shows which theorem produces fuel and which consumes it. Cost typing yields fuel per thread, the soup stores it, and lock-free adequacy uses counters and tickets as the measure that makes every wait finite.",
+      "used": [
+       "th-cost",
+       "th-fund-proc",
+       "th-lf-adequacy",
+       "sp-inv"
+      ]
+     }
+    },
+    {
      "id": "fu-def",
      "title": "Fuel",
      "rocq": "fuel/Fuel.v: Fdef, FuelE, FLev",
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{l}\n\\htmlData{k=fu.zero}{\\forall e.\\ e \\in \\htmlData{k=sr.FE}{F^{N}_{0}\\llbracket \\sigma \\triangleright d ; r \\rrbracket(\\Pi, \\varphi, tk)}} \\\\\ne \\in \\htmlData{k=sr.FE}{F^{N}_{n{+}1}\\llbracket \\htmlData{k=fu.rty}{\\sigma} \\triangleright \\htmlData{k=fu.frame}{d} ; \\htmlData{k=fu.reserve}{r} \\rrbracket(\\htmlData{k=fu.Pi}{\\Pi}, \\htmlData{k=fu.phi}{\\varphi}, \\htmlData{k=fu.tk}{tk})} \\iff {} \\\\\n\\quad \\htmlData{k=fu.refill-kripke}{\\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N},\\ \\htmlData{k=fu.rename}{g \\text{ injective on } \\mathrm{dom}\\,\\Pi \\text{ and on } \\mathrm{dom}\\,\\varphi}. \\\\\n\\quad \\htmlData{k=fu.val}{(\\mathsf{val})\\ g(e) \\in \\mathsf{Val} \\Rightarrow r \\leq tk \\land g(e) \\in \\htmlData{k=sr.FV}{FV^{N'}_{n{+}1}\\llbracket \\sigma \\rrbracket(g\\Pi, g\\varphi)}} \\\\\n\\quad \\htmlData{k=fu.step}{(\\mathsf{step})\\ \\forall \\alpha, e'.\\ g(e) \\xrightarrow{\\alpha} e' \\Rightarrow \\htmlData{k=sr.fobl}{\\mathsf{Fobl}^{N'}_{\\alpha}(e')} \\text{ at level } n} \\qquad \\htmlData{k=fu.oneclock}{\\text{one level per step}}\n\\end{array}",
-     "caption": "Fuel is a per-thread predicate on protocols $\\Pi$, counters $\\varphi$ and tickets $tk$ that reads no point, no world and no relation.",
+     "tex": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=fu.refill-kripke}{\\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N}\\quad \\htmlData{k=fu.rename}{\\forall g \\text{ injective on } \\mathrm{dom}\\,\\Pi} \\\\ \\htmlData{k=fu.val}{g(e) \\in \\mathsf{Val} \\Rightarrow r \\leq tk \\land g(e) \\in \\htmlData{k=sr.FV}{FV^{N'}_{n{+}1}\\llbracket \\sigma \\rrbracket(g\\Pi, g\\varphi)}} \\\\ \\htmlData{k=fu.step}{g(e) \\xrightarrow{\\alpha} e' \\Rightarrow \\htmlData{k=sr.fobl}{\\mathsf{Fobl}^{N'}_{\\alpha}(e')}}\\end{array}}{e \\in \\htmlData{k=sr.FE}{F^{N}_{n{+}1}\\llbracket \\htmlData{k=fu.rty}{\\sigma} \\triangleright \\htmlData{k=fu.frame}{d} ; \\htmlData{k=fu.reserve}{r} \\rrbracket(\\htmlData{k=fu.Pi}{\\Pi}, \\htmlData{k=fu.phi}{\\varphi}, \\htmlData{k=fu.tk}{tk})}}\\;\\textsf{F-Run}\n\\qquad \\htmlData{k=fu.zero}{e \\in \\htmlData{k=sr.FE}{F^{N}_{0}\\llbracket \\sigma \\triangleright d ; r \\rrbracket(\\Pi, \\varphi, tk)}} \\\\[6pt]\n\\htmlData{k=fu.upd}{F_n[x := v]} = F^{N'}_{n}\\llbracket \\sigma \\triangleright d ; r \\rrbracket(\\Pi, \\varphi, tk) \\text{ with the component } x \\text{ replaced by } v \\qquad \\htmlData{k=fu.oneclock}{\\text{every step costs one level}}\n\\end{array}",
+     "caption": "A thread $e$ holds ends with protocols $\\Pi$ and counters $\\varphi$, and $tk$ link tickets. It returns at $\\sigma$ after at most $d$ actions with $r$ tickets left. At level $n+1$ it returns a fueled value or every step meets its fuel obligation at level $n$. Fuel reads no point, no world and no relation.",
      "about": {
       "why": "Fuel is the lock-free side of a thread, its counters and tickets, kept apart from the relation so that it reads no point and no world.",
       "used": [
@@ -1729,8 +1748,8 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{l}\n\\htmlData{k=sr.act}{\\mathsf{act}}\\,o \\iff \\htmlData{k=F-Wait}{\\neg \\htmlData{k=fu.idle}{\\mathsf{idle}}(\\Pi\\,o)} \\land o \\in \\mathrm{dom}\\,\\varphi \\land \\htmlData{k=F-Tick}{\\htmlData{k=fu.fspare}{\\mathsf{fspare}}\\,\\Pi\\,\\varphi\\,(\\mathrm{dom}\\,\\varphi \\setminus \\{o\\})} \\land \\htmlData{k=F-Tick.frame}{1 \\leq d} \\\\\n\\htmlData{k=fu.fspare}{\\mathsf{fspare}\\,\\Pi\\,\\varphi\\,X \\iff \\forall o \\in X.\\ \\varphi(o) = f \\land \\neg\\mathsf{idle}(\\Pi\\,o) \\Rightarrow 1 \\leq f} \\\\\n\\htmlData{k=fu.refillop}{\\mathsf{refill}\\,N\\,o\\,\\varphi = (\\varphi \\setminus o)[o' \\mapsto \\varphi(o') \\mathbin{\\dot-} 1]_{o' \\neq o}[o \\mapsto N]} \\qquad \\htmlData{k=fu.idle}{\\mathsf{idle}\\,S \\iff \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S = \\htmlData{k=sty.skip}{\\mathsf{Skip}}}\n\\end{array}",
-     "caption": "An action on $o$ asks $o$ held and not idle, a unit to spare on every other end that is not idle and on the frame, and then refills $o$ and ticks the rest.",
+     "tex": "\\begin{array}{rcll}\n\\htmlData{k=sr.act}{\\mathsf{act}}\\,o & \\iff & \\htmlData{k=F-Wait}{o \\in \\mathrm{dom}\\,\\varphi \\land \\neg \\htmlData{k=fu.idle}{\\mathsf{idle}}(\\Pi\\,o)} & \\text{F-Wait} \\\\\n & \\land & \\htmlData{k=F-Tick}{\\htmlData{k=fu.fspare}{\\mathsf{fspare}}\\,\\Pi\\,\\varphi\\,(\\mathrm{dom}\\,\\varphi \\setminus \\{o\\})} \\land \\htmlData{k=F-Tick.frame}{1 \\leq d} & \\text{F-Tick} \\\\[4pt]\n\\htmlData{k=fu.fspare}{\\mathsf{fspare}}\\,\\Pi\\,\\varphi\\,X & \\iff & \\htmlData{k=fu.fspare}{\\forall o' \\in X.\\ \\neg\\mathsf{idle}(\\Pi\\,o') \\Rightarrow 1 \\leq \\varphi(o')} \\\\\n\\htmlData{k=fu.refillop}{\\mathsf{refill}}\\,N\\,o\\,\\varphi & = & \\htmlData{k=fu.refillop}{(\\varphi \\setminus o) \\mathbin{\\dot-} 1\\ [o \\mapsto N]} \\\\\n\\htmlData{k=fu.fhand}{\\mathsf{fhand}}\\,M\\,\\varphi & = & \\htmlData{k=fu.fhand}{(\\varphi|_M) \\mathbin{\\dot-} 1} \\\\\n\\mathsf{idle}\\,S & \\iff & \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S = \\htmlData{k=sty.skip}{\\mathsf{Skip}}\n\\end{array}",
+     "caption": "An action on $o$ asks $o$ held and not idle, and a unit to spare on every other live end and on the frame. Afterwards $o$ refills to $N$ and every other counter drops by one. Ends handed to another thread arrive one lower.",
      "about": {
       "why": "An action spends a unit of every other counter and refills its own end. This is the counting that credits describe statically.",
       "used": [
@@ -1740,14 +1759,30 @@ window.MAP = {
      }
     },
     {
-     "id": "fu-obl",
-     "title": "Fuel obligations",
-     "rocq": "fuel/Fuel.v: f_beta, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link, fhand, plink",
+     "id": "fu-obl-int",
+     "title": "Fuel obligations of internal steps",
+     "rocq": "fuel/Fuel.v: f_beta, f_new, f_spawn, f_link, plink",
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{ll}\n\\htmlData{k=F-Beta}{\\textsf{F-Beta}} & e' \\in F_n \\text{ at } (\\sigma, d, r, \\Pi, \\varphi, tk) \\\\\n\\htmlData{k=F-New}{\\textsf{F-New}} & \\htmlData{k=F-New.fresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Pi \\cup \\mathrm{dom}\\,\\varphi} \\Rightarrow \\exists S.\\ e' \\text{ at } \\Pi[c^{+} \\mapsto S, c^{-} \\mapsto \\overline{S}],\\ \\htmlData{k=F-New.cnew}{\\varphi[c^{\\pm} \\mapsto N]} \\\\\n\\htmlData{k=F-Spawn}{\\textsf{F-Spawn}} & M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(v) \\land \\htmlData{k=F-Spawn.held}{M \\subseteq \\mathrm{dom}\\,\\varphi} \\land \\htmlData{k=fu.fspare}{\\mathsf{fspare}}\\,\\Pi\\,\\varphi\\,M \\land {} \\\\\n & \\htmlData{k=F-Spawn.child}{v\\,\\ast \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.rty}{\\mathsf{thread}} \\annot{\\triangleright \\infty ; 0} \\rrbracket(\\Pi|_M, \\htmlData{k=fu.fhand}{\\mathsf{fhand}}\\,M\\,\\varphi, \\lceil tk/2 \\rceil)}} \\land e' \\text{ at } \\Pi \\setminus M, \\varphi \\setminus M, \\htmlData{k=F-Spawn.tickets}{\\lfloor tk/2 \\rfloor} \\\\\n\\htmlData{k=F-Send}{\\textsf{F-Send}} & \\htmlData{k=sr.act}{\\mathsf{act}}\\,o \\land \\Pi(o) = S_0 \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.send}{!(\\bar\\iota.\\ T)}.S \\land M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(w) \\land {} \\\\\n & \\htmlData{k=F-Send.notsubj}{M \\subseteq \\mathrm{dom}\\,\\varphi \\setminus \\{o\\}} \\land \\htmlData{k=fu.fspare}{\\mathsf{fspare}}\\,\\Pi\\,\\varphi\\,M \\land \\htmlData{k=F-Send.payload}{w \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket T \\rrbracket(\\Pi|_M, \\htmlData{k=fu.fhand}{\\mathsf{fhand}}\\,M\\,\\varphi)}} \\land {} \\\\\n & e' \\text{ at } d \\mathbin{\\dot-} 1,\\ (\\Pi \\setminus M)[o \\mapsto S],\\ \\htmlData{k=fu.refillop}{\\mathsf{refill}}\\,N\\,o\\,(\\varphi \\setminus M) \\\\\n\\htmlData{k=F-Recv}{\\textsf{F-Recv}} & \\htmlData{k=sr.act}{\\mathsf{act}}\\,o \\land \\Pi(o) = S_0 \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ T)}.S \\land {} \\\\\n & \\htmlData{k=F-Recv.forall}{\\forall j \\leq n, \\Pi_i, \\varphi_i \\text{ disjoint}.\\ w \\in \\htmlData{k=sr.FV}{FV^{N}_{j}\\llbracket T \\rrbracket(\\Pi_i, \\varphi_i)}} \\Rightarrow {} \\\\\n & \\quad e' \\in F_j \\text{ at } d \\mathbin{\\dot-} 1,\\ \\Pi[o \\mapsto S] \\cup \\Pi_i,\\ \\htmlData{k=fu.refillop}{\\mathsf{refill}}\\,N\\,o\\,\\varphi \\cup \\varphi_i \\\\\n\\htmlData{k=F-Close}{\\textsf{F-Close}} & \\htmlData{k=sr.act}{\\mathsf{act}}\\,o \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}(\\Pi\\,o) = \\htmlData{k=sty.close}{\\mathsf{Close}} \\land e' \\text{ at } d \\mathbin{\\dot-} 1,\\ \\Pi \\setminus o,\\ (\\varphi \\setminus o) \\mathbin{\\dot-} 1 \\\\\n\\htmlData{k=F-Close}{\\textsf{F-Select, F-Branch}} & \\htmlData{k=sr.act}{\\mathsf{act}}\\,o \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}(\\Pi\\,o) \\in \\{\\oplus(S_1,S_2), \\&(S_1,S_2)\\} \\land e' \\text{ at } d \\mathbin{\\dot-} 1,\\ \\Pi[o \\mapsto S_i],\\ \\htmlData{k=fu.refillop}{\\mathsf{refill}}\\,N\\,o\\,\\varphi \\\\\n\\htmlData{k=F-Link}{\\textsf{F-Link}} & \\htmlData{k=F-Link.plink}{o_1 \\neq o_2 \\land \\Pi(o_2) \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{\\Pi(o_1)}} \\land \\{o_1,o_2\\} \\subseteq \\mathrm{dom}\\,\\varphi \\land \\htmlData{k=F-Link.ticket}{1 \\leq tk} \\land {} \\\\\n & e' \\text{ at } \\Pi \\setminus \\{o_1,o_2\\},\\ \\varphi \\setminus \\{o_1,o_2\\},\\ tk - 1 \\\\\n & \\htmlData{k=fu.fhand}{\\mathsf{fhand}\\,M\\,\\varphi = (\\varphi|_M) \\mathbin{\\dot-} 1}\n\\end{array}",
-     "caption": "Every step updates protocols, counters and tickets by one index-free rule, where unchanged components are omitted.",
+     "tex": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=fu.upd}{e' \\in F_{n}}\\end{array}}{\\htmlData{k=F-Beta}{\\mathsf{Fobl}_{\\beta}(e')}}\\;\\textsf{F-Beta} \\qquad\n\\dfrac{\\begin{array}{c}\\htmlData{k=F-New.fresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\varphi} \\Rightarrow \\exists S.\\ \\htmlData{k=fu.upd}{e' \\in F_{n}[\\Pi := \\Pi[c^{+} \\mapsto S, c^{-} \\mapsto \\overline{S}],\\ \\htmlData{k=F-New.cnew}{\\varphi := \\varphi[c^{\\pm} \\mapsto N]}]}\\end{array}}{\\htmlData{k=F-New}{\\mathsf{Fobl}_{\\mathsf{new}\\,c}(e')}}\\;\\textsf{F-New} \\\\[10pt]\n\\dfrac{\\begin{array}{c}M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(v)\\quad \\htmlData{k=F-Spawn.held}{M \\subseteq \\mathrm{dom}\\,\\varphi}\\quad \\htmlData{k=fu.fspare}{\\mathsf{fspare}}\\,\\Pi\\,\\varphi\\,M \\\\ \\htmlData{k=F-Spawn.child}{v\\,\\ast \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.rty}{\\mathsf{thread}} \\annot{\\triangleright \\infty ; 0} \\rrbracket(\\Pi|_M,\\ \\htmlData{k=fu.fhand}{\\mathsf{fhand}}\\,M\\,\\varphi,\\ \\lceil tk/2 \\rceil)}} \\\\ \\htmlData{k=fu.upd}{e' \\in F_{n}[\\Pi := \\Pi \\setminus M,\\ \\varphi := \\varphi \\setminus M,\\ \\htmlData{k=F-Spawn.tickets}{tk := \\lfloor tk/2 \\rfloor}]}\\end{array}}{\\htmlData{k=F-Spawn}{\\mathsf{Fobl}_{\\mathsf{spawn}\\,v}(e')}}\\;\\textsf{F-Spawn} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=F-Link.plink}{o_1 \\neq o_2 \\land \\Pi(o_2) \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{\\Pi(o_1)}}\\quad o_1, o_2 \\in \\mathrm{dom}\\,\\varphi\\quad \\htmlData{k=F-Link.ticket}{1 \\leq tk} \\\\ \\htmlData{k=fu.upd}{e' \\in F_{n}[\\Pi := \\Pi \\setminus \\{o_1,o_2\\},\\ \\varphi := \\varphi \\setminus \\{o_1,o_2\\},\\ tk := tk - 1]}\\end{array}}{\\htmlData{k=F-Link}{\\mathsf{Fobl}_{\\mathsf{link}\\,o_1\\,o_2}(e')}}\\;\\textsf{F-Link}\n\\end{array}",
+     "caption": "Internal steps tick no counter. A new channel starts both ends at $N$. A spawn hands the ends of the thunk to the child one lower, with half the tickets. A link drops two dual ends and spends one ticket.",
+     "about": {
+      "why": "The steps that take no action still move ends or tickets. New channels start at the refill, a spawn hands ends to the child, and a link spends a ticket.",
+      "used": [
+       "fu-def"
+      ]
+     }
+    },
+    {
+     "id": "fu-obl",
+     "title": "Fuel obligations of actions",
+     "rocq": "fuel/Fuel.v: f_send, f_recv, f_close, f_select, f_branch",
+     "modes": [
+      "lf"
+     ],
+     "tex": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}(\\Pi\\,o) = \\htmlData{k=sty.send}{!(\\bar\\iota.\\ T)}.S\\quad M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(w)\\quad \\htmlData{k=F-Send.notsubj}{M \\subseteq \\mathrm{dom}\\,\\varphi \\setminus \\{o\\}}\\quad \\htmlData{k=fu.fspare}{\\mathsf{fspare}}\\,\\Pi\\,\\varphi\\,M \\\\ \\htmlData{k=F-Send.payload}{w \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket T \\rrbracket(\\Pi|_M,\\ \\htmlData{k=fu.fhand}{\\mathsf{fhand}}\\,M\\,\\varphi)}} \\\\ \\htmlData{k=fu.upd}{e' \\in F_{n}[d := d \\mathbin{\\dot-} 1,\\ \\Pi := (\\Pi \\setminus M)[o \\mapsto S],\\ \\varphi := \\htmlData{k=fu.refillop}{\\mathsf{refill}}\\,N\\,o\\,(\\varphi \\setminus M)]}\\end{array}}{\\htmlData{k=F-Send}{\\mathsf{Fobl}_{\\mathsf{send}\\,o\\,w}(e')}}\\;\\textsf{F-Send} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}(\\Pi\\,o) = \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ T)}.S \\\\ \\htmlData{k=F-Recv.forall}{\\forall j \\leq n,\\ \\Pi_i, \\varphi_i \\text{ disjoint}.\\ w \\in \\htmlData{k=sr.FV}{FV^{N}_{j}\\llbracket T \\rrbracket(\\Pi_i, \\varphi_i)}} \\Rightarrow \\htmlData{k=fu.upd}{e' \\in F_{j}[d := d \\mathbin{\\dot-} 1,\\ \\Pi := \\Pi[o \\mapsto S] \\cup \\Pi_i,\\ \\varphi := \\htmlData{k=fu.refillop}{\\mathsf{refill}}\\,N\\,o\\,\\varphi \\cup \\varphi_i]}\\end{array}}{\\htmlData{k=F-Recv}{\\mathsf{Fobl}_{\\mathsf{recv}\\,o\\,w}(e')}}\\;\\textsf{F-Recv} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}(\\Pi\\,o) = \\htmlData{k=sty.close}{\\mathsf{Close}} \\\\ \\htmlData{k=fu.upd}{e' \\in F_{n}[d := d \\mathbin{\\dot-} 1,\\ \\Pi := \\Pi \\setminus o,\\ \\varphi := (\\varphi \\setminus o) \\mathbin{\\dot-} 1]}\\end{array}}{\\htmlData{k=F-Close}{\\mathsf{Fobl}_{\\mathsf{close}\\,o}(e')}}\\;\\textsf{F-Close} \\qquad\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}(\\Pi\\,o) \\in \\{\\oplus(S_1,S_2), \\&(S_1,S_2)\\} \\\\ \\htmlData{k=fu.upd}{e' \\in F_{n}[d := d \\mathbin{\\dot-} 1,\\ \\Pi := \\Pi[o \\mapsto S_i],\\ \\varphi := \\htmlData{k=fu.refillop}{\\mathsf{refill}}\\,N\\,o\\,\\varphi]}\\end{array}}{\\htmlData{k=F-Close}{\\mathsf{Fobl}_{\\mathsf{sel}_i\\,o}(e'),\\ \\mathsf{Fobl}_{\\mathsf{bra}_i\\,o}(e')}}\\;\\textsf{F-Choice}\n\\end{array}",
+     "caption": "Every action spends one unit of the frame, advances the protocol of $o$, refills $o$ and ticks the other ends. A send also hands its payload ends on one lower, and a receive continues for every fueled value that may arrive.",
      "about": {
       "why": "Each kind of step updates protocols, counters and tickets in one way, independent of the level.",
       "used": [
@@ -1762,8 +1797,8 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{l}\n\\htmlData{k=FV-Sess}{o \\in FV\\llbracket (S@x)\\annot{^{a}}\\rrbracket(\\Pi, \\varphi) \\iff \\Pi = \\{o \\mapsto S'\\} \\land \\varphi = \\{o \\mapsto f\\} \\land S' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} S \\land \\htmlData{k=FV-Sess.counter}{a \\leq f}} \\\\\n\\htmlData{k=FV-Arrow}{\\lambda e \\in FV^N_n\\llbracket (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[\\varepsilon;h]\\, U)\\annot{^{a}}\\rrbracket(\\Pi,\\varphi) \\iff \\htmlData{k=FV-Arrow.exact}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\mathrm{dom}\\,\\Pi = \\mathrm{dom}\\,\\varphi} \\land {}} \\\\\n\\quad \\htmlData{k=FV-Arrow.floor}{\\forall o.\\ h + a \\leq \\varphi(o)} \\land \\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N,\\ j < n,\\ \\varphi' \\text{ with } \\mathrm{dom}\\,\\varphi' = \\mathrm{dom}\\,\\varphi \\land h \\leq \\varphi', \\\\\n\\quad \\htmlData{k=FV-Arrow.body}{u \\in \\htmlData{k=sr.FV}{FV^{N'}_{j}\\llbracket T \\rrbracket(\\Pi_u, \\varphi_u)},\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,r\\,tk.\\ e[u] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket U \\annot{\\triangleright c ; r} \\rrbracket(\\Pi \\cup \\Pi_u, \\varphi' \\cup \\varphi_u, tk)}} \\\\\n\\htmlData{k=FV-Box}{!e \\in FV^N_n\\llbracket \\Box(\\ldots U)\\rrbracket(\\Pi,\\varphi) \\iff \\htmlData{k=FV-Box.noends}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\varnothing \\land \\Pi = \\varphi = \\varnothing} \\land {}} \\\\\n\\quad \\htmlData{k=FV-Box.body}{\\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N, j < n, \\bar s \\in \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,N', \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,r\\,tk.\\ e[!e] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket U[\\bar s] \\annot{\\triangleright c ; r} \\rrbracket(\\varnothing,\\varnothing,tk)}} \\\\\n\\htmlData{k=FV-Thread}{v \\in FV\\llbracket \\htmlData{k=fu.rty}{\\mathsf{thread}} \\rrbracket(\\Pi,\\varphi) \\iff \\Pi = \\varphi = \\varnothing} \\qquad \\htmlData{k=sr.fvagg}{\\otimes, \\oplus, \\exists \\text{ split } \\Pi, \\varphi \\text{ among their parts}}\n\\end{array}",
-     "caption": "Fueled values by recursion on the type, reading credits, effects $\\varepsilon = (c, \\vartheta)$ and floors and no point.",
+     "tex": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\Pi = \\{o \\mapsto S'\\}\\quad \\varphi = \\{o \\mapsto f\\}\\quad S' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} S\\quad \\htmlData{k=FV-Sess.counter}{a \\leq f}\\end{array}}{\\htmlData{k=FV-Sess}{o \\in FV\\llbracket (S@x)\\annot{^{a}}\\rrbracket(\\Pi, \\varphi)}}\\;\\textsf{FV-Sess} \\qquad\n\\dfrac{\\begin{array}{c}\\Pi = \\varphi = \\varnothing\\end{array}}{\\htmlData{k=FV-Thread}{v \\in FV\\llbracket \\htmlData{k=fu.rty}{\\mathsf{thread}} \\rrbracket(\\Pi,\\varphi)}}\\;\\textsf{FV-Thread} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=FV-Arrow.exact}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\mathrm{dom}\\,\\Pi = \\mathrm{dom}\\,\\varphi}\\quad \\htmlData{k=FV-Arrow.floor}{\\forall o.\\ h + a \\leq \\varphi(o)} \\\\ \\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N,\\ j < n,\\ \\varphi' \\geq h \\text{ on } \\mathrm{dom}\\,\\varphi,\\ u \\in \\htmlData{k=sr.FV}{FV^{N'}_{j}\\llbracket T \\rrbracket(\\Pi_u, \\varphi_u)},\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,r\\,tk \\\\ \\htmlData{k=FV-Arrow.body}{e[u] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket U \\annot{\\triangleright c ; r} \\rrbracket(\\Pi \\cup \\Pi_u, \\varphi' \\cup \\varphi_u, tk)}}\\end{array}}{\\htmlData{k=FV-Arrow}{\\lambda e \\in FV^N_n\\llbracket (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[(c,\\vartheta);h]\\, U)\\annot{^{a}}\\rrbracket(\\Pi,\\varphi)}}\\;\\textsf{FV-Arrow} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=FV-Box.noends}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\varnothing} \\\\ \\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N,\\ j < n,\\ \\bar s \\in \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,N',\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,r\\,tk \\\\ \\htmlData{k=FV-Box.body}{e[!e] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket U[\\bar s] \\annot{\\triangleright c ; r} \\rrbracket(\\varnothing,\\varnothing,tk)}}\\end{array}}{\\htmlData{k=FV-Box}{!e \\in FV^N_n\\llbracket \\Box(\\ldots (c,\\vartheta) \\ldots U)\\rrbracket(\\varnothing,\\varnothing)}}\\;\\textsf{FV-Box} \\\\[6pt]\n\\htmlData{k=sr.fvagg}{\\otimes, \\oplus, \\exists \\text{ split } \\Pi, \\varphi \\text{ among their parts}}\n\\end{array}",
+     "caption": "Fueled values by recursion on the type. An end has at least its credit. A closure keeps its captured counters at the floor $h$ plus its credit, and its body has fuel at every call. A box holds nothing and its body has fuel at every force. Points are never read.",
      "about": {
       "why": "Fueled values say what a value promises about counters, the run-time side of credits.",
       "used": [
@@ -10595,6 +10630,52 @@ window.MAP = {
     {
      "name": "tk",
      "meaning": "the ticket count, fixed for all levels"
+    }
+   ]
+  },
+  "fu.upd": {
+   "title": "$F_n[x := v]$",
+   "what": "The fuel of the successor at level $n$, with the refill $N'$, result, frame, reserve, protocols, counters and tickets of the current term, except the listed components, which take the listed values.",
+   "why": "Each obligation changes only a few components, so it lists only those.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$e' \\in F_n[tk := tk - 1]$ after a link.",
+   "rocq": "fuel/Fuel.v: f_beta, f_send, f_link",
+   "sig": "F_n[x := v] : \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "args": [
+    {
+     "name": "x",
+     "meaning": "a component among $d, \\Pi, \\varphi, tk$"
+    },
+    {
+     "name": "v",
+     "meaning": "its new value"
+    },
+    {
+     "name": "n",
+     "meaning": "the level, $n \\in \\mathbb{N}$"
+    }
+   ]
+  },
+  "fu.measure": {
+   "title": "The waiting measure $\\mu(t)$",
+   "what": "For a thread $t$ waiting on $o$, the pair of the tickets of all threads and the counter of the partner end $\\overline{o}$, ordered lexicographically.",
+   "why": "A link spends a ticket. A step of the holder of $\\overline{o}$ on another end ticks $\\varphi(\\overline{o})$, which F-Tick keeps at $1$ or more because $\\overline{o}$ is not idle. Every other step keeps $\\mu(t)$. So the holder acts on $\\overline{o}$ after finitely many steps.",
+   "breaks": "Without counters the holder could act on other ends forever, as the server that sends an end back and forth starves its waiter.",
+   "example": "A thread waits on $c^{+}$ while the holder of $c^{-}$ first acts on another end. Each such action lowers $\\varphi(c^{-})$ by one.",
+   "rocq": "soup/LFAdequacy.v: fu, wt",
+   "sig": "\\mu(t) \\in \\mathbb{N} \\times (\\mathbb{N} \\cup \\{\\infty\\})",
+   "args": [
+    {
+     "name": "t",
+     "meaning": "a thread pending on the end $o$"
+    },
+    {
+     "name": "tk_s",
+     "meaning": "the tickets of thread $s$"
+    },
+    {
+     "name": "\\varphi(\\overline{o})",
+     "meaning": "the counter of the partner end in the ownership map"
     }
    ]
   },
