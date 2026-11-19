@@ -81,3 +81,13 @@ must do, open questions.
 ## Done in the Rocq
 
 (entries move here once the repair agent has implemented and merged them)
+
+## Open discussion (not scheduled)
+
+- **Link budgets per end.** Per-thread link tickets reject a box that links
+  once per round forever (e.g. a server linking each new client to a
+  worker) and received closures that link. A budget per end in the session
+  type, like payload credits for hops, might accept the server. The plan
+  (docs/extensions/lock-freedom-plan.md §18) rules out per-end tickets only
+  together with replacement. The author judged it not the cleanest move for
+  now (2026-11-19). No Rocq work.
