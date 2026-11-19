@@ -45,7 +45,7 @@ const unused = Object.keys(notes).filter(k => !used.has(k));
 if (unused.length) console.log('UNUSED', unused.join(' '));
 // prose checks
 const bad = [/[;—]/, /\bsince\b/i, /\bslots?\b/i, /\bgates?\b/i, /\bpriority\b/i, /\b(novel|significant|comprehensive|robust|crucial|seamless|leverage|delve|pivotal|substantial)\b/i];
-const MAC = { '\\llbracket': '[\\![', '\\rrbracket': ']\\!]' };
+const MAC = { '\\llbracket': '[\\![', '\\rrbracket': ']\\!]', '\\annot': '#1' };
 // Unicode math left outside $…$ (Greek letters, arrows, relations, sub/superscripts)
 const umath = /[\u0370-\u03FF\u2070-\u209F\u2190-\u22FF\u27E8-\u27EF\u2A00-\u2AFF\u0300-\u036F]/;
 let nUni = 0;
@@ -66,6 +66,11 @@ function prose(t, where) {
 for (const s of sections) { prose(s.intro, s.id); for (const b of s.blocks) { prose(b.caption, b.id); prose(b.title, b.id + '.title'); } }
 for (const [k, v] of Object.entries(notes)) for (const f of ['title', 'what', 'why', 'breaks', 'example']) prose(v[f], k + '.' + f);
 for (const e of examples) { prose(e.shows, e.id); prose(e.title, e.id + '.title'); }
+// credits a, b, a_i, a' and sums a + ... are annotations: mark them so the page shows them only in the lock-free mode
+const CR = /\^\{((?:a|b)(?:_\{?[A-Za-z0-9]+\}?)?'*(?:\s*\+[^{}]*)?)\}/g;
+const ann = t => typeof t === 'string' ? t.replace(CR, '\\annot{^{$1}}') : t;
+for (const s of sections) for (const b of s.blocks) { b.tex = ann(b.tex); if (b.variants) for (const k of Object.keys(b.variants)) b.variants[k] = ann(b.variants[k]); }
+for (const v of Object.values(notes)) { for (const f of ['title', 'what', 'why', 'breaks', 'example', 'sig']) v[f] = ann(v[f]); for (const a of v.args || []) { if (/^(a|b)(_\{?\w+\}?)?'*$/.test(a.name) && /credit/i.test(a.meaning)) a.ann = true; a.name = ann(a.name); a.meaning = ann(a.meaning); } }
 const out = { sections, notes, examples };
 const file = path.join(__dirname, '..', 'data.js');
 fs.writeFileSync(file, 'window.MAP = ' + JSON.stringify(out, null, 1) + ';\n');

@@ -22,10 +22,10 @@ block(s, {
 block(s, {
   id: 'ty-session', title: 'Session types', rocq: 'types/Types.v: sty, unfoldS',
   tex: R`\begin{array}{rl}
-S ::= & ${h('sty.skip', R`\mathsf{Skip}`)} \mid ${h('sty.seq', R`S.S`)} \mid ${h('sty.recv', R`?(\exists^{m}\bar\iota.\ T^{${h('sty.payload-credit', 'b')}})`)} \mid ${h('sty.send', R`!(\exists^{m}\bar\iota.\ T^{b})`)} \mid ${h('sty.plus', R`\oplus(S_1, S_2)`)} \\
+S ::= & ${h('sty.skip', R`\mathsf{Skip}`)} \mid ${h('sty.seq', R`S.S`)} \mid ${h('sty.recv', R`?(\bar\iota.\ T^{${h('sty.payload-credit', 'b')}})`)} \mid ${h('sty.send', R`!(\bar\iota.\ T^{b})`)} \mid ${h('sty.plus', R`\oplus(S_1, S_2)`)} \\
 \mid & ${h('sty.with', R`\&(S_1, S_2)`)} \mid ${h('sty.close', R`\mathsf{Close}`)} \mid ${h('sty.mu', R`\mu\alpha.S`)} \mid ${h('sty.var', R`\alpha`)} \mid ${h('sty.vard', R`\overline{\alpha}`)} \qquad ${h('sty.unfold', R`\mathsf{unfold}(S)`)}
 \end{array}`,
-  caption: 'Session types with sequencing $S.S$, read through $\\mathsf{unfold}(S)$, whose payloads bind $m$ point variables at the fields of the carrier.'
+  caption: 'Session types with sequencing $S.S$, read through $\\mathsf{unfold}(S)$, whose payloads bind point variables $\\bar\\iota$ at the fields of the carrier.'
 });
 block(s, {
   id: 'ty-dual', title: 'Duality', rocq: 'types/Types.v: dual, sflip',
@@ -57,9 +57,9 @@ block(s, {
   id: 'ty-payload', title: 'Payloads', rocq: 'types/Types.v: payload_at, pscoped',
   tex: R`\begin{array}{l}
 ${h('ty.payload-at', R`\mathsf{payload\_at}\,m\,T\,x = T[x\cdot 0, \ldots, x\cdot(m{-}1) / \iota_0, \ldots, \iota_{m-1}]`)} \\
-${h('ty.pscoped', R`\mathsf{pscoped}\,m\,T`)}
+${h('ty.pscoped', R`\mathsf{pscoped}\,\bar\iota\,T`)}
 \end{array}`,
-  caption: 'A payload mentions only its own point variables $\\iota_0, \\ldots, \\iota_{m-1}$, placed at the fields $x\\cdot 0, \\ldots, x\\cdot(m{-}1)$ of the carrier point $x$.'
+  caption: 'A payload $!(\\bar\\iota.\\,T)$ mentions only its own point variables $\\bar\\iota = \\iota_0, \\ldots, \\iota_{m-1}$, placed at the fields $x\\cdot 0, \\ldots, x\\cdot(m{-}1)$ of the carrier point $x$.'
 });
 block(s, {
   id: 'ty-annot', title: 'Costs and ticket transformers', rocq: 'types/Costs.v: tix, meets, tspawn, tlink, tseq, tok',
@@ -139,8 +139,8 @@ n('ty.ex', 'Existential', '$\\exists^{l}\\bar\\iota.\\ C.\\ T^{a}$ is $T[\\bar x
 n('ty.ex.lb', 'Lower bound $l$', '$l = \\cdot$ when the value holds no end, $l = \\bot$ when its ends sit at points unknown outside, and $l = x$ when $x \\preceq y$ for every partner point $y$ of its ends.', '$\\bot$ stands for a fresh point that the context does not know, and $\\mathsf{hbot}$ propagates it.', 'Without $\\bot$, a closure captures an unopened fresh pair and claims a lower point $l$ that no fact of $W$ supports.', '$\\mathsf{new} : \\exists^{\\bot}\\ldots$', 'types/Points.v: lbound');
 n('sty.skip', '$\\mathsf{Skip}$', 'The empty protocol, and an end at $S$ with $\\mathsf{unfold}(S) = \\mathsf{Skip}$ is idle.', 'No partner waits on an idle end. The fuel layer drops for idle ends the checks that counters are at least $1$, so they may be held indefinitely.', DEF, 'A control end that is passed around and never used sits at $\\mathsf{Skip}$.', 'types/Types.v: SSkip, fuel/Fuel.v: idle');
 n('sty.seq', 'Sequencing', '$S.S\'$ runs $S$ and then $S\'$, and $\\mathsf{unfold}$ normalizes it to its first action.', 'Sequencing composes protocols, so a recursion variable need not occur in tail position.', DEF, '$(!\\ast).\\mathsf{Close}$.', 'types/Types.v: SSeq');
-n('sty.recv', 'Receive', '$?(\\exists^{m}\\bar\\iota.\\ T^{b})$ receives a value of $T[x\\cdot 0, \\ldots, x\\cdot(m{-}1)]$ when the end sits at $x$.', 'A plain protocol action. The binder $\\exists^m\\bar\\iota$ lets a message carry ends whose points the receiver learns as fields of $x$.', DEF, '$\\mu\\alpha.\\,?(\\exists\\kappa.\\ \\alpha @\\kappa).\\mathsf{Close}$ receives an end of the same protocol at a field.', 'types/Types.v: SRcv');
-n('sty.send', 'Send', '$!(\\exists^{m}\\bar\\iota.\\ T^{b})$ sends a value of $T[x\\cdot 0, \\ldots, x\\cdot(m{-}1)]$ at payload credit $b$.', 'A plain protocol action, $\\mathsf{dual}$ of receive.', DEF, '$!\\ast.\\mathsf{Close}$.', 'types/Types.v: SSnd');
+n('sty.recv', 'Receive', '$?(\\bar\\iota.\\ T^{b})$ receives a value of $T[x\\cdot 0, \\ldots, x\\cdot(m{-}1)]$ for $\\bar\\iota = \\iota_0, \\ldots, \\iota_{m-1}$ when the end sits at $x$.', 'A plain protocol action. The binder $\\bar\\iota$ is no existential, because the receiver knows the points of the payload, the fields of $x$. It lets a message carry ends whose points the receiver learns as fields of $x$.', DEF, '$\\mu\\alpha.\\,?(\\kappa.\\ \\alpha @\\kappa).\\mathsf{Close}$ receives an end of the same protocol at a field.', 'types/Types.v: SRcv');
+n('sty.send', 'Send', '$!(\\bar\\iota.\\ T^{b})$ sends a value of $T[x\\cdot 0, \\ldots, x\\cdot(m{-}1)]$ for $\\bar\\iota = \\iota_0, \\ldots, \\iota_{m-1}$, at payload credit $b$.', 'A plain protocol action, $\\mathsf{dual}$ of receive.', DEF, '$!\\ast.\\mathsf{Close}$.', 'types/Types.v: SSnd');
 n('sty.payload-credit', 'Payload credit $b$', 'Every end of the payload has counter at least $b$ at the receiver, and the sender supplies credit $b$ after aging by $1$.', 'Each hop of an end costs $1$. Requiring $b + 1$ of the sender when the receiver gets $b$ bounds the number of hops by the counter.', 'Without payload credits two threads pass an end back and forth forever, and its partner waits forever.', 'A payload at credit $2$.', 'types/Types.v: SRcv b, SSnd b');
 n('sty.plus', 'Internal choice', '$\\oplus(S_1, S_2)$, where the selecting side chooses $i$ and continues with $S_1$ or $S_2$.', 'A plain protocol action. The holder decides the continuation.', DEF, '$\\oplus(\\mathsf{Close}, !\\ast.\\mathsf{Close})$.', 'types/Types.v: SPlus');
 n('sty.with', 'External choice', '$\\&(S_1, S_2)$, where the branching side receives $i$ and continues with $S_1$ or $S_2$.', 'A plain protocol action, $\\mathsf{dual}$ of internal choice.', DEF, '$\\&(\\mathsf{Close}, ?\\ast.\\mathsf{Close})$.', 'types/Types.v: SWith');
@@ -159,7 +159,7 @@ n('ty.heads', '$\\mathsf{heads}$', '$\\mathsf{heads}(T)$ is the set of partner p
 n('ty.hbot', '$\\mathsf{hbot}$', '$\\mathsf{hbot}(T) = \\mathsf{true}$ iff $T$ contains an existential with bound $\\bot$ reachable through $\\otimes$ and $\\oplus$ alone.', 'Ends at unknown points satisfy no fact $u \\prec y$. A term whose context holds such ends performs no session action.', DEF, '$\\mathsf{hbot}(\\exists^{\\bot}\\iota.\\ T) = \\mathsf{true}$.', 'types/Types.v: hbot');
 n('ty.lbound', 'Lower bounds $l$', '$l ::= \\cdot \\mid \\bot \\mid x$, absent, unknown, or a point.', 'It records how much a holder knows about the points of the hidden ends.', DEF, '$l = \\bot$ for $\\mathsf{new}_\\ell$.', 'types/Points.v: lbound');
 n('ty.payload-at', '$\\mathsf{payload\\_at}$', '$\\mathsf{payload\\_at}\\,m\\,T\\,x = T[x\\cdot 0, \\ldots, x\\cdot(m{-}1) / \\iota_0, \\ldots, \\iota_{m-1}]$.', '$\\overline{x}\\cdot j = x\\cdot j$, so sender at $x$ and receiver at $\\overline{x}$ compute the same payload type.', DEF, 'A payload $\\alpha @\\iota_0$ sent at $Y$ has type $\\alpha @Y\\cdot 0$.', 'types/Types.v: payload_at');
-n('ty.pscoped', '$\\mathsf{pscoped}$', '$\\mathsf{pscoped}\\,m\\,T$ iff every point variable of $T$ is among $\\iota_0, \\ldots, \\iota_{m-1}$.', 'A payload mentions only its own point variables, so unrolling a $\\mu$ never captures an outer point.', 'A free outer point inside a $\\mu$-body is captured on unrolling, and point substitution changes its meaning.', '$\\mathsf{pscoped}\\,1\\,(S@\\iota_0)$.', 'types/Types.v: pscoped');
+n('ty.pscoped', '$\\mathsf{pscoped}$', '$\\mathsf{pscoped}\\,\\bar\\iota\\,T$ iff every point variable of $T$ is among $\\bar\\iota$.', 'A payload mentions only its own point variables, so unrolling a $\\mu$ never captures an outer point.', 'A free outer point inside a $\\mu$-body is captured on unrolling, and point substitution changes its meaning.', '$\\mathsf{pscoped}\\,\\iota_0\\,(S@\\iota_0)$.', 'types/Types.v: pscoped');
 n('ann.fuel', '$\\mathbb{N} \\cup \\{\\infty\\}$', 'Credits, costs, floors and counters range over $\\mathbb{N} \\cup \\{\\infty\\}$ with $\\infty - c = \\infty$ for every $c \\in \\mathbb{N}$.', 'Deadlock-freedom typing is the instance where every fresh and refilled counter is $\\infty$, so every aging premise holds there.', DEF, '$\\infty - 3 = \\infty$.', 'types/Costs.v: fuel');
 n('ann.tix', 'Ticket transformer', '$\\vartheta = (s, b)$ denotes $r \\mapsto 2^{s} r + b$ with $s, b \\in \\mathbb{N} \\cup \\{\\infty\\}$.', 'A spawn halves the tickets, so needs grow by doubling. $b = \\infty$ marks a term that no finite ticket count serves, the case of deadlock-freedom typing.', 'Without $b = \\infty$, the transformer of deadlock-freedom typing does not compose with $\\mathsf{tlink}$.', '$(0, 1)$ needs $r + 1$ tickets.', 'types/Costs.v: tix, tapp');
 n('ann.tid', '$\\hat 1$', '$\\hat 1 = (0, 0)$, the identity $r \\mapsto r$.', 'A value performs no link, so it needs exactly its reserve $r$.', DEF, 'Every value types at $\\hat 1$.', 'types/Costs.v: tid');
@@ -216,8 +216,8 @@ sa('ty.ex', R`\exists^{l}\bar\iota.\ C.\ T^{a} \in \mathsf{Ty}`, [A('l', R`The l
 sa('ty.ex.lb', R`l \in \{\cdot, \bot\} \cup \mathsf{Point}`, [A('l', R`$\cdot$ for no end, $\bot$ for ends at unknown points, $x$ when $x \preceq y$ for every partner point $y$ of the ends.`)]);
 sa('sty.skip', R`\mathsf{Skip} \in \mathsf{STy}`, []);
 sa('sty.seq', R`S.S' \in \mathsf{STy}`, [A(R`S, S'`, R`The first and the second protocol.`)]);
-sa('sty.recv', R`?(\exists^{m}\bar\iota.\ T^{b}) \in \mathsf{STy}`, [A('m', R`The number of point variables of the payload.`), A(R`\bar\iota`, R`The point variables, placed at $x\cdot 0, \ldots, x\cdot(m{-}1)$ for the carrier point $x$.`), A('T', R`The payload type.`), A('b', R`The payload credit.`)]);
-sa('sty.send', R`!(\exists^{m}\bar\iota.\ T^{b}) \in \mathsf{STy}`, [A('m', R`The number of point variables of the payload.`), A(R`\bar\iota`, R`The point variables, placed at fields of the carrier point.`), A('T', R`The payload type.`), A('b', R`The payload credit.`)]);
+sa('sty.recv', R`?(\bar\iota.\ T^{b}) \in \mathsf{STy}`, [A(R`\bar\iota`, R`The point variables of the payload, $\iota_0, \ldots, \iota_{m-1}$, placed at $x\cdot 0, \ldots, x\cdot(m{-}1)$ for the carrier point $x$.`), A('T', R`The payload type.`), A('b', R`The payload credit.`)]);
+sa('sty.send', R`!(\bar\iota.\ T^{b}) \in \mathsf{STy}`, [A(R`\bar\iota`, R`The point variables of the payload, placed at the fields of the carrier point.`), A('T', R`The payload type.`), A('b', R`The payload credit.`)]);
 sa('sty.payload-credit', R`b \in \mathbb{N} \cup \{\infty\}`, [A('b', R`The counter the receiver may assume for each end of the payload.`)]);
 sa('sty.plus', R`\oplus(S_1, S_2) \in \mathsf{STy}`, [A(R`S_1, S_2`, R`The continuations for $i = \mathsf{false}$ and $i = \mathsf{true}$.`)]);
 sa('sty.with', R`\&(S_1, S_2) \in \mathsf{STy}`, [A(R`S_1, S_2`, R`The continuations for the received $i = \mathsf{false}$ and $i = \mathsf{true}$.`)]);
@@ -236,7 +236,7 @@ sa('ty.heads', R`\mathsf{heads} : \mathsf{Ty} \to \mathcal{P}_{\mathrm{fin}}(\ma
 sa('ty.hbot', R`\mathsf{hbot} : \mathsf{Ty} \to \mathbb{B}`, [Tt]);
 sa('ty.lbound', R`l \in \mathsf{LBound} = \{\cdot, \bot\} \cup \mathsf{Point}`, []);
 sa('ty.payload-at', R`\mathsf{payload\_at} : \mathbb{N} \to \mathsf{Ty} \to \mathsf{Point} \to \mathsf{Ty}`, [A('m', R`The number of point variables of the payload.`), A('T', R`The payload type over $\iota_0, \ldots, \iota_{m-1}$.`), A('x', R`The point of the carrier end.`)]);
-sa('ty.pscoped', R`\mathsf{pscoped} : \mathbb{N} \to \mathsf{Ty} \to \mathsf{Prop}`, [A('m', R`The number of bound point variables.`), A('T', R`The payload type.`)]);
+sa('ty.pscoped', R`\mathsf{pscoped} : \mathsf{PVar}^{*} \to \mathsf{Ty} \to \mathsf{Prop}`, [A(R`\bar\iota`, R`The point variables the payload binds.`), A('T', R`The payload type.`)]);
 sa('ann.fuel', R`\mathbb{N} \cup \{\infty\}`, []);
 sa('ann.tix', R`\vartheta = (s, b) \in \mathsf{Tix} = (\mathbb{N} \cup \{\infty\})^{2}`, [A('s', R`The doubling exponent.`), A('b', R`The offset.`), A('r', R`The reserve of tickets on return.`)]);
 sa('ann.tid', R`\hat 1 \in \mathsf{Tix}`, []);

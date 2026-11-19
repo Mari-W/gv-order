@@ -197,7 +197,7 @@ main = let p = (force mk₀) ∗ in let ⟨p, q⟩ = (force mk₁) p in
     rocq: 'examples/FactoryEx.v: fx_typed; examples/LFFactoryEx.v: fx_lftyped, fx_lock_free',
     accepts: { df: { ok: true, rocq: 'fx_dftyped, fx_typed' }, live: { ok: true, rocq: 'fx_dftyped, fx_guarded' }, lf: { ok: true, N: 2, rocq: 'fx_lftyped, fx_lock_free' } } },
   { id: 'ex-ring', title: 'The growing ring', modes: ['df', 'live', 'lf'],
-    code: `Sch  = µα. ?(∃κ. α@κ).Close
+    code: `Sch  = µα. ?(κ. α@κ).Close
 ring : □(∀ι₁ ι₂. Cr. ∗ ⊸ (Sch@ι₁ ⊗ S̄ch@ι₂ ⊸^{ι₁+1} ∗))
 ring = !(f = λp. let (x, y) = p in
            let (a, a′) = new in                -- a at ι₂·0
