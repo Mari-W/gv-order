@@ -79,8 +79,8 @@ const ann = t => typeof t !== 'string' ? t : t.replace(CRH, m => '\\annot{' + m 
   .replace(TRI, m => '\\annot{' + m + '}').replace(BRK, m => '\\annot{' + m + '}')
   .replace(/\\vdash(\}*)\^\{(N|\\infty)\}/g, '\\vdash$1\\annot{^{$2}}').replace(/_\{(W(?:_\d)?),(N|\\infty)\}/g, '_{$1\\annot{,$2}}')
   .replace(REF, (m, x, i, s) => isIndex(s, i) ? m : '\\annot{' + m + '}');
-// one toggle: liveness is deadlock freedom plus the guard, so live material shows with deadlock freedom
-const unlive = ms => [...new Set((ms || ['df', 'lf']).map(m => m === 'live' ? 'df' : m))];
+// one toggle: liveness is deadlock freedom plus the guard, which only lock freedom needs, so live material shows with lock freedom
+const unlive = ms => [...new Set((ms || ['df', 'lf']).map(m => m === 'live' ? 'lf' : m))];
 for (const s of sections) for (const b of s.blocks) { b.modes = unlive(b.modes); if (b.variants) delete b.variants.live; }
 for (const e of examples) e.modes = unlive(e.modes);
 for (const s of sections) for (const b of s.blocks) { b.tex = ann(b.tex); if (b.variants) for (const k of Object.keys(b.variants)) b.variants[k] = ann(b.variants[k]); }

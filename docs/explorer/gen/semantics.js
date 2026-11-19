@@ -53,14 +53,14 @@ ${h('ev.admin', R`\mathsf{admin} = \{\beta, \mathsf{new}, \mathsf{spawn}, \maths
   caption: 'An event names the threads $\\mathsf{parts}(ev)$ and the channel or ends acted on.'
 });
 block(s, {
-  id: 'sem-props', title: 'Safety properties', rocq: 'lang/Safety.v: deadlock_free, lockfree/TauThread.v: no_tau_divergence, lockfree/Fair.v: lock_free',
+  id: 'sem-props', title: 'Properties', rocq: 'lang/Safety.v: deadlock_free, lockfree/TauThread.v: no_tau_divergence, lockfree/Fair.v: lock_free',
   tex: R`\begin{array}{l}
 ${h('prop.terminated', R`\mathsf{terminated}\,p \iff p = (\varnothing, \{v\} \uplus E),\ E \subseteq \{\ast\}`)} \\
-${h('prop.df', R`\mathsf{deadlock\_free}\,p \iff \forall p'.\ p ${h('se.reach', R`\to^{*}`)} p' \Rightarrow \mathsf{terminated}\,p' \lor \exists p''.\ p' \to p''`)} \\
-${h('prop.notau', R`\mathsf{no\_tau\_divergence}\,p \iff \forall q.\ p \to^{*} q \Rightarrow ${h('se.acc', R`\mathsf{Acc}`)}\ ${h('prop.padmin', R`\to_{\mathsf{admin}}`)}\ q`)} \\
-${h('prop.lf', R`\begin{array}{l} \mathsf{lock\_free}\,p \iff \forall ${h('se.run', R`(r, l) \in \mathsf{Run}`)}.\ ${h('se.r0', R`${h('proc.erase', R`\mathsf{erase}`)}(r_0) = p`)} \Rightarrow ${h('prop.maximal', R`\mathsf{maximal}\,r\,l`)} \Rightarrow ${h('prop.wfair', R`\mathsf{wfair}\,r\,l`)} \Rightarrow {} \\ \qquad ${h('prop.lfrun', R`\forall i\,t.\ ${h('prop.pend', R`\mathsf{pend}(r_i, t)`)} \Rightarrow \exists j \geq i.\ t \in ${h('se.parts', R`\mathsf{parts}(l_j)`)}`)} \end{array}`)}
+${h('prop.df', R`\mathsf{deadlock\_free}\,p \iff \forall p'.\ p ${h('se.reach', R`\to^{*}`)} p' \Rightarrow \mathsf{terminated}\,p' \lor \exists p''.\ p' \to p''`)}
+\annraw{ \\ }\annot{${h('prop.notau', R`\mathsf{no\_tau\_divergence}\,p \iff \forall q.\ p \to^{*} q \Rightarrow ${h('se.acc', R`\mathsf{Acc}`)}\ ${h('prop.padmin', R`\to_{\mathsf{admin}}`)}\ q`)}}
+\annraw{ \\ }\annot{${h('prop.lf', R`\begin{array}{l} \mathsf{lock\_free}\,p \iff \forall ${h('se.run', R`(r, l) \in \mathsf{Run}`)}.\ ${h('se.r0', R`${h('proc.erase', R`\mathsf{erase}`)}(r_0) = p`)} \Rightarrow ${h('prop.maximal', R`\mathsf{maximal}\,r\,l`)} \Rightarrow ${h('prop.wfair', R`\mathsf{wfair}\,r\,l`)} \Rightarrow {} \\ \qquad ${h('prop.lfrun', R`\forall i\,t.\ ${h('prop.pend', R`\mathsf{pend}(r_i, t)`)} \Rightarrow \exists j \geq i.\ t \in ${h('se.parts', R`\mathsf{parts}(l_j)`)}`)} \end{array}`)}}
 \end{array}`,
-  caption: 'Deadlock freedom, absence of internal divergence and lock freedom over weakly fair maximal runs $(r, l)$.'
+  caption: 'Termination and deadlock freedom, and for lock freedom also absence of internal divergence and lock freedom over weakly fair maximal runs $(r, l)$.'
 });
 
 // ---- notes ----
