@@ -388,10 +388,20 @@ window.MAP = {
    "intro": "\\annp{This section introduces the typing judgment $\\Gamma ; \\Delta \\parallel H \\vdash^{F} e : T \\ ! \\ \\varepsilon$, its contexts $\\Gamma$ and $\\Delta$, the held entries $H$ and the future $F$, the side conditions on points, aging $T - c$ and capture of credits, subtyping, one rule per term former, the process judgment $\\Sigma \\vdash\\annot{\\annot{^{N}}}_{W} p : T$ with the rules P-Term and P-Connect, the lock-free judgment $\\Sigma \\Vdash^{N}_{W} p : T$, and the guard $\\Lambda \\vdash\\!\\triangleright t$.} Deadlock-free typing is the instance $N = \\infty$ with every annotation erased, and lock-free typing takes $N \\in \\mathbb{N}$ and adds the guard.",
    "blocks": [
     {
+     "id": "t-lf-intro",
+     "title": "What lock freedom adds to typing",
+     "rocq": "static/Typing.v: typed; static/Guard.v: lguard; types/Worlds.v: wfworld",
+     "modes": [
+      "lf"
+     ],
+     "tex": "\\begin{array}{lll}\n\\text{mechanism} & \\text{written} & \\text{rules out} \\\\ \\hline\n\\htmlData{k=lfi.credit}{\\text{credits}} & (S@x)\\annot{^{a}},\\ (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} U)\\annot{^{a}} & \\text{a holder that acts elsewhere forever} \\\\\n\\htmlData{k=lfi.cost}{\\text{cost, aging, refill}} & e : T\\ !\\ (c, \\vartheta),\\ \\ \\Delta - c,\\ \\ (S@x^{+})\\annot{^{N}} & \\text{(the counting behind credits)} \\\\\n\\htmlData{k=lfi.floor}{\\text{floors}} & T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[\\varepsilon ; h]\\, U & \\text{(credits carried into a later call)} \\\\\n\\htmlData{k=lfi.hop}{\\text{hops}} & T' - 1 \\leq T[x\\cdot i],\\ \\ \\Delta - 1 & \\text{an end passed on forever} \\\\\n\\htmlData{k=lfi.tickets}{\\text{tickets}} & \\vartheta,\\ \\ \\htmlData{k=ann.tlink}{\\mathsf{tlink}},\\ \\ \\htmlData{k=ann.tspawn}{\\mathsf{tspawn}} & \\text{a waiter relinked to fresh ends forever} \\\\\n\\htmlData{k=lfi.guard}{\\text{guard}} & \\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t & \\text{internal steps forever} \\\\\n\\htmlData{k=lfi.wf}{\\text{well-founded world}} & \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W & \\text{an endless chain of waiting threads}\n\\end{array}",
+     "caption": "Deadlock freedom promises that some thread can always step. Lock freedom promises more, every waiting thread eventually meets its partner. A deadlock-free program can still keep one thread waiting forever while the others step, and each mechanism here rules out one way of doing that. Hover a row for the intuition and the example it rejects, which the Examples tab lists."
+    },
+    {
      "id": "t-judgment",
      "title": "The typing judgment",
      "rocq": "static/Typing.v: typed, dftyped",
-     "tex": "\\begin{array}{l}\\htmlData{k=tj.Gamma}{\\Gamma} ; \\htmlData{k=tj.Delta}{\\Delta} \\htmlData{k=tj.held}{\\parallel H} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=tj.F}{F}} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon} \\\\ \\htmlData{k=tj.held}{\\Delta \\parallel H \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e\\ \\ \\equiv\\ \\ \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(H)} e}\\annot{\\ \\land\\ \\htmlData{k=age.ctx}{H - c}\\ \\text{defined}} \\\\ \\htmlData{k=tj.W}{W}\\annot{,\\ \\htmlData{k=tj.N}{N}}\\ \\text{fixed for a whole derivation}\\annraw{ \\\\ }\\annot{\\htmlData{k=tj.eff}{\\varepsilon = (c, \\vartheta)} \\qquad \\htmlData{k=tj.seq}{\\varepsilon_1 \\cdot \\varepsilon_2 = (c_1 + c_2,\\ \\vartheta_1 \\circ \\vartheta_2)\\ \\text{if}\\ \\htmlData{k=ann.tok}{\\mathsf{tok}}\\,\\vartheta_1\\,\\vartheta_2}}\\annraw{ \\\\ }\\annot{\\htmlData{k=tj.zero}{0 = (0, \\hat 1)} \\qquad \\htmlData{k=tj.one}{1 = (1, \\hat 1)} \\qquad \\htmlData{k=tp.max}{\\max(\\varepsilon_1, \\varepsilon_2)} \\qquad \\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}",
+     "tex": "\\begin{array}{l}\\htmlData{k=tj.Gamma}{\\Gamma} ; \\htmlData{k=tj.Delta}{\\Delta} \\htmlData{k=tj.held}{\\parallel H} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=tj.F}{F}} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon} \\\\ \\htmlData{k=tj.held}{\\Delta \\parallel H \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e\\ \\ \\equiv\\ \\ \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(H)} e}\\annot{\\ \\land\\ \\htmlData{k=tj.hage}{H - c}\\ \\text{defined}} \\\\ \\htmlData{k=tj.W}{W}\\annot{,\\ \\htmlData{k=tj.N}{N}}\\ \\text{fixed for a whole derivation}\\annraw{ \\\\ }\\annot{\\htmlData{k=tj.eff}{\\varepsilon = (c, \\vartheta)} \\qquad \\htmlData{k=tj.seq}{\\varepsilon_1 \\cdot \\varepsilon_2 = (c_1 + c_2,\\ \\vartheta_1 \\circ \\vartheta_2)\\ \\text{if}\\ \\htmlData{k=ann.tok}{\\mathsf{tok}}\\,\\vartheta_1\\,\\vartheta_2}}\\annraw{ \\\\ }\\annot{\\htmlData{k=tj.zero}{0 = (0, \\hat 1)} \\qquad \\htmlData{k=tj.one}{1 = (1, \\hat 1)} \\qquad \\htmlData{k=tp.max}{\\max(\\varepsilon_1, \\varepsilon_2)} \\qquad \\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}",
      "caption": "$\\Gamma$ holds facts, $\\Delta$ the ends and variables, $F$ is the future, and $\\parallel H$ names what the thread holds while $e$ runs. \\annp{The world $W$ and the refill $N$ stay fixed for a whole derivation.} In the lock-free mode $\\varepsilon$ is the effect of $e$.",
      "modes": [
       "df",
@@ -4191,6 +4201,134 @@ window.MAP = {
     {
      "name": "\\varphi \\mapsto u",
      "meaning": "a future variable $\\varphi$ with the fact $u \\prec \\varphi$"
+    }
+   ]
+  },
+  "tj.hage": {
+   "title": "$H - c$, aging what is held",
+   "what": "$H - c$ ages every entry of $H$ by the cost $c$ of $e$. It is defined when every end and closure in $H$ that is not idle has credit at least $c$.",
+   "why": "The thread holds $H$ while $e$ runs, and each of the up to $c$ actions of $e$ lowers the counters of the held ends by $1$.",
+   "breaks": "Without it a thread holds an end across unboundedly many actions on other ends, and the partner of that end waits without bound.",
+   "example": "$(S@x)^{2} - 1 = (S@x)^{1}$ is defined, $(S@x)\\annot{^{0}} - 1$ is not.",
+   "rocq": "static/Contexts.v: thage, lage",
+   "sig": "H - c",
+   "args": [
+    {
+     "name": "H",
+     "meaning": "the entries the thread holds while $e$ runs, a context or a type"
+    },
+    {
+     "name": "c",
+     "meaning": "the cost of $e$"
+    }
+   ]
+  },
+  "lfi.credit": {
+   "title": "Credits, a promise to come back",
+   "what": "Every end carries a counter at run time, the number of actions its holder may still perform on other ends before it must act on this one. The credit $a$ in $(S@x)\\annot{^{a}}$ is a lower bound on that counter, known statically. A closure carries a credit too, because the ends it captured are invisible in its type.",
+   "why": "A partner waiting on an end needs the holder to act on it eventually. If every action elsewhere lowers the counter and the counter must stay non-negative, the holder can only postpone the end finitely often.",
+   "breaks": "Postponement in the Examples tab holds $b$ across a loop that never returns, so $\\mathsf{close}\\,b'$ waits forever. The loop has cost $\\infty$, and no credit is large enough.",
+   "example": "$(S@x)^{3}$ may be held across three actions on other ends.",
+   "rocq": "types/Types.v: TSess, TLolli; fuel/Fuel.v: f_act",
+   "sig": "(S@x)\\annot{^{a}},\\ (T \\multimap U)\\annot{^{a}},\\ a \\in \\mathbb{N} \\cup \\{\\infty\\}",
+   "args": [
+    {
+     "name": "a",
+     "meaning": "a lower bound on the counter of the end, or of the ends a closure captured"
+    }
+   ]
+  },
+  "lfi.cost": {
+   "title": "Cost, aging and refill, the counting",
+   "what": "The cost $c$ of a term bounds its actions before it returns. Every rule that runs a subterm while holding $\\Delta$ ages $\\Delta$ by that cost, $\\Delta - c$, which asks each credit to cover it. An action on an end refills it to $N$, so the end returns as $(S@x^{+})\\annot{^{N}}$. Idle ends, $\\mathsf{Skip}$, age without the check, because nobody waits on them.",
+   "why": "Credits are only useful if something lowers them. The cost says how much, aging applies it to everything held, and the refill starts the count again after the holder kept its promise.",
+   "breaks": "Without the refill a long-running protocol would run out of credit after $N$ actions.",
+   "example": "$\\langle c, \\mathsf{send}\\,\\langle\\ast, d\\rangle\\rangle$ ages $c$ by $1$ while the send on $d$ runs.",
+   "rocq": "static/Typing.v: typed; static/Contexts.v: tage, lage",
+   "sig": "e : T\\ !\\ (c, \\vartheta),\\ \\Delta - c,\\ (S@x^{+})\\annot{^{N}}",
+   "args": [
+    {
+     "name": "c",
+     "meaning": "the cost, an upper bound on the actions of $e$"
+    },
+    {
+     "name": "N",
+     "meaning": "the refill"
+    }
+   ]
+  },
+  "lfi.floor": {
+   "title": "Floors, credit inside a closure",
+   "what": "A closure $T \\multimap[\\varepsilon ; h]\\, U$ records the floor $h$, the credit its body may assume of every captured end when it is called. At creation each captured end needs $h + a$, the floor plus what the closure itself may lose while it is held.",
+   "why": "Between creating a closure and calling it, its holder may act elsewhere, which lowers the counters of the captured ends. The credit $a$ of the closure absorbs that loss, and $h$ is what remains for the body.",
+   "breaks": "Without the floor the body could not hold a captured end across any action.",
+   "example": "A callback with $h = 1$ and $a = 1$ needs its captured ends at credit $2$.",
+   "rocq": "static/Contexts.v: tcap, thcap",
+   "sig": "T \\multimap[\\varepsilon ; h]\\, U",
+   "args": [
+    {
+     "name": "h",
+     "meaning": "the credit the body may assume of every captured end"
+    }
+   ]
+  },
+  "lfi.hop": {
+   "title": "Hops, a passed end loses one",
+   "what": "Every time an end is handed to another thread, by a send or a spawn, its counter drops by $1$. A send asks $T' - 1 \\leq T[x\\cdot i]$ of the payload, a spawned body sees $\\Delta - 1$, and spawning a closure asks its credit $a \\geq 1$.",
+   "why": "Handing an end on is not an action on it, so it does not refill. Without the loss an end could travel between threads forever and its partner would never be served.",
+   "breaks": "Endless delegation in the Examples tab sends $e$ back and forth forever while $e'$ waits. After finitely many hops no credit is left to send it again.",
+   "example": "An end at credit $3$ can be passed on three times before someone must act on it.",
+   "rocq": "static/Typing.v: e_send, e_spawn_lam, e_spawn",
+   "sig": "T' - 1 \\leq T[x\\cdot i],\\ \\Delta - 1,\\ a \\geq 1",
+   "args": [
+    {
+     "name": "T'",
+     "meaning": "the type of a payload value"
+    }
+   ]
+  },
+  "lfi.tickets": {
+   "title": "Tickets, a budget for links",
+   "what": "Each thread holds a number of link tickets. A link spends one, and a spawn splits the tickets between parent and child. The ticket need $\\vartheta$ of a term says how many tickets it needs, $\\mathsf{tlink}$ adds one for a link and $\\mathsf{tspawn}$ accounts for the split. P-Term asks the thread to start with enough.",
+   "why": "A link acts on no end, so counters cannot bound it. Worse, it gives the waiter a fresh partner end at full counter, so a thread could link forever while every counter stays full.",
+   "breaks": "Link refresh in the Examples tab relinks the partner of a waiting end to a fresh channel every round, so the waiter always faces a new end. Each round spends a ticket and none is ever created.",
+   "example": "A thread that links twice needs $\\vartheta(0) \\geq 2$.",
+   "rocq": "types/Costs.v: tlink, tspawn; static/Typing.v: e_link, p_term",
+   "sig": "\\vartheta = (s, b),\\ \\vartheta(r) = 2^{s} r + b",
+   "args": [
+    {
+     "name": "\\vartheta",
+     "meaning": "the ticket need, the tickets a term needs to leave $r$ behind"
+    }
+   ]
+  },
+  "lfi.guard": {
+   "title": "The guard, no recursion before an action",
+   "what": "$\\Lambda \\vdash\\!\\triangleright t$ asks that a box calls itself only after a session action. It is a syntactic check on terms.",
+   "why": "Internal steps, $\\beta$, $\\mathsf{new}$ and $\\mathsf{spawn}$, cost no counter. A loop made only of them would step forever without ever serving anyone, which deadlock freedom allows and lock freedom does not.",
+   "breaks": "Guard rejections in the Examples tab, e.g. $!(f = \\mathsf{force}\\,f)$ and a box that spawns itself forever.",
+   "example": "$!(f = \\lambda x.\\, \\mathsf{let}\\ \\langle v, x\\rangle = \\mathsf{recv}\\,x\\ \\mathsf{in}\\ (\\mathsf{force}\\,f)\\,x)$ is guarded.",
+   "rocq": "static/Guard.v: lguard",
+   "sig": "\\Lambda \\vdash\\!\\triangleright t",
+   "args": [
+    {
+     "name": "\\Lambda",
+     "meaning": "the marks, which variables are boxes not yet allowed to recur"
+    }
+   ]
+  },
+  "lfi.wf": {
+   "title": "A well-founded world",
+   "what": "$\\mathsf{wfworld}\\,W$ asks $\\prec_W$ to have no infinite descending chain. It is a premise of the lock-free theorems, not a typing rule.",
+   "why": "A waiting thread waits on a holder whose own waiting point lies lower. With a well-founded order this chain ends, so someone at the bottom can act.",
+   "breaks": "A waiting chain that grows forever, in the Examples tab, spawns threads that each wait below their predecessor, and new ones keep appearing.",
+   "example": "Every world of the lock-free examples is well-founded.",
+   "rocq": "types/Worlds.v: wfworld; soup/LFAdequacy.v: lf_adequacy",
+   "sig": "\\mathsf{wfworld} : \\mathsf{World} \\to \\mathsf{Prop}",
+   "args": [
+    {
+     "name": "W",
+     "meaning": "a world"
     }
    ]
   },
