@@ -95,6 +95,7 @@ const ABOUT = {
   'sp-inv': { why: 'The soup is the lock-free invariant of a whole program, every thread safe and fueled with its own share of ends.', used: ['sp-lf', 'th-lf-adequacy'] },
   'sp-lf': { why: 'The lock-free semantic judgment chooses the refill and the soup state once, before the level, which the lock-freedom proof needs.', used: ['th-lf-adequacy', 'th-fund-proc'] },
   // theorems
+  'th-chain': { why: 'The proof in one picture. Each arrow is one theorem below, and the lock-free rows show what lock freedom adds on top of the deadlock-free relation.', used: [] },
   'th-adequacy': { why: 'Adequacy turns the semantic judgment into the safety property. It is the only place the relation meets deadlock freedom.', used: ['th-sound'] },
   'th-lf-adequacy': { why: 'The lock-free counterpart, from the soup to lock freedom on every fair run.', used: ['th-sound'] },
   'th-fund-term': { why: 'The fundamental theorem says typing implies the semantic judgment. It is proved rule by rule, which is what makes the type system extensible.', used: ['th-fund-proc'] },

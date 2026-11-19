@@ -38,6 +38,17 @@ const SOUP = (n) => h('th.soup', R`S^{N,W}_{${n}}\llbracket\varnothing \vdash T\
 const MEETS = R`${h('ann.meets', R`\mathsf{meets}`)}\,\vartheta\,0\,${h('fu.tk', 'tk')}`;
 const PRIM = R`${h('ty.prim', R`\mathsf{prim}`)}\,T`;
 
+const BY = (name, k) => R`\overset{${h(k, R`\textsf{${name}}`)}}{\Longrightarrow}`;
+TH('th-chain', 'How the results fit together', 'static/FundamentalProc.v: fundamental_proc, soundness; relation/Adequacy.v: adequacy; static/Fundamental.v: live_fundamental; cost/CostFund.v: fsem_of_cost; soup/LFTyped.v: lf_fundamental; soup/LFAdequacy.v: lf_adequacy', ['df', 'lf'],
+  R`\begin{array}{rcl}
+\Sigma ${PT} p : T & ${BY('fundamental\\_proc', 'th.fundamental-proc')} & \Sigma ${PSEM}_W p : T \quad p \in P^{W}_{n}\llbracket\Sigma \vdash T\rrbracket \text{ for all } n \\[1ex]
+\varnothing ${PSEM}_W p : T & ${BY('adequacy', 'th.adequacy')} & ${DFP}\,p
+\annraw{\\[3ex]}\annot{t \text{ typed at } N \text{ and guarded}}\annraw{&}\annot{${BY('live\\_fundamental', 'th.live-fundamental')}}\annraw{&}\annot{t \in E[\kappa_L]^{W}_{n}\llbracket\Theta \vdash T\rrbracket^{\varnothing} \text{ for all } n}
+\annraw{\\[1ex]}\annot{t \text{ typed at } N,\ ${MEETS}}\annraw{&}\annot{${BY('fsem\\_of\\_cost', 'th.fsem-of-cost')}}\annraw{&}\annot{${h('fu.fsem', R`\mathsf{fsem}\,N\,\Pi\,t`)}}
+\annraw{\\[1ex]}\annot{\Sigma ${PLF} p : T}\annraw{&}\annot{${BY('lf\\_fundamental', 'th.lf-fundamental')}}\annraw{&}\annot{\Sigma ${LFS}_W p : T \quad \text{every thread live and fueled in one soup}}
+\annraw{\\[1ex]}\annot{\varnothing ${LFS}_W p : T,\ ${WFW}\,W}\annraw{&}\annot{${BY('lf\\_adequacy', 'th.lf-adequacy')}}\annraw{&}\annot{${LOCKF}\,p \quad \text{every wait ends, measured by } ${h('fu.measure', R`\mu(t)`)}}
+\end{array}`,
+  'Typing gives the semantic judgment, and the semantic judgment gives deadlock freedom. Both steps use the one relation $(V, E, P)$ at the step costs $\\kappa_{DF}$. \\annp{Lock freedom uses the same relation at $\\kappa_L$, which rules out $\\tau$-divergence, and adds fuel, the counters and tickets of each thread, which read no point. The soup holds both halves of every thread over one ownership map. A thread $t$ waits on $o$, and every step of the holder of $\\overline{o}$ on another end ticks $\\varphi(\\overline{o})$, which F-Tick keeps at $1$ or more, while every link spends a ticket. So $\\mu(t) = (\\sum_s tk_s, \\varphi(\\overline{o}))$ falls until the holder acts on $\\overline{o}$.}');
 TH('th-adequacy', 'Adequacy', 'relation/Adequacy.v: adequacy, live_adequacy, adequacy_gen', ['df', 'live'],
   ROWS(
     h('th.adequacy', IM(R`${STRICT}\,W \land \varnothing ${PSEM}_W p : T`, R`${DFP}\,p`)),

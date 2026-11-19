@@ -57,6 +57,8 @@ ${h('th.Erel', R`e \in E^{W}_{n}\llbracket \Theta \vdash T \rrbracket^{F}`)} & \
 ${h('th.Prel', R`p \in P^{W}_{n}\llbracket \Sigma \vdash T \rrbracket`)} & \text{the process } p \text{ is safe with interface } \Sigma \\
 ${h('sr.obl', R`\mathsf{Obl}_\alpha(e')`)} & \text{what a step } e \xrightarrow{\alpha} e' \text{ must preserve} \\
 ${h('rel.atcost', R`e'\ \text{at}\ \Theta'`)} & e' \text{ is safe holding } \Theta' \text{, at the same level after a free step and one level lower otherwise}
+\annraw{\\}\annot{${h('sr.FE', R`e \in F^{N}_{n}\llbracket \sigma \triangleright d ; r \rrbracket(\Pi, \varphi, tk)`)}}\annraw{&}\annot{\text{the thread } e \text{ has counters } \varphi \text{ and tickets } tk \text{ for } n \text{ more steps, reading no point}}
+\annraw{\\}\annot{${h('th.soup', R`a \in S^{N,W}_{n}\llbracket \Sigma \vdash T \rrbracket`)}}\annraw{&}\annot{\text{every thread of } a \text{ is in } E[\kappa_L] \text{ and fueled, over one ownership map}}
 \end{array}`,
   caption: 'Every relation is indexed by a world $W$, whose order of points the relation reads, and a level $n$, the number of further steps it promises safety for. Safe means never stuck in a deadlock, every end owned by exactly one thread, and every message fitting its protocol.'
 });
@@ -278,16 +280,6 @@ block(s, {
 const FN = (j, upd) => h('fu.upd', upd ? R`e' \in F_{${j}}[${upd}]` : R`e' \in F_{${j}}`);
 const UNFO = (o) => R`${UNF}(\Pi\,${o})`;
 block(s, {
-  id: 'fu-why', title: 'Where fuel is needed', rocq: 'cost/CostFund.v: fsem_of_cost; soup/LFTyped.v: lf_fundamental; soup/LFAdequacy.v: lf_adequacy',
-  modes: ['lf'],
-  tex: R`\begin{array}{rcl}
-\varnothing ; \Delta \vdash^{\varnothing}_{W,N} e : T\ !\ (c, \vartheta) & \overset{${h('th.fsem-of-cost', R`\textsf{fsem\_of\_cost}`)}}{\Longrightarrow} & ${h('fu.fsem', R`\mathsf{fsem}\,N\,\Pi\,e`)} \\[4pt]
-\text{every thread } t \text{ live and } \mathsf{fsem}\,N\,\Pi_t\,e_t & \overset{${h('th.lf-fundamental', R`\textsf{lf\_fundamental}`)}}{\Longrightarrow} & a \in ${h('th.soup', R`S^{N,W}_n`)} \text{ with } ${h('sp.fuel', R`q_a(t) \in F^N_n`)} \text{ for all } n \\[4pt]
-${h('fu.measure', R`\mu(t) = \big(\textstyle\sum_s tk_s,\ \varphi(\overline{o})\big)`)} & \overset{${h('th.lf-adequacy', R`\textsf{lf\_adequacy}`)}}{\Longrightarrow} & \text{the holder of } \overline{o} \text{ acts on } \overline{o} \text{ in finitely many steps}
-\end{array}`,
-  caption: 'Fuel is what makes a deadlock-free program lock free. Cost typing gives each thread fuel, the soup asks every thread fueled at every level, and lock-free adequacy reads the counters and tickets the soup records. A thread $t$ waits on $o$. Every step of the holder of $\\overline{o}$ on another end ticks $\\varphi(\\overline{o})$ by F-Tick, every link spends a ticket, and F-Tick forbids a tick of $\\varphi(\\overline{o})$ at $0$. So $\\mu(t)$ falls lexicographically until the holder acts on $\\overline{o}$.'
-});
-block(s, {
   id: 'fu-def', title: 'Fuel', rocq: 'fuel/Fuel.v: Fdef, FuelE, FLev',
   modes: ['lf'],
   tex: R`\begin{array}{c}
@@ -358,20 +350,25 @@ ${h('cs.csem', R`\Delta \vDash^{N} e : T\ !\ \varepsilon`)}
 block(s, {
   id: 'sp-state', title: 'Soup states', rocq: 'soup/State.v: hold, lfstate',
   modes: ['lf'],
-  tex: R`${h('sp.state', R`a = (q, K, tk)`)} \qquad ${h('sp.hold', R`K : \mathsf{End} \rightharpoonup \mathbb{N} \times \mathsf{Point} \times (\mathbb{N} \cup \{\infty\})`)} \qquad ${h('sp.tk', R`tk : \mathbb{N} \to \mathbb{N}`)}`,
+  tex: R`\begin{array}{c}
+${h('sp.state', R`a = (q, K, tk)`)} \qquad ${h('sp.hold', R`K : \mathsf{End} \rightharpoonup \mathbb{N} \times \mathsf{Point} \times (\mathbb{N} \cup \{\infty\})`)} \qquad ${h('sp.tk', R`tk : \mathbb{N} \to \mathbb{N}`)} \\
+${h('sp.next', R`\mathsf{lf\_next}\,N\,(q, K, tk)\,ev\,q' = (q',\ \mathsf{own\_next}\,N\,ev\,K,\ \mathsf{tk\_next}\,ev\,tk)`)}
+\end{array}`,
   caption: 'A soup state is a configuration with an ownership map from held ends to holder, point and counter, and a ticket count per thread.'
 });
 block(s, {
   id: 'sp-inv', title: 'The soup', rocq: 'soup/State.v: soup_gen, soup/Soup.v: soup_inv, Soup',
   modes: ['lf'],
-  tex: R`\begin{array}{l}
-a \in ${h('th.soup', R`S^{N,W}_n\llbracket\Sigma \vdash T\rrbracket`)} \iff ${h('sp.exists', R`\exists A, \Pi, U`)}.\ ${h('sp.prim', R`${h('ty.prim', R`\mathsf{prim}`)}\,T`)} \land \forall t, e.\ q(t) = e \Rightarrow {} \\
-\quad ${h('sp.rel', R`e \in ${h('th.Erel', R`E[\kappa_L]^W_n\llbracket K_t(A) \vdash U_t\rrbracket^{\varnothing}`)}`)} \land ${h('sp.ty', R`U_t \in \{T, \ast\}`)} \land ${h('sp.fuel', R`e \in ${FE('N', 'n', R`${THR} \triangleright \infty ; 0`, R`K_t(\Pi), ${h('sr.ctrs', R`\mathsf{ctrs}`)}\,K\,t, tk_t`)}`)} \\
-\quad ${h('sp.pts', R`\forall o.\ \mathsf{pt}(A\,o) = \mathsf{pt}(K\,o)`)} \land ${h('sp.dom', R`\mathrm{dom}\,\Pi = \mathrm{dom}\,K`)} \land ${h('sp.owner', R`\forall o.\ K(o) = (t, \_, \_) \Rightarrow t \in \mathrm{dom}\,q`)} \\
-\quad ${h('sp.closed', R`\forall o \in \mathrm{dom}\,K.\ ${ECH}\,o \in C \lor o \in \mathrm{dom}\,\Sigma`)} \land ${h('sp.pair', R`\forall o \in \mathrm{dom}\,K.\ ${ECH}\,o \in C \Rightarrow \overline{o} \in \mathrm{dom}\,K`)} \\
-\quad ${h('sp.sdual', R`A(o) = S@x \land A(\overline{o}) = S'@x' \land ${ECH}\,o \in C \Rightarrow x' = \overline{x} \land ${SDUAL}\,S\,S'`)} \\
-\quad ${h('sp.pdual', R`\Pi(o) = P \land \Pi(\overline{o}) = P' \land ${ECH}\,o \in C \Rightarrow P' ${SEQU} \overline{P}`)} \\
-\quad ${h('sp.sig', R`\Sigma(o) = y \Rightarrow A(o) = y`)} \land ${h('sp.psig', R`\Sigma(o) = S@x \Rightarrow \Pi(o) = S`)} \land ${h('sp.fin', R`\forall o.\ K(o) = (\_, \_, f) \Rightarrow f \in \mathbb{N}`)}
+  tex: R`\begin{array}{ll}
+a \in ${h('th.soup', R`S^{N,W}_n\llbracket\Sigma \vdash T\rrbracket`)} \iff ${h('sp.exists', R`\exists A, \Pi, U`)}.\ ${h('sp.prim', R`${h('ty.prim', R`\mathsf{prim}`)}\,T`)} \land \text{for every thread } q(t) = e & \\[1ex]
+\quad ${h('sp.rel', R`e \in ${h('th.Erel', R`E[\kappa_L]^W_n\llbracket K_t(A) \vdash U_t\rrbracket^{\varnothing}`)}`)} \land ${h('sp.ty', R`U_t \in \{T, \ast\}`)} & \text{live} \\
+\quad ${h('sp.fuel', R`e \in ${FE('N', 'n', R`${THR} \triangleright \infty ; 0`, R`K_t(\Pi), ${h('sr.ctrs', R`\mathsf{ctrs}`)}\,K\,t, tk_t`)}`)} & \text{fueled} \\[1ex]
+\text{and for every end } o & \\[1ex]
+\quad ${h('sp.pts', R`\mathsf{pt}(A\,o) = \mathsf{pt}(K\,o)`)} \land ${h('sp.dom', R`\mathrm{dom}\,\Pi = \mathrm{dom}\,K`)} \land ${h('sp.owner', R`K(o) = (t, \_, \_) \Rightarrow t \in \mathrm{dom}\,q`)} & \text{one owner} \\
+\quad ${h('sp.closed', R`o \in \mathrm{dom}\,K \Rightarrow ${ECH}\,o \in C \lor o \in \mathrm{dom}\,\Sigma`)} \land ${h('sp.pair', R`o \in \mathrm{dom}\,K \land ${ECH}\,o \in C \Rightarrow \overline{o} \in \mathrm{dom}\,K`)} & \text{closed} \\
+\quad ${h('sp.sdual', R`${ECH}\,o \in C \land A(o) = S@x \land A(\overline{o}) = S'@x' \Rightarrow x' = \overline{x} \land ${SDUAL}\,S\,S'`)} & \text{dual} \\
+\quad ${h('sp.pdual', R`${ECH}\,o \in C \land \Pi(o) = P \land \Pi(\overline{o}) = P' \Rightarrow P' ${SEQU} \overline{P}`)} & \\
+\quad ${h('sp.sig', R`\Sigma(o) = y \Rightarrow A(o) = y`)} \land ${h('sp.psig', R`\Sigma(o) = S@x \Rightarrow \Pi(o) = S`)} \land ${h('sp.fin', R`K(o) = (\_, \_, f) \Rightarrow f \in \mathbb{N}`)} & \text{interface}
 \end{array}`,
   caption: 'At each level $n$ the soup asks every thread live and fueled at its part of $A$ and $\\Pi$, with ends, points and counters read from $K$.'
 });
@@ -379,8 +376,7 @@ block(s, {
   id: 'sp-lf', title: 'Lock-free semantic judgment', rocq: 'soup/Soup.v: lf_sem, lf_next, own_next, tk_next',
   modes: ['lf'],
   tex: R`\begin{array}{l}
-${h('sp.lfsem', R`\Sigma \Vvdash_W p : T \iff ${h('sp.exists-before-forall', R`\exists N \in \mathbb{N}, a.\ ${h('proc.erase', R`\mathsf{erase}`)}(${h('th.qa', 'q_a')}) = p \land \forall n`)}.\ a \in ${h('th.soup', R`S^{N,W}_n\llbracket\Sigma \vdash T\rrbracket`)}`)} \\
-${h('sp.next', R`\mathsf{lf\_next}\,N\,(q, K, tk)\,ev\,q' = (q',\ \mathsf{own\_next}\,N\,ev\,K,\ \mathsf{tk\_next}\,ev\,tk)`)}
+${h('sp.lfsem', R`\Sigma \Vvdash_W p : T \iff ${h('sp.exists-before-forall', R`\exists N \in \mathbb{N}, a.\ ${h('proc.erase', R`\mathsf{erase}`)}(${h('th.qa', 'q_a')}) = p \land \forall n`)}.\ a \in ${h('th.soup', R`S^{N,W}_n\llbracket\Sigma \vdash T\rrbracket`)}`)}
 \end{array}`,
   caption: 'The lock-free semantic judgment fixes the refill and the soup state once, before the level.'
 });
