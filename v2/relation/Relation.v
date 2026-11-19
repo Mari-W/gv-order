@@ -463,29 +463,29 @@ Section bodies.
     (** All of them, read off the event. *)
     Definition Pobl (ev : event) (p' : proc) : Prop :=
       match ev with
-      | EvSess _ (SSend o w) => q_send o w p'
-      | EvSess _ (SRecv o w) => q_recv o w p'
-      | EvSess _ (SClose o) => q_close o p'
-      | EvSess _ (SSel o i) => q_select o i p'
-      | EvSess _ (SBra o i) => q_branch o i p'
-      | EvSess _ (SLink os) => q_link os p'
+      | EvOffer _ (SSend o w) => q_send o w p'
+      | EvOffer _ (SRecv o w) => q_recv o w p'
+      | EvOffer _ (SClose o) => q_close o p'
+      | EvOffer _ (SSel o i) => q_select o i p'
+      | EvOffer _ (SBra o i) => q_branch o i p'
+      | EvOffer _ (SLink os) => q_link os p'
       | _ => q_tau ev p'
       end.
 
     (** The step clause, one conjunct per kind of step. *)
     Definition Psteps : Prop :=
       (∀ q ev q', erase q = p → istep q ev q' → ev_tau ev → q_tau ev (erase q')) ∧
-      (∀ q i o w q', erase q = p → istep q (EvSess i (SSend o w)) q' →
+      (∀ q i o w q', erase q = p → istep q (EvOffer i (SSend o w)) q' →
          q_send o w (erase q')) ∧                                    (* Q-Send *)
-      (∀ q i o w q', erase q = p → istep q (EvSess i (SRecv o w)) q' →
+      (∀ q i o w q', erase q = p → istep q (EvOffer i (SRecv o w)) q' →
          q_recv o w (erase q')) ∧                                      (* Q-Recv *)
-      (∀ q i o q', erase q = p → istep q (EvSess i (SClose o)) q' →
+      (∀ q i o q', erase q = p → istep q (EvOffer i (SClose o)) q' →
          q_close o (erase q')) ∧                                       (* Q-Close *)
-      (∀ q i o b q', erase q = p → istep q (EvSess i (SSel o b)) q' →
+      (∀ q i o b q', erase q = p → istep q (EvOffer i (SSel o b)) q' →
          q_select o b (erase q')) ∧                                    (* Q-Select *)
-      (∀ q i o b q', erase q = p → istep q (EvSess i (SBra o b)) q' →
+      (∀ q i o b q', erase q = p → istep q (EvOffer i (SBra o b)) q' →
          q_branch o b (erase q')) ∧                                    (* Q-Branch *)
-      (∀ q i os q', erase q = p → istep q (EvSess i (SLink os)) q' →
+      (∀ q i os q', erase q = p → istep q (EvOffer i (SLink os)) q' →
          q_link os (erase q')).                                        (* Q-Link *)
 
   End qobligations.

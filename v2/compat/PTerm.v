@@ -118,16 +118,16 @@ Qed.
     restricted channel, or an offer on free channels. *)
 Lemma istep_single q ev q' C e :
   erase q = (C, {[+ e +]}) → istep q ev q' →
-  (∃ i e', ev = EvBeta i ∧ tstep e LBeta e' ∧ erase q' = (C, {[+ e' +]})) ∨
-  (∃ i ℓ c e', ev = EvNew i ℓ c ∧ tstep e (LNew ℓ c) e' ∧ c ∉ C ∧ c ∉ fchans e ∧
+  (∃ i e', ev = EvSolo i LBeta PickNone ∧ tstep e LBeta e' ∧ erase q' = (C, {[+ e' +]})) ∨
+  (∃ i ℓ c e', ev = EvSolo i (LNew ℓ c) PickNone ∧ tstep e (LNew ℓ c) e' ∧ c ∉ C ∧ c ∉ fchans e ∧
      erase q' = (C ∪ {[c]}, {[+ e' +]})) ∨
-  (∃ i κf o c e', ev = EvNewAt i κf o c ∧ tstep e (LNewAt κf o c) e' ∧ c ∉ C ∧ c ∉ fchans e ∧
+  (∃ i κf o c e', ev = EvSolo i (LNewAt κf o c) PickNone ∧ tstep e (LNewAt κf o c) e' ∧ c ∉ C ∧ c ∉ fchans e ∧
      erase q' = (C ∪ {[c]}, {[+ e' +]})) ∨
-  (∃ i j v e', ev = EvSpawn i j v ∧ tstep e (LSpawn v) e' ∧
+  (∃ i j v e', ev = EvSolo i (LSpawn v) (PickChild j) ∧ tstep e (LSpawn v) e' ∧
      erase q' = (C, {[+ e' +]} ⊎ {[+ App v EUnit +]})) ∨
-  (∃ i o1 o2 e', ev = EvLink i o1 o2 ∧ tstep e (LSess (SLink ({[o1]} ∪ {[o2]}))) e' ∧ ech o1 ∈ C ∧
+  (∃ i o1 o2 e', ev = EvSolo i (LSess (SLink ({[o1]} ∪ {[o2]}))) (PickLink o1 o2) ∧ tstep e (LSess (SLink ({[o1]} ∪ {[o2]}))) e' ∧ ech o1 ∈ C ∧
      erase q' = (C ∖ {[ech o1]}, {[+ emap (csub o1 o2) e' +]})) ∨
-  (∃ i σ e', ev = EvSess i σ ∧ tstep e (LSess σ) e' ∧ subjs σ ## C ∧
+  (∃ i σ e', ev = EvOffer i σ ∧ tstep e (LSess σ) e' ∧ subjs σ ## C ∧
      erase q' = (C ∖ sentc σ, {[+ e' +]})).
 Proof.
   intros Hq Hst. destruct q as [C' M]. unfold erase in Hq. simpl in Hq. injection Hq as -> HM.
@@ -484,7 +484,7 @@ Qed.
 Lemma single_sess C e σ e' : tstep e (LSess σ) e' → subjs σ ## C →
   pstep (C, {[+ e +]}) (PSess σ) (C ∖ sentc σ, {[+ e' +]}).
 Proof.
-  intros Hs Hc. exists (q1 C e), (EvSess 0 σ), (C ∖ sentc σ, <[0 := e']> {[0 := e]}).
+  intros Hs Hc. exists (q1 C e), (EvOffer 0 σ), (C ∖ sentc σ, <[0 := e']> {[0 := e]}).
   split_and!; [apply erase_q1|by eapply p_act_session; [rewrite lookup_singleton_eq| |]|  |done].
   unfold erase. simpl. rewrite insert_singleton. by rewrite <-(erase_q1 _ e').
 Qed.
@@ -493,19 +493,19 @@ Qed.
 Lemma single_tau C e α e' : tstep e α e' → (∀ σ, α ≠ LSess σ) → ∃ p', preduction (C, {[+ e +]}) p'.
 Proof.
   intros Hs Hα. destruct α as [|ℓ c|κf o c|v|σ].
-  - eexists. exists (q1 C e), (EvBeta 0), (C, <[0 := e']> {[0 := e]}). split_and!; [apply erase_q1| |done|done].
+  - eexists. exists (q1 C e), (EvSolo 0 LBeta PickNone), (C, <[0 := e']> {[0 := e]}). split_and!; [apply erase_q1| |done|done].
     eapply p_act_beta; [by rewrite lookup_singleton_eq|done].
   - set (c' := fresh (C ∪ fchans e)). pose proof (is_fresh (C ∪ fchans e)) as Hf. fold c' in Hf.
     destruct (new_retarget e ℓ c e' c' Hs) as [e'' He''].
-    eexists. exists (q1 C e), (EvNew 0 ℓ c'), (C ∪ {[c']}, <[0 := e'']> {[0 := e]}). split_and!; [apply erase_q1| |done|done].
+    eexists. exists (q1 C e), (EvSolo 0 (LNew ℓ c') PickNone), (C ∪ {[c']}, <[0 := e'']> {[0 := e]}). split_and!; [apply erase_q1| |done|done].
     eapply p_act_new; [by rewrite lookup_singleton_eq|done|set_solver|].
     rewrite soup_q1, echans_singleton. set_solver.
   - set (c' := fresh (C ∪ fchans e)). pose proof (is_fresh (C ∪ fchans e)) as Hf. fold c' in Hf.
     destruct (new_at_retarget e κf o c e' c' Hs) as [e'' He''].
-    eexists. exists (q1 C e), (EvNewAt 0 κf o c'), (C ∪ {[c']}, <[0 := e'']> {[0 := e]}). split_and!; [apply erase_q1| |done|done].
+    eexists. exists (q1 C e), (EvSolo 0 (LNewAt κf o c') PickNone), (C ∪ {[c']}, <[0 := e'']> {[0 := e]}). split_and!; [apply erase_q1| |done|done].
     eapply p_act_new_at; [by rewrite lookup_singleton_eq|done|set_solver|].
     rewrite soup_q1, echans_singleton. set_solver.
-  - eexists. exists (q1 C e), (EvSpawn 0 1 v), (C, <[1 := App v EUnit]> (<[0 := e']> {[0 := e]})).
+  - eexists. exists (q1 C e), (EvSolo 0 (LSpawn v) (PickChild 1)), (C, <[1 := App v EUnit]> (<[0 := e']> {[0 := e]})).
     split_and!; [apply erase_q1| |done|done].
     eapply p_act_spawn; [by rewrite lookup_singleton_eq|done|by rewrite lookup_singleton_ne].
   - by destruct (Hα σ).
@@ -521,7 +521,7 @@ Proof.
   { apply elem_of_union in Ho as [Ho|Ho]; apply elem_of_singleton in Ho.
     - exists o2. by rewrite Ho.
     - exists o1. by rewrite Ho, (union_comm_L {[o2]}). }
-  eexists. exists (q1 C e), (EvLink 0 o o'), (C ∖ {[ech o]}, emap (csub o o') <$> (<[0 := e']> {[0 := e]})).
+  eexists. exists (q1 C e), (EvSolo 0 (LSess (SLink ({[o]} ∪ {[o']}))) (PickLink o o')), (C ∖ {[ech o]}, emap (csub o o') <$> (<[0 := e']> {[0 := e]})).
   split_and!; [apply erase_q1| |done|done].
   eapply p_act_link; [by rewrite lookup_singleton_eq|done|done].
 Qed.
@@ -964,7 +964,7 @@ Definition PTermL (κ : ctable) (m : nat) : Prop :=
   ∀ W Θ T t Σ ΘB C, tfree T → sth Θ Σ ΘB C → t ∈ E[κ]^W _ m⟦Θ ⊢ T⟧^∅ →
     (C, {[+ t +]}) ∈ P[κ]^W _ m⟦Σ ⊢ T⟧.
 
-Lemma istep_single_sess q i σ q' C e : erase q = (C, {[+ e +]}) → istep q (EvSess i σ) q' →
+Lemma istep_single_sess q i σ q' C e : erase q = (C, {[+ e +]}) → istep q (EvOffer i σ) q' →
   ∃ e', tstep e (LSess σ) e' ∧ subjs σ ## C ∧ erase q' = (C ∖ sentc σ, {[+ e' +]}).
 Proof.
   intros Hq Hst.

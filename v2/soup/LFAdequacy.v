@@ -208,12 +208,12 @@ Section run.
     destruct (Hmax k) as [(ev & Hl & Hst)|(_ & Heq & Hl)].
     - rewrite Hl in Ht. simpl in Ht. destruct (ak_next k ev Hl) as [HK _].
       pose proof (ak_ev_ends k ev Hst) as Hen. destruct (held_at k t e a1 o He Ha Ho) as (h & Kh & Eh).
-      destruct ev as [i|i ℓ c|i κ o' c|i j M|i j o' M|i j o'|i j o' b|u o1 o2|i σ];
+      destruct ev as [u α [|j|o1 o2]|i j σ|i σ];
         try (rewrite (rend_emap _ t id e a1 o); [|rewrite emap_id; apply (istep_other_eq _ _ _ t e (proj1 Hst));
-          [done|intros ????; discriminate|done]|done|done]; cbn [id];
-          unfold kpt; rewrite HK, (own_next_keep N _ (s_K (ak k)) t o h); [by rewrite Kh|done|intros ????; discriminate|done|done|done]).
+          [done|intros ?????; discriminate|done]|done|done]; cbn [id];
+          unfold kpt; rewrite HK, (own_next_keep N _ (s_K (ak k)) t o h); [by rewrite Kh|done|intros ?????; discriminate|done|done|done]).
       simpl in Ht. assert (t ≠ u) as Htu by set_solver.
-      rewrite (rend_emap _ t (csub o1 o2) e a1 o); [|exact (istep_link_other _ _ _ _ _ t e (proj1 Hst) Htu He)|done|done].
+      rewrite (rend_emap _ t (csub o1 o2) e a1 o); [|exact (istep_link_other _ _ _ _ _ _ t e (proj1 Hst) Htu He)|done|done].
       simpl in Hen. destruct Hen as (H1 & H2 & _).
       assert (o ≠ o1) by (eapply owns_ne; [exact Kh|exact Eh|exact H1|done]).
       assert (o ≠ o2) by (eapply owns_ne; [exact Kh|exact Eh|exact H2|done]).
@@ -236,11 +236,11 @@ Section run.
         as (p & ep & a3 & Hpin & _ & Hep & Ha3 & Ho3 & _). rewrite edual_edual in Ho3.
       pose proof (held_at k p ep a3 o Hep Ha3 Ho3) as Hp'. pose proof (held_at k t e a1 o He Ha Ho) as Ht'.
       rewrite <-(owns_unique _ _ _ _ Ht' Hp') in Hpin. done. }
-    destruct ev as [i|i ℓ c|i κ o' c|i j M|i j o' M|i j o'|i j o' b|u o1 o2|i σ];
-      try (apply (compat_enabled' _ t s e es a1 a2); [done|exact (istep_other_eq _ _ _ t e (proj1 Hst) Ht ltac:(intros ????; discriminate) He)
-        |exact (istep_other_eq _ _ _ s es (proj1 Hst) Hs ltac:(intros ????; discriminate) Hes)|done|done|done|];
+    destruct ev as [u α [|j|o1 o2]|i j σ|i σ];
+      try (apply (compat_enabled' _ t s e es a1 a2); [done|exact (istep_other_eq _ _ _ t e (proj1 Hst) Ht ltac:(intros ?????; discriminate) He)
+        |exact (istep_other_eq _ _ _ s es (proj1 Hst) Hs ltac:(intros ?????; discriminate) Hes)|done|done|done|];
         intros o'' ->; simpl in Ho; injection Ho as ->; apply (closed_at (S k) o t);
-        apply (held_at (S k) t e (AClose o) o); [exact (istep_other_eq _ _ _ t e (proj1 Hst) Ht ltac:(intros ????; discriminate) He)|done|done]).
+        apply (held_at (S k) t e (AClose o) o); [exact (istep_other_eq _ _ _ t e (proj1 Hst) Ht ltac:(intros ?????; discriminate) He)|done|done]).
     simpl in Ht, Hs. assert (t ≠ u) as Htu by set_solver. assert (s ≠ u) as Hsu by set_solver.
     pose proof (ak_ev_ends k _ Hst) as Hen. simpl in Hen. destruct Hen as (H1 & H2 & _).
     destruct (held_at k t e a1 o He Ha Ho) as (h & Kh & Eh).
@@ -251,8 +251,8 @@ Section run.
     { apply csub_eq_off; [|done]. intros Hx. apply H0. by rewrite Hx, edual_edual. }
     assert (Hgo' : csub o1 o2 (edual o) = edual o).
     { apply csub_eq_off; [|done]. intros Hx. apply H. by apply edual_inj. }
-    pose proof (istep_link_other _ _ _ _ _ t e (proj1 Hst) Htu He) as He'.
-    pose proof (istep_link_other _ _ _ _ _ s es (proj1 Hst) Hsu Hes) as Hes'.
+    pose proof (istep_link_other _ _ _ _ _ _ t e (proj1 Hst) Htu He) as He'.
+    pose proof (istep_link_other _ _ _ _ _ _ s es (proj1 Hst) Hsu Hes) as Hes'.
     apply (compat_enabled' _ t s _ _ (amap (csub o1 o2) a1) (amap (csub o1 o2) a2) (not_eq_sym Hst') He' Hes').
     - by rewrite act_emap, Ha.
     - by rewrite act_emap, Ha2.
@@ -346,20 +346,21 @@ Section run.
        ksum (s_tk (ak (S k))) (r (S k)) = ksum (s_tk (ak k)) (r k) →
        kval (own_next N ev (s_K (ak k))) (edual o) < kval (s_K (ak k)) (edual o) → lexlt (fu (S k) t) (fu k t)).
     { intros Hr' Hks Hlt. unfold fu, lexlt. rewrite Hr', Hr, Hks, HK. simpl. right. split; [done|exact Hlt]. }
-    assert (Hnl : (∀ u o1 o2, ev ≠ EvLink u o1 o2) → rend (r (S k)) t = Some o).
+    assert (Hnl : (∀ u α o1 o2, ev ≠ EvSolo u α (PickLink o1 o2)) → rend (r (S k)) t = Some o).
     { intros Hne. apply (rend_of _ t e a1 o); [|done|done].
       by apply (istep_other_eq _ _ _ t e (proj1 Hst) Ht). }
-    assert (Hks : (∀ u j M, ev ≠ EvSpawn u j M) → s_tk (ak (S k)) = s_tk (ak k) →
+    assert (Hks : (∀ u α j, ev ≠ EvSolo u α (PickChild j)) → s_tk (ak (S k)) = s_tk (ak k) →
                   ksum (s_tk (ak (S k))) (r (S k)) = ksum (s_tk (ak k)) (r k)).
     { intros Hns Htk'. apply ksum_ext; [exact (istep_dom _ _ _ (proj1 Hst) Hns)|]. intros t0 _. by rewrite Htk'. }
-    destruct ev as [u|u ℓ c|u κ o' c|u j v|i j o' w|i j o'|i j o' b|u o1 o2|u σ].
-    - right. apply Hright; [(apply Hnl; intros ????; discriminate)|(apply Hks; [intros ????; discriminate|by rewrite Htk])|exact Kh'|].
+    destruct (istep_event _ _ _ (proj1 Hst)) as [(u & ->)|[(u & ℓ & c & ->)|[(u & κ & o' & c & ->)|[(u & j & v & ->)
+      |[(i & j & o' & w & ->)|[(i & j & o' & ->)|[(i & j & o' & b & ->)|[(u & o1 & o2 & ->)|(u & σ & ->)]]]]]]]].
+    - right. apply Hright; [(apply Hnl; intros ?????; discriminate)|(apply Hks; [intros ????; discriminate|by rewrite Htk])|exact Kh'|].
       intros Hsu. exact (istep_admin_actor _ _ _ s (proj1 Hst) I Hsu).
-    - right. apply Hright; [(apply Hnl; intros ????; discriminate)|(apply Hks; [intros ????; discriminate|by rewrite Htk])| |].
+    - right. apply Hright; [(apply Hnl; intros ?????; discriminate)|(apply Hks; [intros ????; discriminate|by rewrite Htk])| |].
       + cbn [own_next]. destruct Hen as [Hp1 Hp2]. unfold knew. pose proof (elem_of_dom_2 _ _ _ Kh') as Hd.
         rewrite !lookup_insert_ne; [done|intros Hx; rewrite <-Hx in Hd; done|intros Hx; rewrite <-Hx in Hd; done].
       + intros Hsu. exact (istep_admin_actor _ _ _ s (proj1 Hst) I Hsu).
-    - right. apply Hright; [(apply Hnl; intros ????; discriminate)|(apply Hks; [intros ????; discriminate|by rewrite Htk])| |].
+    - right. apply Hright; [(apply Hnl; intros ?????; discriminate)|(apply Hks; [intros ????; discriminate|by rewrite Htk])| |].
       + cbn [own_next]. destruct Hen as [Hp1 Hp2]. unfold knew. pose proof (elem_of_dom_2 _ _ _ Kh') as Hd.
         rewrite !lookup_insert_ne; [done|intros Hx; rewrite <-Hx in Hd; done|intros Hx; rewrite <-Hx in Hd; done].
       + intros Hsu. exact (istep_admin_actor _ _ _ s (proj1 Hst) I Hsu).
@@ -367,7 +368,7 @@ Section run.
       assert (Hksp : ksum (s_tk (ak (S k))) (r (S k)) = ksum (s_tk (ak k)) (r k)).
       { rewrite Htk. cbn [tk_next]. apply ksum_spawn; [by apply elem_of_dom_2 in Heu|by apply not_elem_of_dom|done]. }
       destruct (decide (edual o ∈ fends v)) as [HM|HM].
-      + left. apply Hdrop; [(apply Hnl; intros ????; discriminate)|done|].
+      + left. apply Hdrop; [(apply Hnl; intros ?????; discriminate)|done|].
         assert (s = u) as ->.
         { simpl in Hen. exact (owns_unique _ _ _ _ (ex_intro _ h' (conj Kh' Eh')) (Hen _ HM)). }
         rewrite <-Hq in Heu. pose proof (s_fuel Hs u eu Heu) as HF.
@@ -375,13 +376,13 @@ Section run.
         pose proof (fspare_one _ _ _ _ _ Hsp HM Hφs Hbusy) as H1.
         apply (kval_tick _ _ _ h' m (Hold j h'.(h_pt) (ftick h'.(h_ctr))) Kh' Hm H1); [|done].
         cbn [own_next]. rewrite lookup_khand, Kh'. simpl. by rewrite decide_True.
-      + right. apply Hright; [(apply Hnl; intros ????; discriminate)|done| |].
+      + right. apply Hright; [(apply Hnl; intros ?????; discriminate)|done| |].
         * cbn [own_next]. rewrite lookup_khand, Kh'. simpl. by rewrite decide_False.
         * intros Hsu'. exact (istep_admin_actor _ _ _ s (proj1 Hst) I Hsu').
     - assert (Hks' : ksum (s_tk (ak (S k))) (r (S k)) = ksum (s_tk (ak k)) (r k)) by (apply Hks; [intros ????; discriminate|by rewrite Htk]).
       simpl in Hen. destruct Hen as (H1 & H2 & H3).
       destruct (decide (s = i ∨ s = j)) as [Hsij|Hsij].
-      + left. apply Hdrop; [(apply Hnl; intros ????; discriminate)|done|].
+      + left. apply Hdrop; [(apply Hnl; intros ?????; discriminate)|done|].
         assert (edual o ≠ o') as Hn1.
         { intros Hx. assert (owns (s_K (ak k)) o j) as Hoj by (rewrite <-(edual_edual o), Hx; exact H2).
           rewrite <-(owns_unique _ _ _ _ (ex_intro _ ht (conj Kht Eht)) Hoj) in Ht. set_solver. }
@@ -389,7 +390,7 @@ Section run.
         { intros Hx. apply edual_inj in Hx. subst o'.
           rewrite <-(owns_unique _ _ _ _ (ex_intro _ ht (conj Kht Eht)) H1) in Ht. set_solver. }
         set (p := if decide (s = i) then o' else edual o').
-        assert (ev_end (EvMsg i j o' w) s = Some p) as Hp'.
+        assert (ev_end (EvSync i j (SSend o' w)) s = Some p) as Hp'.
         { simpl. unfold p. destruct (decide (s = i)); [done|]. rewrite decide_True; [done|]. tauto. }
         assert ((r k).2 !! s = Some es) as Hes2 by (by rewrite <-Hq).
         destruct (istep_sync_step _ _ _ s es p (proj1 Hst) Hp' Hes2) as (σ & es' & Hσ & Hae).
@@ -404,13 +405,13 @@ Section run.
         * apply (kval_tick _ _ _ h' m h1 Kh' Hm Hm1 Eh1). rewrite lookup_ksync, !decide_False, Kh' in Eh1 by done.
           simpl in Eh1. injection Eh1 as <-. case_decide; [done|]. rewrite decide_True; [done|]. by rewrite Eh'.
         * rewrite lookup_ksync, !decide_False, Kh' in Eh1 by done. done.
-      + right. apply Hright; [(apply Hnl; intros ????; discriminate)|done| |].
-        * apply (own_next_keep N _ _ s); [split_and!; done|intros ????; discriminate|simpl; set_solver|done|done].
+      + right. apply Hright; [(apply Hnl; intros ?????; discriminate)|done| |].
+        * apply (own_next_keep N _ _ s); [split_and!; done|intros ?????; discriminate|simpl; set_solver|done|done].
         * intros Hx. simpl in Hx. exfalso. apply Hsij. set_solver.
     - assert (Hks' : ksum (s_tk (ak (S k))) (r (S k)) = ksum (s_tk (ak k)) (r k)) by (apply Hks; [intros ????; discriminate|by rewrite Htk]).
       simpl in Hen. destruct Hen as (H1 & H2).
       destruct (decide (s = i ∨ s = j)) as [Hsij|Hsij].
-      + left. apply Hdrop; [(apply Hnl; intros ????; discriminate)|done|].
+      + left. apply Hdrop; [(apply Hnl; intros ?????; discriminate)|done|].
         assert (edual o ≠ o') as Hn1.
         { intros Hx. assert (owns (s_K (ak k)) o j) as Hoj by (rewrite <-(edual_edual o), Hx; exact H2).
           rewrite <-(owns_unique _ _ _ _ (ex_intro _ ht (conj Kht Eht)) Hoj) in Ht. set_solver. }
@@ -418,7 +419,7 @@ Section run.
         { intros Hx. apply edual_inj in Hx. subst o'.
           rewrite <-(owns_unique _ _ _ _ (ex_intro _ ht (conj Kht Eht)) H1) in Ht. set_solver. }
         set (p := if decide (s = i) then o' else edual o').
-        assert (ev_end (EvClose i j o') s = Some p) as Hp'.
+        assert (ev_end (EvSync i j (SClose o')) s = Some p) as Hp'.
         { simpl. unfold p. destruct (decide (s = i)); [done|]. rewrite decide_True; [done|]. tauto. }
         assert ((r k).2 !! s = Some es) as Hes2 by (by rewrite <-Hq).
         destruct (istep_sync_step _ _ _ s es p (proj1 Hst) Hp' Hes2) as (σ & es' & Hσ & Hae).
@@ -431,13 +432,13 @@ Section run.
         apply (kval_tick _ _ _ h' m (htick h') Kh' Hm Hm1); [|done].
         cbn [own_next]. unfold ktick. rewrite lookup_kmod, !lookup_delete_ne by done. rewrite Kh'. simpl.
         rewrite decide_True; [done|]. rewrite Eh'. set_solver.
-      + right. apply Hright; [(apply Hnl; intros ????; discriminate)|done| |].
-        * apply (own_next_keep N _ _ s); [split; done|intros ????; discriminate|simpl; set_solver|done|done].
+      + right. apply Hright; [(apply Hnl; intros ?????; discriminate)|done| |].
+        * apply (own_next_keep N _ _ s); [split; done|intros ?????; discriminate|simpl; set_solver|done|done].
         * intros Hx. simpl in Hx. exfalso. apply Hsij. set_solver.
     - assert (Hks' : ksum (s_tk (ak (S k))) (r (S k)) = ksum (s_tk (ak k)) (r k)) by (apply Hks; [intros ????; discriminate|by rewrite Htk]).
       simpl in Hen. destruct Hen as (H1 & H2).
       destruct (decide (s = i ∨ s = j)) as [Hsij|Hsij].
-      + left. apply Hdrop; [(apply Hnl; intros ????; discriminate)|done|].
+      + left. apply Hdrop; [(apply Hnl; intros ?????; discriminate)|done|].
         assert (edual o ≠ o') as Hn1.
         { intros Hx. assert (owns (s_K (ak k)) o j) as Hoj by (rewrite <-(edual_edual o), Hx; exact H2).
           rewrite <-(owns_unique _ _ _ _ (ex_intro _ ht (conj Kht Eht)) Hoj) in Ht. set_solver. }
@@ -445,7 +446,7 @@ Section run.
         { intros Hx. apply edual_inj in Hx. subst o'.
           rewrite <-(owns_unique _ _ _ _ (ex_intro _ ht (conj Kht Eht)) H1) in Ht. set_solver. }
         set (p := if decide (s = i) then o' else edual o').
-        assert (ev_end (EvChoice i j o' b) s = Some p) as Hp'.
+        assert (ev_end (EvSync i j (SSel o' b)) s = Some p) as Hp'.
         { simpl. unfold p. destruct (decide (s = i)); [done|]. rewrite decide_True; [done|]. tauto. }
         assert ((r k).2 !! s = Some es) as Hes2 by (by rewrite <-Hq).
         destruct (istep_sync_step _ _ _ s es p (proj1 Hst) Hp' Hes2) as (σ & es' & Hσ & Hae).
@@ -461,11 +462,11 @@ Section run.
           simpl in Eh1. injection Eh1 as <-. rewrite decide_False by set_solver. rewrite decide_True; [done|].
           by rewrite Eh'.
         * rewrite lookup_ksync, !decide_False, Kh' in Eh1 by done. done.
-      + right. apply Hright; [(apply Hnl; intros ????; discriminate)|done| |].
-        * apply (own_next_keep N _ _ s); [split; done|intros ????; discriminate|simpl; set_solver|done|done].
+      + right. apply Hright; [(apply Hnl; intros ?????; discriminate)|done| |].
+        * apply (own_next_keep N _ _ s); [split; done|intros ?????; discriminate|simpl; set_solver|done|done].
         * intros Hx. simpl in Hx. exfalso. apply Hsij. set_solver.
     - left. left. unfold fu. cbn [fst]. rewrite Htk. cbn [tk_next].
-      destruct (istep_link_inv _ _ _ _ _ (proj1 Hst)) as (eu & e' & Heu & Hsu).
+      destruct (istep_link_inv _ _ _ _ _ _ (proj1 Hst)) as (eu & e' & Heu & Hsu).
       apply ksum_link; [by apply elem_of_dom_2 in Heu|exact (istep_dom _ _ _ (proj1 Hst) ltac:(intros ????; discriminate))|].
       rewrite <-Hq in Heu. pose proof (s_fuel Hs u eu Heu) as HF.
       by destruct (fuel_link _ _ _ _ _ _ HF _ e' Hsu) as [? _].

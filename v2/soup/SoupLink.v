@@ -103,7 +103,7 @@ Section link.
   Lemma step_link i e o1 o2 e' :
     Mq !! i = Some e → tstep e (LSess (SLink ({[o1]} ∪ {[o2]}))) e' →
     ∃ A' Π', soup_inv N n W ∅ T
-      (lf_next N (LFState (C, Mq) K tk) (EvLink i o1 o2)
+      (lf_next N (LFState (C, Mq) K tk) (EvSolo i (LSess (SLink ({[o1]} ∪ {[o2]}))) (PickLink o1 o2))
         (C ∖ {[ech o1]}, emap (csub o1 o2) <$> (<[i := e']> Mq))) A' Π' U.
   Proof.
     intros He Hst.

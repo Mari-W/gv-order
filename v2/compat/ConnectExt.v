@@ -124,12 +124,12 @@ Section ext.
   Qed.
 
   (** The external step of the composite as a step of a component. *)
-  Local Lemma ext_split q i σ q' : erase q = pc → istep q (EvSess i σ) q' →
+  Local Lemma ext_split q i σ q' : erase q = pc → istep q (EvOffer i σ) q' →
     ∃ M1 M2 e e', M1 ##ₘ M2 ∧ soup M1 = q1.2 ∧ soup M2 = q2.2 ∧ tstep e (LSess σ) e' ∧
       subjs σ ## q1.1 ∪ q2.1 ∪ K ∧
-      ((M1 !! i = Some e ∧ istep (q1.1, M1) (EvSess i σ) (q1.1 ∖ sentc σ, <[i := e']> M1) ∧
+      ((M1 !! i = Some e ∧ istep (q1.1, M1) (EvOffer i σ) (q1.1 ∖ sentc σ, <[i := e']> M1) ∧
          erase q' = ((q1.1 ∪ q2.1 ∪ K) ∖ sentc σ, soup (<[i := e']> M1) ⊎ q2.2)) ∨
-       (M2 !! i = Some e ∧ istep (q2.1, M2) (EvSess i σ) (q2.1 ∖ sentc σ, <[i := e']> M2) ∧
+       (M2 !! i = Some e ∧ istep (q2.1, M2) (EvOffer i σ) (q2.1 ∖ sentc σ, <[i := e']> M2) ∧
          erase q' = ((q1.1 ∪ q2.1 ∪ K) ∖ sentc σ, q1.2 ⊎ soup (<[i := e']> M2)))).
   Proof.
     intros Hq Hst. destruct (pconn_lift _ _ _ _ Hq) as (M1 & M2 & -> & Hd & HM1 & HM2).
@@ -148,7 +148,7 @@ Section ext.
   Proof. intros E. unfold pconn, erase. simpl. rewrite E, !difference_empty_L. done. Qed.
 
   (** Q-Close of the composite. *)
-  Lemma ext_close q i o q' : erase q = pc → istep q (EvSess i (SClose o)) q' →
+  Lemma ext_close q i o q' : erase q = pc → istep q (EvOffer i (SClose o)) q' →
     ∃ S0 x, (Σ1 ∪ Σ2) !! o = Some (S0, x) ∧ unfoldS S0 = SEnd ∧
       at_cost_P (S n) (c_give κ) (Prel κ) (Prel κ (S n)) W1 (delete o (Σ1 ∪ Σ2)) T (erase q').
   Proof.
@@ -165,7 +165,7 @@ Section ext.
   Qed.
 
   (** Q-Select of the composite. *)
-  Lemma ext_select q i o b q' : erase q = pc → istep q (EvSess i (SSel o b)) q' →
+  Lemma ext_select q i o b q' : erase q = pc → istep q (EvOffer i (SSel o b)) q' →
     ∃ S0 x S1 S2, (Σ1 ∪ Σ2) !! o = Some (S0, x) ∧ unfoldS S0 = SPlus S1 S2 ∧
       at_cost_P (S n) (c_give κ) (Prel κ) (Prel κ (S n)) W1 (<[o := (bsel b S1 S2, sel_pt x b)]> (Σ1 ∪ Σ2)) T (erase q').
   Proof.
@@ -182,7 +182,7 @@ Section ext.
   Qed.
 
   (** Q-Branch of the composite. *)
-  Lemma ext_branch q i o b q' : erase q = pc → istep q (EvSess i (SBra o b)) q' →
+  Lemma ext_branch q i o b q' : erase q = pc → istep q (EvOffer i (SBra o b)) q' →
     ∃ S0 x S1 S2, (Σ1 ∪ Σ2) !! o = Some (S0, x) ∧ unfoldS S0 = SWith S1 S2 ∧
       at_cost_P (S n) (c_take κ) (Prel κ) (Prel κ (S n)) W1 (<[o := (bsel b S1 S2, bra_pt x b)]> (Σ1 ∪ Σ2)) T (erase q').
   Proof.
@@ -199,7 +199,7 @@ Section ext.
   Qed.
 
   (** Q-Link of the composite. *)
-  Lemma ext_link q i os q' : erase q = pc → istep q (EvSess i (SLink os)) q' →
+  Lemma ext_link q i os q' : erase q = pc → istep q (EvOffer i (SLink os)) q' →
     ∃ o1 o2 S1 S2 x, os = {[o1]} ∪ {[o2]} ∧ o1 ≠ o2 ∧
       (Σ1 ∪ Σ2) !! o1 = Some (S1, x) ∧ (Σ1 ∪ Σ2) !! o2 = Some (S2, x‾) ∧ sdual S1 S2 ∧
       at_cost_P (S n) (c_link κ) (Prel κ) (Prel κ (S n)) W1 (delete o1 (delete o2 (Σ1 ∪ Σ2))) T (erase q').

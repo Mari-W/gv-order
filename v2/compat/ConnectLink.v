@@ -181,7 +181,7 @@ Section links.
     pose proof Hc as Hc0. destruct Hc0 as [Hd1 Hd2 Hcut Hf1 Hf2 HfC H12 H1C H2C HCC HC1 HC2].
     assert (ech o1 ∉ q1.1) as Hn1 by (clear -Ho1 HCC HC1; cc_set_solver).
     assert (ech o1 ≠ ech o2) as Hne by (intros E; rewrite E in Hn1; done).
-    assert (istep (q1.1, M1) (EvLink i o2 o1) (q1.1 ∖ {[ech o2]}, emap (csub o2 o1) <$> (<[i := e']> M1))) as Hst1.
+    assert (istep (q1.1, M1) (EvSolo i (LSess (SLink ({[o2]} ∪ {[o1]}))) (PickLink o2 o1)) (q1.1 ∖ {[ech o2]}, emap (csub o2 o1) <$> (<[i := e']> M1))) as Hst1.
     { eapply p_act_link; [exact Hi|by rewrite link_sym|done]. }
     destruct H1 as (_ & _ & (Ht1 & _)).
     pose proof (Ht1 (q1.1, M1) _ _ (Hq1e M1 HM1) Hst1 eq_refl) as A. simpl in A.
@@ -218,7 +218,7 @@ Section links.
     pose proof Hc as Hc0. destruct Hc0 as [Hd1 Hd2 Hcut Hf1 Hf2 HfC H12 H1C H2C HCC HC1 HC2].
     assert (ech o1 ∉ q2.1) as Hn1 by (clear -Ho1 HCC HC2; cc_set_solver).
     assert (ech o1 ≠ ech o2) as Hne by (intros E; rewrite E in Hn1; done).
-    assert (istep (q2.1, M2) (EvLink i o2 o1) (q2.1 ∖ {[ech o2]}, emap (csub o2 o1) <$> (<[i := e']> M2))) as Hst2.
+    assert (istep (q2.1, M2) (EvSolo i (LSess (SLink ({[o2]} ∪ {[o1]}))) (PickLink o2 o1)) (q2.1 ∖ {[ech o2]}, emap (csub o2 o1) <$> (<[i := e']> M2))) as Hst2.
     { eapply p_act_link; [exact Hi|by rewrite link_sym|done]. }
     destruct H2 as (_ & _ & (Ht2 & _)).
     pose proof (Ht2 (q2.1, M2) _ _ (Hq2e M2 HM2) Hst2 eq_refl) as A. simpl in A.
@@ -257,7 +257,7 @@ Section links.
     intros Hd HM1 HM2 Hi He HoC Hn1 Hn2.
     pose proof Hc as Hc0. destruct Hc0 as [Hd1 Hd2 Hcut Hf1 Hf2 HfC H12 H1C H2C HCC HC1 HC2].
     pose proof KD as HKD.
-    assert (istep (q1.1, M1) (EvSess i (SLink ({[o1]} ∪ {[o2]}))) (q1.1 ∖ sentc (SLink ({[o1]} ∪ {[o2]})), <[i := e']> M1)) as Hst1.
+    assert (istep (q1.1, M1) (EvOffer i (SLink ({[o1]} ∪ {[o2]}))) (q1.1 ∖ sentc (SLink ({[o1]} ∪ {[o2]})), <[i := e']> M1)) as Hst1.
     { eapply p_act_session; [exact Hi|exact He|]. simpl. rewrite set_map_union_L, !set_map_singleton_L. clear -Hn1 Hn2. cc_set_solver. }
     pose proof H1 as H1'. destruct H1' as (_ & _ & (_ & _ & _ & _ & _ & _ & Hl1)).
     destruct (Hl1 _ _ _ _ (Hq1e M1 HM1) Hst1) as (oa & ob & Sa & Sb & x & Eab & Nab & La & Lb & Hab & A).
@@ -418,7 +418,7 @@ Section links.
     intros Hd HM1 HM2 Hi He HoC Hn1 Hn2.
     pose proof Hc as Hc0. destruct Hc0 as [Hd1 Hd2 Hcut Hf1 Hf2 HfC H12 H1C H2C HCC HC1 HC2].
     pose proof KD as HKD. pose proof (conn_sym _ _ _ _ _ _ Hc) as Hcs.
-    assert (istep (q2.1, M2) (EvSess i (SLink ({[o1]} ∪ {[o2]}))) (q2.1 ∖ sentc (SLink ({[o1]} ∪ {[o2]})), <[i := e']> M2)) as Hst2.
+    assert (istep (q2.1, M2) (EvOffer i (SLink ({[o1]} ∪ {[o2]}))) (q2.1 ∖ sentc (SLink ({[o1]} ∪ {[o2]})), <[i := e']> M2)) as Hst2.
     { eapply p_act_session; [exact Hi|exact He|]. simpl. rewrite set_map_union_L, !set_map_singleton_L. clear -Hn1 Hn2. cc_set_solver. }
     pose proof H2 as H2'. destruct H2' as (_ & _ & (_ & _ & _ & _ & _ & _ & Hl2)).
     destruct (Hl2 _ _ _ _ (Hq2e M2 HM2) Hst2) as (oa & ob & Sa & Sb & x & Eab & Nab & La & Lb & Hab & A).

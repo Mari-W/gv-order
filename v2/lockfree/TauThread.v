@@ -39,7 +39,7 @@ Lemma padmin_beta C E e e' :
   tstep e LBeta e' → padmin (C, E ⊎ {[+ e +]}) (C, E ⊎ {[+ e' +]}).
 Proof.
   intros Hs. destruct (lift_thread C E e) as (M & i & Hi & HM & Hq).
-  exists (C, <[i := e]> M), (EvBeta i), (C, <[i := e']> (<[i := e]> M)). split_and!.
+  exists (C, <[i := e]> M), (EvSolo i LBeta PickNone), (C, <[i := e']> (<[i := e]> M)). split_and!.
   - done.
   - eapply p_act_beta; [by rewrite lookup_insert_eq|done].
   - unfold erase; simpl. by rewrite insert_insert_eq, soup_insert, HM.
@@ -51,7 +51,7 @@ Lemma padmin_new C E e ℓ c e' :
   padmin (C, E ⊎ {[+ e +]}) (C ∪ {[c]}, E ⊎ {[+ e' +]}).
 Proof.
   intros Hs HC HE He. destruct (lift_thread C E e) as (M & i & Hi & HM & Hq).
-  exists (C, <[i := e]> M), (EvNew i ℓ c), (C ∪ {[c]}, <[i := e']> (<[i := e]> M)). split_and!.
+  exists (C, <[i := e]> M), (EvSolo i (LNew ℓ c) PickNone), (C ∪ {[c]}, <[i := e']> (<[i := e]> M)). split_and!.
   - done.
   - eapply p_act_new; [by rewrite lookup_insert_eq|done|done|].
     rewrite soup_insert, HM, echans_disj_union, echans_singleton by done. set_solver.
@@ -64,7 +64,7 @@ Lemma padmin_new_at C E e κ o c e' :
   padmin (C, E ⊎ {[+ e +]}) (C ∪ {[c]}, E ⊎ {[+ e' +]}).
 Proof.
   intros Hs HC HE He. destruct (lift_thread C E e) as (M & i & Hi & HM & Hq).
-  exists (C, <[i := e]> M), (EvNewAt i κ o c), (C ∪ {[c]}, <[i := e']> (<[i := e]> M)).
+  exists (C, <[i := e]> M), (EvSolo i (LNewAt κ o c) PickNone), (C ∪ {[c]}, <[i := e']> (<[i := e]> M)).
   split_and!.
   - done.
   - eapply p_act_new_at; [by rewrite lookup_insert_eq|done|done|].
@@ -82,7 +82,7 @@ Proof.
     by (exists (fresh (dom (<[i := e]> M))); apply not_elem_of_dom, is_fresh).
   assert (i ≠ j) as Hij by (intros ->; by rewrite lookup_insert_eq in Hj).
   assert (M !! j = None) as HjM by (by rewrite lookup_insert_ne in Hj).
-  exists (C, <[i := e]> M), (EvSpawn i j v),
+  exists (C, <[i := e]> M), (EvSolo i (LSpawn v) (PickChild j)),
     (C, <[j := App v EUnit]> (<[i := e']> (<[i := e]> M))). split_and!.
   - done.
   - eapply p_act_spawn; [by rewrite lookup_insert_eq|done|done].
@@ -92,11 +92,11 @@ Proof.
 Qed.
 
 Lemma padmin_link C E e o1 o2 e' :
-  tstep e (LSess (SLink {[o1; o2]})) e' → ech o1 ∈ C →
+  tstep e (LSess (SLink ({[o1]} ∪ {[o2]}))) e' → ech o1 ∈ C →
   padmin (C, E ⊎ {[+ e +]}) (C ∖ {[ech o1]}, emapE (csub o1 o2) (E ⊎ {[+ e' +]})).
 Proof.
   intros Hs HC. destruct (lift_thread C E e) as (M & i & Hi & HM & Hq).
-  exists (C, <[i := e]> M), (EvLink i o1 o2),
+  exists (C, <[i := e]> M), (EvSolo i (LSess (SLink ({[o1]} ∪ {[o2]}))) (PickLink o1 o2)),
     (C ∖ {[ech o1]}, emap (csub o1 o2) <$> (<[i := e']> (<[i := e]> M))). split_and!.
   - done.
   - eapply p_act_link; [by rewrite lookup_insert_eq|done|done].
@@ -278,10 +278,10 @@ Proof.
     pose proof (padmin_spawn C E e v e' He') as Hpa.
     apply (IH _ Hpa (Hr' _ Hpa) (E ⊎ {[+ App v EUnit +]}) e'). simpl. multiset_solver.
   - (* link, at a restricted end *)
-    destruct (act_offer e (ALink o1 o2) (LSess (SLink {[o1; o2]})) Ha eq_refl) as [e' He'].
+    destruct (act_offer e (ALink o1 o2) (LSess (SLink ({[o1]} ∪ {[o2]}))) Ha eq_refl) as [e' He'].
     simpl in Ho. subst os.
     rewrite (Hdet _ _ He' ltac:(simpl; f_equal; f_equal; set_solver)).
-    assert (∀ p1 p2, tstep e (LSess (SLink {[p1; p2]})) e' → ech p1 ∈ C →
+    assert (∀ p1 p2, tstep e (LSess (SLink ({[p1]} ∪ {[p2]}))) e' → ech p1 ∈ C →
               Acc tR (cerase e')) as Hlk.
     { intros p1 p2 Hs' Hc'. pose proof (padmin_link C E e p1 p2 e' Hs' Hc') as Hpa.
       rewrite <-(cerase_emap (csub p1 p2) e').

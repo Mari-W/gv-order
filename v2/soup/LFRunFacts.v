@@ -9,7 +9,7 @@ From stdpp Require Import relations.
 From GV Require Export soup.LFLocal.
 
 Lemma istep_other_eq q ev q' t e :
-  istep q ev q' → t ∉ ev_parts ev → (∀ u o1 o2, ev ≠ EvLink u o1 o2) → q.2 !! t = Some e → q'.2 !! t = Some e.
+  istep q ev q' → t ∉ ev_parts ev → (∀ u α o1 o2, ev ≠ EvSolo u α (PickLink o1 o2)) → q.2 !! t = Some e → q'.2 !! t = Some e.
 Proof.
   destruct 1; simpl; intros Ht Hnl He.
   all: try (exfalso; eapply Hnl; reflexivity).
@@ -17,8 +17,8 @@ Proof.
   all: rewrite lookup_insert_ne; [|intros ->; congruence]; rewrite lookup_insert_ne; [done|set_solver].
 Qed.
 
-Lemma istep_link_other q u o1 o2 q' t e :
-  istep q (EvLink u o1 o2) q' → t ≠ u → q.2 !! t = Some e → q'.2 !! t = Some (emap (csub o1 o2) e).
+Lemma istep_link_other q u α o1 o2 q' t e :
+  istep q (EvSolo u α (PickLink o1 o2)) q' → t ≠ u → q.2 !! t = Some e → q'.2 !! t = Some (emap (csub o1 o2) e).
 Proof.
   intros Hst Htu He. inversion Hst; subst. simpl. rewrite lookup_fmap, lookup_insert_ne by done.
   simpl in He. by rewrite He.
@@ -152,7 +152,7 @@ Qed.
 
 (** ** Inversion of one step, by event *)
 
-Lemma istep_dom q ev q' : istep q ev q' → (∀ u j M, ev ≠ EvSpawn u j M) → dom q'.2 = dom q.2.
+Lemma istep_dom q ev q' : istep q ev q' → (∀ u α j, ev ≠ EvSolo u α (PickChild j)) → dom q'.2 = dom q.2.
 Proof.
   destruct 1 as [C M i e e' Hi|C M i e ℓ c e' Hi|C M i e κ o c e' Hi|C M i j e v e' Hi Hs Hj
     |C M i j o v e e' f f' Hij Hi Hj|C M i j o e e' f f' Hij Hi Hj|C M i j o b e e' f f' Hij Hi Hj
@@ -162,14 +162,14 @@ Proof.
   all: apply elem_of_dom_2 in Hi; try (apply elem_of_dom_2 in Hj); set_solver.
 Qed.
 
-Lemma istep_spawn_inv q u j v q' : istep q (EvSpawn u j v) q' →
+Lemma istep_spawn_inv q u j v q' : istep q (EvSolo u (LSpawn v) (PickChild j)) q' →
   ∃ eu e', q.2 !! u = Some eu ∧ tstep eu (LSpawn v) e' ∧ q.2 !! j = None ∧ dom q'.2 = {[j]} ∪ dom q.2.
 Proof.
   intros Hst. inversion Hst; subst. simpl. exists e, e'. split_and!; [done|done|done|].
   rewrite !dom_insert_L. apply elem_of_dom_2 in H3. set_solver.
 Qed.
 
-Lemma istep_link_inv q u o1 o2 q' : istep q (EvLink u o1 o2) q' →
+Lemma istep_link_inv q u α o1 o2 q' : istep q (EvSolo u α (PickLink o1 o2)) q' →
   ∃ eu e', q.2 !! u = Some eu ∧ tstep eu (LSess (SLink ({[o1]} ∪ {[o2]}))) e'.
 Proof. intros Hst. inversion Hst; subst. simpl. eauto. Qed.
 
@@ -194,7 +194,7 @@ Qed.
 (** The end an actor of a synchronization acts on. *)
 Definition ev_end (ev : event) (s : nat) : option cend :=
   match ev with
-  | EvMsg i j o _ | EvClose i j o | EvChoice i j o _ =>
+  | EvSync i j (SSend o _) | EvSync i j (SClose o) | EvSync i j (SSel o _) =>
       if decide (s = i) then Some o else if decide (s = j) then Some (edual o) else None
   | _ => None
   end.

@@ -63,7 +63,7 @@ Qed.
 Definition psize (p : proc) : nat := msize p.2.
 
 (** A link step makes the soup smaller. *)
-Lemma psize_link q i o1 o2 q' : istep q (EvLink i o1 o2) q' → psize (erase q') < psize (erase q).
+Lemma psize_link q i o1 o2 q' : istep q (EvSolo i (LSess (SLink ({[o1]} ∪ {[o2]}))) (PickLink o1 o2)) q' → psize (erase q') < psize (erase q).
 Proof.
   intros Hst. inversion Hst as [| | | | | | |C M i' e o1' o2' e' Hi Hs HC| ]; subst.
   unfold psize, erase. simpl. rewrite soup_fmap, msize_emap.
@@ -125,8 +125,8 @@ Proof.
     { apply (at_cost_all κ_L (ev_cost κ_L ev)). intros m.
       destruct (HC m) as (_ & _ & A & _). exact (A q ev q' Hq Hst Hτ Hd). }
     split.
-    + intros Hc. assert (∃ i o1 o2, ev = EvLink i o1 o2) as (i & o1 & o2 & ->).
-      { destruct ev; simpl in Hc, Hτ; try discriminate; eauto; by unfold ev_tau in Hτ. }
+    + intros Hc. assert (∃ i o1 o2, ev = EvSolo i (LSess (SLink ({[o1]} ∪ {[o2]}))) (PickLink o1 o2)) as (i & o1 & o2 & ->).
+      { clear -Hst Hc Hτ. destruct Hst; simpl in Hc, Hτ; try discriminate; eauto; by unfold ev_tau in Hτ. }
       apply (IHp (erase q')); [|exact HL'].
       unfold ltof. replace (psize p) with (psize (pmap h p)) by (unfold psize, pmap, emapE; simpl; apply msize_emap).
       rewrite <-Hq. by eapply psize_link.

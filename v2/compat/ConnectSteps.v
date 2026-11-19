@@ -39,10 +39,10 @@ Section core.
     by eapply Prel_down.
   Qed.
 
-  Local Lemma ev_ren_ok1 ev : (match ev with EvLink _ o1 _ => ech o1 ∈ q1.1 | _ => True end) →
+  Local Lemma ev_ren_ok1 ev : (match ev with EvSolo _ _ (PickLink o1 _) => ech o1 ∈ q1.1 | _ => True end) →
     dcomm (ev_ren ev) ∧ ∀ o, pheld (Σ2 ∪ ΣD) q2 o → ev_ren ev o = o.
   Proof.
-    destruct ev; simpl; intros Hl; try (split; [done|done]).
+    destruct ev as [? ? [| |? ?]| |]; simpl; intros Hl; try (split; [done|done]).
     split; [apply csub_dcomm_all|]. apply csub_held_id.
     destruct Hc as [_ _ Hcut _ _ _ _ _ _ HCC HC1 _]. rewrite chans_of_union, (cut_dual_chans _ _ Hcut). cc_set_solver.
   Qed.
@@ -58,7 +58,7 @@ Section core.
     assert (q1.1 ## q2.1 ∪ K) as HC12 by (destruct Hc; cc_set_solver).
     destruct (istep_local _ _ _ _ _ _ _ Hd HC12 Hst Hloc) as (q1' & Hst1 & -> & Hsub & Hdj & Hd').
     destruct (ev_ren_ok1 ev) as [Hgd Hgid].
-    { destruct ev; simpl; try done. by destruct Hloc as [_ ?]. }
+    { destruct ev as [? ? [| |? ?]| |]; simpl; try done. by destruct Hloc as [_ ?]. }
     destruct H1 as (_ & _ & Ht1 & _).
     destruct (Ht1 (q1.1, M1) ev q1' (Hq1e M1 HM1) Hst1 Hτ) as [A0 A1].
     { rewrite chans_of_union. simpl in Hfr. rewrite chans_of_union in Hfr. unfold erase. simpl. cc_set_solver. }
@@ -80,10 +80,10 @@ Section core.
     - intros Hc0. apply (L (S n - ev_cost κ ev) ltac:(lia) Σ1 ΣC Σ2 ΣD); [by apply A1|apply HP2r; [done|done|lia]|done].
   Qed.
 
-  Local Lemma ev_ren_ok2 ev : (match ev with EvLink _ o1 _ => ech o1 ∈ q2.1 | _ => True end) →
+  Local Lemma ev_ren_ok2 ev : (match ev with EvSolo _ _ (PickLink o1 _) => ech o1 ∈ q2.1 | _ => True end) →
     dcomm (ev_ren ev) ∧ ∀ o, pheld (Σ1 ∪ ΣC) q1 o → ev_ren ev o = o.
   Proof.
-    destruct ev; simpl; intros Hl; try (split; [done|done]).
+    destruct ev as [? ? [| |? ?]| |]; simpl; intros Hl; try (split; [done|done]).
     split; [apply csub_dcomm_all|]. apply csub_held_id.
     destruct Hc as [_ _ Hcut _ _ _ _ _ _ HCC _ HC2]. rewrite chans_of_union. cc_set_solver.
   Qed.
@@ -102,7 +102,7 @@ Section core.
     rewrite Esw in Hst.
     destruct (istep_local _ _ _ _ _ _ _ (map_disjoint_sym _ _ Hd) HC21 Hst Hloc) as (q2' & Hst2 & -> & Hsub & Hdj & Hd').
     destruct (ev_ren_ok2 ev) as [Hgd Hgid].
-    { destruct ev; simpl; try done. by destruct Hloc as [_ ?]. }
+    { destruct ev as [? ? [| |? ?]| |]; simpl; try done. by destruct Hloc as [_ ?]. }
     destruct H2 as (_ & _ & Ht2 & _).
     destruct (Ht2 (q2.1, M2) ev q2' (Hq2e M2 HM2) Hst2 Hτ) as [A0 A1].
     { rewrite chans_of_union. simpl in Hfr. rewrite chans_of_union in Hfr. unfold erase. simpl.
@@ -202,11 +202,11 @@ Section core.
     pose proof Hc as Hc0. destruct Hc0 as [Hd1 Hd2 Hcut Hf1 Hf2 HfC H12 H1C H2C HCC HC1 HC2].
     pose proof (cut_dual_chans _ _ Hcut) as HKD.
     destruct H1 as (_ & _ & (_ & _ & _ & S1c & _)). destruct H2 as (_ & _ & (_ & _ & _ & S2c & _)).
-    assert (istep (q1.1, M1) (EvSess i (SClose o)) (q1.1 ∖ sentc (SClose o), <[i := e']> M1) → ech o ∉ q1.1 →
+    assert (istep (q1.1, M1) (EvOffer i (SClose o)) (q1.1 ∖ sentc (SClose o), <[i := e']> M1) → ech o ∉ q1.1 →
       ∃ S0 x, (Σ1 ∪ ΣC) !! o = Some (S0, x) ∧ unfoldS S0 = SEnd ∧
         at_cost_P (S n) (c_give κ) (Prel κ) X1 W1 (delete o (Σ1 ∪ ΣC)) T (erase (q1.1 ∖ sentc (SClose o), <[i := e']> M1))) as C1.
     { intros Hs _. exact (S1c _ _ _ _ (Hq1e M1 HM1) Hs). }
-    assert (istep (q2.1, M2) (EvSess j (SClose (edual o))) (q2.1 ∖ sentc (SClose (edual o)), <[j := f']> M2) →
+    assert (istep (q2.1, M2) (EvOffer j (SClose (edual o))) (q2.1 ∖ sentc (SClose (edual o)), <[j := f']> M2) →
       ∃ S0 x, (Σ2 ∪ ΣD) !! edual o = Some (S0, x) ∧ unfoldS S0 = SEnd ∧
         at_cost_P (S n) (c_give κ) (Prel κ) X2 W1 (delete (edual o) (Σ2 ∪ ΣD)) TUnit (erase (q2.1 ∖ sentc (SClose (edual o)), <[j := f']> M2))) as C2.
     { intros Hs. exact (S2c _ _ _ _ (Hq2e M2 HM2) Hs). }

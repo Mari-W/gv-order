@@ -14,11 +14,18 @@ Definition owns (K : own) (o : cend) (t : nat) : Prop := ∃ h, K !! o = Some h 
 
 Definition ev_ends (K : own) (ev : event) : Prop :=
   match ev with
-  | EvMsg i j o v => owns K o i ∧ owns K (edual o) j ∧ (∀ m, m ∈ fends v → owns K m i ∧ m ≠ o)
-  | EvClose i j o | EvChoice i j o _ => owns K o i ∧ owns K (edual o) j
-  | EvSpawn i j v => ∀ m, m ∈ fends v → owns K m i
-  | EvLink u o1 o2 => owns K o1 u ∧ owns K o2 u ∧ o1 ≠ o2
-  | EvNew _ _ c | EvNewAt _ _ _ c => (EPos c ∉ dom K) ∧ (ENeg c ∉ dom K)
+  | EvSync i j (SSend o v) => owns K o i ∧ owns K (edual o) j ∧ (∀ m, m ∈ fends v → owns K m i ∧ m ≠ o)
+  | EvSync i j (SClose o) | EvSync i j (SSel o _) => owns K o i ∧ owns K (edual o) j
+  | EvSolo u α k =>
+      let fr := match α with
+                | LNew _ c | LNewAt _ _ c => (EPos c ∉ dom K) ∧ (ENeg c ∉ dom K)
+                | _ => True
+                end in
+      match k with
+      | PickLink o1 o2 => owns K o1 u ∧ owns K o2 u ∧ o1 ≠ o2
+      | PickChild _ => match α with LSpawn v => ∀ m, m ∈ fends v → owns K m u | _ => fr end
+      | PickNone => fr
+      end
   | _ => True
   end.
 
@@ -77,15 +84,15 @@ Ltac ne_tac Ho Eh :=
 
 
 Lemma own_next_keep N ev K t o h :
-  ev_ends K ev → (∀ u o1 o2, ev ≠ EvLink u o1 o2) → t ∉ ev_parts ev →
+  ev_ends K ev → (∀ u α o1 o2, ev ≠ EvSolo u α (PickLink o1 o2)) → t ∉ ev_parts ev →
   K !! o = Some h → h.(h_th) = t → own_next N ev K !! o = Some h.
 Proof.
-  intros Hen Hnl Ht Ho Eh. destruct ev as [i|i ℓ c|i κ o' c|i j M|i j o' M|i j o'|i j o' b|u o1 o2|i σ];
-    simpl in Hen, Ht |- *; try done.
-  - destruct Hen as [H1 H2]. unfold knew. pose proof (elem_of_dom_2 _ _ _ Ho) as Hd.
-    rewrite !lookup_insert_ne; [done|intros <-; done|intros <-; done].
-  - destruct Hen as [H1 H2]. unfold knew. pose proof (elem_of_dom_2 _ _ _ Ho) as Hd.
-    rewrite !lookup_insert_ne; [done|intros <-; done|intros <-; done].
+  intros Hen Hnl Ht Ho Eh.
+  destruct ev as [i α [|j|o1 o2]|i j [o' M|o' M|o'|o' b|o' b|os]|i σ];
+    [destruct α as [|ℓ c|κ o' c|M|σ]..| | | | | | | ]; simpl in Hen, Ht |- *; try done.
+  all: try (exfalso; eapply Hnl; reflexivity).
+  all: try (destruct Hen as [H1 H2]; unfold knew; pose proof (elem_of_dom_2 _ _ _ Ho) as Hd;
+    rewrite !lookup_insert_ne; [done|intros <-; done|intros <-; done]).
   - rewrite lookup_khand, Ho. simpl. case_decide as Hm; [|done].
     destruct (Hen o Hm) as (h' & Ho' & <-). rewrite Ho in Ho'. simplify_eq. set_solver.
   - destruct Hen as (H1 & H2 & H3).
@@ -102,5 +109,4 @@ Proof.
     assert (o ≠ o') by ne_tac Ho Eh. assert (o ≠ edual o') by ne_tac Ho Eh.
     rewrite lookup_ksync, !decide_False by done. rewrite Ho. simpl.
     rewrite !decide_False; [done|subst t; set_solver|set_solver].
-  - by destruct (Hnl u o1 o2).
 Qed.

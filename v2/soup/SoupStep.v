@@ -418,7 +418,7 @@ Section step.
   Lemma step_new i e ℓ c e' :
     Mq !! i = Some e → tstep e (LNew ℓ c) e' → c ∉ C →
     ∃ A' Π', soup_inv N n W ∅ T
-      (lf_next N (LFState (C, Mq) K tk) (EvNew i ℓ c) (C ∪ {[c]}, <[i := e']> Mq)) A' Π' U.
+      (lf_next N (LFState (C, Mq) K tk) (EvSolo i (LNew ℓ c) PickNone) (C ∪ {[c]}, <[i := e']> Mq)) A' Π' U.
   Proof.
     intros He Hst Hc. destruct (s_obl i e _ e' He Hst) as [HE HF]. cbn [Eobl Fobl] in HE, HF.
     unfold o_new in HE. unfold f_new in HF.
@@ -435,7 +435,7 @@ Section step.
   Lemma step_new_at i e κf o c e' :
     Mq !! i = Some e → tstep e (LNewAt κf o c) e' → c ∉ C →
     ∃ A' Π', soup_inv N n W ∅ T
-      (lf_next N (LFState (C, Mq) K tk) (EvNewAt i κf o c) (C ∪ {[c]}, <[i := e']> Mq)) A' Π' U.
+      (lf_next N (LFState (C, Mq) K tk) (EvSolo i (LNewAt κf o c) PickNone) (C ∪ {[c]}, <[i := e']> Mq)) A' Π' U.
   Proof.
     intros He Hst Hc. destruct (s_obl i e _ e' He Hst) as [HE HF]. cbn [Eobl Fobl] in HE, HF.
     unfold o_new_at in HE. unfold f_new in HF.
@@ -453,7 +453,7 @@ Section step.
   Lemma step_spawn i j e v e' :
     Mq !! i = Some e → tstep e (LSpawn v) e' → Mq !! j = None →
     soup_inv N n W ∅ T
-      (lf_next N (LFState (C, Mq) K tk) (EvSpawn i j v) (C, <[j := App v EUnit]> (<[i := e']> Mq)))
+      (lf_next N (LFState (C, Mq) K tk) (EvSolo i (LSpawn v) (PickChild j)) (C, <[j := App v EUnit]> (<[i := e']> Mq)))
       A Π (λ t, if decide (t = j) then TUnit else U t).
   Proof.
     intros He Hst Hj. assert (i ≠ j) as Hij by (intros ->; congruence).

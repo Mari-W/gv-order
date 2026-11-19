@@ -225,7 +225,7 @@ Definition alabel (a : action) : tlabel :=
   | ARecv o => LSess (SRecv o EUnit)
   | ASend o v => LSess (SSend o v)
   | AClose o => LSess (SClose o)
-  | ALink o1 o2 => LSess (SLink {[o1; o2]})
+  | ALink o1 o2 => LSess (SLink ({[o1]} ∪ {[o2]}))
   | ASel o i => LSess (SSel o i)
   | ABra o => LSess (SBra o false)
   end.
@@ -267,7 +267,7 @@ Proof.
   - exists (SRecv o EUnit). by split.
   - exists (SSend o v). by split.
   - exists (SClose o). by split.
-  - exists (SLink {[o1; o2]}). split; [|done].
+  - exists (SLink ({[o1]} ∪ {[o2]})). split; [|done].
     simpl. by rewrite set_map_union_L, !set_map_singleton_L.
   - exists (SSel o i). by split.
   - exists (SBra o false). by split.
@@ -395,20 +395,20 @@ Proof.
   pose proof (tenabled_partner C M t e a) as Hneed.
   destruct a as [|ℓ|κ o|v|o|o v|o|o1 o2|o i|o].
   - left. destruct (act_offer_sig e _ LBeta Ha I) as [e' Hs].
-    exists (EvBeta t, (C, <[t := e']> M)). split; [split; [by eapply p_act_beta|done]|simpl; set_solver].
+    exists (EvSolo t LBeta PickNone, (C, <[t := e']> M)). split; [split; [by eapply p_act_beta|done]|simpl; set_solver].
   - left. set (c := fresh (C ∪ echans (soup M))).
     assert (c ∉ C ∪ echans (soup M)) as Hc by apply is_fresh.
     destruct (act_offer_sig e _ (LNew ℓ c) Ha eq_refl) as [e' Hs].
-    exists (EvNew t ℓ c, (C ∪ {[c]}, <[t := e']> M)).
+    exists (EvSolo t (LNew ℓ c) PickNone, (C ∪ {[c]}, <[t := e']> M)).
     split; [split; [eapply p_act_new; [done|done|set_solver|set_solver]|done]|simpl; set_solver].
   - left. set (c := fresh (C ∪ echans (soup M))).
     assert (c ∉ C ∪ echans (soup M)) as Hc by apply is_fresh.
     destruct (act_offer_sig e _ (LNewAt κ o c) Ha (conj eq_refl eq_refl)) as [e' Hs].
-    exists (EvNewAt t κ o c, (C ∪ {[c]}, <[t := e']> M)).
+    exists (EvSolo t (LNewAt κ o c) PickNone, (C ∪ {[c]}, <[t := e']> M)).
     split; [split; [eapply p_act_new_at; [done|done|set_solver|set_solver]|done]|simpl; set_solver].
   - left. destruct (act_offer_sig e _ (LSpawn v) Ha eq_refl) as [e' Hs].
     set (j := fresh (dom M)). assert (M !! j = None) as Hj by (apply not_elem_of_dom, is_fresh).
-    exists (EvSpawn t j v, (C, <[j := App v EUnit]> (<[t := e']> M))).
+    exists (EvSolo t (LSpawn v) (PickChild j), (C, <[j := App v EUnit]> (<[t := e']> M))).
     split; [split; [by eapply p_act_spawn|done]|simpl; set_solver].
   - destruct (find_in_map M (λ j f, j ≠ t ∧ partner_ok (ARecv o) (act f)))
       as [[[j f] [Hj [Hjt Hok]]]|Hno].
@@ -418,7 +418,7 @@ Proof.
         (conj eq_refl eq_refl)) as [f' Hsf].
       destruct (act_offer_sig e _ (LSess (SRecv o w)) Ha
         (conj eq_refl (act_send_val f _ w Hf))) as [e' Hse].
-      exists (EvMsg j t o‾ w, (C, <[t := e']> (<[j := f']> M))).
+      exists (EvSync j t (SSend o‾ w), (C, <[t := e']> (<[j := f']> M))).
       split; [split; [|done]|simpl; set_solver].
       eapply p_act_msg; [done|done|done|exact Hsf|]. by rewrite edual_edual.
     + right. intros Hen. destruct (Hneed Hen He Ha) as (j & f & Hjt & Hj & Hok).
@@ -431,7 +431,7 @@ Proof.
         (conj eq_refl eq_refl)) as [e' Hse].
       destruct (act_offer_sig f _ (LSess (SRecv o‾ v)) Hf
         (conj eq_refl (act_send_val e _ v Ha))) as [f' Hsf].
-      exists (EvMsg t j o v, (C, <[j := f']> (<[t := e']> M))).
+      exists (EvSync t j (SSend o v), (C, <[j := f']> (<[t := e']> M))).
       split; [split; [|done]|simpl; set_solver].
       eapply p_act_msg; [by apply not_eq_sym|done..].
     + right. intros Hen. destruct (Hneed Hen He Ha) as (j & f & Hjt & Hj & Hok).
@@ -444,17 +444,17 @@ Proof.
       subst o'.
       destruct (act_offer_sig e _ (LSess (SClose o)) Ha eq_refl) as [e' Hse].
       destruct (act_offer_sig f _ (LSess (SClose o‾)) Hf eq_refl) as [f' Hsf].
-      exists (EvClose t j o, (C ∖ {[ech o]}, <[j := f']> (<[t := e']> M))).
+      exists (EvSync t j (SClose o), (C ∖ {[ech o]}, <[j := f']> (<[t := e']> M))).
       split; [split; [|done]|simpl; set_solver].
       eapply p_act_close; [by apply not_eq_sym|done..].
     + right. intros Hen. destruct (Hneed Hen He Ha) as (_ & j & f & Hjt & Hj & Hok).
       by apply (Hno j f Hj).
-  - destruct (act_offer_sig e _ (LSess (SLink {[o1; o2]})) Ha eq_refl) as [e' Hse].
+  - destruct (act_offer_sig e _ (LSess (SLink ({[o1]} ∪ {[o2]}))) Ha eq_refl) as [e' Hse].
     destruct (decide (ech o1 ∈ C)) as [HC|HC].
-    { left. exists (EvLink t o1 o2, (C ∖ {[ech o1]}, emap (csub o1 o2) <$> (<[t := e']> M))).
+    { left. exists (EvSolo t (LSess (SLink ({[o1]} ∪ {[o2]}))) (PickLink o1 o2), (C ∖ {[ech o1]}, emap (csub o1 o2) <$> (<[t := e']> M))).
       split; [split; [by eapply p_act_link|done]|simpl; set_solver]. }
     destruct (decide (ech o2 ∈ C)) as [HD|HD].
-    { left. exists (EvLink t o2 o1, (C ∖ {[ech o2]}, emap (csub o2 o1) <$> (<[t := e']> M))).
+    { left. exists (EvSolo t (LSess (SLink ({[o2]} ∪ {[o1]}))) (PickLink o2 o1), (C ∖ {[ech o2]}, emap (csub o2 o1) <$> (<[t := e']> M))).
       split; [split; [|done]|simpl; set_solver]. eapply p_act_link; [done| |done].
       by rewrite upair_comm. }
     right. intros Hen. by destruct (Hneed Hen He Ha).
@@ -464,7 +464,7 @@ Proof.
       subst o'.
       destruct (act_offer_sig e _ (LSess (SSel o i)) Ha (conj eq_refl eq_refl)) as [e' Hse].
       destruct (act_offer_sig f _ (LSess (SBra o‾ i)) Hf eq_refl) as [f' Hsf].
-      exists (EvChoice t j o i, (C, <[j := f']> (<[t := e']> M))).
+      exists (EvSync t j (SSel o i), (C, <[j := f']> (<[t := e']> M))).
       split; [split; [|done]|simpl; set_solver].
       eapply p_act_choice; [by apply not_eq_sym|done..].
     + right. intros Hen. destruct (Hneed Hen He Ha) as (j & f & Hjt & Hj & Hok).
@@ -475,7 +475,7 @@ Proof.
       subst o'.
       destruct (act_offer_sig f _ (LSess (SSel o‾ i)) Hf (conj eq_refl eq_refl)) as [f' Hsf].
       destruct (act_offer_sig e _ (LSess (SBra o i)) Ha eq_refl) as [e' Hse].
-      exists (EvChoice j t o‾ i, (C, <[t := e']> (<[j := f']> M))).
+      exists (EvSync j t (SSel o‾ i), (C, <[t := e']> (<[j := f']> M))).
       split; [split; [|done]|simpl; set_solver].
       eapply p_act_choice; [done|done|done|exact Hsf|]. by rewrite edual_edual.
     + right. intros Hen. destruct (Hneed Hen He Ha) as (j & f & Hjt & Hj & Hok).
@@ -519,7 +519,7 @@ Proof.
     destruct (decide (S ## C)) as [HSC|HSC]; [|exfalso; naive_solver].
     destruct (asubjs_offers a S HS) as (σ & Hσ & Hoff).
     destruct (act_offer_sig e a (LSess σ) Ha Hoff) as [e' Hs].
-    exists (EvSess t σ, (C ∖ sentc σ, <[t := e']> M)). simpl.
+    exists (EvOffer t σ, (C ∖ sentc σ, <[t := e']> M)). simpl.
     eapply p_act_session; [done|done|by rewrite Hσ].
   - right. simpl. intros t e a S Ht Ha HS HSC. apply (Hno t e Ht). eauto.
 Qed.

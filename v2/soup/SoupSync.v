@@ -35,7 +35,7 @@ Section sync.
     i ≠ j → Mq !! i = Some e → Mq !! j = Some f →
     tstep e (LSess (SSend o w)) e' → tstep f (LSess (SRecv (edual o) w)) f' →
     ∃ A' Π', soup_inv N n W ∅ T
-      (lf_next N (LFState (C, Mq) K tk) (EvMsg i j o w) (C, <[j := f']> (<[i := e']> Mq))) A' Π' U.
+      (lf_next N (LFState (C, Mq) K tk) (EvSync i j (SSend o w)) (C, <[j := f']> (<[i := e']> Mq))) A' Π' U.
   Proof.
     intros Hij He Hf Hst Hst'.
     destruct (s_obl _ _ _ _ _ _ _ _ _ _ _ Hs i e _ e' He Hst) as [HEi HFi].
@@ -174,7 +174,7 @@ Section sync.
     i ≠ j → Mq !! i = Some e → Mq !! j = Some f →
     tstep e (LSess (SClose o)) e' → tstep f (LSess (SClose (edual o))) f' →
     ∃ A' Π', soup_inv N n W ∅ T
-      (lf_next N (LFState (C, Mq) K tk) (EvClose i j o) (C ∖ {[ech o]}, <[j := f']> (<[i := e']> Mq))) A' Π' U.
+      (lf_next N (LFState (C, Mq) K tk) (EvSync i j (SClose o)) (C ∖ {[ech o]}, <[j := f']> (<[i := e']> Mq))) A' Π' U.
   Proof.
     intros Hij He Hf Hst Hst'.
     destruct (s_obl _ _ _ _ _ _ _ _ _ _ _ Hs i e _ e' He Hst) as [HEi HFi].
@@ -241,7 +241,7 @@ Section sync.
     i ≠ j → Mq !! i = Some e → Mq !! j = Some f →
     tstep e (LSess (SSel o b)) e' → tstep f (LSess (SBra (edual o) b)) f' →
     ∃ A' Π', soup_inv N n W ∅ T
-      (lf_next N (LFState (C, Mq) K tk) (EvChoice i j o b) (C, <[j := f']> (<[i := e']> Mq))) A' Π' U.
+      (lf_next N (LFState (C, Mq) K tk) (EvSync i j (SSel o b)) (C, <[j := f']> (<[i := e']> Mq))) A' Π' U.
   Proof.
     intros Hij He Hf Hst Hst'.
     destruct (s_obl _ _ _ _ _ _ _ _ _ _ _ Hs i e _ e' He Hst) as [HEi HFi].

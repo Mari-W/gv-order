@@ -217,7 +217,7 @@ Section psteps.
     (W : world) (Σ : senv) (T : ty) (p : proc).
   Context (HP : Psteps κ n Vl Pl VN X W Σ T p).
 
-  Lemma Psteps_head q i σ q' o : erase q = p → istep q (EvSess i σ) q' → ssubj σ = Some o →
+  Lemma Psteps_head q i σ q' o : erase q = p → istep q (EvOffer i σ) q' → ssubj σ = Some o →
     ∃ S0 x, Σ !! o = Some (S0, x) ∧ hd_ok σ (unfoldS S0).
   Proof.
     intros Hq Hst Ho. destruct HP as (_ & H2 & H3 & H4 & H5 & H6 & H7).
@@ -265,8 +265,8 @@ Section offers.
   Local Abbreviation pc := (pconn q1 q2 K).
 
   Lemma sess_lift M1 M2 i σ q1' :
-    M1 ##ₘ M2 → istep (q1.1, M1) (EvSess i σ) q1' → subjs σ ## q1.1 ∪ q2.1 ∪ K →
-    ∃ q', istep (q1.1 ∪ q2.1 ∪ K, M1 ∪ M2) (EvSess i σ) q'.
+    M1 ##ₘ M2 → istep (q1.1, M1) (EvOffer i σ) q1' → subjs σ ## q1.1 ∪ q2.1 ∪ K →
+    ∃ q', istep (q1.1 ∪ q2.1 ∪ K, M1 ∪ M2) (EvOffer i σ) q'.
   Proof.
     intros Hd Hst Hs. inversion Hst; subst. eexists. eapply p_act_session; [|eassumption|done].
     by apply lookup_union_Some_l.
@@ -280,7 +280,7 @@ Section offers.
       is a τ step of the composite. *)
   Lemma link_tau M1 M2 i os q1' :
     M1 ##ₘ M2 → soup M1 = q1.2 → soup M2 = q2.2 →
-    istep (q1.1, M1) (EvSess i (SLink os)) q1' → ¬ (subjs (SLink os) ## q1.1 ∪ q2.1 ∪ K) →
+    istep (q1.1, M1) (EvOffer i (SLink os)) q1' → ¬ (subjs (SLink os) ## q1.1 ∪ q2.1 ∪ K) →
     ¬ stable_p pc.
   Proof.
     intros Hd HM1 HM2 Hst Hs Hstab. inversion Hst; subst.
@@ -307,7 +307,7 @@ Section offers.
     destruct ev; try discriminate. injection Hl as ->.
     destruct (decide (subjs σ ## q1.1 ∪ q2.1 ∪ K)) as [Hs|Hs].
     - destruct (sess_lift M1 M2 i σ q1' Hd Hi Hs) as [q' Hq']. exists σ, (erase q'). split; [|done].
-      rewrite <-Hq. by exists (q1.1 ∪ q2.1 ∪ K, M1 ∪ M2), (EvSess i σ), q'.
+      rewrite <-Hq. by exists (q1.1 ∪ q2.1 ∪ K, M1 ∪ M2), (EvOffer i σ), q'.
     - exfalso. destruct σ as [o' w|o' w|o'|o' b|o' b|os].
       6: by apply (link_tau M1 M2 i os q1').
       all: simpl in Hoσ; apply elem_of_singleton in Hoσ as ->; apply Hs; simpl;
@@ -382,15 +382,15 @@ Proof.
   destruct σ1 as [o1 w|o1 w|o1|o1 b|o1 b|os], σ2 as [o2 w'|o2 w'|o2|o2 b'|o2 b'|os'];
     simpl in Hsy; try done; simpl in E1, E2; injection E1 as ->; injection E2 as ->.
   - pose proof (tstep_label_val _ _ _ He) as Hw. destruct (recv_retarget _ _ _ _ w Hf Hw) as [f2 Hf2].
-    eapply (Hno (EvMsg i1 i2 o w)); [|done]. by eapply p_act_msg.
+    eapply (Hno (EvSync i1 i2 (SSend o w))); [|done]. by eapply p_act_msg.
   - pose proof (tstep_label_val _ _ _ Hf) as Hw. destruct (recv_retarget _ _ _ _ w' He Hw) as [e2 He2].
-    eapply (Hno (EvMsg i2 i1 (edual o) w')); [|done]. eapply p_act_msg; [done|done|done|done|].
+    eapply (Hno (EvSync i2 i1 (SSend (edual o) w'))); [|done]. eapply p_act_msg; [done|done|done|done|].
     by rewrite edual_edual.
-  - eapply (Hno (EvClose i1 i2 o)); [|done]. by eapply p_act_close.
+  - eapply (Hno (EvSync i1 i2 (SClose o))); [|done]. by eapply p_act_close.
   - destruct (bra_retarget _ _ _ _ b Hf) as [f2 Hf2].
-    eapply (Hno (EvChoice i1 i2 o b)); [|done]. by eapply p_act_choice.
+    eapply (Hno (EvSync i1 i2 (SSel o b))); [|done]. by eapply p_act_choice.
   - destruct (bra_retarget _ _ _ _ b' He) as [e2 He2].
-    eapply (Hno (EvChoice i2 i1 (edual o) b')); [|done]. eapply p_act_choice; [done|done|done|done|].
+    eapply (Hno (EvSync i2 i1 (SSel (edual o) b'))); [|done]. eapply p_act_choice; [done|done|done|done|].
     by rewrite edual_edual.
 Qed.
 
@@ -461,7 +461,7 @@ Proof.
   destruct ev; try discriminate. injection Hl as ->.
   destruct (decide (subjs (SLink os) ## q1.1 ∪ q2.1 ∪ K)) as [Hsj|Hsj].
   - destruct (sess_lift ΣC q1 q2 M1 M2 i _ q1' Hd Hi Hsj) as [q' Hq'].
-    exists os, (erase q'). rewrite <-Hq. by exists (q1.1 ∪ q2.1 ∪ K, M1 ∪ M2), (EvSess i (SLink os)), q'.
+    exists os, (erase q'). rewrite <-Hq. by exists (q1.1 ∪ q2.1 ∪ K, M1 ∪ M2), (EvOffer i (SLink os)), q'.
   - exfalso. by apply (link_tau κ n W1 T1 T2 X1 X2 Σ1 ΣC Σ2 ΣD q1 q2 Hc H1 H2 M1 M2 i os q1' Hd HM1 HM2 Hi).
 Qed.
 
@@ -670,14 +670,14 @@ End rdy.
 Definition ev_local (C1 : gset chan) (M1 : gmap nat expr) (ev : event) : Prop :=
   ev_parts ev ⊆ dom M1 ∧
   match ev with
-  | EvClose _ _ o => ech o ∈ C1
-  | EvLink _ o1 _ => ech o1 ∈ C1
-  | EvSess _ _ => False
+  | EvSync _ _ (SClose o) => ech o ∈ C1
+  | EvSolo _ _ (PickLink o1 _) => ech o1 ∈ C1
+  | EvOffer _ _ => False
   | _ => True
   end.
 
 Definition ev_ren (ev : event) : cend → cend :=
-  match ev with EvLink _ o1 o2 => csub o1 o2 | _ => id end.
+  match ev with EvSolo _ _ (PickLink o1 o2) => csub o1 o2 | _ => id end.
 
 Lemma fmap_emap_id (M : gmap nat expr) : emap id <$> M = M.
 Proof. apply map_eq. intros i. rewrite lookup_fmap. destruct (M !! i); simpl; [by rewrite emap_id|done]. Qed.

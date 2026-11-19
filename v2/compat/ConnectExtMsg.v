@@ -51,12 +51,12 @@ Section extmsg.
   Qed.
 
   (** The external step of the composite as a step of a component. *)
-  Local Lemma ext_split q i σ q' : erase q = pc → istep q (EvSess i σ) q' →
+  Local Lemma ext_split q i σ q' : erase q = pc → istep q (EvOffer i σ) q' →
     ∃ M1 M2 e e', M1 ##ₘ M2 ∧ soup M1 = q1.2 ∧ soup M2 = q2.2 ∧ tstep e (LSess σ) e' ∧
       subjs σ ## q1.1 ∪ q2.1 ∪ K ∧
-      ((M1 !! i = Some e ∧ istep (q1.1, M1) (EvSess i σ) (q1.1 ∖ sentc σ, <[i := e']> M1) ∧
+      ((M1 !! i = Some e ∧ istep (q1.1, M1) (EvOffer i σ) (q1.1 ∖ sentc σ, <[i := e']> M1) ∧
          erase q' = ((q1.1 ∪ q2.1 ∪ K) ∖ sentc σ, soup (<[i := e']> M1) ⊎ q2.2)) ∨
-       (M2 !! i = Some e ∧ istep (q2.1, M2) (EvSess i σ) (q2.1 ∖ sentc σ, <[i := e']> M2) ∧
+       (M2 !! i = Some e ∧ istep (q2.1, M2) (EvOffer i σ) (q2.1 ∖ sentc σ, <[i := e']> M2) ∧
          erase q' = ((q1.1 ∪ q2.1 ∪ K) ∖ sentc σ, q1.2 ⊎ soup (<[i := e']> M2)))).
   Proof.
     intros Hq Hst. destruct (pconn_lift _ _ _ _ Hq) as (M1 & M2 & -> & Hd & HM1 & HM2).
@@ -116,7 +116,7 @@ Section extmsg.
   Qed.
 
   (** Q-Send of the composite. *)
-  Lemma ext_send q i o w q' : erase q = pc → istep q (EvSess i (SSend o w)) q' →
+  Lemma ext_send q i o w q' : erase q = pc → istep q (EvOffer i (SSend o w)) q' →
     q_send κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T pc o w (erase q').
   Proof.
     intros Hq Hst. destruct (ext_split _ _ _ _ Hq Hst) as (M1 & M2 & e & e' & Hd & HM1 & HM2 & He & Hsub & [(Hi & Hs & Eq)|(Hi & Hs & Eq)]);
@@ -181,7 +181,7 @@ Section extmsg.
   Qed.
 
   (** Q-Recv of the composite. *)
-  Lemma ext_recv q i o w q' : erase q = pc → istep q (EvSess i (SRecv o w)) q' →
+  Lemma ext_recv q i o w q' : erase q = pc → istep q (EvOffer i (SRecv o w)) q' →
     q_recv κ (S n) (Vrel κ) (Prel κ) W1 (Σ1 ∪ Σ2) T pc o w (erase q').
   Proof.
     intros Hq Hst. destruct (ext_split _ _ _ _ Hq Hst) as (M1 & M2 & e & e' & Hd & HM1 & HM2 & He & Hsub & [(Hi & Hs & Eq)|(Hi & Hs & Eq)]);

@@ -50,12 +50,9 @@ Definition tcost (κ : ctable) (α : tlabel) : nat :=
 
 Definition ev_cost (κ : ctable) (ev : event) : nat :=
   match ev with
-  | EvBeta _ => c_beta κ
-  | EvNew _ _ _ | EvNewAt _ _ _ _ => c_new κ
-  | EvSpawn _ _ _ => c_spawn κ
-  | EvLink _ _ _ => c_link κ
-  | EvMsg _ _ _ _ | EvClose _ _ _ | EvChoice _ _ _ _ => c_give κ + c_take κ
-  | EvSess _ σ => scost κ σ
+  | EvSolo _ α _ => tcost κ α
+  | EvSync _ _ _ => c_give κ + c_take κ
+  | EvOffer _ σ => scost κ σ
   end.
 
 (** The largest cost of a τ step of a process. *)
@@ -64,7 +61,14 @@ Definition cmax (κ : ctable) : nat :=
     (c_give κ + c_take κ).
 
 Lemma ev_cost_le κ ev : ev_tau ev → ev_cost κ ev ≤ cmax κ.
-Proof. unfold ev_tau, cmax. destruct ev; simpl; try discriminate; lia. Qed.
+Proof.
+  unfold ev_tau, cmax. destruct ev as [? α ?| |]; simpl; try discriminate; [|lia].
+  intros _. destruct α as [| | | |σ]; simpl; try lia. destruct σ; simpl; lia.
+Qed.
+
+(** An administrative step is a τ step and costs nothing in κ_L. *)
+Lemma istep_admin_live q ev q' : istep q ev q' → ev_admin ev → ev_tau ev ∧ ev_cost κ_L ev = 0.
+Proof. destruct 1; simpl; intros Had; try contradiction; done. Qed.
 
 (** ** Readers and levels
 

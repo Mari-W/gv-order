@@ -120,20 +120,28 @@ Definition ksync (N i j : nat) (o : cend) (y y' : point) (M : gset cend) (K : ow
     the ends of the moved value move. *)
 Definition own_next (N : nat) (ev : event) (K : own) : own :=
   match ev with
-  | EvBeta _ | EvSess _ _ => K
-  | EvNew i ℓ c => knew N i c (pgen ℓ (kfresh ℓ K)) K
-  | EvNewAt i κ o c => knew N i c ((kpt K o)·κ) K
-  | EvSpawn i j v => khand (fends v) j K
-  | EvMsg i j o v => ksync N i j o (pt_shift 1 (kpt K o)) (pt_shift 1 (kpt K (edual o))) (fends v) K
-  | EvClose i j o => ktick i j ∅ (delete o (delete o‾ K))
-  | EvChoice i j o b => ksync N i j o (sel_pt (kpt K o) b) (bra_pt (kpt K (edual o)) b) ∅ K
-  | EvLink i o1 o2 => kmapr (csub o1 o2) (delete o1 (delete o2 K))
+  | EvSolo i α k =>
+      let kn := match α with
+                | LNew ℓ c => knew N i c (pgen ℓ (kfresh ℓ K)) K
+                | LNewAt κ o c => knew N i c ((kpt K o)·κ) K
+                | _ => K
+                end in
+      match k with
+      | PickLink o1 o2 => kmapr (csub o1 o2) (delete o1 (delete o2 K))
+      | PickChild j => match α with LSpawn v => khand (fends v) j K | _ => kn end
+      | PickNone => kn
+      end
+  | EvSync i j (SSend o v) => ksync N i j o (pt_shift 1 (kpt K o)) (pt_shift 1 (kpt K (edual o))) (fends v) K
+  | EvSync i j (SClose o) => ktick i j ∅ (delete o (delete o‾ K))
+  | EvSync i j (SSel o b) => ksync N i j o (sel_pt (kpt K o) b) (bra_pt (kpt K (edual o)) b) ∅ K
+  | _ => K
   end.
 
 Definition tk_next (ev : event) (tk : nat → nat) : nat → nat :=
   match ev with
-  | EvSpawn i j _ => tupd (tupd tk i (Nat.div2 (tk i))) j (Nat.div2 (S (tk i)))
-  | EvLink i _ _ => tupd tk i (tk i - 1)
+  | EvSolo i α (PickLink _ _) => tupd tk i (tk i - 1)
+  | EvSolo i α (PickChild j) =>
+      match α with LSpawn _ => tupd (tupd tk i (Nat.div2 (tk i))) j (Nat.div2 (S (tk i))) | _ => tk end
   | _ => tk
   end.
 

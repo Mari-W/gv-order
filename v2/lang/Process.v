@@ -2,10 +2,8 @@
 
     A configuration is a set C of restricted channels and a finite map
     from thread identifiers to terms. A step [istep q ev q'] carries an
-    event ev that names the threads taking part and what happened: the
-    family or the field and anchor of a creation, the value of a spawn
-    and of a message, the ends of a close, a choice and a link, and
-    the session label of an external offer. The rules are named after
+    event ev that names the threads taking part and the labels they
+    take. The rules are named after
     the paper's P-Act rules.
 
     This is the only definition of process steps. The plain semantics on
@@ -98,19 +96,28 @@ Qed.
 Lemma erase_surj (p : proc) : ∃ q, erase q = p.
 Proof. destruct p as [C E]. destruct (soup_surj E) as [M HM]. exists (C, M). by rewrite <-HM. Qed.
 
-(** ** Events *)
+(** ** Events
+
+    An event names the threads that take part and the label they take.
+    [EvSolo i α k]: thread i takes the thread label α alone (β, new_ℓ,
+    new_κ, spawn, link), and k is what the process rule picks beyond
+    α: the identifier of a spawned thread, or the order of the ends of
+    a link, whose label is an unordered pair. [EvSync i j σ]: thread i
+    takes σ (a send, a close or a select on o) and thread j the dual
+    label on o‾. [EvOffer i σ]: thread i offers σ to the environment. *)
+
+Inductive pick :=
+  | PickNone
+  | PickChild (j : nat)            (* the spawned thread is j *)
+  | PickLink (o1 o2 : cend).       (* the channel of o1 goes, o1‾ becomes o2 *)
 
 Inductive event :=
-  | EvBeta (i : nat)                                (* P-Act-Beta *)
-  | EvNew (i : nat) (ℓ : family) (c : chan)         (* P-Act-New *)
-  | EvNewAt (i : nat) (κ : field) (o : cend) (c : chan)  (* P-Act-NewAt *)
-  | EvSpawn (i j : nat) (v : expr)                  (* P-Act-Spawn: i spawns the thunk v as j *)
-  | EvMsg (i j : nat) (o : cend) (v : expr)         (* P-Act-Msg: i sends v on o to j *)
-  | EvClose (i j : nat) (o : cend)                  (* P-Act-Close: i closes o, j closes o‾ *)
-  | EvChoice (i j : nat) (o : cend) (b : bool)      (* P-Act-Choice: i selects b on o *)
-  | EvLink (i : nat) (o1 o2 : cend)                 (* P-Act-Link: the channel of o1 goes *)
-  | EvSess (i : nat) (σ : slabel).                  (* P-Act-Session: an external offer *)
+  | EvSolo (i : nat) (α : tlabel) (k : pick)   (* P-Act-Beta, -New, -NewAt, -Spawn, -Link *)
+  | EvSync (i j : nat) (σ : slabel)            (* P-Act-Msg, -Close, -Choice *)
+  | EvOffer (i : nat) (σ : slabel).            (* P-Act-Session *)
 
+Global Instance pick_eq_dec : EqDecision pick.
+Proof. solve_decision. Defined.
 Global Instance event_eq_dec : EqDecision event.
 Proof. solve_decision. Defined.
 
@@ -118,8 +125,8 @@ Proof. solve_decision. Defined.
     link only the thread that runs it. *)
 Definition ev_parts (ev : event) : gset nat :=
   match ev with
-  | EvBeta i | EvNew i _ _ | EvNewAt i _ _ _ | EvSpawn i _ _ | EvLink i _ _ | EvSess i _ => {[i]}
-  | EvMsg i j _ _ | EvClose i j _ | EvChoice i j _ _ => {[i; j]}
+  | EvSolo i _ _ | EvOffer i _ => {[i]}
+  | EvSync i j _ => {[i; j]}
   end.
 
 (** Process labels π ::= τ | σ. *)
@@ -128,7 +135,7 @@ Inductive plabel :=
   | PSess (σ : slabel).
 
 Definition ev_plabel (ev : event) : plabel :=
-  match ev with EvSess _ σ => PSess σ | _ => PTau end.
+  match ev with EvOffer _ σ => PSess σ | _ => PTau end.
 
 (** The events of a closed configuration, all but external offers. *)
 Definition ev_tau (ev : event) : Prop := ev_plabel ev = PTau.
@@ -140,51 +147,64 @@ Proof. unfold ev_tau. apply _. Defined.
 
 (** Administrative events: they cost nothing in the live table (§2.8). *)
 Definition ev_admin (ev : event) : Prop :=
-  match ev with EvBeta _ | EvNew _ _ _ | EvNewAt _ _ _ _ | EvSpawn _ _ _ | EvLink _ _ _ => True
-              | _ => False end.
+  match ev with EvSolo _ _ _ => True | _ => False end.
 
 (** ** Process steps (the P-Act rules) *)
 
 Inductive istep : config → event → config → Prop :=
   | p_act_beta C M i e e' :                            (* P-Act-Beta *)
       M !! i = Some e → tstep e LBeta e' →
-      istep (C, M) (EvBeta i) (C, <[i := e']> M)
+      istep (C, M) (EvSolo i LBeta PickNone) (C, <[i := e']> M)
   | p_act_new C M i e ℓ c e' :                         (* P-Act-New *)
       (* the new channel is globally fresh *)
       M !! i = Some e → tstep e (LNew ℓ c) e' →
       c ∉ C → c ∉ echans (soup M) →
-      istep (C, M) (EvNew i ℓ c) (C ∪ {[c]}, <[i := e']> M)
+      istep (C, M) (EvSolo i (LNew ℓ c) PickNone) (C ∪ {[c]}, <[i := e']> M)
   | p_act_new_at C M i e κ o c e' :                    (* P-Act-NewAt *)
       M !! i = Some e → tstep e (LNewAt κ o c) e' →
       c ∉ C → c ∉ echans (soup M) →
-      istep (C, M) (EvNewAt i κ o c) (C ∪ {[c]}, <[i := e']> M)
+      istep (C, M) (EvSolo i (LNewAt κ o c) PickNone) (C ∪ {[c]}, <[i := e']> M)
   | p_act_spawn C M i j e v e' :                    (* P-Act-Spawn *)
       M !! i = Some e → tstep e (LSpawn v) e' → M !! j = None →
-      istep (C, M) (EvSpawn i j v) (C, <[j := App v EUnit]> (<[i := e']> M))
+      istep (C, M) (EvSolo i (LSpawn v) (PickChild j)) (C, <[j := App v EUnit]> (<[i := e']> M))
   | p_act_msg C M i j o v e e' f f' :               (* P-Act-Msg *)
       (* a send on o meets a receive on o‾; the channel may be free *)
       i ≠ j → M !! i = Some e → M !! j = Some f →
       tstep e (LSess (SSend o v)) e' → tstep f (LSess (SRecv o‾ v)) f' →
-      istep (C, M) (EvMsg i j o v) (C, <[j := f']> (<[i := e']> M))
+      istep (C, M) (EvSync i j (SSend o v)) (C, <[j := f']> (<[i := e']> M))
   | p_act_close C M i j o e e' f f' :                  (* P-Act-Close *)
       i ≠ j → M !! i = Some e → M !! j = Some f →
       tstep e (LSess (SClose o)) e' → tstep f (LSess (SClose o‾)) f' → ech o ∈ C →
-      istep (C, M) (EvClose i j o) (C ∖ {[ech o]}, <[j := f']> (<[i := e']> M))
+      istep (C, M) (EvSync i j (SClose o)) (C ∖ {[ech o]}, <[j := f']> (<[i := e']> M))
   | p_act_choice C M i j o b e e' f f' :               (* P-Act-Choice *)
       i ≠ j → M !! i = Some e → M !! j = Some f →
       tstep e (LSess (SSel o b)) e' → tstep f (LSess (SBra o‾ b)) f' →
-      istep (C, M) (EvChoice i j o b) (C, <[j := f']> (<[i := e']> M))
+      istep (C, M) (EvSync i j (SSel o b)) (C, <[j := f']> (<[i := e']> M))
   | p_act_link C M i e o1 o2 e' :                      (* P-Act-Link *)
       (* the channel of o1 is restricted and goes; every thread is
          renamed, the actor's continuation included, so the holder of
          o1‾ now holds o2 (csub). The label is unordered, so the same
          rule removes either channel. *)
       M !! i = Some e → tstep e (LSess (SLink {[o1; o2]})) e' → ech o1 ∈ C →
-      istep (C, M) (EvLink i o1 o2) (C ∖ {[ech o1]}, emap (csub o1 o2) <$> (<[i := e']> M))
+      istep (C, M) (EvSolo i (LSess (SLink {[o1; o2]})) (PickLink o1 o2)) (C ∖ {[ech o1]}, emap (csub o1 o2) <$> (<[i := e']> M))
   | p_act_session C M i e σ e' :                       (* P-Act-Session *)
       (* an offer on free channels; a send extrudes the ends of its value *)
       M !! i = Some e → tstep e (LSess σ) e' → subjs σ ## C →
-      istep (C, M) (EvSess i σ) (C ∖ sentc σ, <[i := e']> M).
+      istep (C, M) (EvOffer i σ) (C ∖ sentc σ, <[i := e']> M).
+
+(** The events of the P-Act rules, one case per rule. *)
+Lemma istep_event q ev q' : istep q ev q' →
+  (∃ i, ev = EvSolo i LBeta PickNone) ∨
+  (∃ i ℓ c, ev = EvSolo i (LNew ℓ c) PickNone) ∨
+  (∃ i κ o c, ev = EvSolo i (LNewAt κ o c) PickNone) ∨
+  (∃ i j v, ev = EvSolo i (LSpawn v) (PickChild j)) ∨
+  (∃ i j o v, ev = EvSync i j (SSend o v)) ∨
+  (∃ i j o, ev = EvSync i j (SClose o)) ∨
+  (∃ i j o b, ev = EvSync i j (SSel o b)) ∨
+  (∃ i o1 o2, ev = EvSolo i (LSess (SLink {[o1; o2]})) (PickLink o1 o2)) ∨
+  (∃ i σ, ev = EvOffer i σ).
+Proof. destruct 1; [left|do 1 right; left|do 2 right; left|do 3 right; left|do 4 right; left
+  |do 5 right; left|do 6 right; left|do 7 right; left|do 8 right]; eauto. Qed.
 
 (** The steps of a closed configuration. *)
 Definition itstep (q : config) (ev : event) (q' : config) : Prop := istep q ev q' ∧ ev_tau ev.

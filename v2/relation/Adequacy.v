@@ -64,7 +64,7 @@ Section adequacy.
       split_and!; [done|by eapply Vrel_val|done].
     - right. destruct π as [|σ]; [by exists p'|exfalso].
       destruct Hπ as (q & ev & q' & Hq & Hi & Hq' & Hl).
-      destruct ev as [| | | | | | | |i σ']; simpl in Hl; try discriminate. injection Hl as ->.
+      destruct ev as [| |i σ']; simpl in Hl; try discriminate. injection Hl as ->.
       destruct Hst as (_ & H2 & H3 & H4 & H5 & H6 & H7).
       destruct σ as [o w|o w|o|o b|o b|os].
       + destruct (H2 q i o w q' Hq Hi) as (? & ? & ? & ? & ? & ? & ? & ? & ? & ? & A & _).
@@ -99,7 +99,7 @@ Proof.
   intros W Σ T p H HW ->. constructor. intros p' (q & ev & q' & Hq & Hst & <- & Had).
   destruct (Pbody_id κ_L _ _ _ _ _ _ _ _ _ H W (wext_refl W) HW) as (_ & _ & H1 & _).
   assert (ev_tau ev ∧ ev_cost κ_L ev = 0) as [Hτ Hc].
-  { destruct ev; simpl in Had; try contradiction; done. }
+  { exact (istep_admin_live _ _ _ Hst Had). }
   destruct (H1 q ev q' Hq Hst Hτ) as [A1 _].
   { rewrite chans_of_empty. apply disjoint_empty_r. }
   by apply (A1 Hc).
