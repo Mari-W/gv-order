@@ -175,6 +175,29 @@ must do, open questions.
     map against the definitions in v2/, list every difference that is not a
     queued entry, and fix the map or queue the Rocq change.
 
+12. **Generalized arrows, E-SpawnLam derived (decided 2026-11-19 by the
+    author, design to confirm).** Today E-SpawnLam exists beside E-Spawn
+    because E-Abs asks a common lower point `l ≼ Δ` and types the body
+    under a fresh future above `u`, and a λ spawned in place needs neither.
+    Generalize the two points of an arrow instead.
+    (a) Lower point `l = ⊥` allowed (`lbound` already has `LBot`, used by
+    `∃^⊥`). E-Abs drops `l ≼ Δ` when `l = ⊥`, `hbot` reports such arrows,
+    and holding the closure puts `⊥` into the future, which forbids
+    blocking while it is held, as for `∃^⊥`.
+    (b) Upper point `u = ⊤`. E-Abs types the body under the empty future
+    `(∅, ·)`, and E-App needs `⊤ ≺ F`, which holds only for the empty
+    future, so such a closure is applied only in tail position of a thread.
+    E-Spawn asks nothing of `u`.
+    Then `spawn (λe)` types by E-Abs at `l = ⊥, u = ⊤` plus E-Spawn, and
+    E-SpawnLam goes. The value clause at `u = ⊤` is exactly `Vthunk` (body
+    at the empty future), so V-Arrow absorbs V-Thunk and one value clause
+    goes too. Check: E-SpawnLam ages the handed context by one hop while
+    E-Spawn asks closure credit `a ≥ 1`, so capture at `h, a = 1` must give
+    the same credits as `Δ − 1`, and the ticket need of E-SpawnLam
+    (`tspawn` of the body at reserve 0) must match E-Spawn on the arrow.
+    Rocq: after the repair run (entry 6) is merged. Map: after the design
+    is confirmed.
+
 ## Done in the Rocq
 
 (entries move here once the repair agent has implemented and merged them)
