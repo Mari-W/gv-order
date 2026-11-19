@@ -1295,7 +1295,8 @@ first, in stage S2.
   with `tfree` would type more processes). M.7: Q-Send reads the ends of
   the payload through the exactness of V and states only which
   restricted ends leave. M.9: each helper proved once, one lower-bound
-  predicate, one union of futures.
+  predicate, one union of futures. M.12: process readiness stays its own
+  clause (it does not follow from the threads' term readiness).
 
 ## 5  Open decisions for the author
 
