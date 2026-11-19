@@ -1334,7 +1334,7 @@ window.MAP = {
     },
     {
      "id": "ct-two",
-     "title": "The two tables",
+     "title": "Step costs",
      "rocq": "relation/CostTable.v: κ_DF, κ_L, ev_cost",
      "tex": "\\begin{array}{lcc}\n & \\htmlData{k=ct.DF}{\\kappa_{DF}} & \\annot{\\htmlData{k=ct.L}{\\kappa_L}} \\\\ \\hline\n\\htmlData{k=ct.beta}{\\beta} & 1 & 0 \\\\\n\\htmlData{k=ct.new}{\\mathsf{new}} & 1 & 0 \\\\\n\\htmlData{k=ct.spawn}{\\mathsf{spawn}} & 1 & 0 \\\\\n\\htmlData{k=ct.link}{\\mathsf{link}} & 0 & 0 \\\\\n\\htmlData{k=ct.give}{\\mathsf{send},\\ \\mathsf{select},\\ \\mathsf{close}} & 0 & 1 \\\\\n\\htmlData{k=ct.takek}{\\mathsf{recv},\\ \\mathsf{branch}} & 1 & 1 \\\\\n\\htmlData{k=ct.sync}{\\kappa_{give} + \\kappa_{take}} & 1 & 2\n\\end{array}",
      "variants": {
@@ -1358,7 +1358,7 @@ window.MAP = {
      "id": "rel-atcost",
      "title": "After a step",
      "rocq": "relation/Relation.v: at_cost_E, at_cost_V, at_cost_P",
-     "tex": "\\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\Theta' \\iff \\begin{cases} \\htmlData{k=rel.lfp}{X(W, \\Theta', T, F, e')} & \\dfo{\\kappa_{DF}(\\alpha)}\\annot{\\kappa(\\alpha)} = 0 \\\\ e' \\in \\htmlData{k=th.Erel}{E^{W}_{n-\\dfo{\\kappa_{DF}(\\alpha)}\\annot{\\kappa(\\alpha)}}\\llbracket \\Theta' \\vdash T \\rrbracket^{F}} & \\dfo{\\kappa_{DF}(\\alpha)}\\annot{\\kappa(\\alpha)} > 0 \\end{cases}",
+     "tex": "\\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\Theta' \\iff \\begin{cases} \\htmlData{k=rel.lfp}{X(W, \\Theta', T, F, e')} & \\dfo{\\htmlData{k=ct.DF}{\\kappa_{DF}}(\\alpha)}\\annot{\\htmlData{k=ct.table}{\\kappa}(\\alpha)} = 0 \\\\ e' \\in \\htmlData{k=th.Erel}{E^{W}_{n-\\dfo{\\htmlData{k=ct.DF}{\\kappa_{DF}}(\\alpha)}\\annot{\\htmlData{k=ct.table}{\\kappa}(\\alpha)}}\\llbracket \\Theta' \\vdash T \\rrbracket^{F}} & \\dfo{\\htmlData{k=ct.DF}{\\kappa_{DF}}(\\alpha)}\\annot{\\htmlData{k=ct.table}{\\kappa}(\\alpha)} > 0 \\end{cases}",
      "caption": "The reading of a successor $e'$ after a step $\\alpha$ taken at level $n$, where $X$ is the least fixpoint under construction.",
      "modes": [
       "df",
@@ -1630,7 +1630,7 @@ window.MAP = {
      "id": "p-obl",
      "title": "Obligations of process steps",
      "rocq": "relation/Relation.v: q_tau, q_send, q_recv, q_close, q_select, q_branch, q_link",
-     "tex": "\\begin{array}{ll}\n\\htmlData{k=Q-Tau}{\\textsf{Q-Tau}} & C' \\cap \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma = \\varnothing \\Rightarrow \\htmlData{k=rel.atcost}{p'\\ \\text{at}}\\ \\Sigma \\text{ after cost } \\htmlData{k=ct.sync}{\\dfo{\\kappa_{DF}(ev)}\\annot{\\kappa(ev)}} \\\\\n\\htmlData{k=Q-Send}{\\textsf{Q-Send}} & \\htmlData{k=sr.head}{\\Sigma(o) \\doteq \\htmlData{k=sty.send}{!(\\bar\\iota.\\ U)}.S@x} \\land \\Sigma \\setminus o = \\Sigma_v \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Sigma_r \\land {} \\\\\n & \\htmlData{k=Q-Send.theta-e}{\\forall o'.\\ o' \\in \\mathrm{dom}\\,\\Theta_e \\iff o' \\in \\htmlData{k=syn.fends}{\\mathsf{fends}}(w) \\land \\htmlData{k=end.ech}{\\mathsf{ech}}(o') \\in C} \\land {} \\\\\n & \\htmlData{k=Q-Send.split}{\\mathsf{send\\_split}\\,\\Sigma\\,\\Sigma_e\\,\\Theta_e} \\land w \\in \\htmlData{k=th.Vrel}{V^{W}_{\\dfo{n}\\annot{n-\\kappa_{give}}}\\llbracket \\Sigma_v \\cup \\Theta_e \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket} \\land {} \\\\\n & \\htmlData{k=rel.atcost}{p'\\ \\text{at}}\\ (\\Sigma_r \\cup \\htmlData{k=Q-Send.sigma-e}{\\Sigma_e})[o \\mapsto S@x^{+}] \\\\\n\\htmlData{k=Q-Recv}{\\textsf{Q-Recv}} & \\htmlData{k=sr.head}{\\Sigma(o) \\doteq \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ U)}.S@x} \\land \\forall j, \\Theta_2.\\ \\dfo{j < n}\\annot{j + \\kappa_{take} \\leq n} \\land {} \\\\\n & \\htmlData{k=end.ech}{\\mathsf{ech}}[\\mathrm{dom}\\,\\Theta_2] \\cap C = \\varnothing \\land \\htmlData{k=Q-Recv.ok}{\\mathsf{recv\\_ok}\\,\\Sigma'\\,\\Theta_2} \\land w \\in \\htmlData{k=th.Vrel}{V^{W}_{j}\\llbracket \\Theta_2 \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket} \\Rightarrow {} \\\\\n & \\quad (C' \\cup \\htmlData{k=Q-Recv.back}{\\mathsf{recv\\_back}\\,\\Sigma'\\,\\Theta_2}, E') \\in \\htmlData{k=th.Prel}{P^{W}_{j}\\llbracket \\htmlData{k=Q-Recv.env}{\\mathsf{recv\\_env}\\,\\Sigma'\\,\\Theta_2} \\vdash T \\rrbracket} \\\\\n\\htmlData{k=Q-Link}{\\textsf{Q-Close, Q-Select,}} & \\text{the term obligations with } \\Sigma \\text{ for } \\Theta \\text{ and } P \\text{ for } E \\\\\n\\htmlData{k=Q-Link}{\\textsf{Q-Branch, Q-Link}} & \\text{where } p = (C, E),\\ p' = (C', E'),\\ \\Sigma' = \\Sigma[o \\mapsto S@x^{+}]\n\\end{array}",
+     "tex": "\\begin{array}{ll}\n\\htmlData{k=Q-Tau}{\\textsf{Q-Tau}} & C' \\cap \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma = \\varnothing \\Rightarrow \\htmlData{k=rel.atcost}{p'\\ \\text{at}}\\ \\Sigma \\text{ after cost } \\htmlData{k=ct.sync}{\\dfo{\\htmlData{k=ct.DF}{\\kappa_{DF}}(ev)}\\annot{\\htmlData{k=ct.table}{\\kappa}(ev)}} \\\\\n\\htmlData{k=Q-Send}{\\textsf{Q-Send}} & \\htmlData{k=sr.head}{\\Sigma(o) \\doteq \\htmlData{k=sty.send}{!(\\bar\\iota.\\ U)}.S@x} \\land \\Sigma \\setminus o = \\Sigma_v \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Sigma_r \\land {} \\\\\n & \\htmlData{k=Q-Send.theta-e}{\\forall o'.\\ o' \\in \\mathrm{dom}\\,\\Theta_e \\iff o' \\in \\htmlData{k=syn.fends}{\\mathsf{fends}}(w) \\land \\htmlData{k=end.ech}{\\mathsf{ech}}(o') \\in C} \\land {} \\\\\n & \\htmlData{k=Q-Send.split}{\\mathsf{send\\_split}\\,\\Sigma\\,\\Sigma_e\\,\\Theta_e} \\land w \\in \\htmlData{k=th.Vrel}{V^{W}_{\\dfo{n}\\annot{n-\\kappa_{give}}}\\llbracket \\Sigma_v \\cup \\Theta_e \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket} \\land {} \\\\\n & \\htmlData{k=rel.atcost}{p'\\ \\text{at}}\\ (\\Sigma_r \\cup \\htmlData{k=Q-Send.sigma-e}{\\Sigma_e})[o \\mapsto S@x^{+}] \\\\\n\\htmlData{k=Q-Recv}{\\textsf{Q-Recv}} & \\htmlData{k=sr.head}{\\Sigma(o) \\doteq \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ U)}.S@x} \\land \\forall j, \\Theta_2.\\ \\dfo{j < n}\\annot{j + \\kappa_{take} \\leq n} \\land {} \\\\\n & \\htmlData{k=end.ech}{\\mathsf{ech}}[\\mathrm{dom}\\,\\Theta_2] \\cap C = \\varnothing \\land \\htmlData{k=Q-Recv.ok}{\\mathsf{recv\\_ok}\\,\\Sigma'\\,\\Theta_2} \\land w \\in \\htmlData{k=th.Vrel}{V^{W}_{j}\\llbracket \\Theta_2 \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket} \\Rightarrow {} \\\\\n & \\quad (C' \\cup \\htmlData{k=Q-Recv.back}{\\mathsf{recv\\_back}\\,\\Sigma'\\,\\Theta_2}, E') \\in \\htmlData{k=th.Prel}{P^{W}_{j}\\llbracket \\htmlData{k=Q-Recv.env}{\\mathsf{recv\\_env}\\,\\Sigma'\\,\\Theta_2} \\vdash T \\rrbracket} \\\\\n\\htmlData{k=Q-Link}{\\textsf{Q-Close, Q-Select,}} & \\text{the term obligations with } \\Sigma \\text{ for } \\Theta \\text{ and } P \\text{ for } E \\\\\n\\htmlData{k=Q-Link}{\\textsf{Q-Branch, Q-Link}} & \\text{where } p = (C, E),\\ p' = (C', E'),\\ \\Sigma' = \\Sigma[o \\mapsto S@x^{+}]\n\\end{array}",
      "caption": "Internal steps keep the interface, and external messages move ends between the interface and the restricted channels.",
      "modes": [
       "df",
@@ -7396,21 +7396,21 @@ window.MAP = {
    ]
   },
   "ct.DF": {
-   "title": "$\\kappa_{DF}$",
-   "what": "The table $(1,1,1,0,0,1)$.",
-   "why": "Every step of cost $0$ under $\\kappa_{DF}$ is a give or a link, which shrinks the term, so the least fixpoint of a level is a recursion on the term.",
+   "title": "$\\kappa_{DF}$, the step index",
+   "what": "The table $(1,1,1,0,0,1)$. It is the ordinary step index of a logical relation. Almost every step costs one level, and only a send, select, close or link costs none.",
+   "why": "A step index lets $V$ and $E$ refer to themselves at lower levels, which recursion and received closures need. The four free steps each shrink the term, so the successor can be checked at the same level by recursion on the term, and a send can hand its payload over at the level of the continuation.",
    "breaks": "Nothing. It is a definition.",
-   "example": "Under $\\kappa_{DF}$ a send costs $0$ and a receive $1$.",
+   "example": "$\\beta$ and $\\mathsf{recv}$ cost one level, $\\mathsf{send}$ costs none.",
    "rocq": "relation/CostTable.v: κ_DF",
    "sig": "\\kappa_{DF} = (1,1,1,0,0,1) \\in \\mathsf{CTable}",
    "args": []
   },
   "ct.L": {
-   "title": "$\\kappa_L$",
-   "what": "The table $(0,0,0,0,1,1)$.",
-   "why": "Under $\\kappa_L$ exactly the internal steps cost $0$, so the least fixpoint of a level excludes infinite sequences of internal steps.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "Under $\\kappa_L$ a synchronization costs $2$.",
+   "title": "$\\kappa_L$, the live table",
+   "what": "The table $(0,0,0,0,1,1)$. Internal steps, $\\beta$, $\\mathsf{new}$, $\\mathsf{spawn}$ and $\\mathsf{link}$, cost nothing, and only session actions cost a level.",
+   "why": "A free step is checked inside the least fixpoint of the current level, and a least fixpoint admits only finitely many steps in a row. So a term in the relation at $\\kappa_L$ cannot take infinitely many internal steps without an action, which is absence of internal divergence. Lock freedom needs it, because a thread that loops internally never serves its partner. It is not about paying for messages.",
+   "breaks": "$!(f = \\\\mathsf{force}\\\\,f)$ steps by $\\\\beta$ forever and is in no level at $\\\\kappa_L$, while it is in every level at $\\\\kappa_{DF}$.",
+   "example": "Under $\\kappa_L$ a synchronization costs $2$, one level for each side.",
    "rocq": "relation/CostTable.v: κ_L",
    "sig": "\\kappa_L = (0,0,0,0,1,1) \\in \\mathsf{CTable}",
    "args": []

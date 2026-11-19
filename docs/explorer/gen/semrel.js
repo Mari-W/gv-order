@@ -24,7 +24,7 @@ const SND = (U) => h('sty.send', R`!(\bar\iota.\ ${U})`);
 const RCV = (U) => h('sty.recv', R`?(\bar\iota.\ ${U})`);
 // the deadlock-free reading of a level condition, and its lock-free reading under a general table
 const DL = (df, lf) => R`\dfo{${df}}\annot{${lf}}`;
-const KA = DL(R`\kappa_{DF}(\alpha)`, R`\kappa(\alpha)`);
+const KA = DL(R`${h('ct.DF', R`\kappa_{DF}`)}(\alpha)`, R`${h('ct.table', R`\kappa`)}(\alpha)`);
 const LT = (j, k) => DL(R`${j} < n`, R`${j} + \kappa_{${k}} \leq n`);
 // an end whose protocol unfolds to a given head
 const HD = (env, o, form, x) => h('sr.head', R`${env}(${o}) \doteq ${form}@${x}`);
@@ -53,7 +53,7 @@ ${h('ct.take-pos', R`1 \leq \kappa_{take}`)} \qquad ${h('ct.give-pos', R`\kappa_
   caption: 'A cost table $\\kappa$ assigns a cost to each kind of step, subject to three conditions.'
 });
 block(s, {
-  id: 'ct-two', title: 'The two tables', rocq: 'relation/CostTable.v: κ_DF, κ_L, ev_cost',
+  id: 'ct-two', title: 'Step costs', rocq: 'relation/CostTable.v: κ_DF, κ_L, ev_cost',
   tex: R`\begin{array}{lcc}
  & ${h('ct.DF', R`\kappa_{DF}`)} & ${h('ct.L', R`\kappa_L`)} \\ \hline
 ${h('ct.beta', R`\beta`)} & 1 & 0 \\
@@ -235,7 +235,7 @@ ${h('fuse.dpairs', R`\mathsf{dpairs}\,D\,\Sigma \iff \forall o.\ ${ECH}\,o \in D
 block(s, {
   id: 'p-obl', title: 'Obligations of process steps', rocq: 'relation/Relation.v: q_tau, q_send, q_recv, q_close, q_select, q_branch, q_link',
   tex: R`\begin{array}{ll}
-${h('Q-Tau', R`\textsf{Q-Tau}`)} & C' \cap ${h('tp.chans', R`\mathsf{chans}`)}\,\Sigma = \varnothing \Rightarrow ${AT(R`p'`)}\ \Sigma \text{ after cost } ${h('ct.sync', DL(R`\kappa_{DF}(ev)`, R`\kappa(ev)`))} \\
+${h('Q-Tau', R`\textsf{Q-Tau}`)} & C' \cap ${h('tp.chans', R`\mathsf{chans}`)}\,\Sigma = \varnothing \Rightarrow ${AT(R`p'`)}\ \Sigma \text{ after cost } ${h('ct.sync', DL(R`${h('ct.DF', R`\kappa_{DF}`)}(ev)`, R`${h('ct.table', R`\kappa`)}(ev)`))} \\
 ${h('Q-Send', R`\textsf{Q-Send}`)} & ${HD(R`\Sigma`, 'o', R`${SND('U')}.S`, 'x')} \land \Sigma \setminus o = \Sigma_v ${UPL} \Sigma_r \land {} \\
  & ${h('Q-Send.theta-e', R`\forall o'.\ o' \in \mathrm{dom}\,\Theta_e \iff o' \in ${FENDS}(w) \land ${ECH}(o') \in C`)} \land {} \\
  & ${h('Q-Send.split', R`\mathsf{send\_split}\,\Sigma\,\Sigma_e\,\Theta_e`)} \land w \in ${V('W', DL('n', R`n-\kappa_{give}`), R`\Sigma_v \cup \Theta_e`, PAY('U', 'x'))} \land {} \\
@@ -383,8 +383,8 @@ n('ct.table', R`Cost table $\kappa$`, R`A sextuple $\kappa \in \mathbb{N}^6$ of 
 n('ct.take-pos', R`$1 \leq \kappa_{take}$`, R`Receive and branch cost at least one level.`, R`A receive reads $V$ of its payload negatively at the level of its continuation, so that level is $j < n$ and $V_n$ is well defined.`, R`With $\kappa_{take} = 0$, $V_n$ would quantify negatively over $V_n$ and the fixpoint would not exist.`, R`Both tables have $\kappa_{take} = 1$.`, 'relation/CostTable.v: c_take_pos');
 n('ct.give-pos', R`$\kappa_\beta = 0 \Rightarrow 1 \leq \kappa_{give}$`, R`If $\beta$ is free, a give costs at least one level.`, R`For $\kappa_\beta = 0$, $V_n$ and $E_n$ are defined together by recursion on the size of the type, and a free send would read $V_n$ at a payload type of any size.`, DEF, R`$\kappa_L$ has $\kappa_\beta = 0$ and $\kappa_{give} = 1$.`, 'relation/CostTable.v: c_give_pos');
 n('ct.give-take', R`$\kappa_{give} \leq \kappa_{take}$`, R`A give costs at most a take.`, R`A synchronization costs $\kappa_{give} + \kappa_{take}$, and composing two components pays a synchronization of two gives, which needs $2\kappa_{give} \leq \kappa_{give} + \kappa_{take}$.`, DEF, R`$\kappa_{DF}$ has $0 \leq 1$ and $\kappa_L$ has $1 \leq 1$.`, 'relation/CostTable.v: c_give_take');
-n('ct.DF', R`$\kappa_{DF}$`, R`The table $(1,1,1,0,0,1)$.`, R`Every step of cost $0$ under $\kappa_{DF}$ is a give or a link, which shrinks the term, so the least fixpoint of a level is a recursion on the term.`, DEF, R`Under $\kappa_{DF}$ a send costs $0$ and a receive $1$.`, 'relation/CostTable.v: κ_DF');
-n('ct.L', R`$\kappa_L$`, R`The table $(0,0,0,0,1,1)$.`, R`Under $\kappa_L$ exactly the internal steps cost $0$, so the least fixpoint of a level excludes infinite sequences of internal steps.`, DEF, R`Under $\kappa_L$ a synchronization costs $2$.`, 'relation/CostTable.v: κ_L');
+n('ct.DF', R`$\kappa_{DF}$, the step index`, R`The table $(1,1,1,0,0,1)$. It is the ordinary step index of a logical relation. Almost every step costs one level, and only a send, select, close or link costs none.`, R`A step index lets $V$ and $E$ refer to themselves at lower levels, which recursion and received closures need. The four free steps each shrink the term, so the successor can be checked at the same level by recursion on the term, and a send can hand its payload over at the level of the continuation.`, DEF, R`$\beta$ and $\mathsf{recv}$ cost one level, $\mathsf{send}$ costs none.`, 'relation/CostTable.v: κ_DF');
+n('ct.L', R`$\kappa_L$, the live table`, R`The table $(0,0,0,0,1,1)$. Internal steps, $\beta$, $\mathsf{new}$, $\mathsf{spawn}$ and $\mathsf{link}$, cost nothing, and only session actions cost a level.`, R`A free step is checked inside the least fixpoint of the current level, and a least fixpoint admits only finitely many steps in a row. So a term in the relation at $\kappa_L$ cannot take infinitely many internal steps without an action, which is absence of internal divergence. Lock freedom needs it, because a thread that loops internally never serves its partner. It is not about paying for messages.`, R`$!(f = \\mathsf{force}\\,f)$ steps by $\\beta$ forever and is in no level at $\\kappa_L$, while it is in every level at $\\kappa_{DF}$.`, R`Under $\kappa_L$ a synchronization costs $2$, one level for each side.`, 'relation/CostTable.v: κ_L');
 n('ct.beta', R`Cost $\kappa_\beta$`, R`The cost of application, pair and unit elimination, case and force.`, R`An arrow reads its body at every $j < n$ under $\kappa_{DF}$. \annp{Under a general table it reads every $j$ with $j + \kappa_\beta \leq n$, so one arrow clause also serves $j \leq n$ for $\kappa_L$.}`, DEF, R`$(\lambda e)\,v \xrightarrow{\beta} e[v]$ costs $\kappa_\beta$.`, 'relation/CostTable.v: c_beta');
 n('ct.new', R`Cost $\kappa_{new}$`, R`The cost of $\mathsf{new}$.`, R`Creation synchronizes with nobody, so $\kappa_L$ counts it as an internal step.`, DEF, R`$\kappa_L(\mathsf{new}) = 0$.`, 'relation/CostTable.v: c_new');
 n('ct.spawn', R`Cost $\kappa_{spawn}$`, R`The cost of $\mathsf{spawn}$.`, R`For $\kappa_{spawn} = 0$ the child thunk is read inside the least fixpoint of the parent, so an infinite chain of spawns is in no $E_n$.`, DEF, R`$\kappa_L(\mathsf{spawn}) = 0$.`, 'relation/CostTable.v: c_spawn');

@@ -254,6 +254,12 @@ must do, open questions.
 
 ## Open discussion (not scheduled)
 
+- **Cross-references everywhere on the map (author 2026-11-19, another
+  day).** Every symbol in every formula should be hoverable and lead to
+  its definition, which needs a restructure of the generator (one
+  definition site per symbol, references by key). Today only the parts
+  wrapped by hand or by the automatic word list are hoverable.
+
 - **Link budgets per end.** Per-thread link tickets reject a box that links
   once per round forever (e.g. a server linking each new client to a
   worker) and received closures that link. A budget per end in the session
