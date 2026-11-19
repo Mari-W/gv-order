@@ -54,7 +54,7 @@ Proof. unfold chans_of. by rewrite dom_union_L, set_map_union_L. Qed.
 Lemma chans_dom_disj (Σ1 Σ2 : senv) : chans_of Σ1 ## chans_of Σ2 → dom Σ1 ## dom Σ2.
 Proof. intros H o H1 H2. apply (H (ech o)); by apply chans_of_elem. Qed.
 
-Local Instance edual_inj_c : Inj eq eq edual.
+Local Instance edual_inj_c : base.Inj eq eq edual.
 Proof. intros o o' H. by rewrite <-(edual_edual o), H, edual_edual. Qed.
 
 (** Σ̄ holds the partner of each end of Σ at the dual type and point. *)

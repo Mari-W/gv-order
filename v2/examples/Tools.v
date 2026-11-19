@@ -18,7 +18,7 @@ Fixpoint occ (i : nat) (e : expr) : bool :=
   | Lam e | EBox e => occ (S i) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => occ i e1 || occ i e2
   | LetP e1 e2 => occ i e1 || occ (S (S i)) e2
-  | Inj1 e | Inj2 e | Op _ e => occ i e
+  | Inj _ e | Op _ e => occ i e
   | Case e e1 e2 => occ i e || occ (S i) e1 || occ (S i) e2
   end.
 

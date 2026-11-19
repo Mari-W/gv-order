@@ -130,7 +130,6 @@ Proof.
   - destruct H as [H|H]; [left; auto|right; auto].
   - destruct H as [H|H]; [left; auto|right; apply (IHe2 (S (S y)) (upren (upren r)) H)].
   - auto.
-  - auto.
   - destruct H as [H|[H|H]]; [left; auto|right; left; apply (IHe2 (S y) (upren r) H)
                               |right; right; apply (IHe3 (S y) (upren r) H)].
   - apply (IHe (S y) (upren r) H).
@@ -148,7 +147,6 @@ Proof.
   - destruct H as [H|H]; [destruct (IHe1 y r H) as (z & ? & ?); exists z; tauto|].
     destruct (IHe2 (S (S y)) (upren (upren r)) H) as ([|[|z]] & Hz & E); try done. simpl in E.
     injection E as <-. exists z. tauto.
-  - eauto.
   - eauto.
   - destruct H as [H|[H|H]]; [destruct (IHe1 y r H) as (z & ? & ?); exists z; tauto| |].
     + destruct (IHe2 (S y) (upren r) H) as ([|z] & Hz & E); try done. simpl in E.
@@ -223,7 +221,6 @@ Proof.
     split; [congruence|]. eapply vfacts_split; [done|done|].
     eapply vfacts_lsame; [by eapply lage_lsame|]. by eapply (vfacts_under2 _ _ _ (λ x, freevar x _)).
   - split; done.
-  - split; done.
   - (* e_case *)
     split; [set_solver|]. eapply vfacts_split; [done|done|].
     eapply vfacts_lsame; [by eapply lage_lsame|].
@@ -269,7 +266,6 @@ Proof.
   - split; [apply IHe1; intros x Hx; apply H; tauto|].
     apply IHe2. apply (upP_of _ (λ y, freevar y e2)). apply (upP_of _ (λ y, freevar (S y) e2)).
     intros x Hx. apply H. tauto.
-  - by apply IHe.
   - by apply IHe.
   - split_and!; [apply IHe1; intros x Hx; apply H; tauto| |].
     + apply IHe2. apply (upP_of _ (λ y, freevar y e2)). intros x Hx. apply H. tauto.

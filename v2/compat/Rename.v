@@ -71,7 +71,6 @@ Proof.
   destruct 1; simpl; intros Hok; rewrite ?emap_subst1, ?emap_subst2, ?set_map_upair, <-?fends_emap.
   all: try (match type of Hok with gpol _ _ => destruct Hok as [Hp Hn]; rewrite Hp, Hn; constructor end).
   all: try (constructor; by rewrite ?is_val_emap).
-  all: try (match goal with |- context [inj_of ?i] => destruct i; constructor end).
 Qed.
 
 Lemma tstep_emap g e α e' :

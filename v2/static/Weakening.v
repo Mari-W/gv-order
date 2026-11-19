@@ -556,8 +556,7 @@ Proof.
     eapply e_letp; [done|exact Hs| |done|exact Ha| |done].
     + rewrite (lren_heads _ _ _ Hr2), (lren_bot _ _ _ Hr2). by apply IHtyped1.
     + by apply IHtyped2, lren_up, lren_up.
-  - by eapply e_inj1, IHtyped.
-  - by eapply e_inj2, IHtyped.
+  - by eapply e_inj, IHtyped.
   - ren_split Hr.
     eapply e_case; [done|exact Hs| |done|exact Ha| | |done].
     + rewrite (lren_heads _ _ _ Hr2), (lren_bot _ _ _ Hr2). by apply IHtyped1.

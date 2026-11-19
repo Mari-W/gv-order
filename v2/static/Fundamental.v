@@ -354,8 +354,7 @@ Section fund.
   Context (HGletu : ∀ L e1 e2, G L (LetU e1 e2) → ∃ L', cmarks κ L L' e1 ∧ G L e1 ∧ G L' e2).
   Context (HGletp : ∀ L e1 e2, G L (LetP e1 e2) →
              ∃ L', cmarks κ L L' e1 ∧ G L e1 ∧ G (false .: false .: L') e2).
-  Context (HGinj1 : ∀ L e, G L (Inj1 e) → G L e).
-  Context (HGinj2 : ∀ L e, G L (Inj2 e) → G L e).
+  Context (HGinj : ∀ L b e, G L (Inj b e) → G L e).
   Context (HGcase : ∀ L e e1 e2, G L (Case e e1 e2) →
              ∃ L', cmarks κ L L' e ∧ G L e ∧ G (false .: L') e1 ∧ G (false .: L') e2).
 
@@ -379,8 +378,7 @@ Section fund.
       |Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 T1 a1 T1' a1' T2 a2 c1 t1 c2 t2 Hsp Hl H1 IH1 Hta Hla H2 IH2 Hag Hok
       |Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 a T aT c1 t1 c2 t2 Hsp Hl H1 IH1 Hta Hla H2 IH2 Hok
       |Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 T1 a1 T2 a2 a T aT c1 t1 c2 t2 Hsp Hl H1 IH1 Hta Hla H2 IH2 Hok
-      |Θ Γ Δ F e T a U b c t H IH
-      |Θ Γ Δ F e T a U b c t H IH
+      |i Θ Γ Δ F e T a U b c t H IH
       |Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e e1 e2 T1 a1 T2 a2 a T aT c0 t0 c1 t1 c2 t2 Hsp Hl H0 IH0 Hta Hla H1 IH1 H2 IH2 Hok
       |Γ Δ F e m k C ub c t U aU φ HΔ Hφ Hb IH
       |Θ Γ Δ F e m k C ub c t U aU a xs ss c0 t0 Hxs HC Hss Hsi Hub H IH Hok
@@ -458,10 +456,8 @@ Section fund.
         apply (lenv_df_pinst_eq σ (Some (T2, fadd a a2) :: Some (T1, fadd a a1) :: Δ2)
           (Some (T2, fadd a a2) :: Some (T1, fadd a a1) :: Δ2')), lenv_df_cons_eq, lenv_df_cons_eq.
         exact (lage_df_eq _ _ _ Hla).
-    - (* E-Inj1 *)
-      apply later_inj1. exact (IH L (HGinj1 _ _ Hgl) W1 σ ρ B HW Hs).
-    - (* E-Inj2 *)
-      apply later_inj2. exact (IH L (HGinj2 _ _ Hgl) W1 σ ρ B HW Hs).
+    - (* E-Inj *)
+      apply later_inj. destruct i; exact (IH L (HGinj _ _ _ Hgl) W1 σ ρ B HW Hs).
     - (* E-Case *)
       destruct (HGcase _ _ _ _ Hgl) as (L' & Hk & Hg0 & Hg1 & Hg2).
       eapply (later_case κ _ _ _ _ _ _ _ _ _ _ _ _ _ (pinst_ty σ T1) a1 (pinst_ty σ T2) a2 (fadd a a1) (fadd a a2));
@@ -581,7 +577,7 @@ Lemma typed_sem_df W N Θ Γ Δ F e T a c t :
   sem_typed_at κ_DF W1 (tenv_pinst σ Θ) (lenv_pinst σ Δ) (sf_den ρ B (sf_pinst σ F)) e (pinst_ty σ T).
 Proof.
   intros Hwf Ht W1 σ ρ B HW Hs. apply sem_later_empty.
-  refine (typed_sem κ_DF nomarks _ _ _ _ _ _ _ _ _ _ _ W N Θ Γ Δ F e T a c t Hwf Ht ∅ _ W1 σ ρ B HW Hs);
+  refine (typed_sem κ_DF nomarks _ _ _ _ _ _ _ _ _ _ W N Θ Γ Δ F e T a c t Hwf Ht ∅ _ W1 σ ρ B HW Hs);
     [..|done]; unfold nomarks.
   - intros L y H. apply H.
   - intros L b H [|x]; [done|apply H].
@@ -597,7 +593,6 @@ Proof.
   - intros L e1 e2 H. exists L. split_and!; [by left|done|done].
   - intros L e1 e2 H. exists L. split_and!; [by left|done|intros [|[|x]]; [done|done|apply H]].
   - done.
-  - done.
   - intros L e0 e1 e2 H. exists L. split_and!; [by left|done|intros [|x]; [done|apply H]|intros [|x]; [done|apply H]].
 Qed.
 
@@ -609,7 +604,7 @@ Lemma typed_sem_live W N Θ Γ Δ F e T a c t :
   sem_typed_at κ_L W1 (tenv_pinst σ Θ) (lenv_pinst σ Δ) (sf_den ρ B (sf_pinst σ F)) e (pinst_ty σ T).
 Proof.
   intros Hwf Ht Hgd W1 σ ρ B HW Hs. apply sem_later_empty.
-  refine (typed_sem κ_L lguard _ _ _ _ _ _ _ _ _ _ _ W N Θ Γ Δ F e T a c t Hwf Ht ∅ Hgd W1 σ ρ B HW Hs).
+  refine (typed_sem κ_L lguard _ _ _ _ _ _ _ _ _ _ W N Θ Γ Δ F e T a c t Hwf Ht ∅ Hgd W1 σ ρ B HW Hs).
   - intros L y H. by inversion H.
   - intros L b H. by inversion H.
   - intros L b H. exists true. split; [by inversion H|]. intros ?????????????. apply later_box.
@@ -618,8 +613,7 @@ Proof.
   - intros L e1 e2 H. inversion H; subst. eexists; split_and!; [|done|done]. apply kmarks_cmarks; [simpl; lia|done].
   - intros L e1 e2 H. inversion H; subst. eexists; split_and!; [|done|done]. apply kmarks_cmarks; [simpl; lia|done].
   - intros L e1 e2 H. inversion H; subst. eexists; split_and!; [|done|done]. apply kmarks_cmarks; [simpl; lia|done].
-  - intros L e0 H. by inversion H.
-  - intros L e0 H. by inversion H.
+  - intros L b0 e0 H. by inversion H.
   - intros L e0 e1 e2 H. inversion H; subst. eexists; split_and!; [|done|done|done]. apply kmarks_cmarks; [simpl; lia|done].
 Qed.
 

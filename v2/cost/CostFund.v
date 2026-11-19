@@ -23,8 +23,7 @@ Proof.
   - by eapply cost_e_pair.
   - by eapply cost_e_letu.
   - by eapply cost_e_letp.
-  - by apply cost_e_inj1.
-  - by apply cost_e_inj2.
+  - by apply cost_e_inj.
   - by eapply cost_e_case.
   - eapply cost_e_box; [|done|done]. eapply (typed_tfacts _ _ _ _ _ (∅, None)). by eapply e_box.
   - by eapply cost_e_force.

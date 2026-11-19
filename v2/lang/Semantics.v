@@ -54,10 +54,10 @@ Inductive head_step : expr → tlabel → expr → Prop :=
       head_step (LetP (Pair u v) e) LBeta (subst2 u v e)
   | t_act_case_inl v e1 e2 :                            (* T-Act-Case-Inl *)
       is_val v →
-      head_step (Case (Inj1 v) e1 e2) LBeta (subst1 v e1)
+      head_step (Case (Inj false v) e1 e2) LBeta (subst1 v e1)
   | t_act_case_inr v e1 e2 :                            (* T-Act-Case-Inr *)
       is_val v →
-      head_step (Case (Inj2 v) e1 e2) LBeta (subst1 v e2)
+      head_step (Case (Inj true v) e1 e2) LBeta (subst1 v e2)
   | t_act_force e :                                     (* T-Act-Force *)
       (* the body resumes with the thunk for its own bound occurrence *)
       head_step (EForce (EBox e)) LBeta (subst1 (EBox e) e)
@@ -81,7 +81,7 @@ Inductive head_step : expr → tlabel → expr → Prop :=
   | t_act_select i o :                                  (* T-Act-Select *)
       head_step (ESel i (Chan o)) (LSess (SSel o i)) (Chan o)
   | t_act_branch i o :                                  (* T-Act-Branch *)
-      head_step (EBra (Chan o)) (LSess (SBra o i)) (inj_of i (Chan o))
+      head_step (EBra (Chan o)) (LSess (SBra o i)) (Inj i (Chan o))
   | t_act_link o1 o2 :                                  (* T-Act-Link *)
       (* the label is a set, so the order of the ends does not matter;
          the ends need not differ, and the relation rejects a self link *)
@@ -96,8 +96,7 @@ Inductive frame :=
   | FPairR (v1 : expr)
   | FLetU (e2 : expr)
   | FLetP (e2 : expr)
-  | FInj1
-  | FInj2
+  | FInj (b : bool)
   | FCase (e1 e2 : expr)
   | FOp (k : prim).
 
@@ -109,8 +108,7 @@ Definition fill_frame (f : frame) (e : expr) : expr :=
   | FPairR v1 => Pair v1 e
   | FLetU e2 => LetU e e2
   | FLetP e2 => LetP e e2
-  | FInj1 => Inj1 e
-  | FInj2 => Inj2 e
+  | FInj b => Inj b e
   | FCase e1 e2 => Case e e1 e2
   | FOp k => Op k e
   end.

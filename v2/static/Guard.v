@@ -46,8 +46,7 @@ Inductive acts : expr → Prop :=
   | acts_letu2 e1 e2 : acts e2 → acts (LetU e1 e2)
   | acts_letp1 e1 e2 : acts e1 → acts (LetP e1 e2)
   | acts_letp2 e1 e2 : acts e2 → acts (LetP e1 e2)
-  | acts_inj1 e : acts e → acts (Inj1 e)
-  | acts_inj2 e : acts e → acts (Inj2 e)
+  | acts_inj b e : acts e → acts (Inj b e)
   | acts_case e e1 e2 : acts e → acts (Case e e1 e2)
   | acts_branches e e1 e2 : acts e1 → acts e2 → acts (Case e e1 e2).
 
@@ -74,8 +73,7 @@ Inductive lguard : (nat → bool) → expr → Prop :=
   | gl_letu L L' e1 e2 : L ⊢▷ e1 → kmarks L L' e1 → L' ⊢▷ e2 → L ⊢▷ (LetU e1 e2)
   | gl_letp L L' e1 e2 : L ⊢▷ e1 → kmarks L L' e1 → (false .: false .: L') ⊢▷ e2 →
       L ⊢▷ (LetP e1 e2)
-  | gl_inj1 L e : L ⊢▷ e → L ⊢▷ (Inj1 e)
-  | gl_inj2 L e : L ⊢▷ e → L ⊢▷ (Inj2 e)
+  | gl_inj L b e : L ⊢▷ e → L ⊢▷ (Inj b e)
   | gl_case L L' e e1 e2 : L ⊢▷ e → kmarks L L' e → (false .: L') ⊢▷ e1 → (false .: L') ⊢▷ e2 →
       L ⊢▷ (Case e e1 e2)
 where "Λ ⊢▷ t" := (lguard Λ t).
@@ -102,7 +100,7 @@ Proof.
   intros HL H. revert L' HL.
   induction H as [L y Hy|L|L o|L ℓ|L b Hb IH|L b Hb IH|L k e He IH
                  |L L1 e1 e2 H1 IH1 Hk H2 IH2|L L1 e1 e2 H1 IH1 Hk H2 IH2|L L1 e1 e2 H1 IH1 Hk H2 IH2
-                 |L L1 e1 e2 H1 IH1 Hk H2 IH2|L e He IH|L e He IH|L L1 e e1 e2 H0 IH0 Hk H1 IH1 H2 IH2];
+                 |L L1 e1 e2 H1 IH1 Hk H2 IH2|L b0 e He IH|L L1 e e1 e2 H0 IH0 Hk H1 IH1 H2 IH2];
     intros L0 HL; try (by constructor; auto).
   - constructor. by rewrite <-HL.
   - constructor. apply IH. intros [|x]; simpl; auto.
@@ -175,7 +173,7 @@ Lemma guard_rename_fwd L' e : lguard L' e → ∀ L r, (∀ x, L' x = L (r x)) �
 Proof.
   induction 1 as [L y Hy|L|L o|L ℓ|L b Hb IH|L b Hb IH|L k e He IH
                  |L L1 e1 e2 H1 IH1 Hk H2 IH2|L L1 e1 e2 H1 IH1 Hk H2 IH2|L L1 e1 e2 H1 IH1 Hk H2 IH2
-                 |L L1 e1 e2 H1 IH1 Hk H2 IH2|L e He IH|L e He IH|L L1 e e1 e2 H0 IH0 Hk H1 IH1 H2 IH2];
+                 |L L1 e1 e2 H1 IH1 Hk H2 IH2|L b0 e He IH|L L1 e e1 e2 H0 IH0 Hk H1 IH1 H2 IH2];
     intros L0 r HL; simpl.
   - constructor. by rewrite <-HL.
   - constructor.
@@ -189,8 +187,7 @@ Proof.
   - destruct (kmarks_rename_fwd _ _ _ _ _ Hk HL) as (L2 & Hk' & HL2). eapply gl_letu; [eauto|exact Hk'|eauto].
   - destruct (kmarks_rename_fwd _ _ _ _ _ Hk HL) as (L2 & Hk' & HL2). eapply gl_letp; [eauto|exact Hk'|].
     apply IH2. intros [|[|x]]; simpl; auto.
-  - apply gl_inj1; eauto.
-  - apply gl_inj2; eauto.
+  - apply gl_inj; eauto.
   - destruct (kmarks_rename_fwd _ _ _ _ _ Hk HL) as (L2 & Hk' & HL2). eapply gl_case; [eauto|exact Hk'| |];
       [apply IH1|apply IH2]; intros [|x]; simpl; auto.
 Qed.

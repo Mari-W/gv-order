@@ -2035,3 +2035,14 @@ The old development in theories/ stays untouched.
   `kmarks_rename` and `kmarks_rename_fwd`. examples/GuardEx.v,
   `guard_tac` (examples/LFTools.v) pick `Λ' = Λ` by `left` where they
   used the rules without tick.
+- M.5. One injection former (decision of 2026-11-18, cleanup). `Inj (b
+  : bool) e` replaces `Inj1 e` and `Inj2 e` (lang/Syntax.v, false the
+  left side), `FInj b` the two frames, and `inj_of` is gone (T-Act-Branch
+  returns `Inj i (Chan o)`). One rule each: `e_inj i` (premise at `if i
+  then U else T` with credit `if i then b else a`), `d_inj`, `gl_inj`,
+  `acts_inj`, `later_inj`, `cost_e_inj`, `Vfuel_inj`, and the guard
+  hypothesis `HGinj` of `typed_sem`. The two β rules of case keep their
+  names and read `Case (Inj false v)` and `Case (Inj true v)`, and the
+  sum clauses of V and FV read `v = Inj false v'` and `v = Inj true v'`
+  (same clauses, renamed constructor). The constructor `Inj` shadows the
+  stdpp class of injective maps, so four instances write `base.Inj`.

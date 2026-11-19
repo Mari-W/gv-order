@@ -106,8 +106,8 @@ Proof. rewrite Vfuel_eq. simpl. setoid_rewrite Vfuel_eq. simpl. done. Qed.
 
 Lemma Vfuel_sum_inv N n T1 a1 T2 a2 a Π φ v :
   v ∈ FV^N _ n⟦RTy (TSum T1 a1 T2 a2) a⟧(Π, φ) →
-  (∃ v', v = Inj1 v' ∧ v' ∈ FV^N _ n⟦RTy T1 (fadd a a1)⟧(Π, φ)) ∨
-  (∃ v', v = Inj2 v' ∧ v' ∈ FV^N _ n⟦RTy T2 (fadd a a2)⟧(Π, φ)).
+  (∃ v', v = Inj false v' ∧ v' ∈ FV^N _ n⟦RTy T1 (fadd a a1)⟧(Π, φ)) ∨
+  (∃ v', v = Inj true v' ∧ v' ∈ FV^N _ n⟦RTy T2 (fadd a a2)⟧(Π, φ)).
 Proof. rewrite Vfuel_eq. simpl. setoid_rewrite Vfuel_eq. simpl. done. Qed.
 
 Lemma Vfuel_unit_inv N n a Π φ v : v ∈ FV^N _ n⟦RTy TUnit a⟧(Π, φ) → v = EUnit ∧ Π = ∅ ∧ φ = ∅.
@@ -287,8 +287,8 @@ Proof.
   unfold refill. rewrite delete_singleton_eq, fmap_empty_c, ?insert_empty, insert_singleton, decide_True by done.
   assert (fle Nt N') as HN' by (apply rle_fle; by eapply rle_trans).
   apply FuelE_val; [by destruct i|done|]. destruct i; simpl.
-  - apply Vfuel_inj2. rewrite fadd_0_l. by apply Vfuel_sess_intro.
-  - apply Vfuel_inj1. rewrite fadd_0_l. by apply Vfuel_sess_intro.
+  - apply (Vfuel_inj true). rewrite fadd_0_l. by apply Vfuel_sess_intro.
+  - apply (Vfuel_inj false). rewrite fadd_0_l. by apply Vfuel_sess_intro.
 Qed.
 
 Lemma link_redex N n S x a1 a2 a0 Π φ tk d r v :

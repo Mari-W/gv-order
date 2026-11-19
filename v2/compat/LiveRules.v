@@ -835,7 +835,7 @@ Section later.
     apply Vrel_sum_iff in HV as [(v' & -> & HV)|(v' & -> & HV)];
       pose proof (Vrel_val κ _ _ _ _ _ HV) as Hv.
     - apply (beta_det κ _ (subst (v' .: γ) e1)).
-      + intros α e'' Hst. assert (head_step (Case (Inj1 v') (subst (up γ) e1) (subst (up γ) e2)) α e'')
+      + intros α e'' Hst. assert (head_step (Case (Inj false v') (subst (up γ) e1) (subst (up γ) e2)) α e'')
           as Hh by head_only.
         inversion Hh; subst. split; [done|]. by rewrite subst1_subst.
       + rewrite <-(subst1_subst v' γ e1). by apply tstep_head, t_act_case_inl.
@@ -845,7 +845,7 @@ Section later.
           { eapply Vrel_down; [|exact HV]. lia. }
           { eapply GrelL_down; [|exact HG2]. lia. }
     - apply (beta_det κ _ (subst (v' .: γ) e2)).
-      + intros α e'' Hst. assert (head_step (Case (Inj2 v') (subst (up γ) e1) (subst (up γ) e2)) α e'')
+      + intros α e'' Hst. assert (head_step (Case (Inj true v') (subst (up γ) e1) (subst (up γ) e2)) α e'')
           as Hh by head_only.
         inversion Hh; subst. split; [done|]. by rewrite subst1_subst.
       + rewrite <-(subst1_subst v' γ e2). by apply tstep_head, t_act_case_inr.
@@ -856,18 +856,11 @@ Section later.
           { eapply GrelL_down; [|exact HG2]. lia. }
   Qed.
 
-  Lemma later_inj1 W Θ Δ L F e T a U b :
-    sem_later κ W Θ Δ L F e T → sem_later κ W Θ Δ L F (Inj1 e) (TSum T a U b).
+  Lemma later_inj (i : bool) W Θ Δ L F e T a U b :
+    sem_later κ W Θ Δ L F e (if i then U else T) → sem_later κ W Θ Δ L F (Inj i e) (TSum T a U b).
   Proof.
-    apply (later_frame0 FInj1); [done|done|]. intros W' j Θv v _ HV.
-    apply Vrel_Erel, Vrel_sum_iff. left. eauto.
-  Qed.
-
-  Lemma later_inj2 W Θ Δ L F e T a U b :
-    sem_later κ W Θ Δ L F e U → sem_later κ W Θ Δ L F (Inj2 e) (TSum T a U b).
-  Proof.
-    apply (later_frame0 FInj2); [done|done|]. intros W' j Θv v _ HV.
-    apply Vrel_Erel, Vrel_sum_iff. right. eauto.
+    apply (later_frame0 (FInj i)); [done|done|]. intros W' j Θv v _ HV.
+    apply Vrel_Erel, Vrel_sum_iff. destruct i; [right|left]; eauto.
   Qed.
 
   (** *** Structure *)

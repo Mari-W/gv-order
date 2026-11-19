@@ -12,7 +12,7 @@
     - F3. [FuelE_beta]: a head β step in an evaluation context lifts
       FuelE by one level.
     - F6. Values from their parts ([Vfuel_unit], [Vfuel_end],
-      [Vfuel_pair], [Vfuel_inj1], [Vfuel_inj2], [Vfuel_pack]), points
+      [Vfuel_pair], [Vfuel_inj], [Vfuel_pack]), points
       are not read ([Vfuel_pinst]), and a result type that implies
       another ([FuelE_res_mono], [FuelE_thread]). *)
 
@@ -367,8 +367,7 @@ Definition frame_emap (g : cend → cend) (f : frame) : frame :=
   | FPairR v1 => FPairR (emap g v1)
   | FLetU e2 => FLetU (emap g e2)
   | FLetP e2 => FLetP (emap g e2)
-  | FInj1 => FInj1
-  | FInj2 => FInj2
+  | FInj b => FInj b
   | FCase e1 e2 => FCase (emap g e1) (emap g e2)
   | FOp k => FOp k
   end.
@@ -627,13 +626,10 @@ Lemma Vfuel_pair N n T1 a1 T2 a2 a Π1 Π2 φ1 φ2 u v :
   Pair u v ∈ FV^N _ n⟦RTy (TProd T1 a1 T2 a2) a⟧(Π1 ∪ Π2, φ1 ∪ φ2).
 Proof. rewrite !Vfuel_eq. simpl. intros. exists u, v, Π1, Π2, φ1, φ2. by split_and!. Qed.
 
-Lemma Vfuel_inj1 N n T1 a1 T2 a2 a Π φ u :
-  u ∈ FV^N _ n⟦RTy T1 (fadd a a1)⟧(Π, φ) → Inj1 u ∈ FV^N _ n⟦RTy (TSum T1 a1 T2 a2) a⟧(Π, φ).
-Proof. rewrite !Vfuel_eq. simpl. intros. left. eauto. Qed.
-
-Lemma Vfuel_inj2 N n T1 a1 T2 a2 a Π φ u :
-  u ∈ FV^N _ n⟦RTy T2 (fadd a a2)⟧(Π, φ) → Inj2 u ∈ FV^N _ n⟦RTy (TSum T1 a1 T2 a2) a⟧(Π, φ).
-Proof. rewrite !Vfuel_eq. simpl. intros. right. eauto. Qed.
+Lemma Vfuel_inj (i : bool) N n T1 a1 T2 a2 a Π φ u :
+  u ∈ FV^N _ n⟦RTy (if i then T2 else T1) (fadd a (if i then a2 else a1))⟧(Π, φ) →
+  Inj i u ∈ FV^N _ n⟦RTy (TSum T1 a1 T2 a2) a⟧(Π, φ).
+Proof. rewrite !Vfuel_eq. simpl. intros. destruct i; [right|left]; eauto. Qed.
 
 Lemma Vfuel_pack N n lb m C T aT a Π φ v :
   v ∈ FV^N _ n⟦RTy T (fadd a aT)⟧(Π, φ) → v ∈ FV^N _ n⟦RTy (TEx lb m C T aT) a⟧(Π, φ).

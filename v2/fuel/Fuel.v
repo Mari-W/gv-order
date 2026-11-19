@@ -286,8 +286,8 @@ Fixpoint Vty (N : fuel) (El : nat → epred) (Vl : nat → vpred) (n : nat)
         Π = Π1 ∪ Π2 ∧ φ = φ1 ∪ φ2 ∧
         Vty N El Vl n T1 (fadd a a1) Π1 φ1 v1 ∧ Vty N El Vl n T2 (fadd a a2) Π2 φ2 v2
   | TSum T1 a1 T2 a2 =>
-      (∃ v', v = Inj1 v' ∧ Vty N El Vl n T1 (fadd a a1) Π φ v') ∨
-      (∃ v', v = Inj2 v' ∧ Vty N El Vl n T2 (fadd a a2) Π φ v')
+      (∃ v', v = Inj false v' ∧ Vty N El Vl n T1 (fadd a a1) Π φ v') ∨
+      (∃ v', v = Inj true v' ∧ Vty N El Vl n T2 (fadd a a2) Π φ v')
   | TBox _ k _ _ c t U aU =>
       ∃ e, v = EBox e ∧ fends e = ∅ ∧ Π = ∅ ∧ φ = ∅ ∧
         ∀ N' j ss r tk, rle N N' → j < n → length ss = k → sinsts N' ss → meets t r tk →

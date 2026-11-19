@@ -71,24 +71,15 @@ Qed.
 
 (** ** Injections *)
 
-Lemma cost_e_inj1 N Θ Δ e T a U b c t :
-  csem N Θ Δ e T a c t → csem N Θ Δ (Inj1 e) (TSum T a U b) (Some 0) c t.
+Lemma cost_e_inj (i : bool) N Θ Δ e T a U b c t :
+  csem N Θ Δ e (if i then U else T) (if i then b else a) c t →
+  csem N Θ Δ (Inj i e) (TSum T a U b) (Some 0) c t.
 Proof.
   intros Hcs N' n g γ Π φ r tk HN HE Hm.
-  change (subst γ (emap g (Inj1 e))) with (efill [FInj1] (subst γ (emap g e))).
-  eapply (csem_bind0 N Θ Δ e T a c t [FInj1]); [repeat constructor|done|exact Hcs|apply fle_refl|done|done|exact Hm|].
-  intros N'' j i v Πv φv tk' _ _ _ Hv Hr HV. simpl.
-  apply FuelE_val; [done|done|]. apply Vfuel_inj1. by rewrite fadd_0_l.
-Qed.
-
-Lemma cost_e_inj2 N Θ Δ e T a U b c t :
-  csem N Θ Δ e U b c t → csem N Θ Δ (Inj2 e) (TSum T a U b) (Some 0) c t.
-Proof.
-  intros Hcs N' n g γ Π φ r tk HN HE Hm.
-  change (subst γ (emap g (Inj2 e))) with (efill [FInj2] (subst γ (emap g e))).
-  eapply (csem_bind0 N Θ Δ e U b c t [FInj2]); [repeat constructor|done|exact Hcs|apply fle_refl|done|done|exact Hm|].
-  intros N'' j i v Πv φv tk' _ _ _ Hv Hr HV. simpl.
-  apply FuelE_val; [done|done|]. apply Vfuel_inj2. by rewrite fadd_0_l.
+  change (subst γ (emap g (Inj i e))) with (efill [FInj i] (subst γ (emap g e))).
+  eapply (csem_bind0 N Θ Δ e _ _ c t [FInj i]); [repeat constructor|done|exact Hcs|apply fle_refl|done|done|exact Hm|].
+  intros N'' j i' v Πv φv tk' _ _ _ Hv Hr HV. simpl.
+  apply FuelE_val; [done|done|]. apply Vfuel_inj. rewrite fadd_0_l. by destruct i.
 Qed.
 
 (** ** Operators *)

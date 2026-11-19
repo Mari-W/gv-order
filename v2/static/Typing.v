@@ -74,12 +74,9 @@ Inductive typed (W : world) (N : fuel) :
       typed W N Θ2' Γ (Some (T2, fadd a a2) :: Some (T1, fadd a a1) :: Δ2') F e2 T aT c2 t2 →
       tok t1 t2 →
       typed W N Θ Γ Δ F (LetP e1 e2) T aT (fadd c1 c2) (tseq t1 t2)
-  | e_inj1 Θ Γ Δ F e T a U b c t :
-      typed W N Θ Γ Δ F e T a c t →
-      typed W N Θ Γ Δ F (Inj1 e) (TSum T a U b) (Some 0) c t
-  | e_inj2 Θ Γ Δ F e T a U b c t :
-      typed W N Θ Γ Δ F e U b c t →
-      typed W N Θ Γ Δ F (Inj2 e) (TSum T a U b) (Some 0) c t
+  | e_inj (i : bool) Θ Γ Δ F e T a U b c t :
+      typed W N Θ Γ Δ F e (if i then U else T) (if i then b else a) c t →
+      typed W N Θ Γ Δ F (Inj i e) (TSum T a U b) (Some 0) c t
   | e_case Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e e1 e2 T1 a1 T2 a2 a T aT c0 t0 c1 t1 c2 t2 :
       tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
       typed W N Θ1 Γ Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e
@@ -200,7 +197,7 @@ Definition chans_of (Σ : senv) : gset chan := set_map ech (dom Σ).
 Definition senv_dual (Σ : senv) : senv :=
   kmap edual ((λ e : sty * point, (dual e.1, e.2‾)) <$> Σ).
 
-Global Instance edual_inj : Inj eq eq edual.
+Global Instance edual_inj : base.Inj eq eq edual.
 Proof. intros o o'. apply edual_inj. Qed.
 
 (** No end of Σ has its partner in Σ. P-Term asks it of the interface: a

@@ -211,7 +211,7 @@ Ltac guard_tac :=
         | apply gl_tick_letu; [guard_tac|acts_tac|guard_tac] | eapply gl_letu; [guard_tac|left; reflexivity|guard_tac]
         | apply gl_tick_letp; [guard_tac|acts_tac|guard_tac] | eapply gl_letp; [guard_tac|left; reflexivity|guard_tac]
         | apply gl_tick_let; [guard_tac|acts_tac|guard_tac] | apply gl_let; guard_tac
-        | apply gl_inj1; guard_tac | apply gl_inj2; guard_tac
+        | apply gl_inj; guard_tac
         | eapply gl_case; [guard_tac|left; reflexivity|guard_tac|guard_tac] ].
 
 Ltac meets_tac := unfold meets; simpl; lia.

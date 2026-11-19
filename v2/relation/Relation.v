@@ -398,8 +398,8 @@ Section bodies.
           ∃ v1 v2 Θ1 Θ2, v = Pair v1 v2 ∧ Θ1 ##ₘ Θ2 ∧ Θ = Θ1 ∪ Θ2 ∧
             Vbody n Vl El k' W Θ1 T1 v1 ∧ Vbody n Vl El k' W Θ2 U v2
       | TSum T1 _ U _ =>
-          (∃ v', v = Inj1 v' ∧ Vbody n Vl El k' W Θ T1 v') ∨
-          (∃ v', v = Inj2 v' ∧ Vbody n Vl El k' W Θ U v')
+          (∃ v', v = Inj false v' ∧ Vbody n Vl El k' W Θ T1 v') ∨
+          (∃ v', v = Inj true v' ∧ Vbody n Vl El k' W Θ U v')
       | TBox m kk C ub _ _ U _ =>
           Θ = ∅ ∧ ∃ e, v = EBox e ∧ fends e = ∅ ∧                 (* Q14 *)
             ∀ W' xs ss, W ⊑ W' → length xs = m → length ss = kk → Forall hcontractive ss →
@@ -1064,7 +1064,7 @@ Section equations.
 
   Lemma Vrel_sum_iff n W Θ T1 a1 U a2 v :
     Vrel κ n W Θ (TSum T1 a1 U a2) v ↔
-    (∃ v', v = Inj1 v' ∧ Vrel κ n W Θ T1 v') ∨ (∃ v', v = Inj2 v' ∧ Vrel κ n W Θ U v').
+    (∃ v', v = Inj false v' ∧ Vrel κ n W Θ T1 v') ∨ (∃ v', v = Inj true v' ∧ Vrel κ n W Θ U v').
   Proof.
     rewrite Vrel_unfold. cbn [Vbody tsize].
     assert (∀ W Θ v, Vbody κ n (Vrel κ) (Erel κ) (S (tsize T1 + tsize U)) W Θ T1 v ↔

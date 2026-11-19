@@ -103,8 +103,7 @@ Inductive expr :=
   | LetU (e1 e2 : expr)            (* let ∗ = e1 in e2 *)
   | LetP (e1 e2 : expr)            (* let ⟨a,b⟩ = e1 in e2, binds 2 in e2:
                                       index 1 = a, index 0 = b *)
-  | Inj1 (e : expr)
-  | Inj2 (e : expr)
+  | Inj (b : bool) (e : expr)
   | Case (e e1 e2 : expr)          (* case e (a.e1) (a.e2), each branch
                                       binds the payload at index 0 *)
   | EBox (e : expr)                (* !e, a recursive thunk value; binds
@@ -126,7 +125,6 @@ Abbreviation ENewAt κ e := (Op (PNewAt κ) e).
 Abbreviation ENew0 := (ENew 0).
 
 (** The injection of a branch: inj₁ for false, inj₂ for true. *)
-Definition inj_of (b : bool) (e : expr) : expr := if b then Inj2 e else Inj1 e.
 
 (** ** Values *)
 
@@ -134,7 +132,7 @@ Fixpoint is_val (e : expr) : bool :=
   match e with
   | EUnit | Chan _ | Lam _ | EBox _ => true
   | Pair e1 e2 => is_val e1 && is_val e2
-  | Inj1 e | Inj2 e => is_val e
+  | Inj _ e => is_val e
   | _ => false
   end.
 
@@ -159,8 +157,7 @@ Proof.
     | Pair e1 e2 => GenNode 3 [go e1; go e2]
     | LetU e1 e2 => GenNode 4 [go e1; go e2]
     | LetP e1 e2 => GenNode 5 [go e1; go e2]
-    | Inj1 e => GenNode 6 [go e]
-    | Inj2 e => GenNode 7 [go e]
+    | Inj b e => GenNode (if b then 7 else 6) [go e]
     | Case e e1 e2 => GenNode 8 [go e; go e1; go e2]
     | EBox e => GenNode 9 [go e]
     | ENew ℓ => GenNode 10 [GenLeaf (inl (inl ℓ))]
@@ -176,8 +173,8 @@ Proof.
     | GenNode 3 [t1; t2] => Pair (go t1) (go t2)
     | GenNode 4 [t1; t2] => LetU (go t1) (go t2)
     | GenNode 5 [t1; t2] => LetP (go t1) (go t2)
-    | GenNode 6 [t] => Inj1 (go t)
-    | GenNode 7 [t] => Inj2 (go t)
+    | GenNode 6 [t] => Inj false (go t)
+    | GenNode 7 [t] => Inj true (go t)
     | GenNode 8 [t; t1; t2] => Case (go t) (go t1) (go t2)
     | GenNode 9 [t] => EBox (go t)
     | GenNode 10 [GenLeaf (inl (inl ℓ))] => ENew ℓ
@@ -185,7 +182,7 @@ Proof.
     | _ => EUnit
     end).
   apply (inj_countable' enc dec).
-  intros e; induction e; simpl; congruence.
+  intros e; induction e; simpl; try congruence. by destruct b; simpl; rewrite IHe.
 Qed.
 
 (** ** Renaming and parallel substitution *)
@@ -205,8 +202,7 @@ Fixpoint rename (r : nat → nat) (e : expr) : expr :=
   | Pair e1 e2 => Pair (rename r e1) (rename r e2)
   | LetU e1 e2 => LetU (rename r e1) (rename r e2)
   | LetP e1 e2 => LetP (rename r e1) (rename (upren (upren r)) e2)
-  | Inj1 e => Inj1 (rename r e)
-  | Inj2 e => Inj2 (rename r e)
+  | Inj b e => Inj b (rename r e)
   | Case e e1 e2 =>
       Case (rename r e) (rename (upren r) e1) (rename (upren r) e2)
   | EBox e => EBox (rename (upren r) e)
@@ -224,8 +220,7 @@ Fixpoint subst (σ : nat → expr) (e : expr) : expr :=
   | Pair e1 e2 => Pair (subst σ e1) (subst σ e2)
   | LetU e1 e2 => LetU (subst σ e1) (subst σ e2)
   | LetP e1 e2 => LetP (subst σ e1) (subst (up (up σ)) e2)
-  | Inj1 e => Inj1 (subst σ e)
-  | Inj2 e => Inj2 (subst σ e)
+  | Inj b e => Inj b (subst σ e)
   | Case e e1 e2 => Case (subst σ e) (subst (up σ) e1) (subst (up σ) e2)
   | EBox e => EBox (subst (up σ) e)
   | Op k e => Op k (subst σ e)
@@ -258,7 +253,7 @@ Fixpoint fends (e : expr) : gset cend :=
   match e with
   | Var _ | EUnit | ENew _ => ∅
   | Chan o => {[o]}
-  | Lam e | Inj1 e | Inj2 e | EBox e | Op _ e => fends e
+  | Lam e | Inj _ e | EBox e | Op _ e => fends e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => fends e1 ∪ fends e2
   | Case e e1 e2 => fends e ∪ fends e1 ∪ fends e2
   end.
@@ -351,7 +346,7 @@ Fixpoint allfv (P : nat → Prop) (e : expr) : Prop :=
   | Lam e => allfv (upP P) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => allfv P e1 ∧ allfv P e2
   | LetP e1 e2 => allfv P e1 ∧ allfv (upP (upP P)) e2
-  | Inj1 e | Inj2 e | Op _ e => allfv P e
+  | Inj _ e | Op _ e => allfv P e
   | Case e e1 e2 => allfv P e ∧ allfv (upP P) e1 ∧ allfv (upP P) e2
   | EBox e => allfv (upP P) e
   end.
@@ -382,7 +377,7 @@ Fixpoint freevar (x : nat) (e : expr) : Prop :=
   | Lam e => freevar (S x) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => freevar x e1 ∨ freevar x e2
   | LetP e1 e2 => freevar x e1 ∨ freevar (S (S x)) e2
-  | Inj1 e | Inj2 e | Op _ e => freevar x e
+  | Inj _ e | Op _ e => freevar x e
   | Case e e1 e2 => freevar x e ∨ freevar (S x) e1 ∨ freevar (S x) e2
   | EBox e => freevar (S x) e
   end.
@@ -457,8 +452,7 @@ Fixpoint emap (g : cend → cend) (e : expr) : expr :=
   | Pair e1 e2 => Pair (emap g e1) (emap g e2)
   | LetU e1 e2 => LetU (emap g e1) (emap g e2)
   | LetP e1 e2 => LetP (emap g e1) (emap g e2)
-  | Inj1 e => Inj1 (emap g e)
-  | Inj2 e => Inj2 (emap g e)
+  | Inj b e => Inj b (emap g e)
   | Case e e1 e2 => Case (emap g e) (emap g e1) (emap g e2)
   | EBox e => EBox (emap g e)
   | ENew ℓ => ENew ℓ

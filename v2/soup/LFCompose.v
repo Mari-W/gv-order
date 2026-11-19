@@ -34,7 +34,7 @@ Qed.
 (** Thread identifiers shifted by k. *)
 Definition tshift (k : nat) (M : gmap nat expr) : gmap nat expr := kmap (λ t, t + k) M.
 
-Local Instance add_r_inj (k : nat) : Inj eq eq (λ t : nat, t + k).
+Local Instance add_r_inj (k : nat) : base.Inj eq eq (λ t : nat, t + k).
 Proof. intros x y H. lia. Qed.
 
 Lemma soup_tshift k M : soup (tshift k M) = soup M.

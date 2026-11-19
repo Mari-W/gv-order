@@ -24,7 +24,7 @@ From GV Require Export relation.Adequacy compat.Blind.
 Fixpoint esize (e : expr) : nat :=
   match e with
   | Var _ | EUnit | Chan _ | ENew _ => 1
-  | Lam e | Inj1 e | Inj2 e | EBox e | Op _ e => S (esize e)
+  | Lam e | Inj _ e | EBox e | Op _ e => S (esize e)
   | App a b | Pair a b | LetU a b | LetP a b => S (esize a + esize b)
   | Case a b c => S (esize a + esize b + esize c)
   end.

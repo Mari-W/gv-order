@@ -315,10 +315,10 @@ Section redex.
     intros Hu HF HV. destruct n as [|n]; [apply Erel_0|].
     apply Vrel_sess_iff in HV as (o & s' & -> & -> & Hs').
     destruct (seqv_unfold_with _ _ _ _ Hs' Hu) as (S1' & S2' & Hu' & H1 & H2).
-    assert (tstep (EBra (Chan o)) (LSess (SBra o false)) (inj_of false (Chan o))) as Hst
+    assert (tstep (EBra (Chan o)) (LSess (SBra o false)) (Inj false (Chan o))) as Hst
       by (by apply tstep_head, t_act_branch).
     assert (∀ α e', tstep (EBra (Chan o)) α e' →
-              ∃ i, α = LSess (SBra o i) ∧ e' = inj_of i (Chan o)) as Hdet.
+              ∃ i, α = LSess (SBra o i) ∧ e' = Inj i (Chan o)) as Hdet.
     { intros α e' Hs. apply op_head_only in Hs; [|done]. inversion Hs; subst; eauto. }
     apply Erel_S_intro.
     - intros Hi. exact (Hi _ _ Hst).

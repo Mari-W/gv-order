@@ -1291,7 +1291,7 @@ first, in stage S2.
   M.3: E-Unit, E-Var, E-Chan and E-New accept unused unlimited entries,
   and weakening and contraction are admissible renamings. M.4: the guard
   has one rule per frame, with the marks after the first subterm
-  (`kmarks`).
+  (`kmarks`). M.5: one injection former `Inj b`.
 
 ## 5  Open decisions for the author
 

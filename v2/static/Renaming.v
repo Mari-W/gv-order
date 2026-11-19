@@ -18,7 +18,7 @@ From GV Require Export static.Weakening types.Erasure.
 (** ** Renaming of ends *)
 
 Section emap.
-  Context (g : cend → cend) `{!Inj eq eq g}.
+  Context (g : cend → cend) `{!base.Inj eq eq g}.
 
   Local Abbreviation km Θ := (kmap (M2:=gmap cend) g Θ : tenv).
 

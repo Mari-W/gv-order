@@ -308,13 +308,9 @@ Proof.
   - rewrite !fadd_0_l. exact H2.
 Qed.
 
-Lemma d_inj1 W Θ Γ Δ F e T a U b :
-  dftyped W Θ Γ Δ F e T → dftyped W Θ Γ Δ F (Inj1 e) (TSum T a U b).
-Proof. intros H. dfr. by eapply e_inj1. Qed.
-
-Lemma d_inj2 W Θ Γ Δ F e T a U b :
-  dftyped W Θ Γ Δ F e U → dftyped W Θ Γ Δ F (Inj2 e) (TSum T a U b).
-Proof. intros H. dfr. by eapply e_inj2. Qed.
+Lemma d_inj W (i : bool) Θ Γ Δ F e T a U b :
+  dftyped W Θ Γ Δ F e (if i then U else T) → dftyped W Θ Γ Δ F (Inj i e) (TSum T a U b).
+Proof. intros H. dfr. destruct i; [apply (e_inj _ _ true)|apply (e_inj _ _ false)]; exact H. Qed.
 
 Lemma d_case W Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e e1 e2 T1 a1 T2 a2 b1 b2 T :
   tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
@@ -559,8 +555,7 @@ Proof.
   - df_ctx.
     eapply d_letp; [by apply tsplit_df|by apply lenv_split_df| |exact IHtyped2].
     heads_df. exact IHtyped1.
-  - by eapply d_inj1.
-  - by eapply d_inj2.
+  - destruct i; [apply (d_inj _ true)|apply (d_inj _ false)]; exact IHtyped.
   - df_ctx.
     eapply d_case; [by apply tsplit_df|by apply lenv_split_df| |exact IHtyped2|exact IHtyped3].
     heads_df. exact IHtyped1.

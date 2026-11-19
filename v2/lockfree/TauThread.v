@@ -153,7 +153,7 @@ Definition frame_emap (g : cend → cend) (f : frame) : frame :=
   | FAppL e2 => FAppL (emap g e2) | FAppR v => FAppR (emap g v)
   | FPairL e2 => FPairL (emap g e2) | FPairR v => FPairR (emap g v)
   | FLetU e2 => FLetU (emap g e2) | FLetP e2 => FLetP (emap g e2)
-  | FInj1 => FInj1 | FInj2 => FInj2
+  | FInj b => FInj b
   | FCase e1 e2 => FCase (emap g e1) (emap g e2)
   | FOp k => FOp k
   end.
@@ -189,8 +189,8 @@ Proof.
               exists (subst1 (EBox (cerase b)) (cerase b)); split;
               [apply tstep_head, t_act_force
               |unfold cerase; rewrite !emap_subst1; simpl; rewrite !emap_emap; done] end).
-    all: try (match goal with |- context [inj_of ?i] =>
-              exists (inj_of i (Chan (EPos ""))); split; [apply tstep_head, t_act_branch|by destruct i]
+    all: try (match goal with |- context [Inj ?i (Chan _)] =>
+              exists (Inj i (Chan (EPos ""))); split; [apply tstep_head, t_act_branch|by destruct i]
               end).
     all: try (exists EUnit; split; [|done]; apply tstep_head; unfold cerase; simpl;
               rewrite set_map_union_L, !set_map_singleton_L; apply t_act_link).
