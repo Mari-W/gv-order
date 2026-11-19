@@ -208,7 +208,7 @@ window.MAP = {
      "id": "sem-props",
      "title": "Safety properties",
      "rocq": "lang/Safety.v: deadlock_free, lockfree/TauThread.v: no_tau_divergence, lockfree/Fair.v: lock_free",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=prop.terminated}{\\mathsf{terminated}\\,p \\iff p = (\\varnothing, \\{v\\} \\uplus E),\\ E \\subseteq \\{\\ast\\}} \\\\\n\\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}\\,p \\iff \\forall p'.\\ p \\htmlData{k=se.reach}{\\to^{*}} p' \\Rightarrow \\mathsf{terminated}\\,p' \\lor \\exists p''.\\ p' \\to p''} \\\\\n\\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}\\,p \\iff \\forall q.\\ p \\to^{*} q \\Rightarrow \\htmlData{k=se.acc}{\\mathsf{Acc}}\\ \\htmlData{k=prop.padmin}{\\to_{\\mathsf{admin}}}\\ q} \\\\\n\\htmlData{k=prop.lf}{\\begin{array}{l} \\mathsf{lock\\_free}\\,p \\iff \\forall \\htmlData{k=se.run}{r\\,l}.\\ \\mathsf{erase}(r_0) = p \\Rightarrow \\htmlData{k=prop.maximal}{\\mathsf{maximal}\\,r\\,l} \\Rightarrow \\htmlData{k=prop.wfair}{\\mathsf{wfair}\\,r\\,l} \\Rightarrow {} \\\\ \\qquad \\htmlData{k=prop.lfrun}{\\forall i\\,t.\\ \\htmlData{k=prop.pend}{\\mathsf{pend}(r_i, t)} \\Rightarrow \\exists j \\geq i.\\ t \\in \\mathsf{parts}(l_j)} \\end{array}}\n\\end{array}",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=prop.terminated}{\\mathsf{terminated}\\,p \\iff p = (\\varnothing, \\{v\\} \\uplus E),\\ E \\subseteq \\{\\ast\\}} \\\\\n\\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}\\,p \\iff \\forall p'.\\ p \\htmlData{k=se.reach}{\\to^{*}} p' \\Rightarrow \\mathsf{terminated}\\,p' \\lor \\exists p''.\\ p' \\to p''} \\\\\n\\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}\\,p \\iff \\forall q.\\ p \\to^{*} q \\Rightarrow \\htmlData{k=se.acc}{\\mathsf{Acc}}\\ \\htmlData{k=prop.padmin}{\\to_{\\mathsf{admin}}}\\ q} \\\\\n\\htmlData{k=prop.lf}{\\begin{array}{l} \\mathsf{lock\\_free}\\,p \\iff \\forall \\htmlData{k=se.run}{(r, l) \\in \\mathsf{Run}}.\\ \\htmlData{k=se.r0}{\\htmlData{k=proc.erase}{\\mathsf{erase}}(r_0) = p} \\Rightarrow \\htmlData{k=prop.maximal}{\\mathsf{maximal}\\,r\\,l} \\Rightarrow \\htmlData{k=prop.wfair}{\\mathsf{wfair}\\,r\\,l} \\Rightarrow {} \\\\ \\qquad \\htmlData{k=prop.lfrun}{\\forall i\\,t.\\ \\htmlData{k=prop.pend}{\\mathsf{pend}(r_i, t)} \\Rightarrow \\exists j \\geq i.\\ t \\in \\mathsf{parts}(l_j)} \\end{array}}\n\\end{array}",
      "caption": "Deadlock freedom, absence of internal divergence and lock freedom over weakly fair maximal runs $(r, l)$.",
      "modes": [
       "df",
@@ -2316,6 +2316,25 @@ window.MAP = {
     }
    ]
   },
+  "se.r0": {
+   "title": "The run starts at $p$",
+   "what": "$r_0$ is the configuration at position $0$ of the run, and $\\mathsf{erase}(r_0) = p$ states that forgetting its thread names gives the process $p$.",
+   "why": "Lock freedom is a property of a process, and runs are sequences of configurations, so the run must start at a configuration of $p$. Any naming of the threads of $p$ is allowed.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$r_0 = (\\{c\\}, \\{0 \\mapsto \\mathsf{close}\\,c^{+},\\ 1 \\mapsto \\mathsf{close}\\,c^{-}\\})$ for $p = (\\{c\\}, \\{\\!|\\mathsf{close}\\,c^{+}, \\mathsf{close}\\,c^{-}|\\!\\})$.",
+   "rocq": "lockfree/Fair.v: lock_free",
+   "sig": "\\mathsf{erase}(r_0) = p",
+   "args": [
+    {
+     "name": "r_0",
+     "meaning": "The first configuration of the run, $r$ applied to $0$."
+    },
+    {
+     "name": "p",
+     "meaning": "The process whose lock freedom is stated."
+    }
+   ]
+  },
   "se.run": {
    "title": "Runs $r$ and $l$",
    "what": "A run is a pair of sequences, $r_i$ the configuration at position $i$ and $l_i$ the event of the step from $r_i$ to $r_{i+1}$, or none when $r_{i+1} = r_i$ stutters.",
@@ -2323,7 +2342,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$r_0 = (\\varnothing, \\{0 \\mapsto main\\})$.",
    "rocq": "lockfree/Fair.v: run_step",
-   "sig": "(r, l) : (\\mathbb{N} \\to \\mathsf{Config}) \\times (\\mathbb{N} \\to \\mathsf{Event}_{\\bot})",
+   "sig": "(r, l) \\in \\mathsf{Run} = (\\mathbb{N} \\to \\mathsf{Config}) \\times (\\mathbb{N} \\to \\mathsf{Event}_{\\bot})",
    "args": [
     {
      "name": "r_i",
