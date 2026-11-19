@@ -3,14 +3,14 @@ window.MAP = {
   {
    "id": "syntax",
    "title": "Syntax",
-   "intro": "Terms $e$, values, primitives, ends, points and processes, where no term mentions a point.",
+   "intro": "Terms $e$, values, constants, ends, points and processes, where no term mentions a point.",
    "blocks": [
     {
      "id": "syn-terms",
      "title": "Terms",
      "rocq": "lang/Syntax.v: expr",
-     "tex": "\\begin{array}{rl}\ne ::= & \\htmlData{k=syn.var}{x} \\mid \\htmlData{k=syn.unit}{\\ast} \\mid \\htmlData{k=syn.end}{o} \\mid \\htmlData{k=syn.lam}{\\lambda e} \\mid \\htmlData{k=syn.app}{e_1\\,e_2} \\mid \\htmlData{k=syn.pair}{\\langle e_1, e_2\\rangle} \\\\\n\\mid & \\htmlData{k=syn.letu}{\\mathsf{let}\\ \\ast = e_1\\ \\mathsf{in}\\ e_2} \\mid \\htmlData{k=syn.letp}{\\mathsf{let}\\ \\langle a,b\\rangle = e_1\\ \\mathsf{in}\\ e_2} \\\\\n\\mid & \\htmlData{k=syn.inj}{\\mathsf{inj}_i\\,e} \\mid \\htmlData{k=syn.case}{\\mathsf{case}\\ e\\,(a.e_1)\\,(a.e_2)} \\\\\n\\mid & \\htmlData{k=syn.box}{!e} \\mid \\htmlData{k=syn.new}{\\mathsf{new}_\\ell} \\mid \\htmlData{k=syn.op}{k\\,e}\n\\end{array}",
-     "caption": "Thirteen term formers with de Bruijn variables, a box $!e$ binding itself in $e$, and every primitive applied to one argument.",
+     "tex": "\\begin{array}{rl}\ne ::= & \\htmlData{k=syn.var}{x} \\mid \\htmlData{k=syn.unit}{\\ast} \\mid \\htmlData{k=syn.end}{o} \\mid \\htmlData{k=syn.lam}{\\lambda e} \\mid \\htmlData{k=syn.app}{e_1\\,e_2} \\mid \\htmlData{k=syn.pair}{\\langle e_1, e_2\\rangle} \\\\\n\\mid & \\htmlData{k=syn.letu}{\\mathsf{let}\\ \\ast = e_1\\ \\mathsf{in}\\ e_2} \\mid \\htmlData{k=syn.letp}{\\mathsf{let}\\ \\langle a,b\\rangle = e_1\\ \\mathsf{in}\\ e_2} \\\\\n\\mid & \\htmlData{k=syn.inj}{\\mathsf{inj}_i\\,e} \\mid \\htmlData{k=syn.case}{\\mathsf{case}\\ e\\,(a.e_1)\\,(a.e_2)} \\\\\n\\mid & \\htmlData{k=syn.box}{!e} \\mid \\htmlData{k=syn.new}{\\mathsf{new}_\\ell} \\mid \\htmlData{k=syn.op}{k}\n\\end{array}",
+     "caption": "Thirteen term formers with de Bruijn variables, a box $!e$ binding itself in $e$, and the constants $k$.",
      "modes": [
       "df",
       "live",
@@ -31,10 +31,10 @@ window.MAP = {
     },
     {
      "id": "syn-prims",
-     "title": "Saturated primitives",
+     "title": "Constants",
      "rocq": "lang/Syntax.v: prim",
      "tex": "\\begin{array}{rl}\nk ::= & \\htmlData{k=prim.send}{\\mathsf{send}} \\mid \\htmlData{k=prim.recv}{\\mathsf{recv}} \\mid \\htmlData{k=prim.close}{\\mathsf{close}} \\mid \\htmlData{k=prim.select}{\\mathsf{select}_i} \\mid \\htmlData{k=prim.branch}{\\mathsf{branch}} \\\\\n\\mid & \\htmlData{k=prim.link}{\\mathsf{link}} \\mid \\htmlData{k=prim.spawn}{\\mathsf{spawn}} \\mid \\htmlData{k=prim.force}{\\mathsf{force}} \\mid \\htmlData{k=prim.newat}{\\mathsf{new}_\\kappa}\n\\end{array}",
-     "caption": "The primitives $k$ of $k\\,e$, with $\\mathsf{send}$ on $\\langle v, o\\rangle$, $\\mathsf{link}$ on two ends, $\\mathsf{spawn}$ on a thunk and $\\mathsf{new}_\\kappa$ on an end.",
+     "caption": "The constants $k$, with $\\mathsf{send}$ on $\\langle v, o\\rangle$, $\\mathsf{link}$ on two ends, $\\mathsf{spawn}$ on a thunk and $\\mathsf{new}_\\kappa$ on an end.",
      "modes": [
       "df",
       "live",
@@ -45,8 +45,8 @@ window.MAP = {
      "id": "syn-values",
      "title": "Values",
      "rocq": "lang/Syntax.v: is_val",
-     "tex": "\\htmlData{k=syn.values}{v ::= \\ast \\mid o \\mid \\lambda e \\mid\\ !e \\mid \\langle v_1, v_2\\rangle \\mid \\mathsf{inj}_i\\,v}",
-     "caption": "No primitive $k$ is a value, so every value of arrow type has the form $\\lambda e$.",
+     "tex": "\\htmlData{k=syn.values}{v ::= \\ast \\mid o \\mid k \\mid \\lambda e \\mid\\ !e \\mid \\langle v_1, v_2\\rangle \\mid \\mathsf{inj}_i\\,v}",
+     "caption": "Unit, ends, constants, abstractions, boxes, and pairs and injections of values.",
      "modes": [
       "df",
       "live",
@@ -105,7 +105,7 @@ window.MAP = {
      "id": "syn-moves",
      "title": "Where an end moves",
      "rocq": "types/Points.v: sel_pt, bra_pt, payload_pts",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=pt.shift}{\\text{action at } x \\text{ moves to } x^{+}} \\qquad \\htmlData{k=sx.kappai}{\\kappa_{\\mathsf{false}} = 0,\\ \\kappa_{\\mathsf{true}} = 1} \\\\\n\\htmlData{k=pt.sel}{\\mathsf{sel\\_pt}\\,x\\,i = \\overline{x\\cdot\\kappa_i}} \\qquad \\htmlData{k=pt.bra}{\\mathsf{bra\\_pt}\\,x\\,i = x\\cdot\\kappa_i} \\qquad \\htmlData{k=pt.payload}{\\text{payload } j \\text{ at } x\\cdot j}\n\\end{array}",
+     "tex": "\\begin{array}{l}\nx \\;\\mapsto\\; \\htmlData{k=pt.shift}{x^{+}} \\qquad \\htmlData{k=sx.kappai}{\\kappa_{\\mathsf{false}} = 0 \\quad \\kappa_{\\mathsf{true}} = 1} \\\\\n\\htmlData{k=pt.sel}{\\mathsf{sel\\_pt}\\,x\\,i = \\overline{x\\cdot\\kappa_i}} \\qquad \\htmlData{k=pt.bra}{\\mathsf{bra\\_pt}\\,x\\,i = x\\cdot\\kappa_i} \\qquad \\htmlData{k=pt.payload}{\\mathsf{payload\\_pts}\\,x\\,m = (x\\cdot 0, \\dots, x\\cdot(m-1))}\n\\end{array}",
      "caption": "An action moves an end from $x$ to $x^{+}$, a choice to a field, and the $j$-th payload end of a message at $x$ sits at $x\\cdot j$.",
      "modes": [
       "df",
@@ -1416,7 +1416,7 @@ window.MAP = {
   "syn.lam": {
    "title": "$\\lambda$-abstraction",
    "what": "A one-argument closure $\\lambda e$, a value for every $e$ because no frame has its hole under $\\lambda$.",
-   "why": "Every value of arrow type has the form $\\lambda e$. Hence the value relation at an arrow type has exactly one clause, and no clause for primitives.",
+   "why": "A plain term former and the value form of every user function.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\lambda x.\\,\\mathsf{send}\\,x$ is $\\mathsf{send}$ as a function value.",
    "rocq": "lang/Syntax.v: Lam",
@@ -1600,21 +1600,17 @@ window.MAP = {
    ]
   },
   "syn.op": {
-   "title": "Saturated operator",
-   "what": "$k\\,e$ evaluates $e$ to $v$ and then takes the head step of $k\\,v$.",
-   "why": "No primitive is a value. Hence every value of arrow type is a $\\lambda e$, and the value relation needs no clause per primitive.",
-   "breaks": "With primitives as values, the arrow clause of the value relation would need one extra clause for each primitive, each with its own proof obligations.",
+   "title": "Constant $k$",
+   "what": "A constant $k$ is a value, and $k\\,v$ takes the head step of $k$ on the value $v$.",
+   "why": "The constants are the operations on channels, boxes and threads. Application $k\\,e$ evaluates $e$ first like any application.",
+   "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{send}\\,\\langle \\ast, o\\rangle$ applies $\\mathsf{send}$ to a pair.",
-   "rocq": "lang/Syntax.v: Op",
-   "sig": "k\\,e \\in \\mathsf{Expr}",
+   "rocq": "lang/Syntax.v: Op (the value $k$ is $\\lambda x.\\,k\\,x$)",
+   "sig": "k \\in \\mathsf{Val}",
    "args": [
     {
      "name": "k",
-     "meaning": "A primitive, $k \\in \\mathsf{Prim}$."
-    },
-    {
-     "name": "e",
-     "meaning": "The single argument of $k$."
+     "meaning": "A constant, $k \\in \\mathsf{Const}$."
     }
    ]
   },
@@ -1625,7 +1621,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{close}\\,(\\mathsf{send}\\,\\langle \\ast, c^{+}\\rangle)$ sends $\\ast$ and then closes.",
    "rocq": "lang/Syntax.v: PSend, lang/Semantics.v: t_act_send",
-   "sig": "\\mathsf{send} \\in \\mathsf{Prim},\\quad \\mathsf{send}\\,\\langle v, o\\rangle \\xrightarrow{o!v} o",
+   "sig": "\\mathsf{send} \\in \\mathsf{Const},\\quad \\mathsf{send}\\,\\langle v, o\\rangle \\xrightarrow{o!v} o",
    "args": [
     {
      "name": "v",
@@ -1644,7 +1640,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{let}\\ \\langle u, b\\rangle = \\mathsf{recv}\\,b\\ \\mathsf{in}\\ e$.",
    "rocq": "lang/Syntax.v: PRecv",
-   "sig": "\\mathsf{recv} \\in \\mathsf{Prim},\\quad \\mathsf{recv}\\,o \\xrightarrow{o?v} \\langle v, o\\rangle",
+   "sig": "\\mathsf{recv} \\in \\mathsf{Const},\\quad \\mathsf{recv}\\,o \\xrightarrow{o?v} \\langle v, o\\rangle",
    "args": [
     {
      "name": "o",
@@ -1659,11 +1655,11 @@ window.MAP = {
   "prim.close": {
    "title": "$\\mathsf{close}$",
    "what": "$\\mathsf{close}\\,o \\xrightarrow{o\\,\\mathsf{end}} \\ast$. The process step pairs it with $\\mathsf{close}\\,\\overline{o}$ and removes $\\mathsf{ech}\\,o$ from $C$.",
-   "why": "A plain primitive. A session type ends in $\\mathsf{Close}$, and after both closes no thread holds an end of the channel.",
+   "why": "A plain constant. A session type ends in $\\mathsf{Close}$, and after both closes no thread holds an end of the channel.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{close}\\,c^{+}$ in one thread and $\\mathsf{close}\\,c^{-}$ in another.",
    "rocq": "lang/Syntax.v: PClose",
-   "sig": "\\mathsf{close} \\in \\mathsf{Prim},\\quad \\mathsf{close}\\,o \\xrightarrow{o\\,\\mathsf{end}} \\ast",
+   "sig": "\\mathsf{close} \\in \\mathsf{Const},\\quad \\mathsf{close}\\,o \\xrightarrow{o\\,\\mathsf{end}} \\ast",
    "args": [
     {
      "name": "o",
@@ -1678,7 +1674,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{select}_{\\mathsf{true}}\\,o$.",
    "rocq": "lang/Syntax.v: PSel",
-   "sig": "\\mathsf{select}_i \\in \\mathsf{Prim},\\quad \\mathsf{select}_i\\,o \\xrightarrow{o \\lhd i} o",
+   "sig": "\\mathsf{select}_i \\in \\mathsf{Const},\\quad \\mathsf{select}_i\\,o \\xrightarrow{o \\lhd i} o",
    "args": [
     {
      "name": "i",
@@ -1693,11 +1689,11 @@ window.MAP = {
   "prim.branch": {
    "title": "$\\mathsf{branch}$",
    "what": "$\\mathsf{branch}\\,o \\xrightarrow{o \\rhd i} \\mathsf{inj}_i\\,o$ for both $i$.",
-   "why": "A plain primitive, the partner of $\\mathsf{select}_i$. The injection $\\mathsf{inj}_i$ passes the chosen $i$ to the program.",
+   "why": "A plain constant, the partner of $\\mathsf{select}_i$. The injection $\\mathsf{inj}_i$ passes the chosen $i$ to the program.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{case}\\ (\\mathsf{branch}\\,o)\\,(a.\\,e_1)\\,(a.\\,e_2)$.",
    "rocq": "lang/Syntax.v: PBra",
-   "sig": "\\mathsf{branch} \\in \\mathsf{Prim},\\quad \\mathsf{branch}\\,o \\xrightarrow{o \\rhd i} \\mathsf{inj}_i\\,o",
+   "sig": "\\mathsf{branch} \\in \\mathsf{Const},\\quad \\mathsf{branch}\\,o \\xrightarrow{o \\rhd i} \\mathsf{inj}_i\\,o",
    "args": [
     {
      "name": "o",
@@ -1716,7 +1712,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{link}\\,\\langle c^{+}, d^{-}\\rangle$.",
    "rocq": "lang/Syntax.v: PLink",
-   "sig": "\\mathsf{link} \\in \\mathsf{Prim},\\quad \\mathsf{link}\\,\\langle o_1, o_2\\rangle \\xrightarrow{\\leftrightarrow\\{o_1, o_2\\}} \\ast",
+   "sig": "\\mathsf{link} \\in \\mathsf{Const},\\quad \\mathsf{link}\\,\\langle o_1, o_2\\rangle \\xrightarrow{\\leftrightarrow\\{o_1, o_2\\}} \\ast",
    "args": [
     {
      "name": "o_1, o_2",
@@ -1731,7 +1727,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{spawn}\\,(\\lambda u.\\,\\mathsf{let}\\ \\ast = u\\ \\mathsf{in}\\ \\mathsf{close}\\,d')$ hands $d'$ to the child.",
    "rocq": "lang/Syntax.v: PSpawn",
-   "sig": "\\mathsf{spawn} \\in \\mathsf{Prim},\\quad \\mathsf{spawn}\\,v \\xrightarrow{\\mathsf{spawn}\\,v} \\ast",
+   "sig": "\\mathsf{spawn} \\in \\mathsf{Const},\\quad \\mathsf{spawn}\\,v \\xrightarrow{\\mathsf{spawn}\\,v} \\ast",
    "args": [
     {
      "name": "v",
@@ -1742,11 +1738,11 @@ window.MAP = {
   "prim.force": {
    "title": "$\\mathsf{force}$",
    "what": "$\\mathsf{force}\\,(!e) \\xrightarrow{\\beta} e[!e]$.",
-   "why": "A plain primitive. It is the only use of a box, and a loop calls itself by $\\mathsf{force}$ of its own self variable.",
+   "why": "A plain constant. It is the only use of a box, and a loop calls itself by $\\mathsf{force}$ of its own self variable.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{force}\\,f\\,\\langle a, b\\rangle$ runs the loop $f$ again.",
    "rocq": "lang/Syntax.v: PForce",
-   "sig": "\\mathsf{force} \\in \\mathsf{Prim},\\quad \\mathsf{force}\\,(!e) \\xrightarrow{\\beta} e[!e]",
+   "sig": "\\mathsf{force} \\in \\mathsf{Const},\\quad \\mathsf{force}\\,(!e) \\xrightarrow{\\beta} e[!e]",
    "args": [
     {
      "name": "e",
@@ -1761,7 +1757,7 @@ window.MAP = {
    "breaks": "Without anchors, a function that creates a channel between two existing ones needs a point parameter, and programs mention points.",
    "example": "$\\mathsf{let}\\ \\langle c, \\langle d, d'\\rangle\\rangle = \\mathsf{new}_0\\,c\\ \\mathsf{in}\\ e$.",
    "rocq": "lang/Syntax.v: PNewAt, lang/Semantics.v: t_act_new_at",
-   "sig": "\\mathsf{new}_\\kappa \\in \\mathsf{Prim},\\quad \\mathsf{new}_\\kappa\\,o \\xrightarrow{\\mathsf{new}_\\kappa\\,o\\,c} \\langle o, \\langle c^{+}, c^{-}\\rangle\\rangle",
+   "sig": "\\mathsf{new}_\\kappa \\in \\mathsf{Const},\\quad \\mathsf{new}_\\kappa\\,o \\xrightarrow{\\mathsf{new}_\\kappa\\,o\\,c} \\langle o, \\langle c^{+}, c^{-}\\rangle\\rangle",
    "args": [
     {
      "name": "\\kappa",
@@ -1779,10 +1775,10 @@ window.MAP = {
   },
   "syn.values": {
    "title": "Values",
-   "what": "$v ::= \\ast \\mid o \\mid \\lambda e \\mid\\ !e \\mid \\langle v_1, v_2\\rangle \\mid \\mathsf{inj}_i\\,v$.",
-   "why": "No primitive $k$ is a value. Hence a value of arrow type has the form $\\lambda e$.",
+   "what": "$v ::= \\ast \\mid o \\mid k \\mid \\lambda e \\mid\\ !e \\mid \\langle v_1, v_2\\rangle \\mid \\mathsf{inj}_i\\,v$.",
+   "why": "The results of evaluation. A thread that is a value has finished.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\langle \\ast, c^{+}\\rangle$ is a value.",
+   "example": "$\\langle \\ast, c^{+}\\rangle$ and $\\mathsf{send}$ are values.",
    "rocq": "lang/Syntax.v: is_val",
    "sig": "v \\in \\mathsf{Val} \\subseteq \\mathsf{Expr}",
    "args": [
@@ -2109,15 +2105,15 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "A message on $y$ at $Y$ delivers its end at $Y\\cdot 0$.",
    "rocq": "types/Points.v: payload_pts",
-   "sig": "j \\mapsto x\\cdot j : \\mathbb{N} \\to \\mathsf{Point}",
+   "sig": "\\mathsf{payload\\_pts} : \\mathsf{Point} \\to \\mathbb{N} \\to \\mathsf{Point}^{*}",
    "args": [
     {
      "name": "x",
      "meaning": "The point of the carrier end at the send."
     },
     {
-     "name": "j",
-     "meaning": "The position of a point variable of the payload, $0 \\le j < m$."
+     "name": "m",
+     "meaning": "The number of point variables the payload binds."
     }
    ]
   },
