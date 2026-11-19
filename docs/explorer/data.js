@@ -546,8 +546,8 @@ window.MAP = {
      "id": "r-box",
      "title": "E-Box",
      "rocq": "static/Typing.v: e_box, d_box",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Box.unl}{\\Delta\\ \\text{unlimited}}\\quad \\htmlData{k=E-Abs.phi}{\\varphi\\ \\text{fresh}}\\quad \\htmlData{k=E-Box.inst}{\\forall \\bar s.\\ |\\bar s| = k,\\ \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s} \\\\ \\htmlData{k=E-Box.body}{\\htmlData{k=E-Box.open}{\\Gamma\\htmlData{k=tp.shift}{{\\uparrow^m}}, C(\\bar\\iota), u \\prec \\varphi} ; \\htmlData{k=E-Box.self}{\\Delta{\\uparrow^m}, f : \\Box(\\ldots)} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing,\\varphi)} e : \\htmlData{k=tp.sinst}{U[\\bar s]}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} !e : \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}\\annot{[\\varepsilon]}\\,U)\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-Box}",
-     "caption": "The body uses no end. It is typed under $m$ fresh point variables $\\bar\\iota$, the hypothesis $C(\\bar\\iota)$, the box itself as $f$, and a fresh future variable.",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Box.unl}{\\Delta\\ \\text{unlimited}}\\quad \\htmlData{k=E-Abs.phi}{\\varphi\\ \\text{fresh}}\\quad \\htmlData{k=E-Box.fresh}{\\bar\\iota\\ \\text{fresh}}\\quad \\htmlData{k=E-Box.inst}{\\forall \\bar s.\\ \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s} \\\\ \\htmlData{k=E-Box.body}{\\htmlData{k=E-Box.open}{\\Gamma, C(\\bar\\iota), u \\prec \\varphi} ; \\htmlData{k=E-Box.self}{\\Delta, f : \\Box(\\ldots)} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing,\\varphi)} e : \\htmlData{k=tp.sinst}{U[\\bar s]}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} !e : \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}\\annot{[\\varepsilon]}\\,U)\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-Box}",
+     "caption": "The body uses no end. It is typed under fresh point variables $\\bar\\iota$, the hypothesis $C(\\bar\\iota)$, the box itself as $f$, and a fresh future variable.",
      "modes": [
       "df",
       "lf"
@@ -557,7 +557,7 @@ window.MAP = {
      "id": "r-force",
      "title": "E-Force",
      "rocq": "static/Typing.v: e_force, d_force",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{|\\bar x| = m,\\ \\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\quad \\htmlData{k=E-Box.inst}{|\\bar s| = k,\\ \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s}\\quad \\htmlData{k=E-Force.ub}{u[\\bar x] \\prec F} \\\\ \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}\\annot{[\\varepsilon]}\\,U)\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_0}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.force}{\\mathsf{force}}\\,e : \\htmlData{k=tp.sinst}{U[\\bar s]}\\htmlData{k=tp.pinst}{[\\bar x]}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_0 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{E-Force}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\quad \\htmlData{k=E-Box.inst}{\\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s}\\quad \\htmlData{k=E-Force.ub}{u[\\bar x] \\prec F} \\\\ \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}\\annot{[\\varepsilon]}\\,U)\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_0}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.force}{\\mathsf{force}}\\,e : \\htmlData{k=tp.sinst}{U[\\bar s]}\\htmlData{k=tp.pinst}{[\\bar x]}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_0 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{E-Force}",
      "caption": "Forcing chooses $\\bar x$ with $\\Gamma \\vdash C[\\bar x]$ and session types $\\bar s$, and asks $u[\\bar x] \\prec F$.",
      "modes": [
       "df",
@@ -700,8 +700,8 @@ window.MAP = {
      "id": "r-ex",
      "title": "E-Pack, E-Open",
      "rocq": "static/Typing.v: e_pack, e_open, d_pack, d_open",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{|\\bar x| = m,\\ \\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\quad \\htmlData{k=E-Pack.lb}{l \\preccurlyeq \\htmlData{k=tp.pinst}{T[\\bar x]}}\\quad e : T[\\bar x]\\end{array}}{e : \\exists^{l}\\bar\\iota.\\,C.\\,T}\\;\\textsf{E-Pack} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Open.entry}{\\Delta(i) = \\exists^{l}\\bar\\iota.\\,C.\\,T\\annot{,\\ \\neg\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}}\\,T}}\\quad \\htmlData{k=E-Open.body}{\\Gamma\\htmlData{k=tp.shift}{{\\uparrow}}, C ; \\Delta{\\uparrow}[i \\mapsto T] \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F{\\uparrow}} e : U{\\uparrow}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Open}\\end{array}",
-     "caption": "Packing chooses $\\bar x$ with $\\Gamma \\vdash C[\\bar x]$, and opening adds $m$ fresh point variables with hypothesis $C$.",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\quad \\htmlData{k=E-Pack.lb}{l \\preccurlyeq \\htmlData{k=tp.pinst}{T[\\bar x]}}\\quad e : T[\\bar x]\\end{array}}{e : \\exists^{l}\\bar\\iota.\\,C.\\,T}\\;\\textsf{E-Pack} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Open.entry}{\\Delta(i) = \\exists^{l}\\bar\\iota.\\,C.\\,T\\annot{,\\ \\neg\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}}\\,T}}\\quad \\htmlData{k=E-Box.fresh}{\\bar\\iota\\ \\text{fresh}}\\quad \\htmlData{k=E-Open.body}{\\Gamma, C(\\bar\\iota) ; \\Delta[i \\mapsto T] \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Open}\\end{array}",
+     "caption": "Packing chooses $\\bar x$ with $\\Gamma \\vdash C[\\bar x]$, and opening names the witness by fresh point variables $\\bar\\iota$ with hypothesis $C(\\bar\\iota)$.",
      "modes": [
       "df",
       "lf"
@@ -4415,7 +4415,7 @@ window.MAP = {
    "args": [
     {
      "name": "C",
-     "meaning": "a box constraint, a set of facts over $m$ point variables"
+     "meaning": "a box constraint, a set of facts over its bound point variables"
     },
     {
      "name": "\\bar x",
@@ -5183,35 +5183,31 @@ window.MAP = {
   },
   "E-Box.inst": {
    "title": "Session instances",
-   "what": "\\annp{The body is typed for every list $\\bar s$ of $k$ session types with $\\mathsf{sinsts}\\,\\bar s$ at the refill $N$.}",
-   "why": "A box is polymorphic in its $k$ session variables, and each force may choose another instance. At $N = \\infty$ only erased instances are admitted, because an end received at a finite counter cannot age by $\\infty$.",
+   "what": "\\annp{The body is typed for every list $\\bar s$ of session types, one per session variable $\\bar\\alpha$, with $\\mathsf{sinsts}\\,\\bar s$ at the refill $N$.}",
+   "why": "A box is polymorphic in its session variables, and each force may choose another instance. At $N = \\infty$ only erased instances are admitted, because an end received at a finite counter cannot age by $\\infty$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$k = 0$ in every example.",
+   "example": "No example uses a session variable.",
    "rocq": "static/Contexts.v: sinsts",
-   "sig": "\\forall \\bar s.\\ |\\bar s| = k \\land \\mathsf{sinsts}\\,\\bar s \\Rightarrow \\ldots",
+   "sig": "\\forall \\bar s.\\ \\mathsf{sinsts}\\,\\bar s \\Rightarrow \\ldots",
    "args": [
     {
      "name": "\\bar s",
-     "meaning": "a list of session types for the $k$ session variables $\\bar\\alpha$ of the box"
-    },
-    {
-     "name": "k",
-     "meaning": "the number of session variables"
+     "meaning": "a list of session types, one per session variable of the box"
     }
    ]
   },
   "E-Box.body": {
    "title": "Body of a box",
-   "what": "The body is typed with no end, the context shifted past $m$ fresh point variables $\\bar\\iota$, the hypothesis $C(\\bar\\iota)$, the box as $f$, and the future $(\\varnothing, \\varphi)$.",
+   "what": "The body is typed with no end, the fresh point variables $\\bar\\iota$, the hypothesis $C(\\bar\\iota)$, the box as $f$, and the future $(\\varnothing, \\varphi)$.",
    "why": "Each force instantiates $\\bar\\iota$ and the session variables anew. The body may assume only $C(\\bar\\iota)$ and $u \\prec \\varphi$.",
    "breaks": "Nothing. It is a definition.",
    "example": "The body of the client loop.",
    "rocq": "static/Typing.v: e_box",
-   "sig": "\\Gamma{\\uparrow^m}, C(\\bar\\iota), u \\prec \\varphi ; \\Delta{\\uparrow^m}, f \\vdash^{(\\varnothing, \\varphi)} e : U[\\bar s]\\ !\\ \\varepsilon",
+   "sig": "\\Gamma, C(\\bar\\iota), u \\prec \\varphi ; \\Delta, f \\vdash^{(\\varnothing, \\varphi)} e : U[\\bar s]\\ !\\ \\varepsilon",
    "args": [
     {
      "name": "\\bar\\iota",
-     "meaning": "the $m$ fresh point variables of the box"
+     "meaning": "the fresh point variables of the box"
     },
     {
      "name": "f",
@@ -5225,19 +5221,15 @@ window.MAP = {
   },
   "E-Box.open": {
    "title": "Opened constraint",
-   "what": "$\\Gamma{\\uparrow^m}$ extended by the instance $(C, \\bar\\iota)$.",
+   "what": "$\\Gamma$ extended by the instance $C(\\bar\\iota)$ at the fresh variables.",
    "why": "The body relies on $C$ at its own point variables, and every force checks $C$ at the chosen instance.",
    "breaks": "Without $C$ the client loop cannot order the points of two consecutive rounds.",
-   "example": "$\\Gamma{\\uparrow^3}$ extended by $C(\\iota, \\kappa, \\zeta)$.",
+   "example": "$\\Gamma, C(\\iota, \\kappa, \\zeta)$.",
    "rocq": "static/Contexts.v: hc_open",
-   "sig": "\\Gamma{\\uparrow^m}, (C, \\bar\\iota)",
+   "sig": "\\Gamma, C(\\bar\\iota)",
    "args": [
     {
-     "name": "\\Gamma{\\uparrow^m}",
-     "meaning": "$\\Gamma$ shifted past $m$ point variables"
-    },
-    {
-     "name": "(C, \\bar\\iota)",
+     "name": "C(\\bar\\iota)",
      "meaning": "the constraint at the fresh variables"
     }
    ]
@@ -5259,20 +5251,16 @@ window.MAP = {
   },
   "E-Force.hold": {
    "title": "The instance meets $C$",
-   "what": "$|\\bar x| = m$ and $\\Gamma \\vdash C[\\bar x]$.",
+   "what": "$\\Gamma \\vdash C[\\bar x]$, for points $\\bar x$, one per variable of $\\bar\\iota$.",
    "why": "The body was typed under $C(\\bar\\iota)$. Running it at $\\bar x$ is correct only when $C[\\bar x]$ holds.",
    "breaks": "Nothing. It is a definition.",
    "example": "main forces $\\mathsf{between}$ at $(\\rho, \\rho\\cdot 1)$, where $\\Lambda_0$ gives $C$.",
    "rocq": "static/Typing.v: e_force, e_pack",
-   "sig": "|\\bar x| = m \\land \\Gamma \\vdash C[\\bar x]",
+   "sig": "\\Gamma \\vdash C[\\bar x]",
    "args": [
     {
      "name": "\\bar x",
-     "meaning": "the points the force instantiates $\\bar\\iota$ with"
-    },
-    {
-     "name": "m",
-     "meaning": "the number of point variables of the box"
+     "meaning": "the points the force or pack instantiates $\\bar\\iota$ with, one per variable"
     }
    ]
   },
@@ -5692,20 +5680,20 @@ window.MAP = {
   },
   "E-Open.body": {
    "title": "Body after opening",
-   "what": "$\\Gamma$, $\\Delta$, $F$ and $U$ shift past $m$ fresh point variables, $C$ joins $\\Gamma$, and entry $i$ becomes $T$.",
-   "why": "The fresh variables stand for the unknown witness, and $C$ is all the scope knows about it.",
+   "what": "$e$ is typed with $C(\\bar\\iota)$ added to $\\Gamma$ and entry $i$ replaced by $T$, under the same future and result.",
+   "why": "The fresh variables stand for the unknown witness, and $C$ is all the scope knows about it. Freshness keeps them out of $F$ and $U$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{let}\\ p = (\\mathsf{force}\\,\\mathsf{mk}_0)\\,\\ast\\ \\mathsf{in}\\ \\ldots$ opens at $\\iota$.",
    "rocq": "static/Typing.v: e_open",
-   "sig": "\\Gamma{\\uparrow}, C ; \\Delta{\\uparrow}[i \\mapsto T] \\vdash^{F\\uparrow} e : U{\\uparrow}\\ !\\ \\varepsilon",
+   "sig": "\\Gamma, C(\\bar\\iota) ; \\Delta[i \\mapsto T] \\vdash^{F} e : U\\ !\\ \\varepsilon",
    "args": [
     {
-     "name": "{\\uparrow}",
-     "meaning": "the shift past the $m$ fresh point variables of the existential"
+     "name": "\\bar\\iota",
+     "meaning": "the fresh point variables of the existential"
     },
     {
      "name": "U",
-     "meaning": "the result type, which mentions no opened variable"
+     "meaning": "the result type, which mentions no $\\bar\\iota$"
     }
    ]
   },
@@ -6328,22 +6316,18 @@ window.MAP = {
     }
    ]
   },
-  "tp.shift": {
-   "title": "Shift ${\\uparrow^m}$",
-   "what": "Shifts every point variable of a context, type or future past $m$ fresh point variables.",
-   "why": "The fresh variables get indices $0, \\ldots, m-1$, so existing variables move up by $m$.",
+  "E-Box.fresh": {
+   "title": "$\\bar\\iota$ fresh",
+   "what": "The bound point variables $\\bar\\iota$ occur nowhere in $\\Gamma$, $\\Delta$, $F$ or the result type.",
+   "why": "They stand for points chosen later, at each force or for the unknown witness of an existential, so nothing in scope may mention them. The Rocq uses de Bruijn indices and shifts the context instead.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\iota_0{\\uparrow^1} = \\iota_1$.",
-   "rocq": "types/Points.v: pshift",
-   "sig": "{\\uparrow^m} : X \\to X",
+   "example": "Opening $\\exists^{\\bot}\\iota.\\,C.\\,T$ under a context that mentions $\\rho$ picks $\\iota \\neq \\rho$.",
+   "rocq": "types/Points.v: pshift; static/Typing.v: e_box, e_open",
+   "sig": "\\bar\\iota \\cap \\mathsf{pvars}(\\Gamma, \\Delta, F, U) = \\varnothing",
    "args": [
     {
-     "name": "m",
-     "meaning": "the number of fresh point variables"
-    },
-    {
-     "name": "X",
-     "meaning": "a context, type or future"
+     "name": "\\bar\\iota",
+     "meaning": "the bound point variables"
     }
    ]
   },
