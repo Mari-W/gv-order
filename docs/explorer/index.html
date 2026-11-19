@@ -271,7 +271,7 @@ window.MathJax = {
     const old = el.querySelector(':scope > .math'), nu = math(texOf(b, m), m);
     old.replaceWith(nu); hotEl = null;
     requestAnimationFrame(() => addHits(el));
-    if (pinned) markAll(pinned);
+    if (pinned) { markAll(pinned); showNote(pinned, true, m); }
   }
   function renderSection() {
     const cur = current(), root = $('#content');
@@ -356,7 +356,9 @@ window.MathJax = {
     const k = pseudo('sec-' + (n.title || ''), n);
     shownKey = null; showNote(k, false);
   }
-  let shownKey = null, shownPinned = null;
+  let shownKey = null, shownPinned = null, shownMode = null;
+  // the mode a note is read in: the mode of the block it was reached from, which its own switch may change
+  const modeAt = el => { const art = el && el.closest && el.closest('article.block'); return art ? (local.get(art.id.slice(2)) || mode) : mode; };
   // tell the local server (serve.sh) what the reader points at, so the assistant can follow along
   let lastBlock = null, reportTimer = null;
   function report(extra) {
@@ -367,15 +369,16 @@ window.MathJax = {
       fetch('cursor', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(st) }).catch(() => {});
     }, 250);
   }
-  function showNote(key, isPinned) {
+  function showNote(key, isPinned, nm = mode) {
     report({ key, title: (MAP.notes[key] || {}).title || null, how: isPinned ? 'pin' : 'hover' });
-    if (key === shownKey && isPinned === shownPinned) return;
+    if (key === shownKey && isPinned === shownPinned && nm === shownMode) return;
+    shownMode = nm;
     shownKey = key; shownPinned = isPinned;
     const aside = $('#note');
     aside.classList.remove('empty');
     aside.replaceChildren();
     aside.insertAdjacentHTML('beforeend', `<div class="eyebrow"><span>${isPinned ? 'Pinned' : 'Hover'}</span>${isPinned ? '<button type="button" id="unpin">Unpin</button>' : ''}</div>`);
-    const body = noteBody(key); aside.appendChild(body);
+    const saved = mode; mode = nm; const body = noteBody(key); mode = saved; aside.appendChild(body);
     if (body.dataset.fresh) { delete body.dataset.fresh; typeset(body); }
   }
   // a light box behind an entry, drawn inside its own coordinate system
@@ -407,13 +410,13 @@ window.MathJax = {
     const art = e.target.closest && e.target.closest('article'); if (art) lastBlock = art.id;
     const h = e.target.closest && e.target.closest('h3[data-block], h3[data-ex]');
     if (h && !pinned) {
-      if (h.dataset.block) { const b = MAP.sections.flatMap(x => x.blocks).find(x => x.id === h.dataset.block); if (b) showNote(pseudo('b-' + b.id, { title: b.title, what: b.caption, rocq: b.rocq }), false); }
+      if (h.dataset.block) { const b = MAP.sections.flatMap(x => x.blocks).find(x => x.id === h.dataset.block); if (b) showNote(pseudo('b-' + b.id, { title: b.title, what: b.caption, rocq: b.rocq }), false, modeAt(h)); }
       else { const x = (MAP.examples || []).find(x => x.id === h.dataset.ex); if (x) showNote(pseudo('x-' + x.id, { title: x.title, what: x.shows, rocq: x.rocq }), false); }
       return;
     }
     const t = e.target.closest && e.target.closest('[class*="k-"]'); if (!t) return;
     const k = keyOf(t); if (!k) return;
-    hot(t); if (!pinned) showNote(k, false);
+    hot(t); if (!pinned) showNote(k, false, modeAt(t));
   });
   let outTimer = null;
   content.addEventListener('mouseout', e => {
@@ -426,7 +429,7 @@ window.MathJax = {
     if (fb) { flipBlock(fb.closest('.flip').dataset.flip, fb.dataset.m); return; }
     const t = e.target.closest && e.target.closest('[class*="k-"]'); if (!t) return;
     const k = keyOf(t); if (!k) return;
-    pinned = k; markAll(k); showNote(k, true);
+    pinned = k; markAll(k); showNote(k, true, modeAt(t));
   });
   $('#note').addEventListener('click', e => {
     if (e.target.id === 'unpin') { pinned = null; shownKey = null; boxesOff('pin'); $('#note').classList.add('empty'); $('#note').innerHTML = '<div class="placeholder">Hover over a part of a formula.</div>'; }
