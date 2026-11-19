@@ -204,17 +204,17 @@ window.MAP = {
   {
    "id": "types",
    "title": "Types and worlds",
-   "intro": "\\annp{This section introduces types $T$, credits $a$, session types $S$ with $\\mathsf{unfold}$, $\\mathsf{dual}$, $\\simeq$ and $\\approx$, the sets $\\mathsf{heads}$ and the flag $\\mathsf{hbot}$, payloads, costs $c$ and ticket transformers $\\vartheta$, the kinds $\\mathsf{prim}$, $\\mathsf{unlimited}$, $\\mathsf{tfree}$, and worlds $W$ with the order $\\prec_W$, the predicates $\\mathsf{world\\_wf}$, $\\mathsf{strict}$, $\\mathsf{wfworld}$, extension $\\sqsubseteq$ and join $\\sqcup$.} \\annp{Signatures name the sorts $\\mathsf{Ty}$ of types, $\\mathsf{STy}$ of session types, $\\mathsf{Tix}$ of transformers, $\\mathsf{LBound}$ of lower bounds and $\\mathsf{World}$ of worlds, and $X_{\\bot}$ adds an absent element to $X$.}",
+   "intro": "\\annp{This section introduces types $T$, credits $a$, session types $S$ with $\\mathsf{unfold}$, $\\mathsf{dual}$, $\\simeq$ and $\\approx$, the sets $\\mathsf{heads}$ and the flag $\\mathsf{hbot}$, payloads, costs $c$ and ticket needs $\\vartheta$, the kinds $\\mathsf{prim}$, $\\mathsf{unlimited}$, $\\mathsf{tfree}$, and worlds $W$ with the order $\\prec_W$, the predicates $\\mathsf{world\\_wf}$, $\\mathsf{strict}$, $\\mathsf{wfworld}$, extension $\\sqsubseteq$ and join $\\sqcup$.} \\annp{Signatures name the sorts $\\mathsf{Ty}$ of types, $\\mathsf{STy}$ of session types, $\\mathsf{Tix}$ of ticket needs, $\\mathsf{LBound}$ of lower bounds and $\\mathsf{World}$ of worlds, and $X_{\\bot}$ adds an absent element to $X$.}",
    "blocks": [
     {
      "id": "ty-grammar",
      "title": "Types",
      "rocq": "types/Types.v: ty",
-     "tex": "\\begin{array}{rl}\nT, U ::= & \\htmlData{k=ty.unit}{\\ast} \\mid \\htmlData{k=ty.arrow}{T\\annot{^{a}} \\multimap^{\\htmlData{k=ty.arrow.ub}{u}}_{\\htmlData{k=ty.arrow.lb}{l}}\\annot{[\\htmlData{k=ty.arrow.cost}{c} ; \\htmlData{k=ty.arrow.tix}{\\vartheta} ; \\htmlData{k=ty.arrow.floor}{h}]}\\, U\\annot{^{b}}} \\mid \\htmlData{k=ty.prod}{T\\annot{^{a}} \\otimes U\\annot{^{b}}} \\mid \\htmlData{k=ty.sum}{T\\annot{^{a}} \\oplus U\\annot{^{b}}} \\mid \\htmlData{k=ty.sess}{S@x} \\\\\n\\mid & \\htmlData{k=ty.box}{\\Box(\\forall \\htmlData{k=pt.var}{\\bar\\iota}\\, \\htmlData{k=ty.box.svars}{\\bar\\alpha}.\\ \\htmlData{k=ty.box.constraint}{C}.\\ \\ast \\multimap^{u}\\annot{[c ; \\vartheta]}\\, U\\annot{^{b}})} \\mid \\htmlData{k=ty.ex}{\\exists^{\\htmlData{k=ty.ex.lb}{l}} \\bar\\iota.\\ C.\\ T\\annot{^{a}}}\n\\end{array}",
+     "tex": "\\begin{array}{rl}\nT, U ::= & \\htmlData{k=ty.unit}{\\ast} \\mid \\htmlData{k=ty.arrow}{(T \\multimap^{\\htmlData{k=ty.arrow.ub}{u}}_{\\htmlData{k=ty.arrow.lb}{l}}\\annot{[\\htmlData{k=ty.arrow.cost}{c} ; \\htmlData{k=ty.arrow.tix}{\\vartheta} ; \\htmlData{k=ty.arrow.floor}{h}]}\\, U)\\annot{^{\\htmlData{k=ty.credit}{a}}}} \\mid \\htmlData{k=ty.prod}{T \\otimes U} \\mid \\htmlData{k=ty.sum}{T \\oplus U} \\mid \\htmlData{k=ty.sess}{(S@x)\\annot{^{\\htmlData{k=ty.credit}{a}}}} \\\\\n\\mid & \\htmlData{k=ty.box}{\\Box(\\forall \\htmlData{k=pt.var}{\\bar\\iota}\\, \\htmlData{k=ty.box.svars}{\\bar\\alpha}.\\ \\htmlData{k=ty.box.constraint}{C}.\\ \\ast \\multimap^{u}\\annot{[c ; \\vartheta]}\\, U)} \\mid \\htmlData{k=ty.ex}{\\exists^{\\htmlData{k=ty.ex.lb}{l}} \\bar\\iota.\\ C.\\ T}\n\\end{array}",
      "variants": {
       "df": "\\begin{array}{rl} T, U ::= & \\htmlData{k=ty.unit}{\\ast} \\mid \\htmlData{k=ty.arrow}{T \\multimap^{\\htmlData{k=ty.arrow.ub}{u}}_{\\htmlData{k=ty.arrow.lb}{l}} U} \\mid \\htmlData{k=ty.prod}{T \\otimes U} \\mid \\htmlData{k=ty.sum}{T \\oplus U} \\mid \\htmlData{k=ty.sess}{S@x} \\\\ \\mid & \\htmlData{k=ty.box}{\\Box(\\forall \\htmlData{k=pt.var}{\\bar\\iota}\\, \\htmlData{k=ty.box.svars}{\\bar\\alpha}.\\ \\htmlData{k=ty.box.constraint}{C}.\\ \\ast \\multimap^{u} U)} \\mid \\htmlData{k=ty.ex}{\\exists^{\\htmlData{k=ty.ex.lb}{l}} \\bar\\iota.\\ C.\\ T} \\end{array}"
      },
-     "caption": "\\annp{$S@x$ is an end at the point $x$, and the superscripts $a, b$ are credits.}",
+     "caption": "$S@x$ is an end at the point $x$. \\annp{Credits $a$ sit on ends and on closures, the two places where a value holds ends of its own.}",
      "modes": [
       "df",
       "lf"
@@ -227,14 +227,14 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\htmlData{k=ty.credit}{T\\annot{^{a}},\\ a \\in \\mathbb{N} \\cup \\{\\infty\\}} \\qquad \\htmlData{k=ty.credit-agg}{(T\\annot{^{a_1}} \\otimes U\\annot{^{a_2}})\\annot{^{a}} \\text{ gives } a + a_1,\\ a + a_2}",
-     "caption": "A credit $a$ bounds the counters of the ends a value holds from below, and adds to the credits of the parts of an aggregate."
+     "tex": "\\htmlData{k=ty.credit}{(S@x)\\annot{^{a}},\\ (T \\multimap U)\\annot{^{a}},\\ a \\in \\mathbb{N} \\cup \\{\\infty\\}}",
+     "caption": "The credit of an end bounds its counter from below, and the credit of a closure bounds the counters of the ends it captured above its floor. Pairs, sums, existentials and payloads carry no credit, their ends carry their own."
     },
     {
      "id": "ty-session",
      "title": "Session types",
      "rocq": "types/Types.v: sty, unfoldS",
-     "tex": "\\begin{array}{rl}\nS ::= & \\htmlData{k=sty.skip}{\\mathsf{Skip}} \\mid \\htmlData{k=sty.seq}{S.S} \\mid \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ T\\annot{^{\\htmlData{k=sty.payload-credit}{b}}})} \\mid \\htmlData{k=sty.send}{!(\\bar\\iota.\\ T\\annot{^{b}})} \\mid \\htmlData{k=sty.plus}{\\oplus(S_1, S_2)} \\\\\n\\mid & \\htmlData{k=sty.with}{\\&(S_1, S_2)} \\mid \\htmlData{k=sty.close}{\\mathsf{Close}} \\mid \\htmlData{k=sty.mu}{\\mu\\alpha.S} \\mid \\htmlData{k=sty.var}{\\alpha} \\mid \\htmlData{k=sty.vard}{\\overline{\\alpha}} \\qquad \\htmlData{k=sty.unfold}{\\mathsf{unfold}(S)}\n\\end{array}",
+     "tex": "\\begin{array}{rl}\nS ::= & \\htmlData{k=sty.skip}{\\mathsf{Skip}} \\mid \\htmlData{k=sty.seq}{S.S} \\mid \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ T)} \\mid \\htmlData{k=sty.send}{!(\\bar\\iota.\\ T)} \\mid \\htmlData{k=sty.plus}{\\oplus(S_1, S_2)} \\\\\n\\mid & \\htmlData{k=sty.with}{\\&(S_1, S_2)} \\mid \\htmlData{k=sty.close}{\\mathsf{Close}} \\mid \\htmlData{k=sty.mu}{\\mu\\alpha.S} \\mid \\htmlData{k=sty.var}{\\alpha} \\mid \\htmlData{k=sty.vard}{\\overline{\\alpha}} \\qquad \\htmlData{k=sty.unfold}{\\mathsf{unfold}(S)}\n\\end{array}",
      "caption": "Session types with sequencing $S.S$, read through $\\mathsf{unfold}(S)$, whose payloads bind point variables $\\bar\\iota$ at the fields of the carrier.",
      "modes": [
       "df",
@@ -287,23 +287,43 @@ window.MAP = {
     },
     {
      "id": "ty-annot",
-     "title": "Costs and ticket transformers",
-     "rocq": "types/Costs.v: tix, meets, tspawn, tlink, tseq, tok",
+     "title": "Annotation values",
+     "rocq": "types/Costs.v: fuel",
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{l}\n\\htmlData{k=ann.fuel}{a, c, h \\in \\mathbb{N}\\cup\\{\\infty\\}} \\qquad \\htmlData{k=ann.tix}{\\vartheta = (s, b) : r \\mapsto 2^{s} r + b} \\qquad \\htmlData{k=ann.tid}{\\hat 1 = (0, 0)} \\\\\n\\htmlData{k=ann.meets}{\\mathsf{meets}\\,\\vartheta\\,r\\,tk \\iff \\vartheta(r) \\leq tk} \\qquad \\htmlData{k=ann.tlink}{\\mathsf{tlink}\\,\\vartheta = (s, b{+}1)} \\\\\n\\htmlData{k=ann.tspawn}{\\mathsf{tspawn}\\,b_c\\,\\vartheta = (s{+}1, \\max(2b, 2b_c{-}1))} \\qquad \\htmlData{k=ann.tseq}{\\vartheta_1 \\circ \\vartheta_2} \\\\\n\\htmlData{k=ann.tok}{\\mathsf{tok}\\,\\vartheta_1\\,\\vartheta_2 \\iff b_2 = 0 \\lor s_1 \\neq \\infty \\lor b_1 = \\infty}\n\\end{array}",
-     "caption": "Credits, costs and floors range over $\\mathbb{N} \\cup \\{\\infty\\}$, and $\\vartheta$ maps a reserve $r$ to the tickets $tk$ a term needs."
+     "tex": "\\htmlData{k=ann.fuel}{a, c, h, N \\in \\mathbb{N} \\cup \\{\\infty\\} \\qquad \\infty - c = \\infty}",
+     "caption": "Credits $a$, costs $c$, floors $h$ and the refill $N$ are numbers, and $\\infty$ means unbounded."
+    },
+    {
+     "id": "ty-tix",
+     "title": "Ticket needs",
+     "rocq": "types/Costs.v: tix, tapp, tid, meets",
+     "modes": [
+      "lf"
+     ],
+     "tex": "\\begin{array}{l}\n\\htmlData{k=ann.tix}{\\vartheta = (s, b) \\qquad \\vartheta(r) = 2^{s}\\, r + b} \\qquad \\htmlData{k=ann.tid}{\\hat 1 = (0, 0),\\ \\hat 1(r) = r} \\\\\n\\htmlData{k=ann.meets}{\\mathsf{meets}\\,\\vartheta\\,r\\,tk \\iff \\vartheta(r) \\leq tk}\n\\end{array}",
+     "caption": "A term that must leave $r$ link tickets over needs $\\vartheta(r)$ tickets when it starts. A thread with $tk$ tickets runs it if $\\mathsf{meets}\\,\\vartheta\\,r\\,tk$."
+    },
+    {
+     "id": "ty-tix-ops",
+     "title": "Combining ticket needs",
+     "rocq": "types/Costs.v: tlink, tspawn, tseq, tok",
+     "modes": [
+      "lf"
+     ],
+     "tex": "\\begin{array}{l}\n\\htmlData{k=ann.tlink}{\\mathsf{tlink}\\,(s, b) = (s, b + 1)} \\qquad \\htmlData{k=ann.tseq}{(\\vartheta_1 \\circ \\vartheta_2)(r) = \\vartheta_1(\\vartheta_2(r))} \\\\\n\\htmlData{k=ann.tspawn}{\\mathsf{tspawn}\\,b_c\\,(s, b) = (s + 1, \\max(2b, 2b_c - 1))} \\qquad \\htmlData{k=ann.tok}{\\mathsf{tok}\\,\\vartheta_1\\,\\vartheta_2}\n\\end{array}",
+     "caption": "The typing rules build the need of a term from the needs of its parts. A link adds one, a spawn doubles the rest, sequencing composes, and $\\mathsf{tok}$ says when a composition is again a pair."
     },
     {
      "id": "ty-df",
-     "title": "Annotations of deadlock-freedom typing",
+     "title": "Deadlock-free typing as an instance",
      "rocq": "types/Types.v: ty_df, cr_df",
      "modes": [
       "lf"
      ],
-     "tex": "\\htmlData{k=ann.tydf}{\\begin{array}{l}\n\\mathsf{ty\\_df}(T):\\ \\text{credits } \\infty\\ (0 \\text{ on } \\otimes, \\oplus, \\exists),\\ \\text{costs } \\infty, \\\\\n\\qquad \\vartheta = (\\infty,\\infty),\\ \\text{floors } \\infty\n\\end{array}}",
-     "caption": "The deadlock-freedom instance $N = \\infty$ of every annotation."
+     "tex": "\\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}:\\quad a = c = h = N = \\infty \\qquad \\vartheta = (\\infty, \\infty)}",
+     "caption": "Deadlock-free typing is the annotated typing with every annotation at its unbounded value. $\\mathsf{ty\\_df}$ sets a type to these values, and then every premise about annotations holds."
     },
     {
      "id": "ty-kinds",
@@ -375,7 +395,7 @@ window.MAP = {
      "variants": {
       "df": "\\htmlData{k=tj.Theta}{\\Theta} ; \\htmlData{k=tj.Gamma}{\\Gamma} ; \\htmlData{k=tj.Delta}{\\Delta} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=tj.F}{F}}_{\\htmlData{k=tj.W}{W}} t : T \\qquad \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t}"
      },
-     "caption": "\\annp{$\\Theta$ maps ends, $\\Gamma$ holds facts, $\\Delta$ variables, $F$ is the future, $N$ the refill, $c$ the cost and $\\vartheta$ the transformer.}",
+     "caption": "\\annp{$\\Theta$ maps ends, $\\Gamma$ holds facts, $\\Delta$ variables, $F$ is the future, $N$ the refill, $c$ the cost and $\\vartheta$ the ticket need.}",
      "modes": [
       "df",
       "lf"
@@ -431,7 +451,7 @@ window.MAP = {
      "variants": {
       "df": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-sess}{S \\htmlData{k=sty.seqv}{\\approx} S'}\\end{array}}{\\htmlData{k=sub.tsub}{S@x \\leq S'@x}}\\;\\textsf{Sub-Sess} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-ex}{\\mathsf{facts}\\,C' \\subseteq \\mathsf{facts}\\,C}\\\\ \\htmlData{k=tp.sub-teq}{T \\equiv T'}\\end{array}}{\\htmlData{k=sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\htmlData{k=tp.sub-var}{\\text{componentwise on } \\otimes, \\oplus, \\Box,\\ \\text{contravariant in the argument of } \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=sub.dconv}{\\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T \\leq \\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T'}\\end{array}}{t : T \\Rightarrow t : T'}\\;\\textsf{D-Conv}\\end{array}"
      },
-     "caption": "\\annp{At annotations $\\infty$ subtyping is $\\approx$ on sessions plus dropping facts of $\\exists$, and at finite $N$ credits fall while costs, transformers and floors rise.}",
+     "caption": "\\annp{At annotations $\\infty$ subtyping is $\\approx$ on sessions plus dropping facts of $\\exists$, and at finite $N$ credits fall while costs, ticket needs and floors rise.}",
      "modes": [
       "df",
       "lf"
@@ -445,7 +465,7 @@ window.MAP = {
      "variants": {
       "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\ast : \\ast}\\;\\textsf{D-Unit}"
      },
-     "caption": "\\annp{$\\ast$ holds no end, has cost $0$ and transformer $\\hat 1$.}",
+     "caption": "\\annp{$\\ast$ holds no end, has cost $0$ and ticket need $\\hat 1$.}",
      "modes": [
       "df",
       "lf"
@@ -543,7 +563,7 @@ window.MAP = {
      "variants": {
       "df": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : T_i\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.inj}{\\mathsf{inj}_i\\,e} : T_1 \\oplus T_2}\\;\\textsf{D-Inj} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W} e : T_1 \\oplus T_2}\\\\ \\htmlData{k=E-Case.branches}{\\Theta_2 ; \\Gamma ; T_i, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_i : T}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.case}{\\mathsf{case}}\\ e\\,(e_1)\\,(e_2) : T}\\;\\textsf{D-Case}\\end{array}"
      },
-     "caption": "\\annp{An injection keeps the context, cost and transformer of its argument.} Both branches of a case type under one context at one result, at cost $\\max(c_1, c_2)$.",
+     "caption": "\\annp{An injection keeps the context, cost and ticket need of its argument.} Both branches of a case type under one context at one result, at cost $\\max(c_1, c_2)$.",
      "modes": [
       "df",
       "lf"
@@ -582,7 +602,7 @@ window.MAP = {
      "title": "Types of constants",
      "rocq": "static/Typing.v: e_send, e_recv, e_close, e_select, e_branch, e_link, e_spawn, e_force, e_new",
      "tex": "\\begin{array}{lll}\n\\htmlData{k=prim.send}{\\mathsf{send}} & : T[x\\cdot i] \\otimes S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S@\\htmlData{k=pt.shift}{x^{+}} & \\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T,\\ \\neg\\htmlData{k=ty.hbot}{\\mathsf{hbot}}\\,T,\\ \\htmlData{k=E-Send.heads}{x \\prec \\htmlData{k=ty.heads}{\\mathsf{heads}}(T[x\\cdot i])} \\\\\n\\htmlData{k=prim.recv}{\\mathsf{recv}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} T[x\\cdot i] \\otimes S@x^{+} & \\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T \\\\\n\\htmlData{k=prim.close}{\\mathsf{close}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} \\ast & \\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}} \\\\\n\\htmlData{k=prim.select}{\\mathsf{select}}_i & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}} & \\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)} \\\\\n\\htmlData{k=prim.branch}{\\mathsf{branch}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2 & \\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)} \\\\\n\\htmlData{k=prim.link}{\\mathsf{link}} & : \\htmlData{k=E-Link.dual}{S@x \\otimes \\overline{S}@\\overline{x}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.spawn}{\\mathsf{spawn}} & : (\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} \\ast) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.force}{\\mathsf{force}} & : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] & \\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]} \\\\\n\\htmlData{k=syn.new}{\\mathsf{new}} & : \\exists^{\\bot}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ (S@\\pi \\otimes \\overline{S}@\\overline{\\pi}) & \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho)\\} \\cup \\{(\\varepsilon, x\\cdot\\kappa)\\}},\\ \\htmlData{k=E-New.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\Gamma \\cup C)}\n\\end{array}",
-     "caption": "\\annp{Each constant has the type of its eta-expansion $\\lambda y.\\,k\\,y$, for every instance of its variables that meets the conditions on the right, shown without credits, cost and transformer.} An action on $x$ has upper point $x$, so it runs only below the future of its caller. $\\mathsf{new}$ is a term and has the type of E-New.",
+     "caption": "\\annp{Each constant has the type of its eta-expansion $\\lambda y.\\,k\\,y$, for every instance of its variables that meets the conditions on the right, shown without credits, cost and ticket need.} An action on $x$ has upper point $x$, so it runs only below the future of its caller. $\\mathsf{new}$ is a term and has the type of E-New.",
      "modes": [
       "df",
       "lf"
@@ -592,7 +612,7 @@ window.MAP = {
      "id": "r-send",
      "title": "E-Send",
      "rocq": "static/Typing.v: e_send",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T\\annot{^{b}}).S}\\\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\\\ \\htmlData{k=E-Send.nobot}{\\neg\\htmlData{k=ty.hbot}{\\mathsf{hbot}}\\,T} \\\\ \\htmlData{k=E-Send.heads}{\\forall y \\in \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\htmlData{k=ty.payload-at}{T[x\\cdot i]}).\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec y}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : (T[x\\cdot i]\\annot{^{a_p}} \\otimes (S_0@x)\\annot{^{a_S}})\\annot{^{a_0}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0} \\\\ \\annot{\\htmlData{k=E-Send.floor}{(T[x\\cdot i], a_0 + a_p) - 1 \\leq T[x\\cdot i]\\annot{^{b}}}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=prim.send}{\\mathsf{send}}\\,e : (S@\\htmlData{k=pt.shift}{x^{+}})^{\\annot{\\htmlData{k=act.refill}{N}}} \\mathbin{\\annot{\\htmlData{k=tp.tri}{\\triangleright}}} c_0 + 1 ; \\vartheta_0}\\;\\textsf{E-Send}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S}\\\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\\\ \\htmlData{k=E-Send.nobot}{\\neg\\htmlData{k=ty.hbot}{\\mathsf{hbot}}\\,T} \\\\ \\htmlData{k=E-Send.heads}{\\forall y \\in \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\htmlData{k=ty.payload-at}{T[x\\cdot i]}).\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec y}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : (T[x\\cdot i]\\annot{^{a_p}} \\otimes (S_0@x)\\annot{^{a_S}})\\annot{^{a_0}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0} \\\\ \\annot{\\htmlData{k=E-Send.floor}{(T[x\\cdot i], a_0 + a_p) - 1 \\leq T[x\\cdot i]\\annot{^{b}}}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=prim.send}{\\mathsf{send}}\\,e : (S@\\htmlData{k=pt.shift}{x^{+}})^{\\annot{\\htmlData{k=act.refill}{N}}} \\mathbin{\\annot{\\htmlData{k=tp.tri}{\\triangleright}}} c_0 + 1 ; \\vartheta_0}\\;\\textsf{E-Send}",
      "variants": {
       "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S}\\\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\\\ \\htmlData{k=E-Send.nobot}{\\neg\\htmlData{k=ty.hbot}{\\mathsf{hbot}}\\,T}\\\\ \\htmlData{k=E-Send.heads}{x \\prec \\htmlData{k=ty.heads}{\\mathsf{heads}}(T[x\\cdot i])}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : T[x\\cdot i] \\otimes S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.send}{\\mathsf{send}}\\,e : S@\\htmlData{k=pt.shift}{x^{+}}}\\;\\textsf{D-Send}"
      },
@@ -606,7 +626,7 @@ window.MAP = {
      "id": "r-recv",
      "title": "E-Recv",
      "rocq": "static/Typing.v: e_recv",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T\\annot{^{b}}).S}\\\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : (S_0@x)\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=prim.recv}{\\mathsf{recv}}\\,e : (T[x\\cdot i]\\annot{^{\\htmlData{k=sty.payload-credit}{b}}} \\otimes (S@\\htmlData{k=pt.shift}{x^{+}})^{\\annot{\\htmlData{k=act.refill}{N}}})\\annot{^{0}} \\mathbin{\\annot{\\htmlData{k=tp.tri}{\\triangleright}}} c_0 + 1 ; \\vartheta_0}\\;\\textsf{E-Recv}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S}\\\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : (S_0@x)\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=prim.recv}{\\mathsf{recv}}\\,e : (T[x\\cdot i] \\otimes (S@\\htmlData{k=pt.shift}{x^{+}})^{\\annot{\\htmlData{k=act.refill}{N}}})\\annot{^{0}} \\mathbin{\\annot{\\htmlData{k=tp.tri}{\\triangleright}}} c_0 + 1 ; \\vartheta_0}\\;\\textsf{E-Recv}",
      "variants": {
       "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S}\\\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.recv}{\\mathsf{recv}}\\,e : T[x\\cdot i] \\otimes S@\\htmlData{k=pt.shift}{x^{+}}}\\;\\textsf{D-Recv}"
      },
@@ -722,7 +742,7 @@ window.MAP = {
      "variants": {
       "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=sub.dconv}{\\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T \\leq \\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T'}\\end{array}}{t : T \\Rightarrow t : T'}\\;\\textsf{D-Conv}"
      },
-     "caption": "\\annp{A type may lose\\annp{ credit and }a cost or transformer may rise.}",
+     "caption": "\\annp{A type may lose\\annp{ credit and }a cost or ticket need may rise.}",
      "modes": [
       "df",
       "lf"
@@ -1100,7 +1120,7 @@ window.MAP = {
       "lf"
      ],
      "tex": "\\begin{array}{l}\n\\htmlData{k=FV-Sess}{o \\in FV\\llbracket (S@x)\\annot{^{a}}\\rrbracket(\\Pi, \\varphi) \\iff \\Pi = \\{o \\mapsto S'\\} \\land \\varphi = \\{o \\mapsto f\\} \\land S' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} S \\land \\htmlData{k=FV-Sess.counter}{a \\leq f}} \\\\\n\\htmlData{k=FV-Arrow}{\\lambda e \\in FV^N_n\\llbracket (T\\annot{^{a_1}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}_{c;\\vartheta;h} U\\annot{^{a_2}})\\annot{^{a}}\\rrbracket(\\Pi,\\varphi) \\iff \\htmlData{k=FV-Arrow.exact}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\mathrm{dom}\\,\\Pi = \\mathrm{dom}\\,\\varphi} \\land {}} \\\\\n\\quad \\htmlData{k=FV-Arrow.floor}{\\forall o.\\ h + a \\leq \\varphi(o)} \\land \\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N,\\ j < n,\\ \\varphi' \\text{ with } \\mathrm{dom}\\,\\varphi' = \\mathrm{dom}\\,\\varphi \\land h \\leq \\varphi', \\\\\n\\quad \\htmlData{k=FV-Arrow.body}{u \\in \\htmlData{k=sr.FV}{FV^{N'}_{j}\\llbracket T\\annot{^{a_1}} \\rrbracket(\\Pi_u, \\varphi_u)},\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,r\\,tk.\\ e[u] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket U\\annot{^{a_2}} \\annot{\\triangleright c ; r} \\rrbracket(\\Pi \\cup \\Pi_u, \\varphi' \\cup \\varphi_u, tk)}} \\\\\n\\htmlData{k=FV-Box}{!e \\in FV^N_n\\llbracket \\Box(\\ldots U)\\rrbracket(\\Pi,\\varphi) \\iff \\htmlData{k=FV-Box.noends}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\varnothing \\land \\Pi = \\varphi = \\varnothing} \\land {}} \\\\\n\\quad \\htmlData{k=FV-Box.body}{\\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N, j < n, \\bar s \\in \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,N', \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,r\\,tk.\\ e[!e] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket U[\\bar s] \\annot{\\triangleright c ; r} \\rrbracket(\\varnothing,\\varnothing,tk)}} \\\\\n\\htmlData{k=FV-Thread}{v \\in FV\\llbracket \\htmlData{k=fu.rty}{\\mathsf{thread}} \\rrbracket(\\Pi,\\varphi) \\iff \\Pi = \\varphi = \\varnothing} \\qquad \\htmlData{k=sr.fvagg}{\\otimes, \\oplus, \\exists \\text{ add their credit to the parts}}\n\\end{array}",
-     "caption": "Fueled values by recursion on the type, reading credits, costs, transformers and floors and no point."
+     "caption": "Fueled values by recursion on the type, reading credits, costs, ticket needs and floors and no point."
     },
     {
      "id": "fu-fsem",
@@ -3136,20 +3156,25 @@ window.MAP = {
   },
   "ty.arrow": {
    "title": "Arrow",
-   "what": "\\annp{$T\\annot{^{a}} \\multimap^{u}_{l}\\annot{[c ; \\vartheta ; h]}\\,U\\annot{^{b}}$ is a closure type with upper point $u$, lower point $l$, cost $c$, transformer $\\vartheta$, floor $h$\\annp{ and credits} $a, b$.}",
+   "what": "\\annp{$(T \\multimap^{u}_{l}\\annot{[c ; \\vartheta ; h]}\\,U)\\annot{^{a}}$ is a closure type with upper point $u$, lower point $l$, cost $c$, ticket need $\\vartheta$, floor $h$\\annp{ and credit} $a$ for the captured ends.}",
    "why": "A call runs code that may block and holds the ends of the closure. The type bounds where the call blocks by $u$ and where the held ends sit by $l$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\ast \\multimap \\ast$ is the type of a spawned thunk.",
    "rocq": "types/Types.v: TLolli",
-   "sig": "T\\annot{^{a}} \\multimap^{u}_{l}\\annot{[c ; \\vartheta ; h]}\\,U\\annot{^{b}} \\in \\mathsf{Ty}",
+   "sig": "(T \\multimap^{u}_{l}\\annot{[c ; \\vartheta ; h]}\\,U)\\annot{^{a}} \\in \\mathsf{Ty}",
    "args": [
     {
-     "name": "T, a",
-     "meaning": "The argument type\\annp{ and its credit}."
+     "name": "T",
+     "meaning": "The argument type."
     },
     {
-     "name": "U, b",
-     "meaning": "The result type\\annp{ and its credit}."
+     "name": "U",
+     "meaning": "The result type."
+    },
+    {
+     "name": "a",
+     "meaning": "The credit of the captured ends above the floor $h$.",
+     "ann": true
     },
     {
      "name": "u",
@@ -3165,7 +3190,7 @@ window.MAP = {
     },
     {
      "name": "\\vartheta",
-     "meaning": "A ticket transformer $(s, b)$ with $s, b \\in \\mathbb{N} \\cup \\{\\infty\\}$, the function $r \\mapsto 2^{s} r + b$ from tickets left to tickets needed.",
+     "meaning": "A ticket need $(s, b)$ with $s, b \\in \\mathbb{N} \\cup \\{\\infty\\}$, the function $r \\mapsto 2^{s} r + b$ from tickets left to tickets needed.",
      "ann": true
     },
     {
@@ -3221,7 +3246,7 @@ window.MAP = {
    ]
   },
   "ty.arrow.tix": {
-   "title": "Ticket transformer $\\vartheta$ of a call",
+   "title": "ticket need $\\vartheta$ of a call",
    "what": "A call that must leave its caller $r$ link tickets needs $\\vartheta(r)$ tickets when it starts. With $\\vartheta = (s, b)$, $\\vartheta(r) = 2^{s} r + b$, where $s$ counts the spawns of the call, each of which halves the tickets of its thread, and $b$ covers its links.",
    "why": "A link acts on no protocol, so no counter of an end bounds how often a thread links. Each link spends one ticket of the linking thread and no step creates tickets, so every run performs finitely many links.",
    "breaks": "A thread that links the partner of a waiting end to a fresh channel in every round, and acts on some other channel in between, starves the waiter. Each round gives the waiter a fresh partner with a full counter, so counters never run out and only the tickets bound the rounds.",
@@ -3231,7 +3256,7 @@ window.MAP = {
    "args": [
     {
      "name": "\\vartheta",
-     "meaning": "A ticket transformer $(s, b)$ with $s, b \\in \\mathbb{N} \\cup \\{\\infty\\}$, the function $r \\mapsto 2^{s} r + b$ from tickets left to tickets needed.",
+     "meaning": "A ticket need $(s, b)$ with $s, b \\in \\mathbb{N} \\cup \\{\\infty\\}$, the function $r \\mapsto 2^{s} r + b$ from tickets left to tickets needed.",
      "ann": true
     }
    ]
@@ -3253,76 +3278,46 @@ window.MAP = {
   },
   "ty.credit": {
    "title": "Credit $a$",
-   "what": "$a \\in \\mathbb{N} \\cup \\{\\infty\\}$ is a lower bound on the counter of every end a value of type $T\\annot{^{a}}$ holds.",
-   "why": "A counter bounds how many actions of other ends an end may still wait through. A credit lets a type state that bound.",
+   "what": "$a \\in \\mathbb{N} \\cup \\{\\infty\\}$ on an end type $(S@x)\\annot{^{a}}$ is a lower bound on the counter of that end. On a closure type $(T \\multimap [\\ldots ; h]\\, U)\\annot{^{a}}$ every captured end has counter at least $h + a$.",
+   "why": "A counter bounds how many actions of other ends an end may still wait through. Only ends and closures hold ends of their own. A pair, a sum or an existential holds the ends of its parts, and their types carry the credits.",
    "breaks": "A send of an end whose counter may be $0$ lets the end travel forever while its partner waits.",
-   "example": "A fresh end has credit $N$.",
-   "rocq": "types/Types.v: ty (fuel fields)",
+   "example": "A fresh end has type $(S@\\rho)\\annot{^{N}}$.",
+   "rocq": "types/Types.v: TSess, TLolli",
    "sig": "a \\in \\mathbb{N} \\cup \\{\\infty\\}",
    "args": [
     {
      "name": "a",
-     "meaning": "A lower bound on the counter of every end a value of $T\\annot{^{a}}$ holds."
-    }
-   ]
-  },
-  "ty.credit-agg": {
-   "title": "Credit of an aggregate",
-   "what": "$(T\\annot{^{a_1}} \\otimes U\\annot{^{a_2}})\\annot{^{a}}$ gives credit $a + a_1$ to $T$ and $a + a_2$ to $U$, and likewise for $\\oplus$ and $\\exists$.",
-   "why": "Aging, capture and subtyping push the outer credit inward, so a credit on an aggregate bounds the counters of all its ends.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$(T^{1} \\otimes U^{2})^{1}$ gives $T$ credit $2$ and $U$ credit $3$.",
-   "rocq": "static/Contexts.v: tage, tcap, tsub",
-   "sig": "(T\\annot{^{a_1}} \\otimes U\\annot{^{a_2}})\\annot{^{a}}",
-   "args": [
-    {
-     "name": "a",
-     "meaning": "The outer credit of the aggregate.",
-     "ann": true
-    },
-    {
-     "name": "a_1, a_2",
-     "meaning": "The inner credits, the parts get $a + a_1$ and $a + a_2$."
+     "meaning": "A lower bound on the counter of an end, or of the ends a closure captured above its floor."
     }
    ]
   },
   "ty.prod": {
    "title": "Product",
-   "what": "$T\\annot{^{a}} \\otimes U\\annot{^{b}}$. Its value relation splits $\\Theta = \\Theta_1 \\uplus \\Theta_2$ between the components.",
+   "what": "$T \\otimes U$. Its value relation splits $\\Theta = \\Theta_1 \\uplus \\Theta_2$ between the components.",
    "why": "A plain type. $\\mathsf{send}$ takes a pair and $\\mathsf{recv}$ returns one.",
    "breaks": "Nothing. It is a definition.",
    "example": "$S_1@\\iota \\otimes S_2@\\kappa$ for two ends of a client.",
    "rocq": "types/Types.v: TProd",
-   "sig": "T\\annot{^{a}} \\otimes U\\annot{^{b}} \\in \\mathsf{Ty}",
+   "sig": "T \\otimes U \\in \\mathsf{Ty}",
    "args": [
     {
      "name": "T, U",
      "meaning": "The component types."
-    },
-    {
-     "name": "a, b",
-     "meaning": "The component credits.",
-     "ann": true
     }
    ]
   },
   "ty.sum": {
    "title": "Sum",
-   "what": "$T\\annot{^{a}} \\oplus U\\annot{^{b}}$, the type of $\\mathsf{inj}_1\\,v$ with $v : T$ and of $\\mathsf{inj}_2\\,v$ with $v : U$.",
+   "what": "$T \\oplus U$, the type of $\\mathsf{inj}_1\\,v$ with $v : T$ and of $\\mathsf{inj}_2\\,v$ with $v : U$.",
    "why": "A plain type. $\\mathsf{branch}$ returns a sum whose injection records the choice.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{branch}$ at $x$ returns $S_1@x\\cdot\\kappa_{\\mathsf{false}} \\oplus S_2@x\\cdot\\kappa_{\\mathsf{true}}$.",
    "rocq": "types/Types.v: TSum",
-   "sig": "T\\annot{^{a}} \\oplus U\\annot{^{b}} \\in \\mathsf{Ty}",
+   "sig": "T \\oplus U \\in \\mathsf{Ty}",
    "args": [
     {
      "name": "T, U",
      "meaning": "The types of the two injections."
-    },
-    {
-     "name": "a, b",
-     "meaning": "Their credits.",
-     "ann": true
     }
    ]
   },
@@ -3333,7 +3328,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$(!\\ast.\\mathsf{Close})@\\rho$.",
    "rocq": "types/Types.v: TSess",
-   "sig": "S@x \\in \\mathsf{Ty}",
+   "sig": "(S@x)\\annot{^{a}} \\in \\mathsf{Ty}",
    "args": [
     {
      "name": "S",
@@ -3342,6 +3337,11 @@ window.MAP = {
     {
      "name": "x",
      "meaning": "The point of its next action."
+    },
+    {
+     "name": "a",
+     "meaning": "Its credit, a lower bound on its counter.",
+     "ann": true
     }
    ]
   },
@@ -3352,7 +3352,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "A client loop has type $\\Box\\forall\\iota\\,\\kappa\\,\\zeta.\\ C.\\ \\ast \\multimap (S_1@\\iota \\otimes S_2@\\kappa \\multimap^{\\zeta} \\ast)$.",
    "rocq": "types/Types.v: TBox",
-   "sig": "\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u}\\annot{[c ; \\vartheta]}\\,U\\annot{^{b}}) \\in \\mathsf{Ty}",
+   "sig": "\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u}\\annot{[c ; \\vartheta]}\\,U) \\in \\mathsf{Ty}",
    "args": [
     {
      "name": "\\bar\\iota",
@@ -3372,12 +3372,12 @@ window.MAP = {
     },
     {
      "name": "c, \\vartheta",
-     "meaning": "Cost and transformer of one force.",
+     "meaning": "Cost and ticket need of one force.",
      "ann": true
     },
     {
-     "name": "U, b",
-     "meaning": "The result type\\annp{ and credit}."
+     "name": "U",
+     "meaning": "The result type."
     }
    ]
   },
@@ -3418,7 +3418,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{new} : \\exists^{\\bot}\\iota.\\ \\{\\overline{\\iota} \\prec \\iota\\cdot 0\\}.\\ (S@\\iota \\otimes \\overline{S}@\\overline{\\iota})$.",
    "rocq": "types/Types.v: TEx",
-   "sig": "\\exists^{l}\\bar\\iota.\\ C.\\ T\\annot{^{a}} \\in \\mathsf{Ty}",
+   "sig": "\\exists^{l}\\bar\\iota.\\ C.\\ T \\in \\mathsf{Ty}",
    "args": [
     {
      "name": "l",
@@ -3433,8 +3433,8 @@ window.MAP = {
      "meaning": "The facts the witness satisfies."
     },
     {
-     "name": "T, a",
-     "meaning": "The body type\\annp{ and its credit}."
+     "name": "T",
+     "meaning": "The body type."
     }
    ]
   },
@@ -3480,12 +3480,12 @@ window.MAP = {
   },
   "sty.recv": {
    "title": "Receive",
-   "what": "$?(\\bar\\iota.\\ T\\annot{^{b}})$ receives a value of $T[x\\cdot 0, \\ldots, x\\cdot(m{-}1)]$ for $\\bar\\iota = \\iota_0, \\ldots, \\iota_{m-1}$ when the end sits at $x$.",
+   "what": "$?(\\bar\\iota.\\ T)$ receives a value of $T[x\\cdot 0, \\ldots, x\\cdot(m{-}1)]$ for $\\bar\\iota = \\iota_0, \\ldots, \\iota_{m-1}$ when the end sits at $x$.",
    "why": "A plain protocol action. The binder $\\bar\\iota$ is no existential, because the receiver knows the points of the payload, the fields of $x$. It lets a message carry ends whose points the receiver learns as fields of $x$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mu\\alpha.\\,?(\\kappa.\\ \\alpha @\\kappa).\\mathsf{Close}$ receives an end of the same protocol at a field.",
    "rocq": "types/Types.v: SRcv",
-   "sig": "?(\\bar\\iota.\\ T\\annot{^{b}}) \\in \\mathsf{STy}",
+   "sig": "?(\\bar\\iota.\\ T) \\in \\mathsf{STy}",
    "args": [
     {
      "name": "\\bar\\iota",
@@ -3494,22 +3494,17 @@ window.MAP = {
     {
      "name": "T",
      "meaning": "The payload type."
-    },
-    {
-     "name": "b",
-     "meaning": "The payload credit.",
-     "ann": true
     }
    ]
   },
   "sty.send": {
    "title": "Send",
-   "what": "$!(\\bar\\iota.\\ T\\annot{^{b}})$ sends a value of $T[x\\cdot 0, \\ldots, x\\cdot(m{-}1)]$ for $\\bar\\iota = \\iota_0, \\ldots, \\iota_{m-1}$\\annp{, at payload credit $b$}.",
+   "what": "$!(\\bar\\iota.\\ T)$ sends a value of $T[x\\cdot 0, \\ldots, x\\cdot(m{-}1)]$ for $\\bar\\iota = \\iota_0, \\ldots, \\iota_{m-1}$. \\annp{The ends of $T$ carry their credits, and the sender ages the payload by one hop.}",
    "why": "A plain protocol action, $\\mathsf{dual}$ of receive.",
    "breaks": "Nothing. It is a definition.",
    "example": "$!\\ast.\\mathsf{Close}$.",
    "rocq": "types/Types.v: SSnd",
-   "sig": "!(\\bar\\iota.\\ T\\annot{^{b}}) \\in \\mathsf{STy}",
+   "sig": "!(\\bar\\iota.\\ T) \\in \\mathsf{STy}",
    "args": [
     {
      "name": "\\bar\\iota",
@@ -3518,26 +3513,6 @@ window.MAP = {
     {
      "name": "T",
      "meaning": "The payload type."
-    },
-    {
-     "name": "b",
-     "meaning": "The payload credit.",
-     "ann": true
-    }
-   ]
-  },
-  "sty.payload-credit": {
-   "title": "Payload credit $b$",
-   "what": "Every end of the payload has counter at least $b$ at the receiver, and the sender supplies credit $b$ after aging by $1$.",
-   "why": "Each hop of an end costs $1$. Requiring $b + 1$ of the sender when the receiver gets $b$ bounds the number of hops by the counter.",
-   "breaks": "Without payload credits two threads pass an end back and forth forever, and its partner waits forever.",
-   "example": "A payload at credit $2$.",
-   "rocq": "types/Types.v: SRcv b, SSnd b",
-   "sig": "b \\in \\mathbb{N} \\cup \\{\\infty\\}",
-   "args": [
-    {
-     "name": "b",
-     "meaning": "The counter the receiver may assume for each end of the payload."
     }
    ]
   },
@@ -3830,21 +3805,21 @@ window.MAP = {
    ]
   },
   "ann.fuel": {
-   "title": "$\\mathbb{N} \\cup \\{\\infty\\}$",
-   "what": "Credits, costs, floors and counters range over $\\mathbb{N} \\cup \\{\\infty\\}$ with $\\infty - c = \\infty$ for every $c \\in \\mathbb{N}$.",
-   "why": "Deadlock-freedom typing is the instance where every fresh and refilled counter is $\\infty$, so every aging premise holds there.",
+   "title": "Numbers with $\\infty$",
+   "what": "Credits, costs, floors, counters and the refill range over $\\mathbb{N} \\cup \\{\\infty\\}$, where $\\infty$ means unbounded and $\\infty - c = \\infty$.",
+   "why": "Deadlock-free typing sets every annotation to $\\infty$. Then an end holds through any number of actions, and every check of a credit passes.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\infty - 3 = \\infty$.",
+   "example": "A credit $\\infty$ aged by $3$ stays $\\infty$.",
    "rocq": "types/Costs.v: fuel",
    "sig": "\\mathbb{N} \\cup \\{\\infty\\}",
    "args": []
   },
   "ann.tix": {
-   "title": "Ticket transformer",
-   "what": "$\\vartheta = (s, b)$ with $s, b \\in \\mathbb{N} \\cup \\{\\infty\\}$ stands for the function $r \\mapsto 2^{s} r + b$ from the tickets a term must leave to the tickets it needs.",
-   "why": "A spawn halves the tickets of its thread, so needs double with each spawn and add up with each link. $b = \\infty$ means that no finite number of tickets suffices. Deadlock-freedom typing counts no links and uses it everywhere.",
-   "breaks": "Without $b = \\infty$, deadlock-freedom typing would have to bound the links of every term.",
-   "example": "$(0, 1)$ needs $r + 1$ tickets, $(1, 1)$ needs $2r + 1$, and $(0, \\infty)$ is met by no ticket count.",
+   "title": "Ticket need $\\vartheta$",
+   "what": "A pair $\\vartheta = (s, b)$ standing for the function $\\vartheta(r) = 2^{s} r + b$. A term that must leave $r$ link tickets to the code after it needs $\\vartheta(r)$ tickets when it starts. $b$ grows with the links of the term, $s$ counts its spawns, and $s = \\infty$ means the term only runs if it leaves nothing.",
+   "why": "Each link spends one ticket of its thread and each spawn hands half of the tickets to the child. A pair $(s, b)$ describes every need these two operations produce, so the typing can compute needs by arithmetic.",
+   "breaks": "Without a closed form the typing would have to carry arbitrary functions from tickets to tickets.",
+   "example": "$(0, 1)$ is one link, needing $r + 1$. $(1, 1)$ is a spawn whose child links once, needing $2r + 1$. $(0, \\infty)$ is met by no ticket count.",
    "rocq": "types/Costs.v: tix, tapp",
    "sig": "\\vartheta = (s, b) \\in \\mathsf{Tix} = (\\mathbb{N} \\cup \\{\\infty\\})^{2}",
    "args": [
@@ -3863,27 +3838,27 @@ window.MAP = {
    ]
   },
   "ann.tid": {
-   "title": "$\\hat 1$",
-   "what": "$\\hat 1 = (0, 0)$, the identity $r \\mapsto r$.",
-   "why": "A value performs no link, so it needs exactly its reserve $r$.",
+   "title": "No need $\\hat 1$",
+   "what": "$\\hat 1 = (0, 0)$, the need of a term that performs no link and no spawn. It needs exactly the tickets it must leave, $\\hat 1(r) = r$.",
+   "why": "Values and most rules need nothing of their own.",
    "breaks": "Nothing. It is a definition.",
-   "example": "Every value types at $\\hat 1$.",
+   "example": "Every value has need $\\hat 1$.",
    "rocq": "types/Costs.v: tid",
    "sig": "\\hat 1 \\in \\mathsf{Tix}",
    "args": []
   },
   "ann.meets": {
    "title": "$\\mathsf{meets}$",
-   "what": "$\\mathsf{meets}\\,\\vartheta\\,r\\,tk$ iff $\\vartheta(r) \\leq tk$.",
-   "why": "A thread starts with a finite ticket count $tk$, and $\\mathsf{meets}\\,\\vartheta\\,0\\,tk$ states that $tk$ covers its transformer at reserve $0$.",
+   "what": "$\\mathsf{meets}\\,\\vartheta\\,r\\,tk$ holds when $tk$ tickets cover the need $\\vartheta$ with $r$ left over, $\\vartheta(r) \\leq tk$.",
+   "why": "A thread starts with finitely many tickets. Lock-free typing asks $\\mathsf{meets}\\,\\vartheta\\,0\\,tk$ for some $tk$, so each thread performs finitely many links.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{meets}\\,(0, 1)\\,0\\,1$.",
+   "example": "$\\mathsf{meets}\\,(0, 1)\\,0\\,1$, one ticket covers one link.",
    "rocq": "types/Costs.v: meets",
    "sig": "\\mathsf{meets} : \\mathsf{Tix} \\to \\mathbb{N} \\to \\mathbb{N} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "\\vartheta",
-     "meaning": "A ticket transformer $(s, b)$ with $s, b \\in \\mathbb{N} \\cup \\{\\infty\\}$, the function $r \\mapsto 2^{s} r + b$ from tickets left to tickets needed.",
+     "meaning": "A ticket need $(s, b)$ with $s, b \\in \\mathbb{N} \\cup \\{\\infty\\}$, the function $r \\mapsto 2^{s} r + b$ from tickets left to tickets needed.",
      "ann": true
     },
     {
@@ -3898,10 +3873,10 @@ window.MAP = {
   },
   "ann.tspawn": {
    "title": "$\\mathsf{tspawn}$",
-   "what": "$\\mathsf{tspawn}\\,b_c\\,\\vartheta = (s{+}1, \\max(2b, 2b_c{-}1))$. The child gets $\\lceil tk/2\\rceil$ tickets and needs $b_c$, the parent keeps $\\lfloor tk/2\\rfloor$.",
-   "why": "The split $\\lceil tk/2\\rceil, \\lfloor tk/2\\rfloor$ is fixed, so it is the same in every run and at every index.",
+   "what": "The need of a spawn followed by code of need $(s, b)$, when the child needs $b_c$, is $(s + 1, \\max(2b, 2b_c - 1))$. The child receives $\\lceil tk/2 \\rceil$ of the $tk$ tickets and the parent keeps $\\lfloor tk/2 \\rfloor$.",
+   "why": "The split is fixed, so the tickets of every thread are the same in every run and at every step index. Halving makes the parent need twice its rest, hence $s + 1$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "A spawn of a child that links once has $b_c = 1$.",
+   "example": "A spawn of a child that links once, with nothing after it, has need $(1, 1)$.",
    "rocq": "types/Costs.v: tspawn",
    "sig": "\\mathsf{tspawn} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to \\mathsf{Tix} \\to \\mathsf{Tix}",
    "args": [
@@ -3911,65 +3886,65 @@ window.MAP = {
     },
     {
      "name": "\\vartheta",
-     "meaning": "The transformer $(s, b)$ of the parent continuation."
+     "meaning": "The ticket need $(s, b)$ of the parent continuation."
     }
    ]
   },
   "ann.tlink": {
    "title": "$\\mathsf{tlink}$",
-   "what": "$\\mathsf{tlink}\\,(s, b) = (s, b{+}1)$, one ticket and then $\\vartheta$.",
-   "why": "A link spends one ticket and no step creates tickets, so the total number of links of a run is at most the initial ticket count.",
+   "what": "The need of a link followed by code of need $(s, b)$ is $(s, b + 1)$.",
+   "why": "The link spends one ticket before the rest runs. No step creates tickets, so a run performs at most as many links as its threads held tickets at the start.",
    "breaks": "Nothing. It is a definition.",
-   "example": "A link has transformer $\\mathsf{tlink}\\,\\hat 1 = (0, 1)$.",
+   "example": "$\\mathsf{tlink}\\,\\hat 1 = (0, 1)$, a single link.",
    "rocq": "types/Costs.v: tlink",
    "sig": "\\mathsf{tlink} : \\mathsf{Tix} \\to \\mathsf{Tix}",
    "args": [
     {
      "name": "\\vartheta",
-     "meaning": "The transformer $(s, b)$ after the link."
+     "meaning": "The ticket need $(s, b)$ after the link."
     }
    ]
   },
   "ann.tseq": {
    "title": "Sequencing $\\vartheta_1 \\circ \\vartheta_2$",
-   "what": "$(\\vartheta_1 \\circ \\vartheta_2)(r) = \\vartheta_1(\\vartheta_2(r))$, first $\\vartheta_1$, then $\\vartheta_2$.",
-   "why": "The first part of a term must leave enough tickets for the rest.",
+   "what": "Code of need $\\vartheta_1$ followed by code of need $\\vartheta_2$ needs $\\vartheta_1(\\vartheta_2(r))$. The first part must leave what the second part needs.",
+   "why": "Application and the two lets run their parts one after the other.",
    "breaks": "Nothing. It is a definition.",
-   "example": "An application composes the transformers of function, argument and call.",
+   "example": "$(0, 1) \\circ (0, 1) = (0, 2)$, two links in a row.",
    "rocq": "types/Costs.v: tseq",
    "sig": "\\cdot \\circ \\cdot : \\mathsf{Tix} \\to \\mathsf{Tix} \\to \\mathsf{Tix}",
    "args": [
     {
      "name": "\\vartheta_1, \\vartheta_2",
-     "meaning": "The transformers of the first and the second part."
+     "meaning": "The ticket needs of the first and the second part."
     }
    ]
   },
   "ann.tok": {
    "title": "$\\mathsf{tok}$",
-   "what": "$\\mathsf{tok}\\,\\vartheta_1\\,\\vartheta_2$ iff $b_2 = 0$ or $s_1 \\neq \\infty$ or $b_1 = \\infty$.",
-   "why": "Under this condition the pair $\\vartheta_1 \\circ \\vartheta_2$ bounds the tickets of the two parts in sequence. With $b_1 = \\infty$ no $tk$ meets $\\vartheta_1 \\circ \\vartheta_2$, so the composite is met nowhere.",
+   "what": "$\\mathsf{tok}\\,\\vartheta_1\\,\\vartheta_2$ holds when $\\vartheta_2$ needs nothing at $0$, $\\vartheta_1$ has a finite $s$, or $\\vartheta_1$ is met by no ticket count. Then the pair computed for $\\vartheta_1 \\circ \\vartheta_2$ is exact.",
+   "why": "With $s_1 = \\infty$ the first part runs only if it leaves nothing, so a second part that needs tickets cannot follow. The rules that sequence two parts ask $\\mathsf{tok}$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "An application asks $\\mathsf{tok}$ of its parts.",
+   "example": "$\\mathsf{tok}\\,(0, 1)\\,(0, 1)$, the first need has a finite $s$.",
    "rocq": "types/Costs.v: tok",
    "sig": "\\mathsf{tok} : \\mathsf{Tix} \\to \\mathsf{Tix} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "\\vartheta_1 = (s_1, b_1)",
-     "meaning": "The first transformer."
+     "meaning": "The first ticket need."
     },
     {
      "name": "\\vartheta_2 = (s_2, b_2)",
-     "meaning": "The second transformer."
+     "meaning": "The second ticket need."
     }
    ]
   },
   "ann.tydf": {
    "title": "$\\mathsf{ty\\_df}$",
-   "what": "\\annp{$\\mathsf{ty\\_df}(T)$ sets every annotation of $T$ to its value at $N = \\infty$, credits $\\infty$ ($0$ on $\\otimes$, $\\oplus$, $\\exists$), costs $\\infty$, $\\vartheta = (\\infty, \\infty)$, floors $\\infty$.}",
-   "why": "Deadlock-freedom typing is the merged judgment at $N = \\infty$, and its types carry exactly these annotations.",
+   "what": "$\\mathsf{ty\\_df}(T)$ is $T$ with every annotation at its unbounded value. \\annp{Credits, costs and floors become $\\infty$ and every ticket need becomes $(\\infty, \\infty)$.}",
+   "why": "\\annp{Deadlock-free typing is the annotated typing at refill $N = \\infty$ with these annotations.} One set of rules then serves both systems, and every premise about annotations holds at $\\infty$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "\\annp{$\\mathsf{ty\\_df}(S@x)$ has every payload credit of $S$ equal to $\\infty$.}",
+   "example": "$\\mathsf{ty\\_df}((S@x)^{3}) = (S@x)^{\\infty}$.",
    "rocq": "types/Types.v: ty_df",
    "sig": "\\mathsf{ty\\_df} : \\mathsf{Ty} \\to \\mathsf{Ty}",
    "args": [
@@ -4400,11 +4375,11 @@ window.MAP = {
    ]
   },
   "tj.tix": {
-   "title": "The transformer $\\vartheta$",
+   "title": "The ticket need $\\vartheta$",
    "what": "$\\vartheta(r)$ is the number of link tickets $e$ needs to return with $r$ tickets left, and $\\mathsf{meets}\\,\\vartheta\\,r\\,tk \\iff \\vartheta(r) \\leq tk$.",
    "why": "A link performs no session action, so the cost does not bound links. Tickets bound them, and $\\vartheta$ counts the tickets.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{link}\\,e$ has transformer $\\vartheta_0 \\circ \\mathsf{tlink}\\,\\hat 1$.",
+   "example": "$\\mathsf{link}\\,e$ has ticket need $\\vartheta_0 \\circ \\mathsf{tlink}\\,\\hat 1$.",
    "rocq": "static/Typing.v: typed ϑ",
    "sig": "\\vartheta : \\mathbb{N} \\to \\mathbb{N} \\cup \\{\\infty\\}",
    "args": [
@@ -4886,7 +4861,7 @@ window.MAP = {
   "sub.dconv": {
    "title": "D-Conv",
    "what": "If $\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W} t : T$ and $\\mathsf{ty\\_df}\\,T \\leq \\mathsf{ty\\_df}\\,T'$ at annotations $\\infty$, then $\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W} t : T'$.",
-   "why": "\\annp{Deadlock-free typing reads no credit, cost or transformer.} \\annp{At annotations $\\infty$ every clause of $\\leq$ on credits, costs, transformers and floors holds, and $\\leq$ reduces to $\\approx$ on session types and dropping facts of existentials.}",
+   "why": "\\annp{Deadlock-free typing reads no credit, cost or ticket need.} \\annp{At annotations $\\infty$ every clause of $\\leq$ on credits, costs, ticket needs and floors holds, and $\\leq$ reduces to $\\approx$ on session types and dropping facts of existentials.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\exists^{\\bot}\\rho.\\,\\Lambda_0(\\rho).\\,T$ converts to $\\exists^{\\bot}\\rho.\\,\\varnothing.\\,T$.",
    "rocq": "static/Typing.v: d_conv",
@@ -4924,8 +4899,8 @@ window.MAP = {
    ]
   },
   "tp.sub-cost": {
-   "title": "Costs and transformers may rise",
-   "what": "$c \\leq c'$ in $\\mathbb{N} \\cup \\{\\infty\\}$ and $\\vartheta \\leq \\vartheta'$ pointwise, for the cost and transformer of an arrow, a box and, in E-Sub, of the term.",
+   "title": "Costs and ticket needs may rise",
+   "what": "$c \\leq c'$ in $\\mathbb{N} \\cup \\{\\infty\\}$ and $\\vartheta \\leq \\vartheta'$ pointwise, for the cost and ticket need of an arrow, a box and, in E-Sub, of the term.",
    "why": "$c$ and $\\vartheta$ are upper bounds on actions and tickets. The branches of $\\mathsf{case}$ and closures passed to one parameter have different costs, and the larger bound covers both.",
    "breaks": "Nothing. It is a definition.",
    "example": "A closure of cost $1$ passes where cost $\\infty$ is expected.",
@@ -4934,11 +4909,11 @@ window.MAP = {
    "args": [
     {
      "name": "c, \\vartheta",
-     "meaning": "cost and transformer of the subtype"
+     "meaning": "cost and ticket need of the subtype"
     },
     {
      "name": "c', \\vartheta'",
-     "meaning": "cost and transformer of the supertype, pointwise larger"
+     "meaning": "cost and ticket need of the supertype, pointwise larger"
     }
    ]
   },
@@ -5137,7 +5112,7 @@ window.MAP = {
     },
     {
      "name": "c, \\vartheta",
-     "meaning": "the cost and transformer recorded on the arrow",
+     "meaning": "the cost and ticket need recorded on the arrow",
      "ann": true
     }
    ]
@@ -5456,12 +5431,12 @@ window.MAP = {
   },
   "E-Send.unfold": {
    "title": "Send head",
-   "what": "$\\mathsf{unfold}(S_0) = {!}(\\bar\\iota.\\,T\\annot{^{b}}).S$.",
+   "what": "$\\mathsf{unfold}(S_0) = {!}(\\bar\\iota.\\,T).S$.",
    "why": "Rules read the first action of $S_0$ after unfolding, so a recursive protocol $\\mu\\alpha.S$ needs no rule of its own.",
    "breaks": "Nothing. It is a definition.",
    "example": "$S_0 = \\mu\\alpha.\\,{!}\\ast.\\alpha$ unfolds to ${!}\\ast.(\\mu\\alpha.\\,{!}\\ast.\\alpha)$.",
    "rocq": "static/Typing.v: e_send",
-   "sig": "\\mathsf{unfold}(S_0) = {!}(\\bar\\iota.\\,T\\annot{^{b}}).S",
+   "sig": "\\mathsf{unfold}(S_0) = {!}(\\bar\\iota.\\,T).S",
    "args": [
     {
      "name": "S_0",
@@ -5537,12 +5512,12 @@ window.MAP = {
   },
   "E-Recv.unfold": {
    "title": "Receive head",
-   "what": "$\\mathsf{unfold}(S_0) = {?}(\\bar\\iota.\\,T\\annot{^{b}}).S$.",
+   "what": "$\\mathsf{unfold}(S_0) = {?}(\\bar\\iota.\\,T).S$.",
    "why": "Rules read the first action of $S_0$ after unfolding, so recursive protocols need no rule of their own.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mu\\alpha.\\,{?}\\ast.\\alpha$ unfolds to ${?}\\ast.(\\mu\\alpha.\\,{?}\\ast.\\alpha)$.",
    "rocq": "static/Typing.v: e_recv",
-   "sig": "\\mathsf{unfold}(S_0) = {?}(\\bar\\iota.\\,T\\annot{^{b}}).S",
+   "sig": "\\mathsf{unfold}(S_0) = {?}(\\bar\\iota.\\,T).S",
    "args": [
     {
      "name": "S_0",
@@ -5660,7 +5635,7 @@ window.MAP = {
     },
     {
      "name": "c', \\vartheta'",
-     "meaning": "cost and transformer of the child",
+     "meaning": "cost and ticket need of the child",
      "ann": true
     }
    ]
@@ -5786,7 +5761,7 @@ window.MAP = {
   "E-Sub.cost": {
    "title": "Weakening costs",
    "what": "$c \\leq c'$ and $\\vartheta \\leq \\vartheta'$.",
-   "why": "The cost and the transformer are upper bounds, so a larger bound is also correct.",
+   "why": "The cost and the ticket need are upper bounds, so a larger bound is also correct.",
    "breaks": "Nothing. It is a definition.",
    "example": "Every cost may rise to $\\infty$.",
    "rocq": "static/Typing.v: e_sub",
@@ -5794,7 +5769,7 @@ window.MAP = {
    "args": [
     {
      "name": "c, \\vartheta",
-     "meaning": "the cost and transformer derived"
+     "meaning": "the cost and ticket need derived"
     },
     {
      "name": "c', \\vartheta'",
@@ -5988,7 +5963,7 @@ window.MAP = {
   "lf.meets": {
    "title": "$N \\in \\mathbb{N} \\Rightarrow \\exists\\, tk.\\ \\mathsf{meets}\\,\\vartheta\\,0\\,tk$",
    "what": "$N \\in \\mathbb{N} \\Rightarrow \\exists\\, tk.\\ \\vartheta(0) \\leq tk$, trivial at $N = \\infty$.",
-   "why": "Lock freedom needs a finite number of link tickets per thread, and typing at a finite $N$ does not give one, because a transformer may have offset $\\infty$.",
+   "why": "Lock freedom needs a finite number of link tickets per thread, and typing at a finite $N$ does not give one, because a ticket need may have offset $\\infty$.",
    "breaks": "A loop that links once per round has no finite ticket count and is rejected at finite $N$.",
    "example": "$\\mathsf{meets}\\,\\vartheta\\,0\\,0$ in the examples without links.",
    "rocq": "static/Typing.v: p_term",
@@ -6004,7 +5979,7 @@ window.MAP = {
     },
     {
      "name": "\\vartheta",
-     "meaning": "the transformer of the thread, read at reserve $0$"
+     "meaning": "the ticket need of the thread, read at reserve $0$"
     }
    ]
   },
@@ -6561,7 +6536,7 @@ window.MAP = {
   },
   "tp.max": {
    "title": "$\\max(\\vartheta_1, \\vartheta_2)$",
-   "what": "The pointwise maximum of two transformers.",
+   "what": "The pointwise maximum of two ticket needs.",
    "why": "Only one branch of a case runs, so its ticket need is bounded by the larger of the two.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\max(\\hat 1, \\mathsf{tlink}\\,\\hat 1) = \\mathsf{tlink}\\,\\hat 1$.",
@@ -6570,14 +6545,14 @@ window.MAP = {
    "args": [
     {
      "name": "\\vartheta_1, \\vartheta_2",
-     "meaning": "the transformers of the two branches"
+     "meaning": "the ticket needs of the two branches"
     }
    ]
   },
   "tp.vdash": {
    "title": "The term turnstile $\\vdash$",
    "what": "The least relation closed under E-Unit to E-Open, with erased form $\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W} t : T$, defined as $\\Theta_{df} ; \\Gamma ; \\Delta_{df} \\vdash^{F}_{W\\annot{,\\infty}} t : T_{df}\\annot{^{a_{df}}} \\annot{\\triangleright \\infty ; (\\infty, \\infty)}$ with the annotations of $N = \\infty$. D-Unit to D-Open are lemmas.",
-   "why": "\\annp{One relation carries the session type, the points, the credit, the cost and the transformer of $e$, so every mode reads its premises off one derivation.}",
+   "why": "\\annp{One relation carries the session type, the points, the credit, the cost and the ticket need of $e$, so every mode reads its premises off one derivation.}",
    "breaks": "Nothing. It is a definition.",
    "example": "\\annp{$\\varnothing ; \\varnothing ; \\varnothing \\vdash^{(\\varnothing,\\cdot)}_{W\\annot{,N}} \\ast : \\ast^{\\infty} \\annot{\\triangleright 0 ; \\hat 1}$.}",
    "rocq": "static/Typing.v: typed, dftyped",
@@ -6621,13 +6596,13 @@ window.MAP = {
     },
     {
      "name": "\\vartheta",
-     "meaning": "the ticket transformer of $e$",
+     "meaning": "the ticket need of $e$",
      "ann": true
     }
    ]
   },
   "tp.tri": {
-   "title": "Cost and transformer $\\annot{\\triangleright c ; \\vartheta}$",
+   "title": "Cost and ticket need $\\annot{\\triangleright c ; \\vartheta}$",
    "what": "In $e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}$ the part after $\\triangleright$ states that $e$ performs at most $c$ channel actions before it returns and needs tickets as described by $\\vartheta$.",
    "why": "The fuel layer reads $c$ to age the frame and $\\vartheta$ to bound the tickets of links.",
    "breaks": "Nothing. It is a definition.",
@@ -6649,7 +6624,7 @@ window.MAP = {
     },
     {
      "name": "\\vartheta",
-     "meaning": "the ticket transformer of $e$",
+     "meaning": "the ticket need of $e$",
      "ann": true
     }
    ]
@@ -9061,7 +9036,7 @@ window.MAP = {
   "fu.reserve": {
    "title": "Reserve $r$",
    "what": "$r \\in \\mathbb{N}$ is the number of tickets the term must still hold when it returns.",
-   "why": "The context of the term spends these tickets on its own links afterwards, which the transformer of the term promises through $\\mathsf{meets}\\,\\vartheta\\,r\\,tk$.",
+   "why": "The context of the term spends these tickets on its own links afterwards, which the ticket need of the term promises through $\\mathsf{meets}\\,\\vartheta\\,r\\,tk$.",
    "breaks": "Without a reserve, a term could spend tickets its context needs, and a context link would find $tk = 0$.",
    "example": "A thread has reserve $0$.",
    "rocq": "fuel/Fuel.v: Fdef",
@@ -9719,7 +9694,7 @@ window.MAP = {
   "FV-Arrow": {
    "title": "$FV$ at an arrow",
    "what": "A closure whose body has fuel for every larger refill, lower level, counters at or above the floor and argument in $FV$.",
-   "why": "The clause reads costs, transformers, floors and credits, the data typing attaches to arrows.",
+   "why": "The clause reads costs, ticket needs, floors and credits, the data typing attaches to arrows.",
    "breaks": "Nothing. It is a definition.",
    "example": "A loop body at cost $\\infty$.",
    "rocq": "fuel/Fuel.v: Vty TLolli",
@@ -9727,7 +9702,7 @@ window.MAP = {
    "args": [
     {
      "name": "c, \\vartheta, h",
-     "meaning": "the cost, transformer and floor of the arrow"
+     "meaning": "the cost, ticket need and floor of the arrow"
     },
     {
      "name": "a",
@@ -9774,7 +9749,7 @@ window.MAP = {
   "FV-Arrow.body": {
    "title": "Body fuel",
    "what": "$e[u] \\in F^{N'}_j\\llbracket U\\annot{^{a_2}} \\annot{\\triangleright c ; r}\\rrbracket(\\Pi \\cup \\Pi_u, \\varphi' \\cup \\varphi_u, tk)$ for every $tk$ with $\\mathsf{meets}\\,\\vartheta\\,r\\,tk$.",
-   "why": "The caller supplies an argument, counters lowered to the floor by its own actions, and a ticket count meeting the arrow's transformer, and the body promises fuel with frame $c$.",
+   "why": "The caller supplies an argument, counters lowered to the floor by its own actions, and a ticket count meeting the arrow's ticket need, and the body promises fuel with frame $c$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{meets}\\,\\vartheta\\,r\\,tk$.",
    "rocq": "fuel/Fuel.v: Vty TLolli",
@@ -9916,7 +9891,7 @@ window.MAP = {
     },
     {
      "name": "c, \\vartheta",
-     "meaning": "the cost and transformer"
+     "meaning": "the cost and ticket need"
     }
    ]
   },
@@ -11385,7 +11360,7 @@ window.MAP = {
   "th.conservative": {
    "title": "Conservativity",
    "what": "The merged judgment at $N = \\infty$ derives some $T_{df}\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}$ iff the deadlock-free judgment derives $T_{df}$, at erased contexts.",
-   "why": "Deadlock-free typing is the merged judgment with credits, costs and transformers ignored, so one set of rules serves both.",
+   "why": "Deadlock-free typing is the merged judgment with credits, costs and ticket needs ignored, so one set of rules serves both.",
    "breaks": "Nothing. It is a definition.",
    "example": "The client and server main.",
    "rocq": "static/Conservativity.v: conservative",
@@ -11393,7 +11368,7 @@ window.MAP = {
    "args": [
     {
      "name": "a, c, \\vartheta",
-     "meaning": "some credit, cost and transformer"
+     "meaning": "some credit, cost and ticket need"
     },
     {
      "name": "e",
@@ -11686,7 +11661,7 @@ window.MAP = {
   },
   "th.df": {
    "title": "Erasure $X_{df}$",
-   "what": "$\\Theta_{df}$, $\\Delta_{df}$ and $T_{df}$ drop every credit, cost and transformer and keep session types, points and facts.",
+   "what": "$\\Theta_{df}$, $\\Delta_{df}$ and $T_{df}$ drop every credit, cost and ticket need and keep session types, points and facts.",
    "why": "Deadlock-free typing and the relations read no annotation.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(S@x)^{3}$ erases to $S@x$.",

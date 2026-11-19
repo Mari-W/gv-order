@@ -69,7 +69,7 @@ for (const e of examples) { prose(e.shows, e.id); prose(e.title, e.id + '.title'
 // credits a, b, a_i, a' and sums a + ... are annotations: mark them so the page shows them only in the lock-free mode
 const CR = /\^\{((?:a|b)(?:_\{?[A-Za-z0-9]+\}?)?'*(?:\s*\+[^{}]*)?)\}/g;
 const CRH = /\^\{\\htmlData\{k=[^}]*\}\{(?:a|b)(?:_\{?\w+\}?)?'*\}\}/g;
-// costs and transformers after a judgment, arrow and box annotations, refills on types
+// costs and ticket needs after a judgment, arrow and box annotations, refills on types
 const TRI = /(\\mathbin\{\\htmlData\{k=tp\.tri\}\{\\triangleright\}\}|(?<!\\!)\\triangleright)\s*(c(?:_\{?\w+\}?)?'?|\\infty|\d+)\s*;\s*(\\vartheta(?:_\{?\w+\}?)?'?|\\hat\s*1|\d+|r|\([^()]*\))/g;
 const BRK = /\[(?:\\htmlData\{k=[^}]*\}\{)?c(?:_\{?\w+\}?)?'?\}?\s*;[^\]]*\]/g;
 const REF = /\^\{(N|0)\}/g;
@@ -103,7 +103,7 @@ for (const s of sections) for (const b of s.blocks) if (b.variants && b.variants
   if (b.variants.lf) b.variants.lf = markNew(b.variants.lf, known); else b.tex = markNew(b.tex, known);
 }
 // prose of notes reachable in the deadlock-free mode: phrases and sentences about annotations become \annp{…}
-const KW = /credit|transformer|ticket|\\vartheta|\\mathsf\{meets\}|refill|\bfloor\b|\\hat\s*1/i;
+const KW = /credit|ticket need|ticket|\\vartheta|\\mathsf\{meets\}|refill|\bfloor\b|\\hat\s*1/i;
 const PHR = /,? (?:and|with) (?:its|their|the|a|outer and inner|payload)? ?credits?\b|,? credits? and |,? at (?:payload )?credit \$[^$]*\$/gi;
 const stripAnn = s => { let o = '', i = 0; for (;;) { const m = /\\ann(ot|raw|p)\{/.exec(s.slice(i)); if (!m) return o + s.slice(i); const j = i + m.index; let d = 1, k = j + m[0].length; while (k < s.length && d) { if (s[k] === '\\') { k += 2; continue; } if (s[k] === '{') d++; else if (s[k] === '}') d--; k++; } o += s.slice(i, j); i = k; } };
 function annProse(t) {
