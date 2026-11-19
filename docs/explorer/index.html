@@ -89,12 +89,16 @@ aside dl { margin: 0; display: grid; gap: 10px; }
 aside dt { font: 600 0.72rem var(--body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
 aside dd { margin: 2px 0 0; font-size: 0.95rem; line-height: 1.55; }
 aside mjx-container { font-size: 105%; }
-aside dd.sig { overflow-x: auto; }
+aside dd.sig { overflow: hidden; }
+aside dd.sig mjx-container { display: block !important; max-width: 100%; min-width: 0 !important; overflow: hidden; margin: 2px 0 !important; }
+aside dd.sig mjx-container svg { max-width: 100% !important; height: auto !important; }
 aside ul.args { margin: 2px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 0.88rem; }
 aside dd.breaks { border-left: 3px solid var(--hot); padding-left: 8px; }
 aside code, .caption code, .ex code { font-family: var(--mono); font-size: 0.85em; }
 aside .uses { margin-top: 14px; font-size: 0.82rem; color: var(--muted); }
-aside .uses a { color: var(--accent); text-decoration: none; margin-right: 8px; white-space: nowrap; }
+aside .uses .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+aside .uses a { color: var(--accent); text-decoration: none; padding: 2px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); max-width: 100%; overflow-wrap: anywhere; }
+aside .uses a:hover { border-color: var(--accent); }
 aside .placeholder { color: var(--muted); font-size: 0.9rem; }
 
 .ex { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; }
@@ -285,7 +289,7 @@ window.MathJax = {
     const u = uses[key] ? [...uses[key].entries()] : [];
     body.innerHTML = `<h2>${esc(n.title || key)}</h2>
       <dl>${n.sig ? `<div><dt>Type</dt><dd class="sig">$\\displaystyle ${esc(n.sig)}$</dd></div>` : ''}${args(n.args)}${row('What', n.what)}${row('Why', n.why)}${row('Without it', n.breaks, 'breaks')}${row('Example', n.example)}${row('Rocq', n.rocq)}</dl>
-      ${u.length > 1 ? `<div class="uses">Also in ${u.map(([id, v]) => `<a href="#${v.sec}" data-jump="${esc(id)}">${esc(v.title)}</a>`).join('')}</div>` : ''}`;
+      ${u.length > 1 ? `<div class="uses">Also in<div class="chips">${u.map(([id, v]) => `<a href="#${v.sec}" data-jump="${esc(id)}">${esc(v.title)}</a>`).join('')}</div></div>` : ''}`;
     noteCache.set(key, body);
     body.dataset.fresh = '1';
     return body;
