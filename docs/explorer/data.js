@@ -11517,7 +11517,7 @@ window.MAP = {
     "lf"
    ],
    "code": "main = let ⟨a, a′⟩ = new in                    -- a at ρ\n       let ⟨b, b′⟩ = new in                    -- b at ρ·0, facts C at (ρ, ρ·0, ρ·1)\n       let ∗ = spawn (λu. let ∗ = u in (force srv) ⟨a′, b′⟩) in\n       (force cli) ⟨a, b⟩\ncli  = !(f = λp. let ⟨a, b⟩ = p in let a = send ⟨∗, a⟩ in\n                let ⟨u, b⟩ = recv b in let ∗ = u in (force f) ⟨a, b⟩)\nsrv  = !(g = λp. let ⟨a, b⟩ = p in let ⟨u, a⟩ = recv a in let ∗ = u in\n                let b = send ⟨∗, b⟩ in (force g) ⟨a, b⟩)\n-- both boxes : □∀ι κ ζ. C. ∗ ⊸ (S1@ι ⊗ S2@κ ⊸^ζ ∗)\n-- C = {ι+k ≺ (κ+k)‾, κ+k ≺ (ι+k+1)‾, ι+k ≺ ζ, κ+k ≺ ζ | k}",
-   "shows": "The second $\\mathsf{new}$ places $b$ at $\\rho\\cdot 0$ and states $C$ at $(\\rho, \\rho\\cdot 0, \\rho\\cdot 1)$, the facts the self call at $(\\iota^{+}, \\kappa^{+}, \\zeta)$ needs.",
+   "shows": "A client sends on $a$ and then receives on $b$, and a server receives on $a$ and then sends on $b$, both forever. The second $\\mathsf{new}$ places $b$ at the field $\\rho\\cdot 0$ of the root of $a$ and states the facts $C$ at $(\\rho, \\rho\\cdot 0, \\rho\\cdot 1)$. Each recursive call is at the next points $(\\iota^{+}, \\kappa^{+}, \\zeta)$, where $C$ states the same facts again.",
    "rocq": "examples/ClientServer.v: cs_typed; examples/LFClientServer.v: cs_lftyped, cs_lock_free",
    "accepts": {
     "df": {
@@ -11543,7 +11543,7 @@ window.MAP = {
     "lf"
    ],
    "code": "cycle = let ⟨c, c′⟩ = new in          -- c at ρ\n        let ⟨d, d′⟩ = new in          -- d at ρ·0, C = {ρ ≺ (ρ·0)‾, ρ‾ ≺ ρ·0}\n        let ∗ = spawn (λu. let ∗ = u in let ∗ = close c′ in close d′) in\n        let ∗ = close c in close d",
-   "shows": "The second $\\mathsf{new}$ states exactly $\\rho \\prec \\overline{\\rho\\cdot 0}$ and $\\overline{\\rho} \\prec \\rho\\cdot 0$, the two facts the two threads need.",
+   "shows": "Main closes $c$ and then $d$, and the spawned thread closes $c'$ and then $d'$. Each thread waits on one channel while it holds an end of the other. The second $\\mathsf{new}$ states exactly the two facts this requires, $\\rho \\prec \\overline{\\rho\\cdot 0}$ for main and $\\overline{\\rho} \\prec \\rho\\cdot 0$ for the spawned thread.",
    "rocq": "examples/Cycle.v: cy_typed; examples/LFCycle.v: cy_lftyped, cy_lock_free",
    "accepts": {
     "df": {
@@ -11569,7 +11569,7 @@ window.MAP = {
     "lf"
    ],
    "code": "between : □(∀ι κ. C. ∗ ⊸ Close@ι ⊗ Close@κ ⊸^κ ∗)\nbetween = !(f = λp. let ⟨c, e⟩ = p in\n                    let ⟨d, d′⟩ = new in        -- d at ι·0\n                    let ∗ = spawn (λu. let ∗ = u in close d′) in\n                    let ∗ = close c in let ∗ = close d in close e)\n-- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾, δ ≺ κ, δ ≺ κ‾},  δ = ι·0\nmain: c by new at ρ, e by new at ρ·1, force between at (ρ, ρ·1)",
-   "shows": "The box places its new channel at the field $\\iota\\cdot 0$ of the point of $c$, so no point between two box points is needed.",
+   "shows": "The box creates a channel $d$ while it holds two arguments $c$ and $e$, and closes $c$, $d$ and $e$ in this order. E-New places $d$ at the field $\\iota\\cdot 0$ of the point of $c$. The facts of the box constraint then order $d$ between $c$ and $e$, and no point between two box points is needed.",
    "rocq": "examples/FreshBetween.v: fb_typed; examples/LFFreshBetween.v: fb_lftyped, fb_lock_free",
    "accepts": {
     "df": {
@@ -11595,7 +11595,7 @@ window.MAP = {
     "lf"
    ],
    "code": "many = !(f = λp. let ⟨c, e⟩ = p in\n                 let ⟨d, d′⟩ = new in         -- d at δ\n                 let ∗ = spawn (λu. let ∗ = u in\n                                     let ⟨v, d′⟩ = recv d′ in let ∗ = v in\n                                     let ⟨w, d′⟩ = recv d′ in let ∗ = w in close d′) in\n                 let ∗ = close c in\n                 let ∗ = close (send ⟨∗, send ⟨∗, d⟩⟩) in close e)\n-- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾} ∪ {δ+k ≺ κ, δ+k ≺ κ‾ | k},  δ = ι·0",
-   "shows": "An infinite box constraint lets $d$ act at $\\delta, \\delta^{+}, \\delta^{++}$ while $e$ is held at $\\kappa$.",
+   "shows": "The new end $d$ sends twice and closes while the box holds $e$. The constraint of the box is infinite, one pair of facts for each offset of $\\delta$, so $d$ may act at $\\delta$, $\\delta^{+}$ and $\\delta^{++}$ below the point $\\kappa$ of $e$.",
    "rocq": "examples/FreshMany.v: fm_typed; examples/LFFreshMany.v: fm_lftyped, fm_lock_free",
    "accepts": {
     "df": {
@@ -11621,7 +11621,7 @@ window.MAP = {
     "lf"
    ],
    "code": "mk₀  = !(f = λu. let ∗ = u in let ⟨c, c′⟩ = new in\n                let ∗ = spawn (λv. let ∗ = v in close (send ⟨∗, c⟩)) in c′)\nmk₁  = !(f = λp. let ⟨c, c′⟩ = new in\n                let ∗ = spawn (λv. let ∗ = v in close (send ⟨∗, c⟩)) in ⟨p, c′⟩)\nmain = let p = (force mk₀) ∗ in let ⟨p, q⟩ = (force mk₁) p in\n       let ∗ = recvclose p in recvclose q\n-- mk₀ places c at a fresh ρ with C(ρ) = {ρ‾ ≺ ρ·0, ρ‾⁺ ≺ ρ·0}, mk₁ at ι·0 for p at ι\n-- mk₀ : □(∗ ⊸ ∃^⊥ ι. C(ι). (?∗.Close)@ι‾)",
-   "shows": "The first call creates at a fresh root and the second at a field of the end it receives, two typings of the same creation.",
+   "shows": "Each box creates a channel, spawns a sender on one end and returns the other end. $\\mathsf{mk}_0$ places the channel at a fresh root and returns it packed in an existential. $\\mathsf{mk}_1$ places it at a field of the end it receives. The two boxes type one creation in the two ways E-New allows.",
    "rocq": "examples/FactoryEx.v: fx_typed; examples/LFFactoryEx.v: fx_lftyped, fx_lock_free",
    "accepts": {
     "df": {
@@ -11647,7 +11647,7 @@ window.MAP = {
     "lf"
    ],
    "code": "Sch  = µα. ?(κ. α@κ).Close\nring : □(∀ι₁ ι₂. Cr. ∗ ⊸ (Sch@ι₁ ⊗ S̄ch@ι₂ ⊸^{ι₁+1} ∗))\nring = !(f = λp. let ⟨x, y⟩ = p in\n           let ⟨a, a′⟩ = new in                -- a at ι₂·0\n           let ∗ = spawn (λw. let ∗ = w in close (send ⟨a, y⟩)) in\n           let ⟨b, b′⟩ = new in                -- b at ι₁·1\n           let ⟨z, x⟩ = recv x in let ∗ = close x in\n           let ∗ = spawn (λw. let ∗ = w in (force f) ⟨z, b′⟩) in\n           spawn (λw. let ∗ = w in (force f) ⟨b, a′⟩))\nmain = let ⟨e, e′⟩ = new in (force ring) ⟨e, e′⟩",
-   "shows": "$b$ is created at $\\iota_1\\cdot 1$ before the receive on $x$, while $x$ is held at $\\iota_1$.",
+   "shows": "Each round of the ring receives an end $z$ on $x$, spawns two copies of itself, and so the ring grows forever. E-New places $b$ at $\\iota_1\\cdot 1$ while $x$ is held at $\\iota_1$, before the receive on $x$. The ring is lock free, with lock-free typing at $N = 4$.",
    "rocq": "examples/GrowRing.v: rg_typed; examples/LFGrowRing.v: rg_lftyped, rg_lock_free",
    "accepts": {
     "df": {
@@ -11672,7 +11672,7 @@ window.MAP = {
     "lf"
    ],
    "code": "cl c⁺ ∥ cl c⁻,   cl o = close o\n-- each thread by P-Term at every finite N over its end, cut c by P-Connect at exactly dual types",
-   "shows": "The smallest use of P-Term and P-Connect, cutting $c$ at exactly dual types in a world without facts.",
+   "shows": "Two threads each close one end of $c$. P-Term types each thread over its end, and P-Connect cuts $c$ at dual types in a world without facts. It is the smallest use of the two process rules.",
    "rocq": "examples/LFClose.v: cl_lftyped, cl_lock_free",
    "accepts": {
     "lf": {
@@ -11689,7 +11689,7 @@ window.MAP = {
     "lf"
    ],
    "code": "div_box     = !(f = force f)                         -- loops on β steps\npn_fix      = !(f = λx. (force f) x)                  -- fix λx.x\ncx_box      = !(f = let ∗ = (force f) ∗ in λy. y)     -- recurses before returning\nspawn_loop  = !(f = λc. spawn (λ_. (force f) c))      -- spawns forever",
-   "shows": "Each box uses its self before any session action, so $\\varnothing \\vdash\\!\\triangleright t$ fails for every $t$ listed.",
+   "shows": "Each box uses its own variable before its first session action. The first loops on $\\beta$ steps, the second is $\\mathsf{fix}\\,\\lambda x.\\,x$, the third recurses before it returns, and the fourth spawns forever. The guard rejects all four, so they are outside lock-free typing.",
    "rocq": "examples/GuardEx.v: div_not_guarded, pn_fix_not_guarded, cx_not_guarded, spawn_loop_not_guarded",
    "accepts": {
     "live": {
@@ -11711,7 +11711,7 @@ window.MAP = {
     "lf"
    ],
    "code": "loop  = !(f = λx. let ⟨v, x′⟩ = recv x in (force f) x′)\nstage = !(f = λin. let ⟨v, in⟩ = recv in in let ∗ = close in in\n                  let ⟨a, b⟩ = new in let ∗ = spawn (λ_. (force f) b) in\n                  close (send ⟨v, a⟩))                  -- a pipeline stage",
-   "shows": "$\\mathsf{recv}$ acts, so the rest of the body is checked under $\\varnothing$ and the self is unmarked when it is forced.",
+   "shows": "In both boxes a $\\mathsf{recv}$ comes before the recursive call. A receive is a session action, so the guard checks the rest of the body under $\\varnothing$, where the variable of the box is usable again.",
    "rocq": "examples/GuardEx.v: loop_guarded, stage_guarded",
    "accepts": {
     "live": {
@@ -11733,7 +11733,7 @@ window.MAP = {
     "lf"
    ],
    "code": "fw o = let ⟨w, c⟩ = recv o in let ∗ = close c in spawn w\no : ?((∗ ⊸ ∗)^2).Close\ndead_thunk q = λ_. let ∗ = Ω in close q",
-   "shows": "$\\mathsf{dead\\_thunk}\\,q$ mentions $q$ and owns nothing, so it is not in the fuel relation and $\\mathsf{fw}$ has fuel for every closure it receives.",
+   "shows": "The forwarder receives a closure on $o$ and spawns the closure as a new thread. $\\mathsf{dead\\_thunk}\\,q$ mentions the end $q$ without owning it, so it is not a fueled value and cannot arrive on $o$. Each closure the forwarder receives therefore owns its ends, and $\\mathsf{fw}$ has fuel at each refill.",
    "rocq": "cost/Forwarder.v: dead_thunk_rejected, fw_ptyped; cost/CostFund.v: fw_fsem",
    "accepts": {
     "lf": {
@@ -11751,7 +11751,7 @@ window.MAP = {
     "lf"
    ],
    "code": "main = let ⟨a, a′⟩ = new in let ⟨b, b′⟩ = new in   -- a at ρ, b at ρ·0\n       let ⟨c, c′⟩ = new in                              -- c at ρ·2\n       let ∗ = spawn (λu. let ∗ = u in (force srv) ⟨⟨a′, b′⟩, c′⟩) in\n       (force cli) ⟨⟨a, b⟩, c⟩\ncli  = !(f = λp. let ⟨q, k⟩ = p in let ⟨a, b⟩ = q in\n                let a = send ⟨∗, a⟩ in let ⟨u, b⟩ = recv b in\n                let ∗ = u in (force f) ⟨⟨a, b⟩, k⟩)\n-- c sits at Skip on each side, an idle end",
-   "shows": "The idle end $k$ at $\\mathsf{Skip}@\\chi$ is held across every round at credit $0$, because $(\\mathsf{Skip}@\\chi)^{a} - c = (\\mathsf{Skip}@\\chi)^{\\max(a - c, 0)}$ asks no $c \\leq a$.",
+   "shows": "The client sends on $a$ and receives on $b$ in each round, and holds the end $k$ at $\\mathsf{Skip}@\\chi$ throughout. Aging requires $c \\leq a$ only of ends that are not idle. The idle end $k$ therefore has credit $0$ across rounds of unbounded cost.",
    "rocq": "examples/LFController.v: ctl_typedN, ctl_guarded, ctl_lftyped, ctl_lock_free",
    "accepts": {
     "lf": {
@@ -11768,7 +11768,7 @@ window.MAP = {
     "lf"
    ],
    "code": "chat = !(f = λa. let a = send ⟨∗, a⟩ in (force f) a)\nloop = !(f = λ⟨a, b⟩. let ⟨u, a⟩ = recv a in let ∗ = u in (force f) ⟨a, b⟩)\nmain = let ⟨a, a′⟩ = new in let ⟨b, b′⟩ = new in\n       let ∗ = spawn (λ_. (force chat) a′) in\n       let ∗ = spawn (λ_. close b′) in\n       (force loop) ⟨a, b⟩            -- holds b forever, close b′ waits forever",
-   "shows": "$\\mathsf{loop}$ holds $b$ across a loop that never returns, so $\\mathsf{close}\\,b'$ waits while the process keeps stepping. Aging asks $c \\leq a$ of every held end, and the loop has cost $c = \\infty$.",
+   "shows": "Main holds $b$ while it runs a loop that never returns, and the thread with $b'$ waits forever while other threads step. Aging requires $c \\leq a$ of each held end that is not idle. The loop has cost $\\infty$, and $b$ has a finite credit, so the program has no lock-free typing.",
    "rocq": "to be mechanized",
    "accepts": {
     "lf": {
@@ -11784,7 +11784,7 @@ window.MAP = {
     "lf"
    ],
    "code": "pass = !(f = λ⟨e, x, y⟩. let x = send ⟨e, x⟩ in let ⟨e, y⟩ = recv y in (force f) ⟨e, x, y⟩)\nback = !(f = λ⟨x, y⟩. let ⟨e, x⟩ = recv x in let y = send ⟨e, y⟩ in (force f) ⟨x, y⟩)\nmain = let ⟨e, e′⟩ = new in let ⟨x, x′⟩ = new in let ⟨y, y′⟩ = new in\n       let ∗ = spawn (λ_. close e′) in       -- waits for e forever\n       let ∗ = spawn (λ_. (force back) ⟨x′, y′⟩) in\n       (force pass) ⟨e, x, y⟩                -- e goes back and forth forever",
-   "shows": "$e$ travels between two threads forever and its partner $e'$ waits. Each send hands $e$ on with its counter minus one, so after finitely many hops no credit is left to send it again.",
+   "shows": "Two threads send the end $e$ back and forth forever, and the thread with $e'$ waits. Each send passes $e$ on with its counter one lower. After finitely many sends no credit remains to send $e$ again, so the program has no lock-free typing.",
    "rocq": "to be mechanized",
    "accepts": {
     "lf": {
@@ -11800,7 +11800,7 @@ window.MAP = {
     "lf"
    ],
    "code": "refresh = !(f = λ⟨w, k⟩. let ⟨c, c′⟩ = new in\n                     let ∗ = link ⟨w, c⟩ in          -- the waiter now talks to c′\n                     let k = send ⟨∗, k⟩ in           -- one step on another channel\n                     (force f) ⟨c′, k⟩)\nsink    = !(f = λk. let ⟨u, k⟩ = recv k in let ∗ = u in (force f) k)\nmain = let ⟨w, w′⟩ = new in let ⟨k, k′⟩ = new in\n       let ∗ = spawn (λ_. close w′) in              -- waits forever\n       let ∗ = spawn (λ_. (force sink) k′) in\n       (force refresh) ⟨w, k⟩",
-   "shows": "Each round links the partner of the waiting end to a fresh channel, so the waiter always faces a fresh end with a full counter and no counter runs out. Each link spends one ticket of its thread and no step creates tickets.",
+   "shows": "Each round links the partner of the waiting end to a new channel. The waiting thread then faces a new end with a full counter, and no counter decreases to $0$. Each link uses one ticket of its thread and no step creates tickets, so the program has no lock-free typing.",
    "rocq": "to be mechanized",
    "accepts": {
     "lf": {
@@ -11816,7 +11816,7 @@ window.MAP = {
     "lf"
    ],
    "code": "grow = !(f = λw. let ⟨c, c′⟩ = new in                 -- c below the point of w\n                 let ⟨d, d′⟩ = new in let ∗ = spawn (λ_. recvclose d′) in\n                 let ∗ = close (send ⟨∗, d⟩) in              -- one session action\n                 let ∗ = spawn (λ_. (force f) c′) in\n                 let ∗ = close c in close w)                 -- waits on its child\nmain = let ⟨w, w′⟩ = new in let ∗ = spawn (λ_. close w′) in (force grow) w\n-- every thread waits on the one it spawned, close w′ never proceeds",
-   "shows": "Each thread waits on a point below the point of its predecessor, and new threads keep appearing. A well-founded order has no infinite descending chain, so lock-free typing asks $\\mathsf{wfworld}\\,W$ of every world the run reaches.",
+   "shows": "Each thread spawns a child, waits on it, and the child does the same. Each wait is at a point below the point of the previous one, and the chain grows forever. A well-founded world has no infinite descending chain, and lock-free soundness assumes a well-founded world.",
    "rocq": "to be mechanized",
    "accepts": {
     "lf": {

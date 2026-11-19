@@ -1,9 +1,9 @@
 // The text a reader sees first: section intros, block captions and the notes behind block titles.
 // It overrides what the section files set, so the reader-facing prose is written in one place.
 // Writing rules: docs/explorer/BLOCKS.md and the pl-paper-writing skill of sill-obs.
-const { sections } = require('./core');
+const { sections, examples } = require('./core');
 
-const INTRO = {}, CAP = {}, WHY = {}, EX = {};
+const INTRO = {}, CAP = {}, WHY = {}, EX = {}, SHOWS = {};
 
 // ---- syntax ----
 INTRO.syntax = 'Programs are terms of a call-by-value $\\lambda$-calculus with session-typed channels. Terms never mention points. Points appear in types and in the relation, where they order the waits of threads.';
@@ -160,6 +160,23 @@ WHY['th-conserv'] = 'Lock-free typing therefore rejects no deadlock-free program
 CAP['th-terms'] = 'A closed program is sound as a one-thread process. Typing a term implies the semantic term judgment, and $E$ is closed under evaluation frames. \\annp{With the guard a typed term is in the relation at $\\kappa_L$, and a typed term at a finite refill has fuel.}';
 WHY['th-terms'] = 'The proofs of the process results use these lemmas, each proved rule by rule.';
 
+// ---- examples ----
+SHOWS['ex-cs'] = 'A client sends on $a$ and then receives on $b$, and a server receives on $a$ and then sends on $b$, both forever. The second $\\mathsf{new}$ places $b$ at the field $\\rho\\cdot 0$ of the root of $a$ and states the facts $C$ at $(\\rho, \\rho\\cdot 0, \\rho\\cdot 1)$. Each recursive call is at the next points $(\\iota^{+}, \\kappa^{+}, \\zeta)$, where $C$ states the same facts again.';
+SHOWS['ex-cycle'] = 'Main closes $c$ and then $d$, and the spawned thread closes $c\'$ and then $d\'$. Each thread waits on one channel while it holds an end of the other. The second $\\mathsf{new}$ states exactly the two facts this requires, $\\rho \\prec \\overline{\\rho\\cdot 0}$ for main and $\\overline{\\rho} \\prec \\rho\\cdot 0$ for the spawned thread.';
+SHOWS['ex-between'] = 'The box creates a channel $d$ while it holds two arguments $c$ and $e$, and closes $c$, $d$ and $e$ in this order. E-New places $d$ at the field $\\iota\\cdot 0$ of the point of $c$. The facts of the box constraint then order $d$ between $c$ and $e$, and no point between two box points is needed.';
+SHOWS['ex-many'] = 'The new end $d$ sends twice and closes while the box holds $e$. The constraint of the box is infinite, one pair of facts for each offset of $\\delta$, so $d$ may act at $\\delta$, $\\delta^{+}$ and $\\delta^{++}$ below the point $\\kappa$ of $e$.';
+SHOWS['ex-factory'] = 'Each box creates a channel, spawns a sender on one end and returns the other end. $\\mathsf{mk}_0$ places the channel at a fresh root and returns it packed in an existential. $\\mathsf{mk}_1$ places it at a field of the end it receives. The two boxes type one creation in the two ways E-New allows.';
+SHOWS['ex-ring'] = 'Each round of the ring receives an end $z$ on $x$, spawns two copies of itself, and so the ring grows forever. E-New places $b$ at $\\iota_1\\cdot 1$ while $x$ is held at $\\iota_1$, before the receive on $x$. The ring is lock free, with lock-free typing at $N = 4$.';
+SHOWS['ex-close'] = 'Two threads each close one end of $c$. P-Term types each thread over its end, and P-Connect cuts $c$ at dual types in a world without facts. It is the smallest use of the two process rules.';
+SHOWS['ex-guard-neg'] = 'Each box uses its own variable before its first session action. The first loops on $\\beta$ steps, the second is $\\mathsf{fix}\\,\\lambda x.\\,x$, the third recurses before it returns, and the fourth spawns forever. The guard rejects all four, so they are outside lock-free typing.';
+SHOWS['ex-guard-pos'] = 'In both boxes a $\\mathsf{recv}$ comes before the recursive call. A receive is a session action, so the guard checks the rest of the body under $\\varnothing$, where the variable of the box is usable again.';
+SHOWS['ex-forwarder'] = 'The forwarder receives a closure on $o$ and spawns the closure as a new thread. $\\mathsf{dead\\_thunk}\\,q$ mentions the end $q$ without owning it, so it is not a fueled value and cannot arrive on $o$. Each closure the forwarder receives therefore owns its ends, and $\\mathsf{fw}$ has fuel at each refill.';
+SHOWS['ex-controller'] = 'The client sends on $a$ and receives on $b$ in each round, and holds the end $k$ at $\\mathsf{Skip}@\\chi$ throughout. Aging requires $c \\leq a$ only of ends that are not idle. The idle end $k$ therefore has credit $0$ across rounds of unbounded cost.';
+SHOWS['rx-postpone'] = 'Main holds $b$ while it runs a loop that never returns, and the thread with $b\'$ waits forever while other threads step. Aging requires $c \\leq a$ of each held end that is not idle. The loop has cost $\\infty$, and $b$ has a finite credit, so the program has no lock-free typing.';
+SHOWS['rx-delegate'] = 'Two threads send the end $e$ back and forth forever, and the thread with $e\'$ waits. Each send passes $e$ on with its counter one lower. After finitely many sends no credit remains to send $e$ again, so the program has no lock-free typing.';
+SHOWS['rx-relink'] = 'Each round links the partner of the waiting end to a new channel. The waiting thread then faces a new end with a full counter, and no counter decreases to $0$. Each link uses one ticket of its thread and no step creates tickets, so the program has no lock-free typing.';
+SHOWS['rx-chain'] = 'Each thread spawns a child, waits on it, and the child does the same. Each wait is at a point below the point of the previous one, and the chain grows forever. A well-founded world has no infinite descending chain, and lock-free soundness assumes a well-founded world.';
+
 // ---- apply ----
 function apply() {
   for (const s of sections) {
@@ -170,5 +187,6 @@ function apply() {
       if (EX[b.id] !== undefined) b.about = { ...(b.about || {}), example: EX[b.id] };
     }
   }
+  for (const x of examples) if (SHOWS[x.id] !== undefined) x.shows = SHOWS[x.id];
 }
 module.exports = { apply };
