@@ -90,7 +90,8 @@ aside { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 112px); alig
 @media (max-width: 900px) { aside { position: fixed; left: 0; right: 0; bottom: 0; top: auto; max-height: 46vh; border-radius: 12px 12px 0 0; z-index: 6; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); box-shadow: 0 -6px 24px rgba(0,0,0,.12); } aside.empty { display: none; } main { padding-bottom: 50vh; } }
 aside .eyebrow { font: 600 0.7rem var(--body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
 aside .eyebrow button { font: 500 0.75rem var(--body); border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 4px; padding: 2px 8px; cursor: pointer; }
-.block h3[data-block], .ex h3[data-ex] { cursor: help; }
+.block h3[data-block] { cursor: pointer; }
+.ex h3[data-ex] { cursor: help; }
 aside h2 { font-family: var(--display); font-weight: 600; font-size: 1.3rem; margin: 6px 0 10px; text-wrap: balance; }
 aside dl { margin: 0; display: grid; gap: 10px; }
 aside dt { font: 600 0.72rem var(--body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
@@ -342,10 +343,17 @@ window.MathJax = {
     const u = uses[key] ? [...uses[key].entries()] : [];
     body.innerHTML = `<h2>${esc(annot(n.title || key))}</h2>
       <dl>${n.sig ? `<div><dt>Type</dt><dd class="sig">$\\displaystyle ${esc(annot(n.sig))}$</dd></div>` : ''}${args(n.args)}${row('What', n.what)}${row('Why', n.why)}${row('Without it', n.breaks, 'breaks')}${row('Example', n.example)}${row('Rocq', n.rocq)}</dl>
+      ${Array.isArray(n.used) && n.used.length ? `<div class="uses">Used in<div class="chips">${n.used.map(id => { const s = MAP.sections.find(x => x.blocks.some(b => b.id === id)); const b = s && s.blocks.find(b => b.id === id); return b ? `<a href="#${s.id}" data-jump="${esc(id)}">${esc(b.title)}</a>` : ''; }).join('')}</div></div>` : ''}
       ${u.length > 1 ? `<div class="uses">Also in<div class="chips">${u.map(([id, v]) => `<a href="#${v.sec}" data-jump="${esc(id)}">${esc(v.title)}</a>`).join('')}</div></div>` : ''}`;
     noteCache.set(ck, body);
     body.dataset.fresh = '1';
     return body;
+  }
+  // a block's own note: its caption, and why it is there, what breaks without it and where it is used
+  function blockNote(id) {
+    const b = MAP.sections.flatMap(x => x.blocks).find(x => x.id === id); if (!b) return null;
+    const a = b.about || {};
+    return pseudo('b-' + b.id, { title: b.title, what: b.caption, why: a.why, breaks: a.breaks, example: a.example, rocq: b.rocq, used: a.used });
   }
   // a note built from a block's caption, an example's description, or a section intro
   function pseudo(id, n) {
@@ -411,7 +419,7 @@ window.MathJax = {
     const art = e.target.closest && e.target.closest('article'); if (art) lastBlock = art.id;
     const h = e.target.closest && e.target.closest('h3[data-block], h3[data-ex]');
     if (h && !pinned) {
-      if (h.dataset.block) { const b = MAP.sections.flatMap(x => x.blocks).find(x => x.id === h.dataset.block); if (b) showNote(pseudo('b-' + b.id, { title: b.title, what: b.caption, rocq: b.rocq }), false, modeAt(h)); }
+      if (h.dataset.block) { const k = blockNote(h.dataset.block); if (k) showNote(k, false, modeAt(h)); }
       else { const x = (MAP.examples || []).find(x => x.id === h.dataset.ex); if (x) showNote(pseudo('x-' + x.id, { title: x.title, what: x.shows, rocq: x.rocq }), false); }
       return;
     }
@@ -428,6 +436,8 @@ window.MathJax = {
   content.addEventListener('click', e => {
     const fb = e.target.closest && e.target.closest('.flip button');
     if (fb) { flipBlock(fb.closest('.flip').dataset.flip, fb.dataset.m); return; }
+    const hb = e.target.closest && e.target.closest('h3[data-block]');
+    if (hb) { const k = blockNote(hb.dataset.block); if (k) { pinned = k; boxesOff('pin'); showNote(k, true, modeAt(hb)); } return; }
     const t = e.target.closest && e.target.closest('[class*="k-"]'); if (!t) return;
     const k = keyOf(t); if (!k) return;
     pinned = k; markAll(k); showNote(k, true, modeAt(t));

@@ -395,7 +395,18 @@ window.MAP = {
       "lf"
      ],
      "tex": "\\begin{array}{lll}\n\\text{mechanism} & \\text{written} & \\text{rules out} \\\\ \\hline\n\\htmlData{k=lfi.credit}{\\text{credits}} & (S@x)\\annot{^{a}},\\ (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} U)\\annot{^{a}} & \\text{a holder that acts elsewhere forever} \\\\\n\\htmlData{k=lfi.cost}{\\text{cost, aging, refill}} & e : T\\ !\\ (c, \\vartheta),\\ \\ \\Delta - c,\\ \\ (S@x^{+})\\annot{^{N}} & \\text{(the counting behind credits)} \\\\\n\\htmlData{k=lfi.floor}{\\text{floors}} & T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[\\varepsilon ; h]\\, U & \\text{(credits carried into a later call)} \\\\\n\\htmlData{k=lfi.hop}{\\text{hops}} & T' - 1 \\leq T[x\\cdot i],\\ \\ \\Delta - 1 & \\text{an end passed on forever} \\\\\n\\htmlData{k=lfi.tickets}{\\text{tickets}} & \\vartheta,\\ \\ \\htmlData{k=ann.tlink}{\\mathsf{tlink}},\\ \\ \\htmlData{k=ann.tspawn}{\\mathsf{tspawn}} & \\text{a waiter relinked to fresh ends forever} \\\\\n\\htmlData{k=lfi.guard}{\\text{guard}} & \\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t & \\text{internal steps forever} \\\\\n\\htmlData{k=lfi.wf}{\\text{well-founded world}} & \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W & \\text{an endless chain of waiting threads}\n\\end{array}",
-     "caption": "Deadlock freedom promises that some thread can always step. Lock freedom promises more, every waiting thread eventually meets its partner. A deadlock-free program can still keep one thread waiting forever while the others step, and each mechanism here rules out one way of doing that. Hover a row for the intuition and the example it rejects, which the Examples tab lists."
+     "caption": "Deadlock freedom promises that some thread can always step. Lock freedom promises more, every waiting thread eventually meets its partner. A deadlock-free program can still keep one thread waiting forever while the others step, and each mechanism here rules out one way of doing that. Hover a row for the intuition and the example it rejects, which the Examples tab lists.",
+     "about": {
+      "why": "Each row names one mechanism the lock-free mode adds and the endless postponement it rules out. Hover a row for its intuition.",
+      "used": [
+       "t-judgment",
+       "t-age",
+       "t-cap",
+       "r-send",
+       "r-link",
+       "p-lf"
+      ]
+     }
     },
     {
      "id": "t-judgment",
@@ -406,7 +417,17 @@ window.MAP = {
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "Every typing rule concludes and assumes this judgment. The held entries $\\parallel H$ state once what every rule that runs one part while holding another needs, the future of the running part and, in the lock-free mode, the aging of the held part.",
+      "example": "E-App runs $e_1$ while holding $\\Delta_2$, written $\\Gamma ; \\Delta_1 \\parallel \\Delta_2 \\vdash^{F} e_1 : \\ldots$",
+      "used": [
+       "r-app",
+       "r-pair",
+       "r-let",
+       "r-case"
+      ]
+     }
     },
     {
      "id": "t-contexts",
@@ -417,7 +438,16 @@ window.MAP = {
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "Rules split $\\Delta$ between subterms, extend $\\Gamma$ under boxes and existentials, and read order facts only through $\\Gamma \\vdash x \\prec y$. This block fixes what those three objects are.",
+      "used": [
+       "t-side",
+       "r-app",
+       "r-box",
+       "r-ex"
+      ]
+     }
     },
     {
      "id": "t-side",
@@ -428,7 +458,20 @@ window.MAP = {
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "These are the only order checks typing makes. $u \\prec F$ and $x \\prec F$ say a term never waits above a point its context still acts at, $x \\prec T$ says a thread may wait while holding $T$, and $l \\preccurlyeq \\Delta$ fixes the lower point of a closure.",
+      "breaks": "Without them the type system is plain GV and the cycle of two threads closing two channels in opposite orders types.",
+      "used": [
+       "r-app",
+       "r-send",
+       "r-recv",
+       "r-close",
+       "r-abs",
+       "r-force",
+       "r-ex"
+      ]
+     }
     },
     {
      "id": "t-age",
@@ -438,7 +481,20 @@ window.MAP = {
       "lf"
      ],
      "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=age.free}{\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T}\\end{array}}{T - c = T}\\;\\textsf{Age-Free} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=age.credit}{c \\leq a}\\end{array}}{(S@x)\\annot{^{a}} - c = (S@x)^{a - c}}\\;\\textsf{Age-Credit} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=age.idle}{\\htmlData{k=fu.idle}{\\mathsf{idle}}\\,S}\\end{array}}{(S@x)\\annot{^{a}} - c = (S@x)^{\\max(a - c, 0)}}\\;\\textsf{Age-Idle} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=age.credit}{c \\leq a}\\end{array}}{(T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} U)\\annot{^{a}} - c = (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} U)^{a - c}}\\;\\textsf{Age-Arr} \\\\[2ex] \\htmlData{k=age.agg}{(T_1 \\otimes T_2) - c = (T_1 - c) \\otimes (T_2 - c) \\qquad (T_1 \\oplus T_2) - c = (T_1 - c) \\oplus (T_2 - c) \\qquad (\\exists^{l}\\bar\\iota.\\,C.\\,T) - c = \\exists^{l}\\bar\\iota.\\,C.\\,(T - c)}\\end{array}",
-     "caption": "$T - c$ lowers the credit of every end and closure in $T$ by $c$, asks $c \\leq a$ of every end that is not idle and of every closure, and keeps types with $\\mathsf{tfree}\\,T$. $\\Delta - c$ ages every entry."
+     "caption": "$T - c$ lowers the credit of every end and closure in $T$ by $c$, asks $c \\leq a$ of every end that is not idle and of every closure, and keeps types with $\\mathsf{tfree}\\,T$. $\\Delta - c$ ages every entry.",
+     "about": {
+      "why": "Aging is how credits fall. Every rule that holds entries while a subterm runs ages them by the cost of that subterm, and $c \\leq a$ makes the credit cover the actions performed in between.",
+      "breaks": "Without aging a thread may hold an end across unboundedly many actions on other ends, and the partner of that end waits without bound, as in Postponement in the Examples tab.",
+      "example": "$((S@x)^{2} \\otimes \\ast) - 1 = (S@x)^{1} \\otimes \\ast$.",
+      "used": [
+       "t-judgment",
+       "r-app",
+       "r-pair",
+       "r-let",
+       "r-case",
+       "r-spawnlam"
+      ]
+     }
     },
     {
      "id": "t-cap",
@@ -448,7 +504,15 @@ window.MAP = {
       "lf"
      ],
      "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=cap.sess}{h + a \\leq a_0}\\end{array}}{(S@x)\\annot{^{a_0}} \\leadsto_{h,a} (S@x)^{h}}\\;\\textsf{Cap-Sess} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=cap.arr}{h_0 \\leq h \\quad h + a \\leq h_0 + a_0}\\end{array}}{(T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[\\varepsilon;h_0] U)\\annot{^{a_0}} \\leadsto_{h,a} (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[\\varepsilon;h_0] U)^{h - h_0}}\\;\\textsf{Cap-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.tfree}{\\mathsf{tfree}\\,T}\\end{array}}{T \\leadsto_{h,a} T}\\;\\textsf{Cap-Free} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=cap.agg}{T_i \\leadsto_{h,a} T_i'}\\end{array}}{T_1 \\otimes T_2 \\leadsto_{h,a} T_1' \\otimes T_2' \\quad T_1 \\oplus T_2 \\leadsto_{h,a} T_1' \\oplus T_2' \\quad \\exists^{l}\\bar\\iota.\\,C.\\,T_1 \\leadsto_{h,a} \\exists^{l}\\bar\\iota.\\,C.\\,T_1'}\\;\\textsf{Cap-Prod, Cap-Sum, Cap-Ex}\\end{array}",
-     "caption": "A captured end needs credit at least $h + a$, and the body sees it at credit $h$."
+     "caption": "A captured end needs credit at least $h + a$, and the body sees it at credit $h$.",
+     "about": {
+      "why": "Capture fixes what a closure body may assume of the ends it captured. The ends are invisible in the closure type, so the body sees them at the floor $h$, and creation asks each to have $h + a$, the floor plus what the closure may lose while it is held.",
+      "breaks": "Without it a closure could be held across many actions and then use a captured end whose counter has run out.",
+      "example": "An end at credit $2$ captured with $h = 1$ and $a = 1$ is seen at credit $1$ by the body.",
+      "used": [
+       "r-abs"
+      ]
+     }
     },
     {
      "id": "t-sub",
@@ -462,7 +526,15 @@ window.MAP = {
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "Subtyping lets one value fit several expected types. The branches of a case and two creations of one channel type need a common type, and in the lock-free mode a fresh end at credit $N$ must fit a parameter that asks less.",
+      "breaks": "Without it two branches that create a channel with different facts have no common result type.",
+      "example": "$\\exists^{\\bot}\\rho.\\,\\{\\rho \\prec \\overline{\\rho\\cdot 0}\\}.\\,T \\leq \\exists^{\\bot}\\rho.\\,\\varnothing.\\,T$.",
+      "used": [
+       "r-struct"
+      ]
+     }
     },
     {
      "id": "r-unit",
@@ -583,7 +655,21 @@ window.MAP = {
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "The constants are values, so they have types. Each type is the type of the constant applied to a variable, and an action on $x$ has upper point $x$, so a caller can only use it while every later action of the caller lies above $x$.",
+      "used": [
+       "r-send",
+       "r-recv",
+       "r-close",
+       "r-select",
+       "r-branch",
+       "r-link",
+       "r-spawn",
+       "r-force",
+       "r-new"
+      ]
+     }
     },
     {
      "id": "r-send",
@@ -729,7 +815,14 @@ window.MAP = {
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "P-Term turns one well-typed thread into a process. It splits the ends the thread holds into the interface $\\Sigma$ and the channels $C_0$ whose both ends it holds, and asks the world to be strict.",
+      "used": [
+       "p-connect",
+       "p-lf"
+      ]
+     }
     },
     {
      "id": "p-connect",
@@ -740,7 +833,14 @@ window.MAP = {
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "P-Connect composes two processes along the cut $\\Sigma_C$. Each side was checked in its own world, so only the order the two worlds induce on their shared roots must stay acyclic.",
+      "breaks": "Without the strictness check two sides could order shared points in opposite directions, and each thread could wait on the other although each side alone is ready.",
+      "used": [
+       "p-lf"
+      ]
+     }
     },
     {
      "id": "p-lf",
@@ -750,7 +850,13 @@ window.MAP = {
       "lf"
      ],
      "tex": "\\htmlData{k=tp.lfjudg}{\\Sigma \\Vdash^{N}_W p : T \\iff \\htmlData{k=lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_W p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p}}",
-     "caption": "Lock-free typing is process typing at finite $N$ with every thread guarded."
+     "caption": "Lock-free typing is process typing at finite $N$ with every thread guarded.",
+     "about": {
+      "why": "Lock-free process typing is process typing at a finite refill with every thread guarded. This is the premise of the lock-free soundness theorem.",
+      "used": [
+       "g-proc"
+      ]
+     }
     },
     {
      "id": "g-acts",
@@ -760,7 +866,13 @@ window.MAP = {
       "lf"
      ],
      "tex": "\\htmlData{k=guard.acts}{\\begin{array}{l}\\mathsf{acts}\\,(k\\,e) \\iff k \\in K_{\\mathrm{act}} \\lor \\mathsf{acts}\\,e \\\\ K_{\\mathrm{act}} = \\{\\htmlData{k=prim.send}{\\mathsf{send}}, \\htmlData{k=prim.recv}{\\mathsf{recv}}, \\htmlData{k=prim.close}{\\mathsf{close}}, \\htmlData{k=prim.select}{\\mathsf{select}}_i, \\htmlData{k=prim.branch}{\\mathsf{branch}}\\} \\\\ \\mathsf{acts}\\,(e_1\\,e_2),\\ \\mathsf{acts}\\,\\langle e_1, e_2\\rangle \\iff \\mathsf{acts}\\,e_1 \\lor \\mathsf{acts}\\,e_2 \\\\ \\mathsf{acts}\\,(\\htmlData{k=syn.letp}{\\mathsf{let}}\\ p = e_1\\ \\htmlData{k=syn.letp}{\\mathsf{in}}\\ e_2) \\iff \\mathsf{acts}\\,e_1 \\lor \\mathsf{acts}\\,e_2 \\\\ \\mathsf{acts}\\,(\\htmlData{k=syn.case}{\\mathsf{case}}\\ e\\,(e_1)\\,(e_2)) \\iff \\mathsf{acts}\\,e \\lor (\\mathsf{acts}\\,e_1 \\land \\mathsf{acts}\\,e_2) \\\\ \\mathsf{acts}\\,(\\mathsf{inj}_i\\,e) \\iff \\mathsf{acts}\\,e, \\quad \\text{false for values and } \\htmlData{k=syn.new}{\\mathsf{new}_\\ell}\\end{array}}",
-     "caption": "$\\mathsf{acts}\\,e$ holds when every evaluation of $e$ to a value performs a session action."
+     "caption": "$\\mathsf{acts}\\,e$ holds when every evaluation of $e$ to a value performs a session action.",
+     "about": {
+      "why": "The guard needs to know when a session action has certainly happened, because only after an action may a box call itself. $\\mathsf{acts}\\,e$ says that evaluating $e$ to a value performs an action.",
+      "used": [
+       "g-rules"
+      ]
+     }
     },
     {
      "id": "g-rules",
@@ -770,7 +882,16 @@ window.MAP = {
       "lf"
      ],
      "tex": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=guard.var}{\\Lambda(y) = \\htmlData{k=guard.marks}{\\mathsf{false}}}\\end{array}}{\\htmlData{k=guard.marks}{\\Lambda} \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} y}\\;\\textsf{gl\\_var} \\quad \\dfrac{\\begin{array}{c}\\htmlData{k=guard.lam}{\\htmlData{k=guard.marks}{\\mathsf{false}}.\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} b}\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} \\lambda b}\\;\\textsf{gl\\_lam} \\quad \\dfrac{\\begin{array}{c}\\htmlData{k=guard.box}{\\htmlData{k=guard.marks}{\\mathsf{true}}.\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} b}\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}}\\ !b}\\;\\textsf{gl\\_box} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=guard.cong}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_1}\\\\ \\htmlData{k=guard.tick}{\\mathsf{kmarks}\\,\\Lambda\\,\\Lambda'\\,e_1}\\\\ \\Lambda' \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_2\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_1\\,e_2}\\;\\textsf{gl\\_app} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_1\\\\ \\htmlData{k=guard.tick}{\\mathsf{kmarks}\\,\\Lambda\\,\\Lambda'\\,e_1}\\\\ \\htmlData{k=guard.bind}{\\htmlData{k=guard.marks}{\\mathsf{false}}.\\htmlData{k=guard.marks}{\\mathsf{false}}.\\Lambda' \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_2}\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} \\htmlData{k=syn.letp}{\\mathsf{let}}\\ \\langle a, b\\rangle = e_1\\ \\htmlData{k=syn.letp}{\\mathsf{in}}\\ e_2}\\;\\textsf{gl\\_letp}\n\\end{array}",
-     "caption": "A box marks its self, a marked variable is unusable, and after an acting $e_1$ the rest may be checked under $\\varnothing$. The pair, $\\mathsf{let}\\ \\ast$ and the case follow $\\mathsf{gl\\_app}$ and $\\mathsf{gl\\_letp}$."
+     "caption": "A box marks its self, a marked variable is unusable, and after an acting $e_1$ the rest may be checked under $\\varnothing$. The pair, $\\mathsf{let}\\ \\ast$ and the case follow $\\mathsf{gl\\_app}$ and $\\mathsf{gl\\_letp}$.",
+     "about": {
+      "why": "Internal steps, $\\beta$, $\\mathsf{new}$ and $\\mathsf{spawn}$, cost no counter. A box that calls itself before any action could step forever without serving anyone, which deadlock freedom allows and lock freedom does not. The guard marks the self of a box unusable until an action has happened.",
+      "breaks": "Without the guard $!(f = \\mathsf{force}\\,f)$ types in the lock-free mode and diverges by internal steps, see Guard rejections in the Examples tab.",
+      "example": "$!(f = \\lambda x.\\,\\mathsf{let}\\ \\langle v, x\\rangle = \\mathsf{recv}\\,x\\ \\mathsf{in}\\ (\\mathsf{force}\\,f)\\,x)$ is guarded, because the receive acts before the self call.",
+      "used": [
+       "g-proc",
+       "p-lf"
+      ]
+     }
     },
     {
      "id": "g-proc",
@@ -780,7 +901,13 @@ window.MAP = {
       "lf"
      ],
      "tex": "\\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p \\iff \\forall t \\in p.\\ \\varnothing \\vdash\\!\\triangleright t}",
-     "caption": "$\\vdash\\!\\triangleright p$ holds when every thread $t$ of $p$ satisfies $\\varnothing \\vdash\\!\\triangleright t$."
+     "caption": "$\\vdash\\!\\triangleright p$ holds when every thread $t$ of $p$ satisfies $\\varnothing \\vdash\\!\\triangleright t$.",
+     "about": {
+      "why": "A process is guarded when each of its threads is. Lock-free process typing asks it.",
+      "used": [
+       "p-lf"
+      ]
+     }
     }
    ]
   },
