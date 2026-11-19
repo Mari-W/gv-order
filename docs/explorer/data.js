@@ -11506,7 +11506,8 @@ window.MAP = {
      "N": 3,
      "rocq": "cs_lftyped, cs_lock_free"
     }
-   }
+   },
+   "lead": "Two loops that call themselves forever over the same two channels are deadlock free, because one constraint orders the points of all their rounds at once."
   },
   {
    "id": "ex-cycle",
@@ -11532,7 +11533,8 @@ window.MAP = {
      "N": 2,
      "rocq": "cy_lftyped, cy_lock_free"
     }
-   }
+   },
+   "lead": "Two threads that use two channels in the same order type, because creating the second channel states the two order facts the threads need."
   },
   {
    "id": "ex-between",
@@ -11558,7 +11560,8 @@ window.MAP = {
      "N": 2,
      "rocq": "fb_lftyped, fb_lock_free"
     }
-   }
+   },
+   "lead": "A procedure can create a channel whose point lies between the points of two channels it receives as arguments."
   },
   {
    "id": "ex-many",
@@ -11584,7 +11587,8 @@ window.MAP = {
      "N": 4,
      "rocq": "fm_lftyped, fm_lock_free"
     }
-   }
+   },
+   "lead": "A new channel can act several times while an older end is held, because a box constraint may state infinitely many facts."
   },
   {
    "id": "ex-factory",
@@ -11610,7 +11614,8 @@ window.MAP = {
      "N": 2,
      "rocq": "fx_lftyped, fx_lock_free"
     }
-   }
+   },
+   "lead": "One way of creating a channel admits two typings, at a fresh root hidden in an existential or at a field of an end the creator holds."
   },
   {
    "id": "ex-ring",
@@ -11636,7 +11641,8 @@ window.MAP = {
      "N": 4,
      "rocq": "rg_lftyped, rg_lock_free"
     }
-   }
+   },
+   "lead": "A ring of threads that grows forever is lock free."
   },
   {
    "id": "ex-close",
@@ -11653,7 +11659,8 @@ window.MAP = {
      "N": "every",
      "rocq": "cl_lftyped, cl_lock_free"
     }
-   }
+   },
+   "lead": "The smallest process built from two typed threads by the process rules."
   },
   {
    "id": "ex-guard-neg",
@@ -11675,7 +11682,8 @@ window.MAP = {
      "part": "guard",
      "rocq": "div_not_guarded, pn_fix_not_guarded, cx_not_guarded, spawn_loop_not_guarded"
     }
-   }
+   },
+   "lead": "Recursion that can run forever without a session action is outside lock-free typing."
   },
   {
    "id": "ex-guard-pos",
@@ -11697,7 +11705,8 @@ window.MAP = {
      "part": "guard",
      "rocq": "loop_guarded, stage_guarded"
     }
-   }
+   },
+   "lead": "Recursion that performs a session action before each recursive call passes the guard."
   },
   {
    "id": "ex-forwarder",
@@ -11715,7 +11724,8 @@ window.MAP = {
      "part": "typing and fuel",
      "rocq": "fw_ptyped, fw_fsem, dead_thunk_rejected"
     }
-   }
+   },
+   "lead": "A thread that receives closures and spawns them is lock free, because a received closure owns the ends it mentions."
   },
   {
    "id": "ex-controller",
@@ -11732,7 +11742,8 @@ window.MAP = {
      "N": 3,
      "rocq": "ctl_lftyped"
     }
-   }
+   },
+   "lead": "An end that no thread ever acts on may be held across a loop of unbounded length."
   },
   {
    "id": "rx-postpone",
@@ -11748,7 +11759,8 @@ window.MAP = {
      "ok": false,
      "part": "aging"
     }
-   }
+   },
+   "lead": "A deadlock-free program in which one thread waits forever, because the holder of its partner end never acts on that end."
   },
   {
    "id": "rx-delegate",
@@ -11764,7 +11776,8 @@ window.MAP = {
      "ok": false,
      "part": "payload credit"
     }
-   }
+   },
+   "lead": "A deadlock-free program in which an end is sent back and forth forever while its partner waits."
   },
   {
    "id": "rx-relink",
@@ -11780,7 +11793,8 @@ window.MAP = {
      "ok": false,
      "part": "tickets"
     }
-   }
+   },
+   "lead": "A deadlock-free program in which links keep replacing the end a thread waits on."
   },
   {
    "id": "rx-chain",
@@ -11796,7 +11810,8 @@ window.MAP = {
      "ok": false,
      "part": "well-founded world"
     }
-   }
+   },
+   "lead": "A deadlock-free program in which a chain of waiting threads grows forever."
   }
  ]
 };

@@ -3,7 +3,7 @@
 // Writing rules: docs/explorer/BLOCKS.md and the pl-paper-writing skill of sill-obs.
 const { sections, examples } = require('./core');
 
-const INTRO = {}, CAP = {}, WHY = {}, EX = {}, SHOWS = {};
+const INTRO = {}, CAP = {}, WHY = {}, EX = {}, SHOWS = {}, LEAD = {};
 
 // ---- syntax ----
 INTRO.syntax = 'Programs are terms of a call-by-value $\\lambda$-calculus with session-typed channels. Terms never mention points. Points appear in types and in the relation, where they order the waits of threads.';
@@ -178,6 +178,23 @@ SHOWS['rx-delegate'] = 'Two threads send the end $e$ back and forth forever, and
 SHOWS['rx-relink'] = 'Each round links the partner of the waiting end to a new channel. The waiting thread then faces a new end with a full counter, and no counter decreases to $0$. Each link uses one ticket of its thread and no step creates tickets, so the program has no lock-free typing.';
 SHOWS['rx-chain'] = 'Each thread spawns a child, waits on it, and the child does the same. Each wait is at a point below the point of the previous one, and the chain grows forever. A well-founded world has no infinite descending chain, and lock-free soundness assumes a well-founded world.';
 
+// one sentence above the code: what the example demonstrates
+LEAD['ex-cs'] = 'Two loops that call themselves forever over the same two channels are deadlock free, because one constraint orders the points of all their rounds at once.';
+LEAD['ex-cycle'] = 'Two threads that use two channels in the same order type, because creating the second channel states the two order facts the threads need.';
+LEAD['ex-between'] = 'A procedure can create a channel whose point lies between the points of two channels it receives as arguments.';
+LEAD['ex-many'] = 'A new channel can act several times while an older end is held, because a box constraint may state infinitely many facts.';
+LEAD['ex-factory'] = 'One way of creating a channel admits two typings, at a fresh root hidden in an existential or at a field of an end the creator holds.';
+LEAD['ex-ring'] = 'A ring of threads that grows forever is lock free.';
+LEAD['ex-close'] = 'The smallest process built from two typed threads by the process rules.';
+LEAD['ex-guard-neg'] = 'Recursion that can run forever without a session action is outside lock-free typing.';
+LEAD['ex-guard-pos'] = 'Recursion that performs a session action before each recursive call passes the guard.';
+LEAD['ex-forwarder'] = 'A thread that receives closures and spawns them is lock free, because a received closure owns the ends it mentions.';
+LEAD['ex-controller'] = 'An end that no thread ever acts on may be held across a loop of unbounded length.';
+LEAD['rx-postpone'] = 'A deadlock-free program in which one thread waits forever, because the holder of its partner end never acts on that end.';
+LEAD['rx-delegate'] = 'A deadlock-free program in which an end is sent back and forth forever while its partner waits.';
+LEAD['rx-relink'] = 'A deadlock-free program in which links keep replacing the end a thread waits on.';
+LEAD['rx-chain'] = 'A deadlock-free program in which a chain of waiting threads grows forever.';
+
 // ---- apply ----
 function apply() {
   for (const s of sections) {
@@ -188,6 +205,6 @@ function apply() {
       if (EX[b.id] !== undefined) b.about = { ...(b.about || {}), example: EX[b.id] };
     }
   }
-  for (const x of examples) if (SHOWS[x.id] !== undefined) x.shows = SHOWS[x.id];
+  for (const x of examples) { if (SHOWS[x.id] !== undefined) x.shows = SHOWS[x.id]; if (LEAD[x.id] !== undefined) x.lead = LEAD[x.id]; }
 }
 module.exports = { apply };
