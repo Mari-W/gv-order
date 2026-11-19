@@ -1244,7 +1244,9 @@ first, in stage S2.
   credit, was unsound. The fuel skips only the checks "≥ 1" of F-Tick
   and the hand-over for idle ends, and their counters still tick, so a
   kept credit exceeds the counter (`idle_age_cex`, a counterexample to
-  the F5 instance at c = 1, credit 1, counter 1). Stopping idle counters
+  the F5 instance at c = 1, credit 1, counter 1, in
+  v2/examples/LFController.v at commit 587fb4c, deleted as dead code in
+  M.8). Stopping idle counters
   in the fuel instead would make counters depend on the index (Q5).
   Without `age_idle` the controller (#20) types at no finite N (C.6,
   examples/LFController.v).

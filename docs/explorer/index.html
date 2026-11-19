@@ -17,6 +17,7 @@
   --df: #3a5a9c;
   --live: #1f6f78;
   --lf: #7a4c9a;
+  --lf-soft: #f4edf9;
   --display: "Newsreader", "Iowan Old Style", Georgia, serif;
   --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -24,11 +25,11 @@
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #12161c; --panel: #1a2029; --fg: #e3e8ef; --muted: #98a3b3; --line: #2c3540;
   --accent: #5fb3bb; --accent-soft: #1d3438; --hot: #f0a060; --hot-soft: #3a2a1c;
-  --df: #8fa9e0; --live: #5fb3bb; --lf: #c39be0; color-scheme: dark } }
+  --df: #8fa9e0; --live: #5fb3bb; --lf: #c39be0; --lf-soft: #2b2235; color-scheme: dark } }
 :root[data-theme="dark"] {
   --bg: #12161c; --panel: #1a2029; --fg: #e3e8ef; --muted: #98a3b3; --line: #2c3540;
   --accent: #5fb3bb; --accent-soft: #1d3438; --hot: #f0a060; --hot-soft: #3a2a1c;
-  --df: #8fa9e0; --live: #5fb3bb; --lf: #c39be0; color-scheme: dark }
+  --df: #8fa9e0; --live: #5fb3bb; --lf: #c39be0; --lf-soft: #2b2235; color-scheme: dark }
 
 body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5; }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--panel); }
@@ -43,7 +44,12 @@ h1 small { font-family: var(--body); font-weight: 400; font-size: 0.8rem; color:
 .modes button + button { border-left: 1px solid var(--line); }
 .modes button[aria-pressed="true"] { color: #fff; }
 .modes button[data-mode="df"][aria-pressed="true"] { background: var(--df); }
-.modes button[data-mode="live"][aria-pressed="true"] { background: var(--live); }
+.ann { fill: var(--lf); color: var(--lf); }
+.block.lfonly { background: var(--lf-soft); border-color: var(--lf); }
+.flip { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; font: 500 0.66rem var(--body); letter-spacing: 0.04em; }
+.flip button { border: 0; background: transparent; color: var(--muted); padding: 1px 6px; cursor: pointer; font: inherit; }
+.flip button[aria-pressed="true"][data-m="df"] { background: var(--df); color: #fff; }
+.flip button[aria-pressed="true"][data-m="lf"] { background: var(--lf); color: #fff; }
 .modes button[data-mode="lf"][aria-pressed="true"] { background: var(--lf); }
 :root[data-theme="dark"] .modes button[aria-pressed="true"] { color: #10141a; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .modes button[aria-pressed="true"] { color: #10141a; } }
@@ -75,6 +81,7 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 460px; gap: 24px; ma
 
 /* hover targets inside formulas */
 .math [class*="k-"] { cursor: help; }
+.math rect.lr-hit { fill: transparent; stroke: none; pointer-events: all; }
 .math rect.lr-box { fill: var(--hot-soft); stroke: var(--hot); stroke-width: 18; pointer-events: none; }
 .math rect.lr-box.pin { stroke-width: 36; }
 
@@ -88,12 +95,16 @@ aside dl { margin: 0; display: grid; gap: 10px; }
 aside dt { font: 600 0.72rem var(--body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
 aside dd { margin: 2px 0 0; font-size: 0.95rem; line-height: 1.55; }
 aside mjx-container { font-size: 105%; }
-aside dd.sig { overflow-x: auto; }
+aside dd.sig { overflow: hidden; }
+aside dd.sig mjx-container { display: block !important; max-width: 100%; min-width: 0 !important; overflow: hidden; margin: 2px 0 !important; }
+aside dd.sig mjx-container svg { max-width: 100% !important; height: auto !important; }
 aside ul.args { margin: 2px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 0.88rem; }
 aside dd.breaks { border-left: 3px solid var(--hot); padding-left: 8px; }
 aside code, .caption code, .ex code { font-family: var(--mono); font-size: 0.85em; }
 aside .uses { margin-top: 14px; font-size: 0.82rem; color: var(--muted); }
-aside .uses a { color: var(--accent); text-decoration: none; margin-right: 8px; white-space: nowrap; }
+aside .uses .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+aside .uses a { color: var(--accent); text-decoration: none; padding: 2px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); max-width: 100%; overflow-wrap: anywhere; }
+aside .uses a:hover { border-color: var(--accent); }
 aside .placeholder { color: var(--muted); font-size: 0.9rem; }
 
 .ex { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; }
@@ -123,7 +134,6 @@ aside .placeholder { color: var(--muted); font-size: 0.9rem; }
     <h1>GV Relation Map <small>v2 definitions, rules and theorems</small></h1>
     <div class="modes" role="group" aria-label="Instance">
       <button type="button" data-mode="df" aria-pressed="true">Deadlock free</button>
-      <button type="button" data-mode="live" aria-pressed="false">Live</button>
       <button type="button" data-mode="lf" aria-pressed="false">Lock free</button>
     </div>
     <label class="search"><input id="q" type="search" placeholder="Filter rules and clauses" aria-label="Filter"></label>
@@ -151,14 +161,25 @@ window.MathJax = {
 <script>
 (function () {
   const MAP = window.MAP || { sections: [], notes: {}, examples: [] };
-  const MODES = { df: 'Deadlock free', live: 'Live', lf: 'Lock free' };
+  const MODES = { df: 'Deadlock free', lf: 'Lock free' };
   let mode = 'df', pinned = null, query = '';
   try { const m = localStorage.getItem('lrmap-mode'); if (m && MODES[m]) mode = m; } catch (e) {}
+  { const qm = new URLSearchParams(location.search).get('mode'); if (qm && MODES[qm]) mode = qm; }
 
   const $ = s => document.querySelector(s);
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   // inline `code` in prose fields
-  const prose = s => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>');
+  // \annp{…} marks prose about annotations: dropped in the deadlock-free mode, coloured in the lock-free mode
+  function annp(s) {
+    s = String(s || ''); let out = '', i = 0;
+    for (;;) {
+      const j = s.indexOf('\\annp{', i); if (j < 0) return out + s.slice(i);
+      let d = 1, k = j + 6;
+      while (k < s.length && d) { if (s[k] === '\\') { k += 2; continue; } if (s[k] === '{') d++; else if (s[k] === '}') d--; k++; }
+      out += s.slice(i, j) + (mode === 'lf' ? '\u0001' + annp(s.slice(j + 6, k - 1)) + '\u0002' : ''); i = k;
+    }
+  }
+  const prose = s => esc(annp(s)).replace(/\u0001/g, '<span class="ann">').replace(/\u0002/g, '</span>').replace(/`([^`]+)`/g, '<code>$1</code>');
   // syntax highlighting for programs in the surface language
   const KW = new Set(['let', 'in', 'new', 'spawn', 'send', 'recv', 'close', 'select', 'branch', 'link', 'force', 'case', 'of', 'inl', 'inr', 'fix', 'box', 'fun', 'if', 'then', 'else', 'end', 'skip', 'rec']);
   function hl(code) {
@@ -174,7 +195,25 @@ window.MathJax = {
     return out + esc(code.slice(last));
   }
   // \htmlData{k=KEY}{…} (KaTeX style) becomes \class{k-KEY}{…} for MathJax
-  const toMJ = tex => String(tex || '').replace(/\\htmlData\{k=([A-Za-z0-9.\-_]+)\}\{/g, (_, k) => '\\class{k-' + k.replace(/\./g, '__') + '}{');
+  // \annot{X} marks an annotation (a credit): kept in the lock-free mode, dropped otherwise
+  // \annot{X} marks an annotation, \annraw{X} layout that belongs to one: kept (and coloured) in the lock-free mode, dropped otherwise
+  // colour an annotation, keeping a lone superscript attached to its base
+  function colour(t) {
+    if (t.startsWith('^{')) { let d = 1, k = 2; while (k < t.length && d) { if (t[k] === '\\') { k += 2; continue; } if (t[k] === '{') d++; else if (t[k] === '}') d--; k++; } if (k === t.length) return '^{\\class{ann}{' + t.slice(2, -1) + '}}'; }
+    return '\\class{ann}{' + t + '}';
+  }
+  function annot(s, md = mode) {
+    s = String(s || ''); let out = '', i = 0;
+    for (;;) {
+      const m = /\\ann(ot|raw)\{/.exec(s.slice(i)); if (!m) return out + s.slice(i);
+      const j = i + m.index, open = j + m[0].length;
+      let d = 1, k = open;
+      while (k < s.length && d) { if (s[k] === '\\') { k += 2; continue; } if (s[k] === '{') d++; else if (s[k] === '}') d--; k++; }
+      const inner = annot(s.slice(open, k - 1), md);
+      out += s.slice(i, j) + (md !== 'lf' ? '' : m[1] === 'raw' ? inner : colour(inner)); i = k;
+    }
+  }
+  const toMJ = (tex, m) => annot(tex, m).replace(/\\htmlData\{k=([A-Za-z0-9.\-_]+)\}\{/g, (_, k) => '\\class{k-' + k.replace(/\./g, '__') + '}{');
   const keyOf = el => { for (const c of el.classList) if (c.startsWith('k-')) return c.slice(2).replace(/__/g, '.'); return null; };
   const keysIn = tex => { const out = new Set(); String(tex || '').replace(/\\htmlData\{k=([A-Za-z0-9.\-_]+)\}/g, (_, k) => out.add(k)); return out; };
 
@@ -197,13 +236,43 @@ window.MathJax = {
   }
   const matches = (...fields) => !query || fields.join(' ').toLowerCase().includes(query);
 
-  function math(tex) {
+  function math(tex, m) {
     const div = document.createElement('div'); div.className = 'math';
-    try { div.appendChild(MathJax.tex2svg(toMJ(tex), { display: true })); }
+    try { div.appendChild(MathJax.tex2svg(toMJ(tex, m), { display: true })); }
     catch (e) { div.textContent = tex; }
     return div;
   }
 
+  // every hoverable entry gets a transparent rectangle over its whole box, drawn first inside the
+  // entry, so gaps between glyphs count as inside and nested entries (drawn later) stay on top
+  const hitAreas = [];
+  function addHits(block) {
+    block.querySelectorAll('.math [class*="k-"]').forEach(g => {
+      if (g.querySelector(':scope > rect.lr-hit')) return;
+      let b; try { b = g.getBBox(); } catch (e) { return; }
+      if (!b || !b.width) return;
+      const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      r.setAttribute('x', b.x - 40); r.setAttribute('y', b.y - 40);
+      r.setAttribute('width', b.width + 80); r.setAttribute('height', b.height + 80);
+      r.setAttribute('class', 'lr-hit');
+      g.insertBefore(r, g.firstChild);
+    });
+  }
+  // a block may be switched on its own between the two modes when they show it differently
+  const local = new Map();
+  const blockMode = b => local.get(b.id) || mode;
+  const texOf = (b, m) => (b.variants && b.variants[m]) || b.tex;
+  const differs = b => annot(texOf(b, 'df'), 'df') !== annot(texOf(b, 'lf'), 'lf');
+  function flipBlock(id, m) {
+    const b = MAP.sections.flatMap(x => x.blocks).find(x => x.id === id), el = document.getElementById('b-' + id);
+    if (!b || !el) return;
+    if (m === mode) local.delete(id); else local.set(id, m);
+    el.querySelectorAll('.flip button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.m === m)));
+    const old = el.querySelector(':scope > .math'), nu = math(texOf(b, m), m);
+    old.replaceWith(nu); hotEl = null;
+    requestAnimationFrame(() => addHits(el));
+    if (pinned) { markAll(pinned); showNote(pinned, true, m); }
+  }
   function renderSection() {
     const cur = current(), root = $('#content');
     root.innerHTML = '';
@@ -213,17 +282,21 @@ window.MathJax = {
     idle({ title: s.title, what: s.intro });
     let shown = 0;
     for (const b of s.blocks) {
-      const modes = b.modes && b.modes.length ? b.modes : ['df', 'live', 'lf'];
+      const modes = b.modes && b.modes.length ? b.modes : ['df', 'lf'];
       if (!modes.includes(mode)) continue;
-      const tex = (b.variants && b.variants[mode]) || b.tex;
+      const bm = blockMode(b), tex = texOf(b, bm);
       if (!tex || !matches(b.title, b.caption, b.rocq, tex)) continue;
-      const el = document.createElement('article'); el.className = 'block'; el.id = 'b-' + b.id;
-      const tags = modes.length === 3 ? '' : `<span class="tags">${modes.map(m => `<span class="tag ${m}">${m === 'df' ? 'DF' : m === 'live' ? 'live' : 'LF'}</span>`).join('')}</span>`;
-      el.innerHTML = `<h3 data-block="${esc(b.id)}" tabindex="0">${esc(b.title)}${tags}</h3>`;
-      el.appendChild(math(tex));
+      const lfOnly = !modes.includes('df');
+      const el = document.createElement('article'); el.className = 'block' + (lfOnly ? ' lfonly' : ''); el.id = 'b-' + b.id;
+      const tags = modes.length === 2 ? '' : `<span class="tags">${modes.map(m => `<span class="tag ${m}">${m === 'df' ? 'DF' : 'LF'}</span>`).join('')}</span>`;
+      const flip = !lfOnly && differs(b) ? `<span class="tags"><span class="flip" data-flip="${esc(b.id)}">${['df', 'lf'].map(m => `<button type="button" data-m="${m}" aria-pressed="${bm === m}" title="Show this block ${m === 'df' ? 'without' : 'with'} the lock-free additions">${m === 'df' ? 'DF' : 'LF'}</button>`).join('')}</span></span>` : '';
+      el.innerHTML = `<h3 data-block="${esc(b.id)}" tabindex="0">${esc(b.title)}${tags}${flip}</h3>`;
+      el.appendChild(math(tex, bm));
+      hitAreas.push(el);
       root.appendChild(el); shown++;
     }
     if (!shown) root.insertAdjacentHTML('beforeend', '<p class="empty-state">Nothing in this section matches the filter for this instance.</p>');
+    const todo = hitAreas.splice(0); requestAnimationFrame(() => todo.forEach(addHits));
     typeset(root);
     hotEl = null;
     if (pinned) markAll(pinned);
@@ -245,7 +318,7 @@ window.MathJax = {
     idle({ title: 'Examples', what: 'Typed programs. The badges show which judgments accept each one. Point at a title for what it demonstrates.' });
     let shown = 0;
     for (const x of MAP.examples || []) {
-      const modes = x.modes && x.modes.length ? x.modes : ['df', 'live', 'lf'];
+      const modes = x.modes && x.modes.length ? x.modes : ['df', 'lf'];
       if (!modes.includes(mode) || !matches(x.title, x.shows, x.code, x.rocq)) continue;
       root.insertAdjacentHTML('beforeend', `<article class="ex" id="x-${esc(x.id)}"><h3 data-ex="${esc(x.id)}" tabindex="0">${esc(x.title)}</h3>${badges(x.accepts)}${x.code ? `<pre>${hl(x.code)}</pre>` : ''}</article>`);
       shown++;
@@ -259,16 +332,17 @@ window.MathJax = {
 
   const noteCache = new Map();
   function noteBody(key) {
-    if (noteCache.has(key)) return noteCache.get(key);
+    const ck = mode + ' ' + key;
+    if (noteCache.has(ck)) return noteCache.get(ck);
     const n = MAP.notes[key], body = document.createElement('div');
-    if (!n) { body.innerHTML = `<div class="placeholder">No note for <code>${esc(key)}</code>.</div>`; noteCache.set(key, body); return body; }
-    const args = as => Array.isArray(as) && as.length ? `<div><dt>Arguments</dt><dd><ul class="args">${as.map(x => `<li>$${esc(x.name)}$ ${prose(x.meaning)}</li>`).join('')}</ul></dd></div>` : '';
-    const row = (t, v, cls) => v ? `<div><dt>${t}</dt><dd${cls ? ` class="${cls}"` : ''}>${prose(v)}</dd></div>` : '';
+    if (!n) { body.innerHTML = `<div class="placeholder">No note for <code>${esc(key)}</code>.</div>`; noteCache.set(ck, body); return body; }
+    const args = as => Array.isArray(as) && as.length ? `<div><dt>Arguments</dt><dd><ul class="args">${as.filter(x => !x.ann || mode === 'lf').map(x => `<li>$${esc(annot(x.name))}$ ${prose(annot(x.meaning))}</li>`).join('')}</ul></dd></div>` : '';
+    const row = (t, v, cls) => { const w = v ? prose(annot(v)) : ''; return w.replace(/<[^>]*>/g, '').trim() ? `<div><dt>${t}</dt><dd${cls ? ` class="${cls}"` : ''}>${w}</dd></div>` : ''; };
     const u = uses[key] ? [...uses[key].entries()] : [];
-    body.innerHTML = `<h2>${esc(n.title || key)}</h2>
-      <dl>${n.sig ? `<div><dt>Type</dt><dd class="sig">$\\displaystyle ${esc(n.sig)}$</dd></div>` : ''}${args(n.args)}${row('What', n.what)}${row('Why', n.why)}${row('Without it', n.breaks, 'breaks')}${row('Example', n.example)}${row('Rocq', n.rocq)}</dl>
-      ${u.length > 1 ? `<div class="uses">Also in ${u.map(([id, v]) => `<a href="#${v.sec}" data-jump="${esc(id)}">${esc(v.title)}</a>`).join('')}</div>` : ''}`;
-    noteCache.set(key, body);
+    body.innerHTML = `<h2>${esc(annot(n.title || key))}</h2>
+      <dl>${n.sig ? `<div><dt>Type</dt><dd class="sig">$\\displaystyle ${esc(annot(n.sig))}$</dd></div>` : ''}${args(n.args)}${row('What', n.what)}${row('Why', n.why)}${row('Without it', n.breaks, 'breaks')}${row('Example', n.example)}${row('Rocq', n.rocq)}</dl>
+      ${u.length > 1 ? `<div class="uses">Also in<div class="chips">${u.map(([id, v]) => `<a href="#${v.sec}" data-jump="${esc(id)}">${esc(v.title)}</a>`).join('')}</div></div>` : ''}`;
+    noteCache.set(ck, body);
     body.dataset.fresh = '1';
     return body;
   }
@@ -282,15 +356,29 @@ window.MathJax = {
     const k = pseudo('sec-' + (n.title || ''), n);
     shownKey = null; showNote(k, false);
   }
-  let shownKey = null, shownPinned = null;
-  function showNote(key, isPinned) {
-    if (key === shownKey && isPinned === shownPinned) return;
+  let shownKey = null, shownPinned = null, shownMode = null;
+  // the mode a note is read in: the mode of the block it was reached from, which its own switch may change
+  const modeAt = el => { const art = el && el.closest && el.closest('article.block'); return art ? (local.get(art.id.slice(2)) || mode) : mode; };
+  // tell the local server (serve.sh) what the reader points at, so the assistant can follow along
+  let lastBlock = null, reportTimer = null;
+  function report(extra) {
+    if (!/^https?:$/.test(location.protocol) || !/^(127\.0\.0\.1|localhost)$/.test(location.hostname)) return;
+    clearTimeout(reportTimer);
+    reportTimer = setTimeout(() => {
+      const st = { t: new Date().toISOString(), section: current(), mode, block: lastBlock, pinned, ...extra };
+      fetch('cursor', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(st) }).catch(() => {});
+    }, 250);
+  }
+  function showNote(key, isPinned, nm = mode) {
+    report({ key, title: (MAP.notes[key] || {}).title || null, how: isPinned ? 'pin' : 'hover' });
+    if (key === shownKey && isPinned === shownPinned && nm === shownMode) return;
+    shownMode = nm;
     shownKey = key; shownPinned = isPinned;
     const aside = $('#note');
     aside.classList.remove('empty');
     aside.replaceChildren();
     aside.insertAdjacentHTML('beforeend', `<div class="eyebrow"><span>${isPinned ? 'Pinned' : 'Hover'}</span>${isPinned ? '<button type="button" id="unpin">Unpin</button>' : ''}</div>`);
-    const body = noteBody(key); aside.appendChild(body);
+    const saved = mode; mode = nm; const body = noteBody(key); mode = saved; aside.appendChild(body);
     if (body.dataset.fresh) { delete body.dataset.fresh; typeset(body); }
   }
   // a light box behind an entry, drawn inside its own coordinate system
@@ -298,7 +386,7 @@ window.MathJax = {
     let b; try { b = el.getBBox(); } catch (e) { return; }
     if (!b || !b.width) return;
     const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    const pad = 60;
+    const pad = 20; // the box already includes the hit area's margin
     r.setAttribute('x', b.x - pad); r.setAttribute('y', b.y - pad);
     r.setAttribute('width', b.width + 2 * pad); r.setAttribute('height', b.height + 2 * pad);
     r.setAttribute('rx', 80); r.setAttribute('class', 'lr-box ' + cls);
@@ -319,21 +407,29 @@ window.MathJax = {
 
   const content = $('#content');
   content.addEventListener('mouseover', e => {
+    const art = e.target.closest && e.target.closest('article'); if (art) lastBlock = art.id;
     const h = e.target.closest && e.target.closest('h3[data-block], h3[data-ex]');
     if (h && !pinned) {
-      if (h.dataset.block) { const b = MAP.sections.flatMap(x => x.blocks).find(x => x.id === h.dataset.block); if (b) showNote(pseudo('b-' + b.id, { title: b.title, what: b.caption, rocq: b.rocq }), false); }
+      if (h.dataset.block) { const b = MAP.sections.flatMap(x => x.blocks).find(x => x.id === h.dataset.block); if (b) showNote(pseudo('b-' + b.id, { title: b.title, what: b.caption, rocq: b.rocq }), false, modeAt(h)); }
       else { const x = (MAP.examples || []).find(x => x.id === h.dataset.ex); if (x) showNote(pseudo('x-' + x.id, { title: x.title, what: x.shows, rocq: x.rocq }), false); }
       return;
     }
     const t = e.target.closest && e.target.closest('[class*="k-"]'); if (!t) return;
     const k = keyOf(t); if (!k) return;
-    hot(t); if (!pinned) showNote(k, false);
+    hot(t); if (!pinned) showNote(k, false, modeAt(t));
   });
-  content.addEventListener('mouseout', e => { if (!e.relatedTarget || !content.contains(e.relatedTarget) || !e.relatedTarget.closest('[class*="k-"]')) hot(null); });
+  let outTimer = null;
+  content.addEventListener('mouseout', e => {
+    if (e.relatedTarget && content.contains(e.relatedTarget) && e.relatedTarget.closest('[class*="k-"]')) return;
+    clearTimeout(outTimer); outTimer = setTimeout(() => hot(null), 150);
+  });
+  content.addEventListener('mouseover', () => clearTimeout(outTimer), true);
   content.addEventListener('click', e => {
+    const fb = e.target.closest && e.target.closest('.flip button');
+    if (fb) { flipBlock(fb.closest('.flip').dataset.flip, fb.dataset.m); return; }
     const t = e.target.closest && e.target.closest('[class*="k-"]'); if (!t) return;
     const k = keyOf(t); if (!k) return;
-    pinned = k; markAll(k); showNote(k, true);
+    pinned = k; markAll(k); showNote(k, true, modeAt(t));
   });
   $('#note').addEventListener('click', e => {
     if (e.target.id === 'unpin') { pinned = null; shownKey = null; boxesOff('pin'); $('#note').classList.add('empty'); $('#note').innerHTML = '<div class="placeholder">Hover over a part of a formula.</div>'; }
@@ -341,13 +437,33 @@ window.MathJax = {
     if (j) setTimeout(() => { const el = document.getElementById('b-' + j); if (el) { el.scrollIntoView({ block: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1400); } }, 60);
   });
   document.querySelectorAll('.modes button').forEach(b => b.addEventListener('click', () => {
-    mode = b.dataset.mode; try { localStorage.setItem('lrmap-mode', mode); } catch (e) {}
+    mode = b.dataset.mode; local.clear(); try { localStorage.setItem('lrmap-mode', mode); } catch (e) {}
+    report({ how: 'mode' });
     renderModes(); renderSection();
+    if (pinned) { shownKey = null; showNote(pinned, true); }
   }));
   $('#q').addEventListener('input', e => { query = e.target.value.trim().toLowerCase(); renderSection(); });
-  window.addEventListener('hashchange', () => { renderTabs(); renderSection(); window.scrollTo(0, 0); });
+  window.addEventListener('hashchange', () => { renderTabs(); renderSection(); window.scrollTo(0, 0); report({ how: 'section' }); });
 
-  function start() { renderTabs(); renderModes(); renderSection(); }
+  // under serve.sh, reload when explorer.html or data.js changes, keeping the scroll position and the pinned note
+  function watch() {
+    if (!/^https?:$/.test(location.protocol) || !/^(127\.0\.0\.1|localhost)$/.test(location.hostname)) return;
+    let seen = null;
+    setInterval(() => fetch('version', { cache: 'no-store' }).then(r => r.ok ? r.text() : null).then(v => {
+      if (!v) return;
+      if (seen !== null && v !== seen) {
+        try { sessionStorage.setItem('lrmap-keep', JSON.stringify({ y: window.scrollY, pinned })); } catch (e) {}
+        location.reload();
+      }
+      seen = v;
+    }).catch(() => {}), 1000);
+  }
+  function restore() {
+    let k = null; try { k = JSON.parse(sessionStorage.getItem('lrmap-keep')); sessionStorage.removeItem('lrmap-keep'); } catch (e) {}
+    if (!k) return;
+    setTimeout(() => { window.scrollTo(0, k.y || 0); if (k.pinned && MAP.notes[k.pinned]) { pinned = k.pinned; markAll(pinned); showNote(pinned, true); } }, 300);
+  }
+  function start() { renderTabs(); renderModes(); renderSection(); restore(); watch(); }
   if (window.MathJax && MathJax.tex2svg) start(); else window.__mjReady = start;
 })();
 </script>

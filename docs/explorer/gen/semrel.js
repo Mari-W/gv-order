@@ -20,8 +20,8 @@ const LEQ = REL('ty2.le', R`\preccurlyeq`);
 const SDUAL = h('sty.sdual', R`\mathsf{sdual}`);
 const WLT = (W, x, y) => h('w.lt', R`${W} \vdash ${x} \prec ${y}`);
 const PAY = (U, x) => h('ty.payload-at', R`${U}[${x}\cdot\bar\imath]`);
-const SND = (U) => h('sty.send', R`!(\exists^{m}\bar\iota.\ ${U}^{b})`);
-const RCV = (U) => h('sty.recv', R`?(\exists^{m}\bar\iota.\ ${U}^{b})`);
+const SND = (U) => h('sty.send', R`!(\bar\iota.\ ${U}^{b})`);
+const RCV = (U) => h('sty.recv', R`?(\bar\iota.\ ${U}^{b})`);
 const V = (W, nn, Th, T) => h('th.Vrel', R`V^{${W}}_{${nn}}\llbracket ${Th} \vdash ${T} \rrbracket`);
 const E = (W, nn, Th, T, F) => h('th.Erel', R`E^{${W}}_{${nn}}\llbracket ${Th} \vdash ${T} \rrbracket^{${F}}`);
 const P = (W, nn, Sg, T) => h('th.Prel', R`P^{${W}}_{${nn}}\llbracket ${Sg} \vdash ${T} \rrbracket`);
@@ -51,35 +51,13 @@ block(s, {
   tex: R`\begin{array}{lcc}
  & ${h('ct.DF', R`\kappa_{DF}`)} & ${h('ct.L', R`\kappa_L`)} \\ \hline
 ${h('ct.beta', R`\beta`)} & 1 & 0 \\
-${h('ct.new', R`\mathsf{new}_\ell,\ \mathsf{new}_\kappa`)} & 1 & 0 \\
+${h('ct.new', R`\mathsf{new}`)} & 1 & 0 \\
 ${h('ct.spawn', R`\mathsf{spawn}`)} & 1 & 0 \\
 ${h('ct.link', R`\mathsf{link}`)} & 0 & 0 \\
 ${h('ct.give', R`\mathsf{send},\ \mathsf{select},\ \mathsf{close}`)} & 0 & 1 \\
 ${h('ct.takek', R`\mathsf{recv},\ \mathsf{branch}`)} & 1 & 1 \\
 ${h('ct.sync', R`\kappa_{give} + \kappa_{take}`)} & 1 & 2
 \end{array}`,
-  variants: {
-    df: R`\begin{array}{lc}
- & ${h('ct.DF', R`\kappa_{DF}`)} \\ \hline
-${h('ct.beta', R`\beta`)} & 1 \\
-${h('ct.new', R`\mathsf{new}_\ell,\ \mathsf{new}_\kappa`)} & 1 \\
-${h('ct.spawn', R`\mathsf{spawn}`)} & 1 \\
-${h('ct.link', R`\mathsf{link}`)} & 0 \\
-${h('ct.give', R`\mathsf{send},\ \mathsf{select},\ \mathsf{close}`)} & 0 \\
-${h('ct.takek', R`\mathsf{recv},\ \mathsf{branch}`)} & 1 \\
-${h('ct.sync', R`\kappa_{give} + \kappa_{take}`)} & 1
-\end{array}`,
-    live: R`\begin{array}{lc}
- & ${h('ct.L', R`\kappa_L`)} \\ \hline
-${h('ct.beta', R`\beta`)} & 0 \\
-${h('ct.new', R`\mathsf{new}_\ell,\ \mathsf{new}_\kappa`)} & 0 \\
-${h('ct.spawn', R`\mathsf{spawn}`)} & 0 \\
-${h('ct.link', R`\mathsf{link}`)} & 0 \\
-${h('ct.give', R`\mathsf{send},\ \mathsf{select},\ \mathsf{close}`)} & 1 \\
-${h('ct.takek', R`\mathsf{recv},\ \mathsf{branch}`)} & 1 \\
-${h('ct.sync', R`\kappa_{give} + \kappa_{take}`)} & 2
-\end{array}`
-  },
   caption: 'The costs of $\\kappa_{DF}$ and $\\kappa_L$ per kind of step, a synchronization costing $\\kappa_{give} + \\kappa_{take}$.'
 });
 block(s, {
@@ -155,17 +133,15 @@ e \in ${E('W', R`n{+}1`, R`\Theta`, 'T', 'F')} \iff ${h('E.kripke', R`\forall W_
   caption: 'A term in $E$ is a value in $V$ when irreducible, ready when reducible, and every step meets its obligation.'
 });
 block(s, {
-  id: 'e-obl-admin', title: 'Obligations of internal steps', rocq: 'relation/Relation.v: o_beta, o_new, o_new_at, o_spawn, new_env',
+  id: 'e-obl-admin', title: 'Obligations of internal steps', rocq: 'relation/Relation.v: o_beta, o_new, o_spawn, new_env',
   tex: R`\begin{array}{ll}
 ${h('O-Beta', R`\textsf{O-Beta}`)} & ${AT(R`e'`)}\ \Theta \\
-${h('O-New', R`\textsf{O-New}`)} & ${h('O-New.cfresh', R`c^{\pm} \notin \mathrm{dom}\,\Theta`)} \Rightarrow ${h('O-New.forall', R`\forall g.\ ${h('O-New.gfresh', R`g \text{ fresh for } \Theta`)}`)} \Rightarrow \exists S. \\
- & \quad ${AT(R`e'`)}\ ${h('O-New.dual', R`\Theta[c^{+} \mapsto S@g_\ell,\ c^{-} \mapsto \overline{S}@\overline{g_\ell}]`)} \\
-${h('O-NewAt', R`\textsf{O-NewAt}`)} & c^{\pm} \notin \mathrm{dom}\,\Theta \Rightarrow ${h('O-NewAt.held', R`\exists S_0, x.\ \Theta(o) = S_0@x`)} \land \exists S. \\
- & \quad ${AT(R`e'`)}\ \Theta[c^{+} \mapsto S@x\cdot\kappa,\ c^{-} \mapsto \overline{S}@\overline{x\cdot\kappa}] \\
+${h('O-New', R`\textsf{O-New}`)} & ${h('O-New.cfresh', R`c^{\pm} \notin \mathrm{dom}\,\Theta`)} \Rightarrow ${h('O-New.forall', R`\forall a.\ ${h('O-New.gfresh', R`a \notin A_W`)}`)} \Rightarrow ${h('O-New.grow', R`\exists S, \pi, C.\ \pi \in \{a\} \cup \{x\cdot\kappa\} \land \mathsf{strict}(W \oplus C)`)} \land {} \\
+ & \quad ${AT(R`e'`)}_{W \oplus C}\ ${h('O-New.dual', R`\Theta[c^{+} \mapsto S@\pi,\ c^{-} \mapsto \overline{S}@\overline{\pi}]`)} \\
 ${h('O-Spawn', R`\textsf{O-Spawn}`)} & ${h('O-Spawn.split', R`\exists \Theta_M, \Theta_r.\ \Theta = \Theta_M ${UPL} \Theta_r`)} \land ${h('O-Spawn.thunk', R`v \in ${h('sr.vthunk', R`\mathsf{Vthunk}_n(\Theta_M)`)}`)} \land ${AT(R`e'`)}\ \Theta_r \\
  & \quad ${h('O-Spawn.transfer', R`(\text{hence } \mathrm{dom}\,\Theta_M = ${FENDS}(v))`)}
 \end{array}`,
-  caption: 'The obligations of $\\beta$, creation and spawn, which keep or extend the environment.'
+  caption: 'The obligations of $\\beta$, creation and spawn, which keep or extend the environment, and creation grows the world.'
 });
 block(s, {
   id: 'e-obl-msg', title: 'Obligations of send and receive', rocq: 'relation/Relation.v: o_send, o_recv',
@@ -279,10 +255,6 @@ ${h('sj.proc', R`\Sigma ${rel}_W p : T \iff \forall n.\ p \in ${h('th.Prel', R`P
 block(s, {
   id: 'sj', title: 'Semantic judgments', rocq: 'compat/SemTyped.v: Grel, sem_typed_at, sf_den, sem_typed; relation/Adequacy.v: sem_ptyped',
   tex: SJ(R`\vDash[\kappa]`, R`\kappa`),
-  variants: {
-    df: SJ(R`\vDash`, R`\kappa_{DF}`),
-    live: SJ(R`\mathrel{|\!\!\vDash}`, R`\kappa_L`)
-  },
   caption: 'The semantic judgments quantify over every level, later world and grounding, and read the static future at every denotation.'
 });
 
@@ -343,7 +315,7 @@ ${h('FV-Box', R`!e \in FV^N_n\llbracket \Box(\ldots U)\rrbracket(\Pi,\varphi) \i
 \quad ${h('FV-Box.body', R`\forall N' ${RLE} N, j < n, \bar s \in ${h('tp.sinsts', R`\mathsf{sinsts}`)}\,N', ${MEETS}\,\vartheta\,r\,tk.\ e[!e] \in ${FE("N'", 'j', R`U[\bar s] \triangleright c ; r`, R`\varnothing,\varnothing,tk`)}`)} \\
 ${h('FV-Thread', R`v \in FV\llbracket ${THR} \rrbracket(\Pi,\varphi) \iff \Pi = \varphi = \varnothing`)} \qquad ${h('sr.fvagg', R`\otimes, \oplus, \exists \text{ add their credit to the parts}`)}
 \end{array}`,
-  caption: 'Fueled values by recursion on the type, reading credits, costs, transformers and floors and no point.'
+  caption: 'Fueled values by recursion on the type, reading credits, costs, ticket needs and floors and no point.'
 });
 block(s, {
   id: 'fu-fsem', title: 'Fuel of a thread', rocq: 'fuel/Fuel.v: fsem; cost/CostSem.v: csem',
@@ -395,7 +367,7 @@ n('ct.give-take', R`$\kappa_{give} \leq \kappa_{take}$`, R`A give costs at most 
 n('ct.DF', R`$\kappa_{DF}$`, R`The table $(1,1,1,0,0,1)$.`, R`Every step of cost $0$ under $\kappa_{DF}$ is a give or a link, which shrinks the term, so the least fixpoint of a level is a recursion on the term.`, DEF, R`Under $\kappa_{DF}$ a send costs $0$ and a receive $1$.`, 'relation/CostTable.v: κ_DF');
 n('ct.L', R`$\kappa_L$`, R`The table $(0,0,0,0,1,1)$.`, R`Under $\kappa_L$ exactly the internal steps cost $0$, so the least fixpoint of a level excludes infinite sequences of internal steps.`, DEF, R`Under $\kappa_L$ a synchronization costs $2$.`, 'relation/CostTable.v: κ_L');
 n('ct.beta', R`Cost $\kappa_\beta$`, R`The cost of application, pair and unit elimination, case and force.`, R`An arrow reads its body at every $j$ with $j + \kappa_\beta \leq n$, so one arrow clause serves $j < n$ for $\kappa_{DF}$ and $j \leq n$ for $\kappa_L$.`, DEF, R`$(\lambda e)\,v \xrightarrow{\beta} e[v]$ costs $\kappa_\beta$.`, 'relation/CostTable.v: c_beta');
-n('ct.new', R`Cost $\kappa_{new}$`, R`The cost of $\mathsf{new}_\ell$ and $\mathsf{new}_\kappa$.`, R`Creation synchronizes with nobody, so $\kappa_L$ counts it as an internal step.`, DEF, R`$\kappa_L(\mathsf{new}_\ell) = 0$.`, 'relation/CostTable.v: c_new');
+n('ct.new', R`Cost $\kappa_{new}$`, R`The cost of $\mathsf{new}$.`, R`Creation synchronizes with nobody, so $\kappa_L$ counts it as an internal step.`, DEF, R`$\kappa_L(\mathsf{new}) = 0$.`, 'relation/CostTable.v: c_new');
 n('ct.spawn', R`Cost $\kappa_{spawn}$`, R`The cost of $\mathsf{spawn}$.`, R`For $\kappa_{spawn} = 0$ the child thunk is read inside the least fixpoint of the parent, so an infinite chain of spawns is in no $E_n$.`, DEF, R`$\kappa_L(\mathsf{spawn}) = 0$.`, 'relation/CostTable.v: c_spawn');
 n('ct.link', R`Cost $\kappa_{link}$`, R`The cost of $\mathsf{link}$, $0$ in both tables.`, R`A link acts alone and synchronizes with nobody, so it is an internal step.`, R`Under $\kappa_L$ a loop that creates and links forever is an infinite sequence of internal steps and lies in no $E_n$.`, R`$!(f = \mathsf{let}\ \langle a, b\rangle = \mathsf{new}\ \mathsf{in}\ \mathsf{let}\ \ast = \mathsf{link}\,\langle a, b\rangle\ \mathsf{in}\ \mathsf{force}\,f)$ diverges internally.`, 'relation/CostTable.v: c_link');
 n('ct.give', R`Cost $\kappa_{give}$`, R`The cost of $\mathsf{send}$, $\mathsf{select}$ and $\mathsf{close}$.`, R`The obligation of a give reads the continuation at level $n - \kappa_{give}$.`, DEF, R`$\kappa_{DF}(\mathsf{send}) = 0$.`, 'relation/CostTable.v: c_give');
@@ -424,7 +396,7 @@ n('V-Box.inst', R`$W' \vdash C[\bar x]$`, R`The thunk is in $V$ at every instanc
 n('V-Box.hc', R`Hereditarily contractive instances`, R`The thunk is in $V$ at every list $\bar s$ of $k$ hereditarily contractive session types.`, R`Session instances must unfold to a head, which hereditary contractiveness guarantees.`, DEF, R`$k = 0$ in every example.`, 'types/Types.v: hcontractive');
 n('V-Box.thunk', R`The thunk at level $n$`, R`$\mathsf{thunk}(e) \in V^{W'}_n\llbracket\varnothing \vdash \ast \multimap^{u[\bar x]} U[\bar s][\bar x]\rrbracket$.`, R`$\mathsf{size}(\Box\ldots) > \mathsf{size}(\ast \multimap U)$, so $V$ at the box reads $V$ at the thunk type inside level $n$.`, DEF, R`$\mathsf{thunk}(e) = \lambda.\,e[!e]$.`, 'relation/Relation.v: thunk, tthunk');
 n('V-Ex.lb', R`$l \preccurlyeq \mathsf{heads}\,\Theta$`, R`For $l = y$, $\forall z \in \mathsf{heads}\,\Theta.\ y \preccurlyeq z$, for $l$ absent $\mathsf{heads}\,\Theta = \varnothing$, and for $l = \bot$ nothing.`, R`It lets a holder bound the actual heads of a packed value by its static heads, which the readiness of a send carrying a packed payload and the compatibility of E-Pack use.`, R`Without it, a sender holding a packed payload could not show its offered end below the partner points of the payload ends.`, R`$\bot$ for $\mathsf{new}_\ell$.`, 'relation/Readiness.v: lbx_le');
-n('V-Ex.witness', R`A witness in $W$`, R`$\exists \bar x \in \mathsf{Point}^m.\ W \vdash C[\bar x] \land v \in V\llbracket\Theta \vdash T[\bar x]\rrbracket$.`, R`Opening an existential substitutes fresh point variables and adds $C$ to $\Gamma$, and the compatibility of E-Open instantiates them with this witness.`, DEF, R`The fresh root $g_\ell$ with $\Lambda_\ell(g_\ell)$.`, 'relation/Relation.v: Vbody TEx');
+n('V-Ex.witness', R`A witness in $W$`, R`$\exists \bar x \in \mathsf{Point}^m.\ W \vdash C[\bar x] \land v \in V\llbracket\Theta \vdash T[\bar x]\rrbracket$.`, R`Opening an existential substitutes fresh point variables and adds $C$ to $\Gamma$, and the compatibility of E-Open instantiates them with this witness.`, DEF, R`The fresh root $a$ with the facts $C$ of its creation.`, 'relation/Relation.v: Vbody TEx');
 n('rel.vsize', R`Recursion on $(n, \mathsf{size}\,T)$`, R`$V_n$ is defined by recursion on $n$ and, inside a level, on the size of the type, with all levels built by one course-of-values fixpoint.`, R`Under $\kappa_L$, $V_n$ reads $E_n$ and $V_n$ at smaller types, and instantiation preserves size.`, DEF, R`$\mathsf{size}(\Box(\ldots U)) = 3 + \mathsf{size}\,U$.`, 'relation/Relation.v: tsize, Vtop; relation/Sfix.v: sfix');
 // E
 n('E.zero', R`Level $0$`, R`$E_0$ holds every term.`, R`Step indexing starts from the trivial relation.`, DEF, R`$\forall e.\ e \in E_0\llbracket\Theta \vdash T\rrbracket^{F}$.`, 'relation/Relation.v: Etop, Erel_0');
@@ -433,13 +405,12 @@ n('E.stop', R`(stop)`, R`$\mathsf{irred}\,e \Rightarrow e \in V^{W_1}_{n+1}\llbr
 n('E.ready', R`(ready)`, R`$\neg\mathsf{irred}\,e \Rightarrow \mathsf{ready}_{W_1}(\Theta \mid F, e)$.`, R`Readiness excludes circular waiting between threads.`, R`Two threads each waiting on the partner of the other's second end deadlock.`, R`$\mathsf{ready}_W(\Theta \mid F, e)$.`, 'relation/Relation.v: Ebody');
 n('E.step', R`(step)`, R`$\forall \alpha, e'.\ e \xrightarrow{\alpha} e' \Rightarrow \mathsf{Obl}_\alpha(e')$.`, R`One conjunct per kind of label keeps $X$ strictly positive.`, DEF, R`A send step meets O-Send.`, 'relation/Relation.v: Esteps, Eobl');
 n('O-Beta', R`O-Beta`, R`$e'$ at $\Theta$.`, R`A $\beta$ step changes no end, and the compatibility of every elimination rule discharges it by reading the redex at the same environment.`, DEF, R`Under $\kappa_L$ a $\beta$ step stays at level $n$.`, 'relation/Relation.v: o_beta');
-n('O-New', R`O-New`, R`For a fresh name $c$ and every fresh root $g$ of family $\ell$, some $S$ places $c^{+}$ at $S@g_\ell$ and $c^{-}$ at $\overline{S}@\overline{g_\ell}$.`, R`All roots of a family obey the same laws, so the universal quantifier over fresh roots costs nothing and lets the soup pick the least unused root.`, DEF, R`$\mathsf{new}_0$ in the cycle.`, 'relation/Relation.v: o_new');
+n('O-New', R`O-New`, R`For a fresh name $c$ and every root $a \notin A_W$, some $S$, position $\pi$ and facts $C$ with $\mathsf{strict}(W \oplus C)$ place $c^{+}$ at $S@\pi$ and $c^{-}$ at $\overline{S}@\overline{\pi}$, and the successor runs in $W \oplus C$.`, R`It is the semantic counterpart of E-New. The typing chooses $\pi$ and $C$, and the relation continues in the grown world.`, DEF, R`$\mathsf{new}$ in the cycle.`, 'relation/Relation.v: o_new');
 n('O-New.cfresh', R`$c^{\pm} \notin \mathrm{dom}\,\Theta$`, R`The new name is no end of $\Theta$.`, R`The process rule picks $c$ globally fresh, so the term obligation may assume it.`, DEF, R`$c^{+}, c^{-} \notin \mathrm{dom}\,\Theta$.`, 'relation/Relation.v: cfresh');
-n('O-New.forall', R`For every fresh root`, R`The obligation holds at every root $g$ of family $\ell$ that is fresh for $\Theta$.`, R`The placement is then a function of the run, the same at every level.`, R`A root chosen per level breaks lock freedom, because no ownership is then the same at every level.`, R`$\forall g.\ \mathsf{gfresh}\,\ell\,g\,\Theta \Rightarrow \ldots$`, 'relation/Relation.v: o_new');
-n('O-New.gfresh', R`$g$ fresh for $\Theta$`, R`$\forall o, S, x.\ \Theta(o) = S@x \Rightarrow \mathsf{root}(x) \neq g_\ell$.`, R`Roots come from a supply separate from channel names, so a link that renames a channel never revives a used root.`, DEF, R`$\mathsf{gfresh}\,\ell\,g\,\Theta$.`, 'relation/Relation.v: gfresh');
-n('O-New.dual', R`Dual placement`, R`$\Theta[c^{+} \mapsto S@g_\ell,\ c^{-} \mapsto \overline{S}@\overline{g_\ell}]$.`, R`It is the static result of E-New at the witness $g_\ell$, and duality of the pair is what the soup asks of restricted channels.`, DEF, R`$\mathsf{new}_0$ gives $c^{+} : S@g_0$ and $c^{-} : \overline{S}@\overline{g_0}$.`, 'relation/Relation.v: new_env');
-n('O-NewAt', R`O-NewAt`, R`The anchor $o$ is held at $x$, and the new pair goes to $x\cdot\kappa$ and $\overline{x\cdot\kappa}$.`, R`The placement is determined by the anchor, so nothing is chosen.`, DEF, R`$\mathsf{new}_0\,c$ with $c$ at $\rho$ places $d$ at $\rho\cdot 0$.`, 'relation/Relation.v: o_new_at');
-n('O-NewAt.held', R`$\Theta(o) = S_0@x$`, R`The anchor is an end of $\Theta$ with point $x$.`, R`The new channel sits at a field of the anchor's point, which only a held anchor provides.`, DEF, R`$\Theta(c^{+}) = S_0@\rho$.`, 'relation/Relation.v: o_new_at');
+n('O-New.forall', R`For every fresh root`, R`The obligation holds at every root $a$ outside $A_W$.`, R`The root is then a function of the run, the same at every level.`, R`A root chosen per level breaks lock freedom, because no ownership is then the same at every level.`, R`$\forall a.\ a \notin A_W \Rightarrow \ldots$`, 'relation/Relation.v: o_new');
+n('O-New.gfresh', R`$a \notin A_W$`, R`The root $a$ is no root of the current world.`, R`Roots come from a supply separate from channel names, so a link that renames a channel never revives a used root.`, DEF, R`$a \notin \{1, 2\}$.`, 'relation/Relation.v: gfresh');
+n('O-New.grow', R`Position and growth`, R`$\pi$ is the fresh root $a$ or a field $x\cdot\kappa$, and $C$ is a set of facts over $\pi$ and points of $W$ with $\mathsf{strict}(W \oplus C)$.`, R`The witness of the existential that E-New returns is $\pi$, and the facts it states hold in $W \oplus C$.`, DEF, R`$C = \{\rho \prec \overline{\rho\cdot 0},\ \overline{\rho} \prec \rho\cdot 0\}$ at $\pi = \rho\cdot 0$.`, 'relation/Relation.v: o_new');
+n('O-New.dual', R`Dual placement`, R`$\Theta[c^{+} \mapsto S@\pi,\ c^{-} \mapsto \overline{S}@\overline{\pi}]$.`, R`It is the static result of E-New at the witness $\pi$, and duality of the pair is what the soup asks of restricted channels.`, DEF, R`$\mathsf{new}$ gives $c^{+} : S@a$ and $c^{-} : \overline{S}@\overline{a}$.`, 'relation/Relation.v: new_env');
 n('O-Spawn', R`O-Spawn`, R`$\Theta$ splits into a part $\Theta_M$ for the thunk, which is in $\mathsf{Vthunk}_n(\Theta_M)$, and a rest $\Theta_r$ for the continuation.`, R`Exactness of $\mathsf{Vthunk}$ fixes $\mathrm{dom}\,\Theta_M = \mathsf{fends}(v)$, so the split is the same at every level.`, DEF, R`$\mathsf{spawn}\,(\lambda\_.\,\mathsf{close}\,d')$ gives the child $\{d'\}$.`, 'relation/Relation.v: o_spawn');
 n('O-Spawn.split', R`$\Theta = \Theta_M \uplus \Theta_r$`, R`The child and the parent own disjoint parts of $\Theta$.`, R`The fundamental theorem builds the split from E-Spawn's split of the context, and the soup moves exactly $\Theta_M$ to the new thread.`, DEF, R`$\Theta_M = \{d'\}$.`, 'relation/Relation.v: o_spawn');
 n('O-Spawn.transfer', R`$\mathrm{dom}\,\Theta_M = \mathsf{fends}(v)$`, R`The part that leaves is exactly the set of ends of the value that leaves.`, R`It follows from exactness of $V$ and $\mathsf{Vthunk}$, which makes ownership at a hand-over independent of the level.`, R`Without exactness, an end mentioned by neither side could go to either side at different levels.`, R`$\mathsf{fends}(\lambda\_.\,\mathsf{close}\,d') = \{d'\}$.`, 'relation/Relation.v: o_spawn, o_send');
@@ -499,7 +470,7 @@ n('sj.proc', R`$\Sigma \vDash_W p : T$`, R`$\forall n.\ p \in P^W_n\llbracket\Si
 n('fu.zero', R`Level $0$`, R`$F_0$ holds every term.`, R`Step indexing starts from the trivial predicate.`, DEF, R`$\forall e.\ e \in F^N_0\llbracket\sigma \triangleright d ; r\rrbracket(\Pi,\varphi,tk)$.`, 'fuel/Fuel.v: mk_flevel');
 n('fu.rty', R`Result $\sigma$`, R`$\sigma$ is a credited type $T^a$ of the returned value, or $\mathsf{thread}$, whose value holds no end.`, R`A spawned thread returns $\ast$ and keeps no end, which $\mathsf{thread}$ states without a type.`, DEF, R`$\mathsf{thread}$ for a soup thread.`, 'fuel/Fuel.v: rty');
 n('fu.frame', R`Frame $d$`, R`$d \in \mathbb{N} \cup \{\infty\}$ bounds the channel actions the term performs before it returns.`, R`Every action asks $1 \leq d$ and lowers $d$ by one, so a context that ticks its own ends during the term is paid by the frame.`, DEF, R`A thread has frame $\infty$.`, 'fuel/Fuel.v: Fdef');
-n('fu.reserve', R`Reserve $r$`, R`$r \in \mathbb{N}$ is the number of tickets the term must still hold when it returns.`, R`The context of the term spends these tickets on its own links afterwards, which the transformer of the term promises through $\mathsf{meets}\,\vartheta\,r\,tk$.`, R`Without a reserve, a term could spend tickets its context needs, and a context link would find $tk = 0$.`, R`A thread has reserve $0$.`, 'fuel/Fuel.v: Fdef');
+n('fu.reserve', R`Reserve $r$`, R`$r \in \mathbb{N}$ is the number of tickets the term must still hold when it returns.`, R`The context of the term spends these tickets on its own links afterwards, which the ticket need of the term promises through $\mathsf{meets}\,\vartheta\,r\,tk$.`, R`Without a reserve, a term could spend tickets its context needs, and a context link would find $tk = 0$.`, R`A thread has reserve $0$.`, 'fuel/Fuel.v: Fdef');
 n('fu.Pi', R`Protocols $\Pi$`, R`$\Pi$ maps each held end to its session type with annotations.`, R`Counters are compared with credits that the annotations carry, so fuel keeps them.`, DEF, R`$\Pi = \{a \mapsto S_a\}$.`, 'fuel/Fuel.v: penv');
 n('fu.phi', R`Counters $\varphi$`, R`$\varphi$ maps each held end to a counter in $\mathbb{N} \cup \{\infty\}$.`, R`A counter bounds how many actions of its holder may pass before the end acts again, and only the holder updates it.`, DEF, R`$\varphi = \{a \mapsto 3\}$.`, 'fuel/Fuel.v: cenv');
 n('fu.tk', R`Tickets $tk$`, R`$tk \in \mathbb{N}$ is the thread's count of link tickets.`, R`Each link spends one ticket and tickets are conserved, so a thread performs finitely many links between actions.`, DEF, R`$tk = 0$ in every example.`, 'fuel/Fuel.v: Fdef');
@@ -514,7 +485,7 @@ n('F-Tick.frame', R`$1 \leq d$`, R`The frame has a unit for the action.`, R`The 
 n('fu.refillop', R`$\mathsf{refill}$`, R`$\mathsf{refill}\,N\,o\,\varphi$ sets $o$ to $N$ and lowers every other counter by one, truncated at $0$.`, R`Counters evolve by one index-free update.`, DEF, R`$\mathsf{refill}\,3\,a\,\{a \mapsto 1, b \mapsto 2\} = \{a \mapsto 3, b \mapsto 1\}$.`, 'fuel/Fuel.v: refill');
 n('fu.idle', R`$\mathsf{idle}$`, R`$\mathsf{idle}\,S \iff \mathsf{unfold}\,S = \mathsf{Skip}$.`, R`Idleness removes the checks $\geq 1$ and never changes how a counter evolves, so counters stay index-free. The typing ages idle ends by truncation at $0$, matching counters that tick down to $0$.`, R`An idle end whose credit stayed fixed while its counter ticks would exceed its counter.`, R`$\mathsf{idle}\,\mathsf{Skip}$.`, 'fuel/Fuel.v: idle');
 n('F-Beta', R`F-Beta`, R`$e'$ in $F_n$ at the same state.`, R`A $\beta$ step changes no counter and costs one level.`, DEF, R`$(\lambda x.\,x)\,\ast$.`, 'fuel/Fuel.v: f_beta');
-n('F-New', R`F-New`, R`For a fresh $c$, some $S$ adds $c^{+} : S$ and $c^{-} : \overline{S}$ to $\Pi$ with counters $N$.`, R`A new channel starts with both ends at the refill $N$, the credit E-New gives them.`, DEF, R`$\mathsf{new}_0$ adds $c^{\pm}$ at $N$.`, 'fuel/Fuel.v: f_new');
+n('F-New', R`F-New`, R`For a fresh $c$, some $S$ adds $c^{+} : S$ and $c^{-} : \overline{S}$ to $\Pi$ with counters $N$.`, R`A new channel starts with both ends at the refill $N$, the credit E-New gives them.`, DEF, R`$\mathsf{new}$ adds $c^{\pm}$ at $N$.`, 'fuel/Fuel.v: f_new');
 n('F-New.fresh', R`Fresh against the thread`, R`$c^{\pm} \notin \mathrm{dom}\,\Pi \cup \mathrm{dom}\,\varphi$.`, R`Without it, a new channel could reuse a held name and overwrite its counter.`, DEF, R`$\mathsf{ffresh}\,c\,\Pi\,\varphi$.`, 'fuel/Fuel.v: ffresh');
 n('F-New.cnew', R`New counters $N$`, R`$\varphi[c^{+} \mapsto N, c^{-} \mapsto N]$.`, R`One refill $N$ serves fresh ends and ends after an action.`, DEF, R`$\mathsf{cnew}\,N\,c\,\varphi$.`, 'fuel/Fuel.v: cnew');
 n('F-Spawn', R`F-Spawn`, R`The child takes $M = \mathsf{fends}(v)$ with counters minus one and $\lceil tk/2 \rceil$ tickets and runs as a thread, the parent keeps the rest and $\lfloor tk/2 \rfloor$.`, R`Every component of the split is a function of $v$ and $tk$, so it is the same at every level.`, DEF, R`The thunk takes $d'$ at $1$ in the cycle.`, 'fuel/Fuel.v: f_spawn');
@@ -534,10 +505,10 @@ n('F-Link.plink', R`$\mathsf{plink}$`, R`$o_1 \neq o_2 \land \Pi(o_2) \simeq \ov
 n('F-Link.ticket', R`$1 \leq tk$`, R`A link spends one ticket.`, R`Tickets are conserved and spent, so links cannot repeat forever.`, R`A box that links once per round forever.`, R`$tk - 1$.`, 'fuel/Fuel.v: f_link');
 n('FV-Sess', R`$FV$ at $S@x$`, R`An end with protocol $S' \simeq S$ and counter $f \geq a$.`, R`Credits are lower bounds on counters.`, DEF, R`$o$ at $(S@x)^2$ with counter $3$.`, 'fuel/Fuel.v: Vty TSess');
 n('FV-Sess.counter', R`$a \leq f$`, R`The counter meets the credit.`, R`Typing reasons with credits and the soup with counters, and this inequality transfers every credit bound of typing to the counters.`, R`Without it, a context could age an end below its actual counter and F-Tick would fail on an end typing considers spare.`, R`$2 \leq 3$.`, 'fuel/Fuel.v: Vty TSess');
-n('FV-Arrow', R`$FV$ at an arrow`, R`A closure whose body has fuel for every larger refill, lower level, counters at or above the floor and argument in $FV$.`, R`The clause reads costs, transformers, floors and credits, the data typing attaches to arrows.`, DEF, R`A loop body at cost $\infty$.`, 'fuel/Fuel.v: Vty TLolli');
+n('FV-Arrow', R`$FV$ at an arrow`, R`A closure whose body has fuel for every larger refill, lower level, counters at or above the floor and argument in $FV$.`, R`The clause reads costs, ticket needs, floors and credits, the data typing attaches to arrows.`, DEF, R`A loop body at cost $\infty$.`, 'fuel/Fuel.v: Vty TLolli');
 n('FV-Arrow.exact', R`$\mathsf{fends}\,e = \mathrm{dom}\,\Pi$`, R`The closure holds exactly the ends it mentions.`, R`It mirrors exactness of $V$, and the cost fundamental theorem needs it to read fuel off typing.`, R`A closure mentioning an end it does not hold would be in $FV$, and a forwarder receiving it could not spawn it.`, R`$\lambda\_.\,\mathsf{close}\,a$ holds $\{a\}$.`, 'fuel/Fuel.v: Vty TLolli');
 n('FV-Arrow.floor', R`Counters $\geq h + a$`, R`$\forall o.\ h + a \leq \varphi(o)$.`, R`The body may assume the floor $h$ on its captured counters, and the closure's own credit $a$ is spent while it is held.`, DEF, R`$h = 1$, $a = 1$ needs counters $\geq 2$.`, 'fuel/Fuel.v: Vty TLolli');
-n('FV-Arrow.body', R`Body fuel`, R`$e[u] \in F^{N'}_j\llbracket U^{a_2} \triangleright c ; r\rrbracket(\Pi \cup \Pi_u, \varphi' \cup \varphi_u, tk)$ for every $tk$ with $\mathsf{meets}\,\vartheta\,r\,tk$.`, R`The caller supplies an argument, counters lowered to the floor by its own actions, and a ticket count meeting the arrow's transformer, and the body promises fuel with frame $c$.`, DEF, R`$\mathsf{meets}\,\vartheta\,r\,tk$.`, 'fuel/Fuel.v: Vty TLolli');
+n('FV-Arrow.body', R`Body fuel`, R`$e[u] \in F^{N'}_j\llbracket U^{a_2} \triangleright c ; r\rrbracket(\Pi \cup \Pi_u, \varphi' \cup \varphi_u, tk)$ for every $tk$ with $\mathsf{meets}\,\vartheta\,r\,tk$.`, R`The caller supplies an argument, counters lowered to the floor by its own actions, and a ticket count meeting the arrow's ticket need, and the body promises fuel with frame $c$.`, DEF, R`$\mathsf{meets}\,\vartheta\,r\,tk$.`, 'fuel/Fuel.v: Vty TLolli');
 n('FV-Box', R`$FV$ at a box`, R`A box with no ends whose body has fuel per force at every larger refill, lower level and session instance in $\mathsf{sinsts}\,N'$.`, R`A box is unlimited, so it holds no counters and works at every use.`, DEF, R`$\mathsf{ring}$ at $N = 4$.`, 'fuel/Fuel.v: Vty TBox');
 n('FV-Box.noends', R`$\mathsf{fends}\,e = \varnothing$`, R`A box mentions no end and holds no protocol or counter.`, R`A copied box would otherwise copy ends.`, DEF, R`$\mathsf{ring}$.`, 'fuel/Fuel.v: Vty TBox');
 n('FV-Box.body', R`Body per force`, R`$e[!e] \in F^{N'}_j\llbracket U[\bar s] \triangleright c ; r\rrbracket(\varnothing, \varnothing, tk)$ for every $N' \sqsupseteq_{\mathsf{rle}} N$, $j < n$, $\bar s \in \mathsf{sinsts}\,N'$ and $tk$ meeting $\vartheta$.`, R`Each force unrolls the box once, at a refill and instance the forcing context chooses.`, DEF, R`$\mathsf{sinsts}\,N'\,\bar s$.`, 'fuel/Fuel.v: Vty TBox');
@@ -666,13 +637,12 @@ sa('E.stop', R`\mathsf{irred}\,e \Rightarrow e \in V^{W_1}_{n+1}\llbracket \Thet
 sa('E.ready', R`\neg\mathsf{irred}\,e \Rightarrow \mathsf{ready}_{W_1}(\Theta \mid F, e)`, [A(R`e`, R`the term`), A(R`W_1`, R`the extension of $W$`)]);
 sa('E.step', R`\forall \alpha, e'.\ e \xrightarrow{\alpha} e' \Rightarrow \mathsf{Obl}_\alpha(e')`, [A(R`\alpha`, R`a step label`), A(R`e'`, R`the successor`)]);
 sa('O-Beta', OBL('o\\_beta'), oblArgs);
-sa('O-New', R`\mathsf{o\_new} : \mathsf{Fam} \to \mathsf{Chan} \to \mathsf{Expr} \to \mathsf{Prop}`, [...oblArgs, A(R`\ell`, R`the family of the label`), A(R`c`, R`the new channel name`), A(R`g`, R`a generated root of family $\ell$, fresh for $\Theta$`), A(R`S`, R`the session type of $c^{+}$`)]);
+sa('O-New', R`\mathsf{o\_new} : \mathsf{Chan} \to \mathsf{Expr} \to \mathsf{Prop}`, [...oblArgs, A(R`c`, R`the new channel name`), A(R`a`, R`a root outside $A_W$`), A(R`S`, R`the session type of $c^{+}$`), A(R`\pi`, R`the position of $c^{+}$`), A('C', R`the facts of the creation`)]);
 sa('O-New.cfresh', R`c^{\pm} \notin \mathrm{dom}\,\Theta : \mathsf{Prop}`, [A(R`c`, R`the new channel name`), aTh]);
-sa('O-New.forall', R`\forall g \in \mathbb{N}.\ \mathsf{gfresh}\,\ell\,g\,\Theta \Rightarrow \ldots`, [A(R`g`, R`the index of the generated root $g_\ell$`)]);
-sa('O-New.gfresh', R`\mathsf{gfresh} : \mathsf{Fam} \to \mathbb{N} \to ${ENV} \to \mathsf{Prop}`, [A(R`\ell, g`, R`the family and index of the root`), aTh]);
-sa('O-New.dual', R`\Theta[c^{+} \mapsto S@g_\ell,\ c^{-} \mapsto \overline{S}@\overline{g_\ell}] \in ${ENV}`, [A(R`c`, R`the new channel`), A(R`S`, R`the chosen session type`), A(R`g_\ell`, R`the generated root`)]);
-sa('O-NewAt', R`\mathsf{o\_new\_at} : \mathsf{Field} \to \mathsf{End} \to \mathsf{Chan} \to \mathsf{Expr} \to \mathsf{Prop}`, [...oblArgs, A(R`\kappa`, R`the field label`), A(R`o`, R`the anchor`), A(R`c`, R`the new channel`)]);
-sa('O-NewAt.held', R`\exists S_0, x.\ \Theta(o) = S_0@x`, [A(R`o`, R`the anchor`), A(R`x`, R`its point, whose field $x\cdot\kappa$ receives the channel`)]);
+sa('O-New.forall', R`\forall a \in \mathsf{Root}.\ a \notin A_W \Rightarrow \ldots`, [A(R`a`, R`a candidate root`)]);
+sa('O-New.gfresh', R`a \notin A_W : \mathsf{Prop}`, [A(R`a`, R`the root`), aW]);
+sa('O-New.grow', R`\exists S, \pi, C.\ \pi \in \{a\} \cup \{x\cdot\kappa\} \land \mathsf{strict}(W \oplus C)`, [A(R`\pi`, R`the position, the root $a$ or a field of a point $x$ of $W$`), A('C', R`the facts added to $W$`)]);
+sa('O-New.dual', R`\Theta[c^{+} \mapsto S@\pi,\ c^{-} \mapsto \overline{S}@\overline{\pi}] \in ${ENV}`, [A(R`c`, R`the new channel`), A(R`S`, R`the chosen session type`), A(R`\pi`, R`the position`)]);
 sa('O-Spawn', R`\mathsf{o\_spawn} : \mathsf{Val} \to \mathsf{Expr} \to \mathsf{Prop}`, [...oblArgs, A(R`v`, R`the spawned thunk`), A(R`\Theta_M, \Theta_r`, R`the parts of the child and of the parent`)]);
 sa('O-Spawn.split', R`\exists \Theta_M, \Theta_r.\ \Theta = \Theta_M \uplus \Theta_r`, [A(R`\Theta_M`, R`the child's ends`), A(R`\Theta_r`, R`the parent's ends`)]);
 sa('O-Spawn.transfer', R`\mathrm{dom}\,\Theta_M = \mathsf{fends}(v)`, [A(R`\Theta_M`, R`the part that leaves`), A(R`v`, R`the value that leaves, the thunk or the payload`)]);
@@ -763,7 +733,7 @@ sa('F-Link.plink', R`\mathsf{plink} : \mathsf{PEnv} \to \mathcal{P}_{\mathrm{fin
 sa('F-Link.ticket', R`1 \leq tk`, [atk]);
 sa('FV-Sess', R`o \in FV\llbracket (S@x)^{a} \rrbracket(\Pi, \varphi)`, [ao, A(R`S@x, a`, R`the end type and its credit`), A(R`S', f`, R`the protocol and counter of $o$`)]);
 sa('FV-Sess.counter', R`a \leq f`, [A(R`a`, R`the credit`), A(R`f`, R`the counter`)]);
-sa('FV-Arrow', R`\lambda e \in FV^{N}_{n}\llbracket (T^{a_1} \multimap_{c;\vartheta;h} U^{a_2})^{a} \rrbracket(\Pi, \varphi)`, [A(R`c, \vartheta, h`, R`the cost, transformer and floor of the arrow`), A(R`a`, R`the credit of the closure`)]);
+sa('FV-Arrow', R`\lambda e \in FV^{N}_{n}\llbracket (T^{a_1} \multimap_{c;\vartheta;h} U^{a_2})^{a} \rrbracket(\Pi, \varphi)`, [A(R`c, \vartheta, h`, R`the cost, ticket need and floor of the arrow`), A(R`a`, R`the credit of the closure`)]);
 sa('FV-Arrow.exact', R`\mathsf{fends}\,e = \mathrm{dom}\,\Pi = \mathrm{dom}\,\varphi`, [A(R`e`, R`the body`)]);
 sa('FV-Arrow.floor', R`\forall o.\ h + a \leq \varphi(o)`, [A(R`h`, R`the floor`), A(R`a`, R`the closure's credit`)]);
 sa('FV-Arrow.body', R`e[u] \in F^{N'}_{j}\llbracket U^{a_2} \triangleright c ; r \rrbracket(\Pi \cup \Pi_u, \varphi' \cup \varphi_u, tk)`, [A(R`N', j`, R`a larger refill and a lower level`), A(R`\varphi'`, R`the captured counters at the call, at least $h$`), A(R`u, \Pi_u, \varphi_u`, R`the argument with its maps`), A(R`r, tk`, R`a reserve and ticket count with $\mathsf{meets}\,\vartheta\,r\,tk$`)]);
@@ -772,7 +742,7 @@ sa('FV-Box.noends', R`\mathsf{fends}\,e = \varnothing \land \Pi = \varphi = \var
 sa('FV-Box.body', R`e[!e] \in F^{N'}_{j}\llbracket U[\bar s] \triangleright c ; r \rrbracket(\varnothing, \varnothing, tk)`, [A(R`N', j`, R`a larger refill and a lower level`), A(R`\bar s`, R`a session instance in $\mathsf{sinsts}\,N'$`), A(R`r, tk`, R`with $\mathsf{meets}\,\vartheta\,r\,tk$`)]);
 sa('FV-Thread', R`v \in FV\llbracket \mathsf{thread} \rrbracket(\Pi, \varphi)`, [A(R`v`, R`the returned value`)]);
 sa('fu.fsem', R`\mathsf{fsem} : (\mathbb{N} \cup \{\infty\}) \to \mathsf{PEnv} \to \mathsf{Expr} \to \mathsf{Prop}`, [aN, aPi, A(R`e`, R`the thread`), A(R`tk`, R`the ticket count, fixed for all levels`)]);
-sa('cs.csem', R`\Theta;\Delta \vDash^{N} e : T^{a} \triangleright c ; \vartheta`, [A(R`\Theta, \Delta`, R`the end environment and variable context`), aN, A(R`T^{a}`, R`the credited type`), A(R`c, \vartheta`, R`the cost and transformer`)]);
+sa('cs.csem', R`\Theta;\Delta \vDash^{N} e : T^{a} \triangleright c ; \vartheta`, [A(R`\Theta, \Delta`, R`the end environment and variable context`), aN, A(R`T^{a}`, R`the credited type`), A(R`c, \vartheta`, R`the cost and ticket need`)]);
 sa('sp.state', R`a = (q, K, tk) \in \mathsf{Config} \times \mathsf{Own} \times (\mathbb{N} \to \mathbb{N})`, [A(R`q`, R`the configuration`), aK, A(R`tk`, R`the tickets per thread`)]);
 sa('sp.hold', R`K : \mathsf{End} \rightharpoonup \mathbb{N} \times \mathsf{Point} \times (\mathbb{N} \cup \{\infty\})`, [A(R`t, x, f`, R`holder thread, point and counter`)]);
 sa('sp.tk', R`tk : \mathbb{N} \to \mathbb{N}`, [A(R`t`, R`a thread identifier`)]);
