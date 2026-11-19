@@ -3,7 +3,7 @@
 const { examples } = require('./core');
 
 examples.push(
-  { id: 'rx-postpone', title: 'Postponement, a holder that never serves', modes: ['lf'],
+  { id: 'rx-postpone', title: 'Postponement, a holding thread that never serves', modes: ['lf'],
     code: `chat = !(f = λa. let a = send ⟨∗, a⟩ in (force f) a)
 loop = !(f = λ⟨a, b⟩. let ⟨u, a⟩ = recv a in let ∗ = u in (force f) ⟨a, b⟩)
 main = let ⟨a, a′⟩ = new in let ⟨b, b′⟩ = new in
@@ -20,12 +20,12 @@ main = let ⟨e, e′⟩ = new in let ⟨x, x′⟩ = new in let ⟨y, y′⟩ =
        let ∗ = spawn (λ_. close e′) in       -- waits for e forever
        let ∗ = spawn (λ_. (force back) ⟨x′, y′⟩) in
        (force pass) ⟨e, x, y⟩                -- e goes back and forth forever`,
-    shows: "$e$ travels between two threads forever and its partner $e'$ waits. Each send hands $e$ on with its counter minus one, so after finitely many hops no credit is left to send it again.",
+    shows: "$e$ travels between two threads forever and its partner $e'$ waits. Each send transfers $e$ on with its counter minus one, so after finitely many transfers no credit is left to send it again.",
     rocq: 'to be mechanized',
     accepts: { lf: { ok: false, part: 'payload credit' } } },
-  { id: 'rx-relink', title: 'Link refresh, a waiter that always faces a fresh end', modes: ['lf'],
+  { id: 'rx-relink', title: 'Link refresh, a waiting thread that always faces a fresh end', modes: ['lf'],
     code: `refresh = !(f = λ⟨w, k⟩. let ⟨c, c′⟩ = new in
-                     let ∗ = link ⟨w, c⟩ in          -- the waiter now talks to c′
+                     let ∗ = link ⟨w, c⟩ in          -- the waiting thread now talks to c′
                      let k = send ⟨∗, k⟩ in           -- one step on another channel
                      (force f) ⟨c′, k⟩)
 sink    = !(f = λk. let ⟨u, k⟩ = recv k in let ∗ = u in (force f) k)
@@ -33,7 +33,7 @@ main = let ⟨w, w′⟩ = new in let ⟨k, k′⟩ = new in
        let ∗ = spawn (λ_. close w′) in              -- waits forever
        let ∗ = spawn (λ_. (force sink) k′) in
        (force refresh) ⟨w, k⟩`,
-    shows: "Each round links the partner of the waiting end to a fresh channel, so the waiter always faces a fresh end with a full counter and no counter runs out. Each link spends one ticket of its thread and no step creates tickets.",
+    shows: "Each round links the partner of the waiting end to a fresh channel, so the waiting thread always faces a fresh end with a full counter and no counter runs out. Each link uses one ticket of its thread and no step creates tickets.",
     rocq: 'to be mechanized',
     accepts: { lf: { ok: false, part: 'tickets' } } },
   { id: 'rx-chain', title: 'A waiting chain that grows forever', modes: ['lf'],

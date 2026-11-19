@@ -75,7 +75,7 @@ set('ty-grammar', b => {
 });
 drop('ty-credit', 'ty-grammar');
 merge('ty-ann', 'Annotations and ticket needs', ['ty-annot', 'ty-tix', 'ty-tix-ops', 'ty-df'], {
-  caption: R`Credits $a$, costs $c$, floors $h$ and the refill $N$ are numbers, and $\infty$ means unbounded. A term that must leave $r$ link tickets over needs $\vartheta(r)$ tickets when it starts, and a thread with $tk$ tickets runs it if $\mathsf{meets}\,\vartheta\,r\,tk$. A link adds one to the need, a spawn doubles the rest, and sequencing composes. Deadlock-free typing is the instance $\mathsf{ty\_df}$ with every annotation unbounded.`,
+  caption: R`Credits $a$, costs $c$, floors $h$ and the counter bound $N$ are numbers, and $\infty$ means unbounded. A term that must leave $r$ link tickets over needs $\vartheta(r)$ tickets when it starts, and a thread with $tk$ tickets runs it if $\mathsf{meets}\,\vartheta\,r\,tk$. A link adds one to the need, a spawn doubles the rest, and sequencing composes. Deadlock-free typing is the instance $\mathsf{ty\_df}$ with every annotation unbounded.`,
   why: 'The numbers lock-free typing adds to types and judgments. At their unbounded values every premise about them holds, which is how deadlock-free typing is an instance.'
 });
 
@@ -99,11 +99,11 @@ merge('r-boxes', 'Boxes', ['r-box', 'r-force'], {
 set('r-ex', b => { b.title = 'Existentials'; });
 set('r-new', b => { b.title = 'Creation'; });
 merge('r-act', 'Actions and link', ['r-send', 'r-recv', 'r-close', 'r-select', 'r-branch', 'r-link'], {
-  caption: R`An action on an end at $x$ waits at $x$ while the thread holds the rest of $\Delta$, so $x$ lies below the future and below the partner points of what is held. Send and receive move the end to $x^{+}$ and the payload to the fields of $x$, a choice moves it to the field of the branch, and a link asks no order fact. \annp{In the lock-free mode every action returns the end refilled at $N$ and costs one, and a link spends a ticket.}`,
+  caption: R`An action on an end at $x$ waits at $x$ while the thread holds the rest of $\Delta$, so $x$ lies below the future and below the dual points of what is held. Send and receive move the end to $x^{+}$ and the payload to the fields of $x$, a choice moves it to the field of the branch, and a link asks no order fact. \annp{In the lock-free mode every action returns the end reset to $N$ and costs one, and a link uses a ticket.}`,
   why: 'The session primitives. Every order fact the type system asks for is asked here, at the moment a thread waits.'
 });
 merge('r-threads', 'Spawn', ['r-spawnlam', 'r-spawn'], {
-  why: 'A spawn hands ends to a new thread that starts with nothing after it, so the child body is read at the empty future.'
+  why: 'A spawn transfers ends to a new thread that starts with nothing after it, so the child body is read at the empty future.'
 });
 merge('t-subs', 'Subtyping and structural rules', ['t-sub', 'r-struct', 'r-admis'], {
   why: 'Subtyping lets a value lose facts it does not need. Weakening and contraction are admissible, so the rules state no structural rule of their own.'
@@ -135,25 +135,25 @@ merge('rd', 'Readiness', ['rd-term', 'rd-proc'], {
 });
 merge('p-rel', 'The process relation', ['p-body', 'p-fuse']);
 merge('p-obls', 'Obligations of process steps', ['p-obl', 'p-msg']);
-merge('fu', 'Fuel', ['fu-def', 'fu-act', 'fu-fsem'], {
-  caption: R`$e \in F^N_n\llbracket \Phi ; tk \vdash \sigma\ !\ (d, r)\rrbracket$ says that the thread $e$, holding the ends $\Phi$, each with its protocol and counter $S^f$, and $tk$ link tickets, has fuel for $n$ more steps to return at $\sigma$ within $d$ actions with $r$ tickets left. At level $n+1$ it returns a fueled value, or every step meets its fuel obligation at level $n$. An action on $o$ asks $o$ held and not idle and a unit to spare on every other live end and on the frame, then sets $o$ back to $N$ and ticks the rest, $\Phi{\downarrow}[o \mapsto S^{N}]$. A thread has fuel, $\mathsf{fsem}$, when it has fuel at every level with every end at $N$. Fuel reads no point, no world and no relation.`,
+merge('fu', 'Fuel', ['fu-def', 'fu-fsem'], {
+  caption: R`$e \in F^N_n\llbracket \Phi ; tk \vdash \sigma\ !\ (d, r)\rrbracket$ says that the thread $e$, holding the ends $\Phi$, each with its protocol and counter $S^f$, and $tk$ link tickets, has fuel for $n$ more steps to return at $\sigma$ within $d$ actions with $r$ tickets left. At level $n+1$ it returns a value in $FV$, or every step meets its fuel obligation at level $n$. An action on $o$ asks $o$ held and not idle and a positive counter on every other live end and on the frame, then sets $o$ back to $N$ and decrements the other counters, $\Phi{\downarrow}[o \mapsto S^{N}]$. A thread has fuel, $\mathsf{fsem}$, when it has fuel at every level with every end at $N$. Fuel reads no point, no world and no relation.`,
   why: 'Fuel is the lock-free half of a thread, its counters and tickets, kept apart from the relation so that it reads no point and no world. Lock-free adequacy measures waiting with it.'
 });
-merge('fu-obls', 'Fuel obligations', ['fu-obl-int', 'fu-obl'], {
-  caption: R`Internal steps tick no counter. A new channel starts both ends at $N$, a spawn hands the ends of the thunk to the child one lower with half the tickets, and a link drops two dual ends and spends a ticket. Every action spends one unit of the frame, advances the protocol of $o$, refills $o$ and ticks the other ends. A send hands its payload ends on one lower, and a receive continues for every fueled value that may arrive.`
+merge('fu-obls', 'Fuel obligations', ['fu-act', 'fu-obl-int', 'fu-obl'], {
+  caption: R`Internal steps decrement no counter. A new channel starts both ends at $N$, a spawn transfers the ends of the thunk to the child with counters one lower with half the tickets, and a link drops two dual ends and uses a ticket. Every action uses one unit of the frame, advances the protocol of $o$, resets the counter of $o$ to $N$ and decrements the counters of the other ends. A send transfers its payload ends with counters one lower, and a receive continues for every value in $FV$ that may arrive.`
 });
-merge('soup', 'The soup', ['sp-state', 'sp-inv'], {
-  caption: R`A soup state $a = (q, K, tk)$ is a configuration with an ownership map $K$ from held ends to holder, point and counter, and tickets per thread. It is in the soup at level $n$ when every thread is in the relation $E[\kappa_L]$ at the ends it owns and has fuel at their counters. The rest, $\mathsf{consistent}$, is bookkeeping that keeps $K$, $A$ and $\Pi$ in agreement. The soup is the only place fuel is used.`,
-  why: 'The soup joins the two halves of every thread, its relation at $\\kappa_L$ and its fuel, over one ownership map fixed outside the level. Lock-free adequacy reads the counters and points it records.'
+merge('soup', 'The lock-free process relation', ['sp-state', 'sp-inv'], {
+  caption: R`An annotated configuration $a = (q, K, tk)$ is a configuration with an ownership map $K$ from held ends to holding thread, point and counter, and tickets per thread. It is in the lock-free process relation at level $n$ when every thread is in the relation $E[\kappa_L]$ at the ends it owns and has fuel at their counters. The rest, $\mathsf{consistent}$ keeps $K$, $A$ and $\Pi$ in agreement. The lock-free process relation is the only place fuel is used.`,
+  why: 'The lock-free process relation joins the two halves of every thread, its relation at $\\kappa_L$ and its fuel, over one ownership map fixed outside the level. Lock-free adequacy reads the counters and points it records.'
 });
 merge('sj-all', 'Semantic judgments', ['sj', 'sp-lf'], {
-  why: 'The semantic judgments are what the fundamental theorems conclude and what adequacy consumes. \\annp{The lock-free judgment is the soup at every level, with the refill and the soup state chosen once.}'
+  why: 'The semantic judgments are what the fundamental theorems conclude and what adequacy consumes. \\annp{The lock-free judgment is the lock-free process relation at every level, with the counter bound and the annotated configuration chosen once.}'
 });
 order('semantic', ['sr-reading', 'ct-costs', 'v-rel', 'e-rel', 'e-obl', 'rd', 'p-rel', 'p-obls', 'fu-vs', 'fu', 'fu-obls', 'fv', 'soup', 'sj-all']);
 
 // ---- theorems ----
 merge('th-terms', 'Lemmas about terms', ['th-sound-src', 'th-fund-term', 'th-bind', 'th-cost'], {
-  caption: R`The statements the process theorems are built from. A single closed program is sound as a one-thread process. Typing a term implies the semantic term judgment, and $E$ is closed under evaluation frames, which every rule with a subterm uses. \annp{With the guard a typed term is in the live relation, and a typed term at a finite refill has fuel.}`,
+  caption: R`The statements the process theorems are built from. A single closed program is sound as a one-thread process. Typing a term implies the semantic term judgment, and $E$ is closed under evaluation frames, which every rule with a subterm uses. \annp{With the guard a typed term is in the relation at $\kappa_L$, and a typed term at a finite counter bound has fuel.}`,
   why: 'They are the per-thread layer under the process results. Each is proved once, rule by rule, and used by the fundamental theorem for processes.'
 });
 merge('th-adeq', 'Adequacy', ['th-adequacy', 'th-lf-adequacy'], {
