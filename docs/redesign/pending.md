@@ -131,6 +131,18 @@ must do, open questions.
    LF, and lighter notation where one idea is written out several times.
    Map only. Draft after entry 8 is converted.
 
+10. **Readability pass over every section (map only, after the repair
+    run).** Syntax, semantics, types, typing, semantic typing, theorems,
+    examples: lighter notation where one idea repeats, explanations and
+    examples a newcomer can follow, every symbol defined and hoverable,
+    hover texts proofread (also the DF texts the annotation filter cut).
+    Entries 8 and 9 are part of it.
+
+11. **Faithfulness audit of the map against the Rocq (after the repair
+    run is merged).** Check every block, rule, signature and theorem on the
+    map against the definitions in v2/, list every difference that is not a
+    queued entry, and fix the map or queue the Rocq change.
+
 ## Done in the Rocq
 
 (entries move here once the repair agent has implemented and merged them)
