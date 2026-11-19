@@ -547,7 +547,7 @@ window.MAP = {
      "title": "E-Box",
      "rocq": "static/Typing.v: e_box, d_box",
      "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Box.unl}{\\Delta\\ \\text{unlimited}}\\quad \\htmlData{k=E-Abs.phi}{\\varphi\\ \\text{fresh}}\\quad \\htmlData{k=E-Box.fresh}{\\bar\\iota\\ \\text{fresh}}\\quad \\htmlData{k=E-Box.inst}{\\forall \\bar s.\\ \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s} \\\\ \\htmlData{k=E-Box.body}{\\htmlData{k=E-Box.open}{\\Gamma, C(\\bar\\iota), u \\prec \\varphi} ; \\htmlData{k=E-Box.self}{\\Delta, f : \\Box(\\ldots)} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing,\\varphi)} e : \\htmlData{k=tp.sinst}{U[\\bar s]}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} !e : \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}\\annot{[\\varepsilon]}\\,U)\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-Box}",
-     "caption": "The body uses no end. It is typed under fresh point variables $\\bar\\iota$, the hypothesis $C(\\bar\\iota)$, the box itself as $f$, and a fresh future variable.",
+     "caption": "A box $!e$ is a procedure that can be forced many times, and its body calls itself through $f$. A copy of a box must not copy an end, so $\\Delta$ is unlimited. Each force may pick other points for $\\bar\\iota$ and other session types for $\\bar\\alpha$, so the body is typed once with $\\bar\\iota$ fresh and only $C(\\bar\\iota)$ known, and once for every allowed choice $\\bar s$. Its future is a fresh $\\varphi$ above $u$, which stands for whatever a caller does after the force.",
      "modes": [
       "df",
       "lf"
@@ -558,7 +558,7 @@ window.MAP = {
      "title": "E-Force",
      "rocq": "static/Typing.v: e_force, d_force",
      "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\quad \\htmlData{k=E-Box.inst}{\\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s}\\quad \\htmlData{k=E-Force.ub}{u[\\bar x] \\prec F} \\\\ \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}\\annot{[\\varepsilon]}\\,U)\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_0}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.force}{\\mathsf{force}}\\,e : \\htmlData{k=tp.sinst}{U[\\bar s]}\\htmlData{k=tp.pinst}{[\\bar x]}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_0 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{E-Force}",
-     "caption": "Forcing chooses $\\bar x$ with $\\Gamma \\vdash C[\\bar x]$ and session types $\\bar s$, and asks $u[\\bar x] \\prec F$.",
+     "caption": "$\\mathsf{force}\\,e$ runs the body of the box once. The caller picks points $\\bar x$ for $\\bar\\iota$ and session types $\\bar s$ for $\\bar\\alpha$. The body was typed assuming $C$, so $C[\\bar x]$ must hold here. The body waits at most at $u[\\bar x]$, and the caller acts at $F$ afterwards, so $u[\\bar x] \\prec F$, as in E-App. The result is $U$ with both choices put in.",
      "modes": [
       "df",
       "lf"
@@ -5182,12 +5182,12 @@ window.MAP = {
    ]
   },
   "E-Box.inst": {
-   "title": "Session instances",
-   "what": "\\annp{The body is typed for every list $\\bar s$ of session types, one per session variable $\\bar\\alpha$, with $\\mathsf{sinsts}\\,\\bar s$ at the refill $N$.}",
-   "why": "A box is polymorphic in its session variables, and each force may choose another instance. At $N = \\infty$ only erased instances are admitted, because an end received at a finite counter cannot age by $\\infty$.",
+   "title": "Typed for every instance",
+   "what": "The premise has one derivation of the body for every list $\\bar s$ with $\\mathsf{sinsts}\\,\\bar s$, one session type per session variable $\\bar\\alpha$ of the box.",
+   "why": "A force may pick any allowed $\\bar s$, and the derivation for that $\\bar s$ is the one that justifies the call. Checking every instance up front keeps E-Force a plain lookup.",
    "breaks": "Nothing. It is a definition.",
-   "example": "No example uses a session variable.",
-   "rocq": "static/Contexts.v: sinsts",
+   "example": "A box with no session variable has exactly one instance, the empty list, so the premise is one derivation.",
+   "rocq": "static/Typing.v: e_box",
    "sig": "\\forall \\bar s.\\ \\mathsf{sinsts}\\,\\bar s \\Rightarrow \\ldots",
    "args": [
     {
@@ -5266,8 +5266,8 @@ window.MAP = {
   },
   "E-Force.ub": {
    "title": "$u[\\bar x] \\prec F$",
-   "what": "The instantiated upper point $u[\\bar x]$ of the box satisfies $u[\\bar x] \\prec F$.",
-   "why": "The forced body waits only at points up to $u[\\bar x]$, and the caller acts afterwards at $F$.",
+   "what": "The highest point the body waits at, $u$ with the chosen points put in, lies below every point of the future $F$.",
+   "why": "After the force returns, the caller still acts at the points of $F$. If the body waited at a point above one of them, a partner could wait on the caller while the caller waits inside the body. This is the condition $u \\prec F$ of E-App for a box.",
    "breaks": "Nothing. It is a definition.",
    "example": "The self call of a loop at $\\zeta$ under $F = \\varnothing$.",
    "rocq": "static/Typing.v: e_force",
@@ -6336,12 +6336,12 @@ window.MAP = {
    ]
   },
   "tp.sinsts": {
-   "title": "$\\mathsf{sinsts}\\,N\\,\\bar s$",
-   "what": "Every $s \\in \\bar s$ is hereditarily contractive, and at $N = \\infty$ every $s$ equals its erasure.",
-   "why": "Contractive instances keep unfolding well defined. At $N = \\infty$ the body is typed only at erased instances.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{sinsts}\\,N\\,[\\mathsf{Close}]$.",
-   "rocq": "static/Contexts.v: sinsts",
+   "title": "Allowed session instances $\\mathsf{sinsts}\\,\\bar s$",
+   "what": "The session types a session variable of a box may stand for. Every recursion $\\mu\\alpha.S$ inside each $s \\in \\bar s$, also inside payloads, passes an action before $\\alpha$ recurs. \\annp{At $N = \\infty$ each $s$ also carries no finite credit.}",
+   "why": "The rules read the first action of a protocol after unfolding. An instance like $\\mu\\alpha.\\alpha$ has no first action, so substituting it would give an end no rule can type. \\annp{At $N = \\infty$ every annotation in a derivation is $\\infty$, and an instance with a finite credit inside its payloads would bring one in.}",
+   "breaks": "Without the first condition a box with a variable $\\alpha$ could be forced at $\\mu\\alpha.\\alpha$, and an end of type $\\mu\\alpha.\\alpha$ would be stuck with no action to perform.",
+   "example": "$\\mu\\alpha.\\,{!}\\ast.\\alpha$ and $\\mathsf{Close}$ are allowed, $\\mu\\alpha.\\alpha$ and $\\mu\\alpha.\\,\\mathsf{Skip}.\\alpha$ are not.",
+   "rocq": "static/Contexts.v: sinsts; types/Types.v: hcontractive",
    "sig": "\\mathsf{sinsts} : \\mathsf{Fuel} \\to \\mathsf{Sty}^{*} \\to \\mathsf{Prop}",
    "args": [
     {
