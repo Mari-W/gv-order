@@ -417,7 +417,7 @@ Qed.
 (** One component, stable and without a link offer, at a primitive
     type. *)
 Lemma comp_ready κ n W1 T X Σ q :
-  prim T → Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X W1 Σ T q →
+  tfree T → Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X W1 Σ T q →
   stable_p q →
   link_p q ∨
   (above_offered W1 Σ (offered_p Σ q) ∧
@@ -426,7 +426,7 @@ Lemma comp_ready κ n W1 T X Σ q :
 Proof.
   intros HT (Hs & Hr & _) Hstab.
   assert (pirred q → Σ = ∅) as HΣ.
-  { intros Hi. destruct (Hs Hi) as (v & E & _ & Hv & _). by eapply Vrel_prim_empty. }
+  { intros Hi. destruct (Hs Hi) as (v & E & _ & Hv & _). by eapply Vrel_tfree_empty. }
   destruct (decide (Forall is_val (elements q.2))) as [Hall|Hall].
   - assert (pirred q) as Hi.
     { apply all_vals_pirred. intros e He. apply gmultiset_elem_of_elements in He.
@@ -482,7 +482,7 @@ Section rdy.
   Context (Σ1 ΣC Σ2 ΣD : senv) (q1 q2 : proc) (Hc : conn Σ1 ΣC q1.1 Σ2 ΣD q2.1).
   Context (H1 : Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X1 W1 (Σ1 ∪ ΣC) T1 q1).
   Context (H2 : Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X2 W1 (Σ2 ∪ ΣD) T2 q2).
-  Context (HT1 : prim T1) (HT2 : prim T2).
+  Context (HT1 : tfree T1) (HT2 : tfree T2).
   Local Abbreviation K := (chans_of ΣC).
   Local Abbreviation pc := (pconn q1 q2 K).
 
@@ -594,7 +594,7 @@ Section rdy.
       { intros o Ho. destruct (F1 o Ho) as [?|(o' & _ & _ & ? & _)]; by eapply Hno. }
       destruct (R2) as (v2 & E2 & Hq2 & Hv2 & HE2).
       { intros o Ho. destruct (F2 o Ho) as [?|(o' & _ & _ & ? & _)]; by eapply Hno. }
-      pose proof (Vrel_prim_empty _ _ _ _ _ _ HT1 Hv1) as HE1'.
+      pose proof (Vrel_tfree_empty _ _ _ _ _ _ HT1 Hv1) as HE1'.
       assert (ΣC = ∅) as HC0.
       { apply dom_empty_iff_L. apply (f_equal dom) in HE1'. rewrite dom_union_L, dom_empty_L in HE1'. set_solver. }
       rewrite HTU in Hv2. apply Vrel_unit_iff in Hv2 as [_ ->].
@@ -649,8 +649,8 @@ Section rdy.
         split; [rewrite dom_union_L; apply elem_of_union_l; by eapply elem_of_dom_2|done].
       - destruct (chain Hs A1 A2 x o S) as (o' & S' & y' & ? & ? & _); [right; split; [done|by split; [eapply elem_of_dom_2|]]|].
         by apply (Hno o'). }
-    pose proof (Vrel_prim_empty _ _ _ _ _ _ HT1 Hv1) as HE1'.
-    pose proof (Vrel_prim_empty _ _ _ _ _ _ HT2 Hv2) as HE2'.
+    pose proof (Vrel_tfree_empty _ _ _ _ _ _ HT1 Hv1) as HE1'.
+    pose proof (Vrel_tfree_empty _ _ _ _ _ _ HT2 Hv2) as HE2'.
     assert (ΣC = ∅) as HC0.
     { apply dom_empty_iff_L. apply (f_equal dom) in HE1'. rewrite dom_union_L, dom_empty_L in HE1'. set_solver. }
     assert (Σ2 = ∅) as H20.

@@ -10,6 +10,6 @@ fsem_of_cost
      : ∀ (W : world) (N : fuel) (Θ : tenv) (e : expr) 
          (T : ty) (a c : fuel) (ϑ : tix) (tk : nat),
          Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} e : T^a ▷ c ; ϑ
-         → prim T
+         → tfree T
            → (∀ (o : cend) (te : tentry), Θ !! o = Some te → fle (te_cr te) N)
              → meets ϑ 0 tk → fsem N (te_sty <$> Θ) e

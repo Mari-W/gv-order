@@ -103,7 +103,7 @@ reads no point, no world and no relation. Every step costs one level.
 | compat/Blind.v | heads of session types up to ≈ (`seqv_unfold_*`), V, E and P agree at types whose erasures are ≈ (`Vrel_teq`, `Erel_teq_ty`), the blindness lemma `Vrel_blind`, `Erel_blind` |
 | compat/SemTyped.v | groundings `Grel`, the judgment at a set of points `sem_typed_at`, static futures `sf_den`, `Θ ; Δ ⊨^F _ W t : T` and `Θ ; Δ ⊫^F _ W t : T` (`sem_typed κ`) |
 | compat/Redex.v | exact ends and heads of values (`Vrel_exact`, `Vrel_heads`), the β redexes and the redex of every operator (`Erel_send` … `Erel_force`) |
-| compat/LiveDF.v | `live_sub_df`: ∅ ⊫_W p : T ⟹ ∅ ⊨_W p : T at a prim, box-free T |
+| compat/LiveDF.v | `live_sub_df`: ∅ ⊫_W p : T ⟹ ∅ ⊨_W p : T at a tfree, box-free T |
 | compat/Rename.v | decision Q16: V and E under every map of ends injective on the held ends (`Erel_rename`), P by projection of its clause (fuse) (`Prel_fuse`), a composite of fusions is a fusion (`fuse_ok_compose`), renaming (`Prel_rename`, D = ∅), the link substitution as a renaming of the other component (`pren_ok_csub`) |
 | compat/Conv.v | environments up to ≈ (`senv_eqv`): V, E and P transport along them (`Vrel_conv`, `Erel_conv`, `Prel_conv`) |
 | compat/Connect.v | P-Connect: environments of a cut (`cut_dual`, `conn`; `pfree` lives in static/Typing.v), the composite `pconn`, liftings, offers of the composite, the chain of cut ends (`finite_lt_acc`), readiness (`pc_ready`) and P-Stop (`pc_stop`) of the composite, `Prel_S_ind_fuse` |

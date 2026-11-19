@@ -267,7 +267,7 @@ Section step.
     soup_inv N n W ∅ T (LFState (C', Mq') K tk') A Π U'.
   Proof.
     intros -> Hdom Ht. unfold soup_inv. constructor; simpl.
-    - apply (sp_prim _ _ _ _ _ _ _ _ Hs).
+    - apply (sp_tfree _ _ _ _ _ _ _ _ Hs).
     - intros t e He. apply (Ht t e He).
     - intros t e He. apply (Ht t e He).
     - intros t e He. apply (Ht t e He).
@@ -311,7 +311,7 @@ Section step.
     soup_inv N n W ∅ T (LFState (C', Mq') K' tk') A' Π' U'.
   Proof.
     intros Ht Hp Hd Ho Hc Hpr Hsd Hpd Hfin. unfold soup_inv. constructor; simpl.
-    - apply (sp_prim _ _ _ _ _ _ _ _ Hs).
+    - apply (sp_tfree _ _ _ _ _ _ _ _ Hs).
     - intros t e He. apply (Ht t e He).
     - intros t e He. apply (Ht t e He).
     - intros t e He. apply (Ht t e He).

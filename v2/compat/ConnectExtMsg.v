@@ -243,8 +243,8 @@ Section extmsg.
   Lemma pc_clauses : Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T pc.
   Proof.
     split_and!.
-    - intros Hi. exact (pc_stop κ n W1 HS T TUnit X1 X2 Σ1 ΣC Σ2 ΣD q1 q2 Hc H1 H2 HT prim_unit eq_refl Hi).
-    - intros _. exact (pc_ready κ n W1 HS T TUnit X1 X2 Σ1 ΣC Σ2 ΣD q1 q2 Hc H1 H2 HT prim_unit eq_refl).
+    - intros Hi. exact (pc_stop κ n W1 HS T TUnit X1 X2 Σ1 ΣC Σ2 ΣD q1 q2 Hc H1 H2 HT tfree_unit eq_refl Hi).
+    - intros _. exact (pc_ready κ n W1 HS T TUnit X1 X2 Σ1 ΣC Σ2 ΣD q1 q2 Hc H1 H2 HT tfree_unit eq_refl).
     - split_and!.
       + intros q ev q' Hq Hst Hτ Hfr. eapply tau_all; eassumption.
       + intros q i o w q' Hq Hst. by eapply ext_send.

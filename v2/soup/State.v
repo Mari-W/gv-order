@@ -37,7 +37,7 @@ Definition kfin (K : own) : Prop := ∀ o h, K !! o = Some h → is_Some h.(h_ct
     session type of that entry in Π ([sp_sig], [sp_psig]). *)
 Record soup_gen (Erl : senv → ty → expr → Prop) (Frl : penv → cenv → nat → expr → Prop)
     (Σ : senv) (T : ty) (a : lfstate) (A : senv) (Π : penv) (U : nat → ty) : Prop := SoupGen {
-  sp_prim : prim T;
+  sp_tfree : tfree T;
   sp_rel t e : (s_q a).2 !! t = Some e → Erl (kres (s_K a) t A) (U t) e;
   sp_ty t e : (s_q a).2 !! t = Some e → U t = T ∨ U t = TUnit;
   sp_fuel t e : (s_q a).2 !! t = Some e → Frl (kres (s_K a) t Π) (ctrs (s_K a) t) (s_tk a t) e;

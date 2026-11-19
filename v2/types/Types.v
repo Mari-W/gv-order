@@ -521,12 +521,6 @@ Lemma teq_sym T U : teq T U → teq U T.
 Proof. apply eqT_sym, sequiv_sym. Qed.
 (** ** Kinds of types *)
 
-Inductive prim : ty → Prop :=
-  | prim_unit : prim TUnit
-  | prim_prod U a V b : prim U → prim V → prim (TProd U a V b)
-  | prim_sum U a V b : prim U → prim V → prim (TSum U a V b)
-  | prim_box n k C ub c t U a : prim U → prim (TBox n k C ub c t U a).
-
 (** The types whose variables admit contraction and weakening. *)
 Definition unlimited (T : ty) : Prop :=
   match T with TBox _ _ _ _ _ _ _ _ => True | _ => False end.

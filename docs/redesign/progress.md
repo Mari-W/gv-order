@@ -2116,3 +2116,16 @@ The old development in theories/ stays untouched.
   under the absence of τ steps of the whole configuration, which no
   thread sees. So the process clause carries information that the term
   clauses of the threads do not, and the duplication is only apparent.
+- N.1. P-Term asks `tfree T` (decision of 2026-11-19, supersedes M.6).
+  `p_term` (static/Typing.v), the semantic P-Term and P-Connect
+  (`sem_p_term`, `sem_p_connect`, `conn_all`, the section hypotheses of
+  compat/Connect.v and compat/ConnectCtx.v), `soundness_source`,
+  `lf_soundness_source`, `fsem_of_cost`, `FuelE_thread` and the soup
+  field `sp_tfree` (was `sp_prim`) ask `tfree T`. No semantic lemma
+  needs `prim`: every proof read it through `Vrel_tfree_empty` (was
+  `Vrel_prim_empty`, compat/Blind.v), which holds at `tfree` because V
+  at a box asks Θ = ∅. `live_sub_df` asks `tfree T` and `boxfree T`,
+  which is equivalent to the former `prim T` and `boxfree T`, so its
+  statement does not weaken. `prim`, `prim_tfree` and the shadowing
+  notation for `prim` in types/Names.v are gone. Every theorem that
+  asked `prim T` now asks the weaker `tfree T`, so each one strengthens.

@@ -62,7 +62,7 @@ Proof.
       unfold krelabel. rewrite lookup_fmap, Kh. simpl. split_and!; [done| |done].
       destruct (H2 t' e He) as [_ Hfg]. by rewrite Ht, Hfg. }
   unfold soup_inv in *. constructor; simpl in *.
-  - exact (sp_prim _ _ _ _ _ _ _ _ Hs).
+  - exact (sp_tfree _ _ _ _ _ _ _ _ Hs).
   - intros t e He. rewrite (Hkres _ t e A He). destruct (H2 t e He) as [Hg _]. by apply (sp_rel _ _ _ _ _ _ _ _ Hs).
   - intros t e He. destruct (H2 t e He) as [Hg _]. by apply ((sp_ty _ _ _ _ _ _ _ _ Hs) (g t) e).
   - intros t e He. rewrite (Hkres _ t e Π He), (Hctrs t e He). destruct (H2 t e He) as [Hg _].

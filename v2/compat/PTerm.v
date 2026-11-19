@@ -4,7 +4,7 @@
     ends Θ_B of the restricted channels C, both ends of each held as dual
     pairs at dual points, with Σ partner-free, is in P:
 
-      sem_p_term : prim T → sth Θ Σ Θ_B C → t ∈ E[κ]^W _ n⟦Θ ⊢ T⟧^∅ →
+      sem_p_term : tfree T → sth Θ Σ Θ_B C → t ∈ E[κ]^W _ n⟦Θ ⊢ T⟧^∅ →
                    (C, {t}) ∈ P[κ]^W _ n⟦Σ ⊢ T⟧
 
     [sth] packs the conditions on the environments: Θ = Σ ∪ Θ_B, the ends
@@ -961,7 +961,7 @@ End link.
 (** ** The clauses of a single thread *)
 
 Definition PTermL (κ : ctable) (m : nat) : Prop :=
-  ∀ W Θ T t Σ ΘB C, prim T → sth Θ Σ ΘB C → t ∈ E[κ]^W _ m⟦Θ ⊢ T⟧^∅ →
+  ∀ W Θ T t Σ ΘB C, tfree T → sth Θ Σ ΘB C → t ∈ E[κ]^W _ m⟦Θ ⊢ T⟧^∅ →
     (C, {[+ t +]}) ∈ P[κ]^W _ m⟦Σ ⊢ T⟧.
 
 Lemma istep_single_sess q i σ q' C e : erase q = (C, {[+ e +]}) → istep q (EvSess i σ) q' →
@@ -1004,10 +1004,10 @@ Qed.
 Section core.
   Context (κ : ctable) (n : nat) (IH : ∀ j, j < S n → PTermL κ j).
   Context (X : erel) (HXr : erel_ren X).
-  Context (HX : ∀ W Θ T e Σ ΘB C, prim T → sth Θ Σ ΘB C → X W Θ T ∅ e →
+  Context (HX : ∀ W Θ T e Σ ΘB C, tfree T → sth Θ Σ ΘB C → X W Θ T ∅ e →
                  Prel κ (S n) W Σ T (C, {[+ e +]})).
 
-  Lemma ac_EP W Θ T e Σ ΘB C c : prim T → sth Θ Σ ΘB C →
+  Lemma ac_EP W Θ T e Σ ΘB C c : tfree T → sth Θ Σ ΘB C →
     at_cost_E (S n) c (Erel κ) X W Θ T ∅ e →
     at_cost_P (S n) c (Prel κ) (Prel κ (S n)) W Σ T (C, {[+ e +]}).
   Proof.
@@ -1016,7 +1016,7 @@ Section core.
     - intros Hc. refine (IH (S n - c) _ W Θ T e Σ ΘB C HT Hs (A2 Hc)). lia.
   Qed.
 
-  Lemma core W Θ T e Σ ΘB C : prim T → sth Θ Σ ΘB C → Erel κ (S n) W Θ T ∅ e →
+  Lemma core W Θ T e Σ ΘB C : tfree T → sth Θ Σ ΘB C → Erel κ (S n) W Θ T ∅ e →
     Ebody κ (S n) (Vrel κ) (Erel κ) (Vrel κ (S n)) X W Θ T ∅ e →
     (∀ W1, W ⊑ W1 → ∀ v e', tstep e (LSpawn v) e' →
        at_cost_P (S n) (c_spawn κ) (Prel κ) (Prel κ (S n)) W1 Σ T (C, {[+ e' +]} ⊎ {[+ App v EUnit +]})) →
@@ -1055,7 +1055,7 @@ Section core.
         * destruct (Hlk Hl) as (os & p' & Hp'). exact (Hpi _ p' Hp').
         * destruct (Hoff a ltac:(first [exact Ha|reflexivity]) Hst Hl) as (o & _ & (_ & σ & p' & Hp' & _) & _). exact (Hpi _ p' Hp').
       + apply irred_act in Ha. pose proof (Hstop Ha) as Hv.
-        pose proof (Vrel_prim_empty κ _ _ _ _ _ HT Hv) as HΘ.
+        pose proof (Vrel_tfree_empty κ _ _ _ _ _ HT Hv) as HΘ.
         rewrite (st_env _ _ _ _ Hs) in HΘ. apply map_positive_l in HΘ as HΣ.
         rewrite HΣ, (left_id_L ∅ (∪)) in HΘ.
         assert (C = ∅) as HC.
@@ -1176,7 +1176,7 @@ Qed.
 Section node.
   Context (κ : ctable) (n : nat) (IH : ∀ j, j < S n → PTermL κ j).
 
-  Definition Φt : erel := λ W Θ T F e, F = ∅ → prim T → ∀ Σ ΘB C, sth Θ Σ ΘB C →
+  Definition Φt : erel := λ W Θ T F e, F = ∅ → tfree T → ∀ Σ ΘB C, sth Θ Σ ΘB C →
     Prel κ (S n) W Σ T (C, {[+ e +]}).
   Definition Xt : erel := λ W Θ T F e, Erel κ (S n) W Θ T F e ∧ Φren Φt W Θ T F e.
 
@@ -1186,7 +1186,7 @@ Section node.
     intros g Hg. rewrite kren_kren by done. rewrite emap_emap. apply H2. by apply kinj_kren.
   Qed.
 
-  Lemma Xt_P W Θ T e Σ ΘB C : prim T → sth Θ Σ ΘB C → Xt W Θ T ∅ e → Prel κ (S n) W Σ T (C, {[+ e +]}).
+  Lemma Xt_P W Θ T e Σ ΘB C : tfree T → sth Θ Σ ΘB C → Xt W Θ T ∅ e → Prel κ (S n) W Σ T (C, {[+ e +]}).
   Proof.
     intros HT Hs [_ H]. pose proof (H id (kinj_id Θ)) as H'. rewrite kren_id_map, emap_id in H'. exact (H' eq_refl HT Σ ΘB C Hs).
   Qed.
@@ -1197,7 +1197,7 @@ Section node.
   (** The fusions of a single thread, given its spawns. *)
   Lemma node_gen W Θ T e :
     Ebody κ (S n) (Vrel κ) (Erel κ) (Vrel κ (S n)) Xt W Θ T ∅ e →
-    (∀ h Σ ΘB C, kinj h Θ → prim T → sth (kren h Θ) Σ ΘB C → ∀ W1, W ⊑ W1 → ∀ v e', tstep (emap h e) (LSpawn v) e' →
+    (∀ h Σ ΘB C, kinj h Θ → tfree T → sth (kren h Θ) Σ ΘB C → ∀ W1, W ⊑ W1 → ∀ v e', tstep (emap h e) (LSpawn v) e' →
        at_cost_P (S n) (c_spawn κ) (Prel κ) (Prel κ (S n)) W1 Σ T (C, {[+ e' +]} ⊎ {[+ App v EUnit +]})) →
     Φt W Θ T ∅ e.
   Proof.
@@ -1235,7 +1235,7 @@ Section node.
     assert (∀ W', W ⊑ W' → ¬ irred (App (Lam e1) EUnit) ∧ ready _ W'(ΘM ∣ ∅, App (Lam e1) EUnit)) as Hrd.
     { intros W' _. split; [intros Hi; exact (Hi _ _ Hβ)|]. intros Hst. destruct (Hst _ _ Hβ) as [σ Hσ]. discriminate. }
     destruct (decide (m = S n)) as [->|Hmn].
-    - refine (node_beta W ΘM TUnit (App (Lam e1) EUnit) eq_refl _ eq_refl prim_unit ΣM ΘBM CM Hs).
+    - refine (node_beta W ΘM TUnit (App (Lam e1) EUnit) eq_refl _ eq_refl tfree_unit ΣM ΘBM CM Hs).
       intros W' HW'. destruct (Hrd W' HW') as [Hni Hr].
       split; [intros Hi; by destruct Hni|split; [by intros _|unfold Esteps; split_and!]].
       all: intros; match goal with H : tstep _ _ _ |- _ => apply app_thunk_step in H as [Hα ->] end; try discriminate.
@@ -1243,7 +1243,7 @@ Section node.
       + intros Hc. destruct (Hv W' (S n) ∅ EUnit HW' ltac:(lia) (map_disjoint_empty_r _)) as [_ B].
         rewrite map_union_empty in B. by apply B.
       + intros Hc. apply Hlow'; [lia|lia|done].
-    - refine (IH m ltac:(lia) W ΘM TUnit _ ΣM ΘBM CM prim_unit Hs _).
+    - refine (IH m ltac:(lia) W ΘM TUnit _ ΣM ΘBM CM tfree_unit Hs _).
       destruct m as [|m]; [apply Erel_0|]. apply Erel_S_iff. intros W' HW'.
       destruct (Hrd W' HW') as [Hni Hr].
       split; [intros Hi; by destruct Hni|split; [by intros _|unfold Esteps; split_and!]].
@@ -1255,7 +1255,7 @@ Section node.
 
   (** A spawn: the parent and the child compose over the cut of the
       channels with one end on each side (P-Connect). *)
-  Lemma spawn_case W Θ T e Σ ΘB C : prim T → sth Θ Σ ΘB C →
+  Lemma spawn_case W Θ T e Σ ΘB C : tfree T → sth Θ Σ ΘB C →
     Ebody κ (S n) (Vrel κ) (Erel κ) (Vrel κ (S n)) Xt W Θ T ∅ e →
     ∀ W1, W ⊑ W1 → ∀ v e', tstep e (LSpawn v) e' →
       at_cost_P (S n) (c_spawn κ) (Prel κ) (Prel κ (S n)) W1 Σ T (C, {[+ e' +]} ⊎ {[+ App v EUnit +]}).
@@ -1309,5 +1309,5 @@ Qed.
 (** P-Term: a single thread in E at the empty future, over Σ partner-free
     and the dual pairs Θ_B of its restricted channels, is in P. *)
 Theorem sem_p_term κ n W Θ Σ ΘB C t T :
-  prim T → sth Θ Σ ΘB C → t ∈ E[κ]^W _ n⟦Θ ⊢ T⟧^∅ → (C, {[+ t +]}) ∈ P[κ]^W _ n⟦Σ ⊢ T⟧.
+  tfree T → sth Θ Σ ΘB C → t ∈ E[κ]^W _ n⟦Θ ⊢ T⟧^∅ → (C, {[+ t +]}) ∈ P[κ]^W _ n⟦Σ ⊢ T⟧.
 Proof. intros HT Hs Ht. exact (pterm_all κ n W Θ T t Σ ΘB C HT Hs Ht). Qed.

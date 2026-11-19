@@ -6,7 +6,7 @@
       soundness             : strict W → ∅ ⊢_W p : T → deadlock_free p
       live_soundness        : strict W → ∅ ⊢_W p : T → ⊢▷ p →
                                 deadlock_free p ∧ no_tau_divergence p
-      soundness_source      : strict W → prim T → ∅ ; ∅ ; [] ⊢^(∅, None) _ W t : T →
+      soundness_source      : strict W → tfree T → ∅ ; ∅ ; [] ⊢^(∅, None) _ W t : T →
                                 deadlock_free (∅, {[+ t +]})
 
     One induction on [ptyped] for every cost table whose threads satisfy
@@ -106,7 +106,7 @@ Section proc.
       apply typed_E. exact (Hthr W N _ t T a c ϑ HW Ht Hg).
     - destruct (proj1 (p_join_iff_connect W1 W2 Hw1 Hw2 Hfam) HJ) as (HS1 & HS2 & _).
       pose proof (ptyped_conn _ _ _ _ _ _ _ _ _ _ _ H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2) as Hc.
-      refine (sem_p_connect κ n W1 W2 Σ1 ΣC Σ2 (senv_dual ΣC) (C1, E1) (C2, E2) T (ptyped_prim _ _ _ _ _ H1)
+      refine (sem_p_connect κ n W1 W2 Σ1 ΣC Σ2 (senv_dual ΣC) (C1, E1) (C2, E2) T (ptyped_tfree _ _ _ _ _ H1)
                 (IH1 HS1 _ n) (IH2 HS2 _ n) Hc); intros t Ht; apply HG; simpl; multiset_solver.
   Qed.
 End proc.
@@ -133,7 +133,7 @@ Theorem live_soundness W p T : strict W → ∅ ⊢_W p : T → ⊢▷ p →
 Proof. intros HW Hty Hg. apply (live_adequacy W T p HW). by apply live_fundamental_proc. Qed.
 
 (** One closed thread of the DF judgment, with no creation constraint. *)
-Theorem soundness_source W t T : strict W → prim T → ∅ ; hc_empty ; [] ⊢^(∅, None) _ W t : T →
+Theorem soundness_source W t T : strict W → tfree T → ∅ ; hc_empty ; [] ⊢^(∅, None) _ W t : T →
   deadlock_free (∅, {[+ t +]}).
 Proof.
   intros HW HT Ht. apply (adequacy W T _ HW). intros n.

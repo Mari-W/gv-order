@@ -60,7 +60,7 @@ Qed.
     whose transformer some ticket count meets at reserve 0, satisfies
     [fsem N] with the session types of its ends. *)
 Theorem fsem_of_cost W N Θ e T a c ϑ tk :
-  Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} e : T^a ▷ c ; ϑ → prim T →
+  Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} e : T^a ▷ c ; ϑ → tfree T →
   (∀ o te, Θ !! o = Some te → fle (te_cr te) N) → meets ϑ 0 tk →
   fsem N (te_sty <$> Θ) e.
 Proof.
@@ -76,7 +76,7 @@ Qed.
 (** The forwarder of S7.1 satisfies [fsem] at every refill. *)
 Theorem fw_fsem N o : fsem N {[o := S_fw]} (fw o).
 Proof.
-  pose proof (fsem_of_cost W_fw N _ _ _ _ _ _ 0 (fw_typed N o (pvar 0)) prim_unit) as H.
+  pose proof (fsem_of_cost W_fw N _ _ _ _ _ _ 0 (fw_typed N o (pvar 0)) tfree_unit) as H.
   rewrite map_fmap_singleton in H. apply H; [|apply fw_tix_met].
   intros o' te Hte. apply lookup_singleton_Some in Hte as [_ <-]. apply fle_refl.
 Qed.

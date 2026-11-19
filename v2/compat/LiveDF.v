@@ -1,8 +1,8 @@
 (** * live ⊆ DF for closed processes (stage S4, quirk G2)
 
-      ∅ ⊫_W p : T  ⟹  ∅ ⊨_W p : T        when T is prim and box-free
+      ∅ ⊫_W p : T  ⟹  ∅ ⊨_W p : T        when T is tfree and box-free
 
-    [live_sub_df]. A closed process has a [prim] result, and without □
+    [live_sub_df]. A closed process has a [tfree] result, and without □
     it is built from ∗, ⊗ and ⊕. For such T the value relation reads no
     E, so V at T is the same for both cost tables and every level
     ([Vrel_boxfree]). A closed process takes τ steps only, so
@@ -73,7 +73,7 @@ Qed.
 
 (** ** Box-free results
 
-    A process result is [prim] (types/Types.v), built from ∗, ⊗, ⊕ and □.
+    A process result is [tfree] (types/Types.v), built from ∗, ⊗, ⊕ and □.
     [boxfree] rules out □. *)
 
 Fixpoint boxfree (T : ty) : Prop :=
@@ -83,15 +83,15 @@ Fixpoint boxfree (T : ty) : Prop :=
   | _ => True
   end.
 
-Lemma Vrel_boxfree κ κ' T : prim T → boxfree T → ∀ i i' W Θ v, Vrel κ i W Θ T v ↔ Vrel κ' i' W Θ T v.
+Lemma Vrel_boxfree κ κ' T : tfree T → boxfree T → ∀ i i' W Θ v, Vrel κ i W Θ T v ↔ Vrel κ' i' W Θ T v.
 Proof.
-  induction 1 as [|T1 a1 U a2 _ IH1 _ IH2|T1 a1 U a2 _ IH1 _ IH2|]; simpl; intros Hb i i' W Θ v.
+  induction 1 as [| |T1 a1 U a2 _ IH1 _ IH2|T1 a1 U a2 _ IH1 _ IH2]; simpl; intros Hb i i' W Θ v.
   - by rewrite !Vrel_unit_iff.
+  - done.
   - destruct Hb as [Hb1 Hb2]. rewrite !Vrel_prod_iff.
     setoid_rewrite (IH1 Hb1 i i'). by setoid_rewrite (IH2 Hb2 i i').
   - destruct Hb as [Hb1 Hb2]. rewrite !Vrel_sum_iff.
     setoid_rewrite (IH1 Hb1 i i'). by setoid_rewrite (IH2 Hb2 i i').
-  - done.
 Qed.
 
 (** ** The inclusion *)
@@ -105,7 +105,7 @@ Proof.
   - eapply Prel_down; [|exact (H2 Hc)]. lia.
 Qed.
 
-Lemma live_sub_df_n n : ∀ W T p, prim T → boxfree T → (∀ m, Prel κ_L m W ∅ T p) → Prel κ_DF n W ∅ T p.
+Lemma live_sub_df_n n : ∀ W T p, tfree T → boxfree T → (∀ m, Prel κ_L m W ∅ T p) → Prel κ_DF n W ∅ T p.
 Proof.
   induction n as [n IHn] using lt_wf_ind. intros W T p HT Hb.
   destruct n as [|n]; [intros; apply Prel_0|]. revert W.
@@ -147,5 +147,5 @@ Proof.
 Qed.
 
 (** live ⊆ DF, for a closed process at a box-free result. *)
-Theorem live_sub_df W T p : prim T → boxfree T → ∅ ⊫_W p : T → ∅ ⊨_W p : T.
+Theorem live_sub_df W T p : tfree T → boxfree T → ∅ ⊫_W p : T → ∅ ⊨_W p : T.
 Proof. intros HT Hb HL n. by apply live_sub_df_n. Qed.

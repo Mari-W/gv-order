@@ -317,14 +317,14 @@ Qed.
 Lemma sdual_bsel i S1 S2 S1' S2' : sdual S1 S1' → sdual S2 S2' → sdual (bsel i S1 S2) (bsel i S1' S2').
 Proof. by destruct i. Qed.
 
-(** A value of a primitive type holds no end. *)
-Lemma Vrel_prim_empty κ n W Θ T v : prim T → Vrel κ n W Θ T v → Θ = ∅.
+(** A value of a [tfree] type holds no end. *)
+Lemma Vrel_tfree_empty κ n W Θ T v : tfree T → Vrel κ n W Θ T v → Θ = ∅.
 Proof.
-  intros Hp. revert Θ v. induction Hp as [|U a V b HU IHU HV IHV|U a V b HU IHU HV IHV|m k C ub c t U a HU IHU];
+  intros Hp. revert Θ v. induction Hp as [|m k C ub c t U a|U a V b HU IHU HV IHV|U a V b HU IHU HV IHV];
     intros Θ v.
   - by intros [-> _]%Vrel_unit_iff.
+  - by intros [-> _]%Vrel_box_iff.
   - intros (v1 & v2 & Θ1 & Θ2 & -> & _ & -> & H1 & H2)%Vrel_prod_iff.
     rewrite (IHU _ _ H1), (IHV _ _ H2). by rewrite (left_id_L ∅ (∪)).
   - intros [(v' & -> & H)|(v' & -> & H)]%Vrel_sum_iff; eauto.
-  - by intros [-> _]%Vrel_box_iff.
 Qed.

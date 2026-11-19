@@ -229,7 +229,7 @@ Section par.
       (A1 ∪ A2) (Π1 ∪ Π2) (tsel (dom M1) U1 U2).
   Proof.
     unfold soup_inv. constructor; simpl.
-    - exact (sp_prim _ _ _ _ _ _ _ _ Hs1).
+    - exact (sp_tfree _ _ _ _ _ _ _ _ Hs1).
     - intros t e He. unfold tsel. apply (lookup_union_Some _ _ _ _ HM) in He as [He|He].
       + assert (t ∈ dom M1) as Ht by (by eapply elem_of_dom_2). rewrite decide_True by done.
         rewrite kres1 by (done || exact dA1). eapply Erel_mono; [apply wext_join_l|].
@@ -338,7 +338,7 @@ Section nu.
   Proof.
     pose proof (soup_dom_A _ _ _ _ _ _ _ _ _ Hs) as HdA. pose proof (soup_dom_P _ _ _ _ _ _ _ _ _ Hs) as HdP.
     simpl in HdA, HdP. unfold soup_inv. constructor; simpl.
-    - exact (sp_prim _ _ _ _ _ _ _ _ Hs).
+    - exact (sp_tfree _ _ _ _ _ _ _ _ Hs).
     - exact (sp_rel _ _ _ _ _ _ _ _ Hs).
     - exact (sp_ty _ _ _ _ _ _ _ _ Hs).
     - exact (sp_fuel _ _ _ _ _ _ _ _ Hs).
@@ -416,7 +416,7 @@ Definition kterm (N : nat) (Θ : tenv) : own := (λ te, Hold 0 (te_pt te) (Some 
 Section term.
   Context (N n : nat) (W : world) (Σ : senv) (ΘB : tenv) (C0 : gset chan) (t : expr) (T : ty) (tk : nat).
   Local Abbreviation Θ := (tenv_of (Some N) Σ ∪ ΘB).
-  Context (Hp : prim T) (HB : ∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) (HΣ : chans_of Σ ## C0)
+  Context (Hp : tfree T) (HB : ∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) (HΣ : chans_of Σ ## C0)
     (Hd : ∀ c, c ∈ C0 → ∃ S (x : point), ΘB !! (c⁺)%cend = Some (TE S x (Some N)) ∧
                                ΘB !! (c⁻)%cend = Some (TE (dual S) (pt_dual x) (Some N)))
     (He : t ∈ E[live]^W _ n⟦tenv_erase Θ ⊢ T⟧^∅)

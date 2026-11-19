@@ -644,17 +644,14 @@ Proof.
   - destruct Hs as (H0 & H1 & H2 & H3). split_and!; auto.
 Qed.
 
-Lemma prim_tfree T : prim T → tfree T.
-Proof. induction 1; constructor; auto. Qed.
-
-(** A primitive result holds no end, so FuelE at it is FuelE of a thread
+(** A result of a [tfree] type holds no end, so FuelE at it is FuelE of a thread
     once the frame and the reserve are dropped. *)
 Lemma FuelE_thread N n T a d r Π φ tk e :
-  prim T → e ∈ F^N _ n⟦RTy T a ▷ d ; r⟧(Π, φ, tk) → FuelT N n Π φ tk e.
+  tfree T → e ∈ F^N _ n⟦RTy T a ▷ d ; r⟧(Π, φ, tk) → FuelT N n Π φ tk e.
 Proof.
   intros Hp H. eapply FuelE_res_mono; [|eapply FuelE_mono; [apply rle_refl|apply cle_refl|apply fle_inf|lia|done|exact H]].
   intros N' m Π0 φ0 v _. rewrite !Vfuel_eq. simpl. intros Hv.
-  by destruct (Vty_tfree _ _ _ _ _ (prim_tfree _ Hp) _ _ _ _ Hv) as (-> & -> & _).
+  by destruct (Vty_tfree _ _ _ _ _ Hp _ _ _ _ Hv) as (-> & -> & _).
 Qed.
 
 (** ** Points are not read *)

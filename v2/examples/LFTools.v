@@ -74,7 +74,7 @@ Qed.
 (** ** Closed programs *)
 
 Lemma lf_main_typed N W t T a c ϑ tk :
-  prim T → typed W (Some N) ∅ hc_empty [] (∅, None) t T a c ϑ →
+  tfree T → typed W (Some N) ∅ hc_empty [] (∅, None) t T a c ϑ →
   ∅ ⊢▷ t → meets ϑ 0 tk → ∅ ⊩^N _ W (∅, {[+ t +]}) : T.
 Proof.
   intros Hp Ht Hg Hm. split.
@@ -87,7 +87,7 @@ Proof.
 Qed.
 
 Lemma lf_main N W t T a c ϑ tk :
-  strict W → wfworld W → prim T → typed W (Some N) ∅ hc_empty [] (∅, None) t T a c ϑ →
+  strict W → wfworld W → tfree T → typed W (Some N) ∅ hc_empty [] (∅, None) t T a c ϑ →
   ∅ ⊢▷ t → meets ϑ 0 tk → lock_free (∅, {[+ t +]}).
 Proof. intros HS HW Hp Ht Hg Hm. eapply (lf_soundness N W _ T HS HW), lf_main_typed; eauto. Qed.
 

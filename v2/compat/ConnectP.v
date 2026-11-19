@@ -11,7 +11,7 @@ From GV Require Export compat.ConnectExtMsg compat.ConnectFuse.
 From GV Require Import fuel.FuelMono.
 
 Section wrapper.
-  Context (κ : ctable) (n : nat) (T : ty) (HT : prim T).
+  Context (κ : ctable) (n : nat) (T : ty) (HT : tfree T).
   Context (IH : ∀ j W, j < S n → ConnL κ j W T).
 
   (** The predicate of the induction on p1. *)
@@ -126,7 +126,7 @@ Section wrapper.
   Qed.
 End wrapper.
 
-Lemma conn_all κ T : prim T → ∀ j W, ConnL κ j W T.
+Lemma conn_all κ T : tfree T → ∀ j W, ConnL κ j W T.
 Proof.
   intros HT j. induction (lt_wf j) as [j _ IH]. intros W. destruct j as [|n].
   - intros ? ? ? ? ? ? _ _ _. apply Prel_0.
@@ -136,7 +136,7 @@ Qed.
 (** P-Connect: two components in P over a cut compose, at the join of
     their worlds. *)
 Theorem sem_p_connect κ n W1 W2 Σ1 ΣC Σ2 ΣD p1 p2 T :
-  prim T →
+  tfree T →
   p1 ∈ P[κ]^W1 _ n⟦Σ1 ∪ ΣC ⊢ T⟧ → p2 ∈ P[κ]^W2 _ n⟦Σ2 ∪ ΣD ⊢ TUnit⟧ →
   conn Σ1 ΣC p1.1 Σ2 ΣD p2.1 →
   pconn p1 p2 (chans_of ΣC) ∈ P[κ]^(W1 ⊔ W2) _ n⟦Σ1 ∪ Σ2 ⊢ T⟧.

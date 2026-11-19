@@ -366,7 +366,7 @@ block(s, {
   id: 'sp-inv', title: 'The soup', rocq: 'soup/State.v: soup_gen, soup/Soup.v: soup_inv, Soup',
   modes: ['lf'],
   tex: R`\begin{array}{l}
-a \in ${h('th.soup', R`S^{N,W}_n\llbracket\Sigma \vdash T\rrbracket`)} \iff ${h('sp.exists', R`\exists A, \Pi, U`)}.\ ${h('sp.prim', R`${h('ty.prim', R`\mathsf{prim}`)}\,T`)} \land \forall t, e.\ q(t) = e \Rightarrow {} \\
+a \in ${h('th.soup', R`S^{N,W}_n\llbracket\Sigma \vdash T\rrbracket`)} \iff ${h('sp.exists', R`\exists A, \Pi, U`)}.\ ${h('sp.tfree', R`${h('ty.tfree', R`\mathsf{tfree}`)}\,T`)} \land \forall t, e.\ q(t) = e \Rightarrow {} \\
 \quad ${h('sp.rel', R`e \in ${h('th.Erel', R`E[\kappa_L]^W_n\llbracket K_t(A) \vdash U_t\rrbracket^{\varnothing}`)}`)} \land ${h('sp.ty', R`U_t \in \{T, \ast\}`)} \land ${h('sp.fuel', R`e \in ${FE('N', 'n', R`${THR} \triangleright \infty ; 0`, R`K_t(\Pi), ${h('sr.ctrs', R`\mathsf{ctrs}`)}\,K\,t, tk_t`)}`)} \\
 \quad ${h('sp.pts', R`\forall o.\ \mathsf{pt}(A\,o) = \mathsf{pt}(K\,o)`)} \land ${h('sp.dom', R`\mathrm{dom}\,\Pi = \mathrm{dom}\,K`)} \land ${h('sp.owner', R`\forall o.\ K(o) = (t, \_, \_) \Rightarrow t \in \mathrm{dom}\,q`)} \\
 \quad ${h('sp.closed', R`\forall o \in \mathrm{dom}\,K.\ ${ECH}\,o \in C \lor o \in \mathrm{dom}\,\Sigma`)} \land ${h('sp.pair', R`\forall o \in \mathrm{dom}\,K.\ ${ECH}\,o \in C \Rightarrow \overline{o} \in \mathrm{dom}\,K`)} \\
@@ -549,9 +549,9 @@ n('sp.state', R`Soup state $a = (q, K, tk)$`, R`A configuration $q$, an ownershi
 n('sp.hold', R`$K(o) = (t, x, f)$`, R`The holder thread $t$, point $x$ and counter $f$ of a held end $o$.`, R`One map records all data the measure reads.`, DEF, R`$K(a) = (0, \rho, 2)$.`, 'soup/State.v: hold');
 n('sp.tk', R`$tk : \mathbb{N} \to \mathbb{N}$`, R`$tk_t$ is the ticket count of thread $t$.`, R`The termination measure of lock-free adequacy sums the tickets of all threads with their reserves, and links lower that sum.`, DEF, R`$tk_0 = 0$.`, 'soup/State.v: s_tk');
 n('sp.exists', R`Chosen per level`, R`$\exists A, \Pi, U$, the environment, protocols and result types chosen at each level.`, R`O-New and F-New pick the session type of a new channel by separate existentials, so $\Pi$ cannot be read off $A$.`, DEF, R`$\exists A\,\Pi\,U$.`, 'soup/Soup.v: Soup');
-n('sp.prim', R`$\mathsf{prim}\,T$`, R`The result type holds no end.`, R`A main thread returning an end would leave that end's partner waiting.`, R`$\mathsf{main}$ returning an end.`, R`$\mathsf{prim}\,\ast$.`, 'soup/State.v: sp_prim');
+n('sp.tfree', R`$\mathsf{tfree}\,T$`, R`The result type holds no end.`, R`A main thread returning an end would leave that end's partner waiting.`, R`$\mathsf{main}$ returning an end.`, R`$\mathsf{tfree}\,\ast$.`, 'soup/State.v: sp_tfree');
 n('sp.rel', R`Every thread live`, R`$\forall t.\ q(t) \in E[\kappa_L]^W_n\llbracket K_t(A) \vdash U_t\rrbracket^{\varnothing}$, where $K_t(A)$ restricts $A$ to the ends held by $t$.`, R`The per-thread live relation excludes internal divergence and infinite chains of spawns.`, DEF, R`$q(0) \in E[\kappa_L]\llbracket K_0(A) \vdash T\rrbracket^{\varnothing}$.`, 'soup/State.v: sp_rel');
-n('sp.ty', R`$U_t \in \{T, \ast\}$`, R`Each thread returns at $T$ or at $\ast$.`, R`A thread that returns has a value in $V$ at $U_t$, and for $U_t \in \{T, \ast\}$ with $\mathsf{prim}\,T$ that value holds no end, which the termination argument uses.`, R`Without it, a finished thread could still hold an end.`, R`$\mathsf{main}$ at $T$, spawned threads at $\ast$.`, 'soup/State.v: sp_ty');
+n('sp.ty', R`$U_t \in \{T, \ast\}$`, R`Each thread returns at $T$ or at $\ast$.`, R`A thread that returns has a value in $V$ at $U_t$, and for $U_t \in \{T, \ast\}$ with $\mathsf{tfree}\,T$ that value holds no end, which the termination argument uses.`, R`Without it, a finished thread could still hold an end.`, R`$\mathsf{main}$ at $T$, spawned threads at $\ast$.`, 'soup/State.v: sp_ty');
 n('sp.fuel', R`Every thread fueled`, R`$\forall t.\ q(t) \in F^N_n\llbracket\mathsf{thread}\rrbracket(K_t(\Pi), \mathsf{ctrs}\,K\,t, tk_t)$.`, R`Counters of the fuel layer are read from $K$, so they are the same at every level.`, DEF, R`$q(0) \in F^N_n\llbracket\mathsf{thread}\rrbracket(\ldots)$.`, 'soup/State.v: sp_fuel');
 n('sp.pts', R`Points of $A$ from $K$`, R`$\forall o.\ \mathsf{pt}(A\,o) = \mathsf{pt}(K\,o)$.`, R`Points are fixed outside the index.`, DEF, R`$A(a) = S@\rho$ and $K(a) = (0, \rho, 2)$.`, 'soup/State.v: sp_pts');
 n('sp.dom', R`$\mathrm{dom}\,\Pi = \mathrm{dom}\,K$`, R`Protocols exist exactly for the held ends.`, R`The lock-free argument finds the protocol of an end of $K$, and of its partner, to decide idleness, and a synchronization updates $\Pi$ and $K$ together.`, R`Without it, a held end could lack a protocol and idleness of a waiting end would be undefined.`, R`$\mathrm{dom}\,\Pi = \mathrm{dom}\,K$.`, 'soup/State.v: sp_dom');
@@ -777,7 +777,7 @@ sa('sp.state', R`a = (q, K, tk) \in \mathsf{Config} \times \mathsf{Own} \times (
 sa('sp.hold', R`K : \mathsf{End} \rightharpoonup \mathbb{N} \times \mathsf{Point} \times (\mathbb{N} \cup \{\infty\})`, [A(R`t, x, f`, R`holder thread, point and counter`)]);
 sa('sp.tk', R`tk : \mathbb{N} \to \mathbb{N}`, [A(R`t`, R`a thread identifier`)]);
 sa('sp.exists', R`\exists A \in ${ENV}, \Pi \in \mathsf{PEnv}, U : \mathbb{N} \to \mathsf{Ty}`, [A(R`A`, R`the environment of all held ends`), aPi, A(R`U`, R`the result type of each thread`)]);
-sa('sp.prim', R`\mathsf{prim}\,T`, [aT]);
+sa('sp.tfree', R`\mathsf{tfree}\,T`, [aT]);
 sa('sp.rel', R`\forall t, e.\ q(t) = e \Rightarrow e \in E[\kappa_L]^{W}_{n}\llbracket K_t(A) \vdash U_t \rrbracket^{\varnothing}`, [A(R`t`, R`a thread`), A(R`K_t(A)`, R`$A$ restricted to the ends held by $t$`)]);
 sa('sp.ty', R`U_t \in \{T, \ast\}`, [A(R`t`, R`a thread`)]);
 sa('sp.fuel', R`e \in F^{N}_{n}\llbracket \mathsf{thread} \triangleright \infty ; 0 \rrbracket(K_t(\Pi), \mathsf{ctrs}\,K\,t, tk_t)`, [A(R`t`, R`a thread`)]);

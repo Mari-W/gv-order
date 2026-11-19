@@ -169,7 +169,7 @@ Section local.
     destruct (HE W (wext_refl W)) as (Hstop & _ & _).
     pose proof (Hstop (proj2 (irred_act e) Ha)) as HV.
     destruct (s_ty Hs t e He) as [Ht|Ht]; rewrite Ht in HV.
-    - exact (Vrel_prim_empty _ _ _ _ _ _ (sp_prim _ _ _ _ _ _ _ _ Hs) HV).
+    - exact (Vrel_tfree_empty _ _ _ _ _ _ (sp_tfree _ _ _ _ _ _ _ _ Hs) HV).
     - by apply Vrel_unit_iff in HV as [-> _].
   Qed.
 

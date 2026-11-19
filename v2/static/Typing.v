@@ -216,7 +216,7 @@ Qed.
 
 Inductive ptyped (N : fuel) : world → senv → proc → ty → Prop :=
   | p_term W Σ ΘB C0 t T a c ϑ :
-      prim T →
+      tfree T →
       (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 → pfree Σ →
       (∀ c, c ∈ C0 → ∃ S x, ΘB !! (c⁺)%cend = Some (TE S x N) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ N)) →
       typed W N (tenv_of N Σ ∪ ΘB) hc_empty [] (∅, None) t T a c ϑ →
@@ -275,7 +275,7 @@ Proof.
   apply p_connect; try done. by apply p_join_iff_connect.
 Qed.
 
-Lemma ptyped_prim N W Σ p T : ptyped N W Σ p T → prim T.
+Lemma ptyped_tfree N W Σ p T : ptyped N W Σ p T → tfree T.
 Proof. induction 1; auto. Qed.
 
 Lemma chans_of_union (Σ1 Σ2 : senv) : chans_of (Σ1 ∪ Σ2) = chans_of Σ1 ∪ chans_of Σ2.

@@ -24,7 +24,7 @@ Inductive cctx (κ : ctable) (n : nat) (W1 : world) (T : ty) (X1 X2 : prel)
     (Σ1 ΣC Σ2 ΣD : senv) (q1 q2 : proc) : Prop :=
   | CCtx
       (cc_HS : strict W1)
-      (cc_HT : prim T)
+      (cc_HT : tfree T)
       (cc_Hc : conn Σ1 ΣC q1.1 Σ2 ΣD q2.1)
       (cc_H1 : Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X1 W1 (Σ1 ∪ ΣC) T q1)
       (cc_H2 : Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X2 W1 (Σ2 ∪ ΣD) TUnit q2)
@@ -49,7 +49,7 @@ Section cctx_proj.
   Context κ n W1 T X1 X2 Σ1 ΣC Σ2 ΣD q1 q2 (H : cctx κ n W1 T X1 X2 Σ1 ΣC Σ2 ΣD q1 q2).
   Lemma cc_HS : strict W1.
   Proof. by destruct H. Qed.
-  Lemma cc_HT : prim T.
+  Lemma cc_HT : tfree T.
   Proof. by destruct H. Qed.
   Lemma cc_Hc : conn Σ1 ΣC q1.1 Σ2 ΣD q2.1.
   Proof. by destruct H. Qed.
