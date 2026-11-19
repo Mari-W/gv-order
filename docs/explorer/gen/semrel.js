@@ -32,13 +32,8 @@ const V = (W, nn, Th, T) => h('th.Vrel', R`V^{${W}}_{${nn}}\llbracket ${Th} \vda
 const E = (W, nn, Th, T, F) => h('th.Erel', R`E^{${W}}_{${nn}}\llbracket ${Th} \vdash ${T} \rrbracket^{${F}}`);
 const P = (W, nn, Sg, T) => h('th.Prel', R`P^{${W}}_{${nn}}\llbracket ${Sg} \vdash ${T} \rrbracket`);
 const AT = (t) => h('rel.atcost', R`${t}\ \text{at}`);
-const FV = (N, nn, T, args) => h('sr.FV', R`FV^{${N}}_{${nn}}\llbracket ${T} \rrbracket(${args})`);
-const FE = (N, nn, body, args) => h('sr.FE', R`F^{${N}}_{${nn}}\llbracket ${body} \rrbracket(${args})`);
 const THR = h('fu.rty', R`\mathsf{thread}`);
 const ACT = h('sr.act', R`\mathsf{act}`);
-const FSPARE = h('fu.fspare', R`\mathsf{fspare}`);
-const REFILL = h('fu.refillop', R`\mathsf{refill}`);
-const FHAND = h('fu.fhand', R`\mathsf{fhand}`);
 // tk tickets cover the need of vartheta with r left over
 const MEETS = h('ann.meets', R`\vartheta(r) \leq tk`);
 const RLE = REL('fu.refill-kripke', R`\sqsupseteq_{\mathsf{rle}}`);
@@ -59,7 +54,7 @@ ${h('th.Erel', R`e \in E^{W}_{n}\llbracket \Theta \vdash T \rrbracket^{F}`)} & \
 ${h('th.Prel', R`p \in P^{W}_{n}\llbracket \Sigma \vdash T \rrbracket`)} & \text{the process } p \text{ is safe with interface } \Sigma \\
 ${h('sr.obl', R`\mathsf{Obl}_\alpha(e')`)} & \text{what a step } e \xrightarrow{\alpha} e' \text{ must preserve} \\
 ${h('rel.atcost', R`e'\ \text{at}\ \Theta'`)} & e' \text{ is safe holding } \Theta' \text{, at the same level after a free step and one level lower otherwise}
-\annraw{\\}\annot{${h('sr.FE', R`e \in F^{N}_{n}\llbracket \sigma \triangleright d ; r \rrbracket(\Pi, \varphi, tk)`)}}\annraw{&}\annot{\text{the thread } e \text{ has counters } \varphi \text{ and tickets } tk \text{ for } n \text{ more steps, reading no point}}
+\annraw{\\}\annot{${h('sr.FE', R`e \in F^{N}_{n}\llbracket \Phi ; tk \vdash \sigma\ !\ (d, r) \rrbracket`)}}\annraw{&}\annot{\text{the thread } e \text{, holding } \Phi \text{ with counters and } tk \text{ tickets, has fuel for } n \text{ more steps}}
 \annraw{\\}\annot{${h('th.soup', R`a \in S^{N,W}_{n}\llbracket \Sigma \vdash T \rrbracket`)}}\annraw{&}\annot{\text{every thread of } a \text{ is in } E[\kappa_L] \text{ and fueled, over one ownership map}}
 \end{array}`,
   caption: 'Every relation is indexed by a world $W$, whose order of points it reads, and a level $n$, the number of further steps it promises safety for. A term is safe when it is a safe value, or when it is ready and every step leads to a safe term one level lower that holds the ends the step leaves it. Values are safe by their type, the obligations say which ends each step leaves, and readiness says that a stuck term waits below the partner points of what it holds. Processes are safe in the same way, and closed under fusing their ends, so composing two safe processes needs no new proof. \\annp{The lock-free reading adds fuel, a second predicate on each thread, and the soup, which asks both of every thread.}'
@@ -279,54 +274,68 @@ block(s, {
 });
 
 // fuel
-// the successor has fuel at level j with the listed components changed, the others as before
-const FN = (j, upd) => h('fu.upd', upd ? R`e' \in F_{${j}}[${upd}]` : R`e' \in F_{${j}}`);
-const UNFO = (o) => R`${UNF}(\Pi\,${o})`;
+// e ∈ F^N_n⟦Φ ; tk ⊢ σ ! (d, r)⟧: the thread e, holding the ends Φ (protocol and counter each) and tk tickets,
+// has fuel for n steps to return at σ within d actions with r tickets left. Indexed, so written like E, not as a judgment.
+const FF = (N, nn, Phi, tk, sig, d, r) => h('sr.FE', R`F^{${N}}_{${nn}}\llbracket ${Phi} ; ${tk} \vdash ${sig}\ !\ (${d}, ${r}) \rrbracket`);
+const FFV = (N, nn, Phi, T) => h('sr.FV', R`FV^{${N}}_{${nn}}\llbracket ${Phi} \vdash ${T} \rrbracket`);
+const PHI = h('fu.Phi', R`\Phi`);
+const TICK = (x) => h('fu.tick', R`${x}{\downarrow}`);
+const SPARE = h('fu.fspare', R`\mathsf{spare}`);
+// the successor with the given ends, tickets, frame
+const NX = (j, Phi, tk = 'tk', d = 'd') => R`e' \in ${FF('N', j, Phi, tk, R`\sigma`, d, 'r')}`;
 block(s, {
   id: 'fu-vs', title: 'Relation and fuel side by side', rocq: 'relation/Relation.v: Erel; fuel/Fuel.v: FuelE; soup/Soup.v: Soup',
   modes: ['lf'],
   tex: R`\begin{array}{l|l|l}
  & \text{the relation} & \text{fuel} \\ \hline
-\text{a thread} & ${E('W', 'n', R`\Theta`, 'T', 'F')} & ${FE('N', 'n', R`\sigma \triangleright d ; r`, R`\Pi, \varphi, tk`)} \\
-\text{it reads} & \text{the world } W\text{, points, owned ends } \Theta & \text{protocols } \Pi\text{, counters } \varphi\text{, tickets } tk \\
-\text{a value} & ${V('W', 'n', R`\Theta`, 'T')} & ${FV('N', 'n', R`T^{a}`, R`\Pi, \varphi`)} \\
+\text{a thread} & e \in ${E('W', 'n', R`\Theta`, 'T', 'F')} & e \in ${FF('N', 'n', PHI, 'tk', R`\sigma`, 'd', 'r')} \\
+\text{an end} & o \mapsto S@x \text{ in } \Theta & o \mapsto S^{f} \text{ in } \Phi \\
+\text{a value} & v \in ${V('W', 'n', R`\Theta`, 'T')} & v \in ${FFV('N', 'n', PHI, R`T^{a}`)} \\
 \text{a step } \alpha & ${h('sr.obl', R`\mathsf{Obl}_\alpha(e')`)} & ${h('sr.fobl', R`\mathsf{Fobl}_\alpha(e')`)} \\
 \text{rules out} & \text{a stuck wait, and at } \kappa_L \text{ a loop of free steps} & \text{a wait that never ends} \\
 \text{used in} & \vDash \text{ and the soup} & \text{the soup only}
 \end{array}`,
-  caption: 'Fuel is not part of the relation. It is a second predicate on the same thread with the same shape, a value clause and one obligation per step, and it reads counters and tickets where the relation reads points. The soup asks both of every thread. The relation makes every thread ready when stuck, and fuel bounds how often the holder of a partner end may act elsewhere first, so every wait ends.'
+  caption: 'Fuel is not part of the relation. It is a second predicate on the same thread with the same shape, a value clause and one obligation per step. Where the relation gives each end a point, $S@x$, fuel gives it a counter, $S^f$, and fuel also counts link tickets $tk$. The soup asks both of every thread. The relation makes every thread ready when stuck, and fuel bounds how often the holder of a partner end may act elsewhere first, so every wait ends.'
 });
 block(s, {
   id: 'fu-def', title: 'Fuel', rocq: 'fuel/Fuel.v: Fdef, FuelE, FLev',
   modes: ['lf'],
   tex: R`\begin{array}{c}
-${RULE('F-Run', [[h('fu.refill-kripke', R`\forall N' ${RLE} N`), h('fu.rename', R`\forall g \text{ injective on } \mathrm{dom}\,\Pi`)], [h('fu.val', R`g(e) \in \mathsf{Val} \Rightarrow r \leq tk \land g(e) \in ${FV("N'", R`n{+}1`, R`\sigma`, R`g\Pi, g\varphi`)}`)], [h('fu.step', R`g(e) \xrightarrow{\alpha} e' \Rightarrow ${h('sr.fobl', R`\mathsf{Fobl}^{N'}_{\alpha}(e')`)}`)]], R`e \in ${FE('N', R`n{+}1`, R`${h('fu.rty', R`\sigma`)} \triangleright ${h('fu.frame', 'd')} ; ${h('fu.reserve', 'r')}`, R`${h('fu.Pi', R`\Pi`)}, ${h('fu.phi', R`\varphi`)}, ${h('fu.tk', 'tk')}`)}`)}
-\qquad ${h('fu.zero', R`e \in ${FE('N', '0', R`\sigma \triangleright d ; r`, R`\Pi, \varphi, tk`)}`)} \\[6pt]
-${h('fu.upd', R`F_n[x := v]`)} = F^{N'}_{n}\llbracket \sigma \triangleright d ; r \rrbracket(\Pi, \varphi, tk) \text{ with the component } x \text{ replaced by } v \qquad ${h('fu.oneclock', R`\text{every step costs one level}`)}
+${RULE('F-Run', [[h('fu.refill-kripke', R`\forall N' ${RLE} N`), h('fu.rename', R`\forall g \text{ injective on } \mathrm{dom}\,\Phi`)], [h('fu.val', R`g(e) \in \mathsf{Val} \Rightarrow r \leq tk \land g(e) \in ${FFV("N'", R`n{+}1`, R`g\Phi`, R`\sigma`)}`)], [h('fu.step', R`g(e) \xrightarrow{\alpha} e' \Rightarrow ${h('sr.fobl', R`\mathsf{Fobl}^{N'}_{\alpha}(e')`)}`)]], R`e \in ${FF('N', R`n{+}1`, PHI, h('fu.tk', 'tk'), h('fu.rty', R`\sigma`), h('fu.frame', 'd'), h('fu.reserve', 'r'))}`)}
+\qquad ${h('fu.zero', R`e \in ${FF('N', '0', R`\Phi`, 'tk', R`\sigma`, 'd', 'r')}`)} \\[6pt]
+${h('fu.Phi', R`\Phi : o \mapsto S^{f}`)} \qquad ${h('fu.oneclock', R`\text{every step costs one level}`)}
 \end{array}`,
-  caption: 'A thread $e$ holds ends with protocols $\\Pi$ and counters $\\varphi$, and $tk$ link tickets. It returns at $\\sigma$ after at most $d$ actions with $r$ tickets left. At level $n+1$ it returns a fueled value or every step meets its fuel obligation at level $n$. Fuel reads no point, no world and no relation.'
+  caption: 'The thread $e$ holds the ends $\\Phi$, each with its protocol $S$ and counter $f$, and $tk$ link tickets. It has fuel at level $n+1$ when it returns at $\\sigma$ with at most its tickets reserved, or every step meets its fuel obligation at level $n$. $d$ bounds the actions before it returns and $r$ the tickets it keeps. Fuel reads no point, no world and no relation.'
 });
 block(s, {
-  id: 'fu-act', title: 'An action', rocq: 'fuel/Fuel.v: f_act, fspare, idle_at, refill, ftick',
+  id: 'fu-act', title: 'An action', rocq: 'fuel/Fuel.v: f_act, fspare, idle_at, refill, ftick, fhand',
   modes: ['lf'],
   tex: R`\begin{array}{rcll}
-${ACT}\,o & \iff & ${h('F-Wait', R`o \in \mathrm{dom}\,\varphi \land \neg ${h('fu.idle', R`\mathsf{idle}`)}(\Pi\,o)`)} & \text{F-Wait} \\
- & \land & ${h('F-Tick', R`${FSPARE}\,\Pi\,\varphi\,(\mathrm{dom}\,\varphi \setminus \{o\})`)} \land ${h('F-Tick.frame', R`1 \leq d`)} & \text{F-Tick} \\[4pt]
-${FSPARE}\,\Pi\,\varphi\,X & \iff & ${h('fu.fspare', R`\forall o' \in X.\ \neg\mathsf{idle}(\Pi\,o') \Rightarrow 1 \leq \varphi(o')`)} \\
-${REFILL}\,N\,o\,\varphi & = & ${h('fu.refillop', R`(\varphi \setminus o) ${DM} 1\ [o \mapsto N]`)} \\
-${FHAND}\,M\,\varphi & = & ${h('fu.fhand', R`(\varphi|_M) ${DM} 1`)} \\
+${ACT}\,o & \iff & ${h('F-Wait', R`\Phi(o) = S^{f} \land \neg ${h('fu.idle', R`\mathsf{idle}`)}\,S`)} & \text{F-Wait} \\
+ & \land & ${h('F-Tick', R`${SPARE}(\Phi \setminus o)`)} \land ${h('F-Tick.frame', R`1 \leq d`)} & \text{F-Tick} \\[4pt]
+${SPARE}(\Phi) & \iff & ${h('fu.fspare', R`\forall o \mapsto S^{f} \in \Phi.\ \neg\mathsf{idle}\,S \Rightarrow 1 \leq f`)} \\
+${TICK(R`\Phi`)} & = & ${h('fu.tick', R`\{o \mapsto S^{f ${DM} 1} \mid o \mapsto S^{f} \in \Phi\}`)} \\
 \mathsf{idle}\,S & \iff & ${UNF}\,S = ${h('sty.skip', R`\mathsf{Skip}`)}
 \end{array}`,
-  caption: 'An action on $o$ asks $o$ held and not idle, and a unit to spare on every other live end and on the frame. Afterwards $o$ refills to $N$ and every other counter drops by one. Ends handed to another thread arrive one lower.'
+  caption: 'An action on $o$ asks $o$ held and not idle, and a unit to spare on every other live end and on the frame. Afterwards $o$ is back at $N$ and every other counter drops by one, $\\Phi{\\downarrow}[o \\mapsto S^{N}]$. Ends handed to another thread arrive one lower, $\\Phi|_M{\\downarrow}$.'
+});
+block(s, {
+  id: 'fu-fsem', title: 'Fuel of a thread', rocq: 'fuel/Fuel.v: fsem; cost/CostSem.v: csem',
+  modes: ['lf'],
+  tex: R`\begin{array}{l}
+${h('fu.fsem', R`\mathsf{fsem}\,N\,\Pi\,e \iff \exists tk.\ \forall n.\ e \in ${FF('N', 'n', R`\Pi^{N}`, 'tk', THR, R`\infty`, '0')}`)} \qquad \Pi^{N} = \{o \mapsto S^{N} \mid o \mapsto S \in \Pi\} \\
+${h('cs.csem', R`\Delta \vDash^{N} e : T\ !\ \varepsilon`)}
+\end{array}`,
+  caption: 'A thread has fuel when it has fuel at every level, with every held end at $N$ and one ticket count for all levels. This is the only fuel statement free of the level.'
 });
 block(s, {
   id: 'fu-obl-int', title: 'Fuel obligations of internal steps', rocq: 'fuel/Fuel.v: f_beta, f_new, f_spawn, f_link, plink',
   modes: ['lf'],
   tex: R`\begin{array}{c}
-${RULE('F-Beta', [[FN('n')]], R`${h('F-Beta', R`\mathsf{Fobl}_{\beta}(e')`)}`)} \qquad
-${RULE('F-New', [[R`${h('F-New.fresh', R`c^{\pm} \notin \mathrm{dom}\,\varphi`)} \Rightarrow \exists S.\ ${FN('n', R`\Pi := \Pi[c^{+} \mapsto S, c^{-} \mapsto \overline{S}],\ ${h('F-New.cnew', R`\varphi := \varphi[c^{\pm} \mapsto N]`)}`)}`]], R`${h('F-New', R`\mathsf{Fobl}_{\mathsf{new}\,c}(e')`)}`)} \\[10pt]
-${RULE('F-Spawn', [[R`M = ${FENDS}(v)`, h('F-Spawn.held', R`M \subseteq \mathrm{dom}\,\varphi`), R`${FSPARE}\,\Pi\,\varphi\,M`], [h('F-Spawn.child', R`v\,\ast \in ${FE('N', 'n', R`${THR} \triangleright \infty ; 0`, R`\Pi|_M,\ ${FHAND}\,M\,\varphi,\ \lceil tk/2 \rceil`)}`)], [FN('n', R`\Pi := \Pi \setminus M,\ \varphi := \varphi \setminus M,\ ${h('F-Spawn.tickets', R`tk := \lfloor tk/2 \rfloor`)}`)]], R`${h('F-Spawn', R`\mathsf{Fobl}_{\mathsf{spawn}\,v}(e')`)}`)} \\[10pt]
-${RULE('F-Link', [[h('F-Link.plink', R`o_1 \neq o_2 \land \Pi(o_2) ${SEQU} \overline{\Pi(o_1)}`), R`o_1, o_2 \in \mathrm{dom}\,\varphi`, h('F-Link.ticket', R`1 \leq tk`)], [FN('n', R`\Pi := \Pi \setminus \{o_1,o_2\},\ \varphi := \varphi \setminus \{o_1,o_2\},\ tk := tk - 1`)]], R`${h('F-Link', R`\mathsf{Fobl}_{\mathsf{link}\,o_1\,o_2}(e')`)}`)}
+${RULE('F-Beta', [[NX('n', R`\Phi`)]], R`${h('F-Beta', R`\mathsf{Fobl}_{\beta}(e')`)}`)} \qquad
+${RULE('F-New', [[R`${h('F-New.fresh', R`c^{\pm} \notin \mathrm{dom}\,\Phi`)} \Rightarrow \exists S.\ ${NX('n', h('F-New.cnew', R`\Phi[c^{+} \mapsto S^{N}, c^{-} \mapsto \overline{S}^{N}]`))}`]], R`${h('F-New', R`\mathsf{Fobl}_{\mathsf{new}\,c}(e')`)}`)} \\[10pt]
+${RULE('F-Spawn', [[R`M = ${FENDS}(v)`, h('F-Spawn.held', R`M \subseteq \mathrm{dom}\,\Phi`), R`${SPARE}(\Phi|_M)`], [h('F-Spawn.child', R`v\,\ast \in ${FF('N', 'n', TICK(R`\Phi|_M`), R`\lceil tk/2 \rceil`, THR, R`\infty`, '0')}`)], [NX('n', R`\Phi \setminus M`, h('F-Spawn.tickets', R`\lfloor tk/2 \rfloor`))]], R`${h('F-Spawn', R`\mathsf{Fobl}_{\mathsf{spawn}\,v}(e')`)}`)} \\[10pt]
+${RULE('F-Link', [[h('F-Link.plink', R`\Phi(o_1) = S^{f},\ \Phi(o_2) = S'^{f'},\ o_1 \neq o_2,\ S' ${SEQU} \overline{S}`), h('F-Link.ticket', R`1 \leq tk`)], [NX('n', R`\Phi \setminus \{o_1,o_2\}`, R`tk - 1`)]], R`${h('F-Link', R`\mathsf{Fobl}_{\mathsf{link}\,o_1\,o_2}(e')`)}`)}
 \end{array}`,
   caption: 'Internal steps tick no counter. A new channel starts both ends at $N$. A spawn hands the ends of the thunk to the child one lower, with half the tickets. A link drops two dual ends and spends one ticket.'
 });
@@ -334,33 +343,24 @@ block(s, {
   id: 'fu-obl', title: 'Fuel obligations of actions', rocq: 'fuel/Fuel.v: f_send, f_recv, f_close, f_select, f_branch',
   modes: ['lf'],
   tex: R`\begin{array}{c}
-${RULE('F-Send', [[R`${ACT}\,o`, R`${UNFO('o')} = ${SND('T')}.S`, R`M = ${FENDS}(w)`, h('F-Send.notsubj', R`M \subseteq \mathrm{dom}\,\varphi \setminus \{o\}`), R`${FSPARE}\,\Pi\,\varphi\,M`], [h('F-Send.payload', R`w \in ${FV('N', 'n', 'T', R`\Pi|_M,\ ${FHAND}\,M\,\varphi`)}`)], [FN('n', R`d := d ${DM} 1,\ \Pi := (\Pi \setminus M)[o \mapsto S],\ \varphi := ${REFILL}\,N\,o\,(\varphi \setminus M)`)]], R`${h('F-Send', R`\mathsf{Fobl}_{\mathsf{send}\,o\,w}(e')`)}`)} \\[10pt]
-${RULE('F-Recv', [[R`${ACT}\,o`, R`${UNFO('o')} = ${RCV('T')}.S`], [h('F-Recv.forall', R`\forall j \leq n,\ \Pi_i, \varphi_i \text{ disjoint}.\ w \in ${FV('N', 'j', 'T', R`\Pi_i, \varphi_i`)}`) + R` \Rightarrow ${FN('j', R`d := d ${DM} 1,\ \Pi := \Pi[o \mapsto S] \cup \Pi_i,\ \varphi := ${REFILL}\,N\,o\,\varphi \cup \varphi_i`)}`]], R`${h('F-Recv', R`\mathsf{Fobl}_{\mathsf{recv}\,o\,w}(e')`)}`)} \\[10pt]
-${RULE('F-Close', [[R`${ACT}\,o`, R`${UNFO('o')} = ${CLOSE}`], [FN('n', R`d := d ${DM} 1,\ \Pi := \Pi \setminus o,\ \varphi := (\varphi \setminus o) ${DM} 1`)]], R`${h('F-Close', R`\mathsf{Fobl}_{\mathsf{close}\,o}(e')`)}`)} \qquad
-${RULE('F-Choice', [[R`${ACT}\,o`, R`${UNFO('o')} \in \{\oplus(S_1,S_2), \&(S_1,S_2)\}`], [FN('n', R`d := d ${DM} 1,\ \Pi := \Pi[o \mapsto S_i],\ \varphi := ${REFILL}\,N\,o\,\varphi`)]], R`${h('F-Close', R`\mathsf{Fobl}_{\mathsf{sel}_i\,o}(e'),\ \mathsf{Fobl}_{\mathsf{bra}_i\,o}(e')`)}`)}
+${RULE('F-Send', [[R`${ACT}\,o`, R`\Phi(o) = S_0^{f}`, R`${UNF}\,S_0 = ${SND('T')}.S`, R`M = ${FENDS}(w)`, h('F-Send.notsubj', R`o \notin M \subseteq \mathrm{dom}\,\Phi`), R`${SPARE}(\Phi|_M)`], [h('F-Send.payload', R`w \in ${FFV('N', 'n', TICK(R`\Phi|_M`), 'T')}`)], [NX('n', R`${TICK(R`(\Phi \setminus M)`)}[o \mapsto S^{N}]`, 'tk', R`d ${DM} 1`)]], R`${h('F-Send', R`\mathsf{Fobl}_{\mathsf{send}\,o\,w}(e')`)}`)} \\[10pt]
+${RULE('F-Recv', [[R`${ACT}\,o`, R`\Phi(o) = S_0^{f}`, R`${UNF}\,S_0 = ${RCV('T')}.S`], [h('F-Recv.forall', R`\forall j \leq n,\ \Phi_i \mathbin{\#} \Phi.\ w \in ${FFV('N', 'j', R`\Phi_i`, 'T')}`) + R` \Rightarrow ${NX('j', R`${TICK(R`\Phi`)}[o \mapsto S^{N}] \cup \Phi_i`, 'tk', R`d ${DM} 1`)}`]], R`${h('F-Recv', R`\mathsf{Fobl}_{\mathsf{recv}\,o\,w}(e')`)}`)} \\[10pt]
+${RULE('F-Close', [[R`${ACT}\,o`, R`\Phi(o) = S_0^{f}`, R`${UNF}\,S_0 = ${CLOSE}`], [NX('n', TICK(R`(\Phi \setminus o)`), 'tk', R`d ${DM} 1`)]], R`${h('F-Close', R`\mathsf{Fobl}_{\mathsf{close}\,o}(e')`)}`)} \qquad
+${RULE('F-Choice', [[R`${ACT}\,o`, R`\Phi(o) = S_0^{f}`, R`${UNF}\,S_0 \in \{\oplus(S_1,S_2), \&(S_1,S_2)\}`], [NX('n', R`${TICK(R`\Phi`)}[o \mapsto S_i^{N}]`, 'tk', R`d ${DM} 1`)]], R`${h('F-Close', R`\mathsf{Fobl}_{\mathsf{sel}_i\,o}(e'),\ \mathsf{Fobl}_{\mathsf{bra}_i\,o}(e')`)}`)}
 \end{array}`,
-  caption: 'Every action spends one unit of the frame, advances the protocol of $o$, refills $o$ and ticks the other ends. A send also hands its payload ends on one lower, and a receive continues for every fueled value that may arrive.'
+  caption: 'Every action spends one unit of the frame, advances the protocol of $o$, sets its counter back to $N$ and ticks the other ends. A send also hands its payload ends on one lower, and a receive continues for every fueled value that may arrive. The successor keeps $\\sigma$ and $r$.'
 });
 block(s, {
   id: 'fv', title: 'Fueled values', rocq: 'fuel/Fuel.v: Vty, Vres',
   modes: ['lf'],
   tex: R`\begin{array}{c}
-${RULE('FV-Sess', [[R`\Pi = \{o \mapsto S'\}`, R`\varphi = \{o \mapsto f\}`, R`S' ${SEQU} S`, h('FV-Sess.counter', R`a \leq f`)]], h('FV-Sess', R`o \in FV\llbracket (S@x)^{a}\rrbracket(\Pi, \varphi)`))} \qquad
-${RULE('FV-Thread', [[R`\Pi = \varphi = \varnothing`]], h('FV-Thread', R`v \in FV\llbracket ${THR} \rrbracket(\Pi,\varphi)`))} \\[10pt]
-${RULE('FV-Arrow', [[h('FV-Arrow.exact', R`${FENDS}\,e = \mathrm{dom}\,\Pi = \mathrm{dom}\,\varphi`), h('FV-Arrow.floor', R`\forall o.\ h + a \leq \varphi(o)`)], [R`\forall N' ${RLE} N,\ j < n,\ \varphi' \geq h \text{ on } \mathrm{dom}\,\varphi,\ u \in ${FV("N'", 'j', 'T', R`\Pi_u, \varphi_u`)},\ ${MEETS}`], [h('FV-Arrow.body', R`e[u] \in ${FE("N'", 'j', R`U \triangleright c ; r`, R`\Pi \cup \Pi_u, \varphi' \cup \varphi_u, tk`)}`)]], h('FV-Arrow', R`\lambda e \in FV^N_n\llbracket (T ${ARR}[(c,\vartheta);h]\, U)^{a}\rrbracket(\Pi,\varphi)`))} \\[10pt]
-${RULE('FV-Box', [[h('FV-Box.noends', R`${FENDS}\,e = \varnothing`)], [R`\forall N' ${RLE} N,\ j < n,\ \bar s \in ${h('tp.sinsts', R`\mathsf{sinsts}`)}\,N',\ ${MEETS}`], [h('FV-Box.body', R`e[!e] \in ${FE("N'", 'j', R`U[\bar s] \triangleright c ; r`, R`\varnothing,\varnothing,tk`)}`)]], h('FV-Box', R`!e \in FV^N_n\llbracket \Box(\ldots (c,\vartheta) \ldots U)\rrbracket(\varnothing,\varnothing)`))} \\[6pt]
-${h('sr.fvagg', R`\otimes, \oplus, \exists \text{ split } \Pi, \varphi \text{ among their parts}`)}
+${RULE('FV-Sess', [[R`S' ${SEQU} S`, h('FV-Sess.counter', R`a \leq f`)]], h('FV-Sess', R`o \in ${FFV('N', 'n', R`\{o \mapsto S'^{f}\}`, R`(S@x)^{a}`)}`))} \qquad
+${RULE('FV-Thread', [[R`\Phi = \varnothing`]], h('FV-Thread', R`v \in ${FFV('N', 'n', R`\Phi`, THR)}`))} \\[10pt]
+${RULE('FV-Arrow', [[h('FV-Arrow.exact', R`${FENDS}\,e = \mathrm{dom}\,\Phi`), h('FV-Arrow.floor', R`\Phi(o) = S^{f} \Rightarrow h + a \leq f`)], [R`\forall N' ${RLE} N,\ j < n,\ \Phi' \geq h \text{ with the protocols of } \Phi,\ u \in ${FFV("N'", 'j', R`\Phi_u`, 'T')},\ ${MEETS}`], [h('FV-Arrow.body', R`e[u] \in ${FF("N'", 'j', R`\Phi' \cup \Phi_u`, 'tk', 'U', 'c', 'r')}`)]], h('FV-Arrow', R`\lambda e \in ${FFV('N', 'n', R`\Phi`, R`(T ${ARR}[(c,\vartheta);h]\, U)^{a}`)}`))} \\[10pt]
+${RULE('FV-Box', [[h('FV-Box.noends', R`${FENDS}\,e = \varnothing`)], [R`\forall N' ${RLE} N,\ j < n,\ \bar s \in ${h('tp.sinsts', R`\mathsf{sinsts}`)}\,N',\ ${MEETS}`], [h('FV-Box.body', R`e[!e] \in ${FF("N'", 'j', R`\varnothing`, 'tk', R`U[\bar s]`, 'c', 'r')}`)]], h('FV-Box', R`!e \in ${FFV('N', 'n', R`\varnothing`, R`\Box(\ldots (c,\vartheta) \ldots U)`)}`))} \\[6pt]
+${h('sr.fvagg', R`\otimes, \oplus, \exists \text{ split } \Phi \text{ among their parts}`)}
 \end{array}`,
-  caption: 'Fueled values by recursion on the type. An end has at least its credit. A closure keeps its captured counters at the floor $h$ plus its credit, and its body has fuel at every call. A box holds nothing and its body has fuel at every force. Points are never read.'
-});
-block(s, {
-  id: 'fu-fsem', title: 'Fuel of a thread', rocq: 'fuel/Fuel.v: fsem; cost/CostSem.v: csem',
-  modes: ['lf'],
-  tex: R`\begin{array}{l}
-${h('fu.fsem', R`\mathsf{fsem}\,N\,\Pi\,e \iff \exists tk.\ \forall n.\ e \in ${FE('N', 'n', R`${THR} \triangleright \infty ; 0`, R`\Pi, (\lambda\_.N)|_{\mathrm{dom}\,\Pi}, tk`)}`)} \\
-${h('cs.csem', R`\Delta \vDash^{N} e : T\ !\ \varepsilon`)}
-\end{array}`,
-  caption: 'A thread has fuel at every level with every held end at $N$ and one ticket count for all levels.'
+  caption: 'Fueled values by recursion on the type. An end has at least its credit as counter. A closure keeps its captured counters at the floor $h$ plus its credit, and its body has fuel at every call. A box holds nothing and its body has fuel at every force. Points are never read.'
 });
 
 // soup
@@ -379,9 +379,9 @@ block(s, {
   tex: R`\begin{array}{rcll}
 a \in ${h('th.soup', R`S^{N,W}_n\llbracket\Sigma \vdash T\rrbracket`)} & \iff & ${h('sp.exists', R`\exists A, \Pi`)}.\ ${h('sp.prim', R`${h('ty.prim', R`\mathsf{prim}`)}\,T`)} \land \text{for every thread } t \text{ running } e\text{,} & \\[1ex]
  & & \quad ${h('sp.rel', R`e \in ${h('th.Erel', R`E[\kappa_L]^W_n\llbracket A_t \vdash U_t\rrbracket^{\varnothing}`)}`)} & \text{the relation} \\
- & & \quad ${h('sp.fuel', R`e \in ${FE('N', 'n', R`${THR} \triangleright \infty ; 0`, R`\Pi_t, \varphi_t, tk_t`)}`)} & \text{fuel} \\
+ & & \quad ${h('sp.fuel', R`e \in ${FF('N', 'n', R`\Phi_t`, R`tk_t`, THR, R`\infty`, '0')}`)} & \text{fuel} \\
  & & \land\ ${OWN}(a, A, \Pi) & \\[2ex]
-A_t,\ \Pi_t,\ \varphi_t & = & A,\ \Pi \text{ and } ${h('sr.ctrs', R`\text{the counters of } K`)} \text{ on the ends } K \text{ gives } t & ${h('sp.ty', R`U_t \in \{T, \ast\}`)} \\[2ex]
+A_t,\ \Phi_t & = & A \text{ and } \{o \mapsto \Pi(o)^{f} \mid K(o) = (t, \_, f)\} \text{ on the ends } K \text{ gives } t & ${h('sp.ty', R`U_t \in \{T, \ast\}`)} \\[2ex]
 ${OWN}(a, A, \Pi) & \iff & ${h('sp.pts', R`\mathsf{pt}(A\,o) = \mathsf{pt}(K\,o)`)} \land ${h('sp.dom', R`\mathrm{dom}\,\Pi = \mathrm{dom}\,K`)} \land ${h('sp.owner', R`K(o) = (t, \_, \_) \Rightarrow t \in \mathrm{dom}\,q`)} & \text{owners} \\
  & \land & ${h('sp.closed', R`o \in \mathrm{dom}\,K \Rightarrow ${ECH}\,o \in C \lor o \in \mathrm{dom}\,\Sigma`)} \land ${h('sp.pair', R`o \in \mathrm{dom}\,K \land ${ECH}\,o \in C \Rightarrow \overline{o} \in \mathrm{dom}\,K`)} & \text{closed} \\
  & \land & ${h('sp.sdual', R`${ECH}\,o \in C \land A(o) = S@x \land A(\overline{o}) = S'@x' \Rightarrow x' = \overline{x} \land ${SDUAL}\,S\,S'`)} & \text{dual} \\
@@ -509,54 +509,51 @@ n('sj.den', R`$\mathsf{den}_{\rho,B}(F)$`, R`$\mathsf{den}_{\rho,B}(F_1, f) = F_
 n('sj.term', R`$\Delta \vDash^{F}_W e : T$`, R`$\forall \rho, B.\ \Delta \vDash^{\mathsf{den}_{\rho,B}(F)}_W e : T$, with the same context $\Delta$ as the typing judgment.`, R`It is the conclusion of the fundamental theorem for terms. \annp{The lock-free reading $\vDash[\kappa_L]$ uses the table $\kappa_L$.}`, DEF, R`$\varnothing \vDash^{\varnothing}_W e : T$.`, 'compat/SemTyped.v: sem_typed');
 n('sj.proc', R`$\Sigma \vDash_W p : T$`, R`$\forall n.\ p \in P^W_n\llbracket\Sigma \vdash T\rrbracket$.`, R`Adequacy turns it into deadlock freedom. \annp{With $\kappa_L$ it also gives absence of internal divergence.}`, DEF, R`$\varnothing \vDash_W p : \ast$.`, 'relation/Adequacy.v: sem_ptyped');
 // fuel
-n('fu.zero', R`Level $0$`, R`$F_0$ holds every term.`, R`Step indexing starts from the trivial predicate.`, DEF, R`$\forall e.\ e \in F^N_0\llbracket\sigma \triangleright d ; r\rrbracket(\Pi,\varphi,tk)$.`, 'fuel/Fuel.v: mk_flevel');
+n('fu.zero', R`Level $0$`, R`$F_0$ holds every term.`, R`Step indexing starts from the trivial predicate.`, DEF, R`$\forall e.\ e \in F^N_0\llbracket\Phi ; tk \vdash \sigma\ !\ (d, r)\rrbracket$.`, 'fuel/Fuel.v: mk_flevel');
 n('fu.rty', R`Result $\sigma$`, R`$\sigma$ is a credited type $T^a$ of the returned value, or $\mathsf{thread}$, whose value holds no end.`, R`A spawned thread returns $\ast$ and keeps no end, which $\mathsf{thread}$ states without a type.`, DEF, R`$\mathsf{thread}$ for a soup thread.`, 'fuel/Fuel.v: rty');
 n('fu.frame', R`Frame $d$`, R`$d \in \mathbb{N} \cup \{\infty\}$ bounds the channel actions the term performs before it returns.`, R`Every action asks $1 \leq d$ and lowers $d$ by one, so a context that ticks its own ends during the term is paid by the frame.`, DEF, R`A thread has frame $\infty$.`, 'fuel/Fuel.v: Fdef');
 n('fu.reserve', R`Reserve $r$`, R`$r \in \mathbb{N}$ is the number of tickets the term must still hold when it returns.`, R`The context of the term spends these tickets on its own links afterwards, which the ticket need of the term promises through $\mathsf{meets}\,\vartheta\,r\,tk$.`, R`Without a reserve, a term could spend tickets its context needs, and a context link would find $tk = 0$.`, R`A thread has reserve $0$.`, 'fuel/Fuel.v: Fdef');
-n('fu.Pi', R`Protocols $\Pi$`, R`$\Pi$ maps each held end to its session type with annotations.`, R`Counters are compared with credits that the annotations carry, so fuel keeps them.`, DEF, R`$\Pi = \{a \mapsto S_a\}$.`, 'fuel/Fuel.v: penv');
-n('fu.phi', R`Counters $\varphi$`, R`$\varphi$ maps each held end to a counter in $\mathbb{N} \cup \{\infty\}$.`, R`A counter bounds how many actions of its holder may pass before the end acts again, and only the holder updates it.`, DEF, R`$\varphi = \{a \mapsto 3\}$.`, 'fuel/Fuel.v: cenv');
+n('fu.Phi', R`Held ends $\Phi$`, R`$\Phi$ maps each end the thread holds to its protocol $S$, a session type with annotations, and its counter $f \in \mathbb{N} \cup \{\infty\}$, written $o \mapsto S^{f}$. In the Rocq these are two maps $\Pi$ and $\varphi$ with one domain.`, R`The counter bounds how many actions of its holder may pass before the end acts again, and the protocol says when the end is idle and what it carries. Where the relation gives an end a point, fuel gives it a counter.`, DEF, R`$\Phi = \{a \mapsto S^{3}\}$.`, 'fuel/Fuel.v: penv, cenv');
+n('fu.tick', R`$\Phi{\downarrow}$`, R`Every counter of $\Phi$ lowered by one, truncated at $0$, with $\infty$ kept.`, R`An action ticks every other end of its holder, and a hand-over passes every counter one lower. Both are this one operation.`, DEF, R`$\{a \mapsto S^{3}, b \mapsto S'^{1}\}{\downarrow} = \{a \mapsto S^{2}, b \mapsto S'^{0}\}$.`, 'fuel/Fuel.v: ftick, refill, fhand');
 n('fu.tk', R`Tickets $tk$`, R`$tk \in \mathbb{N}$ is the thread's count of link tickets.`, R`Each link spends one ticket and tickets are conserved, so a thread performs finitely many links between actions.`, DEF, R`$tk = 0$ in every example.`, 'fuel/Fuel.v: Fdef');
-n('fu.refill-kripke', R`Every refill above $N$`, R`$F^N$ holds at every $N'$ with $N \sqsubseteq_{\mathsf{rle}} N'$, where finite refills are ordered by $\leq$ and $\infty$ lies above $\infty$ only.`, R`A received value may be used at a larger refill, and $\infty$ must stay separate because a box received at $\infty$ promises nothing at finite instances.`, R`With $\leq$ on $\mathbb{N} \cup \{\infty\}$, a thread at $N = 2$ could receive a box typed at $\infty$ and fail at its finite instance.`, R`$2 \sqsubseteq_{\mathsf{rle}} 3$, and $2 \not\sqsubseteq_{\mathsf{rle}} \infty$.`, 'fuel/Fuel.v: rle');
-n('fu.rename', R`Injective renamings`, R`$F^N$ holds for every renaming $g$ injective on $\mathrm{dom}\,\Pi$ and on $\mathrm{dom}\,\varphi$.`, R`A link renames the partner of a removed end in another thread, so fuel must survive renaming.`, R`A renaming that merges two held ends would merge their counters.`, R`$\mathsf{kinj}\,g\,\Pi$.`, 'fuel/Fuel.v: kinj, renk');
-n('fu.val', R`(val)`, R`$g(e) \in \mathsf{Val} \Rightarrow r \leq tk \land g(e) \in FV^{N'}_{n+1}\llbracket\sigma\rrbracket(g\Pi, g\varphi)$.`, R`A returning term hands its context the reserve it promised and a value whose counters meet its credits, which the bind lemma of fuel consumes.`, R`Without $r \leq tk$, a context link after the term could find no ticket.`, R`$\ast$ returns with $r = 0 \leq tk$.`, 'fuel/Fuel.v: Fdef');
+n('fu.refill-kripke', R`Every refill above $N$`, R`Fuel at $N$ holds at every $N'$ with $N \sqsubseteq_{\mathsf{rle}} N'$, where finite refills are ordered by $\leq$ and $\infty$ lies above $\infty$ only.`, R`A received value may be used at a larger refill, and $\infty$ must stay separate because a box received at $\infty$ promises nothing at finite instances.`, R`With $\leq$ on $\mathbb{N} \cup \{\infty\}$, a thread at $N = 2$ could receive a box typed at $\infty$ and fail at its finite instance.`, R`$2 \sqsubseteq_{\mathsf{rle}} 3$, and $2 \not\sqsubseteq_{\mathsf{rle}} \infty$.`, 'fuel/Fuel.v: rle');
+n('fu.rename', R`Injective renamings`, R`Fuel holds for every renaming $g$ of ends injective on $\mathrm{dom}\,\Phi$.`, R`A link renames the partner of a removed end in another thread, so fuel must survive renaming.`, R`A renaming that merges two held ends would merge their counters.`, R`$g = \{c^{+} \mapsto d^{+}\}$ on $\Phi = \{c^{+} \mapsto S^{2}\}$.`, 'fuel/Fuel.v: kinj, renk');
+n('fu.val', R`(val)`, R`$g(e) \in \mathsf{Val} \Rightarrow r \leq tk \land g(e) \in FV^{N'}_{n+1}\llbracket g\Phi \vdash \sigma\rrbracket$.`, R`A returning term hands its context the reserve it promised and a value whose counters meet its credits, which the bind lemma of fuel consumes.`, R`Without $r \leq tk$, a context link after the term could find no ticket.`, R`$\ast$ returns with $r = 0 \leq tk$.`, 'fuel/Fuel.v: Fdef');
 n('fu.step', R`(step)`, R`$\forall \alpha, e'.\ g(e) \xrightarrow{\alpha} e' \Rightarrow \mathsf{Fobl}^{N'}_\alpha(e')$ at level $n$.`, R`Each step updates the state by one index-free rule, which the soup follows along a run.`, DEF, R`A send step meets F-Send.`, 'fuel/Fuel.v: Fdef, Fobl');
 n('fu.oneclock', R`One level per step`, R`Every step costs one level, $\beta$, creation, spawn and link included.`, R`A clock that let $\beta$ be free would admit a box that only takes $\beta$ steps at every level, so the cost fundamental theorem would need the guard as a premise.`, DEF, R`F-Beta reads $e'$ at level $n$.`, 'fuel/Fuel.v: Fdef');
-n('F-Wait', R`F-Wait`, R`$\neg\mathsf{idle}(\Pi\,o)$, an idle end does not act.`, R`An idle end is exempt from the checks $\geq 1$, so it must not act either.`, DEF, R`An end at $\mathsf{Skip}$ cannot act.`, 'fuel/Fuel.v: f_act');
-n('F-Tick', R`F-Tick`, R`$\mathsf{fspare}\,\Pi\,\varphi\,(\mathrm{dom}\,\varphi \setminus \{o\})$, every other end that is not idle has counter at least $1$.`, R`Each action ticks the other ends, so an end can wait only as many actions of its holder as its counter allows.`, R`A holder that loops on other ends forever while its partner waits on a held end.`, R`At $\varphi = \{a \mapsto 2, b \mapsto 0\}$ no action on $a$ is allowed unless $b$ is idle.`, 'fuel/Fuel.v: f_act, fspare');
+n('F-Wait', R`F-Wait`, R`$\Phi(o) = S^{f}$ with $S$ not idle, so the end is held and can act.`, R`An idle end is exempt from the checks $\geq 1$, so it must not act either.`, DEF, R`An end at $\mathsf{Skip}$ cannot act.`, 'fuel/Fuel.v: f_act');
+n('F-Tick', R`F-Tick`, R`$\mathsf{spare}(\Phi \setminus o)$, every other end that is not idle has counter at least $1$.`, R`Each action ticks the other ends, so an end can wait only as many actions of its holder as its counter allows.`, R`A holder that loops on other ends forever while its partner waits on a held end.`, R`At $\Phi = \{a \mapsto S^{2}, b \mapsto S'^{0}\}$ no action on $a$ is allowed unless $b$ is idle.`, 'fuel/Fuel.v: f_act, fspare');
 n('F-Tick.frame', R`$1 \leq d$`, R`The frame has a unit for the action.`, R`The frame pays the ticks the context's ends take during the term.`, DEF, R`$1 \leq d$.`, 'fuel/Fuel.v: f_act');
-n('fu.refillop', R`$\mathsf{refill}$`, R`$\mathsf{refill}\,N\,o\,\varphi$ sets $o$ to $N$ and lowers every other counter by one, truncated at $0$.`, R`Counters evolve by one index-free update.`, DEF, R`$\mathsf{refill}\,3\,a\,\{a \mapsto 1, b \mapsto 2\} = \{a \mapsto 3, b \mapsto 1\}$.`, 'fuel/Fuel.v: refill');
 n('fu.idle', R`$\mathsf{idle}$`, R`$\mathsf{idle}\,S \iff \mathsf{unfold}\,S = \mathsf{Skip}$.`, R`Idleness removes the checks $\geq 1$ and never changes how a counter evolves, so counters stay index-free. The typing ages idle ends by truncation at $0$, matching counters that tick down to $0$.`, R`An idle end whose credit stayed fixed while its counter ticks would exceed its counter.`, R`$\mathsf{idle}\,\mathsf{Skip}$.`, 'fuel/Fuel.v: idle');
 n('F-Beta', R`F-Beta`, R`$e'$ in $F_n$ at the same state.`, R`A $\beta$ step changes no counter and costs one level.`, DEF, R`$(\lambda x.\,x)\,\ast$.`, 'fuel/Fuel.v: f_beta');
-n('F-New', R`F-New`, R`For a fresh $c$, some $S$ adds $c^{+} : S$ and $c^{-} : \overline{S}$ to $\Pi$ with counters $N$.`, R`A new channel starts with both ends at the refill $N$, the credit E-New gives them.`, DEF, R`$\mathsf{new}$ adds $c^{\pm}$ at $N$.`, 'fuel/Fuel.v: f_new');
-n('F-New.fresh', R`Fresh against the thread`, R`$c^{\pm} \notin \mathrm{dom}\,\Pi \cup \mathrm{dom}\,\varphi$.`, R`Without it, a new channel could reuse a held name and overwrite its counter.`, DEF, R`$\mathsf{ffresh}\,c\,\Pi\,\varphi$.`, 'fuel/Fuel.v: ffresh');
-n('F-New.cnew', R`New counters $N$`, R`$\varphi[c^{+} \mapsto N, c^{-} \mapsto N]$.`, R`One refill $N$ serves fresh ends and ends after an action.`, DEF, R`$\mathsf{cnew}\,N\,c\,\varphi$.`, 'fuel/Fuel.v: cnew');
-n('F-Spawn', R`F-Spawn`, R`The child takes $M = \mathsf{fends}(v)$ with counters minus one and $\lceil tk/2 \rceil$ tickets and runs as a thread, the parent keeps the rest and $\lfloor tk/2 \rfloor$.`, R`Every component of the split is a function of $v$ and $tk$, so it is the same at every level.`, DEF, R`The thunk takes $d'$ at $1$ in the cycle.`, 'fuel/Fuel.v: f_spawn');
-n('F-Spawn.held', R`$M \subseteq \mathrm{dom}\,\varphi$`, R`Only held ends are handed on.`, R`A child mentioning an end the parent does not hold would act on an end without a counter.`, R`A box mentioning channel constants would hand over ends nobody holds.`, R`$M = \{d'\}$.`, 'fuel/Fuel.v: f_spawn');
-n('fu.fspare', R`$\mathsf{fspare}$`, R`$\mathsf{fspare}\,\Pi\,\varphi\,X \iff \forall o \in X.\ \varphi(o) = f \land \neg\mathsf{idle}(\Pi\,o) \Rightarrow 1 \leq f$.`, R`A hand-over passes the counter minus one, so a non-idle end must have a unit to spare. A spawn is no action, so this is its only check.`, R`A hop at counter $0$ under truncation passes $0$ again and an end travels forever.`, R`$\mathsf{fspare}\,\Pi\,\{d' \mapsto 1\}\,\{d'\}$.`, 'fuel/Fuel.v: fspare');
-n('F-Spawn.child', R`The child`, R`$v\,\ast \in F^N_n\llbracket\mathsf{thread} \triangleright \infty ; 0\rrbracket(\Pi|_M, \mathsf{fhand}\,M\,\varphi, \lceil tk/2 \rceil)$.`, R`The child is a new soup thread, so it must have thread fuel at exactly the protocols, counters and tickets the soup moves to it.`, DEF, R`$(\lambda u.\,\mathsf{close}\,d')\,\ast$.`, 'fuel/Fuel.v: f_spawn');
-n('fu.fhand', R`$\mathsf{fhand}$`, R`$\mathsf{fhand}\,M\,\varphi = (\varphi|_M) \mathbin{\dot-} 1$.`, R`Every counter passed on is the holder's minus one, which the termination measure of adequacy reads.`, DEF, R`$\mathsf{fhand}\,\{a\}\,\{a \mapsto 3\} = \{a \mapsto 2\}$.`, 'fuel/Fuel.v: fhand');
+n('F-New', R`F-New`, R`For a fresh $c$, some $S$ adds $c^{+} \mapsto S^{N}$ and $c^{-} \mapsto \overline{S}^{N}$ to $\Phi$.`, R`A new channel starts with both ends at the refill $N$, the credit E-New gives them.`, DEF, R`$\mathsf{new}$ adds $c^{\pm}$ at $N$.`, 'fuel/Fuel.v: f_new');
+n('F-New.fresh', R`Fresh against the thread`, R`$c^{\pm} \notin \mathrm{dom}\,\Phi$.`, R`Without it, a new channel could reuse a held name and overwrite its counter.`, DEF, R`$c^{+} \notin \{a\}$.`, 'fuel/Fuel.v: ffresh');
+n('F-New.cnew', R`New ends at $N$`, R`$\Phi[c^{+} \mapsto S^{N}, c^{-} \mapsto \overline{S}^{N}]$.`, R`One refill $N$ serves fresh ends and ends after an action.`, DEF, R`$\{c^{+} \mapsto S^{3}, c^{-} \mapsto \overline{S}^{3}\}$ at $N = 3$.`, 'fuel/Fuel.v: pnew, cnew');
+n('F-Spawn', R`F-Spawn`, R`The child takes $\Phi|_M{\downarrow}$ for $M = \mathsf{fends}(v)$ and $\lceil tk/2 \rceil$ tickets and runs as a thread, the parent keeps $\Phi \setminus M$ and $\lfloor tk/2 \rfloor$.`, R`Every component of the split is a function of $v$ and $tk$, so it is the same at every level.`, DEF, R`The thunk takes $d'$ at $1$ in the cycle.`, 'fuel/Fuel.v: f_spawn');
+n('F-Spawn.held', R`$M \subseteq \mathrm{dom}\,\Phi$`, R`Only held ends are handed on.`, R`A child mentioning an end the parent does not hold would act on an end without a counter.`, R`A box mentioning channel constants would hand over ends nobody holds.`, R`$M = \{d'\}$.`, 'fuel/Fuel.v: f_spawn');
+n('fu.fspare', R`$\mathsf{spare}$`, R`$\mathsf{spare}(\Phi) \iff$ every end of $\Phi$ that is not idle has counter at least $1$.`, R`A hand-over passes the counter minus one, so a non-idle end must have a unit to spare. A spawn is no action, so this is its only check.`, R`A hop at counter $0$ under truncation passes $0$ again and an end travels forever.`, R`$\mathsf{spare}(\{d' \mapsto S^{1}\})$.`, 'fuel/Fuel.v: fspare');
+n('F-Spawn.child', R`The child`, R`$v\,\ast \in F^N_n\llbracket\Phi|_M{\downarrow} ; \lceil tk/2 \rceil \vdash \mathsf{thread}\ !\ (\infty, 0)\rrbracket$.`, R`The child is a new soup thread, so it must have thread fuel at exactly the ends, counters and tickets the soup moves to it.`, DEF, R`$(\lambda u.\,\mathsf{close}\,d')\,\ast$.`, 'fuel/Fuel.v: f_spawn');
 n('F-Spawn.tickets', R`Ticket split`, R`Child $\lceil tk/2 \rceil$, parent $\lfloor tk/2 \rfloor$.`, R`A fixed split is the only split independent of the level.`, DEF, R`$tk = 3$ gives $2$ and $1$.`, 'fuel/Fuel.v: f_spawn');
-n('F-Send', R`F-Send`, R`An action on $o$ that hands on $M = \mathsf{fends}(w)$ with counters minus one, the payload in $FV$, and the continuation with $o$ refilled.`, R`A send is an action, so F-Tick applies, and a hand-over, so $\mathsf{fspare}$ applies.`, DEF, R`$\mathsf{send}\,\langle a, y\rangle$ in the growing ring.`, 'fuel/Fuel.v: f_send');
-n('F-Send.notsubj', R`$M \subseteq \mathrm{dom}\,\varphi \setminus \{o\}$`, R`A send hands on held ends other than its subject.`, R`The continuation keeps acting on $o$, so $o$ cannot leave.`, R`A term that sends its own subject or an end its context holds.`, R`$M = \{a\}$.`, 'fuel/Fuel.v: f_send');
-n('F-Send.payload', R`Payload in $FV$`, R`$w \in FV^N_n\llbracket T\rrbracket(\Pi|_M, \mathsf{fhand}\,M\,\varphi)$, with every handed counter lowered by one hop.`, R`$FV$ reads no point, so the raw payload type and its placed form agree.`, DEF, R`$FV^N_n\llbracket (S@x)^{2}\rrbracket$ for a payload end promised at credit $2$.`, 'fuel/Fuel.v: f_send');
-n('F-Recv', R`F-Recv`, R`An action on $o$ that continues for every incoming value in $FV$ at every level $j \leq n$ with disjoint maps.`, R`The receiver continues for every value its type admits, and the soup supplies the sender's handed maps.`, DEF, R`$\mathsf{recv}\,b$ in the client loop.`, 'fuel/Fuel.v: f_recv');
-n('F-Recv.forall', R`Every incoming value`, R`$\forall j \leq n, \Pi_i, \varphi_i.\ w \in FV^N_j\llbracket T^b\rrbracket(\Pi_i, \varphi_i)$.`, R`Every value of $FV$ is exact, so incoming closures hold exactly what they mention.`, R`Without exactness, a received closure owning nothing but mentioning an end could not be spawned.`, R`$\forall j\,\Pi_i\,\varphi_i$.`, 'fuel/Fuel.v: f_recv');
-n('F-Close', R`F-Close, F-Select, F-Branch`, R`Actions that drop $o$ and tick the rest at a close, or advance $\Pi(o)$ to $S_i$ and refill $o$ at a choice.`, R`They are the fuel forms of O-Close, O-Select and O-Branch, and each is an action, so F-Tick applies.`, DEF, R`$\mathsf{close}\,c^{+}$.`, 'fuel/Fuel.v: f_close, f_select, f_branch');
+n('F-Send', R`F-Send`, R`An action on $o$ that hands on $M = \mathsf{fends}(w)$ one lower, the payload fueled, and the continuation with $o$ back at $N$.`, R`A send is an action, so F-Tick applies, and a hand-over, so $\mathsf{spare}$ applies.`, DEF, R`$\mathsf{send}\,\langle a, y\rangle$ in the growing ring.`, 'fuel/Fuel.v: f_send');
+n('F-Send.notsubj', R`$o \notin M \subseteq \mathrm{dom}\,\Phi$`, R`A send hands on held ends other than its subject.`, R`The continuation keeps acting on $o$, so $o$ cannot leave.`, R`A term that sends its own subject or an end its context holds.`, R`$M = \{a\}$.`, 'fuel/Fuel.v: f_send');
+n('F-Send.payload', R`Payload fueled`, R`$w \in FV^N_n\llbracket\Phi|_M{\downarrow} \vdash T\rrbracket$, with every handed counter lowered by one hop.`, R`$FV$ reads no point, so the raw payload type and its placed form agree.`, DEF, R`$FV^N_n\llbracket \{a \mapsto S^{2}\} \vdash (S@x)^{2}\rrbracket$ for a payload end promised at credit $2$.`, 'fuel/Fuel.v: f_send');
+n('F-Recv', R`F-Recv`, R`An action on $o$ that continues for every incoming fueled value at every level $j \leq n$ with ends disjoint from $\Phi$.`, R`The receiver continues for every value its type admits, and the soup supplies the sender's handed ends.`, DEF, R`$\mathsf{recv}\,b$ in the client loop.`, 'fuel/Fuel.v: f_recv');
+n('F-Recv.forall', R`Every incoming value`, R`$\forall j \leq n, \Phi_i.\ w \in FV^N_j\llbracket\Phi_i \vdash T\rrbracket$.`, R`Every fueled value is exact, so incoming closures hold exactly what they mention.`, R`Without exactness, a received closure owning nothing but mentioning an end could not be spawned.`, R`$\Phi_i = \{e \mapsto S^{2}\}$.`, 'fuel/Fuel.v: f_recv');
+n('F-Close', R`F-Close, F-Select, F-Branch`, R`Actions that drop $o$ and tick the rest at a close, or advance the protocol of $o$ to $S_i$ and set it back to $N$ at a choice.`, R`They are the fuel forms of O-Close, O-Select and O-Branch, and each is an action, so F-Tick applies.`, DEF, R`$\mathsf{close}\,c^{+}$.`, 'fuel/Fuel.v: f_close, f_select, f_branch');
 n('F-Link', R`F-Link`, R`Two distinct held ends at dual protocols leave, and one ticket is spent.`, R`Tickets bound the links between actions.`, DEF, R`$\mathsf{link}\,\langle c^{+}, d^{-}\rangle$ with $tk = 1$.`, 'fuel/Fuel.v: f_link');
-n('F-Link.plink', R`$\mathsf{plink}$`, R`$o_1 \neq o_2 \land \Pi(o_2) \simeq \overline{\Pi(o_1)}$, with annotations.`, R`After the link the partners form one channel, whose protocols are dual only if $\Pi(o_1)$ and $\Pi(o_2)$ were, and annotations must match for later payload credits.`, R`A credit mismatch at a link breaks the payload credit of a later message.`, R`$\mathsf{plink}\,\Pi\,\{o_1, o_2\}$.`, 'fuel/Fuel.v: plink');
+n('F-Link.plink', R`Dual held ends`, R`$o_1 \neq o_2$, both held, at protocols $S$ and $S' \simeq \overline{S}$, with annotations.`, R`After the link the partners form one channel, whose protocols are dual only if the two linked protocols were, and annotations must match for later payload credits.`, R`A credit mismatch at a link breaks the payload credit of a later message.`, R`$c^{+} \mapsto S^{2}$ and $d^{-} \mapsto \overline{S}^{1}$.`, 'fuel/Fuel.v: plink');
 n('F-Link.ticket', R`$1 \leq tk$`, R`A link spends one ticket.`, R`Tickets are conserved and spent, so links cannot repeat forever.`, R`A box that links once per round forever.`, R`$tk - 1$.`, 'fuel/Fuel.v: f_link');
-n('FV-Sess', R`$FV$ at $S@x$`, R`An end with protocol $S' \simeq S$ and counter $f \geq a$.`, R`Credits are lower bounds on counters.`, DEF, R`$o$ at $(S@x)^2$ with counter $3$.`, 'fuel/Fuel.v: Vty TSess');
+n('FV-Sess', R`$FV$ at $S@x$`, R`An end with protocol $S' \simeq S$ and counter $f \geq a$.`, R`Credits are lower bounds on counters.`, DEF, R`$o \mapsto S^{3}$ at $(S@x)^2$.`, 'fuel/Fuel.v: Vty TSess');
 n('FV-Sess.counter', R`$a \leq f$`, R`The counter meets the credit.`, R`Typing reasons with credits and the soup with counters, and this inequality transfers every credit bound of typing to the counters.`, R`Without it, a context could age an end below its actual counter and F-Tick would fail on an end typing considers spare.`, R`$2 \leq 3$.`, 'fuel/Fuel.v: Vty TSess');
 n('FV-Arrow', R`$FV$ at an arrow`, R`A closure whose body has fuel for every larger refill, lower level, counters at or above the floor and argument in $FV$.`, R`The clause reads costs, ticket needs, floors and credits, the data typing attaches to arrows.`, DEF, R`A loop body at cost $\infty$.`, 'fuel/Fuel.v: Vty TLolli');
-n('FV-Arrow.exact', R`$\mathsf{fends}\,e = \mathrm{dom}\,\Pi$`, R`The closure holds exactly the ends it mentions.`, R`It mirrors exactness of $V$, and the cost fundamental theorem needs it to read fuel off typing.`, R`A closure mentioning an end it does not hold would be in $FV$, and a forwarder receiving it could not spawn it.`, R`$\lambda\_.\,\mathsf{close}\,a$ holds $\{a\}$.`, 'fuel/Fuel.v: Vty TLolli');
-n('FV-Arrow.floor', R`Counters $\geq h + a$`, R`$\forall o.\ h + a \leq \varphi(o)$.`, R`The body may assume the floor $h$ on its captured counters, and the closure's own credit $a$ is spent while it is held.`, DEF, R`$h = 1$, $a = 1$ needs counters $\geq 2$.`, 'fuel/Fuel.v: Vty TLolli');
-n('FV-Arrow.body', R`Body fuel`, R`$e[u] \in F^{N'}_j\llbracket U^{a_2} \triangleright c ; r\rrbracket(\Pi \cup \Pi_u, \varphi' \cup \varphi_u, tk)$ for every $tk$ with $\mathsf{meets}\,\vartheta\,r\,tk$.`, R`The caller supplies an argument, counters lowered to the floor by its own actions, and a ticket count meeting the arrow's ticket need, and the body promises fuel with frame $c$.`, DEF, R`$\mathsf{meets}\,\vartheta\,r\,tk$.`, 'fuel/Fuel.v: Vty TLolli');
+n('FV-Arrow.exact', R`$\mathsf{fends}\,e = \mathrm{dom}\,\Phi$`, R`The closure holds exactly the ends it mentions.`, R`It mirrors exactness of $V$, and the cost fundamental theorem needs it to read fuel off typing.`, R`A closure mentioning an end it does not hold would be fueled, and a forwarder receiving it could not spawn it.`, R`$\lambda\_.\,\mathsf{close}\,a$ holds $\{a\}$.`, 'fuel/Fuel.v: Vty TLolli');
+n('FV-Arrow.floor', R`Counters $\geq h + a$`, R`Every captured counter $f$ has $h + a \leq f$.`, R`The body may assume the floor $h$ on its captured counters, and the closure's own credit $a$ is spent while it is held.`, DEF, R`$h = 1$, $a = 1$ needs counters $\geq 2$.`, 'fuel/Fuel.v: Vty TLolli');
+n('FV-Arrow.body', R`Body fuel`, R`$e[u] \in F^{N'}_j\llbracket\Phi' \cup \Phi_u ; tk \vdash U\ !\ (c, r)\rrbracket$ for every $tk$ with $\vartheta(r) \leq tk$.`, R`The caller supplies an argument, counters lowered to the floor by its own actions, and a ticket count covering the arrow's ticket need, and the body promises fuel with frame $c$.`, DEF, R`$\vartheta(r) \leq tk$.`, 'fuel/Fuel.v: Vty TLolli');
 n('FV-Box', R`$FV$ at a box`, R`A box with no ends whose body has fuel per force at every larger refill, lower level and session instance in $\mathsf{sinsts}\,N'$.`, R`A box is unlimited, so it holds no counters and works at every use.`, DEF, R`$\mathsf{ring}$ at $N = 4$.`, 'fuel/Fuel.v: Vty TBox');
 n('FV-Box.noends', R`$\mathsf{fends}\,e = \varnothing$`, R`A box mentions no end and holds no protocol or counter.`, R`A copied box would otherwise copy ends.`, DEF, R`$\mathsf{ring}$.`, 'fuel/Fuel.v: Vty TBox');
-n('FV-Box.body', R`Body per force`, R`$e[!e] \in F^{N'}_j\llbracket U[\bar s] \triangleright c ; r\rrbracket(\varnothing, \varnothing, tk)$ for every $N' \sqsupseteq_{\mathsf{rle}} N$, $j < n$, $\bar s \in \mathsf{sinsts}\,N'$ and $tk$ meeting $\vartheta$.`, R`Each force unrolls the box once, at a refill and instance the forcing context chooses.`, DEF, R`$\mathsf{sinsts}\,N'\,\bar s$.`, 'fuel/Fuel.v: Vty TBox');
-n('FV-Thread', R`Thread result`, R`$v \in FV\llbracket\mathsf{thread}\rrbracket(\Pi,\varphi) \iff \Pi = \varphi = \varnothing$.`, R`A finished thread holds no end.`, DEF, R`$\Pi = \varphi = \varnothing$.`, 'fuel/Fuel.v: Vres');
-n('fu.fsem', R`$\mathsf{fsem}$`, R`$\exists tk.\ \forall n.\ e$ has thread fuel at level $n$ with every held end at $N$.`, R`It is the per-thread fuel the soup needs, obtained from typing by the cost fundamental theorem.`, DEF, R`$\mathsf{fsem}\,N\,\Pi\,e$.`, 'fuel/Fuel.v: fsem');
-n('fu.upd', R`$F_n[x := v]$`, R`The fuel of the successor at level $n$, with the refill $N'$, result, frame, reserve, protocols, counters and tickets of the current term, except the listed components, which take the listed values.`, R`Each obligation changes only a few components, so it lists only those.`, DEF, R`$e' \in F_n[tk := tk - 1]$ after a link.`, 'fuel/Fuel.v: f_beta, f_send, f_link');
+n('FV-Box.body', R`Body per force`, R`$e[!e] \in F^{N'}_j\llbracket\varnothing ; tk \vdash U[\bar s]\ !\ (c, r)\rrbracket$ for every $N' \sqsupseteq_{\mathsf{rle}} N$, $j < n$, $\bar s \in \mathsf{sinsts}\,N'$ and $tk \geq \vartheta(r)$.`, R`Each force unrolls the box once, at a refill and instance the forcing context chooses.`, DEF, R`$\bar s \in \mathsf{sinsts}\,N'$.`, 'fuel/Fuel.v: Vty TBox');
+n('FV-Thread', R`Thread result`, R`$v \in FV\llbracket\Phi \vdash \mathsf{thread}\rrbracket \iff \Phi = \varnothing$.`, R`A finished thread holds no end.`, DEF, R`$\Phi = \varnothing$.`, 'fuel/Fuel.v: Vres');
+n('fu.fsem', R`$\mathsf{fsem}$`, R`$\exists tk.\ \forall n.\ e \in F^N_n\llbracket\Pi^N ; tk \vdash \mathsf{thread}\ !\ (\infty, 0)\rrbracket$, every held end at $N$.`, R`It is the per-thread fuel the soup needs, obtained from typing by the cost fundamental theorem. It is the one fuel statement that holds at every level.`, DEF, R`$\mathsf{fsem}\,N\,\Pi\,e$.`, 'fuel/Fuel.v: fsem');
 n('cs.csem', R`$\Delta \vDash^{N} e : T\ !\ \varepsilon$`, R`For every larger refill, level, injective renaming of the ends of $\Delta$, grounding in $FV$ and ticket count meeting $\vartheta$, the instance has fuel at $T$ with frame $c$, for $\varepsilon = (c, \vartheta)$.`, R`It reads no $\Gamma$, world or future, because $F$ reads none of them.`, DEF, R`The cost fundamental theorem concludes it.`, 'cost/CostSem.v: csem');
 // soup
 n('sp.state', R`Soup state $a = (q, K, tk)$`, R`A configuration $q$, an ownership map $K$ and a ticket count per thread.`, R`Ranks and counters of the termination measure are read off $K$, so ownership is fixed outside the index.`, R`Placement chosen per level lets a waiting main thread starve in every fair run.`, R`$(q, K, tk)$.`, 'soup/State.v: lfstate');
@@ -566,7 +563,7 @@ n('sp.exists', R`Chosen per level`, R`$\exists A, \Pi, U$, the environment, prot
 n('sp.prim', R`$\mathsf{prim}\,T$`, R`The result type holds no end.`, R`A main thread returning an end would leave that end's partner waiting.`, R`$\mathsf{main}$ returning an end.`, R`$\mathsf{prim}\,\ast$.`, 'soup/State.v: sp_prim');
 n('sp.rel', R`Every thread live`, R`$\forall t.\ q(t) \in E[\kappa_L]^W_n\llbracket K_t(A) \vdash U_t\rrbracket^{\varnothing}$, where $K_t(A)$ restricts $A$ to the ends held by $t$.`, R`The per-thread live relation excludes internal divergence and infinite chains of spawns.`, DEF, R`$q(0) \in E[\kappa_L]\llbracket K_0(A) \vdash T\rrbracket^{\varnothing}$.`, 'soup/State.v: sp_rel');
 n('sp.ty', R`$U_t \in \{T, \ast\}$`, R`Each thread returns at $T$ or at $\ast$.`, R`A thread that returns has a value in $V$ at $U_t$, and for $U_t \in \{T, \ast\}$ with $\mathsf{prim}\,T$ that value holds no end, which the termination argument uses.`, R`Without it, a finished thread could still hold an end.`, R`$\mathsf{main}$ at $T$, spawned threads at $\ast$.`, 'soup/State.v: sp_ty');
-n('sp.fuel', R`Every thread fueled`, R`$\forall t.\ q(t) \in F^N_n\llbracket\mathsf{thread}\rrbracket(K_t(\Pi), \mathsf{ctrs}\,K\,t, tk_t)$.`, R`Counters of the fuel layer are read from $K$, so they are the same at every level.`, DEF, R`$q(0) \in F^N_n\llbracket\mathsf{thread}\rrbracket(\ldots)$.`, 'soup/State.v: sp_fuel');
+n('sp.fuel', R`Every thread fueled`, R`$\forall t.\ q(t) \in F^N_n\llbracket\Phi_t ; tk_t \vdash \mathsf{thread}\ !\ (\infty, 0)\rrbracket$, with the protocols of $\Pi$ and the counters of $K$ on the ends of $t$.`, R`Counters are read from $K$, so they are the same at every level.`, DEF, R`$\Phi_0 = \{a \mapsto S^{2}\}$.`, 'soup/State.v: sp_fuel');
 n('sp.pts', R`Points of $A$ from $K$`, R`$\forall o.\ \mathsf{pt}(A\,o) = \mathsf{pt}(K\,o)$.`, R`Points are fixed outside the index.`, DEF, R`$A(a) = S@\rho$ and $K(a) = (0, \rho, 2)$.`, 'soup/State.v: sp_pts');
 n('sp.dom', R`$\mathrm{dom}\,\Pi = \mathrm{dom}\,K$`, R`Protocols exist exactly for the held ends.`, R`The lock-free argument finds the protocol of an end of $K$, and of its partner, to decide idleness, and a synchronization updates $\Pi$ and $K$ together.`, R`Without it, a held end could lack a protocol and idleness of a waiting end would be undefined.`, R`$\mathrm{dom}\,\Pi = \mathrm{dom}\,K$.`, 'soup/State.v: sp_dom');
 n('sp.owner', R`Holders exist`, R`$\forall o.\ K(o) = (t, \_, \_) \Rightarrow t \in \mathrm{dom}\,q$.`, R`A thread waiting on an end needs its partner's holder to be a thread of $q$, so the dependency of waiting threads is a relation on threads.`, R`Without it, an end could be held by a thread that no longer exists, and its partner would wait forever.`, R`$K(a) = (0, \rho, 2)$ with $q(0)$ defined.`, 'soup/State.v: sp_owner');
@@ -582,9 +579,9 @@ n('sp.exists-before-forall', R`$\exists$ before $\forall n$`, R`$N$ and the stat
 n('sp.next', R`$\mathsf{lf\_next}$`, R`$\mathsf{lf\_next}\,N\,(q, K, tk)\,ev\,q' = (q', \mathsf{own\_next}\,N\,ev\,K, \mathsf{tk\_next}\,ev\,tk)$.`, R`Creation places new ends with counter $N$, actions move and refill, hand-overs move with counter minus one, links spend a ticket and rename, spawns split tickets, all independent of the level.`, DEF, R`One step of the soup along an event.`, 'soup/Soup.v: lf_next');
 n('sp.own', R`$\mathsf{consistent}(a, A, \Pi)$`, R`The ownership map $K$ of the soup state agrees with the environment $A$ and the protocols $\Pi$. Every held end has one holder that exists, every held end is internal or in the interface, internal partners are both held at dual types, points and protocols, interface entries come from $\Sigma$, and counters are finite.`, R`It is bookkeeping. It lets lock-free adequacy read the holder, point and counter of an end from $K$ and know that the partner of an internal end is held by some thread at the dual protocol.`, R`Without it a thread could wait on an end whose partner nobody holds, and the waiting chain of adequacy would break off.`, R`Two threads closing $c^{+}$ and $c^{-}$, each holding one end, with $C = \{c\}$.`, 'soup/State.v: soup_gen');
 // new symbols
-n('sr.FE', R`Fuel $F^N_n\llbracket\sigma \triangleright d ; r\rrbracket(\Pi, \varphi, tk)$`, R`The fuel predicate at refill $N$ and level $n$.`, R`It bounds postponement and link chatter per thread, independent of points.`, DEF, R`$F^{3}_n\llbracket\mathsf{thread} \triangleright \infty ; 0\rrbracket(\Pi, \varphi, 0)$.`, 'fuel/Fuel.v: FuelE');
-n('sr.FV', R`Fueled values $FV^N_n\llbracket\sigma\rrbracket(\Pi, \varphi)$`, R`The value predicate of fuel at refill $N$ and level $n$.`, R`Values carry the protocols and counters of their ends.`, DEF, R`$FV\llbracket(S@x)^2\rrbracket(\{o \mapsto S\}, \{o \mapsto 3\})$.`, 'fuel/Fuel.v: Vfuel, Vty');
-n('sr.act', R`$\mathsf{act}\,o$`, R`The common premise of every action on $o$, F-Wait and F-Tick.`, R`Send, receive, close, select and branch share it.`, DEF, R`$\mathsf{act}\,a$ at $\varphi = \{a \mapsto 0, b \mapsto 1\}$ holds.`, 'fuel/Fuel.v: f_act');
+n('sr.FE', R`Fuel $F^N_n\llbracket\Phi ; tk \vdash \sigma\ !\ (d, r)\rrbracket$`, R`The thread holds the ends $\Phi$ and $tk$ tickets and has fuel for $n$ more steps to return at $\sigma$ within $d$ actions with $r$ tickets left, at refill $N$.`, R`It bounds postponement and links per thread, independent of points. It is indexed by $n$ like $E$, so it is written as membership and not as a judgment.`, DEF, R`$F^{3}_n\llbracket\{a \mapsto S^{3}\} ; 0 \vdash \mathsf{thread}\ !\ (\infty, 0)\rrbracket$.`, 'fuel/Fuel.v: FuelE');
+n('sr.FV', R`Fueled values $FV^N_n\llbracket\Phi \vdash \sigma\rrbracket$`, R`The value holds exactly the ends $\Phi$, and their counters meet the credits of $\sigma$.`, R`Values carry the protocols and counters of their ends.`, DEF, R`$o \in FV\llbracket\{o \mapsto S^{3}\} \vdash (S@x)^2\rrbracket$.`, 'fuel/Fuel.v: Vfuel, Vty');
+n('sr.act', R`$\mathsf{act}\,o$`, R`The common premise of every action on $o$, F-Wait and F-Tick.`, R`Send, receive, close, select and branch share it.`, DEF, R`$\mathsf{act}\,a$ at $\Phi = \{a \mapsto S^{0}, b \mapsto S'^{1}\}$ holds.`, 'fuel/Fuel.v: f_act');
 n('sr.vthunk', R`$\mathsf{Vthunk}^W_n(\Theta)$`, R`The predicate of a spawned thunk owning $\Theta$.`, R`A spawned thunk needs neither lower nor upper point.`, DEF, R`$\lambda u.\,\mathsf{close}\,d' \in \mathsf{Vthunk}_n(\{d'\})$.`, 'relation/Relation.v: Vthunk');
 n('sr.thunk', R`$\mathsf{thunk}(e)$`, R`$\mathsf{thunk}(e) = \lambda\_.\,e[!e]$.`, R`Forcing $!e$ steps to $e[!e]$, which the thunk delays by one $\lambda$.`, DEF, R`$\mathsf{thunk}(\mathsf{force}\,f) = \lambda\_.\,\mathsf{force}\,(!\mathsf{force}\,f)$.`, 'relation/Relation.v: thunk');
 n('sr.size', R`$\mathsf{size}\,T$`, R`The size of a type, with a box counting $3 + \mathsf{size}\,U$.`, R`It makes $V$ at a box read $V$ at the smaller thunk type.`, DEF, R`$\mathsf{size}\,\ast = 1$.`, 'relation/Relation.v: tsize');
@@ -601,8 +598,7 @@ n('sr.pirred', R`$\mathsf{pirred}\,p$`, R`$p$ takes no process step.`, R`P-Stop 
 n('sr.held', R`Held ends`, R`$\mathsf{held} = \{o \mid o \in \mathrm{dom}\,\Sigma \lor \mathsf{ech}\,o \in C\}$.`, R`A process holds its interface ends and both ends of every restricted channel.`, DEF, R`For $\Sigma = \{d^{+}\}$ and $C = \{c\}$, $\mathsf{held} = \{d^{+}, c^{+}, c^{-}\}$.`, 'relation/Relation.v: pheld');
 n('sr.gch', R`$\mathsf{gch}_h$`, R`$\mathsf{gch}_h(c) = \mathsf{ech}(h(c^{+}))$, the channel map induced by $h$.`, R`Restricted sets are sets of channels, so $h$ acts on them through its action on $c^{+}$.`, DEF, R`$\mathsf{gch}_{\mathsf{id}}(c) = c$.`, 'relation/Relation.v: gch');
 n('sr.tenv-erase', R`$|\Delta|$`, R`The ends of $\Delta$ with their session types and points, each entry $(S@x)^{a}$ becoming $S@x$.`, R`$E$ reads ends only, and no credit.`, DEF, R`$|c^{+} : (S@\rho)^{3},\ 0 : T| = \{c^{+} \mapsto S@\rho\}$.`, 'relation/Relation.v: tenv_erase');
-n('sr.fvagg', R`Products, sums and existentials in $FV$`, R`$\otimes$ splits $\Pi$ and $\varphi$ disjointly between its parts, $\oplus$ checks the injected part, and $\exists$ checks its body.`, R`Only ends and closures carry credits, so these types only pass $\Pi$ and $\varphi$ on.`, DEF, R`$(S@x)^{2} \otimes \ast$ gives $o$ to the first part.`, 'fuel/Fuel.v: Vty');
-n('sr.ctrs', R`$\mathsf{ctrs}\,K\,t$`, R`The counters of the ends held by thread $t$, read from $K$.`, R`Fuel of a soup thread uses exactly these counters.`, DEF, R`$\mathsf{ctrs}\,K\,0 = \{a \mapsto 2\}$.`, 'soup/State.v: ctrs');
+n('sr.fvagg', R`Products, sums and existentials in $FV$`, R`$\otimes$ splits $\Phi$ disjointly between its parts, $\oplus$ checks the injected part, and $\exists$ checks its body.`, R`Only ends and closures carry credits, so these types only pass $\Phi$ on.`, DEF, R`$(S@x)^{2} \otimes \ast$ gives $o$ to the first part.`, 'fuel/Fuel.v: Vty');
 
 // ---- signatures and arguments ----
 const A = (name, meaning) => ({ name, meaning });
@@ -617,7 +613,7 @@ const aSg = A(R`\Sigma`, R`the interface, a finite map $\mathsf{End} \rightharpo
 const ap = A(R`p`, R`the process, $p = (C, E) \in \mathsf{Proc}$`);
 const ak = A(R`\kappa`, R`the cost table`);
 const aPi = A(R`\Pi`, R`the protocols, a finite map $\mathsf{End} \rightharpoonup \mathsf{STy}$`);
-const aphi = A(R`\varphi`, R`the counters, a finite map $\mathsf{End} \rightharpoonup \mathbb{N} \cup \{\infty\}$`);
+const aPhi = A(R`\Phi`, R`the held ends, a finite map $o \mapsto S^{f}$ from ends to a protocol and a counter $f \in \mathbb{N} \cup \{\infty\}$`);
 const atk = A(R`tk`, R`the tickets of the thread, $tk \in \mathbb{N}$`);
 const aN = A(R`N`, R`the refill, $N \in \mathbb{N} \cup \{\infty\}$`);
 const aK = A(R`K`, R`the ownership map of the soup state`);
@@ -628,9 +624,9 @@ const OBL = (nm) => R`\mathsf{${nm}} : \mathsf{Expr} \to \mathsf{Prop}`;
 const SIGV = R`v \in V[\kappa]^{W}_{n}\llbracket \Theta \vdash T \rrbracket`;
 const SIGE = R`e \in E[\kappa]^{W}_{n}\llbracket \Theta \vdash T \rrbracket^{F}`;
 const SIGP = R`p \in P[\kappa]^{W}_{n}\llbracket \Sigma \vdash T \rrbracket`;
-const SIGF = R`e \in F^{N}_{n}\llbracket \sigma \triangleright d ; r \rrbracket(\Pi, \varphi, tk)`;
+const SIGF = R`e \in F^{N}_{n}\llbracket \Phi ; tk \vdash \sigma\ !\ (d, r) \rrbracket`;
 const SIGS = R`a \in S^{N,W}_{n}\llbracket \Sigma \vdash T \rrbracket`;
-const fuelArgs = [aN, an, A(R`\sigma`, R`the result, a credited type or $\mathsf{thread}$`), A(R`d`, R`the frame, $d \in \mathbb{N} \cup \{\infty\}$`), A(R`r`, R`the reserve, $r \in \mathbb{N}$`), aPi, aphi, atk, A(R`e`, R`the term`)];
+const fuelArgs = [aN, an, aPhi, atk, A(R`\sigma`, R`the result, a credited type or $\mathsf{thread}$`), A(R`d`, R`the frame, the actions left before returning, $d \in \mathbb{N} \cup \{\infty\}$`), A(R`r`, R`the reserve, the tickets kept on return, $r \in \mathbb{N}$`), A(R`e`, R`the term`)];
 const soupArgs = [aN, aW, an, aSg, aT, A(R`a = (q, K, tk)`, R`the soup state, with $q = (C, M)$ a configuration`)];
 const vArgs = [ak, aW, an, aTh, aT, A(R`v`, R`the value`)];
 const eArgs = [ak, aW, an, aTh, aT, aF, A(R`e`, R`the term`)];
@@ -740,53 +736,50 @@ sa('sj.den', R`\mathsf{den} : (\mathbb{N} \to \mathcal{P}(\mathsf{Point})) \to \
 sa('sj.term', R`\Delta \vDash^{F}_{W} e : T`, [A(R`\Delta`, R`the linear context`), A(R`F`, R`the static future`), aW, A(R`e, T`, R`the term and its type`)]);
 sa('sj.proc', R`\Sigma \vDash_{W} p : T`, [aSg, aW, ap, aT]);
 sa('fu.zero', SIGF, fuelArgs);
+sa('fu.Phi', R`\Phi : \mathsf{End} \rightharpoonup \mathsf{STy} \times (\mathbb{N} \cup \{\infty\})`, [A(R`S^{f}`, R`the protocol $S$ and counter $f$ of an end`)]);
+sa('fu.tick', R`\Phi{\downarrow} = \{o \mapsto S^{f \mathbin{\dot-} 1} \mid o \mapsto S^{f} \in \Phi\}`, [aPhi]);
 sa('fu.rty', R`\sigma \in \{T^{a}\} \cup \{\mathsf{thread}\}`, [A(R`T^{a}`, R`a credited type`)]);
 sa('fu.frame', R`d \in \mathbb{N} \cup \{\infty\}`, []);
 sa('fu.reserve', R`r \in \mathbb{N}`, []);
-sa('fu.Pi', R`\Pi : \mathsf{End} \rightharpoonup \mathsf{STy}`, []);
-sa('fu.phi', R`\varphi : \mathsf{End} \rightharpoonup \mathbb{N} \cup \{\infty\}`, []);
 sa('fu.tk', R`tk \in \mathbb{N}`, []);
 sa('fu.refill-kripke', R`N \sqsubseteq_{\mathsf{rle}} N' : \mathsf{Prop}`, [A(R`N, N'`, R`refills in $\mathbb{N} \cup \{\infty\}$`)]);
-sa('fu.rename', R`g : \mathsf{End} \to \mathsf{End} \text{ injective on } \mathrm{dom}\,\Pi, \mathrm{dom}\,\varphi`, [A(R`g`, R`the renaming`)]);
-sa('fu.val', R`g(e) \in \mathsf{Val} \Rightarrow r \leq tk \land g(e) \in FV^{N'}_{n+1}\llbracket \sigma \rrbracket(g\Pi, g\varphi)`, [A(R`g, N'`, R`the renaming and the refill`)]);
+sa('fu.rename', R`g : \mathsf{End} \to \mathsf{End} \text{ injective on } \mathrm{dom}\,\Phi`, [A(R`g`, R`the renaming`)]);
+sa('fu.val', R`g(e) \in \mathsf{Val} \Rightarrow r \leq tk \land g(e) \in FV^{N'}_{n+1}\llbracket g\Phi \vdash \sigma \rrbracket`, [A(R`g, N'`, R`the renaming and the refill`)]);
 sa('fu.step', R`\forall \alpha, e'.\ g(e) \xrightarrow{\alpha} e' \Rightarrow \mathsf{Fobl}^{N'}_{\alpha}(e')`, [A(R`\alpha, e'`, R`the step label and the successor`)]);
 sa('fu.oneclock', R`\text{cost}(\alpha) = 1`, [A(R`\alpha`, R`every step label`)]);
-sa('F-Wait', R`\neg\mathsf{idle}(\Pi\,o)`, [aPi, ao]);
-sa('F-Tick', R`\mathsf{fspare}\,\Pi\,\varphi\,(\mathrm{dom}\,\varphi \setminus \{o\})`, [aPi, aphi, ao]);
+sa('F-Wait', R`\Phi(o) = S^{f} \land \neg\mathsf{idle}\,S`, [aPhi, ao]);
+sa('F-Tick', R`\mathsf{spare}(\Phi \setminus o)`, [aPhi, ao]);
 sa('F-Tick.frame', R`1 \leq d`, [A(R`d`, R`the frame`)]);
-sa('fu.refillop', R`\mathsf{refill} : (\mathbb{N} \cup \{\infty\}) \to \mathsf{End} \to \mathsf{CEnv} \to \mathsf{CEnv}`, [aN, ao, aphi]);
 sa('fu.idle', R`\mathsf{idle} : \mathsf{STy} \to \mathsf{Prop}`, [A(R`S`, R`a session type`)]);
 sa('F-Beta', R`\mathsf{f\_beta} : \mathsf{Expr} \to \mathsf{Prop}`, [...fuelArgs.slice(0, 8), A(R`e'`, R`the successor`)]);
 sa('F-New', R`\mathsf{f\_new} : \mathsf{Chan} \to \mathsf{Expr} \to \mathsf{Prop}`, [A(R`c`, R`the new channel`), A(R`S`, R`the protocol of $c^{+}$`), A(R`e'`, R`the successor`)]);
-sa('F-New.fresh', R`\mathsf{ffresh} : \mathsf{Chan} \to \mathsf{PEnv} \to \mathsf{CEnv} \to \mathsf{Prop}`, [A(R`c`, R`the new channel`), aPi, aphi]);
-sa('F-New.cnew', R`\mathsf{cnew}\,N\,c\,\varphi = \varphi[c^{+} \mapsto N, c^{-} \mapsto N]`, [aN, A(R`c`, R`the new channel`), aphi]);
+sa('F-New.fresh', R`c^{\pm} \notin \mathrm{dom}\,\Phi`, [A(R`c`, R`the new channel`), aPhi]);
+sa('F-New.cnew', R`\Phi[c^{+} \mapsto S^{N}, c^{-} \mapsto \overline{S}^{N}]`, [aN, A(R`c`, R`the new channel`), A(R`S`, R`the protocol of $c^{+}$`), aPhi]);
 sa('F-Spawn', R`\mathsf{f\_spawn} : \mathsf{Val} \to \mathsf{Expr} \to \mathsf{Prop}`, [A(R`v`, R`the thunk`), A(R`M`, R`$\mathsf{fends}(v)$, the handed ends`), A(R`e'`, R`the parent's successor`)]);
-sa('F-Spawn.held', R`M \subseteq \mathrm{dom}\,\varphi`, [A(R`M`, R`the handed ends`)]);
-sa('fu.fspare', R`\mathsf{fspare} : \mathsf{PEnv} \to \mathsf{CEnv} \to \mathcal{P}_{\mathrm{fin}}(\mathsf{End}) \to \mathsf{Prop}`, [aPi, aphi, A(R`X`, R`the ends that must spare a unit`)]);
-sa('F-Spawn.child', R`v\,\ast \in F^{N}_{n}\llbracket \mathsf{thread} \triangleright \infty ; 0 \rrbracket(\Pi|_M, \mathsf{fhand}\,M\,\varphi, \lceil tk/2 \rceil)`, [A(R`v\,\ast`, R`the child thread`), A(R`M`, R`the handed ends`)]);
-sa('fu.fhand', R`\mathsf{fhand} : \mathcal{P}_{\mathrm{fin}}(\mathsf{End}) \to \mathsf{CEnv} \to \mathsf{CEnv}`, [A(R`M`, R`the handed ends`), aphi]);
+sa('F-Spawn.held', R`M \subseteq \mathrm{dom}\,\Phi`, [A(R`M`, R`the handed ends`)]);
+sa('fu.fspare', R`\mathsf{spare}(\Phi) \iff \forall o \mapsto S^{f} \in \Phi.\ \neg\mathsf{idle}\,S \Rightarrow 1 \leq f`, [aPhi]);
+sa('F-Spawn.child', R`v\,\ast \in F^{N}_{n}\llbracket \Phi|_M{\downarrow} ; \lceil tk/2 \rceil \vdash \mathsf{thread}\ !\ (\infty, 0) \rrbracket`, [A(R`v\,\ast`, R`the child thread`), A(R`M`, R`the handed ends`)]);
 sa('F-Spawn.tickets', R`(\lceil tk/2 \rceil, \lfloor tk/2 \rfloor)`, [atk]);
 sa('F-Send', R`\mathsf{f\_send} : \mathsf{End} \to \mathsf{Val} \to \mathsf{Expr} \to \mathsf{Prop}`, [ao, A(R`w`, R`the payload`), A(R`M`, R`$\mathsf{fends}(w)$`), A(R`T, b`, R`the payload type and credit`), A(R`S`, R`the continuation protocol`)]);
-sa('F-Send.notsubj', R`M \subseteq \mathrm{dom}\,\varphi \setminus \{o\}`, [A(R`M`, R`the handed ends`), ao]);
-sa('F-Send.payload', R`w \in FV^{N}_{n}\llbracket T^{b} \rrbracket(\Pi|_M, \mathsf{fhand}\,M\,\varphi)`, [A(R`w`, R`the payload`), A(R`T^{b}`, R`the raw payload type at the credit of the protocol`)]);
-sa('F-Recv', R`\mathsf{f\_recv} : \mathsf{End} \to \mathsf{Val} \to \mathsf{Expr} \to \mathsf{Prop}`, [ao, A(R`w`, R`the received value`), A(R`j, \Pi_i, \varphi_i`, R`its level, protocols and counters`)]);
-sa('F-Recv.forall', R`\forall j \leq n, \Pi_i, \varphi_i.\ w \in FV^{N}_{j}\llbracket T^{b} \rrbracket(\Pi_i, \varphi_i) \Rightarrow \ldots`, [A(R`\Pi_i, \varphi_i`, R`disjoint from $\Pi[o \mapsto S]$ and $\mathsf{refill}\,N\,o\,\varphi$`)]);
+sa('F-Send.notsubj', R`o \notin M \subseteq \mathrm{dom}\,\Phi`, [A(R`M`, R`the handed ends`), ao]);
+sa('F-Send.payload', R`w \in FV^{N}_{n}\llbracket \Phi|_M{\downarrow} \vdash T \rrbracket`, [A(R`w`, R`the payload`), A(R`T`, R`the payload type`)]);
+sa('F-Recv', R`\mathsf{f\_recv} : \mathsf{End} \to \mathsf{Val} \to \mathsf{Expr} \to \mathsf{Prop}`, [ao, A(R`w`, R`the received value`), A(R`j, \Phi_i`, R`its level and the ends it brings`)]);
+sa('F-Recv.forall', R`\forall j \leq n, \Phi_i \mathbin{\#} \Phi.\ w \in FV^{N}_{j}\llbracket \Phi_i \vdash T \rrbracket \Rightarrow \ldots`, [A(R`\Phi_i`, R`the ends of the received value, disjoint from $\Phi$`)]);
 sa('F-Close', R`\mathsf{f\_close}, \mathsf{f\_select}, \mathsf{f\_branch} : \mathsf{End} \to \ldots \to \mathsf{Prop}`, [ao, A(R`i`, R`the choice, for select and branch`)]);
 sa('F-Link', R`\mathsf{f\_link} : \mathcal{P}_{\mathrm{fin}}(\mathsf{End}) \to \mathsf{Expr} \to \mathsf{Prop}`, [A(R`\{o_1, o_2\}`, R`the linked ends`)]);
-sa('F-Link.plink', R`\mathsf{plink} : \mathsf{PEnv} \to \mathcal{P}_{\mathrm{fin}}(\mathsf{End}) \to \mathsf{Prop}`, [aPi, A(R`\{o_1, o_2\}`, R`the linked ends`)]);
+sa('F-Link.plink', R`\Phi(o_1) = S^{f},\ \Phi(o_2) = S'^{f'},\ o_1 \neq o_2,\ S' \simeq \overline{S}`, [aPhi, A(R`o_1, o_2`, R`the linked ends`)]);
 sa('F-Link.ticket', R`1 \leq tk`, [atk]);
-sa('FV-Sess', R`o \in FV\llbracket (S@x)^{a} \rrbracket(\Pi, \varphi)`, [ao, A(R`S@x, a`, R`the end type and its credit`), A(R`S', f`, R`the protocol and counter of $o$`)]);
+sa('FV-Sess', R`o \in FV^{N}_{n}\llbracket \{o \mapsto S'^{f}\} \vdash (S@x)^{a} \rrbracket`, [ao, A(R`S@x, a`, R`the end type and its credit`), A(R`S', f`, R`the protocol and counter of $o$`)]);
 sa('FV-Sess.counter', R`a \leq f`, [A(R`a`, R`the credit`), A(R`f`, R`the counter`)]);
-sa('FV-Arrow', R`\lambda e \in FV^{N}_{n}\llbracket (T^{a_1} \multimap_{c;\vartheta;h} U^{a_2})^{a} \rrbracket(\Pi, \varphi)`, [A(R`c, \vartheta, h`, R`the cost, ticket need and floor of the arrow`), A(R`a`, R`the credit of the closure`)]);
-sa('FV-Arrow.exact', R`\mathsf{fends}\,e = \mathrm{dom}\,\Pi = \mathrm{dom}\,\varphi`, [A(R`e`, R`the body`)]);
-sa('FV-Arrow.floor', R`\forall o.\ h + a \leq \varphi(o)`, [A(R`h`, R`the floor`), A(R`a`, R`the closure's credit`)]);
-sa('FV-Arrow.body', R`e[u] \in F^{N'}_{j}\llbracket U^{a_2} \triangleright c ; r \rrbracket(\Pi \cup \Pi_u, \varphi' \cup \varphi_u, tk)`, [A(R`N', j`, R`a larger refill and a lower level`), A(R`\varphi'`, R`the captured counters at the call, at least $h$`), A(R`u, \Pi_u, \varphi_u`, R`the argument with its maps`), A(R`r, tk`, R`a reserve and ticket count with $\mathsf{meets}\,\vartheta\,r\,tk$`)]);
-sa('FV-Box', R`!e \in FV^{N}_{n}\llbracket \Box(\ldots) \rrbracket(\Pi, \varphi)`, [A(R`e`, R`the body`)]);
-sa('FV-Box.noends', R`\mathsf{fends}\,e = \varnothing \land \Pi = \varphi = \varnothing`, [A(R`e`, R`the body`)]);
-sa('FV-Box.body', R`e[!e] \in F^{N'}_{j}\llbracket U[\bar s] \triangleright c ; r \rrbracket(\varnothing, \varnothing, tk)`, [A(R`N', j`, R`a larger refill and a lower level`), A(R`\bar s`, R`a session instance in $\mathsf{sinsts}\,N'$`), A(R`r, tk`, R`with $\mathsf{meets}\,\vartheta\,r\,tk$`)]);
-sa('FV-Thread', R`v \in FV\llbracket \mathsf{thread} \rrbracket(\Pi, \varphi)`, [A(R`v`, R`the returned value`)]);
+sa('FV-Arrow', R`\lambda e \in FV^{N}_{n}\llbracket \Phi \vdash (T \multimap[(c, \vartheta); h]\, U)^{a} \rrbracket`, [A(R`c, \vartheta, h`, R`the cost, ticket need and floor of the arrow`), A(R`a`, R`the credit of the closure`)]);
+sa('FV-Arrow.exact', R`\mathsf{fends}\,e = \mathrm{dom}\,\Phi`, [A(R`e`, R`the body`)]);
+sa('FV-Arrow.floor', R`\Phi(o) = S^{f} \Rightarrow h + a \leq f`, [A(R`h`, R`the floor`), A(R`a`, R`the closure's credit`)]);
+sa('FV-Arrow.body', R`e[u] \in F^{N'}_{j}\llbracket \Phi' \cup \Phi_u ; tk \vdash U\ !\ (c, r) \rrbracket`, [A(R`N', j`, R`a larger refill and a lower level`), A(R`\Phi'`, R`the captured ends with counters at the call, at least $h$`), A(R`\Phi_u`, R`the ends of the argument`), A(R`r, tk`, R`with $\vartheta(r) \leq tk$`)]);
+sa('FV-Box', R`!e \in FV^{N}_{n}\llbracket \varnothing \vdash \Box(\ldots) \rrbracket`, [A(R`e`, R`the body`)]);
+sa('FV-Box.noends', R`\mathsf{fends}\,e = \varnothing`, [A(R`e`, R`the body`)]);
+sa('FV-Box.body', R`e[!e] \in F^{N'}_{j}\llbracket \varnothing ; tk \vdash U[\bar s]\ !\ (c, r) \rrbracket`, [A(R`N', j`, R`a larger refill and a lower level`), A(R`\bar s`, R`a session instance in $\mathsf{sinsts}\,N'$`), A(R`r, tk`, R`with $\vartheta(r) \leq tk$`)]);
+sa('FV-Thread', R`v \in FV^{N}_{n}\llbracket \Phi \vdash \mathsf{thread} \rrbracket`, [A(R`v`, R`the returned value`)]);
 sa('fu.fsem', R`\mathsf{fsem} : (\mathbb{N} \cup \{\infty\}) \to \mathsf{PEnv} \to \mathsf{Expr} \to \mathsf{Prop}`, [aN, aPi, A(R`e`, R`the thread`), A(R`tk`, R`the ticket count, fixed for all levels`)]);
-sa('fu.upd', R`F_n[x := v] : \mathsf{Expr} \to \mathsf{Prop}`, [A(R`x`, R`a component among $d, \Pi, \varphi, tk$`), A(R`v`, R`its new value`), an]);
 sa('cs.csem', R`\Delta \vDash^{N} e : T\ !\ \varepsilon`, [A(R`\Delta`, R`the linear context`), aN, A('T', R`the type`), A(R`\varepsilon`, R`the effect, cost and ticket need`)]);
 sa('sp.state', R`a = (q, K, tk) \in \mathsf{Config} \times \mathsf{Own} \times (\mathbb{N} \to \mathbb{N})`, [A(R`q`, R`the configuration`), aK, A(R`tk`, R`the tickets per thread`)]);
 sa('sp.hold', R`K : \mathsf{End} \rightharpoonup \mathbb{N} \times \mathsf{Point} \times (\mathbb{N} \cup \{\infty\})`, [A(R`t, x, f`, R`holder thread, point and counter`)]);
@@ -795,7 +788,7 @@ sa('sp.exists', R`\exists A \in ${ENV}, \Pi \in \mathsf{PEnv}, U : \mathbb{N} \t
 sa('sp.prim', R`\mathsf{prim}\,T`, [aT]);
 sa('sp.rel', R`\forall t, e.\ q(t) = e \Rightarrow e \in E[\kappa_L]^{W}_{n}\llbracket K_t(A) \vdash U_t \rrbracket^{\varnothing}`, [A(R`t`, R`a thread`), A(R`K_t(A)`, R`$A$ restricted to the ends held by $t$`)]);
 sa('sp.ty', R`U_t \in \{T, \ast\}`, [A(R`t`, R`a thread`)]);
-sa('sp.fuel', R`e \in F^{N}_{n}\llbracket \mathsf{thread} \triangleright \infty ; 0 \rrbracket(K_t(\Pi), \mathsf{ctrs}\,K\,t, tk_t)`, [A(R`t`, R`a thread`)]);
+sa('sp.fuel', R`e \in F^{N}_{n}\llbracket \Phi_t ; tk_t \vdash \mathsf{thread}\ !\ (\infty, 0) \rrbracket`, [A(R`t`, R`a thread`), A(R`\Phi_t`, R`the protocols of $\Pi$ and counters of $K$ on the ends of $t$`)]);
 sa('sp.own', R`\mathsf{consistent} : \mathsf{LFState} \to \mathsf{Env} \to \mathsf{PEnv} \to \mathsf{Prop}`, [A('a', R`the soup state $(q, K, tk)$`), A('A', R`the environment of all held ends`), A(R`\Pi`, R`their protocols`)]);
 sa('sp.pts', R`\forall o.\ \mathsf{pt}(A\,o) = \mathsf{pt}(K\,o)`, [A(R`o`, R`an end`)]);
 sa('sp.dom', R`\mathrm{dom}\,\Pi = \mathrm{dom}\,K`, [aPi, aK]);
@@ -811,8 +804,8 @@ sa('sp.lfsem', R`\Sigma \Vvdash_{W} p : T`, [aSg, aW, ap, aT, A(R`N, a`, R`the r
 sa('sp.exists-before-forall', R`\exists N \in \mathbb{N}, a.\ \mathsf{erase}(q_a) = p \land \forall n.\ \ldots`, [aN, A(R`a`, R`the soup state`)]);
 sa('sp.next', R`\mathsf{lf\_next} : \mathbb{N} \to \mathsf{LFState} \to \mathsf{Event} \to \mathsf{Config} \to \mathsf{LFState}`, [aN, A(R`(q, K, tk)`, R`the state`), A(R`ev`, R`the event`), A(R`q'`, R`the configuration after the event`)]);
 sa('sr.FE', SIGF, fuelArgs);
-sa('sr.FV', R`v \in FV^{N}_{n}\llbracket \sigma \rrbracket(\Pi, \varphi)`, [aN, an, A(R`\sigma`, R`the result`), aPi, aphi, A(R`v`, R`the value`)]);
-sa('sr.act', R`\mathsf{act} : \mathsf{End} \to \mathsf{Prop}`, [ao, aPi, aphi, A(R`d`, R`the frame`)]);
+sa('sr.FV', R`v \in FV^{N}_{n}\llbracket \Phi \vdash \sigma \rrbracket`, [aN, an, aPhi, A(R`\sigma`, R`the result`), A(R`v`, R`the value`)]);
+sa('sr.act', R`\mathsf{act} : \mathsf{End} \to \mathsf{Prop}`, [ao, aPhi, A(R`d`, R`the frame`)]);
 sa('sr.vthunk', R`\mathsf{Vthunk}^{W}_{n} : ${ENV} \to \mathsf{Expr} \to \mathsf{Prop}`, [aW, an, aTh]);
 sa('sr.thunk', R`\mathsf{thunk} : \mathsf{Expr} \to \mathsf{Val}`, [A(R`e`, R`the body of a box`)]);
 sa('sr.size', R`\mathsf{size} : \mathsf{Ty} \to \mathbb{N}`, [aT]);
@@ -830,5 +823,4 @@ sa('sr.held', R`\mathsf{held} \subseteq \mathsf{End}`, [aSg, A(R`C`, R`the restr
 sa('sr.gch', R`\mathsf{gch}_h : \mathsf{Chan} \to \mathsf{Chan}`, [A(R`h`, R`the map of ends`), A(R`c`, R`a channel`)]);
 sa('sr.tenv-erase', R`|\cdot| : \mathsf{Ctx} \to ${ENV}`, [A(R`\Delta`, R`a linear context`)]);
 sa('sr.head', R`\Theta(o) \doteq S@x \iff \exists S_0.\ \Theta(o) = S_0@x \land \mathsf{unfold}\,S_0 = S`, [aTh, A('o', R`the subject end`), A('S', R`the head form of its protocol`)]);
-sa('sr.fvagg', R`FV \text{ at } \otimes, \oplus, \exists`, [A(R`\Pi, \varphi`, R`the protocols and counters, split among the parts`)]);
-sa('sr.ctrs', R`\mathsf{ctrs} : \mathsf{Own} \to \mathbb{N} \to \mathsf{CEnv}`, [aK, A(R`t`, R`a thread`)]);
+sa('sr.fvagg', R`FV \text{ at } \otimes, \oplus, \exists`, [A(R`\Phi`, R`the held ends, split among the parts`)]);

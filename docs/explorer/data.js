@@ -899,7 +899,7 @@ window.MAP = {
      "id": "sr-reading",
      "title": "Reading the relations",
      "rocq": "relation/Relation.v: Vrel, Erel, Prel, at_cost_E",
-     "tex": "\\begin{array}{ll}\n\\htmlData{k=th.Vrel}{v \\in V^{W}_{n}\\llbracket \\Theta \\vdash T \\rrbracket} & \\text{the value } v \\text{ owns exactly the ends } \\Theta \\text{ and is safe at } T \\\\\n\\htmlData{k=th.Erel}{e \\in E^{W}_{n}\\llbracket \\Theta \\vdash T \\rrbracket^{F}} & \\text{the term } e \\text{, holding } \\Theta \\text{, is safe until it returns a value of } T \\text{, its context acting at } F \\text{ afterwards} \\\\\n\\htmlData{k=th.Prel}{p \\in P^{W}_{n}\\llbracket \\Sigma \\vdash T \\rrbracket} & \\text{the process } p \\text{ is safe with interface } \\Sigma \\\\\n\\htmlData{k=sr.obl}{\\mathsf{Obl}_\\alpha(e')} & \\text{what a step } e \\xrightarrow{\\alpha} e' \\text{ must preserve} \\\\\n\\htmlData{k=rel.atcost}{e'\\ \\text{at}\\ \\Theta'} & e' \\text{ is safe holding } \\Theta' \\text{, at the same level after a free step and one level lower otherwise}\n\\annraw{\\\\}\\annot{\\htmlData{k=sr.FE}{e \\in F^{N}_{n}\\llbracket \\sigma \\triangleright d ; r \\rrbracket(\\Pi, \\varphi, tk)}}\\annraw{&}\\annot{\\text{the thread } e \\text{ has counters } \\varphi \\text{ and tickets } tk \\text{ for } n \\text{ more steps, reading no point}}\n\\annraw{\\\\}\\annot{\\htmlData{k=th.soup}{a \\in S^{N,W}_{n}\\llbracket \\Sigma \\vdash T \\rrbracket}}\\annraw{&}\\annot{\\text{every thread of } a \\text{ is in } E[\\kappa_L] \\text{ and fueled, over one ownership map}}\n\\end{array}",
+     "tex": "\\begin{array}{ll}\n\\htmlData{k=th.Vrel}{v \\in V^{W}_{n}\\llbracket \\Theta \\vdash T \\rrbracket} & \\text{the value } v \\text{ owns exactly the ends } \\Theta \\text{ and is safe at } T \\\\\n\\htmlData{k=th.Erel}{e \\in E^{W}_{n}\\llbracket \\Theta \\vdash T \\rrbracket^{F}} & \\text{the term } e \\text{, holding } \\Theta \\text{, is safe until it returns a value of } T \\text{, its context acting at } F \\text{ afterwards} \\\\\n\\htmlData{k=th.Prel}{p \\in P^{W}_{n}\\llbracket \\Sigma \\vdash T \\rrbracket} & \\text{the process } p \\text{ is safe with interface } \\Sigma \\\\\n\\htmlData{k=sr.obl}{\\mathsf{Obl}_\\alpha(e')} & \\text{what a step } e \\xrightarrow{\\alpha} e' \\text{ must preserve} \\\\\n\\htmlData{k=rel.atcost}{e'\\ \\text{at}\\ \\Theta'} & e' \\text{ is safe holding } \\Theta' \\text{, at the same level after a free step and one level lower otherwise}\n\\annraw{\\\\}\\annot{\\htmlData{k=sr.FE}{e \\in F^{N}_{n}\\llbracket \\Phi ; tk \\vdash \\sigma\\ !\\ (d, r) \\rrbracket}}\\annraw{&}\\annot{\\text{the thread } e \\text{, holding } \\Phi \\text{ with counters and } tk \\text{ tickets, has fuel for } n \\text{ more steps}}\n\\annraw{\\\\}\\annot{\\htmlData{k=th.soup}{a \\in S^{N,W}_{n}\\llbracket \\Sigma \\vdash T \\rrbracket}}\\annraw{&}\\annot{\\text{every thread of } a \\text{ is in } E[\\kappa_L] \\text{ and fueled, over one ownership map}}\n\\end{array}",
      "caption": "Every relation is indexed by a world $W$, whose order of points it reads, and a level $n$, the number of further steps it promises safety for. A term is safe when it is a safe value, or when it is ready and every step leads to a safe term one level lower that holds the ends the step leaves it. Values are safe by their type, the obligations say which ends each step leaves, and readiness says that a stuck term waits below the partner points of what it holds. Processes are safe in the same way, and closed under fusing their ends, so composing two safe processes needs no new proof. \\annp{The lock-free reading adds fuel, a second predicate on each thread, and the soup, which asks both of every thread.}",
      "modes": [
       "df",
@@ -1058,8 +1058,8 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{l|l|l}\n & \\text{the relation} & \\text{fuel} \\\\ \\hline\n\\text{a thread} & \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta \\vdash T \\rrbracket^{F}} & \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\sigma \\triangleright d ; r \\rrbracket(\\Pi, \\varphi, tk)} \\\\\n\\text{it reads} & \\text{the world } W\\text{, points, owned ends } \\Theta & \\text{protocols } \\Pi\\text{, counters } \\varphi\\text{, tickets } tk \\\\\n\\text{a value} & \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash T \\rrbracket} & \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket T\\annot{^{a}} \\rrbracket(\\Pi, \\varphi)} \\\\\n\\text{a step } \\alpha & \\htmlData{k=sr.obl}{\\mathsf{Obl}_\\alpha(e')} & \\htmlData{k=sr.fobl}{\\mathsf{Fobl}_\\alpha(e')} \\\\\n\\text{rules out} & \\text{a stuck wait, and at } \\kappa_L \\text{ a loop of free steps} & \\text{a wait that never ends} \\\\\n\\text{used in} & \\vDash \\text{ and the soup} & \\text{the soup only}\n\\end{array}",
-     "caption": "Fuel is not part of the relation. It is a second predicate on the same thread with the same shape, a value clause and one obligation per step, and it reads counters and tickets where the relation reads points. The soup asks both of every thread. The relation makes every thread ready when stuck, and fuel bounds how often the holder of a partner end may act elsewhere first, so every wait ends.",
+     "tex": "\\begin{array}{l|l|l}\n & \\text{the relation} & \\text{fuel} \\\\ \\hline\n\\text{a thread} & e \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta \\vdash T \\rrbracket^{F}} & e \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.Phi}{\\Phi} ; tk \\vdash \\sigma\\ !\\ (d, r) \\rrbracket} \\\\\n\\text{an end} & o \\mapsto S@x \\text{ in } \\Theta & o \\mapsto S^{f} \\text{ in } \\Phi \\\\\n\\text{a value} & v \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash T \\rrbracket} & v \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\htmlData{k=fu.Phi}{\\Phi} \\vdash T\\annot{^{a}} \\rrbracket} \\\\\n\\text{a step } \\alpha & \\htmlData{k=sr.obl}{\\mathsf{Obl}_\\alpha(e')} & \\htmlData{k=sr.fobl}{\\mathsf{Fobl}_\\alpha(e')} \\\\\n\\text{rules out} & \\text{a stuck wait, and at } \\kappa_L \\text{ a loop of free steps} & \\text{a wait that never ends} \\\\\n\\text{used in} & \\vDash \\text{ and the soup} & \\text{the soup only}\n\\end{array}",
+     "caption": "Fuel is not part of the relation. It is a second predicate on the same thread with the same shape, a value clause and one obligation per step. Where the relation gives each end a point, $S@x$, fuel gives it a counter, $S^f$, and fuel also counts link tickets $tk$. The soup asks both of every thread. The relation makes every thread ready when stuck, and fuel bounds how often the holder of a partner end may act elsewhere first, so every wait ends.",
      "about": {
       "why": "Fuel and the relation are two predicates on one thread. This table shows what each reads and guarantees, and that the soup is where they meet.",
       "used": [
@@ -1075,9 +1075,9 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "rocq": "fuel/Fuel.v: Fdef, FuelE, FLev; fuel/Fuel.v: f_act, fspare, idle_at, refill, ftick; fuel/Fuel.v: fsem; cost/CostSem.v: csem",
-     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=fu.refill-kripke}{\\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N}\\quad \\htmlData{k=fu.rename}{\\forall g \\text{ injective on } \\mathrm{dom}\\,\\Pi} \\\\ \\htmlData{k=fu.val}{g(e) \\in \\mathsf{Val} \\Rightarrow r \\leq tk \\land g(e) \\in \\htmlData{k=sr.FV}{FV^{N'}_{n{+}1}\\llbracket \\sigma \\rrbracket(g\\Pi, g\\varphi)}} \\\\ \\htmlData{k=fu.step}{g(e) \\xrightarrow{\\alpha} e' \\Rightarrow \\htmlData{k=sr.fobl}{\\mathsf{Fobl}^{N'}_{\\alpha}(e')}}\\end{array}}{e \\in \\htmlData{k=sr.FE}{F^{N}_{n{+}1}\\llbracket \\htmlData{k=fu.rty}{\\sigma} \\triangleright \\htmlData{k=fu.frame}{d} ; \\htmlData{k=fu.reserve}{r} \\rrbracket(\\htmlData{k=fu.Pi}{\\Pi}, \\htmlData{k=fu.phi}{\\varphi}, \\htmlData{k=fu.tk}{tk})}}\\;\\textsf{F-Run}\n\\qquad \\htmlData{k=fu.zero}{e \\in \\htmlData{k=sr.FE}{F^{N}_{0}\\llbracket \\sigma \\triangleright d ; r \\rrbracket(\\Pi, \\varphi, tk)}} \\\\[6pt]\n\\htmlData{k=fu.upd}{F_n[x := v]} = F^{N'}_{n}\\llbracket \\sigma \\triangleright d ; r \\rrbracket(\\Pi, \\varphi, tk) \\text{ with the component } x \\text{ replaced by } v \\qquad \\htmlData{k=fu.oneclock}{\\text{every step costs one level}}\n\\end{array}\\\\[3ex]\\begin{array}{rcll}\n\\htmlData{k=sr.act}{\\mathsf{act}}\\,o & \\iff & \\htmlData{k=F-Wait}{o \\in \\mathrm{dom}\\,\\varphi \\land \\neg \\htmlData{k=fu.idle}{\\mathsf{idle}}(\\Pi\\,o)} & \\text{F-Wait} \\\\\n & \\land & \\htmlData{k=F-Tick}{\\htmlData{k=fu.fspare}{\\mathsf{fspare}}\\,\\Pi\\,\\varphi\\,(\\mathrm{dom}\\,\\varphi \\setminus \\{o\\})} \\land \\htmlData{k=F-Tick.frame}{1 \\leq d} & \\text{F-Tick} \\\\[4pt]\n\\htmlData{k=fu.fspare}{\\mathsf{fspare}}\\,\\Pi\\,\\varphi\\,X & \\iff & \\htmlData{k=fu.fspare}{\\forall o' \\in X.\\ \\neg\\mathsf{idle}(\\Pi\\,o') \\Rightarrow 1 \\leq \\varphi(o')} \\\\\n\\htmlData{k=fu.refillop}{\\mathsf{refill}}\\,N\\,o\\,\\varphi & = & \\htmlData{k=fu.refillop}{(\\varphi \\setminus o) \\mathbin{\\dot-} 1\\ [o \\mapsto N]} \\\\\n\\htmlData{k=fu.fhand}{\\mathsf{fhand}}\\,M\\,\\varphi & = & \\htmlData{k=fu.fhand}{(\\varphi|_M) \\mathbin{\\dot-} 1} \\\\\n\\mathsf{idle}\\,S & \\iff & \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S = \\htmlData{k=sty.skip}{\\mathsf{Skip}}\n\\end{array}\\\\[3ex]\\begin{array}{l}\n\\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\Pi\\,e \\iff \\exists tk.\\ \\forall n.\\ e \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.rty}{\\mathsf{thread}} \\annot{\\triangleright \\infty ; 0} \\rrbracket(\\Pi, (\\lambda\\_.N)|_{\\mathrm{dom}\\,\\Pi}, tk)}} \\\\\n\\htmlData{k=cs.csem}{\\Delta \\vDash^{N} e : T\\ !\\ \\varepsilon}\n\\end{array}\\end{array}",
-     "caption": "A thread $e$ holds ends with protocols $\\Pi$ and counters $\\varphi$, and $tk$ link tickets. It returns at $\\sigma$ after at most $d$ actions with $r$ tickets left. At level $n+1$ it returns a fueled value, or every step meets its fuel obligation at level $n$. An action on $o$ asks $o$ held and not idle and a unit to spare on every other live end and on the frame, then refills $o$ to $N$ and ticks the rest. A thread has fuel, $\\mathsf{fsem}$, when it has fuel at every level with every end at $N$. Fuel reads no point, no world and no relation.",
+     "rocq": "fuel/Fuel.v: Fdef, FuelE, FLev; fuel/Fuel.v: f_act, fspare, idle_at, refill, ftick, fhand; fuel/Fuel.v: fsem; cost/CostSem.v: csem",
+     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=fu.refill-kripke}{\\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N}\\quad \\htmlData{k=fu.rename}{\\forall g \\text{ injective on } \\mathrm{dom}\\,\\Phi} \\\\ \\htmlData{k=fu.val}{g(e) \\in \\mathsf{Val} \\Rightarrow r \\leq tk \\land g(e) \\in \\htmlData{k=sr.FV}{FV^{N'}_{n{+}1}\\llbracket g\\Phi \\vdash \\sigma \\rrbracket}} \\\\ \\htmlData{k=fu.step}{g(e) \\xrightarrow{\\alpha} e' \\Rightarrow \\htmlData{k=sr.fobl}{\\mathsf{Fobl}^{N'}_{\\alpha}(e')}}\\end{array}}{e \\in \\htmlData{k=sr.FE}{F^{N}_{n{+}1}\\llbracket \\htmlData{k=fu.Phi}{\\Phi} ; \\htmlData{k=fu.tk}{tk} \\vdash \\htmlData{k=fu.rty}{\\sigma}\\ !\\ (\\htmlData{k=fu.frame}{d}, \\htmlData{k=fu.reserve}{r}) \\rrbracket}}\\;\\textsf{F-Run}\n\\qquad \\htmlData{k=fu.zero}{e \\in \\htmlData{k=sr.FE}{F^{N}_{0}\\llbracket \\Phi ; tk \\vdash \\sigma\\ !\\ (d, r) \\rrbracket}} \\\\[6pt]\n\\htmlData{k=fu.Phi}{\\Phi : o \\mapsto S^{f}} \\qquad \\htmlData{k=fu.oneclock}{\\text{every step costs one level}}\n\\end{array}\\\\[3ex]\\begin{array}{rcll}\n\\htmlData{k=sr.act}{\\mathsf{act}}\\,o & \\iff & \\htmlData{k=F-Wait}{\\Phi(o) = S^{f} \\land \\neg \\htmlData{k=fu.idle}{\\mathsf{idle}}\\,S} & \\text{F-Wait} \\\\\n & \\land & \\htmlData{k=F-Tick}{\\htmlData{k=fu.fspare}{\\mathsf{spare}}(\\Phi \\setminus o)} \\land \\htmlData{k=F-Tick.frame}{1 \\leq d} & \\text{F-Tick} \\\\[4pt]\n\\htmlData{k=fu.fspare}{\\mathsf{spare}}(\\Phi) & \\iff & \\htmlData{k=fu.fspare}{\\forall o \\mapsto S^{f} \\in \\Phi.\\ \\neg\\mathsf{idle}\\,S \\Rightarrow 1 \\leq f} \\\\\n\\htmlData{k=fu.tick}{\\Phi{\\downarrow}} & = & \\htmlData{k=fu.tick}{\\{o \\mapsto S^{f \\mathbin{\\dot-} 1} \\mid o \\mapsto S^{f} \\in \\Phi\\}} \\\\\n\\mathsf{idle}\\,S & \\iff & \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S = \\htmlData{k=sty.skip}{\\mathsf{Skip}}\n\\end{array}\\\\[3ex]\\begin{array}{l}\n\\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\Pi\\,e \\iff \\exists tk.\\ \\forall n.\\ e \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\Pi\\annot{^{N}} ; tk \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}}\\ !\\ (\\infty, 0) \\rrbracket}} \\qquad \\Pi\\annot{^{N}} = \\{o \\mapsto S\\annot{^{N}} \\mid o \\mapsto S \\in \\Pi\\} \\\\\n\\htmlData{k=cs.csem}{\\Delta \\vDash^{N} e : T\\ !\\ \\varepsilon}\n\\end{array}\\end{array}",
+     "caption": "$e \\in F^N_n\\llbracket \\Phi ; tk \\vdash \\sigma\\ !\\ (d, r)\\rrbracket$ says that the thread $e$, holding the ends $\\Phi$, each with its protocol and counter $S^f$, and $tk$ link tickets, has fuel for $n$ more steps to return at $\\sigma$ within $d$ actions with $r$ tickets left. At level $n+1$ it returns a fueled value, or every step meets its fuel obligation at level $n$. An action on $o$ asks $o$ held and not idle and a unit to spare on every other live end and on the frame, then sets $o$ back to $N$ and ticks the rest, $\\Phi{\\downarrow}[o \\mapsto S^{N}]$. A thread has fuel, $\\mathsf{fsem}$, when it has fuel at every level with every end at $N$. Fuel reads no point, no world and no relation.",
      "about": {
       "why": "Fuel is the lock-free half of a thread, its counters and tickets, kept apart from the relation so that it reads no point and no world. Lock-free adequacy measures waiting with it.",
       "used": [
@@ -1095,7 +1095,7 @@ window.MAP = {
       "lf"
      ],
      "rocq": "fuel/Fuel.v: f_beta, f_new, f_spawn, f_link, plink; fuel/Fuel.v: f_send, f_recv, f_close, f_select, f_branch",
-     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=fu.upd}{e' \\in F_{n}}\\end{array}}{\\htmlData{k=F-Beta}{\\mathsf{Fobl}_{\\beta}(e')}}\\;\\textsf{F-Beta} \\qquad\n\\dfrac{\\begin{array}{c}\\htmlData{k=F-New.fresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\varphi} \\Rightarrow \\exists S.\\ \\htmlData{k=fu.upd}{e' \\in F_{n}[\\Pi := \\Pi[c^{+} \\mapsto S, c^{-} \\mapsto \\overline{S}],\\ \\htmlData{k=F-New.cnew}{\\varphi := \\varphi[c^{\\pm} \\mapsto N]}]}\\end{array}}{\\htmlData{k=F-New}{\\mathsf{Fobl}_{\\mathsf{new}\\,c}(e')}}\\;\\textsf{F-New} \\\\[10pt]\n\\dfrac{\\begin{array}{c}M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(v)\\quad \\htmlData{k=F-Spawn.held}{M \\subseteq \\mathrm{dom}\\,\\varphi}\\quad \\htmlData{k=fu.fspare}{\\mathsf{fspare}}\\,\\Pi\\,\\varphi\\,M \\\\ \\htmlData{k=F-Spawn.child}{v\\,\\ast \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.rty}{\\mathsf{thread}} \\annot{\\triangleright \\infty ; 0} \\rrbracket(\\Pi|_M,\\ \\htmlData{k=fu.fhand}{\\mathsf{fhand}}\\,M\\,\\varphi,\\ \\lceil tk/2 \\rceil)}} \\\\ \\htmlData{k=fu.upd}{e' \\in F_{n}[\\Pi := \\Pi \\setminus M,\\ \\varphi := \\varphi \\setminus M,\\ \\htmlData{k=F-Spawn.tickets}{tk := \\lfloor tk/2 \\rfloor}]}\\end{array}}{\\htmlData{k=F-Spawn}{\\mathsf{Fobl}_{\\mathsf{spawn}\\,v}(e')}}\\;\\textsf{F-Spawn} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=F-Link.plink}{o_1 \\neq o_2 \\land \\Pi(o_2) \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{\\Pi(o_1)}}\\quad o_1, o_2 \\in \\mathrm{dom}\\,\\varphi\\quad \\htmlData{k=F-Link.ticket}{1 \\leq tk} \\\\ \\htmlData{k=fu.upd}{e' \\in F_{n}[\\Pi := \\Pi \\setminus \\{o_1,o_2\\},\\ \\varphi := \\varphi \\setminus \\{o_1,o_2\\},\\ tk := tk - 1]}\\end{array}}{\\htmlData{k=F-Link}{\\mathsf{Fobl}_{\\mathsf{link}\\,o_1\\,o_2}(e')}}\\;\\textsf{F-Link}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}(\\Pi\\,o) = \\htmlData{k=sty.send}{!(\\bar\\iota.\\ T)}.S\\quad M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(w)\\quad \\htmlData{k=F-Send.notsubj}{M \\subseteq \\mathrm{dom}\\,\\varphi \\setminus \\{o\\}}\\quad \\htmlData{k=fu.fspare}{\\mathsf{fspare}}\\,\\Pi\\,\\varphi\\,M \\\\ \\htmlData{k=F-Send.payload}{w \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket T \\rrbracket(\\Pi|_M,\\ \\htmlData{k=fu.fhand}{\\mathsf{fhand}}\\,M\\,\\varphi)}} \\\\ \\htmlData{k=fu.upd}{e' \\in F_{n}[d := d \\mathbin{\\dot-} 1,\\ \\Pi := (\\Pi \\setminus M)[o \\mapsto S],\\ \\varphi := \\htmlData{k=fu.refillop}{\\mathsf{refill}}\\,N\\,o\\,(\\varphi \\setminus M)]}\\end{array}}{\\htmlData{k=F-Send}{\\mathsf{Fobl}_{\\mathsf{send}\\,o\\,w}(e')}}\\;\\textsf{F-Send} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}(\\Pi\\,o) = \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ T)}.S \\\\ \\htmlData{k=F-Recv.forall}{\\forall j \\leq n,\\ \\Pi_i, \\varphi_i \\text{ disjoint}.\\ w \\in \\htmlData{k=sr.FV}{FV^{N}_{j}\\llbracket T \\rrbracket(\\Pi_i, \\varphi_i)}} \\Rightarrow \\htmlData{k=fu.upd}{e' \\in F_{j}[d := d \\mathbin{\\dot-} 1,\\ \\Pi := \\Pi[o \\mapsto S] \\cup \\Pi_i,\\ \\varphi := \\htmlData{k=fu.refillop}{\\mathsf{refill}}\\,N\\,o\\,\\varphi \\cup \\varphi_i]}\\end{array}}{\\htmlData{k=F-Recv}{\\mathsf{Fobl}_{\\mathsf{recv}\\,o\\,w}(e')}}\\;\\textsf{F-Recv} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}(\\Pi\\,o) = \\htmlData{k=sty.close}{\\mathsf{Close}} \\\\ \\htmlData{k=fu.upd}{e' \\in F_{n}[d := d \\mathbin{\\dot-} 1,\\ \\Pi := \\Pi \\setminus o,\\ \\varphi := (\\varphi \\setminus o) \\mathbin{\\dot-} 1]}\\end{array}}{\\htmlData{k=F-Close}{\\mathsf{Fobl}_{\\mathsf{close}\\,o}(e')}}\\;\\textsf{F-Close} \\qquad\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}(\\Pi\\,o) \\in \\{\\oplus(S_1,S_2), \\&(S_1,S_2)\\} \\\\ \\htmlData{k=fu.upd}{e' \\in F_{n}[d := d \\mathbin{\\dot-} 1,\\ \\Pi := \\Pi[o \\mapsto S_i],\\ \\varphi := \\htmlData{k=fu.refillop}{\\mathsf{refill}}\\,N\\,o\\,\\varphi]}\\end{array}}{\\htmlData{k=F-Close}{\\mathsf{Fobl}_{\\mathsf{sel}_i\\,o}(e'),\\ \\mathsf{Fobl}_{\\mathsf{bra}_i\\,o}(e')}}\\;\\textsf{F-Choice}\n\\end{array}\\end{array}",
+     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}e' \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\Phi ; tk \\vdash \\sigma\\ !\\ (d, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-Beta}{\\mathsf{Fobl}_{\\beta}(e')}}\\;\\textsf{F-Beta} \\qquad\n\\dfrac{\\begin{array}{c}\\htmlData{k=F-New.fresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Phi} \\Rightarrow \\exists S.\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=F-New.cnew}{\\Phi[c^{+} \\mapsto S\\annot{^{N}}, c^{-} \\mapsto \\overline{S}\\annot{^{N}}]} ; tk \\vdash \\sigma\\ !\\ (d, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-New}{\\mathsf{Fobl}_{\\mathsf{new}\\,c}(e')}}\\;\\textsf{F-New} \\\\[10pt]\n\\dfrac{\\begin{array}{c}M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(v)\\quad \\htmlData{k=F-Spawn.held}{M \\subseteq \\mathrm{dom}\\,\\Phi}\\quad \\htmlData{k=fu.fspare}{\\mathsf{spare}}(\\Phi|_M) \\\\ \\htmlData{k=F-Spawn.child}{v\\,\\ast \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.tick}{\\Phi|_M{\\downarrow}} ; \\lceil tk/2 \\rceil \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}}\\ !\\ (\\infty, 0) \\rrbracket}} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\Phi \\setminus M ; \\htmlData{k=F-Spawn.tickets}{\\lfloor tk/2 \\rfloor} \\vdash \\sigma\\ !\\ (d, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-Spawn}{\\mathsf{Fobl}_{\\mathsf{spawn}\\,v}(e')}}\\;\\textsf{F-Spawn} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=F-Link.plink}{\\Phi(o_1) = S^{f},\\ \\Phi(o_2) = S'^{f'},\\ o_1 \\neq o_2,\\ S' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{S}}\\quad \\htmlData{k=F-Link.ticket}{1 \\leq tk} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\Phi \\setminus \\{o_1,o_2\\} ; tk - 1 \\vdash \\sigma\\ !\\ (d, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-Link}{\\mathsf{Fobl}_{\\mathsf{link}\\,o_1\\,o_2}(e')}}\\;\\textsf{F-Link}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S_0^{f}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.send}{!(\\bar\\iota.\\ T)}.S\\quad M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(w)\\quad \\htmlData{k=F-Send.notsubj}{o \\notin M \\subseteq \\mathrm{dom}\\,\\Phi}\\quad \\htmlData{k=fu.fspare}{\\mathsf{spare}}(\\Phi|_M) \\\\ \\htmlData{k=F-Send.payload}{w \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\htmlData{k=fu.tick}{\\Phi|_M{\\downarrow}} \\vdash T \\rrbracket}} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.tick}{(\\Phi \\setminus M){\\downarrow}}[o \\mapsto S\\annot{^{N}}] ; tk \\vdash \\sigma\\ !\\ (d \\mathbin{\\dot-} 1, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-Send}{\\mathsf{Fobl}_{\\mathsf{send}\\,o\\,w}(e')}}\\;\\textsf{F-Send} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S_0^{f}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ T)}.S \\\\ \\htmlData{k=F-Recv.forall}{\\forall j \\leq n,\\ \\Phi_i \\mathbin{\\#} \\Phi.\\ w \\in \\htmlData{k=sr.FV}{FV^{N}_{j}\\llbracket \\Phi_i \\vdash T \\rrbracket}} \\Rightarrow e' \\in \\htmlData{k=sr.FE}{F^{N}_{j}\\llbracket \\htmlData{k=fu.tick}{\\Phi{\\downarrow}}[o \\mapsto S\\annot{^{N}}] \\cup \\Phi_i ; tk \\vdash \\sigma\\ !\\ (d \\mathbin{\\dot-} 1, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-Recv}{\\mathsf{Fobl}_{\\mathsf{recv}\\,o\\,w}(e')}}\\;\\textsf{F-Recv} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S_0^{f}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.close}{\\mathsf{Close}} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.tick}{(\\Phi \\setminus o){\\downarrow}} ; tk \\vdash \\sigma\\ !\\ (d \\mathbin{\\dot-} 1, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-Close}{\\mathsf{Fobl}_{\\mathsf{close}\\,o}(e')}}\\;\\textsf{F-Close} \\qquad\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S_0^{f}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 \\in \\{\\oplus(S_1,S_2), \\&(S_1,S_2)\\} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.tick}{\\Phi{\\downarrow}}[o \\mapsto S_i\\annot{^{N}}] ; tk \\vdash \\sigma\\ !\\ (d \\mathbin{\\dot-} 1, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-Close}{\\mathsf{Fobl}_{\\mathsf{sel}_i\\,o}(e'),\\ \\mathsf{Fobl}_{\\mathsf{bra}_i\\,o}(e')}}\\;\\textsf{F-Choice}\n\\end{array}\\end{array}",
      "caption": "Internal steps tick no counter. A new channel starts both ends at $N$, a spawn hands the ends of the thunk to the child one lower with half the tickets, and a link drops two dual ends and spends a ticket. Every action spends one unit of the frame, advances the protocol of $o$, refills $o$ and ticks the other ends. A send hands its payload ends on one lower, and a receive continues for every fueled value that may arrive.",
      "about": {
       "why": "The steps that take no action still move ends or tickets. New channels start at the refill, a spawn hands ends to the child, and a link spends a ticket.",
@@ -1111,8 +1111,8 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\Pi = \\{o \\mapsto S'\\}\\quad \\varphi = \\{o \\mapsto f\\}\\quad S' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} S\\quad \\htmlData{k=FV-Sess.counter}{a \\leq f}\\end{array}}{\\htmlData{k=FV-Sess}{o \\in FV\\llbracket (S@x)\\annot{^{a}}\\rrbracket(\\Pi, \\varphi)}}\\;\\textsf{FV-Sess} \\qquad\n\\dfrac{\\begin{array}{c}\\Pi = \\varphi = \\varnothing\\end{array}}{\\htmlData{k=FV-Thread}{v \\in FV\\llbracket \\htmlData{k=fu.rty}{\\mathsf{thread}} \\rrbracket(\\Pi,\\varphi)}}\\;\\textsf{FV-Thread} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=FV-Arrow.exact}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\mathrm{dom}\\,\\Pi = \\mathrm{dom}\\,\\varphi}\\quad \\htmlData{k=FV-Arrow.floor}{\\forall o.\\ h + a \\leq \\varphi(o)} \\\\ \\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N,\\ j < n,\\ \\varphi' \\geq h \\text{ on } \\mathrm{dom}\\,\\varphi,\\ u \\in \\htmlData{k=sr.FV}{FV^{N'}_{j}\\llbracket T \\rrbracket(\\Pi_u, \\varphi_u)},\\ \\htmlData{k=ann.meets}{\\vartheta(r) \\leq tk} \\\\ \\htmlData{k=FV-Arrow.body}{e[u] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket U \\annot{\\triangleright c ; r} \\rrbracket(\\Pi \\cup \\Pi_u, \\varphi' \\cup \\varphi_u, tk)}}\\end{array}}{\\htmlData{k=FV-Arrow}{\\lambda e \\in FV^N_n\\llbracket (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[(c,\\vartheta);h]\\, U)\\annot{^{a}}\\rrbracket(\\Pi,\\varphi)}}\\;\\textsf{FV-Arrow} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=FV-Box.noends}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\varnothing} \\\\ \\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N,\\ j < n,\\ \\bar s \\in \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,N',\\ \\htmlData{k=ann.meets}{\\vartheta(r) \\leq tk} \\\\ \\htmlData{k=FV-Box.body}{e[!e] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket U[\\bar s] \\annot{\\triangleright c ; r} \\rrbracket(\\varnothing,\\varnothing,tk)}}\\end{array}}{\\htmlData{k=FV-Box}{!e \\in FV^N_n\\llbracket \\Box(\\ldots (c,\\vartheta) \\ldots U)\\rrbracket(\\varnothing,\\varnothing)}}\\;\\textsf{FV-Box} \\\\[6pt]\n\\htmlData{k=sr.fvagg}{\\otimes, \\oplus, \\exists \\text{ split } \\Pi, \\varphi \\text{ among their parts}}\n\\end{array}",
-     "caption": "Fueled values by recursion on the type. An end has at least its credit. A closure keeps its captured counters at the floor $h$ plus its credit, and its body has fuel at every call. A box holds nothing and its body has fuel at every force. Points are never read.",
+     "tex": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}S' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} S\\quad \\htmlData{k=FV-Sess.counter}{a \\leq f}\\end{array}}{\\htmlData{k=FV-Sess}{o \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\{o \\mapsto S'^{f}\\} \\vdash (S@x)\\annot{^{a}} \\rrbracket}}}\\;\\textsf{FV-Sess} \\qquad\n\\dfrac{\\begin{array}{c}\\Phi = \\varnothing\\end{array}}{\\htmlData{k=FV-Thread}{v \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\Phi \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}} \\rrbracket}}}\\;\\textsf{FV-Thread} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=FV-Arrow.exact}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\mathrm{dom}\\,\\Phi}\\quad \\htmlData{k=FV-Arrow.floor}{\\Phi(o) = S^{f} \\Rightarrow h + a \\leq f} \\\\ \\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N,\\ j < n,\\ \\Phi' \\geq h \\text{ with the protocols of } \\Phi,\\ u \\in \\htmlData{k=sr.FV}{FV^{N'}_{j}\\llbracket \\Phi_u \\vdash T \\rrbracket},\\ \\htmlData{k=ann.meets}{\\vartheta(r) \\leq tk} \\\\ \\htmlData{k=FV-Arrow.body}{e[u] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket \\Phi' \\cup \\Phi_u ; tk \\vdash U\\ !\\ (c, r) \\rrbracket}}\\end{array}}{\\htmlData{k=FV-Arrow}{\\lambda e \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\Phi \\vdash (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[(c,\\vartheta);h]\\, U)\\annot{^{a}} \\rrbracket}}}\\;\\textsf{FV-Arrow} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=FV-Box.noends}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\varnothing} \\\\ \\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N,\\ j < n,\\ \\bar s \\in \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,N',\\ \\htmlData{k=ann.meets}{\\vartheta(r) \\leq tk} \\\\ \\htmlData{k=FV-Box.body}{e[!e] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket \\varnothing ; tk \\vdash U[\\bar s]\\ !\\ (c, r) \\rrbracket}}\\end{array}}{\\htmlData{k=FV-Box}{!e \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\varnothing \\vdash \\Box(\\ldots (c,\\vartheta) \\ldots U) \\rrbracket}}}\\;\\textsf{FV-Box} \\\\[6pt]\n\\htmlData{k=sr.fvagg}{\\otimes, \\oplus, \\exists \\text{ split } \\Phi \\text{ among their parts}}\n\\end{array}",
+     "caption": "Fueled values by recursion on the type. An end has at least its credit as counter. A closure keeps its captured counters at the floor $h$ plus its credit, and its body has fuel at every call. A box holds nothing and its body has fuel at every force. Points are never read.",
      "about": {
       "why": "Fueled values say what a value promises about counters, the run-time side of credits.",
       "used": [
@@ -1128,7 +1128,7 @@ window.MAP = {
       "lf"
      ],
      "rocq": "soup/State.v: hold, lfstate; soup/State.v: soup_gen, soup/Soup.v: soup_inv, Soup",
-     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\htmlData{k=sp.state}{a = (q, K, tk)} \\qquad \\htmlData{k=sp.hold}{K : \\mathsf{End} \\rightharpoonup \\mathbb{N} \\times \\mathsf{Point} \\times (\\mathbb{N} \\cup \\{\\infty\\})} \\qquad \\htmlData{k=sp.tk}{tk : \\mathbb{N} \\to \\mathbb{N}} \\\\\n\\htmlData{k=sp.next}{\\mathsf{lf\\_next}\\,N\\,(q, K, tk)\\,ev\\,q' = (q',\\ \\mathsf{own\\_next}\\,N\\,ev\\,K,\\ \\mathsf{tk\\_next}\\,ev\\,tk)}\n\\end{array}\\\\[3ex]\\begin{array}{rcll}\na \\in \\htmlData{k=th.soup}{S^{N,W}_n\\llbracket\\Sigma \\vdash T\\rrbracket} & \\iff & \\htmlData{k=sp.exists}{\\exists A, \\Pi}.\\ \\htmlData{k=sp.prim}{\\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T} \\land \\text{for every thread } t \\text{ running } e\\text{,} & \\\\[1ex]\n & & \\quad \\htmlData{k=sp.rel}{e \\in \\htmlData{k=th.Erel}{E[\\kappa_L]^W_n\\llbracket A_t \\vdash U_t\\rrbracket^{\\varnothing}}} & \\text{the relation} \\\\\n & & \\quad \\htmlData{k=sp.fuel}{e \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.rty}{\\mathsf{thread}} \\annot{\\triangleright \\infty ; 0} \\rrbracket(\\Pi_t, \\varphi_t, tk_t)}} & \\text{fuel} \\\\\n & & \\land\\ \\htmlData{k=sp.own}{\\mathsf{consistent}}(a, A, \\Pi) & \\\\[2ex]\nA_t,\\ \\Pi_t,\\ \\varphi_t & = & A,\\ \\Pi \\text{ and } \\htmlData{k=sr.ctrs}{\\text{the counters of } K} \\text{ on the ends } K \\text{ gives } t & \\htmlData{k=sp.ty}{U_t \\in \\{T, \\ast\\}} \\\\[2ex]\n\\htmlData{k=sp.own}{\\mathsf{consistent}}(a, A, \\Pi) & \\iff & \\htmlData{k=sp.pts}{\\mathsf{pt}(A\\,o) = \\mathsf{pt}(K\\,o)} \\land \\htmlData{k=sp.dom}{\\mathrm{dom}\\,\\Pi = \\mathrm{dom}\\,K} \\land \\htmlData{k=sp.owner}{K(o) = (t, \\_, \\_) \\Rightarrow t \\in \\mathrm{dom}\\,q} & \\text{owners} \\\\\n & \\land & \\htmlData{k=sp.closed}{o \\in \\mathrm{dom}\\,K \\Rightarrow \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\lor o \\in \\mathrm{dom}\\,\\Sigma} \\land \\htmlData{k=sp.pair}{o \\in \\mathrm{dom}\\,K \\land \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow \\overline{o} \\in \\mathrm{dom}\\,K} & \\text{closed} \\\\\n & \\land & \\htmlData{k=sp.sdual}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\land A(o) = S@x \\land A(\\overline{o}) = S'@x' \\Rightarrow x' = \\overline{x} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S'} & \\text{dual} \\\\\n & \\land & \\htmlData{k=sp.pdual}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\land \\Pi(o) = P \\land \\Pi(\\overline{o}) = P' \\Rightarrow P' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{P}} & \\\\\n & \\land & \\htmlData{k=sp.sig}{\\Sigma(o) = y \\Rightarrow A(o) = y} \\land \\htmlData{k=sp.psig}{\\Sigma(o) = S@x \\Rightarrow \\Pi(o) = S} \\land \\htmlData{k=sp.fin}{K(o) = (\\_, \\_, f) \\Rightarrow f \\in \\mathbb{N}} & \\text{interface}\n\\end{array}\\end{array}",
+     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\htmlData{k=sp.state}{a = (q, K, tk)} \\qquad \\htmlData{k=sp.hold}{K : \\mathsf{End} \\rightharpoonup \\mathbb{N} \\times \\mathsf{Point} \\times (\\mathbb{N} \\cup \\{\\infty\\})} \\qquad \\htmlData{k=sp.tk}{tk : \\mathbb{N} \\to \\mathbb{N}} \\\\\n\\htmlData{k=sp.next}{\\mathsf{lf\\_next}\\,N\\,(q, K, tk)\\,ev\\,q' = (q',\\ \\mathsf{own\\_next}\\,N\\,ev\\,K,\\ \\mathsf{tk\\_next}\\,ev\\,tk)}\n\\end{array}\\\\[3ex]\\begin{array}{rcll}\na \\in \\htmlData{k=th.soup}{S^{N,W}_n\\llbracket\\Sigma \\vdash T\\rrbracket} & \\iff & \\htmlData{k=sp.exists}{\\exists A, \\Pi}.\\ \\htmlData{k=sp.prim}{\\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T} \\land \\text{for every thread } t \\text{ running } e\\text{,} & \\\\[1ex]\n & & \\quad \\htmlData{k=sp.rel}{e \\in \\htmlData{k=th.Erel}{E[\\kappa_L]^W_n\\llbracket A_t \\vdash U_t\\rrbracket^{\\varnothing}}} & \\text{the relation} \\\\\n & & \\quad \\htmlData{k=sp.fuel}{e \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\Phi_t ; tk_t \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}}\\ !\\ (\\infty, 0) \\rrbracket}} & \\text{fuel} \\\\\n & & \\land\\ \\htmlData{k=sp.own}{\\mathsf{consistent}}(a, A, \\Pi) & \\\\[2ex]\nA_t,\\ \\Phi_t & = & A \\text{ and } \\{o \\mapsto \\Pi(o)^{f} \\mid K(o) = (t, \\_, f)\\} \\text{ on the ends } K \\text{ gives } t & \\htmlData{k=sp.ty}{U_t \\in \\{T, \\ast\\}} \\\\[2ex]\n\\htmlData{k=sp.own}{\\mathsf{consistent}}(a, A, \\Pi) & \\iff & \\htmlData{k=sp.pts}{\\mathsf{pt}(A\\,o) = \\mathsf{pt}(K\\,o)} \\land \\htmlData{k=sp.dom}{\\mathrm{dom}\\,\\Pi = \\mathrm{dom}\\,K} \\land \\htmlData{k=sp.owner}{K(o) = (t, \\_, \\_) \\Rightarrow t \\in \\mathrm{dom}\\,q} & \\text{owners} \\\\\n & \\land & \\htmlData{k=sp.closed}{o \\in \\mathrm{dom}\\,K \\Rightarrow \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\lor o \\in \\mathrm{dom}\\,\\Sigma} \\land \\htmlData{k=sp.pair}{o \\in \\mathrm{dom}\\,K \\land \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow \\overline{o} \\in \\mathrm{dom}\\,K} & \\text{closed} \\\\\n & \\land & \\htmlData{k=sp.sdual}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\land A(o) = S@x \\land A(\\overline{o}) = S'@x' \\Rightarrow x' = \\overline{x} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S'} & \\text{dual} \\\\\n & \\land & \\htmlData{k=sp.pdual}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\land \\Pi(o) = P \\land \\Pi(\\overline{o}) = P' \\Rightarrow P' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{P}} & \\\\\n & \\land & \\htmlData{k=sp.sig}{\\Sigma(o) = y \\Rightarrow A(o) = y} \\land \\htmlData{k=sp.psig}{\\Sigma(o) = S@x \\Rightarrow \\Pi(o) = S} \\land \\htmlData{k=sp.fin}{K(o) = (\\_, \\_, f) \\Rightarrow f \\in \\mathbb{N}} & \\text{interface}\n\\end{array}\\end{array}",
      "caption": "A soup state $a = (q, K, tk)$ is a configuration with an ownership map $K$ from held ends to holder, point and counter, and tickets per thread. It is in the soup at level $n$ when every thread is in the relation $E[\\kappa_L]$ at the ends it owns and has fuel at their counters. The rest, $\\mathsf{consistent}$, is bookkeeping that keeps $K$, $A$ and $\\Pi$ in agreement. The soup is the only place fuel is used.",
      "about": {
       "why": "The soup joins the two halves of every thread, its relation at $\\kappa_L$ and its fuel, over one ownership map fixed outside the level. Lock-free adequacy reads the counters and points it records.",
@@ -8979,9 +8979,9 @@ window.MAP = {
    "what": "$F_0$ holds every term.",
    "why": "Step indexing starts from the trivial predicate.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\forall e.\\ e \\in F^N_0\\llbracket\\sigma \\triangleright d ; r\\rrbracket(\\Pi,\\varphi,tk)$.",
+   "example": "$\\forall e.\\ e \\in F^N_0\\llbracket\\Phi ; tk \\vdash \\sigma\\ !\\ (d, r)\\rrbracket$.",
    "rocq": "fuel/Fuel.v: mk_flevel",
-   "sig": "e \\in F^{N}_{n}\\llbracket \\sigma \\triangleright d ; r \\rrbracket(\\Pi, \\varphi, tk)",
+   "sig": "e \\in F^{N}_{n}\\llbracket \\Phi ; tk \\vdash \\sigma\\ !\\ (d, r) \\rrbracket",
    "args": [
     {
      "name": "N",
@@ -8992,28 +8992,24 @@ window.MAP = {
      "meaning": "the level, $n \\in \\mathbb{N}$"
     },
     {
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+    },
+    {
+     "name": "tk",
+     "meaning": "the tickets of the thread, $tk \\in \\mathbb{N}$"
+    },
+    {
      "name": "\\sigma",
      "meaning": "the result, a credited type or $\\mathsf{thread}$"
     },
     {
      "name": "d",
-     "meaning": "the frame, $d \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the frame, the actions left before returning, $d \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "r",
-     "meaning": "the reserve, $r \\in \\mathbb{N}$"
-    },
-    {
-     "name": "\\Pi",
-     "meaning": "the protocols, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy}$"
-    },
-    {
-     "name": "\\varphi",
-     "meaning": "the counters, a finite map $\\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$"
-    },
-    {
-     "name": "tk",
-     "meaning": "the tickets of the thread, $tk \\in \\mathbb{N}$"
+     "meaning": "the reserve, the tickets kept on return, $r \\in \\mathbb{N}$"
     },
     {
      "name": "e",
@@ -9056,25 +9052,35 @@ window.MAP = {
    "sig": "r \\in \\mathbb{N}",
    "args": []
   },
-  "fu.Pi": {
-   "title": "Protocols $\\Pi$",
-   "what": "$\\Pi$ maps each held end to its session type with annotations.",
-   "why": "Counters are compared with credits that the annotations carry, so fuel keeps them.",
+  "fu.Phi": {
+   "title": "Held ends $\\Phi$",
+   "what": "$\\Phi$ maps each end the thread holds to its protocol $S$, a session type with annotations, and its counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$, written $o \\mapsto S^{f}$. In the Rocq these are two maps $\\Pi$ and $\\varphi$ with one domain.",
+   "why": "The counter bounds how many actions of its holder may pass before the end acts again, and the protocol says when the end is idle and what it carries. Where the relation gives an end a point, fuel gives it a counter.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\Pi = \\{a \\mapsto S_a\\}$.",
-   "rocq": "fuel/Fuel.v: penv",
-   "sig": "\\Pi : \\mathsf{End} \\rightharpoonup \\mathsf{STy}",
-   "args": []
+   "example": "$\\Phi = \\{a \\mapsto S^{3}\\}$.",
+   "rocq": "fuel/Fuel.v: penv, cenv",
+   "sig": "\\Phi : \\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times (\\mathbb{N} \\cup \\{\\infty\\})",
+   "args": [
+    {
+     "name": "S^{f}",
+     "meaning": "the protocol $S$ and counter $f$ of an end"
+    }
+   ]
   },
-  "fu.phi": {
-   "title": "Counters $\\varphi$",
-   "what": "$\\varphi$ maps each held end to a counter in $\\mathbb{N} \\cup \\{\\infty\\}$.",
-   "why": "A counter bounds how many actions of its holder may pass before the end acts again, and only the holder updates it.",
+  "fu.tick": {
+   "title": "$\\Phi{\\downarrow}$",
+   "what": "Every counter of $\\Phi$ lowered by one, truncated at $0$, with $\\infty$ kept.",
+   "why": "An action ticks every other end of its holder, and a hand-over passes every counter one lower. Both are this one operation.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\varphi = \\{a \\mapsto 3\\}$.",
-   "rocq": "fuel/Fuel.v: cenv",
-   "sig": "\\varphi : \\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}",
-   "args": []
+   "example": "$\\{a \\mapsto S^{3}, b \\mapsto S'^{1}\\}{\\downarrow} = \\{a \\mapsto S^{2}, b \\mapsto S'\\annot{^{0}}\\}$.",
+   "rocq": "fuel/Fuel.v: ftick, refill, fhand",
+   "sig": "\\Phi{\\downarrow} = \\{o \\mapsto S^{f \\mathbin{\\dot-} 1} \\mid o \\mapsto S^{f} \\in \\Phi\\}",
+   "args": [
+    {
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+    }
+   ]
   },
   "fu.tk": {
    "title": "Tickets $tk$",
@@ -9088,7 +9094,7 @@ window.MAP = {
   },
   "fu.refill-kripke": {
    "title": "Every refill above $N$",
-   "what": "$F^N$ holds at every $N'$ with $N \\sqsubseteq_{\\mathsf{rle}} N'$, where finite refills are ordered by $\\leq$ and $\\infty$ lies above $\\infty$ only.",
+   "what": "Fuel at $N$ holds at every $N'$ with $N \\sqsubseteq_{\\mathsf{rle}} N'$, where finite refills are ordered by $\\leq$ and $\\infty$ lies above $\\infty$ only.",
    "why": "A received value may be used at a larger refill, and $\\infty$ must stay separate because a box received at $\\infty$ promises nothing at finite instances.",
    "breaks": "With $\\leq$ on $\\mathbb{N} \\cup \\{\\infty\\}$, a thread at $N = 2$ could receive a box typed at $\\infty$ and fail at its finite instance.",
    "example": "$2 \\sqsubseteq_{\\mathsf{rle}} 3$, and $2 \\not\\sqsubseteq_{\\mathsf{rle}} \\infty$.",
@@ -9103,12 +9109,12 @@ window.MAP = {
   },
   "fu.rename": {
    "title": "Injective renamings",
-   "what": "$F^N$ holds for every renaming $g$ injective on $\\mathrm{dom}\\,\\Pi$ and on $\\mathrm{dom}\\,\\varphi$.",
+   "what": "Fuel holds for every renaming $g$ of ends injective on $\\mathrm{dom}\\,\\Phi$.",
    "why": "A link renames the partner of a removed end in another thread, so fuel must survive renaming.",
    "breaks": "A renaming that merges two held ends would merge their counters.",
-   "example": "$\\mathsf{kinj}\\,g\\,\\Pi$.",
+   "example": "$g = \\{c^{+} \\mapsto d^{+}\\}$ on $\\Phi = \\{c^{+} \\mapsto S^{2}\\}$.",
    "rocq": "fuel/Fuel.v: kinj, renk",
-   "sig": "g : \\mathsf{End} \\to \\mathsf{End} \\text{ injective on } \\mathrm{dom}\\,\\Pi, \\mathrm{dom}\\,\\varphi",
+   "sig": "g : \\mathsf{End} \\to \\mathsf{End} \\text{ injective on } \\mathrm{dom}\\,\\Phi",
    "args": [
     {
      "name": "g",
@@ -9118,12 +9124,12 @@ window.MAP = {
   },
   "fu.val": {
    "title": "(val)",
-   "what": "$g(e) \\in \\mathsf{Val} \\Rightarrow r \\leq tk \\land g(e) \\in FV^{N'}_{n+1}\\llbracket\\sigma\\rrbracket(g\\Pi, g\\varphi)$.",
+   "what": "$g(e) \\in \\mathsf{Val} \\Rightarrow r \\leq tk \\land g(e) \\in FV^{N'}_{n+1}\\llbracket g\\Phi \\vdash \\sigma\\rrbracket$.",
    "why": "A returning term hands its context the reserve it promised and a value whose counters meet its credits, which the bind lemma of fuel consumes.",
    "breaks": "Without $r \\leq tk$, a context link after the term could find no ticket.",
    "example": "$\\ast$ returns with $r = 0 \\leq tk$.",
    "rocq": "fuel/Fuel.v: Fdef",
-   "sig": "g(e) \\in \\mathsf{Val} \\Rightarrow r \\leq tk \\land g(e) \\in FV^{N'}_{n+1}\\llbracket \\sigma \\rrbracket(g\\Pi, g\\varphi)",
+   "sig": "g(e) \\in \\mathsf{Val} \\Rightarrow r \\leq tk \\land g(e) \\in FV^{N'}_{n+1}\\llbracket g\\Phi \\vdash \\sigma \\rrbracket",
    "args": [
     {
      "name": "g, N'",
@@ -9163,16 +9169,16 @@ window.MAP = {
   },
   "F-Wait": {
    "title": "F-Wait",
-   "what": "$\\neg\\mathsf{idle}(\\Pi\\,o)$, an idle end does not act.",
+   "what": "$\\Phi(o) = S^{f}$ with $S$ not idle, so the end is held and can act.",
    "why": "An idle end is exempt from the checks $\\geq 1$, so it must not act either.",
    "breaks": "Nothing. It is a definition.",
    "example": "An end at $\\mathsf{Skip}$ cannot act.",
    "rocq": "fuel/Fuel.v: f_act",
-   "sig": "\\neg\\mathsf{idle}(\\Pi\\,o)",
+   "sig": "\\Phi(o) = S^{f} \\land \\neg\\mathsf{idle}\\,S",
    "args": [
     {
-     "name": "\\Pi",
-     "meaning": "the protocols, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy}$"
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "o",
@@ -9182,20 +9188,16 @@ window.MAP = {
   },
   "F-Tick": {
    "title": "F-Tick",
-   "what": "$\\mathsf{fspare}\\,\\Pi\\,\\varphi\\,(\\mathrm{dom}\\,\\varphi \\setminus \\{o\\})$, every other end that is not idle has counter at least $1$.",
+   "what": "$\\mathsf{spare}(\\Phi \\setminus o)$, every other end that is not idle has counter at least $1$.",
    "why": "Each action ticks the other ends, so an end can wait only as many actions of its holder as its counter allows.",
    "breaks": "A holder that loops on other ends forever while its partner waits on a held end.",
-   "example": "At $\\varphi = \\{a \\mapsto 2, b \\mapsto 0\\}$ no action on $a$ is allowed unless $b$ is idle.",
+   "example": "At $\\Phi = \\{a \\mapsto S^{2}, b \\mapsto S'\\annot{^{0}}\\}$ no action on $a$ is allowed unless $b$ is idle.",
    "rocq": "fuel/Fuel.v: f_act, fspare",
-   "sig": "\\mathsf{fspare}\\,\\Pi\\,\\varphi\\,(\\mathrm{dom}\\,\\varphi \\setminus \\{o\\})",
+   "sig": "\\mathsf{spare}(\\Phi \\setminus o)",
    "args": [
     {
-     "name": "\\Pi",
-     "meaning": "the protocols, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy}$"
-    },
-    {
-     "name": "\\varphi",
-     "meaning": "the counters, a finite map $\\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$"
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "o",
@@ -9215,29 +9217,6 @@ window.MAP = {
     {
      "name": "d",
      "meaning": "the frame"
-    }
-   ]
-  },
-  "fu.refillop": {
-   "title": "$\\mathsf{refill}$",
-   "what": "$\\mathsf{refill}\\,N\\,o\\,\\varphi$ sets $o$ to $N$ and lowers every other counter by one, truncated at $0$.",
-   "why": "Counters evolve by one index-free update.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{refill}\\,3\\,a\\,\\{a \\mapsto 1, b \\mapsto 2\\} = \\{a \\mapsto 3, b \\mapsto 1\\}$.",
-   "rocq": "fuel/Fuel.v: refill",
-   "sig": "\\mathsf{refill} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to \\mathsf{End} \\to \\mathsf{CEnv} \\to \\mathsf{CEnv}",
-   "args": [
-    {
-     "name": "N",
-     "meaning": "the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
-    },
-    {
-     "name": "o",
-     "meaning": "the subject end, $o \\in \\mathsf{End}$"
-    },
-    {
-     "name": "\\varphi",
-     "meaning": "the counters, a finite map $\\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$"
     }
    ]
   },
@@ -9274,28 +9253,28 @@ window.MAP = {
      "meaning": "the level, $n \\in \\mathbb{N}$"
     },
     {
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+    },
+    {
+     "name": "tk",
+     "meaning": "the tickets of the thread, $tk \\in \\mathbb{N}$"
+    },
+    {
      "name": "\\sigma",
      "meaning": "the result, a credited type or $\\mathsf{thread}$"
     },
     {
      "name": "d",
-     "meaning": "the frame, $d \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the frame, the actions left before returning, $d \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "r",
-     "meaning": "the reserve, $r \\in \\mathbb{N}$"
+     "meaning": "the reserve, the tickets kept on return, $r \\in \\mathbb{N}$"
     },
     {
-     "name": "\\Pi",
-     "meaning": "the protocols, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy}$"
-    },
-    {
-     "name": "\\varphi",
-     "meaning": "the counters, a finite map $\\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$"
-    },
-    {
-     "name": "tk",
-     "meaning": "the tickets of the thread, $tk \\in \\mathbb{N}$"
+     "name": "e",
+     "meaning": "the term"
     },
     {
      "name": "e'",
@@ -9305,7 +9284,7 @@ window.MAP = {
   },
   "F-New": {
    "title": "F-New",
-   "what": "For a fresh $c$, some $S$ adds $c^{+} : S$ and $c^{-} : \\overline{S}$ to $\\Pi$ with counters $N$.",
+   "what": "For a fresh $c$, some $S$ adds $c^{+} \\mapsto S\\annot{^{N}}$ and $c^{-} \\mapsto \\overline{S}\\annot{^{N}}$ to $\\Phi$.",
    "why": "A new channel starts with both ends at the refill $N$, the credit E-New gives them.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{new}$ adds $c^{\\pm}$ at $N$.",
@@ -9328,35 +9307,31 @@ window.MAP = {
   },
   "F-New.fresh": {
    "title": "Fresh against the thread",
-   "what": "$c^{\\pm} \\notin \\mathrm{dom}\\,\\Pi \\cup \\mathrm{dom}\\,\\varphi$.",
+   "what": "$c^{\\pm} \\notin \\mathrm{dom}\\,\\Phi$.",
    "why": "Without it, a new channel could reuse a held name and overwrite its counter.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{ffresh}\\,c\\,\\Pi\\,\\varphi$.",
+   "example": "$c^{+} \\notin \\{a\\}$.",
    "rocq": "fuel/Fuel.v: ffresh",
-   "sig": "\\mathsf{ffresh} : \\mathsf{Chan} \\to \\mathsf{PEnv} \\to \\mathsf{CEnv} \\to \\mathsf{Prop}",
+   "sig": "c^{\\pm} \\notin \\mathrm{dom}\\,\\Phi",
    "args": [
     {
      "name": "c",
      "meaning": "the new channel"
     },
     {
-     "name": "\\Pi",
-     "meaning": "the protocols, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy}$"
-    },
-    {
-     "name": "\\varphi",
-     "meaning": "the counters, a finite map $\\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$"
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     }
    ]
   },
   "F-New.cnew": {
-   "title": "New counters $N$",
-   "what": "$\\varphi[c^{+} \\mapsto N, c^{-} \\mapsto N]$.",
+   "title": "New ends at $N$",
+   "what": "$\\Phi[c^{+} \\mapsto S\\annot{^{N}}, c^{-} \\mapsto \\overline{S}\\annot{^{N}}]$.",
    "why": "One refill $N$ serves fresh ends and ends after an action.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{cnew}\\,N\\,c\\,\\varphi$.",
-   "rocq": "fuel/Fuel.v: cnew",
-   "sig": "\\mathsf{cnew}\\,N\\,c\\,\\varphi = \\varphi[c^{+} \\mapsto N, c^{-} \\mapsto N]",
+   "example": "$\\{c^{+} \\mapsto S^{3}, c^{-} \\mapsto \\overline{S}^{3}\\}$ at $N = 3$.",
+   "rocq": "fuel/Fuel.v: pnew, cnew",
+   "sig": "\\Phi[c^{+} \\mapsto S\\annot{^{N}}, c^{-} \\mapsto \\overline{S}\\annot{^{N}}]",
    "args": [
     {
      "name": "N",
@@ -9367,14 +9342,18 @@ window.MAP = {
      "meaning": "the new channel"
     },
     {
-     "name": "\\varphi",
-     "meaning": "the counters, a finite map $\\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$"
+     "name": "S",
+     "meaning": "the protocol of $c^{+}$"
+    },
+    {
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     }
    ]
   },
   "F-Spawn": {
    "title": "F-Spawn",
-   "what": "The child takes $M = \\mathsf{fends}(v)$ with counters minus one and $\\lceil tk/2 \\rceil$ tickets and runs as a thread, the parent keeps the rest and $\\lfloor tk/2 \\rfloor$.",
+   "what": "The child takes $\\Phi|_M{\\downarrow}$ for $M = \\mathsf{fends}(v)$ and $\\lceil tk/2 \\rceil$ tickets and runs as a thread, the parent keeps $\\Phi \\setminus M$ and $\\lfloor tk/2 \\rfloor$.",
    "why": "Every component of the split is a function of $v$ and $tk$, so it is the same at every level.",
    "breaks": "Nothing. It is a definition.",
    "example": "The thunk takes $d'$ at $1$ in the cycle.",
@@ -9396,13 +9375,13 @@ window.MAP = {
    ]
   },
   "F-Spawn.held": {
-   "title": "$M \\subseteq \\mathrm{dom}\\,\\varphi$",
+   "title": "$M \\subseteq \\mathrm{dom}\\,\\Phi$",
    "what": "Only held ends are handed on.",
    "why": "A child mentioning an end the parent does not hold would act on an end without a counter.",
    "breaks": "A box mentioning channel constants would hand over ends nobody holds.",
    "example": "$M = \\{d'\\}$.",
    "rocq": "fuel/Fuel.v: f_spawn",
-   "sig": "M \\subseteq \\mathrm{dom}\\,\\varphi",
+   "sig": "M \\subseteq \\mathrm{dom}\\,\\Phi",
    "args": [
     {
      "name": "M",
@@ -9411,36 +9390,28 @@ window.MAP = {
    ]
   },
   "fu.fspare": {
-   "title": "$\\mathsf{fspare}$",
-   "what": "$\\mathsf{fspare}\\,\\Pi\\,\\varphi\\,X \\iff \\forall o \\in X.\\ \\varphi(o) = f \\land \\neg\\mathsf{idle}(\\Pi\\,o) \\Rightarrow 1 \\leq f$.",
+   "title": "$\\mathsf{spare}$",
+   "what": "$\\mathsf{spare}(\\Phi) \\iff$ every end of $\\Phi$ that is not idle has counter at least $1$.",
    "why": "A hand-over passes the counter minus one, so a non-idle end must have a unit to spare. A spawn is no action, so this is its only check.",
    "breaks": "A hop at counter $0$ under truncation passes $0$ again and an end travels forever.",
-   "example": "$\\mathsf{fspare}\\,\\Pi\\,\\{d' \\mapsto 1\\}\\,\\{d'\\}$.",
+   "example": "$\\mathsf{spare}(\\{d' \\mapsto S^{1}\\})$.",
    "rocq": "fuel/Fuel.v: fspare",
-   "sig": "\\mathsf{fspare} : \\mathsf{PEnv} \\to \\mathsf{CEnv} \\to \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{End}) \\to \\mathsf{Prop}",
+   "sig": "\\mathsf{spare}(\\Phi) \\iff \\forall o \\mapsto S^{f} \\in \\Phi.\\ \\neg\\mathsf{idle}\\,S \\Rightarrow 1 \\leq f",
    "args": [
     {
-     "name": "\\Pi",
-     "meaning": "the protocols, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy}$"
-    },
-    {
-     "name": "\\varphi",
-     "meaning": "the counters, a finite map $\\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$"
-    },
-    {
-     "name": "X",
-     "meaning": "the ends that must spare a unit"
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     }
    ]
   },
   "F-Spawn.child": {
    "title": "The child",
-   "what": "$v\\,\\ast \\in F^N_n\\llbracket\\mathsf{thread} \\annot{\\triangleright \\infty ; 0}\\rrbracket(\\Pi|_M, \\mathsf{fhand}\\,M\\,\\varphi, \\lceil tk/2 \\rceil)$.",
-   "why": "The child is a new soup thread, so it must have thread fuel at exactly the protocols, counters and tickets the soup moves to it.",
+   "what": "$v\\,\\ast \\in F^N_n\\llbracket\\Phi|_M{\\downarrow} ; \\lceil tk/2 \\rceil \\vdash \\mathsf{thread}\\ !\\ (\\infty, 0)\\rrbracket$.",
+   "why": "The child is a new soup thread, so it must have thread fuel at exactly the ends, counters and tickets the soup moves to it.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(\\lambda u.\\,\\mathsf{close}\\,d')\\,\\ast$.",
    "rocq": "fuel/Fuel.v: f_spawn",
-   "sig": "v\\,\\ast \\in F^{N}_{n}\\llbracket \\mathsf{thread} \\annot{\\triangleright \\infty ; 0} \\rrbracket(\\Pi|_M, \\mathsf{fhand}\\,M\\,\\varphi, \\lceil tk/2 \\rceil)",
+   "sig": "v\\,\\ast \\in F^{N}_{n}\\llbracket \\Phi|_M{\\downarrow} ; \\lceil tk/2 \\rceil \\vdash \\mathsf{thread}\\ !\\ (\\infty, 0) \\rrbracket",
    "args": [
     {
      "name": "v\\,\\ast",
@@ -9449,25 +9420,6 @@ window.MAP = {
     {
      "name": "M",
      "meaning": "the handed ends"
-    }
-   ]
-  },
-  "fu.fhand": {
-   "title": "$\\mathsf{fhand}$",
-   "what": "$\\mathsf{fhand}\\,M\\,\\varphi = (\\varphi|_M) \\mathbin{\\dot-} 1$.",
-   "why": "Every counter passed on is the holder's minus one, which the termination measure of adequacy reads.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{fhand}\\,\\{a\\}\\,\\{a \\mapsto 3\\} = \\{a \\mapsto 2\\}$.",
-   "rocq": "fuel/Fuel.v: fhand",
-   "sig": "\\mathsf{fhand} : \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{End}) \\to \\mathsf{CEnv} \\to \\mathsf{CEnv}",
-   "args": [
-    {
-     "name": "M",
-     "meaning": "the handed ends"
-    },
-    {
-     "name": "\\varphi",
-     "meaning": "the counters, a finite map $\\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$"
     }
    ]
   },
@@ -9488,8 +9440,8 @@ window.MAP = {
   },
   "F-Send": {
    "title": "F-Send",
-   "what": "An action on $o$ that hands on $M = \\mathsf{fends}(w)$ with counters minus one, the payload in $FV$, and the continuation with $o$ refilled.",
-   "why": "A send is an action, so F-Tick applies, and a hand-over, so $\\mathsf{fspare}$ applies.",
+   "what": "An action on $o$ that hands on $M = \\mathsf{fends}(w)$ one lower, the payload fueled, and the continuation with $o$ back at $N$.",
+   "why": "A send is an action, so F-Tick applies, and a hand-over, so $\\mathsf{spare}$ applies.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{send}\\,\\langle a, y\\rangle$ in the growing ring.",
    "rocq": "fuel/Fuel.v: f_send",
@@ -9518,13 +9470,13 @@ window.MAP = {
    ]
   },
   "F-Send.notsubj": {
-   "title": "$M \\subseteq \\mathrm{dom}\\,\\varphi \\setminus \\{o\\}$",
+   "title": "$o \\notin M \\subseteq \\mathrm{dom}\\,\\Phi$",
    "what": "A send hands on held ends other than its subject.",
    "why": "The continuation keeps acting on $o$, so $o$ cannot leave.",
    "breaks": "A term that sends its own subject or an end its context holds.",
    "example": "$M = \\{a\\}$.",
    "rocq": "fuel/Fuel.v: f_send",
-   "sig": "M \\subseteq \\mathrm{dom}\\,\\varphi \\setminus \\{o\\}",
+   "sig": "o \\notin M \\subseteq \\mathrm{dom}\\,\\Phi",
    "args": [
     {
      "name": "M",
@@ -9537,28 +9489,28 @@ window.MAP = {
    ]
   },
   "F-Send.payload": {
-   "title": "Payload in $FV$",
-   "what": "$w \\in FV^N_n\\llbracket T\\rrbracket(\\Pi|_M, \\mathsf{fhand}\\,M\\,\\varphi)$, with every handed counter lowered by one hop.",
+   "title": "Payload fueled",
+   "what": "$w \\in FV^N_n\\llbracket\\Phi|_M{\\downarrow} \\vdash T\\rrbracket$, with every handed counter lowered by one hop.",
    "why": "$FV$ reads no point, so the raw payload type and its placed form agree.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$FV^N_n\\llbracket (S@x)^{2}\\rrbracket$ for a payload end promised at credit $2$.",
+   "example": "$FV^N_n\\llbracket \\{a \\mapsto S^{2}\\} \\vdash (S@x)^{2}\\rrbracket$ for a payload end promised at credit $2$.",
    "rocq": "fuel/Fuel.v: f_send",
-   "sig": "w \\in FV^{N}_{n}\\llbracket T\\annot{^{b}} \\rrbracket(\\Pi|_M, \\mathsf{fhand}\\,M\\,\\varphi)",
+   "sig": "w \\in FV^{N}_{n}\\llbracket \\Phi|_M{\\downarrow} \\vdash T \\rrbracket",
    "args": [
     {
      "name": "w",
      "meaning": "the payload"
     },
     {
-     "name": "T\\annot{^{b}}",
-     "meaning": "the raw payload type at the credit of the protocol"
+     "name": "T",
+     "meaning": "the payload type"
     }
    ]
   },
   "F-Recv": {
    "title": "F-Recv",
-   "what": "An action on $o$ that continues for every incoming value in $FV$ at every level $j \\leq n$ with disjoint maps.",
-   "why": "The receiver continues for every value its type admits, and the soup supplies the sender's handed maps.",
+   "what": "An action on $o$ that continues for every incoming fueled value at every level $j \\leq n$ with ends disjoint from $\\Phi$.",
+   "why": "The receiver continues for every value its type admits, and the soup supplies the sender's handed ends.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{recv}\\,b$ in the client loop.",
    "rocq": "fuel/Fuel.v: f_recv",
@@ -9573,29 +9525,29 @@ window.MAP = {
      "meaning": "the received value"
     },
     {
-     "name": "j, \\Pi_i, \\varphi_i",
-     "meaning": "its level, protocols and counters"
+     "name": "j, \\Phi_i",
+     "meaning": "its level and the ends it brings"
     }
    ]
   },
   "F-Recv.forall": {
    "title": "Every incoming value",
-   "what": "$\\forall j \\leq n, \\Pi_i, \\varphi_i.\\ w \\in FV^N_j\\llbracket T^b\\rrbracket(\\Pi_i, \\varphi_i)$.",
-   "why": "Every value of $FV$ is exact, so incoming closures hold exactly what they mention.",
+   "what": "$\\forall j \\leq n, \\Phi_i.\\ w \\in FV^N_j\\llbracket\\Phi_i \\vdash T\\rrbracket$.",
+   "why": "Every fueled value is exact, so incoming closures hold exactly what they mention.",
    "breaks": "Without exactness, a received closure owning nothing but mentioning an end could not be spawned.",
-   "example": "$\\forall j\\,\\Pi_i\\,\\varphi_i$.",
+   "example": "$\\Phi_i = \\{e \\mapsto S^{2}\\}$.",
    "rocq": "fuel/Fuel.v: f_recv",
-   "sig": "\\forall j \\leq n, \\Pi_i, \\varphi_i.\\ w \\in FV^{N}_{j}\\llbracket T\\annot{^{b}} \\rrbracket(\\Pi_i, \\varphi_i) \\Rightarrow \\ldots",
+   "sig": "\\forall j \\leq n, \\Phi_i \\mathbin{\\#} \\Phi.\\ w \\in FV^{N}_{j}\\llbracket \\Phi_i \\vdash T \\rrbracket \\Rightarrow \\ldots",
    "args": [
     {
-     "name": "\\Pi_i, \\varphi_i",
-     "meaning": "disjoint from $\\Pi[o \\mapsto S]$ and $\\mathsf{refill}\\,N\\,o\\,\\varphi$"
+     "name": "\\Phi_i",
+     "meaning": "the ends of the received value, disjoint from $\\Phi$"
     }
    ]
   },
   "F-Close": {
    "title": "F-Close, F-Select, F-Branch",
-   "what": "Actions that drop $o$ and tick the rest at a close, or advance $\\Pi(o)$ to $S_i$ and refill $o$ at a choice.",
+   "what": "Actions that drop $o$ and tick the rest at a close, or advance the protocol of $o$ to $S_i$ and set it back to $N$ at a choice.",
    "why": "They are the fuel forms of O-Close, O-Select and O-Branch, and each is an action, so F-Tick applies.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{close}\\,c^{+}$.",
@@ -9628,20 +9580,20 @@ window.MAP = {
    ]
   },
   "F-Link.plink": {
-   "title": "$\\mathsf{plink}$",
-   "what": "$o_1 \\neq o_2 \\land \\Pi(o_2) \\simeq \\overline{\\Pi(o_1)}$, with annotations.",
-   "why": "After the link the partners form one channel, whose protocols are dual only if $\\Pi(o_1)$ and $\\Pi(o_2)$ were, and annotations must match for later payload credits.",
+   "title": "Dual held ends",
+   "what": "$o_1 \\neq o_2$, both held, at protocols $S$ and $S' \\simeq \\overline{S}$, with annotations.",
+   "why": "After the link the partners form one channel, whose protocols are dual only if the two linked protocols were, and annotations must match for later payload credits.",
    "breaks": "A credit mismatch at a link breaks the payload credit of a later message.",
-   "example": "$\\mathsf{plink}\\,\\Pi\\,\\{o_1, o_2\\}$.",
+   "example": "$c^{+} \\mapsto S^{2}$ and $d^{-} \\mapsto \\overline{S}^{1}$.",
    "rocq": "fuel/Fuel.v: plink",
-   "sig": "\\mathsf{plink} : \\mathsf{PEnv} \\to \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{End}) \\to \\mathsf{Prop}",
+   "sig": "\\Phi(o_1) = S^{f},\\ \\Phi(o_2) = S'^{f'},\\ o_1 \\neq o_2,\\ S' \\simeq \\overline{S}",
    "args": [
     {
-     "name": "\\Pi",
-     "meaning": "the protocols, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy}$"
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
-     "name": "\\{o_1, o_2\\}",
+     "name": "o_1, o_2",
      "meaning": "the linked ends"
     }
    ]
@@ -9666,9 +9618,9 @@ window.MAP = {
    "what": "An end with protocol $S' \\simeq S$ and counter $f \\geq a$.",
    "why": "Credits are lower bounds on counters.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$o$ at $(S@x)^2$ with counter $3$.",
+   "example": "$o \\mapsto S^{3}$ at $(S@x)^2$.",
    "rocq": "fuel/Fuel.v: Vty TSess",
-   "sig": "o \\in FV\\llbracket (S@x)\\annot{^{a}} \\rrbracket(\\Pi, \\varphi)",
+   "sig": "o \\in FV^{N}_{n}\\llbracket \\{o \\mapsto S'^{f}\\} \\vdash (S@x)\\annot{^{a}} \\rrbracket",
    "args": [
     {
      "name": "o",
@@ -9711,7 +9663,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "A loop body at cost $\\infty$.",
    "rocq": "fuel/Fuel.v: Vty TLolli",
-   "sig": "\\lambda e \\in FV^{N}_{n}\\llbracket (T\\annot{^{a_1}} \\multimap_{c;\\vartheta;h} U\\annot{^{a_2}})\\annot{^{a}} \\rrbracket(\\Pi, \\varphi)",
+   "sig": "\\lambda e \\in FV^{N}_{n}\\llbracket \\Phi \\vdash (T \\multimap[(c, \\vartheta); h]\\, U)\\annot{^{a}} \\rrbracket",
    "args": [
     {
      "name": "c, \\vartheta, h",
@@ -9725,13 +9677,13 @@ window.MAP = {
    ]
   },
   "FV-Arrow.exact": {
-   "title": "$\\mathsf{fends}\\,e = \\mathrm{dom}\\,\\Pi$",
+   "title": "$\\mathsf{fends}\\,e = \\mathrm{dom}\\,\\Phi$",
    "what": "The closure holds exactly the ends it mentions.",
    "why": "It mirrors exactness of $V$, and the cost fundamental theorem needs it to read fuel off typing.",
-   "breaks": "A closure mentioning an end it does not hold would be in $FV$, and a forwarder receiving it could not spawn it.",
+   "breaks": "A closure mentioning an end it does not hold would be fueled, and a forwarder receiving it could not spawn it.",
    "example": "$\\lambda\\_.\\,\\mathsf{close}\\,a$ holds $\\{a\\}$.",
    "rocq": "fuel/Fuel.v: Vty TLolli",
-   "sig": "\\mathsf{fends}\\,e = \\mathrm{dom}\\,\\Pi = \\mathrm{dom}\\,\\varphi",
+   "sig": "\\mathsf{fends}\\,e = \\mathrm{dom}\\,\\Phi",
    "args": [
     {
      "name": "e",
@@ -9741,12 +9693,12 @@ window.MAP = {
   },
   "FV-Arrow.floor": {
    "title": "Counters $\\geq h + a$",
-   "what": "$\\forall o.\\ h + a \\leq \\varphi(o)$.",
+   "what": "Every captured counter $f$ has $h + a \\leq f$.",
    "why": "The body may assume the floor $h$ on its captured counters, and the closure's own credit $a$ is spent while it is held.",
    "breaks": "Nothing. It is a definition.",
    "example": "$h = 1$, $a = 1$ needs counters $\\geq 2$.",
    "rocq": "fuel/Fuel.v: Vty TLolli",
-   "sig": "\\forall o.\\ h + a \\leq \\varphi(o)",
+   "sig": "\\Phi(o) = S^{f} \\Rightarrow h + a \\leq f",
    "args": [
     {
      "name": "h",
@@ -9761,28 +9713,28 @@ window.MAP = {
   },
   "FV-Arrow.body": {
    "title": "Body fuel",
-   "what": "$e[u] \\in F^{N'}_j\\llbracket U\\annot{^{a_2}} \\annot{\\triangleright c ; r}\\rrbracket(\\Pi \\cup \\Pi_u, \\varphi' \\cup \\varphi_u, tk)$ for every $tk$ with $\\mathsf{meets}\\,\\vartheta\\,r\\,tk$.",
-   "why": "The caller supplies an argument, counters lowered to the floor by its own actions, and a ticket count meeting the arrow's ticket need, and the body promises fuel with frame $c$.",
+   "what": "$e[u] \\in F^{N'}_j\\llbracket\\Phi' \\cup \\Phi_u ; tk \\vdash U\\ !\\ (c, r)\\rrbracket$ for every $tk$ with $\\vartheta(r) \\leq tk$.",
+   "why": "The caller supplies an argument, counters lowered to the floor by its own actions, and a ticket count covering the arrow's ticket need, and the body promises fuel with frame $c$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{meets}\\,\\vartheta\\,r\\,tk$.",
+   "example": "$\\vartheta(r) \\leq tk$.",
    "rocq": "fuel/Fuel.v: Vty TLolli",
-   "sig": "e[u] \\in F^{N'}_{j}\\llbracket U\\annot{^{a_2}} \\annot{\\triangleright c ; r} \\rrbracket(\\Pi \\cup \\Pi_u, \\varphi' \\cup \\varphi_u, tk)",
+   "sig": "e[u] \\in F^{N'}_{j}\\llbracket \\Phi' \\cup \\Phi_u ; tk \\vdash U\\ !\\ (c, r) \\rrbracket",
    "args": [
     {
      "name": "N', j",
      "meaning": "a larger refill and a lower level"
     },
     {
-     "name": "\\varphi'",
-     "meaning": "the captured counters at the call, at least $h$"
+     "name": "\\Phi'",
+     "meaning": "the captured ends with counters at the call, at least $h$"
     },
     {
-     "name": "u, \\Pi_u, \\varphi_u",
-     "meaning": "the argument with its maps"
+     "name": "\\Phi_u",
+     "meaning": "the ends of the argument"
     },
     {
      "name": "r, tk",
-     "meaning": "a reserve and ticket count with $\\mathsf{meets}\\,\\vartheta\\,r\\,tk$"
+     "meaning": "with $\\vartheta(r) \\leq tk$"
     }
    ]
   },
@@ -9793,7 +9745,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{ring}$ at $N = 4$.",
    "rocq": "fuel/Fuel.v: Vty TBox",
-   "sig": "!e \\in FV^{N}_{n}\\llbracket \\Box(\\ldots) \\rrbracket(\\Pi, \\varphi)",
+   "sig": "!e \\in FV^{N}_{n}\\llbracket \\varnothing \\vdash \\Box(\\ldots) \\rrbracket",
    "args": [
     {
      "name": "e",
@@ -9808,7 +9760,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{ring}$.",
    "rocq": "fuel/Fuel.v: Vty TBox",
-   "sig": "\\mathsf{fends}\\,e = \\varnothing \\land \\Pi = \\varphi = \\varnothing",
+   "sig": "\\mathsf{fends}\\,e = \\varnothing",
    "args": [
     {
      "name": "e",
@@ -9818,12 +9770,12 @@ window.MAP = {
   },
   "FV-Box.body": {
    "title": "Body per force",
-   "what": "$e[!e] \\in F^{N'}_j\\llbracket U[\\bar s] \\annot{\\triangleright c ; r}\\rrbracket(\\varnothing, \\varnothing, tk)$ for every $N' \\sqsupseteq_{\\mathsf{rle}} N$, $j < n$, $\\bar s \\in \\mathsf{sinsts}\\,N'$ and $tk$ meeting $\\vartheta$.",
+   "what": "$e[!e] \\in F^{N'}_j\\llbracket\\varnothing ; tk \\vdash U[\\bar s]\\ !\\ (c, r)\\rrbracket$ for every $N' \\sqsupseteq_{\\mathsf{rle}} N$, $j < n$, $\\bar s \\in \\mathsf{sinsts}\\,N'$ and $tk \\geq \\vartheta(r)$.",
    "why": "Each force unrolls the box once, at a refill and instance the forcing context chooses.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{sinsts}\\,N'\\,\\bar s$.",
+   "example": "$\\bar s \\in \\mathsf{sinsts}\\,N'$.",
    "rocq": "fuel/Fuel.v: Vty TBox",
-   "sig": "e[!e] \\in F^{N'}_{j}\\llbracket U[\\bar s] \\annot{\\triangleright c ; r} \\rrbracket(\\varnothing, \\varnothing, tk)",
+   "sig": "e[!e] \\in F^{N'}_{j}\\llbracket \\varnothing ; tk \\vdash U[\\bar s]\\ !\\ (c, r) \\rrbracket",
    "args": [
     {
      "name": "N', j",
@@ -9835,18 +9787,18 @@ window.MAP = {
     },
     {
      "name": "r, tk",
-     "meaning": "with $\\mathsf{meets}\\,\\vartheta\\,r\\,tk$"
+     "meaning": "with $\\vartheta(r) \\leq tk$"
     }
    ]
   },
   "FV-Thread": {
    "title": "Thread result",
-   "what": "$v \\in FV\\llbracket\\mathsf{thread}\\rrbracket(\\Pi,\\varphi) \\iff \\Pi = \\varphi = \\varnothing$.",
+   "what": "$v \\in FV\\llbracket\\Phi \\vdash \\mathsf{thread}\\rrbracket \\iff \\Phi = \\varnothing$.",
    "why": "A finished thread holds no end.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\Pi = \\varphi = \\varnothing$.",
+   "example": "$\\Phi = \\varnothing$.",
    "rocq": "fuel/Fuel.v: Vres",
-   "sig": "v \\in FV\\llbracket \\mathsf{thread} \\rrbracket(\\Pi, \\varphi)",
+   "sig": "v \\in FV^{N}_{n}\\llbracket \\Phi \\vdash \\mathsf{thread} \\rrbracket",
    "args": [
     {
      "name": "v",
@@ -9856,8 +9808,8 @@ window.MAP = {
   },
   "fu.fsem": {
    "title": "$\\mathsf{fsem}$",
-   "what": "$\\exists tk.\\ \\forall n.\\ e$ has thread fuel at level $n$ with every held end at $N$.",
-   "why": "It is the per-thread fuel the soup needs, obtained from typing by the cost fundamental theorem.",
+   "what": "$\\exists tk.\\ \\forall n.\\ e \\in F^N_n\\llbracket\\Pi^N ; tk \\vdash \\mathsf{thread}\\ !\\ (\\infty, 0)\\rrbracket$, every held end at $N$.",
+   "why": "It is the per-thread fuel the soup needs, obtained from typing by the cost fundamental theorem. It is the one fuel statement that holds at every level.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{fsem}\\,N\\,\\Pi\\,e$.",
    "rocq": "fuel/Fuel.v: fsem",
@@ -9878,29 +9830,6 @@ window.MAP = {
     {
      "name": "tk",
      "meaning": "the ticket count, fixed for all levels"
-    }
-   ]
-  },
-  "fu.upd": {
-   "title": "$F_n[x := v]$",
-   "what": "The fuel of the successor at level $n$, with the refill $N'$, result, frame, reserve, protocols, counters and tickets of the current term, except the listed components, which take the listed values.",
-   "why": "Each obligation changes only a few components, so it lists only those.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$e' \\in F_n[tk := tk - 1]$ after a link.",
-   "rocq": "fuel/Fuel.v: f_beta, f_send, f_link",
-   "sig": "F_n[x := v] : \\mathsf{Expr} \\to \\mathsf{Prop}",
-   "args": [
-    {
-     "name": "x",
-     "meaning": "a component among $d, \\Pi, \\varphi, tk$"
-    },
-    {
-     "name": "v",
-     "meaning": "its new value"
-    },
-    {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
     }
    ]
   },
@@ -10058,16 +9987,20 @@ window.MAP = {
   },
   "sp.fuel": {
    "title": "Every thread fueled",
-   "what": "$\\forall t.\\ q(t) \\in F^N_n\\llbracket\\mathsf{thread}\\rrbracket(K_t(\\Pi), \\mathsf{ctrs}\\,K\\,t, tk_t)$.",
-   "why": "Counters of the fuel layer are read from $K$, so they are the same at every level.",
+   "what": "$\\forall t.\\ q(t) \\in F^N_n\\llbracket\\Phi_t ; tk_t \\vdash \\mathsf{thread}\\ !\\ (\\infty, 0)\\rrbracket$, with the protocols of $\\Pi$ and the counters of $K$ on the ends of $t$.",
+   "why": "Counters are read from $K$, so they are the same at every level.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$q(0) \\in F^N_n\\llbracket\\mathsf{thread}\\rrbracket(\\ldots)$.",
+   "example": "$\\Phi_0 = \\{a \\mapsto S^{2}\\}$.",
    "rocq": "soup/State.v: sp_fuel",
-   "sig": "e \\in F^{N}_{n}\\llbracket \\mathsf{thread} \\annot{\\triangleright \\infty ; 0} \\rrbracket(K_t(\\Pi), \\mathsf{ctrs}\\,K\\,t, tk_t)",
+   "sig": "e \\in F^{N}_{n}\\llbracket \\Phi_t ; tk_t \\vdash \\mathsf{thread}\\ !\\ (\\infty, 0) \\rrbracket",
    "args": [
     {
      "name": "t",
      "meaning": "a thread"
+    },
+    {
+     "name": "\\Phi_t",
+     "meaning": "the protocols of $\\Pi$ and counters of $K$ on the ends of $t$"
     }
    ]
   },
@@ -10330,13 +10263,13 @@ window.MAP = {
    ]
   },
   "sr.FE": {
-   "title": "Fuel $F^N_n\\llbracket\\sigma \\triangleright d ; r\\rrbracket(\\Pi, \\varphi, tk)$",
-   "what": "The fuel predicate at refill $N$ and level $n$.",
-   "why": "It bounds postponement and link chatter per thread, independent of points.",
+   "title": "Fuel $F^N_n\\llbracket\\Phi ; tk \\vdash \\sigma\\ !\\ (d, r)\\rrbracket$",
+   "what": "The thread holds the ends $\\Phi$ and $tk$ tickets and has fuel for $n$ more steps to return at $\\sigma$ within $d$ actions with $r$ tickets left, at refill $N$.",
+   "why": "It bounds postponement and links per thread, independent of points. It is indexed by $n$ like $E$, so it is written as membership and not as a judgment.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$F^{3}_n\\llbracket\\mathsf{thread} \\annot{\\triangleright \\infty ; 0}\\rrbracket(\\Pi, \\varphi, 0)$.",
+   "example": "$F^{3}_n\\llbracket\\{a \\mapsto S^{3}\\} ; 0 \\vdash \\mathsf{thread}\\ !\\ (\\infty, 0)\\rrbracket$.",
    "rocq": "fuel/Fuel.v: FuelE",
-   "sig": "e \\in F^{N}_{n}\\llbracket \\sigma \\triangleright d ; r \\rrbracket(\\Pi, \\varphi, tk)",
+   "sig": "e \\in F^{N}_{n}\\llbracket \\Phi ; tk \\vdash \\sigma\\ !\\ (d, r) \\rrbracket",
    "args": [
     {
      "name": "N",
@@ -10347,28 +10280,24 @@ window.MAP = {
      "meaning": "the level, $n \\in \\mathbb{N}$"
     },
     {
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+    },
+    {
+     "name": "tk",
+     "meaning": "the tickets of the thread, $tk \\in \\mathbb{N}$"
+    },
+    {
      "name": "\\sigma",
      "meaning": "the result, a credited type or $\\mathsf{thread}$"
     },
     {
      "name": "d",
-     "meaning": "the frame, $d \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the frame, the actions left before returning, $d \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "r",
-     "meaning": "the reserve, $r \\in \\mathbb{N}$"
-    },
-    {
-     "name": "\\Pi",
-     "meaning": "the protocols, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy}$"
-    },
-    {
-     "name": "\\varphi",
-     "meaning": "the counters, a finite map $\\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$"
-    },
-    {
-     "name": "tk",
-     "meaning": "the tickets of the thread, $tk \\in \\mathbb{N}$"
+     "meaning": "the reserve, the tickets kept on return, $r \\in \\mathbb{N}$"
     },
     {
      "name": "e",
@@ -10377,13 +10306,13 @@ window.MAP = {
    ]
   },
   "sr.FV": {
-   "title": "Fueled values $FV^N_n\\llbracket\\sigma\\rrbracket(\\Pi, \\varphi)$",
-   "what": "The value predicate of fuel at refill $N$ and level $n$.",
+   "title": "Fueled values $FV^N_n\\llbracket\\Phi \\vdash \\sigma\\rrbracket$",
+   "what": "The value holds exactly the ends $\\Phi$, and their counters meet the credits of $\\sigma$.",
    "why": "Values carry the protocols and counters of their ends.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$FV\\llbracket(S@x)^2\\rrbracket(\\{o \\mapsto S\\}, \\{o \\mapsto 3\\})$.",
+   "example": "$o \\in FV\\llbracket\\{o \\mapsto S^{3}\\} \\vdash (S@x)^2\\rrbracket$.",
    "rocq": "fuel/Fuel.v: Vfuel, Vty",
-   "sig": "v \\in FV^{N}_{n}\\llbracket \\sigma \\rrbracket(\\Pi, \\varphi)",
+   "sig": "v \\in FV^{N}_{n}\\llbracket \\Phi \\vdash \\sigma \\rrbracket",
    "args": [
     {
      "name": "N",
@@ -10394,16 +10323,12 @@ window.MAP = {
      "meaning": "the level, $n \\in \\mathbb{N}$"
     },
     {
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+    },
+    {
      "name": "\\sigma",
      "meaning": "the result"
-    },
-    {
-     "name": "\\Pi",
-     "meaning": "the protocols, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy}$"
-    },
-    {
-     "name": "\\varphi",
-     "meaning": "the counters, a finite map $\\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "v",
@@ -10416,7 +10341,7 @@ window.MAP = {
    "what": "The common premise of every action on $o$, F-Wait and F-Tick.",
    "why": "Send, receive, close, select and branch share it.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{act}\\,a$ at $\\varphi = \\{a \\mapsto 0, b \\mapsto 1\\}$ holds.",
+   "example": "$\\mathsf{act}\\,a$ at $\\Phi = \\{a \\mapsto S\\annot{^{0}}, b \\mapsto S'^{1}\\}$ holds.",
    "rocq": "fuel/Fuel.v: f_act",
    "sig": "\\mathsf{act} : \\mathsf{End} \\to \\mathsf{Prop}",
    "args": [
@@ -10425,12 +10350,8 @@ window.MAP = {
      "meaning": "the subject end, $o \\in \\mathsf{End}$"
     },
     {
-     "name": "\\Pi",
-     "meaning": "the protocols, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy}$"
-    },
-    {
-     "name": "\\varphi",
-     "meaning": "the counters, a finite map $\\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$"
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "d",
@@ -10756,35 +10677,16 @@ window.MAP = {
   },
   "sr.fvagg": {
    "title": "Products, sums and existentials in $FV$",
-   "what": "$\\otimes$ splits $\\Pi$ and $\\varphi$ disjointly between its parts, $\\oplus$ checks the injected part, and $\\exists$ checks its body.",
-   "why": "Only ends and closures carry credits, so these types only pass $\\Pi$ and $\\varphi$ on.",
+   "what": "$\\otimes$ splits $\\Phi$ disjointly between its parts, $\\oplus$ checks the injected part, and $\\exists$ checks its body.",
+   "why": "Only ends and closures carry credits, so these types only pass $\\Phi$ on.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(S@x)^{2} \\otimes \\ast$ gives $o$ to the first part.",
    "rocq": "fuel/Fuel.v: Vty",
    "sig": "FV \\text{ at } \\otimes, \\oplus, \\exists",
    "args": [
     {
-     "name": "\\Pi, \\varphi",
-     "meaning": "the protocols and counters, split among the parts"
-    }
-   ]
-  },
-  "sr.ctrs": {
-   "title": "$\\mathsf{ctrs}\\,K\\,t$",
-   "what": "The counters of the ends held by thread $t$, read from $K$.",
-   "why": "Fuel of a soup thread uses exactly these counters.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{ctrs}\\,K\\,0 = \\{a \\mapsto 2\\}$.",
-   "rocq": "soup/State.v: ctrs",
-   "sig": "\\mathsf{ctrs} : \\mathsf{Own} \\to \\mathbb{N} \\to \\mathsf{CEnv}",
-   "args": [
-    {
-     "name": "K",
-     "meaning": "the ownership map of the soup state"
-    },
-    {
-     "name": "t",
-     "meaning": "a thread"
+     "name": "\\Phi",
+     "meaning": "the held ends, split among the parts"
     }
    ]
   },
