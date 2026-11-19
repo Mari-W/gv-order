@@ -15,7 +15,7 @@ function inner(sp, i) { let best = null; for (const x of sp) if (x.b <= i && i <
 const after = (tex, i) => tex.slice(i, i + 40);
 const SF = {
   strict: 'w.strict', wfworld: 'th.wfworld', 'deadlock\\_free': 'prop.df', 'lock\\_free': 'prop.lf',
-  'no\\_tau\\_divergence': 'prop.notau', prim: 'ty.prim', heads: 'ty.heads', unfold: 'sty.unfold',
+  'no\\_tau\\_divergence': 'prop.notau', heads: 'ty.heads', unfold: 'sty.unfold',
   chans: 'tp.chans', Close: 'sty.close', pfree: 'pfree', meets: 'ann.meets', tok: 'ann.tok',
   erase: 'proc.erase', 'lf\\_next': 'sp.next', sinsts: 'tp.sinsts', pscoped: 'ty.pscoped', hbot: 'ty.hbot',
   tfree: 'ty.tfree', unlimited: 'ty.unlimited', 'ty\\_df': 'ann.tydf', acts: 'guard.acts',
@@ -282,7 +282,7 @@ T('r-ex', 'E-Pack, E-Open', 'static/Typing.v: e_pack, e_open',
 
 // ---- process rules ----
 const MEETSP = R`${h('lf.meets', R`N \in \mathbb{N} \Rightarrow \exists\, tk.\ ${h('ann.meets', R`\mathsf{meets}`)}\,\vartheta\,0\,${h('fu.tk', 'tk')}`)}`;
-const PTERM = (m) => rule('P-Term', R`\begin{array}{c}${h('ty.prim', R`\mathsf{prim}\,T`)}${Q}${h('P-Term.C0', R`\mathrm{dom}\,\Theta_B = ${h('tp.ends', R`\mathsf{ends}`)}(C_0)`)}${Q}${h('P-Term.disj', R`${h('tp.chans', R`\mathsf{chans}`)}\,${h('tp.Sigma', R`\Sigma`)} \cap C_0 = \varnothing`)}${Q}${h('pfree', R`\mathsf{pfree}\,\Sigma`)} \\ ${h('P-Term.pairs', R`\forall c \in C_0.\ \Theta_B(c^{+}) = S@x^{N},\ \Theta_B(c^{-}) = \overline{S}@\overline{x}^{N}`)} \\ ${h('P-Term.typed', R`${h('tp.lift', R`\Sigma^{N}`)} \cup \Theta_B ; \varnothing ; \varnothing \vdash^{${h('P-Term.future', R`(\varnothing,\cdot)`)}}_{W,N} t : T^{a} \triangleright c ; \vartheta`)}\annraw{ \\ }\annot{${m(MEETSP)}}\end{array}`, R`\Sigma ${h('tp.pjudg', R`\vdash^{N}_W`)} (C_0, \{t\}) : T`);
+const PTERM = (m) => rule('P-Term', R`\begin{array}{c}${h('ty.tfree', R`\mathsf{tfree}\,T`)}${Q}${h('P-Term.C0', R`\mathrm{dom}\,\Theta_B = ${h('tp.ends', R`\mathsf{ends}`)}(C_0)`)}${Q}${h('P-Term.disj', R`${h('tp.chans', R`\mathsf{chans}`)}\,${h('tp.Sigma', R`\Sigma`)} \cap C_0 = \varnothing`)}${Q}${h('pfree', R`\mathsf{pfree}\,\Sigma`)} \\ ${h('P-Term.pairs', R`\forall c \in C_0.\ \Theta_B(c^{+}) = S@x^{N},\ \Theta_B(c^{-}) = \overline{S}@\overline{x}^{N}`)} \\ ${h('P-Term.typed', R`${h('tp.lift', R`\Sigma^{N}`)} \cup \Theta_B ; \varnothing ; \varnothing \vdash^{${h('P-Term.future', R`(\varnothing,\cdot)`)}}_{W,N} t : T^{a} \triangleright c ; \vartheta`)}\annraw{ \\ }\annot{${m(MEETSP)}}\end{array}`, R`\Sigma ${h('tp.pjudg', R`\vdash^{N}_W`)} (C_0, \{t\}) : T`);
 const PCONN = R`\begin{array}{c}${h('P-Connect.left', R`\Sigma_1 \cup \Sigma_C \vdash^{N}_{W_1} (C_1, E_1) : T`)} \\ ${h('P-Connect.right', R`\Sigma_2 \cup ${h('P-Connect.cut', R`\overline{\Sigma_C}`)} \vdash^{N}_{W_2} (C_2, E_2) : \ast`)} \\ ${h('P-Connect.disj', R`\text{the channels of } \Sigma_1, \Sigma_2, \Sigma_C, C_1, C_2 \text{ pairwise disjoint}`)} \\ ${h('P-Connect.cutfree', R`\mathsf{pfree}\,\Sigma_C`)}${Q}${h('w.wf', R`\mathsf{world\_wf}\,W_1, W_2`)} \\ ${h('P-Connect.strict', R`${h('w.strict', R`\mathsf{strict}`)}(W_1 \sqcup W_2)`)}\end{array}`;
 const PCONC = R`\begin{array}{c}\Sigma_1 \cup \Sigma_2 \vdash^{N}_{${h('P-Connect.join', R`W_1 ${h('w.join', R`\sqcup`)} W_2`)}} \\ (C_1 \cup C_2 \cup ${h('tp.chans', R`\mathsf{chans}`)}\,\Sigma_C, E_1 \uplus E_2) : T\end{array}`;
 block(s, {

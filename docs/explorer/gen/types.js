@@ -1,7 +1,7 @@
 const { R, h, n, section, block, rule, Q, DEF } = require('./core');
 
 const s = section('types', 'Types and worlds',
-  'This section introduces types $T$, credits $a$, session types $S$ with $\\mathsf{unfold}$, $\\mathsf{dual}$, $\\simeq$ and $\\approx$, the sets $\\mathsf{heads}$ and the flag $\\mathsf{hbot}$, payloads, costs $c$ and ticket needs $\\vartheta$, the kinds $\\mathsf{prim}$, $\\mathsf{unlimited}$, $\\mathsf{tfree}$, and worlds $W$ with the order $\\prec_W$, the predicates $\\mathsf{world\\_wf}$, $\\mathsf{strict}$, $\\mathsf{wfworld}$, extension $\\sqsubseteq$ and join $\\sqcup$. Signatures name the sorts $\\mathsf{Ty}$ of types, $\\mathsf{STy}$ of session types, $\\mathsf{Tix}$ of ticket needs, $\\mathsf{LBound}$ of lower bounds and $\\mathsf{World}$ of worlds, and $X_{\\bot}$ adds an absent element to $X$.');
+  'This section introduces types $T$, credits $a$, session types $S$ with $\\mathsf{unfold}$, $\\mathsf{dual}$, $\\simeq$ and $\\approx$, the sets $\\mathsf{heads}$ and the flag $\\mathsf{hbot}$, payloads, costs $c$ and ticket needs $\\vartheta$, the kinds $\\mathsf{unlimited}$ and $\\mathsf{tfree}$, and worlds $W$ with the order $\\prec_W$, the predicates $\\mathsf{world\\_wf}$, $\\mathsf{strict}$, $\\mathsf{wfworld}$, extension $\\sqsubseteq$ and join $\\sqcup$. Signatures name the sorts $\\mathsf{Ty}$ of types, $\\mathsf{STy}$ of session types, $\\mathsf{Tix}$ of ticket needs, $\\mathsf{LBound}$ of lower bounds and $\\mathsf{World}$ of worlds, and $X_{\\bot}$ adds an absent element to $X$.');
 
 block(s, {
   id: 'ty-grammar', title: 'Types', rocq: 'types/Types.v: ty',
@@ -91,12 +91,12 @@ block(s, {
   caption: 'Deadlock-free typing is the annotated typing with every annotation at its unbounded value. $\\mathsf{ty\\_df}$ sets a type to these values, and then every premise about annotations holds.'
 });
 block(s, {
-  id: 'ty-kinds', title: 'Kinds of types', rocq: 'types/Types.v: prim, unlimited, tfree',
+  id: 'ty-kinds', title: 'Kinds of types', rocq: 'types/Types.v: unlimited, tfree',
   tex: R`\begin{array}{l}
-${h('ty.prim', R`\mathsf{prim}\,T ::= \ast \mid \mathsf{prim} \otimes \mathsf{prim} \mid \mathsf{prim} \oplus \mathsf{prim} \mid \Box(\ldots \mathsf{prim})`)} \\
-${h('ty.unlimited', R`\mathsf{unlimited}\,T \iff T = \Box\ldots`)} \qquad ${h('ty.tfree', R`\mathsf{tfree}\,T`)}
+${h('ty.tfree', R`\mathsf{tfree}\,T ::= \ast \mid \Box\ldots \mid \mathsf{tfree} \otimes \mathsf{tfree} \mid \mathsf{tfree} \oplus \mathsf{tfree}`)} \\
+${h('ty.unlimited', R`\mathsf{unlimited}\,T \iff T = \Box\ldots`)}
 \end{array}`,
-  caption: '$\\mathsf{prim}$ is the shape of a process result, $\\mathsf{unlimited}$ the types that admit weakening and contraction, $\\mathsf{tfree}$ the types whose values hold no end.'
+  caption: '$\\mathsf{tfree}$ is the shape of a process result, the types whose values hold no end, and $\\mathsf{unlimited}$ the types that admit weakening and contraction.'
 });
 block(s, {
   id: 'w-world', title: 'Worlds', rocq: 'types/Worlds.v: world',
@@ -177,9 +177,8 @@ n('ann.tlink', '$\\mathsf{tlink}$', 'The need of a link followed by code of need
 n('ann.tseq', 'Sequencing $\\vartheta_1 \\circ \\vartheta_2$', 'Code of need $\\vartheta_1$ followed by code of need $\\vartheta_2$ needs $\\vartheta_1(\\vartheta_2(r))$. The first part must leave what the second part needs.', 'Application and the two lets run their parts one after the other.', DEF, '$(0, 1) \\circ (0, 1) = (0, 2)$, two links in a row.', 'types/Costs.v: tseq');
 n('ann.tok', '$\\mathsf{tok}$', '$\\mathsf{tok}\\,\\vartheta_1\\,\\vartheta_2$ holds when $\\vartheta_2$ needs nothing at $0$, $\\vartheta_1$ has a finite $s$, or $\\vartheta_1$ is met by no ticket count. Then the pair computed for $\\vartheta_1 \\circ \\vartheta_2$ is exact.', 'With $s_1 = \\infty$ the first part runs only if it leaves nothing, so a second part that needs tickets cannot follow. The rules that sequence two parts ask $\\mathsf{tok}$.', DEF, '$\\mathsf{tok}\\,(0, 1)\\,(0, 1)$, the first need has a finite $s$.', 'types/Costs.v: tok');
 n('ann.tydf', '$\\mathsf{ty\\_df}$', '$\\mathsf{ty\\_df}(T)$ is $T$ with every annotation at its unbounded value. Credits, costs and floors become $\\infty$ and every ticket need becomes $(\\infty, \\infty)$.', 'Deadlock-free typing is the annotated typing at refill $N = \\infty$ with these annotations. One set of rules then serves both systems, and every premise about annotations holds at $\\infty$.', DEF, '$\\mathsf{ty\\_df}((S@x)^{3}) = (S@x)^{\\infty}$.', 'types/Types.v: ty_df');
-n('ty.prim', '$\\mathsf{prim}$', '$\\mathsf{prim}\\,T$ iff $T$ is built from $\\ast$, $\\otimes$, $\\oplus$ and boxes with $\\mathsf{prim}$ results.', 'A value of a $\\mathsf{prim}$ type holds no end, so no partner waits on the result of a process.', 'A main thread that returns an end holds it forever, and its partner waits forever.', '$\\mathsf{prim}(\\ast \\otimes \\ast)$.', 'types/Types.v: prim');
 n('ty.unlimited', '$\\mathsf{unlimited}$', '$\\mathsf{unlimited}\\,T$ iff $T$ is a box type, so its variables admit weakening and contraction.', '$V$ at a box type asks $\\Theta = \\varnothing$, so copying or dropping the value duplicates or loses no end.', DEF, 'The self of a box is unlimited.', 'types/Types.v: unlimited');
-n('ty.tfree', '$\\mathsf{tfree}$', '$\\mathsf{tfree}\\,T$ holds for types built from $\\ast$, boxes, $\\otimes$ and $\\oplus$ whose values hold no end.', 'Aging and capture change the credits of entries that hold ends. For $\\mathsf{tfree}\\,T$ the entry holds none, so they leave it unchanged.', DEF, '$\\mathsf{tfree}(\\ast \\otimes \\Box\\ldots)$.', 'types/Types.v: tfree');
+n('ty.tfree', '$\\mathsf{tfree}$', '$\\mathsf{tfree}\\,T$ iff $T$ is built from $\\ast$, boxes, $\\otimes$ and $\\oplus$. A value of such a type holds no end, because $V$ at a box asks $\\Theta = \\varnothing$.', 'Aging and capture leave an entry at a $\\mathsf{tfree}$ type unchanged. P-Term asks it of the result, so no partner waits on the result of a process.', 'A main thread that returns an end holds it forever, and its partner waits forever.', '$\\mathsf{tfree}(\\ast \\otimes \\Box\\ldots)$.', 'types/Types.v: tfree');
 n('w.world', 'World', '$W = (A, \\prec_A)$, roots and facts.', 'Points carry the order, and $W$ is the data that generates the order $\\prec_W$. A creation grows $W$ by its facts.', DEF, '$W$ with $A = \\{1, 2\\}$ and the fact $1 \\prec \\overline{2}$.', 'types/Worlds.v: world');
 n('w.consts', 'Roots $A$', '$A$ is the finite set of roots of $W$.', 'Facts mention only points with roots in $A$, and composition compares two worlds through $A_1 \\cap A_2$.', DEF, '$A = \\{1, 2\\}$.', 'types/Worlds.v: w_consts');
 n('w.facts', 'Facts $\\prec_A$', 'A set of facts $x \\prec y$, possibly infinite, between points whose roots lie in $A$.', 'They order the channels a component shares with its environment and the channels created so far.', DEF, '$1 \\prec \\overline{2}$.', 'types/Worlds.v: w_facts');
@@ -252,7 +251,6 @@ sa('ann.tlink', R`\mathsf{tlink} : \mathsf{Tix} \to \mathsf{Tix}`, [A(R`\varthet
 sa('ann.tseq', R`\cdot \circ \cdot : \mathsf{Tix} \to \mathsf{Tix} \to \mathsf{Tix}`, [A(R`\vartheta_1, \vartheta_2`, R`The ticket needs of the first and the second part.`)]);
 sa('ann.tok', R`\mathsf{tok} : \mathsf{Tix} \to \mathsf{Tix} \to \mathsf{Prop}`, [A(R`\vartheta_1 = (s_1, b_1)`, R`The first ticket need.`), A(R`\vartheta_2 = (s_2, b_2)`, R`The second ticket need.`)]);
 sa('ann.tydf', R`\mathsf{ty\_df} : \mathsf{Ty} \to \mathsf{Ty}`, [Tt]);
-sa('ty.prim', R`\mathsf{prim} : \mathsf{Ty} \to \mathsf{Prop}`, [Tt]);
 sa('ty.unlimited', R`\mathsf{unlimited} : \mathsf{Ty} \to \mathsf{Prop}`, [Tt]);
 sa('ty.tfree', R`\mathsf{tfree} : \mathsf{Ty} \to \mathsf{Prop}`, [Tt]);
 sa('w.world', R`W = (A, \prec_A) \in \mathsf{World}`, [A('A', R`The roots.`), A(R`\prec_A`, R`The facts.`)]);

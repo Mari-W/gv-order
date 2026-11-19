@@ -181,8 +181,8 @@ window.MAP = {
      "id": "sem-events",
      "title": "Events",
      "rocq": "lang/Process.v: event, ev_parts, ev_admin, ev_tau",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=ev.event}{\\begin{array}{rl} ev ::= & \\beta_i \\mid \\mathsf{new}_i\\,c \\mid \\mathsf{spawn}_{i,j}\\,v \\mid \\mathsf{msg}_{i,j}\\,o\\,v \\\\ \\mid & \\mathsf{close}_{i,j}\\,o \\mid \\mathsf{choice}_{i,j}\\,o\\,b \\mid \\mathsf{link}_i\\,o_1\\,o_2 \\mid \\mathsf{sess}_i\\,\\sigma \\end{array}} \\\\\n\\htmlData{k=ev.admin}{\\mathsf{admin} = \\{\\beta, \\mathsf{new}, \\mathsf{spawn}, \\mathsf{link}\\}} \\qquad \\htmlData{k=ev.tau}{\\tau = \\text{all but } \\mathsf{sess}} \\qquad \\htmlData{k=se.parts}{\\mathsf{parts}(ev)}\n\\end{array}",
-     "caption": "An event names the threads $\\mathsf{parts}(ev)$ and the channel or ends acted on.",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=ev.event}{ev ::= \\mathsf{solo}_i\\,\\alpha\\,k \\mid \\mathsf{sync}_{i,j}\\,\\sigma \\mid \\mathsf{offer}_i\\,\\sigma} \\qquad \\htmlData{k=ev.pick}{k ::= \\cdot \\mid j \\mid (o_1, o_2)} \\\\\n\\htmlData{k=ev.admin}{\\mathsf{admin} = \\{\\mathsf{solo}_i\\,\\alpha\\,k\\}} \\qquad \\htmlData{k=ev.tau}{\\tau = \\text{all but } \\mathsf{offer}} \\qquad \\htmlData{k=se.parts}{\\mathsf{parts}(ev)}\n\\end{array}",
+     "caption": "An event names the threads $\\mathsf{parts}(ev)$ and the labels they take.",
      "modes": [
       "df",
       "lf"
@@ -204,7 +204,7 @@ window.MAP = {
   {
    "id": "types",
    "title": "Types and worlds",
-   "intro": "\\annp{This section introduces types $T$, credits $a$, session types $S$ with $\\mathsf{unfold}$, $\\mathsf{dual}$, $\\simeq$ and $\\approx$, the sets $\\mathsf{heads}$ and the flag $\\mathsf{hbot}$, payloads, costs $c$ and ticket needs $\\vartheta$, the kinds $\\mathsf{prim}$, $\\mathsf{unlimited}$, $\\mathsf{tfree}$, and worlds $W$ with the order $\\prec_W$, the predicates $\\mathsf{world\\_wf}$, $\\mathsf{strict}$, $\\mathsf{wfworld}$, extension $\\sqsubseteq$ and join $\\sqcup$.} \\annp{Signatures name the sorts $\\mathsf{Ty}$ of types, $\\mathsf{STy}$ of session types, $\\mathsf{Tix}$ of ticket needs, $\\mathsf{LBound}$ of lower bounds and $\\mathsf{World}$ of worlds, and $X_{\\bot}$ adds an absent element to $X$.}",
+   "intro": "\\annp{This section introduces types $T$, credits $a$, session types $S$ with $\\mathsf{unfold}$, $\\mathsf{dual}$, $\\simeq$ and $\\approx$, the sets $\\mathsf{heads}$ and the flag $\\mathsf{hbot}$, payloads, costs $c$ and ticket needs $\\vartheta$, the kinds $\\mathsf{unlimited}$ and $\\mathsf{tfree}$, and worlds $W$ with the order $\\prec_W$, the predicates $\\mathsf{world\\_wf}$, $\\mathsf{strict}$, $\\mathsf{wfworld}$, extension $\\sqsubseteq$ and join $\\sqcup$.} \\annp{Signatures name the sorts $\\mathsf{Ty}$ of types, $\\mathsf{STy}$ of session types, $\\mathsf{Tix}$ of ticket needs, $\\mathsf{LBound}$ of lower bounds and $\\mathsf{World}$ of worlds, and $X_{\\bot}$ adds an absent element to $X$.}",
    "blocks": [
     {
      "id": "ty-grammar",
@@ -328,9 +328,9 @@ window.MAP = {
     {
      "id": "ty-kinds",
      "title": "Kinds of types",
-     "rocq": "types/Types.v: prim, unlimited, tfree",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=ty.prim}{\\mathsf{prim}\\,T ::= \\ast \\mid \\mathsf{prim} \\otimes \\mathsf{prim} \\mid \\mathsf{prim} \\oplus \\mathsf{prim} \\mid \\Box(\\ldots \\mathsf{prim})} \\\\\n\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,T \\iff T = \\Box\\ldots} \\qquad \\htmlData{k=ty.tfree}{\\mathsf{tfree}\\,T}\n\\end{array}",
-     "caption": "$\\mathsf{prim}$ is the shape of a process result, $\\mathsf{unlimited}$ the types that admit weakening and contraction, $\\mathsf{tfree}$ the types whose values hold no end.",
+     "rocq": "types/Types.v: unlimited, tfree",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=ty.tfree}{\\mathsf{tfree}\\,T ::= \\ast \\mid \\Box\\ldots \\mid \\mathsf{tfree} \\otimes \\mathsf{tfree} \\mid \\mathsf{tfree} \\oplus \\mathsf{tfree}} \\\\\n\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,T \\iff T = \\Box\\ldots}\n\\end{array}",
+     "caption": "$\\mathsf{tfree}$ is the shape of a process result, the types whose values hold no end, and $\\mathsf{unlimited}$ the types that admit weakening and contraction.",
      "modes": [
       "df",
       "lf"
@@ -780,9 +780,9 @@ window.MAP = {
      "id": "p-term",
      "title": "P-Term",
      "rocq": "static/Typing.v: p_term",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ty.prim}{\\mathsf{prim}\\,T}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\\\ \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing}\\\\ \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = S@x\\annot{^{N}},\\ \\Theta_B(c^{-}) = \\overline{S}@\\overline{x}\\annot{^{N}}} \\\\ \\htmlData{k=P-Term.typed}{\\htmlData{k=tp.lift}{\\Sigma\\annot{^{N}}} \\cup \\Theta_B ; \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}}\\annraw{ \\\\ }\\annot{\\htmlData{k=lf.meets}{N \\in \\mathbb{N} \\Rightarrow \\exists\\, tk.\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk}}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ty.tfree}{\\mathsf{tfree}\\,T}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\\\ \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing}\\\\ \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = S@x\\annot{^{N}},\\ \\Theta_B(c^{-}) = \\overline{S}@\\overline{x}\\annot{^{N}}} \\\\ \\htmlData{k=P-Term.typed}{\\htmlData{k=tp.lift}{\\Sigma\\annot{^{N}}} \\cup \\Theta_B ; \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}}\\annraw{ \\\\ }\\annot{\\htmlData{k=lf.meets}{N \\in \\mathbb{N} \\Rightarrow \\exists\\, tk.\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk}}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}",
      "variants": {
-      "lf": "\\dfrac{\\begin{array}{c}\\htmlData{k=ty.prim}{\\mathsf{prim}\\,T}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\\\ \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing}\\\\ \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = S@x\\annot{^{N}},\\ \\Theta_B(c^{-}) = \\overline{S}@\\overline{x}\\annot{^{N}}} \\\\ \\htmlData{k=P-Term.typed}{\\htmlData{k=tp.lift}{\\Sigma\\annot{^{N}}} \\cup \\Theta_B ; \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}}\\annraw{ \\\\ }\\annot{\\boxed{\\htmlData{k=lf.meets}{N \\in \\mathbb{N} \\Rightarrow \\exists\\, tk.\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk}}}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}"
+      "lf": "\\dfrac{\\begin{array}{c}\\htmlData{k=ty.tfree}{\\mathsf{tfree}\\,T}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\\\ \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing}\\\\ \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = S@x\\annot{^{N}},\\ \\Theta_B(c^{-}) = \\overline{S}@\\overline{x}\\annot{^{N}}} \\\\ \\htmlData{k=P-Term.typed}{\\htmlData{k=tp.lift}{\\Sigma\\annot{^{N}}} \\cup \\Theta_B ; \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}}\\annraw{ \\\\ }\\annot{\\boxed{\\htmlData{k=lf.meets}{N \\in \\mathbb{N} \\Rightarrow \\exists\\, tk.\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk}}}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}"
      },
      "caption": "One thread $t$ holding both ends of every $c \\in C_0$ at dual types and points over a partner-free $\\Sigma$.",
      "modes": [
@@ -1149,7 +1149,7 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{l}\na \\in \\htmlData{k=th.soup}{S^{N,W}_n\\llbracket\\Sigma \\vdash T\\rrbracket} \\iff \\htmlData{k=sp.exists}{\\exists A, \\Pi, U}.\\ \\htmlData{k=sp.prim}{\\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T} \\land \\forall t, e.\\ q(t) = e \\Rightarrow {} \\\\\n\\quad \\htmlData{k=sp.rel}{e \\in \\htmlData{k=th.Erel}{E[\\kappa_L]^W_n\\llbracket K_t(A) \\vdash U_t\\rrbracket^{\\varnothing}}} \\land \\htmlData{k=sp.ty}{U_t \\in \\{T, \\ast\\}} \\land \\htmlData{k=sp.fuel}{e \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.rty}{\\mathsf{thread}} \\annot{\\triangleright \\infty ; 0} \\rrbracket(K_t(\\Pi), \\htmlData{k=sr.ctrs}{\\mathsf{ctrs}}\\,K\\,t, tk_t)}} \\\\\n\\quad \\htmlData{k=sp.pts}{\\forall o.\\ \\mathsf{pt}(A\\,o) = \\mathsf{pt}(K\\,o)} \\land \\htmlData{k=sp.dom}{\\mathrm{dom}\\,\\Pi = \\mathrm{dom}\\,K} \\land \\htmlData{k=sp.owner}{\\forall o.\\ K(o) = (t, \\_, \\_) \\Rightarrow t \\in \\mathrm{dom}\\,q} \\\\\n\\quad \\htmlData{k=sp.closed}{\\forall o \\in \\mathrm{dom}\\,K.\\ \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\lor o \\in \\mathrm{dom}\\,\\Sigma} \\land \\htmlData{k=sp.pair}{\\forall o \\in \\mathrm{dom}\\,K.\\ \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow \\overline{o} \\in \\mathrm{dom}\\,K} \\\\\n\\quad \\htmlData{k=sp.sdual}{A(o) = S@x \\land A(\\overline{o}) = S'@x' \\land \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow x' = \\overline{x} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S'} \\\\\n\\quad \\htmlData{k=sp.pdual}{\\Pi(o) = P \\land \\Pi(\\overline{o}) = P' \\land \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow P' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{P}} \\\\\n\\quad \\htmlData{k=sp.sig}{\\Sigma(o) = y \\Rightarrow A(o) = y} \\land \\htmlData{k=sp.psig}{\\Sigma(o) = S@x \\Rightarrow \\Pi(o) = S} \\land \\htmlData{k=sp.fin}{\\forall o.\\ K(o) = (\\_, \\_, f) \\Rightarrow f \\in \\mathbb{N}}\n\\end{array}",
+     "tex": "\\begin{array}{l}\na \\in \\htmlData{k=th.soup}{S^{N,W}_n\\llbracket\\Sigma \\vdash T\\rrbracket} \\iff \\htmlData{k=sp.exists}{\\exists A, \\Pi, U}.\\ \\htmlData{k=sp.tfree}{\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T} \\land \\forall t, e.\\ q(t) = e \\Rightarrow {} \\\\\n\\quad \\htmlData{k=sp.rel}{e \\in \\htmlData{k=th.Erel}{E[\\kappa_L]^W_n\\llbracket K_t(A) \\vdash U_t\\rrbracket^{\\varnothing}}} \\land \\htmlData{k=sp.ty}{U_t \\in \\{T, \\ast\\}} \\land \\htmlData{k=sp.fuel}{e \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.rty}{\\mathsf{thread}} \\annot{\\triangleright \\infty ; 0} \\rrbracket(K_t(\\Pi), \\htmlData{k=sr.ctrs}{\\mathsf{ctrs}}\\,K\\,t, tk_t)}} \\\\\n\\quad \\htmlData{k=sp.pts}{\\forall o.\\ \\mathsf{pt}(A\\,o) = \\mathsf{pt}(K\\,o)} \\land \\htmlData{k=sp.dom}{\\mathrm{dom}\\,\\Pi = \\mathrm{dom}\\,K} \\land \\htmlData{k=sp.owner}{\\forall o.\\ K(o) = (t, \\_, \\_) \\Rightarrow t \\in \\mathrm{dom}\\,q} \\\\\n\\quad \\htmlData{k=sp.closed}{\\forall o \\in \\mathrm{dom}\\,K.\\ \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\lor o \\in \\mathrm{dom}\\,\\Sigma} \\land \\htmlData{k=sp.pair}{\\forall o \\in \\mathrm{dom}\\,K.\\ \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow \\overline{o} \\in \\mathrm{dom}\\,K} \\\\\n\\quad \\htmlData{k=sp.sdual}{A(o) = S@x \\land A(\\overline{o}) = S'@x' \\land \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow x' = \\overline{x} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S'} \\\\\n\\quad \\htmlData{k=sp.pdual}{\\Pi(o) = P \\land \\Pi(\\overline{o}) = P' \\land \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow P' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{P}} \\\\\n\\quad \\htmlData{k=sp.sig}{\\Sigma(o) = y \\Rightarrow A(o) = y} \\land \\htmlData{k=sp.psig}{\\Sigma(o) = S@x \\Rightarrow \\Pi(o) = S} \\land \\htmlData{k=sp.fin}{\\forall o.\\ K(o) = (\\_, \\_, f) \\Rightarrow f \\in \\mathbb{N}}\n\\end{array}",
      "caption": "At each level $n$ the soup asks every thread live and fueled at its part of $A$ and $\\Pi$, with ends, points and counters read from $K$."
     },
     {
@@ -1219,7 +1219,7 @@ window.MAP = {
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\htmlData{k=th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\htmlData{k=th.Erel}{E[\\kappa]^{W}_{n}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\htmlData{k=th.Prel}{P[\\kappa]^{W}_{n}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.sem-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\htmlData{k=th.conn}{\\mathsf{conn}} \\\\ \\land\\ p_1 \\in \\htmlData{k=th.Prel}{P^{W_1}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket} \\\\ \\land\\ p_2 \\in \\htmlData{k=th.Prel}{P^{W_2}_{n}\\llbracket \\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.par}{p_1 \\parallel_{\\Sigma_C} p_2} \\in \\htmlData{k=th.Prel}{P^{W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket}\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\mathrel{\\htmlData{k=tp.lfjudg}{\\Vdash}}^{N}_{W} (C_0, \\{t\\}) : T \\\\ \\text{by P-Term}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W (C_0, \\{t\\}) : T\\end{array}}}\\end{array}",
+     "tex": "\\begin{array}{l}\\htmlData{k=th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\htmlData{k=th.Erel}{E[\\kappa]^{W}_{n}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\htmlData{k=th.Prel}{P[\\kappa]^{W}_{n}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.sem-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.conn}{\\mathsf{conn}} \\\\ \\land\\ p_1 \\in \\htmlData{k=th.Prel}{P^{W_1}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket} \\\\ \\land\\ p_2 \\in \\htmlData{k=th.Prel}{P^{W_2}_{n}\\llbracket \\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.par}{p_1 \\parallel_{\\Sigma_C} p_2} \\in \\htmlData{k=th.Prel}{P^{W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket}\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\mathrel{\\htmlData{k=tp.lfjudg}{\\Vdash}}^{N}_{W} (C_0, \\{t\\}) : T \\\\ \\text{by P-Term}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W (C_0, \\{t\\}) : T\\end{array}}}\\end{array}",
      "caption": "For every $\\kappa$ and $n$, P-Term and P-Connect hold in $P$."
     },
     {
@@ -1241,7 +1241,7 @@ window.MAP = {
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}} \\\\[1.5ex] \\htmlData{k=th.live-soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{^{\\infty}}_W p : T \\land \\mathrel{\\htmlData{k=guard.proc}{\\vdash\\!\\triangleright}} p \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p \\land \\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}}\\,p\\end{array}} \\\\[1.5ex] \\htmlData{k=th.soundness-source}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\varnothing ; \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land N \\in \\mathbb{N} \\land \\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\\\ \\land\\ \\varnothing;\\varnothing;\\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\\\ \\land\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk} \\land \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}",
+     "tex": "\\begin{array}{l}\\htmlData{k=th.soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}} \\\\[1.5ex] \\htmlData{k=th.live-soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{^{\\infty}}_W p : T \\land \\mathrel{\\htmlData{k=guard.proc}{\\vdash\\!\\triangleright}} p \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p \\land \\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}}\\,p\\end{array}} \\\\[1.5ex] \\htmlData{k=th.soundness-source}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\varnothing ; \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land N \\in \\mathbb{N} \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\land\\ \\varnothing;\\varnothing;\\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\\\ \\land\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk} \\land \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}",
      "caption": "Typing implies deadlock freedom under $\\mathsf{strict}\\,W$ and lock freedom under $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$."
     },
     {
@@ -1252,8 +1252,8 @@ window.MAP = {
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\annot{\\htmlData{k=th.conservative}{\\begin{array}{l}(\\exists a\\,c\\,\\vartheta.\\ \\htmlData{k=th.df}{\\Theta_{df}};\\Gamma;\\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,\\infty}} e : T_{df}\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}) \\\\ \\quad\\iff\\ \\Theta_{df};\\Gamma;\\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.typed-dftyped}{\\begin{array}{l}\\Theta;\\Gamma;\\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\\\ \\quad\\Longrightarrow\\ \\Theta_{df};\\Gamma;\\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_W e : T_{df}\\end{array}}} \\\\[1.5ex] \\htmlData{k=th.live-sub-df}{\\begin{array}{l}\\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\htmlData{k=th.nobox}{\\Box \\notin T} \\land \\varnothing \\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T\\end{array}}\\end{array}",
-     "caption": "Deadlock-free typing is the merged judgment at $N = \\infty$ up to erasure, and live implies deadlock-free at box-free $\\mathsf{prim}$ results."
+     "tex": "\\begin{array}{l}\\annot{\\htmlData{k=th.conservative}{\\begin{array}{l}(\\exists a\\,c\\,\\vartheta.\\ \\htmlData{k=th.df}{\\Theta_{df}};\\Gamma;\\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,\\infty}} e : T_{df}\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}) \\\\ \\quad\\iff\\ \\Theta_{df};\\Gamma;\\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.typed-dftyped}{\\begin{array}{l}\\Theta;\\Gamma;\\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\\\ \\quad\\Longrightarrow\\ \\Theta_{df};\\Gamma;\\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_W e : T_{df}\\end{array}}} \\\\[1.5ex] \\htmlData{k=th.live-sub-df}{\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.nobox}{\\Box \\notin T} \\land \\varnothing \\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T\\end{array}}\\end{array}",
+     "caption": "Deadlock-free typing is the merged judgment at $N = \\infty$ up to erasure, and live implies deadlock-free at box-free $\\mathsf{tfree}$ results."
     },
     {
      "id": "th-cost",
@@ -1262,7 +1262,7 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.cost-fundamental}{\\begin{array}{l}\\Theta;\\Gamma;\\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=cs.csem}{\\Theta;\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{N} e : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.fsem-of-cost}{\\begin{array}{l}\\begin{array}{l}\\Theta;\\varnothing;\\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\land \\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\\\ \\land\\ \\text{credits of } \\Theta \\leq N \\land \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,(\\htmlData{k=th.styof}{\\mathsf{sty} \\circ \\Theta})\\,e}\\end{array}}\\end{array}",
+     "tex": "\\begin{array}{l}\\htmlData{k=th.cost-fundamental}{\\begin{array}{l}\\Theta;\\Gamma;\\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=cs.csem}{\\Theta;\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{N} e : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.fsem-of-cost}{\\begin{array}{l}\\begin{array}{l}\\Theta;\\varnothing;\\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\land\\ \\text{credits of } \\Theta \\leq N \\land \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,(\\htmlData{k=th.styof}{\\mathsf{sty} \\circ \\Theta})\\,e}\\end{array}}\\end{array}",
      "caption": "A typed closed thread with all credits at most $N$ has fuel with every counter at $N$."
     }
    ]
@@ -2169,10 +2169,10 @@ window.MAP = {
   },
   "se.parts": {
    "title": "Participants $\\mathsf{parts}(ev)$",
-   "what": "$\\mathsf{parts}(ev) = \\{i, j\\}$ for $\\mathsf{msg}_{i,j}$, $\\mathsf{close}_{i,j}$, $\\mathsf{choice}_{i,j}$, $\\{i\\}$ for every other event, and $\\mathsf{parts}(\\bot) = \\varnothing$ for a stutter. A spawn names only the parent $i$.",
+   "what": "$\\mathsf{parts}(\\mathsf{sync}_{i,j}\\,\\sigma) = \\{i, j\\}$, $\\mathsf{parts}(\\mathsf{solo}_i\\,\\alpha\\,k) = \\mathsf{parts}(\\mathsf{offer}_i\\,\\sigma) = \\{i\\}$, and $\\mathsf{parts}(\\bot) = \\varnothing$ for a stutter. A spawn names only the parent $i$.",
    "why": "A thread takes part in a step iff it is in $\\mathsf{parts}$ of its event. Weak fairness and lock freedom ask whether $t \\in \\mathsf{parts}(l_j)$ for some position $j$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{parts}(\\mathsf{msg}_{0,1}\\,o) = \\{0, 1\\}$.",
+   "example": "$\\mathsf{parts}(\\mathsf{sync}_{0,1}\\,(a^{+}!\\ast)) = \\{0, 1\\}$.",
    "rocq": "lang/Process.v: ev_parts, lockfree/Fair.v: lparts",
    "sig": "\\mathsf{parts} : \\mathsf{Event} \\to \\mathcal{P}_{\\mathrm{fin}}(\\mathbb{N})",
    "args": [
@@ -2610,7 +2610,7 @@ window.MAP = {
   },
   "P-Act-Beta": {
    "title": "P-Act-Beta",
-   "what": "If $M(i) \\xrightarrow{\\beta} e'$, then $(C, M) \\to (C, M[i \\mapsto e'])$ with event $\\beta_i$.",
+   "what": "If $M(i) \\xrightarrow{\\beta} e'$, then $(C, M) \\to (C, M[i \\mapsto e'])$ with event $\\mathsf{solo}_i\\,\\beta\\,\\cdot$.",
    "why": "A plain rule. A $\\beta$ step changes only thread $i$.",
    "breaks": "Nothing. It is a definition.",
    "example": "A $\\beta$ step of thread $0$.",
@@ -2684,7 +2684,7 @@ window.MAP = {
   "P-Act-Spawn": {
    "title": "P-Act-Spawn",
    "what": "If $M(i) \\xrightarrow{\\mathsf{spawn}\\,v} e'$ and $j \\notin \\mathrm{dom}\\,M$, then $M$ becomes $M[i \\mapsto e'][j \\mapsto v\\,\\ast]$.",
-   "why": "Only thread $i$ takes part, $\\mathsf{parts}(\\mathsf{spawn}_{i,j}) = \\{i\\}$.",
+   "why": "The event is $\\mathsf{solo}_i\\,(\\mathsf{spawn}\\,v)\\,j$, so only thread $i$ takes part.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{spawn}\\,(\\lambda u.\\,e)$ adds a thread $j$ running $(\\lambda u.\\,e)\\,\\ast$.",
    "rocq": "lang/Process.v: p_act_spawn",
@@ -2896,10 +2896,10 @@ window.MAP = {
   },
   "ev.event": {
    "title": "Event",
-   "what": "The label $ev$ of a configuration step, with the identifiers of the threads that take part.",
+   "what": "$\\mathsf{solo}_i\\,\\alpha\\,k$ is a step of thread $i$ alone with thread label $\\alpha$. $\\mathsf{sync}_{i,j}\\,\\sigma$ is a step in which thread $i$ takes the send, close or select $\\sigma$ on an end $o$ and thread $j$ the matching receive, close or branch on $\\overline{o}$. $\\mathsf{offer}_i\\,\\sigma$ is an offer of thread $i$ to the environment.",
    "why": "Weak fairness asks of each thread $t$ that $t \\in \\mathsf{parts}(l_j)$ for some $j$, so every step names its threads.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{msg}_{0,1}\\,a^{+}$.",
+   "example": "$\\mathsf{sync}_{0,1}\\,(a^{+}!\\ast)$.",
    "rocq": "lang/Process.v: event",
    "sig": "ev \\in \\mathsf{Event}",
    "args": [
@@ -2908,26 +2908,41 @@ window.MAP = {
      "meaning": "Thread identifiers of the participants."
     },
     {
-     "name": "c",
-     "meaning": "The new channel of a creation."
+     "name": "\\alpha",
+     "meaning": "The thread label of a solo step."
     },
     {
-     "name": "o, o_1, o_2",
-     "meaning": "Ends acted on."
-    },
-    {
-     "name": "b",
-     "meaning": "A choice."
+     "name": "k",
+     "meaning": "The pick of a solo step."
     },
     {
      "name": "\\sigma",
-     "meaning": "The label of an offer to the environment."
+     "meaning": "The session label of thread $i$, in a synchronization or an offer to the environment."
+    }
+   ]
+  },
+  "ev.pick": {
+   "title": "Pick $k$",
+   "what": "What a process rule chooses beyond the thread label. $k = j$ names the new thread of a spawn, $k = (o_1, o_2)$ orders the ends of a link so that the channel of $o_1$ goes and the holder of $\\overline{o_1}$ then holds $o_2$, and $k = \\cdot$ for every other solo step.",
+   "why": "The thread label of a link is the unordered set $\\{o_1, o_2\\}$, and the thread label of a spawn names no thread, so the event records the choice the rule makes.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\mathsf{solo}_0\\,(\\leftrightarrow\\{c^{+}, d^{-}\\})\\,(c^{+}, d^{-})$ removes $c$.",
+   "rocq": "lang/Process.v: pick",
+   "sig": "k \\in \\mathbb{N}_{\\bot} \\cup \\mathsf{End} \\times \\mathsf{End}",
+   "args": [
+    {
+     "name": "j",
+     "meaning": "The identifier of a spawned thread."
+    },
+    {
+     "name": "o_1, o_2",
+     "meaning": "The ends of a link, the channel of $o_1$ goes."
     }
    ]
   },
   "ev.admin": {
    "title": "Administrative events",
-   "what": "$\\mathsf{admin} = \\{\\beta, \\mathsf{new}, \\mathsf{spawn}, \\mathsf{link}\\}$, each of cost $0$ in $\\kappa_L$.",
+   "what": "$\\mathsf{admin}$ is the set of solo events $\\mathsf{solo}_i\\,\\alpha\\,k$, the steps by $\\beta$, $\\mathsf{new}$, $\\mathsf{spawn}$ and $\\mathsf{link}$, each of cost $0$ in $\\kappa_L$.",
    "why": "They act on no protocol. Absence of internal divergence states that every chain of them is finite.",
    "breaks": "Nothing. It is a definition.",
    "example": "An unbounded chain of spawns takes only administrative steps.",
@@ -2937,10 +2952,10 @@ window.MAP = {
   },
   "ev.tau": {
    "title": "$\\tau$ events",
-   "what": "Every event except $\\mathsf{sess}_i\\,\\sigma$, an offer to the environment.",
+   "what": "Every event except $\\mathsf{offer}_i\\,\\sigma$, an offer to the environment.",
    "why": "A closed configuration has no environment, so all its steps are $\\tau$ steps.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{msg}_{0,1}\\,a^{+}$ is a $\\tau$ event.",
+   "example": "$\\mathsf{sync}_{0,1}\\,(a^{+}!\\ast)$ is a $\\tau$ event.",
    "rocq": "lang/Process.v: ev_tau, itstep",
    "sig": "\\tau \\subseteq \\mathsf{Event}",
    "args": []
@@ -3954,21 +3969,6 @@ window.MAP = {
     }
    ]
   },
-  "ty.prim": {
-   "title": "$\\mathsf{prim}$",
-   "what": "$\\mathsf{prim}\\,T$ iff $T$ is built from $\\ast$, $\\otimes$, $\\oplus$ and boxes with $\\mathsf{prim}$ results.",
-   "why": "A value of a $\\mathsf{prim}$ type holds no end, so no partner waits on the result of a process.",
-   "breaks": "A main thread that returns an end holds it forever, and its partner waits forever.",
-   "example": "$\\mathsf{prim}(\\ast \\otimes \\ast)$.",
-   "rocq": "types/Types.v: prim",
-   "sig": "\\mathsf{prim} : \\mathsf{Ty} \\to \\mathsf{Prop}",
-   "args": [
-    {
-     "name": "T",
-     "meaning": "A type."
-    }
-   ]
-  },
   "ty.unlimited": {
    "title": "$\\mathsf{unlimited}$",
    "what": "$\\mathsf{unlimited}\\,T$ iff $T$ is a box type, so its variables admit weakening and contraction.",
@@ -3986,9 +3986,9 @@ window.MAP = {
   },
   "ty.tfree": {
    "title": "$\\mathsf{tfree}$",
-   "what": "$\\mathsf{tfree}\\,T$ holds for types built from $\\ast$, boxes, $\\otimes$ and $\\oplus$ whose values hold no end.",
-   "why": "\\annp{Aging and capture change the credits of entries that hold ends.} For $\\mathsf{tfree}\\,T$ the entry holds none, so they leave it unchanged.",
-   "breaks": "Nothing. It is a definition.",
+   "what": "$\\mathsf{tfree}\\,T$ iff $T$ is built from $\\ast$, boxes, $\\otimes$ and $\\oplus$. A value of such a type holds no end, because $V$ at a box asks $\\Theta = \\varnothing$.",
+   "why": "Aging and capture leave an entry at a $\\mathsf{tfree}$ type unchanged. P-Term asks it of the result, so no partner waits on the result of a process.",
+   "breaks": "A main thread that returns an end holds it forever, and its partner waits forever.",
    "example": "$\\mathsf{tfree}(\\ast \\otimes \\Box\\ldots)$.",
    "rocq": "types/Types.v: tfree",
    "sig": "\\mathsf{tfree} : \\mathsf{Ty} \\to \\mathsf{Prop}",
@@ -9971,14 +9971,14 @@ window.MAP = {
     }
    ]
   },
-  "sp.prim": {
-   "title": "$\\mathsf{prim}\\,T$",
+  "sp.tfree": {
+   "title": "$\\mathsf{tfree}\\,T$",
    "what": "The result type holds no end.",
    "why": "A main thread returning an end would leave that end's partner waiting.",
    "breaks": "$\\mathsf{main}$ returning an end.",
-   "example": "$\\mathsf{prim}\\,\\ast$.",
-   "rocq": "soup/State.v: sp_prim",
-   "sig": "\\mathsf{prim}\\,T",
+   "example": "$\\mathsf{tfree}\\,\\ast$.",
+   "rocq": "soup/State.v: sp_tfree",
+   "sig": "\\mathsf{tfree}\\,T",
    "args": [
     {
      "name": "T",
@@ -10008,7 +10008,7 @@ window.MAP = {
   "sp.ty": {
    "title": "$U_t \\in \\{T, \\ast\\}$",
    "what": "Each thread returns at $T$ or at $\\ast$.",
-   "why": "A thread that returns has a value in $V$ at $U_t$, and for $U_t \\in \\{T, \\ast\\}$ with $\\mathsf{prim}\\,T$ that value holds no end, which the termination argument uses.",
+   "why": "A thread that returns has a value in $V$ at $U_t$, and for $U_t \\in \\{T, \\ast\\}$ with $\\mathsf{tfree}\\,T$ that value holds no end, which the termination argument uses.",
    "breaks": "Without it, a finished thread could still hold an end.",
    "example": "$\\mathsf{main}$ at $T$, spawned threads at $\\ast$.",
    "rocq": "soup/State.v: sp_ty",
@@ -11101,12 +11101,12 @@ window.MAP = {
   },
   "th.sem-p-term": {
    "title": "Semantic P-Term",
-   "what": "If $\\mathsf{prim}\\,T$, $\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C$ and $t \\in E[\\kappa]^{W}_{n}\\llbracket\\Theta \\vdash T\\rrbracket^{\\varnothing}$, then $(C, \\{t\\}) \\in P[\\kappa]^{W}_{n}\\llbracket\\Sigma \\vdash T\\rrbracket$.",
+   "what": "If $\\mathsf{tfree}\\,T$, $\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C$ and $t \\in E[\\kappa]^{W}_{n}\\llbracket\\Theta \\vdash T\\rrbracket^{\\varnothing}$, then $(C, \\{t\\}) \\in P[\\kappa]^{W}_{n}\\llbracket\\Sigma \\vdash T\\rrbracket$.",
    "why": "It is P-Term in the relation. When $t$ spawns $v$, the child receives exactly the ends $\\mathsf{fends}(v)$, which $V$ fixes by $\\mathrm{dom}\\,\\Theta = \\mathsf{fends}(v)$, and the proof composes parent and child as P-Connect does.",
    "breaks": "Nothing. It is a definition.",
    "example": "A single thread with $\\Sigma = \\varnothing$ and $C = \\varnothing$.",
    "rocq": "compat/PTerm.v: sem_p_term",
-   "sig": "\\mathsf{prim}\\,T \\land \\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C \\land t \\in E[\\kappa]^{W}_{n}\\llbracket\\Theta \\vdash T\\rrbracket^{\\varnothing} \\Rightarrow (C, \\{t\\}) \\in P[\\kappa]^{W}_{n}\\llbracket\\Sigma \\vdash T\\rrbracket",
+   "sig": "\\mathsf{tfree}\\,T \\land \\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C \\land t \\in E[\\kappa]^{W}_{n}\\llbracket\\Theta \\vdash T\\rrbracket^{\\varnothing} \\Rightarrow (C, \\{t\\}) \\in P[\\kappa]^{W}_{n}\\llbracket\\Sigma \\vdash T\\rrbracket",
    "args": [
     {
      "name": "\\kappa",
@@ -11163,12 +11163,12 @@ window.MAP = {
   },
   "th.sem-p-connect": {
    "title": "Semantic P-Connect",
-   "what": "If $\\mathsf{prim}\\,T$, $\\mathsf{conn}$, $p_1 \\in P^{W_1}_n\\llbracket\\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket$ and $p_2 \\in P^{W_2}_n\\llbracket\\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket$, then $p_1 \\parallel_{\\Sigma_C} p_2 \\in P^{W_1 \\sqcup W_2}_n\\llbracket\\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket$.",
+   "what": "If $\\mathsf{tfree}\\,T$, $\\mathsf{conn}$, $p_1 \\in P^{W_1}_n\\llbracket\\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket$ and $p_2 \\in P^{W_2}_n\\llbracket\\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket$, then $p_1 \\parallel_{\\Sigma_C} p_2 \\in P^{W_1 \\sqcup W_2}_n\\llbracket\\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket$.",
    "why": "It is P-Connect in the relation, for every level $n$ and every cost table.",
    "breaks": "Nothing. It is a definition.",
    "example": "Two threads closing $c^{+}$ and $c^{-}$, cut at $c$.",
    "rocq": "compat/ConnectP.v: sem_p_connect",
-   "sig": "\\mathsf{prim}\\,T \\land \\mathsf{conn} \\land p_1 \\in P^{W_1}_{n}\\llbracket\\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket \\land p_2 \\in P^{W_2}_{n}\\llbracket\\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket \\Rightarrow p_1 \\parallel_{\\Sigma_C} p_2 \\in P^{W_1 \\sqcup W_2}_{n}\\llbracket\\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket",
+   "sig": "\\mathsf{tfree}\\,T \\land \\mathsf{conn} \\land p_1 \\in P^{W_1}_{n}\\llbracket\\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket \\land p_2 \\in P^{W_2}_{n}\\llbracket\\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket \\Rightarrow p_1 \\parallel_{\\Sigma_C} p_2 \\in P^{W_1 \\sqcup W_2}_{n}\\llbracket\\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket",
    "args": [
     {
      "name": "n",
@@ -11282,12 +11282,12 @@ window.MAP = {
   },
   "th.soundness-source": {
    "title": "Soundness for source terms",
-   "what": "For strict $W$, $\\mathsf{prim}\\,T$ and $\\varnothing ; \\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W} t : T$, the process $(\\varnothing, \\{t\\})$ is deadlock free.",
+   "what": "For strict $W$, $\\mathsf{tfree}\\,T$ and $\\varnothing ; \\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W} t : T$, the process $(\\varnothing, \\{t\\})$ is deadlock free.",
    "why": "A source term creates channels only at fresh roots and at fields of held ends, so it is P-Term with $\\Sigma = \\varnothing$ and $C_0 = \\varnothing$.",
    "breaks": "Nothing. It is a definition.",
    "example": "Every deadlock-free example.",
    "rocq": "static/FundamentalProc.v: soundness_source",
-   "sig": "\\mathsf{strict}\\,W \\land \\mathsf{prim}\\,T \\land \\varnothing ; \\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W} t : T \\Rightarrow \\mathsf{deadlock\\_free}(\\varnothing, \\{t\\})",
+   "sig": "\\mathsf{strict}\\,W \\land \\mathsf{tfree}\\,T \\land \\varnothing ; \\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W} t : T \\Rightarrow \\mathsf{deadlock\\_free}(\\varnothing, \\{t\\})",
    "args": [
     {
      "name": "W",
@@ -11332,7 +11332,7 @@ window.MAP = {
   },
   "th.lf-soundness-source": {
    "title": "Lock-free soundness for source terms",
-   "what": "For $W$ with $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$, $N \\in \\mathbb{N}$, $\\mathsf{prim}\\,T$, a typing $\\varnothing;\\varnothing;\\varnothing \\vdash^{\\varnothing}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}$, some $tk$ with $\\mathsf{meets}\\,\\vartheta\\,0\\,tk$, and $\\varnothing \\vdash\\!\\triangleright t$, the process $(\\varnothing, \\{t\\})$ is lock free.",
+   "what": "For $W$ with $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$, $N \\in \\mathbb{N}$, $\\mathsf{tfree}\\,T$, a typing $\\varnothing;\\varnothing;\\varnothing \\vdash^{\\varnothing}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}$, some $tk$ with $\\mathsf{meets}\\,\\vartheta\\,0\\,tk$, and $\\varnothing \\vdash\\!\\triangleright t$, the process $(\\varnothing, \\{t\\})$ is lock free.",
    "why": "The premises are those of P-Term at finite $N$ with $\\Sigma = \\varnothing$ and $C_0 = \\varnothing$, plus the guard. Lock-free soundness then applies.",
    "breaks": "Nothing. It is a definition.",
    "example": "Every lock-free example.",
@@ -11393,12 +11393,12 @@ window.MAP = {
   },
   "th.live-sub-df": {
    "title": "Live inside deadlock-free",
-   "what": "For a closed process $p$ with $\\mathsf{prim}\\,T$ and no box in $T$, $\\varnothing \\mathrel{|\\!\\!\\vDash}_W p : T$ implies $\\varnothing \\vDash_W p : T$.",
+   "what": "For a closed process $p$ with $\\mathsf{tfree}\\,T$ and no box in $T$, $\\varnothing \\mathrel{|\\!\\!\\vDash}_W p : T$ implies $\\varnothing \\vDash_W p : T$.",
    "why": "At such $T$ the value relation reads no term relation, so it agrees for both cost tables at every level.",
    "breaks": "Nothing. It is a definition.",
    "example": "Every example with result $\\ast$.",
    "rocq": "compat/LiveDF.v: live_sub_df",
-   "sig": "\\mathsf{prim}\\,T \\land \\Box \\notin T \\land \\varnothing \\mathrel{|\\!\\!\\vDash}_W p : T \\Rightarrow \\varnothing \\vDash_W p : T",
+   "sig": "\\mathsf{tfree}\\,T \\land \\Box \\notin T \\land \\varnothing \\mathrel{|\\!\\!\\vDash}_W p : T \\Rightarrow \\varnothing \\vDash_W p : T",
    "args": [
     {
      "name": "p",
@@ -11413,7 +11413,7 @@ window.MAP = {
   "th.nobox": {
    "title": "$\\Box \\notin T$",
    "what": "$T$ contains no box type $\\Box(\\ldots)$.",
-   "why": "A box value carries code, whose relation depends on the cost table. A $\\mathsf{prim}$ type without boxes carries no code.",
+   "why": "A box value carries code, whose relation depends on the cost table. A $\\mathsf{tfree}$ type without boxes carries no code.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\ast$ and $\\ast \\otimes \\ast$ contain no box.",
    "rocq": "compat/LiveDF.v: boxfree",
@@ -11461,12 +11461,12 @@ window.MAP = {
   },
   "th.fsem-of-cost": {
    "title": "Fuel from cost typing",
-   "what": "If $\\Theta;\\varnothing;\\varnothing \\vdash^{\\varnothing}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}$, $\\mathsf{prim}\\,T$, every credit of $\\Theta$ is at most $N$ and $\\mathsf{meets}\\,\\vartheta\\,0\\,tk$, then $\\mathsf{fsem}\\,N\\,(\\mathsf{sty} \\circ \\Theta)\\,e$.",
+   "what": "If $\\Theta;\\varnothing;\\varnothing \\vdash^{\\varnothing}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}$, $\\mathsf{tfree}\\,T$, every credit of $\\Theta$ is at most $N$ and $\\mathsf{meets}\\,\\vartheta\\,0\\,tk$, then $\\mathsf{fsem}\\,N\\,(\\mathsf{sty} \\circ \\Theta)\\,e$.",
    "why": "P-Term gives every end credit $N$, so the cost judgment yields the per-thread fuel that lock freedom needs.",
    "breaks": "If a closure could mention an end it does not own, the forwarder could receive a closure that owns nothing and would have no fuel after spawning it.",
    "example": "The forwarder $\\mathsf{fw}$.",
    "rocq": "cost/CostFund.v: fsem_of_cost",
-   "sig": "\\ldots \\vdash^{\\varnothing}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta} \\land \\mathsf{prim}\\,T \\land (\\forall o.\\ \\mathsf{cr}(\\Theta(o)) \\leq N) \\land \\mathsf{meets}\\,\\vartheta\\,0\\,tk \\Rightarrow \\mathsf{fsem}\\,N\\,(\\mathsf{sty} \\circ \\Theta)\\,e",
+   "sig": "\\ldots \\vdash^{\\varnothing}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta} \\land \\mathsf{tfree}\\,T \\land (\\forall o.\\ \\mathsf{cr}(\\Theta(o)) \\leq N) \\land \\mathsf{meets}\\,\\vartheta\\,0\\,tk \\Rightarrow \\mathsf{fsem}\\,N\\,(\\mathsf{sty} \\circ \\Theta)\\,e",
    "args": [
     {
      "name": "\\Theta",
