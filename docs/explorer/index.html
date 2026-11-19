@@ -307,16 +307,17 @@ window.MathJax = {
   }
 
   // one badge per judgment: accepted, rejected, or not attempted
-  const JUDG = [['df', '$\\vdash$', 'deadlock free'], ['live', '$\\vdash$ and $\\vdash\\!\\triangleright$', 'live'], ['lf', '$\\Vdash^{N}$', 'lock free']];
+  // each verdict says which judgment it is about and which property that judgment gives
+  const JUDG = [['df', 'statically typed', 'deadlock free'], ['sem', 'semantically typed', 'deadlock free'], ['live', 'typed and guarded', 'live'], ['lf', 'statically typed', 'lock free']];
   function badges(acc) {
     if (!acc) return '';
     // the deadlock-free mode shows only the deadlock-free verdict
     return `<div class="badges">${JUDG.map(([m, sym, name]) => {
-      const a = acc[m]; if (a === undefined || (mode === 'df' && m !== 'df')) return '';
+      const a = acc[m]; if (a === undefined || (mode === 'df' && m !== 'df' && m !== 'sem')) return '';
       const st = a === true || (a && a.ok) ? 'yes' : a === false || (a && a.ok === false) ? 'no' : 'na';
-      const extra = (a && a.N !== undefined ? ` <span class="n">${a.N === 'every' ? 'every $N$' : `$N = ${esc(a.N)}$`}</span>` : '') + (a && a.part ? ` <span class="nm">(${esc(a.part)})</span>` : '');
+      const extra = (a && a.N !== undefined ? ` <span class="n">at ${a.N === 'every' ? 'every $N$' : `$N = ${esc(a.N)}$`}</span>` : '') + (a && a.part ? ` <span class="nm">(${st === 'no' ? 'fails at ' : ''}${esc(a.part)})</span>` : '');
       const title = a && a.rocq ? ` title="${esc(a.rocq)}"` : '';
-      return `<span class="badge ${st} ${m}"${title}><span class="mark">${st === 'yes' ? '✓' : st === 'no' ? '✗' : '–'}</span> ${sym} <span class="nm">${name}</span>${extra}</span>`;
+      return `<span class="badge ${st} ${m}"${title}><span class="mark">${st === 'yes' ? '✓' : st === 'no' ? '✗' : '–'}</span> ${st === 'no' ? 'not ' : ''}${sym}, <span class="nm">${name}</span>${extra}</span>`;
     }).join('')}</div>`;
   }
   function renderExamples(root) {

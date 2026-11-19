@@ -11803,6 +11803,29 @@ window.MAP = {
    "lead": "An end that no thread ever acts on may be held across a loop of unbounded length."
   },
   {
+   "id": "ex-flag",
+   "title": "Self-computed flag",
+   "modes": [
+    "df",
+    "lf"
+   ],
+   "code": "not     = λz. case z of inl w ⇒ inj₂ w | inr w ⇒ inj₁ w\nthread  = case not (inj₂ ∗) of\n            inl _ ⇒ let ∗ = close c in close d      -- runs\n          | inr _ ⇒ let ∗ = close d in close c      -- never runs\npartner = let ∗ = close c̄ in close d̄\n-- the process ({c, d}, {thread, partner}), c at x, d at y",
+   "rocq": "examples/SemBranch.v: sb_thread_E, sb_deadlock_free",
+   "accepts": {
+    "df": {
+     "ok": false,
+     "part": "P-Connect",
+     "rocq": "argued in docs/redesign/semantic-example.md, no Rocq proof"
+    },
+    "sem": {
+     "ok": true,
+     "rocq": "sb_thread_E, sb_deadlock_free"
+    }
+   },
+   "shows": "The flag is always $\\mathsf{inj}_1\\,\\ast$, so the thread closes $c$ before $d$. E-Case types both arms in one world. The first arm asks $x \\prec \\overline{y}$, the second asks $y \\prec \\overline{x}$, and the partner asks $\\overline{x} \\prec y$. The joint world has the cycle $y \\prec \\overline{x} \\prec y$, and P-Connect asks a strict world. The relation reads only the steps the thread takes. After three $\\beta$ steps the thread is in the first arm, which the fundamental theorem places in $E$ in a world with $x \\prec \\overline{y}$ alone. Semantic P-Connect joins it with the partner, the joint world has no cycle, and adequacy gives deadlock freedom. The rejection holds whatever points $c$ and $d$ get, and the map records it as an argument, with no Rocq proof.",
+   "lead": "A thread that branches on a flag it computes itself is deadlock free, and only semantic typing shows it, because static typing checks the arm that never runs."
+  },
+  {
    "id": "rx-postpone",
    "title": "Postponement, a holding thread that never serves",
    "modes": [

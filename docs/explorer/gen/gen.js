@@ -138,7 +138,7 @@ const noSig = Object.keys(notes).filter(k => !notes[k].sig);
 console.log('unhovered symbols (HOV=1 lists them)', nHover, '| notes without sig (SIG=1 lists them)', noSig.length);
 if (process.env.SIG) console.log('NOSIG', noSig.join(' '));
 for (const [k, v] of Object.entries(notes)) { if (v.sig) { try { katex.renderToString(v.sig, { trust: true, strict: 'ignore', throwOnError: true, macros: { ...MAC } }); } catch (e) { console.log('KATEX-SIG', k, e.message.slice(0, 120)); errs++; } for (const a of v.args || []) { try { katex.renderToString(a.name, { trust: true, strict: 'ignore', throwOnError: true, macros: { ...MAC } }); } catch (e) { console.log('KATEX-ARG', k, e.message.slice(0, 120)); errs++; } prose(a.meaning, k + '.arg'); } } }
-for (const e of examples) if (e.accepts) for (const [m, a] of Object.entries(e.accepts)) { if (!['df', 'live', 'lf'].includes(m) || typeof a.ok !== 'boolean') { console.log('BAD-ACCEPTS', e.id, m); errs++; } }
+for (const e of examples) if (e.accepts) for (const [m, a] of Object.entries(e.accepts)) { if (!['df', 'sem', 'live', 'lf'].includes(m) || typeof a.ok !== 'boolean') { console.log('BAD-ACCEPTS', e.id, m); errs++; } }
 // nothing about annotations may show in the deadlock-free mode
 {
   const LEAK = [/\^\{\\htmlData\{k=[^}]*\}\{[ab]/, /\^\{[ab](_|'|\}|\s*\+)/, /(?<!\\!)\\triangleright\}*\s*(c|\\infty|\d)/, /\\vartheta/, /\[c\s*;/, /\\hat\s*1/, /\\mathsf\{(tok|meets|tix|tspawn|tlink|tseq)\}/, /\\vdash\}*\^\{N\}/, /credit/i];

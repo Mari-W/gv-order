@@ -258,7 +258,16 @@ cli  = !(f = λp. let ⟨q, k⟩ = p in let ⟨a, b⟩ = q in
 -- c sits at Skip on each side, an idle end`,
     shows: "The idle end $k$ at $\\mathsf{Skip}@\\chi$ is held across every round at credit $0$, because $(\\mathsf{Skip}@\\chi)^{a} - c = (\\mathsf{Skip}@\\chi)^{\\max(a - c, 0)}$ asks no $c \\leq a$.",
     rocq: 'examples/LFController.v: ctl_typedN, ctl_guarded, ctl_lftyped, ctl_lock_free',
-    accepts: { lf: { ok: true, N: 3, rocq: 'ctl_lftyped' } } }
+    accepts: { lf: { ok: true, N: 3, rocq: 'ctl_lftyped' } } },
+  { id: 'ex-flag', title: 'Self-computed flag', modes: ['df', 'live', 'lf'],
+    code: `not     = λz. case z of inl w ⇒ inj₂ w | inr w ⇒ inj₁ w
+thread  = case not (inj₂ ∗) of
+            inl _ ⇒ let ∗ = close c in close d      -- runs
+          | inr _ ⇒ let ∗ = close d in close c      -- never runs
+partner = let ∗ = close c̄ in close d̄
+-- the process ({c, d}, {thread, partner}), c at x, d at y`,
+    rocq: 'examples/SemBranch.v: sb_thread_E, sb_deadlock_free',
+    accepts: { df: { ok: false, part: 'P-Connect', rocq: 'argued in docs/redesign/semantic-example.md, no Rocq proof' }, sem: { ok: true, rocq: 'sb_thread_E, sb_deadlock_free' } } }
 );
 
 n("th.tpr", "$\\mathsf{thread\\_progress\\_run}$", "For a run $(r, l)$, $\\mathsf{thread\\_progress\\_run}\\,(r, l)$ holds iff each thread $t$ of each position $i$ later stops or acts. That is, some $j \\geq i$ exists at which $t$ is a value in $r\\,j$ or takes part in the step $l\\,j$ by a session action.", "It states lock freedom per run for each thread, including the threads that are not pending. A thread that is neither stopped nor acting forever would be postponed without end.", DEF, "In a run of two threads closing $c^{+}$ and $c^{-}$, both threads take part in the close step.", "lockfree/ThreadProgress.v: thread_progress_run");
