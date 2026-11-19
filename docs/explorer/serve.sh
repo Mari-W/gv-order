@@ -16,7 +16,24 @@ def free_port():
                 pass
     raise SystemExit("no free port found")
 
+import os
+
 class Handler(http.server.SimpleHTTPRequestHandler):
+    # GET /version answers the modification times of the page and its data;
+    # the page polls it and reloads itself when they change.
+    def do_GET(self):
+        if self.path.rstrip("/").endswith("/version"):
+            v = ",".join(str(os.stat(f).st_mtime_ns) for f in ("explorer.html", "data.js"))
+            body = v.encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        else:
+            super().do_GET()
+
     # The page POSTs what the reader points at; keep the latest in .cursor.json
     # and the last 200 events in .cursor.log, so the assistant can follow along.
     def do_POST(self):

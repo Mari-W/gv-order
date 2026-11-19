@@ -54,18 +54,6 @@ window.MAP = {
      ]
     },
     {
-     "id": "syn-consts",
-     "title": "Constants as lambda values",
-     "rocq": "lang/Syntax.v: k_send, k_new, k_new_at",
-     "tex": "\\htmlData{k=syn.consts}{\\begin{array}{l}\n\\mathsf{k\\_send} := \\lambda x.\\,\\mathsf{send}\\,x \\\\\n\\mathsf{k\\_new}_\\ell := \\lambda x.\\,\\mathsf{let}\\ \\ast = x\\ \\mathsf{in}\\ \\mathsf{new}_\\ell \\\\\n\\mathsf{k\\_new}_\\kappa := \\lambda x.\\,\\mathsf{new}_\\kappa\\,x\n\\end{array}}",
-     "caption": "A GV constant passed as an argument is a $\\lambda$-value over its primitive.",
-     "modes": [
-      "df",
-      "live",
-      "lf"
-     ]
-    },
-    {
      "id": "syn-ends",
      "title": "Ends",
      "rocq": "lang/Syntax.v: cend, edual, ech",
@@ -1430,7 +1418,7 @@ window.MAP = {
    "what": "A one-argument closure $\\lambda e$, a value for every $e$ because no frame has its hole under $\\lambda$.",
    "why": "Every value of arrow type has the form $\\lambda e$. Hence the value relation at an arrow type has exactly one clause, and no clause for primitives.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\lambda x.\\,\\mathsf{send}\\,x$ is the send function $\\mathsf{k\\_send}$.",
+   "example": "$\\lambda x.\\,\\mathsf{send}\\,x$ is $\\mathsf{send}$ as a function value.",
    "rocq": "lang/Syntax.v: Lam",
    "sig": "\\lambda e \\in \\mathsf{Val}",
    "args": [
@@ -1809,25 +1797,6 @@ window.MAP = {
     {
      "name": "i",
      "meaning": "The side of an injection."
-    }
-   ]
-  },
-  "syn.consts": {
-   "title": "Constants",
-   "what": "The functions of GV are $\\lambda$-values over the primitives, for example $\\mathsf{k\\_send} = \\lambda x.\\,\\mathsf{send}\\,x$.",
-   "why": "A constant passed as an argument is a $\\lambda e$ and types by the rule for $\\lambda$.",
-   "breaks": "Without them, a program that passes $\\mathsf{send}$ to a higher-order function needs primitives as values.",
-   "example": "$\\mathsf{k\\_new}_\\ell = \\lambda x.\\,\\mathsf{let}\\ \\ast = x\\ \\mathsf{in}\\ \\mathsf{new}_\\ell$.",
-   "rocq": "lang/Syntax.v: k_send … k_new_at",
-   "sig": "\\mathsf{k\\_send}, \\mathsf{k\\_new}_\\ell, \\mathsf{k\\_new}_\\kappa \\in \\mathsf{Val}",
-   "args": [
-    {
-     "name": "x",
-     "meaning": "The argument of the $\\lambda$."
-    },
-    {
-     "name": "\\ell, \\kappa",
-     "meaning": "The family and field label of the wrapped primitive."
     }
    ]
   },

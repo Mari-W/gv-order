@@ -29,6 +29,12 @@ must do, open questions.
    needs (dual end), or does `new` need an interval per end; are fields
    x·κ still needed. Design note to be written before any Rocq work.
 
+3. **No GV constants.** `k_send`, `k_new`, `k_new_at` are unused
+   eta-expansions of primitives. A primitive as a function value is
+   written `λx. k x` directly. Map: done (block removed). Rocq: delete the
+   three definitions in lang/Syntax.v and the sentence about constants in
+   its header comment.
+
 ## Done in the Rocq
 
 (entries move here once the repair agent has implemented and merged them)

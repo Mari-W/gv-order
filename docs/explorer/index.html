@@ -383,7 +383,25 @@ window.MathJax = {
   $('#q').addEventListener('input', e => { query = e.target.value.trim().toLowerCase(); renderSection(); });
   window.addEventListener('hashchange', () => { renderTabs(); renderSection(); window.scrollTo(0, 0); report({ how: 'section' }); });
 
-  function start() { renderTabs(); renderModes(); renderSection(); }
+  // under serve.sh, reload when explorer.html or data.js changes, keeping the scroll position and the pinned note
+  function watch() {
+    if (!/^https?:$/.test(location.protocol)) return;
+    let seen = null;
+    setInterval(() => fetch('version', { cache: 'no-store' }).then(r => r.ok ? r.text() : null).then(v => {
+      if (!v) return;
+      if (seen !== null && v !== seen) {
+        try { sessionStorage.setItem('lrmap-keep', JSON.stringify({ y: window.scrollY, pinned })); } catch (e) {}
+        location.reload();
+      }
+      seen = v;
+    }).catch(() => {}), 1000);
+  }
+  function restore() {
+    let k = null; try { k = JSON.parse(sessionStorage.getItem('lrmap-keep')); sessionStorage.removeItem('lrmap-keep'); } catch (e) {}
+    if (!k) return;
+    setTimeout(() => { window.scrollTo(0, k.y || 0); if (k.pinned && MAP.notes[k.pinned]) { pinned = k.pinned; markAll(pinned); showNote(pinned, true); } }, 300);
+  }
+  function start() { renderTabs(); renderModes(); renderSection(); restore(); watch(); }
   if (window.MathJax && MathJax.tex2svg) start(); else window.__mjReady = start;
 })();
 </script>
