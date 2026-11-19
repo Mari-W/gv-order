@@ -92,6 +92,7 @@ aside .eyebrow { font: 600 0.7rem var(--body); letter-spacing: 0.08em; text-tran
 aside .eyebrow button { font: 500 0.75rem var(--body); border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 4px; padding: 2px 8px; cursor: pointer; }
 .block h3[data-block] { cursor: pointer; }
 .ex h3[data-ex] { cursor: help; }
+.ex { cursor: pointer; }
 aside h2 { font-family: var(--display); font-weight: 600; font-size: 1.3rem; margin: 6px 0 10px; text-wrap: balance; }
 aside dl { margin: 0; display: grid; gap: 10px; }
 aside dt { font: 600 0.72rem var(--body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
@@ -357,6 +358,11 @@ window.MathJax = {
     const a = b.about || {};
     return pseudo('b-' + b.id, { title: b.title, what: b.caption, why: a.why, breaks: a.breaks, example: a.example, rocq: b.rocq, used: a.used });
   }
+  // an example's own note: what it demonstrates, then how
+  function exNote(id) {
+    const x = (MAP.examples || []).find(x => x.id === id); if (!x) return null;
+    return pseudo('x-' + x.id, { title: x.title, what: [x.lead, x.shows].filter(Boolean).join(' '), rocq: x.rocq });
+  }
   // a note built from a block's caption, an example's description, or a section intro
   function pseudo(id, n) {
     if (!MAP.notes['@' + id]) MAP.notes['@' + id] = n;
@@ -422,7 +428,7 @@ window.MathJax = {
     const h = e.target.closest && e.target.closest('h3[data-block], h3[data-ex]');
     if (h && !pinned) {
       if (h.dataset.block) { const k = blockNote(h.dataset.block); if (k) showNote(k, false, modeAt(h)); }
-      else { const x = (MAP.examples || []).find(x => x.id === h.dataset.ex); if (x) showNote(pseudo('x-' + x.id, { title: x.title, what: x.shows, rocq: x.rocq }), false); }
+      else { const k = exNote(h.dataset.ex); if (k) showNote(k, false); }
       return;
     }
     const t = e.target.closest && e.target.closest('[class*="k-"]'); if (!t) return;
@@ -440,6 +446,9 @@ window.MathJax = {
     if (fb) { flipBlock(fb.closest('.flip').dataset.flip, fb.dataset.m); return; }
     const hb = e.target.closest && e.target.closest('h3[data-block]');
     if (hb) { const k = blockNote(hb.dataset.block); if (k) { pinned = k; boxesOff('pin'); showNote(k, true, modeAt(hb)); } return; }
+    // a click anywhere on an example pins its description
+    const xa = e.target.closest && e.target.closest('article.ex');
+    if (xa) { const k = exNote(xa.id.slice(2)); if (k) { pinned = k; boxesOff('pin'); showNote(k, true); } return; }
     const t = e.target.closest && e.target.closest('[class*="k-"]'); if (!t) return;
     const k = keyOf(t); if (!k) return;
     pinned = k; markAll(k); showNote(k, true, modeAt(t));
