@@ -8,15 +8,6 @@
 
 From GV Require Export types.Types.
 
-Lemma cr_df_pinst σ T : cr_df (pinst_ty σ T) = cr_df T.
-Proof. by destruct T. Qed.
-Lemma cr_df_sinst σ T : cr_df (sinst_ty σ T) = cr_df T.
-Proof. by destruct T. Qed.
-Lemma cr_df_sren r T : cr_df (sren_ty r T) = cr_df T.
-Proof. by destruct T. Qed.
-Lemma cr_df_sflip k T : cr_df (sflip_ty k T) = cr_df T.
-Proof. by destruct T. Qed.
-
 Lemma heads_df T : heads (ty_df T) = heads T.
 Proof. induction T; simpl; congruence. Qed.
 
@@ -32,7 +23,7 @@ Lemma df_pinst_mut :
   (∀ T σ, ty_df (pinst_ty σ T) = pinst_ty σ (ty_df T)) ∧
   (∀ s σ, sty_df (pinst_sty σ s) = pinst_sty σ (sty_df s)).
 Proof.
-  split; [|done]. intros T. induction T; intros σ; simpl; rewrite ?cr_df_pinst; congruence.
+  split; [|done]. intros T. induction T; intros σ; simpl; congruence.
 Qed.
 
 Lemma ty_df_pinst σ T : ty_df (pinst_ty σ T) = pinst_ty σ (ty_df T).
@@ -60,7 +51,7 @@ Proof. unfold ty_inst. by rewrite ty_df_pinst. Qed.
 Lemma df_sren_mut :
   (∀ T r, ty_df (sren_ty r T) = sren_ty r (ty_df T)) ∧
   (∀ s r, sty_df (sren r s) = sren r (sty_df s)).
-Proof. apply ty_sty_mut_ind; intros; simpl; rewrite ?cr_df_sren; congruence. Qed.
+Proof. apply ty_sty_mut_ind; intros; simpl; congruence. Qed.
 
 Lemma sty_df_sren r s : sty_df (sren r s) = sren r (sty_df s).
 Proof. apply df_sren_mut. Qed.
@@ -69,7 +60,7 @@ Lemma df_sflip_mut :
   (∀ T k, ty_df (sflip_ty k T) = sflip_ty k (ty_df T)) ∧
   (∀ s k, sty_df (sflip k s) = sflip k (sty_df s)).
 Proof.
-  apply ty_sty_mut_ind; intros; simpl; rewrite ?cr_df_sflip; try congruence.
+  apply ty_sty_mut_ind; intros; simpl; try congruence.
   all: by case_decide.
 Qed.
 
@@ -117,7 +108,7 @@ Lemma df_sinst_mut :
   (∀ T σ, ty_df (sinst_ty σ T) = sinst_ty (sty_df ∘ σ) (ty_df T)) ∧
   (∀ s σ, sty_df (sinst σ s) = sinst (sty_df ∘ σ) (sty_df s)).
 Proof.
-  apply ty_sty_mut_ind; intros; simpl; rewrite ?cr_df_sinst; try congruence.
+  apply ty_sty_mut_ind; intros; simpl; try congruence.
   all: try apply sty_df_dual.
   all: try (rewrite H; f_equal; apply sinst_ty_ext; intros a; apply iter_sty_up_df).
   all: try (rewrite H; f_equal; apply sinst_ext; intros a; apply sty_up_df).
@@ -169,8 +160,8 @@ Qed.
 
 Definition hview_df (h : hview) : hview :=
   match h with
-  | HRcv m T _ s => HRcv m (ty_df T) (cr_df T) (sty_df s)
-  | HSnd m T _ s => HSnd m (ty_df T) (cr_df T) (sty_df s)
+  | HRcv m T s => HRcv m (ty_df T) (sty_df s)
+  | HSnd m T s => HSnd m (ty_df T) (sty_df s)
   | HVar a s => HVar a (sty_df s)
   | HVarD a s => HVarD a (sty_df s)
   | HPlus a b => HPlus (sty_df a) (sty_df b)
@@ -187,15 +178,12 @@ Proof. unfold hd. by rewrite unfoldS_df, view_df. Qed.
 
 (** ** ≈ is preserved *)
 
-Lemma eqT_cr_df ρ T U : eqT ρ T U → cr_df T = cr_df U.
-Proof. destruct T, U; simpl; naive_solver. Qed.
-
 Lemma eqT_df (ρ ρ' : sty → sty → Prop) T : ∀ U,
   (∀ s r, ρ s r → ρ' (sty_df s) (sty_df r)) → eqT ρ T U → eqT ρ' (ty_df T) (ty_df U).
 Proof.
   induction T; intros [] Hρ H; simpl in *; try done.
-  all: destruct_and?; subst; split_and?; eauto using eqT_cr_df.
-  all: repeat case_match; subst; eauto using eqT_cr_df.
+  all: destruct_and?; subst; split_and?; eauto.
+  all: repeat case_match; subst; eauto.
 Qed.
 
 (** One observation of ≈ at every depth gives ≈ one step down. *)
@@ -227,7 +215,7 @@ Proof.
   clear. intros s r (s0 & r0 & -> & -> & H). apply sequiv_step in H.
   unfold eq_step in *. rewrite !hd_df.
   hd_cases s0; hd_cases r0; simpl; try done.
-  all: destruct_and?; subst; split_and?; eauto using eqT_cr_df.
+  all: destruct_and?; subst; split_and?; eauto.
   all: try (eapply eqT_df; [|done]; intros a b Hab; eauto).
   all: congruence.
 Qed.

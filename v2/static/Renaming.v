@@ -32,18 +32,18 @@ Section gmap_types.
   Fixpoint gmap_ty (T : ty) : ty :=
     match T with
     | TUnit => TUnit
-    | TLolli ub lb c t h T1 a1 U a2 =>
-        TLolli (pt_gmap r <$> ub) (pt_gmap r <$> lb) c t h (gmap_ty T1) a1 (gmap_ty U) a2
-    | TProd T1 a1 U a2 => TProd (gmap_ty T1) a1 (gmap_ty U) a2
-    | TSum T1 a1 U a2 => TSum (gmap_ty T1) a1 (gmap_ty U) a2
-    | TBox n k C ub c t U a => TBox n k (bcs_gmap r C) (pt_gmap r <$> ub) c t (gmap_ty U) a
-    | TSess s x => TSess (gmap_sty s) (pt_gmap r x)
-    | TEx lb n C T1 a => TEx (lb_map (pt_gmap r) lb) n (bcs_gmap r C) (gmap_ty T1) a
+    | TLolli ub lb c t h T1 U a =>
+        TLolli (pt_gmap r <$> ub) (pt_gmap r <$> lb) c t h (gmap_ty T1) (gmap_ty U) a
+    | TProd T1 U => TProd (gmap_ty T1) (gmap_ty U)
+    | TSum T1 U => TSum (gmap_ty T1) (gmap_ty U)
+    | TBox n k C ub c t U => TBox n k (bcs_gmap r C) (pt_gmap r <$> ub) c t (gmap_ty U)
+    | TSess s x a => TSess (gmap_sty s) (pt_gmap r x) a
+    | TEx lb n C T1 => TEx (lb_map (pt_gmap r) lb) n (bcs_gmap r C) (gmap_ty T1)
     end
   with gmap_sty (s : sty) : sty :=
     match s with
-    | SRcv m T b => SRcv m (gmap_ty T) b
-    | SSnd m T b => SSnd m (gmap_ty T) b
+    | SRcv m T => SRcv m (gmap_ty T)
+    | SSnd m T => SSnd m (gmap_ty T)
     | SMu s' => SMu (gmap_sty s')
     | SSeq s1 s2 => SSeq (gmap_sty s1) (gmap_sty s2)
     | SPlus s1 s2 => SPlus (gmap_sty s1) (gmap_sty s2)
@@ -70,8 +70,6 @@ Section gmap_types.
 
   (** *** ≈ and subtyping *)
 
-  Definition gent (σ : ty * fuel) : ty * fuel := (gmap_ty σ.1, σ.2).
-
 End gmap_types.
 
 (** ** Renaming of generated roots in contexts *)
@@ -82,7 +80,7 @@ Section gmap_ctx.
   Definition tentry_gmap (e : tentry) : tentry :=
     TE (gmap_sty r (te_sty e)) (pt_gmap r (te_pt e)) (te_cr e).
   Definition tenv_gmap (Θ : tenv) : tenv := tentry_gmap <$> Θ.
-  Definition lenv_gmap (Δ : lenv) : lenv := fmap (M:=option) (gent r) <$> Δ.
+  Definition lenv_gmap (Δ : lenv) : lenv := fmap (M:=option) (gmap_ty r) <$> Δ.
   Definition sf_gmap (F : sfuture) : sfuture := (set_map (pt_gmap r) F.1, F.2).
   (** *** Θ *)
 
@@ -99,12 +97,12 @@ Section gmap_ctx.
 
   Lemma lenv_heads_gmap Δ : lenv_heads (lenv_gmap Δ) = set_map (pt_gmap r) (lenv_heads Δ).
   Proof.
-    induction Δ as [|[[T a]|] Δ IH]; simpl; [by rewrite set_map_empty|..|done].
+    induction Δ as [|[T|] Δ IH]; simpl; [by rewrite set_map_empty|..|done].
     by rewrite set_map_union_L, heads_gmap, IH.
   Qed.
 
   Lemma lenv_bot_gmap Δ : lenv_bot (lenv_gmap Δ) = lenv_bot Δ.
-  Proof. induction Δ as [|[[T a]|] Δ IH]; simpl; rewrite ?hbot_gmap; congruence. Qed.
+  Proof. induction Δ as [|[T|] Δ IH]; simpl; rewrite ?hbot_gmap; congruence. Qed.
 
   (** *** F *)
 

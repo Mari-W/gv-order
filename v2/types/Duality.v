@@ -32,7 +32,7 @@ Definition sflip_comm := proj2 sflip_comm_mut.
 
 Lemma sflip_dual s : ∀ j, sflip j (dual s) = dual (sflip j s).
 Proof.
-  induction s as [m T b|m T b| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; intros j; simpl; f_equal;
+  induction s as [m T|m T| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; intros j; simpl; f_equal;
     auto.
   - rewrite <-IH. apply sflip_comm. lia.
   - repeat (case_decide; simpl); congruence.
@@ -41,19 +41,19 @@ Qed.
 
 Lemma sfuel_sflip s : ∀ k, sfuel (sflip k s) = sfuel s.
 Proof.
-  induction s as [m T b|m T b| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; intros k; simpl; auto;
+  induction s as [m T|m T| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; intros k; simpl; auto;
     try case_decide; done.
 Qed.
 
 Lemma dual_involutive s : dual (dual s) = s.
 Proof.
-  induction s as [m T b|m T b| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; simpl; f_equal; auto.
+  induction s as [m T|m T| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; simpl; f_equal; auto.
   rewrite <-sflip_dual, sflip_sflip. exact IH.
 Qed.
 
 Lemma sfuel_dual s : sfuel (dual s) = sfuel s.
 Proof.
-  induction s as [m T b|m T b| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; simpl; auto.
+  induction s as [m T|m T| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; simpl; auto.
   by rewrite sfuel_sflip, IH.
 Qed.
 
@@ -116,7 +116,7 @@ Qed.
 
 Lemma dual_sren s : ∀ r, dual (sren r s) = sren r (dual s).
 Proof.
-  induction s as [m T b|m T b| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; intros r; simpl; f_equal;
+  induction s as [m T|m T| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; intros r; simpl; f_equal;
     auto.
   rewrite IH. apply (proj2 sflip_sren_iff_mut).
   intros [|a]; simpl; unfold compose; split; intros; simplify_eq; done.
@@ -169,7 +169,7 @@ Qed.
 
 Lemma dual_sinst s : ∀ σ, dual (sinst σ s) = sinst σ (dual s).
 Proof.
-  induction s as [m T b|m T b| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; intros σ; simpl; f_equal;
+  induction s as [m T|m T| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; intros σ; simpl; f_equal;
     auto.
   - rewrite IH. apply (proj2 sflip_sinst_mut); [done|].
     intros [|a] Ha; simpl; [lia|]. unfold compose.
@@ -249,8 +249,8 @@ Qed.
 Definition vdual (h : hview) : hview :=
   match h with
   | HSkip => HSkip
-  | HRcv m T b s => HSnd m T b (dual s)
-  | HSnd m T b s => HRcv m T b (dual s)
+  | HRcv m T s => HSnd m T (dual s)
+  | HSnd m T s => HRcv m T (dual s)
   | HVar a s => HVarD a (dual s)
   | HVarD a s => HVar a (dual s)
   | HPlus a b => HWith (dual a) (dual b)

@@ -29,21 +29,21 @@ Lemma tenv_heads_empty : tenv_heads ∅ = ∅.
 Proof. apply set_eq. intros y. rewrite elem_of_tenv_heads. setoid_rewrite lookup_empty. set_solver. Qed.
 
 (** An entry that the term does not need: absent or unlimited. *)
-Definition spare (o : option (ty * fuel)) : Prop :=
-  match o with None => True | Some (U, _) => unlimited U end.
+Definition spare (o : option ty) : Prop :=
+  match o with None => True | Some U => unlimited U end.
 
 Lemma spare_unl Δ : (∀ y o, Δ !! y = Some o → spare o) → lenv_unl Δ.
 Proof.
   intros H o Ho. apply list_elem_of_lookup in Ho as [y Hy]. specialize (H y o Hy).
-  destruct o as [[U a]|]; [right; by exists U, a|by left].
+  destruct o as [U|]; [right; by exists U|by left].
 Qed.
 
-Lemma spare_only Δ x T a :
-  Δ !! x = Some (Some (T, a)) → (∀ y o, y ≠ x → Δ !! y = Some o → spare o) → lenv_only Δ x (T, a).
-Proof. intros Hx Hs. split; [done|]. intros y [U b] Hne Hy. exact (Hs y _ Hne Hy). Qed.
+Lemma spare_only Δ x T :
+  Δ !! x = Some (Some T) → (∀ y o, y ≠ x → Δ !! y = Some o → spare o) → lenv_only Δ x T.
+Proof. intros Hx Hs. split; [done|]. intros y U Hne Hy. exact (Hs y _ Hne Hy). Qed.
 
-Lemma d_var' W Γ Δ F x T a :
-  Δ !! x = Some (Some (T, a)) → (∀ y o, y ≠ x → Δ !! y = Some o → spare o) →
+Lemma d_var' W Γ Δ F x T :
+  Δ !! x = Some (Some T) → (∀ y o, y ≠ x → Δ !! y = Some o → spare o) →
   dftyped W ∅ Γ Δ F (Var x) T.
 Proof.
   intros Hx Hs. eapply d_var. by apply spare_only.
@@ -52,14 +52,14 @@ Qed.
 Lemma d_unit' W Γ Δ F : (∀ y o, Δ !! y = Some o → spare o) → dftyped W ∅ Γ Δ F EUnit TUnit.
 Proof. intros H. by apply d_unit, spare_unl. Qed.
 
-Lemma d_new' W Γ Δ F ℓ S a1 a2 a3 :
+Lemma d_new' W Γ Δ F ℓ S a1 a2 :
   (∀ y o, Δ !! y = Some o → spare o) → ℓ ∈ w_fams W →
   dftyped W ∅ Γ Δ F (ENew ℓ)
-    (TEx LBot 1 (bcs_of (w_laws W ℓ)) (TProd (TSess S (pvar 0)) a1 (TSess (dual S) (pvar 0)‾) a2) a3).
+    (TEx LBot 1 (bcs_of (w_laws W ℓ)) (TProd (TSess S (pvar 0) a1) (TSess (dual S) (pvar 0)‾ a2))).
 Proof. intros H Hℓ. apply d_new; [by apply spare_unl|done]. Qed.
 
 (** A tail of absent entries. *)
-Abbreviation nones n := (replicate n (@None (ty * fuel))).
+Abbreviation nones n := (replicate n (@None ty)).
 
 Lemma lsplit_nones n : lenv_split (nones n) (nones n) (nones n).
 Proof. induction n; simpl; constructor; done. Qed.
@@ -98,7 +98,7 @@ Ltac lsplit_go i e1 e2 :=
   | |- lenv_split [] _ _ => apply lsplit_nil
   | |- lenv_split (replicate _ None) _ _ => apply lsplit_nones
   | |- lenv_split (None :: _) _ _ => apply lsplit_none; lsplit_go (S i) e1 e2
-  | |- lenv_split (Some (?U, ?a) :: _) _ _ =>
+  | |- lenv_split (Some ?U :: _) _ _ =>
       first [ apply lsplit_unl; [exact I|lsplit_go (S i) e1 e2]
             | let b := eval vm_compute in (occ i e1) in
               lazymatch b with
@@ -154,7 +154,7 @@ Proof. destruct x; simpl; [split_and!; [set_solver|done|done]|done]. Qed.
 
 Lemma spare_heads Δ : (∀ y o, Δ !! y = Some o → spare o) → lenv_heads Δ = ∅ ∧ lenv_bot Δ = false.
 Proof.
-  induction Δ as [|[[U a]|] Δ IH]; intros H; simpl; [done| |].
+  induction Δ as [|[U|] Δ IH]; intros H; simpl; [done| |].
   - pose proof (H 0 _ eq_refl) as HU. destruct U; try done. simpl.
     destruct IH as [-> ->]; [intros y o Hy; apply (H (S y) o Hy)|]. split; [set_solver|done].
   - apply IH. intros y o Hy. apply (H (S y) o Hy).

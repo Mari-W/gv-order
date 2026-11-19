@@ -48,7 +48,7 @@ Proof. intros Hf Hs. eapply hyp_slt_ids; [apply Γnew_in|done|done]. Qed.
 (** A box □∀ιs. C. T ⊸^u ∗ whose body is λp. e, typed under the
     context of the box body. *)
 Definition box1 (m : nat) (C : bcs) (u : point) (T : ty) : ty :=
-  TBox m 0 C None None tinf (TLolli (Some u) None None tinf None T (Some 0) TUnit None) None.
+  TBox m 0 C None None tinf (TLolli (Some u) None None tinf None T TUnit None).
 
 Definition Γbox (m : nat) (C : bcs) (u : point) (Γ : hctx) : hctx :=
   hc_fvar 1 (Some u) (hc_fvar 0 None (hc_open m C Γ)).
@@ -60,16 +60,16 @@ Lemma Γbox_fv m C u Γ : hc_fv (Γbox m C u Γ) !! 1 = Some (Some u).
 Proof. unfold Γbox, hc_fvar. simpl. by rewrite lookup_insert_eq. Qed.
 
 Lemma lenv_pinst_cons' σ o Δ :
-  lenv_pinst σ (o :: Δ) = (fmap (M:=option) (λ '(T, a), (pinst_ty σ T, a)) o) :: lenv_pinst σ Δ.
+  lenv_pinst σ (o :: Δ) = (fmap (M:=option) (pinst_ty σ) o) :: lenv_pinst σ Δ.
 Proof. done. Qed.
 
 Lemma box1_typed W Γ n F m C u T e :
   hc_fv Γ = ∅ → pinst_ty (pshift m) (box1 m C u T) = box1 m C u T →
-  dftyped W ∅ (Γbox m C u Γ) (Some (T, Some 0) :: Some (box1 m C u T, None) :: nones n)
+  dftyped W ∅ (Γbox m C u Γ) (Some T :: Some (box1 m C u T) :: nones n)
     (∅, Some (FVar 1)) e TUnit →
   dftyped W ∅ Γ (nones n) F (EBox (Lam e)) (box1 m C u T).
 Proof.
-  intros HΓ HB He. unfold box1 at 1. eapply (d_box _ _ _ _ _ _ _ _ _ _ _ _ _ None 0).
+  intros HΓ HB He. unfold box1 at 1. eapply (d_box _ _ _ _ _ _ _ _ _ _ _ _ 0).
   { intros o Ho. apply elem_of_replicate in Ho as [-> _]. by left. }
   { unfold hc_open. simpl. rewrite HΓ. unfold fhyps_pinst. rewrite fmap_empty. set_solver. }
   intros ss Hk _. destruct ss; [|done]. rewrite sinst_nil.
@@ -101,15 +101,15 @@ Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.
 
 (** A box □∀ιs. C. T ⊸^ub U whose body is λp. e. *)
 Definition boxg (m : nat) (C : bcs) (ub : option point) (T U : ty) : ty :=
-  TBox m 0 C None None tinf (TLolli ub None None tinf None T (Some 0) U None) None.
+  TBox m 0 C None None tinf (TLolli ub None None tinf None T U None).
 
 Lemma boxg_typed W Γ n F m C ub T U e :
   hc_fv Γ = ∅ → pinst_ty (pshift m) (boxg m C ub T U) = boxg m C ub T U →
   dftyped W ∅ (hc_fvar 1 ub (hc_fvar 0 None (hc_open m C Γ)))
-    (Some (T, Some 0) :: Some (boxg m C ub T U, None) :: nones n) (∅, Some (FVar 1)) e U →
+    (Some T :: Some (boxg m C ub T U) :: nones n) (∅, Some (FVar 1)) e U →
   dftyped W ∅ Γ (nones n) F (EBox (Lam e)) (boxg m C ub T U).
 Proof.
-  intros HΓ HB He. unfold boxg at 1. eapply (d_box _ _ _ _ _ _ _ _ _ _ _ _ _ None 0).
+  intros HΓ HB He. unfold boxg at 1. eapply (d_box _ _ _ _ _ _ _ _ _ _ _ _ 0).
   { intros o Ho. apply elem_of_replicate in Ho as [-> _]. by left. }
   { unfold hc_open. simpl. rewrite HΓ. unfold fhyps_pinst. rewrite fmap_empty. set_solver. }
   intros ss Hk _. destruct ss; [|done]. rewrite sinst_nil.

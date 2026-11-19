@@ -160,7 +160,7 @@ Qed.
 Lemma teq_pinst σ T U : teq T U → teq (pinst_ty σ T) (pinst_ty σ U).
 Proof. apply eqT_pinst. Qed.
 
-Lemma tsub_pinst σ T a T' a' : tsub T a T' a' → tsub (pinst_ty σ T) a (pinst_ty σ T') a'.
+Lemma tsub_pinst σ T T' : tsub T T' → tsub (pinst_ty σ T) (pinst_ty σ T').
 Proof.
   intros H. revert σ. induction H; intros σ; simpl; constructor; auto using teq_pinst.
   - destruct k; [by apply teq_pinst|by subst].
@@ -192,39 +192,39 @@ Proof.
     split; [done|]. apply pt_inst_dual.
 Qed.
 
-Lemma lenv_only_pinst σ Δ x T a :
-  lenv_only Δ x (T, a) → lenv_only (lenv_pinst σ Δ) x (pinst_ty σ T, a).
+Lemma lenv_only_pinst σ Δ x T :
+  lenv_only Δ x T → lenv_only (lenv_pinst σ Δ) x (pinst_ty σ T).
 Proof.
   intros [Hx Hy]. split; [by rewrite lenv_pinst_lookup, Hx|].
   intros y σ' Hne Hσ. rewrite lenv_pinst_lookup in Hσ.
-  destruct (Δ !! y) as [[[T0 a0]|]|] eqn:E; simplify_eq/=.
+  destruct (Δ !! y) as [[T0|]|] eqn:E; simplify_eq/=.
   apply unlimited_pinst, (Hy y _ Hne E).
 Qed.
 
 Lemma lenv_split_pinst σ Δ Δ1 Δ2 :
   lenv_split Δ Δ1 Δ2 → lenv_split (lenv_pinst σ Δ) (lenv_pinst σ Δ1) (lenv_pinst σ Δ2).
 Proof.
-  induction 1 as [| | [T a] | [T a] |]; simpl; constructor; try done. by apply unlimited_pinst.
+  induction 1; simpl; constructor; try done. by apply unlimited_pinst.
 Qed.
 
 Lemma lenv_unl_pinst σ Δ : lenv_unl Δ → lenv_unl (lenv_pinst σ Δ).
 Proof.
   intros H o Ho. unfold lenv_pinst in Ho. apply list_elem_of_fmap in Ho as (o' & -> & Ho').
-  destruct (H o' Ho') as [->|(U & a & -> & HU)]; [by left|right].
-  eexists _, _. split; [done|]. by apply unlimited_pinst.
+  destruct (H o' Ho') as [->|(U & -> & HU)]; [by left|right].
+  eexists _. split; [done|]. by apply unlimited_pinst.
 Qed.
 
 Lemma lenv_heads_pinst σ Δ : lenv_heads (lenv_pinst σ Δ) = set_map (pt_inst σ) (lenv_heads Δ).
 Proof.
-  induction Δ as [|[[T a]|] Δ IH]; simpl; [by rewrite set_map_empty|..|done].
+  induction Δ as [|[T|] Δ IH]; simpl; [by rewrite set_map_empty|..|done].
   by rewrite set_map_union_L, heads_pinst, IH.
 Qed.
 
 Lemma lenv_bot_pinst σ Δ : lenv_bot (lenv_pinst σ Δ) = lenv_bot Δ.
-Proof. induction Δ as [|[[T a]|] Δ IH]; simpl; rewrite ?hbot_pinst; congruence. Qed.
+Proof. induction Δ as [|[T|] Δ IH]; simpl; rewrite ?hbot_pinst; congruence. Qed.
 
-Lemma lenv_pinst_insert σ Δ i T a :
-  lenv_pinst σ (<[i := Some (T, a)]> Δ) = <[i := Some (pinst_ty σ T, a)]> (lenv_pinst σ Δ).
+Lemma lenv_pinst_insert σ Δ i T :
+  lenv_pinst σ (<[i := Some T]> Δ) = <[i := Some (pinst_ty σ T)]> (lenv_pinst σ Δ).
 Proof. unfold lenv_pinst. by rewrite list_fmap_insert. Qed.
 
 Lemma sf_pinst_unionb σ F X b :

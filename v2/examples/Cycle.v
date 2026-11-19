@@ -38,19 +38,19 @@ Proof. eapply (law_slt _ _ (FLt (pvar 0)‾ ((pvar 0)·0))); [by right|simpl; li
 Theorem cy_dftyped : dftyped W_cy ∅ hc_empty [] (∅, None) cy_main TUnit.
 Proof.
   unfold cy_main, let_new.
-  eapply d_let with (b1 := None); [apply tsplit_empty|apply lsplit_nil| |].
-  { eapply (d_new' _ _ _ _ _ SEnd None None (Some 0)); [spare_tac|set_solver]. }
-  eapply d_open with (i := 0) (b := None); [reflexivity|cbn; tauto|].
+  eapply d_let; [apply tsplit_empty|apply lsplit_nil| |].
+  { eapply (d_new' _ _ _ _ _ SEnd None None); [spare_tac|set_solver]. }
+  eapply d_open with (i := 0); [reflexivity|cbn; tauto|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
   fold (Γnew W_cy 0).
-  eapply d_letp with (b1 := None) (b2 := None); [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
+  eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
-  eapply d_letp with (b1 := None) (b2 := None); [apply tsplit_empty|lsplit_tac (ENewAt 0 (Var 1)) EUnit| |].
+  eapply d_letp; [apply tsplit_empty|lsplit_tac (ENewAt 0 (Var 1)) EUnit| |].
   { eapply (d_new_at _ _ _ _ _ _ 0 SEnd (pvar 0) SEnd). eapply d_var'; [reflexivity|]. spare_tac. }
-  eapply d_letp with (b1 := None) (b2 := None); [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
+  eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
   eapply d_letu; [apply tsplit_empty|lsplit_tac (ESpawn cy_thunk) EUnit| |].
-  - eapply d_spawn_lam with (a1 := None).
+  - eapply d_spawn_lam.
     eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
     { eapply d_var'; [reflexivity|]. spare_tac. }
     eapply d_letu; [apply tsplit_empty|lsplit_tac (EClose (Var 5)) EUnit| |].
@@ -67,5 +67,5 @@ Proof.
   Unshelve. all: exact None.
 Qed.
 
-Theorem cy_typed : typed W_cy None ∅ hc_empty [] (∅, None) cy_main TUnit None None tinf.
+Theorem cy_typed : typed W_cy None ∅ hc_empty [] (∅, None) cy_main TUnit None tinf.
 Proof. apply (dftyped_typed _ _ _ _ _ _ _ cy_dftyped). Qed.
