@@ -38,7 +38,21 @@ then reports it.
    `db_component_unrealizable` does for the dispatcher.
 6. **Entry 4, a weakly fair run exists** (low priority).
 7. **Entry 5, Padovani-style corollary** (low priority).
-8. **Entry 11, faithfulness audit** of the map against the merged Rocq.
+8. **Notation of the map in the Rocq** (map changes of 2026-11-19, display
+   only so far). Give the Rocq the notations the map uses, or rename, so that
+   statements read the same in both:
+   - fuel `e ∈ F^N_n⟦Φ ; tk ⊢ σ ! (d, r)⟧` and `v ∈ FV^N_n⟦Φ ⊢ T^a⟧`, with one
+     map `Φ : o ↦ S^f` for the two maps `Π`, `φ` of `FuelE` (a notation over the
+     pair, or a refactor to one map if it shortens proofs), `Φ↓` for
+     `ftick`, `refill`, `fhand`, and `spare Φ` for `fspare`;
+   - `ϑ(r) ≤ tk` for `meets ϑ r tk`, and `ϑ(0) ∈ ℕ` for `∃ tk, meets ϑ 0 tk`
+     in `p_term`, `fsem_of_cost` and `lf_soundness_source`;
+   - `cr(Δ) ≤ N` for `∀ o te, Θ !! o = Some te → fle (te_cr te) N`;
+   - the soup as relation, fuel and `consistent(a, A, Π)` (`soup_gen`).
+   Open question for the author, do not decide: one existential for the
+   protocol of a new channel shared by O-New and F-New, so that the soup can
+   ask `Π = sty ∘ A` and drop `Π`.
+9. **Entry 11, faithfulness audit** of the map against the merged Rocq.
    List every difference that is not a queued entry.
 
 ## Design checks, write-ups only (no Rocq change without the author)
