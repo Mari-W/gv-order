@@ -361,7 +361,7 @@ window.MathJax = {
   // tell the local server (serve.sh) what the reader points at, so the assistant can follow along
   let lastBlock = null, reportTimer = null;
   function report(extra) {
-    if (!/^https?:$/.test(location.protocol)) return;
+    if (!/^https?:$/.test(location.protocol) || !/^(127\.0\.0\.1|localhost)$/.test(location.hostname)) return;
     clearTimeout(reportTimer);
     reportTimer = setTimeout(() => {
       const st = { t: new Date().toISOString(), section: current(), mode, block: lastBlock, pinned, ...extra };
@@ -445,7 +445,7 @@ window.MathJax = {
 
   // under serve.sh, reload when explorer.html or data.js changes, keeping the scroll position and the pinned note
   function watch() {
-    if (!/^https?:$/.test(location.protocol)) return;
+    if (!/^https?:$/.test(location.protocol) || !/^(127\.0\.0\.1|localhost)$/.test(location.hostname)) return;
     let seen = null;
     setInterval(() => fetch('version', { cache: 'no-store' }).then(r => r.ok ? r.text() : null).then(v => {
       if (!v) return;
