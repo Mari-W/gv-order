@@ -18,16 +18,19 @@ must do, open questions.
    built, without make test, make check or the map. The agent stopped when
    the session ended. Map: not yet. Rocq: finish N.2 on that branch.
 
-2. **One `new` with an optional interval.** `new [L | U]` with L, U sets
-   of held ends, both optional. The new channel gets a point variable ρ
-   with exactly the facts l ≺ ρ (l ∈ L) and ρ ≺ u (u ∈ U). `new` alone is
-   the empty interval. Replaces `new_ℓ`, `new_κ o`, E-New, E-NewAt,
-   O-New, O-NewAt, the two labels and the family laws Λ_ℓ. Map: not yet
-   (design first). Rocq: world growth at creation, a strictness check at
-   every creation, how the semantics picks the fresh point. Open: does
-   the interval for one end give the partner end's thread the facts it
-   needs (dual end), or does `new` need an interval per end; are fields
-   x·κ still needed. Design note to be written before any Rocq work.
+2. **One `new` with an optional position and an interval per end.**
+   `new@π [L⁺ | U⁺ ; L⁻ | U⁻]`, every part optional. L, U are sets of
+   held ends. The position π is either absent (a fresh root ρ) or a field
+   `o·κ` of a held end o at point x (then ρ = x·κ). The end c⁺ sits at ρ
+   with exactly the facts l ≺ ρ (l ∈ L⁺) and ρ ≺ u (u ∈ U⁺), and c⁻ sits
+   at ρ̄ with the facts from L⁻, U⁻ (decided 2026-11-19: one interval per
+   end, it is more general). Replaces `new_ℓ`, `new_κ o`, E-New,
+   E-NewAt, O-New, O-NewAt, the two labels and the family laws Λ_ℓ.
+   Fields x·κ stay, both as positions for `new` and as delivery points
+   of messages and choices. Map: not yet. Rocq: world growth at creation,
+   a strictness check at every creation, fresh point choice. Open: may an
+   interval add facts to a field x·κ that already carries facts, and may
+   two creations use the same field.
 
 3. **No GV constants.** `k_send`, `k_new`, `k_new_at` are unused
    eta-expansions of primitives. A primitive as a function value is
