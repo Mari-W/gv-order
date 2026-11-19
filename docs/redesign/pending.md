@@ -111,3 +111,9 @@ must do, open questions.
   (docs/extensions/lock-freedom-plan.md §18) rules out per-end tickets only
   together with replacement. The author judged it not the cleanest move for
   now (2026-11-19). No Rocq work.
+- **Points on actions instead of one point per end.** Kobayashi and
+  Padovani annotate every action with its priority. We keep one point per
+  end, S@x, and compute later points (x⁺, fields x·κ). Equal
+  expressiveness for finite protocols, finite types for recursive ones,
+  point-free session types. Written points would only read better. Author
+  (2026-11-19): queue it as a discussion item. No Rocq work.
