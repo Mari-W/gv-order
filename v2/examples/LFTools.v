@@ -206,13 +206,13 @@ Ltac guard_tac :=
   first [ apply gl_var; reflexivity | apply gl_unit | apply gl_chan | apply gl_new
         | apply gl_lam; guard_tac | apply gl_box; guard_tac
         | apply gl_op; guard_tac
-        | apply gl_tick_app; [guard_tac|acts_tac|guard_tac] | apply gl_app; guard_tac
-        | apply gl_tick_pair; [guard_tac|acts_tac|guard_tac] | apply gl_pair; guard_tac
-        | apply gl_tick_letu; [guard_tac|acts_tac|guard_tac] | apply gl_letu; guard_tac
-        | apply gl_tick_letp; [guard_tac|acts_tac|guard_tac] | apply gl_letp; guard_tac
+        | apply gl_tick_app; [guard_tac|acts_tac|guard_tac] | eapply gl_app; [guard_tac|left; reflexivity|guard_tac]
+        | apply gl_tick_pair; [guard_tac|acts_tac|guard_tac] | eapply gl_pair; [guard_tac|left; reflexivity|guard_tac]
+        | apply gl_tick_letu; [guard_tac|acts_tac|guard_tac] | eapply gl_letu; [guard_tac|left; reflexivity|guard_tac]
+        | apply gl_tick_letp; [guard_tac|acts_tac|guard_tac] | eapply gl_letp; [guard_tac|left; reflexivity|guard_tac]
         | apply gl_tick_let; [guard_tac|acts_tac|guard_tac] | apply gl_let; guard_tac
         | apply gl_inj1; guard_tac | apply gl_inj2; guard_tac
-        | apply gl_case; guard_tac ].
+        | eapply gl_case; [guard_tac|left; reflexivity|guard_tac|guard_tac] ].
 
 Ltac meets_tac := unfold meets; simpl; lia.
 

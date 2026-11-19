@@ -56,6 +56,9 @@ Inductive acts : expr → Prop :=
 (** No variable at ▷. *)
 Global Instance marks_empty : Empty (nat → bool) := λ _, false.
 
+(** The marks after a term e: kept, or cleared when e acts. *)
+Definition kmarks (L L' : nat → bool) (e : expr) : Prop := L' = L ∨ (L' = ∅ ∧ acts e).
+
 Reserved Notation "Λ ⊢▷ t" (at level 74, t at level 60, format "Λ  ⊢▷  t").
 
 Inductive lguard : (nat → bool) → expr → Prop :=
@@ -66,32 +69,57 @@ Inductive lguard : (nat → bool) → expr → Prop :=
   | gl_lam L b : (false .: L) ⊢▷ b → L ⊢▷ (Lam b)
   | gl_box L b : (true .: L) ⊢▷ b → L ⊢▷ (EBox b)
   | gl_op L k e : L ⊢▷ e → L ⊢▷ (Op k e)
-  | gl_app L e1 e2 : L ⊢▷ e1 → L ⊢▷ e2 → L ⊢▷ (App e1 e2)
-  | gl_tick_app L e1 e2 : L ⊢▷ e1 → acts e1 → ∅ ⊢▷ e2 → L ⊢▷ (App e1 e2)
-  | gl_pair L e1 e2 : L ⊢▷ e1 → L ⊢▷ e2 → L ⊢▷ (Pair e1 e2)
-  | gl_tick_pair L e1 e2 : L ⊢▷ e1 → acts e1 → ∅ ⊢▷ e2 → L ⊢▷ (Pair e1 e2)
-  | gl_letu L e1 e2 : L ⊢▷ e1 → L ⊢▷ e2 → L ⊢▷ (LetU e1 e2)
-  | gl_tick_letu L e1 e2 : L ⊢▷ e1 → acts e1 → ∅ ⊢▷ e2 → L ⊢▷ (LetU e1 e2)
-  | gl_letp L e1 e2 : L ⊢▷ e1 → (false .: false .: L) ⊢▷ e2 → L ⊢▷ (LetP e1 e2)
-  | gl_tick_letp L e1 e2 : L ⊢▷ e1 → acts e1 → ∅ ⊢▷ e2 → L ⊢▷ (LetP e1 e2)
+  | gl_app L L' e1 e2 : L ⊢▷ e1 → kmarks L L' e1 → L' ⊢▷ e2 → L ⊢▷ (App e1 e2)
+  | gl_pair L L' e1 e2 : L ⊢▷ e1 → kmarks L L' e1 → L' ⊢▷ e2 → L ⊢▷ (Pair e1 e2)
+  | gl_letu L L' e1 e2 : L ⊢▷ e1 → kmarks L L' e1 → L' ⊢▷ e2 → L ⊢▷ (LetU e1 e2)
+  | gl_letp L L' e1 e2 : L ⊢▷ e1 → kmarks L L' e1 → (false .: false .: L') ⊢▷ e2 →
+      L ⊢▷ (LetP e1 e2)
   | gl_inj1 L e : L ⊢▷ e → L ⊢▷ (Inj1 e)
   | gl_inj2 L e : L ⊢▷ e → L ⊢▷ (Inj2 e)
-  | gl_case L e e1 e2 : L ⊢▷ e → (false .: L) ⊢▷ e1 → (false .: L) ⊢▷ e2 →
-      L ⊢▷ (Case e e1 e2)
-  | gl_tick_case L e e1 e2 : L ⊢▷ e → acts e → ∅ ⊢▷ e1 → ∅ ⊢▷ e2 →
+  | gl_case L L' e e1 e2 : L ⊢▷ e → kmarks L L' e → (false .: L') ⊢▷ e1 → (false .: L') ⊢▷ e2 →
       L ⊢▷ (Case e e1 e2)
 where "Λ ⊢▷ t" := (lguard Λ t).
 
+(** The rules after an acting term, as lemmas. *)
+Lemma gl_tick_app L e1 e2 : L ⊢▷ e1 → acts e1 → ∅ ⊢▷ e2 → L ⊢▷ (App e1 e2).
+Proof. intros H1 Ha H2. apply (gl_app _ ∅); [done|by right|done]. Qed.
+Lemma gl_tick_pair L e1 e2 : L ⊢▷ e1 → acts e1 → ∅ ⊢▷ e2 → L ⊢▷ (Pair e1 e2).
+Proof. intros H1 Ha H2. apply (gl_pair _ ∅); [done|by right|done]. Qed.
+Lemma gl_tick_letu L e1 e2 : L ⊢▷ e1 → acts e1 → ∅ ⊢▷ e2 → L ⊢▷ (LetU e1 e2).
+Proof. intros H1 Ha H2. apply (gl_letu _ ∅); [done|by right|done]. Qed.
+
 (** ** Structure *)
+
+Lemma kmarks_ext L L0 L1 e : (∀ x, L x = L0 x) → kmarks L L1 e →
+  ∃ L1', kmarks L0 L1' e ∧ ∀ x, L1 x = L1' x.
+Proof.
+  intros HL [->|[-> Ha]]; [exists L0; split; [by left|done]|].
+  exists ∅. split; [by right|done].
+Qed.
 
 Lemma guard_ext L L' e : (∀ x, L x = L' x) → lguard L e → lguard L' e.
 Proof.
-  intros HL H. revert L' HL. induction H; intros L' HL; try (by constructor; auto).
+  intros HL H. revert L' HL.
+  induction H as [L y Hy|L|L o|L ℓ|L b Hb IH|L b Hb IH|L k e He IH
+                 |L L1 e1 e2 H1 IH1 Hk H2 IH2|L L1 e1 e2 H1 IH1 Hk H2 IH2|L L1 e1 e2 H1 IH1 Hk H2 IH2
+                 |L L1 e1 e2 H1 IH1 Hk H2 IH2|L e He IH|L e He IH|L L1 e e1 e2 H0 IH0 Hk H1 IH1 H2 IH2];
+    intros L0 HL; try (by constructor; auto).
   - constructor. by rewrite <-HL.
-  - constructor. apply IHlguard. intros [|x]; simpl; auto.
-  - constructor. apply IHlguard. intros [|x]; simpl; auto.
-  - constructor; [auto|]. apply IHlguard2. intros [|[|x]]; simpl; auto.
-  - constructor; [auto| |]; [apply IHlguard2|apply IHlguard3]; intros [|x]; simpl; auto.
+  - constructor. apply IH. intros [|x]; simpl; auto.
+  - constructor. apply IH. intros [|x]; simpl; auto.
+  - destruct (kmarks_ext _ _ _ _ HL Hk) as (L1' & Hk' & H1'). eapply gl_app; [auto|exact Hk'|auto].
+  - destruct (kmarks_ext _ _ _ _ HL Hk) as (L1' & Hk' & H1'). eapply gl_pair; [auto|exact Hk'|auto].
+  - destruct (kmarks_ext _ _ _ _ HL Hk) as (L1' & Hk' & H1'). eapply gl_letu; [auto|exact Hk'|auto].
+  - destruct (kmarks_ext _ _ _ _ HL Hk) as (L1' & Hk' & H1'). eapply gl_letp; [auto|exact Hk'|].
+    apply IH2. intros [|[|x]]; simpl; auto.
+  - destruct (kmarks_ext _ _ _ _ HL Hk) as (L1' & Hk' & H1'). eapply gl_case; [auto|exact Hk'| |].
+    + apply IH1. intros [|x]; simpl; auto.
+    + apply IH2. intros [|x]; simpl; auto.
+Qed.
+
+Lemma gl_tick_letp L e1 e2 : L ⊢▷ e1 → acts e1 → ∅ ⊢▷ e2 → L ⊢▷ (LetP e1 e2).
+Proof.
+  intros H1 Ha H2. apply (gl_letp _ ∅); [done|by right|]. eapply guard_ext; [|exact H2]. by intros [|[|x]].
 Qed.
 
 Lemma acts_rename_inv e : ∀ r, acts (rename r e) → acts e.
@@ -99,7 +127,22 @@ Proof.
   induction e; intros r H; simpl in H; inversion H; subst; try (by constructor; eauto); by apply acts_branches; eauto.
 Qed.
 
-Local Ltac marks := intros [|[|x]]; simpl; done.
+Lemma acts_rename e r : acts e → acts (rename r e).
+Proof. intros H. revert r. induction H; intros r; simpl; eauto using acts. Qed.
+
+Lemma kmarks_rename L L1 r e : kmarks L L1 (rename r e) →
+  ∃ L2, kmarks (λ x, L (r x)) L2 e ∧ ∀ x, L1 (r x) = L2 x.
+Proof.
+  intros [->|[-> Ha]]; [exists (λ x, L (r x)); split; [by left|done]|].
+  exists ∅. split; [right; split; [done|by eapply acts_rename_inv]|done].
+Qed.
+
+Lemma kmarks_rename_fwd L' L1 L r e : kmarks L' L1 e → (∀ x, L' x = L (r x)) →
+  ∃ L2, kmarks L L2 (rename r e) ∧ ∀ x, L1 x = L2 (r x).
+Proof.
+  intros [->|[-> Ha]] HL; [exists L; split; [by left|done]|].
+  exists ∅. split; [right; split; [done|by apply acts_rename]|done].
+Qed.
 
 (** A renaming of the variables moves the marks with it. *)
 Lemma guard_rename e : ∀ L r, lguard L (rename r e) → lguard (λ x, L (r x)) e.
@@ -108,52 +151,48 @@ Proof.
   all: try (by constructor).
   all: try (by constructor; eauto).
   - (* Lam *)
-    constructor. eapply guard_ext; [|by apply IHe]. marks.
-  - (* App *) apply gl_tick_app; [eauto|by eapply acts_rename_inv|].
-    eapply guard_ext; [|by apply IHe2]. done.
-  - apply gl_tick_pair; [eauto|by eapply acts_rename_inv|].
-    eapply guard_ext; [|by apply IHe2]. done.
-  - apply gl_tick_letu; [eauto|by eapply acts_rename_inv|].
-    eapply guard_ext; [|by apply IHe2]. done.
-  - apply gl_letp; [eauto|]. eapply guard_ext; [|by apply IHe2]. marks.
-  - apply gl_tick_letp; [eauto|by eapply acts_rename_inv|].
-    eapply guard_ext; [|by apply IHe2]. done.
-  - apply gl_case; [eauto| |].
-    + eapply guard_ext; [|by apply IHe2]. marks.
-    + eapply guard_ext; [|by apply IHe3]. marks.
-  - apply gl_tick_case; [eauto|by eapply acts_rename_inv| |].
-    + eapply guard_ext; [|by apply IHe2]. done.
-    + eapply guard_ext; [|by apply IHe3]. done.
+    constructor. eapply guard_ext; [|by apply IHe]. by intros [|x].
+  - (* App *)
+    match goal with Hk : kmarks _ _ _ |- _ => destruct (kmarks_rename _ _ _ _ Hk) as (L2 & Hk' & HL2) end.
+    eapply gl_app; [eauto|exact Hk'|]. eapply guard_ext; [|by apply IHe2]. done.
+  - match goal with Hk : kmarks _ _ _ |- _ => destruct (kmarks_rename _ _ _ _ Hk) as (L2 & Hk' & HL2) end.
+    eapply gl_pair; [eauto|exact Hk'|]. eapply guard_ext; [|by apply IHe2]. done.
+  - match goal with Hk : kmarks _ _ _ |- _ => destruct (kmarks_rename _ _ _ _ Hk) as (L2 & Hk' & HL2) end.
+    eapply gl_letu; [eauto|exact Hk'|]. eapply guard_ext; [|by apply IHe2]. done.
+  - match goal with Hk : kmarks _ _ _ |- _ => destruct (kmarks_rename _ _ _ _ Hk) as (L2 & Hk' & HL2) end.
+    eapply gl_letp; [eauto|exact Hk'|]. eapply guard_ext; [|by apply IHe2].
+    intros [|[|x]]; simpl; try done; unfold compose; simpl; apply HL2.
+  - match goal with Hk : kmarks _ _ _ |- _ => destruct (kmarks_rename _ _ _ _ Hk) as (L2 & Hk' & HL2) end.
+    eapply gl_case; [eauto|exact Hk'| |].
+    + eapply guard_ext; [|by apply IHe2]. intros [|x]; simpl; try done; unfold compose; simpl; apply HL2.
+    + eapply guard_ext; [|by apply IHe3]. intros [|x]; simpl; try done; unfold compose; simpl; apply HL2.
   - (* EBox *)
-    constructor. eapply guard_ext; [|by apply IHe]. marks.
+    constructor. eapply guard_ext; [|by apply IHe]. by intros [|x].
 Qed.
-
-Lemma acts_rename e r : acts e → acts (rename r e).
-Proof. intros H. revert r. induction H; intros r; simpl; eauto using acts. Qed.
 
 (** The converse of [guard_rename]. *)
 Lemma guard_rename_fwd L' e : lguard L' e → ∀ L r, (∀ x, L' x = L (r x)) → lguard L (rename r e).
 Proof.
-  induction 1; intros L0 r HL; simpl.
+  induction 1 as [L y Hy|L|L o|L ℓ|L b Hb IH|L b Hb IH|L k e He IH
+                 |L L1 e1 e2 H1 IH1 Hk H2 IH2|L L1 e1 e2 H1 IH1 Hk H2 IH2|L L1 e1 e2 H1 IH1 Hk H2 IH2
+                 |L L1 e1 e2 H1 IH1 Hk H2 IH2|L e He IH|L e He IH|L L1 e e1 e2 H0 IH0 Hk H1 IH1 H2 IH2];
+    intros L0 r HL; simpl.
   - constructor. by rewrite <-HL.
   - constructor.
   - constructor.
   - constructor.
-  - constructor. apply IHlguard. intros [|x]; simpl; auto.
-  - constructor. apply IHlguard. intros [|x]; simpl; auto.
+  - constructor. apply IH. intros [|x]; simpl; auto.
+  - constructor. apply IH. intros [|x]; simpl; auto.
   - constructor. eauto.
-  - apply gl_app; eauto.
-  - apply gl_tick_app; [eauto|by apply acts_rename|by apply IHlguard2].
-  - apply gl_pair; eauto.
-  - apply gl_tick_pair; [eauto|by apply acts_rename|by apply IHlguard2].
-  - apply gl_letu; eauto.
-  - apply gl_tick_letu; [eauto|by apply acts_rename|by apply IHlguard2].
-  - apply gl_letp; [eauto|]. apply IHlguard2. intros [|[|x]]; simpl; auto.
-  - apply gl_tick_letp; [eauto|by apply acts_rename|by apply IHlguard2].
+  - destruct (kmarks_rename_fwd _ _ _ _ _ Hk HL) as (L2 & Hk' & HL2). eapply gl_app; [eauto|exact Hk'|eauto].
+  - destruct (kmarks_rename_fwd _ _ _ _ _ Hk HL) as (L2 & Hk' & HL2). eapply gl_pair; [eauto|exact Hk'|eauto].
+  - destruct (kmarks_rename_fwd _ _ _ _ _ Hk HL) as (L2 & Hk' & HL2). eapply gl_letu; [eauto|exact Hk'|eauto].
+  - destruct (kmarks_rename_fwd _ _ _ _ _ Hk HL) as (L2 & Hk' & HL2). eapply gl_letp; [eauto|exact Hk'|].
+    apply IH2. intros [|[|x]]; simpl; auto.
   - apply gl_inj1; eauto.
   - apply gl_inj2; eauto.
-  - apply gl_case; [eauto| |]; [apply IHlguard2|apply IHlguard3]; intros [|x]; simpl; auto.
-  - apply gl_tick_case; [eauto|by apply acts_rename| |]; [apply IHlguard2|apply IHlguard3]; done.
+  - destruct (kmarks_rename_fwd _ _ _ _ _ Hk HL) as (L2 & Hk' & HL2). eapply gl_case; [eauto|exact Hk'| |];
+      [apply IH1|apply IH2]; intros [|x]; simpl; auto.
 Qed.
 
 (** ** let x = e1 in e2, the derived form [ELet] *)
@@ -165,11 +204,11 @@ Proof. intros H. by apply acts_letp2, acts_letu2, acts_rename. Qed.
 
 Lemma gl_let L e1 e2 : L ⊢▷ e1 → (false .: L) ⊢▷ e2 → L ⊢▷ (ELet e1 e2).
 Proof.
-  intros H1 H2. apply gl_letp; [by apply gl_pair; [|apply gl_unit]|].
-  apply gl_letu; [by apply gl_var|]. eapply guard_rename_fwd; [exact H2|]. by intros [|x].
+  intros H1 H2. eapply gl_letp; [eapply gl_pair; [exact H1|by left|apply gl_unit]|by left|].
+  eapply gl_letu; [by apply gl_var|by left|]. eapply guard_rename_fwd; [exact H2|]. by intros [|x].
 Qed.
 Lemma gl_tick_let L e1 e2 : L ⊢▷ e1 → acts e1 → ∅ ⊢▷ e2 → L ⊢▷ (ELet e1 e2).
 Proof.
-  intros H1 Ha H2. apply gl_tick_letp; [by apply gl_pair; [|apply gl_unit]|by apply acts_pair1|].
-  apply gl_letu; [by apply gl_var|]. by eapply guard_rename_fwd; [exact H2|].
+  intros H1 Ha H2. apply gl_tick_letp; [eapply gl_pair; [exact H1|by left|apply gl_unit]|by apply acts_pair1|].
+  eapply gl_letu; [by apply gl_var|by left|]. by eapply guard_rename_fwd; [exact H2|].
 Qed.

@@ -16,7 +16,7 @@
       its self unmarked and pays β ([gen_e_box]).
     - The live instance ([typed_sem_live]) carries the marks of the
       guard. A box marks its self ([later_box]), a frame keeps the marks
-      or clears them after an acting hole ([kmarks]).
+      or clears them after an acting hole ([cmarks], [kmarks]).
     - E-Abs and E-Box extend ρ by the future of the body, any set above
       the upper point u of the arrow or the box. E-Box and E-Open lift σ
       under the m point variables and close them with the instance xs of
@@ -349,15 +349,15 @@ Section fund.
   Context (HGlam : ∀ L b, G L (Lam b) → G (false .: L) b).
   Context (HGbox : ∀ L b, G L (EBox b) → ∃ mk, G (mk .: L) b ∧ box_rule κ L mk).
   Context (HGop : ∀ L k e, G L (Op k e) → G L e).
-  Context (HGapp : ∀ L e1 e2, G L (App e1 e2) → ∃ L', kmarks κ L L' e1 ∧ G L e1 ∧ G L' e2).
-  Context (HGpair : ∀ L e1 e2, G L (Pair e1 e2) → ∃ L', kmarks κ L L' e1 ∧ G L e1 ∧ G L' e2).
-  Context (HGletu : ∀ L e1 e2, G L (LetU e1 e2) → ∃ L', kmarks κ L L' e1 ∧ G L e1 ∧ G L' e2).
+  Context (HGapp : ∀ L e1 e2, G L (App e1 e2) → ∃ L', cmarks κ L L' e1 ∧ G L e1 ∧ G L' e2).
+  Context (HGpair : ∀ L e1 e2, G L (Pair e1 e2) → ∃ L', cmarks κ L L' e1 ∧ G L e1 ∧ G L' e2).
+  Context (HGletu : ∀ L e1 e2, G L (LetU e1 e2) → ∃ L', cmarks κ L L' e1 ∧ G L e1 ∧ G L' e2).
   Context (HGletp : ∀ L e1 e2, G L (LetP e1 e2) →
-             ∃ L', kmarks κ L L' e1 ∧ G L e1 ∧ G (false .: false .: L') e2).
+             ∃ L', cmarks κ L L' e1 ∧ G L e1 ∧ G (false .: false .: L') e2).
   Context (HGinj1 : ∀ L e, G L (Inj1 e) → G L e).
   Context (HGinj2 : ∀ L e, G L (Inj2 e) → G L e).
   Context (HGcase : ∀ L e e1 e2, G L (Case e e1 e2) →
-             ∃ L', kmarks κ L L' e ∧ G L e ∧ G (false .: L') e1 ∧ G (false .: L') e2).
+             ∃ L', cmarks κ L L' e ∧ G L e ∧ G (false .: L') e1 ∧ G (false .: L') e2).
 
   Local Ltac heads_p :=
     rewrite ?tenv_heads_pinst, ?lenv_heads_pinst, ?lenv_bot_pinst, ?heads_pinst, ?hbot_pinst,
@@ -614,15 +614,13 @@ Proof.
   - intros L b H. by inversion H.
   - intros L b H. exists true. split; [by inversion H|]. intros ?????????????. apply later_box.
   - intros L k e0 H. by inversion H.
-  - intros L e1 e2 H. inversion H; subst; eexists; split_and!; try done; [by left|by right].
-  - intros L e1 e2 H. inversion H; subst; eexists; split_and!; try done; [by left|by right].
-  - intros L e1 e2 H. inversion H; subst; eexists; split_and!; try done; [by left|by right].
-  - intros L e1 e2 H. inversion H; subst; eexists; split_and!; try done; [by left|by right|].
-    eapply guard_ext; [|done]. by intros [|[|x]].
+  - intros L e1 e2 H. inversion H; subst. eexists; split_and!; [|done|done]. apply kmarks_cmarks; [simpl; lia|done].
+  - intros L e1 e2 H. inversion H; subst. eexists; split_and!; [|done|done]. apply kmarks_cmarks; [simpl; lia|done].
+  - intros L e1 e2 H. inversion H; subst. eexists; split_and!; [|done|done]. apply kmarks_cmarks; [simpl; lia|done].
+  - intros L e1 e2 H. inversion H; subst. eexists; split_and!; [|done|done]. apply kmarks_cmarks; [simpl; lia|done].
   - intros L e0 H. by inversion H.
   - intros L e0 H. by inversion H.
-  - intros L e0 e1 e2 H. inversion H; subst; eexists; split_and!; try done; [by left|by right| |];
-      (eapply guard_ext; [|done]; by intros [|x]).
+  - intros L e0 e1 e2 H. inversion H; subst. eexists; split_and!; [|done|done|done]. apply kmarks_cmarks; [simpl; lia|done].
 Qed.
 
 (** ** The theorems *)

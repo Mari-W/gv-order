@@ -687,11 +687,15 @@ Section later.
   (** *** Frames, with or without clearing the marks *)
 
   (** The marks of the frame: L itself, or none when the hole acts. *)
-  Definition kmarks (L L' : nat → bool) (e : expr) : Prop :=
+  Definition cmarks (L L' : nat → bool) (e : expr) : Prop :=
     L' = L ∨ (L' = ∅ ∧ 1 ≤ c_give κ ∧ acts e).
 
+  (** The marks of the guard, where an action costs one or more. *)
+  Lemma kmarks_cmarks L L' e : 1 ≤ c_give κ → kmarks L L' e → cmarks L L' e.
+  Proof. intros Hg [->|[-> Ha]]; [by left|by right]. Qed.
+
   Lemma later_bind_gen (mk : (nat → expr) → frame) W Θ Θ1 Θ2 Δ Δ1 Δ2 L L' F e t T U :
-    kmarks L L' e →
+    cmarks L L' e →
     tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
     (∀ γ, subst γ t = fill_frame (mk γ) (subst γ e)) → (∀ γ, frame_val (mk γ)) →
     (∀ B, sem_later κ W Θ1 Δ1 L (F ∪ tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ (if lenv_bot Δ2 then B else ∅)) e T) →
@@ -706,7 +710,7 @@ Section later.
   Qed.
 
   Lemma later_app W Θ Θ1 Θ2 Δ Δ1 Δ2 L L' F e1 e2 ub lb c t h T aT U aU :
-    kmarks L L' e1 → tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_lt W ub F →
+    cmarks L L' e1 → tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_lt W ub F →
     (∀ B, sem_later κ W Θ1 Δ1 L (F ∪ tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ (if lenv_bot Δ2 then B else ∅)) e1
             (TLolli ub lb c t h T aT U aU)) →
     sem_later κ W Θ2 Δ2 L' (F ∪ opt_heads lb) e2 T →
@@ -733,7 +737,7 @@ Section later.
   Qed.
 
   Lemma later_pair W Θ Θ1 Θ2 Δ Δ1 Δ2 L L' F e1 e2 T1 a1 T2 a2 :
-    kmarks L L' e1 → tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
+    cmarks L L' e1 → tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
     (∀ B, sem_later κ W Θ1 Δ1 L (F ∪ tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ (if lenv_bot Δ2 then B else ∅)) e1 T1) →
     (∀ B, sem_later κ W Θ2 Δ2 L' (F ∪ heads T1 ∪ (if hbot T1 then B else ∅)) e2 T2) →
     sem_later κ W Θ Δ L F (Pair e1 e2) (TProd T1 a1 T2 a2).
@@ -758,7 +762,7 @@ Section later.
   Qed.
 
   Lemma later_letu W Θ Θ1 Θ2 Δ Δ1 Δ2 L L' F e1 e2 T :
-    kmarks L L' e1 → tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
+    cmarks L L' e1 → tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
     (∀ B, sem_later κ W Θ1 Δ1 L (F ∪ tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ (if lenv_bot Δ2 then B else ∅)) e1 TUnit) →
     sem_later κ W Θ2 Δ2 L' F e2 T →
     sem_later κ W Θ Δ L F (LetU e1 e2) T.
@@ -776,7 +780,7 @@ Section later.
   Qed.
 
   Lemma later_letp W Θ Θ1 Θ2 Δ Δ1 Δ2 L L' F e1 e2 T1 a1 T2 a2 b1 b2 T :
-    kmarks L L' e1 → tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
+    cmarks L L' e1 → tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
     (∀ B, sem_later κ W Θ1 Δ1 L (F ∪ tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ (if lenv_bot Δ2 then B else ∅)) e1
             (TProd T1 a1 T2 a2)) →
     sem_later κ W Θ2 (Some (T2, b2) :: Some (T1, b1) :: Δ2) (false .: false .: L') F e2 T →
@@ -815,7 +819,7 @@ Section later.
   Qed.
 
   Lemma later_case W Θ Θ1 Θ2 Δ Δ1 Δ2 L L' F e e1 e2 T1 a1 T2 a2 b1 b2 T :
-    kmarks L L' e → tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
+    cmarks L L' e → tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
     (∀ B, sem_later κ W Θ1 Δ1 L (F ∪ tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ (if lenv_bot Δ2 then B else ∅)) e
             (TSum T1 a1 T2 a2)) →
     sem_later κ W Θ2 (Some (T1, b1) :: Δ2) (false .: L') F e1 T →

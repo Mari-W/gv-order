@@ -18,6 +18,7 @@ From GV Require Export lang.Syntax static.Guard.
 Local Ltac inv_all :=
   repeat match goal with
   | H : lguard _ _ |- _ => inversion H; subst; clear H
+  | H : kmarks _ _ _ |- _ => destruct H as [->|[-> ?]]
   | H : acts _ |- _ => inversion H; subst; clear H
   | H : sprim _ |- _ => simpl in H; done
   end.
@@ -54,7 +55,7 @@ Proof.
   apply gl_box, gl_lam, gl_tick_letp.
   - apply gl_op, gl_var. done.
   - by apply acts_op.
-  - apply gl_app; [apply gl_op|]; by apply gl_var.
+  - eapply gl_app; [apply gl_op; by apply gl_var|by left|by apply gl_var].
 Qed.
 
 (** The stage of B.1 #4:
@@ -70,9 +71,9 @@ Definition stage : expr :=
 Lemma stage_guarded : ∅ ⊢▷ stage.
 Proof.
   apply gl_box, gl_lam, gl_tick_letp; [apply gl_op, gl_var; done|by apply acts_op|].
-  apply gl_letu; [apply gl_op, gl_var; done|].
-  apply gl_letp; [apply gl_new|].
-  apply gl_letu.
-  - apply gl_op, gl_lam, gl_app; [apply gl_op|]; by apply gl_var.
-  - apply gl_op, gl_op, gl_pair; by apply gl_var.
+  eapply gl_letu; [apply gl_op, gl_var; done|by left|].
+  eapply gl_letp; [apply gl_new|by left|].
+  eapply gl_letu; [|by left|].
+  - apply gl_op, gl_lam. eapply gl_app; [apply gl_op; by apply gl_var|by left|by apply gl_var].
+  - apply gl_op, gl_op. eapply gl_pair; [by apply gl_var|by left|by apply gl_var].
 Qed.

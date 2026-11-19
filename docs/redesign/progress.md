@@ -2020,3 +2020,18 @@ The old development in theories/ stays untouched.
   `e_new'` are now direct (`spare_unl`, `spare_only`), and `drop_but`,
   `drop_but_wk`, `drop_but_only`, `lenv_all_spare_empty`,
   `lenv_empty_nones` are gone.
+- M.4. One guard rule per frame (decision of 2026-11-18, cleanup).
+  `kmarks L L' e := L' = L ∨ (L' = ∅ ∧ acts e)` (static/Guard.v) gives
+  the marks after e, and each pair `gl_X`, `gl_tick_X` for X ∈ {app,
+  pair, letu, letp, case} is one rule `gl_X L L' …` with premise
+  `kmarks L L' e1` (14 rules, from 19). `gl_tick_app`, `gl_tick_pair`,
+  `gl_tick_letu` and `gl_tick_letp` stay as lemmas with their old
+  statements (test/GuardNotations.v prints `gl_tick_app` unchanged),
+  `gl_tick_case` is gone (unused). The semantic frame relation of
+  compat/LiveRules.v, which also asks an action to cost one or more, is
+  renamed `cmarks κ` and `kmarks_cmarks` lifts the guard's marks at a
+  table with `1 ≤ c_give κ`. `guard_ext`, `guard_rename` and
+  `guard_rename_fwd` move the marks through `kmarks_ext`,
+  `kmarks_rename` and `kmarks_rename_fwd`. examples/GuardEx.v,
+  `guard_tac` (examples/LFTools.v) pick `Λ' = Λ` by `left` where they
+  used the rules without tick.

@@ -1289,7 +1289,9 @@ first, in stage S2.
   are their instance at the empty marks. M.8: no code that no theorem
   of the explorer page needs; CheckAll lists exactly those theorems.
   M.3: E-Unit, E-Var, E-Chan and E-New accept unused unlimited entries,
-  and weakening and contraction are admissible renamings.
+  and weakening and contraction are admissible renamings. M.4: the guard
+  has one rule per frame, with the marks after the first subterm
+  (`kmarks`).
 
 ## 5  Open decisions for the author
 

@@ -922,8 +922,8 @@ window.MAP = {
       "live",
       "lf"
      ],
-     "tex": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=guard.var}{\\Lambda(y) = \\htmlData{k=guard.marks}{\\mathsf{false}}}\\end{array}}{\\htmlData{k=guard.marks}{\\Lambda} \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} y}\\;\\textsf{gl\\_var} \\quad \\dfrac{\\begin{array}{c}\\htmlData{k=guard.lam}{\\htmlData{k=guard.marks}{\\mathsf{false}}.\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} b}\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} \\lambda b}\\;\\textsf{gl\\_lam} \\quad \\dfrac{\\begin{array}{c}\\htmlData{k=guard.box}{\\htmlData{k=guard.marks}{\\mathsf{true}}.\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} b}\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}}\\ !b}\\;\\textsf{gl\\_box} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=guard.cong}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_1 \\quad \\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_2}\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_1\\,e_2}\\;\\textsf{gl\\_app} \\quad \\dfrac{\\begin{array}{c}\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_1\\\\ \\htmlData{k=guard.acts}{\\mathsf{acts}\\,e_1}\\\\ \\htmlData{k=guard.tick}{\\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_2}\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_1\\,e_2}\\;\\textsf{gl\\_tick\\_app} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=guard.bind}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_1 \\quad \\htmlData{k=guard.marks}{\\mathsf{false}}.\\htmlData{k=guard.marks}{\\mathsf{false}}.\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_2}\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} \\htmlData{k=syn.letp}{\\mathsf{let}}\\ \\langle a, b\\rangle = e_1\\ \\htmlData{k=syn.letp}{\\mathsf{in}}\\ e_2}\\;\\textsf{gl\\_letp}\n\\end{array}",
-     "caption": "A box marks its self, a marked variable is unusable, and after an acting $e_1$ the rest is checked under $\\varnothing$."
+     "tex": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=guard.var}{\\Lambda(y) = \\htmlData{k=guard.marks}{\\mathsf{false}}}\\end{array}}{\\htmlData{k=guard.marks}{\\Lambda} \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} y}\\;\\textsf{gl\\_var} \\quad \\dfrac{\\begin{array}{c}\\htmlData{k=guard.lam}{\\htmlData{k=guard.marks}{\\mathsf{false}}.\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} b}\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} \\lambda b}\\;\\textsf{gl\\_lam} \\quad \\dfrac{\\begin{array}{c}\\htmlData{k=guard.box}{\\htmlData{k=guard.marks}{\\mathsf{true}}.\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} b}\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}}\\ !b}\\;\\textsf{gl\\_box} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=guard.cong}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_1}\\\\ \\htmlData{k=guard.tick}{\\mathsf{kmarks}\\,\\Lambda\\,\\Lambda'\\,e_1}\\\\ \\Lambda' \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_2\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_1\\,e_2}\\;\\textsf{gl\\_app} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_1\\\\ \\htmlData{k=guard.tick}{\\mathsf{kmarks}\\,\\Lambda\\,\\Lambda'\\,e_1}\\\\ \\htmlData{k=guard.bind}{\\htmlData{k=guard.marks}{\\mathsf{false}}.\\htmlData{k=guard.marks}{\\mathsf{false}}.\\Lambda' \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_2}\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} \\htmlData{k=syn.letp}{\\mathsf{let}}\\ \\langle a, b\\rangle = e_1\\ \\htmlData{k=syn.letp}{\\mathsf{in}}\\ e_2}\\;\\textsf{gl\\_letp}\n\\end{array}",
+     "caption": "A box marks its self, a marked variable is unusable, and after an acting $e_1$ the rest may be checked under $\\varnothing$. The pair, $\\mathsf{let}\\ \\ast$ and the case follow $\\mathsf{gl\\_app}$ and $\\mathsf{gl\\_letp}$."
     },
     {
      "id": "g-proc",
@@ -6511,40 +6511,48 @@ window.MAP = {
    ]
   },
   "guard.cong": {
-   "title": "Congruence",
-   "what": "Without an action in $e_1$, both $e_1$ and $e_2$ are checked under $\\Lambda$.",
-   "why": "No action means no step of positive cost, so every mark stays in force.",
+   "title": "Frames",
+   "what": "A frame checks its first subterm $e_1$ under $\\Lambda$ and the rest under the marks $\\Lambda'$ that $e_1$ leaves.",
+   "why": "Without an action no step of positive cost happens, so every mark stays in force until $e_1$ acts.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\Lambda \\vdash\\!\\triangleright e_1\\,e_2$ from $\\Lambda \\vdash\\!\\triangleright e_1$ and $\\Lambda \\vdash\\!\\triangleright e_2$.",
-   "rocq": "static/Guard.v: gl_app",
-   "sig": "\\Lambda \\vdash\\!\\triangleright e_1 \\land \\Lambda \\vdash\\!\\triangleright e_2",
+   "example": "$\\Lambda \\vdash\\!\\triangleright e_1\\,e_2$ from $\\Lambda \\vdash\\!\\triangleright e_1$ and $\\Lambda \\vdash\\!\\triangleright e_2$ with $\\Lambda' = \\Lambda$.",
+   "rocq": "static/Guard.v: gl_app, gl_pair, gl_letu, gl_letp, gl_case",
+   "sig": "\\Lambda \\vdash\\!\\triangleright e_1 \\land \\mathsf{kmarks}\\,\\Lambda\\,\\Lambda'\\,e_1 \\land \\Lambda' \\vdash\\!\\triangleright e_2",
    "args": [
     {
      "name": "e_1, e_2",
-     "meaning": "the subterms of an application or pair"
+     "meaning": "the subterms of a frame"
     },
     {
      "name": "\\Lambda",
      "meaning": "the marks, a list mapping each variable to $\\mathsf{true}$ (unusable) or $\\mathsf{false}$"
+    },
+    {
+     "name": "\\Lambda'",
+     "meaning": "the marks after $e_1$"
     }
    ]
   },
   "guard.tick": {
-   "title": "Tick",
-   "what": "If $\\mathsf{acts}\\,e_1$, the rest is checked under $\\varnothing$.",
-   "why": "The rest runs after a session action, one level lower, where every self is available.",
-   "breaks": "Without ticks no loop that recurses after an action is guarded.",
-   "example": "$\\mathsf{let}\\ \\langle v, x'\\rangle = \\mathsf{recv}\\,x\\ \\mathsf{in}\\ (\\mathsf{force}\\,f)\\,x'$.",
-   "rocq": "static/Guard.v: gl_tick_app and siblings",
-   "sig": "\\mathsf{acts}\\,e_1 \\Rightarrow \\varnothing \\vdash\\!\\triangleright e_2",
+   "title": "$\\mathsf{kmarks}\\,\\Lambda\\,\\Lambda'\\,e$",
+   "what": "$\\Lambda' = \\Lambda$, or $\\Lambda' = \\varnothing$ and $\\mathsf{acts}\\,e$.",
+   "why": "After a session action the rest runs one level lower, where every self is available.",
+   "breaks": "Without the second case no loop that recurses after an action is guarded.",
+   "example": "$\\mathsf{let}\\ \\langle v, x'\\rangle = \\mathsf{recv}\\,x\\ \\mathsf{in}\\ (\\mathsf{force}\\,f)\\,x'$ takes $\\Lambda' = \\varnothing$.",
+   "rocq": "static/Guard.v: kmarks",
+   "sig": "\\mathsf{kmarks}\\,\\Lambda\\,\\Lambda'\\,e \\iff \\Lambda' = \\Lambda \\lor (\\Lambda' = \\varnothing \\land \\mathsf{acts}\\,e)",
    "args": [
     {
-     "name": "e_1",
-     "meaning": "the first subterm, which acts"
+     "name": "\\Lambda",
+     "meaning": "the marks, a list mapping each variable to $\\mathsf{true}$ (unusable) or $\\mathsf{false}$"
     },
     {
-     "name": "e_2",
-     "meaning": "the rest, checked with no marks"
+     "name": "\\Lambda'",
+     "meaning": "the marks for the rest"
+    },
+    {
+     "name": "e",
+     "meaning": "the term that runs first"
     }
    ]
   },
@@ -6555,15 +6563,15 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{let}\\ \\langle a, b\\rangle = e_1\\ \\mathsf{in}\\ e_2$ checks $e_2$ under $\\mathsf{false}.\\mathsf{false}.\\Lambda$.",
    "rocq": "static/Guard.v: gl_letp, gl_case",
-   "sig": "\\Lambda \\vdash\\!\\triangleright e_1 \\land \\mathsf{false}.\\mathsf{false}.\\Lambda \\vdash\\!\\triangleright e_2",
+   "sig": "\\mathsf{false}.\\mathsf{false}.\\Lambda' \\vdash\\!\\triangleright e_2",
    "args": [
-    {
-     "name": "e_1",
-     "meaning": "the bound term"
-    },
     {
      "name": "e_2",
      "meaning": "the body, with the two bound variables unmarked"
+    },
+    {
+     "name": "\\Lambda'",
+     "meaning": "the marks after the bound term"
     }
    ]
   },
