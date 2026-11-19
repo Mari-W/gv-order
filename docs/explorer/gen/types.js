@@ -1,7 +1,7 @@
 const { R, h, n, section, block, rule, Q, DEF } = require('./core');
 
 const s = section('types', 'Types and worlds',
-  'This section introduces types $T$, credits $a$, session types $S$ with $\\mathsf{unfold}$, $\\mathsf{dual}$, $\\simeq$ and $\\approx$, the sets $\\mathsf{heads}$ and the flag $\\mathsf{hbot}$, payloads, costs $c$ and ticket needs $\\vartheta$, the kinds $\\mathsf{prim}$, $\\mathsf{unlimited}$, $\\mathsf{tfree}$, and worlds $W$ with the order $\\prec_W$, the predicates $\\mathsf{world\\_wf}$, $\\mathsf{strict}$, $\\mathsf{wfworld}$, extension $\\sqsubseteq$ and join $\\sqcup$. Signatures name the sorts $\\mathsf{Ty}$ of types, $\\mathsf{STy}$ of session types, $\\mathsf{Tix}$ of ticket needs, $\\mathsf{LBound}$ of lower bounds and $\\mathsf{World}$ of worlds, and $X_{\\bot}$ adds an absent element to $X$.');
+  'This section introduces types $T$, credits $a$, session types $S$ with $\\mathsf{unfold}$, $\\mathsf{dual}$, $\\simeq$ and $\\approx$, the sets $\\mathsf{heads}$, payloads, costs $c$ and ticket needs $\\vartheta$, the kinds $\\mathsf{prim}$, $\\mathsf{unlimited}$, $\\mathsf{tfree}$, and worlds $W$ with the order $\\prec_W$, the predicates $\\mathsf{world\\_wf}$, $\\mathsf{strict}$, $\\mathsf{wfworld}$, extension $\\sqsubseteq$ and join $\\sqcup$. Signatures name the sorts $\\mathsf{Ty}$ of types, $\\mathsf{STy}$ of session types, $\\mathsf{Tix}$ of ticket needs, $\\mathsf{LBound}$ of lower bounds and $\\mathsf{World}$ of worlds, and $X_{\\bot}$ adds an absent element to $X$.');
 
 block(s, {
   id: 'ty-grammar', title: 'Types', rocq: 'types/Types.v: ty',
@@ -46,12 +46,12 @@ ${h('sty.sdual', R`\mathsf{sdual}\,S\,S' \iff S' \approx \mathsf{dual}\,S`)}
   caption: 'Equivalence $\\simeq$ by behaviour, $\\approx$ the same after erasing annotations, and $\\mathsf{sdual}$ duality up to annotations.'
 });
 block(s, {
-  id: 'ty-heads', title: 'Heads, bottom flag, lower bounds', rocq: 'types/Types.v: heads, hbot, types/Points.v: lbound',
+  id: 'ty-heads', title: 'Heads and lower bounds', rocq: 'types/Types.v: heads, hbot, types/Points.v: lbound',
   tex: R`\begin{array}{l}
-${h('ty.heads', R`\mathsf{heads}(S@x) = \{\overline{x}\} \quad \mathsf{heads}(T \multimap_{l} U) = \{l\} \quad \mathsf{heads}(\exists^{l}) = \{l\} \quad \mathsf{heads}(\Box\ldots) = \varnothing`)} \\
-${h('ty.hbot', R`\mathsf{hbot}(T)`)} \qquad ${h('ty.lbound', R`l ::= \cdot \mid \bot \mid x`)}
+${h('ty.heads', R`\mathsf{heads}(S@x) = \{\overline{x}\} \quad \mathsf{heads}(T \multimap_{l} U) = \mathsf{heads}(\exists^{l}\ldots) = \{l\} \setminus \{\cdot\} \quad \mathsf{heads}(\Box\ldots) = \varnothing`)} \\
+${h('ty.lbound', R`l ::= \cdot \mid \bot \mid x`)} \qquad ${h('ty.botord', R`\Gamma \nvdash x \prec \bot \quad \Gamma \nvdash \bot \preccurlyeq y`)}
 \end{array}`,
-  caption: '$\\mathsf{heads}(T)$ are the partner points a holder of a value of $T$ stays below while it waits, and $\\mathsf{hbot}(T)$ marks hidden ends.'
+  caption: '$\\mathsf{heads}(T)$ are the partner points a holder of a value of $T$ stays below while it waits. Hidden ends contribute $\\bot$, which no order fact relates to a point, so every check against a held value with hidden ends fails.'
 });
 block(s, {
   id: 'ty-payload', title: 'Payloads', rocq: 'types/Types.v: payload_at, pscoped',
@@ -163,8 +163,8 @@ n('sty.sequiv', 'Session equivalence $\\simeq$', 'The greatest relation with $S 
 n('ty2.stydf', '$\\mathsf{sty\\_df}$', '$\\mathsf{sty\\_df}(S)$ sets every annotation of $S$ to its value at $N = \\infty$.', 'Deadlock freedom and liveness read no credit, so two protocols that differ only in annotations are equal for them.', DEF, '$\\mathsf{sty\\_df}(!(\\ast^{2}).\\mathsf{Close}) = !(\\ast^{\\infty}).\\mathsf{Close}$.', 'types/Types.v: sty_df');
 n('sty.seqv', 'Up to annotations $\\approx$', '$S \\approx S\' \\iff \\mathsf{sty\\_df}(S) \\simeq \\mathsf{sty\\_df}(S\')$.', 'The relations of deadlock freedom and liveness ignore credits, so one relation serves every refill $N$.', DEF, '$!(\\ast^{2}).\\mathsf{Close} \\approx !(\\ast^{\\infty}).\\mathsf{Close}$.', 'relation/Relation.v: seqv');
 n('sty.sdual', 'Dual up to annotations', '$\\mathsf{sdual}\\,S\\,S\'$ iff $S\' \\approx \\mathsf{dual}\\,S$.', 'The relation pairs the two ends of a channel by $\\mathsf{sdual}$, consistent with comparing by $\\approx$.', DEF, 'A link of ends at $S$ and $S\'$ asks $\\mathsf{sdual}\\,S\\,S\'$.', 'relation/Relation.v: sdual');
-n('ty.heads', '$\\mathsf{heads}$', '$\\mathsf{heads}(T)$ is the set of partner points of the ends a value of $T$ holds, $\\{\\overline{x}\\}$ for $S@x$, $\\{l\\}$ for an arrow or existential with bound $l$, and the union for $\\otimes$ and $\\oplus$.', 'A thread blocked at $u$ while holding a value of $T$ needs $u \\prec y$ for every $y \\in \\mathsf{heads}(T)$, or the partner of a held end may wait on the thread.', DEF, '$\\mathsf{heads}(\\mathsf{Close}@\\rho \\otimes \\mathsf{Close}@\\rho\\cdot 0) = \\{\\overline{\\rho}, \\overline{\\rho\\cdot 0}\\}$.', 'types/Types.v: heads');
-n('ty.hbot', '$\\mathsf{hbot}$', '$\\mathsf{hbot}(T) = \\mathsf{true}$ iff $T$ contains an existential with bound $\\bot$ reachable through $\\otimes$ and $\\oplus$ alone.', 'Ends at unknown points satisfy no fact $u \\prec y$. A term whose context holds such ends performs no session action.', DEF, '$\\mathsf{hbot}(\\exists^{\\bot}\\iota.\\ T) = \\mathsf{true}$.', 'types/Types.v: hbot');
+n('ty.heads', '$\\mathsf{heads}$', '$\\mathsf{heads}(T)$ is the set of partner points of the ends a value of $T$ holds, $\\{\\overline{x}\\}$ for $S@x$, $\\{l\\}$ for an arrow or existential with bound $l$, $\\varnothing$ for bound $\\cdot$, and the union for $\\otimes$ and $\\oplus$. An existential at $\\bot$ contributes $\\bot$.', 'A thread blocked at $u$ while holding a value of $T$ needs $u \\prec y$ for every $y \\in \\mathsf{heads}(T)$, or the partner of a held end may wait on the thread. With $\\bot$ in the set this fails, which is what hidden ends require.', DEF, '$\\mathsf{heads}(\\mathsf{Close}@\\rho \\otimes \\mathsf{Close}@\\rho\\cdot 0) = \\{\\overline{\\rho}, \\overline{\\rho\\cdot 0}\\}$ and $\\mathsf{heads}(\\exists^{\\bot}\\iota.\\,C.\\,T) = \\{\\bot\\}$.', 'types/Types.v: heads, hbot');
+n('ty.botord', '$\\bot$ in the order', 'No fact relates $\\bot$ to a point, $\\Gamma \\nvdash x \\prec \\bot$ and $\\Gamma \\nvdash \\bot \\preccurlyeq y$.', 'Hidden ends sit at points nothing outside the existential knows. A holder of such ends can be ordered against nothing, so it may not block.', DEF, '$x \\prec \\{\\overline{\\rho}, \\bot\\}$ fails for every $x$.', 'types/Types.v: hbot; static/Contexts.v: sf_unionb, lbx_below_h');
 n('ty.lbound', 'Lower bounds $l$', '$l ::= \\cdot \\mid \\bot \\mid x$, absent, unknown, or a point.', 'It records how much a holder knows about the points of the hidden ends.', DEF, '$l = \\bot$ for $\\mathsf{new}_\\ell$.', 'types/Points.v: lbound');
 n('ty.payload-at', '$\\mathsf{payload\\_at}$', '$\\mathsf{payload\\_at}\\,m\\,T\\,x = T[x\\cdot 0, \\ldots, x\\cdot(m{-}1) / \\iota_0, \\ldots, \\iota_{m-1}]$.', '$\\overline{x}\\cdot j = x\\cdot j$, so sender at $x$ and receiver at $\\overline{x}$ compute the same payload type.', DEF, 'A payload $\\alpha @\\iota_0$ sent at $Y$ has type $\\alpha @Y\\cdot 0$.', 'types/Types.v: payload_at');
 n('ty.pscoped', '$\\mathsf{pscoped}$', '$\\mathsf{pscoped}\\,\\bar\\iota\\,T$ iff every point variable of $T$ is among $\\bar\\iota$.', 'A payload mentions only its own point variables, so unrolling a $\\mu$ never captures an outer point.', 'A free outer point inside a $\\mu$-body is captured on unrolling, and point substitution changes its meaning.', '$\\mathsf{pscoped}\\,\\iota_0\\,(S@\\iota_0)$.', 'types/Types.v: pscoped');
@@ -238,8 +238,8 @@ sa('sty.sequiv', R`\cdot \simeq \cdot \subseteq \mathsf{STy} \times \mathsf{STy}
 sa('ty2.stydf', R`\mathsf{sty\_df} : \mathsf{STy} \to \mathsf{STy}`, [Ss]);
 sa('sty.seqv', R`\cdot \approx \cdot \subseteq \mathsf{STy} \times \mathsf{STy}`, [A(R`S, S'`, R`Session types compared after $\mathsf{sty\_df}$.`)]);
 sa('sty.sdual', R`\mathsf{sdual} : \mathsf{STy} \to \mathsf{STy} \to \mathsf{Prop}`, [A('S', R`The protocol of one end.`), A(R`S'`, R`The protocol of its partner, $S' \approx \mathsf{dual}\,S$.`)]);
-sa('ty.heads', R`\mathsf{heads} : \mathsf{Ty} \to \mathcal{P}_{\mathrm{fin}}(\mathsf{Point})`, [Tt]);
-sa('ty.hbot', R`\mathsf{hbot} : \mathsf{Ty} \to \mathbb{B}`, [Tt]);
+sa('ty.heads', R`\mathsf{heads} : \mathsf{Ty} \to \mathcal{P}_{\mathrm{fin}}(\mathsf{Point} \cup \{\bot\})`, [Tt]);
+sa('ty.botord', R`\Gamma \nvdash x \prec \bot,\ \Gamma \nvdash \bot \preccurlyeq y`, [A('x, y', R`points`)]);
 sa('ty.lbound', R`l \in \mathsf{LBound} = \{\cdot, \bot\} \cup \mathsf{Point}`, []);
 sa('ty.payload-at', R`\mathsf{payload\_at} : \mathbb{N} \to \mathsf{Ty} \to \mathsf{Point} \to \mathsf{Ty}`, [A('m', R`The number of point variables of the payload.`), A('T', R`The payload type over $\iota_0, \ldots, \iota_{m-1}$.`), A('x', R`The point of the carrier end.`)]);
 sa('ty.pscoped', R`\mathsf{pscoped} : \mathsf{PVar}^{*} \to \mathsf{Ty} \to \mathsf{Prop}`, [A(R`\bar\iota`, R`The point variables the payload binds.`), A('T', R`The payload type.`)]);

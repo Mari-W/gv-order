@@ -204,7 +204,7 @@ window.MAP = {
   {
    "id": "types",
    "title": "Types and worlds",
-   "intro": "\\annp{This section introduces types $T$, credits $a$, session types $S$ with $\\mathsf{unfold}$, $\\mathsf{dual}$, $\\simeq$ and $\\approx$, the sets $\\mathsf{heads}$ and the flag $\\mathsf{hbot}$, payloads, costs $c$ and ticket needs $\\vartheta$, the kinds $\\mathsf{prim}$, $\\mathsf{unlimited}$, $\\mathsf{tfree}$, and worlds $W$ with the order $\\prec_W$, the predicates $\\mathsf{world\\_wf}$, $\\mathsf{strict}$, $\\mathsf{wfworld}$, extension $\\sqsubseteq$ and join $\\sqcup$.} \\annp{Signatures name the sorts $\\mathsf{Ty}$ of types, $\\mathsf{STy}$ of session types, $\\mathsf{Tix}$ of ticket needs, $\\mathsf{LBound}$ of lower bounds and $\\mathsf{World}$ of worlds, and $X_{\\bot}$ adds an absent element to $X$.}",
+   "intro": "\\annp{This section introduces types $T$, credits $a$, session types $S$ with $\\mathsf{unfold}$, $\\mathsf{dual}$, $\\simeq$ and $\\approx$, the sets $\\mathsf{heads}$, payloads, costs $c$ and ticket needs $\\vartheta$, the kinds $\\mathsf{prim}$, $\\mathsf{unlimited}$, $\\mathsf{tfree}$, and worlds $W$ with the order $\\prec_W$, the predicates $\\mathsf{world\\_wf}$, $\\mathsf{strict}$, $\\mathsf{wfworld}$, extension $\\sqsubseteq$ and join $\\sqcup$.} \\annp{Signatures name the sorts $\\mathsf{Ty}$ of types, $\\mathsf{STy}$ of session types, $\\mathsf{Tix}$ of ticket needs, $\\mathsf{LBound}$ of lower bounds and $\\mathsf{World}$ of worlds, and $X_{\\bot}$ adds an absent element to $X$.}",
    "blocks": [
     {
      "id": "ty-grammar",
@@ -265,10 +265,10 @@ window.MAP = {
     },
     {
      "id": "ty-heads",
-     "title": "Heads, bottom flag, lower bounds",
+     "title": "Heads and lower bounds",
      "rocq": "types/Types.v: heads, hbot, types/Points.v: lbound",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=ty.heads}{\\mathsf{heads}(S@x) = \\{\\overline{x}\\} \\quad \\mathsf{heads}(T \\multimap_{l} U) = \\{l\\} \\quad \\mathsf{heads}(\\exists^{l}) = \\{l\\} \\quad \\mathsf{heads}(\\Box\\ldots) = \\varnothing} \\\\\n\\htmlData{k=ty.hbot}{\\mathsf{hbot}(T)} \\qquad \\htmlData{k=ty.lbound}{l ::= \\cdot \\mid \\bot \\mid x}\n\\end{array}",
-     "caption": "$\\mathsf{heads}(T)$ are the partner points a holder of a value of $T$ stays below while it waits, and $\\mathsf{hbot}(T)$ marks hidden ends.",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=ty.heads}{\\mathsf{heads}(S@x) = \\{\\overline{x}\\} \\quad \\mathsf{heads}(T \\multimap_{l} U) = \\mathsf{heads}(\\exists^{l}\\ldots) = \\{l\\} \\setminus \\{\\cdot\\} \\quad \\mathsf{heads}(\\Box\\ldots) = \\varnothing} \\\\\n\\htmlData{k=ty.lbound}{l ::= \\cdot \\mid \\bot \\mid x} \\qquad \\htmlData{k=ty.botord}{\\Gamma \\nvdash x \\prec \\bot \\quad \\Gamma \\nvdash \\bot \\preccurlyeq y}\n\\end{array}",
+     "caption": "$\\mathsf{heads}(T)$ are the partner points a holder of a value of $T$ stays below while it waits. Hidden ends contribute $\\bot$, which no order fact relates to a point, so every check against a held value with hidden ends fails.",
      "modes": [
       "df",
       "lf"
@@ -413,7 +413,7 @@ window.MAP = {
      "id": "t-side",
      "title": "Side conditions on points",
      "rocq": "static/Contexts.v: ub_below_s, lbx_below_h, lbound_of, hold_at",
-     "tex": "\\begin{array}{l}\\htmlData{k=side.ub}{u \\prec F \\iff \\forall y \\in X.\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} u \\prec y,\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} u \\prec \\varphi,\\ \\neg\\bot} \\\\ \\htmlData{k=E-Send.heads}{x \\prec T \\iff \\neg\\htmlData{k=ty.hbot}{\\mathsf{hbot}}\\,T \\land \\forall y \\in \\htmlData{k=ty.heads}{\\mathsf{heads}}(T).\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec y} \\qquad \\htmlData{k=side.lb}{l \\preccurlyeq \\Delta \\text{ and } \\neg\\bot_\\Delta} \\qquad \\htmlData{k=side.hold}{\\Gamma \\vdash C[\\bar x]}\\end{array}",
+     "tex": "\\begin{array}{l}\\htmlData{k=side.ub}{u \\prec F \\iff \\forall y \\in X.\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} u \\prec y,\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} u \\prec \\varphi,\\ \\neg\\bot} \\\\ \\htmlData{k=E-Send.heads}{x \\prec T \\iff \\forall y \\in \\htmlData{k=ty.heads}{\\mathsf{heads}}(T).\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec y} \\qquad \\htmlData{k=side.lb}{l \\preccurlyeq \\Delta \\iff \\forall y \\in \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Delta).\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} l \\preccurlyeq y} \\qquad \\htmlData{k=side.hold}{\\Gamma \\vdash C[\\bar x]}\\end{array}",
      "caption": "$u \\prec F$ states that $u$ lies below every point of $F$, $x \\prec T$ that $x$ lies below every partner point of the ends in $T$, $l \\preccurlyeq \\Delta$ that $l$ lies at or below every partner point of $\\Delta$, and $\\Gamma \\vdash C[\\bar x]$ that every fact of $C$ at $\\bar x$ is derivable.",
      "modes": [
       "df",
@@ -3646,12 +3646,12 @@ window.MAP = {
   },
   "ty.heads": {
    "title": "$\\mathsf{heads}$",
-   "what": "$\\mathsf{heads}(T)$ is the set of partner points of the ends a value of $T$ holds, $\\{\\overline{x}\\}$ for $S@x$, $\\{l\\}$ for an arrow or existential with bound $l$, and the union for $\\otimes$ and $\\oplus$.",
-   "why": "A thread blocked at $u$ while holding a value of $T$ needs $u \\prec y$ for every $y \\in \\mathsf{heads}(T)$, or the partner of a held end may wait on the thread.",
+   "what": "$\\mathsf{heads}(T)$ is the set of partner points of the ends a value of $T$ holds, $\\{\\overline{x}\\}$ for $S@x$, $\\{l\\}$ for an arrow or existential with bound $l$, $\\varnothing$ for bound $\\cdot$, and the union for $\\otimes$ and $\\oplus$. An existential at $\\bot$ contributes $\\bot$.",
+   "why": "A thread blocked at $u$ while holding a value of $T$ needs $u \\prec y$ for every $y \\in \\mathsf{heads}(T)$, or the partner of a held end may wait on the thread. With $\\bot$ in the set this fails, which is what hidden ends require.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{heads}(\\mathsf{Close}@\\rho \\otimes \\mathsf{Close}@\\rho\\cdot 0) = \\{\\overline{\\rho}, \\overline{\\rho\\cdot 0}\\}$.",
-   "rocq": "types/Types.v: heads",
-   "sig": "\\mathsf{heads} : \\mathsf{Ty} \\to \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Point})",
+   "example": "$\\mathsf{heads}(\\mathsf{Close}@\\rho \\otimes \\mathsf{Close}@\\rho\\cdot 0) = \\{\\overline{\\rho}, \\overline{\\rho\\cdot 0}\\}$ and $\\mathsf{heads}(\\exists^{\\bot}\\iota.\\,C.\\,T) = \\{\\bot\\}$.",
+   "rocq": "types/Types.v: heads, hbot",
+   "sig": "\\mathsf{heads} : \\mathsf{Ty} \\to \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Point} \\cup \\{\\bot\\})",
    "args": [
     {
      "name": "T",
@@ -3659,18 +3659,18 @@ window.MAP = {
     }
    ]
   },
-  "ty.hbot": {
-   "title": "$\\mathsf{hbot}$",
-   "what": "$\\mathsf{hbot}(T) = \\mathsf{true}$ iff $T$ contains an existential with bound $\\bot$ reachable through $\\otimes$ and $\\oplus$ alone.",
-   "why": "Ends at unknown points satisfy no fact $u \\prec y$. A term whose context holds such ends performs no session action.",
+  "ty.botord": {
+   "title": "$\\bot$ in the order",
+   "what": "No fact relates $\\bot$ to a point, $\\Gamma \\nvdash x \\prec \\bot$ and $\\Gamma \\nvdash \\bot \\preccurlyeq y$.",
+   "why": "Hidden ends sit at points nothing outside the existential knows. A holder of such ends can be ordered against nothing, so it may not block.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{hbot}(\\exists^{\\bot}\\iota.\\ T) = \\mathsf{true}$.",
-   "rocq": "types/Types.v: hbot",
-   "sig": "\\mathsf{hbot} : \\mathsf{Ty} \\to \\mathbb{B}",
+   "example": "$x \\prec \\{\\overline{\\rho}, \\bot\\}$ fails for every $x$.",
+   "rocq": "types/Types.v: hbot; static/Contexts.v: sf_unionb, lbx_below_h",
+   "sig": "\\Gamma \\nvdash x \\prec \\bot,\\ \\Gamma \\nvdash \\bot \\preccurlyeq y",
    "args": [
     {
-     "name": "T",
-     "meaning": "A type."
+     "name": "x, y",
+     "meaning": "points"
     }
    ]
   },
@@ -4980,12 +4980,12 @@ window.MAP = {
   },
   "E-Abs.lb": {
    "title": "Lower point of a closure",
-   "what": "$l \\preccurlyeq \\Delta$, the point $l$ lies at or below the partner point of every captured end, and $\\Delta$ carries no $\\bot$.",
-   "why": "A holder of the closure reads the partner points of its ends only through $l$. A hidden point has no lower bound, so $\\bot$ is excluded.",
+   "what": "$l \\preccurlyeq \\Delta$, the point $l$ lies at or below every element of $\\mathsf{heads}(\\Delta)$. Hidden ends put $\\bot$ there, which no point lies below.",
+   "why": "A holder of the closure reads the partner points of its ends only through $l$. A hidden end has no partner point to bound, so a closure cannot capture it.",
    "breaks": "A thread holding ends at the unrelated points $1$ and $2$ has no common lower point, so E-Abs rejects a $\\lambda$ that captures both. E-SpawnLam types the spawn of such a $\\lambda$.",
    "example": "Capturing $a^{+}$ at $\\rho$ gives $l = \\overline{\\rho}$.",
    "rocq": "static/Contexts.v: lbx_below_h, lbound_of",
-   "sig": "l \\preccurlyeq \\Delta \\iff l \\preccurlyeq \\mathsf{heads}(\\Delta) \\land \\neg\\bot_{\\Delta}",
+   "sig": "l \\preccurlyeq \\Delta \\iff \\forall y \\in \\mathsf{heads}(\\Delta).\\ \\Gamma \\vdash l \\preccurlyeq y",
    "args": [
     {
      "name": "l",
@@ -4993,11 +4993,7 @@ window.MAP = {
     },
     {
      "name": "\\mathsf{heads}(\\Delta)",
-     "meaning": "the partner points of every captured end"
-    },
-    {
-     "name": "\\bot_\\Delta",
-     "meaning": "whether $\\Delta$ holds an unopened existential at $\\bot$"
+     "meaning": "the partner points of every captured end, with $\\bot$ for hidden ends"
     }
    ]
   },
@@ -5308,12 +5304,12 @@ window.MAP = {
   },
   "E-Send.heads": {
    "title": "$x \\prec T$, the action point below a held value",
-   "what": "$x \\prec T$ states that $T$ holds no unopened existential at $\\bot$ and $\\Gamma \\vdash x \\prec y$ for every partner point $y \\in \\mathsf{heads}(T)$.",
-   "why": "A thread waiting at $x$ while it holds a value of $T$ does not offer the ends in $T$, so readiness asks $x$ below the partner point of each. An existential at $\\bot$ has ends at points no head bounds, $\\mathsf{heads}(\\exists^{\\bot}\\ldots) = \\varnothing$, so the second half alone would hold vacuously. The first half rules it out, as $\\bot$ in a future rules out $u \\prec F$.",
-   "breaks": "Without the first half $\\mathsf{send}\\,\\langle p, o\\rangle$ with the unopened pair $p$ of a $\\mathsf{new}$ types, and the sender waits while holding ends at points nothing orders.",
+   "what": "$x \\prec T$ states $\\Gamma \\vdash x \\prec y$ for every $y \\in \\mathsf{heads}(T)$. If $T$ holds hidden ends, $\\bot \\in \\mathsf{heads}(T)$ and the check fails.",
+   "why": "A thread waiting at $x$ while it holds a value of $T$ does not offer the ends in $T$, so readiness asks $x$ below the partner point of each. Hidden ends have no known partner point, so a thread holding them may not wait.",
+   "breaks": "Without $\\bot$ in the heads, $\\mathsf{send}\\,\\langle p, o\\rangle$ with the unopened pair $p$ of a $\\mathsf{new}$ types, and the sender waits while holding ends at points nothing orders.",
    "example": "The growing ring needs $Y \\prec \\overline{Y\\cdot 0}$ for the payload $a$ of the send on $y$ at $Y$.",
    "rocq": "static/Typing.v: e_send; types/Types.v: heads, hbot",
-   "sig": "x \\prec T \\iff \\neg\\mathsf{hbot}\\,T \\land \\forall y \\in \\mathsf{heads}(T).\\ \\Gamma \\vdash x \\prec y",
+   "sig": "x \\prec T \\iff \\forall y \\in \\mathsf{heads}(T).\\ \\Gamma \\vdash x \\prec y",
    "args": [
     {
      "name": "x",
@@ -5325,7 +5321,7 @@ window.MAP = {
     },
     {
      "name": "y",
-     "meaning": "a partner point of an end in $T$"
+     "meaning": "a partner point of an end in $T$, or $\\bot$ for hidden ends, which no $x$ lies below"
     }
    ]
   },
@@ -5631,12 +5627,12 @@ window.MAP = {
   },
   "E-Pack.lb": {
    "title": "Lower bound of a pack",
-   "what": "$l = \\bot$, the ends sit at hidden points, or $l \\preccurlyeq \\mathsf{heads}(T[\\bar x])$ and $T[\\bar x]$ carries no $\\bot$, where $l = \\cdot$ asks that $T[\\bar x]$ holds no end.",
+   "what": "$l = \\bot$, the ends become hidden, or $l \\preccurlyeq T[\\bar x]$, every head of the packed value lies at or above $l$, where $l = \\cdot$ asks that $T[\\bar x]$ holds no end.",
    "why": "After packing, a holder sees the ends only through $l$, so $l$ must bound the heads of the packed value from below. The value relation at an existential states exactly this bound.",
    "breaks": "Nothing. It is a definition.",
    "example": "Packing a fresh pair at $\\bot$.",
    "rocq": "static/Contexts.v: lbx_below_h",
-   "sig": "l = \\bot \\lor (l \\preccurlyeq \\mathsf{heads}(T[\\bar x]) \\land \\neg\\mathsf{hbot}\\,T[\\bar x])",
+   "sig": "l = \\bot \\lor l \\preccurlyeq T[\\bar x]",
    "args": [
     {
      "name": "l",

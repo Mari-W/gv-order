@@ -227,8 +227,11 @@ must do, open questions.
 
 14. **Typing QA against static/Typing.v (2026-11-19).** Beyond entries 2,
     6, 8, 12, 13 the map differed in three places, all fixed on the map:
-    `¬hbot T` at E-Send is now part of `x ≺ T` (heads(∃^⊥) = ∅, so the
-    order check alone is vacuous); the arrow lower bound "absent"
+    `¬hbot T` at E-Send is gone: the map lets heads return ⊥ for hidden
+    ends (heads(∃^⊥) = {⊥}, no fact relates ⊥ to a point), so `x ≺ T`,
+    `l ≼ Δ` and held futures need no separate hbot or ⊥_Δ (Rocq: heads
+    with ∅ plus the flag hbot, sf_unionb, lbx_below_h; optional Rocq
+    cleanup, heads into Point ∪ {⊥}); the arrow lower bound "absent"
     (`LNone`, no end) is written `·`, not `⊥`, which is the hidden bound
     `LBot` of `∃^⊥`; held futures add the flag ⊥ when H holds an `∃^⊥`
     (`sf_unionb … (lenv_bot Δ2)`). Entry 12 must keep the two apart: the
