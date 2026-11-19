@@ -2046,3 +2046,17 @@ The old development in theories/ stays untouched.
   sum clauses of V and FV read `v = Inj false v'` and `v = Inj true v'`
   (same clauses, renamed constructor). The constructor `Inj` shadows the
   stdpp class of injective maps, so four instances write `base.Inj`.
+- M.6. `prim`, `tfree` and `boxfree` checked, nothing changed (decision
+  of 2026-11-18, cleanup: only if no statement weakens and typing stays
+  the same). `prim T` implies `tfree T`, and the converse fails: `prim`
+  asks the result of every box to be `prim` (`prim_box`), `tfree` asks
+  nothing of a box. So P-Term with `tfree` would type more processes, a
+  thread that returns a box whose body returns an end among them. The
+  semantic side would accept it: P-Term and P-Connect read `prim` only
+  through `Vrel_prim_empty` (a value of a `prim` type holds no end),
+  which holds at `tfree` types too, because V at a box asks Θ = ∅. The
+  change would still alter what types, so it is not made. `prim` cannot
+  be written through `tfree` without a second recursive condition on
+  box results, so no definition goes away. On box-free types the three
+  agree: `prim T ∧ boxfree T ↔ tfree T ∧ boxfree T`, the types built
+  from ∗, ⊗ and ⊕, which is what `live_sub_df` asks.
