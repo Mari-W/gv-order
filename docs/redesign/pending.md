@@ -78,7 +78,7 @@ must do, open questions.
    step in which that thread takes part (Padovani 2014, Def. II.1, in our
    per-thread form). Map: one line in the theorems section once proven.
 
-6. **Proposal, not decided: credits only where ends sit (2026-11-19).**
+6. **Decided 2026-11-19 (author): credits only where ends sit.**
    Today every slot of a type carries a credit: components of ⊗ and ⊕,
    the body of ∃, the argument and result of ⊸, the result of a box, the
    payload (b), and every Δ entry (static/Contexts.v: `ty` in
@@ -96,7 +96,10 @@ must do, open questions.
    proof uses the outer offset to age an aggregate in one step
    (`age_credit` on an aggregate) in a way the leaf form cannot match, and
    whether subtyping of aggregates (Sub-Prod with a + aᵢ) loses anything.
-   Map: not yet, waits for the author's decision.
+   Map: Types section done (grammar `(S@x)^a`, `(T ⊸ U)^a`, no credits on
+   ⊗ ⊕ ∃ box results or payloads; the map calls ϑ a "ticket need"). The
+   typing, semantic-typing, fuel and theorem blocks still show the old
+   credits and must follow the Rocq once this is implemented.
 
 ## Done in the Rocq
 
