@@ -32,61 +32,31 @@ Proof. apply set_eq. intros y. rewrite elem_of_tenv_heads. setoid_rewrite lookup
 Definition spare (o : option (ty * fuel)) : Prop :=
   match o with None => True | Some (U, _) => unlimited U end.
 
-Lemma lenv_all_spare_empty Δ : (∀ y o, Δ !! y = Some o → spare o) → lenv_wk ((λ _, None) <$> Δ) Δ.
+Lemma spare_unl Δ : (∀ y o, Δ !! y = Some o → spare o) → lenv_unl Δ.
 Proof.
-  induction Δ as [|o Δ IH]; intros H; simpl; [constructor|].
-  destruct o as [[U a]|].
-  - apply lwk_drop; [apply (H 0 _ eq_refl)|]. apply IH. intros y o Hy. apply (H (S y) o Hy).
-  - constructor. apply IH. intros y o Hy. apply (H (S y) o Hy).
+  intros H o Ho. apply list_elem_of_lookup in Ho as [y Hy]. specialize (H y o Hy).
+  destruct o as [[U a]|]; [right; by exists U, a|by left].
 Qed.
 
-(** Weaken every spare entry except x. *)
-Fixpoint drop_but (x : nat) (Δ : lenv) {struct Δ} : lenv :=
-  match Δ with
-  | [] => []
-  | o :: Δ' => match x with 0 => o :: ((λ _, None) <$> Δ') | S x' => None :: drop_but x' Δ' end
-  end.
-
-Lemma drop_but_wk x Δ : (∀ y o, y ≠ x → Δ !! y = Some o → spare o) → lenv_wk (drop_but x Δ) Δ.
-Proof.
-  revert x. induction Δ as [|o Δ IH]; intros x H; simpl; [constructor|].
-  destruct x as [|x].
-  - constructor. apply lenv_all_spare_empty. intros y o' Ho. apply (H (S y)); [lia|done].
-  - destruct o as [[U a]|].
-    + apply lwk_drop; [apply (H 0 _ ltac:(lia) eq_refl)|]. apply IH. intros y o' Hy Ho.
-      apply (H (S y)); [lia|done].
-    + constructor. apply IH. intros y o' Hy Ho. apply (H (S y)); [lia|done].
-Qed.
-
-Lemma drop_but_only x Δ σ : Δ !! x = Some (Some σ) → lenv_only (drop_but x Δ) x σ.
-Proof.
-  revert x. induction Δ as [|o Δ IH]; intros x Hx; [done|].
-  destruct x as [|x]; simpl in *.
-  - injection Hx as ->. split; [done|]. intros y σ' Hy.
-    destruct y as [|y]; simpl in Hy; [by injection Hy as ->|].
-    rewrite list_lookup_fmap in Hy. by destruct (Δ !! y).
-  - destruct (IH x Hx) as [H1 H2]. split; [done|]. intros [|y] σ' Hy; simpl in Hy; [done|].
-    destruct (H2 y σ' Hy) as [-> ->]. done.
-Qed.
+Lemma spare_only Δ x T a :
+  Δ !! x = Some (Some (T, a)) → (∀ y o, y ≠ x → Δ !! y = Some o → spare o) → lenv_only Δ x (T, a).
+Proof. intros Hx Hs. split; [done|]. intros y [U b] Hne Hy. exact (Hs y _ Hne Hy). Qed.
 
 Lemma d_var' W Γ Δ F x T a :
   Δ !! x = Some (Some (T, a)) → (∀ y o, y ≠ x → Δ !! y = Some o → spare o) →
   dftyped W ∅ Γ Δ F (Var x) T.
 Proof.
-  intros Hx Hs. eapply d_weak; [by apply drop_but_wk|]. eapply d_var. by apply drop_but_only.
+  intros Hx Hs. eapply d_var. by apply spare_only.
 Qed.
 
-Lemma lenv_empty_nones Δ : lenv_empty ((λ _ : option (ty * fuel), None) <$> Δ).
-Proof. intros o Ho. by apply list_elem_of_fmap in Ho as (? & -> & _). Qed.
-
 Lemma d_unit' W Γ Δ F : (∀ y o, Δ !! y = Some o → spare o) → dftyped W ∅ Γ Δ F EUnit TUnit.
-Proof. intros H. eapply d_weak; [by apply lenv_all_spare_empty|]. apply d_unit, lenv_empty_nones. Qed.
+Proof. intros H. by apply d_unit, spare_unl. Qed.
 
 Lemma d_new' W Γ Δ F ℓ S a1 a2 a3 :
   (∀ y o, Δ !! y = Some o → spare o) → ℓ ∈ w_fams W →
   dftyped W ∅ Γ Δ F (ENew ℓ)
     (TEx LBot 1 (bcs_of (w_laws W ℓ)) (TProd (TSess S (pvar 0)) a1 (TSess (dual S) (pvar 0)‾) a2) a3).
-Proof. intros H Hℓ. eapply d_weak; [by apply lenv_all_spare_empty|]. apply d_new; [apply lenv_empty_nones|done]. Qed.
+Proof. intros H Hℓ. apply d_new; [by apply spare_unl|done]. Qed.
 
 (** A tail of absent entries. *)
 Abbreviation nones n := (replicate n (@None (ty * fuel))).

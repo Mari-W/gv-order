@@ -97,19 +97,19 @@ Lemma e_var' W N Γ Δ F x T a :
   Δ !! x = Some (Some (T, a)) → (∀ y o, y ≠ x → Δ !! y = Some o → spare o) →
   typed W N ∅ Γ Δ F (Var x) T a (Some 0) tid.
 Proof.
-  intros Hx Hs. eapply e_weak; [by apply drop_but_wk|]. eapply e_var. by apply drop_but_only.
+  intros Hx Hs. eapply e_var. by apply spare_only.
 Qed.
 
 Lemma e_unit' W N Γ Δ F : (∀ y o, Δ !! y = Some o → spare o) →
   typed W N ∅ Γ Δ F EUnit TUnit None (Some 0) tid.
-Proof. intros H. eapply e_weak; [by apply lenv_all_spare_empty|]. apply e_unit, lenv_empty_nones. Qed.
+Proof. intros H. by apply e_unit, spare_unl. Qed.
 
 Lemma e_new' W N Γ Δ F ℓ S :
   (∀ y o, Δ !! y = Some o → spare o) → ℓ ∈ w_fams W →
   typed W N ∅ Γ Δ F (ENew ℓ)
     (TEx LBot 1 (bcs_of (w_laws W ℓ)) (TProd (TSess S (pvar 0)) N (TSess (dual S) (pvar 0)‾) N) (Some 0))
     (Some 0) (Some 0) tid.
-Proof. intros H Hℓ. eapply e_weak; [by apply lenv_all_spare_empty|]. apply e_new; [apply lenv_empty_nones|done]. Qed.
+Proof. intros H Hℓ. apply e_new; [by apply spare_unl|done]. Qed.
 
 Lemma thage_empty c : thage c ∅ ∅.
 Proof. intros o. by rewrite lookup_empty. Qed.

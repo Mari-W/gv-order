@@ -143,16 +143,16 @@ block(s, {
 const T = (id, title, rocq, merged, erased, caption) => block(s, { id, title, rocq, tex: merged, variants: { df: erased, live: erased }, caption });
 
 T('r-unit', 'E-Unit', 'static/Typing.v: e_unit',
-  rule('E-Unit', h('ctx.empty', R`\Delta\ \text{empty}`), J(R`\varnothing`, R`\Gamma`, R`\Delta`, 'F', R`\ast`, R`\ast`, h('ann.fuel', R`\infty`), '0', h('ann.tid', R`\hat 1`))),
-  rule('D-Unit', h('ctx.empty', R`\Delta\ \text{empty}`), DJ(R`\varnothing`, R`\Gamma`, R`\Delta`, 'F', R`\ast`, R`\ast`)),
+  rule('E-Unit', h('ctx.empty', R`\Delta\ \text{unlimited}`), J(R`\varnothing`, R`\Gamma`, R`\Delta`, 'F', R`\ast`, R`\ast`, h('ann.fuel', R`\infty`), '0', h('ann.tid', R`\hat 1`))),
+  rule('D-Unit', h('ctx.empty', R`\Delta\ \text{unlimited}`), DJ(R`\varnothing`, R`\Gamma`, R`\Delta`, 'F', R`\ast`, R`\ast`)),
   '$\\ast$ holds no end, has cost $0$ and transformer $\\hat 1$.');
 T('r-var', 'E-Var', 'static/Typing.v: e_var',
   rule('E-Var', h('ctx.only', R`\Delta = \{x : T^{a}\}`), J(R`\varnothing`, R`\Gamma`, R`\Delta`, 'F', 'x', 'T', 'a', '0', R`\hat 1`)),
   rule('D-Var', h('ctx.only', R`\Delta = \{x : T\}`), DJ(R`\varnothing`, R`\Gamma`, R`\Delta`, 'F', 'x', 'T')),
   '$x$ is the only non-empty entry of $\\Delta$.');
 T('r-chan', 'E-Chan', 'static/Typing.v: e_chan',
-  rule('E-Chan', h('ctx.empty', R`\Delta\ \text{empty}`), J(R`\{o : S@x^{a}\}`, R`\Gamma`, R`\Delta`, 'F', 'o', R`(S@x)`, 'a', '0', R`\hat 1`)),
-  rule('D-Chan', h('ctx.empty', R`\Delta\ \text{empty}`), DJ(R`\{o : S@x\}`, R`\Gamma`, R`\Delta`, 'F', 'o', R`S@x`)),
+  rule('E-Chan', h('ctx.empty', R`\Delta\ \text{unlimited}`), J(R`\{o : S@x^{a}\}`, R`\Gamma`, R`\Delta`, 'F', 'o', R`(S@x)`, 'a', '0', R`\hat 1`)),
+  rule('D-Chan', h('ctx.empty', R`\Delta\ \text{unlimited}`), DJ(R`\{o : S@x\}`, R`\Gamma`, R`\Delta`, 'F', 'o', R`S@x`)),
   'The value $o$ is typed with $\\Theta = \\{o \\mapsto S@x^{a}\\}$, exactly its own entry.');
 T('r-abs', 'E-Abs', 'static/Typing.v: e_abs',
   rule('E-Abs', R`${h('E-Abs.phi', R`\varphi\ \text{fresh}`)}${Q}${h('E-Abs.lb', R`l \preccurlyeq \mathsf{heads}(\Theta, \Delta),\ \neg\bot_\Delta`)}${Q}${h('E-Abs.cap', R`\Theta \leadsto_{h,a} \Theta^{h},\ \Delta \leadsto_{h,a} \Delta^{h}`)}${Q}${h('E-Abs.body', J(R`\Theta^{h}`, R`\Gamma, u \prec \varphi`, R`\Delta^{h}, T^{a_T}`, R`(\varnothing, \varphi)`, 'e', 'U', R`a_U`, 'c', R`\vartheta`))}`,
@@ -248,9 +248,9 @@ T('r-spawn', 'E-Spawn', 'static/Typing.v: e_spawn',
   rule('D-Spawn', DJ(R`\Theta`, R`\Gamma`, R`\Delta`, 'F', 'e', R`\ast \multimap^{u}_{l} \ast`), DJ(R`\Theta`, R`\Gamma`, R`\Delta`, 'F', R`\mathsf{spawn}\,e`, R`\ast`)),
   'Spawning a closure value hands over its captured ends and asks its credit $a \\geq 1$.');
 T('r-new', 'E-New', 'static/Typing.v: e_new',
-  rule('E-New', R`${h('ctx.empty', R`\Delta\ \text{empty}`)}${Q}${h('E-New.fam', R`\ell \in ${h('w.fams', 'L_W')}`)}`,
+  rule('E-New', R`${h('ctx.empty', R`\Delta\ \text{unlimited}`)}${Q}${h('E-New.fam', R`\ell \in ${h('w.fams', 'L_W')}`)}`,
     J(R`\varnothing`, R`\Gamma`, R`\Delta`, 'F', R`\mathsf{new}_\ell`, R`(\exists^{${h('E-New.bot', R`\bot`)}}\rho.\ ${h('E-New.laws', R`${h('w.laws', R`\Lambda_\ell`)}(\rho)`)}.\ ${h('E-New.dual', R`((S@\rho)^{N} \otimes (${h('sty.dual', R`\overline{S}`)}@\overline{\rho})^{N})`)}^{0})`, '0', '0', R`\hat 1`)),
-  rule('D-New', R`${h('ctx.empty', R`\Delta\ \text{empty}`)}${Q}${h('E-New.fam', R`\ell \in ${h('w.fams', 'L_W')}`)}`,
+  rule('D-New', R`${h('ctx.empty', R`\Delta\ \text{unlimited}`)}${Q}${h('E-New.fam', R`\ell \in ${h('w.fams', 'L_W')}`)}`,
     DJ(R`\varnothing`, R`\Gamma`, R`\Delta`, 'F', R`\mathsf{new}_\ell`, R`\exists^{${h('E-New.bot', R`\bot`)}}\rho.\ ${h('E-New.laws', R`${h('w.laws', R`\Lambda_\ell`)}(\rho)`)}.\ ${h('E-New.dual', R`S@\rho \otimes \overline{S}@\overline{\rho}`)}`)),
   'The pair sits at a fresh root $\\rho$ with $\\Lambda_\\ell(\\rho)$ and lower bound $\\bot$.');
 T('r-newat', 'E-NewAt', 'static/Typing.v: e_new_at',
@@ -259,10 +259,14 @@ T('r-newat', 'E-NewAt', 'static/Typing.v: e_new_at',
   rule('D-NewAt', h('E-NewAt.anchor', DJ(R`\Theta`, R`\Gamma`, R`\Delta`, 'F', 'e', R`S_0@x`)),
     DJ(R`\Theta`, R`\Gamma`, R`\Delta`, 'F', R`\mathsf{new}_\kappa\,e`, R`S_0@x \otimes ${h('E-NewAt.field', R`(S@x\cdot\kappa \otimes \overline{S}@\overline{x\cdot\kappa})`)}`)),
   'The anchor returns unchanged and the new ends sit at $x\\cdot\\kappa$ and $\\overline{x\\cdot\\kappa}$ with credit $N$.');
-T('r-struct', 'E-Sub, E-Weak, E-Contract', 'static/Typing.v: e_sub, e_weak, e_contract',
-  rows(rule('E-Sub', R`e : T^{a} \triangleright c ; \vartheta${Q}${h('sub.tsub', R`T^{a} \leq T'^{a'}`)}${Q}${h('E-Sub.cost', R`c \leq c',\ \vartheta \leq \vartheta'`)}`, R`e : T'^{a'} \triangleright c' ; \vartheta'`), rule('E-Weak', h('E-Weak.drop', R`\Delta' \preceq_{\mathsf{wk}} \Delta`), R`\Delta' \vdash e \Rightarrow \Delta \vdash e`), rule('E-Contract', h('ty.unlimited', R`\mathsf{unlimited}\,U`), R`U, U, \Delta \vdash e \Rightarrow U, \Delta \vdash e[x/x']`)),
-  rows(rule('D-Conv', h('sub.dconv', R`${h('ann.tydf', R`\mathsf{ty\_df}`)}\,T \leq \mathsf{ty\_df}\,T'`), R`t : T \Rightarrow t : T'`), rule('D-Weak', h('E-Weak.drop', R`\Delta' \preceq_{\mathsf{wk}} \Delta`), R`\Delta' \vdash t \Rightarrow \Delta \vdash t`), rule('D-Contract', h('ty.unlimited', R`\mathsf{unlimited}\,U`), R`U, U, \Delta \vdash t \Rightarrow U, \Delta \vdash t`)),
-  'Weakening and contraction apply to entries of unlimited type only.');
+T('r-struct', 'E-Sub', 'static/Typing.v: e_sub',
+  rule('E-Sub', R`e : T^{a} \triangleright c ; \vartheta${Q}${h('sub.tsub', R`T^{a} \leq T'^{a'}`)}${Q}${h('E-Sub.cost', R`c \leq c',\ \vartheta \leq \vartheta'`)}`, R`e : T'^{a'} \triangleright c' ; \vartheta'`),
+  rule('D-Conv', h('sub.dconv', R`${h('ann.tydf', R`\mathsf{ty\_df}`)}\,T \leq \mathsf{ty\_df}\,T'`), R`t : T \Rightarrow t : T'`),
+  'A type may lose credit and a cost or transformer may rise.');
+T('r-admis', 'E-Weak, E-Contract (admissible)', 'static/Weakening.v: e_weak, e_contract, d_weak, d_contract, typed_rename',
+  rows(rule('E-Weak', h('E-Weak.drop', R`\Delta' \preceq_{\mathsf{wk}} \Delta`), R`\Delta' \vdash e \Rightarrow \Delta \vdash e`), rule('E-Contract', h('ty.unlimited', R`\mathsf{unlimited}\,U`), R`U, U, \Delta \vdash e \Rightarrow U, \Delta \vdash e[x/x']`)),
+  rows(rule('D-Weak', h('E-Weak.drop', R`\Delta' \preceq_{\mathsf{wk}} \Delta`), R`\Delta' \vdash t \Rightarrow \Delta \vdash t`), rule('D-Contract', h('ty.unlimited', R`\mathsf{unlimited}\,U`), R`U, U, \Delta \vdash t \Rightarrow U, \Delta \vdash t`)),
+  'Both are renamings of the variables, the identity and the map $x \\mapsto x - 1$. They hold because E-Unit, E-Var, E-Chan and E-New accept unused entries of unlimited type.');
 T('r-ex', 'E-Pack, E-Open', 'static/Typing.v: e_pack, e_open',
   rows(rule('E-Pack', R`${h('E-Force.hold', R`|\bar x| = m,\ \Gamma \vdash C[\bar x]`)}${Q}${h('E-Pack.lb', R`l \preccurlyeq \mathsf{heads}(${h('tp.pinst', R`T[\bar x]`)})`)}${Q}e : T[\bar x]^{a}`, R`e : (\exists^{l}\bar\iota.\,C.\,T^{a})^{0}`), rule('E-Open', R`${h('E-Open.entry', R`\Delta(i) = (\exists^{l}\bar\iota.\,C.\,T^{a_T})^{a},\ \neg\mathsf{unlimited}\,T`)}${Q}${h('E-Open.body', R`\Theta${h('tp.shift', R`{\uparrow}`)}; \Gamma{\uparrow}, C; \Delta{\uparrow}[i \mapsto T^{a+a_T}] \vdash^{F\uparrow} e : U{\uparrow}`)}`, R`\Theta;\Gamma;\Delta \vdash^{F} e : U`)),
   rows(rule('D-Pack', R`${h('E-Force.hold', R`\Gamma \vdash C[\bar x]`)}${Q}${h('E-Pack.lb', R`l \preccurlyeq \mathsf{heads}(${h('tp.pinst', R`T[\bar x]`)})`)}${Q}t : T[\bar x]`, R`t : \exists^{l}\bar\iota.\,C.\,T`), rule('D-Open', R`${h('E-Open.entry', R`\Delta(i) = \exists^{l}\bar\iota.\,C.\,T`)}${Q}${h('E-Open.body', R`\Theta${h('tp.shift', R`{\uparrow}`)}; \Gamma{\uparrow}, C; \Delta{\uparrow}[i \mapsto T] \vdash t : U{\uparrow}`)}`, R`\Theta;\Gamma;\Delta \vdash t : U`)),
@@ -333,8 +337,8 @@ n("ctx.fvar", "Future variables $\\varphi \\mapsto u$", "$\\varphi \\mapsto u \\
 n("ctx.fvarF", "The variable $\\varphi$ in $F$", "The unknown part of a future, read only through $\\Gamma \\vdash u \\prec \\varphi$.", "In the semantics $\\varphi$ denotes an arbitrary set of points above $u$. A body typed under $\\varphi$ is therefore correct for every caller future above $u$.", DEF, "$F = (\\varnothing, \\varphi)$.", "static/Contexts.v: futrest");
 n("ctx.bot", "The flag $\\bot$ in $F$", "$\\bot$ states that the context holds ends at points unknown to the term, which then performs no session action.", "Every action asks $u \\prec F$, which requires $F$ to have no $\\bot$. No point is known to lie below a hidden point, so an action under $\\bot$ could wait above it.", DEF, "$e_1$ beside a context that holds an unopened $\\exists^{\\bot}$.", "static/Contexts.v: FBot, fs_bot");
 n("ctx.slt", "$\\Gamma \\vdash x \\prec y$", "The least transitive relation containing $\\prec_W$, the facts $C[\\bar x]$ of the instances $(C, \\bar x)$ in $\\Gamma$, and $u \\prec \\varphi$ for every $\\varphi \\mapsto u$ in $\\Gamma$.", "Every order fact a typing rule reads is a judgment $\\Gamma \\vdash x \\prec y$.", DEF, "$\\Gamma \\vdash x \\prec x^{+}$ for every $\\Gamma$ and $x$.", "static/Contexts.v: fl, slt");
-n("ctx.empty", "$\\Delta$ empty", "Every entry of $\\Delta$ is empty.", "A value that mentions no variable uses no entry of $\\Delta$.", DEF, "$\\ast$ types under every $\\Delta$ whose entries are all empty.", "static/Contexts.v: lenv_empty");
-n("ctx.only", "$\\Delta = \\{x : T^{a}\\}$", "$\\Delta(x) = T^{a}$ and every other entry of $\\Delta$ is empty.", "Every linear entry is used exactly once. Unused entries of unlimited type are removed by E-Weak first.", DEF, "$x = 0$ types under $\\Delta = [T^{a}]$.", "static/Contexts.v: lenv_only");
+n("ctx.empty", "$\\Delta$ unlimited", "Every non-empty entry of $\\Delta$ has unlimited type.", "A value that mentions no variable uses no linear entry, and an unlimited entry may go unused.", DEF, "$\\ast$ types under every $\\Delta$ whose entries are empty or unlimited.", "static/Contexts.v: lenv_unl");
+n("ctx.only", "$\\Delta = \\{x : T^{a}\\}$", "$\\Delta(x) = T^{a}$ and every other non-empty entry of $\\Delta$ has unlimited type.", "Every linear entry is used exactly once, and an unlimited entry may go unused.", DEF, "$x = 0$ types under $\\Delta = [T^{a}]$.", "static/Contexts.v: lenv_only");
 n("side.act", "$x \\prec F$ at an action", "For an action at $x$ under $F = (X, \\cdot)$, $\\Gamma \\vdash x \\prec y$ for every $y \\in X$, $\\Gamma \\vdash x \\prec \\varphi$ when $F$ has a variable $\\varphi$, and $F$ has no $\\bot$.", "While the term waits at $x$, every point at which its context acts later lies above $x$. This is readiness against the future.", "Without it a term may wait at $x$ while its context must first act at a point below $x$, and the thread waits on itself through the partner end.", "E-Close at $x$ asks $x \\prec F$.", "static/Contexts.v: ub_below_s");
 n("act.refill", "Refill $N$ after an action", "An end returned by an action, or created fresh, has credit $N$.", "The fuel layer sets the counter of an end to $N$ at every action on it, and the static credit is a lower bound on that counter.", DEF, "$\\mathsf{send}$ returns $(S@x^{+})^{N}$.", "static/Typing.v: e_send, e_recv, e_select, e_branch, e_new");
 n("side.ub", "$u \\prec F$", "$u \\prec F \\iff (\\forall y \\in X.\\ \\Gamma \\vdash u \\prec y) \\land \\Gamma \\vdash u \\prec \\varphi \\land \\bot \\notin F$, true for absent $u$.", "It is the condition $x \\prec F$ of an action, stated for the upper point $u$ up to which a callee may wait.", DEF, "E-App asks $u \\prec F$ of the upper point $u$ of the closure.", "static/Contexts.v: ub_below_s");
@@ -482,8 +486,8 @@ sa('ctx.fvar', R`(\varphi \mapsto u) \in \Gamma`, [A(R`\varphi`, R`a future vari
 sa('ctx.fvarF', R`F = (X, \varphi)`, [A(R`\varphi`, R`the variable part of the future`), A('X', R`the known points of the future`)]);
 sa('ctx.bot', R`F = (X, \bot)`, [A(R`\bot`, R`the flag that some held end of the context has a point unknown to the term`), A('X', R`the known points of the future`)]);
 sa('ctx.slt', R`\Gamma \vdash x \prec y \subseteq \mathsf{Hctx} \times \mathsf{Pt} \times \mathsf{Pt}`, [aGa, A('x, y', R`points, the judgment states that $x$ lies strictly below $y$`)]);
-sa('ctx.empty', R`\Delta\ \text{empty} \iff \forall i.\ \Delta(i) = \bot`, [aDe]);
-sa('ctx.only', R`\Delta = \{x : T^{a}\} \iff \Delta(x) = T^{a} \land \forall i \neq x.\ \Delta(i) = \bot`, [A('x', R`the de Bruijn index of the variable`), A(R`T^{a}`, R`its credited type`)]);
+sa('ctx.empty', R`\Delta\ \text{unlimited} \iff \forall i.\ \Delta(i) = \bot \lor \mathsf{unlimited}\,\Delta(i)`, [aDe]);
+sa('ctx.only', R`\Delta = \{x : T^{a}\} \iff \Delta(x) = T^{a} \land \forall i \neq x.\ \Delta(i) = \bot \lor \mathsf{unlimited}\,\Delta(i)`, [A('x', R`the de Bruijn index of the variable`), A(R`T^{a}`, R`its credited type`)]);
 sa('side.act', R`x \prec F \iff (\forall y \in X.\ \Gamma \vdash x \prec y) \land (F = (X, \varphi) \Rightarrow \Gamma \vdash x \prec \varphi) \land F \neq (X, \bot)`, [aX, aF, aGa]);
 sa('act.refill', R`(S@x)^{N}`, [A('S@x', R`the end after the action, at its new point`), aN]);
 sa('side.ub', R`u \prec F \iff (\forall y \in X.\ \Gamma \vdash u \prec y) \land (F = (X, \varphi) \Rightarrow \Gamma \vdash u \prec \varphi) \land F \neq (X, \bot)`, [A('u', R`the upper point of a closure or box, the highest point its body waits at`), aF, aGa]);

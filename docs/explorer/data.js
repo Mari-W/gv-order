@@ -490,10 +490,10 @@ window.MAP = {
      "id": "r-unit",
      "title": "E-Unit",
      "rocq": "static/Typing.v: e_unit",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{empty}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\ast : \\ast^{\\htmlData{k=ann.fuel}{\\infty}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\htmlData{k=ann.tid}{\\hat 1}}\\;\\textsf{E-Unit}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\ast : \\ast^{\\htmlData{k=ann.fuel}{\\infty}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\htmlData{k=ann.tid}{\\hat 1}}\\;\\textsf{E-Unit}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{empty}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\ast : \\ast}\\;\\textsf{D-Unit}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{empty}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\ast : \\ast}\\;\\textsf{D-Unit}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\ast : \\ast}\\;\\textsf{D-Unit}",
+      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\ast : \\ast}\\;\\textsf{D-Unit}"
      },
      "caption": "$\\ast$ holds no end, has cost $0$ and transformer $\\hat 1$.",
      "modes": [
@@ -522,10 +522,10 @@ window.MAP = {
      "id": "r-chan",
      "title": "E-Chan",
      "rocq": "static/Typing.v: e_chan",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{empty}}\\end{array}}{\\{o : S@x^{a}\\} ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} o : (S@x)^{a} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\hat 1}\\;\\textsf{E-Chan}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\{o : S@x^{a}\\} ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} o : (S@x)^{a} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\hat 1}\\;\\textsf{E-Chan}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{empty}}\\end{array}}{\\{o : S@x\\} ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} o : S@x}\\;\\textsf{D-Chan}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{empty}}\\end{array}}{\\{o : S@x\\} ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} o : S@x}\\;\\textsf{D-Chan}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\{o : S@x\\} ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} o : S@x}\\;\\textsf{D-Chan}",
+      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\{o : S@x\\} ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} o : S@x}\\;\\textsf{D-Chan}"
      },
      "caption": "The value $o$ is typed with $\\Theta = \\{o \\mapsto S@x^{a}\\}$, exactly its own entry.",
      "modes": [
@@ -778,10 +778,10 @@ window.MAP = {
      "id": "r-new",
      "title": "E-New",
      "rocq": "static/Typing.v: e_new",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{empty}}\\\\ \\htmlData{k=E-New.fam}{\\ell \\in \\htmlData{k=w.fams}{L_W}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\htmlData{k=syn.new}{\\mathsf{new}_\\ell} : (\\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\rho.\\ \\htmlData{k=E-New.laws}{\\htmlData{k=w.laws}{\\Lambda_\\ell}(\\rho)}.\\ \\htmlData{k=E-New.dual}{((S@\\rho)^{N} \\otimes (\\htmlData{k=sty.dual}{\\overline{S}}@\\overline{\\rho})^{N})}^{0})^{0} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\hat 1}\\;\\textsf{E-New}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\\\ \\htmlData{k=E-New.fam}{\\ell \\in \\htmlData{k=w.fams}{L_W}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\htmlData{k=syn.new}{\\mathsf{new}_\\ell} : (\\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\rho.\\ \\htmlData{k=E-New.laws}{\\htmlData{k=w.laws}{\\Lambda_\\ell}(\\rho)}.\\ \\htmlData{k=E-New.dual}{((S@\\rho)^{N} \\otimes (\\htmlData{k=sty.dual}{\\overline{S}}@\\overline{\\rho})^{N})}^{0})^{0} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\hat 1}\\;\\textsf{E-New}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{empty}}\\\\ \\htmlData{k=E-New.fam}{\\ell \\in \\htmlData{k=w.fams}{L_W}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.new}{\\mathsf{new}_\\ell} : \\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\rho.\\ \\htmlData{k=E-New.laws}{\\htmlData{k=w.laws}{\\Lambda_\\ell}(\\rho)}.\\ \\htmlData{k=E-New.dual}{S@\\rho \\otimes \\overline{S}@\\overline{\\rho}}}\\;\\textsf{D-New}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{empty}}\\\\ \\htmlData{k=E-New.fam}{\\ell \\in \\htmlData{k=w.fams}{L_W}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.new}{\\mathsf{new}_\\ell} : \\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\rho.\\ \\htmlData{k=E-New.laws}{\\htmlData{k=w.laws}{\\Lambda_\\ell}(\\rho)}.\\ \\htmlData{k=E-New.dual}{S@\\rho \\otimes \\overline{S}@\\overline{\\rho}}}\\;\\textsf{D-New}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\\\ \\htmlData{k=E-New.fam}{\\ell \\in \\htmlData{k=w.fams}{L_W}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.new}{\\mathsf{new}_\\ell} : \\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\rho.\\ \\htmlData{k=E-New.laws}{\\htmlData{k=w.laws}{\\Lambda_\\ell}(\\rho)}.\\ \\htmlData{k=E-New.dual}{S@\\rho \\otimes \\overline{S}@\\overline{\\rho}}}\\;\\textsf{D-New}",
+      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\\\ \\htmlData{k=E-New.fam}{\\ell \\in \\htmlData{k=w.fams}{L_W}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.new}{\\mathsf{new}_\\ell} : \\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\rho.\\ \\htmlData{k=E-New.laws}{\\htmlData{k=w.laws}{\\Lambda_\\ell}(\\rho)}.\\ \\htmlData{k=E-New.dual}{S@\\rho \\otimes \\overline{S}@\\overline{\\rho}}}\\;\\textsf{D-New}"
      },
      "caption": "The pair sits at a fresh root $\\rho$ with $\\Lambda_\\ell(\\rho)$ and lower bound $\\bot$.",
      "modes": [
@@ -808,14 +808,30 @@ window.MAP = {
     },
     {
      "id": "r-struct",
-     "title": "E-Sub, E-Weak, E-Contract",
-     "rocq": "static/Typing.v: e_sub, e_weak, e_contract",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}e : T^{a} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta\\\\ \\htmlData{k=sub.tsub}{T^{a} \\leq T'^{a'}}\\\\ \\htmlData{k=E-Sub.cost}{c \\leq c',\\ \\vartheta \\leq \\vartheta'}\\end{array}}{e : T'^{a'} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c' ; \\vartheta'}\\;\\textsf{E-Sub} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\end{array}}{\\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e \\Rightarrow \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e}\\;\\textsf{E-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,U}\\end{array}}{U, U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e \\Rightarrow U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e[x/x']}\\;\\textsf{E-Contract}\\end{array}",
+     "title": "E-Sub",
+     "rocq": "static/Typing.v: e_sub",
+     "tex": "\\dfrac{\\begin{array}{c}e : T^{a} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta\\\\ \\htmlData{k=sub.tsub}{T^{a} \\leq T'^{a'}}\\\\ \\htmlData{k=E-Sub.cost}{c \\leq c',\\ \\vartheta \\leq \\vartheta'}\\end{array}}{e : T'^{a'} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c' ; \\vartheta'}\\;\\textsf{E-Sub}",
      "variants": {
-      "df": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=sub.dconv}{\\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T \\leq \\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T'}\\end{array}}{t : T \\Rightarrow t : T'}\\;\\textsf{D-Conv} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\end{array}}{\\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t \\Rightarrow \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t}\\;\\textsf{D-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,U}\\end{array}}{U, U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t \\Rightarrow U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t}\\;\\textsf{D-Contract}\\end{array}",
-      "live": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=sub.dconv}{\\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T \\leq \\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T'}\\end{array}}{t : T \\Rightarrow t : T'}\\;\\textsf{D-Conv} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\end{array}}{\\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t \\Rightarrow \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t}\\;\\textsf{D-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,U}\\end{array}}{U, U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t \\Rightarrow U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t}\\;\\textsf{D-Contract}\\end{array}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=sub.dconv}{\\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T \\leq \\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T'}\\end{array}}{t : T \\Rightarrow t : T'}\\;\\textsf{D-Conv}",
+      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=sub.dconv}{\\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T \\leq \\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T'}\\end{array}}{t : T \\Rightarrow t : T'}\\;\\textsf{D-Conv}"
      },
-     "caption": "Weakening and contraction apply to entries of unlimited type only.",
+     "caption": "A type may lose credit and a cost or transformer may rise.",
+     "modes": [
+      "df",
+      "live",
+      "lf"
+     ]
+    },
+    {
+     "id": "r-admis",
+     "title": "E-Weak, E-Contract (admissible)",
+     "rocq": "static/Weakening.v: e_weak, e_contract, d_weak, d_contract, typed_rename",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\end{array}}{\\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e \\Rightarrow \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e}\\;\\textsf{E-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,U}\\end{array}}{U, U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e \\Rightarrow U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e[x/x']}\\;\\textsf{E-Contract}\\end{array}",
+     "variants": {
+      "df": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\end{array}}{\\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t \\Rightarrow \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t}\\;\\textsf{D-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,U}\\end{array}}{U, U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t \\Rightarrow U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t}\\;\\textsf{D-Contract}\\end{array}",
+      "live": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\end{array}}{\\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t \\Rightarrow \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t}\\;\\textsf{D-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,U}\\end{array}}{U, U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t \\Rightarrow U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t}\\;\\textsf{D-Contract}\\end{array}"
+     },
+     "caption": "Both are renamings of the variables, the identity and the map $x \\mapsto x - 1$. They hold because E-Unit, E-Var, E-Chan and E-New accept unused entries of unlimited type.",
      "modes": [
       "df",
       "live",
@@ -4786,13 +4802,13 @@ window.MAP = {
    ]
   },
   "ctx.empty": {
-   "title": "$\\Delta$ empty",
-   "what": "Every entry of $\\Delta$ is empty.",
-   "why": "A value that mentions no variable uses no entry of $\\Delta$.",
+   "title": "$\\Delta$ unlimited",
+   "what": "Every non-empty entry of $\\Delta$ has unlimited type.",
+   "why": "A value that mentions no variable uses no linear entry, and an unlimited entry may go unused.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\ast$ types under every $\\Delta$ whose entries are all empty.",
-   "rocq": "static/Contexts.v: lenv_empty",
-   "sig": "\\Delta\\ \\text{empty} \\iff \\forall i.\\ \\Delta(i) = \\bot",
+   "example": "$\\ast$ types under every $\\Delta$ whose entries are empty or unlimited.",
+   "rocq": "static/Contexts.v: lenv_unl",
+   "sig": "\\Delta\\ \\text{unlimited} \\iff \\forall i.\\ \\Delta(i) = \\bot \\lor \\mathsf{unlimited}\\,\\Delta(i)",
    "args": [
     {
      "name": "\\Delta",
@@ -4802,12 +4818,12 @@ window.MAP = {
   },
   "ctx.only": {
    "title": "$\\Delta = \\{x : T^{a}\\}$",
-   "what": "$\\Delta(x) = T^{a}$ and every other entry of $\\Delta$ is empty.",
-   "why": "Every linear entry is used exactly once. Unused entries of unlimited type are removed by E-Weak first.",
+   "what": "$\\Delta(x) = T^{a}$ and every other non-empty entry of $\\Delta$ has unlimited type.",
+   "why": "Every linear entry is used exactly once, and an unlimited entry may go unused.",
    "breaks": "Nothing. It is a definition.",
    "example": "$x = 0$ types under $\\Delta = [T^{a}]$.",
    "rocq": "static/Contexts.v: lenv_only",
-   "sig": "\\Delta = \\{x : T^{a}\\} \\iff \\Delta(x) = T^{a} \\land \\forall i \\neq x.\\ \\Delta(i) = \\bot",
+   "sig": "\\Delta = \\{x : T^{a}\\} \\iff \\Delta(x) = T^{a} \\land \\forall i \\neq x.\\ \\Delta(i) = \\bot \\lor \\mathsf{unlimited}\\,\\Delta(i)",
    "args": [
     {
      "name": "x",

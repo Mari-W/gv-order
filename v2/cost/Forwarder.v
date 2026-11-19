@@ -77,12 +77,12 @@ Proof.
     + apply lsplit_l, lsplit_r, lsplit_nil.
     + eapply (e_close W_fw N _ _ _ _ _ SEnd); [reflexivity| |].
       * simpl. rewrite tenv_heads_nil. split_and!; [intros y Hy; exfalso; set_solver|done|done].
-      * apply e_var. split; [done|]. intros [|[|y]] σ' Hy; simpl in Hy; [by injection Hy as <-|done|].
+      * apply e_var. split; [done|]. intros [|[|y]] σ' Hne Hy; simpl in Hy; [done|done|].
         rewrite lookup_nil in Hy. done.
     + intros o'. by rewrite lookup_empty.
     + apply lage_none, lage_some; [|apply lage_nil]. apply age_credit. simpl. lia.
     + eapply e_spawn; [| |apply tok_tid].
-      * apply e_var. split; [done|]. intros [|[|y]] σ' Hy; simpl in Hy; [done|by injection Hy as <-|].
+      * apply e_var. split; [done|]. intros [|[|y]] σ' Hne Hy; simpl in Hy; [done|done|].
         rewrite lookup_nil in Hy. done.
       * simpl. lia.
     + apply tok_tid.

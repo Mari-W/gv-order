@@ -358,7 +358,6 @@ Section fund.
   Context (HGinj2 : ∀ L e, G L (Inj2 e) → G L e).
   Context (HGcase : ∀ L e e1 e2, G L (Case e e1 e2) →
              ∃ L', kmarks κ L L' e ∧ G L e ∧ G (false .: L') e1 ∧ G (false .: L') e2).
-  Context (HGren : ∀ L e, G L (rename pred e) → G (λ x, L (pred x)) e).
 
   Local Ltac heads_p :=
     rewrite ?tenv_heads_pinst, ?lenv_heads_pinst, ?lenv_bot_pinst, ?heads_pinst, ?hbot_pinst,
@@ -396,17 +395,15 @@ Section fund.
       |Γ Δ F ℓ S HΔ Hℓ
       |Θ Γ Δ F e κf S0 x a S c0 t0 H IH
       |Θ Γ Δ F e T a T' a' c c' t t' H IH Hsub Hc Ht
-      |Θ Γ Δ' Δ F e T a c t Hwk H IH
-      |Θ Γ Δ U aU F e T a c t Hu H IH
       |Θ Γ Δ F e lb m C T xs a c t Hxs HC Hlbx H IH
       |Θ Γ Δ F e i lb m C T aT a U aU c t Hi Hnu H IH];
       intros L Hgl W1 σ ρ B HW Hs; cbn [pinst_ty]; rewrite ?tenv_pinst_empty, ?tenv_pinst_singleton.
     - (* E-Unit *)
-      by apply later_unit, lenv_empty_pinst.
+      by apply later_unit, lenv_unl_pinst.
     - (* E-Var *)
       by eapply later_var; [apply lenv_only_pinst|apply HGvar].
     - (* E-Chan *)
-      by apply later_chan, lenv_empty_pinst.
+      by apply later_chan, lenv_unl_pinst.
     - (* E-Abs *)
       assert (tfacts Θ Δ (Lam e)) as Htf by (eapply (typed_tfacts W N _ _ _ F), e_abs; eassumption).
       destruct (lb_sem W W1 Hwf HW σ ρ Γ _ _ _ Hs Hlb) as [Hbot Hlb'].
@@ -548,18 +545,12 @@ Section fund.
     - (* E-New *)
       rewrite pt_inst_dual, pt_inst_pup1_0.
       change (bcs_inst σ (bcs_of (w_laws W ℓ))) with (bcs_of (w_laws W ℓ)).
-      apply later_new_ext; [done|by apply lenv_empty_pinst|done].
+      apply later_new_ext; [done|by apply lenv_unl_pinst|done].
     - (* E-NewAt *)
       rewrite pt_inst_dual, pt_inst_field. eapply later_new_at. exact (IH L (HGop _ _ _ Hgl) W1 σ ρ B HW Hs).
     - (* E-Sub *)
       eapply (later_conv κ _ _ _ _ _ _ (pinst_ty σ T)); [|by apply IH].
       rewrite !ty_df_pinst. apply tsub_pinst. exact (tsub_df _ _ _ _ Hsub).
-    - (* E-Weak *)
-      eapply later_weak; [by apply lenv_wk_pinst|by apply IH].
-    - (* E-Contract *)
-      change (lenv_pinst σ (Some (U, aU) :: Δ)) with (Some (pinst_ty σ U, aU) :: lenv_pinst σ Δ).
-      apply later_contract; [by apply unlimited_pinst|].
-      exact (IH _ (HGren _ _ Hgl) W1 σ ρ B HW Hs).
     - (* E-Pack *)
       subst m. eapply (later_pack κ _ _ _ _ _ _ _ _ _ _ _ (pt_inst σ <$> xs));
         [by rewrite length_fmap|exact (hold_sem W W1 Hwf HW σ ρ Γ C xs Hs HC)| |].
@@ -590,7 +581,7 @@ Lemma typed_sem_df W N Θ Γ Δ F e T a c t :
   sem_typed_at κ_DF W1 (tenv_pinst σ Θ) (lenv_pinst σ Δ) (sf_den ρ B (sf_pinst σ F)) e (pinst_ty σ T).
 Proof.
   intros Hwf Ht W1 σ ρ B HW Hs. apply sem_later_empty.
-  refine (typed_sem κ_DF nomarks _ _ _ _ _ _ _ _ _ _ _ _ W N Θ Γ Δ F e T a c t Hwf Ht ∅ _ W1 σ ρ B HW Hs);
+  refine (typed_sem κ_DF nomarks _ _ _ _ _ _ _ _ _ _ _ W N Θ Γ Δ F e T a c t Hwf Ht ∅ _ W1 σ ρ B HW Hs);
     [..|done]; unfold nomarks.
   - intros L y H. apply H.
   - intros L b H [|x]; [done|apply H].
@@ -608,7 +599,6 @@ Proof.
   - done.
   - done.
   - intros L e0 e1 e2 H. exists L. split_and!; [by left|done|intros [|x]; [done|apply H]|intros [|x]; [done|apply H]].
-  - intros L e0 H x. apply H.
 Qed.
 
 (** ** The live instance: the marks of the guard *)
@@ -619,7 +609,7 @@ Lemma typed_sem_live W N Θ Γ Δ F e T a c t :
   sem_typed_at κ_L W1 (tenv_pinst σ Θ) (lenv_pinst σ Δ) (sf_den ρ B (sf_pinst σ F)) e (pinst_ty σ T).
 Proof.
   intros Hwf Ht Hgd W1 σ ρ B HW Hs. apply sem_later_empty.
-  refine (typed_sem κ_L lguard _ _ _ _ _ _ _ _ _ _ _ _ W N Θ Γ Δ F e T a c t Hwf Ht ∅ Hgd W1 σ ρ B HW Hs).
+  refine (typed_sem κ_L lguard _ _ _ _ _ _ _ _ _ _ _ W N Θ Γ Δ F e T a c t Hwf Ht ∅ Hgd W1 σ ρ B HW Hs).
   - intros L y H. by inversion H.
   - intros L b H. by inversion H.
   - intros L b H. exists true. split; [by inversion H|]. intros ?????????????. apply later_box.
@@ -633,7 +623,6 @@ Proof.
   - intros L e0 H. by inversion H.
   - intros L e0 e1 e2 H. inversion H; subst; eexists; split_and!; try done; [by left|by right| |];
       (eapply guard_ext; [|done]; by intros [|x]).
-  - intros L e0 H. exact (guard_rename e0 L pred H).
 Qed.
 
 (** ** The theorems *)

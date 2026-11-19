@@ -30,13 +30,13 @@ From GV Require Export static.Contexts.
 Inductive typed (W : world) (N : fuel) :
     tenv → hctx → lenv → sfuture → expr → ty → fuel → fuel → tix → Prop :=
   | e_unit Γ Δ F :
-      lenv_empty Δ →
+      lenv_unl Δ →
       typed W N ∅ Γ Δ F EUnit TUnit None (Some 0) tid
   | e_var Γ Δ F x T a :
       lenv_only Δ x (T, a) →
       typed W N ∅ Γ Δ F (Var x) T a (Some 0) tid
   | e_chan Γ Δ F o S x a :
-      lenv_empty Δ →
+      lenv_unl Δ →
       typed W N {[o := TE S x a]} Γ Δ F (Chan o) (TSess S x) a (Some 0) tid
   | e_abs Θ Θh Γ Δ Δh F e T aT U aU ub lb c t h a φ :
       φ ∉ dom (hc_fv Γ) →
@@ -147,7 +147,7 @@ Inductive typed (W : world) (N : fuel) :
       fle (Some 1) a → tok t0 (tspawn (tapp t' 0) tid) →
       typed W N Θ Γ Δ F (ESpawn e) TUnit None c0 (tseq t0 (tspawn (tapp t' 0) tid))
   | e_new Γ Δ F ℓ S :
-      lenv_empty Δ → ℓ ∈ w_fams W →
+      lenv_unl Δ → ℓ ∈ w_fams W →
       typed W N ∅ Γ Δ F (ENew ℓ)
         (TEx LBot 1 (bcs_of (w_laws W ℓ))
            (TProd (TSess S (pvar 0)) N (TSess (dual S) (pvar 0)‾) N) (Some 0))
@@ -160,12 +160,6 @@ Inductive typed (W : world) (N : fuel) :
   | e_sub Θ Γ Δ F e T a T' a' c c' t t' :
       typed W N Θ Γ Δ F e T a c t → tsub T a T' a' → fle c c' → tle t t' →
       typed W N Θ Γ Δ F e T' a' c' t'
-  | e_weak Θ Γ Δ' Δ F e T a c t :
-      lenv_wk Δ' Δ → typed W N Θ Γ Δ' F e T a c t → typed W N Θ Γ Δ F e T a c t
-  | e_contract Θ Γ Δ U aU F e T a c t :
-      unlimited U →
-      typed W N Θ Γ (Some (U, aU) :: Some (U, aU) :: Δ) F e T a c t →
-      typed W N Θ Γ (Some (U, aU) :: Δ) F (rename pred e) T a c t
   | e_pack Θ Γ Δ F e lb m C T xs a c t :
       length xs = m → hold_at W Γ C xs →
       lbx_below_h W Γ lb (heads (ty_inst xs T)) (hbot (ty_inst xs T)) →

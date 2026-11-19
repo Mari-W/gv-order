@@ -388,23 +388,6 @@ Proof.
     intros x' σ Hx'. apply Hun with σ. by eapply lenv_wk_sub.
 Qed.
 
-(** Δ' with every entry absent: Δ' weakens to it when its only entries
-    are unlimited. *)
-Lemma lren_empty r Δ Δ' :
-  lenv_empty Δ → lren r Δ Δ' →
-  lenv_wk ((λ _ : option (ty * fuel), None) <$> Δ') Δ' ∧
-  lenv_empty ((λ _ : option (ty * fuel), None) <$> Δ').
-Proof.
-  intros He (_ & _ & H3). split.
-  - apply lenv_wk_intro; [by rewrite length_fmap|].
-    intros x o0 o Ho0 Ho. rewrite list_lookup_fmap, Ho in Ho0. simpl in Ho0. simplify_eq.
-    destruct o as [[T a]|]; [|by left]. right. split; [done|].
-    destruct (decide (unlimited T)) as [Hu|Hu]; [eauto|].
-    destruct (H3 _ _ _ Ho Hu) as (x' & _ & Hx' & _).
-    by apply list_elem_of_lookup_2, He in Hx'.
-  - intros o Ho. apply list_elem_of_fmap in Ho as (? & -> & _). done.
-Qed.
-
 Lemma lren_unl r Δ Δ' : lenv_unl Δ → lren r Δ Δ' → lenv_unl Δ'.
 Proof.
   intros Hu (_ & _ & H3) o Ho. apply list_elem_of_lookup_1 in Ho as [y Hy].
@@ -537,29 +520,20 @@ Theorem typed_rename W N Θ Γ Δ F e T a c t :
   ∀ r Δ', lren r Δ Δ' → typed W N Θ Γ Δ' F (rename r e) T a c t.
 Proof.
   induction 1; intros r Δr Hr; simpl.
-  - destruct (lren_empty _ _ _ H Hr) as [Hw He]. eapply e_weak; [exact Hw|]. by apply e_unit.
+  - by apply e_unit, (lren_unl _ _ _ H Hr).
   - (* E-Var *)
     destruct H as [Hx Hun]. pose proof Hr as (H1 & H2 & H3).
-    set (Δk := imap (λ z o, if decide (z = r x) then o else None) Δr).
-    assert (∀ σ, Δr !! r x = Some (Some σ) → lenv_wk Δk Δr ∧ lenv_only Δk (r x) σ) as Hk.
-    { intros σ Hσ. unfold Δk. split.
-      - apply lenv_wk_intro; [by rewrite length_imap|].
-        intros z o0 o Ho0 Ho. rewrite list_lookup_imap, Ho in Ho0. simpl in Ho0.
-        case_decide as Hz; simplify_eq; [by left|]. destruct o as [[U b]|]; [|by left]. right.
-        split; [done|]. destruct (decide (unlimited U)) as [HU|HU]; [eauto|].
-        destruct (H3 _ _ _ Ho HU) as (x' & Hrx' & Hx' & _).
-        destruct (Hun _ _ Hx') as [-> _]. done.
-      - split; [rewrite list_lookup_imap, Hσ; simpl; case_decide; done|].
-        intros y σ' Hy. rewrite list_lookup_imap in Hy.
-        destruct (Δr !! y) eqn:Ey; simpl in Hy; [|done].
-        case_decide; simplify_eq; split; [done|congruence]. }
+    assert (∀ σ, Δr !! r x = Some (Some σ) → lenv_only Δr (r x) σ) as Hk.
+    { intros σ Hσ. split; [done|]. intros y [U b] Hne Hy. simpl.
+      destruct (decide (unlimited U)) as [HU|HU]; [done|].
+      destruct (H3 _ _ _ Hy HU) as (x' & <- & Hx' & _).
+      assert (x' ≠ x) as Hx'x by (intros ->; done).
+      exact (Hun x' (U, b) Hx'x Hx'). }
     destruct (decide (unlimited T)) as [HU|HU].
-    + destruct (H1 _ _ _ Hx HU) as [a' Ha']. destruct (Hk _ Ha') as [Hw Ho].
-      eapply e_weak; [exact Hw|]. eapply e_sub; [by eapply e_var|by apply tsub_unl_credit
-                                                 |apply fle_refl|apply tle_refl].
-    + destruct (Hk _ (H2 _ _ _ Hx HU)) as [Hw Ho].
-      eapply e_weak; [exact Hw|]. by eapply e_var.
-  - destruct (lren_empty _ _ _ H Hr) as [Hw He]. eapply e_weak; [exact Hw|]. by apply e_chan.
+    + destruct (H1 _ _ _ Hx HU) as [a' Ha'].
+      eapply e_sub; [by eapply e_var, Hk|by apply tsub_unl_credit|apply fle_refl|apply tle_refl].
+    + by eapply e_var, Hk, H2.
+  - by apply e_chan, (lren_unl _ _ _ H Hr).
   - (* E-Abs *)
     destruct (lren_lcap _ _ _ _ _ _ H2 Hr) as (Δhr & Hc & Hr').
     eapply e_abs; [done| |done|exact Hc|].
@@ -602,12 +576,9 @@ Proof.
   - destruct (lren_lage _ _ _ _ _ H0 Hr) as (Δr' & Ha & Hr').
     eapply e_spawn_lam; [done|exact Ha|]. by apply IHtyped, lren_up.
   - eapply e_spawn; eauto.
-  - destruct (lren_empty _ _ _ H Hr) as [Hw He]. eapply e_weak; [exact Hw|]. by apply e_new.
+  - apply e_new; [exact (lren_unl _ _ _ H Hr)|done].
   - eapply e_new_at; eauto.
   - eapply e_sub; eauto.
-  - apply IHtyped. by eapply lren_wk.
-  - (* E-Contract *)
-    rewrite rename_rename. by apply IHtyped, lren_contract.
   - eapply e_pack; eauto.
   - (* E-Open *)
     pose proof Hr as (_ & Hl2 & _). pose proof (Hl2 _ _ _ H ltac:(simpl; tauto)) as Hri.
@@ -622,6 +593,32 @@ Corollary typed_weaken_head W N Θ Γ Δ F e T a c t :
 Proof.
   intros H. eapply typed_rename; [exact H|]. apply lren_inj; [done|by intros ?? [=]|].
   intros [|y] σ Hy; [done|]. by exists y.
+Qed.
+
+Lemma rename_id e : rename id e = e.
+Proof. rewrite <-(subst_ids (rename id e)), subst_rename. apply subst_ids. Qed.
+
+Lemma lren_refl Δ : lren id Δ Δ.
+Proof. apply lren_inj; [done|done|]. intros y σ _. by exists y. Qed.
+
+(** E-Weak is admissible: the identity renaming into a context with more
+    unlimited entries. *)
+Lemma e_weak W N Θ Γ Δ' Δ F e T a c t :
+  lenv_wk Δ' Δ → typed W N Θ Γ Δ' F e T a c t → typed W N Θ Γ Δ F e T a c t.
+Proof.
+  intros Hw H. rewrite <-(rename_id e). eapply typed_rename; [exact H|].
+  exact (lren_wk _ _ _ _ Hw (lren_refl Δ)).
+Qed.
+
+(** E-Contract is admissible: the renaming pred merges two copies of an
+    unlimited entry. *)
+Lemma e_contract W N Θ Γ Δ U aU F e T a c t :
+  unlimited U →
+  typed W N Θ Γ (Some (U, aU) :: Some (U, aU) :: Δ) F e T a c t →
+  typed W N Θ Γ (Some (U, aU) :: Δ) F (rename pred e) T a c t.
+Proof.
+  intros Hu H. eapply typed_rename; [exact H|].
+  exact (lren_contract id U aU _ _ Hu (lren_refl _)).
 Qed.
 
 (** *** Renaming in the deadlock-freedom projection *)
@@ -647,6 +644,16 @@ Theorem dftyped_rename W Θ Γ Δ F e T :
   ∀ r Δ', lren r Δ Δ' → dftyped W Θ Γ Δ' F (rename r e) T.
 Proof. intros H r Δ' Hr. eapply typed_rename; [exact H|]. by apply lren_df. Qed.
 
+Lemma d_weak W Θ Γ Δ' Δ F e T :
+  lenv_wk Δ' Δ → dftyped W Θ Γ Δ' F e T → dftyped W Θ Γ Δ F e T.
+Proof. intros Hw H. eapply e_weak; [by apply lenv_wk_df|exact H]. Qed.
+
+Lemma d_contract W Θ Γ Δ U aU F e T :
+  unlimited U →
+  dftyped W Θ Γ (Some (U, aU) :: Some (U, aU) :: Δ) F e T →
+  dftyped W Θ Γ (Some (U, aU) :: Δ) F (rename pred e) T.
+Proof. intros Hu H. eapply e_contract; [by apply unlimited_df|exact H]. Qed.
+
 Corollary dftyped_weaken_head W Θ Γ Δ F e T :
   dftyped W Θ Γ Δ F e T → dftyped W Θ Γ (None :: Δ) F (rename S e) T.
 Proof.
@@ -668,8 +675,8 @@ Section let_admissible.
   Proof. induction Δ as [|[σ|] Δ IH]; simpl; constructor; done. Qed.
   Local Lemma lsplit_allr Δ : lenv_split Δ (lnone Δ) Δ.
   Proof. induction Δ as [|[σ|] Δ IH]; simpl; constructor; done. Qed.
-  Local Lemma lempty_lnone Δ : lenv_empty (lnone Δ).
-  Proof. intros o Ho. by apply list_elem_of_fmap in Ho as (? & -> & _). Qed.
+  Local Lemma lempty_lnone Δ : lenv_unl (lnone Δ).
+  Proof. intros o Ho. left. by apply list_elem_of_fmap in Ho as (? & -> & _). Qed.
   Local Lemma lnone_lookup (Δ : lenv) (y : nat) (σ : ty * fuel) : lnone Δ !! y = Some (Some σ) → False.
   Proof. revert y. induction Δ as [|o Δ IH]; intros [|y]; simpl; [done|done|congruence|apply IH]. Qed.
   Local Lemma lnone_lookup_S o (Δ : lenv) (y : nat) (σ : ty * fuel) :
@@ -732,9 +739,8 @@ Section let_admissible.
       + left. done.
     - rewrite (fadd_0_l a1).
       eapply e_letu; [apply tsplit_r|apply lsplit_l, lsplit_allr| |apply thage_0|apply lage_0| |].
-      + apply e_var. split; [done|]. intros y σ' Hy. destruct y.
-        * simpl in Hy. by simplify_eq.
-        * by destruct (lnone_lookup_S _ _ _ _ Hy).
+      + apply e_var. split; [done|]. intros y σ' Hne Hy. destruct y; [done|].
+        by destruct (lnone_lookup_S _ _ _ _ Hy).
       + simpl. by apply typed_weaken_head.
       + right. left. done.
     - rewrite tseq_tid_r, tseq_tid_l. exact Hok.
@@ -754,9 +760,8 @@ Section let_admissible.
       + by rewrite lheads_lnone, lbot_lnone, sf_union_nil.
       + apply d_unit, lempty_lnone.
     - eapply d_letu; [apply tsplit_r|apply lsplit_l, lsplit_allr| |].
-      + eapply (d_var _ _ _ _ _ _ None). split; [done|]. intros y σ' Hy. destruct y.
-        * simpl in Hy. by simplify_eq.
-        * by destruct (lnone_lookup_S _ _ _ _ Hy).
+      + eapply (d_var _ _ _ _ _ _ None). split; [done|]. intros y σ' Hne Hy. destruct y; [done|].
+        by destruct (lnone_lookup_S _ _ _ _ Hy).
       + by apply dftyped_weaken_head.
   Qed.
 End let_admissible.

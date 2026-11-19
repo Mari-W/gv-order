@@ -1993,3 +1993,30 @@ The old development in theories/ stays untouched.
   soup/LFLocal.v (1): `rend_some`.
   static/Contexts.v (1): `sl_dpo`.
   static/Guard.v (1): `marks_empty_cons`.
+- M.3. E-Weak, E-Contract, D-Weak and D-Contract are admissible
+  (decision of 2026-11-18, cleanup). The leaf rules accept unused
+  entries of unlimited type: E-Unit, E-Chan and E-New ask `lenv_unl Δ`
+  in place of `lenv_empty Δ`, and `lenv_only Δ x σ` (E-Var) now says
+  that x holds σ and every other entry is absent or unlimited
+  (static/Contexts.v). The rules `e_weak` and `e_contract` leave
+  `typed` (26 rules). `typed_rename` no longer needs them: at a leaf
+  the renamed context is again unlimited (`lren_unl`), and at E-Var
+  the entries beside r x are unlimited because a linear one would come
+  from a linear entry of Δ other than x. `e_weak` is `typed_rename` at
+  the identity (`lren_refl`, `rename_id`), `e_contract` at `pred`
+  (`lren_contract`), with the old statements (static/Weakening.v), and
+  `d_weak`, `d_contract` follow by the definition of `dftyped`. The
+  semantic leaf lemmas follow the rules: `later_unit`, `later_chan`,
+  `later_new_ext` read `GrelL_unl`, `GrelL_only` drops an unlimited value
+  with no ends (`Vrel_unl_empty`), and the cost side reads `envf_unl`,
+  `gfuel_unl` and the new `gfuel_only` (`Vfuel_unl_empty`). The cases of
+  weakening and contraction leave `typed_sem`, `cost_fundamental`,
+  `typed_tfacts` and `typed_dftyped`, and with them the guard
+  hypothesis on renamings of `typed_sem`, `cost_e_weak`,
+  `cost_e_contract`, `envf_wk`, `envf_contract`, `gfuel_wk`,
+  `gfuel_contract`, `envf_empty`, `gfuel_empty`, `GrelL_empty`,
+  `lren_empty`, `lenv_empty_df`, `lenv_empty_pinst`. The examples'
+  leaf variants `d_var'`, `d_unit'`, `d_new'`, `e_var'`, `e_unit'`,
+  `e_new'` are now direct (`spare_unl`, `spare_only`), and `drop_but`,
+  `drop_but_wk`, `drop_but_only`, `lenv_all_spare_empty`,
+  `lenv_empty_nones` are gone.

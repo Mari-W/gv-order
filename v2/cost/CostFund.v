@@ -42,8 +42,6 @@ Proof.
   - by apply cost_e_new.
   - by eapply cost_e_new_at.
   - by eapply cost_e_sub.
-  - by eapply cost_e_weak.
-  - by apply cost_e_contract.
   - by eapply cost_e_pack.
   - by eapply cost_e_open.
 Qed.

@@ -266,13 +266,6 @@ Section groundL.
     - intros HG. eapply IH, HG.
   Qed.
 
-  Lemma GrelL_empty n W Θ Δ L γ : lenv_empty Δ → GrelL κ n W Θ Δ L γ → Θ = ∅.
-  Proof.
-    revert Θ L γ. induction Δ as [|o Δ IH]; intros Θ L γ HΔ; simpl; [done|].
-    assert (o = None) as -> by (apply HΔ; left).
-    apply IH. intros o' Ho'. apply HΔ. by right.
-  Qed.
-
   Lemma GrelL_unl n W Θ Δ L γ : lenv_unl Δ → GrelL κ n W Θ Δ L γ → Θ = ∅.
   Proof.
     revert Θ L γ. induction Δ as [|o Δ IH]; intros Θ L γ HΔ; simpl; [done|].
@@ -380,14 +373,19 @@ Section groundL.
     revert Θ L γ x. induction Δ as [|o Δ IH]; intros Θ L γ x [Hx Hy] HL; [done|].
     destruct x as [|x]; simpl in Hx.
     - injection Hx as ->. simpl. rewrite HL. intros (Θ1 & Θ2 & _ & -> & HV & HG).
-      assert (lenv_empty Δ) as He.
-      { intros o Ho. destruct o as [σ|]; [|done]. apply list_elem_of_lookup in Ho as [i Hi].
-        by destruct (Hy (S i) σ Hi). }
-      rewrite (GrelL_empty _ _ _ _ _ _ He HG), map_union_empty. done.
-    - destruct o as [[T' a']|]; simpl.
-      + by destruct (Hy 0 (T', a') eq_refl).
-      + intros HG. apply (IH Θ (λ y, L (S y)) (λ y, γ (S y)) x); [|done|done]. split; [done|].
-        intros y σ' Hσ. destruct (Hy (S y) σ' Hσ) as [[= ->] ->]. done.
+      assert (lenv_unl Δ) as He.
+      { intros o Ho. destruct o as [[U b]|]; [|by left]. apply list_elem_of_lookup in Ho as [i Hi].
+        right. exists U, b. split; [done|]. exact (Hy (S i) (U, b) ltac:(done) Hi). }
+      rewrite (GrelL_unl _ _ _ _ _ _ He HG), map_union_empty. done.
+    - assert (∀ y σ', y ≠ x → Δ !! y = Some (Some σ') → unlimited σ'.1) as Hy'.
+      { intros y σ' Hne Hσ. apply (Hy (S y) σ'); [lia|done]. }
+      destruct o as [[T' a']|]; simpl.
+      + pose proof (Hy 0 (T', a') ltac:(done) eq_refl) as Hu. simpl in Hu. destruct (L 0).
+        * intros [_ HG]. exact (IH Θ (λ y, L (S y)) (λ y, γ (S y)) x (conj Hx Hy') HL HG).
+        * intros (Θ1 & Θ2 & _ & -> & HV & HG).
+          rewrite (Vrel_unl_empty κ _ _ _ _ _ Hu HV), map_empty_union.
+          exact (IH Θ2 (λ y, L (S y)) (λ y, γ (S y)) x (conj Hx Hy') HL HG).
+      + intros HG. exact (IH Θ (λ y, L (S y)) (λ y, γ (S y)) x (conj Hx Hy') HL HG).
   Qed.
 
   Lemma GrelL_wk n W Θ Δ' Δ L γ : lenv_wk Δ' Δ → GrelL κ n W Θ Δ L γ → GrelL κ n W Θ Δ' L γ.
@@ -575,9 +573,9 @@ Section later.
 
   (** *** Values *)
 
-  Lemma later_unit W Δ L F : lenv_empty Δ → sem_later κ W ∅ Δ L F EUnit TUnit.
+  Lemma later_unit W Δ L F : lenv_unl Δ → sem_later κ W ∅ Δ L F EUnit TUnit.
   Proof.
-    intros HΔ n W' Θ' γ HW Hd HG. rewrite (GrelL_empty κ _ _ _ _ _ _ HΔ HG), tenv_erase_empty, map_union_empty.
+    intros HΔ n W' Θ' γ HW Hd HG. rewrite (GrelL_unl κ _ _ _ _ _ _ HΔ HG), tenv_erase_empty, map_union_empty.
     apply Vrel_Erel. by apply Vrel_unit_iff.
   Qed.
 
@@ -589,19 +587,19 @@ Section later.
   Qed.
 
   Lemma later_chan W Δ L F o S x a :
-    lenv_empty Δ → sem_later κ W {[o := TE S x a]} Δ L F (Chan o) (TSess S x).
+    lenv_unl Δ → sem_later κ W {[o := TE S x a]} Δ L F (Chan o) (TSess S x).
   Proof.
-    intros HΔ n W' Θ' γ HW Hd HG. rewrite (GrelL_empty κ _ _ _ _ _ _ HΔ HG), map_union_empty, tenv_erase_singleton.
+    intros HΔ n W' Θ' γ HW Hd HG. rewrite (GrelL_unl κ _ _ _ _ _ _ HΔ HG), map_union_empty, tenv_erase_singleton.
     apply Vrel_Erel. apply Vrel_sess_iff. exists o, S. split_and!; [done|done|apply seqv_refl].
   Qed.
 
   Lemma later_new_ext (ℓ : family) W0 W Δ L F S a1 a2 a3 :
-    W0 ⊑ W → lenv_empty Δ → ℓ ∈ w_fams W0 →
+    W0 ⊑ W → lenv_unl Δ → ℓ ∈ w_fams W0 →
     sem_later κ W ∅ Δ L F (ENew ℓ)
       (TEx LBot 1 (bcs_of (w_laws W0 ℓ)) (TProd (TSess S (pvar 0)) a1 (TSess (dual S) (pvar 0)‾) a2) a3).
   Proof.
     intros HW0 HΔ Hℓ n W' Θ' γ HW Hd HG. simpl.
-    rewrite (GrelL_empty κ _ _ _ _ _ _ HΔ HG), tenv_erase_empty, map_union_empty.
+    rewrite (GrelL_unl κ _ _ _ _ _ _ HΔ HG), tenv_erase_empty, map_union_empty.
     assert (W0 ⊑ W') as HW0' by by eapply wext_trans.
     apply Erel_new_sub.
     - by apply (wext_fams _ _ HW0').

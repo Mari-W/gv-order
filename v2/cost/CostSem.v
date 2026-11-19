@@ -167,13 +167,6 @@ Proof.
   - apply IH.
 Qed.
 
-Lemma gfuel_empty N n Δ : ∀ γ Π φ, lenv_empty Δ → gfuel N n Δ γ Π φ → Π = ∅ ∧ φ = ∅.
-Proof.
-  induction Δ as [|o Δ IH]; intros γ Π φ HΔ; simpl; [done|].
-  assert (o = None) as -> by (apply HΔ; left).
-  apply IH. intros o' Ho'. apply HΔ. by right.
-Qed.
-
 Lemma gfuel_unl N n Δ : ∀ γ Π φ, lenv_unl Δ → gfuel N n Δ γ Π φ → Π = ∅ ∧ φ = ∅.
 Proof.
   induction Δ as [|o Δ IH]; intros γ Π φ HΔ; simpl; [done|].
@@ -190,14 +183,17 @@ Proof.
   intros [Hx Ho]. revert x γ Π φ Hx Ho. induction Δ as [|o Δ IH]; intros x γ Π φ Hx Ho; [done|].
   destruct x as [|x]; simpl in Hx.
   - injection Hx as ->. intros (Π1 & Π2 & φ1 & φ2 & _ & _ & -> & -> & Hv & HG).
-    assert (lenv_empty Δ) as HΔ.
-    { intros o' Ho'. destruct o' as [σ|]; [|done]. apply list_elem_of_lookup in Ho' as [y Hy].
-      by destruct (Ho (S y) σ Hy). }
-    destruct (gfuel_empty _ _ _ _ _ _ HΔ HG) as [-> ->]. by rewrite !map_union_empty.
-  - destruct o as [[U b]|].
-    + by destruct (Ho 0 (U, b) eq_refl).
-    + simpl. intros HG. apply (IH x (λ y, γ (S y))); [done| |done].
-      intros y σ' Hy. destruct (Ho (S y) σ' Hy) as [? ?]. split; [lia|done].
+    assert (lenv_unl Δ) as HΔ.
+    { intros o' Ho'. destruct o' as [[U b]|]; [|by left]. apply list_elem_of_lookup in Ho' as [y Hy].
+      right. exists U, b. split; [done|]. exact (Ho (S y) (U, b) ltac:(done) Hy). }
+    destruct (gfuel_unl _ _ _ _ _ _ HΔ HG) as [-> ->]. by rewrite !map_union_empty.
+  - assert (∀ y σ', y ≠ x → Δ !! y = Some (Some σ') → unlimited σ'.1) as Ho'.
+    { intros y σ' Hne Hσ. apply (Ho (S y) σ'); [lia|done]. }
+    destruct o as [[U b]|]; simpl.
+    + intros (Π1 & Π2 & φ1 & φ2 & _ & _ & -> & -> & Hv & HG).
+      destruct (Vfuel_unl_empty _ _ _ _ _ _ _ (Ho 0 (U, b) ltac:(done) eq_refl) Hv) as [-> ->].
+      rewrite !map_empty_union. exact (IH x (λ y, γ (S y)) _ _ Hx Ho' HG).
+    + intros HG. exact (IH x (λ y, γ (S y)) _ _ Hx Ho' HG).
 Qed.
 
 Lemma gfuel_split N n Δ Δ1 Δ2 γ Π φ :
@@ -312,25 +308,6 @@ Proof.
       * apply (kinj_dom g (Π1 ∪ Π2)); [rewrite dom_union_L; set_solver|done].
       * apply (kinj_dom g (φ1 ∪ φ2)); [rewrite dom_union_L; set_solver|done].
   - eapply IH; eassumption.
-Qed.
-
-Lemma gfuel_wk N n Δ' Δ : lenv_wk Δ' Δ → ∀ γ Π φ, gfuel N n Δ γ Π φ → gfuel N n Δ' γ Π φ.
-Proof.
-  induction 1 as [|[[T a]|] Δ' Δ _ IH|U a Δ' Δ Hu _ IH]; intros γ Π φ; simpl; try done.
-  - intros (Π1 & Π2 & φ1 & φ2 & Hd1 & Hd2 & -> & -> & Hv & HG). exists Π1, Π2, φ1, φ2. split_and!; auto.
-  - apply IH.
-  - intros (Π1 & Π2 & φ1 & φ2 & Hd1 & Hd2 & -> & -> & Hv & HG).
-    destruct (Vfuel_unl_empty _ _ _ _ _ _ _ Hu Hv) as [-> ->]. rewrite !map_empty_union. by apply IH.
-Qed.
-
-Lemma gfuel_contract N n U a Δ γ Π φ :
-  unlimited U → gfuel N n (Some (U, a) :: Δ) γ Π φ →
-  gfuel N n (Some (U, a) :: Some (U, a) :: Δ) (λ x, γ (pred x)) Π φ.
-Proof.
-  intros Hu (Π1 & Π2 & φ1 & φ2 & Hd1 & Hd2 & -> & -> & Hv & HG).
-  destruct (Vfuel_unl_empty _ _ _ _ _ _ _ Hu Hv) as [-> ->]. rewrite !map_empty_union.
-  exists ∅, Π2, ∅, φ2. rewrite !map_empty_union. split_and!; try done; try apply map_disjoint_empty_l.
-  exists ∅, Π2, ∅, φ2. rewrite !map_empty_union. split_and!; try done; apply map_disjoint_empty_l.
 Qed.
 
 Lemma gfuel_pinst N n ρ Δ : ∀ γ Π φ, gfuel N n (lenv_pinst ρ Δ) γ Π φ ↔ gfuel N n Δ γ Π φ.
@@ -612,27 +589,6 @@ Qed.
 Lemma envf_down N n m Θ Δ g γ Π φ : m ≤ n → envf N n Θ Δ g γ Π φ → envf N m Θ Δ g γ Π φ.
 Proof. intros Hm. apply envf_mono; [apply rle_refl|done|apply cle_refl]. Qed.
 
-Lemma envf_wk N n Θ Δ' Δ g γ Π φ : lenv_wk Δ' Δ → envf N n Θ Δ g γ Π φ → envf N n Θ Δ' g γ Π φ.
-Proof.
-  intros Hw (ΠΘ & φΘ & Πγ & φγ & HT & HG & Hd1 & Hd2 & -> & ->).
-  exists ΠΘ, φΘ, Πγ, φγ. split_and!; try done. by eapply gfuel_wk.
-Qed.
-
-Lemma envf_contract N n Θ U a Δ g γ Π φ :
-  unlimited U → envf N n Θ (Some (U, a) :: Δ) g γ Π φ →
-  envf N n Θ (Some (U, a) :: Some (U, a) :: Δ) g (λ x, γ (pred x)) Π φ.
-Proof.
-  intros Hu (ΠΘ & φΘ & Πγ & φγ & HT & HG & Hd1 & Hd2 & -> & ->).
-  exists ΠΘ, φΘ, Πγ, φγ. split_and!; try done. by apply gfuel_contract.
-Qed.
-
-Lemma envf_empty N n Δ g γ Π φ : lenv_empty Δ → envf N n ∅ Δ g γ Π φ → Π = ∅ ∧ φ = ∅.
-Proof.
-  intros HΔ (ΠΘ & φΘ & Πγ & φγ & HT & HG & Hd1 & Hd2 & -> & ->).
-  destruct (thfuel_empty _ _ _ HT) as [-> ->]. destruct (gfuel_empty _ _ _ _ _ _ HΔ HG) as [-> ->].
-  by rewrite !map_empty_union.
-Qed.
-
 Lemma envf_unl N n Δ g γ Π φ : lenv_unl Δ → envf N n ∅ Δ g γ Π φ → Π = ∅ ∧ φ = ∅.
 Proof.
   intros HΔ (ΠΘ & φΘ & Πγ & φγ & HT & HG & Hd1 & Hd2 & -> & ->).
@@ -648,11 +604,11 @@ Proof.
 Qed.
 
 Lemma envf_single N n o te Δ g γ Π φ :
-  lenv_empty Δ → envf N n {[o := te]} Δ g γ Π φ →
+  lenv_unl Δ → envf N n {[o := te]} Δ g γ Π φ →
   Π = {[g o := te_sty te]} ∧ ∃ f, φ = {[g o := f]} ∧ fle (te_cr te) f.
 Proof.
   intros HΔ (ΠΘ & φΘ & Πγ & φγ & HT & HG & Hd1 & Hd2 & -> & ->).
-  destruct (gfuel_empty _ _ _ _ _ _ HΔ HG) as [-> ->]. rewrite !map_union_empty.
+  destruct (gfuel_unl _ _ _ _ _ _ HΔ HG) as [-> ->]. rewrite !map_union_empty.
   by apply thfuel_single.
 Qed.
 

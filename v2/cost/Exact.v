@@ -164,15 +164,16 @@ Qed.
 Lemma vfacts_or Δ P Q : vfacts Δ P → vfacts Δ Q → vfacts Δ (λ x, P x ∨ Q x).
 Proof. intros [A1 B1] [A2 B2]. split; [intros x [H|H]; eauto|intros; left; eauto]. Qed.
 
-Lemma vfacts_empty Δ : lenv_empty Δ → vfacts Δ (λ _, False).
+Lemma vfacts_empty Δ : lenv_unl Δ → vfacts Δ (λ _, False).
 Proof.
-  intros H. split; [done|]. intros x U a Hx _.
-  pose proof (H _ (list_elem_of_lookup_2 _ _ _ Hx)). done.
+  intros H. split; [done|]. intros x U a Hx Hu.
+  destruct (H _ (list_elem_of_lookup_2 _ _ _ Hx)) as [?|(U' & a' & [= <- <-] & ?)]; done.
 Qed.
 
 Lemma vfacts_only Δ x σ : lenv_only Δ x σ → vfacts Δ (λ y, y = x).
 Proof.
-  intros [Hx H]. split; [intros y ->; eauto|]. intros y U a Hy _. by destruct (H y _ Hy).
+  intros [Hx H]. split; [intros y ->; eauto|]. intros y U a Hy Hu.
+  destruct (decide (y = x)) as [->|Hne]; [done|]. by destruct (Hu (H y _ Hne Hy)).
 Qed.
 
 Lemma thcap_dom h a Θ Θ' : thcap h a Θ Θ' → dom Θ' = dom Θ.
@@ -244,16 +245,6 @@ Proof.
   - split; [by rewrite dom_empty_L|by apply vfacts_empty].
   - split; done.
   - split; done.
-  - split; [done|]. eapply vfacts_lsame; [by eapply lwk_lsame|done].
-  - (* e_contract *)
-    split; [by rewrite fends_rename|].
-    match goal with H : vfacts _ (λ x, freevar x ?e) |- _ => destruct H as [A B] end.
-    split.
-    + intros x Hx. apply freevar_rename_inv in Hx as (y & Hy & <-).
-      destruct (A y Hy) as [σ Hσ]. destruct y as [|[|y]]; simpl in *; eauto.
-    + intros [|x] U' a' Hx Hu; simpl in Hx.
-      * injection Hx as -> ->. done.
-      * apply (freevar_rename _ (S (S x)) pred). by apply (B (S (S x)) U' a').
   - split; done.
   - (* e_open *)
     split; [unfold tenv_pinst in *; by rewrite <-dom_fmap_L with (f := tentry_pinst (pshift m))|].

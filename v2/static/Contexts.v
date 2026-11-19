@@ -43,8 +43,9 @@ Qed.
 
 Definition lenv_empty (Δ : lenv) : Prop := ∀ o, o ∈ Δ → o = None.
 
+(** x holds σ, and every other entry is absent or unlimited. *)
 Definition lenv_only (Δ : lenv) (x : nat) (σ : ty * fuel) : Prop :=
-  Δ !! x = Some (Some σ) ∧ ∀ y σ', Δ !! y = Some (Some σ') → y = x ∧ σ' = σ.
+  Δ !! x = Some (Some σ) ∧ ∀ y σ', y ≠ x → Δ !! y = Some (Some σ') → unlimited σ'.1.
 
 Inductive lenv_split : lenv → lenv → lenv → Prop :=
   | lsplit_nil : lenv_split [] [] []

@@ -27,9 +27,9 @@ Qed.
 
 (** ** Leaves and structure *)
 
-Lemma cost_e_unit N Δ : lenv_empty Δ → csem N ∅ Δ EUnit TUnit None (Some 0) tid.
+Lemma cost_e_unit N Δ : lenv_unl Δ → csem N ∅ Δ EUnit TUnit None (Some 0) tid.
 Proof.
-  intros HΔ N' n g γ Π φ r tk HN HE Hm. destruct (envf_empty _ _ _ _ _ _ _ HΔ HE) as [-> ->].
+  intros HΔ N' n g γ Π φ r tk HN HE Hm. destruct (envf_unl _ _ _ _ _ _ _ HΔ HE) as [-> ->].
   simpl. apply FuelE_val; [done|by apply meets_tid|apply Vfuel_unit].
 Qed.
 
@@ -39,7 +39,7 @@ Proof.
   apply FuelE_val; [by eapply Vfuel_val|by apply meets_tid|done].
 Qed.
 
-Lemma cost_e_chan N Δ o S x a : lenv_empty Δ → csem N {[o := TE S x a]} Δ (Chan o) (TSess S x) a (Some 0) tid.
+Lemma cost_e_chan N Δ o S x a : lenv_unl Δ → csem N {[o := TE S x a]} Δ (Chan o) (TSess S x) a (Some 0) tid.
 Proof.
   intros HΔ N' n g γ Π φ r tk HN HE Hm. destruct (envf_single _ _ _ _ _ _ _ _ _ HΔ HE) as (-> & f & -> & Hf).
   simpl. apply FuelE_val; [done|by apply meets_tid|]. by apply Vfuel_sess_intro; [apply sequiv_refl|].
@@ -50,18 +50,6 @@ Lemma cost_e_sub N Θ Δ e T a T' a' c c' t t' :
 Proof.
   intros Hcs Hs Hc Ht N' n g γ Π φ r tk HN HE Hm.
   eapply FuelE_sub; [exact Hs|]. eapply FuelE_frame_mono; [exact Hc|]. apply Hcs; [done|done|by apply Ht].
-Qed.
-
-Lemma cost_e_weak N Θ Δ' Δ e T a c t : lenv_wk Δ' Δ → csem N Θ Δ' e T a c t → csem N Θ Δ e T a c t.
-Proof. intros Hw Hcs N' n g γ Π φ r tk HN HE. apply Hcs; [done|by eapply envf_wk]. Qed.
-
-Lemma cost_e_contract N Θ Δ U aU e T a c t :
-  unlimited U → csem N Θ (Some (U, aU) :: Some (U, aU) :: Δ) e T a c t →
-  csem N Θ (Some (U, aU) :: Δ) (rename pred e) T a c t.
-Proof.
-  intros Hu Hcs N' n g γ Π φ r tk HN HE Hm.
-  rewrite emap_rename, subst_rename. apply (Hcs N' n g (λ x, γ (pred x))); [done| |done].
-  by apply envf_contract.
 Qed.
 
 Lemma cost_e_pack N Θ Δ e lb m C T xs a c t :
@@ -215,11 +203,11 @@ Proof.
 Qed.
 
 Lemma cost_e_new N Δ (ℓ : family) lb C S :
-  lenv_empty Δ →
+  lenv_unl Δ →
   csem N ∅ Δ (ENew ℓ) (TEx lb 1 C (TProd (TSess S (pvar 0)) N (TSess (dual S) (pvar 0)‾) N) (Some 0))
     (Some 0) (Some 0) tid.
 Proof.
-  intros HΔ N' n g γ Π φ r tk HN HE Hm. destruct (envf_empty _ _ _ _ _ _ _ HΔ HE) as [-> ->].
+  intros HΔ N' n g γ Π φ r tk HN HE Hm. destruct (envf_unl _ _ _ _ _ _ _ HΔ HE) as [-> ->].
   simpl. apply (proj1 (meets_tid _ _)) in Hm. by apply new_redex.
 Qed.
 
