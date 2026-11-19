@@ -280,3 +280,25 @@ must do, open questions.
   (internal channels only, so the interface split is not involved).
   Later: a hybrid that cuts along one channel without order facts
   (Wadler-style) and uses points only for cycles.
+  **Important, to discuss (author 2026-11-19).** The author wants the
+  relation to admit, inside a component, whatever can be proved by hand.
+  Today it does not: readiness is stated against a strict order of points
+  that grows only at creation, so a hand proof must exhibit points, and
+  the flag program (channels created before the flag) is outside the
+  relation in every world, not only untypable. Mechanize that, as
+  db_component_unrealizable (examples/DataBranch.v) does for the
+  dispatcher. Options discussed:
+  (a) one-end lemma: a process with one free end, in either relation,
+      offers that end when stuck; this would allow a mixed P-Connect along
+      a single channel (cut of one channel, payload condition as in
+      docs/extensions/regions.md §3, cut points stay on our side); needs
+      their definitions (dosualdo2026logical is metadata only in the
+      store, read and record facts first);
+  (b) a single-channel cut rule in our own relation that needs no world
+      agreement, orders only inside cycles (the hybrid);
+  (c) world growth at a decision with an owner token (data-dependent
+      constraints, regions.md §1 pending choices, BranchWorlds.v), and
+      facts guarded by shared values (regions.md §6);
+  (d) state and check that we subsume their static system, which types
+      trees (one point per end may already suffice). Semantic inclusion of
+      their relation in ours is false in general.
