@@ -53,8 +53,13 @@ must do, open questions.
    sentence about constants in the header of lang/Syntax.v. The map shows
    constants `k` as values with `k v` stepping by the head step of `k`.
    The Rocq keeps saturated `Op k e`, and the value `k` is `λx. k x`.
-   No Rocq change beyond the deletion. Optional, for the paper: a lemma
-   deriving the typing rule of a constant from E-Abs and the rule of `k`.
+   The map shows a block "Types of constants" (typing section, DF form):
+   send : T[x·i] ⊗ S₀@x ⊸^x S@x⁺ (conditions of E-Send), recv, close,
+   select_i, branch at upper point x, link : S@x ⊗ S̄@x̄ ⊸ ∗,
+   spawn : (∗ ⊸^u_l ∗) ⊸ ∗, force : □(∀ῑᾱ.C. ∗ ⊸^u U) ⊸^{u[x̄]} U[s̄][x̄]
+   under Γ ⊢ C[x̄]. Rocq: prove each as a derived rule, λy. k y typed at
+   that schema (dftyped, and the merged typing with the annotations of
+   the rule of k), or report which schema needs changing.
 
 ## Done in the Rocq
 

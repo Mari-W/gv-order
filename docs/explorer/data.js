@@ -635,6 +635,18 @@ window.MAP = {
      ]
     },
     {
+     "id": "t-consts",
+     "title": "Types of constants",
+     "rocq": "static/Typing.v: e_send, e_recv, e_close, e_select, e_branch, e_link, e_spawn, e_force, e_new",
+     "tex": "\\begin{array}{lll}\n\\htmlData{k=prim.send}{\\mathsf{send}} & : T[x\\cdot i] \\otimes S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S@\\htmlData{k=pt.shift}{x^{+}} & \\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\exists^{m}\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,m\\,T,\\ \\neg\\htmlData{k=ty.hbot}{\\mathsf{hbot}}\\,T,\\ \\htmlData{k=E-Send.heads}{x \\prec \\htmlData{k=ty.heads}{\\mathsf{heads}}(T[x\\cdot i])} \\\\\n\\htmlData{k=prim.recv}{\\mathsf{recv}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} T[x\\cdot i] \\otimes S@x^{+} & \\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\exists^{m}\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,m\\,T \\\\\n\\htmlData{k=prim.close}{\\mathsf{close}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} \\ast & \\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}} \\\\\n\\htmlData{k=prim.select}{\\mathsf{select}}_i & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}} & \\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)} \\\\\n\\htmlData{k=prim.branch}{\\mathsf{branch}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2 & \\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)} \\\\\n\\htmlData{k=prim.link}{\\mathsf{link}} & : \\htmlData{k=E-Link.dual}{S@x \\otimes \\overline{S}@\\overline{x}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.spawn}{\\mathsf{spawn}} & : (\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} \\ast) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.force}{\\mathsf{force}} & : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] & \\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]} \\\\\n\\htmlData{k=syn.new}{\\mathsf{new}} & : \\exists^{\\bot}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ (S@\\pi \\otimes \\overline{S}@\\overline{\\pi}) & \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho)\\} \\cup \\{(\\varepsilon, x\\cdot\\kappa)\\}},\\ \\htmlData{k=E-New.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\Gamma \\cup C)}\n\\end{array}",
+     "caption": "Each constant has the type of its eta-expansion $\\lambda y.\\,k\\,y$, for every instance of its variables that meets the conditions on the right, shown without credits, cost and transformer. An action on $x$ has upper point $x$, so it runs only below the future of its caller. $\\mathsf{new}$ is a term and has the type of E-New.",
+     "modes": [
+      "df",
+      "live",
+      "lf"
+     ]
+    },
+    {
      "id": "r-send",
      "title": "E-Send",
      "rocq": "static/Typing.v: e_send",
@@ -1575,8 +1587,21 @@ window.MAP = {
    "breaks": "With the position or the facts in the term, every held end that the facts mention is an argument that $\\mathsf{new}$ takes and returns, because ends are linear.",
    "example": "$\\mathsf{let}\\ \\langle a, a'\\rangle = \\mathsf{new}\\ \\mathsf{in}\\ e$.",
    "rocq": "lang/Syntax.v: ENew",
-   "sig": "\\mathsf{new} \\in \\mathsf{Expr}",
-   "args": []
+   "sig": "\\mathsf{new} : \\exists^{\\bot}\\bar\\iota.\\ C.\\ (S@\\pi \\otimes \\overline{S}@\\overline{\\pi})",
+   "args": [
+    {
+     "name": "\\pi",
+     "meaning": "The position of $c^{+}$, a fresh root $\\rho$ bound by the existential or a field $x\\cdot\\kappa$."
+    },
+    {
+     "name": "C",
+     "meaning": "The facts of the creation, with $\\mathsf{strict}(\\Gamma \\cup C)$."
+    },
+    {
+     "name": "S",
+     "meaning": "The session type of $c^{+}$."
+    }
+   ]
   },
   "syn.op": {
    "title": "Constant $k$",
@@ -1600,15 +1625,23 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{close}\\,(\\mathsf{send}\\,\\langle \\ast, c^{+}\\rangle)$ sends $\\ast$ and then closes.",
    "rocq": "lang/Syntax.v: PSend, lang/Semantics.v: t_act_send",
-   "sig": "\\mathsf{send} \\in \\mathsf{Const},\\quad \\mathsf{send}\\,\\langle v, o\\rangle \\xrightarrow{o!v} o",
+   "sig": "\\mathsf{send} : T[x\\cdot i] \\otimes S_0@x \\multimap^{x} S@x^{+}",
    "args": [
     {
-     "name": "v",
-     "meaning": "The payload, a value."
+     "name": "x",
+     "meaning": "The point of the end acted on, also the upper point of the call."
     },
     {
-     "name": "o",
-     "meaning": "The end acted on, $o \\in \\mathsf{End}$."
+     "name": "S_0",
+     "meaning": "The session type of the end before the action."
+    },
+    {
+     "name": "T, m",
+     "meaning": "The payload type and the number $m$ of point variables it binds, instantiated at the fields $x\\cdot i$."
+    },
+    {
+     "name": "S",
+     "meaning": "The continuation after the action."
     }
    ]
   },
@@ -1619,15 +1652,23 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{let}\\ \\langle u, b\\rangle = \\mathsf{recv}\\,b\\ \\mathsf{in}\\ e$.",
    "rocq": "lang/Syntax.v: PRecv",
-   "sig": "\\mathsf{recv} \\in \\mathsf{Const},\\quad \\mathsf{recv}\\,o \\xrightarrow{o?v} \\langle v, o\\rangle",
+   "sig": "\\mathsf{recv} : S_0@x \\multimap^{x} T[x\\cdot i] \\otimes S@x^{+}",
    "args": [
     {
-     "name": "o",
-     "meaning": "The end acted on, $o \\in \\mathsf{End}$."
+     "name": "x",
+     "meaning": "The point of the end acted on, also the upper point of the call."
     },
     {
-     "name": "v",
-     "meaning": "The received value, universally quantified over all values."
+     "name": "S_0",
+     "meaning": "The session type of the end before the action."
+    },
+    {
+     "name": "T, m",
+     "meaning": "The payload type and the number $m$ of point variables it binds, instantiated at the fields $x\\cdot i$."
+    },
+    {
+     "name": "S",
+     "meaning": "The continuation after the action."
     }
    ]
   },
@@ -1638,11 +1679,15 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{close}\\,c^{+}$ in one thread and $\\mathsf{close}\\,c^{-}$ in another.",
    "rocq": "lang/Syntax.v: PClose",
-   "sig": "\\mathsf{close} \\in \\mathsf{Const},\\quad \\mathsf{close}\\,o \\xrightarrow{o\\,\\mathsf{end}} \\ast",
+   "sig": "\\mathsf{close} : S_0@x \\multimap^{x} \\ast",
    "args": [
     {
-     "name": "o",
-     "meaning": "The end acted on, $o \\in \\mathsf{End}$."
+     "name": "x",
+     "meaning": "The point of the end acted on, also the upper point of the call."
+    },
+    {
+     "name": "S_0",
+     "meaning": "The session type of the end before the action."
     }
    ]
   },
@@ -1653,15 +1698,19 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{select}_{\\mathsf{true}}\\,o$.",
    "rocq": "lang/Syntax.v: PSel",
-   "sig": "\\mathsf{select}_i \\in \\mathsf{Const},\\quad \\mathsf{select}_i\\,o \\xrightarrow{o \\lhd i} o",
+   "sig": "\\mathsf{select}_i : S_0@x \\multimap^{x} S_i@\\overline{x\\cdot\\kappa_i}",
    "args": [
     {
      "name": "i",
      "meaning": "The chosen branch, $i \\in \\{\\mathsf{false}, \\mathsf{true}\\}$."
     },
     {
-     "name": "o",
-     "meaning": "The end acted on, $o \\in \\mathsf{End}$."
+     "name": "x",
+     "meaning": "The point of the end acted on, also the upper point of the call."
+    },
+    {
+     "name": "S_0, S_i",
+     "meaning": "The session type before the action and the chosen continuation."
     }
    ]
   },
@@ -1672,15 +1721,15 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{case}\\ (\\mathsf{branch}\\,o)\\,(a.\\,e_1)\\,(a.\\,e_2)$.",
    "rocq": "lang/Syntax.v: PBra",
-   "sig": "\\mathsf{branch} \\in \\mathsf{Const},\\quad \\mathsf{branch}\\,o \\xrightarrow{o \\rhd i} \\mathsf{inj}_i\\,o",
+   "sig": "\\mathsf{branch} : S_0@x \\multimap^{x} S_1@x\\cdot\\kappa_1 \\oplus S_2@x\\cdot\\kappa_2",
    "args": [
     {
-     "name": "o",
-     "meaning": "The end acted on, $o \\in \\mathsf{End}$."
+     "name": "x",
+     "meaning": "The point of the end acted on, also the upper point of the call."
     },
     {
-     "name": "i",
-     "meaning": "The received choice, quantified over both values."
+     "name": "S_0, S_1, S_2",
+     "meaning": "The session type before the action and the two continuations."
     }
    ]
   },
@@ -1691,11 +1740,15 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{link}\\,\\langle c^{+}, d^{-}\\rangle$.",
    "rocq": "lang/Syntax.v: PLink",
-   "sig": "\\mathsf{link} \\in \\mathsf{Const},\\quad \\mathsf{link}\\,\\langle o_1, o_2\\rangle \\xrightarrow{\\leftrightarrow\\{o_1, o_2\\}} \\ast",
+   "sig": "\\mathsf{link} : S@x \\otimes \\overline{S}@\\overline{x} \\multimap \\ast",
    "args": [
     {
-     "name": "o_1, o_2",
-     "meaning": "The two linked ends."
+     "name": "S@x",
+     "meaning": "The first linked end."
+    },
+    {
+     "name": "\\overline{S}@\\overline{x}",
+     "meaning": "The second, at the dual type and the dual point."
     }
    ]
   },
@@ -1706,11 +1759,11 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{spawn}\\,(\\lambda u.\\,\\mathsf{let}\\ \\ast = u\\ \\mathsf{in}\\ \\mathsf{close}\\,d')$ hands $d'$ to the child.",
    "rocq": "lang/Syntax.v: PSpawn",
-   "sig": "\\mathsf{spawn} \\in \\mathsf{Const},\\quad \\mathsf{spawn}\\,v \\xrightarrow{\\mathsf{spawn}\\,v} \\ast",
+   "sig": "\\mathsf{spawn} : (\\ast \\multimap^{u}_{l} \\ast) \\multimap \\ast",
    "args": [
     {
-     "name": "v",
-     "meaning": "The thunk, a value whose application $v\\,\\ast$ is the child thread."
+     "name": "u, l",
+     "meaning": "The upper and lower point of the thunk, arbitrary."
     }
    ]
   },
@@ -1721,11 +1774,23 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{force}\\,f\\,\\langle a, b\\rangle$ runs the loop $f$ again.",
    "rocq": "lang/Syntax.v: PForce",
-   "sig": "\\mathsf{force} \\in \\mathsf{Const},\\quad \\mathsf{force}\\,(!e) \\xrightarrow{\\beta} e[!e]",
+   "sig": "\\mathsf{force} : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\multimap^{u} U) \\multimap^{u[\\bar x]} U[\\bar s][\\bar x]",
    "args": [
     {
-     "name": "e",
-     "meaning": "The body of the forced box."
+     "name": "\\bar\\iota, \\bar\\alpha",
+     "meaning": "The point and session variables of the box."
+    },
+    {
+     "name": "\\bar x, \\bar s",
+     "meaning": "Their instances, with $\\Gamma \\vdash C[\\bar x]$."
+    },
+    {
+     "name": "u",
+     "meaning": "The upper point of the body, instantiated as the upper point of the call."
+    },
+    {
+     "name": "U",
+     "meaning": "The result type of the body."
     }
    ]
   },

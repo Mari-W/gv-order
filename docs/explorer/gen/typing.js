@@ -200,6 +200,21 @@ T('r-force', 'E-Force', 'static/Typing.v: e_force',
   rule('D-Force', R`${h('E-Force.hold', R`\Gamma \vdash C[\bar x]`)}${Q}${h('E-Force.ub', R`u[\bar x] \prec F`)}${Q}${DJ(R`\Theta`, R`\Gamma`, R`\Delta`, 'F', 'e', R`\Box(\forall\bar\iota\,\bar\alpha.\ C.\ \ast\multimap^{u} U)`)}`,
     DJ(R`\Theta`, R`\Gamma`, R`\Delta`, 'F', R`\mathsf{force}\,e`, R`U[\bar s][\bar x]`)),
   'Forcing chooses $\\bar x$ with $\\Gamma \\vdash C[\\bar x]$ and session types $\\bar s$, and asks $u[\\bar x] \\prec F$.');
+block(s, {
+  id: 't-consts', title: 'Types of constants', rocq: 'static/Typing.v: e_send, e_recv, e_close, e_select, e_branch, e_link, e_spawn, e_force, e_new',
+  tex: R`\begin{array}{lll}
+\mathsf{send} & : T[x\cdot i] \otimes S_0@x \multimap^{x} S@${h('pt.shift', R`x^{+}`)} & ${h('E-Send.unfold', R`${h('sty.unfold', R`\mathsf{unfold}`)}(S_0) = {!}(\exists^{m}\bar\iota.\,T).S`)},\ \mathsf{pscoped}\,m\,T,\ \neg\mathsf{hbot}\,T,\ ${h('E-Send.heads', R`x \prec \mathsf{heads}(T[x\cdot i])`)} \\
+\mathsf{recv} & : S_0@x \multimap^{x} T[x\cdot i] \otimes S@x^{+} & ${h('E-Recv.unfold', R`${h('sty.unfold', R`\mathsf{unfold}`)}(S_0) = {?}(\exists^{m}\bar\iota.\,T).S`)},\ \mathsf{pscoped}\,m\,T \\
+\mathsf{close} & : S_0@x \multimap^{x} \ast & ${h('E-Close.unfold', R`${h('sty.unfold', R`\mathsf{unfold}`)}(S_0) = \mathsf{Close}`)} \\
+\mathsf{select}_i & : S_0@x \multimap^{x} S_i@${h('pt.sel', R`\overline{x\cdot\kappa_i}`)} & ${h('E-Select.unfold', R`${h('sty.unfold', R`\mathsf{unfold}`)}(S_0) = \oplus(S_1,S_2)`)} \\
+\mathsf{branch} & : S_0@x \multimap^{x} S_1@${h('pt.bra', R`x\cdot\kappa_1`)} \oplus S_2@x\cdot\kappa_2 & ${h('E-Branch.unfold', R`${h('sty.unfold', R`\mathsf{unfold}`)}(S_0) = \&(S_1,S_2)`)} \\
+\mathsf{link} & : ${h('E-Link.dual', R`S@x \otimes \overline{S}@\overline{x}`)} \multimap \ast & \\
+\mathsf{spawn} & : (\ast \multimap^{u}_{l} \ast) \multimap \ast & \\
+\mathsf{force} & : \Box(\forall\bar\iota\,\bar\alpha.\ C.\ \ast\multimap^{u} U) \multimap^{u[\bar x]} U[\bar s][\bar x] & ${h('E-Force.hold', R`\Gamma \vdash C[\bar x]`)} \\
+\mathsf{new} & : \exists^{\bot}\bar\iota.\ ${h('E-New.facts', 'C')}.\ (S@\pi \otimes \overline{S}@\overline{\pi}) & ${h('E-New.pos', R`(\bar\iota, \pi) \in \{(\rho, \rho)\} \cup \{(\varepsilon, x\cdot\kappa)\}`)},\ ${h('E-New.strict', R`\mathsf{strict}(\Gamma \cup C)`)}
+\end{array}`,
+  caption: 'Each constant has the type of its eta-expansion $\\lambda y.\\,k\\,y$, for every instance of its variables that meets the conditions on the right, shown without credits, cost and transformer. An action on $x$ has upper point $x$, so it runs only below the future of its caller. $\\mathsf{new}$ is a term and has the type of E-New.'
+});
 T('r-send', 'E-Send', 'static/Typing.v: e_send',
   rule('E-Send', R`\begin{array}{c}${h('E-Send.unfold', R`${h('sty.unfold', R`\mathsf{unfold}`)}(S_0) = {!}(\exists^{m}\bar\iota.\,T^{b}).S`)}${Q}${h('ty.pscoped', R`\mathsf{pscoped}\,m\,T`)}${Q}${h('E-Send.nobot', R`\neg${h('ty.hbot', R`\mathsf{hbot}`)}\,T`)} \\ ${h('E-Send.heads', R`\forall y \in \mathsf{heads}(${h('ty.payload-at', R`T[x\cdot i]`)}).\ \Gamma \vdash x \prec y`)}${Q}${act}${Q}${J(R`\Theta`, R`\Gamma`, R`\Delta`, 'F', 'e', R`(T[x\cdot i]^{a_p} \otimes (S_0@x)^{a_S})`, R`a_0`, R`c_0`, R`\vartheta_0`)} \\ ${h('E-Send.floor', R`(T[x\cdot i], a_0 + a_p) - 1 \leq T[x\cdot i]^{b}`)}\end{array}`,
     J(R`\Theta`, R`\Gamma`, R`\Delta`, 'F', R`\mathsf{send}\,e`, R`(S@${h('pt.shift', R`x^{+}`)})`, h('act.refill', 'N'), R`c_0 + 1`, R`\vartheta_0`)),
