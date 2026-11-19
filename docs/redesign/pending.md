@@ -195,6 +195,19 @@ must do, open questions.
     E-Spawn asks closure credit `a ≥ 1`, so capture at `h, a = 1` must give
     the same credits as `Δ − 1`, and the ticket need of E-SpawnLam
     (`tspawn` of the body at reserve 0) must match E-Spawn on the arrow.
+    Tickets match (both write tspawn(ϑ'(0))). Credits do not: capture
+    restates every captured end at one floor h, with h + a ≤ a₀, while
+    E-SpawnLam keeps each end at its own credit minus one. Lost example:
+    A at N and B at 1 handed to a child that acts on B while holding A.
+    E-SpawnLam gives A at N − 1, capture at a = 1 forces h = 0 and A at 0.
+    Proposed fix, to check first: per-end capture, the body sees Δ − a
+    instead of the floor h, and FV-Arrow asks counters at call time to be
+    at least the counters at creation minus a (FV knows the creation
+    counters). Then the derivation loses nothing, ordinary closures get
+    more precise, and the floor h (and Cap-Arr's h − h₀) may go. Touches
+    FV-Arrow, capture, Sub-Arr. Fallback if it fails: generalized arrows
+    with the loss, after checking every lock-free example still types.
+    Order: check per-end capture, then generalize arrows.
     Rocq: after the repair run (entry 6) is merged. Map: after the design
     is confirmed.
 
