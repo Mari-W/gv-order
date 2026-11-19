@@ -301,10 +301,8 @@ must do, open questions.
   each thread to be in E, and E orders every end the thread holds.
   sem_p_connect composes any two members of P, so a hand-proved component
   composes with typed ones, provided it is ready at its interface (offered
-  ends below the partner points of the ends it does not offer). To do:
-  mechanize the flag program in P⟦∅ ⊢ ∗⟧ by a direct proof, and show it is
-  outside what P-Term can build (no assignment of points for the threads).
-  Options discussed:
+  ends below the partner points of the ends it does not offer). Both
+  points are obvious, no mechanization wanted. Options discussed:
   (a) one-end lemma: a process with one free end, in either relation,
       offers that end when stuck; this would allow a mixed P-Connect along
       a single channel (cut of one channel, payload condition as in
@@ -319,3 +317,11 @@ must do, open questions.
   (d) state and check that we subsume their static system, which types
       trees (one point per end may already suffice). Semantic inclusion of
       their relation in ours is false in general.
+  (e) Author: embed the topological relation in ours by one generic proof.
+      Inside a component nothing is to show, internal channels carry no
+      points. At the external channels replay the topological argument
+      once, generically: their tree-shaped interface should let us choose
+      points for the interface ends so that ready_p holds. Then every
+      process in their relation is in our P, and composes with typed code
+      by sem_p_connect. Open: which points the tree induces, and whether
+      their interface readiness implies above_offered.
