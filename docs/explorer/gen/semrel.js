@@ -1,4 +1,4 @@
-const { R, h, n, sa, section, block, DEF } = require('./core');
+const { R, h, n, sa, section, block, rule, DEF } = require('./core');
 
 const s = section('semantic', 'Semantic typing',
   'One step-indexed relation $(V, E, P)$ parametric in a cost table $\\kappa$, the fuel predicate $F^N$ on counters and tickets, and the soup $S^{N,W}_n$ that fixes ownership before the level. The sorts are $\\mathsf{Env} = \\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$, $\\mathsf{TEnv}$ the same with credits, $\\mathsf{PEnv} = \\mathsf{End} \\rightharpoonup \\mathsf{STy}$, $\\mathsf{CEnv} = \\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$, $\\mathsf{Own}$ the ownership maps, $\\mathsf{LFState}$ the soup states, $\\mathsf{CTable} \\subseteq \\mathbb{N}^6$, $\\mathsf{Fam}$ and $\\mathsf{Field}$ the labels, $\\mathsf{SFuture}$ the static futures.');
@@ -42,8 +42,23 @@ const FHAND = h('fu.fhand', R`\mathsf{fhand}`);
 const MEETS = h('ann.meets', R`\mathsf{meets}`);
 const RLE = REL('fu.refill-kripke', R`\sqsupseteq_{\mathsf{rle}}`);
 const DM = R`\mathbin{\dot-}`;
+// a clause of a relation as a rule, premises side by side, rows stacked
+const RULE = (name, rows, concl) => rule(name, R`\begin{array}{c}${rows.map(r => r.join(R`\quad `)).join(R` \\ `)}\end{array}`, concl);
+const PB = (a) => h('sr.pobl', R`\mathsf{Pobl}_{${a}}(p')`);
+const OB = (a) => h('sr.obl', R`\mathsf{Obl}_{${a}}(e')`);
 
 // cost tables
+block(s, {
+  id: 'sr-reading', title: 'Reading the relations', rocq: 'relation/Relation.v: Vrel, Erel, Prel, at_cost_E',
+  tex: R`\begin{array}{ll}
+${h('th.Vrel', R`v \in V^{W}_{n}\llbracket \Theta \vdash T \rrbracket`)} & \text{the value } v \text{ owns exactly the ends } \Theta \text{ and is safe at } T \\
+${h('th.Erel', R`e \in E^{W}_{n}\llbracket \Theta \vdash T \rrbracket^{F}`)} & \text{the term } e \text{, holding } \Theta \text{, is safe until it returns a value of } T \text{, its context acting at } F \text{ afterwards} \\
+${h('th.Prel', R`p \in P^{W}_{n}\llbracket \Sigma \vdash T \rrbracket`)} & \text{the process } p \text{ is safe with interface } \Sigma \\
+${h('sr.obl', R`\mathsf{Obl}_\alpha(e')`)} & \text{what a step } e \xrightarrow{\alpha} e' \text{ must preserve} \\
+${h('rel.atcost', R`e'\ \text{at}\ \Theta'`)} & e' \text{ is safe holding } \Theta' \text{, at the same level after a free step and one level lower otherwise}
+\end{array}`,
+  caption: 'Every relation is indexed by a world $W$, whose order of points the relation reads, and a level $n$, the number of further steps it promises safety for. Safe means never stuck in a deadlock, every end owned by exactly one thread, and every message fitting its protocol.'
+});
 block(s, {
   id: 'ct-table', title: 'Cost tables', rocq: 'relation/CostTable.v: ctable', modes: ['lf'],
   tex: R`\begin{array}{l}
@@ -87,47 +102,42 @@ block(s, {
 // V
 block(s, {
   id: 'v-base', title: 'Values of unit, end, product and sum type', rocq: 'relation/Relation.v: Vbody',
-  tex: R`\begin{array}{l}
-${h('V-Unit', R`v \in ${V('W', 'n', R`\Theta`, R`\ast`)} \iff \Theta = \varnothing \land v = \ast`)} \\
-${h('V-Sess', R`v \in ${V('W', 'n', R`\Theta`, R`S@x`)} \iff \exists o, S'.\ v = o \land ${h('V-Sess.exact', R`\Theta = \{o \mapsto S'@x\}`)} \land S' ${SEQV} S`)} \\
-${h('V-Prod', R`\langle v_1, v_2\rangle \in ${V('W', 'n', R`\Theta`, R`T_1 \otimes T_2`)} \iff ${h('V-Prod.split', R`\exists \Theta_1, \Theta_2.\ \Theta = \Theta_1 ${UPL} \Theta_2`)} \land \forall i.\ v_i \in ${V('W', 'n', R`\Theta_i`, R`T_i`)}`)} \\
-${h('V-Sum', R`${h('syn.inj', R`\mathsf{inj}_i`)}\,v \in ${V('W', 'n', R`\Theta`, R`T_1 \oplus T_2`)} \iff v \in ${V('W', 'n', R`\Theta`, R`T_i`)}`)}
+  tex: R`\begin{array}{c}
+${RULE('V-Unit', [[R`\phantom{x}`]], h('V-Unit', R`\ast \in ${V('W', 'n', R`\varnothing`, R`\ast`)}`))} \qquad ${RULE('V-Sess', [[R`S' ${SEQV} S`]], h('V-Sess', R`o \in ${V('W', 'n', h('V-Sess.exact', R`\{o \mapsto S'@x\}`), R`S@x`)}`))} \\[2ex]
+${RULE('V-Prod', [[R`v_1 \in ${V('W', 'n', R`\Theta_1`, R`T_1`)}`, R`v_2 \in ${V('W', 'n', R`\Theta_2`, R`T_2`)}`]], h('V-Prod', R`\langle v_1, v_2\rangle \in ${V('W', 'n', h('V-Prod.split', R`\Theta_1 ${UPL} \Theta_2`), R`T_1 \otimes T_2`)}`))} \qquad ${RULE('V-Sum', [[R`v \in ${V('W', 'n', R`\Theta`, R`T_i`)}`]], h('V-Sum', R`${h('syn.inj', R`\mathsf{inj}_i`)}\,v \in ${V('W', 'n', R`\Theta`, R`T_1 \oplus T_2`)}`))}
 \end{array}`,
-  caption: '$V$ at the first-order types, where $\\Theta$ maps exactly the ends of the value.'
+  caption: 'Each rule is one clause of $V$, read as an equivalence. The environment $\\Theta$ maps exactly the ends the value owns, so a unit owns none, an end owns itself, and a pair splits its ends between its components.'
 });
 block(s, {
   id: 'v-arrow', title: 'Values of arrow type', rocq: 'relation/Relation.v: Varr',
-  tex: R`\begin{array}{l}
-\lambda e \in ${V('W', 'n', R`\Theta`, R`T ${ARR}^{u}_{l} U`)} \iff ${h('V-Arrow.exact', R`\mathrm{dom}\,\Theta = ${FENDS}(e)`)} \land ${h('V-Arrow.lb', R`l ${LEQ} ${HEADS}\,\Theta`)} \land {} \\
-\quad ${h('V-Arrow.kripke', R`\forall W' ${EXT} W`)},\ ${h('V-Arrow.level', R`j \in \mathbb{N},\ ${LT('j', R`\beta`)}`)},\ \Theta' \mathbin{\#} \Theta,\ ${h('V-Arrow.ub', R`F \text{ with } ${WLT("W'", 'u', 'F')}`)},\ w \in ${V("W'", 'j', R`\Theta'`, 'T')}. \\
-\qquad ${h('V-Arrow.body', R`e[w] \in ${E("W'", 'j', R`\Theta \cup \Theta'`, 'U', 'F')}`)}
-\end{array}`,
-  caption: 'A closure is in $V$ when it owns exactly the ends it mentions and its body is in $E$ for every later world, level, disjoint argument and future above $u$.'
+  tex: RULE('V-Arrow', [
+    [h('V-Arrow.exact', R`\mathrm{dom}\,\Theta = ${FENDS}(e)`), h('V-Arrow.lb', R`l ${LEQ} ${HEADS}\,\Theta`)],
+    [R`${h('V-Arrow.kripke', R`\forall W' ${EXT} W`)},\ ${h('V-Arrow.level', LT('j', R`\beta`))},\ \Theta' \mathbin{\#} \Theta,\ ${h('V-Arrow.ub', R`F \text{ with } ${WLT("W'", 'u', 'F')}`)}.`],
+    [R`w \in ${V("W'", 'j', R`\Theta'`, 'T')} \ \Longrightarrow\ ${h('V-Arrow.body', R`e[w] \in ${E("W'", 'j', R`\Theta \cup \Theta'`, 'U', 'F')}`)}`]],
+    R`\lambda e \in ${V('W', 'n', R`\Theta`, R`T ${ARR}^{u}_{l} U`)}`),
+  caption: 'A closure owns exactly the ends it mentions, and $l$ lies at or below their partner points. Calling it is safe in every later world, at every lower level, with every argument owning other ends, and for every caller future above $u$.'
 });
 block(s, {
-  id: 'v-thunk', title: 'The spawned thunk', rocq: 'relation/Relation.v: Vthunk',
-  tex: R`\begin{array}{l}
-\lambda e \in ${h('sr.vthunk', R`\mathsf{Vthunk}^{W}_{n}(\Theta)`)} \iff ${h('V-Arrow.exact', R`\mathrm{dom}\,\Theta = ${FENDS}(e)`)} \land {} \\
-\quad \forall W' ${EXT} W,\ ${LT('j', R`\beta`)},\ \Theta' \mathbin{\#} \Theta,\ w \in ${V("W'", 'j', R`\Theta'`, R`\ast`)}.\ e[w] \in ${E("W'", 'j', R`\Theta \cup \Theta'`, R`\ast`, h('V-Thunk.empty', R`\varnothing`))}
-\end{array}`,
-  caption: '$V$ at $\\ast \\multimap \\ast$ with no lower and no upper point and the body read at the empty future.'
+  id: 'v-thunk', title: 'Thunks, the closures a spawn runs', rocq: 'relation/Relation.v: Vthunk',
+  tex: RULE('V-Thunk', [
+    [h('V-Arrow.exact', R`\mathrm{dom}\,\Theta = ${FENDS}(e)`)],
+    [R`\forall W' ${EXT} W,\ ${LT('j', R`\beta`)},\ \Theta' \mathbin{\#} \Theta.\quad w \in ${V("W'", 'j', R`\Theta'`, R`\ast`)} \ \Longrightarrow\ e[w] \in ${E("W'", 'j', R`\Theta \cup \Theta'`, R`\ast`, h('V-Thunk.empty', R`\varnothing`))}`]],
+    R`\lambda e \in ${h('sr.vthunk', R`\mathsf{Vthunk}^{W}_{n}(\Theta)`)}`),
+  caption: 'A thunk is a closure $\\lambda\\_.\\,e$ that only takes $\\ast$, a computation put off until it is called. $\\mathsf{spawn}$ takes a thunk and runs its body as a new thread. The child has nothing after it, so its body is read at the empty future, and the thunk needs no lower or upper point.'
 });
 block(s, {
   id: 'v-box', title: 'Values of box type', rocq: 'relation/Relation.v: Vbody (TBox), Vrel_box_iff',
-  tex: R`\begin{array}{l}
-!e \in ${V('W', 'n', R`\Theta`, R`\Box(\forall\bar\iota\,\bar\alpha.\,C.\ \ast ${ARR}^{u} U)`)} \iff ${h('V-Box.empty', R`\Theta = \varnothing`)} \land ${h('V-Box.noends', R`${FENDS}(e) = \varnothing`)} \land {} \\
-\quad ${h('V-Box.kripke', R`\forall W' ${EXT} W`)},\ ${h('V-Box.inst', R`\bar x \in \mathsf{Point}^{m} \text{ with } W' \vdash C[\bar x]`)},\ ${h('V-Box.hc', R`\bar s \in \mathsf{STy}^{k} \text{ with } \forall s \in \bar s.\ \mathsf{hcontractive}\,s`)}. \\
-\qquad ${h('V-Box.thunk', R`${h('sr.thunk', R`\mathsf{thunk}(e)`)} \in ${V("W'", 'n', R`\varnothing`, R`\ast ${ARR}^{u[\bar x]} U[\bar s][\bar x]`)}`)}
-\end{array}`,
-  caption: 'A box is in $V$ when it owns no end and its thunk $\\lambda\\_.\\,e[!e]$ is in $V$ at the same level for every later world and every instance meeting $C$.'
+  tex: RULE('V-Box', [
+    [h('V-Box.empty', R`\Theta = \varnothing`), h('V-Box.noends', R`${FENDS}(e) = \varnothing`)],
+    [R`${h('V-Box.kripke', R`\forall W' ${EXT} W`)},\ ${h('V-Box.inst', R`\bar x \text{ with } W' \vdash C[\bar x]`)},\ ${h('V-Box.hc', R`\bar s \text{ contractive}`)}.\quad ${h('V-Box.thunk', R`${h('sr.thunk', R`\mathsf{thunk}(e)`)} \in ${V("W'", 'n', R`\varnothing`, R`\ast ${ARR}^{u[\bar x]} U[\bar s][\bar x]`)}`)}`]],
+    R`!e \in ${V('W', 'n', R`\varnothing`, R`\Box(\forall\bar\iota\,\bar\alpha.\,C.\ \ast ${ARR}^{u} U)`)}`),
+  caption: 'A box owns no end, and every force of it is safe. A force runs $\\mathsf{thunk}(e) = \\lambda\\_.\\,e[!e]$, the body with the box put in for its self, so the box is in $V$ when that thunk is, in every later world and at every instance meeting $C$.'
 });
 block(s, {
   id: 'v-ex', title: 'Values of existential type', rocq: 'relation/Relation.v: Vbody (TEx), Vrel_ex_iff',
-  tex: R`\begin{array}{l}
-v \in ${V('W', 'n', R`\Theta`, R`\exists^{l}\bar\iota.\,C.\,T`)} \iff ${h('V-Ex.lb', R`l ${LEQ} ${HEADS}\,\Theta`)} \land {} \\
-\quad ${h('V-Ex.witness', R`\exists \bar x \in \mathsf{Point}^{m}.\ W \vdash C[\bar x] \land v \in ${V('W', 'n', R`\Theta`, R`T[\bar x]`)}`)}
-\end{array}`,
-  caption: 'An existential value has a witness instance in $W$, and its lower bound bounds the heads of its ends.'
+  tex: RULE('V-Ex', [[h('V-Ex.lb', R`l ${LEQ} ${HEADS}\,\Theta`), h('V-Ex.witness', R`W \vdash C[\bar x]`), R`v \in ${V('W', 'n', R`\Theta`, R`T[\bar x]`)}`]],
+    R`v \in ${V('W', 'n', R`\Theta`, R`\exists^{l}\bar\iota.\,C.\,T`)}`),
+  caption: 'An existential value is a value of the body at some witness points $\\bar x$ whose facts hold in $W$. Its lower bound lies at or below the partner points of its ends.'
 });
 block(s, {
   id: 'v-size', title: 'Recursion of V', rocq: 'relation/Relation.v: tsize, Vtop; relation/Sfix.v: sfix',
@@ -152,59 +162,49 @@ e \in ${E('W', R`n{+}1`, R`\Theta`, 'T', 'F')} \iff ${h('E.kripke', R`\forall W_
 });
 block(s, {
   id: 'e-obl-admin', title: 'Obligations of internal steps', rocq: 'relation/Relation.v: o_beta, o_new, o_spawn, new_env',
-  tex: R`\begin{array}{ll}
-${h('O-Beta', R`\textsf{O-Beta}`)} & ${AT(R`e'`)}\ \Theta \\
-${h('O-New', R`\textsf{O-New}`)} & ${h('O-New.cfresh', R`c^{\pm} \notin \mathrm{dom}\,\Theta`)} \Rightarrow ${h('O-New.forall', R`\forall a.\ ${h('O-New.gfresh', R`a \notin A_W`)}`)} \Rightarrow ${h('O-New.grow', R`\exists S, \pi, C.\ \pi \in \{a\} \cup \{x\cdot\kappa\} \land \mathsf{strict}(W \oplus C)`)} \land {} \\
- & \quad ${AT(R`e'`)}_{W \oplus C}\ ${h('O-New.dual', R`\Theta[c^{+} \mapsto S@\pi,\ c^{-} \mapsto \overline{S}@\overline{\pi}]`)} \\
-${h('O-Spawn', R`\textsf{O-Spawn}`)} & ${h('O-Spawn.split', R`\exists \Theta_M, \Theta_r.\ \Theta = \Theta_M ${UPL} \Theta_r`)} \land ${h('O-Spawn.thunk', R`v \in ${h('sr.vthunk', R`\mathsf{Vthunk}_n(\Theta_M)`)}`)} \land ${AT(R`e'`)}\ \Theta_r \\
- & \quad ${h('O-Spawn.transfer', R`(\text{hence } \mathrm{dom}\,\Theta_M = ${FENDS}(v))`)}
+  tex: R`\begin{array}{c}
+${RULE('O-Beta', [[R`${AT(R`e'`)}\ \Theta`]], OB(R`\beta`))} \qquad ${RULE('O-Spawn', [[h('O-Spawn.split', R`\Theta = \Theta_M ${UPL} \Theta_r`), h('O-Spawn.thunk', R`v \in ${h('sr.vthunk', R`\mathsf{Vthunk}_n(\Theta_M)`)}`), R`${AT(R`e'`)}\ \Theta_r`]], OB(R`\mathsf{spawn}\,v`))} \\[2ex]
+${RULE('O-New', [[h('O-New.cfresh', R`c^{\pm} \notin \mathrm{dom}\,\Theta`)], [R`${h('O-New.forall', R`\forall a \notin A_W`)}.\ ${h('O-New.grow', R`\exists S, \pi, C.\ \pi \in \{a, x\cdot\kappa\},\ \mathsf{strict}(W \oplus C)`)},\ ${AT(R`e'`)}_{W \oplus C}\ ${h('O-New.dual', R`\Theta[c^{+} \mapsto S@\pi,\ c^{-} \mapsto \overline{S}@\overline{\pi}]`)}`]], OB(R`\mathsf{new}\,c`))}
 \end{array}`,
-  caption: 'The obligations of $\\beta$, creation and spawn, which keep or extend the environment, and creation grows the world.'
+  caption: 'Each step $e \\xrightarrow{\\alpha} e\'$ of a term holding $\\Theta$ must meet the obligation $\\mathsf{Obl}_\\alpha(e\')$. A $\\beta$ step keeps the ends, a spawn gives the child exactly the ends its thunk mentions, and a creation adds the two new ends at a fresh root or a field and grows the world by their facts.'
 });
 block(s, {
   id: 'e-obl-msg', title: 'Obligations of send and receive', rocq: 'relation/Relation.v: o_send, o_recv',
-  tex: R`\begin{array}{ll}
-${h('O-Send', R`\textsf{O-Send}`)} & ${HD(R`\Theta`, 'o', R`${SND('U')}.S`, 'x')} \land ${h('O-Send.split', R`\Theta \setminus o = \Theta_M ${UPL} \Theta_r`)} \land {} \\
- & ${h('O-Send.payload', R`w \in ${V('W', DL('n', R`n-\kappa_{give}`), R`\Theta_M`, PAY('U', 'x'))}`)} \land ${AT(R`e'`)}\ ${h('O-Send.shift', R`\Theta_r[o \mapsto S@x^{+}]`)} \\
- & \quad ${h('O-Spawn.transfer', R`(\text{hence } \mathrm{dom}\,\Theta_M = ${FENDS}(w))`)} \\
-${h('O-Recv', R`\textsf{O-Recv}`)} & ${HD(R`\Theta`, 'o', R`${RCV('U')}.S`, 'x')} \land {} \\
- & ${h('O-Recv.forall', R`\forall j, \Theta_{in}.\ ${LT('j', 'take')} \land \Theta_{in} \mathbin{\#} \Theta \land w \in ${V('W', 'j', R`\Theta_{in}`, PAY('U', 'x'))}`)} \Rightarrow \\
- & \quad ${h('O-Recv.level', R`e' \in ${E('W', 'j', R`\Theta[o \mapsto S@x^{+}] \cup \Theta_{in}`, 'T', 'F')}`)}
+  tex: R`\begin{array}{c}
+${RULE('O-Send', [[HD(R`\Theta`, 'o', R`${SND('U')}.S`, 'x'), h('O-Send.split', R`\Theta \setminus o = \Theta_M ${UPL} \Theta_r`)], [h('O-Send.payload', R`w \in ${V('W', DL('n', R`n-\kappa_{give}`), R`\Theta_M`, PAY('U', 'x'))}`), R`${AT(R`e'`)}\ ${h('O-Send.shift', R`\Theta_r[o \mapsto S@x^{+}]`)}`]], OB(R`\mathsf{send}\,o\,w`))} \\[2ex]
+${RULE('O-Recv', [[HD(R`\Theta`, 'o', R`${RCV('U')}.S`, 'x')], [R`${h('O-Recv.forall', R`\forall j, \Theta_{in}.\ ${LT('j', 'take')},\ \Theta_{in} \mathbin{\#} \Theta,\ w \in ${V('W', 'j', R`\Theta_{in}`, PAY('U', 'x'))}`)} \ \Longrightarrow\ ${h('O-Recv.level', R`e' \in ${E('W', 'j', R`\Theta[o \mapsto S@x^{+}] \cup \Theta_{in}`, 'T', 'F')}`)}`]], OB(R`\mathsf{recv}\,o\,w`))}
 \end{array}`,
-  caption: 'A send gives up the ends of its payload and a receive continues for every incoming value at every lower level.'
+  caption: 'A send gives away exactly the ends of its payload, which must be a safe value, and keeps the rest. A receive does not know what arrives, so it must be safe for every incoming value at every lower level, with the new ends added.'
 });
 block(s, {
   id: 'e-obl-other', title: 'Obligations of close, choice and link', rocq: 'relation/Relation.v: o_close, o_select, o_branch, o_link',
-  tex: R`\begin{array}{ll}
-${h('O-Close', R`\textsf{O-Close}`)} & ${HD(R`\Theta`, 'o', CLOSE, 'x')} \land ${AT(R`e'`)}\ \Theta \setminus o \\
-${h('O-Select', R`\textsf{O-Select}`)} & ${HD(R`\Theta`, 'o', h('sty.plus', R`\oplus(S_1,S_2)`), 'x')} \land ${AT(R`e'`)}\ \Theta[o \mapsto S_i@${h('pt.sel', R`\overline{x\cdot\kappa_i}`)}] \\
-${h('O-Branch', R`\textsf{O-Branch}`)} & ${HD(R`\Theta`, 'o', h('sty.with', R`\&(S_1,S_2)`), 'x')} \land ${AT(R`e'`)}\ \Theta[o \mapsto S_i@${h('pt.bra', R`x\cdot\kappa_i`)}] \\
-${h('O-Link', R`\textsf{O-Link}`)} & ${h('O-Link.distinct', R`o_1 \neq o_2`)} \land ${h('O-Link.dual', R`\Theta(o_1) = S_1@x \land \Theta(o_2) = S_2@\overline{x} \land ${SDUAL}\,S_1\,S_2`)} \land {} \\
- & ${AT(R`e'`)}\ \Theta \setminus \{o_1, o_2\}
+  tex: R`\begin{array}{c}
+${RULE('O-Close', [[HD(R`\Theta`, 'o', CLOSE, 'x'), R`${AT(R`e'`)}\ \Theta \setminus o`]], OB(R`\mathsf{close}\,o`))} \qquad ${RULE('O-Link', [[h('O-Link.distinct', R`o_1 \neq o_2`), h('O-Link.dual', R`\Theta(o_1) = S_1@x,\ \Theta(o_2) = S_2@\overline{x},\ ${SDUAL}\,S_1\,S_2`), R`${AT(R`e'`)}\ \Theta \setminus \{o_1, o_2\}`]], OB(R`\mathsf{link}\,o_1\,o_2`))} \\[2ex]
+${RULE('O-Select', [[HD(R`\Theta`, 'o', h('sty.plus', R`\oplus(S_1,S_2)`), 'x'), R`${AT(R`e'`)}\ \Theta[o \mapsto S_i@${h('pt.sel', R`\overline{x\cdot\kappa_i}`)}]`]], OB(R`\mathsf{select}_i\,o`))} \qquad ${RULE('O-Branch', [[HD(R`\Theta`, 'o', h('sty.with', R`\&(S_1,S_2)`), 'x'), R`${AT(R`e'`)}\ \Theta[o \mapsto S_i@${h('pt.bra', R`x\cdot\kappa_i`)}]`]], OB(R`\mathsf{branch}_i\,o`))}
 \end{array}`,
-  caption: 'Each obligation reads and updates only the entries of the subject ends.'
+  caption: 'Close drops the end, a choice moves it to the field of the chosen branch, and a link drops two dual ends whose partners now talk to each other.'
 });
 
 // readiness
 block(s, {
   id: 'rd-term', title: 'Readiness of a term', rocq: 'relation/Readiness.v: ready_t, below_rest, offered_t, stable_t, link_t',
-  tex: R`\begin{array}{l}
-${h('sr.ready', R`\mathsf{ready}_W(\Theta \mid F, t)`)} \iff ${h('rd.stable', R`\mathsf{stable}\,t`)} \Rightarrow {} \\
-\quad ${h('rd.value', R`\big((\forall o.\ \neg ${h('rd.offered', R`\mathsf{offered}_\Theta(t, o)`)}) \Rightarrow t \in \mathsf{Val}\big)`)} \land \big(${h('rd.link', R`\mathsf{link}\,t`)} \lor ${h('rd.below-rest', R`\mathsf{below\_rest}_W(\Theta, \mathsf{offered}_\Theta(t), F)`)}\big) \\
-${h('rd.below-rest', R`\mathsf{below\_rest}_W(\Theta, O, F)`)} \iff \forall o \in O.\ \Theta(o) = S@x \Rightarrow {} \\
-\quad ${h('rd.below-held', R`(\forall o' \notin O.\ \Theta(o') = S'@x' \Rightarrow ${WLT('W', 'x', R`\overline{x'}`)})`)} \land ${h('rd.below-future', R`(\forall y \in F.\ ${WLT('W', 'x', 'y')})`)}
+  tex: R`\begin{array}{rcl}
+${h('sr.ready', R`\mathsf{ready}_W(\Theta \mid F, t)`)} & \iff & ${h('rd.stable', R`\mathsf{stable}\,t`)} \Longrightarrow ${h('rd.value', R`\mathsf{done}`)} \land ${h('rd.below-rest', R`\mathsf{ordered}`)} \\[1ex]
+${h('rd.value', R`\mathsf{done}`)} & \iff & ${h('rd.value', R`O = \varnothing \Rightarrow t \in \mathsf{Val}`)} \\
+${h('rd.below-rest', R`\mathsf{ordered}`)} & \iff & ${h('rd.link', R`\mathsf{link}\,t`)} \lor {} ${h('rd.below-rest', R`\forall o \in O.\ ${h('rd.below-held', R`(\forall o' \in \mathrm{dom}\,\Theta \setminus O.\ W \vdash x_o \prec \overline{x_{o'}})`)} \land ${h('rd.below-future', R`(\forall y \in F.\ W \vdash x_o \prec y)`)}`)} \\[1ex]
+ & & O = ${h('rd.offered', R`\mathsf{offered}_\Theta(t)`)},\ \text{the ends } t \text{ offers} \qquad x_o \text{ the point of } \Theta(o)
 \end{array}`,
-  caption: 'A stable reducible term offers held ends, each below the partner point of every other held end and below every point of the future, unless it is at a link.'
+  caption: 'Readiness only matters when the term is stuck, $\\mathsf{stable}\\,t$, all it can do is offer actions to partners. Then it has finished if it offers nothing, and every end it offers lies below the partner point of every end it keeps and below every point of its future. In a strict order some stuck thread is then at the bottom and its partner can serve it.'
 });
 block(s, {
   id: 'rd-proc', title: 'Readiness of a process', rocq: 'relation/Readiness.v: ready_p, above_offered, stable_p, link_p, offered_p',
-  tex: R`\begin{array}{l}
-${h('sr.readyp', R`\mathsf{ready}_W(\Sigma, p)`)} \iff ${h('rd.p-stable', R`\mathsf{stable}\,p`)} \Rightarrow ${h('rd.link', R`\mathsf{link}\,p`)} \lor {} \\
-\quad \big(${h('rd.p-term', R`((\forall o.\ \neg\mathsf{offered}_\Sigma(p, o)) \Rightarrow ${h('prop.terminated', R`\mathsf{terminated}`)}\,p)`)} \land ${h('rd.above-offered', R`\mathsf{above\_offered}`)}\big) \\
-${h('rd.above-offered', R`\mathsf{above\_offered}`)} \iff \forall o.\ \Sigma(o) = S@x \land \neg${h('rd.offered', R`\mathsf{offered}_\Sigma(p, o)`)} \Rightarrow {} \\
-\quad \exists o'.\ ${h('rd.offered', R`\mathsf{offered}_\Sigma(p, o')`)} \land \Sigma(o') = S'@x' \land ${WLT('W', R`x'`, R`\overline{x}`)}
+  tex: R`\begin{array}{rcl}
+${h('sr.readyp', R`\mathsf{ready}_W(\Sigma, p)`)} & \iff & ${h('rd.p-stable', R`\mathsf{stable}\,p`)} \Longrightarrow ${h('rd.link', R`\mathsf{link}\,p`)} \lor (${h('rd.p-term', R`\mathsf{done}`)} \land ${h('rd.above-offered', R`\mathsf{covered}`)}) \\[1ex]
+${h('rd.p-term', R`\mathsf{done}`)} & \iff & ${h('rd.p-term', R`O = \varnothing \Rightarrow ${h('prop.terminated', R`\mathsf{terminated}`)}\,p`)} \\
+${h('rd.above-offered', R`\mathsf{covered}`)} & \iff & ${h('rd.above-offered', R`\forall o \in \mathrm{dom}\,\Sigma \setminus O.\ \exists o' \in O.\ W \vdash x_{o'} \prec \overline{x_o}`)} \\[1ex]
+ & & O = ${h('rd.offered', R`\mathsf{offered}_\Sigma(p)`)},\ \text{the interface ends } p \text{ offers}
 \end{array}`,
-  caption: 'A stable process is at a link or terminated or offers an interface end, and every interface end it does not offer has an offered end below its partner point.'
+  caption: 'Only the interface ends have points, internal channels carry none. A stuck process sits at a link, or has finished if it offers nothing, and every interface end it keeps has an offered end below its partner point. For a closed process this is deadlock freedom itself.'
 });
 
 // P
@@ -234,19 +234,14 @@ ${h('fuse.dpairs', R`\mathsf{dpairs}\,D\,\Sigma \iff \forall o.\ ${ECH}\,o \in D
 });
 block(s, {
   id: 'p-obl', title: 'Obligations of process steps', rocq: 'relation/Relation.v: q_tau, q_send, q_recv, q_close, q_select, q_branch, q_link',
-  tex: R`\begin{array}{ll}
-${h('Q-Tau', R`\textsf{Q-Tau}`)} & C' \cap ${h('tp.chans', R`\mathsf{chans}`)}\,\Sigma = \varnothing \Rightarrow ${AT(R`p'`)}\ \Sigma \text{ after cost } ${h('ct.sync', DL(R`${h('ct.DF', R`\kappa_{DF}`)}(ev)`, R`${h('ct.table', R`\kappa`)}(ev)`))} \\
-${h('Q-Send', R`\textsf{Q-Send}`)} & ${HD(R`\Sigma`, 'o', R`${SND('U')}.S`, 'x')} \land \Sigma \setminus o = \Sigma_v ${UPL} \Sigma_r \land {} \\
- & ${h('Q-Send.theta-e', R`\forall o'.\ o' \in \mathrm{dom}\,\Theta_e \iff o' \in ${FENDS}(w) \land ${ECH}(o') \in C`)} \land {} \\
- & ${h('Q-Send.split', R`\mathsf{send\_split}\,\Sigma\,\Sigma_e\,\Theta_e`)} \land w \in ${V('W', DL('n', R`n-\kappa_{give}`), R`\Sigma_v \cup \Theta_e`, PAY('U', 'x'))} \land {} \\
- & ${AT(R`p'`)}\ (\Sigma_r \cup ${h('Q-Send.sigma-e', R`\Sigma_e`)})[o \mapsto S@x^{+}] \\
-${h('Q-Recv', R`\textsf{Q-Recv}`)} & ${HD(R`\Sigma`, 'o', R`${RCV('U')}.S`, 'x')} \land \forall j, \Theta_2.\ ${LT('j', 'take')} \land {} \\
- & ${ECH}[\mathrm{dom}\,\Theta_2] \cap C = \varnothing \land ${h('Q-Recv.ok', R`\mathsf{recv\_ok}\,\Sigma'\,\Theta_2`)} \land w \in ${V('W', 'j', R`\Theta_2`, PAY('U', 'x'))} \Rightarrow {} \\
- & \quad (C' \cup ${h('Q-Recv.back', R`\mathsf{recv\_back}\,\Sigma'\,\Theta_2`)}, E') \in ${P('W', 'j', h('Q-Recv.env', R`\mathsf{recv\_env}\,\Sigma'\,\Theta_2`), 'T')} \\
-${h('Q-Link', R`\textsf{Q-Close, Q-Select,}`)} & \text{the term obligations with } \Sigma \text{ for } \Theta \text{ and } P \text{ for } E \\
-${h('Q-Link', R`\textsf{Q-Branch, Q-Link}`)} & \text{where } p = (C, E),\ p' = (C', E'),\ \Sigma' = \Sigma[o \mapsto S@x^{+}]
+  tex: R`\begin{array}{c}
+${RULE('Q-Tau', [[R`C' \cap ${h('tp.chans', R`\mathsf{chans}`)}\,\Sigma = \varnothing`, R`${AT(R`p'`)}\ \Sigma \text{ after cost } ${h('ct.sync', DL(R`${h('ct.DF', R`\kappa_{DF}`)}(ev)`, R`${h('ct.table', R`\kappa`)}(ev)`))}`]], PB('ev'))} \\[2ex]
+${RULE('Q-Send', [[HD(R`\Sigma`, 'o', R`${SND('U')}.S`, 'x'), R`\Sigma \setminus o = \Sigma_v ${UPL} \Sigma_r`], [h('Q-Send.theta-e', R`\mathrm{dom}\,\Theta_e = \{o' \in ${FENDS}(w) \mid ${ECH}(o') \in C\}`), h('Q-Send.split', R`\mathsf{send\_split}\,\Sigma\,\Sigma_e\,\Theta_e`)], [R`w \in ${V('W', DL('n', R`n-\kappa_{give}`), R`\Sigma_v \cup \Theta_e`, PAY('U', 'x'))}`, R`${AT(R`p'`)}\ (\Sigma_r \cup ${h('Q-Send.sigma-e', R`\Sigma_e`)})[o \mapsto S@x^{+}]`]], PB(R`\mathsf{send}\,o\,w`))} \\[2ex]
+${RULE('Q-Recv', [[HD(R`\Sigma`, 'o', R`${RCV('U')}.S`, 'x')], [R`\forall j, \Theta_2.\ ${LT('j', 'take')},\ ${ECH}[\mathrm{dom}\,\Theta_2] \cap C = \varnothing,\ ${h('Q-Recv.ok', R`\mathsf{recv\_ok}\,\Sigma'\,\Theta_2`)},\ w \in ${V('W', 'j', R`\Theta_2`, PAY('U', 'x'))}`], [R`\Longrightarrow\ (C' \cup ${h('Q-Recv.back', R`\mathsf{recv\_back}\,\Sigma'\,\Theta_2`)}, E') \in ${P('W', 'j', h('Q-Recv.env', R`\mathsf{recv\_env}\,\Sigma'\,\Theta_2`), 'T')}`]], PB(R`\mathsf{recv}\,o\,w`))} \\[2ex]
+${h('Q-Link', R`\textsf{Q-Close, Q-Select, Q-Branch, Q-Link}\ \text{are the term obligations with } \Sigma \text{ for } \Theta \text{ and } P \text{ for } E`)} \\
+p = (C, E),\ p' = (C', E'),\ \Sigma' = \Sigma[o \mapsto S@x^{+}]
 \end{array}`,
-  caption: 'Internal steps keep the interface, and external messages move ends between the interface and the restricted channels.'
+  caption: 'Internal steps, including messages between two threads inside $p$, keep the interface. A message with the outside moves ends across it. A send gives away the payload ends, those of internal channels $\\Theta_e$ included, and a receive must be safe for every incoming value at every lower level.'
 });
 block(s, {
   id: 'p-msg', title: 'Interfaces after a message', rocq: 'relation/Relation.v: send_split, recv_ok, recv_back, recv_env',

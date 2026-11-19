@@ -63,6 +63,7 @@ const ABOUT = {
   'r-admis': { why: 'Unused unlimited entries may be dropped and copied. The rules are lemmas, so the rule set stays small.' },
   'r-ex': { why: 'Existentials hide the points of a created channel behind its facts. Packing hides them, opening names them freshly.', used: ['r-new', 'v-ex'] },
   // semantic typing
+  'sr-reading': { why: 'A key to the notation of this section. The three relations say when a value, a term and a process are safe, and the obligations say what each step must preserve.', used: ['v-base', 'e-body', 'p-body', 'rel-atcost'] },
   'ct-table': { why: 'One relation serves deadlock freedom and lock freedom. A cost table says how many levels each kind of step consumes, and the three conditions keep the relation well defined.', used: ['ct-two', 'rel-atcost'] },
   'ct-two': { why: 'The step costs fix how far the step index falls per step. Steps that cost nothing are read inside the same level, which needs a decreasing measure.', used: ['rel-atcost', 'e-obl-msg', 'p-obl'] },
   'rel-atcost': { why: 'After a step the successor is checked either at the same level, inside the fixpoint being built, or at a lower level. This one definition is used by every obligation.', used: ['e-obl-admin', 'e-obl-msg', 'e-obl-other', 'p-obl'] },
