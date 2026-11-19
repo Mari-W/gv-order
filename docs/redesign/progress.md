@@ -2060,3 +2060,14 @@ The old development in theories/ stays untouched.
   box results, so no definition goes away. On box-free types the three
   agree: `prim T ∧ boxfree T ↔ tfree T ∧ boxfree T`, the types built
   from ∗, ⊗ and ⊕, which is what `live_sub_df` asks.
+- M.7. Q-Send drops `fends w = dom Σv ∪ dom Θe` (relation change
+  approved by the author, 2026-11-18). V is exact (`Vrel_exact`), and
+  Q-Send asks w in V at Σv ∪ Θe at some level, so the clause follows
+  (`at_cost_V_exact`, compat/Redex.v). The proofs that read it derive
+  it there: the receiving side of a cut (compat/ConnectCross.v, from the
+  payload at the receiver's level) and Q-Send of a composite
+  (compat/ConnectExtMsg.v `ext_send`, from the component's payload).
+  The proofs that built it lose a step (compat/PTerm.v Q-Send,
+  `ext_send`, the mono, down and conv lemmas of relation/Relation.v,
+  relation/Closure.v, compat/Conv.v). No other clause changes, and
+  every theorem keeps its statement.

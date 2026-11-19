@@ -1292,7 +1292,9 @@ first, in stage S2.
   and weakening and contraction are admissible renamings. M.4: the guard
   has one rule per frame, with the marks after the first subterm
   (`kmarks`). M.5: one injection former `Inj b`. M.6: `prim` stays (P-Term
-  with `tfree` would type more processes).
+  with `tfree` would type more processes). M.7: Q-Send reads the ends of
+  the payload through the exactness of V and states only which
+  restricted ends leave.
 
 ## 5  Open decisions for the author
 

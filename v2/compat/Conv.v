@@ -463,13 +463,13 @@ Section prel.
       by rewrite (chans_of_conv _ _ HΣ).
     - intros q i o w q' Hq Hst.
       destruct (H2 q i o w q' Hq Hst)
-        as (S0 & x & m & U & b & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A6 & A7 & A8 & A9).
+        as (S0 & x & m & U & b & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A7 & A8 & A9).
       destruct (senv_eqv_lookup _ _ _ _ _ HΣ A1) as (S0' & A1' & Hs0).
       destruct (seqv_unfold_snd S0' S0 m U b S (seqv_sym _ _ Hs0) A2) as (U' & b' & S' & A2' & HU & HS).
       assert (senv_eqv (Σv ∪ Σr) (delete o Σ')) as Hdel by (rewrite <-A4; by apply senv_eqv_delete).
       destruct (senv_eqv_split _ _ _ Hdel A3) as (Σv' & Σr' & Hdel' & Hd' & Ev & Er).
       exists S0', x, m, U', b', S', Σv', Σr', Θe, Σe. split_and!; [done|done|done|done|done
-        |by rewrite <-(senv_eqv_dom _ _ Ev)|by eapply send_split_conv| |].
+        |by eapply send_split_conv| |].
       + destruct A8 as [B1 B2].
         assert (senv_eqv (Σv ∪ Θe) (Σv' ∪ Θe)) as EvΘ by (apply senv_eqv_union; [done|apply senv_eqv_refl]).
         split.

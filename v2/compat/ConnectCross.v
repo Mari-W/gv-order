@@ -64,7 +64,7 @@ Section cross.
     destruct H1 as (_ & _ & (_ & S1s & _)). destruct H2 as (_ & _ & (_ & _ & S2r & _)).
     assert (ech o ∉ q1.1 → ∃ S0 x m U b Sc Σv Σr Θe Σe, (Σ1 ∪ ΣC) !! o = Some (S0, x) ∧
         unfoldS S0 = SSeq (SSnd m U b) Sc ∧ Σv ##ₘ Σr ∧ delete o (Σ1 ∪ ΣC) = Σv ∪ Σr ∧
-        (∀ o', o' ∈ dom Θe ↔ o' ∈ (fends w) ∧ ech o' ∈ q1.1) ∧ (fends w) = dom Σv ∪ dom Θe ∧
+        (∀ o', o' ∈ dom Θe ↔ o' ∈ (fends w) ∧ ech o' ∈ q1.1) ∧
         send_split (Σ1 ∪ ΣC) Σe Θe ∧
         at_cost_V (S n) (c_give κ) (Vrel κ) (Vrel κ (S n)) W1 (Σv ∪ Θe) (payload_at m U x) w ∧
         at_cost_P (S n) (c_give κ) (Prel κ) X1 W1 (<[o := (Sc, x⁺)]> (Σr ∪ Σe)) T
@@ -85,7 +85,7 @@ Section cross.
     assert (ech o ∉ q2.1) as Hn2.
     { intros Ho. destruct C1 as (S0 & x & ? & ? & ? & ? & ? & ? & ? & ? & Hl & _); [clear -Ho HCC; cc_set_solver|].
       apply elem_of_dom_2, elem_of_chans_of in Hl. rewrite chans_of_union in Hl. clear -Ho Hl HC2. cc_set_solver. }
-    destruct C1 as (S0 & x & m & U & b & Sc & Σv & Σr & Θe & Σe & L1 & U1 & Dvr & Edel & HΘe & HMv & Hss & AV & AP); [done|].
+    destruct C1 as (S0 & x & m & U & b & Sc & Σv & Σr & Θe & Σe & L1 & U1 & Dvr & Edel & HΘe & Hss & AV & AP); [done|].
     destruct C2 as (S0' & x' & m' & U' & b' & Sc' & L2 & U2 & AR); [done|].
     assert (ech o ∈ K) as HoK.
     { destruct (lookup_union_cases _ _ _ _ L1) as [Lc|[_ Lc]]; [|by apply elem_of_dom_2, elem_of_chans_of in Lc].
@@ -113,7 +113,8 @@ Section cross.
     pose proof (AR jj (Σv ∪ Θe) ltac:(unfold jj; lia) Hdj Hok HV) as P2.
     unfold erase in P2. simpl in P2. rewrite difference_empty_L in P2.
     assert (Prel κ jj W1 (<[o := (Sc, x⁺)]> (Σr ∪ Σe)) T (erase (q1.1 ∖ set_map ech (dom Σv ∪ dom Θe), <[i := e']> M1))) as P1.
-    { simpl in AP. unfold fchans in AP. rewrite HMv in AP. eapply (at_cost_lvl X1P); [exact AP|]. unfold jj. lia. }
+    { assert (fends w = dom Σv ∪ dom Θe) as HMv by (by rewrite <-(Vrel_exact κ _ _ _ _ _ HV), dom_union_L).
+      simpl in AP. unfold fchans in AP. rewrite HMv in AP. eapply (at_cost_lvl X1P); [exact AP|]. unfold jj. lia. }
     pose proof (msg_conn Σ1 ΣC Σ2 ΣD q1.1 q2.1 Hc o S0 x Lc Σv Σr Θe Σe Dvr Edel HΘe' Hss Sc Sc' (x⁺) HdS) as Hc'.
     pose proof (msg_iface Σ1 ΣC Σ2 ΣD q1.1 q2.1 Hc o S0 x Lc Σv Σr Θe Σe Dvr Edel HΘe' Hss Sc Sc' (x⁺) HdS) as Hif.
     pose proof (msg_chans Σ1 ΣC Σ2 ΣD q1.1 q2.1 Hc o S0 x Lc Σv Σr Θe Σe Dvr Edel HΘe' Hss Sc Sc' (x⁺) HdS) as Hch.
@@ -138,7 +139,7 @@ Section cross.
     destruct H1 as (_ & _ & (_ & _ & S1r & _)). destruct H2 as (_ & _ & (_ & S2s & _)).
     assert (ech o ∉ q2.1 → ∃ S0 x m U b Sc Σv Σr Θe Σe, (Σ2 ∪ ΣD) !! o = Some (S0, x) ∧
         unfoldS S0 = SSeq (SSnd m U b) Sc ∧ Σv ##ₘ Σr ∧ delete o (Σ2 ∪ ΣD) = Σv ∪ Σr ∧
-        (∀ o', o' ∈ dom Θe ↔ o' ∈ (fends w) ∧ ech o' ∈ q2.1) ∧ (fends w) = dom Σv ∪ dom Θe ∧
+        (∀ o', o' ∈ dom Θe ↔ o' ∈ (fends w) ∧ ech o' ∈ q2.1) ∧
         send_split (Σ2 ∪ ΣD) Σe Θe ∧
         at_cost_V (S n) (c_give κ) (Vrel κ) (Vrel κ (S n)) W1 (Σv ∪ Θe) (payload_at m U x) w ∧
         at_cost_P (S n) (c_give κ) (Prel κ) X2 W1 (<[o := (Sc, x⁺)]> (Σr ∪ Σe)) TUnit
@@ -159,7 +160,7 @@ Section cross.
     assert (ech o ∉ q1.1) as Hn1.
     { intros Ho. destruct C2 as (S0 & x & ? & ? & ? & ? & ? & ? & ? & ? & Hl & _); [clear -Ho HCC; cc_set_solver|].
       apply elem_of_dom_2, elem_of_chans_of in Hl. rewrite chans_of_union, HKD in Hl. clear -Ho Hl HC1. cc_set_solver. }
-    destruct C2 as (S0 & x & m & U & b & Sc & Σv & Σr & Θe & Σe & L2 & U2 & Dvr & Edel & HΘe & HMv & Hss & AV & AP); [done|].
+    destruct C2 as (S0 & x & m & U & b & Sc & Σv & Σr & Θe & Σe & L2 & U2 & Dvr & Edel & HΘe & Hss & AV & AP); [done|].
     destruct C1 as (S0' & x' & m' & U' & b' & Sc' & L1 & U1 & AR); [done|].
     assert (ech o ∈ K) as HoK.
     { destruct (lookup_union_cases _ _ _ _ L2) as [Lc|[_ Lc]]; [|by apply elem_of_dom_2, elem_of_chans_of in Lc; rewrite HKD in Lc].
@@ -187,7 +188,8 @@ Section cross.
     pose proof (AR jj (Σv ∪ Θe) ltac:(unfold jj; lia) Hdj Hok HV) as P1.
     unfold erase in P1. simpl in P1. rewrite difference_empty_L in P1.
     assert (Prel κ jj W1 (<[o := (Sc, x⁺)]> (Σr ∪ Σe)) TUnit (erase (q2.1 ∖ set_map ech (dom Σv ∪ dom Θe), <[i := e']> M2))) as P2.
-    { simpl in AP. unfold fchans in AP. rewrite HMv in AP. eapply (at_cost_lvl X2P); [exact AP|]. unfold jj. lia. }
+    { assert (fends w = dom Σv ∪ dom Θe) as HMv by (by rewrite <-(Vrel_exact κ _ _ _ _ _ HV), dom_union_L).
+      simpl in AP. unfold fchans in AP. rewrite HMv in AP. eapply (at_cost_lvl X2P); [exact AP|]. unfold jj. lia. }
     pose proof (msg_conn Σ2 ΣD Σ1 ΣC q2.1 q1.1 Hcs o S0 x Ld Σv Σr Θe Σe Dvr Edel HΘe' Hss Sc Sc' (x⁺) HdS) as Hc'.
     pose proof (msg_iface Σ2 ΣD Σ1 ΣC q2.1 q1.1 Hcs o S0 x Ld Σv Σr Θe Σe Dvr Edel HΘe' Hss Sc Sc' (x⁺) HdS) as Hif.
     pose proof (msg_chans Σ2 ΣD Σ1 ΣC q2.1 q1.1 Hcs o S0 x Ld Σv Σr Θe Σe Dvr Edel HΘe' Hss Sc Sc' (x⁺) HdS) as Hch.

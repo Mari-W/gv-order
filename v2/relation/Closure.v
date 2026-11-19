@@ -196,7 +196,7 @@ Section closure.
     - intros q ev q' Hq Hst Hτ Hd. apply Hac. exact (H1 q ev q' Hq Hst Hτ Hd).
     - intros q i o w q' Hq Hst.
       destruct (H2 q i o w q' Hq Hst)
-        as (S0 & x & m' & U & b & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A6 & A7 & A8 & A9).
+        as (S0 & x & m' & U & b & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A7 & A8 & A9).
       exists S0, x, m', U, b, S, Σv, Σr, Θe, Σe. split_and!; [done..| |by apply Hac].
       eapply at_cost_V_down; [|exact A8]. lia.
     - intros q i o w q' Hq Hst. destruct (H3 q i o w q' Hq Hst) as (S0 & x & m' & U & b & S & A1 & A2 & A3).

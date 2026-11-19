@@ -122,7 +122,9 @@ Section extmsg.
     intros Hq Hst. destruct (ext_split _ _ _ _ Hq Hst) as (M1 & M2 & e & e' & Hd & HM1 & HM2 & He & Hsub & [(Hi & Hs & Eq)|(Hi & Hs & Eq)]);
       simpl in Hsub; assert (ech o ∉ K) as HnK by (clear -Hsub; cc_set_solver); rewrite Eq.
     - destruct H1 as (_ & _ & (_ & S1 & _)).
-      destruct (S1 _ _ _ _ _ (Hq1e M1 HM1) Hs) as (S0 & x & m & U & b & Sc & Σv1 & Σr1 & Θe1 & Σe1 & Lo & Uo & Dvr & Edel & HΘ1 & HM & Hss & AV & AP).
+      destruct (S1 _ _ _ _ _ (Hq1e M1 HM1) Hs) as (S0 & x & m & U & b & Sc & Σv1 & Σr1 & Θe1 & Σe1 & Lo & Uo & Dvr & Edel & HΘ1 & Hss & AV & AP).
+      assert (fends w = dom Σv1 ∪ dom Θe1) as HM
+        by (rewrite <-dom_union_L; symmetry; exact (at_cost_V_exact κ _ _ _ _ _ _ _ AV)).
       destruct (iface1 _ _ Lo HnK) as [Lo' Do].
       assert (∀ o', o' ∈ dom Θe1 → ech o' ∈ q1.1) as HΘe by (intros o' Ho'; by apply HΘ1).
       destruct (snd_moved Σ1 ΣC Σ2 ΣD q1.1 q2.1 Hc o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺) (fends w) HΘ1 HM) as [HΘ HM'].
@@ -135,7 +137,6 @@ Section extmsg.
       + apply (snd_vr Σ1 ΣC Σ2 ΣD q1.1 q2.1 Hc o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺)).
       + apply (snd_del Σ1 ΣC Σ2 ΣD q1.1 q2.1 Hc o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺)).
       + exact HΘ.
-      + exact HM'.
       + apply (snd_split Σ1 ΣC Σ2 ΣD q1.1 q2.1 Hc o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺)).
       + rewrite (snd_payload Σ1 ΣC Σ2 ΣD q1.1 q2.1 Hc o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺)). exact AV.
       + simpl in AP |- *. unfold fchans in AP |- *. rewrite HM in AP. rewrite <-Hif.
@@ -147,7 +148,9 @@ Section extmsg.
         unfold pconn, erase. simpl. unfold fchans. rewrite HM, Hch. f_equal.
     - rewrite HΣ12. pose proof (conn_sym _ _ _ _ _ _ Hc) as Hcs.
       destruct H2 as (_ & _ & (_ & S2 & _)).
-      destruct (S2 _ _ _ _ _ (Hq2e M2 HM2) Hs) as (S0 & x & m & U & b & Sc & Σv1 & Σr1 & Θe1 & Σe1 & Lo & Uo & Dvr & Edel & HΘ1 & HM & Hss & AV & AP).
+      destruct (S2 _ _ _ _ _ (Hq2e M2 HM2) Hs) as (S0 & x & m & U & b & Sc & Σv1 & Σr1 & Θe1 & Σe1 & Lo & Uo & Dvr & Edel & HΘ1 & Hss & AV & AP).
+      assert (fends w = dom Σv1 ∪ dom Θe1) as HM
+        by (rewrite <-dom_union_L; symmetry; exact (at_cost_V_exact κ _ _ _ _ _ _ _ AV)).
       destruct (iface2 _ _ Lo HnK) as [Lo' Do].
       assert (∀ o', o' ∈ dom Θe1 → ech o' ∈ q2.1) as HΘe by (intros o' Ho'; by apply HΘ1).
       destruct (snd_moved Σ2 ΣD Σ1 ΣC q2.1 q1.1 Hcs o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺) (fends w) HΘ1 HM) as [HΘ HM'].
@@ -160,7 +163,6 @@ Section extmsg.
       + apply (snd_vr Σ2 ΣD Σ1 ΣC q2.1 q1.1 Hcs o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺)).
       + apply (snd_del Σ2 ΣD Σ1 ΣC q2.1 q1.1 Hcs o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺)).
       + intros o'. rewrite (HΘ o'). simpl. rewrite HKD. clear. cc_set_solver.
-      + exact HM'.
       + apply (snd_split Σ2 ΣD Σ1 ΣC q2.1 q1.1 Hcs o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺)).
       + rewrite (snd_payload Σ2 ΣD Σ1 ΣC q2.1 q1.1 Hcs o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺)). exact AV.
       + simpl in AP |- *. unfold fchans in AP |- *. rewrite HM in AP. rewrite <-Hif.

@@ -431,7 +431,7 @@ Section bodies.
       ∃ S0 x m U b S Σv Σr Θe Σe, Σ !! o = Some (S0, x) ∧
         unfoldS S0 = SSeq (SSnd m U b) S ∧
         Σv ##ₘ Σr ∧ delete o Σ = Σv ∪ Σr ∧
-        (∀ o', o' ∈ dom Θe ↔ o' ∈ fends w ∧ ech o' ∈ p.1) ∧ fends w = dom Σv ∪ dom Θe ∧
+        (∀ o', o' ∈ dom Θe ↔ o' ∈ fends w ∧ ech o' ∈ p.1) ∧
         send_split Σ Σe Θe ∧
         at_cost_V n (c_give κ) Vl VN W (Σv ∪ Θe) (payload_at m U x) w ∧
         at_cost_P n (c_give κ) Pl X W (<[o := (S, x⁺)]> (Σr ∪ Σe)) T p'.
@@ -654,10 +654,10 @@ Section maps.
     split.
     { intros q i o w q' Hq Hs.
       destruct (H2 q i o w q' Hq Hs)
-        as (S0 & x & m & U & b & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A6 & A7 & A8 & A9).
+        as (S0 & x & m & U & b & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A6 & A7 & A9).
       exists S0, x, m, U, b, S, Σv, Σr, Θe, Σe. split; [exact A1|]. split; [exact A2|].
       split; [exact A3|]. split; [exact A4|]. split; [exact A5|]. split; [exact A6|].
-      split; [exact A7|]. split; [exact A8|].
+      split; [exact A7|].
       exact (at_cost_P_map _ _ _ _ _ _ _ _ _ (f _ _ _ _) A9). }
     split; [exact H3|].
     split.
@@ -841,7 +841,7 @@ Section mono.
     - intros q ev q' Hq Hs Hτ Hd. apply Hac. exact (H1 q ev q' Hq Hs Hτ Hd).
     - intros q i o w q' Hq Hs.
       destruct (H2 q i o w q' Hq Hs)
-        as (S0 & x & m & U & b & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A6 & A7 & A8 & A9).
+        as (S0 & x & m & U & b & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A7 & A8 & A9).
       exists S0, x, m, U, b, S, Σv, Σr, Θe, Σe. split_and!; [done..| |by apply Hac].
       eapply at_cost_V_mono; [done| |intros; by apply HVN|exact A8].
       intros j Hj. by apply HVl.

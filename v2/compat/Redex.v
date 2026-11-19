@@ -37,6 +37,13 @@ Section values.
       unfold ty_inst. rewrite tsize_pinst. simpl. lia.
   Qed.
 
+  Lemma at_cost_V_exact n c m W Θ T v :
+    at_cost_V n c (Vrel κ) (Vrel κ m) W Θ T v → dom Θ = fends v.
+  Proof.
+    intros [H0 H1]. destruct (decide (c = 0)) as [Hc|Hc];
+      [exact (Vrel_exact _ _ _ _ _ (H0 Hc))|exact (Vrel_exact _ _ _ _ _ (H1 Hc))].
+  Qed.
+
   Lemma Vrel_heads n W Θ T v :
     Vrel κ n W Θ T v → hbot T = false →
     ∀ o S x, Θ !! o = Some (S, x) → ∃ h, h ∈ heads T ∧ w_le W h x‾.

@@ -1118,7 +1118,6 @@ Section core.
       + intros o'. unfold rin. rewrite elem_of_dom_filter, <-HM. simpl. split.
         * intros (v & Hv & Hc'). split; [by eapply elem_of_dom_2|done].
         * intros [Hv Hc']. apply elem_of_dom in Hv as [v Hv]. eauto.
-      + by rewrite <-dom_union_L, (snd_ΘM C ΘM).
       + exact (snd_send_split Θ Σ ΘB C Hs o S0 x Ho Hc ΘM Θr Hd HΘ).
       + by rewrite (snd_ΘM C ΘM).
       + simpl. unfold fchans. rewrite <-HM. eapply ac_EP; [done|exact (snd_sth Θ Σ ΘB C Hs o S0 x Ho Hc ΘM Θr Hd HΘ _)|exact HA].
