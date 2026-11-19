@@ -214,24 +214,25 @@ ${h('rd.above-offered', R`\mathsf{covered}`)} & \iff & ${h('rd.above-offered', R
 block(s, {
   id: 'p-body', title: 'The process relation', rocq: 'relation/Relation.v: Pbody, Pclauses, Pind, Ptop',
   tex: R`\begin{array}{l}
-p \in ${P('W', R`n{+}1`, R`\Sigma`, 'T')} \iff ${h('P.strict', R`\forall W_1 ${EXT} W.\ ${h('w.strict', R`\mathsf{strict}`)}\,W_1 \Rightarrow {}`)} \\
-\quad ${h('P.fuse', R`\forall h, D.\ ${h('sr.fuseok', R`\mathsf{fuse\_ok}`)}\,h\,D\,\Sigma\,p \Rightarrow \text{clauses at } W_1,\ \Sigma' = ${h('sr.sdrop', R`\mathsf{sdrop}`)}\,D\,(h\,\Sigma),\ p' = ${h('sr.pfuse', R`\mathsf{pfuse}`)}\,h\,D\,p`)} \\
-\quad ${h('P-Stop', R`(\textsf{P-Stop})\ ${h('sr.pirred', R`\mathsf{pirred}`)}\,p' \Rightarrow \exists v, E.\ p' = (\varnothing, \{v\} ${BIN('tp.msunion', R`\uplus`)} E) \land v \in ${V('W_1', R`n{+}1`, R`\Sigma'`, 'T')} \land \forall e \in E.\ e = \ast`)} \\
-\quad ${h('P-Ready', R`(\textsf{P-Ready})\ \neg\mathsf{pirred}\,p' \Rightarrow ${h('sr.readyp', R`\mathsf{ready}_{W_1}(\Sigma', p')`)}`)} \\
-\quad ${h('P-Step', R`(\textsf{P-Step})\ \forall q, ev, q'.\ ${h('proc.erase', R`\mathsf{erase}`)}\,q = p' \land q \xrightarrow{ev} q' \Rightarrow ${h('sr.pobl', R`\mathsf{Pobl}_{ev}(\mathsf{erase}\,q')`)}`)} \qquad ${h('rel.lfp', R`\text{least fixpoint}`)}
+p \in ${P('W', R`n{+}1`, R`\Sigma`, 'T')} \iff ${h('P.strict', R`\forall W_1 ${EXT} W.\ ${h('w.strict', R`\mathsf{strict}`)}\,W_1`)} \Rightarrow ${h('P.fuse', R`\forall h, D.\ ${h('sr.fuseok', R`\mathsf{fuse\_ok}`)}\,h\,D\,\Sigma\,p`)} \Rightarrow \text{at } p' = ${h('sr.pfuse', R`\mathsf{pfuse}`)}\,h\,D\,p,\ \Sigma' = ${h('sr.sdrop', R`\mathsf{sdrop}`)}\,D\,(h\,\Sigma) \\
+\quad ${h('P-Stop', R`(\mathsf{stop})\ ${h('sr.pirred', R`\mathsf{pirred}`)}\,p' \Rightarrow p' = (\varnothing, \{v\} ${BIN('tp.msunion', R`\uplus`)} E) \land v \in ${V('W_1', R`n{+}1`, R`\Sigma'`, 'T')} \land E \subseteq \{\ast\}`)} \\
+\quad ${h('P-Ready', R`(\mathsf{ready})\ \neg\mathsf{pirred}\,p' \Rightarrow ${h('sr.readyp', R`\mathsf{ready}_{W_1}(\Sigma', p')`)}`)} \\
+\quad ${h('P-Step', R`(\mathsf{step})\ ${h('proc.erase', R`\mathsf{erase}`)}\,q = p' \land q \xrightarrow{ev} q' \Rightarrow ${h('sr.pobl', R`\mathsf{Pobl}_{ev}(\mathsf{erase}\,q')`)}`)} \qquad ${h('rel.lfp', R`\text{least fixpoint}`)}
 \end{array}`,
-  caption: 'A process in $P$ meets three clauses in every strict later world and after every admissible fusion of its held ends.'
+  caption: 'A process meets the three clauses of a term, stop, ready and step, in every strict later world and after every admissible fusion of its held ends. Composition fuses ends, so the relation is closed under it from the start.'
 });
 block(s, {
   id: 'p-fuse', title: 'Fusions of held ends', rocq: 'relation/Relation.v: fuse_ok, pheld, pfuse, sdrop, dpairs, gch',
-  tex: R`\begin{array}{l}
-${h('sr.fuseok', R`\mathsf{fuse\_ok}\,h\,D\,\Sigma\,(C, E)`)} \iff ${h('fuse.dcomm', R`\forall o.\ h(\overline{o}) = \overline{h(o)}`)} \land {} \\
-\quad ${h('fuse.inj', R`\forall o_1, o_2 \in ${h('sr.held', R`\mathsf{held}`)}.\ h(o_1) = h(o_2) \Rightarrow o_1 = o_2`)} \land {} \\
-\quad ${h('fuse.partners', R`\forall o_1, o_2 \in \mathsf{held}.\ h(o_2) = \overline{h(o_1)} \Rightarrow o_2 = \overline{o_1} \lor ${ECH}(h\,o_1) \in D`)} \land {} \\
-\quad ${h('fuse.D', R`D \cap ${h('sr.gch', R`\mathsf{gch}_h`)}[C] = \varnothing`)} \land ${h('fuse.dpairs', R`\mathsf{dpairs}\,D\,(h\,\Sigma)`)} \\
-${h('sr.held', R`\mathsf{held} = \{o \mid o \in \mathrm{dom}\,\Sigma \lor ${ECH}\,o \in C\}`)} \qquad ${h('sr.gch', R`\mathsf{gch}_h(c) = ${ECH}(h(c^{+}))`)} \\
-${h('sr.sdrop', R`\mathsf{sdrop}\,D\,\Sigma = \{o \mapsto y \in \Sigma \mid ${ECH}\,o \notin D\}`)} \qquad ${h('sr.pfuse', R`\mathsf{pfuse}\,h\,D\,(C, E) = (\mathsf{gch}_h[C] \cup D,\ h[E])`)} \\
-${h('fuse.dpairs', R`\mathsf{dpairs}\,D\,\Sigma \iff \forall o.\ ${ECH}\,o \in D \Rightarrow \Sigma(o) = S@x \land \Sigma(\overline{o}) = S'@\overline{x} \land ${SDUAL}\,S\,S'`)}
+  tex: R`\begin{array}{rcll}
+${h('sr.fuseok', R`\mathsf{fuse\_ok}\,h\,D\,\Sigma\,(C, E)`)} & \iff & ${h('fuse.dcomm', R`\forall o.\ h(\overline{o}) = \overline{h(o)}`)} & \text{respects duality} \\
+ & \land & ${h('fuse.inj', R`h(o_1) = h(o_2) \Rightarrow o_1 = o_2`)} & \text{injective, } o_1, o_2 \in \mathsf{held} \\
+ & \land & ${h('fuse.partners', R`h(o_2) = \overline{h(o_1)} \Rightarrow o_2 = \overline{o_1} \lor ${ECH}(h\,o_1) \in D`)} & \text{new pairs restricted, } o_1, o_2 \in \mathsf{held} \\
+ & \land & ${h('fuse.D', R`D \cap ${h('sr.gch', R`\mathsf{gch}_h`)}[C] = \varnothing`)} \land ${h('fuse.dpairs', R`\mathsf{dpairs}\,D\,(h\,\Sigma)`)} & D \text{ fresh and dual} \\[1ex]
+${h('sr.held', R`\mathsf{held}`)} & = & ${h('sr.held', R`\{o \mid o \in \mathrm{dom}\,\Sigma \lor ${ECH}\,o \in C\}`)} \\
+${h('sr.gch', R`\mathsf{gch}_h(c)`)} & = & ${h('sr.gch', R`${ECH}(h(c^{+}))`)} \\
+${h('sr.sdrop', R`\mathsf{sdrop}\,D\,\Sigma`)} & = & ${h('sr.sdrop', R`\{o \mapsto y \in \Sigma \mid ${ECH}\,o \notin D\}`)} \\
+${h('sr.pfuse', R`\mathsf{pfuse}\,h\,D\,(C, E)`)} & = & ${h('sr.pfuse', R`(\mathsf{gch}_h[C] \cup D,\ h[E])`)} \\
+${h('fuse.dpairs', R`\mathsf{dpairs}\,D\,\Sigma`)} & \iff & ${h('fuse.dpairs', R`${ECH}\,o \in D \Rightarrow \Sigma(o) = S@x \land \Sigma(\overline{o}) = S'@\overline{x} \land ${SDUAL}\,S\,S'`)}
 \end{array}`,
   caption: 'An admissible fusion $(h, D)$ renames held ends injectively up to the new pairs it restricts as $D$.'
 });

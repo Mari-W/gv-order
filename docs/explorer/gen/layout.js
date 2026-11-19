@@ -97,6 +97,7 @@ merge('r-boxes', 'Boxes', ['r-box', 'r-force'], {
   why: 'Boxes are the only recursion and the only polymorphism over points and protocols. Each force picks an instance.'
 });
 set('r-ex', b => { b.title = 'Existentials'; });
+set('r-new', b => { b.title = 'Creation'; });
 merge('r-act', 'Actions and link', ['r-send', 'r-recv', 'r-close', 'r-select', 'r-branch', 'r-link'], {
   caption: R`An action on an end at $x$ waits at $x$ while the thread holds the rest of $\Delta$, so $x$ lies below the future and below the partner points of what is held. Send and receive move the end to $x^{+}$ and the payload to the fields of $x$, a choice moves it to the field of the branch, and a link asks no order fact. \annp{In the lock-free mode every action returns the end refilled at $N$ and costs one, and a link spends a ticket.}`,
   why: 'The session primitives. Every order fact the type system asks for is asked here, at the moment a thread waits.'
