@@ -12133,6 +12133,70 @@ window.MAP = {
      "rocq": "ctl_lftyped"
     }
    }
+  },
+  {
+   "id": "rx-postpone",
+   "title": "Postponement, a holder that never serves",
+   "modes": [
+    "lf"
+   ],
+   "code": "chat = !(f = λa. let a = send ⟨∗, a⟩ in (force f) a)\nloop = !(f = λ⟨a, b⟩. let ⟨u, a⟩ = recv a in let ∗ = u in (force f) ⟨a, b⟩)\nmain = let ⟨a, a′⟩ = new in let ⟨b, b′⟩ = new in\n       let ∗ = spawn (λ_. (force chat) a′) in\n       let ∗ = spawn (λ_. close b′) in\n       (force loop) ⟨a, b⟩            -- holds b forever, close b′ waits forever",
+   "shows": "$\\mathsf{loop}$ holds $b$ across a loop that never returns, so $\\mathsf{close}\\,b'$ waits while the process keeps stepping. Aging asks $c \\leq a$ of every held end, and the loop has cost $c = \\infty$.",
+   "rocq": "to be mechanized",
+   "accepts": {
+    "lf": {
+     "ok": false,
+     "part": "aging"
+    }
+   }
+  },
+  {
+   "id": "rx-delegate",
+   "title": "Endless delegation, an end that travels forever",
+   "modes": [
+    "lf"
+   ],
+   "code": "pass = !(f = λ⟨e, x, y⟩. let x = send ⟨e, x⟩ in let ⟨e, y⟩ = recv y in (force f) ⟨e, x, y⟩)\nback = !(f = λ⟨x, y⟩. let ⟨e, x⟩ = recv x in let y = send ⟨e, y⟩ in (force f) ⟨x, y⟩)\nmain = let ⟨e, e′⟩ = new in let ⟨x, x′⟩ = new in let ⟨y, y′⟩ = new in\n       let ∗ = spawn (λ_. close e′) in       -- waits for e forever\n       let ∗ = spawn (λ_. (force back) ⟨x′, y′⟩) in\n       (force pass) ⟨e, x, y⟩                -- e goes back and forth forever",
+   "shows": "$e$ travels between two threads forever and its partner $e'$ waits. Each send hands $e$ on with its counter minus one, so after finitely many hops no credit is left to send it again.",
+   "rocq": "to be mechanized",
+   "accepts": {
+    "lf": {
+     "ok": false,
+     "part": "payload credit"
+    }
+   }
+  },
+  {
+   "id": "rx-relink",
+   "title": "Link refresh, a waiter that always faces a fresh end",
+   "modes": [
+    "lf"
+   ],
+   "code": "refresh = !(f = λ⟨w, k⟩. let ⟨c, c′⟩ = new in\n                     let ∗ = link ⟨w, c⟩ in          -- the waiter now talks to c′\n                     let k = send ⟨∗, k⟩ in           -- one step on another channel\n                     (force f) ⟨c′, k⟩)\nsink    = !(f = λk. let ⟨u, k⟩ = recv k in let ∗ = u in (force f) k)\nmain = let ⟨w, w′⟩ = new in let ⟨k, k′⟩ = new in\n       let ∗ = spawn (λ_. close w′) in              -- waits forever\n       let ∗ = spawn (λ_. (force sink) k′) in\n       (force refresh) ⟨w, k⟩",
+   "shows": "Each round links the partner of the waiting end to a fresh channel, so the waiter always faces a fresh end with a full counter and no counter runs out. Each link spends one ticket of its thread and no step creates tickets.",
+   "rocq": "to be mechanized",
+   "accepts": {
+    "lf": {
+     "ok": false,
+     "part": "tickets"
+    }
+   }
+  },
+  {
+   "id": "rx-chain",
+   "title": "A waiting chain that grows forever",
+   "modes": [
+    "lf"
+   ],
+   "code": "grow = !(f = λw. let ⟨c, c′⟩ = new in                 -- c below the point of w\n                 let ⟨d, d′⟩ = new in let ∗ = spawn (λ_. recvclose d′) in\n                 let ∗ = close (send ⟨∗, d⟩) in              -- one session action\n                 let ∗ = spawn (λ_. (force f) c′) in\n                 let ∗ = close c in close w)                 -- waits on its child\nmain = let ⟨w, w′⟩ = new in let ∗ = spawn (λ_. close w′) in (force grow) w\n-- every thread waits on the one it spawned, close w′ never proceeds",
+   "shows": "Each thread waits on a point below the point of its predecessor, and new threads keep appearing. A well-founded order has no infinite descending chain, so lock-free typing asks $\\mathsf{wfworld}\\,W$ of every world the run reaches.",
+   "rocq": "to be mechanized",
+   "accepts": {
+    "lf": {
+     "ok": false,
+     "part": "well-founded world"
+    }
+   }
   }
  ]
 };

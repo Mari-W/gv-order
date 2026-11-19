@@ -101,6 +101,26 @@ must do, open questions.
    typing, semantic-typing, fuel and theorem blocks still show the old
    credits and must follow the Rocq once this is implemented.
 
+7. **One rejected example per lock-freedom mechanism (2026-11-19).** The
+   map's examples page shows four programs that step forever without a
+   deadlock while a thread waits forever: postponement (rx-postpone, aging),
+   endless delegation (rx-delegate, payload credit / one hop), link refresh
+   (rx-relink, tickets), a growing waiting chain (rx-chain, well-founded
+   world); τ-divergence is covered by the guard rejections. Rocq: for each,
+   the process, a proof that it is not lock free, and a proof that it is
+   not lock-free typable at any N (or that the named premise fails for
+   every derivation); then fill the badges' Rocq names. rx-chain depends on
+   entry 2's risk (b) once worlds grow. Map: done (badges say "to be
+   mechanized").
+
+8. **Readable typing notation (draft, under review).** Map: draft blocks at
+   the end of the typing section (Draft notation, Draft E-App, E-Send,
+   E-Abs): one linear context Δ for ends and variables, W and N implicit,
+   held entries `∥ H` (future ∪ heads(H), and in LF the aging H − c), and
+   one effect ε = (c, ϑ) with sequencing ε₁·ε₂ (defined iff tok). Pure
+   notation over the current rules. If the author approves: convert every
+   rule on the map. Rocq: optional definitions and unfolding lemmas.
+
 ## Done in the Rocq
 
 (entries move here once the repair agent has implemented and merged them)

@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const core = require('./core');
-require('./syntax'); require('./semantics'); require('./types'); require('./typing'); require('./draft'); require('./semrel'); require('./theorems');
+require('./syntax'); require('./semantics'); require('./types'); require('./typing'); require('./draft'); require('./semrel'); require('./theorems'); require('./rejects');
 const katex = require('/home/mari/.vscode-server/extensions/goessner.mdmath-2.7.4/node_modules/katex/dist/katex.js');
 const { sections, notes, examples, sigs } = core;
 for (const [k, v] of Object.entries(sigs)) { if (!notes[k]) { console.log('SIG-NO-NOTE', k); } else { notes[k].sig = v.sig; notes[k].args = v.args; } }
