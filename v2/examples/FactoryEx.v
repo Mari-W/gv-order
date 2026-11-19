@@ -164,20 +164,20 @@ Proof.
     - eapply d_recv with (x := (pvar 0)‾) (m := 0) (T := TUnit) (b := None) (S0 := Sr);
         [done|exact I| |eapply d_var'; [reflexivity|spare_tac]].
       apply ub_below_novar; [|reflexivity]. intros y Hy.
-      cbn [sf_unionb sf_union fst snd lenv_bot hbot orb] in Hy. heads_cases Hy.
+      cbn [sf_unionb fst snd lenv_bot hbot orb] in Hy. heads_cases Hy.
       apply fx_law; [by left|simpl; lia].
     - eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 1) EUnit| |].
       { eapply d_var'; [reflexivity|]. spare_tac. }
       eapply d_close with (S0 := SEnd) (x := pt_shift 1 (pvar 0)‾); [done| |].
       + apply ub_below_novar; [|reflexivity]. intros y Hy.
-        cbn [sf_unionb sf_union fst snd lenv_bot hbot orb] in Hy. heads_cases Hy.
+        cbn [sf_unionb fst snd lenv_bot hbot orb] in Hy. heads_cases Hy.
         apply fx_law; [by right|simpl; lia].
       + eapply d_var'; [reflexivity|]. spare_tac. }
   eapply d_letp with (b1 := None) (b2 := None); [apply tsplit_empty|lsplit_tac (ERecv (Var 0)) EUnit| |].
   - eapply d_recv with (x := ((pvar 0)·0)‾) (m := 0) (T := TUnit) (b := None) (S0 := Sr);
       [done|exact I| |eapply d_var'; [reflexivity|spare_tac]].
     apply ub_below_novar; [|reflexivity]. intros y Hy.
-    cbn [sf_unionb sf_union fst snd lenv_bot hbot orb] in Hy. heads_cases Hy.
+    cbn [sf_unionb fst snd lenv_bot hbot orb] in Hy. heads_cases Hy.
   - eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 1) EUnit| |].
     { eapply d_var'; [reflexivity|]. spare_tac. }
     eapply d_close with (S0 := SEnd) (x := pt_shift 1 ((pvar 0)·0)‾); [done|apply ub_below_empty|].

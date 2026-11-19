@@ -5,7 +5,7 @@
     (static/Conservativity.v). Programs create every channel with
     [new_ℓ] or [new_κ], so Θ is empty throughout. *)
 
-From GV Require Export static.Conservativity static.Weakening.
+From GV Require Export static.Conservativity static.Weakening static.PointSubst.
 
 (** let (a, b) = new_ℓ in e, the ∃ of new bound at index 2 and opened. *)
 Definition let_new (ℓ : family) (e : expr) : expr := ELet (ENew ℓ) (LetP (Var 0) e).
@@ -145,9 +145,6 @@ Ltac pt_norm := cbn [fact_map pt_inst pt_polar pt_shift pt_dual pt_field pn_inst
 
 Ltac fact_eq := pt_norm; repeat f_equal; lia.
 
-Lemma tenv_pinst_empty σ : tenv_pinst σ ∅ = ∅.
-Proof. apply fmap_empty. Qed.
-
 Lemma sf_pinst_empty σ : sf_pinst σ (∅, None) = (∅, None).
 Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.
 
@@ -164,10 +161,10 @@ Proof.
 Qed.
 
 Lemma lb_below_none W Γ Δ : (∀ y o, Δ !! y = Some o → spare o) →
-  lb_below_hb W Γ None (tenv_heads ∅ ∪ lenv_heads Δ) (lenv_bot Δ).
+  lbx_below_h W Γ (lbound_of None) (tenv_heads ∅ ∪ lenv_heads Δ) (lenv_bot Δ).
 Proof.
   intros H. destruct (spare_heads Δ H) as [-> ->]. rewrite tenv_heads_empty.
-  unfold lb_below_hb, lb_below_h. set_solver.
+  simpl. split; [set_solver|done].
 Qed.
 
 Lemma sinst_id_mut :

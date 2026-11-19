@@ -118,17 +118,6 @@ Lemma aend_not_link a o os : aend a = Some o → offers a (LSess (SLink os)) →
 Proof. by destruct a. Qed.
 
 (** V at a primitive type holds no end. *)
-Lemma Vrel_prim_empty κ n W Θ T v : prim T → Vrel κ n W Θ T v → Θ = ∅.
-Proof.
-  intros Hp. revert Θ v. induction Hp as [|U a V b HU IHU HV IHV|U a V b HU IHU HV IHV|m k C ub c t U a HU IH];
-    intros Θ v.
-  - by intros [-> _]%Vrel_unit_iff.
-  - intros (v1 & v2 & Θ1 & Θ2 & _ & _ & -> & H1 & H2)%Vrel_prod_iff.
-    by rewrite (IHU _ _ H1), (IHV _ _ H2), map_union_empty.
-  - intros [(v' & _ & H)|(v' & _ & H)]%Vrel_sum_iff; [by apply (IHU _ v')|by apply (IHV _ v')].
-  - by intros [-> _]%Vrel_box_iff.
-Qed.
-
 (** ** The facts of one soup *)
 
 Section local.

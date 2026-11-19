@@ -148,22 +148,6 @@ Proof. destruct α as [| | | |[]]; simpl; by rewrite ?cerase_idem, ?set_map_eras
 Lemma admin_lerase α : admin_lbl (lerase α) ↔ admin_lbl α.
 Proof. destruct α as [| | | |[]]; done. Qed.
 
-Definition frame_emap (g : cend → cend) (f : frame) : frame :=
-  match f with
-  | FAppL e2 => FAppL (emap g e2) | FAppR v => FAppR (emap g v)
-  | FPairL e2 => FPairL (emap g e2) | FPairR v => FPairR (emap g v)
-  | FLetU e2 => FLetU (emap g e2) | FLetP e2 => FLetP (emap g e2)
-  | FInj b => FInj b
-  | FCase e1 e2 => FCase (emap g e1) (emap g e2)
-  | FOp k => FOp k
-  end.
-
-Lemma emap_fill g f e : emap g (fill_frame f e) = fill_frame (frame_emap g f) (emap g e).
-Proof. by destruct f. Qed.
-
-Lemma frame_val_emap g f : frame_val (frame_emap g f) ↔ frame_val f.
-Proof. destruct f; simpl; rewrite ?is_val_emap; done. Qed.
-
 (** An erased term steps with the erased label, to the erased result up
     to the names a creation picks. *)
 Lemma tstep_cerase e α e' :

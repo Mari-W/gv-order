@@ -116,6 +116,22 @@ Proof.
   apply (Hg (h o1) (h o2) v1 v2); [by apply H1|by apply H1|exact Heq].
 Qed.
 
+Lemma kinj_nil {Y : Type} (g : cend → cend) : kinj (Y := Y) g ∅.
+Proof. intros ? ? ? ?; by rewrite lookup_empty. Qed.
+
+Lemma kinj_union {Y : Type} (g : cend → cend) (m1 m2 : gmap cend Y) :
+  kinj g m1 → kinj g m2 → (∀ o1 o2, o1 ∈ dom m1 → o2 ∈ dom m2 → g o1 ≠ g o2) →
+  kinj g (m1 ∪ m2).
+Proof.
+  intros H1 H2 Hx o1 o2 v1 v2 Ho1 Ho2 Heq.
+  apply lookup_union_Some_raw in Ho1 as [Ho1|[N1 Ho1]], Ho2 as [Ho2|[N2 Ho2]].
+  - exact (H1 o1 o2 v1 v2 Ho1 Ho2 Heq).
+  - exfalso. apply (Hx o1 o2); [by eapply elem_of_dom_2|by eapply elem_of_dom_2|done].
+  - exfalso. apply (Hx o2 o1); [by eapply elem_of_dom_2|by eapply elem_of_dom_2|done].
+  - exact (H2 o1 o2 v1 v2 Ho1 Ho2 Heq).
+Qed.
+
+
 (** ** The order on refills
 
     Finite refills are ordered by ≤, and ∞ lies above ∞ only. FuelE and

@@ -160,7 +160,7 @@ Lemma e_app_ W N Γ Δ Δ1 Δ2 Δ2' F e1 e2 ub lb c t h T aT U aU a1 c1 t1 c2 t2
   typed W N ∅ Γ Δ1 (sf_unionb F (tenv_heads ∅ ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1
     (TLolli ub lb c t h T aT U aU) a1 c1 t1 →
   lage c1 Δ2 Δ2' →
-  typed W N ∅ Γ Δ2' (sf_union F (opt_heads lb)) e2 T aT c2 t2 →
+  typed W N ∅ Γ Δ2' (sf_unionb F (opt_heads lb) false) e2 T aT c2 t2 →
   fle c2 a1 → tok t2 t → tok t1 (tseq t2 t) →
   typed W N ∅ Γ Δ F (App e1 e2) U aU (fadd c1 (fadd c2 c)) (tseq t1 (tseq t2 t)).
 Proof. intros. eapply e_app; eauto using tsplit_empty, thage_empty. Qed.

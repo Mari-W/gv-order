@@ -48,9 +48,6 @@ Qed.
 Lemma chans_of_elem (Σ : senv) o : o ∈ dom Σ → ech o ∈ chans_of Σ.
 Proof. intros H. unfold chans_of. apply elem_of_map. by exists o. Qed.
 
-Lemma chans_of_union_c (Σ1 Σ2 : senv) : chans_of (Σ1 ∪ Σ2) = chans_of Σ1 ∪ chans_of Σ2.
-Proof. unfold chans_of. by rewrite dom_union_L, set_map_union_L. Qed.
-
 Lemma chans_dom_disj (Σ1 Σ2 : senv) : chans_of Σ1 ## chans_of Σ2 → dom Σ1 ## dom Σ2.
 Proof. intros H o H1 H2. apply (H (ech o)); by apply chans_of_elem. Qed.
 
@@ -397,16 +394,16 @@ Proof.
     Hs1 Hs2 HM) as Hp.
   rewrite Heq in Hp.
   assert (chans_of (ΣC ∪ ΣD) = chans_of ΣC) as Hcu.
-  { rewrite chans_of_union_c, HD. set_solver. }
+  { rewrite chans_of_union, HD. set_solver. }
   rewrite <-Hcu. apply (soup_nu _ _ _ _ (ΣC ∪ ΣD)).
   - apply Hp; [|done| |].
     + rewrite !dom_union_L. pose proof (chans_dom_disj Σ1 Σ2 H12). pose proof (chans_dom_disj Σ1 ΣC H1C).
       pose proof (chans_dom_disj Σ1 ΣD ltac:(by rewrite HD)). pose proof (chans_dom_disj Σ2 ΣC H2C).
       set_solver.
-    + by rewrite chans_of_union_c, HD.
-    + by rewrite chans_of_union_c.
+    + by rewrite chans_of_union, HD.
+    + by rewrite chans_of_union.
   - rewrite Hcu. set_solver.
-  - rewrite Hcu, chans_of_union_c. set_solver.
+  - rewrite Hcu, chans_of_union. set_solver.
   - intros o S x Ho. by apply cut_pair.
 Qed.
 

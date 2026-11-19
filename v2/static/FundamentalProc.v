@@ -46,7 +46,7 @@ Proof.
   intros H1 H2 D1 D2 Hf H12 H1C H2C HC HC1 HC2.
   pose proof (ptyped_pfree _ _ _ _ _ H1) as F1. pose proof (ptyped_pfree _ _ _ _ _ H2) as F2.
   pose proof (ptyped_chans _ _ _ _ _ H1) as K1. pose proof (ptyped_chans _ _ _ _ _ H2) as K2.
-  simpl in K1, K2. rewrite chans_of_union' in K1, K2.
+  simpl in K1, K2. rewrite chans_of_union in K1, K2.
   rewrite (cut_dual_chans _ _ (senv_dual_cut ΣC)) in K2.
   constructor; try done.
   - apply senv_dual_cut.

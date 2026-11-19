@@ -245,7 +245,7 @@ Proof. intros HΔ. dfr. by eapply e_chan, lenv_unl_df. Qed.
 
 Lemma d_abs W Θ Γ Δ F e T aT U aU ub lb c t h φ :
   φ ∉ dom (hc_fv Γ) →
-  lb_below_hb W Γ lb (tenv_heads Θ ∪ lenv_heads Δ) (lenv_bot Δ) →
+  lbx_below_h W Γ (lbound_of lb) (tenv_heads Θ ∪ lenv_heads Δ) (lenv_bot Δ) →
   dftyped W Θ (hc_fvar φ ub Γ) (Some (T, aT) :: Δ) (∅, Some (FVar φ)) e U →
   dftyped W Θ Γ Δ F (Lam e) (TLolli ub lb c t h T aT U aU).
 Proof.
@@ -259,7 +259,7 @@ Lemma d_app W Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e1 e2 ub lb c t h T aT U aU :
   tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_below_s W Γ ub F →
   dftyped W Θ1 Γ Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1
     (TLolli ub lb c t h T aT U aU) →
-  dftyped W Θ2 Γ Δ2 (sf_union F (opt_heads lb)) e2 T →
+  dftyped W Θ2 Γ Δ2 (sf_unionb F (opt_heads lb) false) e2 T →
   dftyped W Θ Γ Δ F (App e1 e2) U.
 Proof.
   intros Hs Hl Hub H1 H2. dfr.

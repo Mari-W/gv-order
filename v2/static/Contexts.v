@@ -101,10 +101,8 @@ Definition fs_var (o : option futrest) : option nat :=
 Definition fs_bot (o : option futrest) : bool :=
   match o with Some (FBot _) => true | _ => false end.
 
-Definition sf_union (F : sfuture) (X : gset point) : sfuture := (F.1 ∪ X, F.2).
-
 Definition sf_unionb (F : sfuture) (X : gset point) (b : bool) : sfuture :=
-  if b then (F.1 ∪ X, Some (FBot (fs_var F.2))) else sf_union F X.
+  if b then (F.1 ∪ X, Some (FBot (fs_var F.2))) else (F.1 ∪ X, F.2).
 
 (** Γ, one context for the facts and the future hypotheses (A.5). *)
 Record hctx := HCtx { hc_hyps : hyps; hc_fv : fhyps }.
@@ -146,18 +144,17 @@ Definition ub_below_s (W : world) (Γ : hctx) (ub : option point) (F : sfuture) 
               fs_bot F.2 = false
   end.
 
-Definition lb_below_h (W : world) (Γ : hctx) (lb : option point) (H : gset point) : Prop :=
-  match lb with None => H = ∅ | Some x => ∀ y, y ∈ H → sle W Γ x y end.
-
-Definition lb_below_hb (W : world) (Γ : hctx) (lb : option point) (H : gset point) (b : bool) : Prop :=
-  if b then False else lb_below_h W Γ lb H.
-
 Definition lbx_below_h (W : world) (Γ : hctx) (lb : lbound) (H : gset point) (b : bool) : Prop :=
   match lb with
   | LBot => True
   | LNone => H = ∅ ∧ b = false
   | LPt x => (∀ y, y ∈ H → sle W Γ x y) ∧ b = false
   end.
+
+(** The lower bound of an arrow as a bound of [lbx_below_h]: none, or a
+    point. *)
+Definition lbound_of (lb : option point) : lbound :=
+  match lb with None => LNone | Some x => LPt x end.
 
 (** ** Point instantiation of contexts *)
 

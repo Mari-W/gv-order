@@ -2071,3 +2071,24 @@ The old development in theories/ stays untouched.
   `ext_send`, the mono, down and conv lemmas of relation/Relation.v,
   relation/Closure.v, compat/Conv.v). No other clause changes, and
   every theorem keeps its statement.
+- M.9. Small duplicates (decision of 2026-11-18, cleanup). Each helper
+  is proved once: `Vrel_prim_empty` (compat/Blind.v, was in
+  compat/Connect.v and soup/LFLocal.v), `frame_emap`, `emap_fill`,
+  `frame_val_emap` (lang/Semantics.v, were in lockfree/TauThread.v and
+  fuel/FuelValues.v), `offers_send` … `offers_bra` (lang/Safety.v, the
+  copies in soup/LFRunFacts.v are gone), the duality lemmas `sdual_sym`,
+  `sdual_snd`, `sdual_rcv`, `sdual_end`, `sdual_plus`, `sdual_with`,
+  `sdual_bsel` and the `unfold_dual_*` (compat/Blind.v, from
+  compat/Connect.v; soup/Sessions.v keeps the forms with both unfoldings
+  as corollaries `sdual_snd_both`, `sdual_plus_both`), `chans_of_union`
+  (static/Typing.v, was `chans_of_union'` there and a copy each in
+  compat/Connect.v and soup/SoupCompose.v), `kinj_nil`, `kinj_union`
+  (fuel/Fuel.v, the senv copies `kinj_empty`, `kinj_union` of
+  compat/Rename.v are gone) and `tenv_pinst_empty` (static/PointSubst.v,
+  examples/Tools.v now exports it). One lower-bound predicate:
+  `lb_below_h` and `lb_below_hb` are gone, E-Abs and D-Abs ask
+  `lbx_below_h W Γ (lbound_of lb) …` with `lbound_of None = LNone` and
+  `lbound_of (Some x) = LPt x`, the same condition. One union of
+  futures: `sf_union F X` is gone, E-App and D-App write `sf_unionb F X
+  false`, and `sf_den_union`, `sf_pinst_union`, `sf_gmap_union` go with
+  it. The section hypothesis `Hsl` went in M.1.

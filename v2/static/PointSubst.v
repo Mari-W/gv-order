@@ -230,12 +230,9 @@ Lemma lenv_pinst_insert σ Δ i T a :
   lenv_pinst σ (<[i := Some (T, a)]> Δ) = <[i := Some (pinst_ty σ T, a)]> (lenv_pinst σ Δ).
 Proof. unfold lenv_pinst. by rewrite list_fmap_insert. Qed.
 
-Lemma sf_pinst_union σ F X : sf_pinst σ (sf_union F X) = sf_union (sf_pinst σ F) (set_map (pt_inst σ) X).
-Proof. unfold sf_pinst, sf_union. simpl. by rewrite set_map_union_L. Qed.
-
 Lemma sf_pinst_unionb σ F X b :
   sf_pinst σ (sf_unionb F X b) = sf_unionb (sf_pinst σ F) (set_map (pt_inst σ) X) b.
-Proof. destruct b; unfold sf_pinst, sf_unionb, sf_union; simpl; by rewrite set_map_union_L. Qed.
+Proof. destruct b; unfold sf_pinst, sf_unionb; simpl; by rewrite set_map_union_L. Qed.
 
 Lemma sf_pinst_nil σ o : sf_pinst σ (∅, o) = (∅, o).
 Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.
@@ -269,5 +266,5 @@ Proof. rewrite pt_inst_pvar_at. unfold pup. by rewrite decide_True by lia. Qed.
 
 Local Ltac heads_p :=
   rewrite ?tenv_heads_pinst, ?lenv_heads_pinst, ?lenv_bot_pinst, ?heads_pinst, ?hbot_pinst,
-    ?opt_heads_pinst, <-?set_map_union_L, <-?sf_pinst_unionb, <-?sf_pinst_union.
+    ?opt_heads_pinst, <-?set_map_union_L, <-?sf_pinst_unionb.
 

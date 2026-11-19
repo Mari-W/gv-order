@@ -123,7 +123,7 @@ Section body.
   Ltac fut :=
     lazymatch goal with
     | |- ub_below_s _ _ (Some ?x) ?F =>
-        rewrite ?lenv_bot_nones; cbn [lenv_bot hbot orb sf_unionb sf_union fst snd];
+        rewrite ?lenv_bot_nones; cbn [lenv_bot hbot orb sf_unionb fst snd];
         apply (ub_below_var _ _ _ (pvar 2) _ 1 φ_hyp)
     end.
 

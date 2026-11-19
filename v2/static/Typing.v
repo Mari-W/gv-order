@@ -40,7 +40,7 @@ Inductive typed (W : world) (N : fuel) :
       typed W N {[o := TE S x a]} Γ Δ F (Chan o) (TSess S x) a (Some 0) tid
   | e_abs Θ Θh Γ Δ Δh F e T aT U aU ub lb c t h a φ :
       φ ∉ dom (hc_fv Γ) →
-      lb_below_hb W Γ lb (tenv_heads Θ ∪ lenv_heads Δ) (lenv_bot Δ) →
+      lbx_below_h W Γ (lbound_of lb) (tenv_heads Θ ∪ lenv_heads Δ) (lenv_bot Δ) →
       thcap h a Θ Θh → lcap h a Δ Δh →
       typed W N Θh (hc_fvar φ ub Γ) (Some (T, aT) :: Δh) (∅, Some (FVar φ)) e U aU c t →
       typed W N Θ Γ Δ F (Lam e) (TLolli ub lb c t h T aT U aU) a (Some 0) tid
@@ -49,7 +49,7 @@ Inductive typed (W : world) (N : fuel) :
       typed W N Θ1 Γ Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1
         (TLolli ub lb c t h T aT U aU) a1 c1 t1 →
       thage c1 Θ2 Θ2' → lage c1 Δ2 Δ2' →
-      typed W N Θ2' Γ Δ2' (sf_union F (opt_heads lb)) e2 T aT c2 t2 →
+      typed W N Θ2' Γ Δ2' (sf_unionb F (opt_heads lb) false) e2 T aT c2 t2 →
       fle c2 a1 → tok t2 t → tok t1 (tseq t2 t) →
       typed W N Θ Γ Δ F (App e1 e2) U aU (fadd c1 (fadd c2 c)) (tseq t1 (tseq t2 t))
   | e_pair Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 T1 a1 T1' a1' T2 a2 c1 t1 c2 t2 :
@@ -278,7 +278,7 @@ Qed.
 Lemma ptyped_prim N W Σ p T : ptyped N W Σ p T → prim T.
 Proof. induction 1; auto. Qed.
 
-Lemma chans_of_union' (Σ1 Σ2 : senv) : chans_of (Σ1 ∪ Σ2) = chans_of Σ1 ∪ chans_of Σ2.
+Lemma chans_of_union (Σ1 Σ2 : senv) : chans_of (Σ1 ∪ Σ2) = chans_of Σ1 ∪ chans_of Σ2.
 Proof. unfold chans_of. by rewrite dom_union_L, set_map_union_L. Qed.
 
 Lemma elem_of_chans_of' o (Σ : senv) : o ∈ dom Σ → ech o ∈ chans_of Σ.
@@ -303,5 +303,5 @@ Qed.
 Lemma ptyped_chans N W Σ p T : ptyped N W Σ p T → p.1 ## chans_of Σ.
 Proof.
   induction 1 as [|? ? ? ? ? ? ? ? ? ? _ IH1 _ IH2 ? ? ? ? ? ? ? ? ?];
-    simpl in *; [done|..]; rewrite !chans_of_union' in *; set_solver.
+    simpl in *; [done|..]; rewrite !chans_of_union in *; set_solver.
 Qed.

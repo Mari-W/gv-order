@@ -219,9 +219,6 @@ Section kren.
   Lemma kinj_sub h Θ Θ1 : dom Θ1 ⊆ dom Θ → kinj h Θ → kinj h Θ1.
   Proof. apply kinj_dom. Qed.
 
-  Lemma kinj_empty h : kinj h (∅ : senv).
-  Proof. intros ? ? ? ? H. by rewrite lookup_empty in H. Qed.
-
   Lemma kren_singleton h o v : kren h {[o := v]} = {[h o := v]}.
   Proof.
     assert (kinj h {[o := v]}) as Hk.
@@ -321,18 +318,6 @@ Section kren.
   Proof.
     intros Hh Hg. symmetry. apply renk_kren; [by apply kinj_kren|].
     eapply renk_compose; apply kren_renk; done.
-  Qed.
-
-  Lemma kinj_union h Θ1 Θ2 :
-    kinj h Θ1 → kinj h Θ2 → (∀ o1 o2, o1 ∈ dom Θ1 → o2 ∈ dom Θ2 → h o1 ≠ h o2) →
-    kinj h (Θ1 ∪ Θ2).
-  Proof.
-    intros K1 K2 Hx o1 o2 v1 v2 H1 H2 Heq.
-    apply lookup_union_Some_raw in H1 as [H1|[_ H1]]; apply lookup_union_Some_raw in H2 as [H2|[_ H2]].
-    - exact (K1 o1 o2 v1 v2 H1 H2 Heq).
-    - exfalso. apply (Hx o1 o2); [by eapply elem_of_dom_2|by eapply elem_of_dom_2|done].
-    - exfalso. apply (Hx o2 o1); [by eapply elem_of_dom_2|by eapply elem_of_dom_2|done].
-    - exact (K2 o1 o2 v1 v2 H1 H2 Heq).
   Qed.
 
   Lemma gfresh_kren h ℓ (gr : nat) Θ : kinj h Θ → gfresh ℓ gr (kren h Θ) → gfresh ℓ gr Θ.
@@ -530,7 +515,7 @@ Section rel.
     - intros (-> & e & -> & Hfe & H)%Vrel_box_iff. apply Vrel_box_iff. rewrite kren_empty.
       split; [done|]. exists (emap h e). split_and!; [done|by rewrite fends_emap, Hfe, set_map_empty|].
       intros W' xs ss HW Hxs Hss Hsc HC. rewrite <-emap_thunk, <-(kren_empty h).
-      apply IHt; [|apply kinj_empty|by apply H].
+      apply IHt; [|apply kinj_nil|by apply H].
       rewrite tsize_tthunk. unfold ty_inst. rewrite tsize_sinst, tsize_pinst. simpl. lia.
     - intros (o & s' & -> & -> & Hs)%Vrel_sess_iff. apply Vrel_sess_iff. exists (h o), s'.
       by rewrite kren_singleton.

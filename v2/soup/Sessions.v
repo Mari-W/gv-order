@@ -14,33 +14,21 @@ From GV Require Export soup.OwnFacts compat.Blind static.PointSubst.
 Lemma seqv_dual s r : seqv s r → seqv (dual s) (dual r).
 Proof. unfold seqv. rewrite !sty_df_dual. apply sequiv_dual. Qed.
 
-Lemma sdual_sym S S' : sdual S S' → sdual S' S.
-Proof.
-  unfold sdual. intros H. apply seqv_dual in H. rewrite dual_involutive in H. by apply seqv_sym.
-Qed.
-
-Lemma sdual_snd S0 S0' m U b S m' U' b' S' :
+Lemma sdual_snd_both S0 S0' m U b S m' U' b' S' :
   sdual S0 S0' → unfoldS S0 = SSeq (SSnd m U b) S → unfoldS S0' = SSeq (SRcv m' U' b') S' →
   m' = m ∧ teq (ty_df U') (ty_df U) ∧ sdual S S'.
 Proof.
-  intros Hd Hu Hu'. unfold sdual in Hd.
-  assert (unfoldS (dual S0) = SSeq (SRcv m U b) (dual S)) as Hdu by (by rewrite <-dual_unfoldS, Hu).
-  destruct (seqv_unfold_rcv _ _ _ _ _ _ Hd Hdu) as (U'' & b'' & S'' & Hu'' & HU & HS).
+  intros Hd Hu Hu'. destruct (sdual_snd _ _ _ _ _ _ Hd Hu) as (U'' & b'' & S'' & Hu'' & HU & HS).
   rewrite Hu' in Hu''. simplify_eq. done.
 Qed.
 
-Lemma sdual_plus S0 S0' S1 S2 S1' S2' :
+Lemma sdual_plus_both S0 S0' S1 S2 S1' S2' :
   sdual S0 S0' → unfoldS S0 = SPlus S1 S2 → unfoldS S0' = SWith S1' S2' →
   sdual S1 S1' ∧ sdual S2 S2'.
 Proof.
-  intros Hd Hu Hu'. unfold sdual in Hd.
-  assert (unfoldS (dual S0) = SWith (dual S1) (dual S2)) as Hdu by (by rewrite <-dual_unfoldS, Hu).
-  destruct (seqv_unfold_with _ _ _ _ Hd Hdu) as (R1 & R2 & Hu'' & H1 & H2).
+  intros Hd Hu Hu'. destruct (sdual_plus _ _ _ _ Hd Hu) as (R1 & R2 & Hu'' & H1 & H2).
   rewrite Hu' in Hu''. simplify_eq. done.
 Qed.
-
-Lemma sdual_bsel i S1 S2 S1' S2' : sdual S1 S1' → sdual S2 S2' → sdual (bsel i S1 S2) (bsel i S1' S2').
-Proof. by destruct i. Qed.
 
 (** A link: the partners R1 of S1 and R2 of S2 are dual when S1 and S2 are. *)
 Lemma sdual_link S1 S2 R1 R2 : sdual S1 S2 → sdual S1 R1 → sdual S2 R2 → sdual R1 R2.

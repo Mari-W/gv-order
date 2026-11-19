@@ -103,7 +103,7 @@ Section body.
 
   Ltac normF :=
     cbn [lenv_bot hbot orb]; rewrite ?lenv_bot_nones; unfold rgl_ty, lbox;
-    cbn [hbot orb sf_unionb sf_union fst snd fs_var fs_bot].
+    cbn [hbot orb sf_unionb fst snd fs_var fs_bot].
 
   Ltac fut x :=
     apply (ub_below_gen _ _ x (sh 1 (pvar 0)) 1);

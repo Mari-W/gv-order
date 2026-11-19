@@ -64,14 +64,10 @@ Notation "Θ ; Δ ⊫^ F '_' W t : T" := (sem_typed κ_L W Θ Δ F t T)
   (at level 74, Δ at level 60, F at level 0, W at level 0, t at level 60, T at level 60,
    format "Θ  ;  Δ  ⊫^ F  '_'  W  t  :  T").
 
-Lemma sf_den_union ρ B F X : sf_den ρ B (sf_union F X) = sf_den ρ B F ∪ X.
-Proof. destruct F as [P o]. unfold sf_den, sf_union. simpl. set_solver. Qed.
-
 Lemma sf_den_unionb ρ B F X b :
   sf_den ρ B (sf_unionb F X b) = sf_den ρ B F ∪ X ∪ (if b then B else ∅).
 Proof.
-  destruct b; [|rewrite union_empty_r_L; apply sf_den_union].
-  destruct F as [P o]. unfold sf_den, sf_unionb. simpl.
+  destruct F as [P o]. unfold sf_den, sf_unionb. destruct b; simpl; [|set_solver].
   destruct o as [[φ|o]|]; simpl; set_solver.
 Qed.
 

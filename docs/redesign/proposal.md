@@ -1294,7 +1294,8 @@ first, in stage S2.
   (`kmarks`). M.5: one injection former `Inj b`. M.6: `prim` stays (P-Term
   with `tfree` would type more processes). M.7: Q-Send reads the ends of
   the payload through the exactness of V and states only which
-  restricted ends leave.
+  restricted ends leave. M.9: each helper proved once, one lower-bound
+  predicate, one union of futures.
 
 ## 5  Open decisions for the author
 

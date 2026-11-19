@@ -37,9 +37,6 @@ Proof. intros H. apply (renk_functional g ∅); [done|]. split; intros ? ?; by r
 Lemma renk_nil {Y : Type} (g : cend → cend) : renk (Y := Y) g ∅ ∅.
 Proof. split; intros ? ?; by rewrite lookup_empty. Qed.
 
-Lemma kinj_nil {Y : Type} (g : cend → cend) : kinj (Y := Y) g ∅.
-Proof. intros ? ? ? ?; by rewrite lookup_empty. Qed.
-
 Lemma renk_singleton {Y : Type} (g : cend → cend) o (v : Y) m' :
   renk g {[o := v]} m' → m' = {[g o := v]}.
 Proof.
@@ -130,18 +127,6 @@ Proof.
     + intros o' f Ho'. assert (o' ∈ dom π') as [k Hk]%elem_of_dom by (rewrite <-Hd; by eapply elem_of_dom_2).
       destruct (B o' k Hk) as (o & -> & Ho). exists o. split; [done|].
       by rewrite map_lookup_imap, Ho.
-Qed.
-
-Lemma kinj_union {Y : Type} (g : cend → cend) (m1 m2 : gmap cend Y) :
-  kinj g m1 → kinj g m2 → (∀ o1 o2, o1 ∈ dom m1 → o2 ∈ dom m2 → g o1 ≠ g o2) →
-  kinj g (m1 ∪ m2).
-Proof.
-  intros H1 H2 Hx o1 o2 v1 v2 Ho1 Ho2 Heq.
-  apply lookup_union_Some_raw in Ho1 as [Ho1|[N1 Ho1]], Ho2 as [Ho2|[N2 Ho2]].
-  - exact (H1 o1 o2 v1 v2 Ho1 Ho2 Heq).
-  - exfalso. apply (Hx o1 o2); [by eapply elem_of_dom_2|by eapply elem_of_dom_2|done].
-  - exfalso. apply (Hx o2 o1); [by eapply elem_of_dom_2|by eapply elem_of_dom_2|done].
-  - exact (H2 o1 o2 v1 v2 Ho1 Ho2 Heq).
 Qed.
 
 Lemma renk_fmap {Y Z : Type} (f : Y → Z) (g : cend → cend) (m m' : gmap cend Y) :
@@ -358,19 +343,6 @@ Abbreviation ectx := (list frame).
 
 Fixpoint efill (K : ectx) (e : expr) : expr :=
   match K with [] => e | f :: K' => fill_frame f (efill K' e) end.
-
-Definition frame_emap (g : cend → cend) (f : frame) : frame :=
-  match f with
-  | FAppL e2 => FAppL (emap g e2)
-  | FAppR v1 => FAppR (emap g v1)
-  | FPairL e2 => FPairL (emap g e2)
-  | FPairR v1 => FPairR (emap g v1)
-  | FLetU e2 => FLetU (emap g e2)
-  | FLetP e2 => FLetP (emap g e2)
-  | FInj b => FInj b
-  | FCase e1 e2 => FCase (emap g e1) (emap g e2)
-  | FOp k => FOp k
-  end.
 
 Definition kemap (g : cend → cend) (K : ectx) : ectx := frame_emap g <$> K.
 

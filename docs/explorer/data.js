@@ -441,7 +441,7 @@ window.MAP = {
     {
      "id": "t-side",
      "title": "Side conditions on points",
-     "rocq": "static/Contexts.v: ub_below_s, lb_below_hb, lbx_below_h, hold_at",
+     "rocq": "static/Contexts.v: ub_below_s, lbx_below_h, lbound_of, hold_at",
      "tex": "\\begin{array}{l}\\htmlData{k=side.ub}{u \\prec F \\iff \\forall y \\in X.\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} u \\prec y,\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} u \\prec \\varphi,\\ \\neg\\bot} \\\\ \\htmlData{k=side.lb}{l \\preccurlyeq H \\text{ and } \\neg\\bot} \\qquad \\htmlData{k=side.hold}{\\Gamma \\vdash C[\\bar x]}\\end{array}",
      "caption": "$u \\prec F$ states that $u$ lies below every point of $F$, $l \\preccurlyeq H$ that $l$ lies at or below every point of $H$, and $\\Gamma \\vdash C[\\bar x]$ that every fact of $C$ at $\\bar x$ is derivable.",
      "modes": [
@@ -4906,7 +4906,7 @@ window.MAP = {
    "why": "A holder of a closure sees the heads of its ends only through $l$. Hence $l$ must be a lower bound of those heads.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\overline{\\rho} \\preccurlyeq \\{\\overline{\\rho}\\}$.",
-   "rocq": "static/Contexts.v: lb_below_h, lb_below_hb",
+   "rocq": "static/Contexts.v: lbx_below_h, lbound_of",
    "sig": "l \\preccurlyeq H \\iff (l = \\bot \\Rightarrow H = \\varnothing) \\land \\forall y \\in H.\\ l = y \\lor \\Gamma \\vdash l \\prec y",
    "args": [
     {
@@ -5314,7 +5314,7 @@ window.MAP = {
    "why": "A holder of the closure reads the heads of its ends only through $l$. A hidden point has no lower bound, so $\\bot$ is excluded.",
    "breaks": "A thread holding ends at the unrelated points $1$ and $2$ has no common lower point, so E-Abs rejects a $\\lambda$ that captures both. E-SpawnLam types the spawn of such a $\\lambda$.",
    "example": "Capturing $a^{+}$ at $\\rho$ gives $l = \\overline{\\rho}$.",
-   "rocq": "static/Contexts.v: lb_below_hb",
+   "rocq": "static/Contexts.v: lbx_below_h, lbound_of",
    "sig": "l \\preccurlyeq \\mathsf{heads}(\\Theta, \\Delta) \\land \\neg\\bot_{\\Delta}",
    "args": [
     {

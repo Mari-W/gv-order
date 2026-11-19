@@ -108,12 +108,9 @@ Section gmap_ctx.
 
   (** *** F *)
 
-  Lemma sf_gmap_union F X : sf_gmap (sf_union F X) = sf_union (sf_gmap F) (set_map (pt_gmap r) X).
-  Proof. unfold sf_gmap, sf_union. simpl. by rewrite set_map_union_L. Qed.
-
   Lemma sf_gmap_unionb F X b :
     sf_gmap (sf_unionb F X b) = sf_unionb (sf_gmap F) (set_map (pt_gmap r) X) b.
-  Proof. destruct b; unfold sf_gmap, sf_unionb, sf_union; simpl; by rewrite set_map_union_L. Qed.
+  Proof. destruct b; unfold sf_gmap, sf_unionb; simpl; by rewrite set_map_union_L. Qed.
 
   Lemma opt_heads_gmap o : opt_heads (pt_gmap r <$> o) = set_map (pt_gmap r) (opt_heads o).
   Proof. destruct o; simpl; [by rewrite set_map_singleton_L|by rewrite set_map_empty]. Qed.
@@ -145,7 +142,7 @@ Section gmap_typed.
 
   Local Ltac heads_g :=
     rewrite ?tenv_heads_gmap, ?lenv_heads_gmap, ?lenv_bot_gmap, ?heads_gmap, ?hbot_gmap,
-      ?opt_heads_gmap, <-?set_map_union_L, <-?sf_gmap_unionb, <-?sf_gmap_union.
+      ?opt_heads_gmap, <-?set_map_union_L, <-?sf_gmap_unionb.
 
 End gmap_typed.
 

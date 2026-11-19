@@ -55,8 +55,8 @@ Lemma den_fresh ρ B φ F' :
 Proof. unfold sf_den. simpl. rewrite decide_True by done. set_solver. Qed.
 
 Lemma den_union ρ B σ F (X : gset point) :
-  sf_den ρ B (sf_pinst σ (sf_union F X)) = sf_den ρ B (sf_pinst σ F) ∪ set_map (D:=gset point) (pt_inst σ) X.
-Proof. by rewrite sf_pinst_union, sf_den_union. Qed.
+  sf_den ρ B (sf_pinst σ (sf_unionb F X false)) = sf_den ρ B (sf_pinst σ F) ∪ set_map (D:=gset point) (pt_inst σ) X.
+Proof. by rewrite sf_pinst_unionb, sf_den_unionb, union_empty_r_L. Qed.
 
 Lemma den_unionb ρ (B B' : gset point) σ F (X : gset point) (b : bool) :
   sf_den ρ B (sf_pinst σ F) ∪ set_map (D:=gset point) (pt_inst σ) X ∪ (if b then B' else ∅) ⊆
@@ -126,11 +126,10 @@ Section facts.
   Qed.
 
   Lemma lb_sem σ ρ Γ lb H b :
-    hsat W σ ρ Γ → lb_below_hb W0 Γ lb H b →
+    hsat W σ ρ Γ → lbx_below_h W0 Γ (lbound_of lb) H b →
     b = false ∧ lb_le W (pt_inst σ <$> lb) (set_map (pt_inst σ) H).
   Proof.
-    intros Hs. unfold lb_below_hb. destruct b; [done|]. intros Hl. split; [done|].
-    destruct lb as [l|]; simpl in *.
+    intros Hs. destruct lb as [l|]; simpl; intros [Hl ->]; split; try done.
     - intros y (y0 & -> & Hy0)%elem_of_map. by eapply sle_sem, Hl.
     - by rewrite Hl, set_map_empty.
   Qed.

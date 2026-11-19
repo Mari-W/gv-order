@@ -117,6 +117,23 @@ Definition fill_frame (f : frame) (e : expr) : expr :=
 Definition frame_val (f : frame) : Prop :=
   match f with FAppR v1 | FPairR v1 => is_val v1 | _ => True end.
 
+(** A map of ends on a frame. *)
+Definition frame_emap (g : cend → cend) (f : frame) : frame :=
+  match f with
+  | FAppL e2 => FAppL (emap g e2) | FAppR v => FAppR (emap g v)
+  | FPairL e2 => FPairL (emap g e2) | FPairR v => FPairR (emap g v)
+  | FLetU e2 => FLetU (emap g e2) | FLetP e2 => FLetP (emap g e2)
+  | FInj b => FInj b
+  | FCase e1 e2 => FCase (emap g e1) (emap g e2)
+  | FOp k => FOp k
+  end.
+
+Lemma emap_fill g f e : emap g (fill_frame f e) = fill_frame (frame_emap g f) (emap g e).
+Proof. by destruct f. Qed.
+
+Lemma frame_val_emap g f : frame_val (frame_emap g f) ↔ frame_val f.
+Proof. destruct f; simpl; rewrite ?is_val_emap; done. Qed.
+
 (** ** Thread steps: head steps under evaluation frames (T-Act-Ctx) *)
 
 Inductive tstep : expr → tlabel → expr → Prop :=

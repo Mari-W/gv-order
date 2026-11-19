@@ -53,7 +53,7 @@ Section sync.
     destruct (owner_of j (edual o) _ Ho') as (hj & Khj & Ehj).
     pose proof (inA _ _ _ Ho) as HA. pose proof (inA _ _ _ Ho') as HA'.
     destruct (s_sdual _ _ _ _ _ _ _ _ Hs o S0 x S0' x' HA HA') as [-> Hsd].
-    destruct (sdual_snd _ _ _ _ _ _ _ _ _ _ Hsd Hu Hu') as (-> & HU & HSS').
+    destruct (sdual_snd_both _ _ _ _ _ _ _ _ _ _ Hsd Hu Hu') as (-> & HU & HSS').
     pose proof (s_pdual _ _ _ _ _ _ _ _ Hs o P0 P0' (inΠ _ _ _ HPo) (inΠ _ _ _ HPo')) as Hpd.
     destruct (pdual_snd _ _ _ _ _ _ _ _ _ _ Hpd HPu HPu') as (-> & -> & HT & HPP').
     destruct (split_mres _ _ _ _ Hd HΘ HM) as [-> ->].
@@ -256,7 +256,7 @@ Section sync.
     destruct (owner_of j (edual o) _ Ho') as (hj & Khj & Ehj).
     pose proof (inA _ _ _ Ho) as HA. pose proof (inA _ _ _ Ho') as HA'.
     destruct (s_sdual _ _ _ _ _ _ _ _ Hs o S0 x S0' x' HA HA') as [-> Hsd].
-    destruct (sdual_plus _ _ _ _ _ _ Hsd Hu Hu') as [Hd1 Hd2].
+    destruct (sdual_plus_both _ _ _ _ _ _ Hsd Hu Hu') as [Hd1 Hd2].
     pose proof (s_pdual _ _ _ _ _ _ _ _ Hs o P0 P0' (inΠ _ _ _ HPo) (inΠ _ _ _ HPo')) as Hpd.
     destruct (pdual_plus _ _ _ _ _ _ Hpd HPu HPu') as [Hq1 Hq2].
     pose proof (s_kpt _ _ _ _ _ _ _ _ Hs o S0 x HA) as Hkx. cbn [s_K] in Hkx.

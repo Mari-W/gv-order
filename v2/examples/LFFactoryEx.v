@@ -147,7 +147,7 @@ Proof.
     { eapply e_recv with (x := (pvar 0)‾) (m := 0) (T := TUnit) (b := None) (S0 := Sr);
         [done|exact I| |eapply e_var'; [reflexivity|spare_tac]].
       apply ub_below_novar; [|reflexivity]. intros y Hy.
-      cbn [sf_unionb sf_union fst snd lenv_bot hbot orb] in Hy. heads_cases Hy.
+      cbn [sf_unionb fst snd lenv_bot hbot orb] in Hy. heads_cases Hy.
       apply fx_law; [by left|simpl; lia]. }
     lage_tac.
     eapply e_letu_; [lsplit_tac (Var 1) EUnit| | | |shelve].
@@ -155,7 +155,7 @@ Proof.
     lage_tac.
     eapply e_close with (S0 := SEnd) (x := pt_shift 1 (pvar 0)‾); [done| |].
     + apply ub_below_novar; [|reflexivity]. intros y Hy.
-      cbn [sf_unionb sf_union fst snd lenv_bot hbot orb] in Hy. heads_cases Hy.
+      cbn [sf_unionb fst snd lenv_bot hbot orb] in Hy. heads_cases Hy.
       apply fx_law; [by right|simpl; lia].
     + eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
@@ -163,7 +163,7 @@ Proof.
   { eapply e_recv with (x := ((pvar 0)·0)‾) (m := 0) (T := TUnit) (b := None) (S0 := Sr);
       [done|exact I| |eapply e_var'; [reflexivity|spare_tac]].
     apply ub_below_novar; [|reflexivity]. intros y Hy.
-    cbn [sf_unionb sf_union fst snd lenv_bot hbot orb] in Hy. heads_cases Hy. }
+    cbn [sf_unionb fst snd lenv_bot hbot orb] in Hy. heads_cases Hy. }
   lage_tac.
   eapply e_letu_; [lsplit_tac (Var 1) EUnit| | | |shelve].
   { eapply e_var'; [reflexivity|]. spare_tac. }

@@ -24,17 +24,6 @@ Proof.
   simpl in He. by rewrite He.
 Qed.
 
-Lemma offers_send a o v : offers a (LSess (SSend o v)) → a = ASend o v.
-Proof. destruct a; simpl; try done. intros (-> & ->). done. Qed.
-Lemma offers_recv a o v : offers a (LSess (SRecv o v)) → a = ARecv o.
-Proof. destruct a; simpl; try done. intros (-> & _). done. Qed.
-Lemma offers_close a o : offers a (LSess (SClose o)) → a = AClose o.
-Proof. destruct a; simpl; try done. intros ->. done. Qed.
-Lemma offers_sel a o b : offers a (LSess (SSel o b)) → a = ASel o b.
-Proof. destruct a; simpl; try done. intros (-> & ->). done. Qed.
-Lemma offers_bra a o b : offers a (LSess (SBra o b)) → a = ABra o.
-Proof. destruct a; simpl; try done. intros ->. done. Qed.
-
 Lemma step_act e α e' : tstep e α e' → ∃ a, act e = Some a ∧ offers a α.
 Proof. apply act_step. Qed.
 

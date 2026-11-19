@@ -13,7 +13,7 @@
     type through these lemmas, because V at S@x holds the end at a type
     S' with S' ≈ S only. *)
 
-From GV Require Export types.Erasure static.PointSubst relation.Closure.
+From GV Require Export types.Erasure types.Duality static.PointSubst relation.Closure.
 
 (** ** Session types up to annotations *)
 
@@ -245,3 +245,86 @@ Section blind.
   (** ** P reads its type only through V *)
 
 End blind.
+
+(** ** Duality of session types up to ≈ *)
+
+Lemma sdual_sym S S' : sdual S S' → sdual S' S.
+Proof.
+  unfold sdual, seqv. rewrite !sty_df_dual. intros H.
+  apply sequiv_dual in H. rewrite dual_involutive in H. by apply sequiv_sym.
+Qed.
+
+Lemma sdual_trans_l S1 S2 S3 : sdual S1 S2 → sdual S1 S3 → seqv S2 S3.
+Proof. unfold sdual. intros H1 H2. eapply seqv_trans; [exact H1|by apply seqv_sym]. Qed.
+
+Lemma sdual_dual_dual S1 S2 S3 S4 : sdual S1 S2 → sdual S3 S4 → sdual S1 S3 → sdual S2 S4.
+Proof.
+  intros H12 H34 H13. unfold sdual, seqv in *. rewrite !sty_df_dual in *.
+  eapply sequiv_trans; [exact H34|]. apply sequiv_dual in H13. rewrite dual_involutive in H13.
+  eapply sequiv_trans; [exact H13|]. apply sequiv_dual in H12. rewrite dual_involutive in H12.
+  by apply sequiv_sym.
+Qed.
+
+Lemma unfold_dual_snd S0 m U b S :
+  unfoldS S0 = SSeq (SSnd m U b) S → unfoldS (dual S0) = SSeq (SRcv m U b) (dual S).
+Proof. intros H. by rewrite <-dual_unfoldS, H. Qed.
+Lemma unfold_dual_rcv S0 m U b S :
+  unfoldS S0 = SSeq (SRcv m U b) S → unfoldS (dual S0) = SSeq (SSnd m U b) (dual S).
+Proof. intros H. by rewrite <-dual_unfoldS, H. Qed.
+Lemma unfold_dual_end S0 : unfoldS S0 = SEnd → unfoldS (dual S0) = SEnd.
+Proof. intros H. by rewrite <-dual_unfoldS, H. Qed.
+Lemma unfold_dual_plus S0 S1 S2 : unfoldS S0 = SPlus S1 S2 → unfoldS (dual S0) = SWith (dual S1) (dual S2).
+Proof. intros H. by rewrite <-dual_unfoldS, H. Qed.
+Lemma unfold_dual_with S0 S1 S2 : unfoldS S0 = SWith S1 S2 → unfoldS (dual S0) = SPlus (dual S1) (dual S2).
+Proof. intros H. by rewrite <-dual_unfoldS, H. Qed.
+
+(** The partner of a send receives the same payload type up to ≈. *)
+Lemma sdual_snd S0 S0' m U b S :
+  sdual S0 S0' → unfoldS S0 = SSeq (SSnd m U b) S →
+  ∃ U' b' S', unfoldS S0' = SSeq (SRcv m U' b') S' ∧ teq (ty_df U') (ty_df U) ∧ sdual S S'.
+Proof.
+  intros H Hu. destruct (seqv_unfold_rcv S0' (dual S0) m U b (dual S) H (unfold_dual_snd _ _ _ _ _ Hu))
+    as (U' & b' & S' & H1 & H2 & H3). eauto 10.
+Qed.
+
+Lemma sdual_rcv S0 S0' m U b S :
+  sdual S0 S0' → unfoldS S0 = SSeq (SRcv m U b) S →
+  ∃ U' b' S', unfoldS S0' = SSeq (SSnd m U' b') S' ∧ teq (ty_df U') (ty_df U) ∧ sdual S S'.
+Proof.
+  intros H Hu. destruct (seqv_unfold_snd S0' (dual S0) m U b (dual S) H (unfold_dual_rcv _ _ _ _ _ Hu))
+    as (U' & b' & S' & H1 & H2 & H3). eauto 10.
+Qed.
+
+Lemma sdual_end S0 S0' : sdual S0 S0' → unfoldS S0 = SEnd → unfoldS S0' = SEnd.
+Proof. intros H Hu. by eapply seqv_unfold_end; [exact H|apply unfold_dual_end]. Qed.
+
+Lemma sdual_plus S0 S0' S1 S2 :
+  sdual S0 S0' → unfoldS S0 = SPlus S1 S2 →
+  ∃ S1' S2', unfoldS S0' = SWith S1' S2' ∧ sdual S1 S1' ∧ sdual S2 S2'.
+Proof.
+  intros H Hu. destruct (seqv_unfold_with S0' (dual S0) (dual S1) (dual S2) H (unfold_dual_plus _ _ _ Hu))
+    as (S1' & S2' & H1 & H2 & H3). eauto 10.
+Qed.
+
+Lemma sdual_with S0 S0' S1 S2 :
+  sdual S0 S0' → unfoldS S0 = SWith S1 S2 →
+  ∃ S1' S2', unfoldS S0' = SPlus S1' S2' ∧ sdual S1 S1' ∧ sdual S2 S2'.
+Proof.
+  intros H Hu. destruct (seqv_unfold_plus S0' (dual S0) (dual S1) (dual S2) H (unfold_dual_with _ _ _ Hu))
+    as (S1' & S2' & H1 & H2 & H3). eauto 10.
+Qed.
+
+Lemma sdual_bsel i S1 S2 S1' S2' : sdual S1 S1' → sdual S2 S2' → sdual (bsel i S1 S2) (bsel i S1' S2').
+Proof. by destruct i. Qed.
+
+(** A value of a primitive type holds no end. *)
+Lemma Vrel_prim_empty κ n W Θ T v : prim T → Vrel κ n W Θ T v → Θ = ∅.
+Proof.
+  intros Hp. revert Θ v. induction Hp as [|U a V b HU IHU HV IHV|U a V b HU IHU HV IHV|m k C ub c t U a HU IHU];
+    intros Θ v.
+  - by intros [-> _]%Vrel_unit_iff.
+  - intros (v1 & v2 & Θ1 & Θ2 & -> & _ & -> & H1 & H2)%Vrel_prod_iff.
+    rewrite (IHU _ _ H1), (IHV _ _ H2). by rewrite (left_id_L ∅ (∪)).
+  - intros [(v' & -> & H)|(v' & -> & H)]%Vrel_sum_iff; eauto.
+  - by intros [-> _]%Vrel_box_iff.
+Qed.

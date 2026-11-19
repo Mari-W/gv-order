@@ -713,7 +713,7 @@ Section let_admissible.
   Proof. destruct t as [[s|] [b|]]; unfold tseq, tid, fmul; simpl; rewrite ?Nat.add_0_r; done. Qed.
   Local Lemma sf_union_nil F : sf_unionb F (tenv_heads ∅ ∪ ∅) false = F.
   Proof.
-    destruct F as [X o]. unfold sf_unionb, sf_union. simpl. f_equal.
+    destruct F as [X o]. unfold sf_unionb. simpl. f_equal.
     apply set_eq. intros y. rewrite elem_of_union, elem_of_union, elem_of_tenv_heads.
     setoid_rewrite lookup_empty. set_solver.
   Qed.
