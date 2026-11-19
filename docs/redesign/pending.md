@@ -293,12 +293,18 @@ must do, open questions.
   (Wadler-style) and uses points only for cycles.
   **Important, to discuss (author 2026-11-19).** The author wants the
   relation to admit, inside a component, whatever can be proved by hand.
-  Today it does not: readiness is stated against a strict order of points
-  that grows only at creation, so a hand proof must exhibit points, and
-  the flag program (channels created before the flag) is outside the
-  relation in every world, not only untypable. Mechanize that, as
-  db_component_unrealizable (examples/DataBranch.v) does for the
-  dispatcher. Options discussed:
+  Correction of an earlier claim: it already does at the process level.
+  ready_p (relation/Readiness.v) reads points only of interface ends, and
+  internal channels carry none, so P⟦∅ ⊢ T⟧ asks exactly deadlock
+  freedom of every reachable stuck state, and the flag program is in it by
+  a direct proof. What rejects it is the route through typing: P-Term asks
+  each thread to be in E, and E orders every end the thread holds.
+  sem_p_connect composes any two members of P, so a hand-proved component
+  composes with typed ones, provided it is ready at its interface (offered
+  ends below the partner points of the ends it does not offer). To do:
+  mechanize the flag program in P⟦∅ ⊢ ∗⟧ by a direct proof, and show it is
+  outside what P-Term can build (no assignment of points for the threads).
+  Options discussed:
   (a) one-end lemma: a process with one free end, in either relation,
       offers that end when stuck; this would allow a mixed P-Connect along
       a single channel (cut of one channel, payload condition as in
