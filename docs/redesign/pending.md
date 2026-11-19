@@ -61,6 +61,23 @@ must do, open questions.
    that schema (dftyped, and the merged typing with the annotations of
    the rule of k), or report which schema needs changing.
 
+4. **Lock freedom is not vacuous (low priority, queued 2026-11-19).**
+   `lock_free p` quantifies over every maximal weakly fair run from p. Keep
+   that universal (an existential would let a good scheduler hide a lock).
+   Add a semantics lemma, independent of typing: every configuration has a
+   maximal weakly fair run (round-robin over its finitely many threads;
+   the constructive form needs a choice of step at each position). State
+   the main result with it, e.g. `lf_soundness` also concludes
+   `∃ r l. erase (r 0) = p ∧ maximal r l ∧ wfair r l`, or package both in
+   the definition. Map: add the existence lemma to the theorems section
+   once proven.
+
+5. **Padovani-style lock freedom as a corollary (low priority, queued
+   2026-11-19).** From `lock_free p` and item 4: for every q reachable
+   from p and every thread pending in q, some q' reachable from q has a
+   step in which that thread takes part (Padovani 2014, Def. II.1, in our
+   per-thread form). Map: one line in the theorems section once proven.
+
 ## Done in the Rocq
 
 (entries move here once the repair agent has implemented and merged them)
