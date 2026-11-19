@@ -18,6 +18,7 @@
   --df: #3a5a9c;
   --live: #1f6f78;
   --lf: #7a4c9a;
+  --lf-soft: #f4edf9;
   --display: "Newsreader", "Iowan Old Style", Georgia, serif;
   --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -25,11 +26,11 @@
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #12161c; --panel: #1a2029; --fg: #e3e8ef; --muted: #98a3b3; --line: #2c3540;
   --accent: #5fb3bb; --accent-soft: #1d3438; --hot: #f0a060; --hot-soft: #3a2a1c;
-  --df: #8fa9e0; --live: #5fb3bb; --lf: #c39be0; color-scheme: dark } }
+  --df: #8fa9e0; --live: #5fb3bb; --lf: #c39be0; --lf-soft: #2b2235; color-scheme: dark } }
 :root[data-theme="dark"] {
   --bg: #12161c; --panel: #1a2029; --fg: #e3e8ef; --muted: #98a3b3; --line: #2c3540;
   --accent: #5fb3bb; --accent-soft: #1d3438; --hot: #f0a060; --hot-soft: #3a2a1c;
-  --df: #8fa9e0; --live: #5fb3bb; --lf: #c39be0; color-scheme: dark }
+  --df: #8fa9e0; --live: #5fb3bb; --lf: #c39be0; --lf-soft: #2b2235; color-scheme: dark }
 
 body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5; }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--panel); }
@@ -45,6 +46,12 @@ h1 small { font-family: var(--body); font-weight: 400; font-size: 0.8rem; color:
 .modes button[aria-pressed="true"] { color: #fff; }
 .modes button[data-mode="df"][aria-pressed="true"] { background: var(--df); }
 .ann { fill: var(--lf); color: var(--lf); }
+.block.lfonly { background: var(--lf-soft); border-color: var(--lf); }
+.block.lfonly .math { color: var(--lf); }
+.flip { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; font: 500 0.66rem var(--body); letter-spacing: 0.04em; }
+.flip button { border: 0; background: transparent; color: var(--muted); padding: 1px 6px; cursor: pointer; font: inherit; }
+.flip button[aria-pressed="true"][data-m="df"] { background: var(--df); color: #fff; }
+.flip button[aria-pressed="true"][data-m="lf"] { background: var(--lf); color: #fff; }
 .modes button[data-mode="lf"][aria-pressed="true"] { background: var(--lf); }
 :root[data-theme="dark"] .modes button[aria-pressed="true"] { color: #10141a; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .modes button[aria-pressed="true"] { color: #10141a; } }
@@ -196,18 +203,18 @@ window.MathJax = {
     if (t.startsWith('^{')) { let d = 1, k = 2; while (k < t.length && d) { if (t[k] === '\\') { k += 2; continue; } if (t[k] === '{') d++; else if (t[k] === '}') d--; k++; } if (k === t.length) return '^{\\class{ann}{' + t.slice(2, -1) + '}}'; }
     return '\\class{ann}{' + t + '}';
   }
-  function annot(s) {
+  function annot(s, m = mode) {
     s = String(s || ''); let out = '', i = 0;
     for (;;) {
       const m = /\\ann(ot|raw)\{/.exec(s.slice(i)); if (!m) return out + s.slice(i);
       const j = i + m.index, open = j + m[0].length;
       let d = 1, k = open;
       while (k < s.length && d) { if (s[k] === '\\') { k += 2; continue; } if (s[k] === '{') d++; else if (s[k] === '}') d--; k++; }
-      const inner = annot(s.slice(open, k - 1));
-      out += s.slice(i, j) + (mode !== 'lf' ? '' : m[1] === 'raw' ? inner : colour(inner)); i = k;
+      const inner = annot(s.slice(open, k - 1), m);
+      out += s.slice(i, j) + (m !== 'lf' ? '' : m[1] === 'raw' ? inner : colour(inner)); i = k;
     }
   }
-  const toMJ = tex => annot(tex).replace(/\\htmlData\{k=([A-Za-z0-9.\-_]+)\}\{/g, (_, k) => '\\class{k-' + k.replace(/\./g, '__') + '}{');
+  const toMJ = (tex, m) => annot(tex, m).replace(/\\htmlData\{k=([A-Za-z0-9.\-_]+)\}\{/g, (_, k) => '\\class{k-' + k.replace(/\./g, '__') + '}{');
   const keyOf = el => { for (const c of el.classList) if (c.startsWith('k-')) return c.slice(2).replace(/__/g, '.'); return null; };
   const keysIn = tex => { const out = new Set(); String(tex || '').replace(/\\htmlData\{k=([A-Za-z0-9.\-_]+)\}/g, (_, k) => out.add(k)); return out; };
 
@@ -230,9 +237,9 @@ window.MathJax = {
   }
   const matches = (...fields) => !query || fields.join(' ').toLowerCase().includes(query);
 
-  function math(tex) {
+  function math(tex, m) {
     const div = document.createElement('div'); div.className = 'math';
-    try { div.appendChild(MathJax.tex2svg(toMJ(tex), { display: true })); }
+    try { div.appendChild(MathJax.tex2svg(toMJ(tex, m), { display: true })); }
     catch (e) { div.textContent = tex; }
     return div;
   }
@@ -252,6 +259,21 @@ window.MathJax = {
       g.insertBefore(r, g.firstChild);
     });
   }
+  // a block may be switched on its own between the two modes when they show it differently
+  const local = new Map();
+  const blockMode = b => local.get(b.id) || mode;
+  const texOf = (b, m) => (b.variants && b.variants[m]) || b.tex;
+  const differs = b => annot(texOf(b, 'df'), 'df') !== annot(texOf(b, 'lf'), 'lf');
+  function flipBlock(id, m) {
+    const b = MAP.sections.flatMap(x => x.blocks).find(x => x.id === id), el = document.getElementById('b-' + id);
+    if (!b || !el) return;
+    if (m === mode) local.delete(id); else local.set(id, m);
+    el.querySelectorAll('.flip button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.m === m)));
+    const old = el.querySelector(':scope > .math'), nu = math(texOf(b, m), m);
+    old.replaceWith(nu); hotEl = null;
+    requestAnimationFrame(() => addHits(el));
+    if (pinned) markAll(pinned);
+  }
   function renderSection() {
     const cur = current(), root = $('#content');
     root.innerHTML = '';
@@ -263,12 +285,14 @@ window.MathJax = {
     for (const b of s.blocks) {
       const modes = b.modes && b.modes.length ? b.modes : ['df', 'lf'];
       if (!modes.includes(mode)) continue;
-      const tex = (b.variants && b.variants[mode]) || b.tex;
+      const bm = blockMode(b), tex = texOf(b, bm);
       if (!tex || !matches(b.title, b.caption, b.rocq, tex)) continue;
-      const el = document.createElement('article'); el.className = 'block'; el.id = 'b-' + b.id;
+      const lfOnly = !modes.includes('df');
+      const el = document.createElement('article'); el.className = 'block' + (lfOnly ? ' lfonly' : ''); el.id = 'b-' + b.id;
       const tags = modes.length === 2 ? '' : `<span class="tags">${modes.map(m => `<span class="tag ${m}">${m === 'df' ? 'DF' : 'LF'}</span>`).join('')}</span>`;
-      el.innerHTML = `<h3 data-block="${esc(b.id)}" tabindex="0">${esc(b.title)}${tags}</h3>`;
-      el.appendChild(math(tex));
+      const flip = !lfOnly && differs(b) ? `<span class="tags"><span class="flip" data-flip="${esc(b.id)}">${['df', 'lf'].map(m => `<button type="button" data-m="${m}" aria-pressed="${bm === m}" title="Show this block ${m === 'df' ? 'without' : 'with'} the lock-free additions">${m === 'df' ? 'DF' : 'LF'}</button>`).join('')}</span></span>` : '';
+      el.innerHTML = `<h3 data-block="${esc(b.id)}" tabindex="0">${esc(b.title)}${tags}${flip}</h3>`;
+      el.appendChild(math(tex, bm));
       hitAreas.push(el);
       root.appendChild(el); shown++;
     }
@@ -399,6 +423,8 @@ window.MathJax = {
   });
   content.addEventListener('mouseover', () => clearTimeout(outTimer), true);
   content.addEventListener('click', e => {
+    const fb = e.target.closest && e.target.closest('.flip button');
+    if (fb) { flipBlock(fb.closest('.flip').dataset.flip, fb.dataset.m); return; }
     const t = e.target.closest && e.target.closest('[class*="k-"]'); if (!t) return;
     const k = keyOf(t); if (!k) return;
     pinned = k; markAll(k); showNote(k, true);
@@ -409,7 +435,7 @@ window.MathJax = {
     if (j) setTimeout(() => { const el = document.getElementById('b-' + j); if (el) { el.scrollIntoView({ block: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1400); } }, 60);
   });
   document.querySelectorAll('.modes button').forEach(b => b.addEventListener('click', () => {
-    mode = b.dataset.mode; try { localStorage.setItem('lrmap-mode', mode); } catch (e) {}
+    mode = b.dataset.mode; local.clear(); try { localStorage.setItem('lrmap-mode', mode); } catch (e) {}
     report({ how: 'mode' });
     renderModes(); renderSection();
     if (pinned) { shownKey = null; showNote(pinned, true); }
