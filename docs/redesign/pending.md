@@ -78,6 +78,26 @@ must do, open questions.
    step in which that thread takes part (Padovani 2014, Def. II.1, in our
    per-thread form). Map: one line in the theorems section once proven.
 
+6. **Proposal, not decided: credits only where ends sit (2026-11-19).**
+   Today every slot of a type carries a credit: components of ⊗ and ⊕,
+   the body of ∃, the argument and result of ⊸, the result of a box, the
+   payload (b), and every Δ entry (static/Contexts.v: `ty` in
+   types/Types.v; `TSess` itself has none). The aggregate cases of aging
+   and capture (`age_prod`, `age_sum`, `age_ex`, `cap_prod`, `cap_sum`,
+   `cap_ex`) push the outer credit into the parts (a + aᵢ) and reset it to
+   0, so an outer credit on ⊗, ⊕, ∃ is only a shared offset. Only two kinds
+   of position need a credit of their own: an end `S@x` (its counter) and a
+   closure `T ⊸ U` (its captured ends are invisible in its type, Cap-Arr).
+   Proposal: credits as part of exactly these two type formers,
+   `(S@x)^a` and `(T ⊸ U)^a`; drop the credits of ⊗, ⊕, ∃, box results,
+   arrow argument and result, and payloads (the payload's own leaves carry
+   them, E-Send's floor becomes aging the payload by 1). Aging and capture
+   then recurse structurally and the summing rules go. Open: whether any
+   proof uses the outer offset to age an aggregate in one step
+   (`age_credit` on an aggregate) in a way the leaf form cannot match, and
+   whether subtyping of aggregates (Sub-Prod with a + aᵢ) loses anything.
+   Map: not yet, waits for the author's decision.
+
 ## Done in the Rocq
 
 (entries move here once the repair agent has implemented and merged them)
