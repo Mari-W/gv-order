@@ -2,7 +2,11 @@
 
 The map tells the story of the paper. Each section is one stage of it, and
 each block is one thing the paper defines or states. `gen/layout.js` applies
-these rules to the fine-grained blocks the section files define.
+these rules to the fine-grained blocks the section files define, and
+`gen/prose.js` holds the text a reader sees first: section intros, block
+captions, block title notes and example descriptions. The prose follows the
+pl-paper-writing skill of sill-obs, and `.claude/tools/lint-map.py` checks
+the mechanical rules.
 
 1. **One block per definition or rule group.** A block holds one definition
    (one relation, one judgment, one operation) or the rules of one construct,
