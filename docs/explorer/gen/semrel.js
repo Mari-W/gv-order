@@ -20,8 +20,14 @@ const LEQ = REL('ty2.le', R`\preccurlyeq`);
 const SDUAL = h('sty.sdual', R`\mathsf{sdual}`);
 const WLT = (W, x, y) => h('w.lt', R`${W} \vdash ${x} \prec ${y}`);
 const PAY = (U, x) => h('ty.payload-at', R`${U}[${x}\cdot\bar\imath]`);
-const SND = (U) => h('sty.send', R`!(\bar\iota.\ ${U}^{b})`);
-const RCV = (U) => h('sty.recv', R`?(\bar\iota.\ ${U}^{b})`);
+const SND = (U) => h('sty.send', R`!(\bar\iota.\ ${U})`);
+const RCV = (U) => h('sty.recv', R`?(\bar\iota.\ ${U})`);
+// the deadlock-free reading of a level condition, and its lock-free reading under a general table
+const DL = (df, lf) => R`\dfo{${df}}\annot{${lf}}`;
+const KA = DL(R`\kappa_{DF}(\alpha)`, R`\kappa(\alpha)`);
+const LT = (j, k) => DL(R`${j} < n`, R`${j} + \kappa_{${k}} \leq n`);
+// an end whose protocol unfolds to a given head
+const HD = (env, o, form, x) => h('sr.head', R`${env}(${o}) \doteq ${form}@${x}`);
 const V = (W, nn, Th, T) => h('th.Vrel', R`V^{${W}}_{${nn}}\llbracket ${Th} \vdash ${T} \rrbracket`);
 const E = (W, nn, Th, T, F) => h('th.Erel', R`E^{${W}}_{${nn}}\llbracket ${Th} \vdash ${T} \rrbracket^{${F}}`);
 const P = (W, nn, Sg, T) => h('th.Prel', R`P^{${W}}_{${nn}}\llbracket ${Sg} \vdash ${T} \rrbracket`);
@@ -39,7 +45,7 @@ const DM = R`\mathbin{\dot-}`;
 
 // cost tables
 block(s, {
-  id: 'ct-table', title: 'Cost tables', rocq: 'relation/CostTable.v: ctable',
+  id: 'ct-table', title: 'Cost tables', rocq: 'relation/CostTable.v: ctable', modes: ['lf'],
   tex: R`\begin{array}{l}
 ${h('ct.table', R`\kappa = (\kappa_\beta, \kappa_{new}, \kappa_{spawn}, \kappa_{link}, \kappa_{give}, \kappa_{take}) \in \mathbb{N}^{6}`)} \\
 ${h('ct.take-pos', R`1 \leq \kappa_{take}`)} \qquad ${h('ct.give-pos', R`\kappa_\beta = 0 \Rightarrow 1 \leq \kappa_{give}`)} \qquad ${h('ct.give-take', R`\kappa_{give} \leq \kappa_{take}`)}
@@ -67,14 +73,14 @@ ${h('ct.spawn', R`\mathsf{spawn}`)} & 1 \\
 ${h('ct.link', R`\mathsf{link}`)} & 0 \\
 ${h('ct.give', R`\mathsf{send},\ \mathsf{select},\ \mathsf{close}`)} & 0 \\
 ${h('ct.takek', R`\mathsf{recv},\ \mathsf{branch}`)} & 1 \\
-${h('ct.sync', R`\kappa_{give} + \kappa_{take}`)} & 1
+${h('ct.sync', R`\text{a message, send with recv}`)} & 1
 \end{array}`
   },
-  caption: 'The costs of $\\kappa_{DF}$ and $\\kappa_L$ per kind of step, a synchronization costing $\\kappa_{give} + \\kappa_{take}$.'
+  caption: 'The levels each kind of step costs in the deadlock-free relation. \\annp{The lock-free relation uses $\\kappa_L$, and a synchronization costs $\\kappa_{give} + \\kappa_{take}$.}'
 });
 block(s, {
   id: 'rel-atcost', title: 'After a step', rocq: 'relation/Relation.v: at_cost_E, at_cost_V, at_cost_P',
-  tex: R`${AT(R`e'`)}\ \Theta' \iff \begin{cases} ${h('rel.lfp', R`X(W, \Theta', T, F, e')`)} & \kappa(\alpha) = 0 \\ e' \in ${E('W', R`n-\kappa(\alpha)`, R`\Theta'`, 'T', 'F')} & \kappa(\alpha) > 0 \end{cases}`,
+  tex: R`${AT(R`e'`)}\ \Theta' \iff \begin{cases} ${h('rel.lfp', R`X(W, \Theta', T, F, e')`)} & ${KA} = 0 \\ e' \in ${E('W', R`n-${KA}`, R`\Theta'`, 'T', 'F')} & ${KA} > 0 \end{cases}`,
   caption: 'The reading of a successor $e\'$ after a step $\\alpha$ taken at level $n$, where $X$ is the least fixpoint under construction.'
 });
 
@@ -93,7 +99,7 @@ block(s, {
   id: 'v-arrow', title: 'Values of arrow type', rocq: 'relation/Relation.v: Varr',
   tex: R`\begin{array}{l}
 \lambda e \in ${V('W', 'n', R`\Theta`, R`T ${ARR}^{u}_{l} U`)} \iff ${h('V-Arrow.exact', R`\mathrm{dom}\,\Theta = ${FENDS}(e)`)} \land ${h('V-Arrow.lb', R`l ${LEQ} ${HEADS}\,\Theta`)} \land {} \\
-\quad ${h('V-Arrow.kripke', R`\forall W' ${EXT} W`)},\ ${h('V-Arrow.level', R`j \in \mathbb{N},\ j + \kappa_\beta \leq n`)},\ \Theta' \mathbin{\#} \Theta,\ ${h('V-Arrow.ub', R`F \text{ with } ${WLT("W'", 'u', 'F')}`)},\ w \in ${V("W'", 'j', R`\Theta'`, 'T')}. \\
+\quad ${h('V-Arrow.kripke', R`\forall W' ${EXT} W`)},\ ${h('V-Arrow.level', R`j \in \mathbb{N},\ ${LT('j', R`\beta`)}`)},\ \Theta' \mathbin{\#} \Theta,\ ${h('V-Arrow.ub', R`F \text{ with } ${WLT("W'", 'u', 'F')}`)},\ w \in ${V("W'", 'j', R`\Theta'`, 'T')}. \\
 \qquad ${h('V-Arrow.body', R`e[w] \in ${E("W'", 'j', R`\Theta \cup \Theta'`, 'U', 'F')}`)}
 \end{array}`,
   caption: 'A closure is in $V$ when it owns exactly the ends it mentions and its body is in $E$ for every later world, level, disjoint argument and future above $u$.'
@@ -102,7 +108,7 @@ block(s, {
   id: 'v-thunk', title: 'The spawned thunk', rocq: 'relation/Relation.v: Vthunk',
   tex: R`\begin{array}{l}
 \lambda e \in ${h('sr.vthunk', R`\mathsf{Vthunk}^{W}_{n}(\Theta)`)} \iff ${h('V-Arrow.exact', R`\mathrm{dom}\,\Theta = ${FENDS}(e)`)} \land {} \\
-\quad \forall W' ${EXT} W,\ j + \kappa_\beta \leq n,\ \Theta' \mathbin{\#} \Theta,\ w \in ${V("W'", 'j', R`\Theta'`, R`\ast`)}.\ e[w] \in ${E("W'", 'j', R`\Theta \cup \Theta'`, R`\ast`, h('V-Thunk.empty', R`\varnothing`))}
+\quad \forall W' ${EXT} W,\ ${LT('j', R`\beta`)},\ \Theta' \mathbin{\#} \Theta,\ w \in ${V("W'", 'j', R`\Theta'`, R`\ast`)}.\ e[w] \in ${E("W'", 'j', R`\Theta \cup \Theta'`, R`\ast`, h('V-Thunk.empty', R`\varnothing`))}
 \end{array}`,
   caption: '$V$ at $\\ast \\multimap \\ast$ with no lower and no upper point and the body read at the empty future.'
 });
@@ -158,11 +164,11 @@ ${h('O-Spawn', R`\textsf{O-Spawn}`)} & ${h('O-Spawn.split', R`\exists \Theta_M, 
 block(s, {
   id: 'e-obl-msg', title: 'Obligations of send and receive', rocq: 'relation/Relation.v: o_send, o_recv',
   tex: R`\begin{array}{ll}
-${h('O-Send', R`\textsf{O-Send}`)} & \Theta(o) = S_0@x \land ${UNF}\,S_0 = ${SND('U')}.S \land ${h('O-Send.split', R`\Theta \setminus o = \Theta_M ${UPL} \Theta_r`)} \land {} \\
- & ${h('O-Send.payload', R`w \in ${V('W', R`n-\kappa_{give}`, R`\Theta_M`, PAY('U', 'x'))}`)} \land ${AT(R`e'`)}\ ${h('O-Send.shift', R`\Theta_r[o \mapsto S@x^{+}]`)} \\
+${h('O-Send', R`\textsf{O-Send}`)} & ${HD(R`\Theta`, 'o', R`${SND('U')}.S`, 'x')} \land ${h('O-Send.split', R`\Theta \setminus o = \Theta_M ${UPL} \Theta_r`)} \land {} \\
+ & ${h('O-Send.payload', R`w \in ${V('W', DL('n', R`n-\kappa_{give}`), R`\Theta_M`, PAY('U', 'x'))}`)} \land ${AT(R`e'`)}\ ${h('O-Send.shift', R`\Theta_r[o \mapsto S@x^{+}]`)} \\
  & \quad ${h('O-Spawn.transfer', R`(\text{hence } \mathrm{dom}\,\Theta_M = ${FENDS}(w))`)} \\
-${h('O-Recv', R`\textsf{O-Recv}`)} & \Theta(o) = S_0@x \land ${UNF}\,S_0 = ${RCV('U')}.S \land {} \\
- & ${h('O-Recv.forall', R`\forall j, \Theta_{in}.\ j + \kappa_{take} \leq n \land \Theta_{in} \mathbin{\#} \Theta \land w \in ${V('W', 'j', R`\Theta_{in}`, PAY('U', 'x'))}`)} \Rightarrow \\
+${h('O-Recv', R`\textsf{O-Recv}`)} & ${HD(R`\Theta`, 'o', R`${RCV('U')}.S`, 'x')} \land {} \\
+ & ${h('O-Recv.forall', R`\forall j, \Theta_{in}.\ ${LT('j', 'take')} \land \Theta_{in} \mathbin{\#} \Theta \land w \in ${V('W', 'j', R`\Theta_{in}`, PAY('U', 'x'))}`)} \Rightarrow \\
  & \quad ${h('O-Recv.level', R`e' \in ${E('W', 'j', R`\Theta[o \mapsto S@x^{+}] \cup \Theta_{in}`, 'T', 'F')}`)}
 \end{array}`,
   caption: 'A send gives up the ends of its payload and a receive continues for every incoming value at every lower level.'
@@ -170,9 +176,9 @@ ${h('O-Recv', R`\textsf{O-Recv}`)} & \Theta(o) = S_0@x \land ${UNF}\,S_0 = ${RCV
 block(s, {
   id: 'e-obl-other', title: 'Obligations of close, choice and link', rocq: 'relation/Relation.v: o_close, o_select, o_branch, o_link',
   tex: R`\begin{array}{ll}
-${h('O-Close', R`\textsf{O-Close}`)} & \Theta(o) = S_0@x \land ${UNF}\,S_0 = ${CLOSE} \land ${AT(R`e'`)}\ \Theta \setminus o \\
-${h('O-Select', R`\textsf{O-Select}`)} & \Theta(o) = S_0@x \land ${UNF}\,S_0 = ${h('sty.plus', R`\oplus(S_1,S_2)`)} \land ${AT(R`e'`)}\ \Theta[o \mapsto S_i@${h('pt.sel', R`\overline{x\cdot\kappa_i}`)}] \\
-${h('O-Branch', R`\textsf{O-Branch}`)} & \Theta(o) = S_0@x \land ${UNF}\,S_0 = ${h('sty.with', R`\&(S_1,S_2)`)} \land ${AT(R`e'`)}\ \Theta[o \mapsto S_i@${h('pt.bra', R`x\cdot\kappa_i`)}] \\
+${h('O-Close', R`\textsf{O-Close}`)} & ${HD(R`\Theta`, 'o', CLOSE, 'x')} \land ${AT(R`e'`)}\ \Theta \setminus o \\
+${h('O-Select', R`\textsf{O-Select}`)} & ${HD(R`\Theta`, 'o', h('sty.plus', R`\oplus(S_1,S_2)`), 'x')} \land ${AT(R`e'`)}\ \Theta[o \mapsto S_i@${h('pt.sel', R`\overline{x\cdot\kappa_i}`)}] \\
+${h('O-Branch', R`\textsf{O-Branch}`)} & ${HD(R`\Theta`, 'o', h('sty.with', R`\&(S_1,S_2)`), 'x')} \land ${AT(R`e'`)}\ \Theta[o \mapsto S_i@${h('pt.bra', R`x\cdot\kappa_i`)}] \\
 ${h('O-Link', R`\textsf{O-Link}`)} & ${h('O-Link.distinct', R`o_1 \neq o_2`)} \land ${h('O-Link.dual', R`\Theta(o_1) = S_1@x \land \Theta(o_2) = S_2@\overline{x} \land ${SDUAL}\,S_1\,S_2`)} \land {} \\
  & ${AT(R`e'`)}\ \Theta \setminus \{o_1, o_2\}
 \end{array}`,
@@ -229,12 +235,12 @@ ${h('fuse.dpairs', R`\mathsf{dpairs}\,D\,\Sigma \iff \forall o.\ ${ECH}\,o \in D
 block(s, {
   id: 'p-obl', title: 'Obligations of process steps', rocq: 'relation/Relation.v: q_tau, q_send, q_recv, q_close, q_select, q_branch, q_link',
   tex: R`\begin{array}{ll}
-${h('Q-Tau', R`\textsf{Q-Tau}`)} & C' \cap ${h('tp.chans', R`\mathsf{chans}`)}\,\Sigma = \varnothing \Rightarrow ${AT(R`p'`)}\ \Sigma \text{ after cost } ${h('ct.sync', R`\kappa(ev)`)} \\
-${h('Q-Send', R`\textsf{Q-Send}`)} & \Sigma(o) = S_0@x \land ${UNF}\,S_0 = ${SND('U')}.S \land \Sigma \setminus o = \Sigma_v ${UPL} \Sigma_r \land {} \\
+${h('Q-Tau', R`\textsf{Q-Tau}`)} & C' \cap ${h('tp.chans', R`\mathsf{chans}`)}\,\Sigma = \varnothing \Rightarrow ${AT(R`p'`)}\ \Sigma \text{ after cost } ${h('ct.sync', DL(R`\kappa_{DF}(ev)`, R`\kappa(ev)`))} \\
+${h('Q-Send', R`\textsf{Q-Send}`)} & ${HD(R`\Sigma`, 'o', R`${SND('U')}.S`, 'x')} \land \Sigma \setminus o = \Sigma_v ${UPL} \Sigma_r \land {} \\
  & ${h('Q-Send.theta-e', R`\forall o'.\ o' \in \mathrm{dom}\,\Theta_e \iff o' \in ${FENDS}(w) \land ${ECH}(o') \in C`)} \land {} \\
- & ${h('Q-Send.split', R`\mathsf{send\_split}\,\Sigma\,\Sigma_e\,\Theta_e`)} \land w \in ${V('W', R`n-\kappa_{give}`, R`\Sigma_v \cup \Theta_e`, PAY('U', 'x'))} \land {} \\
+ & ${h('Q-Send.split', R`\mathsf{send\_split}\,\Sigma\,\Sigma_e\,\Theta_e`)} \land w \in ${V('W', DL('n', R`n-\kappa_{give}`), R`\Sigma_v \cup \Theta_e`, PAY('U', 'x'))} \land {} \\
  & ${AT(R`p'`)}\ (\Sigma_r \cup ${h('Q-Send.sigma-e', R`\Sigma_e`)})[o \mapsto S@x^{+}] \\
-${h('Q-Recv', R`\textsf{Q-Recv}`)} & \Sigma(o) = S_0@x \land ${UNF}\,S_0 = ${RCV('U')}.S \land \forall j, \Theta_2.\ j + \kappa_{take} \leq n \land {} \\
+${h('Q-Recv', R`\textsf{Q-Recv}`)} & ${HD(R`\Sigma`, 'o', R`${RCV('U')}.S`, 'x')} \land \forall j, \Theta_2.\ ${LT('j', 'take')} \land {} \\
  & ${ECH}[\mathrm{dom}\,\Theta_2] \cap C = \varnothing \land ${h('Q-Recv.ok', R`\mathsf{recv\_ok}\,\Sigma'\,\Theta_2`)} \land w \in ${V('W', 'j', R`\Theta_2`, PAY('U', 'x'))} \Rightarrow {} \\
  & \quad (C' \cup ${h('Q-Recv.back', R`\mathsf{recv\_back}\,\Sigma'\,\Theta_2`)}, E') \in ${P('W', 'j', h('Q-Recv.env', R`\mathsf{recv\_env}\,\Sigma'\,\Theta_2`), 'T')} \\
 ${h('Q-Link', R`\textsf{Q-Close, Q-Select,}`)} & \text{the term obligations with } \Sigma \text{ for } \Theta \text{ and } P \text{ for } E \\
@@ -259,15 +265,15 @@ ${h('Q-Recv.env', R`\mathsf{recv\_env}\,\Sigma\,\Theta_2 = \{o \mapsto y \in \Si
 
 // semantic judgments
 const SJ = (rel, k) => R`\begin{array}{l}
-${h('sj.at', R`\Theta;\Delta ${REL('sj.term', rel)}^{X}_W t : T \iff \forall n, W' ${EXT} W, \Theta', \gamma.\ ${h('sr.tenv-erase', R`|\Theta|`)} \mathbin{\#} \Theta' \land {}`)} \\
-\quad ${h('sj.at', R`${h('sj.grel', R`\gamma \in G[${k}]^{W'}_n\llbracket\Theta' \vdash \Delta\rrbracket`)} \Rightarrow \gamma(t) \in ${h('th.Erel', R`E[${k}]^{W'}_n\llbracket |\Theta| \cup \Theta' \vdash T\rrbracket^{X}`)}`)} \\
-${h('sj.term', R`\Theta;\Delta ${rel}^{F}_W t : T \iff \forall \rho, B.\ \Theta;\Delta ${rel}^{${h('sj.den', R`\mathsf{den}_{\rho,B}(F)`)}}_W t : T`)} \\
-${h('sj.proc', R`\Sigma ${rel}_W p : T \iff \forall n.\ p \in ${h('th.Prel', R`P[${k}]^{W}_n\llbracket\Sigma \vdash T\rrbracket`)}`)}
+${h('sj.at', R`\Delta ${REL('sj.term', rel)}^{X}_W e : T \iff \forall n, W' ${EXT} W, \Theta', \gamma.\ ${h('sr.tenv-erase', R`|\Delta|`)} \mathbin{\#} \Theta' \land {}`)} \\
+\quad ${h('sj.at', R`${h('sj.grel', R`\gamma \in G${k}^{W'}_n\llbracket\Theta' \vdash \Delta\rrbracket`)} \Rightarrow \gamma(e) \in ${h('th.Erel', R`E${k}^{W'}_n\llbracket |\Delta| \cup \Theta' \vdash T\rrbracket^{X}`)}`)} \\
+${h('sj.term', R`\Delta ${rel}^{F}_W e : T \iff \forall \rho, B.\ \Delta ${rel}^{${h('sj.den', R`\mathsf{den}_{\rho,B}(F)`)}}_W e : T`)} \\
+${h('sj.proc', R`\Sigma ${rel}_W p : T \iff \forall n.\ p \in ${h('th.Prel', R`P${k}^{W}_n\llbracket\Sigma \vdash T\rrbracket`)}`)}
 \end{array}`;
 block(s, {
   id: 'sj', title: 'Semantic judgments', rocq: 'compat/SemTyped.v: Grel, sem_typed_at, sf_den, sem_typed; relation/Adequacy.v: sem_ptyped',
-  tex: SJ(R`\vDash[\kappa]`, R`\kappa`),
-  variants: { df: SJ(R`\vDash`, R`\kappa_{DF}`) },
+  tex: SJ(R`\vDash[\kappa]`, R`[\kappa]`),
+  variants: { df: SJ(R`\vDash`, '') },
   caption: 'The semantic judgments quantify over every level, later world and grounding, and read the static future at every denotation.'
 });
 
@@ -303,10 +309,10 @@ ${h('F-New', R`\textsf{F-New}`)} & ${h('F-New.fresh', R`c^{\pm} \notin \mathrm{d
 ${h('F-Spawn', R`\textsf{F-Spawn}`)} & M = ${FENDS}(v) \land ${h('F-Spawn.held', R`M \subseteq \mathrm{dom}\,\varphi`)} \land ${FSPARE}\,\Pi\,\varphi\,M \land {} \\
  & ${h('F-Spawn.child', R`v\,\ast \in ${FE('N', 'n', R`${THR} \triangleright \infty ; 0`, R`\Pi|_M, ${FHAND}\,M\,\varphi, \lceil tk/2 \rceil`)}`)} \land e' \text{ at } \Pi \setminus M, \varphi \setminus M, ${h('F-Spawn.tickets', R`\lfloor tk/2 \rfloor`)} \\
 ${h('F-Send', R`\textsf{F-Send}`)} & ${ACT}\,o \land \Pi(o) = S_0 \land ${UNF}\,S_0 = ${SND('T')}.S \land M = ${FENDS}(w) \land {} \\
- & ${h('F-Send.notsubj', R`M \subseteq \mathrm{dom}\,\varphi \setminus \{o\}`)} \land ${FSPARE}\,\Pi\,\varphi\,M \land ${h('F-Send.payload', R`w \in ${FV('N', 'n', R`T^{b}`, R`\Pi|_M, ${FHAND}\,M\,\varphi`)}`)} \land {} \\
+ & ${h('F-Send.notsubj', R`M \subseteq \mathrm{dom}\,\varphi \setminus \{o\}`)} \land ${FSPARE}\,\Pi\,\varphi\,M \land ${h('F-Send.payload', R`w \in ${FV('N', 'n', 'T', R`\Pi|_M, ${FHAND}\,M\,\varphi`)}`)} \land {} \\
  & e' \text{ at } d ${DM} 1,\ (\Pi \setminus M)[o \mapsto S],\ ${REFILL}\,N\,o\,(\varphi \setminus M) \\
 ${h('F-Recv', R`\textsf{F-Recv}`)} & ${ACT}\,o \land \Pi(o) = S_0 \land ${UNF}\,S_0 = ${RCV('T')}.S \land {} \\
- & ${h('F-Recv.forall', R`\forall j \leq n, \Pi_i, \varphi_i \text{ disjoint}.\ w \in ${FV('N', 'j', R`T^{b}`, R`\Pi_i, \varphi_i`)}`)} \Rightarrow {} \\
+ & ${h('F-Recv.forall', R`\forall j \leq n, \Pi_i, \varphi_i \text{ disjoint}.\ w \in ${FV('N', 'j', 'T', R`\Pi_i, \varphi_i`)}`)} \Rightarrow {} \\
  & \quad e' \in F_j \text{ at } d ${DM} 1,\ \Pi[o \mapsto S] \cup \Pi_i,\ ${REFILL}\,N\,o\,\varphi \cup \varphi_i \\
 ${h('F-Close', R`\textsf{F-Close}`)} & ${ACT}\,o \land ${UNF}(\Pi\,o) = ${CLOSE} \land e' \text{ at } d ${DM} 1,\ \Pi \setminus o,\ (\varphi \setminus o) ${DM} 1 \\
 ${h('F-Close', R`\textsf{F-Select, F-Branch}`)} & ${ACT}\,o \land ${UNF}(\Pi\,o) \in \{\oplus(S_1,S_2), \&(S_1,S_2)\} \land e' \text{ at } d ${DM} 1,\ \Pi[o \mapsto S_i],\ ${REFILL}\,N\,o\,\varphi \\
@@ -321,21 +327,21 @@ block(s, {
   modes: ['lf'],
   tex: R`\begin{array}{l}
 ${h('FV-Sess', R`o \in FV\llbracket (S@x)^{a}\rrbracket(\Pi, \varphi) \iff \Pi = \{o \mapsto S'\} \land \varphi = \{o \mapsto f\} \land S' ${SEQU} S \land ${h('FV-Sess.counter', R`a \leq f`)}`)} \\
-${h('FV-Arrow', R`\lambda e \in FV^N_n\llbracket (T^{a_1} ${ARR}_{c;\vartheta;h} U^{a_2})^{a}\rrbracket(\Pi,\varphi) \iff ${h('FV-Arrow.exact', R`${FENDS}\,e = \mathrm{dom}\,\Pi = \mathrm{dom}\,\varphi`)} \land {}`)} \\
+${h('FV-Arrow', R`\lambda e \in FV^N_n\llbracket (T ${ARR}[\varepsilon;h]\, U)^{a}\rrbracket(\Pi,\varphi) \iff ${h('FV-Arrow.exact', R`${FENDS}\,e = \mathrm{dom}\,\Pi = \mathrm{dom}\,\varphi`)} \land {}`)} \\
 \quad ${h('FV-Arrow.floor', R`\forall o.\ h + a \leq \varphi(o)`)} \land \forall N' ${RLE} N,\ j < n,\ \varphi' \text{ with } \mathrm{dom}\,\varphi' = \mathrm{dom}\,\varphi \land h \leq \varphi', \\
-\quad ${h('FV-Arrow.body', R`u \in ${FV("N'", 'j', R`T^{a_1}`, R`\Pi_u, \varphi_u`)},\ ${MEETS}\,\vartheta\,r\,tk.\ e[u] \in ${FE("N'", 'j', R`U^{a_2} \triangleright c ; r`, R`\Pi \cup \Pi_u, \varphi' \cup \varphi_u, tk`)}`)} \\
+\quad ${h('FV-Arrow.body', R`u \in ${FV("N'", 'j', 'T', R`\Pi_u, \varphi_u`)},\ ${MEETS}\,\vartheta\,r\,tk.\ e[u] \in ${FE("N'", 'j', R`U \triangleright c ; r`, R`\Pi \cup \Pi_u, \varphi' \cup \varphi_u, tk`)}`)} \\
 ${h('FV-Box', R`!e \in FV^N_n\llbracket \Box(\ldots U)\rrbracket(\Pi,\varphi) \iff ${h('FV-Box.noends', R`${FENDS}\,e = \varnothing \land \Pi = \varphi = \varnothing`)} \land {}`)} \\
 \quad ${h('FV-Box.body', R`\forall N' ${RLE} N, j < n, \bar s \in ${h('tp.sinsts', R`\mathsf{sinsts}`)}\,N', ${MEETS}\,\vartheta\,r\,tk.\ e[!e] \in ${FE("N'", 'j', R`U[\bar s] \triangleright c ; r`, R`\varnothing,\varnothing,tk`)}`)} \\
-${h('FV-Thread', R`v \in FV\llbracket ${THR} \rrbracket(\Pi,\varphi) \iff \Pi = \varphi = \varnothing`)} \qquad ${h('sr.fvagg', R`\otimes, \oplus, \exists \text{ add their credit to the parts}`)}
+${h('FV-Thread', R`v \in FV\llbracket ${THR} \rrbracket(\Pi,\varphi) \iff \Pi = \varphi = \varnothing`)} \qquad ${h('sr.fvagg', R`\otimes, \oplus, \exists \text{ split } \Pi, \varphi \text{ among their parts}`)}
 \end{array}`,
-  caption: 'Fueled values by recursion on the type, reading credits, costs, ticket needs and floors and no point.'
+  caption: 'Fueled values by recursion on the type, reading credits, effects $\\varepsilon = (c, \\vartheta)$ and floors and no point.'
 });
 block(s, {
   id: 'fu-fsem', title: 'Fuel of a thread', rocq: 'fuel/Fuel.v: fsem; cost/CostSem.v: csem',
   modes: ['lf'],
   tex: R`\begin{array}{l}
 ${h('fu.fsem', R`\mathsf{fsem}\,N\,\Pi\,e \iff \exists tk.\ \forall n.\ e \in ${FE('N', 'n', R`${THR} \triangleright \infty ; 0`, R`\Pi, (\lambda\_.N)|_{\mathrm{dom}\,\Pi}, tk`)}`)} \\
-${h('cs.csem', R`\Theta;\Delta \vDash^{N} e : T^{a} \triangleright c ; \vartheta`)}
+${h('cs.csem', R`\Delta \vDash^{N} e : T\ !\ \varepsilon`)}
 \end{array}`,
   caption: 'A thread has fuel at every level with every held end at $N$ and one ticket count for all levels.'
 });
@@ -379,13 +385,13 @@ n('ct.give-pos', R`$\kappa_\beta = 0 \Rightarrow 1 \leq \kappa_{give}$`, R`If $\
 n('ct.give-take', R`$\kappa_{give} \leq \kappa_{take}$`, R`A give costs at most a take.`, R`A synchronization costs $\kappa_{give} + \kappa_{take}$, and composing two components pays a synchronization of two gives, which needs $2\kappa_{give} \leq \kappa_{give} + \kappa_{take}$.`, DEF, R`$\kappa_{DF}$ has $0 \leq 1$ and $\kappa_L$ has $1 \leq 1$.`, 'relation/CostTable.v: c_give_take');
 n('ct.DF', R`$\kappa_{DF}$`, R`The table $(1,1,1,0,0,1)$.`, R`Every step of cost $0$ under $\kappa_{DF}$ is a give or a link, which shrinks the term, so the least fixpoint of a level is a recursion on the term.`, DEF, R`Under $\kappa_{DF}$ a send costs $0$ and a receive $1$.`, 'relation/CostTable.v: κ_DF');
 n('ct.L', R`$\kappa_L$`, R`The table $(0,0,0,0,1,1)$.`, R`Under $\kappa_L$ exactly the internal steps cost $0$, so the least fixpoint of a level excludes infinite sequences of internal steps.`, DEF, R`Under $\kappa_L$ a synchronization costs $2$.`, 'relation/CostTable.v: κ_L');
-n('ct.beta', R`Cost $\kappa_\beta$`, R`The cost of application, pair and unit elimination, case and force.`, R`An arrow reads its body at every $j$ with $j + \kappa_\beta \leq n$, so one arrow clause serves $j < n$ for $\kappa_{DF}$ and $j \leq n$ for $\kappa_L$.`, DEF, R`$(\lambda e)\,v \xrightarrow{\beta} e[v]$ costs $\kappa_\beta$.`, 'relation/CostTable.v: c_beta');
+n('ct.beta', R`Cost $\kappa_\beta$`, R`The cost of application, pair and unit elimination, case and force.`, R`An arrow reads its body at every $j < n$ under $\kappa_{DF}$. \annp{Under a general table it reads every $j$ with $j + \kappa_\beta \leq n$, so one arrow clause also serves $j \leq n$ for $\kappa_L$.}`, DEF, R`$(\lambda e)\,v \xrightarrow{\beta} e[v]$ costs $\kappa_\beta$.`, 'relation/CostTable.v: c_beta');
 n('ct.new', R`Cost $\kappa_{new}$`, R`The cost of $\mathsf{new}$.`, R`Creation synchronizes with nobody, so $\kappa_L$ counts it as an internal step.`, DEF, R`$\kappa_L(\mathsf{new}) = 0$.`, 'relation/CostTable.v: c_new');
 n('ct.spawn', R`Cost $\kappa_{spawn}$`, R`The cost of $\mathsf{spawn}$.`, R`For $\kappa_{spawn} = 0$ the child thunk is read inside the least fixpoint of the parent, so an infinite chain of spawns is in no $E_n$.`, DEF, R`$\kappa_L(\mathsf{spawn}) = 0$.`, 'relation/CostTable.v: c_spawn');
 n('ct.link', R`Cost $\kappa_{link}$`, R`The cost of $\mathsf{link}$, $0$ in both tables.`, R`A link acts alone and synchronizes with nobody, so it is an internal step.`, R`Under $\kappa_L$ a loop that creates and links forever is an infinite sequence of internal steps and lies in no $E_n$.`, R`$!(f = \mathsf{let}\ \langle a, b\rangle = \mathsf{new}\ \mathsf{in}\ \mathsf{let}\ \ast = \mathsf{link}\,\langle a, b\rangle\ \mathsf{in}\ \mathsf{force}\,f)$ diverges internally.`, 'relation/CostTable.v: c_link');
 n('ct.give', R`Cost $\kappa_{give}$`, R`The cost of $\mathsf{send}$, $\mathsf{select}$ and $\mathsf{close}$.`, R`The obligation of a give reads the continuation at level $n - \kappa_{give}$.`, DEF, R`$\kappa_{DF}(\mathsf{send}) = 0$.`, 'relation/CostTable.v: c_give');
 n('ct.takek', R`Cost $\kappa_{take}$`, R`The cost of $\mathsf{recv}$ and $\mathsf{branch}$, $1$ in both tables.`, R`The obligation of a take reads every incoming value at $j \leq n - \kappa_{take} < n$.`, DEF, R`$\kappa(\mathsf{recv}) = 1$.`, 'relation/CostTable.v: c_take');
-n('ct.sync', R`Cost of an event $\kappa(ev)$`, R`$\kappa(ev)$ is the cost of the step kind of $ev$, and $\kappa_{give} + \kappa_{take}$ for a synchronization.`, R`Both partners of a synchronization step at once, so the process pays both costs.`, DEF, R`A message costs $1$ under $\kappa_{DF}$ and $2$ under $\kappa_L$.`, 'relation/CostTable.v: ev_cost');
+n('ct.sync', R`Cost of an event $\kappa(ev)$`, R`$\kappa(ev)$ is the cost of the step kind of $ev$, and $\kappa_{give} + \kappa_{take}$ for a synchronization.`, R`Both partners of a synchronization step at once, so the process pays both costs.`, DEF, R`A message costs $1$ under $\kappa_{DF}$\annp{ and $2$ under $\kappa_L$}.`, 'relation/CostTable.v: ev_cost');
 n('rel.atcost', R`$e'$ at $\Theta'$`, R`The successor of a step of cost $c$ at level $n$ is read in the fixpoint $X$ if $c = 0$ and in $E_{n-c}$ if $c > 0$.`, R`Stated as two implications, $X$ occurs strictly positively and the inductive definition is admissible.`, DEF, R`Under $\kappa_L$ a $\beta$ step stays at level $n$.`, 'relation/Relation.v: at_cost_E, at_cost_V, at_cost_P');
 n('rel.lfp', R`Least fixpoint $X$`, R`$E_n$ and $P_n$ are the least fixpoints of their clauses over steps of cost $0$.`, R`A least fixpoint admits only finite sequences of cost-$0$ steps, so under $\kappa_L$ no term in $E_n$ diverges internally.`, R`A greatest fixpoint would admit $!(f = \mathsf{force}\,f)$, which takes only $\beta$ steps.`, R`Induction on $E_n$ is induction on cost-$0$ steps.`, 'relation/Relation.v: Eind, Pind');
 // V
@@ -398,7 +404,7 @@ n('V-Sum', R`$V$ at $\oplus$`, R`$\mathsf{inj}_i\,v \in V\llbracket\Theta \vdash
 n('V-Arrow.exact', R`$\mathrm{dom}\,\Theta = \mathsf{fends}(e)$`, R`A closure owns exactly the ends its body mentions.`, R`With it, every $v \in V$ satisfies $\mathrm{dom}\,\Theta = \mathsf{fends}(v)$, so the ends a send or spawn hands over are $\mathsf{fends}$ of the value.`, R`$\lambda\_.\,\mathsf{let}\ \ast = \Omega\ \mathsf{in}\ \mathsf{close}\,q^{+}$ owns nothing and is in $V$ at every level, and then a send of it next to $q^{+}$ fails E-Send.`, R`$\lambda\_.\,\mathsf{close}\,a$ owns $\{a\}$.`, 'relation/Relation.v: Varr');
 n('V-Arrow.lb', R`$l \preccurlyeq \mathsf{heads}\,\Theta$`, R`For $l = y$, $\forall z \in \mathsf{heads}\,\Theta.\ y \preccurlyeq z$, and for $l$ absent, $\mathsf{heads}\,\Theta = \varnothing$.`, R`The holder of a closure reads its heads through $l$, which bounds the heads of the values it holds.`, DEF, R`A closure over $a$ at $\rho$ has $\mathsf{heads}\,\Theta = \{\overline{\rho}\}$ and $l = \overline{\rho}$.`, 'relation/Relation.v: Varr, lb_le');
 n('V-Arrow.kripke', R`$\forall W' \sqsupseteq W$`, R`The body is in $E$ in every extension $W'$ of $W$.`, R`A closure may be called after composition has extended the world, so $V$ is monotone in $W$.`, DEF, R`A received closure is called in $W \sqcup W'$.`, 'relation/Relation.v: Varr');
-n('V-Arrow.level', R`$j + \kappa_\beta \leq n$`, R`The body is read at every level $j \leq n - \kappa_\beta$.`, R`Under $\kappa_{DF}$ this is $j < n$, under $\kappa_L$ it is $j \leq n$, where $\beta$ is free.`, DEF, R`Under $\kappa_L$ the body is read at level $n$.`, 'relation/Relation.v: Varr');
+n('V-Arrow.level', R`Level of the body`, R`The body is read at every level $j < n$, \annp{and under a general table at every $j \leq n - \kappa_\beta$.}`, R`A $\beta$-step costs one level in the deadlock-free relation. \annp{Under $\kappa_L$, where $\beta$ is free, the body is read at level $n$.}`, DEF, R`The body of a closure in $V_3$ is read at levels $0$ to $2$.`, 'relation/Relation.v: Varr');
 n('V-Arrow.ub', R`$W' \vdash u \prec F$`, R`The body is in $E$ under every future $F$ with $\forall y \in F.\ W' \vdash u \prec y$.`, R`A closure may block up to $u$, so its caller must still act only above $u$.`, DEF, R`The body of $\mathsf{between}$ runs under every $F$ above $\kappa$.`, 'relation/Readiness.v: ub_lt');
 n('V-Arrow.body', R`Body in $E$`, R`$e[w] \in E^{W'}_j\llbracket\Theta \cup \Theta' \vdash U\rrbracket^{F}$ for every argument $w \in V^{W'}_j\llbracket\Theta' \vdash T\rrbracket$ with $\Theta' \mathbin{\#} \Theta$.`, R`The call owns the closure's ends and the argument's ends, which are disjoint, and the compatibility of E-App feeds exactly this union to the body.`, DEF, R`$\mathsf{cli}$ applied to $\langle a, b\rangle$ runs at $\{a, b\}$.`, 'relation/Relation.v: Varr');
 n('V-Thunk.empty', R`Empty future $\varnothing$`, R`The spawned body is read at $F = \varnothing$ with no lower and no upper point.`, R`The thunk leaves the parent and starts a thread with no context, so no readiness of the parent reads its heads and nothing waits after it.`, R`With a lower point, a thread holding ends at unrelated points $1$ and $2$ could not spawn a thunk that closes both.`, R`$\mathsf{spawn}\,(\lambda u.\,\mathsf{close}\,d')$.`, 'relation/Relation.v: Vthunk');
@@ -430,14 +436,15 @@ n('O-Spawn.transfer', R`$\mathrm{dom}\,\Theta_M = \mathsf{fends}(v)$`, R`The par
 n('O-Spawn.thunk', R`$v \in \mathsf{Vthunk}_n(\Theta_M)$`, R`The thunk is in $\mathsf{Vthunk}$ at the parent's level $n$.`, R`For $\kappa_{spawn} = 0$ the child is read inside the parent's least fixpoint, so an infinite chain of spawns is in no $E_n$.`, DEF, R`$\mathsf{Vthunk}_n(\{d'\})$.`, 'relation/Relation.v: o_spawn');
 n('O-Send', R`O-Send`, R`The subject is at a send head, $\Theta \setminus o$ splits into the payload part $\Theta_M$ and the rest, the payload is in $V$, and the continuation runs at the rest with $o$ at $S@x^{+}$.`, R`Exactness of $V$ fixes $\mathrm{dom}\,\Theta_M = \mathsf{fends}(w)$.`, DEF, R`$\mathsf{send}\,\langle a, y\rangle$ in the growing ring.`, 'relation/Relation.v: o_send');
 n('O-Send.split', R`$\Theta \setminus o = \Theta_M \uplus \Theta_r$`, R`The payload owns no copy of the subject $o$.`, R`A send hands on held ends other than its subject.`, R`A term that sends its own subject would leave the continuation acting on an end it gave away.`, R`$\Theta \setminus o = \Theta_M \cup \Theta_r$.`, 'relation/Relation.v: o_send');
-n('O-Send.payload', R`Payload level`, R`$w \in V_{n-\kappa_{give}}\llbracket\Theta_M \vdash U[x\cdot\bar\imath]\rrbracket$.`, R`The payload is read at the level of the continuation, $n$ under $\kappa_{DF}$ and $n - 1$ under $\kappa_L$.`, DEF, R`The payload $a$ of $\mathsf{send}\,\langle a, y\rangle$ at $Y\cdot 0$.`, 'relation/Relation.v: o_send');
+n('sr.head', R`Head of an end $\Theta(o) \doteq S@x$`, R`$\Theta(o) \doteq S@x$ states $\Theta(o) = S_0@x$ for some $S_0$ with $\mathsf{unfold}\,S_0 = S$.`, R`Every obligation reads the first action of the subject end after unfolding, so the notation states it once.`, DEF, R`$\Theta(o) \doteq {!}(\bar\iota.\,\ast).\mathsf{Close}@x$ for $\Theta(o) = (\mu\alpha.\,{!}\ast.\mathsf{Close})@x$.`, 'relation/Relation.v: o_send, o_recv, o_close, o_select, o_branch');
+n('O-Send.payload', R`Payload level`, R`$w \in V_{n}\llbracket\Theta_M \vdash U[x\cdot\bar\imath]\rrbracket$, \annp{and $V_{n-\kappa_{give}}$ under a general table.}`, R`The payload is read at the level of the continuation, because a send costs no level in the deadlock-free relation. \annp{Under $\kappa_L$ it costs one.}`, DEF, R`The payload $a$ of $\mathsf{send}\,\langle a, y\rangle$ at $Y\cdot 0$.`, 'relation/Relation.v: o_send');
 n('O-Send.shift', R`$o : S@x^{+}$`, R`The subject continues at $S$ and the next point $x^{+}$.`, R`$x \prec x^{+}$ holds in every world, so successive actions on one end are ordered.`, DEF, R`$\Theta_r[o \mapsto S@x^{+}]$.`, 'relation/Relation.v: o_send');
-n('O-Recv', R`O-Recv`, R`For every $j \leq n - \kappa_{take}$ and every incoming $w \in V_j$ with ends disjoint from $\Theta$, the continuation is in $E_j$ with those ends added.`, R`The receiver cannot know what arrives, so it continues for every value its type admits, and the compatibility of E-Recv pairs this with the sender's O-Send.`, DEF, R`$\mathsf{let}\ \langle u, b\rangle = \mathsf{recv}\,b\ \mathsf{in}\ \ldots$`, 'relation/Relation.v: o_recv');
-n('O-Recv.forall', R`Every incoming value`, R`$\forall j, \Theta_{in}.\ j + \kappa_{take} \leq n \land \Theta_{in} \mathbin{\#} \Theta \land w \in V_j\llbracket\Theta_{in} \vdash U[x\cdot\bar\imath]\rrbracket$.`, R`$1 \leq \kappa_{take}$ makes $j < n$, so this negative occurrence of $V$ is at a lower level.`, DEF, R`$\forall j\,\Theta_{in}$.`, 'relation/Relation.v: o_recv');
+n('O-Recv', R`O-Recv`, R`For every $j < n$ and every incoming $w \in V_j$ with ends disjoint from $\Theta$, the continuation is in $E_j$ with those ends added.`, R`The receiver cannot know what arrives, so it continues for every value its type admits, and the compatibility of E-Recv pairs this with the sender's O-Send.`, DEF, R`$\mathsf{let}\ \langle u, b\rangle = \mathsf{recv}\,b\ \mathsf{in}\ \ldots$`, 'relation/Relation.v: o_recv');
+n('O-Recv.forall', R`Every incoming value`, R`$\forall j, \Theta_{in}.\ j < n \land \Theta_{in} \mathbin{\#} \Theta \land w \in V_j\llbracket\Theta_{in} \vdash U[x\cdot\bar\imath]\rrbracket$.`, R`This negative occurrence of $V$ is at a lower level, so $V$ is well defined. \annp{Under a general table the bound is $j + \kappa_{take} \leq n$, and $1 \leq \kappa_{take}$ keeps $j < n$.}`, DEF, R`$\forall j\,\Theta_{in}$.`, 'relation/Relation.v: o_recv');
 n('O-Recv.level', R`Continuation at level $j$`, R`$e' \in E_j\llbracket\Theta[o \mapsto S@x^{+}] \cup \Theta_{in} \vdash T\rrbracket^{F}$.`, R`The continuation owns the old ends with $o$ advanced and the received ends, and is read at the level of the value it received.`, DEF, R`$E_j\llbracket\Theta[o \mapsto S@x^{+}] \cup \Theta_{in} \vdash T\rrbracket^{F}$.`, 'relation/Relation.v: o_recv');
 n('O-Close', R`O-Close`, R`At a $\mathsf{Close}$ head, $e'$ at $\Theta \setminus o$.`, R`After the close nobody holds $o$, which matches the restriction removed by the process rule.`, DEF, R`$\mathsf{close}\,c^{+}$.`, 'relation/Relation.v: o_close');
 n('O-Select', R`O-Select`, R`At a head $\oplus(S_1, S_2)$, $e'$ at $\Theta[o \mapsto S_i@\overline{x\cdot\kappa_i}]$.`, R`The selecting end keeps its name and moves to the dual side of the field of choice $i$, where E-Select places it.`, DEF, R`$\mathsf{select}_{\mathsf{true}}\,o$.`, 'relation/Relation.v: o_select');
-n('O-Branch', R`O-Branch`, R`For the choice $i$ the step took, $e'$ at $\Theta[o \mapsto S_i@x\cdot\kappa_i]$, at cost $\kappa_{take}$.`, R`The branching end moves to the field of choice $i$, the partner point of the selecting side.`, DEF, R`$\mathsf{branch}\,o$.`, 'relation/Relation.v: o_branch');
+n('O-Branch', R`O-Branch`, R`For the choice $i$ the step took, $e'$ at $\Theta[o \mapsto S_i@x\cdot\kappa_i]$, one level later.`, R`The branching end moves to the field of choice $i$, the partner point of the selecting side.`, DEF, R`$\mathsf{branch}\,o$.`, 'relation/Relation.v: o_branch');
 n('O-Link', R`O-Link`, R`Two distinct ends at $x$ and $\overline{x}$ with dual types leave $\Theta$.`, R`After the link the partners of $o_1$ and $o_2$ form one channel, which is well typed only if $o_1$ and $o_2$ were dual.`, DEF, R`$\mathsf{link}\,\langle c^{+}, d^{-}\rangle$.`, 'relation/Relation.v: o_link');
 n('O-Link.distinct', R`$o_1 \neq o_2$`, R`A self link is rejected.`, R`The link label is a set and may be degenerate.`, DEF, R`$\mathsf{link}\,\langle c^{+}, c^{+}\rangle$ is in no $E_n$.`, 'relation/Relation.v: o_link');
 n('O-Link.dual', R`Dual at dual points`, R`$\Theta(o_1) = S_1@x \land \Theta(o_2) = S_2@\overline{x} \land \mathsf{sdual}\,S_1\,S_2$.`, R`E-Link types the two ends exactly dual at dual points, and the soup keeps restricted pairs dual, which the renaming of the link preserves only under this condition.`, DEF, R`$c^{+} : S@x$ and $d^{-} : \overline{S}@\overline{x}$.`, 'relation/Relation.v: o_link');
@@ -463,7 +470,7 @@ n('fuse.inj', R`Injective on held ends`, R`$\forall o_1, o_2 \in \mathsf{held}.\
 n('fuse.partners', R`New partners only on $D$`, R`$h(o_2) = \overline{h(o_1)} \Rightarrow o_2 = \overline{o_1} \lor \mathsf{ech}(h\,o_1) \in D$.`, R`Two held ends become partners only if they were or their channel is restricted by the fusion.`, R`Without it, $h$ joins unrelated interface ends into one channel, and composition fails.`, R`$D = \varnothing$ creates no new pair.`, 'relation/Relation.v: fuse_ok');
 n('fuse.D', R`$D \cap \mathsf{gch}_h[C] = \varnothing$`, R`The channels restricted by the fusion are not images of channels already restricted.`, R`Composition splits a fused process into its two sides, and this condition keeps the two restricted sets $\mathsf{gch}_h[C_i] \cup D_i$ disjoint from each other and from the interface.`, R`Without it, a restricted channel could be restricted again as a new pair, and the split of the fused composite fails.`, R`$D \mathbin{\#} \mathsf{gch}_h[C]$.`, 'relation/Relation.v: fuse_ok');
 n('fuse.dpairs', R`$\mathsf{dpairs}\,D\,\Sigma$`, R`Both ends of every channel of $D$ are in $\Sigma$, at dual points and dual types.`, R`They become restricted, and restricted channels are dual pairs.`, DEF, R`Internalizing $c$ with $\Sigma(c^{+}) = S@x$ and $\Sigma(c^{-}) = \overline{S}@\overline{x}$.`, 'relation/Relation.v: dpairs');
-n('Q-Tau', R`Q-Tau`, R`An internal step that restricts no interface channel keeps $\Sigma$ and costs $\kappa(ev)$.`, R`Administrative steps and internal synchronizations are one clause.`, DEF, R`A message between two threads costs $\kappa_{give} + \kappa_{take}$.`, 'relation/Relation.v: q_tau');
+n('Q-Tau', R`Q-Tau`, R`An internal step that restricts no interface channel keeps $\Sigma$ and costs the levels of its kind of step.`, R`Administrative steps and internal synchronizations are one clause.`, DEF, R`A message between two threads costs one level\annp{, and $\kappa_{give} + \kappa_{take}$ under a general table}.`, 'relation/Relation.v: q_tau');
 n('Q-Send', R`Q-Send`, R`An external send. The interface part $\Sigma_v$ and the restricted part $\Theta_e$ of the payload leave, and the partners $\Sigma_e$ left behind join the interface.`, R`It is O-Send at the process level, and the compatibility of P-Term discharges it from O-Send of the thread.`, DEF, R`Sending a restricted end $d^{+}$ puts $d^{-}$ into the interface.`, 'relation/Relation.v: q_send');
 n('Q-Send.theta-e', R`Extruded ends $\Theta_e$`, R`$\mathrm{dom}\,\Theta_e = \{o' \in \mathsf{fends}(w) \mid \mathsf{ech}(o') \in C\}$.`, R`$\Theta_e$ is exactly the restricted part of the ends of $w$. Exactness of $V$ at the payload gives $\mathsf{fends}(w) = \mathrm{dom}\,\Sigma_v \cup \mathrm{dom}\,\Theta_e$, so the payload carries $\mathsf{fends}(w)$ and nothing else.`, DEF, R`$\Theta_e = \{d^{+}\}$.`, 'relation/Relation.v: q_send, compat/Redex.v: Vrel_exact');
 n('Q-Send.split', R`$\mathsf{send\_split}$`, R`The extruded ends are no interface ends, and $\Sigma_e$ holds the partners of extruded ends that stay, at dual types and points.`, R`The partner of an extruded end becomes an interface end, and the interface must record its type and point.`, R`Without it, the process would keep an end its interface does not mention, and P-Stop could not hold.`, R`$\Sigma_e = \{d^{-}\}$.`, 'relation/Relation.v: send_split');
@@ -474,11 +481,11 @@ n('Q-Recv.back', R`$\mathsf{recv\_back}$`, R`The channels of incoming ends whose
 n('Q-Recv.env', R`$\mathsf{recv\_env}$`, R`The interface after the receive, without the ends that became internal.`, R`Internal ends leave the interface, and the rest of $\Theta_2$ joins it.`, DEF, R`$\mathsf{recv\_env}\,\Sigma\,\Theta_2$.`, 'relation/Relation.v: recv_env');
 n('Q-Link', R`Q-Close, Q-Select, Q-Branch, Q-Link`, R`The term obligations O-Close, O-Select, O-Branch and O-Link with $\Sigma$ for $\Theta$ and $P$ for $E$.`, R`An external close, choice or link acts on interface ends exactly as a thread acts on its own ends.`, DEF, R`Q-Link removes both linked ends from $\Sigma$.`, 'relation/Relation.v: q_close, q_select, q_branch, q_link');
 // semantic judgments
-n('sj.at', R`Judgment at a set of points $X$`, R`For every level, later world and grounding $\gamma$ of $\Delta$ disjoint from $|\Theta|$, $\gamma(t) \in E_n\llbracket|\Theta| \cup \Theta' \vdash T\rrbracket^{X}$.`, R`It quantifies over everything a context may supply, so it composes by the compatibility lemmas.`, DEF, R`$\Theta;\Delta \vDash^{X}_W t : T$.`, 'compat/SemTyped.v: sem_typed_at');
+n('sj.at', R`Judgment at a set of points $X$`, R`For every level, later world, environment $\Theta'$ disjoint from the ends $|\Delta|$ and grounding $\gamma$ of the variables of $\Delta$ in $\Theta'$, $\gamma(e) \in E_n\llbracket|\Delta| \cup \Theta' \vdash T\rrbracket^{X}$.`, R`It quantifies over everything a context may supply, so it composes by the compatibility lemmas.`, DEF, R`$\Delta \vDash^{X}_W e : T$.`, 'compat/SemTyped.v: sem_typed_at');
 n('sj.grel', R`Grounding $\gamma \in G\llbracket\Theta \vdash \Delta\rrbracket$`, R`$\gamma$ substitutes for each entry $T^a$ of $\Delta$ a value in $V\llbracket\Theta_i \vdash T\rrbracket$, with $\Theta = \biguplus_i \Theta_i$.`, R`Variables of $\Delta$ stand for values, and the ends of those values split $\Theta$ disjointly.`, DEF, R`For $\Delta = [T]$, $\gamma(0) \in V\llbracket\Theta \vdash T\rrbracket$.`, 'compat/SemTyped.v: Grel');
 n('sj.den', R`$\mathsf{den}_{\rho,B}(F)$`, R`$\mathsf{den}_{\rho,B}(F_1, f) = F_1 \cup \rho(\varphi) \cup B$, with $\rho(\varphi)$ only if $f$ has the variable $\varphi$ and $B$ only if $f$ has the flag $\bot$.`, R`A future variable and the flag $\bot$ stand for unknown sets of points, so the judgment holds at every choice of them.`, DEF, R`$\mathsf{den}_{\rho,B}(\varnothing, \varphi) = \rho(\varphi)$.`, 'compat/SemTyped.v: sf_den');
-n('sj.term', R`$\Theta ; \Delta \vDash^{F}_W t : T$`, R`$\forall \rho, B.\ \Theta;\Delta \vDash^{\mathsf{den}_{\rho,B}(F)}_W t : T$, read with $\kappa_{DF}$ as $\vDash$ and with $\kappa_L$ as $\mathrel{|\!\!\vDash}$.`, R`It is the conclusion of the fundamental theorem for terms.`, DEF, R`$\varnothing;\varnothing \vDash^{\varnothing}_W e : T$.`, 'compat/SemTyped.v: sem_typed');
-n('sj.proc', R`$\Sigma \vDash_W p : T$`, R`$\forall n.\ p \in P^W_n\llbracket\Sigma \vdash T\rrbracket$, with $\kappa_{DF}$ as $\vDash$ and with $\kappa_L$ as $\mathrel{|\!\!\vDash}$.`, R`Adequacy turns it into deadlock freedom, and with $\kappa_L$ also into absence of internal divergence.`, DEF, R`$\varnothing \vDash_W p : \ast$.`, 'relation/Adequacy.v: sem_ptyped');
+n('sj.term', R`$\Delta \vDash^{F}_W e : T$`, R`$\forall \rho, B.\ \Delta \vDash^{\mathsf{den}_{\rho,B}(F)}_W e : T$, with the same context $\Delta$ as the typing judgment.`, R`It is the conclusion of the fundamental theorem for terms. \annp{The lock-free reading $\vDash[\kappa_L]$ uses the table $\kappa_L$.}`, DEF, R`$\varnothing \vDash^{\varnothing}_W e : T$.`, 'compat/SemTyped.v: sem_typed');
+n('sj.proc', R`$\Sigma \vDash_W p : T$`, R`$\forall n.\ p \in P^W_n\llbracket\Sigma \vdash T\rrbracket$.`, R`Adequacy turns it into deadlock freedom. \annp{With $\kappa_L$ it also gives absence of internal divergence.}`, DEF, R`$\varnothing \vDash_W p : \ast$.`, 'relation/Adequacy.v: sem_ptyped');
 // fuel
 n('fu.zero', R`Level $0$`, R`$F_0$ holds every term.`, R`Step indexing starts from the trivial predicate.`, DEF, R`$\forall e.\ e \in F^N_0\llbracket\sigma \triangleright d ; r\rrbracket(\Pi,\varphi,tk)$.`, 'fuel/Fuel.v: mk_flevel');
 n('fu.rty', R`Result $\sigma$`, R`$\sigma$ is a credited type $T^a$ of the returned value, or $\mathsf{thread}$, whose value holds no end.`, R`A spawned thread returns $\ast$ and keeps no end, which $\mathsf{thread}$ states without a type.`, DEF, R`$\mathsf{thread}$ for a soup thread.`, 'fuel/Fuel.v: rty');
@@ -509,7 +516,7 @@ n('fu.fhand', R`$\mathsf{fhand}$`, R`$\mathsf{fhand}\,M\,\varphi = (\varphi|_M) 
 n('F-Spawn.tickets', R`Ticket split`, R`Child $\lceil tk/2 \rceil$, parent $\lfloor tk/2 \rfloor$.`, R`A fixed split is the only split independent of the level.`, DEF, R`$tk = 3$ gives $2$ and $1$.`, 'fuel/Fuel.v: f_spawn');
 n('F-Send', R`F-Send`, R`An action on $o$ that hands on $M = \mathsf{fends}(w)$ with counters minus one, the payload in $FV$, and the continuation with $o$ refilled.`, R`A send is an action, so F-Tick applies, and a hand-over, so $\mathsf{fspare}$ applies.`, DEF, R`$\mathsf{send}\,\langle a, y\rangle$ in the growing ring.`, 'fuel/Fuel.v: f_send');
 n('F-Send.notsubj', R`$M \subseteq \mathrm{dom}\,\varphi \setminus \{o\}$`, R`A send hands on held ends other than its subject.`, R`The continuation keeps acting on $o$, so $o$ cannot leave.`, R`A term that sends its own subject or an end its context holds.`, R`$M = \{a\}$.`, 'fuel/Fuel.v: f_send');
-n('F-Send.payload', R`Payload in $FV$`, R`$w \in FV^N_n\llbracket T^b\rrbracket(\Pi|_M, \mathsf{fhand}\,M\,\varphi)$.`, R`$FV$ reads no point, so the raw payload type and its placed form agree.`, DEF, R`$FV^N_n\llbracket T^b\rrbracket$.`, 'fuel/Fuel.v: f_send');
+n('F-Send.payload', R`Payload in $FV$`, R`$w \in FV^N_n\llbracket T\rrbracket(\Pi|_M, \mathsf{fhand}\,M\,\varphi)$, with every handed counter lowered by one hop.`, R`$FV$ reads no point, so the raw payload type and its placed form agree.`, DEF, R`$FV^N_n\llbracket (S@x)^{2}\rrbracket$ for a payload end promised at credit $2$.`, 'fuel/Fuel.v: f_send');
 n('F-Recv', R`F-Recv`, R`An action on $o$ that continues for every incoming value in $FV$ at every level $j \leq n$ with disjoint maps.`, R`The receiver continues for every value its type admits, and the soup supplies the sender's handed maps.`, DEF, R`$\mathsf{recv}\,b$ in the client loop.`, 'fuel/Fuel.v: f_recv');
 n('F-Recv.forall', R`Every incoming value`, R`$\forall j \leq n, \Pi_i, \varphi_i.\ w \in FV^N_j\llbracket T^b\rrbracket(\Pi_i, \varphi_i)$.`, R`Every value of $FV$ is exact, so incoming closures hold exactly what they mention.`, R`Without exactness, a received closure owning nothing but mentioning an end could not be spawned.`, R`$\forall j\,\Pi_i\,\varphi_i$.`, 'fuel/Fuel.v: f_recv');
 n('F-Close', R`F-Close, F-Select, F-Branch`, R`Actions that drop $o$ and tick the rest at a close, or advance $\Pi(o)$ to $S_i$ and refill $o$ at a choice.`, R`They are the fuel forms of O-Close, O-Select and O-Branch, and each is an action, so F-Tick applies.`, DEF, R`$\mathsf{close}\,c^{+}$.`, 'fuel/Fuel.v: f_close, f_select, f_branch');
@@ -527,7 +534,7 @@ n('FV-Box.noends', R`$\mathsf{fends}\,e = \varnothing$`, R`A box mentions no end
 n('FV-Box.body', R`Body per force`, R`$e[!e] \in F^{N'}_j\llbracket U[\bar s] \triangleright c ; r\rrbracket(\varnothing, \varnothing, tk)$ for every $N' \sqsupseteq_{\mathsf{rle}} N$, $j < n$, $\bar s \in \mathsf{sinsts}\,N'$ and $tk$ meeting $\vartheta$.`, R`Each force unrolls the box once, at a refill and instance the forcing context chooses.`, DEF, R`$\mathsf{sinsts}\,N'\,\bar s$.`, 'fuel/Fuel.v: Vty TBox');
 n('FV-Thread', R`Thread result`, R`$v \in FV\llbracket\mathsf{thread}\rrbracket(\Pi,\varphi) \iff \Pi = \varphi = \varnothing$.`, R`A finished thread holds no end.`, DEF, R`$\Pi = \varphi = \varnothing$.`, 'fuel/Fuel.v: Vres');
 n('fu.fsem', R`$\mathsf{fsem}$`, R`$\exists tk.\ \forall n.\ e$ has thread fuel at level $n$ with every held end at $N$.`, R`It is the per-thread fuel the soup needs, obtained from typing by the cost fundamental theorem.`, DEF, R`$\mathsf{fsem}\,N\,\Pi\,e$.`, 'fuel/Fuel.v: fsem');
-n('cs.csem', R`$\Theta;\Delta \vDash^{N} e : T^{a} \triangleright c ; \vartheta$`, R`For every larger refill, level, injective renaming of $\Theta$, grounding in $FV$ and ticket count meeting $\vartheta$, the instance has fuel at $T^a$ with frame $c$.`, R`It reads no $\Gamma$, world or future, because $F$ reads none of them.`, DEF, R`The cost fundamental theorem concludes it.`, 'cost/CostSem.v: csem');
+n('cs.csem', R`$\Delta \vDash^{N} e : T\ !\ \varepsilon$`, R`For every larger refill, level, injective renaming of the ends of $\Delta$, grounding in $FV$ and ticket count meeting $\vartheta$, the instance has fuel at $T$ with frame $c$, for $\varepsilon = (c, \vartheta)$.`, R`It reads no $\Gamma$, world or future, because $F$ reads none of them.`, DEF, R`The cost fundamental theorem concludes it.`, 'cost/CostSem.v: csem');
 // soup
 n('sp.state', R`Soup state $a = (q, K, tk)$`, R`A configuration $q$, an ownership map $K$ and a ticket count per thread.`, R`Ranks and counters of the termination measure are read off $K$, so ownership is fixed outside the index.`, R`Placement chosen per level lets a waiting main thread starve in every fair run.`, R`$(q, K, tk)$.`, 'soup/State.v: lfstate');
 n('sp.hold', R`$K(o) = (t, x, f)$`, R`The holder thread $t$, point $x$ and counter $f$ of a held end $o$.`, R`One map records all data the measure reads.`, DEF, R`$K(a) = (0, \rho, 2)$.`, 'soup/State.v: hold');
@@ -569,8 +576,8 @@ n('sr.pfuse', R`$\mathsf{pfuse}\,h\,D\,p$`, R`$p$ renamed by $h$ with the channe
 n('sr.pirred', R`$\mathsf{pirred}\,p$`, R`$p$ takes no process step.`, R`P-Stop applies exactly to irreducible processes.`, DEF, R`$\mathsf{pirred}\,(\varnothing, \{\ast\})$.`, 'lang/Process.v: pirred');
 n('sr.held', R`Held ends`, R`$\mathsf{held} = \{o \mid o \in \mathrm{dom}\,\Sigma \lor \mathsf{ech}\,o \in C\}$.`, R`A process holds its interface ends and both ends of every restricted channel.`, DEF, R`For $\Sigma = \{d^{+}\}$ and $C = \{c\}$, $\mathsf{held} = \{d^{+}, c^{+}, c^{-}\}$.`, 'relation/Relation.v: pheld');
 n('sr.gch', R`$\mathsf{gch}_h$`, R`$\mathsf{gch}_h(c) = \mathsf{ech}(h(c^{+}))$, the channel map induced by $h$.`, R`Restricted sets are sets of channels, so $h$ acts on them through its action on $c^{+}$.`, DEF, R`$\mathsf{gch}_{\mathsf{id}}(c) = c$.`, 'relation/Relation.v: gch');
-n('sr.tenv-erase', R`$|\Theta|$`, R`$\Theta$ without credits, each entry $S@x^a$ becoming $S@x$.`, R`$E$ reads no credit.`, DEF, R`$|\{c^{+} \mapsto S@\rho^{3}\}| = \{c^{+} \mapsto S@\rho\}$.`, 'relation/Relation.v: tenv_erase');
-n('sr.fvagg', R`Aggregates in $FV$`, R`$\otimes$ splits $\Pi$ and $\varphi$ disjointly and gives each part credit $a + a_i$, $\oplus$ gives the injected part credit $a + a_i$, and $\exists$ gives its body credit $a + a_T$.`, R`Credits of aggregates push inward to the ends.`, DEF, R`$((T^1 \otimes U^1))^1$ checks $T$ and $U$ at credit $2$.`, 'fuel/Fuel.v: Vty');
+n('sr.tenv-erase', R`$|\Delta|$`, R`The ends of $\Delta$ with their session types and points, each entry $(S@x)^{a}$ becoming $S@x$.`, R`$E$ reads ends only, and no credit.`, DEF, R`$|c^{+} : (S@\rho)^{3},\ 0 : T| = \{c^{+} \mapsto S@\rho\}$.`, 'relation/Relation.v: tenv_erase');
+n('sr.fvagg', R`Products, sums and existentials in $FV$`, R`$\otimes$ splits $\Pi$ and $\varphi$ disjointly between its parts, $\oplus$ checks the injected part, and $\exists$ checks its body.`, R`Only ends and closures carry credits, so these types only pass $\Pi$ and $\varphi$ on.`, DEF, R`$(S@x)^{2} \otimes \ast$ gives $o$ to the first part.`, 'fuel/Fuel.v: Vty');
 n('sr.ctrs', R`$\mathsf{ctrs}\,K\,t$`, R`The counters of the ends held by thread $t$, read from $K$.`, R`Fuel of a soup thread uses exactly these counters.`, DEF, R`$\mathsf{ctrs}\,K\,0 = \{a \mapsto 2\}$.`, 'soup/State.v: ctrs');
 
 // ---- signatures and arguments ----
@@ -703,10 +710,10 @@ sa('Q-Recv.ok', R`\mathsf{recv\_ok} : ${ENV} \to ${ENV} \to \mathsf{Prop}`, [aSg
 sa('Q-Recv.back', R`\mathsf{recv\_back} : ${ENV} \to ${ENV} \to \mathcal{P}_{\mathrm{fin}}(\mathsf{Chan})`, [aSg, A(R`\Theta_2`, R`the incoming ends`)]);
 sa('Q-Recv.env', R`\mathsf{recv\_env} : ${ENV} \to ${ENV} \to ${ENV}`, [aSg, A(R`\Theta_2`, R`the incoming ends`)]);
 sa('Q-Link', R`\mathsf{q\_close}, \mathsf{q\_select}, \mathsf{q\_branch}, \mathsf{q\_link}`, qArgs);
-sa('sj.at', R`\Theta;\Delta \vDash^{X}_{W} t : T`, [A(R`\Theta`, R`the credited end environment, erased to $|\Theta|$`), A(R`\Delta`, R`the variable context`), A(R`X`, R`a set of points read as the future`), A(R`n, W', \Theta', \gamma`, R`every level, extension, environment of the grounding and grounding`)]);
-sa('sj.grel', R`\gamma \in G[\kappa]^{W}_{n}\llbracket \Theta \vdash \Delta \rrbracket`, [A(R`\gamma`, R`a substitution $\mathbb{N} \to \mathsf{Expr}$`), aTh, A(R`\Delta`, R`the variable context`)]);
+sa('sj.at', R`\Delta \vDash^{X}_{W} e : T`, [A(R`\Delta`, R`the linear context of the typing judgment, its ends erased to $|\Delta|$`), A(R`X`, R`a set of points read as the future`), A(R`n, W', \Theta', \gamma`, R`every level, extension, environment of the grounding and grounding`)]);
+sa('sj.grel', R`\gamma \in G^{W}_{n}\llbracket \Theta \vdash \Delta \rrbracket`, [A(R`\gamma`, R`a substitution $\mathbb{N} \to \mathsf{Expr}$ for the variables of $\Delta$`), aTh, A(R`\Delta`, R`the linear context`)]);
 sa('sj.den', R`\mathsf{den} : (\mathbb{N} \to \mathcal{P}(\mathsf{Point})) \to \mathcal{P}(\mathsf{Point}) \to \mathsf{SFuture} \to \mathcal{P}(\mathsf{Point})`, [A(R`\rho`, R`the denotation of future variables`), A(R`B`, R`the denotation of the flag $\bot$`), A(R`F`, R`the static future`)]);
-sa('sj.term', R`\Theta;\Delta \vDash^{F}_{W} t : T`, [A(R`\Theta, \Delta`, R`the end environment and the variable context`), A(R`F`, R`the static future`), aW, A(R`t, T`, R`the term and its type`)]);
+sa('sj.term', R`\Delta \vDash^{F}_{W} e : T`, [A(R`\Delta`, R`the linear context`), A(R`F`, R`the static future`), aW, A(R`e, T`, R`the term and its type`)]);
 sa('sj.proc', R`\Sigma \vDash_{W} p : T`, [aSg, aW, ap, aT]);
 sa('fu.zero', SIGF, fuelArgs);
 sa('fu.rty', R`\sigma \in \{T^{a}\} \cup \{\mathsf{thread}\}`, [A(R`T^{a}`, R`a credited type`)]);
@@ -755,7 +762,7 @@ sa('FV-Box.noends', R`\mathsf{fends}\,e = \varnothing \land \Pi = \varphi = \var
 sa('FV-Box.body', R`e[!e] \in F^{N'}_{j}\llbracket U[\bar s] \triangleright c ; r \rrbracket(\varnothing, \varnothing, tk)`, [A(R`N', j`, R`a larger refill and a lower level`), A(R`\bar s`, R`a session instance in $\mathsf{sinsts}\,N'$`), A(R`r, tk`, R`with $\mathsf{meets}\,\vartheta\,r\,tk$`)]);
 sa('FV-Thread', R`v \in FV\llbracket \mathsf{thread} \rrbracket(\Pi, \varphi)`, [A(R`v`, R`the returned value`)]);
 sa('fu.fsem', R`\mathsf{fsem} : (\mathbb{N} \cup \{\infty\}) \to \mathsf{PEnv} \to \mathsf{Expr} \to \mathsf{Prop}`, [aN, aPi, A(R`e`, R`the thread`), A(R`tk`, R`the ticket count, fixed for all levels`)]);
-sa('cs.csem', R`\Theta;\Delta \vDash^{N} e : T^{a} \triangleright c ; \vartheta`, [A(R`\Theta, \Delta`, R`the end environment and variable context`), aN, A(R`T^{a}`, R`the credited type`), A(R`c, \vartheta`, R`the cost and ticket need`)]);
+sa('cs.csem', R`\Delta \vDash^{N} e : T\ !\ \varepsilon`, [A(R`\Delta`, R`the linear context`), aN, A('T', R`the type`), A(R`\varepsilon`, R`the effect, cost and ticket need`)]);
 sa('sp.state', R`a = (q, K, tk) \in \mathsf{Config} \times \mathsf{Own} \times (\mathbb{N} \to \mathbb{N})`, [A(R`q`, R`the configuration`), aK, A(R`tk`, R`the tickets per thread`)]);
 sa('sp.hold', R`K : \mathsf{End} \rightharpoonup \mathbb{N} \times \mathsf{Point} \times (\mathbb{N} \cup \{\infty\})`, [A(R`t, x, f`, R`holder thread, point and counter`)]);
 sa('sp.tk', R`tk : \mathbb{N} \to \mathbb{N}`, [A(R`t`, R`a thread identifier`)]);
@@ -795,6 +802,7 @@ sa('sr.pfuse', R`\mathsf{pfuse} : (\mathsf{End} \to \mathsf{End}) \to \mathcal{P
 sa('sr.pirred', R`\mathsf{pirred} : \mathsf{Proc} \to \mathsf{Prop}`, [ap]);
 sa('sr.held', R`\mathsf{held} \subseteq \mathsf{End}`, [aSg, A(R`C`, R`the restricted channels`)]);
 sa('sr.gch', R`\mathsf{gch}_h : \mathsf{Chan} \to \mathsf{Chan}`, [A(R`h`, R`the map of ends`), A(R`c`, R`a channel`)]);
-sa('sr.tenv-erase', R`|\cdot| : \mathsf{TEnv} \to ${ENV}`, [aTh]);
-sa('sr.fvagg', R`FV \text{ at } \otimes, \oplus, \exists`, [A(R`a, a_i`, R`the credits of the aggregate and of its parts`)]);
+sa('sr.tenv-erase', R`|\cdot| : \mathsf{Ctx} \to ${ENV}`, [A(R`\Delta`, R`a linear context`)]);
+sa('sr.head', R`\Theta(o) \doteq S@x \iff \exists S_0.\ \Theta(o) = S_0@x \land \mathsf{unfold}\,S_0 = S`, [aTh, A('o', R`the subject end`), A('S', R`the head form of its protocol`)]);
+sa('sr.fvagg', R`FV \text{ at } \otimes, \oplus, \exists`, [A(R`\Pi, \varphi`, R`the protocols and counters, split among the parts`)]);
 sa('sr.ctrs', R`\mathsf{ctrs} : \mathsf{Own} \to \mathbb{N} \to \mathsf{CEnv}`, [aK, A(R`t`, R`a thread`)]);

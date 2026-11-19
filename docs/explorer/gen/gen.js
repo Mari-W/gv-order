@@ -12,7 +12,7 @@ function scan(tex, where) {
     if (!/^[A-Za-z0-9.\-]+$/.test(m[1])) { console.log('BADKEY', m[1], where); errs++; }
     if (!notes[m[1]]) { console.log('MISSING', m[1], where); errs++; }
   }
-  try { katex.renderToString(tex, { trust: true, strict: 'ignore', throwOnError: true, displayMode: true, macros: { '\\annot': '#1', '\\annraw': '#1' } }); }
+  try { katex.renderToString(tex, { trust: true, strict: 'ignore', throwOnError: true, displayMode: true, macros: { '\\annot': '#1', '\\annraw': '#1', '\\dfo': '#1' } }); }
   catch (e) { console.log('KATEX', where, e.message.slice(0, 200)); errs++; }
 }
 // ranges of tex covered by the body of some \htmlData{k=..}{BODY}
@@ -45,7 +45,7 @@ const unused = Object.keys(notes).filter(k => !used.has(k));
 if (unused.length) console.log('UNUSED', unused.join(' '));
 // prose checks
 const bad = [/[;—]/, /\bsince\b/i, /\bslots?\b/i, /\bgates?\b/i, /\bpriority\b/i, /\b(novel|significant|comprehensive|robust|crucial|seamless|leverage|delve|pivotal|substantial)\b/i];
-const MAC = { '\\llbracket': '[\\![', '\\rrbracket': ']\\!]', '\\annot': '#1', '\\annraw': '#1' };
+const MAC = { '\\llbracket': '[\\![', '\\rrbracket': ']\\!]', '\\annot': '#1', '\\annraw': '#1', '\\dfo': '#1' };
 // Unicode math left outside $…$ (Greek letters, arrows, relations, sub/superscripts)
 const umath = /[\u0370-\u03FF\u2070-\u209F\u2190-\u22FF\u27E8-\u27EF\u2A00-\u2AFF\u0300-\u036F]/;
 let nUni = 0;

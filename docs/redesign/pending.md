@@ -145,6 +145,14 @@ must do, open questions.
    at κ_DF in DF mode, the general κ form with the differences coloured in
    LF, and lighter notation where one idea is written out several times.
    Map only. Draft after entry 8 is converted.
+   Map done 2026-11-19: a new marker `\dfo{…}` shows the deadlock-free
+   reading of a part whose lock-free reading is an `\annot`, so DF shows
+   `j < n`, level `n` for a send payload and `κ_DF(α)` where LF shows the
+   general table. The general cost table is LF only, the DF table labels
+   its last row as a message. The obligations write the head of the
+   subject end once, `Θ(o) ≐ S@x` (Θ(o) = S₀@x with unfold S₀ = S). The
+   semantic judgment takes the typing context, `Δ ⊨^F_W e : T`, with
+   `|Δ|` its ends. Payloads lose `^b` and FV follows entry 6.
 
 10. **Readability pass over every section (map only, after the repair
     run).** Syntax, semantics, types, typing, semantic typing, theorems,
