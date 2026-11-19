@@ -35,18 +35,23 @@ const P0 = (W, n, body) => h('th.Prel', R`P^{${W}}_{${n}}\llbracket ${body}\rrbr
 const ER = (k, W, n, body, F) => h('th.Erel', R`E\annot{[${k}]}^{${W}}_{${n}}\llbracket ${body}\rrbracket^{${F}}`);
 const E0 = (W, n, body, F) => h('th.Erel', R`E^{${W}}_{${n}}\llbracket ${body}\rrbracket^{${F}}`);
 const SOUP = (n) => h('th.soup', R`S^{N,W}_{${n}}\llbracket\varnothing \vdash T\rrbracket`);
-const MEETS = R`${h('ann.meets', R`\mathsf{meets}`)}\,\vartheta\,0\,${h('fu.tk', 'tk')}`;
+// the need of a whole thread is finite, so some ticket count covers it
+const MEETS = h('ann.fin0', R`\vartheta(0) \in \mathbb{N}`);
+// every credit of a context is at most the refill
+const CRN = (D) => h('th.crle', R`\mathsf{cr}(${D}) \leq N`);
+const CTY = (D, t) => R`\varnothing ; ${D} \vdash^{\varnothing}_{W,N} ${t} : T\ !\ (c, \vartheta)`;
+const GRD = (t) => h('guard.judg', R`\varnothing \vdash\!\triangleright ${t}`);
 const PRIM = R`${h('ty.prim', R`\mathsf{prim}`)}\,T`;
 
 const BY = (name, k) => R`\overset{${h(k, R`\textsf{${name}}`)}}{\Longrightarrow}`;
 TH('th-chain', 'How the results fit together', 'static/FundamentalProc.v: fundamental_proc, soundness; relation/Adequacy.v: adequacy; static/Fundamental.v: live_fundamental; cost/CostFund.v: fsem_of_cost; soup/LFTyped.v: lf_fundamental; soup/LFAdequacy.v: lf_adequacy', ['df', 'lf'],
   R`\begin{array}{rcl}
-\Sigma ${PT} p : T & ${BY('fundamental\\_proc', 'th.fundamental-proc')} & \Sigma ${PSEM}_W p : T \quad p \in P^{W}_{n}\llbracket\Sigma \vdash T\rrbracket \text{ for all } n \\[1ex]
+\Sigma ${PT} p : T & ${BY('fundamental\\_proc', 'th.fundamental-proc')} & \Sigma ${PSEM}_W p : T \\[1ex]
 \varnothing ${PSEM}_W p : T & ${BY('adequacy', 'th.adequacy')} & ${DFP}\,p
-\annraw{\\[3ex]}\annot{t \text{ typed at } N \text{ and guarded}}\annraw{&}\annot{${BY('live\\_fundamental', 'th.live-fundamental')}}\annraw{&}\annot{t \in E[\kappa_L]^{W}_{n}\llbracket\Theta \vdash T\rrbracket^{\varnothing} \text{ for all } n}
-\annraw{\\[1ex]}\annot{t \text{ typed at } N,\ ${MEETS}}\annraw{&}\annot{${BY('fsem\\_of\\_cost', 'th.fsem-of-cost')}}\annraw{&}\annot{${h('fu.fsem', R`\mathsf{fsem}\,N\,\Pi\,t`)}}
-\annraw{\\[1ex]}\annot{\Sigma ${PLF} p : T}\annraw{&}\annot{${BY('lf\\_fundamental', 'th.lf-fundamental')}}\annraw{&}\annot{\Sigma ${LFS}_W p : T \quad \text{every thread live and fueled in one soup}}
-\annraw{\\[1ex]}\annot{\varnothing ${LFS}_W p : T,\ ${WFW}\,W}\annraw{&}\annot{${BY('lf\\_adequacy', 'th.lf-adequacy')}}\annraw{&}\annot{${LOCKF}\,p \quad \text{every wait ends, measured by } ${h('fu.measure', R`\mu(t)`)}}
+\annraw{\\[3ex]}\annot{${CTY(R`\Delta`, 't')} \land ${GRD('t')}}\annraw{&}\annot{${BY('live\\_fundamental', 'th.live-fundamental')}}\annraw{&}\annot{\Delta ${TLIVE}^{\varnothing}_W t : T}
+\annraw{\\[1ex]}\annot{${CTY(R`\Delta`, 't')} \land ${CRN(R`\Delta`)} \land ${MEETS}}\annraw{&}\annot{${BY('fsem\\_of\\_cost', 'th.fsem-of-cost')}}\annraw{&}\annot{${h('fu.fsem', R`\mathsf{fsem}\,N\,(${h('th.styof', R`\mathsf{sty} \circ \Delta`)})\,t`)}}
+\annraw{\\[1ex]}\annot{\Sigma ${PLF} p : T}\annraw{&}\annot{${BY('lf\\_fundamental', 'th.lf-fundamental')}}\annraw{&}\annot{\Sigma ${LFS}_W p : T}
+\annraw{\\[1ex]}\annot{\varnothing ${LFS}_W p : T \land ${WFW}\,W}\annraw{&}\annot{${BY('lf\\_adequacy', 'th.lf-adequacy')}}\annraw{&}\annot{${LOCKF}\,p}
 \end{array}`,
   'Typing gives the semantic judgment, and the semantic judgment gives deadlock freedom. Both steps use the one relation $(V, E, P)$ at the step costs $\\kappa_{DF}$. \\annp{Lock freedom uses the same relation at $\\kappa_L$, which rules out $\\tau$-divergence, and adds fuel, the counters and tickets of each thread, which read no point. The soup holds both halves of every thread over one ownership map. A thread $t$ waits on $o$, and every step of the holder of $\\overline{o}$ on another end ticks $\\varphi(\\overline{o})$, which F-Tick keeps at $1$ or more, while every link spends a ticket. So $\\mu(t) = (\\sum_s tk_s, \\varphi(\\overline{o}))$ falls until the holder acts on $\\overline{o}$.}');
 TH('th-adequacy', 'Adequacy', 'relation/Adequacy.v: adequacy, live_adequacy, adequacy_gen', ['df', 'live'],
@@ -74,7 +79,7 @@ TH('th-compose', 'Semantic composition rules', 'compat/PTerm.v: sem_p_term; comp
   ROWS(
     h('th.sem-p-term', IM(AL(R`${PRIM} \land ${h('th.sth', R`\mathsf{sth}\,\Theta\,\Sigma\,\Theta_B\,C`)}`, R`\land\ t \in ${ER(R`\kappa`, 'W', 'n', R`\Theta \vdash T`, R`\varnothing`)}`), R`(C, \{t\}) \in ${PR(R`\kappa`, 'W', 'n', R`\Sigma \vdash T`)}`)),
     h('th.sem-p-connect', IM(AL(R`\mathsf{prim}\,T \land ${h('th.conn', R`\mathsf{conn}`)}`, R`\land\ p_1 \in ${P0(R`W_1`, 'n', R`\Sigma_1 \cup \Sigma_C \vdash T`)}`, R`\land\ p_2 \in ${P0(R`W_2`, 'n', R`\Sigma_2 \cup \Sigma_D \vdash \ast`)}`), R`${h('th.par', R`p_1 \parallel_{\Sigma_C} p_2`)} \in ${P0(R`W_1 \sqcup W_2`, 'n', R`\Sigma_1 \cup \Sigma_2 \vdash T`)}`)),
-    h('th.lf-p-term', IM(AL(R`\mathsf{strict}\,W \land \Sigma \Vdash^{N}_{W} (C_0, \{t\}) : T`, R`\text{by P-Term}`), R`\Sigma \Vvdash_W (C_0, \{t\}) : T`))),
+    h('th.lf-p-term', IM(R`\mathsf{strict}\,W \land \Sigma \Vdash^{N}_{W} (C_0, \{t\}) : T`, R`\Sigma \Vvdash_W (C_0, \{t\}) : T`))),
   'What it tells you. Composition is semantic. A single safe thread is a safe process, and two safe processes connected at dual interfaces are a safe process. So any component proved safe by hand, without typing, composes with typed ones. \\annp{The same holds in the soup.}');
 TH('th-bind', 'The bind lemma', 'compat/Bind.v: Erel_bind', ['df', 'live', 'lf'],
   h('th.Erel-bind', IM(AL(
@@ -91,7 +96,7 @@ TH('th-sound', 'Soundness', 'static/FundamentalProc.v: soundness; soup/LFTyped.v
 TH('th-sound-src', 'Soundness for a single program', 'static/FundamentalProc.v: soundness_source; soup/LFCompose.v: lf_soundness_source', ['df', 'live', 'lf'],
   ROWS(
     h('th.soundness-source', IM(R`\mathsf{strict}\,W \land ${PRIM} \land \varnothing ; \varnothing \vdash^{\varnothing}_W t : T`, R`\mathsf{deadlock\_free}(\varnothing, \{t\})`)),
-    h('th.lf-soundness-source', IM(AL(R`\mathsf{strict}\,W \land \mathsf{wfworld}\,W \land N \in \mathbb{N} \land \mathsf{prim}\,T`, R`\land\ \varnothing ; \varnothing \vdash^{\varnothing}_{W,N} t : T\ !\ (c, \vartheta)`, R`\land\ ${MEETS} \land \varnothing \vdash\!\triangleright t`), R`\mathsf{lock\_free}(\varnothing, \{t\})`))),
+    h('th.lf-soundness-source', IM(AL(R`\mathsf{strict}\,W \land \mathsf{wfworld}\,W \land N \in \mathbb{N} \land ${PRIM}`, R`\land\ ${CTY(R`\varnothing`, 't')} \land ${MEETS} \land ${GRD('t')}`), R`\mathsf{lock\_free}(\varnothing, \{t\})`))),
   'A closed program $t$ typed at a $\\mathsf{prim}$ result runs deadlock free as the one-thread process $(\\varnothing, \\{t\\})$. \\annp{With a finite refill, enough tickets and the guard it runs lock free.}');
 TH('th-conserv', 'Conservativity', 'static/Conservativity.v: conservative, typed_dftyped, dftyped_typed', ['lf'],
   ROWS(
@@ -101,7 +106,7 @@ TH('th-conserv', 'Conservativity', 'static/Conservativity.v: conservative, typed
 TH('th-cost', 'Cost', 'cost/CostFund.v: cost_fundamental, fsem_of_cost', ['lf'],
   ROWS(
     h('th.cost-fundamental', IM(R`\Gamma ; \Delta \vdash^{F}_{W,N} e : T\ !\ \varepsilon`, h('cs.csem', R`\Delta \vDash^{N} e : T\ !\ \varepsilon`))),
-    h('th.fsem-of-cost', IM(AL(R`\varnothing ; \Delta \vdash^{\varnothing}_{W,N} e : T\ !\ (c, \vartheta) \land ${PRIM}`, R`\land\ \text{credits of } \Delta \leq N \land ${MEETS}`), h('fu.fsem', R`\mathsf{fsem}\,N\,(${h('th.styof', R`\mathsf{sty} \circ \Delta`)})\,e`)))),
+    h('th.fsem-of-cost', IM(R`${CTY(R`\Delta`, 'e')} \land ${PRIM} \land ${CRN(R`\Delta`)} \land ${MEETS}`, h('fu.fsem', R`\mathsf{fsem}\,N\,(${h('th.styof', R`\mathsf{sty} \circ \Delta`)})\,e`)))),
   'A typed closed thread with all credits at most $N$ has fuel with every counter at $N$.');
 
 // ---- notes ----
@@ -127,7 +132,9 @@ n("th.conservative", "Conservativity", "The annotated typing judgment at $N = \\
 n("th.typed-dftyped", "Erasure to deadlock-free typing", "For every $N$, erasing the annotations of an annotated derivation gives a deadlock-free derivation.", "Hence every lock-free typing is also a deadlock-free typing.", DEF, "The cycle at $N = 2$ erases to its deadlock-free typing.", "static/Conservativity.v: typed_dftyped");
 n("th.wfworld", "$\\mathsf{wfworld}\\,W$", "$\\prec_W$ is well-founded, there is no infinite descending chain $x_0 \\succ_W x_1 \\succ_W \\cdots$.", "A chain of waiting threads descends in $\\prec_W$, so well-foundedness makes it finite. Deadlock freedom does not need it.", DEF, "Every world of the lock-free examples is well-founded.", "types/Worlds.v: wfworld");
 n("th.cost-fundamental", "Cost fundamental theorem", "The annotated typing judgment implies the semantic cost judgment $\\Delta \\vDash^{N} e : T\\ !\\ \\varepsilon$.", "It is the cost half of the annotated typing judgment, proved rule by rule.", DEF, "The forwarder $\\mathsf{fw}$.", "cost/CostFund.v: cost_fundamental");
-n("th.fsem-of-cost", "Fuel from cost typing", "If $\\varnothing ; \\Delta \\vdash^{\\varnothing}_{W,N} e : T\\ !\\ (c, \\vartheta)$, $\\mathsf{prim}\\,T$, every credit of $\\Delta$ is at most $N$ and $\\mathsf{meets}\\,\\vartheta\\,0\\,tk$, then $\\mathsf{fsem}\\,N\\,(\\mathsf{sty} \\circ \\Delta)\\,e$.", "P-Term gives every end credit $N$, so the cost judgment yields the per-thread fuel that lock freedom needs.", "If a closure could mention an end it does not own, the forwarder could receive a closure that owns nothing and would have no fuel after spawning it.", "The forwarder $\\mathsf{fw}$.", "cost/CostFund.v: fsem_of_cost");
+n("th.fsem-of-cost", "Fuel from cost typing", "If $\\varnothing ; \\Delta \\vdash^{\\varnothing}_{W,N} e : T\\ !\\ (c, \\vartheta)$, $\\mathsf{prim}\\,T$, $\\mathsf{cr}(\\Delta) \\leq N$ and $\\vartheta(0) \\in \\mathbb{N}$, then $\\mathsf{fsem}\\,N\\,(\\mathsf{sty} \\circ \\Delta)\\,e$.", "P-Term gives every end credit $N$, so the cost judgment yields the per-thread fuel that lock freedom needs.", "If a closure could mention an end it does not own, the forwarder could receive a closure that owns nothing and would have no fuel after spawning it.", "The forwarder $\\mathsf{fw}$.", "cost/CostFund.v: fsem_of_cost");
+n('th.crle', R`$\mathsf{cr}(\Delta) \leq N$`, R`Every credit in $\Delta$ is at most the refill $N$, that is $a \leq N$ for every entry $(S@x)^{a}$ or $(T \multimap U)^{a}$ of $\Delta$.`, R`A thread starts with every counter at $N$, so its credits may promise no more than $N$.`, R`A credit above $N$ would promise more postponement than a fresh counter allows.`, R`$\mathsf{cr}(\{o \mapsto (S@x)^{2}\}) \leq 3$.`, 'cost/CostFund.v: fsem_of_cost');
+n('ann.fin0', R`$\vartheta(0) \in \mathbb{N}$`, R`The ticket need of a whole thread, which keeps no reserve, is a finite number.`, R`Then some ticket count $tk \geq \vartheta(0)$ covers every link of the thread.`, R`A need that is $\infty$ at reserve $0$ belongs to a thread that may link without bound.`, R`$(0, 1)(0) = 1$, one link.`, 'types/Costs.v: meets, tapp');
 n("th.Prel", "The process relation $P$", "$P[\\kappa]^{W}_{n}\\llbracket\\Sigma \\vdash T\\rrbracket$, the processes in the relation at table $\\kappa$, world $W$, level $n$, interface $\\Sigma$ and result $T$.", "The semantic process judgment asks membership at every level $n$.", DEF, "Two threads closing $c^{+}$ and $c^{-}$ lie in $P^{W}_{n}\\llbracket\\varnothing \\vdash \\ast\\rrbracket$ for every $n$.", "relation/Relation.v: Prel");
 n("th.Erel", "The term relation $E$", "$E[\\kappa]^{W}_{n}\\llbracket\\Theta \\vdash T\\rrbracket^{F}$ is the set of terms in the relation at cost table $\\kappa$, world $W$ and level $n$, for ends $\\Theta$, result $T$ and future $F$.", "The semantic term judgment asks membership at every level and for every grounding of the variables.", DEF, "$\\mathsf{close}\\,c^{+} \\in E^{W}_{n}\\llbracket\\{c^{+} \\mapsto \\mathsf{Close}@x\\} \\vdash \\ast\\rrbracket^{\\varnothing}$.", "relation/Relation.v: Erel");
 n("th.Vrel", "The value relation $V$", "$V^{W}_{j}\\llbracket\\Theta \\vdash T\\rrbracket$ is the set of values in the relation at world $W$ and level $j$, for ends $\\Theta$ and type $T$.", "A term in $E$ that is irreducible is a value in $V$.", DEF, "$c^{+} \\in V^{W}_{j}\\llbracket\\{c^{+} \\mapsto \\mathsf{Close}@x\\} \\vdash \\mathsf{Close}@x\\rrbracket$.", "relation/Relation.v: Vrel");
@@ -291,7 +298,9 @@ sa('th.conservative', R`(\exists \varepsilon.\ \ldots \vdash^{F}_{W,\infty} e : 
 sa('th.typed-dftyped', R`\Gamma ; \Delta \vdash^{F}_{W,N} e : T\ !\ \varepsilon \Rightarrow \Gamma ; \Delta_{df} \vdash^{F}_{W} e : T_{df}`, [A('N', R`any refill`)]);
 sa('th.wfworld', R`\mathsf{wfworld} : \mathsf{World} \to \mathsf{Prop}`, [aW]);
 sa('th.cost-fundamental', R`\Gamma ; \Delta \vdash^{F}_{W,N} e : T\ !\ \varepsilon \Rightarrow \Delta \vDash^{N} e : T\ !\ \varepsilon`, [A('N', R`the refill`), A('e', R`the term`)]);
-sa('th.fsem-of-cost', R`\ldots \vdash^{\varnothing}_{W,N} e : T\ !\ (c, \vartheta) \land \mathsf{prim}\,T \land (\forall o.\ \mathsf{cr}(\Delta(o)) \leq N) \land \mathsf{meets}\,\vartheta\,0\,tk \Rightarrow \mathsf{fsem}\,N\,(\mathsf{sty} \circ \Delta)\,e`, [A(R`\Theta`, R`the ends of the thread`), A('tk', R`its ticket count`)]);
+sa('th.fsem-of-cost', R`\varnothing ; \Delta \vdash^{\varnothing}_{W,N} e : T\ !\ (c, \vartheta) \land \mathsf{prim}\,T \land \mathsf{cr}(\Delta) \leq N \land \vartheta(0) \in \mathbb{N} \Rightarrow \mathsf{fsem}\,N\,(\mathsf{sty} \circ \Delta)\,e`, [A(R`\Delta`, R`the ends of the thread with their credits`)]);
+sa('th.crle', R`\mathsf{cr} : \mathsf{TEnv} \to \mathbb{N} \cup \{\infty\}`, [A(R`\Delta`, R`a context`), A('N', R`the refill`)]);
+sa('ann.fin0', R`\vartheta(0) \in \mathbb{N} : \mathsf{Prop}`, [A(R`\vartheta`, R`the ticket need of the thread`)]);
 sa('th.Prel', R`P[\kappa]^{W}_{n}\llbracket\Sigma \vdash T\rrbracket \subseteq \mathsf{Proc}`, [aK, aW, aN, aSi, aT]);
 sa('th.Erel', R`E[\kappa]^{W}_{n}\llbracket\Theta \vdash T\rrbracket^{F} \subseteq \mathsf{Expr}`, [aK, aW, aN, aTh, A('T', R`the result type`), aF]);
 sa('th.Vrel', R`V^{W}_{j}\llbracket\Theta \vdash T\rrbracket \subseteq \mathsf{Val}`, [aW, A('j', R`the level`), aTh, A('T', R`the type`)]);
