@@ -85,7 +85,7 @@ TH('th-sound', 'Soundness', 'static/FundamentalProc.v: soundness, live_soundness
     h('th.lf-soundness', IM(R`${LFW} \land \varnothing ${PLF} p : T`, R`${LOCKF}\,p`)),
     h('th.lf-soundness-source', IM(AL(R`\mathsf{strict}\,W \land \mathsf{wfworld}\,W \land N \in \mathbb{N} \land \mathsf{prim}\,T`, R`\land\ \varnothing;\varnothing;\varnothing \vdash^{\varnothing}_{W,N} t : T^{a} \triangleright c ; \vartheta`, R`\land\ ${MEETS} \land \varnothing \vdash\!\triangleright t`), R`\mathsf{lock\_free}(\varnothing, \{t\})`))),
   'Typing implies deadlock freedom under $\\mathsf{strict}\\,W$ and lock freedom under $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$.');
-TH('th-conserv', 'Conservativity and live inside deadlock-free', 'static/Conservativity.v: conservative, typed_dftyped, dftyped_typed; compat/LiveDF.v: live_sub_df', ['df', 'live', 'lf'],
+TH('th-conserv', 'Conservativity and live inside deadlock-free', 'static/Conservativity.v: conservative, typed_dftyped, dftyped_typed; compat/LiveDF.v: live_sub_df', ['lf'],
   ROWS(
     h('th.conservative', AL(R`(\exists a\,c\,\vartheta.\ ${DF(R`\Theta`)};\Gamma;\Delta_{df} \vdash^{F}_{W,\infty} e : T_{df}^{a} \triangleright c ; \vartheta)`, R`\quad\iff\ \Theta_{df};\Gamma;\Delta_{df} \vdash^{F}_{W} e : T_{df}`)),
     h('th.typed-dftyped', IM(R`\Theta;\Gamma;\Delta \vdash^{F}_{W,N} e : T^{a} \triangleright c ; \vartheta`, R`\Theta_{df};\Gamma;\Delta_{df} \vdash^{F}_W e : T_{df}`)),

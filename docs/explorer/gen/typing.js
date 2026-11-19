@@ -89,7 +89,7 @@ const act = h('side.act', R`x \prec F`);
 const refill = (t) => R`(${t})^{${h('act.refill', 'N')}}`;
 
 block(s, {
-  id: 't-judgment', title: 'The merged judgment', rocq: 'static/Typing.v: typed, dftyped',
+  id: 't-judgment', title: 'The typing judgment', rocq: 'static/Typing.v: typed, dftyped',
   tex: R`${h('tj.Theta', R`\Theta`)} ; ${h('tj.Gamma', R`\Gamma`)} ; ${h('tj.Delta', R`\Delta`)} \vdash^{${h('tj.F', 'F')}}_{${h('tj.W', 'W')},${h('tj.N', 'N')}} e : T^{${h('ty.credit', 'a')}} \triangleright ${h('tj.cost', 'c')} ; ${h('tj.tix', R`\vartheta`)}`,
   variants: {
     df: R`${h('tj.Theta', R`\Theta`)} ; ${h('tj.Gamma', R`\Gamma`)} ; ${h('tj.Delta', R`\Delta`)} \vdash^{${h('tj.F', 'F')}}_{${h('tj.W', 'W')}} t : T`,
