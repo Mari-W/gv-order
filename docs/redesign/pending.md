@@ -160,6 +160,15 @@ must do, open questions.
     examples a newcomer can follow, every symbol defined and hoverable,
     hover texts proofread (also the DF texts the annotation filter cut).
     Entries 8 and 9 are part of it.
+    Scope narrowed by the author 2026-11-19: theorems and examples only,
+    the other sections are fine. Map done 2026-11-19: theorem statements
+    use the new judgments (`∅ ; Δ ⊢^F_W t : T`, `T ! ε` for the annotated
+    one, `Δ ⊨^F_W t : T`, erasure `Δ_df`), "merged judgment" became
+    "annotated typing judgment", general-κ rows and `[κ]` show only in LF,
+    and the captions state the DF result first. Examples use the source
+    syntax of the syntax section (`let ∗ =`, `let ⟨a, b⟩ =`), the
+    forwarder protocol reads `?((∗ ⊸ ∗)^2).Close`, and the controller
+    states idle aging in the entry-6 form.
 
 11. **Faithfulness audit of the map against the Rocq (after the repair
     run is merged).** Check every block, rule, signature and theorem on the

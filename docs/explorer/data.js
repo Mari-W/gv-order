@@ -1110,8 +1110,8 @@ window.MAP = {
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.adequacy}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-adequacy}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p \\land \\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}}\\,p\\end{array}}} \\\\[1.5ex] \\htmlData{k=th.adequacy-gen}{\\begin{array}{l}\\forall \\kappa.\\ \\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\forall n.\\ p \\in \\htmlData{k=th.Prel}{P[\\kappa]^{W}_{n}\\llbracket \\varnothing \\vdash T\\rrbracket} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\end{array}",
-     "caption": "For every $\\kappa$ and strict $W$, $\\forall n.\\ p \\in P[\\kappa]^{W}_{n}\\llbracket \\varnothing \\vdash T\\rrbracket$ implies deadlock freedom, and at $\\kappa_L$ absence of $\\tau$-divergence."
+     "tex": "\\begin{array}{l}\\htmlData{k=th.adequacy}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-adequacy}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p \\land \\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.adequacy-gen}{\\begin{array}{l}\\forall \\kappa.\\ \\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\forall n.\\ p \\in \\htmlData{k=th.Prel}{P\\annot{[\\kappa]}^{W}_{n}\\llbracket \\varnothing \\vdash T\\rrbracket} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}}\\end{array}",
+     "caption": "For strict $W$, a closed process in the semantic judgment is deadlock free. \\annp{The statement holds for every cost table $\\kappa$, and at $\\kappa_L$ it also gives absence of $\\tau$-divergence.}"
     },
     {
      "id": "th-lf-adequacy",
@@ -1131,8 +1131,8 @@ window.MAP = {
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\\\ \\quad\\Longrightarrow\\ \\Theta ; \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}^{F}_W t : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.fundamental-typed}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.df}{\\Theta_{df}} ; \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{F}_W t : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\\\ \\quad\\Longrightarrow\\ \\Theta ; \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{F}_W t : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-typed}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\\\ \\land\\ \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Theta_{df} ; \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_W t : T_{df}\\end{array}}}\\end{array}",
-     "caption": "For strict $W$, typing with empty $\\Gamma$ implies the semantic term judgment, and with $\\varnothing \\vdash\\!\\triangleright t$ its live version."
+     "tex": "\\begin{array}{l}\\htmlData{k=th.fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}^{F}_W t : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.fundamental-typed}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.df}{\\Delta_{df}} \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{F}_W t : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{F}_W t : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-typed}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_W t : T_{df}\\end{array}}}\\end{array}",
+     "caption": "For strict $W$, typing with empty $\\Gamma$ implies the semantic term judgment. \\annp{With the guard $\\varnothing \\vdash\\!\\triangleright t$ it implies the live judgment.}"
     },
     {
      "id": "th-fund-proc",
@@ -1153,8 +1153,8 @@ window.MAP = {
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\htmlData{k=th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\htmlData{k=th.Erel}{E[\\kappa]^{W}_{n}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\htmlData{k=th.Prel}{P[\\kappa]^{W}_{n}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.sem-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\htmlData{k=th.conn}{\\mathsf{conn}} \\\\ \\land\\ p_1 \\in \\htmlData{k=th.Prel}{P^{W_1}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket} \\\\ \\land\\ p_2 \\in \\htmlData{k=th.Prel}{P^{W_2}_{n}\\llbracket \\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.par}{p_1 \\parallel_{\\Sigma_C} p_2} \\in \\htmlData{k=th.Prel}{P^{W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket}\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\mathrel{\\htmlData{k=tp.lfjudg}{\\Vdash}}^{N}_{W} (C_0, \\{t\\}) : T \\\\ \\text{by P-Term}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W (C_0, \\{t\\}) : T\\end{array}}}\\end{array}",
-     "caption": "For every $\\kappa$ and $n$, P-Term and P-Connect hold in $P$."
+     "tex": "\\begin{array}{l}\\htmlData{k=th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\htmlData{k=th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\htmlData{k=th.Erel}{E\\annot{[\\kappa]}^{W}_{n}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\htmlData{k=th.Prel}{P\\annot{[\\kappa]}^{W}_{n}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.sem-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\htmlData{k=th.conn}{\\mathsf{conn}} \\\\ \\land\\ p_1 \\in \\htmlData{k=th.Prel}{P^{W_1}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket} \\\\ \\land\\ p_2 \\in \\htmlData{k=th.Prel}{P^{W_2}_{n}\\llbracket \\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.par}{p_1 \\parallel_{\\Sigma_C} p_2} \\in \\htmlData{k=th.Prel}{P^{W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket}\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\mathrel{\\htmlData{k=tp.lfjudg}{\\Vdash}}^{N}_{W} (C_0, \\{t\\}) : T \\\\ \\text{by P-Term}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W (C_0, \\{t\\}) : T\\end{array}}}\\end{array}",
+     "caption": "P-Term and P-Connect hold in $P$ at every level $n$. \\annp{They hold for every cost table $\\kappa$.}"
     },
     {
      "id": "th-bind",
@@ -1165,7 +1165,7 @@ window.MAP = {
       "lf"
      ],
      "tex": "\\htmlData{k=th.Erel-bind}{\\begin{array}{l}\\begin{array}{l}e \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta_1 \\vdash T\\rrbracket^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}\\,\\Theta_2}} \\\\ \\land\\ \\forall W' \\htmlData{k=w.ext}{\\sqsupseteq} W,\\ j \\leq n,\\ v \\in \\htmlData{k=th.Vrel}{V^{W'}_j\\llbracket\\Theta_v \\vdash T\\rrbracket}. \\\\ \\qquad \\htmlData{k=se.frame}{f[v]} \\in \\htmlData{k=th.Erel}{E^{W'}_{j}\\llbracket \\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=se.frame}{f[e]} \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array}}",
-     "caption": "For every $\\kappa$, $E$ is closed under frames $f$, with the hole under $F \\cup \\mathsf{heads}\\,\\Theta_2$."
+     "caption": "$E$ is closed under frames $f$, with the hole under $F \\cup \\mathsf{heads}\\,\\Theta_2$. \\annp{This holds for every cost table $\\kappa$.}"
     },
     {
      "id": "th-sound",
@@ -1175,7 +1175,7 @@ window.MAP = {
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{^{\\infty}}_W p : T \\land \\mathrel{\\htmlData{k=guard.proc}{\\vdash\\!\\triangleright}} p \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p \\land \\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}}\\,p\\end{array}}} \\\\[1.5ex] \\htmlData{k=th.soundness-source}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\varnothing ; \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land N \\in \\mathbb{N} \\land \\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\\\ \\land\\ \\varnothing;\\varnothing;\\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\\\ \\land\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk} \\land \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}",
+     "tex": "\\begin{array}{l}\\htmlData{k=th.soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{^{\\infty}}_W p : T \\land \\mathrel{\\htmlData{k=guard.proc}{\\vdash\\!\\triangleright}} p \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p \\land \\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}}\\,p\\end{array}}} \\\\[1.5ex] \\htmlData{k=th.soundness-source}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land N \\in \\mathbb{N} \\land \\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\\\ \\land\\ \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ (c, \\vartheta) \\\\ \\land\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk} \\land \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}",
      "caption": "Typing implies deadlock freedom under $\\mathsf{strict}\\,W$ and lock freedom under $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$."
     },
     {
@@ -1185,8 +1185,8 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\annot{\\htmlData{k=th.conservative}{\\begin{array}{l}(\\exists a\\,c\\,\\vartheta.\\ \\htmlData{k=th.df}{\\Theta_{df}};\\Gamma;\\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,\\infty}} e : T_{df}\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}) \\\\ \\quad\\iff\\ \\Theta_{df};\\Gamma;\\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.typed-dftyped}{\\begin{array}{l}\\Theta;\\Gamma;\\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\\\ \\quad\\Longrightarrow\\ \\Theta_{df};\\Gamma;\\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_W e : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-sub-df}{\\begin{array}{l}\\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\htmlData{k=th.nobox}{\\Box \\notin T} \\land \\varnothing \\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T\\end{array}}}\\end{array}",
-     "caption": "Deadlock-free typing is the merged judgment at $N = \\infty$ up to erasure, and live implies deadlock-free at box-free $\\mathsf{prim}$ results."
+     "tex": "\\begin{array}{l}\\annot{\\htmlData{k=th.conservative}{\\begin{array}{l}(\\exists \\varepsilon.\\ \\Gamma;\\htmlData{k=th.df}{\\Delta_{df}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,\\infty}} e : T_{df}\\ !\\ \\varepsilon) \\\\ \\quad\\iff\\ \\Gamma ; \\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.typed-dftyped}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\Gamma ; \\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_W e : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-sub-df}{\\begin{array}{l}\\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\htmlData{k=th.nobox}{\\Box \\notin T} \\land \\varnothing \\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T\\end{array}}}\\end{array}",
+     "caption": "Deadlock-free typing is the annotated typing judgment at $N = \\infty$ up to erasure, and live implies deadlock-free at box-free $\\mathsf{prim}$ results."
     },
     {
      "id": "th-cost",
@@ -1195,7 +1195,7 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.cost-fundamental}{\\begin{array}{l}\\Theta;\\Gamma;\\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=cs.csem}{\\Theta;\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{N} e : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.fsem-of-cost}{\\begin{array}{l}\\begin{array}{l}\\Theta;\\varnothing;\\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\land \\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\\\ \\land\\ \\text{credits of } \\Theta \\leq N \\land \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,(\\htmlData{k=th.styof}{\\mathsf{sty} \\circ \\Theta})\\,e}\\end{array}}\\end{array}",
+     "tex": "\\begin{array}{l}\\htmlData{k=th.cost-fundamental}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=cs.csem}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{N} e : T\\ !\\ \\varepsilon}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.fsem-of-cost}{\\begin{array}{l}\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} e : T\\ !\\ (c, \\vartheta) \\land \\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\\\ \\land\\ \\text{credits of } \\Delta \\leq N \\land \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,(\\htmlData{k=th.styof}{\\mathsf{sty} \\circ \\Delta})\\,e}\\end{array}}\\end{array}",
      "caption": "A typed closed thread with all credits at most $N$ has fuel with every counter at $N$."
     }
    ]
@@ -10744,24 +10744,20 @@ window.MAP = {
   },
   "th.fundamental": {
    "title": "Fundamental theorem",
-   "what": "For strict $W$, $\\Theta ; \\varnothing ; \\Delta \\vdash^{F}_{W} t : T$ implies $\\Theta ; \\Delta \\vDash^{F}_{W} t : T$.",
+   "what": "For strict $W$, $\\varnothing ; \\Delta \\vdash^{F}_{W} t : T$ implies $\\Delta \\vDash^{F}_{W} t : T$.",
    "why": "Each typing rule has a semantic counterpart that holds at every level, and the theorem is the induction on the derivation.",
    "breaks": "Nothing. It is a definition.",
    "example": "The main thread of the cycle example satisfies the semantic judgment.",
    "rocq": "static/Fundamental.v: fundamental",
-   "sig": "\\mathsf{strict}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\vdash^{F}_{W} t : T \\Rightarrow \\Theta ; \\Delta \\vDash^{F}_{W} t : T",
+   "sig": "\\mathsf{strict}\\,W \\land \\varnothing ; \\Delta \\vdash^{F}_{W} t : T \\Rightarrow \\Delta \\vDash^{F}_{W} t : T",
    "args": [
     {
      "name": "W",
      "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
     },
     {
-     "name": "\\Theta",
-     "meaning": "the ends held by the term"
-    },
-    {
      "name": "\\Delta",
-     "meaning": "the variable context"
+     "meaning": "the linear context of ends and variables"
     },
     {
      "name": "F",
@@ -10778,25 +10774,21 @@ window.MAP = {
    ]
   },
   "th.fundamental-typed": {
-   "title": "Fundamental theorem for the merged judgment",
-   "what": "For strict $W$ and every $N$, the merged judgment implies the semantic judgment at $\\Theta_{df}$, $\\Delta_{df}$ and $T_{df}$.",
-   "why": "Erasing the annotations of a merged derivation gives a deadlock-free derivation, to which the fundamental theorem applies.",
+   "title": "Fundamental theorem for annotated typing",
+   "what": "For strict $W$ and every $N$, the annotated typing judgment implies the semantic judgment at $\\Delta_{df}$ and $T_{df}$.",
+   "why": "Erasing the annotations of an annotated derivation gives a deadlock-free derivation, to which the fundamental theorem applies.",
    "breaks": "Nothing. It is a definition.",
    "example": "The client and server main at $N = \\infty$.",
    "rocq": "static/Fundamental.v: fundamental_typed",
-   "sig": "\\mathsf{strict}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\vdash^{F}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta} \\Rightarrow \\Theta_{df} ; \\Delta_{df} \\vDash^{F}_{W} t : T_{df}",
+   "sig": "\\mathsf{strict}\\,W \\land \\varnothing ; \\Delta \\vdash^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\Rightarrow \\Delta_{df} \\vDash^{F}_{W} t : T_{df}",
    "args": [
     {
      "name": "W",
      "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
     },
     {
-     "name": "\\Theta",
-     "meaning": "the ends held by the term"
-    },
-    {
      "name": "\\Delta",
-     "meaning": "the variable context"
+     "meaning": "the linear context of ends and variables"
     },
     {
      "name": "N",
@@ -10806,24 +10798,20 @@ window.MAP = {
   },
   "th.live-fundamental": {
    "title": "Live fundamental theorem",
-   "what": "For strict $W$, $\\Theta ; \\varnothing ; \\Delta \\vdash^{F}_{W} t : T$ and $\\varnothing \\vdash\\!\\triangleright t$ imply $\\Theta ; \\Delta \\mathrel{|\\!\\!\\vDash}^{F}_{W} t : T$.",
+   "what": "For strict $W$, $\\varnothing ; \\Delta \\vdash^{F}_{W} t : T$ and $\\varnothing \\vdash\\!\\triangleright t$ imply $\\Delta \\mathrel{|\\!\\!\\vDash}^{F}_{W} t : T$.",
    "why": "The guard lets a box recurse only after an action, so every recursive call is read at a lower level, as the least fixpoint of the live relation requires.",
    "breaks": "Without the guard the statement is false, $!(f = \\mathsf{force}\\,f)$ types and satisfies no live judgment.",
    "example": "The guarded receive loop.",
    "rocq": "static/LiveFundamental.v: live_fundamental",
-   "sig": "\\mathsf{strict}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\vdash^{F}_{W} t : T \\land \\varnothing \\vdash\\!\\triangleright t \\Rightarrow \\Theta ; \\Delta \\mathrel{|\\!\\!\\vDash}^{F}_{W} t : T",
+   "sig": "\\mathsf{strict}\\,W \\land \\varnothing ; \\Delta \\vdash^{F}_{W} t : T \\land \\varnothing \\vdash\\!\\triangleright t \\Rightarrow \\Delta \\mathrel{|\\!\\!\\vDash}^{F}_{W} t : T",
    "args": [
     {
      "name": "W",
      "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
     },
     {
-     "name": "\\Theta",
-     "meaning": "the ends held by the term"
-    },
-    {
      "name": "\\Delta",
-     "meaning": "the variable context"
+     "meaning": "the linear context of ends and variables"
     },
     {
      "name": "F",
@@ -10836,13 +10824,13 @@ window.MAP = {
    ]
   },
   "th.live-fundamental-typed": {
-   "title": "Live fundamental theorem for the merged judgment",
-   "what": "For strict $W$, the merged judgment with $\\varnothing \\vdash\\!\\triangleright t$ implies the live judgment at erased environments and type.",
+   "title": "Live fundamental theorem for annotated typing",
+   "what": "For strict $W$, the annotated typing judgment with $\\varnothing \\vdash\\!\\triangleright t$ implies the live judgment at erased environments and type.",
    "why": "Lock-free typing reaches the live relation of each thread through this theorem.",
    "breaks": "Nothing. It is a definition.",
    "example": "A thread typed by P-Term at finite $N$.",
    "rocq": "static/LiveFundamental.v: live_fundamental_typed",
-   "sig": "\\mathsf{strict}\\,W \\land \\ldots \\vdash^{F}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta} \\land \\varnothing \\vdash\\!\\triangleright t \\Rightarrow \\Theta_{df} ; \\Delta_{df} \\mathrel{|\\!\\!\\vDash}^{F}_{W} t : T_{df}",
+   "sig": "\\mathsf{strict}\\,W \\land \\ldots \\vdash^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\land \\varnothing \\vdash\\!\\triangleright t \\Rightarrow \\Delta_{df} \\mathrel{|\\!\\!\\vDash}^{F}_{W} t : T_{df}",
    "args": [
     {
      "name": "W",
@@ -11126,12 +11114,12 @@ window.MAP = {
   },
   "th.soundness-source": {
    "title": "Soundness for source terms",
-   "what": "For strict $W$, $\\mathsf{prim}\\,T$ and $\\varnothing ; \\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W} t : T$, the process $(\\varnothing, \\{t\\})$ is deadlock free.",
+   "what": "For strict $W$, $\\mathsf{prim}\\,T$ and $\\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W} t : T$, the process $(\\varnothing, \\{t\\})$ is deadlock free.",
    "why": "A source term creates channels only at fresh roots and at fields of held ends, so it is P-Term with $\\Sigma = \\varnothing$ and $C_0 = \\varnothing$.",
    "breaks": "Nothing. It is a definition.",
    "example": "Every deadlock-free example.",
    "rocq": "static/FundamentalProc.v: soundness_source",
-   "sig": "\\mathsf{strict}\\,W \\land \\mathsf{prim}\\,T \\land \\varnothing ; \\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W} t : T \\Rightarrow \\mathsf{deadlock\\_free}(\\varnothing, \\{t\\})",
+   "sig": "\\mathsf{strict}\\,W \\land \\mathsf{prim}\\,T \\land \\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W} t : T \\Rightarrow \\mathsf{deadlock\\_free}(\\varnothing, \\{t\\})",
    "args": [
     {
      "name": "W",
@@ -11176,7 +11164,7 @@ window.MAP = {
   },
   "th.lf-soundness-source": {
    "title": "Lock-free soundness for source terms",
-   "what": "For $W$ with $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$, $N \\in \\mathbb{N}$, $\\mathsf{prim}\\,T$, a typing $\\varnothing;\\varnothing;\\varnothing \\vdash^{\\varnothing}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}$, some $tk$ with $\\mathsf{meets}\\,\\vartheta\\,0\\,tk$, and $\\varnothing \\vdash\\!\\triangleright t$, the process $(\\varnothing, \\{t\\})$ is lock free.",
+   "what": "For $W$ with $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$, $N \\in \\mathbb{N}$, $\\mathsf{prim}\\,T$, a typing $\\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ (c, \\vartheta)$, some $tk$ with $\\mathsf{meets}\\,\\vartheta\\,0\\,tk$, and $\\varnothing \\vdash\\!\\triangleright t$, the process $(\\varnothing, \\{t\\})$ is lock free.",
    "why": "The premises are those of P-Term at finite $N$ with $\\Sigma = \\varnothing$ and $C_0 = \\varnothing$, plus the guard. Lock-free soundness then applies.",
    "breaks": "Nothing. It is a definition.",
    "example": "Every lock-free example.",
@@ -11203,12 +11191,12 @@ window.MAP = {
   },
   "th.conservative": {
    "title": "Conservativity",
-   "what": "The merged judgment at $N = \\infty$ derives some $T_{df}\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}$ iff the deadlock-free judgment derives $T_{df}$, at erased contexts.",
-   "why": "Deadlock-free typing is the merged judgment with credits, costs and ticket needs ignored, so one set of rules serves both.",
+   "what": "The annotated typing judgment at $N = \\infty$ derives some $T_{df}\\ !\\ \\varepsilon$ iff the deadlock-free judgment derives $T_{df}$, at erased contexts.",
+   "why": "Deadlock-free typing is the annotated typing judgment with credits, costs and ticket needs ignored, so one set of rules serves both.",
    "breaks": "Nothing. It is a definition.",
    "example": "The client and server main.",
    "rocq": "static/Conservativity.v: conservative",
-   "sig": "(\\exists a\\,c\\,\\vartheta.\\ \\ldots \\vdash^{F}_{W\\annot{,\\infty}} e : T_{df}\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}) \\iff \\ldots \\vdash^{F}_{W} e : T_{df}",
+   "sig": "(\\exists \\varepsilon.\\ \\ldots \\vdash^{F}_{W\\annot{,\\infty}} e : T_{df}\\ !\\ \\varepsilon) \\iff \\ldots \\vdash^{F}_{W} e : T_{df}",
    "args": [
     {
      "name": "a, c, \\vartheta",
@@ -11222,12 +11210,12 @@ window.MAP = {
   },
   "th.typed-dftyped": {
    "title": "Erasure to deadlock-free typing",
-   "what": "For every $N$, erasing the annotations of a merged derivation gives a deadlock-free derivation.",
+   "what": "For every $N$, erasing the annotations of an annotated derivation gives a deadlock-free derivation.",
    "why": "Hence every lock-free typing is also a deadlock-free typing.",
    "breaks": "Nothing. It is a definition.",
    "example": "The cycle at $N = 2$ erases to its deadlock-free typing.",
    "rocq": "static/Conservativity.v: typed_dftyped",
-   "sig": "\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta} \\Rightarrow \\Theta_{df} ; \\Gamma ; \\Delta_{df} \\vdash^{F}_{W} e : T_{df}",
+   "sig": "\\Gamma ; \\Delta \\vdash^{F}_{W\\annot{,N}} e : T\\ !\\ \\varepsilon \\Rightarrow \\Gamma ; \\Delta_{df} \\vdash^{F}_{W} e : T_{df}",
    "args": [
     {
      "name": "N",
@@ -11286,12 +11274,12 @@ window.MAP = {
   },
   "th.cost-fundamental": {
    "title": "Cost fundamental theorem",
-   "what": "The merged judgment implies the semantic cost judgment $\\Theta;\\Delta \\vDash^{N} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}$.",
-   "why": "It is the cost half of the merged judgment, proved rule by rule.",
+   "what": "The annotated typing judgment implies the semantic cost judgment $\\Delta \\vDash^{N} e : T\\ !\\ \\varepsilon$.",
+   "why": "It is the cost half of the annotated typing judgment, proved rule by rule.",
    "breaks": "Nothing. It is a definition.",
    "example": "The forwarder $\\mathsf{fw}$.",
    "rocq": "cost/CostFund.v: cost_fundamental",
-   "sig": "\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta} \\Rightarrow \\Theta ; \\Delta \\vDash^{N} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}",
+   "sig": "\\Gamma ; \\Delta \\vdash^{F}_{W\\annot{,N}} e : T\\ !\\ \\varepsilon \\Rightarrow \\Delta \\vDash^{N} e : T\\ !\\ \\varepsilon",
    "args": [
     {
      "name": "N",
@@ -11305,12 +11293,12 @@ window.MAP = {
   },
   "th.fsem-of-cost": {
    "title": "Fuel from cost typing",
-   "what": "If $\\Theta;\\varnothing;\\varnothing \\vdash^{\\varnothing}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}$, $\\mathsf{prim}\\,T$, every credit of $\\Theta$ is at most $N$ and $\\mathsf{meets}\\,\\vartheta\\,0\\,tk$, then $\\mathsf{fsem}\\,N\\,(\\mathsf{sty} \\circ \\Theta)\\,e$.",
+   "what": "If $\\varnothing ; \\Delta \\vdash^{\\varnothing}_{W\\annot{,N}} e : T\\ !\\ (c, \\vartheta)$, $\\mathsf{prim}\\,T$, every credit of $\\Delta$ is at most $N$ and $\\mathsf{meets}\\,\\vartheta\\,0\\,tk$, then $\\mathsf{fsem}\\,N\\,(\\mathsf{sty} \\circ \\Delta)\\,e$.",
    "why": "P-Term gives every end credit $N$, so the cost judgment yields the per-thread fuel that lock freedom needs.",
    "breaks": "If a closure could mention an end it does not own, the forwarder could receive a closure that owns nothing and would have no fuel after spawning it.",
    "example": "The forwarder $\\mathsf{fw}$.",
    "rocq": "cost/CostFund.v: fsem_of_cost",
-   "sig": "\\ldots \\vdash^{\\varnothing}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta} \\land \\mathsf{prim}\\,T \\land (\\forall o.\\ \\mathsf{cr}(\\Theta(o)) \\leq N) \\land \\mathsf{meets}\\,\\vartheta\\,0\\,tk \\Rightarrow \\mathsf{fsem}\\,N\\,(\\mathsf{sty} \\circ \\Theta)\\,e",
+   "sig": "\\ldots \\vdash^{\\varnothing}_{W\\annot{,N}} e : T\\ !\\ (c, \\vartheta) \\land \\mathsf{prim}\\,T \\land (\\forall o.\\ \\mathsf{cr}(\\Delta(o)) \\leq N) \\land \\mathsf{meets}\\,\\vartheta\\,0\\,tk \\Rightarrow \\mathsf{fsem}\\,N\\,(\\mathsf{sty} \\circ \\Delta)\\,e",
    "args": [
     {
      "name": "\\Theta",
@@ -11505,7 +11493,7 @@ window.MAP = {
   },
   "th.df": {
    "title": "Erasure $X_{df}$",
-   "what": "$\\Theta_{df}$, $\\Delta_{df}$ and $T_{df}$ drop every credit, cost and ticket need and keep session types, points and facts.",
+   "what": "$\\Delta_{df}$ and $T_{df}$ drop every credit, cost and ticket need and keep session types, points and facts.",
    "why": "Deadlock-free typing and the relations read no annotation.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(S@x)^{3}$ erases to $S@x$.",
@@ -11519,17 +11507,17 @@ window.MAP = {
    ]
   },
   "th.styof": {
-   "title": "$\\mathsf{sty} \\circ \\Theta$",
-   "what": "The map that sends each end $o \\in \\mathrm{dom}\\,\\Theta$ with $\\Theta(o) = S@x\\annot{^{a}}$ to $S$.",
+   "title": "$\\mathsf{sty} \\circ \\Delta$",
+   "what": "The map that sends each end $o$ of $\\Delta$ with $\\Delta(o) = (S@x)\\annot{^{a}}$ to $S$.",
    "why": "The fuel layer reads protocols, not points or credits.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\{a \\mapsto (S@x)\\annot{^{N}}\\}$ gives $\\{a \\mapsto S\\}$.",
    "rocq": "cost/CostFund.v: fsem_of_cost",
-   "sig": "\\mathsf{sty} \\circ \\Theta : \\mathsf{End} \\rightharpoonup \\mathsf{Sty}",
+   "sig": "\\mathsf{sty} \\circ \\Delta : \\mathsf{End} \\rightharpoonup \\mathsf{Sty}",
    "args": [
     {
-     "name": "\\Theta",
-     "meaning": "the ends held by the term"
+     "name": "\\Delta",
+     "meaning": "the linear context of ends and variables"
     }
    ]
   },
@@ -11565,7 +11553,7 @@ window.MAP = {
     "df",
     "lf"
    ],
-   "code": "main = let (a, a′) = new in                    -- a at ρ\n       let (b, b′) = new in                    -- b at ρ·0, facts C at (ρ, ρ·0, ρ·1)\n       let () = spawn (λu. let () = u in (force srv) ⟨a′, b′⟩) in\n       (force cli) ⟨a, b⟩\ncli  = !(f = λp. let (a, b) = p in let a = send ⟨∗, a⟩ in\n                let (u, b) = recv b in let () = u in (force f) ⟨a, b⟩)\nsrv  = !(g = λp. let (a, b) = p in let (u, a) = recv a in let () = u in\n                let b = send ⟨∗, b⟩ in (force g) ⟨a, b⟩)\n-- both boxes : □∀ι κ ζ. C. ∗ ⊸ (S1@ι ⊗ S2@κ ⊸^ζ ∗)\n-- C = {ι+k ≺ (κ+k)‾, κ+k ≺ (ι+k+1)‾, ι+k ≺ ζ, κ+k ≺ ζ | k}",
+   "code": "main = let ⟨a, a′⟩ = new in                    -- a at ρ\n       let ⟨b, b′⟩ = new in                    -- b at ρ·0, facts C at (ρ, ρ·0, ρ·1)\n       let ∗ = spawn (λu. let ∗ = u in (force srv) ⟨a′, b′⟩) in\n       (force cli) ⟨a, b⟩\ncli  = !(f = λp. let ⟨a, b⟩ = p in let a = send ⟨∗, a⟩ in\n                let ⟨u, b⟩ = recv b in let ∗ = u in (force f) ⟨a, b⟩)\nsrv  = !(g = λp. let ⟨a, b⟩ = p in let ⟨u, a⟩ = recv a in let ∗ = u in\n                let b = send ⟨∗, b⟩ in (force g) ⟨a, b⟩)\n-- both boxes : □∀ι κ ζ. C. ∗ ⊸ (S1@ι ⊗ S2@κ ⊸^ζ ∗)\n-- C = {ι+k ≺ (κ+k)‾, κ+k ≺ (ι+k+1)‾, ι+k ≺ ζ, κ+k ≺ ζ | k}",
    "shows": "The second $\\mathsf{new}$ places $b$ at $\\rho\\cdot 0$ and states $C$ at $(\\rho, \\rho\\cdot 0, \\rho\\cdot 1)$, the facts the self call at $(\\iota^{+}, \\kappa^{+}, \\zeta)$ needs.",
    "rocq": "examples/ClientServer.v: cs_typed; examples/LFClientServer.v: cs_lftyped, cs_lock_free",
    "accepts": {
@@ -11591,7 +11579,7 @@ window.MAP = {
     "df",
     "lf"
    ],
-   "code": "cycle = let (c, c′) = new in          -- c at ρ\n        let (d, d′) = new in          -- d at ρ·0, C = {ρ ≺ (ρ·0)‾, ρ‾ ≺ ρ·0}\n        let () = spawn (λu. let () = u in let () = close c′ in close d′) in\n        let () = close c in close d",
+   "code": "cycle = let ⟨c, c′⟩ = new in          -- c at ρ\n        let ⟨d, d′⟩ = new in          -- d at ρ·0, C = {ρ ≺ (ρ·0)‾, ρ‾ ≺ ρ·0}\n        let ∗ = spawn (λu. let ∗ = u in let ∗ = close c′ in close d′) in\n        let ∗ = close c in close d",
    "shows": "The second $\\mathsf{new}$ states exactly $\\rho \\prec \\overline{\\rho\\cdot 0}$ and $\\overline{\\rho} \\prec \\rho\\cdot 0$, the two facts the two threads need.",
    "rocq": "examples/Cycle.v: cy_typed; examples/LFCycle.v: cy_lftyped, cy_lock_free",
    "accepts": {
@@ -11617,7 +11605,7 @@ window.MAP = {
     "df",
     "lf"
    ],
-   "code": "between : □(∀ι κ. C. ∗ ⊸ Close@ι ⊗ Close@κ ⊸^κ ∗)\nbetween = !(f = λp. let (c, e) = p in\n                    let (d, d′) = new in        -- d at ι·0\n                    let () = spawn (λu. let () = u in close d′) in\n                    let () = close c in let () = close d in close e)\n-- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾, δ ≺ κ, δ ≺ κ‾},  δ = ι·0\nmain: c by new at ρ, e by new at ρ·1, force between at (ρ, ρ·1)",
+   "code": "between : □(∀ι κ. C. ∗ ⊸ Close@ι ⊗ Close@κ ⊸^κ ∗)\nbetween = !(f = λp. let ⟨c, e⟩ = p in\n                    let ⟨d, d′⟩ = new in        -- d at ι·0\n                    let ∗ = spawn (λu. let ∗ = u in close d′) in\n                    let ∗ = close c in let ∗ = close d in close e)\n-- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾, δ ≺ κ, δ ≺ κ‾},  δ = ι·0\nmain: c by new at ρ, e by new at ρ·1, force between at (ρ, ρ·1)",
    "shows": "The box places its new channel at the field $\\iota\\cdot 0$ of the point of $c$, so no point between two box points is needed.",
    "rocq": "examples/FreshBetween.v: fb_typed; examples/LFFreshBetween.v: fb_lftyped, fb_lock_free",
    "accepts": {
@@ -11643,7 +11631,7 @@ window.MAP = {
     "df",
     "lf"
    ],
-   "code": "many = !(f = λp. let (c, e) = p in\n                 let (d, d′) = new in         -- d at δ\n                 let () = spawn (λu. let () = u in\n                                     let (v, d′) = recv d′ in let () = v in\n                                     let (w, d′) = recv d′ in let () = w in close d′) in\n                 let () = close c in\n                 let () = close (send ⟨∗, send ⟨∗, d⟩⟩) in close e)\n-- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾} ∪ {δ+k ≺ κ, δ+k ≺ κ‾ | k},  δ = ι·0",
+   "code": "many = !(f = λp. let ⟨c, e⟩ = p in\n                 let ⟨d, d′⟩ = new in         -- d at δ\n                 let ∗ = spawn (λu. let ∗ = u in\n                                     let ⟨v, d′⟩ = recv d′ in let ∗ = v in\n                                     let ⟨w, d′⟩ = recv d′ in let ∗ = w in close d′) in\n                 let ∗ = close c in\n                 let ∗ = close (send ⟨∗, send ⟨∗, d⟩⟩) in close e)\n-- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾} ∪ {δ+k ≺ κ, δ+k ≺ κ‾ | k},  δ = ι·0",
    "shows": "An infinite box constraint lets $d$ act at $\\delta, \\delta^{+}, \\delta^{++}$ while $e$ is held at $\\kappa$.",
    "rocq": "examples/FreshMany.v: fm_typed; examples/LFFreshMany.v: fm_lftyped, fm_lock_free",
    "accepts": {
@@ -11669,7 +11657,7 @@ window.MAP = {
     "df",
     "lf"
    ],
-   "code": "mk₀  = !(f = λu. let () = u in let (c, c′) = new in\n                let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in c′)\nmk₁  = !(f = λp. let (c, c′) = new in\n                let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in ⟨p, c′⟩)\nmain = let p = (force mk₀) ∗ in let ⟨p, q⟩ = (force mk₁) p in\n       let () = recvclose p in recvclose q\n-- mk₀ places c at a fresh ρ with C(ρ) = {ρ‾ ≺ ρ·0, ρ‾⁺ ≺ ρ·0}, mk₁ at ι·0 for p at ι\n-- mk₀ : □(∗ ⊸ ∃^⊥ ι. C(ι). (?∗.Close)@ι‾)",
+   "code": "mk₀  = !(f = λu. let ∗ = u in let ⟨c, c′⟩ = new in\n                let ∗ = spawn (λv. let ∗ = v in close (send ⟨∗, c⟩)) in c′)\nmk₁  = !(f = λp. let ⟨c, c′⟩ = new in\n                let ∗ = spawn (λv. let ∗ = v in close (send ⟨∗, c⟩)) in ⟨p, c′⟩)\nmain = let p = (force mk₀) ∗ in let ⟨p, q⟩ = (force mk₁) p in\n       let ∗ = recvclose p in recvclose q\n-- mk₀ places c at a fresh ρ with C(ρ) = {ρ‾ ≺ ρ·0, ρ‾⁺ ≺ ρ·0}, mk₁ at ι·0 for p at ι\n-- mk₀ : □(∗ ⊸ ∃^⊥ ι. C(ι). (?∗.Close)@ι‾)",
    "shows": "The first call creates at a fresh root and the second at a field of the end it receives, two typings of the same creation.",
    "rocq": "examples/FactoryEx.v: fx_typed; examples/LFFactoryEx.v: fx_lftyped, fx_lock_free",
    "accepts": {
@@ -11695,7 +11683,7 @@ window.MAP = {
     "df",
     "lf"
    ],
-   "code": "Sch  = µα. ?(κ. α@κ).Close\nring : □(∀ι₁ ι₂. Cr. ∗ ⊸ (Sch@ι₁ ⊗ S̄ch@ι₂ ⊸^{ι₁+1} ∗))\nring = !(f = λp. let (x, y) = p in\n           let (a, a′) = new in                -- a at ι₂·0\n           let () = spawn (λw. let () = w in close (send ⟨a, y⟩)) in\n           let (b, b′) = new in                -- b at ι₁·1\n           let (z, x) = recv x in let () = close x in\n           let () = spawn (λw. let () = w in (force f) ⟨z, b′⟩) in\n           spawn (λw. let () = w in (force f) ⟨b, a′⟩))\nmain = let (e, e′) = new in (force ring) ⟨e, e′⟩",
+   "code": "Sch  = µα. ?(κ. α@κ).Close\nring : □(∀ι₁ ι₂. Cr. ∗ ⊸ (Sch@ι₁ ⊗ S̄ch@ι₂ ⊸^{ι₁+1} ∗))\nring = !(f = λp. let ⟨x, y⟩ = p in\n           let ⟨a, a′⟩ = new in                -- a at ι₂·0\n           let ∗ = spawn (λw. let ∗ = w in close (send ⟨a, y⟩)) in\n           let ⟨b, b′⟩ = new in                -- b at ι₁·1\n           let ⟨z, x⟩ = recv x in let ∗ = close x in\n           let ∗ = spawn (λw. let ∗ = w in (force f) ⟨z, b′⟩) in\n           spawn (λw. let ∗ = w in (force f) ⟨b, a′⟩))\nmain = let ⟨e, e′⟩ = new in (force ring) ⟨e, e′⟩",
    "shows": "$b$ is created at $\\iota_1\\cdot 1$ before the receive on $x$, while $x$ is held at $\\iota_1$.",
    "rocq": "examples/GrowRing.v: rg_typed; examples/LFGrowRing.v: rg_lftyped, rg_lock_free",
    "accepts": {
@@ -11781,7 +11769,7 @@ window.MAP = {
    "modes": [
     "lf"
    ],
-   "code": "fw o = let ⟨w, c⟩ = recv o in let ∗ = close c in spawn w\no : ?(∗ ⊸ ∗)^2.end\ndead_thunk q = λ_. let ∗ = Ω in close q",
+   "code": "fw o = let ⟨w, c⟩ = recv o in let ∗ = close c in spawn w\no : ?((∗ ⊸ ∗)^2).Close\ndead_thunk q = λ_. let ∗ = Ω in close q",
    "shows": "$\\mathsf{dead\\_thunk}\\,q$ mentions $q$ and owns nothing, so it is not in the fuel relation and $\\mathsf{fw}$ has fuel for every closure it receives.",
    "rocq": "cost/Forwarder.v: dead_thunk_rejected, fw_ptyped; cost/CostFund.v: fw_fsem",
    "accepts": {
@@ -11799,8 +11787,8 @@ window.MAP = {
    "modes": [
     "lf"
    ],
-   "code": "main = let (a, a′) = new in let (b, b′) = new in   -- a at ρ, b at ρ·0\n       let (c, c′) = new in                              -- c at ρ·2\n       let () = spawn (λu. let () = u in (force srv) ⟨⟨a′, b′⟩, c′⟩) in\n       (force cli) ⟨⟨a, b⟩, c⟩\ncli  = !(f = λp. let (q, k) = p in let (a, b) = q in\n                let a = send ⟨∗, a⟩ in let (u, b) = recv b in\n                let () = u in (force f) ⟨⟨a, b⟩, k⟩)\n-- c sits at Skip on each side, an idle end",
-   "shows": "The idle end $k$ at $\\mathsf{Skip}@\\chi$ is held across every round at credit $0$, because $(\\mathsf{Skip}@\\chi, a) - c = (\\mathsf{Skip}@\\chi, \\max(a - c, 0))$ asks no $c \\leq a$.",
+   "code": "main = let ⟨a, a′⟩ = new in let ⟨b, b′⟩ = new in   -- a at ρ, b at ρ·0\n       let ⟨c, c′⟩ = new in                              -- c at ρ·2\n       let ∗ = spawn (λu. let ∗ = u in (force srv) ⟨⟨a′, b′⟩, c′⟩) in\n       (force cli) ⟨⟨a, b⟩, c⟩\ncli  = !(f = λp. let ⟨q, k⟩ = p in let ⟨a, b⟩ = q in\n                let a = send ⟨∗, a⟩ in let ⟨u, b⟩ = recv b in\n                let ∗ = u in (force f) ⟨⟨a, b⟩, k⟩)\n-- c sits at Skip on each side, an idle end",
+   "shows": "The idle end $k$ at $\\mathsf{Skip}@\\chi$ is held across every round at credit $0$, because $(\\mathsf{Skip}@\\chi)^{a} - c = (\\mathsf{Skip}@\\chi)^{\\max(a - c, 0)}$ asks no $c \\leq a$.",
    "rocq": "examples/LFController.v: ctl_typedN, ctl_guarded, ctl_lftyped, ctl_lock_free",
    "accepts": {
     "lf": {

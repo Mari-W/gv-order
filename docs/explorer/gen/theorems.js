@@ -14,7 +14,7 @@ const L = R`\mathrel{|\!\!\vDash}`;
 const IM = (p, c) => R`\begin{array}{l}${p} \\ \quad\Longrightarrow\ ${c}\end{array}`;
 const AL = (...rs) => R`\begin{array}{l}${rs.join(R` \\ `)}\end{array}`;
 // rows that only the lock-free mode shows (and colours): the lock-free results and those stated over the annotated judgment
-const LFROWS = /^\\htmlData\{k=th\.(lf-[\w-]+|live-[\w-]+|fundamental-typed|conservative|typed-dftyped)\}/;
+const LFROWS = /^\\htmlData\{k=th\.(lf-[\w-]+|live-[\w-]+|fundamental-typed|conservative|typed-dftyped|adequacy-gen)\}/;
 const ROWS = (...rs) => R`\begin{array}{l}${rs.map((r, i) => { const sep = i ? R` \\[1.5ex] ` : ''; return LFROWS.test(r) ? (sep ? R`\annraw{${sep}}` : '') + R`\annot{${r}}` : sep + r; }).join('')}\end{array}`;
 const STRICT = h('w.strict', R`\mathsf{strict}`);
 const WFW = h('th.wfworld', R`\mathsf{wfworld}`);
@@ -30,9 +30,9 @@ const LFS = h('sp.lfsem', R`\Vvdash`);
 const PT = h('tp.pjudg', R`\vdash^{\infty}_W`);
 const PLF = h('tp.lfjudg', R`\Vdash^{N}_W`);
 const DF = (x) => h('th.df', R`${x}_{df}`);
-const PR = (k, W, n, body) => h('th.Prel', R`P[${k}]^{${W}}_{${n}}\llbracket ${body}\rrbracket`);
+const PR = (k, W, n, body) => h('th.Prel', R`P\annot{[${k}]}^{${W}}_{${n}}\llbracket ${body}\rrbracket`);
 const P0 = (W, n, body) => h('th.Prel', R`P^{${W}}_{${n}}\llbracket ${body}\rrbracket`);
-const ER = (k, W, n, body, F) => h('th.Erel', R`E[${k}]^{${W}}_{${n}}\llbracket ${body}\rrbracket^{${F}}`);
+const ER = (k, W, n, body, F) => h('th.Erel', R`E\annot{[${k}]}^{${W}}_{${n}}\llbracket ${body}\rrbracket^{${F}}`);
 const E0 = (W, n, body, F) => h('th.Erel', R`E^{${W}}_{${n}}\llbracket ${body}\rrbracket^{${F}}`);
 const SOUP = (n) => h('th.soup', R`S^{N,W}_{${n}}\llbracket\varnothing \vdash T\rrbracket`);
 const MEETS = R`${h('ann.meets', R`\mathsf{meets}`)}\,\vartheta\,0\,${h('fu.tk', 'tk')}`;
@@ -43,7 +43,7 @@ TH('th-adequacy', 'Adequacy', 'relation/Adequacy.v: adequacy, live_adequacy, ade
     h('th.adequacy', IM(R`${STRICT}\,W \land \varnothing ${PSEM}_W p : T`, R`${DFP}\,p`)),
     h('th.live-adequacy', IM(R`\mathsf{strict}\,W \land \varnothing ${PLIVE}_W p : T`, R`\mathsf{deadlock\_free}\,p \land ${NOTAU}\,p`)),
     h('th.adequacy-gen', IM(R`\forall \kappa.\ \mathsf{strict}\,W \land \forall n.\ p \in ${PR(R`\kappa`, 'W', 'n', R`\varnothing \vdash T`)}`, R`\mathsf{deadlock\_free}\,p`))),
-  'For every $\\kappa$ and strict $W$, $\\forall n.\\ p \\in P[\\kappa]^{W}_{n}\\llbracket \\varnothing \\vdash T\\rrbracket$ implies deadlock freedom, and at $\\kappa_L$ absence of $\\tau$-divergence.');
+  'For strict $W$, a closed process in the semantic judgment is deadlock free. \\annp{The statement holds for every cost table $\\kappa$, and at $\\kappa_L$ it also gives absence of $\\tau$-divergence.}');
 TH('th-lf-adequacy', 'Lock-free adequacy', 'soup/LFAdequacy.v: lf_adequacy, lf_thread_progress; soup/SoupTau.v: soup_no_tau_divergence; soup/SoupRun.v: lfsoup_step', ['lf'],
   ROWS(
     h('th.lf-adequacy', IM(R`${LFW} \land \varnothing ${LFS}_W p : T`, R`${LOCKF}\,p`)),
@@ -53,11 +53,11 @@ TH('th-lf-adequacy', 'Lock-free adequacy', 'soup/LFAdequacy.v: lf_adequacy, lf_t
   'For $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$, $\\varnothing \\Vvdash_W p : T$ implies lock freedom.');
 TH('th-fund-term', 'Fundamental theorems for terms', 'static/Fundamental.v: typed_sem, fundamental, fundamental_typed, live_fundamental, live_fundamental_typed', ['df', 'live', 'lf'],
   ROWS(
-    h('th.fundamental', IM(R`${STRICT}\,W \land \Theta ; \varnothing ; \Delta \vdash^{F}_{W} t : T`, R`\Theta ; \Delta ${TSEM}^{F}_W t : T`)),
-    h('th.fundamental-typed', IM(R`\mathsf{strict}\,W \land \Theta ; \varnothing ; \Delta \vdash^{F}_{W,N} t : T^{a} \triangleright c ; \vartheta`, R`${DF(R`\Theta`)} ; \Delta_{df} \vDash^{F}_W t : T_{df}`)),
-    h('th.live-fundamental', IM(R`\mathsf{strict}\,W \land \Theta ; \varnothing ; \Delta \vdash^{F}_{W} t : T \land ${h('guard.judg', R`\varnothing \vdash\!\triangleright t`)}`, R`\Theta ; \Delta ${TLIVE}^{F}_W t : T`)),
-    h('th.live-fundamental-typed', IM(AL(R`\mathsf{strict}\,W \land \Theta ; \varnothing ; \Delta \vdash^{F}_{W,N} t : T^{a} \triangleright c ; \vartheta`, R`\land\ \varnothing \vdash\!\triangleright t`), R`\Theta_{df} ; \Delta_{df} ${L}^{F}_W t : T_{df}`))),
-  'For strict $W$, typing with empty $\\Gamma$ implies the semantic term judgment, and with $\\varnothing \\vdash\\!\\triangleright t$ its live version.');
+    h('th.fundamental', IM(R`${STRICT}\,W \land \varnothing ; \Delta \vdash^{F}_{W} t : T`, R`\Delta ${TSEM}^{F}_W t : T`)),
+    h('th.fundamental-typed', IM(R`\mathsf{strict}\,W \land \varnothing ; \Delta \vdash^{F}_{W,N} t : T\ !\ \varepsilon`, R`${DF(R`\Delta`)} \vDash^{F}_W t : T_{df}`)),
+    h('th.live-fundamental', IM(R`\mathsf{strict}\,W \land \varnothing ; \Delta \vdash^{F}_{W} t : T \land ${h('guard.judg', R`\varnothing \vdash\!\triangleright t`)}`, R`\Delta ${TLIVE}^{F}_W t : T`)),
+    h('th.live-fundamental-typed', IM(AL(R`\mathsf{strict}\,W \land \varnothing ; \Delta \vdash^{F}_{W,N} t : T\ !\ \varepsilon`, R`\land\ \varnothing \vdash\!\triangleright t`), R`\Delta_{df} ${L}^{F}_W t : T_{df}`))),
+  'For strict $W$, typing with empty $\\Gamma$ implies the semantic term judgment. \\annp{With the guard $\\varnothing \\vdash\\!\\triangleright t$ it implies the live judgment.}');
 TH('th-fund-proc', 'Fundamental theorems for processes', 'static/FundamentalProc.v: fundamental_proc, live_fundamental_proc; soup/LFTyped.v: lf_fundamental', ['df', 'live', 'lf'],
   ROWS(
     h('th.fundamental-proc', IM(R`${STRICT}\,W \land \Sigma ${PT} p : T`, R`\Sigma ${PSEM}_W p : T`)),
@@ -69,32 +69,32 @@ TH('th-compose', 'Semantic composition rules', 'compat/PTerm.v: sem_p_term; comp
     h('th.sem-p-term', IM(AL(R`${PRIM} \land ${h('th.sth', R`\mathsf{sth}\,\Theta\,\Sigma\,\Theta_B\,C`)}`, R`\land\ t \in ${ER(R`\kappa`, 'W', 'n', R`\Theta \vdash T`, R`\varnothing`)}`), R`(C, \{t\}) \in ${PR(R`\kappa`, 'W', 'n', R`\Sigma \vdash T`)}`)),
     h('th.sem-p-connect', IM(AL(R`\mathsf{prim}\,T \land ${h('th.conn', R`\mathsf{conn}`)}`, R`\land\ p_1 \in ${P0(R`W_1`, 'n', R`\Sigma_1 \cup \Sigma_C \vdash T`)}`, R`\land\ p_2 \in ${P0(R`W_2`, 'n', R`\Sigma_2 \cup \Sigma_D \vdash \ast`)}`), R`${h('th.par', R`p_1 \parallel_{\Sigma_C} p_2`)} \in ${P0(R`W_1 \sqcup W_2`, 'n', R`\Sigma_1 \cup \Sigma_2 \vdash T`)}`)),
     h('th.lf-p-term', IM(AL(R`\mathsf{strict}\,W \land \Sigma \Vdash^{N}_{W} (C_0, \{t\}) : T`, R`\text{by P-Term}`), R`\Sigma \Vvdash_W (C_0, \{t\}) : T`))),
-  'For every $\\kappa$ and $n$, P-Term and P-Connect hold in $P$.');
+  'P-Term and P-Connect hold in $P$ at every level $n$. \\annp{They hold for every cost table $\\kappa$.}');
 TH('th-bind', 'The bind lemma', 'compat/Bind.v: Erel_bind', ['df', 'live', 'lf'],
   h('th.Erel-bind', IM(AL(
       R`e \in ${E0('W', 'n', R`\Theta_1 \vdash T`, R`F \cup ${h('ty.heads', R`\mathsf{heads}`)}\,\Theta_2`)}`,
       R`\land\ \forall W' ${h('w.ext', R`\sqsupseteq`)} W,\ j \leq n,\ v \in ${h('th.Vrel', R`V^{W'}_j\llbracket\Theta_v \vdash T\rrbracket`)}.`,
       R`\qquad ${h('se.frame', 'f[v]')} \in ${E0(R`W'`, 'j', R`\Theta_v \cup \Theta_2 \vdash U`, 'F')}`),
     R`${h('se.frame', 'f[e]')} \in ${E0('W', 'n', R`\Theta_1 \cup \Theta_2 \vdash U`, 'F')}`)),
-  'For every $\\kappa$, $E$ is closed under frames $f$, with the hole under $F \\cup \\mathsf{heads}\\,\\Theta_2$.');
+  '$E$ is closed under frames $f$, with the hole under $F \\cup \\mathsf{heads}\\,\\Theta_2$. \\annp{This holds for every cost table $\\kappa$.}');
 TH('th-sound', 'Soundness', 'static/FundamentalProc.v: soundness, live_soundness, soundness_source; soup/LFTyped.v: lf_soundness; soup/LFCompose.v: lf_soundness_source', ['df', 'live', 'lf'],
   ROWS(
     h('th.soundness', IM(R`${STRICT}\,W \land \varnothing ${PT} p : T`, R`${DFP}\,p`)),
     h('th.live-soundness', IM(R`\mathsf{strict}\,W \land \varnothing \vdash^{\infty}_W p : T \land \vdash\!\triangleright p`, R`\mathsf{deadlock\_free}\,p \land ${NOTAU}\,p`)),
-    h('th.soundness-source', IM(R`\mathsf{strict}\,W \land ${PRIM} \land \varnothing ; \varnothing ; \varnothing \vdash^{\varnothing}_W t : T`, R`\mathsf{deadlock\_free}(\varnothing, \{t\})`)),
+    h('th.soundness-source', IM(R`\mathsf{strict}\,W \land ${PRIM} \land \varnothing ; \varnothing \vdash^{\varnothing}_W t : T`, R`\mathsf{deadlock\_free}(\varnothing, \{t\})`)),
     h('th.lf-soundness', IM(R`${LFW} \land \varnothing ${PLF} p : T`, R`${LOCKF}\,p`)),
-    h('th.lf-soundness-source', IM(AL(R`\mathsf{strict}\,W \land \mathsf{wfworld}\,W \land N \in \mathbb{N} \land \mathsf{prim}\,T`, R`\land\ \varnothing;\varnothing;\varnothing \vdash^{\varnothing}_{W,N} t : T^{a} \triangleright c ; \vartheta`, R`\land\ ${MEETS} \land \varnothing \vdash\!\triangleright t`), R`\mathsf{lock\_free}(\varnothing, \{t\})`))),
+    h('th.lf-soundness-source', IM(AL(R`\mathsf{strict}\,W \land \mathsf{wfworld}\,W \land N \in \mathbb{N} \land \mathsf{prim}\,T`, R`\land\ \varnothing ; \varnothing \vdash^{\varnothing}_{W,N} t : T\ !\ (c, \vartheta)`, R`\land\ ${MEETS} \land \varnothing \vdash\!\triangleright t`), R`\mathsf{lock\_free}(\varnothing, \{t\})`))),
   'Typing implies deadlock freedom under $\\mathsf{strict}\\,W$ and lock freedom under $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$.');
 TH('th-conserv', 'Conservativity and live inside deadlock-free', 'static/Conservativity.v: conservative, typed_dftyped, dftyped_typed; compat/LiveDF.v: live_sub_df', ['lf'],
   ROWS(
-    h('th.conservative', AL(R`(\exists a\,c\,\vartheta.\ ${DF(R`\Theta`)};\Gamma;\Delta_{df} \vdash^{F}_{W,\infty} e : T_{df}^{a} \triangleright c ; \vartheta)`, R`\quad\iff\ \Theta_{df};\Gamma;\Delta_{df} \vdash^{F}_{W} e : T_{df}`)),
-    h('th.typed-dftyped', IM(R`\Theta;\Gamma;\Delta \vdash^{F}_{W,N} e : T^{a} \triangleright c ; \vartheta`, R`\Theta_{df};\Gamma;\Delta_{df} \vdash^{F}_W e : T_{df}`)),
+    h('th.conservative', AL(R`(\exists \varepsilon.\ \Gamma;${DF(R`\Delta`)} \vdash^{F}_{W,\infty} e : T_{df}\ !\ \varepsilon)`, R`\quad\iff\ \Gamma ; \Delta_{df} \vdash^{F}_{W} e : T_{df}`)),
+    h('th.typed-dftyped', IM(R`\Gamma ; \Delta \vdash^{F}_{W,N} e : T\ !\ \varepsilon`, R`\Gamma ; \Delta_{df} \vdash^{F}_W e : T_{df}`)),
     h('th.live-sub-df', IM(R`${PRIM} \land ${h('th.nobox', R`\Box \notin T`)} \land \varnothing ${PLIVE}_W p : T`, R`\varnothing ${PSEM}_W p : T`))),
-  'Deadlock-free typing is the merged judgment at $N = \\infty$ up to erasure, and live implies deadlock-free at box-free $\\mathsf{prim}$ results.');
+  'Deadlock-free typing is the annotated typing judgment at $N = \\infty$ up to erasure, and live implies deadlock-free at box-free $\\mathsf{prim}$ results.');
 TH('th-cost', 'Cost', 'cost/CostFund.v: cost_fundamental, fsem_of_cost', ['lf'],
   ROWS(
-    h('th.cost-fundamental', IM(R`\Theta;\Gamma;\Delta \vdash^{F}_{W,N} e : T^{a} \triangleright c ; \vartheta`, h('cs.csem', R`\Theta;\Delta \vDash^{N} e : T^{a} \triangleright c ; \vartheta`))),
-    h('th.fsem-of-cost', IM(AL(R`\Theta;\varnothing;\varnothing \vdash^{\varnothing}_{W,N} e : T^{a} \triangleright c ; \vartheta \land ${PRIM}`, R`\land\ \text{credits of } \Theta \leq N \land ${MEETS}`), h('fu.fsem', R`\mathsf{fsem}\,N\,(${h('th.styof', R`\mathsf{sty} \circ \Theta`)})\,e`)))),
+    h('th.cost-fundamental', IM(R`\Gamma ; \Delta \vdash^{F}_{W,N} e : T\ !\ \varepsilon`, h('cs.csem', R`\Delta \vDash^{N} e : T\ !\ \varepsilon`))),
+    h('th.fsem-of-cost', IM(AL(R`\varnothing ; \Delta \vdash^{\varnothing}_{W,N} e : T\ !\ (c, \vartheta) \land ${PRIM}`, R`\land\ \text{credits of } \Delta \leq N \land ${MEETS}`), h('fu.fsem', R`\mathsf{fsem}\,N\,(${h('th.styof', R`\mathsf{sty} \circ \Delta`)})\,e`)))),
   'A typed closed thread with all credits at most $N$ has fuel with every counter at $N$.');
 
 // ---- notes ----
@@ -105,10 +105,10 @@ n("th.lf-adequacy", "Lock-free adequacy", "For $W$ with $\\mathsf{strict}\\,W$ a
 n("th.lf-thread-progress", "Thread progress", "Under the premises of lock-free adequacy, every run $(r, l)$ with $\\mathsf{erase}(r\\,0) = p$, $\\mathsf{maximal}\\,(r, l)$ and $\\mathsf{wfair}\\,(r, l)$ satisfies $\\mathsf{thread\\_progress\\_run}\\,(r, l)$.", "Every thread eventually returns a value or takes part in a session step, so no thread, pending or not, is postponed forever.", DEF, "Every lock-free example.", "soup/LFAdequacy.v: lf_thread_progress");
 n("th.soup-no-tau", "No $\\tau$-divergence of the soup", "If $a \\in S^{N,W}_{n}\\llbracket\\varnothing \\vdash T\\rrbracket$ for all $n$, then $\\mathsf{erase}\\,q_a$ has no $\\tau$-divergence.", "Every thread of the soup is in the live relation, which admits no infinite sequence of free steps. Hence the soup needs no live process relation beside it.", DEF, "An infinite chain of spawns is rejected thread by thread.", "soup/SoupTau.v: soup_no_tau_divergence");
 n("th.lfsoup-step", "One step of the soup", "If $a \\in S^{N,W}_{n+1}$ and $q_a \\xrightarrow{ev} q'$, then $\\mathsf{lf\\_next}\\,N\\,a\\,ev\\,q' \\in S^{N,W}_{n}$.", "Ownership, points and counters after the step are functions of the step alone, so they agree at every index. Each thread pays its own side of a synchronization.", DEF, "Iterating it follows a whole run.", "soup/SoupRun.v: lfsoup_step");
-n("th.fundamental", "Fundamental theorem", "For strict $W$, $\\Theta ; \\varnothing ; \\Delta \\vdash^{F}_{W} t : T$ implies $\\Theta ; \\Delta \\vDash^{F}_{W} t : T$.", "Each typing rule has a semantic counterpart that holds at every level, and the theorem is the induction on the derivation.", DEF, "The main thread of the cycle example satisfies the semantic judgment.", "static/Fundamental.v: fundamental");
-n("th.fundamental-typed", "Fundamental theorem for the merged judgment", "For strict $W$ and every $N$, the merged judgment implies the semantic judgment at $\\Theta_{df}$, $\\Delta_{df}$ and $T_{df}$.", "Erasing the annotations of a merged derivation gives a deadlock-free derivation, to which the fundamental theorem applies.", DEF, "The client and server main at $N = \\infty$.", "static/Fundamental.v: fundamental_typed");
-n("th.live-fundamental", "Live fundamental theorem", "For strict $W$, $\\Theta ; \\varnothing ; \\Delta \\vdash^{F}_{W} t : T$ and $\\varnothing \\vdash\\!\\triangleright t$ imply $\\Theta ; \\Delta \\mathrel{|\\!\\!\\vDash}^{F}_{W} t : T$.", "The guard lets a box recurse only after an action, so every recursive call is read at a lower level, as the least fixpoint of the live relation requires.", "Without the guard the statement is false, $!(f = \\mathsf{force}\\,f)$ types and satisfies no live judgment.", "The guarded receive loop.", "static/LiveFundamental.v: live_fundamental");
-n("th.live-fundamental-typed", "Live fundamental theorem for the merged judgment", "For strict $W$, the merged judgment with $\\varnothing \\vdash\\!\\triangleright t$ implies the live judgment at erased environments and type.", "Lock-free typing reaches the live relation of each thread through this theorem.", DEF, "A thread typed by P-Term at finite $N$.", "static/LiveFundamental.v: live_fundamental_typed");
+n("th.fundamental", "Fundamental theorem", "For strict $W$, $\\varnothing ; \\Delta \\vdash^{F}_{W} t : T$ implies $\\Delta \\vDash^{F}_{W} t : T$.", "Each typing rule has a semantic counterpart that holds at every level, and the theorem is the induction on the derivation.", DEF, "The main thread of the cycle example satisfies the semantic judgment.", "static/Fundamental.v: fundamental");
+n("th.fundamental-typed", "Fundamental theorem for annotated typing", "For strict $W$ and every $N$, the annotated typing judgment implies the semantic judgment at $\\Delta_{df}$ and $T_{df}$.", "Erasing the annotations of an annotated derivation gives a deadlock-free derivation, to which the fundamental theorem applies.", DEF, "The client and server main at $N = \\infty$.", "static/Fundamental.v: fundamental_typed");
+n("th.live-fundamental", "Live fundamental theorem", "For strict $W$, $\\varnothing ; \\Delta \\vdash^{F}_{W} t : T$ and $\\varnothing \\vdash\\!\\triangleright t$ imply $\\Delta \\mathrel{|\\!\\!\\vDash}^{F}_{W} t : T$.", "The guard lets a box recurse only after an action, so every recursive call is read at a lower level, as the least fixpoint of the live relation requires.", "Without the guard the statement is false, $!(f = \\mathsf{force}\\,f)$ types and satisfies no live judgment.", "The guarded receive loop.", "static/LiveFundamental.v: live_fundamental");
+n("th.live-fundamental-typed", "Live fundamental theorem for annotated typing", "For strict $W$, the annotated typing judgment with $\\varnothing \\vdash\\!\\triangleright t$ implies the live judgment at erased environments and type.", "Lock-free typing reaches the live relation of each thread through this theorem.", DEF, "A thread typed by P-Term at finite $N$.", "static/LiveFundamental.v: live_fundamental_typed");
 n("th.fundamental-proc", "Fundamental theorem for processes", "For strict $W$, $\\Sigma \\vdash^{\\infty}_{W} p : T$ implies $\\Sigma \\vDash_W p : T$.", "It is an induction on the process derivation with the semantic P-Term and P-Connect as cases.", DEF, "Two threads closing the two ends of $c$.", "static/FundamentalProc.v: fundamental_proc");
 n("th.live-fundamental-proc", "Live fundamental theorem for processes", "For strict $W$, $\\Sigma \\vdash^{\\infty}_{W} p : T$ and $\\vdash\\!\\triangleright p$ imply $\\Sigma \\mathrel{|\\!\\!\\vDash}_W p : T$.", "The same induction with the live versions of P-Term and P-Connect.", DEF, "The guarded receive loop as a process.", "static/FundamentalProc.v: live_fundamental_proc");
 n("th.lf-fundamental", "Lock-free fundamental theorem", "For strict $W$, $\\Sigma \\Vdash^{N}_{W} p : T$ implies $\\Sigma \\Vvdash_W p : T$.", "The fuel of each thread comes from its cost typing at finite $N$ with the ticket premise of P-Term, and its live relation from its guarded typing.", DEF, "The cycle example.", "soup/LFTyped.v: lf_fundamental");
@@ -119,16 +119,16 @@ n("th.lf-p-term", "P-Term in the soup", "For strict $W$, a thread with $\\Sigma 
 n("th.Erel-bind", "Bind", "For every cost table, if $e \\in E^{W}_{n}\\llbracket\\Theta_1 \\vdash T\\rrbracket^{F \\cup \\mathsf{heads}\\,\\Theta_2}$ and $f[v] \\in E^{W'}_{j}\\llbracket\\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}$ for all $W' \\sqsupseteq W$, $j \\leq n$ and $v \\in V^{W'}_{j}\\llbracket\\Theta_v \\vdash T\\rrbracket$, then $f[e] \\in E^{W}_{n}\\llbracket\\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}$.", "Every rule with a subterm runs the subterm first. The frame holds $\\Theta_2$ while the hole runs, so the hole must not wait above $\\mathsf{heads}\\,\\Theta_2$.", DEF, "$\\mathsf{let}\\ \\ast = \\mathsf{close}\\,c\\ \\mathsf{in}\\ \\mathsf{close}\\,d$ runs $\\mathsf{close}\\,c$ with $\\overline{x_d}$ in its future.", "compat/Bind.v: Erel_bind");
 n("th.soundness", "Soundness", "For strict $W$, $\\varnothing \\vdash^{\\infty}_{W} p : T$ implies that $p$ is deadlock free.", "The fundamental theorem for processes followed by adequacy.", DEF, "The cycle example is deadlock free.", "static/FundamentalProc.v: soundness");
 n("th.live-soundness", "Live soundness", "For strict $W$, $\\varnothing \\vdash^{\\infty}_{W} p : T$ and $\\vdash\\!\\triangleright p$ imply that $p$ is deadlock free and has no $\\tau$-divergence.", "The live fundamental theorem for processes followed by live adequacy.", DEF, "The receive loop and the pipeline stage.", "static/FundamentalProc.v: live_soundness");
-n("th.soundness-source", "Soundness for source terms", "For strict $W$, $\\mathsf{prim}\\,T$ and $\\varnothing ; \\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W} t : T$, the process $(\\varnothing, \\{t\\})$ is deadlock free.", "A source term creates channels only at fresh roots and at fields of held ends, so it is P-Term with $\\Sigma = \\varnothing$ and $C_0 = \\varnothing$.", DEF, "Every deadlock-free example.", "static/FundamentalProc.v: soundness_source");
+n("th.soundness-source", "Soundness for source terms", "For strict $W$, $\\mathsf{prim}\\,T$ and $\\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W} t : T$, the process $(\\varnothing, \\{t\\})$ is deadlock free.", "A source term creates channels only at fresh roots and at fields of held ends, so it is P-Term with $\\Sigma = \\varnothing$ and $C_0 = \\varnothing$.", DEF, "Every deadlock-free example.", "static/FundamentalProc.v: soundness_source");
 n("th.lf-soundness", "Lock-free soundness", "For $W$ with $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$, $\\varnothing \\Vdash^{N}_{W} p : T$ implies that $p$ is lock free.", "The lock-free fundamental theorem followed by lock-free adequacy.", DEF, "The cycle example is lock free.", "soup/LFTyped.v: lf_soundness");
-n("th.lf-soundness-source", "Lock-free soundness for source terms", "For $W$ with $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$, $N \\in \\mathbb{N}$, $\\mathsf{prim}\\,T$, a typing $\\varnothing;\\varnothing;\\varnothing \\vdash^{\\varnothing}_{W,N} t : T^{a} \\triangleright c ; \\vartheta$, some $tk$ with $\\mathsf{meets}\\,\\vartheta\\,0\\,tk$, and $\\varnothing \\vdash\\!\\triangleright t$, the process $(\\varnothing, \\{t\\})$ is lock free.", "The premises are those of P-Term at finite $N$ with $\\Sigma = \\varnothing$ and $C_0 = \\varnothing$, plus the guard. Lock-free soundness then applies.", DEF, "Every lock-free example.", "soup/LFCompose.v: lf_soundness_source");
-n("th.conservative", "Conservativity", "The merged judgment at $N = \\infty$ derives some $T_{df}^{a} \\triangleright c ; \\vartheta$ iff the deadlock-free judgment derives $T_{df}$, at erased contexts.", "Deadlock-free typing is the merged judgment with credits, costs and ticket needs ignored, so one set of rules serves both.", DEF, "The client and server main.", "static/Conservativity.v: conservative");
-n("th.typed-dftyped", "Erasure to deadlock-free typing", "For every $N$, erasing the annotations of a merged derivation gives a deadlock-free derivation.", "Hence every lock-free typing is also a deadlock-free typing.", DEF, "The cycle at $N = 2$ erases to its deadlock-free typing.", "static/Conservativity.v: typed_dftyped");
+n("th.lf-soundness-source", "Lock-free soundness for source terms", "For $W$ with $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$, $N \\in \\mathbb{N}$, $\\mathsf{prim}\\,T$, a typing $\\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W,N} t : T\\ !\\ (c, \\vartheta)$, some $tk$ with $\\mathsf{meets}\\,\\vartheta\\,0\\,tk$, and $\\varnothing \\vdash\\!\\triangleright t$, the process $(\\varnothing, \\{t\\})$ is lock free.", "The premises are those of P-Term at finite $N$ with $\\Sigma = \\varnothing$ and $C_0 = \\varnothing$, plus the guard. Lock-free soundness then applies.", DEF, "Every lock-free example.", "soup/LFCompose.v: lf_soundness_source");
+n("th.conservative", "Conservativity", "The annotated typing judgment at $N = \\infty$ derives some $T_{df}\\ !\\ \\varepsilon$ iff the deadlock-free judgment derives $T_{df}$, at erased contexts.", "Deadlock-free typing is the annotated typing judgment with credits, costs and ticket needs ignored, so one set of rules serves both.", DEF, "The client and server main.", "static/Conservativity.v: conservative");
+n("th.typed-dftyped", "Erasure to deadlock-free typing", "For every $N$, erasing the annotations of an annotated derivation gives a deadlock-free derivation.", "Hence every lock-free typing is also a deadlock-free typing.", DEF, "The cycle at $N = 2$ erases to its deadlock-free typing.", "static/Conservativity.v: typed_dftyped");
 n("th.live-sub-df", "Live inside deadlock-free", "For a closed process $p$ with $\\mathsf{prim}\\,T$ and no box in $T$, $\\varnothing \\mathrel{|\\!\\!\\vDash}_W p : T$ implies $\\varnothing \\vDash_W p : T$.", "At such $T$ the value relation reads no term relation, so it agrees for both cost tables at every level.", DEF, "Every example with result $\\ast$.", "compat/LiveDF.v: live_sub_df");
 n("th.nobox", "$\\Box \\notin T$", "$T$ contains no box type $\\Box(\\ldots)$.", "A box value carries code, whose relation depends on the cost table. A $\\mathsf{prim}$ type without boxes carries no code.", DEF, "$\\ast$ and $\\ast \\otimes \\ast$ contain no box.", "compat/LiveDF.v: boxfree");
 n("th.wfworld", "$\\mathsf{wfworld}\\,W$", "$\\prec_W$ is well-founded, there is no infinite descending chain $x_0 \\succ_W x_1 \\succ_W \\cdots$.", "A chain of waiting threads descends in $\\prec_W$, so well-foundedness makes it finite. Deadlock freedom does not need it.", DEF, "Every world of the lock-free examples is well-founded.", "types/Worlds.v: wfworld");
-n("th.cost-fundamental", "Cost fundamental theorem", "The merged judgment implies the semantic cost judgment $\\Theta;\\Delta \\vDash^{N} e : T^{a} \\triangleright c ; \\vartheta$.", "It is the cost half of the merged judgment, proved rule by rule.", DEF, "The forwarder $\\mathsf{fw}$.", "cost/CostFund.v: cost_fundamental");
-n("th.fsem-of-cost", "Fuel from cost typing", "If $\\Theta;\\varnothing;\\varnothing \\vdash^{\\varnothing}_{W,N} e : T^{a} \\triangleright c ; \\vartheta$, $\\mathsf{prim}\\,T$, every credit of $\\Theta$ is at most $N$ and $\\mathsf{meets}\\,\\vartheta\\,0\\,tk$, then $\\mathsf{fsem}\\,N\\,(\\mathsf{sty} \\circ \\Theta)\\,e$.", "P-Term gives every end credit $N$, so the cost judgment yields the per-thread fuel that lock freedom needs.", "If a closure could mention an end it does not own, the forwarder could receive a closure that owns nothing and would have no fuel after spawning it.", "The forwarder $\\mathsf{fw}$.", "cost/CostFund.v: fsem_of_cost");
+n("th.cost-fundamental", "Cost fundamental theorem", "The annotated typing judgment implies the semantic cost judgment $\\Delta \\vDash^{N} e : T\\ !\\ \\varepsilon$.", "It is the cost half of the annotated typing judgment, proved rule by rule.", DEF, "The forwarder $\\mathsf{fw}$.", "cost/CostFund.v: cost_fundamental");
+n("th.fsem-of-cost", "Fuel from cost typing", "If $\\varnothing ; \\Delta \\vdash^{\\varnothing}_{W,N} e : T\\ !\\ (c, \\vartheta)$, $\\mathsf{prim}\\,T$, every credit of $\\Delta$ is at most $N$ and $\\mathsf{meets}\\,\\vartheta\\,0\\,tk$, then $\\mathsf{fsem}\\,N\\,(\\mathsf{sty} \\circ \\Delta)\\,e$.", "P-Term gives every end credit $N$, so the cost judgment yields the per-thread fuel that lock freedom needs.", "If a closure could mention an end it does not own, the forwarder could receive a closure that owns nothing and would have no fuel after spawning it.", "The forwarder $\\mathsf{fw}$.", "cost/CostFund.v: fsem_of_cost");
 n("th.Prel", "The process relation $P$", "$P[\\kappa]^{W}_{n}\\llbracket\\Sigma \\vdash T\\rrbracket$, the processes in the relation at table $\\kappa$, world $W$, level $n$, interface $\\Sigma$ and result $T$.", "The semantic process judgment asks membership at every level $n$.", DEF, "Two threads closing $c^{+}$ and $c^{-}$ lie in $P^{W}_{n}\\llbracket\\varnothing \\vdash \\ast\\rrbracket$ for every $n$.", "relation/Relation.v: Prel");
 n("th.Erel", "The term relation $E$", "$E[\\kappa]^{W}_{n}\\llbracket\\Theta \\vdash T\\rrbracket^{F}$ is the set of terms in the relation at cost table $\\kappa$, world $W$ and level $n$, for ends $\\Theta$, result $T$ and future $F$.", "The semantic term judgment asks membership at every level and for every grounding of the variables.", DEF, "$\\mathsf{close}\\,c^{+} \\in E^{W}_{n}\\llbracket\\{c^{+} \\mapsto \\mathsf{Close}@x\\} \\vdash \\ast\\rrbracket^{\\varnothing}$.", "relation/Relation.v: Erel");
 n("th.Vrel", "The value relation $V$", "$V^{W}_{j}\\llbracket\\Theta \\vdash T\\rrbracket$ is the set of values in the relation at world $W$ and level $j$, for ends $\\Theta$ and type $T$.", "A term in $E$ that is irreducible is a value in $V$.", DEF, "$c^{+} \\in V^{W}_{j}\\llbracket\\{c^{+} \\mapsto \\mathsf{Close}@x\\} \\vdash \\mathsf{Close}@x\\rrbracket$.", "relation/Relation.v: Vrel");
@@ -136,19 +136,19 @@ n("th.soup", "The soup $S^{N,W}_{n}$", "$a \\in S^{N,W}_{n}\\llbracket\\Sigma \\
 n("th.qa", "$q_a$", "The configuration of the soup state $a$.", "A soup state is a configuration together with ownership and tickets.", DEF, "$q_a = (C, M)$.", "soup/State.v: s_q");
 n("th.conn", "$\\mathsf{conn}$", "The side conditions of P-Connect, with $\\Sigma_D$ the partners of $\\Sigma_C$ dual up to $\\approx$ at dual points.", "They make the composite a process in which every channel lives in one place.", DEF, "$\\Sigma_C = \\{c^{+} \\mapsto \\mathsf{Close}@x\\}$ and $\\Sigma_D = \\{c^{-} \\mapsto \\mathsf{Close}@\\overline{x}\\}$.", "compat/Connect.v: conn, cut_dual");
 n("th.par", "$p_1 \\parallel_{\\Sigma_C} p_2$", "The composite $(C_1 \\cup C_2 \\cup \\mathsf{chans}\\,\\Sigma_C, E_1 \\uplus E_2)$ of $p_1 = (C_1, E_1)$ and $p_2 = (C_2, E_2)$.", "After composition the two sides communicate on the cut, which no outside process sees.", DEF, "$\\mathsf{close}\\,c^{+} \\parallel \\mathsf{close}\\,c^{-}$ restricts $c$.", "compat/Connect.v: pconn");
-n("th.df", "Erasure $X_{df}$", "$\\Theta_{df}$, $\\Delta_{df}$ and $T_{df}$ drop every credit, cost and ticket need and keep session types, points and facts.", "Deadlock-free typing and the relations read no annotation.", DEF, "$(S@x)^{3}$ erases to $S@x$.", "types/Types.v: ty_df, static/Contexts.v: tenv_df, lenv_df");
-n("th.styof", "$\\mathsf{sty} \\circ \\Theta$", "The map that sends each end $o \\in \\mathrm{dom}\\,\\Theta$ with $\\Theta(o) = S@x^{a}$ to $S$.", "The fuel layer reads protocols, not points or credits.", DEF, "$\\{a \\mapsto (S@x)^{N}\\}$ gives $\\{a \\mapsto S\\}$.", "cost/CostFund.v: fsem_of_cost");
+n("th.df", "Erasure $X_{df}$", "$\\Delta_{df}$ and $T_{df}$ drop every credit, cost and ticket need and keep session types, points and facts.", "Deadlock-free typing and the relations read no annotation.", DEF, "$(S@x)^{3}$ erases to $S@x$.", "types/Types.v: ty_df, static/Contexts.v: tenv_df, lenv_df");
+n("th.styof", "$\\mathsf{sty} \\circ \\Delta$", "The map that sends each end $o$ of $\\Delta$ with $\\Delta(o) = (S@x)^{a}$ to $S$.", "The fuel layer reads protocols, not points or credits.", DEF, "$\\{a \\mapsto (S@x)^{N}\\}$ gives $\\{a \\mapsto S\\}$.", "cost/CostFund.v: fsem_of_cost");
 
 // ---- examples ----
 examples.push(
   { id: 'ex-cs', title: 'Client and server cycle', modes: ['df', 'live', 'lf'],
-    code: `main = let (a, a′) = new in                    -- a at ρ
-       let (b, b′) = new in                    -- b at ρ·0, facts C at (ρ, ρ·0, ρ·1)
-       let () = spawn (λu. let () = u in (force srv) ⟨a′, b′⟩) in
+    code: `main = let ⟨a, a′⟩ = new in                    -- a at ρ
+       let ⟨b, b′⟩ = new in                    -- b at ρ·0, facts C at (ρ, ρ·0, ρ·1)
+       let ∗ = spawn (λu. let ∗ = u in (force srv) ⟨a′, b′⟩) in
        (force cli) ⟨a, b⟩
-cli  = !(f = λp. let (a, b) = p in let a = send ⟨∗, a⟩ in
-                let (u, b) = recv b in let () = u in (force f) ⟨a, b⟩)
-srv  = !(g = λp. let (a, b) = p in let (u, a) = recv a in let () = u in
+cli  = !(f = λp. let ⟨a, b⟩ = p in let a = send ⟨∗, a⟩ in
+                let ⟨u, b⟩ = recv b in let ∗ = u in (force f) ⟨a, b⟩)
+srv  = !(g = λp. let ⟨a, b⟩ = p in let ⟨u, a⟩ = recv a in let ∗ = u in
                 let b = send ⟨∗, b⟩ in (force g) ⟨a, b⟩)
 -- both boxes : □∀ι κ ζ. C. ∗ ⊸ (S1@ι ⊗ S2@κ ⊸^ζ ∗)
 -- C = {ι+k ≺ (κ+k)‾, κ+k ≺ (ι+k+1)‾, ι+k ≺ ζ, κ+k ≺ ζ | k}`,
@@ -156,43 +156,43 @@ srv  = !(g = λp. let (a, b) = p in let (u, a) = recv a in let () = u in
     rocq: 'examples/ClientServer.v: cs_typed; examples/LFClientServer.v: cs_lftyped, cs_lock_free',
     accepts: { df: { ok: true, rocq: 'cs_dftyped, cs_typed' }, live: { ok: true, rocq: 'cs_dftyped, cs_guarded' }, lf: { ok: true, N: 3, rocq: 'cs_lftyped, cs_lock_free' } } },
   { id: 'ex-cycle', title: 'Cycle', modes: ['df', 'live', 'lf'],
-    code: `cycle = let (c, c′) = new in          -- c at ρ
-        let (d, d′) = new in          -- d at ρ·0, C = {ρ ≺ (ρ·0)‾, ρ‾ ≺ ρ·0}
-        let () = spawn (λu. let () = u in let () = close c′ in close d′) in
-        let () = close c in close d`,
+    code: `cycle = let ⟨c, c′⟩ = new in          -- c at ρ
+        let ⟨d, d′⟩ = new in          -- d at ρ·0, C = {ρ ≺ (ρ·0)‾, ρ‾ ≺ ρ·0}
+        let ∗ = spawn (λu. let ∗ = u in let ∗ = close c′ in close d′) in
+        let ∗ = close c in close d`,
     shows: "The second $\\mathsf{new}$ states exactly $\\rho \\prec \\overline{\\rho\\cdot 0}$ and $\\overline{\\rho} \\prec \\rho\\cdot 0$, the two facts the two threads need.",
     rocq: 'examples/Cycle.v: cy_typed; examples/LFCycle.v: cy_lftyped, cy_lock_free',
     accepts: { df: { ok: true, rocq: 'cy_dftyped, cy_typed' }, live: { ok: true, rocq: 'cy_dftyped, cy_guarded' }, lf: { ok: true, N: 2, rocq: 'cy_lftyped, cy_lock_free' } } },
   { id: 'ex-between', title: 'A channel between two box arguments', modes: ['df', 'live', 'lf'],
     code: `between : □(∀ι κ. C. ∗ ⊸ Close@ι ⊗ Close@κ ⊸^κ ∗)
-between = !(f = λp. let (c, e) = p in
-                    let (d, d′) = new in        -- d at ι·0
-                    let () = spawn (λu. let () = u in close d′) in
-                    let () = close c in let () = close d in close e)
+between = !(f = λp. let ⟨c, e⟩ = p in
+                    let ⟨d, d′⟩ = new in        -- d at ι·0
+                    let ∗ = spawn (λu. let ∗ = u in close d′) in
+                    let ∗ = close c in let ∗ = close d in close e)
 -- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾, δ ≺ κ, δ ≺ κ‾},  δ = ι·0
 main: c by new at ρ, e by new at ρ·1, force between at (ρ, ρ·1)`,
     shows: "The box places its new channel at the field $\\iota\\cdot 0$ of the point of $c$, so no point between two box points is needed.",
     rocq: 'examples/FreshBetween.v: fb_typed; examples/LFFreshBetween.v: fb_lftyped, fb_lock_free',
     accepts: { df: { ok: true, rocq: 'fb_dftyped, fb_typed' }, live: { ok: true, rocq: 'fb_dftyped, fb_guarded' }, lf: { ok: true, N: 2, rocq: 'fb_lftyped, fb_lock_free' } } },
   { id: 'ex-many', title: 'A channel that acts several times', modes: ['df', 'live', 'lf'],
-    code: `many = !(f = λp. let (c, e) = p in
-                 let (d, d′) = new in         -- d at δ
-                 let () = spawn (λu. let () = u in
-                                     let (v, d′) = recv d′ in let () = v in
-                                     let (w, d′) = recv d′ in let () = w in close d′) in
-                 let () = close c in
-                 let () = close (send ⟨∗, send ⟨∗, d⟩⟩) in close e)
+    code: `many = !(f = λp. let ⟨c, e⟩ = p in
+                 let ⟨d, d′⟩ = new in         -- d at δ
+                 let ∗ = spawn (λu. let ∗ = u in
+                                     let ⟨v, d′⟩ = recv d′ in let ∗ = v in
+                                     let ⟨w, d′⟩ = recv d′ in let ∗ = w in close d′) in
+                 let ∗ = close c in
+                 let ∗ = close (send ⟨∗, send ⟨∗, d⟩⟩) in close e)
 -- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾} ∪ {δ+k ≺ κ, δ+k ≺ κ‾ | k},  δ = ι·0`,
     shows: "An infinite box constraint lets $d$ act at $\\delta, \\delta^{+}, \\delta^{++}$ while $e$ is held at $\\kappa$.",
     rocq: 'examples/FreshMany.v: fm_typed; examples/LFFreshMany.v: fm_lftyped, fm_lock_free',
     accepts: { df: { ok: true, rocq: 'fm_dftyped, fm_typed' }, live: { ok: true, rocq: 'fm_dftyped, fm_guarded' }, lf: { ok: true, N: 4, rocq: 'fm_lftyped, fm_lock_free' } } },
   { id: 'ex-factory', title: 'The factory', modes: ['df', 'live', 'lf'],
-    code: `mk₀  = !(f = λu. let () = u in let (c, c′) = new in
-                let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in c′)
-mk₁  = !(f = λp. let (c, c′) = new in
-                let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in ⟨p, c′⟩)
+    code: `mk₀  = !(f = λu. let ∗ = u in let ⟨c, c′⟩ = new in
+                let ∗ = spawn (λv. let ∗ = v in close (send ⟨∗, c⟩)) in c′)
+mk₁  = !(f = λp. let ⟨c, c′⟩ = new in
+                let ∗ = spawn (λv. let ∗ = v in close (send ⟨∗, c⟩)) in ⟨p, c′⟩)
 main = let p = (force mk₀) ∗ in let ⟨p, q⟩ = (force mk₁) p in
-       let () = recvclose p in recvclose q
+       let ∗ = recvclose p in recvclose q
 -- mk₀ places c at a fresh ρ with C(ρ) = {ρ‾ ≺ ρ·0, ρ‾⁺ ≺ ρ·0}, mk₁ at ι·0 for p at ι
 -- mk₀ : □(∗ ⊸ ∃^⊥ ι. C(ι). (?∗.Close)@ι‾)`,
     shows: "The first call creates at a fresh root and the second at a field of the end it receives, two typings of the same creation.",
@@ -201,14 +201,14 @@ main = let p = (force mk₀) ∗ in let ⟨p, q⟩ = (force mk₁) p in
   { id: 'ex-ring', title: 'The growing ring', modes: ['df', 'live', 'lf'],
     code: `Sch  = µα. ?(κ. α@κ).Close
 ring : □(∀ι₁ ι₂. Cr. ∗ ⊸ (Sch@ι₁ ⊗ S̄ch@ι₂ ⊸^{ι₁+1} ∗))
-ring = !(f = λp. let (x, y) = p in
-           let (a, a′) = new in                -- a at ι₂·0
-           let () = spawn (λw. let () = w in close (send ⟨a, y⟩)) in
-           let (b, b′) = new in                -- b at ι₁·1
-           let (z, x) = recv x in let () = close x in
-           let () = spawn (λw. let () = w in (force f) ⟨z, b′⟩) in
-           spawn (λw. let () = w in (force f) ⟨b, a′⟩))
-main = let (e, e′) = new in (force ring) ⟨e, e′⟩`,
+ring = !(f = λp. let ⟨x, y⟩ = p in
+           let ⟨a, a′⟩ = new in                -- a at ι₂·0
+           let ∗ = spawn (λw. let ∗ = w in close (send ⟨a, y⟩)) in
+           let ⟨b, b′⟩ = new in                -- b at ι₁·1
+           let ⟨z, x⟩ = recv x in let ∗ = close x in
+           let ∗ = spawn (λw. let ∗ = w in (force f) ⟨z, b′⟩) in
+           spawn (λw. let ∗ = w in (force f) ⟨b, a′⟩))
+main = let ⟨e, e′⟩ = new in (force ring) ⟨e, e′⟩`,
     shows: "$b$ is created at $\\iota_1\\cdot 1$ before the receive on $x$, while $x$ is held at $\\iota_1$.",
     rocq: 'examples/GrowRing.v: rg_typed; examples/LFGrowRing.v: rg_lftyped, rg_lock_free',
     accepts: { df: { ok: true, rocq: 'rg_dftyped, rg_typed' }, live: { ok: true, rocq: 'rg_dftyped, rg_guarded' }, lf: { ok: true, N: 4, rocq: 'rg_lftyped, rg_lock_free' } } },
@@ -236,21 +236,21 @@ stage = !(f = λin. let ⟨v, in⟩ = recv in in let ∗ = close in in
     accepts: { live: { ok: true, part: 'guard', rocq: 'loop_guarded, stage_guarded' }, lf: { ok: true, part: 'guard', rocq: 'loop_guarded, stage_guarded' } } },
   { id: 'ex-forwarder', title: 'The spawn forwarder', modes: ['lf'],
     code: `fw o = let ⟨w, c⟩ = recv o in let ∗ = close c in spawn w
-o : ?(∗ ⊸ ∗)^2.end
+o : ?((∗ ⊸ ∗)^2).Close
 dead_thunk q = λ_. let ∗ = Ω in close q`,
     shows: "$\\mathsf{dead\\_thunk}\\,q$ mentions $q$ and owns nothing, so it is not in the fuel relation and $\\mathsf{fw}$ has fuel for every closure it receives.",
     rocq: 'cost/Forwarder.v: dead_thunk_rejected, fw_ptyped; cost/CostFund.v: fw_fsem',
     accepts: { lf: { ok: true, N: 'every', part: 'typing and fuel', rocq: 'fw_ptyped, fw_fsem, dead_thunk_rejected' } } },
   { id: 'ex-controller', title: 'The controller', modes: ['lf'],
-    code: `main = let (a, a′) = new in let (b, b′) = new in   -- a at ρ, b at ρ·0
-       let (c, c′) = new in                              -- c at ρ·2
-       let () = spawn (λu. let () = u in (force srv) ⟨⟨a′, b′⟩, c′⟩) in
+    code: `main = let ⟨a, a′⟩ = new in let ⟨b, b′⟩ = new in   -- a at ρ, b at ρ·0
+       let ⟨c, c′⟩ = new in                              -- c at ρ·2
+       let ∗ = spawn (λu. let ∗ = u in (force srv) ⟨⟨a′, b′⟩, c′⟩) in
        (force cli) ⟨⟨a, b⟩, c⟩
-cli  = !(f = λp. let (q, k) = p in let (a, b) = q in
-                let a = send ⟨∗, a⟩ in let (u, b) = recv b in
-                let () = u in (force f) ⟨⟨a, b⟩, k⟩)
+cli  = !(f = λp. let ⟨q, k⟩ = p in let ⟨a, b⟩ = q in
+                let a = send ⟨∗, a⟩ in let ⟨u, b⟩ = recv b in
+                let ∗ = u in (force f) ⟨⟨a, b⟩, k⟩)
 -- c sits at Skip on each side, an idle end`,
-    shows: "The idle end $k$ at $\\mathsf{Skip}@\\chi$ is held across every round at credit $0$, because $(\\mathsf{Skip}@\\chi, a) - c = (\\mathsf{Skip}@\\chi, \\max(a - c, 0))$ asks no $c \\leq a$.",
+    shows: "The idle end $k$ at $\\mathsf{Skip}@\\chi$ is held across every round at credit $0$, because $(\\mathsf{Skip}@\\chi)^{a} - c = (\\mathsf{Skip}@\\chi)^{\\max(a - c, 0)}$ asks no $c \\leq a$.",
     rocq: 'examples/LFController.v: ctl_typedN, ctl_guarded, ctl_lftyped, ctl_lock_free',
     accepts: { lf: { ok: true, N: 3, rocq: 'ctl_lftyped' } } }
 );
@@ -266,7 +266,7 @@ const aK = A(R`\kappa`, R`a cost table, $\kappa_{DF}$ for deadlock freedom and $
 const aN = A('n', R`the level, a natural number`);
 const aSi = A(R`\Sigma`, R`the interface of the process`);
 const aTh = A(R`\Theta`, R`the ends held by the term`);
-const aDe = A(R`\Delta`, R`the variable context`);
+const aDe = A(R`\Delta`, R`the linear context of ends and variables`);
 const aF = A('F', R`the future`);
 const aNf = A('N', R`the refill, a natural number for lock freedom`);
 const run = [A(R`(r, l)`, R`a run, $r\,i$ the configuration and $l\,i$ the event at position $i$`)];
@@ -277,10 +277,10 @@ sa('th.lf-adequacy', R`\mathsf{strict}\,W \land \mathsf{wfworld}\,W \land \varno
 sa('th.lf-thread-progress', R`\ldots \Rightarrow \forall (r, l).\ \mathsf{erase}(r\,0) = p \land \mathsf{maximal}\,(r, l) \land \mathsf{wfair}\,(r, l) \Rightarrow \mathsf{thread\_progress\_run}\,(r, l)`, [aW, aP, ...run]);
 sa('th.soup-no-tau', R`(\forall n.\ a \in S^{N,W}_{n}\llbracket\varnothing \vdash T\rrbracket) \Rightarrow \mathsf{no\_tau\_divergence}(\mathsf{erase}\,q_a)`, [A('a', R`a soup state, fixed before the level`), aN, A(R`q_a`, R`the configuration of $a$`)]);
 sa('th.lfsoup-step', R`a \in S^{N,W}_{n+1} \land q_a \xrightarrow{ev} q' \Rightarrow \mathsf{lf\_next}\,N\,a\,ev\,q' \in S^{N,W}_{n}`, [A('a', R`a soup state at level $n + 1$`), A('ev', R`the event of the step`), A(R`q'`, R`the configuration after the step`)]);
-sa('th.fundamental', R`\mathsf{strict}\,W \land \Theta ; \varnothing ; \Delta \vdash^{F}_{W} t : T \Rightarrow \Theta ; \Delta \vDash^{F}_{W} t : T`, [aW, aTh, aDe, aF, A('t', R`the term`), A('T', R`its type`)]);
-sa('th.fundamental-typed', R`\mathsf{strict}\,W \land \Theta ; \varnothing ; \Delta \vdash^{F}_{W,N} t : T^{a} \triangleright c ; \vartheta \Rightarrow \Theta_{df} ; \Delta_{df} \vDash^{F}_{W} t : T_{df}`, [aW, aTh, aDe, A('N', R`any refill`)]);
-sa('th.live-fundamental', R`\mathsf{strict}\,W \land \Theta ; \varnothing ; \Delta \vdash^{F}_{W} t : T \land \varnothing \vdash\!\triangleright t \Rightarrow \Theta ; \Delta \mathrel{|\!\!\vDash}^{F}_{W} t : T`, [aW, aTh, aDe, aF, A('t', R`the guarded term`)]);
-sa('th.live-fundamental-typed', R`\mathsf{strict}\,W \land \ldots \vdash^{F}_{W,N} t : T^{a} \triangleright c ; \vartheta \land \varnothing \vdash\!\triangleright t \Rightarrow \Theta_{df} ; \Delta_{df} \mathrel{|\!\!\vDash}^{F}_{W} t : T_{df}`, [aW, A('N', R`any refill`), A('t', R`the guarded term`)]);
+sa('th.fundamental', R`\mathsf{strict}\,W \land \varnothing ; \Delta \vdash^{F}_{W} t : T \Rightarrow \Delta \vDash^{F}_{W} t : T`, [aW, aDe, aF, A('t', R`the term`), A('T', R`its type`)]);
+sa('th.fundamental-typed', R`\mathsf{strict}\,W \land \varnothing ; \Delta \vdash^{F}_{W,N} t : T\ !\ \varepsilon \Rightarrow \Delta_{df} \vDash^{F}_{W} t : T_{df}`, [aW, aDe, A('N', R`any refill`)]);
+sa('th.live-fundamental', R`\mathsf{strict}\,W \land \varnothing ; \Delta \vdash^{F}_{W} t : T \land \varnothing \vdash\!\triangleright t \Rightarrow \Delta \mathrel{|\!\!\vDash}^{F}_{W} t : T`, [aW, aDe, aF, A('t', R`the guarded term`)]);
+sa('th.live-fundamental-typed', R`\mathsf{strict}\,W \land \ldots \vdash^{F}_{W,N} t : T\ !\ \varepsilon \land \varnothing \vdash\!\triangleright t \Rightarrow \Delta_{df} \mathrel{|\!\!\vDash}^{F}_{W} t : T_{df}`, [aW, A('N', R`any refill`), A('t', R`the guarded term`)]);
 sa('th.fundamental-proc', R`\mathsf{strict}\,W \land \Sigma \vdash^{\infty}_{W} p : T \Rightarrow \Sigma \vDash_W p : T`, [aW, aSi, aP, aT]);
 sa('th.live-fundamental-proc', R`\mathsf{strict}\,W \land \Sigma \vdash^{\infty}_{W} p : T \land \vdash\!\triangleright p \Rightarrow \Sigma \mathrel{|\!\!\vDash}_W p : T`, [aW, aSi, aP, aT]);
 sa('th.lf-fundamental', R`\mathsf{strict}\,W \land \Sigma \Vdash^{N}_{W} p : T \Rightarrow \Sigma \Vvdash_W p : T`, [aW, aSi, aNf, aP, aT]);
@@ -291,16 +291,16 @@ sa('th.lf-p-term', R`\mathsf{strict}\,W \land \Sigma \Vdash^{N}_{W} (C_0, \{t\})
 sa('th.Erel-bind', R`e \in E^{W}_{n}\llbracket\Theta_1 \vdash T\rrbracket^{F \cup \mathsf{heads}\,\Theta_2} \land (\forall W' \sqsupseteq W, j \leq n, v.\ \ldots) \Rightarrow f[e] \in E^{W}_{n}\llbracket\Theta_1 \cup \Theta_2 \vdash U\rrbracket^{F}`, [A('f', R`an evaluation frame`), A(R`\Theta_2`, R`the ends the frame holds while $e$ runs`), A(R`W', j, v`, R`every later world, every level $j \leq n$ and every value $v$ in $V^{W'}_{j}$ that $e$ may return`)]);
 sa('th.soundness', R`\mathsf{strict}\,W \land \varnothing \vdash^{\infty}_{W} p : T \Rightarrow \mathsf{deadlock\_free}\,p`, [aW, aP, aT]);
 sa('th.live-soundness', R`\mathsf{strict}\,W \land \varnothing \vdash^{\infty}_{W} p : T \land \vdash\!\triangleright p \Rightarrow \mathsf{deadlock\_free}\,p \land \mathsf{no\_tau\_divergence}\,p`, [aW, aP, aT]);
-sa('th.soundness-source', R`\mathsf{strict}\,W \land \mathsf{prim}\,T \land \varnothing ; \varnothing ; \varnothing \vdash^{\varnothing}_{W} t : T \Rightarrow \mathsf{deadlock\_free}(\varnothing, \{t\})`, [aW, A('t', R`a source term, the main thread`), aT]);
+sa('th.soundness-source', R`\mathsf{strict}\,W \land \mathsf{prim}\,T \land \varnothing ; \varnothing \vdash^{\varnothing}_{W} t : T \Rightarrow \mathsf{deadlock\_free}(\varnothing, \{t\})`, [aW, A('t', R`a source term, the main thread`), aT]);
 sa('th.lf-soundness', R`\mathsf{strict}\,W \land \mathsf{wfworld}\,W \land \varnothing \Vdash^{N}_{W} p : T \Rightarrow \mathsf{lock\_free}\,p`, [aW, aNf, aP, aT]);
 sa('th.lf-soundness-source', R`\mathsf{strict}\,W \land \mathsf{wfworld}\,W \land N \in \mathbb{N} \land \ldots \Rightarrow \mathsf{lock\_free}(\varnothing, \{t\})`, [aW, aNf, A('t', R`the source term`), A('tk', R`a ticket count with $\mathsf{meets}\,\vartheta\,0\,tk$`)]);
-sa('th.conservative', R`(\exists a\,c\,\vartheta.\ \ldots \vdash^{F}_{W,\infty} e : T_{df}^{a} \triangleright c ; \vartheta) \iff \ldots \vdash^{F}_{W} e : T_{df}`, [A(R`a, c, \vartheta`, R`some credit, cost and ticket need`), A('e', R`the term`)]);
-sa('th.typed-dftyped', R`\Theta ; \Gamma ; \Delta \vdash^{F}_{W,N} e : T^{a} \triangleright c ; \vartheta \Rightarrow \Theta_{df} ; \Gamma ; \Delta_{df} \vdash^{F}_{W} e : T_{df}`, [A('N', R`any refill`)]);
+sa('th.conservative', R`(\exists \varepsilon.\ \ldots \vdash^{F}_{W,\infty} e : T_{df}\ !\ \varepsilon) \iff \ldots \vdash^{F}_{W} e : T_{df}`, [A(R`a, c, \vartheta`, R`some credit, cost and ticket need`), A('e', R`the term`)]);
+sa('th.typed-dftyped', R`\Gamma ; \Delta \vdash^{F}_{W,N} e : T\ !\ \varepsilon \Rightarrow \Gamma ; \Delta_{df} \vdash^{F}_{W} e : T_{df}`, [A('N', R`any refill`)]);
 sa('th.live-sub-df', R`\mathsf{prim}\,T \land \Box \notin T \land \varnothing \mathrel{|\!\!\vDash}_W p : T \Rightarrow \varnothing \vDash_W p : T`, [aP, aT]);
 sa('th.nobox', R`\Box \notin T`, [A('T', R`a type`)]);
 sa('th.wfworld', R`\mathsf{wfworld} : \mathsf{World} \to \mathsf{Prop}`, [aW]);
-sa('th.cost-fundamental', R`\Theta ; \Gamma ; \Delta \vdash^{F}_{W,N} e : T^{a} \triangleright c ; \vartheta \Rightarrow \Theta ; \Delta \vDash^{N} e : T^{a} \triangleright c ; \vartheta`, [A('N', R`the refill`), A('e', R`the term`)]);
-sa('th.fsem-of-cost', R`\ldots \vdash^{\varnothing}_{W,N} e : T^{a} \triangleright c ; \vartheta \land \mathsf{prim}\,T \land (\forall o.\ \mathsf{cr}(\Theta(o)) \leq N) \land \mathsf{meets}\,\vartheta\,0\,tk \Rightarrow \mathsf{fsem}\,N\,(\mathsf{sty} \circ \Theta)\,e`, [A(R`\Theta`, R`the ends of the thread`), A('tk', R`its ticket count`)]);
+sa('th.cost-fundamental', R`\Gamma ; \Delta \vdash^{F}_{W,N} e : T\ !\ \varepsilon \Rightarrow \Delta \vDash^{N} e : T\ !\ \varepsilon`, [A('N', R`the refill`), A('e', R`the term`)]);
+sa('th.fsem-of-cost', R`\ldots \vdash^{\varnothing}_{W,N} e : T\ !\ (c, \vartheta) \land \mathsf{prim}\,T \land (\forall o.\ \mathsf{cr}(\Delta(o)) \leq N) \land \mathsf{meets}\,\vartheta\,0\,tk \Rightarrow \mathsf{fsem}\,N\,(\mathsf{sty} \circ \Delta)\,e`, [A(R`\Theta`, R`the ends of the thread`), A('tk', R`its ticket count`)]);
 sa('th.Prel', R`P[\kappa]^{W}_{n}\llbracket\Sigma \vdash T\rrbracket \subseteq \mathsf{Proc}`, [aK, aW, aN, aSi, aT]);
 sa('th.Erel', R`E[\kappa]^{W}_{n}\llbracket\Theta \vdash T\rrbracket^{F} \subseteq \mathsf{Expr}`, [aK, aW, aN, aTh, A('T', R`the result type`), aF]);
 sa('th.Vrel', R`V^{W}_{j}\llbracket\Theta \vdash T\rrbracket \subseteq \mathsf{Val}`, [aW, A('j', R`the level`), aTh, A('T', R`the type`)]);
@@ -309,5 +309,5 @@ sa('th.qa', R`q_a : \mathsf{Config}`, [A('a', R`a soup state`)]);
 sa('th.conn', R`\mathsf{conn}\,\Sigma_1\,\Sigma_C\,C_1\,\Sigma_2\,\Sigma_D\,C_2`, [A(R`\Sigma_1, \Sigma_2`, R`the outer interfaces`), A(R`\Sigma_C, \Sigma_D`, R`the cut and its partners`), A(R`C_1, C_2`, R`the restricted channels of the two sides`)]);
 sa('th.par', R`p_1 \parallel_{\Sigma_C} p_2 = (C_1 \cup C_2 \cup \mathsf{chans}\,\Sigma_C, E_1 \uplus E_2)`, [A(R`p_i = (C_i, E_i)`, R`the two components`), A(R`\Sigma_C`, R`the cut`)]);
 sa('th.df', R`X \mapsto X_{df}`, [A('X', R`an end environment, a variable context or a type`)]);
-sa('th.styof', R`\mathsf{sty} \circ \Theta : \mathsf{End} \rightharpoonup \mathsf{Sty}`, [aTh]);
+sa('th.styof', R`\mathsf{sty} \circ \Delta : \mathsf{End} \rightharpoonup \mathsf{Sty}`, [aDe]);
 sa('th.tpr', R`\mathsf{thread\_progress\_run} : (\mathbb{N} \to \mathsf{Config}) \to (\mathbb{N} \to \mathsf{Event}_{\bot}) \to \mathsf{Prop}`, [...run, A('i, j', R`positions with $i \leq j$`), A('t', R`a thread identifier`)]);
