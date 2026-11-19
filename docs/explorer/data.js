@@ -571,21 +571,80 @@ window.MAP = {
    "intro": "The typing judgment assigns each term a type under a context of facts, ends and variables, and a future, the points at which the context acts after the term. Its rules check the order facts a thread needs when it waits. Process typing builds processes from typed threads. \\annp{Lock-free typing adds credits, costs and ticket needs at a finite refill $N$, and the guard.}",
    "blocks": [
     {
-     "id": "t-lf-intro",
-     "title": "What lock freedom adds to typing",
-     "rocq": "static/Typing.v: typed; static/Guard.v: lguard; types/Worlds.v: wfworld",
+     "id": "t-lf-credits",
+     "title": "Credits",
+     "rocq": "types/Types.v: TSess, TLolli; static/Contexts.v: tage, tcap; static/Typing.v: e_send, e_spawn_lam, e_spawn",
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{lll}\n\\text{mechanism} & \\text{written} & \\text{rules out} \\\\ \\hline\n\\htmlData{k=lfi.credit}{\\text{credits}} & (S@x)\\annot{^{a}},\\ (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} U)\\annot{^{a}} & \\text{a holder that acts elsewhere forever} \\\\\n\\htmlData{k=lfi.cost}{\\text{cost, aging, refill}} & e : T\\ !\\ (c, \\vartheta),\\ \\ \\Delta - c,\\ \\ (S@x^{+})\\annot{^{N}} & \\text{(the counting behind credits)} \\\\\n\\htmlData{k=lfi.floor}{\\text{floors}} & T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[\\varepsilon ; h]\\, U & \\text{(credits carried into a later call)} \\\\\n\\htmlData{k=lfi.hop}{\\text{hops}} & T' - 1 \\leq T[x\\cdot i],\\ \\ \\Delta - 1 & \\text{an end passed on forever} \\\\\n\\htmlData{k=lfi.tickets}{\\text{tickets}} & \\vartheta,\\ \\ \\htmlData{k=ann.tlink}{\\mathsf{tlink}},\\ \\ \\htmlData{k=ann.tspawn}{\\mathsf{tspawn}} & \\text{a waiter relinked to fresh ends forever} \\\\\n\\htmlData{k=lfi.guard}{\\text{guard}} & \\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t & \\text{internal steps forever} \\\\\n\\htmlData{k=lfi.wf}{\\text{well-founded world}} & \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W & \\text{an endless chain of waiting threads}\n\\end{array}",
-     "caption": "A deadlock-free program can keep one thread waiting forever while other threads step. Each row names one device that rules out one way of doing so. The note of each row gives the intuition and the example it rejects.",
+     "tex": "\\begin{array}{lll}\\htmlData{k=lfi.credit}{\\text{credit}} & \\htmlData{k=ty.credit}{(S@x)\\annot{^{a}},\\ (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} U)\\annot{^{a}}} & \\text{a lower bound on the counter of an end, or of the ends a closure captured} \\\\[3pt] \\htmlData{k=lfi.cost}{\\text{cost}} & \\htmlData{k=tj.eff}{e : T\\ !\\ (c, \\vartheta)} & \\text{the term performs at most $c$ actions before it returns} \\\\[3pt]  & \\htmlData{k=age.ctx}{\\Delta - c} & \\text{what is held while $e$ runs loses $c$, and each credit must be at least $c$} \\\\[3pt]  & \\htmlData{k=age.idle}{(\\mathsf{Skip}@x)\\annot{^{a}} - c} & \\text{an idle end loses credit without the check} \\\\[3pt]  & \\htmlData{k=act.refill}{(S@x^{+})\\annot{^{N}}} & \\text{an action returns its end with credit $N$} \\\\[3pt] \\htmlData{k=lfi.floor}{\\text{floor}} & \\htmlData{k=ty.arrow.floor}{T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[\\varepsilon ; h]\\, U} & \\text{the body of a closure may assume credit $h$ of each captured end} \\\\[3pt] \\htmlData{k=lfi.hop}{\\text{hop}} & \\htmlData{k=E-Send.floor}{T' - 1 \\leq T[x\\cdot i]} & \\text{a sent end loses one} \\\\[3pt]  & \\htmlData{k=E-SpawnLam.age}{\\Delta - 1},\\ \\htmlData{k=E-Spawn.credit}{a \\geq 1} & \\text{the ends a spawn hands to the child lose one}\\end{array}",
+     "caption": "Each end has a counter at run time, the number of actions its holder may perform on other ends before it must act on this end. A credit is a lower bound on that counter, so the holder postpones an end only finitely often. Aging lowers the credits of held values by the cost of the code that runs, an action restores its own end to $N$, and handing an end to another thread lowers its credit by one.",
      "about": {
-      "why": "Lock freedom requires that a waiting thread eventually takes part in a step. The rows list what typing adds to deadlock-free typing to establish this.",
+      "why": "Credits rule out a holder that acts on other ends forever while a partner waits, and an end that is passed between threads forever.",
+      "example": "Postponement and endless delegation in the Examples tab have no lock-free typing.",
       "used": [
-       "t-judgment",
        "t-agecap",
+       "r-fun",
        "r-act",
+       "r-threads",
+       "fv"
+      ]
+     }
+    },
+    {
+     "id": "t-lf-tickets",
+     "title": "Tickets",
+     "rocq": "types/Costs.v: tix, tapp, tlink, tspawn, tseq, tok; static/Typing.v: e_link, p_term",
+     "modes": [
+      "lf"
+     ],
+     "tex": "\\begin{array}{lll}\\htmlData{k=lfi.tickets}{\\text{need}} & \\htmlData{k=ann.tix}{\\vartheta = (s, b),\\ \\ \\vartheta(r) = 2^{s} r + b} & \\text{the tickets a term needs at its start to keep $r$ tickets at its end} \\\\[3pt]  & \\htmlData{k=ann.meets}{\\vartheta(r) \\leq tk} & \\text{$tk$ tickets suffice} \\\\[3pt]  & \\htmlData{k=ann.tlink}{\\mathsf{tlink}\\,(s, b) = (s, b + 1)} & \\text{a link uses one ticket} \\\\[3pt]  & \\htmlData{k=ann.tspawn}{\\mathsf{tspawn}\\,b_c\\,(s, b)} & \\text{a spawn gives the child half the tickets, so the need doubles} \\\\[3pt]  & \\htmlData{k=tj.seq}{\\varepsilon_1 \\cdot \\varepsilon_2} & \\text{sequencing composes needs, and is defined when the result is again a pair} \\\\[3pt]  & \\htmlData{k=lf.meets}{N \\in \\mathbb{N} \\Rightarrow \\vartheta(0) \\in \\mathbb{N}} & \\text{P-Term requires a finite need for each thread}\\end{array}",
+     "caption": "Each thread has a number of link tickets, a link uses one, and no step creates tickets. A ticket need $\\vartheta$ says how many tickets a term needs, and P-Term requires the need of each thread to be finite. A thread therefore performs finitely many links.",
+     "about": {
+      "why": "A link acts on no end, so counters do not bound links, and a link gives the waiting thread a new partner end with a full counter. Tickets rule out a thread that relinks forever.",
+      "example": "Link refresh in the Examples tab has no lock-free typing.",
+      "used": [
+       "r-act",
+       "r-threads",
+       "p-typing",
+       "ty-ann"
+      ]
+     }
+    },
+    {
+     "id": "t-lf-guard",
+     "title": "The guard",
+     "rocq": "static/Guard.v: lguard, acts",
+     "modes": [
+      "lf"
+     ],
+     "tex": "\\begin{array}{lll}\\htmlData{k=lfi.guard}{\\text{guard}} & \\htmlData{k=guard.judg}{\\Lambda \\vdash\\!\\triangleright t} & \\text{$t$ uses the variable of a box only after a session action} \\\\[3pt]  & \\htmlData{k=guard.box}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}}\\ !b \\iff \\htmlData{k=guard.marks}{\\mathsf{true}}.\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} b} & \\text{a box marks its own variable} \\\\[3pt]  & \\htmlData{k=guard.var}{\\Lambda(y) = \\htmlData{k=guard.marks}{\\mathsf{false}}} & \\text{a marked variable cannot be used} \\\\[3pt]  & \\htmlData{k=guard.acts}{\\mathsf{acts}\\,e} & \\text{each evaluation of $e$ to a value performs a session action, after which the marks are cleared} \\\\[3pt]  & \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p} & \\text{each thread of the process is guarded}\\end{array}",
+     "caption": "Internal steps ($\\beta$, $\\mathsf{new}$, $\\mathsf{spawn}$, $\\mathsf{link}$) change no counter. The guard requires each recursive call to come after a session action, so a thread cannot take internal steps forever.",
+     "about": {
+      "why": "A loop made only of internal steps runs forever without acting with any other thread. Deadlock freedom allows such a loop and lock freedom does not.",
+      "example": "Guard rejections in the Examples tab, such as $!(f = \\mathsf{force}\\,f)$.",
+      "used": [
+       "g-guard",
        "p-typing"
+      ]
+     }
+    },
+    {
+     "id": "t-lf-wf",
+     "title": "A well-founded world",
+     "rocq": "types/Worlds.v: wfworld; soup/LFAdequacy.v: lf_adequacy",
+     "modes": [
+      "lf"
+     ],
+     "tex": "\\begin{array}{lll}\\htmlData{k=lfi.wf}{\\text{well-founded}} & \\htmlData{k=w.lfworld}{\\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\iff \\prec_W \\text{ is well-founded}} & \\text{the order has no infinite descending chain} \\\\[3pt]  & \\htmlData{k=th.wfworld}{\\mathsf{wfworld}\\,W} & \\text{a premise of lock-free soundness, which no typing rule checks}\\end{array}",
+     "caption": "A waiting thread waits on the holder of its partner end, which may itself wait at a lower point. In a well-founded order this chain of waits ends, and the thread at its bottom can act.",
+     "about": {
+      "why": "It rules out a chain of waiting threads that grows forever, each waiting below the previous one.",
+      "example": "The growing waiting chain in the Examples tab is outside lock-free soundness.",
+      "used": [
+       "th-sound",
+       "th-adeq",
+       "w-wf"
       ]
      }
     },
@@ -792,7 +851,6 @@ window.MAP = {
       "why": "A thread waits only at actions, so the order facts of the type system are required here.",
       "used": [
        "e-obl",
-       "t-lf-intro",
        "r-data",
        "syn-csub"
       ]
@@ -1083,7 +1141,6 @@ window.MAP = {
       "used": [
        "fu-obls",
        "soup",
-       "t-lf-intro",
        "th-terms"
       ]
      }

@@ -76,8 +76,6 @@ WHY['w-ext'] = 'Worlds grow during a run, and the relation holds in each larger 
 
 // ---- typing ----
 INTRO.typing = 'The typing judgment assigns each term a type under a context of facts, ends and variables, and a future, the points at which the context acts after the term. Its rules check the order facts a thread needs when it waits. Process typing builds processes from typed threads. \\annp{Lock-free typing adds credits, costs and ticket needs at a finite refill $N$, and the guard.}';
-CAP['t-lf-intro'] = 'A deadlock-free program can keep one thread waiting forever while other threads step. Each row names one device that rules out one way of doing so. The note of each row gives the intuition and the example it rejects.';
-WHY['t-lf-intro'] = 'Lock freedom requires that a waiting thread eventually takes part in a step. The rows list what typing adds to deadlock-free typing to establish this.';
 CAP['t-judgment'] = '$\\Gamma$ holds facts, $\\Delta$ the ends and variables, and $F$ is the future. $\\parallel H$ names what the thread holds while $e$ runs. \\annp{The world $W$ and the refill $N$ are fixed for a derivation, and $\\varepsilon$ is the effect of $e$.}';
 WHY['t-judgment'] = 'Several rules run one subterm while the thread holds the values of others. $\\parallel H$ states once what these rules need, the future of the running subterm \\annp{and the aging of the held values}.';
 EX['t-judgment'] = 'E-App runs $e_1$ while holding $\\Delta_2$, written $\\Gamma ; \\Delta_1 \\parallel \\Delta_2 \\vdash^{F} e_1 : \\ldots$';

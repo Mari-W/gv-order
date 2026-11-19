@@ -115,7 +115,7 @@ merge('p-typing', 'Process typing', ['p-term', 'p-connect', 'p-lf'], {
 merge('g-guard', 'The guard', ['g-acts', 'g-rules', 'g-proc'], {
   why: 'Lock freedom needs every thread to keep acting. The guard rejects recursion that can loop without a session action.'
 });
-order('typing', ['t-lf-intro', 't-judgment', 't-contexts', 't-side', 't-agecap', 'r-base', 'r-fun', 'r-data', 'r-boxes', 'r-ex', 't-consts', 'r-act', 'r-threads', 'r-new', 't-subs', 'p-typing', 'g-guard']);
+order('typing', ['t-lf-credits', 't-lf-tickets', 't-lf-guard', 't-lf-wf', 't-judgment', 't-contexts', 't-side', 't-agecap', 'r-base', 'r-fun', 'r-data', 'r-boxes', 'r-ex', 't-consts', 'r-act', 'r-threads', 'r-new', 't-subs', 'p-typing', 'g-guard']);
 
 // ---- semantic typing ----
 merge('ct-costs', 'Step costs', ['ct-two', 'ct-table']);

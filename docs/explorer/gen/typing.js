@@ -96,19 +96,53 @@ const REF = h('act.refill', 'N');
 const ARR = (T, U, eff, hh, a) => R`(${T} \multimap^{u}_{l}\annot{[${eff} ; ${hh}]}\, ${U})${CRD(a)}`;
 const QH = R`\quad `;
 
+// the four devices lock freedom adds, one block each: label (its note), the operators (their notes), what they mean
+const LFROW = (k, lbl, op, txt) => R`${k ? h(k, R`\text{${lbl}}`) : ''} & ${op} & \text{${txt}}`;
+const LFTAB = (rows) => R`\begin{array}{lll}${rows.join(R` \\[3pt] `)}\end{array}`;
 block(s, {
-  id: 't-lf-intro', title: 'What lock freedom adds to typing', rocq: 'static/Typing.v: typed; static/Guard.v: lguard; types/Worlds.v: wfworld', modes: ['lf'],
-  tex: R`\begin{array}{lll}
-\text{mechanism} & \text{written} & \text{rules out} \\ \hline
-${h('lfi.credit', R`\text{credits}`)} & (S@x)^{a},\ (T \multimap U)^{a} & \text{a holder that acts elsewhere forever} \\
-${h('lfi.cost', R`\text{cost, aging, refill}`)} & e : T\ !\ (c, \vartheta),\ \ \Delta - c,\ \ (S@x^{+})^{N} & \text{(the counting behind credits)} \\
-${h('lfi.floor', R`\text{floors}`)} & T \multimap[\varepsilon ; h]\, U & \text{(credits carried into a later call)} \\
-${h('lfi.hop', R`\text{hops}`)} & T' - 1 \leq T[x\cdot i],\ \ \Delta - 1 & \text{an end passed on forever} \\
-${h('lfi.tickets', R`\text{tickets}`)} & \vartheta,\ \ \mathsf{tlink},\ \ \mathsf{tspawn} & \text{a waiter relinked to fresh ends forever} \\
-${h('lfi.guard', R`\text{guard}`)} & \Lambda \vdash\!\triangleright t & \text{internal steps forever} \\
-${h('lfi.wf', R`\text{well-founded world}`)} & \mathsf{wfworld}\,W & \text{an endless chain of waiting threads}
-\end{array}`,
-  caption: 'Deadlock freedom promises that some thread can always step. Lock freedom promises more, every waiting thread eventually meets its partner. A deadlock-free program can still keep one thread waiting forever while the others step, and each mechanism here rules out one way of doing that. Hover a row for the intuition and the example it rejects, which the Examples tab lists.'
+  id: 't-lf-credits', title: 'Credits', rocq: 'types/Types.v: TSess, TLolli; static/Contexts.v: tage, tcap; static/Typing.v: e_send, e_spawn_lam, e_spawn', modes: ['lf'],
+  tex: LFTAB([
+    LFROW('lfi.credit', 'credit', h('ty.credit', R`(S@x)^{a},\ (T \multimap U)^{a}`), 'a lower bound on the counter of an end, or of the ends a closure captured'),
+    LFROW('lfi.cost', 'cost', h('tj.eff', R`e : T\ !\ (c, \vartheta)`), R`the term performs at most $c$ actions before it returns`),
+    LFROW('', '', h('age.ctx', R`\Delta - c`), R`what is held while $e$ runs loses $c$, and each credit must be at least $c$`),
+    LFROW('', '', h('age.idle', R`(\mathsf{Skip}@x)^{a} - c`), R`an idle end loses credit without the check`),
+    LFROW('', '', h('act.refill', R`(S@x^{+})^{N}`), R`an action returns its end with credit $N$`),
+    LFROW('lfi.floor', 'floor', h('ty.arrow.floor', R`T \multimap[\varepsilon ; h]\, U`), R`the body of a closure may assume credit $h$ of each captured end`),
+    LFROW('lfi.hop', 'hop', h('E-Send.floor', R`T' - 1 \leq T[x\cdot i]`), R`a sent end loses one`),
+    LFROW('', '', R`${h('E-SpawnLam.age', R`\Delta - 1`)},\ ${h('E-Spawn.credit', R`a \geq 1`)}`, R`the ends a spawn hands to the child lose one`)]),
+  caption: 'Each end has a counter at run time, the number of actions its holder may perform on other ends before it must act on this end. A credit is a lower bound on that counter, so the holder postpones an end only finitely often. Aging lowers the credits of held values by the cost of the code that runs, an action restores its own end to $N$, and handing an end to another thread lowers its credit by one.',
+  about: { why: 'Credits rule out a holder that acts on other ends forever while a partner waits, and an end that is passed between threads forever.', example: 'Postponement and endless delegation in the Examples tab have no lock-free typing.', used: ['t-agecap', 'r-fun', 'r-act', 'r-threads', 'fv'] }
+});
+block(s, {
+  id: 't-lf-tickets', title: 'Tickets', rocq: 'types/Costs.v: tix, tapp, tlink, tspawn, tseq, tok; static/Typing.v: e_link, p_term', modes: ['lf'],
+  tex: LFTAB([
+    LFROW('lfi.tickets', 'need', h('ann.tix', R`\vartheta = (s, b),\ \ \vartheta(r) = 2^{s} r + b`), R`the tickets a term needs at its start to keep $r$ tickets at its end`),
+    LFROW('', '', h('ann.meets', R`\vartheta(r) \leq tk`), R`$tk$ tickets suffice`),
+    LFROW('', '', h('ann.tlink', R`\mathsf{tlink}\,(s, b) = (s, b + 1)`), 'a link uses one ticket'),
+    LFROW('', '', h('ann.tspawn', R`\mathsf{tspawn}\,b_c\,(s, b)`), R`a spawn gives the child half the tickets, so the need doubles`),
+    LFROW('', '', h('tj.seq', R`\varepsilon_1 \cdot \varepsilon_2`), 'sequencing composes needs, and is defined when the result is again a pair'),
+    LFROW('', '', h('lf.meets', R`N \in \mathbb{N} \Rightarrow \vartheta(0) \in \mathbb{N}`), 'P-Term requires a finite need for each thread')]),
+  caption: 'Each thread has a number of link tickets, a link uses one, and no step creates tickets. A ticket need $\\vartheta$ says how many tickets a term needs, and P-Term requires the need of each thread to be finite. A thread therefore performs finitely many links.',
+  about: { why: 'A link acts on no end, so counters do not bound links, and a link gives the waiting thread a new partner end with a full counter. Tickets rule out a thread that relinks forever.', example: 'Link refresh in the Examples tab has no lock-free typing.', used: ['r-act', 'r-threads', 'p-typing', 'ty-ann'] }
+});
+block(s, {
+  id: 't-lf-guard', title: 'The guard', rocq: 'static/Guard.v: lguard, acts', modes: ['lf'],
+  tex: LFTAB([
+    LFROW('lfi.guard', 'guard', h('guard.judg', R`\Lambda \vdash\!\triangleright t`), R`$t$ uses the variable of a box only after a session action`),
+    LFROW('', '', h('guard.box', R`\Lambda \vdash\!\triangleright\ !b \iff \mathsf{true}.\Lambda \vdash\!\triangleright b`), 'a box marks its own variable'),
+    LFROW('', '', h('guard.var', R`\Lambda(y) = \mathsf{false}`), 'a marked variable cannot be used'),
+    LFROW('', '', h('guard.acts', R`\mathsf{acts}\,e`), R`each evaluation of $e$ to a value performs a session action, after which the marks are cleared`),
+    LFROW('', '', h('guard.proc', R`\vdash\!\triangleright p`), 'each thread of the process is guarded')]),
+  caption: 'Internal steps ($\\beta$, $\\mathsf{new}$, $\\mathsf{spawn}$, $\\mathsf{link}$) change no counter. The guard requires each recursive call to come after a session action, so a thread cannot take internal steps forever.',
+  about: { why: 'A loop made only of internal steps runs forever without acting with any other thread. Deadlock freedom allows such a loop and lock freedom does not.', example: 'Guard rejections in the Examples tab, such as $!(f = \\mathsf{force}\\,f)$.', used: ['g-guard', 'p-typing'] }
+});
+block(s, {
+  id: 't-lf-wf', title: 'A well-founded world', rocq: 'types/Worlds.v: wfworld; soup/LFAdequacy.v: lf_adequacy', modes: ['lf'],
+  tex: LFTAB([
+    LFROW('lfi.wf', 'well-founded', h('w.lfworld', R`\mathsf{wfworld}\,W \iff \prec_W \text{ is well-founded}`), 'the order has no infinite descending chain'),
+    LFROW('', '', h('th.wfworld', R`\mathsf{wfworld}\,W`), 'a premise of lock-free soundness, which no typing rule checks')]),
+  caption: 'A waiting thread waits on the holder of its partner end, which may itself wait at a lower point. In a well-founded order this chain of waits ends, and the thread at its bottom can act.',
+  about: { why: 'It rules out a chain of waiting threads that grows forever, each waiting below the previous one.', example: 'The growing waiting chain in the Examples tab is outside lock-free soundness.', used: ['th-sound', 'th-adeq', 'w-wf'] }
 });
 block(s, {
   id: 't-judgment', title: 'The typing judgment', rocq: 'static/Typing.v: typed, dftyped',
