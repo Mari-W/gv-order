@@ -3888,10 +3888,10 @@ window.MAP = {
   },
   "ann.tspawn": {
    "title": "$\\mathsf{tspawn}$",
-   "what": "The need of a spawn followed by code of need $(s, b)$, when the child needs $b_c$, is $(s + 1, \\max(2b, 2b_c - 1))$. The child receives $\\lceil tk/2 \\rceil$ of the $tk$ tickets and the parent keeps $\\lfloor tk/2 \\rfloor$.",
-   "why": "The split is fixed, so the tickets of every thread are the same in every run and at every step index. Halving makes the parent need twice its rest, hence $s + 1$.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "A spawn of a child that links once, with nothing after it, has need $(1, 1)$.",
+   "what": "The need of a spawn followed by code of need $(s, b)$, when the child needs $b_c$, is $(s + 1, \\max(2b, 2b_c - 1))$. The child receives $\\lceil tk/2 \\rceil$ of the $tk$ tickets and the parent keeps $\\lfloor tk/2 \\rfloor$. The parent must keep $\\lfloor tk/2 \\rfloor \\geq 2^{s} r + b$, hence $tk \\geq 2^{s+1} r + 2b$, and the child must get $\\lceil tk/2 \\rceil \\geq b_c$, hence $tk \\geq 2b_c - 1$. The pair is the larger of the two bounds.",
+   "why": "Tickets belong to threads and a spawn creates a thread, so the child takes its tickets from the parent and no spawn creates any. Otherwise a loop that spawns a linking child in every round performs infinitely many links. The split is a fixed function of $tk$, the same in every run and at every step index. A split chosen freely could differ between indices, and the relation does not see how many tickets the child needs.",
+   "breaks": "With fresh tickets for every child, a loop that spawns a child which links once, forever, is accepted, and a waiter whose partner is linked away in every round starves.",
+   "example": "A thread spawns a child that links once and then links once itself. After the spawn the parent needs $(0, 1)$, one ticket, and the child needs $b_c = 1$. The start needs $\\max(2 \\cdot 1, 2 \\cdot 1 - 1) = 2$ tickets, with $\\lceil 2/2 \\rceil = 1$ for the child and $\\lfloor 2/2 \\rfloor = 1$ for the parent, and $\\mathsf{tspawn}\\,1\\,(0, 1) = (1, 2)$.",
    "rocq": "types/Costs.v: tspawn",
    "sig": "\\mathsf{tspawn} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to \\mathsf{Tix} \\to \\mathsf{Tix}",
    "args": [

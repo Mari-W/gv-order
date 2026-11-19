@@ -120,3 +120,9 @@ must do, open questions.
   expressiveness for finite protocols, finite types for recursive ones,
   point-free session types. Written points would only read better. Author
   (2026-11-19): queue it as a discussion item. No Rocq work.
+- **Type-directed ticket split at spawn.** Today a spawn halves the
+  tickets (child ⌈tk/2⌉, parent ⌊tk/2⌋), which forces the doubling form
+  ϑ(r) = 2^s r + b and the side condition tok. If the child got exactly
+  its need b_c, needs would just add up. That needs the split to be fixed
+  outside the step index without the relation reading types. Discuss
+  together with per-end link budgets. No Rocq work.
