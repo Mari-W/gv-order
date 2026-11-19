@@ -5,8 +5,8 @@
 
     A step-indexed predicate on one thread e. Π maps the ends the thread
     holds to their session types, φ maps them to their counters, and tk
-    is the thread's count of link tickets. σ is the credited type of the
-    value e returns, or [RThread] for a thread, which returns holding no
+    is the thread's count of link tickets. σ is the type of the value e
+    returns, with the credits of its ends and closures, or [RThread] for a thread, which returns holding no
     end. r is the reserve, the tickets e must still hold when it
     returns, and c the frame, the channel actions e may still perform
     before it returns. N is the refill, the counter of a fresh end and
@@ -17,8 +17,8 @@
     merged judgment (decision Q11) a cost protocol is a session type
     with its annotations, so Π is the session-type part of the
     environment of the live relation at the same index (stage S8). The
-    payload of a send is read at the payload type and its credit in the
-    session type of Π.
+    payload of a send is read at the payload type of the session type of
+    Π, whose ends carry their own credits.
 
     Counters evolve by one update at every index. An action on o
     refills o to N and ticks every other counter of the thread by one
@@ -38,7 +38,7 @@
     FuelE^N holds for every refill N′ ≥ N and is closed under injective
     renamings of ends (a link renames the partner of the removed end in
     another thread). [Vfuel] recurses on the type. A closure at
-    T ⊸[c ; ϑ ; h] U with credit a has captured counters at least h + a,
+    (T ⊸[c ; ϑ ; h] U)^a has captured counters at least h + a,
     and for every refill N′ ≥ N, lower level, counters at or above the
     floor h and argument in [Vfuel] at T, its body satisfies [FuelE] at U
     with frame c and every reserve and ticket count that meet ϑ. A box
@@ -195,9 +195,9 @@ Definition plink (Π : penv) (os : gset cend) : Prop :=
 
 (** ** Result types and readers *)
 
-(** The credited type T^a of a returned value, or a thread, which
-    returns any value and holds no end then. *)
-Inductive rty := RTy (T : ty) (a : fuel) | RThread.
+(** The type T of a returned value, or a thread, which returns any
+    value and holds no end then. *)
+Inductive rty := RTy (T : ty) | RThread.
 
 (** FuelE at one level reads the refill, the result type, the frame,
     the reserve, protocols, counters, tickets and the term. Vfuel reads
@@ -232,19 +232,19 @@ Section obligations.
     El n' N σ d r (mrem (fends v) Π) (mrem (fends v) φ) (Nat.div2 tk) e'.
 
   (** A send hands on held ends other than its subject, at the payload
-      type and credit of the session type, with one unit less. *)
+      type of the session type, with one unit less. *)
   Definition f_send (o : cend) (w e' : expr) : Prop :=
-    f_act o ∧ ∃ S0 m T b S, Π !! o = Some S0 ∧ unfoldS S0 = SSeq (SSnd m T b) S ∧
+    f_act o ∧ ∃ S0 m T S, Π !! o = Some S0 ∧ unfoldS S0 = SSeq (SSnd m T) S ∧
       fends w ⊆ dom φ ∖ {[o]} ∧ fspare Π φ (fends w) ∧
-      Vl n' N (RTy T b) (mres (fends w) Π) (fhand (fends w) φ) w ∧
+      Vl n' N (RTy T) (mres (fends w) Π) (fhand (fends w) φ) w ∧
       El n' N σ (ftick d) r (<[o := S]> (mrem (fends w) Π)) (refill N o (mrem (fends w) φ)) tk e'.
 
   (** A receive continues for every incoming value at the payload type,
       with any protocols and counters it brings. *)
   Definition f_recv (o : cend) (w e' : expr) : Prop :=
-    f_act o ∧ ∃ S0 m T b S, Π !! o = Some S0 ∧ unfoldS S0 = SSeq (SRcv m T b) S ∧
+    f_act o ∧ ∃ S0 m T S, Π !! o = Some S0 ∧ unfoldS S0 = SSeq (SRcv m T) S ∧
       ∀ j Πi φi, j ≤ n' → Πi ##ₘ <[o := S]> Π → φi ##ₘ refill N o φ →
-        Vl j N (RTy T b) Πi φi w →
+        Vl j N (RTy T) Πi φi w →
         El j N σ (ftick d) r (<[o := S]> Π ∪ Πi) (refill N o φ ∪ φi) tk e'.
 
   Definition f_close (o : cend) (e' : expr) : Prop :=
@@ -279,42 +279,42 @@ Section obligations.
     end.
 End obligations.
 
-(** ** Values at a credited type (§2.11)
+(** ** Values at a type (§2.11)
 
     By recursion on the type. Points, upper and lower points, box
-    constraints and transformers of boxes are not read. A product and a
-    sum add their credit to their parts, and a product splits its ends
-    into two disjoint parts. *)
+    constraints and transformers of boxes are not read. An end and a
+    closure read their credit, and a product splits its ends into two
+    disjoint parts. *)
 Fixpoint Vty (N : fuel) (El : nat → epred) (Vl : nat → vpred) (n : nat)
-    (T : ty) (a : fuel) (Π : penv) (φ : cenv) (v : expr) {struct T} : Prop :=
+    (T : ty) (Π : penv) (φ : cenv) (v : expr) {struct T} : Prop :=
   match T with
   | TUnit => v = EUnit ∧ Π = ∅ ∧ φ = ∅
-  | TSess s _ =>
+  | TSess s _ a =>
       ∃ o S' f, v = Chan o ∧ Π = {[o := S']} ∧ φ = {[o := f]} ∧ sequiv S' s ∧ fle a f
-  | TLolli _ _ c t h T1 a1 U a2 =>
+  | TLolli _ _ c t h T1 U a =>
       ∃ e, v = Lam e ∧ fends e = dom Π ∧ dom Π = dom φ ∧ (∀ o f, φ !! o = Some f → fle (fadd h a) f) ∧
         ∀ N' j φ' Πu φu u r tk, rle N N' → j < n → dom φ' = dom φ →
           (∀ o f, φ' !! o = Some f → fle h f) → Π ##ₘ Πu → φ' ##ₘ φu →
-          Vl j N' (RTy T1 a1) Πu φu u → meets t r tk →
-          El j N' (RTy U a2) c r (Π ∪ Πu) (φ' ∪ φu) tk (subst1 u e)
-  | TProd T1 a1 T2 a2 =>
+          Vl j N' (RTy T1) Πu φu u → meets t r tk →
+          El j N' (RTy U) c r (Π ∪ Πu) (φ' ∪ φu) tk (subst1 u e)
+  | TProd T1 T2 =>
       ∃ v1 v2 Π1 Π2 φ1 φ2, v = Pair v1 v2 ∧ Π1 ##ₘ Π2 ∧ φ1 ##ₘ φ2 ∧
         Π = Π1 ∪ Π2 ∧ φ = φ1 ∪ φ2 ∧
-        Vty N El Vl n T1 (fadd a a1) Π1 φ1 v1 ∧ Vty N El Vl n T2 (fadd a a2) Π2 φ2 v2
-  | TSum T1 a1 T2 a2 =>
-      (∃ v', v = Inj false v' ∧ Vty N El Vl n T1 (fadd a a1) Π φ v') ∨
-      (∃ v', v = Inj true v' ∧ Vty N El Vl n T2 (fadd a a2) Π φ v')
-  | TBox _ k _ _ c t U aU =>
+        Vty N El Vl n T1 Π1 φ1 v1 ∧ Vty N El Vl n T2 Π2 φ2 v2
+  | TSum T1 T2 =>
+      (∃ v', v = Inj false v' ∧ Vty N El Vl n T1 Π φ v') ∨
+      (∃ v', v = Inj true v' ∧ Vty N El Vl n T2 Π φ v')
+  | TBox _ k _ _ c t U =>
       ∃ e, v = EBox e ∧ fends e = ∅ ∧ Π = ∅ ∧ φ = ∅ ∧
         ∀ N' j ss r tk, rle N N' → j < n → length ss = k → sinsts N' ss → meets t r tk →
-          El j N' (RTy (sinst_ty (slist ss) U) aU) c r ∅ ∅ tk (subst1 (EBox e) e)
-  | TEx _ _ _ T1 aT => Vty N El Vl n T1 (fadd a aT) Π φ v
+          El j N' (RTy (sinst_ty (slist ss) U)) c r ∅ ∅ tk (subst1 (EBox e) e)
+  | TEx _ _ _ T1 => Vty N El Vl n T1 Π φ v
   end.
 
 Definition Vres (N : fuel) (El : nat → epred) (Vl : nat → vpred) (n : nat)
     (σ : rty) (Π : penv) (φ : cenv) (v : expr) : Prop :=
   match σ with
-  | RTy T a => Vty N El Vl n T a Π φ v
+  | RTy T => Vty N El Vl n T Π φ v
   | RThread => Π = ∅ ∧ φ = ∅
   end.
 
@@ -383,10 +383,10 @@ Section ext.
     - intros H Hf. destruct (H Hf) as [S HS]. exists S. by apply HE'.
     - intros H Hf. destruct (H Hf) as [S HS]. exists S. by apply HE'.
     - intros (H1 & H2 & H3 & H4). split_and!; [done|done|by apply HE'|by apply HE'].
-    - intros (Ha & S0 & m & T & b & S & H1 & H2 & H3 & H4 & H5 & H6).
-      split; [done|]. exists S0, m, T, b, S. split_and!; try done; [apply HV; [lia|done]|by apply HE'].
-    - intros (Ha & S0 & m & T & b & S & H1 & H2 & H3).
-      split; [done|]. exists S0, m, T, b, S. split_and!; [done|done|].
+    - intros (Ha & S0 & m & T & S & H1 & H2 & H3 & H4 & H5 & H6).
+      split; [done|]. exists S0, m, T, S. split_and!; try done; [apply HV; [lia|done]|by apply HE'].
+    - intros (Ha & S0 & m & T & S & H1 & H2 & H3).
+      split; [done|]. exists S0, m, T, S. split_and!; [done|done|].
       intros j Πi φi Hj Hd1 Hd2 Hv. apply HE; [done|]. apply H3; try done. by apply HV.
     - intros (Ha & S0 & H1 & H2 & H3). split; [done|]. exists S0. split_and!; [done|done|by apply HE'].
     - intros (Ha & S0 & S1 & S2 & H1 & H2 & H3). split; [done|].
@@ -396,15 +396,15 @@ Section ext.
     - intros (H0 & H1 & H2 & H3). split_and!; [done|done|done|by apply HE'].
   Qed.
 
-  Lemma Vty_ext_1 N n T a Π φ v :
+  Lemma Vty_ext_1 N n T Π φ v :
     (∀ j, j < n → ∀ N σ d r Π φ tk e, El1 j N σ d r Π φ tk e ↔ El2 j N σ d r Π φ tk e) →
     (∀ j, j < n → ∀ N σ Π φ v, Vl1 j N σ Π φ v ↔ Vl2 j N σ Π φ v) →
-    Vty N El1 Vl1 n T a Π φ v → Vty N El2 Vl2 n T a Π φ v.
+    Vty N El1 Vl1 n T Π φ v → Vty N El2 Vl2 n T Π φ v.
   Proof.
-    intros HE HV. revert a Π φ v.
-    induction T as [|ub lb c t h T1 IH1 a1 U IH2 a2|T1 IH1 a1 T2 IH2 a2|T1 IH1 a1 T2 IH2 a2
-                   |m k C ub c t U IH aU|s x|lb m C T1 IH aT];
-      intros a Π φ v; simpl; try done.
+    intros HE HV. revert Π φ v.
+    induction T as [|ub lb c t h T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
+                   |m k C ub c t U IH|s x a|lb m C T1 IH];
+      intros Π φ v; simpl; try done.
     - intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|done|done|].
       intros N' j φ' Πu φu u r tk HN Hj Hd' Hh HΠ Hφ Hu Ht.
       apply HE; [done|]. apply H; try done. by apply HV.

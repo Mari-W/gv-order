@@ -74,8 +74,8 @@ Section above.
   Lemma Vty_credit_above N n T : ∀ a Π φ v,
     Vty N El Vl n T a Π φ v → ∀ o f, φ !! o = Some f → fle a f.
   Proof.
-    induction T as [|ub lb c t h T1 IH1 a1 U IH2 a2|T1 IH1 a1 T2 IH2 a2|T1 IH1 a1 T2 IH2 a2
-                   |m k C ub c t U IH aU|s x|lb m C T1 IH aT];
+    induction T as [|ub lb c t h T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
+                   |m k C ub c t U IH|s x a|lb m C T1 IH];
       intros a0 Π φ v; simpl.
     - intros (_ & _ & ->) o f. by rewrite lookup_empty.
     - intros (e & _ & _ & _ & Hf & _) o f Ho. eapply fle_trans; [|exact (Hf o f Ho)].
@@ -163,7 +163,7 @@ Proof.
   induction Δ as [|[[T a]|] Δ IH]; intros γ Π φ; simpl.
   - intros [-> ->]. by rewrite !dom_empty_L.
   - intros (Π1 & Π2 & φ1 & φ2 & _ & _ & -> & -> & Hv & HG).
-    rewrite !dom_union_L, (Vfuel_dom _ _ _ _ _ _ _ Hv). by erewrite IH.
+    rewrite !dom_union_L, (Vfuel_dom _ _ _ _ _ _ Hv). by erewrite IH.
   - apply IH.
 Qed.
 
@@ -327,7 +327,7 @@ Proof.
   induction Δ as [|[[T a]|] Δ IH]; intros γ Π φ; simpl.
   - intros [-> _]. split; [intros x σ; by rewrite lookup_nil|intros o; rewrite dom_empty_L; set_solver].
   - intros (Π1 & Π2 & φ1 & φ2 & Hd1 & Hd2 & -> & -> & Hv & HG).
-    destruct (IH _ _ _ HG) as [A B]. pose proof (Vfuel_exact _ _ _ _ _ _ _ Hv) as Hx. split.
+    destruct (IH _ _ _ HG) as [A B]. pose proof (Vfuel_exact _ _ _ _ _ _ Hv) as Hx. split.
     + intros [|x] σ Hx'; simpl in Hx'; rewrite dom_union_L; [rewrite Hx; set_solver|].
       specialize (A x σ Hx'). set_solver.
     + intros o. rewrite dom_union_L. intros [Ho|Ho]%elem_of_union.

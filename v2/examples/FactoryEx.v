@@ -104,7 +104,7 @@ Proof. intros HΓ. apply boxg_typed; [done|reflexivity|apply mk0_body]. Qed.
 
 Lemma mk1_body Γ n :
   dftyped W_fx ∅ (hc_fvar 1 None (hc_fvar 0 None (hc_open 1 mk1_C Γ)))
-    (Some (TSess Sr (pvar 0) (Some 0)) :: Some mk1_ty :: nones n) (∅, Some (FVar 1)) mk1_e mk1_res.
+    (Some (TSess Sr (pvar 0) None) :: Some mk1_ty :: nones n) (∅, Some (FVar 1)) mk1_e mk1_res.
 Proof.
   unfold mk1_e.
   eapply d_letp; [apply tsplit_empty|lsplit_tac (ENewAt 0 (Var 0)) EUnit| |].
@@ -147,8 +147,8 @@ Proof.
   eapply d_letp; [apply tsplit_empty|lsplit_tac (App (EForce mk1) (Var 0)) EUnit| |].
   { eapply d_app; [apply tsplit_empty|lsplit_tac (EForce mk1) (Var 0)|apply ub_below_empty| |].
     - assert (sinst_ty (slist []) (ty_inst ((pvar 0)‾ :: [])
-                (TLolli None None None tinf None (TSess Sr (pvar 0) (Some 0)) mk1_res None)) =
-              TLolli None None None tinf None (TSess Sr (pvar 0)‾ (Some 0))
+                (TLolli None None None tinf None (TSess Sr (pvar 0) None) mk1_res None)) =
+              TLolli None None None tinf None (TSess Sr (pvar 0)‾ None)
                 (TProd (TSess Sr (pvar 0)‾ None) (TSess Sr ((pvar 0)·0)‾ None)) None) as <-
         by (rewrite sinst_nil; reflexivity).
       eapply d_force with (ub := None) (c := None) (t := tinf) (C := mk1_C);

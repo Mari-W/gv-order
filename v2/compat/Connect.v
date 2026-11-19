@@ -222,8 +222,8 @@ Section psteps.
   Proof.
     intros Hq Hst Ho. destruct HP as (_ & H2 & H3 & H4 & H5 & H6 & H7).
     destruct σ as [o' w|o' w|o'|o' b|o' b|os]; simpl in Ho; injection Ho as <- || discriminate.
-    - destruct (H2 _ _ _ _ _ Hq Hst) as (S0 & x & m & U & b & S & ? & ? & ? & ? & A & B & _). exists S0, x. split; [done|simpl; eauto 10].
-    - destruct (H3 _ _ _ _ _ Hq Hst) as (S0 & x & m & U & b & S & A & B & _). exists S0, x. split; [done|simpl; eauto 10].
+    - destruct (H2 _ _ _ _ _ Hq Hst) as (S0 & x & m & U & S & ? & ? & ? & ? & A & B & _). exists S0, x. split; [done|simpl; eauto 10].
+    - destruct (H3 _ _ _ _ _ Hq Hst) as (S0 & x & m & U & S & A & B & _). exists S0, x. split; [done|simpl; eauto 10].
     - destruct (H4 _ _ _ _ Hq Hst) as (S0 & x & A & B & _). exists S0, x. split; [done|simpl; eauto 10].
     - destruct (H5 _ _ _ _ _ Hq Hst) as (S0 & x & S1 & S2 & A & B & _). exists S0, x. split; [done|simpl; eauto 10].
     - destruct (H6 _ _ _ _ _ Hq Hst) as (S0 & x & S1 & S2 & A & B & _). exists S0, x. split; [done|simpl; eauto 10].

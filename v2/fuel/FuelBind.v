@@ -246,10 +246,10 @@ Section obl_bind.
         apply (Hcont (LSpawn v) n); [lia| | |by intros []|exact Hpar].
         * by rewrite !dom_mrem, HdΠ1.
         * rewrite dom_mrem. set_solver.
-    - intros (Ha & S0 & m & T & b & Sc & H1 & H2 & H3 & H4 & H5 & H6).
+    - intros (Ha & S0 & m & T & Sc & H1 & H2 & H3 & H4 & H5 & H6).
       assert (Ho : o ∈ dom φ1) by (by destruct Ha as (_ & Ho & _)).
       destruct (not_in_K o Ho) as [HoΠ HoK]. assert (HMK : fends w ## dom φK) by set_solver.
-      split; [by apply f_act_bind|]. exists S0, m, T, b, Sc. split_and!.
+      split; [by apply f_act_bind|]. exists S0, m, T, Sc. split_and!.
       + by rewrite lookup_union_l'.
       + done.
       + rewrite dom_union_L. set_solver.
@@ -261,17 +261,17 @@ Section obl_bind.
         * rewrite dom_insert_L, dom_refill, !dom_mrem, HdΠ1. done.
         * rewrite dom_refill, dom_mrem. set_solver.
         * intros _. by destruct Ha as (_ & _ & _ & ?).
-    - intros (Ha & S0 & m & T & b & Sc & H1 & H2 & H3).
+    - intros (Ha & S0 & m & T & Sc & H1 & H2 & H3).
       assert (Ho : o ∈ dom φ1) by (by destruct Ha as (_ & Ho & _)).
       destruct (not_in_K o Ho) as [HoΠ HoK].
-      split; [by apply f_act_bind|]. exists S0, m, T, b, Sc.
+      split; [by apply f_act_bind|]. exists S0, m, T, Sc.
       split_and!; [by rewrite lookup_union_l'|done|].
       intros j Πi φi Hj HΠi Hφi Hw.
       rewrite insert_union_l in HΠi |- *. rewrite refill_union in Hφi |- * by done.
       apply map_disjoint_union_r in HΠi as [HΠi1 HΠiK].
       apply map_disjoint_union_r in Hφi as [Hφi1 HφiK].
       rewrite (union_swap _ ΠK Πi), (union_swap _ (ftick <$> φK) φi) by (by apply map_disjoint_sym).
-      assert (HdΠi := Vfuel_dom _ _ _ _ _ _ _ Hw).
+      assert (HdΠi := Vfuel_dom _ _ _ _ _ _ Hw).
       apply (Hcont (LSess (SRecv o w)) j); [lia| | | |by apply H3].
       + rewrite !dom_union_L, dom_insert_L, dom_refill, HdΠ1, HdΠi. done.
       + apply map_disjoint_dom in HφiK. rewrite dom_fmap_L in HφiK.

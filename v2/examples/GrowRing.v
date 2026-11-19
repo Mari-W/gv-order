@@ -172,7 +172,7 @@ Section body.
       | first [by left | right; apply sl_po] | normF; reflexivity ].
 
   Lemma rg_body :
-    dftyped W ∅ Γb (Some (rg_T, Some 0) :: Some (rg_ty, None) :: nones n) (∅, Some (FVar 1)) rg_e TUnit.
+    dftyped W ∅ Γb (Some rg_T :: Some rg_ty :: nones n) (∅, Some (FVar 1)) rg_e TUnit.
   Proof.
     unfold rg_e.
     eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].

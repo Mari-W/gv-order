@@ -67,9 +67,9 @@ Section adequacy.
       destruct ev as [| |i σ']; simpl in Hl; try discriminate. injection Hl as ->.
       destruct Hst as (_ & H2 & H3 & H4 & H5 & H6 & H7).
       destruct σ as [o w|o w|o|o b|o b|os].
-      + destruct (H2 q i o w q' Hq Hi) as (? & ? & ? & ? & ? & ? & ? & ? & ? & ? & A & _).
+      + destruct (H2 q i o w q' Hq Hi) as (? & ? & ? & ? & ? & ? & ? & ? & ? & A & _).
         by rewrite lookup_empty in A.
-      + destruct (H3 q i o w q' Hq Hi) as (? & ? & ? & ? & ? & ? & A & _).
+      + destruct (H3 q i o w q' Hq Hi) as (? & ? & ? & ? & ? & A & _).
         by rewrite lookup_empty in A.
       + destruct (H4 q i o q' Hq Hi) as (? & ? & A & _). by rewrite lookup_empty in A.
       + destruct (H5 q i o b q' Hq Hi) as (? & ? & ? & ? & A & _). by rewrite lookup_empty in A.

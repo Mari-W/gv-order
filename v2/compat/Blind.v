@@ -143,10 +143,10 @@ Section blind.
       exists ΘM, Θr. split_and!; [done|done| |by apply Hac].
       revert A4. apply Vthunk_mono; [by intros|by intros|by intros|]. by intros _ ? ? ? ? [? _].
     - intros o w e' Hst.
-      destruct (H5 o w e' Hst) as (S0 & x & m' & U & b & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
-      exists S0, x, m', U, b, S, ΘM, Θr. split_and!; [done..|by apply Hac].
-    - intros o w e' Hst. destruct (H6 o w e' Hst) as (S0 & x & m' & U & b & S & A1 & A2 & A3).
-      exists S0, x, m', U, b, S. split_and!; [done|done|].
+      destruct (H5 o w e' Hst) as (S0 & x & m' & U & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
+      exists S0, x, m', U, S, ΘM, Θr. split_and!; [done..|by apply Hac].
+    - intros o w e' Hst. destruct (H6 o w e' Hst) as (S0 & x & m' & U & S & A1 & A2 & A3).
+      exists S0, x, m', U, S. split_and!; [done|done|].
       intros j Θin Hj Hd Hw. pose proof (c_take_pos κ).
       apply (IHn j ltac:(lia) T T'); [|by apply A3].
       intros m W2 Θ2 v Hm. apply HV. lia.
@@ -182,7 +182,7 @@ Section blind.
               ∀ n W Θ v, Vrel κ n W Θ T1 v ↔ Vrel κ n W Θ T1' v) as IH.
     { intros T1 T1' H1 H2. apply (IHk (tsize T1)); [lia|lia|done]. }
     clear IHk.
-    destruct T as [|ub lb c t h T1 a1 U a2|T1 a1 U a2|T1 a1 U a2|m kk C ub c t U a|s x|lb m C T1 a],
+    destruct T as [|ub lb c t h T1 U a|T1 U|T1 U|m kk C ub c t U|s x a|lb m C T1],
       T' as [|ub' lb' c' t' h' T1' a1' U' a2'|T1' a1' U' a2'|T1' a1' U' a2'|m' kk' C' ub' c' t' U' a'|s' x'|lb' m' C' T1' a'];
       unfold teq in Heq; simpl in Heq; try done; destruct_and?; subst.
     - rewrite !Vrel_lolli_iff. unfold Varr_rel.

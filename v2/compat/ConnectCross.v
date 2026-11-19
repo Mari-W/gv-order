@@ -85,7 +85,7 @@ Section cross.
     assert (ech o ∉ q2.1) as Hn2.
     { intros Ho. destruct C1 as (S0 & x & ? & ? & ? & ? & ? & ? & ? & ? & Hl & _); [clear -Ho HCC; cc_set_solver|].
       apply elem_of_dom_2, elem_of_chans_of in Hl. rewrite chans_of_union in Hl. clear -Ho Hl HC2. cc_set_solver. }
-    destruct C1 as (S0 & x & m & U & b & Sc & Σv & Σr & Θe & Σe & L1 & U1 & Dvr & Edel & HΘe & Hss & AV & AP); [done|].
+    destruct C1 as (S0 & x & m & U & Sc & Σv & Σr & Θe & Σe & L1 & U1 & Dvr & Edel & HΘe & Hss & AV & AP); [done|].
     destruct C2 as (S0' & x' & m' & U' & b' & Sc' & L2 & U2 & AR); [done|].
     assert (ech o ∈ K) as HoK.
     { destruct (lookup_union_cases _ _ _ _ L1) as [Lc|[_ Lc]]; [|by apply elem_of_dom_2, elem_of_chans_of in Lc].
@@ -160,7 +160,7 @@ Section cross.
     assert (ech o ∉ q1.1) as Hn1.
     { intros Ho. destruct C2 as (S0 & x & ? & ? & ? & ? & ? & ? & ? & ? & Hl & _); [clear -Ho HCC; cc_set_solver|].
       apply elem_of_dom_2, elem_of_chans_of in Hl. rewrite chans_of_union, HKD in Hl. clear -Ho Hl HC1. cc_set_solver. }
-    destruct C2 as (S0 & x & m & U & b & Sc & Σv & Σr & Θe & Σe & L2 & U2 & Dvr & Edel & HΘe & Hss & AV & AP); [done|].
+    destruct C2 as (S0 & x & m & U & Sc & Σv & Σr & Θe & Σe & L2 & U2 & Dvr & Edel & HΘe & Hss & AV & AP); [done|].
     destruct C1 as (S0' & x' & m' & U' & b' & Sc' & L1 & U1 & AR); [done|].
     assert (ech o ∈ K) as HoK.
     { destruct (lookup_union_cases _ _ _ _ L2) as [Lc|[_ Lc]]; [|by apply elem_of_dom_2, elem_of_chans_of in Lc; rewrite HKD in Lc].

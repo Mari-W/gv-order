@@ -24,7 +24,7 @@ Section values.
   Lemma Vrel_exact n W Θ T v : Vrel κ n W Θ T v → dom Θ = fends v.
   Proof.
     revert W Θ v. induction T as [T IH] using tsize_ind. intros W Θ v.
-    destruct T as [|ub lb c t h T1 a1 U a2|T1 a1 U a2|T1 a1 U a2|m kk C ub c t U a|s x|lb m C T1 a].
+    destruct T as [|ub lb c t h T1 U a|T1 U|T1 U|m kk C ub c t U|s x a|lb m C T1].
     - intros [-> ->]%Vrel_unit_iff. by rewrite dom_empty_L.
     - by intros (e & -> & Hfe & _)%Vrel_lolli_iff.
     - intros (v1 & v2 & Θ1 & Θ2 & -> & _ & -> & H1 & H2)%Vrel_prod_iff. simpl.
@@ -49,7 +49,7 @@ Section values.
     ∀ o S x, Θ !! o = Some (S, x) → ∃ h, h ∈ heads T ∧ w_le W h x‾.
   Proof.
     revert W Θ v. induction T as [T IH] using tsize_ind. intros W Θ v.
-    destruct T as [|ub lb c t h T1 a1 U a2|T1 a1 U a2|T1 a1 U a2|m kk C ub c t U a|s x0|lb m C T1 a].
+    destruct T as [|ub lb c t h T1 U a|T1 U|T1 U|m kk C ub c t U|s x0 a|lb m C T1].
     - intros [-> ->]%Vrel_unit_iff _ o S x Hx. by rewrite lookup_empty in Hx.
     - intros (e & -> & _ & Hlb & _)%Vrel_lolli_iff _ o S x Hx.
       assert (x‾ ∈ senv_heads Θ) as Hh by (apply elem_of_senv_heads; eauto).

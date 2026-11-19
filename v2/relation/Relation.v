@@ -44,10 +44,10 @@ Local Set Warnings "-register-all".
     three, so that V of a box can read V of its thunk type ∗ ⊸ U. *)
 Fixpoint tsize (T : ty) : nat :=
   match T with
-  | TUnit | TSess _ _ => 1
-  | TLolli _ _ _ _ _ T1 _ U _ | TProd T1 _ U _ | TSum T1 _ U _ => S (tsize T1 + tsize U)
-  | TBox _ _ _ _ _ _ U _ => 3 + tsize U
-  | TEx _ _ _ T1 _ => S (tsize T1)
+  | TUnit | TSess _ _ _ => 1
+  | TLolli _ _ _ _ _ T1 U _ | TProd T1 U | TSum T1 U => S (tsize T1 + tsize U)
+  | TBox _ _ _ _ _ _ U => 3 + tsize U
+  | TEx _ _ _ T1 => S (tsize T1)
   end.
 
 Lemma tsize_pos T : 1 ≤ tsize T.
@@ -62,7 +62,7 @@ Proof. induction T in σ |- *; simpl; auto. Qed.
 (** The type of a thunk ∗ ⊸^u U, with the annotations of N = ∞, which
     the relation does not read. *)
 Definition tthunk (ub : option point) (U : ty) : ty :=
-  TLolli ub None None tinf None TUnit None U None.
+  TLolli ub None None tinf None TUnit U None.
 
 Lemma tsize_tthunk ub U : tsize (tthunk ub U) = 2 + tsize U.
 Proof. simpl. lia. Qed.
@@ -300,13 +300,13 @@ Section bodies.
         at_cost_E n (c_spawn κ) El X W Θr T F e'.
 
     Definition o_send (o : cend) (w e' : expr) : Prop :=
-      ∃ S0 x m U b S ΘM Θr, Θ !! o = Some (S0, x) ∧ unfoldS S0 = SSeq (SSnd m U b) S ∧
+      ∃ S0 x m U S ΘM Θr, Θ !! o = Some (S0, x) ∧ unfoldS S0 = SSeq (SSnd m U) S ∧
         ΘM ##ₘ Θr ∧ delete o Θ = ΘM ∪ Θr ∧
         at_cost_V n (c_give κ) Vl VN W ΘM (payload_at m U x) w ∧
         at_cost_E n (c_give κ) El X W (<[o := (S, x⁺)]> Θr) T F e'.
 
     Definition o_recv (o : cend) (w e' : expr) : Prop :=
-      ∃ S0 x m U b S, Θ !! o = Some (S0, x) ∧ unfoldS S0 = SSeq (SRcv m U b) S ∧
+      ∃ S0 x m U S, Θ !! o = Some (S0, x) ∧ unfoldS S0 = SSeq (SRcv m U) S ∧
         ∀ j Θin, j + c_take κ ≤ n → Θ ##ₘ Θin →
           Vl j W Θin (payload_at m U x) w →
           El j W (<[o := (S, x⁺)]> Θ ∪ Θin) T F e'.
@@ -390,23 +390,23 @@ Section bodies.
     | S k' =>
       match T with
       | TUnit => Θ = ∅ ∧ v = EUnit
-      | TSess s x => ∃ o s', v = Chan o ∧ Θ = {[o := (s', x)]} ∧ seqv s' s
-      | TLolli ub lb _ _ _ T1 _ U _ =>
+      | TSess s x _ => ∃ o s', v = Chan o ∧ Θ = {[o := (s', x)]} ∧ seqv s' s
+      | TLolli ub lb _ _ _ T1 U _ =>
           Varr n Vl El (λ W' Θ' w, Vbody n Vl El k' W' Θ' T1 w)
             (λ W' Θ' F e, Etop n Vl El (Vbody n Vl El k') W' Θ' U F e) T1 U ub lb W Θ v
-      | TProd T1 _ U _ =>
+      | TProd T1 U =>
           ∃ v1 v2 Θ1 Θ2, v = Pair v1 v2 ∧ Θ1 ##ₘ Θ2 ∧ Θ = Θ1 ∪ Θ2 ∧
             Vbody n Vl El k' W Θ1 T1 v1 ∧ Vbody n Vl El k' W Θ2 U v2
-      | TSum T1 _ U _ =>
+      | TSum T1 U =>
           (∃ v', v = Inj false v' ∧ Vbody n Vl El k' W Θ T1 v') ∨
           (∃ v', v = Inj true v' ∧ Vbody n Vl El k' W Θ U v')
-      | TBox m kk C ub _ _ U _ =>
+      | TBox m kk C ub _ _ U =>
           Θ = ∅ ∧ ∃ e, v = EBox e ∧ fends e = ∅ ∧                 (* Q14 *)
             ∀ W' xs ss, W ⊑ W' → length xs = m → length ss = kk → Forall hcontractive ss →
               wholds W' C xs →
               Vbody n Vl El k' W' ∅
                 (tthunk (pt_inst (plist xs) <$> ub) (sinst_ty (slist ss) (ty_inst xs U))) (thunk e)
-      | TEx lb m C T1 _ =>
+      | TEx lb m C T1 =>
           lbx_le W lb (senv_heads Θ) ∧
           ∃ xs, length xs = m ∧ wholds W C xs ∧ Vbody n Vl El k' W Θ (ty_inst xs T1) v
       end
@@ -428,8 +428,8 @@ Section bodies.
       p'.1 ## chans_of Σ → at_cost_P n (ev_cost κ ev) Pl X W Σ T p'.
 
     Definition q_send (o : cend) (w : expr) (p' : proc) : Prop :=
-      ∃ S0 x m U b S Σv Σr Θe Σe, Σ !! o = Some (S0, x) ∧
-        unfoldS S0 = SSeq (SSnd m U b) S ∧
+      ∃ S0 x m U S Σv Σr Θe Σe, Σ !! o = Some (S0, x) ∧
+        unfoldS S0 = SSeq (SSnd m U) S ∧
         Σv ##ₘ Σr ∧ delete o Σ = Σv ∪ Σr ∧
         (∀ o', o' ∈ dom Θe ↔ o' ∈ fends w ∧ ech o' ∈ p.1) ∧
         send_split Σ Σe Θe ∧
@@ -437,7 +437,7 @@ Section bodies.
         at_cost_P n (c_give κ) Pl X W (<[o := (S, x⁺)]> (Σr ∪ Σe)) T p'.
 
     Definition q_recv (o : cend) (w : expr) (p' : proc) : Prop :=
-      ∃ S0 x m U b S, Σ !! o = Some (S0, x) ∧ unfoldS S0 = SSeq (SRcv m U b) S ∧
+      ∃ S0 x m U S, Σ !! o = Some (S0, x) ∧ unfoldS S0 = SSeq (SRcv m U) S ∧
         ∀ j Θ2, j + c_take κ ≤ n → set_map ech (dom Θ2) ## p.1 →
           recv_ok (<[o := (S, x⁺)]> Σ) Θ2 → Vl j W Θ2 (payload_at m U x) w →
           Pl j W (recv_env (<[o := (S, x⁺)]> Σ) Θ2) T
@@ -601,8 +601,8 @@ Section maps.
       exact (at_cost_E_map _ _ _ _ _ _ _ _ _ _ (f _ _ _ _ _) A5). }
     split.
     { intros o w e' Hs.
-      destruct (H5 o w e' Hs) as (S0 & x & m & U & b & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
-      exists S0, x, m, U, b, S, ΘM, Θr. split; [exact A1|]. split; [exact A2|].
+      destruct (H5 o w e' Hs) as (S0 & x & m & U & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
+      exists S0, x, m, U, S, ΘM, Θr. split; [exact A1|]. split; [exact A2|].
       split; [exact A3|]. split; [exact A4|]. split; [exact A6|].
       exact (at_cost_E_map _ _ _ _ _ _ _ _ _ _ (f _ _ _ _ _) A7). }
     split; [exact H6|].
@@ -654,8 +654,8 @@ Section maps.
     split.
     { intros q i o w q' Hq Hs.
       destruct (H2 q i o w q' Hq Hs)
-        as (S0 & x & m & U & b & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A6 & A7 & A9).
-      exists S0, x, m, U, b, S, Σv, Σr, Θe, Σe. split; [exact A1|]. split; [exact A2|].
+        as (S0 & x & m & U & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A6 & A7 & A9).
+      exists S0, x, m, U, S, Σv, Σr, Θe, Σe. split; [exact A1|]. split; [exact A2|].
       split; [exact A3|]. split; [exact A4|]. split; [exact A5|]. split; [exact A6|].
       split; [exact A7|].
       exact (at_cost_P_map _ _ _ _ _ _ _ _ _ (f _ _ _ _) A9). }
@@ -794,12 +794,12 @@ Section mono.
       + by intros.
       + intros _ W0 Θ0 F0 e0. apply HXu.
     - intros o w e' Hs.
-      destruct (H5 o w e' Hs) as (S0 & x & m & U & b & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
-      exists S0, x, m, U, b, S, ΘM, Θr. split_and!; [done..| |by apply Hac].
+      destruct (H5 o w e' Hs) as (S0 & x & m & U & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
+      exists S0, x, m, U, S, ΘM, Θr. split_and!; [done..| |by apply Hac].
       eapply at_cost_V_mono; [done| |intros; by apply HVN|exact A6].
       intros j Hj. by apply HVl.
-    - intros o w e' Hs. destruct (H6 o w e' Hs) as (S0 & x & m & U & b & S & A1 & A2 & A3).
-      exists S0, x, m, U, b, S. split_and!; [done|done|].
+    - intros o w e' Hs. destruct (H6 o w e' Hs) as (S0 & x & m & U & S & A1 & A2 & A3).
+      exists S0, x, m, U, S. split_and!; [done|done|].
       intros j Θin Hj Hd Hw. pose proof (c_take_pos κ). apply HEl; [lia|].
       apply A3; [done|done|]. apply HVl; [lia|done].
     - intros o e' Hs. destruct (H7 o e' Hs) as (S0 & x & A1 & A2 & A3).
@@ -841,12 +841,12 @@ Section mono.
     - intros q ev q' Hq Hs Hτ Hd. apply Hac. exact (H1 q ev q' Hq Hs Hτ Hd).
     - intros q i o w q' Hq Hs.
       destruct (H2 q i o w q' Hq Hs)
-        as (S0 & x & m & U & b & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A7 & A8 & A9).
-      exists S0, x, m, U, b, S, Σv, Σr, Θe, Σe. split_and!; [done..| |by apply Hac].
+        as (S0 & x & m & U & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A7 & A8 & A9).
+      exists S0, x, m, U, S, Σv, Σr, Θe, Σe. split_and!; [done..| |by apply Hac].
       eapply at_cost_V_mono; [done| |intros; by apply HVN|exact A8].
       intros j Hj. by apply HVl.
-    - intros q i o w q' Hq Hs. destruct (H3 q i o w q' Hq Hs) as (S0 & x & m & U & b & S & A1 & A2 & A3).
-      exists S0, x, m, U, b, S. split_and!; [done|done|].
+    - intros q i o w q' Hq Hs. destruct (H3 q i o w q' Hq Hs) as (S0 & x & m & U & S & A1 & A2 & A3).
+      exists S0, x, m, U, S. split_and!; [done|done|].
       intros j Θ2 Hj Hd Hok Hw. pose proof (c_take_pos κ). apply HPl; [lia|].
       apply A3; [done|done|done|]. apply HVl; [lia|done].
     - intros q i o q' Hq Hs. destruct (H4 q i o q' Hq Hs) as (S0 & x & A1 & A2 & A3).
@@ -910,7 +910,7 @@ Section fuel.
     Vbody κ n Vl1 El1 k W Θ T v ↔ Vbody κ n Vl2 El2 k W Θ T v.
   Proof.
     intros HVl HEl. revert W Θ T v. induction k as [|k IH]; intros W Θ T v; [done|].
-    destruct T as [|ub lb c t h T1 a1 U a2|T1 a1 U a2|T1 a1 U a2|m kk C ub c t U a|s x|lb m C T1 a];
+    destruct T as [|ub lb c t h T1 U a|T1 U|T1 U|m kk C ub c t U|s x a|lb m C T1];
       cbn [Vbody].
     - done.
     - split; (apply Varr_mono; [intros; by apply HVl|intros; by apply HEl|intros; by apply IH|]);
@@ -929,7 +929,7 @@ Section fuel.
   Proof.
     induction k1 as [|k1 IH]; intros k2 W Θ T v H1 H2; [lia|].
     destruct k2 as [|k2]; [lia|].
-    destruct T as [|ub lb c t h T1 a1 U a2|T1 a1 U a2|T1 a1 U a2|m kk C ub c t U a|s x|lb m C T1 a];
+    destruct T as [|ub lb c t h T1 U a|T1 U|T1 U|m kk C ub c t U|s x a|lb m C T1];
       cbn [Vbody tsize] in *.
     - done.
     - pose proof (tsize_pos T1). pose proof (tsize_pos U).
@@ -1045,12 +1045,12 @@ Section equations.
   Lemma Vrel_unit_iff n W Θ v : Vrel κ n W Θ TUnit v ↔ Θ = ∅ ∧ v = EUnit.
   Proof. by rewrite Vrel_unfold. Qed.
 
-  Lemma Vrel_sess_iff n W Θ s x v :
-    Vrel κ n W Θ (TSess s x) v ↔ ∃ o s', v = Chan o ∧ Θ = {[o := (s', x)]} ∧ seqv s' s.
+  Lemma Vrel_sess_iff n W Θ s x a v :
+    Vrel κ n W Θ (TSess s x a) v ↔ ∃ o s', v = Chan o ∧ Θ = {[o := (s', x)]} ∧ seqv s' s.
   Proof. by rewrite Vrel_unfold. Qed.
 
-  Lemma Vrel_prod_iff n W Θ T1 a1 U a2 v :
-    Vrel κ n W Θ (TProd T1 a1 U a2) v ↔
+  Lemma Vrel_prod_iff n W Θ T1 U v :
+    Vrel κ n W Θ (TProd T1 U) v ↔
     ∃ v1 v2 Θ1 Θ2, v = Pair v1 v2 ∧ Θ1 ##ₘ Θ2 ∧ Θ = Θ1 ∪ Θ2 ∧
       Vrel κ n W Θ1 T1 v1 ∧ Vrel κ n W Θ2 U v2.
   Proof.
@@ -1062,8 +1062,8 @@ Section equations.
     by setoid_rewrite H1; setoid_rewrite H2.
   Qed.
 
-  Lemma Vrel_sum_iff n W Θ T1 a1 U a2 v :
-    Vrel κ n W Θ (TSum T1 a1 U a2) v ↔
+  Lemma Vrel_sum_iff n W Θ T1 U v :
+    Vrel κ n W Θ (TSum T1 U) v ↔
     (∃ v', v = Inj false v' ∧ Vrel κ n W Θ T1 v') ∨ (∃ v', v = Inj true v' ∧ Vrel κ n W Θ U v').
   Proof.
     rewrite Vrel_unfold. cbn [Vbody tsize].
@@ -1091,11 +1091,11 @@ Section equations.
     - intros W' j Θ' w F HW Hj Hd Hub. split; [intros Hjn Hw; by apply H|]. intros -> Hw. by apply H.
   Qed.
 
-  Lemma Vrel_lolli_iff n W Θ ub lb c t h T1 a1 U a2 v :
-    Vrel κ n W Θ (TLolli ub lb c t h T1 a1 U a2) v ↔ Varr_rel n T1 U ub lb W Θ v.
+  Lemma Vrel_lolli_iff n W Θ ub lb c t h T1 U a v :
+    Vrel κ n W Θ (TLolli ub lb c t h T1 U a) v ↔ Varr_rel n T1 U ub lb W Θ v.
   Proof.
     rewrite Vrel_unfold, <-Varr_rel_iff.
-    remember (tsize (TLolli ub lb c t h T1 a1 U a2)) as k eqn:Hk. cbn [Vbody].
+    remember (tsize (TLolli ub lb c t h T1 U a)) as k eqn:Hk. cbn [Vbody].
     cbn [tsize] in Hk. pose proof (tsize_pos T1). pose proof (tsize_pos U).
     assert (∀ W Θ T v, tsize T < k → Vbody κ n (Vrel κ) (Erel κ) k W Θ T v ↔ Vrel κ n W Θ T v)
       as HF.
@@ -1111,8 +1111,8 @@ Section equations.
       [intros; done|intros; done|intros _ ? ? ? ?; apply HF; [lia|done]|intros Hb ? ? ? ? ?; by apply HE]).
   Qed.
 
-  Lemma Vrel_box_iff n W Θ m kk C ub c t U a v :
-    Vrel κ n W Θ (TBox m kk C ub c t U a) v ↔
+  Lemma Vrel_box_iff n W Θ m kk C ub c t U v :
+    Vrel κ n W Θ (TBox m kk C ub c t U) v ↔
     Θ = ∅ ∧ ∃ e, v = EBox e ∧ fends e = ∅ ∧
       ∀ W' xs ss, W ⊑ W' → length xs = m → length ss = kk → Forall hcontractive ss →
         wholds W' C xs →
@@ -1129,8 +1129,8 @@ Section equations.
     by setoid_rewrite HF.
   Qed.
 
-  Lemma Vrel_ex_iff n W Θ lb m C T1 a v :
-    Vrel κ n W Θ (TEx lb m C T1 a) v ↔
+  Lemma Vrel_ex_iff n W Θ lb m C T1 v :
+    Vrel κ n W Θ (TEx lb m C T1) v ↔
     lbx_le W lb (senv_heads Θ) ∧ ∃ xs, length xs = m ∧ wholds W C xs ∧ Vrel κ n W Θ (ty_inst xs T1) v.
   Proof.
     rewrite Vrel_unfold. cbn [Vbody tsize].

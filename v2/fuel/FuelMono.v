@@ -196,12 +196,12 @@ Qed.
 Section vty.
   Context (El : nat → epred) (Vl : nat → vpred).
 
-  Lemma Vty_dom N n T a Π φ v : Vty N El Vl n T a Π φ v → dom Π = dom φ.
+  Lemma Vty_dom N n T Π φ v : Vty N El Vl n T Π φ v → dom Π = dom φ.
   Proof.
-    revert a Π φ v.
-    induction T as [|ub lb c t h T1 IH1 a1 U IH2 a2|T1 IH1 a1 T2 IH2 a2|T1 IH1 a1 T2 IH2 a2
-                   |m k C ub c t U IH aU|s x|lb m C T1 IH aT];
-      intros a0 Π φ v; simpl.
+    revert Π φ v.
+    induction T as [|ub lb c t h T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
+                   |m k C ub c t U IH|s x a|lb m C T1 IH];
+      intros Π φ v; simpl.
     - intros (_ & -> & ->). by rewrite !dom_empty_L.
     - by intros (e & _ & _ & Hd & _).
     - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & _ & _ & _ & -> & -> & H1 & H2).
@@ -212,27 +212,26 @@ Section vty.
     - eauto.
   Qed.
 
-  Lemma Vty_counters N n T a a' Π φ φ' v :
-    fle a' a → cle φ φ' → Vty N El Vl n T a Π φ v → Vty N El Vl n T a' Π φ' v.
+  Lemma Vty_counters N n T Π φ φ' v :
+    cle φ φ' → Vty N El Vl n T Π φ v → Vty N El Vl n T Π φ' v.
   Proof.
-    revert a a' Π φ φ' v.
-    induction T as [|ub lb c t h T1 IH1 a1 U IH2 a2|T1 IH1 a1 T2 IH2 a2|T1 IH1 a1 T2 IH2 a2
-                   |m k C ub c t U IH aU|s x|lb m C T1 IH aT];
-      intros a a' Π φ φ' v Ha Hc; simpl.
+    revert Π φ φ' v.
+    induction T as [|ub lb c t h T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
+                   |m k C ub c t U IH|s x a|lb m C T1 IH];
+      intros Π φ φ' v Hc; simpl.
     - intros (-> & -> & ->). by rewrite (cle_empty_l _ Hc).
     - intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|by rewrite <-(cle_dom _ _ Hc)| |].
       + intros o f' Ho. destruct (cle_lookup_r _ _ _ _ Hc Ho) as (f & Hf' & Hle).
-        eapply fle_trans; [|exact Hle]. eapply fle_trans; [|exact (Hf o f Hf')].
-        destruct h, a, a'; simpl in *; lia.
+        eapply fle_trans; [|exact Hle]. exact (Hf o f Hf').
       + intros N' j φ2 Πu φu u r tk HN Hj Hd2. apply H; [done|done|by rewrite (cle_dom _ _ Hc)].
     - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & -> & HΠ & Hφ & -> & -> & H1 & H2).
       destruct (cle_union_split _ _ _ Hφ Hc) as (φ1' & φ2' & -> & Hd' & C1 & C2).
       exists v1, v2, Π1, Π2, φ1', φ2'. split_and!; try done.
-      + eapply IH1; [|exact C1|exact H1]. destruct a, a', a1; simpl in *; lia.
-      + eapply IH2; [|exact C2|exact H2]. destruct a, a', a2; simpl in *; lia.
+      + eapply IH1; [exact C1|exact H1].
+      + eapply IH2; [exact C2|exact H2].
     - intros [(v' & -> & H)|(v' & -> & H)]; [left|right]; exists v'; split; try done.
-      + eapply IH1; [|exact Hc|exact H]. destruct a, a', a1; simpl in *; lia.
-      + eapply IH2; [|exact Hc|exact H]. destruct a, a', a2; simpl in *; lia.
+      + eapply IH1; [exact Hc|exact H].
+      + eapply IH2; [exact Hc|exact H].
     - intros (e & -> & Hx & -> & -> & H). rewrite (cle_empty_l _ Hc). exists e. by split_and!.
     - intros (o & S' & f & -> & -> & -> & Hs & Hf).
       destruct (cle_lookup _ _ o f Hc ltac:(by rewrite lookup_singleton_eq)) as (f' & Hf' & Hle).
@@ -240,17 +239,17 @@ Section vty.
       + apply map_eq. intros o'. specialize (Hc o').
         destruct (decide (o = o')) as [<-|Hne]; [by rewrite lookup_singleton_eq|].
         rewrite lookup_singleton_ne in Hc |- * by done. by destruct (φ' !! o').
-      + eapply fle_trans; [exact Ha|]. by eapply fle_trans.
-    - intros H. eapply IH; [|exact Hc|exact H]. destruct a, a', aT; simpl in *; lia.
+      + by eapply fle_trans.
+    - intros H. eapply IH; [exact Hc|exact H].
   Qed.
 
-  Lemma Vty_refill_mono N N1 n T a Π φ v :
-    rle N N1 → Vty N El Vl n T a Π φ v → Vty N1 El Vl n T a Π φ v.
+  Lemma Vty_refill_mono N N1 n T Π φ v :
+    rle N N1 → Vty N El Vl n T Π φ v → Vty N1 El Vl n T Π φ v.
   Proof.
-    intros HN. revert a Π φ v.
-    induction T as [|ub lb c t h T1 IH1 a1 U IH2 a2|T1 IH1 a1 T2 IH2 a2|T1 IH1 a1 T2 IH2 a2
-                   |m k C ub c t U IH aU|s x|lb m C T1 IH aT];
-      intros a Π φ v; simpl; try done.
+    intros HN. revert Π φ v.
+    induction T as [|ub lb c t h T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
+                   |m k C ub c t U IH|s x a|lb m C T1 IH];
+      intros Π φ v; simpl; try done.
     - intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|done|done|].
       intros N' j φ' Πu φu u r tk HN'. apply H. by eapply rle_trans.
     - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & -> & HΠ & Hφ & -> & -> & H1 & H2).
@@ -261,13 +260,13 @@ Section vty.
     - auto.
   Qed.
 
-  Lemma Vty_down N m n T a Π φ v :
-    m ≤ n → Vty N El Vl n T a Π φ v → Vty N El Vl m T a Π φ v.
+  Lemma Vty_down N m n T Π φ v :
+    m ≤ n → Vty N El Vl n T Π φ v → Vty N El Vl m T Π φ v.
   Proof.
-    intros Hmn. revert a Π φ v.
-    induction T as [|ub lb c t h T1 IH1 a1 U IH2 a2|T1 IH1 a1 T2 IH2 a2|T1 IH1 a1 T2 IH2 a2
-                   |k0 k C ub c t U IH aU|s x|lb k0 C T1 IH aT];
-      intros a Π φ v; simpl; try done.
+    intros Hmn. revert Π φ v.
+    induction T as [|ub lb c t h T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
+                   |k0 k C ub c t U IH|s x a|lb k0 C T1 IH];
+      intros Π φ v; simpl; try done.
     - intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|done|done|].
       intros N' j φ' Πu φu u r tk HN' Hj. apply H; [done|lia].
     - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & -> & HΠ & Hφ & -> & -> & H1 & H2).
@@ -278,12 +277,12 @@ Section vty.
     - auto.
   Qed.
 
-  Lemma Vty_val N n T a Π φ v : Vty N El Vl n T a Π φ v → is_val v.
+  Lemma Vty_val N n T Π φ v : Vty N El Vl n T Π φ v → is_val v.
   Proof.
-    revert a Π φ v.
-    induction T as [|ub lb c t h T1 IH1 a1 U IH2 a2|T1 IH1 a1 T2 IH2 a2|T1 IH1 a1 T2 IH2 a2
-                   |m k C ub c t U IH aU|s x|lb m C T1 IH aT];
-      intros a0 Π φ v; simpl.
+    revert Π φ v.
+    induction T as [|ub lb c t h T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
+                   |m k C ub c t U IH|s x a|lb m C T1 IH];
+      intros Π φ v; simpl.
     - by intros (-> & _ & _).
     - by intros (e & -> & _).
     - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & -> & _ & _ & _ & _ & H1 & H2). simpl.
@@ -295,12 +294,12 @@ Section vty.
   Qed.
 
   (** Q15. A value of [Vfuel] mentions exactly the ends of its map. *)
-  Lemma Vty_exact N n T a Π φ v : Vty N El Vl n T a Π φ v → fends v = dom Π.
+  Lemma Vty_exact N n T Π φ v : Vty N El Vl n T Π φ v → fends v = dom Π.
   Proof.
-    revert a Π φ v.
-    induction T as [|ub lb c t h T1 IH1 a1 U IH2 a2|T1 IH1 a1 T2 IH2 a2|T1 IH1 a1 T2 IH2 a2
-                   |m k C ub c t U IH aU|s x|lb m C T1 IH aT];
-      intros a0 Π φ v; simpl.
+    revert Π φ v.
+    induction T as [|ub lb c t h T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
+                   |m k C ub c t U IH|s x a|lb m C T1 IH];
+      intros Π φ v; simpl.
     - intros (-> & -> & _). by rewrite dom_empty_L.
     - by intros (e & -> & Hx & _).
     - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & -> & _ & _ & -> & _ & H1 & H2). simpl.
@@ -312,22 +311,21 @@ Section vty.
   Qed.
 End vty.
 
-Lemma Vfuel_dom N n T a Π φ v : v ∈ FV^N _ n⟦RTy T a⟧(Π, φ) → dom Π = dom φ.
+Lemma Vfuel_dom N n T Π φ v : v ∈ FV^N _ n⟦RTy T⟧(Π, φ) → dom Π = dom φ.
 Proof. rewrite Vfuel_eq. apply Vty_dom. Qed.
 
-Lemma Vfuel_val N n T a Π φ v : v ∈ FV^N _ n⟦RTy T a⟧(Π, φ) → is_val v.
+Lemma Vfuel_val N n T Π φ v : v ∈ FV^N _ n⟦RTy T⟧(Π, φ) → is_val v.
 Proof. rewrite Vfuel_eq. apply Vty_val. Qed.
 
-Lemma Vfuel_exact N n T a Π φ v : v ∈ FV^N _ n⟦RTy T a⟧(Π, φ) → fends v = dom Π.
+Lemma Vfuel_exact N n T Π φ v : v ∈ FV^N _ n⟦RTy T⟧(Π, φ) → fends v = dom Π.
 Proof. rewrite Vfuel_eq. apply Vty_exact. Qed.
 
-(** F5, monotonicity of values: a larger refill, larger counters, a
-    smaller credit. *)
+(** F5, monotonicity of values: a larger refill, larger counters. *)
 Lemma Vfuel_mono N N' n σ Π φ φ' v :
   rle N N' → cle φ φ' → v ∈ FV^N _ n⟦σ⟧(Π, φ) → v ∈ FV^N' _ n⟦σ⟧(Π, φ').
 Proof.
-  intros HN Hc. rewrite !Vfuel_eq. destruct σ as [T a|]; simpl.
-  - intros H. eapply Vty_refill_mono; [exact HN|]. eapply Vty_counters; [apply fle_refl|exact Hc|exact H].
+  intros HN Hc. rewrite !Vfuel_eq. destruct σ as [T|]; simpl.
+  - intros H. eapply Vty_refill_mono; [exact HN|]. eapply Vty_counters; [exact Hc|exact H].
   - intros [-> ->]. by rewrite (cle_empty_l _ Hc).
 Qed.
 
@@ -412,10 +410,10 @@ Proof.
   - intros Hf. destruct (Hs Hf) as [Sn HS]. exists Sn. by apply IH.
   - intros Hf. destruct (Hs Hf) as [Sn HS]. exists Sn. by apply IH.
   - destruct Hs as (H1 & H2 & H3 & H4). split_and!; auto.
-  - destruct Hs as (Ha & S0 & m & T & b & Sc & H1 & H2 & H3 & H4 & H5 & H6).
-    split; [done|]. exists S0, m, T, b, Sc. split_and!; auto. by apply (Vfuel_down _ n (S n)); [lia|].
-  - destruct Hs as (Ha & S0 & m & T & b & Sc & H1 & H2 & H3).
-    split; [done|]. exists S0, m, T, b, Sc. split_and!; [done|done|].
+  - destruct Hs as (Ha & S0 & m & T & Sc & H1 & H2 & H3 & H4 & H5 & H6).
+    split; [done|]. exists S0, m, T, Sc. split_and!; auto. by apply (Vfuel_down _ n (S n)); [lia|].
+  - destruct Hs as (Ha & S0 & m & T & Sc & H1 & H2 & H3).
+    split; [done|]. exists S0, m, T, Sc. split_and!; [done|done|].
     intros j Πi φi Hj. apply H3. lia.
   - destruct Hs as (Ha & S0 & H1 & H2 & H3). split; [done|]. exists S0. split_and!; auto.
   - destruct Hs as (Ha & S0 & S1 & S2 & H1 & H2 & H3). split; [done|]. exists S0, S1, S2. split_and!; auto.
@@ -482,14 +480,14 @@ Proof.
     + eapply IHn; [lia|apply fle_refl|lia| |by apply cle_fhand|exact H3].
       apply (div2_mono (S tk) (S tk')). lia.
     + eapply IHn; [lia|done|done|by apply div2_mono|by apply cle_mrem|exact H4].
-  - destruct Hs as (Ha & S0 & m & T & b & Sc & H1 & H2 & H3 & H4 & H5 & H6).
-    split; [by apply Hact|]. exists S0, m, T, b, Sc. split_and!; try done.
+  - destruct Hs as (Ha & S0 & m & T & Sc & H1 & H2 & H3 & H4 & H5 & H6).
+    split; [by apply Hact|]. exists S0, m, T, Sc. split_and!; try done.
     + by rewrite <-(cle_dom _ _ Hc0).
     + by eapply fspare_mono.
     + eapply Vfuel_mono; [apply rle_refl|by apply cle_fhand|exact H5].
     + eapply IHn; [lia|done|done|done|by apply cle_refill, cle_mrem|exact H6].
-  - destruct Hs as (Ha & S0 & m & T & b & Sc & H1 & H2 & H3).
-    split; [by apply Hact|]. exists S0, m, T, b, Sc. split_and!; [done|done|].
+  - destruct Hs as (Ha & S0 & m & T & Sc & H1 & H2 & H3).
+    split; [by apply Hact|]. exists S0, m, T, Sc. split_and!; [done|done|].
     intros j Πi φi Hj HΠi Hφi Hw.
     eapply IHn; [lia|done|done|done| |].
     + apply cle_union; [by apply cle_refill|apply cle_refl].

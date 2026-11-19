@@ -1104,13 +1104,13 @@ Section core.
       + exfalso. unfold ev_tau in Hτ. simpl in Hτ. discriminate.
     - (* Q-Send *)
       intros q i o w q' Hq Hst. destruct (istep_single_sess _ _ _ _ _ _ Hq Hst) as (e' & Hs' & Hsub & ->).
-      destruct (H5 _ _ _ Hs') as (S0 & x & m & U & b & S & ΘM & Θr & Ho & Hu & Hd & HΘ & HV & HA).
+      destruct (H5 _ _ _ Hs') as (S0 & x & m & U & S & ΘM & Θr & Ho & Hu & Hd & HΘ & HV & HA).
       assert (HM : dom ΘM = fends w).
       { destruct (decide (c_give κ = 0)) as [Hc0|Hc0];
           [exact (Vrel_exact _ _ _ _ _ _ (proj1 HV Hc0))|exact (Vrel_exact _ _ _ _ _ _ (proj2 HV Hc0))]. }
       assert (ech o ∉ C) as Hc by (simpl in Hsub; intros Hc'; apply (Hsub (ech o)); [by apply elem_of_singleton|done]).
       destruct (snd_split Θ Σ ΘB C Hs o ΘM Θr Hd HΘ) as [Hd' HΣ].
-      exists S0, x, m, U, b, S, (rout C ΘM), (rout C Θr), (rin C ΘM), (rpart C ΘM Θr). split_and!.
+      exists S0, x, m, U, S, (rout C ΘM), (rout C Θr), (rin C ΘM), (rpart C ΘM Θr). split_and!.
       + exact (snd_Σo Θ Σ ΘB C Hs o S0 x Ho Hc).
       + done.
       + done.
@@ -1123,9 +1123,9 @@ Section core.
       + simpl. unfold fchans. rewrite <-HM. eapply ac_EP; [done|exact (snd_sth Θ Σ ΘB C Hs o S0 x Ho Hc ΘM Θr Hd HΘ _)|exact HA].
     - (* Q-Recv *)
       intros q i o w q' Hq Hst. destruct (istep_single_sess _ _ _ _ _ _ Hq Hst) as (e' & Hs' & Hsub & ->).
-      destruct (H6 _ _ _ Hs') as (S0 & x & m & U & b & S & Ho & Hu & HR).
+      destruct (H6 _ _ _ Hs') as (S0 & x & m & U & S & Ho & Hu & HR).
       assert (ech o ∉ C) as Hc by (simpl in Hsub; intros Hc'; apply (Hsub (ech o)); [by apply elem_of_singleton|done]).
-      exists S0, x, m, U, b, S. split_and!; [exact (sth_lookup_nC _ _ _ _ _ _ Hs Hc Ho)|done|].
+      exists S0, x, m, U, S. split_and!; [exact (sth_lookup_nC _ _ _ _ _ _ Hs Hc Ho)|done|].
       intros j Θ2 Hj HC2 Hok Hw. simpl in *. pose proof (c_take_pos κ).
       pose proof (sth_upd Θ Σ ΘB C Hs o (S, x⁺) Hc (elem_of_dom_2 _ _ _ Ho)) as Hs1.
       pose proof (rcv_disj _ _ _ _ Hs1 Θ2 HC2 Hok) as Hd1.

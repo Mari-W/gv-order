@@ -226,7 +226,7 @@ Section rel.
     VC n T.
   Proof.
     intros IHl IHt IHe W Θ Θ' v HΘ.
-    destruct T as [|ub lb c t hh T1 a1 U a2|T1 a1 U a2|T1 a1 U a2|m kk C ub c t U a0|s x|lb m C T1 a0].
+    destruct T as [|ub lb c t hh T1 U a0|T1 U|T1 U|m kk C ub c t U|s x a0|lb m C T1].
     - intros [-> ->]%Vrel_unit_iff. apply Vrel_unit_iff. by rewrite (senv_eqv_empty _ HΘ).
     - intros (e & -> & Hfe & Hlb & H)%Vrel_lolli_iff. apply Vrel_lolli_iff.
       exists e. split_and!; [done|by rewrite <-(senv_eqv_dom _ _ HΘ)|by rewrite <-(senv_eqv_heads _ _ HΘ)|].
@@ -299,7 +299,7 @@ Section rel.
       + intros -> Hw. destruct (B2 eq_refl Hw) as [_ B3]. apply B3; [by right|].
         apply senv_eqv_union; [done|apply senv_eqv_refl].
     - intros o w e' Hst.
-      destruct (H5 o w e' Hst) as (S0 & x & m & U & b & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
+      destruct (H5 o w e' Hst) as (S0 & x & m & U & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
       destruct (senv_eqv_lookup _ _ _ _ _ HΘ A1) as (S0' & A1' & Hs0).
       destruct (seqv_unfold_snd S0' S0 m U b S (seqv_sym _ _ Hs0) A2) as (U' & b' & S' & A2' & HU & HS).
       assert (senv_eqv (ΘM ∪ Θr) (delete o Θ')) as Hdel by (rewrite <-A4; by apply senv_eqv_delete).
@@ -311,7 +311,7 @@ Section rel.
         * intros Hc. apply (proj2 (Vrel_teq κ _ _ _ _ _ _ (teq_payload m U U' x HU))).
           apply (proj1 (IHl (Datatypes.S n - c_give κ) ltac:(lia) _) _ ΘM); [done|by apply B2].
       + eapply Hac; [|exact A7]. apply senv_eqv_insert; [done|by apply seqv_sym].
-    - intros o w e' Hst. destruct (H6 o w e' Hst) as (S0 & x & m & U & b & S & A1 & A2 & A3).
+    - intros o w e' Hst. destruct (H6 o w e' Hst) as (S0 & x & m & U & S & A1 & A2 & A3).
       destruct (senv_eqv_lookup _ _ _ _ _ HΘ A1) as (S0' & A1' & Hs0).
       destruct (seqv_unfold_rcv S0' S0 m U b S (seqv_sym _ _ Hs0) A2) as (U' & b' & S' & A2' & HU & HS).
       exists S0', x, m, U', b', S'. split_and!; [done|done|].
@@ -463,7 +463,7 @@ Section prel.
       by rewrite (chans_of_conv _ _ HΣ).
     - intros q i o w q' Hq Hst.
       destruct (H2 q i o w q' Hq Hst)
-        as (S0 & x & m & U & b & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A7 & A8 & A9).
+        as (S0 & x & m & U & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A7 & A8 & A9).
       destruct (senv_eqv_lookup _ _ _ _ _ HΣ A1) as (S0' & A1' & Hs0).
       destruct (seqv_unfold_snd S0' S0 m U b S (seqv_sym _ _ Hs0) A2) as (U' & b' & S' & A2' & HU & HS).
       assert (senv_eqv (Σv ∪ Σr) (delete o Σ')) as Hdel by (rewrite <-A4; by apply senv_eqv_delete).
@@ -479,7 +479,7 @@ Section prel.
           apply (Vrel_conv κ _ _ (Σv ∪ Θe)); [done|by apply B2].
       + eapply Hac; [|exact A9]. apply senv_eqv_insert; [|by apply seqv_sym].
         apply senv_eqv_union; [done|apply senv_eqv_refl].
-    - intros q i o w q' Hq Hst. destruct (H3 q i o w q' Hq Hst) as (S0 & x & m & U & b & S & A1 & A2 & A3).
+    - intros q i o w q' Hq Hst. destruct (H3 q i o w q' Hq Hst) as (S0 & x & m & U & S & A1 & A2 & A3).
       destruct (senv_eqv_lookup _ _ _ _ _ HΣ A1) as (S0' & A1' & Hs0).
       destruct (seqv_unfold_rcv S0' S0 m U b S (seqv_sym _ _ Hs0) A2) as (U' & b' & S' & A2' & HU & HS).
       exists S0', x, m, U', b', S'. split_and!; [done|done|].

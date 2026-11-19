@@ -29,7 +29,7 @@ Section closure.
   Lemma Vrel_val n W Θ T v : Vrel κ n W Θ T v → is_val v.
   Proof.
     revert W Θ v. induction T as [T IH] using tsize_ind. intros W Θ v.
-    destruct T as [|ub lb c t h T1 a1 U a2|T1 a1 U a2|T1 a1 U a2|m kk C ub c t U a|s x|lb m C T1 a].
+    destruct T as [|ub lb c t h T1 U a|T1 U|T1 U|m kk C ub c t U|s x a|lb m C T1].
     - by intros [_ ->]%Vrel_unit_iff.
     - by intros (e & -> & _)%Vrel_lolli_iff.
     - intros (v1 & v2 & Θ1 & Θ2 & -> & _ & _ & H1 & H2)%Vrel_prod_iff. simpl.
@@ -47,7 +47,7 @@ Section closure.
   Lemma Vrel_mono n W W' Θ T v : W ⊑ W' → Vrel κ n W Θ T v → Vrel κ n W' Θ T v.
   Proof.
     intros HW. revert W W' HW Θ v. induction T as [T IH] using tsize_ind. intros W W' HW Θ v.
-    destruct T as [|ub lb c t h T1 a1 U a2|T1 a1 U a2|T1 a1 U a2|m kk C ub c t U a|s x|lb m C T1 a].
+    destruct T as [|ub lb c t h T1 U a|T1 U|T1 U|m kk C ub c t U|s x a|lb m C T1].
     - by rewrite !Vrel_unit_iff.
     - rewrite !Vrel_lolli_iff. intros (e & -> & Hfe & Hlb & H). exists e.
       split_and!; [done|done|by eapply lb_le_mono|]. intros W'' j Θ' w F HW'' Hj Hd Hub Hw.
@@ -92,7 +92,7 @@ Section closure.
   Lemma Vrel_down n m W Θ T v : m ≤ n → Vrel κ n W Θ T v → Vrel κ m W Θ T v.
   Proof.
     intros Hmn. revert W Θ v. induction T as [T IH] using tsize_ind. intros W Θ v.
-    destruct T as [|ub lb c t h T1 a1 U a2|T1 a1 U a2|T1 a1 U a2|m' kk C ub c t U a|s x|lb m' C T1 a].
+    destruct T as [|ub lb c t h T1 U a|T1 U|T1 U|m' kk C ub c t U|s x a|lb m' C T1].
     - by rewrite !Vrel_unit_iff.
     - rewrite !Vrel_lolli_iff. intros (e & -> & Hfe & Hlb & H). exists e.
       split_and!; [done|done|done|]. intros W' j Θ' w F HW Hj Hd Hub Hw. apply H; [done|lia|done..].
@@ -152,11 +152,11 @@ Section closure.
       + by apply B2.
       + apply B1; [lia|]. by apply Vrel_unit_iff.
     - intros o w e' Hst.
-      destruct (H5 o w e' Hst) as (S0 & x & m' & U & b & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
-      exists S0, x, m', U, b, S, ΘM, Θr. split_and!; [done..| |eapply Hac; [done|exact A7]].
+      destruct (H5 o w e' Hst) as (S0 & x & m' & U & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
+      exists S0, x, m', U, S, ΘM, Θr. split_and!; [done..| |eapply Hac; [done|exact A7]].
       eapply at_cost_V_down; [|exact A6]. lia.
-    - intros o w e' Hst. destruct (H6 o w e' Hst) as (S0 & x & m' & U & b & S & A1 & A2 & A3).
-      exists S0, x, m', U, b, S. split_and!; [done|done|].
+    - intros o w e' Hst. destruct (H6 o w e' Hst) as (S0 & x & m' & U & S & A1 & A2 & A3).
+      exists S0, x, m', U, S. split_and!; [done|done|].
       intros j Θin Hj Hd Hw. pose proof (c_take_pos κ).
       apply (IHm j ltac:(lia) j W1 _ T F F'); [lia|done|]. apply A3; [lia|done|done].
     - intros o e' Hst. destruct (H7 o e' Hst) as (S0 & x & A1 & A2 & A3).
@@ -196,11 +196,11 @@ Section closure.
     - intros q ev q' Hq Hst Hτ Hd. apply Hac. exact (H1 q ev q' Hq Hst Hτ Hd).
     - intros q i o w q' Hq Hst.
       destruct (H2 q i o w q' Hq Hst)
-        as (S0 & x & m' & U & b & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A7 & A8 & A9).
-      exists S0, x, m', U, b, S, Σv, Σr, Θe, Σe. split_and!; [done..| |by apply Hac].
+        as (S0 & x & m' & U & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A7 & A8 & A9).
+      exists S0, x, m', U, S, Σv, Σr, Θe, Σe. split_and!; [done..| |by apply Hac].
       eapply at_cost_V_down; [|exact A8]. lia.
-    - intros q i o w q' Hq Hst. destruct (H3 q i o w q' Hq Hst) as (S0 & x & m' & U & b & S & A1 & A2 & A3).
-      exists S0, x, m', U, b, S. split_and!; [done|done|].
+    - intros q i o w q' Hq Hst. destruct (H3 q i o w q' Hq Hst) as (S0 & x & m' & U & S & A1 & A2 & A3).
+      exists S0, x, m', U, S. split_and!; [done|done|].
       intros j Θ2 Hj Hd Hok Hw. apply A3; [lia|done..].
     - intros q i o q' Hq Hst. destruct (H4 q i o q' Hq Hst) as (S0 & x & A1 & A2 & A3).
       exists S0, x. split_and!; [done|done|by apply Hac].
@@ -228,7 +228,7 @@ Section closure.
       body is read at the empty future, above every upper point, and
       the lower point is dropped. *)
   Lemma Vrel_thunk n W Θ ub lb v :
-    Vrel κ n W Θ (TLolli ub lb None tinf None TUnit None TUnit None) v →
+    Vrel κ n W Θ (TLolli ub lb None tinf None TUnit TUnit None) v →
     Vthunk κ n (Vrel κ) (Erel κ) (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit)
       (λ W' Θ' F e, Erel κ n W' Θ' TUnit F e) W Θ v.
   Proof.

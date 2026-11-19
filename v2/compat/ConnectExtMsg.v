@@ -122,7 +122,7 @@ Section extmsg.
     intros Hq Hst. destruct (ext_split _ _ _ _ Hq Hst) as (M1 & M2 & e & e' & Hd & HM1 & HM2 & He & Hsub & [(Hi & Hs & Eq)|(Hi & Hs & Eq)]);
       simpl in Hsub; assert (ech o ∉ K) as HnK by (clear -Hsub; cc_set_solver); rewrite Eq.
     - destruct H1 as (_ & _ & (_ & S1 & _)).
-      destruct (S1 _ _ _ _ _ (Hq1e M1 HM1) Hs) as (S0 & x & m & U & b & Sc & Σv1 & Σr1 & Θe1 & Σe1 & Lo & Uo & Dvr & Edel & HΘ1 & Hss & AV & AP).
+      destruct (S1 _ _ _ _ _ (Hq1e M1 HM1) Hs) as (S0 & x & m & U & Sc & Σv1 & Σr1 & Θe1 & Σe1 & Lo & Uo & Dvr & Edel & HΘ1 & Hss & AV & AP).
       assert (fends w = dom Σv1 ∪ dom Θe1) as HM
         by (rewrite <-dom_union_L; symmetry; exact (at_cost_V_exact κ _ _ _ _ _ _ _ AV)).
       destruct (iface1 _ _ Lo HnK) as [Lo' Do].
@@ -131,7 +131,7 @@ Section extmsg.
       pose proof (snd_conn Σ1 ΣC Σ2 ΣD q1.1 q2.1 Hc o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺)) as Hc'.
       pose proof (snd_iface Σ1 ΣC Σ2 ΣD q1.1 q2.1 Hc o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺)) as Hif.
       pose proof (snd_chans Σ1 ΣC Σ2 ΣD q1.1 q2.1 Hc o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺)) as Hch.
-      eexists S0, x, m, U, b, Sc, _, _, _, _. split_and!.
+      eexists S0, x, m, U, Sc, _, _, _, _. split_and!.
       + by apply lk12.
       + done.
       + apply (snd_vr Σ1 ΣC Σ2 ΣD q1.1 q2.1 Hc o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺)).
@@ -148,7 +148,7 @@ Section extmsg.
         unfold pconn, erase. simpl. unfold fchans. rewrite HM, Hch. f_equal.
     - rewrite HΣ12. pose proof (conn_sym _ _ _ _ _ _ Hc) as Hcs.
       destruct H2 as (_ & _ & (_ & S2 & _)).
-      destruct (S2 _ _ _ _ _ (Hq2e M2 HM2) Hs) as (S0 & x & m & U & b & Sc & Σv1 & Σr1 & Θe1 & Σe1 & Lo & Uo & Dvr & Edel & HΘ1 & Hss & AV & AP).
+      destruct (S2 _ _ _ _ _ (Hq2e M2 HM2) Hs) as (S0 & x & m & U & Sc & Σv1 & Σr1 & Θe1 & Σe1 & Lo & Uo & Dvr & Edel & HΘ1 & Hss & AV & AP).
       assert (fends w = dom Σv1 ∪ dom Θe1) as HM
         by (rewrite <-dom_union_L; symmetry; exact (at_cost_V_exact κ _ _ _ _ _ _ _ AV)).
       destruct (iface2 _ _ Lo HnK) as [Lo' Do].
@@ -157,7 +157,7 @@ Section extmsg.
       pose proof (snd_conn Σ2 ΣD Σ1 ΣC q2.1 q1.1 Hcs o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺)) as Hc'.
       pose proof (snd_iface Σ2 ΣD Σ1 ΣC q2.1 q1.1 Hcs o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺)) as Hif.
       pose proof (snd_chans Σ2 ΣD Σ1 ΣC q2.1 q1.1 Hcs o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺)) as Hch.
-      eexists S0, x, m, U, b, Sc, _, _, _, _. split_and!.
+      eexists S0, x, m, U, Sc, _, _, _, _. split_and!.
       + by apply lookup_union_Some_l.
       + done.
       + apply (snd_vr Σ2 ΣD Σ1 ΣC q2.1 q1.1 Hcs o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺)).
@@ -187,9 +187,9 @@ Section extmsg.
     intros Hq Hst. destruct (ext_split _ _ _ _ Hq Hst) as (M1 & M2 & e & e' & Hd & HM1 & HM2 & He & Hsub & [(Hi & Hs & Eq)|(Hi & Hs & Eq)]);
       simpl in Hsub; assert (ech o ∉ K) as HnK by (clear -Hsub; cc_set_solver); rewrite Eq.
     - destruct H1 as (_ & _ & (_ & _ & R1 & _)).
-      destruct (R1 _ _ _ _ _ (Hq1e M1 HM1) Hs) as (S0 & x & m & U & b & Sc & Lo & Uo & AR).
+      destruct (R1 _ _ _ _ _ (Hq1e M1 HM1) Hs) as (S0 & x & m & U & Sc & Lo & Uo & AR).
       destruct (iface1 _ _ Lo HnK) as [Lo' Do].
-      exists S0, x, m, U, b, Sc. split_and!; [by apply lk12|done|]. intros j Θ2 Hj Hdj Hok HV.
+      exists S0, x, m, U, Sc. split_and!; [by apply lk12|done|]. intros j Θ2 Hj Hdj Hok HV.
       pose proof (c_take_pos κ) as Ht.
       pose proof (conn_retype1 _ _ _ _ _ _ o (Sc, x⁺) Hc Do) as Hc1.
       rewrite insert_union_l in Hok |- *. rewrite insert_union_l in AR.
@@ -209,9 +209,9 @@ Section extmsg.
       unfold pconn, erase. simpl. rewrite !difference_empty_L. f_equal. rewrite <-Hch. done.
     - rewrite HΣ12. pose proof (conn_sym _ _ _ _ _ _ Hc) as Hcs.
       destruct H2 as (_ & _ & (_ & _ & R2 & _)).
-      destruct (R2 _ _ _ _ _ (Hq2e M2 HM2) Hs) as (S0 & x & m & U & b & Sc & Lo & Uo & AR).
+      destruct (R2 _ _ _ _ _ (Hq2e M2 HM2) Hs) as (S0 & x & m & U & Sc & Lo & Uo & AR).
       destruct (iface2 _ _ Lo HnK) as [Lo' Do].
-      exists S0, x, m, U, b, Sc. split_and!; [by apply lookup_union_Some_l|done|]. intros j Θ2 Hj Hdj Hok HV.
+      exists S0, x, m, U, Sc. split_and!; [by apply lookup_union_Some_l|done|]. intros j Θ2 Hj Hdj Hok HV.
       pose proof (c_take_pos κ) as Ht.
       pose proof (conn_retype1 _ _ _ _ _ _ o (Sc, x⁺) Hcs Do) as Hc1.
       rewrite insert_union_l in Hok |- *. rewrite insert_union_l in AR.

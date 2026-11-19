@@ -186,7 +186,7 @@ Proof.
   op_step Hst. inversion Hst; subst. cbn [Fobl]. unfold f_send, f_act.
   assert (o ∉ dom φ1) as Ho1 by (apply map_disjoint_dom in Hdφ; rewrite dom_singleton_L in Hdφ; set_solver).
   assert (dom Π1 = dom φ1) as HdΠφ by (by eapply Vfuel_dom).
-  assert (fends w = dom φ1) as Hfw by (rewrite (Vfuel_exact _ _ _ _ _ _ _ Hw); done).
+  assert (fends w = dom φ1) as Hfw by (rewrite (Vfuel_exact _ _ _ _ _ _ Hw); done).
   assert ((Π1 ∪ {[o := s']}) !! o = Some s') as HΠo.
   { apply lookup_union_Some_raw. right. split; [apply not_elem_of_dom; by rewrite HdΠφ|apply lookup_singleton_eq]. }
   assert (∀ o' f', o' ∈ dom (φ1 ∪ {[o := f]}) ∖ {[o]} → (φ1 ∪ {[o := f]}) !! o' = Some f' →
