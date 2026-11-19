@@ -143,13 +143,13 @@ merge('fu-obls', 'Fuel obligations', ['fu-obl-int', 'fu-obl'], {
   caption: R`Internal steps tick no counter. A new channel starts both ends at $N$, a spawn hands the ends of the thunk to the child one lower with half the tickets, and a link drops two dual ends and spends a ticket. Every action spends one unit of the frame, advances the protocol of $o$, refills $o$ and ticks the other ends. A send hands its payload ends on one lower, and a receive continues for every fueled value that may arrive.`
 });
 merge('soup', 'The soup', ['sp-state', 'sp-inv'], {
-  caption: R`A soup state $a = (q, K, tk)$ is a configuration with an ownership map $K$ from held ends to holder, point and counter, and tickets per thread. It is in the soup at level $n$ when every thread is in $E[\kappa_L]$ at its part of the ends and fueled at its part of the counters, and ownership, points and protocols agree across threads.`,
+  caption: R`A soup state $a = (q, K, tk)$ is a configuration with an ownership map $K$ from held ends to holder, point and counter, and tickets per thread. It is in the soup at level $n$ when every thread is in the relation $E[\kappa_L]$ at the ends it owns and has fuel at their counters. The rest, $\mathsf{consistent}$, is bookkeeping that keeps $K$, $A$ and $\Pi$ in agreement. The soup is the only place fuel is used.`,
   why: 'The soup joins the two halves of every thread, its relation at $\\kappa_L$ and its fuel, over one ownership map fixed outside the level. Lock-free adequacy reads the counters and points it records.'
 });
 merge('sj-all', 'Semantic judgments', ['sj', 'sp-lf'], {
   why: 'The semantic judgments are what the fundamental theorems conclude and what adequacy consumes. \\annp{The lock-free judgment is the soup at every level, with the refill and the soup state chosen once.}'
 });
-order('semantic', ['sr-reading', 'ct-costs', 'v-rel', 'e-rel', 'e-obl', 'rd', 'p-rel', 'p-obls', 'fu', 'fu-obls', 'fv', 'soup', 'sj-all']);
+order('semantic', ['sr-reading', 'ct-costs', 'v-rel', 'e-rel', 'e-obl', 'rd', 'p-rel', 'p-obls', 'fu-vs', 'fu', 'fu-obls', 'fv', 'soup', 'sj-all']);
 
 // ---- theorems ----
 merge('th-fund', 'Fundamental theorems', ['th-fund-term', 'th-fund-proc', 'th-cost'], {

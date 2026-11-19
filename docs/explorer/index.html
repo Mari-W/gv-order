@@ -45,7 +45,7 @@ h1 small { font-family: var(--body); font-weight: 400; font-size: 0.8rem; color:
 .modes button[aria-pressed="true"] { color: #fff; }
 .modes button[data-mode="df"][aria-pressed="true"] { background: var(--df); }
 .ann { fill: var(--lf); color: var(--lf); }
-.block.lfonly { background: var(--lf-soft); border-color: var(--lf); }
+.block.lfonly, .ex.lfonly { background: var(--lf-soft); border-color: var(--lf); }
 .block.lfonly .ann { fill: currentColor; color: inherit; }
 .flip { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; font: 500 0.66rem var(--body); letter-spacing: 0.04em; }
 .flip button { border: 0; background: transparent; color: var(--muted); padding: 1px 6px; cursor: pointer; font: inherit; }
@@ -308,8 +308,9 @@ window.MathJax = {
   const JUDG = [['df', '$\\vdash$', 'deadlock free'], ['live', '$\\vdash$ and $\\vdash\\!\\triangleright$', 'live'], ['lf', '$\\Vdash^{N}$', 'lock free']];
   function badges(acc) {
     if (!acc) return '';
+    // the deadlock-free mode shows only the deadlock-free verdict
     return `<div class="badges">${JUDG.map(([m, sym, name]) => {
-      const a = acc[m]; if (a === undefined) return '';
+      const a = acc[m]; if (a === undefined || (mode === 'df' && m !== 'df')) return '';
       const st = a === true || (a && a.ok) ? 'yes' : a === false || (a && a.ok === false) ? 'no' : 'na';
       const extra = (a && a.N !== undefined ? ` <span class="n">${a.N === 'every' ? 'every $N$' : `$N = ${esc(a.N)}$`}</span>` : '') + (a && a.part ? ` <span class="nm">(${esc(a.part)})</span>` : '');
       const title = a && a.rocq ? ` title="${esc(a.rocq)}"` : '';
@@ -322,7 +323,7 @@ window.MathJax = {
     for (const x of MAP.examples || []) {
       const modes = x.modes && x.modes.length ? x.modes : ['df', 'lf'];
       if (!modes.includes(mode) || !matches(x.title, x.shows, x.code, x.rocq)) continue;
-      root.insertAdjacentHTML('beforeend', `<article class="ex" id="x-${esc(x.id)}"><h3 data-ex="${esc(x.id)}" tabindex="0">${esc(x.title)}</h3>${badges(x.accepts)}${x.code ? `<pre>${hl(x.code)}</pre>` : ''}</article>`);
+      root.insertAdjacentHTML('beforeend', `<article class="ex${modes.includes('df') ? '' : ' lfonly'}" id="x-${esc(x.id)}"><h3 data-ex="${esc(x.id)}" tabindex="0">${esc(x.title)}</h3>${badges(x.accepts)}${x.code ? `<pre>${hl(x.code)}</pre>` : ''}</article>`);
       shown++;
     }
     if (!shown) root.insertAdjacentHTML('beforeend', '<p class="empty-state">No example for this instance matches the filter.</p>');

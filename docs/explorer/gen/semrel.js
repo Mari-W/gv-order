@@ -47,6 +47,7 @@ const DM = R`\mathbin{\dot-}`;
 const RULE = (name, rows, concl) => rule(name, R`\begin{array}{c}${rows.map(r => r.join(R`\quad `)).join(R` \\ `)}\end{array}`, /^[OQ]-/.test(name) ? h(name, concl) : concl);
 const PB = (a) => h('sr.pobl', R`\mathsf{Pobl}_{${a}}(p')`);
 const OB = (a) => h('sr.obl', R`\mathsf{Obl}_{${a}}(e')`);
+const OWN = h('sp.own', R`\mathsf{consistent}`);
 
 // cost tables
 block(s, {
@@ -60,7 +61,7 @@ ${h('rel.atcost', R`e'\ \text{at}\ \Theta'`)} & e' \text{ is safe holding } \The
 \annraw{\\}\annot{${h('sr.FE', R`e \in F^{N}_{n}\llbracket \sigma \triangleright d ; r \rrbracket(\Pi, \varphi, tk)`)}}\annraw{&}\annot{\text{the thread } e \text{ has counters } \varphi \text{ and tickets } tk \text{ for } n \text{ more steps, reading no point}}
 \annraw{\\}\annot{${h('th.soup', R`a \in S^{N,W}_{n}\llbracket \Sigma \vdash T \rrbracket`)}}\annraw{&}\annot{\text{every thread of } a \text{ is in } E[\kappa_L] \text{ and fueled, over one ownership map}}
 \end{array}`,
-  caption: 'Every relation is indexed by a world $W$, whose order of points the relation reads, and a level $n$, the number of further steps it promises safety for. Safe means never stuck in a deadlock, every end owned by exactly one thread, and every message fitting its protocol.'
+  caption: 'Every relation is indexed by a world $W$, whose order of points it reads, and a level $n$, the number of further steps it promises safety for. A term is safe when it is a safe value, or when it is ready and every step leads to a safe term one level lower that holds the ends the step leaves it. Values are safe by their type, the obligations say which ends each step leaves, and readiness says that a stuck term waits below the partner points of what it holds. Processes are safe in the same way, and closed under fusing their ends, so composing two safe processes needs no new proof. \\annp{The lock-free reading adds fuel, a second predicate on each thread, and the soup, which asks both of every thread.}'
 });
 block(s, {
   id: 'ct-table', title: 'Cost tables', rocq: 'relation/CostTable.v: ctable', modes: ['lf'],
@@ -281,6 +282,20 @@ block(s, {
 const FN = (j, upd) => h('fu.upd', upd ? R`e' \in F_{${j}}[${upd}]` : R`e' \in F_{${j}}`);
 const UNFO = (o) => R`${UNF}(\Pi\,${o})`;
 block(s, {
+  id: 'fu-vs', title: 'Relation and fuel side by side', rocq: 'relation/Relation.v: Erel; fuel/Fuel.v: FuelE; soup/Soup.v: Soup',
+  modes: ['lf'],
+  tex: R`\begin{array}{l|l|l}
+ & \text{the relation} & \text{fuel} \\ \hline
+\text{a thread} & ${E('W', 'n', R`\Theta`, 'T', 'F')} & ${FE('N', 'n', R`\sigma \triangleright d ; r`, R`\Pi, \varphi, tk`)} \\
+\text{it reads} & \text{the world } W\text{, points, owned ends } \Theta & \text{protocols } \Pi\text{, counters } \varphi\text{, tickets } tk \\
+\text{a value} & ${V('W', 'n', R`\Theta`, 'T')} & ${FV('N', 'n', R`T^{a}`, R`\Pi, \varphi`)} \\
+\text{a step } \alpha & ${h('sr.obl', R`\mathsf{Obl}_\alpha(e')`)} & ${h('sr.fobl', R`\mathsf{Fobl}_\alpha(e')`)} \\
+\text{rules out} & \text{a stuck wait, and at } \kappa_L \text{ a loop of free steps} & \text{a wait that never ends} \\
+\text{used in} & \vDash \text{ and the soup} & \text{the soup only}
+\end{array}`,
+  caption: 'Fuel is not part of the relation. It is a second predicate on the same thread with the same shape, a value clause and one obligation per step, and it reads counters and tickets where the relation reads points. The soup asks both of every thread. The relation makes every thread ready when stuck, and fuel bounds how often the holder of a partner end may act elsewhere first, so every wait ends.'
+});
+block(s, {
   id: 'fu-def', title: 'Fuel', rocq: 'fuel/Fuel.v: Fdef, FuelE, FLev',
   modes: ['lf'],
   tex: R`\begin{array}{c}
@@ -360,16 +375,17 @@ ${h('sp.next', R`\mathsf{lf\_next}\,N\,(q, K, tk)\,ev\,q' = (q',\ \mathsf{own\_n
 block(s, {
   id: 'sp-inv', title: 'The soup', rocq: 'soup/State.v: soup_gen, soup/Soup.v: soup_inv, Soup',
   modes: ['lf'],
-  tex: R`\begin{array}{ll}
-a \in ${h('th.soup', R`S^{N,W}_n\llbracket\Sigma \vdash T\rrbracket`)} \iff ${h('sp.exists', R`\exists A, \Pi, U`)}.\ ${h('sp.prim', R`${h('ty.prim', R`\mathsf{prim}`)}\,T`)} \land \text{for every thread } q(t) = e & \\[1ex]
-\quad ${h('sp.rel', R`e \in ${h('th.Erel', R`E[\kappa_L]^W_n\llbracket K_t(A) \vdash U_t\rrbracket^{\varnothing}`)}`)} \land ${h('sp.ty', R`U_t \in \{T, \ast\}`)} & \text{live} \\
-\quad ${h('sp.fuel', R`e \in ${FE('N', 'n', R`${THR} \triangleright \infty ; 0`, R`K_t(\Pi), ${h('sr.ctrs', R`\mathsf{ctrs}`)}\,K\,t, tk_t`)}`)} & \text{fueled} \\[1ex]
-\text{and for every end } o & \\[1ex]
-\quad ${h('sp.pts', R`\mathsf{pt}(A\,o) = \mathsf{pt}(K\,o)`)} \land ${h('sp.dom', R`\mathrm{dom}\,\Pi = \mathrm{dom}\,K`)} \land ${h('sp.owner', R`K(o) = (t, \_, \_) \Rightarrow t \in \mathrm{dom}\,q`)} & \text{one owner} \\
-\quad ${h('sp.closed', R`o \in \mathrm{dom}\,K \Rightarrow ${ECH}\,o \in C \lor o \in \mathrm{dom}\,\Sigma`)} \land ${h('sp.pair', R`o \in \mathrm{dom}\,K \land ${ECH}\,o \in C \Rightarrow \overline{o} \in \mathrm{dom}\,K`)} & \text{closed} \\
-\quad ${h('sp.sdual', R`${ECH}\,o \in C \land A(o) = S@x \land A(\overline{o}) = S'@x' \Rightarrow x' = \overline{x} \land ${SDUAL}\,S\,S'`)} & \text{dual} \\
-\quad ${h('sp.pdual', R`${ECH}\,o \in C \land \Pi(o) = P \land \Pi(\overline{o}) = P' \Rightarrow P' ${SEQU} \overline{P}`)} & \\
-\quad ${h('sp.sig', R`\Sigma(o) = y \Rightarrow A(o) = y`)} \land ${h('sp.psig', R`\Sigma(o) = S@x \Rightarrow \Pi(o) = S`)} \land ${h('sp.fin', R`K(o) = (\_, \_, f) \Rightarrow f \in \mathbb{N}`)} & \text{interface}
+  tex: R`\begin{array}{rcll}
+a \in ${h('th.soup', R`S^{N,W}_n\llbracket\Sigma \vdash T\rrbracket`)} & \iff & ${h('sp.exists', R`\exists A, \Pi`)}.\ ${h('sp.prim', R`${h('ty.prim', R`\mathsf{prim}`)}\,T`)} \land \text{for every thread } t \text{ running } e\text{,} & \\[1ex]
+ & & \quad ${h('sp.rel', R`e \in ${h('th.Erel', R`E[\kappa_L]^W_n\llbracket A_t \vdash U_t\rrbracket^{\varnothing}`)}`)} & \text{the relation} \\
+ & & \quad ${h('sp.fuel', R`e \in ${FE('N', 'n', R`${THR} \triangleright \infty ; 0`, R`\Pi_t, \varphi_t, tk_t`)}`)} & \text{fuel} \\
+ & & \land\ ${OWN}(a, A, \Pi) & \\[2ex]
+A_t,\ \Pi_t,\ \varphi_t & = & A,\ \Pi \text{ and } ${h('sr.ctrs', R`\text{the counters of } K`)} \text{ on the ends } K \text{ gives } t & ${h('sp.ty', R`U_t \in \{T, \ast\}`)} \\[2ex]
+${OWN}(a, A, \Pi) & \iff & ${h('sp.pts', R`\mathsf{pt}(A\,o) = \mathsf{pt}(K\,o)`)} \land ${h('sp.dom', R`\mathrm{dom}\,\Pi = \mathrm{dom}\,K`)} \land ${h('sp.owner', R`K(o) = (t, \_, \_) \Rightarrow t \in \mathrm{dom}\,q`)} & \text{owners} \\
+ & \land & ${h('sp.closed', R`o \in \mathrm{dom}\,K \Rightarrow ${ECH}\,o \in C \lor o \in \mathrm{dom}\,\Sigma`)} \land ${h('sp.pair', R`o \in \mathrm{dom}\,K \land ${ECH}\,o \in C \Rightarrow \overline{o} \in \mathrm{dom}\,K`)} & \text{closed} \\
+ & \land & ${h('sp.sdual', R`${ECH}\,o \in C \land A(o) = S@x \land A(\overline{o}) = S'@x' \Rightarrow x' = \overline{x} \land ${SDUAL}\,S\,S'`)} & \text{dual} \\
+ & \land & ${h('sp.pdual', R`${ECH}\,o \in C \land \Pi(o) = P \land \Pi(\overline{o}) = P' \Rightarrow P' ${SEQU} \overline{P}`)} & \\
+ & \land & ${h('sp.sig', R`\Sigma(o) = y \Rightarrow A(o) = y`)} \land ${h('sp.psig', R`\Sigma(o) = S@x \Rightarrow \Pi(o) = S`)} \land ${h('sp.fin', R`K(o) = (\_, \_, f) \Rightarrow f \in \mathbb{N}`)} & \text{interface}
 \end{array}`,
   caption: 'At each level $n$ the soup asks every thread live and fueled at its part of $A$ and $\\Pi$, with ends, points and counters read from $K$.'
 });
@@ -564,6 +580,7 @@ n('sp.fin', R`Finite counters`, R`$\forall o.\ K(o) = (\_, \_, f) \Rightarrow f 
 n('sp.lfsem', R`$\Sigma \Vvdash_W p : T$`, R`$\exists N \in \mathbb{N}, a.\ \mathsf{erase}(q_a) = p \land \forall n.\ a \in S^{N,W}_n\llbracket\Sigma \vdash T\rrbracket$.`, R`The soup alone suffices, and absence of internal divergence of the soup gives what a process conjunct would.`, DEF, R`The lock-free fundamental theorem concludes it.`, 'soup/Soup.v: lf_sem');
 n('sp.exists-before-forall', R`$\exists$ before $\forall n$`, R`$N$ and the state $a$ are fixed before the level quantifier.`, R`Ownership, points and counters are then the same at every level.`, R`A placement chosen per level lets the main thread starve in every fair run.`, R`$\exists N\,a.\ \ldots \forall n$.`, 'soup/Soup.v: lf_sem');
 n('sp.next', R`$\mathsf{lf\_next}$`, R`$\mathsf{lf\_next}\,N\,(q, K, tk)\,ev\,q' = (q', \mathsf{own\_next}\,N\,ev\,K, \mathsf{tk\_next}\,ev\,tk)$.`, R`Creation places new ends with counter $N$, actions move and refill, hand-overs move with counter minus one, links spend a ticket and rename, spawns split tickets, all independent of the level.`, DEF, R`One step of the soup along an event.`, 'soup/Soup.v: lf_next');
+n('sp.own', R`$\mathsf{consistent}(a, A, \Pi)$`, R`The ownership map $K$ of the soup state agrees with the environment $A$ and the protocols $\Pi$. Every held end has one holder that exists, every held end is internal or in the interface, internal partners are both held at dual types, points and protocols, interface entries come from $\Sigma$, and counters are finite.`, R`It is bookkeeping. It lets lock-free adequacy read the holder, point and counter of an end from $K$ and know that the partner of an internal end is held by some thread at the dual protocol.`, R`Without it a thread could wait on an end whose partner nobody holds, and the waiting chain of adequacy would break off.`, R`Two threads closing $c^{+}$ and $c^{-}$, each holding one end, with $C = \{c\}$.`, 'soup/State.v: soup_gen');
 // new symbols
 n('sr.FE', R`Fuel $F^N_n\llbracket\sigma \triangleright d ; r\rrbracket(\Pi, \varphi, tk)$`, R`The fuel predicate at refill $N$ and level $n$.`, R`It bounds postponement and link chatter per thread, independent of points.`, DEF, R`$F^{3}_n\llbracket\mathsf{thread} \triangleright \infty ; 0\rrbracket(\Pi, \varphi, 0)$.`, 'fuel/Fuel.v: FuelE');
 n('sr.FV', R`Fueled values $FV^N_n\llbracket\sigma\rrbracket(\Pi, \varphi)$`, R`The value predicate of fuel at refill $N$ and level $n$.`, R`Values carry the protocols and counters of their ends.`, DEF, R`$FV\llbracket(S@x)^2\rrbracket(\{o \mapsto S\}, \{o \mapsto 3\})$.`, 'fuel/Fuel.v: Vfuel, Vty');
@@ -780,6 +797,7 @@ sa('sp.prim', R`\mathsf{prim}\,T`, [aT]);
 sa('sp.rel', R`\forall t, e.\ q(t) = e \Rightarrow e \in E[\kappa_L]^{W}_{n}\llbracket K_t(A) \vdash U_t \rrbracket^{\varnothing}`, [A(R`t`, R`a thread`), A(R`K_t(A)`, R`$A$ restricted to the ends held by $t$`)]);
 sa('sp.ty', R`U_t \in \{T, \ast\}`, [A(R`t`, R`a thread`)]);
 sa('sp.fuel', R`e \in F^{N}_{n}\llbracket \mathsf{thread} \triangleright \infty ; 0 \rrbracket(K_t(\Pi), \mathsf{ctrs}\,K\,t, tk_t)`, [A(R`t`, R`a thread`)]);
+sa('sp.own', R`\mathsf{consistent} : \mathsf{LFState} \to \mathsf{Env} \to \mathsf{PEnv} \to \mathsf{Prop}`, [A('a', R`the soup state $(q, K, tk)$`), A('A', R`the environment of all held ends`), A(R`\Pi`, R`their protocols`)]);
 sa('sp.pts', R`\forall o.\ \mathsf{pt}(A\,o) = \mathsf{pt}(K\,o)`, [A(R`o`, R`an end`)]);
 sa('sp.dom', R`\mathrm{dom}\,\Pi = \mathrm{dom}\,K`, [aPi, aK]);
 sa('sp.owner', R`\forall o.\ K(o) = (t, \_, \_) \Rightarrow t \in \mathrm{dom}\,q`, [A(R`o, t`, R`a held end and its holder`)]);
