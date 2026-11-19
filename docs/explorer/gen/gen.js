@@ -71,7 +71,7 @@ const CR = /\^\{((?:a|b)(?:_\{?[A-Za-z0-9]+\}?)?'*(?:\s*\+[^{}]*)?)\}/g;
 const CRH = /\^\{\\htmlData\{k=[^}]*\}\{(?:a|b)(?:_\{?\w+\}?)?'*\}\}/g;
 // costs and transformers after a judgment, arrow and box annotations, refills on types
 const TRI = /(\\mathbin\{\\htmlData\{k=tp\.tri\}\{\\triangleright\}\}|(?<!\\!)\\triangleright)\s*(c(?:_\{?\w+\}?)?'?|\\infty|\d+)\s*;\s*(\\vartheta(?:_\{?\w+\}?)?'?|\\hat\s*1|\d+|r|\([^()]*\))/g;
-const BRK = /\[c(?:_\{?\w+\}?)?'?\s*;[^\]]*\]/g;
+const BRK = /\[(?:\\htmlData\{k=[^}]*\}\{)?c(?:_\{?\w+\}?)?'?\}?\s*;[^\]]*\]/g;
 const REF = /\^\{(N|0)\}/g;
 // a superscript N or 0 on a judgment or on F, P, E, V is an index, elsewhere a refill or credit
 const isIndex = (s, i) => /(Vdash|vDash)\}*$/.test(s.slice(Math.max(0, i - 12), i)) || /(^|[^\\A-Za-z])(FV|F|P|E|V)$/.test(s.slice(Math.max(0, i - 4), i));
@@ -84,6 +84,24 @@ const unlive = ms => [...new Set((ms || ['df', 'lf']).map(m => m === 'live' ? 'd
 for (const s of sections) for (const b of s.blocks) { b.modes = unlive(b.modes); if (b.variants) delete b.variants.live; }
 for (const e of examples) e.modes = unlive(e.modes);
 for (const s of sections) for (const b of s.blocks) { b.tex = ann(b.tex); if (b.variants) for (const k of Object.keys(b.variants)) b.variants[k] = ann(b.variants[k]); }
+// in a block with its own deadlock-free form, every hoverable part of the lock-free form whose key the deadlock-free form lacks is a lock-free addition
+// keys the deadlock-free forms write without a hover but that are no lock-free addition
+const SAME = new Set(['ty.payload-at', 'ctx.slt', 'sty.dual', 'tp.sinsts', 'tp.sinst', 'tp.pinst', 'ty.unlimited', 'sty.sequiv', 'sub.tsub']);
+function markNew(tex, known) {
+  let out = '', i = 0;
+  const close = j => { let d = 1, k = j; while (k < tex.length && d) { if (tex[k] === '\\') { k += 2; continue; } if (tex[k] === '{') d++; else if (tex[k] === '}') d--; k++; } return k; };
+  for (;;) {
+    const m = /\\ann(?:ot|raw)\{|\\htmlData\{k=([^}]*)\}\{/.exec(tex.slice(i)); if (!m) return out + tex.slice(i);
+    const j = i + m.index, open = j + m[0].length;
+    if (!m[1]) { const k = close(open); out += tex.slice(i, k); i = k; continue; }
+    if (known.has(m[1]) || SAME.has(m[1])) { out += tex.slice(i, open); i = open; continue; }
+    const k = close(open); out += tex.slice(i, j) + '\\annot{' + tex.slice(j, k) + '}'; i = k;
+  }
+}
+for (const s of sections) for (const b of s.blocks) if (b.variants && b.variants.df && b.modes.includes('df')) {
+  const known = new Set([...b.variants.df.matchAll(/\\htmlData\{k=([^}]*)\}/g)].map(m => m[1]));
+  if (b.variants.lf) b.variants.lf = markNew(b.variants.lf, known); else b.tex = markNew(b.tex, known);
+}
 // prose of notes reachable in the deadlock-free mode: phrases and sentences about annotations become \annp{…}
 const KW = /credit|transformer|ticket|\\vartheta|\\mathsf\{meets\}|refill|\bfloor\b|\\hat\s*1/i;
 const PHR = /,? (?:and|with) (?:its|their|the|a|outer and inner|payload)? ?credits?\b|,? credits? and |,? at (?:payload )?credit \$[^$]*\$/gi;
@@ -99,7 +117,7 @@ function annProse(t) {
 }
 const dfKeys = new Set();
 for (const s of sections) for (const b of s.blocks) if (b.modes.includes('df')) for (const m of stripAnn(ann((b.variants && b.variants.df) || b.tex)).matchAll(/\\htmlData\{k=([^}]*)\}/g)) dfKeys.add(m[1]);
-for (const s of sections) for (const b of s.blocks) if (b.modes.includes('df')) b.caption = annProse(ann(b.caption));
+for (const s of sections) { s.intro = annProse(ann(s.intro)); for (const b of s.blocks) if (b.modes.includes('df')) b.caption = annProse(ann(b.caption)); }
 for (const [k, v] of Object.entries(notes)) if (dfKeys.has(k)) {
   for (const f of ['what', 'why', 'breaks', 'example']) v[f] = annProse(v[f]);
   for (const a of v.args || []) if (KW.test(a.meaning)) { const onlyAnn = a.name.split(',').every(x => /^\s*(a|b|c|h|tk|r|\\vartheta)(_\{?\w+\}?)?'*\s*$/.test(x)); if (onlyAnn) a.ann = true; else a.meaning = annProse(a.meaning); }

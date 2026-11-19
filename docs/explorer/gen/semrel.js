@@ -58,28 +58,6 @@ ${h('ct.give', R`\mathsf{send},\ \mathsf{select},\ \mathsf{close}`)} & 0 & 1 \\
 ${h('ct.takek', R`\mathsf{recv},\ \mathsf{branch}`)} & 1 & 1 \\
 ${h('ct.sync', R`\kappa_{give} + \kappa_{take}`)} & 1 & 2
 \end{array}`,
-  variants: {
-    df: R`\begin{array}{lc}
- & ${h('ct.DF', R`\kappa_{DF}`)} \\ \hline
-${h('ct.beta', R`\beta`)} & 1 \\
-${h('ct.new', R`\mathsf{new}`)} & 1 \\
-${h('ct.spawn', R`\mathsf{spawn}`)} & 1 \\
-${h('ct.link', R`\mathsf{link}`)} & 0 \\
-${h('ct.give', R`\mathsf{send},\ \mathsf{select},\ \mathsf{close}`)} & 0 \\
-${h('ct.takek', R`\mathsf{recv},\ \mathsf{branch}`)} & 1 \\
-${h('ct.sync', R`\kappa_{give} + \kappa_{take}`)} & 1
-\end{array}`,
-    live: R`\begin{array}{lc}
- & ${h('ct.L', R`\kappa_L`)} \\ \hline
-${h('ct.beta', R`\beta`)} & 0 \\
-${h('ct.new', R`\mathsf{new}`)} & 0 \\
-${h('ct.spawn', R`\mathsf{spawn}`)} & 0 \\
-${h('ct.link', R`\mathsf{link}`)} & 0 \\
-${h('ct.give', R`\mathsf{send},\ \mathsf{select},\ \mathsf{close}`)} & 1 \\
-${h('ct.takek', R`\mathsf{recv},\ \mathsf{branch}`)} & 1 \\
-${h('ct.sync', R`\kappa_{give} + \kappa_{take}`)} & 2
-\end{array}`
-  },
   caption: 'The costs of $\\kappa_{DF}$ and $\\kappa_L$ per kind of step, a synchronization costing $\\kappa_{give} + \\kappa_{take}$.'
 });
 block(s, {
@@ -277,10 +255,6 @@ ${h('sj.proc', R`\Sigma ${rel}_W p : T \iff \forall n.\ p \in ${h('th.Prel', R`P
 block(s, {
   id: 'sj', title: 'Semantic judgments', rocq: 'compat/SemTyped.v: Grel, sem_typed_at, sf_den, sem_typed; relation/Adequacy.v: sem_ptyped',
   tex: SJ(R`\vDash[\kappa]`, R`\kappa`),
-  variants: {
-    df: SJ(R`\vDash`, R`\kappa_{DF}`),
-    live: SJ(R`\mathrel{|\!\!\vDash}`, R`\kappa_L`)
-  },
   caption: 'The semantic judgments quantify over every level, later world and grounding, and read the static future at every denotation.'
 });
 

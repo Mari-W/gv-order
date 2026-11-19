@@ -92,8 +92,7 @@ block(s, {
   id: 't-judgment', title: 'The merged judgment', rocq: 'static/Typing.v: typed, dftyped',
   tex: R`${h('tj.Theta', R`\Theta`)} ; ${h('tj.Gamma', R`\Gamma`)} ; ${h('tj.Delta', R`\Delta`)} \vdash^{${h('tj.F', 'F')}}_{${h('tj.W', 'W')},${h('tj.N', 'N')}} e : T^{${h('ty.credit', 'a')}} \triangleright ${h('tj.cost', 'c')} ; ${h('tj.tix', R`\vartheta`)}`,
   variants: {
-    df: R`${h('tj.Theta', R`\Theta`)} ; ${h('tj.Gamma', R`\Gamma`)} ; ${h('tj.Delta', R`\Delta`)} \vdash^{${h('tj.F', 'F')}}_{${h('tj.W', 'W')}} t : T`,
-    live: R`${h('tj.Theta', R`\Theta`)} ; ${h('tj.Gamma', R`\Gamma`)} ; ${h('tj.Delta', R`\Delta`)} \vdash^{${h('tj.F', 'F')}}_{${h('tj.W', 'W')}} t : T \quad\text{and}\quad ${h('guard.judg', R`\varnothing \vdash\!\triangleright t`)}`
+    df: R`${h('tj.Theta', R`\Theta`)} ; ${h('tj.Gamma', R`\Gamma`)} ; ${h('tj.Delta', R`\Delta`)} \vdash^{${h('tj.F', 'F')}}_{${h('tj.W', 'W')}} t : T \qquad ${h('guard.judg', R`\varnothing \vdash\!\triangleright t`)}`,
   },
   caption: '$\\Theta$ maps ends, $\\Gamma$ holds facts, $\\Delta$ variables, $F$ is the future, $N$ the refill, $c$ the cost and $\\vartheta$ the transformer.'
 });

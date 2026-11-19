@@ -164,6 +164,7 @@ window.MathJax = {
   const MODES = { df: 'Deadlock free', lf: 'Lock free' };
   let mode = 'df', pinned = null, query = '';
   try { const m = localStorage.getItem('lrmap-mode'); if (m && MODES[m]) mode = m; } catch (e) {}
+  { const qm = new URLSearchParams(location.search).get('mode'); if (qm && MODES[qm]) mode = qm; }
 
   const $ = s => document.querySelector(s);
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -201,15 +202,15 @@ window.MathJax = {
     if (t.startsWith('^{')) { let d = 1, k = 2; while (k < t.length && d) { if (t[k] === '\\') { k += 2; continue; } if (t[k] === '{') d++; else if (t[k] === '}') d--; k++; } if (k === t.length) return '^{\\class{ann}{' + t.slice(2, -1) + '}}'; }
     return '\\class{ann}{' + t + '}';
   }
-  function annot(s, m = mode) {
+  function annot(s, md = mode) {
     s = String(s || ''); let out = '', i = 0;
     for (;;) {
       const m = /\\ann(ot|raw)\{/.exec(s.slice(i)); if (!m) return out + s.slice(i);
       const j = i + m.index, open = j + m[0].length;
       let d = 1, k = open;
       while (k < s.length && d) { if (s[k] === '\\') { k += 2; continue; } if (s[k] === '{') d++; else if (s[k] === '}') d--; k++; }
-      const inner = annot(s.slice(open, k - 1), m);
-      out += s.slice(i, j) + (m !== 'lf' ? '' : m[1] === 'raw' ? inner : colour(inner)); i = k;
+      const inner = annot(s.slice(open, k - 1), md);
+      out += s.slice(i, j) + (md !== 'lf' ? '' : m[1] === 'raw' ? inner : colour(inner)); i = k;
     }
   }
   const toMJ = (tex, m) => annot(tex, m).replace(/\\htmlData\{k=([A-Za-z0-9.\-_]+)\}\{/g, (_, k) => '\\class{k-' + k.replace(/\./g, '__') + '}{');
