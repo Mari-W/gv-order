@@ -120,6 +120,16 @@ must do, open questions.
    one effect ε = (c, ϑ) with sequencing ε₁·ε₂ (defined iff tok). Pure
    notation over the current rules. If the author approves: convert every
    rule on the map. Rocq: optional definitions and unfolding lemmas.
+   Approved by the author 2026-11-19: convert all rules after the repair
+   run. Also replace heads(H) by a lighter notation (proposal: H̄, the
+   points the partners of H wait at, with S@x ↦ x̄, closures and ∃ ↦ their
+   lower point l, boxes ↦ ∅).
+
+9. **Readable semantic typing (to design).** Same treatment as entry 8 for
+   V, E, P, the obligations, readiness, fuel and the soup: show the relation
+   at κ_DF in DF mode, the general κ form with the differences coloured in
+   LF, and lighter notation where one idea is written out several times.
+   Map only. Draft after entry 8 is converted.
 
 ## Done in the Rocq
 
@@ -146,3 +156,13 @@ must do, open questions.
   its need b_c, needs would just add up. That needs the split to be fixed
   outside the step index without the relation reading types. Discuss
   together with per-end link budgets. No Rocq work.
+- **Programs the topological relation accepts and ours rejects.** The
+  earlier relation (D'Osualdo, van den Heuvel, Thiemann, Weidner) needs no
+  order, only a per-extruded-channel split at the interface. Candidate:
+  thread A sends a flag to thread B, then both close a and b in the order
+  the flag picks. Deadlock free. Ours rejects it: A needs x_a ≺ x̄_b and
+  x_b ≺ x̄_a, B needs x̄_a ≺ x_b and x̄_b ≺ x_a, a cycle, and the points
+  are fixed before the flag exists. Check the earlier relation accepts it
+  (internal channels only, so the interface split is not involved).
+  Later: a hybrid that cuts along one channel without order facts
+  (Wadler-style) and uses points only for cycles.
