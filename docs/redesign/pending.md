@@ -207,7 +207,8 @@ must do, open questions.
     more precise, and the floor h (and Cap-Arr's h − h₀) may go. Touches
     FV-Arrow, capture, Sub-Arr. Fallback if it fails: generalized arrows
     with the loss, after checking every lock-free example still types.
-    Order: check per-end capture, then generalize arrows.
+    Order: check per-end capture, then generalize arrows. Author
+    (2026-11-19): per-end capture is important.
     Rocq: after the repair run (entry 6) is merged. Map: after the design
     is confirmed.
 
@@ -239,11 +240,13 @@ must do, open questions.
     a spawn-only closure cannot be sent (no loss, it cannot exist today).
     Open questions from the author, to discuss:
     (a) Named variables on the map instead of de Bruijn indices in Δ, as
-        for points (the Rocq keeps indices).
+        for points (the Rocq keeps indices). Author: cosmetic, map only,
+        low priority.
     (b) Future variables: Γ holds φ ↦ u (the fact u ≺ φ) and F names φ as
         the unknown rest. Each φ has exactly one fact, so Γ ⊢ x ≺ φ iff
         Γ ⊢ x ≼ u. Candidate: F = (X, above u) and no future variables in
-        Γ. To check against fl and the semantic den_{ρ,B}.
+        Γ. To check against fl and the semantic den_{ρ,B}. Author
+        (2026-11-19): wanted if it holds.
 
 ## Done in the Rocq
 
@@ -263,13 +266,15 @@ must do, open questions.
   end, S@x, and compute later points (x⁺, fields x·κ). Equal
   expressiveness for finite protocols, finite types for recursive ones,
   point-free session types. Written points would only read better. Author
-  (2026-11-19): queue it as a discussion item. No Rocq work.
+  (2026-11-19): queue it as a discussion item. No Rocq work. Author later
+  the same day: not wanted for now, also not as a display on the map.
 - **Type-directed ticket split at spawn.** Today a spawn halves the
   tickets (child ⌈tk/2⌉, parent ⌊tk/2⌋), which forces the doubling form
   ϑ(r) = 2^s r + b and the side condition tok. If the child got exactly
   its need b_c, needs would just add up. That needs the split to be fixed
   outside the step index without the relation reading types. Discuss
-  together with per-end link budgets. No Rocq work.
+  together with per-end link budgets. No Rocq work. Author (2026-11-19):
+  probably good, worth designing.
 - **Programs the topological relation accepts and ours rejects.** The
   earlier relation (D'Osualdo, van den Heuvel, Thiemann, Weidner) needs no
   order, only a per-extruded-channel split at the interface. Candidate:
