@@ -36,6 +36,7 @@ examples/FreshMany.v
 examples/FactoryEx.v
 examples/GrowRing.v
 examples/SemBranch.v
+examples/TreeTopo.v
 relation/Sfix.v
 relation/CostTable.v
 relation/Readiness.v
