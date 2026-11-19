@@ -48,11 +48,38 @@ then reports it.
    - `ϑ(r) ≤ tk` for `meets ϑ r tk`, and `ϑ(0) ∈ ℕ` for `∃ tk, meets ϑ 0 tk`
      in `p_term`, `fsem_of_cost` and `lf_soundness_source`;
    - `cr(Δ) ≤ N` for `∀ o te, Θ !! o = Some te → fle (te_cr te) N`;
-   - the soup as relation, fuel and `consistent(a, A, Π)` (`soup_gen`).
+   - the soup as relation, fuel and `consistent(a, A, Π)` (`soup_gen`);
+   - the step clause of `Pbody` over `pstep` (lang/Process.v), so that P
+     reads `p' →^{ev} p'' ⇒ Pobl_ev(p'')` and `erase` leaves the
+     deadlock-free relation, as the map already shows.
    Open question for the author, do not decide: one existential for the
    protocol of a new channel shared by O-New and F-New, so that the soup can
    ask `Π = sty ∘ A` and drop `Π`.
-9. **Entry 11, faithfulness audit** of the map against the merged Rocq.
+9. **Remove the clause (fuse) of P** (author, 2026-11-19). P should not
+   quantify over fusions `(h, D)` with `fuse_ok`. It came from two repairs
+   (progress.md S4.12 and S4.18, proposal.md near "P is closed under fusion
+   by definition"). Hard constraints: the link stays the substitution
+   `csub` of lang/Process.v, never a forwarder thread. No syntactic clause
+   in the relation.
+   - Restricted channels as bound names. Today a process is `(C, E)` with
+     `C` a concrete set of names, and nothing identifies processes that
+     differ by a renaming of `C`. Either quotient (P invariant under
+     renaming of restricted channels, proved as a lemma) or make `C` a
+     binder, whichever is shorter. Report which.
+   - Interface renaming as a theorem. `Prel_rename` (compat/Rename.v:915)
+     is today a projection of the clause. Prove it by induction on the
+     level, as `Erel_rename` (compat/Rename.v:743) is proved for E.
+   - The link case of P-Connect. `csub o1 o2` renames the held ends of the
+     other component and can create a new dual pair when that component
+     holds `ō2` as well (the comment above `fuse_ok_csub_cut`). Close this
+     case from the two lemmas above plus internalizing that pair inside
+     P-Connect's own proof.
+   - First test: the counterexample of S4.18 (a renaming that joins two
+     unrelated interface ends), which must stay excluded.
+   - Stop and report if a lemma fails, with the failing goal. Do not
+     restore (fuse) under another name. Update docs/explorer/gen (p-body,
+     p-fuse, the notes P.fuse, sr.fuseok) when it lands.
+10. **Entry 11, faithfulness audit** of the map against the merged Rocq.
    List every difference that is not a queued entry.
 
 ## Design checks, write-ups only (no Rocq change without the author)
