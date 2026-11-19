@@ -3165,7 +3165,7 @@ window.MAP = {
     },
     {
      "name": "\\vartheta",
-     "meaning": "A ticket transformer $(s, b)$, denoting $r \\mapsto 2^{s} r + b$.",
+     "meaning": "A ticket transformer $(s, b)$ with $s, b \\in \\mathbb{N} \\cup \\{\\infty\\}$, the function $r \\mapsto 2^{s} r + b$ from tickets left to tickets needed.",
      "ann": true
     },
     {
@@ -3221,17 +3221,17 @@ window.MAP = {
    ]
   },
   "ty.arrow.tix": {
-   "title": "Arrow transformer $\\vartheta$",
-   "what": "$\\vartheta(r)$ bounds the link tickets a call needs when it must still hold $r$ tickets on return.",
-   "why": "A link acts on no protocol. A finite ticket count bounds the number of links a thread performs.",
-   "breaks": "A box that links once per round forever needs an unbounded number of tickets, and no finite $tk$ meets its transformer.",
-   "example": "One link needs $r + 1$ tickets, $\\vartheta = (0, 1)$.",
+   "title": "Ticket transformer $\\vartheta$ of a call",
+   "what": "A call that must leave its caller $r$ link tickets needs $\\vartheta(r)$ tickets when it starts. With $\\vartheta = (s, b)$, $\\vartheta(r) = 2^{s} r + b$, where $s$ counts the spawns of the call, each of which halves the tickets of its thread, and $b$ covers its links.",
+   "why": "A link acts on no protocol, so no counter of an end bounds how often a thread links. Each link spends one ticket of the linking thread and no step creates tickets, so every run performs finitely many links.",
+   "breaks": "A thread that links the partner of a waiting end to a fresh channel in every round, and acts on some other channel in between, starves the waiter. Each round gives the waiter a fresh partner with a full counter, so counters never run out and only the tickets bound the rounds.",
+   "example": "$\\lambda x.\\,\\mathsf{link}\\,x$ has $\\vartheta = (0, 1)$ and needs $r + 1$ tickets. A body that spawns a child which links once has $\\vartheta = (1, 1)$ and needs $2r + 1$, because the spawn halves the tickets.",
    "rocq": "types/Types.v: TLolli t",
-   "sig": "\\vartheta \\in \\mathsf{Tix}",
+   "sig": "\\vartheta = (s, b) \\in \\mathsf{Tix} = (\\mathbb{N} \\cup \\{\\infty\\})^{2}",
    "args": [
     {
      "name": "\\vartheta",
-     "meaning": "A ticket transformer $(s, b)$, denoting $r \\mapsto 2^{s} r + b$.",
+     "meaning": "A ticket transformer $(s, b)$ with $s, b \\in \\mathbb{N} \\cup \\{\\infty\\}$, the function $r \\mapsto 2^{s} r + b$ from tickets left to tickets needed.",
      "ann": true
     }
    ]
@@ -3841,10 +3841,10 @@ window.MAP = {
   },
   "ann.tix": {
    "title": "Ticket transformer",
-   "what": "$\\vartheta = (s, b)$ denotes $r \\mapsto 2^{s} r + b$ with $s, b \\in \\mathbb{N} \\cup \\{\\infty\\}$.",
-   "why": "A spawn halves the tickets, so needs grow by doubling. $b = \\infty$ marks a term that no finite ticket count serves, the case of deadlock-freedom typing.",
-   "breaks": "Without $b = \\infty$, the transformer of deadlock-freedom typing does not compose with $\\mathsf{tlink}$.",
-   "example": "$(0, 1)$ needs $r + 1$ tickets.",
+   "what": "$\\vartheta = (s, b)$ with $s, b \\in \\mathbb{N} \\cup \\{\\infty\\}$ stands for the function $r \\mapsto 2^{s} r + b$ from the tickets a term must leave to the tickets it needs.",
+   "why": "A spawn halves the tickets of its thread, so needs double with each spawn and add up with each link. $b = \\infty$ means that no finite number of tickets suffices. Deadlock-freedom typing counts no links and uses it everywhere.",
+   "breaks": "Without $b = \\infty$, deadlock-freedom typing would have to bound the links of every term.",
+   "example": "$(0, 1)$ needs $r + 1$ tickets, $(1, 1)$ needs $2r + 1$, and $(0, \\infty)$ is met by no ticket count.",
    "rocq": "types/Costs.v: tix, tapp",
    "sig": "\\vartheta = (s, b) \\in \\mathsf{Tix} = (\\mathbb{N} \\cup \\{\\infty\\})^{2}",
    "args": [
@@ -3883,7 +3883,7 @@ window.MAP = {
    "args": [
     {
      "name": "\\vartheta",
-     "meaning": "A ticket transformer $(s, b)$, denoting $r \\mapsto 2^{s} r + b$.",
+     "meaning": "A ticket transformer $(s, b)$ with $s, b \\in \\mathbb{N} \\cup \\{\\infty\\}$, the function $r \\mapsto 2^{s} r + b$ from tickets left to tickets needed.",
      "ann": true
     },
     {
