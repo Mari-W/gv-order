@@ -208,7 +208,7 @@ const TH = A(R`\vartheta`, R`A ticket need $(s, b)$ with $s, b \in \mathbb{N} \c
 sa('ty.unit', R`\ast \in \mathsf{Ty}`, []);
 sa('ty.arrow', R`(T \multimap^{u}_{l}[c ; \vartheta ; h]\,U)^{a} \in \mathsf{Ty}`, [A('T', R`The argument type.`), A('U', R`The result type.`), A('a', R`The credit of the captured ends above the floor $h$.`), A('u', R`The upper point, optional.`), A('l', R`The lower point, absent iff the closure holds no end.`), A('c', R`The cost of a call, $c \in \mathbb{N} \cup \{\infty\}$.`), TH, A('h', R`The floor of the captured ends.`)]);
 sa('ty.arrow.ub', R`u \in \mathsf{Point}_{\bot}`, [A('u', R`A point or absent. The body is in $E$ under every future $F$ with $u \prec y$ for all $y \in F$.`)]);
-sa('ty.arrow.lb', R`l \in \mathsf{Point}_{\bot}`, [A('l', R`A point with $l \preceq y$ for every $y \in \mathsf{heads}(\Theta)$ of the captured environment $\Theta$, or absent iff $\Theta = \varnothing$.`)]);
+sa('ty.arrow.lb', R`l \in \mathsf{Point} \cup \{\cdot\}`, [A('l', R`A point with $l \preceq y$ for every partner point $y$ of the captured ends, or $\cdot$ iff the closure captures no end. Not $\bot$, which marks hidden points at $\exists^{\bot}$.`)]);
 sa('ty.arrow.cost', R`c \in \mathbb{N} \cup \{\infty\}`, [A('c', R`An upper bound on the channel actions of one call before it returns.`)]);
 sa('ty.arrow.tix', R`\vartheta = (s, b) \in \mathsf{Tix} = (\mathbb{N} \cup \{\infty\})^{2}`, [TH]);
 sa('ty.arrow.floor', R`h \in \mathbb{N} \cup \{\infty\}`, [A('h', R`The credit at which the body sees each captured end.`)]);

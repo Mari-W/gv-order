@@ -413,7 +413,7 @@ window.MAP = {
      "id": "t-side",
      "title": "Side conditions on points",
      "rocq": "static/Contexts.v: ub_below_s, lbx_below_h, lbound_of, hold_at",
-     "tex": "\\begin{array}{l}\\htmlData{k=side.ub}{u \\prec F \\iff \\forall y \\in X.\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} u \\prec y,\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} u \\prec \\varphi,\\ \\neg\\bot} \\\\ \\htmlData{k=E-Send.heads}{x \\prec T \\iff \\forall y \\in \\htmlData{k=ty.heads}{\\mathsf{heads}}(T).\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec y} \\qquad \\htmlData{k=side.lb}{l \\preccurlyeq \\Delta \\text{ and } \\neg\\bot_\\Delta} \\qquad \\htmlData{k=side.hold}{\\Gamma \\vdash C[\\bar x]}\\end{array}",
+     "tex": "\\begin{array}{l}\\htmlData{k=side.ub}{u \\prec F \\iff \\forall y \\in X.\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} u \\prec y,\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} u \\prec \\varphi,\\ \\neg\\bot} \\\\ \\htmlData{k=E-Send.heads}{x \\prec T \\iff \\neg\\htmlData{k=ty.hbot}{\\mathsf{hbot}}\\,T \\land \\forall y \\in \\htmlData{k=ty.heads}{\\mathsf{heads}}(T).\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec y} \\qquad \\htmlData{k=side.lb}{l \\preccurlyeq \\Delta \\text{ and } \\neg\\bot_\\Delta} \\qquad \\htmlData{k=side.hold}{\\Gamma \\vdash C[\\bar x]}\\end{array}",
      "caption": "$u \\prec F$ states that $u$ lies below every point of $F$, $x \\prec T$ that $x$ lies below every partner point of the ends in $T$, $l \\preccurlyeq \\Delta$ that $l$ lies at or below every partner point of $\\Delta$, and $\\Gamma \\vdash C[\\bar x]$ that every fact of $C$ at $\\bar x$ is derivable.",
      "modes": [
       "df",
@@ -427,7 +427,7 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=age.free}{\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T}\\end{array}}{T - c = T}\\;\\textsf{Age-Free} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=age.credit}{c \\leq a}\\end{array}}{(S@x)\\annot{^{a}} - c = (S@x)^{a - c}}\\;\\textsf{Age-Credit} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=age.idle}{\\htmlData{k=fu.idle}{\\mathsf{idle}}\\,S}\\end{array}}{(S@x)\\annot{^{a}} - c = (S@x)^{\\max(a - c, 0)}}\\;\\textsf{Age-Idle} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=age.credit}{c \\leq a}\\end{array}}{(T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} U)\\annot{^{a}} - c = (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} U)^{a - c}}\\;\\textsf{Age-Arr} \\\\[2ex] \\htmlData{k=age.agg}{(T_1 \\otimes T_2) - c = (T_1 - c) \\otimes (T_2 - c),\\ \\text{likewise for } \\oplus \\text{ and the body of } \\exists}\\end{array}",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=age.free}{\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T}\\end{array}}{T - c = T}\\;\\textsf{Age-Free} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=age.credit}{c \\leq a}\\end{array}}{(S@x)\\annot{^{a}} - c = (S@x)^{a - c}}\\;\\textsf{Age-Credit} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=age.idle}{\\htmlData{k=fu.idle}{\\mathsf{idle}}\\,S}\\end{array}}{(S@x)\\annot{^{a}} - c = (S@x)^{\\max(a - c, 0)}}\\;\\textsf{Age-Idle} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=age.credit}{c \\leq a}\\end{array}}{(T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} U)\\annot{^{a}} - c = (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} U)^{a - c}}\\;\\textsf{Age-Arr} \\\\[2ex] \\htmlData{k=age.agg}{(T_1 \\otimes T_2) - c = (T_1 - c) \\otimes (T_2 - c) \\qquad (T_1 \\oplus T_2) - c = (T_1 - c) \\oplus (T_2 - c) \\qquad (\\exists^{l}\\bar\\iota.\\,C.\\,T) - c = \\exists^{l}\\bar\\iota.\\,C.\\,(T - c)}\\end{array}",
      "caption": "$T - c$ lowers the credit of every end and closure in $T$ by $c$, asks $c \\leq a$ of every end that is not idle and of every closure, and keeps types with $\\mathsf{tfree}\\,T$. $\\Delta - c$ ages every entry."
     },
     {
@@ -437,16 +437,16 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=cap.sess}{h + a \\leq a_0}\\end{array}}{(S@x)\\annot{^{a_0}} \\leadsto_{h,a} (S@x)^{h}}\\;\\textsf{Cap-Sess} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=cap.arr}{h_0 \\leq h \\quad h + a \\leq h_0 + a_0}\\end{array}}{(T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[\\varepsilon;h_0] U)\\annot{^{a_0}} \\leadsto_{h,a} (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[\\varepsilon;h_0] U)^{h - h_0}}\\;\\textsf{Cap-Arr} \\\\[2ex] \\htmlData{k=cap.agg}{\\text{structurally on } \\otimes, \\oplus, \\exists,\\ \\text{the identity on } \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\ \\text{types}}\\end{array}",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=cap.sess}{h + a \\leq a_0}\\end{array}}{(S@x)\\annot{^{a_0}} \\leadsto_{h,a} (S@x)^{h}}\\;\\textsf{Cap-Sess} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=cap.arr}{h_0 \\leq h \\quad h + a \\leq h_0 + a_0}\\end{array}}{(T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[\\varepsilon;h_0] U)\\annot{^{a_0}} \\leadsto_{h,a} (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[\\varepsilon;h_0] U)^{h - h_0}}\\;\\textsf{Cap-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.tfree}{\\mathsf{tfree}\\,T}\\end{array}}{T \\leadsto_{h,a} T}\\;\\textsf{Cap-Free} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=cap.agg}{T_i \\leadsto_{h,a} T_i'}\\end{array}}{T_1 \\otimes T_2 \\leadsto_{h,a} T_1' \\otimes T_2' \\quad T_1 \\oplus T_2 \\leadsto_{h,a} T_1' \\oplus T_2' \\quad \\exists^{l}\\bar\\iota.\\,C.\\,T_1 \\leadsto_{h,a} \\exists^{l}\\bar\\iota.\\,C.\\,T_1'}\\;\\textsf{Cap-Prod, Cap-Sum, Cap-Ex}\\end{array}",
      "caption": "A captured end needs credit at least $h + a$, and the body sees it at credit $h$."
     },
     {
      "id": "t-sub",
      "title": "Subtyping",
      "rocq": "static/Contexts.v: tsub, static/Typing.v: e_sub, d_conv",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-sess}{S \\htmlData{k=sty.sequiv}{\\simeq} S'}\\quad \\annot{\\htmlData{k=tp.sub-credit}{a' \\leq a}}\\end{array}}{\\htmlData{k=sub.tsub}{(S@x)\\annot{^{a}} \\leq (S'@x)\\annot{^{a'}}}}\\;\\textsf{Sub-Sess} \\\\[2ex] \\dfrac{\\begin{array}{c}\\annot{\\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\quad \\annot{\\htmlData{k=tp.sub-floor}{h \\leq h',\\ h' + a' \\leq h + a}} \\\\ \\htmlData{k=tp.sub-var}{\\htmlData{k=sub.tsub}{T_1' \\leq T_1} \\quad \\htmlData{k=sub.tsub}{U \\leq U'}}\\end{array}}{(T_1 \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}[\\varepsilon;h]\\,U)\\annot{^{a}} \\leq (T_1' \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}[\\varepsilon';h']\\,U')\\annot{^{a'}}}\\;\\textsf{Sub-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\annot{\\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\quad \\htmlData{k=tp.sub-teq}{U \\equiv U'}\\end{array}}{\\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}[\\varepsilon]\\,U) \\leq \\Box(\\ldots[\\varepsilon']\\,U')}\\;\\textsf{Sub-Box} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-ex}{\\mathsf{facts}\\,C' \\subseteq \\mathsf{facts}\\,C}\\quad \\htmlData{k=tp.sub-teq}{T \\equiv T'}\\end{array}}{\\htmlData{k=sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\htmlData{k=tp.sub-agg}{\\text{componentwise on } \\otimes \\text{ and } \\oplus}\\end{array}",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-sess}{S \\htmlData{k=sty.sequiv}{\\simeq} S'}\\quad \\annot{\\htmlData{k=tp.sub-credit}{a' \\leq a}}\\end{array}}{\\htmlData{k=sub.tsub}{(S@x)\\annot{^{a}} \\leq (S'@x)\\annot{^{a'}}}}\\;\\textsf{Sub-Sess} \\\\[2ex] \\dfrac{\\begin{array}{c}\\annot{\\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\quad \\annot{\\htmlData{k=tp.sub-floor}{h \\leq h',\\ h' + a' \\leq h + a}} \\\\ \\htmlData{k=tp.sub-var}{\\htmlData{k=sub.tsub}{T_1' \\leq T_1} \\quad \\htmlData{k=sub.tsub}{U \\leq U'}}\\end{array}}{(T_1 \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}[\\varepsilon;h]\\,U)\\annot{^{a}} \\leq (T_1' \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}[\\varepsilon';h']\\,U')\\annot{^{a'}}}\\;\\textsf{Sub-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\annot{\\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\quad \\htmlData{k=tp.sub-teq}{U \\equiv U'}\\end{array}}{\\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}[\\varepsilon]\\,U) \\leq \\Box(\\ldots[\\varepsilon']\\,U')}\\;\\textsf{Sub-Box} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-ex}{\\mathsf{facts}\\,C' \\subseteq \\mathsf{facts}\\,C}\\quad \\htmlData{k=tp.sub-teq}{T \\equiv T'}\\end{array}}{\\htmlData{k=sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-agg}{\\htmlData{k=sub.tsub}{T_1 \\leq T_1'} \\quad \\htmlData{k=sub.tsub}{T_2 \\leq T_2'}}\\end{array}}{T_1 \\otimes T_2 \\leq T_1' \\otimes T_2' \\qquad T_1 \\oplus T_2 \\leq T_1' \\oplus T_2'}\\;\\textsf{Sub-Prod, Sub-Sum}\\end{array}",
      "variants": {
-      "df": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-sess}{S \\htmlData{k=sty.seqv}{\\approx} S'}\\end{array}}{\\htmlData{k=sub.tsub}{S@x \\leq S'@x}}\\;\\textsf{Sub-Sess} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-ex}{\\mathsf{facts}\\,C' \\subseteq \\mathsf{facts}\\,C}\\quad \\htmlData{k=tp.sub-teq}{T \\equiv T'}\\end{array}}{\\htmlData{k=sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\htmlData{k=tp.sub-agg}{\\text{componentwise on } \\otimes, \\oplus},\\ \\htmlData{k=tp.sub-var}{\\Box,\\ \\text{contravariant in the argument of } \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}}\\end{array}"
+      "df": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-sess}{S \\htmlData{k=sty.seqv}{\\approx} S'}\\end{array}}{\\htmlData{k=sub.tsub}{S@x \\leq S'@x}}\\;\\textsf{Sub-Sess} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-ex}{\\mathsf{facts}\\,C' \\subseteq \\mathsf{facts}\\,C}\\quad \\htmlData{k=tp.sub-teq}{T \\equiv T'}\\end{array}}{\\htmlData{k=sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-agg}{\\htmlData{k=sub.tsub}{T_1 \\leq T_1'} \\quad \\htmlData{k=sub.tsub}{T_2 \\leq T_2'}}\\end{array}}{T_1 \\otimes T_2 \\leq T_1' \\otimes T_2' \\qquad T_1 \\oplus T_2 \\leq T_1' \\oplus T_2'}\\;\\textsf{Sub-Prod, Sub-Sum} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-var}{\\htmlData{k=sub.tsub}{T_1' \\leq T_1} \\quad \\htmlData{k=sub.tsub}{U \\leq U'}}\\end{array}}{T_1 \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U \\leq T_1' \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U'}\\;\\textsf{Sub-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-teq}{U \\equiv U'}\\end{array}}{\\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\leq \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U')}\\;\\textsf{Sub-Box}\\end{array}"
      },
      "caption": "Without annotations subtyping is $\\approx$ on sessions plus dropping facts of $\\exists$. \\annp{In the lock-free mode credits fall while costs, ticket needs and floors rise.}",
      "modes": [
@@ -568,7 +568,7 @@ window.MAP = {
      "id": "t-consts",
      "title": "Types of constants",
      "rocq": "static/Typing.v: e_send, e_recv, e_close, e_select, e_branch, e_link, e_spawn, e_force, e_new",
-     "tex": "\\begin{array}{lll}\n\\htmlData{k=prim.send}{\\mathsf{send}} & : T[x\\cdot i] \\otimes S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S@\\htmlData{k=pt.shift}{x^{+}} & \\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T,\\ \\neg\\htmlData{k=ty.hbot}{\\mathsf{hbot}}\\,T,\\ \\htmlData{k=E-Send.heads}{x \\prec T[x\\cdot i]} \\\\\n\\htmlData{k=prim.recv}{\\mathsf{recv}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} T[x\\cdot i] \\otimes S@x^{+} & \\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T \\\\\n\\htmlData{k=prim.close}{\\mathsf{close}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} \\ast & \\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}} \\\\\n\\htmlData{k=prim.select}{\\mathsf{select}}_i & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}} & \\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)} \\\\\n\\htmlData{k=prim.branch}{\\mathsf{branch}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2 & \\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)} \\\\\n\\htmlData{k=prim.link}{\\mathsf{link}} & : \\htmlData{k=E-Link.dual}{S@x \\otimes \\overline{S}@\\overline{x}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.spawn}{\\mathsf{spawn}} & : (\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} \\ast) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.force}{\\mathsf{force}} & : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] & \\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]} \\\\\n\\htmlData{k=syn.new}{\\mathsf{new}} & : \\exists^{\\bot}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ (S@\\pi \\otimes \\overline{S}@\\overline{\\pi}) & \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho), (\\varnothing, x\\cdot\\kappa)\\}},\\ \\htmlData{k=E-New.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\Gamma \\cup C)}\n\\end{array}",
+     "tex": "\\begin{array}{lll}\n\\htmlData{k=prim.send}{\\mathsf{send}} & : T[x\\cdot i] \\otimes S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S@\\htmlData{k=pt.shift}{x^{+}} & \\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T,\\ \\htmlData{k=E-Send.heads}{x \\prec T[x\\cdot i]} \\\\\n\\htmlData{k=prim.recv}{\\mathsf{recv}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} T[x\\cdot i] \\otimes S@x^{+} & \\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T \\\\\n\\htmlData{k=prim.close}{\\mathsf{close}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} \\ast & \\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}} \\\\\n\\htmlData{k=prim.select}{\\mathsf{select}}_i & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}} & \\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)} \\\\\n\\htmlData{k=prim.branch}{\\mathsf{branch}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2 & \\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)} \\\\\n\\htmlData{k=prim.link}{\\mathsf{link}} & : \\htmlData{k=E-Link.dual}{S@x \\otimes \\overline{S}@\\overline{x}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.spawn}{\\mathsf{spawn}} & : (\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} \\ast) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.force}{\\mathsf{force}} & : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] & \\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]} \\\\\n\\htmlData{k=syn.new}{\\mathsf{new}} & : \\exists^{\\bot}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ (S@\\pi \\otimes \\overline{S}@\\overline{\\pi}) & \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho), (\\varnothing, x\\cdot\\kappa)\\}},\\ \\htmlData{k=E-New.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\Gamma \\cup C)}\n\\end{array}",
      "caption": "\\annp{Each constant has the type of its eta-expansion $\\lambda y.\\,k\\,y$, for every instance of its variables that meets the conditions on the right, shown without credits, cost and ticket need.} An action on $x$ has upper point $x$, so it runs only below the future of its caller. $\\mathsf{new}$ is a term and has the type of E-New.",
      "modes": [
       "df",
@@ -579,7 +579,7 @@ window.MAP = {
      "id": "r-send",
      "title": "E-Send",
      "rocq": "static/Typing.v: e_send, d_send",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S}\\quad \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\quad \\htmlData{k=E-Send.nobot}{\\neg\\htmlData{k=ty.hbot}{\\mathsf{hbot}}\\,T}\\quad \\htmlData{k=E-Send.heads}{x \\prec \\htmlData{k=ty.payload-at}{T[x\\cdot i]}}\\quad \\htmlData{k=side.act}{x \\prec F} \\\\ \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T' \\otimes (S_0@x)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\annraw{\\quad }\\annot{\\htmlData{k=E-Send.floor}{T' - 1 \\leq T[x\\cdot i]}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.send}{\\mathsf{send}}\\,e : (S@\\htmlData{k=pt.shift}{x^{+}})\\annot{^{\\htmlData{k=act.refill}{N}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon \\htmlData{k=tj.seq}{\\cdot} \\htmlData{k=tj.one}{1}}}\\;\\textsf{E-Send}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S}\\quad \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\quad \\htmlData{k=E-Send.heads}{x \\prec \\htmlData{k=ty.payload-at}{T[x\\cdot i]}}\\quad \\htmlData{k=side.act}{x \\prec F} \\\\ \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T' \\otimes (S_0@x)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\annraw{\\quad }\\annot{\\htmlData{k=E-Send.floor}{T' - 1 \\leq T[x\\cdot i]}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.send}{\\mathsf{send}}\\,e : (S@\\htmlData{k=pt.shift}{x^{+}})\\annot{^{\\htmlData{k=act.refill}{N}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon \\htmlData{k=tj.seq}{\\cdot} \\htmlData{k=tj.one}{1}}}\\;\\textsf{E-Send}",
      "caption": "The sender holds the payload while it waits at $x$, so $x$ lies below the partner points of the payload. \\annp{In the lock-free mode the payload survives one hop and the end returns refilled at $N$.}",
      "modes": [
       "df",
@@ -725,7 +725,7 @@ window.MAP = {
      "id": "p-connect",
      "title": "P-Connect",
      "rocq": "static/Typing.v: p_connect",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1} (C_1, E_1) : T} \\\\ \\htmlData{k=P-Connect.right}{\\Sigma_2 \\cup \\htmlData{k=P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\htmlData{k=P-Connect.disj}{\\text{the channels of } \\Sigma_1, \\Sigma_2, \\Sigma_C, C_1, C_2 \\text{ pairwise disjoint}} \\\\ \\htmlData{k=P-Connect.cutfree}{\\htmlData{k=pfree}{\\mathsf{pfree}}\\,\\Sigma_C}\\\\ \\htmlData{k=P-Connect.fams}{\\text{families of } W_1, W_2 \\text{ disjoint}} \\\\ \\htmlData{k=P-Connect.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\htmlData{k=w.restrict}{W_1|_S} \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2|_S),\\ S = \\text{the roots } W_1 \\text{ and } W_2 \\text{ share}}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{\\htmlData{k=P-Connect.join}{W_1 \\htmlData{k=w.join}{\\sqcup} W_2}} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1} (C_1, E_1) : T} \\\\ \\htmlData{k=P-Connect.right}{\\Sigma_2 \\cup \\htmlData{k=P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\htmlData{k=P-Connect.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_1,\\ \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_2,\\ \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C,\\ C_1,\\ C_2\\ \\text{pairwise disjoint}} \\\\ \\htmlData{k=P-Connect.cutfree}{\\htmlData{k=pfree}{\\mathsf{pfree}}\\,\\Sigma_C} \\\\ \\htmlData{k=P-Connect.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\htmlData{k=w.restrict}{W_1|_S} \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2|_S)\\ \\ \\text{for}\\ \\ S = \\htmlData{k=w.consts}{A_{W_1}} \\cap A_{W_2}}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{\\htmlData{k=P-Connect.join}{W_1 \\htmlData{k=w.join}{\\sqcup} W_2}} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect}",
      "caption": "\\annp{Two components at refill $N$ in worlds $W_1$, $W_2$, cut at $\\Sigma_C$ against $\\overline{\\Sigma_C}$, the left one carrying $T$.}",
      "modes": [
       "df",
@@ -3144,11 +3144,11 @@ window.MAP = {
    "breaks": "Without $l$, a thread blocks at $x$ while it holds a closure with a captured end at $v$ and $x \\not\\prec \\overline{v}$, so the partner of that end may wait on the thread.",
    "example": "A closure capturing $a^{+}$ at $\\rho$ has $l = \\overline{\\rho}$.",
    "rocq": "types/Types.v: TLolli lb",
-   "sig": "l \\in \\mathsf{Point}_{\\bot}",
+   "sig": "l \\in \\mathsf{Point} \\cup \\{\\cdot\\}",
    "args": [
     {
      "name": "l",
-     "meaning": "A point with $l \\preceq y$ for every $y \\in \\mathsf{heads}(\\Theta)$ of the captured environment $\\Theta$, or absent iff $\\Theta = \\varnothing$."
+     "meaning": "A point with $l \\preceq y$ for every partner point $y$ of the captured ends, or $\\cdot$ iff the closure captures no end. Not $\\bot$, which marks hidden points at $\\exists^{\\bot}$."
     }
    ]
   },
@@ -4204,6 +4204,10 @@ window.MAP = {
    "sig": "\\Delta \\parallel H \\vdash^{F} e \\ \\equiv\\ \\Delta \\vdash^{F \\cup \\mathsf{heads}(H)} e\\ \\land\\ H - c\\ \\text{defined}",
    "args": [
     {
+     "name": "F \\cup \\mathsf{heads}(H)",
+     "meaning": "$F$ with the partner points of the ends in $H$ added, and the flag $\\bot$ added when $H$ holds an unopened existential at $\\bot$"
+    },
+    {
      "name": "H",
      "meaning": "the entries the thread holds while $e$ runs, a context or a type"
     },
@@ -4609,11 +4613,11 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\overline{\\rho} \\preccurlyeq \\{\\overline{\\rho}\\}$.",
    "rocq": "static/Contexts.v: lbx_below_h, lbound_of",
-   "sig": "l \\preccurlyeq H \\iff (l = \\bot \\Rightarrow H = \\varnothing) \\land \\forall y \\in H.\\ l = y \\lor \\Gamma \\vdash l \\prec y",
+   "sig": "l \\preccurlyeq H \\iff (l = \\cdot \\Rightarrow H = \\varnothing) \\land \\forall y \\in H.\\ l = y \\lor \\Gamma \\vdash l \\prec y",
    "args": [
     {
      "name": "l",
-     "meaning": "a lower point or absent"
+     "meaning": "a lower point, or $\\cdot$ when the value holds no end"
     },
     {
      "name": "H",
@@ -5302,33 +5306,14 @@ window.MAP = {
     }
    ]
   },
-  "E-Send.nobot": {
-   "title": "No $\\bot$ in the payload",
-   "what": "$\\mathsf{hbot}\\,T = \\mathsf{false}$, so the payload contains no existential with lower bound $\\bot$.",
-   "why": "While the sender waits at $x$ it holds the payload, so every end $o$ of the payload at point $y$ needs $x \\prec \\overline{y}$. These ends are bounded only through the heads of $T$, and an existential at $\\bot$ has ends at points that no head bounds, so the readiness of the send fails.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{send}\\,\\langle \\mathsf{new}_\\ell, o\\rangle$ with the unopened pair of $\\mathsf{new}_\\ell$ as payload is rejected.",
-   "rocq": "static/Typing.v: e_send",
-   "sig": "\\mathsf{hbot}\\,T = \\mathsf{false}",
-   "args": [
-    {
-     "name": "T",
-     "meaning": "the payload type"
-    },
-    {
-     "name": "\\mathsf{hbot}",
-     "meaning": "whether an existential at $\\bot$ is reachable through $\\otimes$ and $\\oplus$"
-    }
-   ]
-  },
   "E-Send.heads": {
    "title": "$x \\prec T$, the action point below a held value",
-   "what": "$x \\prec T$ states $\\Gamma \\vdash x \\prec y$ for every partner point $y \\in \\mathsf{heads}(T)$ of the ends in $T$.",
-   "why": "A thread waiting at $x$ while it holds a value of $T$ does not offer the ends in $T$. Readiness asks $x$ below the partner point of each such end, and $\\mathsf{heads}(T)$ bounds those partner points from below.",
-   "breaks": "Nothing. It is a definition.",
+   "what": "$x \\prec T$ states that $T$ holds no unopened existential at $\\bot$ and $\\Gamma \\vdash x \\prec y$ for every partner point $y \\in \\mathsf{heads}(T)$.",
+   "why": "A thread waiting at $x$ while it holds a value of $T$ does not offer the ends in $T$, so readiness asks $x$ below the partner point of each. An existential at $\\bot$ has ends at points no head bounds, $\\mathsf{heads}(\\exists^{\\bot}\\ldots) = \\varnothing$, so the second half alone would hold vacuously. The first half rules it out, as $\\bot$ in a future rules out $u \\prec F$.",
+   "breaks": "Without the first half $\\mathsf{send}\\,\\langle p, o\\rangle$ with the unopened pair $p$ of a $\\mathsf{new}$ types, and the sender waits while holding ends at points nothing orders.",
    "example": "The growing ring needs $Y \\prec \\overline{Y\\cdot 0}$ for the payload $a$ of the send on $y$ at $Y$.",
-   "rocq": "static/Typing.v: e_send",
-   "sig": "x \\prec T \\iff \\forall y \\in \\mathsf{heads}(T).\\ \\Gamma \\vdash x \\prec y",
+   "rocq": "static/Typing.v: e_send; types/Types.v: heads, hbot",
+   "sig": "x \\prec T \\iff \\neg\\mathsf{hbot}\\,T \\land \\forall y \\in \\mathsf{heads}(T).\\ \\Gamma \\vdash x \\prec y",
    "args": [
     {
      "name": "x",
@@ -5646,7 +5631,7 @@ window.MAP = {
   },
   "E-Pack.lb": {
    "title": "Lower bound of a pack",
-   "what": "$l = \\bot$, or $l \\preccurlyeq \\mathsf{heads}(T[\\bar x])$ and $T[\\bar x]$ carries no $\\bot$.",
+   "what": "$l = \\bot$, the ends sit at hidden points, or $l \\preccurlyeq \\mathsf{heads}(T[\\bar x])$ and $T[\\bar x]$ carries no $\\bot$, where $l = \\cdot$ asks that $T[\\bar x]$ holds no end.",
    "why": "After packing, a holder sees the ends only through $l$, so $l$ must bound the heads of the packed value from below. The value relation at an existential states exactly this bound.",
    "breaks": "Nothing. It is a definition.",
    "example": "Packing a fresh pair at $\\bot$.",
@@ -5926,35 +5911,20 @@ window.MAP = {
   },
   "P-Connect.strict": {
    "title": "Only the shared part is compared",
-   "what": "$\\mathsf{strict}(W_1|_S \\sqcup W_2|_S)$ with $S$ the roots both worlds contain. $W|_S$ keeps the facts $x \\prec_W y$ derivable in $W$ whose roots lie in $S$.",
+   "what": "$\\mathsf{strict}(W_1|_S \\sqcup W_2|_S)$ for $S = A_{W_1} \\cap A_{W_2}$, the roots of both worlds. $W|_S$ keeps the facts $x \\prec_W y$ derivable in $W$ whose roots lie in $S$.",
    "why": "Each side is strict by its own derivation, so the only new cycles a join can create run through shared roots. Checking the orders the two sides induce on those roots is enough, and the join is then strict.",
    "breaks": "If $W_1$ derives $\\rho \\prec \\rho\\cdot 0$ and $W_2$ derives $\\rho\\cdot 0 \\prec \\rho$, the join has a cycle and two threads each wait on the other although each side alone is ready.",
-   "example": "Two worlds that share no root need no check.",
+   "example": "Two worlds without a common root need no check.",
    "rocq": "static/Typing.v: p_connect, p_join_iff_connect",
-   "sig": "\\mathsf{strict}(W_1|_S \\sqcup W_2|_S)",
+   "sig": "\\mathsf{strict}(W_1|_S \\sqcup W_2|_S),\\ S = A_{W_1} \\cap A_{W_2}",
    "args": [
     {
-     "name": "S",
-     "meaning": "the roots both worlds contain"
+     "name": "A_{W}",
+     "meaning": "the roots of $W$"
     },
     {
      "name": "W|_S",
      "meaning": "the facts of $\\prec_W$ between points with roots in $S$"
-    }
-   ]
-  },
-  "P-Connect.fams": {
-   "title": "Families disjoint",
-   "what": "No family of $W_1$ is a family of $W_2$.",
-   "why": "A family's laws are stated once per world. With disjoint families the laws of the join are the laws of one side, and strictness of the join reduces to the shared roots.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "Each side creates its channels in its own families.",
-   "rocq": "static/Typing.v: p_connect",
-   "sig": "\\mathsf{fams}\\,W_1 \\cap \\mathsf{fams}\\,W_2 = \\varnothing",
-   "args": [
-    {
-     "name": "W_1, W_2",
-     "meaning": "the worlds of the two sides"
     }
    ]
   },

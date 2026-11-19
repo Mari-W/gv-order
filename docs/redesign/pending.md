@@ -221,8 +221,26 @@ must do, open questions.
     strict (W1|_S ⊔ W2|_S). By induction every process derivation sits over
     a strict world (strict_join_iff for the connect case), so the old rule
     is derivable, p_join disappears, and the `strict W` premise of the
-    process soundness theorems follows from the derivation. Map done. Rocq:
-    after the repair run is merged.
+    process soundness theorems follows from the derivation. The map writes
+    S = A_{W1} ∩ A_{W2} and no families premise, because entry 2 removes
+    families. Map done. Rocq: after the repair run is merged.
+
+14. **Typing QA against static/Typing.v (2026-11-19).** Beyond entries 2,
+    6, 8, 12, 13 the map differed in three places, all fixed on the map:
+    `¬hbot T` at E-Send is now part of `x ≺ T` (heads(∃^⊥) = ∅, so the
+    order check alone is vacuous); the arrow lower bound "absent"
+    (`LNone`, no end) is written `·`, not `⊥`, which is the hidden bound
+    `LBot` of `∃^⊥`; held futures add the flag ⊥ when H holds an `∃^⊥`
+    (`sf_unionb … (lenv_bot Δ2)`). Entry 12 must keep the two apart: the
+    new arrow bound there is `LBot`, and hbot must report such arrows, so
+    a spawn-only closure cannot be sent (no loss, it cannot exist today).
+    Open questions from the author, to discuss:
+    (a) Named variables on the map instead of de Bruijn indices in Δ, as
+        for points (the Rocq keeps indices).
+    (b) Future variables: Γ holds φ ↦ u (the fact u ≺ φ) and F names φ as
+        the unknown rest. Each φ has exactly one fact, so Γ ⊢ x ≺ φ iff
+        Γ ⊢ x ≼ u. Candidate: F = (X, above u) and no future variables in
+        Γ. To check against fl and the semantic den_{ρ,B}.
 
 ## Done in the Rocq
 
