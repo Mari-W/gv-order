@@ -851,6 +851,50 @@ window.MAP = {
      ],
      "tex": "\\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p \\iff \\forall t \\in p.\\ \\varnothing \\vdash\\!\\triangleright t}",
      "caption": "$\\vdash\\!\\triangleright p$ holds when every thread $t$ of $p$ satisfies $\\varnothing \\vdash\\!\\triangleright t$."
+    },
+    {
+     "id": "dr-notation",
+     "title": "Draft notation for readable rules",
+     "rocq": "static/Typing.v: typed (unfolded)",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=dr.judg}{\\Gamma ; \\Delta \\parallel H \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ !\\ \\varepsilon}} \\\\\n\\htmlData{k=dr.held}{\\Delta \\parallel H \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e\\ \\ \\equiv\\ \\ \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(H)} e\\annot{\\ \\land\\ H - c\\ \\mathrm{defined}}} \\\\\n\\annot{\\htmlData{k=dr.eff}{\\varepsilon = (c, \\vartheta)} \\qquad \\htmlData{k=dr.seq}{\\varepsilon_1 \\cdot \\varepsilon_2 = (c_1 + c_2,\\ \\vartheta_1 \\circ \\vartheta_2)\\ \\ (\\htmlData{k=ann.tok}{\\mathsf{tok}}\\,\\vartheta_1\\,\\vartheta_2)} \\qquad \\htmlData{k=dr.zero}{0 = (0, \\hat 1)}}\n\\end{array}",
+     "caption": "One linear context $\\Delta$ holds ends and variables, $\\Gamma$ holds facts, and $W$ and $N$ are fixed for a whole derivation. $\\parallel H$ marks what the thread holds while $e$ runs, and in the lock-free mode $! \\, \\varepsilon$ is the effect of $e$.",
+     "modes": [
+      "df",
+      "lf"
+     ]
+    },
+    {
+     "id": "dr-app",
+     "title": "Draft E-App",
+     "rocq": "static/Typing.v: e_app",
+     "tex": "\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta_1 \\htmlData{k=dr.held}{\\parallel \\Delta_2} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_1 : (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[\\varepsilon ; h]}\\, U)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=dr.eff}{!}\\ \\varepsilon_1} \\\\ \\Gamma ; \\Delta_2\\annot{ - \\varepsilon_1} \\htmlData{k=dr.held}{\\parallel (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U)\\annot{\\annot{^{a}}}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_2 : T\\annot{\\ \\htmlData{k=dr.eff}{!}\\ \\varepsilon_2}\\\\ \\htmlData{k=E-App.ub}{u \\prec F}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_1\\,e_2 : U\\annot{\\ \\htmlData{k=dr.eff}{!}\\ \\varepsilon_1 \\cdot \\varepsilon_2 \\cdot \\varepsilon}}\\;\\textsf{E-App}",
+     "caption": "The thread holds $\\Delta_2$ while $e_1$ runs and the closure while $e_2$ runs. Holding gives the future and, in the lock-free mode, the aging\\annp{ and the credit} check.",
+     "modes": [
+      "df",
+      "lf"
+     ]
+    },
+    {
+     "id": "dr-send",
+     "title": "Draft E-Send",
+     "rocq": "static/Typing.v: e_send",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S}\\\\ \\htmlData{k=E-Send.heads}{x \\prec \\htmlData{k=ty.heads}{\\mathsf{heads}}(T[x\\cdot i])}\\\\ \\htmlData{k=E-Send.nobot}{\\neg\\htmlData{k=ty.hbot}{\\mathsf{hbot}}\\,T}\\\\ \\htmlData{k=side.act}{x \\prec F} \\\\ \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T' \\otimes (S_0@x)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=dr.eff}{!}\\ \\varepsilon}\\annraw{\\\\ }\\annot{\\htmlData{k=dr.hop}{T' - 1 \\leq T[x\\cdot i]}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.send}{\\mathsf{send}}\\,e : (S@\\htmlData{k=pt.shift}{x^{+}})\\annot{\\annot{^{N}}}\\annot{\\ \\htmlData{k=dr.eff}{!}\\ \\varepsilon \\cdot 1}}\\;\\textsf{E-Send}",
+     "caption": "The sender waits at $x$ while it holds the payload. \\annp{In the lock-free mode the payload survives one hop and the end returns refilled at $N$.}",
+     "modes": [
+      "df",
+      "lf"
+     ]
+    },
+    {
+     "id": "dr-abs",
+     "title": "Draft E-Abs",
+     "rocq": "static/Typing.v: e_abs",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Abs.phi}{\\varphi\\ \\text{fresh}}\\\\ \\htmlData{k=E-Abs.lb}{l \\preccurlyeq \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Delta),\\ \\neg\\bot_\\Delta}\\annraw{\\\\ }\\annot{\\htmlData{k=E-Abs.cap}{\\Delta \\leadsto_{h,a} \\Delta^{h}}} \\\\ \\Gamma, \\htmlData{k=E-Abs.phi}{u \\prec \\varphi} ; \\Delta\\annot{^{h}}, T \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing, \\varphi)} e : U\\annot{\\ \\htmlData{k=dr.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\lambda e : (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[\\varepsilon ; h]}\\, U)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=dr.eff}{!}\\ 0}}\\;\\textsf{E-Abs}",
+     "caption": "The body runs at a later call under a fresh future. \\annp{In the lock-free mode the closure records the effect of its body and restates its captured ends at the floor $h$.}",
+     "modes": [
+      "df",
+      "lf"
+     ]
     }
    ]
   },
@@ -6644,6 +6688,127 @@ window.MAP = {
     {
      "name": "E_1, E_2",
      "meaning": "the thread multisets of the two components"
+    }
+   ]
+  },
+  "dr.judg": {
+   "title": "Draft judgment",
+   "what": "$\\Gamma ; \\Delta \\parallel H \\vdash^{F} e : T \\ ! \\ \\varepsilon$ types $e$ with the linear context $\\Delta$ of ends and variables, the facts $\\Gamma$, the held entries $H$, the future $F$ and, in the lock-free mode, the effect $\\varepsilon$.",
+   "why": "\\annp{The world $W$ and the refill $N$ never change inside a derivation, so they are left implicit.} Ends and variables split the same way, so one context holds both.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\Gamma ; a : (!\\ast.\\mathsf{Close})@\\rho \\vdash^{F} \\mathsf{send}\\,\\langle \\ast, a \\rangle : \\mathsf{Close}@\\rho^{+}$.",
+   "rocq": "static/Typing.v: typed",
+   "sig": "\\Gamma ; \\Delta \\parallel H \\vdash^{F} e : T\\ !\\ \\varepsilon",
+   "args": [
+    {
+     "name": "\\Gamma",
+     "meaning": "the facts"
+    },
+    {
+     "name": "\\Delta",
+     "meaning": "the linear context of ends and variables"
+    },
+    {
+     "name": "H",
+     "meaning": "the entries the thread holds while $e$ runs"
+    },
+    {
+     "name": "F",
+     "meaning": "the future"
+    },
+    {
+     "name": "e",
+     "meaning": "the term"
+    },
+    {
+     "name": "T",
+     "meaning": "its type"
+    },
+    {
+     "name": "\\varepsilon",
+     "meaning": "its effect, lock-free mode only"
+    }
+   ]
+  },
+  "dr.held": {
+   "title": "Held entries $\\parallel H$",
+   "what": "$\\Delta \\parallel H \\vdash^{F} e$ types $e$ while the thread holds $H$. It unfolds to the future $F \\cup \\mathsf{heads}(H)$, and in the lock-free mode also to the aging $H - c$ by the cost $c$ of $e$.",
+   "why": "Every rule that runs one part while it holds another states the same two facts about the held part. The notation states them once.",
+   "breaks": "Without it, E-App lists the heads of the held context, the aging of that context\\annp{ and the credit} of the closure as four separate premises.",
+   "example": "$\\Delta_1 \\parallel \\Delta_2 \\vdash^{F} e_1$ in E-App.",
+   "rocq": "static/Typing.v: e_app",
+   "sig": "\\Delta \\parallel H \\vdash^{F} e \\ \\equiv\\ \\Delta \\vdash^{F \\cup \\mathsf{heads}(H)} e\\ \\land\\ H - c\\ \\mathrm{defined}",
+   "args": [
+    {
+     "name": "H",
+     "meaning": "the entries the thread holds while $e$ runs"
+    },
+    {
+     "name": "c",
+     "meaning": "the cost of $e$"
+    }
+   ]
+  },
+  "dr.eff": {
+   "title": "Effect $\\varepsilon$",
+   "what": "$\\varepsilon = (c, \\vartheta)$ pairs the cost $c$ of a term, the number of channel actions before it returns, with its ticket need $\\vartheta$.",
+   "why": "Cost and ticket need always travel together and combine in the same places, so one symbol carries both.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "A send has effect $(1, \\hat 1)$, written $1$.",
+   "rocq": "static/Typing.v: typed",
+   "sig": "\\varepsilon = (c, \\vartheta) \\in (\\mathbb{N} \\cup \\{\\infty\\}) \\times \\mathsf{Tix}",
+   "args": [
+    {
+     "name": "c",
+     "meaning": "the cost"
+    },
+    {
+     "name": "\\vartheta",
+     "meaning": "the ticket need"
+    }
+   ]
+  },
+  "dr.seq": {
+   "title": "Sequencing $\\varepsilon_1 \\cdot \\varepsilon_2$",
+   "what": "$\\varepsilon_1 \\cdot \\varepsilon_2 = (c_1 + c_2, \\vartheta_1 \\circ \\vartheta_2)$, defined when $\\mathsf{tok}\\,\\vartheta_1\\,\\vartheta_2$.",
+   "why": "A term that runs two parts in sequence adds their costs and composes their ticket needs. The side condition $\\mathsf{tok}$ becomes definedness.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$1 \\cdot 1 = (2, \\hat 1)$.",
+   "rocq": "types/Costs.v: tseq, tok",
+   "sig": "\\cdot : \\mathsf{Eff} \\times \\mathsf{Eff} \\rightharpoonup \\mathsf{Eff}",
+   "args": [
+    {
+     "name": "\\varepsilon_1, \\varepsilon_2",
+     "meaning": "the effects of the first and the second part"
+    }
+   ]
+  },
+  "dr.zero": {
+   "title": "No effect $0$",
+   "what": "$0 = (0, \\hat 1)$, the effect of a value.",
+   "why": "A value performs no action and no link.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\lambda e$ has effect $0$.",
+   "rocq": "types/Costs.v: tid",
+   "sig": "0 \\in \\mathsf{Eff}",
+   "args": []
+  },
+  "dr.hop": {
+   "title": "One hop",
+   "what": "$T' - 1 \\leq T[x\\cdot i]$, the payload value aged by one step still has the credits the protocol promises.",
+   "why": "Each send of an end lowers its counter by one, so an end cannot travel forever.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "A payload end at credit $3$ meets a protocol that promises $2$.",
+   "rocq": "static/Typing.v: e_send",
+   "sig": "T' - 1 \\leq T[x\\cdot i]",
+   "args": [
+    {
+     "name": "T'",
+     "meaning": "the type of the payload value"
+    },
+    {
+     "name": "T[x\\cdot i]",
+     "meaning": "the payload type of the protocol at the fields of $x$"
     }
    ]
   },
