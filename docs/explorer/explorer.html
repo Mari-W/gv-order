@@ -196,8 +196,8 @@ window.MathJax = {
     return out + esc(code.slice(last));
   }
   // \htmlData{k=KEY}{…} (KaTeX style) becomes \class{k-KEY}{…} for MathJax
-  // \annot{X} marks an annotation (a credit): kept in the lock-free mode, dropped otherwise
   // \annot{X} marks an annotation, \annraw{X} layout that belongs to one: kept (and coloured) in the lock-free mode, dropped otherwise
+  // \dfo{X} is the deadlock-free reading of a part whose lock-free reading is an \annot: kept in the deadlock-free mode, dropped otherwise
   // colour an annotation, keeping a lone superscript attached to its base
   function colour(t) {
     if (t.startsWith('^{')) { let d = 1, k = 2; while (k < t.length && d) { if (t[k] === '\\') { k += 2; continue; } if (t[k] === '{') d++; else if (t[k] === '}') d--; k++; } if (k === t.length) return '^{\\class{ann}{' + t.slice(2, -1) + '}}'; }
@@ -206,12 +206,12 @@ window.MathJax = {
   function annot(s, md = mode) {
     s = String(s || ''); let out = '', i = 0;
     for (;;) {
-      const m = /\\ann(ot|raw)\{/.exec(s.slice(i)); if (!m) return out + s.slice(i);
+      const m = /\\(?:ann(ot|raw)|(dfo))\{/.exec(s.slice(i)); if (!m) return out + s.slice(i);
       const j = i + m.index, open = j + m[0].length;
       let d = 1, k = open;
       while (k < s.length && d) { if (s[k] === '\\') { k += 2; continue; } if (s[k] === '{') d++; else if (s[k] === '}') d--; k++; }
       const inner = annot(s.slice(open, k - 1), md);
-      out += s.slice(i, j) + (md !== 'lf' ? '' : m[1] === 'raw' ? inner : colour(inner)); i = k;
+      out += s.slice(i, j) + (m[2] ? (md !== 'lf' ? inner : '') : md !== 'lf' ? '' : m[1] === 'raw' ? inner : colour(inner)); i = k;
     }
   }
   const toMJ = (tex, m) => annot(tex, m).replace(/\\htmlData\{k=([A-Za-z0-9.\-_]+)\}\{/g, (_, k) => '\\class{k-' + k.replace(/\./g, '__') + '}{');

@@ -126,6 +126,12 @@ for (const v of Object.values(notes)) { for (const f of ['title', 'what', 'why',
 const out = { sections, notes, examples };
 const file = path.join(__dirname, '..', 'data.js');
 fs.writeFileSync(file, 'window.MAP = ' + JSON.stringify(out, null, 1) + ';\n');
+// explorer.html, the page serve.sh opens, is index.html with a document skeleton, rebuilt every time so the two never drift
+{
+  const dir = path.join(__dirname, '..');
+  const page = fs.readFileSync(path.join(dir, 'index.html'), 'utf8');
+  fs.writeFileSync(path.join(dir, 'explorer.html'), '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"></head><body>\n' + page + '\n</body></html>\n');
+}
 const nb = sections.reduce((a, s) => a + s.blocks.length, 0);
 console.log('unicode-math fields (UNI=1 lists them)', nUni);
 const noSig = Object.keys(notes).filter(k => !notes[k].sig);

@@ -23,7 +23,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     # the page polls it and reloads itself when they change.
     def do_GET(self):
         if self.path.rstrip("/").endswith("/version"):
-            v = ",".join(str(os.stat(f).st_mtime_ns) for f in ("explorer.html", "data.js"))
+            v = ",".join(str(os.stat(f).st_mtime_ns) for f in ("explorer.html", "index.html", "data.js"))
             body = v.encode()
             self.send_response(200)
             self.send_header("Content-Type", "text/plain")
