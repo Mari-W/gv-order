@@ -100,6 +100,11 @@ must do, open questions.
    ⊗ ⊕ ∃ box results or payloads; the map calls ϑ a "ticket need"). The
    typing, semantic-typing, fuel and theorem blocks still show the old
    credits and must follow the Rocq once this is implemented.
+   Rocq status: the repair agent was stopped by the author on 2026-11-19
+   during stage C. Branch redesign-clean3 (worktree redesign-s4) holds
+   entry 3 done (5907cd0), a merge of redesign (f0b97af) and two WIP
+   commits for this entry (2c2168a, b9d0c05) that do not build. Resume
+   from b9d0c05: the credits section of the types was next.
 
 7. **One rejected example per lock-freedom mechanism (2026-11-19).** The
    map's examples page shows four programs that step forever without a
