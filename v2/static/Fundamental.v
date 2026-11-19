@@ -42,21 +42,6 @@ Proof.
     apply (H2 x U0 _ E). by rewrite <-(unlimited_pinst_iff σ).
 Qed.
 
-Lemma tfacts_unpinst σ Θ Δ e : tfacts (tenv_pinst σ Θ) (lenv_pinst σ Δ) e → tfacts Θ Δ e.
-Proof.
-  intros (Hf & H1 & H2). split; [unfold tenv_pinst in Hf; by rewrite dom_fmap_L in Hf|split].
-  - intros x Hx. destruct (H1 x Hx) as [σ' Hσ]. rewrite lenv_pinst_lookup in Hσ.
-    destruct (Δ !! x) as [[[U0 a0]|]|]; simplify_eq/=. eauto.
-  - intros x U a Hx Hu. apply (H2 x (pinst_ty σ U) a); [by rewrite lenv_pinst_lookup, Hx|].
-    by rewrite unlimited_pinst_iff.
-Qed.
-
-Lemma tfacts_lam Θ o Δ e : tfacts Θ (o :: Δ) e → tfacts Θ Δ (Lam e).
-Proof. intros (Hf & Hv). split; [done|]. exact (vfacts_under _ _ (λ x, freevar x e) Hv). Qed.
-
-Lemma tfacts_box Θ o Δ e : tfacts Θ (o :: Δ) e → tfacts Θ Δ (EBox e).
-Proof. intros (Hf & Hv). split; [done|]. exact (vfacts_under _ _ (λ x, freevar x e) Hv). Qed.
-
 (** ** Static futures read through ρ and B *)
 
 Lemma den_nil ρ B σ o : sf_den ρ B (sf_pinst σ (∅, o)) = sf_den ρ B (∅, o).

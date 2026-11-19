@@ -75,16 +75,6 @@ Proof.
   destruct o as [[φ|o]|]; simpl; set_solver.
 Qed.
 
-(** Without a variable and the flag, a static future denotes its points. *)
-Lemma sf_den_points ρ B P : sf_den ρ B (P, None) = P.
-Proof. unfold sf_den. simpl. set_solver. Qed.
-
-Lemma sem_typed_points κ W Θ Δ P t T :
-  sem_typed κ W Θ Δ (P, None) t T ↔ sem_typed_at κ W Θ Δ P t T.
-Proof.
-  unfold sem_typed. setoid_rewrite sf_den_points. split; [|done]. intros H. exact (H (λ _, ∅) ∅).
-Qed.
-
 (** ** Facts about groundings *)
 
 Section grel.
@@ -104,64 +94,10 @@ Section grel.
     by eapply Vrel_down.
   Qed.
 
-  Lemma Grel_ext n W Θ Δ γ γ' : (∀ x, γ x = γ' x) → Grel κ n W Θ Δ γ → Grel κ n W Θ Δ γ'.
-  Proof.
-    revert Θ γ γ'. induction Δ as [|[[T a]|] Δ IH]; intros Θ γ γ' Hγ; simpl; [done| |].
-    - intros (Θ1 & Θ2 & Hd & -> & HV & HG). exists Θ1, Θ2. rewrite <-Hγ.
-      split_and!; try done. eapply IH; [|exact HG]. intros x. apply Hγ.
-    - apply IH. intros x. apply Hγ.
-  Qed.
-
   (** A value of a box holds no end. *)
   Lemma Vrel_unl_empty n W Θ U v : unlimited U → Vrel κ n W Θ U v → Θ = ∅.
   Proof. destruct U; try done. intros _ H. by apply Vrel_box_iff in H as [-> _]. Qed.
 
-  Lemma Grel_empty n W Θ Δ γ : lenv_empty Δ → Grel κ n W Θ Δ γ → Θ = ∅.
-  Proof.
-    revert Θ γ. induction Δ as [|o Δ IH]; intros Θ γ HΔ; simpl; [done|].
-    assert (o = None) as -> by (apply HΔ; left).
-    apply IH. intros o' Ho'. apply HΔ. by right.
-  Qed.
-
-  Lemma Grel_empty_intro n W Δ γ : lenv_empty Δ → Grel κ n W ∅ Δ γ.
-  Proof.
-    revert γ. induction Δ as [|o Δ IH]; intros γ HΔ; simpl; [done|].
-    assert (o = None) as -> by (apply HΔ; left).
-    apply IH. intros o' Ho'. apply HΔ. by right.
-  Qed.
-
-  (** A grounding splits along a split of its context. *)
-  Lemma Grel_split n W Θ Δ Δ1 Δ2 γ :
-    lenv_split Δ Δ1 Δ2 → Grel κ n W Θ Δ γ →
-    ∃ Θ1 Θ2, Θ1 ##ₘ Θ2 ∧ Θ = Θ1 ∪ Θ2 ∧ Grel κ n W Θ1 Δ1 γ ∧ Grel κ n W Θ2 Δ2 γ.
-  Proof.
-    intros Hs. revert Θ γ. induction Hs as [|Δ Δ1 Δ2 Hs IH|[T a] Δ Δ1 Δ2 Hs IH|[T a] Δ Δ1 Δ2 Hs IH
-      |U a Δ Δ1 Δ2 Hu Hs IH]; intros Θ γ; simpl.
-    - intros ->. exists ∅, ∅. split_and!; try done.
-    - apply IH.
-    - intros (Θa & Θb & Hd & -> & HV & HG).
-      destruct (IH _ _ HG) as (Θ1 & Θ2 & Hd' & -> & H1 & H2).
-      apply map_disjoint_union_r in Hd as [Hd1 Hd2].
-      exists (Θa ∪ Θ1), Θ2. split_and!.
-      + apply map_disjoint_union_l. split; done.
-      + by rewrite map_union_assoc.
-      + exists Θa, Θ1. split_and!; done.
-      + done.
-    - intros (Θa & Θb & Hd & -> & HV & HG).
-      destruct (IH _ _ HG) as (Θ1 & Θ2 & Hd' & -> & H1 & H2).
-      apply map_disjoint_union_r in Hd as [Hd1 Hd2].
-      exists Θ1, (Θa ∪ Θ2). split_and!.
-      + apply map_disjoint_union_r. split; [by symmetry|done].
-      + rewrite map_union_assoc, (map_union_comm Θa Θ1) by done. by rewrite map_union_assoc.
-      + done.
-      + exists Θa, Θ2. split_and!; done.
-    - intros (Θa & Θb & Hd & -> & HV & HG).
-      pose proof (Vrel_unl_empty _ _ _ _ _ Hu HV) as ->.
-      destruct (IH _ _ HG) as (Θ1 & Θ2 & Hd' & -> & H1 & H2).
-      exists Θ1, Θ2. split_and!; [done|by rewrite map_empty_union| |].
-      + exists ∅, Θ1. split_and!; [apply map_disjoint_empty_l|by rewrite map_empty_union|done|done].
-      + exists ∅, Θ2. split_and!; [apply map_disjoint_empty_l|by rewrite map_empty_union|done|done].
-  Qed.
 End grel.
 
 (** ** Facts about the judgment *)
@@ -169,15 +105,4 @@ End grel.
 Section sem.
   Context (κ : ctable).
 
-  Lemma sem_typed_at_future W Θ Δ F F' t T :
-    F' ⊆ F → sem_typed_at κ W Θ Δ F t T → sem_typed_at κ W Θ Δ F' t T.
-  Proof. intros HF H n W' Θ' γ HW Hd HG. eapply Erel_future; [exact HF|]. by apply H. Qed.
-
-  Lemma sem_typed_at_mono W W1 Θ Δ F t T :
-    W ⊑ W1 → sem_typed_at κ W Θ Δ F t T → sem_typed_at κ W1 Θ Δ F t T.
-  Proof. intros HW H n W' Θ' γ HW' Hd HG. apply H; [by eapply wext_trans|done..]. Qed.
-
-  Lemma sem_typed_mono W W1 Θ Δ F t T :
-    W ⊑ W1 → sem_typed κ W Θ Δ F t T → sem_typed κ W1 Θ Δ F t T.
-  Proof. intros HW H ρ B. by eapply sem_typed_at_mono. Qed.
 End sem.

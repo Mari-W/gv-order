@@ -248,29 +248,10 @@ Global Arguments ELet : simpl never.
 (** ** The constants of GV as derived λ-values (§3.2) *)
 
 Definition k_send : expr := Lam (ESend (Var 0)).
-Definition k_recv : expr := Lam (ERecv (Var 0)).
-Definition k_close : expr := Lam (EClose (Var 0)).
-Definition k_select (i : bool) : expr := Lam (ESel i (Var 0)).
-Definition k_branch : expr := Lam (EBra (Var 0)).
-Definition k_link : expr := Lam (ELink (Var 0)).
-Definition k_spawn : expr := Lam (ESpawn (Var 0)).
-Definition k_force : expr := Lam (EForce (Var 0)).
 Definition k_new (ℓ : family) : expr := Lam (LetU (Var 0) (ENew ℓ)).
 Definition k_new_at (κ : field) : expr := Lam (ENewAt κ (Var 0)).
 
 (** ** Closedness, free channels and free ends *)
-
-Fixpoint closed_at (n : nat) (e : expr) : bool :=
-  match e with
-  | Var x => bool_decide (x < n)
-  | EUnit | Chan _ | ENew _ => true
-  | Lam e => closed_at (S n) e
-  | App e1 e2 | Pair e1 e2 | LetU e1 e2 => closed_at n e1 && closed_at n e2
-  | LetP e1 e2 => closed_at n e1 && closed_at (S (S n)) e2
-  | Inj1 e | Inj2 e | Op _ e => closed_at n e
-  | Case e e1 e2 => closed_at n e && closed_at (S n) e1 && closed_at (S n) e2
-  | EBox e => closed_at (S n) e
-  end.
 
 (** The ends a term mentions. Terms bind no channel. *)
 Fixpoint fends (e : expr) : gset cend :=
@@ -284,13 +265,6 @@ Fixpoint fends (e : expr) : gset cend :=
 
 (** The channels a term mentions. *)
 Definition fchans (e : expr) : gset chan := set_map ech (fends e).
-
-Lemma closed_k_constants :
-  closed_at 0 k_send ∧ closed_at 0 k_recv ∧ closed_at 0 k_close ∧
-  (∀ i, closed_at 0 (k_select i)) ∧ closed_at 0 k_branch ∧ closed_at 0 k_link ∧
-  closed_at 0 k_spawn ∧ closed_at 0 k_force ∧ (∀ ℓ, closed_at 0 (k_new ℓ)) ∧
-  (∀ κ, closed_at 0 (k_new_at κ)).
-Proof. done. Qed.
 
 (** ** Basic lemmas about substitution *)
 
@@ -413,20 +387,6 @@ Fixpoint freevar (x : nat) (e : expr) : Prop :=
   | EBox e => freevar (S x) e
   end.
 
-Lemma upP_upren (P : nat → Prop) r x :
-  upP (λ y, P (r y)) x → upP P (upren r x).
-Proof. destruct x; simpl; auto. Qed.
-
-Lemma allfv_rename e : ∀ (P : nat → Prop) r,
-  allfv (λ x, P (r x)) e → allfv P (rename r e).
-Proof.
-  induction e; simpl; intros P r H; auto; destruct_and?; split_and?; auto.
-  all: first [apply IHe|apply IHe1|apply IHe2|apply IHe3];
-    eapply allfv_mono; [|eassumption]; intros x Hx;
-    first [ by apply upP_upren
-          | apply upP_upren; eapply upP_mono; [|exact Hx]; apply upP_upren ].
-Qed.
-
 (** ** Ends under renaming and substitution *)
 
 Lemma fends_rename e : ∀ r, fends (rename r e) = fends e.
@@ -478,31 +438,8 @@ Proof.
   all: set_solver.
 Qed.
 
-Lemma fends_subst1_sub v e : fends (subst1 v e) ⊆ fends e ∪ fends v.
-Proof. apply fends_subst. apply allfv_forall. intros [|x]; simpl; set_solver. Qed.
-
-Lemma fends_subst2_sub u v e :
-  fends (subst2 u v e) ⊆ fends e ∪ (fends u ∪ fends v).
-Proof. apply fends_subst. apply allfv_forall. intros [|[|x]]; simpl; set_solver. Qed.
-
-Lemma fchans_rename e r : fchans (rename r e) = fchans e.
-Proof. unfold fchans. by rewrite fends_rename. Qed.
-
 Lemma elem_of_fchans c e : c ∈ fchans e ↔ ∃ o, o ∈ fends e ∧ ech o = c.
 Proof. unfold fchans. rewrite elem_of_map. naive_solver. Qed.
-
-Lemma fchans_subst1_sub v e : fchans (subst1 v e) ⊆ fchans e ∪ fchans v.
-Proof.
-  intros c. rewrite elem_of_union, !elem_of_fchans. intros (o & Ho & <-).
-  apply fends_subst1_sub in Ho. set_solver.
-Qed.
-
-Lemma fchans_subst2_sub u v e :
-  fchans (subst2 u v e) ⊆ fchans e ∪ (fchans u ∪ fchans v).
-Proof.
-  intros c. rewrite !elem_of_union, !elem_of_fchans. intros (o & Ho & <-).
-  apply fends_subst2_sub in Ho. set_solver.
-Qed.
 
 (** ** The one channel renaming
 
@@ -536,9 +473,6 @@ Lemma ech_cmap h o : ech (cmap h o) = h (ech o).
 Proof. by destruct o. Qed.
 Lemma cmap_edual h o : cmap h (edual o) = edual (cmap h o).
 Proof. by destruct o. Qed.
-Lemma cmap_id o : cmap id o = o.
-Proof. by destruct o. Qed.
-
 (** The one substitution, of a link of o1 and o2 that removes the
     channel of o1 (P-Act-Link). The holder of ō1 now talks to the holder
     of ō2, so ō1 becomes o2, and o1 becomes ō2. Every other end stays. *)
@@ -591,28 +525,6 @@ Proof.
     try congruence.
 Qed.
 
-(** A renaming that fixes every end of a term fixes the term. *)
-Lemma emap_id_on g e : (∀ o, o ∈ fends e → g o = o) → emap g e = e.
-Proof. induction e; simpl; intros H; f_equal; auto; set_solver. Qed.
-
-Lemma emap_csub_fresh o1 o2 e : ech o1 ∉ fchans e → emap (csub o1 o2) e = e.
-Proof.
-  intros H. apply emap_id_on. intros o Ho. apply csub_ne. intros Heq.
-  apply H. apply elem_of_fchans. eauto.
-Qed.
-
-Lemma fchans_emap_csub o1 o2 e :
-  fchans (emap (csub o1 o2) e) ⊆ (fchans e ∖ {[ech o1]}) ∪ {[ech o2]}.
-Proof.
-  intros c. rewrite elem_of_fchans, fends_emap. intros (o' & Ho' & <-).
-  apply elem_of_map in Ho' as (o & -> & Ho). unfold csub.
-  case_decide; [set_solver|]. case_decide; [rewrite ech_edual; set_solver|].
-  destruct (decide (ech o = ech o1)) as [Heq|Hne].
-  - apply ech_eq in Heq as [->| ->]; [done|]. by rewrite edual_edual in *.
-  - apply elem_of_union_l, elem_of_difference. split; [|set_solver].
-    apply elem_of_fchans. eauto.
-Qed.
-
 (** ** Processes: soups of threads over a set of restricted channels *)
 
 Definition proc : Type := gset chan * gmultiset expr.
@@ -637,9 +549,6 @@ Proof.
   setoid_rewrite gmultiset_elem_of_disj_union. naive_solver.
 Qed.
 
-Lemma echans_empty : echans ∅ = ∅.
-Proof. unfold echans. by rewrite gmultiset_elements_empty. Qed.
-
 Lemma echans_singleton e : echans {[+ e +]} = fchans e.
 Proof. unfold echans. rewrite gmultiset_elements_singleton. simpl. set_solver. Qed.
 
@@ -653,20 +562,3 @@ Proof. apply gmultiset_map_disj_union. Qed.
 Lemma emapE_singleton g e : emapE g {[+ e +]} = {[+ emap g e +]}.
 Proof. apply gmultiset_map_singleton. Qed.
 
-Lemma emapE_csub_fresh o1 o2 E : ech o1 ∉ echans E → emapE (csub o1 o2) E = E.
-Proof.
-  induction E as [|e E IH] using gmultiset_ind; intros Hc.
-  - unfold emapE. by rewrite gmultiset_map_empty.
-  - rewrite echans_disj_union, echans_singleton in Hc.
-    rewrite emapE_disj_union, emapE_singleton, emap_csub_fresh by set_solver.
-    rewrite IH by set_solver. done.
-Qed.
-
-Lemma echans_emapE_csub o1 o2 E :
-  echans (emapE (csub o1 o2) E) ⊆ (echans E ∖ {[ech o1]}) ∪ {[ech o2]}.
-Proof.
-  induction E as [|e E IH] using gmultiset_ind.
-  - unfold emapE. rewrite gmultiset_map_empty, echans_empty. set_solver.
-  - rewrite emapE_disj_union, emapE_singleton, !echans_disj_union, !echans_singleton.
-    pose proof (fchans_emap_csub o1 o2 e). set_solver.
-Qed.

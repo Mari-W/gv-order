@@ -20,79 +20,7 @@ From GV Require Export static.Conservativity.
 Section wext.
   Context (W W' : world) (HW : W ⊑ W').
 
-  Lemma fl_wext Γ a b : fl W Γ a b → fl W' Γ a b.
-  Proof.
-    induction 1.
-    - apply fl_w. by eapply w_lt_mono.
-    - by apply fl_h.
-    - by apply fl_v.
-    - by eapply fl_trans.
-  Qed.
-
-  Lemma slt_wext Γ x y : slt W Γ x y → slt W' Γ x y.
-  Proof. apply fl_wext. Qed.
-
-  Lemma sle_wext Γ x y : sle W Γ x y → sle W' Γ x y.
-  Proof. intros [->|H]; [by left|right; by apply slt_wext]. Qed.
-
-  Lemma hold_at_wext Γ C xs : hold_at W Γ C xs → hold_at W' Γ C xs.
-  Proof. intros H x y Hf. by apply slt_wext, H. Qed.
-
-  Lemma ub_below_s_wext Γ ub F : ub_below_s W Γ ub F → ub_below_s W' Γ ub F.
-  Proof.
-    destruct ub; simpl; [|done]. intros (H1 & H2 & H3). split_and!; [| |done].
-    - intros y Hy. by apply slt_wext, H1.
-    - intros φ Hφ. by apply fl_wext, H2.
-  Qed.
-
-  Lemma lb_below_hb_wext Γ lb H b : lb_below_hb W Γ lb H b → lb_below_hb W' Γ lb H b.
-  Proof.
-    unfold lb_below_hb, lb_below_h. destruct b; [done|].
-    destruct lb; [|done]. intros Hy y Hyy. by apply sle_wext, Hy.
-  Qed.
-
-  Lemma lbx_below_h_wext Γ lb H b : lbx_below_h W Γ lb H b → lbx_below_h W' Γ lb H b.
-  Proof.
-    destruct lb; simpl; try done. intros [Hy Hb]. split; [|done].
-    intros y Hyy. by apply sle_wext, Hy.
-  Qed.
 End wext.
-
-Theorem typed_wext W W' N Θ Γ Δ F e T a c t :
-  W ⊑ W' → typed W N Θ Γ Δ F e T a c t → typed W' N Θ Γ Δ F e T a c t.
-Proof.
-  intros HW. induction 1.
-  - by apply e_unit.
-  - by eapply e_var.
-  - by apply e_chan.
-  - eapply e_abs; eauto using lb_below_hb_wext.
-  - eapply e_app; eauto using ub_below_s_wext.
-  - eapply e_pair; eauto.
-  - eapply e_letu; eauto.
-  - eapply e_letp; eauto.
-  - by eapply e_inj1.
-  - by eapply e_inj2.
-  - eapply e_case; eauto.
-  - eapply e_box; eauto.
-  - eapply e_force; eauto using hold_at_wext, ub_below_s_wext.
-  - eapply e_send; eauto using slt_wext, ub_below_s_wext.
-  - eapply e_recv; eauto using ub_below_s_wext.
-  - eapply e_close; eauto using ub_below_s_wext.
-  - eapply e_select; eauto using slt_wext, ub_below_s_wext.
-  - eapply e_branch; eauto using slt_wext, ub_below_s_wext.
-  - eapply e_link; eauto.
-  - eapply e_spawn_lam; eauto.
-  - eapply e_spawn; eauto.
-  - eapply e_sub; [eapply e_new; [done|by apply (wext_fams _ _ HW)]| |apply fle_refl|apply tle_refl].
-    apply sub_ex; [done| |apply teq_refl|apply fle_refl].
-    intros g Hg. simpl in *. by apply (wext_laws _ _ HW).
-  - eapply e_new_at; eauto.
-  - eapply e_sub; eauto.
-  - eapply e_weak; eauto.
-  - eapply e_contract; eauto.
-  - eapply e_pack; eauto using hold_at_wext, lbx_below_h_wext.
-  - eapply e_open; eauto.
-Qed.
 
 (** ** Renaming of term variables *)
 
@@ -589,43 +517,6 @@ Proof.
     split_and!; [done|by rewrite <-Hl|]. intros x' σ _ Hx'. by apply Hi.
 Qed.
 
-Lemma lren_refl Δ : lren id Δ Δ.
-Proof. apply lren_inj; [done|done|]. intros y _ _. by exists y. Qed.
-
-(** The shift past a new variable at position i. *)
-Definition shift_at (i : nat) : nat → nat := λ x, if decide (x < i) then x else S x.
-
-Lemma upren_shift_at i x : upren (shift_at i) x = shift_at (S i) x.
-Proof.
-  unfold shift_at, upren, scons, compose. destruct x as [|x];
-    repeat destruct (decide _); simpl in *; lia.
-Qed.
-
-Lemma shift_at_0 x : shift_at 0 x = S x.
-Proof. unfold shift_at. by rewrite decide_False by lia. Qed.
-
-Definition linsert (i : nat) (Δ : lenv) : lenv := take i Δ ++ None :: drop i Δ.
-
-Lemma lren_linsert i Δ : i ≤ length Δ → lren (shift_at i) Δ (linsert i Δ).
-Proof.
-  intros Hi. assert (length (take i Δ) = i) as Ht by (rewrite length_take; lia).
-  apply lren_inj.
-  - intros x. unfold shift_at, linsert. case_decide.
-    + rewrite lookup_app_l by lia. by rewrite lookup_take_lt by lia.
-    + rewrite lookup_app_r by lia. replace (S x - length (take i Δ)) with (S (x - i)) by lia.
-      simpl. rewrite lookup_drop. f_equal. lia.
-  - intros x x'. unfold shift_at. repeat case_decide; lia.
-  - intros y σ Hy. unfold linsert in Hy.
-    destruct (decide (y < i)).
-    + exists y. unfold shift_at. by rewrite decide_True.
-    + destruct (decide (y = i)) as [->|].
-      * rewrite lookup_app_r in Hy by lia. by rewrite Ht, Nat.sub_diag in Hy.
-      * exists (pred y). unfold shift_at. rewrite decide_False by lia. lia.
-Qed.
-
-Lemma linsert_0 Δ : linsert 0 Δ = None :: Δ.
-Proof. done. Qed.
-
 (** *** The renaming lemma *)
 
 Lemma tsub_unl_credit T a a' : unlimited T → tsub T a T a'.
@@ -725,12 +616,6 @@ Proof.
       [by apply lren_pinst| |simpl; tauto|done].
     by rewrite lenv_pinst_lookup, H.
 Qed.
-
-(** Weakening by an absent entry at position i. *)
-Corollary typed_insert_none W N Θ Γ Δ F e T a c t i :
-  i ≤ length Δ → typed W N Θ Γ Δ F e T a c t →
-  typed W N Θ Γ (linsert i Δ) F (rename (shift_at i) e) T a c t.
-Proof. intros Hi H. by eapply typed_rename, lren_linsert. Qed.
 
 Corollary typed_weaken_head W N Θ Γ Δ F e T a c t :
   typed W N Θ Γ Δ F e T a c t → typed W N Θ Γ (None :: Δ) F (rename S e) T a c t.

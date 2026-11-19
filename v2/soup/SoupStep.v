@@ -94,14 +94,6 @@ Section soup.
     destruct (s_K a !! o); simpl in *; by simplify_eq.
   Qed.
 
-  (** Two parts of different threads are disjoint. *)
-  Lemma s_disj {Y : Type} (m m' : gmap cend Y) t s :
-    t ≠ s → kres (s_K a) t m ##ₘ kres (s_K a) s m'.
-  Proof.
-    intros Hts. apply map_disjoint_spec. intros o v w H1 H2.
-    apply lookup_kres in H1 as [_ (h & Hh & <-)]. apply lookup_kres in H2 as [_ (h' & Hh' & Ht')].
-    rewrite Hh in Hh'. simplify_eq.
-  Qed.
 End soup.
 
 Arguments s_rel {_ _ _ _ _ _ _ _} _ _ _ _.
@@ -119,10 +111,6 @@ Proof.
 Qed.
 
 (** ** Lookups of the update *)
-
-Lemma lookup_ktick i j M K o :
-  ktick i j M K !! o = (λ h, if decide ((h.(h_th) = i ∨ h.(h_th) = j) ∧ o ∉ M) then htick h else h) <$> K !! o.
-Proof. apply lookup_kmod. Qed.
 
 Lemma lookup_khand M j K o :
   khand M j K !! o = (λ h, if decide (o ∈ M) then Hold j h.(h_pt) (ftick h.(h_ctr)) else h) <$> K !! o.
@@ -236,14 +224,6 @@ Proof.
       { apply lookup_mres_Some. split; [|done]. apply lookup_ctrs. by eexists. }
       congruence.
     + split; [|done]. intros (h' & ? & Ht & _). simplify_eq. by destruct (Hj o h' E).
-Qed.
-
-Lemma kres_ktick {Y : Type} i j M K t (m : gmap cend Y) : kres (ktick i j M K) t m = kres K t m.
-Proof.
-  apply kres_ext.
-  - intros o. rewrite lookup_ktick. destruct (K !! o) as [h|]; simpl; [|naive_solver].
-    case_decide; split; intros (h' & ? & ?); simplify_eq; simpl in *; eauto.
-  - intros o h Hh _. done.
 Qed.
 
 (** ** One step, case by case *)

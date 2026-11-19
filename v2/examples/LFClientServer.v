@@ -75,7 +75,7 @@ Section body.
     eexists _, _. split.
     { eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | |shelve].
     { eapply e_var'; [reflexivity|]. spare_tac. }
-    lage_tac. unfold cli_e, elet.
+    lage_tac. unfold cli_e.
     eapply e_let_; [lsplit_tac (ESend (Pair EUnit (Var 1))) EUnit| | | |shelve].
     { eapply e_send with (x := pvar 0) (m := 0) (T := TUnit) (b := None) (S0 := Sa);
         [exact unfold_Sa|exact I|done|cbn; set_solver|dfut (pvar 0)| |age_tac|shelve].
@@ -114,7 +114,7 @@ Section body.
     eexists _, _. split.
     { eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | |shelve].
     { eapply e_var'; [reflexivity|]. spare_tac. }
-    lage_tac. unfold srv_e, elet.
+    lage_tac. unfold srv_e.
     eapply e_letp_; [lsplit_tac (ERecv (Var 1)) EUnit| | | |shelve].
     { eapply e_recv with (x := pvar 0) (m := 0) (T := TUnit) (b := None) (S0 := Sb);
         [exact unfold_Sb|exact I|dfut (pvar 0)|].
@@ -226,7 +226,7 @@ Proof.
 Qed.
 
 Lemma cs_guarded : ∅ ⊢▷ cs_main.
-Proof. unfold cs_main, cli, srv, let_new, elet. guard_tac. Qed.
+Proof. unfold cs_main, cli, srv, let_new. guard_tac. Qed.
 
 Theorem cs_lftyped : ∃ N, ∅ ⊩^N _ W_cs (∅, {[+ cs_main +]}) : TUnit.
 Proof.

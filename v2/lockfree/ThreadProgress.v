@@ -35,23 +35,6 @@ Section runs.
       exists (g' ∘ g). by rewrite Hg', emap_emap.
   Qed.
 
-  (** A stopped thread takes part in no step. *)
-  Lemma stopped_not_part k t : stopped (r k) t → t ∉ lparts (l k).
-  Proof.
-    intros (e & He & Ha) Ht. destruct (Hmax k) as [Hs|(_ & _ & Hl)].
-    - destruct Hs as (ev & Hl & Hs & _). rewrite Hl in Ht.
-      destruct (istep_actor _ _ _ t e Hs Ht He) as (α & e' & Hst & _).
-      destruct (act_step _ _ _ Hst) as (a & Ha' & _). congruence.
-    - rewrite Hl in Ht. set_solver.
-  Qed.
-
-  Lemma stopped_forever j t : stopped (r j) t → ∀ m, j ≤ m → stopped (r m) t.
-  Proof.
-    intros Hs m Hjm. induction Hjm as [|m Hjm IH]; [done|].
-    destruct IH as (e & He & Ha).
-    destruct (run_other r l Hmax m t e) as [g Hg]; [apply stopped_not_part; by exists e|done|].
-    exists (emap g e). by rewrite act_emap, Ha.
-  Qed.
 End runs.
 
 Section progress.
@@ -131,25 +114,3 @@ Proof.
   rewrite <-Hr0. by apply (run_reach r l Hmax).
 Qed.
 
-(** A stopped thread of a reachable configuration is a value. Typing
-    supplies it ([prim T] for the main thread, ∗ for spawned ones). *)
-Definition threads_safe (p : proc) : Prop :=
-  ∀ q t e, pred_star p (erase q) → q.2 !! t = Some e → act e = None → is_val e.
-
-Corollary thread_progress_val p :
-  lock_free p → no_tau_divergence p → links_restricted p → threads_safe p →
-  ∀ r l, erase (r 0) = p → maximal r l → wfair r l →
-  ∀ i t e, (r i).2 !! t = Some e →
-    ∃ j, i ≤ j ∧
-      ((∃ v, is_val v ∧ ∀ m, j ≤ m → ∃ g, (r m).2 !! t = Some (emap g v)) ∨
-       chan_part r l j t).
-Proof.
-  intros Hlf Hnd Hlr Hsafe r l Hr0 Hmax Hfair i t e He.
-  destruct (thread_progress p Hlf Hnd Hlr r l Hr0 Hmax Hfair i t e He)
-    as (j & Hij & [Hs|Hc]); [|exists j; by split; [|right]].
-  exists j. split; [done|left]. destruct Hs as (v & Hv & Ha). exists v. split.
-  - apply (Hsafe (r j) t v); [|done|done]. rewrite <-Hr0. by apply (run_reach r l Hmax).
-  - intros m Hjm. apply (run_keep r l Hmax j t v Hv m Hjm).
-    intros m' Hm'. apply (stopped_not_part r l Hmax).
-    apply (stopped_forever r l Hmax j); [by exists v|lia].
-Qed.

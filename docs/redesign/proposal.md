@@ -1286,7 +1286,8 @@ first, in stage S2.
   induction on the merged judgment, generic in the cost table and the
   guard, gives the DF and the live fundamental theorems. M.2: the
   semantic rules exist once, with marks, and the rules without marks
-  are their instance at the empty marks.
+  are their instance at the empty marks. M.8: no code that no theorem
+  of the explorer page needs; CheckAll lists exactly those theorems.
 
 ## 5  Open decisions for the author
 

@@ -236,10 +236,6 @@ Lemma cls_D Σ1 ΣC Σ2 ΣD C1 C2 o : conn Σ1 ΣC C1 Σ2 ΣD C2 → o ∈ dom �
   edual o ∉ dom Σ2 ∧ edual o ∉ dom ΣD ∧ edual o ∉ dom Σ1 ∧ edual o ∈ dom ΣC.
 Proof. intros Hc. apply (cls_C Σ2 ΣD Σ1 ΣC C2 C1). by apply conn_sym. Qed.
 
-Lemma cls_c2 Σ1 ΣC Σ2 ΣD C1 C2 o : conn Σ1 ΣC C1 Σ2 ΣD C2 → ech o ∈ C2 →
-  o ∉ dom Σ2 ∧ o ∉ dom ΣD ∧ o ∉ dom Σ1 ∧ o ∉ dom ΣC ∧ ech o ∉ C1.
-Proof. intros Hc. apply (cls_c1 Σ2 ΣD Σ1 ΣC C2 C1). by apply conn_sym. Qed.
-
 (** A pair of partners in the environment after a receive is a pair
     before it. *)
 Lemma pfree_recv_env (Σ Θ2 : senv) : recv_ok Σ Θ2 → pfree Σ → pfree (recv_env Σ Θ2).

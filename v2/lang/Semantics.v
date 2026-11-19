@@ -128,25 +128,10 @@ Inductive tstep : expr → tlabel → expr → Prop :=
       (* no frame under λ or a box: both suspend evaluation *)
       frame_val f → tstep e α e' → tstep (fill_frame f e) α (fill_frame f e').
 
-(** GV-style term reduction, the β steps. *)
-Definition reduction (e e' : expr) : Prop := tstep e LBeta e'.
-
 (** ** Anatomy of a label *)
 
 Lemma upair_comm `{Countable A} (c d : A) : ({[c; d]} : gset A) = {[d; c]}.
 Proof. apply set_eq. set_solver. Qed.
-
-Lemma upair_eq_inv `{Countable A} (a b c d : A) :
-  ({[a; b]} : gset A) = {[c; d]} → a ≠ b →
-  (a = c ∧ b = d) ∨ (a = d ∧ b = c).
-Proof.
-  intros Hs Hab.
-  assert (a ∈ ({[c; d]} : gset A)) as Ha by (rewrite <-Hs; set_solver).
-  assert (b ∈ ({[c; d]} : gset A)) as Hb by (rewrite <-Hs; set_solver).
-  assert (c ∈ ({[a; b]} : gset A)) as Hc by (rewrite Hs; set_solver).
-  assert (d ∈ ({[a; b]} : gset A)) as Hd by (rewrite Hs; set_solver).
-  set_solver.
-Qed.
 
 (** The subjects of a session label, as channels. *)
 Definition subjs (σ : slabel) : gset chan :=
@@ -158,18 +143,6 @@ Definition subjs (σ : slabel) : gset chan :=
 (** The channels an external send extrudes: those of the ends of its value. *)
 Definition sentc (σ : slabel) : gset chan :=
   match σ with SSend _ v => fchans v | _ => ∅ end.
-
-(** The channels a step can introduce into the thread. *)
-Definition lchans (α : tlabel) : gset chan :=
-  match α with
-  | LBeta => ∅
-  | LSess (SRecv o w) => {[ech o]} ∪ fchans w
-  | LSess (SSend o _) | LSess (SClose o) | LSess (SSel o _) | LSess (SBra o _) => {[ech o]}
-  | LSess (SLink os) => set_map ech os
-  | LNew _ c => {[c]}
-  | LNewAt _ o c => {[ech o; c]}
-  | LSpawn v => fchans v
-  end.
 
 (** ** Basic lemmas *)
 
@@ -223,33 +196,6 @@ Lemma tstep_label_val e α e' : tstep e α e' → lval α.
 Proof. induction 1 as [e α e' Hh| ]; [by destruct Hh|done]. Qed.
 
 (** ** Footprint of a step *)
-
-Lemma head_step_fchans e α e' :
-  head_step e α e' → fchans e' ⊆ fchans e ∪ lchans α.
-Proof.
-  destruct 1; simpl; try (destruct i);
-    try (etrans; [apply fchans_subst1_sub|]);
-    try (etrans; [apply fchans_subst2_sub|]);
-    unfold fchans; simpl; rewrite ?set_map_union_L, ?set_map_singleton_L, ?set_map_empty;
-    set_solver.
-Qed.
-
-Lemma fchans_fill f e : fchans (fill_frame f e) =
-  fchans e ∪ match f with
-             | FAppL e2 | FAppR e2 | FPairL e2 | FPairR e2 | FLetU e2 | FLetP e2 => fchans e2
-             | FCase e1 e2 => fchans e1 ∪ fchans e2
-             | _ => ∅
-             end.
-Proof.
-  unfold fchans. destruct f; simpl; rewrite ?set_map_union_L, ?set_map_empty; set_solver.
-Qed.
-
-Lemma tstep_fchans e α e' :
-  tstep e α e' → fchans e' ⊆ fchans e ∪ lchans α.
-Proof.
-  induction 1 as [|f e α e' Hf Hs IH]; [by apply head_step_fchans|].
-  rewrite !fchans_fill. set_solver.
-Qed.
 
 (** A link label is a pair, possibly degenerate. *)
 Lemma tstep_link_shape e os e' :

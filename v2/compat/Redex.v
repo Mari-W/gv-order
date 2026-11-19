@@ -471,13 +471,6 @@ Section redex.
         * apply Vrel_sess_iff. eexists _, _. split_and!; [done|done|apply seqv_refl].
   Qed.
 
-  Lemma Erel_new (ℓ : family) n W S a1 a2 a3 F :
-    ℓ ∈ w_fams W →
-    Erel κ n W ∅
-      (TEx LBot 1 (bcs_of (w_laws W ℓ)) (TProd (TSess S (pvar 0)) a1 (TSess (dual S) (pvar 0)‾) a2) a3)
-      F (ENew ℓ).
-  Proof. intros Hℓ. by apply Erel_new_sub. Qed.
-
   (** ** Force *)
 
   Lemma Erel_force n W m kk C ub c t U a xs ss F v :

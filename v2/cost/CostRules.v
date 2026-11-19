@@ -17,12 +17,6 @@ Proof. destruct c0, c; simpl; lia. Qed.
 Lemma fle_frame_seq i c1 c2 : fle (Some i) c1 → fle c2 (fsub (fadd c1 c2) (Some i)).
 Proof. destruct c1, c2; simpl; lia. Qed.
 
-Lemma fle_frame_0 i c0 : fle (Some i) c0 → fle (Some 0) (fsub c0 (Some i)).
-Proof. destruct c0; simpl; lia. Qed.
-
-Lemma fsub_fsub (c : fuel) i j : fsub (fsub c (Some i)) (Some j) = fsub c (Some (i + j)).
-Proof. destruct c; simpl; [f_equal; lia|done]. Qed.
-
 Lemma meets_seq_split t1 t2 r tk : tok t1 t2 → meets (tseq t1 t2) r tk →
   ∃ r', meets t1 r' tk ∧ ∀ tk', r' ≤ tk' → meets t2 r tk'.
 Proof.
@@ -252,10 +246,6 @@ Proof. destruct c1, c2, c; simpl; lia. Qed.
 
 Lemma fle_frame_mid i c1 c2 c : fle (Some i) c1 → fle c2 (fsub (fadd c1 (fadd c2 c)) (Some i)).
 Proof. destruct c1, c2, c; simpl; lia. Qed.
-
-Lemma fle_frame_pair i i2 c1 c2 : fle (Some i) c1 → fle (Some i2) c2 →
-  fle (Some 0) (fsub (fsub (fadd c1 c2) (Some i)) (Some i2)).
-Proof. destruct c1, c2; simpl; lia. Qed.
 
 Lemma cost_e_app N Θ Θ1 Θ2 Θ2' Δ Δ1 Δ2 Δ2' e1 e2 ub lb c t h T aT U aU a1 c1 t1 c2 t2 :
   tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →

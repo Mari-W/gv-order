@@ -10,9 +10,6 @@ From GV Require Export static.Conservativity static.Weakening.
 (** let (a, b) = new_ℓ in e, the ∃ of new bound at index 2 and opened. *)
 Definition let_new (ℓ : family) (e : expr) : expr := ELet (ENew ℓ) (LetP (Var 0) e).
 
-(** let x = e1 in e2 *)
-Definition elet (e1 e2 : expr) : expr := ELet e1 e2.
-
 (** Occurrence of a variable, decidable. *)
 Fixpoint occ (i : nat) (e : expr) : bool :=
   match e with
@@ -238,9 +235,6 @@ Proof.
   intros Hφ HX Hu. split_and!; [done| |done]. simpl. intros φ' [= <-].
   destruct Hu as [->|Hu]; [by apply fl_v|]. eapply fl_trans; [exact Hu|by apply fl_v].
 Qed.
-
-Lemma sf_unionb_false F X : sf_unionb F X false = sf_union F X.
-Proof. done. Qed.
 
 Lemma ub_below_varb W Γ x u X b φ :
   b = false → hc_fv Γ !! φ = Some (Some u) → (∀ y, y ∈ X → slt W Γ x y) → sle W Γ x u →

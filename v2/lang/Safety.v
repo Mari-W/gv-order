@@ -101,25 +101,11 @@ Definition asubjs (a : action) : option (gset chan) :=
   | ALink o1 o2 => Some {[ech o1; ech o2]}
   end.
 
-(** The ends a session action acts on. *)
-Definition aends (a : action) : option (gset cend) :=
-  match a with
-  | ABeta | ANew _ | ANewAt _ _ | ASpawn _ => None
-  | ARecv o | ASend o _ | AClose o | ASel o _ | ABra o => Some {[o]}
-  | ALink o1 o2 => Some {[o1; o2]}
-  end.
-
 Lemma act_fill f e : frame_val f → ¬ is_val e → act (fill_frame f e) = act e.
 Proof.
   intros Hf Hv. assert (is_val e = false) as Hv' by (destruct (is_val e); naive_solver).
   destruct f; simpl in *; rewrite ?Hv'; try done.
   all: by rewrite (is_val_true _ Hf), ?Hv'.
-Qed.
-
-Lemma act_val e : is_val e → act e = None.
-Proof.
-  induction e; simpl; intros Hv; try done; auto.
-  apply andb_True in Hv as [H1 H2]. rewrite (is_val_true _ H1). auto.
 Qed.
 
 (** ** [act] is sound and complete for [tstep] *)
@@ -249,23 +235,12 @@ Definition alabel (a : action) : tlabel :=
 Lemma offers_alabel a : offers a (alabel a).
 Proof. destruct a; simpl; auto. Qed.
 
-(** Progress for terms: a term is irreducible or it steps. *)
-Lemma tstep_progress e : irred e ∨ ∃ α e', tstep e α e'.
-Proof.
-  destruct (act e) as [a|] eqn:Ha; [right|left; by apply act_None_irred].
-  destruct (act_offer _ _ (alabel a) Ha (offers_alabel a)) as [e' ?]. eauto.
-Qed.
-
 (** ** Reading an action back off a label *)
 
-Lemma offers_beta a : offers a LBeta → a = ABeta.
-Proof. by destruct a. Qed.
 Lemma offers_new a ℓ c : offers a (LNew ℓ c) → a = ANew ℓ.
 Proof. destruct a; try done. by intros ->. Qed.
 Lemma offers_new_at a κ o c : offers a (LNewAt κ o c) → a = ANewAt κ o.
 Proof. destruct a; try done. by intros [-> ->]. Qed.
-Lemma offers_spawn a v : offers a (LSpawn v) → a = ASpawn v.
-Proof. destruct a; try done. by intros ->. Qed.
 Lemma offers_send a o v : offers a (LSess (SSend o v)) → a = ASend o v.
 Proof. destruct a; try done. by intros (-> & ->). Qed.
 Lemma offers_recv a o v : offers a (LSess (SRecv o v)) → a = ARecv o.
@@ -299,9 +274,6 @@ Proof.
   - exists (SSel o i). by split.
   - exists (SBra o false). by split.
 Qed.
-
-Lemma aends_asubjs a : is_Some (aends a) ↔ is_Some (asubjs a).
-Proof. destruct a; simpl; split; intros [? ?]; try discriminate; eauto. Qed.
 
 (** ** Kinds of actions *)
 
@@ -580,111 +552,3 @@ Qed.
 
 (** ** Preservation of closedness *)
 
-Lemma closed_at_rename e : ∀ n m r,
-  closed_at n e → (∀ x, x < n → r x < m) → closed_at m (rename r e).
-Proof.
-  induction e; simpl; intros n m r Hc Hr; rewrite ?andb_True in Hc |- *; destruct_and?;
-    split_and?; try done.
-  all: try (repeat match goal with H : Is_true (bool_decide _) |- _ => apply bool_decide_unpack in H end;
-    apply bool_decide_pack; by auto).
-  all: first [eapply IHe|eapply IHe1|eapply IHe2|eapply IHe3]; [eassumption|].
-  all: intros [|[|x]] Hx; simpl; unfold compose, upren, scons; simpl; try lia.
-  all: try (apply Hr; lia).
-  all: try (assert (x < n) as Hx' by lia; apply Hr in Hx'; lia).
-  all: try (assert (S x < n) as Hx' by lia; apply Hr in Hx'; lia).
-  all: try (assert (0 < n) as Hx' by lia; apply Hr in Hx'; lia).
-Qed.
-
-Lemma closed_at_subst e : ∀ n m σ,
-  closed_at n e → (∀ x, x < n → closed_at m (σ x)) → closed_at m (subst σ e).
-Proof.
-  induction e; simpl; intros n m σ Hc Hσ; rewrite ?andb_True in Hc |- *; destruct_and?;
-    split_and?; try done.
-  all: try (repeat match goal with H : Is_true (bool_decide _) |- _ => apply bool_decide_unpack in H end;
-    by auto).
-  all: first [eapply IHe|eapply IHe1|eapply IHe2|eapply IHe3]; [eassumption|].
-  all: intros [|[|x]] Hx; simpl; unfold compose; try done; try (apply bool_decide_pack; lia).
-  all: try (apply Hσ; lia).
-  all: rewrite ?rename_rename; eapply closed_at_rename; [apply Hσ; lia|]; intros; simpl; lia.
-Qed.
-
-Lemma closed_subst1 v e : closed_at 0 v → closed_at 1 e → closed_at 0 (subst1 v e).
-Proof. intros Hv He. eapply closed_at_subst; [exact He|]. intros [|x] Hx; [done|lia]. Qed.
-
-Lemma closed_subst2 u v e :
-  closed_at 0 u → closed_at 0 v → closed_at 2 e → closed_at 0 (subst2 u v e).
-Proof. intros Hu Hv He. eapply closed_at_subst; [exact He|]. intros [|[|x]] Hx; [done|done|lia]. Qed.
-
-(** The values a label carries are closed. *)
-Definition lclosed (α : tlabel) : Prop :=
-  match α with
-  | LSess (SRecv _ v) | LSess (SSend _ v) | LSpawn v => closed_at 0 v
-  | _ => True
-  end.
-
-Lemma head_step_closed e α e' :
-  head_step e α e' → closed_at 0 e →
-  (match α with LSess (SRecv _ v) => closed_at 0 v | _ => True end) →
-  closed_at 0 e' ∧ lclosed α.
-Proof.
-  destruct 1; simpl; intros Hc Hr; rewrite ?andb_True in Hc |- *; destruct_and?;
-    split_and?; auto.
-  - by apply closed_subst1.
-  - by apply closed_subst2.
-  - by apply closed_subst1.
-  - by apply closed_subst1.
-  - by apply closed_subst1.
-  - by destruct i.
-Qed.
-
-Lemma tstep_closed e α e' :
-  tstep e α e' → closed_at 0 e →
-  (match α with LSess (SRecv _ v) => closed_at 0 v | _ => True end) →
-  closed_at 0 e' ∧ lclosed α.
-Proof.
-  induction 1 as [|f e α e' Hf Hs IH]; [by apply head_step_closed|].
-  intros Hc Hr. destruct f; simpl in *; rewrite ?andb_True in Hc |- *; destruct_and?;
-    destruct (IH ltac:(done) Hr); split_and?; done.
-Qed.
-
-(** Every thread of a configuration is closed. *)
-Definition closed_conf (q : config) : Prop := ∀ i e, q.2 !! i = Some e → closed_at 0 e.
-
-Lemma closed_emap g e n : closed_at n (emap g e) = closed_at n e.
-Proof. revert n. induction e; intros n; simpl; by rewrite ?IHe, ?IHe1, ?IHe2, ?IHe3. Qed.
-
-Lemma closed_conf_insert C C' M i e :
-  closed_conf (C, M) → closed_at 0 e → closed_conf (C', <[i := e]> M).
-Proof.
-  intros HM He k ek Hk. simpl in Hk.
-  apply lookup_insert_Some in Hk as [[<- <-]|[_ Hk]]; [done|]. by eapply HM.
-Qed.
-
-Theorem itstep_closed q ev q' : itstep q ev q' → closed_conf q → closed_conf q'.
-Proof.
-  intros [Hst Hτ] Hq.
-  destruct Hst as [C M i e e' Hi Hst|C M i e ℓ c e' Hi Hst HC Hc|C M i e κ o c e' Hi Hst HC Hc
-    |C M i j e v e' Hi Hst Hj
-    |C M i j o v e e' f f' Hij Hi Hj He Hf|C M i j o e e' f f' Hij Hi Hj He Hf HC
-    |C M i j o b e e' f f' Hij Hi Hj He Hf|C M i e o1 o2 e' Hi Hst HC
-    |C M i e σ e' Hi Hst HC]; simpl in Hτ; try discriminate.
-  all: try (eapply (closed_conf_insert C); [done|];
-            by eapply (tstep_closed _ _ _ Hst); [eapply Hq|]).
-  - (* spawn: the parent's continuation and the thunk applied to ∗ *)
-    destruct (tstep_closed _ _ _ Hst) as [He' Hv]; [by eapply Hq|done|].
-    eapply (closed_conf_insert C); [by eapply (closed_conf_insert C)|]. simpl in *. rewrite andb_True. by split.
-  - (* the receiver gets the sender's value *)
-    destruct (tstep_closed _ _ _ He) as [He' Hv]; [by eapply Hq|done|].
-    eapply (closed_conf_insert C); [by eapply (closed_conf_insert C)|].
-    by eapply (tstep_closed _ _ _ Hf); [eapply Hq|].
-  - destruct (tstep_closed _ _ _ He) as [He' _]; [by eapply Hq|done|].
-    eapply (closed_conf_insert C); [by eapply (closed_conf_insert C)|].
-    by eapply (tstep_closed _ _ _ Hf); [eapply Hq|].
-  - destruct (tstep_closed _ _ _ He) as [He' _]; [by eapply Hq|done|].
-    eapply (closed_conf_insert C); [by eapply (closed_conf_insert C)|].
-    by eapply (tstep_closed _ _ _ Hf); [eapply Hq|].
-  - (* the link renames every thread *)
-    destruct (tstep_closed _ _ _ Hst) as [He' _]; [by eapply Hq|done|].
-    intros k ek Hk. simpl in Hk. apply lookup_fmap_Some in Hk as (ek0 & <- & Hk).
-    rewrite closed_emap. apply lookup_insert_Some in Hk as [[<- <-]|[_ Hk]]; [done|by eapply Hq].
-Qed.

@@ -28,20 +28,6 @@ Section sync.
   Local Lemma inΠ t o v : kres K t Π !! o = Some v → Π !! o = Some v.
   Proof. intros H. apply lookup_kres in H as [H _]. done. Qed.
 
-  Local Lemma ctrs_some t o : o ∈ dom (kth K t) → ∃ f, ctrs K t !! o = Some f.
-  Proof. intros (h & Hh & Ht)%elem_of_dom_kth. exists h.(h_ctr). apply lookup_ctrs. eauto. Qed.
-
-  (** The owner of every held end is a thread, and a held end is held at
-      a point of A, a protocol of Π and a counter. *)
-  Local Lemma held_all o h : K !! o = Some h →
-    (∃ S x, A !! o = Some (S, x) ∧ x = h.(h_pt)) ∧ ∃ P, Π !! o = Some P.
-  Proof.
-    intros Ho. split.
-    - pose proof (s_pts _ _ _ _ _ _ _ _ Hs o) as Hp. cbn [s_K] in Hp. rewrite Ho in Hp.
-      destruct (A !! o) as [[S x]|]; simpl in Hp; simplify_eq. eauto.
-    - assert (o ∈ dom Π) as HΠ by (rewrite (s_dom _ _ _ _ _ _ _ _ Hs); by apply elem_of_dom_2 in Ho).
-      by apply elem_of_dom in HΠ.
-  Qed.
   Local Ltac pw := apply map_eq_some; intros o0 v0.
 
   (** P-Act-Msg. *)

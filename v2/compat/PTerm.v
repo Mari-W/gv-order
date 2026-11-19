@@ -63,13 +63,6 @@ Section sth.
   Lemma sth_lookup_S Θ Σ ΘB C o v : sth Θ Σ ΘB C → Σ !! o = Some v → Θ !! o = Some v.
   Proof. intros Hs H. rewrite (st_env _ _ _ _ Hs). by apply lookup_union_Some_l. Qed.
 
-  (** An end of Θ on a restricted channel is an end of Θ_B. *)
-  Lemma sth_lookup_C Θ Σ ΘB C o v : sth Θ Σ ΘB C → ech o ∈ C → Θ !! o = Some v → ΘB !! o = Some v.
-  Proof.
-    intros Hs Hc H. rewrite (st_env _ _ _ _ Hs) in H. apply lookup_union_Some_raw in H as [H|[_ H]]; [|done].
-    exfalso. apply (st_disj _ _ _ _ Hs (ech o)); [apply elem_of_chans_of; by eapply elem_of_dom_2|done].
-  Qed.
-
   Lemma sth_lookup_nC Θ Σ ΘB C o v : sth Θ Σ ΘB C → ech o ∉ C → Θ !! o = Some v → Σ !! o = Some v.
   Proof.
     intros Hs Hc H. rewrite (st_env _ _ _ _ Hs) in H. apply lookup_union_Some_raw in H as [H|[_ H]]; [done|].
@@ -742,9 +735,6 @@ Section recv.
       + exists o. split; [done|]. apply elem_of_filter. set_solver.
       + exists (edual o). rewrite ech_edual. split; [done|]. apply elem_of_filter. split; [rewrite edual_edual|]; set_solver.
   Qed.
-
-  Lemma rcv_pfree : pfree Σ.
-  Proof. exact (st_free _ _ _ _ Hs). Qed.
 
   Lemma rcv_sth : sth (Θ ∪ Θ2) (recv_env Σ Θ2) (ΘB ∪ rback Σ Θ2) (C ∪ recv_back Σ Θ2).
   Proof.

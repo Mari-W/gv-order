@@ -100,9 +100,6 @@ Proof.
   - rewrite (IHT (pup n σ) (pup n τ)) by (intros; by apply pup_ext).
     rewrite (bcs_inst_ext σ τ), (lb_map_ext _ (pt_inst τ)) by first [done|intros; by apply pt_inst_ext]. done.
 Qed.
-Lemma pinst_sty_ext s σ τ : (∀ a, σ a = τ a) → pinst_sty σ s = pinst_sty τ s.
-Proof. done. Qed.
-
 Lemma pinst_ty_comp T : ∀ σ τ, pinst_ty τ (pinst_ty σ T) = pinst_ty (pt_inst τ ∘ σ) T.
 Proof.
   induction T; intros σ τ; simpl; try done.
@@ -121,9 +118,6 @@ Proof.
     rewrite (lb_map_ext (pt_inst τ ∘ pt_inst σ) (pt_inst (pt_inst τ ∘ σ))) by (intros; apply pt_inst_comp).
     done.
 Qed.
-Lemma pinst_sty_comp s σ τ : pinst_sty τ (pinst_sty σ s) = pinst_sty (pt_inst τ ∘ σ) s.
-Proof. done. Qed.
-
 Lemma pinst_ty_pvar T : pinst_ty pvar T = T.
 Proof.
   induction T; simpl; try done.
@@ -136,9 +130,6 @@ Proof.
   - rewrite (pinst_ty_ext T _ pvar), IHT by apply pup_pvar. rewrite bcs_inst_pvar.
     by rewrite lb_map_id by apply pt_inst_pvar.
 Qed.
-Lemma pinst_sty_pvar s : pinst_sty pvar s = s.
-Proof. done. Qed.
-
 (** ** Point-closed payloads
 
     [pscoped k T]: every point variable of T is below k (binders of T
@@ -528,9 +519,6 @@ Lemma teq_refl T : teq T T.
 Proof. apply eqT_refl, sequiv_refl. Qed.
 Lemma teq_sym T U : teq T U → teq U T.
 Proof. apply eqT_sym, sequiv_sym. Qed.
-Lemma teq_trans T U V : teq T U → teq U V → teq T V.
-Proof. apply eqT_trans. intros ???. apply sequiv_trans. Qed.
-
 (** ** Kinds of types *)
 
 Inductive prim : ty → Prop :=
@@ -556,9 +544,6 @@ Proof. destruct T; try done. intros _. constructor. Qed.
 
 Lemma unlimited_pinst σ U : unlimited U → unlimited (pinst_ty σ U).
 Proof. by destruct U. Qed.
-
-Lemma tfree_pinst σ T : tfree T → tfree (pinst_ty σ T).
-Proof. induction 1; simpl; constructor; auto. Qed.
 
 (** ** The annotations of the instance N = ∞
 

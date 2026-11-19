@@ -113,9 +113,6 @@ Section fuse_side.
     apply elem_of_dom_2 in Lb. rewrite dom_union_L, elem_of_union in Lb. done.
   Qed.
 
-  Local Lemma img o' : o' ∈ dom (kren h (Σ1 ∪ Σ2)) → ∃ a, o' = h a ∧ (a ∈ dom Σ1 ∨ a ∈ dom Σ2).
-  Proof. rewrite (KD _ _ H12). setoid_rewrite dom_union_L. setoid_rewrite elem_of_union. done. Qed.
-
   (** The classes of a held end. *)
   Local Ltac cls a :=
     first [ let H := fresh in assert (a ∈ dom Σ1) as H by assumption; pose proof (cls_1 _ _ _ _ _ _ Hc a H)
@@ -132,9 +129,6 @@ Section fuse_side.
     - set_solver.
     - set_solver.
   Qed.
-
-  Local Lemma hD_ne a b : held a → held b → h a = h b → a ≠ b → False.
-  Proof. intros Ha Hb E N. by apply N, hinj. Qed.
 
   (** ** Side conditions for one side; the other side is the mirror *)
 

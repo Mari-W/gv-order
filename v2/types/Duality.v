@@ -226,12 +226,6 @@ Proof.
   intros [|a] Ha; [lia|done].
 Qed.
 
-Lemma dual_hseq h s2 : dual (hseq h s2) = hseq (dual h) (dual s2).
-Proof. destruct h as [| | | | | | |o r| |]; simpl; try done. by destruct r. Qed.
-
-Lemma dual_skip_iff h : dual h = SSkip ↔ h = SSkip.
-Proof. split; [|by intros ->]. by destruct h. Qed.
-
 Lemma dual_unrN k : ∀ s, unrN k (dual s) = dual <$> unrN k s.
 Proof.
   induction k as [|k IH]; intros s; simpl; [done|].

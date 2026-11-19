@@ -44,12 +44,6 @@ Lemma fle_trans a b c : fle a b → fle b c → fle a c.
 Proof. destruct a, b, c; simpl; lia. Qed.
 Lemma fle_inf a : fle a None.
 Proof. by destruct a. Qed.
-Lemma fle_inf_inv a : fle None a → a = None.
-Proof. by destruct a. Qed.
-Lemma fadd_inf_l a : fadd None a = None.
-Proof. done. Qed.
-Lemma fadd_inf_r a : fadd a None = None.
-Proof. by destruct a. Qed.
 Lemma fadd_0_l a : fadd (Some 0) a = a.
 Proof. by destruct a. Qed.
 Lemma fsub_inf a : fsub None a = None.
@@ -77,9 +71,6 @@ Definition tle (t t' : tix) : Prop := ∀ r tk, meets t' r tk → meets t r tk.
 
 Lemma tle_refl t : tle t t.
 Proof. by intros r tk. Qed.
-Lemma tle_trans t1 t2 t3 : tle t1 t2 → tle t2 t3 → tle t1 t3.
-Proof. intros H12 H23 r tk H. by apply H12, H23. Qed.
-
 (** Nothing meets the transformer of N = ∞. *)
 Lemma meets_tinf r tk : ¬ meets tinf r tk.
 Proof. unfold meets, tapp, tinf. destruct (Nat.eqb r 0); simpl; tauto. Qed.
@@ -108,12 +99,6 @@ Definition tmax (t1 t2 : tix) : tix := (fmax t1.1 t2.1, fmax t1.2 t2.2).
 (** t1 ∘ t2 is sound when t2 needs nothing at 0, t1 has a finite slope,
     or t1 has offset ∞ (then t1 ∘ t2 is met nowhere). *)
 Definition tok (t1 t2 : tix) : Prop := t2.2 = Some 0 ∨ t1.1 ≠ None ∨ t1.2 = None.
-
-Lemma meets_fadd_inf t r tk : t.2 = None → ¬ meets t r tk.
-Proof.
-  destruct t as [[s|] b]; simpl; intros ->; unfold meets, tapp;
-    [rewrite fadd_inf_r; tauto|destruct (Nat.eqb r 0); tauto].
-Qed.
 
 Lemma link_split t r tk : meets (tlink t) r tk → 1 ≤ tk ∧ meets t r (tk - 1).
 Proof.

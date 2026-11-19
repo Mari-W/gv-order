@@ -20,9 +20,6 @@ From GV Require Export examples.Tools2.
 Definition Sd : sty := SSeq (SSnd 0 TUnit None) SEnd.
 Definition Sr : sty := SSeq (SRcv 0 TUnit None) SEnd.
 
-Lemma dual_Sd : dual Sd = Sr.
-Proof. done. Qed.
-
 Definition fx_L (g : fact) : Prop :=
   g = FLt (pvar 0)‾ ((pvar 0)·0) ∨ g = FLt (pt_shift 1 (pvar 0)‾) ((pvar 0)·0).
 
@@ -54,7 +51,7 @@ Definition mk1_e : expr :=
 Definition mk1 : expr := EBox (Lam mk1_e).
 
 Definition fx_main : expr :=
-  elet (App (EForce mk0) EUnit)
+  ELet (App (EForce mk0) EUnit)
     (LetP (App (EForce mk1) (Var 0))
       (LetU (LetP (ERecv (Var 1)) (LetU (Var 1) (EClose (Var 0))))
             (LetP (ERecv (Var 0)) (LetU (Var 1) (EClose (Var 0)))))).
@@ -134,7 +131,7 @@ Proof. intros Hf Hs. by apply law_slt'. Qed.
 
 Theorem fx_dftyped : dftyped W_fx ∅ hc_empty [] (∅, None) fx_main TUnit.
 Proof.
-  unfold fx_main, elet.
+  unfold fx_main.
   eapply d_let with (b1 := None); [apply tsplit_empty|apply lsplit_nil| |].
   { (* the first call needs no point *)
     eapply d_app; [apply tsplit_empty|apply lsplit_nil|apply ub_below_empty| |apply d_unit'; spare_tac].

@@ -229,10 +229,6 @@ Proof.
   destruct (soup_split M _ _ HM) as (M1 & M2 & -> & Hd & H1 & H2). exists M1, M2. done.
 Qed.
 
-Lemma pconn_erase C1 C2 K M1 M2 : M1 ##ₘ M2 →
-  erase (C1 ∪ C2 ∪ K, M1 ∪ M2) = pconn (erase (C1, M1)) (erase (C2, M2)) K.
-Proof. intros Hd. unfold erase, pconn. simpl. by rewrite soup_union. Qed.
-
 (** A τ step of a component is a τ step of the composite, up to the
     choice of fresh names. *)
 Lemma tau_lift C1 C2 K M1 M2 ev q1' :
@@ -295,20 +291,6 @@ Section psteps.
     (W : world) (Σ : senv) (T : ty) (p : proc).
   Context (HP : Psteps κ n Vl Pl VN X W Σ T p).
 
-  Lemma Psteps_sends q i σ q' : erase q = p → istep q (EvSess i σ) q' → sends σ ⊆ dom Σ.
-  Proof.
-    intros Hq Hst. destruct HP as (_ & H2 & H3 & H4 & H5 & H6 & H7).
-    destruct σ as [o w|o w|o|o b|o b|os]; simpl.
-    - destruct (H2 _ _ _ _ _ Hq Hst) as (? & ? & ? & ? & ? & ? & ? & ? & ? & ? & A & _).
-      apply elem_of_dom_2 in A. set_solver.
-    - destruct (H3 _ _ _ _ _ Hq Hst) as (? & ? & ? & ? & ? & ? & A & _). apply elem_of_dom_2 in A. set_solver.
-    - destruct (H4 _ _ _ _ Hq Hst) as (? & ? & A & _). apply elem_of_dom_2 in A. set_solver.
-    - destruct (H5 _ _ _ _ _ Hq Hst) as (? & ? & ? & ? & A & _). apply elem_of_dom_2 in A. set_solver.
-    - destruct (H6 _ _ _ _ _ Hq Hst) as (? & ? & ? & ? & A & _). apply elem_of_dom_2 in A. set_solver.
-    - destruct (H7 _ _ _ _ Hq Hst) as (o1 & o2 & ? & ? & ? & -> & _ & A1 & A2 & _).
-      apply elem_of_dom_2 in A1, A2. set_solver.
-  Qed.
-
   Lemma Psteps_head q i σ q' o : erase q = p → istep q (EvSess i σ) q' → ssubj σ = Some o →
     ∃ S0 x, Σ !! o = Some (S0, x) ∧ hd_ok σ (unfoldS S0).
   Proof.
@@ -367,33 +349,6 @@ Section offers.
   Local Abbreviation K := (chans_of ΣC).
   Local Abbreviation pc := (pconn q1 q2 K).
 
-  Lemma conn_not2 o : o ∈ dom Σ1 → o ∉ dom (Σ2 ∪ ΣD).
-  Proof.
-    destruct Hc as [? ? Hcut ? ? ? H12 H1C _ _ _ _]. rewrite (dom_union_L Σ2 ΣD).
-    intros Ho Ho'. apply elem_of_union in Ho' as [Ho'|Ho'].
-    - apply (H12 (ech o)); by apply elem_of_chans_of.
-    - apply (H1C (ech o)); [by apply elem_of_chans_of|]. rewrite <-(cut_dual_chans _ _ Hcut).
-      by apply elem_of_chans_of.
-  Qed.
-
-  (** A step of the composite on an end of Σ1 comes from p1. *)
-  Lemma offered_c_1 o : o ∈ dom Σ1 → offered_p (Σ1 ∪ Σ2) pc o → offered_p (Σ1 ∪ ΣC) q1 o.
-  Proof.
-    intros HoΣ [_ (σ & p' & Hst & Hoσ)]. split; [rewrite dom_union_L; set_solver|].
-    destruct (erase_surj pc) as [q Hq]. destruct (pconn_lift _ _ _ _ Hq) as (M1 & M2 & -> & Hd & HM1 & HM2).
-    rewrite <-Hq in Hst. destruct (pstep_lift _ _ _ Hst) as (ev & q' & Hi & Hl & _).
-    destruct ev; try discriminate. injection Hl as ->. inversion Hi; subst.
-    match goal with Hlk : (M1 ∪ M2) !! _ = Some _ |- _ => apply (lookup_union_Some _ _ _ _ Hd) in Hlk as [Hlk|Hlk] end.
-    - exists σ, (erase ((q1.1 ∖ sentc σ), <[i := e']> M1)). split; [|done].
-      exists (q1.1, M1), (EvSess i σ), (q1.1 ∖ sentc σ, <[i := e']> M1). split_and!; [|by eapply p_act_session; [eassumption|eassumption|set_solver]|done|done].
-      unfold erase. simpl. rewrite HM1. by destruct q1.
-    - exfalso. apply (conn_not2 o HoΣ).
-      apply (Psteps_sends κ _ _ _ _ _ _ _ _ q2 (proj2 (proj2 H2)) (q2.1, M2) i σ (q2.1 ∖ sentc σ, <[i := e']> M2)).
-      + unfold erase. simpl. rewrite HM2. by destruct q2.
-      + by eapply p_act_session; [eassumption|eassumption|set_solver].
-      + done.
-  Qed.
-
   Lemma sess_lift M1 M2 i σ q1' :
     M1 ##ₘ M2 → istep (q1.1, M1) (EvSess i σ) q1' → subjs σ ## q1.1 ∪ q2.1 ∪ K →
     ∃ q', istep (q1.1 ∪ q2.1 ∪ K, M1 ∪ M2) (EvSess i σ) q'.
@@ -446,9 +401,6 @@ Section offers.
         pose proof (elem_of_chans_of _ _ HoΣ) as Hco; clear - Hc'' Hco H1C HC1 HC2; set_solver.
   Qed.
 End offers.
-
-Lemma ssubj_sends σ o : ssubj σ = Some o → sends σ = {[o]}.
-Proof. by destruct σ; simpl; intros [= ->]. Qed.
 
 Lemma sends_ssubj σ o : o ∈ sends σ → (∃ os, σ = SLink os) ∨ ssubj σ = Some o.
 Proof. destruct σ; simpl; try (intros ->%elem_of_singleton; by right). eauto. Qed.
@@ -528,19 +480,6 @@ Proof.
 Qed.
 
 (** ** Readiness of the composite *)
-
-Lemma terminated_pirred p : terminated p → pirred p.
-Proof.
-  intros (v & E & -> & Hv & HE) π p' (q & ev & q' & Hq & Hst & _).
-  destruct (istep_parts_nonempty _ _ _ Hst) as [t Ht].
-  destruct (istep_parts_some _ _ _ t Hst Ht) as [e He].
-  destruct (istep_actor _ _ _ t e Hst Ht He) as (α & e' & Hs & _).
-  assert (e ∈ soup q.2) as Hin by (apply elem_of_soup; eauto).
-  destruct q as [C M]. injection Hq as _ HM. simpl in Hin. rewrite HM in Hin.
-  apply gmultiset_elem_of_disj_union in Hin as [Hin|Hin].
-  - apply gmultiset_elem_of_singleton in Hin as ->. by apply (val_no_tstep _ _ _ Hs).
-  - rewrite (HE e Hin) in Hs. by apply (val_no_tstep _ _ _ Hs).
-Qed.
 
 Lemma chans_disj_map (Σ1 Σ2 : senv) : chans_of Σ1 ## chans_of Σ2 → Σ1 ##ₘ Σ2.
 Proof.
@@ -926,15 +865,6 @@ Lemma csub_held_id o1 o2 (Σ : senv) (p : proc) :
   ech o1 ∉ chans_of Σ ∪ p.1 → ∀ o, pheld Σ p o → csub o1 o2 o = o.
 Proof.
   intros Hn o [Ho|Ho]; apply csub_ne; intros He; apply Hn; rewrite <-He; [apply elem_of_union_l; by apply elem_of_chans_of|set_solver].
-Qed.
-
-(** A renaming that fixes the held ends keeps a process in P at its
-    interface. *)
-Lemma Prel_ren_id κ m W Σ T p g :
-  dcomm g → (∀ o, pheld Σ p o → g o = o) → Prel κ m W Σ T p → Prel κ m W Σ T (pmap g p).
-Proof.
-  intros Hd Hid HP. destruct (ren_held_id g Σ p Hd Hid) as (Hok & Hk & _).
-  rewrite <-Hk at 1. by apply Prel_rename.
 Qed.
 
 Lemma conn_C1 Σ1 ΣC C1 Σ2 ΣD C2 C1' :

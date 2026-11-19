@@ -93,7 +93,6 @@ Fixpoint pn_root (p : pname) : pname :=
   match p with NField q _ _ => pn_root q | r => r end.
 Definition pt_root (x : point) : pname := pn_root (pt_name x).
 
-Definition pconst (a : nat) : point := MkPt (NConst a) true 0.
 Definition pgen (ℓ : family) (g : nat) : point := MkPt (NGen ℓ g) true 0.
 Definition pvar (a : nat) : point := MkPt (NVar a) true 0.
 
@@ -111,18 +110,8 @@ Lemma pt_field_dual x κ : x‾·κ = x·κ.
 Proof. done. Qed.
 Lemma pt_dual_shift n x : pt_shift n x‾ = (pt_shift n x)‾.
 Proof. done. Qed.
-Lemma pt_dual_inj x y : x‾ = y‾ → x = y.
-Proof. intros H. by rewrite <-(pt_dual_dual x), H, pt_dual_dual. Qed.
-Lemma pt_dual_neq x : x‾ ≠ x.
-Proof. destruct x as [p [] o]; unfold pt_dual; simpl; congruence. Qed.
 Lemma pt_shift_0 x : pt_shift 0 x = x.
 Proof. destruct x as [p b o]. unfold pt_shift. simpl. f_equal. lia. Qed.
-Lemma pt_shift_shift m n x : pt_shift m (pt_shift n x) = pt_shift (n + m) x.
-Proof. destruct x. unfold pt_shift. simpl. f_equal. lia. Qed.
-Lemma pt_polar_shift b n y : pt_polar b (pt_shift n y) = pt_shift n (pt_polar b y).
-Proof. by destruct b. Qed.
-Lemma pt_polar_dual b y : pt_polar b y‾ = (pt_polar b y)‾.
-Proof. by destruct b. Qed.
 Lemma pt_root_shift n x : pt_root (pt_shift n x) = pt_root x.
 Proof. done. Qed.
 Lemma pt_root_dual x : pt_root x‾ = pt_root x.
@@ -131,13 +120,6 @@ Lemma pt_root_field x κ : pt_root (x·κ) = pt_root x.
 Proof. done. Qed.
 Lemma pt_root_polar b x : pt_root (pt_polar b x) = pt_root x.
 Proof. by destruct b. Qed.
-Lemma pn_root_idem p : pn_root (pn_root p) = pn_root p.
-Proof. induction p; simpl; auto. Qed.
-
-(** A point and its shifts are distinct. *)
-Lemma pt_shift_neq n x : n ≠ 0 → pt_shift n x ≠ x.
-Proof. intros Hn E. destruct x. unfold pt_shift in E. injection E. lia. Qed.
-
 (** ** Point instantiation
 
     x[σ] instantiates the point variables of x. A variable denotes the
@@ -169,9 +151,6 @@ Definition pshift (m : nat) : nat → point := λ a, pvar (a + m).
 (** The fields x·0, …, x·(m−1), where the ends of a message sit. *)
 Definition payload_pts (x : point) (m : nat) : list point :=
   (λ i, x·i) <$> seq 0 m.
-
-Lemma payload_pts_dual x m : payload_pts x‾ m = payload_pts x m.
-Proof. done. Qed.
 
 Lemma pt_inst_pvar_at σ a : pt_inst σ (pvar a) = σ a.
 Proof. unfold pt_inst, pvar. simpl. apply pt_shift_0. Qed.
@@ -234,22 +213,11 @@ Proof.
   destruct bb; unfold pt_polar, pt_shift, pt_dual; simpl; f_equal; lia.
 Qed.
 
-(** A point whose root is no variable is fixed by every instantiation. *)
-Lemma pn_inst_novar σ p : (∀ a, pn_root p ≠ NVar a) → pn_inst σ p = MkPt p true 0.
-Proof.
-  intros H. induction p; simpl in *; try done; [by destruct (H a)|].
-  rewrite IHp by done. done.
-Qed.
-
 Lemma pt_inst_novar σ x : (∀ a, pt_root x ≠ NVar a) → pt_inst σ x = x.
 Proof.
   intros H. rewrite (pt_inst_ext_root σ pvar); [apply pt_inst_pvar|].
   intros a Ha. by destruct (H a).
 Qed.
-
-Lemma pt_root_inst σ x :
-  (∀ a, pt_root x ≠ NVar a) → pt_root (pt_inst σ x) = pt_root x.
-Proof. intros H. by rewrite pt_inst_novar. Qed.
 
 (** The root of an instance is the root of the instance of the root. *)
 Lemma pn_root_inst σ p :
@@ -295,15 +263,6 @@ Qed.
 Lemma plist_lookup xs i x : xs !! i = Some x → plist xs i = x.
 Proof. unfold plist. by intros ->. Qed.
 
-Lemma payload_pts_length x m : length (payload_pts x m) = m.
-Proof. unfold payload_pts. by rewrite length_fmap, length_seq. Qed.
-
-Lemma payload_pts_inst σ x m : pt_inst σ <$> payload_pts x m = payload_pts (pt_inst σ x) m.
-Proof.
-  unfold payload_pts. rewrite <-list_fmap_compose. apply list_fmap_ext.
-  intros _ i _. apply pt_inst_field.
-Qed.
-
 (** ** Renamings of generated roots
 
     [pn_gmap r] renames every generated root (ℓ, g) to r (ℓ, g) and
@@ -319,64 +278,6 @@ Fixpoint pn_gmap (r : family * nat → family * nat) (p : pname) : pname :=
 
 Definition pt_gmap (r : family * nat → family * nat) (x : point) : point :=
   MkPt (pn_gmap r (pt_name x)) (pt_pol x) (pt_off x).
-
-Definition frename (f : family → family) : family * nat → family * nat :=
-  λ lg, (f lg.1, lg.2).
-
-Lemma pt_gmap_shift r n x : pt_gmap r (pt_shift n x) = pt_shift n (pt_gmap r x).
-Proof. done. Qed.
-Lemma pt_gmap_dual r x : pt_gmap r x‾ = (pt_gmap r x)‾.
-Proof. done. Qed.
-Lemma pt_gmap_field r x κ : pt_gmap r (x·κ) = (pt_gmap r x)·κ.
-Proof. done. Qed.
-Lemma pt_gmap_polar r b x : pt_gmap r (pt_polar b x) = pt_polar b (pt_gmap r x).
-Proof. by destruct b. Qed.
-
-Lemma pn_gmap_id r p : (∀ lg, r lg = lg) → pn_gmap r p = p.
-Proof. intros H. induction p; simpl; rewrite ?IHp, ?H; auto. Qed.
-
-Lemma pt_gmap_id r x : (∀ lg, r lg = lg) → pt_gmap r x = x.
-Proof. intros H. destruct x. unfold pt_gmap. simpl. by rewrite pn_gmap_id. Qed.
-
-Lemma pn_gmap_comp r r' p : pn_gmap r (pn_gmap r' p) = pn_gmap (r ∘ r') p.
-Proof. induction p; simpl; rewrite ?IHp; auto. by destruct (r' (ℓ, g)). Qed.
-
-Lemma pt_gmap_comp r r' x : pt_gmap r (pt_gmap r' x) = pt_gmap (r ∘ r') x.
-Proof. unfold pt_gmap. simpl. by rewrite pn_gmap_comp. Qed.
-
-Lemma pn_gmap_inj r p q : Inj eq eq r → pn_gmap r p = pn_gmap r q → p = q.
-Proof.
-  intros Hr. revert q. induction p; intros []; simpl; try congruence.
-  - intros E. injection E as E1 E2. f_equal; [|];
-      apply (f_equal fst) in E1 || idtac;
-      assert (r (ℓ, g) = r (ℓ0, g0)) as E by (destruct (r (ℓ, g)), (r (ℓ0, g0)); simpl in *; congruence);
-      apply Hr in E; congruence.
-  - intros E. injection E as E1 E2 E3. f_equal; auto.
-Qed.
-
-Lemma pt_gmap_inj r x y : Inj eq eq r → pt_gmap r x = pt_gmap r y → x = y.
-Proof.
-  intros Hr E. destruct x, y. unfold pt_gmap in E. simpl in E. injection E as E1 E2 E3.
-  f_equal; auto. by apply (pn_gmap_inj r).
-Qed.
-
-Lemma pn_root_gmap r p : pn_root (pn_gmap r p) = pn_gmap r (pn_root p).
-Proof. induction p; simpl; auto. Qed.
-
-Lemma pt_root_gmap r x : pt_root (pt_gmap r x) = pn_gmap r (pt_root x).
-Proof. apply pn_root_gmap. Qed.
-
-(** A renaming of generated roots commutes with instantiation when the
-    instance is renamed too. *)
-Lemma pn_gmap_inst r σ p :
-  pt_gmap r (pn_inst σ p) = pn_inst (pt_gmap r ∘ σ) (pn_gmap r p).
-Proof. induction p; simpl; try done. by rewrite pt_gmap_field, pt_gmap_shift, IHp. Qed.
-
-Lemma pt_gmap_inst r σ x :
-  pt_gmap r (pt_inst σ x) = pt_inst (pt_gmap r ∘ σ) (pt_gmap r x).
-Proof.
-  unfold pt_inst. rewrite pt_gmap_polar, pt_gmap_shift, pn_gmap_inst. done.
-Qed.
 
 (** ** Facts *)
 

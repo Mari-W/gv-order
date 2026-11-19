@@ -26,9 +26,6 @@ From GV Require Export examples.Tools.
 Definition Sa : sty := SMu (SSeq (SSnd 0 TUnit None) (SVar 0)).
 Definition Sb : sty := SMu (SSeq (SRcv 0 TUnit None) (SVar 0)).
 
-Lemma dual_Sa : dual Sa = Sb.
-Proof. done. Qed.
-
 Abbreviation sh := pt_shift.
 
 (** The constraint, over ι = 0, κ = 1, ζ = 2. *)
@@ -52,12 +49,12 @@ Definition cs_arr (S1 S2 : sty) : ty :=
 Definition cs_box (S1 S2 : sty) : ty := TBox 3 0 cs_C None None tinf (cs_arr S1 S2) None.
 
 Definition cli : expr :=
-  EBox (Lam (LetP (Var 0) (elet (ESend (Pair EUnit (Var 1)))
+  EBox (Lam (LetP (Var 0) (ELet (ESend (Pair EUnit (Var 1)))
     (LetP (ERecv (Var 1)) (LetU (Var 1) (App (EForce (Var 6)) (Pair (Var 2) (Var 0)))))))).
 
 Definition srv : expr :=
   EBox (Lam (LetP (Var 0) (LetP (ERecv (Var 1)) (LetU (Var 1)
-    (elet (ESend (Pair EUnit (Var 2))) (App (EForce (Var 6)) (Pair (Var 1) (Var 0)))))))).
+    (ELet (ESend (Pair EUnit (Var 2))) (App (EForce (Var 6)) (Pair (Var 1) (Var 0)))))))).
 
 Definition cs_main : expr :=
   let_new 0 (LetP (ENewAt 0 (Var 1)) (LetP (Var 0)
@@ -157,7 +154,7 @@ Section body.
     | right; fct 0 ].
 
   Definition cli_e : expr :=
-    elet (ESend (Pair EUnit (Var 1)))
+    ELet (ESend (Pair EUnit (Var 1)))
       (LetP (ERecv (Var 1)) (LetU (Var 1) (App (EForce (Var 6)) (Pair (Var 2) (Var 0))))).
 
   Lemma cli_body :
@@ -165,7 +162,7 @@ Section body.
                      None :: Some (cs_box Sa Sb, None) :: nones n)
       (∅, Some (FVar 1)) cli_e TUnit.
   Proof.
-    unfold cli_e, elet.
+    unfold cli_e.
     eapply d_let with (b1 := None); [apply tsplit_empty|lsplit_tac (ESend (Pair EUnit (Var 1))) EUnit| |].
     { eapply d_send with (x := pvar 0) (m := 0) (T := TUnit) (b := None) (S0 := Sa);
         [exact unfold_Sa|exact I|done|cbn; set_solver|dfut (pvar 0)|].
@@ -190,14 +187,14 @@ Section body.
 
   Definition srv_e : expr :=
     LetP (ERecv (Var 1)) (LetU (Var 1)
-      (elet (ESend (Pair EUnit (Var 2))) (App (EForce (Var 6)) (Pair (Var 1) (Var 0))))).
+      (ELet (ESend (Pair EUnit (Var 2))) (App (EForce (Var 6)) (Pair (Var 1) (Var 0))))).
 
   Lemma srv_body :
     dftyped W ∅ Γb (Some (TSess Sa (pvar 1), None) :: Some (TSess Sb (pvar 0), None) ::
                      None :: Some (cs_box Sb Sa, None) :: nones n)
       (∅, Some (FVar 1)) srv_e TUnit.
   Proof.
-    unfold srv_e, elet.
+    unfold srv_e.
     eapply d_letp with (b1 := None) (b2 := None);
       [apply tsplit_empty|lsplit_tac (ERecv (Var 1)) EUnit| |].
     { eapply d_recv with (x := pvar 0) (m := 0) (T := TUnit) (b := None) (S0 := Sb);

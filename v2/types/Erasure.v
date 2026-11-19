@@ -26,17 +26,6 @@ Proof. induction T; simpl; try congruence; by destruct lb. Qed.
 Lemma unlimited_df T : unlimited (ty_df T) ↔ unlimited T.
 Proof. by destruct T. Qed.
 
-Lemma tfree_df T : tfree T → tfree (ty_df T).
-Proof. induction 1; simpl; constructor; auto. Qed.
-
-Lemma tfree_df_inv T : tfree (ty_df T) → tfree T.
-Proof.
-  induction T; simpl; intros H; inversion H; subst; constructor; auto.
-Qed.
-
-Lemma prim_df T : prim T → prim (ty_df T).
-Proof. induction 1; simpl; constructor; auto. Qed.
-
 (** ** Point instantiation *)
 
 Lemma df_pinst_mut :
@@ -153,9 +142,6 @@ Lemma sty_df_unroll b : sty_df (unroll b) = unroll (sty_df b).
 Proof.
   unfold unroll. rewrite sty_df_sinst. apply sinst_ext. by intros [|a].
 Qed.
-
-Lemma sty_df_skip s : sty_df s = SSkip ↔ s = SSkip.
-Proof. by destruct s. Qed.
 
 Lemma sty_df_hseq h s2 : sty_df (hseq h s2) = hseq (sty_df h) (sty_df s2).
 Proof.

@@ -32,14 +32,6 @@ Section eqv.
     split; [done|by apply seqv_sym].
   Qed.
 
-  Lemma senv_eqv_trans Θ1 Θ2 Θ3 : senv_eqv Θ1 Θ2 → senv_eqv Θ2 Θ3 → senv_eqv Θ1 Θ3.
-  Proof.
-    intros H1 H2 o. specialize (H1 o). specialize (H2 o).
-    destruct (Θ1 !! o) as [a|], (Θ2 !! o) as [b|], (Θ3 !! o) as [c|];
-      inversion H1 as [? ? [A1 A2]|]; inversion H2 as [? ? [B1 B2]|]; subst; constructor.
-    split; [congruence|by eapply seqv_trans].
-  Qed.
-
   Lemma senv_eqv_dom Θ Θ' : senv_eqv Θ Θ' → dom Θ = dom Θ'.
   Proof.
     intros H. apply set_eq. intros o. rewrite !elem_of_dom. specialize (H o).
@@ -58,13 +50,6 @@ Section eqv.
   Proof.
     intros H Ho. destruct (senv_eqv_lookup Θ' Θ o S' x (senv_eqv_sym _ _ H) Ho) as (S & ? & ?).
     exists S. split; [done|by apply seqv_sym].
-  Qed.
-
-  Lemma senv_eqv_lookup_pt Θ Θ' o S x S' x' :
-    senv_eqv Θ Θ' → Θ !! o = Some (S, x) → Θ' !! o = Some (S', x') → x' = x ∧ seqv S S'.
-  Proof.
-    intros H H1 H2. destruct (senv_eqv_lookup _ _ _ _ _ H H1) as (S'' & H3 & ?).
-    rewrite H2 in H3. by simplify_eq.
   Qed.
 
   Lemma senv_eqv_insert Θ Θ' o S S' x :
@@ -136,9 +121,6 @@ Section eqv.
     - intros (o & S & x & Ho & ->). destruct (senv_eqv_lookup _ _ _ _ _ H Ho) as (S' & ? & _). eauto.
     - intros (o & S & x & Ho & ->). destruct (senv_eqv_lookup_r _ _ _ _ _ H Ho) as (S' & ? & _). eauto.
   Qed.
-
-  Lemma senv_eqv_disjoint Θ Θ' (Y : senv) : senv_eqv Θ Θ' → Θ ##ₘ Y → Θ' ##ₘ Y.
-  Proof. intros H. rewrite !map_disjoint_dom. by rewrite (senv_eqv_dom _ _ H). Qed.
 
   Lemma senv_eqv_empty Θ : senv_eqv ∅ Θ → Θ = ∅.
   Proof. intros H. apply dom_empty_iff_L. by rewrite <-(senv_eqv_dom _ _ H), dom_empty_L. Qed.

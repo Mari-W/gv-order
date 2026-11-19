@@ -132,9 +132,6 @@ Lemma sl_trans W Γ x y z : slt W Γ x y → slt W Γ y z → slt W Γ x z.
 Proof. apply fl_trans. Qed.
 Lemma sl_po W Γ x : slt W Γ x x⁺.
 Proof. apply sl_w, w_lt_po. Qed.
-Lemma sl_dpo W Γ x : slt W Γ x x‾⁺.
-Proof. apply sl_w, w_lt_dpo. Qed.
-
 (** C holds at the instance xs. *)
 Definition hold_at (W : world) (Γ : hctx) (C : bcs) (xs : list point) : Prop :=
   ∀ x y, bcs_at C xs (FLt x y) → slt W Γ x y.

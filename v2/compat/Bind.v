@@ -43,12 +43,6 @@ Section bind.
       apply elem_of_dom_2 in H1. apply elem_of_dom_2 in H2. set_solver.
   Qed.
 
-  (** A frame around a non-value is no value. *)
-  Lemma fill_frame_not_val f e : ¬ is_val e → ¬ is_val (fill_frame f e).
-  Proof.
-    intros Hv. destruct f; simpl; try done; rewrite ?andb_True; intros ?; destruct_and?; done.
-  Qed.
-
   (** ** Readiness under a frame *)
 
   Section readiness.

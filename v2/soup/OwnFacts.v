@@ -70,22 +70,6 @@ Section own.
     apply set_eq. intros o. rewrite !elem_of_dom, lookup_kmod. by destruct (K !! o).
   Qed.
 
-  (** Two states have the same part at t when the entries of t agree. *)
-  Lemma kres_ext {Y : Type} K K' t (m m' : gmap cend Y) :
-    (∀ o, (∃ h, K' !! o = Some h ∧ h.(h_th) = t) ↔ (∃ h, K !! o = Some h ∧ h.(h_th) = t)) →
-    (∀ o h, K !! o = Some h → h.(h_th) = t → m' !! o = m !! o) →
-    kres K' t m' = kres K t m.
-  Proof.
-    intros Ho Hm. apply map_eq_some. intros o v. rewrite !lookup_kres, Ho. split.
-    - intros [Hv (h & Hh & Ht)]. rewrite (Hm o h Hh Ht) in Hv. eauto.
-    - intros [Hv (h & Hh & Ht)]. rewrite (Hm o h Hh Ht). eauto.
-  Qed.
-
-  Lemma ctrs_ext K K' t :
-    (∀ o f, (∃ h, K' !! o = Some h ∧ h.(h_th) = t ∧ h.(h_ctr) = f) ↔
-            (∃ h, K !! o = Some h ∧ h.(h_th) = t ∧ h.(h_ctr) = f)) →
-    ctrs K' t = ctrs K t.
-  Proof. intros H. apply map_eq_some. intros o f. by rewrite !lookup_ctrs. Qed.
 End own.
 
 (** ** Renaming keys *)
@@ -189,5 +173,3 @@ Proof.
   by apply kfin_khand, kfin_ktick.
 Qed.
 
-Lemma kfin_knew N i c x K : kfin K → kfin (knew N i c x K).
-Proof. intros HK. unfold knew. apply kfin_insert; [by eexists|]. apply kfin_insert; [by eexists|done]. Qed.

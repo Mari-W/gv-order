@@ -163,33 +163,12 @@ Definition lf_run (r : nat → config) (l : nat → option event) : Prop :=
 Definition lock_free (p : proc) : Prop :=
   ∀ r l, erase (r 0) = p → maximal r l → wfair r l → lf_run r l.
 
-(** Padovani's lock freedom (padovani2014deadlock, Definition II.1, p4):
-    from every reachable state with a pending action, some continuation
-    performs it. A pending action is named by its thread, because a link
-    may rename its channel meanwhile. *)
-Definition lock_free_reach (p : proc) : Prop :=
-  ∀ q t, pred_star p (erase q) → pend q t →
-    ∃ q1 ev q2, itsteps q q1 ∧ itstep q1 ev q2 ∧ t ∈ ev_parts ev.
-
 (** ** Dependencies
 
     A pending thread t waits for s when s is another thread that mentions
     the partner of an end of t's redex. [local_progress] says that the
     chain of waits from every pending thread reaches an enabled
     thread. *)
-
-Definition waits (q : config) (t s : nat) : Prop :=
-  s ≠ t ∧ ∃ e a S o es, q.2 !! t = Some e ∧ act e = Some a ∧ aends a = Some S ∧
-    o ∈ S ∧ q.2 !! s = Some es ∧ o‾ ∈ fends es.
-
-Definition local_progress (q : config) : Prop :=
-  ∀ t, pend q t → ∃ s, rtc (waits q) t s ∧ tenabled q s.
-
-Lemma waits_pend q t s : waits q t s → pend q t.
-Proof.
-  intros (_ & e & a & S & o & es & He & Ha & HS & _). exists e, a.
-  split_and!; [done|done|]. unfold is_sess. apply aends_asubjs. by rewrite HS.
-Qed.
 
 (** ** Runs from a process reach reachable states *)
 

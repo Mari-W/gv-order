@@ -86,15 +86,6 @@ Proof.
     rewrite delete_delete. multiset_solver.
 Qed.
 
-(** Splitting a soup. *)
-Lemma gmultiset_split1 (E : gmultiset expr) e :
-  e ∈ E → ∃ E0, E = E0 ⊎ {[+ e +]}.
-Proof. intros. exists (E ∖ {[+ e +]}). multiset_solver. Qed.
-
-Lemma gmultiset_split2 (E : gmultiset expr) e f :
-  e ∈ E → f ∈ E ∖ {[+ e +]} → ∃ E0, E = E0 ⊎ {[+ e +]} ⊎ {[+ f +]}.
-Proof. intros. exists (E ∖ {[+ e +]} ∖ {[+ f +]}). multiset_solver. Qed.
-
 (** Every soup has a lifting. *)
 Lemma soup_surj (E : gmultiset expr) : ∃ M, soup M = E.
 Proof.
@@ -365,13 +356,6 @@ Proof.
     destruct (IH q1 eq_refl) as (q2 & Hq2 & <-).
     exists q2. split; [|done]. eapply rtc_l; [by exists ev|done].
 Qed.
-
-(** Session-labelled steps come from P-Act-Session only. *)
-Lemma pstep_sess_inv C E σ p' :
-  pstep (C, E) (PSess σ) p' →
-  ∃ E0 e e', E = E0 ⊎ {[+ e +]} ∧ tstep e (LSess σ) e' ∧ subjs σ ## C ∧
-    p' = (C ∖ sentc σ, E0 ⊎ {[+ e' +]}).
-Proof. rewrite pstep_iff. intros H. inversion H; simplify_eq. eauto 10. Qed.
 
 (** ** Threads under a step *)
 

@@ -58,9 +58,6 @@ Proof. intros HW. destruct lb; simpl; [|done]. intros Hl y Hy. eauto using w_le_
 Lemma ub_lt_mono W W' ub F : W ⊑ W' → ub_lt W ub F → ub_lt W' ub F.
 Proof. intros HW. destruct ub; simpl; [|done]. intros Hl y Hy. eauto using w_lt_mono. Qed.
 
-Lemma ub_lt_future W ub F F' : F' ⊆ F → ub_lt W ub F → ub_lt W ub F'.
-Proof. intros HF. destruct ub; simpl; [|done]. intros Hl y Hy. apply Hl. set_solver. Qed.
-
 Lemma lbx_le_mono W W' lb H : W ⊑ W' → lbx_le W lb H → lbx_le W' lb H.
 Proof. intros HW. destruct lb; simpl; try done. intros Hl y Hy. eauto using w_le_mono. Qed.
 
@@ -135,43 +132,9 @@ Proof.
   split; [done|]. intros y Hy. apply H2. set_solver.
 Qed.
 
-Lemma below_rest_mono W W' Θ off F :
-  W ⊑ W' → below_rest W Θ off F → below_rest W' Θ off F.
-Proof.
-  intros HW H o S x Ho Hx. destruct (H o S x Ho Hx) as [H1 H2].
-  split; intros; eapply w_lt_mono; eauto.
-Qed.
-
-Lemma above_offered_mono W W' Σ off :
-  W ⊑ W' → above_offered W Σ off → above_offered W' Σ off.
-Proof.
-  intros HW H o S x Ho Hn. destruct (H o S x Ho Hn) as (o' & S' & x' & ? & ? & ?).
-  exists o', S', x'. split_and!; [done|done|]. by eapply w_lt_mono.
-Qed.
-
 Lemma ready_t_future W Θ t F F' : F' ⊆ F → ready _ W(Θ ∣ F, t) → ready _ W(Θ ∣ F', t).
 Proof.
   intros HF H Hs. destruct (H Hs) as [? [?|?]]; split; [done|by left|done|].
   right. by eapply below_rest_future.
 Qed.
 
-Lemma ready_t_mono W W' Θ F t : W ⊑ W' → ready _ W(Θ ∣ F, t) → ready _ W'(Θ ∣ F, t).
-Proof.
-  intros HW H Hs. destruct (H Hs) as [? [?|?]]; split; [done|by left|done|].
-  right. by eapply below_rest_mono.
-Qed.
-
-Lemma ready_p_mono W W' Σ p : W ⊑ W' → ready _ W(Σ, p) → ready _ W'(Σ, p).
-Proof.
-  intros HW H Hs. destruct (H Hs) as [?|[? ?]]; [by left|right].
-  split; [done|]. by eapply above_offered_mono.
-Qed.
-
-(** With an offered end, below_rest gives above_offered. *)
-Lemma below_rest_above W Θ (off : cend → Prop) F o0 S0 x0 :
-  off o0 → Θ !! o0 = Some (S0, x0) →
-  below_rest W Θ off F → above_offered W Θ off.
-Proof.
-  intros Ho Hx H o S x Hy Hn. exists o0, S0, x0. split_and!; [done|done|].
-  exact (proj1 (H o0 S0 x0 Ho Hx) o S x Hy Hn).
-Qed.

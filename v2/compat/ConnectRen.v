@@ -90,7 +90,6 @@ Section conn_rename.
   Proof. intros H. apply Hfix. rewrite dom_union_L. set_solver. Qed.
 
   Local Definition iC := img_kren ΣC kinjC H_C.
-  Local Definition iD := img_kren ΣD kinjD H_D.
   Local Definition i1 := img_fix Σ1 H_1 fix1.
   Local Definition i2 := img_fix Σ2 H_2 fix2.
   Local Definition ic1 := img_set C1 H_c1.
@@ -139,15 +138,6 @@ Proof.
   intros [Ho|Ho]; [rewrite dom_union_L in Ho; apply elem_of_union in Ho as [Ho|Ho]|].
   - left. rewrite dom_union_L. set_solver.
   - right. simpl. apply elem_of_union_r. by apply elem_of_chans_of.
-  - right. simpl. set_solver.
-Qed.
-
-Lemma pheld_pconn_2 Σ1 ΣC Σ2 ΣD (p1 p2 : proc) o : chans_of ΣD = chans_of ΣC →
-  pheld (Σ2 ∪ ΣD) p2 o → pheld (Σ1 ∪ Σ2) (pconn p1 p2 (chans_of ΣC)) o.
-Proof.
-  intros HK [Ho|Ho]; [rewrite dom_union_L in Ho; apply elem_of_union in Ho as [Ho|Ho]|].
-  - left. rewrite dom_union_L. set_solver.
-  - right. simpl. apply elem_of_union_r. rewrite <-HK. by apply elem_of_chans_of.
   - right. simpl. set_solver.
 Qed.
 

@@ -114,7 +114,7 @@ Qed.
 Lemma fxl_typedN : ∃ c ϑ, typed W_fx (Some 2) ∅ hc_empty [] (∅, None) fx_main TUnit None c ϑ ∧ meets ϑ 0 0.
 Proof.
   eexists _, _. split.
-  { unfold fx_main, elet.
+  { unfold fx_main.
   eapply e_let_; [apply lsplit_nil| | | |shelve].
   { (* the first call needs no point *)
     eapply e_app_; [apply lsplit_nil|apply ub_below_empty| | | |shelve|shelve|shelve].
@@ -175,7 +175,7 @@ Proof.
 Qed.
 
 Lemma fx_guarded : ∅ ⊢▷ fx_main.
-Proof. unfold fx_main, mk0, mk1, mk0_e, mk1_e, worker, let_new, elet. guard_tac. Qed.
+Proof. unfold fx_main, mk0, mk1, mk0_e, mk1_e, worker, let_new. guard_tac. Qed.
 
 Theorem fx_lftyped : ∃ N, ∅ ⊩^N _ W_fx (∅, {[+ fx_main +]}) : TUnit.
 Proof.

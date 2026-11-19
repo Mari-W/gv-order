@@ -35,47 +35,16 @@
 
 From GV Require Export examples.LFTools examples.LFClientServer.
 
-Lemma sess_not_free S x : ¬ tfree (TSess S x).
-Proof. inversion 1. Qed.
-
-(** An end that is not idle ages by its credit. *)
-Lemma sess_ages c S x a σ : tage c (TSess S x, a) σ → ¬ idle S → σ = (TSess S x, fsub a c) ∧ fle c a.
-Proof.
-  intros Ha Hn. inversion Ha; subst; [by exfalso; eapply sess_not_free|done|contradiction].
-Qed.
-
-(** The kept-credit form of [age_idle] fails F5 ([Vfuel_age]) at c = 1,
-    credit 1, counter 1. The counter of an idle end ticks to 0, and FV
-    asks the credit 1 at or below it. *)
-Lemma idle_age_cex N n x o :
-  idle SSkip ∧
-  Chan o ∈ FV^N _ n⟦RTy (TSess SSkip x) (Some 1)⟧({[o := SSkip]}, {[o := Some 1]}) ∧
-  fminus (Some 1) <$> ({[o := Some 1]} : cenv) = {[o := Some 0]} ∧
-  ¬ Chan o ∈ FV^N _ n⟦RTy (TSess SSkip x) (Some 1)⟧({[o := SSkip]}, {[o := Some 0]}).
-Proof.
-  split_and!.
-  - done.
-  - apply Vfuel_end. simpl. lia.
-  - rewrite map_fmap_singleton. reflexivity.
-  - rewrite Vfuel_eq. simpl. intros (o' & S' & f & [= <-] & _ & Hf & _ & Hle).
-    apply (f_equal (lookup o)) in Hf. rewrite !lookup_singleton_eq in Hf. injection Hf as <-.
-    simpl in Hle. lia.
-Qed.
-
-(** Subtyping never raises the credit of an end. *)
-Lemma sess_sub_credit S x a T' a' : tsub (TSess S x) a T' a' → fle a' a.
-Proof. inversion 1; subst; done. Qed.
-
 (** ** The program *)
 
 Definition ctl_cli : expr :=
-  EBox (Lam (LetP (Var 0) (LetP (Var 1) (elet (ESend (Pair EUnit (Var 1)))
+  EBox (Lam (LetP (Var 0) (LetP (Var 1) (ELet (ESend (Pair EUnit (Var 1)))
     (LetP (ERecv (Var 1)) (LetU (Var 1)
       (App (EForce (Var 8)) (Pair (Pair (Var 2) (Var 0)) (Var 5))))))))).
 
 Definition ctl_srv : expr :=
   EBox (Lam (LetP (Var 0) (LetP (Var 1) (LetP (ERecv (Var 1)) (LetU (Var 1)
-    (elet (ESend (Pair EUnit (Var 2)))
+    (ELet (ESend (Pair EUnit (Var 2)))
       (App (EForce (Var 8)) (Pair (Pair (Var 1) (Var 0)) (Var 5))))))))).
 
 Definition ctl_main : expr :=
@@ -212,7 +181,7 @@ Section body.
 
   Lemma ctl_cli_body : ∃ c t,
     typed W (Some 3) ∅ Γc (Some (ctl_T Sa Sb, Some 0) :: Some (ctl_box Sa Sb, None) :: nones n)
-      (∅, Some (FVar 1)) (LetP (Var 0) (LetP (Var 1) (elet (ESend (Pair EUnit (Var 1)))
+      (∅, Some (FVar 1)) (LetP (Var 0) (LetP (Var 1) (ELet (ESend (Pair EUnit (Var 1)))
         (LetP (ERecv (Var 1)) (LetU (Var 1)
           (App (EForce (Var 8)) (Pair (Pair (Var 2) (Var 0)) (Var 5))))))))
       TUnit None c t ∧ t.2 = Some 0.
@@ -223,7 +192,7 @@ Section body.
     lage_tac.
     eapply e_letp_; [lsplit_tac (Var 1) EUnit| | | |shelve].
     { eapply e_var'; [reflexivity|]. spare_tac. }
-    lage_tac. unfold elet.
+    lage_tac. 
     eapply e_let_; [lsplit_tac (ESend (Pair EUnit (Var 1))) EUnit| | | |shelve].
     { eapply e_send with (x := pvar 0) (m := 0) (T := TUnit) (b := None) (S0 := Sa);
         [exact unfold_Sa|exact I|done|cbn; set_solver|dfut (pvar 0)| |age_tac|shelve].
@@ -262,7 +231,7 @@ Section body.
   Lemma ctl_srv_body : ∃ c t,
     typed W (Some 3) ∅ Γc (Some (ctl_T Sb Sa, Some 0) :: Some (ctl_box Sb Sa, None) :: nones n)
       (∅, Some (FVar 1)) (LetP (Var 0) (LetP (Var 1) (LetP (ERecv (Var 1)) (LetU (Var 1)
-        (elet (ESend (Pair EUnit (Var 2)))
+        (ELet (ESend (Pair EUnit (Var 2)))
           (App (EForce (Var 8)) (Pair (Pair (Var 1) (Var 0)) (Var 5))))))))
       TUnit None c t ∧ t.2 = Some 0.
   Proof.
@@ -280,7 +249,7 @@ Section body.
     lage_tac.
     eapply e_letu_; [lsplit_tac (Var 1) EUnit| | | |shelve].
     { eapply e_var'; [reflexivity|]. spare_tac. }
-    lage_tac. unfold elet.
+    lage_tac. 
     eapply e_let_; [lsplit_tac (ESend (Pair EUnit (Var 2))) EUnit| | | |shelve].
     { eapply e_send with (x := pvar 1) (m := 0) (T := TUnit) (b := None) (S0 := Sa);
         [exact unfold_Sa|exact I|done|cbn; set_solver|dfut (pvar 1)| |age_tac|shelve].
@@ -409,7 +378,7 @@ Proof.
 Qed.
 
 Lemma ctl_guarded : ∅ ⊢▷ ctl_main.
-Proof. unfold ctl_main, ctl_cli, ctl_srv, let_new, elet. guard_tac. Qed.
+Proof. unfold ctl_main, ctl_cli, ctl_srv, let_new. guard_tac. Qed.
 
 Theorem ctl_lftyped : ∃ N, ∅ ⊩^N _ W_ctl (∅, {[+ ctl_main +]}) : TUnit.
 Proof.

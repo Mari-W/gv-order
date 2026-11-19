@@ -170,9 +170,6 @@ Proof.
   apply set_eq. intros c. rewrite elem_of_map. unfold gch. simpl. split; [by intros (? & -> & ?)|eauto].
 Qed.
 
-Lemma pren_ok_id (Σ : senv) (p : proc) : pren_ok id Σ p.
-Proof. split_and!; [done|by intros ? ? _ _|by intros ? ? _ _]. Qed.
-
 Lemma sdrop_empty (Σ : senv) : sdrop ∅ Σ = Σ.
 Proof. unfold sdrop. apply map_filter_id. intros i x _. simpl. set_solver. Qed.
 
@@ -491,23 +488,6 @@ Section bodies.
       (∀ q i os q', erase q = p → istep q (EvSess i (SLink os)) q' →
          q_link os (erase q')).                                        (* Q-Link *)
 
-    Lemma Psteps_iff :
-      Psteps ↔ ∀ q ev q', erase q = p → istep q ev q' → Pobl ev (erase q').
-    Proof.
-      split.
-      - intros (H1 & H2 & H3 & H4 & H5 & H6 & H7) q ev q' Hq Hst.
-        destruct ev as [| | | | | | | |i [o w|o w|o|o b|o b|os]]; simpl;
-          first [eapply H1; [exact Hq|exact Hst|reflexivity] | eauto].
-      - intros H. split_and!.
-        + intros q ev q' Hq Hst Hτ. specialize (H q ev q' Hq Hst).
-          destruct ev; try done; by unfold ev_tau in Hτ.
-        + intros q i o w q' Hq Hst. exact (H _ _ _ Hq Hst).
-        + intros q i o w q' Hq Hst. exact (H _ _ _ Hq Hst).
-        + intros q i o q' Hq Hst. exact (H _ _ _ Hq Hst).
-        + intros q i o b q' Hq Hst. exact (H _ _ _ Hq Hst).
-        + intros q i o b q' Hq Hst. exact (H _ _ _ Hq Hst).
-        + intros q i os q' Hq Hst. exact (H _ _ _ Hq Hst).
-    Qed.
   End qobligations.
 
   (** The clauses of P at level n in the world W1. *)
@@ -581,15 +561,6 @@ Notation "p ∈ P^ W '_' n ⟦ Σ ⊢ T ⟧" := (Prel κ_DF n W Σ T p)
 
 Section maps.
   Context (κ : ctable).
-
-  Definition Varr_mapB n Vl El VNa (B1 B2 : world → senv → gset point → expr → Prop)
-      (f : ∀ W Θ F e, B1 W Θ F e → B2 W Θ F e) T1 U ub lb W Θ v :
-    Varr κ n Vl El VNa B1 T1 U ub lb W Θ v → Varr κ n Vl El VNa B2 T1 U ub lb W Θ v.
-  Proof.
-    intros (e & Hv & Hfe & Hlb & H). exists e. split; [exact Hv|]. split; [exact Hfe|]. split; [exact Hlb|].
-    intros W' j Θ' w F HW Hj Hd Hub. destruct (H W' j Θ' w F HW Hj Hd Hub) as [H1 H2].
-    split; [exact H1|]. intros Hjn Hw. exact (f _ _ _ _ (H2 Hjn Hw)).
-  Defined.
 
   Definition Vthunk_mapB n Vl El VNa (B1 B2 : world → senv → gset point → expr → Prop)
       (f : ∀ W Θ F e, B1 W Θ F e → B2 W Θ F e) W Θ v :
@@ -1017,9 +988,6 @@ Section equations.
   Proof. intros Hj. unfold Prel. by rewrite BL_lt. Qed.
   Local Lemma BL_P2 n j W Σ T p : j < n → Prel κ j W Σ T p → lP (BL n j) W Σ T p.
   Proof. intros Hj. unfold Prel. by rewrite BL_lt. Qed.
-  Local Lemma BL_P n : ∀ j, j < n → ∀ W Σ T p, lP (BL n j) W Σ T p ↔ Prel κ j W Σ T p.
-  Proof. intros j Hj. unfold Prel. by rewrite BL_lt. Qed.
-
   Lemma Vrel_fuel n k W Θ T v :
     tsize T < k → Vrel κ n W Θ T v ↔ Vbody κ n (Vrel κ) (Erel κ) k W Θ T v.
   Proof.

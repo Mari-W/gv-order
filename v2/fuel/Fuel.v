@@ -140,9 +140,6 @@ Proof. destruct N1, N2, N3; simpl; lia || done. Qed.
 Lemma rle_fle N N' : rle N N' → fle N N'.
 Proof. destruct N, N'; simpl; lia || done. Qed.
 
-Lemma rle_inf_r N : rle N None → N = None.
-Proof. by destruct N. Qed.
-
 Lemma rle_sinsts N N' ss : rle N N' → sinsts N' ss → sinsts N ss.
 Proof. intros H [H1 H2]. split; [done|]. intros ->. destruct N'; [done|]. by apply H2. Qed.
 

@@ -55,11 +55,6 @@ Fixpoint pn_fsum (p : pname) : nat :=
 Definition pt_depth (x : point) : nat := pn_depth (pt_name x).
 Definition pt_fsum (x : point) : nat := pn_fsum (pt_name x).
 
-(** The program-order steps raise the offset and keep the name. *)
-Lemma wstep_po_off x y : (y = x⁺ ∨ y = x‾⁺) →
-  pt_name y = pt_name x ∧ pt_off y = S (pt_off x).
-Proof. intros [->| ->]; simpl; split; [done|lia|done|lia]. Qed.
-
 (** A measure that rises on the laws and on x ≺ x⁺, x ≺ x‾⁺ through the
     offset, for a world without facts. *)
 Lemma wfworld_lex3 W (m : point → nat * nat * nat) :

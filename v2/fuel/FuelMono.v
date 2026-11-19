@@ -60,9 +60,6 @@ Qed.
 Lemma fle_ftick f f' : fle f f' → fle (ftick f) (ftick f').
 Proof. destruct f, f'; simpl; lia. Qed.
 
-Lemma ftick_le f : fle (ftick f) f.
-Proof. destruct f; simpl; lia. Qed.
-
 Lemma cle_tick φ φ' : cle φ φ' → cle (ftick <$> φ) (ftick <$> φ').
 Proof.
   intros H o. rewrite !lookup_fmap. specialize (H o).
@@ -107,9 +104,6 @@ Proof. intros H. by apply cle_tick, cle_mres. Qed.
 
 Lemma cle_cnew N c φ φ' : cle φ φ' → cle (cnew N c φ) (cnew N c φ').
 Proof. intros H. apply cle_insert; [apply fle_refl|]. apply cle_insert; [apply fle_refl|done]. Qed.
-
-Lemma map_disjoint_cle (m : cenv) φ φ' : cle φ φ' → m ##ₘ φ → m ##ₘ φ'.
-Proof. intros H. rewrite !map_disjoint_dom. by rewrite (cle_dom φ φ' H). Qed.
 
 Lemma map_disjoint_cle_r (m : cenv) φ φ' : cle φ φ' → m ##ₘ φ' → m ##ₘ φ.
 Proof. intros H. rewrite !map_disjoint_dom. by rewrite (cle_dom φ φ' H). Qed.
@@ -337,10 +331,6 @@ Proof.
   - intros [-> ->]. by rewrite (cle_empty_l _ Hc).
 Qed.
 
-Lemma Vfuel_credit N n T a a' Π φ v :
-  fle a' a → v ∈ FV^N _ n⟦RTy T a⟧(Π, φ) → v ∈ FV^N _ n⟦RTy T a'⟧(Π, φ).
-Proof. rewrite !Vfuel_eq. simpl. intros Ha. apply Vty_counters; [done|apply cle_refl]. Qed.
-
 Lemma Vfuel_down N m n σ Π φ v :
   m ≤ n → v ∈ FV^N _ n⟦σ⟧(Π, φ) → v ∈ FV^N _ m⟦σ⟧(Π, φ).
 Proof.
@@ -361,13 +351,6 @@ Section clauses.
     apply FuelE_S in HF.
     pose proof (HF N id Π φ (rle_refl N) (kinj_id Π) (kinj_id φ) (renk_id Π) (renk_id φ)) as H.
     by rewrite emap_id in H.
-  Qed.
-
-  (** (val): a value returned holds the reserve and is in [Vfuel]. *)
-  Lemma fuel_val : is_val e → r ≤ tk ∧ e ∈ FV^N _ (S n)⟦σ⟧(Π, φ).
-  Proof.
-    intros Hv. destruct fuel_self as [H _]. destruct (H Hv) as [Hr H'].
-    split; [done|]. by apply Vfuel_eq.
   Qed.
 
   (** (step). *)
@@ -400,19 +383,6 @@ Section clauses.
     tstep e (LSess s) e' → act_end s = Some o → fspare Π φ (dom φ ∖ {[o]}).
   Proof. intros Hst Ho. by destruct (fuel_act s e' o Hst Ho) as (_ & _ & H & _). Qed.
 
-  (** An action spends a unit of the frame. *)
-  Lemma fuel_frame s e' o :
-    tstep e (LSess s) e' → act_end s = Some o → fle (Some 1) d.
-  Proof. intros Hst Ho. by destruct (fuel_act s e' o Hst Ho) as (_ & _ & _ & H). Qed.
-
-  (** A send hands on held ends other than its subject, with a unit to spare. *)
-  Lemma fuel_send_hand o w e' :
-    tstep e (LSess (SSend o w)) e' → fends w ⊆ dom φ ∖ {[o]} ∧ fspare Π φ (fends w).
-  Proof.
-    intros Hst. pose proof (fuel_obl _ _ Hst) as (_ & S0 & m & T & b & Sc & _ & _ & H1 & H2 & _).
-    done.
-  Qed.
-
   (** A spawn hands on held ends with a unit to spare. *)
   Lemma fuel_spawn_hand v e' : tstep e (LSpawn v) e' → fends v ⊆ dom φ ∧ fspare Π φ (fends v).
   Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (H1 & H2 & _). Qed.
@@ -421,38 +391,8 @@ Section clauses.
   Lemma fuel_link os e' : tstep e (LSess (SLink os)) e' → 1 ≤ tk ∧ os ⊆ dom φ.
   Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (_ & H1 & H2 & _). Qed.
 
-  (** A link forwards two ends at dual protocols. *)
-  Lemma fuel_link_dual os e' : tstep e (LSess (SLink os)) e' → plink Π os.
-  Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (H & _). Qed.
-
   (** ** At counter 0 *)
 
-  (** The holder's next action is on the end at 0, unless that end is idle. *)
-  Lemma fuel_zero_act o s e' o' :
-    φ !! o = Some (Some 0) → ¬ idle_at Π o →
-    tstep e (LSess s) e' → act_end s = Some o' → o' = o.
-  Proof.
-    intros H0 Hi Hst Ho'. destruct (decide (o = o')) as [|Hne]; [done|].
-    pose proof (fuel_tick _ _ _ Hst Ho' o (Some 0)) as H.
-    exfalso. assert (o ∈ dom φ ∖ {[o']}) as Hin by (apply elem_of_difference;
-      split; [by apply elem_of_dom_2 in H0|set_solver]).
-    specialize (H Hin H0 Hi). simpl in H. lia.
-  Qed.
-
-  (** It does not hand the end at 0 on, unless that end is idle. *)
-  Lemma fuel_zero_nospawn o v e' :
-    φ !! o = Some (Some 0) → ¬ idle_at Π o → tstep e (LSpawn v) e' → o ∉ fends v.
-  Proof.
-    intros H0 Hi Hst Hin. destruct (fuel_spawn_hand _ _ Hst) as [_ H].
-    specialize (H o _ Hin H0 Hi). simpl in H. lia.
-  Qed.
-
-  Lemma fuel_zero_nosend o o1 w e' :
-    φ !! o = Some (Some 0) → ¬ idle_at Π o → tstep e (LSess (SSend o1 w)) e' → o ∉ fends w.
-  Proof.
-    intros H0 Hi Hst Hin. destruct (fuel_send_hand _ _ _ Hst) as [_ H].
-    specialize (H o _ Hin H0 Hi). simpl in H. lia.
-  Qed.
 End clauses.
 
 (** ** Downward closure in the index *)
@@ -572,21 +512,9 @@ Lemma FuelE_refill_mono N N' n σ d r Π φ tk e :
   rle N N' → e ∈ F^N _ n⟦σ ▷ d ; r⟧(Π, φ, tk) → e ∈ F^N' _ n⟦σ ▷ d ; r⟧(Π, φ, tk).
 Proof. intros HN. apply FuelE_mono; [done|apply cle_refl|apply fle_refl|lia|lia]. Qed.
 
-Lemma FuelE_counters_mono N n σ d r Π φ φ' tk e :
-  cle φ φ' → e ∈ F^N _ n⟦σ ▷ d ; r⟧(Π, φ, tk) → e ∈ F^N _ n⟦σ ▷ d ; r⟧(Π, φ', tk).
-Proof. intros Hc. apply FuelE_mono; [apply rle_refl|done|apply fle_refl|lia|lia]. Qed.
-
-Lemma FuelE_tk_mono N n σ d r Π φ tk tk' e :
-  tk ≤ tk' → e ∈ F^N _ n⟦σ ▷ d ; r⟧(Π, φ, tk) → e ∈ F^N _ n⟦σ ▷ d ; r⟧(Π, φ, tk').
-Proof. intros Ht. apply FuelE_mono; [apply rle_refl|apply cle_refl|apply fle_refl|lia|done]. Qed.
-
 Lemma FuelE_frame_mono N n σ d d' r Π φ tk e :
   fle d d' → e ∈ F^N _ n⟦σ ▷ d ; r⟧(Π, φ, tk) → e ∈ F^N _ n⟦σ ▷ d' ; r⟧(Π, φ, tk).
 Proof. intros Hd. apply FuelE_mono; [apply rle_refl|apply cle_refl|done|lia|lia]. Qed.
-
-Lemma FuelE_reserve_mono N n σ d r r' Π φ tk e :
-  r' ≤ r → e ∈ F^N _ n⟦σ ▷ d ; r⟧(Π, φ, tk) → e ∈ F^N _ n⟦σ ▷ d ; r'⟧(Π, φ, tk).
-Proof. intros Hr. apply FuelE_mono; [apply rle_refl|apply cle_refl|apply fle_refl|done|lia]. Qed.
 
 (** ** Renaming of ends (a link renames the partner of its removed end) *)
 

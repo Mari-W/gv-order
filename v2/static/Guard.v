@@ -84,9 +84,6 @@ where "Λ ⊢▷ t" := (lguard Λ t).
 
 (** ** Structure *)
 
-Lemma marks_empty_cons : ∀ x, (false .: ∅) x = ∅ x.
-Proof. by intros []. Qed.
-
 Lemma guard_ext L L' e : (∀ x, L x = L' x) → lguard L e → lguard L' e.
 Proof.
   intros HL H. revert L' HL. induction H; intros L' HL; try (by constructor; auto).

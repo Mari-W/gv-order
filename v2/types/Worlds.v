@@ -107,9 +107,6 @@ Proof.
     cbn [pt_shift pt_dual pt_name pt_off] in *; split; try done; lia.
 Qed.
 
-Lemma po_irrefl x : ¬ po x x.
-Proof. intros H. apply po_root in H. lia. Qed.
-
 (** ** Extension, join, restriction *)
 
 Record wext (W W' : world) : Prop := {
@@ -443,87 +440,3 @@ Definition wfrename (f : family → family) (W : world) : world :=
   World (w_consts W) (w_facts W) (set_map f (w_fams W))
     (λ ℓ g, ∃ ℓ0, ℓ = f ℓ0 ∧ ℓ0 ∈ w_fams W ∧ w_laws W ℓ0 g).
 
-(** A point of a law or a constant fact has no generated root. *)
-Definition no_gen (x : point) : Prop := ∀ ℓ g, pt_root x ≠ NGen ℓ g.
-
-Lemma pn_gmap_nogen r p : (∀ ℓ g, pn_root p ≠ NGen ℓ g) → pn_gmap r p = p.
-Proof. induction p; simpl; intros H; rewrite ?IHp; auto. by destruct (H ℓ g). Qed.
-
-Lemma pt_gmap_nogen r x : no_gen x → pt_gmap r x = x.
-Proof. intros H. destruct x. unfold pt_gmap. simpl. by rewrite pn_gmap_nogen. Qed.
-
-Lemma law_inst_gmap r ℓ g x :
-  pt_root x = NVar 0 → pt_gmap r (law_inst ℓ g x) = law_inst (r (ℓ, g)).1 (r (ℓ, g)).2 x.
-Proof.
-  intros Hx. unfold law_inst. rewrite pt_gmap_inst.
-  rewrite (pt_gmap_nogen r x) by (intros ??; rewrite Hx; done).
-  apply pt_inst_ext. intros a. done.
-Qed.
-
-(** A renaming of generated roots that respects families maps the order
-    into the order. Families renamed by f, roots within a family by
-    anything. *)
-Lemma w_lt_gmap W r f x y :
-  world_wf W → (∀ ℓ g, (r (ℓ, g)).1 = f ℓ) →
-  W ⊢ x ≺ y → wfrename f W ⊢ pt_gmap r x ≺ pt_gmap r y.
-Proof.
-  intros Hwf Hr. apply tc_congruence. intros a b Hs.
-  destruct Hs as [a b Hf|ℓ g a b Hℓ Hl|a|a].
-  - destruct (wf_facts _ Hwf a b Hf) as [[c [Hc _]] [d [Hd _]]].
-    rewrite !pt_gmap_nogen by (intros ??; congruence). by apply ws_fact.
-  - destruct (wf_laws _ Hwf ℓ a b Hℓ Hl) as [Ha Hb].
-    rewrite !law_inst_gmap by done. rewrite Hr. apply ws_law; [set_solver|].
-    exists ℓ. split_and!; done.
-  - apply ws_po.
-  - apply ws_dpo.
-Qed.
-
-Lemma wfrename_wf f W : world_wf W → world_wf (wfrename f W).
-Proof.
-  intros Hwf. split; simpl.
-  - apply (wf_facts _ Hwf).
-  - intros ℓ x y _ (ℓ0 & -> & Hℓ0 & Hl). by apply (wf_laws _ Hwf ℓ0).
-Qed.
-
-(** A family renaming with a left inverse loses nothing. Renaming the
-    families back lands inside W. *)
-Lemma wfrename_back f f' W : (∀ ℓ, f' (f ℓ) = ℓ) → wfrename f' (wfrename f W) ⊑ W.
-Proof.
-  intros Hf. split; simpl; [done|done| |].
-  - intros ℓ Hℓ. apply elem_of_map in Hℓ as (ℓ1 & -> & H1).
-    apply elem_of_map in H1 as (ℓ0 & -> & H0). by rewrite Hf.
-  - intros ℓ g _ (ℓ1 & -> & _ & ℓ0 & -> & Hℓ0 & Hl). by rewrite Hf.
-Qed.
-
-Lemma w_lt_frename_back W f f' x y :
-  world_wf W → (∀ ℓ, f' (f ℓ) = ℓ) →
-  wfrename f W ⊢ x ≺ y → W ⊢ pt_gmap (frename f') x ≺ pt_gmap (frename f') y.
-Proof.
-  intros Hwf Hf H. eapply w_lt_mono; [by apply wfrename_back|].
-  apply (w_lt_gmap _ _ f'); [by apply wfrename_wf|done|done].
-Qed.
-
-Lemma strict_wfrename f f' W : (∀ ℓ, f' (f ℓ) = ℓ) → strict W → strict (wfrename f W).
-Proof.
-  intros Hf [Hwf HS]. split; [by apply wfrename_wf|]. intros x Hx.
-  apply (HS (pt_gmap (frename f') x)). by eapply w_lt_frename_back.
-Qed.
-
-Lemma wfworld_wfrename f f' W : (∀ ℓ, f' (f ℓ) = ℓ) → strict W → wfworld W → wfworld (wfrename f W).
-Proof.
-  intros Hf HS Hwf.
-  apply (wf_projected (w_lt W) (pt_gmap (frename f'))); [|done].
-  intros x y H. by apply (w_lt_frename_back W f f'); [apply HS|done|].
-Qed.
-
-(** Renaming the generated roots of one family is invisible to W: the
-    order between renamed points is the order between the points. *)
-Lemma w_lt_grename W r x y :
-  world_wf W → (∀ ℓ g, (r (ℓ, g)).1 = ℓ) →
-  W ⊢ x ≺ y → W ⊢ pt_gmap r x ≺ pt_gmap r y.
-Proof.
-  intros Hwf Hr H. eapply w_lt_mono; [|apply (w_lt_gmap W r id); done].
-  split; simpl; [done|done| |].
-  - intros ℓ Hℓ. apply elem_of_map in Hℓ as (ℓ0 & -> & ?). done.
-  - by intros ℓ g _ (ℓ0 & -> & _ & ?).
-Qed.

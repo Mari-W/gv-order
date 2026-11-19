@@ -38,9 +38,6 @@ Proof. intros Hq H. apply Vfuel_exact in H. apply Hq. rewrite <-H. apply fends_d
 
 Definition S_fw : sty := SSeq (SRcv 0 T_thk (Some 2)) SEnd.
 
-Lemma unfold_S_fw : unfoldS S_fw = SSeq (SRcv 0 T_thk (Some 2)) SEnd.
-Proof. reflexivity. Qed.
-
 (** let ⟨w, c⟩ = recv o in let ∗ = close c in spawn w *)
 Definition fw (o : cend) : expr := LetP (ERecv (Chan o)) (LetU (EClose (Var 0)) (ESpawn (Var 1))).
 

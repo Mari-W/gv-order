@@ -167,24 +167,9 @@ Proof.
   - apply IH.
 Qed.
 
-Lemma gfuel_ext N n Δ : ∀ γ γ' Π φ, (∀ x, γ x = γ' x) → gfuel N n Δ γ Π φ → gfuel N n Δ γ' Π φ.
-Proof.
-  induction Δ as [|[[T a]|] Δ IH]; intros γ γ' Π φ Hγ; simpl; [done| |].
-  - intros (Π1 & Π2 & φ1 & φ2 & H1 & H2 & H3 & H4 & Hv & HG). exists Π1, Π2, φ1, φ2.
-    rewrite <-Hγ. split_and!; try done. eapply IH; [|exact HG]. intros x. apply Hγ.
-  - apply IH. intros x. apply Hγ.
-Qed.
-
 Lemma gfuel_empty N n Δ : ∀ γ Π φ, lenv_empty Δ → gfuel N n Δ γ Π φ → Π = ∅ ∧ φ = ∅.
 Proof.
   induction Δ as [|o Δ IH]; intros γ Π φ HΔ; simpl; [done|].
-  assert (o = None) as -> by (apply HΔ; left).
-  apply IH. intros o' Ho'. apply HΔ. by right.
-Qed.
-
-Lemma gfuel_empty_intro N n Δ γ : lenv_empty Δ → gfuel N n Δ γ ∅ ∅.
-Proof.
-  revert γ. induction Δ as [|o Δ IH]; intros γ HΔ; simpl; [done|].
   assert (o = None) as -> by (apply HΔ; left).
   apply IH. intros o' Ho'. apply HΔ. by right.
 Qed.
@@ -381,9 +366,6 @@ Qed.
 
 Lemma thfuel_dom Θ g Π φ : thfuel Θ g Π φ → dom Π = dom φ.
 Proof. by intros (_ & _ & -> & _). Qed.
-
-Lemma thfuel_nil g : thfuel ∅ g ∅ ∅.
-Proof. split_and!; [set_solver|by rewrite !dom_empty_L, set_map_empty|done|]. intros o te. by rewrite lookup_empty. Qed.
 
 Lemma thfuel_empty g Π φ : thfuel ∅ g Π φ → Π = ∅ ∧ φ = ∅.
 Proof.
@@ -688,9 +670,6 @@ Proof.
   - rewrite <-!map_union_assoc. f_equal. by apply map_union_comm.
   - rewrite <-!map_union_assoc. f_equal. by apply map_union_comm.
 Qed.
-
-Lemma envf_none N n Θ Δ g γ v Π φ : envf N n Θ Δ g γ Π φ → envf N n Θ (None :: Δ) g (v .: γ) Π φ.
-Proof. done. Qed.
 
 Lemma envf_pinst N n ρ Θ Δ g γ Π φ :
   envf N n Θ Δ g γ Π φ → envf N n (tenv_pinst ρ Θ) (lenv_pinst ρ Δ) g γ Π φ.

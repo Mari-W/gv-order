@@ -22,9 +22,6 @@ Proof.
   intros H o. rewrite !lookup_fmap. destruct (φ !! o); simpl; [by apply fle_fminus_anti|done].
 Qed.
 
-Lemma kinj_union_l {Y : Type} (g : cend → cend) (m1 m2 : gmap cend Y) : kinj g (m1 ∪ m2) → kinj g m2.
-Proof. apply kinj_dom. rewrite dom_union_L. set_solver. Qed.
-
 Lemma csem_bind0 N Θ Δ e T1 a1 c1 t1 (K : ectx) σ d r N' n g γ Π φ tk r1 :
   ectx_ok K → (∀ g' : cend → cend, kemap g' K = K) → csem N Θ Δ e T1 a1 c1 t1 → fle c1 d → rle N N' →
   envf N' n Θ Δ g γ Π φ → meets t1 r1 tk →

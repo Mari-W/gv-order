@@ -27,9 +27,6 @@ Definition fcover (W : world) (F' F : gset point) : Prop :=
 Lemma fcover_mono W W' F' F : W ⊑ W' → fcover W F' F → fcover W' F' F.
 Proof. intros HW H y' Hy. destruct (H y' Hy) as (y & ? & ?). eauto using w_le_mono. Qed.
 
-Lemma fcover_sub W F' F : F' ⊆ F → fcover W F' F.
-Proof. intros H y Hy. exists y. split; [set_solver|by left]. Qed.
-
 Lemma w_le_lt_trans W x y z : W ⊢ x ≺ y → w_le W y z → W ⊢ x ≺ z.
 Proof. intros H [->|H']; [done|by eapply w_lt_trans]. Qed.
 

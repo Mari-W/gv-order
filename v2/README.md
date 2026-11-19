@@ -30,13 +30,10 @@ and run `make` again. The root build of theories/ ignores v2.
 | lang/Semantics.v | thread steps, the T-Act rules `t_act_*` and the frame rule `t_act_ctx`, labels carry the moved value (no transfer sets) |
 | lang/Process.v | the one instrumented semantics `istep` (thread ids, events, rules `p_act_*`), its erasure `pstep`, the multiset view `pspec` |
 | lang/Safety.v | `act`, `act_offer_sig` once, progress for terms and configurations, closedness preserved |
-| lang/Harmony.v | a label-free reduction semantics and `harmony` |
-| lang/ThreadSim.v | tools for simulations, with β runs, contexts and threads related one to one |
 | lang/ChannelSwap.v | renamings of channel names and transpositions in thread and process steps |
-| lockfree/Fair.v | runs, weak fairness, `lock_free`, `lock_free_reach`, waiting |
-| lockfree/Reach.v | `lock_free_reach_of`, a fair scheduler |
+| lockfree/Fair.v | runs, weak fairness, `lock_free`, waiting |
 | lockfree/TauThread.v | `no_tau_divergence` and its thread-wise form `thread_acc` |
-| CheckAll.v | `Print Assumptions` of the main results of the stage |
+| CheckAll.v | `Print Assumptions` of the theorems the explorer page presents |
 
 ## Stage S2, points, worlds and the typing judgment
 
@@ -52,7 +49,7 @@ and run `make` again. The root build of theories/ ignores v2.
 | static/Conservativity.v | the DF rules `d_*` as lemmas, `typed_dftyped`, `dftyped_typed`, `conservative` |
 | static/Weakening.v | world extension, term-variable renaming and weakening |
 | static/Renaming.v | channel renaming, renaming of families and generated roots |
-| static/PointSubst.v | point substitution `typed_pinst` |
+| static/PointSubst.v | point substitution on types and contexts |
 | examples/ | the S2 examples, typed in `dftyped` and lifted to N = ∞ |
 | test/TypeNotations.v | the S2 notations, ends and points side by side |
 
@@ -94,7 +91,7 @@ reads no point, no world and no relation. Every step costs one level.
 | fuel/Fuel.v | maps of ends, idle ends, the index-free update (`refill`, `fhand`, `cnew`), the obligations `f_*` named after F-Beta to F-Link, `Vty` by the type, `FuelE` and `Vfuel` through `sfix`, the notations, the unfolding equations |
 | fuel/FuelMono.v | the clauses at index n + 1 (F-Wait, F-Tick, the hand-over, counter 0), downward closure, `FuelE_mono` in the refill, the counters, the frame, the tickets and the reserve, `FuelE_rename` |
 | fuel/FuelValues.v | `Vfuel_rename`, `FuelE_val` (F2), `FuelE_beta` (F3), `Vfuel_recount` along the capture Θ^h and `Vfuel_age` along aging Γ − c (F5), values from their parts and `Vfuel_pinst` (F6), `FuelE_res_mono`, `FuelE_thread` |
-| fuel/FuelBind.v | `FuelE_bind` (F1) and `link_tickets_fall` |
+| fuel/FuelBind.v | `FuelE_bind` (F1) |
 | fuel/FuelSub.v | `Vfuel_teq`, `Vfuel_sub`, `FuelE_sub` along the subtyping of the merged judgment |
 | test/FuelNotations.v | the S6 notations |
 ## Stage S4, generic compatibility
@@ -103,17 +100,15 @@ reads no point, no world and no relation. Every step costs one level.
 |---|---|
 | types/Duality.v | duality commutes with unfolding (`dual_unfoldS`), ≈ is a congruence for `dual` (`sequiv_dual`), ported |
 | compat/Bind.v | `Erel_sends`, readiness under a frame, the bind lemma `Erel_bind` for every cost table |
-| compat/Blind.v | heads of session types up to ≈ (`seqv_unfold_*`), V, E and P agree at types whose erasures are ≈ (`Vrel_teq`, `Erel_teq_ty`, `Prel_teq`), the blindness lemma `Vrel_blind`, `Erel_blind` |
+| compat/Blind.v | heads of session types up to ≈ (`seqv_unfold_*`), V, E and P agree at types whose erasures are ≈ (`Vrel_teq`, `Erel_teq_ty`), the blindness lemma `Vrel_blind`, `Erel_blind` |
 | compat/SemTyped.v | groundings `Grel`, the judgment at a set of points `sem_typed_at`, static futures `sf_den`, `Θ ; Δ ⊨^F _ W t : T` and `Θ ; Δ ⊫^F _ W t : T` (`sem_typed κ`) |
-| compat/Redex.v | exact ends and heads of values (`Vrel_exact`, `Vrel_heads`), the β redexes and the redex of every operator (`Erel_send` … `Erel_force`, `Erel_new`) |
+| compat/Redex.v | exact ends and heads of values (`Vrel_exact`, `Vrel_heads`), the β redexes and the redex of every operator (`Erel_send` … `Erel_force`) |
 | compat/LiveDF.v | `live_sub_df`: ∅ ⊫_W p : T ⟹ ∅ ⊨_W p : T at a prim, box-free T |
-| compat/Swap.v | the transposition of channel names on environments (`sswap`) and readiness |
-| compat/Rename.v | decision Q16: V and E under every map of ends injective on the held ends (`Vrel_rename`, `Erel_rename`), P by projection of its clause (fuse) (`Prel_fuse`), a composite of fusions is a fusion (`fuse_ok_compose`), renaming (`Prel_rename`, D = ∅) and Internalize (`Prel_internalize`, h = id) as instances, the transpositions as instances (`Vrel_swap`, `Erel_swap`), the link substitution as a renaming of the other component (`pren_ok_csub`) |
-| compat/PSwap.v | the transposition on configurations with thread ids and on events (`istep_qswap`), the external clauses along it, P is invariant (`Prel_swap`, an instance of `Prel_rename`) |
+| compat/Rename.v | decision Q16: V and E under every map of ends injective on the held ends (`Erel_rename`), P by projection of its clause (fuse) (`Prel_fuse`), a composite of fusions is a fusion (`fuse_ok_compose`), renaming (`Prel_rename`, D = ∅), the link substitution as a renaming of the other component (`pren_ok_csub`) |
 | compat/Conv.v | environments up to ≈ (`senv_eqv`): V, E and P transport along them (`Vrel_conv`, `Erel_conv`, `Prel_conv`) |
 | compat/Connect.v | P-Connect: environments of a cut (`cut_dual`, `conn`; `pfree` lives in static/Typing.v), the composite `pconn`, liftings, offers of the composite, the chain of cut ends (`finite_lt_acc`), readiness (`pc_ready`) and P-Stop (`pc_stop`) of the composite, `Prel_S_ind_fuse` |
 | compat/ConnectSteps.v | P-Connect: the step clause of the composite, one lemma per kind of step (`tau_l1`, `tau_l2`, `tau_close`, `tau_choice12`) |
-| compat/ConnectP.v | P-Connect and P-Join (`conn_all`, `sem_p_connect`, `sem_p_join`) |
+| compat/ConnectP.v | P-Connect and P-Join (`conn_all`, `sem_p_connect`) |
 | compat/RenameInd.v | one unfolding of E under a renaming, for any reader closed under renaming (`Ebody_rename`), and the induction over the steps of cost 0 with its predicate closed under renaming (`Erel_S_ind_ren`) |
 | compat/PTerm.v | P-Term: the environments of a single thread (`sth`), its steps (`istep_single`), the split at a spawn (`spawn_split`), a fusion (`sth_fuse`), the environments after Q-Send, Q-Recv and a link of a restricted channel (`snd_sth`, `rcv_sth`, `lk_res`), the clauses (`core`), the spawned thread composed by P-Connect (`spawn_case`), `sem_p_term` |
 | test/CompatNotations.v | the S4 notations |
@@ -158,10 +153,10 @@ point (`Vthunk`), which E-SpawnLam meets (`later_spawn_lam`).
 | compat/EFacts.v | E is closed upwards in its future (`Erel_cover`) and monotone in its type above a world (`Erel_ty_mono`) |
 | compat/BindActs.v | the bind lemma for a hole that acts before it returns (`Erel_bind_acts`) |
 | compat/LiveRules.v | V along subtyping (`Vrel_tsub`), groundings with marks `GrelL`, `sem_later`, every rule with marks for every cost table (`later_*`), the box that marks its self (`later_box`), the unmarked box at a positive cost of β (`gen_e_box`), frames that clear the marks (`later_bind_acts`) |
-| static/Guard.v | `acts`, the guard `glive` and `guarded`, renaming of marks |
+| static/Guard.v | `acts`, the guard `lguard`, renaming of marks |
 | static/Fundamental.v | `hsat`, instances under binders (`pclose`), contexts up to annotations (`sem_later_ctx`, `sem_later_undf`), `typed_sem` and its instances `typed_sem_df`, `typed_sem_live`, `fundamental`, `fundamental_typed`, `live_fundamental`, `live_fundamental_typed` |
 | examples/GuardEx.v | the guard against Appendix B #12 to #15 and #40, and the C2 stage of B.1 #4 |
-| static/FundamentalProc.v | the side conditions of P-Connect from the typing premises (`ptyped_conn`), one induction on `ptyped` for every cost table (`proc_gen`), `fundamental_proc`, `live_fundamental_proc` (every thread guarded, `pguarded`), `soundness`, `live_soundness`, `soundness_source` |
+| static/FundamentalProc.v | the side conditions of P-Connect from the typing premises (`ptyped_conn`), one induction on `ptyped` for every cost table (`proc_gen`), `fundamental_proc`, `live_fundamental_proc` (every thread guarded, `pguard`), `soundness`, `live_soundness`, `soundness_source` |
 
 ## Stage S8, the soup and adequacy
 
@@ -219,4 +214,4 @@ on `ptyped`.
 | examples/LFClientServer.v | the client and server loops at N = 3, `cs_lock_free` |
 | examples/LFFactoryEx.v | the factory at N = 2, `fx_lock_free` |
 | examples/LFGrowRing.v | the growing ring at N = 4 with payload credit 2 (`Schl`), `W_rg_wf`, `rg_lock_free` |
-| examples/LFController.v | the controller at N = 3, its idle end k at credit 0, `W_ctl_wfworld`, `ctl_lock_free`, and `idle_age_cex`, the kept-credit form of `age_idle` against F5 |
+| examples/LFController.v | the controller at N = 3, its idle end k at credit 0, `W_ctl_wfworld`, `ctl_lock_free` |

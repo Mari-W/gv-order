@@ -20,12 +20,6 @@ Definition aend (a : action) : option cend :=
 Definition rend (q : config) (t : nat) : option cend :=
   q.2 !! t ≫= λ e, act e ≫= aend.
 
-Lemma rend_some q t o : rend q t = Some o → ∃ e a, q.2 !! t = Some e ∧ act e = Some a ∧ aend a = Some o.
-Proof.
-  unfold rend. destruct (q.2 !! t) as [e|] eqn:He; simpl; [|done].
-  destruct (act e) as [a|] eqn:Ha; simpl; [|done]. intros H. exists e, a. done.
-Qed.
-
 Lemma aend_sess a o : aend a = Some o → is_sess a ∧ ¬ is_admin a.
 Proof. destruct a; simpl; intros H; try discriminate; (split; [unfold is_sess; simpl; by eexists|by intros []]). Qed.
 

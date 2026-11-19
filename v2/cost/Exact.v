@@ -21,9 +21,6 @@ Definition vfacts (Δ : lenv) (P : nat → Prop) : Prop :=
 Definition tfacts (Θ : tenv) (Δ : lenv) (e : expr) : Prop :=
   fends e = dom Θ ∧ vfacts Δ (λ x, freevar x e).
 
-Lemma vfacts_ext Δ P Q : (∀ x, P x ↔ Q x) → vfacts Δ P → vfacts Δ Q.
-Proof. intros H [H1 H2]. split; [intros x Hx; apply H1, H, Hx|intros; apply H; eauto]. Qed.
-
 Lemma vfacts_under o Δ P : vfacts (o :: Δ) P → vfacts Δ (λ x, P (S x)).
 Proof. intros [H1 H2]. split; [intros x Hx; apply (H1 (S x) Hx)|intros x U a Hx; apply (H2 (S x) U a Hx)]. Qed.
 

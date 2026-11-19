@@ -1915,3 +1915,81 @@ The old development in theories/ stays untouched.
   `GrelL_unmarked`. Two files and 760 lines go. CheckAll drops the 20
   instances and `gen_e_abs`, `gen_e_app`, `gen_e_conv`, `gen_e_pack`,
   `gen_e_spawn_lam`.
+- M.8 (done before M.3, because every later item would otherwise adapt
+  code that this item deletes). Dead code goes (decision of 2026-11-18,
+  extended the same day: every definition, lemma and file that no
+  theorem of the explorer page depends on). CheckAll lists the 85
+  theorems the page presents (`make check`: 85 of 85 closed). The
+  dependency graph comes from the .glob files: every reference is
+  charged to the definition around it, and instances, notations,
+  abbreviations, hints, Ltac, Context and schemes count as roots. Whole
+  files deleted: lang/Harmony.v (200 lines, `harmony`),
+  lang/ThreadSim.v (167), lockfree/Reach.v (290, `lock_free_reach_of`),
+  compat/PSwap.v (248, `Prel_swap`, `istep_qswap`), compat/Swap.v (126,
+  `sswap`), and before this item static/LiveFundamental.v (M.1),
+  compat/Rules.v and compat/TermRules.v (M.2). Also the section of
+  compat/Rename.v with the transpositions as instances (`Vrel_swap`,
+  `Erel_swap`, `kren_kmap`), the empty section `gmap_facts` of
+  static/Renaming.v and the alias `elet` of examples/Tools.v (the
+  examples write `ELet`). Among the deleted lemmas are those the author
+  listed: `typed_grename`, `typed_gmap`, `typed_emap`, `typed_pinst`,
+  `typed_wext`, `wfworld_wfrename`, `closed_k_constants` and the unused
+  constants `k_recv` … `k_force`. Deleted definitions and lemmas per
+  file (count), besides the whole files:
+  static/Renaming.v (109): `kmap_lookup_cases`, `tsplit_kmap`, `tenv_heads_kmap`, `thage_kmap`, `thcap_kmap`, `tenv_pinst_kmap`, `typed_emap`, `pt_gmap_pvar`, `pt_gmap_pup`, `pt_gmap_pshift`, `pt_gmap_plist`, `bcs_gmap_inst`, `opt_gmap_inst`, `gmap_pinst_ty`, `gmap_pinst_sty`, `pt_pscoped_gmap`, `Forall_pscoped_gmap`, `gmap_pscoped_mut`, `pscoped_gmap`, `gmap_pshift_ty`, `gmap_ty_inst`, `gmap_payload_pts`, `gmap_payload_at`, `unlimited_gmap`, `tfree_gmap`, `prim_gmap`, `gmap_df_mut`, `sty_df_gmap`, `gmap_sren_mut`, `gmap_sflip_mut`, `gmap_dual`, `gmap_sty_up`, `gmap_iter_sty_up`, `gmap_sinst_mut`, `gmap_sinst_ty`, `gmap_slist`, `gmap_sinst_slist`, `gmap_unroll`, `gmap_hseq`, `sfuel_gmap`, `unrN_gmap`, `unfoldS_gmap`, `hview_gmap`, `view_gmap`, `hd_gmap`, `ahc_gmap`, `hcontractive_gmap`, `sinsts_gmap`, `eqT_gmap`, `sequiv_gmap`, `teq_gmap`, `tsub_gmap`, `tage_gmap`, `tcap_gmap`, `opt_gmap_comp`, `lb_gmap_comp`, `bcs_gmap_comp`, `gmap_comp_mut`, `gmap_sty_comp`, `gmap_id_mut`, `gmap_sty_id`, `hyps_gmap`, `fhyps_gmap`, `hc_gmap`, `pt_gmap_inst_pshift`, `tenv_gmap_empty`, `tenv_gmap_singleton`, `tsplit_gmap`, `thage_gmap`, `thcap_gmap`, `tenv_gmap_pshift`, `lenv_gmap_lookup`, `lenv_gmap_cons`, `lenv_empty_gmap`, `lenv_only_gmap`, `lenv_split_gmap`, `lenv_wk_gmap`, `lenv_unl_gmap`, `lage_gmap`, `lcap_gmap`, `lenv_gmap_pshift`, `lenv_gmap_insert`, `sf_gmap_nil`, `sf_gmap_pshift`, `ids_gmap`, `hyps_gmap_pshift`, `fhyps_gmap_pshift`, `hc_gmap_open`, `hc_gmap_fvar`, `dom_hc_gmap`, `w_lt_gmap_fams`, `pt_gmap_scoped`, `pt_gmap_inst2`, `bcs_at_gmap`, `bcs_at_gmap_inv`, `node_gmap`, `fl_gmap`, `slt_gmap`, `sle_gmap`, `hold_at_gmap`, `ub_below_s_gmap`, `lb_below_hb_gmap`, `lbx_below_h_gmap`, `relabel`, `relabel_rename`, `relabel_id`, `typed_gmap`, `wfrename_id_wext`, `typed_grename`.
+  lang/ChannelSwap.v (39): `sren`, `lren`, `pren`, `head_step_cmap`, `tstep_cmap`, `cswap_involutive`, `cswap_l`, `cswap_r`, `cswap_ne`, `cswap_inj`, `oswap_involutive`, `oswap_inj`, `eswap_involutive`, `gswap`, `elem_of_gswap`, `elem_of_gswap'`, `gswap_involutive`, `gswap_union`, `gswap_singleton`, `gswap_empty`, `gswap_difference`, `gswap_disjoint_iff`, `set_map_ech_oswap`, `fchans_eswap`, `subjs_sren`, `sentc_sren`, `oswap_csub`, `eswap_csub`, `pswap`, `emapE_id`, `echans_eswapE`, `pswap_involutive`, `tstep_eswap`, `pspec_pswap`, `pstep_pswap`, `preduction_pswap`, `terminated_pswap`, `safe_pswap`, `safe_pswap_iff`.
+  static/PointSubst.v (30): `pt_inst_pup_pshift`, `pinst_pup_pshift`, `pent`, `tage_pinst`, `tcap_pinst`, `thage_pinst`, `thcap_pinst`, `tenv_pinst_pup_pshift`, `lenv_pinst_cons`, `lage_pinst`, `lcap_pinst`, `lenv_pinst_pup_pshift`, `sf_pinst_pup_pshift`, `node_inst`, `hinst`, `fl_pinst`, `slt_pinst`, `sle_pinst`, `hold_at_pinst`, `ub_below_s_pinst`, `lb_below_hb_pinst`, `lbx_below_h_pinst`, `fl_mono`, `hinst_fvar`, `hinst_pshift`, `ids_pup`, `bcs_inst_pup_pshift`, `hinst_open`, `tage_pinst2`, `typed_pinst`.
+  types/Points.v (28): `pconst`, `pt_dual_inj`, `pt_dual_neq`, `pt_shift_shift`, `pt_polar_shift`, `pt_polar_dual`, `pn_root_idem`, `pt_shift_neq`, `payload_pts_dual`, `pn_inst_novar`, `pt_root_inst`, `payload_pts_length`, `payload_pts_inst`, `frename`, `pt_gmap_shift`, `pt_gmap_dual`, `pt_gmap_field`, `pt_gmap_polar`, `pn_gmap_id`, `pt_gmap_id`, `pn_gmap_comp`, `pt_gmap_comp`, `pn_gmap_inj`, `pt_gmap_inj`, `pn_root_gmap`, `pt_root_gmap`, `pn_gmap_inst`, `pt_gmap_inst`.
+  lang/Syntax.v (23): `k_recv`, `k_close`, `k_select`, `k_branch`, `k_link`, `k_spawn`, `k_force`, `closed_at`, `closed_k_constants`, `upP_upren`, `allfv_rename`, `fends_subst1_sub`, `fends_subst2_sub`, `fchans_rename`, `fchans_subst1_sub`, `fchans_subst2_sub`, `cmap_id`, `emap_id_on`, `emap_csub_fresh`, `fchans_emap_csub`, `echans_empty`, `emapE_csub_fresh`, `echans_emapE_csub`.
+  lang/Safety.v (17): `aends`, `act_val`, `tstep_progress`, `offers_beta`, `offers_spawn`, `aends_asubjs`, `closed_at_rename`, `closed_at_subst`, `closed_subst1`, `closed_subst2`, `lclosed`, `head_step_closed`, `tstep_closed`, `closed_conf`, `closed_emap`, `closed_conf_insert`, `itstep_closed`.
+  static/Weakening.v (16): `fl_wext`, `slt_wext`, `sle_wext`, `hold_at_wext`, `ub_below_s_wext`, `lb_below_hb_wext`, `lbx_below_h_wext`, `typed_wext`, `lren_refl`, `shift_at`, `upren_shift_at`, `shift_at_0`, `linsert`, `lren_linsert`, `linsert_0`, `typed_insert_none`.
+  fuel/FuelMono.v (13): `ftick_le`, `map_disjoint_cle`, `Vfuel_credit`, `fuel_val`, `fuel_frame`, `fuel_send_hand`, `fuel_link_dual`, `fuel_zero_act`, `fuel_zero_nospawn`, `fuel_zero_nosend`, `FuelE_counters_mono`, `FuelE_tk_mono`, `FuelE_reserve_mono`.
+  types/Worlds.v (12): `po_irrefl`, `no_gen`, `pn_gmap_nogen`, `pt_gmap_nogen`, `law_inst_gmap`, `w_lt_gmap`, `wfrename_wf`, `wfrename_back`, `w_lt_frename_back`, `strict_wfrename`, `wfworld_wfrename`, `w_lt_grename`.
+  compat/SemTyped.v (9): `sf_den_points`, `sem_typed_points`, `Grel_ext`, `Grel_empty`, `Grel_empty_intro`, `Grel_split`, `sem_typed_at_future`, `sem_typed_at_mono`, `sem_typed_mono`.
+  compat/Connect.v (7): `pconn_erase`, `Psteps_sends`, `conn_not2`, `offered_c_1`, `ssubj_sends`, `terminated_pirred`, `Prel_ren_id`.
+  types/Types.v (7): `ty_mut_ind`, `sty_mut_ind`, `pinst_sty_ext`, `pinst_sty_comp`, `pinst_sty_pvar`, `teq_trans`, `tfree_pinst`.
+  lang/Semantics.v (6): `reduction`, `upair_eq_inv`, `lchans`, `head_step_fchans`, `fchans_fill`, `tstep_fchans`.
+  relation/Readiness.v (6): `ub_lt_future`, `below_rest_mono`, `above_offered_mono`, `ready_t_mono`, `ready_p_mono`, `below_rest_above`.
+  types/Costs.v (5): `fle_inf_inv`, `fadd_inf_l`, `fadd_inf_r`, `tle_trans`, `meets_fadd_inf`.
+  compat/Rename.v (4): `Vrel_rename`, `pmap_pmap`, `pheld_fuse_inv`, `Prel_internalize`.
+  cost/CostSem.v (4): `gfuel_ext`, `gfuel_empty_intro`, `thfuel_nil`, `envf_none`.
+  examples/LFController.v (4): `sess_not_free`, `sess_ages`, `idle_age_cex`, `sess_sub_credit`.
+  lockfree/Fair.v (4): `lock_free_reach`, `waits`, `local_progress`, `waits_pend`.
+  lockfree/ThreadProgress.v (4): `stopped_not_part`, `stopped_forever`, `threads_safe`, `thread_progress_val`.
+  relation/Adequacy.v (4): `no_istep_done`, `Prel_done`, `tstep_beta_unit`, `Erel_beta_unit`.
+  relation/Relation.v (4): `pren_ok_id`, `Psteps_iff`, `Varr_mapB`, `BL_P`.
+  types/Erasure.v (4): `tfree_df`, `tfree_df_inv`, `prim_df`, `sty_df_skip`.
+  compat/Conv.v (3): `senv_eqv_trans`, `senv_eqv_lookup_pt`, `senv_eqv_disjoint`.
+  cost/CostRules.v (3): `fle_frame_0`, `fsub_fsub`, `fle_frame_pair`.
+  fuel/FuelValues.v (3): `kinj_fmap`, `tstep_efill`, `Vfuel_end`.
+  lang/Process.v (3): `gmultiset_split1`, `gmultiset_split2`, `pstep_sess_inv`.
+  soup/OwnFacts.v (3): `kres_ext`, `ctrs_ext`, `kfin_knew`.
+  soup/SoupStep.v (3): `s_disj`, `lookup_ktick`, `kres_ktick`.
+  static/Fundamental.v (3): `tfacts_unpinst`, `tfacts_lam`, `tfacts_box`.
+  compat/Blind.v (2): `Prel_teq_1`, `Prel_teq`.
+  compat/ConnectFuse.v (2): `img`, `hD_ne`.
+  compat/ConnectMsg.v (2): `not_Θ2_C`, `not_Θ2_of_1C`.
+  compat/ConnectRen.v (2): `iD`, `pheld_pconn_2`.
+  compat/ConnectSendEnv.v (2): `Kv'`, `Kr`.
+  compat/PTerm.v (2): `sth_lookup_C`, `rcv_pfree`.
+  soup/LFAdequacy.v (2): `lf_links_restricted`, `lf_no_tau`.
+  soup/SoupSync.v (2): `ctrs_some`, `held_all`.
+  types/Duality.v (2): `dual_hseq`, `dual_skip_iff`.
+  compat/Bind.v (1): `fill_frame_not_val`.
+  compat/ConnectSplit.v (1): `cls_c2`.
+  compat/EFacts.v (1): `fcover_sub`.
+  compat/LiveRules.v (1): `spawn_lam_later`.
+  compat/Redex.v (1): `Erel_new`.
+  cost/CostBind.v (1): `kinj_union_l`.
+  cost/Exact.v (1): `vfacts_ext`.
+  cost/Forwarder.v (1): `unfold_S_fw`.
+  examples/ClientServer.v (1): `dual_Sa`.
+  examples/FactoryEx.v (1): `dual_Sd`.
+  examples/LFTools.v (1): `wstep_po_off`.
+  examples/Tools.v (1): `sf_unionb_false`.
+  fuel/Fuel.v (1): `rle_inf_r`.
+  fuel/FuelBind.v (1): `link_tickets_fall`.
+  relation/Closure.v (1): `Prel_S_step`.
+  soup/LFLocal.v (1): `rend_some`.
+  static/Contexts.v (1): `sl_dpo`.
+  static/Guard.v (1): `marks_empty_cons`.

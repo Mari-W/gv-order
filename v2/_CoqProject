@@ -8,11 +8,8 @@ test/LangNotations.v
 lang/Semantics.v
 lang/Process.v
 lang/Safety.v
-lang/Harmony.v
-lang/ThreadSim.v
 lang/ChannelSwap.v
 lockfree/Fair.v
-lockfree/Reach.v
 lockfree/TauThread.v
 lockfree/Criterion.v
 lockfree/ThreadProgress.v
@@ -65,9 +62,7 @@ compat/Blind.v
 compat/SemTyped.v
 compat/Redex.v
 compat/LiveDF.v
-compat/Swap.v
 compat/Rename.v
-compat/PSwap.v
 compat/Conv.v
 compat/Connect.v
 compat/ConnectCtx.v

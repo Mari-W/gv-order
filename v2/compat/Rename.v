@@ -26,7 +26,7 @@
     The transpositions of compat/Swap.v are the special case of an
     involution ([Vrel_swap_rename], [Erel_swap_rename]). *)
 
-From GV Require Export compat.Bind compat.Redex compat.Swap relation.Adequacy.
+From GV Require Export compat.Bind compat.Redex compat.Blind lang.ChannelSwap relation.Adequacy.
 From GV Require Import fuel.FuelMono.
 
 (** ** Labels under a map of ends *)
@@ -756,51 +756,9 @@ End rel.
 
 (** ** Decision Q16, held-ends form *)
 
-Theorem Vrel_rename κ n W Θ T v h :
-  kinj h Θ → v ∈ V[κ]^W _ n⟦Θ ⊢ T⟧ → emap h v ∈ V[κ]^W _ n⟦kren h Θ ⊢ T⟧.
-Proof. intros Hk Hv. by apply (rename_level κ n T). Qed.
-
 Theorem Erel_rename κ n W Θ T F e h :
   kinj h Θ → e ∈ E[κ]^W _ n⟦Θ ⊢ T⟧^F → emap h e ∈ E[κ]^W _ n⟦kren h Θ ⊢ T⟧^F.
 Proof. intros Hk He. by apply (rename_level κ n T). Qed.
-
-(** ** The transpositions of compat/Swap.v, as instances *)
-
-Lemma kren_kmap (h : cend → cend) `{!Inj eq eq h} (Θ : senv) : kren h Θ = kmap h Θ.
-Proof.
-  assert (kinj h Θ) as Hk by (intros o1 o2 v1 v2 _ _ Heq; by apply (inj h)).
-  apply renk_kren; [done|]. split.
-  - intros o v Ho. by rewrite lookup_kmap.
-  - intros o' v Ho'. apply lookup_kmap_Some in Ho' as (o & -> & Ho); [|apply _]. eauto.
-Qed.
-
-Lemma Vrel_swap_rename κ a b n W Θ T v :
-  v ∈ V[κ]^W _ n⟦Θ ⊢ T⟧ → eswap a b v ∈ V[κ]^W _ n⟦sswap a b Θ ⊢ T⟧.
-Proof.
-  intros Hv. unfold sswap. rewrite <-kren_kmap by apply _.
-  apply Vrel_rename; [|done]. intros o1 o2 v1 v2 _ _. apply oswap_inj.
-Qed.
-
-Lemma Erel_swap_rename κ a b n W Θ T F e :
-  e ∈ E[κ]^W _ n⟦Θ ⊢ T⟧^F → eswap a b e ∈ E[κ]^W _ n⟦sswap a b Θ ⊢ T⟧^F.
-Proof.
-  intros He. unfold sswap. rewrite <-kren_kmap by apply _.
-  apply Erel_rename; [|done]. intros o1 o2 v1 v2 _ _. apply oswap_inj.
-Qed.
-
-Lemma Vrel_swap κ a b n W Θ T v :
-  Vrel κ n W Θ T v ↔ Vrel κ n W (sswap a b Θ) T (eswap a b v).
-Proof.
-  split; [apply Vrel_swap_rename|]. intros H.
-  rewrite <-(sswap_inv a b Θ), <-(eswap_involutive a b v). by apply Vrel_swap_rename.
-Qed.
-
-Lemma Erel_swap κ a b n W Θ T F e :
-  Erel κ n W Θ T F e ↔ Erel κ n W (sswap a b Θ) T F (eswap a b e).
-Proof.
-  split; [apply Erel_swap_rename|]. intros H.
-  rewrite <-(sswap_inv a b Θ), <-(eswap_involutive a b e). by apply Erel_swap_rename.
-Qed.
 
 (** ** P under a renaming: a projection of the clause (rename) *)
 
@@ -812,16 +770,6 @@ Qed.
 
 Lemma gch_compose g h c : dcomm g → gch g (gch h c) = gch (g ∘ h) c.
 Proof. intros Hd. unfold gch at 2 3. simpl. symmetry. by apply ech_gch. Qed.
-
-Lemma pmap_pmap g h p : dcomm g → pmap g (pmap h p) = pmap (g ∘ h) p.
-Proof.
-  intros Hd. destruct p as [C E]. unfold pmap. simpl. rewrite emapE_emapE. f_equal.
-  apply set_eq. intros c. rewrite !elem_of_map. split.
-  - intros (c1 & -> & (c2 & -> & Hc2)%elem_of_map). exists c2. split; [|done].
-    by rewrite gch_compose.
-  - intros (c2 & -> & Hc2). exists (gch h c2). split; [|apply elem_of_map; by exists c2].
-    by rewrite gch_compose.
-Qed.
 
 Lemma fuse_ok_kinj h D Σ p : fuse_ok h D Σ p → kinj h Σ.
 Proof.
@@ -871,20 +819,6 @@ Proof.
     apply elem_of_dom in Ho as [v Hv]. apply elem_of_dom. exists v. apply sdrop_lookup.
     split; [|done]. apply kren_lookup; [by eapply fuse_ok_kinj|done].
   - right. simpl. apply elem_of_union_l. rewrite ech_gch by apply Hok. apply elem_of_map. by exists (ech o).
-Qed.
-
-Lemma pheld_fuse_inv h D Σ p o' : fuse_ok h D Σ p →
-  pheld (sdrop D (kren h Σ)) (pfuse h D p) o' → ∃ o, o' = h o ∧ pheld Σ p o.
-Proof.
-  intros (Hd & Hi & _ & _ & Hp) [Ho|Ho].
-  - apply elem_of_dom in Ho as [v Hv]. apply sdrop_lookup in Hv as [Hv _].
-    destruct (kren_lookup_inv _ _ _ _ Hv) as (o & -> & Ho). exists o. split; [done|left; by eapply elem_of_dom_2].
-  - simpl in Ho. apply elem_of_union in Ho as [Ho|Ho].
-    + apply elem_of_map in Ho as (c & Hc & HcC). unfold gch in Hc. apply ech_eq in Hc as [Hc|Hc].
-      * exists (EPos c). split; [done|by right].
-      * exists (ENeg c). split; [|by right]. change (ENeg c) with (edual (EPos c)). by rewrite Hd, Hc, edual_edual.
-    + destruct (Hp o' Ho) as (S & x & S' & Hl & _).
-      destruct (kren_lookup_inv _ _ _ _ Hl) as (o & -> & Ho'). exists o. split; [done|left; by eapply elem_of_dom_2].
 Qed.
 
 Section fuse_compose.
@@ -998,22 +932,6 @@ Theorem Prel_rename κ n W Σ T p h :
   pren_ok h Σ p → p ∈ P[κ]^W _ n⟦Σ ⊢ T⟧ → pmap h p ∈ P[κ]^W _ n⟦kren h Σ ⊢ T⟧.
 Proof.
   intros Hh HP. rewrite <-pfuse_empty, <-(sdrop_empty (kren h Σ)). by apply Prel_fuse; [apply pren_fuse_ok|].
-Qed.
-
-(** Internalize, h = id: the channels D, whose two ends Σ holds as dual
-    pairs at dual points, become restricted. *)
-Theorem Prel_internalize κ n W Σ T p D :
-  dpairs D Σ → D ## p.1 →
-  p ∈ P[κ]^W _ n⟦Σ ⊢ T⟧ → (p.1 ∪ D, p.2) ∈ P[κ]^W _ n⟦sdrop D Σ ⊢ T⟧.
-Proof.
-  intros Hp HD HP.
-  assert (fuse_ok id D Σ p) as Hok.
-  { split_and!; [done|by intros ? ? _ _|by intros ? ? _ _ ?; left| |by rewrite kren_id_map].
-    simpl. intros c Hc Hc'. apply elem_of_map in Hc' as (c' & -> & Hc'). unfold gch in Hc. simpl in Hc. set_solver. }
-  pose proof (Prel_fuse κ n W Σ T p id D Hok HP) as H. rewrite kren_id_map in H.
-  unfold pfuse in H. rewrite emapE_id_map in H.
-  replace (set_map (gch id) p.1) with p.1 in H; [done|].
-  apply set_eq. intros c. rewrite elem_of_map. unfold gch. simpl. split; [eauto|by intros (? & -> & ?)].
 Qed.
 
 (** ** The link substitution renames the other component (P-Connect)

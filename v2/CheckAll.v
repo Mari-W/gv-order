@@ -1,333 +1,134 @@
-(** * Every main result of v2 is closed under the global context
+(** * The main results of v2 are closed under the global context
 
-    Stages S1 to S9 (docs/redesign/progress.md). [make check] compiles this file and fails if any line below
-    reports an axiom. *)
+    The theorems the explorer page (docs/explorer) presents. [make check]
+    compiles this file and fails if any line below reports an axiom. *)
 
-From GV Require Import lang.Harmony lang.ThreadSim lang.ChannelSwap
-  lockfree.Reach lockfree.TauThread.
-From GV Require Import static.Conservativity static.Weakening static.Renaming static.PointSubst
-  examples.ClientServer examples.Cycle examples.FreshBetween examples.FreshMany
-  examples.FactoryEx examples.GrowRing.
-From GV Require Import relation.Adequacy.
-From GV Require Import static.FundamentalProc.
-From GV Require Import fuel.FuelSub.
-From GV Require Import cost.Transformers cost.Forwarder cost.Exact cost.CostFund.
-From GV Require Import compat.LiveDF compat.Swap compat.Rename compat.PSwap compat.Conv compat.ConnectP.
-From GV Require Import static.Fundamental examples.GuardEx.
-From GV Require Import soup.LFAdequacy soup.LFCompose soup.LFTyped examples.LFClose.
-From GV Require Import examples.LFTools examples.LFCycle examples.LFFreshBetween
-  examples.LFFreshMany examples.LFClientServer examples.LFFactoryEx examples.LFGrowRing
-  examples.LFController.
+From GV Require Import types.Points types.Worlds static.Typing static.Conservativity.
+From GV Require Import examples.ClientServer examples.Cycle examples.FreshBetween examples.FreshMany.
+From GV Require Import examples.FactoryEx examples.GrowRing relation.Relation relation.Adequacy.
+From GV Require Import cost.Forwarder cost.CostFund compat.Bind compat.LiveDF.
+From GV Require Import compat.ConnectP compat.PTerm static.Fundamental static.FundamentalProc.
+From GV Require Import examples.GuardEx examples.LFClose examples.LFCycle examples.LFFreshBetween.
+From GV Require Import examples.LFFreshMany examples.LFClientServer examples.LFFactoryEx examples.LFGrowRing.
+From GV Require Import examples.LFController soup.SoupRun soup.SoupTau soup.LFAdequacy.
+From GV Require Import soup.LFCompose soup.LFTyped.
 
-(** Language: the redex once, progress, preservation. *)
-Print Assumptions act_offer_sig.
-Print Assumptions act_offer.
-Print Assumptions act_step.
-Print Assumptions tstep_progress.
-Print Assumptions istep_progress.
-Print Assumptions proc_progress.
-Print Assumptions itstep_closed.
-(** One instrumented semantics and its erasure. *)
-Print Assumptions istep_pspec.
-Print Assumptions pspec_lift.
-Print Assumptions pstep_iff.
-Print Assumptions pstep_lift.
-Print Assumptions pred_star_lift.
-(** Harmony and renamings. *)
-Print Assumptions harmony.
-Print Assumptions tstep_cmap.
-Print Assumptions pstep_pswap.
-Print Assumptions safe_pswap_iff.
-(** Thread simulation tools. *)
-Print Assumptions normalize.
-Print Assumptions mrel_extract.
-(** Runs, fairness, lock freedom. *)
-Print Assumptions lock_free_reach_of.
-Print Assumptions thread_acc.
-Print Assumptions run_reach.
-(** S2. Worlds: R7, renaming families apart, renaming generated roots. *)
+(** types/Points.v *)
+Print Assumptions pt_dual_dual.
+Print Assumptions pt_field_dual.
+(** types/Worlds.v *)
 Print Assumptions strict_join_iff.
-Print Assumptions strict_wfrename.
-Print Assumptions wfworld_wfrename.
-Print Assumptions strict_wfworld.
-Print Assumptions w_lt_grename.
+(** static/Typing.v *)
 Print Assumptions p_join_iff_connect.
-(** S2. The merged judgment: conservativity over DF typing. *)
-Print Assumptions typed_dftyped.
+Print Assumptions p_join.
+(** static/Conservativity.v *)
+Print Assumptions d_conv.
 Print Assumptions dftyped_typed.
+Print Assumptions typed_dftyped.
 Print Assumptions conservative.
-(** S2. Structural lemmas. *)
-Print Assumptions typed_wext.
-Print Assumptions typed_rename.
-Print Assumptions typed_insert_none.
-Print Assumptions e_let.
-Print Assumptions d_let.
-Print Assumptions typed_emap.
-Print Assumptions typed_gmap.
-Print Assumptions typed_grename.
-Print Assumptions typed_pinst.
-(** S2. Examples. *)
+(** examples/ClientServer.v *)
+Print Assumptions cs_dftyped.
 Print Assumptions cs_typed.
+(** examples/Cycle.v *)
+Print Assumptions cy_dftyped.
 Print Assumptions cy_typed.
+(** examples/FreshBetween.v *)
+Print Assumptions fb_dftyped.
 Print Assumptions fb_typed.
+(** examples/FreshMany.v *)
+Print Assumptions fm_dftyped.
 Print Assumptions fm_typed.
+(** examples/FactoryEx.v *)
+Print Assumptions fx_dftyped.
 Print Assumptions fx_typed.
+(** examples/GrowRing.v *)
+Print Assumptions rg_dftyped.
 Print Assumptions rg_typed.
-(** S3. The step-indexed fixpoint. *)
-Print Assumptions sfix_unfold.
-Print Assumptions sfix_below_lt.
-(** S3. Readiness. *)
-Print Assumptions ready_t_future.
-Print Assumptions ready_t_mono.
-Print Assumptions ready_p_mono.
-(** S3. The characteristic equations of R^κ. *)
-Print Assumptions Vrel_unit_iff.
-Print Assumptions Vrel_sess_iff.
-Print Assumptions Vrel_prod_iff.
-Print Assumptions Vrel_sum_iff.
-Print Assumptions Vrel_lolli_iff.
+(** relation/Relation.v *)
+Print Assumptions Erel_0.
 Print Assumptions Vrel_box_iff.
 Print Assumptions Vrel_ex_iff.
-Print Assumptions Erel_S_iff.
-Print Assumptions Erel_S_ind.
-Print Assumptions Prel_S_iff.
-Print Assumptions Prel_S_ind.
-Print Assumptions Erel_S_step.
-Print Assumptions Prel_S_step.
-Print Assumptions Vrel_thunk.
-(** S3. Downward closure and monotonicity. *)
-Print Assumptions Vrel_val.
-Print Assumptions Vrel_Erel.
-Print Assumptions Vrel_mono.
-Print Assumptions Erel_mono.
-Print Assumptions Prel_mono.
-Print Assumptions Vrel_down.
-Print Assumptions Erel_down.
-Print Assumptions Erel_future.
-Print Assumptions Prel_down.
-(** S3. Adequacy. *)
+(** relation/Adequacy.v *)
 Print Assumptions adequacy_gen.
 Print Assumptions adequacy.
 Print Assumptions live_adequacy.
-Print Assumptions Prel_done.
-Print Assumptions Erel_beta_unit.
-(** S6. Fuel: unfolding and the clauses. *)
-Print Assumptions FuelE_0.
-Print Assumptions FuelE_S.
-Print Assumptions Vfuel_eq.
-Print Assumptions fuel_val.
-Print Assumptions fuel_obl.
-Print Assumptions fuel_wait.
-Print Assumptions fuel_tick.
-Print Assumptions fuel_zero_act.
-Print Assumptions fuel_zero_nospawn.
-Print Assumptions fuel_zero_nosend.
-(** S6. Downward closure, F4 monotonicity, renaming. *)
-Print Assumptions FuelE_down.
-Print Assumptions Vfuel_down.
-Print Assumptions FuelE_mono.
-Print Assumptions Vfuel_mono.
-Print Assumptions FuelE_rename.
-Print Assumptions Vfuel_rename.
-(** S6. F2, F3, F5, F6. *)
-Print Assumptions FuelE_val.
-Print Assumptions FuelE_beta.
-Print Assumptions Vfuel_recount.
-Print Assumptions Vfuel_age.
-Print Assumptions Vfuel_pinst.
-Print Assumptions Vfuel_teq.
-Print Assumptions Vfuel_sub.
-Print Assumptions FuelE_sub.
-Print Assumptions FuelE_res_mono.
-Print Assumptions FuelE_thread.
-Print Assumptions Vfuel_pair.
-(** S6. F1 bind, link loops. *)
-Print Assumptions FuelE_bind.
-Print Assumptions link_tickets_fall.
-(** S7. Sequencing of transformers, exact values (Q15), the forwarder. *)
-Print Assumptions seq_sound.
-Print Assumptions Vfuel_exact.
+(** cost/Forwarder.v *)
 Print Assumptions dead_thunk_rejected.
 Print Assumptions fw_ptyped.
-Print Assumptions typed_tfacts.
-Print Assumptions fends_subst_eq.
-Print Assumptions envf_exact.
-Print Assumptions csem_bind1.
-Print Assumptions csem_bind2.
-Print Assumptions send_redex.
-Print Assumptions spawn_redex.
-Print Assumptions cost_e_app.
-Print Assumptions cost_e_abs.
-Print Assumptions cost_e_box.
-Print Assumptions cost_e_spawn_lam.
+(** cost/CostFund.v *)
 Print Assumptions cost_fundamental.
 Print Assumptions fsem_of_cost.
 Print Assumptions fw_fsem.
-(** S4. The bind lemma, blindness, groundings. *)
-Print Assumptions Erel_sends.
+(** compat/Bind.v *)
 Print Assumptions Erel_bind.
-Print Assumptions Vrel_teq.
-Print Assumptions Erel_teq_ty.
-Print Assumptions Prel_teq.
-Print Assumptions Vrel_blind.
-Print Assumptions Erel_blind.
-Print Assumptions Grel_split.
-Print Assumptions sf_den_unionb.
-Print Assumptions sem_typed_points.
-(** S4. Decision Q14, operator redexes and rules, live ⊆ DF, renaming. *)
-Print Assumptions Vrel_exact.
-Print Assumptions Vrel_heads.
-Print Assumptions Erel_beta.
-Print Assumptions Erel_app.
-Print Assumptions Erel_send.
-Print Assumptions Erel_recv.
-Print Assumptions Erel_close.
-Print Assumptions Erel_select.
-Print Assumptions Erel_branch.
-Print Assumptions Erel_link.
-Print Assumptions Erel_spawn.
-Print Assumptions Erel_new_at.
-Print Assumptions Erel_new.
-Print Assumptions Erel_force.
-Print Assumptions dual_unfoldS.
-Print Assumptions sequiv_dual.
+(** compat/LiveDF.v *)
 Print Assumptions live_sub_df.
-Print Assumptions Vrel_swap.
-Print Assumptions Erel_swap.
-(** S4. Decision Q16: maps injective on the held ends. *)
-Print Assumptions tstep_det.
-Print Assumptions tstep_emap.
-Print Assumptions fresh_pull.
-Print Assumptions ready_rename.
-Print Assumptions Vrel_rename.
-Print Assumptions Erel_rename.
-Print Assumptions Prel_rename.
-Print Assumptions Prel_fuse.
-Print Assumptions Prel_internalize.
-Print Assumptions fuse_ok_compose.
-Print Assumptions pren_ok_csub.
-(** S4. P-Connect, P-Join admissible. *)
-Print Assumptions pc_clauses.
-Print Assumptions fs_conn.
+(** compat/ConnectP.v *)
 Print Assumptions sem_p_connect.
-Print Assumptions p_join.
-(** S4. P-Term. *)
-Print Assumptions Ebody_rename.
-Print Assumptions Erel_S_ind_ren.
-Print Assumptions istep_single.
-Print Assumptions spawn_split.
-Print Assumptions sth_fuse.
-Print Assumptions snd_sth.
-Print Assumptions rcv_sth.
-Print Assumptions lk_res.
-Print Assumptions core.
+(** compat/PTerm.v *)
 Print Assumptions sem_p_term.
-(** S5. The process theorems. *)
-Print Assumptions ptyped_pfree.
-Print Assumptions ptyped_chans.
-Print Assumptions ptyped_conn.
+(** static/Fundamental.v *)
+Print Assumptions typed_sem.
+Print Assumptions fundamental.
+Print Assumptions fundamental_typed.
+Print Assumptions live_fundamental.
+Print Assumptions live_fundamental_typed.
+(** static/FundamentalProc.v *)
 Print Assumptions fundamental_proc.
 Print Assumptions live_fundamental_proc.
 Print Assumptions soundness.
 Print Assumptions live_soundness.
 Print Assumptions soundness_source.
-(** S4. Renaming of P. *)
-Print Assumptions istep_qswap.
-Print Assumptions erase_qswap.
-Print Assumptions send_split_swap.
-Print Assumptions recv_ok_swap.
-Print Assumptions recv_env_swap.
-Print Assumptions recv_back_swap.
-Print Assumptions ready_p_swap.
-Print Assumptions Prel_swap.
-Print Assumptions csub_fuses.
-Print Assumptions Vrel_conv.
-Print Assumptions Erel_conv.
-Print Assumptions Prel_conv.
-(** S5: two facts about E, the structural rules. *)
-Print Assumptions Erel_cover.
-Print Assumptions Erel_ty_mono.
-Print Assumptions Vrel_tsub.
-Print Assumptions gen_e_box.
-(** S5: the fundamental theorem for terms. *)
-Print Assumptions later_spawn_lam.
-Print Assumptions typed_sem.
-Print Assumptions fundamental.
-Print Assumptions fundamental_typed.
-(** S5: the guard, the rules with marks, the live fundamental theorem. *)
-Print Assumptions guard_rename.
-Print Assumptions acts_stable.
-Print Assumptions Erel_bind_acts.
-Print Assumptions sem_later_empty.
-Print Assumptions later_bind_acts.
-Print Assumptions later_box.
-Print Assumptions live_fundamental.
-Print Assumptions live_fundamental_typed.
+(** examples/GuardEx.v *)
 Print Assumptions div_not_guarded.
 Print Assumptions pn_fix_not_guarded.
 Print Assumptions cx_not_guarded.
 Print Assumptions spawn_loop_not_guarded.
 Print Assumptions loop_guarded.
 Print Assumptions stage_guarded.
-(** Soup and adequacy (stage S8). *)
-Print Assumptions lf_run_criterion.
-Print Assumptions thread_progress.
-Print Assumptions idle_dual.
-Print Assumptions lfsoup_step.
-Print Assumptions lfsoup_run.
-Print Assumptions lfsoup_isteps.
-Print Assumptions Erel_tacc.
-Print Assumptions soup_no_tau_divergence.
-Print Assumptions soup_relabel.
-Print Assumptions lf_local_progress.
-Print Assumptions lf_fuel.
-Print Assumptions lf_adequacy_soup.
-Print Assumptions lf_adequacy.
-Print Assumptions lf_thread_progress.
-Print Assumptions soup_par.
-Print Assumptions soup_nu.
-Print Assumptions soup_connect.
-Print Assumptions soup_term.
-Print Assumptions soup_lift.
-Print Assumptions lf_soup_connect.
-Print Assumptions lf_p_connect.
-Print Assumptions lf_soup_term.
-Print Assumptions lf_p_term.
-Print Assumptions lf_soundness_source.
-Print Assumptions lf_fundamental.
-Print Assumptions lf_soundness.
-Print Assumptions wfworld_bare.
+(** examples/LFClose.v *)
 Print Assumptions cl_lftyped.
 Print Assumptions cl_lock_free.
-Print Assumptions wfworld_measure.
-Print Assumptions wfworld_lex3.
-Print Assumptions lf_main.
-Print Assumptions lbox_typed.
-Print Assumptions W_cy_wfworld.
+(** examples/LFCycle.v *)
+Print Assumptions cy_guarded.
 Print Assumptions cy_lftyped.
 Print Assumptions cy_lock_free.
-Print Assumptions W_fb_wfworld.
+(** examples/LFFreshBetween.v *)
+Print Assumptions fb_guarded.
 Print Assumptions fb_lftyped.
 Print Assumptions fb_lock_free.
-Print Assumptions W_fm_wfworld.
+(** examples/LFFreshMany.v *)
+Print Assumptions fm_guarded.
 Print Assumptions fm_lftyped.
 Print Assumptions fm_lock_free.
-Print Assumptions W_cs_wfworld.
+(** examples/LFClientServer.v *)
+Print Assumptions cs_guarded.
 Print Assumptions cs_lftyped.
 Print Assumptions cs_lock_free.
-Print Assumptions W_fx_wfworld.
+(** examples/LFFactoryEx.v *)
+Print Assumptions fx_guarded.
 Print Assumptions fx_lftyped.
 Print Assumptions fx_lock_free.
-Print Assumptions W_rg_wfworld.
+(** examples/LFGrowRing.v *)
+Print Assumptions rg_guarded.
 Print Assumptions rg_lftyped.
 Print Assumptions rg_lock_free.
-(** I.1 to I.3: idle ends age by truncation ([age_idle]), the kept-credit
-    form fails F5, and the controller is lock free (examples/LFController.v). *)
-Print Assumptions Vfuel_age.
-Print Assumptions Vfuel_age_above.
-Print Assumptions idle_age_cex.
-Print Assumptions sess_ages.
-Print Assumptions sess_sub_credit.
-Print Assumptions W_ctl_wfworld.
+(** examples/LFController.v *)
+Print Assumptions ctl_typedN.
+Print Assumptions ctl_guarded.
 Print Assumptions ctl_lftyped.
 Print Assumptions ctl_lock_free.
+(** soup/SoupRun.v *)
+Print Assumptions lfsoup_step.
+(** soup/SoupTau.v *)
+Print Assumptions soup_no_tau_divergence.
+(** soup/LFAdequacy.v *)
+Print Assumptions lf_adequacy.
+Print Assumptions lf_thread_progress.
+(** soup/LFCompose.v *)
+Print Assumptions lf_p_connect.
+Print Assumptions lf_p_term.
+Print Assumptions lf_soundness_source.
+(** soup/LFTyped.v *)
+Print Assumptions lf_fundamental.
+Print Assumptions lf_soundness.

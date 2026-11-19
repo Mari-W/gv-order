@@ -187,11 +187,6 @@ Section msg_env.
       + by apply not_E2'_c1.
   Qed.
 
-  Local Lemma not_Θ2_C o' : o' ∈ dom ΣC → o' ∉ dom Σv → o' ∉ dom Θ2.
-  Proof.
-    intros H Hv D. destruct (DΘ _ D) as [[_ [_ ?]]|[D' _]]; [done|]. contra_with (cls_C _ _ _ _ _ _ Hc o' H).
-  Qed.
-
   Lemma msg_disj : dom E1 ## dom E2.
   Proof.
     intros o' H1 H2. destruct (E1_out o' H1) as [A B]. apply DE2 in H2 as [[? _]|[? _]]; done.
@@ -266,9 +261,6 @@ Section msg_env.
           split; [right; right; by eapply elem_of_dom_2|tauto].
         * exfalso. apply B'. rewrite dom_union_L. apply elem_of_union_r. by eapply elem_of_dom_2.
   Qed.
-  Local Lemma not_Θ2_of_1C o' : o' ∈ dom ΣC → o' ∉ dom Σv → edual (edual o') ∉ dom Θ2.
-  Proof. rewrite edual_edual. apply not_Θ2_C. Qed.
-
   Lemma msg_types o' S1 y1 : E1 !! o' = Some (S1, y1) → o' ∉ dom Σ →
     ∃ S2, E2 !! edual o' = Some (S2, y1‾) ∧ sdual S1 S2.
   Proof.

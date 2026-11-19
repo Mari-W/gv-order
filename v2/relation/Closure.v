@@ -223,14 +223,6 @@ Section closure.
     exact (proj1 (Esteps_iff _ _ _ _ _ _ _ _ _ _ _) H α e' Hst).
   Qed.
 
-  Lemma Prel_S_step n W W1 Σ T q ev q' :
-    Prel κ (S n) W Σ T (erase q) → W ⊑ W1 → strict W1 → istep q ev q' →
-    Pobl κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) (Prel κ (S n)) W1 Σ T (erase q) ev (erase q').
-  Proof.
-    intros HP HW HS Hst. destruct (Prel_S_clauses κ n _ _ _ _ HP W1 HW HS) as (_ & _ & H).
-    exact (proj1 (Psteps_iff _ _ _ _ _ _ _ _ _ _) H q ev q' eq_refl Hst).
-  Qed.
-
   (** The thunk of O-Spawn is read at the level of the parent, inside
       the fixpoint when β is free. A value at 1 ⊸^ub_lb 1 is a thunk: its
       body is read at the empty future, above every upper point, and

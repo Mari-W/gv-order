@@ -153,12 +153,6 @@ Proof.
     destruct (B o' v0 Ho') as (o & -> & Ho). exists o. by rewrite lookup_fmap, Ho.
 Qed.
 
-Lemma kinj_fmap {Y Z : Type} (f : Y → Z) (g : cend → cend) (m : gmap cend Y) :
-  kinj g m → kinj g (f <$> m).
-Proof.
-  intros Hk. apply (kinj_dom g m); [by rewrite dom_fmap_L|done].
-Qed.
-
 (** ** A fresh renaming by a prefix
 
     [eprefix s] prepends s to the channel of an end, [eunfix s g] undoes
@@ -405,9 +399,6 @@ Proof.
   destruct f; simpl; first [exact IH | intros [] | intros H; apply andb_True in H as [? ?]; done].
 Qed.
 
-Lemma tstep_efill K e α e' : ectx_ok K → tstep e α e' → tstep (efill K e) α (efill K e').
-Proof. induction 1 as [|f K Hf HK IH]; simpl; [done|]. intros Hst. apply tstep_fill; auto. Qed.
-
 Lemma tstep_efill_inv K e α E' :
   ectx_ok K → ¬ is_val e → tstep (efill K e) α E' → ∃ e', tstep e α e' ∧ E' = efill K e'.
 Proof.
@@ -629,10 +620,6 @@ Qed.
 
 Lemma Vfuel_unit N n a : EUnit ∈ FV^N _ n⟦RTy TUnit a⟧(∅, ∅).
 Proof. rewrite Vfuel_eq. simpl. by split_and!. Qed.
-
-Lemma Vfuel_end N n S x a o f :
-  fle a f → Chan o ∈ FV^N _ n⟦RTy (TSess S x) a⟧({[o := S]}, {[o := f]}).
-Proof. rewrite Vfuel_eq. simpl. intros Ha. exists o, S, f. split_and!; try done. apply sequiv_refl. Qed.
 
 Lemma Vfuel_pair N n T1 a1 T2 a2 a Π1 Π2 φ1 φ2 u v :
   Π1 ##ₘ Π2 → φ1 ##ₘ φ2 →

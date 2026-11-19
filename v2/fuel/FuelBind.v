@@ -380,12 +380,3 @@ Qed.
     after the link, has no fuel at tk tickets and index tk + 1. A link
     loop with chatter (C3, Appendix B #5) is of this shape between its
     chatter steps, so no ticket count gives it fuel at every index. *)
-Lemma link_tickets_fall N σ d r (Q : penv → cenv → expr → Prop) :
-  (∀ Π φ e, Q Π φ e → ∃ os e', tstep e (LSess (SLink os)) e' ∧ Q (mrem os Π) (mrem os φ) e') →
-  ∀ tk Π φ e, Q Π φ e → ¬ e ∈ F^N _ (S tk)⟦σ ▷ d ; r⟧(Π, φ, tk).
-Proof.
-  intros HQ tk. induction tk as [|tk IH]; intros Π φ e Hq HF;
-    destruct (HQ Π φ e Hq) as (os & e' & Hst & Hq');
-    pose proof (fuel_obl _ _ _ _ _ _ HF _ _ Hst) as (_ & _ & H1 & H2); [simpl in H1; lia|].
-  simpl in H2. rewrite Nat.sub_0_r in H2. exact (IH _ _ _ Hq' H2).
-Qed.

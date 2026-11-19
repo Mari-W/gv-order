@@ -1017,9 +1017,3 @@ Section later.
   Qed.
 End later.
 
-(** The semantic rule E-SpawnLam with marks. *)
-Definition spawn_lam_later (κ : ctable) : Prop :=
-  ∀ W Θ Δ L F e a1,
-    tfacts Θ Δ (Lam e) →
-    (∀ W1, W ⊑ W1 → sem_later κ W1 Θ (Some (TUnit, a1) :: Δ) (false .: L) ∅ e TUnit) →
-    sem_later κ W Θ Δ L F (ESpawn (Lam e)) TUnit.

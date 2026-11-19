@@ -83,20 +83,11 @@ Section send_env.
   Local Lemma Kv o' : o' ∈ dom Σv1 → o' ∉ dom Σ → o' ∈ dom ΣC.
   Proof. intros H HΣ. destruct (Dv _ H) as [[D|D] _]; [|done]. rewrite dom_union_L in HΣ. set_solver. Qed.
 
-  Local Lemma Kv' o' : o' ∈ dom Σv1 → o' ∈ dom Σ → o' ∈ dom Σ1.
-  Proof.
-    intros H HΣ. destruct (Dv _ H) as [[D|D] _]; [done|]. exfalso. rewrite dom_union_L, elem_of_union in HΣ.
-    destruct HΣ; contra_with (cls_C _ _ _ _ _ _ Hc o' D).
-  Qed.
-
   Local Lemma Kr' o' : o' ∈ dom Σr1 → o' ∈ dom Σ → o' ∈ dom Σ1.
   Proof.
     intros H HΣ. destruct (Dr _ H) as [[D|D] _]; [done|]. exfalso. rewrite dom_union_L, elem_of_union in HΣ.
     destruct HΣ; contra_with (cls_C _ _ _ _ _ _ Hc o' D).
   Qed.
-
-  Local Lemma Kr o' : o' ∈ dom Σr1 → o' ∉ dom Σ → o' ∈ dom ΣC.
-  Proof. intros H HΣ. destruct (Dr _ H) as [[D|D] _]; [|done]. rewrite dom_union_L in HΣ. set_solver. Qed.
 
   (** ** The environments of the composite's Q-Send *)
 

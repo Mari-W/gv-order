@@ -81,18 +81,6 @@ Section run.
 
   (** ** Restricted links and no τ-divergence *)
 
-  Lemma lf_links_restricted : links_restricted (erase (r 0)).
-  Proof.
-    intros q E e o1 o2 Hq HE Ha. rewrite <-Hr0 in Hq. destruct (pred_star_lift _ _ Hq) as (q' & Hq' & <-).
-    destruct (lfsoup_isteps N W T a0 q' Hs0 Hq') as (a' & <- & Hs').
-    destruct (Hs' 1) as (A & Π & U & Hs). simpl in HE.
-    assert (e ∈ soup (s_q a').2) as Hin by (rewrite HE; multiset_solver).
-    apply elem_of_soup in Hin as [t Ht]. exact (s_link _ _ _ _ _ _ _ _ Hs HWs t e o1 o2 Ht Ha).
-  Qed.
-
-  Lemma lf_no_tau : no_tau_divergence (erase (r 0)).
-  Proof. rewrite <-Hr0. exact (soup_no_tau_divergence N W T a0 Hs0). Qed.
-
   (** ** Local progress *)
 
   Lemma lp_end k : ∀ x t e a1 o, (r k).2 !! t = Some e → act e = Some a1 → aend a1 = Some o →
