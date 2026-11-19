@@ -6,8 +6,7 @@
     point.
 
     Primitives are saturated operators [Op k e] and the nullary [ENew ℓ].
-    The constants of GV are derived λ-values ([k_send] := λx. send x and
-    so on), so every value of arrow type is a λ (§3.2). [ENew ℓ] carries
+    [ENew ℓ] carries
     a family label ℓ and [Op (PNewAt κ) e] a field label κ. The runtime
     erases both labels into the step label, where the relation reads
     them (§2.5). *)
@@ -239,12 +238,6 @@ Definition subst2 (u v : expr) (e : expr) : expr := subst (v .: u .: Var) e.
     takes one. *)
 Definition ELet (e1 e2 : expr) : expr := LetP (Pair e1 EUnit) (LetU (Var 0) (rename S e2)).
 Global Arguments ELet : simpl never.
-
-(** ** The constants of GV as derived λ-values (§3.2) *)
-
-Definition k_send : expr := Lam (ESend (Var 0)).
-Definition k_new (ℓ : family) : expr := Lam (LetU (Var 0) (ENew ℓ)).
-Definition k_new_at (κ : field) : expr := Lam (ENewAt κ (Var 0)).
 
 (** ** Closedness, free channels and free ends *)
 

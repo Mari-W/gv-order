@@ -12,9 +12,9 @@
     No program mentions a point. [new_ℓ] opens a fresh generated root ρ
     of family ℓ with the laws Λ_ℓ(ρ) of W (E-New), [new_κ o] creates at
     the field x·κ of the point x of o and returns o (E-NewAt). Every
-    primitive has its own rule (E-Send, …, E-Force). A constant passed as
-    a function is a λ-value of lang/Syntax.v and types by E-Abs over the
-    rule of its primitive.
+    primitive has its own rule (E-Send, …, E-Force). A constant k passed as
+    a function is its eta-expansion λy. k y, which types by E-Abs over the
+    rule of k (static/Constants.v).
 
     [dftyped] is the deadlock-freedom projection, Θ ; Γ ; Δ ⊢^F_W e : T,
     defined as the instance N = ∞ with the annotations of N = ∞. Its

@@ -200,7 +200,7 @@ T('r-force', 'E-Force', 'static/Typing.v: e_force',
     DJ(R`\Theta`, R`\Gamma`, R`\Delta`, 'F', R`\mathsf{force}\,e`, R`U[\bar s][\bar x]`)),
   'Forcing chooses $\\bar x$ with $\\Gamma \\vdash C[\\bar x]$ and session types $\\bar s$, and asks $u[\\bar x] \\prec F$.');
 block(s, {
-  id: 't-consts', title: 'Types of constants', rocq: 'static/Typing.v: e_send, e_recv, e_close, e_select, e_branch, e_link, e_spawn, e_force, e_new',
+  id: 't-consts', title: 'Types of constants', rocq: 'static/Constants.v: k_send_df, k_recv_df, k_close_df, k_select_df, k_branch_df, k_link_df, k_spawn_df, k_force_df, k_send, k_recv, k_close, k_select, k_branch, k_link, k_spawn, k_force',
   tex: R`\begin{array}{lll}
 \mathsf{send} & : T[x\cdot i] \otimes S_0@x \multimap^{x} S@${h('pt.shift', R`x^{+}`)} & ${h('E-Send.unfold', R`${h('sty.unfold', R`\mathsf{unfold}`)}(S_0) = {!}(\bar\iota.\,T).S`)},\ \mathsf{pscoped}\,\bar\iota\,T,\ \neg\mathsf{hbot}\,T,\ ${h('E-Send.heads', R`x \prec \mathsf{heads}(T[x\cdot i])`)} \\
 \mathsf{recv} & : S_0@x \multimap^{x} T[x\cdot i] \otimes S@x^{+} & ${h('E-Recv.unfold', R`${h('sty.unfold', R`\mathsf{unfold}`)}(S_0) = {?}(\bar\iota.\,T).S`)},\ \mathsf{pscoped}\,\bar\iota\,T \\

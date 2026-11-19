@@ -23,6 +23,7 @@ types/Duality.v
 static/Contexts.v
 static/Typing.v
 static/Conservativity.v
+static/Constants.v
 static/Weakening.v
 static/Renaming.v
 static/PointSubst.v

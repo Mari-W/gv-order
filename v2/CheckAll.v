@@ -3,7 +3,7 @@
     The theorems the explorer page (docs/explorer) presents. [make check]
     compiles this file and fails if any line below reports an axiom. *)
 
-From GV Require Import types.Points types.Worlds static.Typing static.Conservativity.
+From GV Require Import types.Points types.Worlds static.Typing static.Conservativity static.Constants.
 From GV Require Import examples.ClientServer examples.Cycle examples.FreshBetween examples.FreshMany.
 From GV Require Import examples.FactoryEx examples.GrowRing relation.Relation relation.Adequacy.
 From GV Require Import cost.Forwarder cost.CostFund compat.Bind compat.LiveDF.
@@ -26,6 +26,15 @@ Print Assumptions d_conv.
 Print Assumptions dftyped_typed.
 Print Assumptions typed_dftyped.
 Print Assumptions conservative.
+(** static/Constants.v *)
+Print Assumptions k_send_df.
+Print Assumptions k_recv_df.
+Print Assumptions k_close_df.
+Print Assumptions k_select_df.
+Print Assumptions k_branch_df.
+Print Assumptions k_link_df.
+Print Assumptions k_spawn_df.
+Print Assumptions k_force_df.
 (** examples/ClientServer.v *)
 Print Assumptions cs_dftyped.
 Print Assumptions cs_typed.
