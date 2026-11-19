@@ -266,7 +266,7 @@ window.MAP = {
       "why": "Evaluation order is call by value from left to right. Frames say where the next step happens, never inside a $\\lambda$ or a box.",
       "used": [
        "sem-head",
-       "th-bind"
+       "th-terms"
       ]
      }
     },
@@ -464,7 +464,7 @@ window.MAP = {
        "p-typing",
        "t-judgment",
        "th-conserv",
-       "th-fund"
+       "th-terms"
       ]
      }
     },
@@ -701,7 +701,7 @@ window.MAP = {
       "used": [
        "r-threads",
        "v-rel",
-       "th-bind"
+       "th-terms"
       ]
      }
     },
@@ -1084,7 +1084,7 @@ window.MAP = {
        "fu-obls",
        "soup",
        "t-lf-intro",
-       "th-fund"
+       "th-terms"
       ]
      }
     },
@@ -1117,7 +1117,7 @@ window.MAP = {
       "why": "Fueled values say what a value promises about counters, the run-time side of credits.",
       "used": [
        "fu-obls",
-       "th-fund"
+       "th-terms"
       ]
      }
     },
@@ -1154,7 +1154,8 @@ window.MAP = {
      "about": {
       "why": "The semantic judgments are what the fundamental theorems conclude and what adequacy consumes. \\annp{The lock-free judgment is the soup at every level, with the refill and the soup state chosen once.}",
       "used": [
-       "th-fund",
+       "th-terms",
+       "th-fund-proc",
        "th-adeq"
       ]
      }
@@ -1182,20 +1183,17 @@ window.MAP = {
      }
     },
     {
-     "id": "th-bind",
-     "title": "The bind lemma",
-     "rocq": "compat/Bind.v: Erel_bind",
+     "id": "th-sound",
+     "title": "Soundness",
+     "rocq": "static/FundamentalProc.v: soundness; soup/LFTyped.v: lf_soundness",
      "modes": [
       "df",
       "lf"
      ],
-     "tex": "\\htmlData{k=th.Erel-bind}{\\begin{array}{l}\\begin{array}{l}e \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta_1 \\vdash T\\rrbracket^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}\\,\\Theta_2}} \\\\ \\land\\ \\forall W' \\htmlData{k=w.ext}{\\sqsupseteq} W,\\ j \\leq n,\\ v \\in \\htmlData{k=th.Vrel}{V^{W'}_j\\llbracket\\Theta_v \\vdash T\\rrbracket}. \\\\ \\qquad \\htmlData{k=se.frame}{f[v]} \\in \\htmlData{k=th.Erel}{E^{W'}_{j}\\llbracket \\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=se.frame}{f[e]} \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array}}",
-     "caption": "$E$ is closed under frames $f$, with the hole under $F \\cup \\mathsf{heads}\\,\\Theta_2$. \\annp{This holds for every cost table $\\kappa$.}",
+     "tex": "\\begin{array}{l}\\htmlData{k=th.soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\end{array}",
+     "caption": "What it tells you. A closed typed process is deadlock free in every strict world. \\annp{A closed process typed at a finite refill with every thread guarded is lock free in every strict and well-founded world.}",
      "about": {
-      "why": "Every rule with a subterm runs the subterm first. Bind lets each proof handle the subterm and the rest separately.",
-      "used": [
-       "th-fund"
-      ]
+      "why": "The main results. Typing gives deadlock freedom, \\annp{and lock-free typing gives lock freedom}."
      }
     },
     {
@@ -1207,29 +1205,28 @@ window.MAP = {
       "lf"
      ],
      "tex": "\\begin{array}{l}\\htmlData{k=th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\htmlData{k=th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\htmlData{k=th.Erel}{E\\annot{[\\kappa]}^{W}_{n}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\htmlData{k=th.Prel}{P\\annot{[\\kappa]}^{W}_{n}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.sem-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\htmlData{k=th.conn}{\\mathsf{conn}} \\\\ \\land\\ p_1 \\in \\htmlData{k=th.Prel}{P^{W_1}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket} \\\\ \\land\\ p_2 \\in \\htmlData{k=th.Prel}{P^{W_2}_{n}\\llbracket \\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.par}{p_1 \\parallel_{\\Sigma_C} p_2} \\in \\htmlData{k=th.Prel}{P^{W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket}\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\mathrel{\\htmlData{k=tp.lfjudg}{\\Vdash}}^{N}_{W} (C_0, \\{t\\}) : T \\\\ \\text{by P-Term}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W (C_0, \\{t\\}) : T\\end{array}}}\\end{array}",
-     "caption": "P-Term and P-Connect hold in $P$ at every level $n$. \\annp{They hold for every cost table $\\kappa$.}",
+     "caption": "What it tells you. Composition is semantic. A single safe thread is a safe process, and two safe processes connected at dual interfaces are a safe process. So any component proved safe by hand, without typing, composes with typed ones. \\annp{The same holds in the soup.}",
      "about": {
       "why": "P-Term and P-Connect hold in the relation itself. This is the compositionality of the approach.",
       "used": [
-       "th-fund"
+       "th-fund-proc"
       ]
      }
     },
     {
-     "id": "th-fund",
-     "title": "Fundamental theorems",
+     "id": "th-fund-proc",
+     "title": "Fundamental theorem",
+     "rocq": "static/FundamentalProc.v: fundamental_proc, live_fundamental_proc; soup/LFTyped.v: lf_fundamental",
      "modes": [
       "df",
       "lf"
      ],
-     "rocq": "static/Fundamental.v: typed_sem, fundamental, fundamental_typed, live_fundamental, live_fundamental_typed; static/FundamentalProc.v: fundamental_proc, live_fundamental_proc; soup/LFTyped.v: lf_fundamental; cost/CostFund.v: cost_fundamental, fsem_of_cost",
-     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}^{F}_W t : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.fundamental-typed}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.df}{\\Delta_{df}} \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{F}_W t : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{F}_W t : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-typed}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_W t : T_{df}\\end{array}}}\\end{array}\\\\[3ex]\\begin{array}{l}\\htmlData{k=th.fundamental-proc}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sj.proc}{\\vDash}_W p : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-proc}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{^{\\infty}}_W p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}_W p : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T\\end{array}}}\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\htmlData{k=th.cost-fundamental}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=cs.csem}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{N} e : T\\ !\\ \\varepsilon}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.fsem-of-cost}{\\begin{array}{l}\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} e : T\\ !\\ (c, \\vartheta) \\land \\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\\\ \\land\\ \\text{credits of } \\Delta \\leq N \\land \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,(\\htmlData{k=th.styof}{\\mathsf{sty} \\circ \\Delta})\\,e}\\end{array}}\\end{array}}\\end{array}",
-     "caption": "Typing implies the semantic judgment, for terms by induction on the typing derivation and for processes with the semantic P-Term and P-Connect as the two cases. \\annp{With the guard a typed term is in the live relation, and a typed term at finite $N$ has fuel. Together they put every thread of a lock-free typed process into the soup.}",
+     "tex": "\\begin{array}{l}\\htmlData{k=th.fundamental-proc}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sj.proc}{\\vDash}_W p : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T\\end{array}}}\\end{array}",
+     "caption": "What it tells you. Every typed process is in the semantic judgment, so every typed process is safe in the sense of the relation. The proof is an induction over P-Term and P-Connect, using the composition rules above.",
      "about": {
-      "why": "Each fundamental theorem is proved rule by rule, so a new typing rule needs only its compatibility lemma.",
+      "why": "The same for processes, by induction over P-Term and P-Connect.",
       "used": [
-       "th-sound",
-       "th-adeq"
+       "th-sound"
       ]
      }
     },
@@ -1241,7 +1238,7 @@ window.MAP = {
       "lf"
      ],
      "rocq": "relation/Adequacy.v: adequacy, live_adequacy, adequacy_gen; soup/LFAdequacy.v: lf_adequacy, lf_thread_progress; soup/SoupTau.v: soup_no_tau_divergence; soup/SoupRun.v: lfsoup_step",
-     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.adequacy}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-adequacy}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p \\land \\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.adequacy-gen}{\\begin{array}{l}\\forall \\kappa.\\ \\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\forall n.\\ p \\in \\htmlData{k=th.Prel}{P\\annot{[\\kappa]}^{W}_{n}\\llbracket \\varnothing \\vdash T\\rrbracket} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}}\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\annot{\\htmlData{k=th.lf-adequacy}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-thread-progress}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\begin{array}{l}\\forall (r, l).\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,(\\htmlData{k=se.run}{r\\,0}) = p \\land \\htmlData{k=prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\htmlData{k=prop.wfair}{\\mathsf{wfair}}\\,(r, l) \\\\ \\quad \\Longrightarrow\\ \\htmlData{k=th.tpr}{\\mathsf{thread\\_progress\\_run}}\\,(r, l)\\end{array}\\end{array}}} \\\\[1.5ex] \\htmlData{k=th.soup-no-tau}{\\begin{array}{l}\\forall n.\\ a \\in \\htmlData{k=th.soup}{S^{N,W}_{n}\\llbracket\\varnothing \\vdash T\\rrbracket} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}}(\\htmlData{k=proc.erase}{\\mathsf{erase}}\\,\\htmlData{k=th.qa}{q_a})\\end{array}} \\\\[1.5ex] \\htmlData{k=th.lfsoup-step}{\\begin{array}{l}a \\in \\htmlData{k=th.soup}{S^{N,W}_{n+1}\\llbracket\\varnothing \\vdash T\\rrbracket} \\land q_a \\xrightarrow{ev} q' \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=sp.next}{\\mathsf{lf\\_next}}\\,N\\,a\\,ev\\,q' \\in \\htmlData{k=th.soup}{S^{N,W}_{n}\\llbracket\\varnothing \\vdash T\\rrbracket}\\end{array}}\\end{array}}\\end{array}",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.adequacy}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\annot{\\htmlData{k=th.lf-adequacy}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-thread-progress}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\begin{array}{l}\\forall (r, l).\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,(\\htmlData{k=se.run}{r\\,0}) = p \\land \\htmlData{k=prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\htmlData{k=prop.wfair}{\\mathsf{wfair}}\\,(r, l) \\\\ \\quad \\Longrightarrow\\ \\htmlData{k=th.tpr}{\\mathsf{thread\\_progress\\_run}}\\,(r, l)\\end{array}\\end{array}}}\\end{array}}\\end{array}",
      "caption": "For strict $W$, a closed process in the semantic judgment is deadlock free. \\annp{For strict and well-founded $W$, a closed process in the lock-free judgment is lock free, and every thread progresses on every weakly fair maximal run.}",
      "about": {
       "why": "Adequacy is the only place the relation meets the safety property.",
@@ -1251,30 +1248,34 @@ window.MAP = {
      }
     },
     {
-     "id": "th-sound",
-     "title": "Soundness",
-     "rocq": "static/FundamentalProc.v: soundness, live_soundness, soundness_source; soup/LFTyped.v: lf_soundness; soup/LFCompose.v: lf_soundness_source",
+     "id": "th-conserv",
+     "title": "Conservativity",
+     "rocq": "static/Conservativity.v: conservative, typed_dftyped, dftyped_typed",
+     "modes": [
+      "lf"
+     ],
+     "tex": "\\begin{array}{l}\\annot{\\htmlData{k=th.conservative}{\\begin{array}{l}(\\exists \\varepsilon.\\ \\Gamma;\\htmlData{k=th.df}{\\Delta_{df}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,\\infty}} e : T_{df}\\ !\\ \\varepsilon) \\\\ \\quad\\iff\\ \\Gamma ; \\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.typed-dftyped}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\Gamma ; \\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_W e : T_{df}\\end{array}}}\\end{array}",
+     "caption": "What it tells you. Lock-free typing loses no deadlock-free program. The annotated judgment at $N = \\infty$ types exactly what deadlock-free typing types, and erasing the annotations of any lock-free typing gives a deadlock-free typing.",
+     "about": {
+      "why": "Lock-free typing adds annotations and loses no deadlock-free program, and every lock-free typing is a deadlock-free one."
+     }
+    },
+    {
+     "id": "th-terms",
+     "title": "Lemmas about terms",
      "modes": [
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{^{\\infty}}_W p : T \\land \\mathrel{\\htmlData{k=guard.proc}{\\vdash\\!\\triangleright}} p \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p \\land \\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}}\\,p\\end{array}}} \\\\[1.5ex] \\htmlData{k=th.soundness-source}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land N \\in \\mathbb{N} \\land \\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\\\ \\land\\ \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ (c, \\vartheta) \\\\ \\land\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk} \\land \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}",
-     "caption": "Typing implies deadlock freedom under $\\mathsf{strict}\\,W$ and lock freedom under $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$.",
+     "rocq": "static/FundamentalProc.v: soundness_source; soup/LFCompose.v: lf_soundness_source; static/Fundamental.v: typed_sem, fundamental, fundamental_typed, live_fundamental, live_fundamental_typed; compat/Bind.v: Erel_bind; cost/CostFund.v: cost_fundamental, fsem_of_cost",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.soundness-source}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land N \\in \\mathbb{N} \\land \\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\\\ \\land\\ \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ (c, \\vartheta) \\\\ \\land\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk} \\land \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}\\\\[3ex]\\begin{array}{l}\\htmlData{k=th.fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}^{F}_W t : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.fundamental-typed}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.df}{\\Delta_{df}} \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{F}_W t : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{F}_W t : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-typed}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_W t : T_{df}\\end{array}}}\\end{array}\\\\[3ex]\\htmlData{k=th.Erel-bind}{\\begin{array}{l}\\begin{array}{l}e \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta_1 \\vdash T\\rrbracket^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}\\,\\Theta_2}} \\\\ \\land\\ \\forall W' \\htmlData{k=w.ext}{\\sqsupseteq} W,\\ j \\leq n,\\ v \\in \\htmlData{k=th.Vrel}{V^{W'}_j\\llbracket\\Theta_v \\vdash T\\rrbracket}. \\\\ \\qquad \\htmlData{k=se.frame}{f[v]} \\in \\htmlData{k=th.Erel}{E^{W'}_{j}\\llbracket \\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=se.frame}{f[e]} \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array}}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\htmlData{k=th.cost-fundamental}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=cs.csem}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{N} e : T\\ !\\ \\varepsilon}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.fsem-of-cost}{\\begin{array}{l}\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} e : T\\ !\\ (c, \\vartheta) \\land \\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\\\ \\land\\ \\text{credits of } \\Delta \\leq N \\land \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,(\\htmlData{k=th.styof}{\\mathsf{sty} \\circ \\Delta})\\,e}\\end{array}}\\end{array}}\\end{array}",
+     "caption": "The statements the process theorems are built from. A single closed program is sound as a one-thread process. Typing a term implies the semantic term judgment, and $E$ is closed under evaluation frames, which every rule with a subterm uses. \\annp{With the guard a typed term is in the live relation, and a typed term at a finite refill has fuel.}",
      "about": {
-      "why": "The main results. Typing gives deadlock freedom, \\annp{and lock-free typing gives lock freedom}."
-     }
-    },
-    {
-     "id": "th-conserv",
-     "title": "Conservativity and live inside deadlock-free",
-     "rocq": "static/Conservativity.v: conservative, typed_dftyped, dftyped_typed; compat/LiveDF.v: live_sub_df",
-     "modes": [
-      "lf"
-     ],
-     "tex": "\\begin{array}{l}\\annot{\\htmlData{k=th.conservative}{\\begin{array}{l}(\\exists \\varepsilon.\\ \\Gamma;\\htmlData{k=th.df}{\\Delta_{df}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,\\infty}} e : T_{df}\\ !\\ \\varepsilon) \\\\ \\quad\\iff\\ \\Gamma ; \\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.typed-dftyped}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\Gamma ; \\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_W e : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-sub-df}{\\begin{array}{l}\\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\htmlData{k=th.nobox}{\\Box \\notin T} \\land \\varnothing \\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T\\end{array}}}\\end{array}",
-     "caption": "Deadlock-free typing is the annotated typing judgment at $N = \\infty$ up to erasure, and live implies deadlock-free at box-free $\\mathsf{prim}$ results.",
-     "about": {
-      "why": "Lock-free typing adds annotations and loses no deadlock-free program, and every lock-free typing is a deadlock-free one."
+      "why": "They are the per-thread layer under the process results. Each is proved once, rule by rule, and used by the fundamental theorem for processes.",
+      "used": [
+       "th-fund-proc",
+       "th-adeq"
+      ]
      }
     }
    ]
@@ -10837,60 +10838,6 @@ window.MAP = {
     }
    ]
   },
-  "th.live-adequacy": {
-   "title": "Live adequacy",
-   "what": "For strict $W$, if $\\varnothing \\mathrel{|\\!\\!\\vDash}_W p : T$ then $p$ is deadlock free and has no $\\tau$-divergence.",
-   "why": "Administrative steps cost $0$ in $\\kappa_L$ and are read inside a least fixpoint. Hence no reachable state starts an infinite sequence of them.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "A guarded receive loop takes no infinite sequence of free steps.",
-   "rocq": "relation/Adequacy.v: live_adequacy",
-   "sig": "\\mathsf{strict}\\,W \\land \\varnothing \\mathrel{|\\!\\!\\vDash}_W p : T \\Rightarrow \\mathsf{deadlock\\_free}\\,p \\land \\mathsf{no\\_tau\\_divergence}\\,p",
-   "args": [
-    {
-     "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
-    },
-    {
-     "name": "p",
-     "meaning": "a closed process $(C, E)$"
-    },
-    {
-     "name": "T",
-     "meaning": "the result type of the main thread"
-    }
-   ]
-  },
-  "th.adequacy-gen": {
-   "title": "Adequacy for every cost table",
-   "what": "For every $\\kappa$ and strict $W$, if $p \\in P[\\kappa]^{W}_{n}\\llbracket\\varnothing \\vdash T\\rrbracket$ for all $n$, then $p$ is deadlock free.",
-   "why": "A $\\tau$ step lowers the level by at most $\\kappa(\\mathit{give}) + \\kappa(\\mathit{take})$, so for every reachable state some level reaches it with a positive level left.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "Instantiated at $\\kappa_{DF}$ and $\\kappa_L$.",
-   "rocq": "relation/Adequacy.v: adequacy_gen",
-   "sig": "\\forall \\kappa.\\ \\mathsf{strict}\\,W \\land (\\forall n.\\ p \\in P[\\kappa]^{W}_{n}\\llbracket\\varnothing \\vdash T\\rrbracket) \\Rightarrow \\mathsf{deadlock\\_free}\\,p",
-   "args": [
-    {
-     "name": "\\kappa",
-     "meaning": "a cost table, $\\kappa_{DF}$ for deadlock freedom and $\\kappa_L$ for liveness"
-    },
-    {
-     "name": "n",
-     "meaning": "the level, a natural number"
-    },
-    {
-     "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
-    },
-    {
-     "name": "p",
-     "meaning": "a closed process $(C, E)$"
-    },
-    {
-     "name": "T",
-     "meaning": "the result type of the main thread"
-    }
-   ]
-  },
   "th.lf-adequacy": {
    "title": "Lock-free adequacy",
    "what": "For $W$ with $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$, if $\\varnothing \\Vvdash_W p : T$ then $p$ is lock free.",
@@ -10934,52 +10881,6 @@ window.MAP = {
     {
      "name": "(r, l)",
      "meaning": "a run, $r\\,i$ the configuration and $l\\,i$ the event at position $i$"
-    }
-   ]
-  },
-  "th.soup-no-tau": {
-   "title": "No $\\tau$-divergence of the soup",
-   "what": "If $a \\in S^{N,W}_{n}\\llbracket\\varnothing \\vdash T\\rrbracket$ for all $n$, then $\\mathsf{erase}\\,q_a$ has no $\\tau$-divergence.",
-   "why": "Every thread of the soup is in the live relation, which admits no infinite sequence of free steps. Hence the soup needs no live process relation beside it.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "An infinite chain of spawns is rejected thread by thread.",
-   "rocq": "soup/SoupTau.v: soup_no_tau_divergence",
-   "sig": "(\\forall n.\\ a \\in S^{N,W}_{n}\\llbracket\\varnothing \\vdash T\\rrbracket) \\Rightarrow \\mathsf{no\\_tau\\_divergence}(\\mathsf{erase}\\,q_a)",
-   "args": [
-    {
-     "name": "a",
-     "meaning": "a soup state, fixed before the level"
-    },
-    {
-     "name": "n",
-     "meaning": "the level, a natural number"
-    },
-    {
-     "name": "q_a",
-     "meaning": "the configuration of $a$"
-    }
-   ]
-  },
-  "th.lfsoup-step": {
-   "title": "One step of the soup",
-   "what": "If $a \\in S^{N,W}_{n+1}$ and $q_a \\xrightarrow{ev} q'$, then $\\mathsf{lf\\_next}\\,N\\,a\\,ev\\,q' \\in S^{N,W}_{n}$.",
-   "why": "Ownership, points and counters after the step are functions of the step alone, so they agree at every index. Each thread pays its own side of a synchronization.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "Iterating it follows a whole run.",
-   "rocq": "soup/SoupRun.v: lfsoup_step",
-   "sig": "a \\in S^{N,W}_{n+1} \\land q_a \\xrightarrow{ev} q' \\Rightarrow \\mathsf{lf\\_next}\\,N\\,a\\,ev\\,q' \\in S^{N,W}_{n}",
-   "args": [
-    {
-     "name": "a",
-     "meaning": "a soup state at level $n + 1$"
-    },
-    {
-     "name": "ev",
-     "meaning": "the event of the step"
-    },
-    {
-     "name": "q'",
-     "meaning": "the configuration after the step"
     }
    ]
   },
@@ -11095,33 +10996,6 @@ window.MAP = {
    "example": "Two threads closing the two ends of $c$.",
    "rocq": "static/FundamentalProc.v: fundamental_proc",
    "sig": "\\mathsf{strict}\\,W \\land \\Sigma \\vdash\\annot{^{\\infty}}_{W} p : T \\Rightarrow \\Sigma \\vDash_W p : T",
-   "args": [
-    {
-     "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
-    },
-    {
-     "name": "\\Sigma",
-     "meaning": "the interface of the process"
-    },
-    {
-     "name": "p",
-     "meaning": "a closed process $(C, E)$"
-    },
-    {
-     "name": "T",
-     "meaning": "the result type of the main thread"
-    }
-   ]
-  },
-  "th.live-fundamental-proc": {
-   "title": "Live fundamental theorem for processes",
-   "what": "For strict $W$, $\\Sigma \\vdash\\annot{^{\\infty}}_{W} p : T$ and $\\vdash\\!\\triangleright p$ imply $\\Sigma \\mathrel{|\\!\\!\\vDash}_W p : T$.",
-   "why": "The same induction with the live versions of P-Term and P-Connect.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "The guarded receive loop as a process.",
-   "rocq": "static/FundamentalProc.v: live_fundamental_proc",
-   "sig": "\\mathsf{strict}\\,W \\land \\Sigma \\vdash\\annot{^{\\infty}}_{W} p : T \\land \\vdash\\!\\triangleright p \\Rightarrow \\Sigma \\mathrel{|\\!\\!\\vDash}_W p : T",
    "args": [
     {
      "name": "W",
@@ -11330,29 +11204,6 @@ window.MAP = {
     }
    ]
   },
-  "th.live-soundness": {
-   "title": "Live soundness",
-   "what": "For strict $W$, $\\varnothing \\vdash\\annot{^{\\infty}}_{W} p : T$ and $\\vdash\\!\\triangleright p$ imply that $p$ is deadlock free and has no $\\tau$-divergence.",
-   "why": "The live fundamental theorem for processes followed by live adequacy.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "The receive loop and the pipeline stage.",
-   "rocq": "static/FundamentalProc.v: live_soundness",
-   "sig": "\\mathsf{strict}\\,W \\land \\varnothing \\vdash\\annot{^{\\infty}}_{W} p : T \\land \\vdash\\!\\triangleright p \\Rightarrow \\mathsf{deadlock\\_free}\\,p \\land \\mathsf{no\\_tau\\_divergence}\\,p",
-   "args": [
-    {
-     "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
-    },
-    {
-     "name": "p",
-     "meaning": "a closed process $(C, E)$"
-    },
-    {
-     "name": "T",
-     "meaning": "the result type of the main thread"
-    }
-   ]
-  },
   "th.soundness-source": {
    "title": "Soundness for source terms",
    "what": "For strict $W$, $\\mathsf{prim}\\,T$ and $\\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W} t : T$, the process $(\\varnothing, \\{t\\})$ is deadlock free.",
@@ -11461,40 +11312,6 @@ window.MAP = {
     {
      "name": "N",
      "meaning": "any refill"
-    }
-   ]
-  },
-  "th.live-sub-df": {
-   "title": "Live inside deadlock-free",
-   "what": "For a closed process $p$ with $\\mathsf{prim}\\,T$ and no box in $T$, $\\varnothing \\mathrel{|\\!\\!\\vDash}_W p : T$ implies $\\varnothing \\vDash_W p : T$.",
-   "why": "At such $T$ the value relation reads no term relation, so it agrees for both cost tables at every level.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "Every example with result $\\ast$.",
-   "rocq": "compat/LiveDF.v: live_sub_df",
-   "sig": "\\mathsf{prim}\\,T \\land \\Box \\notin T \\land \\varnothing \\mathrel{|\\!\\!\\vDash}_W p : T \\Rightarrow \\varnothing \\vDash_W p : T",
-   "args": [
-    {
-     "name": "p",
-     "meaning": "a closed process $(C, E)$"
-    },
-    {
-     "name": "T",
-     "meaning": "the result type of the main thread"
-    }
-   ]
-  },
-  "th.nobox": {
-   "title": "$\\Box \\notin T$",
-   "what": "$T$ contains no box type $\\Box(\\ldots)$.",
-   "why": "A box value carries code, whose relation depends on the cost table. A $\\mathsf{prim}$ type without boxes carries no code.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\ast$ and $\\ast \\otimes \\ast$ contain no box.",
-   "rocq": "compat/LiveDF.v: boxfree",
-   "sig": "\\Box \\notin T",
-   "args": [
-    {
-     "name": "T",
-     "meaning": "a type"
     }
    ]
   },

@@ -152,15 +152,15 @@ merge('sj-all', 'Semantic judgments', ['sj', 'sp-lf'], {
 order('semantic', ['sr-reading', 'ct-costs', 'v-rel', 'e-rel', 'e-obl', 'rd', 'p-rel', 'p-obls', 'fu-vs', 'fu', 'fu-obls', 'fv', 'soup', 'sj-all']);
 
 // ---- theorems ----
-merge('th-fund', 'Fundamental theorems', ['th-fund-term', 'th-fund-proc', 'th-cost'], {
-  caption: R`Typing implies the semantic judgment, for terms by induction on the typing derivation and for processes with the semantic P-Term and P-Connect as the two cases. \annp{With the guard a typed term is in the live relation, and a typed term at finite $N$ has fuel. Together they put every thread of a lock-free typed process into the soup.}`,
-  why: 'Each fundamental theorem is proved rule by rule, so a new typing rule needs only its compatibility lemma.'
+merge('th-terms', 'Lemmas about terms', ['th-sound-src', 'th-fund-term', 'th-bind', 'th-cost'], {
+  caption: R`The statements the process theorems are built from. A single closed program is sound as a one-thread process. Typing a term implies the semantic term judgment, and $E$ is closed under evaluation frames, which every rule with a subterm uses. \annp{With the guard a typed term is in the live relation, and a typed term at a finite refill has fuel.}`,
+  why: 'They are the per-thread layer under the process results. Each is proved once, rule by rule, and used by the fundamental theorem for processes.'
 });
 merge('th-adeq', 'Adequacy', ['th-adequacy', 'th-lf-adequacy'], {
   caption: R`For strict $W$, a closed process in the semantic judgment is deadlock free. \annp{For strict and well-founded $W$, a closed process in the lock-free judgment is lock free, and every thread progresses on every weakly fair maximal run.}`,
   why: 'Adequacy is the only place the relation meets the safety property.'
 });
-order('theorems', ['th-chain', 'th-bind', 'th-compose', 'th-fund', 'th-adeq', 'th-sound', 'th-conserv']);
+order('theorems', ['th-chain', 'th-sound', 'th-compose', 'th-fund-proc', 'th-adeq', 'th-conserv', 'th-terms']);
 
 // every caption sentence about the lock-free mode hides in the deadlock-free mode
 for (const s of sections) for (const b of s.blocks) if (b.modes.includes('df')) b.caption = lfSentences(b.caption);
