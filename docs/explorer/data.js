@@ -711,9 +711,9 @@ window.MAP = {
      "id": "p-term",
      "title": "P-Term",
      "rocq": "static/Typing.v: p_term",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ty.prim}{\\mathsf{prim}\\,T}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\\\ \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing}\\\\ \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = S@x\\annot{^{N}},\\ \\Theta_B(c^{-}) = \\overline{S}@\\overline{x}\\annot{^{N}}} \\\\ \\htmlData{k=P-Term.typed}{\\varnothing ; \\htmlData{k=tp.lift}{\\Sigma\\annot{\\annot{^{N}}}}, \\Theta_B \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}} t : T\\annot{\\ !\\ (c, \\vartheta)}}\\annraw{ \\\\ }\\annot{\\htmlData{k=lf.meets}{N \\in \\mathbb{N} \\Rightarrow \\exists\\, tk.\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk}}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ty.prim}{\\mathsf{prim}\\,T}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\\\ \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing}\\\\ \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma}\\\\ \\htmlData{k=P-Term.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = S@x\\annot{^{N}},\\ \\Theta_B(c^{-}) = \\overline{S}@\\overline{x}\\annot{^{N}}} \\\\ \\htmlData{k=P-Term.typed}{\\varnothing ; \\htmlData{k=tp.lift}{\\Sigma\\annot{\\annot{^{N}}}}, \\Theta_B \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}} t : T\\annot{\\ !\\ (c, \\vartheta)}}\\annraw{ \\\\ }\\annot{\\htmlData{k=lf.meets}{N \\in \\mathbb{N} \\Rightarrow \\exists\\, tk.\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk}}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}",
      "variants": {
-      "lf": "\\dfrac{\\begin{array}{c}\\htmlData{k=ty.prim}{\\mathsf{prim}\\,T}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\\\ \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing}\\\\ \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = S@x\\annot{^{N}},\\ \\Theta_B(c^{-}) = \\overline{S}@\\overline{x}\\annot{^{N}}} \\\\ \\htmlData{k=P-Term.typed}{\\varnothing ; \\htmlData{k=tp.lift}{\\Sigma\\annot{\\annot{^{N}}}}, \\Theta_B \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}} t : T\\annot{\\ !\\ (c, \\vartheta)}}\\annraw{ \\\\ }\\annot{\\boxed{\\htmlData{k=lf.meets}{N \\in \\mathbb{N} \\Rightarrow \\exists\\, tk.\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk}}}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}"
+      "lf": "\\dfrac{\\begin{array}{c}\\htmlData{k=ty.prim}{\\mathsf{prim}\\,T}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\\\ \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing}\\\\ \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma}\\\\ \\htmlData{k=P-Term.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = S@x\\annot{^{N}},\\ \\Theta_B(c^{-}) = \\overline{S}@\\overline{x}\\annot{^{N}}} \\\\ \\htmlData{k=P-Term.typed}{\\varnothing ; \\htmlData{k=tp.lift}{\\Sigma\\annot{\\annot{^{N}}}}, \\Theta_B \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}} t : T\\annot{\\ !\\ (c, \\vartheta)}}\\annraw{ \\\\ }\\annot{\\boxed{\\htmlData{k=lf.meets}{N \\in \\mathbb{N} \\Rightarrow \\exists\\, tk.\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk}}}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}"
      },
      "caption": "One thread $t$ holding both ends of every $c \\in C_0$ at dual types and points over a partner-free $\\Sigma$.",
      "modes": [
@@ -725,7 +725,7 @@ window.MAP = {
      "id": "p-connect",
      "title": "P-Connect",
      "rocq": "static/Typing.v: p_connect",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1} (C_1, E_1) : T} \\\\ \\htmlData{k=P-Connect.right}{\\Sigma_2 \\cup \\htmlData{k=P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\htmlData{k=P-Connect.disj}{\\text{the channels of } \\Sigma_1, \\Sigma_2, \\Sigma_C, C_1, C_2 \\text{ pairwise disjoint}} \\\\ \\htmlData{k=P-Connect.cutfree}{\\htmlData{k=pfree}{\\mathsf{pfree}}\\,\\Sigma_C}\\\\ \\htmlData{k=w.wf}{\\mathsf{world\\_wf}\\,W_1, W_2} \\\\ \\htmlData{k=P-Connect.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{\\htmlData{k=P-Connect.join}{W_1 \\htmlData{k=w.join}{\\sqcup} W_2}} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1} (C_1, E_1) : T} \\\\ \\htmlData{k=P-Connect.right}{\\Sigma_2 \\cup \\htmlData{k=P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\htmlData{k=P-Connect.disj}{\\text{the channels of } \\Sigma_1, \\Sigma_2, \\Sigma_C, C_1, C_2 \\text{ pairwise disjoint}} \\\\ \\htmlData{k=P-Connect.cutfree}{\\htmlData{k=pfree}{\\mathsf{pfree}}\\,\\Sigma_C}\\\\ \\htmlData{k=P-Connect.fams}{\\text{families of } W_1, W_2 \\text{ disjoint}} \\\\ \\htmlData{k=P-Connect.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\htmlData{k=w.restrict}{W_1|_S} \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2|_S),\\ S = \\text{the roots } W_1 \\text{ and } W_2 \\text{ share}}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{\\htmlData{k=P-Connect.join}{W_1 \\htmlData{k=w.join}{\\sqcup} W_2}} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect}",
      "caption": "\\annp{Two components at refill $N$ in worlds $W_1$, $W_2$, cut at $\\Sigma_C$ against $\\overline{\\Sigma_C}$, the left one carrying $T$.}",
      "modes": [
       "df",
@@ -741,17 +741,6 @@ window.MAP = {
      ],
      "tex": "\\htmlData{k=tp.lfjudg}{\\Sigma \\Vdash^{N}_W p : T \\iff \\htmlData{k=lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_W p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p}}",
      "caption": "Lock-free typing is process typing at finite $N$ with every thread guarded."
-    },
-    {
-     "id": "p-join",
-     "title": "P-Join (admissible)",
-     "rocq": "static/Typing.v: p_join",
-     "tex": "\\dfrac{\\begin{array}{c}\\text{premises of P-Connect with} \\\\ \\htmlData{k=P-Join.lemma}{\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W_1,\\ \\htmlData{k=w.strict}{\\mathsf{strict}}\\,W_2,\\ \\htmlData{k=w.strict}{\\mathsf{strict}}(\\htmlData{k=w.restrict}{W_1|_S} \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2|_S)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Join}",
-     "caption": "For well-formed $W_1$, $W_2$, $\\mathsf{strict}(W_1 \\sqcup W_2)$ iff both are strict and so is the join of their restrictions to the shared constants.",
-     "modes": [
-      "df",
-      "lf"
-     ]
     },
     {
      "id": "g-acts",
@@ -5948,17 +5937,51 @@ window.MAP = {
    ]
   },
   "P-Connect.strict": {
-   "title": "$\\mathsf{strict}(W_1 \\sqcup W_2)$",
-   "what": "The joined world is strict, $\\prec_{W_1 \\sqcup W_2}$ is irreflexive.",
-   "why": "A cycle in the join lets each component be ready round the cycle while no thread can step.",
-   "breaks": "With a cyclic join two threads each wait on the other although each side alone is ready.",
-   "example": "The join of two worlds without facts.",
-   "rocq": "static/Typing.v: p_connect",
-   "sig": "\\mathsf{strict}(W_1 \\sqcup W_2)",
+   "title": "Only the shared part is compared",
+   "what": "$\\mathsf{strict}(W_1|_S \\sqcup W_2|_S)$ with $S$ the roots both worlds contain. $W|_S$ keeps the facts $x \\prec_W y$ derivable in $W$ whose roots lie in $S$.",
+   "why": "Each side is strict by its own derivation, so the only new cycles a join can create run through shared roots. Checking the orders the two sides induce on those roots is enough, and the join is then strict.",
+   "breaks": "If $W_1$ derives $\\rho \\prec \\rho\\cdot 0$ and $W_2$ derives $\\rho\\cdot 0 \\prec \\rho$, the join has a cycle and two threads each wait on the other although each side alone is ready.",
+   "example": "Two worlds that share no root need no check.",
+   "rocq": "static/Typing.v: p_connect, p_join_iff_connect",
+   "sig": "\\mathsf{strict}(W_1|_S \\sqcup W_2|_S)",
    "args": [
     {
-     "name": "W_1 \\sqcup W_2",
-     "meaning": "the join of the two worlds"
+     "name": "S",
+     "meaning": "the roots both worlds contain"
+    },
+    {
+     "name": "W|_S",
+     "meaning": "the facts of $\\prec_W$ between points with roots in $S$"
+    }
+   ]
+  },
+  "P-Connect.fams": {
+   "title": "Families disjoint",
+   "what": "No family of $W_1$ is a family of $W_2$.",
+   "why": "A family's laws are stated once per world. With disjoint families the laws of the join are the laws of one side, and strictness of the join reduces to the shared roots.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "Each side creates its channels in its own families.",
+   "rocq": "static/Typing.v: p_connect",
+   "sig": "\\mathsf{fams}\\,W_1 \\cap \\mathsf{fams}\\,W_2 = \\varnothing",
+   "args": [
+    {
+     "name": "W_1, W_2",
+     "meaning": "the worlds of the two sides"
+    }
+   ]
+  },
+  "P-Term.strict": {
+   "title": "$\\mathsf{strict}\\,W$",
+   "what": "The world of a single thread is well formed and acyclic.",
+   "why": "Every process derivation then sits over a strict world. P-Connect checks only the shared part, and the joined world is strict again.",
+   "breaks": "Without it P-Connect would have to check the whole join.",
+   "example": "The empty world.",
+   "rocq": "static/Typing.v: p_term",
+   "sig": "\\mathsf{strict}\\,W",
+   "args": [
+    {
+     "name": "W",
+     "meaning": "the world of the thread"
     }
    ]
   },
@@ -5974,25 +5997,6 @@ window.MAP = {
     {
      "name": "W_1, W_2",
      "meaning": "the worlds of the components"
-    }
-   ]
-  },
-  "P-Join.lemma": {
-   "title": "Side conditions of P-Join",
-   "what": "$\\mathsf{strict}\\,W_1$, $\\mathsf{strict}\\,W_2$ and $\\mathsf{strict}(W_1|_S \\sqcup W_2|_S)$ with $S$ the shared constants.",
-   "why": "For well-formed worlds these three conditions are equivalent to $\\mathsf{strict}(W_1 \\sqcup W_2)$. Hence P-Join is derivable from P-Connect.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "Two worlds with no shared constant.",
-   "rocq": "static/Typing.v: p_join, p_join_iff_connect",
-   "sig": "\\mathsf{strict}\\,W_1 \\land \\mathsf{strict}\\,W_2 \\land \\mathsf{strict}(W_1|_S \\sqcup W_2|_S)",
-   "args": [
-    {
-     "name": "S",
-     "meaning": "the constants shared by $W_1$ and $W_2$"
-    },
-    {
-     "name": "W|_S",
-     "meaning": "the restriction of $W$ to facts over $S$"
     }
    ]
   },

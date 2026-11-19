@@ -211,6 +211,19 @@ must do, open questions.
     Rocq: after the repair run (entry 6) is merged. Map: after the design
     is confirmed.
 
+13. **P-Connect compares only the shared roots (2026-11-19, author).**
+    Today p_connect asks world_wf W1, world_wf W2, disjoint families and
+    strict (W1 ⊔ W2), and the lemma p_join states the overlap form, strict
+    W1, strict W2, strict (W1|_S ⊔ W2|_S) for the shared constants S,
+    equivalent by p_join_iff_connect (strict_join_iff). world_wf is not
+    trivially true, because p_term asks nothing of its world. New form:
+    p_term asks strict W, and p_connect asks disjoint families and only
+    strict (W1|_S ⊔ W2|_S). By induction every process derivation sits over
+    a strict world (strict_join_iff for the connect case), so the old rule
+    is derivable, p_join disappears, and the `strict W` premise of the
+    process soundness theorems follows from the derivation. Map done. Rocq:
+    after the repair run is merged.
+
 ## Done in the Rocq
 
 (entries move here once the repair agent has implemented and merged them)
