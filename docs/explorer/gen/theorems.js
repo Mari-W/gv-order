@@ -13,7 +13,9 @@ const L = R`\mathrel{|\!\!\vDash}`;
 // shorthands, each linked to its definition
 const IM = (p, c) => R`\begin{array}{l}${p} \\ \quad\Longrightarrow\ ${c}\end{array}`;
 const AL = (...rs) => R`\begin{array}{l}${rs.join(R` \\ `)}\end{array}`;
-const ROWS = (...rs) => R`\begin{array}{l}${rs.join(R` \\[1.5ex] `)}\end{array}`;
+// rows that only the lock-free mode shows (and colours): the lock-free results and those stated over the annotated judgment
+const LFROWS = /^\\htmlData\{k=th\.(lf-[\w-]+|fundamental-typed|live-fundamental-typed|conservative|typed-dftyped)\}/;
+const ROWS = (...rs) => R`\begin{array}{l}${rs.map((r, i) => { const sep = i ? R` \\[1.5ex] ` : ''; return LFROWS.test(r) ? (sep ? R`\annraw{${sep}}` : '') + R`\annot{${r}}` : sep + r; }).join('')}\end{array}`;
 const STRICT = h('w.strict', R`\mathsf{strict}`);
 const WFW = h('th.wfworld', R`\mathsf{wfworld}`);
 const LFW = R`${STRICT}\,W \land ${WFW}\,W`;

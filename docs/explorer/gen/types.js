@@ -73,7 +73,7 @@ ${h('ann.tok', R`\mathsf{tok}\,\vartheta_1\,\vartheta_2 \iff b_2 = 0 \lor s_1 \n
   caption: 'Credits, costs and floors range over $\\mathbb{N} \\cup \\{\\infty\\}$, and $\\vartheta$ maps a reserve $r$ to the tickets $tk$ a term needs.'
 });
 block(s, {
-  id: 'ty-df', title: 'Annotations of deadlock-freedom typing', rocq: 'types/Types.v: ty_df, cr_df',
+  id: 'ty-df', title: 'Annotations of deadlock-freedom typing', rocq: 'types/Types.v: ty_df, cr_df', modes: ['lf'],
   tex: h('ann.tydf', R`\begin{array}{l}
 \mathsf{ty\_df}(T):\ \text{credits } \infty\ (0 \text{ on } \otimes, \oplus, \exists),\ \text{costs } \infty, \\
 \qquad \vartheta = (\infty,\infty),\ \text{floors } \infty

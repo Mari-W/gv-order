@@ -13,7 +13,6 @@ window.MAP = {
      "caption": "Thirteen term formers with de Bruijn variables, a box $!e$ binding itself in $e$, and the constants $k$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -25,7 +24,6 @@ window.MAP = {
      "caption": "The one-variable $\\mathsf{let}$ is notation over pairs and unit with $u$ fresh.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -37,7 +35,6 @@ window.MAP = {
      "caption": "The constants $k$, with $\\mathsf{send}$ on $\\langle v, o\\rangle$, $\\mathsf{link}$ on two ends and $\\mathsf{spawn}$ on a thunk.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -49,7 +46,6 @@ window.MAP = {
      "caption": "Unit, ends, constants, abstractions, boxes, and pairs and injections of values.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -61,7 +57,6 @@ window.MAP = {
      "caption": "An end $o$ of the channel $\\mathsf{ech}\\,o$ with partner $\\overline{o}$, named independently of any point.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -73,7 +68,6 @@ window.MAP = {
      "caption": "$\\mathsf{fends}(e)$ is the set of ends in $e$ and $\\mathsf{fchans}(e) = \\mathsf{ech}[\\mathsf{fends}(e)]$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -85,7 +79,6 @@ window.MAP = {
      "caption": "A process is a finite set $C$ of restricted channels with a finite multiset $E$ of threads, and a configuration names threads by $i \\in \\mathrm{dom}\\,M$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -97,7 +90,6 @@ window.MAP = {
      "caption": "A point $x$ has a root $a$ or $\\iota$, a polarity flipped by $\\overline{x}$, an offset raised by $x^{+}$ and fields $x\\cdot\\kappa$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -109,7 +101,6 @@ window.MAP = {
      "caption": "An action moves an end from $x$ to $x^{+}$, a choice to a field, and the $j$-th payload end of a message at $x$ sits at $x\\cdot j$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -121,7 +112,6 @@ window.MAP = {
      "caption": "Field labels $\\kappa$ are natural numbers and name the fields $x\\cdot\\kappa$ of a point.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -133,7 +123,6 @@ window.MAP = {
      "caption": "The renaming a link applies to every thread, so the holder of $\\overline{o_1}$ ends up holding $o_2$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     }
@@ -152,7 +141,6 @@ window.MAP = {
      "caption": "$\\beta$ covers application, unit and pair elimination, case and force, and session labels $\\sigma$ are offers on ends.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -164,7 +152,6 @@ window.MAP = {
      "caption": "One head rule per redex, where $\\mathsf{recv}\\,o$ has a step for every value $v$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -176,7 +163,6 @@ window.MAP = {
      "caption": "Steps lift through one evaluation frame $f$ at a time, never under $\\lambda$ or $!$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -188,7 +174,6 @@ window.MAP = {
      "caption": "Each rule turns steps of one or two threads into a step of $(C, M)$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -200,7 +185,6 @@ window.MAP = {
      "caption": "An event names the threads $\\mathsf{parts}(ev)$ and the channel or ends acted on.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -212,7 +196,6 @@ window.MAP = {
      "caption": "Deadlock freedom, absence of internal divergence and lock freedom over weakly fair maximal runs $(r, l)$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     }
@@ -227,15 +210,13 @@ window.MAP = {
      "id": "ty-grammar",
      "title": "Types",
      "rocq": "types/Types.v: ty",
-     "tex": "\\begin{array}{rl}\nT, U ::= & \\htmlData{k=ty.unit}{\\ast} \\mid \\htmlData{k=ty.arrow}{T\\annot{^{a}} \\multimap^{\\htmlData{k=ty.arrow.ub}{u}}_{\\htmlData{k=ty.arrow.lb}{l}}[\\htmlData{k=ty.arrow.cost}{c} ; \\htmlData{k=ty.arrow.tix}{\\vartheta} ; \\htmlData{k=ty.arrow.floor}{h}]\\, U\\annot{^{b}}} \\mid \\htmlData{k=ty.prod}{T\\annot{^{a}} \\otimes U\\annot{^{b}}} \\mid \\htmlData{k=ty.sum}{T\\annot{^{a}} \\oplus U\\annot{^{b}}} \\mid \\htmlData{k=ty.sess}{S@x} \\\\\n\\mid & \\htmlData{k=ty.box}{\\Box(\\forall \\htmlData{k=pt.var}{\\bar\\iota}\\, \\htmlData{k=ty.box.svars}{\\bar\\alpha}.\\ \\htmlData{k=ty.box.constraint}{C}.\\ \\ast \\multimap^{u}[c ; \\vartheta]\\, U\\annot{^{b}})} \\mid \\htmlData{k=ty.ex}{\\exists^{\\htmlData{k=ty.ex.lb}{l}} \\bar\\iota.\\ C.\\ T\\annot{^{a}}}\n\\end{array}",
+     "tex": "\\begin{array}{rl}\nT, U ::= & \\htmlData{k=ty.unit}{\\ast} \\mid \\htmlData{k=ty.arrow}{T\\annot{^{a}} \\multimap^{\\htmlData{k=ty.arrow.ub}{u}}_{\\htmlData{k=ty.arrow.lb}{l}}[\\htmlData{k=ty.arrow.cost}{c} ; \\htmlData{k=ty.arrow.tix}{\\vartheta} ; \\htmlData{k=ty.arrow.floor}{h}]\\, U\\annot{^{b}}} \\mid \\htmlData{k=ty.prod}{T\\annot{^{a}} \\otimes U\\annot{^{b}}} \\mid \\htmlData{k=ty.sum}{T\\annot{^{a}} \\oplus U\\annot{^{b}}} \\mid \\htmlData{k=ty.sess}{S@x} \\\\\n\\mid & \\htmlData{k=ty.box}{\\Box(\\forall \\htmlData{k=pt.var}{\\bar\\iota}\\, \\htmlData{k=ty.box.svars}{\\bar\\alpha}.\\ \\htmlData{k=ty.box.constraint}{C}.\\ \\ast \\multimap^{u}\\annot{[c ; \\vartheta]}\\, U\\annot{^{b}})} \\mid \\htmlData{k=ty.ex}{\\exists^{\\htmlData{k=ty.ex.lb}{l}} \\bar\\iota.\\ C.\\ T\\annot{^{a}}}\n\\end{array}",
      "variants": {
-      "df": "\\begin{array}{rl} T, U ::= & \\htmlData{k=ty.unit}{\\ast} \\mid \\htmlData{k=ty.arrow}{T \\multimap^{\\htmlData{k=ty.arrow.ub}{u}}_{\\htmlData{k=ty.arrow.lb}{l}} U} \\mid \\htmlData{k=ty.prod}{T \\otimes U} \\mid \\htmlData{k=ty.sum}{T \\oplus U} \\mid \\htmlData{k=ty.sess}{S@x} \\\\ \\mid & \\htmlData{k=ty.box}{\\Box(\\forall \\htmlData{k=pt.var}{\\bar\\iota}\\, \\htmlData{k=ty.box.svars}{\\bar\\alpha}.\\ \\htmlData{k=ty.box.constraint}{C}.\\ \\ast \\multimap^{u} U)} \\mid \\htmlData{k=ty.ex}{\\exists^{\\htmlData{k=ty.ex.lb}{l}} \\bar\\iota.\\ C.\\ T} \\end{array}",
-      "live": "\\begin{array}{rl} T, U ::= & \\htmlData{k=ty.unit}{\\ast} \\mid \\htmlData{k=ty.arrow}{T \\multimap^{\\htmlData{k=ty.arrow.ub}{u}}_{\\htmlData{k=ty.arrow.lb}{l}} U} \\mid \\htmlData{k=ty.prod}{T \\otimes U} \\mid \\htmlData{k=ty.sum}{T \\oplus U} \\mid \\htmlData{k=ty.sess}{S@x} \\\\ \\mid & \\htmlData{k=ty.box}{\\Box(\\forall \\htmlData{k=pt.var}{\\bar\\iota}\\, \\htmlData{k=ty.box.svars}{\\bar\\alpha}.\\ \\htmlData{k=ty.box.constraint}{C}.\\ \\ast \\multimap^{u} U)} \\mid \\htmlData{k=ty.ex}{\\exists^{\\htmlData{k=ty.ex.lb}{l}} \\bar\\iota.\\ C.\\ T} \\end{array}"
+      "df": "\\begin{array}{rl} T, U ::= & \\htmlData{k=ty.unit}{\\ast} \\mid \\htmlData{k=ty.arrow}{T \\multimap^{\\htmlData{k=ty.arrow.ub}{u}}_{\\htmlData{k=ty.arrow.lb}{l}} U} \\mid \\htmlData{k=ty.prod}{T \\otimes U} \\mid \\htmlData{k=ty.sum}{T \\oplus U} \\mid \\htmlData{k=ty.sess}{S@x} \\\\ \\mid & \\htmlData{k=ty.box}{\\Box(\\forall \\htmlData{k=pt.var}{\\bar\\iota}\\, \\htmlData{k=ty.box.svars}{\\bar\\alpha}.\\ \\htmlData{k=ty.box.constraint}{C}.\\ \\ast \\multimap^{u} U)} \\mid \\htmlData{k=ty.ex}{\\exists^{\\htmlData{k=ty.ex.lb}{l}} \\bar\\iota.\\ C.\\ T} \\end{array}"
      },
-     "caption": "$S@x$ is an end at the point $x$, and the superscripts $a, b$ are credits.",
+     "caption": "\\annp{$S@x$ is an end at the point $x$, and the superscripts $a, b$ are credits.}",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -253,11 +234,10 @@ window.MAP = {
      "id": "ty-session",
      "title": "Session types",
      "rocq": "types/Types.v: sty, unfoldS",
-     "tex": "\\begin{array}{rl}\nS ::= & \\htmlData{k=sty.skip}{\\mathsf{Skip}} \\mid \\htmlData{k=sty.seq}{S.S} \\mid \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ T^{\\htmlData{k=sty.payload-credit}{b}})} \\mid \\htmlData{k=sty.send}{!(\\bar\\iota.\\ T\\annot{^{b}})} \\mid \\htmlData{k=sty.plus}{\\oplus(S_1, S_2)} \\\\\n\\mid & \\htmlData{k=sty.with}{\\&(S_1, S_2)} \\mid \\htmlData{k=sty.close}{\\mathsf{Close}} \\mid \\htmlData{k=sty.mu}{\\mu\\alpha.S} \\mid \\htmlData{k=sty.var}{\\alpha} \\mid \\htmlData{k=sty.vard}{\\overline{\\alpha}} \\qquad \\htmlData{k=sty.unfold}{\\mathsf{unfold}(S)}\n\\end{array}",
+     "tex": "\\begin{array}{rl}\nS ::= & \\htmlData{k=sty.skip}{\\mathsf{Skip}} \\mid \\htmlData{k=sty.seq}{S.S} \\mid \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ T\\annot{^{\\htmlData{k=sty.payload-credit}{b}}})} \\mid \\htmlData{k=sty.send}{!(\\bar\\iota.\\ T\\annot{^{b}})} \\mid \\htmlData{k=sty.plus}{\\oplus(S_1, S_2)} \\\\\n\\mid & \\htmlData{k=sty.with}{\\&(S_1, S_2)} \\mid \\htmlData{k=sty.close}{\\mathsf{Close}} \\mid \\htmlData{k=sty.mu}{\\mu\\alpha.S} \\mid \\htmlData{k=sty.var}{\\alpha} \\mid \\htmlData{k=sty.vard}{\\overline{\\alpha}} \\qquad \\htmlData{k=sty.unfold}{\\mathsf{unfold}(S)}\n\\end{array}",
      "caption": "Session types with sequencing $S.S$, read through $\\mathsf{unfold}(S)$, whose payloads bind point variables $\\bar\\iota$ at the fields of the carrier.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -269,7 +249,6 @@ window.MAP = {
      "caption": "$\\mathsf{dual}$ keeps payloads $P$, $\\mathsf{Skip}$ and $\\mathsf{Close}$, and $\\overline{S} := \\mathsf{dual}\\,S$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -281,7 +260,6 @@ window.MAP = {
      "caption": "Equivalence $\\simeq$ by behaviour, $\\approx$ the same after erasing annotations, and $\\mathsf{sdual}$ duality up to annotations.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -293,7 +271,6 @@ window.MAP = {
      "caption": "$\\mathsf{heads}(T)$ are the partner points a holder of a value of $T$ stays below while it waits, and $\\mathsf{hbot}(T)$ marks hidden ends.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -305,7 +282,6 @@ window.MAP = {
      "caption": "A payload $!(\\bar\\iota.\\,T)$ mentions only its own point variables $\\bar\\iota = \\iota_0, \\ldots, \\iota_{m-1}$, placed at the fields $x\\cdot 0, \\ldots, x\\cdot(m{-}1)$ of the carrier point $x$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -323,13 +299,11 @@ window.MAP = {
      "id": "ty-df",
      "title": "Annotations of deadlock-freedom typing",
      "rocq": "types/Types.v: ty_df, cr_df",
-     "tex": "\\htmlData{k=ann.tydf}{\\begin{array}{l}\n\\mathsf{ty\\_df}(T):\\ \\text{credits } \\infty\\ (0 \\text{ on } \\otimes, \\oplus, \\exists),\\ \\text{costs } \\infty, \\\\\n\\qquad \\vartheta = (\\infty,\\infty),\\ \\text{floors } \\infty\n\\end{array}}",
-     "caption": "The deadlock-freedom instance $N = \\infty$ of every annotation.",
      "modes": [
-      "df",
-      "live",
       "lf"
-     ]
+     ],
+     "tex": "\\htmlData{k=ann.tydf}{\\begin{array}{l}\n\\mathsf{ty\\_df}(T):\\ \\text{credits } \\infty\\ (0 \\text{ on } \\otimes, \\oplus, \\exists),\\ \\text{costs } \\infty, \\\\\n\\qquad \\vartheta = (\\infty,\\infty),\\ \\text{floors } \\infty\n\\end{array}}",
+     "caption": "The deadlock-freedom instance $N = \\infty$ of every annotation."
     },
     {
      "id": "ty-kinds",
@@ -339,7 +313,6 @@ window.MAP = {
      "caption": "$\\mathsf{prim}$ is the shape of a process result, $\\mathsf{unlimited}$ the types that admit weakening and contraction, $\\mathsf{tfree}$ the types whose values hold no end.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -351,7 +324,6 @@ window.MAP = {
      "caption": "A world $W$ has roots $A$ and facts $\\prec_A$ between points with roots in $A$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -363,7 +335,6 @@ window.MAP = {
      "caption": "$\\prec_W$ is the transitive closure $\\mathsf{tc}$ of the facts, $x \\prec x^{+}$ and $x \\prec \\overline{x}^{+}$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -375,7 +346,6 @@ window.MAP = {
      "caption": "$\\mathsf{strict}\\,W$ is asked by every result, $\\mathsf{wfworld}\\,W$ in addition by lock freedom.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -387,7 +357,6 @@ window.MAP = {
      "caption": "Extension $\\sqsubseteq$, growth $W \\oplus C$ by the facts of a creation, the join $\\sqcup$, and strictness of a join decided on the shared constants $S = A_1 \\cap A_2$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     }
@@ -402,15 +371,13 @@ window.MAP = {
      "id": "t-judgment",
      "title": "The merged judgment",
      "rocq": "static/Typing.v: typed, dftyped",
-     "tex": "\\htmlData{k=tj.Theta}{\\Theta} ; \\htmlData{k=tj.Gamma}{\\Gamma} ; \\htmlData{k=tj.Delta}{\\Delta} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=tj.F}{F}}_{\\htmlData{k=tj.W}{W},\\htmlData{k=tj.N}{N}} e : T^{\\htmlData{k=ty.credit}{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} \\htmlData{k=tj.cost}{c} ; \\htmlData{k=tj.tix}{\\vartheta}",
+     "tex": "\\htmlData{k=tj.Theta}{\\Theta} ; \\htmlData{k=tj.Gamma}{\\Gamma} ; \\htmlData{k=tj.Delta}{\\Delta} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=tj.F}{F}}_{\\htmlData{k=tj.W}{W},\\htmlData{k=tj.N}{N}} e : T\\annot{^{\\htmlData{k=ty.credit}{a}}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} \\htmlData{k=tj.cost}{c} ; \\htmlData{k=tj.tix}{\\vartheta}",
      "variants": {
-      "df": "\\htmlData{k=tj.Theta}{\\Theta} ; \\htmlData{k=tj.Gamma}{\\Gamma} ; \\htmlData{k=tj.Delta}{\\Delta} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=tj.F}{F}}_{\\htmlData{k=tj.W}{W}} t : T",
-      "live": "\\htmlData{k=tj.Theta}{\\Theta} ; \\htmlData{k=tj.Gamma}{\\Gamma} ; \\htmlData{k=tj.Delta}{\\Delta} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=tj.F}{F}}_{\\htmlData{k=tj.W}{W}} t : T \\quad\\text{and}\\quad \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t}"
+      "df": "\\htmlData{k=tj.Theta}{\\Theta} ; \\htmlData{k=tj.Gamma}{\\Gamma} ; \\htmlData{k=tj.Delta}{\\Delta} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=tj.F}{F}}_{\\htmlData{k=tj.W}{W}} t : T"
      },
-     "caption": "$\\Theta$ maps ends, $\\Gamma$ holds facts, $\\Delta$ variables, $F$ is the future, $N$ the refill, $c$ the cost and $\\vartheta$ the transformer.",
+     "caption": "\\annp{$\\Theta$ maps ends, $\\Gamma$ holds facts, $\\Delta$ variables, $F$ is the future, $N$ the refill, $c$ the cost and $\\vartheta$ the transformer.}",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -422,7 +389,6 @@ window.MAP = {
      "caption": "Every order fact a rule reads is a judgment $\\Gamma \\vdash x \\prec y$, the least transitive relation containing $\\prec_W$, the facts $C[\\bar x]$ of the instances in $\\Gamma$, and $u \\prec \\varphi$ for every $\\varphi \\mapsto u$ in $\\Gamma$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -434,7 +400,6 @@ window.MAP = {
      "caption": "$u \\prec F$ states that $u$ lies below every point of $F$, $l \\preccurlyeq H$ that $l$ lies at or below every point of $H$, and $\\Gamma \\vdash C[\\bar x]$ that every fact of $C$ at $\\bar x$ is derivable.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -462,15 +427,13 @@ window.MAP = {
      "id": "t-sub",
      "title": "Subtyping",
      "rocq": "static/Contexts.v: tsub, static/Typing.v: e_sub, d_conv",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-credit}{a' \\leq a}\\end{array}}{\\htmlData{k=sub.tsub}{\\ast\\annot{^{a}} \\leq \\ast\\annot{^{a'}}}}\\;\\textsf{Sub-Unit} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-sess}{S \\htmlData{k=sty.sequiv}{\\simeq} S'}\\\\ \\htmlData{k=tp.sub-credit}{a' \\leq a}\\end{array}}{\\htmlData{k=sub.tsub}{(S@x)\\annot{^{a}} \\leq (S'@x)\\annot{^{a'}}}}\\;\\textsf{Sub-Sess} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-cost}{c \\leq c',\\ \\vartheta \\leq \\vartheta'}\\\\ \\htmlData{k=tp.sub-floor}{h \\leq h',\\ h' + a' \\leq h + a} \\\\ \\htmlData{k=tp.sub-var}{\\htmlData{k=sub.tsub}{T_1'\\annot{^{a_1'}} \\leq T_1\\annot{^{a_1}}} \\quad \\htmlData{k=sub.tsub}{U\\annot{^{a_2}} \\leq U'\\annot{^{a_2'}}}}\\end{array}}{\\begin{array}{c}(T_1\\annot{^{a_1}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}[c;\\vartheta;h]\\,U\\annot{^{a_2}})\\annot{^{a}} \\\\ \\leq (T_1'\\annot{^{a_1'}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}[c';\\vartheta';h']\\,U'\\annot{^{a_2'}})\\annot{^{a'}}\\end{array}}\\;\\textsf{Sub-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-agg}{T_i\\annot{^{a + a_i}} \\leq T_i'\\annot{^{a' + a_i'}}\\ \\ (i = 1, 2)}\\end{array}}{(T_1\\annot{^{a_1}} \\otimes T_2\\annot{^{a_2}})\\annot{^{a}} \\leq (T_1'\\annot{^{a_1'}} \\otimes T_2'\\annot{^{a_2'}})\\annot{^{a'}}}\\;\\textsf{Sub-Prod, Sub-Sum} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-cost}{c \\leq c',\\ \\vartheta \\leq \\vartheta'}\\\\ \\htmlData{k=tp.sub-teq}{U \\equiv U'}\\end{array}}{\\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}[c;\\vartheta]\\,U)\\annot{^{a}} \\leq \\Box(\\ldots[c';\\vartheta']\\,U')\\annot{^{a'}}}\\;\\textsf{Sub-Box} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-ex}{\\mathsf{facts}\\,C' \\subseteq \\mathsf{facts}\\,C}\\\\ \\htmlData{k=tp.sub-teq}{T \\equiv T'}\\\\ \\htmlData{k=tp.sub-credit}{a' + a_T' \\leq a + a_T}\\end{array}}{(\\exists^{l}\\bar\\iota.\\,C.\\,T\\annot{^{a_T}})\\annot{^{a}} \\leq (\\exists^{l}\\bar\\iota.\\,C'.\\,T'\\annot{^{a_T'}})\\annot{^{a'}}}\\;\\textsf{Sub-Ex}\\end{array}",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-credit}{a' \\leq a}\\end{array}}{\\htmlData{k=sub.tsub}{\\ast\\annot{^{a}} \\leq \\ast\\annot{^{a'}}}}\\;\\textsf{Sub-Unit} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-sess}{S \\htmlData{k=sty.sequiv}{\\simeq} S'}\\\\ \\htmlData{k=tp.sub-credit}{a' \\leq a}\\end{array}}{\\htmlData{k=sub.tsub}{(S@x)\\annot{^{a}} \\leq (S'@x)\\annot{^{a'}}}}\\;\\textsf{Sub-Sess} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-cost}{c \\leq c',\\ \\vartheta \\leq \\vartheta'}\\\\ \\htmlData{k=tp.sub-floor}{h \\leq h',\\ h' + a' \\leq h + a} \\\\ \\htmlData{k=tp.sub-var}{\\htmlData{k=sub.tsub}{T_1'\\annot{^{a_1'}} \\leq T_1\\annot{^{a_1}}} \\quad \\htmlData{k=sub.tsub}{U\\annot{^{a_2}} \\leq U'\\annot{^{a_2'}}}}\\end{array}}{\\begin{array}{c}(T_1\\annot{^{a_1}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[c;\\vartheta;h]}\\,U\\annot{^{a_2}})\\annot{^{a}} \\\\ \\leq (T_1'\\annot{^{a_1'}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[c';\\vartheta';h']}\\,U'\\annot{^{a_2'}})\\annot{^{a'}}\\end{array}}\\;\\textsf{Sub-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-agg}{T_i\\annot{^{a + a_i}} \\leq T_i'\\annot{^{a' + a_i'}}\\ \\ (i = 1, 2)}\\end{array}}{(T_1\\annot{^{a_1}} \\otimes T_2\\annot{^{a_2}})\\annot{^{a}} \\leq (T_1'\\annot{^{a_1'}} \\otimes T_2'\\annot{^{a_2'}})\\annot{^{a'}}}\\;\\textsf{Sub-Prod, Sub-Sum} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-cost}{c \\leq c',\\ \\vartheta \\leq \\vartheta'}\\\\ \\htmlData{k=tp.sub-teq}{U \\equiv U'}\\end{array}}{\\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}\\annot{[c;\\vartheta]}\\,U)\\annot{^{a}} \\leq \\Box(\\ldots\\annot{[c';\\vartheta']}\\,U')\\annot{^{a'}}}\\;\\textsf{Sub-Box} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-ex}{\\mathsf{facts}\\,C' \\subseteq \\mathsf{facts}\\,C}\\\\ \\htmlData{k=tp.sub-teq}{T \\equiv T'}\\\\ \\htmlData{k=tp.sub-credit}{a' + a_T' \\leq a + a_T}\\end{array}}{(\\exists^{l}\\bar\\iota.\\,C.\\,T\\annot{^{a_T}})\\annot{^{a}} \\leq (\\exists^{l}\\bar\\iota.\\,C'.\\,T'\\annot{^{a_T'}})\\annot{^{a'}}}\\;\\textsf{Sub-Ex}\\end{array}",
      "variants": {
-      "df": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-sess}{S \\htmlData{k=sty.seqv}{\\approx} S'}\\end{array}}{\\htmlData{k=sub.tsub}{S@x \\leq S'@x}}\\;\\textsf{Sub-Sess} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-ex}{\\mathsf{facts}\\,C' \\subseteq \\mathsf{facts}\\,C}\\\\ \\htmlData{k=tp.sub-teq}{T \\equiv T'}\\end{array}}{\\htmlData{k=sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\htmlData{k=tp.sub-var}{\\text{componentwise on } \\otimes, \\oplus, \\Box,\\ \\text{contravariant in the argument of } \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=sub.dconv}{\\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T \\leq \\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T'}\\end{array}}{t : T \\Rightarrow t : T'}\\;\\textsf{D-Conv}\\end{array}",
-      "live": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-sess}{S \\htmlData{k=sty.seqv}{\\approx} S'}\\end{array}}{\\htmlData{k=sub.tsub}{S@x \\leq S'@x}}\\;\\textsf{Sub-Sess} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-ex}{\\mathsf{facts}\\,C' \\subseteq \\mathsf{facts}\\,C}\\\\ \\htmlData{k=tp.sub-teq}{T \\equiv T'}\\end{array}}{\\htmlData{k=sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\htmlData{k=tp.sub-var}{\\text{componentwise on } \\otimes, \\oplus, \\Box,\\ \\text{contravariant in the argument of } \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=sub.dconv}{\\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T \\leq \\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T'}\\end{array}}{t : T \\Rightarrow t : T'}\\;\\textsf{D-Conv}\\end{array}"
+      "df": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-sess}{S \\htmlData{k=sty.seqv}{\\approx} S'}\\end{array}}{\\htmlData{k=sub.tsub}{S@x \\leq S'@x}}\\;\\textsf{Sub-Sess} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-ex}{\\mathsf{facts}\\,C' \\subseteq \\mathsf{facts}\\,C}\\\\ \\htmlData{k=tp.sub-teq}{T \\equiv T'}\\end{array}}{\\htmlData{k=sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\htmlData{k=tp.sub-var}{\\text{componentwise on } \\otimes, \\oplus, \\Box,\\ \\text{contravariant in the argument of } \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=sub.dconv}{\\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T \\leq \\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T'}\\end{array}}{t : T \\Rightarrow t : T'}\\;\\textsf{D-Conv}\\end{array}"
      },
-     "caption": "At annotations $\\infty$ subtyping is $\\approx$ on sessions plus dropping facts of $\\exists$, and at finite $N$ credits fall while costs, transformers and floors rise.",
+     "caption": "\\annp{At annotations $\\infty$ subtyping is $\\approx$ on sessions plus dropping facts of $\\exists$, and at finite $N$ credits fall while costs, transformers and floors rise.}",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -478,15 +441,13 @@ window.MAP = {
      "id": "r-unit",
      "title": "E-Unit",
      "rocq": "static/Typing.v: e_unit",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\ast : \\ast^{\\htmlData{k=ann.fuel}{\\infty}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\htmlData{k=ann.tid}{\\hat 1}}\\;\\textsf{E-Unit}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\ast : \\ast^{\\htmlData{k=ann.fuel}{\\infty}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\htmlData{k=ann.tid}{\\hat 1}}\\;\\textsf{E-Unit}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\ast : \\ast}\\;\\textsf{D-Unit}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\ast : \\ast}\\;\\textsf{D-Unit}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\ast : \\ast}\\;\\textsf{D-Unit}"
      },
-     "caption": "$\\ast$ holds no end, has cost $0$ and transformer $\\hat 1$.",
+     "caption": "\\annp{$\\ast$ holds no end, has cost $0$ and transformer $\\hat 1$.}",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -494,15 +455,13 @@ window.MAP = {
      "id": "r-var",
      "title": "E-Var",
      "rocq": "static/Typing.v: e_var",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.only}{\\Delta = \\{x : T\\annot{^{a}}\\}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} x : T\\annot{^{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\hat 1}\\;\\textsf{E-Var}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.only}{\\Delta = \\{x : T\\annot{^{a}}\\}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} x : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\hat 1}}\\;\\textsf{E-Var}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.only}{\\Delta = \\{x : T\\}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} x : T}\\;\\textsf{D-Var}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.only}{\\Delta = \\{x : T\\}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} x : T}\\;\\textsf{D-Var}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.only}{\\Delta = \\{x : T\\}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} x : T}\\;\\textsf{D-Var}"
      },
      "caption": "$x$ is the only non-empty entry of $\\Delta$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -510,15 +469,13 @@ window.MAP = {
      "id": "r-chan",
      "title": "E-Chan",
      "rocq": "static/Typing.v: e_chan",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\{o : S@x\\annot{^{a}}\\} ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} o : (S@x)\\annot{^{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\hat 1}\\;\\textsf{E-Chan}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\{o : S@x\\annot{^{a}}\\} ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} o : (S@x)\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\hat 1}}\\;\\textsf{E-Chan}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\{o : S@x\\} ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} o : S@x}\\;\\textsf{D-Chan}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\{o : S@x\\} ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} o : S@x}\\;\\textsf{D-Chan}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\{o : S@x\\} ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} o : S@x}\\;\\textsf{D-Chan}"
      },
-     "caption": "The value $o$ is typed with $\\Theta = \\{o \\mapsto S@x^{a}\\}$, exactly its own entry.",
+     "caption": "The value $o$ is typed with $\\Theta = \\{o \\mapsto S@x\\annot{^{a}}\\}$, exactly its own entry.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -526,15 +483,13 @@ window.MAP = {
      "id": "r-abs",
      "title": "E-Abs",
      "rocq": "static/Typing.v: e_abs",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Abs.phi}{\\varphi\\ \\text{fresh}}\\\\ \\htmlData{k=E-Abs.lb}{l \\preccurlyeq \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta, \\Delta),\\ \\neg\\bot_\\Delta}\\\\ \\htmlData{k=E-Abs.cap}{\\Theta \\leadsto_{h,a} \\Theta^{h},\\ \\Delta \\leadsto_{h,a} \\Delta^{h}}\\\\ \\htmlData{k=E-Abs.body}{\\Theta^{h} ; \\Gamma, u \\prec \\varphi ; \\Delta^{h}, T\\annot{^{a_T}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing, \\varphi)}_{W,N} e : U\\annot{^{a_U}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\lambda e : (T\\annot{^{a_T}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}[c;\\vartheta;h]\\, U\\annot{^{a_U}})\\annot{^{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\hat 1}\\;\\textsf{E-Abs}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Abs.phi}{\\varphi\\ \\text{fresh}}\\\\ \\htmlData{k=E-Abs.lb}{l \\preccurlyeq \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta, \\Delta),\\ \\neg\\bot_\\Delta}\\\\ \\htmlData{k=E-Abs.cap}{\\Theta \\leadsto_{h,a} \\Theta^{h},\\ \\Delta \\leadsto_{h,a} \\Delta^{h}}\\\\ \\htmlData{k=E-Abs.body}{\\Theta^{h} ; \\Gamma, u \\prec \\varphi ; \\Delta^{h}, T\\annot{^{a_T}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing, \\varphi)}_{W\\annot{,N}} e : U\\annot{^{a_U}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\lambda e : (T\\annot{^{a_T}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[c;\\vartheta;h]}\\, U\\annot{^{a_U}})\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\hat 1}}\\;\\textsf{E-Abs}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Abs.phi}{\\varphi\\ \\text{fresh}}\\\\ \\htmlData{k=E-Abs.lb}{l \\preccurlyeq \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta, \\Delta),\\ \\neg\\bot_\\Delta}\\\\ \\htmlData{k=E-Abs.body}{\\Theta ; \\Gamma, u \\prec \\varphi ; \\Delta, T \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing,\\varphi)}_{W} e : U}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\lambda e : T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U}\\;\\textsf{D-Abs}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Abs.phi}{\\varphi\\ \\text{fresh}}\\\\ \\htmlData{k=E-Abs.lb}{l \\preccurlyeq \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta, \\Delta),\\ \\neg\\bot_\\Delta}\\\\ \\htmlData{k=E-Abs.body}{\\Theta ; \\Gamma, u \\prec \\varphi ; \\Delta, T \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing,\\varphi)}_{W} e : U}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\lambda e : T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U}\\;\\textsf{D-Abs}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Abs.phi}{\\varphi\\ \\text{fresh}}\\\\ \\htmlData{k=E-Abs.lb}{l \\preccurlyeq \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta, \\Delta),\\ \\neg\\bot_\\Delta}\\\\ \\htmlData{k=E-Abs.body}{\\Theta ; \\Gamma, u \\prec \\varphi ; \\Delta, T \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing,\\varphi)}_{W} e : U}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\lambda e : T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U}\\;\\textsf{D-Abs}"
      },
      "caption": "The body runs under a fresh $\\varphi$ with $u \\prec \\varphi$ and captures $\\Theta$ and $\\Delta$ with $l \\preccurlyeq \\mathsf{heads}(\\Theta, \\Delta)$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -542,15 +497,13 @@ window.MAP = {
      "id": "r-app",
      "title": "E-App",
      "rocq": "static/Typing.v: e_app",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.tsplit}{\\Theta = \\Theta_1 \\uplus \\Theta_2}\\\\ \\htmlData{k=ctx.lsplit}{\\Delta = \\Delta_1 \\sqcup \\Delta_2}\\\\ \\htmlData{k=E-App.ub}{u \\prec F} \\\\ \\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W,N} e_1 : (T\\annot{^{a_T}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}[c;\\vartheta;h]\\,U\\annot{^{a_U}})\\annot{^{a_1}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_1 ; \\vartheta_1} \\\\ \\htmlData{k=age.ctx}{\\Theta_2' = \\Theta_2 - c_1,\\ \\Delta_2' = \\Delta_2 - c_1}\\\\ \\htmlData{k=E-App.fut2}{\\Theta_2' ; \\Gamma ; \\Delta_2' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\{l\\}}_{W,N} e_2 : T\\annot{^{a_T}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_2 ; \\vartheta_2} \\\\ \\htmlData{k=E-App.credit}{c_2 \\leq a_1}\\\\ \\htmlData{k=ann.tok}{\\mathsf{tok}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} e_1\\,e_2 : U\\annot{^{a_U}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} \\htmlData{k=E-App.cost}{c_1 + c_2 + c} ; \\vartheta_1 \\circ \\vartheta_2 \\circ \\vartheta}\\;\\textsf{E-App}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.tsplit}{\\Theta = \\Theta_1 \\uplus \\Theta_2}\\\\ \\htmlData{k=ctx.lsplit}{\\Delta = \\Delta_1 \\sqcup \\Delta_2}\\\\ \\htmlData{k=E-App.ub}{u \\prec F} \\\\ \\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W\\annot{,N}} e_1 : (T\\annot{^{a_T}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[c;\\vartheta;h]}\\,U\\annot{^{a_U}})\\annot{^{a_1}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_1 ; \\vartheta_1}} \\\\ \\htmlData{k=age.ctx}{\\Theta_2' = \\Theta_2 - c_1,\\ \\Delta_2' = \\Delta_2 - c_1}\\\\ \\htmlData{k=E-App.fut2}{\\Theta_2' ; \\Gamma ; \\Delta_2' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\{l\\}}_{W\\annot{,N}} e_2 : T\\annot{^{a_T}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_2 ; \\vartheta_2}} \\\\ \\htmlData{k=E-App.credit}{c_2 \\leq a_1}\\\\ \\htmlData{k=ann.tok}{\\mathsf{tok}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e_1\\,e_2 : U\\annot{^{a_U}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} \\htmlData{k=E-App.cost}{c_1 + c_2 + c} ; \\vartheta_1 \\circ \\vartheta_2 \\circ \\vartheta}\\;\\textsf{E-App}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.tsplit}{\\Theta = \\Theta_1 \\uplus \\Theta_2}\\\\ \\htmlData{k=ctx.lsplit}{\\Delta = \\Delta_1 \\sqcup \\Delta_2}\\\\ \\htmlData{k=E-App.ub}{u \\prec F} \\\\ \\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W} e_1 : T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U}\\\\ \\htmlData{k=E-App.fut2}{\\Theta_2 ; \\Gamma ; \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\{l\\}}_{W} e_2 : T}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e_1\\,e_2 : U}\\;\\textsf{D-App}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.tsplit}{\\Theta = \\Theta_1 \\uplus \\Theta_2}\\\\ \\htmlData{k=ctx.lsplit}{\\Delta = \\Delta_1 \\sqcup \\Delta_2}\\\\ \\htmlData{k=E-App.ub}{u \\prec F} \\\\ \\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W} e_1 : T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U}\\\\ \\htmlData{k=E-App.fut2}{\\Theta_2 ; \\Gamma ; \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\{l\\}}_{W} e_2 : T}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e_1\\,e_2 : U}\\;\\textsf{D-App}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.tsplit}{\\Theta = \\Theta_1 \\uplus \\Theta_2}\\\\ \\htmlData{k=ctx.lsplit}{\\Delta = \\Delta_1 \\sqcup \\Delta_2}\\\\ \\htmlData{k=E-App.ub}{u \\prec F} \\\\ \\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W} e_1 : T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U}\\\\ \\htmlData{k=E-App.fut2}{\\Theta_2 ; \\Gamma ; \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\{l\\}}_{W} e_2 : T}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e_1\\,e_2 : U}\\;\\textsf{D-App}"
      },
      "caption": "$e_1$ runs while $\\Theta_2$ and $\\Delta_2$ are held, $e_2$ runs while the closure is held, and the body runs under $F$ with $u \\prec F$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -558,15 +511,13 @@ window.MAP = {
      "id": "r-pair",
      "title": "E-Pair",
      "rocq": "static/Typing.v: e_pair",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.tsplit}{\\Theta = \\Theta_1 \\uplus \\Theta_2}\\\\ \\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W,N} e_1 : T_1\\annot{^{a_1}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_1 ; \\vartheta_1} \\\\ \\htmlData{k=age.ctx}{\\Theta_2 - c_1,\\ \\Delta_2 - c_1}\\\\ \\htmlData{k=E-Pair.fut2}{\\Theta_2' ; \\Gamma ; \\Delta_2' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(T_1)}_{W,N} e_2 : T_2\\annot{^{a_2}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_2 ; \\vartheta_2}\\\\ \\htmlData{k=E-Pair.age1}{(T_1, a_1) - c_2 = (T_1', a_1')}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\langle e_1, e_2\\rangle : (T_1'\\annot{^{a_1'}} \\otimes T_2\\annot{^{a_2}})^{0} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_1 + c_2 ; \\vartheta_1 \\circ \\vartheta_2}\\;\\textsf{E-Pair}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.tsplit}{\\Theta = \\Theta_1 \\uplus \\Theta_2}\\\\ \\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W\\annot{,N}} e_1 : T_1\\annot{^{a_1}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_1 ; \\vartheta_1}} \\\\ \\htmlData{k=age.ctx}{\\Theta_2 - c_1,\\ \\Delta_2 - c_1}\\\\ \\htmlData{k=E-Pair.fut2}{\\Theta_2' ; \\Gamma ; \\Delta_2' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(T_1)}_{W\\annot{,N}} e_2 : T_2\\annot{^{a_2}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_2 ; \\vartheta_2}}\\\\ \\htmlData{k=E-Pair.age1}{(T_1, a_1) - c_2 = (T_1', a_1')}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\langle e_1, e_2\\rangle : (T_1'\\annot{^{a_1'}} \\otimes T_2\\annot{^{a_2}})\\annot{^{0}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_1 + c_2 ; \\vartheta_1 \\circ \\vartheta_2}\\;\\textsf{E-Pair}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.tsplit}{\\Theta = \\Theta_1 \\uplus \\Theta_2}\\\\ \\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W} e_1 : T_1}\\\\ \\htmlData{k=E-Pair.fut2}{\\Theta_2 ; \\Gamma ; \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(T_1)}_{W} e_2 : T_2}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\langle e_1, e_2\\rangle : T_1 \\otimes T_2}\\;\\textsf{D-Pair}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.tsplit}{\\Theta = \\Theta_1 \\uplus \\Theta_2}\\\\ \\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W} e_1 : T_1}\\\\ \\htmlData{k=E-Pair.fut2}{\\Theta_2 ; \\Gamma ; \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(T_1)}_{W} e_2 : T_2}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\langle e_1, e_2\\rangle : T_1 \\otimes T_2}\\;\\textsf{D-Pair}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.tsplit}{\\Theta = \\Theta_1 \\uplus \\Theta_2}\\\\ \\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W} e_1 : T_1}\\\\ \\htmlData{k=E-Pair.fut2}{\\Theta_2 ; \\Gamma ; \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(T_1)}_{W} e_2 : T_2}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\langle e_1, e_2\\rangle : T_1 \\otimes T_2}\\;\\textsf{D-Pair}"
      },
      "caption": "The value of $e_1$ is held while $e_2$ runs, so $e_2$ runs under $F \\cup \\mathsf{heads}(T_1)$ and $T_1$ ages by $c_2$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -574,15 +525,13 @@ window.MAP = {
      "id": "r-let",
      "title": "E-LetP, E-LetU",
      "rocq": "static/Typing.v: e_letp, e_letu",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W,N} e_1 : (T_1\\annot{^{a_1}} \\otimes T_2\\annot{^{a_2}})\\annot{^{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_1 ; \\vartheta_1}\\\\ \\htmlData{k=age.ctx}{\\Theta_2' = \\Theta_2 - c_1,\\ \\Delta_2' = \\Delta_2 - c_1}\\\\ \\htmlData{k=tp.letp}{\\Theta_2' ; \\Gamma ; T_2\\annot{^{a+a_2}}, T_1\\annot{^{a+a_1}}, \\Delta_2' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} e_2 : T\\annot{^{a_T}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_2 ; \\vartheta_2}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\htmlData{k=syn.letp}{\\mathsf{let}}\\ \\langle a, b\\rangle = e_1\\ \\htmlData{k=syn.letp}{\\mathsf{in}}\\ e_2 : T\\annot{^{a_T}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_1 + c_2 ; \\vartheta_1 \\circ \\vartheta_2}\\;\\textsf{E-LetP} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W,N} e_1 : \\ast\\annot{^{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_1 ; \\vartheta_1}\\\\ \\htmlData{k=age.ctx}{\\Theta_2' = \\Theta_2 - c_1,\\ \\Delta_2' = \\Delta_2 - c_1}\\\\ \\htmlData{k=tp.letu}{\\Theta_2' ; \\Gamma ; \\Delta_2' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} e_2 : T\\annot{^{a_T}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_2 ; \\vartheta_2}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\htmlData{k=syn.letu}{\\mathsf{let}}\\ \\ast = e_1\\ \\htmlData{k=syn.letu}{\\mathsf{in}}\\ e_2 : T\\annot{^{a_T}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_1 + c_2 ; \\vartheta_1 \\circ \\vartheta_2}\\;\\textsf{E-LetU}\\end{array}",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W\\annot{,N}} e_1 : (T_1\\annot{^{a_1}} \\otimes T_2\\annot{^{a_2}})\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_1 ; \\vartheta_1}}\\\\ \\htmlData{k=age.ctx}{\\Theta_2' = \\Theta_2 - c_1,\\ \\Delta_2' = \\Delta_2 - c_1}\\\\ \\htmlData{k=tp.letp}{\\Theta_2' ; \\Gamma ; T_2\\annot{^{a+a_2}}, T_1\\annot{^{a+a_1}}, \\Delta_2' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e_2 : T\\annot{^{a_T}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_2 ; \\vartheta_2}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=syn.letp}{\\mathsf{let}}\\ \\langle a, b\\rangle = e_1\\ \\htmlData{k=syn.letp}{\\mathsf{in}}\\ e_2 : T\\annot{^{a_T}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_1 + c_2 ; \\vartheta_1 \\circ \\vartheta_2}\\;\\textsf{E-LetP} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W\\annot{,N}} e_1 : \\ast\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_1 ; \\vartheta_1}}\\\\ \\htmlData{k=age.ctx}{\\Theta_2' = \\Theta_2 - c_1,\\ \\Delta_2' = \\Delta_2 - c_1}\\\\ \\htmlData{k=tp.letu}{\\Theta_2' ; \\Gamma ; \\Delta_2' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e_2 : T\\annot{^{a_T}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_2 ; \\vartheta_2}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=syn.letu}{\\mathsf{let}}\\ \\ast = e_1\\ \\htmlData{k=syn.letu}{\\mathsf{in}}\\ e_2 : T\\annot{^{a_T}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_1 + c_2 ; \\vartheta_1 \\circ \\vartheta_2}\\;\\textsf{E-LetU}\\end{array}",
      "variants": {
-      "df": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W} e_1 : T_1 \\otimes T_2}\\\\ \\htmlData{k=tp.letp}{\\Theta_2 ; \\Gamma ; T_2, T_1, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e_2 : T}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.letp}{\\mathsf{let}}\\ \\langle a, b\\rangle = e_1\\ \\htmlData{k=syn.letp}{\\mathsf{in}}\\ e_2 : T}\\;\\textsf{D-LetP} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W} e_1 : \\ast}\\\\ \\htmlData{k=tp.letu}{\\Theta_2 ; \\Gamma ; \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e_2 : T}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.letu}{\\mathsf{let}}\\ \\ast = e_1\\ \\htmlData{k=syn.letu}{\\mathsf{in}}\\ e_2 : T}\\;\\textsf{D-LetU}\\end{array}",
-      "live": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W} e_1 : T_1 \\otimes T_2}\\\\ \\htmlData{k=tp.letp}{\\Theta_2 ; \\Gamma ; T_2, T_1, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e_2 : T}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.letp}{\\mathsf{let}}\\ \\langle a, b\\rangle = e_1\\ \\htmlData{k=syn.letp}{\\mathsf{in}}\\ e_2 : T}\\;\\textsf{D-LetP} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W} e_1 : \\ast}\\\\ \\htmlData{k=tp.letu}{\\Theta_2 ; \\Gamma ; \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e_2 : T}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.letu}{\\mathsf{let}}\\ \\ast = e_1\\ \\htmlData{k=syn.letu}{\\mathsf{in}}\\ e_2 : T}\\;\\textsf{D-LetU}\\end{array}"
+      "df": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W} e_1 : T_1 \\otimes T_2}\\\\ \\htmlData{k=tp.letp}{\\Theta_2 ; \\Gamma ; T_2, T_1, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e_2 : T}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.letp}{\\mathsf{let}}\\ \\langle a, b\\rangle = e_1\\ \\htmlData{k=syn.letp}{\\mathsf{in}}\\ e_2 : T}\\;\\textsf{D-LetP} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W} e_1 : \\ast}\\\\ \\htmlData{k=tp.letu}{\\Theta_2 ; \\Gamma ; \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e_2 : T}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.letu}{\\mathsf{let}}\\ \\ast = e_1\\ \\htmlData{k=syn.letu}{\\mathsf{in}}\\ e_2 : T}\\;\\textsf{D-LetU}\\end{array}"
      },
      "caption": "$\\mathsf{let}\\ x = e_1\\ \\mathsf{in}\\ e_2$ abbreviates a pair elimination followed by a unit elimination and types by E-LetP, E-Pair and E-LetU.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -590,15 +539,13 @@ window.MAP = {
      "id": "r-case",
      "title": "E-Inj, E-Case",
      "rocq": "static/Typing.v: e_inj, e_case",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} e : T_i\\annot{^{a_i}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\htmlData{k=syn.inj}{\\mathsf{inj}_i\\,e} : (T_1\\annot{^{a_1}} \\oplus T_2\\annot{^{a_2}})^{0} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}\\;\\textsf{E-Inj} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W,N} e : (T_1\\annot{^{a_1}} \\oplus T_2\\annot{^{a_2}})\\annot{^{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0}\\\\ \\htmlData{k=E-Case.branches}{\\Theta_2' ; \\Gamma ; T_i\\annot{^{a+a_i}}, \\Delta_2' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_i : T\\annot{^{a_T}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_i ; \\vartheta_i}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\htmlData{k=syn.case}{\\mathsf{case}}\\ e\\,(e_1)\\,(e_2) : T\\annot{^{a_T}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 + \\max(c_1,c_2) ; \\vartheta_0 \\circ \\htmlData{k=tp.max}{\\max}(\\vartheta_1,\\vartheta_2)}\\;\\textsf{E-Case}\\end{array}",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T_i\\annot{^{a_i}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=syn.inj}{\\mathsf{inj}_i\\,e} : (T_1\\annot{^{a_1}} \\oplus T_2\\annot{^{a_2}})\\annot{^{0}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}}\\;\\textsf{E-Inj} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W\\annot{,N}} e : (T_1\\annot{^{a_1}} \\oplus T_2\\annot{^{a_2}})\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0}}\\\\ \\htmlData{k=E-Case.branches}{\\Theta_2' ; \\Gamma ; T_i\\annot{^{a+a_i}}, \\Delta_2' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_i : T\\annot{^{a_T}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_i ; \\vartheta_i}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=syn.case}{\\mathsf{case}}\\ e\\,(e_1)\\,(e_2) : T\\annot{^{a_T}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 + \\max(c_1,c_2) ; \\vartheta_0 \\circ \\htmlData{k=tp.max}{\\max}(\\vartheta_1,\\vartheta_2)}\\;\\textsf{E-Case}\\end{array}",
      "variants": {
-      "df": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : T_i\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.inj}{\\mathsf{inj}_i\\,e} : T_1 \\oplus T_2}\\;\\textsf{D-Inj} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W} e : T_1 \\oplus T_2}\\\\ \\htmlData{k=E-Case.branches}{\\Theta_2 ; \\Gamma ; T_i, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_i : T}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.case}{\\mathsf{case}}\\ e\\,(e_1)\\,(e_2) : T}\\;\\textsf{D-Case}\\end{array}",
-      "live": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : T_i\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.inj}{\\mathsf{inj}_i\\,e} : T_1 \\oplus T_2}\\;\\textsf{D-Inj} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W} e : T_1 \\oplus T_2}\\\\ \\htmlData{k=E-Case.branches}{\\Theta_2 ; \\Gamma ; T_i, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_i : T}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.case}{\\mathsf{case}}\\ e\\,(e_1)\\,(e_2) : T}\\;\\textsf{D-Case}\\end{array}"
+      "df": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : T_i\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.inj}{\\mathsf{inj}_i\\,e} : T_1 \\oplus T_2}\\;\\textsf{D-Inj} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W} e : T_1 \\oplus T_2}\\\\ \\htmlData{k=E-Case.branches}{\\Theta_2 ; \\Gamma ; T_i, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_i : T}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.case}{\\mathsf{case}}\\ e\\,(e_1)\\,(e_2) : T}\\;\\textsf{D-Case}\\end{array}"
      },
-     "caption": "An injection keeps the context, cost and transformer of its argument. Both branches of a case type under one context at one result, at cost $\\max(c_1, c_2)$.",
+     "caption": "\\annp{An injection keeps the context, cost and transformer of its argument.} Both branches of a case type under one context at one result, at cost $\\max(c_1, c_2)$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -606,15 +553,13 @@ window.MAP = {
      "id": "r-box",
      "title": "E-Box",
      "rocq": "static/Typing.v: e_box",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Box.unl}{\\Delta\\ \\text{unlimited}}\\\\ \\htmlData{k=E-Abs.phi}{\\varphi\\ \\text{fresh}}\\\\ \\htmlData{k=E-Box.inst}{\\forall \\bar s.\\ |\\bar s| = k,\\ \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,N\\,\\bar s}\\\\ \\htmlData{k=E-Box.body}{\\varnothing ; \\htmlData{k=E-Box.open}{\\Gamma\\htmlData{k=tp.shift}{{\\uparrow^m}}, C(\\bar\\iota), u \\prec \\varphi} ; \\htmlData{k=E-Box.self}{\\Delta{\\uparrow^m}, f : \\Box(\\ldots)^{\\infty}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing,\\varphi)}_{W,N} e : \\htmlData{k=tp.sinst}{U[\\bar s]}\\annot{^{a_U}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} !e : \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}[c;\\vartheta]\\,U\\annot{^{a_U}})^{\\infty} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\hat 1}\\;\\textsf{E-Box}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Box.unl}{\\Delta\\ \\text{unlimited}}\\\\ \\htmlData{k=E-Abs.phi}{\\varphi\\ \\text{fresh}}\\\\ \\htmlData{k=E-Box.inst}{\\forall \\bar s.\\ |\\bar s| = k,\\ \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,N\\,\\bar s}\\\\ \\htmlData{k=E-Box.body}{\\varnothing ; \\htmlData{k=E-Box.open}{\\Gamma\\htmlData{k=tp.shift}{{\\uparrow^m}}, C(\\bar\\iota), u \\prec \\varphi} ; \\htmlData{k=E-Box.self}{\\Delta{\\uparrow^m}, f : \\Box(\\ldots)^{\\infty}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing,\\varphi)}_{W\\annot{,N}} e : \\htmlData{k=tp.sinst}{U[\\bar s]}\\annot{^{a_U}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} !e : \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}\\annot{[c;\\vartheta]}\\,U\\annot{^{a_U}})^{\\infty} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\hat 1}}\\;\\textsf{E-Box}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Box.unl}{\\Delta\\ \\text{unlimited}}\\\\ \\htmlData{k=E-Abs.phi}{\\varphi\\ \\text{fresh}}\\\\ \\htmlData{k=E-Box.inst}{\\forall \\bar s\\ (N = \\infty\\ \\text{instances})}\\\\ \\htmlData{k=E-Box.body}{\\varnothing ; \\htmlData{k=E-Box.open}{\\Gamma\\htmlData{k=tp.shift}{{\\uparrow^m}}, C(\\bar\\iota), u \\prec \\varphi} ; \\htmlData{k=E-Box.self}{\\Delta{\\uparrow^m}, f : \\Box(\\ldots)} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing,\\varphi)}_{W} e : U[\\bar s]}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} !e : \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U)}\\;\\textsf{D-Box}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Box.unl}{\\Delta\\ \\text{unlimited}}\\\\ \\htmlData{k=E-Abs.phi}{\\varphi\\ \\text{fresh}}\\\\ \\htmlData{k=E-Box.inst}{\\forall \\bar s\\ (N = \\infty\\ \\text{instances})}\\\\ \\htmlData{k=E-Box.body}{\\varnothing ; \\htmlData{k=E-Box.open}{\\Gamma\\htmlData{k=tp.shift}{{\\uparrow^m}}, C(\\bar\\iota), u \\prec \\varphi} ; \\htmlData{k=E-Box.self}{\\Delta{\\uparrow^m}, f : \\Box(\\ldots)} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing,\\varphi)}_{W} e : U[\\bar s]}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} !e : \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U)}\\;\\textsf{D-Box}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Box.unl}{\\Delta\\ \\text{unlimited}}\\\\ \\htmlData{k=E-Abs.phi}{\\varphi\\ \\text{fresh}}\\\\ \\htmlData{k=E-Box.inst}{\\forall \\bar s\\ (N = \\infty\\ \\text{instances})}\\\\ \\htmlData{k=E-Box.body}{\\varnothing ; \\htmlData{k=E-Box.open}{\\Gamma\\htmlData{k=tp.shift}{{\\uparrow^m}}, C(\\bar\\iota), u \\prec \\varphi} ; \\htmlData{k=E-Box.self}{\\Delta{\\uparrow^m}, f : \\Box(\\ldots)} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing,\\varphi)}_{W} e : U[\\bar s]}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} !e : \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U)}\\;\\textsf{D-Box}"
      },
      "caption": "The body is typed with $\\Theta = \\varnothing$ under $m$ fresh point variables $\\bar\\iota$, the hypothesis $C(\\bar\\iota)$, the box itself at index $0$, and a fresh future variable.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -622,15 +567,13 @@ window.MAP = {
      "id": "r-force",
      "title": "E-Force",
      "rocq": "static/Typing.v: e_force",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{|\\bar x| = m,\\ \\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\\\ \\htmlData{k=E-Box.inst}{|\\bar s| = k,\\ \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,N\\,\\bar s}\\\\ \\htmlData{k=E-Force.ub}{u[\\bar x] \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} e : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}[c;\\vartheta]\\,U\\annot{^{a_U}})\\annot{^{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\htmlData{k=prim.force}{\\mathsf{force}}\\,e : \\htmlData{k=tp.sinst}{U[\\bar s]}\\htmlData{k=tp.pinst}{[\\bar x]}\\annot{^{a_U}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 + c ; \\vartheta_0 \\circ \\vartheta}\\;\\textsf{E-Force}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{|\\bar x| = m,\\ \\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\\\ \\htmlData{k=E-Box.inst}{|\\bar s| = k,\\ \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,N\\,\\bar s}\\\\ \\htmlData{k=E-Force.ub}{u[\\bar x] \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}\\annot{[c;\\vartheta]}\\,U\\annot{^{a_U}})\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=prim.force}{\\mathsf{force}}\\,e : \\htmlData{k=tp.sinst}{U[\\bar s]}\\htmlData{k=tp.pinst}{[\\bar x]}\\annot{^{a_U}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 + c ; \\vartheta_0 \\circ \\vartheta}\\;\\textsf{E-Force}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\\\ \\htmlData{k=E-Force.ub}{u[\\bar x] \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U)\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.force}{\\mathsf{force}}\\,e : U[\\bar s][\\bar x]}\\;\\textsf{D-Force}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\\\ \\htmlData{k=E-Force.ub}{u[\\bar x] \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U)\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.force}{\\mathsf{force}}\\,e : U[\\bar s][\\bar x]}\\;\\textsf{D-Force}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\\\ \\htmlData{k=E-Force.ub}{u[\\bar x] \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U)\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.force}{\\mathsf{force}}\\,e : U[\\bar s][\\bar x]}\\;\\textsf{D-Force}"
      },
      "caption": "Forcing chooses $\\bar x$ with $\\Gamma \\vdash C[\\bar x]$ and session types $\\bar s$, and asks $u[\\bar x] \\prec F$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -639,10 +582,9 @@ window.MAP = {
      "title": "Types of constants",
      "rocq": "static/Typing.v: e_send, e_recv, e_close, e_select, e_branch, e_link, e_spawn, e_force, e_new",
      "tex": "\\begin{array}{lll}\n\\htmlData{k=prim.send}{\\mathsf{send}} & : T[x\\cdot i] \\otimes S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S@\\htmlData{k=pt.shift}{x^{+}} & \\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T,\\ \\neg\\htmlData{k=ty.hbot}{\\mathsf{hbot}}\\,T,\\ \\htmlData{k=E-Send.heads}{x \\prec \\htmlData{k=ty.heads}{\\mathsf{heads}}(T[x\\cdot i])} \\\\\n\\htmlData{k=prim.recv}{\\mathsf{recv}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} T[x\\cdot i] \\otimes S@x^{+} & \\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T \\\\\n\\htmlData{k=prim.close}{\\mathsf{close}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} \\ast & \\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}} \\\\\n\\htmlData{k=prim.select}{\\mathsf{select}}_i & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}} & \\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)} \\\\\n\\htmlData{k=prim.branch}{\\mathsf{branch}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2 & \\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)} \\\\\n\\htmlData{k=prim.link}{\\mathsf{link}} & : \\htmlData{k=E-Link.dual}{S@x \\otimes \\overline{S}@\\overline{x}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.spawn}{\\mathsf{spawn}} & : (\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} \\ast) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.force}{\\mathsf{force}} & : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] & \\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]} \\\\\n\\htmlData{k=syn.new}{\\mathsf{new}} & : \\exists^{\\bot}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ (S@\\pi \\otimes \\overline{S}@\\overline{\\pi}) & \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho)\\} \\cup \\{(\\varepsilon, x\\cdot\\kappa)\\}},\\ \\htmlData{k=E-New.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\Gamma \\cup C)}\n\\end{array}",
-     "caption": "Each constant has the type of its eta-expansion $\\lambda y.\\,k\\,y$, for every instance of its variables that meets the conditions on the right, shown without credits, cost and transformer. An action on $x$ has upper point $x$, so it runs only below the future of its caller. $\\mathsf{new}$ is a term and has the type of E-New.",
+     "caption": "\\annp{Each constant has the type of its eta-expansion $\\lambda y.\\,k\\,y$, for every instance of its variables that meets the conditions on the right, shown without credits, cost and transformer.} An action on $x$ has upper point $x$, so it runs only below the future of its caller. $\\mathsf{new}$ is a term and has the type of E-New.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -650,15 +592,13 @@ window.MAP = {
      "id": "r-send",
      "title": "E-Send",
      "rocq": "static/Typing.v: e_send",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T\\annot{^{b}}).S}\\\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\\\ \\htmlData{k=E-Send.nobot}{\\neg\\htmlData{k=ty.hbot}{\\mathsf{hbot}}\\,T} \\\\ \\htmlData{k=E-Send.heads}{\\forall y \\in \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\htmlData{k=ty.payload-at}{T[x\\cdot i]}).\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec y}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} e : (T[x\\cdot i]\\annot{^{a_p}} \\otimes (S_0@x)\\annot{^{a_S}})\\annot{^{a_0}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0 \\\\ \\htmlData{k=E-Send.floor}{(T[x\\cdot i], a_0 + a_p) - 1 \\leq T[x\\cdot i]\\annot{^{b}}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\htmlData{k=prim.send}{\\mathsf{send}}\\,e : (S@\\htmlData{k=pt.shift}{x^{+}})^{\\htmlData{k=act.refill}{N}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 + 1 ; \\vartheta_0}\\;\\textsf{E-Send}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T\\annot{^{b}}).S}\\\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\\\ \\htmlData{k=E-Send.nobot}{\\neg\\htmlData{k=ty.hbot}{\\mathsf{hbot}}\\,T} \\\\ \\htmlData{k=E-Send.heads}{\\forall y \\in \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\htmlData{k=ty.payload-at}{T[x\\cdot i]}).\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec y}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : (T[x\\cdot i]\\annot{^{a_p}} \\otimes (S_0@x)\\annot{^{a_S}})\\annot{^{a_0}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0} \\\\ \\htmlData{k=E-Send.floor}{(T[x\\cdot i], a_0 + a_p) - 1 \\leq T[x\\cdot i]\\annot{^{b}}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=prim.send}{\\mathsf{send}}\\,e : (S@\\htmlData{k=pt.shift}{x^{+}})^{\\htmlData{k=act.refill}{N}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 + 1 ; \\vartheta_0}\\;\\textsf{E-Send}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S}\\\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\\\ \\htmlData{k=E-Send.nobot}{\\neg\\htmlData{k=ty.hbot}{\\mathsf{hbot}}\\,T}\\\\ \\htmlData{k=E-Send.heads}{x \\prec \\htmlData{k=ty.heads}{\\mathsf{heads}}(T[x\\cdot i])}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : T[x\\cdot i] \\otimes S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.send}{\\mathsf{send}}\\,e : S@\\htmlData{k=pt.shift}{x^{+}}}\\;\\textsf{D-Send}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S}\\\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\\\ \\htmlData{k=E-Send.nobot}{\\neg\\htmlData{k=ty.hbot}{\\mathsf{hbot}}\\,T}\\\\ \\htmlData{k=E-Send.heads}{x \\prec \\htmlData{k=ty.heads}{\\mathsf{heads}}(T[x\\cdot i])}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : T[x\\cdot i] \\otimes S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.send}{\\mathsf{send}}\\,e : S@\\htmlData{k=pt.shift}{x^{+}}}\\;\\textsf{D-Send}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S}\\\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\\\ \\htmlData{k=E-Send.nobot}{\\neg\\htmlData{k=ty.hbot}{\\mathsf{hbot}}\\,T}\\\\ \\htmlData{k=E-Send.heads}{x \\prec \\htmlData{k=ty.heads}{\\mathsf{heads}}(T[x\\cdot i])}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : T[x\\cdot i] \\otimes S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.send}{\\mathsf{send}}\\,e : S@\\htmlData{k=pt.shift}{x^{+}}}\\;\\textsf{D-Send}"
      },
-     "caption": "The sender holds the payload while it waits at $x$, so $x \\prec \\mathsf{heads}$ of the payload, and the end returns at $x^{+}$ with credit $N$.",
+     "caption": "The sender holds the payload while it waits at $x$, so $x \\prec \\mathsf{heads}$ of the payload, and the end returns at $x^{+}$\\annp{ with credit} $N$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -666,15 +606,13 @@ window.MAP = {
      "id": "r-recv",
      "title": "E-Recv",
      "rocq": "static/Typing.v: e_recv",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T\\annot{^{b}}).S}\\\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} e : (S_0@x)\\annot{^{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\htmlData{k=prim.recv}{\\mathsf{recv}}\\,e : (T[x\\cdot i]^{\\htmlData{k=sty.payload-credit}{b}} \\otimes (S@\\htmlData{k=pt.shift}{x^{+}})^{\\htmlData{k=act.refill}{N}})^{0} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 + 1 ; \\vartheta_0}\\;\\textsf{E-Recv}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T\\annot{^{b}}).S}\\\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : (S_0@x)\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=prim.recv}{\\mathsf{recv}}\\,e : (T[x\\cdot i]\\annot{^{\\htmlData{k=sty.payload-credit}{b}}} \\otimes (S@\\htmlData{k=pt.shift}{x^{+}})^{\\htmlData{k=act.refill}{N}})\\annot{^{0}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 + 1 ; \\vartheta_0}\\;\\textsf{E-Recv}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S}\\\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.recv}{\\mathsf{recv}}\\,e : T[x\\cdot i] \\otimes S@\\htmlData{k=pt.shift}{x^{+}}}\\;\\textsf{D-Recv}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S}\\\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.recv}{\\mathsf{recv}}\\,e : T[x\\cdot i] \\otimes S@\\htmlData{k=pt.shift}{x^{+}}}\\;\\textsf{D-Recv}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S}\\\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.recv}{\\mathsf{recv}}\\,e : T[x\\cdot i] \\otimes S@\\htmlData{k=pt.shift}{x^{+}}}\\;\\textsf{D-Recv}"
      },
-     "caption": "The payload arrives at credit $b$ with its ends at $x \\cdot i$, and the end returns at $x^{+}$ with credit $N$.",
+     "caption": "The payload arrives\\annp{ at credit $b$} with its ends at $x \\cdot i$, and the end returns at $x^{+}$\\annp{ with credit} $N$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -682,15 +620,13 @@ window.MAP = {
      "id": "r-close",
      "title": "E-Close",
      "rocq": "static/Typing.v: e_close",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} e : (S_0@x)\\annot{^{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\htmlData{k=prim.close}{\\mathsf{close}}\\,e : \\ast^{\\infty} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 + 1 ; \\vartheta_0}\\;\\textsf{E-Close}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : (S_0@x)\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=prim.close}{\\mathsf{close}}\\,e : \\ast^{\\infty} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 + 1 ; \\vartheta_0}\\;\\textsf{E-Close}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.close}{\\mathsf{close}}\\,e : \\ast}\\;\\textsf{D-Close}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.close}{\\mathsf{close}}\\,e : \\ast}\\;\\textsf{D-Close}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.close}{\\mathsf{close}}\\,e : \\ast}\\;\\textsf{D-Close}"
      },
      "caption": "A close is an action at $x$ of cost $1$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -698,15 +634,13 @@ window.MAP = {
      "id": "r-select",
      "title": "E-Select",
      "rocq": "static/Typing.v: e_select",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} e : (S_0@x)\\annot{^{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\htmlData{k=prim.select}{\\mathsf{select}}_i\\,e : (S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}})^{\\htmlData{k=act.refill}{N}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 + 1 ; \\vartheta_0}\\;\\textsf{E-Select}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : (S_0@x)\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=prim.select}{\\mathsf{select}}_i\\,e : (S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}})^{\\htmlData{k=act.refill}{N}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 + 1 ; \\vartheta_0}\\;\\textsf{E-Select}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.select}{\\mathsf{select}}_i\\,e : S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}}}\\;\\textsf{D-Select}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.select}{\\mathsf{select}}_i\\,e : S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}}}\\;\\textsf{D-Select}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.select}{\\mathsf{select}}_i\\,e : S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}}}\\;\\textsf{D-Select}"
      },
      "caption": "The selecting end continues at $\\overline{x\\cdot\\kappa_i}$, and the rule asks $\\Gamma \\vdash x \\prec x\\cdot\\kappa_i$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -714,15 +648,13 @@ window.MAP = {
      "id": "r-branch",
      "title": "E-Branch",
      "rocq": "static/Typing.v: e_branch",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} e : (S_0@x)\\annot{^{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\htmlData{k=prim.branch}{\\mathsf{branch}}\\,e : ((S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1})^{N} \\oplus (S_2@x\\cdot\\kappa_2)^{N})^{0} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 + 1 ; \\vartheta_0}\\;\\textsf{E-Branch}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : (S_0@x)\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=prim.branch}{\\mathsf{branch}}\\,e : ((S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1})\\annot{^{N}} \\oplus (S_2@x\\cdot\\kappa_2)\\annot{^{N}})\\annot{^{0}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 + 1 ; \\vartheta_0}\\;\\textsf{E-Branch}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.branch}{\\mathsf{branch}}\\,e : S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2}\\;\\textsf{D-Branch}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.branch}{\\mathsf{branch}}\\,e : S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2}\\;\\textsf{D-Branch}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.branch}{\\mathsf{branch}}\\,e : S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2}\\;\\textsf{D-Branch}"
      },
      "caption": "The branching end continues at $x\\cdot\\kappa_i$, and the rule asks $\\Gamma \\vdash x \\prec \\overline{x\\cdot\\kappa_i}$ for both $i$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -730,15 +662,13 @@ window.MAP = {
      "id": "r-link",
      "title": "E-Link",
      "rocq": "static/Typing.v: e_link",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Link.dual}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} e : ((S@x)\\annot{^{a_1}} \\otimes (\\overline{S}@\\overline{x})\\annot{^{a_2}})\\annot{^{a_0}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0}\\\\ \\htmlData{k=ann.tok}{\\mathsf{tok}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\htmlData{k=prim.link}{\\mathsf{link}}\\,e : \\ast^{\\infty} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0 \\circ \\htmlData{k=ann.tlink}{\\mathsf{tlink}\\,\\hat 1}}\\;\\textsf{E-Link}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Link.dual}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : ((S@x)\\annot{^{a_1}} \\otimes (\\overline{S}@\\overline{x})\\annot{^{a_2}})\\annot{^{a_0}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0}}\\\\ \\htmlData{k=ann.tok}{\\mathsf{tok}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=prim.link}{\\mathsf{link}}\\,e : \\ast^{\\infty} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0} \\circ \\htmlData{k=ann.tlink}{\\mathsf{tlink}\\,\\hat 1}}\\;\\textsf{E-Link}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Link.dual}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S@x \\otimes \\overline{S}@\\overline{x}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.link}{\\mathsf{link}}\\,e : \\ast}\\;\\textsf{D-Link}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Link.dual}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S@x \\otimes \\overline{S}@\\overline{x}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.link}{\\mathsf{link}}\\,e : \\ast}\\;\\textsf{D-Link}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Link.dual}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S@x \\otimes \\overline{S}@\\overline{x}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.link}{\\mathsf{link}}\\,e : \\ast}\\;\\textsf{D-Link}"
      },
-     "caption": "A link asks no order fact, costs $0$ and spends one ticket.",
+     "caption": "\\annp{A link asks no order fact, costs $0$ and spends one ticket.}",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -746,15 +676,13 @@ window.MAP = {
      "id": "r-spawnlam",
      "title": "E-SpawnLam",
      "rocq": "static/Typing.v: e_spawn_lam",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-SpawnLam.age}{\\Theta' = \\Theta - 1,\\ \\Delta' = \\Delta - 1}\\\\ \\htmlData{k=E-SpawnLam.body}{\\Theta' ; \\Gamma ; \\ast\\annot{^{a_1}}, \\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=E-SpawnLam.future}{(\\varnothing, \\cdot)}}_{W,N} e : \\ast\\annot{^{a_U}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c' ; \\vartheta'}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\htmlData{k=prim.spawn}{\\mathsf{spawn}}\\,(\\lambda e) : \\ast^{\\infty} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\htmlData{k=ann.tspawn}{\\mathsf{tspawn}(\\vartheta'(0))\\,\\hat 1}}\\;\\textsf{E-SpawnLam}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-SpawnLam.age}{\\Theta' = \\Theta - 1,\\ \\Delta' = \\Delta - 1}\\\\ \\htmlData{k=E-SpawnLam.body}{\\Theta' ; \\Gamma ; \\ast\\annot{^{a_1}}, \\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=E-SpawnLam.future}{(\\varnothing, \\cdot)}}_{W\\annot{,N}} e : \\ast\\annot{^{a_U}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c' ; \\vartheta'}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=prim.spawn}{\\mathsf{spawn}}\\,(\\lambda e) : \\ast^{\\infty} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\htmlData{k=ann.tspawn}{\\mathsf{tspawn}(\\vartheta'(0))\\,\\hat 1}}\\;\\textsf{E-SpawnLam}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-SpawnLam.body}{\\Theta ; \\Gamma ; \\ast, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=E-SpawnLam.future}{(\\varnothing, \\cdot)}}_{W} e : \\ast}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.spawn}{\\mathsf{spawn}}\\,(\\lambda e) : \\ast}\\;\\textsf{D-SpawnLam}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-SpawnLam.body}{\\Theta ; \\Gamma ; \\ast, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=E-SpawnLam.future}{(\\varnothing, \\cdot)}}_{W} e : \\ast}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.spawn}{\\mathsf{spawn}}\\,(\\lambda e) : \\ast}\\;\\textsf{D-SpawnLam}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-SpawnLam.body}{\\Theta ; \\Gamma ; \\ast, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=E-SpawnLam.future}{(\\varnothing, \\cdot)}}_{W} e : \\ast}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.spawn}{\\mathsf{spawn}}\\,(\\lambda e) : \\ast}\\;\\textsf{D-SpawnLam}"
      },
      "caption": "The child body runs under the empty future, and every handed entry ages by $1$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -762,15 +690,13 @@ window.MAP = {
      "id": "r-spawn",
      "title": "E-Spawn",
      "rocq": "static/Typing.v: e_spawn",
-     "tex": "\\dfrac{\\begin{array}{c}\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} e : (\\ast\\annot{^{a_1}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}[c';\\vartheta';h]\\,\\ast\\annot{^{a_U}})\\annot{^{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0\\\\ \\htmlData{k=E-Spawn.credit}{a \\geq 1}\\\\ \\htmlData{k=ann.tok}{\\mathsf{tok}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\htmlData{k=prim.spawn}{\\mathsf{spawn}}\\,e : \\ast^{\\infty} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0 \\circ \\htmlData{k=ann.tspawn}{\\mathsf{tspawn}(\\vartheta'(0))\\,\\hat 1}}\\;\\textsf{E-Spawn}",
+     "tex": "\\dfrac{\\begin{array}{c}\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : (\\ast\\annot{^{a_1}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[c';\\vartheta';h]}\\,\\ast\\annot{^{a_U}})\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0}\\\\ \\htmlData{k=E-Spawn.credit}{a \\geq 1}\\\\ \\htmlData{k=ann.tok}{\\mathsf{tok}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=prim.spawn}{\\mathsf{spawn}}\\,e : \\ast^{\\infty} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0} \\circ \\htmlData{k=ann.tspawn}{\\mathsf{tspawn}(\\vartheta'(0))\\,\\hat 1}}\\;\\textsf{E-Spawn}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} \\ast\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.spawn}{\\mathsf{spawn}}\\,e : \\ast}\\;\\textsf{D-Spawn}",
-      "live": "\\dfrac{\\begin{array}{c}\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} \\ast\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.spawn}{\\mathsf{spawn}}\\,e : \\ast}\\;\\textsf{D-Spawn}"
+      "df": "\\dfrac{\\begin{array}{c}\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} \\ast\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.spawn}{\\mathsf{spawn}}\\,e : \\ast}\\;\\textsf{D-Spawn}"
      },
-     "caption": "Spawning a closure value hands over its captured ends and asks its credit $a \\geq 1$.",
+     "caption": "\\annp{Spawning a closure value hands over its captured ends and asks its credit $a \\geq 1$.}",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -778,15 +704,13 @@ window.MAP = {
      "id": "r-new",
      "title": "E-New",
      "rocq": "static/Typing.v: e_new",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\\\ \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho)\\} \\cup \\{(\\varepsilon, x\\cdot\\kappa)\\}}\\\\ \\htmlData{k=E-New.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\Gamma \\cup C)}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\htmlData{k=syn.new}{\\mathsf{new}} : (\\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ \\htmlData{k=E-New.dual}{((S@\\pi)^{N} \\otimes (\\htmlData{k=sty.dual}{\\overline{S}}@\\overline{\\pi})^{N})}^{0})^{0} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\hat 1}\\;\\textsf{E-New}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\\\ \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho)\\} \\cup \\{(\\varepsilon, x\\cdot\\kappa)\\}}\\\\ \\htmlData{k=E-New.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\Gamma \\cup C)}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=syn.new}{\\mathsf{new}} : (\\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ \\htmlData{k=E-New.dual}{((S@\\pi)\\annot{^{N}} \\otimes (\\htmlData{k=sty.dual}{\\overline{S}}@\\overline{\\pi})\\annot{^{N}})}\\annot{^{0}})\\annot{^{0}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\hat 1}}\\;\\textsf{E-New}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\\\ \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho)\\} \\cup \\{(\\varepsilon, x\\cdot\\kappa)\\}}\\\\ \\htmlData{k=E-New.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\Gamma \\cup C)}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.new}{\\mathsf{new}} : \\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ \\htmlData{k=E-New.dual}{S@\\pi \\otimes \\overline{S}@\\overline{\\pi}}}\\;\\textsf{D-New}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\\\ \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho)\\} \\cup \\{(\\varepsilon, x\\cdot\\kappa)\\}}\\\\ \\htmlData{k=E-New.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\Gamma \\cup C)}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.new}{\\mathsf{new}} : \\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ \\htmlData{k=E-New.dual}{S@\\pi \\otimes \\overline{S}@\\overline{\\pi}}}\\;\\textsf{D-New}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\\\ \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho)\\} \\cup \\{(\\varepsilon, x\\cdot\\kappa)\\}}\\\\ \\htmlData{k=E-New.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\Gamma \\cup C)}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.new}{\\mathsf{new}} : \\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ \\htmlData{k=E-New.dual}{S@\\pi \\otimes \\overline{S}@\\overline{\\pi}}}\\;\\textsf{D-New}"
      },
      "caption": "The pair sits at a fresh root $\\rho$ or at a field $x\\cdot\\kappa$, with facts $C$ that keep the order strict and lower bound $\\bot$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -794,15 +718,13 @@ window.MAP = {
      "id": "r-struct",
      "title": "E-Sub",
      "rocq": "static/Typing.v: e_sub",
-     "tex": "\\dfrac{\\begin{array}{c}e : T\\annot{^{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta\\\\ \\htmlData{k=sub.tsub}{T\\annot{^{a}} \\leq T'\\annot{^{a'}}}\\\\ \\htmlData{k=E-Sub.cost}{c \\leq c',\\ \\vartheta \\leq \\vartheta'}\\end{array}}{e : T'\\annot{^{a'}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c' ; \\vartheta'}\\;\\textsf{E-Sub}",
+     "tex": "\\dfrac{\\begin{array}{c}e : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}\\\\ \\htmlData{k=sub.tsub}{T\\annot{^{a}} \\leq T'\\annot{^{a'}}}\\\\ \\htmlData{k=E-Sub.cost}{c \\leq c',\\ \\vartheta \\leq \\vartheta'}\\end{array}}{e : T'\\annot{^{a'}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c' ; \\vartheta'}}\\;\\textsf{E-Sub}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=sub.dconv}{\\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T \\leq \\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T'}\\end{array}}{t : T \\Rightarrow t : T'}\\;\\textsf{D-Conv}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=sub.dconv}{\\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T \\leq \\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T'}\\end{array}}{t : T \\Rightarrow t : T'}\\;\\textsf{D-Conv}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=sub.dconv}{\\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T \\leq \\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T'}\\end{array}}{t : T \\Rightarrow t : T'}\\;\\textsf{D-Conv}"
      },
-     "caption": "A type may lose credit and a cost or transformer may rise.",
+     "caption": "\\annp{A type may lose\\annp{ credit and }a cost or transformer may rise.}",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -812,13 +734,11 @@ window.MAP = {
      "rocq": "static/Weakening.v: e_weak, e_contract, d_weak, d_contract, typed_rename",
      "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\end{array}}{\\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e \\Rightarrow \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e}\\;\\textsf{E-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,U}\\end{array}}{U, U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e \\Rightarrow U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e[x/x']}\\;\\textsf{E-Contract}\\end{array}",
      "variants": {
-      "df": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\end{array}}{\\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t \\Rightarrow \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t}\\;\\textsf{D-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,U}\\end{array}}{U, U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t \\Rightarrow U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t}\\;\\textsf{D-Contract}\\end{array}",
-      "live": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\end{array}}{\\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t \\Rightarrow \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t}\\;\\textsf{D-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,U}\\end{array}}{U, U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t \\Rightarrow U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t}\\;\\textsf{D-Contract}\\end{array}"
+      "df": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\end{array}}{\\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t \\Rightarrow \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t}\\;\\textsf{D-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,U}\\end{array}}{U, U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t \\Rightarrow U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t}\\;\\textsf{D-Contract}\\end{array}"
      },
      "caption": "Both are renamings of the variables, the identity and the map $x \\mapsto x - 1$. They hold because E-Unit, E-Var, E-Chan and E-New accept unused entries of unlimited type.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -826,15 +746,13 @@ window.MAP = {
      "id": "r-ex",
      "title": "E-Pack, E-Open",
      "rocq": "static/Typing.v: e_pack, e_open",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{|\\bar x| = m,\\ \\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\\\ \\htmlData{k=E-Pack.lb}{l \\preccurlyeq \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\htmlData{k=tp.pinst}{T[\\bar x]})}\\\\ e : T[\\bar x]\\annot{^{a}}\\end{array}}{e : (\\exists^{l}\\bar\\iota.\\,C.\\,T\\annot{^{a}})^{0}}\\;\\textsf{E-Pack} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Open.entry}{\\Delta(i) = (\\exists^{l}\\bar\\iota.\\,C.\\,T\\annot{^{a_T}})\\annot{^{a}},\\ \\neg\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}}\\,T}\\\\ \\htmlData{k=E-Open.body}{\\Theta\\htmlData{k=tp.shift}{{\\uparrow}}; \\Gamma{\\uparrow}, C; \\Delta{\\uparrow}[i \\mapsto T\\annot{^{a+a_T}}] \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F\\uparrow} e : U{\\uparrow}}\\end{array}}{\\Theta;\\Gamma;\\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : U}\\;\\textsf{E-Open}\\end{array}",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{|\\bar x| = m,\\ \\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\\\ \\htmlData{k=E-Pack.lb}{l \\preccurlyeq \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\htmlData{k=tp.pinst}{T[\\bar x]})}\\\\ e : T[\\bar x]\\annot{^{a}}\\end{array}}{e : (\\exists^{l}\\bar\\iota.\\,C.\\,T\\annot{^{a}})\\annot{^{0}}}\\;\\textsf{E-Pack} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Open.entry}{\\Delta(i) = (\\exists^{l}\\bar\\iota.\\,C.\\,T\\annot{^{a_T}})\\annot{^{a}},\\ \\neg\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}}\\,T}\\\\ \\htmlData{k=E-Open.body}{\\Theta\\htmlData{k=tp.shift}{{\\uparrow}}; \\Gamma{\\uparrow}, C; \\Delta{\\uparrow}[i \\mapsto T\\annot{^{a+a_T}}] \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F\\uparrow} e : U{\\uparrow}}\\end{array}}{\\Theta;\\Gamma;\\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : U}\\;\\textsf{E-Open}\\end{array}",
      "variants": {
-      "df": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\\\ \\htmlData{k=E-Pack.lb}{l \\preccurlyeq \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\htmlData{k=tp.pinst}{T[\\bar x]})}\\\\ t : T[\\bar x]\\end{array}}{t : \\exists^{l}\\bar\\iota.\\,C.\\,T}\\;\\textsf{D-Pack} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Open.entry}{\\Delta(i) = \\exists^{l}\\bar\\iota.\\,C.\\,T}\\\\ \\htmlData{k=E-Open.body}{\\Theta\\htmlData{k=tp.shift}{{\\uparrow}}; \\Gamma{\\uparrow}, C; \\Delta{\\uparrow}[i \\mapsto T] \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t : U{\\uparrow}}\\end{array}}{\\Theta;\\Gamma;\\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t : U}\\;\\textsf{D-Open}\\end{array}",
-      "live": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\\\ \\htmlData{k=E-Pack.lb}{l \\preccurlyeq \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\htmlData{k=tp.pinst}{T[\\bar x]})}\\\\ t : T[\\bar x]\\end{array}}{t : \\exists^{l}\\bar\\iota.\\,C.\\,T}\\;\\textsf{D-Pack} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Open.entry}{\\Delta(i) = \\exists^{l}\\bar\\iota.\\,C.\\,T}\\\\ \\htmlData{k=E-Open.body}{\\Theta\\htmlData{k=tp.shift}{{\\uparrow}}; \\Gamma{\\uparrow}, C; \\Delta{\\uparrow}[i \\mapsto T] \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t : U{\\uparrow}}\\end{array}}{\\Theta;\\Gamma;\\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t : U}\\;\\textsf{D-Open}\\end{array}"
+      "df": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\\\ \\htmlData{k=E-Pack.lb}{l \\preccurlyeq \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\htmlData{k=tp.pinst}{T[\\bar x]})}\\\\ t : T[\\bar x]\\end{array}}{t : \\exists^{l}\\bar\\iota.\\,C.\\,T}\\;\\textsf{D-Pack} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Open.entry}{\\Delta(i) = \\exists^{l}\\bar\\iota.\\,C.\\,T}\\\\ \\htmlData{k=E-Open.body}{\\Theta\\htmlData{k=tp.shift}{{\\uparrow}}; \\Gamma{\\uparrow}, C; \\Delta{\\uparrow}[i \\mapsto T] \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t : U{\\uparrow}}\\end{array}}{\\Theta;\\Gamma;\\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t : U}\\;\\textsf{D-Open}\\end{array}"
      },
      "caption": "Packing chooses $\\bar x$ with $\\Gamma \\vdash C[\\bar x]$, and opening adds $m$ fresh point variables with hypothesis $C$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -842,14 +760,13 @@ window.MAP = {
      "id": "p-term",
      "title": "P-Term",
      "rocq": "static/Typing.v: p_term",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ty.prim}{\\mathsf{prim}\\,T}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\\\ \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing}\\\\ \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = S@x^{N},\\ \\Theta_B(c^{-}) = \\overline{S}@\\overline{x}^{N}} \\\\ \\htmlData{k=P-Term.typed}{\\htmlData{k=tp.lift}{\\Sigma^{N}} \\cup \\Theta_B ; \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}}_{W,N} t : T\\annot{^{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\\\ \\htmlData{k=lf.meets}{N \\in \\mathbb{N} \\Rightarrow \\exists\\, tk.\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash^{N}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ty.prim}{\\mathsf{prim}\\,T}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\\\ \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing}\\\\ \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = S@x\\annot{^{N}},\\ \\Theta_B(c^{-}) = \\overline{S}@\\overline{x}\\annot{^{N}}} \\\\ \\htmlData{k=P-Term.typed}{\\htmlData{k=tp.lift}{\\Sigma\\annot{^{N}}} \\cup \\Theta_B ; \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}}\\annraw{ \\\\ }\\annot{\\htmlData{k=lf.meets}{N \\in \\mathbb{N} \\Rightarrow \\exists\\, tk.\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk}}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}",
      "variants": {
-      "lf": "\\dfrac{\\begin{array}{c}\\htmlData{k=ty.prim}{\\mathsf{prim}\\,T}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\\\ \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing}\\\\ \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = S@x^{N},\\ \\Theta_B(c^{-}) = \\overline{S}@\\overline{x}^{N}} \\\\ \\htmlData{k=P-Term.typed}{\\htmlData{k=tp.lift}{\\Sigma^{N}} \\cup \\Theta_B ; \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}}_{W,N} t : T\\annot{^{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\\\ \\boxed{\\htmlData{k=lf.meets}{N \\in \\mathbb{N} \\Rightarrow \\exists\\, tk.\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk}}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash^{N}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}"
+      "lf": "\\dfrac{\\begin{array}{c}\\htmlData{k=ty.prim}{\\mathsf{prim}\\,T}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\\\ \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing}\\\\ \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = S@x\\annot{^{N}},\\ \\Theta_B(c^{-}) = \\overline{S}@\\overline{x}\\annot{^{N}}} \\\\ \\htmlData{k=P-Term.typed}{\\htmlData{k=tp.lift}{\\Sigma\\annot{^{N}}} \\cup \\Theta_B ; \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}}\\annraw{ \\\\ }\\annot{\\boxed{\\htmlData{k=lf.meets}{N \\in \\mathbb{N} \\Rightarrow \\exists\\, tk.\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk}}}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}"
      },
      "caption": "One thread $t$ holding both ends of every $c \\in C_0$ at dual types and points over a partner-free $\\Sigma$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -857,11 +774,10 @@ window.MAP = {
      "id": "p-connect",
      "title": "P-Connect",
      "rocq": "static/Typing.v: p_connect",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}^{N}_{W_1} (C_1, E_1) : T} \\\\ \\htmlData{k=P-Connect.right}{\\Sigma_2 \\cup \\htmlData{k=P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}^{N}_{W_2} (C_2, E_2) : \\ast} \\\\ \\htmlData{k=P-Connect.disj}{\\text{the channels of } \\Sigma_1, \\Sigma_2, \\Sigma_C, C_1, C_2 \\text{ pairwise disjoint}} \\\\ \\htmlData{k=P-Connect.cutfree}{\\htmlData{k=pfree}{\\mathsf{pfree}}\\,\\Sigma_C}\\\\ \\htmlData{k=w.wf}{\\mathsf{world\\_wf}\\,W_1, W_2} \\\\ \\htmlData{k=P-Connect.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}^{N}_{\\htmlData{k=P-Connect.join}{W_1 \\htmlData{k=w.join}{\\sqcup} W_2}} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect}",
-     "caption": "Two components at refill $N$ in worlds $W_1$, $W_2$, cut at $\\Sigma_C$ against $\\overline{\\Sigma_C}$, the left one carrying $T$.",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1} (C_1, E_1) : T} \\\\ \\htmlData{k=P-Connect.right}{\\Sigma_2 \\cup \\htmlData{k=P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\htmlData{k=P-Connect.disj}{\\text{the channels of } \\Sigma_1, \\Sigma_2, \\Sigma_C, C_1, C_2 \\text{ pairwise disjoint}} \\\\ \\htmlData{k=P-Connect.cutfree}{\\htmlData{k=pfree}{\\mathsf{pfree}}\\,\\Sigma_C}\\\\ \\htmlData{k=w.wf}{\\mathsf{world\\_wf}\\,W_1, W_2} \\\\ \\htmlData{k=P-Connect.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{\\htmlData{k=P-Connect.join}{W_1 \\htmlData{k=w.join}{\\sqcup} W_2}} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect}",
+     "caption": "\\annp{Two components at refill $N$ in worlds $W_1$, $W_2$, cut at $\\Sigma_C$ against $\\overline{\\Sigma_C}$, the left one carrying $T$.}",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -872,18 +788,17 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\htmlData{k=tp.lfjudg}{\\Sigma \\Vdash^{N}_W p : T \\iff \\htmlData{k=lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}^{N}_W p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p}}",
+     "tex": "\\htmlData{k=tp.lfjudg}{\\Sigma \\Vdash^{N}_W p : T \\iff \\htmlData{k=lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_W p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p}}",
      "caption": "Lock-free typing is process typing at finite $N$ with every thread guarded."
     },
     {
      "id": "p-join",
      "title": "P-Join (admissible)",
      "rocq": "static/Typing.v: p_join",
-     "tex": "\\dfrac{\\begin{array}{c}\\text{premises of P-Connect with} \\\\ \\htmlData{k=P-Join.lemma}{\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W_1,\\ \\htmlData{k=w.strict}{\\mathsf{strict}}\\,W_2,\\ \\htmlData{k=w.strict}{\\mathsf{strict}}(\\htmlData{k=w.restrict}{W_1|_S} \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2|_S)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}^{N}_{W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Join}",
+     "tex": "\\dfrac{\\begin{array}{c}\\text{premises of P-Connect with} \\\\ \\htmlData{k=P-Join.lemma}{\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W_1,\\ \\htmlData{k=w.strict}{\\mathsf{strict}}\\,W_2,\\ \\htmlData{k=w.strict}{\\mathsf{strict}}(\\htmlData{k=w.restrict}{W_1|_S} \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2|_S)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Join}",
      "caption": "For well-formed $W_1$, $W_2$, $\\mathsf{strict}(W_1 \\sqcup W_2)$ iff both are strict and so is the join of their restrictions to the shared constants.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -892,7 +807,7 @@ window.MAP = {
      "title": "Terms that act",
      "rocq": "static/Guard.v: sprim, acts",
      "modes": [
-      "live",
+      "df",
       "lf"
      ],
      "tex": "\\htmlData{k=guard.acts}{\\begin{array}{l}\\mathsf{acts}\\,(k\\,e) \\iff k \\in K_{\\mathrm{act}} \\lor \\mathsf{acts}\\,e \\\\ K_{\\mathrm{act}} = \\{\\htmlData{k=prim.send}{\\mathsf{send}}, \\htmlData{k=prim.recv}{\\mathsf{recv}}, \\htmlData{k=prim.close}{\\mathsf{close}}, \\htmlData{k=prim.select}{\\mathsf{select}}_i, \\htmlData{k=prim.branch}{\\mathsf{branch}}\\} \\\\ \\mathsf{acts}\\,(e_1\\,e_2),\\ \\mathsf{acts}\\,\\langle e_1, e_2\\rangle \\iff \\mathsf{acts}\\,e_1 \\lor \\mathsf{acts}\\,e_2 \\\\ \\mathsf{acts}\\,(\\htmlData{k=syn.letp}{\\mathsf{let}}\\ p = e_1\\ \\htmlData{k=syn.letp}{\\mathsf{in}}\\ e_2) \\iff \\mathsf{acts}\\,e_1 \\lor \\mathsf{acts}\\,e_2 \\\\ \\mathsf{acts}\\,(\\htmlData{k=syn.case}{\\mathsf{case}}\\ e\\,(e_1)\\,(e_2)) \\iff \\mathsf{acts}\\,e \\lor (\\mathsf{acts}\\,e_1 \\land \\mathsf{acts}\\,e_2) \\\\ \\mathsf{acts}\\,(\\mathsf{inj}_i\\,e) \\iff \\mathsf{acts}\\,e, \\quad \\text{false for values and } \\htmlData{k=syn.new}{\\mathsf{new}_\\ell}\\end{array}}",
@@ -903,7 +818,7 @@ window.MAP = {
      "title": "The guard $\\Lambda \\vdash\\!\\triangleright t$",
      "rocq": "static/Guard.v: lguard",
      "modes": [
-      "live",
+      "df",
       "lf"
      ],
      "tex": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=guard.var}{\\Lambda(y) = \\htmlData{k=guard.marks}{\\mathsf{false}}}\\end{array}}{\\htmlData{k=guard.marks}{\\Lambda} \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} y}\\;\\textsf{gl\\_var} \\quad \\dfrac{\\begin{array}{c}\\htmlData{k=guard.lam}{\\htmlData{k=guard.marks}{\\mathsf{false}}.\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} b}\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} \\lambda b}\\;\\textsf{gl\\_lam} \\quad \\dfrac{\\begin{array}{c}\\htmlData{k=guard.box}{\\htmlData{k=guard.marks}{\\mathsf{true}}.\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} b}\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}}\\ !b}\\;\\textsf{gl\\_box} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=guard.cong}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_1}\\\\ \\htmlData{k=guard.tick}{\\mathsf{kmarks}\\,\\Lambda\\,\\Lambda'\\,e_1}\\\\ \\Lambda' \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_2\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_1\\,e_2}\\;\\textsf{gl\\_app} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_1\\\\ \\htmlData{k=guard.tick}{\\mathsf{kmarks}\\,\\Lambda\\,\\Lambda'\\,e_1}\\\\ \\htmlData{k=guard.bind}{\\htmlData{k=guard.marks}{\\mathsf{false}}.\\htmlData{k=guard.marks}{\\mathsf{false}}.\\Lambda' \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_2}\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} \\htmlData{k=syn.letp}{\\mathsf{let}}\\ \\langle a, b\\rangle = e_1\\ \\htmlData{k=syn.letp}{\\mathsf{in}}\\ e_2}\\;\\textsf{gl\\_letp}\n\\end{array}",
@@ -914,7 +829,7 @@ window.MAP = {
      "title": "Guard of a process",
      "rocq": "static/FundamentalProc.v: pguard",
      "modes": [
-      "live",
+      "df",
       "lf"
      ],
      "tex": "\\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p \\iff \\forall t \\in p.\\ \\varnothing \\vdash\\!\\triangleright t}",
@@ -935,7 +850,6 @@ window.MAP = {
      "caption": "A cost table $\\kappa$ assigns a cost to each kind of step, subject to three conditions.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -945,13 +859,11 @@ window.MAP = {
      "rocq": "relation/CostTable.v: κ_DF, κ_L, ev_cost",
      "tex": "\\begin{array}{lcc}\n & \\htmlData{k=ct.DF}{\\kappa_{DF}} & \\htmlData{k=ct.L}{\\kappa_L} \\\\ \\hline\n\\htmlData{k=ct.beta}{\\beta} & 1 & 0 \\\\\n\\htmlData{k=ct.new}{\\mathsf{new}} & 1 & 0 \\\\\n\\htmlData{k=ct.spawn}{\\mathsf{spawn}} & 1 & 0 \\\\\n\\htmlData{k=ct.link}{\\mathsf{link}} & 0 & 0 \\\\\n\\htmlData{k=ct.give}{\\mathsf{send},\\ \\mathsf{select},\\ \\mathsf{close}} & 0 & 1 \\\\\n\\htmlData{k=ct.takek}{\\mathsf{recv},\\ \\mathsf{branch}} & 1 & 1 \\\\\n\\htmlData{k=ct.sync}{\\kappa_{give} + \\kappa_{take}} & 1 & 2\n\\end{array}",
      "variants": {
-      "df": "\\begin{array}{lc}\n & \\htmlData{k=ct.DF}{\\kappa_{DF}} \\\\ \\hline\n\\htmlData{k=ct.beta}{\\beta} & 1 \\\\\n\\htmlData{k=ct.new}{\\mathsf{new}} & 1 \\\\\n\\htmlData{k=ct.spawn}{\\mathsf{spawn}} & 1 \\\\\n\\htmlData{k=ct.link}{\\mathsf{link}} & 0 \\\\\n\\htmlData{k=ct.give}{\\mathsf{send},\\ \\mathsf{select},\\ \\mathsf{close}} & 0 \\\\\n\\htmlData{k=ct.takek}{\\mathsf{recv},\\ \\mathsf{branch}} & 1 \\\\\n\\htmlData{k=ct.sync}{\\kappa_{give} + \\kappa_{take}} & 1\n\\end{array}",
-      "live": "\\begin{array}{lc}\n & \\htmlData{k=ct.L}{\\kappa_L} \\\\ \\hline\n\\htmlData{k=ct.beta}{\\beta} & 0 \\\\\n\\htmlData{k=ct.new}{\\mathsf{new}} & 0 \\\\\n\\htmlData{k=ct.spawn}{\\mathsf{spawn}} & 0 \\\\\n\\htmlData{k=ct.link}{\\mathsf{link}} & 0 \\\\\n\\htmlData{k=ct.give}{\\mathsf{send},\\ \\mathsf{select},\\ \\mathsf{close}} & 1 \\\\\n\\htmlData{k=ct.takek}{\\mathsf{recv},\\ \\mathsf{branch}} & 1 \\\\\n\\htmlData{k=ct.sync}{\\kappa_{give} + \\kappa_{take}} & 2\n\\end{array}"
+      "df": "\\begin{array}{lc}\n & \\htmlData{k=ct.DF}{\\kappa_{DF}} \\\\ \\hline\n\\htmlData{k=ct.beta}{\\beta} & 1 \\\\\n\\htmlData{k=ct.new}{\\mathsf{new}} & 1 \\\\\n\\htmlData{k=ct.spawn}{\\mathsf{spawn}} & 1 \\\\\n\\htmlData{k=ct.link}{\\mathsf{link}} & 0 \\\\\n\\htmlData{k=ct.give}{\\mathsf{send},\\ \\mathsf{select},\\ \\mathsf{close}} & 0 \\\\\n\\htmlData{k=ct.takek}{\\mathsf{recv},\\ \\mathsf{branch}} & 1 \\\\\n\\htmlData{k=ct.sync}{\\kappa_{give} + \\kappa_{take}} & 1\n\\end{array}"
      },
      "caption": "The costs of $\\kappa_{DF}$ and $\\kappa_L$ per kind of step, a synchronization costing $\\kappa_{give} + \\kappa_{take}$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -963,7 +875,6 @@ window.MAP = {
      "caption": "The reading of a successor $e'$ after a step $\\alpha$ taken at level $n$, where $X$ is the least fixpoint under construction.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -975,7 +886,6 @@ window.MAP = {
      "caption": "$V$ at the first-order types, where $\\Theta$ maps exactly the ends of the value.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -987,7 +897,6 @@ window.MAP = {
      "caption": "A closure is in $V$ when it owns exactly the ends it mentions and its body is in $E$ for every later world, level, disjoint argument and future above $u$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -999,7 +908,6 @@ window.MAP = {
      "caption": "$V$ at $\\ast \\multimap \\ast$ with no lower and no upper point and the body read at the empty future.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -1011,7 +919,6 @@ window.MAP = {
      "caption": "A box is in $V$ when it owns no end and its thunk $\\lambda\\_.\\,e[!e]$ is in $V$ at the same level for every later world and every instance meeting $C$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -1023,7 +930,6 @@ window.MAP = {
      "caption": "An existential value has a witness instance in $W$, and its lower bound bounds the heads of its ends.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -1035,7 +941,6 @@ window.MAP = {
      "caption": "$V$ at level $n$ recurses on the size of the type inside the level, and the box clause stays inside the recursion.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -1047,7 +952,6 @@ window.MAP = {
      "caption": "A term in $E$ is a value in $V$ when irreducible, ready when reducible, and every step meets its obligation.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -1059,7 +963,6 @@ window.MAP = {
      "caption": "The obligations of $\\beta$, creation and spawn, which keep or extend the environment, and creation grows the world.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -1071,7 +974,6 @@ window.MAP = {
      "caption": "A send gives up the ends of its payload and a receive continues for every incoming value at every lower level.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -1083,7 +985,6 @@ window.MAP = {
      "caption": "Each obligation reads and updates only the entries of the subject ends.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -1095,7 +996,6 @@ window.MAP = {
      "caption": "A stable reducible term offers held ends, each below the partner point of every other held end and below every point of the future, unless it is at a link.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -1107,7 +1007,6 @@ window.MAP = {
      "caption": "A stable process is at a link or terminated or offers an interface end, and every interface end it does not offer has an offered end below its partner point.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -1119,7 +1018,6 @@ window.MAP = {
      "caption": "A process in $P$ meets three clauses in every strict later world and after every admissible fusion of its held ends.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -1131,7 +1029,6 @@ window.MAP = {
      "caption": "An admissible fusion $(h, D)$ renames held ends injectively up to the new pairs it restricts as $D$.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -1143,7 +1040,6 @@ window.MAP = {
      "caption": "Internal steps keep the interface, and external messages move ends between the interface and the restricted channels.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -1155,7 +1051,6 @@ window.MAP = {
      "caption": "The side conditions that move ends across the interface at an external send and receive.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -1165,13 +1060,11 @@ window.MAP = {
      "rocq": "compat/SemTyped.v: Grel, sem_typed_at, sf_den, sem_typed; relation/Adequacy.v: sem_ptyped",
      "tex": "\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Theta;\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash[\\kappa]}}^{X}_W t : T \\iff \\forall n, W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Theta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G[\\kappa]^{W'}_n\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(t) \\in \\htmlData{k=th.Erel}{E[\\kappa]^{W'}_n\\llbracket |\\Theta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Theta;\\Delta \\vDash[\\kappa]^{F}_W t : T \\iff \\forall \\rho, B.\\ \\Theta;\\Delta \\vDash[\\kappa]^{\\htmlData{k=sj.den}{\\mathsf{den}_{\\rho,B}(F)}}_W t : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash[\\kappa]_W p : T \\iff \\forall n.\\ p \\in \\htmlData{k=th.Prel}{P[\\kappa]^{W}_n\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}",
      "variants": {
-      "df": "\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Theta;\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{X}_W t : T \\iff \\forall n, W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Theta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G[\\kappa_{DF}]^{W'}_n\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(t) \\in \\htmlData{k=th.Erel}{E[\\kappa_{DF}]^{W'}_n\\llbracket |\\Theta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Theta;\\Delta \\vDash^{F}_W t : T \\iff \\forall \\rho, B.\\ \\Theta;\\Delta \\vDash^{\\htmlData{k=sj.den}{\\mathsf{den}_{\\rho,B}(F)}}_W t : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash_W p : T \\iff \\forall n.\\ p \\in \\htmlData{k=th.Prel}{P[\\kappa_{DF}]^{W}_n\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}",
-      "live": "\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Theta;\\Delta \\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{X}_W t : T \\iff \\forall n, W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Theta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G[\\kappa_L]^{W'}_n\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(t) \\in \\htmlData{k=th.Erel}{E[\\kappa_L]^{W'}_n\\llbracket |\\Theta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Theta;\\Delta \\mathrel{|\\!\\!\\vDash}^{F}_W t : T \\iff \\forall \\rho, B.\\ \\Theta;\\Delta \\mathrel{|\\!\\!\\vDash}^{\\htmlData{k=sj.den}{\\mathsf{den}_{\\rho,B}(F)}}_W t : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\mathrel{|\\!\\!\\vDash}_W p : T \\iff \\forall n.\\ p \\in \\htmlData{k=th.Prel}{P[\\kappa_L]^{W}_n\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}"
+      "df": "\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Theta;\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{X}_W t : T \\iff \\forall n, W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Theta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G[\\kappa_{DF}]^{W'}_n\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(t) \\in \\htmlData{k=th.Erel}{E[\\kappa_{DF}]^{W'}_n\\llbracket |\\Theta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Theta;\\Delta \\vDash^{F}_W t : T \\iff \\forall \\rho, B.\\ \\Theta;\\Delta \\vDash^{\\htmlData{k=sj.den}{\\mathsf{den}_{\\rho,B}(F)}}_W t : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash_W p : T \\iff \\forall n.\\ p \\in \\htmlData{k=th.Prel}{P[\\kappa_{DF}]^{W}_n\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}"
      },
      "caption": "The semantic judgments quantify over every level, later world and grounding, and read the static future at every denotation.",
      "modes": [
       "df",
-      "live",
       "lf"
      ]
     },
@@ -1202,7 +1095,7 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{ll}\n\\htmlData{k=F-Beta}{\\textsf{F-Beta}} & e' \\in F_n \\text{ at } (\\sigma, d, r, \\Pi, \\varphi, tk) \\\\\n\\htmlData{k=F-New}{\\textsf{F-New}} & \\htmlData{k=F-New.fresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Pi \\cup \\mathrm{dom}\\,\\varphi} \\Rightarrow \\exists S.\\ e' \\text{ at } \\Pi[c^{+} \\mapsto S, c^{-} \\mapsto \\overline{S}],\\ \\htmlData{k=F-New.cnew}{\\varphi[c^{\\pm} \\mapsto N]} \\\\\n\\htmlData{k=F-Spawn}{\\textsf{F-Spawn}} & M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(v) \\land \\htmlData{k=F-Spawn.held}{M \\subseteq \\mathrm{dom}\\,\\varphi} \\land \\htmlData{k=fu.fspare}{\\mathsf{fspare}}\\,\\Pi\\,\\varphi\\,M \\land {} \\\\\n & \\htmlData{k=F-Spawn.child}{v\\,\\ast \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.rty}{\\mathsf{thread}} \\triangleright \\infty ; 0 \\rrbracket(\\Pi|_M, \\htmlData{k=fu.fhand}{\\mathsf{fhand}}\\,M\\,\\varphi, \\lceil tk/2 \\rceil)}} \\land e' \\text{ at } \\Pi \\setminus M, \\varphi \\setminus M, \\htmlData{k=F-Spawn.tickets}{\\lfloor tk/2 \\rfloor} \\\\\n\\htmlData{k=F-Send}{\\textsf{F-Send}} & \\htmlData{k=sr.act}{\\mathsf{act}}\\,o \\land \\Pi(o) = S_0 \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.send}{!(\\bar\\iota.\\ T\\annot{^{b}})}.S \\land M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(w) \\land {} \\\\\n & \\htmlData{k=F-Send.notsubj}{M \\subseteq \\mathrm{dom}\\,\\varphi \\setminus \\{o\\}} \\land \\htmlData{k=fu.fspare}{\\mathsf{fspare}}\\,\\Pi\\,\\varphi\\,M \\land \\htmlData{k=F-Send.payload}{w \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket T\\annot{^{b}} \\rrbracket(\\Pi|_M, \\htmlData{k=fu.fhand}{\\mathsf{fhand}}\\,M\\,\\varphi)}} \\land {} \\\\\n & e' \\text{ at } d \\mathbin{\\dot-} 1,\\ (\\Pi \\setminus M)[o \\mapsto S],\\ \\htmlData{k=fu.refillop}{\\mathsf{refill}}\\,N\\,o\\,(\\varphi \\setminus M) \\\\\n\\htmlData{k=F-Recv}{\\textsf{F-Recv}} & \\htmlData{k=sr.act}{\\mathsf{act}}\\,o \\land \\Pi(o) = S_0 \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ T\\annot{^{b}})}.S \\land {} \\\\\n & \\htmlData{k=F-Recv.forall}{\\forall j \\leq n, \\Pi_i, \\varphi_i \\text{ disjoint}.\\ w \\in \\htmlData{k=sr.FV}{FV^{N}_{j}\\llbracket T\\annot{^{b}} \\rrbracket(\\Pi_i, \\varphi_i)}} \\Rightarrow {} \\\\\n & \\quad e' \\in F_j \\text{ at } d \\mathbin{\\dot-} 1,\\ \\Pi[o \\mapsto S] \\cup \\Pi_i,\\ \\htmlData{k=fu.refillop}{\\mathsf{refill}}\\,N\\,o\\,\\varphi \\cup \\varphi_i \\\\\n\\htmlData{k=F-Close}{\\textsf{F-Close}} & \\htmlData{k=sr.act}{\\mathsf{act}}\\,o \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}(\\Pi\\,o) = \\htmlData{k=sty.close}{\\mathsf{Close}} \\land e' \\text{ at } d \\mathbin{\\dot-} 1,\\ \\Pi \\setminus o,\\ (\\varphi \\setminus o) \\mathbin{\\dot-} 1 \\\\\n\\htmlData{k=F-Close}{\\textsf{F-Select, F-Branch}} & \\htmlData{k=sr.act}{\\mathsf{act}}\\,o \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}(\\Pi\\,o) \\in \\{\\oplus(S_1,S_2), \\&(S_1,S_2)\\} \\land e' \\text{ at } d \\mathbin{\\dot-} 1,\\ \\Pi[o \\mapsto S_i],\\ \\htmlData{k=fu.refillop}{\\mathsf{refill}}\\,N\\,o\\,\\varphi \\\\\n\\htmlData{k=F-Link}{\\textsf{F-Link}} & \\htmlData{k=F-Link.plink}{o_1 \\neq o_2 \\land \\Pi(o_2) \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{\\Pi(o_1)}} \\land \\{o_1,o_2\\} \\subseteq \\mathrm{dom}\\,\\varphi \\land \\htmlData{k=F-Link.ticket}{1 \\leq tk} \\land {} \\\\\n & e' \\text{ at } \\Pi \\setminus \\{o_1,o_2\\},\\ \\varphi \\setminus \\{o_1,o_2\\},\\ tk - 1 \\\\\n & \\htmlData{k=fu.fhand}{\\mathsf{fhand}\\,M\\,\\varphi = (\\varphi|_M) \\mathbin{\\dot-} 1}\n\\end{array}",
+     "tex": "\\begin{array}{ll}\n\\htmlData{k=F-Beta}{\\textsf{F-Beta}} & e' \\in F_n \\text{ at } (\\sigma, d, r, \\Pi, \\varphi, tk) \\\\\n\\htmlData{k=F-New}{\\textsf{F-New}} & \\htmlData{k=F-New.fresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Pi \\cup \\mathrm{dom}\\,\\varphi} \\Rightarrow \\exists S.\\ e' \\text{ at } \\Pi[c^{+} \\mapsto S, c^{-} \\mapsto \\overline{S}],\\ \\htmlData{k=F-New.cnew}{\\varphi[c^{\\pm} \\mapsto N]} \\\\\n\\htmlData{k=F-Spawn}{\\textsf{F-Spawn}} & M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(v) \\land \\htmlData{k=F-Spawn.held}{M \\subseteq \\mathrm{dom}\\,\\varphi} \\land \\htmlData{k=fu.fspare}{\\mathsf{fspare}}\\,\\Pi\\,\\varphi\\,M \\land {} \\\\\n & \\htmlData{k=F-Spawn.child}{v\\,\\ast \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.rty}{\\mathsf{thread}} \\annot{\\triangleright \\infty ; 0} \\rrbracket(\\Pi|_M, \\htmlData{k=fu.fhand}{\\mathsf{fhand}}\\,M\\,\\varphi, \\lceil tk/2 \\rceil)}} \\land e' \\text{ at } \\Pi \\setminus M, \\varphi \\setminus M, \\htmlData{k=F-Spawn.tickets}{\\lfloor tk/2 \\rfloor} \\\\\n\\htmlData{k=F-Send}{\\textsf{F-Send}} & \\htmlData{k=sr.act}{\\mathsf{act}}\\,o \\land \\Pi(o) = S_0 \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.send}{!(\\bar\\iota.\\ T\\annot{^{b}})}.S \\land M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(w) \\land {} \\\\\n & \\htmlData{k=F-Send.notsubj}{M \\subseteq \\mathrm{dom}\\,\\varphi \\setminus \\{o\\}} \\land \\htmlData{k=fu.fspare}{\\mathsf{fspare}}\\,\\Pi\\,\\varphi\\,M \\land \\htmlData{k=F-Send.payload}{w \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket T\\annot{^{b}} \\rrbracket(\\Pi|_M, \\htmlData{k=fu.fhand}{\\mathsf{fhand}}\\,M\\,\\varphi)}} \\land {} \\\\\n & e' \\text{ at } d \\mathbin{\\dot-} 1,\\ (\\Pi \\setminus M)[o \\mapsto S],\\ \\htmlData{k=fu.refillop}{\\mathsf{refill}}\\,N\\,o\\,(\\varphi \\setminus M) \\\\\n\\htmlData{k=F-Recv}{\\textsf{F-Recv}} & \\htmlData{k=sr.act}{\\mathsf{act}}\\,o \\land \\Pi(o) = S_0 \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ T\\annot{^{b}})}.S \\land {} \\\\\n & \\htmlData{k=F-Recv.forall}{\\forall j \\leq n, \\Pi_i, \\varphi_i \\text{ disjoint}.\\ w \\in \\htmlData{k=sr.FV}{FV^{N}_{j}\\llbracket T\\annot{^{b}} \\rrbracket(\\Pi_i, \\varphi_i)}} \\Rightarrow {} \\\\\n & \\quad e' \\in F_j \\text{ at } d \\mathbin{\\dot-} 1,\\ \\Pi[o \\mapsto S] \\cup \\Pi_i,\\ \\htmlData{k=fu.refillop}{\\mathsf{refill}}\\,N\\,o\\,\\varphi \\cup \\varphi_i \\\\\n\\htmlData{k=F-Close}{\\textsf{F-Close}} & \\htmlData{k=sr.act}{\\mathsf{act}}\\,o \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}(\\Pi\\,o) = \\htmlData{k=sty.close}{\\mathsf{Close}} \\land e' \\text{ at } d \\mathbin{\\dot-} 1,\\ \\Pi \\setminus o,\\ (\\varphi \\setminus o) \\mathbin{\\dot-} 1 \\\\\n\\htmlData{k=F-Close}{\\textsf{F-Select, F-Branch}} & \\htmlData{k=sr.act}{\\mathsf{act}}\\,o \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}(\\Pi\\,o) \\in \\{\\oplus(S_1,S_2), \\&(S_1,S_2)\\} \\land e' \\text{ at } d \\mathbin{\\dot-} 1,\\ \\Pi[o \\mapsto S_i],\\ \\htmlData{k=fu.refillop}{\\mathsf{refill}}\\,N\\,o\\,\\varphi \\\\\n\\htmlData{k=F-Link}{\\textsf{F-Link}} & \\htmlData{k=F-Link.plink}{o_1 \\neq o_2 \\land \\Pi(o_2) \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{\\Pi(o_1)}} \\land \\{o_1,o_2\\} \\subseteq \\mathrm{dom}\\,\\varphi \\land \\htmlData{k=F-Link.ticket}{1 \\leq tk} \\land {} \\\\\n & e' \\text{ at } \\Pi \\setminus \\{o_1,o_2\\},\\ \\varphi \\setminus \\{o_1,o_2\\},\\ tk - 1 \\\\\n & \\htmlData{k=fu.fhand}{\\mathsf{fhand}\\,M\\,\\varphi = (\\varphi|_M) \\mathbin{\\dot-} 1}\n\\end{array}",
      "caption": "Every step updates protocols, counters and tickets by one index-free rule, where unchanged components are omitted."
     },
     {
@@ -1212,7 +1105,7 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{l}\n\\htmlData{k=FV-Sess}{o \\in FV\\llbracket (S@x)\\annot{^{a}}\\rrbracket(\\Pi, \\varphi) \\iff \\Pi = \\{o \\mapsto S'\\} \\land \\varphi = \\{o \\mapsto f\\} \\land S' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} S \\land \\htmlData{k=FV-Sess.counter}{a \\leq f}} \\\\\n\\htmlData{k=FV-Arrow}{\\lambda e \\in FV^N_n\\llbracket (T\\annot{^{a_1}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}_{c;\\vartheta;h} U\\annot{^{a_2}})\\annot{^{a}}\\rrbracket(\\Pi,\\varphi) \\iff \\htmlData{k=FV-Arrow.exact}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\mathrm{dom}\\,\\Pi = \\mathrm{dom}\\,\\varphi} \\land {}} \\\\\n\\quad \\htmlData{k=FV-Arrow.floor}{\\forall o.\\ h + a \\leq \\varphi(o)} \\land \\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N,\\ j < n,\\ \\varphi' \\text{ with } \\mathrm{dom}\\,\\varphi' = \\mathrm{dom}\\,\\varphi \\land h \\leq \\varphi', \\\\\n\\quad \\htmlData{k=FV-Arrow.body}{u \\in \\htmlData{k=sr.FV}{FV^{N'}_{j}\\llbracket T\\annot{^{a_1}} \\rrbracket(\\Pi_u, \\varphi_u)},\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,r\\,tk.\\ e[u] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket U\\annot{^{a_2}} \\triangleright c ; r \\rrbracket(\\Pi \\cup \\Pi_u, \\varphi' \\cup \\varphi_u, tk)}} \\\\\n\\htmlData{k=FV-Box}{!e \\in FV^N_n\\llbracket \\Box(\\ldots U)\\rrbracket(\\Pi,\\varphi) \\iff \\htmlData{k=FV-Box.noends}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\varnothing \\land \\Pi = \\varphi = \\varnothing} \\land {}} \\\\\n\\quad \\htmlData{k=FV-Box.body}{\\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N, j < n, \\bar s \\in \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,N', \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,r\\,tk.\\ e[!e] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket U[\\bar s] \\triangleright c ; r \\rrbracket(\\varnothing,\\varnothing,tk)}} \\\\\n\\htmlData{k=FV-Thread}{v \\in FV\\llbracket \\htmlData{k=fu.rty}{\\mathsf{thread}} \\rrbracket(\\Pi,\\varphi) \\iff \\Pi = \\varphi = \\varnothing} \\qquad \\htmlData{k=sr.fvagg}{\\otimes, \\oplus, \\exists \\text{ add their credit to the parts}}\n\\end{array}",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=FV-Sess}{o \\in FV\\llbracket (S@x)\\annot{^{a}}\\rrbracket(\\Pi, \\varphi) \\iff \\Pi = \\{o \\mapsto S'\\} \\land \\varphi = \\{o \\mapsto f\\} \\land S' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} S \\land \\htmlData{k=FV-Sess.counter}{a \\leq f}} \\\\\n\\htmlData{k=FV-Arrow}{\\lambda e \\in FV^N_n\\llbracket (T\\annot{^{a_1}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}_{c;\\vartheta;h} U\\annot{^{a_2}})\\annot{^{a}}\\rrbracket(\\Pi,\\varphi) \\iff \\htmlData{k=FV-Arrow.exact}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\mathrm{dom}\\,\\Pi = \\mathrm{dom}\\,\\varphi} \\land {}} \\\\\n\\quad \\htmlData{k=FV-Arrow.floor}{\\forall o.\\ h + a \\leq \\varphi(o)} \\land \\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N,\\ j < n,\\ \\varphi' \\text{ with } \\mathrm{dom}\\,\\varphi' = \\mathrm{dom}\\,\\varphi \\land h \\leq \\varphi', \\\\\n\\quad \\htmlData{k=FV-Arrow.body}{u \\in \\htmlData{k=sr.FV}{FV^{N'}_{j}\\llbracket T\\annot{^{a_1}} \\rrbracket(\\Pi_u, \\varphi_u)},\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,r\\,tk.\\ e[u] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket U\\annot{^{a_2}} \\annot{\\triangleright c ; r} \\rrbracket(\\Pi \\cup \\Pi_u, \\varphi' \\cup \\varphi_u, tk)}} \\\\\n\\htmlData{k=FV-Box}{!e \\in FV^N_n\\llbracket \\Box(\\ldots U)\\rrbracket(\\Pi,\\varphi) \\iff \\htmlData{k=FV-Box.noends}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\varnothing \\land \\Pi = \\varphi = \\varnothing} \\land {}} \\\\\n\\quad \\htmlData{k=FV-Box.body}{\\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N, j < n, \\bar s \\in \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,N', \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,r\\,tk.\\ e[!e] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket U[\\bar s] \\annot{\\triangleright c ; r} \\rrbracket(\\varnothing,\\varnothing,tk)}} \\\\\n\\htmlData{k=FV-Thread}{v \\in FV\\llbracket \\htmlData{k=fu.rty}{\\mathsf{thread}} \\rrbracket(\\Pi,\\varphi) \\iff \\Pi = \\varphi = \\varnothing} \\qquad \\htmlData{k=sr.fvagg}{\\otimes, \\oplus, \\exists \\text{ add their credit to the parts}}\n\\end{array}",
      "caption": "Fueled values by recursion on the type, reading credits, costs, transformers and floors and no point."
     },
     {
@@ -1222,7 +1115,7 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{l}\n\\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\Pi\\,e \\iff \\exists tk.\\ \\forall n.\\ e \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.rty}{\\mathsf{thread}} \\triangleright \\infty ; 0 \\rrbracket(\\Pi, (\\lambda\\_.N)|_{\\mathrm{dom}\\,\\Pi}, tk)}} \\\\\n\\htmlData{k=cs.csem}{\\Theta;\\Delta \\vDash^{N} e : T\\annot{^{a}} \\triangleright c ; \\vartheta}\n\\end{array}",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\Pi\\,e \\iff \\exists tk.\\ \\forall n.\\ e \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.rty}{\\mathsf{thread}} \\annot{\\triangleright \\infty ; 0} \\rrbracket(\\Pi, (\\lambda\\_.N)|_{\\mathrm{dom}\\,\\Pi}, tk)}} \\\\\n\\htmlData{k=cs.csem}{\\Theta;\\Delta \\vDash^{N} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}}\n\\end{array}",
      "caption": "A thread has fuel at every level with every held end at $N$ and one ticket count for all levels."
     },
     {
@@ -1242,7 +1135,7 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{l}\na \\in \\htmlData{k=th.soup}{S^{N,W}_n\\llbracket\\Sigma \\vdash T\\rrbracket} \\iff \\htmlData{k=sp.exists}{\\exists A, \\Pi, U}.\\ \\htmlData{k=sp.prim}{\\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T} \\land \\forall t, e.\\ q(t) = e \\Rightarrow {} \\\\\n\\quad \\htmlData{k=sp.rel}{e \\in \\htmlData{k=th.Erel}{E[\\kappa_L]^W_n\\llbracket K_t(A) \\vdash U_t\\rrbracket^{\\varnothing}}} \\land \\htmlData{k=sp.ty}{U_t \\in \\{T, \\ast\\}} \\land \\htmlData{k=sp.fuel}{e \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.rty}{\\mathsf{thread}} \\triangleright \\infty ; 0 \\rrbracket(K_t(\\Pi), \\htmlData{k=sr.ctrs}{\\mathsf{ctrs}}\\,K\\,t, tk_t)}} \\\\\n\\quad \\htmlData{k=sp.pts}{\\forall o.\\ \\mathsf{pt}(A\\,o) = \\mathsf{pt}(K\\,o)} \\land \\htmlData{k=sp.dom}{\\mathrm{dom}\\,\\Pi = \\mathrm{dom}\\,K} \\land \\htmlData{k=sp.owner}{\\forall o.\\ K(o) = (t, \\_, \\_) \\Rightarrow t \\in \\mathrm{dom}\\,q} \\\\\n\\quad \\htmlData{k=sp.closed}{\\forall o \\in \\mathrm{dom}\\,K.\\ \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\lor o \\in \\mathrm{dom}\\,\\Sigma} \\land \\htmlData{k=sp.pair}{\\forall o \\in \\mathrm{dom}\\,K.\\ \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow \\overline{o} \\in \\mathrm{dom}\\,K} \\\\\n\\quad \\htmlData{k=sp.sdual}{A(o) = S@x \\land A(\\overline{o}) = S'@x' \\land \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow x' = \\overline{x} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S'} \\\\\n\\quad \\htmlData{k=sp.pdual}{\\Pi(o) = P \\land \\Pi(\\overline{o}) = P' \\land \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow P' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{P}} \\\\\n\\quad \\htmlData{k=sp.sig}{\\Sigma(o) = y \\Rightarrow A(o) = y} \\land \\htmlData{k=sp.psig}{\\Sigma(o) = S@x \\Rightarrow \\Pi(o) = S} \\land \\htmlData{k=sp.fin}{\\forall o.\\ K(o) = (\\_, \\_, f) \\Rightarrow f \\in \\mathbb{N}}\n\\end{array}",
+     "tex": "\\begin{array}{l}\na \\in \\htmlData{k=th.soup}{S^{N,W}_n\\llbracket\\Sigma \\vdash T\\rrbracket} \\iff \\htmlData{k=sp.exists}{\\exists A, \\Pi, U}.\\ \\htmlData{k=sp.prim}{\\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T} \\land \\forall t, e.\\ q(t) = e \\Rightarrow {} \\\\\n\\quad \\htmlData{k=sp.rel}{e \\in \\htmlData{k=th.Erel}{E[\\kappa_L]^W_n\\llbracket K_t(A) \\vdash U_t\\rrbracket^{\\varnothing}}} \\land \\htmlData{k=sp.ty}{U_t \\in \\{T, \\ast\\}} \\land \\htmlData{k=sp.fuel}{e \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.rty}{\\mathsf{thread}} \\annot{\\triangleright \\infty ; 0} \\rrbracket(K_t(\\Pi), \\htmlData{k=sr.ctrs}{\\mathsf{ctrs}}\\,K\\,t, tk_t)}} \\\\\n\\quad \\htmlData{k=sp.pts}{\\forall o.\\ \\mathsf{pt}(A\\,o) = \\mathsf{pt}(K\\,o)} \\land \\htmlData{k=sp.dom}{\\mathrm{dom}\\,\\Pi = \\mathrm{dom}\\,K} \\land \\htmlData{k=sp.owner}{\\forall o.\\ K(o) = (t, \\_, \\_) \\Rightarrow t \\in \\mathrm{dom}\\,q} \\\\\n\\quad \\htmlData{k=sp.closed}{\\forall o \\in \\mathrm{dom}\\,K.\\ \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\lor o \\in \\mathrm{dom}\\,\\Sigma} \\land \\htmlData{k=sp.pair}{\\forall o \\in \\mathrm{dom}\\,K.\\ \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow \\overline{o} \\in \\mathrm{dom}\\,K} \\\\\n\\quad \\htmlData{k=sp.sdual}{A(o) = S@x \\land A(\\overline{o}) = S'@x' \\land \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow x' = \\overline{x} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S'} \\\\\n\\quad \\htmlData{k=sp.pdual}{\\Pi(o) = P \\land \\Pi(\\overline{o}) = P' \\land \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow P' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{P}} \\\\\n\\quad \\htmlData{k=sp.sig}{\\Sigma(o) = y \\Rightarrow A(o) = y} \\land \\htmlData{k=sp.psig}{\\Sigma(o) = S@x \\Rightarrow \\Pi(o) = S} \\land \\htmlData{k=sp.fin}{\\forall o.\\ K(o) = (\\_, \\_, f) \\Rightarrow f \\in \\mathbb{N}}\n\\end{array}",
      "caption": "At each level $n$ the soup asks every thread live and fueled at its part of $A$ and $\\Pi$, with ends, points and counters read from $K$."
     },
     {
@@ -1267,8 +1160,7 @@ window.MAP = {
      "title": "Adequacy",
      "rocq": "relation/Adequacy.v: adequacy, live_adequacy, adequacy_gen",
      "modes": [
-      "df",
-      "live"
+      "df"
      ],
      "tex": "\\begin{array}{l}\\htmlData{k=th.adequacy}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}} \\\\[1.5ex] \\htmlData{k=th.live-adequacy}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p \\land \\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}}\\,p\\end{array}} \\\\[1.5ex] \\htmlData{k=th.adequacy-gen}{\\begin{array}{l}\\forall \\kappa.\\ \\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\forall n.\\ p \\in \\htmlData{k=th.Prel}{P[\\kappa]^{W}_{n}\\llbracket \\varnothing \\vdash T\\rrbracket} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\end{array}",
      "caption": "For every $\\kappa$ and strict $W$, $\\forall n.\\ p \\in P[\\kappa]^{W}_{n}\\llbracket \\varnothing \\vdash T\\rrbracket$ implies deadlock freedom, and at $\\kappa_L$ absence of $\\tau$-divergence."
@@ -1280,7 +1172,7 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.lf-adequacy}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}} \\\\[1.5ex] \\htmlData{k=th.lf-thread-progress}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\begin{array}{l}\\forall (r, l).\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,(\\htmlData{k=se.run}{r\\,0}) = p \\land \\htmlData{k=prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\htmlData{k=prop.wfair}{\\mathsf{wfair}}\\,(r, l) \\\\ \\quad \\Longrightarrow\\ \\htmlData{k=th.tpr}{\\mathsf{thread\\_progress\\_run}}\\,(r, l)\\end{array}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.soup-no-tau}{\\begin{array}{l}\\forall n.\\ a \\in \\htmlData{k=th.soup}{S^{N,W}_{n}\\llbracket\\varnothing \\vdash T\\rrbracket} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}}(\\htmlData{k=proc.erase}{\\mathsf{erase}}\\,\\htmlData{k=th.qa}{q_a})\\end{array}} \\\\[1.5ex] \\htmlData{k=th.lfsoup-step}{\\begin{array}{l}a \\in \\htmlData{k=th.soup}{S^{N,W}_{n+1}\\llbracket\\varnothing \\vdash T\\rrbracket} \\land q_a \\xrightarrow{ev} q' \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=sp.next}{\\mathsf{lf\\_next}}\\,N\\,a\\,ev\\,q' \\in \\htmlData{k=th.soup}{S^{N,W}_{n}\\llbracket\\varnothing \\vdash T\\rrbracket}\\end{array}}\\end{array}",
+     "tex": "\\begin{array}{l}\\annot{\\htmlData{k=th.lf-adequacy}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-thread-progress}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\begin{array}{l}\\forall (r, l).\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,(\\htmlData{k=se.run}{r\\,0}) = p \\land \\htmlData{k=prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\htmlData{k=prop.wfair}{\\mathsf{wfair}}\\,(r, l) \\\\ \\quad \\Longrightarrow\\ \\htmlData{k=th.tpr}{\\mathsf{thread\\_progress\\_run}}\\,(r, l)\\end{array}\\end{array}}} \\\\[1.5ex] \\htmlData{k=th.soup-no-tau}{\\begin{array}{l}\\forall n.\\ a \\in \\htmlData{k=th.soup}{S^{N,W}_{n}\\llbracket\\varnothing \\vdash T\\rrbracket} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}}(\\htmlData{k=proc.erase}{\\mathsf{erase}}\\,\\htmlData{k=th.qa}{q_a})\\end{array}} \\\\[1.5ex] \\htmlData{k=th.lfsoup-step}{\\begin{array}{l}a \\in \\htmlData{k=th.soup}{S^{N,W}_{n+1}\\llbracket\\varnothing \\vdash T\\rrbracket} \\land q_a \\xrightarrow{ev} q' \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=sp.next}{\\mathsf{lf\\_next}}\\,N\\,a\\,ev\\,q' \\in \\htmlData{k=th.soup}{S^{N,W}_{n}\\llbracket\\varnothing \\vdash T\\rrbracket}\\end{array}}\\end{array}",
      "caption": "For $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$, $\\varnothing \\Vvdash_W p : T$ implies lock freedom."
     },
     {
@@ -1289,10 +1181,9 @@ window.MAP = {
      "rocq": "static/Fundamental.v: typed_sem, fundamental, fundamental_typed, live_fundamental, live_fundamental_typed",
      "modes": [
       "df",
-      "live",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\\\ \\quad\\Longrightarrow\\ \\Theta ; \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}^{F}_W t : T\\end{array}} \\\\[1.5ex] \\htmlData{k=th.fundamental-typed}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} t : T\\annot{^{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.df}{\\Theta_{df}} ; \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{F}_W t : T_{df}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.live-fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\\\ \\quad\\Longrightarrow\\ \\Theta ; \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{F}_W t : T\\end{array}} \\\\[1.5ex] \\htmlData{k=th.live-fundamental-typed}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} t : T\\annot{^{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta \\\\ \\land\\ \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Theta_{df} ; \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_W t : T_{df}\\end{array}}\\end{array}",
+     "tex": "\\begin{array}{l}\\htmlData{k=th.fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\\\ \\quad\\Longrightarrow\\ \\Theta ; \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}^{F}_W t : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.fundamental-typed}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.df}{\\Theta_{df}} ; \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{F}_W t : T_{df}\\end{array}}} \\\\[1.5ex] \\htmlData{k=th.live-fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\\\ \\quad\\Longrightarrow\\ \\Theta ; \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{F}_W t : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-typed}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\\\ \\land\\ \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Theta_{df} ; \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_W t : T_{df}\\end{array}}}\\end{array}",
      "caption": "For strict $W$, typing with empty $\\Gamma$ implies the semantic term judgment, and with $\\varnothing \\vdash\\!\\triangleright t$ its live version."
     },
     {
@@ -1301,10 +1192,9 @@ window.MAP = {
      "rocq": "static/FundamentalProc.v: fundamental_proc, live_fundamental_proc; soup/LFTyped.v: lf_fundamental",
      "modes": [
       "df",
-      "live",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.fundamental-proc}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\htmlData{k=tp.pjudg}{\\vdash^{\\infty}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sj.proc}{\\vDash}_W p : T\\end{array}} \\\\[1.5ex] \\htmlData{k=th.live-fundamental-proc}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}^{\\infty}_W p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}_W p : T\\end{array}} \\\\[1.5ex] \\htmlData{k=th.lf-fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T\\end{array}}\\end{array}",
+     "tex": "\\begin{array}{l}\\htmlData{k=th.fundamental-proc}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sj.proc}{\\vDash}_W p : T\\end{array}} \\\\[1.5ex] \\htmlData{k=th.live-fundamental-proc}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{^{\\infty}}_W p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}_W p : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T\\end{array}}}\\end{array}",
      "caption": "Each is an induction on the derivation of the process judgment, with the semantic P-Term and P-Connect as its two cases."
     },
     {
@@ -1313,10 +1203,9 @@ window.MAP = {
      "rocq": "compat/PTerm.v: sem_p_term; compat/ConnectP.v: sem_p_connect; soup/LFCompose.v: lf_p_term, lf_p_connect",
      "modes": [
       "df",
-      "live",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\htmlData{k=th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\htmlData{k=th.Erel}{E[\\kappa]^{W}_{n}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\htmlData{k=th.Prel}{P[\\kappa]^{W}_{n}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.sem-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\htmlData{k=th.conn}{\\mathsf{conn}} \\\\ \\land\\ p_1 \\in \\htmlData{k=th.Prel}{P^{W_1}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket} \\\\ \\land\\ p_2 \\in \\htmlData{k=th.Prel}{P^{W_2}_{n}\\llbracket \\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.par}{p_1 \\parallel_{\\Sigma_C} p_2} \\in \\htmlData{k=th.Prel}{P^{W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.lf-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\mathrel{\\htmlData{k=tp.lfjudg}{\\Vdash}}^{N}_{W} (C_0, \\{t\\}) : T \\\\ \\text{by P-Term}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W (C_0, \\{t\\}) : T\\end{array}}\\end{array}",
+     "tex": "\\begin{array}{l}\\htmlData{k=th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\htmlData{k=th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\htmlData{k=th.Erel}{E[\\kappa]^{W}_{n}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\htmlData{k=th.Prel}{P[\\kappa]^{W}_{n}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.sem-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\htmlData{k=th.conn}{\\mathsf{conn}} \\\\ \\land\\ p_1 \\in \\htmlData{k=th.Prel}{P^{W_1}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket} \\\\ \\land\\ p_2 \\in \\htmlData{k=th.Prel}{P^{W_2}_{n}\\llbracket \\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.par}{p_1 \\parallel_{\\Sigma_C} p_2} \\in \\htmlData{k=th.Prel}{P^{W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket}\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\mathrel{\\htmlData{k=tp.lfjudg}{\\Vdash}}^{N}_{W} (C_0, \\{t\\}) : T \\\\ \\text{by P-Term}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W (C_0, \\{t\\}) : T\\end{array}}}\\end{array}",
      "caption": "For every $\\kappa$ and $n$, P-Term and P-Connect hold in $P$."
     },
     {
@@ -1325,7 +1214,6 @@ window.MAP = {
      "rocq": "compat/Bind.v: Erel_bind",
      "modes": [
       "df",
-      "live",
       "lf"
      ],
      "tex": "\\htmlData{k=th.Erel-bind}{\\begin{array}{l}\\begin{array}{l}e \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta_1 \\vdash T\\rrbracket^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}\\,\\Theta_2}} \\\\ \\land\\ \\forall W' \\htmlData{k=w.ext}{\\sqsupseteq} W,\\ j \\leq n,\\ v \\in \\htmlData{k=th.Vrel}{V^{W'}_j\\llbracket\\Theta_v \\vdash T\\rrbracket}. \\\\ \\qquad \\htmlData{k=se.frame}{f[v]} \\in \\htmlData{k=th.Erel}{E^{W'}_{j}\\llbracket \\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=se.frame}{f[e]} \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array}}",
@@ -1337,10 +1225,9 @@ window.MAP = {
      "rocq": "static/FundamentalProc.v: soundness, live_soundness, soundness_source; soup/LFTyped.v: lf_soundness; soup/LFCompose.v: lf_soundness_source",
      "modes": [
       "df",
-      "live",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=tp.pjudg}{\\vdash^{\\infty}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}} \\\\[1.5ex] \\htmlData{k=th.live-soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}^{\\infty}_W p : T \\land \\mathrel{\\htmlData{k=guard.proc}{\\vdash\\!\\triangleright}} p \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p \\land \\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}}\\,p\\end{array}} \\\\[1.5ex] \\htmlData{k=th.soundness-source}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\varnothing ; \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}} \\\\[1.5ex] \\htmlData{k=th.lf-soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}} \\\\[1.5ex] \\htmlData{k=th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land N \\in \\mathbb{N} \\land \\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\\\ \\land\\ \\varnothing;\\varnothing;\\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W,N} t : T\\annot{^{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta \\\\ \\land\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk} \\land \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\end{array}",
+     "tex": "\\begin{array}{l}\\htmlData{k=th.soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}} \\\\[1.5ex] \\htmlData{k=th.live-soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{^{\\infty}}_W p : T \\land \\mathrel{\\htmlData{k=guard.proc}{\\vdash\\!\\triangleright}} p \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p \\land \\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}}\\,p\\end{array}} \\\\[1.5ex] \\htmlData{k=th.soundness-source}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\varnothing ; \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land N \\in \\mathbb{N} \\land \\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\\\ \\land\\ \\varnothing;\\varnothing;\\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\\\ \\land\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk} \\land \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}",
      "caption": "Typing implies deadlock freedom under $\\mathsf{strict}\\,W$ and lock freedom under $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$."
     },
     {
@@ -1349,10 +1236,9 @@ window.MAP = {
      "rocq": "static/Conservativity.v: conservative, typed_dftyped, dftyped_typed; compat/LiveDF.v: live_sub_df",
      "modes": [
       "df",
-      "live",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.conservative}{\\begin{array}{l}(\\exists a\\,c\\,\\vartheta.\\ \\htmlData{k=th.df}{\\Theta_{df}};\\Gamma;\\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,\\infty} e : T_{df}\\annot{^{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta) \\\\ \\quad\\iff\\ \\Theta_{df};\\Gamma;\\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : T_{df}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.typed-dftyped}{\\begin{array}{l}\\Theta;\\Gamma;\\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} e : T\\annot{^{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta \\\\ \\quad\\Longrightarrow\\ \\Theta_{df};\\Gamma;\\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_W e : T_{df}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.live-sub-df}{\\begin{array}{l}\\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\htmlData{k=th.nobox}{\\Box \\notin T} \\land \\varnothing \\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T\\end{array}}\\end{array}",
+     "tex": "\\begin{array}{l}\\annot{\\htmlData{k=th.conservative}{\\begin{array}{l}(\\exists a\\,c\\,\\vartheta.\\ \\htmlData{k=th.df}{\\Theta_{df}};\\Gamma;\\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,\\infty}} e : T_{df}\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}) \\\\ \\quad\\iff\\ \\Theta_{df};\\Gamma;\\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.typed-dftyped}{\\begin{array}{l}\\Theta;\\Gamma;\\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\\\ \\quad\\Longrightarrow\\ \\Theta_{df};\\Gamma;\\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_W e : T_{df}\\end{array}}} \\\\[1.5ex] \\htmlData{k=th.live-sub-df}{\\begin{array}{l}\\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\land \\htmlData{k=th.nobox}{\\Box \\notin T} \\land \\varnothing \\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T\\end{array}}\\end{array}",
      "caption": "Deadlock-free typing is the merged judgment at $N = \\infty$ up to erasure, and live implies deadlock-free at box-free $\\mathsf{prim}$ results."
     },
     {
@@ -1362,7 +1248,7 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.cost-fundamental}{\\begin{array}{l}\\Theta;\\Gamma;\\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} e : T\\annot{^{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=cs.csem}{\\Theta;\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{N} e : T\\annot{^{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.fsem-of-cost}{\\begin{array}{l}\\begin{array}{l}\\Theta;\\varnothing;\\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W,N} e : T\\annot{^{a}} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta \\land \\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\\\ \\land\\ \\text{credits of } \\Theta \\leq N \\land \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,(\\htmlData{k=th.styof}{\\mathsf{sty} \\circ \\Theta})\\,e}\\end{array}}\\end{array}",
+     "tex": "\\begin{array}{l}\\htmlData{k=th.cost-fundamental}{\\begin{array}{l}\\Theta;\\Gamma;\\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=cs.csem}{\\Theta;\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{N} e : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.fsem-of-cost}{\\begin{array}{l}\\begin{array}{l}\\Theta;\\varnothing;\\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\land \\htmlData{k=ty.prim}{\\mathsf{prim}}\\,T \\\\ \\land\\ \\text{credits of } \\Theta \\leq N \\land \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,(\\htmlData{k=th.styof}{\\mathsf{sty} \\circ \\Theta})\\,e}\\end{array}}\\end{array}",
      "caption": "A typed closed thread with all credits at most $N$ has fuel with every counter at $N$."
     }
    ]
@@ -1736,7 +1622,7 @@ window.MAP = {
   "prim.link": {
    "title": "$\\mathsf{link}$",
    "what": "$\\mathsf{link}\\,\\langle o_1, o_2\\rangle \\xrightarrow{\\leftrightarrow\\{o_1, o_2\\}} \\ast$. The process step removes $\\mathsf{ech}\\,o_1$ and renames every thread by $\\mathsf{csub}\\,o_1\\,o_2$.",
-   "why": "A link forwards a conversation without relaying messages. It acts on no protocol, so it costs $0$ in both cost tables, and in the fuel layer it spends one link ticket.",
+   "why": "A link forwards a conversation without relaying messages. \\annp{It acts on no protocol, so it costs $0$ in both cost tables, and in the fuel layer it spends one link ticket.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{link}\\,\\langle c^{+}, d^{-}\\rangle$.",
    "rocq": "lang/Syntax.v: PLink",
@@ -3256,20 +3142,20 @@ window.MAP = {
   },
   "ty.arrow": {
    "title": "Arrow",
-   "what": "$T\\annot{^{a}} \\multimap^{u}_{l}[c ; \\vartheta ; h]\\,U\\annot{^{b}}$ is a closure type with upper point $u$, lower point $l$, cost $c$, transformer $\\vartheta$, floor $h$ and credits $a, b$.",
+   "what": "\\annp{$T\\annot{^{a}} \\multimap^{u}_{l}\\annot{[c ; \\vartheta ; h]}\\,U\\annot{^{b}}$ is a closure type with upper point $u$, lower point $l$, cost $c$, transformer $\\vartheta$, floor $h$\\annp{ and credits} $a, b$.}",
    "why": "A call runs code that may block and holds the ends of the closure. The type bounds where the call blocks by $u$ and where the held ends sit by $l$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\ast \\multimap \\ast$ is the type of a spawned thunk.",
    "rocq": "types/Types.v: TLolli",
-   "sig": "T\\annot{^{a}} \\multimap^{u}_{l}[c ; \\vartheta ; h]\\,U\\annot{^{b}} \\in \\mathsf{Ty}",
+   "sig": "T\\annot{^{a}} \\multimap^{u}_{l}\\annot{[c ; \\vartheta ; h]}\\,U\\annot{^{b}} \\in \\mathsf{Ty}",
    "args": [
     {
      "name": "T, a",
-     "meaning": "The argument type and its credit."
+     "meaning": "The argument type\\annp{ and its credit}."
     },
     {
      "name": "U, b",
-     "meaning": "The result type and its credit."
+     "meaning": "The result type\\annp{ and its credit}."
     },
     {
      "name": "u",
@@ -3285,11 +3171,13 @@ window.MAP = {
     },
     {
      "name": "\\vartheta",
-     "meaning": "A ticket transformer $(s, b)$, denoting $r \\mapsto 2^{s} r + b$."
+     "meaning": "A ticket transformer $(s, b)$, denoting $r \\mapsto 2^{s} r + b$.",
+     "ann": true
     },
     {
      "name": "h",
-     "meaning": "The floor of the captured ends."
+     "meaning": "The floor of the captured ends.",
+     "ann": true
     }
    ]
   },
@@ -3349,7 +3237,8 @@ window.MAP = {
    "args": [
     {
      "name": "\\vartheta",
-     "meaning": "A ticket transformer $(s, b)$, denoting $r \\mapsto 2^{s} r + b$."
+     "meaning": "A ticket transformer $(s, b)$, denoting $r \\mapsto 2^{s} r + b$.",
+     "ann": true
     }
    ]
   },
@@ -3418,7 +3307,8 @@ window.MAP = {
     },
     {
      "name": "a, b",
-     "meaning": "The component credits."
+     "meaning": "The component credits.",
+     "ann": true
     }
    ]
   },
@@ -3437,7 +3327,8 @@ window.MAP = {
     },
     {
      "name": "a, b",
-     "meaning": "Their credits."
+     "meaning": "Their credits.",
+     "ann": true
     }
    ]
   },
@@ -3467,7 +3358,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "A client loop has type $\\Box\\forall\\iota\\,\\kappa\\,\\zeta.\\ C.\\ \\ast \\multimap (S_1@\\iota \\otimes S_2@\\kappa \\multimap^{\\zeta} \\ast)$.",
    "rocq": "types/Types.v: TBox",
-   "sig": "\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u}[c ; \\vartheta]\\,U\\annot{^{b}}) \\in \\mathsf{Ty}",
+   "sig": "\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u}\\annot{[c ; \\vartheta]}\\,U\\annot{^{b}}) \\in \\mathsf{Ty}",
    "args": [
     {
      "name": "\\bar\\iota",
@@ -3487,11 +3378,12 @@ window.MAP = {
     },
     {
      "name": "c, \\vartheta",
-     "meaning": "Cost and transformer of one force."
+     "meaning": "Cost and transformer of one force.",
+     "ann": true
     },
     {
      "name": "U, b",
-     "meaning": "The result type and credit."
+     "meaning": "The result type\\annp{ and credit}."
     }
    ]
   },
@@ -3548,7 +3440,7 @@ window.MAP = {
     },
     {
      "name": "T, a",
-     "meaning": "The body type and its credit."
+     "meaning": "The body type\\annp{ and its credit}."
     }
    ]
   },
@@ -3618,7 +3510,7 @@ window.MAP = {
   },
   "sty.send": {
    "title": "Send",
-   "what": "$!(\\bar\\iota.\\ T\\annot{^{b}})$ sends a value of $T[x\\cdot 0, \\ldots, x\\cdot(m{-}1)]$ for $\\bar\\iota = \\iota_0, \\ldots, \\iota_{m-1}$, at payload credit $b$.",
+   "what": "$!(\\bar\\iota.\\ T\\annot{^{b}})$ sends a value of $T[x\\cdot 0, \\ldots, x\\cdot(m{-}1)]$ for $\\bar\\iota = \\iota_0, \\ldots, \\iota_{m-1}$\\annp{, at payload credit $b$}.",
    "why": "A plain protocol action, $\\mathsf{dual}$ of receive.",
    "breaks": "Nothing. It is a definition.",
    "example": "$!\\ast.\\mathsf{Close}$.",
@@ -3815,7 +3707,7 @@ window.MAP = {
   "ty2.stydf": {
    "title": "$\\mathsf{sty\\_df}$",
    "what": "$\\mathsf{sty\\_df}(S)$ sets every annotation of $S$ to its value at $N = \\infty$.",
-   "why": "Deadlock freedom and liveness read no credit, so two protocols that differ only in annotations are equal for them.",
+   "why": "\\annp{Deadlock freedom and liveness read no credit, so two protocols that differ only in annotations are equal for them.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{sty\\_df}(!(\\ast^{2}).\\mathsf{Close}) = !(\\ast^{\\infty}).\\mathsf{Close}$.",
    "rocq": "types/Types.v: sty_df",
@@ -3830,7 +3722,7 @@ window.MAP = {
   "sty.seqv": {
    "title": "Up to annotations $\\approx$",
    "what": "$S \\approx S' \\iff \\mathsf{sty\\_df}(S) \\simeq \\mathsf{sty\\_df}(S')$.",
-   "why": "The relations of deadlock freedom and liveness ignore credits, so one relation serves every refill $N$.",
+   "why": "\\annp{The relations of deadlock freedom and liveness ignore credits, so one relation serves every refill $N$.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$!(\\ast^{2}).\\mathsf{Close} \\approx !(\\ast^{\\infty}).\\mathsf{Close}$.",
    "rocq": "relation/Relation.v: seqv",
@@ -3997,7 +3889,8 @@ window.MAP = {
    "args": [
     {
      "name": "\\vartheta",
-     "meaning": "A ticket transformer $(s, b)$, denoting $r \\mapsto 2^{s} r + b$."
+     "meaning": "A ticket transformer $(s, b)$, denoting $r \\mapsto 2^{s} r + b$.",
+     "ann": true
     },
     {
      "name": "r",
@@ -4079,10 +3972,10 @@ window.MAP = {
   },
   "ann.tydf": {
    "title": "$\\mathsf{ty\\_df}$",
-   "what": "$\\mathsf{ty\\_df}(T)$ sets every annotation of $T$ to its value at $N = \\infty$, credits $\\infty$ ($0$ on $\\otimes$, $\\oplus$, $\\exists$), costs $\\infty$, $\\vartheta = (\\infty, \\infty)$, floors $\\infty$.",
+   "what": "\\annp{$\\mathsf{ty\\_df}(T)$ sets every annotation of $T$ to its value at $N = \\infty$, credits $\\infty$ ($0$ on $\\otimes$, $\\oplus$, $\\exists$), costs $\\infty$, $\\vartheta = (\\infty, \\infty)$, floors $\\infty$.}",
    "why": "Deadlock-freedom typing is the merged judgment at $N = \\infty$, and its types carry exactly these annotations.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{ty\\_df}(S@x)$ has every payload credit of $S$ equal to $\\infty$.",
+   "example": "\\annp{$\\mathsf{ty\\_df}(S@x)$ has every payload credit of $S$ equal to $\\infty$.}",
    "rocq": "types/Types.v: ty_df",
    "sig": "\\mathsf{ty\\_df} : \\mathsf{Ty} \\to \\mathsf{Ty}",
    "args": [
@@ -4125,7 +4018,7 @@ window.MAP = {
   "ty.tfree": {
    "title": "$\\mathsf{tfree}$",
    "what": "$\\mathsf{tfree}\\,T$ holds for types built from $\\ast$, boxes, $\\otimes$ and $\\oplus$ whose values hold no end.",
-   "why": "Aging and capture change the credits of entries that hold ends. For $\\mathsf{tfree}\\,T$ the entry holds none, so they leave it unchanged.",
+   "why": "\\annp{Aging and capture change the credits of entries that hold ends.} For $\\mathsf{tfree}\\,T$ the entry holds none, so they leave it unchanged.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{tfree}(\\ast \\otimes \\Box\\ldots)$.",
    "rocq": "types/Types.v: tfree",
@@ -4393,10 +4286,10 @@ window.MAP = {
   },
   "tj.Theta": {
    "title": "$\\Theta$, the end environment",
-   "what": "$\\Theta$ is a finite map from ends $o$ to entries $S@x\\annot{^{a}}$ with a session type $S$, a point $x$ and a credit $a$.",
+   "what": "$\\Theta$ is a finite map from ends $o$ to entries $S@x\\annot{^{a}}$ with a session type $S$, a point $x$\\annp{ and a credit} $a$.",
    "why": "Each end has its own name, so $\\Theta(c^{+})$ and $\\Theta(c^{-})$ are two separate entries and no entry needs a side bit.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\Theta = \\{a \\mapsto S_a@\\rho^{N},\\ b \\mapsto S_b@(\\rho\\cdot 0)^{N}\\}$.",
+   "example": "$\\Theta = \\{a \\mapsto S_a@\\rho\\annot{^{N}},\\ b \\mapsto S_b@(\\rho\\cdot 0)\\annot{^{N}}\\}$.",
    "rocq": "static/Contexts.v: tentry, tenv",
    "sig": "\\Theta : \\mathsf{End} \\rightharpoonup_{\\mathrm{fin}} \\mathsf{Sty} \\times \\mathsf{Pt} \\times (\\mathbb{N} \\cup \\{\\infty\\})",
    "args": [
@@ -4406,7 +4299,7 @@ window.MAP = {
     },
     {
      "name": "S@x\\annot{^{a}}",
-     "meaning": "the entry of $o$, its session type $S$, its point $x$ and its credit $a$"
+     "meaning": "the entry of $o$, its session type $S$, its point $x$\\annp{ and its credit} $a$"
     }
    ]
   },
@@ -4431,16 +4324,16 @@ window.MAP = {
   },
   "tj.Delta": {
    "title": "$\\Delta$, the variable context",
-   "what": "$\\Delta$ is a list indexed by de Bruijn indices whose entries are empty or a credited type $T\\annot{^{a}}$.",
+   "what": "\\annp{$\\Delta$ is a list indexed by de Bruijn indices whose entries are empty or a credited type $T\\annot{^{a}}$.}",
    "why": "A split puts an empty entry at index $i$ in the half that does not own variable $i$. Hence $i$ denotes the same variable in $\\Delta$, $\\Delta_1$ and $\\Delta_2$, and no index is shifted.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\Delta = [(S_1@\\iota \\otimes S_2@\\kappa)^{0}]$ for the argument of a loop body.",
+   "example": "$\\Delta = [(S_1@\\iota \\otimes S_2@\\kappa)\\annot{^{0}}]$ for the argument of a loop body.",
    "rocq": "static/Contexts.v: lenv",
    "sig": "\\Delta : (\\mathsf{Ty} \\times (\\mathbb{N} \\cup \\{\\infty\\}))_{\\bot}^{*}",
    "args": [
     {
      "name": "\\Delta(i)",
-     "meaning": "the entry of de Bruijn index $i$, empty or a credited type $T\\annot{^{a}}$"
+     "meaning": "\\annp{the entry of de Bruijn index $i$, empty or a credited type $T\\annot{^{a}}$}"
     }
    ]
   },
@@ -4561,7 +4454,7 @@ window.MAP = {
    "args": [
     {
      "name": "\\Delta",
-     "meaning": "the de Bruijn list of optional credited types of the variables"
+     "meaning": "\\annp{the de Bruijn list of optional credited types of the variables}"
     },
     {
      "name": "\\Delta_1, \\Delta_2",
@@ -4679,7 +4572,7 @@ window.MAP = {
    "args": [
     {
      "name": "\\Delta",
-     "meaning": "the de Bruijn list of optional credited types of the variables"
+     "meaning": "\\annp{the de Bruijn list of optional credited types of the variables}"
     }
    ]
   },
@@ -4698,7 +4591,7 @@ window.MAP = {
     },
     {
      "name": "T\\annot{^{a}}",
-     "meaning": "its credited type"
+     "meaning": "\\annp{its credited type}"
     }
    ]
   },
@@ -4730,9 +4623,9 @@ window.MAP = {
    "what": "An end returned by an action, or created fresh, has credit $N$.",
    "why": "The fuel layer sets the counter of an end to $N$ at every action on it, and the static credit is a lower bound on that counter.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{send}$ returns $(S@x^{+})^{N}$.",
+   "example": "$\\mathsf{send}$ returns $(S@x^{+})\\annot{^{N}}$.",
    "rocq": "static/Typing.v: e_send, e_recv, e_select, e_branch, e_new",
-   "sig": "(S@x)^{N}",
+   "sig": "(S@x)\\annot{^{N}}",
    "args": [
     {
      "name": "S@x",
@@ -4740,7 +4633,7 @@ window.MAP = {
     },
     {
      "name": "N",
-     "meaning": "the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "\\annp{the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$}"
     }
    ]
   },
@@ -4980,26 +4873,26 @@ window.MAP = {
   "sub.tsub": {
    "title": "Subtyping $T\\annot{^{a}} \\leq T'\\annot{^{a'}}$",
    "what": "The least relation closed under Sub-Unit, Sub-Sess, Sub-Arr, Sub-Prod, Sub-Sum, Sub-Box and Sub-Ex, used by E-Sub.",
-   "why": "The branches of $\\mathsf{case}$ and of a received choice need one common type, and the credit $N$ of $\\mathsf{new}_\\ell$ must fall to what a protocol asks. Every clause weakens what a value promises, so $V$ at $T\\annot{^{a}}$ is contained in $V$ at $T'\\annot{^{a'}}$.",
-   "breaks": "Without E-Sub the client loop could not pass the fresh ends at credit $N = 3$ to a parameter that asks credits $1$ and $2$.",
+   "why": "The branches of $\\mathsf{case}$ and of a received choice need one common type\\annp{, and the credit} $N$ of $\\mathsf{new}_\\ell$ must fall to what a protocol asks. Every clause weakens what a value promises, so $V$ at $T\\annot{^{a}}$ is contained in $V$ at $T'\\annot{^{a'}}$.",
+   "breaks": "\\annp{Without E-Sub the client loop could not pass the fresh ends\\annp{ at credit $N = 3$} to a parameter that asks credits $1$ and $2$.}",
    "example": "$(S@x)^{3} \\leq (S@x)^{1}$ and $\\exists^{\\bot}\\rho.\\,\\{\\rho \\prec \\overline{\\rho\\cdot 0}\\}.\\,T \\leq \\exists^{\\bot}\\rho.\\,\\varnothing.\\,T$.",
    "rocq": "static/Contexts.v: tsub",
    "sig": "T\\annot{^{a}} \\leq T'\\annot{^{a'}} \\subseteq (\\mathsf{Ty} \\times \\mathsf{Fuel})^{2}",
    "args": [
     {
      "name": "T\\annot{^{a}}",
-     "meaning": "the type and credit a value has"
+     "meaning": "the type\\annp{ and credit} a value has"
     },
     {
      "name": "T'\\annot{^{a'}}",
-     "meaning": "the type and credit it is used at"
+     "meaning": "the type\\annp{ and credit} it is used at"
     }
    ]
   },
   "sub.dconv": {
    "title": "D-Conv",
    "what": "If $\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W} t : T$ and $\\mathsf{ty\\_df}\\,T \\leq \\mathsf{ty\\_df}\\,T'$ at annotations $\\infty$, then $\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W} t : T'$.",
-   "why": "Deadlock-free typing reads no credit, cost or transformer. At annotations $\\infty$ every clause of $\\leq$ on credits, costs, transformers and floors holds, and $\\leq$ reduces to $\\approx$ on session types and dropping facts of existentials.",
+   "why": "\\annp{Deadlock-free typing reads no credit, cost or transformer.} \\annp{At annotations $\\infty$ every clause of $\\leq$ on credits, costs, transformers and floors holds, and $\\leq$ reduces to $\\approx$ on session types and dropping facts of existentials.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\exists^{\\bot}\\rho.\\,\\Lambda_0(\\rho).\\,T$ converts to $\\exists^{\\bot}\\rho.\\,\\varnothing.\\,T$.",
    "rocq": "static/Typing.v: d_conv",
@@ -5110,7 +5003,7 @@ window.MAP = {
   },
   "tp.sub-var": {
    "title": "Variance",
-   "what": "$\\leq$ is contravariant in the argument and covariant in the result of $\\multimap$, and covariant in the components of $\\otimes$ and $\\oplus$, whose credits add before comparison.",
+   "what": "\\annp{$\\leq$ is contravariant in the argument and covariant in the result of $\\multimap$, and covariant in the components of $\\otimes$ and $\\oplus$, whose credits add before comparison.}",
    "why": "A closure that accepts more and returns less can stand for one that accepts less and returns more.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(T^{1} \\multimap U^{3}) \\leq (T^{2} \\multimap U^{1})$.",
@@ -5132,7 +5025,7 @@ window.MAP = {
    "what": "$T_i\\annot{^{a + a_i}} \\leq T_i'\\annot{^{a' + a_i'}}$ for $i = 1, 2$.",
    "why": "The credit of an aggregate pushes inward, so the parts are compared at the credits they carry inside the aggregate.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$(T^{1} \\otimes U^{1})^{1} \\leq (T^{2} \\otimes U^{0})^{0}$ needs $T^{2} \\leq T^{2}$ and $U^{2} \\leq U^{0}$.",
+   "example": "$(T^{1} \\otimes U^{1})^{1} \\leq (T^{2} \\otimes U\\annot{^{0}})\\annot{^{0}}$ needs $T^{2} \\leq T^{2}$ and $U^{2} \\leq U\\annot{^{0}}$.",
    "rocq": "static/Contexts.v: sub_prod, sub_sum",
    "sig": "T_i\\annot{^{a + a_i}} \\leq T_i'\\annot{^{a' + a_i'}}",
    "args": [
@@ -5153,7 +5046,7 @@ window.MAP = {
   "tp.sub-teq": {
    "title": "Equal up to $\\simeq$",
    "what": "$T \\equiv T'$, the two types have the same shape and their session types are pairwise $\\simeq$.",
-   "why": "The body of a box and of an existential is compared exactly up to protocol spellings. Credits inside it are not lowered, because a box is copied and an existential is opened at its own credit.",
+   "why": "The body of a box and of an existential is compared exactly up to protocol spellings. \\annp{Credits inside it are not lowered, because a box is copied and an existential is opened at its own credit.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Box(\\ldots\\,(\\mathsf{Skip}.S)@x) \\leq \\Box(\\ldots\\,S@x)$.",
    "rocq": "types/Types.v: teq",
@@ -5236,9 +5129,9 @@ window.MAP = {
    "what": "$e$ is typed under $\\Theta^{h}$, $\\Gamma$ extended by $u \\prec \\varphi$, $\\Delta^{h}$ extended by the argument $T\\annot{^{a_T}}$, and the future $(\\varnothing, \\varphi)$.",
    "why": "The body runs at a later call. It may rely only on its captured entries, its argument and $u \\prec \\varphi$, and E-App establishes $u \\prec F$ at every call.",
    "breaks": "Nothing. It is a definition.",
-   "example": "The body of the client loop with argument $(S_1@\\iota \\otimes S_2@\\kappa)^{0}$.",
+   "example": "The body of the client loop with argument $(S_1@\\iota \\otimes S_2@\\kappa)\\annot{^{0}}$.",
    "rocq": "static/Typing.v: e_abs",
-   "sig": "\\Theta^{h} ; \\Gamma, u \\prec \\varphi ; \\Delta^{h}, T\\annot{^{a_T}} \\vdash^{(\\varnothing, \\varphi)}_{W,N} e : U\\annot{^{a_U}} \\triangleright c ; \\vartheta",
+   "sig": "\\Theta^{h} ; \\Gamma, u \\prec \\varphi ; \\Delta^{h}, T\\annot{^{a_T}} \\vdash^{(\\varnothing, \\varphi)}_{W\\annot{,N}} e : U\\annot{^{a_U}} \\annot{\\triangleright c ; \\vartheta}",
    "args": [
     {
      "name": "T\\annot{^{a_T}}",
@@ -5250,7 +5143,8 @@ window.MAP = {
     },
     {
      "name": "c, \\vartheta",
-     "meaning": "the cost and transformer recorded on the arrow"
+     "meaning": "the cost and transformer recorded on the arrow",
+     "ann": true
     }
    ]
   },
@@ -5280,7 +5174,7 @@ window.MAP = {
    "breaks": "$\\mathsf{let}\\ \\ast = \\mathsf{close}\\,c\\ \\mathsf{in}\\ \\mathsf{close}\\,d$ beside a partner that closes $d$ before $c$ deadlocks. E-LetU rejects the first thread unless $x_c \\prec \\overline{x_d}$.",
    "example": "The cycle example needs $\\rho \\prec \\overline{\\rho\\cdot 0}$ for $\\mathsf{close}\\,c$ while $d$ is held.",
    "rocq": "static/Typing.v: e_app, e_pair, e_letp, e_letu, e_case",
-   "sig": "\\Theta_1 ; \\Gamma ; \\Delta_1 \\vdash^{F \\cup \\mathsf{heads}(\\Theta_2, \\Delta_2)}_{W,N} e_1 : \\ldots",
+   "sig": "\\Theta_1 ; \\Gamma ; \\Delta_1 \\vdash^{F \\cup \\mathsf{heads}(\\Theta_2, \\Delta_2)}_{W\\annot{,N}} e_1 : \\ldots",
    "args": [
     {
      "name": "\\Theta_1, \\Delta_1",
@@ -5299,7 +5193,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$f\\,(\\mathsf{close}\\,c)$ with $f$ capturing $d$.",
    "rocq": "static/Typing.v: e_app",
-   "sig": "\\Theta_2' ; \\Gamma ; \\Delta_2' \\vdash^{F \\cup \\{l\\}}_{W,N} e_2 : T\\annot{^{a_T}} \\triangleright c_2 ; \\vartheta_2",
+   "sig": "\\Theta_2' ; \\Gamma ; \\Delta_2' \\vdash^{F \\cup \\{l\\}}_{W\\annot{,N}} e_2 : T\\annot{^{a_T}} \\annot{\\triangleright c_2 ; \\vartheta_2}",
    "args": [
     {
      "name": "l",
@@ -5357,7 +5251,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\langle c, \\mathsf{close}\\,d\\rangle$ needs $x_d \\prec \\overline{x_c}$.",
    "rocq": "static/Typing.v: e_pair",
-   "sig": "\\ldots \\vdash^{F \\cup \\mathsf{heads}(T_1)}_{W,N} e_2 : T_2\\annot{^{a_2}} \\triangleright c_2 ; \\vartheta_2",
+   "sig": "\\ldots \\vdash^{F \\cup \\mathsf{heads}(T_1)}_{W\\annot{,N}} e_2 : T_2\\annot{^{a_2}} \\annot{\\triangleright c_2 ; \\vartheta_2}",
    "args": [
     {
      "name": "\\mathsf{heads}(T_1)",
@@ -5387,19 +5281,19 @@ window.MAP = {
   "tp.letp": {
    "title": "Body of a pair elimination",
    "what": "$e_2$ is typed under the aged $\\Theta_2'$, $\\Delta_2'$ extended by $T_2\\annot{^{a+a_2}}$ at index $0$ and $T_1\\annot{^{a+a_1}}$ at index $1$, under $F$.",
-   "why": "The credit $a$ of the pair is a common share of both components, so each bound variable gets $a$ added to its own credit.",
+   "why": "\\annp{The credit $a$ of the pair is a common share of both components, so each bound variable gets $a$ added to its own credit.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{let}\\ \\langle v, c\\rangle = \\mathsf{recv}\\,c\\ \\mathsf{in}\\ e$ binds the received value and the continuation end.",
    "rocq": "static/Typing.v: e_letp",
-   "sig": "\\Theta_2' ; \\Gamma ; T_2\\annot{^{a+a_2}}, T_1\\annot{^{a+a_1}}, \\Delta_2' \\vdash^{F}_{W,N} e_2 : T\\annot{^{a_T}} \\triangleright c_2 ; \\vartheta_2",
+   "sig": "\\Theta_2' ; \\Gamma ; T_2\\annot{^{a+a_2}}, T_1\\annot{^{a+a_1}}, \\Delta_2' \\vdash^{F}_{W\\annot{,N}} e_2 : T\\annot{^{a_T}} \\annot{\\triangleright c_2 ; \\vartheta_2}",
    "args": [
     {
      "name": "T_1\\annot{^{a_1}} \\otimes T_2\\annot{^{a_2}}",
-     "meaning": "the type of $e_1$ with outer credit $a$"
+     "meaning": "\\annp{the type of $e_1$ with outer credit $a$}"
     },
     {
      "name": "a + a_i",
-     "meaning": "the credit of the bound component"
+     "meaning": "\\annp{the credit of the bound component}"
     }
    ]
   },
@@ -5410,7 +5304,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{let}\\ \\ast = \\mathsf{close}\\,c\\ \\mathsf{in}\\ \\mathsf{close}\\,d$.",
    "rocq": "static/Typing.v: e_letu",
-   "sig": "\\Theta_2' ; \\Gamma ; \\Delta_2' \\vdash^{F}_{W,N} e_2 : T\\annot{^{a_T}} \\triangleright c_2 ; \\vartheta_2",
+   "sig": "\\Theta_2' ; \\Gamma ; \\Delta_2' \\vdash^{F}_{W\\annot{,N}} e_2 : T\\annot{^{a_T}} \\annot{\\triangleright c_2 ; \\vartheta_2}",
    "args": [
     {
      "name": "\\Theta_2', \\Delta_2'",
@@ -5425,7 +5319,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{case}\\,(\\mathsf{branch}\\,o)\\,(a.\\,\\mathsf{close}\\,a)\\,(a.\\,\\mathsf{close}\\,a)$.",
    "rocq": "static/Typing.v: e_case",
-   "sig": "\\Theta_2' ; \\Gamma ; T_i\\annot{^{a+a_i}}, \\Delta_2' \\vdash^{F}_{W,N} e_i : T\\annot{^{a_T}} \\triangleright c_i ; \\vartheta_i",
+   "sig": "\\Theta_2' ; \\Gamma ; T_i\\annot{^{a+a_i}}, \\Delta_2' \\vdash^{F}_{W\\annot{,N}} e_i : T\\annot{^{a_T}} \\annot{\\triangleright c_i ; \\vartheta_i}",
    "args": [
     {
      "name": "i",
@@ -5448,14 +5342,14 @@ window.MAP = {
    "args": [
     {
      "name": "\\Delta",
-     "meaning": "the de Bruijn list of optional credited types of the variables"
+     "meaning": "\\annp{the de Bruijn list of optional credited types of the variables}"
     }
    ]
   },
   "E-Box.inst": {
    "title": "Session instances",
    "what": "The body is typed for every list $\\bar s$ of $k$ session types with $\\mathsf{sinsts}\\,N\\,\\bar s$.",
-   "why": "A box is polymorphic in its $k$ session variables, and each force may choose another instance. At $N = \\infty$ only erased instances are admitted, because an end received at a finite credit cannot age by $\\infty$.",
+   "why": "A box is polymorphic in its $k$ session variables, and each force may choose another instance. \\annp{At $N = \\infty$ only erased instances are admitted, because an end received at a finite credit cannot age by $\\infty$.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$k = 0$ in every example.",
    "rocq": "static/Contexts.v: sinsts",
@@ -5478,7 +5372,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "The body of the client loop.",
    "rocq": "static/Typing.v: e_box",
-   "sig": "\\varnothing ; \\Gamma{\\uparrow^m}, C(\\bar\\iota), u \\prec \\varphi ; \\Delta{\\uparrow^m}, f \\vdash^{(\\varnothing, \\varphi)}_{W,N} e : U[\\bar s]\\annot{^{a_U}} \\triangleright c ; \\vartheta",
+   "sig": "\\varnothing ; \\Gamma{\\uparrow^m}, C(\\bar\\iota), u \\prec \\varphi ; \\Delta{\\uparrow^m}, f \\vdash^{(\\varnothing, \\varphi)}_{W\\annot{,N}} e : U[\\bar s]\\annot{^{a_U}} \\annot{\\triangleright c ; \\vartheta}",
    "args": [
     {
      "name": "\\bar\\iota",
@@ -5515,12 +5409,12 @@ window.MAP = {
   },
   "E-Box.self": {
    "title": "The self",
-   "what": "The body binds the box at index $0$, at its own type and credit $\\infty$.",
-   "why": "This is recursion. A box holds no end, so its credit bounds nothing and is $\\infty$.",
+   "what": "The body binds the box at index $0$, at its own type\\annp{ and credit} $\\infty$.",
+   "why": "This is recursion. \\annp{A box holds no end, so its credit bounds nothing and is $\\infty$.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$(\\mathsf{force}\\,f)\\,\\langle a, b\\rangle$ calls the self $f$.",
    "rocq": "static/Typing.v: e_box",
-   "sig": "f : \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u}[c;\\vartheta]\\,U\\annot{^{a_U}})^{\\infty}",
+   "sig": "f : \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u}\\annot{[c;\\vartheta]}\\,U\\annot{^{a_U}})^{\\infty}",
    "args": [
     {
      "name": "f",
@@ -5760,11 +5654,11 @@ window.MAP = {
   "E-SpawnLam.body": {
    "title": "Body of a spawned $\\lambda$",
    "what": "$e$ is typed under $\\Theta'$, $\\Delta'$ extended by the argument $\\ast\\annot{^{a_1}}$, and the empty future.",
-   "why": "A spawned $\\lambda$ needs no lower point, because no thread holds it as a closure. Each spawned body therefore gets its own floor.",
+   "why": "A spawned $\\lambda$ needs no lower point, because no thread holds it as a closure. \\annp{Each spawned body therefore gets its own floor.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{spawn}\\,(\\lambda u.\\,\\mathsf{let}\\ \\ast = u\\ \\mathsf{in}\\ \\mathsf{close}\\,d')$.",
    "rocq": "static/Typing.v: e_spawn_lam",
-   "sig": "\\Theta' ; \\Gamma ; \\ast\\annot{^{a_1}}, \\Delta' \\vdash^{(\\varnothing, \\cdot)}_{W,N} e : \\ast\\annot{^{a_U}} \\triangleright c' ; \\vartheta'",
+   "sig": "\\Theta' ; \\Gamma ; \\ast\\annot{^{a_1}}, \\Delta' \\vdash^{(\\varnothing, \\cdot)}_{W\\annot{,N}} e : \\ast\\annot{^{a_U}} \\annot{\\triangleright c' ; \\vartheta'}",
    "args": [
     {
      "name": "\\ast\\annot{^{a_1}}",
@@ -5772,7 +5666,8 @@ window.MAP = {
     },
     {
      "name": "c', \\vartheta'",
-     "meaning": "cost and transformer of the child"
+     "meaning": "cost and transformer of the child",
+     "ann": true
     }
    ]
   },
@@ -5877,12 +5772,12 @@ window.MAP = {
   },
   "E-New.dual": {
    "title": "Dual pair at $N$",
-   "what": "$c^{+}$ has type $S@\\pi$ and $c^{-}$ type $\\overline{S}@\\overline{\\pi}$, both at credit $N$.",
-   "why": "The fuel layer starts both counters of a new channel at $N$, and the credits are lower bounds on them.",
+   "what": "$c^{+}$ has type $S@\\pi$ and $c^{-}$ type $\\overline{S}@\\overline{\\pi}$, both\\annp{ at credit $N$}.",
+   "why": "The fuel layer starts both counters of a new channel at $N$\\annp{, and the credits} are lower bounds on them.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$(S_a@\\pi)^{N} \\otimes (S_b@\\overline{\\pi})^{N}$ with $S_b = \\overline{S_a}$.",
+   "example": "$(S_a@\\pi)\\annot{^{N}} \\otimes (S_b@\\overline{\\pi})\\annot{^{N}}$ with $S_b = \\overline{S_a}$.",
    "rocq": "static/Typing.v: e_new",
-   "sig": "(S@\\pi)^{N} \\otimes (\\overline{S}@\\overline{\\pi})^{N}",
+   "sig": "(S@\\pi)\\annot{^{N}} \\otimes (\\overline{S}@\\overline{\\pi})\\annot{^{N}}",
    "args": [
     {
      "name": "S",
@@ -5890,7 +5785,7 @@ window.MAP = {
     },
     {
      "name": "N",
-     "meaning": "the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "\\annp{the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$}"
     }
    ]
   },
@@ -5966,18 +5861,19 @@ window.MAP = {
     },
     {
      "name": "a, a_T",
-     "meaning": "the outer and inner credits"
+     "meaning": "the outer and inner credits",
+     "ann": true
     }
    ]
   },
   "E-Open.body": {
    "title": "Body after opening",
    "what": "$\\Theta$, $\\Gamma$, $\\Delta$, $F$ and $U$ shift past $m$ fresh point variables, $C$ joins $\\Gamma$, and entry $i$ becomes $T\\annot{^{a + a_T}}$.",
-   "why": "The fresh variables stand for the unknown witness, and $C$ is all the scope knows about it. The credit of the existential moves into its body.",
+   "why": "The fresh variables stand for the unknown witness, and $C$ is all the scope knows about it. \\annp{The credit of the existential moves into its body.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{let}\\ p = (\\mathsf{force}\\,\\mathsf{mk}_0)\\,\\ast\\ \\mathsf{in}\\ \\ldots$ opens at $\\iota$.",
    "rocq": "static/Typing.v: e_open",
-   "sig": "\\Theta{\\uparrow} ; \\Gamma{\\uparrow}, C ; \\Delta{\\uparrow}[i \\mapsto T\\annot{^{a + a_T}}] \\vdash^{F\\uparrow}_{W,N} e : U{\\uparrow}",
+   "sig": "\\Theta{\\uparrow} ; \\Gamma{\\uparrow}, C ; \\Delta{\\uparrow}[i \\mapsto T\\annot{^{a + a_T}}] \\vdash^{F\\uparrow}_{W\\annot{,N}} e : U{\\uparrow}",
    "args": [
     {
      "name": "{\\uparrow}",
@@ -6026,7 +5922,7 @@ window.MAP = {
   "P-Term.disj": {
    "title": "$\\mathsf{chans}\\,\\Sigma \\cap C_0 = \\varnothing$",
    "what": "No channel of the interface is restricted.",
-   "why": "Then every end of $\\Sigma^{N} \\cup \\Theta_B$ lies in exactly one part, and the interface is the environment restricted to the channels outside $C_0$.",
+   "why": "Then every end of $\\Sigma\\annot{^{N}} \\cup \\Theta_B$ lies in exactly one part, and the interface is the environment restricted to the channels outside $C_0$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Sigma = \\{c^{+} \\mapsto \\mathsf{Close}@x\\}$ with $C_0 = \\varnothing$.",
    "rocq": "static/Typing.v: p_term",
@@ -6044,12 +5940,12 @@ window.MAP = {
   },
   "P-Term.pairs": {
    "title": "Restricted pairs dual",
-   "what": "For every $c \\in C_0$ there are $S$ and $x$ with $\\Theta_B(c^{+}) = S@x^{N}$ and $\\Theta_B(c^{-}) = \\overline{S}@\\overline{x}^{N}$.",
+   "what": "For every $c \\in C_0$ there are $S$ and $x$ with $\\Theta_B(c^{+}) = S@x\\annot{^{N}}$ and $\\Theta_B(c^{-}) = \\overline{S}@\\overline{x}\\annot{^{N}}$.",
    "why": "A restricted channel has both ends inside the process. They synchronize with each other only, so they need dual types at dual points.",
    "breaks": "Nothing. It is a definition.",
    "example": "$c^{+} : S@x$ and $c^{-} : \\overline{S}@\\overline{x}$.",
    "rocq": "static/Typing.v: p_term",
-   "sig": "\\forall c \\in C_0.\\ \\exists S\\,x.\\ \\Theta_B(c^{+}) = S@x^{N} \\land \\Theta_B(c^{-}) = \\overline{S}@\\overline{x}^{N}",
+   "sig": "\\forall c \\in C_0.\\ \\exists S\\,x.\\ \\Theta_B(c^{+}) = S@x\\annot{^{N}} \\land \\Theta_B(c^{-}) = \\overline{S}@\\overline{x}\\annot{^{N}}",
    "args": [
     {
      "name": "c",
@@ -6063,20 +5959,20 @@ window.MAP = {
   },
   "P-Term.typed": {
    "title": "Thread typing",
-   "what": "$t$ is typed under $\\Sigma^{N} \\cup \\Theta_B$, empty $\\Gamma$ and $\\Delta$, and the empty future, at $W$ and $N$.",
+   "what": "$t$ is typed under $\\Sigma\\annot{^{N}} \\cup \\Theta_B$, empty $\\Gamma$ and $\\Delta$, and the empty future, at $W$ and $N$.",
    "why": "The process judgment has static premises only. Its semantic content comes from the fundamental theorems.",
    "breaks": "Nothing. It is a definition.",
    "example": "The client and server main at $N = \\infty$.",
    "rocq": "static/Typing.v: p_term",
-   "sig": "\\Sigma^{N} \\cup \\Theta_B ; \\varnothing ; \\varnothing \\vdash^{(\\varnothing,\\cdot)}_{W,N} t : T\\annot{^{a}} \\triangleright c ; \\vartheta",
+   "sig": "\\Sigma\\annot{^{N}} \\cup \\Theta_B ; \\varnothing ; \\varnothing \\vdash^{(\\varnothing,\\cdot)}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}",
    "args": [
     {
      "name": "t",
      "meaning": "the thread"
     },
     {
-     "name": "\\Sigma^{N}",
-     "meaning": "the interface at credit $N$"
+     "name": "\\Sigma\\annot{^{N}}",
+     "meaning": "the interface\\annp{ at credit $N$}"
     }
    ]
   },
@@ -6106,7 +6002,7 @@ window.MAP = {
    "args": [
     {
      "name": "N",
-     "meaning": "the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "\\annp{the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$}"
     },
     {
      "name": "tk",
@@ -6129,7 +6025,7 @@ window.MAP = {
    "args": [
     {
      "name": "N",
-     "meaning": "the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "\\annp{the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$}"
     }
    ]
   },
@@ -6140,7 +6036,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{close}\\,c^{+}$ at $T = \\ast$.",
    "rocq": "static/Typing.v: p_connect",
-   "sig": "\\Sigma_1 \\cup \\Sigma_C \\vdash^{N}_{W_1} (C_1, E_1) : T",
+   "sig": "\\Sigma_1 \\cup \\Sigma_C \\vdash\\annot{\\annot{^{N}}}_{W_1} (C_1, E_1) : T",
    "args": [
     {
      "name": "\\Sigma_1",
@@ -6159,7 +6055,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{close}\\,c^{-}$.",
    "rocq": "static/Typing.v: p_connect",
-   "sig": "\\Sigma_2 \\cup \\overline{\\Sigma_C} \\vdash^{N}_{W_2} (C_2, E_2) : \\ast",
+   "sig": "\\Sigma_2 \\cup \\overline{\\Sigma_C} \\vdash\\annot{\\annot{^{N}}}_{W_2} (C_2, E_2) : \\ast",
    "args": [
     {
      "name": "\\Sigma_2",
@@ -6175,7 +6071,7 @@ window.MAP = {
    "title": "Exact dual cut $\\overline{\\Sigma_C}$",
    "what": "$\\overline{\\Sigma_C}$ maps $\\overline{o}$ to $\\overline{S}@\\overline{x}$ for every $o \\mapsto S@x$ in $\\Sigma_C$.",
    "why": "After composition the two ends of each cut channel are restricted, and lock freedom asks their protocols dual up to annotations. An exact dual gives this, a dual up to annotations does not.",
-   "breaks": "An annotation mismatch on a cut channel breaks the payload credit of a later message.",
+   "breaks": "\\annp{An annotation mismatch on a cut channel breaks the payload credit of a later message.}",
    "example": "$\\overline{\\{c^{+} \\mapsto \\mathsf{Close}@x\\}} = \\{c^{-} \\mapsto \\mathsf{Close}@\\overline{x}\\}$.",
    "rocq": "static/Typing.v: senv_dual",
    "sig": "\\overline{\\Sigma_C} = \\{\\overline{o} \\mapsto \\overline{S}@\\overline{x} \\mid (o \\mapsto S@x) \\in \\Sigma_C\\}",
@@ -6479,13 +6375,13 @@ window.MAP = {
    ]
   },
   "tp.pjudg": {
-   "title": "$\\Sigma \\vdash^{N}_{W} p : T$",
-   "what": "The process $p$ is typed over $\\Sigma$ in $W$ at refill $N$ with result $T$, derived by P-Term and P-Connect.",
+   "title": "$\\Sigma \\vdash\\annot{\\annot{^{N}}}_{W} p : T$",
+   "what": "\\annp{The process $p$ is typed over $\\Sigma$ in $W$ at refill $N$ with result $T$, derived by P-Term and P-Connect.}",
    "why": "One judgment serves deadlock freedom at $N = \\infty$ and lock freedom at finite $N$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\varnothing \\vdash^{\\infty}_{W} (\\varnothing, \\{t\\}) : \\ast$.",
+   "example": "$\\varnothing \\vdash\\annot{^{\\infty}}_{W} (\\varnothing, \\{t\\}) : \\ast$.",
    "rocq": "static/Typing.v: ptyped",
-   "sig": "\\Sigma \\vdash^{N}_{W} p : T",
+   "sig": "\\Sigma \\vdash\\annot{\\annot{^{N}}}_{W} p : T",
    "args": [
     {
      "name": "\\Sigma",
@@ -6497,7 +6393,7 @@ window.MAP = {
     },
     {
      "name": "N",
-     "meaning": "the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "\\annp{the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$}"
     },
     {
      "name": "p",
@@ -6511,12 +6407,12 @@ window.MAP = {
   },
   "tp.lfjudg": {
    "title": "$\\Sigma \\Vdash^{N}_{W} p : T$",
-   "what": "$\\Sigma \\Vdash^{N}_{W} p : T$ iff $N \\in \\mathbb{N}$, $\\Sigma \\vdash^{N}_{W} p : T$ and $\\vdash\\!\\triangleright p$.",
+   "what": "$\\Sigma \\Vdash^{N}_{W} p : T$ iff $N \\in \\mathbb{N}$, $\\Sigma \\vdash\\annot{\\annot{^{N}}}_{W} p : T$ and $\\vdash\\!\\triangleright p$.",
    "why": "Lock freedom needs finite counters and no infinite run of free steps, and the guard excludes the latter.",
    "breaks": "Nothing. It is a definition.",
    "example": "Two threads closing $c^{+}$ and $c^{-}$, at every $N \\in \\mathbb{N}$.",
    "rocq": "static/Typing.v: ptyped, static/FundamentalProc.v: pguard",
-   "sig": "\\Sigma \\Vdash^{N}_{W} p : T \\iff N \\in \\mathbb{N} \\land \\Sigma \\vdash^{N}_{W} p : T \\land \\vdash\\!\\triangleright p",
+   "sig": "\\Sigma \\Vdash^{N}_{W} p : T \\iff N \\in \\mathbb{N} \\land \\Sigma \\vdash\\annot{\\annot{^{N}}}_{W} p : T \\land \\vdash\\!\\triangleright p",
    "args": [
     {
      "name": "\\Sigma",
@@ -6528,7 +6424,7 @@ window.MAP = {
     },
     {
      "name": "N",
-     "meaning": "the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "\\annp{the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$}"
     },
     {
      "name": "p",
@@ -6575,13 +6471,13 @@ window.MAP = {
    ]
   },
   "tp.lift": {
-   "title": "$\\Sigma^{N}$",
-   "what": "$\\Sigma$ with every entry at credit $N$.",
-   "why": "Interface ends start a thread at credit $N$, as fresh ends do.",
+   "title": "$\\Sigma\\annot{^{N}}$",
+   "what": "$\\Sigma$ with every entry\\annp{ at credit $N$}.",
+   "why": "Interface ends start a thread\\annp{ at credit $N$}, as fresh ends do.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\{c^{+} \\mapsto \\mathsf{Close}@x\\}^{N} = \\{c^{+} \\mapsto \\mathsf{Close}@x^{N}\\}$.",
+   "example": "$\\{c^{+} \\mapsto \\mathsf{Close}@x\\}\\annot{^{N}} = \\{c^{+} \\mapsto \\mathsf{Close}@x\\annot{^{N}}\\}$.",
    "rocq": "static/Contexts.v: tenv_of",
-   "sig": "\\Sigma^{N} : \\mathsf{End} \\rightharpoonup \\mathsf{Sty} \\times \\mathsf{Pt} \\times \\mathsf{Fuel}",
+   "sig": "\\Sigma\\annot{^{N}} : \\mathsf{End} \\rightharpoonup \\mathsf{Sty} \\times \\mathsf{Pt} \\times \\mathsf{Fuel}",
    "args": [
     {
      "name": "\\Sigma",
@@ -6589,7 +6485,7 @@ window.MAP = {
     },
     {
      "name": "N",
-     "meaning": "the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "\\annp{the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$}"
     }
    ]
   },
@@ -6661,7 +6557,7 @@ window.MAP = {
    "args": [
     {
      "name": "N",
-     "meaning": "the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "\\annp{the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$}"
     },
     {
      "name": "\\bar s",
@@ -6686,12 +6582,12 @@ window.MAP = {
   },
   "tp.vdash": {
    "title": "The term turnstile $\\vdash$",
-   "what": "The least relation closed under E-Unit to E-Open, with erased form $\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W} t : T$, defined as $\\Theta_{df} ; \\Gamma ; \\Delta_{df} \\vdash^{F}_{W,\\infty} t : T_{df}\\annot{^{a_{df}}} \\triangleright \\infty ; (\\infty, \\infty)$ with the annotations of $N = \\infty$. D-Unit to D-Open are lemmas.",
-   "why": "One relation carries the session type, the points, the credit, the cost and the transformer of $e$, so every mode reads its premises off one derivation.",
+   "what": "The least relation closed under E-Unit to E-Open, with erased form $\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W} t : T$, defined as $\\Theta_{df} ; \\Gamma ; \\Delta_{df} \\vdash^{F}_{W\\annot{,\\infty}} t : T_{df}\\annot{^{a_{df}}} \\annot{\\triangleright \\infty ; (\\infty, \\infty)}$ with the annotations of $N = \\infty$. D-Unit to D-Open are lemmas.",
+   "why": "\\annp{One relation carries the session type, the points, the credit, the cost and the transformer of $e$, so every mode reads its premises off one derivation.}",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\varnothing ; \\varnothing ; \\varnothing \\vdash^{(\\varnothing,\\cdot)}_{W,N} \\ast : \\ast^{\\infty} \\triangleright 0 ; \\hat 1$.",
+   "example": "\\annp{$\\varnothing ; \\varnothing ; \\varnothing \\vdash^{(\\varnothing,\\cdot)}_{W\\annot{,N}} \\ast : \\ast^{\\infty} \\annot{\\triangleright 0 ; \\hat 1}$.}",
    "rocq": "static/Typing.v: typed, dftyped",
-   "sig": "\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W,N} e : T\\annot{^{a}} \\triangleright c ; \\vartheta",
+   "sig": "\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}",
    "args": [
     {
      "name": "\\Theta",
@@ -6703,7 +6599,7 @@ window.MAP = {
     },
     {
      "name": "\\Delta",
-     "meaning": "the de Bruijn list of optional credited types of the variables"
+     "meaning": "\\annp{the de Bruijn list of optional credited types of the variables}"
     },
     {
      "name": "F",
@@ -6715,7 +6611,7 @@ window.MAP = {
     },
     {
      "name": "N",
-     "meaning": "the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "\\annp{the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$}"
     },
     {
      "name": "e",
@@ -6723,7 +6619,7 @@ window.MAP = {
     },
     {
      "name": "T\\annot{\\annot{^{a}}}",
-     "meaning": "the result type $T$ with credit $a \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the result type $T$\\annp{ with credit} $a \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "c",
@@ -6731,18 +6627,19 @@ window.MAP = {
     },
     {
      "name": "\\vartheta",
-     "meaning": "the ticket transformer of $e$"
+     "meaning": "the ticket transformer of $e$",
+     "ann": true
     }
    ]
   },
   "tp.tri": {
-   "title": "Cost and transformer $\\triangleright c ; \\vartheta$",
-   "what": "In $e : T\\annot{^{a}} \\triangleright c ; \\vartheta$ the part after $\\triangleright$ states that $e$ performs at most $c$ channel actions before it returns and needs tickets as described by $\\vartheta$.",
+   "title": "Cost and transformer $\\annot{\\triangleright c ; \\vartheta}$",
+   "what": "In $e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}$ the part after $\\triangleright$ states that $e$ performs at most $c$ channel actions before it returns and needs tickets as described by $\\vartheta$.",
    "why": "The fuel layer reads $c$ to age the frame and $\\vartheta$ to bound the tickets of links.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{send}\\,e : (S@x^{+})^{N} \\triangleright c_0 + 1 ; \\vartheta_0$.",
+   "example": "$\\mathsf{send}\\,e : (S@x^{+})\\annot{^{N}} \\triangleright c_0 + 1 ; \\vartheta_0$.",
    "rocq": "static/Typing.v: typed",
-   "sig": "e : T\\annot{^{a}} \\triangleright c ; \\vartheta",
+   "sig": "e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}",
    "args": [
     {
      "name": "e",
@@ -6750,7 +6647,7 @@ window.MAP = {
     },
     {
      "name": "T\\annot{\\annot{^{a}}}",
-     "meaning": "the result type $T$ with credit $a \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the result type $T$\\annp{ with credit} $a \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "c",
@@ -6758,7 +6655,8 @@ window.MAP = {
     },
     {
      "name": "\\vartheta",
-     "meaning": "the ticket transformer of $e$"
+     "meaning": "the ticket transformer of $e$",
+     "ann": true
     }
    ]
   },
@@ -7953,7 +7851,7 @@ window.MAP = {
     },
     {
      "name": "m, U, b",
-     "meaning": "the number of point variables, the type and the credit of the payload"
+     "meaning": "the number of point variables, the type\\annp{ and the credit} of the payload"
     }
    ]
   },
@@ -8978,7 +8876,7 @@ window.MAP = {
    "args": [
     {
      "name": "\\Theta",
-     "meaning": "the credited end environment, erased to $|\\Theta|$"
+     "meaning": "\\annp{the credited end environment, erased to $|\\Theta|$}"
     },
     {
      "name": "\\Delta",
@@ -9555,12 +9453,12 @@ window.MAP = {
   },
   "F-Spawn.child": {
    "title": "The child",
-   "what": "$v\\,\\ast \\in F^N_n\\llbracket\\mathsf{thread} \\triangleright \\infty ; 0\\rrbracket(\\Pi|_M, \\mathsf{fhand}\\,M\\,\\varphi, \\lceil tk/2 \\rceil)$.",
+   "what": "$v\\,\\ast \\in F^N_n\\llbracket\\mathsf{thread} \\annot{\\triangleright \\infty ; 0}\\rrbracket(\\Pi|_M, \\mathsf{fhand}\\,M\\,\\varphi, \\lceil tk/2 \\rceil)$.",
    "why": "The child is a new soup thread, so it must have thread fuel at exactly the protocols, counters and tickets the soup moves to it.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(\\lambda u.\\,\\mathsf{close}\\,d')\\,\\ast$.",
    "rocq": "fuel/Fuel.v: f_spawn",
-   "sig": "v\\,\\ast \\in F^{N}_{n}\\llbracket \\mathsf{thread} \\triangleright \\infty ; 0 \\rrbracket(\\Pi|_M, \\mathsf{fhand}\\,M\\,\\varphi, \\lceil tk/2 \\rceil)",
+   "sig": "v\\,\\ast \\in F^{N}_{n}\\llbracket \\mathsf{thread} \\annot{\\triangleright \\infty ; 0} \\rrbracket(\\Pi|_M, \\mathsf{fhand}\\,M\\,\\varphi, \\lceil tk/2 \\rceil)",
    "args": [
     {
      "name": "v\\,\\ast",
@@ -9881,12 +9779,12 @@ window.MAP = {
   },
   "FV-Arrow.body": {
    "title": "Body fuel",
-   "what": "$e[u] \\in F^{N'}_j\\llbracket U\\annot{^{a_2}} \\triangleright c ; r\\rrbracket(\\Pi \\cup \\Pi_u, \\varphi' \\cup \\varphi_u, tk)$ for every $tk$ with $\\mathsf{meets}\\,\\vartheta\\,r\\,tk$.",
+   "what": "$e[u] \\in F^{N'}_j\\llbracket U\\annot{^{a_2}} \\annot{\\triangleright c ; r}\\rrbracket(\\Pi \\cup \\Pi_u, \\varphi' \\cup \\varphi_u, tk)$ for every $tk$ with $\\mathsf{meets}\\,\\vartheta\\,r\\,tk$.",
    "why": "The caller supplies an argument, counters lowered to the floor by its own actions, and a ticket count meeting the arrow's transformer, and the body promises fuel with frame $c$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{meets}\\,\\vartheta\\,r\\,tk$.",
    "rocq": "fuel/Fuel.v: Vty TLolli",
-   "sig": "e[u] \\in F^{N'}_{j}\\llbracket U\\annot{^{a_2}} \\triangleright c ; r \\rrbracket(\\Pi \\cup \\Pi_u, \\varphi' \\cup \\varphi_u, tk)",
+   "sig": "e[u] \\in F^{N'}_{j}\\llbracket U\\annot{^{a_2}} \\annot{\\triangleright c ; r} \\rrbracket(\\Pi \\cup \\Pi_u, \\varphi' \\cup \\varphi_u, tk)",
    "args": [
     {
      "name": "N', j",
@@ -9938,12 +9836,12 @@ window.MAP = {
   },
   "FV-Box.body": {
    "title": "Body per force",
-   "what": "$e[!e] \\in F^{N'}_j\\llbracket U[\\bar s] \\triangleright c ; r\\rrbracket(\\varnothing, \\varnothing, tk)$ for every $N' \\sqsupseteq_{\\mathsf{rle}} N$, $j < n$, $\\bar s \\in \\mathsf{sinsts}\\,N'$ and $tk$ meeting $\\vartheta$.",
+   "what": "$e[!e] \\in F^{N'}_j\\llbracket U[\\bar s] \\annot{\\triangleright c ; r}\\rrbracket(\\varnothing, \\varnothing, tk)$ for every $N' \\sqsupseteq_{\\mathsf{rle}} N$, $j < n$, $\\bar s \\in \\mathsf{sinsts}\\,N'$ and $tk$ meeting $\\vartheta$.",
    "why": "Each force unrolls the box once, at a refill and instance the forcing context chooses.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{sinsts}\\,N'\\,\\bar s$.",
    "rocq": "fuel/Fuel.v: Vty TBox",
-   "sig": "e[!e] \\in F^{N'}_{j}\\llbracket U[\\bar s] \\triangleright c ; r \\rrbracket(\\varnothing, \\varnothing, tk)",
+   "sig": "e[!e] \\in F^{N'}_{j}\\llbracket U[\\bar s] \\annot{\\triangleright c ; r} \\rrbracket(\\varnothing, \\varnothing, tk)",
    "args": [
     {
      "name": "N', j",
@@ -10002,13 +9900,13 @@ window.MAP = {
    ]
   },
   "cs.csem": {
-   "title": "$\\Theta;\\Delta \\vDash^{N} e : T\\annot{^{a}} \\triangleright c ; \\vartheta$",
+   "title": "$\\Theta;\\Delta \\vDash^{N} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}$",
    "what": "For every larger refill, level, injective renaming of $\\Theta$, grounding in $FV$ and ticket count meeting $\\vartheta$, the instance has fuel at $T^a$ with frame $c$.",
    "why": "It reads no $\\Gamma$, world or future, because $F$ reads none of them.",
    "breaks": "Nothing. It is a definition.",
    "example": "The cost fundamental theorem concludes it.",
    "rocq": "cost/CostSem.v: csem",
-   "sig": "\\Theta;\\Delta \\vDash^{N} e : T\\annot{^{a}} \\triangleright c ; \\vartheta",
+   "sig": "\\Theta;\\Delta \\vDash^{N} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}",
    "args": [
     {
      "name": "\\Theta, \\Delta",
@@ -10160,7 +10058,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$q(0) \\in F^N_n\\llbracket\\mathsf{thread}\\rrbracket(\\ldots)$.",
    "rocq": "soup/State.v: sp_fuel",
-   "sig": "e \\in F^{N}_{n}\\llbracket \\mathsf{thread} \\triangleright \\infty ; 0 \\rrbracket(K_t(\\Pi), \\mathsf{ctrs}\\,K\\,t, tk_t)",
+   "sig": "e \\in F^{N}_{n}\\llbracket \\mathsf{thread} \\annot{\\triangleright \\infty ; 0} \\rrbracket(K_t(\\Pi), \\mathsf{ctrs}\\,K\\,t, tk_t)",
    "args": [
     {
      "name": "t",
@@ -10408,7 +10306,7 @@ window.MAP = {
    "what": "The fuel predicate at refill $N$ and level $n$.",
    "why": "It bounds postponement and link chatter per thread, independent of points.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$F^{3}_n\\llbracket\\mathsf{thread} \\triangleright \\infty ; 0\\rrbracket(\\Pi, \\varphi, 0)$.",
+   "example": "$F^{3}_n\\llbracket\\mathsf{thread} \\annot{\\triangleright \\infty ; 0}\\rrbracket(\\Pi, \\varphi, 0)$.",
    "rocq": "fuel/Fuel.v: FuelE",
    "sig": "e \\in F^{N}_{n}\\llbracket \\sigma \\triangleright d ; r \\rrbracket(\\Pi, \\varphi, tk)",
    "args": [
@@ -10675,7 +10573,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{Fobl}$ of a send is F-Send.",
    "rocq": "fuel/Fuel.v: Fobl",
-   "sig": "\\mathsf{Fobl}^{N} : \\mathsf{TLabel} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "sig": "\\mathsf{Fobl}\\annot{^{N}} : \\mathsf{TLabel} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "N",
@@ -10815,8 +10713,8 @@ window.MAP = {
   },
   "sr.tenv-erase": {
    "title": "$|\\Theta|$",
-   "what": "$\\Theta$ without credits, each entry $S@x^a$ becoming $S@x$.",
-   "why": "$E$ reads no credit.",
+   "what": "\\annp{$\\Theta$ without credits, each entry $S@x^a$ becoming $S@x$.}",
+   "why": "\\annp{$E$ reads no credit.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$|\\{c^{+} \\mapsto S@\\rho^{3}\\}| = \\{c^{+} \\mapsto S@\\rho\\}$.",
    "rocq": "relation/Relation.v: tenv_erase",
@@ -11073,7 +10971,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "The client and server main at $N = \\infty$.",
    "rocq": "static/Fundamental.v: fundamental_typed",
-   "sig": "\\mathsf{strict}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\vdash^{F}_{W,N} t : T\\annot{^{a}} \\triangleright c ; \\vartheta \\Rightarrow \\Theta_{df} ; \\Delta_{df} \\vDash^{F}_{W} t : T_{df}",
+   "sig": "\\mathsf{strict}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\vdash^{F}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta} \\Rightarrow \\Theta_{df} ; \\Delta_{df} \\vDash^{F}_{W} t : T_{df}",
    "args": [
     {
      "name": "W",
@@ -11131,7 +11029,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "A thread typed by P-Term at finite $N$.",
    "rocq": "static/LiveFundamental.v: live_fundamental_typed",
-   "sig": "\\mathsf{strict}\\,W \\land \\ldots \\vdash^{F}_{W,N} t : T\\annot{^{a}} \\triangleright c ; \\vartheta \\land \\varnothing \\vdash\\!\\triangleright t \\Rightarrow \\Theta_{df} ; \\Delta_{df} \\mathrel{|\\!\\!\\vDash}^{F}_{W} t : T_{df}",
+   "sig": "\\mathsf{strict}\\,W \\land \\ldots \\vdash^{F}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta} \\land \\varnothing \\vdash\\!\\triangleright t \\Rightarrow \\Theta_{df} ; \\Delta_{df} \\mathrel{|\\!\\!\\vDash}^{F}_{W} t : T_{df}",
    "args": [
     {
      "name": "W",
@@ -11149,12 +11047,12 @@ window.MAP = {
   },
   "th.fundamental-proc": {
    "title": "Fundamental theorem for processes",
-   "what": "For strict $W$, $\\Sigma \\vdash^{\\infty}_{W} p : T$ implies $\\Sigma \\vDash_W p : T$.",
+   "what": "For strict $W$, $\\Sigma \\vdash\\annot{^{\\infty}}_{W} p : T$ implies $\\Sigma \\vDash_W p : T$.",
    "why": "It is an induction on the process derivation with the semantic P-Term and P-Connect as cases.",
    "breaks": "Nothing. It is a definition.",
    "example": "Two threads closing the two ends of $c$.",
    "rocq": "static/FundamentalProc.v: fundamental_proc",
-   "sig": "\\mathsf{strict}\\,W \\land \\Sigma \\vdash^{\\infty}_{W} p : T \\Rightarrow \\Sigma \\vDash_W p : T",
+   "sig": "\\mathsf{strict}\\,W \\land \\Sigma \\vdash\\annot{^{\\infty}}_{W} p : T \\Rightarrow \\Sigma \\vDash_W p : T",
    "args": [
     {
      "name": "W",
@@ -11176,12 +11074,12 @@ window.MAP = {
   },
   "th.live-fundamental-proc": {
    "title": "Live fundamental theorem for processes",
-   "what": "For strict $W$, $\\Sigma \\vdash^{\\infty}_{W} p : T$ and $\\vdash\\!\\triangleright p$ imply $\\Sigma \\mathrel{|\\!\\!\\vDash}_W p : T$.",
+   "what": "For strict $W$, $\\Sigma \\vdash\\annot{^{\\infty}}_{W} p : T$ and $\\vdash\\!\\triangleright p$ imply $\\Sigma \\mathrel{|\\!\\!\\vDash}_W p : T$.",
    "why": "The same induction with the live versions of P-Term and P-Connect.",
    "breaks": "Nothing. It is a definition.",
    "example": "The guarded receive loop as a process.",
    "rocq": "static/FundamentalProc.v: live_fundamental_proc",
-   "sig": "\\mathsf{strict}\\,W \\land \\Sigma \\vdash^{\\infty}_{W} p : T \\land \\vdash\\!\\triangleright p \\Rightarrow \\Sigma \\mathrel{|\\!\\!\\vDash}_W p : T",
+   "sig": "\\mathsf{strict}\\,W \\land \\Sigma \\vdash\\annot{^{\\infty}}_{W} p : T \\land \\vdash\\!\\triangleright p \\Rightarrow \\Sigma \\mathrel{|\\!\\!\\vDash}_W p : T",
    "args": [
     {
      "name": "W",
@@ -11369,12 +11267,12 @@ window.MAP = {
   },
   "th.soundness": {
    "title": "Soundness",
-   "what": "For strict $W$, $\\varnothing \\vdash^{\\infty}_{W} p : T$ implies that $p$ is deadlock free.",
+   "what": "For strict $W$, $\\varnothing \\vdash\\annot{^{\\infty}}_{W} p : T$ implies that $p$ is deadlock free.",
    "why": "The fundamental theorem for processes followed by adequacy.",
    "breaks": "Nothing. It is a definition.",
    "example": "The cycle example is deadlock free.",
    "rocq": "static/FundamentalProc.v: soundness",
-   "sig": "\\mathsf{strict}\\,W \\land \\varnothing \\vdash^{\\infty}_{W} p : T \\Rightarrow \\mathsf{deadlock\\_free}\\,p",
+   "sig": "\\mathsf{strict}\\,W \\land \\varnothing \\vdash\\annot{^{\\infty}}_{W} p : T \\Rightarrow \\mathsf{deadlock\\_free}\\,p",
    "args": [
     {
      "name": "W",
@@ -11392,12 +11290,12 @@ window.MAP = {
   },
   "th.live-soundness": {
    "title": "Live soundness",
-   "what": "For strict $W$, $\\varnothing \\vdash^{\\infty}_{W} p : T$ and $\\vdash\\!\\triangleright p$ imply that $p$ is deadlock free and has no $\\tau$-divergence.",
+   "what": "For strict $W$, $\\varnothing \\vdash\\annot{^{\\infty}}_{W} p : T$ and $\\vdash\\!\\triangleright p$ imply that $p$ is deadlock free and has no $\\tau$-divergence.",
    "why": "The live fundamental theorem for processes followed by live adequacy.",
    "breaks": "Nothing. It is a definition.",
    "example": "The receive loop and the pipeline stage.",
    "rocq": "static/FundamentalProc.v: live_soundness",
-   "sig": "\\mathsf{strict}\\,W \\land \\varnothing \\vdash^{\\infty}_{W} p : T \\land \\vdash\\!\\triangleright p \\Rightarrow \\mathsf{deadlock\\_free}\\,p \\land \\mathsf{no\\_tau\\_divergence}\\,p",
+   "sig": "\\mathsf{strict}\\,W \\land \\varnothing \\vdash\\annot{^{\\infty}}_{W} p : T \\land \\vdash\\!\\triangleright p \\Rightarrow \\mathsf{deadlock\\_free}\\,p \\land \\mathsf{no\\_tau\\_divergence}\\,p",
    "args": [
     {
      "name": "W",
@@ -11465,7 +11363,7 @@ window.MAP = {
   },
   "th.lf-soundness-source": {
    "title": "Lock-free soundness for source terms",
-   "what": "For $W$ with $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$, $N \\in \\mathbb{N}$, $\\mathsf{prim}\\,T$, a typing $\\varnothing;\\varnothing;\\varnothing \\vdash^{\\varnothing}_{W,N} t : T\\annot{^{a}} \\triangleright c ; \\vartheta$, some $tk$ with $\\mathsf{meets}\\,\\vartheta\\,0\\,tk$, and $\\varnothing \\vdash\\!\\triangleright t$, the process $(\\varnothing, \\{t\\})$ is lock free.",
+   "what": "For $W$ with $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$, $N \\in \\mathbb{N}$, $\\mathsf{prim}\\,T$, a typing $\\varnothing;\\varnothing;\\varnothing \\vdash^{\\varnothing}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}$, some $tk$ with $\\mathsf{meets}\\,\\vartheta\\,0\\,tk$, and $\\varnothing \\vdash\\!\\triangleright t$, the process $(\\varnothing, \\{t\\})$ is lock free.",
    "why": "The premises are those of P-Term at finite $N$ with $\\Sigma = \\varnothing$ and $C_0 = \\varnothing$, plus the guard. Lock-free soundness then applies.",
    "breaks": "Nothing. It is a definition.",
    "example": "Every lock-free example.",
@@ -11492,12 +11390,12 @@ window.MAP = {
   },
   "th.conservative": {
    "title": "Conservativity",
-   "what": "The merged judgment at $N = \\infty$ derives some $T_{df}\\annot{^{a}} \\triangleright c ; \\vartheta$ iff the deadlock-free judgment derives $T_{df}$, at erased contexts.",
+   "what": "The merged judgment at $N = \\infty$ derives some $T_{df}\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}$ iff the deadlock-free judgment derives $T_{df}$, at erased contexts.",
    "why": "Deadlock-free typing is the merged judgment with credits, costs and transformers ignored, so one set of rules serves both.",
    "breaks": "Nothing. It is a definition.",
    "example": "The client and server main.",
    "rocq": "static/Conservativity.v: conservative",
-   "sig": "(\\exists a\\,c\\,\\vartheta.\\ \\ldots \\vdash^{F}_{W,\\infty} e : T_{df}\\annot{^{a}} \\triangleright c ; \\vartheta) \\iff \\ldots \\vdash^{F}_{W} e : T_{df}",
+   "sig": "(\\exists a\\,c\\,\\vartheta.\\ \\ldots \\vdash^{F}_{W\\annot{,\\infty}} e : T_{df}\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}) \\iff \\ldots \\vdash^{F}_{W} e : T_{df}",
    "args": [
     {
      "name": "a, c, \\vartheta",
@@ -11516,7 +11414,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "The cycle at $N = 2$ erases to its deadlock-free typing.",
    "rocq": "static/Conservativity.v: typed_dftyped",
-   "sig": "\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W,N} e : T\\annot{^{a}} \\triangleright c ; \\vartheta \\Rightarrow \\Theta_{df} ; \\Gamma ; \\Delta_{df} \\vdash^{F}_{W} e : T_{df}",
+   "sig": "\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta} \\Rightarrow \\Theta_{df} ; \\Gamma ; \\Delta_{df} \\vdash^{F}_{W} e : T_{df}",
    "args": [
     {
      "name": "N",
@@ -11575,12 +11473,12 @@ window.MAP = {
   },
   "th.cost-fundamental": {
    "title": "Cost fundamental theorem",
-   "what": "The merged judgment implies the semantic cost judgment $\\Theta;\\Delta \\vDash^{N} e : T\\annot{^{a}} \\triangleright c ; \\vartheta$.",
+   "what": "The merged judgment implies the semantic cost judgment $\\Theta;\\Delta \\vDash^{N} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}$.",
    "why": "It is the cost half of the merged judgment, proved rule by rule.",
    "breaks": "Nothing. It is a definition.",
    "example": "The forwarder $\\mathsf{fw}$.",
    "rocq": "cost/CostFund.v: cost_fundamental",
-   "sig": "\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W,N} e : T\\annot{^{a}} \\triangleright c ; \\vartheta \\Rightarrow \\Theta ; \\Delta \\vDash^{N} e : T\\annot{^{a}} \\triangleright c ; \\vartheta",
+   "sig": "\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta} \\Rightarrow \\Theta ; \\Delta \\vDash^{N} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}",
    "args": [
     {
      "name": "N",
@@ -11594,12 +11492,12 @@ window.MAP = {
   },
   "th.fsem-of-cost": {
    "title": "Fuel from cost typing",
-   "what": "If $\\Theta;\\varnothing;\\varnothing \\vdash^{\\varnothing}_{W,N} e : T\\annot{^{a}} \\triangleright c ; \\vartheta$, $\\mathsf{prim}\\,T$, every credit of $\\Theta$ is at most $N$ and $\\mathsf{meets}\\,\\vartheta\\,0\\,tk$, then $\\mathsf{fsem}\\,N\\,(\\mathsf{sty} \\circ \\Theta)\\,e$.",
+   "what": "If $\\Theta;\\varnothing;\\varnothing \\vdash^{\\varnothing}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}$, $\\mathsf{prim}\\,T$, every credit of $\\Theta$ is at most $N$ and $\\mathsf{meets}\\,\\vartheta\\,0\\,tk$, then $\\mathsf{fsem}\\,N\\,(\\mathsf{sty} \\circ \\Theta)\\,e$.",
    "why": "P-Term gives every end credit $N$, so the cost judgment yields the per-thread fuel that lock freedom needs.",
    "breaks": "If a closure could mention an end it does not own, the forwarder could receive a closure that owns nothing and would have no fuel after spawning it.",
    "example": "The forwarder $\\mathsf{fw}$.",
    "rocq": "cost/CostFund.v: fsem_of_cost",
-   "sig": "\\ldots \\vdash^{\\varnothing}_{W,N} e : T\\annot{^{a}} \\triangleright c ; \\vartheta \\land \\mathsf{prim}\\,T \\land (\\forall o.\\ \\mathsf{cr}(\\Theta(o)) \\leq N) \\land \\mathsf{meets}\\,\\vartheta\\,0\\,tk \\Rightarrow \\mathsf{fsem}\\,N\\,(\\mathsf{sty} \\circ \\Theta)\\,e",
+   "sig": "\\ldots \\vdash^{\\varnothing}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta} \\land \\mathsf{prim}\\,T \\land (\\forall o.\\ \\mathsf{cr}(\\Theta(o)) \\leq N) \\land \\mathsf{meets}\\,\\vartheta\\,0\\,tk \\Rightarrow \\mathsf{fsem}\\,N\\,(\\mathsf{sty} \\circ \\Theta)\\,e",
    "args": [
     {
      "name": "\\Theta",
@@ -11812,7 +11710,7 @@ window.MAP = {
    "what": "The map that sends each end $o \\in \\mathrm{dom}\\,\\Theta$ with $\\Theta(o) = S@x\\annot{^{a}}$ to $S$.",
    "why": "The fuel layer reads protocols, not points or credits.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\{a \\mapsto (S@x)^{N}\\}$ gives $\\{a \\mapsto S\\}$.",
+   "example": "$\\{a \\mapsto (S@x)\\annot{^{N}}\\}$ gives $\\{a \\mapsto S\\}$.",
    "rocq": "cost/CostFund.v: fsem_of_cost",
    "sig": "\\mathsf{sty} \\circ \\Theta : \\mathsf{End} \\rightharpoonup \\mathsf{Sty}",
    "args": [
@@ -11852,7 +11750,6 @@ window.MAP = {
    "title": "Client and server cycle",
    "modes": [
     "df",
-    "live",
     "lf"
    ],
    "code": "main = let (a, a′) = new in                    -- a at ρ\n       let (b, b′) = new in                    -- b at ρ·0, facts C at (ρ, ρ·0, ρ·1)\n       let () = spawn (λu. let () = u in (force srv) ⟨a′, b′⟩) in\n       (force cli) ⟨a, b⟩\ncli  = !(f = λp. let (a, b) = p in let a = send ⟨∗, a⟩ in\n                let (u, b) = recv b in let () = u in (force f) ⟨a, b⟩)\nsrv  = !(g = λp. let (a, b) = p in let (u, a) = recv a in let () = u in\n                let b = send ⟨∗, b⟩ in (force g) ⟨a, b⟩)\n-- both boxes : □∀ι κ ζ. C. ∗ ⊸ (S1@ι ⊗ S2@κ ⊸^ζ ∗)\n-- C = {ι+k ≺ (κ+k)‾, κ+k ≺ (ι+k+1)‾, ι+k ≺ ζ, κ+k ≺ ζ | k}",
@@ -11879,7 +11776,6 @@ window.MAP = {
    "title": "Cycle",
    "modes": [
     "df",
-    "live",
     "lf"
    ],
    "code": "cycle = let (c, c′) = new in          -- c at ρ\n        let (d, d′) = new in          -- d at ρ·0, C = {ρ ≺ (ρ·0)‾, ρ‾ ≺ ρ·0}\n        let () = spawn (λu. let () = u in let () = close c′ in close d′) in\n        let () = close c in close d",
@@ -11906,7 +11802,6 @@ window.MAP = {
    "title": "A channel between two box arguments",
    "modes": [
     "df",
-    "live",
     "lf"
    ],
    "code": "between : □(∀ι κ. C. ∗ ⊸ Close@ι ⊗ Close@κ ⊸^κ ∗)\nbetween = !(f = λp. let (c, e) = p in\n                    let (d, d′) = new in        -- d at ι·0\n                    let () = spawn (λu. let () = u in close d′) in\n                    let () = close c in let () = close d in close e)\n-- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾, δ ≺ κ, δ ≺ κ‾},  δ = ι·0\nmain: c by new at ρ, e by new at ρ·1, force between at (ρ, ρ·1)",
@@ -11933,7 +11828,6 @@ window.MAP = {
    "title": "A channel that acts several times",
    "modes": [
     "df",
-    "live",
     "lf"
    ],
    "code": "many = !(f = λp. let (c, e) = p in\n                 let (d, d′) = new in         -- d at δ\n                 let () = spawn (λu. let () = u in\n                                     let (v, d′) = recv d′ in let () = v in\n                                     let (w, d′) = recv d′ in let () = w in close d′) in\n                 let () = close c in\n                 let () = close (send ⟨∗, send ⟨∗, d⟩⟩) in close e)\n-- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾} ∪ {δ+k ≺ κ, δ+k ≺ κ‾ | k},  δ = ι·0",
@@ -11960,7 +11854,6 @@ window.MAP = {
    "title": "The factory",
    "modes": [
     "df",
-    "live",
     "lf"
    ],
    "code": "mk₀  = !(f = λu. let () = u in let (c, c′) = new in\n                let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in c′)\nmk₁  = !(f = λp. let (c, c′) = new in\n                let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in ⟨p, c′⟩)\nmain = let p = (force mk₀) ∗ in let ⟨p, q⟩ = (force mk₁) p in\n       let () = recvclose p in recvclose q\n-- mk₀ places c at a fresh ρ with C(ρ) = {ρ‾ ≺ ρ·0, ρ‾⁺ ≺ ρ·0}, mk₁ at ι·0 for p at ι\n-- mk₀ : □(∗ ⊸ ∃^⊥ ι. C(ι). (?∗.Close)@ι‾)",
@@ -11987,7 +11880,6 @@ window.MAP = {
    "title": "The growing ring",
    "modes": [
     "df",
-    "live",
     "lf"
    ],
    "code": "Sch  = µα. ?(κ. α@κ).Close\nring : □(∀ι₁ ι₂. Cr. ∗ ⊸ (Sch@ι₁ ⊗ S̄ch@ι₂ ⊸^{ι₁+1} ∗))\nring = !(f = λp. let (x, y) = p in\n           let (a, a′) = new in                -- a at ι₂·0\n           let () = spawn (λw. let () = w in close (send ⟨a, y⟩)) in\n           let (b, b′) = new in                -- b at ι₁·1\n           let (z, x) = recv x in let () = close x in\n           let () = spawn (λw. let () = w in (force f) ⟨z, b′⟩) in\n           spawn (λw. let () = w in (force f) ⟨b, a′⟩))\nmain = let (e, e′) = new in (force ring) ⟨e, e′⟩",
@@ -12030,7 +11922,7 @@ window.MAP = {
    "id": "ex-guard-neg",
    "title": "Guard rejections",
    "modes": [
-    "live",
+    "df",
     "lf"
    ],
    "code": "div_box     = !(f = force f)                         -- loops on β steps\npn_fix      = !(f = λx. (force f) x)                  -- fix λx.x\ncx_box      = !(f = let ∗ = (force f) ∗ in λy. y)     -- recurses before returning\nspawn_loop  = !(f = λc. spawn (λ_. (force f) c))      -- spawns forever",
@@ -12053,7 +11945,7 @@ window.MAP = {
    "id": "ex-guard-pos",
    "title": "Guard acceptances",
    "modes": [
-    "live",
+    "df",
     "lf"
    ],
    "code": "loop  = !(f = λx. let ⟨v, x′⟩ = recv x in (force f) x′)\nstage = !(f = λin. let ⟨v, in⟩ = recv in in let ∗ = close in in\n                  let ⟨a, b⟩ = new in let ∗ = spawn (λ_. (force f) b) in\n                  close (send ⟨v, a⟩))                  -- a pipeline stage",

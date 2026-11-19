@@ -44,7 +44,7 @@ h1 small { font-family: var(--body); font-weight: 400; font-size: 0.8rem; color:
 .modes button + button { border-left: 1px solid var(--line); }
 .modes button[aria-pressed="true"] { color: #fff; }
 .modes button[data-mode="df"][aria-pressed="true"] { background: var(--df); }
-.modes button[data-mode="live"][aria-pressed="true"] { background: var(--live); }
+.ann { fill: var(--lf); color: var(--lf); }
 .modes button[data-mode="lf"][aria-pressed="true"] { background: var(--lf); }
 :root[data-theme="dark"] .modes button[aria-pressed="true"] { color: #10141a; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .modes button[aria-pressed="true"] { color: #10141a; } }
@@ -129,7 +129,6 @@ aside .placeholder { color: var(--muted); font-size: 0.9rem; }
     <h1>GV Relation Map <small>v2 definitions, rules and theorems</small></h1>
     <div class="modes" role="group" aria-label="Instance">
       <button type="button" data-mode="df" aria-pressed="true">Deadlock free</button>
-      <button type="button" data-mode="live" aria-pressed="false">Live</button>
       <button type="button" data-mode="lf" aria-pressed="false">Lock free</button>
     </div>
     <label class="search"><input id="q" type="search" placeholder="Filter rules and clauses" aria-label="Filter"></label>
@@ -157,14 +156,24 @@ window.MathJax = {
 <script>
 (function () {
   const MAP = window.MAP || { sections: [], notes: {}, examples: [] };
-  const MODES = { df: 'Deadlock free', live: 'Live', lf: 'Lock free' };
+  const MODES = { df: 'Deadlock free', lf: 'Lock free' };
   let mode = 'df', pinned = null, query = '';
   try { const m = localStorage.getItem('lrmap-mode'); if (m && MODES[m]) mode = m; } catch (e) {}
 
   const $ = s => document.querySelector(s);
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   // inline `code` in prose fields
-  const prose = s => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>');
+  // \annp{…} marks prose about annotations: dropped in the deadlock-free mode, coloured in the lock-free mode
+  function annp(s) {
+    s = String(s || ''); let out = '', i = 0;
+    for (;;) {
+      const j = s.indexOf('\\annp{', i); if (j < 0) return out + s.slice(i);
+      let d = 1, k = j + 6;
+      while (k < s.length && d) { if (s[k] === '\\') { k += 2; continue; } if (s[k] === '{') d++; else if (s[k] === '}') d--; k++; }
+      out += s.slice(i, j) + (mode === 'lf' ? '\u0001' + annp(s.slice(j + 6, k - 1)) + '\u0002' : ''); i = k;
+    }
+  }
+  const prose = s => esc(annp(s)).replace(/\u0001/g, '<span class="ann">').replace(/\u0002/g, '</span>').replace(/`([^`]+)`/g, '<code>$1</code>');
   // syntax highlighting for programs in the surface language
   const KW = new Set(['let', 'in', 'new', 'spawn', 'send', 'recv', 'close', 'select', 'branch', 'link', 'force', 'case', 'of', 'inl', 'inr', 'fix', 'box', 'fun', 'if', 'then', 'else', 'end', 'skip', 'rec']);
   function hl(code) {
@@ -181,13 +190,21 @@ window.MathJax = {
   }
   // \htmlData{k=KEY}{…} (KaTeX style) becomes \class{k-KEY}{…} for MathJax
   // \annot{X} marks an annotation (a credit): kept in the lock-free mode, dropped otherwise
+  // \annot{X} marks an annotation, \annraw{X} layout that belongs to one: kept (and coloured) in the lock-free mode, dropped otherwise
+  // colour an annotation, keeping a lone superscript attached to its base
+  function colour(t) {
+    if (t.startsWith('^{')) { let d = 1, k = 2; while (k < t.length && d) { if (t[k] === '\\') { k += 2; continue; } if (t[k] === '{') d++; else if (t[k] === '}') d--; k++; } if (k === t.length) return '^{\\class{ann}{' + t.slice(2, -1) + '}}'; }
+    return '\\class{ann}{' + t + '}';
+  }
   function annot(s) {
     s = String(s || ''); let out = '', i = 0;
     for (;;) {
-      const j = s.indexOf('\\annot{', i); if (j < 0) return out + s.slice(i);
-      let d = 1, k = j + 7;
+      const m = /\\ann(ot|raw)\{/.exec(s.slice(i)); if (!m) return out + s.slice(i);
+      const j = i + m.index, open = j + m[0].length;
+      let d = 1, k = open;
       while (k < s.length && d) { if (s[k] === '\\') { k += 2; continue; } if (s[k] === '{') d++; else if (s[k] === '}') d--; k++; }
-      out += s.slice(i, j) + (mode === 'lf' ? annot(s.slice(j + 7, k - 1)) : ''); i = k;
+      const inner = annot(s.slice(open, k - 1));
+      out += s.slice(i, j) + (mode !== 'lf' ? '' : m[1] === 'raw' ? inner : colour(inner)); i = k;
     }
   }
   const toMJ = tex => annot(tex).replace(/\\htmlData\{k=([A-Za-z0-9.\-_]+)\}\{/g, (_, k) => '\\class{k-' + k.replace(/\./g, '__') + '}{');
@@ -244,12 +261,12 @@ window.MathJax = {
     idle({ title: s.title, what: s.intro });
     let shown = 0;
     for (const b of s.blocks) {
-      const modes = b.modes && b.modes.length ? b.modes : ['df', 'live', 'lf'];
+      const modes = b.modes && b.modes.length ? b.modes : ['df', 'lf'];
       if (!modes.includes(mode)) continue;
       const tex = (b.variants && b.variants[mode]) || b.tex;
       if (!tex || !matches(b.title, b.caption, b.rocq, tex)) continue;
       const el = document.createElement('article'); el.className = 'block'; el.id = 'b-' + b.id;
-      const tags = modes.length === 3 ? '' : `<span class="tags">${modes.map(m => `<span class="tag ${m}">${m === 'df' ? 'DF' : m === 'live' ? 'live' : 'LF'}</span>`).join('')}</span>`;
+      const tags = modes.length === 2 ? '' : `<span class="tags">${modes.map(m => `<span class="tag ${m}">${m === 'df' ? 'DF' : 'LF'}</span>`).join('')}</span>`;
       el.innerHTML = `<h3 data-block="${esc(b.id)}" tabindex="0">${esc(b.title)}${tags}</h3>`;
       el.appendChild(math(tex));
       hitAreas.push(el);
@@ -278,7 +295,7 @@ window.MathJax = {
     idle({ title: 'Examples', what: 'Typed programs. The badges show which judgments accept each one. Point at a title for what it demonstrates.' });
     let shown = 0;
     for (const x of MAP.examples || []) {
-      const modes = x.modes && x.modes.length ? x.modes : ['df', 'live', 'lf'];
+      const modes = x.modes && x.modes.length ? x.modes : ['df', 'lf'];
       if (!modes.includes(mode) || !matches(x.title, x.shows, x.code, x.rocq)) continue;
       root.insertAdjacentHTML('beforeend', `<article class="ex" id="x-${esc(x.id)}"><h3 data-ex="${esc(x.id)}" tabindex="0">${esc(x.title)}</h3>${badges(x.accepts)}${x.code ? `<pre>${hl(x.code)}</pre>` : ''}</article>`);
       shown++;
@@ -297,7 +314,7 @@ window.MathJax = {
     const n = MAP.notes[key], body = document.createElement('div');
     if (!n) { body.innerHTML = `<div class="placeholder">No note for <code>${esc(key)}</code>.</div>`; noteCache.set(ck, body); return body; }
     const args = as => Array.isArray(as) && as.length ? `<div><dt>Arguments</dt><dd><ul class="args">${as.filter(x => !x.ann || mode === 'lf').map(x => `<li>$${esc(annot(x.name))}$ ${prose(annot(x.meaning))}</li>`).join('')}</ul></dd></div>` : '';
-    const row = (t, v, cls) => v ? `<div><dt>${t}</dt><dd${cls ? ` class="${cls}"` : ''}>${prose(annot(v))}</dd></div>` : '';
+    const row = (t, v, cls) => { const w = v ? prose(annot(v)) : ''; return w.replace(/<[^>]*>/g, '').trim() ? `<div><dt>${t}</dt><dd${cls ? ` class="${cls}"` : ''}>${w}</dd></div>` : ''; };
     const u = uses[key] ? [...uses[key].entries()] : [];
     body.innerHTML = `<h2>${esc(annot(n.title || key))}</h2>
       <dl>${n.sig ? `<div><dt>Type</dt><dd class="sig">$\\displaystyle ${esc(annot(n.sig))}$</dd></div>` : ''}${args(n.args)}${row('What', n.what)}${row('Why', n.why)}${row('Without it', n.breaks, 'breaks')}${row('Example', n.example)}${row('Rocq', n.rocq)}</dl>
