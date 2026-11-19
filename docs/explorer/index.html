@@ -75,6 +75,7 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 460px; gap: 24px; ma
 
 /* hover targets inside formulas */
 .math [class*="k-"] { cursor: help; }
+.math rect.lr-hit { fill: transparent; stroke: none; pointer-events: all; }
 .math rect.lr-box { fill: var(--hot-soft); stroke: var(--hot); stroke-width: 18; pointer-events: none; }
 .math rect.lr-box.pin { stroke-width: 36; }
 
@@ -204,6 +205,21 @@ window.MathJax = {
     return div;
   }
 
+  // every hoverable entry gets a transparent rectangle over its whole box, drawn first inside the
+  // entry, so gaps between glyphs count as inside and nested entries (drawn later) stay on top
+  const hitAreas = [];
+  function addHits(block) {
+    block.querySelectorAll('.math [class*="k-"]').forEach(g => {
+      if (g.querySelector(':scope > rect.lr-hit')) return;
+      let b; try { b = g.getBBox(); } catch (e) { return; }
+      if (!b || !b.width) return;
+      const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      r.setAttribute('x', b.x - 40); r.setAttribute('y', b.y - 40);
+      r.setAttribute('width', b.width + 80); r.setAttribute('height', b.height + 80);
+      r.setAttribute('class', 'lr-hit');
+      g.insertBefore(r, g.firstChild);
+    });
+  }
   function renderSection() {
     const cur = current(), root = $('#content');
     root.innerHTML = '';
@@ -221,9 +237,11 @@ window.MathJax = {
       const tags = modes.length === 3 ? '' : `<span class="tags">${modes.map(m => `<span class="tag ${m}">${m === 'df' ? 'DF' : m === 'live' ? 'live' : 'LF'}</span>`).join('')}</span>`;
       el.innerHTML = `<h3 data-block="${esc(b.id)}" tabindex="0">${esc(b.title)}${tags}</h3>`;
       el.appendChild(math(tex));
+      hitAreas.push(el);
       root.appendChild(el); shown++;
     }
     if (!shown) root.insertAdjacentHTML('beforeend', '<p class="empty-state">Nothing in this section matches the filter for this instance.</p>');
+    const todo = hitAreas.splice(0); requestAnimationFrame(() => todo.forEach(addHits));
     typeset(root);
     hotEl = null;
     if (pinned) markAll(pinned);
@@ -309,7 +327,7 @@ window.MathJax = {
     let b; try { b = el.getBBox(); } catch (e) { return; }
     if (!b || !b.width) return;
     const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    const pad = 60;
+    const pad = 20; // the box already includes the hit area's margin
     r.setAttribute('x', b.x - pad); r.setAttribute('y', b.y - pad);
     r.setAttribute('width', b.width + 2 * pad); r.setAttribute('height', b.height + 2 * pad);
     r.setAttribute('rx', 80); r.setAttribute('class', 'lr-box ' + cls);
@@ -341,7 +359,12 @@ window.MathJax = {
     const k = keyOf(t); if (!k) return;
     hot(t); if (!pinned) showNote(k, false);
   });
-  content.addEventListener('mouseout', e => { if (!e.relatedTarget || !content.contains(e.relatedTarget) || !e.relatedTarget.closest('[class*="k-"]')) hot(null); });
+  let outTimer = null;
+  content.addEventListener('mouseout', e => {
+    if (e.relatedTarget && content.contains(e.relatedTarget) && e.relatedTarget.closest('[class*="k-"]')) return;
+    clearTimeout(outTimer); outTimer = setTimeout(() => hot(null), 150);
+  });
+  content.addEventListener('mouseover', () => clearTimeout(outTimer), true);
   content.addEventListener('click', e => {
     const t = e.target.closest && e.target.closest('[class*="k-"]'); if (!t) return;
     const k = keyOf(t); if (!k) return;
