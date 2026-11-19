@@ -140,8 +140,8 @@ n("th.styof", "$\\mathsf{sty} \\circ \\Theta$", "The map that sends each end $o 
 // ---- examples ----
 examples.push(
   { id: 'ex-cs', title: 'Client and server cycle', modes: ['df', 'live', 'lf'],
-    code: `main = let (a, a′) = new_0 in
-       let (a, ⟨b, b′⟩) = new_κ a in
+    code: `main = let (a, a′) = new in                    -- a at ρ
+       let (b, b′) = new in                    -- b at ρ·0, facts C at (ρ, ρ·0, ρ·1)
        let () = spawn (λu. let () = u in (force srv) ⟨a′, b′⟩) in
        (force cli) ⟨a, b⟩
 cli  = !(f = λp. let (a, b) = p in let a = send ⟨∗, a⟩ in
@@ -150,32 +150,31 @@ srv  = !(g = λp. let (a, b) = p in let (u, a) = recv a in let () = u in
                 let b = send ⟨∗, b⟩ in (force g) ⟨a, b⟩)
 -- both boxes : □∀ι κ ζ. C. ∗ ⊸ (S1@ι ⊗ S2@κ ⊸^ζ ∗)
 -- C = {ι+k ≺ (κ+k)‾, κ+k ≺ (ι+k+1)‾, ι+k ≺ ζ, κ+k ≺ ζ | k}`,
-    shows: "The cycle created by main is ordered by $\\Lambda_0$, which states $C$ at $(\\rho, \\rho\\cdot 0, \\rho\\cdot 1)$ for the self call at $(\\iota^{+}, \\kappa^{+}, \\zeta)$.",
+    shows: "The second $\\mathsf{new}$ places $b$ at $\\rho\\cdot 0$ and states $C$ at $(\\rho, \\rho\\cdot 0, \\rho\\cdot 1)$, the facts the self call at $(\\iota^{+}, \\kappa^{+}, \\zeta)$ needs.",
     rocq: 'examples/ClientServer.v: cs_typed; examples/LFClientServer.v: cs_lftyped, cs_lock_free',
     accepts: { df: { ok: true, rocq: 'cs_dftyped, cs_typed' }, live: { ok: true, rocq: 'cs_dftyped, cs_guarded' }, lf: { ok: true, N: 3, rocq: 'cs_lftyped, cs_lock_free' } } },
   { id: 'ex-cycle', title: 'Cycle', modes: ['df', 'live', 'lf'],
-    code: `cycle = let (c, c′) = new_0 in
-        let (c, ⟨d, d′⟩) = new_0 c in
+    code: `cycle = let (c, c′) = new in          -- c at ρ
+        let (d, d′) = new in          -- d at ρ·0, C = {ρ ≺ (ρ·0)‾, ρ‾ ≺ ρ·0}
         let () = spawn (λu. let () = u in let () = close c′ in close d′) in
-        let () = close c in close d
--- Λ₀(r) = {r ≺ (r·0)‾, r‾ ≺ r·0}`,
-    shows: "$\\Lambda_0$ states exactly $\\rho \\prec \\overline{\\rho\\cdot 0}$ and $\\overline{\\rho} \\prec \\rho\\cdot 0$, the two facts the two threads need.",
+        let () = close c in close d`,
+    shows: "The second $\\mathsf{new}$ states exactly $\\rho \\prec \\overline{\\rho\\cdot 0}$ and $\\overline{\\rho} \\prec \\rho\\cdot 0$, the two facts the two threads need.",
     rocq: 'examples/Cycle.v: cy_typed; examples/LFCycle.v: cy_lftyped, cy_lock_free',
     accepts: { df: { ok: true, rocq: 'cy_dftyped, cy_typed' }, live: { ok: true, rocq: 'cy_dftyped, cy_guarded' }, lf: { ok: true, N: 2, rocq: 'cy_lftyped, cy_lock_free' } } },
   { id: 'ex-between', title: 'A channel between two box arguments', modes: ['df', 'live', 'lf'],
     code: `between : □(∀ι κ. C. ∗ ⊸ Close@ι ⊗ Close@κ ⊸^κ ∗)
 between = !(f = λp. let (c, e) = p in
-                    let (c, ⟨d, d′⟩) = new_0 c in
+                    let (d, d′) = new in        -- d at ι·0
                     let () = spawn (λu. let () = u in close d′) in
                     let () = close c in let () = close d in close e)
 -- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾, δ ≺ κ, δ ≺ κ‾},  δ = ι·0
-main: c by new_0 at ρ, e by new_1 c at ρ·1, force between at (ρ, ρ·1)`,
-    shows: "The box creates its channel at the field $\\iota\\cdot 0$ of the end it receives, so no point between two box points is needed.",
+main: c by new at ρ, e by new at ρ·1, force between at (ρ, ρ·1)`,
+    shows: "The box places its new channel at the field $\\iota\\cdot 0$ of the point of $c$, so no point between two box points is needed.",
     rocq: 'examples/FreshBetween.v: fb_typed; examples/LFFreshBetween.v: fb_lftyped, fb_lock_free',
     accepts: { df: { ok: true, rocq: 'fb_dftyped, fb_typed' }, live: { ok: true, rocq: 'fb_dftyped, fb_guarded' }, lf: { ok: true, N: 2, rocq: 'fb_lftyped, fb_lock_free' } } },
   { id: 'ex-many', title: 'A channel that acts several times', modes: ['df', 'live', 'lf'],
     code: `many = !(f = λp. let (c, e) = p in
-                 let (c, ⟨d, d′⟩) = new_0 c in
+                 let (d, d′) = new in         -- d at δ
                  let () = spawn (λu. let () = u in
                                      let (v, d′) = recv d′ in let () = v in
                                      let (w, d′) = recv d′ in let () = w in close d′) in
@@ -186,35 +185,35 @@ main: c by new_0 at ρ, e by new_1 c at ρ·1, force between at (ρ, ρ·1)`,
     rocq: 'examples/FreshMany.v: fm_typed; examples/LFFreshMany.v: fm_lftyped, fm_lock_free',
     accepts: { df: { ok: true, rocq: 'fm_dftyped, fm_typed' }, live: { ok: true, rocq: 'fm_dftyped, fm_guarded' }, lf: { ok: true, N: 4, rocq: 'fm_lftyped, fm_lock_free' } } },
   { id: 'ex-factory', title: 'The factory', modes: ['df', 'live', 'lf'],
-    code: `mk₀  = !(f = λu. let () = u in let (c, c′) = new_0 in
+    code: `mk₀  = !(f = λu. let () = u in let (c, c′) = new in
                 let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in c′)
-mk₁  = !(f = λp. let (p, ⟨c, c′⟩) = new_0 p in
+mk₁  = !(f = λp. let (c, c′) = new in
                 let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in ⟨p, c′⟩)
 main = let p = (force mk₀) ∗ in let ⟨p, q⟩ = (force mk₁) p in
        let () = recvclose p in recvclose q
--- Λ₀(r) = {r‾ ≺ r·0, r‾⁺ ≺ r·0}
--- mk₀ : □(∗ ⊸ ∃^⊥ ι. Λ₀(ι). (?∗.Close)@ι‾)`,
-    shows: "The first call creates at a fresh root and the second anchors at the end it receives, so two variants of $\\mathsf{mk}$ replace one term with two types.",
+-- mk₀ places c at a fresh ρ with C(ρ) = {ρ‾ ≺ ρ·0, ρ‾⁺ ≺ ρ·0}, mk₁ at ι·0 for p at ι
+-- mk₀ : □(∗ ⊸ ∃^⊥ ι. C(ι). (?∗.Close)@ι‾)`,
+    shows: "The first call creates at a fresh root and the second at a field of the end it receives, two typings of the same creation.",
     rocq: 'examples/FactoryEx.v: fx_typed; examples/LFFactoryEx.v: fx_lftyped, fx_lock_free',
     accepts: { df: { ok: true, rocq: 'fx_dftyped, fx_typed' }, live: { ok: true, rocq: 'fx_dftyped, fx_guarded' }, lf: { ok: true, N: 2, rocq: 'fx_lftyped, fx_lock_free' } } },
   { id: 'ex-ring', title: 'The growing ring', modes: ['df', 'live', 'lf'],
     code: `Sch  = µα. ?(∃κ. α@κ).Close
 ring : □(∀ι₁ ι₂. Cr. ∗ ⊸ (Sch@ι₁ ⊗ S̄ch@ι₂ ⊸^{ι₁+1} ∗))
 ring = !(f = λp. let (x, y) = p in
-           let (y, ⟨a, a′⟩) = new_0 y in
+           let (a, a′) = new in                -- a at ι₂·0
            let () = spawn (λw. let () = w in close (send ⟨a, y⟩)) in
-           let (x, ⟨b, b′⟩) = new_1 x in
+           let (b, b′) = new in                -- b at ι₁·1
            let (z, x) = recv x in let () = close x in
            let () = spawn (λw. let () = w in (force f) ⟨z, b′⟩) in
            spawn (λw. let () = w in (force f) ⟨b, a′⟩))
-main = let (e, e′) = new_0 in (force ring) ⟨e, e′⟩`,
-    shows: "$b$ is created by $\\mathsf{new}_1\\,x$ before the receive on $x$, so it is anchored while $x$ is held.",
+main = let (e, e′) = new in (force ring) ⟨e, e′⟩`,
+    shows: "$b$ is created at $\\iota_1\\cdot 1$ before the receive on $x$, while $x$ is held at $\\iota_1$.",
     rocq: 'examples/GrowRing.v: rg_typed; examples/LFGrowRing.v: rg_lftyped, rg_lock_free',
     accepts: { df: { ok: true, rocq: 'rg_dftyped, rg_typed' }, live: { ok: true, rocq: 'rg_dftyped, rg_guarded' }, lf: { ok: true, N: 4, rocq: 'rg_lftyped, rg_lock_free' } } },
   { id: 'ex-close', title: 'Two threads closing one channel', modes: ['lf'],
     code: `cl c⁺ ∥ cl c⁻,   cl o = close o
 -- each thread by P-Term at every finite N over its end, cut c by P-Connect at exactly dual types`,
-    shows: "The smallest use of P-Term and P-Connect, cutting $c$ at exactly dual types in a world without facts or families.",
+    shows: "The smallest use of P-Term and P-Connect, cutting $c$ at exactly dual types in a world without facts.",
     rocq: 'examples/LFClose.v: cl_lftyped, cl_lock_free',
     accepts: { lf: { ok: true, N: 'every', rocq: 'cl_lftyped, cl_lock_free' } } },
   { id: 'ex-guard-neg', title: 'Guard rejections', modes: ['live', 'lf'],
@@ -241,8 +240,8 @@ dead_thunk q = λ_. let ∗ = Ω in close q`,
     rocq: 'cost/Forwarder.v: dead_thunk_rejected, fw_ptyped; cost/CostFund.v: fw_fsem',
     accepts: { lf: { ok: true, N: 'every', part: 'typing and fuel', rocq: 'fw_ptyped, fw_fsem, dead_thunk_rejected' } } },
   { id: 'ex-controller', title: 'The controller', modes: ['lf'],
-    code: `main = let (a, a′) = new_0 in let (a, ⟨b, b′⟩) = new_0 a in
-       let (a, ⟨c, c′⟩) = new_2 a in
+    code: `main = let (a, a′) = new in let (b, b′) = new in   -- a at ρ, b at ρ·0
+       let (c, c′) = new in                              -- c at ρ·2
        let () = spawn (λu. let () = u in (force srv) ⟨⟨a′, b′⟩, c′⟩) in
        (force cli) ⟨⟨a, b⟩, c⟩
 cli  = !(f = λp. let (q, k) = p in let (a, b) = q in

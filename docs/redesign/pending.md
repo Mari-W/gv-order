@@ -18,25 +18,43 @@ must do, open questions.
    built, without make test, make check or the map. The agent stopped when
    the session ended. Map: not yet. Rocq: finish N.2 on that branch.
 
-2. **One `new` with an optional position and an interval per end.**
-   `new@π [L⁺ | U⁺ ; L⁻ | U⁻]`, every part optional. L, U are sets of
-   held ends. The position π is either absent (a fresh root ρ) or a field
-   `o·κ` of a held end o at point x (then ρ = x·κ). The end c⁺ sits at ρ
-   with exactly the facts l ≺ ρ (l ∈ L⁺) and ρ ≺ u (u ∈ U⁺), and c⁻ sits
-   at ρ̄ with the facts from L⁻, U⁻ (decided 2026-11-19: one interval per
-   end, it is more general). Replaces `new_ℓ`, `new_κ o`, E-New,
-   E-NewAt, O-New, O-NewAt, the two labels and the family laws Λ_ℓ.
-   Fields x·κ stay, both as positions for `new` and as delivery points
-   of messages and choices. Map: not yet. Rocq: world growth at creation,
-   a strictness check at every creation, fresh point choice. Open: may an
-   interval add facts to a field x·κ that already carries facts, and may
-   two creations use the same field.
+2. **One plain `new`; position and facts live in the type.** Decided
+   2026-11-19. The term is `new`, label `new c`, event `new_i c`. E-New
+   types it at `∃^⊥ ῑ. C. ((S@π)^N ⊗ (S̄@π̄)^N)` with
+   `(ῑ, π) ∈ {(ρ, ρ)} ∪ {(ε, x·κ)}` (a fresh root, or a field of a point
+   of the context) and premise `strict(Γ ∪ C)`. C is any constraint in the
+   existing constraint language (possibly infinite) over π, its shifts and
+   fields, and context points. An interval per end is the special case
+   `L⁺ ≺ π ≺ U⁺, L⁻ ≺ π̄ ≺ U⁻`. Finite intervals of held ends do not
+   suffice: the client-server example needs `ι+k ≺ (κ+k)‾` for all k.
+   Worlds become `W = (A, ≺_A)` with growth `W ⊕ C`; families L, laws Λ_ℓ,
+   generated roots g_ℓ, `new_ℓ`, `new_κ o`, E-NewAt, O-NewAt, T-Act-NewAt,
+   the labels LNew ℓ / LNewAt and P-Connect's disjoint-families premise go.
+   O-New: `c fresh ⇒ ∀ a ∉ A_W ⇒ ∃ S π C. π ∈ {a} ∪ {x·κ} ∧
+   strict(W ⊕ C) ∧ e' at_{W⊕C} Θ[c⁺ ↦ S@π, c⁻ ↦ S̄@π̄]`. The examples are
+   translated one to one: new_ℓ becomes new with C = Λ_ℓ(ρ) stated on the
+   new that needs it, new_κ o becomes new at x·κ. Map: done.
+   Rocq: E, V, P and the soup become Kripke in W along creations (W grows
+   along a run), world growth lemmas (strict and well-founded preserved by
+   one strict growth), every theorem over the grown world.
+   Risks to report back on, not to paper over:
+   (a) O-New chooses C by an existential at each level. The lock-free
+       argument needs ownership the same at every level, and the root is
+       universal for that reason. C chosen per level may break it. Possible
+       fix: the soup fixes the world of a run once, as it fixes ownership.
+   (b) Each grown world is well-founded, but a run may grow the world
+       forever (a loop that creates below the previous channel). Check that
+       lock freedom only needs the world at each position, not the limit.
+   (c) Two creations at one field x·κ share a point. Allowed (loose), the
+       strictness check decides.
 
-3. **No GV constants.** `k_send`, `k_new`, `k_new_at` are unused
-   eta-expansions of primitives. A primitive as a function value is
-   written `λx. k x` directly. Map: done (block removed). Rocq: delete the
-   three definitions in lang/Syntax.v and the sentence about constants in
-   its header comment.
+3. **No GV constants in the Rocq; constants are values on the map.**
+   `k_send`, `k_new`, `k_new_at` are unused. Rocq: delete them and the
+   sentence about constants in the header of lang/Syntax.v. The map shows
+   constants `k` as values with `k v` stepping by the head step of `k`.
+   The Rocq keeps saturated `Op k e`, and the value `k` is `λx. k x`.
+   No Rocq change beyond the deletion. Optional, for the paper: a lemma
+   deriving the typing rule of a constant from E-Abs and the rule of `k`.
 
 ## Done in the Rocq
 

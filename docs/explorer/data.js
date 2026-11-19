@@ -9,7 +9,7 @@ window.MAP = {
      "id": "syn-terms",
      "title": "Terms",
      "rocq": "lang/Syntax.v: expr",
-     "tex": "\\begin{array}{rl}\ne ::= & \\htmlData{k=syn.var}{x} \\mid \\htmlData{k=syn.unit}{\\ast} \\mid \\htmlData{k=syn.end}{o} \\mid \\htmlData{k=syn.lam}{\\lambda e} \\mid \\htmlData{k=syn.app}{e_1\\,e_2} \\mid \\htmlData{k=syn.pair}{\\langle e_1, e_2\\rangle} \\\\\n\\mid & \\htmlData{k=syn.letu}{\\mathsf{let}\\ \\ast = e_1\\ \\mathsf{in}\\ e_2} \\mid \\htmlData{k=syn.letp}{\\mathsf{let}\\ \\langle a,b\\rangle = e_1\\ \\mathsf{in}\\ e_2} \\\\\n\\mid & \\htmlData{k=syn.inj}{\\mathsf{inj}_i\\,e} \\mid \\htmlData{k=syn.case}{\\mathsf{case}\\ e\\,(a.e_1)\\,(a.e_2)} \\\\\n\\mid & \\htmlData{k=syn.box}{!e} \\mid \\htmlData{k=syn.new}{\\mathsf{new}_\\ell} \\mid \\htmlData{k=syn.op}{k}\n\\end{array}",
+     "tex": "\\begin{array}{rl}\ne ::= & \\htmlData{k=syn.var}{x} \\mid \\htmlData{k=syn.unit}{\\ast} \\mid \\htmlData{k=syn.end}{o} \\mid \\htmlData{k=syn.lam}{\\lambda e} \\mid \\htmlData{k=syn.app}{e_1\\,e_2} \\mid \\htmlData{k=syn.pair}{\\langle e_1, e_2\\rangle} \\\\\n\\mid & \\htmlData{k=syn.letu}{\\mathsf{let}\\ \\ast = e_1\\ \\mathsf{in}\\ e_2} \\mid \\htmlData{k=syn.letp}{\\mathsf{let}\\ \\langle a,b\\rangle = e_1\\ \\mathsf{in}\\ e_2} \\\\\n\\mid & \\htmlData{k=syn.inj}{\\mathsf{inj}_i\\,e} \\mid \\htmlData{k=syn.case}{\\mathsf{case}\\ e\\,(a.e_1)\\,(a.e_2)} \\\\\n\\mid & \\htmlData{k=syn.box}{!e} \\mid \\htmlData{k=syn.new}{\\mathsf{new}} \\mid \\htmlData{k=syn.op}{k}\n\\end{array}",
      "caption": "Thirteen term formers with de Bruijn variables, a box $!e$ binding itself in $e$, and the constants $k$.",
      "modes": [
       "df",
@@ -33,8 +33,8 @@ window.MAP = {
      "id": "syn-prims",
      "title": "Constants",
      "rocq": "lang/Syntax.v: prim",
-     "tex": "\\begin{array}{rl}\nk ::= & \\htmlData{k=prim.send}{\\mathsf{send}} \\mid \\htmlData{k=prim.recv}{\\mathsf{recv}} \\mid \\htmlData{k=prim.close}{\\mathsf{close}} \\mid \\htmlData{k=prim.select}{\\mathsf{select}_i} \\mid \\htmlData{k=prim.branch}{\\mathsf{branch}} \\\\\n\\mid & \\htmlData{k=prim.link}{\\mathsf{link}} \\mid \\htmlData{k=prim.spawn}{\\mathsf{spawn}} \\mid \\htmlData{k=prim.force}{\\mathsf{force}} \\mid \\htmlData{k=prim.newat}{\\mathsf{new}_\\kappa}\n\\end{array}",
-     "caption": "The constants $k$, with $\\mathsf{send}$ on $\\langle v, o\\rangle$, $\\mathsf{link}$ on two ends, $\\mathsf{spawn}$ on a thunk and $\\mathsf{new}_\\kappa$ on an end.",
+     "tex": "\\begin{array}{rl}\nk ::= & \\htmlData{k=prim.send}{\\mathsf{send}} \\mid \\htmlData{k=prim.recv}{\\mathsf{recv}} \\mid \\htmlData{k=prim.close}{\\mathsf{close}} \\mid \\htmlData{k=prim.select}{\\mathsf{select}_i} \\mid \\htmlData{k=prim.branch}{\\mathsf{branch}} \\\\\n\\mid & \\htmlData{k=prim.link}{\\mathsf{link}} \\mid \\htmlData{k=prim.spawn}{\\mathsf{spawn}} \\mid \\htmlData{k=prim.force}{\\mathsf{force}}\n\\end{array}",
+     "caption": "The constants $k$, with $\\mathsf{send}$ on $\\langle v, o\\rangle$, $\\mathsf{link}$ on two ends and $\\mathsf{spawn}$ on a thunk.",
      "modes": [
       "df",
       "live",
@@ -93,8 +93,8 @@ window.MAP = {
      "id": "syn-points",
      "title": "Points",
      "rocq": "types/Points.v: pname, point",
-     "tex": "\\begin{array}{l}\nr ::= \\htmlData{k=pt.const}{a} \\mid \\htmlData{k=pt.gen}{g_\\ell} \\mid \\htmlData{k=pt.var}{\\iota} \\qquad x ::= r \\mid \\htmlData{k=pt.shift}{x^{+}} \\mid \\htmlData{k=pt.field}{x\\cdot\\kappa} \\mid \\htmlData{k=pt.dual}{\\overline{x}} \\\\\n\\htmlData{k=pt.laws}{\\overline{\\overline{x}} = x \\quad \\overline{x}\\cdot\\kappa = x\\cdot\\kappa \\quad \\overline{x^{+}} = \\overline{x}^{+}}\n\\end{array}",
-     "caption": "A point $x$ has a root $a$, $g_\\ell$ or $\\iota$, a polarity flipped by $\\overline{x}$, an offset raised by $x^{+}$ and fields $x\\cdot\\kappa$.",
+     "tex": "\\begin{array}{l}\nr ::= \\htmlData{k=pt.const}{a} \\mid \\htmlData{k=pt.var}{\\iota} \\qquad x ::= r \\mid \\htmlData{k=pt.shift}{x^{+}} \\mid \\htmlData{k=pt.field}{x\\cdot\\kappa} \\mid \\htmlData{k=pt.dual}{\\overline{x}} \\\\\n\\htmlData{k=pt.laws}{\\overline{\\overline{x}} = x \\quad \\overline{x}\\cdot\\kappa = x\\cdot\\kappa \\quad \\overline{x^{+}} = \\overline{x}^{+}}\n\\end{array}",
+     "caption": "A point $x$ has a root $a$ or $\\iota$, a polarity flipped by $\\overline{x}$, an offset raised by $x^{+}$ and fields $x\\cdot\\kappa$.",
      "modes": [
       "df",
       "live",
@@ -115,10 +115,10 @@ window.MAP = {
     },
     {
      "id": "syn-labels",
-     "title": "Labels in programs and steps",
-     "rocq": "lang/Syntax.v: family, field",
-     "tex": "\\htmlData{k=lbl.family}{\\ell \\in \\mathbb{N}} \\qquad \\htmlData{k=lbl.field}{\\kappa \\in \\mathbb{N}}",
-     "caption": "Family labels $\\ell$ and field labels $\\kappa$ are natural numbers.",
+     "title": "Field labels",
+     "rocq": "lang/Syntax.v: field",
+     "tex": "\\htmlData{k=lbl.field}{\\kappa \\in \\mathbb{N}}",
+     "caption": "Field labels $\\kappa$ are natural numbers and name the fields $x\\cdot\\kappa$ of a point.",
      "modes": [
       "df",
       "live",
@@ -148,7 +148,7 @@ window.MAP = {
      "id": "sem-labels",
      "title": "Thread labels",
      "rocq": "lang/Semantics.v: tlabel, slabel",
-     "tex": "\\begin{array}{rl}\n\\alpha ::= & \\htmlData{k=lbl.beta}{\\beta} \\mid \\htmlData{k=lbl.new}{\\mathsf{new}_\\ell\\,c} \\mid \\htmlData{k=lbl.newat}{\\mathsf{new}_\\kappa\\,o\\,c} \\mid \\htmlData{k=lbl.spawn}{\\mathsf{spawn}\\,v} \\mid \\htmlData{k=se.slabel}{\\sigma} \\\\\n\\sigma ::= & \\htmlData{k=lbl.send}{o!v} \\mid \\htmlData{k=lbl.recv}{o?v} \\mid \\htmlData{k=lbl.close}{o\\,\\mathsf{end}} \\mid \\htmlData{k=lbl.sel}{o \\lhd i} \\mid \\htmlData{k=lbl.bra}{o \\rhd i} \\mid \\htmlData{k=lbl.link}{\\leftrightarrow\\{o_1,o_2\\}}\n\\end{array}",
+     "tex": "\\begin{array}{rl}\n\\alpha ::= & \\htmlData{k=lbl.beta}{\\beta} \\mid \\htmlData{k=lbl.new}{\\mathsf{new}\\,c} \\mid \\htmlData{k=lbl.spawn}{\\mathsf{spawn}\\,v} \\mid \\htmlData{k=se.slabel}{\\sigma} \\\\\n\\sigma ::= & \\htmlData{k=lbl.send}{o!v} \\mid \\htmlData{k=lbl.recv}{o?v} \\mid \\htmlData{k=lbl.close}{o\\,\\mathsf{end}} \\mid \\htmlData{k=lbl.sel}{o \\lhd i} \\mid \\htmlData{k=lbl.bra}{o \\rhd i} \\mid \\htmlData{k=lbl.link}{\\leftrightarrow\\{o_1,o_2\\}}\n\\end{array}",
      "caption": "$\\beta$ covers application, unit and pair elimination, case and force, and session labels $\\sigma$ are offers on ends.",
      "modes": [
       "df",
@@ -160,7 +160,7 @@ window.MAP = {
      "id": "sem-head",
      "title": "Head steps (T-Act rules)",
      "rocq": "lang/Semantics.v: head_step",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=T-Act-App}{(\\lambda e)\\,v \\xrightarrow{\\beta} \\htmlData{k=se.subst}{e[v]}} \\\\\n\\htmlData{k=T-Act-Force}{\\mathsf{force}\\,(!e) \\xrightarrow{\\beta} e[!e]} \\qquad \\htmlData{k=T-Act-New}{\\mathsf{new}_\\ell \\xrightarrow{\\mathsf{new}_\\ell\\,c} \\langle c^{+}, c^{-}\\rangle} \\\\\n\\htmlData{k=T-Act-NewAt}{\\mathsf{new}_\\kappa\\,o \\xrightarrow{\\mathsf{new}_\\kappa\\,o\\,c} \\langle o, \\langle c^{+}, c^{-}\\rangle\\rangle} \\\\\n\\htmlData{k=T-Act-Spawn}{\\mathsf{spawn}\\,v \\xrightarrow{\\mathsf{spawn}\\,v} \\ast} \\\\\n\\htmlData{k=T-Act-Send}{\\mathsf{send}\\,\\langle v, o\\rangle \\xrightarrow{o!v} o} \\\\\n\\htmlData{k=T-Act-Recv}{\\mathsf{recv}\\,o \\xrightarrow{o?v} \\langle v, o\\rangle} \\qquad \\htmlData{k=T-Act-Close}{\\mathsf{close}\\,o \\xrightarrow{o\\,\\mathsf{end}} \\ast} \\\\\n\\htmlData{k=T-Act-Select}{\\mathsf{select}_i\\,o \\xrightarrow{o\\lhd i} o} \\qquad \\htmlData{k=T-Act-Branch}{\\mathsf{branch}\\,o \\xrightarrow{o\\rhd i} \\mathsf{inj}_i\\,o} \\\\\n\\htmlData{k=T-Act-Link}{\\mathsf{link}\\,\\langle o_1, o_2\\rangle \\xrightarrow{\\leftrightarrow\\{o_1,o_2\\}} \\ast}\n\\end{array}",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=T-Act-App}{(\\lambda e)\\,v \\xrightarrow{\\beta} \\htmlData{k=se.subst}{e[v]}} \\\\\n\\htmlData{k=T-Act-Force}{\\mathsf{force}\\,(!e) \\xrightarrow{\\beta} e[!e]} \\qquad \\htmlData{k=T-Act-New}{\\mathsf{new} \\xrightarrow{\\mathsf{new}\\,c} \\langle c^{+}, c^{-}\\rangle} \\\\\n\\htmlData{k=T-Act-Spawn}{\\mathsf{spawn}\\,v \\xrightarrow{\\mathsf{spawn}\\,v} \\ast} \\\\\n\\htmlData{k=T-Act-Send}{\\mathsf{send}\\,\\langle v, o\\rangle \\xrightarrow{o!v} o} \\\\\n\\htmlData{k=T-Act-Recv}{\\mathsf{recv}\\,o \\xrightarrow{o?v} \\langle v, o\\rangle} \\qquad \\htmlData{k=T-Act-Close}{\\mathsf{close}\\,o \\xrightarrow{o\\,\\mathsf{end}} \\ast} \\\\\n\\htmlData{k=T-Act-Select}{\\mathsf{select}_i\\,o \\xrightarrow{o\\lhd i} o} \\qquad \\htmlData{k=T-Act-Branch}{\\mathsf{branch}\\,o \\xrightarrow{o\\rhd i} \\mathsf{inj}_i\\,o} \\\\\n\\htmlData{k=T-Act-Link}{\\mathsf{link}\\,\\langle o_1, o_2\\rangle \\xrightarrow{\\leftrightarrow\\{o_1,o_2\\}} \\ast}\n\\end{array}",
      "caption": "One head rule per redex, where $\\mathsf{recv}\\,o$ has a step for every value $v$.",
      "modes": [
       "df",
@@ -196,8 +196,8 @@ window.MAP = {
      "id": "sem-events",
      "title": "Events",
      "rocq": "lang/Process.v: event, ev_parts, ev_admin, ev_tau",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=ev.event}{\\begin{array}{rl} ev ::= & \\beta_i \\mid \\mathsf{new}_i\\,\\ell\\,c \\mid \\mathsf{newat}_i\\,\\kappa\\,o\\,c \\mid \\mathsf{spawn}_{i,j}\\,v \\mid \\mathsf{msg}_{i,j}\\,o\\,v \\\\ \\mid & \\mathsf{close}_{i,j}\\,o \\mid \\mathsf{choice}_{i,j}\\,o\\,b \\mid \\mathsf{link}_i\\,o_1\\,o_2 \\mid \\mathsf{sess}_i\\,\\sigma \\end{array}} \\\\\n\\htmlData{k=ev.admin}{\\mathsf{admin} = \\{\\beta, \\mathsf{new}, \\mathsf{newat}, \\mathsf{spawn}, \\mathsf{link}\\}} \\qquad \\htmlData{k=ev.tau}{\\tau = \\text{all but } \\mathsf{sess}} \\qquad \\htmlData{k=se.parts}{\\mathsf{parts}(ev)}\n\\end{array}",
-     "caption": "An event names the threads $\\mathsf{parts}(ev)$ and the family, channel or ends acted on.",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=ev.event}{\\begin{array}{rl} ev ::= & \\beta_i \\mid \\mathsf{new}_i\\,c \\mid \\mathsf{spawn}_{i,j}\\,v \\mid \\mathsf{msg}_{i,j}\\,o\\,v \\\\ \\mid & \\mathsf{close}_{i,j}\\,o \\mid \\mathsf{choice}_{i,j}\\,o\\,b \\mid \\mathsf{link}_i\\,o_1\\,o_2 \\mid \\mathsf{sess}_i\\,\\sigma \\end{array}} \\\\\n\\htmlData{k=ev.admin}{\\mathsf{admin} = \\{\\beta, \\mathsf{new}, \\mathsf{spawn}, \\mathsf{link}\\}} \\qquad \\htmlData{k=ev.tau}{\\tau = \\text{all but } \\mathsf{sess}} \\qquad \\htmlData{k=se.parts}{\\mathsf{parts}(ev)}\n\\end{array}",
+     "caption": "An event names the threads $\\mathsf{parts}(ev)$ and the channel or ends acted on.",
      "modes": [
       "df",
       "live",
@@ -347,8 +347,8 @@ window.MAP = {
      "id": "w-world",
      "title": "Worlds",
      "rocq": "types/Worlds.v: world",
-     "tex": "\\htmlData{k=w.world}{W = (\\htmlData{k=w.consts}{A}, \\htmlData{k=w.facts}{\\prec_A}, \\htmlData{k=w.fams}{L}, \\htmlData{k=w.laws}{(\\Lambda_\\ell)_{\\ell \\in L}})}",
-     "caption": "A world $W$ has constant roots $A$, facts $\\prec_A$ between points with constant roots, family labels $L$, and laws $\\Lambda_\\ell$ for each $\\ell \\in L$ over the root variable $\\iota_0$.",
+     "tex": "\\htmlData{k=w.world}{W = (\\htmlData{k=w.consts}{A}, \\htmlData{k=w.facts}{\\prec_A})}",
+     "caption": "A world $W$ has roots $A$ and facts $\\prec_A$ between points with roots in $A$.",
      "modes": [
       "df",
       "live",
@@ -359,8 +359,8 @@ window.MAP = {
      "id": "w-order",
      "title": "The order of a world",
      "rocq": "types/Worlds.v: wstep, w_lt",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=w.lt}{\\begin{array}{l} \\prec_W\\ =\\ \\mathsf{tc}\\big(\\htmlData{k=w.ws-fact}{\\prec_A} \\;\\cup\\; \\htmlData{k=w.ws-law}{\\textstyle\\bigcup_{\\ell \\in L,\\, g} \\Lambda_\\ell(g_\\ell)} \\\\ \\qquad\\qquad \\cup\\; \\htmlData{k=w.ws-po}{\\{x \\prec x^{+}\\}} \\;\\cup\\; \\htmlData{k=w.ws-dpo}{\\{x \\prec \\overline{x}^{+}\\}}\\big) \\end{array}} \\\\\n\\htmlData{k=ty2.le}{x \\preceq y \\iff x = y \\lor x \\prec_W y}\n\\end{array}",
-     "caption": "$\\prec_W$ is the transitive closure $\\mathsf{tc}$ of facts, laws at every generated root, $x \\prec x^{+}$ and $x \\prec \\overline{x}^{+}$.",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=w.lt}{\\begin{array}{l} \\prec_W\\ =\\ \\mathsf{tc}\\big(\\htmlData{k=w.ws-fact}{\\prec_A} \\\\ \\qquad\\qquad \\cup\\; \\htmlData{k=w.ws-po}{\\{x \\prec x^{+}\\}} \\;\\cup\\; \\htmlData{k=w.ws-dpo}{\\{x \\prec \\overline{x}^{+}\\}}\\big) \\end{array}} \\\\\n\\htmlData{k=ty2.le}{x \\preceq y \\iff x = y \\lor x \\prec_W y}\n\\end{array}",
+     "caption": "$\\prec_W$ is the transitive closure $\\mathsf{tc}$ of the facts, $x \\prec x^{+}$ and $x \\prec \\overline{x}^{+}$.",
      "modes": [
       "df",
       "live",
@@ -381,10 +381,10 @@ window.MAP = {
     },
     {
      "id": "w-ext",
-     "title": "Extension, join, restriction",
+     "title": "Extension, growth, join, restriction",
      "rocq": "types/Worlds.v: wext, wjoin, wrestrict, strict_join_iff",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=w.ext}{W \\sqsubseteq W'} \\qquad \\htmlData{k=w.join}{W_1 \\sqcup W_2} \\\\\n\\htmlData{k=w.R7}{\\begin{array}{l} \\mathsf{strict}(W_1 \\sqcup W_2) \\iff {} \\\\ \\qquad \\mathsf{strict}\\,W_1 \\land \\mathsf{strict}\\,W_2 \\land \\mathsf{strict}(\\htmlData{k=w.restrict}{W_1|_S} \\sqcup W_2|_S),\\ S = A_1 \\cap A_2 \\end{array}}\n\\end{array}",
-     "caption": "Extension $\\sqsubseteq$, the join $\\sqcup$, and strictness of a join decided on the shared constants $S = A_1 \\cap A_2$.",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=w.ext}{W \\sqsubseteq W'} \\qquad \\htmlData{k=w.grow}{W \\oplus C = (A \\cup \\mathsf{roots}(C),\\ \\prec_A \\cup\\, C)} \\qquad \\htmlData{k=w.join}{W_1 \\sqcup W_2} \\\\\n\\htmlData{k=w.R7}{\\begin{array}{l} \\mathsf{strict}(W_1 \\sqcup W_2) \\iff {} \\\\ \\qquad \\mathsf{strict}\\,W_1 \\land \\mathsf{strict}\\,W_2 \\land \\mathsf{strict}(\\htmlData{k=w.restrict}{W_1|_S} \\sqcup W_2|_S),\\ S = A_1 \\cap A_2 \\end{array}}\n\\end{array}",
+     "caption": "Extension $\\sqsubseteq$, growth $W \\oplus C$ by the facts of a creation, the join $\\sqcup$, and strictness of a join decided on the shared constants $S = A_1 \\cap A_2$.",
      "modes": [
       "df",
       "live",
@@ -766,28 +766,12 @@ window.MAP = {
      "id": "r-new",
      "title": "E-New",
      "rocq": "static/Typing.v: e_new",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\\\ \\htmlData{k=E-New.fam}{\\ell \\in \\htmlData{k=w.fams}{L_W}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\htmlData{k=syn.new}{\\mathsf{new}_\\ell} : (\\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\rho.\\ \\htmlData{k=E-New.laws}{\\htmlData{k=w.laws}{\\Lambda_\\ell}(\\rho)}.\\ \\htmlData{k=E-New.dual}{((S@\\rho)^{N} \\otimes (\\htmlData{k=sty.dual}{\\overline{S}}@\\overline{\\rho})^{N})}^{0})^{0} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\hat 1}\\;\\textsf{E-New}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\\\ \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho)\\} \\cup \\{(\\varepsilon, x\\cdot\\kappa)\\}}\\\\ \\htmlData{k=E-New.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\Gamma \\cup C)}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\htmlData{k=syn.new}{\\mathsf{new}} : (\\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ \\htmlData{k=E-New.dual}{((S@\\pi)^{N} \\otimes (\\htmlData{k=sty.dual}{\\overline{S}}@\\overline{\\pi})^{N})}^{0})^{0} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\hat 1}\\;\\textsf{E-New}",
      "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\\\ \\htmlData{k=E-New.fam}{\\ell \\in \\htmlData{k=w.fams}{L_W}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.new}{\\mathsf{new}_\\ell} : \\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\rho.\\ \\htmlData{k=E-New.laws}{\\htmlData{k=w.laws}{\\Lambda_\\ell}(\\rho)}.\\ \\htmlData{k=E-New.dual}{S@\\rho \\otimes \\overline{S}@\\overline{\\rho}}}\\;\\textsf{D-New}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\\\ \\htmlData{k=E-New.fam}{\\ell \\in \\htmlData{k=w.fams}{L_W}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.new}{\\mathsf{new}_\\ell} : \\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\rho.\\ \\htmlData{k=E-New.laws}{\\htmlData{k=w.laws}{\\Lambda_\\ell}(\\rho)}.\\ \\htmlData{k=E-New.dual}{S@\\rho \\otimes \\overline{S}@\\overline{\\rho}}}\\;\\textsf{D-New}"
+      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\\\ \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho)\\} \\cup \\{(\\varepsilon, x\\cdot\\kappa)\\}}\\\\ \\htmlData{k=E-New.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\Gamma \\cup C)}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.new}{\\mathsf{new}} : \\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ \\htmlData{k=E-New.dual}{S@\\pi \\otimes \\overline{S}@\\overline{\\pi}}}\\;\\textsf{D-New}",
+      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\\\ \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho)\\} \\cup \\{(\\varepsilon, x\\cdot\\kappa)\\}}\\\\ \\htmlData{k=E-New.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\Gamma \\cup C)}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.new}{\\mathsf{new}} : \\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ \\htmlData{k=E-New.dual}{S@\\pi \\otimes \\overline{S}@\\overline{\\pi}}}\\;\\textsf{D-New}"
      },
-     "caption": "The pair sits at a fresh root $\\rho$ with $\\Lambda_\\ell(\\rho)$ and lower bound $\\bot$.",
-     "modes": [
-      "df",
-      "live",
-      "lf"
-     ]
-    },
-    {
-     "id": "r-newat",
-     "title": "E-NewAt",
-     "rocq": "static/Typing.v: e_new_at",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-NewAt.anchor}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} e : (S_0@x)^{a} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W,N} \\htmlData{k=prim.newat}{\\mathsf{new}_\\kappa}\\,e : ((S_0@x)^{a} \\otimes \\htmlData{k=E-NewAt.field}{((S@x\\cdot\\kappa)^{N} \\otimes (\\overline{S}@\\overline{x\\cdot\\kappa})^{N})}^{0})^{0} \\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0}\\;\\textsf{E-NewAt}",
-     "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-NewAt.anchor}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.newat}{\\mathsf{new}_\\kappa}\\,e : S_0@x \\otimes \\htmlData{k=E-NewAt.field}{(S@x\\cdot\\kappa \\otimes \\overline{S}@\\overline{x\\cdot\\kappa})}}\\;\\textsf{D-NewAt}",
-      "live": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-NewAt.anchor}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.newat}{\\mathsf{new}_\\kappa}\\,e : S_0@x \\otimes \\htmlData{k=E-NewAt.field}{(S@x\\cdot\\kappa \\otimes \\overline{S}@\\overline{x\\cdot\\kappa})}}\\;\\textsf{D-NewAt}"
-     },
-     "caption": "The anchor returns unchanged and the new ends sit at $x\\cdot\\kappa$ and $\\overline{x\\cdot\\kappa}$ with credit $N$.",
+     "caption": "The pair sits at a fresh root $\\rho$ or at a field $x\\cdot\\kappa$, with facts $C$ that keep the order strict and lower bound $\\bot$.",
      "modes": [
       "df",
       "live",
@@ -861,7 +845,7 @@ window.MAP = {
      "id": "p-connect",
      "title": "P-Connect",
      "rocq": "static/Typing.v: p_connect",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}^{N}_{W_1} (C_1, E_1) : T} \\\\ \\htmlData{k=P-Connect.right}{\\Sigma_2 \\cup \\htmlData{k=P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}^{N}_{W_2} (C_2, E_2) : \\ast} \\\\ \\htmlData{k=P-Connect.disj}{\\text{the channels of } \\Sigma_1, \\Sigma_2, \\Sigma_C, C_1, C_2 \\text{ pairwise disjoint}} \\\\ \\htmlData{k=P-Connect.cutfree}{\\htmlData{k=pfree}{\\mathsf{pfree}}\\,\\Sigma_C}\\\\ \\htmlData{k=w.wf}{\\mathsf{world\\_wf}\\,W_1, W_2} \\\\ \\htmlData{k=P-Connect.fams}{\\htmlData{k=w.fams}{L_1} \\cap L_2 = \\varnothing}\\\\ \\htmlData{k=P-Connect.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}^{N}_{\\htmlData{k=P-Connect.join}{W_1 \\htmlData{k=w.join}{\\sqcup} W_2}} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}^{N}_{W_1} (C_1, E_1) : T} \\\\ \\htmlData{k=P-Connect.right}{\\Sigma_2 \\cup \\htmlData{k=P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}^{N}_{W_2} (C_2, E_2) : \\ast} \\\\ \\htmlData{k=P-Connect.disj}{\\text{the channels of } \\Sigma_1, \\Sigma_2, \\Sigma_C, C_1, C_2 \\text{ pairwise disjoint}} \\\\ \\htmlData{k=P-Connect.cutfree}{\\htmlData{k=pfree}{\\mathsf{pfree}}\\,\\Sigma_C}\\\\ \\htmlData{k=w.wf}{\\mathsf{world\\_wf}\\,W_1, W_2} \\\\ \\htmlData{k=P-Connect.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}^{N}_{\\htmlData{k=P-Connect.join}{W_1 \\htmlData{k=w.join}{\\sqcup} W_2}} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect}",
      "caption": "Two components at refill $N$ in worlds $W_1$, $W_2$, cut at $\\Sigma_C$ against $\\overline{\\Sigma_C}$, the left one carrying $T$.",
      "modes": [
       "df",
@@ -884,7 +868,7 @@ window.MAP = {
      "title": "P-Join (admissible)",
      "rocq": "static/Typing.v: p_join",
      "tex": "\\dfrac{\\begin{array}{c}\\text{premises of P-Connect with} \\\\ \\htmlData{k=P-Join.lemma}{\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W_1,\\ \\htmlData{k=w.strict}{\\mathsf{strict}}\\,W_2,\\ \\htmlData{k=w.strict}{\\mathsf{strict}}(\\htmlData{k=w.restrict}{W_1|_S} \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2|_S)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}^{N}_{W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Join}",
-     "caption": "For well-formed $W_1$, $W_2$ with disjoint families, $\\mathsf{strict}(W_1 \\sqcup W_2)$ iff both are strict and so is the join of their restrictions to the shared constants.",
+     "caption": "For well-formed $W_1$, $W_2$, $\\mathsf{strict}(W_1 \\sqcup W_2)$ iff both are strict and so is the join of their restrictions to the shared constants.",
      "modes": [
       "df",
       "live",
@@ -947,10 +931,10 @@ window.MAP = {
      "id": "ct-two",
      "title": "The two tables",
      "rocq": "relation/CostTable.v: κ_DF, κ_L, ev_cost",
-     "tex": "\\begin{array}{lcc}\n & \\htmlData{k=ct.DF}{\\kappa_{DF}} & \\htmlData{k=ct.L}{\\kappa_L} \\\\ \\hline\n\\htmlData{k=ct.beta}{\\beta} & 1 & 0 \\\\\n\\htmlData{k=ct.new}{\\mathsf{new}_\\ell,\\ \\mathsf{new}_\\kappa} & 1 & 0 \\\\\n\\htmlData{k=ct.spawn}{\\mathsf{spawn}} & 1 & 0 \\\\\n\\htmlData{k=ct.link}{\\mathsf{link}} & 0 & 0 \\\\\n\\htmlData{k=ct.give}{\\mathsf{send},\\ \\mathsf{select},\\ \\mathsf{close}} & 0 & 1 \\\\\n\\htmlData{k=ct.takek}{\\mathsf{recv},\\ \\mathsf{branch}} & 1 & 1 \\\\\n\\htmlData{k=ct.sync}{\\kappa_{give} + \\kappa_{take}} & 1 & 2\n\\end{array}",
+     "tex": "\\begin{array}{lcc}\n & \\htmlData{k=ct.DF}{\\kappa_{DF}} & \\htmlData{k=ct.L}{\\kappa_L} \\\\ \\hline\n\\htmlData{k=ct.beta}{\\beta} & 1 & 0 \\\\\n\\htmlData{k=ct.new}{\\mathsf{new}} & 1 & 0 \\\\\n\\htmlData{k=ct.spawn}{\\mathsf{spawn}} & 1 & 0 \\\\\n\\htmlData{k=ct.link}{\\mathsf{link}} & 0 & 0 \\\\\n\\htmlData{k=ct.give}{\\mathsf{send},\\ \\mathsf{select},\\ \\mathsf{close}} & 0 & 1 \\\\\n\\htmlData{k=ct.takek}{\\mathsf{recv},\\ \\mathsf{branch}} & 1 & 1 \\\\\n\\htmlData{k=ct.sync}{\\kappa_{give} + \\kappa_{take}} & 1 & 2\n\\end{array}",
      "variants": {
-      "df": "\\begin{array}{lc}\n & \\htmlData{k=ct.DF}{\\kappa_{DF}} \\\\ \\hline\n\\htmlData{k=ct.beta}{\\beta} & 1 \\\\\n\\htmlData{k=ct.new}{\\mathsf{new}_\\ell,\\ \\mathsf{new}_\\kappa} & 1 \\\\\n\\htmlData{k=ct.spawn}{\\mathsf{spawn}} & 1 \\\\\n\\htmlData{k=ct.link}{\\mathsf{link}} & 0 \\\\\n\\htmlData{k=ct.give}{\\mathsf{send},\\ \\mathsf{select},\\ \\mathsf{close}} & 0 \\\\\n\\htmlData{k=ct.takek}{\\mathsf{recv},\\ \\mathsf{branch}} & 1 \\\\\n\\htmlData{k=ct.sync}{\\kappa_{give} + \\kappa_{take}} & 1\n\\end{array}",
-      "live": "\\begin{array}{lc}\n & \\htmlData{k=ct.L}{\\kappa_L} \\\\ \\hline\n\\htmlData{k=ct.beta}{\\beta} & 0 \\\\\n\\htmlData{k=ct.new}{\\mathsf{new}_\\ell,\\ \\mathsf{new}_\\kappa} & 0 \\\\\n\\htmlData{k=ct.spawn}{\\mathsf{spawn}} & 0 \\\\\n\\htmlData{k=ct.link}{\\mathsf{link}} & 0 \\\\\n\\htmlData{k=ct.give}{\\mathsf{send},\\ \\mathsf{select},\\ \\mathsf{close}} & 1 \\\\\n\\htmlData{k=ct.takek}{\\mathsf{recv},\\ \\mathsf{branch}} & 1 \\\\\n\\htmlData{k=ct.sync}{\\kappa_{give} + \\kappa_{take}} & 2\n\\end{array}"
+      "df": "\\begin{array}{lc}\n & \\htmlData{k=ct.DF}{\\kappa_{DF}} \\\\ \\hline\n\\htmlData{k=ct.beta}{\\beta} & 1 \\\\\n\\htmlData{k=ct.new}{\\mathsf{new}} & 1 \\\\\n\\htmlData{k=ct.spawn}{\\mathsf{spawn}} & 1 \\\\\n\\htmlData{k=ct.link}{\\mathsf{link}} & 0 \\\\\n\\htmlData{k=ct.give}{\\mathsf{send},\\ \\mathsf{select},\\ \\mathsf{close}} & 0 \\\\\n\\htmlData{k=ct.takek}{\\mathsf{recv},\\ \\mathsf{branch}} & 1 \\\\\n\\htmlData{k=ct.sync}{\\kappa_{give} + \\kappa_{take}} & 1\n\\end{array}",
+      "live": "\\begin{array}{lc}\n & \\htmlData{k=ct.L}{\\kappa_L} \\\\ \\hline\n\\htmlData{k=ct.beta}{\\beta} & 0 \\\\\n\\htmlData{k=ct.new}{\\mathsf{new}} & 0 \\\\\n\\htmlData{k=ct.spawn}{\\mathsf{spawn}} & 0 \\\\\n\\htmlData{k=ct.link}{\\mathsf{link}} & 0 \\\\\n\\htmlData{k=ct.give}{\\mathsf{send},\\ \\mathsf{select},\\ \\mathsf{close}} & 1 \\\\\n\\htmlData{k=ct.takek}{\\mathsf{recv},\\ \\mathsf{branch}} & 1 \\\\\n\\htmlData{k=ct.sync}{\\kappa_{give} + \\kappa_{take}} & 2\n\\end{array}"
      },
      "caption": "The costs of $\\kappa_{DF}$ and $\\kappa_L$ per kind of step, a synchronization costing $\\kappa_{give} + \\kappa_{take}$.",
      "modes": [
@@ -1058,9 +1042,9 @@ window.MAP = {
     {
      "id": "e-obl-admin",
      "title": "Obligations of internal steps",
-     "rocq": "relation/Relation.v: o_beta, o_new, o_new_at, o_spawn, new_env",
-     "tex": "\\begin{array}{ll}\n\\htmlData{k=O-Beta}{\\textsf{O-Beta}} & \\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\Theta \\\\\n\\htmlData{k=O-New}{\\textsf{O-New}} & \\htmlData{k=O-New.cfresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Theta} \\Rightarrow \\htmlData{k=O-New.forall}{\\forall g.\\ \\htmlData{k=O-New.gfresh}{g \\text{ fresh for } \\Theta}} \\Rightarrow \\exists S. \\\\\n & \\quad \\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\htmlData{k=O-New.dual}{\\Theta[c^{+} \\mapsto S@g_\\ell,\\ c^{-} \\mapsto \\overline{S}@\\overline{g_\\ell}]} \\\\\n\\htmlData{k=O-NewAt}{\\textsf{O-NewAt}} & c^{\\pm} \\notin \\mathrm{dom}\\,\\Theta \\Rightarrow \\htmlData{k=O-NewAt.held}{\\exists S_0, x.\\ \\Theta(o) = S_0@x} \\land \\exists S. \\\\\n & \\quad \\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\Theta[c^{+} \\mapsto S@x\\cdot\\kappa,\\ c^{-} \\mapsto \\overline{S}@\\overline{x\\cdot\\kappa}] \\\\\n\\htmlData{k=O-Spawn}{\\textsf{O-Spawn}} & \\htmlData{k=O-Spawn.split}{\\exists \\Theta_M, \\Theta_r.\\ \\Theta = \\Theta_M \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Theta_r} \\land \\htmlData{k=O-Spawn.thunk}{v \\in \\htmlData{k=sr.vthunk}{\\mathsf{Vthunk}_n(\\Theta_M)}} \\land \\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\Theta_r \\\\\n & \\quad \\htmlData{k=O-Spawn.transfer}{(\\text{hence } \\mathrm{dom}\\,\\Theta_M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(v))}\n\\end{array}",
-     "caption": "The obligations of $\\beta$, creation and spawn, which keep or extend the environment.",
+     "rocq": "relation/Relation.v: o_beta, o_new, o_spawn, new_env",
+     "tex": "\\begin{array}{ll}\n\\htmlData{k=O-Beta}{\\textsf{O-Beta}} & \\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\Theta \\\\\n\\htmlData{k=O-New}{\\textsf{O-New}} & \\htmlData{k=O-New.cfresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Theta} \\Rightarrow \\htmlData{k=O-New.forall}{\\forall a.\\ \\htmlData{k=O-New.gfresh}{a \\notin A_W}} \\Rightarrow \\htmlData{k=O-New.grow}{\\exists S, \\pi, C.\\ \\pi \\in \\{a\\} \\cup \\{x\\cdot\\kappa\\} \\land \\mathsf{strict}(W \\oplus C)} \\land {} \\\\\n & \\quad \\htmlData{k=rel.atcost}{e'\\ \\text{at}}_{W \\oplus C}\\ \\htmlData{k=O-New.dual}{\\Theta[c^{+} \\mapsto S@\\pi,\\ c^{-} \\mapsto \\overline{S}@\\overline{\\pi}]} \\\\\n\\htmlData{k=O-Spawn}{\\textsf{O-Spawn}} & \\htmlData{k=O-Spawn.split}{\\exists \\Theta_M, \\Theta_r.\\ \\Theta = \\Theta_M \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Theta_r} \\land \\htmlData{k=O-Spawn.thunk}{v \\in \\htmlData{k=sr.vthunk}{\\mathsf{Vthunk}_n(\\Theta_M)}} \\land \\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\Theta_r \\\\\n & \\quad \\htmlData{k=O-Spawn.transfer}{(\\text{hence } \\mathrm{dom}\\,\\Theta_M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(v))}\n\\end{array}",
+     "caption": "The obligations of $\\beta$, creation and spawn, which keep or extend the environment, and creation grows the world.",
      "modes": [
       "df",
       "live",
@@ -1403,7 +1387,7 @@ window.MAP = {
    "what": "The value $o$ names one end of a channel, the only channel name in terms.",
    "why": "Each end has its own name $c^{+}$ or $c^{-}$, and $\\mathsf{select}_i\\,o$ and $\\mathsf{branch}\\,o$ return the same name $o$. Hence no step of the semantics reads a point.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{new}_\\ell \\xrightarrow{\\mathsf{new}_\\ell\\,c} \\langle c^{+}, c^{-}\\rangle$ returns the two end values of $c$.",
+   "example": "$\\mathsf{new} \\xrightarrow{\\mathsf{new}\\,c} \\langle c^{+}, c^{-}\\rangle$ returns the two end values of $c$.",
    "rocq": "lang/Syntax.v: Chan",
    "sig": "o \\in \\mathsf{Val}",
    "args": [
@@ -1585,19 +1569,14 @@ window.MAP = {
    ]
   },
   "syn.new": {
-   "title": "$\\mathsf{new}_\\ell$",
-   "what": "$\\mathsf{new}_\\ell \\xrightarrow{\\mathsf{new}_\\ell\\,c} \\langle c^{+}, c^{-}\\rangle$, with $c^{+}$ at a fresh root $g_\\ell$ and $c^{-}$ at $\\overline{g_\\ell}$.",
-   "why": "The label $\\ell$ selects the laws $\\Lambda_\\ell$ that order the fresh root. The semantics ignores $\\ell$.",
-   "breaks": "Without families a fresh root obeys no fact, and two channels created by $\\mathsf{new}$ are unordered. A client and a server that use two fresh channels in a fixed order do not type.",
-   "example": "$\\mathsf{let}\\ \\langle a, a'\\rangle = \\mathsf{new}_0\\ \\mathsf{in}\\ e$.",
+   "title": "$\\mathsf{new}$",
+   "what": "$\\mathsf{new} \\xrightarrow{\\mathsf{new}\\,c} \\langle c^{+}, c^{-}\\rangle$ for a fresh channel $c$. The typing places $c^{+}$ at a position $\\pi$, a fresh root or a field $x\\cdot\\kappa$, places $c^{-}$ at $\\overline{\\pi}$, and states a constraint $C$ on both.",
+   "why": "The term names no point. Position and constraint live in the existential type of $\\mathsf{new}$, chosen by the typing derivation, so every ordering of a new channel is available without program syntax for it.",
+   "breaks": "With the position or the facts in the term, every held end that the facts mention is an argument that $\\mathsf{new}$ takes and returns, because ends are linear.",
+   "example": "$\\mathsf{let}\\ \\langle a, a'\\rangle = \\mathsf{new}\\ \\mathsf{in}\\ e$.",
    "rocq": "lang/Syntax.v: ENew",
-   "sig": "\\mathsf{new}_\\ell \\in \\mathsf{Expr}",
-   "args": [
-    {
-     "name": "\\ell",
-     "meaning": "The family label, $\\ell \\in \\mathbb{N}$."
-    }
-   ]
+   "sig": "\\mathsf{new} \\in \\mathsf{Expr}",
+   "args": []
   },
   "syn.op": {
    "title": "Constant $k$",
@@ -1750,29 +1729,6 @@ window.MAP = {
     }
    ]
   },
-  "prim.newat": {
-   "title": "$\\mathsf{new}_\\kappa$ (anchored creation)",
-   "what": "$\\mathsf{new}_\\kappa\\,o \\xrightarrow{\\mathsf{new}_\\kappa\\,o\\,c} \\langle o, \\langle c^{+}, c^{-}\\rangle\\rangle$. If $o$ sits at $x$, the relation places $c^{+}$ at $x\\cdot\\kappa$ and $c^{-}$ at $\\overline{x\\cdot\\kappa}$.",
-   "why": "A channel that must lie next to a held end $o$ is created at a field of the point of $o$, so no program names a point. The field $x\\cdot j$ is also where a message on $o$ delivers its $j$-th end, so a channel created to be sent on $o$ arrives at the point the receiver expects.",
-   "breaks": "Without anchors, a function that creates a channel between two existing ones needs a point parameter, and programs mention points.",
-   "example": "$\\mathsf{let}\\ \\langle c, \\langle d, d'\\rangle\\rangle = \\mathsf{new}_0\\,c\\ \\mathsf{in}\\ e$.",
-   "rocq": "lang/Syntax.v: PNewAt, lang/Semantics.v: t_act_new_at",
-   "sig": "\\mathsf{new}_\\kappa \\in \\mathsf{Const},\\quad \\mathsf{new}_\\kappa\\,o \\xrightarrow{\\mathsf{new}_\\kappa\\,o\\,c} \\langle o, \\langle c^{+}, c^{-}\\rangle\\rangle",
-   "args": [
-    {
-     "name": "\\kappa",
-     "meaning": "The field label, $\\kappa \\in \\mathbb{N}$."
-    },
-    {
-     "name": "o",
-     "meaning": "The anchor end, held before and after the step."
-    },
-    {
-     "name": "c",
-     "meaning": "The new channel, chosen fresh by the process rule."
-    }
-   ]
-  },
   "syn.values": {
    "title": "Values",
    "what": "$v ::= \\ast \\mid o \\mid k \\mid \\lambda e \\mid\\ !e \\mid \\langle v_1, v_2\\rangle \\mid \\mathsf{inj}_i\\,v$.",
@@ -1801,7 +1757,7 @@ window.MAP = {
    "what": "An end $o \\in \\{c^{+}, c^{-}\\}$ of a channel $c$, with one entry per end in every environment.",
    "why": "The two ends have independent names, and $\\mathsf{select}$ and $\\mathsf{branch}$ return the name they received. Hence an environment entry is determined by the end alone.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{new}_\\ell$ returns $\\langle c^{+}, c^{-}\\rangle$.",
+   "example": "$\\mathsf{new}$ returns $\\langle c^{+}, c^{-}\\rangle$.",
    "rocq": "lang/Syntax.v: cend",
    "sig": "o \\in \\mathsf{End} = \\{c^{+}, c^{-} \\mid c \\in \\mathsf{Chan}\\}",
    "args": [
@@ -1929,42 +1885,23 @@ window.MAP = {
    ]
   },
   "pt.const": {
-   "title": "Constant root $a$",
-   "what": "A root $a \\in A$, the only kind of root the facts $\\prec_A$ mention.",
-   "why": "The channels a component shares with its environment exist before the program runs. Their points have constant roots, and $W$ orders them directly.",
+   "title": "Root $a$",
+   "what": "A root $a \\in A$ of the world $W$, either shared with the environment or added to $W$ by the creation of a channel.",
+   "why": "Every point of a held end has a root in $A$. The facts $\\prec_A$ mention only such points.",
    "breaks": "Nothing. It is a definition.",
-   "example": "Constants $1, 2$ with the fact $1 \\prec \\overline{2}$.",
+   "example": "Roots $1, 2$ with the fact $1 \\prec \\overline{2}$.",
    "rocq": "types/Points.v: NConst",
    "sig": "a \\in \\mathsf{Root}",
    "args": [
     {
      "name": "a",
-     "meaning": "A constant, $a \\in A$ for the world $W$ in use."
-    }
-   ]
-  },
-  "pt.gen": {
-   "title": "Generated root $g_\\ell$",
-   "what": "A root $g_\\ell$ of family $\\ell$ from an infinite supply, with $\\Lambda_\\ell(g_\\ell)$ for every $g$.",
-   "why": "The facts of $g_\\ell$ are $\\Lambda_\\ell(g_\\ell)$, fixed by $W$ before the run. Hence $\\prec_W$ is the same at every index and along every run.",
-   "breaks": "If the facts of a fresh point were chosen during the run, $\\prec$ would depend on the run, and lock freedom could not rank waiting threads by one order.",
-   "example": "$\\mathsf{new}_0$ places $c^{+}$ at a fresh $g_0$.",
-   "rocq": "types/Points.v: NGen",
-   "sig": "g_\\ell \\in \\mathsf{Root}",
-   "args": [
-    {
-     "name": "g",
-     "meaning": "An index into the infinite supply of generated roots, $g \\in \\mathbb{N}$."
-    },
-    {
-     "name": "\\ell",
-     "meaning": "The family whose laws $\\Lambda_\\ell$ hold at $g_\\ell$."
+     "meaning": "A root, $a \\in A$ for the world $W$ in use."
     }
    ]
   },
   "pt.var": {
    "title": "Point variable $\\iota$",
-   "what": "A de Bruijn point variable, bound by $\\Box\\forall\\bar\\iota$, by $\\exists^m\\bar\\iota$ or by the existential of $\\mathsf{new}_\\ell$, and absent from terms.",
+   "what": "A de Bruijn point variable, bound by $\\Box\\forall\\bar\\iota$, by $\\exists^m\\bar\\iota$ or by the existential of $\\mathsf{new}$, and absent from terms.",
    "why": "No term mentions a point. Types quantify over points instead.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Box\\forall \\iota\\,\\kappa\\,\\zeta.\\ C.\\ \\ast \\multimap U$ binds three point variables.",
@@ -1973,7 +1910,7 @@ window.MAP = {
    "args": [
     {
      "name": "\\iota",
-     "meaning": "A de Bruijn index over points, bound by $\\Box\\forall\\bar\\iota$, by $\\exists^m\\bar\\iota$ or by the existential of $\\mathsf{new}_\\ell$."
+     "meaning": "A de Bruijn index over points, bound by $\\Box\\forall\\bar\\iota$, by $\\exists^m\\bar\\iota$ or by the existential of $\\mathsf{new}$."
     }
    ]
   },
@@ -1994,10 +1931,10 @@ window.MAP = {
   },
   "pt.field": {
    "title": "Field $x\\cdot\\kappa$",
-   "what": "$x\\cdot\\kappa$ is a name below $x$ with offset $0$ and positive polarity, where payloads, branch continuations and anchored channels sit.",
-   "why": "The $j$-th payload end of a message at $x$ sits at $x\\cdot j$, and the continuation of choice $i$ at $x\\cdot\\kappa_i$. An anchored channel $\\mathsf{new}_\\kappa\\,o$ uses the same fields, so a channel created to be sent lands where the message delivers it.",
-   "breaks": "With a separate sort of field for anchors, a reply channel created to be sent sits away from the payload field, and request and reply programs do not type.",
-   "example": "$\\mathsf{new}_0\\,c$ with $c$ at $\\rho$ places $d^{+}$ at $\\rho\\cdot 0$.",
+   "what": "$x\\cdot\\kappa$ is a name below $x$ with offset $0$ and positive polarity, where payloads, branch continuations and channels created at a field sit.",
+   "why": "The $j$-th payload end of a message at $x$ sits at $x\\cdot j$, and the continuation of choice $i$ at $x\\cdot\\kappa_i$. $\\mathsf{new}$ may place a channel at the same fields, so a channel created to be sent lands where the message delivers it.",
+   "breaks": "With a separate sort of point for created channels, a reply channel created to be sent sits away from the payload field, and request and reply programs do not type.",
+   "example": "$\\mathsf{new}$ at the position $\\rho\\cdot 0$ places $d^{+}$ at $\\rho\\cdot 0$ and $d^{-}$ at $\\overline{\\rho\\cdot 0}$.",
    "rocq": "types/Points.v: pt_field",
    "sig": "(\\cdot)\\cdot\\kappa : \\mathsf{Point} \\times \\mathbb{N} \\to \\mathsf{Point}",
    "args": [
@@ -2016,7 +1953,7 @@ window.MAP = {
    "what": "$\\overline{x}$ flips the polarity of $x$, and the two ends of a channel sit at $x$ and $\\overline{x}$.",
    "why": "A thread blocked at $u$ that holds an end at $v$ must satisfy $u \\prec \\overline{v}$, the point of the partner end.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{new}_\\ell$ places $c^{+}$ at $\\rho$ and $c^{-}$ at $\\overline{\\rho}$.",
+   "example": "$\\mathsf{new}$ places $c^{+}$ at $\\rho$ and $c^{-}$ at $\\overline{\\rho}$.",
    "rocq": "types/Points.v: pt_dual",
    "sig": "\\overline{\\cdot} : \\mathsf{Point} \\to \\mathsf{Point}",
    "args": [
@@ -2117,33 +2054,18 @@ window.MAP = {
     }
    ]
   },
-  "lbl.family": {
-   "title": "Family label $\\ell$",
-   "what": "$\\ell \\in \\mathbb{N}$ selects the laws $\\Lambda_\\ell$ of $W$ for a generated root.",
-   "why": "Composition renames the families of two components apart, so $L_{W_1} \\cap L_{W_2} = \\varnothing$ and laws of different components never constrain one root.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{new}_0$ and $\\mathsf{new}_1$ in a program with two families.",
-   "rocq": "lang/Syntax.v: family",
-   "sig": "\\ell \\in \\mathbb{N}",
-   "args": [
-    {
-     "name": "\\ell",
-     "meaning": "A family label, valid in $W$ when $\\ell \\in L_W$."
-    }
-   ]
-  },
   "lbl.field": {
    "title": "Field label $\\kappa$",
-   "what": "$\\kappa \\in \\mathbb{N}$ selects the field $x\\cdot\\kappa$ for $\\mathsf{new}_\\kappa$.",
-   "why": "$x\\cdot\\kappa = x\\cdot\\kappa'$ iff $\\kappa = \\kappa'$, so distinct labels, or an action on the anchor in between, give distinct points.",
-   "breaks": "Two $\\mathsf{new}_\\kappa\\,o$ with one $\\kappa$ and no action on $o$ in between create two channels at one point $x\\cdot\\kappa$. Their ends sit at the same points $x\\cdot\\kappa$ and $\\overline{x\\cdot\\kappa}$, so no fact of $W$ orders one channel before the other.",
-   "example": "$\\mathsf{new}_0\\,c$ and $\\mathsf{new}_1\\,c$ create channels at $\\rho\\cdot 0$ and $\\rho\\cdot 1$.",
+   "what": "$\\kappa \\in \\mathbb{N}$ selects the field $x\\cdot\\kappa$ of a point $x$.",
+   "why": "Payloads, choices and the position of a new channel use fields. $x\\cdot\\kappa = x\\cdot\\kappa'$ iff $\\kappa = \\kappa'$.",
+   "breaks": "Two channels created at one field $x\\cdot\\kappa$ sit at the same points $x\\cdot\\kappa$ and $\\overline{x\\cdot\\kappa}$, so no fact orders one before the other.",
+   "example": "$\\mathsf{bra\\_pt}\\,x\\,\\mathsf{true} = x\\cdot 1$.",
    "rocq": "lang/Syntax.v: field",
    "sig": "\\kappa \\in \\mathbb{N}",
    "args": [
     {
      "name": "\\kappa",
-     "meaning": "A field label of $\\mathsf{new}_\\kappa$."
+     "meaning": "A field label."
     }
    ]
   },
@@ -2359,41 +2281,14 @@ window.MAP = {
    "args": []
   },
   "lbl.new": {
-   "title": "Label $\\mathsf{new}_\\ell\\,c$",
-   "what": "It carries the family $\\ell$ and the name $c$ of the new channel.",
-   "why": "The relation reads $\\ell$ to place $c^{+}$ at a generated root $g_\\ell$ and $c^{-}$ at $\\overline{g_\\ell}$.",
+   "title": "Label $\\mathsf{new}\\,c$",
+   "what": "It carries the name $c$ of the new channel.",
+   "why": "The process rule reads $c$ to keep names fresh. Position and facts of $c$ are no part of the label, and the relation chooses them.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{new}_0 \\xrightarrow{\\mathsf{new}_0\\,c} \\langle c^{+}, c^{-}\\rangle$.",
+   "example": "$\\mathsf{new} \\xrightarrow{\\mathsf{new}\\,c} \\langle c^{+}, c^{-}\\rangle$.",
    "rocq": "lang/Semantics.v: LNew",
-   "sig": "\\mathsf{new}_\\ell\\,c \\in \\mathsf{TLabel}",
+   "sig": "\\mathsf{new}\\,c \\in \\mathsf{TLabel}",
    "args": [
-    {
-     "name": "\\ell",
-     "meaning": "The family label of the creating term."
-    },
-    {
-     "name": "c",
-     "meaning": "The name of the new channel."
-    }
-   ]
-  },
-  "lbl.newat": {
-   "title": "Label $\\mathsf{new}_\\kappa\\,o\\,c$",
-   "what": "It carries the field $\\kappa$, the anchor end $o$ and the new name $c$.",
-   "why": "The relation reads the point $x$ of $o$ from the environment and places $c^{+}$ at $x\\cdot\\kappa$ and $c^{-}$ at $\\overline{x\\cdot\\kappa}$.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{new}_0\\,c^{+}$ creating $d$ with $c^{+}$ at $x$ places $d^{+}$ at $x\\cdot 0$.",
-   "rocq": "lang/Semantics.v: LNewAt",
-   "sig": "\\mathsf{new}_\\kappa\\,o\\,c \\in \\mathsf{TLabel}",
-   "args": [
-    {
-     "name": "\\kappa",
-     "meaning": "The field label."
-    },
-    {
-     "name": "o",
-     "meaning": "The anchor end."
-    },
     {
      "name": "c",
      "meaning": "The name of the new channel."
@@ -2557,40 +2452,13 @@ window.MAP = {
   },
   "T-Act-New": {
    "title": "T-Act-New",
-   "what": "$\\mathsf{new}_\\ell \\xrightarrow{\\mathsf{new}_\\ell\\,c} \\langle c^{+}, c^{-}\\rangle$ for every $c$, and the process rule picks $c$.",
+   "what": "$\\mathsf{new} \\xrightarrow{\\mathsf{new}\\,c} \\langle c^{+}, c^{-}\\rangle$ for every $c$, and the process rule picks $c$.",
    "why": "A thread does not know which names are taken. The process rule asks $c \\notin C \\cup \\mathsf{echans}(M)$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{new}_0 \\xrightarrow{\\mathsf{new}_0\\,c} \\langle c^{+}, c^{-}\\rangle$.",
+   "example": "$\\mathsf{new} \\xrightarrow{\\mathsf{new}\\,c} \\langle c^{+}, c^{-}\\rangle$.",
    "rocq": "lang/Semantics.v: t_act_new",
    "sig": "\\cdot \\xrightarrow{\\cdot} \\cdot \\subseteq \\mathsf{Expr} \\times \\mathsf{TLabel} \\times \\mathsf{Expr}",
    "args": [
-    {
-     "name": "\\ell",
-     "meaning": "The family."
-    },
-    {
-     "name": "c",
-     "meaning": "Any channel name, restricted by the process rule."
-    }
-   ]
-  },
-  "T-Act-NewAt": {
-   "title": "T-Act-NewAt",
-   "what": "$\\mathsf{new}_\\kappa\\,o \\xrightarrow{\\mathsf{new}_\\kappa\\,o\\,c} \\langle o, \\langle c^{+}, c^{-}\\rangle\\rangle$.",
-   "why": "The anchor $o$ is an argument and part of the result, so the thread holds $o$ before and after the step.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{new}_1\\,x \\xrightarrow{\\mathsf{new}_1\\,x\\,b} \\langle x, \\langle b^{+}, b^{-}\\rangle\\rangle$.",
-   "rocq": "lang/Semantics.v: t_act_new_at",
-   "sig": "\\cdot \\xrightarrow{\\cdot} \\cdot \\subseteq \\mathsf{Expr} \\times \\mathsf{TLabel} \\times \\mathsf{Expr}",
-   "args": [
-    {
-     "name": "\\kappa",
-     "meaning": "The field label."
-    },
-    {
-     "name": "o",
-     "meaning": "The anchor end, returned unchanged."
-    },
     {
      "name": "c",
      "meaning": "Any channel name, restricted by the process rule."
@@ -2780,12 +2648,12 @@ window.MAP = {
    ]
   },
   "P-Act-New": {
-   "title": "P-Act-New and P-Act-NewAt",
-   "what": "If $M(i) \\xrightarrow{\\mathsf{new}_\\ell\\,c} e'$ and $c \\notin C \\cup \\mathsf{echans}(M)$, then $(C, M) \\to (C \\cup \\{c\\}, M[i \\mapsto e'])$, and the same for $\\mathsf{new}_\\kappa$.",
+   "title": "P-Act-New",
+   "what": "If $M(i) \\xrightarrow{\\mathsf{new}\\,c} e'$ and $c \\notin C \\cup \\mathsf{echans}(M)$, then $(C, M) \\to (C \\cup \\{c\\}, M[i \\mapsto e'])$.",
    "why": "Both ends of $c$ start in thread $i$, so $c$ is internal to the process and joins $C$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{new}_0$ creates $c$ with $c \\notin C$.",
-   "rocq": "lang/Process.v: p_act_new, p_act_new_at",
+   "example": "$\\mathsf{new}$ creates $c$ with $c \\notin C$.",
+   "rocq": "lang/Process.v: p_act_new",
    "sig": "(C, M) \\xrightarrow{ev} (C', M') \\subseteq \\mathsf{Config} \\times \\mathsf{Event} \\times \\mathsf{Config}",
    "args": [
     {
@@ -3056,8 +2924,8 @@ window.MAP = {
      "meaning": "Thread identifiers of the participants."
     },
     {
-     "name": "\\ell, \\kappa, c",
-     "meaning": "Family, field and new channel of a creation."
+     "name": "c",
+     "meaning": "The new channel of a creation."
     },
     {
      "name": "o, o_1, o_2",
@@ -3075,7 +2943,7 @@ window.MAP = {
   },
   "ev.admin": {
    "title": "Administrative events",
-   "what": "$\\mathsf{admin} = \\{\\beta, \\mathsf{new}, \\mathsf{newat}, \\mathsf{spawn}, \\mathsf{link}\\}$, each of cost $0$ in $\\kappa_L$.",
+   "what": "$\\mathsf{admin} = \\{\\beta, \\mathsf{new}, \\mathsf{spawn}, \\mathsf{link}\\}$, each of cost $0$ in $\\kappa_L$.",
    "why": "They act on no protocol. Absence of internal divergence states that every chain of them is finite.",
    "breaks": "Nothing. It is a definition.",
    "example": "An unbounded chain of spawns takes only administrative steps.",
@@ -3575,9 +3443,9 @@ window.MAP = {
   "ty.ex": {
    "title": "Existential",
    "what": "$\\exists^{l}\\bar\\iota.\\ C.\\ T^{a}$ is $T[\\bar x]$ for some $\\bar x$ with $C[\\bar x]$, and $l$ bounds the partner points of its ends from below.",
-   "why": "A fresh point is unknown outside the term that created it. $\\mathsf{new}_\\ell$ returns an existential over it, and payloads bind their points the same way.",
+   "why": "A fresh point is unknown outside the term that created it. $\\mathsf{new}$ returns an existential over it, and payloads bind their points the same way.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{new}_0 : \\exists^{\\bot}\\iota.\\ \\Lambda_0(\\iota).\\ (S@\\iota \\otimes \\overline{S}@\\overline{\\iota})$.",
+   "example": "$\\mathsf{new} : \\exists^{\\bot}\\iota.\\ \\{\\overline{\\iota} \\prec \\iota\\cdot 0\\}.\\ (S@\\iota \\otimes \\overline{S}@\\overline{\\iota})$.",
    "rocq": "types/Types.v: TEx",
    "sig": "\\exists^{l}\\bar\\iota.\\ C.\\ T^{a} \\in \\mathsf{Ty}",
    "args": [
@@ -3604,7 +3472,7 @@ window.MAP = {
    "what": "$l = \\cdot$ when the value holds no end, $l = \\bot$ when its ends sit at points unknown outside, and $l = x$ when $x \\preceq y$ for every partner point $y$ of its ends.",
    "why": "$\\bot$ stands for a fresh point that the context does not know, and $\\mathsf{hbot}$ propagates it.",
    "breaks": "Without $\\bot$, a closure captures an unopened fresh pair and claims a lower point $l$ that no fact of $W$ supports.",
-   "example": "$\\mathsf{new}_\\ell : \\exists^{\\bot}\\ldots$",
+   "example": "$\\mathsf{new} : \\exists^{\\bot}\\ldots$",
    "rocq": "types/Points.v: lbound",
    "sig": "l \\in \\{\\cdot, \\bot\\} \\cup \\mathsf{Point}",
    "args": [
@@ -4192,34 +4060,26 @@ window.MAP = {
   },
   "w.world": {
    "title": "World",
-   "what": "$W = (A, \\prec_A, L, (\\Lambda_\\ell)_{\\ell \\in L})$, constant roots, facts, family labels and laws.",
-   "why": "Points carry the order, and $W$ is the data that generates the order $\\prec_W$.",
+   "what": "$W = (A, \\prec_A)$, roots and facts.",
+   "why": "Points carry the order, and $W$ is the data that generates the order $\\prec_W$. A creation grows $W$ by its facts.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$W$ with $A = \\varnothing$, $L = \\{0\\}$ and laws $\\Lambda_0$.",
+   "example": "$W$ with $A = \\{1, 2\\}$ and the fact $1 \\prec \\overline{2}$.",
    "rocq": "types/Worlds.v: world",
-   "sig": "W = (A, \\prec_A, L, (\\Lambda_\\ell)_{\\ell \\in L}) \\in \\mathsf{World}",
+   "sig": "W = (A, \\prec_A) \\in \\mathsf{World}",
    "args": [
     {
      "name": "A",
-     "meaning": "The constant roots."
+     "meaning": "The roots."
     },
     {
      "name": "\\prec_A",
      "meaning": "The facts."
-    },
-    {
-     "name": "L",
-     "meaning": "The family labels."
-    },
-    {
-     "name": "\\Lambda_\\ell",
-     "meaning": "The laws of family $\\ell$."
     }
    ]
   },
   "w.consts": {
-   "title": "Constants $A$",
-   "what": "$A$ is the finite set of constant roots of $W$.",
+   "title": "Roots $A$",
+   "what": "$A$ is the finite set of roots of $W$.",
    "why": "Facts mention only points with roots in $A$, and composition compares two worlds through $A_1 \\cap A_2$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$A = \\{1, 2\\}$.",
@@ -4229,46 +4089,17 @@ window.MAP = {
   },
   "w.facts": {
    "title": "Facts $\\prec_A$",
-   "what": "A set of facts $x \\prec y$ between points whose roots lie in $A$.",
-   "why": "They order the channels a component shares with its environment.",
+   "what": "A set of facts $x \\prec y$, possibly infinite, between points whose roots lie in $A$.",
+   "why": "They order the channels a component shares with its environment and the channels created so far.",
    "breaks": "Nothing. It is a definition.",
    "example": "$1 \\prec \\overline{2}$.",
    "rocq": "types/Worlds.v: w_facts",
    "sig": "\\prec_A \\subseteq \\mathsf{Point} \\times \\mathsf{Point}",
    "args": []
   },
-  "w.fams": {
-   "title": "Families $L$",
-   "what": "$L \\subseteq \\mathbb{N}$ is the set of family labels of $W$, and $\\mathsf{new}_\\ell$ types only for $\\ell \\in L$.",
-   "why": "A family label names one set of laws $\\Lambda_\\ell$.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$L = \\{0\\}$.",
-   "rocq": "types/Worlds.v: w_fams",
-   "sig": "L \\subseteq \\mathbb{N}",
-   "args": []
-  },
-  "w.laws": {
-   "title": "Laws $\\Lambda_\\ell$",
-   "what": "$\\Lambda_\\ell$ is a set of facts over the root variable $\\iota_0$, and $\\Lambda_\\ell(g_\\ell)$ holds for every generated root $g_\\ell$.",
-   "why": "A law mentions one root, so the laws order no two generated roots against each other.",
-   "breaks": "With one set of laws for all fresh points, two components with different laws compose only into a cyclic world.",
-   "example": "$\\Lambda_0(r) = \\{r \\prec \\overline{r\\cdot 0},\\ \\overline{r} \\prec r\\cdot 0\\}$.",
-   "rocq": "types/Worlds.v: w_laws",
-   "sig": "\\Lambda_\\ell \\subseteq \\mathsf{Point} \\times \\mathsf{Point}",
-   "args": [
-    {
-     "name": "\\ell",
-     "meaning": "A family label, $\\ell \\in L$."
-    },
-    {
-     "name": "\\iota_0",
-     "meaning": "The root variable the laws mention, instantiated with each $g_\\ell$."
-    }
-   ]
-  },
   "w.lt": {
    "title": "$\\prec_W$",
-   "what": "$\\prec_W$ is the transitive closure of the four generators, and $W \\vdash x \\prec y$ means $x \\prec_W y$.",
+   "what": "$\\prec_W$ is the transitive closure of the three generators, and $W \\vdash x \\prec y$ means $x \\prec_W y$.",
    "why": "A waiting chain combines several facts, so the order is transitive.",
    "breaks": "Nothing. It is a definition.",
    "example": "$W \\vdash x \\prec x^{++}$.",
@@ -4282,10 +4113,6 @@ window.MAP = {
     {
      "name": "x, y",
      "meaning": "Points."
-    },
-    {
-     "name": "g",
-     "meaning": "Ranges over all generated root indices in the law generator."
     }
    ]
   },
@@ -4298,29 +4125,6 @@ window.MAP = {
    "rocq": "types/Worlds.v: ws_fact",
    "sig": "x \\prec_A y \\Rightarrow x \\prec_W y",
    "args": [
-    {
-     "name": "x, y",
-     "meaning": "Points."
-    }
-   ]
-  },
-  "w.ws-law": {
-   "title": "Laws generator",
-   "what": "For $\\ell \\in L$ and every $g$, each fact of $\\Lambda_\\ell(g_\\ell)$ holds in $\\prec_W$.",
-   "why": "Every generated root obeys its laws before it is created, so $W$ is the same along a run that creates channels.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\Lambda_0$ at $g$ gives $g_0 \\prec_W \\overline{g_0\\cdot 0}$.",
-   "rocq": "types/Worlds.v: ws_law, law_inst",
-   "sig": "(x \\prec y) \\in \\Lambda_\\ell(g_\\ell) \\Rightarrow x \\prec_W y",
-   "args": [
-    {
-     "name": "\\ell",
-     "meaning": "A family in $L$."
-    },
-    {
-     "name": "g",
-     "meaning": "Any generated root index."
-    },
     {
      "name": "x, y",
      "meaning": "Points."
@@ -4374,10 +4178,10 @@ window.MAP = {
   },
   "w.wf": {
    "title": "$\\mathsf{world\\_wf}$",
-   "what": "$\\mathsf{world\\_wf}\\,W$ iff every fact of $\\prec_A$ relates points with roots in $A$, and every law of $\\Lambda_\\ell$ with $\\ell \\in L$ relates points with root $\\iota_0$.",
-   "why": "A law that mentions a second root orders fresh points against each other, and a fact outside $A$ mentions a point no component owns.",
+   "what": "$\\mathsf{world\\_wf}\\,W$ iff every fact of $\\prec_A$ relates points with roots in $A$.",
+   "why": "A fact outside $A$ mentions a point no component owns.",
    "breaks": "Nothing. It is a definition.",
-   "example": "A law $\\iota_0 \\prec g'$ with another root $g'$ violates it.",
+   "example": "A fact $1 \\prec 3$ with $3 \\notin A$ violates it.",
    "rocq": "types/Worlds.v: world_wf",
    "sig": "\\mathsf{world\\_wf} : \\mathsf{World} \\to \\mathsf{Prop}",
    "args": [
@@ -4411,7 +4215,7 @@ window.MAP = {
    "what": "$\\mathsf{wfworld}\\,W$ iff $\\prec_W$ is well-founded, so no infinite chain $\\cdots \\prec x_2 \\prec x_1 \\prec x_0$ exists.",
    "why": "Lock freedom ranks a pending thread by the point of the end it waits on, and every waiting chain descends in $\\prec_W$. Well-foundedness makes every such chain finite.",
    "breaks": "Without it, waiting descends forever. Each thread waits on one below it, new threads keep appearing below, and the top thread never proceeds.",
-   "example": "$W$ with no facts and no families satisfies $\\mathsf{wfworld}\\,W$.",
+   "example": "$W$ with no facts satisfies $\\mathsf{wfworld}\\,W$.",
    "rocq": "types/Worlds.v: wfworld",
    "sig": "\\mathsf{wfworld} : \\mathsf{World} \\to \\mathsf{Prop}",
    "args": [
@@ -4423,10 +4227,10 @@ window.MAP = {
   },
   "w.ext": {
    "title": "Extension $\\sqsubseteq$",
-   "what": "$W \\sqsubseteq W'$ iff $A \\subseteq A'$, $L \\subseteq L'$, every fact of $W$ is a fact of $W'$ and every law of $\\ell \\in L$ is a law of $\\ell$ in $W'$.",
-   "why": "$W \\sqsubseteq W'$ implies $\\prec_W \\subseteq \\prec_{W'}$, so every relation stated monotone in $W$ survives composition with another component.",
+   "what": "$W \\sqsubseteq W'$ iff $A \\subseteq A'$ and every fact of $W$ is a fact of $W'$.",
+   "why": "$W \\sqsubseteq W'$ implies $\\prec_W \\subseteq \\prec_{W'}$, so every relation stated monotone in $W$ survives growth and composition with another component.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$W \\sqsubseteq W \\sqcup W'$.",
+   "example": "$W \\sqsubseteq W \\oplus C$ and $W \\sqsubseteq W \\sqcup W'$.",
    "rocq": "types/Worlds.v: wext",
    "sig": "\\cdot \\sqsubseteq \\cdot \\subseteq \\mathsf{World} \\times \\mathsf{World}",
    "args": [
@@ -4436,10 +4240,29 @@ window.MAP = {
     }
    ]
   },
+  "w.grow": {
+   "title": "Growth $W \\oplus C$",
+   "what": "$W \\oplus C$ adds the roots of the facts $C$ to $A$ and the facts $C$ to $\\prec_A$.",
+   "why": "A creation adds a fresh root and the facts its typing chose, so the world of a run grows with every $\\mathsf{new}$ and never loses a fact.",
+   "breaks": "With all facts fixed before the run, every fresh point obeys facts chosen in advance, and a channel between two given channels needs those facts for every possible pair.",
+   "example": "$W \\oplus \\{1 \\prec a,\\ a \\prec \\overline{2}\\}$ with $a$ fresh places $a$ between $1$ and $\\overline{2}$.",
+   "rocq": "types/Worlds.v: wgrow",
+   "sig": "\\cdot \\oplus \\cdot : \\mathsf{World} \\to \\mathcal{P}(\\mathsf{Point} \\times \\mathsf{Point}) \\to \\mathsf{World}",
+   "args": [
+    {
+     "name": "W",
+     "meaning": "A world."
+    },
+    {
+     "name": "C",
+     "meaning": "The facts of a creation, over the fresh root and points of $W$."
+    }
+   ]
+  },
   "w.join": {
    "title": "Join $\\sqcup$",
-   "what": "$W_1 \\sqcup W_2$ takes the unions of constants, facts, families and laws.",
-   "why": "Two components typed in $W_1$ and $W_2$ compose in $W_1 \\sqcup W_2$, with $L_1 \\cap L_2 = \\varnothing$.",
+   "what": "$W_1 \\sqcup W_2$ takes the unions of roots and facts.",
+   "why": "Two components typed in $W_1$ and $W_2$ compose in $W_1 \\sqcup W_2$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$W \\sqsubseteq W \\sqcup W'$ and $W' \\sqsubseteq W \\sqcup W'$.",
    "rocq": "types/Worlds.v: wjoin",
@@ -4447,13 +4270,13 @@ window.MAP = {
    "args": [
     {
      "name": "W_1, W_2",
-     "meaning": "The worlds of two components, with $L_1 \\cap L_2 = \\varnothing$ at composition."
+     "meaning": "The worlds of two components."
     }
    ]
   },
   "w.restrict": {
    "title": "Restriction $W|_S$",
-   "what": "$W|_S$ has the facts $x \\prec_W y$ with roots of $x, y$ in $S$, and no families.",
+   "what": "$W|_S$ has the facts $x \\prec_W y$ with roots of $x, y$ in $S$.",
    "why": "It is the part of $\\prec_W$ another component sees through the shared constants $S$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$W|_{A_1 \\cap A_2}$.",
@@ -4481,7 +4304,7 @@ window.MAP = {
    "args": [
     {
      "name": "W_1, W_2",
-     "meaning": "Two well-formed worlds with disjoint families."
+     "meaning": "Two well-formed worlds."
     },
     {
      "name": "S",
@@ -4567,16 +4390,16 @@ window.MAP = {
   },
   "tj.W": {
    "title": "The world $W$",
-   "what": "The world whose order $\\prec_W$, families $L_W$ and laws $\\Lambda_\\ell$ the rules read.",
+   "what": "The world whose order $\\prec_W$ the rules read.",
    "why": "Every point fact a rule uses comes from $\\prec_W$ or from $\\Gamma$. Typing is monotone in $W$, so a program typed in $W$ is typed in every $W' \\sqsupseteq W$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "E-New asks $\\ell \\in L_W$.",
+   "example": "E-New asks $\\mathsf{strict}(\\Gamma \\cup C)$ over $\\prec_W$.",
    "rocq": "static/Typing.v: typed W",
    "sig": "W : \\mathsf{World}",
    "args": [
     {
      "name": "W",
-     "meaning": "a world $(A, \\prec_A, L, \\Lambda)$ of constants, facts, families and laws"
+     "meaning": "a world $(A, \\prec_A)$ of roots and facts"
     }
    ]
   },
@@ -5181,8 +5004,8 @@ window.MAP = {
   "tp.sub-ex": {
    "title": "An existential may drop facts",
    "what": "$\\mathsf{facts}\\,C' \\subseteq \\mathsf{facts}\\,C$, the constraint $C'$ of the supertype states a subset of the facts of $C$ over the same variables.",
-   "why": "E-New types $\\mathsf{new}_\\ell$ at $\\exists^{\\bot}\\rho.\\,\\Lambda_\\ell(\\rho).\\,T$, which names the laws of $W$. Under a world extension $W \\sqsubseteq W'$ and at P-Connect the laws of $W'$ or $W_1 \\sqcup W_2$ can contain more facts, so a derivation must keep the result typable at the smaller constraint by dropping facts.",
-   "breaks": "Without it a typing in $W$ is no typing in $W \\sqcup W'$, and P-Connect could not reuse the derivations of its two components.",
+   "why": "E-New states the facts $C$ of a creation in its existential. Two branches of a $\\mathsf{case}$ or two creations that serve one type then agree on the facts both state, by dropping the rest.",
+   "breaks": "Without it, two branches that create a channel with different facts have different result types, and the $\\mathsf{case}$ does not type.",
    "example": "$\\exists^{\\bot}\\rho.\\,\\{\\rho \\prec \\overline{\\rho\\cdot 0}\\}.\\,T \\leq \\exists^{\\bot}\\rho.\\,\\varnothing.\\,T$.",
    "rocq": "static/Contexts.v: sub_ex",
    "sig": "\\mathsf{facts}\\,C' \\subseteq \\mathsf{facts}\\,C",
@@ -5892,31 +5715,12 @@ window.MAP = {
     }
    ]
   },
-  "E-New.fam": {
-   "title": "$\\ell \\in L_W$",
-   "what": "The family $\\ell$ is a family of $W$.",
-   "why": "E-New opens the laws $\\Lambda_\\ell$ of $W$, which exist only for $\\ell \\in L_W$.",
-   "breaks": "A $\\mathsf{new}_\\ell$ with $\\ell \\notin L_W$ has no laws to open.",
-   "example": "$\\mathsf{new}_0$ in the world of the cycle example.",
-   "rocq": "static/Typing.v: e_new",
-   "sig": "\\ell \\in L_W",
-   "args": [
-    {
-     "name": "\\ell",
-     "meaning": "the family label of $\\mathsf{new}_\\ell$"
-    },
-    {
-     "name": "L_W",
-     "meaning": "the families of $W$"
-    }
-   ]
-  },
   "E-New.bot": {
    "title": "Lower bound $\\bot$",
    "what": "The pair sits at a root $\\rho$ that no point of the context is related to.",
    "why": "$\\exists^{\\bot}$ records that the ends of the value sit at points without a known lower bound, and $\\bot$ propagates into every future that holds the value.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{mk}_0$ returns $\\exists^{\\bot}\\iota.\\,\\Lambda_0(\\iota).\\,({?}\\ast.\\mathsf{Close})@\\overline{\\iota}$.",
+   "example": "$\\mathsf{mk}_0$ returns $\\exists^{\\bot}\\iota.\\,C.\\,({?}\\ast.\\mathsf{Close})@\\overline{\\iota}$.",
    "rocq": "static/Typing.v: e_new",
    "sig": "\\exists^{\\bot}",
    "args": [
@@ -5926,33 +5730,67 @@ window.MAP = {
     }
    ]
   },
-  "E-New.laws": {
-   "title": "Laws as the constraint",
-   "what": "The existential has the constraint $\\Lambda_\\ell(\\rho)$ at the fresh root $\\rho$.",
-   "why": "Facts about a fresh root come only from the laws of its family, so every root of family $\\ell$ satisfies the same facts at every index.",
-   "breaks": "With the built-in order $\\prec_W$ alone, the client and server cycle created by main does not type.",
-   "example": "Opening $\\mathsf{new}_0$ in the cycle example gives $\\rho$ with $\\Lambda_0(\\rho)$.",
+  "E-New.facts": {
+   "title": "The constraint $C$",
+   "what": "A set of facts, possibly infinite, over $\\pi$, its shifts and fields, and points of $\\Gamma$.",
+   "why": "The derivation chooses the facts the new channel needs, and an interval $l \\prec \\pi \\prec u$ is the simplest case. Opening the existential adds $C$ to $\\Gamma$.",
+   "breaks": "With facts limited to finitely many bounds by held ends, a client and server loop that orders the two channels at every round, $\\iota^{+k} \\prec \\overline{\\kappa^{+k}}$ for all $k$, does not type.",
+   "example": "$C = \\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ in the cycle example.",
    "rocq": "static/Typing.v: e_new",
-   "sig": "\\Lambda_\\ell(\\rho)",
+   "sig": "C \\subseteq \\mathsf{Point} \\times \\mathsf{Point}",
+   "args": [
+    {
+     "name": "C",
+     "meaning": "the facts of the creation, chosen by the derivation"
+    }
+   ]
+  },
+  "E-New.pos": {
+   "title": "Position $\\pi$",
+   "what": "Either $\\pi = \\rho$, bound by the existential, or $\\pi = x\\cdot\\kappa$ for a point $x$ of the context.",
+   "why": "A channel created to be sent on an end at $x$ lands at the field $x\\cdot j$ where the receiver expects its $j$-th payload end.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$d$ at $\\iota\\cdot 0$ in the example with a channel between two box arguments.",
+   "rocq": "static/Typing.v: e_new",
+   "sig": "\\pi \\in \\mathsf{Point}",
    "args": [
     {
      "name": "\\rho",
-     "meaning": "the bound point variable, the fresh root"
+     "meaning": "the point variable bound by the existential"
     },
     {
-     "name": "\\Lambda_\\ell",
-     "meaning": "the laws of family $\\ell$ in $W$"
+     "name": "x, \\kappa",
+     "meaning": "a point of the context and a field label"
+    }
+   ]
+  },
+  "E-New.strict": {
+   "title": "$\\mathsf{strict}(\\Gamma \\cup C)$",
+   "what": "The facts of $\\Gamma$, the order $\\prec_W$ and $C$ together derive no $x \\prec x$.",
+   "why": "Every creation grows the world by $C$, and the results ask a strict world. The check keeps every grown world strict.",
+   "breaks": "Facts $\\overline{\\rho} \\prec \\rho\\cdot 0$ and $\\rho\\cdot 0 \\prec \\overline{\\rho}$ in one $C$ give a cycle, and two threads waiting on each other would both count as ready.",
+   "example": "$\\{\\rho \\prec \\overline{\\rho\\cdot 0}\\}$ is strict.",
+   "rocq": "static/Typing.v: e_new",
+   "sig": "\\mathsf{strict}(\\Gamma \\cup C) : \\mathsf{Prop}",
+   "args": [
+    {
+     "name": "\\Gamma",
+     "meaning": "the fact context"
+    },
+    {
+     "name": "C",
+     "meaning": "the facts of the creation"
     }
    ]
   },
   "E-New.dual": {
    "title": "Dual pair at $N$",
-   "what": "$c^{+}$ has type $S@\\rho$ and $c^{-}$ type $\\overline{S}@\\overline{\\rho}$, both at credit $N$.",
+   "what": "$c^{+}$ has type $S@\\pi$ and $c^{-}$ type $\\overline{S}@\\overline{\\pi}$, both at credit $N$.",
    "why": "The fuel layer starts both counters of a new channel at $N$, and the credits are lower bounds on them.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$(S_a@\\rho)^{N} \\otimes (S_b@\\overline{\\rho})^{N}$ with $S_b = \\overline{S_a}$.",
+   "example": "$(S_a@\\pi)^{N} \\otimes (S_b@\\overline{\\pi})^{N}$ with $S_b = \\overline{S_a}$.",
    "rocq": "static/Typing.v: e_new",
-   "sig": "(S@\\rho)^{N} \\otimes (\\overline{S}@\\overline{\\rho})^{N}",
+   "sig": "(S@\\pi)^{N} \\otimes (\\overline{S}@\\overline{\\pi})^{N}",
    "args": [
     {
      "name": "S",
@@ -5961,40 +5799,6 @@ window.MAP = {
     {
      "name": "N",
      "meaning": "the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
-    }
-   ]
-  },
-  "E-NewAt.anchor": {
-   "title": "The anchor",
-   "what": "$e$ returns an end $S_0@x$ at credit $a$, which $\\mathsf{new}_\\kappa\\,e$ returns unchanged.",
-   "why": "The new channel is placed relative to $x$, so the anchor must be held when the channel is created.",
-   "breaks": "Creating $b$ after the close of $x$ leaves no anchor. The growing ring creates $b$ by $\\mathsf{new}_1\\,x$ before $\\mathsf{recv}\\,x$.",
-   "example": "$\\mathsf{new}_0\\,c$ in the cycle example.",
-   "rocq": "static/Typing.v: e_new_at",
-   "sig": "\\ldots \\vdash e : (S_0@x)^{a}",
-   "args": [
-    {
-     "name": "S_0@x",
-     "meaning": "the anchor end, returned unchanged"
-    }
-   ]
-  },
-  "E-NewAt.field": {
-   "title": "The channel at the field",
-   "what": "The new ends sit at $x\\cdot\\kappa$ and $\\overline{x\\cdot\\kappa}$, both at credit $N$.",
-   "why": "$x\\cdot\\kappa$ is also the point of the $\\kappa$-th payload end of a message on the anchor, so a channel created to be sent on the anchor sits where the receiver expects it.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$d$ at $\\rho\\cdot 0$ and $d'$ at $\\overline{\\rho\\cdot 0}$.",
-   "rocq": "static/Typing.v: e_new_at",
-   "sig": "(S@x\\cdot\\kappa)^{N} \\otimes (\\overline{S}@\\overline{x\\cdot\\kappa})^{N}",
-   "args": [
-    {
-     "name": "\\kappa",
-     "meaning": "the field label of $\\mathsf{new}_\\kappa$"
-    },
-    {
-     "name": "x",
-     "meaning": "the point of the end the action is on"
     }
    ]
   },
@@ -6320,21 +6124,6 @@ window.MAP = {
     }
    ]
   },
-  "P-Connect.fams": {
-   "title": "$L_1 \\cap L_2 = \\varnothing$",
-   "what": "The two worlds share no family.",
-   "why": "Families are renamed apart before composition. Two components with contradicting laws for one family would make the join non-strict.",
-   "breaks": "Laws $\\rho \\prec \\overline{\\rho}^{+}$ on one side and $\\overline{\\rho}^{+} \\prec \\rho$ on the other for one family give a cycle in the join.",
-   "example": "A world with no families joins with itself.",
-   "rocq": "static/Typing.v: p_connect",
-   "sig": "L_{W_1} \\cap L_{W_2} = \\varnothing",
-   "args": [
-    {
-     "name": "W_1, W_2",
-     "meaning": "the worlds of the components"
-    }
-   ]
-  },
   "P-Connect.strict": {
    "title": "$\\mathsf{strict}(W_1 \\sqcup W_2)$",
    "what": "The joined world is strict, $\\prec_{W_1 \\sqcup W_2}$ is irreflexive.",
@@ -6368,7 +6157,7 @@ window.MAP = {
   "P-Join.lemma": {
    "title": "Side conditions of P-Join",
    "what": "$\\mathsf{strict}\\,W_1$, $\\mathsf{strict}\\,W_2$ and $\\mathsf{strict}(W_1|_S \\sqcup W_2|_S)$ with $S$ the shared constants.",
-   "why": "For well-formed worlds with disjoint families these three conditions are equivalent to $\\mathsf{strict}(W_1 \\sqcup W_2)$. Hence P-Join is derivable from P-Connect.",
+   "why": "For well-formed worlds these three conditions are equivalent to $\\mathsf{strict}(W_1 \\sqcup W_2)$. Hence P-Join is derivable from P-Connect.",
    "breaks": "Nothing. It is a definition.",
    "example": "Two worlds with no shared constant.",
    "rocq": "static/Typing.v: p_join, p_join_iff_connect",
@@ -6612,7 +6401,7 @@ window.MAP = {
     },
     {
      "name": "W",
-     "meaning": "the world whose order $\\prec_W$, families and laws the rule reads"
+     "meaning": "the world whose order $\\prec_W$ the rule reads"
     },
     {
      "name": "N",
@@ -6643,7 +6432,7 @@ window.MAP = {
     },
     {
      "name": "W",
-     "meaning": "the world whose order $\\prec_W$, families and laws the rule reads"
+     "meaning": "the world whose order $\\prec_W$ the rule reads"
     },
     {
      "name": "N",
@@ -6830,7 +6619,7 @@ window.MAP = {
     },
     {
      "name": "W",
-     "meaning": "the world whose order $\\prec_W$, families and laws the rule reads"
+     "meaning": "the world whose order $\\prec_W$ the rule reads"
     },
     {
      "name": "N",
@@ -6993,10 +6782,10 @@ window.MAP = {
   },
   "ct.new": {
    "title": "Cost $\\kappa_{new}$",
-   "what": "The cost of $\\mathsf{new}_\\ell$ and $\\mathsf{new}_\\kappa$.",
+   "what": "The cost of $\\mathsf{new}$.",
    "why": "Creation synchronizes with nobody, so $\\kappa_L$ counts it as an internal step.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\kappa_L(\\mathsf{new}_\\ell) = 0$.",
+   "example": "$\\kappa_L(\\mathsf{new}) = 0$.",
    "rocq": "relation/CostTable.v: c_new",
    "sig": "\\kappa_{new} \\in \\mathbb{N}",
    "args": [
@@ -7584,7 +7373,7 @@ window.MAP = {
    "what": "$\\exists \\bar x \\in \\mathsf{Point}^m.\\ W \\vdash C[\\bar x] \\land v \\in V\\llbracket\\Theta \\vdash T[\\bar x]\\rrbracket$.",
    "why": "Opening an existential substitutes fresh point variables and adds $C$ to $\\Gamma$, and the compatibility of E-Open instantiates them with this witness.",
    "breaks": "Nothing. It is a definition.",
-   "example": "The fresh root $g_\\ell$ with $\\Lambda_\\ell(g_\\ell)$.",
+   "example": "The fresh root $a$ with the facts $C$ of its creation.",
    "rocq": "relation/Relation.v: Vbody TEx",
    "sig": "\\exists \\bar x \\in \\mathsf{Point}^{m}.\\ W \\vdash C[\\bar x] \\land v \\in V^{W}_{n}\\llbracket \\Theta \\vdash T[\\bar x] \\rrbracket",
    "args": [
@@ -7773,12 +7562,12 @@ window.MAP = {
   },
   "O-New": {
    "title": "O-New",
-   "what": "For a fresh name $c$ and every fresh root $g$ of family $\\ell$, some $S$ places $c^{+}$ at $S@g_\\ell$ and $c^{-}$ at $\\overline{S}@\\overline{g_\\ell}$.",
-   "why": "All roots of a family obey the same laws, so the universal quantifier over fresh roots costs nothing and lets the soup pick the least unused root.",
+   "what": "For a fresh name $c$ and every root $a \\notin A_W$, some $S$, position $\\pi$ and facts $C$ with $\\mathsf{strict}(W \\oplus C)$ place $c^{+}$ at $S@\\pi$ and $c^{-}$ at $\\overline{S}@\\overline{\\pi}$, and the successor runs in $W \\oplus C$.",
+   "why": "It is the semantic counterpart of E-New. The typing chooses $\\pi$ and $C$, and the relation continues in the grown world.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{new}_0$ in the cycle.",
+   "example": "$\\mathsf{new}$ in the cycle.",
    "rocq": "relation/Relation.v: o_new",
-   "sig": "\\mathsf{o\\_new} : \\mathsf{Fam} \\to \\mathsf{Chan} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "sig": "\\mathsf{o\\_new} : \\mathsf{Chan} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
@@ -7805,20 +7594,24 @@ window.MAP = {
      "meaning": "a term and its successor, $e, e' \\in \\mathsf{Expr}$"
     },
     {
-     "name": "\\ell",
-     "meaning": "the family of the label"
-    },
-    {
      "name": "c",
      "meaning": "the new channel name"
     },
     {
-     "name": "g",
-     "meaning": "a generated root of family $\\ell$, fresh for $\\Theta$"
+     "name": "a",
+     "meaning": "a root outside $A_W$"
     },
     {
      "name": "S",
      "meaning": "the session type of $c^{+}$"
+    },
+    {
+     "name": "\\pi",
+     "meaning": "the position of $c^{+}$"
+    },
+    {
+     "name": "C",
+     "meaning": "the facts of the creation"
     }
    ]
   },
@@ -7843,46 +7636,65 @@ window.MAP = {
   },
   "O-New.forall": {
    "title": "For every fresh root",
-   "what": "The obligation holds at every root $g$ of family $\\ell$ that is fresh for $\\Theta$.",
-   "why": "The placement is then a function of the run, the same at every level.",
+   "what": "The obligation holds at every root $a$ outside $A_W$.",
+   "why": "The root is then a function of the run, the same at every level.",
    "breaks": "A root chosen per level breaks lock freedom, because no ownership is then the same at every level.",
-   "example": "$\\forall g.\\ \\mathsf{gfresh}\\,\\ell\\,g\\,\\Theta \\Rightarrow \\ldots$",
+   "example": "$\\forall a.\\ a \\notin A_W \\Rightarrow \\ldots$",
    "rocq": "relation/Relation.v: o_new",
-   "sig": "\\forall g \\in \\mathbb{N}.\\ \\mathsf{gfresh}\\,\\ell\\,g\\,\\Theta \\Rightarrow \\ldots",
+   "sig": "\\forall a \\in \\mathsf{Root}.\\ a \\notin A_W \\Rightarrow \\ldots",
    "args": [
     {
-     "name": "g",
-     "meaning": "the index of the generated root $g_\\ell$"
+     "name": "a",
+     "meaning": "a candidate root"
     }
    ]
   },
   "O-New.gfresh": {
-   "title": "$g$ fresh for $\\Theta$",
-   "what": "$\\forall o, S, x.\\ \\Theta(o) = S@x \\Rightarrow \\mathsf{root}(x) \\neq g_\\ell$.",
+   "title": "$a \\notin A_W$",
+   "what": "The root $a$ is no root of the current world.",
    "why": "Roots come from a supply separate from channel names, so a link that renames a channel never revives a used root.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{gfresh}\\,\\ell\\,g\\,\\Theta$.",
+   "example": "$a \\notin \\{1, 2\\}$.",
    "rocq": "relation/Relation.v: gfresh",
-   "sig": "\\mathsf{gfresh} : \\mathsf{Fam} \\to \\mathbb{N} \\to \\mathsf{Env} \\to \\mathsf{Prop}",
+   "sig": "a \\notin A_W : \\mathsf{Prop}",
    "args": [
     {
-     "name": "\\ell, g",
-     "meaning": "the family and index of the root"
+     "name": "a",
+     "meaning": "the root"
     },
     {
-     "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "name": "W",
+     "meaning": "the world, $W \\in \\mathsf{World}$"
+    }
+   ]
+  },
+  "O-New.grow": {
+   "title": "Position and growth",
+   "what": "$\\pi$ is the fresh root $a$ or a field $x\\cdot\\kappa$, and $C$ is a set of facts over $\\pi$ and points of $W$ with $\\mathsf{strict}(W \\oplus C)$.",
+   "why": "The witness of the existential that E-New returns is $\\pi$, and the facts it states hold in $W \\oplus C$.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$C = \\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ at $\\pi = \\rho\\cdot 0$.",
+   "rocq": "relation/Relation.v: o_new",
+   "sig": "\\exists S, \\pi, C.\\ \\pi \\in \\{a\\} \\cup \\{x\\cdot\\kappa\\} \\land \\mathsf{strict}(W \\oplus C)",
+   "args": [
+    {
+     "name": "\\pi",
+     "meaning": "the position, the root $a$ or a field of a point $x$ of $W$"
+    },
+    {
+     "name": "C",
+     "meaning": "the facts added to $W$"
     }
    ]
   },
   "O-New.dual": {
    "title": "Dual placement",
-   "what": "$\\Theta[c^{+} \\mapsto S@g_\\ell,\\ c^{-} \\mapsto \\overline{S}@\\overline{g_\\ell}]$.",
-   "why": "It is the static result of E-New at the witness $g_\\ell$, and duality of the pair is what the soup asks of restricted channels.",
+   "what": "$\\Theta[c^{+} \\mapsto S@\\pi,\\ c^{-} \\mapsto \\overline{S}@\\overline{\\pi}]$.",
+   "why": "It is the static result of E-New at the witness $\\pi$, and duality of the pair is what the soup asks of restricted channels.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{new}_0$ gives $c^{+} : S@g_0$ and $c^{-} : \\overline{S}@\\overline{g_0}$.",
+   "example": "$\\mathsf{new}$ gives $c^{+} : S@a$ and $c^{-} : \\overline{S}@\\overline{a}$.",
    "rocq": "relation/Relation.v: new_env",
-   "sig": "\\Theta[c^{+} \\mapsto S@g_\\ell,\\ c^{-} \\mapsto \\overline{S}@\\overline{g_\\ell}] \\in \\mathsf{Env}",
+   "sig": "\\Theta[c^{+} \\mapsto S@\\pi,\\ c^{-} \\mapsto \\overline{S}@\\overline{\\pi}] \\in \\mathsf{Env}",
    "args": [
     {
      "name": "c",
@@ -7893,74 +7705,8 @@ window.MAP = {
      "meaning": "the chosen session type"
     },
     {
-     "name": "g_\\ell",
-     "meaning": "the generated root"
-    }
-   ]
-  },
-  "O-NewAt": {
-   "title": "O-NewAt",
-   "what": "The anchor $o$ is held at $x$, and the new pair goes to $x\\cdot\\kappa$ and $\\overline{x\\cdot\\kappa}$.",
-   "why": "The placement is determined by the anchor, so nothing is chosen.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{new}_0\\,c$ with $c$ at $\\rho$ places $d$ at $\\rho\\cdot 0$.",
-   "rocq": "relation/Relation.v: o_new_at",
-   "sig": "\\mathsf{o\\_new\\_at} : \\mathsf{Field} \\to \\mathsf{End} \\to \\mathsf{Chan} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
-   "args": [
-    {
-     "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
-    },
-    {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
-    },
-    {
-     "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
-    },
-    {
-     "name": "T",
-     "meaning": "the type, $T \\in \\mathsf{Ty}$"
-    },
-    {
-     "name": "F",
-     "meaning": "the future, a finite set of points"
-    },
-    {
-     "name": "e, e'",
-     "meaning": "a term and its successor, $e, e' \\in \\mathsf{Expr}$"
-    },
-    {
-     "name": "\\kappa",
-     "meaning": "the field label"
-    },
-    {
-     "name": "o",
-     "meaning": "the anchor"
-    },
-    {
-     "name": "c",
-     "meaning": "the new channel"
-    }
-   ]
-  },
-  "O-NewAt.held": {
-   "title": "$\\Theta(o) = S_0@x$",
-   "what": "The anchor is an end of $\\Theta$ with point $x$.",
-   "why": "The new channel sits at a field of the anchor's point, which only a held anchor provides.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\Theta(c^{+}) = S_0@\\rho$.",
-   "rocq": "relation/Relation.v: o_new_at",
-   "sig": "\\exists S_0, x.\\ \\Theta(o) = S_0@x",
-   "args": [
-    {
-     "name": "o",
-     "meaning": "the anchor"
-    },
-    {
-     "name": "x",
-     "meaning": "its point, whose field $x\\cdot\\kappa$ receives the channel"
+     "name": "\\pi",
+     "meaning": "the position"
     }
    ]
   },
@@ -9590,7 +9336,7 @@ window.MAP = {
    "what": "For a fresh $c$, some $S$ adds $c^{+} : S$ and $c^{-} : \\overline{S}$ to $\\Pi$ with counters $N$.",
    "why": "A new channel starts with both ends at the refill $N$, the credit E-New gives them.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{new}_0$ adds $c^{\\pm}$ at $N$.",
+   "example": "$\\mathsf{new}$ adds $c^{\\pm}$ at $N$.",
    "rocq": "fuel/Fuel.v: f_new",
    "sig": "\\mathsf{f\\_new} : \\mathsf{Chan} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
    "args": [
@@ -12014,8 +11760,8 @@ window.MAP = {
     "live",
     "lf"
    ],
-   "code": "main = let (a, a′) = new_0 in\n       let (a, ⟨b, b′⟩) = new_κ a in\n       let () = spawn (λu. let () = u in (force srv) ⟨a′, b′⟩) in\n       (force cli) ⟨a, b⟩\ncli  = !(f = λp. let (a, b) = p in let a = send ⟨∗, a⟩ in\n                let (u, b) = recv b in let () = u in (force f) ⟨a, b⟩)\nsrv  = !(g = λp. let (a, b) = p in let (u, a) = recv a in let () = u in\n                let b = send ⟨∗, b⟩ in (force g) ⟨a, b⟩)\n-- both boxes : □∀ι κ ζ. C. ∗ ⊸ (S1@ι ⊗ S2@κ ⊸^ζ ∗)\n-- C = {ι+k ≺ (κ+k)‾, κ+k ≺ (ι+k+1)‾, ι+k ≺ ζ, κ+k ≺ ζ | k}",
-   "shows": "The cycle created by main is ordered by $\\Lambda_0$, which states $C$ at $(\\rho, \\rho\\cdot 0, \\rho\\cdot 1)$ for the self call at $(\\iota^{+}, \\kappa^{+}, \\zeta)$.",
+   "code": "main = let (a, a′) = new in                    -- a at ρ\n       let (b, b′) = new in                    -- b at ρ·0, facts C at (ρ, ρ·0, ρ·1)\n       let () = spawn (λu. let () = u in (force srv) ⟨a′, b′⟩) in\n       (force cli) ⟨a, b⟩\ncli  = !(f = λp. let (a, b) = p in let a = send ⟨∗, a⟩ in\n                let (u, b) = recv b in let () = u in (force f) ⟨a, b⟩)\nsrv  = !(g = λp. let (a, b) = p in let (u, a) = recv a in let () = u in\n                let b = send ⟨∗, b⟩ in (force g) ⟨a, b⟩)\n-- both boxes : □∀ι κ ζ. C. ∗ ⊸ (S1@ι ⊗ S2@κ ⊸^ζ ∗)\n-- C = {ι+k ≺ (κ+k)‾, κ+k ≺ (ι+k+1)‾, ι+k ≺ ζ, κ+k ≺ ζ | k}",
+   "shows": "The second $\\mathsf{new}$ places $b$ at $\\rho\\cdot 0$ and states $C$ at $(\\rho, \\rho\\cdot 0, \\rho\\cdot 1)$, the facts the self call at $(\\iota^{+}, \\kappa^{+}, \\zeta)$ needs.",
    "rocq": "examples/ClientServer.v: cs_typed; examples/LFClientServer.v: cs_lftyped, cs_lock_free",
    "accepts": {
     "df": {
@@ -12041,8 +11787,8 @@ window.MAP = {
     "live",
     "lf"
    ],
-   "code": "cycle = let (c, c′) = new_0 in\n        let (c, ⟨d, d′⟩) = new_0 c in\n        let () = spawn (λu. let () = u in let () = close c′ in close d′) in\n        let () = close c in close d\n-- Λ₀(r) = {r ≺ (r·0)‾, r‾ ≺ r·0}",
-   "shows": "$\\Lambda_0$ states exactly $\\rho \\prec \\overline{\\rho\\cdot 0}$ and $\\overline{\\rho} \\prec \\rho\\cdot 0$, the two facts the two threads need.",
+   "code": "cycle = let (c, c′) = new in          -- c at ρ\n        let (d, d′) = new in          -- d at ρ·0, C = {ρ ≺ (ρ·0)‾, ρ‾ ≺ ρ·0}\n        let () = spawn (λu. let () = u in let () = close c′ in close d′) in\n        let () = close c in close d",
+   "shows": "The second $\\mathsf{new}$ states exactly $\\rho \\prec \\overline{\\rho\\cdot 0}$ and $\\overline{\\rho} \\prec \\rho\\cdot 0$, the two facts the two threads need.",
    "rocq": "examples/Cycle.v: cy_typed; examples/LFCycle.v: cy_lftyped, cy_lock_free",
    "accepts": {
     "df": {
@@ -12068,8 +11814,8 @@ window.MAP = {
     "live",
     "lf"
    ],
-   "code": "between : □(∀ι κ. C. ∗ ⊸ Close@ι ⊗ Close@κ ⊸^κ ∗)\nbetween = !(f = λp. let (c, e) = p in\n                    let (c, ⟨d, d′⟩) = new_0 c in\n                    let () = spawn (λu. let () = u in close d′) in\n                    let () = close c in let () = close d in close e)\n-- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾, δ ≺ κ, δ ≺ κ‾},  δ = ι·0\nmain: c by new_0 at ρ, e by new_1 c at ρ·1, force between at (ρ, ρ·1)",
-   "shows": "The box creates its channel at the field $\\iota\\cdot 0$ of the end it receives, so no point between two box points is needed.",
+   "code": "between : □(∀ι κ. C. ∗ ⊸ Close@ι ⊗ Close@κ ⊸^κ ∗)\nbetween = !(f = λp. let (c, e) = p in\n                    let (d, d′) = new in        -- d at ι·0\n                    let () = spawn (λu. let () = u in close d′) in\n                    let () = close c in let () = close d in close e)\n-- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾, δ ≺ κ, δ ≺ κ‾},  δ = ι·0\nmain: c by new at ρ, e by new at ρ·1, force between at (ρ, ρ·1)",
+   "shows": "The box places its new channel at the field $\\iota\\cdot 0$ of the point of $c$, so no point between two box points is needed.",
    "rocq": "examples/FreshBetween.v: fb_typed; examples/LFFreshBetween.v: fb_lftyped, fb_lock_free",
    "accepts": {
     "df": {
@@ -12095,7 +11841,7 @@ window.MAP = {
     "live",
     "lf"
    ],
-   "code": "many = !(f = λp. let (c, e) = p in\n                 let (c, ⟨d, d′⟩) = new_0 c in\n                 let () = spawn (λu. let () = u in\n                                     let (v, d′) = recv d′ in let () = v in\n                                     let (w, d′) = recv d′ in let () = w in close d′) in\n                 let () = close c in\n                 let () = close (send ⟨∗, send ⟨∗, d⟩⟩) in close e)\n-- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾} ∪ {δ+k ≺ κ, δ+k ≺ κ‾ | k},  δ = ι·0",
+   "code": "many = !(f = λp. let (c, e) = p in\n                 let (d, d′) = new in         -- d at δ\n                 let () = spawn (λu. let () = u in\n                                     let (v, d′) = recv d′ in let () = v in\n                                     let (w, d′) = recv d′ in let () = w in close d′) in\n                 let () = close c in\n                 let () = close (send ⟨∗, send ⟨∗, d⟩⟩) in close e)\n-- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾} ∪ {δ+k ≺ κ, δ+k ≺ κ‾ | k},  δ = ι·0",
    "shows": "An infinite box constraint lets $d$ act at $\\delta, \\delta^{+}, \\delta^{++}$ while $e$ is held at $\\kappa$.",
    "rocq": "examples/FreshMany.v: fm_typed; examples/LFFreshMany.v: fm_lftyped, fm_lock_free",
    "accepts": {
@@ -12122,8 +11868,8 @@ window.MAP = {
     "live",
     "lf"
    ],
-   "code": "mk₀  = !(f = λu. let () = u in let (c, c′) = new_0 in\n                let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in c′)\nmk₁  = !(f = λp. let (p, ⟨c, c′⟩) = new_0 p in\n                let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in ⟨p, c′⟩)\nmain = let p = (force mk₀) ∗ in let ⟨p, q⟩ = (force mk₁) p in\n       let () = recvclose p in recvclose q\n-- Λ₀(r) = {r‾ ≺ r·0, r‾⁺ ≺ r·0}\n-- mk₀ : □(∗ ⊸ ∃^⊥ ι. Λ₀(ι). (?∗.Close)@ι‾)",
-   "shows": "The first call creates at a fresh root and the second anchors at the end it receives, so two variants of $\\mathsf{mk}$ replace one term with two types.",
+   "code": "mk₀  = !(f = λu. let () = u in let (c, c′) = new in\n                let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in c′)\nmk₁  = !(f = λp. let (c, c′) = new in\n                let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in ⟨p, c′⟩)\nmain = let p = (force mk₀) ∗ in let ⟨p, q⟩ = (force mk₁) p in\n       let () = recvclose p in recvclose q\n-- mk₀ places c at a fresh ρ with C(ρ) = {ρ‾ ≺ ρ·0, ρ‾⁺ ≺ ρ·0}, mk₁ at ι·0 for p at ι\n-- mk₀ : □(∗ ⊸ ∃^⊥ ι. C(ι). (?∗.Close)@ι‾)",
+   "shows": "The first call creates at a fresh root and the second at a field of the end it receives, two typings of the same creation.",
    "rocq": "examples/FactoryEx.v: fx_typed; examples/LFFactoryEx.v: fx_lftyped, fx_lock_free",
    "accepts": {
     "df": {
@@ -12149,8 +11895,8 @@ window.MAP = {
     "live",
     "lf"
    ],
-   "code": "Sch  = µα. ?(∃κ. α@κ).Close\nring : □(∀ι₁ ι₂. Cr. ∗ ⊸ (Sch@ι₁ ⊗ S̄ch@ι₂ ⊸^{ι₁+1} ∗))\nring = !(f = λp. let (x, y) = p in\n           let (y, ⟨a, a′⟩) = new_0 y in\n           let () = spawn (λw. let () = w in close (send ⟨a, y⟩)) in\n           let (x, ⟨b, b′⟩) = new_1 x in\n           let (z, x) = recv x in let () = close x in\n           let () = spawn (λw. let () = w in (force f) ⟨z, b′⟩) in\n           spawn (λw. let () = w in (force f) ⟨b, a′⟩))\nmain = let (e, e′) = new_0 in (force ring) ⟨e, e′⟩",
-   "shows": "$b$ is created by $\\mathsf{new}_1\\,x$ before the receive on $x$, so it is anchored while $x$ is held.",
+   "code": "Sch  = µα. ?(∃κ. α@κ).Close\nring : □(∀ι₁ ι₂. Cr. ∗ ⊸ (Sch@ι₁ ⊗ S̄ch@ι₂ ⊸^{ι₁+1} ∗))\nring = !(f = λp. let (x, y) = p in\n           let (a, a′) = new in                -- a at ι₂·0\n           let () = spawn (λw. let () = w in close (send ⟨a, y⟩)) in\n           let (b, b′) = new in                -- b at ι₁·1\n           let (z, x) = recv x in let () = close x in\n           let () = spawn (λw. let () = w in (force f) ⟨z, b′⟩) in\n           spawn (λw. let () = w in (force f) ⟨b, a′⟩))\nmain = let (e, e′) = new in (force ring) ⟨e, e′⟩",
+   "shows": "$b$ is created at $\\iota_1\\cdot 1$ before the receive on $x$, while $x$ is held at $\\iota_1$.",
    "rocq": "examples/GrowRing.v: rg_typed; examples/LFGrowRing.v: rg_lftyped, rg_lock_free",
    "accepts": {
     "df": {
@@ -12175,7 +11921,7 @@ window.MAP = {
     "lf"
    ],
    "code": "cl c⁺ ∥ cl c⁻,   cl o = close o\n-- each thread by P-Term at every finite N over its end, cut c by P-Connect at exactly dual types",
-   "shows": "The smallest use of P-Term and P-Connect, cutting $c$ at exactly dual types in a world without facts or families.",
+   "shows": "The smallest use of P-Term and P-Connect, cutting $c$ at exactly dual types in a world without facts.",
    "rocq": "examples/LFClose.v: cl_lftyped, cl_lock_free",
    "accepts": {
     "lf": {
@@ -12255,7 +12001,7 @@ window.MAP = {
    "modes": [
     "lf"
    ],
-   "code": "main = let (a, a′) = new_0 in let (a, ⟨b, b′⟩) = new_0 a in\n       let (a, ⟨c, c′⟩) = new_2 a in\n       let () = spawn (λu. let () = u in (force srv) ⟨⟨a′, b′⟩, c′⟩) in\n       (force cli) ⟨⟨a, b⟩, c⟩\ncli  = !(f = λp. let (q, k) = p in let (a, b) = q in\n                let a = send ⟨∗, a⟩ in let (u, b) = recv b in\n                let () = u in (force f) ⟨⟨a, b⟩, k⟩)\n-- c sits at Skip on each side, an idle end",
+   "code": "main = let (a, a′) = new in let (b, b′) = new in   -- a at ρ, b at ρ·0\n       let (c, c′) = new in                              -- c at ρ·2\n       let () = spawn (λu. let () = u in (force srv) ⟨⟨a′, b′⟩, c′⟩) in\n       (force cli) ⟨⟨a, b⟩, c⟩\ncli  = !(f = λp. let (q, k) = p in let (a, b) = q in\n                let a = send ⟨∗, a⟩ in let (u, b) = recv b in\n                let () = u in (force f) ⟨⟨a, b⟩, k⟩)\n-- c sits at Skip on each side, an idle end",
    "shows": "The idle end $k$ at $\\mathsf{Skip}@\\chi$ is held across every round at credit $0$, because $(\\mathsf{Skip}@\\chi, a) - c = (\\mathsf{Skip}@\\chi, \\max(a - c, 0))$ asks no $c \\leq a$.",
    "rocq": "examples/LFController.v: ctl_typedN, ctl_guarded, ctl_lftyped, ctl_lock_free",
    "accepts": {
