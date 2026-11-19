@@ -43,7 +43,8 @@ const MEETS = h('ann.meets', R`\mathsf{meets}`);
 const RLE = REL('fu.refill-kripke', R`\sqsupseteq_{\mathsf{rle}}`);
 const DM = R`\mathbin{\dot-}`;
 // a clause of a relation as a rule, premises side by side, rows stacked
-const RULE = (name, rows, concl) => rule(name, R`\begin{array}{c}${rows.map(r => r.join(R`\quad `)).join(R` \\ `)}\end{array}`, concl);
+// the conclusion of an obligation rule hovers to the note of the rule
+const RULE = (name, rows, concl) => rule(name, R`\begin{array}{c}${rows.map(r => r.join(R`\quad `)).join(R` \\ `)}\end{array}`, /^[OQ]-/.test(name) ? h(name, concl) : concl);
 const PB = (a) => h('sr.pobl', R`\mathsf{Pobl}_{${a}}(p')`);
 const OB = (a) => h('sr.obl', R`\mathsf{Obl}_{${a}}(e')`);
 
@@ -164,7 +165,7 @@ block(s, {
   id: 'e-obl-admin', title: 'Obligations of internal steps', rocq: 'relation/Relation.v: o_beta, o_new, o_spawn, new_env',
   tex: R`\begin{array}{c}
 ${RULE('O-Beta', [[R`${AT(R`e'`)}\ \Theta`]], OB(R`\beta`))} \qquad ${RULE('O-Spawn', [[h('O-Spawn.split', R`\Theta = \Theta_M ${UPL} \Theta_r`), h('O-Spawn.thunk', R`v \in ${h('sr.vthunk', R`\mathsf{Vthunk}_n(\Theta_M)`)}`), R`${AT(R`e'`)}\ \Theta_r`]], OB(R`\mathsf{spawn}\,v`))} \\[2ex]
-${RULE('O-New', [[h('O-New.cfresh', R`c^{\pm} \notin \mathrm{dom}\,\Theta`)], [R`${h('O-New.forall', R`\forall a \notin A_W`)}.\ ${h('O-New.grow', R`\exists S, \pi, C.\ \pi \in \{a, x\cdot\kappa\},\ \mathsf{strict}(W \oplus C)`)},\ ${AT(R`e'`)}_{W \oplus C}\ ${h('O-New.dual', R`\Theta[c^{+} \mapsto S@\pi,\ c^{-} \mapsto \overline{S}@\overline{\pi}]`)}`]], OB(R`\mathsf{new}\,c`))}
+${RULE('O-New', [[h('O-New.cfresh', R`c^{\pm} \notin \mathrm{dom}\,\Theta`)], [R`${h('O-New.forall', R`\forall ${h('O-New.gfresh', R`a \notin A_W`)}`)}.\ ${h('O-New.grow', R`\exists S, \pi, C.\ \pi \in \{a, x\cdot\kappa\},\ \mathsf{strict}(W \oplus C)`)},\ ${AT(R`e'`)}_{W \oplus C}\ ${h('O-New.dual', R`\Theta[c^{+} \mapsto S@\pi,\ c^{-} \mapsto \overline{S}@\overline{\pi}]`)}`]], OB(R`\mathsf{new}\,c`))}
 \end{array}`,
   caption: 'Each step $e \\xrightarrow{\\alpha} e\'$ of a term holding $\\Theta$ must meet the obligation $\\mathsf{Obl}_\\alpha(e\')$. A $\\beta$ step keeps the ends, a spawn gives the child exactly the ends its thunk mentions, and a creation adds the two new ends at a fresh root or a field and grows the world by their facts.'
 });
