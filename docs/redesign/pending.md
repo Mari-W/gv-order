@@ -47,6 +47,35 @@ must do, open questions.
        lock freedom only needs the world at each position, not the limit.
    (c) Two creations at one field x·κ share a point. Allowed (loose), the
        strictness check decides.
+   Overnight stage 4, 2026-11-20: stopped at the feasibility check of (a),
+   no Rocq change. Verdict on (a): the plan fails as stated. The soup
+   fixes the state `a` once for every index (`lf_sem := ∃ N a, ∀ n, a ∈
+   S^{N,W}_n⟦Σ ⊢ T⟧`, soup/Soup.v), and a run computes the next state by
+   the index-free update `own_next` from the event alone. The event of a
+   plain `new c` names neither the point π nor the constraint C. If O-New
+   picks `∃ S π C` at each level, the state after the creation needs the
+   point of the new ends in K to equal π_n for every n, and the world to
+   grow by one C for every n. Nothing forces π_n and C_n to agree across
+   levels. Downward closure of E does not rescue it, because the choices
+   form an infinite set (every field κ, every constraint C), so no
+   pigeonhole argument finds one choice valid at every level. Repairs to
+   decide on: (i) a finite menu of (π, C) per creation, determined by Θ,
+   with downward closure and pigeonhole giving one choice for all levels
+   (the client-server constraint `ι+k ≺ (κ+k)‾` for all k must then be one
+   entry of the menu); (ii) the soup carries its own world and points,
+   and O-New in the lock-free relation is stated at the world and point
+   the soup offers, quantified universally over the offers that keep the
+   world strict, which turns the thread's choice into the environment's
+   and loses the creations that need a particular C; (iii) per-level
+   worlds and points in the soup, which breaks the rank argument, because
+   the rank of a pending thread is the point of its end in K at that
+   position and the criterion compares it across positions. Note on (b)
+   from the same reading: lockfree/Criterion.v asks one well-founded order
+   on ranks for the whole run, so with growing worlds the order would be
+   the union of the worlds along the run, which a loop that creates below
+   its previous channel makes non-well-founded although every single
+   world is well founded. A criterion that compares ranks only within one
+   position would be needed. (c) needs nothing beyond strictness.
 
 3. **No GV constants in the Rocq; constants are values on the map.**
    `k_send`, `k_new`, `k_new_at` are unused. Rocq: delete them and the
@@ -259,6 +288,14 @@ must do, open questions.
     (`sf_unionb … (lenv_bot Δ2)`). Entry 12 must keep the two apart: the
     new arrow bound there is `LBot`, and hbot must report such arrows, so
     a spawn-only closure cannot be sent (no loss, it cannot exist today).
+    Overnight stage 3, 2026-11-20: not done, by the rule "only if it
+    shortens proofs". The flag is threaded beside the head sets through
+    hbot (41 uses in 20 files), lenv_bot (56 in 17), sf_unionb (47 in 18)
+    and fs_bot (12 in 10), and the semantic reading `sf_den` interprets it
+    by the arbitrary set B. Folding ⊥ into the sets replaces each case
+    split on the flag by a membership test of ⊥ and changes every one of
+    these sites, with no proof that gets shorter in sight. `LNone` and
+    `LBot` stay apart as they are.
     Open questions from the author, to discuss:
     (a) Named variables on the map instead of de Bruijn indices in Δ, as
         for points (the Rocq keeps indices). Author: cosmetic, map only,
