@@ -62,17 +62,17 @@ Qed.
 
 (** ** Types at a finite refill *)
 
-Definition Schl : sty := SMu (SSeq (SRcv 1 (TSess (SVar 0) (pvar 0)) (Some 2)) SEnd).
+Definition Schl : sty := SMu (SSeq (SRcv 1 (TSess (SVar 0) (pvar 0) (Some 2))) SEnd).
 
-Lemma unfold_Schl : unfoldS Schl = SSeq (SRcv 1 (TSess Schl (pvar 0)) (Some 2)) SEnd.
+Lemma unfold_Schl : unfoldS Schl = SSeq (SRcv 1 (TSess Schl (pvar 0) (Some 2))) SEnd.
 Proof. done. Qed.
-Lemma unfold_dSchl : unfoldS (dual Schl) = SSeq (SSnd 1 (TSess Schl (pvar 0)) (Some 2)) SEnd.
+Lemma unfold_dSchl : unfoldS (dual Schl) = SSeq (SSnd 1 (TSess Schl (pvar 0) (Some 2))) SEnd.
 Proof. done. Qed.
-Lemma pscoped_SchlT : pscoped 1 (TSess Schl (pvar 0)).
+Lemma pscoped_SchlT : pscoped 1 (TSess Schl (pvar 0) (Some 2)).
 Proof. simpl. split_and?; try done; intros a Ha; injection Ha as <-; lia. Qed.
 
-Definition rgl_T : ty := TProd (TSess Schl (pvar 0)) (Some 0) (TSess (dual Schl) (pvar 1)) (Some 1).
-Definition rgl_ty : ty := lbox 2 rg_C (Some (sh 1 (pvar 0))) rgl_T (Some 0) TUnit None.
+Definition rgl_T : ty := TProd (TSess Schl (pvar 0) (Some 0)) (TSess (dual Schl) (pvar 1) (Some 1)).
+Definition rgl_ty : ty := lbox 2 rg_C (Some (sh 1 (pvar 0))) rgl_T TUnit.
 
 Ltac tsub_tac := first [apply tsub_refl | apply sub_sess; [apply sequiv_refl|simpl; lia]].
 
@@ -83,16 +83,14 @@ Section body.
   Ltac rgf := apply rg_hyp; exists (pvar 0), (pvar 1); split; [apply rr_root|unfold rg_F; rg_disj].
 
   (** A recursive call at a pair reachable in one step. *)
-  Lemma rgl_call Δ F e X1 Y1 a c0 t0 :
+  Lemma rgl_call Δ F e X1 Y1 c0 t0 :
     rreach (pvar 0) (pvar 1) X1 Y1 →
-    typed W (Some 4) ∅ Γb Δ F e rgl_ty a c0 t0 →
+    typed W (Some 4) ∅ Γb Δ F e rgl_ty c0 t0 →
     typed W (Some 4) ∅ Γb Δ F (EForce e)
-      (TLolli (Some (sh 1 X1)) None None tz (Some 0)
-         (TProd (TSess Schl X1) (Some 0) (TSess (dual Schl) Y1) (Some 1)) (Some 0) TUnit None)
-      None (fadd c0 (Some 0)) (tseq t0 tid).
+      (TLolli (Some (sh 1 X1)) None None tz (Some 0) (TProd (TSess Schl X1 (Some 0)) (TSess (dual Schl) Y1 (Some 1))) TUnit None) (fadd c0 (Some 0)) (tseq t0 tid).
   Proof.
     intros HR H.
-    eapply (lbox_force_eq _ _ _ _ _ _ 2 rg_C (Some (sh 1 (pvar 0))) rgl_T (Some 0) TUnit None (X1 :: Y1 :: []));
+    eapply (lbox_force_eq _ _ _ _ _ _ 2 rg_C (Some (sh 1 (pvar 0))) rgl_T TUnit (X1 :: Y1 :: []));
       [done| | | |done|exact H].
     - apply hold_at_nil. intros f Hf _.
       destruct (fact_map (pt_inst (plist (X1 :: Y1 :: []))) f) as [x y] eqn:E.
@@ -114,8 +112,8 @@ Section body.
       | first [by left | right; apply sl_po] | normF; reflexivity ].
 
   Lemma rgl_body : ∃ c t,
-    typed W (Some 4) ∅ Γb (Some (rgl_T, Some 0) :: Some (rgl_ty, None) :: nones n) (∅, Some (FVar 1))
-      rg_e TUnit None c t ∧ t.2 = Some 0.
+    typed W (Some 4) ∅ Γb (Some rgl_T :: Some rgl_ty :: nones n) (∅, Some (FVar 1))
+      rg_e TUnit c t ∧ t.2 = Some 0.
   Proof.
     eexists _, _. split.
     { unfold rg_e.
@@ -137,7 +135,7 @@ Section body.
       { eapply e_var'; [reflexivity|]. spare_tac. }
       lage_tac.
       eapply e_close with (S0 := SEnd) (x := sh 1 (pvar 1)); [done|apply ub_below_empty|].
-      eapply e_send with (x := pvar 1) (m := 1) (T := TSess Schl (pvar 0)) (b := Some 2) (S0 := dual Schl);
+      eapply e_send with (x := pvar 1) (m := 1) (T := TSess Schl (pvar 0) (Some 2)) (S0 := dual Schl);
         [exact unfold_dSchl|exact pscoped_SchlT|done| |apply ub_below_empty| | |].
       { intros y Hy. cbn in Hy. apply elem_of_singleton in Hy as ->. rgf. }
       { eapply e_pair_; [lsplit_tac (Var 2) (Var 4)| | | | |shelve].
@@ -156,7 +154,7 @@ Section body.
     { eapply e_var'; [reflexivity|]. spare_tac. }
     lage_tac.
     eapply e_letp_; [lsplit_tac (ERecv (Var 3)) EUnit| | | |shelve].
-    { eapply e_recv with (x := pvar 0) (m := 1) (T := TSess Schl (pvar 0)) (b := Some 2) (S0 := Schl);
+    { eapply e_recv with (x := pvar 0) (m := 1) (T := TSess Schl (pvar 0) (Some 2)) (S0 := Schl);
         [exact unfold_Schl|exact pscoped_SchlT|fut (pvar 0)|].
       eapply e_var'; [reflexivity|]. spare_tac. }
     lage_tac.
@@ -198,7 +196,7 @@ Section body.
   Qed.
 End body.
 
-Lemma ringl_typed W Γ n F : hc_fv Γ = ∅ → typed W (Some 4) ∅ Γ (nones n) F ring rgl_ty None (Some 0) tid.
+Lemma ringl_typed W Γ n F : hc_fv Γ = ∅ → typed W (Some 4) ∅ Γ (nones n) F ring rgl_ty (Some 0) tid.
 Proof.
   intros HΓ. destruct (rgl_body W Γ n) as (c & t & Hb & Ht).
   eapply lbox_typed; [done|reflexivity|exact Hb|exact Ht].
@@ -216,7 +214,7 @@ Proof.
   - eapply pt_vb_inst; [exact Hv|]. intros [|[|a]] Ha; unfold rg_xs, plist in *; simpl in *; lia.
 Qed.
 
-Lemma rgl_typedN : ∃ c ϑ, typed W_rg (Some 4) ∅ hc_empty [] (∅, None) rg_main TUnit None c ϑ ∧ meets ϑ 0 0.
+Lemma rgl_typedN : ∃ c ϑ, typed W_rg (Some 4) ∅ hc_empty [] (∅, None) rg_main TUnit c ϑ ∧ meets ϑ 0 0.
 Proof.
   eexists _, _. split.
   { unfold rg_main, let_new.
@@ -230,8 +228,8 @@ Proof.
   { eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_app_; [lsplit_tac (EForce ring) EUnit|apply ub_below_empty| | | |shelve|shelve|shelve].
-  { eapply (lbox_force_eq _ _ _ _ _ _ 2 rg_C (Some (sh 1 (pvar 0))) rgl_T (Some 0) TUnit None rg_xs _ _ _
-      (Some (sh 1 (pvar 0))) (TProd (TSess Schl (pvar 0)) (Some 0) (TSess (dual Schl) (pvar 0)‾) (Some 1)));
+  { eapply (lbox_force_eq _ _ _ _ _ _ 2 rg_C (Some (sh 1 (pvar 0))) rgl_T TUnit rg_xs _ _
+      (Some (sh 1 (pvar 0))) (TProd (TSess Schl (pvar 0) (Some 0)) (TSess (dual Schl) (pvar 0)‾ (Some 1))));
       [done|apply rgl_hold|done|done|done|].
     apply (ringl_typed _ _ 3). done. }
   lage_tac.

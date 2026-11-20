@@ -23,8 +23,8 @@ Proof.
     destruct Hf as [->|[->|[->|(k & [->| ->])]]]; simpl in E; injection E as -> ->; unfold pt_fsum, pt_depth; simpl; lia.
 Qed.
 
-Definition fml_T : ty := TProd (TSess SEnd (pvar 0)) (Some 4) (TSess SEnd (pvar 1)) (Some 4).
-Definition fml_ty : ty := lbox 2 fm_C (Some (pvar 1)) fml_T (Some 0) TUnit None.
+Definition fml_T : ty := TProd (TSess SEnd (pvar 0) (Some 4)) (TSess SEnd (pvar 1) (Some 4)).
+Definition fml_ty : ty := lbox 2 fm_C (Some (pvar 1)) fml_T TUnit.
 
 Section body.
   Context (W : world) (Γ : hctx) (n : nat).
@@ -46,8 +46,8 @@ Section body.
       | normF; reflexivity | apply Γbox_fv | right; fmf | normF; reflexivity ].
 
   Lemma fml_body : ∃ c t,
-    typed W (Some 4) ∅ Γb (Some (fml_T, Some 0) :: Some (fml_ty, None) :: nones n) (∅, Some (FVar 1))
-      fm_e TUnit None c t ∧ t.2 = Some 0.
+    typed W (Some 4) ∅ Γb (Some fml_T :: Some fml_ty :: nones n) (∅, Some (FVar 1))
+      fm_e TUnit c t ∧ t.2 = Some 0.
   Proof.
     eexists _, _. split.
     { unfold fm_e.
@@ -67,7 +67,7 @@ Section body.
       { eapply e_var'; [reflexivity|]. spare_tac. }
       lage_tac.
       eapply e_letp_; [lsplit_tac (ERecv (Var 1)) EUnit| | | |shelve].
-      { eapply e_recv with (x := (fmd 0)‾) (m := 0) (T := TUnit) (b := None) (S0 := dual Sdd);
+      { eapply e_recv with (x := (fmd 0)‾) (m := 0) (T := TUnit) (S0 := dual Sdd);
           [done|exact I| |eapply e_var'; [reflexivity|spare_tac]].
         apply ub_below_nil; [bot_false|]. intros y Hy. heads_cases Hy. }
       lage_tac.
@@ -75,7 +75,7 @@ Section body.
       { eapply e_var'; [reflexivity|]. spare_tac. }
       lage_tac.
       eapply e_letp_; [lsplit_tac (ERecv (Var 0)) EUnit| | | |shelve].
-      { eapply e_recv with (x := pt_shift 1 (fmd 0)‾) (m := 0) (T := TUnit) (b := None) (S0 := dual Sd1);
+      { eapply e_recv with (x := pt_shift 1 (fmd 0)‾) (m := 0) (T := TUnit) (S0 := dual Sd1);
           [done|exact I| |eapply e_var'; [reflexivity|spare_tac]].
         apply ub_below_nil; [bot_false|]. intros y Hy. heads_cases Hy. }
       lage_tac.
@@ -91,12 +91,12 @@ Section body.
     lage_tac.
     eapply e_letu_; [lsplit_tac (EClose (ESend (Pair EUnit (ESend (Pair EUnit (Var 1)))))) EUnit| | | |shelve].
     { eapply e_close with (S0 := SEnd) (x := pt_shift 1 (pt_shift 1 (fmd 0))); [done|fut (fmd 2)|].
-      eapply e_send with (x := pt_shift 1 (fmd 0)) (m := 0) (T := TUnit) (b := None) (S0 := Sd1);
+      eapply e_send with (x := pt_shift 1 (fmd 0)) (m := 0) (T := TUnit) (Tp := TUnit) (S0 := Sd1);
         [done|exact I|done|cbn; set_solver|fut (fmd 1)| |age_tac|shelve].
       eapply e_pair_; [lsplit_tac EUnit (ESend (Pair EUnit (Var 1)))| | | | |shelve].
       { apply e_unit'. spare_tac. }
       lage_tac.
-      { eapply e_send with (x := fmd 0) (m := 0) (T := TUnit) (b := None) (S0 := Sdd);
+      { eapply e_send with (x := fmd 0) (m := 0) (T := TUnit) (Tp := TUnit) (S0 := Sdd);
           [done|exact I|done|cbn; set_solver|fut (fmd 0)| |age_tac|shelve].
         eapply e_pair_; [lsplit_tac EUnit (Var 1)| | | | |shelve].
         { apply e_unit'. spare_tac. }
@@ -113,7 +113,7 @@ Section body.
 End body.
 
 Lemma fml_box_typed W Γ n F : hc_fv Γ = ∅ →
-  typed W (Some 4) ∅ Γ (nones n) F fm_box fml_ty None (Some 0) tid.
+  typed W (Some 4) ∅ Γ (nones n) F fm_box fml_ty (Some 0) tid.
 Proof.
   intros HΓ. destruct (fml_body W Γ n) as (c & t & Hb & Ht).
   eapply lbox_typed; [done|reflexivity|exact Hb|exact Ht].
@@ -127,7 +127,7 @@ Proof.
   destruct Hf as [->|[->|[->|(k & [->| ->])]]]; simpl in E; injection E as <- <-; simpl; lia.
 Qed.
 
-Lemma fml_typedN : ∃ c ϑ, typed W_fm (Some 4) ∅ hc_empty [] (∅, None) fm_main TUnit None c ϑ ∧ meets ϑ 0 0.
+Lemma fml_typedN : ∃ c ϑ, typed W_fm (Some 4) ∅ hc_empty [] (∅, None) fm_main TUnit c ϑ ∧ meets ϑ 0 0.
 Proof.
   eexists _, _. split.
   { unfold fm_main, let_new.
@@ -163,8 +163,8 @@ Proof.
     eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_app_; [lsplit_tac (EForce fm_box) EUnit|apply ub_below_empty| | | |shelve|shelve|shelve].
-  { eapply (lbox_force_eq _ _ _ _ _ _ 2 fm_C (Some (pvar 1)) fml_T (Some 0) TUnit None fm_xs _ _ _
-      (Some ((pvar 0)·1)) (TProd (TSess SEnd (pvar 0)) (Some 4) (TSess SEnd ((pvar 0)·1)) (Some 4)));
+  { eapply (lbox_force_eq _ _ _ _ _ _ 2 fm_C (Some (pvar 1)) fml_T TUnit fm_xs _ _
+      (Some ((pvar 0)·1)) (TProd (TSess SEnd (pvar 0) (Some 4)) (TSess SEnd ((pvar 0)·1) (Some 4))));
       [done|apply fml_hold|done|done|done|].
     apply (fml_box_typed _ _ 7). done. }
   lage_tac.

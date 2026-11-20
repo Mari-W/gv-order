@@ -92,18 +92,18 @@ Qed.
 
 Section proc.
   Context (κ : ctable) (G : expr → Prop).
-  Context (Hthr : ∀ W N Θ t T a c ϑ, strict W → Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} t : T^a ▷ c ; ϑ →
+  Context (Hthr : ∀ W N Θ t T c ϑ, strict W → Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} t : T ▷ c ; ϑ →
                     G t → sem_typed κ W (tenv_df Θ) (lenv_df []) (∅, None) t (ty_df T)).
 
   Lemma proc_gen N W Σ p T : strict W → ptyped N W Σ p T → (∀ t, t ∈ p.2 → G t) → sem_ptyped κ W Σ p T.
   Proof.
     intros HW Hty. revert HW. induction Hty as
-      [W Σ ΘB C0 t T a c ϑ Hp HB HΣ Hpf Hd Ht _
+      [W Σ ΘB C0 t T c ϑ Hp HB HΣ Hpf Hd Ht _
       |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T H1 IH1 H2 IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hw1 Hw2 Hfam HJ];
       intros HW HG n; simpl in HG.
     - apply (sem_p_term κ n W _ Σ (tenv_erase ΘB) C0 t T Hp (pterm_sth N Σ ΘB C0 HB HΣ Hpf Hd)).
       assert (G t) as Hg by (apply HG; multiset_solver).
-      apply typed_E. exact (Hthr W N _ t T a c ϑ HW Ht Hg).
+      apply typed_E. exact (Hthr W N _ t T c ϑ HW Ht Hg).
     - destruct (proj1 (p_join_iff_connect W1 W2 Hw1 Hw2 Hfam) HJ) as (HS1 & HS2 & _).
       pose proof (ptyped_conn _ _ _ _ _ _ _ _ _ _ _ H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2) as Hc.
       refine (sem_p_connect κ n W1 W2 Σ1 ΣC Σ2 (senv_dual ΣC) (C1, E1) (C2, E2) T (ptyped_tfree _ _ _ _ _ H1)
@@ -116,13 +116,13 @@ End proc.
 Theorem fundamental_proc W Σ p T : strict W → Σ ⊢_W p : T → Σ ⊨_W p : T.
 Proof.
   intros HW Hty. refine (proc_gen κ_DF (λ _, True) _ None W Σ p T HW Hty _); [|done].
-  intros W' N Θ t T' a c ϑ HW' Ht _. exact (fundamental_typed W' N Θ [] (∅, None) t T' a c ϑ HW' Ht).
+  intros W' N Θ t T' c ϑ HW' Ht _. exact (fundamental_typed W' N Θ [] (∅, None) t T' c ϑ HW' Ht).
 Qed.
 
 Theorem live_fundamental_proc W Σ p T : strict W → Σ ⊢_W p : T → ⊢▷ p → Σ ⊫_W p : T.
 Proof.
   intros HW Hty Hg. refine (proc_gen κ_L (lguard ∅) _ None W Σ p T HW Hty Hg).
-  intros W' N Θ t T' a c ϑ HW' Ht Hgt. exact (live_fundamental_typed W' N Θ [] (∅, None) t T' a c ϑ HW' Ht Hgt).
+  intros W' N Θ t T' c ϑ HW' Ht Hgt. exact (live_fundamental_typed W' N Θ [] (∅, None) t T' c ϑ HW' Ht Hgt).
 Qed.
 
 Theorem soundness W p T : strict W → ∅ ⊢_W p : T → deadlock_free p.

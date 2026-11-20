@@ -2,6 +2,6 @@
 
 From GV Require Import cost.CostFund.
 
-Check (λ N Θ Δ e T a c ϑ, Θ ; Δ ⊨^N e : T^a ▷ c ; ϑ).
+Check (λ N Θ Δ e T c ϑ, Θ ; Δ ⊨^N e : T ▷ c ; ϑ).
 Check cost_fundamental.
 Check fsem_of_cost.

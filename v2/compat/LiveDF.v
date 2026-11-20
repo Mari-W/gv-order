@@ -78,14 +78,14 @@ Qed.
 
 Fixpoint boxfree (T : ty) : Prop :=
   match T with
-  | TBox _ _ _ _ _ _ _ _ => False
-  | TProd A _ B _ | TSum A _ B _ => boxfree A ∧ boxfree B
+  | TBox _ _ _ _ _ _ _ => False
+  | TProd A B | TSum A B => boxfree A ∧ boxfree B
   | _ => True
   end.
 
 Lemma Vrel_boxfree κ κ' T : tfree T → boxfree T → ∀ i i' W Θ v, Vrel κ i W Θ T v ↔ Vrel κ' i' W Θ T v.
 Proof.
-  induction 1 as [| |T1 a1 U a2 _ IH1 _ IH2|T1 a1 U a2 _ IH1 _ IH2]; simpl; intros Hb i i' W Θ v.
+  induction 1 as [| |T1 U _ IH1 _ IH2|T1 U _ IH1 _ IH2]; simpl; intros Hb i i' W Θ v.
   - by rewrite !Vrel_unit_iff.
   - done.
   - destruct Hb as [Hb1 Hb2]. rewrite !Vrel_prod_iff.
@@ -132,10 +132,10 @@ Proof.
       rewrite <-Hq. by eapply psize_link.
     + intros Hc. eapply (IHn (S n - _)); [lia|done|done|]. intros m. apply HL'.
   - intros q i o w q' Hq Hst. exfalso.
-    destruct (H2 q i o w q' Hq Hst) as (? & ? & ? & ? & ? & ? & ? & ? & ? & ? & A & _).
+    destruct (H2 q i o w q' Hq Hst) as (? & ? & ? & ? & ? & ? & ? & ? & ? & A & _).
     by rewrite lookup_empty in A.
   - intros q i o w q' Hq Hst. exfalso.
-    destruct (H3 q i o w q' Hq Hst) as (? & ? & ? & ? & ? & ? & A & _). by rewrite lookup_empty in A.
+    destruct (H3 q i o w q' Hq Hst) as (? & ? & ? & ? & ? & A & _). by rewrite lookup_empty in A.
   - intros q i o q' Hq Hst. exfalso.
     destruct (H4 q i o q' Hq Hst) as (? & ? & A & _). by rewrite lookup_empty in A.
   - intros q i o b q' Hq Hst. exfalso.

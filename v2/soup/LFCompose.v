@@ -117,11 +117,11 @@ Proof.
 Qed.
 
 (** The thread of P-Term, typed at a finite N and guarded, in E[live]. *)
-Lemma typed_live W N Θ t T a c ϑ n :
-  strict W → ∅ ⊢▷ t → Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} t : T^a ▷ c ; ϑ →
+Lemma typed_live W N Θ t T c ϑ n :
+  strict W → ∅ ⊢▷ t → Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} t : T ▷ c ; ϑ →
   t ∈ E[live]^W _ n⟦tenv_erase Θ ⊢ T⟧^∅.
 Proof.
-  intros HW Hg Hty. pose proof (live_fundamental_typed _ _ _ _ _ _ _ _ _ _ HW Hty Hg (λ _, ∅) ∅
+  intros HW Hg Hty. pose proof (live_fundamental_typed _ _ _ _ _ _ _ _ _ HW Hty Hg (λ _, ∅) ∅
     n W ∅ Var (wext_refl _) (map_disjoint_empty_r _) eq_refl) as H.
   rewrite subst_ids, map_union_empty in H.
   assert (sf_den (λ _, ∅) ∅ (∅, None) = ∅) as E.
@@ -133,12 +133,12 @@ Qed.
 
 (** The rule P-Term: the premises of [p_term] at Some N, a guarded
     thread and a ticket count meeting its transformer, in a strict world. *)
-Theorem lf_p_term W N Σ ΘB C0 t T a c ϑ tk :
+Theorem lf_p_term W N Σ ΘB C0 t T c ϑ tk :
   strict W → tfree T →
   (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 →
   (∀ c, c ∈ C0 → ∃ S (x : point), ΘB !! (c⁺)%cend = Some (TE S x (Some N)) ∧
                                    ΘB !! (c⁻)%cend = Some (TE (dual S) (pt_dual x) (Some N))) →
-  tenv_of (Some N) Σ ∪ ΘB ; hc_empty ; [] ⊢^(∅, None) _{W,(Some N)} t : T^a ▷ c ; ϑ →
+  tenv_of (Some N) Σ ∪ ΘB ; hc_empty ; [] ⊢^(∅, None) _{W,(Some N)} t : T ▷ c ; ϑ →
   ∅ ⊢▷ t → meets ϑ 0 tk →
   Σ ⊪_W (C0, {[+ t +]}) : T.
 Proof.
@@ -150,7 +150,7 @@ Proof.
       destruct (Hd _ Hc) as (S & x & H1 & H2). destruct o as [c'|c']; simpl in *.
       + rewrite H1 in Hte. injection Hte as <-. apply fle_refl.
       + rewrite H2 in Hte. injection Hte as <-. apply fle_refl. }
-  destruct (fsem_of_cost _ _ _ _ _ _ _ _ tk Hty Hp Hcr Hm) as [tk' Hf].
+  destruct (fsem_of_cost _ _ _ _ _ _ _ tk Hty Hp Hcr Hm) as [tk' Hf].
   apply (lf_soup_term N W Σ ΘB C0 t T tk'); try done.
   intros n. by eapply typed_live.
 Qed.
@@ -159,16 +159,16 @@ Qed.
 
     A guarded closed thread of primitive type, typed at a finite N, whose
     transformer some ticket count meets, is lock free. *)
-Theorem lf_soundness_source W N t T a c ϑ tk :
+Theorem lf_soundness_source W N t T c ϑ tk :
   strict W → wfworld W → ∅ ⊢▷ t → tfree T →
-  ∅ ; hc_empty ; [] ⊢^(∅, None) _{W,(Some N)} t : T^a ▷ c ; ϑ → meets ϑ 0 tk →
+  ∅ ; hc_empty ; [] ⊢^(∅, None) _{W,(Some N)} t : T ▷ c ; ϑ → meets ϑ 0 tk →
   lock_free (∅, {[+ t +]}).
 Proof.
   intros HS HW Hg Hp Hty Hm.
   assert (tenv_of (Some N) ∅ ∪ ∅ = (∅ : tenv)) as E by (unfold tenv_of; by rewrite fmap_empty, map_union_empty).
   rewrite <-E in Hty.
   assert (∀ o, o ∈ dom (∅ : tenv) ↔ ech o ∈ (∅ : gset chan)) as HB by (intros o; rewrite dom_empty_L; set_solver).
-  destruct (lf_p_term W N ∅ ∅ ∅ t T a c ϑ tk HS Hp HB
+  destruct (lf_p_term W N ∅ ∅ ∅ t T c ϑ tk HS Hp HB
     ltac:(set_solver) ltac:(set_solver) Hty Hg Hm) as (N' & a' & He & Hs).
   rewrite <-He. by apply (lf_adequacy_soup N' W T a').
 Qed.

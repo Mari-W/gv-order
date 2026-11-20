@@ -51,7 +51,7 @@ Proof. constructor; simpl; [done|set_solver]. Qed.
 Definition cl (o : cend) : expr := EClose (Chan o).
 
 Lemma cl_typed N o x :
-  typed W_cl (Some N) {[o := TE SEnd x (Some N)]} hc_empty [] (∅, None) (cl o) TUnit None
+  typed W_cl (Some N) {[o := TE SEnd x (Some N)]} hc_empty [] (∅, None) (cl o) TUnit
     (fadd (Some 0) (Some 1)) tid.
 Proof.
   eapply (e_close W_cl (Some N) _ _ _ _ _ SEnd); [reflexivity| |].
@@ -61,7 +61,7 @@ Qed.
 
 Lemma cl_term N o x : ptyped (Some N) W_cl {[o := (SEnd, x)]} (∅, {[+ cl o +]}) TUnit.
 Proof.
-  apply (p_term (Some N) W_cl _ ∅ ∅ _ TUnit None (fadd (Some 0) (Some 1)) tid).
+  apply (p_term (Some N) W_cl _ ∅ ∅ _ TUnit (fadd (Some 0) (Some 1)) tid).
   - constructor.
   - intros o'. rewrite dom_empty_L. set_solver.
   - set_solver.

@@ -42,20 +42,20 @@ Section sync.
     destruct (s_obl _ _ _ _ _ _ _ _ _ _ _ Hs j f _ f' Hf Hst') as [HEj HFj].
     cbn [Eobl Fobl] in HEi, HFi, HEj, HFj. unfold o_send in HEi. unfold o_recv in HEj.
     unfold f_send in HFi. unfold f_recv in HFj.
-    destruct HEi as (S0 & x & m & U0 & b & S & ΘM & Θr & Ho & Hu & Hd & HΘ & HV & HE').
+    destruct HEi as (S0 & x & m & U0 & S & ΘM & Θr & Ho & Hu & Hd & HΘ & HV & HE').
     assert (HM : dom ΘM = fends w).
     { destruct (decide (c_give live = 0)) as [Hc|Hc];
         [exact (Vrel_exact _ _ _ _ _ _ (proj1 HV Hc))|exact (Vrel_exact _ _ _ _ _ _ (proj2 HV Hc))]. }
-    destruct HEj as (S0' & x' & m' & U0' & b' & S' & Ho' & Hu' & HR).
-    destruct HFi as (_ & P0 & m2 & T2 & b2 & P & HPo & HPu & HMφ & _ & HVf & HF').
-    destruct HFj as (_ & P0' & m3 & T3 & b3 & P' & HPo' & HPu' & HRf).
+    destruct HEj as (S0' & x' & m' & U0' & S' & Ho' & Hu' & HR).
+    destruct HFi as (_ & P0 & m2 & T2 & P & HPo & HPu & HMφ & _ & HVf & HF').
+    destruct HFj as (_ & P0' & m3 & T3 & P' & HPo' & HPu' & HRf).
     destruct (owner_of i o _ Ho) as (hi & Khi & Ehi).
     destruct (owner_of j (edual o) _ Ho') as (hj & Khj & Ehj).
     pose proof (inA _ _ _ Ho) as HA. pose proof (inA _ _ _ Ho') as HA'.
     destruct (s_sdual _ _ _ _ _ _ _ _ Hs o S0 x S0' x' HA HA') as [-> Hsd].
-    destruct (sdual_snd_both _ _ _ _ _ _ _ _ _ _ Hsd Hu Hu') as (-> & HU & HSS').
+    destruct (sdual_snd_both _ _ _ _ _ _ _ _ Hsd Hu Hu') as (-> & HU & HSS').
     pose proof (s_pdual _ _ _ _ _ _ _ _ Hs o P0 P0' (inΠ _ _ _ HPo) (inΠ _ _ _ HPo')) as Hpd.
-    destruct (pdual_snd _ _ _ _ _ _ _ _ _ _ Hpd HPu HPu') as (-> & -> & HT & HPP').
+    destruct (pdual_snd _ _ _ _ _ _ _ _ Hpd HPu HPu') as (-> & HT & HPP').
     destruct (split_mres _ _ _ _ Hd HΘ HM) as [-> ->].
     pose proof (s_kpt _ _ _ _ _ _ _ _ Hs o S0 x HA) as Hkx. cbn [s_K] in Hkx.
     pose proof (s_kpt _ _ _ _ _ _ _ _ Hs (edual o) S0' (pt_dual x) HA') as Hkx'. cbn [s_K] in Hkx'.
@@ -77,7 +77,7 @@ Section sync.
       destruct (owner_of _ _ _ H1) as (h1 & Hh1 & Ht1). destruct (owner_of _ _ _ H2) as (h2 & Hh2 & Ht2).
       simplify_eq; congruence. }
     pose proof (HR n _ ltac:(cbn; lia) Hdisj HVr) as HEr.
-    assert (HVfr : Vfuel (Some N) n (RTy T3 b2) (mres (fends w) (kres K i Π)) (fhand (fends w) (ctrs K i)) w).
+    assert (HVfr : Vfuel (Some N) n (RTy T3) (mres (fends w) (kres K i Π)) (fhand (fends w) (ctrs K i)) w).
     { apply (Vfuel_teq n (Some N) T2 T3); [by apply teq_sym|exact HVf]. }
     assert (Hd1 : mres (fends w) (kres K i Π) ##ₘ <[edual o := P']> (kres K j Π)).
     { apply map_disjoint_spec. intros o1 v1 v2 H1 H2. apply lookup_mres_Some in H1 as [H1 Hin].

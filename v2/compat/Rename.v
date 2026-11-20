@@ -638,13 +638,13 @@ Section rel.
         (conj eq_refl eq_refl)) as [e0 He0].
       assert (lmap h (LSess (SSend o v)) = LSess (SSend (h o) (emap h v))) as Hl by reflexivity.
       rewrite (tstep_emap_back h h e _ x _ e0 Hst He0 I Hl eq_refl).
-      destruct (H5 _ _ _ He0) as (S0 & x0 & m' & U & b' & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
+      destruct (H5 _ _ _ He0) as (S0 & x0 & m' & U & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
       assert (dom ΘM ∪ dom Θr ⊆ dom Θ ∖ {[o]}) as Hdd by (rewrite <-dom_union_L, <-A4, dom_delete_L; done).
       assert (kinj h (ΘM ∪ Θr)) as KMr by (rewrite <-A4; apply Hkdel).
       assert (kinj h ΘM) as KM by (eapply kinj_sub; [|exact Hk]; set_solver).
       assert (kinj h (<[o := (S, x0⁺)]> Θr)) as Kr.
       { eapply kinj_sub; [|exact Hk]. rewrite dom_insert_L. apply elem_of_dom_2 in A1. set_solver. }
-      exists S0, x0, m', U, b', S, (kren h ΘM), (kren h Θr). split_and!.
+      exists S0, x0, m', U, S, (kren h ΘM), (kren h Θr). split_and!.
       + by apply kren_lookup.
       + done.
       + by apply kren_disjoint.
@@ -657,8 +657,8 @@ Section rel.
       intros o' w x Hst. destruct (tstep_emap_act _ _ _ _ Hst) as (a & Ha & Ho).
       destruct a as [| | | |o| | | | |]; simpl in Ho; try contradiction. destruct Ho as [<- Hw].
       destruct (act_offer e (ARecv o) (LSess (SRecv o EUnit)) Ha (conj eq_refl I)) as [e00 He00].
-      destruct (H6 _ _ _ He00) as (S0 & x0 & m' & U & b' & S & A1 & A2 & _).
-      exists S0, x0, m', U, b', S. split_and!; [by apply kren_lookup|done|].
+      destruct (H6 _ _ _ He00) as (S0 & x0 & m' & U & S & A1 & A2 & _).
+      exists S0, x0, m', U, S. split_and!; [by apply kren_lookup|done|].
       intros j Θw Hj Hd HVw. pose proof (c_take_pos κ).
       destruct (pull_value j W1 (payload_at m' U x0) h Θ Θw w X (proj1 (IHl j ltac:(lia) _)) Hk
         ltac:(set_solver) Hd HVw) as (h' & w0 & Θ0 & Hw0 & Hd0 & Hww & Hext & Hk' & Hren & _).
@@ -667,8 +667,8 @@ Section rel.
       assert (h' o = h o) as Hho by (apply Hext, HXd; by eapply elem_of_dom_2).
       assert (lmap h' (LSess (SRecv o w0)) = LSess (SRecv (h o) w)) as Hl by (simpl; by rewrite Hww, Hho).
       rewrite (tstep_emap_back h h' e _ x _ e0 Hst He0 I Hl (Hee h' Hext)).
-      destruct (H6 _ _ _ He0) as (S0' & x0' & m'' & U' & b'' & S' & A1' & A2' & A3').
-      rewrite A1 in A1'. injection A1' as <- <-. rewrite A2 in A2'. injection A2' as <- <- <- <-.
+      destruct (H6 _ _ _ He0) as (S0' & x0' & m'' & U' & S' & A1' & A2' & A3').
+      rewrite A1 in A1'. injection A1' as <- <-. rewrite A2 in A2'. injection A2' as <- <- <-.
       assert (Erel κ j W1 (<[o := (S, x0⁺)]> Θ ∪ Θ0) T0 F e0) as HE0 by (apply A3'; [lia|done|done]).
       rewrite <-insert_union_l in HE0.
       assert (kinj h' (<[o := (S, x0⁺)]> (Θ ∪ Θ0))) as Hk2.

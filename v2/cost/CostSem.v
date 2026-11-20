@@ -1,12 +1,12 @@
 (** * The semantic cost judgment (stage S7, proposal §2.11, decisions Q11, Q15)
 
-      Θ ; Δ ⊨^N e : T^a ▷ c ; ϑ        [csem N Θ Δ e T a c ϑ]
+      Θ ; Δ ⊨^N e : T ▷ c ; ϑ        [csem N Θ Δ e T c ϑ]
 
     The cost half of the merged judgment. For every refill N′ above N
     ([rle]), every level n, every renaming g of the ends of Θ, every
     grounding γ of Δ by values of [Vfuel] at N′ and n, and every reserve
     r and ticket count tk that meet ϑ, the instance subst γ (emap g e)
-    is in FuelE at N′ and n, at the result T^a, frame c and reserve r,
+    is in FuelE at N′ and n, at the result T, frame c and reserve r,
     with the maps of the renamed Θ and of the grounding.
 
     Θ enters through [thfuel]: each end o of Θ becomes g o, with the
@@ -34,9 +34,9 @@ Fixpoint gfuel (N : fuel) (n : nat) (Δ : lenv) (γ : nat → expr) (Π : penv) 
   match Δ with
   | [] => Π = ∅ ∧ φ = ∅
   | None :: Δ' => gfuel N n Δ' (λ x, γ (S x)) Π φ
-  | Some (T, a) :: Δ' =>
+  | Some T :: Δ' =>
       ∃ Π1 Π2 φ1 φ2, Π1 ##ₘ Π2 ∧ φ1 ##ₘ φ2 ∧ Π = Π1 ∪ Π2 ∧ φ = φ1 ∪ φ2 ∧
-        γ 0 ∈ FV^N _ n⟦RTy T a⟧(Π1, φ1) ∧ gfuel N n Δ' (λ x, γ (S x)) Π2 φ2
+        γ 0 ∈ FV^N _ n⟦RTy T⟧(Π1, φ1) ∧ gfuel N n Δ' (λ x, γ (S x)) Π2 φ2
   end.
 
 Definition envf (N : fuel) (n : nat) (Θ : tenv) (Δ : lenv) (g : cend → cend) (γ : nat → expr)
@@ -46,14 +46,14 @@ Definition envf (N : fuel) (n : nat) (Θ : tenv) (Δ : lenv) (g : cend → cend)
 
 (** ** The judgment *)
 
-Definition csem (N : fuel) (Θ : tenv) (Δ : lenv) (e : expr) (T : ty) (a c : fuel) (ϑ : tix) : Prop :=
+Definition csem (N : fuel) (Θ : tenv) (Δ : lenv) (e : expr) (T : ty) (c : fuel) (ϑ : tix) : Prop :=
   ∀ N' n g γ Π φ r tk, rle N N' → envf N' n Θ Δ g γ Π φ → meets ϑ r tk →
-    subst γ (emap g e) ∈ F^N' _ n⟦RTy T a ▷ c ; r⟧(Π, φ, tk).
+    subst γ (emap g e) ∈ F^N' _ n⟦RTy T ▷ c ; r⟧(Π, φ, tk).
 
-Notation "Θ ; Δ ⊨^ N e : T ^ a ▷ c ; ϑ" := (csem N Θ Δ e T a c ϑ)
-  (at level 74, Δ at level 60, N at level 0, e at level 60, T at level 29, a at level 0,
+Notation "Θ ; Δ ⊨^ N e : T ▷ c ; ϑ" := (csem N Θ Δ e T c ϑ)
+  (at level 74, Δ at level 60, N at level 0, e at level 60, T at level 29,
    c at level 60, ϑ at level 60,
-   format "Θ  ;  Δ  ⊨^ N  e  :  T ^ a  ▷  c  ;  ϑ").
+   format "Θ  ;  Δ  ⊨^ N  e  :  T  ▷  c  ;  ϑ").
 
 (** ** Arithmetic *)
 
@@ -64,50 +64,31 @@ Proof. destruct a, b; simpl; lia. Qed.
 
 (** ** Facts about values *)
 
-Lemma Vfuel_unl_empty N n U a Π φ v : unlimited U → v ∈ FV^N _ n⟦RTy U a⟧(Π, φ) → Π = ∅ ∧ φ = ∅.
+Lemma Vfuel_unl_empty N n U Π φ v : unlimited U → v ∈ FV^N _ n⟦RTy U⟧(Π, φ) → Π = ∅ ∧ φ = ∅.
 Proof. destruct U; try done. intros _. rewrite Vfuel_eq. simpl. by intros (? & _ & _ & -> & -> & _). Qed.
 
 Section above.
   Context (El : nat → epred) (Vl : nat → vpred).
 
-  (** Every counter of a value is at or above its credit. *)
-  Lemma Vty_credit_above N n T : ∀ a Π φ v,
-    Vty N El Vl n T a Π φ v → ∀ o f, φ !! o = Some f → fle a f.
-  Proof.
-    induction T as [|ub lb c t h T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
-                   |m k C ub c t U IH|s x a|lb m C T1 IH];
-      intros a0 Π φ v; simpl.
-    - intros (_ & _ & ->) o f. by rewrite lookup_empty.
-    - intros (e & _ & _ & _ & Hf & _) o f Ho. eapply fle_trans; [|exact (Hf o f Ho)].
-      apply fle_fadd_r'.
-    - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & _ & _ & _ & _ & -> & H1 & H2) o f Ho.
-      apply lookup_union_Some_raw in Ho as [Ho|[_ Ho]];
-        [eapply fle_trans; [|exact (IH1 _ _ _ _ H1 o f Ho)]|eapply fle_trans; [|exact (IH2 _ _ _ _ H2 o f Ho)]];
-        apply fle_fadd_l'.
-    - intros [(v' & _ & H)|(v' & _ & H)] o f Ho;
-        [eapply fle_trans; [|exact (IH1 _ _ _ _ H o f Ho)]|eapply fle_trans; [|exact (IH2 _ _ _ _ H o f Ho)]];
-        apply fle_fadd_l'.
-    - intros (_ & _ & _ & _ & -> & _) o f. by rewrite lookup_empty.
-    - intros (o' & S' & f' & _ & _ & -> & _ & Hf) o f Ho.
-      apply lookup_singleton_Some in Ho as [<- <-]. done.
-    - intros H o f Ho. eapply fle_trans; [|exact (IH _ _ _ _ H o f Ho)]. apply fle_fadd_l'.
-  Qed.
-
   (** Aging by c leaves every counter of an end that is not idle at or
-      above c. An idle end ages by truncation ([age_idle]) and may hold
-      less. *)
-  Lemma Vty_age_above N n c σ σ' Π φ v :
-    tage c σ σ' → Vty N El Vl n σ.1 σ.2 Π φ v → fabove c Π φ.
+      above c. An end and a closure cover c by their credit, which their
+      counters are at or above. An idle end ages by truncation
+      ([age_idle]) and may hold less. *)
+  Lemma Vty_age_above N n c T T' Π φ v :
+    tage c T T' → Vty N El Vl n T Π φ v → fabove c Π φ.
   Proof.
     intros Ha. revert Π φ v.
-    induction Ha as [T a Hf|T a Hle|S x a Hi|T1 a1 T2 a2 a T1' a1' T2' a2' H1 IH1 H2 IH2
-                    |T1 a1 T2 a2 a T1' a1' T2' a2' H1 IH1 H2 IH2|lb m C T aT a T' aT' H1 IH1];
+    induction Ha as [T Hf|S x a Hle|S x a Hi|ub lb c0 t h T U a Hle
+                    |T1 T2 T1' T2' H1 IH1 H2 IH2|T1 T2 T1' T2' H1 IH1 H2 IH2|lb m C T T' H1 IH1];
       intros Π φ v; simpl.
-    - intros Hv. destruct (Vty_tfree _ _ _ _ _ Hf _ _ _ _ Hv) as (_ & -> & _). intros o f. by rewrite lookup_empty.
-    - intros Hv o f Ho _. eapply fle_trans; [exact Hle|]. exact (Vty_credit_above _ _ _ _ _ _ _ Hv o f Ho).
+    - intros Hv. destruct (Vty_tfree _ _ _ _ _ Hf _ _ _ Hv) as (-> & -> & _). intros o f. by rewrite lookup_empty.
+    - intros (o' & S' & f' & _ & _ & -> & _ & Hf) o f Ho _.
+      apply lookup_singleton_Some in Ho as [<- <-]. by eapply fle_trans.
     - intros (o' & S' & f' & _ & -> & -> & Hs & _) o f Ho Hn.
       apply lookup_singleton_Some in Ho as [<- <-]. exfalso. apply Hn.
       exists S'. rewrite lookup_singleton_eq. split; [done|]. by apply (idle_sequiv _ _ Hs).
+    - intros (e & _ & _ & _ & Hf & _) o f Ho _. eapply fle_trans; [exact Hle|].
+      eapply fle_trans; [apply fle_fadd_r'|exact (Hf o f Ho)].
     - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & _ & HdΠ & _ & -> & -> & Hv1 & Hv2) o f Ho Hn.
       apply lookup_union_Some_raw in Ho as [Ho|[_ Ho]];
         [apply (IH1 _ _ _ Hv1 o f Ho)|apply (IH2 _ _ _ Hv2 o f Ho)];
@@ -117,16 +98,16 @@ Section above.
     - intros Hv. exact (IH1 _ _ _ Hv).
   Qed.
 
-  Lemma Vty_cap_above N n h a σ σ' Π φ v :
-    tcap h a σ σ' → Vty N El Vl n σ.1 σ.2 Π φ v → ∀ o f, φ !! o = Some f → fle (fadd h a) f.
+  Lemma Vty_cap_above N n h a T T' Π φ v :
+    tcap h a T T' → Vty N El Vl n T Π φ v → ∀ o f, φ !! o = Some f → fle (fadd h a) f.
   Proof.
     intros Hc. revert Π φ v.
-    induction Hc as [T0 b Hf|S x b Hle|ub lb c t h0 T1 aT U aU b Hh0 Hle
-                    |T1 a1 T2 a2 b T1' a1' T2' a2' H1 IH1 H2 IH2
-                    |T1 a1 T2 a2 b T1' a1' T2' a2' H1 IH1 H2 IH2
-                    |lb m C T1 aT b T1' aT' H1 IH1];
+    induction Hc as [T0 Hf|S x b Hle|ub lb c t h0 T1 U b Hh0 Hle
+                    |T1 T2 T1' T2' H1 IH1 H2 IH2
+                    |T1 T2 T1' T2' H1 IH1 H2 IH2
+                    |lb m C T1 T1' H1 IH1];
       intros Π φ v; simpl.
-    - intros Hv. destruct (Vty_tfree _ _ _ _ _ Hf _ _ _ _ Hv) as (_ & -> & _). intros o f. by rewrite lookup_empty.
+    - intros Hv. destruct (Vty_tfree _ _ _ _ _ Hf _ _ _ Hv) as (_ & -> & _). intros o f. by rewrite lookup_empty.
     - intros (o' & S' & f' & _ & _ & -> & _ & Hf) o f Ho.
       apply lookup_singleton_Some in Ho as [<- <-]. by eapply fle_trans.
     - intros (e & _ & _ & _ & Hf & _) o f Ho. eapply fle_trans; [exact Hle|exact (Hf o f Ho)].
@@ -137,9 +118,9 @@ Section above.
   Qed.
 End above.
 
-Lemma Vfuel_age_above N n c T a T' a' Π φ v :
-  tage c (T, a) (T', a') → v ∈ FV^N _ n⟦RTy T a⟧(Π, φ) → fabove c Π φ.
-Proof. rewrite Vfuel_eq. intros Ha. apply (Vty_age_above _ _ N n c (T, a) (T', a')). done. Qed.
+Lemma Vfuel_age_above N n c T T' Π φ v :
+  tage c T T' → v ∈ FV^N _ n⟦RTy T⟧(Π, φ) → fabove c Π φ.
+Proof. rewrite Vfuel_eq. intros Ha. apply (Vty_age_above _ _ N n c T T'). done. Qed.
 
 Lemma fabove_union c Π1 Π2 φ1 φ2 :
   Π1 ##ₘ Π2 → fabove c Π1 φ1 → fabove c Π2 φ2 → fabove c (Π1 ∪ Π2) (φ1 ∪ φ2).
@@ -152,15 +133,15 @@ Qed.
 Lemma fabove_of c Π φ : (∀ o f, φ !! o = Some f → fle c f) → fabove c Π φ.
 Proof. intros H o f Ho _. exact (H o f Ho). Qed.
 
-Lemma Vfuel_cap_above N n h a0 T a T' a' Π φ v :
-  tcap h a0 (T, a) (T', a') → v ∈ FV^N _ n⟦RTy T a⟧(Π, φ) → ∀ o f, φ !! o = Some f → fle (fadd h a0) f.
-Proof. rewrite Vfuel_eq. intros Ha. apply (Vty_cap_above _ _ N n h a0 (T, a) (T', a')). done. Qed.
+Lemma Vfuel_cap_above N n h a0 T T' Π φ v :
+  tcap h a0 T T' → v ∈ FV^N _ n⟦RTy T⟧(Π, φ) → ∀ o f, φ !! o = Some f → fle (fadd h a0) f.
+Proof. rewrite Vfuel_eq. intros Ha. apply (Vty_cap_above _ _ N n h a0 T T'). done. Qed.
 
 (** ** Facts about groundings *)
 
 Lemma gfuel_dom N n Δ : ∀ γ Π φ, gfuel N n Δ γ Π φ → dom Π = dom φ.
 Proof.
-  induction Δ as [|[[T a]|] Δ IH]; intros γ Π φ; simpl.
+  induction Δ as [|[T|] Δ IH]; intros γ Π φ; simpl.
   - intros [-> ->]. by rewrite !dom_empty_L.
   - intros (Π1 & Π2 & φ1 & φ2 & _ & _ & -> & -> & Hv & HG).
     rewrite !dom_union_L, (Vfuel_dom _ _ _ _ _ _ Hv). by erewrite IH.
@@ -171,27 +152,27 @@ Lemma gfuel_unl N n Δ : ∀ γ Π φ, lenv_unl Δ → gfuel N n Δ γ Π φ →
 Proof.
   induction Δ as [|o Δ IH]; intros γ Π φ HΔ; simpl; [done|].
   assert (lenv_unl Δ) as HΔ' by (intros o' Ho'; apply HΔ; by right).
-  destruct (HΔ o ltac:(left)) as [->|(U & a & -> & Hu)]; [by apply IH|].
+  destruct (HΔ o ltac:(left)) as [->|(U & -> & Hu)]; [by apply IH|].
   intros (Π1 & Π2 & φ1 & φ2 & _ & _ & -> & -> & Hv & HG).
-  destruct (Vfuel_unl_empty _ _ _ _ _ _ _ Hu Hv) as [-> ->].
+  destruct (Vfuel_unl_empty _ _ _ _ _ _ Hu Hv) as [-> ->].
   destruct (IH _ _ _ HΔ' HG) as [-> ->]. by rewrite !map_empty_union.
 Qed.
 
-Lemma gfuel_only N n Δ x T a γ Π φ :
-  lenv_only Δ x (T, a) → gfuel N n Δ γ Π φ → γ x ∈ FV^N _ n⟦RTy T a⟧(Π, φ).
+Lemma gfuel_only N n Δ x T γ Π φ :
+  lenv_only Δ x T → gfuel N n Δ γ Π φ → γ x ∈ FV^N _ n⟦RTy T⟧(Π, φ).
 Proof.
   intros [Hx Ho]. revert x γ Π φ Hx Ho. induction Δ as [|o Δ IH]; intros x γ Π φ Hx Ho; [done|].
   destruct x as [|x]; simpl in Hx.
   - injection Hx as ->. intros (Π1 & Π2 & φ1 & φ2 & _ & _ & -> & -> & Hv & HG).
     assert (lenv_unl Δ) as HΔ.
-    { intros o' Ho'. destruct o' as [[U b]|]; [|by left]. apply list_elem_of_lookup in Ho' as [y Hy].
-      right. exists U, b. split; [done|]. exact (Ho (S y) (U, b) ltac:(done) Hy). }
+    { intros o' Ho'. destruct o' as [U|]; [|by left]. apply list_elem_of_lookup in Ho' as [y Hy].
+      right. exists U. split; [done|]. exact (Ho (S y) U ltac:(done) Hy). }
     destruct (gfuel_unl _ _ _ _ _ _ HΔ HG) as [-> ->]. by rewrite !map_union_empty.
-  - assert (∀ y σ', y ≠ x → Δ !! y = Some (Some σ') → unlimited σ'.1) as Ho'.
+  - assert (∀ y σ', y ≠ x → Δ !! y = Some (Some σ') → unlimited σ') as Ho'.
     { intros y σ' Hne Hσ. apply (Ho (S y) σ'); [lia|done]. }
-    destruct o as [[U b]|]; simpl.
+    destruct o as [U|]; simpl.
     + intros (Π1 & Π2 & φ1 & φ2 & _ & _ & -> & -> & Hv & HG).
-      destruct (Vfuel_unl_empty _ _ _ _ _ _ _ (Ho 0 (U, b) ltac:(done) eq_refl) Hv) as [-> ->].
+      destruct (Vfuel_unl_empty _ _ _ _ _ _ (Ho 0 U ltac:(done) eq_refl) Hv) as [-> ->].
       rewrite !map_empty_union. exact (IH x (λ y, γ (S y)) _ _ Hx Ho' HG).
     + intros HG. exact (IH x (λ y, γ (S y)) _ _ Hx Ho' HG).
 Qed.
@@ -202,7 +183,7 @@ Lemma gfuel_split N n Δ Δ1 Δ2 γ Π φ :
     gfuel N n Δ1 γ Π1 φ1 ∧ gfuel N n Δ2 γ Π2 φ2.
 Proof.
   intros Hs. revert γ Π φ.
-  induction Hs as [|Δ Δ1 Δ2 Hs IH|[T a] Δ Δ1 Δ2 Hs IH|[T a] Δ Δ1 Δ2 Hs IH|U a Δ Δ1 Δ2 Hu Hs IH];
+  induction Hs as [|Δ Δ1 Δ2 Hs IH|T Δ Δ1 Δ2 Hs IH|T Δ Δ1 Δ2 Hs IH|U Δ Δ1 Δ2 Hu Hs IH];
     intros γ Π φ; simpl.
   - intros [-> ->]. exists ∅, ∅, ∅, ∅. rewrite !map_empty_union. split_and!; try done; apply map_disjoint_empty_l.
   - apply IH.
@@ -223,7 +204,7 @@ Proof.
                 |rewrite !map_union_assoc; f_equal; by apply map_union_comm|done|].
     exists Πa, Π2, φa, φ2. by split_and!.
   - intros (Πa & Πb & φa & φb & Hd1 & Hd2 & -> & -> & Hv & HG).
-    destruct (Vfuel_unl_empty _ _ _ _ _ _ _ Hu Hv) as [-> ->]. rewrite !map_empty_union.
+    destruct (Vfuel_unl_empty _ _ _ _ _ _ Hu Hv) as [-> ->]. rewrite !map_empty_union.
     destruct (IH _ _ _ HG) as (Π1 & Π2 & φ1 & φ2 & D1 & D2 & -> & -> & G1 & G2).
     exists Π1, Π2, φ1, φ2. split_and!; try done.
     + exists ∅, Π1, ∅, φ1. rewrite !map_empty_union. split_and!; try done; apply map_disjoint_empty_l.
@@ -233,7 +214,7 @@ Qed.
 Lemma gfuel_mono N N' n m Δ : ∀ γ Π φ φ', rle N N' → m ≤ n → cle φ φ' →
   gfuel N n Δ γ Π φ → gfuel N' m Δ γ Π φ'.
 Proof.
-  induction Δ as [|[[T a]|] Δ IH]; intros γ Π φ φ' HN Hm Hc; simpl.
+  induction Δ as [|[T|] Δ IH]; intros γ Π φ φ' HN Hm Hc; simpl.
   - intros [-> ->]. split; [done|by apply cle_empty_l].
   - intros (Π1 & Π2 & φ1 & φ2 & Hd1 & Hd2 & -> & -> & Hv & HG).
     destruct (cle_union_split _ _ _ Hd2 Hc) as (φ1' & φ2' & -> & Hd' & C1 & C2).
@@ -245,7 +226,7 @@ Qed.
 
 Lemma gfuel_age N n c Δ Δ' : lage c Δ Δ' → ∀ γ Π φ, gfuel N n Δ γ Π φ → gfuel N n Δ' γ Π (fminus c <$> φ).
 Proof.
-  induction 1 as [|Δ Δ' _ IH|[T a] [T' a'] Δ Δ' Ha _ IH]; intros γ Π φ; simpl.
+  induction 1 as [|Δ Δ' _ IH|T T' Δ Δ' Ha _ IH]; intros γ Π φ; simpl.
   - intros [-> ->]. by rewrite fmap_empty.
   - apply IH.
   - intros (Π1 & Π2 & φ1 & φ2 & Hd1 & Hd2 & -> & -> & Hv & HG).
@@ -259,28 +240,28 @@ Qed.
 Lemma gfuel_age_above N n c Δ Δ' : lage c Δ Δ' → ∀ γ Π φ, gfuel N n Δ γ Π φ →
   fabove c Π φ.
 Proof.
-  induction 1 as [|Δ Δ' _ IH|[T a] [T' a'] Δ Δ' Ha _ IH]; intros γ Π φ; simpl.
+  induction 1 as [|Δ Δ' _ IH|T T' Δ Δ' Ha _ IH]; intros γ Π φ; simpl.
   - intros [-> ->] o f. by rewrite lookup_empty.
   - apply IH.
   - intros (Π1 & Π2 & φ1 & φ2 & Hd1 & Hd2 & -> & -> & Hv & HG).
-    apply fabove_union; [done|exact (Vfuel_age_above _ _ _ _ _ _ _ _ _ _ Ha Hv)|exact (IH _ _ _ HG)].
+    apply fabove_union; [done|exact (Vfuel_age_above _ _ _ _ _ _ _ _ Ha Hv)|exact (IH _ _ _ HG)].
 Qed.
 
 Lemma gfuel_cap_above N n h a Δ Δ' : lcap h a Δ Δ' → ∀ γ Π φ, gfuel N n Δ γ Π φ →
   ∀ o f, φ !! o = Some f → fle (fadd h a) f.
 Proof.
-  induction 1 as [|Δ Δ' _ IH|[T a0] [T' a0'] Δ Δ' Ha _ IH]; intros γ Π φ; simpl.
+  induction 1 as [|Δ Δ' _ IH|T T' Δ Δ' Ha _ IH]; intros γ Π φ; simpl.
   - intros [-> ->] o f. by rewrite lookup_empty.
   - apply IH.
   - intros (Π1 & Π2 & φ1 & φ2 & Hd1 & Hd2 & -> & -> & Hv & HG) o f Ho.
     apply lookup_union_Some_raw in Ho as [Ho|[_ Ho]];
-      [exact (Vfuel_cap_above _ _ _ _ _ _ _ _ _ _ _ Ha Hv o f Ho)|exact (IH _ _ _ HG o f Ho)].
+      [exact (Vfuel_cap_above _ _ _ _ _ _ _ _ _ Ha Hv o f Ho)|exact (IH _ _ _ HG o f Ho)].
 Qed.
 
 Lemma gfuel_cap N n h a Δ Δ' : lcap h a Δ Δ' → ∀ γ Π φ φ', gfuel N n Δ γ Π φ →
   dom φ' = dom φ → (∀ o f, φ' !! o = Some f → fle h f) → gfuel N n Δ' γ Π φ'.
 Proof.
-  induction 1 as [|Δ Δ' _ IH|[T a0] [T' a0'] Δ Δ' Ha _ IH]; intros γ Π φ φ'; simpl.
+  induction 1 as [|Δ Δ' _ IH|T T' Δ Δ' Ha _ IH]; intros γ Π φ φ'; simpl.
   - intros [-> ->] Hd _. split; [done|]. rewrite dom_empty_L in Hd. by apply dom_empty_inv_L.
   - apply IH.
   - intros (Π1 & Π2 & φ1 & φ2 & Hd1 & Hd2 & -> & -> & Hv & HG) Hd Hh.
@@ -295,7 +276,7 @@ Lemma gfuel_rename N n Δ : ∀ γ Π φ (g : cend → cend) Π' φ',
   kinj g Π → kinj g φ → renk g Π Π' → renk g φ φ' →
   gfuel N n Δ γ Π φ → gfuel N n Δ (λ x, emap g (γ x)) Π' φ'.
 Proof.
-  induction Δ as [|[[T a]|] Δ IH]; intros γ Π φ g Π' φ' Hk1 Hk2 R1 R2; simpl.
+  induction Δ as [|[T|] Δ IH]; intros γ Π φ g Π' φ' Hk1 Hk2 R1 R2; simpl.
   - intros [-> ->]. split; [by apply (renk_empty g)|by apply (renk_empty g)].
   - intros (Π1 & Π2 & φ1 & φ2 & Hd1 & Hd2 & -> & -> & Hv & HG).
     destruct (renk_union_split g Π1 Π2 Π' Hk1 Hd1 R1) as (Π1' & Π2' & -> & R11 & R12 & Hd').
@@ -312,7 +293,7 @@ Qed.
 
 Lemma gfuel_pinst N n ρ Δ : ∀ γ Π φ, gfuel N n (lenv_pinst ρ Δ) γ Π φ ↔ gfuel N n Δ γ Π φ.
 Proof.
-  induction Δ as [|[[T a]|] Δ IH]; intros γ Π φ; simpl; [done| |apply IH].
+  induction Δ as [|[T|] Δ IH]; intros γ Π φ; simpl; [done| |apply IH].
   split; intros (Π1 & Π2 & φ1 & φ2 & Hd1 & Hd2 & -> & -> & Hv & HG); exists Π1, Π2, φ1, φ2;
     split_and!; try done; try (by apply IH); by apply Vfuel_pinst in Hv || apply Vfuel_pinst.
 Qed.
@@ -322,21 +303,21 @@ Qed.
     of an entry that is not unlimited. *)
 Lemma gfuel_ends N n Δ : ∀ γ Π φ, gfuel N n Δ γ Π φ →
   (∀ x σ, Δ !! x = Some (Some σ) → fends (γ x) ⊆ dom Π) ∧
-  (∀ o, o ∈ dom Π → ∃ x T a, Δ !! x = Some (Some (T, a)) ∧ ¬ unlimited T ∧ o ∈ fends (γ x)).
+  (∀ o, o ∈ dom Π → ∃ x T, Δ !! x = Some (Some T) ∧ ¬ unlimited T ∧ o ∈ fends (γ x)).
 Proof.
-  induction Δ as [|[[T a]|] Δ IH]; intros γ Π φ; simpl.
+  induction Δ as [|[T|] Δ IH]; intros γ Π φ; simpl.
   - intros [-> _]. split; [intros x σ; by rewrite lookup_nil|intros o; rewrite dom_empty_L; set_solver].
   - intros (Π1 & Π2 & φ1 & φ2 & Hd1 & Hd2 & -> & -> & Hv & HG).
     destruct (IH _ _ _ HG) as [A B]. pose proof (Vfuel_exact _ _ _ _ _ _ Hv) as Hx. split.
     + intros [|x] σ Hx'; simpl in Hx'; rewrite dom_union_L; [rewrite Hx; set_solver|].
       specialize (A x σ Hx'). set_solver.
     + intros o. rewrite dom_union_L. intros [Ho|Ho]%elem_of_union.
-      * exists 0, T, a. split_and!; [done| |by rewrite Hx].
-        intros Hu. destruct (Vfuel_unl_empty _ _ _ _ _ _ _ Hu Hv) as [-> _]. set_solver.
-      * destruct (B o Ho) as (x & T' & a' & ? & ? & ?). by exists (S x), T', a'.
+      * exists 0, T. split_and!; [done| |by rewrite Hx].
+        intros Hu. destruct (Vfuel_unl_empty _ _ _ _ _ _ Hu Hv) as [-> _]. set_solver.
+      * destruct (B o Ho) as (x & T' & ? & ? & ?). by exists (S x), T'.
   - intros HG. destruct (IH _ _ _ HG) as [A B]. split.
     + intros [|x] σ Hx'; simpl in Hx'; [done|]. by apply (A x σ).
-    + intros o Ho. destruct (B o Ho) as (x & T' & a' & ? & ? & ?). by exists (S x), T', a'.
+    + intros o Ho. destruct (B o Ho) as (x & T' & ? & ? & ?). by exists (S x), T'.
 Qed.
 
 (** ** Facts about the ends of Θ *)
@@ -596,8 +577,8 @@ Proof.
   by rewrite !map_empty_union.
 Qed.
 
-Lemma envf_only N n Δ x T a g γ Π φ :
-  lenv_only Δ x (T, a) → envf N n ∅ Δ g γ Π φ → γ x ∈ FV^N _ n⟦RTy T a⟧(Π, φ).
+Lemma envf_only N n Δ x T g γ Π φ :
+  lenv_only Δ x T → envf N n ∅ Δ g γ Π φ → γ x ∈ FV^N _ n⟦RTy T⟧(Π, φ).
 Proof.
   intros Ho (ΠΘ & φΘ & Πγ & φγ & HT & HG & Hd1 & Hd2 & -> & ->).
   destruct (thfuel_empty _ _ _ HT) as [-> ->]. rewrite !map_empty_union. by eapply gfuel_only.
@@ -612,9 +593,9 @@ Proof.
   by apply thfuel_single.
 Qed.
 
-Lemma envf_cons N n Θ Δ g γ Π φ T a v Πv φv :
-  envf N n Θ Δ g γ Π φ → v ∈ FV^N _ n⟦RTy T a⟧(Πv, φv) → Π ##ₘ Πv → φ ##ₘ φv →
-  envf N n Θ (Some (T, a) :: Δ) g (v .: γ) (Π ∪ Πv) (φ ∪ φv).
+Lemma envf_cons N n Θ Δ g γ Π φ T v Πv φv :
+  envf N n Θ Δ g γ Π φ → v ∈ FV^N _ n⟦RTy T⟧(Πv, φv) → Π ##ₘ Πv → φ ##ₘ φv →
+  envf N n Θ (Some T :: Δ) g (v .: γ) (Π ∪ Πv) (φ ∪ φv).
 Proof.
   intros (ΠΘ & φΘ & Πγ & φγ & HT & HG & Hd1 & Hd2 & -> & ->) Hv HdΠ Hdφ.
   apply map_disjoint_union_l in HdΠ as [A1 A2]. apply map_disjoint_union_l in Hdφ as [B1 B2].
@@ -634,44 +615,44 @@ Proof.
   exists ΠΘ, φΘ, Πγ, φγ. split_and!; try done; [by apply thfuel_pinst|by apply gfuel_pinst].
 Qed.
 
-Lemma gfuel_open N n Δ i lb m C T aT a T' : ∀ γ Π φ,
-  Δ !! i = Some (Some (TEx lb m C T aT, a)) → T' = (T, fadd a aT) →
+Lemma gfuel_open N n Δ i lb m C T T' : ∀ γ Π φ,
+  Δ !! i = Some (Some (TEx lb m C T)) → T' = T →
   gfuel N n Δ γ Π φ → gfuel N n (<[i := Some T']> Δ) γ Π φ.
 Proof.
   revert i. induction Δ as [|o Δ IH]; intros i γ Π φ Hi ->; [done|].
   destruct i as [|i]; simpl in Hi |- *.
   - injection Hi as ->. intros (Π1 & Π2 & φ1 & φ2 & Hd1 & Hd2 & -> & -> & Hv & HG).
     exists Π1, Π2, φ1, φ2. split_and!; try done. rewrite Vfuel_eq in Hv |- *. exact Hv.
-  - destruct o as [[U b]|].
+  - destruct o as [U|].
     + intros (Π1 & Π2 & φ1 & φ2 & Hd1 & Hd2 & -> & -> & Hv & HG).
       exists Π1, Π2, φ1, φ2. split_and!; try done. by eapply IH.
     + by apply IH.
 Qed.
 
-Lemma gfuel_replace N n Δ i T1 T2 b :
-  (∀ Π φ v, v ∈ FV^N _ n⟦RTy T1 b⟧(Π, φ) → v ∈ FV^N _ n⟦RTy T2 b⟧(Π, φ)) →
-  ∀ γ Π φ, gfuel N n (<[i := Some (T1, b)]> Δ) γ Π φ → gfuel N n (<[i := Some (T2, b)]> Δ) γ Π φ.
+Lemma gfuel_replace N n Δ i T1 T2 :
+  (∀ Π φ v, v ∈ FV^N _ n⟦RTy T1⟧(Π, φ) → v ∈ FV^N _ n⟦RTy T2⟧(Π, φ)) →
+  ∀ γ Π φ, gfuel N n (<[i := Some T1]> Δ) γ Π φ → gfuel N n (<[i := Some T2]> Δ) γ Π φ.
 Proof.
   intros HV. revert i. induction Δ as [|o Δ IH]; intros i γ Π φ; [done|].
   destruct i as [|i]; simpl.
   - intros (Π1 & Π2 & φ1 & φ2 & Hd1 & Hd2 & -> & -> & Hv & HG).
     exists Π1, Π2, φ1, φ2. split_and!; auto.
-  - destruct o as [[U c]|]; simpl; [|apply IH].
+  - destruct o as [U|]; simpl; [|apply IH].
     intros (Π1 & Π2 & φ1 & φ2 & Hd1 & Hd2 & -> & -> & Hv & HG).
     exists Π1, Π2, φ1, φ2. split_and!; auto.
 Qed.
 
-Lemma envf_open N n Θ Δ i lb m C T aT a g γ Π φ ρ :
-  Δ !! i = Some (Some (TEx lb m C T aT, a)) → envf N n Θ Δ g γ Π φ →
-  envf N n (tenv_pinst ρ Θ) (<[i := Some (T, fadd a aT)]> (lenv_pinst ρ Δ)) g γ Π φ.
+Lemma envf_open N n Θ Δ i lb m C T g γ Π φ ρ :
+  Δ !! i = Some (Some (TEx lb m C T)) → envf N n Θ Δ g γ Π φ →
+  envf N n (tenv_pinst ρ Θ) (<[i := Some T]> (lenv_pinst ρ Δ)) g γ Π φ.
 Proof.
   intros Hi (ΠΘ & φΘ & Πγ & φγ & HT & HG & Hd1 & Hd2 & -> & ->).
   exists ΠΘ, φΘ, Πγ, φγ. split_and!; try done; [by apply thfuel_pinst|].
   assert (lenv_pinst ρ Δ !! i = Some (Some (TEx (lb_map (pt_inst ρ) lb) m (bcs_inst ρ C)
-            (pinst_ty (pup m ρ) T) aT, a))) as Hi'.
+            (pinst_ty (pup m ρ) T)))) as Hi'.
   { rewrite lenv_pinst_lookup, Hi. done. }
   assert (gfuel N n (lenv_pinst ρ Δ) γ Πγ φγ) as HG' by by apply gfuel_pinst.
-  pose proof (gfuel_open _ _ _ _ _ _ _ _ _ _ _ γ Πγ φγ Hi' eq_refl HG') as H.
+  pose proof (gfuel_open _ _ _ _ _ _ _ _ _ γ Πγ φγ Hi' eq_refl HG') as H.
   eapply gfuel_replace; [|exact H]. intros Π0 φ0 v Hv. by apply Vfuel_pinst in Hv.
 Qed.
 
@@ -684,6 +665,6 @@ Proof.
   destruct (gfuel_ends _ _ _ _ _ _ HG) as [A B]. pose proof HT as (_ & HΠ & _).
   rewrite dom_union_L, HΠ, <-Hf, <-fends_emap. apply fends_subst_eq.
   - intros x Hx. apply freevar_emap in Hx. destruct (Hv1 x Hx) as [σ Hσ]. exact (A x σ Hσ).
-  - intros o Ho. destruct (B o Ho) as (x & T & a & Hx & Hu & Ho'). exists x. split; [|done].
-    apply freevar_emap. by apply (Hv2 x T a).
+  - intros o Ho. destruct (B o Ho) as (x & T & Hx & Hu & Ho'). exists x. split; [|done].
+    apply freevar_emap. by apply (Hv2 x T).
 Qed.

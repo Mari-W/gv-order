@@ -204,8 +204,8 @@ Definition ssubj (σ : slabel) : option cend :=
 (** The head of the session type a label asks. *)
 Definition hd_ok (σ : slabel) (u : sty) : Prop :=
   match σ with
-  | SSend _ _ => ∃ m U b S, u = SSeq (SSnd m U b) S
-  | SRecv _ _ => ∃ m U b S, u = SSeq (SRcv m U b) S
+  | SSend _ _ => ∃ m U S, u = SSeq (SSnd m U) S
+  | SRecv _ _ => ∃ m U S, u = SSeq (SRcv m U) S
   | SClose _ => u = SEnd
   | SSel _ _ => ∃ S1 S2, u = SPlus S1 S2
   | SBra _ _ => ∃ S1 S2, u = SWith S1 S2
@@ -246,8 +246,8 @@ Proof.
   destruct σ1 as [| | | | |], σ2 as [| | | | |]; simpl in *; try done; try congruence;
     repeat match goal with H : ∃ _, _ |- _ => destruct H as [? H] end;
     first
-    [ destruct (sdual_snd _ _ _ _ _ _ Hd H1) as (? & ? & ? & E & _)
-    | destruct (sdual_rcv _ _ _ _ _ _ Hd H1) as (? & ? & ? & E & _)
+    [ destruct (sdual_snd _ _ _ _ _ Hd H1) as (? & ? & ? & E & _)
+    | destruct (sdual_rcv _ _ _ _ _ Hd H1) as (? & ? & ? & E & _)
     | pose proof (sdual_end _ _ Hd H1) as E
     | destruct (sdual_plus _ _ _ _ Hd H1) as (? & ? & E & _)
     | destruct (sdual_with _ _ _ _ Hd H1) as (? & ? & E & _) ];

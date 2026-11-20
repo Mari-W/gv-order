@@ -24,7 +24,7 @@ Notation "Σ ⊩^ N '_' W p : T" := (ptyped (Some N) W Σ p T ∧ ⊢▷ p)
 Theorem lf_fundamental N W Σ p T : strict W → Σ ⊩^N _ W p : T → Σ ⊪_W p : T.
 Proof.
   intros HW [Hty Hg]. remember (Some N) as N' eqn:EN. revert HW Hg. induction Hty as
-    [W Σ ΘB C0 t T a c ϑ Hp HB HΣ Hpf Hd Ht Hfin
+    [W Σ ΘB C0 t T c ϑ Hp HB HΣ Hpf Hd Ht Hfin
     |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hw1 Hw2 Hfam HJ];
     intros HW Hg; subst.
   - destruct Hfin as [Hn|[tk Hm]]; [discriminate|].

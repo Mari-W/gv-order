@@ -93,7 +93,7 @@ Definition Θl (o : cend) (x : point) : tenv := {[o := TE SEnd x None]}.
 Lemma leaf_typed W o x :
   dftyped W (Θl o x) hc_empty [] (∅, None) (EClose (Chan o)) TUnit.
 Proof.
-  eapply d_close with (S0 := SEnd) (x := x); [done|apply ub_below_empty|].
+  eapply d_close with (S0 := SEnd) (x := x) (a := None); [done|apply ub_below_empty|].
   apply d_chan; intros o' Ho; inversion Ho.
 Qed.
 

@@ -1,6 +1,6 @@
 (** * The cost half of the merged judgment (stage S7, A.3)
 
-      Θ ; Γ ; Δ ⊢^F _{W,N} e : T^a ▷ c ; ϑ  ⟹  Θ ; Δ ⊨^N e : T^a ▷ c ; ϑ    [cost_fundamental]
+      Θ ; Γ ; Δ ⊢^F _{W,N} e : T ▷ c ; ϑ  ⟹  Θ ; Δ ⊨^N e : T ▷ c ; ϑ    [cost_fundamental]
 
     by induction on the derivation, one rule of cost/CostRules.v per
     case. E-Abs, E-Box and E-SpawnLam take the facts of their term from
@@ -11,8 +11,8 @@
 
 From GV Require Export cost.CostRules cost.Forwarder.
 
-Theorem cost_fundamental W N Θ Γ Δ F e T a c ϑ :
-  Θ ; Γ ; Δ ⊢^F _{W,N} e : T^a ▷ c ; ϑ → Θ ; Δ ⊨^N e : T^a ▷ c ; ϑ.
+Theorem cost_fundamental W N Θ Γ Δ F e T c ϑ :
+  Θ ; Γ ; Δ ⊢^F _{W,N} e : T ▷ c ; ϑ → Θ ; Δ ⊨^N e : T ▷ c ; ϑ.
 Proof.
   induction 1.
   - by apply cost_e_unit.
@@ -59,14 +59,14 @@ Qed.
 (** A closed thread typed at N, whose ends have credits at most N and
     whose transformer some ticket count meets at reserve 0, satisfies
     [fsem N] with the session types of its ends. *)
-Theorem fsem_of_cost W N Θ e T a c ϑ tk :
-  Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} e : T^a ▷ c ; ϑ → tfree T →
+Theorem fsem_of_cost W N Θ e T c ϑ tk :
+  Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} e : T ▷ c ; ϑ → tfree T →
   (∀ o te, Θ !! o = Some te → fle (te_cr te) N) → meets ϑ 0 tk →
   fsem N (te_sty <$> Θ) e.
 Proof.
   intros Hty Hp HN Hm. exists tk. intros n.
-  pose proof (cost_fundamental _ _ _ _ _ _ _ _ _ _ _ Hty) as Hcs.
-  assert (subst Var (emap id e) ∈ F^N _ n⟦RTy T a ▷ c ; 0⟧((te_sty <$> Θ) ∪ ∅,
+  pose proof (cost_fundamental _ _ _ _ _ _ _ _ _ _ Hty) as Hcs.
+  assert (subst Var (emap id e) ∈ F^N _ n⟦RTy T ▷ c ; 0⟧((te_sty <$> Θ) ∪ ∅,
             (const N <$> (te_sty <$> Θ)) ∪ ∅, tk)) as H.
   { apply (Hcs N n id Var); [apply rle_refl| |exact Hm].
     apply envf_intro; [by apply thfuel_id|done|apply map_disjoint_empty_r]. }
@@ -76,7 +76,7 @@ Qed.
 (** The forwarder of S7.1 satisfies [fsem] at every refill. *)
 Theorem fw_fsem N o : fsem N {[o := S_fw]} (fw o).
 Proof.
-  pose proof (fsem_of_cost W_fw N _ _ _ _ _ _ 0 (fw_typed N o (pvar 0)) tfree_unit) as H.
+  pose proof (fsem_of_cost W_fw N _ _ _ _ _ 0 (fw_typed N o (pvar 0)) tfree_unit) as H.
   rewrite map_fmap_singleton in H. apply H; [|apply fw_tix_met].
   intros o' te Hte. apply lookup_singleton_Some in Hte as [_ <-]. apply fle_refl.
 Qed.

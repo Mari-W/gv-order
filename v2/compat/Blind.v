@@ -28,22 +28,22 @@ Local Ltac hd_inv Hq Hu :=
   apply sequiv_step in Hq; unfold eq_step in Hq; rewrite !hd_df, (hd_of _ _ Hu) in Hq;
   simpl in Hq.
 
-Lemma seqv_unfold_snd s S0 m U b S :
-  seqv s S0 → unfoldS S0 = SSeq (SSnd m U b) S →
-  ∃ U' b' S', unfoldS s = SSeq (SSnd m U' b') S' ∧ teq (ty_df U') (ty_df U) ∧ seqv S' S.
+Lemma seqv_unfold_snd s S0 m U S :
+  seqv s S0 → unfoldS S0 = SSeq (SSnd m U) S →
+  ∃ U' S', unfoldS s = SSeq (SSnd m U') S' ∧ teq (ty_df U') (ty_df U) ∧ seqv S' S.
 Proof.
   intros Hq Hu. hd_inv Hq Hu.
   destruct (hd s) eqn:Hs; simpl in Hq; try done. destruct_and!; subst.
-  eexists _, _, _. split_and!; [|done|done]. by rewrite unfoldS_unview, Hs.
+  eexists _, _. split_and!; [|done|done]. by rewrite unfoldS_unview, Hs.
 Qed.
 
-Lemma seqv_unfold_rcv s S0 m U b S :
-  seqv s S0 → unfoldS S0 = SSeq (SRcv m U b) S →
-  ∃ U' b' S', unfoldS s = SSeq (SRcv m U' b') S' ∧ teq (ty_df U') (ty_df U) ∧ seqv S' S.
+Lemma seqv_unfold_rcv s S0 m U S :
+  seqv s S0 → unfoldS S0 = SSeq (SRcv m U) S →
+  ∃ U' S', unfoldS s = SSeq (SRcv m U') S' ∧ teq (ty_df U') (ty_df U) ∧ seqv S' S.
 Proof.
   intros Hq Hu. hd_inv Hq Hu.
   destruct (hd s) eqn:Hs; simpl in Hq; try done. destruct_and!; subst.
-  eexists _, _, _. split_and!; [|done|done]. by rewrite unfoldS_unview, Hs.
+  eexists _, _. split_and!; [|done|done]. by rewrite unfoldS_unview, Hs.
 Qed.
 
 Lemma seqv_unfold_end s S0 : seqv s S0 → unfoldS S0 = SEnd → unfoldS s = SEnd.
@@ -171,7 +171,7 @@ Section blind.
 
   Lemma teq_thunk ub X X' :
     teq (ty_df X) (ty_df X') → teq (ty_df (tthunk ub X)) (ty_df (tthunk ub X')).
-  Proof. intros H. unfold teq in *. cbn. split_and!; try done. rewrite <-(cr_df_df X), <-(cr_df_df X'). by eapply eqT_cr_df. Qed.
+  Proof. intros H. unfold teq in *. cbn. split_and!; try done. Qed.
 
   Lemma Vrel_teq_k k : ∀ T T', tsize T ≤ k → teq (ty_df T) (ty_df T') →
     ∀ n W Θ v, Vrel κ n W Θ T v ↔ Vrel κ n W Θ T' v.
@@ -183,7 +183,7 @@ Section blind.
     { intros T1 T1' H1 H2. apply (IHk (tsize T1)); [lia|lia|done]. }
     clear IHk.
     destruct T as [|ub lb c t h T1 U a|T1 U|T1 U|m kk C ub c t U|s x a|lb m C T1],
-      T' as [|ub' lb' c' t' h' T1' a1' U' a2'|T1' a1' U' a2'|T1' a1' U' a2'|m' kk' C' ub' c' t' U' a'|s' x'|lb' m' C' T1' a'];
+      T' as [|ub' lb' c' t' h' T1' U' a'|T1' U'|T1' U'|m' kk' C' ub' c' t' U'|s' x' a'|lb' m' C' T1'];
       unfold teq in Heq; simpl in Heq; try done; destruct_and?; subst.
     - rewrite !Vrel_lolli_iff. unfold Varr_rel.
       assert (∀ j W Θ w, Vrel κ j W Θ T1 w ↔ Vrel κ j W Θ T1' w) as E1.
@@ -265,11 +265,11 @@ Proof.
   by apply sequiv_sym.
 Qed.
 
-Lemma unfold_dual_snd S0 m U b S :
-  unfoldS S0 = SSeq (SSnd m U b) S → unfoldS (dual S0) = SSeq (SRcv m U b) (dual S).
+Lemma unfold_dual_snd S0 m U S :
+  unfoldS S0 = SSeq (SSnd m U) S → unfoldS (dual S0) = SSeq (SRcv m U) (dual S).
 Proof. intros H. by rewrite <-dual_unfoldS, H. Qed.
-Lemma unfold_dual_rcv S0 m U b S :
-  unfoldS S0 = SSeq (SRcv m U b) S → unfoldS (dual S0) = SSeq (SSnd m U b) (dual S).
+Lemma unfold_dual_rcv S0 m U S :
+  unfoldS S0 = SSeq (SRcv m U) S → unfoldS (dual S0) = SSeq (SSnd m U) (dual S).
 Proof. intros H. by rewrite <-dual_unfoldS, H. Qed.
 Lemma unfold_dual_end S0 : unfoldS S0 = SEnd → unfoldS (dual S0) = SEnd.
 Proof. intros H. by rewrite <-dual_unfoldS, H. Qed.
@@ -279,20 +279,20 @@ Lemma unfold_dual_with S0 S1 S2 : unfoldS S0 = SWith S1 S2 → unfoldS (dual S0)
 Proof. intros H. by rewrite <-dual_unfoldS, H. Qed.
 
 (** The partner of a send receives the same payload type up to ≈. *)
-Lemma sdual_snd S0 S0' m U b S :
-  sdual S0 S0' → unfoldS S0 = SSeq (SSnd m U b) S →
-  ∃ U' b' S', unfoldS S0' = SSeq (SRcv m U' b') S' ∧ teq (ty_df U') (ty_df U) ∧ sdual S S'.
+Lemma sdual_snd S0 S0' m U S :
+  sdual S0 S0' → unfoldS S0 = SSeq (SSnd m U) S →
+  ∃ U' S', unfoldS S0' = SSeq (SRcv m U') S' ∧ teq (ty_df U') (ty_df U) ∧ sdual S S'.
 Proof.
-  intros H Hu. destruct (seqv_unfold_rcv S0' (dual S0) m U b (dual S) H (unfold_dual_snd _ _ _ _ _ Hu))
-    as (U' & b' & S' & H1 & H2 & H3). eauto 10.
+  intros H Hu. destruct (seqv_unfold_rcv S0' (dual S0) m U (dual S) H (unfold_dual_snd _ _ _ _ Hu))
+    as (U' & S' & H1 & H2 & H3). eauto 10.
 Qed.
 
-Lemma sdual_rcv S0 S0' m U b S :
-  sdual S0 S0' → unfoldS S0 = SSeq (SRcv m U b) S →
-  ∃ U' b' S', unfoldS S0' = SSeq (SSnd m U' b') S' ∧ teq (ty_df U') (ty_df U) ∧ sdual S S'.
+Lemma sdual_rcv S0 S0' m U S :
+  sdual S0 S0' → unfoldS S0 = SSeq (SRcv m U) S →
+  ∃ U' S', unfoldS S0' = SSeq (SSnd m U') S' ∧ teq (ty_df U') (ty_df U) ∧ sdual S S'.
 Proof.
-  intros H Hu. destruct (seqv_unfold_snd S0' (dual S0) m U b (dual S) H (unfold_dual_rcv _ _ _ _ _ Hu))
-    as (U' & b' & S' & H1 & H2 & H3). eauto 10.
+  intros H Hu. destruct (seqv_unfold_snd S0' (dual S0) m U (dual S) H (unfold_dual_rcv _ _ _ _ Hu))
+    as (U' & S' & H1 & H2 & H3). eauto 10.
 Qed.
 
 Lemma sdual_end S0 S0' : sdual S0 S0' → unfoldS S0 = SEnd → unfoldS S0' = SEnd.
@@ -320,7 +320,7 @@ Proof. by destruct i. Qed.
 (** A value of a [tfree] type holds no end. *)
 Lemma Vrel_tfree_empty κ n W Θ T v : tfree T → Vrel κ n W Θ T v → Θ = ∅.
 Proof.
-  intros Hp. revert Θ v. induction Hp as [|m k C ub c t U a|U a V b HU IHU HV IHV|U a V b HU IHU HV IHV];
+  intros Hp. revert Θ v. induction Hp as [|m k C ub c t U|U V HU IHU HV IHV|U V HU IHU HV IHV];
     intros Θ v.
   - by intros [-> _]%Vrel_unit_iff.
   - by intros [-> _]%Vrel_box_iff.

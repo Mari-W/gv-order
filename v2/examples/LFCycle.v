@@ -16,7 +16,7 @@ Proof.
   - intros ℓ g x y _ [E|E]; injection E as -> ->; unfold pt_fsum, pt_depth; simpl; lia.
 Qed.
 
-Lemma cy_typedN : ∃ c ϑ, typed W_cy (Some 2) ∅ hc_empty [] (∅, None) cy_main TUnit None c ϑ ∧ meets ϑ 0 0.
+Lemma cy_typedN : ∃ c ϑ, typed W_cy (Some 2) ∅ hc_empty [] (∅, None) cy_main TUnit c ϑ ∧ meets ϑ 0 0.
 Proof.
   eexists _, _. split.
   { unfold cy_main, let_new.

@@ -128,12 +128,12 @@ Proof.
   intros Hab Hlt. unfold cl2.
   eapply d_letu with (Θ1 := {[a := TE SEnd xa None]}) (Θ2 := {[b := TE SEnd xb None]}); [|apply lsplit_nil| |].
   - split; [by apply map_disjoint_singleton_l_2; rewrite lookup_singleton_ne|reflexivity].
-  - eapply d_close with (S0 := SEnd) (x := xa); [done| |].
+  - eapply d_close with (S0 := SEnd) (x := xa) (a := None); [done| |].
     + cbn. split_and!; [|done|done]. intros y Hy.
       assert (y = xb‾) as -> by (rewrite tenv_heads_one' in Hy; simpl in Hy; set_solver).
       exact Hlt.
     + apply d_chan; intros o Ho; inversion Ho.
-  - eapply d_close with (S0 := SEnd) (x := xb); [done|apply ub_below_empty|].
+  - eapply d_close with (S0 := SEnd) (x := xb) (a := None); [done|apply ub_below_empty|].
     apply d_chan; intros o Ho; inversion Ho.
 Qed.
 

@@ -62,16 +62,16 @@ Section cross.
     pose proof Hc as Hc0. destruct Hc0 as [Hd1 Hd2 Hcut Hf1 Hf2 HfC H12 H1C H2C HCC HC1 HC2].
     pose proof (cut_dual_chans _ _ Hcut) as HKD.
     destruct H1 as (_ & _ & (_ & S1s & _)). destruct H2 as (_ & _ & (_ & _ & S2r & _)).
-    assert (ech o ∉ q1.1 → ∃ S0 x m U b Sc Σv Σr Θe Σe, (Σ1 ∪ ΣC) !! o = Some (S0, x) ∧
-        unfoldS S0 = SSeq (SSnd m U b) Sc ∧ Σv ##ₘ Σr ∧ delete o (Σ1 ∪ ΣC) = Σv ∪ Σr ∧
+    assert (ech o ∉ q1.1 → ∃ S0 x m U Sc Σv Σr Θe Σe, (Σ1 ∪ ΣC) !! o = Some (S0, x) ∧
+        unfoldS S0 = SSeq (SSnd m U) Sc ∧ Σv ##ₘ Σr ∧ delete o (Σ1 ∪ ΣC) = Σv ∪ Σr ∧
         (∀ o', o' ∈ dom Θe ↔ o' ∈ (fends w) ∧ ech o' ∈ q1.1) ∧
         send_split (Σ1 ∪ ΣC) Σe Θe ∧
         at_cost_V (S n) (c_give κ) (Vrel κ) (Vrel κ (S n)) W1 (Σv ∪ Θe) (payload_at m U x) w ∧
         at_cost_P (S n) (c_give κ) (Prel κ) X1 W1 (<[o := (Sc, x⁺)]> (Σr ∪ Σe)) T
           (erase (q1.1 ∖ sentc (SSend o w), <[i := e']> M1))) as C1.
     { intros Hn. eapply (S1s _ _ _ _ _ (Hq1e' M1 HM1)). eapply p_act_session; [exact Hi|exact He|simpl; clear -Hn; cc_set_solver]. }
-    assert (ech o ∉ q2.1 → ∃ S0 x m U b Sc, (Σ2 ∪ ΣD) !! edual o = Some (S0, x) ∧
-        unfoldS S0 = SSeq (SRcv m U b) Sc ∧
+    assert (ech o ∉ q2.1 → ∃ S0 x m U Sc, (Σ2 ∪ ΣD) !! edual o = Some (S0, x) ∧
+        unfoldS S0 = SSeq (SRcv m U) Sc ∧
         ∀ jl Θ2, jl + c_take κ ≤ S n → set_map ech (dom Θ2) ## q2.1 →
           recv_ok (<[edual o := (Sc, x⁺)]> (Σ2 ∪ ΣD)) Θ2 → Vrel κ jl W1 Θ2 (payload_at m U x) w →
           Prel κ jl W1 (recv_env (<[edual o := (Sc, x⁺)]> (Σ2 ∪ ΣD)) Θ2) TUnit
@@ -79,14 +79,14 @@ Section cross.
              (erase (q2.1 ∖ sentc (SRecv (edual o) w), <[j := f']> M2)).2)) as C2.
     { intros Hn. eapply (S2r _ _ _ _ _ (Hq2e' M2 HM2)). eapply p_act_session; [exact Hj|exact Hf|simpl; rewrite ech_edual; clear -Hn; cc_set_solver]. }
     assert (ech o ∉ q1.1) as Hn1.
-    { intros Ho. destruct C2 as (S0 & x & ? & ? & ? & ? & Hl & _); [clear -Ho HCC; cc_set_solver|].
+    { intros Ho. destruct C2 as (S0 & x & ? & ? & ? & Hl & _); [clear -Ho HCC; cc_set_solver|].
       apply elem_of_dom_2, elem_of_chans_of in Hl. rewrite chans_of_union, HKD, ech_edual in Hl.
       clear -Ho Hl HC1. cc_set_solver. }
     assert (ech o ∉ q2.1) as Hn2.
-    { intros Ho. destruct C1 as (S0 & x & ? & ? & ? & ? & ? & ? & ? & ? & Hl & _); [clear -Ho HCC; cc_set_solver|].
+    { intros Ho. destruct C1 as (S0 & x & ? & ? & ? & ? & ? & ? & ? & Hl & _); [clear -Ho HCC; cc_set_solver|].
       apply elem_of_dom_2, elem_of_chans_of in Hl. rewrite chans_of_union in Hl. clear -Ho Hl HC2. cc_set_solver. }
     destruct C1 as (S0 & x & m & U & Sc & Σv & Σr & Θe & Σe & L1 & U1 & Dvr & Edel & HΘe & Hss & AV & AP); [done|].
-    destruct C2 as (S0' & x' & m' & U' & b' & Sc' & L2 & U2 & AR); [done|].
+    destruct C2 as (S0' & x' & m' & U' & Sc' & L2 & U2 & AR); [done|].
     assert (ech o ∈ K) as HoK.
     { destruct (lookup_union_cases _ _ _ _ L1) as [Lc|[_ Lc]]; [|by apply elem_of_dom_2, elem_of_chans_of in Lc].
       exfalso. apply elem_of_dom_2, elem_of_chans_of in Lc. apply elem_of_dom_2, elem_of_chans_of in L2.
@@ -98,8 +98,8 @@ Section cross.
     { destruct (lookup_union_cases _ _ _ _ L2) as [Ld|[_ Ld]]; [|done]. exfalso.
       apply elem_of_dom_2, elem_of_chans_of in Ld. rewrite ech_edual in Ld. clear -Ld HoK H2C. cc_set_solver. }
     destruct (proj2 Hcut _ _ _ Lc) as (S0'' & Ld' & Hdu). rewrite Ld in Ld'. injection Ld' as <- ->.
-    destruct (sdual_snd _ _ _ _ _ _ Hdu U1) as (U'' & b'' & S'' & U2' & Hteq & HdS).
-    rewrite U2 in U2'. injection U2' as -> <- <- <-.
+    destruct (sdual_snd _ _ _ _ _ Hdu U1) as (U'' & S'' & U2' & Hteq & HdS).
+    rewrite U2 in U2'. injection U2' as -> <- <-.
     rewrite (pt_dual_shift 1 x) in AR.
     assert (∀ o', o' ∈ dom Θe → ech o' ∈ q1.1) as HΘe' by (intros o' Ho'; by apply HΘe).
     set (jj := S n - (c_give κ + c_take κ)).
@@ -137,16 +137,16 @@ Section cross.
     pose proof Hc as Hc0. destruct Hc0 as [Hd1 Hd2 Hcut Hf1 Hf2 HfC H12 H1C H2C HCC HC1 HC2].
     pose proof (cut_dual_chans _ _ Hcut) as HKD. pose proof (conn_sym _ _ _ _ _ _ Hc) as Hcs.
     destruct H1 as (_ & _ & (_ & _ & S1r & _)). destruct H2 as (_ & _ & (_ & S2s & _)).
-    assert (ech o ∉ q2.1 → ∃ S0 x m U b Sc Σv Σr Θe Σe, (Σ2 ∪ ΣD) !! o = Some (S0, x) ∧
-        unfoldS S0 = SSeq (SSnd m U b) Sc ∧ Σv ##ₘ Σr ∧ delete o (Σ2 ∪ ΣD) = Σv ∪ Σr ∧
+    assert (ech o ∉ q2.1 → ∃ S0 x m U Sc Σv Σr Θe Σe, (Σ2 ∪ ΣD) !! o = Some (S0, x) ∧
+        unfoldS S0 = SSeq (SSnd m U) Sc ∧ Σv ##ₘ Σr ∧ delete o (Σ2 ∪ ΣD) = Σv ∪ Σr ∧
         (∀ o', o' ∈ dom Θe ↔ o' ∈ (fends w) ∧ ech o' ∈ q2.1) ∧
         send_split (Σ2 ∪ ΣD) Σe Θe ∧
         at_cost_V (S n) (c_give κ) (Vrel κ) (Vrel κ (S n)) W1 (Σv ∪ Θe) (payload_at m U x) w ∧
         at_cost_P (S n) (c_give κ) (Prel κ) X2 W1 (<[o := (Sc, x⁺)]> (Σr ∪ Σe)) TUnit
           (erase (q2.1 ∖ sentc (SSend o w), <[i := e']> M2))) as C2.
     { intros Hn. eapply (S2s _ _ _ _ _ (Hq2e' M2 HM2)). eapply p_act_session; [exact Hi|exact He|simpl; clear -Hn; cc_set_solver]. }
-    assert (ech o ∉ q1.1 → ∃ S0 x m U b Sc, (Σ1 ∪ ΣC) !! edual o = Some (S0, x) ∧
-        unfoldS S0 = SSeq (SRcv m U b) Sc ∧
+    assert (ech o ∉ q1.1 → ∃ S0 x m U Sc, (Σ1 ∪ ΣC) !! edual o = Some (S0, x) ∧
+        unfoldS S0 = SSeq (SRcv m U) Sc ∧
         ∀ jl Θ2, jl + c_take κ ≤ S n → set_map ech (dom Θ2) ## q1.1 →
           recv_ok (<[edual o := (Sc, x⁺)]> (Σ1 ∪ ΣC)) Θ2 → Vrel κ jl W1 Θ2 (payload_at m U x) w →
           Prel κ jl W1 (recv_env (<[edual o := (Sc, x⁺)]> (Σ1 ∪ ΣC)) Θ2) T
@@ -154,14 +154,14 @@ Section cross.
              (erase (q1.1 ∖ sentc (SRecv (edual o) w), <[j := f']> M1)).2)) as C1.
     { intros Hn. eapply (S1r _ _ _ _ _ (Hq1e' M1 HM1)). eapply p_act_session; [exact Hj|exact Hf|simpl; rewrite ech_edual; clear -Hn; cc_set_solver]. }
     assert (ech o ∉ q2.1) as Hn2.
-    { intros Ho. destruct C1 as (S0 & x & ? & ? & ? & ? & Hl & _); [clear -Ho HCC; cc_set_solver|].
+    { intros Ho. destruct C1 as (S0 & x & ? & ? & ? & Hl & _); [clear -Ho HCC; cc_set_solver|].
       apply elem_of_dom_2, elem_of_chans_of in Hl. rewrite chans_of_union, ech_edual in Hl.
       clear -Ho Hl HC2. cc_set_solver. }
     assert (ech o ∉ q1.1) as Hn1.
-    { intros Ho. destruct C2 as (S0 & x & ? & ? & ? & ? & ? & ? & ? & ? & Hl & _); [clear -Ho HCC; cc_set_solver|].
+    { intros Ho. destruct C2 as (S0 & x & ? & ? & ? & ? & ? & ? & ? & Hl & _); [clear -Ho HCC; cc_set_solver|].
       apply elem_of_dom_2, elem_of_chans_of in Hl. rewrite chans_of_union, HKD in Hl. clear -Ho Hl HC1. cc_set_solver. }
     destruct C2 as (S0 & x & m & U & Sc & Σv & Σr & Θe & Σe & L2 & U2 & Dvr & Edel & HΘe & Hss & AV & AP); [done|].
-    destruct C1 as (S0' & x' & m' & U' & b' & Sc' & L1 & U1 & AR); [done|].
+    destruct C1 as (S0' & x' & m' & U' & Sc' & L1 & U1 & AR); [done|].
     assert (ech o ∈ K) as HoK.
     { destruct (lookup_union_cases _ _ _ _ L2) as [Lc|[_ Lc]]; [|by apply elem_of_dom_2, elem_of_chans_of in Lc; rewrite HKD in Lc].
       exfalso. apply elem_of_dom_2, elem_of_chans_of in Lc. apply elem_of_dom_2, elem_of_chans_of in L1.
@@ -173,8 +173,8 @@ Section cross.
     { destruct (lookup_union_cases _ _ _ _ L1) as [Lc|[_ Lc]]; [|done]. exfalso.
       apply elem_of_dom_2, elem_of_chans_of in Lc. rewrite ech_edual in Lc. clear -Lc HoK H1C. cc_set_solver. }
     destruct (proj2 (cut_dual_sym _ _ HfC Hcut) _ _ _ Ld) as (S0'' & Lc' & Hdu). rewrite Lc in Lc'. injection Lc' as <- ->.
-    destruct (sdual_snd _ _ _ _ _ _ Hdu U2) as (U'' & b'' & S'' & U1' & Hteq & HdS).
-    rewrite U1 in U1'. injection U1' as -> <- <- <-.
+    destruct (sdual_snd _ _ _ _ _ Hdu U2) as (U'' & S'' & U1' & Hteq & HdS).
+    rewrite U1 in U1'. injection U1' as -> <- <-.
     rewrite (pt_dual_shift 1 x) in AR.
     assert (∀ o', o' ∈ dom Θe → ech o' ∈ q2.1) as HΘe' by (intros o' Ho'; by apply HΘe).
     set (jj := S n - (c_give κ + c_take κ)).

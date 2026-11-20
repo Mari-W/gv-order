@@ -14,11 +14,11 @@ From GV Require Export soup.OwnFacts compat.Blind static.PointSubst.
 Lemma seqv_dual s r : seqv s r → seqv (dual s) (dual r).
 Proof. unfold seqv. rewrite !sty_df_dual. apply sequiv_dual. Qed.
 
-Lemma sdual_snd_both S0 S0' m U b S m' U' b' S' :
-  sdual S0 S0' → unfoldS S0 = SSeq (SSnd m U b) S → unfoldS S0' = SSeq (SRcv m' U' b') S' →
+Lemma sdual_snd_both S0 S0' m U S m' U' S' :
+  sdual S0 S0' → unfoldS S0 = SSeq (SSnd m U) S → unfoldS S0' = SSeq (SRcv m' U') S' →
   m' = m ∧ teq (ty_df U') (ty_df U) ∧ sdual S S'.
 Proof.
-  intros Hd Hu Hu'. destruct (sdual_snd _ _ _ _ _ _ Hd Hu) as (U'' & b'' & S'' & Hu'' & HU & HS).
+  intros Hd Hu Hu'. destruct (sdual_snd _ _ _ _ _ Hd Hu) as (U'' & S'' & Hu'' & HU & HS).
   rewrite Hu' in Hu''. simplify_eq. done.
 Qed.
 
@@ -46,9 +46,9 @@ Qed.
 
 (** ** Up to ≈, with annotations *)
 
-Lemma sequiv_unfold_rcv s S0 m U b S :
-  sequiv s S0 → unfoldS S0 = SSeq (SRcv m U b) S →
-  ∃ U' S', unfoldS s = SSeq (SRcv m U' b) S' ∧ teq U' U ∧ sequiv S' S.
+Lemma sequiv_unfold_rcv s S0 m U S :
+  sequiv s S0 → unfoldS S0 = SSeq (SRcv m U) S →
+  ∃ U' S', unfoldS s = SSeq (SRcv m U') S' ∧ teq U' U ∧ sequiv S' S.
 Proof.
   intros Hq Hu. apply sequiv_step in Hq. unfold eq_step in Hq. rewrite (hd_of _ _ Hu) in Hq.
   simpl in Hq. destruct (hd s) eqn:Hs; simpl in Hq; try done. destruct_and!; subst.
@@ -64,13 +64,13 @@ Proof.
   eexists _, _. split_and!; [|done|done]. by rewrite unfoldS_unview, Hs.
 Qed.
 
-Lemma pdual_snd P0 P0' m T b P m' T' b' P' :
-  sequiv P0' (dual P0) → unfoldS P0 = SSeq (SSnd m T b) P → unfoldS P0' = SSeq (SRcv m' T' b') P' →
-  m' = m ∧ b' = b ∧ teq T' T ∧ sequiv P' (dual P).
+Lemma pdual_snd P0 P0' m T P m' T' P' :
+  sequiv P0' (dual P0) → unfoldS P0 = SSeq (SSnd m T) P → unfoldS P0' = SSeq (SRcv m' T') P' →
+  m' = m ∧ teq T' T ∧ sequiv P' (dual P).
 Proof.
   intros Hd Hu Hu'.
-  assert (unfoldS (dual P0) = SSeq (SRcv m T b) (dual P)) as Hdu by (by rewrite <-dual_unfoldS, Hu).
-  destruct (sequiv_unfold_rcv _ _ _ _ _ _ Hd Hdu) as (T'' & P'' & Hu'' & HT & HP).
+  assert (unfoldS (dual P0) = SSeq (SRcv m T) (dual P)) as Hdu by (by rewrite <-dual_unfoldS, Hu).
+  destruct (sequiv_unfold_rcv _ _ _ _ _ Hd Hdu) as (T'' & P'' & Hu'' & HT & HP).
   rewrite Hu' in Hu''. simplify_eq. done.
 Qed.
 

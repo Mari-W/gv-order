@@ -3,7 +3,7 @@
       Θ ; Δ ⊨^F _ W t : T    [sem_typed κ_DF W Θ Δ F t T]    deadlock freedom
       Θ ; Δ ⊫^F _ W t : T    [sem_typed κ_L W Θ Δ F t T]     liveness
 
-    Θ is a typing environment ([tenv]) and Δ a context of credited types,
+    Θ is a typing environment ([tenv]) and Δ a context of types,
     as in the static judgment. The relation reads neither credits nor
     annotations, so Θ enters through [tenv_erase] and Δ through the types
     of its entries.
@@ -34,7 +34,7 @@ Fixpoint Grel (κ : ctable) (n : nat) (W : world) (Θ : senv) (Δ : lenv) (γ : 
   match Δ with
   | [] => Θ = ∅
   | None :: Δ' => Grel κ n W Θ Δ' (λ x, γ (S x))
-  | Some (T, _) :: Δ' =>
+  | Some T :: Δ' =>
       ∃ Θ1 Θ2, Θ1 ##ₘ Θ2 ∧ Θ = Θ1 ∪ Θ2 ∧
         Vrel κ n W Θ1 T (γ 0) ∧ Grel κ n W Θ2 Δ' (λ x, γ (S x))
   end.
@@ -78,14 +78,14 @@ Section grel.
 
   Lemma Grel_mono n W W' Θ Δ γ : W ⊑ W' → Grel κ n W Θ Δ γ → Grel κ n W' Θ Δ γ.
   Proof.
-    intros HW. revert Θ γ. induction Δ as [|[[T a]|] Δ IH]; intros Θ γ; simpl; [done| |auto].
+    intros HW. revert Θ γ. induction Δ as [|[T|] Δ IH]; intros Θ γ; simpl; [done| |auto].
     intros (Θ1 & Θ2 & Hd & -> & HV & HG). exists Θ1, Θ2. split_and!; try done; [|auto].
     by eapply Vrel_mono.
   Qed.
 
   Lemma Grel_down n m W Θ Δ γ : m ≤ n → Grel κ n W Θ Δ γ → Grel κ m W Θ Δ γ.
   Proof.
-    intros Hm. revert Θ γ. induction Δ as [|[[T a]|] Δ IH]; intros Θ γ; simpl; [done| |auto].
+    intros Hm. revert Θ γ. induction Δ as [|[T|] Δ IH]; intros Θ γ; simpl; [done| |auto].
     intros (Θ1 & Θ2 & Hd & -> & HV & HG). exists Θ1, Θ2. split_and!; try done; [|auto].
     by eapply Vrel_down.
   Qed.

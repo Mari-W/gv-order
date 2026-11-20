@@ -34,8 +34,8 @@ Section bind.
   Proof.
     intros HE Hst. pose proof (Erel_S_step κ n W W Θ T F e _ e' HE (wext_refl W) Hst) as H.
     destruct σ as [o w|o w|o|o i|o i|os]; simpl in H |- *.
-    - destruct H as (? & ? & ? & ? & ? & ? & ? & ? & Ho & _). apply elem_of_dom_2 in Ho. set_solver.
-    - destruct H as (? & ? & ? & ? & ? & ? & Ho & _). apply elem_of_dom_2 in Ho. set_solver.
+    - destruct H as (? & ? & ? & ? & ? & ? & ? & Ho & _). apply elem_of_dom_2 in Ho. set_solver.
+    - destruct H as (? & ? & ? & ? & ? & Ho & _). apply elem_of_dom_2 in Ho. set_solver.
     - destruct H as (? & ? & Ho & _). apply elem_of_dom_2 in Ho. set_solver.
     - destruct H as (? & ? & ? & ? & Ho & _). apply elem_of_dom_2 in Ho. set_solver.
     - destruct H as (? & ? & ? & ? & Ho & _). apply elem_of_dom_2 in Ho. set_solver.
@@ -170,11 +170,11 @@ Section bind.
       + by apply Hac.
     - (* O-Send *)
       intros o w E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
-      destruct (H5 o w e' Hst') as (S0 & x & m & U' & b & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
+      destruct (H5 o w e' Hst') as (S0 & x & m & U' & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
       assert (Θ2 !! o = None) as Ho2 by (eapply map_disjoint_Some_l; eauto).
       assert (ΘM ##ₘ Θ2 ∧ Θr ##ₘ Θ2) as [HdM Hdr].
       { apply map_disjoint_union_l. rewrite <-A4. by apply map_disjoint_delete_l. }
-      exists S0, x, m, U', b, S, ΘM, (Θr ∪ Θ2). split_and!; try done.
+      exists S0, x, m, U', S, ΘM, (Θr ∪ Θ2). split_and!; try done.
       + by apply lookup_union_Some_l.
       + by apply map_disjoint_union_r.
       + by rewrite delete_union, A4, (delete_id Θ2 o Ho2), map_union_assoc.
@@ -182,9 +182,9 @@ Section bind.
         by apply map_disjoint_insert_l.
     - (* O-Recv *)
       intros o w E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
-      destruct (H6 o w e' Hst') as (S0 & x & m & U' & b & S & A1 & A2 & A3).
+      destruct (H6 o w e' Hst') as (S0 & x & m & U' & S & A1 & A2 & A3).
       assert (Θ2 !! o = None) as Ho2 by (eapply map_disjoint_Some_l; eauto).
-      exists S0, x, m, U', b, S. split_and!; [by apply lookup_union_Some_l|done|].
+      exists S0, x, m, U', S. split_and!; [by apply lookup_union_Some_l|done|].
       intros j Θin Hj Hdin Hw.
       apply map_disjoint_union_l in Hdin as [Hd1 Hd2].
       assert (<[o:=(S, x⁺)]> (Θ1 ∪ Θ2) ∪ Θin = (<[o:=(S, x⁺)]> Θ1 ∪ Θin) ∪ Θ2) as ->.

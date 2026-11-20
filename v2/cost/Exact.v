@@ -16,13 +16,13 @@ From GV Require Export static.Weakening.
 
 Definition vfacts (Δ : lenv) (P : nat → Prop) : Prop :=
   (∀ x, P x → ∃ σ, Δ !! x = Some (Some σ)) ∧
-  (∀ x U a, Δ !! x = Some (Some (U, a)) → ¬ unlimited U → P x).
+  (∀ x U, Δ !! x = Some (Some U) → ¬ unlimited U → P x).
 
 Definition tfacts (Θ : tenv) (Δ : lenv) (e : expr) : Prop :=
   fends e = dom Θ ∧ vfacts Δ (λ x, freevar x e).
 
 Lemma vfacts_under o Δ P : vfacts (o :: Δ) P → vfacts Δ (λ x, P (S x)).
-Proof. intros [H1 H2]. split; [intros x Hx; apply (H1 (S x) Hx)|intros x U a Hx; apply (H2 (S x) U a Hx)]. Qed.
+Proof. intros [H1 H2]. split; [intros x Hx; apply (H1 (S x) Hx)|intros x U Hx; apply (H2 (S x) U Hx)]. Qed.
 
 Lemma vfacts_under2 o1 o2 Δ P : vfacts (o1 :: o2 :: Δ) P → vfacts Δ (λ x, P (S (S x))).
 Proof. intros H. by apply vfacts_under, vfacts_under in H. Qed.
@@ -39,7 +39,7 @@ Proof.
   intros Hs [A1 B1] [A2 B2]. split.
   - intros x [Hx|Hx]; [destruct (A1 x Hx) as [σ Hσ]|destruct (A2 x Hx) as [σ Hσ]]; exists σ;
       [by eapply lenv_split_sub_l|by eapply lenv_split_sub_r].
-  - intros x U a Hx Hu. destruct (lenv_split_inv _ _ _ _ _ Hs Hx) as [H|H]; [left|right]; eauto.
+  - intros x U Hx Hu. destruct (lenv_split_inv _ _ _ _ _ Hs Hx) as [H|H]; [left|right]; eauto.
 Qed.
 
 (** [lsame Δ Δ']: every entry of Δ' has one in Δ, and every entry of Δ
@@ -48,66 +48,66 @@ Qed.
     rule and of its premise this way. *)
 Definition lsame (Δ Δ' : lenv) : Prop :=
   ∀ x, (∀ σ, Δ' !! x = Some (Some σ) → ∃ σ0, Δ !! x = Some (Some σ0)) ∧
-       (∀ U a, Δ !! x = Some (Some (U, a)) → ¬ unlimited U →
-          ∃ U' a', Δ' !! x = Some (Some (U', a')) ∧ ¬ unlimited U').
+       (∀ U, Δ !! x = Some (Some U) → ¬ unlimited U →
+          ∃ U', Δ' !! x = Some (Some U') ∧ ¬ unlimited U').
 
 Lemma vfacts_lsame Δ Δ' P : lsame Δ Δ' → vfacts Δ' P → vfacts Δ P.
 Proof.
   intros Hs [A B]. split.
   - intros x Hx. destruct (A x Hx) as [σ Hσ]. exact (proj1 (Hs x) σ Hσ).
-  - intros x U a Hx Hu. destruct (proj2 (Hs x) U a Hx Hu) as (U' & a' & Hx' & Hu'). eauto.
+  - intros x U Hx Hu. destruct (proj2 (Hs x) U Hx Hu) as (U' & Hx' & Hu'). eauto.
 Qed.
 
 Lemma lsame_cons o o' Δ Δ' :
   (∀ σ, o' = Some σ → ∃ σ0, o = Some σ0) →
-  (∀ U a, o = Some (U, a) → ¬ unlimited U → ∃ U' a', o' = Some (U', a') ∧ ¬ unlimited U') →
+  (∀ U, o = Some U → ¬ unlimited U → ∃ U', o' = Some U' ∧ ¬ unlimited U') →
   lsame Δ Δ' → lsame (o :: Δ) (o' :: Δ').
 Proof.
   intros H1 H2 Hs [|x]; simpl; [|apply Hs]. split.
   - intros σ [= Hσ]. destruct (H1 σ Hσ) as [σ0 ->]. eauto.
-  - intros U a [= Ho] Hu. destruct (H2 U a Ho Hu) as (U' & a' & -> & Hu'). eauto.
+  - intros U [= Ho] Hu. destruct (H2 U Ho Hu) as (U' & -> & Hu'). eauto.
 Qed.
 
 Lemma lsame_nil : lsame [] [].
 Proof. intros x. split; intros; rewrite lookup_nil in *; done. Qed.
 
-Lemma tcap_unl h a T a0 T' a0' : tcap h a (T, a0) (T', a0') → unlimited T' ↔ unlimited T.
+Lemma tcap_unl h a T T' : tcap h a T T' → unlimited T' ↔ unlimited T.
 Proof. inversion 1; subst; done. Qed.
 
-Lemma tage_unl c T a0 T' a0' : tage c (T, a0) (T', a0') → unlimited T' ↔ unlimited T.
+Lemma tage_unl c T T' : tage c T T' → unlimited T' ↔ unlimited T.
 Proof. inversion 1; subst; done. Qed.
 
 Lemma lcap_lsame h a Δ Δ' : lcap h a Δ Δ' → lsame Δ Δ'.
 Proof.
-  induction 1 as [|Δ Δ' _ IH|[T a0] [T' a0'] Δ Δ' Hc _ IH]; [apply lsame_nil| |].
+  induction 1 as [|Δ Δ' _ IH|T T' Δ Δ' Hc _ IH]; [apply lsame_nil| |].
   - apply lsame_cons; [done|done|done].
-  - apply lsame_cons; [eauto|intros U a1 [= -> ->] Hu; exists T', a0'; split; [done|]|done].
-    by rewrite (tcap_unl _ _ _ _ _ _ Hc).
+  - apply lsame_cons; [eauto|intros U [= ->] Hu; exists T'; split; [done|]|done].
+    by rewrite (tcap_unl _ _ _ _ Hc).
 Qed.
 
 Lemma lage_lsame c Δ Δ' : lage c Δ Δ' → lsame Δ Δ'.
 Proof.
-  induction 1 as [|Δ Δ' _ IH|[T a0] [T' a0'] Δ Δ' Hc _ IH]; [apply lsame_nil| |].
+  induction 1 as [|Δ Δ' _ IH|T T' Δ Δ' Hc _ IH]; [apply lsame_nil| |].
   - apply lsame_cons; [done|done|done].
-  - apply lsame_cons; [eauto|intros U a1 [= -> ->] Hu; exists T', a0'; split; [done|]|done].
-    by rewrite (tage_unl _ _ _ _ _ Hc).
+  - apply lsame_cons; [eauto|intros U [= ->] Hu; exists T'; split; [done|]|done].
+    by rewrite (tage_unl _ _ _ Hc).
 Qed.
 
 Lemma lsame_pinst σ Δ : lsame Δ (lenv_pinst σ Δ).
 Proof.
   intros x. rewrite lenv_pinst_lookup. split.
-  - intros σ' H. destruct (Δ !! x) as [[[T a]|]|]; simpl in H; try done. eauto.
-  - intros U a Hx Hu. rewrite Hx. simpl. exists (pinst_ty σ U), a. split; [done|].
+  - intros σ' H. destruct (Δ !! x) as [[T|]|]; simpl in H; try done. eauto.
+  - intros U Hx Hu. rewrite Hx. simpl. exists (pinst_ty σ U). split; [done|].
     by rewrite unlimited_pinst_iff.
 Qed.
 
-Lemma lsame_pinst_insert σ Δ i T b lb m C T0 aT a :
-  Δ !! i = Some (Some (TEx lb m C T0 aT, a)) → ¬ unlimited T →
-  lsame Δ (<[i := Some (T, b)]> (lenv_pinst σ Δ)).
+Lemma lsame_pinst_insert σ Δ i T lb m C T0 :
+  Δ !! i = Some (Some (TEx lb m C T0)) → ¬ unlimited T →
+  lsame Δ (<[i := Some T]> (lenv_pinst σ Δ)).
 Proof.
   intros Hi Hu x. destruct (decide (x = i)) as [->|Hne].
   - rewrite list_lookup_insert_eq; [|unfold lenv_pinst; rewrite length_fmap; by eapply lookup_lt_Some].
-    split; [eauto|]. intros U a' _ _. eauto.
+    split; [eauto|]. intros U _ _. eauto.
   - rewrite list_lookup_insert_ne by done. apply lsame_pinst.
 Qed.
 
@@ -120,13 +120,13 @@ Proof. intros [A1 B1] [A2 B2]. split; [intros x [H|H]; eauto|intros; left; eauto
 
 Lemma vfacts_empty Δ : lenv_unl Δ → vfacts Δ (λ _, False).
 Proof.
-  intros H. split; [done|]. intros x U a Hx Hu.
-  destruct (H _ (list_elem_of_lookup_2 _ _ _ Hx)) as [?|(U' & a' & [= <- <-] & ?)]; done.
+  intros H. split; [done|]. intros x U Hx Hu.
+  destruct (H _ (list_elem_of_lookup_2 _ _ _ Hx)) as [?|(U' & [= <-] & ?)]; done.
 Qed.
 
 Lemma vfacts_only Δ x σ : lenv_only Δ x σ → vfacts Δ (λ y, y = x).
 Proof.
-  intros [Hx H]. split; [intros y ->; eauto|]. intros y U a Hy Hu.
+  intros [Hx H]. split; [intros y ->; eauto|]. intros y U Hy Hu.
   destruct (decide (y = x)) as [->|Hne]; [done|]. by destruct (Hu (H y _ Hne Hy)).
 Qed.
 
@@ -153,7 +153,7 @@ Proof.
   split; [|intros _]; induction k; simpl; constructor; auto; apply hcontractive_end.
 Qed.
 
-Theorem typed_tfacts W N Θ Γ Δ F e T a c t : typed W N Θ Γ Δ F e T a c t → tfacts Θ Δ e.
+Theorem typed_tfacts W N Θ Γ Δ F e T c t : typed W N Θ Γ Δ F e T c t → tfacts Θ Δ e.
 Proof.
   induction 1; unfold tfacts in *; simpl; destruct_and?.
   all: try match goal with H : tsplit _ _ _ |- _ => rewrite (tsplit_dom _ _ _ H) end.

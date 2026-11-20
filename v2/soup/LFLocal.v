@@ -42,8 +42,8 @@ Qed.
 (** The kind of a redex against the session type of its end. *)
 Definition akind (a : action) (S0 : sty) : Prop :=
   match a with
-  | ASend _ _ => ∃ m U b S, unfoldS S0 = SSeq (SSnd m U b) S
-  | ARecv _ => ∃ m U b S, unfoldS S0 = SSeq (SRcv m U b) S
+  | ASend _ _ => ∃ m U S, unfoldS S0 = SSeq (SSnd m U) S
+  | ARecv _ => ∃ m U S, unfoldS S0 = SSeq (SRcv m U) S
   | AClose _ => unfoldS S0 = SEnd
   | ASel _ _ => ∃ S1 S2, unfoldS S0 = SPlus S1 S2
   | ABra _ => ∃ S1 S2, unfoldS S0 = SWith S1 S2
@@ -67,8 +67,8 @@ Proof.
   all: repeat match goal with H : ∃ _, _ |- _ => destruct H end.
   all: match goal with Hd : seqv _ (dual ?s), H1 : unfoldS ?s = ?u |- _ =>
          assert (unfoldS (dual s) = dual u) as Hdu by (by rewrite <-dual_unfoldS, H1); simpl in Hdu end.
-  all: first [ destruct (seqv_unfold_rcv _ _ _ _ _ _ Hd Hdu) as (? & ? & ? & Hx & _)
-             | destruct (seqv_unfold_snd _ _ _ _ _ _ Hd Hdu) as (? & ? & ? & Hx & _)
+  all: first [ destruct (seqv_unfold_rcv _ _ _ _ _ Hd Hdu) as (? & ? & ? & Hx & _)
+             | destruct (seqv_unfold_snd _ _ _ _ _ Hd Hdu) as (? & ? & ? & Hx & _)
              | pose proof (seqv_unfold_end _ _ Hd Hdu) as Hx
              | destruct (seqv_unfold_with _ _ _ _ Hd Hdu) as (? & ? & Hx & _)
              | destruct (seqv_unfold_plus _ _ _ _ Hd Hdu) as (? & ? & Hx & _) ].
@@ -143,11 +143,11 @@ Section local.
     intros He Ha Ho. destruct a1 as [| | | |o'|o' w|o'|o1 o2|o' b|o']; simpl in Ho; simplify_eq.
     - destruct (act_offer e (ARecv o) (LSess (SRecv o EUnit)) Ha (conj eq_refl I)) as [e' He'].
       pose proof (l_obl t e _ e' He He') as H. cbn [Eobl] in H.
-      destruct H as (S0 & x & m & U0 & b & S & Ho & Hu & _). exists S0, x. split; [done|]. simpl. eauto.
+      destruct H as (S0 & x & m & U0 & S & Ho & Hu & _). exists S0, x. split; [done|]. simpl. eauto.
     - destruct (act_offer e (ASend o w) (LSess (SSend o w)) Ha (conj eq_refl eq_refl))
         as [e' He'].
       pose proof (l_obl t e _ e' He He') as H. cbn [Eobl] in H.
-      destruct H as (S0 & x & m & U0 & b & S & ΘM & Θr & Ho & Hu & _). exists S0, x. split; [done|]. simpl. eauto.
+      destruct H as (S0 & x & m & U0 & S & ΘM & Θr & Ho & Hu & _). exists S0, x. split; [done|]. simpl. eauto.
     - destruct (act_offer e (AClose o) (LSess (SClose o)) Ha eq_refl) as [e' He'].
       pose proof (l_obl t e _ e' He He') as H. cbn [Eobl] in H.
       destruct H as (S0 & x & Ho & Hu & _). exists S0, x. done.

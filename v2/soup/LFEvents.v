@@ -55,11 +55,11 @@ Proof.
     rewrite <-HM, dom_mres in Hm. apply elem_of_intersection in Hm as [Hm _].
     apply elem_of_dom in Hm as [v' Hv']. exact (owns_of _ _ _ _ _ Hv').
   - pose proof (Hobl i e _ e' Hi He) as H1. pose proof (Hobl j f _ f' Hj Hf) as H2. cbn [Eobl] in H1, H2.
-    destruct H1 as (S0 & x & m & U0 & b0 & S & ΘM & Θr & Ho & _ & Hd & HΘ & HV & _).
+    destruct H1 as (S0 & x & m & U0 & S & ΘM & Θr & Ho & _ & Hd & HΘ & HV & _).
     assert (HM : dom ΘM = fends v).
     { destruct (decide (c_give live = 0)) as [Hc|Hc];
         [exact (Vrel_exact _ _ _ _ _ _ (proj1 HV Hc))|exact (Vrel_exact _ _ _ _ _ _ (proj2 HV Hc))]. }
-    destruct H2 as (S0' & x' & m' & U0' & b0' & S' & Ho' & _).
+    destruct H2 as (S0' & x' & m' & U0' & S' & Ho' & _).
     split_and!; [exact (owns_of _ _ _ _ _ Ho)|exact (owns_of _ _ _ _ _ Ho')|].
     intros m1 Hm. destruct (split_mres _ _ _ _ Hd HΘ HM) as [-> _].
     rewrite <-HM, dom_mres in Hm. apply elem_of_intersection in Hm as [Hm _].

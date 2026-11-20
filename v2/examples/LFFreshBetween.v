@@ -23,8 +23,8 @@ Proof.
     destruct Hf as [->|[->|[->|[->| ->]]]]; simpl in E; injection E as -> ->; unfold pt_fsum, pt_depth; simpl; lia.
 Qed.
 
-Definition fbl_T : ty := TProd (TSess SEnd (pvar 0)) (Some 2) (TSess SEnd (pvar 1)) (Some 2).
-Definition fbl_ty : ty := lbox 2 fb_C (Some (pvar 1)) fbl_T (Some 0) TUnit None.
+Definition fbl_T : ty := TProd (TSess SEnd (pvar 0) (Some 2)) (TSess SEnd (pvar 1) (Some 2)).
+Definition fbl_ty : ty := lbox 2 fb_C (Some (pvar 1)) fbl_T TUnit.
 
 Section body.
   Context (W : world) (Γ : hctx) (n : nat).
@@ -36,11 +36,11 @@ Section body.
   Ltac fbf := apply fbl_hyp; [unfold fbx_P; fb_disj|simpl; lia].
 
   Lemma fbl_body : ∃ c t,
-    typed W (Some 2) ∅ Γb (Some (fbl_T, Some 0) :: Some (fbl_ty, None) :: nones n) (∅, Some (FVar 1))
+    typed W (Some 2) ∅ Γb (Some fbl_T :: Some fbl_ty :: nones n) (∅, Some (FVar 1))
       (LetP (Var 0) (LetP (ENewAt 0 (Var 1)) (LetP (Var 0)
         (LetU (ESpawn (Lam (LetU (Var 0) (EClose (Var 1)))))
         (LetU (EClose (Var 3)) (LetU (EClose (Var 1)) (EClose (Var 4))))))))
-      TUnit None c t ∧ t.2 = Some 0.
+      TUnit c t ∧ t.2 = Some 0.
   Proof.
     eexists _, _. split.
     { eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | |shelve].
@@ -78,7 +78,7 @@ Section body.
 End body.
 
 Lemma fbl_box_typed W Γ n F : hc_fv Γ = ∅ →
-  typed W (Some 2) ∅ Γ (nones n) F fb_box fbl_ty None (Some 0) tid.
+  typed W (Some 2) ∅ Γ (nones n) F fb_box fbl_ty (Some 0) tid.
 Proof.
   intros HΓ. destruct (fbl_body W Γ n) as (c & t & Hb & Ht).
   eapply lbox_typed; [done|reflexivity|exact Hb|exact Ht].
@@ -92,7 +92,7 @@ Proof.
   destruct Hf as [->|[->|[->|[->| ->]]]]; simpl in E; injection E as <- <-; simpl; lia.
 Qed.
 
-Lemma fbl_typedN : ∃ c ϑ, typed W_fb (Some 2) ∅ hc_empty [] (∅, None) fb_main TUnit None c ϑ ∧ meets ϑ 0 0.
+Lemma fbl_typedN : ∃ c ϑ, typed W_fb (Some 2) ∅ hc_empty [] (∅, None) fb_main TUnit c ϑ ∧ meets ϑ 0 0.
 Proof.
   eexists _, _. split.
   { unfold fb_main, let_new.
@@ -128,8 +128,8 @@ Proof.
     eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_app_; [lsplit_tac (EForce fb_box) EUnit|apply ub_below_empty| | | |shelve|shelve|shelve].
-  { eapply (lbox_force_eq _ _ _ _ _ _ 2 fb_C (Some (pvar 1)) fbl_T (Some 0) TUnit None fb_xs _ _ _
-      (Some ((pvar 0)·1)) (TProd (TSess SEnd (pvar 0)) (Some 2) (TSess SEnd ((pvar 0)·1)) (Some 2)));
+  { eapply (lbox_force_eq _ _ _ _ _ _ 2 fb_C (Some (pvar 1)) fbl_T TUnit fb_xs _ _
+      (Some ((pvar 0)·1)) (TProd (TSess SEnd (pvar 0) (Some 2)) (TSess SEnd ((pvar 0)·1) (Some 2))));
       [done|apply fbl_hold|done|done|done|].
     apply (fbl_box_typed _ _ 7). done. }
   lage_tac.
