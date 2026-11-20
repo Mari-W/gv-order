@@ -29,7 +29,7 @@ lf_thread_progress
      : nat → world → senv → proc → ty → Prop
 lf_fundamental
      : ∀ (N : nat) (W : world) (Σ : senv) (p : proc) (T : ty),
-         strict W → Σ ⊩^N _ W p : T → Σ ⊪_W p : T
+         Σ ⊩^N _ W p : T → Σ ⊪_W p : T
 lf_soundness
      : ∀ (N : nat) (W : world) (p : proc) (T : ty),
-         strict W → wfworld W → ∅ ⊩^N _ W p : T → lock_free p
+         wfworld W → ∅ ⊩^N _ W p : T → lock_free p

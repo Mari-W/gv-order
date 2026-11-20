@@ -15,5 +15,4 @@ live_fundamental
          → Θ ; hc_empty ; Δ ⊢^F _ W t : T → ∅ ⊢▷ t → Θ ; Δ ⊫^F _ W t : T
 live_soundness
      : ∀ (W : world) (p : proc) (T : ty),
-         strict W
-         → ∅ ⊢_W p : T → ⊢▷ p → deadlock_free p ∧ no_tau_divergence p
+         ∅ ⊢_W p : T → ⊢▷ p → deadlock_free p ∧ no_tau_divergence p

@@ -32,10 +32,9 @@ FuelE_mono
                  → e ∈ F^N _ n⟦σ ▷ d ; r⟧(Π, φ, tk)
                    → e ∈ F^N' _ n⟦σ ▷ d' ; r'⟧(Π, φ', tk')
 Vfuel_recount
-     : ∀ (N : fuel) (n : nat) (h a : fuel) (T : ty) 
-         (a0 : fuel) (T' : ty) (a0' : fuel) (Π : penv) 
-         (φ φ' : cenv) (v : expr),
-         tcap h a (T, a0) (T', a0')
+     : ∀ (N : fuel) (n : nat) (h a : fuel) (T T' : ty) 
+         (Π : penv) (φ φ' : cenv) (v : expr),
+         tcap h a T T'
          → dom φ' = dom φ
            → (∀ (o : cend) (f : fuel), φ' !! o = Some f → fle h f)
-             → v ∈ FV^N _ n⟦RTy T a0⟧(Π, φ) → v ∈ FV^N _ n⟦RTy T' a0'⟧(Π, φ')
+             → v ∈ FV^N _ n⟦RTy T⟧(Π, φ) → v ∈ FV^N _ n⟦RTy T'⟧(Π, φ')

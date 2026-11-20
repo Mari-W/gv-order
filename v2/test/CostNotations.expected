@@ -1,15 +1,13 @@
-λ (N : fuel) (Θ : tenv) (Δ : lenv) (e : expr) (T : ty) (a c : fuel) (ϑ : tix),
-  Θ ; Δ ⊨^N e : T^a ▷ c ; ϑ
-     : fuel → tenv → lenv → expr → ty → fuel → fuel → tix → Prop
+λ (N : fuel) (Θ : tenv) (Δ : lenv) (e : expr) (T : ty) (c : fuel) (ϑ : tix),
+  Θ ; Δ ⊨^N e : T ▷ c ; ϑ
+     : fuel → tenv → lenv → expr → ty → fuel → tix → Prop
 cost_fundamental
      : ∀ (W : world) (N : fuel) (Θ : tenv) (Γ : hctx) 
          (Δ : lenv) (F : sfuture) (e : expr) (T : ty) 
-         (a c : fuel) (ϑ : tix),
-         Θ ; Γ ; Δ ⊢^F _{W,N} e : T^a ▷ c ; ϑ → Θ ; Δ ⊨^N e : T^a ▷ c ; ϑ
+         (c : fuel) (ϑ : tix),
+         Θ ; Γ ; Δ ⊢^F _{W,N} e : T ▷ c ; ϑ → Θ ; Δ ⊨^N e : T ▷ c ; ϑ
 fsem_of_cost
      : ∀ (W : world) (N : fuel) (Θ : tenv) (e : expr) 
-         (T : ty) (a c : fuel) (ϑ : tix) (tk : nat),
-         Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} e : T^a ▷ c ; ϑ
-         → tfree T
-           → (∀ (o : cend) (te : tentry), Θ !! o = Some te → fle (te_cr te) N)
-             → meets ϑ 0 tk → fsem N (te_sty <$> Θ) e
+         (T : ty) (c : fuel) (ϑ : tix),
+         Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} e : T ▷ c ; ϑ
+         → tfree T → cr_le Θ N → tfin ϑ → fsem N (te_sty <$> Θ) e
