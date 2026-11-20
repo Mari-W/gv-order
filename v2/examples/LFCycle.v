@@ -64,7 +64,7 @@ Proof. unfold cy_main, let_new, cy_thunk. guard_tac. Qed.
 Theorem cy_lftyped : ∃ N, ∅ ⊩^N _ W_cy (∅, {[+ cy_main +]}) : TUnit.
 Proof.
   destruct cy_typedN as (c & ϑ & Ht & Hm). exists 2.
-  eapply lf_main_typed; [constructor|exact Ht|apply cy_guarded|exact Hm].
+  eapply lf_main_typed; [apply strict_wfworld; [apply W_cy_wf|apply W_cy_wfworld]|constructor|exact Ht|apply cy_guarded|exact Hm].
 Qed.
 
 Theorem cy_lock_free : lock_free (∅, {[+ cy_main +]}).

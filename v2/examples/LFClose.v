@@ -69,6 +69,7 @@ Proof.
   - set_solver.
   - rewrite map_union_empty. unfold tenv_of. rewrite map_fmap_singleton. apply cl_typed.
   - right. exists 0. unfold meets, tid. simpl. lia.
+  - apply (strict_mono _ (W_cl ⊔ W_cl)); [apply W_cl_wf|apply wext_join_l|apply W_cl_strict].
 Qed.
 
 Theorem cl_lftyped N c (x : point) :
@@ -96,12 +97,11 @@ Proof.
   - set_solver.
   - set_solver.
   - set_solver.
-  - apply W_cl_wf.
-  - apply W_cl_wf.
   - simpl. set_solver.
-  - exact W_cl_strict.
+  - exact (proj2 (proj2 (proj1 (strict_join_iff W_cl W_cl W_cl_wf W_cl_wf ltac:(simpl; set_solver))
+      W_cl_strict))).
 Qed.
 
 Theorem cl_lock_free c :
   lock_free ({[c]}, {[+ cl (c⁺)%cend +]} ⊎ {[+ cl (c⁻)%cend +]}).
-Proof. exact (lf_soundness 0 _ _ TUnit W_cl_strict W_cl_wfworld (cl_lftyped 0 c (MkPt (NConst 0) true 0))). Qed.
+Proof. exact (lf_soundness 0 _ _ TUnit W_cl_wfworld (cl_lftyped 0 c (MkPt (NConst 0) true 0))). Qed.

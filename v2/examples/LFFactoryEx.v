@@ -180,7 +180,7 @@ Proof. unfold fx_main, mk0, mk1, mk0_e, mk1_e, worker, let_new. guard_tac. Qed.
 Theorem fx_lftyped : ∃ N, ∅ ⊩^N _ W_fx (∅, {[+ fx_main +]}) : TUnit.
 Proof.
   destruct fxl_typedN as (c & ϑ & Ht & Hm). exists 2.
-  eapply lf_main_typed; [constructor|exact Ht|apply fx_guarded|exact Hm].
+  eapply lf_main_typed; [apply strict_wfworld; [apply W_fx_wf|apply W_fx_wfworld]|constructor|exact Ht|apply fx_guarded|exact Hm].
 Qed.
 
 Theorem fx_lock_free : lock_free (∅, {[+ fx_main +]}).

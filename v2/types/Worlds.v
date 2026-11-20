@@ -107,6 +107,21 @@ Proof.
     cbn [pt_shift pt_dual pt_name pt_off] in *; split; try done; lia.
 Qed.
 
+(** A world without facts and families orders only by program order,
+    which raises the offset, so it is strict. *)
+Lemma strict_bare W : (∀ g, ¬ w_facts W g) → w_fams W = ∅ → strict W.
+Proof.
+  intros Hf Hl.
+  assert (∀ x y, W ⊢ x ≺ y → po x y) as Hpo.
+  { induction 1 as [x y Hs|x y z Hs _ IH].
+    - destruct Hs as [x y Hxy|ℓ g x y Hℓ _|x|x]; [by destruct (Hf _ Hxy)|set_solver|by apply tc_once; left|by apply tc_once; right].
+    - eapply tc_transitive; [|exact IH].
+      destruct Hs as [x y Hxy|ℓ g x y Hℓ _|x|x]; [by destruct (Hf _ Hxy)|set_solver|by apply tc_once; left|by apply tc_once; right]. }
+  split.
+  - split; [intros x y H; by destruct (Hf _ H)|intros ℓ x y Hℓ; set_solver].
+  - intros x Hx. destruct (po_root _ _ (Hpo _ _ Hx)) as [_ H]. lia.
+Qed.
+
 (** ** Extension, join, restriction *)
 
 Record wext (W W' : world) : Prop := {

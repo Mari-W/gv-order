@@ -229,7 +229,7 @@ Proof. unfold cs_main, cli, srv, let_new. guard_tac. Qed.
 Theorem cs_lftyped : ∃ N, ∅ ⊩^N _ W_cs (∅, {[+ cs_main +]}) : TUnit.
 Proof.
   destruct csl_typedN as (c & ϑ & Ht & Hm). exists 3.
-  eapply lf_main_typed; [constructor|exact Ht|apply cs_guarded|exact Hm].
+  eapply lf_main_typed; [apply strict_wfworld; [apply W_cs_wf|apply W_cs_wfworld]|constructor|exact Ht|apply cs_guarded|exact Hm].
 Qed.
 
 Theorem cs_lock_free : lock_free (∅, {[+ cs_main +]}).

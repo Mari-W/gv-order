@@ -100,4 +100,5 @@ Proof.
   - set_solver.
   - rewrite map_union_empty. unfold tenv_of. rewrite map_fmap_singleton. apply fw_typed.
   - right. exists 0. apply fw_tix_met.
+  - apply strict_bare; [intros g Hg; exact Hg|done].
 Qed.

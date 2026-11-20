@@ -249,7 +249,7 @@ Proof. unfold rg_main, ring, rg_e, let_new. guard_tac. Qed.
 Theorem rg_lftyped : ∃ N, ∅ ⊩^N _ W_rg (∅, {[+ rg_main +]}) : TUnit.
 Proof.
   destruct rgl_typedN as (c & ϑ & Ht & Hm). exists 4.
-  eapply lf_main_typed; [constructor|exact Ht|apply rg_guarded|exact Hm].
+  eapply lf_main_typed; [apply strict_wfworld; [apply W_rg_wf|apply W_rg_wfworld]|constructor|exact Ht|apply rg_guarded|exact Hm].
 Qed.
 
 Theorem rg_lock_free : lock_free (∅, {[+ rg_main +]}).

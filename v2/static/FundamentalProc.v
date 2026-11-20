@@ -1,10 +1,10 @@
 (** * The fundamental theorems for processes and soundness (stage S5,
       Appendix A.3)
 
-      fundamental_proc      : strict W → Σ ⊢_W p : T → Σ ⊨_W p : T
-      live_fundamental_proc : strict W → Σ ⊢_W p : T → ⊢▷ p → Σ ⊫_W p : T
-      soundness             : strict W → ∅ ⊢_W p : T → deadlock_free p
-      live_soundness        : strict W → ∅ ⊢_W p : T → ⊢▷ p →
+      fundamental_proc      : Σ ⊢_W p : T → Σ ⊨_W p : T
+      live_fundamental_proc : Σ ⊢_W p : T → ⊢▷ p → Σ ⊫_W p : T
+      soundness             : ∅ ⊢_W p : T → deadlock_free p
+      live_soundness        : ∅ ⊢_W p : T → ⊢▷ p →
                                 deadlock_free p ∧ no_tau_divergence p
       soundness_source      : strict W → tfree T → ∅ ; ∅ ; [] ⊢^(∅, None) _ W t : T →
                                 deadlock_free (∅, {[+ t +]})
@@ -13,7 +13,9 @@
     the term-level theorem ([proc_gen]): P-Term by [sem_p_term], P-Connect
     by [sem_p_connect], whose side condition [conn] the premises of the
     rule give ([ptyped_conn]). The results
-    hold at every fuel N, ⊢_W is the instance N = ∞. *)
+    hold at every fuel N, ⊢_W is the instance N = ∞. A process derivation
+    sits over a strict world ([ptyped_strict]), so the process theorems
+    ask no strictness of their own. *)
 
 From GV Require Export compat.PTerm static.Fundamental.
 From GV Require Import compat.Conv.
@@ -95,42 +97,45 @@ Section proc.
   Context (Hthr : ∀ W N Θ t T c ϑ, strict W → Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} t : T ▷ c ; ϑ →
                     G t → sem_typed κ W (tenv_df Θ) (lenv_df []) (∅, None) t (ty_df T)).
 
-  Lemma proc_gen N W Σ p T : strict W → ptyped N W Σ p T → (∀ t, t ∈ p.2 → G t) → sem_ptyped κ W Σ p T.
+  Lemma proc_gen N W Σ p T : ptyped N W Σ p T → (∀ t, t ∈ p.2 → G t) → sem_ptyped κ W Σ p T.
   Proof.
-    intros HW Hty. revert HW. induction Hty as
-      [W Σ ΘB C0 t T c ϑ Hp HB HΣ Hpf Hd Ht _
-      |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T H1 IH1 H2 IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hw1 Hw2 Hfam HJ];
-      intros HW HG n; simpl in HG.
+    induction 1 as
+      [W Σ ΘB C0 t T c ϑ Hp HB HΣ Hpf Hd Ht _ HW
+      |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T H1 IH1 H2 IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hfam HJ];
+      intros HG n; simpl in HG.
     - apply (sem_p_term κ n W _ Σ (tenv_erase ΘB) C0 t T Hp (pterm_sth N Σ ΘB C0 HB HΣ Hpf Hd)).
       assert (G t) as Hg by (apply HG; multiset_solver).
       apply typed_E. exact (Hthr W N _ t T c ϑ HW Ht Hg).
-    - destruct (proj1 (p_join_iff_connect W1 W2 Hw1 Hw2 Hfam) HJ) as (HS1 & HS2 & _).
-      pose proof (ptyped_conn _ _ _ _ _ _ _ _ _ _ _ H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2) as Hc.
+    - pose proof (ptyped_conn _ _ _ _ _ _ _ _ _ _ _ H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2) as Hc.
       refine (sem_p_connect κ n W1 W2 Σ1 ΣC Σ2 (senv_dual ΣC) (C1, E1) (C2, E2) T (ptyped_tfree _ _ _ _ _ H1)
-                (IH1 HS1 _ n) (IH2 HS2 _ n) Hc); intros t Ht; apply HG; simpl; multiset_solver.
+                (IH1 _ n) (IH2 _ n) Hc); intros t Ht; apply HG; simpl; multiset_solver.
   Qed.
 End proc.
 
 (** ** The theorems of A.3 *)
 
-Theorem fundamental_proc W Σ p T : strict W → Σ ⊢_W p : T → Σ ⊨_W p : T.
+Theorem fundamental_proc W Σ p T : Σ ⊢_W p : T → Σ ⊨_W p : T.
 Proof.
-  intros HW Hty. refine (proc_gen κ_DF (λ _, True) _ None W Σ p T HW Hty _); [|done].
+  intros Hty. refine (proc_gen κ_DF (λ _, True) _ None W Σ p T Hty _); [|done].
   intros W' N Θ t T' c ϑ HW' Ht _. exact (fundamental_typed W' N Θ [] (∅, None) t T' c ϑ HW' Ht).
 Qed.
 
-Theorem live_fundamental_proc W Σ p T : strict W → Σ ⊢_W p : T → ⊢▷ p → Σ ⊫_W p : T.
+Theorem live_fundamental_proc W Σ p T : Σ ⊢_W p : T → ⊢▷ p → Σ ⊫_W p : T.
 Proof.
-  intros HW Hty Hg. refine (proc_gen κ_L (lguard ∅) _ None W Σ p T HW Hty Hg).
+  intros Hty Hg. refine (proc_gen κ_L (lguard ∅) _ None W Σ p T Hty Hg).
   intros W' N Θ t T' c ϑ HW' Ht Hgt. exact (live_fundamental_typed W' N Θ [] (∅, None) t T' c ϑ HW' Ht Hgt).
 Qed.
 
-Theorem soundness W p T : strict W → ∅ ⊢_W p : T → deadlock_free p.
-Proof. intros HW Hty. apply (adequacy W T p HW). by apply fundamental_proc. Qed.
+Theorem soundness W p T : ∅ ⊢_W p : T → deadlock_free p.
+Proof.
+  intros Hty. apply (adequacy W T p (ptyped_strict _ _ _ _ _ Hty)). by apply fundamental_proc.
+Qed.
 
-Theorem live_soundness W p T : strict W → ∅ ⊢_W p : T → ⊢▷ p →
+Theorem live_soundness W p T : ∅ ⊢_W p : T → ⊢▷ p →
   deadlock_free p ∧ no_tau_divergence p.
-Proof. intros HW Hty Hg. apply (live_adequacy W T p HW). by apply live_fundamental_proc. Qed.
+Proof.
+  intros Hty Hg. apply (live_adequacy W T p (ptyped_strict _ _ _ _ _ Hty)). by apply live_fundamental_proc.
+Qed.
 
 (** One closed thread of the DF judgment, with no creation constraint. *)
 Theorem soundness_source W t T : strict W → tfree T → ∅ ; hc_empty ; [] ⊢^(∅, None) _ W t : T →

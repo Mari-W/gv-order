@@ -23,7 +23,9 @@
     No rule matches the shape of a redex. let x = e1 in e2 is
     the derived form [ELet] of lang/Syntax.v, and E-Let and D-Let are
     admissible ([e_let] and [d_let] in static/Weakening.v). [ptyped] is process typing with P-Term and P-Connect
-    in the two-world form, P-Join is admissible ([p_join]). *)
+    in the two-world form. P-Connect compares the two worlds only at
+    their shared roots, and every derivation sits over a strict world
+    ([ptyped_strict]). *)
 
 From GV Require Export static.Contexts.
 
@@ -179,11 +181,15 @@ Definition dftyped (W : world) (Θ : tenv) (Γ : hctx) (Δ : lenv) (F : sfuture)
     restricted channels C0, both ends of each, dual at dual points, with
     credit N, and at a finite N asks some ticket count to meet the
     transformer of the thread at 0. At N = ∞ the premise holds by its
-    left disjunct, so ⊢_W is unchanged. P-Connect composes two components typed at their own
-    worlds, whose families are apart, over the cut Σ_C, and asks the join
-    strict. P-Join asks only the restrictions to the shared constants
-    strict (cleanup R7, [strict_join_iff]). It is a lemma, [p_join],
-    because the two conditions agree ([p_join_iff_connect]). *)
+    left disjunct, so ⊢_W is unchanged. P-Term asks its world strict.
+    P-Connect composes two components typed at their own worlds, whose
+    families are apart, over the cut Σ_C, and asks only the restrictions
+    of the two worlds to their shared roots S = A_{W1} ∩ A_{W2} strict
+    together (entry 13 of docs/redesign/pending.md). Both components sit
+    over strict worlds by induction, so the join is strict
+    ([strict_join_iff], [ptyped_strict]) and the earlier form of the
+    rule, which asked the join strict, is admissible
+    ([p_connect_join]). *)
 
 Definition chans_of (Σ : senv) : gset chan := set_map ech (dom Σ).
 
@@ -214,7 +220,7 @@ Inductive ptyped (N : fuel) : world → senv → proc → ty → Prop :=
       (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 → pfree Σ →
       (∀ c, c ∈ C0 → ∃ S x, ΘB !! (c⁺)%cend = Some (TE S x N) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ N)) →
       typed W N (tenv_of N Σ ∪ ΘB) hc_empty [] (∅, None) t T c ϑ →
-      (N = None ∨ ∃ tk, meets ϑ 0 tk) →
+      (N = None ∨ ∃ tk, meets ϑ 0 tk) → strict W →
       ptyped N W Σ (C0, {[+ t +]}) T
   | p_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
       ptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →
@@ -223,8 +229,8 @@ Inductive ptyped (N : fuel) : world → senv → proc → ty → Prop :=
       (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
       chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
       C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
-      world_wf W1 → world_wf W2 → w_fams W1 ## w_fams W2 →
-      strict (W1 ⊔ W2) →
+      w_fams W1 ## w_fams W2 →
+      strict (wrestrict W1 (wshared W1 W2) ⊔ wrestrict W2 (wshared W1 W2)) →
       ptyped N (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
 
 (** ** Notations (Appendix A) *)
@@ -243,17 +249,16 @@ Notation "Σ ⊢_ W p : T" := (ptyped None W Σ p T)
   (at level 74, W at level 0, p at level 60, T at level 60,
    format "Σ  ⊢_ W  p  :  T").
 
-(** P-Join and P-Connect agree: their side conditions are equivalent by
-    R7. *)
-Lemma p_join_iff_connect W1 W2 :
-  world_wf W1 → world_wf W2 → w_fams W1 ## w_fams W2 →
-  strict (W1 ⊔ W2) ↔
-    strict W1 ∧ strict W2 ∧ strict (wrestrict W1 (wshared W1 W2) ⊔ wrestrict W2 (wshared W1 W2)).
-Proof. apply strict_join_iff. Qed.
+(** Every process derivation sits over a strict world. *)
+Lemma ptyped_strict N W Σ p T : ptyped N W Σ p T → strict W.
+Proof.
+  induction 1 as [|W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 _ _ _ _ _ _ _ _ _ Hfam HS]; [done|].
+  apply (strict_join_iff W1 W2 (proj1 IH1) (proj1 IH2) Hfam). by split_and!.
+Qed.
 
-(** P-Join is admissible: it is P-Connect with the strictness of the
-    join split by [p_join_iff_connect]. *)
-Lemma p_join N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
+(** The earlier P-Connect, which asked the join strict and both worlds
+    well formed, is admissible. *)
+Lemma p_connect_join N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
   ptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →
   ptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
   Σ1 ##ₘ ΣC → Σ2 ##ₘ senv_dual ΣC →
@@ -261,12 +266,11 @@ Lemma p_join N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
   chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
   C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
   world_wf W1 → world_wf W2 → w_fams W1 ## w_fams W2 →
-  strict W1 → strict W2 →
-  strict (wrestrict W1 (wshared W1 W2) ⊔ wrestrict W2 (wshared W1 W2)) →
+  strict (W1 ⊔ W2) →
   ptyped N (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
 Proof.
-  intros H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hw1 Hw2 Hfam HS1 HS2 HS.
-  apply p_connect; try done. by apply p_join_iff_connect.
+  intros H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hw1 Hw2 Hfam HS.
+  apply p_connect; try done. by apply (strict_join_iff W1 W2 Hw1 Hw2 Hfam).
 Qed.
 
 Lemma ptyped_tfree N W Σ p T : ptyped N W Σ p T → tfree T.

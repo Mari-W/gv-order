@@ -19,8 +19,8 @@ Print Assumptions pt_field_dual.
 (** types/Worlds.v *)
 Print Assumptions strict_join_iff.
 (** static/Typing.v *)
-Print Assumptions p_join_iff_connect.
-Print Assumptions p_join.
+Print Assumptions ptyped_strict.
+Print Assumptions p_connect_join.
 (** static/Conservativity.v *)
 Print Assumptions d_conv.
 Print Assumptions dftyped_typed.

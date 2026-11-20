@@ -183,7 +183,7 @@ Proof. unfold fm_main, fm_box, fm_e, fm_thunk, let_new. guard_tac. Qed.
 Theorem fm_lftyped : ∃ N, ∅ ⊩^N _ W_fm (∅, {[+ fm_main +]}) : TUnit.
 Proof.
   destruct fml_typedN as (c & ϑ & Ht & Hm). exists 4.
-  eapply lf_main_typed; [constructor|exact Ht|apply fm_guarded|exact Hm].
+  eapply lf_main_typed; [apply strict_wfworld; [apply W_fm_wf|apply W_fm_wfworld]|constructor|exact Ht|apply fm_guarded|exact Hm].
 Qed.
 
 Theorem fm_lock_free : lock_free (∅, {[+ fm_main +]}).

@@ -94,10 +94,10 @@ Theorem lf_p_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
   (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
   chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
   C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
-  world_wf W1 → world_wf W2 → w_fams W1 ## w_fams W2 →
-  strict (W1 ⊔ W2) →
+  w_fams W1 ## w_fams W2 →
+  strict (wrestrict W1 (wshared W1 W2) ⊔ wrestrict W2 (wshared W1 W2)) →
   (Σ1 ∪ Σ2) ⊪_(W1 ⊔ W2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) : T.
-Proof. intros H1 H2 _ _ Hf H12 H1C H2C HC HC1 HC2 _ _ _ _. by apply lf_soup_connect. Qed.
+Proof. intros H1 H2 _ _ Hf H12 H1C H2C HC HC1 HC2 _ _. by apply lf_soup_connect. Qed.
 
 (** ** P-Term *)
 

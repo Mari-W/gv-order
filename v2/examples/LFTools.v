@@ -74,11 +74,11 @@ Qed.
 (** ** Closed programs *)
 
 Lemma lf_main_typed N W t T c ϑ tk :
-  tfree T → typed W (Some N) ∅ hc_empty [] (∅, None) t T c ϑ →
+  strict W → tfree T → typed W (Some N) ∅ hc_empty [] (∅, None) t T c ϑ →
   ∅ ⊢▷ t → meets ϑ 0 tk → ∅ ⊩^N _ W (∅, {[+ t +]}) : T.
 Proof.
-  intros Hp Ht Hg Hm. split.
-  - apply (p_term (Some N) W ∅ ∅ ∅ t T c ϑ); [done| | | | |done|by right; exists tk].
+  intros HS Hp Ht Hg Hm. split.
+  - apply (p_term (Some N) W ∅ ∅ ∅ t T c ϑ); [done| | | | |done|by right; exists tk|done].
     + intros o. rewrite dom_empty_L. set_solver.
     + set_solver.
     + apply pfree_empty.
@@ -89,7 +89,7 @@ Qed.
 Lemma lf_main N W t T c ϑ tk :
   strict W → wfworld W → tfree T → typed W (Some N) ∅ hc_empty [] (∅, None) t T c ϑ →
   ∅ ⊢▷ t → meets ϑ 0 tk → lock_free (∅, {[+ t +]}).
-Proof. intros HS HW Hp Ht Hg Hm. eapply (lf_soundness N W _ T HS HW), lf_main_typed; eauto. Qed.
+Proof. intros HS HW Hp Ht Hg Hm. eapply (lf_soundness N W _ T HW), lf_main_typed; eauto. Qed.
 
 (** ** Rules of the merged judgment with weakening built in *)
 

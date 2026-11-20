@@ -381,7 +381,7 @@ Proof. unfold ctl_main, ctl_cli, ctl_srv, let_new. guard_tac. Qed.
 Theorem ctl_lftyped : ∃ N, ∅ ⊩^N _ W_ctl (∅, {[+ ctl_main +]}) : TUnit.
 Proof.
   destruct ctl_typedN as (c & ϑ & Ht & Hm). exists 3.
-  eapply lf_main_typed; [constructor|exact Ht|apply ctl_guarded|exact Hm].
+  eapply lf_main_typed; [apply strict_wfworld; [apply W_ctl_wf|apply W_ctl_wfworld]|constructor|exact Ht|apply ctl_guarded|exact Hm].
 Qed.
 
 Theorem ctl_lock_free : lock_free (∅, {[+ ctl_main +]}).

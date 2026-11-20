@@ -148,7 +148,7 @@ Proof. unfold fb_main, fb_box, let_new. guard_tac. Qed.
 Theorem fb_lftyped : ∃ N, ∅ ⊩^N _ W_fb (∅, {[+ fb_main +]}) : TUnit.
 Proof.
   destruct fbl_typedN as (c & ϑ & Ht & Hm). exists 2.
-  eapply lf_main_typed; [constructor|exact Ht|apply fb_guarded|exact Hm].
+  eapply lf_main_typed; [apply strict_wfworld; [apply W_fb_wf|apply W_fb_wfworld]|constructor|exact Ht|apply fb_guarded|exact Hm].
 Qed.
 
 Theorem fb_lock_free : lock_free (∅, {[+ fb_main +]}).
