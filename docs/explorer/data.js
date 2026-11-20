@@ -310,8 +310,7 @@ window.MAP = {
        "sem-props",
        "th-adeq"
       ]
-     },
-     "planned": "Events as solo, sync and offer are planned (docs/redesign/pending.md, entry 1). The Rocq has one event per kind of step."
+     }
     },
     {
      "id": "sem-props",

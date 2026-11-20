@@ -167,7 +167,6 @@ const NEW2 = 'Plain new, with position and facts in its type and worlds that gro
 const planned = {
   'syn-terms': NEW2, 'syn-points': NEW2, 'sem-labels': NEW2, 'sem-head': NEW2, 'sem-proc': NEW2,
   'w-world': NEW2, 'w-order': NEW2, 'w-ext': NEW2, 'r-new': NEW2, 'e-obl': NEW2,
-  'sem-events': 'Events as solo, sync and offer are planned (docs/redesign/pending.md, entry 1). The Rocq has one event per kind of step.',
   'soup': NEW2 + ' The creation choice χ is a proposal of 2026-11-20.',
   'sj-all': NEW2 + ' The creation choice χ is a proposal of 2026-11-20.',
 };

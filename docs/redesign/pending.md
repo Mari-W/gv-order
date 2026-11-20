@@ -107,6 +107,8 @@ must do, open questions.
    `prim` gone) is committed there (6986a1c), N.2 is uncommitted and
    built, without make test, make check or the map. The agent stopped when
    the session ended. Map: not yet. Rocq: finish N.2 on that branch.
+   Status 2026-11-20: done in the Rocq (fc8a020, EvSolo, EvSync, EvOffer
+   in lang/Process.v) and on the map (56e4eb4), merged into redesign.
 
 2. **One plain `new`; position and facts live in the type.** Decided
    2026-11-19. The term is `new`, label `new c`, event `new_i c`. E-New
