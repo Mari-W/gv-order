@@ -262,6 +262,38 @@ must do, open questions.
     run is merged).** Check every block, rule, signature and theorem on the
     map against the definitions in v2/, list every difference that is not a
     queued entry, and fix the map or queue the Rocq change.
+    Overnight stage 10, 2026-11-20, against redesign-clean3 after stages
+    1, 2, 5 and 8. Scope: every Rocq name the map cites (601 references in
+    data.js, checked by a script against the definitions in v2/) and the
+    statements of the theorems section. The formulas of the other blocks
+    were not compared symbol by symbol. No map edit, none of the
+    differences is a statement the Rocq proves false. Differences that no
+    entry queues:
+    (1) Names that no longer exist. ty-ann cites `cr_df` (gone with entry
+    6). age.credit cites `age_credit` (now `age_sess` and `age_arr`).
+    P-Connect.strict cites `p_join_iff_connect` (gone with entry 13, the
+    rule now rests on `strict_join_iff` and `ptyped_strict`).
+    th.live-fundamental and th.live-fundamental-typed cite
+    static/LiveFundamental.v, which does not exist (both theorems are in
+    static/Fundamental.v). ctx.only cites `tenv_only` (the Rocq name is
+    `lenv_only`). syn.let cites `t_act_let` (the steps are
+    `t_act_let_unit` and `t_act_let_pair`).
+    (2) Names in the wrong file. The blocks r-base, r-fun, r-data,
+    r-boxes, r-ex, r-act, r-threads, r-new and t-subs cite the rules
+    `d_*` and `d_conv` in static/Typing.v, they are in
+    static/Conservativity.v. V-Arrow.lb cites `lb_le` in
+    relation/Relation.v, it is in relation/Readiness.v. fu.idle and
+    sty.skip cite `idle` in fuel/Fuel.v, it is in types/Types.v.
+    (3) Premises the Rocq dropped. th.fundamental-proc, th.lf-fundamental,
+    th.soundness and th.lf-soundness, with their notes and signatures,
+    ask `strict W`. Since stage 2 the Rocq theorems ask none
+    (`ptyped_strict`), so the map states a weaker theorem. Entry 13 names
+    the Rocq change and marks its map side done, but the theorems section
+    still shows the premise.
+    (4) Rocq results without a map entry: `fp_unrealizable`
+    (examples/FlagPair.v), `soup_gen_iff` (the soup as relation, fuel and
+    consistency, soup/State.v), `strict_bare` (types/Worlds.v),
+    `p_connect_join` (static/Typing.v).
 
 12. **Generalized arrows, E-SpawnLam derived (decided 2026-11-19 by the
     author, design to confirm).** Today E-SpawnLam exists beside E-Spawn
