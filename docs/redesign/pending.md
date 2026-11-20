@@ -194,6 +194,28 @@ must do, open questions.
    no outer credits on results). Process rules and the semantic-typing and
    theorem sections still use the old judgment (entry 9).
 
+   Overnight stage 8, 2026-11-20 (96d5f7e), the Rocq side of the map's
+   notation. Done: `tfin ϑ` is ϑ(0) ∈ ℕ (types/Costs.v) and replaces
+   `∃ tk, meets ϑ 0 tk` in p_term, fsem_of_cost, lf_p_term and
+   lf_soundness_source. `cr_le Θ N` is cr(Θ) ≤ N (static/Contexts.v) in
+   fsem_of_cost and thfuel_id. `meets ϑ r tk` carries the comment
+   ϑ(r) ≤ tk. `soup_consistent` and `soup_gen_iff` (soup/State.v) read the
+   soup as relation, fuel and consistency. Names and comments only, no
+   Rocq notation, because a notation that starts with ϑ( or cr( clashes
+   with application. Not done: one map Φ for Π and φ in FuelE and FV,
+   with Φ↓ and spare Φ (FuelE and Vfuel occur in 20 files, and fuel/*.v
+   and cost/*.v hold 302 lemmas that pass the two maps), and the step
+   clause of Pbody over
+   pstep (it changes the definition of P that stage 9 also changes, so
+   it belongs to that work).
+   Open question for the author, facts only. O-New picks the session
+   type of a new channel by `∃ S` in relation/Relation.v (o_new) and F-New
+   by its own `∃ S` in fuel/Fuel.v (f_new). The two obligations live in
+   two step-indexed predicates that the soup combines only at the end,
+   so a shared existential needs FuelE to take the relation's choice as
+   a parameter, or one predicate for both. Then the soup could ask
+   `Π = sty ∘ A` and drop Π. Nothing decided.
+
 9. **Readable semantic typing (to design).** Same treatment as entry 8 for
    V, E, P, the obligations, readiness, fuel and the soup: show the relation
    at κ_DF in DF mode, the general κ form with the differences coloured in
