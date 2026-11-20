@@ -28,7 +28,7 @@ const ABOUT = {
   'ty-session': { why: 'Session types describe the protocol of one end. The rules read the first action after unfolding recursion and leading $\\mathsf{Skip}$.', used: ['ty-dual', 'r-send', 'r-recv'] },
   'ty-dual': { why: 'The two ends of a channel follow opposite protocols. Creation, linking and composition check duality.', used: ['r-new', 'r-link', 'p-term', 'p-connect'] },
   'ty-equiv': { why: 'One protocol has many spellings once recursion and $\\mathsf{Skip}$ exist. Equivalence compares them by behaviour.', used: ['t-sub', 'v-base'] },
-  'ty-heads': { why: 'A thread that waits while holding a value must wait below the dual points of the ends in it. $\\mathsf{heads}$ collects those points from a type.', used: ['t-side', 't-judgment', 'r-abs', 'r-ex'] },
+  'ty-heads': { why: 'A thread that waits while holding a value must wait below the dual points of the ends in it. $\\mathsf{ap}$ collects those points from a type.', used: ['t-side', 't-judgment', 'r-abs', 'r-ex'] },
   'ty-payload': { why: 'A payload is described relative to the end that sends it, so one protocol serves every position. Its ends land at the fields of the carrier.', used: ['r-send', 'r-recv', 'e-obl-msg'] },
   'ty-annot': { why: 'The lock-free annotations are numbers with $\\infty$ for unbounded. At $\\infty$ everywhere they say nothing, which is deadlock-free typing.', used: ['ty-df', 't-age'] },
   'ty-tix': { why: 'Links need a budget of their own because counters cannot bound them. A ticket need says how many tickets a term needs as a function of what must be left over.', used: ['ty-tix-ops', 'r-link', 'r-spawn', 'p-term'] },
