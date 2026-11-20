@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const core = require('./core');
-require('./syntax'); require('./semantics'); require('./types'); require('./typing'); require('./semrel'); require('./theorems');
+require('./syntax'); require('./semantics'); require('./types'); require('./typing'); require('./semrel'); require('./theorems'); require('./rejects'); require('./about'); require('./layout').remap(); require('./prose').apply();
 const katex = require('/home/mari/.vscode-server/extensions/goessner.mdmath-2.7.4/node_modules/katex/dist/katex.js');
 const { sections, notes, examples, sigs } = core;
 for (const [k, v] of Object.entries(sigs)) { if (!notes[k]) { console.log('SIG-NO-NOTE', k); } else { notes[k].sig = v.sig; notes[k].args = v.args; } }
@@ -12,7 +12,7 @@ function scan(tex, where) {
     if (!/^[A-Za-z0-9.\-]+$/.test(m[1])) { console.log('BADKEY', m[1], where); errs++; }
     if (!notes[m[1]]) { console.log('MISSING', m[1], where); errs++; }
   }
-  try { katex.renderToString(tex, { trust: true, strict: 'ignore', throwOnError: true, displayMode: true, macros: { '\\annot': '#1', '\\annraw': '#1' } }); }
+  try { katex.renderToString(tex, { trust: true, strict: 'ignore', throwOnError: true, displayMode: true, macros: { '\\annot': '#1', '\\annraw': '#1', '\\dfo': '#1' } }); }
   catch (e) { console.log('KATEX', where, e.message.slice(0, 200)); errs++; }
 }
 // ranges of tex covered by the body of some \htmlData{k=..}{BODY}
@@ -45,7 +45,7 @@ const unused = Object.keys(notes).filter(k => !used.has(k));
 if (unused.length) console.log('UNUSED', unused.join(' '));
 // prose checks
 const bad = [/[;—]/, /\bsince\b/i, /\bslots?\b/i, /\bgates?\b/i, /\bpriority\b/i, /\b(novel|significant|comprehensive|robust|crucial|seamless|leverage|delve|pivotal|substantial)\b/i];
-const MAC = { '\\llbracket': '[\\![', '\\rrbracket': ']\\!]', '\\annot': '#1', '\\annraw': '#1' };
+const MAC = { '\\llbracket': '[\\![', '\\rrbracket': ']\\!]', '\\annot': '#1', '\\annraw': '#1', '\\dfo': '#1' };
 // Unicode math left outside $…$ (Greek letters, arrows, relations, sub/superscripts)
 const umath = /[\u0370-\u03FF\u2070-\u209F\u2190-\u22FF\u27E8-\u27EF\u2A00-\u2AFF\u0300-\u036F]/;
 let nUni = 0;
@@ -79,8 +79,8 @@ const ann = t => typeof t !== 'string' ? t : t.replace(CRH, m => '\\annot{' + m 
   .replace(TRI, m => '\\annot{' + m + '}').replace(BRK, m => '\\annot{' + m + '}')
   .replace(/\\vdash(\}*)\^\{(N|\\infty)\}/g, '\\vdash$1\\annot{^{$2}}').replace(/_\{(W(?:_\d)?),(N|\\infty)\}/g, '_{$1\\annot{,$2}}')
   .replace(REF, (m, x, i, s) => isIndex(s, i) ? m : '\\annot{' + m + '}');
-// one toggle: liveness is deadlock freedom plus the guard, so live material shows with deadlock freedom
-const unlive = ms => [...new Set((ms || ['df', 'lf']).map(m => m === 'live' ? 'df' : m))];
+// one toggle: liveness is deadlock freedom plus the guard, which only lock freedom needs, so live material shows with lock freedom
+const unlive = ms => [...new Set((ms || ['df', 'lf']).map(m => m === 'live' ? 'lf' : m))];
 for (const s of sections) for (const b of s.blocks) { b.modes = unlive(b.modes); if (b.variants) delete b.variants.live; }
 for (const e of examples) e.modes = unlive(e.modes);
 for (const s of sections) for (const b of s.blocks) { b.tex = ann(b.tex); if (b.variants) for (const k of Object.keys(b.variants)) b.variants[k] = ann(b.variants[k]); }
@@ -126,13 +126,19 @@ for (const v of Object.values(notes)) { for (const f of ['title', 'what', 'why',
 const out = { sections, notes, examples };
 const file = path.join(__dirname, '..', 'data.js');
 fs.writeFileSync(file, 'window.MAP = ' + JSON.stringify(out, null, 1) + ';\n');
+// explorer.html, the page serve.sh opens, is index.html with a document skeleton, rebuilt every time so the two never drift
+{
+  const dir = path.join(__dirname, '..');
+  const page = fs.readFileSync(path.join(dir, 'index.html'), 'utf8');
+  fs.writeFileSync(path.join(dir, 'explorer.html'), '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"></head><body>\n' + page + '\n</body></html>\n');
+}
 const nb = sections.reduce((a, s) => a + s.blocks.length, 0);
 console.log('unicode-math fields (UNI=1 lists them)', nUni);
 const noSig = Object.keys(notes).filter(k => !notes[k].sig);
 console.log('unhovered symbols (HOV=1 lists them)', nHover, '| notes without sig (SIG=1 lists them)', noSig.length);
 if (process.env.SIG) console.log('NOSIG', noSig.join(' '));
 for (const [k, v] of Object.entries(notes)) { if (v.sig) { try { katex.renderToString(v.sig, { trust: true, strict: 'ignore', throwOnError: true, macros: { ...MAC } }); } catch (e) { console.log('KATEX-SIG', k, e.message.slice(0, 120)); errs++; } for (const a of v.args || []) { try { katex.renderToString(a.name, { trust: true, strict: 'ignore', throwOnError: true, macros: { ...MAC } }); } catch (e) { console.log('KATEX-ARG', k, e.message.slice(0, 120)); errs++; } prose(a.meaning, k + '.arg'); } } }
-for (const e of examples) if (e.accepts) for (const [m, a] of Object.entries(e.accepts)) { if (!['df', 'live', 'lf'].includes(m) || typeof a.ok !== 'boolean') { console.log('BAD-ACCEPTS', e.id, m); errs++; } }
+for (const e of examples) if (e.accepts) for (const [m, a] of Object.entries(e.accepts)) { if (!['df', 'sem', 'live', 'lf'].includes(m) || typeof a.ok !== 'boolean') { console.log('BAD-ACCEPTS', e.id, m); errs++; } }
 // nothing about annotations may show in the deadlock-free mode
 {
   const LEAK = [/\^\{\\htmlData\{k=[^}]*\}\{[ab]/, /\^\{[ab](_|'|\}|\s*\+)/, /(?<!\\!)\\triangleright\}*\s*(c|\\infty|\d)/, /\\vartheta/, /\[c\s*;/, /\\hat\s*1/, /\\mathsf\{(tok|meets|tix|tspawn|tlink|tseq)\}/, /\\vdash\}*\^\{N\}/, /credit/i];

@@ -3,157 +3,254 @@ window.MAP = {
   {
    "id": "syntax",
    "title": "Syntax",
-   "intro": "Terms $e$, values, constants, ends, points and processes, where no term mentions a point.",
+   "intro": "Programs are terms of a call-by-value $\\lambda$-calculus with session-typed channels. Terms never mention points. Points appear in types and in the relation, where they order the waits of threads.",
    "blocks": [
     {
      "id": "syn-terms",
      "title": "Terms",
      "rocq": "lang/Syntax.v: expr",
      "tex": "\\begin{array}{rl}\ne ::= & \\htmlData{k=syn.var}{x} \\mid \\htmlData{k=syn.unit}{\\ast} \\mid \\htmlData{k=syn.end}{o} \\mid \\htmlData{k=syn.lam}{\\lambda e} \\mid \\htmlData{k=syn.app}{e_1\\,e_2} \\mid \\htmlData{k=syn.pair}{\\langle e_1, e_2\\rangle} \\\\\n\\mid & \\htmlData{k=syn.letu}{\\mathsf{let}\\ \\ast = e_1\\ \\mathsf{in}\\ e_2} \\mid \\htmlData{k=syn.letp}{\\mathsf{let}\\ \\langle a,b\\rangle = e_1\\ \\mathsf{in}\\ e_2} \\\\\n\\mid & \\htmlData{k=syn.inj}{\\mathsf{inj}_i\\,e} \\mid \\htmlData{k=syn.case}{\\mathsf{case}\\ e\\,(a.e_1)\\,(a.e_2)} \\\\\n\\mid & \\htmlData{k=syn.box}{!e} \\mid \\htmlData{k=syn.new}{\\mathsf{new}} \\mid \\htmlData{k=syn.op}{k}\n\\end{array}",
-     "caption": "Thirteen term formers with de Bruijn variables, a box $!e$ binding itself in $e$, and the constants $k$.",
+     "caption": "Thirteen term formers with de Bruijn variables. A box $!e$ binds itself in $e$, and $k$ ranges over the constants.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "Typing has one rule per term former, and the semantics one head step per redex.",
+      "used": [
+       "sem-head",
+       "r-base",
+       "r-fun",
+       "r-boxes"
+      ]
+     }
     },
     {
      "id": "syn-let",
      "title": "Derived let",
      "rocq": "lang/Syntax.v: ELet (notation)",
      "tex": "\\htmlData{k=syn.let}{\\begin{array}{l}\n\\mathsf{let}\\ a = e_1\\ \\mathsf{in}\\ e_2 \\ \\triangleq\\ {} \\\\\n\\qquad \\mathsf{let}\\ \\langle a, u\\rangle = \\langle e_1, \\ast\\rangle\\ \\mathsf{in}\\ \\mathsf{let}\\ \\ast = u\\ \\mathsf{in}\\ e_2\n\\end{array}}",
-     "caption": "The one-variable $\\mathsf{let}$ is notation over pairs and unit with $u$ fresh.",
+     "caption": "The one-variable $\\mathsf{let}$ is notation for a pair followed by a unit elimination, with $u$ fresh.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "Examples read better with a one-variable $\\mathsf{let}$. As notation it needs no typing rule of its own.",
+      "used": [
+       "r-data"
+      ]
+     }
     },
     {
      "id": "syn-prims",
      "title": "Constants",
      "rocq": "lang/Syntax.v: prim",
      "tex": "\\begin{array}{rl}\nk ::= & \\htmlData{k=prim.send}{\\mathsf{send}} \\mid \\htmlData{k=prim.recv}{\\mathsf{recv}} \\mid \\htmlData{k=prim.close}{\\mathsf{close}} \\mid \\htmlData{k=prim.select}{\\mathsf{select}_i} \\mid \\htmlData{k=prim.branch}{\\mathsf{branch}} \\\\\n\\mid & \\htmlData{k=prim.link}{\\mathsf{link}} \\mid \\htmlData{k=prim.spawn}{\\mathsf{spawn}} \\mid \\htmlData{k=prim.force}{\\mathsf{force}}\n\\end{array}",
-     "caption": "The constants $k$, with $\\mathsf{send}$ on $\\langle v, o\\rangle$, $\\mathsf{link}$ on two ends and $\\mathsf{spawn}$ on a thunk.",
+     "caption": "The channel operations are constants. $\\mathsf{send}$ takes a pair $\\langle v, o\\rangle$, $\\mathsf{link}$ a pair of ends and $\\mathsf{spawn}$ a thunk.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "As constants applied to values, the channel operations need no syntax of their own, and each has an ordinary function type.",
+      "used": [
+       "t-consts",
+       "sem-head"
+      ]
+     }
     },
     {
      "id": "syn-values",
      "title": "Values",
      "rocq": "lang/Syntax.v: is_val",
      "tex": "\\htmlData{k=syn.values}{v ::= \\ast \\mid o \\mid k \\mid \\lambda e \\mid\\ !e \\mid \\langle v_1, v_2\\rangle \\mid \\mathsf{inj}_i\\,v}",
-     "caption": "Unit, ends, constants, abstractions, boxes, and pairs and injections of values.",
+     "caption": "Unit, ends, constants, abstractions and boxes are values, and so are pairs and injections of values.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "A thread that is a value has finished. The value relation $V$ is defined on values.",
+      "used": [
+       "v-rel",
+       "e-rel"
+      ]
+     }
     },
     {
      "id": "syn-ends",
      "title": "Ends",
      "rocq": "lang/Syntax.v: cend, edual, ech",
      "tex": "\\htmlData{k=end.cend}{o ::= c^{+} \\mid c^{-}} \\qquad \\htmlData{k=end.dual}{\\overline{c^{+}} = c^{-}\\quad \\overline{c^{-}} = c^{+}} \\qquad \\htmlData{k=end.ech}{\\mathsf{ech}(c^{\\pm}) = c}",
-     "caption": "An end $o$ of the channel $\\mathsf{ech}\\,o$ with partner $\\overline{o}$, named independently of any point.",
+     "caption": "An end $o$ belongs to the channel $\\mathsf{ech}\\,o$, and $\\overline{o}$ is the other end of that channel.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "Two threads hold the two ends of a channel. Naming ends instead of channels gives each end its own type, point and counter.",
+      "used": [
+       "syn-fends",
+       "syn-csub",
+       "t-contexts"
+      ]
+     }
     },
     {
      "id": "syn-fends",
      "title": "Ends a term mentions",
      "rocq": "lang/Syntax.v: fends, fchans",
      "tex": "\\htmlData{k=syn.fends}{\\mathsf{fends}(e)} \\qquad \\htmlData{k=syn.fchans}{\\mathsf{fchans}(e) = \\mathsf{ech}[\\mathsf{fends}(e)]}",
-     "caption": "$\\mathsf{fends}(e)$ is the set of ends in $e$ and $\\mathsf{fchans}(e) = \\mathsf{ech}[\\mathsf{fends}(e)]$.",
+     "caption": "$\\mathsf{fends}(e)$ is the set of ends in $e$, and $\\mathsf{fchans}(e)$ the set of their channels.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "The relation reads ownership off terms. A closure or a payload owns exactly the ends in it, and the relation checks this when a value is spawned or sent.",
+      "used": [
+       "v-rel",
+       "e-obl"
+      ]
+     }
     },
     {
      "id": "syn-procs",
      "title": "Processes and configurations",
      "rocq": "lang/Syntax.v: proc, lang/Process.v: config, erase",
      "tex": "\\begin{array}{l}\n\\htmlData{k=proc.proc}{p = (C, E)} \\qquad \\htmlData{k=proc.config}{q = (C, M),\\ M : \\mathbb{N} \\rightharpoonup e} \\\\\n\\htmlData{k=proc.erase}{\\mathsf{erase}(C, M) = (C, \\{\\!|\\, M(i) \\mid i \\,|\\!\\})}\n\\end{array}",
-     "caption": "A process is a finite set $C$ of restricted channels with a finite multiset $E$ of threads, and a configuration names threads by $i \\in \\mathrm{dom}\\,M$.",
+     "caption": "A process is a finite set $C$ of restricted channels and a finite multiset $E$ of threads. A configuration names its threads by $i \\in \\mathrm{dom}\\,M$.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "A running program is a set of threads together with its private channels. A channel is restricted when both of its ends are inside the process.",
+      "used": [
+       "sem-proc",
+       "p-typing",
+       "p-rel"
+      ]
+     }
     },
     {
      "id": "syn-points",
      "title": "Points",
      "rocq": "types/Points.v: pname, point",
      "tex": "\\begin{array}{l}\nr ::= \\htmlData{k=pt.const}{a} \\mid \\htmlData{k=pt.var}{\\iota} \\qquad x ::= r \\mid \\htmlData{k=pt.shift}{x^{+}} \\mid \\htmlData{k=pt.field}{x\\cdot\\kappa} \\mid \\htmlData{k=pt.dual}{\\overline{x}} \\\\\n\\htmlData{k=pt.laws}{\\overline{\\overline{x}} = x \\quad \\overline{x}\\cdot\\kappa = x\\cdot\\kappa \\quad \\overline{x^{+}} = \\overline{x}^{+}}\n\\end{array}",
-     "caption": "A point $x$ has a root $a$ or $\\iota$, a polarity flipped by $\\overline{x}$, an offset raised by $x^{+}$ and fields $x\\cdot\\kappa$.",
+     "caption": "A point $x$ has a root, a constant $a$ or a variable $\\iota$. $\\overline{x}$ flips its polarity, $x^{+}$ raises its offset, and $x\\cdot\\kappa$ is one of its fields.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "Points order the waits of threads. Each end has a point, and a thread may wait at a point only below the points of the ends it still holds.",
+      "used": [
+       "syn-moves",
+       "w-world",
+       "t-side"
+      ]
+     }
     },
     {
      "id": "syn-moves",
      "title": "Where an end moves",
      "rocq": "types/Points.v: sel_pt, bra_pt, payload_pts",
      "tex": "\\begin{array}{l}\nx \\;\\mapsto\\; \\htmlData{k=pt.shift}{x^{+}} \\qquad \\htmlData{k=sx.kappai}{\\kappa_{\\mathsf{false}} = 0 \\quad \\kappa_{\\mathsf{true}} = 1} \\\\\n\\htmlData{k=pt.sel}{\\mathsf{sel\\_pt}\\,x\\,i = \\overline{x\\cdot\\kappa_i}} \\qquad \\htmlData{k=pt.bra}{\\mathsf{bra\\_pt}\\,x\\,i = x\\cdot\\kappa_i} \\qquad \\htmlData{k=pt.payload}{\\mathsf{payload\\_pts}\\,x\\,m = (x\\cdot 0, \\dots, x\\cdot(m-1))}\n\\end{array}",
-     "caption": "An action moves an end from $x$ to $x^{+}$, a choice to a field, and the $j$-th payload end of a message at $x$ sits at $x\\cdot j$.",
+     "caption": "An action moves an end from $x$ to $x^{+}$, and a choice moves it to a field of $x$. The $j$-th payload end of a message at $x$ arrives at $x\\cdot j$.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "The point of an end changes as its protocol advances. One point per end therefore describes a whole protocol, and no action needs a point of its own.",
+      "example": "An end at $x$ that sends twice is at $x^{++}$ afterwards.",
+      "used": [
+       "r-act",
+       "ty-payload"
+      ]
+     }
     },
     {
      "id": "syn-labels",
      "title": "Field labels",
      "rocq": "lang/Syntax.v: field",
      "tex": "\\htmlData{k=lbl.field}{\\kappa \\in \\mathbb{N}}",
-     "caption": "Field labels $\\kappa$ are natural numbers and name the fields $x\\cdot\\kappa$ of a point.",
+     "caption": "Field labels $\\kappa$ are natural numbers, and $x\\cdot\\kappa$ is the field $\\kappa$ of the point $x$.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "Fields give payload ends and the continuations of a choice points of their own, each related to the point of the carrier.",
+      "used": [
+       "syn-moves",
+       "r-new"
+      ]
+     }
     },
     {
      "id": "syn-csub",
      "title": "Link substitution",
      "rocq": "lang/Syntax.v: csub",
      "tex": "\\htmlData{k=link.csub}{\\mathsf{csub}\\,o_1\\,o_2 :\\ \\overline{o_1} \\mapsto o_2,\\quad o_1 \\mapsto \\overline{o_2},\\quad o \\mapsto o\\ \\text{otherwise}}",
-     "caption": "The renaming a link applies to every thread, so the holder of $\\overline{o_1}$ ends up holding $o_2$.",
+     "caption": "A link of $o_1$ and $o_2$ renames $\\overline{o_1}$ to $o_2$ in the other threads, so that the two remaining ends form one channel.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "After a link, the threads holding $\\overline{o_1}$ and $\\overline{o_2}$ communicate with each other directly.",
+      "used": [
+       "sem-proc",
+       "r-act"
+      ]
+     }
     }
    ]
   },
   {
    "id": "semantics",
    "title": "Semantics",
-   "intro": "This section introduces thread labels $\\alpha$ and session labels $\\sigma$, head steps $e \\xrightarrow{\\alpha} e'$, frames $f[e]$, substitution $e[v]$, configuration steps $(C, M) \\to (C', M')$ with events $ev$ and participants $\\mathsf{parts}(ev)$, runs $(r, l)$, and the properties $\\mathsf{deadlock\\_free}$, $\\mathsf{no\\_tau\\_divergence}$ and $\\mathsf{lock\\_free}$. Signatures name the sorts $\\mathsf{TLabel}$ and $\\mathsf{SLabel}$ of thread and session labels, $\\mathsf{Frame}$ of frames, $\\mathsf{Event}$ of events and $\\mathsf{Run}$ of runs.",
+   "intro": "A thread steps with a label, and a process steps by one or two thread steps. The section ends with the three properties the theorems establish, deadlock freedom, absence of internal divergence and lock freedom.",
    "blocks": [
     {
      "id": "sem-labels",
      "title": "Thread labels",
      "rocq": "lang/Semantics.v: tlabel, slabel",
      "tex": "\\begin{array}{rl}\n\\alpha ::= & \\htmlData{k=lbl.beta}{\\beta} \\mid \\htmlData{k=lbl.new}{\\mathsf{new}\\,c} \\mid \\htmlData{k=lbl.spawn}{\\mathsf{spawn}\\,v} \\mid \\htmlData{k=se.slabel}{\\sigma} \\\\\n\\sigma ::= & \\htmlData{k=lbl.send}{o!v} \\mid \\htmlData{k=lbl.recv}{o?v} \\mid \\htmlData{k=lbl.close}{o\\,\\mathsf{end}} \\mid \\htmlData{k=lbl.sel}{o \\lhd i} \\mid \\htmlData{k=lbl.bra}{o \\rhd i} \\mid \\htmlData{k=lbl.link}{\\leftrightarrow\\{o_1,o_2\\}}\n\\end{array}",
-     "caption": "$\\beta$ covers application, unit and pair elimination, case and force, and session labels $\\sigma$ are offers on ends.",
+     "caption": "The label $\\beta$ stands for application, unit and pair elimination, case and force. A session label $\\sigma$ is an action offered on an end.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "An internal step needs no other thread. A session label must be matched by the dual label of another thread.",
+      "used": [
+       "sem-head",
+       "sem-proc",
+       "ct-costs"
+      ]
+     }
     },
     {
      "id": "sem-head",
      "title": "Head steps (T-Act rules)",
      "rocq": "lang/Semantics.v: head_step",
      "tex": "\\begin{array}{l}\n\\htmlData{k=T-Act-App}{(\\lambda e)\\,v \\xrightarrow{\\beta} \\htmlData{k=se.subst}{e[v]}} \\\\\n\\htmlData{k=T-Act-Force}{\\mathsf{force}\\,(!e) \\xrightarrow{\\beta} e[!e]} \\qquad \\htmlData{k=T-Act-New}{\\mathsf{new} \\xrightarrow{\\mathsf{new}\\,c} \\langle c^{+}, c^{-}\\rangle} \\\\\n\\htmlData{k=T-Act-Spawn}{\\mathsf{spawn}\\,v \\xrightarrow{\\mathsf{spawn}\\,v} \\ast} \\\\\n\\htmlData{k=T-Act-Send}{\\mathsf{send}\\,\\langle v, o\\rangle \\xrightarrow{o!v} o} \\\\\n\\htmlData{k=T-Act-Recv}{\\mathsf{recv}\\,o \\xrightarrow{o?v} \\langle v, o\\rangle} \\qquad \\htmlData{k=T-Act-Close}{\\mathsf{close}\\,o \\xrightarrow{o\\,\\mathsf{end}} \\ast} \\\\\n\\htmlData{k=T-Act-Select}{\\mathsf{select}_i\\,o \\xrightarrow{o\\lhd i} o} \\qquad \\htmlData{k=T-Act-Branch}{\\mathsf{branch}\\,o \\xrightarrow{o\\rhd i} \\mathsf{inj}_i\\,o} \\\\\n\\htmlData{k=T-Act-Link}{\\mathsf{link}\\,\\langle o_1, o_2\\rangle \\xrightarrow{\\leftrightarrow\\{o_1,o_2\\}} \\ast}\n\\end{array}",
-     "caption": "One head rule per redex, where $\\mathsf{recv}\\,o$ has a step for every value $v$.",
+     "caption": "One head step per redex. $\\mathsf{recv}\\,o$ has a step for each value $v$ it may receive.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "Because a receive steps for each possible value, the step of a thread is defined without the other thread of the channel.",
+      "used": [
+       "sem-ctx",
+       "sem-proc"
+      ]
+     }
     },
     {
      "id": "sem-ctx",
@@ -164,47 +261,76 @@ window.MAP = {
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "Evaluation is call by value from left to right. A $\\lambda$ or a box delays its body until it is applied or forced.",
+      "used": [
+       "sem-head",
+       "th-terms"
+      ]
+     }
     },
     {
      "id": "sem-proc",
      "title": "Process steps (P-Act rules)",
      "rocq": "lang/Process.v: istep",
      "tex": "\\begin{array}{l}\n\\htmlData{k=P-Act-Beta}{M(i) \\xrightarrow{\\beta} e'} \\\\ \\qquad \\Rightarrow\\ (C, \\htmlData{k=se.upd}{M[i \\mapsto e']}) \\\\[4pt]\n\\htmlData{k=P-Act-New}{M(i) \\xrightarrow{\\mathsf{new}\\,c} e',\\ \\htmlData{k=sem.fresh-global}{c \\notin C \\cup \\htmlData{k=se.echans}{\\mathsf{echans}(M)}}} \\\\ \\qquad \\Rightarrow\\ (C \\cup \\{c\\}, M[i\\mapsto e']) \\\\[4pt]\n\\htmlData{k=P-Act-Spawn}{M(i) \\xrightarrow{\\mathsf{spawn}\\,v} e',\\ j \\notin \\mathsf{dom}\\,M} \\\\ \\qquad \\Rightarrow\\ (C, M[i\\mapsto e'][j \\mapsto v\\,\\ast]) \\\\[4pt]\n\\htmlData{k=P-Act-Msg}{M(i) \\xrightarrow{o!v} e',\\ M(j) \\xrightarrow{\\overline{o}?v} f',\\ i \\neq j} \\\\ \\qquad \\Rightarrow\\ (C, M[i\\mapsto e'][j\\mapsto f']) \\\\[4pt]\n\\htmlData{k=P-Act-Close}{M(i) \\xrightarrow{o\\,\\mathsf{end}} e',\\ M(j) \\xrightarrow{\\overline{o}\\,\\mathsf{end}} f',\\ i \\neq j,\\ \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C} \\\\ \\qquad \\Rightarrow\\ (C \\setminus \\{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o\\}, M[i\\mapsto e'][j\\mapsto f']) \\\\[4pt]\n\\htmlData{k=P-Act-Choice}{M(i) \\xrightarrow{o\\lhd b} e',\\ M(j) \\xrightarrow{\\overline{o}\\rhd b} f',\\ i \\neq j} \\\\ \\qquad \\Rightarrow\\ (C, M[i\\mapsto e'][j\\mapsto f']) \\\\[4pt]\n\\htmlData{k=P-Act-Link}{M(i) \\xrightarrow{\\leftrightarrow\\{o_1,o_2\\}} e',\\ \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o_1 \\in C} \\\\ \\qquad \\Rightarrow\\ (C\\setminus\\{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o_1\\}, \\htmlData{k=link.csub}{\\mathsf{csub}\\,o_1\\,o_2}\\ \\text{on every thread of } M[i\\mapsto e']) \\\\[4pt]\n\\htmlData{k=P-Act-Session}{M(i) \\xrightarrow{\\sigma} e',\\ \\htmlData{k=se.subj}{\\mathsf{subj}\\,\\sigma} \\cap C = \\varnothing} \\\\ \\qquad \\Rightarrow\\ (C \\setminus \\htmlData{k=sem.sentc}{\\mathsf{sentc}\\,\\sigma}, M[i\\mapsto e'])\n\\end{array}",
-     "caption": "Each rule turns steps of one or two threads into a step of $(C, M)$.",
+     "caption": "Each rule combines the steps of one or two threads into a step of the configuration $(C, M)$.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "A message pairs a send and a receive on the two ends of one channel. Internal steps involve one thread.",
+      "used": [
+       "sem-events",
+       "p-rel",
+       "sem-props"
+      ]
+     }
     },
     {
      "id": "sem-events",
      "title": "Events",
      "rocq": "lang/Process.v: event, ev_parts, ev_admin, ev_tau",
      "tex": "\\begin{array}{l}\n\\htmlData{k=ev.event}{ev ::= \\mathsf{solo}_i\\,\\alpha\\,k \\mid \\mathsf{sync}_{i,j}\\,\\sigma \\mid \\mathsf{offer}_i\\,\\sigma} \\qquad \\htmlData{k=ev.pick}{k ::= \\cdot \\mid j \\mid (o_1, o_2)} \\\\\n\\htmlData{k=ev.admin}{\\mathsf{admin} = \\{\\mathsf{solo}_i\\,\\alpha\\,k\\}} \\qquad \\htmlData{k=ev.tau}{\\tau = \\text{all but } \\mathsf{offer}} \\qquad \\htmlData{k=se.parts}{\\mathsf{parts}(ev)}\n\\end{array}",
-     "caption": "An event names the threads $\\mathsf{parts}(ev)$ and the labels they take.",
+     "caption": "An event records the threads $\\mathsf{parts}(ev)$ that took part in a step, and the channel or ends of the step.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "Lock freedom is stated in terms of the threads that take part in steps, which the event of each step records.",
+      "used": [
+       "sem-props",
+       "th-adeq"
+      ]
+     }
     },
     {
      "id": "sem-props",
-     "title": "Safety properties",
+     "title": "Properties",
      "rocq": "lang/Safety.v: deadlock_free, lockfree/TauThread.v: no_tau_divergence, lockfree/Fair.v: lock_free",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=prop.terminated}{\\mathsf{terminated}\\,p \\iff p = (\\varnothing, \\{v\\} \\uplus E),\\ E \\subseteq \\{\\ast\\}} \\\\\n\\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}\\,p \\iff \\forall p'.\\ p \\htmlData{k=se.reach}{\\to^{*}} p' \\Rightarrow \\mathsf{terminated}\\,p' \\lor \\exists p''.\\ p' \\to p''} \\\\\n\\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}\\,p \\iff \\forall q.\\ p \\to^{*} q \\Rightarrow \\htmlData{k=se.acc}{\\mathsf{Acc}}\\ \\htmlData{k=prop.padmin}{\\to_{\\mathsf{admin}}}\\ q} \\\\\n\\htmlData{k=prop.lf}{\\begin{array}{l} \\mathsf{lock\\_free}\\,p \\iff \\forall \\htmlData{k=se.run}{(r, l) \\in \\mathsf{Run}}.\\ \\htmlData{k=se.r0}{\\htmlData{k=proc.erase}{\\mathsf{erase}}(r_0) = p} \\Rightarrow \\htmlData{k=prop.maximal}{\\mathsf{maximal}\\,r\\,l} \\Rightarrow \\htmlData{k=prop.wfair}{\\mathsf{wfair}\\,r\\,l} \\Rightarrow {} \\\\ \\qquad \\htmlData{k=prop.lfrun}{\\forall i\\,t.\\ \\htmlData{k=prop.pend}{\\mathsf{pend}(r_i, t)} \\Rightarrow \\exists j \\geq i.\\ t \\in \\htmlData{k=se.parts}{\\mathsf{parts}(l_j)}} \\end{array}}\n\\end{array}",
-     "caption": "Deadlock freedom, absence of internal divergence and lock freedom over weakly fair maximal runs $(r, l)$.",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=prop.terminated}{\\mathsf{terminated}\\,p \\iff p = (\\varnothing, \\{v\\} \\uplus E),\\ E \\subseteq \\{\\ast\\}} \\\\\n\\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}\\,p \\iff \\forall p'.\\ p \\htmlData{k=se.reach}{\\to^{*}} p' \\Rightarrow \\mathsf{terminated}\\,p' \\lor \\exists p''.\\ p' \\to p''}\n\\annraw{ \\\\ }\\annot{\\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}\\,p \\iff \\forall q.\\ p \\to^{*} q \\Rightarrow \\htmlData{k=se.acc}{\\mathsf{Acc}}\\ \\htmlData{k=prop.padmin}{\\to_{\\mathsf{admin}}}\\ q}}\n\\annraw{ \\\\ }\\annot{\\htmlData{k=prop.lf}{\\begin{array}{l} \\mathsf{lock\\_free}\\,p \\iff \\forall \\htmlData{k=se.run}{(r, l) \\in \\mathsf{Run}}.\\ \\htmlData{k=se.r0}{\\htmlData{k=proc.erase}{\\mathsf{erase}}(r_0) = p} \\Rightarrow \\htmlData{k=prop.maximal}{\\mathsf{maximal}\\,r\\,l} \\Rightarrow \\htmlData{k=prop.wfair}{\\mathsf{wfair}\\,r\\,l} \\Rightarrow {} \\\\ \\qquad \\htmlData{k=prop.lfrun}{\\forall i\\,t.\\ \\htmlData{k=prop.pend}{\\mathsf{pend}(r_i, t)} \\Rightarrow \\exists j \\geq i.\\ t \\in \\htmlData{k=se.parts}{\\mathsf{parts}(l_j)}} \\end{array}}}\n\\end{array}",
+     "caption": "A process is deadlock free when each reachable process has terminated or can step. \\annp{It has no internal divergence when no reachable process runs internal steps forever. It is lock free when, on each weakly fair maximal run, a waiting thread later takes part in a step.}",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "The theorems establish these properties for typed processes.",
+      "used": [
+       "th-adeq",
+       "th-sound"
+      ]
+     }
     }
    ]
   },
   {
    "id": "types",
    "title": "Types and worlds",
-   "intro": "\\annp{This section introduces types $T$, credits $a$, session types $S$ with $\\mathsf{unfold}$, $\\mathsf{dual}$, $\\simeq$ and $\\approx$, the sets $\\mathsf{heads}$ and the flag $\\mathsf{hbot}$, payloads, costs $c$ and ticket needs $\\vartheta$, the kinds $\\mathsf{unlimited}$ and $\\mathsf{tfree}$, and worlds $W$ with the order $\\prec_W$, the predicates $\\mathsf{world\\_wf}$, $\\mathsf{strict}$, $\\mathsf{wfworld}$, extension $\\sqsubseteq$ and join $\\sqcup$.} \\annp{Signatures name the sorts $\\mathsf{Ty}$ of types, $\\mathsf{STy}$ of session types, $\\mathsf{Tix}$ of ticket needs, $\\mathsf{LBound}$ of lower bounds and $\\mathsf{World}$ of worlds, and $X_{\\bot}$ adds an absent element to $X$.}",
+   "intro": "Types give each end a session type and a point. Worlds order the points, and typing and the relation read the order of one world. \\annp{Lock-free types add credits to ends and closures, and costs and ticket needs to arrows and judgments.}",
    "blocks": [
     {
      "id": "ty-grammar",
@@ -214,1002 +340,918 @@ window.MAP = {
      "variants": {
       "df": "\\begin{array}{rl} T, U ::= & \\htmlData{k=ty.unit}{\\ast} \\mid \\htmlData{k=ty.arrow}{T \\multimap^{\\htmlData{k=ty.arrow.ub}{u}}_{\\htmlData{k=ty.arrow.lb}{l}} U} \\mid \\htmlData{k=ty.prod}{T \\otimes U} \\mid \\htmlData{k=ty.sum}{T \\oplus U} \\mid \\htmlData{k=ty.sess}{S@x} \\\\ \\mid & \\htmlData{k=ty.box}{\\Box(\\forall \\htmlData{k=pt.var}{\\bar\\iota}\\, \\htmlData{k=ty.box.svars}{\\bar\\alpha}.\\ \\htmlData{k=ty.box.constraint}{C}.\\ \\ast \\multimap^{u} U)} \\mid \\htmlData{k=ty.ex}{\\exists^{\\htmlData{k=ty.ex.lb}{l}} \\bar\\iota.\\ C.\\ T} \\end{array}"
      },
-     "caption": "$S@x$ is an end at the point $x$. \\annp{Credits $a$ sit on ends and on closures, the two places where a value holds ends of its own.}",
+     "caption": "$S@x$ is an end with session type $S$ at the point $x$. An arrow has an upper point $u$ and a lower bound $l$, and a box quantifies over points and session types under a constraint $C$. \\annp{Credits $a$ appear on ends and on closures, the two kinds of value that hold ends themselves. \\annp{The credit of an end is a lower bound on its counter.} \\annp{The credit of a closure is a lower bound on its captured counters above the floor $h$.}}",
      "modes": [
       "df",
       "lf"
-     ]
-    },
-    {
-     "id": "ty-credit",
-     "title": "Credits",
-     "rocq": "types/Costs.v: fuel",
-     "modes": [
-      "lf"
      ],
-     "tex": "\\htmlData{k=ty.credit}{(S@x)\\annot{^{a}},\\ (T \\multimap U)\\annot{^{a}},\\ a \\in \\mathbb{N} \\cup \\{\\infty\\}}",
-     "caption": "The credit of an end bounds its counter from below, and the credit of a closure bounds the counters of the ends it captured above its floor. Pairs, sums, existentials and payloads carry no credit, their ends carry their own."
+     "about": {
+      "why": "A type says what a value is and, for an end, at which point it waits. \\annp{A credit bounds how long the thread holding an end may postpone it.}",
+      "used": [
+       "t-judgment",
+       "v-rel"
+      ]
+     }
     },
     {
      "id": "ty-session",
      "title": "Session types",
      "rocq": "types/Types.v: sty, unfoldS",
      "tex": "\\begin{array}{rl}\nS ::= & \\htmlData{k=sty.skip}{\\mathsf{Skip}} \\mid \\htmlData{k=sty.seq}{S.S} \\mid \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ T)} \\mid \\htmlData{k=sty.send}{!(\\bar\\iota.\\ T)} \\mid \\htmlData{k=sty.plus}{\\oplus(S_1, S_2)} \\\\\n\\mid & \\htmlData{k=sty.with}{\\&(S_1, S_2)} \\mid \\htmlData{k=sty.close}{\\mathsf{Close}} \\mid \\htmlData{k=sty.mu}{\\mu\\alpha.S} \\mid \\htmlData{k=sty.var}{\\alpha} \\mid \\htmlData{k=sty.vard}{\\overline{\\alpha}} \\qquad \\htmlData{k=sty.unfold}{\\mathsf{unfold}(S)}\n\\end{array}",
-     "caption": "Session types with sequencing $S.S$, read through $\\mathsf{unfold}(S)$, whose payloads bind point variables $\\bar\\iota$ at the fields of the carrier.",
+     "caption": "Session types with sequencing $S.S$ and recursion, read through $\\mathsf{unfold}(S)$. A payload binds point variables $\\bar\\iota$, which stand for the fields of the carrier.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "A session type describes the protocol of one end. The typing rules read its first action after unfolding recursion and leading $\\mathsf{Skip}$.",
+      "used": [
+       "ty-dual",
+       "r-act"
+      ]
+     }
     },
     {
      "id": "ty-dual",
      "title": "Duality",
      "rocq": "types/Types.v: dual, sflip",
      "tex": "\\htmlData{k=sty.dual}{\\begin{array}{l}\n\\mathsf{dual}(!P) = ?P \\qquad \\mathsf{dual}(?P) = !P \\qquad \\mathsf{dual}(\\alpha) = \\overline{\\alpha} \\\\\n\\mathsf{dual}(\\oplus(S_1,S_2)) = \\&(\\mathsf{dual}\\,S_1,\\mathsf{dual}\\,S_2) \\\\\n\\mathsf{dual}(S_1.S_2) = \\mathsf{dual}\\,S_1.\\mathsf{dual}\\,S_2 \\\\\n\\mathsf{dual}(\\mu\\alpha.S) = \\mu\\alpha.\\,\\htmlData{k=sty.flip}{\\mathsf{flip}_\\alpha}(\\mathsf{dual}\\,S)\n\\end{array}}",
-     "caption": "$\\mathsf{dual}$ keeps payloads $P$, $\\mathsf{Skip}$ and $\\mathsf{Close}$, and $\\overline{S} := \\mathsf{dual}\\,S$.",
+     "caption": "$\\mathsf{dual}$ swaps sending and receiving and keeps payloads, $\\mathsf{Skip}$ and $\\mathsf{Close}$. We write $\\overline{S}$ for $\\mathsf{dual}\\,S$.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "The two ends of a channel follow dual protocols. Creation, linking and composition check duality.",
+      "used": [
+       "r-new",
+       "r-act",
+       "p-typing"
+      ]
+     }
     },
     {
      "id": "ty-equiv",
      "title": "Session equivalence",
      "rocq": "types/Types.v: sequiv, relation/Relation.v: seqv, sdual",
      "tex": "\\begin{array}{l}\n\\htmlData{k=sty.sequiv}{S \\simeq S'} \\qquad \\htmlData{k=sty.seqv}{S \\approx S' \\iff \\htmlData{k=ty2.stydf}{\\mathsf{sty\\_df}}(S) \\simeq \\mathsf{sty\\_df}(S')} \\\\\n\\htmlData{k=sty.sdual}{\\mathsf{sdual}\\,S\\,S' \\iff S' \\approx \\mathsf{dual}\\,S}\n\\end{array}",
-     "caption": "Equivalence $\\simeq$ by behaviour, $\\approx$ the same after erasing annotations, and $\\mathsf{sdual}$ duality up to annotations.",
+     "caption": "$S \\simeq S'$ when the two session types describe the same protocol. $\\approx$ is $\\simeq$ after erasing annotations, and $\\mathsf{sdual}$ is duality up to annotations.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "With recursion and $\\mathsf{Skip}$ one protocol has many spellings, and the rules compare session types up to $\\simeq$.",
+      "used": [
+       "t-subs",
+       "v-rel"
+      ]
+     }
     },
     {
      "id": "ty-heads",
-     "title": "Heads, bottom flag, lower bounds",
+     "title": "Heads and lower bounds",
      "rocq": "types/Types.v: heads, hbot, types/Points.v: lbound",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=ty.heads}{\\mathsf{heads}(S@x) = \\{\\overline{x}\\} \\quad \\mathsf{heads}(T \\multimap_{l} U) = \\{l\\} \\quad \\mathsf{heads}(\\exists^{l}) = \\{l\\} \\quad \\mathsf{heads}(\\Box\\ldots) = \\varnothing} \\\\\n\\htmlData{k=ty.hbot}{\\mathsf{hbot}(T)} \\qquad \\htmlData{k=ty.lbound}{l ::= \\cdot \\mid \\bot \\mid x}\n\\end{array}",
-     "caption": "$\\mathsf{heads}(T)$ are the partner points a holder of a value of $T$ stays below while it waits, and $\\mathsf{hbot}(T)$ marks hidden ends.",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=ty.heads}{\\mathsf{heads}(S@x) = \\{\\overline{x}\\} \\quad \\mathsf{heads}(T \\multimap_{l} U) = \\mathsf{heads}(\\exists^{l}\\ldots) = \\{l\\} \\setminus \\{\\cdot\\} \\quad \\mathsf{heads}(\\Box\\ldots) = \\varnothing} \\\\\n\\htmlData{k=ty.lbound}{l ::= \\cdot \\mid \\bot \\mid x} \\qquad \\htmlData{k=ty.botord}{\\Gamma \\nvdash x \\prec \\bot \\quad \\Gamma \\nvdash \\bot \\preccurlyeq y}\n\\end{array}",
+     "caption": "$\\mathsf{heads}(T)$ is the set of dual points of the ends in a value of $T$. A thread holding such a value may wait only below these points. Hidden ends contribute $\\bot$, which no fact orders against a point, so a check against a value with hidden ends fails.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "A thread that waits while it holds a value must wait below the dual points of the ends in that value, and $\\mathsf{heads}$ computes these points from the type.",
+      "used": [
+       "t-side",
+       "t-judgment",
+       "r-fun",
+       "r-ex"
+      ]
+     }
     },
     {
      "id": "ty-payload",
      "title": "Payloads",
      "rocq": "types/Types.v: payload_at, pscoped",
      "tex": "\\begin{array}{l}\n\\htmlData{k=ty.payload-at}{\\mathsf{payload\\_at}\\,m\\,T\\,x = T[x\\cdot 0, \\ldots, x\\cdot(m{-}1) / \\iota_0, \\ldots, \\iota_{m-1}]} \\\\\n\\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\n\\end{array}",
-     "caption": "A payload $!(\\bar\\iota.\\,T)$ mentions only its own point variables $\\bar\\iota = \\iota_0, \\ldots, \\iota_{m-1}$, placed at the fields $x\\cdot 0, \\ldots, x\\cdot(m{-}1)$ of the carrier point $x$.",
+     "caption": "A payload $!(\\bar\\iota.\\,T)$ mentions only its own point variables $\\iota_0, \\ldots, \\iota_{m-1}$. A message at the carrier point $x$ places them at the fields $x\\cdot 0, \\ldots, x\\cdot(m{-}1)$.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "A payload is described relative to the end that sends it, so one session type serves each point the end may have.",
+      "used": [
+       "r-act",
+       "e-obl"
+      ]
+     }
     },
     {
-     "id": "ty-annot",
-     "title": "Annotation values",
-     "rocq": "types/Costs.v: fuel",
+     "id": "ty-ann",
+     "title": "Annotations and ticket needs",
      "modes": [
       "lf"
      ],
-     "tex": "\\htmlData{k=ann.fuel}{a, c, h, N \\in \\mathbb{N} \\cup \\{\\infty\\} \\qquad \\infty - c = \\infty}",
-     "caption": "Credits $a$, costs $c$, floors $h$ and the refill $N$ are numbers, and $\\infty$ means unbounded."
-    },
-    {
-     "id": "ty-tix",
-     "title": "Ticket needs",
-     "rocq": "types/Costs.v: tix, tapp, tid, meets",
-     "modes": [
-      "lf"
-     ],
-     "tex": "\\begin{array}{l}\n\\htmlData{k=ann.tix}{\\vartheta = (s, b) \\qquad \\vartheta(r) = 2^{s}\\, r + b} \\qquad \\htmlData{k=ann.tid}{\\hat 1 = (0, 0),\\ \\hat 1(r) = r} \\\\\n\\htmlData{k=ann.meets}{\\mathsf{meets}\\,\\vartheta\\,r\\,tk \\iff \\vartheta(r) \\leq tk}\n\\end{array}",
-     "caption": "A term that must leave $r$ link tickets over needs $\\vartheta(r)$ tickets when it starts. A thread with $tk$ tickets runs it if $\\mathsf{meets}\\,\\vartheta\\,r\\,tk$."
-    },
-    {
-     "id": "ty-tix-ops",
-     "title": "Combining ticket needs",
-     "rocq": "types/Costs.v: tlink, tspawn, tseq, tok",
-     "modes": [
-      "lf"
-     ],
-     "tex": "\\begin{array}{l}\n\\htmlData{k=ann.tlink}{\\mathsf{tlink}\\,(s, b) = (s, b + 1)} \\qquad \\htmlData{k=ann.tseq}{(\\vartheta_1 \\circ \\vartheta_2)(r) = \\vartheta_1(\\vartheta_2(r))} \\\\\n\\htmlData{k=ann.tspawn}{\\mathsf{tspawn}\\,b_c\\,(s, b) = (s + 1, \\max(2b, 2b_c - 1))} \\qquad \\htmlData{k=ann.tok}{\\mathsf{tok}\\,\\vartheta_1\\,\\vartheta_2}\n\\end{array}",
-     "caption": "The typing rules build the need of a term from the needs of its parts. A link adds one, a spawn doubles the rest, sequencing composes, and $\\mathsf{tok}$ says when a composition is again a pair."
-    },
-    {
-     "id": "ty-df",
-     "title": "Deadlock-free typing as an instance",
-     "rocq": "types/Types.v: ty_df, cr_df",
-     "modes": [
-      "lf"
-     ],
-     "tex": "\\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}:\\quad a = c = h = N = \\infty \\qquad \\vartheta = (\\infty, \\infty)}",
-     "caption": "Deadlock-free typing is the annotated typing with every annotation at its unbounded value. $\\mathsf{ty\\_df}$ sets a type to these values, and then every premise about annotations holds."
+     "rocq": "types/Costs.v: fuel; types/Costs.v: tix, tapp, tid, meets; types/Costs.v: tlink, tspawn, tseq, tok; types/Types.v: ty_df, cr_df",
+     "tex": "\\begin{array}{c}\\htmlData{k=ann.fuel}{a, c, h, N \\in \\mathbb{N} \\cup \\{\\infty\\} \\qquad \\infty - c = \\infty}\\\\[3ex]\\begin{array}{l}\n\\htmlData{k=ann.tix}{\\vartheta = (s, b) \\qquad \\vartheta(r) = 2^{s}\\, r + b} \\qquad \\htmlData{k=ann.tid}{\\hat 1 = (0, 0),\\ \\hat 1(r) = r} \\\\\n\\htmlData{k=ann.meets}{\\vartheta(r) \\leq tk} \\quad \\text{false when } \\vartheta(r) = \\infty\n\\end{array}\\\\[3ex]\\begin{array}{l}\n\\htmlData{k=ann.tlink}{\\mathsf{tlink}\\,(s, b) = (s, b + 1)} \\qquad \\htmlData{k=ann.tseq}{(\\vartheta_1 \\circ \\vartheta_2)(r) = \\vartheta_1(\\vartheta_2(r))} \\\\\n\\htmlData{k=ann.tspawn}{\\mathsf{tspawn}\\,b_c\\,(s, b) = (s + 1, \\max(2b, 2b_c - 1))} \\qquad \\htmlData{k=ann.tok}{\\mathsf{tok}\\,\\vartheta_1\\,\\vartheta_2}\n\\end{array}\\\\[3ex]\\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}:\\quad a = c = h = N = \\infty \\qquad \\vartheta = (\\infty, \\infty)}\\end{array}",
+     "caption": "Credits $a$, costs $c$, floors $h$ and the counter bound $N$ are numbers or $\\infty$. A term that must keep $r$ link tickets needs $\\vartheta(r)$ tickets when it starts, and $tk$ tickets suffice when $\\vartheta(r) \\leq tk$. A link adds one to the need, a spawn doubles the rest, and sequencing composes needs. With every annotation at $\\infty$, written $\\mathsf{ty\\_df}$, lock-free typing is deadlock-free typing.",
+     "about": {
+      "why": "These are the numbers lock-free typing adds to types and judgments. At $\\infty$ each premise about them holds.",
+      "used": [
+       "t-agecap",
+       "r-act",
+       "r-threads",
+       "p-typing",
+       "t-judgment",
+       "th-conserv",
+       "th-terms"
+      ]
+     }
     },
     {
      "id": "ty-kinds",
      "title": "Kinds of types",
      "rocq": "types/Types.v: unlimited, tfree",
      "tex": "\\begin{array}{l}\n\\htmlData{k=ty.tfree}{\\mathsf{tfree}\\,T ::= \\ast \\mid \\Box\\ldots \\mid \\mathsf{tfree} \\otimes \\mathsf{tfree} \\mid \\mathsf{tfree} \\oplus \\mathsf{tfree}} \\\\\n\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,T \\iff T = \\Box\\ldots}\n\\end{array}",
-     "caption": "$\\mathsf{tfree}$ is the shape of a process result, the types whose values hold no end, and $\\mathsf{unlimited}$ the types that admit weakening and contraction.",
+     "caption": "$\\mathsf{tfree}\\,T$ holds for the types whose values hold no end, and P-Term asks it of the result type of a process. $\\mathsf{unlimited}\\,T$ holds for the types that may be copied and dropped.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "Process results hold no end, only unlimited types may be copied or dropped, and values without ends do not age.",
+      "used": [
+       "p-typing",
+       "t-subs",
+       "t-agecap"
+      ]
+     }
     },
     {
      "id": "w-world",
      "title": "Worlds",
      "rocq": "types/Worlds.v: world",
      "tex": "\\htmlData{k=w.world}{W = (\\htmlData{k=w.consts}{A}, \\htmlData{k=w.facts}{\\prec_A})}",
-     "caption": "A world $W$ has roots $A$ and facts $\\prec_A$ between points with roots in $A$.",
+     "caption": "A world $W$ has a set of roots $A$ and facts $\\prec_A$ between points with roots in $A$.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "Typing and the relation read the order of one world. Each creation adds roots and facts.",
+      "used": [
+       "w-order",
+       "w-ext",
+       "p-typing"
+      ]
+     }
     },
     {
      "id": "w-order",
      "title": "The order of a world",
      "rocq": "types/Worlds.v: wstep, w_lt",
      "tex": "\\begin{array}{l}\n\\htmlData{k=w.lt}{\\begin{array}{l} \\prec_W\\ =\\ \\mathsf{tc}\\big(\\htmlData{k=w.ws-fact}{\\prec_A} \\\\ \\qquad\\qquad \\cup\\; \\htmlData{k=w.ws-po}{\\{x \\prec x^{+}\\}} \\;\\cup\\; \\htmlData{k=w.ws-dpo}{\\{x \\prec \\overline{x}^{+}\\}}\\big) \\end{array}} \\\\\n\\htmlData{k=ty2.le}{x \\preceq y \\iff x = y \\lor x \\prec_W y}\n\\end{array}",
-     "caption": "$\\prec_W$ is the transitive closure $\\mathsf{tc}$ of the facts, $x \\prec x^{+}$ and $x \\prec \\overline{x}^{+}$.",
+     "caption": "$\\prec_W$ is the transitive closure $\\mathsf{tc}$ of the facts together with $x \\prec x^{+}$ and $x \\prec \\overline{x}^{+}$.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "Besides the stated facts, the order says that an end moves up as its protocol advances.",
+      "used": [
+       "t-contexts",
+       "rd"
+      ]
+     }
     },
     {
      "id": "w-wf",
      "title": "Well-formed, strict and well-founded worlds",
      "rocq": "types/Worlds.v: world_wf, strict, wfworld",
      "tex": "\\begin{array}{l}\n\\htmlData{k=w.wf}{\\mathsf{world\\_wf}\\,W} \\\\\n\\htmlData{k=w.strict}{\\mathsf{strict}\\,W \\iff \\mathsf{world\\_wf}\\,W \\land \\forall x.\\ W \\nvdash x \\prec x} \\\\\n\\htmlData{k=w.lfworld}{\\mathsf{wfworld}\\,W \\iff \\prec_W \\text{ is well-founded}}\n\\end{array}",
-     "caption": "$\\mathsf{strict}\\,W$ is asked by every result, $\\mathsf{wfworld}\\,W$ in addition by lock freedom.",
+     "caption": "Each result asks for a strict world. \\annp{Lock freedom also asks for a well-founded one.}",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "In a cyclic order two threads waiting on each other would both count as ready, so the results ask for strict worlds. \\annp{Lock-free adequacy proceeds by induction along the order, which needs well-foundedness.}",
+      "used": [
+       "p-typing",
+       "th-sound",
+       "th-adeq"
+      ]
+     }
     },
     {
      "id": "w-ext",
      "title": "Extension, growth, join, restriction",
      "rocq": "types/Worlds.v: wext, wjoin, wrestrict, strict_join_iff",
      "tex": "\\begin{array}{l}\n\\htmlData{k=w.ext}{W \\sqsubseteq W'} \\qquad \\htmlData{k=w.grow}{W \\oplus C = (A \\cup \\mathsf{roots}(C),\\ \\prec_A \\cup\\, C)} \\qquad \\htmlData{k=w.join}{W_1 \\sqcup W_2} \\\\\n\\htmlData{k=w.R7}{\\begin{array}{l} \\mathsf{strict}(W_1 \\sqcup W_2) \\iff {} \\\\ \\qquad \\mathsf{strict}\\,W_1 \\land \\mathsf{strict}\\,W_2 \\land \\mathsf{strict}(\\htmlData{k=w.restrict}{W_1|_S} \\sqcup W_2|_S),\\ S = A_1 \\cap A_2 \\end{array}}\n\\end{array}",
-     "caption": "Extension $\\sqsubseteq$, growth $W \\oplus C$ by the facts of a creation, the join $\\sqcup$, and strictness of a join decided on the shared constants $S = A_1 \\cap A_2$.",
+     "caption": "Extension $\\sqsubseteq$, growth $W \\oplus C$ by the facts of a creation, and the join $\\sqcup$. A join is strict when both worlds are and their restrictions to the shared roots $S = A_1 \\cap A_2$ join strictly.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "Worlds grow during a run, and the relation holds in each larger world. Composition joins two worlds and checks only their shared roots.",
+      "used": [
+       "p-typing",
+       "v-rel",
+       "e-rel",
+       "p-rel"
+      ]
+     }
     }
    ]
   },
   {
    "id": "typing",
    "title": "Typing",
-   "intro": "\\annp{This section introduces the typing judgment $\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}$, its contexts $\\Theta$, $\\Gamma$, $\\Delta$ and the future $F$, the side conditions on points, aging $\\Gamma - c$ and capture of credits, subtyping, one rule per term former, the process judgment $\\Sigma \\vdash\\annot{\\annot{^{N}}}_{W} p : T$ with the rules P-Term and P-Connect, the lock-free judgment $\\Sigma \\Vdash^{N}_{W} p : T$, and the guard $\\Lambda \\vdash\\!\\triangleright t$.} Deadlock-free typing is the instance $N = \\infty$ with every annotation erased, live typing adds the guard, and lock-free typing takes $N \\in \\mathbb{N}$ and the guard.",
+   "intro": "The typing judgment assigns each term a type under a context of facts, ends and variables, and a future, the points at which the context acts after the term. Its rules check the order facts a thread needs when it waits. Process typing builds processes from typed threads. \\annp{Lock-free typing adds credits, costs and ticket needs at a finite counter bound $N$, and the guard.}",
    "blocks": [
     {
+     "id": "t-lf-credits",
+     "title": "Credits",
+     "rocq": "types/Types.v: TSess, TLolli; static/Contexts.v: tage, tcap; static/Typing.v: e_send, e_spawn_lam, e_spawn",
+     "modes": [
+      "lf"
+     ],
+     "tex": "\\begin{array}{lll}\\htmlData{k=lfi.credit}{\\text{credit}} & \\htmlData{k=ty.credit}{(S@x)\\annot{^{a}},\\ (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} U)\\annot{^{a}}} & \\text{a lower bound on the counter of an end, or of the ends a closure captured} \\\\[3pt] \\htmlData{k=lfi.cost}{\\text{cost}} & \\htmlData{k=tj.eff}{e : T\\ !\\ (c, \\vartheta)} & \\text{the term performs at most $c$ actions before it returns} \\\\[3pt]  & \\htmlData{k=age.ctx}{\\Delta - c} & \\text{what is held while $e$ runs loses $c$, and each credit must be at least $c$} \\\\[3pt]  & \\htmlData{k=age.idle}{(\\mathsf{Skip}@x)\\annot{^{a}} - c} & \\text{an idle end loses credit without the check} \\\\[3pt]  & \\htmlData{k=act.refill}{(S@x^{+})\\annot{^{N}}} & \\text{an action returns its end with credit $N$} \\\\[3pt] \\htmlData{k=lfi.floor}{\\text{floor}} & \\htmlData{k=ty.arrow.floor}{T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[\\varepsilon ; h]\\, U} & \\text{the body of a closure may assume credit $h$ of each captured end} \\\\[3pt] \\htmlData{k=lfi.hop}{\\text{transfer}} & \\htmlData{k=E-Send.floor}{T' - 1 \\leq T[x\\cdot i]} & \\text{a sent end loses one} \\\\[3pt]  & \\htmlData{k=E-SpawnLam.age}{\\Delta - 1},\\ \\htmlData{k=E-Spawn.credit}{a \\geq 1} & \\text{the ends a spawn transfers to the child lose one}\\end{array}",
+     "caption": "Each end has a counter at run time, the number of actions the thread holding it may perform on other ends before it must act on this end. A credit is a lower bound on that counter, so the holding thread postpones an end only finitely often. Aging lowers the credits of held values by the cost of the code that runs, an action restores its own end to $N$, and transferring an end to another thread lowers its credit by one.",
+     "about": {
+      "why": "Credits rule out a holding thread that acts on other ends forever while a partner waits, and an end that is passed between threads forever.",
+      "example": "Postponement and endless delegation in the Examples tab have no lock-free typing.",
+      "used": [
+       "t-agecap",
+       "r-fun",
+       "r-act",
+       "r-threads",
+       "fv"
+      ]
+     }
+    },
+    {
+     "id": "t-lf-tickets",
+     "title": "Tickets",
+     "rocq": "types/Costs.v: tix, tapp, tlink, tspawn, tseq, tok; static/Typing.v: e_link, p_term",
+     "modes": [
+      "lf"
+     ],
+     "tex": "\\begin{array}{lll}\\htmlData{k=lfi.tickets}{\\text{need}} & \\htmlData{k=ann.tix}{\\vartheta = (s, b),\\ \\ \\vartheta(r) = 2^{s} r + b} & \\text{the tickets a term needs at its start to keep $r$ tickets at its end} \\\\[3pt]  & \\htmlData{k=ann.meets}{\\vartheta(r) \\leq tk} & \\text{$tk$ tickets suffice} \\\\[3pt]  & \\htmlData{k=ann.tlink}{\\mathsf{tlink}\\,(s, b) = (s, b + 1)} & \\text{a link uses one ticket} \\\\[3pt]  & \\htmlData{k=ann.tspawn}{\\mathsf{tspawn}\\,b_c\\,(s, b)} & \\text{a spawn gives the child half the tickets, so the need doubles} \\\\[3pt]  & \\htmlData{k=tj.seq}{\\varepsilon_1 \\cdot \\varepsilon_2} & \\text{sequencing composes needs, and is defined when the result is again a pair} \\\\[3pt]  & \\htmlData{k=lf.meets}{N \\in \\mathbb{N} \\Rightarrow \\vartheta(0) \\in \\mathbb{N}} & \\text{P-Term requires a finite need for each thread}\\end{array}",
+     "caption": "Each thread has a number of link tickets, a link uses one, and no step creates tickets. A ticket need $\\vartheta$ says how many tickets a term needs, and P-Term requires the need of each thread to be finite. A thread therefore performs finitely many links.",
+     "about": {
+      "why": "A link acts on no end, so counters do not bound links, and a link gives the waiting thread a new dual end with a full counter. Tickets rule out a thread that relinks forever.",
+      "example": "Link refresh in the Examples tab has no lock-free typing.",
+      "used": [
+       "r-act",
+       "r-threads",
+       "p-typing",
+       "ty-ann"
+      ]
+     }
+    },
+    {
+     "id": "t-lf-guard",
+     "title": "The guard",
+     "rocq": "static/Guard.v: lguard, acts",
+     "modes": [
+      "lf"
+     ],
+     "tex": "\\begin{array}{lll}\\htmlData{k=lfi.guard}{\\text{guard}} & \\htmlData{k=guard.judg}{\\Lambda \\vdash\\!\\triangleright t} & \\text{$t$ uses the variable of a box only after a session action} \\\\[3pt]  & \\htmlData{k=guard.box}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}}\\ !b \\iff \\htmlData{k=guard.marks}{\\mathsf{true}}.\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} b} & \\text{a box marks its own variable} \\\\[3pt]  & \\htmlData{k=guard.var}{\\Lambda(y) = \\htmlData{k=guard.marks}{\\mathsf{false}}} & \\text{a marked variable cannot be used} \\\\[3pt]  & \\htmlData{k=guard.acts}{\\mathsf{acts}\\,e} & \\text{each evaluation of $e$ to a value performs a session action, after which the marks are cleared} \\\\[3pt]  & \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p} & \\text{each thread of the process is guarded}\\end{array}",
+     "caption": "Internal steps ($\\beta$, $\\mathsf{new}$, $\\mathsf{spawn}$, $\\mathsf{link}$) change no counter. The guard requires each recursive call to come after a session action, so a thread cannot take internal steps forever.",
+     "about": {
+      "why": "A loop made only of internal steps runs forever without acting with any other thread. Deadlock freedom allows such a loop and lock freedom does not.",
+      "example": "Guard rejections in the Examples tab, such as $!(f = \\mathsf{force}\\,f)$.",
+      "used": [
+       "g-guard",
+       "p-typing"
+      ]
+     }
+    },
+    {
+     "id": "t-lf-wf",
+     "title": "A well-founded world",
+     "rocq": "types/Worlds.v: wfworld; soup/LFAdequacy.v: lf_adequacy",
+     "modes": [
+      "lf"
+     ],
+     "tex": "\\begin{array}{lll}\\htmlData{k=lfi.wf}{\\text{well-founded}} & \\htmlData{k=w.lfworld}{\\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\iff \\prec_W \\text{ is well-founded}} & \\text{the order has no infinite descending chain} \\\\[3pt]  & \\htmlData{k=th.wfworld}{\\mathsf{wfworld}\\,W} & \\text{a premise of lock-free soundness, which no typing rule checks}\\end{array}",
+     "caption": "A waiting thread waits on the thread holding its dual end, which may itself wait at a lower point. In a well-founded order this chain of waits ends, and the thread at its bottom can act.",
+     "about": {
+      "why": "It rules out a chain of waiting threads that grows forever, each waiting below the previous one.",
+      "example": "The growing waiting chain in the Examples tab is outside lock-free soundness.",
+      "used": [
+       "th-sound",
+       "th-adeq",
+       "w-wf"
+      ]
+     }
+    },
+    {
      "id": "t-judgment",
-     "title": "The merged judgment",
+     "title": "The typing judgment",
      "rocq": "static/Typing.v: typed, dftyped",
-     "tex": "\\htmlData{k=tj.Theta}{\\Theta} ; \\htmlData{k=tj.Gamma}{\\Gamma} ; \\htmlData{k=tj.Delta}{\\Delta} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=tj.F}{F}}_{\\htmlData{k=tj.W}{W},\\annot{\\htmlData{k=tj.N}{N}}} e : T\\annot{^{\\htmlData{k=ty.credit}{a}}} \\mathbin{\\annot{\\htmlData{k=tp.tri}{\\triangleright}}} \\annot{\\htmlData{k=tj.cost}{c}} ; \\annot{\\htmlData{k=tj.tix}{\\vartheta}}",
-     "variants": {
-      "df": "\\htmlData{k=tj.Theta}{\\Theta} ; \\htmlData{k=tj.Gamma}{\\Gamma} ; \\htmlData{k=tj.Delta}{\\Delta} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=tj.F}{F}}_{\\htmlData{k=tj.W}{W}} t : T \\qquad \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t}"
-     },
-     "caption": "\\annp{$\\Theta$ maps ends, $\\Gamma$ holds facts, $\\Delta$ variables, $F$ is the future, $N$ the refill, $c$ the cost and $\\vartheta$ the ticket need.}",
+     "tex": "\\begin{array}{l}\\htmlData{k=tj.Gamma}{\\Gamma} ; \\htmlData{k=tj.Delta}{\\Delta} \\htmlData{k=tj.held}{\\parallel H} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=tj.F}{F}} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon} \\\\ \\htmlData{k=tj.held}{\\Delta \\parallel H \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e\\ \\ \\equiv\\ \\ \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(H)} e}\\annot{\\ \\land\\ \\htmlData{k=tj.hage}{H - c}\\ \\text{defined}} \\\\ \\htmlData{k=tj.W}{W}\\annot{,\\ \\htmlData{k=tj.N}{N}}\\ \\text{fixed for a whole derivation}\\annraw{ \\\\ }\\annot{\\htmlData{k=tj.eff}{\\varepsilon = (c, \\vartheta)} \\qquad \\htmlData{k=tj.seq}{\\varepsilon_1 \\cdot \\varepsilon_2 = (c_1 + c_2,\\ \\vartheta_1 \\circ \\vartheta_2)\\ \\text{if}\\ \\htmlData{k=ann.tok}{\\mathsf{tok}}\\,\\vartheta_1\\,\\vartheta_2}}\\annraw{ \\\\ }\\annot{\\htmlData{k=tj.zero}{0 = (0, \\hat 1)} \\qquad \\htmlData{k=tj.one}{1 = (1, \\hat 1)} \\qquad \\htmlData{k=tp.max}{\\max(\\varepsilon_1, \\varepsilon_2)} \\qquad \\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}",
+     "caption": "$\\Gamma$ holds facts, $\\Delta$ the ends and variables, and $F$ is the future. $\\parallel H$ names what the thread holds while $e$ runs. \\annp{The world $W$ and the counter bound $N$ are fixed for a derivation, and $\\varepsilon$ is the effect of $e$.}",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "Several rules run one subterm while the thread holds the values of others. $\\parallel H$ states once what these rules need, the future of the running subterm \\annp{and the aging of the held values}.",
+      "example": "E-App runs $e_1$ while holding $\\Delta_2$, written $\\Gamma ; \\Delta_1 \\parallel \\Delta_2 \\vdash^{F} e_1 : \\ldots$",
+      "used": [
+       "r-fun",
+       "r-data"
+      ]
+     }
     },
     {
      "id": "t-contexts",
      "title": "Contexts and the fact theory",
      "rocq": "static/Contexts.v: tentry, tsplit, lenv_split, hctx, fl, sfuture",
-     "tex": "\\begin{array}{l}\\htmlData{k=tj.Theta}{\\Theta : o \\mapsto S@x\\annot{^{a}}} \\qquad \\htmlData{k=ctx.tsplit}{\\Theta = \\Theta_1 \\uplus \\Theta_2} \\qquad \\htmlData{k=ctx.lsplit}{\\Delta = \\Delta_1 \\sqcup \\Delta_2} \\\\ \\htmlData{k=tj.Gamma}{\\Gamma = (\\htmlData{k=ctx.hyps}{(C, \\bar x)^{*}}, \\htmlData{k=ctx.fvar}{\\varphi \\mapsto u})} \\qquad \\htmlData{k=ctx.slt}{\\Gamma \\vdash x \\prec y} \\\\ \\htmlData{k=tj.F}{F = (X, \\htmlData{k=ctx.fvarF}{\\varphi} \\mid \\htmlData{k=ctx.bot}{\\bot})}\\end{array}",
-     "caption": "Every order fact a rule reads is a judgment $\\Gamma \\vdash x \\prec y$, the least transitive relation containing $\\prec_W$, the facts $C[\\bar x]$ of the instances in $\\Gamma$, and $u \\prec \\varphi$ for every $\\varphi \\mapsto u$ in $\\Gamma$.",
+     "tex": "\\begin{array}{l}\\htmlData{k=tj.Delta}{\\Delta : o \\mapsto (S@x)\\annot{\\annot{^{a}}},\\ i \\mapsto T} \\qquad \\htmlData{k=ctx.lsplit}{\\Delta = \\Delta_1, \\Delta_2} \\\\ \\htmlData{k=tj.Gamma}{\\Gamma = (\\htmlData{k=ctx.hyps}{(C, \\bar x)^{*}}, \\htmlData{k=ctx.fvar}{\\varphi \\mapsto u})} \\qquad \\htmlData{k=ctx.slt}{\\Gamma \\vdash x \\prec y} \\\\ \\htmlData{k=tj.F}{F = (X, \\htmlData{k=ctx.fvarF}{\\varphi} \\mid \\htmlData{k=ctx.bot}{\\bot})}\\end{array}",
+     "caption": "The rules read order facts only through $\\Gamma \\vdash x \\prec y$. It is the least transitive relation containing $\\prec_W$, the facts $C[\\bar x]$ of the instances in $\\Gamma$, and $u \\prec \\varphi$ for the future variables $\\varphi \\mapsto u$ in $\\Gamma$.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "The rules split $\\Delta$ between subterms and extend $\\Gamma$ under boxes and existentials. The block defines the two contexts and the order judgment $\\Gamma \\vdash x \\prec y$.",
+      "used": [
+       "t-side",
+       "r-fun",
+       "r-boxes",
+       "r-ex"
+      ]
+     }
     },
     {
      "id": "t-side",
      "title": "Side conditions on points",
      "rocq": "static/Contexts.v: ub_below_s, lbx_below_h, lbound_of, hold_at",
-     "tex": "\\begin{array}{l}\\htmlData{k=side.ub}{u \\prec F \\iff \\forall y \\in X.\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} u \\prec y,\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} u \\prec \\varphi,\\ \\neg\\bot} \\\\ \\htmlData{k=side.lb}{l \\preccurlyeq H \\text{ and } \\neg\\bot} \\qquad \\htmlData{k=side.hold}{\\Gamma \\vdash C[\\bar x]}\\end{array}",
-     "caption": "$u \\prec F$ states that $u$ lies below every point of $F$, $l \\preccurlyeq H$ that $l$ lies at or below every point of $H$, and $\\Gamma \\vdash C[\\bar x]$ that every fact of $C$ at $\\bar x$ is derivable.",
+     "tex": "\\begin{array}{l}\\htmlData{k=side.ub}{u \\prec F \\iff \\forall y \\in X.\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} u \\prec y,\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} u \\prec \\varphi,\\ \\neg\\bot} \\\\ \\htmlData{k=E-Send.heads}{x \\prec T \\iff \\forall y \\in \\htmlData{k=ty.heads}{\\mathsf{heads}}(T).\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec y} \\qquad \\htmlData{k=side.lb}{l \\preccurlyeq \\Delta \\iff \\forall y \\in \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Delta).\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} l \\preccurlyeq y} \\qquad \\htmlData{k=side.hold}{\\Gamma \\vdash C[\\bar x]}\\end{array}",
+     "caption": "$u \\prec F$ says that $u$ lies below the points of $F$. $x \\prec T$ says that $x$ lies below the dual points of the ends in $T$. $l \\preccurlyeq \\Delta$ says that $l$ lies at or below the dual points of $\\Delta$, and $\\Gamma \\vdash C[\\bar x]$ that the facts of $C$ at $\\bar x$ are derivable.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "These are the order checks of typing. A term never waits above a point at which its context acts later, and a thread waits only below the dual points of the values it holds.",
+      "breaks": "Without them the type system is plain GV and the cycle of two threads closing two channels in opposite orders types.",
+      "used": [
+       "r-fun",
+       "r-act",
+       "r-boxes",
+       "r-ex"
+      ]
+     }
     },
     {
-     "id": "t-age",
-     "title": "Aging $\\Gamma - c$",
-     "rocq": "static/Contexts.v: tage, lage, thage, types/Types.v: idle",
+     "id": "t-agecap",
+     "title": "Aging and capture",
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=age.free}{\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T}\\end{array}}{(T, a) - c = (T, a)}\\;\\textsf{Age-Free} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=age.credit}{c \\leq a}\\end{array}}{(T, a) - c = (T, a - c)}\\;\\textsf{Age-Credit} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=age.idle}{\\htmlData{k=fu.idle}{\\mathsf{idle}}\\,S}\\end{array}}{(S@x, a) - c = (S@x, \\max(a - c, 0))}\\;\\textsf{Age-Idle} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=age.agg}{(T_i, a + a_i) - c = (T_i', a_i')}\\end{array}}{(T_1\\annot{^{a_1}} \\otimes T_2\\annot{^{a_2}}, a) - c = (T_1'\\annot{^{a_1'}} \\otimes T_2'\\annot{^{a_2'}}, 0)}\\;\\textsf{Age-Agg}\\end{array}",
-     "caption": "$(T, a) - c$ lowers every credit by $c$, asks $c \\leq a$ of every end that is not idle, and keeps entries with $\\mathsf{tfree}\\,T$."
+     "rocq": "static/Contexts.v: tage, lage, thage, types/Types.v: idle; static/Contexts.v: tcap, thcap",
+     "tex": "\\begin{array}{c}\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=age.free}{\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T}\\end{array}}{T - c = T}\\;\\textsf{Age-Free} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=age.credit}{c \\leq a}\\end{array}}{(S@x)\\annot{^{a}} - c = (S@x)^{a - c}}\\;\\textsf{Age-Credit} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=age.idle}{\\htmlData{k=fu.idle}{\\mathsf{idle}}\\,S}\\end{array}}{(S@x)\\annot{^{a}} - c = (S@x)^{\\max(a - c, 0)}}\\;\\textsf{Age-Idle} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=age.credit}{c \\leq a}\\end{array}}{(T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} U)\\annot{^{a}} - c = (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} U)^{a - c}}\\;\\textsf{Age-Arr} \\\\[2ex] \\htmlData{k=age.agg}{(T_1 \\otimes T_2) - c = (T_1 - c) \\otimes (T_2 - c) \\qquad (T_1 \\oplus T_2) - c = (T_1 - c) \\oplus (T_2 - c) \\qquad (\\exists^{l}\\bar\\iota.\\,C.\\,T) - c = \\exists^{l}\\bar\\iota.\\,C.\\,(T - c)}\\end{array}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=cap.sess}{h + a \\leq a_0}\\end{array}}{(S@x)\\annot{^{a_0}} \\leadsto_{h,a} (S@x)^{h}}\\;\\textsf{Cap-Sess} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=cap.arr}{h_0 \\leq h \\quad h + a \\leq h_0 + a_0}\\end{array}}{(T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[\\varepsilon;h_0] U)\\annot{^{a_0}} \\leadsto_{h,a} (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[\\varepsilon;h_0] U)^{h - h_0}}\\;\\textsf{Cap-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.tfree}{\\mathsf{tfree}\\,T}\\end{array}}{T \\leadsto_{h,a} T}\\;\\textsf{Cap-Free} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=cap.agg}{T_i \\leadsto_{h,a} T_i'}\\end{array}}{T_1 \\otimes T_2 \\leadsto_{h,a} T_1' \\otimes T_2' \\quad T_1 \\oplus T_2 \\leadsto_{h,a} T_1' \\oplus T_2' \\quad \\exists^{l}\\bar\\iota.\\,C.\\,T_1 \\leadsto_{h,a} \\exists^{l}\\bar\\iota.\\,C.\\,T_1'}\\;\\textsf{Cap-Prod, Cap-Sum, Cap-Ex}\\end{array}\\end{array}",
+     "caption": "$T - c$ lowers the credits of the ends and closures in $T$ by $c$. It requires $c \\leq a$ for ends that are not idle and for closures, and leaves $\\mathsf{tfree}$ types unchanged. A captured end needs credit $h + a$, and the body of the closure sees it at credit $h$.",
+     "about": {
+      "why": "An action of the thread postpones the ends the thread holds by one step. Aging records this on the types of held values, and capture records it for the ends a closure takes along.",
+      "used": [
+       "t-judgment",
+       "r-fun",
+       "r-data",
+       "r-threads"
+      ]
+     }
     },
     {
-     "id": "t-cap",
-     "title": "Capture at E-Abs",
-     "rocq": "static/Contexts.v: tcap, thcap",
+     "id": "r-base",
+     "title": "Unit, variables and ends",
      "modes": [
+      "df",
       "lf"
      ],
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=cap.sess}{h + a \\leq a_0}\\end{array}}{(S@x, a_0) \\leadsto_{h,a} (S@x, h)}\\;\\textsf{Cap-Sess} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=cap.arr}{h_0 \\leq h \\quad h + a \\leq h_0 + a_0}\\end{array}}{(T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[\\ldots;h_0] U, a_0) \\leadsto_{h,a} (\\ldots, h - h_0)}\\;\\textsf{Cap-Arr}\\end{array}",
-     "caption": "A captured end needs credit at least $h + a$, and the body sees it at credit $h$."
+     "rocq": "static/Typing.v: e_unit, d_unit; static/Typing.v: e_var, d_var; static/Typing.v: e_chan, d_chan",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\ast : \\ast\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-Unit}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\Gamma ; \\htmlData{k=ctx.only}{\\Delta, x : T} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} x : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-Var}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\Gamma ; \\htmlData{k=ctx.only}{\\Delta, o : (S@x)\\annot{\\annot{^{a}}}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} o : (S@x)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-Chan}\\end{array}",
+     "caption": "$\\ast$ uses no entry of $\\Delta$, and a variable or an end is typed by its own entry. The remaining entries must be unlimited.",
+     "about": {
+      "why": "Unused unlimited entries are dropped at the leaves of a derivation, so the rules need no weakening rule.",
+      "used": [
+       "r-data",
+       "p-typing"
+      ]
+     }
     },
     {
-     "id": "t-sub",
-     "title": "Subtyping",
-     "rocq": "static/Contexts.v: tsub, static/Typing.v: e_sub, d_conv",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\annot{\\htmlData{k=tp.sub-credit}{a' \\leq a}}\\end{array}}{\\htmlData{k=sub.tsub}{\\ast\\annot{^{a}} \\leq \\ast\\annot{^{a'}}}}\\;\\textsf{Sub-Unit} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-sess}{S \\htmlData{k=sty.sequiv}{\\simeq} S'}\\\\ \\annot{\\htmlData{k=tp.sub-credit}{a' \\leq a}}\\end{array}}{\\htmlData{k=sub.tsub}{(S@x)\\annot{^{a}} \\leq (S'@x)\\annot{^{a'}}}}\\;\\textsf{Sub-Sess} \\\\[2ex] \\dfrac{\\begin{array}{c}\\annot{\\htmlData{k=tp.sub-cost}{c \\leq c',\\ \\vartheta \\leq \\vartheta'}}\\\\ \\annot{\\htmlData{k=tp.sub-floor}{h \\leq h',\\ h' + a' \\leq h + a}} \\\\ \\htmlData{k=tp.sub-var}{\\htmlData{k=sub.tsub}{T_1'\\annot{^{a_1'}} \\leq T_1\\annot{^{a_1}}} \\quad \\htmlData{k=sub.tsub}{U\\annot{^{a_2}} \\leq U'\\annot{^{a_2'}}}}\\end{array}}{\\begin{array}{c}(T_1\\annot{^{a_1}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[c;\\vartheta;h]}\\,U\\annot{^{a_2}})\\annot{^{a}} \\\\ \\leq (T_1'\\annot{^{a_1'}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[c';\\vartheta';h']}\\,U'\\annot{^{a_2'}})\\annot{^{a'}}\\end{array}}\\;\\textsf{Sub-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\annot{\\htmlData{k=tp.sub-agg}{T_i\\annot{^{a + a_i}} \\leq T_i'\\annot{^{a' + a_i'}}\\ \\ (i = 1, 2)}}\\end{array}}{(T_1\\annot{^{a_1}} \\otimes T_2\\annot{^{a_2}})\\annot{^{a}} \\leq (T_1'\\annot{^{a_1'}} \\otimes T_2'\\annot{^{a_2'}})\\annot{^{a'}}}\\;\\textsf{Sub-Prod, Sub-Sum} \\\\[2ex] \\dfrac{\\begin{array}{c}\\annot{\\htmlData{k=tp.sub-cost}{c \\leq c',\\ \\vartheta \\leq \\vartheta'}}\\\\ \\htmlData{k=tp.sub-teq}{U \\equiv U'}\\end{array}}{\\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}\\annot{[c;\\vartheta]}\\,U)\\annot{^{a}} \\leq \\Box(\\ldots\\annot{[c';\\vartheta']}\\,U')\\annot{^{a'}}}\\;\\textsf{Sub-Box} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-ex}{\\mathsf{facts}\\,C' \\subseteq \\mathsf{facts}\\,C}\\\\ \\htmlData{k=tp.sub-teq}{T \\equiv T'}\\\\ \\annot{\\htmlData{k=tp.sub-credit}{a' + a_T' \\leq a + a_T}}\\end{array}}{(\\exists^{l}\\bar\\iota.\\,C.\\,T\\annot{^{a_T}})\\annot{^{a}} \\leq (\\exists^{l}\\bar\\iota.\\,C'.\\,T'\\annot{^{a_T'}})\\annot{^{a'}}}\\;\\textsf{Sub-Ex}\\end{array}",
-     "variants": {
-      "df": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-sess}{S \\htmlData{k=sty.seqv}{\\approx} S'}\\end{array}}{\\htmlData{k=sub.tsub}{S@x \\leq S'@x}}\\;\\textsf{Sub-Sess} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-ex}{\\mathsf{facts}\\,C' \\subseteq \\mathsf{facts}\\,C}\\\\ \\htmlData{k=tp.sub-teq}{T \\equiv T'}\\end{array}}{\\htmlData{k=sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\htmlData{k=tp.sub-var}{\\text{componentwise on } \\otimes, \\oplus, \\Box,\\ \\text{contravariant in the argument of } \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=sub.dconv}{\\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T \\leq \\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T'}\\end{array}}{t : T \\Rightarrow t : T'}\\;\\textsf{D-Conv}\\end{array}"
-     },
-     "caption": "\\annp{At annotations $\\infty$ subtyping is $\\approx$ on sessions plus dropping facts of $\\exists$, and at finite $N$ credits fall while costs, ticket needs and floors rise.}",
+     "id": "r-fun",
+     "title": "Functions",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "rocq": "static/Typing.v: e_abs, d_abs; static/Typing.v: e_app, d_app",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Abs.phi}{\\varphi\\ \\text{fresh}}\\quad \\htmlData{k=E-Abs.lb}{l \\preccurlyeq \\Delta}\\annraw{\\quad }\\annot{\\htmlData{k=E-Abs.cap}{\\Delta \\leadsto_{h,a} \\Delta^{h}}} \\\\ \\htmlData{k=E-Abs.body}{\\Gamma, u \\prec \\varphi ; \\Delta\\annot{^{h}}, T \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing, \\varphi)} e : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\lambda e : (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[\\varepsilon ; h]}\\, U)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-Abs}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Gamma ; \\Delta_1 \\htmlData{k=tj.held}{\\parallel \\Delta_2} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_1 : (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[\\varepsilon ; h]}\\, U)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1}} \\\\ \\htmlData{k=E-App.fut2}{\\Gamma ; \\Delta_2\\annot{ \\htmlData{k=age.ctx}{- \\varepsilon_1}} \\htmlData{k=tj.held}{\\parallel (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U)\\annot{\\annot{^{a}}}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_2 : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_2}}\\quad \\htmlData{k=E-App.ub}{u \\prec F}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_1\\,e_2 : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon_2 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{E-App}\\end{array}",
+     "caption": "E-Abs types the body under a fresh future variable $\\varphi$ above the upper point $u$, and requires $l$ at or below the dual points of the captured entries. E-App holds $\\Delta_2$ while $e_1$ runs and the closure while $e_2$ runs, and the call requires $u \\prec F$. \\annp{The closure records the effect of its body. Holding it while $e_2$ runs ages it by the cost of $e_2$.}",
+     "about": {
+      "why": "A closure delays its body until a call. Its type records the bounds the body needs, and the call site checks them against its own future.",
+      "used": [
+       "r-threads",
+       "v-rel",
+       "th-terms"
+      ]
+     }
     },
     {
-     "id": "r-unit",
-     "title": "E-Unit",
-     "rocq": "static/Typing.v: e_unit",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\ast : \\ast^{\\annot{\\htmlData{k=ann.fuel}{\\infty}}} \\mathbin{\\annot{\\htmlData{k=tp.tri}{\\triangleright}}} 0 ; \\annot{\\htmlData{k=ann.tid}{\\hat 1}}}\\;\\textsf{E-Unit}",
-     "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\ast : \\ast}\\;\\textsf{D-Unit}"
-     },
-     "caption": "\\annp{$\\ast$ holds no end, has cost $0$ and ticket need $\\hat 1$.}",
+     "id": "r-data",
+     "title": "Products, sums and let",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "rocq": "static/Typing.v: e_pair, d_pair; static/Typing.v: e_letp, e_letu, d_letp, d_letu; static/Typing.v: e_inj, e_case, d_inj, d_case",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Gamma ; \\Delta_1 \\htmlData{k=tj.held}{\\parallel \\Delta_2} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_1 : T_1\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1}}\\quad \\htmlData{k=E-Pair.fut2}{\\Gamma ; \\Delta_2\\annot{ \\htmlData{k=age.ctx}{- \\varepsilon_1}} \\htmlData{k=tj.held}{\\parallel T_1} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_2 : T_2\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_2}}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\langle e_1, e_2\\rangle : \\annot{(}T_1\\annot{ \\htmlData{k=age.ctx}{- \\varepsilon_2}}\\annot{)} \\otimes T_2\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon_2}}\\;\\textsf{E-Pair}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Gamma ; \\Delta_1 \\htmlData{k=tj.held}{\\parallel \\Delta_2} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_1 : T_1 \\otimes T_2\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1}}\\quad \\htmlData{k=tp.letp}{\\Gamma ; T_2, T_1, \\Delta_2\\annot{ \\htmlData{k=age.ctx}{- \\varepsilon_1}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_2 : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_2}}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.letp}{\\mathsf{let}}\\ \\langle a, b\\rangle = e_1\\ \\htmlData{k=syn.letp}{\\mathsf{in}}\\ e_2 : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon_2}}\\;\\textsf{E-LetP} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Gamma ; \\Delta_1 \\htmlData{k=tj.held}{\\parallel \\Delta_2} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_1 : \\ast\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1}}\\quad \\htmlData{k=tp.letu}{\\Gamma ; \\Delta_2\\annot{ \\htmlData{k=age.ctx}{- \\varepsilon_1}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_2 : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_2}}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.letu}{\\mathsf{let}}\\ \\ast = e_1\\ \\htmlData{k=syn.letu}{\\mathsf{in}}\\ e_2 : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon_2}}\\;\\textsf{E-LetU}\\end{array}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T_i\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.inj}{\\mathsf{inj}_i\\,e} : T_1 \\oplus T_2\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Inj} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Gamma ; \\Delta_1 \\htmlData{k=tj.held}{\\parallel \\Delta_2} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T_1 \\oplus T_2\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_0}}\\quad \\htmlData{k=E-Case.branches}{\\Gamma ; T_i, \\Delta_2\\annot{ \\htmlData{k=age.ctx}{- \\varepsilon_0}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_i : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_i}}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.case}{\\mathsf{case}}\\ e\\,(e_1)\\,(e_2) : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_0 \\htmlData{k=tj.seq}{\\cdot} \\htmlData{k=tp.max}{\\max}(\\varepsilon_1,\\varepsilon_2)}}\\;\\textsf{E-Case}\\end{array}\\end{array}",
+     "caption": "E-Pair holds the value of $e_1$ while $e_2$ runs. \\annp{The held value ages by the cost of $e_2$.} The derived $\\mathsf{let}$ is typed by E-Pair, E-LetP and E-LetU. Both branches of a case are typed under one context at one result type.",
+     "about": {
+      "why": "A pair is the simplest place where a thread holds a value while other code runs, and E-Pair checks the order this requires.",
+      "used": [
+       "r-act"
+      ]
+     }
     },
     {
-     "id": "r-var",
-     "title": "E-Var",
-     "rocq": "static/Typing.v: e_var",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.only}{\\Delta = \\{x : T\\annot{^{a}}\\}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} x : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\hat 1}}\\;\\textsf{E-Var}",
-     "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.only}{\\Delta = \\{x : T\\}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} x : T}\\;\\textsf{D-Var}"
-     },
-     "caption": "$x$ is the only non-empty entry of $\\Delta$.",
+     "id": "r-boxes",
+     "title": "Boxes",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "rocq": "static/Typing.v: e_box, d_box; static/Typing.v: e_force, d_force",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Box.unl}{\\Delta\\ \\text{unlimited}}\\quad \\htmlData{k=E-Abs.phi}{\\varphi\\ \\text{fresh}}\\quad \\htmlData{k=E-Box.fresh}{\\bar\\iota\\ \\text{fresh}}\\quad \\htmlData{k=E-Box.inst}{\\forall \\bar s.\\ \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s} \\\\ \\htmlData{k=E-Box.body}{\\htmlData{k=E-Box.open}{\\Gamma, C(\\bar\\iota), u \\prec \\varphi} ; \\htmlData{k=E-Box.self}{\\Delta, f : \\Box(\\ldots)} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing,\\varphi)} e : \\htmlData{k=tp.sinst}{U[\\bar s]}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} !e : \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}\\annot{[\\varepsilon]}\\,U)\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-Box}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\quad \\htmlData{k=E-Box.inst}{\\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s}\\quad \\htmlData{k=E-Force.ub}{u[\\bar x] \\prec F} \\\\ \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}\\annot{[\\varepsilon]}\\,U)\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_0}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.force}{\\mathsf{force}}\\,e : \\htmlData{k=tp.sinst}{U[\\bar s]}\\htmlData{k=tp.pinst}{[\\bar x]}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_0 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{E-Force}\\end{array}",
+     "caption": "E-Box types the body once, with fresh point variables $\\bar\\iota$, the hypothesis $C(\\bar\\iota)$ and a fresh future variable above $u$, for each allowed session instance $\\bar s$. The context is unlimited, because a box may be copied. E-Force picks points $\\bar x$ and session types $\\bar s$, requires $C[\\bar x]$ and $u[\\bar x] \\prec F$, and gives the instantiated result type.",
+     "about": {
+      "why": "Boxes provide recursion and polymorphism over points and session types. Each force chooses an instance.",
+      "used": [
+       "v-rel",
+       "g-guard"
+      ]
+     }
     },
     {
-     "id": "r-chan",
-     "title": "E-Chan",
-     "rocq": "static/Typing.v: e_chan",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\{o : S@x\\annot{^{a}}\\} ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} o : (S@x)\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\hat 1}}\\;\\textsf{E-Chan}",
-     "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\{o : S@x\\} ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} o : S@x}\\;\\textsf{D-Chan}"
-     },
-     "caption": "The value $o$ is typed with $\\Theta = \\{o \\mapsto S@x\\annot{^{a}}\\}$, exactly its own entry.",
+     "id": "r-ex",
+     "title": "Existentials",
+     "rocq": "static/Typing.v: e_pack, e_open, d_pack, d_open",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\quad \\htmlData{k=E-Pack.lb}{l \\preccurlyeq \\htmlData{k=tp.pinst}{T[\\bar x]}}\\quad e : T[\\bar x]\\end{array}}{e : \\exists^{l}\\bar\\iota.\\,C.\\,T}\\;\\textsf{E-Pack} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Open.entry}{\\Delta(i) = \\exists^{l}\\bar\\iota.\\,C.\\,T\\annot{,\\ \\neg\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}}\\,T}}\\quad \\htmlData{k=E-Box.fresh}{\\bar\\iota\\ \\text{fresh}}\\quad \\htmlData{k=E-Open.body}{\\Gamma, C(\\bar\\iota) ; \\Delta[i \\mapsto T] \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Open}\\end{array}",
+     "caption": "E-Pack chooses witness points $\\bar x$ with $\\Gamma \\vdash C[\\bar x]$. E-Open names the witnesses by fresh point variables $\\bar\\iota$ with the hypothesis $C(\\bar\\iota)$.",
      "modes": [
       "df",
       "lf"
-     ]
-    },
-    {
-     "id": "r-abs",
-     "title": "E-Abs",
-     "rocq": "static/Typing.v: e_abs",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Abs.phi}{\\varphi\\ \\text{fresh}}\\\\ \\htmlData{k=E-Abs.lb}{l \\preccurlyeq \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta, \\Delta),\\ \\neg\\bot_\\Delta}\\\\ \\annot{\\htmlData{k=E-Abs.cap}{\\Theta \\leadsto_{h,a} \\Theta^{h},\\ \\Delta \\leadsto_{h,a} \\Delta^{h}}}\\\\ \\htmlData{k=E-Abs.body}{\\Theta^{h} ; \\Gamma, u \\prec \\varphi ; \\Delta^{h}, T\\annot{^{a_T}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing, \\varphi)}_{W\\annot{,N}} e : U\\annot{^{a_U}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\lambda e : (T\\annot{^{a_T}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[c;\\vartheta;h]}\\, U\\annot{^{a_U}})\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\hat 1}}\\;\\textsf{E-Abs}",
-     "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Abs.phi}{\\varphi\\ \\text{fresh}}\\\\ \\htmlData{k=E-Abs.lb}{l \\preccurlyeq \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta, \\Delta),\\ \\neg\\bot_\\Delta}\\\\ \\htmlData{k=E-Abs.body}{\\Theta ; \\Gamma, u \\prec \\varphi ; \\Delta, T \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing,\\varphi)}_{W} e : U}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\lambda e : T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U}\\;\\textsf{D-Abs}"
-     },
-     "caption": "The body runs under a fresh $\\varphi$ with $u \\prec \\varphi$ and captures $\\Theta$ and $\\Delta$ with $l \\preccurlyeq \\mathsf{heads}(\\Theta, \\Delta)$.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "r-app",
-     "title": "E-App",
-     "rocq": "static/Typing.v: e_app",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.tsplit}{\\Theta = \\Theta_1 \\uplus \\Theta_2}\\\\ \\htmlData{k=ctx.lsplit}{\\Delta = \\Delta_1 \\sqcup \\Delta_2}\\\\ \\htmlData{k=E-App.ub}{u \\prec F} \\\\ \\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W\\annot{,N}} e_1 : (T\\annot{^{a_T}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[c;\\vartheta;h]}\\,U\\annot{^{a_U}})\\annot{^{a_1}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_1 ; \\vartheta_1}} \\\\ \\annot{\\htmlData{k=age.ctx}{\\Theta_2' = \\Theta_2 - c_1,\\ \\Delta_2' = \\Delta_2 - c_1}}\\\\ \\htmlData{k=E-App.fut2}{\\Theta_2' ; \\Gamma ; \\Delta_2' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\{l\\}}_{W\\annot{,N}} e_2 : T\\annot{^{a_T}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_2 ; \\vartheta_2}} \\\\ \\annot{\\htmlData{k=E-App.credit}{c_2 \\leq a_1}}\\\\ \\annot{\\htmlData{k=ann.tok}{\\mathsf{tok}}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e_1\\,e_2 : U\\annot{^{a_U}} \\mathbin{\\annot{\\htmlData{k=tp.tri}{\\triangleright}}} \\annot{\\htmlData{k=E-App.cost}{c_1 + c_2 + c}} ; \\vartheta_1 \\circ \\vartheta_2 \\circ \\vartheta}\\;\\textsf{E-App}",
-     "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.tsplit}{\\Theta = \\Theta_1 \\uplus \\Theta_2}\\\\ \\htmlData{k=ctx.lsplit}{\\Delta = \\Delta_1 \\sqcup \\Delta_2}\\\\ \\htmlData{k=E-App.ub}{u \\prec F} \\\\ \\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W} e_1 : T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U}\\\\ \\htmlData{k=E-App.fut2}{\\Theta_2 ; \\Gamma ; \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\{l\\}}_{W} e_2 : T}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e_1\\,e_2 : U}\\;\\textsf{D-App}"
-     },
-     "caption": "$e_1$ runs while $\\Theta_2$ and $\\Delta_2$ are held, $e_2$ runs while the closure is held, and the body runs under $F$ with $u \\prec F$.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "r-pair",
-     "title": "E-Pair",
-     "rocq": "static/Typing.v: e_pair",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.tsplit}{\\Theta = \\Theta_1 \\uplus \\Theta_2}\\\\ \\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W\\annot{,N}} e_1 : T_1\\annot{^{a_1}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_1 ; \\vartheta_1}} \\\\ \\annot{\\htmlData{k=age.ctx}{\\Theta_2 - c_1,\\ \\Delta_2 - c_1}}\\\\ \\htmlData{k=E-Pair.fut2}{\\Theta_2' ; \\Gamma ; \\Delta_2' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(T_1)}_{W\\annot{,N}} e_2 : T_2\\annot{^{a_2}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_2 ; \\vartheta_2}}\\\\ \\annot{\\htmlData{k=E-Pair.age1}{(T_1, a_1) - c_2 = (T_1', a_1')}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\langle e_1, e_2\\rangle : (T_1'\\annot{^{a_1'}} \\otimes T_2\\annot{^{a_2}})\\annot{^{0}} \\mathbin{\\annot{\\htmlData{k=tp.tri}{\\triangleright}}} c_1 + c_2 ; \\vartheta_1 \\circ \\vartheta_2}\\;\\textsf{E-Pair}",
-     "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.tsplit}{\\Theta = \\Theta_1 \\uplus \\Theta_2}\\\\ \\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W} e_1 : T_1}\\\\ \\htmlData{k=E-Pair.fut2}{\\Theta_2 ; \\Gamma ; \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(T_1)}_{W} e_2 : T_2}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\langle e_1, e_2\\rangle : T_1 \\otimes T_2}\\;\\textsf{D-Pair}"
-     },
-     "caption": "The value of $e_1$ is held while $e_2$ runs, so $e_2$ runs under $F \\cup \\mathsf{heads}(T_1)$ and $T_1$ ages by $c_2$.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "r-let",
-     "title": "E-LetP, E-LetU",
-     "rocq": "static/Typing.v: e_letp, e_letu",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W\\annot{,N}} e_1 : (T_1\\annot{^{a_1}} \\otimes T_2\\annot{^{a_2}})\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_1 ; \\vartheta_1}}\\\\ \\annot{\\htmlData{k=age.ctx}{\\Theta_2' = \\Theta_2 - c_1,\\ \\Delta_2' = \\Delta_2 - c_1}}\\\\ \\htmlData{k=tp.letp}{\\Theta_2' ; \\Gamma ; T_2\\annot{^{a+a_2}}, T_1\\annot{^{a+a_1}}, \\Delta_2' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e_2 : T\\annot{^{a_T}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_2 ; \\vartheta_2}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=syn.letp}{\\mathsf{let}}\\ \\langle a, b\\rangle = e_1\\ \\htmlData{k=syn.letp}{\\mathsf{in}}\\ e_2 : T\\annot{^{a_T}} \\mathbin{\\annot{\\htmlData{k=tp.tri}{\\triangleright}}} c_1 + c_2 ; \\vartheta_1 \\circ \\vartheta_2}\\;\\textsf{E-LetP} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W\\annot{,N}} e_1 : \\ast\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_1 ; \\vartheta_1}}\\\\ \\annot{\\htmlData{k=age.ctx}{\\Theta_2' = \\Theta_2 - c_1,\\ \\Delta_2' = \\Delta_2 - c_1}}\\\\ \\htmlData{k=tp.letu}{\\Theta_2' ; \\Gamma ; \\Delta_2' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e_2 : T\\annot{^{a_T}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_2 ; \\vartheta_2}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=syn.letu}{\\mathsf{let}}\\ \\ast = e_1\\ \\htmlData{k=syn.letu}{\\mathsf{in}}\\ e_2 : T\\annot{^{a_T}} \\mathbin{\\annot{\\htmlData{k=tp.tri}{\\triangleright}}} c_1 + c_2 ; \\vartheta_1 \\circ \\vartheta_2}\\;\\textsf{E-LetU}\\end{array}",
-     "variants": {
-      "df": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W} e_1 : T_1 \\otimes T_2}\\\\ \\htmlData{k=tp.letp}{\\Theta_2 ; \\Gamma ; T_2, T_1, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e_2 : T}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.letp}{\\mathsf{let}}\\ \\langle a, b\\rangle = e_1\\ \\htmlData{k=syn.letp}{\\mathsf{in}}\\ e_2 : T}\\;\\textsf{D-LetP} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W} e_1 : \\ast}\\\\ \\htmlData{k=tp.letu}{\\Theta_2 ; \\Gamma ; \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e_2 : T}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.letu}{\\mathsf{let}}\\ \\ast = e_1\\ \\htmlData{k=syn.letu}{\\mathsf{in}}\\ e_2 : T}\\;\\textsf{D-LetU}\\end{array}"
-     },
-     "caption": "$\\mathsf{let}\\ x = e_1\\ \\mathsf{in}\\ e_2$ abbreviates a pair elimination followed by a unit elimination and types by E-LetP, E-Pair and E-LetU.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "r-case",
-     "title": "E-Inj, E-Case",
-     "rocq": "static/Typing.v: e_inj, e_case",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T_i\\annot{^{a_i}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=syn.inj}{\\mathsf{inj}_i\\,e} : (T_1\\annot{^{a_1}} \\oplus T_2\\annot{^{a_2}})\\annot{^{0}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}}\\;\\textsf{E-Inj} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W\\annot{,N}} e : (T_1\\annot{^{a_1}} \\oplus T_2\\annot{^{a_2}})\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0}}\\\\ \\htmlData{k=E-Case.branches}{\\Theta_2' ; \\Gamma ; T_i\\annot{^{a+a_i}}, \\Delta_2' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_i : T\\annot{^{a_T}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_i ; \\vartheta_i}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=syn.case}{\\mathsf{case}}\\ e\\,(e_1)\\,(e_2) : T\\annot{^{a_T}} \\mathbin{\\annot{\\htmlData{k=tp.tri}{\\triangleright}}} c_0 + \\max(c_1,c_2) ; \\vartheta_0 \\circ \\annot{\\htmlData{k=tp.max}{\\max}}(\\vartheta_1,\\vartheta_2)}\\;\\textsf{E-Case}\\end{array}",
-     "variants": {
-      "df": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : T_i\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.inj}{\\mathsf{inj}_i\\,e} : T_1 \\oplus T_2}\\;\\textsf{D-Inj} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Theta_1 ; \\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\Theta_2,\\Delta_2)}_{W} e : T_1 \\oplus T_2}\\\\ \\htmlData{k=E-Case.branches}{\\Theta_2 ; \\Gamma ; T_i, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_i : T}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.case}{\\mathsf{case}}\\ e\\,(e_1)\\,(e_2) : T}\\;\\textsf{D-Case}\\end{array}"
-     },
-     "caption": "\\annp{An injection keeps the context, cost and ticket need of its argument.} Both branches of a case type under one context at one result, at cost $\\max(c_1, c_2)$.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "r-box",
-     "title": "E-Box",
-     "rocq": "static/Typing.v: e_box",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Box.unl}{\\Delta\\ \\text{unlimited}}\\\\ \\htmlData{k=E-Abs.phi}{\\varphi\\ \\text{fresh}}\\\\ \\htmlData{k=E-Box.inst}{\\forall \\bar s.\\ |\\bar s| = k,\\ \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,N\\,\\bar s}\\\\ \\htmlData{k=E-Box.body}{\\varnothing ; \\htmlData{k=E-Box.open}{\\Gamma\\htmlData{k=tp.shift}{{\\uparrow^m}}, C(\\bar\\iota), u \\prec \\varphi} ; \\htmlData{k=E-Box.self}{\\Delta{\\uparrow^m}, f : \\Box(\\ldots)^{\\infty}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing,\\varphi)}_{W\\annot{,N}} e : \\htmlData{k=tp.sinst}{U[\\bar s]}\\annot{^{a_U}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} !e : \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}\\annot{[c;\\vartheta]}\\,U\\annot{^{a_U}})^{\\infty} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\hat 1}}\\;\\textsf{E-Box}",
-     "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Box.unl}{\\Delta\\ \\text{unlimited}}\\\\ \\htmlData{k=E-Abs.phi}{\\varphi\\ \\text{fresh}}\\\\ \\htmlData{k=E-Box.inst}{\\forall \\bar s\\ (N = \\infty\\ \\text{instances})}\\\\ \\htmlData{k=E-Box.body}{\\varnothing ; \\htmlData{k=E-Box.open}{\\Gamma\\htmlData{k=tp.shift}{{\\uparrow^m}}, C(\\bar\\iota), u \\prec \\varphi} ; \\htmlData{k=E-Box.self}{\\Delta{\\uparrow^m}, f : \\Box(\\ldots)} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing,\\varphi)}_{W} e : U[\\bar s]}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} !e : \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U)}\\;\\textsf{D-Box}"
-     },
-     "caption": "The body is typed with $\\Theta = \\varnothing$ under $m$ fresh point variables $\\bar\\iota$, the hypothesis $C(\\bar\\iota)$, the box itself at index $0$, and a fresh future variable.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "r-force",
-     "title": "E-Force",
-     "rocq": "static/Typing.v: e_force",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{|\\bar x| = m,\\ \\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\\\ \\annot{\\htmlData{k=E-Box.inst}{|\\bar s| = k,\\ \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,N\\,\\bar s}}\\\\ \\htmlData{k=E-Force.ub}{u[\\bar x] \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}\\annot{[c;\\vartheta]}\\,U\\annot{^{a_U}})\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=prim.force}{\\mathsf{force}}\\,e : \\htmlData{k=tp.sinst}{U[\\bar s]}\\htmlData{k=tp.pinst}{[\\bar x]}\\annot{^{a_U}} \\mathbin{\\annot{\\htmlData{k=tp.tri}{\\triangleright}}} c_0 + c ; \\vartheta_0 \\circ \\vartheta}\\;\\textsf{E-Force}",
-     "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\\\ \\htmlData{k=E-Force.ub}{u[\\bar x] \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U)\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.force}{\\mathsf{force}}\\,e : U[\\bar s][\\bar x]}\\;\\textsf{D-Force}"
-     },
-     "caption": "Forcing chooses $\\bar x$ with $\\Gamma \\vdash C[\\bar x]$ and session types $\\bar s$, and asks $u[\\bar x] \\prec F$.",
-     "modes": [
-      "df",
-      "lf"
-     ]
+     ],
+     "about": {
+      "why": "An existential hides the points of a created channel behind the facts it states about these points.",
+      "used": [
+       "r-new",
+       "v-rel"
+      ]
+     }
     },
     {
      "id": "t-consts",
      "title": "Types of constants",
      "rocq": "static/Constants.v: k_send_df, k_recv_df, k_close_df, k_select_df, k_branch_df, k_link_df, k_spawn_df, k_force_df, k_send, k_recv, k_close, k_select, k_branch, k_link, k_spawn, k_force",
-     "tex": "\\begin{array}{lll}\n\\htmlData{k=prim.send}{\\mathsf{send}} & : T[x\\cdot i] \\otimes S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S@\\htmlData{k=pt.shift}{x^{+}} & \\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T,\\ \\neg\\htmlData{k=ty.hbot}{\\mathsf{hbot}}\\,T,\\ \\htmlData{k=E-Send.heads}{x \\prec \\htmlData{k=ty.heads}{\\mathsf{heads}}(T[x\\cdot i])} \\\\\n\\htmlData{k=prim.recv}{\\mathsf{recv}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} T[x\\cdot i] \\otimes S@x^{+} & \\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T \\\\\n\\htmlData{k=prim.close}{\\mathsf{close}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} \\ast & \\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}} \\\\\n\\htmlData{k=prim.select}{\\mathsf{select}}_i & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}} & \\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)} \\\\\n\\htmlData{k=prim.branch}{\\mathsf{branch}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2 & \\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)} \\\\\n\\htmlData{k=prim.link}{\\mathsf{link}} & : \\htmlData{k=E-Link.dual}{S@x \\otimes \\overline{S}@\\overline{x}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.spawn}{\\mathsf{spawn}} & : (\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} \\ast) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.force}{\\mathsf{force}} & : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] & \\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]} \\\\\n\\htmlData{k=syn.new}{\\mathsf{new}} & : \\exists^{\\bot}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ (S@\\pi \\otimes \\overline{S}@\\overline{\\pi}) & \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho)\\} \\cup \\{(\\varepsilon, x\\cdot\\kappa)\\}},\\ \\htmlData{k=E-New.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\Gamma \\cup C)}\n\\end{array}",
-     "caption": "\\annp{Each constant has the type of its eta-expansion $\\lambda y.\\,k\\,y$, for every instance of its variables that meets the conditions on the right, shown without credits, cost and ticket need.} An action on $x$ has upper point $x$, so it runs only below the future of its caller. $\\mathsf{new}$ is a term and has the type of E-New.",
+     "tex": "\\begin{array}{lll}\n\\htmlData{k=prim.send}{\\mathsf{send}} & : T[x\\cdot i] \\otimes S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S@\\htmlData{k=pt.shift}{x^{+}} & \\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T,\\ \\htmlData{k=E-Send.heads}{x \\prec T[x\\cdot i]} \\\\\n\\htmlData{k=prim.recv}{\\mathsf{recv}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} T[x\\cdot i] \\otimes S@x^{+} & \\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T \\\\\n\\htmlData{k=prim.close}{\\mathsf{close}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} \\ast & \\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}} \\\\\n\\htmlData{k=prim.select}{\\mathsf{select}}_i & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}} & \\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)} \\\\\n\\htmlData{k=prim.branch}{\\mathsf{branch}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2 & \\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)} \\\\\n\\htmlData{k=prim.link}{\\mathsf{link}} & : \\htmlData{k=E-Link.dual}{S@x \\otimes \\overline{S}@\\overline{x}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.spawn}{\\mathsf{spawn}} & : (\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} \\ast) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.force}{\\mathsf{force}} & : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] & \\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]} \\\\\n\\htmlData{k=syn.new}{\\mathsf{new}} & : \\exists^{\\bot}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ (S@\\pi \\otimes \\overline{S}@\\overline{\\pi}) & \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho), (\\varnothing, x\\cdot\\kappa)\\}},\\ \\htmlData{k=E-New.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\Gamma \\cup C)}\n\\end{array}",
+     "caption": "Each constant has the type of its eta-expansion $\\lambda y.\\,k\\,y$, for each instance of its variables that meets the side conditions. An action on an end at $x$ has upper point $x$. $\\mathsf{new}$ is a term and is typed by E-New. \\annp{The types are shown without credits, cost and ticket need.}",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "Constants are values and therefore need types. The upper point $x$ means that a caller may apply an action at $x$ only while its future lies above $x$.",
+      "used": [
+       "r-act",
+       "r-threads",
+       "r-boxes",
+       "r-new"
+      ]
+     }
     },
     {
-     "id": "r-send",
-     "title": "E-Send",
-     "rocq": "static/Typing.v: e_send",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S}\\\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\\\ \\htmlData{k=E-Send.nobot}{\\neg\\htmlData{k=ty.hbot}{\\mathsf{hbot}}\\,T} \\\\ \\htmlData{k=E-Send.heads}{\\forall y \\in \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\htmlData{k=ty.payload-at}{T[x\\cdot i]}).\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec y}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : (T[x\\cdot i]\\annot{^{a_p}} \\otimes (S_0@x)\\annot{^{a_S}})\\annot{^{a_0}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0} \\\\ \\annot{\\htmlData{k=E-Send.floor}{(T[x\\cdot i], a_0 + a_p) - 1 \\leq T[x\\cdot i]\\annot{^{b}}}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=prim.send}{\\mathsf{send}}\\,e : (S@\\htmlData{k=pt.shift}{x^{+}})^{\\annot{\\htmlData{k=act.refill}{N}}} \\mathbin{\\annot{\\htmlData{k=tp.tri}{\\triangleright}}} c_0 + 1 ; \\vartheta_0}\\;\\textsf{E-Send}",
-     "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S}\\\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\\\ \\htmlData{k=E-Send.nobot}{\\neg\\htmlData{k=ty.hbot}{\\mathsf{hbot}}\\,T}\\\\ \\htmlData{k=E-Send.heads}{x \\prec \\htmlData{k=ty.heads}{\\mathsf{heads}}(T[x\\cdot i])}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : T[x\\cdot i] \\otimes S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.send}{\\mathsf{send}}\\,e : S@\\htmlData{k=pt.shift}{x^{+}}}\\;\\textsf{D-Send}"
-     },
-     "caption": "The sender holds the payload while it waits at $x$, so $x \\prec \\mathsf{heads}$ of the payload, and the end returns at $x^{+}$\\annp{ with credit} $N$.",
+     "id": "r-act",
+     "title": "Actions and link",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "rocq": "static/Typing.v: e_send, d_send; static/Typing.v: e_recv, d_recv; static/Typing.v: e_close, d_close; static/Typing.v: e_select, d_select; static/Typing.v: e_branch, d_branch; static/Typing.v: e_link, d_link",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S}\\quad \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\quad \\htmlData{k=E-Send.heads}{x \\prec \\htmlData{k=ty.payload-at}{T[x\\cdot i]}}\\quad \\htmlData{k=side.act}{x \\prec F} \\\\ \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T' \\otimes (S_0@x)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\annraw{\\quad }\\annot{\\htmlData{k=E-Send.floor}{T' - 1 \\leq T[x\\cdot i]}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.send}{\\mathsf{send}}\\,e : (S@\\htmlData{k=pt.shift}{x^{+}})\\annot{^{\\htmlData{k=act.refill}{N}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon \\htmlData{k=tj.seq}{\\cdot} \\htmlData{k=tj.one}{1}}}\\;\\textsf{E-Send}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S}\\quad \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\quad \\htmlData{k=side.act}{x \\prec F}\\quad \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : (S_0@x)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.recv}{\\mathsf{recv}}\\,e : T[x\\cdot i] \\otimes (S@\\htmlData{k=pt.shift}{x^{+}})\\annot{^{\\htmlData{k=act.refill}{N}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon \\htmlData{k=tj.seq}{\\cdot} \\htmlData{k=tj.one}{1}}}\\;\\textsf{E-Recv}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}}\\quad \\htmlData{k=side.act}{x \\prec F}\\quad \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : (S_0@x)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.close}{\\mathsf{close}}\\,e : \\ast\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon \\htmlData{k=tj.seq}{\\cdot} \\htmlData{k=tj.one}{1}}}\\;\\textsf{E-Close}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)}\\quad \\htmlData{k=side.act}{x \\prec F}\\quad \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : (S_0@x)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.select}{\\mathsf{select}}_i\\,e : (S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}})\\annot{^{\\htmlData{k=act.refill}{N}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon \\htmlData{k=tj.seq}{\\cdot} \\htmlData{k=tj.one}{1}}}\\;\\textsf{E-Select}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)}\\quad \\htmlData{k=side.act}{x \\prec F}\\quad \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : (S_0@x)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.branch}{\\mathsf{branch}}\\,e : (S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1})\\annot{^{\\htmlData{k=act.refill}{N}}} \\oplus (S_2@x\\cdot\\kappa_2)\\annot{^{\\htmlData{k=act.refill}{N}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon \\htmlData{k=tj.seq}{\\cdot} \\htmlData{k=tj.one}{1}}}\\;\\textsf{E-Branch}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-Link.dual}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : (S@x)\\annot{\\annot{^{a_1}}} \\otimes (\\overline{S}@\\overline{x})\\annot{\\annot{^{a_2}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.link}{\\mathsf{link}}\\,e : \\ast\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon \\htmlData{k=tj.seq}{\\cdot} (0, \\htmlData{k=ann.tlink}{\\mathsf{tlink}\\,\\hat 1})}}\\;\\textsf{E-Link}\\end{array}",
+     "caption": "An action on an end at $x$ waits at $x$ while the thread holds the rest of $\\Delta$. The rules therefore require $x$ below the future and below the dual points of the held values. Send and receive move the end to $x^{+}$ and the payload to the fields of $x$, a choice moves the end to the field of the branch, and a link requires no order fact. \\annp{An action costs one and returns the end\\annp{ with credit} $N$, and a link uses one ticket.}",
+     "about": {
+      "why": "A thread waits only at actions, so the order facts of the type system are required here.",
+      "used": [
+       "e-obl",
+       "r-data",
+       "syn-csub"
+      ]
+     }
     },
     {
-     "id": "r-recv",
-     "title": "E-Recv",
-     "rocq": "static/Typing.v: e_recv",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S}\\\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : (S_0@x)\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=prim.recv}{\\mathsf{recv}}\\,e : (T[x\\cdot i] \\otimes (S@\\htmlData{k=pt.shift}{x^{+}})^{\\annot{\\htmlData{k=act.refill}{N}}})\\annot{^{0}} \\mathbin{\\annot{\\htmlData{k=tp.tri}{\\triangleright}}} c_0 + 1 ; \\vartheta_0}\\;\\textsf{E-Recv}",
-     "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S}\\\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.recv}{\\mathsf{recv}}\\,e : T[x\\cdot i] \\otimes S@\\htmlData{k=pt.shift}{x^{+}}}\\;\\textsf{D-Recv}"
-     },
-     "caption": "The payload arrives\\annp{ at credit $b$} with its ends at $x \\cdot i$, and the end returns at $x^{+}$\\annp{ with credit} $N$.",
+     "id": "r-threads",
+     "title": "Spawn",
      "modes": [
       "df",
       "lf"
-     ]
-    },
-    {
-     "id": "r-close",
-     "title": "E-Close",
-     "rocq": "static/Typing.v: e_close",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : (S_0@x)\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=prim.close}{\\mathsf{close}}\\,e : \\ast^{\\infty} \\mathbin{\\annot{\\htmlData{k=tp.tri}{\\triangleright}}} c_0 + 1 ; \\vartheta_0}\\;\\textsf{E-Close}",
-     "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.close}{\\mathsf{close}}\\,e : \\ast}\\;\\textsf{D-Close}"
-     },
-     "caption": "A close is an action at $x$ of cost $1$.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "r-select",
-     "title": "E-Select",
-     "rocq": "static/Typing.v: e_select",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : (S_0@x)\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=prim.select}{\\mathsf{select}}_i\\,e : (S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}})^{\\annot{\\htmlData{k=act.refill}{N}}} \\mathbin{\\annot{\\htmlData{k=tp.tri}{\\triangleright}}} c_0 + 1 ; \\vartheta_0}\\;\\textsf{E-Select}",
-     "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.select}{\\mathsf{select}}_i\\,e : S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}}}\\;\\textsf{D-Select}"
-     },
-     "caption": "The selecting end continues at $\\overline{x\\cdot\\kappa_i}$, and the rule asks $\\Gamma \\vdash x \\prec x\\cdot\\kappa_i$.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "r-branch",
-     "title": "E-Branch",
-     "rocq": "static/Typing.v: e_branch",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : (S_0@x)\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=prim.branch}{\\mathsf{branch}}\\,e : ((S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1})\\annot{^{N}} \\oplus (S_2@x\\cdot\\kappa_2)\\annot{^{N}})\\annot{^{0}} \\mathbin{\\annot{\\htmlData{k=tp.tri}{\\triangleright}}} c_0 + 1 ; \\vartheta_0}\\;\\textsf{E-Branch}",
-     "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)}\\\\ \\htmlData{k=side.act}{x \\prec F}\\\\ \\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S_0@x\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.branch}{\\mathsf{branch}}\\,e : S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2}\\;\\textsf{D-Branch}"
-     },
-     "caption": "The branching end continues at $x\\cdot\\kappa_i$, and the rule asks $\\Gamma \\vdash x \\prec \\overline{x\\cdot\\kappa_i}$ for both $i$.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "r-link",
-     "title": "E-Link",
-     "rocq": "static/Typing.v: e_link",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Link.dual}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : ((S@x)\\annot{^{a_1}} \\otimes (\\overline{S}@\\overline{x})\\annot{^{a_2}})\\annot{^{a_0}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0}}\\\\ \\annot{\\htmlData{k=ann.tok}{\\mathsf{tok}}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=prim.link}{\\mathsf{link}}\\,e : \\ast^{\\infty} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0} \\circ \\annot{\\htmlData{k=ann.tlink}{\\mathsf{tlink}\\,\\hat 1}}}\\;\\textsf{E-Link}",
-     "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-Link.dual}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : S@x \\otimes \\overline{S}@\\overline{x}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.link}{\\mathsf{link}}\\,e : \\ast}\\;\\textsf{D-Link}"
-     },
-     "caption": "\\annp{A link asks no order fact, costs $0$ and spends one ticket.}",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "r-spawnlam",
-     "title": "E-SpawnLam",
-     "rocq": "static/Typing.v: e_spawn_lam",
-     "tex": "\\dfrac{\\begin{array}{c}\\annot{\\htmlData{k=E-SpawnLam.age}{\\Theta' = \\Theta - 1,\\ \\Delta' = \\Delta - 1}}\\\\ \\htmlData{k=E-SpawnLam.body}{\\Theta' ; \\Gamma ; \\ast\\annot{^{a_1}}, \\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=E-SpawnLam.future}{(\\varnothing, \\cdot)}}_{W\\annot{,N}} e : \\ast\\annot{^{a_U}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c' ; \\vartheta'}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=prim.spawn}{\\mathsf{spawn}}\\,(\\lambda e) : \\ast^{\\infty} \\mathbin{\\annot{\\htmlData{k=tp.tri}{\\triangleright}}} 0 ; \\annot{\\htmlData{k=ann.tspawn}{\\mathsf{tspawn}(\\vartheta'(0))\\,\\hat 1}}}\\;\\textsf{E-SpawnLam}",
-     "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=E-SpawnLam.body}{\\Theta ; \\Gamma ; \\ast, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=E-SpawnLam.future}{(\\varnothing, \\cdot)}}_{W} e : \\ast}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.spawn}{\\mathsf{spawn}}\\,(\\lambda e) : \\ast}\\;\\textsf{D-SpawnLam}"
-     },
-     "caption": "The child body runs under the empty future, and every handed entry ages by $1$.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "r-spawn",
-     "title": "E-Spawn",
-     "rocq": "static/Typing.v: e_spawn",
-     "tex": "\\dfrac{\\begin{array}{c}\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : (\\ast\\annot{^{a_1}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[c';\\vartheta';h]}\\,\\ast\\annot{^{a_U}})\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0}\\\\ \\annot{\\htmlData{k=E-Spawn.credit}{a \\geq 1}}\\\\ \\annot{\\htmlData{k=ann.tok}{\\mathsf{tok}}}\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=prim.spawn}{\\mathsf{spawn}}\\,e : \\ast^{\\infty} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c_0 ; \\vartheta_0} \\circ \\annot{\\htmlData{k=ann.tspawn}{\\mathsf{tspawn}(\\vartheta'(0))\\,\\hat 1}}}\\;\\textsf{E-Spawn}",
-     "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} \\ast\\end{array}}{\\Theta ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=prim.spawn}{\\mathsf{spawn}}\\,e : \\ast}\\;\\textsf{D-Spawn}"
-     },
-     "caption": "\\annp{Spawning a closure value hands over its captured ends and asks its credit $a \\geq 1$.}",
-     "modes": [
-      "df",
-      "lf"
-     ]
+     ],
+     "rocq": "static/Typing.v: e_spawn_lam, d_spawn_lam; static/Typing.v: e_spawn, d_spawn",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-SpawnLam.body}{\\Gamma ; \\htmlData{k=E-SpawnLam.age}{\\Delta\\annot{ \\htmlData{k=age.ctx}{- 1}}}, \\ast \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=E-SpawnLam.future}{(\\varnothing, \\cdot)}} e : \\ast\\annot{\\ \\htmlData{k=tj.eff}{!}\\ (c', \\vartheta')}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.spawn}{\\mathsf{spawn}}\\,(\\lambda e) : \\ast\\annot{\\ \\htmlData{k=tj.eff}{!}\\ (0, \\htmlData{k=ann.tspawn}{\\mathsf{tspawn}(\\vartheta'(0))\\,\\hat 1})}}\\;\\textsf{E-SpawnLam}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : (\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[(c', \\vartheta') ; h]}\\, \\ast)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\annraw{\\quad }\\annot{\\htmlData{k=E-Spawn.credit}{a \\geq 1}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.spawn}{\\mathsf{spawn}}\\,e : \\ast\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon \\htmlData{k=tj.seq}{\\cdot} (0, \\htmlData{k=ann.tspawn}{\\mathsf{tspawn}(\\vartheta'(0))\\,\\hat 1})}}\\;\\textsf{E-Spawn}\\end{array}",
+     "caption": "E-SpawnLam types the child body under the empty future, and E-Spawn spawns a closure value with the ends it captured. \\annp{The transferred entries age by one step.}",
+     "about": {
+      "why": "A spawned thread has no code after it, so the child body is typed at the empty future.",
+      "used": [
+       "v-rel",
+       "e-obl"
+      ]
+     }
     },
     {
      "id": "r-new",
-     "title": "E-New",
-     "rocq": "static/Typing.v: e_new",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\\\ \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho)\\} \\cup \\{(\\varepsilon, x\\cdot\\kappa)\\}}\\\\ \\htmlData{k=E-New.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\Gamma \\cup C)}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} \\htmlData{k=syn.new}{\\mathsf{new}} : (\\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ \\htmlData{k=E-New.dual}{((S@\\pi)\\annot{^{N}} \\otimes (\\htmlData{k=sty.dual}{\\overline{S}}@\\overline{\\pi})\\annot{^{N}})}\\annot{^{0}})\\annot{^{0}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} 0 ; \\hat 1}}\\;\\textsf{E-New}",
-     "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\\\ \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho)\\} \\cup \\{(\\varepsilon, x\\cdot\\kappa)\\}}\\\\ \\htmlData{k=E-New.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\Gamma \\cup C)}\\end{array}}{\\varnothing ; \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.new}{\\mathsf{new}} : \\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ \\htmlData{k=E-New.dual}{S@\\pi \\otimes \\overline{S}@\\overline{\\pi}}}\\;\\textsf{D-New}"
-     },
-     "caption": "The pair sits at a fresh root $\\rho$ or at a field $x\\cdot\\kappa$, with facts $C$ that keep the order strict and lower bound $\\bot$.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "r-struct",
-     "title": "E-Sub",
-     "rocq": "static/Typing.v: e_sub",
-     "tex": "\\dfrac{\\begin{array}{c}e : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}\\\\ \\htmlData{k=sub.tsub}{T\\annot{^{a}} \\leq T'\\annot{^{a'}}}\\\\ \\annot{\\htmlData{k=E-Sub.cost}{c \\leq c',\\ \\vartheta \\leq \\vartheta'}}\\end{array}}{e : T'\\annot{^{a'}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c' ; \\vartheta'}}\\;\\textsf{E-Sub}",
-     "variants": {
-      "df": "\\dfrac{\\begin{array}{c}\\htmlData{k=sub.dconv}{\\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T \\leq \\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}}\\,T'}\\end{array}}{t : T \\Rightarrow t : T'}\\;\\textsf{D-Conv}"
-     },
-     "caption": "\\annp{A type may lose\\annp{ credit and }a cost or ticket need may rise.}",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "r-admis",
-     "title": "E-Weak, E-Contract (admissible)",
-     "rocq": "static/Weakening.v: e_weak, e_contract, d_weak, d_contract, typed_rename",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\end{array}}{\\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e \\Rightarrow \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e}\\;\\textsf{E-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,U}\\end{array}}{U, U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e \\Rightarrow U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e[x/x']}\\;\\textsf{E-Contract}\\end{array}",
-     "variants": {
-      "df": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\end{array}}{\\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t \\Rightarrow \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t}\\;\\textsf{D-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,U}\\end{array}}{U, U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t \\Rightarrow U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t}\\;\\textsf{D-Contract}\\end{array}"
-     },
-     "caption": "Both are renamings of the variables, the identity and the map $x \\mapsto x - 1$. They hold because E-Unit, E-Var, E-Chan and E-New accept unused entries of unlimited type.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "r-ex",
-     "title": "E-Pack, E-Open",
-     "rocq": "static/Typing.v: e_pack, e_open",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{|\\bar x| = m,\\ \\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\\\ \\htmlData{k=E-Pack.lb}{l \\preccurlyeq \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\htmlData{k=tp.pinst}{T[\\bar x]})}\\\\ e : T[\\bar x]\\annot{^{a}}\\end{array}}{e : (\\exists^{l}\\bar\\iota.\\,C.\\,T\\annot{^{a}})\\annot{^{0}}}\\;\\textsf{E-Pack} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Open.entry}{\\Delta(i) = (\\exists^{l}\\bar\\iota.\\,C.\\,T\\annot{^{a_T}})\\annot{^{a}},\\ \\neg\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}}\\,T}\\\\ \\htmlData{k=E-Open.body}{\\Theta\\htmlData{k=tp.shift}{{\\uparrow}}; \\Gamma{\\uparrow}, C; \\Delta{\\uparrow}[i \\mapsto T\\annot{^{a+a_T}}] \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F\\uparrow} e : U{\\uparrow}}\\end{array}}{\\Theta;\\Gamma;\\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : U}\\;\\textsf{E-Open}\\end{array}",
-     "variants": {
-      "df": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\\\ \\htmlData{k=E-Pack.lb}{l \\preccurlyeq \\htmlData{k=ty.heads}{\\mathsf{heads}}(\\htmlData{k=tp.pinst}{T[\\bar x]})}\\\\ t : T[\\bar x]\\end{array}}{t : \\exists^{l}\\bar\\iota.\\,C.\\,T}\\;\\textsf{D-Pack} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Open.entry}{\\Delta(i) = \\exists^{l}\\bar\\iota.\\,C.\\,T}\\\\ \\htmlData{k=E-Open.body}{\\Theta\\htmlData{k=tp.shift}{{\\uparrow}}; \\Gamma{\\uparrow}, C; \\Delta{\\uparrow}[i \\mapsto T] \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t : U{\\uparrow}}\\end{array}}{\\Theta;\\Gamma;\\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} t : U}\\;\\textsf{D-Open}\\end{array}"
-     },
-     "caption": "Packing chooses $\\bar x$ with $\\Gamma \\vdash C[\\bar x]$, and opening adds $m$ fresh point variables with hypothesis $C$.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "p-term",
-     "title": "P-Term",
-     "rocq": "static/Typing.v: p_term",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ty.tfree}{\\mathsf{tfree}\\,T}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\\\ \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing}\\\\ \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = S@x\\annot{^{N}},\\ \\Theta_B(c^{-}) = \\overline{S}@\\overline{x}\\annot{^{N}}} \\\\ \\htmlData{k=P-Term.typed}{\\htmlData{k=tp.lift}{\\Sigma\\annot{^{N}}} \\cup \\Theta_B ; \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}}\\annraw{ \\\\ }\\annot{\\htmlData{k=lf.meets}{N \\in \\mathbb{N} \\Rightarrow \\exists\\, tk.\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk}}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}",
-     "variants": {
-      "lf": "\\dfrac{\\begin{array}{c}\\htmlData{k=ty.tfree}{\\mathsf{tfree}\\,T}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\\\ \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing}\\\\ \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = S@x\\annot{^{N}},\\ \\Theta_B(c^{-}) = \\overline{S}@\\overline{x}\\annot{^{N}}} \\\\ \\htmlData{k=P-Term.typed}{\\htmlData{k=tp.lift}{\\Sigma\\annot{^{N}}} \\cup \\Theta_B ; \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}}\\annraw{ \\\\ }\\annot{\\boxed{\\htmlData{k=lf.meets}{N \\in \\mathbb{N} \\Rightarrow \\exists\\, tk.\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk}}}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}"
-     },
-     "caption": "One thread $t$ holding both ends of every $c \\in C_0$ at dual types and points over a partner-free $\\Sigma$.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "p-connect",
-     "title": "P-Connect",
-     "rocq": "static/Typing.v: p_connect",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1} (C_1, E_1) : T} \\\\ \\htmlData{k=P-Connect.right}{\\Sigma_2 \\cup \\htmlData{k=P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\htmlData{k=P-Connect.disj}{\\text{the channels of } \\Sigma_1, \\Sigma_2, \\Sigma_C, C_1, C_2 \\text{ pairwise disjoint}} \\\\ \\htmlData{k=P-Connect.cutfree}{\\htmlData{k=pfree}{\\mathsf{pfree}}\\,\\Sigma_C}\\\\ \\htmlData{k=w.wf}{\\mathsf{world\\_wf}\\,W_1, W_2} \\\\ \\htmlData{k=P-Connect.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{\\htmlData{k=P-Connect.join}{W_1 \\htmlData{k=w.join}{\\sqcup} W_2}} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect}",
-     "caption": "\\annp{Two components at refill $N$ in worlds $W_1$, $W_2$, cut at $\\Sigma_C$ against $\\overline{\\Sigma_C}$, the left one carrying $T$.}",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "p-lf",
-     "title": "Lock-free process typing",
-     "rocq": "static/Typing.v: ptyped, static/FundamentalProc.v: pguard",
-     "modes": [
-      "lf"
-     ],
-     "tex": "\\htmlData{k=tp.lfjudg}{\\Sigma \\Vdash^{N}_W p : T \\iff \\htmlData{k=lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_W p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p}}",
-     "caption": "Lock-free typing is process typing at finite $N$ with every thread guarded."
-    },
-    {
-     "id": "p-join",
-     "title": "P-Join (admissible)",
-     "rocq": "static/Typing.v: p_join",
-     "tex": "\\dfrac{\\begin{array}{c}\\text{premises of P-Connect with} \\\\ \\htmlData{k=P-Join.lemma}{\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W_1,\\ \\htmlData{k=w.strict}{\\mathsf{strict}}\\,W_2,\\ \\htmlData{k=w.strict}{\\mathsf{strict}}(\\htmlData{k=w.restrict}{W_1|_S} \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2|_S)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Join}",
-     "caption": "For well-formed $W_1$, $W_2$, $\\mathsf{strict}(W_1 \\sqcup W_2)$ iff both are strict and so is the join of their restrictions to the shared constants.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "g-acts",
-     "title": "Terms that act",
-     "rocq": "static/Guard.v: sprim, acts",
+     "title": "Creation",
+     "rocq": "static/Typing.v: e_new, d_new",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\quad \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho), (\\varnothing, x\\cdot\\kappa)\\}}\\quad \\htmlData{k=E-New.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\Gamma \\cup C)}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.new}{\\mathsf{new}} : \\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ \\htmlData{k=E-New.dual}{(S@\\pi)\\annot{^{\\htmlData{k=act.refill}{N}}} \\otimes (\\htmlData{k=sty.dual}{\\overline{S}}@\\overline{\\pi})\\annot{^{\\htmlData{k=act.refill}{N}}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-New}",
+     "caption": "The two ends of a new channel are at a fresh root $\\rho$ and its dual, or at a field $x\\cdot\\kappa$ and its dual. The facts $C$ keep the order strict, and the lower bound is $\\bot$.",
      "modes": [
       "df",
       "lf"
      ],
-     "tex": "\\htmlData{k=guard.acts}{\\begin{array}{l}\\mathsf{acts}\\,(k\\,e) \\iff k \\in K_{\\mathrm{act}} \\lor \\mathsf{acts}\\,e \\\\ K_{\\mathrm{act}} = \\{\\htmlData{k=prim.send}{\\mathsf{send}}, \\htmlData{k=prim.recv}{\\mathsf{recv}}, \\htmlData{k=prim.close}{\\mathsf{close}}, \\htmlData{k=prim.select}{\\mathsf{select}}_i, \\htmlData{k=prim.branch}{\\mathsf{branch}}\\} \\\\ \\mathsf{acts}\\,(e_1\\,e_2),\\ \\mathsf{acts}\\,\\langle e_1, e_2\\rangle \\iff \\mathsf{acts}\\,e_1 \\lor \\mathsf{acts}\\,e_2 \\\\ \\mathsf{acts}\\,(\\htmlData{k=syn.letp}{\\mathsf{let}}\\ p = e_1\\ \\htmlData{k=syn.letp}{\\mathsf{in}}\\ e_2) \\iff \\mathsf{acts}\\,e_1 \\lor \\mathsf{acts}\\,e_2 \\\\ \\mathsf{acts}\\,(\\htmlData{k=syn.case}{\\mathsf{case}}\\ e\\,(e_1)\\,(e_2)) \\iff \\mathsf{acts}\\,e \\lor (\\mathsf{acts}\\,e_1 \\land \\mathsf{acts}\\,e_2) \\\\ \\mathsf{acts}\\,(\\mathsf{inj}_i\\,e) \\iff \\mathsf{acts}\\,e, \\quad \\text{false for values and } \\htmlData{k=syn.new}{\\mathsf{new}_\\ell}\\end{array}}",
-     "caption": "$\\mathsf{acts}\\,e$ holds when every evaluation of $e$ to a value performs a session action."
+     "about": {
+      "why": "Creation places a new channel in the order. Later rules may use the facts $C$ about the new points.",
+      "used": [
+       "e-obl",
+       "w-ext"
+      ]
+     }
     },
     {
-     "id": "g-rules",
-     "title": "The guard $\\Lambda \\vdash\\!\\triangleright t$",
-     "rocq": "static/Guard.v: lguard",
+     "id": "t-subs",
+     "title": "Subtyping and structural rules",
      "modes": [
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=guard.var}{\\Lambda(y) = \\htmlData{k=guard.marks}{\\mathsf{false}}}\\end{array}}{\\htmlData{k=guard.marks}{\\Lambda} \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} y}\\;\\textsf{gl\\_var} \\quad \\dfrac{\\begin{array}{c}\\htmlData{k=guard.lam}{\\htmlData{k=guard.marks}{\\mathsf{false}}.\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} b}\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} \\lambda b}\\;\\textsf{gl\\_lam} \\quad \\dfrac{\\begin{array}{c}\\htmlData{k=guard.box}{\\htmlData{k=guard.marks}{\\mathsf{true}}.\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} b}\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}}\\ !b}\\;\\textsf{gl\\_box} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=guard.cong}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_1}\\\\ \\htmlData{k=guard.tick}{\\mathsf{kmarks}\\,\\Lambda\\,\\Lambda'\\,e_1}\\\\ \\Lambda' \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_2\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_1\\,e_2}\\;\\textsf{gl\\_app} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_1\\\\ \\htmlData{k=guard.tick}{\\mathsf{kmarks}\\,\\Lambda\\,\\Lambda'\\,e_1}\\\\ \\htmlData{k=guard.bind}{\\htmlData{k=guard.marks}{\\mathsf{false}}.\\htmlData{k=guard.marks}{\\mathsf{false}}.\\Lambda' \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_2}\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} \\htmlData{k=syn.letp}{\\mathsf{let}}\\ \\langle a, b\\rangle = e_1\\ \\htmlData{k=syn.letp}{\\mathsf{in}}\\ e_2}\\;\\textsf{gl\\_letp}\n\\end{array}",
-     "caption": "A box marks its self, a marked variable is unusable, and after an acting $e_1$ the rest may be checked under $\\varnothing$. The pair, $\\mathsf{let}\\ \\ast$ and the case follow $\\mathsf{gl\\_app}$ and $\\mathsf{gl\\_letp}$."
+     "rocq": "static/Contexts.v: tsub, static/Typing.v: e_sub, d_conv; static/Typing.v: e_sub, d_conv; static/Weakening.v: e_weak, e_contract, d_weak, d_contract, typed_rename",
+     "tex": "\\begin{array}{c}\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-sess}{S \\htmlData{k=sty.sequiv}{\\simeq} S'}\\quad \\annot{\\htmlData{k=tp.sub-credit}{a' \\leq a}}\\end{array}}{\\htmlData{k=sub.tsub}{(S@x)\\annot{^{a}} \\leq (S'@x)\\annot{^{a'}}}}\\;\\textsf{Sub-Sess} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}\\quad \\annot{\\htmlData{k=tp.sub-floor}{h \\leq h',\\ h' + a' \\leq h + a}} \\\\ \\htmlData{k=tp.sub-var}{\\htmlData{k=sub.tsub}{T_1' \\leq T_1} \\quad \\htmlData{k=sub.tsub}{U \\leq U'}}\\end{array}}{(T_1 \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}[\\varepsilon;h]\\,U)\\annot{^{a}} \\leq (T_1' \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}[\\varepsilon';h']\\,U')\\annot{^{a'}}}\\;\\textsf{Sub-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}\\quad \\htmlData{k=tp.sub-teq}{U \\equiv U'}\\end{array}}{\\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}[\\varepsilon]\\,U) \\leq \\Box(\\ldots[\\varepsilon']\\,U')}\\;\\textsf{Sub-Box} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-ex}{\\mathsf{facts}\\,C' \\subseteq \\mathsf{facts}\\,C}\\quad \\htmlData{k=tp.sub-teq}{T \\equiv T'}\\end{array}}{\\htmlData{k=sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-agg}{\\htmlData{k=sub.tsub}{T_1 \\leq T_1'} \\quad \\htmlData{k=sub.tsub}{T_2 \\leq T_2'}}\\end{array}}{T_1 \\otimes T_2 \\leq T_1' \\otimes T_2' \\qquad T_1 \\oplus T_2 \\leq T_1' \\oplus T_2'}\\;\\textsf{Sub-Prod, Sub-Sum}\\end{array}\\\\[3ex]\\dfrac{\\begin{array}{c}e : T\\annot{\\ !\\ \\varepsilon}\\quad \\htmlData{k=sub.tsub}{T \\leq T'}\\annraw{\\quad }\\annot{\\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}}{e : T'\\annot{\\ !\\ \\varepsilon'}}\\;\\textsf{E-Sub}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\end{array}}{\\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e \\Rightarrow \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e}\\;\\textsf{E-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,U}\\end{array}}{U, U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e \\Rightarrow U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e[x/x']}\\;\\textsf{E-Contract}\\end{array}\\end{array}",
+     "caption": "Subtyping is $\\approx$ on session types, and an existential may drop facts. \\annp{Credits may decrease, and costs, ticket needs and floors may increase.} Weakening and contraction are admissible, because they are renamings of variables.",
+     "variants": {
+      "df": "\\begin{array}{c}\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-sess}{S \\htmlData{k=sty.seqv}{\\approx} S'}\\end{array}}{\\htmlData{k=sub.tsub}{S@x \\leq S'@x}}\\;\\textsf{Sub-Sess} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-ex}{\\mathsf{facts}\\,C' \\subseteq \\mathsf{facts}\\,C}\\quad \\htmlData{k=tp.sub-teq}{T \\equiv T'}\\end{array}}{\\htmlData{k=sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-agg}{\\htmlData{k=sub.tsub}{T_1 \\leq T_1'} \\quad \\htmlData{k=sub.tsub}{T_2 \\leq T_2'}}\\end{array}}{T_1 \\otimes T_2 \\leq T_1' \\otimes T_2' \\qquad T_1 \\oplus T_2 \\leq T_1' \\oplus T_2'}\\;\\textsf{Sub-Prod, Sub-Sum} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-var}{\\htmlData{k=sub.tsub}{T_1' \\leq T_1} \\quad \\htmlData{k=sub.tsub}{U \\leq U'}}\\end{array}}{T_1 \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U \\leq T_1' \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U'}\\;\\textsf{Sub-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-teq}{U \\equiv U'}\\end{array}}{\\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\leq \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U')}\\;\\textsf{Sub-Box}\\end{array}\\\\[3ex]\\dfrac{\\begin{array}{c}e : T\\annot{\\ !\\ \\varepsilon}\\quad \\htmlData{k=sub.tsub}{T \\leq T'}\\annraw{\\quad }\\annot{\\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}}{e : T'\\annot{\\ !\\ \\varepsilon'}}\\;\\textsf{E-Sub}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\end{array}}{\\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e \\Rightarrow \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e}\\;\\textsf{E-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,U}\\end{array}}{U, U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e \\Rightarrow U, \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} e[x/x']}\\;\\textsf{E-Contract}\\end{array}\\end{array}"
+     },
+     "about": {
+      "why": "A value may forget facts it does not need. Admissible weakening and contraction keep the rule set free of structural rules.",
+      "used": []
+     }
     },
     {
-     "id": "g-proc",
-     "title": "Guard of a process",
-     "rocq": "static/FundamentalProc.v: pguard",
+     "id": "p-typing",
+     "title": "Process typing",
      "modes": [
       "df",
       "lf"
      ],
-     "tex": "\\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p \\iff \\forall t \\in p.\\ \\varnothing \\vdash\\!\\triangleright t}",
-     "caption": "$\\vdash\\!\\triangleright p$ holds when every thread $t$ of $p$ satisfies $\\varnothing \\vdash\\!\\triangleright t$."
+     "rocq": "static/Typing.v: p_term; static/Typing.v: p_connect; static/Typing.v: ptyped, static/FundamentalProc.v: pguard",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=ty.tfree}{\\mathsf{tfree}\\,T}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\\\ \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing}\\\\ \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma}\\\\ \\htmlData{k=P-Term.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = S@x\\annot{^{N}},\\ \\Theta_B(c^{-}) = \\overline{S}@\\overline{x}\\annot{^{N}}} \\\\ \\htmlData{k=P-Term.typed}{\\varnothing ; \\htmlData{k=tp.lift}{\\Sigma\\annot{\\annot{^{N}}}}, \\Theta_B \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}} t : T\\annot{\\ !\\ (c, \\vartheta)}}\\annraw{ \\\\ }\\annot{\\boxed{\\htmlData{k=lf.meets}{N \\in \\mathbb{N} \\Rightarrow \\htmlData{k=ann.fin0}{\\vartheta(0) \\in \\mathbb{N}}}}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1} (C_1, E_1) : T} \\\\ \\htmlData{k=P-Connect.right}{\\Sigma_2 \\cup \\htmlData{k=P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\htmlData{k=P-Connect.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_1,\\ \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_2,\\ \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C,\\ C_1,\\ C_2\\ \\text{pairwise disjoint}} \\\\ \\htmlData{k=P-Connect.cutfree}{\\htmlData{k=pfree}{\\mathsf{pfree}}\\,\\Sigma_C} \\\\ \\htmlData{k=P-Connect.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\htmlData{k=w.restrict}{W_1|_S} \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2|_S)\\ \\ \\text{for}\\ \\ S = \\htmlData{k=w.consts}{A_{W_1}} \\cap A_{W_2}}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{\\htmlData{k=P-Connect.join}{W_1 \\htmlData{k=w.join}{\\sqcup} W_2}} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect}\\annraw{\\\\[3ex]}\\annot{\\htmlData{k=tp.lfjudg}{\\Sigma \\Vdash^{N}_W p : T \\iff \\htmlData{k=lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_W p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p}}}\\end{array}",
+     "caption": "P-Term types one thread $t$ that holds both ends of each channel in $C_0$, at dual types and points, over an interface $\\Sigma$ without partner pairs. P-Connect cuts two components at $\\Sigma_C$ against $\\overline{\\Sigma_C}$ and compares only the shared roots of the two worlds. \\annp{Lock-free process typing is process typing at a finite counter bound $N$ with each thread guarded.}",
+     "variants": {
+      "df": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=ty.tfree}{\\mathsf{tfree}\\,T}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\\\ \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing}\\\\ \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma}\\\\ \\htmlData{k=P-Term.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = S@x\\annot{^{N}},\\ \\Theta_B(c^{-}) = \\overline{S}@\\overline{x}\\annot{^{N}}} \\\\ \\htmlData{k=P-Term.typed}{\\varnothing ; \\htmlData{k=tp.lift}{\\Sigma\\annot{\\annot{^{N}}}}, \\Theta_B \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}} t : T\\annot{\\ !\\ (c, \\vartheta)}}\\annraw{ \\\\ }\\annot{\\htmlData{k=lf.meets}{N \\in \\mathbb{N} \\Rightarrow \\htmlData{k=ann.fin0}{\\vartheta(0) \\in \\mathbb{N}}}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1} (C_1, E_1) : T} \\\\ \\htmlData{k=P-Connect.right}{\\Sigma_2 \\cup \\htmlData{k=P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\htmlData{k=P-Connect.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_1,\\ \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_2,\\ \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C,\\ C_1,\\ C_2\\ \\text{pairwise disjoint}} \\\\ \\htmlData{k=P-Connect.cutfree}{\\htmlData{k=pfree}{\\mathsf{pfree}}\\,\\Sigma_C} \\\\ \\htmlData{k=P-Connect.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\htmlData{k=w.restrict}{W_1|_S} \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2|_S)\\ \\ \\text{for}\\ \\ S = \\htmlData{k=w.consts}{A_{W_1}} \\cap A_{W_2}}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{\\htmlData{k=P-Connect.join}{W_1 \\htmlData{k=w.join}{\\sqcup} W_2}} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect}\\end{array}"
+     },
+     "about": {
+      "why": "Processes are built from single threads by P-Term and composed by P-Connect.",
+      "used": [
+       "g-guard"
+      ]
+     }
+    },
+    {
+     "id": "g-guard",
+     "title": "The guard",
+     "modes": [
+      "lf"
+     ],
+     "rocq": "static/Guard.v: sprim, acts; static/Guard.v: lguard; static/FundamentalProc.v: pguard",
+     "tex": "\\begin{array}{c}\\htmlData{k=guard.acts}{\\begin{array}{l}\\mathsf{acts}\\,(k\\,e) \\iff k \\in K_{\\mathrm{act}} \\lor \\mathsf{acts}\\,e \\\\ K_{\\mathrm{act}} = \\{\\htmlData{k=prim.send}{\\mathsf{send}}, \\htmlData{k=prim.recv}{\\mathsf{recv}}, \\htmlData{k=prim.close}{\\mathsf{close}}, \\htmlData{k=prim.select}{\\mathsf{select}}_i, \\htmlData{k=prim.branch}{\\mathsf{branch}}\\} \\\\ \\mathsf{acts}\\,(e_1\\,e_2),\\ \\mathsf{acts}\\,\\langle e_1, e_2\\rangle \\iff \\mathsf{acts}\\,e_1 \\lor \\mathsf{acts}\\,e_2 \\\\ \\mathsf{acts}\\,(\\htmlData{k=syn.letp}{\\mathsf{let}}\\ p = e_1\\ \\htmlData{k=syn.letp}{\\mathsf{in}}\\ e_2) \\iff \\mathsf{acts}\\,e_1 \\lor \\mathsf{acts}\\,e_2 \\\\ \\mathsf{acts}\\,(\\htmlData{k=syn.case}{\\mathsf{case}}\\ e\\,(e_1)\\,(e_2)) \\iff \\mathsf{acts}\\,e \\lor (\\mathsf{acts}\\,e_1 \\land \\mathsf{acts}\\,e_2) \\\\ \\mathsf{acts}\\,(\\mathsf{inj}_i\\,e) \\iff \\mathsf{acts}\\,e, \\quad \\text{false for values and } \\htmlData{k=syn.new}{\\mathsf{new}_\\ell}\\end{array}}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=guard.var}{\\Lambda(y) = \\htmlData{k=guard.marks}{\\mathsf{false}}}\\end{array}}{\\htmlData{k=guard.marks}{\\Lambda} \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} y}\\;\\textsf{gl\\_var} \\quad \\dfrac{\\begin{array}{c}\\htmlData{k=guard.lam}{\\htmlData{k=guard.marks}{\\mathsf{false}}.\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} b}\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} \\lambda b}\\;\\textsf{gl\\_lam} \\quad \\dfrac{\\begin{array}{c}\\htmlData{k=guard.box}{\\htmlData{k=guard.marks}{\\mathsf{true}}.\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} b}\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}}\\ !b}\\;\\textsf{gl\\_box} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=guard.cong}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_1}\\\\ \\htmlData{k=guard.tick}{\\mathsf{kmarks}\\,\\Lambda\\,\\Lambda'\\,e_1}\\\\ \\Lambda' \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_2\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_1\\,e_2}\\;\\textsf{gl\\_app} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_1\\\\ \\htmlData{k=guard.tick}{\\mathsf{kmarks}\\,\\Lambda\\,\\Lambda'\\,e_1}\\\\ \\htmlData{k=guard.bind}{\\htmlData{k=guard.marks}{\\mathsf{false}}.\\htmlData{k=guard.marks}{\\mathsf{false}}.\\Lambda' \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} e_2}\\end{array}}{\\Lambda \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} \\htmlData{k=syn.letp}{\\mathsf{let}}\\ \\langle a, b\\rangle = e_1\\ \\htmlData{k=syn.letp}{\\mathsf{in}}\\ e_2}\\;\\textsf{gl\\_letp}\n\\end{array}\\\\[3ex]\\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p \\iff \\forall t \\in p.\\ \\varnothing \\vdash\\!\\triangleright t}\\end{array}",
+     "caption": "$\\mathsf{acts}\\,e$ holds when each evaluation of $e$ to a value performs a session action. The guard marks the variable of a box as unusable until the body has acted. A process is guarded when each of its threads is.",
+     "about": {
+      "why": "A thread that recurses without a session action makes internal steps forever. The guard rejects such recursion.",
+      "used": [
+       "p-typing"
+      ]
+     }
     }
    ]
   },
   {
    "id": "semantic",
    "title": "Semantic typing",
-   "intro": "\\annp{One step-indexed relation $(V, E, P)$ parametric in a cost table $\\kappa$, the fuel predicate $F^N$ on counters and tickets, and the soup $S^{N,W}_n$ that fixes ownership before the level.} The sorts are $\\mathsf{Env} = \\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$, $\\mathsf{TEnv}$ the same\\annp{ with credits}, $\\mathsf{PEnv} = \\mathsf{End} \\rightharpoonup \\mathsf{STy}$, $\\mathsf{CEnv} = \\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$, $\\mathsf{Own}$ the ownership maps, $\\mathsf{LFState}$ the soup states, $\\mathsf{CTable} \\subseteq \\mathbb{N}^6$, $\\mathsf{Fam}$ and $\\mathsf{Field}$ the labels, $\\mathsf{SFuture}$ the static futures.",
+   "intro": "The logical relation defines when a value, a term and a process are safe, by induction on a step index. Typed programs are safe by the fundamental theorems, and safe closed processes are deadlock free by adequacy. \\annp{For lock freedom we read the same relation with other step costs, add fuel to each thread, and combine the two in the lock-free process relation.}",
    "blocks": [
     {
-     "id": "ct-table",
-     "title": "Cost tables",
-     "rocq": "relation/CostTable.v: ctable",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=ct.table}{\\kappa = (\\kappa_\\beta, \\kappa_{new}, \\kappa_{spawn}, \\kappa_{link}, \\kappa_{give}, \\kappa_{take}) \\in \\mathbb{N}^{6}} \\\\\n\\htmlData{k=ct.take-pos}{1 \\leq \\kappa_{take}} \\qquad \\htmlData{k=ct.give-pos}{\\kappa_\\beta = 0 \\Rightarrow 1 \\leq \\kappa_{give}} \\qquad \\htmlData{k=ct.give-take}{\\kappa_{give} \\leq \\kappa_{take}}\n\\end{array}",
-     "caption": "A cost table $\\kappa$ assigns a cost to each kind of step, subject to three conditions.",
+     "id": "sr-reading",
+     "title": "Reading the relations",
+     "rocq": "relation/Relation.v: Vrel, Erel, Prel, at_cost_E",
+     "tex": "\\begin{array}{ll}\n\\htmlData{k=th.Vrel}{v \\in V^{W}_{n}\\llbracket \\Theta \\vdash T \\rrbracket} & \\text{the value } v \\text{ owns exactly the ends } \\Theta \\text{ and is safe at } T \\\\\n\\htmlData{k=th.Erel}{e \\in E^{W}_{n}\\llbracket \\Theta \\vdash T \\rrbracket^{F}} & \\text{the term } e \\text{, holding } \\Theta \\text{, is safe until it returns a value of } T \\text{, its context acting at } F \\text{ afterwards} \\\\\n\\htmlData{k=th.Prel}{p \\in P^{W}_{n}\\llbracket \\Sigma \\vdash T \\rrbracket} & \\text{the process } p \\text{ is safe with interface } \\Sigma \\\\\n\\htmlData{k=sr.obl}{\\mathsf{Obl}_\\alpha(e')} & \\text{what a step } e \\xrightarrow{\\alpha} e' \\text{ must preserve} \\\\\n\\htmlData{k=rel.atcost}{e'\\ \\text{at}\\ \\Theta'} & e' \\text{ is safe holding } \\Theta' \\text{, at the same level after a free step and one level lower otherwise}\n\\annraw{\\\\}\\annot{\\htmlData{k=sr.FE}{e \\in F^{N}_{n}\\llbracket \\Phi ; tk \\vdash \\sigma\\ !\\ (d, r) \\rrbracket}}\\annraw{&}\\annot{\\text{the thread } e \\text{, holding } \\Phi \\text{ with counters and } tk \\text{ tickets, has fuel for } n \\text{ more steps}}\n\\annraw{\\\\}\\annot{\\htmlData{k=th.soup}{a \\in S^{N,W}_{n}\\llbracket \\Sigma \\vdash T \\rrbracket}}\\annraw{&}\\annot{\\text{every thread of } a \\text{ is in } E[\\kappa_L] \\text{ and has fuel, under one ownership map}}\n\\end{array}",
+     "caption": "The relations are indexed by a world $W$, whose order they read, and a level $n$, the number of steps for which they guarantee safety. A term is safe when it is a safe value, or when it is ready and each of its steps leads to a safe term one level lower. Readiness says that a stuck term waits below the dual points of the ends it holds. Processes are safe in the same way and remain safe when their ends are fused, so composing two safe processes needs no further proof. \\annp{Fuel is a second predicate on each thread, and the lock-free process relation requires both of every thread.}",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "about": {
+      "why": "Each row says in words what one judgment of this section means.",
+      "used": [
+       "v-rel",
+       "e-rel",
+       "p-rel"
+      ]
+     }
     },
     {
-     "id": "ct-two",
-     "title": "The two tables",
-     "rocq": "relation/CostTable.v: κ_DF, κ_L, ev_cost",
-     "tex": "\\begin{array}{lcc}\n & \\htmlData{k=ct.DF}{\\kappa_{DF}} & \\htmlData{k=ct.L}{\\kappa_L} \\\\ \\hline\n\\htmlData{k=ct.beta}{\\beta} & 1 & 0 \\\\\n\\htmlData{k=ct.new}{\\mathsf{new}} & 1 & 0 \\\\\n\\htmlData{k=ct.spawn}{\\mathsf{spawn}} & 1 & 0 \\\\\n\\htmlData{k=ct.link}{\\mathsf{link}} & 0 & 0 \\\\\n\\htmlData{k=ct.give}{\\mathsf{send},\\ \\mathsf{select},\\ \\mathsf{close}} & 0 & 1 \\\\\n\\htmlData{k=ct.takek}{\\mathsf{recv},\\ \\mathsf{branch}} & 1 & 1 \\\\\n\\htmlData{k=ct.sync}{\\kappa_{give} + \\kappa_{take}} & 1 & 2\n\\end{array}",
-     "caption": "The costs of $\\kappa_{DF}$ and $\\kappa_L$ per kind of step, a synchronization costing $\\kappa_{give} + \\kappa_{take}$.",
+     "id": "ct-costs",
+     "title": "Step costs",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "rocq": "relation/CostTable.v: κ_DF, κ_L, ev_cost; relation/CostTable.v: ctable",
+     "tex": "\\begin{array}{c}\\begin{array}{lcc}\n & \\htmlData{k=ct.DF}{\\kappa_{DF}} & \\annot{\\htmlData{k=ct.L}{\\kappa_L}} \\\\ \\hline\n\\htmlData{k=ct.beta}{\\beta} & 1 & 0 \\\\\n\\htmlData{k=ct.new}{\\mathsf{new}} & 1 & 0 \\\\\n\\htmlData{k=ct.spawn}{\\mathsf{spawn}} & 1 & 0 \\\\\n\\htmlData{k=ct.link}{\\mathsf{link}} & 0 & 0 \\\\\n\\htmlData{k=ct.give}{\\mathsf{send},\\ \\mathsf{select},\\ \\mathsf{close}} & 0 & 1 \\\\\n\\htmlData{k=ct.takek}{\\mathsf{recv},\\ \\mathsf{branch}} & 1 & 1 \\\\\n\\htmlData{k=ct.sync}{\\kappa_{give} + \\kappa_{take}} & 1 & 2\n\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\n\\htmlData{k=ct.table}{\\kappa = (\\kappa_\\beta, \\kappa_{new}, \\kappa_{spawn}, \\kappa_{link}, \\kappa_{give}, \\kappa_{take}) \\in \\mathbb{N}^{6}} \\\\\n\\htmlData{k=ct.take-pos}{1 \\leq \\kappa_{take}} \\qquad \\htmlData{k=ct.give-pos}{\\kappa_\\beta = 0 \\Rightarrow 1 \\leq \\kappa_{give}} \\qquad \\htmlData{k=ct.give-take}{\\kappa_{give} \\leq \\kappa_{take}}\n\\end{array}}\\end{array}",
+     "caption": "The number of levels each kind of step consumes in the deadlock-free relation. \\annp{A cost table $\\kappa$ assigns these numbers subject to three conditions. The lock-free relation uses $\\kappa_L$, in which internal steps are free.}",
+     "variants": {
+      "df": "\\begin{array}{c}\\begin{array}{lc}\n & \\htmlData{k=ct.DF}{\\kappa_{DF}} \\\\ \\hline\n\\htmlData{k=ct.beta}{\\beta} & 1 \\\\\n\\htmlData{k=ct.new}{\\mathsf{new}} & 1 \\\\\n\\htmlData{k=ct.spawn}{\\mathsf{spawn}} & 1 \\\\\n\\htmlData{k=ct.link}{\\mathsf{link}} & 0 \\\\\n\\htmlData{k=ct.give}{\\mathsf{send},\\ \\mathsf{select},\\ \\mathsf{close}} & 0 \\\\\n\\htmlData{k=ct.takek}{\\mathsf{recv},\\ \\mathsf{branch}} & 1 \\\\\n\\htmlData{k=ct.sync}{\\text{a message, send with recv}} & 1\n\\end{array}\\end{array}"
+     },
+     "about": {
+      "why": "The costs fix how far the level drops at a step. \\annp{A step of cost $0$ is read at the same level, so a thread cannot take infinitely many of them.}",
+      "used": [
+       "e-rel",
+       "e-obl",
+       "p-obls"
+      ]
+     }
     },
     {
-     "id": "rel-atcost",
-     "title": "After a step",
-     "rocq": "relation/Relation.v: at_cost_E, at_cost_V, at_cost_P",
-     "tex": "\\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\Theta' \\iff \\begin{cases} \\htmlData{k=rel.lfp}{X(W, \\Theta', T, F, e')} & \\kappa(\\alpha) = 0 \\\\ e' \\in \\htmlData{k=th.Erel}{E^{W}_{n-\\kappa(\\alpha)}\\llbracket \\Theta' \\vdash T \\rrbracket^{F}} & \\kappa(\\alpha) > 0 \\end{cases}",
-     "caption": "The reading of a successor $e'$ after a step $\\alpha$ taken at level $n$, where $X$ is the least fixpoint under construction.",
+     "id": "v-rel",
+     "title": "The value relation",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "rocq": "relation/Relation.v: Vbody; relation/Relation.v: Varr; relation/Relation.v: Vthunk; relation/Relation.v: Vbody (TBox), Vrel_box_iff; relation/Relation.v: Vbody (TEx), Vrel_ex_iff; relation/Relation.v: tsize, Vtop; relation/Sfix.v: sfix",
+     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\phantom{x}\\end{array}}{\\htmlData{k=V-Unit}{\\ast \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\varnothing \\vdash \\ast \\rrbracket}}}\\;\\textsf{V-Unit} \\qquad \\dfrac{\\begin{array}{c}S' \\mathrel{\\htmlData{k=sty.seqv}{\\approx}} S\\end{array}}{\\htmlData{k=V-Sess}{o \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\htmlData{k=V-Sess.exact}{\\{o \\mapsto S'@x\\}} \\vdash S@x \\rrbracket}}}\\;\\textsf{V-Sess} \\\\[2ex]\n\\dfrac{\\begin{array}{c}v_1 \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta_1 \\vdash T_1 \\rrbracket}\\quad v_2 \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta_2 \\vdash T_2 \\rrbracket}\\end{array}}{\\htmlData{k=V-Prod}{\\langle v_1, v_2\\rangle \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\htmlData{k=V-Prod.split}{\\Theta_1 \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Theta_2} \\vdash T_1 \\otimes T_2 \\rrbracket}}}\\;\\textsf{V-Prod} \\qquad \\dfrac{\\begin{array}{c}v \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash T_i \\rrbracket}\\end{array}}{\\htmlData{k=V-Sum}{\\htmlData{k=syn.inj}{\\mathsf{inj}_i}\\,v \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash T_1 \\oplus T_2 \\rrbracket}}}\\;\\textsf{V-Sum}\n\\end{array}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=V-Arrow.exact}{\\mathrm{dom}\\,\\Theta = \\htmlData{k=syn.fends}{\\mathsf{fends}}(e)}\\quad \\htmlData{k=V-Arrow.lb}{l \\mathrel{\\htmlData{k=ty2.le}{\\preccurlyeq}} \\htmlData{k=ty.heads}{\\mathsf{heads}}\\,\\Theta} \\\\ \\htmlData{k=V-Arrow.kripke}{\\forall W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W},\\ \\htmlData{k=V-Arrow.level}{\\dfo{j < n}\\annot{j + \\kappa_{\\beta} \\leq n}},\\ \\Theta' \\mathbin{\\#} \\Theta,\\ \\htmlData{k=V-Arrow.ub}{F \\text{ with } \\htmlData{k=w.lt}{W' \\vdash u \\prec F}}. \\\\ w \\in \\htmlData{k=th.Vrel}{V^{W'}_{j}\\llbracket \\Theta' \\vdash T \\rrbracket} \\ \\Longrightarrow\\ \\htmlData{k=V-Arrow.body}{e[w] \\in \\htmlData{k=th.Erel}{E^{W'}_{j}\\llbracket \\Theta \\cup \\Theta' \\vdash U \\rrbracket^{F}}}\\end{array}}{\\lambda e \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U \\rrbracket}}\\;\\textsf{V-Arrow}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=V-Arrow.exact}{\\mathrm{dom}\\,\\Theta = \\htmlData{k=syn.fends}{\\mathsf{fends}}(e)} \\\\ \\forall W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W,\\ \\dfo{j < n}\\annot{j + \\kappa_{\\beta} \\leq n},\\ \\Theta' \\mathbin{\\#} \\Theta.\\quad w \\in \\htmlData{k=th.Vrel}{V^{W'}_{j}\\llbracket \\Theta' \\vdash \\ast \\rrbracket} \\ \\Longrightarrow\\ e[w] \\in \\htmlData{k=th.Erel}{E^{W'}_{j}\\llbracket \\Theta \\cup \\Theta' \\vdash \\ast \\rrbracket^{\\htmlData{k=V-Thunk.empty}{\\varnothing}}}\\end{array}}{\\lambda e \\in \\htmlData{k=sr.vthunk}{\\mathsf{Vthunk}^{W}_{n}(\\Theta)}}\\;\\textsf{V-Thunk}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=V-Box.empty}{\\Theta = \\varnothing}\\quad \\htmlData{k=V-Box.noends}{\\htmlData{k=syn.fends}{\\mathsf{fends}}(e) = \\varnothing} \\\\ \\htmlData{k=V-Box.kripke}{\\forall W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W},\\ \\htmlData{k=V-Box.inst}{\\bar x \\text{ with } W' \\vdash C[\\bar x]},\\ \\htmlData{k=V-Box.hc}{\\bar s \\text{ contractive}}.\\quad \\htmlData{k=V-Box.thunk}{\\htmlData{k=sr.thunk}{\\mathsf{thunk}(e)} \\in \\htmlData{k=th.Vrel}{V^{W'}_{n}\\llbracket \\varnothing \\vdash \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] \\rrbracket}}\\end{array}}{!e \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\varnothing \\vdash \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\,C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\rrbracket}}\\;\\textsf{V-Box}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=V-Ex.lb}{l \\mathrel{\\htmlData{k=ty2.le}{\\preccurlyeq}} \\htmlData{k=ty.heads}{\\mathsf{heads}}\\,\\Theta}\\quad \\htmlData{k=V-Ex.witness}{W \\vdash C[\\bar x]}\\quad v \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash T[\\bar x] \\rrbracket}\\end{array}}{v \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash \\exists^{l}\\bar\\iota.\\,C.\\,T \\rrbracket}}\\;\\textsf{V-Ex}\\\\[3ex]\\begin{array}{l}\n\\htmlData{k=rel.vsize}{V_n \\text{ by recursion on } (n, \\htmlData{k=sr.size}{\\mathsf{size}}\\,T) \\text{ ordered lexicographically}} \\\\\n\\htmlData{k=sr.size}{\\mathsf{size}(\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\,C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U)) = 3 + \\mathsf{size}\\,U} \\qquad \\htmlData{k=sr.size}{\\mathsf{size}(\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) = 2 + \\mathsf{size}\\,U}\n\\end{array}\\end{array}",
+     "caption": "Each rule is one clause of $V$, by recursion on the type within a level, and $\\Theta$ maps exactly the ends the value owns. A closure is safe when its body is safe in each larger world, at each lower level, for each argument and each future of the caller above $u$. A thunk, the closure that $\\mathsf{spawn}$ runs, is read at the empty future. A box owns no end, and it is safe when $\\mathsf{thunk}(e) = \\lambda\\_.\\,e[!e]$ is safe at each instance. An existential value is a value of the body at witness points whose facts hold.",
+     "about": {
+      "why": "The clauses for closures, thunks and boxes quantify over larger worlds and lower levels. This quantification makes the relation compositional.",
+      "used": [
+       "e-rel",
+       "p-rel",
+       "r-fun",
+       "e-obl",
+       "r-threads",
+       "r-boxes",
+       "r-ex"
+      ]
+     }
     },
     {
-     "id": "v-base",
-     "title": "Values of unit, end, product and sum type",
-     "rocq": "relation/Relation.v: Vbody",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=V-Unit}{v \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash \\ast \\rrbracket} \\iff \\Theta = \\varnothing \\land v = \\ast} \\\\\n\\htmlData{k=V-Sess}{v \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash S@x \\rrbracket} \\iff \\exists o, S'.\\ v = o \\land \\htmlData{k=V-Sess.exact}{\\Theta = \\{o \\mapsto S'@x\\}} \\land S' \\mathrel{\\htmlData{k=sty.seqv}{\\approx}} S} \\\\\n\\htmlData{k=V-Prod}{\\langle v_1, v_2\\rangle \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash T_1 \\otimes T_2 \\rrbracket} \\iff \\htmlData{k=V-Prod.split}{\\exists \\Theta_1, \\Theta_2.\\ \\Theta = \\Theta_1 \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Theta_2} \\land \\forall i.\\ v_i \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta_i \\vdash T_i \\rrbracket}} \\\\\n\\htmlData{k=V-Sum}{\\htmlData{k=syn.inj}{\\mathsf{inj}_i}\\,v \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash T_1 \\oplus T_2 \\rrbracket} \\iff v \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash T_i \\rrbracket}}\n\\end{array}",
-     "caption": "$V$ at the first-order types, where $\\Theta$ maps exactly the ends of the value.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "v-arrow",
-     "title": "Values of arrow type",
-     "rocq": "relation/Relation.v: Varr",
-     "tex": "\\begin{array}{l}\n\\lambda e \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U \\rrbracket} \\iff \\htmlData{k=V-Arrow.exact}{\\mathrm{dom}\\,\\Theta = \\htmlData{k=syn.fends}{\\mathsf{fends}}(e)} \\land \\htmlData{k=V-Arrow.lb}{l \\mathrel{\\htmlData{k=ty2.le}{\\preccurlyeq}} \\htmlData{k=ty.heads}{\\mathsf{heads}}\\,\\Theta} \\land {} \\\\\n\\quad \\htmlData{k=V-Arrow.kripke}{\\forall W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W},\\ \\htmlData{k=V-Arrow.level}{j \\in \\mathbb{N},\\ j + \\kappa_\\beta \\leq n},\\ \\Theta' \\mathbin{\\#} \\Theta,\\ \\htmlData{k=V-Arrow.ub}{F \\text{ with } \\htmlData{k=w.lt}{W' \\vdash u \\prec F}},\\ w \\in \\htmlData{k=th.Vrel}{V^{W'}_{j}\\llbracket \\Theta' \\vdash T \\rrbracket}. \\\\\n\\qquad \\htmlData{k=V-Arrow.body}{e[w] \\in \\htmlData{k=th.Erel}{E^{W'}_{j}\\llbracket \\Theta \\cup \\Theta' \\vdash U \\rrbracket^{F}}}\n\\end{array}",
-     "caption": "A closure is in $V$ when it owns exactly the ends it mentions and its body is in $E$ for every later world, level, disjoint argument and future above $u$.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "v-thunk",
-     "title": "The spawned thunk",
-     "rocq": "relation/Relation.v: Vthunk",
-     "tex": "\\begin{array}{l}\n\\lambda e \\in \\htmlData{k=sr.vthunk}{\\mathsf{Vthunk}^{W}_{n}(\\Theta)} \\iff \\htmlData{k=V-Arrow.exact}{\\mathrm{dom}\\,\\Theta = \\htmlData{k=syn.fends}{\\mathsf{fends}}(e)} \\land {} \\\\\n\\quad \\forall W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W,\\ j + \\kappa_\\beta \\leq n,\\ \\Theta' \\mathbin{\\#} \\Theta,\\ w \\in \\htmlData{k=th.Vrel}{V^{W'}_{j}\\llbracket \\Theta' \\vdash \\ast \\rrbracket}.\\ e[w] \\in \\htmlData{k=th.Erel}{E^{W'}_{j}\\llbracket \\Theta \\cup \\Theta' \\vdash \\ast \\rrbracket^{\\htmlData{k=V-Thunk.empty}{\\varnothing}}}\n\\end{array}",
-     "caption": "$V$ at $\\ast \\multimap \\ast$ with no lower and no upper point and the body read at the empty future.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "v-box",
-     "title": "Values of box type",
-     "rocq": "relation/Relation.v: Vbody (TBox), Vrel_box_iff",
-     "tex": "\\begin{array}{l}\n!e \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\,C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\rrbracket} \\iff \\htmlData{k=V-Box.empty}{\\Theta = \\varnothing} \\land \\htmlData{k=V-Box.noends}{\\htmlData{k=syn.fends}{\\mathsf{fends}}(e) = \\varnothing} \\land {} \\\\\n\\quad \\htmlData{k=V-Box.kripke}{\\forall W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W},\\ \\htmlData{k=V-Box.inst}{\\bar x \\in \\mathsf{Point}^{m} \\text{ with } W' \\vdash C[\\bar x]},\\ \\htmlData{k=V-Box.hc}{\\bar s \\in \\mathsf{STy}^{k} \\text{ with } \\forall s \\in \\bar s.\\ \\mathsf{hcontractive}\\,s}. \\\\\n\\qquad \\htmlData{k=V-Box.thunk}{\\htmlData{k=sr.thunk}{\\mathsf{thunk}(e)} \\in \\htmlData{k=th.Vrel}{V^{W'}_{n}\\llbracket \\varnothing \\vdash \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] \\rrbracket}}\n\\end{array}",
-     "caption": "A box is in $V$ when it owns no end and its thunk $\\lambda\\_.\\,e[!e]$ is in $V$ at the same level for every later world and every instance meeting $C$.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "v-ex",
-     "title": "Values of existential type",
-     "rocq": "relation/Relation.v: Vbody (TEx), Vrel_ex_iff",
-     "tex": "\\begin{array}{l}\nv \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash \\exists^{l}\\bar\\iota.\\,C.\\,T \\rrbracket} \\iff \\htmlData{k=V-Ex.lb}{l \\mathrel{\\htmlData{k=ty2.le}{\\preccurlyeq}} \\htmlData{k=ty.heads}{\\mathsf{heads}}\\,\\Theta} \\land {} \\\\\n\\quad \\htmlData{k=V-Ex.witness}{\\exists \\bar x \\in \\mathsf{Point}^{m}.\\ W \\vdash C[\\bar x] \\land v \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash T[\\bar x] \\rrbracket}}\n\\end{array}",
-     "caption": "An existential value has a witness instance in $W$, and its lower bound bounds the heads of its ends.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "v-size",
-     "title": "Recursion of V",
-     "rocq": "relation/Relation.v: tsize, Vtop; relation/Sfix.v: sfix",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=rel.vsize}{V_n \\text{ by recursion on } (n, \\htmlData{k=sr.size}{\\mathsf{size}}\\,T) \\text{ ordered lexicographically}} \\\\\n\\htmlData{k=sr.size}{\\mathsf{size}(\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\,C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U)) = 3 + \\mathsf{size}\\,U} \\qquad \\htmlData{k=sr.size}{\\mathsf{size}(\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) = 2 + \\mathsf{size}\\,U}\n\\end{array}",
-     "caption": "$V$ at level $n$ recurses on the size of the type inside the level, and the box clause stays inside the recursion.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "e-body",
+     "id": "e-rel",
      "title": "The term relation",
-     "rocq": "relation/Relation.v: Ebody, Eind, Etop",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=E.zero}{\\forall e.\\ e \\in \\htmlData{k=th.Erel}{E^{W}_{0}\\llbracket \\Theta \\vdash T \\rrbracket^{F}}} \\\\\ne \\in \\htmlData{k=th.Erel}{E^{W}_{n{+}1}\\llbracket \\Theta \\vdash T \\rrbracket^{F}} \\iff \\htmlData{k=E.kripke}{\\forall W_1 \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W}. \\\\\n\\quad \\htmlData{k=E.stop}{(\\mathsf{stop})\\ \\htmlData{k=sr.irred}{\\mathsf{irred}}\\,e \\Rightarrow e \\in \\htmlData{k=th.Vrel}{V^{W_1}_{n{+}1}\\llbracket \\Theta \\vdash T \\rrbracket}} \\\\\n\\quad \\htmlData{k=E.ready}{(\\mathsf{ready})\\ \\neg\\mathsf{irred}\\,e \\Rightarrow \\htmlData{k=sr.ready}{\\mathsf{ready}_{W_1}(\\Theta \\mid F, e)}} \\\\\n\\quad \\htmlData{k=E.step}{(\\mathsf{step})\\ \\forall \\alpha, e'.\\ e \\xrightarrow{\\alpha} e' \\Rightarrow \\htmlData{k=sr.obl}{\\mathsf{Obl}_\\alpha(e')}} \\qquad \\htmlData{k=rel.lfp}{\\text{least fixpoint}}\n\\end{array}",
-     "caption": "A term in $E$ is a value in $V$ when irreducible, ready when reducible, and every step meets its obligation.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "rocq": "relation/Relation.v: Ebody, Eind, Etop; relation/Relation.v: at_cost_E, at_cost_V, at_cost_P",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=E.zero}{\\forall e.\\ e \\in \\htmlData{k=th.Erel}{E^{W}_{0}\\llbracket \\Theta \\vdash T \\rrbracket^{F}}} \\\\\ne \\in \\htmlData{k=th.Erel}{E^{W}_{n{+}1}\\llbracket \\Theta \\vdash T \\rrbracket^{F}} \\iff \\htmlData{k=E.kripke}{\\forall W_1 \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W}. \\\\\n\\quad \\htmlData{k=E.stop}{(\\mathsf{stop})\\ \\htmlData{k=sr.irred}{\\mathsf{irred}}\\,e \\Rightarrow e \\in \\htmlData{k=th.Vrel}{V^{W_1}_{n{+}1}\\llbracket \\Theta \\vdash T \\rrbracket}} \\\\\n\\quad \\htmlData{k=E.ready}{(\\mathsf{ready})\\ \\neg\\mathsf{irred}\\,e \\Rightarrow \\htmlData{k=sr.ready}{\\mathsf{ready}_{W_1}(\\Theta \\mid F, e)}} \\\\\n\\quad \\htmlData{k=E.step}{(\\mathsf{step})\\ \\forall \\alpha, e'.\\ e \\xrightarrow{\\alpha} e' \\Rightarrow \\htmlData{k=sr.obl}{\\mathsf{Obl}_\\alpha(e')}} \\qquad \\htmlData{k=rel.lfp}{\\text{least fixpoint}}\n\\end{array}\\\\[3ex]\\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\Theta' \\iff \\begin{cases} \\htmlData{k=rel.lfp}{X(W, \\Theta', T, F, e')} & \\dfo{\\htmlData{k=ct.DF}{\\kappa_{DF}}(\\alpha)}\\annot{\\htmlData{k=ct.table}{\\kappa}(\\alpha)} = 0 \\\\ e' \\in \\htmlData{k=th.Erel}{E^{W}_{n-\\dfo{\\htmlData{k=ct.DF}{\\kappa_{DF}}(\\alpha)}\\annot{\\htmlData{k=ct.table}{\\kappa}(\\alpha)}}\\llbracket \\Theta' \\vdash T \\rrbracket^{F}} & \\dfo{\\htmlData{k=ct.DF}{\\kappa_{DF}}(\\alpha)}\\annot{\\htmlData{k=ct.table}{\\kappa}(\\alpha)} > 0 \\end{cases}\\end{array}",
+     "caption": "A term in $E$ is a value in $V$ when it is irreducible and ready when it is reducible, and each of its steps meets its obligation. The successor is read one level lower, or at the same level after a free step.",
+     "about": {
+      "why": "The term relation is the center of the logical relation. Values, obligations and readiness are its three clauses.",
+      "used": [
+       "rd",
+       "e-obl",
+       "sj-all",
+       "p-obls"
+      ]
+     }
     },
     {
-     "id": "e-obl-admin",
-     "title": "Obligations of internal steps",
-     "rocq": "relation/Relation.v: o_beta, o_new, o_spawn, new_env",
-     "tex": "\\begin{array}{ll}\n\\htmlData{k=O-Beta}{\\textsf{O-Beta}} & \\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\Theta \\\\\n\\htmlData{k=O-New}{\\textsf{O-New}} & \\htmlData{k=O-New.cfresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Theta} \\Rightarrow \\htmlData{k=O-New.forall}{\\forall a.\\ \\htmlData{k=O-New.gfresh}{a \\notin A_W}} \\Rightarrow \\htmlData{k=O-New.grow}{\\exists S, \\pi, C.\\ \\pi \\in \\{a\\} \\cup \\{x\\cdot\\kappa\\} \\land \\mathsf{strict}(W \\oplus C)} \\land {} \\\\\n & \\quad \\htmlData{k=rel.atcost}{e'\\ \\text{at}}_{W \\oplus C}\\ \\htmlData{k=O-New.dual}{\\Theta[c^{+} \\mapsto S@\\pi,\\ c^{-} \\mapsto \\overline{S}@\\overline{\\pi}]} \\\\\n\\htmlData{k=O-Spawn}{\\textsf{O-Spawn}} & \\htmlData{k=O-Spawn.split}{\\exists \\Theta_M, \\Theta_r.\\ \\Theta = \\Theta_M \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Theta_r} \\land \\htmlData{k=O-Spawn.thunk}{v \\in \\htmlData{k=sr.vthunk}{\\mathsf{Vthunk}_n(\\Theta_M)}} \\land \\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\Theta_r \\\\\n & \\quad \\htmlData{k=O-Spawn.transfer}{(\\text{hence } \\mathrm{dom}\\,\\Theta_M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(v))}\n\\end{array}",
-     "caption": "The obligations of $\\beta$, creation and spawn, which keep or extend the environment, and creation grows the world.",
+     "id": "e-obl",
+     "title": "Obligations of term steps",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "rocq": "relation/Relation.v: o_beta, o_new, o_spawn, new_env; relation/Relation.v: o_send, o_recv; relation/Relation.v: o_close, o_select, o_branch, o_link",
+     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\Theta\\end{array}}{\\htmlData{k=O-Beta}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\beta}(e')}}}\\;\\textsf{O-Beta} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=O-Spawn.split}{\\Theta = \\Theta_M \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Theta_r}\\quad \\htmlData{k=O-Spawn.thunk}{v \\in \\htmlData{k=sr.vthunk}{\\mathsf{Vthunk}_n(\\Theta_M)}}\\quad \\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\Theta_r\\end{array}}{\\htmlData{k=O-Spawn}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{spawn}\\,v}(e')}}}\\;\\textsf{O-Spawn} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=O-New.cfresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Theta} \\\\ \\htmlData{k=O-New.forall}{\\forall \\htmlData{k=O-New.gfresh}{a \\notin A_W}}.\\ \\htmlData{k=O-New.grow}{\\exists S, \\pi, C.\\ \\pi \\in \\{a, x\\cdot\\kappa\\},\\ \\mathsf{strict}(W \\oplus C)},\\ \\htmlData{k=rel.atcost}{e'\\ \\text{at}}_{W \\oplus C}\\ \\htmlData{k=O-New.dual}{\\Theta[c^{+} \\mapsto S@\\pi,\\ c^{-} \\mapsto \\overline{S}@\\overline{\\pi}]}\\end{array}}{\\htmlData{k=O-New}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{new}\\,c}(e')}}}\\;\\textsf{O-New}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.send}{!(\\bar\\iota.\\ U)}.S@x}\\quad \\htmlData{k=O-Send.split}{\\Theta \\setminus o = \\Theta_M \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Theta_r} \\\\ \\htmlData{k=O-Send.payload}{w \\in \\htmlData{k=th.Vrel}{V^{W}_{\\dfo{n}\\annot{n-\\kappa_{give}}}\\llbracket \\Theta_M \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}}\\quad \\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\htmlData{k=O-Send.shift}{\\Theta_r[o \\mapsto S@x^{+}]}\\end{array}}{\\htmlData{k=O-Send}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{send}\\,o\\,w}(e')}}}\\;\\textsf{O-Send} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ U)}.S@x} \\\\ \\htmlData{k=O-Recv.forall}{\\forall j, \\Theta_{in}.\\ \\dfo{j < n}\\annot{j + \\kappa_{take} \\leq n},\\ \\Theta_{in} \\mathbin{\\#} \\Theta,\\ w \\in \\htmlData{k=th.Vrel}{V^{W}_{j}\\llbracket \\Theta_{in} \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}} \\ \\Longrightarrow\\ \\htmlData{k=O-Recv.level}{e' \\in \\htmlData{k=th.Erel}{E^{W}_{j}\\llbracket \\Theta[o \\mapsto S@x^{+}] \\cup \\Theta_{in} \\vdash T \\rrbracket^{F}}}\\end{array}}{\\htmlData{k=O-Recv}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{recv}\\,o\\,w}(e')}}}\\;\\textsf{O-Recv}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.close}{\\mathsf{Close}}@x}\\quad \\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\Theta \\setminus o\\end{array}}{\\htmlData{k=O-Close}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{close}\\,o}(e')}}}\\;\\textsf{O-Close} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=O-Link.distinct}{o_1 \\neq o_2}\\quad \\htmlData{k=O-Link.dual}{\\Theta(o_1) = S_1@x,\\ \\Theta(o_2) = S_2@\\overline{x},\\ \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S_1\\,S_2}\\quad \\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\Theta \\setminus \\{o_1, o_2\\}\\end{array}}{\\htmlData{k=O-Link}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{link}\\,o_1\\,o_2}(e')}}}\\;\\textsf{O-Link} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.plus}{\\oplus(S_1,S_2)}@x}\\quad \\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\Theta[o \\mapsto S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}}]\\end{array}}{\\htmlData{k=O-Select}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{select}_i\\,o}(e')}}}\\;\\textsf{O-Select} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.with}{\\&(S_1,S_2)}@x}\\quad \\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\Theta[o \\mapsto S_i@\\htmlData{k=pt.bra}{x\\cdot\\kappa_i}]\\end{array}}{\\htmlData{k=O-Branch}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{branch}_i\\,o}(e')}}}\\;\\textsf{O-Branch}\n\\end{array}\\end{array}",
+     "caption": "Each step $e \\xrightarrow{\\alpha} e'$ of a term holding $\\Theta$ must meet $\\mathsf{Obl}_\\alpha(e')$. A $\\beta$ step keeps the ends. A spawn gives the child exactly the ends of its thunk, and a creation adds two dual ends at a fresh root or at a field. A send gives away exactly the ends of its payload, and a receive is safe for each value that may arrive. A close removes the end, a choice moves it to the field of the branch, and a link removes two dual ends.",
+     "about": {
+      "why": "The obligations say how each step changes ownership and points. The relation reads step labels only here.",
+      "used": [
+       "e-rel"
+      ]
+     }
     },
     {
-     "id": "e-obl-msg",
-     "title": "Obligations of send and receive",
-     "rocq": "relation/Relation.v: o_send, o_recv",
-     "tex": "\\begin{array}{ll}\n\\htmlData{k=O-Send}{\\textsf{O-Send}} & \\Theta(o) = S_0@x \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.send}{!(\\bar\\iota.\\ U\\annot{^{b}})}.S \\land \\htmlData{k=O-Send.split}{\\Theta \\setminus o = \\Theta_M \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Theta_r} \\land {} \\\\\n & \\htmlData{k=O-Send.payload}{w \\in \\htmlData{k=th.Vrel}{V^{W}_{n-\\kappa_{give}}\\llbracket \\Theta_M \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}} \\land \\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\htmlData{k=O-Send.shift}{\\Theta_r[o \\mapsto S@x^{+}]} \\\\\n & \\quad \\htmlData{k=O-Spawn.transfer}{(\\text{hence } \\mathrm{dom}\\,\\Theta_M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(w))} \\\\\n\\htmlData{k=O-Recv}{\\textsf{O-Recv}} & \\Theta(o) = S_0@x \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ U\\annot{^{b}})}.S \\land {} \\\\\n & \\htmlData{k=O-Recv.forall}{\\forall j, \\Theta_{in}.\\ j + \\kappa_{take} \\leq n \\land \\Theta_{in} \\mathbin{\\#} \\Theta \\land w \\in \\htmlData{k=th.Vrel}{V^{W}_{j}\\llbracket \\Theta_{in} \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}} \\Rightarrow \\\\\n & \\quad \\htmlData{k=O-Recv.level}{e' \\in \\htmlData{k=th.Erel}{E^{W}_{j}\\llbracket \\Theta[o \\mapsto S@x^{+}] \\cup \\Theta_{in} \\vdash T \\rrbracket^{F}}}\n\\end{array}",
-     "caption": "A send gives up the ends of its payload and a receive continues for every incoming value at every lower level.",
+     "id": "rd",
+     "title": "Readiness",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "rocq": "relation/Readiness.v: ready_t, below_rest, offered_t, stable_t, link_t; relation/Readiness.v: ready_p, above_offered, stable_p, link_p, offered_p",
+     "tex": "\\begin{array}{c}\\begin{array}{rcl}\n\\htmlData{k=sr.ready}{\\mathsf{ready}_W(\\Theta \\mid F, t)} & \\iff & \\htmlData{k=rd.stable}{\\mathsf{stable}\\,t} \\Longrightarrow \\htmlData{k=rd.value}{\\mathsf{done}} \\land \\htmlData{k=rd.below-rest}{\\mathsf{ordered}} \\\\[1ex]\n\\htmlData{k=rd.value}{\\mathsf{done}} & \\iff & \\htmlData{k=rd.value}{O = \\varnothing \\Rightarrow t \\in \\mathsf{Val}} \\\\\n\\htmlData{k=rd.below-rest}{\\mathsf{ordered}} & \\iff & \\htmlData{k=rd.link}{\\mathsf{link}\\,t} \\lor {} \\htmlData{k=rd.below-rest}{\\forall o \\in O.\\ \\htmlData{k=rd.below-held}{(\\forall o' \\in \\mathrm{dom}\\,\\Theta \\setminus O.\\ W \\vdash x_o \\prec \\overline{x_{o'}})} \\land \\htmlData{k=rd.below-future}{(\\forall y \\in F.\\ W \\vdash x_o \\prec y)}} \\\\[1ex]\n & & O = \\htmlData{k=rd.offered}{\\mathsf{offered}_\\Theta(t)},\\ \\text{the ends } t \\text{ offers} \\qquad x_o \\text{ the point of } \\Theta(o)\n\\end{array}\\\\[3ex]\\begin{array}{rcl}\n\\htmlData{k=sr.readyp}{\\mathsf{ready}_W(\\Sigma, p)} & \\iff & \\htmlData{k=rd.p-stable}{\\mathsf{stable}\\,p} \\Longrightarrow \\htmlData{k=rd.link}{\\mathsf{link}\\,p} \\lor (\\htmlData{k=rd.p-term}{\\mathsf{done}} \\land \\htmlData{k=rd.above-offered}{\\mathsf{covered}}) \\\\[1ex]\n\\htmlData{k=rd.p-term}{\\mathsf{done}} & \\iff & \\htmlData{k=rd.p-term}{O = \\varnothing \\Rightarrow \\htmlData{k=prop.terminated}{\\mathsf{terminated}}\\,p} \\\\\n\\htmlData{k=rd.above-offered}{\\mathsf{covered}} & \\iff & \\htmlData{k=rd.above-offered}{\\forall o \\in \\mathrm{dom}\\,\\Sigma \\setminus O.\\ \\exists o' \\in O.\\ W \\vdash x_{o'} \\prec \\overline{x_o}} \\\\[1ex]\n & & O = \\htmlData{k=rd.offered}{\\mathsf{offered}_\\Sigma(p)},\\ \\text{the interface ends } p \\text{ offers}\n\\end{array}\\end{array}",
+     "caption": "Readiness constrains a stuck term, one that can only offer actions. A stuck term has finished when it offers nothing, and each end it offers lies below the dual points of the ends it keeps and below its future. A stuck process is at a link, or has finished when it offers nothing, and each interface end it keeps has an offered end below its dual point. Internal channels have no points.",
+     "about": {
+      "why": "In a strict order some stuck thread waits at a minimal point, and the thread holding the dual end can act with that thread. Adequacy uses this argument to derive deadlock freedom from readiness.",
+      "used": [
+       "e-rel",
+       "p-rel",
+       "th-adeq"
+      ]
+     }
     },
     {
-     "id": "e-obl-other",
-     "title": "Obligations of close, choice and link",
-     "rocq": "relation/Relation.v: o_close, o_select, o_branch, o_link",
-     "tex": "\\begin{array}{ll}\n\\htmlData{k=O-Close}{\\textsf{O-Close}} & \\Theta(o) = S_0@x \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.close}{\\mathsf{Close}} \\land \\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\Theta \\setminus o \\\\\n\\htmlData{k=O-Select}{\\textsf{O-Select}} & \\Theta(o) = S_0@x \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.plus}{\\oplus(S_1,S_2)} \\land \\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\Theta[o \\mapsto S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}}] \\\\\n\\htmlData{k=O-Branch}{\\textsf{O-Branch}} & \\Theta(o) = S_0@x \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.with}{\\&(S_1,S_2)} \\land \\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\Theta[o \\mapsto S_i@\\htmlData{k=pt.bra}{x\\cdot\\kappa_i}] \\\\\n\\htmlData{k=O-Link}{\\textsf{O-Link}} & \\htmlData{k=O-Link.distinct}{o_1 \\neq o_2} \\land \\htmlData{k=O-Link.dual}{\\Theta(o_1) = S_1@x \\land \\Theta(o_2) = S_2@\\overline{x} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S_1\\,S_2} \\land {} \\\\\n & \\htmlData{k=rel.atcost}{e'\\ \\text{at}}\\ \\Theta \\setminus \\{o_1, o_2\\}\n\\end{array}",
-     "caption": "Each obligation reads and updates only the entries of the subject ends.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "rd-term",
-     "title": "Readiness of a term",
-     "rocq": "relation/Readiness.v: ready_t, below_rest, offered_t, stable_t, link_t",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=sr.ready}{\\mathsf{ready}_W(\\Theta \\mid F, t)} \\iff \\htmlData{k=rd.stable}{\\mathsf{stable}\\,t} \\Rightarrow {} \\\\\n\\quad \\htmlData{k=rd.value}{\\big((\\forall o.\\ \\neg \\htmlData{k=rd.offered}{\\mathsf{offered}_\\Theta(t, o)}) \\Rightarrow t \\in \\mathsf{Val}\\big)} \\land \\big(\\htmlData{k=rd.link}{\\mathsf{link}\\,t} \\lor \\htmlData{k=rd.below-rest}{\\mathsf{below\\_rest}_W(\\Theta, \\mathsf{offered}_\\Theta(t), F)}\\big) \\\\\n\\htmlData{k=rd.below-rest}{\\mathsf{below\\_rest}_W(\\Theta, O, F)} \\iff \\forall o \\in O.\\ \\Theta(o) = S@x \\Rightarrow {} \\\\\n\\quad \\htmlData{k=rd.below-held}{(\\forall o' \\notin O.\\ \\Theta(o') = S'@x' \\Rightarrow \\htmlData{k=w.lt}{W \\vdash x \\prec \\overline{x'}})} \\land \\htmlData{k=rd.below-future}{(\\forall y \\in F.\\ \\htmlData{k=w.lt}{W \\vdash x \\prec y})}\n\\end{array}",
-     "caption": "A stable reducible term offers held ends, each below the partner point of every other held end and below every point of the future, unless it is at a link.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "rd-proc",
-     "title": "Readiness of a process",
-     "rocq": "relation/Readiness.v: ready_p, above_offered, stable_p, link_p, offered_p",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=sr.readyp}{\\mathsf{ready}_W(\\Sigma, p)} \\iff \\htmlData{k=rd.p-stable}{\\mathsf{stable}\\,p} \\Rightarrow \\htmlData{k=rd.link}{\\mathsf{link}\\,p} \\lor {} \\\\\n\\quad \\big(\\htmlData{k=rd.p-term}{((\\forall o.\\ \\neg\\mathsf{offered}_\\Sigma(p, o)) \\Rightarrow \\htmlData{k=prop.terminated}{\\mathsf{terminated}}\\,p)} \\land \\htmlData{k=rd.above-offered}{\\mathsf{above\\_offered}}\\big) \\\\\n\\htmlData{k=rd.above-offered}{\\mathsf{above\\_offered}} \\iff \\forall o.\\ \\Sigma(o) = S@x \\land \\neg\\htmlData{k=rd.offered}{\\mathsf{offered}_\\Sigma(p, o)} \\Rightarrow {} \\\\\n\\quad \\exists o'.\\ \\htmlData{k=rd.offered}{\\mathsf{offered}_\\Sigma(p, o')} \\land \\Sigma(o') = S'@x' \\land \\htmlData{k=w.lt}{W \\vdash x' \\prec \\overline{x}}\n\\end{array}",
-     "caption": "A stable process is at a link or terminated or offers an interface end, and every interface end it does not offer has an offered end below its partner point.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "p-body",
+     "id": "p-rel",
      "title": "The process relation",
-     "rocq": "relation/Relation.v: Pbody, Pclauses, Pind, Ptop",
-     "tex": "\\begin{array}{l}\np \\in \\htmlData{k=th.Prel}{P^{W}_{n{+}1}\\llbracket \\Sigma \\vdash T \\rrbracket} \\iff \\htmlData{k=P.strict}{\\forall W_1 \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W.\\ \\htmlData{k=w.strict}{\\mathsf{strict}}\\,W_1 \\Rightarrow {}} \\\\\n\\quad \\htmlData{k=P.fuse}{\\forall h, D.\\ \\htmlData{k=sr.fuseok}{\\mathsf{fuse\\_ok}}\\,h\\,D\\,\\Sigma\\,p \\Rightarrow \\text{clauses at } W_1,\\ \\Sigma' = \\htmlData{k=sr.sdrop}{\\mathsf{sdrop}}\\,D\\,(h\\,\\Sigma),\\ p' = \\htmlData{k=sr.pfuse}{\\mathsf{pfuse}}\\,h\\,D\\,p} \\\\\n\\quad \\htmlData{k=P-Stop}{(\\textsf{P-Stop})\\ \\htmlData{k=sr.pirred}{\\mathsf{pirred}}\\,p' \\Rightarrow \\exists v, E.\\ p' = (\\varnothing, \\{v\\} \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E) \\land v \\in \\htmlData{k=th.Vrel}{V^{W_1}_{n{+}1}\\llbracket \\Sigma' \\vdash T \\rrbracket} \\land \\forall e \\in E.\\ e = \\ast} \\\\\n\\quad \\htmlData{k=P-Ready}{(\\textsf{P-Ready})\\ \\neg\\mathsf{pirred}\\,p' \\Rightarrow \\htmlData{k=sr.readyp}{\\mathsf{ready}_{W_1}(\\Sigma', p')}} \\\\\n\\quad \\htmlData{k=P-Step}{(\\textsf{P-Step})\\ \\forall q, ev, q'.\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,q = p' \\land q \\xrightarrow{ev} q' \\Rightarrow \\htmlData{k=sr.pobl}{\\mathsf{Pobl}_{ev}(\\mathsf{erase}\\,q')}} \\qquad \\htmlData{k=rel.lfp}{\\text{least fixpoint}}\n\\end{array}",
-     "caption": "A process in $P$ meets three clauses in every strict later world and after every admissible fusion of its held ends.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "rocq": "relation/Relation.v: Pbody, Pclauses, Pind, Ptop; relation/Relation.v: fuse_ok, pheld, pfuse, sdrop, dpairs, gch",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\np \\in \\htmlData{k=th.Prel}{P^{W}_{n{+}1}\\llbracket \\Sigma \\vdash T \\rrbracket} \\iff \\htmlData{k=P.strict}{\\forall W_1 \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W.\\ \\htmlData{k=w.strict}{\\mathsf{strict}}\\,W_1} \\Rightarrow \\htmlData{k=P.fuse}{\\forall h, D.\\ \\htmlData{k=sr.fuseok}{\\mathsf{fuse\\_ok}}\\,h\\,D\\,\\Sigma\\,p} \\Rightarrow \\text{at } p' = \\htmlData{k=sr.pfuse}{\\mathsf{pfuse}}\\,h\\,D\\,p,\\ \\Sigma' = \\htmlData{k=sr.sdrop}{\\mathsf{sdrop}}\\,D\\,(h\\,\\Sigma) \\\\\n\\quad \\htmlData{k=P-Stop}{(\\mathsf{stop})\\ \\htmlData{k=sr.pirred}{\\mathsf{pirred}}\\,p' \\Rightarrow p' = (\\varnothing, \\{v\\} \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E) \\land v \\in \\htmlData{k=th.Vrel}{V^{W_1}_{n{+}1}\\llbracket \\Sigma' \\vdash T \\rrbracket} \\land E \\subseteq \\{\\ast\\}} \\\\\n\\quad \\htmlData{k=P-Ready}{(\\mathsf{ready})\\ \\neg\\mathsf{pirred}\\,p' \\Rightarrow \\htmlData{k=sr.readyp}{\\mathsf{ready}_{W_1}(\\Sigma', p')}} \\\\\n\\quad \\htmlData{k=P-Step}{(\\mathsf{step})\\ p' \\xrightarrow{ev} p'' \\Rightarrow \\htmlData{k=sr.pobl}{\\mathsf{Pobl}_{ev}(p'')}} \\qquad \\htmlData{k=rel.lfp}{\\text{least fixpoint}}\n\\end{array}\\\\[3ex]\\begin{array}{rcll}\n\\htmlData{k=sr.fuseok}{\\mathsf{fuse\\_ok}\\,h\\,D\\,\\Sigma\\,(C, E)} & \\iff & \\htmlData{k=fuse.dcomm}{\\forall o.\\ h(\\overline{o}) = \\overline{h(o)}} & \\text{respects duality} \\\\\n & \\land & \\htmlData{k=fuse.inj}{h(o_1) = h(o_2) \\Rightarrow o_1 = o_2} & \\text{injective, } o_1, o_2 \\in \\mathsf{held} \\\\\n & \\land & \\htmlData{k=fuse.partners}{h(o_2) = \\overline{h(o_1)} \\Rightarrow o_2 = \\overline{o_1} \\lor \\htmlData{k=end.ech}{\\mathsf{ech}}(h\\,o_1) \\in D} & \\text{new pairs restricted, } o_1, o_2 \\in \\mathsf{held} \\\\\n & \\land & \\htmlData{k=fuse.D}{D \\cap \\htmlData{k=sr.gch}{\\mathsf{gch}_h}[C] = \\varnothing} \\land \\htmlData{k=fuse.dpairs}{\\mathsf{dpairs}\\,D\\,(h\\,\\Sigma)} & D \\text{ fresh and dual} \\\\[1ex]\n\\htmlData{k=sr.held}{\\mathsf{held}} & = & \\htmlData{k=sr.held}{\\{o \\mid o \\in \\mathrm{dom}\\,\\Sigma \\lor \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C\\}} \\\\\n\\htmlData{k=sr.gch}{\\mathsf{gch}_h(c)} & = & \\htmlData{k=sr.gch}{\\htmlData{k=end.ech}{\\mathsf{ech}}(h(c^{+}))} \\\\\n\\htmlData{k=sr.sdrop}{\\mathsf{sdrop}\\,D\\,\\Sigma} & = & \\htmlData{k=sr.sdrop}{\\{o \\mapsto y \\in \\Sigma \\mid \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\notin D\\}} \\\\\n\\htmlData{k=sr.pfuse}{\\mathsf{pfuse}\\,h\\,D\\,(C, E)} & = & \\htmlData{k=sr.pfuse}{(\\mathsf{gch}_h[C] \\cup D,\\ h[E])} \\\\\n\\htmlData{k=fuse.dpairs}{\\mathsf{dpairs}\\,D\\,\\Sigma} & \\iff & \\htmlData{k=fuse.dpairs}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in D \\Rightarrow \\Sigma(o) = S@x \\land \\Sigma(\\overline{o}) = S'@\\overline{x} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S'}\n\\end{array}\\end{array}",
+     "caption": "A process satisfies the three clauses of a term, stop, ready and step, in each strict larger world and after each admissible fusion of its held ends. An admissible fusion $(h, D)$ renames held ends injectively, except for the new pairs it restricts in $D$.",
+     "about": {
+      "why": "Composition fuses ends of two processes. Building fusion into the relation lets the semantic P-Connect hold without further proof.",
+      "used": [
+       "p-obls",
+       "sj-all",
+       "th-compose"
+      ]
+     }
     },
     {
-     "id": "p-fuse",
-     "title": "Fusions of held ends",
-     "rocq": "relation/Relation.v: fuse_ok, pheld, pfuse, sdrop, dpairs, gch",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=sr.fuseok}{\\mathsf{fuse\\_ok}\\,h\\,D\\,\\Sigma\\,(C, E)} \\iff \\htmlData{k=fuse.dcomm}{\\forall o.\\ h(\\overline{o}) = \\overline{h(o)}} \\land {} \\\\\n\\quad \\htmlData{k=fuse.inj}{\\forall o_1, o_2 \\in \\htmlData{k=sr.held}{\\mathsf{held}}.\\ h(o_1) = h(o_2) \\Rightarrow o_1 = o_2} \\land {} \\\\\n\\quad \\htmlData{k=fuse.partners}{\\forall o_1, o_2 \\in \\mathsf{held}.\\ h(o_2) = \\overline{h(o_1)} \\Rightarrow o_2 = \\overline{o_1} \\lor \\htmlData{k=end.ech}{\\mathsf{ech}}(h\\,o_1) \\in D} \\land {} \\\\\n\\quad \\htmlData{k=fuse.D}{D \\cap \\htmlData{k=sr.gch}{\\mathsf{gch}_h}[C] = \\varnothing} \\land \\htmlData{k=fuse.dpairs}{\\mathsf{dpairs}\\,D\\,(h\\,\\Sigma)} \\\\\n\\htmlData{k=sr.held}{\\mathsf{held} = \\{o \\mid o \\in \\mathrm{dom}\\,\\Sigma \\lor \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C\\}} \\qquad \\htmlData{k=sr.gch}{\\mathsf{gch}_h(c) = \\htmlData{k=end.ech}{\\mathsf{ech}}(h(c^{+}))} \\\\\n\\htmlData{k=sr.sdrop}{\\mathsf{sdrop}\\,D\\,\\Sigma = \\{o \\mapsto y \\in \\Sigma \\mid \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\notin D\\}} \\qquad \\htmlData{k=sr.pfuse}{\\mathsf{pfuse}\\,h\\,D\\,(C, E) = (\\mathsf{gch}_h[C] \\cup D,\\ h[E])} \\\\\n\\htmlData{k=fuse.dpairs}{\\mathsf{dpairs}\\,D\\,\\Sigma \\iff \\forall o.\\ \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in D \\Rightarrow \\Sigma(o) = S@x \\land \\Sigma(\\overline{o}) = S'@\\overline{x} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S'}\n\\end{array}",
-     "caption": "An admissible fusion $(h, D)$ renames held ends injectively up to the new pairs it restricts as $D$.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "p-obl",
+     "id": "p-obls",
      "title": "Obligations of process steps",
-     "rocq": "relation/Relation.v: q_tau, q_send, q_recv, q_close, q_select, q_branch, q_link",
-     "tex": "\\begin{array}{ll}\n\\htmlData{k=Q-Tau}{\\textsf{Q-Tau}} & C' \\cap \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma = \\varnothing \\Rightarrow \\htmlData{k=rel.atcost}{p'\\ \\text{at}}\\ \\Sigma \\text{ after cost } \\htmlData{k=ct.sync}{\\kappa(ev)} \\\\\n\\htmlData{k=Q-Send}{\\textsf{Q-Send}} & \\Sigma(o) = S_0@x \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.send}{!(\\bar\\iota.\\ U\\annot{^{b}})}.S \\land \\Sigma \\setminus o = \\Sigma_v \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Sigma_r \\land {} \\\\\n & \\htmlData{k=Q-Send.theta-e}{\\forall o'.\\ o' \\in \\mathrm{dom}\\,\\Theta_e \\iff o' \\in \\htmlData{k=syn.fends}{\\mathsf{fends}}(w) \\land \\htmlData{k=end.ech}{\\mathsf{ech}}(o') \\in C} \\land {} \\\\\n & \\htmlData{k=Q-Send.split}{\\mathsf{send\\_split}\\,\\Sigma\\,\\Sigma_e\\,\\Theta_e} \\land w \\in \\htmlData{k=th.Vrel}{V^{W}_{n-\\kappa_{give}}\\llbracket \\Sigma_v \\cup \\Theta_e \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket} \\land {} \\\\\n & \\htmlData{k=rel.atcost}{p'\\ \\text{at}}\\ (\\Sigma_r \\cup \\htmlData{k=Q-Send.sigma-e}{\\Sigma_e})[o \\mapsto S@x^{+}] \\\\\n\\htmlData{k=Q-Recv}{\\textsf{Q-Recv}} & \\Sigma(o) = S_0@x \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ U\\annot{^{b}})}.S \\land \\forall j, \\Theta_2.\\ j + \\kappa_{take} \\leq n \\land {} \\\\\n & \\htmlData{k=end.ech}{\\mathsf{ech}}[\\mathrm{dom}\\,\\Theta_2] \\cap C = \\varnothing \\land \\htmlData{k=Q-Recv.ok}{\\mathsf{recv\\_ok}\\,\\Sigma'\\,\\Theta_2} \\land w \\in \\htmlData{k=th.Vrel}{V^{W}_{j}\\llbracket \\Theta_2 \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket} \\Rightarrow {} \\\\\n & \\quad (C' \\cup \\htmlData{k=Q-Recv.back}{\\mathsf{recv\\_back}\\,\\Sigma'\\,\\Theta_2}, E') \\in \\htmlData{k=th.Prel}{P^{W}_{j}\\llbracket \\htmlData{k=Q-Recv.env}{\\mathsf{recv\\_env}\\,\\Sigma'\\,\\Theta_2} \\vdash T \\rrbracket} \\\\\n\\htmlData{k=Q-Link}{\\textsf{Q-Close, Q-Select,}} & \\text{the term obligations with } \\Sigma \\text{ for } \\Theta \\text{ and } P \\text{ for } E \\\\\n\\htmlData{k=Q-Link}{\\textsf{Q-Branch, Q-Link}} & \\text{where } p = (C, E),\\ p' = (C', E'),\\ \\Sigma' = \\Sigma[o \\mapsto S@x^{+}]\n\\end{array}",
-     "caption": "Internal steps keep the interface, and external messages move ends between the interface and the restricted channels.",
      "modes": [
       "df",
       "lf"
-     ]
+     ],
+     "rocq": "relation/Relation.v: q_tau, q_send, q_recv, q_close, q_select, q_branch, q_link; relation/Relation.v: send_split, recv_ok, recv_back, recv_env",
+     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}C' \\cap \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma = \\varnothing\\quad \\htmlData{k=rel.atcost}{p'\\ \\text{at}}\\ \\Sigma \\text{ after cost } \\htmlData{k=ct.sync}{\\dfo{\\htmlData{k=ct.DF}{\\kappa_{DF}}(ev)}\\annot{\\htmlData{k=ct.table}{\\kappa}(ev)}}\\end{array}}{\\htmlData{k=Q-Tau}{\\htmlData{k=sr.pobl}{\\mathsf{Pobl}_{ev}(p')}}}\\;\\textsf{Q-Tau} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Sigma(o) \\doteq \\htmlData{k=sty.send}{!(\\bar\\iota.\\ U)}.S@x}\\quad \\Sigma \\setminus o = \\Sigma_v \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Sigma_r \\\\ \\htmlData{k=Q-Send.theta-e}{\\mathrm{dom}\\,\\Theta_e = \\{o' \\in \\htmlData{k=syn.fends}{\\mathsf{fends}}(w) \\mid \\htmlData{k=end.ech}{\\mathsf{ech}}(o') \\in C\\}}\\quad \\htmlData{k=Q-Send.split}{\\mathsf{send\\_split}\\,\\Sigma\\,\\Sigma_e\\,\\Theta_e} \\\\ w \\in \\htmlData{k=th.Vrel}{V^{W}_{\\dfo{n}\\annot{n-\\kappa_{give}}}\\llbracket \\Sigma_v \\cup \\Theta_e \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}\\quad \\htmlData{k=rel.atcost}{p'\\ \\text{at}}\\ (\\Sigma_r \\cup \\htmlData{k=Q-Send.sigma-e}{\\Sigma_e})[o \\mapsto S@x^{+}]\\end{array}}{\\htmlData{k=Q-Send}{\\htmlData{k=sr.pobl}{\\mathsf{Pobl}_{\\mathsf{send}\\,o\\,w}(p')}}}\\;\\textsf{Q-Send} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Sigma(o) \\doteq \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ U)}.S@x} \\\\ \\forall j, \\Theta_2.\\ \\dfo{j < n}\\annot{j + \\kappa_{take} \\leq n},\\ \\htmlData{k=end.ech}{\\mathsf{ech}}[\\mathrm{dom}\\,\\Theta_2] \\cap C = \\varnothing,\\ \\htmlData{k=Q-Recv.ok}{\\mathsf{recv\\_ok}\\,\\Sigma'\\,\\Theta_2},\\ w \\in \\htmlData{k=th.Vrel}{V^{W}_{j}\\llbracket \\Theta_2 \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket} \\\\ \\Longrightarrow\\ (C' \\cup \\htmlData{k=Q-Recv.back}{\\mathsf{recv\\_back}\\,\\Sigma'\\,\\Theta_2}, E') \\in \\htmlData{k=th.Prel}{P^{W}_{j}\\llbracket \\htmlData{k=Q-Recv.env}{\\mathsf{recv\\_env}\\,\\Sigma'\\,\\Theta_2} \\vdash T \\rrbracket}\\end{array}}{\\htmlData{k=Q-Recv}{\\htmlData{k=sr.pobl}{\\mathsf{Pobl}_{\\mathsf{recv}\\,o\\,w}(p')}}}\\;\\textsf{Q-Recv} \\\\[2ex]\n\\htmlData{k=Q-Link}{\\textsf{Q-Close, Q-Select, Q-Branch, Q-Link}\\ \\text{are the term obligations with } \\Sigma \\text{ for } \\Theta \\text{ and } P \\text{ for } E} \\\\\np = (C, E),\\ p' = (C', E'),\\ \\Sigma' = \\Sigma[o \\mapsto S@x^{+}]\n\\end{array}\\\\[3ex]\\begin{array}{l}\n\\htmlData{k=Q-Send.split}{\\mathsf{send\\_split}\\,\\Sigma\\,\\Sigma_e\\,\\Theta_e} \\iff (\\forall o \\in \\mathrm{dom}\\,\\Theta_e.\\ o, \\overline{o} \\notin \\mathrm{dom}\\,\\Sigma) \\land {} \\\\\n\\quad (\\forall o.\\ o \\in \\mathrm{dom}\\,\\Sigma_e \\iff \\overline{o} \\in \\mathrm{dom}\\,\\Theta_e \\land o \\notin \\mathrm{dom}\\,\\Theta_e) \\land {} \\\\\n\\quad (\\forall o.\\ \\Theta_e(o) = S@y \\Rightarrow \\exists S'.\\ (\\Sigma_e \\cup \\Theta_e)(\\overline{o}) = S'@\\overline{y} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S') \\\\\n\\htmlData{k=Q-Recv.ok}{\\mathsf{recv\\_ok}\\,\\Sigma\\,\\Theta_2} \\iff (\\forall o \\in \\mathrm{dom}\\,\\Theta_2.\\ o \\notin \\mathrm{dom}\\,\\Sigma) \\land {} \\\\\n\\quad (\\forall o.\\ \\Theta_2(o) = S@y \\land (\\Sigma \\cup \\Theta_2)(\\overline{o}) = S'@y' \\Rightarrow y' = \\overline{y} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S') \\\\\n\\htmlData{k=Q-Recv.back}{\\mathsf{recv\\_back}\\,\\Sigma\\,\\Theta_2 = \\htmlData{k=end.ech}{\\mathsf{ech}}[\\{o \\in \\mathrm{dom}\\,\\Theta_2 \\mid \\overline{o} \\in \\mathrm{dom}\\,\\Sigma \\cup \\mathrm{dom}\\,\\Theta_2\\}]} \\\\\n\\htmlData{k=Q-Recv.env}{\\mathsf{recv\\_env}\\,\\Sigma\\,\\Theta_2 = \\{o \\mapsto y \\in \\Sigma \\mid \\overline{o} \\notin \\mathrm{dom}\\,\\Theta_2\\} \\cup {}} \\\\\n\\quad \\htmlData{k=Q-Recv.env}{\\{o \\mapsto y \\in \\Theta_2 \\mid \\overline{o} \\notin \\mathrm{dom}\\,\\Sigma \\cup \\mathrm{dom}\\,\\Theta_2\\}}\n\\end{array}\\end{array}",
+     "caption": "Internal steps, including messages between two threads of $p$, keep the interface. A message with the outside moves ends across the interface. A send gives away its payload ends, including the ends $\\Theta_e$ of internal channels, and a receive must be safe for each value that may arrive at each lower level.",
+     "about": {
+      "why": "Each case says how the interface changes at a step and where the successor must be safe.",
+      "used": [
+       "p-rel"
+      ]
+     }
     },
     {
-     "id": "p-msg",
-     "title": "Interfaces after a message",
-     "rocq": "relation/Relation.v: send_split, recv_ok, recv_back, recv_env",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=Q-Send.split}{\\mathsf{send\\_split}\\,\\Sigma\\,\\Sigma_e\\,\\Theta_e} \\iff (\\forall o \\in \\mathrm{dom}\\,\\Theta_e.\\ o, \\overline{o} \\notin \\mathrm{dom}\\,\\Sigma) \\land {} \\\\\n\\quad (\\forall o.\\ o \\in \\mathrm{dom}\\,\\Sigma_e \\iff \\overline{o} \\in \\mathrm{dom}\\,\\Theta_e \\land o \\notin \\mathrm{dom}\\,\\Theta_e) \\land {} \\\\\n\\quad (\\forall o.\\ \\Theta_e(o) = S@y \\Rightarrow \\exists S'.\\ (\\Sigma_e \\cup \\Theta_e)(\\overline{o}) = S'@\\overline{y} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S') \\\\\n\\htmlData{k=Q-Recv.ok}{\\mathsf{recv\\_ok}\\,\\Sigma\\,\\Theta_2} \\iff (\\forall o \\in \\mathrm{dom}\\,\\Theta_2.\\ o \\notin \\mathrm{dom}\\,\\Sigma) \\land {} \\\\\n\\quad (\\forall o.\\ \\Theta_2(o) = S@y \\land (\\Sigma \\cup \\Theta_2)(\\overline{o}) = S'@y' \\Rightarrow y' = \\overline{y} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S') \\\\\n\\htmlData{k=Q-Recv.back}{\\mathsf{recv\\_back}\\,\\Sigma\\,\\Theta_2 = \\htmlData{k=end.ech}{\\mathsf{ech}}[\\{o \\in \\mathrm{dom}\\,\\Theta_2 \\mid \\overline{o} \\in \\mathrm{dom}\\,\\Sigma \\cup \\mathrm{dom}\\,\\Theta_2\\}]} \\\\\n\\htmlData{k=Q-Recv.env}{\\mathsf{recv\\_env}\\,\\Sigma\\,\\Theta_2 = \\{o \\mapsto y \\in \\Sigma \\mid \\overline{o} \\notin \\mathrm{dom}\\,\\Theta_2\\} \\cup {}} \\\\\n\\quad \\htmlData{k=Q-Recv.env}{\\{o \\mapsto y \\in \\Theta_2 \\mid \\overline{o} \\notin \\mathrm{dom}\\,\\Sigma \\cup \\mathrm{dom}\\,\\Theta_2\\}}\n\\end{array}",
-     "caption": "The side conditions that move ends across the interface at an external send and receive.",
+     "id": "fu-vs",
+     "title": "Relation and fuel side by side",
+     "rocq": "relation/Relation.v: Erel; fuel/Fuel.v: FuelE; soup/Soup.v: Soup",
      "modes": [
-      "df",
       "lf"
-     ]
+     ],
+     "tex": "\\begin{array}{l|l|l}\n & \\text{the relation} & \\text{fuel} \\\\ \\hline\n\\text{a thread} & e \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta \\vdash T \\rrbracket^{F}} & e \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.Phi}{\\Phi} ; tk \\vdash \\sigma\\ !\\ (d, r) \\rrbracket} \\\\\n\\text{an end} & o \\mapsto S@x \\text{ in } \\Theta & o \\mapsto S^{f} \\text{ in } \\Phi \\\\\n\\text{a value} & v \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash T \\rrbracket} & v \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\htmlData{k=fu.Phi}{\\Phi} \\vdash T\\annot{^{a}} \\rrbracket} \\\\\n\\text{a step } \\alpha & \\htmlData{k=sr.obl}{\\mathsf{Obl}_\\alpha(e')} & \\htmlData{k=sr.fobl}{\\mathsf{Fobl}_\\alpha(e')} \\\\\n\\text{rules out} & \\text{a stuck wait, and at } \\kappa_L \\text{ a loop of free steps} & \\text{a wait that never ends} \\\\\n\\text{used in} & \\vDash \\text{ and the lock-free process relation} & \\text{the lock-free process relation only}\n\\end{array}",
+     "caption": "Fuel is a second predicate on a thread, separate from the relation and with the same shape, a value clause and one obligation per step. The relation gives each end a point, $S@x$, and fuel gives it a counter, $S^f$, and also counts link tickets $tk$. The lock-free process relation requires both of each thread. The relation makes a stuck thread ready, and fuel bounds how often the thread holding a dual end acts on other ends first.",
+     "about": {
+      "why": "This table compares what the relation and fuel read and guarantee, and shows that the lock-free process relation is where they meet.",
+      "used": [
+       "fu",
+       "soup",
+       "th-chain"
+      ]
+     }
     },
     {
-     "id": "sj",
-     "title": "Semantic judgments",
-     "rocq": "compat/SemTyped.v: Grel, sem_typed_at, sf_den, sem_typed; relation/Adequacy.v: sem_ptyped",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Theta;\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash[\\kappa]}}^{X}_W t : T \\iff \\forall n, W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Theta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G[\\kappa]^{W'}_n\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(t) \\in \\htmlData{k=th.Erel}{E[\\kappa]^{W'}_n\\llbracket |\\Theta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Theta;\\Delta \\vDash[\\kappa]^{F}_W t : T \\iff \\forall \\rho, B.\\ \\Theta;\\Delta \\vDash[\\kappa]^{\\htmlData{k=sj.den}{\\mathsf{den}_{\\rho,B}(F)}}_W t : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash[\\kappa]_W p : T \\iff \\forall n.\\ p \\in \\htmlData{k=th.Prel}{P[\\kappa]^{W}_n\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}",
-     "caption": "The semantic judgments quantify over every level, later world and grounding, and read the static future at every denotation.",
-     "modes": [
-      "df",
-      "lf"
-     ]
-    },
-    {
-     "id": "fu-def",
+     "id": "fu",
      "title": "Fuel",
-     "rocq": "fuel/Fuel.v: Fdef, FuelE, FLev",
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{l}\n\\htmlData{k=fu.zero}{\\forall e.\\ e \\in \\htmlData{k=sr.FE}{F^{N}_{0}\\llbracket \\sigma \\triangleright d ; r \\rrbracket(\\Pi, \\varphi, tk)}} \\\\\ne \\in \\htmlData{k=sr.FE}{F^{N}_{n{+}1}\\llbracket \\htmlData{k=fu.rty}{\\sigma} \\triangleright \\htmlData{k=fu.frame}{d} ; \\htmlData{k=fu.reserve}{r} \\rrbracket(\\htmlData{k=fu.Pi}{\\Pi}, \\htmlData{k=fu.phi}{\\varphi}, \\htmlData{k=fu.tk}{tk})} \\iff {} \\\\\n\\quad \\htmlData{k=fu.refill-kripke}{\\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N},\\ \\htmlData{k=fu.rename}{g \\text{ injective on } \\mathrm{dom}\\,\\Pi \\text{ and on } \\mathrm{dom}\\,\\varphi}. \\\\\n\\quad \\htmlData{k=fu.val}{(\\mathsf{val})\\ g(e) \\in \\mathsf{Val} \\Rightarrow r \\leq tk \\land g(e) \\in \\htmlData{k=sr.FV}{FV^{N'}_{n{+}1}\\llbracket \\sigma \\rrbracket(g\\Pi, g\\varphi)}} \\\\\n\\quad \\htmlData{k=fu.step}{(\\mathsf{step})\\ \\forall \\alpha, e'.\\ g(e) \\xrightarrow{\\alpha} e' \\Rightarrow \\htmlData{k=sr.fobl}{\\mathsf{Fobl}^{N'}_{\\alpha}(e')} \\text{ at level } n} \\qquad \\htmlData{k=fu.oneclock}{\\text{one level per step}}\n\\end{array}",
-     "caption": "Fuel is a per-thread predicate on protocols $\\Pi$, counters $\\varphi$ and tickets $tk$ that reads no point, no world and no relation."
+     "rocq": "fuel/Fuel.v: Fdef, FuelE, FLev; fuel/Fuel.v: fsem; cost/CostSem.v: csem",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=fu.zero}{\\forall e.\\ e \\in \\htmlData{k=sr.FE}{F^{N}_{0}\\llbracket \\Phi ; tk \\vdash \\sigma\\ !\\ (d, r) \\rrbracket}} \\\\\ne \\in \\htmlData{k=sr.FE}{F^{N}_{n{+}1}\\llbracket \\htmlData{k=fu.Phi}{\\Phi} ; \\htmlData{k=fu.tk}{tk} \\vdash \\htmlData{k=fu.rty}{\\sigma}\\ !\\ (\\htmlData{k=fu.frame}{d}, \\htmlData{k=fu.reserve}{r}) \\rrbracket} \\iff \\htmlData{k=fu.refill-kripke}{\\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N},\\ \\htmlData{k=fu.rename}{g \\text{ injective on } \\mathrm{dom}\\,\\Phi}. \\\\\n\\quad \\htmlData{k=fu.val}{(\\mathsf{stop})\\ g(e) \\in \\mathsf{Val} \\Rightarrow r \\leq tk \\land g(e) \\in \\htmlData{k=sr.FV}{FV^{N'}_{n{+}1}\\llbracket g\\Phi \\vdash \\sigma \\rrbracket}} \\\\\n\\quad \\htmlData{k=fu.step}{(\\mathsf{step})\\ g(e) \\xrightarrow{\\alpha} e' \\Rightarrow \\htmlData{k=sr.fobl}{\\mathsf{Fobl}^{N'}_{\\alpha}(e')}} \\qquad \\htmlData{k=fu.oneclock}{\\text{every step costs one level}} \\\\[6pt]\n\\htmlData{k=fu.Phi}{\\Phi : o \\mapsto S^{f}} \\quad \\text{each held end with its protocol } S \\text{ and counter } f\n\\end{array}\\\\[3ex]\\begin{array}{l}\n\\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\Phi\\,e \\iff \\exists tk.\\ \\forall n.\\ e \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\Phi ; tk \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}}\\ !\\ (\\infty, 0) \\rrbracket}} \\qquad \\text{each counter of } \\Phi \\text{ is } N \\\\\n\\htmlData{k=cs.csem}{\\Delta \\vDash^{N} e : T\\ !\\ \\varepsilon}\n\\end{array}\\end{array}",
+     "caption": "Fuel has the shape of the term relation $E$ without the ready clause. $e \\in F^N_n\\llbracket \\Phi ; tk \\vdash \\sigma\\ !\\ (d, r)\\rrbracket$ says that the thread $e$, which holds the ends $\\Phi$ and $tk$ link tickets, has fuel for $n$ more steps. When $e$ is a value it is in $FV$ at $\\sigma$ and keeps $r$ tickets. Otherwise each step meets its fuel obligation one level lower. The clauses hold for each larger counter bound $N'$ and each injective renaming $g$ of ends, because a link in another thread renames ends. $\\mathsf{fsem}$ is fuel at each level with each counter at $N$, and it is the only fuel statement independent of the level.",
+     "about": {
+      "why": "Fuel bounds how often a thread acts on other ends before it acts on an end it holds. Lock-free adequacy measures waits with these counters and tickets.",
+      "used": [
+       "fu-obls",
+       "soup",
+       "th-terms"
+      ]
+     }
     },
     {
-     "id": "fu-act",
-     "title": "An action",
-     "rocq": "fuel/Fuel.v: f_act, fspare, idle_at, refill, ftick",
-     "modes": [
-      "lf"
-     ],
-     "tex": "\\begin{array}{l}\n\\htmlData{k=sr.act}{\\mathsf{act}}\\,o \\iff \\htmlData{k=F-Wait}{\\neg \\htmlData{k=fu.idle}{\\mathsf{idle}}(\\Pi\\,o)} \\land o \\in \\mathrm{dom}\\,\\varphi \\land \\htmlData{k=F-Tick}{\\htmlData{k=fu.fspare}{\\mathsf{fspare}}\\,\\Pi\\,\\varphi\\,(\\mathrm{dom}\\,\\varphi \\setminus \\{o\\})} \\land \\htmlData{k=F-Tick.frame}{1 \\leq d} \\\\\n\\htmlData{k=fu.fspare}{\\mathsf{fspare}\\,\\Pi\\,\\varphi\\,X \\iff \\forall o \\in X.\\ \\varphi(o) = f \\land \\neg\\mathsf{idle}(\\Pi\\,o) \\Rightarrow 1 \\leq f} \\\\\n\\htmlData{k=fu.refillop}{\\mathsf{refill}\\,N\\,o\\,\\varphi = (\\varphi \\setminus o)[o' \\mapsto \\varphi(o') \\mathbin{\\dot-} 1]_{o' \\neq o}[o \\mapsto N]} \\qquad \\htmlData{k=fu.idle}{\\mathsf{idle}\\,S \\iff \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S = \\htmlData{k=sty.skip}{\\mathsf{Skip}}}\n\\end{array}",
-     "caption": "An action on $o$ asks $o$ held and not idle, a unit to spare on every other end that is not idle and on the frame, and then refills $o$ and ticks the rest."
-    },
-    {
-     "id": "fu-obl",
+     "id": "fu-obls",
      "title": "Fuel obligations",
-     "rocq": "fuel/Fuel.v: f_beta, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link, fhand, plink",
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{ll}\n\\htmlData{k=F-Beta}{\\textsf{F-Beta}} & e' \\in F_n \\text{ at } (\\sigma, d, r, \\Pi, \\varphi, tk) \\\\\n\\htmlData{k=F-New}{\\textsf{F-New}} & \\htmlData{k=F-New.fresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Pi \\cup \\mathrm{dom}\\,\\varphi} \\Rightarrow \\exists S.\\ e' \\text{ at } \\Pi[c^{+} \\mapsto S, c^{-} \\mapsto \\overline{S}],\\ \\htmlData{k=F-New.cnew}{\\varphi[c^{\\pm} \\mapsto N]} \\\\\n\\htmlData{k=F-Spawn}{\\textsf{F-Spawn}} & M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(v) \\land \\htmlData{k=F-Spawn.held}{M \\subseteq \\mathrm{dom}\\,\\varphi} \\land \\htmlData{k=fu.fspare}{\\mathsf{fspare}}\\,\\Pi\\,\\varphi\\,M \\land {} \\\\\n & \\htmlData{k=F-Spawn.child}{v\\,\\ast \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.rty}{\\mathsf{thread}} \\annot{\\triangleright \\infty ; 0} \\rrbracket(\\Pi|_M, \\htmlData{k=fu.fhand}{\\mathsf{fhand}}\\,M\\,\\varphi, \\lceil tk/2 \\rceil)}} \\land e' \\text{ at } \\Pi \\setminus M, \\varphi \\setminus M, \\htmlData{k=F-Spawn.tickets}{\\lfloor tk/2 \\rfloor} \\\\\n\\htmlData{k=F-Send}{\\textsf{F-Send}} & \\htmlData{k=sr.act}{\\mathsf{act}}\\,o \\land \\Pi(o) = S_0 \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.send}{!(\\bar\\iota.\\ T\\annot{^{b}})}.S \\land M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(w) \\land {} \\\\\n & \\htmlData{k=F-Send.notsubj}{M \\subseteq \\mathrm{dom}\\,\\varphi \\setminus \\{o\\}} \\land \\htmlData{k=fu.fspare}{\\mathsf{fspare}}\\,\\Pi\\,\\varphi\\,M \\land \\htmlData{k=F-Send.payload}{w \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket T\\annot{^{b}} \\rrbracket(\\Pi|_M, \\htmlData{k=fu.fhand}{\\mathsf{fhand}}\\,M\\,\\varphi)}} \\land {} \\\\\n & e' \\text{ at } d \\mathbin{\\dot-} 1,\\ (\\Pi \\setminus M)[o \\mapsto S],\\ \\htmlData{k=fu.refillop}{\\mathsf{refill}}\\,N\\,o\\,(\\varphi \\setminus M) \\\\\n\\htmlData{k=F-Recv}{\\textsf{F-Recv}} & \\htmlData{k=sr.act}{\\mathsf{act}}\\,o \\land \\Pi(o) = S_0 \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ T\\annot{^{b}})}.S \\land {} \\\\\n & \\htmlData{k=F-Recv.forall}{\\forall j \\leq n, \\Pi_i, \\varphi_i \\text{ disjoint}.\\ w \\in \\htmlData{k=sr.FV}{FV^{N}_{j}\\llbracket T\\annot{^{b}} \\rrbracket(\\Pi_i, \\varphi_i)}} \\Rightarrow {} \\\\\n & \\quad e' \\in F_j \\text{ at } d \\mathbin{\\dot-} 1,\\ \\Pi[o \\mapsto S] \\cup \\Pi_i,\\ \\htmlData{k=fu.refillop}{\\mathsf{refill}}\\,N\\,o\\,\\varphi \\cup \\varphi_i \\\\\n\\htmlData{k=F-Close}{\\textsf{F-Close}} & \\htmlData{k=sr.act}{\\mathsf{act}}\\,o \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}(\\Pi\\,o) = \\htmlData{k=sty.close}{\\mathsf{Close}} \\land e' \\text{ at } d \\mathbin{\\dot-} 1,\\ \\Pi \\setminus o,\\ (\\varphi \\setminus o) \\mathbin{\\dot-} 1 \\\\\n\\htmlData{k=F-Close}{\\textsf{F-Select, F-Branch}} & \\htmlData{k=sr.act}{\\mathsf{act}}\\,o \\land \\htmlData{k=sty.unfold}{\\mathsf{unfold}}(\\Pi\\,o) \\in \\{\\oplus(S_1,S_2), \\&(S_1,S_2)\\} \\land e' \\text{ at } d \\mathbin{\\dot-} 1,\\ \\Pi[o \\mapsto S_i],\\ \\htmlData{k=fu.refillop}{\\mathsf{refill}}\\,N\\,o\\,\\varphi \\\\\n\\htmlData{k=F-Link}{\\textsf{F-Link}} & \\htmlData{k=F-Link.plink}{o_1 \\neq o_2 \\land \\Pi(o_2) \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{\\Pi(o_1)}} \\land \\{o_1,o_2\\} \\subseteq \\mathrm{dom}\\,\\varphi \\land \\htmlData{k=F-Link.ticket}{1 \\leq tk} \\land {} \\\\\n & e' \\text{ at } \\Pi \\setminus \\{o_1,o_2\\},\\ \\varphi \\setminus \\{o_1,o_2\\},\\ tk - 1 \\\\\n & \\htmlData{k=fu.fhand}{\\mathsf{fhand}\\,M\\,\\varphi = (\\varphi|_M) \\mathbin{\\dot-} 1}\n\\end{array}",
-     "caption": "Every step updates protocols, counters and tickets by one index-free rule, where unchanged components are omitted."
+     "rocq": "fuel/Fuel.v: f_act, fspare, idle_at, refill, ftick, fhand; fuel/Fuel.v: f_beta, f_new, f_spawn, f_link, plink; fuel/Fuel.v: f_send, f_recv, f_close, f_select, f_branch",
+     "tex": "\\begin{array}{c}\\begin{array}{rcll}\n\\htmlData{k=sr.act}{\\mathsf{act}}\\,o & \\iff & \\htmlData{k=F-Wait}{\\Phi(o) = S^{f} \\land \\neg \\htmlData{k=fu.idle}{\\mathsf{idle}}\\,S} & \\text{F-Wait} \\\\\n & \\land & \\htmlData{k=F-Tick}{\\htmlData{k=fu.fspare}{\\mathsf{positive}}(\\Phi \\setminus o)} \\land \\htmlData{k=F-Tick.frame}{1 \\leq d} & \\text{F-Count} \\\\[4pt]\n\\htmlData{k=fu.fspare}{\\mathsf{positive}}(\\Phi) & \\iff & \\htmlData{k=fu.fspare}{\\forall o \\mapsto S^{f} \\in \\Phi.\\ \\neg\\mathsf{idle}\\,S \\Rightarrow 1 \\leq f} \\\\\n\\htmlData{k=fu.tick}{\\Phi{\\downarrow}} & = & \\htmlData{k=fu.tick}{\\{o \\mapsto S^{f \\mathbin{\\dot-} 1} \\mid o \\mapsto S^{f} \\in \\Phi\\}} \\\\\n\\mathsf{idle}\\,S & \\iff & \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S = \\htmlData{k=sty.skip}{\\mathsf{Skip}}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}e' \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\Phi ; tk \\vdash \\sigma\\ !\\ (d, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-Beta}{\\mathsf{Fobl}_{\\beta}(e')}}\\;\\textsf{F-Beta} \\qquad\n\\dfrac{\\begin{array}{c}\\htmlData{k=F-New.fresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Phi} \\Rightarrow \\exists S.\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=F-New.cnew}{\\Phi[c^{+} \\mapsto S\\annot{^{N}}, c^{-} \\mapsto \\overline{S}\\annot{^{N}}]} ; tk \\vdash \\sigma\\ !\\ (d, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-New}{\\mathsf{Fobl}_{\\mathsf{new}\\,c}(e')}}\\;\\textsf{F-New} \\\\[10pt]\n\\dfrac{\\begin{array}{c}M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(v)\\quad \\htmlData{k=F-Spawn.held}{M \\subseteq \\mathrm{dom}\\,\\Phi}\\quad \\htmlData{k=fu.fspare}{\\mathsf{positive}}(\\Phi|_M) \\\\ \\htmlData{k=F-Spawn.child}{v\\,\\ast \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.tick}{\\Phi|_M{\\downarrow}} ; \\lceil tk/2 \\rceil \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}}\\ !\\ (\\infty, 0) \\rrbracket}} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\Phi \\setminus M ; \\htmlData{k=F-Spawn.tickets}{\\lfloor tk/2 \\rfloor} \\vdash \\sigma\\ !\\ (d, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-Spawn}{\\mathsf{Fobl}_{\\mathsf{spawn}\\,v}(e')}}\\;\\textsf{F-Spawn} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=F-Link.plink}{\\Phi(o_1) = S^{f},\\ \\Phi(o_2) = S'^{f'},\\ o_1 \\neq o_2,\\ S' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{S}}\\quad \\htmlData{k=F-Link.ticket}{1 \\leq tk} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\Phi \\setminus \\{o_1,o_2\\} ; tk - 1 \\vdash \\sigma\\ !\\ (d, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-Link}{\\mathsf{Fobl}_{\\mathsf{link}\\,o_1\\,o_2}(e')}}\\;\\textsf{F-Link}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S_0^{f}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.send}{!(\\bar\\iota.\\ T)}.S\\quad M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(w)\\quad \\htmlData{k=F-Send.notsubj}{o \\notin M \\subseteq \\mathrm{dom}\\,\\Phi}\\quad \\htmlData{k=fu.fspare}{\\mathsf{positive}}(\\Phi|_M) \\\\ \\htmlData{k=F-Send.payload}{w \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\htmlData{k=fu.tick}{\\Phi|_M{\\downarrow}} \\vdash T \\rrbracket}} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.tick}{(\\Phi \\setminus M){\\downarrow}}[o \\mapsto S\\annot{^{N}}] ; tk \\vdash \\sigma\\ !\\ (d \\mathbin{\\dot-} 1, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-Send}{\\mathsf{Fobl}_{\\mathsf{send}\\,o\\,w}(e')}}\\;\\textsf{F-Send} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S_0^{f}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ T)}.S \\\\ \\htmlData{k=F-Recv.forall}{\\forall j \\leq n,\\ \\Phi_i \\mathbin{\\#} \\Phi.\\ w \\in \\htmlData{k=sr.FV}{FV^{N}_{j}\\llbracket \\Phi_i \\vdash T \\rrbracket}} \\Rightarrow e' \\in \\htmlData{k=sr.FE}{F^{N}_{j}\\llbracket \\htmlData{k=fu.tick}{\\Phi{\\downarrow}}[o \\mapsto S\\annot{^{N}}] \\cup \\Phi_i ; tk \\vdash \\sigma\\ !\\ (d \\mathbin{\\dot-} 1, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-Recv}{\\mathsf{Fobl}_{\\mathsf{recv}\\,o\\,w}(e')}}\\;\\textsf{F-Recv} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S_0^{f}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.close}{\\mathsf{Close}} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.tick}{(\\Phi \\setminus o){\\downarrow}} ; tk \\vdash \\sigma\\ !\\ (d \\mathbin{\\dot-} 1, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-Close}{\\mathsf{Fobl}_{\\mathsf{close}\\,o}(e')}}\\;\\textsf{F-Close} \\qquad\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S_0^{f}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 \\in \\{\\oplus(S_1,S_2), \\&(S_1,S_2)\\} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.tick}{\\Phi{\\downarrow}}[o \\mapsto S_i\\annot{^{N}}] ; tk \\vdash \\sigma\\ !\\ (d \\mathbin{\\dot-} 1, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-Close}{\\mathsf{Fobl}_{\\mathsf{sel}_i\\,o}(e'),\\ \\mathsf{Fobl}_{\\mathsf{bra}_i\\,o}(e')}}\\;\\textsf{F-Choice}\n\\end{array}\\end{array}",
+     "caption": "An action on $o$ requires $o$ held and not idle, and a positive counter on the other ends that are not idle and on the frame. It uses one unit of the frame, advances the protocol of $o$, resets the counter of $o$ to $N$ and decrements the other counters, written $\\Phi{\\downarrow}[o \\mapsto S^{N}]$. Internal steps decrement no counter. A new channel starts both ends at $N$. A spawn transfers the ends of the thunk to the child with counters one lower and gives the child half the tickets. A link removes two dual ends and uses one ticket. A send transfers its payload ends with counters one lower, and a receive continues for each value in $FV$ that may arrive.",
+     "about": {
+      "why": "Each kind of step changes the held ends, counters and tickets in one way, the same at each level.",
+      "used": [
+       "fu"
+      ]
+     }
     },
     {
      "id": "fv",
-     "title": "Fueled values",
+     "title": "Values with fuel",
      "rocq": "fuel/Fuel.v: Vty, Vres",
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{l}\n\\htmlData{k=FV-Sess}{o \\in FV\\llbracket (S@x)\\annot{^{a}}\\rrbracket(\\Pi, \\varphi) \\iff \\Pi = \\{o \\mapsto S'\\} \\land \\varphi = \\{o \\mapsto f\\} \\land S' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} S \\land \\htmlData{k=FV-Sess.counter}{a \\leq f}} \\\\\n\\htmlData{k=FV-Arrow}{\\lambda e \\in FV^N_n\\llbracket (T\\annot{^{a_1}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}_{c;\\vartheta;h} U\\annot{^{a_2}})\\annot{^{a}}\\rrbracket(\\Pi,\\varphi) \\iff \\htmlData{k=FV-Arrow.exact}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\mathrm{dom}\\,\\Pi = \\mathrm{dom}\\,\\varphi} \\land {}} \\\\\n\\quad \\htmlData{k=FV-Arrow.floor}{\\forall o.\\ h + a \\leq \\varphi(o)} \\land \\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N,\\ j < n,\\ \\varphi' \\text{ with } \\mathrm{dom}\\,\\varphi' = \\mathrm{dom}\\,\\varphi \\land h \\leq \\varphi', \\\\\n\\quad \\htmlData{k=FV-Arrow.body}{u \\in \\htmlData{k=sr.FV}{FV^{N'}_{j}\\llbracket T\\annot{^{a_1}} \\rrbracket(\\Pi_u, \\varphi_u)},\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,r\\,tk.\\ e[u] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket U\\annot{^{a_2}} \\annot{\\triangleright c ; r} \\rrbracket(\\Pi \\cup \\Pi_u, \\varphi' \\cup \\varphi_u, tk)}} \\\\\n\\htmlData{k=FV-Box}{!e \\in FV^N_n\\llbracket \\Box(\\ldots U)\\rrbracket(\\Pi,\\varphi) \\iff \\htmlData{k=FV-Box.noends}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\varnothing \\land \\Pi = \\varphi = \\varnothing} \\land {}} \\\\\n\\quad \\htmlData{k=FV-Box.body}{\\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N, j < n, \\bar s \\in \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,N', \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,r\\,tk.\\ e[!e] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket U[\\bar s] \\annot{\\triangleright c ; r} \\rrbracket(\\varnothing,\\varnothing,tk)}} \\\\\n\\htmlData{k=FV-Thread}{v \\in FV\\llbracket \\htmlData{k=fu.rty}{\\mathsf{thread}} \\rrbracket(\\Pi,\\varphi) \\iff \\Pi = \\varphi = \\varnothing} \\qquad \\htmlData{k=sr.fvagg}{\\otimes, \\oplus, \\exists \\text{ add their credit to the parts}}\n\\end{array}",
-     "caption": "Fueled values by recursion on the type, reading credits, costs, ticket needs and floors and no point."
+     "tex": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}S' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} S\\quad \\htmlData{k=FV-Sess.counter}{a \\leq f}\\end{array}}{\\htmlData{k=FV-Sess}{o \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\{o \\mapsto S'^{f}\\} \\vdash (S@x)\\annot{^{a}} \\rrbracket}}}\\;\\textsf{FV-Sess} \\qquad\n\\dfrac{\\begin{array}{c}\\Phi = \\varnothing\\end{array}}{\\htmlData{k=FV-Thread}{v \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\Phi \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}} \\rrbracket}}}\\;\\textsf{FV-Thread} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=FV-Arrow.exact}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\mathrm{dom}\\,\\Phi}\\quad \\htmlData{k=FV-Arrow.floor}{\\Phi(o) = S^{f} \\Rightarrow h + a \\leq f} \\\\ \\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N,\\ j < n,\\ \\Phi' \\geq h \\text{ with the protocols of } \\Phi,\\ u \\in \\htmlData{k=sr.FV}{FV^{N'}_{j}\\llbracket \\Phi_u \\vdash T \\rrbracket},\\ \\htmlData{k=ann.meets}{\\vartheta(r) \\leq tk} \\\\ \\htmlData{k=FV-Arrow.body}{e[u] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket \\Phi' \\cup \\Phi_u ; tk \\vdash U\\ !\\ (c, r) \\rrbracket}}\\end{array}}{\\htmlData{k=FV-Arrow}{\\lambda e \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\Phi \\vdash (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[(c,\\vartheta);h]\\, U)\\annot{^{a}} \\rrbracket}}}\\;\\textsf{FV-Arrow} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=FV-Box.noends}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\varnothing} \\\\ \\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N,\\ j < n,\\ \\bar s \\in \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,N',\\ \\htmlData{k=ann.meets}{\\vartheta(r) \\leq tk} \\\\ \\htmlData{k=FV-Box.body}{e[!e] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket \\varnothing ; tk \\vdash U[\\bar s]\\ !\\ (c, r) \\rrbracket}}\\end{array}}{\\htmlData{k=FV-Box}{!e \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\varnothing \\vdash \\Box(\\ldots (c,\\vartheta) \\ldots U) \\rrbracket}}}\\;\\textsf{FV-Box} \\\\[6pt]\n\\htmlData{k=sr.fvagg}{\\otimes, \\oplus, \\exists \\text{ split } \\Phi \\text{ among their parts}}\n\\end{array}",
+     "caption": "Values with fuel by recursion on the type. The counter of an end is at least its credit. A closure keeps its captured counters at least at the floor $h$ plus its credit, and its body has fuel at each call. A box holds no end, and its body has fuel at each force.",
+     "about": {
+      "why": "Values with fuel connect credits in types with counters at run time.",
+      "used": [
+       "fu-obls",
+       "th-terms"
+      ]
+     }
     },
     {
-     "id": "fu-fsem",
-     "title": "Fuel of a thread",
-     "rocq": "fuel/Fuel.v: fsem; cost/CostSem.v: csem",
+     "id": "soup",
+     "title": "The lock-free process relation",
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{l}\n\\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\Pi\\,e \\iff \\exists tk.\\ \\forall n.\\ e \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.rty}{\\mathsf{thread}} \\annot{\\triangleright \\infty ; 0} \\rrbracket(\\Pi, (\\lambda\\_.N)|_{\\mathrm{dom}\\,\\Pi}, tk)}} \\\\\n\\htmlData{k=cs.csem}{\\Theta;\\Delta \\vDash^{N} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}}\n\\end{array}",
-     "caption": "A thread has fuel at every level with every held end at $N$ and one ticket count for all levels."
+     "rocq": "soup/State.v: hold, lfstate; soup/State.v: soup_gen, soup/Soup.v: soup_inv, Soup",
+     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\htmlData{k=sp.state}{a = (q, K, tk)} \\qquad \\htmlData{k=sp.hold}{K : \\mathsf{End} \\rightharpoonup \\mathbb{N} \\times \\mathsf{Point} \\times (\\mathbb{N} \\cup \\{\\infty\\})} \\qquad \\htmlData{k=sp.tk}{tk : \\mathbb{N} \\to \\mathbb{N}} \\\\\n\\htmlData{k=sp.next}{\\mathsf{lf\\_next}\\,N\\,(q, K, tk)\\,ev\\,q' = (q',\\ \\mathsf{own\\_next}\\,N\\,ev\\,K,\\ \\mathsf{tk\\_next}\\,ev\\,tk)}\n\\end{array}\\\\[3ex]\\begin{array}{rcll}\na \\in \\htmlData{k=th.soup}{S^{N,W}_n\\llbracket\\Sigma \\vdash T\\rrbracket} & \\iff & \\htmlData{k=sp.exists}{\\exists A, \\Phi}.\\ \\htmlData{k=sp.tfree}{\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T} \\land \\text{for each thread } t \\text{ running } e\\text{,} & \\\\[1ex]\n & & \\quad \\htmlData{k=sp.rel}{e \\in \\htmlData{k=th.Erel}{E[\\kappa_L]^W_n\\llbracket A|_t \\vdash U_t\\rrbracket^{\\varnothing}}} & \\text{the relation} \\\\\n & & \\quad \\htmlData{k=sp.fuel}{e \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\Phi|_t ; tk_t \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}}\\ !\\ (\\infty, 0) \\rrbracket}} & \\text{fuel} \\\\\n & & \\land\\ \\htmlData{k=sp.own}{\\mathsf{consistent}}(a, A, \\Phi) & \\\\[2ex]\nA,\\ \\Phi & & \\text{the held ends as } o \\mapsto S@x \\text{ for the relation and as } o \\mapsto S^{f} \\text{ for fuel} & \\\\\nA|_t,\\ \\Phi|_t & & \\text{their restrictions to the ends } K \\text{ gives } t & \\htmlData{k=sp.ty}{U_t \\in \\{T, \\ast\\}} \\\\[2ex]\n\\htmlData{k=sp.own}{\\mathsf{consistent}}(a, A, \\Phi) & \\iff & \\htmlData{k=sp.dom}{\\mathrm{dom}\\,A = \\mathrm{dom}\\,\\Phi = \\mathrm{dom}\\,K} \\land \\htmlData{k=sp.owner}{K(o) = (t, x, f) \\Rightarrow t \\in \\mathrm{dom}\\,q} & \\text{owners} \\\\\n & \\land & \\htmlData{k=sp.pts}{K(o) = (t, x, f) \\Rightarrow A(o) = \\_@x \\land \\Phi(o) = \\_^{f}} \\land \\htmlData{k=sp.fin}{f \\in \\mathbb{N}} & \\\\\n & \\land & \\htmlData{k=sp.closed}{o \\in \\mathrm{dom}\\,K \\Rightarrow \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\lor o \\in \\mathrm{dom}\\,\\Sigma} \\land \\htmlData{k=sp.pair}{o \\in \\mathrm{dom}\\,K \\land \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow \\overline{o} \\in \\mathrm{dom}\\,K} & \\text{closed} \\\\\n & \\land & \\htmlData{k=sp.sdual}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\land A(o) = S@x \\land A(\\overline{o}) = S'@x' \\Rightarrow x' = \\overline{x} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S'} & \\text{dual} \\\\\n & \\land & \\htmlData{k=sp.pdual}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\land \\Phi(o) = P^{f} \\land \\Phi(\\overline{o}) = P'^{f'} \\Rightarrow P' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{P}} & \\\\\n & \\land & \\htmlData{k=sp.sig}{\\Sigma(o) = S@x \\Rightarrow A(o) = S@x} \\land \\htmlData{k=sp.psig}{\\Phi(o) = S^{f}} & \\text{interface}\n\\end{array}\\end{array}",
+     "caption": "An annotated configuration $a = (q, K, tk)$ is a configuration $q$ with an ownership map $K$ and a ticket count per thread. $K$ gives each held end the thread that holds it, its point and its counter. The configuration is in the lock-free process relation at level $n$ when each thread is in $E[\\kappa_L]$ at the ends it owns and has fuel at their counters. $A$ and $\\Phi$ describe the held ends for the relation and for fuel, and $\\mathsf{consistent}$ requires $A$, $\\Phi$ and $K$ to agree. Fuel occurs only in this definition.",
+     "about": {
+      "why": "The lock-free process relation combines the relation and the fuel of each thread over one ownership map, fixed for all levels. Lock-free adequacy reads the points and counters that $K$ records.",
+      "used": [
+       "sj-all",
+       "th-adeq"
+      ]
+     }
     },
     {
-     "id": "sp-state",
-     "title": "Soup states",
-     "rocq": "soup/State.v: hold, lfstate",
+     "id": "sj-all",
+     "title": "Semantic judgments",
      "modes": [
+      "df",
       "lf"
      ],
-     "tex": "\\htmlData{k=sp.state}{a = (q, K, tk)} \\qquad \\htmlData{k=sp.hold}{K : \\mathsf{End} \\rightharpoonup \\mathbb{N} \\times \\mathsf{Point} \\times (\\mathbb{N} \\cup \\{\\infty\\})} \\qquad \\htmlData{k=sp.tk}{tk : \\mathbb{N} \\to \\mathbb{N}}",
-     "caption": "A soup state is a configuration with an ownership map from held ends to holder, point and counter, and a ticket count per thread."
-    },
-    {
-     "id": "sp-inv",
-     "title": "The soup",
-     "rocq": "soup/State.v: soup_gen, soup/Soup.v: soup_inv, Soup",
-     "modes": [
-      "lf"
-     ],
-     "tex": "\\begin{array}{l}\na \\in \\htmlData{k=th.soup}{S^{N,W}_n\\llbracket\\Sigma \\vdash T\\rrbracket} \\iff \\htmlData{k=sp.exists}{\\exists A, \\Pi, U}.\\ \\htmlData{k=sp.tfree}{\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T} \\land \\forall t, e.\\ q(t) = e \\Rightarrow {} \\\\\n\\quad \\htmlData{k=sp.rel}{e \\in \\htmlData{k=th.Erel}{E[\\kappa_L]^W_n\\llbracket K_t(A) \\vdash U_t\\rrbracket^{\\varnothing}}} \\land \\htmlData{k=sp.ty}{U_t \\in \\{T, \\ast\\}} \\land \\htmlData{k=sp.fuel}{e \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.rty}{\\mathsf{thread}} \\annot{\\triangleright \\infty ; 0} \\rrbracket(K_t(\\Pi), \\htmlData{k=sr.ctrs}{\\mathsf{ctrs}}\\,K\\,t, tk_t)}} \\\\\n\\quad \\htmlData{k=sp.pts}{\\forall o.\\ \\mathsf{pt}(A\\,o) = \\mathsf{pt}(K\\,o)} \\land \\htmlData{k=sp.dom}{\\mathrm{dom}\\,\\Pi = \\mathrm{dom}\\,K} \\land \\htmlData{k=sp.owner}{\\forall o.\\ K(o) = (t, \\_, \\_) \\Rightarrow t \\in \\mathrm{dom}\\,q} \\\\\n\\quad \\htmlData{k=sp.closed}{\\forall o \\in \\mathrm{dom}\\,K.\\ \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\lor o \\in \\mathrm{dom}\\,\\Sigma} \\land \\htmlData{k=sp.pair}{\\forall o \\in \\mathrm{dom}\\,K.\\ \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow \\overline{o} \\in \\mathrm{dom}\\,K} \\\\\n\\quad \\htmlData{k=sp.sdual}{A(o) = S@x \\land A(\\overline{o}) = S'@x' \\land \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow x' = \\overline{x} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S'} \\\\\n\\quad \\htmlData{k=sp.pdual}{\\Pi(o) = P \\land \\Pi(\\overline{o}) = P' \\land \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow P' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{P}} \\\\\n\\quad \\htmlData{k=sp.sig}{\\Sigma(o) = y \\Rightarrow A(o) = y} \\land \\htmlData{k=sp.psig}{\\Sigma(o) = S@x \\Rightarrow \\Pi(o) = S} \\land \\htmlData{k=sp.fin}{\\forall o.\\ K(o) = (\\_, \\_, f) \\Rightarrow f \\in \\mathbb{N}}\n\\end{array}",
-     "caption": "At each level $n$ the soup asks every thread live and fueled at its part of $A$ and $\\Pi$, with ends, points and counters read from $K$."
-    },
-    {
-     "id": "sp-lf",
-     "title": "Lock-free semantic judgment",
-     "rocq": "soup/Soup.v: lf_sem, lf_next, own_next, tk_next",
-     "modes": [
-      "lf"
-     ],
-     "tex": "\\begin{array}{l}\n\\htmlData{k=sp.lfsem}{\\Sigma \\Vvdash_W p : T \\iff \\htmlData{k=sp.exists-before-forall}{\\exists N \\in \\mathbb{N}, a.\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}(\\htmlData{k=th.qa}{q_a}) = p \\land \\forall n}.\\ a \\in \\htmlData{k=th.soup}{S^{N,W}_n\\llbracket\\Sigma \\vdash T\\rrbracket}} \\\\\n\\htmlData{k=sp.next}{\\mathsf{lf\\_next}\\,N\\,(q, K, tk)\\,ev\\,q' = (q',\\ \\mathsf{own\\_next}\\,N\\,ev\\,K,\\ \\mathsf{tk\\_next}\\,ev\\,tk)}\n\\end{array}",
-     "caption": "The lock-free semantic judgment fixes the refill and the soup state once, before the level."
+     "rocq": "compat/SemTyped.v: Grel, sem_typed_at, sf_den, sem_typed; relation/Adequacy.v: sem_ptyped; soup/Soup.v: lf_sem, lf_next, own_next, tk_next",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash[\\kappa]}}^{X}_W e : T \\iff \\forall n, W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G[\\kappa]^{W'}_n\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\htmlData{k=th.Erel}{E[\\kappa]^{W'}_n\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Delta \\vDash[\\kappa]^{F}_W e : T \\iff \\forall \\rho, B.\\ \\Delta \\vDash[\\kappa]^{\\htmlData{k=sj.den}{\\mathsf{den}_{\\rho,B}(F)}}_W e : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash[\\kappa]_W p : T \\iff \\forall n.\\ p \\in \\htmlData{k=th.Prel}{P[\\kappa]^{W}_n\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\n\\htmlData{k=sp.lfsem}{\\Sigma \\Vvdash_W p : T \\iff \\htmlData{k=sp.exists-before-forall}{\\exists N \\in \\mathbb{N}, a.\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}(\\htmlData{k=th.qa}{q_a}) = p \\land \\forall n}.\\ a \\in \\htmlData{k=th.soup}{S^{N,W}_n\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}}\\end{array}",
+     "caption": "The semantic judgments quantify over levels, larger worlds and substitutions, and read the static future at each of its denotations. \\annp{The lock-free judgment fixes the counter bound and the annotated configuration once, for all levels.}",
+     "variants": {
+      "df": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{X}_W e : T \\iff \\forall n, W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G^{W'}_n\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\htmlData{k=th.Erel}{E^{W'}_n\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Delta \\vDash^{F}_W e : T \\iff \\forall \\rho, B.\\ \\Delta \\vDash^{\\htmlData{k=sj.den}{\\mathsf{den}_{\\rho,B}(F)}}_W e : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash_W p : T \\iff \\forall n.\\ p \\in \\htmlData{k=th.Prel}{P^{W}_n\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}\\end{array}"
+     },
+     "about": {
+      "why": "The fundamental theorems conclude the semantic judgments, and adequacy takes a semantic judgment as its premise.",
+      "used": [
+       "th-terms",
+       "th-fund-proc",
+       "th-adeq"
+      ]
+     }
     }
    ]
   },
   {
    "id": "theorems",
    "title": "Theorems",
-   "intro": "The main results, closed under the global context, and the relations $V$, $E$, $P$ and the soup $S$ they mention.",
+   "intro": "Typed closed processes are deadlock free, and the proof goes through the logical relation. The section opens with the chain of results and then states each of them for processes. The lemmas about terms come last. \\annp{The lock-free results sit next to their deadlock-free counterparts.}",
    "blocks": [
     {
-     "id": "th-adequacy",
-     "title": "Adequacy",
-     "rocq": "relation/Adequacy.v: adequacy, live_adequacy, adequacy_gen",
-     "modes": [
-      "df"
-     ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.adequacy}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}} \\\\[1.5ex] \\htmlData{k=th.live-adequacy}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p \\land \\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}}\\,p\\end{array}} \\\\[1.5ex] \\htmlData{k=th.adequacy-gen}{\\begin{array}{l}\\forall \\kappa.\\ \\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\forall n.\\ p \\in \\htmlData{k=th.Prel}{P[\\kappa]^{W}_{n}\\llbracket \\varnothing \\vdash T\\rrbracket} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\end{array}",
-     "caption": "For every $\\kappa$ and strict $W$, $\\forall n.\\ p \\in P[\\kappa]^{W}_{n}\\llbracket \\varnothing \\vdash T\\rrbracket$ implies deadlock freedom, and at $\\kappa_L$ absence of $\\tau$-divergence."
-    },
-    {
-     "id": "th-lf-adequacy",
-     "title": "Lock-free adequacy",
-     "rocq": "soup/LFAdequacy.v: lf_adequacy, lf_thread_progress; soup/SoupTau.v: soup_no_tau_divergence; soup/SoupRun.v: lfsoup_step",
-     "modes": [
-      "lf"
-     ],
-     "tex": "\\begin{array}{l}\\annot{\\htmlData{k=th.lf-adequacy}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-thread-progress}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\begin{array}{l}\\forall (r, l).\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,(\\htmlData{k=se.run}{r\\,0}) = p \\land \\htmlData{k=prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\htmlData{k=prop.wfair}{\\mathsf{wfair}}\\,(r, l) \\\\ \\quad \\Longrightarrow\\ \\htmlData{k=th.tpr}{\\mathsf{thread\\_progress\\_run}}\\,(r, l)\\end{array}\\end{array}}} \\\\[1.5ex] \\htmlData{k=th.soup-no-tau}{\\begin{array}{l}\\forall n.\\ a \\in \\htmlData{k=th.soup}{S^{N,W}_{n}\\llbracket\\varnothing \\vdash T\\rrbracket} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}}(\\htmlData{k=proc.erase}{\\mathsf{erase}}\\,\\htmlData{k=th.qa}{q_a})\\end{array}} \\\\[1.5ex] \\htmlData{k=th.lfsoup-step}{\\begin{array}{l}a \\in \\htmlData{k=th.soup}{S^{N,W}_{n+1}\\llbracket\\varnothing \\vdash T\\rrbracket} \\land q_a \\xrightarrow{ev} q' \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=sp.next}{\\mathsf{lf\\_next}}\\,N\\,a\\,ev\\,q' \\in \\htmlData{k=th.soup}{S^{N,W}_{n}\\llbracket\\varnothing \\vdash T\\rrbracket}\\end{array}}\\end{array}",
-     "caption": "For $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$, $\\varnothing \\Vvdash_W p : T$ implies lock freedom."
-    },
-    {
-     "id": "th-fund-term",
-     "title": "Fundamental theorems for terms",
-     "rocq": "static/Fundamental.v: typed_sem, fundamental, fundamental_typed, live_fundamental, live_fundamental_typed",
+     "id": "th-chain",
+     "title": "How the results fit together",
+     "rocq": "static/FundamentalProc.v: fundamental_proc, soundness; relation/Adequacy.v: adequacy; static/Fundamental.v: live_fundamental; cost/CostFund.v: fsem_of_cost; soup/LFTyped.v: lf_fundamental; soup/LFAdequacy.v: lf_adequacy",
      "modes": [
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\\\ \\quad\\Longrightarrow\\ \\Theta ; \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}^{F}_W t : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.fundamental-typed}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.df}{\\Theta_{df}} ; \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{F}_W t : T_{df}\\end{array}}} \\\\[1.5ex] \\htmlData{k=th.live-fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\\\ \\quad\\Longrightarrow\\ \\Theta ; \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{F}_W t : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-typed}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\\\ \\land\\ \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Theta_{df} ; \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_W t : T_{df}\\end{array}}}\\end{array}",
-     "caption": "For strict $W$, typing with empty $\\Gamma$ implies the semantic term judgment, and with $\\varnothing \\vdash\\!\\triangleright t$ its live version."
+     "tex": "\\begin{array}{rcl}\n\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T & \\overset{\\htmlData{k=th.fundamental-proc}{\\textsf{fundamental\\_proc}}}{\\Longrightarrow} & \\Sigma \\htmlData{k=sj.proc}{\\vDash}_W p : T \\\\[1ex]\n\\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T & \\overset{\\htmlData{k=th.adequacy}{\\textsf{adequacy}}}{\\Longrightarrow} & \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\n\\annraw{\\\\[3ex]}\\annot{\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ (c, \\vartheta) \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t}}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.live-fundamental}{\\textsf{live\\_fundamental}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{\\varnothing}_W t : T}\n\\annraw{\\\\[1ex]}\\annot{\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ (c, \\vartheta) \\land \\htmlData{k=th.crle}{\\mathsf{cr}(\\Delta) \\leq N} \\land \\htmlData{k=ann.fin0}{\\vartheta(0) \\in \\mathbb{N}}}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.fsem-of-cost}{\\textsf{fsem\\_of\\_cost}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\htmlData{k=th.styof}{\\Delta\\annot{^{N}}}\\,t}}\n\\annraw{\\\\[1ex]}\\annot{\\Sigma \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.lf-fundamental}{\\textsf{lf\\_fundamental}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\Sigma \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T}\n\\annraw{\\\\[1ex]}\\annot{\\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.lf-adequacy}{\\textsf{lf\\_adequacy}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p}\n\\end{array}",
+     "caption": "Typing implies the semantic judgment, and the semantic judgment implies deadlock freedom. Both steps use the relation $(V, E, P)$ at the step costs $\\kappa_{DF}$. \\annp{Lock freedom uses the same relation at $\\kappa_L$, which excludes internal divergence, together with fuel. The lock-free process relation combines both for each thread. Lock-free adequacy measures a wait on $o$ by $\\mu(t) = (\\sum_s tk_s, f)$, where $f$ is the counter of $\\overline{o}$. A step of the thread holding $\\overline{o}$ on another end decreases $f$, which F-Count keeps at $1$ or more. \\annp{A link uses one ticket.} The thread holding $\\overline{o}$ therefore acts on $\\overline{o}$ after finitely many steps.}",
+     "about": {
+      "why": "Each arrow is one theorem of this section. \\annp{The lock-free rows show what lock freedom adds to the deadlock-free proof.}",
+      "used": []
+     }
     },
     {
-     "id": "th-fund-proc",
-     "title": "Fundamental theorems for processes",
-     "rocq": "static/FundamentalProc.v: fundamental_proc, live_fundamental_proc; soup/LFTyped.v: lf_fundamental",
+     "id": "th-sound",
+     "title": "Soundness",
+     "rocq": "static/FundamentalProc.v: soundness; soup/LFTyped.v: lf_soundness",
      "modes": [
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.fundamental-proc}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sj.proc}{\\vDash}_W p : T\\end{array}} \\\\[1.5ex] \\htmlData{k=th.live-fundamental-proc}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{^{\\infty}}_W p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}_W p : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T\\end{array}}}\\end{array}",
-     "caption": "Each is an induction on the derivation of the process judgment, with the semantic P-Term and P-Connect as its two cases."
+     "tex": "\\begin{array}{l}\\htmlData{k=th.soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\end{array}",
+     "caption": "A closed typed process is deadlock free in a strict world. \\annp{A closed process typed at a finite counter bound, with each thread guarded, is lock free in a strict and well-founded world.}",
+     "about": {
+      "why": "These are the main results."
+     }
     },
     {
      "id": "th-compose",
@@ -1219,51 +1261,79 @@ window.MAP = {
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\htmlData{k=th.Erel}{E[\\kappa]^{W}_{n}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\htmlData{k=th.Prel}{P[\\kappa]^{W}_{n}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.sem-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.conn}{\\mathsf{conn}} \\\\ \\land\\ p_1 \\in \\htmlData{k=th.Prel}{P^{W_1}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket} \\\\ \\land\\ p_2 \\in \\htmlData{k=th.Prel}{P^{W_2}_{n}\\llbracket \\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.par}{p_1 \\parallel_{\\Sigma_C} p_2} \\in \\htmlData{k=th.Prel}{P^{W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket}\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\mathrel{\\htmlData{k=tp.lfjudg}{\\Vdash}}^{N}_{W} (C_0, \\{t\\}) : T \\\\ \\text{by P-Term}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W (C_0, \\{t\\}) : T\\end{array}}}\\end{array}",
-     "caption": "For every $\\kappa$ and $n$, P-Term and P-Connect hold in $P$."
+     "tex": "\\begin{array}{l}\\htmlData{k=th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\htmlData{k=th.Erel}{E\\annot{[\\kappa]}^{W}_{n}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\htmlData{k=th.Prel}{P\\annot{[\\kappa]}^{W}_{n}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.sem-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.conn}{\\mathsf{conn}} \\\\ \\land\\ p_1 \\in \\htmlData{k=th.Prel}{P^{W_1}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket} \\\\ \\land\\ p_2 \\in \\htmlData{k=th.Prel}{P^{W_2}_{n}\\llbracket \\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.par}{p_1 \\parallel_{\\Sigma_C} p_2} \\in \\htmlData{k=th.Prel}{P^{W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket}\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-p-term}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\mathrel{\\htmlData{k=tp.lfjudg}{\\Vdash}}^{N}_{W} (C_0, \\{t\\}) : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W (C_0, \\{t\\}) : T\\end{array}}}\\end{array}",
+     "caption": "A safe thread is a safe process, and two safe processes connected at dual interfaces form a safe process. A component proved safe without typing therefore composes with typed components. \\annp{The same holds for the lock-free process relation.}",
+     "about": {
+      "why": "P-Term and P-Connect hold in the relation, which makes the approach compositional.",
+      "used": [
+       "th-fund-proc"
+      ]
+     }
     },
     {
-     "id": "th-bind",
-     "title": "The bind lemma",
-     "rocq": "compat/Bind.v: Erel_bind",
+     "id": "th-fund-proc",
+     "title": "Fundamental theorem",
+     "rocq": "static/FundamentalProc.v: fundamental_proc, live_fundamental_proc; soup/LFTyped.v: lf_fundamental",
      "modes": [
       "df",
       "lf"
      ],
-     "tex": "\\htmlData{k=th.Erel-bind}{\\begin{array}{l}\\begin{array}{l}e \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta_1 \\vdash T\\rrbracket^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}\\,\\Theta_2}} \\\\ \\land\\ \\forall W' \\htmlData{k=w.ext}{\\sqsupseteq} W,\\ j \\leq n,\\ v \\in \\htmlData{k=th.Vrel}{V^{W'}_j\\llbracket\\Theta_v \\vdash T\\rrbracket}. \\\\ \\qquad \\htmlData{k=se.frame}{f[v]} \\in \\htmlData{k=th.Erel}{E^{W'}_{j}\\llbracket \\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=se.frame}{f[e]} \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array}}",
-     "caption": "For every $\\kappa$, $E$ is closed under frames $f$, with the hole under $F \\cup \\mathsf{heads}\\,\\Theta_2$."
+     "tex": "\\begin{array}{l}\\htmlData{k=th.fundamental-proc}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sj.proc}{\\vDash}_W p : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T\\end{array}}}\\end{array}",
+     "caption": "A typed process is in the semantic judgment. The proof is by induction over P-Term and P-Connect and uses the composition rules.",
+     "about": {
+      "why": "The fundamental theorem connects typing with the relation.",
+      "used": [
+       "th-sound"
+      ]
+     }
     },
     {
-     "id": "th-sound",
-     "title": "Soundness",
-     "rocq": "static/FundamentalProc.v: soundness, live_soundness, soundness_source; soup/LFTyped.v: lf_soundness; soup/LFCompose.v: lf_soundness_source",
+     "id": "th-adeq",
+     "title": "Adequacy",
      "modes": [
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}} \\\\[1.5ex] \\htmlData{k=th.live-soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{^{\\infty}}_W p : T \\land \\mathrel{\\htmlData{k=guard.proc}{\\vdash\\!\\triangleright}} p \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p \\land \\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}}\\,p\\end{array}} \\\\[1.5ex] \\htmlData{k=th.soundness-source}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\varnothing ; \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land N \\in \\mathbb{N} \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\land\\ \\varnothing;\\varnothing;\\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\\\ \\land\\ \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk} \\land \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}",
-     "caption": "Typing implies deadlock freedom under $\\mathsf{strict}\\,W$ and lock freedom under $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$."
+     "rocq": "relation/Adequacy.v: adequacy, live_adequacy, adequacy_gen; soup/LFAdequacy.v: lf_adequacy, lf_thread_progress; soup/SoupTau.v: soup_no_tau_divergence; soup/SoupRun.v: lfsoup_step",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.adequacy}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\annot{\\htmlData{k=th.lf-adequacy}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-thread-progress}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\begin{array}{l}\\forall (r, l).\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,(\\htmlData{k=se.run}{r\\,0}) = p \\land \\htmlData{k=prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\htmlData{k=prop.wfair}{\\mathsf{wfair}}\\,(r, l) \\\\ \\quad \\Longrightarrow\\ \\htmlData{k=th.tpr}{\\mathsf{thread\\_progress\\_run}}\\,(r, l)\\end{array}\\end{array}}}\\end{array}}\\end{array}",
+     "caption": "In a strict world, a closed process in the semantic judgment is deadlock free. \\annp{In a strict and well-founded world, a closed process in the lock-free judgment is lock free, and each thread progresses on each weakly fair maximal run.}",
+     "about": {
+      "why": "Adequacy connects the relation with the safety property.",
+      "used": [
+       "th-sound"
+      ]
+     }
     },
     {
      "id": "th-conserv",
-     "title": "Conservativity and live inside deadlock-free",
-     "rocq": "static/Conservativity.v: conservative, typed_dftyped, dftyped_typed; compat/LiveDF.v: live_sub_df",
+     "title": "Conservativity",
+     "rocq": "static/Conservativity.v: conservative, typed_dftyped, dftyped_typed",
+     "modes": [
+      "lf"
+     ],
+     "tex": "\\begin{array}{l}\\annot{\\htmlData{k=th.conservative}{\\begin{array}{l}(\\exists \\varepsilon.\\ \\Gamma;\\htmlData{k=th.df}{\\Delta_{df}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,\\infty}} e : T_{df}\\ !\\ \\varepsilon) \\\\ \\quad\\iff\\ \\Gamma ; \\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.typed-dftyped}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\Gamma ; \\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_W e : T_{df}\\end{array}}}\\end{array}",
+     "caption": "The annotated judgment at $N = \\infty$ types the same terms as deadlock-free typing, and erasing the annotations of a lock-free typing gives a deadlock-free typing.",
+     "about": {
+      "why": "Lock-free typing therefore rejects no deadlock-free program."
+     }
+    },
+    {
+     "id": "th-terms",
+     "title": "Lemmas about terms",
      "modes": [
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\annot{\\htmlData{k=th.conservative}{\\begin{array}{l}(\\exists a\\,c\\,\\vartheta.\\ \\htmlData{k=th.df}{\\Theta_{df}};\\Gamma;\\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,\\infty}} e : T_{df}\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}) \\\\ \\quad\\iff\\ \\Theta_{df};\\Gamma;\\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.typed-dftyped}{\\begin{array}{l}\\Theta;\\Gamma;\\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\\\ \\quad\\Longrightarrow\\ \\Theta_{df};\\Gamma;\\Delta_{df} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_W e : T_{df}\\end{array}}} \\\\[1.5ex] \\htmlData{k=th.live-sub-df}{\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.nobox}{\\Box \\notin T} \\land \\varnothing \\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T\\end{array}}\\end{array}",
-     "caption": "Deadlock-free typing is the merged judgment at $N = \\infty$ up to erasure, and live implies deadlock-free at box-free $\\mathsf{tfree}$ results."
-    },
-    {
-     "id": "th-cost",
-     "title": "Cost",
-     "rocq": "cost/CostFund.v: cost_fundamental, fsem_of_cost",
-     "modes": [
-      "lf"
-     ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.cost-fundamental}{\\begin{array}{l}\\Theta;\\Gamma;\\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=cs.csem}{\\Theta;\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{N} e : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta}}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.fsem-of-cost}{\\begin{array}{l}\\begin{array}{l}\\Theta;\\varnothing;\\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\mathbin{\\htmlData{k=tp.tri}{\\triangleright}} c ; \\vartheta} \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\land\\ \\text{credits of } \\Theta \\leq N \\land \\htmlData{k=ann.meets}{\\mathsf{meets}}\\,\\vartheta\\,0\\,\\htmlData{k=fu.tk}{tk}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,(\\htmlData{k=th.styof}{\\mathsf{sty} \\circ \\Theta})\\,e}\\end{array}}\\end{array}",
-     "caption": "A typed closed thread with all credits at most $N$ has fuel with every counter at $N$."
+     "rocq": "static/FundamentalProc.v: soundness_source; soup/LFCompose.v: lf_soundness_source; static/Fundamental.v: typed_sem, fundamental, fundamental_typed, live_fundamental, live_fundamental_typed; compat/Bind.v: Erel_bind; cost/CostFund.v: cost_fundamental, fsem_of_cost",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.soundness-source}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land N \\in \\mathbb{N} \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\land\\ \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ (c, \\vartheta) \\land \\htmlData{k=ann.fin0}{\\vartheta(0) \\in \\mathbb{N}} \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}\\\\[3ex]\\begin{array}{l}\\htmlData{k=th.fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}^{F}_W t : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.fundamental-typed}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.df}{\\Delta_{df}} \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{F}_W t : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{F}_W t : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-typed}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_W t : T_{df}\\end{array}}}\\end{array}\\\\[3ex]\\htmlData{k=th.Erel-bind}{\\begin{array}{l}\\begin{array}{l}e \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta_1 \\vdash T\\rrbracket^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{heads}}\\,\\Theta_2}} \\\\ \\land\\ \\forall W' \\htmlData{k=w.ext}{\\sqsupseteq} W,\\ j \\leq n,\\ v \\in \\htmlData{k=th.Vrel}{V^{W'}_j\\llbracket\\Theta_v \\vdash T\\rrbracket}. \\\\ \\qquad \\htmlData{k=se.frame}{f[v]} \\in \\htmlData{k=th.Erel}{E^{W'}_{j}\\llbracket \\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=se.frame}{f[e]} \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array}}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\htmlData{k=th.cost-fundamental}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=cs.csem}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{N} e : T\\ !\\ \\varepsilon}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.fsem-of-cost}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} e : T\\ !\\ (c, \\vartheta) \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.crle}{\\mathsf{cr}(\\Delta) \\leq N} \\land \\htmlData{k=ann.fin0}{\\vartheta(0) \\in \\mathbb{N}} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\htmlData{k=th.styof}{\\Delta\\annot{^{N}}}\\,e}\\end{array}}\\end{array}}\\end{array}",
+     "caption": "A closed program is sound as a one-thread process. Typing a term implies the semantic term judgment, and $E$ is closed under evaluation frames. \\annp{With the guard a typed term is in the relation at $\\kappa_L$, and a typed term at a finite counter bound has fuel.}",
+     "about": {
+      "why": "The proofs of the process results use these lemmas, each proved rule by rule.",
+      "used": [
+       "th-fund-proc",
+       "th-adeq"
+      ]
+     }
     }
    ]
   }
@@ -1380,7 +1450,7 @@ window.MAP = {
   "syn.letp": {
    "title": "Pair elimination",
    "what": "$\\mathsf{let}\\ \\langle a, b\\rangle = e_1\\ \\mathsf{in}\\ e_2$ evaluates $e_1$ to $\\langle v_1, v_2\\rangle$ and steps to $e_2[v_1, v_2]$ by $\\beta$.",
-   "why": "A plain term former and the only eliminator of $\\otimes$. A $\\mathsf{recv}$ returns $\\langle v, o\\rangle$, and the continuation reads $v$ and $o$ through it.",
+   "why": "A plain term former and the only eliminator of $\\otimes$. A $\\mathsf{recv}$ returns $\\langle v, o\\rangle$, and the continuation reads $v$ and $o$ through the pair elimination.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{let}\\ \\langle v, c\\rangle = \\mathsf{recv}\\,c\\ \\mathsf{in}\\ e$.",
    "rocq": "lang/Syntax.v: LetP",
@@ -1403,8 +1473,8 @@ window.MAP = {
   "syn.let": {
    "title": "Derived let",
    "what": "$\\mathsf{let}\\ a = e_1\\ \\mathsf{in}\\ e_2 := \\mathsf{let}\\ \\langle a, u\\rangle = \\langle e_1, \\ast\\rangle\\ \\mathsf{in}\\ \\mathsf{let}\\ \\ast = u\\ \\mathsf{in}\\ e_2$ with $u$ fresh.",
-   "why": "The abbreviation binds one variable without a $\\lambda$, so its body keeps every end of the context and the typing needs no lower point $l$ for them. It uses only $\\otimes$ and $\\ast$, which every system already has.",
-   "breaks": "Written as $(\\lambda a.\\,e_2)\\,e_1$ instead, the $\\lambda$ must bound the partner points of all ends it captures by one lower point $l$. After $\\mathsf{let}\\ \\langle a, a'\\rangle = \\mathsf{new}_\\ell$ the ends $a, a'$ sit at $\\rho$ and $\\overline{\\rho}$, which have no common lower bound, and the body does not type.",
+   "why": "The abbreviation binds one variable without a $\\lambda$, so its body keeps every end of the context and the typing needs no lower point $l$ for these ends. It uses only $\\otimes$ and $\\ast$, which every system already has.",
+   "breaks": "Written as $(\\lambda a.\\,e_2)\\,e_1$ instead, the $\\lambda$ must bound the dual points of all ends it captures by one lower point $l$. After $\\mathsf{let}\\ \\langle a, a'\\rangle = \\mathsf{new}_\\ell$ the ends $a, a'$ are at $\\rho$ and $\\overline{\\rho}$, which have no common lower bound, and the body does not type.",
    "example": "$\\mathsf{let}\\ p = \\mathsf{force}\\,mk\\,\\ast\\ \\mathsf{in}\\ e$ keeps every end of the context in $e$.",
    "rocq": "lang/Syntax.v: ELet, lang/Semantics.v: t_act_let",
    "sig": "\\mathsf{let}\\ a = e_1\\ \\mathsf{in}\\ e_2 \\in \\mathsf{Expr}",
@@ -1483,7 +1553,7 @@ window.MAP = {
   "syn.new": {
    "title": "$\\mathsf{new}$",
    "what": "$\\mathsf{new} \\xrightarrow{\\mathsf{new}\\,c} \\langle c^{+}, c^{-}\\rangle$ for a fresh channel $c$. The typing places $c^{+}$ at a position $\\pi$, a fresh root or a field $x\\cdot\\kappa$, places $c^{-}$ at $\\overline{\\pi}$, and states a constraint $C$ on both.",
-   "why": "The term names no point. Position and constraint live in the existential type of $\\mathsf{new}$, chosen by the typing derivation, so every ordering of a new channel is available without program syntax for it.",
+   "why": "The term names no point. Position and constraint are part of the existential type of $\\mathsf{new}$, which the typing derivation chooses. Each ordering of a new channel is therefore available without program syntax.",
    "breaks": "With the position or the facts in the term, every held end that the facts mention is an argument that $\\mathsf{new}$ takes and returns, because ends are linear.",
    "example": "$\\mathsf{let}\\ \\langle a, a'\\rangle = \\mathsf{new}\\ \\mathsf{in}\\ e$.",
    "rocq": "lang/Syntax.v: ENew",
@@ -1506,7 +1576,7 @@ window.MAP = {
   "syn.op": {
    "title": "Constant $k$",
    "what": "A constant $k$ is a value, and $k\\,v$ takes the head step of $k$ on the value $v$.",
-   "why": "The constants are the operations on channels, boxes and threads. Application $k\\,e$ evaluates $e$ first like any application.",
+   "why": "The constants are the operations on channels, boxes and threads. Application $k\\,e$ evaluates $e$ first, as each application does.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{send}\\,\\langle \\ast, o\\rangle$ applies $\\mathsf{send}$ to a pair.",
    "rocq": "lang/Syntax.v: Op (the value $k$ is $\\lambda x.\\,k\\,x$)",
@@ -1521,7 +1591,7 @@ window.MAP = {
   "prim.send": {
    "title": "$\\mathsf{send}$",
    "what": "$\\mathsf{send}\\,\\langle v, o\\rangle \\xrightarrow{o!v} o$.",
-   "why": "The label carries the payload $v$. The value relation is exact, $\\mathrm{dom}\\,\\Theta = \\mathsf{fends}(v)$ for $v$ in $V$ at $\\Theta$, so the ends that leave the thread are determined by $v$.",
+   "why": "The label contains the payload $v$. The value relation is exact, $\\mathrm{dom}\\,\\Theta = \\mathsf{fends}(v)$ for $v$ in $V$ at $\\Theta$, so the ends that leave the thread are determined by $v$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{close}\\,(\\mathsf{send}\\,\\langle \\ast, c^{+}\\rangle)$ sends $\\ast$ and then closes.",
    "rocq": "lang/Syntax.v: PSend, lang/Semantics.v: t_act_send",
@@ -1548,7 +1618,7 @@ window.MAP = {
   "prim.recv": {
    "title": "$\\mathsf{recv}$",
    "what": "$\\mathsf{recv}\\,o \\xrightarrow{o?v} \\langle v, o\\rangle$ for every value $v$.",
-   "why": "The step admits every $v$, so a receive meets every send of the partner. The session type of $o$ restricts the $v$ the relation considers.",
+   "why": "A receive has a step for each value, so it can match the send of the partner whatever value is sent. The session type of $o$ restricts the $v$ the relation considers.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{let}\\ \\langle u, b\\rangle = \\mathsf{recv}\\,b\\ \\mathsf{in}\\ e$.",
    "rocq": "lang/Syntax.v: PRecv",
@@ -1636,7 +1706,7 @@ window.MAP = {
   "prim.link": {
    "title": "$\\mathsf{link}$",
    "what": "$\\mathsf{link}\\,\\langle o_1, o_2\\rangle \\xrightarrow{\\leftrightarrow\\{o_1, o_2\\}} \\ast$. The process step removes $\\mathsf{ech}\\,o_1$ and renames every thread by $\\mathsf{csub}\\,o_1\\,o_2$.",
-   "why": "A link forwards a conversation without relaying messages. \\annp{It acts on no protocol, so it costs $0$ in both cost tables, and in the fuel layer it spends one link ticket.}",
+   "why": "A link forwards a conversation without relaying messages. \\annp{It acts on no protocol, so it costs $0$ in both cost tables, and in the fuel layer it uses one link ticket.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{link}\\,\\langle c^{+}, d^{-}\\rangle$.",
    "rocq": "lang/Syntax.v: PLink",
@@ -1655,9 +1725,9 @@ window.MAP = {
   "prim.spawn": {
    "title": "$\\mathsf{spawn}$",
    "what": "$\\mathsf{spawn}\\,v \\xrightarrow{\\mathsf{spawn}\\,v} \\ast$, and the process starts a thread running $v\\,\\ast$.",
-   "why": "The label carries the thunk $v$. The value relation is exact, so the child holds exactly the ends $\\mathsf{fends}(v)$ and the parent keeps the rest.",
+   "why": "The label contains the thunk $v$. The value relation is exact, so the child holds exactly the ends $\\mathsf{fends}(v)$ and the parent keeps the rest.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{spawn}\\,(\\lambda u.\\,\\mathsf{let}\\ \\ast = u\\ \\mathsf{in}\\ \\mathsf{close}\\,d')$ hands $d'$ to the child.",
+   "example": "$\\mathsf{spawn}\\,(\\lambda u.\\,\\mathsf{let}\\ \\ast = u\\ \\mathsf{in}\\ \\mathsf{close}\\,d')$ transfers $d'$ to the child.",
    "rocq": "lang/Syntax.v: PSpawn",
    "sig": "\\mathsf{spawn} : (\\ast \\multimap^{u}_{l} \\ast) \\multimap \\ast",
    "args": [
@@ -1733,7 +1803,7 @@ window.MAP = {
    ]
   },
   "end.dual": {
-   "title": "Partner end $\\overline{o}$",
+   "title": "Dual end $\\overline{o}$",
    "what": "$\\overline{c^{+}} = c^{-}$ and $\\overline{c^{-}} = c^{+}$, so $\\overline{\\overline{o}} = o$.",
    "why": "A message on $o$ synchronizes with an action on $\\overline{o}$. Every two-thread process step pairs an end with its partner.",
    "breaks": "Nothing. It is a definition.",
@@ -1814,7 +1884,7 @@ window.MAP = {
   "proc.config": {
    "title": "Configuration",
    "what": "A configuration $q = (C, M)$ has a finite partial map $M : \\mathbb{N} \\rightharpoonup e$ from thread identifiers to terms.",
-   "why": "Weak fairness and lock freedom speak about one thread $t$ across a run, so threads carry identifiers.",
+   "why": "Weak fairness and lock freedom speak about one thread $t$ across a run, so threads have identifiers.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(\\varnothing, \\{0 \\mapsto main\\})$.",
    "rocq": "lang/Process.v: config",
@@ -1884,7 +1954,7 @@ window.MAP = {
    "what": "$x^{+}$ raises the offset of $x$ by $1$, so an action on an end at $x$ moves it to $x^{+}$.",
    "why": "For every $W$ and $x$, $x \\prec_W x^{+}$. Hence the actions of one end are ordered in program order.",
    "breaks": "Nothing. It is a definition.",
-   "example": "After $\\mathsf{send}$ at $x$ the end sits at $x^{+}$.",
+   "example": "After $\\mathsf{send}$ at $x$ the end is at $x^{+}$.",
    "rocq": "types/Points.v: pt_shift",
    "sig": "(\\cdot)^{+} : \\mathsf{Point} \\to \\mathsf{Point}",
    "args": [
@@ -1896,9 +1966,9 @@ window.MAP = {
   },
   "pt.field": {
    "title": "Field $x\\cdot\\kappa$",
-   "what": "$x\\cdot\\kappa$ is a name below $x$ with offset $0$ and positive polarity, where payloads, branch continuations and channels created at a field sit.",
-   "why": "The $j$-th payload end of a message at $x$ sits at $x\\cdot j$, and the continuation of choice $i$ at $x\\cdot\\kappa_i$. $\\mathsf{new}$ may place a channel at the same fields, so a channel created to be sent lands where the message delivers it.",
-   "breaks": "With a separate sort of point for created channels, a reply channel created to be sent sits away from the payload field, and request and reply programs do not type.",
+   "what": "$x\\cdot\\kappa$ is a name below $x$ with offset $0$ and positive polarity, where payloads, branch continuations and channels created at a field are.",
+   "why": "The $j$-th payload end of a message at $x$ is at $x\\cdot j$, and the continuation of choice $i$ at $x\\cdot\\kappa_i$. $\\mathsf{new}$ may place a channel at the same fields, so a channel created to be sent is at the field where the message delivers its payload.",
+   "breaks": "With a separate sort of point for created channels, a reply channel created to be sent is away from the payload field, and request and reply programs do not type.",
    "example": "$\\mathsf{new}$ at the position $\\rho\\cdot 0$ places $d^{+}$ at $\\rho\\cdot 0$ and $d^{-}$ at $\\overline{\\rho\\cdot 0}$.",
    "rocq": "types/Points.v: pt_field",
    "sig": "(\\cdot)\\cdot\\kappa : \\mathsf{Point} \\times \\mathbb{N} \\to \\mathsf{Point}",
@@ -1915,8 +1985,8 @@ window.MAP = {
   },
   "pt.dual": {
    "title": "Dual point $\\overline{x}$",
-   "what": "$\\overline{x}$ flips the polarity of $x$, and the two ends of a channel sit at $x$ and $\\overline{x}$.",
-   "why": "A thread blocked at $u$ that holds an end at $v$ must satisfy $u \\prec \\overline{v}$, the point of the partner end.",
+   "what": "$\\overline{x}$ flips the polarity of $x$, and the two ends of a channel are at $x$ and $\\overline{x}$.",
+   "why": "A thread blocked at $u$ that holds an end at $v$ must satisfy $u \\prec \\overline{v}$, the point of the dual end.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{new}$ places $c^{+}$ at $\\rho$ and $c^{-}$ at $\\overline{\\rho}$.",
    "rocq": "types/Points.v: pt_dual",
@@ -1931,8 +2001,8 @@ window.MAP = {
   "pt.laws": {
    "title": "Point laws",
    "what": "For every $x$ and $\\kappa$, $\\overline{\\overline{x}} = x$, $\\overline{x}\\cdot\\kappa = x\\cdot\\kappa$ and $\\overline{x^{+}} = \\overline{x}^{+}$.",
-   "why": "$\\overline{x}\\cdot\\kappa = x\\cdot\\kappa$ makes the payload points $x\\cdot j$ of sender and receiver equal, although the two ends sit at $x$ and $\\overline{x}$.",
-   "breaks": "If $\\overline{x}\\cdot\\kappa \\neq x\\cdot\\kappa$, the ends a message carries sit at different points for sender and receiver, and the received value is not in the value relation at its type.",
+   "why": "$\\overline{x}\\cdot\\kappa = x\\cdot\\kappa$ makes the payload points $x\\cdot j$ of sender and receiver equal, although the two ends are at $x$ and $\\overline{x}$.",
+   "breaks": "If $\\overline{x}\\cdot\\kappa \\neq x\\cdot\\kappa$, the ends of a message are at different points for sender and receiver, and the received value is not in the value relation at its type.",
    "example": "$\\overline{\\rho}\\cdot 0 = \\rho\\cdot 0$.",
    "rocq": "types/Points.v: pt_dual_dual, pt_field_dual",
    "sig": "\\forall x \\in \\mathsf{Point}, \\kappa \\in \\mathbb{N}.\\ \\overline{\\overline{x}} = x \\land \\overline{x}\\cdot\\kappa = x\\cdot\\kappa \\land \\overline{x^{+}} = \\overline{x}^{+}",
@@ -1950,7 +2020,7 @@ window.MAP = {
   "sx.kappai": {
    "title": "Field of a choice $\\kappa_i$",
    "what": "$\\kappa_{\\mathsf{false}} = 0$ and $\\kappa_{\\mathsf{true}} = 1$.",
-   "why": "The two continuations of a choice sit at distinct fields $x\\cdot 0 \\neq x\\cdot 1$, so facts order them independently.",
+   "why": "The two continuations of a choice are at distinct fields $x\\cdot 0 \\neq x\\cdot 1$, so facts order them independently.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{branch}$ at $\\overline{x}$ continues at $x\\cdot 0$ or $x\\cdot 1$.",
    "rocq": "types/Points.v: bfield",
@@ -1984,7 +2054,7 @@ window.MAP = {
   "pt.bra": {
    "title": "Branch continuation",
    "what": "$\\mathsf{bra\\_pt}\\,x\\,i = x\\cdot\\kappa_i$, the point of the end after $\\mathsf{branch}$ at $\\overline{x}$ receives $i$.",
-   "why": "It is $\\overline{\\mathsf{sel\\_pt}\\,x\\,i}$, the partner point of the selecting side.",
+   "why": "It is $\\overline{\\mathsf{sel\\_pt}\\,x\\,i}$, the dual point of the selecting side.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{branch}$ at $\\overline{x}$ continues at $x\\cdot\\kappa_i$.",
    "rocq": "types/Points.v: bra_pt",
@@ -1992,7 +2062,7 @@ window.MAP = {
    "args": [
     {
      "name": "x",
-     "meaning": "The point of the selecting partner, the branching end sits at $\\overline{x}$."
+     "meaning": "The point of the selecting partner, the branching end is at $\\overline{x}$."
     },
     {
      "name": "i",
@@ -2002,7 +2072,7 @@ window.MAP = {
   },
   "pt.payload": {
    "title": "Payload fields",
-   "what": "The $j$-th end of a message sent at $x$ sits at $x\\cdot j$.",
+   "what": "The $j$-th end of a message sent at $x$ is at $x\\cdot j$.",
    "why": "$\\overline{x}\\cdot j = x\\cdot j$, so sender at $x$ and receiver at $\\overline{x}$ compute the same points for the delivered ends.",
    "breaks": "Nothing. It is a definition.",
    "example": "A message on $y$ at $Y$ delivers its end at $Y\\cdot 0$.",
@@ -2023,7 +2093,7 @@ window.MAP = {
    "title": "Field label $\\kappa$",
    "what": "$\\kappa \\in \\mathbb{N}$ selects the field $x\\cdot\\kappa$ of a point $x$.",
    "why": "Payloads, choices and the position of a new channel use fields. $x\\cdot\\kappa = x\\cdot\\kappa'$ iff $\\kappa = \\kappa'$.",
-   "breaks": "Two channels created at one field $x\\cdot\\kappa$ sit at the same points $x\\cdot\\kappa$ and $\\overline{x\\cdot\\kappa}$, so no fact orders one before the other.",
+   "breaks": "Two channels created at one field $x\\cdot\\kappa$ are at the same points $x\\cdot\\kappa$ and $\\overline{x\\cdot\\kappa}$, so no fact orders one before the other.",
    "example": "$\\mathsf{bra\\_pt}\\,x\\,\\mathsf{true} = x\\cdot 1$.",
    "rocq": "lang/Syntax.v: field",
    "sig": "\\kappa \\in \\mathbb{N}",
@@ -2037,9 +2107,9 @@ window.MAP = {
   "link.csub": {
    "title": "$\\mathsf{csub}$",
    "what": "$\\mathsf{csub}\\,o_1\\,o_2 = \\{\\overline{o_1} \\mapsto o_2,\\ o_1 \\mapsto \\overline{o_2}\\}$, the identity elsewhere, applied to every thread after a link.",
-   "why": "After the link, the holder of $\\overline{o_1}$ talks to the holder of $\\overline{o_2}$, so it holds $o_2$. The map identifies $\\overline{o_1}$ with $o_2$, so it is no bijection.",
+   "why": "After the link, the thread holding $\\overline{o_1}$ communicates with the thread holding $\\overline{o_2}$, so it holds $o_2$. The map identifies $\\overline{o_1}$ with $o_2$, so it is no bijection.",
    "breaks": "Nothing. It is a definition.",
-   "example": "After $\\mathsf{link}\\,\\langle c^{+}, d^{-}\\rangle$ the holder of $c^{-}$ holds $d^{-}$.",
+   "example": "After $\\mathsf{link}\\,\\langle c^{+}, d^{-}\\rangle$ the thread holding $c^{-}$ holds $d^{-}$.",
    "rocq": "lang/Syntax.v: csub",
    "sig": "\\mathsf{csub} : \\mathsf{End} \\to \\mathsf{End} \\to \\mathsf{End} \\to \\mathsf{End}",
    "args": [
@@ -2056,7 +2126,7 @@ window.MAP = {
   "se.slabel": {
    "title": "Session label $\\sigma$",
    "what": "A label $\\sigma$ of a step that acts on an end and synchronizes with a partner thread or with the environment.",
-   "why": "Session labels are exactly the steps a thread can wait on. Readiness and the obligations of the relation are stated over them.",
+   "why": "Session labels are exactly the steps a thread can wait on. Readiness and the obligations of the relation are stated over session labels.",
    "breaks": "Nothing. It is a definition.",
    "example": "$o?v$ and $o\\,\\mathsf{end}$ are session labels, $\\beta$ is none.",
    "rocq": "lang/Semantics.v: slabel",
@@ -2178,7 +2248,7 @@ window.MAP = {
    "args": [
     {
      "name": "ev",
-     "meaning": "An event, $\\mathsf{parts}(ev)$ the identifiers of the threads that take part in it."
+     "meaning": "An event. $\\mathsf{parts}(ev)$ is the set of identifiers of the threads that take part in the step of $ev$."
     }
    ]
   },
@@ -2238,7 +2308,7 @@ window.MAP = {
   "se.run": {
    "title": "Runs $r$ and $l$",
    "what": "A run is a pair of sequences, $r_i$ the configuration at position $i$ and $l_i$ the event of the step from $r_i$ to $r_{i+1}$, or none when $r_{i+1} = r_i$ stutters.",
-   "why": "Lock freedom quantifies over infinite runs and speaks of positions $i \\leq j$ in them.",
+   "why": "Lock freedom quantifies over infinite runs and speaks of positions $i \\leq j$ in a run.",
    "breaks": "Nothing. It is a definition.",
    "example": "$r_0 = (\\varnothing, \\{0 \\mapsto main\\})$.",
    "rocq": "lockfree/Fair.v: run_step",
@@ -2257,7 +2327,7 @@ window.MAP = {
   "lbl.beta": {
    "title": "$\\beta$ label",
    "what": "The label of application, unit and pair elimination, case and force.",
-   "why": "All of these steps have the same cost $\\kappa(\\beta)$ in every cost table, so one label covers them.",
+   "why": "These steps have the same cost $\\kappa(\\beta)$ in each cost table, so one label covers these steps.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{force}\\,(!e) \\xrightarrow{\\beta} e[!e]$.",
    "rocq": "lang/Semantics.v: LBeta",
@@ -2266,8 +2336,8 @@ window.MAP = {
   },
   "lbl.new": {
    "title": "Label $\\mathsf{new}\\,c$",
-   "what": "It carries the name $c$ of the new channel.",
-   "why": "The process rule reads $c$ to keep names fresh. Position and facts of $c$ are no part of the label, and the relation chooses them.",
+   "what": "It contains the name $c$ of the new channel.",
+   "why": "The process rule reads $c$ to keep names fresh. Position and facts of $c$ are no part of the label, and the relation chooses position and facts.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{new} \\xrightarrow{\\mathsf{new}\\,c} \\langle c^{+}, c^{-}\\rangle$.",
    "rocq": "lang/Semantics.v: LNew",
@@ -2281,10 +2351,10 @@ window.MAP = {
   },
   "lbl.spawn": {
    "title": "Label $\\mathsf{spawn}\\,v$",
-   "what": "It carries the thunk $v$ that starts the child thread $v\\,\\ast$.",
+   "what": "It contains the thunk $v$ that starts the child thread $v\\,\\ast$.",
    "why": "The relation splits the environment of the parent as $\\Theta = \\Theta_c \\uplus \\Theta_r$ with $v$ in the thunk relation at $\\Theta_c$. Exactness of $V$ gives $\\mathrm{dom}\\,\\Theta_c = \\mathsf{fends}(v)$, so the split is determined by $v$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{spawn}\\,(\\lambda u.\\,\\mathsf{close}\\,d')$ hands $d'$ to the child.",
+   "example": "$\\mathsf{spawn}\\,(\\lambda u.\\,\\mathsf{close}\\,d')$ transfers $d'$ to the child.",
    "rocq": "lang/Semantics.v: LSpawn",
    "sig": "\\mathsf{spawn}\\,v \\in \\mathsf{TLabel}",
    "args": [
@@ -2422,7 +2492,7 @@ window.MAP = {
   "T-Act-Force": {
    "title": "T-Act-Force",
    "what": "$\\mathsf{force}\\,(!e) \\xrightarrow{\\beta} e[!e]$, so the body runs with the box for its self.",
-   "why": "It is the only rule that unrolls a definition, so all recursion and replication goes through it.",
+   "why": "It is the only rule that unrolls a definition, so recursion and replication go through force steps.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{force}\\,!(f = \\mathsf{force}\\,f)$ steps to itself by $\\beta$ forever.",
    "rocq": "lang/Semantics.v: t_act_force",
@@ -2437,7 +2507,7 @@ window.MAP = {
   "T-Act-New": {
    "title": "T-Act-New",
    "what": "$\\mathsf{new} \\xrightarrow{\\mathsf{new}\\,c} \\langle c^{+}, c^{-}\\rangle$ for every $c$, and the process rule picks $c$.",
-   "why": "A thread does not know which names are taken. The process rule asks $c \\notin C \\cup \\mathsf{echans}(M)$.",
+   "why": "The step of a single thread cannot determine which channel names are in use. The process rule asks $c \\notin C \\cup \\mathsf{echans}(M)$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{new} \\xrightarrow{\\mathsf{new}\\,c} \\langle c^{+}, c^{-}\\rangle$.",
    "rocq": "lang/Semantics.v: t_act_new",
@@ -2452,7 +2522,7 @@ window.MAP = {
   "T-Act-Spawn": {
    "title": "T-Act-Spawn",
    "what": "$\\mathsf{spawn}\\,v \\xrightarrow{\\mathsf{spawn}\\,v} \\ast$.",
-   "why": "The label carries $v$, so the process rule can start the thread $v\\,\\ast$.",
+   "why": "The label contains $v$, so the process rule can start the thread $v\\,\\ast$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{spawn}\\,(\\lambda u.\\,\\mathsf{close}\\,d') \\xrightarrow{\\mathsf{spawn}\\,(\\lambda u.\\,\\mathsf{close}\\,d')} \\ast$.",
    "rocq": "lang/Semantics.v: t_act_spawn",
@@ -2467,7 +2537,7 @@ window.MAP = {
   "T-Act-Send": {
    "title": "T-Act-Send",
    "what": "$\\mathsf{send}\\,\\langle v, o\\rangle \\xrightarrow{o!v} o$.",
-   "why": "The label carries the payload $v$, which the receiving thread obtains by the process rule.",
+   "why": "The label contains the payload $v$, which the receiving thread obtains by the process rule.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{send}\\,\\langle \\ast, c^{+}\\rangle \\xrightarrow{c^{+}!\\ast} c^{+}$.",
    "rocq": "lang/Semantics.v: t_act_send",
@@ -2486,7 +2556,7 @@ window.MAP = {
   "T-Act-Recv": {
    "title": "T-Act-Recv",
    "what": "$\\mathsf{recv}\\,o \\xrightarrow{o?v} \\langle v, o\\rangle$ for every value $v$.",
-   "why": "The thread does not know what the partner sends, so it has a step for each $v$. The receive obligation quantifies only over $v$ in the value relation at the payload type.",
+   "why": "The step of a single thread does not depend on what the partner sends, so it has a step for each $v$. The receive obligation quantifies only over $v$ in the value relation at the payload type.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{recv}\\,b \\xrightarrow{b?\\ast} \\langle \\ast, b\\rangle$.",
    "rocq": "lang/Semantics.v: t_act_recv",
@@ -2558,7 +2628,7 @@ window.MAP = {
   "T-Act-Link": {
    "title": "T-Act-Link",
    "what": "$\\mathsf{link}\\,\\langle o_1, o_2\\rangle \\xrightarrow{\\leftrightarrow\\{o_1, o_2\\}} \\ast$. The label is a set, so $\\langle o_1, o_2\\rangle$ and $\\langle o_2, o_1\\rangle$ give one label.",
-   "why": "The renaming $\\mathsf{csub}\\,o_1\\,o_2$ concerns other threads, so the process rule performs it.",
+   "why": "The renaming $\\mathsf{csub}\\,o_1\\,o_2$ concerns other threads, so the process rule performs the renaming.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{link}\\,\\langle c^{+}, d^{-}\\rangle \\xrightarrow{\\leftrightarrow\\{c^{+}, d^{-}\\}} \\ast$.",
    "rocq": "lang/Semantics.v: t_act_link",
@@ -2923,7 +2993,7 @@ window.MAP = {
   },
   "ev.pick": {
    "title": "Pick $k$",
-   "what": "What a process rule chooses beyond the thread label. $k = j$ names the new thread of a spawn, $k = (o_1, o_2)$ orders the ends of a link so that the channel of $o_1$ goes and the holder of $\\overline{o_1}$ then holds $o_2$, and $k = \\cdot$ for every other solo step.",
+   "what": "What a process rule chooses beyond the thread label. $k = j$ names the new thread of a spawn. $k = (o_1, o_2)$ orders the ends of a link, so the channel of $o_1$ goes and the thread with $\\overline{o_1}$ then holds $o_2$. Every other solo step has $k = \\cdot$.",
    "why": "The thread label of a link is the unordered set $\\{o_1, o_2\\}$, and the thread label of a spawn names no thread, so the event records the choice the rule makes.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{solo}_0\\,(\\leftrightarrow\\{c^{+}, d^{-}\\})\\,(c^{+}, d^{-})$ removes $c$.",
@@ -3009,9 +3079,9 @@ window.MAP = {
   "prop.notau": {
    "title": "$\\mathsf{no\\_tau\\_divergence}$",
    "what": "For every $q$ with $p \\to^{*} q$, $\\mathsf{Acc}\\ {\\to_{\\mathsf{admin}}}\\ q$, so no infinite chain of administrative steps starts at $q$.",
-   "why": "Lock freedom requires that a thread reaches its next action. An infinite chain of $\\beta$, spawn or link steps never reaches one.",
+   "why": "Lock freedom requires that a thread eventually performs its next action. An infinite chain of $\\beta$, spawn or link steps never performs one.",
    "breaks": "$\\mathsf{force}\\,!(f = \\mathsf{force}\\,f)$ takes $\\beta$ steps forever, and a forwarder that spawns a new forwarder at each round spawns forever.",
-   "example": "$\\mathsf{force}\\,!(f = \\mathsf{force}\\,f)$ violates it.",
+   "example": "$\\mathsf{force}\\,!(f = \\mathsf{force}\\,f)$ violates the property.",
    "rocq": "lockfree/TauThread.v: no_tau_divergence",
    "sig": "\\mathsf{no\\_tau\\_divergence} : \\mathsf{Proc} \\to \\mathsf{Prop}",
    "args": [
@@ -3120,7 +3190,7 @@ window.MAP = {
   "prop.pend": {
    "title": "Pending thread",
    "what": "$\\mathsf{pend}(q, t)$ holds when thread $t$ of $q$ has a session label as its next step.",
-   "why": "Lock freedom promises progress exactly to the pending threads.",
+   "why": "Lock freedom guarantees progress exactly to the pending threads.",
    "breaks": "Nothing. It is a definition.",
    "example": "A thread at $\\mathsf{recv}\\,b$ is pending.",
    "rocq": "lockfree/Fair.v: pend",
@@ -3172,7 +3242,7 @@ window.MAP = {
   "ty.arrow": {
    "title": "Arrow",
    "what": "\\annp{$(T \\multimap^{u}_{l}\\annot{[c ; \\vartheta ; h]}\\,U)\\annot{^{a}}$ is a closure type with upper point $u$, lower point $l$, cost $c$, ticket need $\\vartheta$, floor $h$\\annp{ and credit} $a$ for the captured ends.}",
-   "why": "A call runs code that may block and holds the ends of the closure. The type bounds where the call blocks by $u$ and where the held ends sit by $l$.",
+   "why": "A call runs code that may block and holds the ends of the closure. The type bounds where the call blocks by $u$ and where the held ends are by $l$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\ast \\multimap \\ast$ is the type of a spawned thunk.",
    "rocq": "types/Types.v: TLolli",
@@ -3218,7 +3288,7 @@ window.MAP = {
   "ty.arrow.ub": {
    "title": "Upper point $u$",
    "what": "The body is in $E$ under every $F$ with $\\forall y \\in F.\\ u \\prec y$, which every caller must establish.",
-   "why": "The caller does not see the body. The condition $u \\prec F$ makes every later action of the caller lie above every point where the body may block.",
+   "why": "The type of a closure does not show its body. The condition $u \\prec F$ places the later actions of the caller above the points where the body may block.",
    "breaks": "Without $u$, a closure that blocks at $x$ with $y \\prec x$ for some later action $y$ of the caller could be called first, and the thread waits on its own later action.",
    "example": "A function that blocks on an end at $\\kappa$ has $u = \\kappa$.",
    "rocq": "types/Types.v: TLolli ub",
@@ -3233,15 +3303,15 @@ window.MAP = {
   "ty.arrow.lb": {
    "title": "Lower point $l$",
    "what": "$\\forall y \\in \\mathsf{heads}(\\Theta).\\ l \\preceq y$ for the captured ends, with $l$ absent iff $\\Theta = \\varnothing$.",
-   "why": "A closure is a held value. A thread blocked at $x$ while holding it needs $x \\prec y$ for every partner point $y$ of the captured ends, and $x \\prec l$ implies all of them.",
+   "why": "A closure is a held value. A thread blocked at $x$ while holding it needs $x \\prec y$ for every dual point $y$ of the captured ends, and $x \\prec l$ implies these facts.",
    "breaks": "Without $l$, a thread blocks at $x$ while it holds a closure with a captured end at $v$ and $x \\not\\prec \\overline{v}$, so the partner of that end may wait on the thread.",
    "example": "A closure capturing $a^{+}$ at $\\rho$ has $l = \\overline{\\rho}$.",
    "rocq": "types/Types.v: TLolli lb",
-   "sig": "l \\in \\mathsf{Point}_{\\bot}",
+   "sig": "l \\in \\mathsf{Point} \\cup \\{\\cdot\\}",
    "args": [
     {
      "name": "l",
-     "meaning": "A point with $l \\preceq y$ for every $y \\in \\mathsf{heads}(\\Theta)$ of the captured environment $\\Theta$, or absent iff $\\Theta = \\varnothing$."
+     "meaning": "A point with $l \\preceq y$ for every dual point $y$ of the captured ends, or $\\cdot$ iff the closure captures no end. Not $\\bot$, which marks hidden points at $\\exists^{\\bot}$."
     }
    ]
   },
@@ -3249,7 +3319,7 @@ window.MAP = {
    "title": "Arrow cost $c$",
    "what": "A call performs at most $c \\in \\mathbb{N} \\cup \\{\\infty\\}$ channel actions before it returns.",
    "why": "A thread that holds an end $o$ while a call runs delays $o$ by at most $c$ actions. Aging subtracts $c$ from the credit of $o$.",
-   "breaks": "A thread that holds an end across a call that never returns starves the partner. With $c = \\infty$ the held end has credit $a - \\infty$, which fails $c \\leq a$ at finite refill.",
+   "breaks": "A thread that holds an end across a call that never returns waits forever the partner. With $c = \\infty$ the held end has credit $a - \\infty$, which fails $c \\leq a$ at finite counter bound.",
    "example": "A loop body that never returns has $c = \\infty$.",
    "rocq": "types/Types.v: TLolli c",
    "sig": "c \\in \\mathbb{N} \\cup \\{\\infty\\}",
@@ -3263,8 +3333,8 @@ window.MAP = {
   "ty.arrow.tix": {
    "title": "ticket need $\\vartheta$ of a call",
    "what": "A call that must leave its caller $r$ link tickets needs $\\vartheta(r)$ tickets when it starts. With $\\vartheta = (s, b)$, $\\vartheta(r) = 2^{s} r + b$, where $s$ counts the spawns of the call, each of which halves the tickets of its thread, and $b$ covers its links.",
-   "why": "A link acts on no protocol, so no counter of an end bounds how often a thread links. Each link spends one ticket of the linking thread and no step creates tickets, so every run performs finitely many links.",
-   "breaks": "A thread that links the partner of a waiting end to a fresh channel in every round, and acts on some other channel in between, starves the waiter. Each round gives the waiter a fresh partner with a full counter, so counters never run out and only the tickets bound the rounds.",
+   "why": "A link acts on no protocol, so no counter of an end bounds how often a thread links. Each link uses one ticket of the linking thread and no step creates tickets, so every run performs finitely many links.",
+   "breaks": "A thread that links the partner of a waiting end to a fresh channel in every round, and acts on some other channel in between, waits forever the waiting thread. Each round gives the waiting thread a fresh partner with a full counter, so counters never run out and only the tickets bound the rounds.",
    "example": "$\\lambda x.\\,\\mathsf{link}\\,x$ has $\\vartheta = (0, 1)$ and needs $r + 1$ tickets. A body that spawns a child which links once has $\\vartheta = (1, 1)$ and needs $2r + 1$, because the spawn halves the tickets.",
    "rocq": "types/Types.v: TLolli t",
    "sig": "\\vartheta = (s, b) \\in \\mathsf{Tix} = (\\mathbb{N} \\cup \\{\\infty\\})^{2}",
@@ -3278,8 +3348,8 @@ window.MAP = {
   },
   "ty.arrow.floor": {
    "title": "Floor $h$",
-   "what": "Every captured end must have counter at least $h + a$ when the closure is built, and the body sees each captured end at credit $h$.",
-   "why": "The body does not know the counters of the ends it captured. $h$ is the lower bound it may assume.",
+   "what": "Every captured end must have counter at least $h + a$ when the closure is built, and the body is typed with each captured end at credit $h$.",
+   "why": "The counters of the captured ends at the time of a call are unknown when the body is typed. $h$ is the lower bound it may assume.",
    "breaks": "Nothing. It is a definition.",
    "example": "Deadlock-freedom typing has $h = \\infty$.",
    "rocq": "types/Types.v: TLolli h",
@@ -3287,15 +3357,15 @@ window.MAP = {
    "args": [
     {
      "name": "h",
-     "meaning": "The credit at which the body sees each captured end."
+     "meaning": "The credit of each captured end in the typing of the body."
     }
    ]
   },
   "ty.credit": {
    "title": "Credit $a$",
    "what": "$a \\in \\mathbb{N} \\cup \\{\\infty\\}$ on an end type $(S@x)\\annot{^{a}}$ is a lower bound on the counter of that end. On a closure type $(T \\multimap [\\ldots ; h]\\, U)\\annot{^{a}}$ every captured end has counter at least $h + a$.",
-   "why": "A counter bounds how many actions of other ends an end may still wait through. Only ends and closures hold ends of their own. A pair, a sum or an existential holds the ends of its parts, and their types carry the credits.",
-   "breaks": "A send of an end whose counter may be $0$ lets the end travel forever while its partner waits.",
+   "why": "A counter bounds how many actions of other ends an end may still wait through. Only ends and closures hold ends of their own. A pair, a sum or an existential holds the ends of its parts, and their types have the credits.",
+   "breaks": "A send of an end whose counter may be $0$ lets the end be sent on forever while its partner waits.",
    "example": "A fresh end has type $(S@\\rho)\\annot{^{N}}$.",
    "rocq": "types/Types.v: TSess, TLolli",
    "sig": "a \\in \\mathbb{N} \\cup \\{\\infty\\}",
@@ -3428,8 +3498,8 @@ window.MAP = {
   },
   "ty.ex": {
    "title": "Existential",
-   "what": "$\\exists^{l}\\bar\\iota.\\ C.\\ T\\annot{^{a}}$ is $T[\\bar x]$ for some $\\bar x$ with $C[\\bar x]$, and $l$ bounds the partner points of its ends from below.",
-   "why": "A fresh point is unknown outside the term that created it. $\\mathsf{new}$ returns an existential over it, and payloads bind their points the same way.",
+   "what": "$\\exists^{l}\\bar\\iota.\\ C.\\ T\\annot{^{a}}$ is $T[\\bar x]$ for some $\\bar x$ with $C[\\bar x]$, and $l$ bounds the dual points of its ends from below.",
+   "why": "A fresh point is unknown outside the term that created the point. $\\mathsf{new}$ returns an existential over it, and payloads bind their points the same way.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{new} : \\exists^{\\bot}\\iota.\\ \\{\\overline{\\iota} \\prec \\iota\\cdot 0\\}.\\ (S@\\iota \\otimes \\overline{S}@\\overline{\\iota})$.",
    "rocq": "types/Types.v: TEx",
@@ -3455,8 +3525,8 @@ window.MAP = {
   },
   "ty.ex.lb": {
    "title": "Lower bound $l$",
-   "what": "$l = \\cdot$ when the value holds no end, $l = \\bot$ when its ends sit at points unknown outside, and $l = x$ when $x \\preceq y$ for every partner point $y$ of its ends.",
-   "why": "$\\bot$ stands for a fresh point that the context does not know, and $\\mathsf{hbot}$ propagates it.",
+   "what": "$l = \\cdot$ when the value holds no end, $l = \\bot$ when its ends are at points unknown outside, and $l = x$ when $x \\preceq y$ for every dual point $y$ of its ends.",
+   "why": "$\\bot$ stands for a fresh point that no fact of the context mentions, and $\\mathsf{hbot}$ propagates $\\bot$.",
    "breaks": "Without $\\bot$, a closure captures an unopened fresh pair and claims a lower point $l$ that no fact of $W$ supports.",
    "example": "$\\mathsf{new} : \\exists^{\\bot}\\ldots$",
    "rocq": "types/Points.v: lbound",
@@ -3464,7 +3534,7 @@ window.MAP = {
    "args": [
     {
      "name": "l",
-     "meaning": "$\\cdot$ for no end, $\\bot$ for ends at unknown points, $x$ when $x \\preceq y$ for every partner point $y$ of the ends."
+     "meaning": "$\\cdot$ for no end, $\\bot$ for ends at unknown points, $x$ when $x \\preceq y$ for every dual point $y$ of the ends."
     }
    ]
   },
@@ -3473,7 +3543,7 @@ window.MAP = {
    "what": "The empty protocol, and an end at $S$ with $\\mathsf{unfold}(S) = \\mathsf{Skip}$ is idle.",
    "why": "No partner waits on an idle end. The fuel layer drops for idle ends the checks that counters are at least $1$, so they may be held indefinitely.",
    "breaks": "Nothing. It is a definition.",
-   "example": "A control end that is passed around and never used sits at $\\mathsf{Skip}$.",
+   "example": "A control end that is passed around and never used is at $\\mathsf{Skip}$.",
    "rocq": "types/Types.v: SSkip, fuel/Fuel.v: idle",
    "sig": "\\mathsf{Skip} \\in \\mathsf{STy}",
    "args": []
@@ -3495,8 +3565,8 @@ window.MAP = {
   },
   "sty.recv": {
    "title": "Receive",
-   "what": "$?(\\bar\\iota.\\ T)$ receives a value of $T[x\\cdot 0, \\ldots, x\\cdot(m{-}1)]$ for $\\bar\\iota = \\iota_0, \\ldots, \\iota_{m-1}$ when the end sits at $x$.",
-   "why": "A plain protocol action. The binder $\\bar\\iota$ is no existential, because the receiver knows the points of the payload, the fields of $x$. It lets a message carry ends whose points the receiver learns as fields of $x$.",
+   "what": "$?(\\bar\\iota.\\ T)$ receives a value of $T[x\\cdot 0, \\ldots, x\\cdot(m{-}1)]$ for $\\bar\\iota = \\iota_0, \\ldots, \\iota_{m-1}$ when the end is at $x$.",
+   "why": "A plain protocol action. The binder $\\bar\\iota$ is no existential, because the points of the payload are determined, the fields of $x$. It lets a message have ends whose points the receiver learns as fields of $x$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mu\\alpha.\\,?(\\kappa.\\ \\alpha @\\kappa).\\mathsf{Close}$ receives an end of the same protocol at a field.",
    "rocq": "types/Types.v: SRcv",
@@ -3514,7 +3584,7 @@ window.MAP = {
   },
   "sty.send": {
    "title": "Send",
-   "what": "$!(\\bar\\iota.\\ T)$ sends a value of $T[x\\cdot 0, \\ldots, x\\cdot(m{-}1)]$ for $\\bar\\iota = \\iota_0, \\ldots, \\iota_{m-1}$. \\annp{The ends of $T$ carry their credits, and the sender ages the payload by one hop.}",
+   "what": "$!(\\bar\\iota.\\ T)$ sends a value of $T[x\\cdot 0, \\ldots, x\\cdot(m{-}1)]$ for $\\bar\\iota = \\iota_0, \\ldots, \\iota_{m-1}$. \\annp{The ends of $T$ have their credits, and the sender ages the payload by one transfer.}",
    "why": "A plain protocol action, $\\mathsf{dual}$ of receive.",
    "breaks": "Nothing. It is a definition.",
    "example": "$!\\ast.\\mathsf{Close}$.",
@@ -3534,7 +3604,7 @@ window.MAP = {
   "sty.plus": {
    "title": "Internal choice",
    "what": "$\\oplus(S_1, S_2)$, where the selecting side chooses $i$ and continues with $S_1$ or $S_2$.",
-   "why": "A plain protocol action. The holder decides the continuation.",
+   "why": "A plain protocol action. The holding thread decides the continuation.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\oplus(\\mathsf{Close}, !\\ast.\\mathsf{Close})$.",
    "rocq": "types/Types.v: SPlus",
@@ -3564,7 +3634,7 @@ window.MAP = {
   "sty.close": {
    "title": "$\\mathsf{Close}$",
    "what": "The next action of the end is $\\mathsf{close}$.",
-   "why": "A plain protocol action. Every finite protocol ends with it.",
+   "why": "A plain protocol action. Every finite protocol ends with $\\mathsf{Close}$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{Close}@x^{+}$ after one send at $x$.",
    "rocq": "types/Types.v: SEnd",
@@ -3608,7 +3678,7 @@ window.MAP = {
   "sty.vard": {
    "title": "Dual variable $\\overline{\\alpha}$",
    "what": "$\\mathsf{dual}(\\alpha) = \\overline{\\alpha}$, and substituting $s$ for $\\alpha$ substitutes $\\mathsf{dual}\\,s$ for $\\overline{\\alpha}$.",
-   "why": "The dual of a protocol substituted for $\\alpha$ is known only after substitution, so $\\overline{\\alpha}$ defers it.",
+   "why": "The dual of a protocol substituted for $\\alpha$ is known only after substitution, so $\\overline{\\alpha}$ defers the dual.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{dual}\\,\\alpha = \\overline{\\alpha}$.",
    "rocq": "types/Types.v: SVarD",
@@ -3706,7 +3776,7 @@ window.MAP = {
   "sty.seqv": {
    "title": "Up to annotations $\\approx$",
    "what": "$S \\approx S' \\iff \\mathsf{sty\\_df}(S) \\simeq \\mathsf{sty\\_df}(S')$.",
-   "why": "\\annp{The relations of deadlock freedom and liveness ignore credits, so one relation serves every refill $N$.}",
+   "why": "\\annp{The relations of deadlock freedom and liveness ignore credits, so one relation serves every counter bound $N$.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$!(\\ast^{2}).\\mathsf{Close} \\approx !(\\ast^{\\infty}).\\mathsf{Close}$.",
    "rocq": "relation/Relation.v: seqv",
@@ -3739,12 +3809,12 @@ window.MAP = {
   },
   "ty.heads": {
    "title": "$\\mathsf{heads}$",
-   "what": "$\\mathsf{heads}(T)$ is the set of partner points of the ends a value of $T$ holds, $\\{\\overline{x}\\}$ for $S@x$, $\\{l\\}$ for an arrow or existential with bound $l$, and the union for $\\otimes$ and $\\oplus$.",
-   "why": "A thread blocked at $u$ while holding a value of $T$ needs $u \\prec y$ for every $y \\in \\mathsf{heads}(T)$, or the partner of a held end may wait on the thread.",
+   "what": "$\\mathsf{heads}(T)$ is the set of dual points of the ends a value of $T$ holds. It is $\\{\\overline{x}\\}$ for $S@x$, $\\{l\\}$ for an arrow or existential with bound $l$, and $\\varnothing$ for bound $\\cdot$. For $\\otimes$ and $\\oplus$ it is the union. An existential at $\\bot$ contributes $\\bot$.",
+   "why": "A thread blocked at $u$ while holding a value of $T$ needs $u \\prec y$ for every $y \\in \\mathsf{heads}(T)$, or the partner of a held end may wait on the thread. With $\\bot$ in the set this fails, which is what hidden ends require.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{heads}(\\mathsf{Close}@\\rho \\otimes \\mathsf{Close}@\\rho\\cdot 0) = \\{\\overline{\\rho}, \\overline{\\rho\\cdot 0}\\}$.",
-   "rocq": "types/Types.v: heads",
-   "sig": "\\mathsf{heads} : \\mathsf{Ty} \\to \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Point})",
+   "example": "$\\mathsf{heads}(\\mathsf{Close}@\\rho \\otimes \\mathsf{Close}@\\rho\\cdot 0) = \\{\\overline{\\rho}, \\overline{\\rho\\cdot 0}\\}$ and $\\mathsf{heads}(\\exists^{\\bot}\\iota.\\,C.\\,T) = \\{\\bot\\}$.",
+   "rocq": "types/Types.v: heads, hbot",
+   "sig": "\\mathsf{heads} : \\mathsf{Ty} \\to \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Point} \\cup \\{\\bot\\})",
    "args": [
     {
      "name": "T",
@@ -3752,25 +3822,25 @@ window.MAP = {
     }
    ]
   },
-  "ty.hbot": {
-   "title": "$\\mathsf{hbot}$",
-   "what": "$\\mathsf{hbot}(T) = \\mathsf{true}$ iff $T$ contains an existential with bound $\\bot$ reachable through $\\otimes$ and $\\oplus$ alone.",
-   "why": "Ends at unknown points satisfy no fact $u \\prec y$. A term whose context holds such ends performs no session action.",
+  "ty.botord": {
+   "title": "$\\bot$ in the order",
+   "what": "No fact relates $\\bot$ to a point, $\\Gamma \\nvdash x \\prec \\bot$ and $\\Gamma \\nvdash \\bot \\preccurlyeq y$.",
+   "why": "Hidden ends are at points that no fact outside the existential mentions. A holding thread of such ends can be ordered against nothing, so it may not block.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{hbot}(\\exists^{\\bot}\\iota.\\ T) = \\mathsf{true}$.",
-   "rocq": "types/Types.v: hbot",
-   "sig": "\\mathsf{hbot} : \\mathsf{Ty} \\to \\mathbb{B}",
+   "example": "$x \\prec \\{\\overline{\\rho}, \\bot\\}$ fails for every $x$.",
+   "rocq": "types/Types.v: hbot; static/Contexts.v: sf_unionb, lbx_below_h",
+   "sig": "\\Gamma \\nvdash x \\prec \\bot,\\ \\Gamma \\nvdash \\bot \\preccurlyeq y",
    "args": [
     {
-     "name": "T",
-     "meaning": "A type."
+     "name": "x, y",
+     "meaning": "points"
     }
    ]
   },
   "ty.lbound": {
    "title": "Lower bounds $l$",
    "what": "$l ::= \\cdot \\mid \\bot \\mid x$, absent, unknown, or a point.",
-   "why": "It records how much a holder knows about the points of the hidden ends.",
+   "why": "It records which facts about the points of the hidden ends are available to a holding thread.",
    "breaks": "Nothing. It is a definition.",
    "example": "$l = \\bot$ for $\\mathsf{new}_\\ell$.",
    "rocq": "types/Points.v: lbound",
@@ -3821,8 +3891,8 @@ window.MAP = {
   },
   "ann.fuel": {
    "title": "Numbers with $\\infty$",
-   "what": "Credits, costs, floors, counters and the refill range over $\\mathbb{N} \\cup \\{\\infty\\}$, where $\\infty$ means unbounded and $\\infty - c = \\infty$.",
-   "why": "Deadlock-free typing sets every annotation to $\\infty$. Then an end holds through any number of actions, and every check of a credit passes.",
+   "what": "Credits, costs, floors, counters and the counter bound range over $\\mathbb{N} \\cup \\{\\infty\\}$, where $\\infty$ means unbounded and $\\infty - c = \\infty$.",
+   "why": "Deadlock-free typing sets every annotation to $\\infty$. Then a held end remains arbitrarily many actions, and the checks on credits hold.",
    "breaks": "Nothing. It is a definition.",
    "example": "A credit $\\infty$ aged by $3$ stays $\\infty$.",
    "rocq": "types/Costs.v: fuel",
@@ -3832,8 +3902,8 @@ window.MAP = {
   "ann.tix": {
    "title": "Ticket need $\\vartheta$",
    "what": "A pair $\\vartheta = (s, b)$ standing for the function $\\vartheta(r) = 2^{s} r + b$. A term that must leave $r$ link tickets to the code after it needs $\\vartheta(r)$ tickets when it starts. $b$ grows with the links of the term, $s$ counts its spawns, and $s = \\infty$ means the term only runs if it leaves nothing.",
-   "why": "Each link spends one ticket of its thread and each spawn hands half of the tickets to the child. A pair $(s, b)$ describes every need these two operations produce, so the typing can compute needs by arithmetic.",
-   "breaks": "Without a closed form the typing would have to carry arbitrary functions from tickets to tickets.",
+   "why": "Each link uses one ticket of its thread and each spawn transfers half of the tickets to the child. A pair $(s, b)$ describes every need these two operations produce, so the typing can compute needs by arithmetic.",
+   "breaks": "Without a closed form the typing would need arbitrary functions from tickets to tickets.",
    "example": "$(0, 1)$ is one link, needing $r + 1$. $(1, 1)$ is a spawn whose child links once, needing $2r + 1$. $(0, \\infty)$ is met by no ticket count.",
    "rocq": "types/Costs.v: tix, tapp",
    "sig": "\\vartheta = (s, b) \\in \\mathsf{Tix} = (\\mathbb{N} \\cup \\{\\infty\\})^{2}",
@@ -3863,13 +3933,13 @@ window.MAP = {
    "args": []
   },
   "ann.meets": {
-   "title": "$\\mathsf{meets}$",
-   "what": "$\\mathsf{meets}\\,\\vartheta\\,r\\,tk$ holds when $tk$ tickets cover the need $\\vartheta$ with $r$ left over, $\\vartheta(r) \\leq tk$.",
-   "why": "A thread starts with finitely many tickets. Lock-free typing asks $\\mathsf{meets}\\,\\vartheta\\,0\\,tk$ for some $tk$, so each thread performs finitely many links.",
+   "title": "$\\vartheta(r) \\leq tk$",
+   "what": "$tk$ tickets cover the need $\\vartheta$ with $r$ left over. It is false when $\\vartheta(r) = \\infty$.",
+   "why": "A thread starts with finitely many tickets, and every link uses one.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{meets}\\,(0, 1)\\,0\\,1$, one ticket covers one link.",
+   "example": "$(0, 1)(0) = 1 \\leq 1$, one ticket covers one link.",
    "rocq": "types/Costs.v: meets",
-   "sig": "\\mathsf{meets} : \\mathsf{Tix} \\to \\mathbb{N} \\to \\mathbb{N} \\to \\mathsf{Prop}",
+   "sig": "\\vartheta(r) \\leq tk : \\mathsf{Prop}",
    "args": [
     {
      "name": "\\vartheta",
@@ -3889,8 +3959,8 @@ window.MAP = {
   "ann.tspawn": {
    "title": "$\\mathsf{tspawn}$",
    "what": "The need of a spawn followed by code of need $(s, b)$, when the child needs $b_c$, is $(s + 1, \\max(2b, 2b_c - 1))$. The child receives $\\lceil tk/2 \\rceil$ of the $tk$ tickets and the parent keeps $\\lfloor tk/2 \\rfloor$. The parent must keep $\\lfloor tk/2 \\rfloor \\geq 2^{s} r + b$, hence $tk \\geq 2^{s+1} r + 2b$, and the child must get $\\lceil tk/2 \\rceil \\geq b_c$, hence $tk \\geq 2b_c - 1$. The pair is the larger of the two bounds.",
-   "why": "Tickets belong to threads and a spawn creates a thread, so the child takes its tickets from the parent and no spawn creates any. Otherwise a loop that spawns a linking child in every round performs infinitely many links. The split is a fixed function of $tk$, the same in every run and at every step index. A split chosen freely could differ between indices, and the relation does not see how many tickets the child needs.",
-   "breaks": "With fresh tickets for every child, a loop that spawns a child which links once, forever, is accepted, and a waiter whose partner is linked away in every round starves.",
+   "why": "Tickets belong to threads and a spawn creates a thread, so the child takes its tickets from the parent and no spawn creates any. Otherwise a loop that spawns a linking child in every round performs infinitely many links. The split is a fixed function of $tk$, the same in each run and at each step index. A split chosen freely could differ between indices, and the relation does not see how many tickets the child needs.",
+   "breaks": "With fresh tickets for every child, a loop that spawns a child which links once, forever, is accepted, and a waiting thread whose partner is linked away in every round waits forever.",
    "example": "A thread spawns a child that links once and then links once itself. After the spawn the parent needs $(0, 1)$, one ticket, and the child needs $b_c = 1$. The start needs $\\max(2 \\cdot 1, 2 \\cdot 1 - 1) = 2$ tickets, with $\\lceil 2/2 \\rceil = 1$ for the child and $\\lfloor 2/2 \\rfloor = 1$ for the parent, and $\\mathsf{tspawn}\\,1\\,(0, 1) = (1, 2)$.",
    "rocq": "types/Costs.v: tspawn",
    "sig": "\\mathsf{tspawn} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to \\mathsf{Tix} \\to \\mathsf{Tix}",
@@ -3908,7 +3978,7 @@ window.MAP = {
   "ann.tlink": {
    "title": "$\\mathsf{tlink}$",
    "what": "The need of a link followed by code of need $(s, b)$ is $(s, b + 1)$.",
-   "why": "The link spends one ticket before the rest runs. No step creates tickets, so a run performs at most as many links as its threads held tickets at the start.",
+   "why": "The link uses one ticket before the rest runs. No step creates tickets, so a run performs at most as many links as its threads held tickets at the start.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{tlink}\\,\\hat 1 = (0, 1)$, a single link.",
    "rocq": "types/Costs.v: tlink",
@@ -3956,8 +4026,8 @@ window.MAP = {
   },
   "ann.tydf": {
    "title": "$\\mathsf{ty\\_df}$",
-   "what": "$\\mathsf{ty\\_df}(T)$ is $T$ with every annotation at its unbounded value. \\annp{Credits, costs and floors become $\\infty$ and every ticket need becomes $(\\infty, \\infty)$.}",
-   "why": "\\annp{Deadlock-free typing is the annotated typing at refill $N = \\infty$ with these annotations.} One set of rules then serves both systems, and every premise about annotations holds at $\\infty$.",
+   "what": "$\\mathsf{ty\\_df}(T)$ is $T$ with every annotation at its unbounded value. Credits, costs and floors become $\\infty$ and every ticket need becomes $(\\infty, \\infty)$.",
+   "why": "Deadlock-free typing is the annotated typing at counter bound $N = \\infty$ with these annotations. One set of rules then serves both systems, and every premise about annotations holds at $\\infty$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{ty\\_df}((S@x)^{3}) = (S@x)^{\\infty}$.",
    "rocq": "types/Types.v: ty_df",
@@ -4002,7 +4072,7 @@ window.MAP = {
   "w.world": {
    "title": "World",
    "what": "$W = (A, \\prec_A)$, roots and facts.",
-   "why": "Points carry the order, and $W$ is the data that generates the order $\\prec_W$. A creation grows $W$ by its facts.",
+   "why": "The order is an order on points, and $W$ is the data that generates the order $\\prec_W$. A creation grows $W$ by its facts.",
    "breaks": "Nothing. It is a definition.",
    "example": "$W$ with $A = \\{1, 2\\}$ and the fact $1 \\prec \\overline{2}$.",
    "rocq": "types/Worlds.v: world",
@@ -4090,7 +4160,7 @@ window.MAP = {
   "ty2.le": {
    "title": "Order or equal $\\preceq$",
    "what": "$x \\preceq y$ iff $x = y$ or $x \\prec_W y$.",
-   "why": "Lower bounds compare by $\\preceq$, so a closure whose only captured end has partner point $l$ may have lower point $l$.",
+   "why": "Lower bounds compare by $\\preceq$, so a closure whose only captured end has dual point $l$ may have lower point $l$.",
    "breaks": "Nothing. It is a definition.",
    "example": "A closure capturing $a^{+}$ at $\\rho$ has $l = \\overline{\\rho}$ and $\\overline{\\rho} \\preceq \\overline{\\rho}$.",
    "rocq": "types/Worlds.v: w_le",
@@ -4122,7 +4192,7 @@ window.MAP = {
    "what": "$\\mathsf{world\\_wf}\\,W$ iff every fact of $\\prec_A$ relates points with roots in $A$.",
    "why": "A fact outside $A$ mentions a point no component owns.",
    "breaks": "Nothing. It is a definition.",
-   "example": "A fact $1 \\prec 3$ with $3 \\notin A$ violates it.",
+   "example": "A fact $1 \\prec 3$ with $3 \\notin A$ violates the property.",
    "rocq": "types/Worlds.v: world_wf",
    "sig": "\\mathsf{world\\_wf} : \\mathsf{World} \\to \\mathsf{Prop}",
    "args": [
@@ -4135,7 +4205,7 @@ window.MAP = {
   "w.strict": {
    "title": "$\\mathsf{strict}$",
    "what": "$\\mathsf{strict}\\,W$ iff $\\mathsf{world\\_wf}\\,W$ and $W \\nvdash x \\prec x$ for every $x$, so $\\prec_W$ is acyclic.",
-   "why": "Readiness of two threads that wait on each other needs $x \\prec y$ and $y \\prec x$, hence $x \\prec x$. Strictness excludes it.",
+   "why": "Readiness of two threads that wait on each other needs $x \\prec y$ and $y \\prec x$, hence $x \\prec x$. Strictness excludes such a cycle.",
    "breaks": "In a cyclic $W$ two threads that wait on each other both count as ready, and a deadlocked process is in the relation.",
    "example": "$W$ whose only fact is $1 \\prec \\overline{2}$.",
    "rocq": "types/Worlds.v: strict",
@@ -4169,7 +4239,7 @@ window.MAP = {
   "w.ext": {
    "title": "Extension $\\sqsubseteq$",
    "what": "$W \\sqsubseteq W'$ iff $A \\subseteq A'$ and every fact of $W$ is a fact of $W'$.",
-   "why": "$W \\sqsubseteq W'$ implies $\\prec_W \\subseteq \\prec_{W'}$, so every relation stated monotone in $W$ survives growth and composition with another component.",
+   "why": "$W \\sqsubseteq W'$ implies $\\prec_W \\subseteq \\prec_{W'}$, so every relation stated monotone in $W$ remains growth and composition with another component.",
    "breaks": "Nothing. It is a definition.",
    "example": "$W \\sqsubseteq W \\oplus C$ and $W \\sqsubseteq W \\sqcup W'$.",
    "rocq": "types/Worlds.v: wext",
@@ -4185,7 +4255,7 @@ window.MAP = {
    "title": "Growth $W \\oplus C$",
    "what": "$W \\oplus C$ adds the roots of the facts $C$ to $A$ and the facts $C$ to $\\prec_A$.",
    "why": "A creation adds a fresh root and the facts its typing chose, so the world of a run grows with every $\\mathsf{new}$ and never loses a fact.",
-   "breaks": "With all facts fixed before the run, every fresh point obeys facts chosen in advance, and a channel between two given channels needs those facts for every possible pair.",
+   "breaks": "If the facts were fixed before the run, the facts of a fresh point would be chosen in advance. A channel between two given channels would then need these facts for each possible pair.",
    "example": "$W \\oplus \\{1 \\prec a,\\ a \\prec \\overline{2}\\}$ with $a$ fresh places $a$ between $1$ and $\\overline{2}$.",
    "rocq": "types/Worlds.v: wgrow",
    "sig": "\\cdot \\oplus \\cdot : \\mathsf{World} \\to \\mathcal{P}(\\mathsf{Point} \\times \\mathsf{Point}) \\to \\mathsf{World}",
@@ -4218,7 +4288,7 @@ window.MAP = {
   "w.restrict": {
    "title": "Restriction $W|_S$",
    "what": "$W|_S$ has the facts $x \\prec_W y$ with roots of $x, y$ in $S$.",
-   "why": "It is the part of $\\prec_W$ another component sees through the shared constants $S$.",
+   "why": "It is the part of $\\prec_W$ that is visible to another component through the shared constants $S$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$W|_{A_1 \\cap A_2}$.",
    "rocq": "types/Worlds.v: wrestrict",
@@ -4253,25 +4323,6 @@ window.MAP = {
     }
    ]
   },
-  "tj.Theta": {
-   "title": "$\\Theta$, the end environment",
-   "what": "$\\Theta$ is a finite map from ends $o$ to entries $S@x\\annot{^{a}}$ with a session type $S$, a point $x$\\annp{ and a credit} $a$.",
-   "why": "Each end has its own name, so $\\Theta(c^{+})$ and $\\Theta(c^{-})$ are two separate entries and no entry needs a side bit.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\Theta = \\{a \\mapsto S_a@\\rho\\annot{^{N}},\\ b \\mapsto S_b@(\\rho\\cdot 0)\\annot{^{N}}\\}$.",
-   "rocq": "static/Contexts.v: tentry, tenv",
-   "sig": "\\Theta : \\mathsf{End} \\rightharpoonup_{\\mathrm{fin}} \\mathsf{Sty} \\times \\mathsf{Pt} \\times (\\mathbb{N} \\cup \\{\\infty\\})",
-   "args": [
-    {
-     "name": "o",
-     "meaning": "an end $c^{\\pm}$ held by the term"
-    },
-    {
-     "name": "S@x\\annot{^{a}}",
-     "meaning": "the entry of $o$, its session type $S$, its point $x$\\annp{ and its credit} $a$"
-    }
-   ]
-  },
   "tj.Gamma": {
    "title": "$\\Gamma$, facts and future hypotheses",
    "what": "$\\Gamma$ consists of a list of constraint instances $(C, \\bar x)$ and a finite map of future variables $\\varphi \\mapsto u$, read as $u \\prec \\varphi$.",
@@ -4291,18 +4342,227 @@ window.MAP = {
     }
    ]
   },
-  "tj.Delta": {
-   "title": "$\\Delta$, the variable context",
-   "what": "\\annp{$\\Delta$ is a list indexed by de Bruijn indices whose entries are empty or a credited type $T\\annot{^{a}}$.}",
-   "why": "A split puts an empty entry at index $i$ in the half that does not own variable $i$. Hence $i$ denotes the same variable in $\\Delta$, $\\Delta_1$ and $\\Delta_2$, and no index is shifted.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\Delta = [(S_1@\\iota \\otimes S_2@\\kappa)\\annot{^{0}}]$ for the argument of a loop body.",
-   "rocq": "static/Contexts.v: lenv",
-   "sig": "\\Delta : (\\mathsf{Ty} \\times (\\mathbb{N} \\cup \\{\\infty\\}))_{\\bot}^{*}",
+  "tj.hage": {
+   "title": "$H - c$, aging what is held",
+   "what": "$H - c$ ages every entry of $H$ by the cost $c$ of $e$. It is defined when every end and closure in $H$ that is not idle has credit at least $c$.",
+   "why": "The thread holds $H$ while $e$ runs, and each of the up to $c$ actions of $e$ lowers the counters of the held ends by $1$.",
+   "breaks": "Without it a thread holds an end across unboundedly many actions on other ends, and the partner of that end waits without bound.",
+   "example": "$(S@x)^{2} - 1 = (S@x)^{1}$ is defined, $(S@x)\\annot{^{0}} - 1$ is not.",
+   "rocq": "static/Contexts.v: thage, lage",
+   "sig": "H - c",
    "args": [
     {
+     "name": "H",
+     "meaning": "the entries the thread holds while $e$ runs, a context or a type"
+    },
+    {
+     "name": "c",
+     "meaning": "the cost of $e$"
+    }
+   ]
+  },
+  "lfi.credit": {
+   "title": "Credits, a bound on postponement",
+   "what": "Every end has a counter at run time, the number of actions the thread holding it may still perform on other ends before it must act on this one. The credit $a$ in $(S@x)\\annot{^{a}}$ is a lower bound on that counter, known statically. A closure has a credit too, because the ends it captured are invisible in its type.",
+   "why": "A partner waiting on an end needs the holding thread to act on it eventually. If every action elsewhere lowers the counter and the counter must stay non-negative, the holding thread can only postpone the end finitely often.",
+   "breaks": "Postponement in the Examples tab holds $b$ across a loop that never returns, so $\\mathsf{close}\\,b'$ waits forever. The loop has cost $\\infty$, and no credit is large enough.",
+   "example": "$(S@x)^{3}$ may be held across three actions on other ends.",
+   "rocq": "types/Types.v: TSess, TLolli; fuel/Fuel.v: f_act",
+   "sig": "(S@x)\\annot{^{a}},\\ (T \\multimap U)\\annot{^{a}},\\ a \\in \\mathbb{N} \\cup \\{\\infty\\}",
+   "args": [
+    {
+     "name": "a",
+     "meaning": "a lower bound on the counter of the end, or of the ends a closure captured"
+    }
+   ]
+  },
+  "lfi.cost": {
+   "title": "Cost, aging and counter bound, the counting",
+   "what": "The cost $c$ of a term bounds its actions before it returns. Every rule that runs a subterm while holding $\\Delta$ ages $\\Delta$ by that cost, $\\Delta - c$, which asks each credit to be at least the cost. An action on an end counter bounds it to $N$, so the end returns as $(S@x^{+})\\annot{^{N}}$. Idle ends, $\\mathsf{Skip}$, age without the check, because no thread waits on an idle end.",
+   "why": "Credits bound postponement only if the holding thread's actions lower the credits. The cost says how much, aging applies it to everything held, and the counter bound starts the count again after the holding thread kept its promise.",
+   "breaks": "Without the counter bound a long-running protocol would run out of credit after $N$ actions.",
+   "example": "$\\langle c, \\mathsf{send}\\,\\langle\\ast, d\\rangle\\rangle$ ages $c$ by $1$ while the send on $d$ runs.",
+   "rocq": "static/Typing.v: typed; static/Contexts.v: tage, lage",
+   "sig": "e : T\\ !\\ (c, \\vartheta),\\ \\Delta - c,\\ (S@x^{+})\\annot{^{N}}",
+   "args": [
+    {
+     "name": "c",
+     "meaning": "the cost, an upper bound on the actions of $e$"
+    },
+    {
+     "name": "N",
+     "meaning": "the counter bound"
+    }
+   ]
+  },
+  "lfi.floor": {
+   "title": "Floors, credit inside a closure",
+   "what": "A closure $T \\multimap[\\varepsilon ; h]\\, U$ records the floor $h$, the credit its body may assume of every captured end when it is called. At creation each captured end needs $h + a$, the floor plus what the closure itself may lose while it is held.",
+   "why": "Between creating a closure and calling it, the thread holding it may act elsewhere, which lowers the counters of the captured ends. The credit $a$ of the closure absorbs that loss, and $h$ is what remains for the body.",
+   "breaks": "Without the floor the body could not hold a captured end across any action.",
+   "example": "A callback with $h = 1$ and $a = 1$ needs its captured ends at credit $2$.",
+   "rocq": "static/Contexts.v: tcap, thcap",
+   "sig": "T \\multimap[\\varepsilon ; h]\\, U",
+   "args": [
+    {
+     "name": "h",
+     "meaning": "the credit the body may assume of every captured end"
+    }
+   ]
+  },
+  "lfi.hop": {
+   "title": "Transfers, a passed end loses one",
+   "what": "Every time an end is transferred to another thread, by a send or a spawn, its counter drops by $1$. A send asks $T' - 1 \\leq T[x\\cdot i]$ of the payload, a spawned body sees $\\Delta - 1$, and spawning a closure asks its credit $a \\geq 1$.",
+   "why": "Transferring an end on is not an action on it, so it does not counter bound. Without the loss an end could be sent between threads forever and its partner would never be served.",
+   "breaks": "Endless delegation in the Examples tab sends $e$ back and forth forever while $e'$ waits. After finitely many transfers no credit is left to send it again.",
+   "example": "An end at credit $3$ can be passed on three times before a thread must act on the end.",
+   "rocq": "static/Typing.v: e_send, e_spawn_lam, e_spawn",
+   "sig": "T' - 1 \\leq T[x\\cdot i],\\ \\Delta - 1,\\ a \\geq 1",
+   "args": [
+    {
+     "name": "T'",
+     "meaning": "the type of a payload value"
+    }
+   ]
+  },
+  "lfi.tickets": {
+   "title": "Tickets, a bound on links",
+   "what": "Each thread holds a number of link tickets. A link uses one, and a spawn splits the tickets between parent and child. The ticket need $\\vartheta$ of a term says how many tickets it needs, $\\mathsf{tlink}$ adds one for a link and $\\mathsf{tspawn}$ accounts for the split. P-Term asks the thread to start with enough.",
+   "why": "A link acts on no end, so counters cannot bound the number of links. Worse, it gives the waiting thread a fresh dual end at full counter, so a thread could link forever while every counter stays full.",
+   "breaks": "Link refresh in the Examples tab relinks the partner of a waiting end to a fresh channel every round, so the waiting thread always faces a new end. Each round uses a ticket and none is ever created.",
+   "example": "A thread that links twice needs $\\vartheta(0) \\geq 2$.",
+   "rocq": "types/Costs.v: tlink, tspawn; static/Typing.v: e_link, p_term",
+   "sig": "\\vartheta = (s, b),\\ \\vartheta(r) = 2^{s} r + b",
+   "args": [
+    {
+     "name": "\\vartheta",
+     "meaning": "the ticket need, the tickets a term needs to leave $r$ behind"
+    }
+   ]
+  },
+  "lfi.guard": {
+   "title": "The guard, no recursion before an action",
+   "what": "$\\Lambda \\vdash\\!\\triangleright t$ asks that a box calls itself only after a session action. It is a syntactic check on terms.",
+   "why": "Internal steps, $\\beta$, $\\mathsf{new}$ and $\\mathsf{spawn}$, cost no counter. A loop made only of them would step forever without ever serving anyone, which deadlock freedom allows and lock freedom does not.",
+   "breaks": "Guard rejections in the Examples tab, e.g. $!(f = \\mathsf{force}\\,f)$ and a box that spawns itself forever.",
+   "example": "$!(f = \\lambda x.\\, \\mathsf{let}\\ \\langle v, x\\rangle = \\mathsf{recv}\\,x\\ \\mathsf{in}\\ (\\mathsf{force}\\,f)\\,x)$ is guarded.",
+   "rocq": "static/Guard.v: lguard",
+   "sig": "\\Lambda \\vdash\\!\\triangleright t",
+   "args": [
+    {
+     "name": "\\Lambda",
+     "meaning": "the marks, which variables are boxes not yet allowed to recur"
+    }
+   ]
+  },
+  "lfi.wf": {
+   "title": "A well-founded world",
+   "what": "$\\mathsf{wfworld}\\,W$ asks $\\prec_W$ to have no infinite descending chain. It is a premise of the lock-free theorems and no typing rule checks well-foundedness.",
+   "why": "A waiting thread waits on a holding thread whose own waiting point lies lower. With a well-founded order this chain ends, so someone at the bottom can act.",
+   "breaks": "A waiting chain that grows forever, in the Examples tab, spawns threads that each wait below their predecessor, and new ones keep appearing.",
+   "example": "Every world of the lock-free examples is well-founded.",
+   "rocq": "types/Worlds.v: wfworld; soup/LFAdequacy.v: lf_adequacy",
+   "sig": "\\mathsf{wfworld} : \\mathsf{World} \\to \\mathsf{Prop}",
+   "args": [
+    {
+     "name": "W",
+     "meaning": "a world"
+    }
+   ]
+  },
+  "tj.held": {
+   "title": "Held entries $\\parallel H$",
+   "what": "$\\Delta \\parallel H \\vdash^{F} e$ types $e$ while the thread holds $H$. It unfolds to $\\Delta \\vdash^{F \\cup \\mathsf{heads}(H)} e$, \\annp{and in the lock-free mode also asks that $H - c$ is defined for the cost $c$ of $e$.}",
+   "why": "Every rule that runs one part while it holds another states the same facts about the held part, and the notation states them once. $H$ is a context, as in E-App, or a type, as in E-Pair.",
+   "breaks": "Without the future part a thread waits above an end it holds, and the partner of that end waits on the thread.",
+   "example": "$\\Delta_1 \\parallel \\Delta_2 \\vdash^{F} e_1$ in E-App.",
+   "rocq": "static/Typing.v: e_app, e_pair, e_letp, e_letu, e_case",
+   "sig": "\\Delta \\parallel H \\vdash^{F} e \\ \\equiv\\ \\Delta \\vdash^{F \\cup \\mathsf{heads}(H)} e\\ \\land\\ H - c\\ \\text{defined}",
+   "args": [
+    {
+     "name": "F \\cup \\mathsf{heads}(H)",
+     "meaning": "$F$ with the dual points of the ends in $H$ added, and the flag $\\bot$ added when $H$ holds an unopened existential at $\\bot$"
+    },
+    {
+     "name": "H",
+     "meaning": "the entries the thread holds while $e$ runs, a context or a type"
+    },
+    {
+     "name": "c",
+     "meaning": "the cost of $e$, lock-free mode only"
+    }
+   ]
+  },
+  "tj.eff": {
+   "title": "Effect $\\varepsilon$",
+   "what": "$\\varepsilon = (c, \\vartheta)$ pairs the cost $c$ of a term, an upper bound on its channel actions before it returns, with its ticket need $\\vartheta$.",
+   "why": "Cost and ticket need appear together and combine at the same places, so one symbol has both. Aging reads the cost, and the tickets of links read $\\vartheta$.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "A send has effect $\\varepsilon \\cdot 1$, one more action than its argument.",
+   "rocq": "static/Typing.v: typed",
+   "sig": "\\varepsilon = (c, \\vartheta) \\in \\mathsf{Eff} = (\\mathbb{N} \\cup \\{\\infty\\}) \\times \\mathsf{Tix}",
+   "args": [
+    {
+     "name": "c",
+     "meaning": "the cost"
+    },
+    {
+     "name": "\\vartheta",
+     "meaning": "the ticket need"
+    }
+   ]
+  },
+  "tj.seq": {
+   "title": "Sequencing $\\varepsilon_1 \\cdot \\varepsilon_2$",
+   "what": "$\\varepsilon_1 \\cdot \\varepsilon_2 = (c_1 + c_2, \\vartheta_1 \\circ \\vartheta_2)$, defined when $\\mathsf{tok}\\,\\vartheta_1\\,\\vartheta_2$.",
+   "why": "A term that runs two parts in sequence adds their costs and composes their ticket needs. The side condition $\\mathsf{tok}$ becomes definedness, so no rule lists $\\mathsf{tok}$.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$1 \\cdot 1 = (2, \\hat 1)$.",
+   "rocq": "types/Costs.v: tseq, tok",
+   "sig": "\\cdot : \\mathsf{Eff} \\times \\mathsf{Eff} \\rightharpoonup \\mathsf{Eff}",
+   "args": [
+    {
+     "name": "\\varepsilon_1, \\varepsilon_2",
+     "meaning": "the effects of the first and the second part"
+    }
+   ]
+  },
+  "tj.zero": {
+   "title": "No effect $0$",
+   "what": "$0 = (0, \\hat 1)$, the effect of a value.",
+   "why": "A value performs no action and no link.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\lambda e$ has effect $0$.",
+   "rocq": "types/Costs.v: tid",
+   "sig": "0 = (0, \\hat 1) \\in \\mathsf{Eff}",
+   "args": []
+  },
+  "tj.one": {
+   "title": "One action $1$",
+   "what": "$1 = (1, \\hat 1)$, the effect of one channel action.",
+   "why": "Every action adds one to the cost and needs no ticket.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\mathsf{close}\\,e$ has effect $\\varepsilon \\cdot 1$.",
+   "rocq": "static/Typing.v: e_send, e_recv, e_close, e_select, e_branch",
+   "sig": "1 = (1, \\hat 1) \\in \\mathsf{Eff}",
+   "args": []
+  },
+  "tj.Delta": {
+   "title": "$\\Delta$, the linear context",
+   "what": "$\\Delta$ maps ends $o$ to end types $(S@x)\\annot{^{a}}$ and de Bruijn indices $i$ to types $T$, with empty entries for indices another part owns.",
+   "why": "Ends and variables split the same way between two subterms, so one context holds both. A split puts an empty entry at index $i$ in the half that does not own variable $i$, so no index shifts.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\Delta = a : (S_a@\\rho)\\annot{^{N}},\\ 0 : S_1@\\iota \\otimes S_2@\\kappa$.",
+   "rocq": "static/Contexts.v: tenv, lenv",
+   "sig": "\\Delta : (\\mathsf{End} \\rightharpoonup_{\\mathrm{fin}} \\mathsf{Ty}) \\times \\mathsf{Ty}_{\\bot}^{*}",
+   "args": [
+    {
+     "name": "o",
+     "meaning": "an end held by the term, with its end type $(S@x)\\annot{^{a}}$"
+    },
+    {
      "name": "\\Delta(i)",
-     "meaning": "\\annp{the entry of de Bruijn index $i$, empty or a credited type $T\\annot{^{a}}$}"
+     "meaning": "the entry of de Bruijn index $i$, empty or a type $T$"
     }
    ]
   },
@@ -4311,7 +4571,7 @@ window.MAP = {
    "what": "$F = (X, \\varphi)$, $(X, \\bot)$ or $(X, \\cdot)$ with $X$ the points the context acts at after the term, $\\varphi$ an unknown rest above a known point and $\\bot$ a rest at hidden points.",
    "why": "Every action at $x$ asks $x \\prec F$. Hence a term never waits at a point above a point at which its own context still acts.",
    "breaks": "Without $F$ the thread $\\mathsf{let}\\ \\ast = \\mathsf{close}\\,c\\ \\mathsf{in}\\ \\mathsf{close}\\,d$ types for every placement of $c$ and $d$, and beside a partner that closes $d$ before $c$ both threads wait forever.",
-   "example": "$e_1$ of E-App runs under $F \\cup \\mathsf{heads}(\\Theta_2, \\Delta_2)$.",
+   "example": "$e_1$ of E-App runs under $F \\cup \\mathsf{heads}(\\Delta_2)$.",
    "rocq": "static/Contexts.v: sfuture",
    "sig": "F : \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Pt}) \\times (\\mathsf{FVar} + \\{\\bot, \\cdot\\})",
    "args": [
@@ -4345,9 +4605,9 @@ window.MAP = {
    ]
   },
   "tj.N": {
-   "title": "The refill $N$",
-   "what": "$N \\in \\mathbb{N} \\cup \\{\\infty\\}$ is the credit of a fresh end and of an end after an action on it.",
-   "why": "A credit is a lower bound on a counter, and each action of a holder on another end lowers the counter by $1$. A finite $N$ bounds the number of such actions between two actions on one end, which lock freedom needs, and $N = \\infty$ gives deadlock-free typing.",
+   "title": "The counter bound $N$",
+   "what": "$N \\in \\mathbb{N} \\cup \\{\\infty\\}$ is the credit of a fresh end and of an end after an action on that end.",
+   "why": "A credit is a lower bound on a counter, and each action of a holding thread on another end lowers the counter by $1$. A finite $N$ bounds the number of such actions between two actions on one end, which lock freedom needs, and $N = \\infty$ gives deadlock-free typing.",
    "breaks": "Nothing. It is a definition.",
    "example": "The client and server loop types at $N = 3$.",
    "rocq": "static/Typing.v: typed N",
@@ -4356,40 +4616,6 @@ window.MAP = {
     {
      "name": "N",
      "meaning": "the credit of a fresh end and of an end after an action on it, $\\infty$ for deadlock-free typing"
-    }
-   ]
-  },
-  "tj.cost": {
-   "title": "The cost $c$",
-   "what": "$c \\in \\mathbb{N} \\cup \\{\\infty\\}$ is an upper bound on the number of session actions $e$ performs before it returns.",
-   "why": "Every entry held while $e$ runs ages by $c$. Hence $e$ performs at most as many actions as the credits of the held ends allow.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{send}\\,e$ has cost $c_0 + 1$.",
-   "rocq": "static/Typing.v: typed c",
-   "sig": "c \\in \\mathbb{N} \\cup \\{\\infty\\}",
-   "args": [
-    {
-     "name": "c",
-     "meaning": "an upper bound on the session actions $e$ performs before it returns"
-    }
-   ]
-  },
-  "tj.tix": {
-   "title": "The ticket need $\\vartheta$",
-   "what": "$\\vartheta(r)$ is the number of link tickets $e$ needs to return with $r$ tickets left, and $\\mathsf{meets}\\,\\vartheta\\,r\\,tk \\iff \\vartheta(r) \\leq tk$.",
-   "why": "A link performs no session action, so the cost does not bound links. Tickets bound them, and $\\vartheta$ counts the tickets.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{link}\\,e$ has ticket need $\\vartheta_0 \\circ \\mathsf{tlink}\\,\\hat 1$.",
-   "rocq": "static/Typing.v: typed ϑ",
-   "sig": "\\vartheta : \\mathbb{N} \\to \\mathbb{N} \\cup \\{\\infty\\}",
-   "args": [
-    {
-     "name": "r",
-     "meaning": "a reserve, the tickets $e$ must still hold when it returns"
-    },
-    {
-     "name": "\\vartheta(r)",
-     "meaning": "the tickets $e$ needs to return with $r$ left"
     }
    ]
   },
@@ -4403,31 +4629,27 @@ window.MAP = {
    "sig": "\\Theta = \\Theta_1 \\uplus \\Theta_2 \\iff \\mathrm{dom}\\,\\Theta_1 \\cap \\mathrm{dom}\\,\\Theta_2 = \\varnothing \\land \\Theta = \\Theta_1 \\cup \\Theta_2",
    "args": [
     {
-     "name": "\\Theta",
-     "meaning": "the finite map from the ends held by the term to entries $S@x\\annot{\\annot{^{a}}}$"
-    },
-    {
      "name": "\\Theta_1, \\Theta_2",
      "meaning": "the ends given to the first and to the second subterm"
     }
    ]
   },
   "ctx.lsplit": {
-   "title": "$\\Delta = \\Delta_1 \\sqcup \\Delta_2$",
-   "what": "For every index $i$, a linear entry $\\Delta(i)$ is in exactly one of $\\Delta_1(i)$ and $\\Delta_2(i)$ and the other is empty, and an entry of unlimited type is in both.",
-   "why": "A linear entry may hold ends and is used exactly once. An entry of unlimited type holds no end, so using it twice duplicates no end.",
+   "title": "$\\Delta = \\Delta_1, \\Delta_2$",
+   "what": "Every end of $\\Delta$ goes to exactly one of $\\Delta_1$ and $\\Delta_2$. For every index $i$, a linear entry goes to one side and the other side has an empty entry, and an entry of unlimited type goes to both.",
+   "why": "An end and a linear entry are used exactly once. An entry of unlimited type holds no end, so using it twice duplicates no end.",
    "breaks": "Nothing. It is a definition.",
    "example": "A box variable $f$ may be forced in both $e_1$ and $e_2$.",
-   "rocq": "static/Contexts.v: lenv_split",
-   "sig": "\\Delta = \\Delta_1 \\sqcup \\Delta_2",
+   "rocq": "static/Contexts.v: tsplit, lenv_split",
+   "sig": "\\Delta = \\Delta_1, \\Delta_2",
    "args": [
     {
      "name": "\\Delta",
-     "meaning": "\\annp{the de Bruijn list of optional credited types of the variables}"
+     "meaning": "the linear context, ends $o$ with end types and de Bruijn indices with types"
     },
     {
      "name": "\\Delta_1, \\Delta_2",
-     "meaning": "the variable contexts of the two subterms, of the same length as $\\Delta$"
+     "meaning": "the contexts of the two subterms, the ends disjoint and the index lists of the same length as in $\\Delta$"
     },
     {
      "name": "i",
@@ -4438,7 +4660,7 @@ window.MAP = {
   "ctx.hyps": {
    "title": "Constraint instances $(C, \\bar x)$",
    "what": "A constraint $C$ with the points $\\bar x$ it is instantiated at, added by E-Box and E-Open.",
-   "why": "A box body and the scope of an opened existential know their points only through these instances. The facts $C[\\bar x]$ are all they may assume about them.",
+   "why": "A box body and the scope of an opened existential refer to their points only through these instances. The facts $C[\\bar x]$ are the only hypotheses about these points.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(C, [\\iota, \\kappa, \\zeta])$ in the body of the client loop.",
    "rocq": "static/Contexts.v: hyps, hc_open",
@@ -4446,7 +4668,7 @@ window.MAP = {
    "args": [
     {
      "name": "C",
-     "meaning": "a box constraint, a set of facts over $m$ point variables"
+     "meaning": "a box constraint, a set of facts over its bound point variables"
     },
     {
      "name": "\\bar x",
@@ -4495,7 +4717,7 @@ window.MAP = {
   "ctx.bot": {
    "title": "The flag $\\bot$ in $F$",
    "what": "$\\bot$ states that the context holds ends at points unknown to the term, which then performs no session action.",
-   "why": "Every action asks $u \\prec F$, which requires $F$ to have no $\\bot$. No point is known to lie below a hidden point, so an action under $\\bot$ could wait above it.",
+   "why": "Every action asks $u \\prec F$, which requires $F$ to have no $\\bot$. No point is known to lie below a hidden point, so an action under $\\bot$ could wait above the hidden point.",
    "breaks": "Nothing. It is a definition.",
    "example": "$e_1$ beside a context that holds an unopened $\\exists^{\\bot}$.",
    "rocq": "static/Contexts.v: FBot, fs_bot",
@@ -4537,30 +4759,34 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\ast$ types under every $\\Delta$ whose entries are empty or unlimited.",
    "rocq": "static/Contexts.v: lenv_unl",
-   "sig": "\\Delta\\ \\text{unlimited} \\iff \\forall i.\\ \\Delta(i) = \\bot \\lor \\mathsf{unlimited}\\,\\Delta(i)",
+   "sig": "\\Delta\\ \\text{unlimited} \\iff \\Delta \\text{ holds no end} \\land \\forall i.\\ \\Delta(i) = \\bot \\lor \\mathsf{unlimited}\\,\\Delta(i)",
    "args": [
     {
      "name": "\\Delta",
-     "meaning": "\\annp{the de Bruijn list of optional credited types of the variables}"
+     "meaning": "the linear context, ends $o$ with end types and de Bruijn indices with types"
     }
    ]
   },
   "ctx.only": {
-   "title": "$\\Delta = \\{x : T\\annot{^{a}}\\}$",
-   "what": "$\\Delta(x) = T\\annot{^{a}}$ and every other non-empty entry of $\\Delta$ has unlimited type.",
+   "title": "The only used entry",
+   "what": "In $\\Delta, x : T$ the entry $x$ is used and every entry of $\\Delta$ has unlimited type.",
    "why": "Every linear entry is used exactly once, and an unlimited entry may go unused.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$x = 0$ types under $\\Delta = [T\\annot{^{a}}]$.",
-   "rocq": "static/Contexts.v: lenv_only",
-   "sig": "\\Delta = \\{x : T\\annot{^{a}}\\} \\iff \\Delta(x) = T\\annot{^{a}} \\land \\forall i \\neq x.\\ \\Delta(i) = \\bot \\lor \\mathsf{unlimited}\\,\\Delta(i)",
+   "example": "$x = 0$ types under $0 : T$.",
+   "rocq": "static/Contexts.v: lenv_only, tenv_only",
+   "sig": "\\Delta, x : T",
    "args": [
     {
      "name": "x",
-     "meaning": "the de Bruijn index of the variable"
+     "meaning": "the variable or end used"
     },
     {
-     "name": "T\\annot{^{a}}",
-     "meaning": "\\annp{its credited type}"
+     "name": "T",
+     "meaning": "its type"
+    },
+    {
+     "name": "\\Delta",
+     "meaning": "the rest of the context, unlimited"
     }
    ]
   },
@@ -4568,7 +4794,7 @@ window.MAP = {
    "title": "$x \\prec F$ at an action",
    "what": "For an action at $x$ under $F = (X, \\cdot)$, $\\Gamma \\vdash x \\prec y$ for every $y \\in X$, $\\Gamma \\vdash x \\prec \\varphi$ when $F$ has a variable $\\varphi$, and $F$ has no $\\bot$.",
    "why": "While the term waits at $x$, every point at which its context acts later lies above $x$. This is readiness against the future.",
-   "breaks": "Without it a term may wait at $x$ while its context must first act at a point below $x$, and the thread waits on itself through the partner end.",
+   "breaks": "Without it a term may wait at $x$ while its context must first act at a point below $x$, and the thread waits on itself through the dual end.",
    "example": "E-Close at $x$ asks $x \\prec F$.",
    "rocq": "static/Contexts.v: ub_below_s",
    "sig": "x \\prec F \\iff (\\forall y \\in X.\\ \\Gamma \\vdash x \\prec y) \\land (F = (X, \\varphi) \\Rightarrow \\Gamma \\vdash x \\prec \\varphi) \\land F \\neq (X, \\bot)",
@@ -4588,7 +4814,7 @@ window.MAP = {
    ]
   },
   "act.refill": {
-   "title": "Refill $N$ after an action",
+   "title": "Credit $N$ after an action",
    "what": "An end returned by an action, or created fresh, has credit $N$.",
    "why": "The fuel layer sets the counter of an end to $N$ at every action on it, and the static credit is a lower bound on that counter.",
    "breaks": "Nothing. It is a definition.",
@@ -4602,7 +4828,7 @@ window.MAP = {
     },
     {
      "name": "N",
-     "meaning": "\\annp{the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$}"
+     "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     }
    ]
   },
@@ -4632,19 +4858,19 @@ window.MAP = {
   "side.lb": {
    "title": "$l \\preccurlyeq H$",
    "what": "$l \\preccurlyeq H \\iff \\forall y \\in H.\\ l = y \\lor \\Gamma \\vdash l \\prec y$ for a point $l$, and $H = \\varnothing$ for absent $l$.",
-   "why": "A holder of a closure sees the heads of its ends only through $l$. Hence $l$ must be a lower bound of those heads.",
+   "why": "For a holding thread of a closure, the heads of its ends are bounded only through $l$. Hence $l$ must be a lower bound of those heads.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\overline{\\rho} \\preccurlyeq \\{\\overline{\\rho}\\}$.",
    "rocq": "static/Contexts.v: lbx_below_h, lbound_of",
-   "sig": "l \\preccurlyeq H \\iff (l = \\bot \\Rightarrow H = \\varnothing) \\land \\forall y \\in H.\\ l = y \\lor \\Gamma \\vdash l \\prec y",
+   "sig": "l \\preccurlyeq H \\iff (l = \\cdot \\Rightarrow H = \\varnothing) \\land \\forall y \\in H.\\ l = y \\lor \\Gamma \\vdash l \\prec y",
    "args": [
     {
      "name": "l",
-     "meaning": "a lower point or absent"
+     "meaning": "a lower point, or $\\cdot$ when the value holds no end"
     },
     {
      "name": "H",
-     "meaning": "a set of heads, partner points of held ends"
+     "meaning": "a set of heads, dual points of held ends"
     }
    ]
   },
@@ -4672,22 +4898,17 @@ window.MAP = {
    ]
   },
   "age.free": {
-   "title": "Aging an entry without ends",
-   "what": "$(T, a) - c = (T, a)$ when $\\mathsf{tfree}\\,T$.",
-   "why": "An entry without ends has no counter that could fall, so its credit bounds nothing.",
+   "title": "Aging a type without ends",
+   "what": "$T - c = T$ when $\\mathsf{tfree}\\,T$.",
+   "why": "A type without ends has no counter that could fall, so aging changes nothing.",
    "breaks": "Nothing. It is a definition.",
    "example": "A box variable never ages.",
    "rocq": "static/Contexts.v: age_free",
-   "sig": "\\mathsf{tfree}\\,T \\Rightarrow (T, a) - c = (T, a)",
+   "sig": "\\mathsf{tfree}\\,T \\Rightarrow T - c = T",
    "args": [
     {
      "name": "T",
      "meaning": "a type holding no end"
-    },
-    {
-     "name": "a",
-     "meaning": "its credit",
-     "ann": true
     },
     {
      "name": "c",
@@ -4696,37 +4917,33 @@ window.MAP = {
    ]
   },
   "age.credit": {
-   "title": "Aging an entry",
-   "what": "$(T, a) - c = (T, a - c)$, defined when $c \\leq a$.",
-   "why": "While a term of cost $c$ runs, the holder performs up to $c$ actions on other ends, and each lowers the counter of every held end by $1$. The premise $c \\leq a$ keeps the credit a lower bound on the counter.",
+   "title": "Aging an end or a closure",
+   "what": "$(S@x)\\annot{^{a}} - c = (S@x)^{a - c}$ and $(T \\multimap U)\\annot{^{a}} - c = (T \\multimap U)^{a - c}$, defined when $c \\leq a$.",
+   "why": "While a term of cost $c$ runs, the holding thread performs up to $c$ actions on other ends, and each lowers the counter of every held end by $1$. The premise $c \\leq a$ keeps the credit a lower bound on the counter.",
    "breaks": "Without $c \\leq a$ a server holds its client end while it runs a callback of cost $\\infty$ at finite $N$, and the client waits without bound.",
-   "example": "$(S@x, 3) - 1 = (S@x, 2)$.",
+   "example": "$(S@x)^{3} - 1 = (S@x)^{2}$.",
    "rocq": "static/Contexts.v: age_credit",
-   "sig": "c \\leq a \\Rightarrow (T, a) - c = (T, a - c)",
+   "sig": "c \\leq a \\Rightarrow (S@x)\\annot{^{a}} - c = (S@x)^{a - c}",
    "args": [
     {
-     "name": "T",
-     "meaning": "a type holding ends, an end type or an arrow"
-    },
-    {
      "name": "a",
-     "meaning": "its credit",
+     "meaning": "the credit of the end or closure",
      "ann": true
     },
     {
      "name": "c",
-     "meaning": "the cost of what runs while the entry is held"
+     "meaning": "the cost of what runs while it is held"
     }
    ]
   },
   "age.idle": {
    "title": "Aging an idle end",
-   "what": "$(S@x, a) - c = (S@x, \\max(a - c, 0))$ when $\\mathsf{unfold}(S) = \\mathsf{Skip}$.",
-   "why": "No thread acts on an idle end, so no action refills it. Truncation keeps its credit at or below its counter, which ticks and truncates at $0$ in the same way.",
-   "breaks": "With $c \\leq a$ required an idle end held across a loop loses credit every round and no finite $N$ types the loop. Keeping the credit instead exceeds the counter after one tick.",
-   "example": "$(\\mathsf{Skip}@\\chi, 0) - 1 = (\\mathsf{Skip}@\\chi, 0)$.",
+   "what": "$(S@x)\\annot{^{a}} - c = (S@x)^{\\max(a - c, 0)}$ when $\\mathsf{unfold}(S) = \\mathsf{Skip}$.",
+   "why": "No thread acts on an idle end, so no action counter bounds an idle end. Truncation keeps its credit at or below its counter, which decrements and truncates at $0$ in the same way.",
+   "breaks": "With $c \\leq a$ required an idle end held across a loop loses credit every round and no finite $N$ types the loop. Keeping the credit instead exceeds the counter after one decrement.",
+   "example": "$(\\mathsf{Skip}@\\chi)\\annot{^{0}} - 1 = (\\mathsf{Skip}@\\chi)\\annot{^{0}}$.",
    "rocq": "static/Contexts.v: age_idle",
-   "sig": "\\mathsf{idle}\\,S \\Rightarrow (S@x, a) - c = (S@x, \\max(a - c, 0))",
+   "sig": "\\mathsf{idle}\\,S \\Rightarrow (S@x)\\annot{^{a}} - c = (S@x)^{\\max(a - c, 0)}",
    "args": [
     {
      "name": "S",
@@ -4748,56 +4965,51 @@ window.MAP = {
    ]
   },
   "age.agg": {
-   "title": "Aging an aggregate",
-   "what": "For a product, a sum or an existential, $(T, a) - c$ ages every part $(T_i, a + a_i)$ and returns credit $0$.",
-   "why": "The credit of an aggregate is a common share of its parts, so aging moves it into the parts and ages them.",
+   "title": "Aging a product, sum or existential",
+   "what": "Aging goes into the parts. $(T_1 \\otimes T_2) - c = (T_1 - c) \\otimes (T_2 - c)$, likewise for $\\oplus$, and $\\exists^{l}\\bar\\iota.\\,C.\\,T$ ages its body.",
+   "why": "Only ends and closures have credits, so a compound type ages by aging the ends and closures it contains.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$(T^{1} \\otimes U^{1}, 1) - 1 = (T^{1} \\otimes U^{1}, 0)$.",
+   "example": "$((S@x)^{2} \\otimes \\ast) - 1 = (S@x)^{1} \\otimes \\ast$.",
    "rocq": "static/Contexts.v: age_prod, age_sum, age_ex",
-   "sig": "(T_1\\annot{^{a_1}} \\otimes T_2\\annot{^{a_2}}, a) - c = (T_1'\\annot{^{a_1'}} \\otimes T_2'\\annot{^{a_2'}}, 0)",
+   "sig": "(T_1 \\otimes T_2) - c = (T_1 - c) \\otimes (T_2 - c)",
    "args": [
     {
-     "name": "T_i, a_i",
-     "meaning": "the components and their inner credits"
+     "name": "T_1, T_2",
+     "meaning": "the components"
     },
     {
-     "name": "a",
-     "meaning": "the outer credit, added to each $a_i$ before aging",
-     "ann": true
-    },
-    {
-     "name": "(T_i', a_i')",
-     "meaning": "the aged components, $(T_i, a + a_i) - c = (T_i', a_i')$"
+     "name": "c",
+     "meaning": "the cost of what runs while the value is held"
     }
    ]
   },
   "age.ctx": {
-   "title": "Aging the frame",
-   "what": "$\\Theta_2 - c_1$ and $\\Delta_2 - c_1$ age every entry by the cost $c_1$ of the first subterm.",
-   "why": "$\\Theta_2$ and $\\Delta_2$ are held while $e_1$ runs, and each action of $e_1$ lowers their counters by $1$.",
+   "title": "Aging what is held",
+   "what": "$\\Delta - \\varepsilon$ ages every entry of $\\Delta$ by the cost $c$ of $\\varepsilon = (c, \\vartheta)$.",
+   "why": "The entries are held while the subterm with effect $\\varepsilon$ runs, and each of its actions lowers their counters by $1$.",
    "breaks": "Without aging a thread holds an end across unboundedly many actions on other ends, and the partner of that end waits without bound.",
    "example": "In the cycle example main loses $1$ of the credit of $d$ while it closes $c$.",
    "rocq": "static/Contexts.v: thage, lage",
-   "sig": "\\Theta - c,\\ \\Delta - c",
+   "sig": "\\Delta - \\varepsilon",
    "args": [
     {
-     "name": "\\Theta, \\Delta",
-     "meaning": "the ends and variables held while a subterm runs"
+     "name": "\\Delta",
+     "meaning": "the entries held while a subterm runs"
     },
     {
-     "name": "c",
-     "meaning": "the cost of that subterm"
+     "name": "\\varepsilon = (c, \\vartheta)",
+     "meaning": "the effect of that subterm, whose cost $c$ ages every entry"
     }
    ]
   },
   "cap.sess": {
    "title": "Capturing an end",
-   "what": "$(S@x, a_0) \\leadsto_{h,a} (S@x, h)$, defined when $h + a \\leq a_0$.",
+   "what": "$(S@x)\\annot{^{a_0}} \\leadsto_{h,a} (S@x)^{h}$, defined when $h + a \\leq a_0$.",
    "why": "The closure itself has credit $a$ and ages by up to $a$ before its body runs. The body may assume credit $h$ on the end, so the end needs $h + a$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$h = 1$ and $a = 1$ need $a_0 \\geq 2$.",
    "rocq": "static/Contexts.v: cap_sess",
-   "sig": "h + a \\leq a_0 \\Rightarrow (S@x, a_0) \\leadsto_{h,a} (S@x, h)",
+   "sig": "h + a \\leq a_0 \\Rightarrow (S@x)\\annot{^{a_0}} \\leadsto_{h,a} (S@x)^{h}",
    "args": [
     {
      "name": "h",
@@ -4817,12 +5029,12 @@ window.MAP = {
   },
   "cap.arr": {
    "title": "Capturing a closure",
-   "what": "$(T \\multimap[\\ldots;h_0] U, a_0) \\leadsto_{h,a} (T \\multimap[\\ldots;h_0] U, h - h_0)$, defined when $h_0 \\leq h$ and $h + a \\leq h_0 + a_0$.",
+   "what": "$(T \\multimap[\\varepsilon;h_0] U)\\annot{^{a_0}} \\leadsto_{h,a} (T \\multimap[\\varepsilon;h_0] U)^{h - h_0}$, defined when $h_0 \\leq h$ and $h + a \\leq h_0 + a_0$.",
    "why": "A captured closure guarantees credit $h_0 + a_0$ on its own ends, and the premise asks this to cover $h + a$. The new credit $h - h_0$ places those ends at exactly the floor $h$ of the outer closure.",
    "breaks": "Nothing. It is a definition.",
    "example": "A callback with $h_0 = 1$ and $a_0 = 2$, captured at $h = 2$ and $a = 1$, gets credit $1$.",
    "rocq": "static/Contexts.v: cap_arr",
-   "sig": "h_0 \\leq h \\land h + a \\leq h_0 + a_0 \\Rightarrow (T \\multimap[\\ldots;h_0] U, a_0) \\leadsto_{h,a} (\\ldots, h - h_0)",
+   "sig": "h_0 \\leq h \\land h + a \\leq h_0 + a_0 \\Rightarrow (T \\multimap[\\varepsilon;h_0] U)\\annot{^{a_0}} \\leadsto_{h,a} (T \\multimap[\\varepsilon;h_0] U)^{h - h_0}",
    "args": [
     {
      "name": "h_0",
@@ -4839,48 +5051,44 @@ window.MAP = {
     }
    ]
   },
-  "sub.tsub": {
-   "title": "Subtyping $T\\annot{^{a}} \\leq T'\\annot{^{a'}}$",
-   "what": "The least relation closed under Sub-Unit, Sub-Sess, Sub-Arr, Sub-Prod, Sub-Sum, Sub-Box and Sub-Ex, used by E-Sub.",
-   "why": "The branches of $\\mathsf{case}$ and of a received choice need one common type\\annp{, and the credit} $N$ of $\\mathsf{new}_\\ell$ must fall to what a protocol asks. Every clause weakens what a value promises, so $V$ at $T\\annot{^{a}}$ is contained in $V$ at $T'\\annot{^{a'}}$.",
-   "breaks": "\\annp{Without E-Sub the client loop could not pass the fresh ends\\annp{ at credit $N = 3$} to a parameter that asks credits $1$ and $2$.}",
-   "example": "$(S@x)^{3} \\leq (S@x)^{1}$ and $\\exists^{\\bot}\\rho.\\,\\{\\rho \\prec \\overline{\\rho\\cdot 0}\\}.\\,T \\leq \\exists^{\\bot}\\rho.\\,\\varnothing.\\,T$.",
-   "rocq": "static/Contexts.v: tsub",
-   "sig": "T\\annot{^{a}} \\leq T'\\annot{^{a'}} \\subseteq (\\mathsf{Ty} \\times \\mathsf{Fuel})^{2}",
+  "cap.agg": {
+   "title": "Capture of other types",
+   "what": "Capture goes into the parts of $\\otimes$, $\\oplus$ and $\\exists$ and leaves types with $\\mathsf{tfree}$ unchanged.",
+   "why": "Only ends and closures have credits, so only they are restated.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$((S@x)^{2} \\otimes \\ast) \\leadsto_{1,1} (S@x)^{1} \\otimes \\ast$.",
+   "rocq": "static/Contexts.v: tcap",
+   "sig": "(T_1 \\otimes T_2) \\leadsto_{h,a} (T_1' \\otimes T_2') \\iff T_i \\leadsto_{h,a} T_i'",
    "args": [
     {
-     "name": "T\\annot{^{a}}",
-     "meaning": "the type\\annp{ and credit} a value has"
-    },
-    {
-     "name": "T'\\annot{^{a'}}",
-     "meaning": "the type\\annp{ and credit} it is used at"
+     "name": "h, a",
+     "meaning": "the floor and credit of the capturing closure"
     }
    ]
   },
-  "sub.dconv": {
-   "title": "D-Conv",
-   "what": "If $\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W} t : T$ and $\\mathsf{ty\\_df}\\,T \\leq \\mathsf{ty\\_df}\\,T'$ at annotations $\\infty$, then $\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W} t : T'$.",
-   "why": "\\annp{Deadlock-free typing reads no credit, cost or ticket need.} \\annp{At annotations $\\infty$ every clause of $\\leq$ on credits, costs, ticket needs and floors holds, and $\\leq$ reduces to $\\approx$ on session types and dropping facts of existentials.}",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\exists^{\\bot}\\rho.\\,\\Lambda_0(\\rho).\\,T$ converts to $\\exists^{\\bot}\\rho.\\,\\varnothing.\\,T$.",
-   "rocq": "static/Typing.v: d_conv",
-   "sig": "\\mathsf{ty\\_df}\\,T \\leq \\mathsf{ty\\_df}\\,T' \\Rightarrow (t : T \\Rightarrow t : T')",
+  "sub.tsub": {
+   "title": "Subtyping $T \\leq T'$",
+   "what": "The least relation closed under Sub-Sess, Sub-Arr, Sub-Box, Sub-Ex and componentwise on $\\otimes$ and $\\oplus$, used by E-Sub.",
+   "why": "The branches of $\\mathsf{case}$ and of a received choice need one common type. Every clause weakens what a value guarantees.",
+   "breaks": "Without E-Sub two branches that create a channel with different facts have no common result type.",
+   "example": "$\\exists^{\\bot}\\rho.\\,\\{\\rho \\prec \\overline{\\rho\\cdot 0}\\}.\\,T \\leq \\exists^{\\bot}\\rho.\\,\\varnothing.\\,T$, and $(S@x)^{3} \\leq (S@x)^{1}$ in the lock-free mode.",
+   "rocq": "static/Contexts.v: tsub",
+   "sig": "T \\leq T' \\subseteq \\mathsf{Ty} \\times \\mathsf{Ty}",
    "args": [
     {
-     "name": "T, T'",
-     "meaning": "erased types"
+     "name": "T",
+     "meaning": "the type a value has"
     },
     {
-     "name": "t",
-     "meaning": "the term"
+     "name": "T'",
+     "meaning": "the type it is used at"
     }
    ]
   },
   "tp.sub-credit": {
    "title": "Credits may fall",
-   "what": "$a' \\leq a$, and $a' + a_T' \\leq a + a_T$ at an existential.",
-   "why": "A credit is a lower bound on the counter of every end inside the value, so a smaller credit promises less. $\\mathsf{new}_\\ell$ and every action return credit $N$, and the protocol of a parameter or a payload asks a fixed credit $b \\leq N$.",
+   "what": "$a' \\leq a$ for the credits of an end.",
+   "why": "A credit is a lower bound on the counter of an end, so a smaller credit guarantees less. $\\mathsf{new}$ and every action return credit $N$, and a parameter or a payload asks a fixed credit $b \\leq N$.",
    "breaks": "Without it a fresh end at credit $N$ fits only a parameter at credit exactly $N$, and no loop that ages an end before its self call types.",
    "example": "$(S@x)^{3} \\leq (S@x)^{2}$.",
    "rocq": "static/Contexts.v: tsub",
@@ -4888,39 +5096,20 @@ window.MAP = {
    "args": [
     {
      "name": "a",
-     "meaning": "the credit of the subtype",
+     "meaning": "the credit of the end in the subtype",
      "ann": true
     },
     {
      "name": "a'",
-     "meaning": "the credit of the supertype",
+     "meaning": "the credit in the supertype",
      "ann": true
-    }
-   ]
-  },
-  "tp.sub-cost": {
-   "title": "Costs and ticket needs may rise",
-   "what": "$c \\leq c'$ in $\\mathbb{N} \\cup \\{\\infty\\}$ and $\\vartheta \\leq \\vartheta'$ pointwise, for the cost and ticket need of an arrow, a box and, in E-Sub, of the term.",
-   "why": "$c$ and $\\vartheta$ are upper bounds on actions and tickets. The branches of $\\mathsf{case}$ and closures passed to one parameter have different costs, and the larger bound covers both.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "A closure of cost $1$ passes where cost $\\infty$ is expected.",
-   "rocq": "static/Contexts.v: tsub, types/Costs.v: tle",
-   "sig": "c \\leq c' \\land \\vartheta \\leq \\vartheta'",
-   "args": [
-    {
-     "name": "c, \\vartheta",
-     "meaning": "cost and ticket need of the subtype"
-    },
-    {
-     "name": "c', \\vartheta'",
-     "meaning": "cost and ticket need of the supertype, pointwise larger"
     }
    ]
   },
   "tp.sub-floor": {
    "title": "The wait bound of an arrow",
    "what": "$h \\leq h'$ and $h' + a' \\leq h + a$ for the floors $h, h'$ and credits $a, a'$ of two arrows.",
-   "why": "The body of a closure may assume that every captured end has credit $h$, and the holder guarantees $h + a$ in total. Raising the floor to $h'$ is sound only when the guarantee $h' + a'$ does not exceed the old $h + a$.",
+   "why": "The body of a closure may assume that every captured end has credit $h$, and the holding thread guarantees $h + a$ in total. Raising the floor to $h'$ is sound only when the guarantee $h' + a'$ does not exceed the old $h + a$.",
    "breaks": "Without $h' + a' \\leq h + a$ a closure could claim a floor above the credit its captured ends have.",
    "example": "$h = 1, a = 1$ converts to $h' = 2, a' = 0$.",
    "rocq": "static/Contexts.v: tsub",
@@ -4972,12 +5161,12 @@ window.MAP = {
   },
   "tp.sub-var": {
    "title": "Variance",
-   "what": "\\annp{$\\leq$ is contravariant in the argument and covariant in the result of $\\multimap$, and covariant in the components of $\\otimes$ and $\\oplus$, whose credits add before comparison.}",
+   "what": "$\\leq$ is contravariant in the argument and covariant in the result of $\\multimap$, and covariant in the components of $\\otimes$ and $\\oplus$.",
    "why": "A closure that accepts more and returns less can stand for one that accepts less and returns more.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$(T^{1} \\multimap U^{3}) \\leq (T^{2} \\multimap U^{1})$.",
+   "example": "$((S@x)^{1} \\multimap (S@y)^{3}) \\leq ((S@x)^{2} \\multimap (S@y)^{1})$.",
    "rocq": "static/Contexts.v: sub_arr, sub_prod, sub_sum",
-   "sig": "T_1'\\annot{^{a_1'}} \\leq T_1\\annot{^{a_1}} \\land U\\annot{^{a_2}} \\leq U'\\annot{^{a_2'}}",
+   "sig": "T_1' \\leq T_1 \\land U \\leq U'",
    "args": [
     {
      "name": "T_1, T_1'",
@@ -4991,24 +5180,16 @@ window.MAP = {
   },
   "tp.sub-agg": {
    "title": "Products and sums",
-   "what": "$T_i\\annot{^{a + a_i}} \\leq T_i'\\annot{^{a' + a_i'}}$ for $i = 1, 2$.",
-   "why": "The credit of an aggregate pushes inward, so the parts are compared at the credits they carry inside the aggregate.",
+   "what": "$T_1 \\otimes T_2 \\leq T_1' \\otimes T_2'$ when $T_i \\leq T_i'$ for $i = 1, 2$, and likewise for $\\oplus$.",
+   "why": "\\annp{A product or a sum has no credit of its own, so it compares part by part.}",
    "breaks": "Nothing. It is a definition.",
-   "example": "$(T^{1} \\otimes U^{1})^{1} \\leq (T^{2} \\otimes U\\annot{^{0}})\\annot{^{0}}$ needs $T^{2} \\leq T^{2}$ and $U^{2} \\leq U\\annot{^{0}}$.",
+   "example": "$(S@x)^{2} \\otimes \\ast \\leq (S@x)^{1} \\otimes \\ast$.",
    "rocq": "static/Contexts.v: sub_prod, sub_sum",
-   "sig": "T_i\\annot{^{a + a_i}} \\leq T_i'\\annot{^{a' + a_i'}}",
+   "sig": "T_1 \\leq T_1' \\land T_2 \\leq T_2'",
    "args": [
     {
-     "name": "i",
-     "meaning": "$1$ or $2$, the component"
-    },
-    {
-     "name": "a, a'",
-     "meaning": "the outer credits"
-    },
-    {
-     "name": "a_i, a_i'",
-     "meaning": "the inner credits"
+     "name": "T_i, T_i'",
+     "meaning": "the components of the two products or sums"
     }
    ]
   },
@@ -5048,35 +5229,31 @@ window.MAP = {
   },
   "E-Abs.lb": {
    "title": "Lower point of a closure",
-   "what": "$l \\preccurlyeq \\mathsf{heads}(\\Theta, \\Delta)$ and $\\Delta$ carries no $\\bot$.",
-   "why": "A holder of the closure reads the heads of its ends only through $l$. A hidden point has no lower bound, so $\\bot$ is excluded.",
+   "what": "$l \\preccurlyeq \\Delta$, the point $l$ lies at or below every element of $\\mathsf{heads}(\\Delta)$. Hidden ends put $\\bot$ there, which no point lies below.",
+   "why": "A holding thread of the closure reads the dual points of its ends only through $l$. A hidden end has no dual point to bound, so a closure cannot capture a hidden end.",
    "breaks": "A thread holding ends at the unrelated points $1$ and $2$ has no common lower point, so E-Abs rejects a $\\lambda$ that captures both. E-SpawnLam types the spawn of such a $\\lambda$.",
    "example": "Capturing $a^{+}$ at $\\rho$ gives $l = \\overline{\\rho}$.",
    "rocq": "static/Contexts.v: lbx_below_h, lbound_of",
-   "sig": "l \\preccurlyeq \\mathsf{heads}(\\Theta, \\Delta) \\land \\neg\\bot_{\\Delta}",
+   "sig": "l \\preccurlyeq \\Delta \\iff \\forall y \\in \\mathsf{heads}(\\Delta).\\ \\Gamma \\vdash l \\preccurlyeq y",
    "args": [
     {
      "name": "l",
      "meaning": "the lower point of the arrow"
     },
     {
-     "name": "\\mathsf{heads}(\\Theta, \\Delta)",
-     "meaning": "the partner points of every captured end"
-    },
-    {
-     "name": "\\bot_\\Delta",
-     "meaning": "whether $\\Delta$ holds an unopened existential at $\\bot$"
+     "name": "\\mathsf{heads}(\\Delta)",
+     "meaning": "the dual points of every captured end, with $\\bot$ for hidden ends"
     }
    ]
   },
   "E-Abs.cap": {
    "title": "Capture",
-   "what": "$\\Theta \\leadsto_{h,a} \\Theta^{h}$ and $\\Delta \\leadsto_{h,a} \\Delta^{h}$ restate every captured entry at the floor $h$.",
+   "what": "$\\Delta \\leadsto_{h,a} \\Delta^{h}$ restates every captured end and closure at the floor $h$.",
    "why": "The closure has credit $a$, and its body may assume credit $h$ on every captured end. Capture asks $h + a$ of each captured credit.",
    "breaks": "Nothing. It is a definition.",
    "example": "$a^{+}$ at credit $2$ captured with $h = 1$ and $a = 1$ is seen at credit $1$.",
    "rocq": "static/Contexts.v: thcap, lcap",
-   "sig": "\\Theta \\leadsto_{h,a} \\Theta^{h} \\land \\Delta \\leadsto_{h,a} \\Delta^{h}",
+   "sig": "\\Delta \\leadsto_{h,a} \\Delta^{h}",
    "args": [
     {
      "name": "h",
@@ -5088,32 +5265,31 @@ window.MAP = {
      "ann": true
     },
     {
-     "name": "\\Theta^{h}, \\Delta^{h}",
+     "name": "\\Delta^{h}",
      "meaning": "the captured context restated at floor $h$"
     }
    ]
   },
   "E-Abs.body": {
    "title": "Body of a $\\lambda$",
-   "what": "$e$ is typed under $\\Theta^{h}$, $\\Gamma$ extended by $u \\prec \\varphi$, $\\Delta^{h}$ extended by the argument $T\\annot{^{a_T}}$, and the future $(\\varnothing, \\varphi)$.",
+   "what": "$e$ is typed under $\\Gamma$ extended by $u \\prec \\varphi$, the captured $\\Delta$ extended by the argument $T$, and the future $(\\varnothing, \\varphi)$. \\annp{In the lock-free mode the captured entries are restated at the floor $h$.}",
    "why": "The body runs at a later call. It may rely only on its captured entries, its argument and $u \\prec \\varphi$, and E-App establishes $u \\prec F$ at every call.",
    "breaks": "Nothing. It is a definition.",
-   "example": "The body of the client loop with argument $(S_1@\\iota \\otimes S_2@\\kappa)\\annot{^{0}}$.",
+   "example": "The body of the client loop with argument $S_1@\\iota \\otimes S_2@\\kappa$.",
    "rocq": "static/Typing.v: e_abs",
-   "sig": "\\Theta^{h} ; \\Gamma, u \\prec \\varphi ; \\Delta^{h}, T\\annot{^{a_T}} \\vdash^{(\\varnothing, \\varphi)}_{W\\annot{,N}} e : U\\annot{^{a_U}} \\annot{\\triangleright c ; \\vartheta}",
+   "sig": "\\Gamma, u \\prec \\varphi ; \\Delta^{h}, T \\vdash^{(\\varnothing, \\varphi)} e : U\\ !\\ \\varepsilon",
    "args": [
     {
-     "name": "T\\annot{^{a_T}}",
+     "name": "T",
      "meaning": "the argument at index $0$"
     },
     {
-     "name": "U\\annot{^{a_U}}",
+     "name": "U",
      "meaning": "the result of the body"
     },
     {
-     "name": "c, \\vartheta",
-     "meaning": "the cost and ticket need recorded on the arrow",
-     "ann": true
+     "name": "\\varepsilon",
+     "meaning": "the effect recorded on the arrow"
     }
    ]
   },
@@ -5137,215 +5313,150 @@ window.MAP = {
    ]
   },
   "E-App.fut1": {
-   "title": "Future of the first subterm",
-   "what": "$e_1$ is typed under $F \\cup \\mathsf{heads}(\\Theta_2, \\Delta_2)$, with $\\bot$ added when $\\Delta_2$ carries $\\bot$.",
-   "why": "The entries of the second subterm are held while $e_1$ runs. Hence $e_1$ must not wait above their heads.",
+   "title": "The first subterm runs while the rest is held",
+   "what": "$e_1$ is typed under $\\Delta_1 \\parallel \\Delta_2$, so its future is $F \\cup \\mathsf{heads}(\\Delta_2)$, with $\\bot$ added when $\\Delta_2$ has $\\bot$.",
+   "why": "The entries of the second subterm are held while $e_1$ runs. Hence $e_1$ must not wait above their dual points.",
    "breaks": "$\\mathsf{let}\\ \\ast = \\mathsf{close}\\,c\\ \\mathsf{in}\\ \\mathsf{close}\\,d$ beside a partner that closes $d$ before $c$ deadlocks. E-LetU rejects the first thread unless $x_c \\prec \\overline{x_d}$.",
    "example": "The cycle example needs $\\rho \\prec \\overline{\\rho\\cdot 0}$ for $\\mathsf{close}\\,c$ while $d$ is held.",
    "rocq": "static/Typing.v: e_app, e_pair, e_letp, e_letu, e_case",
-   "sig": "\\Theta_1 ; \\Gamma ; \\Delta_1 \\vdash^{F \\cup \\mathsf{heads}(\\Theta_2, \\Delta_2)}_{W\\annot{,N}} e_1 : \\ldots",
+   "sig": "\\Gamma ; \\Delta_1 \\parallel \\Delta_2 \\vdash^{F} e_1 : \\ldots",
    "args": [
     {
-     "name": "\\Theta_1, \\Delta_1",
+     "name": "\\Delta_1",
      "meaning": "the part of the context given to $e_1$"
     },
     {
-     "name": "\\mathsf{heads}(\\Theta_2, \\Delta_2)",
-     "meaning": "the partner points of the ends held for the rest of the term"
+     "name": "\\Delta_2",
+     "meaning": "the part held for the rest of the term"
     }
    ]
   },
   "E-App.fut2": {
-   "title": "Future of the argument",
-   "what": "$e_2$ is typed under $F \\cup \\{l\\}$ with $l$ the lower point of the closure.",
-   "why": "The closure is held while $e_2$ runs, and $l$ bounds the heads of its ends from below.",
+   "title": "The argument runs while the closure is held",
+   "what": "$e_2$ is typed while the thread holds the closure, so its future is $F \\cup \\{l\\}$ with $l$ the lower point of the closure. \\annp{In the lock-free mode the closure ages by the cost of $e_2$, which needs that much credit.}",
+   "why": "The closure is held while $e_2$ runs, and $l$ bounds the dual points of its ends from below.",
    "breaks": "Nothing. It is a definition.",
    "example": "$f\\,(\\mathsf{close}\\,c)$ with $f$ capturing $d$.",
    "rocq": "static/Typing.v: e_app",
-   "sig": "\\Theta_2' ; \\Gamma ; \\Delta_2' \\vdash^{F \\cup \\{l\\}}_{W\\annot{,N}} e_2 : T\\annot{^{a_T}} \\annot{\\triangleright c_2 ; \\vartheta_2}",
+   "sig": "\\Gamma ; \\Delta_2 - \\varepsilon_1 \\parallel (T \\multimap^{u}_{l} U)\\annot{^{a}} \\vdash^{F} e_2 : T\\ !\\ \\varepsilon_2",
    "args": [
     {
      "name": "l",
      "meaning": "the lower point of the closure, held while $e_2$ runs"
     },
     {
-     "name": "\\Theta_2', \\Delta_2'",
-     "meaning": "the aged context of $e_2$"
-    }
-   ]
-  },
-  "E-App.credit": {
-   "title": "$c_2 \\leq a_1$",
-   "what": "The credit $a_1$ of the closure is at least the cost $c_2$ of the argument.",
-   "why": "The closure is held while $e_2$ runs, and each action of $e_2$ lowers the counters of the captured ends by $1$.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "A closure at credit $\\infty$ admits an argument of every cost.",
-   "rocq": "static/Typing.v: e_app",
-   "sig": "c_2 \\leq a_1",
-   "args": [
-    {
-     "name": "c_2",
-     "meaning": "the cost of the argument"
-    },
-    {
-     "name": "a_1",
-     "meaning": "the credit of the closure value of $e_1$",
+     "name": "a",
+     "meaning": "the credit of the closure, which bounds the cost of $e_2$",
      "ann": true
     }
    ]
   },
-  "E-App.cost": {
-   "title": "Cost of a call",
-   "what": "$e_1\\,e_2$ has cost $c_1 + c_2 + c$ with $c$ the cost of the arrow.",
-   "why": "The call runs $e_1$, then $e_2$, then the body, and $c$ bounds the actions of the body.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$f\\,v$ with $f$ and $v$ values and $f : T \\multimap[2;\\ldots] U$ has cost $2$.",
-   "rocq": "static/Typing.v: e_app",
-   "sig": "c_1 + c_2 + c",
-   "args": [
-    {
-     "name": "c_1, c_2",
-     "meaning": "the costs of $e_1$ and $e_2$"
-    },
-    {
-     "name": "c",
-     "meaning": "the cost of the arrow, the cost of the body"
-    }
-   ]
-  },
   "E-Pair.fut2": {
-   "title": "Future of the second component",
-   "what": "$e_2$ is typed under $F \\cup \\mathsf{heads}(T_1)$.",
+   "title": "The second component runs while the first is held",
+   "what": "$e_2$ is typed while the thread holds the value of $e_1$, so its future is $F \\cup \\mathsf{heads}(T_1)$. In the lock-free mode $T_1$ ages by the cost of $e_2$.",
    "why": "The value of $e_1$ is held while $e_2$ runs.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\langle c, \\mathsf{close}\\,d\\rangle$ needs $x_d \\prec \\overline{x_c}$.",
    "rocq": "static/Typing.v: e_pair",
-   "sig": "\\ldots \\vdash^{F \\cup \\mathsf{heads}(T_1)}_{W\\annot{,N}} e_2 : T_2\\annot{^{a_2}} \\annot{\\triangleright c_2 ; \\vartheta_2}",
+   "sig": "\\Gamma ; \\Delta_2 - \\varepsilon_1 \\parallel T_1 \\vdash^{F} e_2 : T_2\\ !\\ \\varepsilon_2",
    "args": [
     {
-     "name": "\\mathsf{heads}(T_1)",
-     "meaning": "the partner points of the ends of the first component"
-    }
-   ]
-  },
-  "E-Pair.age1": {
-   "title": "Aging the first component",
-   "what": "$(T_1, a_1) - c_2 = (T_1', a_1')$.",
-   "why": "The value of $e_1$ is held while $e_2$ runs, so it ages by $c_2$.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\langle c, \\mathsf{send}\\,\\langle\\ast, d\\rangle\\rangle$ ages $c$ by $1$.",
-   "rocq": "static/Typing.v: e_pair",
-   "sig": "(T_1, a_1) - c_2 = (T_1', a_1')",
-   "args": [
-    {
-     "name": "T_1\\annot{^{a_1}}",
-     "meaning": "the type of the first component"
-    },
-    {
-     "name": "c_2",
-     "meaning": "the cost of the second component"
+     "name": "T_1",
+     "meaning": "the type of the first component, held while $e_2$ runs"
     }
    ]
   },
   "tp.letp": {
    "title": "Body of a pair elimination",
-   "what": "$e_2$ is typed under the aged $\\Theta_2'$, $\\Delta_2'$ extended by $T_2\\annot{^{a+a_2}}$ at index $0$ and $T_1\\annot{^{a+a_1}}$ at index $1$, under $F$.",
-   "why": "\\annp{The credit $a$ of the pair is a common share of both components, so each bound variable gets $a$ added to its own credit.}",
+   "what": "$e_2$ is typed under $\\Delta_2$, aged by $e_1$ in the lock-free mode, extended by $T_2$ at index $0$ and $T_1$ at index $1$, under $F$.",
+   "why": "Both components become variables of $e_2$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{let}\\ \\langle v, c\\rangle = \\mathsf{recv}\\,c\\ \\mathsf{in}\\ e$ binds the received value and the continuation end.",
    "rocq": "static/Typing.v: e_letp",
-   "sig": "\\Theta_2' ; \\Gamma ; T_2\\annot{^{a+a_2}}, T_1\\annot{^{a+a_1}}, \\Delta_2' \\vdash^{F}_{W\\annot{,N}} e_2 : T\\annot{^{a_T}} \\annot{\\triangleright c_2 ; \\vartheta_2}",
+   "sig": "\\Gamma ; T_2, T_1, \\Delta_2 - \\varepsilon_1 \\vdash^{F} e_2 : T\\ !\\ \\varepsilon_2",
    "args": [
     {
-     "name": "T_1\\annot{^{a_1}} \\otimes T_2\\annot{^{a_2}}",
-     "meaning": "\\annp{the type of $e_1$ with outer credit $a$}"
-    },
-    {
-     "name": "a + a_i",
-     "meaning": "\\annp{the credit of the bound component}"
+     "name": "T_1 \\otimes T_2",
+     "meaning": "the type of $e_1$"
     }
    ]
   },
   "tp.letu": {
    "title": "Body of a unit elimination",
-   "what": "$e_2$ is typed under the aged $\\Theta_2'$ and $\\Delta_2'$, under $F$, after $e_1$ returned $\\ast$.",
+   "what": "$e_2$ is typed under $\\Delta_2$, aged by $e_1$ in the lock-free mode, under $F$, after $e_1$ returned $\\ast$.",
    "why": "$\\ast$ holds no end, so nothing is bound. The rule sequences $e_1$ before $e_2$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{let}\\ \\ast = \\mathsf{close}\\,c\\ \\mathsf{in}\\ \\mathsf{close}\\,d$.",
    "rocq": "static/Typing.v: e_letu",
-   "sig": "\\Theta_2' ; \\Gamma ; \\Delta_2' \\vdash^{F}_{W\\annot{,N}} e_2 : T\\annot{^{a_T}} \\annot{\\triangleright c_2 ; \\vartheta_2}",
+   "sig": "\\Gamma ; \\Delta_2 - \\varepsilon_1 \\vdash^{F} e_2 : T\\ !\\ \\varepsilon_2",
    "args": [
     {
-     "name": "\\Theta_2', \\Delta_2'",
-     "meaning": "the context of $e_2$ aged by the cost $c_1$ of $e_1$"
+     "name": "\\Delta_2 - \\varepsilon_1",
+     "meaning": "the context of $e_2$ aged by the cost of $e_1$"
     }
    ]
   },
   "E-Case.branches": {
    "title": "Branches",
-   "what": "$\\Theta_2' ; \\Gamma ; T_i\\annot{^{a + a_i}}, \\Delta_2' \\vdash e_i : T\\annot{^{a_T}}$ for $i = 1, 2$, with cost $c_0 + \\max(c_1, c_2)$.",
-   "why": "Exactly one branch runs, and the choice is known only at run time. Both branches must fit the same continuation, and the cost bounds either.",
+   "what": "Each branch $e_i$ is typed under $T_i, \\Delta_2$ at the common result $T$.",
+   "why": "Exactly one branch runs, and the choice is known only at run time. Both branches must fit the same continuation.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{case}\\,(\\mathsf{branch}\\,o)\\,(a.\\,\\mathsf{close}\\,a)\\,(a.\\,\\mathsf{close}\\,a)$.",
    "rocq": "static/Typing.v: e_case",
-   "sig": "\\Theta_2' ; \\Gamma ; T_i\\annot{^{a+a_i}}, \\Delta_2' \\vdash^{F}_{W\\annot{,N}} e_i : T\\annot{^{a_T}} \\annot{\\triangleright c_i ; \\vartheta_i}",
+   "sig": "\\Gamma ; T_i, \\Delta_2 - \\varepsilon_0 \\vdash^{F} e_i : T\\ !\\ \\varepsilon_i",
    "args": [
     {
      "name": "i",
      "meaning": "$1$ or $2$, the branch"
     },
     {
-     "name": "T_i\\annot{^{a+a_i}}",
+     "name": "T_i",
      "meaning": "the payload of injection $i$ at index $0$"
     }
    ]
   },
   "E-Box.unl": {
    "title": "$\\Delta$ unlimited",
-   "what": "Every non-empty entry of $\\Delta$ has unlimited type, and $\\Theta = \\varnothing$.",
+   "what": "Every entry of $\\Delta$ has unlimited type, so $\\Delta$ holds no end.",
    "why": "A box value is copied freely. If it held an end, a copy would duplicate that end.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{ring}$ captures no variable.",
    "rocq": "static/Contexts.v: lenv_unl",
-   "sig": "\\Theta = \\varnothing \\land \\forall i.\\ \\Delta(i) = T\\annot{^{a}} \\Rightarrow \\mathsf{unlimited}\\,T",
+   "sig": "\\Delta \\text{ holds no end} \\land \\forall i.\\ \\Delta(i) = T \\Rightarrow \\mathsf{unlimited}\\,T",
    "args": [
     {
      "name": "\\Delta",
-     "meaning": "\\annp{the de Bruijn list of optional credited types of the variables}"
+     "meaning": "the linear context, ends $o$ with end types and de Bruijn indices with types"
     }
    ]
   },
   "E-Box.inst": {
-   "title": "Session instances",
-   "what": "The body is typed for every list $\\bar s$ of $k$ session types with $\\mathsf{sinsts}\\,N\\,\\bar s$.",
-   "why": "A box is polymorphic in its $k$ session variables, and each force may choose another instance. \\annp{At $N = \\infty$ only erased instances are admitted, because an end received at a finite credit cannot age by $\\infty$.}",
+   "title": "Typed for every instance",
+   "what": "The premise has one derivation of the body for every list $\\bar s$ with $\\mathsf{sinsts}\\,\\bar s$, one session type per session variable $\\bar\\alpha$ of the box.",
+   "why": "A force may pick any allowed $\\bar s$, and the derivation for that $\\bar s$ is the one that justifies the call. Checking every instance up front keeps E-Force a plain lookup.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$k = 0$ in every example.",
-   "rocq": "static/Contexts.v: sinsts",
-   "sig": "\\forall \\bar s.\\ |\\bar s| = k \\land \\mathsf{sinsts}\\,N\\,\\bar s \\Rightarrow \\ldots",
+   "example": "A box with no session variable has exactly one instance, the empty list, so the premise is one derivation.",
+   "rocq": "static/Typing.v: e_box",
+   "sig": "\\forall \\bar s.\\ \\mathsf{sinsts}\\,\\bar s \\Rightarrow \\ldots",
    "args": [
     {
      "name": "\\bar s",
-     "meaning": "a list of session types for the $k$ session variables $\\bar\\alpha$ of the box"
-    },
-    {
-     "name": "k",
-     "meaning": "the number of session variables"
+     "meaning": "a list of session types, one per session variable of the box"
     }
    ]
   },
   "E-Box.body": {
    "title": "Body of a box",
-   "what": "The body is typed with $\\Theta = \\varnothing$, the context shifted past $m$ fresh point variables $\\bar\\iota$, the hypothesis $C(\\bar\\iota)$, the box at index $0$, and the future $(\\varnothing, \\varphi)$.",
+   "what": "The body is typed with no end, the fresh point variables $\\bar\\iota$, the hypothesis $C(\\bar\\iota)$, the box as $f$, and the future $(\\varnothing, \\varphi)$.",
    "why": "Each force instantiates $\\bar\\iota$ and the session variables anew. The body may assume only $C(\\bar\\iota)$ and $u \\prec \\varphi$.",
    "breaks": "Nothing. It is a definition.",
    "example": "The body of the client loop.",
    "rocq": "static/Typing.v: e_box",
-   "sig": "\\varnothing ; \\Gamma{\\uparrow^m}, C(\\bar\\iota), u \\prec \\varphi ; \\Delta{\\uparrow^m}, f \\vdash^{(\\varnothing, \\varphi)}_{W\\annot{,N}} e : U[\\bar s]\\annot{^{a_U}} \\annot{\\triangleright c ; \\vartheta}",
+   "sig": "\\Gamma, C(\\bar\\iota), u \\prec \\varphi ; \\Delta, f \\vdash^{(\\varnothing, \\varphi)} e : U[\\bar s]\\ !\\ \\varepsilon",
    "args": [
     {
      "name": "\\bar\\iota",
-     "meaning": "the $m$ fresh point variables of the box"
+     "meaning": "the fresh point variables of the box"
     },
     {
      "name": "f",
@@ -5353,37 +5464,33 @@ window.MAP = {
     },
     {
      "name": "\\varphi",
-     "meaning": "the future variable of the caller"
+     "meaning": "the future variable of the body"
     }
    ]
   },
   "E-Box.open": {
    "title": "Opened constraint",
-   "what": "$\\Gamma{\\uparrow^m}$ extended by the instance $(C, \\bar\\iota)$.",
+   "what": "$\\Gamma$ extended by the instance $C(\\bar\\iota)$ at the fresh variables.",
    "why": "The body relies on $C$ at its own point variables, and every force checks $C$ at the chosen instance.",
    "breaks": "Without $C$ the client loop cannot order the points of two consecutive rounds.",
-   "example": "$\\Gamma{\\uparrow^3}$ extended by $C(\\iota, \\kappa, \\zeta)$.",
+   "example": "$\\Gamma, C(\\iota, \\kappa, \\zeta)$.",
    "rocq": "static/Contexts.v: hc_open",
-   "sig": "\\Gamma{\\uparrow^m}, (C, \\bar\\iota)",
+   "sig": "\\Gamma, C(\\bar\\iota)",
    "args": [
     {
-     "name": "\\Gamma{\\uparrow^m}",
-     "meaning": "$\\Gamma$ shifted past $m$ point variables"
-    },
-    {
-     "name": "(C, \\bar\\iota)",
+     "name": "C(\\bar\\iota)",
      "meaning": "the constraint at the fresh variables"
     }
    ]
   },
   "E-Box.self": {
    "title": "The self",
-   "what": "The body binds the box at index $0$, at its own type\\annp{ and credit} $\\infty$.",
-   "why": "This is recursion. \\annp{A box holds no end, so its credit bounds nothing and is $\\infty$.}",
+   "what": "The body binds the box as $f$ at index $0$, at its own type.",
+   "why": "This is recursion. \\annp{A box holds no end, so it has no credit.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$(\\mathsf{force}\\,f)\\,\\langle a, b\\rangle$ calls the self $f$.",
    "rocq": "static/Typing.v: e_box",
-   "sig": "f : \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u}\\annot{[c;\\vartheta]}\\,U\\annot{^{a_U}})^{\\infty}",
+   "sig": "f : \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u}[\\varepsilon]\\,U)",
    "args": [
     {
      "name": "f",
@@ -5393,27 +5500,23 @@ window.MAP = {
   },
   "E-Force.hold": {
    "title": "The instance meets $C$",
-   "what": "$|\\bar x| = m$ and $\\Gamma \\vdash C[\\bar x]$.",
+   "what": "$\\Gamma \\vdash C[\\bar x]$, for points $\\bar x$, one per variable of $\\bar\\iota$.",
    "why": "The body was typed under $C(\\bar\\iota)$. Running it at $\\bar x$ is correct only when $C[\\bar x]$ holds.",
    "breaks": "Nothing. It is a definition.",
    "example": "main forces $\\mathsf{between}$ at $(\\rho, \\rho\\cdot 1)$, where $\\Lambda_0$ gives $C$.",
    "rocq": "static/Typing.v: e_force, e_pack",
-   "sig": "|\\bar x| = m \\land \\Gamma \\vdash C[\\bar x]",
+   "sig": "\\Gamma \\vdash C[\\bar x]",
    "args": [
     {
      "name": "\\bar x",
-     "meaning": "the points the force instantiates $\\bar\\iota$ with"
-    },
-    {
-     "name": "m",
-     "meaning": "the number of point variables of the box"
+     "meaning": "the points the force or pack instantiates $\\bar\\iota$ with, one per variable"
     }
    ]
   },
   "E-Force.ub": {
    "title": "$u[\\bar x] \\prec F$",
-   "what": "The instantiated upper point $u[\\bar x]$ of the box satisfies $u[\\bar x] \\prec F$.",
-   "why": "The forced body waits only at points up to $u[\\bar x]$, and the caller acts afterwards at $F$.",
+   "what": "The highest point the body waits at, $u$ with the chosen points put in, lies below every point of the future $F$.",
+   "why": "After the force returns, the caller still acts at the points of $F$. If the body waited at a point above one of them, a partner could wait on the caller while the caller waits inside the body. This is the condition $u \\prec F$ of E-App for a box.",
    "breaks": "Nothing. It is a definition.",
    "example": "The self call of a loop at $\\zeta$ under $F = \\varnothing$.",
    "rocq": "static/Typing.v: e_force",
@@ -5448,65 +5551,45 @@ window.MAP = {
     }
    ]
   },
-  "E-Send.nobot": {
-   "title": "No $\\bot$ in the payload",
-   "what": "$\\mathsf{hbot}\\,T = \\mathsf{false}$, so the payload contains no existential with lower bound $\\bot$.",
-   "why": "While the sender waits at $x$ it holds the payload, so every end $o$ of the payload at point $y$ needs $x \\prec \\overline{y}$. These ends are bounded only through the heads of $T$, and an existential at $\\bot$ has ends at points that no head bounds, so the readiness of the send fails.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{send}\\,\\langle \\mathsf{new}_\\ell, o\\rangle$ with the unopened pair of $\\mathsf{new}_\\ell$ as payload is rejected.",
-   "rocq": "static/Typing.v: e_send",
-   "sig": "\\mathsf{hbot}\\,T = \\mathsf{false}",
-   "args": [
-    {
-     "name": "T",
-     "meaning": "the payload type"
-    },
-    {
-     "name": "\\mathsf{hbot}",
-     "meaning": "whether an existential at $\\bot$ is reachable through $\\otimes$ and $\\oplus$"
-    }
-   ]
-  },
   "E-Send.heads": {
-   "title": "$x$ below the payload heads",
-   "what": "$\\Gamma \\vdash x \\prec y$ for every $y \\in \\mathsf{heads}(T[x\\cdot i])$.",
-   "why": "The sender holds the payload while it waits at $x$ and does not offer the payload ends. Readiness asks $x$ below the partner point of each such end, and the heads bound those partner points from below.",
-   "breaks": "Nothing. It is a definition.",
+   "title": "$x \\prec T$, the action point below a held value",
+   "what": "$x \\prec T$ states $\\Gamma \\vdash x \\prec y$ for every $y \\in \\mathsf{heads}(T)$. If $T$ holds hidden ends, $\\bot \\in \\mathsf{heads}(T)$ and the check fails.",
+   "why": "A thread waiting at $x$ while it holds a value of $T$ does not offer the ends in $T$, so readiness asks $x$ below the dual point of each. Hidden ends have no known dual point, so a thread holding them may not wait.",
+   "breaks": "Without $\\bot$ in the heads, $\\mathsf{send}\\,\\langle p, o\\rangle$ with the unopened pair $p$ of a $\\mathsf{new}$ types, and the sender waits while holding ends at points nothing orders.",
    "example": "The growing ring needs $Y \\prec \\overline{Y\\cdot 0}$ for the payload $a$ of the send on $y$ at $Y$.",
-   "rocq": "static/Typing.v: e_send",
-   "sig": "\\forall y \\in \\mathsf{heads}(T[x \\cdot i]).\\ \\Gamma \\vdash x \\prec y",
+   "rocq": "static/Typing.v: e_send; types/Types.v: heads, hbot",
+   "sig": "x \\prec T \\iff \\forall y \\in \\mathsf{heads}(T).\\ \\Gamma \\vdash x \\prec y",
    "args": [
     {
      "name": "x",
      "meaning": "the point of the end the action is on"
     },
     {
-     "name": "T[x\\cdot i]",
-     "meaning": "the payload with its $i$-th point variable at the field $x \\cdot i$"
+     "name": "T",
+     "meaning": "a held value, in E-Send the payload $T[x\\cdot i]$"
     },
     {
      "name": "y",
-     "meaning": "a head of the payload"
+     "meaning": "a dual point of an end in $T$, or $\\bot$ for hidden ends, which no $x$ lies below"
     }
    ]
   },
   "E-Send.floor": {
-   "title": "Payload floor",
-   "what": "$(T[x\\cdot i], a_0 + a_p) - 1 \\leq T[x\\cdot i]\\annot{^{b}}$, so the payload aged by $1$ still meets the floor $b$ of the protocol.",
-   "why": "A handed end loses $1$ of its counter at the send. Requiring $b$ after the loss bounds how often one end may be handed on.",
-   "breaks": "Without the loss of $1$, an end at floor $b$ is handed on forever, and its partner waits forever.",
-   "example": "The growing ring sends $a'$ at credit $4$ against floor $2$.",
+   "title": "One transfer",
+   "what": "$T' - 1 \\leq T[x\\cdot i]$, the payload value aged by one transfer still has the credits the protocol guarantees.",
+   "why": "A transferred end loses $1$ of its counter at the send. Asking the promised credits after the loss bounds how often one end may be transferred.",
+   "breaks": "Without the loss of $1$, an end is transferred forever, and its partner waits forever.",
+   "example": "The growing ring sends $a'$ at credit $4$ against a promised $2$.",
    "rocq": "static/Typing.v: e_send",
-   "sig": "(T[x\\cdot i], a_0 + a_p) - 1 \\leq T[x\\cdot i]\\annot{^{b}}",
+   "sig": "T' - 1 \\leq T[x\\cdot i]",
    "args": [
     {
-     "name": "a_0 + a_p",
-     "meaning": "the credit of the payload inside the pair"
+     "name": "T'",
+     "meaning": "the type of the payload value"
     },
     {
-     "name": "b",
-     "meaning": "the payload credit the protocol asks",
-     "ann": true
+     "name": "T[x\\cdot i]",
+     "meaning": "the payload type of the protocol at the fields of $x$"
     }
    ]
   },
@@ -5588,7 +5671,7 @@ window.MAP = {
   },
   "E-Link.dual": {
    "title": "Linked ends dual",
-   "what": "$e$ returns $(S@x)\\annot{^{a_1}} \\otimes (\\overline{S}@\\overline{x})\\annot{^{a_2}}$, two ends at dual types and dual points.",
+   "what": "$e$ returns $S@x \\otimes \\overline{S}@\\overline{x}$, two ends at dual types and dual points.",
    "why": "After the link the partners of the two ends form one channel. They are a well-typed pair only when the linked ends are exactly dual at dual points.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{link}\\,\\langle c^{+}, d^{-}\\rangle$ with $c^{+} : S@x$ and $d^{-} : \\overline{S}@\\overline{x}$.",
@@ -5606,37 +5689,32 @@ window.MAP = {
    ]
   },
   "E-SpawnLam.age": {
-   "title": "Handed ends lose $1$",
-   "what": "$\\Theta' = \\Theta - 1$ and $\\Delta' = \\Delta - 1$.",
-   "why": "A hand-over passes each counter minus $1$. A spawn is no action, so this loss is the only bound on how often an end is handed on by spawns.",
-   "breaks": "Under truncation a counter $0$ is handed on as $0$ again, and an end travels from thread to thread forever.",
-   "example": "In the cycle example the thunk receives $d'$ with credit $1$ less.",
+   "title": "Transferred ends lose $1$",
+   "what": "\\annp{$\\Delta - 1$ lowers the credit of each transferred entry by one.}",
+   "why": "A transfer passes each counter minus $1$. A spawn is no action, so this loss is the only bound on how often an end is transferred by spawns.",
+   "breaks": "Under truncation a counter $0$ is transferred as $0$ again, and an end is passed from thread to thread forever.",
+   "example": "In the cycle example the thunk receives $d'$\\annp{ with credit} $1$ less.",
    "rocq": "static/Typing.v: e_spawn_lam",
-   "sig": "\\Theta' = \\Theta - 1 \\land \\Delta' = \\Delta - 1",
+   "sig": "\\Delta - 1",
    "args": [
     {
-     "name": "\\Theta, \\Delta",
-     "meaning": "the context handed to the child"
+     "name": "\\Delta",
+     "meaning": "the context transferred to the child"
     }
    ]
   },
   "E-SpawnLam.body": {
    "title": "Body of a spawned $\\lambda$",
-   "what": "$e$ is typed under $\\Theta'$, $\\Delta'$ extended by the argument $\\ast\\annot{^{a_1}}$, and the empty future.",
+   "what": "$e$ is typed under the transferred $\\Delta$ extended by the unit argument, and the empty future.",
    "why": "A spawned $\\lambda$ needs no lower point, because no thread holds it as a closure. \\annp{Each spawned body therefore gets its own floor.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{spawn}\\,(\\lambda u.\\,\\mathsf{let}\\ \\ast = u\\ \\mathsf{in}\\ \\mathsf{close}\\,d')$.",
    "rocq": "static/Typing.v: e_spawn_lam",
-   "sig": "\\Theta' ; \\Gamma ; \\ast\\annot{^{a_1}}, \\Delta' \\vdash^{(\\varnothing, \\cdot)}_{W\\annot{,N}} e : \\ast\\annot{^{a_U}} \\annot{\\triangleright c' ; \\vartheta'}",
+   "sig": "\\Gamma ; \\Delta\\annot{ - 1}, \\ast \\vdash^{(\\varnothing, \\cdot)} e : \\ast\\annot{\\ !\\ (c', \\vartheta')}",
    "args": [
     {
-     "name": "\\ast\\annot{^{a_1}}",
+     "name": "\\ast",
      "meaning": "the unit argument of the thunk"
-    },
-    {
-     "name": "c', \\vartheta'",
-     "meaning": "cost and ticket need of the child",
-     "ann": true
     }
    ]
   },
@@ -5644,7 +5722,7 @@ window.MAP = {
    "title": "Empty future of the child",
    "what": "The child body runs under $(\\varnothing, \\cdot)$, a future with no point, no variable and no $\\bot$.",
    "why": "The child is a new thread with no context, so no point of any context lies in its future.",
-   "breaks": "Typing the child under every future above an upper point fails for a body that creates a channel at a fresh root and waits on it.",
+   "breaks": "Typing the child under every future above an upper point fails for a body that creates a channel at a fresh root and waits on that channel.",
    "example": "P-Term types every thread under $(\\varnothing, \\cdot)$.",
    "rocq": "static/Typing.v: e_spawn_lam",
    "sig": "F = (\\varnothing, \\cdot)",
@@ -5658,7 +5736,7 @@ window.MAP = {
   "E-Spawn.credit": {
    "title": "Closure credit $a \\geq 1$",
    "what": "A spawned closure value has credit $a \\geq 1$.",
-   "why": "Spawning hands over the captured ends with their counters minus $1$, and $a \\geq 1$ pays for that loss.",
+   "why": "Spawning passes on the captured ends with their counters minus $1$, and $a \\geq 1$ makes up for that loss.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{spawn}\\,f$ with $f$ at credit $1$.",
    "rocq": "static/Typing.v: e_spawn",
@@ -5673,8 +5751,8 @@ window.MAP = {
   },
   "E-New.bot": {
    "title": "Lower bound $\\bot$",
-   "what": "The pair sits at a root $\\rho$ that no point of the context is related to.",
-   "why": "$\\exists^{\\bot}$ records that the ends of the value sit at points without a known lower bound, and $\\bot$ propagates into every future that holds the value.",
+   "what": "The pair is at a root $\\rho$ that no point of the context is related to.",
+   "why": "$\\exists^{\\bot}$ records that the ends of the value are at points without a known lower bound, and $\\bot$ propagates into every future that holds the value.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{mk}_0$ returns $\\exists^{\\bot}\\iota.\\,C.\\,({?}\\ast.\\mathsf{Close})@\\overline{\\iota}$.",
    "rocq": "static/Typing.v: e_new",
@@ -5742,7 +5820,7 @@ window.MAP = {
   "E-New.dual": {
    "title": "Dual pair at $N$",
    "what": "$c^{+}$ has type $S@\\pi$ and $c^{-}$ type $\\overline{S}@\\overline{\\pi}$, both\\annp{ at credit $N$}.",
-   "why": "The fuel layer starts both counters of a new channel at $N$\\annp{, and the credits} are lower bounds on them.",
+   "why": "The fuel layer starts both counters of a new channel at $N$\\annp{, and the credits} are lower bounds on these counters.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(S_a@\\pi)\\annot{^{N}} \\otimes (S_b@\\overline{\\pi})\\annot{^{N}}$ with $S_b = \\overline{S_a}$.",
    "rocq": "static/Typing.v: e_new",
@@ -5754,26 +5832,26 @@ window.MAP = {
     },
     {
      "name": "N",
-     "meaning": "\\annp{the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$}"
+     "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     }
    ]
   },
   "E-Sub.cost": {
-   "title": "Weakening costs",
-   "what": "$c \\leq c'$ and $\\vartheta \\leq \\vartheta'$.",
-   "why": "The cost and the ticket need are upper bounds, so a larger bound is also correct.",
+   "title": "Effects may rise",
+   "what": "$\\varepsilon \\leq \\varepsilon'$, so $c \\leq c'$ in $\\mathbb{N} \\cup \\{\\infty\\}$ and $\\vartheta \\leq \\vartheta'$ pointwise.",
+   "why": "The cost and the ticket need are upper bounds, so a larger bound is also correct. The branches of a case and closures passed to one parameter have different effects, and the larger bound covers both.",
    "breaks": "Nothing. It is a definition.",
    "example": "Every cost may rise to $\\infty$.",
-   "rocq": "static/Typing.v: e_sub",
-   "sig": "c \\leq c' \\land \\vartheta \\leq \\vartheta'",
+   "rocq": "static/Typing.v: e_sub, types/Costs.v: tle",
+   "sig": "\\varepsilon \\leq \\varepsilon' \\iff c \\leq c' \\land \\vartheta \\leq \\vartheta'",
    "args": [
     {
-     "name": "c, \\vartheta",
-     "meaning": "the cost and ticket need derived"
+     "name": "\\varepsilon = (c, \\vartheta)",
+     "meaning": "the effect derived"
     },
     {
-     "name": "c', \\vartheta'",
-     "meaning": "the weaker ones concluded"
+     "name": "\\varepsilon' = (c', \\vartheta')",
+     "meaning": "the weaker one concluded"
     }
    ]
   },
@@ -5798,12 +5876,12 @@ window.MAP = {
   },
   "E-Pack.lb": {
    "title": "Lower bound of a pack",
-   "what": "$l = \\bot$, or $l \\preccurlyeq \\mathsf{heads}(T[\\bar x])$ and $T[\\bar x]$ carries no $\\bot$.",
-   "why": "After packing, a holder sees the ends only through $l$, so $l$ must bound the heads of the packed value from below. The value relation at an existential states exactly this bound.",
+   "what": "$l = \\bot$, the ends become hidden, or $l \\preccurlyeq T[\\bar x]$, every head of the packed value lies at or above $l$, where $l = \\cdot$ asks that $T[\\bar x]$ holds no end.",
+   "why": "After packing, a holding thread refers to the ends only through $l$, so $l$ must bound the heads of the packed value from below. The value relation at an existential states exactly this bound.",
    "breaks": "Nothing. It is a definition.",
    "example": "Packing a fresh pair at $\\bot$.",
    "rocq": "static/Contexts.v: lbx_below_h",
-   "sig": "l = \\bot \\lor (l \\preccurlyeq \\mathsf{heads}(T[\\bar x]) \\land \\neg\\mathsf{hbot}\\,T[\\bar x])",
+   "sig": "l = \\bot \\lor l \\preccurlyeq T[\\bar x]",
    "args": [
     {
      "name": "l",
@@ -5817,40 +5895,35 @@ window.MAP = {
   },
   "E-Open.entry": {
    "title": "Opened entry",
-   "what": "$\\Delta(i) = (\\exists^{l}\\bar\\iota.\\,C.\\,T\\annot{^{a_T}})\\annot{^{a}}$ and $T$ is not unlimited.",
+   "what": "$\\Delta(i) = \\exists^{l}\\bar\\iota.\\,C.\\,T$ and $T$ is not unlimited.",
    "why": "Opening replaces entry $i$ in place. Variable renaming, used for contraction, maps distinct linear entries to distinct indices, and this needs the opened entry to be linear.",
    "breaks": "Nothing. It is a definition.",
-   "example": "Opening the result of $\\mathsf{new}_\\ell$.",
+   "example": "Opening the result of $\\mathsf{new}$.",
    "rocq": "static/Typing.v: e_open",
-   "sig": "\\Delta(i) = (\\exists^{l}\\bar\\iota.\\,C.\\,T\\annot{^{a_T}})\\annot{^{a}} \\land \\neg\\mathsf{unlimited}\\,T",
+   "sig": "\\Delta(i) = \\exists^{l}\\bar\\iota.\\,C.\\,T \\land \\neg\\mathsf{unlimited}\\,T",
    "args": [
     {
      "name": "i",
      "meaning": "the de Bruijn index of the opened variable"
-    },
-    {
-     "name": "a, a_T",
-     "meaning": "the outer and inner credits",
-     "ann": true
     }
    ]
   },
   "E-Open.body": {
    "title": "Body after opening",
-   "what": "$\\Theta$, $\\Gamma$, $\\Delta$, $F$ and $U$ shift past $m$ fresh point variables, $C$ joins $\\Gamma$, and entry $i$ becomes $T\\annot{^{a + a_T}}$.",
-   "why": "The fresh variables stand for the unknown witness, and $C$ is all the scope knows about it. \\annp{The credit of the existential moves into its body.}",
+   "what": "$e$ is typed with $C(\\bar\\iota)$ added to $\\Gamma$ and entry $i$ replaced by $T$, under the same future and result.",
+   "why": "The fresh variables stand for the unknown witness, and $C$ is the only hypothesis about the witness in the scope. Freshness keeps them out of $F$ and $U$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{let}\\ p = (\\mathsf{force}\\,\\mathsf{mk}_0)\\,\\ast\\ \\mathsf{in}\\ \\ldots$ opens at $\\iota$.",
    "rocq": "static/Typing.v: e_open",
-   "sig": "\\Theta{\\uparrow} ; \\Gamma{\\uparrow}, C ; \\Delta{\\uparrow}[i \\mapsto T\\annot{^{a + a_T}}] \\vdash^{F\\uparrow}_{W\\annot{,N}} e : U{\\uparrow}",
+   "sig": "\\Gamma, C(\\bar\\iota) ; \\Delta[i \\mapsto T] \\vdash^{F} e : U\\ !\\ \\varepsilon",
    "args": [
     {
-     "name": "{\\uparrow}",
-     "meaning": "the shift past the $m$ fresh point variables of the existential"
+     "name": "\\bar\\iota",
+     "meaning": "the fresh point variables of the existential"
     },
     {
      "name": "U",
-     "meaning": "the result type, which mentions no opened variable"
+     "meaning": "the result type, which mentions no $\\bar\\iota$"
     }
    ]
   },
@@ -5928,12 +6001,12 @@ window.MAP = {
   },
   "P-Term.typed": {
    "title": "Thread typing",
-   "what": "$t$ is typed under $\\Sigma\\annot{^{N}} \\cup \\Theta_B$, empty $\\Gamma$ and $\\Delta$, and the empty future, at $W$ and $N$.",
+   "what": "$t$ is typed under no facts, the interface ends and $\\Theta_B$, and the empty future.",
    "why": "The process judgment has static premises only. Its semantic content comes from the fundamental theorems.",
    "breaks": "Nothing. It is a definition.",
-   "example": "The client and server main at $N = \\infty$.",
+   "example": "The client and server main.",
    "rocq": "static/Typing.v: p_term",
-   "sig": "\\Sigma\\annot{^{N}} \\cup \\Theta_B ; \\varnothing ; \\varnothing \\vdash^{(\\varnothing,\\cdot)}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}",
+   "sig": "\\varnothing ; \\Sigma\\annot{^{N}}, \\Theta_B \\vdash^{(\\varnothing,\\cdot)}_{W\\annot{,N}} t : T\\annot{\\ !\\ (c, \\vartheta)}",
    "args": [
     {
      "name": "t",
@@ -5961,21 +6034,17 @@ window.MAP = {
    ]
   },
   "lf.meets": {
-   "title": "$N \\in \\mathbb{N} \\Rightarrow \\exists\\, tk.\\ \\mathsf{meets}\\,\\vartheta\\,0\\,tk$",
-   "what": "$N \\in \\mathbb{N} \\Rightarrow \\exists\\, tk.\\ \\vartheta(0) \\leq tk$, trivial at $N = \\infty$.",
+   "title": "$N \\in \\mathbb{N} \\Rightarrow \\vartheta(0) \\in \\mathbb{N}$",
+   "what": "At a finite counter bound the ticket need of the thread is finite, trivial at $N = \\infty$.",
    "why": "Lock freedom needs a finite number of link tickets per thread, and typing at a finite $N$ does not give one, because a ticket need may have offset $\\infty$.",
-   "breaks": "A loop that links once per round has no finite ticket count and is rejected at finite $N$.",
-   "example": "$\\mathsf{meets}\\,\\vartheta\\,0\\,0$ in the examples without links.",
+   "breaks": "A loop that links once per round has no finite ticket need and is rejected at finite $N$.",
+   "example": "$\\vartheta = \\hat 1$, need $0$, in the examples without links.",
    "rocq": "static/Typing.v: p_term",
-   "sig": "N \\in \\mathbb{N} \\Rightarrow \\exists\\, tk.\\ \\mathsf{meets}\\,\\vartheta\\,0\\,tk",
+   "sig": "N \\in \\mathbb{N} \\Rightarrow \\vartheta(0) \\in \\mathbb{N}",
    "args": [
     {
      "name": "N",
-     "meaning": "\\annp{the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$}"
-    },
-    {
-     "name": "tk",
-     "meaning": "a ticket count of the thread"
+     "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "\\vartheta",
@@ -5985,7 +6054,7 @@ window.MAP = {
   },
   "lf.N": {
    "title": "$N \\in \\mathbb{N}$",
-   "what": "The refill of lock-free typing is a natural number.",
+   "what": "The counter bound of lock-free typing is a natural number.",
    "why": "Lock freedom ranks waiting threads by counters as natural numbers, and at $N = \\infty$ every counter is $\\infty$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$N = 4$ for the growing ring.",
@@ -5994,14 +6063,14 @@ window.MAP = {
    "args": [
     {
      "name": "N",
-     "meaning": "\\annp{the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$}"
+     "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     }
    ]
   },
   "P-Connect.left": {
    "title": "Left component",
    "what": "$(C_1, E_1)$ is typed over $\\Sigma_1 \\cup \\Sigma_C$ in $W_1$ at result $T$.",
-   "why": "The main thread lies on the left, so the left side carries the result $T$ and the right side returns $\\ast$.",
+   "why": "The main thread lies on the left, so the left side has the result $T$ and the right side returns $\\ast$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{close}\\,c^{+}$ at $T = \\ast$.",
    "rocq": "static/Typing.v: p_connect",
@@ -6054,7 +6123,7 @@ window.MAP = {
   "P-Connect.disj": {
    "title": "Disjoint channels",
    "what": "$\\mathrm{dom}\\,\\Sigma_1 \\cap \\mathrm{dom}\\,\\Sigma_C = \\varnothing$, $\\mathrm{dom}\\,\\Sigma_2 \\cap \\mathrm{dom}\\,\\overline{\\Sigma_C} = \\varnothing$, the channel sets of $\\Sigma_1$, $\\Sigma_2$, $\\Sigma_C$ are pairwise disjoint, $C_1 \\cap C_2 = \\varnothing$, and each $C_i$ is disjoint from the channels of $\\Sigma_1$, $\\Sigma_2$, $\\Sigma_C$.",
-   "why": "Every channel then lives in one place. The cut $\\Sigma_C$ is the only channel set both sides use, so composition merges no two channels.",
+   "why": "Every channel then belongs to one side. The cut $\\Sigma_C$ is the only channel set both sides use, so composition merges no two channels.",
    "breaks": "Nothing. It is a definition.",
    "example": "Two closes cut at $c$ with $\\Sigma_1 = \\Sigma_2 = \\varnothing$ and $C_1 = C_2 = \\varnothing$.",
    "rocq": "static/Typing.v: p_connect",
@@ -6082,17 +6151,36 @@ window.MAP = {
    ]
   },
   "P-Connect.strict": {
-   "title": "$\\mathsf{strict}(W_1 \\sqcup W_2)$",
-   "what": "The joined world is strict, $\\prec_{W_1 \\sqcup W_2}$ is irreflexive.",
-   "why": "A cycle in the join lets each component be ready round the cycle while no thread can step.",
-   "breaks": "With a cyclic join two threads each wait on the other although each side alone is ready.",
-   "example": "The join of two worlds without facts.",
-   "rocq": "static/Typing.v: p_connect",
-   "sig": "\\mathsf{strict}(W_1 \\sqcup W_2)",
+   "title": "Only the shared part is compared",
+   "what": "$\\mathsf{strict}(W_1|_S \\sqcup W_2|_S)$ for $S = A_{W_1} \\cap A_{W_2}$, the roots of both worlds. $W|_S$ keeps the facts $x \\prec_W y$ derivable in $W$ whose roots lie in $S$.",
+   "why": "Each side is strict by its own derivation, so the only new cycles a join can create run through shared roots. Checking the orders the two sides induce on those roots is enough, and the join is then strict.",
+   "breaks": "If $W_1$ derives $\\rho \\prec \\rho\\cdot 0$ and $W_2$ derives $\\rho\\cdot 0 \\prec \\rho$, the join has a cycle and two threads each wait on the other although each side alone is ready.",
+   "example": "Two worlds without a common root need no check.",
+   "rocq": "static/Typing.v: p_connect, p_join_iff_connect",
+   "sig": "\\mathsf{strict}(W_1|_S \\sqcup W_2|_S),\\ S = A_{W_1} \\cap A_{W_2}",
    "args": [
     {
-     "name": "W_1 \\sqcup W_2",
-     "meaning": "the join of the two worlds"
+     "name": "A_{W}",
+     "meaning": "the roots of $W$"
+    },
+    {
+     "name": "W|_S",
+     "meaning": "the facts of $\\prec_W$ between points with roots in $S$"
+    }
+   ]
+  },
+  "P-Term.strict": {
+   "title": "$\\mathsf{strict}\\,W$",
+   "what": "The world of a single thread is well formed and acyclic.",
+   "why": "Every process derivation then is over a strict world. P-Connect checks only the shared part, and the joined world is strict again.",
+   "breaks": "Without it P-Connect would have to check the whole join.",
+   "example": "The empty world.",
+   "rocq": "static/Typing.v: p_term",
+   "sig": "\\mathsf{strict}\\,W",
+   "args": [
+    {
+     "name": "W",
+     "meaning": "the world of the thread"
     }
    ]
   },
@@ -6101,7 +6189,7 @@ window.MAP = {
    "what": "The composite is typed in the join of the two worlds.",
    "why": "Each component keeps its own facts, and the join contains the facts of both.",
    "breaks": "Nothing. It is a definition.",
-   "example": "Two closes land in the join of their two worlds.",
+   "example": "Two closes are typed in the join of their two worlds.",
    "rocq": "static/Typing.v: p_connect",
    "sig": "W_1 \\sqcup W_2",
    "args": [
@@ -6111,30 +6199,11 @@ window.MAP = {
     }
    ]
   },
-  "P-Join.lemma": {
-   "title": "Side conditions of P-Join",
-   "what": "$\\mathsf{strict}\\,W_1$, $\\mathsf{strict}\\,W_2$ and $\\mathsf{strict}(W_1|_S \\sqcup W_2|_S)$ with $S$ the shared constants.",
-   "why": "For well-formed worlds these three conditions are equivalent to $\\mathsf{strict}(W_1 \\sqcup W_2)$. Hence P-Join is derivable from P-Connect.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "Two worlds with no shared constant.",
-   "rocq": "static/Typing.v: p_join, p_join_iff_connect",
-   "sig": "\\mathsf{strict}\\,W_1 \\land \\mathsf{strict}\\,W_2 \\land \\mathsf{strict}(W_1|_S \\sqcup W_2|_S)",
-   "args": [
-    {
-     "name": "S",
-     "meaning": "the constants shared by $W_1$ and $W_2$"
-    },
-    {
-     "name": "W|_S",
-     "meaning": "the restriction of $W$ to facts over $S$"
-    }
-   ]
-  },
   "guard.judg": {
    "title": "The guard $\\varnothing \\vdash\\!\\triangleright t$",
    "what": "$\\Lambda \\vdash\\!\\triangleright t$ holds iff the self of every box in $t$ is used only after a session action of the body.",
-   "why": "$\\kappa_L$ makes $\\beta$ free, so without the guard $!(f = \\mathsf{force}\\,f)$ types and diverges on free steps. Deadlock-free typing does not use it.",
-   "breaks": "$!(f = \\mathsf{force}\\,f)$ types and is in no live relation.",
+   "why": "$\\kappa_L$ makes $\\beta$ free, so without the guard $!(f = \\mathsf{force}\\,f)$ types and diverges on free steps. Deadlock-free typing does not use the guard.",
+   "breaks": "$!(f = \\mathsf{force}\\,f)$ types and is in no relation at $kappa_L$.",
    "example": "$!(f = \\lambda x.\\,\\mathsf{let}\\ \\langle v, x'\\rangle = \\mathsf{recv}\\,x\\ \\mathsf{in}\\ (\\mathsf{force}\\,f)\\,x')$ is guarded.",
    "rocq": "static/Guard.v: lguard",
    "sig": "\\Lambda \\vdash\\!\\triangleright t \\subseteq \\mathsf{bool}^{*} \\times \\mathsf{Expr}",
@@ -6345,7 +6414,7 @@ window.MAP = {
   },
   "tp.pjudg": {
    "title": "$\\Sigma \\vdash\\annot{\\annot{^{N}}}_{W} p : T$",
-   "what": "\\annp{The process $p$ is typed over $\\Sigma$ in $W$ at refill $N$ with result $T$, derived by P-Term and P-Connect.}",
+   "what": "The process $p$ is typed over $\\Sigma$ in $W$ at counter bound $N$ with result $T$, derived by P-Term and P-Connect.",
    "why": "One judgment serves deadlock freedom at $N = \\infty$ and lock freedom at finite $N$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\varnothing \\vdash\\annot{^{\\infty}}_{W} (\\varnothing, \\{t\\}) : \\ast$.",
@@ -6362,7 +6431,7 @@ window.MAP = {
     },
     {
      "name": "N",
-     "meaning": "\\annp{the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$}"
+     "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "p",
@@ -6393,7 +6462,7 @@ window.MAP = {
     },
     {
      "name": "N",
-     "meaning": "\\annp{the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$}"
+     "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "p",
@@ -6454,26 +6523,22 @@ window.MAP = {
     },
     {
      "name": "N",
-     "meaning": "\\annp{the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$}"
+     "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     }
    ]
   },
-  "tp.shift": {
-   "title": "Shift ${\\uparrow^m}$",
-   "what": "Shifts every point variable of a context, type or future past $m$ fresh point variables.",
-   "why": "The fresh variables get indices $0, \\ldots, m-1$, so existing variables move up by $m$.",
+  "E-Box.fresh": {
+   "title": "$\\bar\\iota$ fresh",
+   "what": "The bound point variables $\\bar\\iota$ occur nowhere in $\\Gamma$, $\\Delta$, $F$ or the result type.",
+   "why": "They stand for points chosen later, at each force or for the unknown witness of an existential, so nothing in scope may mention these variables. The Rocq uses de Bruijn indices and shifts the context instead.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\iota_0{\\uparrow^1} = \\iota_1$.",
-   "rocq": "types/Points.v: pshift",
-   "sig": "{\\uparrow^m} : X \\to X",
+   "example": "Opening $\\exists^{\\bot}\\iota.\\,C.\\,T$ under a context that mentions $\\rho$ picks $\\iota \\neq \\rho$.",
+   "rocq": "types/Points.v: pshift; static/Typing.v: e_box, e_open",
+   "sig": "\\bar\\iota \\cap \\mathsf{pvars}(\\Gamma, \\Delta, F, U) = \\varnothing",
    "args": [
     {
-     "name": "m",
-     "meaning": "the number of fresh point variables"
-    },
-    {
-     "name": "X",
-     "meaning": "a context, type or future"
+     "name": "\\bar\\iota",
+     "meaning": "the bound point variables"
     }
    ]
   },
@@ -6516,17 +6581,17 @@ window.MAP = {
    ]
   },
   "tp.sinsts": {
-   "title": "$\\mathsf{sinsts}\\,N\\,\\bar s$",
-   "what": "Every $s \\in \\bar s$ is hereditarily contractive, and at $N = \\infty$ every $s$ equals its erasure.",
-   "why": "Contractive instances keep unfolding well defined. At $N = \\infty$ the body is typed only at erased instances.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{sinsts}\\,N\\,[\\mathsf{Close}]$.",
-   "rocq": "static/Contexts.v: sinsts",
+   "title": "Allowed session instances $\\mathsf{sinsts}\\,\\bar s$",
+   "what": "The session types a session variable of a box may stand for. Every recursion $\\mu\\alpha.S$ inside each $s \\in \\bar s$, also inside payloads, passes an action before $\\alpha$ recurs. \\annp{At $N = \\infty$ each $s$ also has no finite credit.}",
+   "why": "The rules read the first action of a protocol after unfolding. An instance such as $\\mu\\alpha.\\alpha$ has no first action, so substituting it would give an end no rule can type. \\annp{At $N = \\infty$ every annotation in a derivation is $\\infty$, and an instance with a finite credit inside its payloads would bring one in.}",
+   "breaks": "Without the first condition a box with a variable $\\alpha$ could be forced at $\\mu\\alpha.\\alpha$, and an end of type $\\mu\\alpha.\\alpha$ would be stuck with no action to perform.",
+   "example": "$\\mu\\alpha.\\,{!}\\ast.\\alpha$ and $\\mathsf{Close}$ are allowed, $\\mu\\alpha.\\alpha$ and $\\mu\\alpha.\\,\\mathsf{Skip}.\\alpha$ are not.",
+   "rocq": "static/Contexts.v: sinsts; types/Types.v: hcontractive",
    "sig": "\\mathsf{sinsts} : \\mathsf{Fuel} \\to \\mathsf{Sty}^{*} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "N",
-     "meaning": "\\annp{the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$}"
+     "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "\\bar s",
@@ -6535,97 +6600,56 @@ window.MAP = {
    ]
   },
   "tp.max": {
-   "title": "$\\max(\\vartheta_1, \\vartheta_2)$",
-   "what": "The pointwise maximum of two ticket needs.",
-   "why": "Only one branch of a case runs, so its ticket need is bounded by the larger of the two.",
+   "title": "$\\max(\\varepsilon_1, \\varepsilon_2)$",
+   "what": "The larger of two effects, $(\\max(c_1, c_2), \\max(\\vartheta_1, \\vartheta_2))$ with the ticket needs compared pointwise.",
+   "why": "Only one branch of a case runs, so its effect is bounded by the larger of the two.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\max(\\hat 1, \\mathsf{tlink}\\,\\hat 1) = \\mathsf{tlink}\\,\\hat 1$.",
+   "example": "$\\max(1, (0, \\mathsf{tlink}\\,\\hat 1)) = (1, \\mathsf{tlink}\\,\\hat 1)$.",
    "rocq": "types/Costs.v: fmax, tmax",
-   "sig": "\\max : \\mathsf{Tix} \\times \\mathsf{Tix} \\to \\mathsf{Tix}",
+   "sig": "\\max : \\mathsf{Eff} \\times \\mathsf{Eff} \\to \\mathsf{Eff}",
    "args": [
     {
-     "name": "\\vartheta_1, \\vartheta_2",
-     "meaning": "the ticket needs of the two branches"
+     "name": "\\varepsilon_1, \\varepsilon_2",
+     "meaning": "the effects of the two branches"
     }
    ]
   },
   "tp.vdash": {
    "title": "The term turnstile $\\vdash$",
-   "what": "The least relation closed under E-Unit to E-Open, with erased form $\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W} t : T$, defined as $\\Theta_{df} ; \\Gamma ; \\Delta_{df} \\vdash^{F}_{W\\annot{,\\infty}} t : T_{df}\\annot{^{a_{df}}} \\annot{\\triangleright \\infty ; (\\infty, \\infty)}$ with the annotations of $N = \\infty$. D-Unit to D-Open are lemmas.",
-   "why": "\\annp{One relation carries the session type, the points, the credit, the cost and the ticket need of $e$, so every mode reads its premises off one derivation.}",
+   "what": "The least relation closed under E-Unit to E-Open. The deadlock-free judgment $\\Gamma ; \\Delta \\vdash^{F} t : T$ is the instance $N = \\infty$ with every annotation $\\infty$.",
+   "why": "One relation has the session type, the points and, in the lock-free mode, the\\annp{ credits and }the effect of $e$, so every mode reads its premises off one derivation.",
    "breaks": "Nothing. It is a definition.",
-   "example": "\\annp{$\\varnothing ; \\varnothing ; \\varnothing \\vdash^{(\\varnothing,\\cdot)}_{W\\annot{,N}} \\ast : \\ast^{\\infty} \\annot{\\triangleright 0 ; \\hat 1}$.}",
+   "example": "$\\varnothing ; \\varnothing \\vdash^{(\\varnothing, \\cdot)} \\ast : \\ast$.",
    "rocq": "static/Typing.v: typed, dftyped",
-   "sig": "\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}",
+   "sig": "\\Gamma ; \\Delta \\parallel H \\vdash^{F} e : T\\ !\\ \\varepsilon",
    "args": [
-    {
-     "name": "\\Theta",
-     "meaning": "the finite map from the ends held by the term to entries $S@x\\annot{\\annot{^{a}}}$"
-    },
     {
      "name": "\\Gamma",
      "meaning": "the hypotheses, constraint instances $(C, \\bar x)$ and future variables $\\varphi \\mapsto u$"
     },
     {
      "name": "\\Delta",
-     "meaning": "\\annp{the de Bruijn list of optional credited types of the variables}"
+     "meaning": "the linear context, ends $o$ with end types and de Bruijn indices with types"
+    },
+    {
+     "name": "H",
+     "meaning": "the entries the thread holds while $e$ runs, a context or a type"
     },
     {
      "name": "F",
      "meaning": "the future, the points at which the context acts after the term"
     },
     {
-     "name": "W",
-     "meaning": "the world whose order $\\prec_W$ the rule reads"
-    },
-    {
-     "name": "N",
-     "meaning": "\\annp{the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$}"
-    },
-    {
      "name": "e",
      "meaning": "the term"
     },
     {
-     "name": "T\\annot{\\annot{^{a}}}",
-     "meaning": "the result type $T$\\annp{ with credit} $a \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "name": "T",
+     "meaning": "the result type"
     },
     {
-     "name": "c",
-     "meaning": "the cost, an upper bound in $\\mathbb{N} \\cup \\{\\infty\\}$ on the session actions of $e$"
-    },
-    {
-     "name": "\\vartheta",
-     "meaning": "the ticket need of $e$",
-     "ann": true
-    }
-   ]
-  },
-  "tp.tri": {
-   "title": "Cost and ticket need $\\annot{\\triangleright c ; \\vartheta}$",
-   "what": "In $e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}$ the part after $\\triangleright$ states that $e$ performs at most $c$ channel actions before it returns and needs tickets as described by $\\vartheta$.",
-   "why": "The fuel layer reads $c$ to age the frame and $\\vartheta$ to bound the tickets of links.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{send}\\,e : (S@x^{+})\\annot{^{N}} \\triangleright c_0 + 1 ; \\vartheta_0$.",
-   "rocq": "static/Typing.v: typed",
-   "sig": "e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}",
-   "args": [
-    {
-     "name": "e",
-     "meaning": "the term"
-    },
-    {
-     "name": "T\\annot{\\annot{^{a}}}",
-     "meaning": "the result type $T$\\annp{ with credit} $a \\in \\mathbb{N} \\cup \\{\\infty\\}$"
-    },
-    {
-     "name": "c",
-     "meaning": "the cost, an upper bound in $\\mathbb{N} \\cup \\{\\infty\\}$ on the session actions of $e$"
-    },
-    {
-     "name": "\\vartheta",
-     "meaning": "the ticket need of $e$",
-     "ann": true
+     "name": "\\varepsilon",
+     "meaning": "\\annp{the effect of $e$, its cost and ticket need, lock-free mode only}"
     }
    ]
   },
@@ -6647,7 +6671,7 @@ window.MAP = {
   "ct.table": {
    "title": "Cost table $\\kappa$",
    "what": "A sextuple $\\kappa \\in \\mathbb{N}^6$ of costs, one per kind of step.",
-   "why": "One relation parametric in $\\kappa$ yields both the deadlock-freedom and the liveness relation, so every compatibility proof is done once for all $\\kappa$.",
+   "why": "One relation parametric in $\\kappa$ yields both the deadlock-freedom and the liveness relation, so each compatibility proof is done once for all $\\kappa$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\kappa_{DF} = (1,1,1,0,0,1)$.",
    "rocq": "relation/CostTable.v: ctable",
@@ -6692,7 +6716,7 @@ window.MAP = {
   "ct.give-take": {
    "title": "$\\kappa_{give} \\leq \\kappa_{take}$",
    "what": "A give costs at most a take.",
-   "why": "A synchronization costs $\\kappa_{give} + \\kappa_{take}$, and composing two components pays a synchronization of two gives, which needs $2\\kappa_{give} \\leq \\kappa_{give} + \\kappa_{take}$.",
+   "why": "A synchronization costs $\\kappa_{give} + \\kappa_{take}$, and composing two components counts a synchronization as two gives, which needs $2\\kappa_{give} \\leq \\kappa_{give} + \\kappa_{take}$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\kappa_{DF}$ has $0 \\leq 1$ and $\\kappa_L$ has $1 \\leq 1$.",
    "rocq": "relation/CostTable.v: c_give_take",
@@ -6705,21 +6729,21 @@ window.MAP = {
    ]
   },
   "ct.DF": {
-   "title": "$\\kappa_{DF}$",
-   "what": "The table $(1,1,1,0,0,1)$.",
-   "why": "Every step of cost $0$ under $\\kappa_{DF}$ is a give or a link, which shrinks the term, so the least fixpoint of a level is a recursion on the term.",
+   "title": "$\\kappa_{DF}$, the step index",
+   "what": "The table $(1,1,1,0,0,1)$. It is the ordinary step index of a logical relation. Almost every step costs one level, and only a send, select, close or link costs none.",
+   "why": "A step index lets $V$ and $E$ refer to themselves at lower levels, which recursion and received closures need. Each of the four free steps shrinks the term, so the successor is checked at the same level by recursion on the term. A send therefore passes its payload on at the level of the continuation.",
    "breaks": "Nothing. It is a definition.",
-   "example": "Under $\\kappa_{DF}$ a send costs $0$ and a receive $1$.",
+   "example": "$\\beta$ and $\\mathsf{recv}$ cost one level, $\\mathsf{send}$ costs none.",
    "rocq": "relation/CostTable.v: κ_DF",
    "sig": "\\kappa_{DF} = (1,1,1,0,0,1) \\in \\mathsf{CTable}",
    "args": []
   },
   "ct.L": {
-   "title": "$\\kappa_L$",
-   "what": "The table $(0,0,0,0,1,1)$.",
-   "why": "Under $\\kappa_L$ exactly the internal steps cost $0$, so the least fixpoint of a level excludes infinite sequences of internal steps.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "Under $\\kappa_L$ a synchronization costs $2$.",
+   "title": "$\\kappa_L$, the live table",
+   "what": "The table $(0,0,0,0,1,1)$. Internal steps, $\\beta$, $\\mathsf{new}$, $\\mathsf{spawn}$ and $\\mathsf{link}$, cost nothing, and only session actions cost a level.",
+   "why": "A free step is checked inside the least fixpoint of the current level, and a least fixpoint admits only finitely many steps in a row. So a term in the relation at $\\kappa_L$ cannot take infinitely many internal steps without an action, which is absence of internal divergence. Lock freedom needs it, because a thread that loops internally never serves its partner. It is not about paying for messages.",
+   "breaks": "$!(f = \\\\mathsf{force}\\\\,f)$ steps by $\\\\beta$ forever and is in no level at $\\\\kappa_L$, while it is in every level at $\\\\kappa_{DF}$.",
+   "example": "Under $\\kappa_L$ a synchronization costs $2$, one level for each side.",
    "rocq": "relation/CostTable.v: κ_L",
    "sig": "\\kappa_L = (0,0,0,0,1,1) \\in \\mathsf{CTable}",
    "args": []
@@ -6727,7 +6751,7 @@ window.MAP = {
   "ct.beta": {
    "title": "Cost $\\kappa_\\beta$",
    "what": "The cost of application, pair and unit elimination, case and force.",
-   "why": "An arrow reads its body at every $j$ with $j + \\kappa_\\beta \\leq n$, so one arrow clause serves $j < n$ for $\\kappa_{DF}$ and $j \\leq n$ for $\\kappa_L$.",
+   "why": "An arrow reads its body at every $j < n$ under $\\kappa_{DF}$. \\annp{Under a general table it reads every $j$ with $j + \\kappa_\\beta \\leq n$, so one arrow clause also serves $j \\leq n$ for $\\kappa_L$.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$(\\lambda e)\\,v \\xrightarrow{\\beta} e[v]$ costs $\\kappa_\\beta$.",
    "rocq": "relation/CostTable.v: c_beta",
@@ -6817,9 +6841,9 @@ window.MAP = {
   "ct.sync": {
    "title": "Cost of an event $\\kappa(ev)$",
    "what": "$\\kappa(ev)$ is the cost of the step kind of $ev$, and $\\kappa_{give} + \\kappa_{take}$ for a synchronization.",
-   "why": "Both partners of a synchronization step at once, so the process pays both costs.",
+   "why": "Both partners of a synchronization step at once, so the step of the process costs the sum of both costs.",
    "breaks": "Nothing. It is a definition.",
-   "example": "A message costs $1$ under $\\kappa_{DF}$ and $2$ under $\\kappa_L$.",
+   "example": "A message costs $1$ under $\\kappa_{DF}$\\annp{ and $2$ under $\\kappa_L$}.",
    "rocq": "relation/CostTable.v: ev_cost",
    "sig": "\\kappa(\\cdot) : \\mathsf{Event} \\to \\mathbb{N}",
    "args": [
@@ -7076,7 +7100,7 @@ window.MAP = {
   "V-Arrow.exact": {
    "title": "$\\mathrm{dom}\\,\\Theta = \\mathsf{fends}(e)$",
    "what": "A closure owns exactly the ends its body mentions.",
-   "why": "With it, every $v \\in V$ satisfies $\\mathrm{dom}\\,\\Theta = \\mathsf{fends}(v)$, so the ends a send or spawn hands over are $\\mathsf{fends}$ of the value.",
+   "why": "With it, every $v \\in V$ satisfies $\\mathrm{dom}\\,\\Theta = \\mathsf{fends}(v)$, so the ends a send or spawn passes on are $\\mathsf{fends}$ of the value.",
    "breaks": "$\\lambda\\_.\\,\\mathsf{let}\\ \\ast = \\Omega\\ \\mathsf{in}\\ \\mathsf{close}\\,q^{+}$ owns nothing and is in $V$ at every level, and then a send of it next to $q^{+}$ fails E-Send.",
    "example": "$\\lambda\\_.\\,\\mathsf{close}\\,a$ owns $\\{a\\}$.",
    "rocq": "relation/Relation.v: Varr",
@@ -7095,7 +7119,7 @@ window.MAP = {
   "V-Arrow.lb": {
    "title": "$l \\preccurlyeq \\mathsf{heads}\\,\\Theta$",
    "what": "For $l = y$, $\\forall z \\in \\mathsf{heads}\\,\\Theta.\\ y \\preccurlyeq z$, and for $l$ absent, $\\mathsf{heads}\\,\\Theta = \\varnothing$.",
-   "why": "The holder of a closure reads its heads through $l$, which bounds the heads of the values it holds.",
+   "why": "The thread holding a closure reads its heads through $l$, which bounds the heads of the values it holds.",
    "breaks": "Nothing. It is a definition.",
    "example": "A closure over $a$ at $\\rho$ has $\\mathsf{heads}\\,\\Theta = \\{\\overline{\\rho}\\}$ and $l = \\overline{\\rho}$.",
    "rocq": "relation/Relation.v: Varr, lb_le",
@@ -7131,11 +7155,11 @@ window.MAP = {
    ]
   },
   "V-Arrow.level": {
-   "title": "$j + \\kappa_\\beta \\leq n$",
-   "what": "The body is read at every level $j \\leq n - \\kappa_\\beta$.",
-   "why": "Under $\\kappa_{DF}$ this is $j < n$, under $\\kappa_L$ it is $j \\leq n$, where $\\beta$ is free.",
+   "title": "Level of the body",
+   "what": "The body is read at every level $j < n$, \\annp{and under a general table at every $j \\leq n - \\kappa_\\beta$.}",
+   "why": "A $\\beta$-step costs one level in the deadlock-free relation. \\annp{Under $\\kappa_L$, where $\\beta$ is free, the body is read at level $n$.}",
    "breaks": "Nothing. It is a definition.",
-   "example": "Under $\\kappa_L$ the body is read at level $n$.",
+   "example": "The body of a closure in $V_3$ is read at levels $0$ to $2$.",
    "rocq": "relation/Relation.v: Varr",
    "sig": "j + \\kappa_\\beta \\leq n : \\mathsf{Prop}",
    "args": [
@@ -7194,7 +7218,7 @@ window.MAP = {
   "V-Thunk.empty": {
    "title": "Empty future $\\varnothing$",
    "what": "The spawned body is read at $F = \\varnothing$ with no lower and no upper point.",
-   "why": "The thunk leaves the parent and starts a thread with no context, so no readiness of the parent reads its heads and nothing waits after it.",
+   "why": "The thunk leaves the parent and starts a thread with no context, so no readiness of the parent reads its heads and no code of the parent runs after the thunk in the child.",
    "breaks": "With a lower point, a thread holding ends at unrelated points $1$ and $2$ could not spawn a thunk that closes both.",
    "example": "$\\mathsf{spawn}\\,(\\lambda u.\\,\\mathsf{close}\\,d')$.",
    "rocq": "relation/Relation.v: Vthunk",
@@ -7224,7 +7248,7 @@ window.MAP = {
   "V-Box.noends": {
    "title": "$\\mathsf{fends}(e) = \\varnothing$",
    "what": "The body of a box mentions no end.",
-   "why": "A box is unlimited, so it must be copyable, and an end mentioned inside would be copied with it.",
+   "why": "A box is unlimited, so it must be copyable, and an end mentioned inside would be copied with the box.",
    "breaks": "A box hiding an end under an empty environment could be forced twice and act on the end twice.",
    "example": "$\\mathsf{ring}$ mentions no end.",
    "rocq": "relation/Relation.v: Vbody TBox",
@@ -7311,8 +7335,8 @@ window.MAP = {
   "V-Ex.lb": {
    "title": "$l \\preccurlyeq \\mathsf{heads}\\,\\Theta$",
    "what": "For $l = y$, $\\forall z \\in \\mathsf{heads}\\,\\Theta.\\ y \\preccurlyeq z$, for $l$ absent $\\mathsf{heads}\\,\\Theta = \\varnothing$, and for $l = \\bot$ nothing.",
-   "why": "It lets a holder bound the actual heads of a packed value by its static heads, which the readiness of a send carrying a packed payload and the compatibility of E-Pack use.",
-   "breaks": "Without it, a sender holding a packed payload could not show its offered end below the partner points of the payload ends.",
+   "why": "It lets a holding thread bound the actual heads of a packed value by its static heads, which the readiness of a send carrying a packed payload and the compatibility of E-Pack use.",
+   "breaks": "Without it, a sender holding a packed payload could not show its offered end below the dual points of the payload ends.",
    "example": "$\\bot$ for $\\mathsf{new}_\\ell$.",
    "rocq": "relation/Readiness.v: lbx_le",
    "sig": "l \\preccurlyeq \\mathsf{heads}\\,\\Theta : \\mathsf{Prop}",
@@ -7577,7 +7601,7 @@ window.MAP = {
   "O-New.cfresh": {
    "title": "$c^{\\pm} \\notin \\mathrm{dom}\\,\\Theta$",
    "what": "The new name is no end of $\\Theta$.",
-   "why": "The process rule picks $c$ globally fresh, so the term obligation may assume it.",
+   "why": "The process rule picks $c$ globally fresh, so the term obligation may assume freshness.",
    "breaks": "Nothing. It is a definition.",
    "example": "$c^{+}, c^{-} \\notin \\mathrm{dom}\\,\\Theta$.",
    "rocq": "relation/Relation.v: cfresh",
@@ -7649,7 +7673,7 @@ window.MAP = {
   "O-New.dual": {
    "title": "Dual placement",
    "what": "$\\Theta[c^{+} \\mapsto S@\\pi,\\ c^{-} \\mapsto \\overline{S}@\\overline{\\pi}]$.",
-   "why": "It is the static result of E-New at the witness $\\pi$, and duality of the pair is what the soup asks of restricted channels.",
+   "why": "It is the static result of E-New at the witness $\\pi$, and duality of the pair is what the lock-free process relation asks of restricted channels.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{new}$ gives $c^{+} : S@a$ and $c^{-} : \\overline{S}@\\overline{a}$.",
    "rocq": "relation/Relation.v: new_env",
@@ -7715,7 +7739,7 @@ window.MAP = {
   "O-Spawn.split": {
    "title": "$\\Theta = \\Theta_M \\uplus \\Theta_r$",
    "what": "The child and the parent own disjoint parts of $\\Theta$.",
-   "why": "The fundamental theorem builds the split from E-Spawn's split of the context, and the soup moves exactly $\\Theta_M$ to the new thread.",
+   "why": "The fundamental theorem builds the split from E-Spawn's split of the context, and the lock-free process relation moves exactly $\\Theta_M$ to the new thread.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Theta_M = \\{d'\\}$.",
    "rocq": "relation/Relation.v: o_spawn",
@@ -7734,7 +7758,7 @@ window.MAP = {
   "O-Spawn.transfer": {
    "title": "$\\mathrm{dom}\\,\\Theta_M = \\mathsf{fends}(v)$",
    "what": "The part that leaves is exactly the set of ends of the value that leaves.",
-   "why": "It follows from exactness of $V$ and $\\mathsf{Vthunk}$, which makes ownership at a hand-over independent of the level.",
+   "why": "It follows from exactness of $V$ and $\\mathsf{Vthunk}$, which makes ownership at a transfer independent of the level.",
    "breaks": "Without exactness, an end mentioned by neither side could go to either side at different levels.",
    "example": "$\\mathsf{fends}(\\lambda\\_.\\,\\mathsf{close}\\,d') = \\{d'\\}$.",
    "rocq": "relation/Relation.v: o_spawn, o_send",
@@ -7827,7 +7851,7 @@ window.MAP = {
   "O-Send.split": {
    "title": "$\\Theta \\setminus o = \\Theta_M \\uplus \\Theta_r$",
    "what": "The payload owns no copy of the subject $o$.",
-   "why": "A send hands on held ends other than its subject.",
+   "why": "A send gives away held ends other than its subject.",
    "breaks": "A term that sends its own subject would leave the continuation acting on an end it gave away.",
    "example": "$\\Theta \\setminus o = \\Theta_M \\cup \\Theta_r$.",
    "rocq": "relation/Relation.v: o_send",
@@ -7843,10 +7867,33 @@ window.MAP = {
     }
    ]
   },
+  "sr.head": {
+   "title": "Head of an end $\\Theta(o) \\doteq S@x$",
+   "what": "$\\Theta(o) \\doteq S@x$ states $\\Theta(o) = S_0@x$ for some $S_0$ with $\\mathsf{unfold}\\,S_0 = S$.",
+   "why": "Every obligation reads the first action of the subject end after unfolding, so the notation states it once.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\Theta(o) \\doteq {!}(\\bar\\iota.\\,\\ast).\\mathsf{Close}@x$ for $\\Theta(o) = (\\mu\\alpha.\\,{!}\\ast.\\mathsf{Close})@x$.",
+   "rocq": "relation/Relation.v: o_send, o_recv, o_close, o_select, o_branch",
+   "sig": "\\Theta(o) \\doteq S@x \\iff \\exists S_0.\\ \\Theta(o) = S_0@x \\land \\mathsf{unfold}\\,S_0 = S",
+   "args": [
+    {
+     "name": "\\Theta",
+     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+    },
+    {
+     "name": "o",
+     "meaning": "the subject end"
+    },
+    {
+     "name": "S",
+     "meaning": "the head form of its protocol"
+    }
+   ]
+  },
   "O-Send.payload": {
    "title": "Payload level",
-   "what": "$w \\in V_{n-\\kappa_{give}}\\llbracket\\Theta_M \\vdash U[x\\cdot\\bar\\imath]\\rrbracket$.",
-   "why": "The payload is read at the level of the continuation, $n$ under $\\kappa_{DF}$ and $n - 1$ under $\\kappa_L$.",
+   "what": "$w \\in V_{n}\\llbracket\\Theta_M \\vdash U[x\\cdot\\bar\\imath]\\rrbracket$, \\annp{and $V_{n-\\kappa_{give}}$ under a general table.}",
+   "why": "The payload is read at the level of the continuation, because a send costs no level in the deadlock-free relation. \\annp{Under $\\kappa_L$ it costs one.}",
    "breaks": "Nothing. It is a definition.",
    "example": "The payload $a$ of $\\mathsf{send}\\,\\langle a, y\\rangle$ at $Y\\cdot 0$.",
    "rocq": "relation/Relation.v: o_send",
@@ -7879,8 +7926,8 @@ window.MAP = {
   },
   "O-Recv": {
    "title": "O-Recv",
-   "what": "For every $j \\leq n - \\kappa_{take}$ and every incoming $w \\in V_j$ with ends disjoint from $\\Theta$, the continuation is in $E_j$ with those ends added.",
-   "why": "The receiver cannot know what arrives, so it continues for every value its type admits, and the compatibility of E-Recv pairs this with the sender's O-Send.",
+   "what": "For every $j < n$ and every incoming $w \\in V_j$ with ends disjoint from $\\Theta$, the continuation is in $E_j$ with those ends added.",
+   "why": "The value that arrives is unknown when the receiver is typed, so it continues for every value its type admits, and the compatibility of E-Recv pairs this with the sender's O-Send.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{let}\\ \\langle u, b\\rangle = \\mathsf{recv}\\,b\\ \\mathsf{in}\\ \\ldots$",
    "rocq": "relation/Relation.v: o_recv",
@@ -7930,8 +7977,8 @@ window.MAP = {
   },
   "O-Recv.forall": {
    "title": "Every incoming value",
-   "what": "$\\forall j, \\Theta_{in}.\\ j + \\kappa_{take} \\leq n \\land \\Theta_{in} \\mathbin{\\#} \\Theta \\land w \\in V_j\\llbracket\\Theta_{in} \\vdash U[x\\cdot\\bar\\imath]\\rrbracket$.",
-   "why": "$1 \\leq \\kappa_{take}$ makes $j < n$, so this negative occurrence of $V$ is at a lower level.",
+   "what": "$\\forall j, \\Theta_{in}.\\ j < n \\land \\Theta_{in} \\mathbin{\\#} \\Theta \\land w \\in V_j\\llbracket\\Theta_{in} \\vdash U[x\\cdot\\bar\\imath]\\rrbracket$.",
+   "why": "This negative occurrence of $V$ is at a lower level, so $V$ is well defined. \\annp{Under a general table the bound is $j + \\kappa_{take} \\leq n$, and $1 \\leq \\kappa_{take}$ keeps $j < n$.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\forall j\\,\\Theta_{in}$.",
    "rocq": "relation/Relation.v: o_recv",
@@ -8008,7 +8055,7 @@ window.MAP = {
   "O-Select": {
    "title": "O-Select",
    "what": "At a head $\\oplus(S_1, S_2)$, $e'$ at $\\Theta[o \\mapsto S_i@\\overline{x\\cdot\\kappa_i}]$.",
-   "why": "The selecting end keeps its name and moves to the dual side of the field of choice $i$, where E-Select places it.",
+   "why": "The selecting end keeps its name and moves to the dual side of the field of choice $i$, where E-Select places the end.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{select}_{\\mathsf{true}}\\,o$.",
    "rocq": "relation/Relation.v: o_select",
@@ -8050,8 +8097,8 @@ window.MAP = {
   },
   "O-Branch": {
    "title": "O-Branch",
-   "what": "For the choice $i$ the step took, $e'$ at $\\Theta[o \\mapsto S_i@x\\cdot\\kappa_i]$, at cost $\\kappa_{take}$.",
-   "why": "The branching end moves to the field of choice $i$, the partner point of the selecting side.",
+   "what": "For the choice $i$ the step took, $e'$ at $\\Theta[o \\mapsto S_i@x\\cdot\\kappa_i]$, one level later.",
+   "why": "The branching end moves to the field of choice $i$, the dual point of the selecting side.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{branch}\\,o$.",
    "rocq": "relation/Relation.v: o_branch",
@@ -8148,7 +8195,7 @@ window.MAP = {
   "O-Link.dual": {
    "title": "Dual at dual points",
    "what": "$\\Theta(o_1) = S_1@x \\land \\Theta(o_2) = S_2@\\overline{x} \\land \\mathsf{sdual}\\,S_1\\,S_2$.",
-   "why": "E-Link types the two ends exactly dual at dual points, and the soup keeps restricted pairs dual, which the renaming of the link preserves only under this condition.",
+   "why": "E-Link types the two ends exactly dual at dual points, and the lock-free process relation keeps restricted pairs dual, which the renaming of the link preserves only under this condition.",
    "breaks": "Nothing. It is a definition.",
    "example": "$c^{+} : S@x$ and $d^{-} : \\overline{S}@\\overline{x}$.",
    "rocq": "relation/Relation.v: o_link",
@@ -8220,7 +8267,7 @@ window.MAP = {
   "rd.link": {
    "title": "$\\mathsf{link}\\,t$",
    "what": "$\\exists os, t'.\\ t \\xrightarrow{\\leftrightarrow os} t'$, and a term at a link is ready.",
-   "why": "A link step at process level needs no partner thread, so a link never waits and readiness need not order it.",
+   "why": "A link step at process level needs no partner thread, so a link never waits and readiness need not order the link.",
    "breaks": "Asking the order of a link would reject every link next to an end held at an unrelated point, and E-Link has no order premise.",
    "example": "$\\mathsf{link}\\,\\langle c^{+}, d^{-}\\rangle$.",
    "rocq": "relation/Readiness.v: link_t",
@@ -8238,7 +8285,7 @@ window.MAP = {
   },
   "rd.below-rest": {
    "title": "$\\mathsf{below\\_rest}$",
-   "what": "Every offered end at $x$ lies below the partner point of every held end it does not offer and below every point of $F$.",
+   "what": "Every offered end at $x$ lies below the dual point of every held end it does not offer and below every point of $F$.",
    "why": "It excludes circular waiting, because a waiting thread's offer is minimal among what it holds and what its context still does.",
    "breaks": "Client and server each blocked on their second channel while holding the first, under a cyclic order.",
    "example": "Closing $c$ at $\\rho$ while $d$ is held at $\\rho\\cdot 0$ needs $\\rho \\prec \\overline{\\rho\\cdot 0}$.",
@@ -8444,16 +8491,16 @@ window.MAP = {
   },
   "P-Step": {
    "title": "P-Step",
-   "what": "Every instrumented step $q \\xrightarrow{ev} q'$ with $\\mathsf{erase}\\,q = p'$ meets $\\mathsf{Pobl}_{ev}$.",
-   "why": "$P$ quantifies over every thread numbering of $p'$, so it speaks of the one instrumented semantics.",
+   "what": "Every step $p' \\xrightarrow{ev} p''$ meets $\\mathsf{Pobl}_{ev}$. A process steps when some numbering of its threads steps, $p \\xrightarrow{ev} p' \\iff \\exists q, q'.\\ \\mathsf{erase}\\,q = p \\land q \\xrightarrow{ev} q' \\land \\mathsf{erase}\\,q' = p'$.",
+   "why": "The obligations read the event and the result, and no thread number. Thread numbers matter only to the lock-free process relation, which records the thread holding each end.",
    "breaks": "Nothing. It is a definition.",
    "example": "A message between two threads meets Q-Tau.",
    "rocq": "relation/Relation.v: Psteps",
-   "sig": "\\forall q, ev, q'.\\ \\mathsf{erase}\\,q = p' \\land q \\xrightarrow{ev} q' \\Rightarrow \\mathsf{Pobl}_{ev}(\\mathsf{erase}\\,q')",
+   "sig": "\\forall ev, p''.\\ p' \\xrightarrow{ev} p'' \\Rightarrow \\mathsf{Pobl}_{ev}(p'')",
    "args": [
     {
-     "name": "q, q'",
-     "meaning": "configurations, $q$ a numbering of the threads of $p'$"
+     "name": "p''",
+     "meaning": "the process after the step"
     },
     {
      "name": "ev",
@@ -8550,10 +8597,10 @@ window.MAP = {
   },
   "Q-Tau": {
    "title": "Q-Tau",
-   "what": "An internal step that restricts no interface channel keeps $\\Sigma$ and costs $\\kappa(ev)$.",
+   "what": "An internal step that restricts no interface channel keeps $\\Sigma$ and costs the levels of its kind of step.",
    "why": "Administrative steps and internal synchronizations are one clause.",
    "breaks": "Nothing. It is a definition.",
-   "example": "A message between two threads costs $\\kappa_{give} + \\kappa_{take}$.",
+   "example": "A message between two threads costs one level\\annp{, and $\\kappa_{give} + \\kappa_{take}$ under a general table}.",
    "rocq": "relation/Relation.v: q_tau",
    "sig": "\\mathsf{q\\_tau} : \\mathsf{Event} \\to \\mathsf{Proc} \\to \\mathsf{Prop}",
    "args": [
@@ -8633,7 +8680,7 @@ window.MAP = {
   "Q-Send.theta-e": {
    "title": "Extruded ends $\\Theta_e$",
    "what": "$\\mathrm{dom}\\,\\Theta_e = \\{o' \\in \\mathsf{fends}(w) \\mid \\mathsf{ech}(o') \\in C\\}$.",
-   "why": "$\\Theta_e$ is exactly the restricted part of the ends of $w$. Exactness of $V$ at the payload gives $\\mathsf{fends}(w) = \\mathrm{dom}\\,\\Sigma_v \\cup \\mathrm{dom}\\,\\Theta_e$, so the payload carries $\\mathsf{fends}(w)$ and nothing else.",
+   "why": "$\\Theta_e$ is exactly the restricted part of the ends of $w$. Exactness of $V$ at the payload gives $\\mathsf{fends}(w) = \\mathrm{dom}\\,\\Sigma_v \\cup \\mathrm{dom}\\,\\Theta_e$, so the payload has $\\mathsf{fends}(w)$ and nothing else.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Theta_e = \\{d^{+}\\}$.",
    "rocq": "relation/Relation.v: q_send, compat/Redex.v: Vrel_exact",
@@ -8748,7 +8795,7 @@ window.MAP = {
   },
   "Q-Recv.ok": {
    "title": "$\\mathsf{recv\\_ok}$",
-   "what": "Incoming ends are new to $\\Sigma$, and every incoming end whose partner is held or received sits at the dual point with the dual type.",
+   "what": "Incoming ends are new to $\\Sigma$, and every incoming end whose partner is held or received is at the dual point with the dual type.",
    "why": "Composition delivers one component's payload only under this condition, and it is what makes a newly restricted pair dual.",
    "breaks": "Without the duality conjunct, receiving the partner of a held end at a mismatched type would restrict an ill-typed channel.",
    "example": "$\\mathsf{recv\\_ok}\\,\\Sigma\\,\\Theta_2$.",
@@ -8787,7 +8834,7 @@ window.MAP = {
   "Q-Recv.env": {
    "title": "$\\mathsf{recv\\_env}$",
    "what": "The interface after the receive, without the ends that became internal.",
-   "why": "Internal ends leave the interface, and the rest of $\\Theta_2$ joins it.",
+   "why": "Internal ends leave the interface, and the rest of $\\Theta_2$ joins the interface.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{recv\\_env}\\,\\Sigma\\,\\Theta_2$.",
    "rocq": "relation/Relation.v: recv_env",
@@ -8836,20 +8883,16 @@ window.MAP = {
   },
   "sj.at": {
    "title": "Judgment at a set of points $X$",
-   "what": "For every level, later world and grounding $\\gamma$ of $\\Delta$ disjoint from $|\\Theta|$, $\\gamma(t) \\in E_n\\llbracket|\\Theta| \\cup \\Theta' \\vdash T\\rrbracket^{X}$.",
+   "what": "For every level, later world, environment $\\Theta'$ disjoint from the ends $|\\Delta|$ and grounding $\\gamma$ of the variables of $\\Delta$ in $\\Theta'$, $\\gamma(e) \\in E_n\\llbracket|\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}$.",
    "why": "It quantifies over everything a context may supply, so it composes by the compatibility lemmas.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\Theta;\\Delta \\vDash^{X}_W t : T$.",
+   "example": "$\\Delta \\vDash^{X}_W e : T$.",
    "rocq": "compat/SemTyped.v: sem_typed_at",
-   "sig": "\\Theta;\\Delta \\vDash^{X}_{W} t : T",
+   "sig": "\\Delta \\vDash^{X}_{W} e : T",
    "args": [
     {
-     "name": "\\Theta",
-     "meaning": "\\annp{the credited end environment, erased to $|\\Theta|$}"
-    },
-    {
      "name": "\\Delta",
-     "meaning": "the variable context"
+     "meaning": "the linear context of the typing judgment, its ends erased to $|\\Delta|$"
     },
     {
      "name": "X",
@@ -8868,11 +8911,11 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "For $\\Delta = [T]$, $\\gamma(0) \\in V\\llbracket\\Theta \\vdash T\\rrbracket$.",
    "rocq": "compat/SemTyped.v: Grel",
-   "sig": "\\gamma \\in G[\\kappa]^{W}_{n}\\llbracket \\Theta \\vdash \\Delta \\rrbracket",
+   "sig": "\\gamma \\in G^{W}_{n}\\llbracket \\Theta \\vdash \\Delta \\rrbracket",
    "args": [
     {
      "name": "\\gamma",
-     "meaning": "a substitution $\\mathbb{N} \\to \\mathsf{Expr}$"
+     "meaning": "a substitution $\\mathbb{N} \\to \\mathsf{Expr}$ for the variables of $\\Delta$"
     },
     {
      "name": "\\Theta",
@@ -8880,14 +8923,14 @@ window.MAP = {
     },
     {
      "name": "\\Delta",
-     "meaning": "the variable context"
+     "meaning": "the linear context"
     }
    ]
   },
   "sj.den": {
    "title": "$\\mathsf{den}_{\\rho,B}(F)$",
    "what": "$\\mathsf{den}_{\\rho,B}(F_1, f) = F_1 \\cup \\rho(\\varphi) \\cup B$, with $\\rho(\\varphi)$ only if $f$ has the variable $\\varphi$ and $B$ only if $f$ has the flag $\\bot$.",
-   "why": "A future variable and the flag $\\bot$ stand for unknown sets of points, so the judgment holds at every choice of them.",
+   "why": "A future variable and the flag $\\bot$ stand for unknown sets of points, so the judgment holds at each choice of these sets.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{den}_{\\rho,B}(\\varnothing, \\varphi) = \\rho(\\varphi)$.",
    "rocq": "compat/SemTyped.v: sf_den",
@@ -8908,17 +8951,17 @@ window.MAP = {
    ]
   },
   "sj.term": {
-   "title": "$\\Theta ; \\Delta \\vDash^{F}_W t : T$",
-   "what": "$\\forall \\rho, B.\\ \\Theta;\\Delta \\vDash^{\\mathsf{den}_{\\rho,B}(F)}_W t : T$, read with $\\kappa_{DF}$ as $\\vDash$ and with $\\kappa_L$ as $\\mathrel{|\\!\\!\\vDash}$.",
-   "why": "It is the conclusion of the fundamental theorem for terms.",
+   "title": "$\\Delta \\vDash^{F}_W e : T$",
+   "what": "$\\forall \\rho, B.\\ \\Delta \\vDash^{\\mathsf{den}_{\\rho,B}(F)}_W e : T$, with the same context $\\Delta$ as the typing judgment.",
+   "why": "It is the conclusion of the fundamental theorem for terms. \\annp{The lock-free reading $\\vDash[\\kappa_L]$ uses the table $\\kappa_L$.}",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\varnothing;\\varnothing \\vDash^{\\varnothing}_W e : T$.",
+   "example": "$\\varnothing \\vDash^{\\varnothing}_W e : T$.",
    "rocq": "compat/SemTyped.v: sem_typed",
-   "sig": "\\Theta;\\Delta \\vDash^{F}_{W} t : T",
+   "sig": "\\Delta \\vDash^{F}_{W} e : T",
    "args": [
     {
-     "name": "\\Theta, \\Delta",
-     "meaning": "the end environment and the variable context"
+     "name": "\\Delta",
+     "meaning": "the linear context"
     },
     {
      "name": "F",
@@ -8929,15 +8972,15 @@ window.MAP = {
      "meaning": "the world, $W \\in \\mathsf{World}$"
     },
     {
-     "name": "t, T",
+     "name": "e, T",
      "meaning": "the term and its type"
     }
    ]
   },
   "sj.proc": {
    "title": "$\\Sigma \\vDash_W p : T$",
-   "what": "$\\forall n.\\ p \\in P^W_n\\llbracket\\Sigma \\vdash T\\rrbracket$, with $\\kappa_{DF}$ as $\\vDash$ and with $\\kappa_L$ as $\\mathrel{|\\!\\!\\vDash}$.",
-   "why": "Adequacy turns it into deadlock freedom, and with $\\kappa_L$ also into absence of internal divergence.",
+   "what": "$\\forall n.\\ p \\in P^W_n\\llbracket\\Sigma \\vdash T\\rrbracket$.",
+   "why": "Adequacy turns it into deadlock freedom. \\annp{With $\\kappa_L$ it also gives absence of internal divergence.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\varnothing \\vDash_W p : \\ast$.",
    "rocq": "relation/Adequacy.v: sem_ptyped",
@@ -8966,17 +9009,25 @@ window.MAP = {
    "what": "$F_0$ holds every term.",
    "why": "Step indexing starts from the trivial predicate.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\forall e.\\ e \\in F^N_0\\llbracket\\sigma \\triangleright d ; r\\rrbracket(\\Pi,\\varphi,tk)$.",
+   "example": "$\\forall e.\\ e \\in F^N_0\\llbracket\\Phi ; tk \\vdash \\sigma\\ !\\ (d, r)\\rrbracket$.",
    "rocq": "fuel/Fuel.v: mk_flevel",
-   "sig": "e \\in F^{N}_{n}\\llbracket \\sigma \\triangleright d ; r \\rrbracket(\\Pi, \\varphi, tk)",
+   "sig": "e \\in F^{N}_{n}\\llbracket \\Phi ; tk \\vdash \\sigma\\ !\\ (d, r) \\rrbracket",
    "args": [
     {
      "name": "N",
-     "meaning": "the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "n",
      "meaning": "the level, $n \\in \\mathbb{N}$"
+    },
+    {
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+    },
+    {
+     "name": "tk",
+     "meaning": "the tickets of the thread, $tk \\in \\mathbb{N}$"
     },
     {
      "name": "\\sigma",
@@ -8984,23 +9035,11 @@ window.MAP = {
     },
     {
      "name": "d",
-     "meaning": "the frame, $d \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the frame, the actions left before returning, $d \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "r",
-     "meaning": "the reserve, $r \\in \\mathbb{N}$"
-    },
-    {
-     "name": "\\Pi",
-     "meaning": "the protocols, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy}$"
-    },
-    {
-     "name": "\\varphi",
-     "meaning": "the counters, a finite map $\\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$"
-    },
-    {
-     "name": "tk",
-     "meaning": "the tickets of the thread, $tk \\in \\mathbb{N}$"
+     "meaning": "the reserve, the tickets kept on return, $r \\in \\mathbb{N}$"
     },
     {
      "name": "e",
@@ -9013,7 +9052,7 @@ window.MAP = {
    "what": "$\\sigma$ is a credited type $T^a$ of the returned value, or $\\mathsf{thread}$, whose value holds no end.",
    "why": "A spawned thread returns $\\ast$ and keeps no end, which $\\mathsf{thread}$ states without a type.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{thread}$ for a soup thread.",
+   "example": "$\\mathsf{thread}$ for a lock-free process relation thread.",
    "rocq": "fuel/Fuel.v: rty",
    "sig": "\\sigma \\in \\{T\\annot{^{a}}\\} \\cup \\{\\mathsf{thread}\\}",
    "args": [
@@ -9026,7 +9065,7 @@ window.MAP = {
   "fu.frame": {
    "title": "Frame $d$",
    "what": "$d \\in \\mathbb{N} \\cup \\{\\infty\\}$ bounds the channel actions the term performs before it returns.",
-   "why": "Every action asks $1 \\leq d$ and lowers $d$ by one, so a context that ticks its own ends during the term is paid by the frame.",
+   "why": "Every action asks $1 \\leq d$ and lowers $d$ by one, so the frame bounds how often the context decrements its own ends during the term.",
    "breaks": "Nothing. It is a definition.",
    "example": "A thread has frame $\\infty$.",
    "rocq": "fuel/Fuel.v: Fdef",
@@ -9036,37 +9075,47 @@ window.MAP = {
   "fu.reserve": {
    "title": "Reserve $r$",
    "what": "$r \\in \\mathbb{N}$ is the number of tickets the term must still hold when it returns.",
-   "why": "The context of the term spends these tickets on its own links afterwards, which the ticket need of the term promises through $\\mathsf{meets}\\,\\vartheta\\,r\\,tk$.",
-   "breaks": "Without a reserve, a term could spend tickets its context needs, and a context link would find $tk = 0$.",
+   "why": "The context of the term uses these tickets on its own links afterwards, which the ticket need of the term guarantees through $\\vartheta(r) \\leq tk$.",
+   "breaks": "Without a reserve, a term could use tickets its context needs, and a context link would find $tk = 0$.",
    "example": "A thread has reserve $0$.",
    "rocq": "fuel/Fuel.v: Fdef",
    "sig": "r \\in \\mathbb{N}",
    "args": []
   },
-  "fu.Pi": {
-   "title": "Protocols $\\Pi$",
-   "what": "$\\Pi$ maps each held end to its session type with annotations.",
-   "why": "Counters are compared with credits that the annotations carry, so fuel keeps them.",
+  "fu.Phi": {
+   "title": "Held ends $\\Phi$",
+   "what": "$\\Phi$ maps each end the thread holds to its protocol $S$, a session type with annotations, and its counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$, written $o \\mapsto S^{f}$. In the Rocq these are two maps $\\Pi$ and $\\varphi$ with one domain.",
+   "why": "The counter bounds how many actions of the thread holding it may pass before the end acts again, and the protocol says when the end is idle and what it sends and receives. Where the relation gives an end a point, fuel gives it a counter.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\Pi = \\{a \\mapsto S_a\\}$.",
-   "rocq": "fuel/Fuel.v: penv",
-   "sig": "\\Pi : \\mathsf{End} \\rightharpoonup \\mathsf{STy}",
-   "args": []
+   "example": "$\\Phi = \\{a \\mapsto S^{3}\\}$.",
+   "rocq": "fuel/Fuel.v: penv, cenv",
+   "sig": "\\Phi : \\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times (\\mathbb{N} \\cup \\{\\infty\\})",
+   "args": [
+    {
+     "name": "S^{f}",
+     "meaning": "the protocol $S$ and counter $f$ of an end"
+    }
+   ]
   },
-  "fu.phi": {
-   "title": "Counters $\\varphi$",
-   "what": "$\\varphi$ maps each held end to a counter in $\\mathbb{N} \\cup \\{\\infty\\}$.",
-   "why": "A counter bounds how many actions of its holder may pass before the end acts again, and only the holder updates it.",
+  "fu.tick": {
+   "title": "$\\Phi{\\downarrow}$",
+   "what": "Every counter of $\\Phi$ lowered by one, truncated at $0$, with $\\infty$ kept.",
+   "why": "An action decrements the counters of the other ends of the thread holding it, and a transfer passes counters on one lower. Both use this operation.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\varphi = \\{a \\mapsto 3\\}$.",
-   "rocq": "fuel/Fuel.v: cenv",
-   "sig": "\\varphi : \\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}",
-   "args": []
+   "example": "$\\{a \\mapsto S^{3}, b \\mapsto S'^{1}\\}{\\downarrow} = \\{a \\mapsto S^{2}, b \\mapsto S'\\annot{^{0}}\\}$.",
+   "rocq": "fuel/Fuel.v: ftick, refill, fhand",
+   "sig": "\\Phi{\\downarrow} = \\{o \\mapsto S^{f \\mathbin{\\dot-} 1} \\mid o \\mapsto S^{f} \\in \\Phi\\}",
+   "args": [
+    {
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+    }
+   ]
   },
   "fu.tk": {
    "title": "Tickets $tk$",
    "what": "$tk \\in \\mathbb{N}$ is the thread's count of link tickets.",
-   "why": "Each link spends one ticket and tickets are conserved, so a thread performs finitely many links between actions.",
+   "why": "Each link uses one ticket and tickets are conserved, so a thread performs finitely many links between actions.",
    "breaks": "Nothing. It is a definition.",
    "example": "$tk = 0$ in every example.",
    "rocq": "fuel/Fuel.v: Fdef",
@@ -9074,9 +9123,9 @@ window.MAP = {
    "args": []
   },
   "fu.refill-kripke": {
-   "title": "Every refill above $N$",
-   "what": "$F^N$ holds at every $N'$ with $N \\sqsubseteq_{\\mathsf{rle}} N'$, where finite refills are ordered by $\\leq$ and $\\infty$ lies above $\\infty$ only.",
-   "why": "A received value may be used at a larger refill, and $\\infty$ must stay separate because a box received at $\\infty$ promises nothing at finite instances.",
+   "title": "Every counter bound above $N$",
+   "what": "Fuel at $N$ holds at every $N'$ with $N \\sqsubseteq_{\\mathsf{rle}} N'$, where finite counter bounds are ordered by $\\leq$ and $\\infty$ lies above $\\infty$ only.",
+   "why": "A received value may be used at a larger counter bound, and $\\infty$ must stay separate because a box received at $\\infty$ guarantees nothing at finite instances.",
    "breaks": "With $\\leq$ on $\\mathbb{N} \\cup \\{\\infty\\}$, a thread at $N = 2$ could receive a box typed at $\\infty$ and fail at its finite instance.",
    "example": "$2 \\sqsubseteq_{\\mathsf{rle}} 3$, and $2 \\not\\sqsubseteq_{\\mathsf{rle}} \\infty$.",
    "rocq": "fuel/Fuel.v: rle",
@@ -9084,18 +9133,18 @@ window.MAP = {
    "args": [
     {
      "name": "N, N'",
-     "meaning": "refills in $\\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "counter bounds in $\\mathbb{N} \\cup \\{\\infty\\}$"
     }
    ]
   },
   "fu.rename": {
    "title": "Injective renamings",
-   "what": "$F^N$ holds for every renaming $g$ injective on $\\mathrm{dom}\\,\\Pi$ and on $\\mathrm{dom}\\,\\varphi$.",
-   "why": "A link renames the partner of a removed end in another thread, so fuel must survive renaming.",
+   "what": "Fuel holds for every renaming $g$ of ends injective on $\\mathrm{dom}\\,\\Phi$.",
+   "why": "A link renames the partner of a removed end in another thread, so fuel must remain renaming.",
    "breaks": "A renaming that merges two held ends would merge their counters.",
-   "example": "$\\mathsf{kinj}\\,g\\,\\Pi$.",
+   "example": "$g = \\{c^{+} \\mapsto d^{+}\\}$ on $\\Phi = \\{c^{+} \\mapsto S^{2}\\}$.",
    "rocq": "fuel/Fuel.v: kinj, renk",
-   "sig": "g : \\mathsf{End} \\to \\mathsf{End} \\text{ injective on } \\mathrm{dom}\\,\\Pi, \\mathrm{dom}\\,\\varphi",
+   "sig": "g : \\mathsf{End} \\to \\mathsf{End} \\text{ injective on } \\mathrm{dom}\\,\\Phi",
    "args": [
     {
      "name": "g",
@@ -9105,23 +9154,23 @@ window.MAP = {
   },
   "fu.val": {
    "title": "(val)",
-   "what": "$g(e) \\in \\mathsf{Val} \\Rightarrow r \\leq tk \\land g(e) \\in FV^{N'}_{n+1}\\llbracket\\sigma\\rrbracket(g\\Pi, g\\varphi)$.",
-   "why": "A returning term hands its context the reserve it promised and a value whose counters meet its credits, which the bind lemma of fuel consumes.",
+   "what": "$g(e) \\in \\mathsf{Val} \\Rightarrow r \\leq tk \\land g(e) \\in FV^{N'}_{n+1}\\llbracket g\\Phi \\vdash \\sigma\\rrbracket$.",
+   "why": "A returning term transfers its context the reserve it promised and a value whose counters meet its credits, which the bind lemma of fuel consumes.",
    "breaks": "Without $r \\leq tk$, a context link after the term could find no ticket.",
    "example": "$\\ast$ returns with $r = 0 \\leq tk$.",
    "rocq": "fuel/Fuel.v: Fdef",
-   "sig": "g(e) \\in \\mathsf{Val} \\Rightarrow r \\leq tk \\land g(e) \\in FV^{N'}_{n+1}\\llbracket \\sigma \\rrbracket(g\\Pi, g\\varphi)",
+   "sig": "g(e) \\in \\mathsf{Val} \\Rightarrow r \\leq tk \\land g(e) \\in FV^{N'}_{n+1}\\llbracket g\\Phi \\vdash \\sigma \\rrbracket",
    "args": [
     {
      "name": "g, N'",
-     "meaning": "the renaming and the refill"
+     "meaning": "the renaming and the counter bound"
     }
    ]
   },
   "fu.step": {
    "title": "(step)",
    "what": "$\\forall \\alpha, e'.\\ g(e) \\xrightarrow{\\alpha} e' \\Rightarrow \\mathsf{Fobl}^{N'}_\\alpha(e')$ at level $n$.",
-   "why": "Each step updates the state by one index-free rule, which the soup follows along a run.",
+   "why": "Each step updates the state by one index-free rule, which the lock-free process relation follows along a run.",
    "breaks": "Nothing. It is a definition.",
    "example": "A send step meets F-Send.",
    "rocq": "fuel/Fuel.v: Fdef, Fobl",
@@ -9150,16 +9199,16 @@ window.MAP = {
   },
   "F-Wait": {
    "title": "F-Wait",
-   "what": "$\\neg\\mathsf{idle}(\\Pi\\,o)$, an idle end does not act.",
+   "what": "$\\Phi(o) = S^{f}$ with $S$ not idle, so the end is held and can act.",
    "why": "An idle end is exempt from the checks $\\geq 1$, so it must not act either.",
    "breaks": "Nothing. It is a definition.",
    "example": "An end at $\\mathsf{Skip}$ cannot act.",
    "rocq": "fuel/Fuel.v: f_act",
-   "sig": "\\neg\\mathsf{idle}(\\Pi\\,o)",
+   "sig": "\\Phi(o) = S^{f} \\land \\neg\\mathsf{idle}\\,S",
    "args": [
     {
-     "name": "\\Pi",
-     "meaning": "the protocols, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy}$"
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "o",
@@ -9168,21 +9217,17 @@ window.MAP = {
    ]
   },
   "F-Tick": {
-   "title": "F-Tick",
-   "what": "$\\mathsf{fspare}\\,\\Pi\\,\\varphi\\,(\\mathrm{dom}\\,\\varphi \\setminus \\{o\\})$, every other end that is not idle has counter at least $1$.",
-   "why": "Each action ticks the other ends, so an end can wait only as many actions of its holder as its counter allows.",
-   "breaks": "A holder that loops on other ends forever while its partner waits on a held end.",
-   "example": "At $\\varphi = \\{a \\mapsto 2, b \\mapsto 0\\}$ no action on $a$ is allowed unless $b$ is idle.",
+   "title": "F-Count",
+   "what": "$\\mathsf{positive}(\\Phi \\setminus o)$, every other end that is not idle has counter at least $1$.",
+   "why": "Each action decrements the counters of the other ends, so an end can wait only as many actions of the thread holding it as its counter allows.",
+   "breaks": "A holding thread that loops on other ends forever while its partner waits on a held end.",
+   "example": "At $\\Phi = \\{a \\mapsto S^{2}, b \\mapsto S'\\annot{^{0}}\\}$ no action on $a$ is allowed unless $b$ is idle.",
    "rocq": "fuel/Fuel.v: f_act, fspare",
-   "sig": "\\mathsf{fspare}\\,\\Pi\\,\\varphi\\,(\\mathrm{dom}\\,\\varphi \\setminus \\{o\\})",
+   "sig": "\\mathsf{positive}(\\Phi \\setminus o)",
    "args": [
     {
-     "name": "\\Pi",
-     "meaning": "the protocols, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy}$"
-    },
-    {
-     "name": "\\varphi",
-     "meaning": "the counters, a finite map $\\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$"
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "o",
@@ -9193,7 +9238,7 @@ window.MAP = {
   "F-Tick.frame": {
    "title": "$1 \\leq d$",
    "what": "The frame has a unit for the action.",
-   "why": "The frame pays the ticks the context's ends take during the term.",
+   "why": "The frame bounds the decrements of the context's ends during the term.",
    "breaks": "Nothing. It is a definition.",
    "example": "$1 \\leq d$.",
    "rocq": "fuel/Fuel.v: f_act",
@@ -9205,34 +9250,11 @@ window.MAP = {
     }
    ]
   },
-  "fu.refillop": {
-   "title": "$\\mathsf{refill}$",
-   "what": "$\\mathsf{refill}\\,N\\,o\\,\\varphi$ sets $o$ to $N$ and lowers every other counter by one, truncated at $0$.",
-   "why": "Counters evolve by one index-free update.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{refill}\\,3\\,a\\,\\{a \\mapsto 1, b \\mapsto 2\\} = \\{a \\mapsto 3, b \\mapsto 1\\}$.",
-   "rocq": "fuel/Fuel.v: refill",
-   "sig": "\\mathsf{refill} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to \\mathsf{End} \\to \\mathsf{CEnv} \\to \\mathsf{CEnv}",
-   "args": [
-    {
-     "name": "N",
-     "meaning": "the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
-    },
-    {
-     "name": "o",
-     "meaning": "the subject end, $o \\in \\mathsf{End}$"
-    },
-    {
-     "name": "\\varphi",
-     "meaning": "the counters, a finite map $\\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$"
-    }
-   ]
-  },
   "fu.idle": {
    "title": "$\\mathsf{idle}$",
    "what": "$\\mathsf{idle}\\,S \\iff \\mathsf{unfold}\\,S = \\mathsf{Skip}$.",
-   "why": "Idleness removes the checks $\\geq 1$ and never changes how a counter evolves, so counters stay index-free. The typing ages idle ends by truncation at $0$, matching counters that tick down to $0$.",
-   "breaks": "An idle end whose credit stayed fixed while its counter ticks would exceed its counter.",
+   "why": "Idleness removes the checks $\\geq 1$ and never changes how a counter evolves, so counters stay index-free. The typing ages idle ends by truncation at $0$, matching counters that decrement down to $0$.",
+   "breaks": "An idle end whose credit stayed fixed while its counter decrements would exceed its counter.",
    "example": "$\\mathsf{idle}\\,\\mathsf{Skip}$.",
    "rocq": "fuel/Fuel.v: idle",
    "sig": "\\mathsf{idle} : \\mathsf{STy} \\to \\mathsf{Prop}",
@@ -9254,11 +9276,19 @@ window.MAP = {
    "args": [
     {
      "name": "N",
-     "meaning": "the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "n",
      "meaning": "the level, $n \\in \\mathbb{N}$"
+    },
+    {
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+    },
+    {
+     "name": "tk",
+     "meaning": "the tickets of the thread, $tk \\in \\mathbb{N}$"
     },
     {
      "name": "\\sigma",
@@ -9266,23 +9296,15 @@ window.MAP = {
     },
     {
      "name": "d",
-     "meaning": "the frame, $d \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the frame, the actions left before returning, $d \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "r",
-     "meaning": "the reserve, $r \\in \\mathbb{N}$"
+     "meaning": "the reserve, the tickets kept on return, $r \\in \\mathbb{N}$"
     },
     {
-     "name": "\\Pi",
-     "meaning": "the protocols, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy}$"
-    },
-    {
-     "name": "\\varphi",
-     "meaning": "the counters, a finite map $\\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$"
-    },
-    {
-     "name": "tk",
-     "meaning": "the tickets of the thread, $tk \\in \\mathbb{N}$"
+     "name": "e",
+     "meaning": "the term"
     },
     {
      "name": "e'",
@@ -9292,8 +9314,8 @@ window.MAP = {
   },
   "F-New": {
    "title": "F-New",
-   "what": "For a fresh $c$, some $S$ adds $c^{+} : S$ and $c^{-} : \\overline{S}$ to $\\Pi$ with counters $N$.",
-   "why": "A new channel starts with both ends at the refill $N$, the credit E-New gives them.",
+   "what": "For a fresh $c$, some $S$ adds $c^{+} \\mapsto S\\annot{^{N}}$ and $c^{-} \\mapsto \\overline{S}\\annot{^{N}}$ to $\\Phi$.",
+   "why": "A new channel starts with both ends at the counter bound $N$, the credit E-New gives to fresh ends.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{new}$ adds $c^{\\pm}$ at $N$.",
    "rocq": "fuel/Fuel.v: f_new",
@@ -9315,54 +9337,54 @@ window.MAP = {
   },
   "F-New.fresh": {
    "title": "Fresh against the thread",
-   "what": "$c^{\\pm} \\notin \\mathrm{dom}\\,\\Pi \\cup \\mathrm{dom}\\,\\varphi$.",
+   "what": "$c^{\\pm} \\notin \\mathrm{dom}\\,\\Phi$.",
    "why": "Without it, a new channel could reuse a held name and overwrite its counter.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{ffresh}\\,c\\,\\Pi\\,\\varphi$.",
+   "example": "$c^{+} \\notin \\{a\\}$.",
    "rocq": "fuel/Fuel.v: ffresh",
-   "sig": "\\mathsf{ffresh} : \\mathsf{Chan} \\to \\mathsf{PEnv} \\to \\mathsf{CEnv} \\to \\mathsf{Prop}",
+   "sig": "c^{\\pm} \\notin \\mathrm{dom}\\,\\Phi",
    "args": [
     {
      "name": "c",
      "meaning": "the new channel"
     },
     {
-     "name": "\\Pi",
-     "meaning": "the protocols, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy}$"
-    },
-    {
-     "name": "\\varphi",
-     "meaning": "the counters, a finite map $\\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$"
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     }
    ]
   },
   "F-New.cnew": {
-   "title": "New counters $N$",
-   "what": "$\\varphi[c^{+} \\mapsto N, c^{-} \\mapsto N]$.",
-   "why": "One refill $N$ serves fresh ends and ends after an action.",
+   "title": "New ends at $N$",
+   "what": "$\\Phi[c^{+} \\mapsto S\\annot{^{N}}, c^{-} \\mapsto \\overline{S}\\annot{^{N}}]$.",
+   "why": "One counter bound $N$ serves fresh ends and ends after an action.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{cnew}\\,N\\,c\\,\\varphi$.",
-   "rocq": "fuel/Fuel.v: cnew",
-   "sig": "\\mathsf{cnew}\\,N\\,c\\,\\varphi = \\varphi[c^{+} \\mapsto N, c^{-} \\mapsto N]",
+   "example": "$\\{c^{+} \\mapsto S^{3}, c^{-} \\mapsto \\overline{S}^{3}\\}$ at $N = 3$.",
+   "rocq": "fuel/Fuel.v: pnew, cnew",
+   "sig": "\\Phi[c^{+} \\mapsto S\\annot{^{N}}, c^{-} \\mapsto \\overline{S}\\annot{^{N}}]",
    "args": [
     {
      "name": "N",
-     "meaning": "the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "c",
      "meaning": "the new channel"
     },
     {
-     "name": "\\varphi",
-     "meaning": "the counters, a finite map $\\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$"
+     "name": "S",
+     "meaning": "the protocol of $c^{+}$"
+    },
+    {
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     }
    ]
   },
   "F-Spawn": {
    "title": "F-Spawn",
-   "what": "The child takes $M = \\mathsf{fends}(v)$ with counters minus one and $\\lceil tk/2 \\rceil$ tickets and runs as a thread, the parent keeps the rest and $\\lfloor tk/2 \\rfloor$.",
-   "why": "Every component of the split is a function of $v$ and $tk$, so it is the same at every level.",
+   "what": "The child takes $\\Phi|_M{\\downarrow}$ for $M = \\mathsf{fends}(v)$ and $\\lceil tk/2 \\rceil$ tickets and runs as a thread, the parent keeps $\\Phi \\setminus M$ and $\\lfloor tk/2 \\rfloor$.",
+   "why": "The split is a function of $v$ and $tk$, so it is the same at each level.",
    "breaks": "Nothing. It is a definition.",
    "example": "The thunk takes $d'$ at $1$ in the cycle.",
    "rocq": "fuel/Fuel.v: f_spawn",
@@ -9374,7 +9396,7 @@ window.MAP = {
     },
     {
      "name": "M",
-     "meaning": "$\\mathsf{fends}(v)$, the handed ends"
+     "meaning": "$\\mathsf{fends}(v)$, the transferred ends"
     },
     {
      "name": "e'",
@@ -9383,51 +9405,43 @@ window.MAP = {
    ]
   },
   "F-Spawn.held": {
-   "title": "$M \\subseteq \\mathrm{dom}\\,\\varphi$",
-   "what": "Only held ends are handed on.",
+   "title": "$M \\subseteq \\mathrm{dom}\\,\\Phi$",
+   "what": "Only held ends are transferred.",
    "why": "A child mentioning an end the parent does not hold would act on an end without a counter.",
-   "breaks": "A box mentioning channel constants would hand over ends nobody holds.",
+   "breaks": "A box mentioning channel constants would pass on ends nobody holds.",
    "example": "$M = \\{d'\\}$.",
    "rocq": "fuel/Fuel.v: f_spawn",
-   "sig": "M \\subseteq \\mathrm{dom}\\,\\varphi",
+   "sig": "M \\subseteq \\mathrm{dom}\\,\\Phi",
    "args": [
     {
      "name": "M",
-     "meaning": "the handed ends"
+     "meaning": "the transferred ends"
     }
    ]
   },
   "fu.fspare": {
-   "title": "$\\mathsf{fspare}$",
-   "what": "$\\mathsf{fspare}\\,\\Pi\\,\\varphi\\,X \\iff \\forall o \\in X.\\ \\varphi(o) = f \\land \\neg\\mathsf{idle}(\\Pi\\,o) \\Rightarrow 1 \\leq f$.",
-   "why": "A hand-over passes the counter minus one, so a non-idle end must have a unit to spare. A spawn is no action, so this is its only check.",
-   "breaks": "A hop at counter $0$ under truncation passes $0$ again and an end travels forever.",
-   "example": "$\\mathsf{fspare}\\,\\Pi\\,\\{d' \\mapsto 1\\}\\,\\{d'\\}$.",
+   "title": "$\\mathsf{positive}$",
+   "what": "$\\mathsf{positive}(\\Phi) \\iff$ every end of $\\Phi$ that is not idle has counter at least $1$.",
+   "why": "A transfer passes the counter minus one, so a non-idle end must have a positive counter. A spawn is no action, so this is its only check.",
+   "breaks": "A transfer at counter $0$ under truncation passes $0$ again and an end is passed on forever.",
+   "example": "$\\mathsf{positive}(\\{d' \\mapsto S^{1}\\})$.",
    "rocq": "fuel/Fuel.v: fspare",
-   "sig": "\\mathsf{fspare} : \\mathsf{PEnv} \\to \\mathsf{CEnv} \\to \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{End}) \\to \\mathsf{Prop}",
+   "sig": "\\mathsf{positive}(\\Phi) \\iff \\forall o \\mapsto S^{f} \\in \\Phi.\\ \\neg\\mathsf{idle}\\,S \\Rightarrow 1 \\leq f",
    "args": [
     {
-     "name": "\\Pi",
-     "meaning": "the protocols, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy}$"
-    },
-    {
-     "name": "\\varphi",
-     "meaning": "the counters, a finite map $\\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$"
-    },
-    {
-     "name": "X",
-     "meaning": "the ends that must spare a unit"
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     }
    ]
   },
   "F-Spawn.child": {
    "title": "The child",
-   "what": "$v\\,\\ast \\in F^N_n\\llbracket\\mathsf{thread} \\annot{\\triangleright \\infty ; 0}\\rrbracket(\\Pi|_M, \\mathsf{fhand}\\,M\\,\\varphi, \\lceil tk/2 \\rceil)$.",
-   "why": "The child is a new soup thread, so it must have thread fuel at exactly the protocols, counters and tickets the soup moves to it.",
+   "what": "$v\\,\\ast \\in F^N_n\\llbracket\\Phi|_M{\\downarrow} ; \\lceil tk/2 \\rceil \\vdash \\mathsf{thread}\\ !\\ (\\infty, 0)\\rrbracket$.",
+   "why": "The child is a new lock-free process relation thread, so it must have thread fuel at exactly the ends, counters and tickets the lock-free process relation moves to the child.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(\\lambda u.\\,\\mathsf{close}\\,d')\\,\\ast$.",
    "rocq": "fuel/Fuel.v: f_spawn",
-   "sig": "v\\,\\ast \\in F^{N}_{n}\\llbracket \\mathsf{thread} \\annot{\\triangleright \\infty ; 0} \\rrbracket(\\Pi|_M, \\mathsf{fhand}\\,M\\,\\varphi, \\lceil tk/2 \\rceil)",
+   "sig": "v\\,\\ast \\in F^{N}_{n}\\llbracket \\Phi|_M{\\downarrow} ; \\lceil tk/2 \\rceil \\vdash \\mathsf{thread}\\ !\\ (\\infty, 0) \\rrbracket",
    "args": [
     {
      "name": "v\\,\\ast",
@@ -9435,26 +9449,7 @@ window.MAP = {
     },
     {
      "name": "M",
-     "meaning": "the handed ends"
-    }
-   ]
-  },
-  "fu.fhand": {
-   "title": "$\\mathsf{fhand}$",
-   "what": "$\\mathsf{fhand}\\,M\\,\\varphi = (\\varphi|_M) \\mathbin{\\dot-} 1$.",
-   "why": "Every counter passed on is the holder's minus one, which the termination measure of adequacy reads.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{fhand}\\,\\{a\\}\\,\\{a \\mapsto 3\\} = \\{a \\mapsto 2\\}$.",
-   "rocq": "fuel/Fuel.v: fhand",
-   "sig": "\\mathsf{fhand} : \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{End}) \\to \\mathsf{CEnv} \\to \\mathsf{CEnv}",
-   "args": [
-    {
-     "name": "M",
-     "meaning": "the handed ends"
-    },
-    {
-     "name": "\\varphi",
-     "meaning": "the counters, a finite map $\\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the transferred ends"
     }
    ]
   },
@@ -9475,8 +9470,8 @@ window.MAP = {
   },
   "F-Send": {
    "title": "F-Send",
-   "what": "An action on $o$ that hands on $M = \\mathsf{fends}(w)$ with counters minus one, the payload in $FV$, and the continuation with $o$ refilled.",
-   "why": "A send is an action, so F-Tick applies, and a hand-over, so $\\mathsf{fspare}$ applies.",
+   "what": "An action on $o$ that passes on $M = \\mathsf{fends}(w)$ one lower, the payload in $FV$, and the continuation with $o$ back at $N$.",
+   "why": "A send is an action, so F-Count applies, and a transfer, so $\\mathsf{positive}$ applies.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{send}\\,\\langle a, y\\rangle$ in the growing ring.",
    "rocq": "fuel/Fuel.v: f_send",
@@ -9505,17 +9500,17 @@ window.MAP = {
    ]
   },
   "F-Send.notsubj": {
-   "title": "$M \\subseteq \\mathrm{dom}\\,\\varphi \\setminus \\{o\\}$",
-   "what": "A send hands on held ends other than its subject.",
+   "title": "$o \\notin M \\subseteq \\mathrm{dom}\\,\\Phi$",
+   "what": "A send gives away held ends other than its subject.",
    "why": "The continuation keeps acting on $o$, so $o$ cannot leave.",
    "breaks": "A term that sends its own subject or an end its context holds.",
    "example": "$M = \\{a\\}$.",
    "rocq": "fuel/Fuel.v: f_send",
-   "sig": "M \\subseteq \\mathrm{dom}\\,\\varphi \\setminus \\{o\\}",
+   "sig": "o \\notin M \\subseteq \\mathrm{dom}\\,\\Phi",
    "args": [
     {
      "name": "M",
-     "meaning": "the handed ends"
+     "meaning": "the transferred ends"
     },
     {
      "name": "o",
@@ -9525,27 +9520,27 @@ window.MAP = {
   },
   "F-Send.payload": {
    "title": "Payload in $FV$",
-   "what": "$w \\in FV^N_n\\llbracket T^b\\rrbracket(\\Pi|_M, \\mathsf{fhand}\\,M\\,\\varphi)$.",
+   "what": "$w \\in FV^N_n\\llbracket\\Phi|_M{\\downarrow} \\vdash T\\rrbracket$, with every transferred counter lowered by one transfer.",
    "why": "$FV$ reads no point, so the raw payload type and its placed form agree.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$FV^N_n\\llbracket T^b\\rrbracket$.",
+   "example": "$FV^N_n\\llbracket \\{a \\mapsto S^{2}\\} \\vdash (S@x)^{2}\\rrbracket$ for a payload end promised at credit $2$.",
    "rocq": "fuel/Fuel.v: f_send",
-   "sig": "w \\in FV^{N}_{n}\\llbracket T\\annot{^{b}} \\rrbracket(\\Pi|_M, \\mathsf{fhand}\\,M\\,\\varphi)",
+   "sig": "w \\in FV^{N}_{n}\\llbracket \\Phi|_M{\\downarrow} \\vdash T \\rrbracket",
    "args": [
     {
      "name": "w",
      "meaning": "the payload"
     },
     {
-     "name": "T\\annot{^{b}}",
-     "meaning": "the raw payload type at the credit of the protocol"
+     "name": "T",
+     "meaning": "the payload type"
     }
    ]
   },
   "F-Recv": {
    "title": "F-Recv",
-   "what": "An action on $o$ that continues for every incoming value in $FV$ at every level $j \\leq n$ with disjoint maps.",
-   "why": "The receiver continues for every value its type admits, and the soup supplies the sender's handed maps.",
+   "what": "An action on $o$ that continues for every incoming value in $FV$ at every level $j \\leq n$ with ends disjoint from $\\Phi$.",
+   "why": "The receiver continues for every value its type admits, and the lock-free process relation supplies the sender's transferred ends.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{recv}\\,b$ in the client loop.",
    "rocq": "fuel/Fuel.v: f_recv",
@@ -9560,30 +9555,30 @@ window.MAP = {
      "meaning": "the received value"
     },
     {
-     "name": "j, \\Pi_i, \\varphi_i",
-     "meaning": "its level, protocols and counters"
+     "name": "j, \\Phi_i",
+     "meaning": "its level and the ends it brings"
     }
    ]
   },
   "F-Recv.forall": {
    "title": "Every incoming value",
-   "what": "$\\forall j \\leq n, \\Pi_i, \\varphi_i.\\ w \\in FV^N_j\\llbracket T^b\\rrbracket(\\Pi_i, \\varphi_i)$.",
-   "why": "Every value of $FV$ is exact, so incoming closures hold exactly what they mention.",
+   "what": "$\\forall j \\leq n, \\Phi_i.\\ w \\in FV^N_j\\llbracket\\Phi_i \\vdash T\\rrbracket$.",
+   "why": "Every value in $FV$ is exact, so incoming closures hold exactly what they mention.",
    "breaks": "Without exactness, a received closure owning nothing but mentioning an end could not be spawned.",
-   "example": "$\\forall j\\,\\Pi_i\\,\\varphi_i$.",
+   "example": "$\\Phi_i = \\{e \\mapsto S^{2}\\}$.",
    "rocq": "fuel/Fuel.v: f_recv",
-   "sig": "\\forall j \\leq n, \\Pi_i, \\varphi_i.\\ w \\in FV^{N}_{j}\\llbracket T\\annot{^{b}} \\rrbracket(\\Pi_i, \\varphi_i) \\Rightarrow \\ldots",
+   "sig": "\\forall j \\leq n, \\Phi_i \\mathbin{\\#} \\Phi.\\ w \\in FV^{N}_{j}\\llbracket \\Phi_i \\vdash T \\rrbracket \\Rightarrow \\ldots",
    "args": [
     {
-     "name": "\\Pi_i, \\varphi_i",
-     "meaning": "disjoint from $\\Pi[o \\mapsto S]$ and $\\mathsf{refill}\\,N\\,o\\,\\varphi$"
+     "name": "\\Phi_i",
+     "meaning": "the ends of the received value, disjoint from $\\Phi$"
     }
    ]
   },
   "F-Close": {
    "title": "F-Close, F-Select, F-Branch",
-   "what": "Actions that drop $o$ and tick the rest at a close, or advance $\\Pi(o)$ to $S_i$ and refill $o$ at a choice.",
-   "why": "They are the fuel forms of O-Close, O-Select and O-Branch, and each is an action, so F-Tick applies.",
+   "what": "Actions that drop $o$ and decrement the rest at a close, or advance the protocol of $o$ to $S_i$ and set it back to $N$ at a choice.",
+   "why": "They are the fuel forms of O-Close, O-Select and O-Branch, and each is an action, so F-Count applies.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{close}\\,c^{+}$.",
    "rocq": "fuel/Fuel.v: f_close, f_select, f_branch",
@@ -9601,7 +9596,7 @@ window.MAP = {
   },
   "F-Link": {
    "title": "F-Link",
-   "what": "Two distinct held ends at dual protocols leave, and one ticket is spent.",
+   "what": "Two distinct held ends at dual protocols leave, and one ticket is used.",
    "why": "Tickets bound the links between actions.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{link}\\,\\langle c^{+}, d^{-}\\rangle$ with $tk = 1$.",
@@ -9615,28 +9610,28 @@ window.MAP = {
    ]
   },
   "F-Link.plink": {
-   "title": "$\\mathsf{plink}$",
-   "what": "$o_1 \\neq o_2 \\land \\Pi(o_2) \\simeq \\overline{\\Pi(o_1)}$, with annotations.",
-   "why": "After the link the partners form one channel, whose protocols are dual only if $\\Pi(o_1)$ and $\\Pi(o_2)$ were, and annotations must match for later payload credits.",
+   "title": "Dual held ends",
+   "what": "$o_1 \\neq o_2$, both held, at protocols $S$ and $S' \\simeq \\overline{S}$, with annotations.",
+   "why": "After the link the partners form one channel, whose protocols are dual only if the two linked protocols were, and annotations must match for later payload credits.",
    "breaks": "A credit mismatch at a link breaks the payload credit of a later message.",
-   "example": "$\\mathsf{plink}\\,\\Pi\\,\\{o_1, o_2\\}$.",
+   "example": "$c^{+} \\mapsto S^{2}$ and $d^{-} \\mapsto \\overline{S}^{1}$.",
    "rocq": "fuel/Fuel.v: plink",
-   "sig": "\\mathsf{plink} : \\mathsf{PEnv} \\to \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{End}) \\to \\mathsf{Prop}",
+   "sig": "\\Phi(o_1) = S^{f},\\ \\Phi(o_2) = S'^{f'},\\ o_1 \\neq o_2,\\ S' \\simeq \\overline{S}",
    "args": [
     {
-     "name": "\\Pi",
-     "meaning": "the protocols, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy}$"
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
-     "name": "\\{o_1, o_2\\}",
+     "name": "o_1, o_2",
      "meaning": "the linked ends"
     }
    ]
   },
   "F-Link.ticket": {
    "title": "$1 \\leq tk$",
-   "what": "A link spends one ticket.",
-   "why": "Tickets are conserved and spent, so links cannot repeat forever.",
+   "what": "A link uses one ticket.",
+   "why": "Tickets are conserved and used, so links cannot repeat forever.",
    "breaks": "A box that links once per round forever.",
    "example": "$tk - 1$.",
    "rocq": "fuel/Fuel.v: f_link",
@@ -9653,9 +9648,9 @@ window.MAP = {
    "what": "An end with protocol $S' \\simeq S$ and counter $f \\geq a$.",
    "why": "Credits are lower bounds on counters.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$o$ at $(S@x)^2$ with counter $3$.",
+   "example": "$o \\mapsto S^{3}$ at $(S@x)^2$.",
    "rocq": "fuel/Fuel.v: Vty TSess",
-   "sig": "o \\in FV\\llbracket (S@x)\\annot{^{a}} \\rrbracket(\\Pi, \\varphi)",
+   "sig": "o \\in FV^{N}_{n}\\llbracket \\{o \\mapsto S'^{f}\\} \\vdash (S@x)\\annot{^{a}} \\rrbracket",
    "args": [
     {
      "name": "o",
@@ -9674,8 +9669,8 @@ window.MAP = {
   "FV-Sess.counter": {
    "title": "$a \\leq f$",
    "what": "The counter meets the credit.",
-   "why": "Typing reasons with credits and the soup with counters, and this inequality transfers every credit bound of typing to the counters.",
-   "breaks": "Without it, a context could age an end below its actual counter and F-Tick would fail on an end typing considers spare.",
+   "why": "Typing reasons with credits and the lock-free process relation with counters, and this inequality transfers every credit bound of typing to the counters.",
+   "breaks": "Without it, a context could age an end below its actual counter and F-Count would fail on an end whose credit typing treats as positive.",
    "example": "$2 \\leq 3$.",
    "rocq": "fuel/Fuel.v: Vty TSess",
    "sig": "a \\leq f",
@@ -9693,12 +9688,12 @@ window.MAP = {
   },
   "FV-Arrow": {
    "title": "$FV$ at an arrow",
-   "what": "A closure whose body has fuel for every larger refill, lower level, counters at or above the floor and argument in $FV$.",
+   "what": "A closure whose body has fuel for every larger counter bound, lower level, counters at or above the floor and argument in $FV$.",
    "why": "The clause reads costs, ticket needs, floors and credits, the data typing attaches to arrows.",
    "breaks": "Nothing. It is a definition.",
    "example": "A loop body at cost $\\infty$.",
    "rocq": "fuel/Fuel.v: Vty TLolli",
-   "sig": "\\lambda e \\in FV^{N}_{n}\\llbracket (T\\annot{^{a_1}} \\multimap_{c;\\vartheta;h} U\\annot{^{a_2}})\\annot{^{a}} \\rrbracket(\\Pi, \\varphi)",
+   "sig": "\\lambda e \\in FV^{N}_{n}\\llbracket \\Phi \\vdash (T \\multimap[(c, \\vartheta); h]\\, U)\\annot{^{a}} \\rrbracket",
    "args": [
     {
      "name": "c, \\vartheta, h",
@@ -9712,13 +9707,13 @@ window.MAP = {
    ]
   },
   "FV-Arrow.exact": {
-   "title": "$\\mathsf{fends}\\,e = \\mathrm{dom}\\,\\Pi$",
+   "title": "$\\mathsf{fends}\\,e = \\mathrm{dom}\\,\\Phi$",
    "what": "The closure holds exactly the ends it mentions.",
    "why": "It mirrors exactness of $V$, and the cost fundamental theorem needs it to read fuel off typing.",
-   "breaks": "A closure mentioning an end it does not hold would be in $FV$, and a forwarder receiving it could not spawn it.",
+   "breaks": "A closure mentioning an end it does not hold would be in $FV$, and a forwarder receiving that closure could not spawn the closure.",
    "example": "$\\lambda\\_.\\,\\mathsf{close}\\,a$ holds $\\{a\\}$.",
    "rocq": "fuel/Fuel.v: Vty TLolli",
-   "sig": "\\mathsf{fends}\\,e = \\mathrm{dom}\\,\\Pi = \\mathrm{dom}\\,\\varphi",
+   "sig": "\\mathsf{fends}\\,e = \\mathrm{dom}\\,\\Phi",
    "args": [
     {
      "name": "e",
@@ -9728,12 +9723,12 @@ window.MAP = {
   },
   "FV-Arrow.floor": {
    "title": "Counters $\\geq h + a$",
-   "what": "$\\forall o.\\ h + a \\leq \\varphi(o)$.",
-   "why": "The body may assume the floor $h$ on its captured counters, and the closure's own credit $a$ is spent while it is held.",
+   "what": "Every captured counter $f$ has $h + a \\leq f$.",
+   "why": "The body may assume the floor $h$ on its captured counters, and the closure's own credit $a$ is used while it is held.",
    "breaks": "Nothing. It is a definition.",
    "example": "$h = 1$, $a = 1$ needs counters $\\geq 2$.",
    "rocq": "fuel/Fuel.v: Vty TLolli",
-   "sig": "\\forall o.\\ h + a \\leq \\varphi(o)",
+   "sig": "\\Phi(o) = S^{f} \\Rightarrow h + a \\leq f",
    "args": [
     {
      "name": "h",
@@ -9748,39 +9743,39 @@ window.MAP = {
   },
   "FV-Arrow.body": {
    "title": "Body fuel",
-   "what": "$e[u] \\in F^{N'}_j\\llbracket U\\annot{^{a_2}} \\annot{\\triangleright c ; r}\\rrbracket(\\Pi \\cup \\Pi_u, \\varphi' \\cup \\varphi_u, tk)$ for every $tk$ with $\\mathsf{meets}\\,\\vartheta\\,r\\,tk$.",
-   "why": "The caller supplies an argument, counters lowered to the floor by its own actions, and a ticket count meeting the arrow's ticket need, and the body promises fuel with frame $c$.",
+   "what": "$e[u] \\in F^{N'}_j\\llbracket\\Phi' \\cup \\Phi_u ; tk \\vdash U\\ !\\ (c, r)\\rrbracket$ for every $tk$ with $\\vartheta(r) \\leq tk$.",
+   "why": "The caller supplies an argument, counters lowered to the floor by its own actions, and a ticket count covering the arrow's ticket need, and the body guarantees fuel with frame $c$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{meets}\\,\\vartheta\\,r\\,tk$.",
+   "example": "$\\vartheta(r) \\leq tk$.",
    "rocq": "fuel/Fuel.v: Vty TLolli",
-   "sig": "e[u] \\in F^{N'}_{j}\\llbracket U\\annot{^{a_2}} \\annot{\\triangleright c ; r} \\rrbracket(\\Pi \\cup \\Pi_u, \\varphi' \\cup \\varphi_u, tk)",
+   "sig": "e[u] \\in F^{N'}_{j}\\llbracket \\Phi' \\cup \\Phi_u ; tk \\vdash U\\ !\\ (c, r) \\rrbracket",
    "args": [
     {
      "name": "N', j",
-     "meaning": "a larger refill and a lower level"
+     "meaning": "a larger counter bound and a lower level"
     },
     {
-     "name": "\\varphi'",
-     "meaning": "the captured counters at the call, at least $h$"
+     "name": "\\Phi'",
+     "meaning": "the captured ends with counters at the call, at least $h$"
     },
     {
-     "name": "u, \\Pi_u, \\varphi_u",
-     "meaning": "the argument with its maps"
+     "name": "\\Phi_u",
+     "meaning": "the ends of the argument"
     },
     {
      "name": "r, tk",
-     "meaning": "a reserve and ticket count with $\\mathsf{meets}\\,\\vartheta\\,r\\,tk$"
+     "meaning": "with $\\vartheta(r) \\leq tk$"
     }
    ]
   },
   "FV-Box": {
    "title": "$FV$ at a box",
-   "what": "A box with no ends whose body has fuel per force at every larger refill, lower level and session instance in $\\mathsf{sinsts}\\,N'$.",
+   "what": "A box with no ends whose body has fuel per force at every larger counter bound, lower level and session instance in $\\mathsf{sinsts}\\,N'$.",
    "why": "A box is unlimited, so it holds no counters and works at every use.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{ring}$ at $N = 4$.",
    "rocq": "fuel/Fuel.v: Vty TBox",
-   "sig": "!e \\in FV^{N}_{n}\\llbracket \\Box(\\ldots) \\rrbracket(\\Pi, \\varphi)",
+   "sig": "!e \\in FV^{N}_{n}\\llbracket \\varnothing \\vdash \\Box(\\ldots) \\rrbracket",
    "args": [
     {
      "name": "e",
@@ -9795,7 +9790,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{ring}$.",
    "rocq": "fuel/Fuel.v: Vty TBox",
-   "sig": "\\mathsf{fends}\\,e = \\varnothing \\land \\Pi = \\varphi = \\varnothing",
+   "sig": "\\mathsf{fends}\\,e = \\varnothing",
    "args": [
     {
      "name": "e",
@@ -9805,16 +9800,16 @@ window.MAP = {
   },
   "FV-Box.body": {
    "title": "Body per force",
-   "what": "$e[!e] \\in F^{N'}_j\\llbracket U[\\bar s] \\annot{\\triangleright c ; r}\\rrbracket(\\varnothing, \\varnothing, tk)$ for every $N' \\sqsupseteq_{\\mathsf{rle}} N$, $j < n$, $\\bar s \\in \\mathsf{sinsts}\\,N'$ and $tk$ meeting $\\vartheta$.",
-   "why": "Each force unrolls the box once, at a refill and instance the forcing context chooses.",
+   "what": "$e[!e] \\in F^{N'}_j\\llbracket\\varnothing ; tk \\vdash U[\\bar s]\\ !\\ (c, r)\\rrbracket$ for every $N' \\sqsupseteq_{\\mathsf{rle}} N$, $j < n$, $\\bar s \\in \\mathsf{sinsts}\\,N'$ and $tk \\geq \\vartheta(r)$.",
+   "why": "Each force unrolls the box once, at a counter bound and instance the forcing context chooses.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{sinsts}\\,N'\\,\\bar s$.",
+   "example": "$\\bar s \\in \\mathsf{sinsts}\\,N'$.",
    "rocq": "fuel/Fuel.v: Vty TBox",
-   "sig": "e[!e] \\in F^{N'}_{j}\\llbracket U[\\bar s] \\annot{\\triangleright c ; r} \\rrbracket(\\varnothing, \\varnothing, tk)",
+   "sig": "e[!e] \\in F^{N'}_{j}\\llbracket \\varnothing ; tk \\vdash U[\\bar s]\\ !\\ (c, r) \\rrbracket",
    "args": [
     {
      "name": "N', j",
-     "meaning": "a larger refill and a lower level"
+     "meaning": "a larger counter bound and a lower level"
     },
     {
      "name": "\\bar s",
@@ -9822,18 +9817,18 @@ window.MAP = {
     },
     {
      "name": "r, tk",
-     "meaning": "with $\\mathsf{meets}\\,\\vartheta\\,r\\,tk$"
+     "meaning": "with $\\vartheta(r) \\leq tk$"
     }
    ]
   },
   "FV-Thread": {
    "title": "Thread result",
-   "what": "$v \\in FV\\llbracket\\mathsf{thread}\\rrbracket(\\Pi,\\varphi) \\iff \\Pi = \\varphi = \\varnothing$.",
+   "what": "$v \\in FV\\llbracket\\Phi \\vdash \\mathsf{thread}\\rrbracket \\iff \\Phi = \\varnothing$.",
    "why": "A finished thread holds no end.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\Pi = \\varphi = \\varnothing$.",
+   "example": "$\\Phi = \\varnothing$.",
    "rocq": "fuel/Fuel.v: Vres",
-   "sig": "v \\in FV\\llbracket \\mathsf{thread} \\rrbracket(\\Pi, \\varphi)",
+   "sig": "v \\in FV^{N}_{n}\\llbracket \\Phi \\vdash \\mathsf{thread} \\rrbracket",
    "args": [
     {
      "name": "v",
@@ -9843,20 +9838,20 @@ window.MAP = {
   },
   "fu.fsem": {
    "title": "$\\mathsf{fsem}$",
-   "what": "$\\exists tk.\\ \\forall n.\\ e$ has thread fuel at level $n$ with every held end at $N$.",
-   "why": "It is the per-thread fuel the soup needs, obtained from typing by the cost fundamental theorem.",
+   "what": "$\\mathsf{fsem}\\,N\\,\\Phi\\,e \\iff \\exists tk.\\ \\forall n.\\ e \\in F^N_n\\llbracket\\Phi ; tk \\vdash \\mathsf{thread}\\ !\\ (\\infty, 0)\\rrbracket$, where each counter of $\\Phi$ is $N$.",
+   "why": "It is the fuel of a thread that the lock-free process relation requires, and the cost fundamental theorem derives it from typing. It is the one fuel statement that holds at every level.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{fsem}\\,N\\,\\Pi\\,e$.",
+   "example": "$\\mathsf{fsem}\\,N\\,\\{c^{+} \\mapsto \\mathsf{Close}\\annot{^{N}}\\}\\,(\\mathsf{close}\\,c^{+})$.",
    "rocq": "fuel/Fuel.v: fsem",
-   "sig": "\\mathsf{fsem} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to \\mathsf{PEnv} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "sig": "\\mathsf{fsem} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to (\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times (\\mathbb{N} \\cup \\{\\infty\\})) \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "N",
-     "meaning": "the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
-     "name": "\\Pi",
-     "meaning": "the protocols, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy}$"
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "e",
@@ -9869,37 +9864,37 @@ window.MAP = {
    ]
   },
   "cs.csem": {
-   "title": "$\\Theta;\\Delta \\vDash^{N} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}$",
-   "what": "For every larger refill, level, injective renaming of $\\Theta$, grounding in $FV$ and ticket count meeting $\\vartheta$, the instance has fuel at $T^a$ with frame $c$.",
-   "why": "It reads no $\\Gamma$, world or future, because $F$ reads none of them.",
+   "title": "$\\Delta \\vDash^{N} e : T\\ !\\ \\varepsilon$",
+   "what": "For every larger counter bound, level, injective renaming of the ends of $\\Delta$, grounding in $FV$ and ticket count meeting $\\vartheta$, the instance has fuel at $T$ with frame $c$, for $\\varepsilon = (c, \\vartheta)$.",
+   "why": "It reads no $\\Gamma$, world or future, because fuel reads none of these.",
    "breaks": "Nothing. It is a definition.",
-   "example": "The cost fundamental theorem concludes it.",
+   "example": "The cost fundamental theorem concludes this judgment.",
    "rocq": "cost/CostSem.v: csem",
-   "sig": "\\Theta;\\Delta \\vDash^{N} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}",
+   "sig": "\\Delta \\vDash^{N} e : T\\ !\\ \\varepsilon",
    "args": [
     {
-     "name": "\\Theta, \\Delta",
-     "meaning": "the end environment and variable context"
+     "name": "\\Delta",
+     "meaning": "the linear context"
     },
     {
      "name": "N",
-     "meaning": "the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
-     "name": "T\\annot{^{a}}",
-     "meaning": "the credited type"
+     "name": "T",
+     "meaning": "the type"
     },
     {
-     "name": "c, \\vartheta",
-     "meaning": "the cost and ticket need"
+     "name": "\\varepsilon",
+     "meaning": "the effect, cost and ticket need"
     }
    ]
   },
   "sp.state": {
-   "title": "Soup state $a = (q, K, tk)$",
+   "title": "Annotated configuration $a = (q, K, tk)$",
    "what": "A configuration $q$, an ownership map $K$ and a ticket count per thread.",
    "why": "Ranks and counters of the termination measure are read off $K$, so ownership is fixed outside the index.",
-   "breaks": "Placement chosen per level lets a waiting main thread starve in every fair run.",
+   "breaks": "Placement chosen per level lets a waiting main thread wait forever in every fair run.",
    "example": "$(q, K, tk)$.",
    "rocq": "soup/State.v: lfstate",
    "sig": "a = (q, K, tk) \\in \\mathsf{Config} \\times \\mathsf{Own} \\times (\\mathbb{N} \\to \\mathbb{N})",
@@ -9910,7 +9905,7 @@ window.MAP = {
     },
     {
      "name": "K",
-     "meaning": "the ownership map of the soup state"
+     "meaning": "the ownership map of the annotated configuration"
     },
     {
      "name": "tk",
@@ -9920,7 +9915,7 @@ window.MAP = {
   },
   "sp.hold": {
    "title": "$K(o) = (t, x, f)$",
-   "what": "The holder thread $t$, point $x$ and counter $f$ of a held end $o$.",
+   "what": "The holding thread thread $t$, point $x$ and counter $f$ of a held end $o$.",
    "why": "One map records all data the measure reads.",
    "breaks": "Nothing. It is a definition.",
    "example": "$K(a) = (0, \\rho, 2)$.",
@@ -9929,7 +9924,7 @@ window.MAP = {
    "args": [
     {
      "name": "t, x, f",
-     "meaning": "holder thread, point and counter"
+     "meaning": "holding thread thread, point and counter"
     }
    ]
   },
@@ -9950,20 +9945,20 @@ window.MAP = {
   },
   "sp.exists": {
    "title": "Chosen per level",
-   "what": "$\\exists A, \\Pi, U$, the environment, protocols and result types chosen at each level.",
-   "why": "O-New and F-New pick the session type of a new channel by separate existentials, so $\\Pi$ cannot be read off $A$.",
+   "what": "$\\exists A, \\Phi, U$, the held ends for the relation and for fuel, and the result type of each thread, chosen at each level.",
+   "why": "O-New and F-New choose the session type of a new channel in separate existentials, so the protocols in $\\Phi$ are not determined by $A$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\exists A\\,\\Pi\\,U$.",
+   "example": "$A = \\{c^{+} \\mapsto \\mathsf{Close}@x\\}$ and $\\Phi = \\{c^{+} \\mapsto \\mathsf{Close}^{2}\\}$.",
    "rocq": "soup/Soup.v: Soup",
-   "sig": "\\exists A \\in \\mathsf{Env}, \\Pi \\in \\mathsf{PEnv}, U : \\mathbb{N} \\to \\mathsf{Ty}",
+   "sig": "\\exists A \\in \\mathsf{Env}, \\Phi, U : \\mathbb{N} \\to \\mathsf{Ty}",
    "args": [
     {
      "name": "A",
-     "meaning": "the environment of all held ends"
+     "meaning": "the held ends for the relation, $o \\mapsto S@x$"
     },
     {
-     "name": "\\Pi",
-     "meaning": "the protocols, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy}$"
+     "name": "\\Phi",
+     "meaning": "the held ends for fuel, $o \\mapsto S^{f}$"
     },
     {
      "name": "U",
@@ -9989,7 +9984,7 @@ window.MAP = {
   "sp.rel": {
    "title": "Every thread live",
    "what": "$\\forall t.\\ q(t) \\in E[\\kappa_L]^W_n\\llbracket K_t(A) \\vdash U_t\\rrbracket^{\\varnothing}$, where $K_t(A)$ restricts $A$ to the ends held by $t$.",
-   "why": "The per-thread live relation excludes internal divergence and infinite chains of spawns.",
+   "why": "The per-thread relation at $\\kappa_L$ excludes internal divergence and infinite chains of spawns.",
    "breaks": "Nothing. It is a definition.",
    "example": "$q(0) \\in E[\\kappa_L]\\llbracket K_0(A) \\vdash T\\rrbracket^{\\varnothing}$.",
    "rocq": "soup/State.v: sp_rel",
@@ -10021,28 +10016,32 @@ window.MAP = {
    ]
   },
   "sp.fuel": {
-   "title": "Every thread fueled",
-   "what": "$\\forall t.\\ q(t) \\in F^N_n\\llbracket\\mathsf{thread}\\rrbracket(K_t(\\Pi), \\mathsf{ctrs}\\,K\\,t, tk_t)$.",
-   "why": "Counters of the fuel layer are read from $K$, so they are the same at every level.",
+   "title": "Each thread has fuel",
+   "what": "$\\forall t.\\ q(t) \\in F^N_n\\llbracket\\Phi|_t ; tk_t \\vdash \\mathsf{thread}\\ !\\ (\\infty, 0)\\rrbracket$, where $\\Phi|_t$ is $\\Phi$ on the ends that $K$ gives to $t$.",
+   "why": "The counters of $\\Phi$ are those recorded in $K$, so they are the same at every level.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$q(0) \\in F^N_n\\llbracket\\mathsf{thread}\\rrbracket(\\ldots)$.",
+   "example": "$\\Phi|_0 = \\{a \\mapsto S^{2}\\}$.",
    "rocq": "soup/State.v: sp_fuel",
-   "sig": "e \\in F^{N}_{n}\\llbracket \\mathsf{thread} \\annot{\\triangleright \\infty ; 0} \\rrbracket(K_t(\\Pi), \\mathsf{ctrs}\\,K\\,t, tk_t)",
+   "sig": "e \\in F^{N}_{n}\\llbracket \\Phi|_t ; tk_t \\vdash \\mathsf{thread}\\ !\\ (\\infty, 0) \\rrbracket",
    "args": [
     {
      "name": "t",
      "meaning": "a thread"
+    },
+    {
+     "name": "\\Phi|_t",
+     "meaning": "$\\Phi$ on the ends that $K$ gives to $t$"
     }
    ]
   },
   "sp.pts": {
-   "title": "Points of $A$ from $K$",
-   "what": "$\\forall o.\\ \\mathsf{pt}(A\\,o) = \\mathsf{pt}(K\\,o)$.",
-   "why": "Points are fixed outside the index.",
+   "title": "Points and counters from $K$",
+   "what": "$K(o) = (t, x, f)$ implies that $o$ is at $x$ in $A$ and has counter $f$ in $\\Phi$.",
+   "why": "Points and counters are fixed outside the step index.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$A(a) = S@\\rho$ and $K(a) = (0, \\rho, 2)$.",
-   "rocq": "soup/State.v: sp_pts",
-   "sig": "\\forall o.\\ \\mathsf{pt}(A\\,o) = \\mathsf{pt}(K\\,o)",
+   "example": "$A(a) = S@\\rho$, $\\Phi(a) = S^{2}$ and $K(a) = (0, \\rho, 2)$.",
+   "rocq": "soup/State.v: sp_pts, ctrs",
+   "sig": "K(o) = (t, x, f) \\Rightarrow A(o) = \\_@x \\land \\Phi(o) = \\_^{f}",
    "args": [
     {
      "name": "o",
@@ -10051,28 +10050,28 @@ window.MAP = {
    ]
   },
   "sp.dom": {
-   "title": "$\\mathrm{dom}\\,\\Pi = \\mathrm{dom}\\,K$",
-   "what": "Protocols exist exactly for the held ends.",
-   "why": "The lock-free argument finds the protocol of an end of $K$, and of its partner, to decide idleness, and a synchronization updates $\\Pi$ and $K$ together.",
-   "breaks": "Without it, a held end could lack a protocol and idleness of a waiting end would be undefined.",
-   "example": "$\\mathrm{dom}\\,\\Pi = \\mathrm{dom}\\,K$.",
-   "rocq": "soup/State.v: sp_dom",
-   "sig": "\\mathrm{dom}\\,\\Pi = \\mathrm{dom}\\,K",
+   "title": "$\\mathrm{dom}\\,A = \\mathrm{dom}\\,\\Phi = \\mathrm{dom}\\,K$",
+   "what": "$A$, $\\Phi$ and $K$ describe the same held ends.",
+   "why": "Lock-free adequacy reads the protocol of an end of $K$, and of its dual end, to decide idleness, and a synchronization updates $\\Phi$ and $K$ together.",
+   "breaks": "Without it, a held end could lack a protocol, and idleness of a waiting end would be undefined.",
+   "example": "$\\mathrm{dom}\\,\\Phi = \\{c^{+}, c^{-}\\} = \\mathrm{dom}\\,K$.",
+   "rocq": "soup/State.v: sp_dom, sp_pts",
+   "sig": "\\mathrm{dom}\\,A = \\mathrm{dom}\\,\\Phi = \\mathrm{dom}\\,K",
    "args": [
     {
-     "name": "\\Pi",
-     "meaning": "the protocols, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy}$"
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "K",
-     "meaning": "the ownership map of the soup state"
+     "meaning": "the ownership map of the annotated configuration"
     }
    ]
   },
   "sp.owner": {
-   "title": "Holders exist",
+   "title": "Holding threads exist",
    "what": "$\\forall o.\\ K(o) = (t, \\_, \\_) \\Rightarrow t \\in \\mathrm{dom}\\,q$.",
-   "why": "A thread waiting on an end needs its partner's holder to be a thread of $q$, so the dependency of waiting threads is a relation on threads.",
+   "why": "A thread waiting on an end needs its partner's holding thread to be a thread of $q$, so the dependency of waiting threads is a relation on threads.",
    "breaks": "Without it, an end could be held by a thread that no longer exists, and its partner would wait forever.",
    "example": "$K(a) = (0, \\rho, 2)$ with $q(0)$ defined.",
    "rocq": "soup/State.v: sp_owner",
@@ -10080,15 +10079,15 @@ window.MAP = {
    "args": [
     {
      "name": "o, t",
-     "meaning": "a held end and its holder"
+     "meaning": "a held end and the thread holding it"
     }
    ]
   },
   "sp.closed": {
    "title": "Held ends restricted or interface",
    "what": "$\\forall o \\in \\mathrm{dom}\\,K.\\ \\mathsf{ech}\\,o \\in C \\lor o \\in \\mathrm{dom}\\,\\Sigma$.",
-   "why": "For $\\Sigma = \\varnothing$ every held end is restricted, which gives both ends of every acted channel to the soup, and composition splits held ends by it.",
-   "breaks": "Without it, a closed process could hold an end whose partner nobody holds, and its holder would wait forever.",
+   "why": "For $\\Sigma = \\varnothing$ each held end is restricted, so the lock-free process relation holds both ends of each channel it acts on. Composition splits held ends along this condition.",
+   "breaks": "Without it, a closed process could hold an end whose partner nobody holds, and the thread holding it would wait forever.",
    "example": "For $\\Sigma = \\varnothing$, $\\mathsf{ech}\\,o \\in C$.",
    "rocq": "soup/State.v: sp_closed",
    "sig": "\\forall o \\in \\mathrm{dom}\\,K.\\ \\mathsf{ech}\\,o \\in C \\lor o \\in \\mathrm{dom}\\,\\Sigma",
@@ -10121,7 +10120,7 @@ window.MAP = {
   "sp.sdual": {
    "title": "Restricted pairs dual",
    "what": "$A(o) = S@x \\land A(\\overline{o}) = S'@x' \\land \\mathsf{ech}\\,o \\in C \\Rightarrow x' = \\overline{x} \\land \\mathsf{sdual}\\,S\\,S'$.",
-   "why": "Internal partners sit at dual points with dual session types.",
+   "why": "Internal partners are at dual points with dual session types.",
    "breaks": "Nothing. It is a definition.",
    "example": "$x' = \\overline{x}$.",
    "rocq": "soup/State.v: sp_sdual",
@@ -10135,12 +10134,12 @@ window.MAP = {
   },
   "sp.pdual": {
    "title": "Restricted protocols dual",
-   "what": "$\\Pi(o) = P \\land \\Pi(\\overline{o}) = P' \\land \\mathsf{ech}\\,o \\in C \\Rightarrow P' \\simeq \\overline{P}$.",
-   "why": "Lock-free adequacy reads idleness off $\\Pi$, and duality transfers idleness across a pair.",
+   "what": "$\\mathsf{ech}\\,o \\in C$, $\\Phi(o) = P^{f}$ and $\\Phi(\\overline{o}) = P'^{f'}$ imply $P' \\simeq \\overline{P}$.",
+   "why": "Lock-free adequacy reads idleness from $\\Phi$, and duality transfers idleness from an end to its dual end.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\Pi(c^{-}) \\simeq \\overline{\\Pi(c^{+})}$.",
+   "example": "$\\Phi(c^{+}) = \\mathsf{Close}^{2}$ and $\\Phi(c^{-}) = \\mathsf{Close}^{1}$.",
    "rocq": "soup/State.v: sp_pdual",
-   "sig": "\\Pi(o) = P \\land \\Pi(\\overline{o}) = P' \\land \\mathsf{ech}\\,o \\in C \\Rightarrow P' \\simeq \\overline{P}",
+   "sig": "\\mathsf{ech}\\,o \\in C \\land \\Phi(o) = P^{f} \\land \\Phi(\\overline{o}) = P'^{f'} \\Rightarrow P' \\simeq \\overline{P}",
    "args": [
     {
      "name": "P, P'",
@@ -10164,13 +10163,13 @@ window.MAP = {
    ]
   },
   "sp.psig": {
-   "title": "Interface protocols in $\\Pi$",
-   "what": "$\\Sigma(o) = S@x \\Rightarrow \\Pi(o) = S$.",
-   "why": "At composition the cut's protocols come from $\\Sigma$, which typing makes exactly dual.",
+   "title": "Interface protocols in $\\Phi$",
+   "what": "$\\Sigma(o) = S@x$ implies $\\Phi(o) = S^{f}$ for some counter $f$.",
+   "why": "At composition the protocols of the cut come from $\\Sigma$, which typing makes dual.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\Pi(o) = S$.",
+   "example": "$\\Sigma(o) = \\mathsf{Close}@x$ and $\\Phi(o) = \\mathsf{Close}^{2}$.",
    "rocq": "soup/State.v: sp_psig",
-   "sig": "\\Sigma(o) = S@x \\Rightarrow \\Pi(o) = S",
+   "sig": "\\Sigma(o) = S@x \\Rightarrow \\Phi(o) = S^{f}",
    "args": [
     {
      "name": "o",
@@ -10196,9 +10195,9 @@ window.MAP = {
   "sp.lfsem": {
    "title": "$\\Sigma \\Vvdash_W p : T$",
    "what": "$\\exists N \\in \\mathbb{N}, a.\\ \\mathsf{erase}(q_a) = p \\land \\forall n.\\ a \\in S^{N,W}_n\\llbracket\\Sigma \\vdash T\\rrbracket$.",
-   "why": "The soup alone suffices, and absence of internal divergence of the soup gives what a process conjunct would.",
+   "why": "The lock-free process relation alone suffices, and absence of internal divergence of the lock-free process relation gives what a process conjunct would.",
    "breaks": "Nothing. It is a definition.",
-   "example": "The lock-free fundamental theorem concludes it.",
+   "example": "The lock-free fundamental theorem concludes this judgment.",
    "rocq": "soup/Soup.v: lf_sem",
    "sig": "\\Sigma \\Vvdash_{W} p : T",
    "args": [
@@ -10220,7 +10219,7 @@ window.MAP = {
     },
     {
      "name": "N, a",
-     "meaning": "the refill and the soup state, fixed before $n$"
+     "meaning": "the counter bound and the annotated configuration, fixed before $n$"
     }
    ]
   },
@@ -10228,33 +10227,33 @@ window.MAP = {
    "title": "$\\exists$ before $\\forall n$",
    "what": "$N$ and the state $a$ are fixed before the level quantifier.",
    "why": "Ownership, points and counters are then the same at every level.",
-   "breaks": "A placement chosen per level lets the main thread starve in every fair run.",
+   "breaks": "A placement chosen per level lets the main thread wait forever in every fair run.",
    "example": "$\\exists N\\,a.\\ \\ldots \\forall n$.",
    "rocq": "soup/Soup.v: lf_sem",
    "sig": "\\exists N \\in \\mathbb{N}, a.\\ \\mathsf{erase}(q_a) = p \\land \\forall n.\\ \\ldots",
    "args": [
     {
      "name": "N",
-     "meaning": "the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "a",
-     "meaning": "the soup state"
+     "meaning": "the annotated configuration"
     }
    ]
   },
   "sp.next": {
    "title": "$\\mathsf{lf\\_next}$",
    "what": "$\\mathsf{lf\\_next}\\,N\\,(q, K, tk)\\,ev\\,q' = (q', \\mathsf{own\\_next}\\,N\\,ev\\,K, \\mathsf{tk\\_next}\\,ev\\,tk)$.",
-   "why": "Creation places new ends with counter $N$, actions move and refill, hand-overs move with counter minus one, links spend a ticket and rename, spawns split tickets, all independent of the level.",
+   "why": "Creation places new ends with counter $N$, actions move and counter bound, transfer move with counter minus one, links use a ticket and rename, spawns split tickets, all independent of the level.",
    "breaks": "Nothing. It is a definition.",
-   "example": "One step of the soup along an event.",
+   "example": "One step of the lock-free process relation along an event.",
    "rocq": "soup/Soup.v: lf_next",
    "sig": "\\mathsf{lf\\_next} : \\mathbb{N} \\to \\mathsf{LFState} \\to \\mathsf{Event} \\to \\mathsf{Config} \\to \\mathsf{LFState}",
    "args": [
     {
      "name": "N",
-     "meaning": "the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "(q, K, tk)",
@@ -10270,22 +10269,53 @@ window.MAP = {
     }
    ]
   },
+  "sp.own": {
+   "title": "$\\mathsf{consistent}(a, A, \\Phi)$",
+   "what": "The ownership map $K$ of the annotated configuration agrees with $A$ and $\\Phi$. Each held end is held by one thread of the configuration and is internal or in the interface. Both ends of an internal channel are held, at dual types, points and protocols. Interface entries come from $\\Sigma$, and counters are finite.",
+   "why": "Lock-free adequacy reads the thread holding an end, its point and its counter from $K$, and concludes that the dual end of an internal end is held by some thread at the dual protocol.",
+   "breaks": "Without it a thread could wait on an end whose dual end no thread holds, and the chain of waits in the proof of adequacy would break off.",
+   "example": "Two threads closing $c^{+}$ and $c^{-}$, each holding one end, with $C = \\{c\\}$.",
+   "rocq": "soup/State.v: soup_gen",
+   "sig": "\\mathsf{consistent} : \\mathsf{LFState} \\to \\mathsf{Env} \\to (\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathbb{N}) \\to \\mathsf{Prop}",
+   "args": [
+    {
+     "name": "a",
+     "meaning": "the annotated configuration $(q, K, tk)$"
+    },
+    {
+     "name": "A",
+     "meaning": "the held ends for the relation"
+    },
+    {
+     "name": "\\Phi",
+     "meaning": "the held ends for fuel"
+    }
+   ]
+  },
   "sr.FE": {
-   "title": "Fuel $F^N_n\\llbracket\\sigma \\triangleright d ; r\\rrbracket(\\Pi, \\varphi, tk)$",
-   "what": "The fuel predicate at refill $N$ and level $n$.",
-   "why": "It bounds postponement and link chatter per thread, independent of points.",
+   "title": "Fuel $F^N_n\\llbracket\\Phi ; tk \\vdash \\sigma\\ !\\ (d, r)\\rrbracket$",
+   "what": "The thread holds the ends $\\Phi$ and $tk$ tickets and has fuel for $n$ more steps to return at $\\sigma$ within $d$ actions with $r$ tickets left, at counter bound $N$.",
+   "why": "It bounds postponement and links per thread, independent of points. It is indexed by $n$, as $E$ is, so it is written as membership and not as a judgment.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$F^{3}_n\\llbracket\\mathsf{thread} \\annot{\\triangleright \\infty ; 0}\\rrbracket(\\Pi, \\varphi, 0)$.",
+   "example": "$F^{3}_n\\llbracket\\{a \\mapsto S^{3}\\} ; 0 \\vdash \\mathsf{thread}\\ !\\ (\\infty, 0)\\rrbracket$.",
    "rocq": "fuel/Fuel.v: FuelE",
-   "sig": "e \\in F^{N}_{n}\\llbracket \\sigma \\triangleright d ; r \\rrbracket(\\Pi, \\varphi, tk)",
+   "sig": "e \\in F^{N}_{n}\\llbracket \\Phi ; tk \\vdash \\sigma\\ !\\ (d, r) \\rrbracket",
    "args": [
     {
      "name": "N",
-     "meaning": "the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "n",
      "meaning": "the level, $n \\in \\mathbb{N}$"
+    },
+    {
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+    },
+    {
+     "name": "tk",
+     "meaning": "the tickets of the thread, $tk \\in \\mathbb{N}$"
     },
     {
      "name": "\\sigma",
@@ -10293,23 +10323,11 @@ window.MAP = {
     },
     {
      "name": "d",
-     "meaning": "the frame, $d \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the frame, the actions left before returning, $d \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "r",
-     "meaning": "the reserve, $r \\in \\mathbb{N}$"
-    },
-    {
-     "name": "\\Pi",
-     "meaning": "the protocols, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy}$"
-    },
-    {
-     "name": "\\varphi",
-     "meaning": "the counters, a finite map $\\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$"
-    },
-    {
-     "name": "tk",
-     "meaning": "the tickets of the thread, $tk \\in \\mathbb{N}$"
+     "meaning": "the reserve, the tickets kept on return, $r \\in \\mathbb{N}$"
     },
     {
      "name": "e",
@@ -10318,33 +10336,29 @@ window.MAP = {
    ]
   },
   "sr.FV": {
-   "title": "Fueled values $FV^N_n\\llbracket\\sigma\\rrbracket(\\Pi, \\varphi)$",
-   "what": "The value predicate of fuel at refill $N$ and level $n$.",
-   "why": "Values carry the protocols and counters of their ends.",
+   "title": "Values with fuel, $FV^N_n\\llbracket\\Phi \\vdash \\sigma\\rrbracket$",
+   "what": "The value holds exactly the ends $\\Phi$, and their counters meet the credits of $\\sigma$.",
+   "why": "Values have the protocols and counters of their ends.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$FV\\llbracket(S@x)^2\\rrbracket(\\{o \\mapsto S\\}, \\{o \\mapsto 3\\})$.",
+   "example": "$o \\in FV\\llbracket\\{o \\mapsto S^{3}\\} \\vdash (S@x)^2\\rrbracket$.",
    "rocq": "fuel/Fuel.v: Vfuel, Vty",
-   "sig": "v \\in FV^{N}_{n}\\llbracket \\sigma \\rrbracket(\\Pi, \\varphi)",
+   "sig": "v \\in FV^{N}_{n}\\llbracket \\Phi \\vdash \\sigma \\rrbracket",
    "args": [
     {
      "name": "N",
-     "meaning": "the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "n",
      "meaning": "the level, $n \\in \\mathbb{N}$"
     },
     {
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+    },
+    {
      "name": "\\sigma",
      "meaning": "the result"
-    },
-    {
-     "name": "\\Pi",
-     "meaning": "the protocols, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy}$"
-    },
-    {
-     "name": "\\varphi",
-     "meaning": "the counters, a finite map $\\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "v",
@@ -10354,10 +10368,10 @@ window.MAP = {
   },
   "sr.act": {
    "title": "$\\mathsf{act}\\,o$",
-   "what": "The common premise of every action on $o$, F-Wait and F-Tick.",
-   "why": "Send, receive, close, select and branch share it.",
+   "what": "The common premise of every action on $o$, F-Wait and F-Count.",
+   "why": "Send, receive, close, select and branch share this premise.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{act}\\,a$ at $\\varphi = \\{a \\mapsto 0, b \\mapsto 1\\}$ holds.",
+   "example": "$\\mathsf{act}\\,a$ at $\\Phi = \\{a \\mapsto S\\annot{^{0}}, b \\mapsto S'^{1}\\}$ holds.",
    "rocq": "fuel/Fuel.v: f_act",
    "sig": "\\mathsf{act} : \\mathsf{End} \\to \\mathsf{Prop}",
    "args": [
@@ -10366,12 +10380,8 @@ window.MAP = {
      "meaning": "the subject end, $o \\in \\mathsf{End}$"
     },
     {
-     "name": "\\Pi",
-     "meaning": "the protocols, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy}$"
-    },
-    {
-     "name": "\\varphi",
-     "meaning": "the counters, a finite map $\\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$"
+     "name": "\\Phi",
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "d",
@@ -10546,7 +10556,7 @@ window.MAP = {
    "args": [
     {
      "name": "N",
-     "meaning": "the refill, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
      "name": "\\alpha",
@@ -10681,51 +10691,32 @@ window.MAP = {
    ]
   },
   "sr.tenv-erase": {
-   "title": "$|\\Theta|$",
-   "what": "\\annp{$\\Theta$ without credits, each entry $S@x^a$ becoming $S@x$.}",
-   "why": "\\annp{$E$ reads no credit.}",
+   "title": "$|\\Delta|$",
+   "what": "The ends of $\\Delta$ with their session types and points, each entry $(S@x)\\annot{^{a}}$ becoming $S@x$.",
+   "why": "\\annp{$E$ reads ends only, and no credit.}",
    "breaks": "Nothing. It is a definition.",
-   "example": "$|\\{c^{+} \\mapsto S@\\rho^{3}\\}| = \\{c^{+} \\mapsto S@\\rho\\}$.",
+   "example": "$|c^{+} : (S@\\rho)^{3},\\ 0 : T| = \\{c^{+} \\mapsto S@\\rho\\}$.",
    "rocq": "relation/Relation.v: tenv_erase",
-   "sig": "|\\cdot| : \\mathsf{TEnv} \\to \\mathsf{Env}",
+   "sig": "|\\cdot| : \\mathsf{Ctx} \\to \\mathsf{Env}",
    "args": [
     {
-     "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "name": "\\Delta",
+     "meaning": "a linear context"
     }
    ]
   },
   "sr.fvagg": {
-   "title": "Aggregates in $FV$",
-   "what": "$\\otimes$ splits $\\Pi$ and $\\varphi$ disjointly and gives each part credit $a + a_i$, $\\oplus$ gives the injected part credit $a + a_i$, and $\\exists$ gives its body credit $a + a_T$.",
-   "why": "Credits of aggregates push inward to the ends.",
+   "title": "Products, sums and existentials in $FV$",
+   "what": "$\\otimes$ splits $\\Phi$ disjointly between its parts, $\\oplus$ checks the injected part, and $\\exists$ checks its body.",
+   "why": "Only ends and closures have credits, so these types only pass $\\Phi$ on.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$((T^1 \\otimes U^1))^1$ checks $T$ and $U$ at credit $2$.",
+   "example": "$(S@x)^{2} \\otimes \\ast$ gives $o$ to the first part.",
    "rocq": "fuel/Fuel.v: Vty",
    "sig": "FV \\text{ at } \\otimes, \\oplus, \\exists",
    "args": [
     {
-     "name": "a, a_i",
-     "meaning": "the credits of the aggregate and of its parts"
-    }
-   ]
-  },
-  "sr.ctrs": {
-   "title": "$\\mathsf{ctrs}\\,K\\,t$",
-   "what": "The counters of the ends held by thread $t$, read from $K$.",
-   "why": "Fuel of a soup thread uses exactly these counters.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{ctrs}\\,K\\,0 = \\{a \\mapsto 2\\}$.",
-   "rocq": "soup/State.v: ctrs",
-   "sig": "\\mathsf{ctrs} : \\mathsf{Own} \\to \\mathbb{N} \\to \\mathsf{CEnv}",
-   "args": [
-    {
-     "name": "K",
-     "meaning": "the ownership map of the soup state"
-    },
-    {
-     "name": "t",
-     "meaning": "a thread"
+     "name": "\\Phi",
+     "meaning": "the held ends, split among the parts"
     }
    ]
   },
@@ -10752,65 +10743,11 @@ window.MAP = {
     }
    ]
   },
-  "th.live-adequacy": {
-   "title": "Live adequacy",
-   "what": "For strict $W$, if $\\varnothing \\mathrel{|\\!\\!\\vDash}_W p : T$ then $p$ is deadlock free and has no $\\tau$-divergence.",
-   "why": "Administrative steps cost $0$ in $\\kappa_L$ and are read inside a least fixpoint. Hence no reachable state starts an infinite sequence of them.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "A guarded receive loop takes no infinite sequence of free steps.",
-   "rocq": "relation/Adequacy.v: live_adequacy",
-   "sig": "\\mathsf{strict}\\,W \\land \\varnothing \\mathrel{|\\!\\!\\vDash}_W p : T \\Rightarrow \\mathsf{deadlock\\_free}\\,p \\land \\mathsf{no\\_tau\\_divergence}\\,p",
-   "args": [
-    {
-     "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
-    },
-    {
-     "name": "p",
-     "meaning": "a closed process $(C, E)$"
-    },
-    {
-     "name": "T",
-     "meaning": "the result type of the main thread"
-    }
-   ]
-  },
-  "th.adequacy-gen": {
-   "title": "Adequacy for every cost table",
-   "what": "For every $\\kappa$ and strict $W$, if $p \\in P[\\kappa]^{W}_{n}\\llbracket\\varnothing \\vdash T\\rrbracket$ for all $n$, then $p$ is deadlock free.",
-   "why": "A $\\tau$ step lowers the level by at most $\\kappa(\\mathit{give}) + \\kappa(\\mathit{take})$, so for every reachable state some level reaches it with a positive level left.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "Instantiated at $\\kappa_{DF}$ and $\\kappa_L$.",
-   "rocq": "relation/Adequacy.v: adequacy_gen",
-   "sig": "\\forall \\kappa.\\ \\mathsf{strict}\\,W \\land (\\forall n.\\ p \\in P[\\kappa]^{W}_{n}\\llbracket\\varnothing \\vdash T\\rrbracket) \\Rightarrow \\mathsf{deadlock\\_free}\\,p",
-   "args": [
-    {
-     "name": "\\kappa",
-     "meaning": "a cost table, $\\kappa_{DF}$ for deadlock freedom and $\\kappa_L$ for liveness"
-    },
-    {
-     "name": "n",
-     "meaning": "the level, a natural number"
-    },
-    {
-     "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
-    },
-    {
-     "name": "p",
-     "meaning": "a closed process $(C, E)$"
-    },
-    {
-     "name": "T",
-     "meaning": "the result type of the main thread"
-    }
-   ]
-  },
   "th.lf-adequacy": {
    "title": "Lock-free adequacy",
    "what": "For $W$ with $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$, if $\\varnothing \\Vvdash_W p : T$ then $p$ is lock free.",
-   "why": "A pending thread waits for the holder of the partner of its end. The proof follows this chain of waiting threads and shows it is finite, by a measure of the point of the awaited end, the tickets left and the counter, which decreases because $\\prec_W$ is well-founded.",
-   "breaks": "Without $\\mathsf{wfworld}\\,W$ an infinite descending chain of points lets a thread wait forever along an infinite chain of holders.",
+   "why": "A pending thread waits for the thread holding the partner of its end. The proof follows this chain of waiting threads and shows it is finite, by a measure of the point of the awaited end, the tickets left and the counter, which decreases because $\\prec_W$ is well-founded.",
+   "breaks": "Without $\\mathsf{wfworld}\\,W$ an infinite descending chain of points lets a thread wait forever along an infinite chain of holding threads.",
    "example": "Two threads closing the two ends of $c$ are lock free.",
    "rocq": "soup/LFAdequacy.v: lf_adequacy",
    "sig": "\\mathsf{strict}\\,W \\land \\mathsf{wfworld}\\,W \\land \\varnothing \\Vvdash_W p : T \\Rightarrow \\mathsf{lock\\_free}\\,p",
@@ -10852,72 +10789,22 @@ window.MAP = {
     }
    ]
   },
-  "th.soup-no-tau": {
-   "title": "No $\\tau$-divergence of the soup",
-   "what": "If $a \\in S^{N,W}_{n}\\llbracket\\varnothing \\vdash T\\rrbracket$ for all $n$, then $\\mathsf{erase}\\,q_a$ has no $\\tau$-divergence.",
-   "why": "Every thread of the soup is in the live relation, which admits no infinite sequence of free steps. Hence the soup needs no live process relation beside it.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "An infinite chain of spawns is rejected thread by thread.",
-   "rocq": "soup/SoupTau.v: soup_no_tau_divergence",
-   "sig": "(\\forall n.\\ a \\in S^{N,W}_{n}\\llbracket\\varnothing \\vdash T\\rrbracket) \\Rightarrow \\mathsf{no\\_tau\\_divergence}(\\mathsf{erase}\\,q_a)",
-   "args": [
-    {
-     "name": "a",
-     "meaning": "a soup state, fixed before the level"
-    },
-    {
-     "name": "n",
-     "meaning": "the level, a natural number"
-    },
-    {
-     "name": "q_a",
-     "meaning": "the configuration of $a$"
-    }
-   ]
-  },
-  "th.lfsoup-step": {
-   "title": "One step of the soup",
-   "what": "If $a \\in S^{N,W}_{n+1}$ and $q_a \\xrightarrow{ev} q'$, then $\\mathsf{lf\\_next}\\,N\\,a\\,ev\\,q' \\in S^{N,W}_{n}$.",
-   "why": "Ownership, points and counters after the step are functions of the step alone, so they agree at every index. Each thread pays its own side of a synchronization.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "Iterating it follows a whole run.",
-   "rocq": "soup/SoupRun.v: lfsoup_step",
-   "sig": "a \\in S^{N,W}_{n+1} \\land q_a \\xrightarrow{ev} q' \\Rightarrow \\mathsf{lf\\_next}\\,N\\,a\\,ev\\,q' \\in S^{N,W}_{n}",
-   "args": [
-    {
-     "name": "a",
-     "meaning": "a soup state at level $n + 1$"
-    },
-    {
-     "name": "ev",
-     "meaning": "the event of the step"
-    },
-    {
-     "name": "q'",
-     "meaning": "the configuration after the step"
-    }
-   ]
-  },
   "th.fundamental": {
    "title": "Fundamental theorem",
-   "what": "For strict $W$, $\\Theta ; \\varnothing ; \\Delta \\vdash^{F}_{W} t : T$ implies $\\Theta ; \\Delta \\vDash^{F}_{W} t : T$.",
+   "what": "For strict $W$, $\\varnothing ; \\Delta \\vdash^{F}_{W} t : T$ implies $\\Delta \\vDash^{F}_{W} t : T$.",
    "why": "Each typing rule has a semantic counterpart that holds at every level, and the theorem is the induction on the derivation.",
    "breaks": "Nothing. It is a definition.",
    "example": "The main thread of the cycle example satisfies the semantic judgment.",
    "rocq": "static/Fundamental.v: fundamental",
-   "sig": "\\mathsf{strict}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\vdash^{F}_{W} t : T \\Rightarrow \\Theta ; \\Delta \\vDash^{F}_{W} t : T",
+   "sig": "\\mathsf{strict}\\,W \\land \\varnothing ; \\Delta \\vdash^{F}_{W} t : T \\Rightarrow \\Delta \\vDash^{F}_{W} t : T",
    "args": [
     {
      "name": "W",
      "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
     },
     {
-     "name": "\\Theta",
-     "meaning": "the ends held by the term"
-    },
-    {
      "name": "\\Delta",
-     "meaning": "the variable context"
+     "meaning": "the linear context of ends and variables"
     },
     {
      "name": "F",
@@ -10934,52 +10821,44 @@ window.MAP = {
    ]
   },
   "th.fundamental-typed": {
-   "title": "Fundamental theorem for the merged judgment",
-   "what": "For strict $W$ and every $N$, the merged judgment implies the semantic judgment at $\\Theta_{df}$, $\\Delta_{df}$ and $T_{df}$.",
-   "why": "Erasing the annotations of a merged derivation gives a deadlock-free derivation, to which the fundamental theorem applies.",
+   "title": "Fundamental theorem for annotated typing",
+   "what": "For strict $W$ and every $N$, the annotated typing judgment implies the semantic judgment at $\\Delta_{df}$ and $T_{df}$.",
+   "why": "Erasing the annotations of an annotated derivation gives a deadlock-free derivation, to which the fundamental theorem applies.",
    "breaks": "Nothing. It is a definition.",
    "example": "The client and server main at $N = \\infty$.",
    "rocq": "static/Fundamental.v: fundamental_typed",
-   "sig": "\\mathsf{strict}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\vdash^{F}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta} \\Rightarrow \\Theta_{df} ; \\Delta_{df} \\vDash^{F}_{W} t : T_{df}",
+   "sig": "\\mathsf{strict}\\,W \\land \\varnothing ; \\Delta \\vdash^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\Rightarrow \\Delta_{df} \\vDash^{F}_{W} t : T_{df}",
    "args": [
     {
      "name": "W",
      "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
     },
     {
-     "name": "\\Theta",
-     "meaning": "the ends held by the term"
-    },
-    {
      "name": "\\Delta",
-     "meaning": "the variable context"
+     "meaning": "the linear context of ends and variables"
     },
     {
      "name": "N",
-     "meaning": "any refill"
+     "meaning": "any counter bound"
     }
    ]
   },
   "th.live-fundamental": {
    "title": "Live fundamental theorem",
-   "what": "For strict $W$, $\\Theta ; \\varnothing ; \\Delta \\vdash^{F}_{W} t : T$ and $\\varnothing \\vdash\\!\\triangleright t$ imply $\\Theta ; \\Delta \\mathrel{|\\!\\!\\vDash}^{F}_{W} t : T$.",
-   "why": "The guard lets a box recurse only after an action, so every recursive call is read at a lower level, as the least fixpoint of the live relation requires.",
+   "what": "For strict $W$, $\\varnothing ; \\Delta \\vdash^{F}_{W} t : T$ and $\\varnothing \\vdash\\!\\triangleright t$ imply $\\Delta \\mathrel{|\\!\\!\\vDash}^{F}_{W} t : T$.",
+   "why": "The guard lets a box recurse only after an action, so every recursive call is read at a lower level, as the least fixpoint of the relation at $kappa_L$ requires.",
    "breaks": "Without the guard the statement is false, $!(f = \\mathsf{force}\\,f)$ types and satisfies no live judgment.",
    "example": "The guarded receive loop.",
    "rocq": "static/LiveFundamental.v: live_fundamental",
-   "sig": "\\mathsf{strict}\\,W \\land \\Theta ; \\varnothing ; \\Delta \\vdash^{F}_{W} t : T \\land \\varnothing \\vdash\\!\\triangleright t \\Rightarrow \\Theta ; \\Delta \\mathrel{|\\!\\!\\vDash}^{F}_{W} t : T",
+   "sig": "\\mathsf{strict}\\,W \\land \\varnothing ; \\Delta \\vdash^{F}_{W} t : T \\land \\varnothing \\vdash\\!\\triangleright t \\Rightarrow \\Delta \\mathrel{|\\!\\!\\vDash}^{F}_{W} t : T",
    "args": [
     {
      "name": "W",
      "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
     },
     {
-     "name": "\\Theta",
-     "meaning": "the ends held by the term"
-    },
-    {
      "name": "\\Delta",
-     "meaning": "the variable context"
+     "meaning": "the linear context of ends and variables"
     },
     {
      "name": "F",
@@ -10992,13 +10871,13 @@ window.MAP = {
    ]
   },
   "th.live-fundamental-typed": {
-   "title": "Live fundamental theorem for the merged judgment",
-   "what": "For strict $W$, the merged judgment with $\\varnothing \\vdash\\!\\triangleright t$ implies the live judgment at erased environments and type.",
-   "why": "Lock-free typing reaches the live relation of each thread through this theorem.",
+   "title": "Live fundamental theorem for annotated typing",
+   "what": "For strict $W$, the annotated typing judgment with $\\varnothing \\vdash\\!\\triangleright t$ implies the live judgment at erased environments and type.",
+   "why": "Lock-free soundness obtains the relation at $kappa_L$ of each thread from this theorem.",
    "breaks": "Nothing. It is a definition.",
    "example": "A thread typed by P-Term at finite $N$.",
    "rocq": "static/LiveFundamental.v: live_fundamental_typed",
-   "sig": "\\mathsf{strict}\\,W \\land \\ldots \\vdash^{F}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta} \\land \\varnothing \\vdash\\!\\triangleright t \\Rightarrow \\Theta_{df} ; \\Delta_{df} \\mathrel{|\\!\\!\\vDash}^{F}_{W} t : T_{df}",
+   "sig": "\\mathsf{strict}\\,W \\land \\ldots \\vdash^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\land \\varnothing \\vdash\\!\\triangleright t \\Rightarrow \\Delta_{df} \\mathrel{|\\!\\!\\vDash}^{F}_{W} t : T_{df}",
    "args": [
     {
      "name": "W",
@@ -11006,7 +10885,7 @@ window.MAP = {
     },
     {
      "name": "N",
-     "meaning": "any refill"
+     "meaning": "any counter bound"
     },
     {
      "name": "t",
@@ -11041,37 +10920,10 @@ window.MAP = {
     }
    ]
   },
-  "th.live-fundamental-proc": {
-   "title": "Live fundamental theorem for processes",
-   "what": "For strict $W$, $\\Sigma \\vdash\\annot{^{\\infty}}_{W} p : T$ and $\\vdash\\!\\triangleright p$ imply $\\Sigma \\mathrel{|\\!\\!\\vDash}_W p : T$.",
-   "why": "The same induction with the live versions of P-Term and P-Connect.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "The guarded receive loop as a process.",
-   "rocq": "static/FundamentalProc.v: live_fundamental_proc",
-   "sig": "\\mathsf{strict}\\,W \\land \\Sigma \\vdash\\annot{^{\\infty}}_{W} p : T \\land \\vdash\\!\\triangleright p \\Rightarrow \\Sigma \\mathrel{|\\!\\!\\vDash}_W p : T",
-   "args": [
-    {
-     "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
-    },
-    {
-     "name": "\\Sigma",
-     "meaning": "the interface of the process"
-    },
-    {
-     "name": "p",
-     "meaning": "a closed process $(C, E)$"
-    },
-    {
-     "name": "T",
-     "meaning": "the result type of the main thread"
-    }
-   ]
-  },
   "th.lf-fundamental": {
    "title": "Lock-free fundamental theorem",
    "what": "For strict $W$, $\\Sigma \\Vdash^{N}_{W} p : T$ implies $\\Sigma \\Vvdash_W p : T$.",
-   "why": "The fuel of each thread comes from its cost typing at finite $N$ with the ticket premise of P-Term, and its live relation from its guarded typing.",
+   "why": "The fuel of each thread comes from its cost typing at finite $N$ with the ticket premise of P-Term, and its relation at $kappa_L$ from its guarded typing.",
    "breaks": "Nothing. It is a definition.",
    "example": "The cycle example.",
    "rocq": "soup/LFTyped.v: lf_fundamental",
@@ -11087,7 +10939,7 @@ window.MAP = {
     },
     {
      "name": "N",
-     "meaning": "the refill, a natural number for lock freedom"
+     "meaning": "the counter bound, a natural number for lock freedom"
     },
     {
      "name": "p",
@@ -11137,7 +10989,7 @@ window.MAP = {
   "th.sth": {
    "title": "$\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C$",
    "what": "$\\Theta = \\Sigma \\cup \\Theta_B$, $\\mathrm{dom}\\,\\Theta_B = \\mathsf{ends}(C)$, $\\mathsf{chans}\\,\\Sigma \\cap C = \\varnothing$, $\\mathsf{pfree}\\,\\Sigma$, and for every $c \\in C$ the two entries of $\\Theta_B$ are dual at dual points.",
-   "why": "These are the environment premises of P-Term, as the semantic proof uses them.",
+   "why": "These are the environment premises of P-Term, as the semantic proof uses these premises.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Sigma = \\varnothing$ and $C = \\varnothing$ for a source program.",
    "rocq": "compat/PTerm.v: sth",
@@ -11185,9 +11037,9 @@ window.MAP = {
    ]
   },
   "th.lf-p-term": {
-   "title": "P-Term in the soup",
+   "title": "P-Term in the lock-free process relation",
    "what": "For strict $W$, a thread with $\\Sigma \\Vdash^{N}_{W} (C_0, \\{t\\}) : T$ derived by P-Term satisfies $\\Sigma \\Vvdash_W (C_0, \\{t\\}) : T$.",
-   "why": "It is P-Term read in the soup.",
+   "why": "It is P-Term read in the lock-free process relation.",
    "breaks": "Nothing. It is a definition.",
    "example": "One thread closing its end $c^{+}$.",
    "rocq": "soup/LFCompose.v: lf_p_term",
@@ -11257,37 +11109,14 @@ window.MAP = {
     }
    ]
   },
-  "th.live-soundness": {
-   "title": "Live soundness",
-   "what": "For strict $W$, $\\varnothing \\vdash\\annot{^{\\infty}}_{W} p : T$ and $\\vdash\\!\\triangleright p$ imply that $p$ is deadlock free and has no $\\tau$-divergence.",
-   "why": "The live fundamental theorem for processes followed by live adequacy.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "The receive loop and the pipeline stage.",
-   "rocq": "static/FundamentalProc.v: live_soundness",
-   "sig": "\\mathsf{strict}\\,W \\land \\varnothing \\vdash\\annot{^{\\infty}}_{W} p : T \\land \\vdash\\!\\triangleright p \\Rightarrow \\mathsf{deadlock\\_free}\\,p \\land \\mathsf{no\\_tau\\_divergence}\\,p",
-   "args": [
-    {
-     "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
-    },
-    {
-     "name": "p",
-     "meaning": "a closed process $(C, E)$"
-    },
-    {
-     "name": "T",
-     "meaning": "the result type of the main thread"
-    }
-   ]
-  },
   "th.soundness-source": {
    "title": "Soundness for source terms",
-   "what": "For strict $W$, $\\mathsf{tfree}\\,T$ and $\\varnothing ; \\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W} t : T$, the process $(\\varnothing, \\{t\\})$ is deadlock free.",
+   "what": "For strict $W$, $\\mathsf{tfree}\\,T$ and $\\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W} t : T$, the process $(\\varnothing, \\{t\\})$ is deadlock free.",
    "why": "A source term creates channels only at fresh roots and at fields of held ends, so it is P-Term with $\\Sigma = \\varnothing$ and $C_0 = \\varnothing$.",
    "breaks": "Nothing. It is a definition.",
    "example": "Every deadlock-free example.",
    "rocq": "static/FundamentalProc.v: soundness_source",
-   "sig": "\\mathsf{strict}\\,W \\land \\mathsf{tfree}\\,T \\land \\varnothing ; \\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W} t : T \\Rightarrow \\mathsf{deadlock\\_free}(\\varnothing, \\{t\\})",
+   "sig": "\\mathsf{strict}\\,W \\land \\mathsf{tfree}\\,T \\land \\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W} t : T \\Rightarrow \\mathsf{deadlock\\_free}(\\varnothing, \\{t\\})",
    "args": [
     {
      "name": "W",
@@ -11318,7 +11147,7 @@ window.MAP = {
     },
     {
      "name": "N",
-     "meaning": "the refill, a natural number for lock freedom"
+     "meaning": "the counter bound, a natural number for lock freedom"
     },
     {
      "name": "p",
@@ -11332,7 +11161,7 @@ window.MAP = {
   },
   "th.lf-soundness-source": {
    "title": "Lock-free soundness for source terms",
-   "what": "For $W$ with $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$, $N \\in \\mathbb{N}$, $\\mathsf{tfree}\\,T$, a typing $\\varnothing;\\varnothing;\\varnothing \\vdash^{\\varnothing}_{W\\annot{,N}} t : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}$, some $tk$ with $\\mathsf{meets}\\,\\vartheta\\,0\\,tk$, and $\\varnothing \\vdash\\!\\triangleright t$, the process $(\\varnothing, \\{t\\})$ is lock free.",
+   "what": "For $W$ with $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$, $N \\in \\mathbb{N}$, $\\mathsf{tfree}\\,T$, a typing $\\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ (c, \\vartheta)$, $\\vartheta(0) \\in \\mathbb{N}$, and $\\varnothing \\vdash\\!\\triangleright t$, the process $(\\varnothing, \\{t\\})$ is lock free.",
    "why": "The premises are those of P-Term at finite $N$ with $\\Sigma = \\varnothing$ and $C_0 = \\varnothing$, plus the guard. Lock-free soundness then applies.",
    "breaks": "Nothing. It is a definition.",
    "example": "Every lock-free example.",
@@ -11345,7 +11174,7 @@ window.MAP = {
     },
     {
      "name": "N",
-     "meaning": "the refill, a natural number for lock freedom"
+     "meaning": "the counter bound, a natural number for lock freedom"
     },
     {
      "name": "t",
@@ -11353,18 +11182,18 @@ window.MAP = {
     },
     {
      "name": "tk",
-     "meaning": "a ticket count with $\\mathsf{meets}\\,\\vartheta\\,0\\,tk$"
+     "meaning": "a ticket count with $\\vartheta(0) \\in \\mathbb{N}$"
     }
    ]
   },
   "th.conservative": {
    "title": "Conservativity",
-   "what": "The merged judgment at $N = \\infty$ derives some $T_{df}\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}$ iff the deadlock-free judgment derives $T_{df}$, at erased contexts.",
-   "why": "Deadlock-free typing is the merged judgment with credits, costs and ticket needs ignored, so one set of rules serves both.",
+   "what": "The annotated typing judgment at $N = \\infty$ derives some $T_{df}\\ !\\ \\varepsilon$ iff the deadlock-free judgment derives $T_{df}$, at erased contexts.",
+   "why": "Deadlock-free typing is the annotated typing judgment with credits, costs and ticket needs ignored, so one set of rules serves both.",
    "breaks": "Nothing. It is a definition.",
    "example": "The client and server main.",
    "rocq": "static/Conservativity.v: conservative",
-   "sig": "(\\exists a\\,c\\,\\vartheta.\\ \\ldots \\vdash^{F}_{W\\annot{,\\infty}} e : T_{df}\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}) \\iff \\ldots \\vdash^{F}_{W} e : T_{df}",
+   "sig": "(\\exists \\varepsilon.\\ \\ldots \\vdash^{F}_{W\\annot{,\\infty}} e : T_{df}\\ !\\ \\varepsilon) \\iff \\ldots \\vdash^{F}_{W} e : T_{df}",
    "args": [
     {
      "name": "a, c, \\vartheta",
@@ -11378,57 +11207,23 @@ window.MAP = {
   },
   "th.typed-dftyped": {
    "title": "Erasure to deadlock-free typing",
-   "what": "For every $N$, erasing the annotations of a merged derivation gives a deadlock-free derivation.",
+   "what": "For every $N$, erasing the annotations of an annotated derivation gives a deadlock-free derivation.",
    "why": "Hence every lock-free typing is also a deadlock-free typing.",
    "breaks": "Nothing. It is a definition.",
    "example": "The cycle at $N = 2$ erases to its deadlock-free typing.",
    "rocq": "static/Conservativity.v: typed_dftyped",
-   "sig": "\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta} \\Rightarrow \\Theta_{df} ; \\Gamma ; \\Delta_{df} \\vdash^{F}_{W} e : T_{df}",
+   "sig": "\\Gamma ; \\Delta \\vdash^{F}_{W\\annot{,N}} e : T\\ !\\ \\varepsilon \\Rightarrow \\Gamma ; \\Delta_{df} \\vdash^{F}_{W} e : T_{df}",
    "args": [
     {
      "name": "N",
-     "meaning": "any refill"
-    }
-   ]
-  },
-  "th.live-sub-df": {
-   "title": "Live inside deadlock-free",
-   "what": "For a closed process $p$ with $\\mathsf{tfree}\\,T$ and no box in $T$, $\\varnothing \\mathrel{|\\!\\!\\vDash}_W p : T$ implies $\\varnothing \\vDash_W p : T$.",
-   "why": "At such $T$ the value relation reads no term relation, so it agrees for both cost tables at every level.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "Every example with result $\\ast$.",
-   "rocq": "compat/LiveDF.v: live_sub_df",
-   "sig": "\\mathsf{tfree}\\,T \\land \\Box \\notin T \\land \\varnothing \\mathrel{|\\!\\!\\vDash}_W p : T \\Rightarrow \\varnothing \\vDash_W p : T",
-   "args": [
-    {
-     "name": "p",
-     "meaning": "a closed process $(C, E)$"
-    },
-    {
-     "name": "T",
-     "meaning": "the result type of the main thread"
-    }
-   ]
-  },
-  "th.nobox": {
-   "title": "$\\Box \\notin T$",
-   "what": "$T$ contains no box type $\\Box(\\ldots)$.",
-   "why": "A box value carries code, whose relation depends on the cost table. A $\\mathsf{tfree}$ type without boxes carries no code.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\ast$ and $\\ast \\otimes \\ast$ contain no box.",
-   "rocq": "compat/LiveDF.v: boxfree",
-   "sig": "\\Box \\notin T",
-   "args": [
-    {
-     "name": "T",
-     "meaning": "a type"
+     "meaning": "any counter bound"
     }
    ]
   },
   "th.wfworld": {
    "title": "$\\mathsf{wfworld}\\,W$",
    "what": "$\\prec_W$ is well-founded, there is no infinite descending chain $x_0 \\succ_W x_1 \\succ_W \\cdots$.",
-   "why": "A chain of waiting threads descends in $\\prec_W$, so well-foundedness makes it finite. Deadlock freedom does not need it.",
+   "why": "A chain of waiting threads descends in $\\prec_W$, so well-foundedness makes it finite. Deadlock freedom does not need well-foundedness.",
    "breaks": "Nothing. It is a definition.",
    "example": "Every world of the lock-free examples is well-founded.",
    "rocq": "types/Worlds.v: wfworld",
@@ -11442,16 +11237,16 @@ window.MAP = {
   },
   "th.cost-fundamental": {
    "title": "Cost fundamental theorem",
-   "what": "The merged judgment implies the semantic cost judgment $\\Theta;\\Delta \\vDash^{N} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}$.",
-   "why": "It is the cost half of the merged judgment, proved rule by rule.",
+   "what": "The annotated typing judgment implies the semantic cost judgment $\\Delta \\vDash^{N} e : T\\ !\\ \\varepsilon$.",
+   "why": "It is the cost half of the annotated typing judgment, proved rule by rule.",
    "breaks": "Nothing. It is a definition.",
    "example": "The forwarder $\\mathsf{fw}$.",
    "rocq": "cost/CostFund.v: cost_fundamental",
-   "sig": "\\Theta ; \\Gamma ; \\Delta \\vdash^{F}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta} \\Rightarrow \\Theta ; \\Delta \\vDash^{N} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}",
+   "sig": "\\Gamma ; \\Delta \\vdash^{F}_{W\\annot{,N}} e : T\\ !\\ \\varepsilon \\Rightarrow \\Delta \\vDash^{N} e : T\\ !\\ \\varepsilon",
    "args": [
     {
      "name": "N",
-     "meaning": "the refill"
+     "meaning": "the counter bound"
     },
     {
      "name": "e",
@@ -11461,20 +11256,50 @@ window.MAP = {
   },
   "th.fsem-of-cost": {
    "title": "Fuel from cost typing",
-   "what": "If $\\Theta;\\varnothing;\\varnothing \\vdash^{\\varnothing}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta}$, $\\mathsf{tfree}\\,T$, every credit of $\\Theta$ is at most $N$ and $\\mathsf{meets}\\,\\vartheta\\,0\\,tk$, then $\\mathsf{fsem}\\,N\\,(\\mathsf{sty} \\circ \\Theta)\\,e$.",
+   "what": "If $\\varnothing ; \\Delta \\vdash^{\\varnothing}_{W\\annot{,N}} e : T\\ !\\ (c, \\vartheta)$, $\\mathsf{tfree}\\,T$, $\\mathsf{cr}(\\Delta) \\leq N$ and $\\vartheta(0) \\in \\mathbb{N}$, then $\\mathsf{fsem}\\,N\\,(\\mathsf{sty} \\circ \\Delta)\\,e$.",
    "why": "P-Term gives every end credit $N$, so the cost judgment yields the per-thread fuel that lock freedom needs.",
-   "breaks": "If a closure could mention an end it does not own, the forwarder could receive a closure that owns nothing and would have no fuel after spawning it.",
+   "breaks": "If a closure could mention an end it does not own, the forwarder could receive a closure that owns nothing and would have no fuel after spawning the closure.",
    "example": "The forwarder $\\mathsf{fw}$.",
    "rocq": "cost/CostFund.v: fsem_of_cost",
-   "sig": "\\ldots \\vdash^{\\varnothing}_{W\\annot{,N}} e : T\\annot{^{a}} \\annot{\\triangleright c ; \\vartheta} \\land \\mathsf{tfree}\\,T \\land (\\forall o.\\ \\mathsf{cr}(\\Theta(o)) \\leq N) \\land \\mathsf{meets}\\,\\vartheta\\,0\\,tk \\Rightarrow \\mathsf{fsem}\\,N\\,(\\mathsf{sty} \\circ \\Theta)\\,e",
+   "sig": "\\varnothing ; \\Delta \\vdash^{\\varnothing}_{W\\annot{,N}} e : T\\ !\\ (c, \\vartheta) \\land \\mathsf{tfree}\\,T \\land \\mathsf{cr}(\\Delta) \\leq N \\land \\vartheta(0) \\in \\mathbb{N} \\Rightarrow \\mathsf{fsem}\\,N\\,\\Delta\\annot{^{N}}\\,e",
    "args": [
     {
-     "name": "\\Theta",
-     "meaning": "the ends of the thread"
+     "name": "\\Delta",
+     "meaning": "the ends of the thread with their credits"
+    }
+   ]
+  },
+  "th.crle": {
+   "title": "$\\mathsf{cr}(\\Delta) \\leq N$",
+   "what": "Every credit in $\\Delta$ is at most the counter bound $N$, that is $a \\leq N$ for every entry $(S@x)\\annot{^{a}}$ or $(T \\multimap U)\\annot{^{a}}$ of $\\Delta$.",
+   "why": "A thread starts with every counter at $N$, so its credits may guarantee no more than $N$.",
+   "breaks": "A credit above $N$ would allow more postponement than a fresh counter allows.",
+   "example": "$\\mathsf{cr}(\\{o \\mapsto (S@x)^{2}\\}) \\leq 3$.",
+   "rocq": "cost/CostFund.v: fsem_of_cost",
+   "sig": "\\mathsf{cr} : \\mathsf{TEnv} \\to \\mathbb{N} \\cup \\{\\infty\\}",
+   "args": [
+    {
+     "name": "\\Delta",
+     "meaning": "a context"
     },
     {
-     "name": "tk",
-     "meaning": "its ticket count"
+     "name": "N",
+     "meaning": "the counter bound"
+    }
+   ]
+  },
+  "ann.fin0": {
+   "title": "$\\vartheta(0) \\in \\mathbb{N}$",
+   "what": "The ticket need of a whole thread, which keeps no reserve, is a finite number.",
+   "why": "Then some ticket count $tk \\geq \\vartheta(0)$ covers every link of the thread.",
+   "breaks": "A need that is $\\infty$ at reserve $0$ belongs to a thread that may link without bound.",
+   "example": "$(0, 1)(0) = 1$, one link.",
+   "rocq": "types/Costs.v: meets, tapp",
+   "sig": "\\vartheta(0) \\in \\mathbb{N} : \\mathsf{Prop}",
+   "args": [
+    {
+     "name": "\\vartheta",
+     "meaning": "the ticket need of the thread"
     }
    ]
   },
@@ -11512,7 +11337,7 @@ window.MAP = {
   "th.Erel": {
    "title": "The term relation $E$",
    "what": "$E[\\kappa]^{W}_{n}\\llbracket\\Theta \\vdash T\\rrbracket^{F}$ is the set of terms in the relation at cost table $\\kappa$, world $W$ and level $n$, for ends $\\Theta$, result $T$ and future $F$.",
-   "why": "The semantic term judgment asks membership at every level and for every grounding of the variables.",
+   "why": "The semantic term judgment asks membership at each level and for each grounding of the variables.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{close}\\,c^{+} \\in E^{W}_{n}\\llbracket\\{c^{+} \\mapsto \\mathsf{Close}@x\\} \\vdash \\ast\\rrbracket^{\\varnothing}$.",
    "rocq": "relation/Relation.v: Erel",
@@ -11572,8 +11397,8 @@ window.MAP = {
    ]
   },
   "th.soup": {
-   "title": "The soup $S^{N,W}_{n}$",
-   "what": "$a \\in S^{N,W}_{n}\\llbracket\\Sigma \\vdash T\\rrbracket$ holds of a soup state $a$ when every thread of $a$ is in the live relation and has fuel at index $n$, with the ownership, points and counters that $a$ records.",
+   "title": "The lock-free process relation $S^{N,W}_{n}$",
+   "what": "$a \\in S^{N,W}_{n}\\llbracket\\Sigma \\vdash T\\rrbracket$ holds of a annotated configuration $a$ when every thread of $a$ is in the relation at $kappa_L$ and has fuel at index $n$, with the ownership, points and counters that $a$ records.",
    "why": "The state $a$ is fixed outside the index, so ownership is the same at every index $n$.",
    "breaks": "Nothing. It is a definition.",
    "example": "The state of two threads closing $c^{+}$ and $c^{-}$.",
@@ -11582,7 +11407,7 @@ window.MAP = {
    "args": [
     {
      "name": "N",
-     "meaning": "the refill, a natural number for lock freedom"
+     "meaning": "the counter bound, a natural number for lock freedom"
     },
     {
      "name": "W",
@@ -11604,8 +11429,8 @@ window.MAP = {
   },
   "th.qa": {
    "title": "$q_a$",
-   "what": "The configuration of the soup state $a$.",
-   "why": "A soup state is a configuration together with ownership and tickets.",
+   "what": "The configuration of the annotated configuration $a$.",
+   "why": "An annotated configuration is a configuration together with ownership and tickets.",
    "breaks": "Nothing. It is a definition.",
    "example": "$q_a = (C, M)$.",
    "rocq": "soup/State.v: s_q",
@@ -11613,14 +11438,14 @@ window.MAP = {
    "args": [
     {
      "name": "a",
-     "meaning": "a soup state"
+     "meaning": "a annotated configuration"
     }
    ]
   },
   "th.conn": {
    "title": "$\\mathsf{conn}$",
    "what": "The side conditions of P-Connect, with $\\Sigma_D$ the partners of $\\Sigma_C$ dual up to $\\approx$ at dual points.",
-   "why": "They make the composite a process in which every channel lives in one place.",
+   "why": "They make the composite a process in which every channel belongs to one side.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Sigma_C = \\{c^{+} \\mapsto \\mathsf{Close}@x\\}$ and $\\Sigma_D = \\{c^{-} \\mapsto \\mathsf{Close}@\\overline{x}\\}$.",
    "rocq": "compat/Connect.v: conn, cut_dual",
@@ -11643,7 +11468,7 @@ window.MAP = {
   "th.par": {
    "title": "$p_1 \\parallel_{\\Sigma_C} p_2$",
    "what": "The composite $(C_1 \\cup C_2 \\cup \\mathsf{chans}\\,\\Sigma_C, E_1 \\uplus E_2)$ of $p_1 = (C_1, E_1)$ and $p_2 = (C_2, E_2)$.",
-   "why": "After composition the two sides communicate on the cut, which no outside process sees.",
+   "why": "After composition the two sides communicate on the cut, which no outside process holds.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{close}\\,c^{+} \\parallel \\mathsf{close}\\,c^{-}$ restricts $c$.",
    "rocq": "compat/Connect.v: pconn",
@@ -11661,7 +11486,7 @@ window.MAP = {
   },
   "th.df": {
    "title": "Erasure $X_{df}$",
-   "what": "$\\Theta_{df}$, $\\Delta_{df}$ and $T_{df}$ drop every credit, cost and ticket need and keep session types, points and facts.",
+   "what": "$\\Delta_{df}$ and $T_{df}$ drop every credit, cost and ticket need and keep session types, points and facts.",
    "why": "Deadlock-free typing and the relations read no annotation.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(S@x)^{3}$ erases to $S@x$.",
@@ -11675,24 +11500,24 @@ window.MAP = {
    ]
   },
   "th.styof": {
-   "title": "$\\mathsf{sty} \\circ \\Theta$",
-   "what": "The map that sends each end $o \\in \\mathrm{dom}\\,\\Theta$ with $\\Theta(o) = S@x\\annot{^{a}}$ to $S$.",
-   "why": "The fuel layer reads protocols, not points or credits.",
+   "title": "$\\Delta\\annot{^{N}}$",
+   "what": "The held ends of $\\Delta$ for fuel, each at counter $N$. An entry $o \\mapsto (S@x)\\annot{^{a}}$ of $\\Delta$ becomes $o \\mapsto S\\annot{^{N}}$.",
+   "why": "Fuel reads protocols and counters and ignores points and credits. A thread starts with each counter at $N$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\{a \\mapsto (S@x)\\annot{^{N}}\\}$ gives $\\{a \\mapsto S\\}$.",
+   "example": "$\\{a \\mapsto (S@x)^{2}\\}\\annot{^{N}} = \\{a \\mapsto S\\annot{^{N}}\\}$.",
    "rocq": "cost/CostFund.v: fsem_of_cost",
-   "sig": "\\mathsf{sty} \\circ \\Theta : \\mathsf{End} \\rightharpoonup \\mathsf{Sty}",
+   "sig": "\\Delta\\annot{^{N}} : \\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathbb{N}",
    "args": [
     {
-     "name": "\\Theta",
-     "meaning": "the ends held by the term"
+     "name": "\\Delta",
+     "meaning": "the linear context of ends and variables"
     }
    ]
   },
   "th.tpr": {
    "title": "$\\mathsf{thread\\_progress\\_run}$",
-   "what": "For a run $(r, l)$, $\\mathsf{thread\\_progress\\_run}\\,(r, l)$ holds iff for every position $i$ and every thread $t$ of $r\\,i$ there is $j \\geq i$ such that $t$ is a value in $r\\,j$ or $t$ takes part in the step $l\\,j$ by a session action.",
-   "why": "It is the per-run content of lock freedom stated for every thread, not only for pending ones. A thread that is neither stopped nor acting forever would be postponed without end.",
+   "what": "For a run $(r, l)$, $\\mathsf{thread\\_progress\\_run}\\,(r, l)$ holds iff each thread $t$ of each position $i$ later stops or acts. That is, some $j \\geq i$ exists at which $t$ is a value in $r\\,j$ or takes part in the step $l\\,j$ by a session action.",
+   "why": "It states lock freedom per run for each thread, including the threads that are not pending. A thread that is neither stopped nor acting forever would be postponed without end.",
    "breaks": "Nothing. It is a definition.",
    "example": "In a run of two threads closing $c^{+}$ and $c^{-}$, both threads take part in the close step.",
    "rocq": "lockfree/ThreadProgress.v: thread_progress_run",
@@ -11721,8 +11546,8 @@ window.MAP = {
     "df",
     "lf"
    ],
-   "code": "main = let (a, a′) = new in                    -- a at ρ\n       let (b, b′) = new in                    -- b at ρ·0, facts C at (ρ, ρ·0, ρ·1)\n       let () = spawn (λu. let () = u in (force srv) ⟨a′, b′⟩) in\n       (force cli) ⟨a, b⟩\ncli  = !(f = λp. let (a, b) = p in let a = send ⟨∗, a⟩ in\n                let (u, b) = recv b in let () = u in (force f) ⟨a, b⟩)\nsrv  = !(g = λp. let (a, b) = p in let (u, a) = recv a in let () = u in\n                let b = send ⟨∗, b⟩ in (force g) ⟨a, b⟩)\n-- both boxes : □∀ι κ ζ. C. ∗ ⊸ (S1@ι ⊗ S2@κ ⊸^ζ ∗)\n-- C = {ι+k ≺ (κ+k)‾, κ+k ≺ (ι+k+1)‾, ι+k ≺ ζ, κ+k ≺ ζ | k}",
-   "shows": "The second $\\mathsf{new}$ places $b$ at $\\rho\\cdot 0$ and states $C$ at $(\\rho, \\rho\\cdot 0, \\rho\\cdot 1)$, the facts the self call at $(\\iota^{+}, \\kappa^{+}, \\zeta)$ needs.",
+   "code": "main = let ⟨a, a′⟩ = new in                    -- a at ρ\n       let ⟨b, b′⟩ = new in                    -- b at ρ·0, facts C at (ρ, ρ·0, ρ·1)\n       let ∗ = spawn (λu. let ∗ = u in (force srv) ⟨a′, b′⟩) in\n       (force cli) ⟨a, b⟩\ncli  = !(f = λp. let ⟨a, b⟩ = p in let a = send ⟨∗, a⟩ in\n                let ⟨u, b⟩ = recv b in let ∗ = u in (force f) ⟨a, b⟩)\nsrv  = !(g = λp. let ⟨a, b⟩ = p in let ⟨u, a⟩ = recv a in let ∗ = u in\n                let b = send ⟨∗, b⟩ in (force g) ⟨a, b⟩)\n-- both boxes : □∀ι κ ζ. C. ∗ ⊸ (S1@ι ⊗ S2@κ ⊸^ζ ∗)\n-- C = {ι+k ≺ (κ+k)‾, κ+k ≺ (ι+k+1)‾, ι+k ≺ ζ, κ+k ≺ ζ | k}",
+   "shows": "A client sends on $a$ and then receives on $b$, and a server receives on $a$ and then sends on $b$, both forever. The second $\\mathsf{new}$ places $b$ at the field $\\rho\\cdot 0$ of the root of $a$ and states the facts $C$ at $(\\rho, \\rho\\cdot 0, \\rho\\cdot 1)$. Each recursive call is at the next points $(\\iota^{+}, \\kappa^{+}, \\zeta)$, where $C$ states the same facts again.",
    "rocq": "examples/ClientServer.v: cs_typed; examples/LFClientServer.v: cs_lftyped, cs_lock_free",
    "accepts": {
     "df": {
@@ -11738,7 +11563,8 @@ window.MAP = {
      "N": 3,
      "rocq": "cs_lftyped, cs_lock_free"
     }
-   }
+   },
+   "lead": "Two loops that call themselves forever over the same two channels are deadlock free, because one constraint orders the points of all their rounds at once."
   },
   {
    "id": "ex-cycle",
@@ -11747,8 +11573,8 @@ window.MAP = {
     "df",
     "lf"
    ],
-   "code": "cycle = let (c, c′) = new in          -- c at ρ\n        let (d, d′) = new in          -- d at ρ·0, C = {ρ ≺ (ρ·0)‾, ρ‾ ≺ ρ·0}\n        let () = spawn (λu. let () = u in let () = close c′ in close d′) in\n        let () = close c in close d",
-   "shows": "The second $\\mathsf{new}$ states exactly $\\rho \\prec \\overline{\\rho\\cdot 0}$ and $\\overline{\\rho} \\prec \\rho\\cdot 0$, the two facts the two threads need.",
+   "code": "cycle = let ⟨c, c′⟩ = new in          -- c at ρ\n        let ⟨d, d′⟩ = new in          -- d at ρ·0, C = {ρ ≺ (ρ·0)‾, ρ‾ ≺ ρ·0}\n        let ∗ = spawn (λu. let ∗ = u in let ∗ = close c′ in close d′) in\n        let ∗ = close c in close d",
+   "shows": "Main closes $c$ and then $d$, and the spawned thread closes $c'$ and then $d'$. Each thread waits on one channel while it holds an end of the other. The second $\\mathsf{new}$ states exactly the two facts this requires, $\\rho \\prec \\overline{\\rho\\cdot 0}$ for main and $\\overline{\\rho} \\prec \\rho\\cdot 0$ for the spawned thread.",
    "rocq": "examples/Cycle.v: cy_typed; examples/LFCycle.v: cy_lftyped, cy_lock_free",
    "accepts": {
     "df": {
@@ -11764,7 +11590,8 @@ window.MAP = {
      "N": 2,
      "rocq": "cy_lftyped, cy_lock_free"
     }
-   }
+   },
+   "lead": "Two threads that use two channels in the same order type, because creating the second channel states the two order facts the threads need."
   },
   {
    "id": "ex-between",
@@ -11773,8 +11600,8 @@ window.MAP = {
     "df",
     "lf"
    ],
-   "code": "between : □(∀ι κ. C. ∗ ⊸ Close@ι ⊗ Close@κ ⊸^κ ∗)\nbetween = !(f = λp. let (c, e) = p in\n                    let (d, d′) = new in        -- d at ι·0\n                    let () = spawn (λu. let () = u in close d′) in\n                    let () = close c in let () = close d in close e)\n-- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾, δ ≺ κ, δ ≺ κ‾},  δ = ι·0\nmain: c by new at ρ, e by new at ρ·1, force between at (ρ, ρ·1)",
-   "shows": "The box places its new channel at the field $\\iota\\cdot 0$ of the point of $c$, so no point between two box points is needed.",
+   "code": "between : □(∀ι κ. C. ∗ ⊸ Close@ι ⊗ Close@κ ⊸^κ ∗)\nbetween = !(f = λp. let ⟨c, e⟩ = p in\n                    let ⟨d, d′⟩ = new in        -- d at ι·0\n                    let ∗ = spawn (λu. let ∗ = u in close d′) in\n                    let ∗ = close c in let ∗ = close d in close e)\n-- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾, δ ≺ κ, δ ≺ κ‾},  δ = ι·0\nmain: c by new at ρ, e by new at ρ·1, force between at (ρ, ρ·1)",
+   "shows": "The box creates a channel $d$ while it holds two arguments $c$ and $e$, and closes $c$, $d$ and $e$ in this order. E-New places $d$ at the field $\\iota\\cdot 0$ of the point of $c$. The facts of the box constraint then order $d$ between $c$ and $e$, and no point between two box points is needed.",
    "rocq": "examples/FreshBetween.v: fb_typed; examples/LFFreshBetween.v: fb_lftyped, fb_lock_free",
    "accepts": {
     "df": {
@@ -11790,7 +11617,8 @@ window.MAP = {
      "N": 2,
      "rocq": "fb_lftyped, fb_lock_free"
     }
-   }
+   },
+   "lead": "A procedure can create a channel whose point lies between the points of two channels it receives as arguments."
   },
   {
    "id": "ex-many",
@@ -11799,8 +11627,8 @@ window.MAP = {
     "df",
     "lf"
    ],
-   "code": "many = !(f = λp. let (c, e) = p in\n                 let (d, d′) = new in         -- d at δ\n                 let () = spawn (λu. let () = u in\n                                     let (v, d′) = recv d′ in let () = v in\n                                     let (w, d′) = recv d′ in let () = w in close d′) in\n                 let () = close c in\n                 let () = close (send ⟨∗, send ⟨∗, d⟩⟩) in close e)\n-- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾} ∪ {δ+k ≺ κ, δ+k ≺ κ‾ | k},  δ = ι·0",
-   "shows": "An infinite box constraint lets $d$ act at $\\delta, \\delta^{+}, \\delta^{++}$ while $e$ is held at $\\kappa$.",
+   "code": "many = !(f = λp. let ⟨c, e⟩ = p in\n                 let ⟨d, d′⟩ = new in         -- d at δ\n                 let ∗ = spawn (λu. let ∗ = u in\n                                     let ⟨v, d′⟩ = recv d′ in let ∗ = v in\n                                     let ⟨w, d′⟩ = recv d′ in let ∗ = w in close d′) in\n                 let ∗ = close c in\n                 let ∗ = close (send ⟨∗, send ⟨∗, d⟩⟩) in close e)\n-- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾} ∪ {δ+k ≺ κ, δ+k ≺ κ‾ | k},  δ = ι·0",
+   "shows": "The new end $d$ sends twice and closes while the box holds $e$. The constraint of the box is infinite, one pair of facts for each offset of $\\delta$, so $d$ may act at $\\delta$, $\\delta^{+}$ and $\\delta^{++}$ below the point $\\kappa$ of $e$.",
    "rocq": "examples/FreshMany.v: fm_typed; examples/LFFreshMany.v: fm_lftyped, fm_lock_free",
    "accepts": {
     "df": {
@@ -11816,7 +11644,8 @@ window.MAP = {
      "N": 4,
      "rocq": "fm_lftyped, fm_lock_free"
     }
-   }
+   },
+   "lead": "A new channel can act several times while an older end is held, because a box constraint may state infinitely many facts."
   },
   {
    "id": "ex-factory",
@@ -11825,8 +11654,8 @@ window.MAP = {
     "df",
     "lf"
    ],
-   "code": "mk₀  = !(f = λu. let () = u in let (c, c′) = new in\n                let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in c′)\nmk₁  = !(f = λp. let (c, c′) = new in\n                let () = spawn (λv. let () = v in close (send ⟨∗, c⟩)) in ⟨p, c′⟩)\nmain = let p = (force mk₀) ∗ in let ⟨p, q⟩ = (force mk₁) p in\n       let () = recvclose p in recvclose q\n-- mk₀ places c at a fresh ρ with C(ρ) = {ρ‾ ≺ ρ·0, ρ‾⁺ ≺ ρ·0}, mk₁ at ι·0 for p at ι\n-- mk₀ : □(∗ ⊸ ∃^⊥ ι. C(ι). (?∗.Close)@ι‾)",
-   "shows": "The first call creates at a fresh root and the second at a field of the end it receives, two typings of the same creation.",
+   "code": "mk₀  = !(f = λu. let ∗ = u in let ⟨c, c′⟩ = new in\n                let ∗ = spawn (λv. let ∗ = v in close (send ⟨∗, c⟩)) in c′)\nmk₁  = !(f = λp. let ⟨c, c′⟩ = new in\n                let ∗ = spawn (λv. let ∗ = v in close (send ⟨∗, c⟩)) in ⟨p, c′⟩)\nmain = let p = (force mk₀) ∗ in let ⟨p, q⟩ = (force mk₁) p in\n       let ∗ = recvclose p in recvclose q\n-- mk₀ places c at a fresh ρ with C(ρ) = {ρ‾ ≺ ρ·0, ρ‾⁺ ≺ ρ·0}, mk₁ at ι·0 for p at ι\n-- mk₀ : □(∗ ⊸ ∃^⊥ ι. C(ι). (?∗.Close)@ι‾)",
+   "shows": "Each box creates a channel, spawns a sender on one end and returns the other end. $\\mathsf{mk}_0$ places the channel at a fresh root and returns it packed in an existential. $\\mathsf{mk}_1$ places it at a field of the end it receives. The two boxes type one creation in the two ways E-New allows.",
    "rocq": "examples/FactoryEx.v: fx_typed; examples/LFFactoryEx.v: fx_lftyped, fx_lock_free",
    "accepts": {
     "df": {
@@ -11842,7 +11671,8 @@ window.MAP = {
      "N": 2,
      "rocq": "fx_lftyped, fx_lock_free"
     }
-   }
+   },
+   "lead": "One way of creating a channel admits two typings, at a fresh root hidden in an existential or at a field of an end the creator holds."
   },
   {
    "id": "ex-ring",
@@ -11851,8 +11681,8 @@ window.MAP = {
     "df",
     "lf"
    ],
-   "code": "Sch  = µα. ?(κ. α@κ).Close\nring : □(∀ι₁ ι₂. Cr. ∗ ⊸ (Sch@ι₁ ⊗ S̄ch@ι₂ ⊸^{ι₁+1} ∗))\nring = !(f = λp. let (x, y) = p in\n           let (a, a′) = new in                -- a at ι₂·0\n           let () = spawn (λw. let () = w in close (send ⟨a, y⟩)) in\n           let (b, b′) = new in                -- b at ι₁·1\n           let (z, x) = recv x in let () = close x in\n           let () = spawn (λw. let () = w in (force f) ⟨z, b′⟩) in\n           spawn (λw. let () = w in (force f) ⟨b, a′⟩))\nmain = let (e, e′) = new in (force ring) ⟨e, e′⟩",
-   "shows": "$b$ is created at $\\iota_1\\cdot 1$ before the receive on $x$, while $x$ is held at $\\iota_1$.",
+   "code": "Sch  = µα. ?(κ. α@κ).Close\nring : □(∀ι₁ ι₂. Cr. ∗ ⊸ (Sch@ι₁ ⊗ S̄ch@ι₂ ⊸^{ι₁+1} ∗))\nring = !(f = λp. let ⟨x, y⟩ = p in\n           let ⟨a, a′⟩ = new in                -- a at ι₂·0\n           let ∗ = spawn (λw. let ∗ = w in close (send ⟨a, y⟩)) in\n           let ⟨b, b′⟩ = new in                -- b at ι₁·1\n           let ⟨z, x⟩ = recv x in let ∗ = close x in\n           let ∗ = spawn (λw. let ∗ = w in (force f) ⟨z, b′⟩) in\n           spawn (λw. let ∗ = w in (force f) ⟨b, a′⟩))\nmain = let ⟨e, e′⟩ = new in (force ring) ⟨e, e′⟩",
+   "shows": "Each round of the ring receives an end $z$ on $x$, spawns two copies of itself, and so the ring grows forever. E-New places $b$ at $\\iota_1\\cdot 1$ while $x$ is held at $\\iota_1$, before the receive on $x$. The ring is lock free, with lock-free typing at $N = 4$.",
    "rocq": "examples/GrowRing.v: rg_typed; examples/LFGrowRing.v: rg_lftyped, rg_lock_free",
    "accepts": {
     "df": {
@@ -11868,7 +11698,8 @@ window.MAP = {
      "N": 4,
      "rocq": "rg_lftyped, rg_lock_free"
     }
-   }
+   },
+   "lead": "A ring of threads that grows forever is lock free."
   },
   {
    "id": "ex-close",
@@ -11877,7 +11708,7 @@ window.MAP = {
     "lf"
    ],
    "code": "cl c⁺ ∥ cl c⁻,   cl o = close o\n-- each thread by P-Term at every finite N over its end, cut c by P-Connect at exactly dual types",
-   "shows": "The smallest use of P-Term and P-Connect, cutting $c$ at exactly dual types in a world without facts.",
+   "shows": "Two threads each close one end of $c$. P-Term types each thread over its end, and P-Connect cuts $c$ at dual types in a world without facts. It is the smallest use of the two process rules.",
    "rocq": "examples/LFClose.v: cl_lftyped, cl_lock_free",
    "accepts": {
     "lf": {
@@ -11885,17 +11716,17 @@ window.MAP = {
      "N": "every",
      "rocq": "cl_lftyped, cl_lock_free"
     }
-   }
+   },
+   "lead": "The smallest process built from two typed threads by the process rules."
   },
   {
    "id": "ex-guard-neg",
    "title": "Guard rejections",
    "modes": [
-    "df",
     "lf"
    ],
    "code": "div_box     = !(f = force f)                         -- loops on β steps\npn_fix      = !(f = λx. (force f) x)                  -- fix λx.x\ncx_box      = !(f = let ∗ = (force f) ∗ in λy. y)     -- recurses before returning\nspawn_loop  = !(f = λc. spawn (λ_. (force f) c))      -- spawns forever",
-   "shows": "Each box uses its self before any session action, so $\\varnothing \\vdash\\!\\triangleright t$ fails for every $t$ listed.",
+   "shows": "Each box uses its own variable before its first session action. The first loops on $\\beta$ steps, the second is $\\mathsf{fix}\\,\\lambda x.\\,x$, the third recurses before it returns, and the fourth spawns forever. The guard rejects all four, so they are outside lock-free typing.",
    "rocq": "examples/GuardEx.v: div_not_guarded, pn_fix_not_guarded, cx_not_guarded, spawn_loop_not_guarded",
    "accepts": {
     "live": {
@@ -11908,17 +11739,17 @@ window.MAP = {
      "part": "guard",
      "rocq": "div_not_guarded, pn_fix_not_guarded, cx_not_guarded, spawn_loop_not_guarded"
     }
-   }
+   },
+   "lead": "Recursion that can run forever without a session action is outside lock-free typing."
   },
   {
    "id": "ex-guard-pos",
    "title": "Guard acceptances",
    "modes": [
-    "df",
     "lf"
    ],
    "code": "loop  = !(f = λx. let ⟨v, x′⟩ = recv x in (force f) x′)\nstage = !(f = λin. let ⟨v, in⟩ = recv in in let ∗ = close in in\n                  let ⟨a, b⟩ = new in let ∗ = spawn (λ_. (force f) b) in\n                  close (send ⟨v, a⟩))                  -- a pipeline stage",
-   "shows": "$\\mathsf{recv}$ acts, so the rest of the body is checked under $\\varnothing$ and the self is unmarked when it is forced.",
+   "shows": "In both boxes a $\\mathsf{recv}$ comes before the recursive call. A receive is a session action, so the guard checks the rest of the body under $\\varnothing$, where the variable of the box is usable again.",
    "rocq": "examples/GuardEx.v: loop_guarded, stage_guarded",
    "accepts": {
     "live": {
@@ -11931,7 +11762,8 @@ window.MAP = {
      "part": "guard",
      "rocq": "loop_guarded, stage_guarded"
     }
-   }
+   },
+   "lead": "Recursion that performs a session action before each recursive call passes the guard."
   },
   {
    "id": "ex-forwarder",
@@ -11939,8 +11771,8 @@ window.MAP = {
    "modes": [
     "lf"
    ],
-   "code": "fw o = let ⟨w, c⟩ = recv o in let ∗ = close c in spawn w\no : ?(∗ ⊸ ∗)^2.end\ndead_thunk q = λ_. let ∗ = Ω in close q",
-   "shows": "$\\mathsf{dead\\_thunk}\\,q$ mentions $q$ and owns nothing, so it is not in the fuel relation and $\\mathsf{fw}$ has fuel for every closure it receives.",
+   "code": "fw o = let ⟨w, c⟩ = recv o in let ∗ = close c in spawn w\no : ?((∗ ⊸ ∗)^2).Close\ndead_thunk q = λ_. let ∗ = Ω in close q",
+   "shows": "The forwarder receives a closure on $o$ and spawns the closure as a new thread. $\\mathsf{dead\\_thunk}\\,q$ mentions the end $q$ without owning it, so it is not a value in $FV$ and cannot arrive on $o$. Each closure the forwarder receives therefore owns its ends, and $\\mathsf{fw}$ has fuel at each counter bound.",
    "rocq": "cost/Forwarder.v: dead_thunk_rejected, fw_ptyped; cost/CostFund.v: fw_fsem",
    "accepts": {
     "lf": {
@@ -11949,7 +11781,8 @@ window.MAP = {
      "part": "typing and fuel",
      "rocq": "fw_ptyped, fw_fsem, dead_thunk_rejected"
     }
-   }
+   },
+   "lead": "A thread that receives closures and spawns them is lock free, because a received closure owns the ends it mentions."
   },
   {
    "id": "ex-controller",
@@ -11957,8 +11790,8 @@ window.MAP = {
    "modes": [
     "lf"
    ],
-   "code": "main = let (a, a′) = new in let (b, b′) = new in   -- a at ρ, b at ρ·0\n       let (c, c′) = new in                              -- c at ρ·2\n       let () = spawn (λu. let () = u in (force srv) ⟨⟨a′, b′⟩, c′⟩) in\n       (force cli) ⟨⟨a, b⟩, c⟩\ncli  = !(f = λp. let (q, k) = p in let (a, b) = q in\n                let a = send ⟨∗, a⟩ in let (u, b) = recv b in\n                let () = u in (force f) ⟨⟨a, b⟩, k⟩)\n-- c sits at Skip on each side, an idle end",
-   "shows": "The idle end $k$ at $\\mathsf{Skip}@\\chi$ is held across every round at credit $0$, because $(\\mathsf{Skip}@\\chi, a) - c = (\\mathsf{Skip}@\\chi, \\max(a - c, 0))$ asks no $c \\leq a$.",
+   "code": "main = let ⟨a, a′⟩ = new in let ⟨b, b′⟩ = new in   -- a at ρ, b at ρ·0\n       let ⟨c, c′⟩ = new in                              -- c at ρ·2\n       let ∗ = spawn (λu. let ∗ = u in (force srv) ⟨⟨a′, b′⟩, c′⟩) in\n       (force cli) ⟨⟨a, b⟩, c⟩\ncli  = !(f = λp. let ⟨q, k⟩ = p in let ⟨a, b⟩ = q in\n                let a = send ⟨∗, a⟩ in let ⟨u, b⟩ = recv b in\n                let ∗ = u in (force f) ⟨⟨a, b⟩, k⟩)\n-- c sits at Skip on each side, an idle end",
+   "shows": "The client sends on $a$ and receives on $b$ in each round, and holds the end $k$ at $\\mathsf{Skip}@\\chi$ throughout. Aging requires $c \\leq a$ only of ends that are not idle. The idle end $k$ therefore has credit $0$ across rounds of unbounded cost.",
    "rocq": "examples/LFController.v: ctl_typedN, ctl_guarded, ctl_lftyped, ctl_lock_free",
    "accepts": {
     "lf": {
@@ -11966,7 +11799,99 @@ window.MAP = {
      "N": 3,
      "rocq": "ctl_lftyped"
     }
-   }
+   },
+   "lead": "An end that no thread ever acts on may be held across a loop of unbounded length."
+  },
+  {
+   "id": "ex-flag",
+   "title": "Self-computed flag",
+   "modes": [
+    "df",
+    "lf"
+   ],
+   "code": "not     = λz. case z of inl w ⇒ inj₂ w | inr w ⇒ inj₁ w\nthread  = case not (inj₂ ∗) of\n            inl _ ⇒ let ∗ = close c in close d      -- runs\n          | inr _ ⇒ let ∗ = close d in close c      -- never runs\npartner = let ∗ = close c̄ in close d̄\n-- the process ({c, d}, {thread, partner}), c at x, d at y",
+   "rocq": "examples/SemBranch.v: sb_thread_E, sb_deadlock_free",
+   "accepts": {
+    "df": {
+     "ok": false,
+     "part": "P-Connect",
+     "rocq": "argued in docs/redesign/semantic-example.md, no Rocq proof"
+    },
+    "sem": {
+     "ok": true,
+     "rocq": "sb_thread_E, sb_deadlock_free"
+    }
+   },
+   "shows": "The flag is always $\\mathsf{inj}_1\\,\\ast$, so the thread closes $c$ before $d$. E-Case types both arms in one world. The first arm asks $x \\prec \\overline{y}$, the second asks $y \\prec \\overline{x}$, and the partner asks $\\overline{x} \\prec y$. The joint world has the cycle $y \\prec \\overline{x} \\prec y$, and P-Connect asks a strict world. The relation reads only the steps the thread takes. After three $\\beta$ steps the thread is in the first arm, which the fundamental theorem places in $E$ in a world with $x \\prec \\overline{y}$ alone. Semantic P-Connect joins it with the partner, the joint world has no cycle, and adequacy gives deadlock freedom. The rejection holds whatever points $c$ and $d$ get, and the map records it as an argument, with no Rocq proof.",
+   "lead": "A thread that branches on a flag it computes itself is deadlock free, and only semantic typing shows it, because static typing checks the arm that never runs."
+  },
+  {
+   "id": "rx-postpone",
+   "title": "Postponement, a holding thread that never serves",
+   "modes": [
+    "lf"
+   ],
+   "code": "chat = !(f = λa. let a = send ⟨∗, a⟩ in (force f) a)\nloop = !(f = λ⟨a, b⟩. let ⟨u, a⟩ = recv a in let ∗ = u in (force f) ⟨a, b⟩)\nmain = let ⟨a, a′⟩ = new in let ⟨b, b′⟩ = new in\n       let ∗ = spawn (λ_. (force chat) a′) in\n       let ∗ = spawn (λ_. close b′) in\n       (force loop) ⟨a, b⟩            -- holds b forever, close b′ waits forever",
+   "shows": "Main holds $b$ while it runs a loop that never returns, and the thread with $b'$ waits forever while other threads step. Aging requires $c \\leq a$ of each held end that is not idle. The loop has cost $\\infty$, and $b$ has a finite credit, so the program has no lock-free typing.",
+   "rocq": "to be mechanized",
+   "accepts": {
+    "lf": {
+     "ok": false,
+     "part": "aging"
+    }
+   },
+   "lead": "A deadlock-free program in which one thread waits forever, because the thread holding its dual end never acts on that end."
+  },
+  {
+   "id": "rx-delegate",
+   "title": "Endless delegation, an end that travels forever",
+   "modes": [
+    "lf"
+   ],
+   "code": "pass = !(f = λ⟨e, x, y⟩. let x = send ⟨e, x⟩ in let ⟨e, y⟩ = recv y in (force f) ⟨e, x, y⟩)\nback = !(f = λ⟨x, y⟩. let ⟨e, x⟩ = recv x in let y = send ⟨e, y⟩ in (force f) ⟨x, y⟩)\nmain = let ⟨e, e′⟩ = new in let ⟨x, x′⟩ = new in let ⟨y, y′⟩ = new in\n       let ∗ = spawn (λ_. close e′) in       -- waits for e forever\n       let ∗ = spawn (λ_. (force back) ⟨x′, y′⟩) in\n       (force pass) ⟨e, x, y⟩                -- e goes back and forth forever",
+   "shows": "Two threads send the end $e$ back and forth forever, and the thread with $e'$ waits. Each send passes $e$ on with its counter one lower. After finitely many sends no credit remains to send $e$ again, so the program has no lock-free typing.",
+   "rocq": "to be mechanized",
+   "accepts": {
+    "lf": {
+     "ok": false,
+     "part": "payload credit"
+    }
+   },
+   "lead": "A deadlock-free program in which an end is sent back and forth forever while its partner waits."
+  },
+  {
+   "id": "rx-relink",
+   "title": "Link refresh, a waiting thread that always faces a fresh end",
+   "modes": [
+    "lf"
+   ],
+   "code": "refresh = !(f = λ⟨w, k⟩. let ⟨c, c′⟩ = new in\n                     let ∗ = link ⟨w, c⟩ in          -- the waiting thread now talks to c′\n                     let k = send ⟨∗, k⟩ in           -- one step on another channel\n                     (force f) ⟨c′, k⟩)\nsink    = !(f = λk. let ⟨u, k⟩ = recv k in let ∗ = u in (force f) k)\nmain = let ⟨w, w′⟩ = new in let ⟨k, k′⟩ = new in\n       let ∗ = spawn (λ_. close w′) in              -- waits forever\n       let ∗ = spawn (λ_. (force sink) k′) in\n       (force refresh) ⟨w, k⟩",
+   "shows": "Each round links the partner of the waiting end to a new channel. The waiting thread then faces a new end with a full counter, and no counter decreases to $0$. Each link uses one ticket of its thread and no step creates tickets, so the program has no lock-free typing.",
+   "rocq": "to be mechanized",
+   "accepts": {
+    "lf": {
+     "ok": false,
+     "part": "tickets"
+    }
+   },
+   "lead": "A deadlock-free program in which links keep replacing the end a thread waits on."
+  },
+  {
+   "id": "rx-chain",
+   "title": "A waiting chain that grows forever",
+   "modes": [
+    "lf"
+   ],
+   "code": "grow = !(f = λw. let ⟨c, c′⟩ = new in                 -- c below the point of w\n                 let ⟨d, d′⟩ = new in let ∗ = spawn (λ_. recvclose d′) in\n                 let ∗ = close (send ⟨∗, d⟩) in              -- one session action\n                 let ∗ = spawn (λ_. (force f) c′) in\n                 let ∗ = close c in close w)                 -- waits on its child\nmain = let ⟨w, w′⟩ = new in let ∗ = spawn (λ_. close w′) in (force grow) w\n-- every thread waits on the one it spawned, close w′ never proceeds",
+   "shows": "Each thread spawns a child, waits on it, and the child does the same. Each wait is at a point below the point of the previous one, and the chain grows forever. A well-founded world has no infinite descending chain, and lock-free soundness assumes a well-founded world.",
+   "rocq": "to be mechanized",
+   "accepts": {
+    "lf": {
+     "ok": false,
+     "part": "well-founded world"
+    }
+   },
+   "lead": "A deadlock-free program in which a chain of waiting threads grows forever."
   }
  ]
 };

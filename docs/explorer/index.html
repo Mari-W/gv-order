@@ -45,7 +45,8 @@ h1 small { font-family: var(--body); font-weight: 400; font-size: 0.8rem; color:
 .modes button[aria-pressed="true"] { color: #fff; }
 .modes button[data-mode="df"][aria-pressed="true"] { background: var(--df); }
 .ann { fill: var(--lf); color: var(--lf); }
-.block.lfonly { background: var(--lf-soft); border-color: var(--lf); }
+.block.lfonly, .ex.lfonly { background: var(--lf-soft); border-color: var(--lf); }
+.block.lfonly .ann { fill: currentColor; color: inherit; }
 .flip { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; font: 500 0.66rem var(--body); letter-spacing: 0.04em; }
 .flip button { border: 0; background: transparent; color: var(--muted); padding: 1px 6px; cursor: pointer; font: inherit; }
 .flip button[aria-pressed="true"][data-m="df"] { background: var(--df); color: #fff; }
@@ -89,7 +90,9 @@ aside { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 112px); alig
 @media (max-width: 900px) { aside { position: fixed; left: 0; right: 0; bottom: 0; top: auto; max-height: 46vh; border-radius: 12px 12px 0 0; z-index: 6; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); box-shadow: 0 -6px 24px rgba(0,0,0,.12); } aside.empty { display: none; } main { padding-bottom: 50vh; } }
 aside .eyebrow { font: 600 0.7rem var(--body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
 aside .eyebrow button { font: 500 0.75rem var(--body); border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 4px; padding: 2px 8px; cursor: pointer; }
-.block h3[data-block], .ex h3[data-ex] { cursor: help; }
+.block h3[data-block] { cursor: pointer; }
+.ex h3[data-ex] { cursor: help; }
+.ex { cursor: pointer; }
 aside h2 { font-family: var(--display); font-weight: 600; font-size: 1.3rem; margin: 6px 0 10px; text-wrap: balance; }
 aside dl { margin: 0; display: grid; gap: 10px; }
 aside dt { font: 600 0.72rem var(--body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
@@ -116,6 +119,7 @@ aside .placeholder { color: var(--muted); font-size: 0.9rem; }
 .ex pre .com { color: var(--muted); font-style: italic; }
 .ex pre .ty { color: var(--accent); }
 .ex p { margin: 6px 0 0; font-size: 0.9rem; }
+.ex p.lead { font-size: 0.95rem; color: var(--fg); margin: 6px 0 4px; }
 .badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 2px; }
 .badge { display: inline-flex; align-items: baseline; gap: 4px; font: 500 0.78rem var(--body); padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); }
 .badge .mark { font-weight: 700; }
@@ -195,8 +199,8 @@ window.MathJax = {
     return out + esc(code.slice(last));
   }
   // \htmlData{k=KEY}{…} (KaTeX style) becomes \class{k-KEY}{…} for MathJax
-  // \annot{X} marks an annotation (a credit): kept in the lock-free mode, dropped otherwise
   // \annot{X} marks an annotation, \annraw{X} layout that belongs to one: kept (and coloured) in the lock-free mode, dropped otherwise
+  // \dfo{X} is the deadlock-free reading of a part whose lock-free reading is an \annot: kept in the deadlock-free mode, dropped otherwise
   // colour an annotation, keeping a lone superscript attached to its base
   function colour(t) {
     if (t.startsWith('^{')) { let d = 1, k = 2; while (k < t.length && d) { if (t[k] === '\\') { k += 2; continue; } if (t[k] === '{') d++; else if (t[k] === '}') d--; k++; } if (k === t.length) return '^{\\class{ann}{' + t.slice(2, -1) + '}}'; }
@@ -205,12 +209,12 @@ window.MathJax = {
   function annot(s, md = mode) {
     s = String(s || ''); let out = '', i = 0;
     for (;;) {
-      const m = /\\ann(ot|raw)\{/.exec(s.slice(i)); if (!m) return out + s.slice(i);
+      const m = /\\(?:ann(ot|raw)|(dfo))\{/.exec(s.slice(i)); if (!m) return out + s.slice(i);
       const j = i + m.index, open = j + m[0].length;
       let d = 1, k = open;
       while (k < s.length && d) { if (s[k] === '\\') { k += 2; continue; } if (s[k] === '{') d++; else if (s[k] === '}') d--; k++; }
       const inner = annot(s.slice(open, k - 1), md);
-      out += s.slice(i, j) + (md !== 'lf' ? '' : m[1] === 'raw' ? inner : colour(inner)); i = k;
+      out += s.slice(i, j) + (m[2] ? (md !== 'lf' ? inner : '') : md !== 'lf' ? '' : m[1] === 'raw' ? inner : colour(inner)); i = k;
     }
   }
   const toMJ = (tex, m) => annot(tex, m).replace(/\\htmlData\{k=([A-Za-z0-9.\-_]+)\}\{/g, (_, k) => '\\class{k-' + k.replace(/\./g, '__') + '}{');
@@ -303,15 +307,17 @@ window.MathJax = {
   }
 
   // one badge per judgment: accepted, rejected, or not attempted
-  const JUDG = [['df', '$\\vdash$', 'deadlock free'], ['live', '$\\vdash$ and $\\vdash\\!\\triangleright$', 'live'], ['lf', '$\\Vdash^{N}$', 'lock free']];
+  // each verdict says which judgment it is about and which property that judgment gives
+  const JUDG = [['df', 'statically typed', 'deadlock free'], ['sem', 'semantically typed', 'deadlock free'], ['live', 'typed and guarded', 'live'], ['lf', 'statically typed', 'lock free']];
   function badges(acc) {
     if (!acc) return '';
+    // the deadlock-free mode shows only the deadlock-free verdict
     return `<div class="badges">${JUDG.map(([m, sym, name]) => {
-      const a = acc[m]; if (a === undefined) return '';
+      const a = acc[m]; if (a === undefined || (mode === 'df' && m !== 'df' && m !== 'sem')) return '';
       const st = a === true || (a && a.ok) ? 'yes' : a === false || (a && a.ok === false) ? 'no' : 'na';
-      const extra = (a && a.N !== undefined ? ` <span class="n">${a.N === 'every' ? 'every $N$' : `$N = ${esc(a.N)}$`}</span>` : '') + (a && a.part ? ` <span class="nm">(${esc(a.part)})</span>` : '');
+      const extra = (a && a.N !== undefined ? ` <span class="n">at ${a.N === 'every' ? 'every $N$' : `$N = ${esc(a.N)}$`}</span>` : '') + (a && a.part ? ` <span class="nm">(${st === 'no' ? 'fails at ' : ''}${esc(a.part)})</span>` : '');
       const title = a && a.rocq ? ` title="${esc(a.rocq)}"` : '';
-      return `<span class="badge ${st} ${m}"${title}><span class="mark">${st === 'yes' ? '✓' : st === 'no' ? '✗' : '–'}</span> ${sym} <span class="nm">${name}</span>${extra}</span>`;
+      return `<span class="badge ${st} ${m}"${title}><span class="mark">${st === 'yes' ? '✓' : st === 'no' ? '✗' : '–'}</span> ${st === 'no' ? 'not ' : ''}${sym}, <span class="nm">${name}</span>${extra}</span>`;
     }).join('')}</div>`;
   }
   function renderExamples(root) {
@@ -320,7 +326,7 @@ window.MathJax = {
     for (const x of MAP.examples || []) {
       const modes = x.modes && x.modes.length ? x.modes : ['df', 'lf'];
       if (!modes.includes(mode) || !matches(x.title, x.shows, x.code, x.rocq)) continue;
-      root.insertAdjacentHTML('beforeend', `<article class="ex" id="x-${esc(x.id)}"><h3 data-ex="${esc(x.id)}" tabindex="0">${esc(x.title)}</h3>${badges(x.accepts)}${x.code ? `<pre>${hl(x.code)}</pre>` : ''}</article>`);
+      root.insertAdjacentHTML('beforeend', `<article class="ex${modes.includes('df') ? '' : ' lfonly'}" id="x-${esc(x.id)}"><h3 data-ex="${esc(x.id)}" tabindex="0">${esc(x.title)}</h3>${badges(x.accepts)}${x.lead ? `<p class="lead">${prose(x.lead)}</p>` : ''}${x.code ? `<pre>${hl(x.code)}</pre>` : ''}${x.shows ? `<p>${prose(x.shows)}</p>` : ''}</article>`);
       shown++;
     }
     if (!shown) root.insertAdjacentHTML('beforeend', '<p class="empty-state">No example for this instance matches the filter.</p>');
@@ -341,10 +347,22 @@ window.MathJax = {
     const u = uses[key] ? [...uses[key].entries()] : [];
     body.innerHTML = `<h2>${esc(annot(n.title || key))}</h2>
       <dl>${n.sig ? `<div><dt>Type</dt><dd class="sig">$\\displaystyle ${esc(annot(n.sig))}$</dd></div>` : ''}${args(n.args)}${row('What', n.what)}${row('Why', n.why)}${row('Without it', n.breaks, 'breaks')}${row('Example', n.example)}${row('Rocq', n.rocq)}</dl>
+      ${Array.isArray(n.used) && n.used.length ? `<div class="uses">Used in<div class="chips">${n.used.map(id => { const s = MAP.sections.find(x => x.blocks.some(b => b.id === id)); const b = s && s.blocks.find(b => b.id === id); return b ? `<a href="#${s.id}" data-jump="${esc(id)}">${esc(b.title)}</a>` : ''; }).join('')}</div></div>` : ''}
       ${u.length > 1 ? `<div class="uses">Also in<div class="chips">${u.map(([id, v]) => `<a href="#${v.sec}" data-jump="${esc(id)}">${esc(v.title)}</a>`).join('')}</div></div>` : ''}`;
     noteCache.set(ck, body);
     body.dataset.fresh = '1';
     return body;
+  }
+  // a block's own note: its caption, and why it is there, what breaks without it and where it is used
+  function blockNote(id) {
+    const b = MAP.sections.flatMap(x => x.blocks).find(x => x.id === id); if (!b) return null;
+    const a = b.about || {};
+    return pseudo('b-' + b.id, { title: b.title, what: b.caption, why: a.why, breaks: a.breaks, example: a.example, rocq: b.rocq, used: a.used });
+  }
+  // an example's own note: what it demonstrates, then how
+  function exNote(id) {
+    const x = (MAP.examples || []).find(x => x.id === id); if (!x) return null;
+    return pseudo('x-' + x.id, { title: x.title, what: [x.lead, x.shows].filter(Boolean).join(' '), rocq: x.rocq });
   }
   // a note built from a block's caption, an example's description, or a section intro
   function pseudo(id, n) {
@@ -410,8 +428,8 @@ window.MathJax = {
     const art = e.target.closest && e.target.closest('article'); if (art) lastBlock = art.id;
     const h = e.target.closest && e.target.closest('h3[data-block], h3[data-ex]');
     if (h && !pinned) {
-      if (h.dataset.block) { const b = MAP.sections.flatMap(x => x.blocks).find(x => x.id === h.dataset.block); if (b) showNote(pseudo('b-' + b.id, { title: b.title, what: b.caption, rocq: b.rocq }), false, modeAt(h)); }
-      else { const x = (MAP.examples || []).find(x => x.id === h.dataset.ex); if (x) showNote(pseudo('x-' + x.id, { title: x.title, what: x.shows, rocq: x.rocq }), false); }
+      if (h.dataset.block) { const k = blockNote(h.dataset.block); if (k) showNote(k, false, modeAt(h)); }
+      else { const k = exNote(h.dataset.ex); if (k) showNote(k, false); }
       return;
     }
     const t = e.target.closest && e.target.closest('[class*="k-"]'); if (!t) return;
@@ -427,6 +445,11 @@ window.MathJax = {
   content.addEventListener('click', e => {
     const fb = e.target.closest && e.target.closest('.flip button');
     if (fb) { flipBlock(fb.closest('.flip').dataset.flip, fb.dataset.m); return; }
+    const hb = e.target.closest && e.target.closest('h3[data-block]');
+    if (hb) { const k = blockNote(hb.dataset.block); if (k) { pinned = k; boxesOff('pin'); showNote(k, true, modeAt(hb)); } return; }
+    // a click anywhere on an example pins its description
+    const xa = e.target.closest && e.target.closest('article.ex');
+    if (xa) { const k = exNote(xa.id.slice(2)); if (k) { pinned = k; boxesOff('pin'); showNote(k, true); } return; }
     const t = e.target.closest && e.target.closest('[class*="k-"]'); if (!t) return;
     const k = keyOf(t); if (!k) return;
     pinned = k; markAll(k); showNote(k, true, modeAt(t));

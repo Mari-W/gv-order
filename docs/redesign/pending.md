@@ -100,12 +100,165 @@ must do, open questions.
    ⊗ ⊕ ∃ box results or payloads; the map calls ϑ a "ticket need"). The
    typing, semantic-typing, fuel and theorem blocks still show the old
    credits and must follow the Rocq once this is implemented.
+   Rocq status: the repair agent was stopped by the author on 2026-11-19
+   during stage C. Branch redesign-clean3 (worktree redesign-s4) holds
+   entry 3 done (5907cd0), a merge of redesign (f0b97af) and two WIP
+   commits for this entry (2c2168a, b9d0c05) that do not build. Resume
+   from b9d0c05: the credits section of the types was next.
+
+7. **One rejected example per lock-freedom mechanism (2026-11-19).** The
+   map's examples page shows four programs that step forever without a
+   deadlock while a thread waits forever: postponement (rx-postpone, aging),
+   endless delegation (rx-delegate, payload credit / one hop), link refresh
+   (rx-relink, tickets), a growing waiting chain (rx-chain, well-founded
+   world); τ-divergence is covered by the guard rejections. Rocq: for each,
+   the process, a proof that it is not lock free, and a proof that it is
+   not lock-free typable at any N (or that the named premise fails for
+   every derivation); then fill the badges' Rocq names. rx-chain depends on
+   entry 2's risk (b) once worlds grow. Map: done (badges say "to be
+   mechanized").
+
+8. **Readable typing notation (draft, under review).** Map: draft blocks at
+   the end of the typing section (Draft notation, Draft E-App, E-Send,
+   E-Abs): one linear context Δ for ends and variables, W and N implicit,
+   held entries `∥ H` (future ∪ heads(H), and in LF the aging H − c), and
+   one effect ε = (c, ϑ) with sequencing ε₁·ε₂ (defined iff tok). Pure
+   notation over the current rules. If the author approves: convert every
+   rule on the map. Rocq: optional definitions and unfolding lemmas.
+   Approved by the author 2026-11-19: convert all rules after the repair
+   run. Also replace heads(H) by a lighter notation (proposal: H̄, the
+   points the partners of H wait at, with S@x ↦ x̄, closures and ∃ ↦ their
+   lower point l, boxes ↦ ∅).
+   Map done 2026-11-19: every typing rule uses the notation, one form per
+   rule with the lock-free parts marked (no separate D- rules on the map),
+   and the draft blocks are gone. Heads: no H̄, because an overline on a
+   context already means the dual interface (P-Connect). Instead heads
+   hide inside `∥ H`, and the two places that still need them lift the
+   order to types and contexts, `x ≺ T` (E-Send) and `l ≼ Δ` (E-Abs,
+   E-Pack). The typing rules also follow entry 6 (credits only on ends and
+   closures, aging and capture structural, E-Send asks `T' − 1 ≤ T[x·i]`,
+   no outer credits on results). Process rules and the semantic-typing and
+   theorem sections still use the old judgment (entry 9).
+
+9. **Readable semantic typing (to design).** Same treatment as entry 8 for
+   V, E, P, the obligations, readiness, fuel and the soup: show the relation
+   at κ_DF in DF mode, the general κ form with the differences coloured in
+   LF, and lighter notation where one idea is written out several times.
+   Map only. Draft after entry 8 is converted.
+   Map done 2026-11-19: a new marker `\dfo{…}` shows the deadlock-free
+   reading of a part whose lock-free reading is an `\annot`, so DF shows
+   `j < n`, level `n` for a send payload and `κ_DF(α)` where LF shows the
+   general table. The general cost table is LF only, the DF table labels
+   its last row as a message. The obligations write the head of the
+   subject end once, `Θ(o) ≐ S@x` (Θ(o) = S₀@x with unfold S₀ = S). The
+   semantic judgment takes the typing context, `Δ ⊨^F_W e : T`, with
+   `|Δ|` its ends. Payloads lose `^b` and FV follows entry 6.
+
+10. **Readability pass over every section (map only, after the repair
+    run).** Syntax, semantics, types, typing, semantic typing, theorems,
+    examples: lighter notation where one idea repeats, explanations and
+    examples a newcomer can follow, every symbol defined and hoverable,
+    hover texts proofread (also the DF texts the annotation filter cut).
+    Entries 8 and 9 are part of it.
+    Scope narrowed by the author 2026-11-19: theorems and examples only,
+    the other sections are fine. Map done 2026-11-19: theorem statements
+    use the new judgments (`∅ ; Δ ⊢^F_W t : T`, `T ! ε` for the annotated
+    one, `Δ ⊨^F_W t : T`, erasure `Δ_df`), "merged judgment" became
+    "annotated typing judgment", general-κ rows and `[κ]` show only in LF,
+    and the captions state the DF result first. Examples use the source
+    syntax of the syntax section (`let ∗ =`, `let ⟨a, b⟩ =`), the
+    forwarder protocol reads `?((∗ ⊸ ∗)^2).Close`, and the controller
+    states idle aging in the entry-6 form.
+
+11. **Faithfulness audit of the map against the Rocq (after the repair
+    run is merged).** Check every block, rule, signature and theorem on the
+    map against the definitions in v2/, list every difference that is not a
+    queued entry, and fix the map or queue the Rocq change.
+
+12. **Generalized arrows, E-SpawnLam derived (decided 2026-11-19 by the
+    author, design to confirm).** Today E-SpawnLam exists beside E-Spawn
+    because E-Abs asks a common lower point `l ≼ Δ` and types the body
+    under a fresh future above `u`, and a λ spawned in place needs neither.
+    Generalize the two points of an arrow instead.
+    (a) Lower point `l = ⊥` allowed (`lbound` already has `LBot`, used by
+    `∃^⊥`). E-Abs drops `l ≼ Δ` when `l = ⊥`, `hbot` reports such arrows,
+    and holding the closure puts `⊥` into the future, which forbids
+    blocking while it is held, as for `∃^⊥`.
+    (b) Upper point `u = ⊤`. E-Abs types the body under the empty future
+    `(∅, ·)`, and E-App needs `⊤ ≺ F`, which holds only for the empty
+    future, so such a closure is applied only in tail position of a thread.
+    E-Spawn asks nothing of `u`.
+    Then `spawn (λe)` types by E-Abs at `l = ⊥, u = ⊤` plus E-Spawn, and
+    E-SpawnLam goes. The value clause at `u = ⊤` is exactly `Vthunk` (body
+    at the empty future), so V-Arrow absorbs V-Thunk and one value clause
+    goes too. Check: E-SpawnLam ages the handed context by one hop while
+    E-Spawn asks closure credit `a ≥ 1`, so capture at `h, a = 1` must give
+    the same credits as `Δ − 1`, and the ticket need of E-SpawnLam
+    (`tspawn` of the body at reserve 0) must match E-Spawn on the arrow.
+    Tickets match (both write tspawn(ϑ'(0))). Credits do not: capture
+    restates every captured end at one floor h, with h + a ≤ a₀, while
+    E-SpawnLam keeps each end at its own credit minus one. Lost example:
+    A at N and B at 1 handed to a child that acts on B while holding A.
+    E-SpawnLam gives A at N − 1, capture at a = 1 forces h = 0 and A at 0.
+    Proposed fix, to check first: per-end capture, the body sees Δ − a
+    instead of the floor h, and FV-Arrow asks counters at call time to be
+    at least the counters at creation minus a (FV knows the creation
+    counters). Then the derivation loses nothing, ordinary closures get
+    more precise, and the floor h (and Cap-Arr's h − h₀) may go. Touches
+    FV-Arrow, capture, Sub-Arr. Fallback if it fails: generalized arrows
+    with the loss, after checking every lock-free example still types.
+    Order: check per-end capture, then generalize arrows. Author
+    (2026-11-19): per-end capture is important.
+    Rocq: after the repair run (entry 6) is merged. Map: after the design
+    is confirmed.
+
+13. **P-Connect compares only the shared roots (2026-11-19, author).**
+    Today p_connect asks world_wf W1, world_wf W2, disjoint families and
+    strict (W1 ⊔ W2), and the lemma p_join states the overlap form, strict
+    W1, strict W2, strict (W1|_S ⊔ W2|_S) for the shared constants S,
+    equivalent by p_join_iff_connect (strict_join_iff). world_wf is not
+    trivially true, because p_term asks nothing of its world. New form:
+    p_term asks strict W, and p_connect asks disjoint families and only
+    strict (W1|_S ⊔ W2|_S). By induction every process derivation sits over
+    a strict world (strict_join_iff for the connect case), so the old rule
+    is derivable, p_join disappears, and the `strict W` premise of the
+    process soundness theorems follows from the derivation. The map writes
+    S = A_{W1} ∩ A_{W2} and no families premise, because entry 2 removes
+    families. Map done. Rocq: after the repair run is merged.
+
+14. **Typing QA against static/Typing.v (2026-11-19).** Beyond entries 2,
+    6, 8, 12, 13 the map differed in three places, all fixed on the map:
+    `¬hbot T` at E-Send is gone: the map lets heads return ⊥ for hidden
+    ends (heads(∃^⊥) = {⊥}, no fact relates ⊥ to a point), so `x ≺ T`,
+    `l ≼ Δ` and held futures need no separate hbot or ⊥_Δ (Rocq: heads
+    with ∅ plus the flag hbot, sf_unionb, lbx_below_h; optional Rocq
+    cleanup, heads into Point ∪ {⊥}); the arrow lower bound "absent"
+    (`LNone`, no end) is written `·`, not `⊥`, which is the hidden bound
+    `LBot` of `∃^⊥`; held futures add the flag ⊥ when H holds an `∃^⊥`
+    (`sf_unionb … (lenv_bot Δ2)`). Entry 12 must keep the two apart: the
+    new arrow bound there is `LBot`, and hbot must report such arrows, so
+    a spawn-only closure cannot be sent (no loss, it cannot exist today).
+    Open questions from the author, to discuss:
+    (a) Named variables on the map instead of de Bruijn indices in Δ, as
+        for points (the Rocq keeps indices). Author: cosmetic, map only,
+        low priority.
+    (b) Future variables: Γ holds φ ↦ u (the fact u ≺ φ) and F names φ as
+        the unknown rest. Each φ has exactly one fact, so Γ ⊢ x ≺ φ iff
+        Γ ⊢ x ≼ u. Candidate: F = (X, above u) and no future variables in
+        Γ. To check against fl and the semantic den_{ρ,B}. Author
+        (2026-11-19): wanted if it holds.
 
 ## Done in the Rocq
 
 (entries move here once the repair agent has implemented and merged them)
 
 ## Open discussion (not scheduled)
+
+- **Cross-references everywhere on the map (author 2026-11-19, another
+  day).** Every symbol in every formula should be hoverable and lead to
+  its definition, which needs a restructure of the generator (one
+  definition site per symbol, references by key). Today only the parts
+  wrapped by hand or by the automatic word list are hoverable.
 
 - **Link budgets per end.** Per-thread link tickets reject a box that links
   once per round forever (e.g. a server linking each new client to a
@@ -119,10 +272,56 @@ must do, open questions.
   end, S@x, and compute later points (x⁺, fields x·κ). Equal
   expressiveness for finite protocols, finite types for recursive ones,
   point-free session types. Written points would only read better. Author
-  (2026-11-19): queue it as a discussion item. No Rocq work.
+  (2026-11-19): queue it as a discussion item. No Rocq work. Author later
+  the same day: not wanted for now, also not as a display on the map.
 - **Type-directed ticket split at spawn.** Today a spawn halves the
   tickets (child ⌈tk/2⌉, parent ⌊tk/2⌋), which forces the doubling form
   ϑ(r) = 2^s r + b and the side condition tok. If the child got exactly
   its need b_c, needs would just add up. That needs the split to be fixed
   outside the step index without the relation reading types. Discuss
-  together with per-end link budgets. No Rocq work.
+  together with per-end link budgets. No Rocq work. Author (2026-11-19):
+  probably good, worth designing.
+- **Programs the topological relation accepts and ours rejects.** The
+  earlier relation (D'Osualdo, van den Heuvel, Thiemann, Weidner) needs no
+  order, only a per-extruded-channel split at the interface. Candidate:
+  thread A sends a flag to thread B, then both close a and b in the order
+  the flag picks. Deadlock free. Ours rejects it: A needs x_a ≺ x̄_b and
+  x_b ≺ x̄_a, B needs x̄_a ≺ x_b and x̄_b ≺ x_a, a cycle, and the points
+  are fixed before the flag exists. Check the earlier relation accepts it
+  (internal channels only, so the interface split is not involved).
+  Later: a hybrid that cuts along one channel without order facts
+  (Wadler-style) and uses points only for cycles.
+  **Important, to discuss (author 2026-11-19).** The author wants the
+  relation to admit, inside a component, whatever can be proved by hand.
+  Correction of an earlier claim: it already does at the process level.
+  ready_p (relation/Readiness.v) reads points only of interface ends, and
+  internal channels carry none, so P⟦∅ ⊢ T⟧ asks exactly deadlock
+  freedom of every reachable stuck state, and the flag program is in it by
+  a direct proof. What rejects it is the route through typing: P-Term asks
+  each thread to be in E, and E orders every end the thread holds.
+  sem_p_connect composes any two members of P, so a hand-proved component
+  composes with typed ones, provided it is ready at its interface (offered
+  ends below the partner points of the ends it does not offer). Both
+  points are obvious, no mechanization wanted. Options discussed:
+  (a) one-end lemma: a process with one free end, in either relation,
+      offers that end when stuck; this would allow a mixed P-Connect along
+      a single channel (cut of one channel, payload condition as in
+      docs/extensions/regions.md §3, cut points stay on our side); needs
+      their definitions (dosualdo2026logical is metadata only in the
+      store, read and record facts first);
+  (b) a single-channel cut rule in our own relation that needs no world
+      agreement, orders only inside cycles (the hybrid);
+  (c) world growth at a decision with an owner token (data-dependent
+      constraints, regions.md §1 pending choices, BranchWorlds.v), and
+      facts guarded by shared values (regions.md §6);
+  (d) state and check that we subsume their static system, which types
+      trees (one point per end may already suffice). Semantic inclusion of
+      their relation in ours is false in general.
+  (e) Author: embed the topological relation in ours by one generic proof.
+      Inside a component nothing is to show, internal channels carry no
+      points. At the external channels replay the topological argument
+      once, generically: their tree-shaped interface should let us choose
+      points for the interface ends so that ready_p holds. Then every
+      process in their relation is in our P, and composes with typed code
+      by sem_p_connect. Open: which points the tree induces, and whether
+      their interface readiness implies above_offered.
