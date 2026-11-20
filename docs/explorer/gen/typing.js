@@ -183,7 +183,7 @@ const SUBDF = rows(
   R`${rule('Sub-Prod, Sub-Sum', h('tp.sub-agg', R`${LE(R`T_1`, R`T_1'`)} \quad ${LE(R`T_2`, R`T_2'`)}`), R`T_1 \otimes T_2 \leq T_1' \otimes T_2' \qquad T_1 \oplus T_2 \leq T_1' \oplus T_2'`)} \qquad ${rule('Sub-Arr', h('tp.sub-var', R`${LE(R`T_1'`, R`T_1`)} \quad ${LE('U', R`U'`)}`), R`T_1 \multimap^{u}_{l} U \leq T_1' \multimap^{u}_{l} U'`)}`,
   rule('Sub-Box', h('tp.sub-teq', R`U \equiv U'`), R`\Box(\forall \bar\iota\,\bar\alpha.\ C.\ \ast \multimap^{u} U) \leq \Box(\forall \bar\iota\,\bar\alpha.\ C.\ \ast \multimap^{u} U')`));
 block(s, {
-  id: 't-sub', title: 'Subtyping', rocq: 'static/Contexts.v: tsub, static/Typing.v: e_sub, d_conv',
+  id: 't-sub', title: 'Subtyping', rocq: 'static/Contexts.v: tsub, static/Typing.v: e_sub; static/Conservativity.v: d_conv',
   tex: SUBLF,
   variants: { df: SUBDF },
   caption: 'Without annotations subtyping is $\\approx$ on sessions plus dropping facts of $\\exists$. In the lock-free mode credits fall while costs, ticket needs and floors rise.'
@@ -193,46 +193,46 @@ block(s, {
 const T = (id, title, rocq, tex, caption) => block(s, { id, title, rocq, tex, caption });
 const UNL = h('ctx.empty', R`\Delta\ \text{unlimited}`);
 
-T('r-unit', 'E-Unit', 'static/Typing.v: e_unit, d_unit',
+T('r-unit', 'E-Unit', 'static/Typing.v: e_unit; static/Conservativity.v: d_unit',
   rule('E-Unit', UNL, J(R`\Gamma`, R`\Delta`, '', 'F', R`\ast`, R`\ast`, ZERO)),
   '$\\ast$ uses no entry of $\\Delta$.');
-T('r-var', 'E-Var', 'static/Typing.v: e_var, d_var',
+T('r-var', 'E-Var', 'static/Typing.v: e_var; static/Conservativity.v: d_var',
   rule('E-Var', UNL, J(R`\Gamma`, h('ctx.only', R`\Delta, x : T`), '', 'F', 'x', 'T', ZERO)),
   '$x$ is the only entry of the context that is not unlimited.');
-T('r-chan', 'E-Chan', 'static/Typing.v: e_chan, d_chan',
+T('r-chan', 'E-Chan', 'static/Typing.v: e_chan; static/Conservativity.v: d_chan',
   rule('E-Chan', UNL, J(R`\Gamma`, h('ctx.only', R`\Delta, o : (S@x)\annot{^{a}}`), '', 'F', 'o', R`(S@x)\annot{^{a}}`, ZERO)),
   'The end $o$ is typed by its own entry.');
-T('r-abs', 'E-Abs', 'static/Typing.v: e_abs, d_abs',
+T('r-abs', 'E-Abs', 'static/Typing.v: e_abs; static/Conservativity.v: d_abs',
   rule('E-Abs',
     R`${h('E-Abs.phi', R`\varphi\ \text{fresh}`)}${QH}${h('E-Abs.lb', R`l \preccurlyeq \Delta`)}\annraw{${QH}}\annot{${h('E-Abs.cap', R`\Delta \leadsto_{h,a} \Delta^{h}`)}} \\ ${h('E-Abs.body', J(R`\Gamma, u \prec \varphi`, R`\Delta\annot{^{h}}, T`, '', R`(\varnothing, \varphi)`, 'e', 'U', R`\varepsilon`))}`,
     J(R`\Gamma`, R`\Delta`, '', 'F', R`\lambda e`, ARR('T', 'U', R`\varepsilon`, 'h', 'a'), ZERO)),
   'The body runs at a later call under a fresh future $\\varphi$ above $u$, and $l$ lies at or below the dual points of the captured entries. In the lock-free mode the closure records the effect of its body and restates its captured ends at the floor $h$.');
-T('r-app', 'E-App', 'static/Typing.v: e_app, d_app',
+T('r-app', 'E-App', 'static/Typing.v: e_app; static/Conservativity.v: d_app',
   rule('E-App',
     R`${h('E-App.fut1', J(R`\Gamma`, R`\Delta_1`, R`\Delta_2`, 'F', R`e_1`, ARR('T', 'U', R`\varepsilon`, 'h', 'a'), R`\varepsilon_1`))} \\ ${h('E-App.fut2', J(R`\Gamma`, AGE(R`\Delta_2`, R`\varepsilon_1`), R`(T \multimap^{u}_{l} U)\annot{^{a}}`, 'F', R`e_2`, 'T', R`\varepsilon_2`))}${QH}${h('E-App.ub', R`u \prec F`)}`,
     J(R`\Gamma`, R`\Delta_1, \Delta_2`, '', 'F', R`e_1\,e_2`, 'U', R`\varepsilon_1 ${SEQ} \varepsilon_2 ${SEQ} \varepsilon`)),
   'The thread holds $\\Delta_2$ while $e_1$ runs and the closure while $e_2$ runs, and the body runs under $F$ with $u \\prec F$. In the lock-free mode holding the closure ages it by the cost of $e_2$, which needs that much credit.');
-T('r-pair', 'E-Pair', 'static/Typing.v: e_pair, d_pair',
+T('r-pair', 'E-Pair', 'static/Typing.v: e_pair; static/Conservativity.v: d_pair',
   rule('E-Pair',
     R`${h('E-App.fut1', J(R`\Gamma`, R`\Delta_1`, R`\Delta_2`, 'F', R`e_1`, R`T_1`, R`\varepsilon_1`))}${QH}${h('E-Pair.fut2', J(R`\Gamma`, AGE(R`\Delta_2`, R`\varepsilon_1`), R`T_1`, 'F', R`e_2`, R`T_2`, R`\varepsilon_2`))}`,
     J(R`\Gamma`, R`\Delta_1, \Delta_2`, '', 'F', R`\langle e_1, e_2\rangle`, R`\annot{(}T_1${AGE('', R`\varepsilon_2`)}\annot{)} \otimes T_2`, R`\varepsilon_1 ${SEQ} \varepsilon_2`)),
   'The value of $e_1$ is held while $e_2$ runs. In the lock-free mode it ages by the cost of $e_2$.');
-T('r-let', 'E-LetP, E-LetU', 'static/Typing.v: e_letp, e_letu, d_letp, d_letu',
+T('r-let', 'E-LetP, E-LetU', 'static/Typing.v: e_letp, e_letu; static/Conservativity.v: d_letp, d_letu',
   rows(rule('E-LetP', R`${h('E-App.fut1', J(R`\Gamma`, R`\Delta_1`, R`\Delta_2`, 'F', R`e_1`, R`T_1 \otimes T_2`, R`\varepsilon_1`))}${QH}${h('tp.letp', J(R`\Gamma`, R`T_2, T_1, ${AGE(R`\Delta_2`, R`\varepsilon_1`)}`, '', 'F', R`e_2`, 'T', R`\varepsilon_2`))}`,
     J(R`\Gamma`, R`\Delta_1, \Delta_2`, '', 'F', R`\mathsf{let}\ \langle a, b\rangle = e_1\ \mathsf{in}\ e_2`, 'T', R`\varepsilon_1 ${SEQ} \varepsilon_2`)),
     rule('E-LetU', R`${h('E-App.fut1', J(R`\Gamma`, R`\Delta_1`, R`\Delta_2`, 'F', R`e_1`, R`\ast`, R`\varepsilon_1`))}${QH}${h('tp.letu', J(R`\Gamma`, AGE(R`\Delta_2`, R`\varepsilon_1`), '', 'F', R`e_2`, 'T', R`\varepsilon_2`))}`,
     J(R`\Gamma`, R`\Delta_1, \Delta_2`, '', 'F', R`\mathsf{let}\ \ast = e_1\ \mathsf{in}\ e_2`, 'T', R`\varepsilon_1 ${SEQ} \varepsilon_2`))),
   '$\\mathsf{let}\\ x = e_1\\ \\mathsf{in}\\ e_2$ abbreviates a pair elimination followed by a unit elimination and types by E-LetP, E-Pair and E-LetU.');
-T('r-case', 'E-Inj, E-Case', 'static/Typing.v: e_inj, e_case, d_inj, d_case',
+T('r-case', 'E-Inj, E-Case', 'static/Typing.v: e_inj, e_case; static/Conservativity.v: d_inj, d_case',
   rows(rule('E-Inj', J(R`\Gamma`, R`\Delta`, '', 'F', 'e', R`T_i`, R`\varepsilon`), J(R`\Gamma`, R`\Delta`, '', 'F', h('syn.inj', R`\mathsf{inj}_i\,e`), R`T_1 \oplus T_2`, R`\varepsilon`)),
     rule('E-Case', R`${h('E-App.fut1', J(R`\Gamma`, R`\Delta_1`, R`\Delta_2`, 'F', 'e', R`T_1 \oplus T_2`, R`\varepsilon_0`))}${QH}${h('E-Case.branches', J(R`\Gamma`, R`T_i, ${AGE(R`\Delta_2`, R`\varepsilon_0`)}`, '', 'F', R`e_i`, 'T', R`\varepsilon_i`))}`,
     J(R`\Gamma`, R`\Delta_1, \Delta_2`, '', 'F', R`\mathsf{case}\ e\,(e_1)\,(e_2)`, 'T', R`\varepsilon_0 ${SEQ} ${h('tp.max', R`\max`)}(\varepsilon_1,\varepsilon_2)`))),
   'An injection keeps the context of its argument. Both branches of a case type under one context at one result.');
-T('r-box', 'E-Box', 'static/Typing.v: e_box, d_box',
+T('r-box', 'E-Box', 'static/Typing.v: e_box; static/Conservativity.v: d_box',
   rule('E-Box', R`${h('E-Box.unl', R`\Delta\ \text{unlimited}`)}${QH}${h('E-Abs.phi', R`\varphi\ \text{fresh}`)}${QH}${h('E-Box.fresh', R`\bar\iota\ \text{fresh}`)}${QH}${h('E-Box.inst', R`\forall \bar s.\ ${h('tp.sinsts', R`\mathsf{sinsts}`)}\,\bar s`)} \\ ${h('E-Box.body', J(h('E-Box.open', R`\Gamma, C(\bar\iota), u \prec \varphi`), h('E-Box.self', R`\Delta, f : \Box(\ldots)`), '', R`(\varnothing,\varphi)`, 'e', h('tp.sinst', R`U[\bar s]`), R`\varepsilon`))}`,
     J(R`\Gamma`, R`\Delta`, '', 'F', R`!e`, R`\Box(\forall \bar\iota\,\bar\alpha.\ C.\ \ast \multimap^{u}\annot{[\varepsilon]}\,U)`, ZERO)),
   'A box $!e$ is a procedure that can be forced many times, and its body calls itself through $f$. A copy of a box must not copy an end, so $\\Delta$ is unlimited. Each force may pick other points for $\\bar\\iota$ and other session types for $\\bar\\alpha$, so the body is typed once with $\\bar\\iota$ fresh and only $C(\\bar\\iota)$ known, and once for every allowed choice $\\bar s$. Its future is a fresh $\\varphi$ above $u$, which stands for whatever a caller does after the force.');
-T('r-force', 'E-Force', 'static/Typing.v: e_force, d_force',
+T('r-force', 'E-Force', 'static/Typing.v: e_force; static/Conservativity.v: d_force',
   rule('E-Force', R`${h('E-Force.hold', R`\Gamma \vdash C[\bar x]`)}${QH}${h('E-Box.inst', R`\mathsf{sinsts}\,\bar s`)}${QH}${h('E-Force.ub', R`u[\bar x] \prec F`)} \\ ${J(R`\Gamma`, R`\Delta`, '', 'F', 'e', R`\Box(\forall\bar\iota\,\bar\alpha.\ C.\ \ast\multimap^{u}\annot{[\varepsilon]}\,U)`, R`\varepsilon_0`)}`,
     J(R`\Gamma`, R`\Delta`, '', 'F', R`\mathsf{force}\,e`, R`${h('tp.sinst', R`U[\bar s]`)}${h('tp.pinst', R`[\bar x]`)}`, R`\varepsilon_0 ${SEQ} \varepsilon`)),
   '$\\mathsf{force}\\,e$ runs the body of the box once. The caller picks points $\\bar x$ for $\\bar\\iota$ and session types $\\bar s$ for $\\bar\\alpha$. The body was typed assuming $C$, so $C[\\bar x]$ must hold here. The body waits at most at $u[\\bar x]$, and the caller acts at $F$ afterwards, so $u[\\bar x] \\prec F$, as in E-App. The result is $U$ with both choices put in.');
@@ -253,49 +253,49 @@ block(s, {
 });
 const UNF = (k, form) => h(k, R`${h('sty.unfold', R`\mathsf{unfold}`)}(S_0) = ${form}`);
 const XP = h('pt.shift', R`x^{+}`);
-T('r-send', 'E-Send', 'static/Typing.v: e_send, d_send',
+T('r-send', 'E-Send', 'static/Typing.v: e_send; static/Conservativity.v: d_send',
   rule('E-Send', R`${UNF('E-Send.unfold', R`{!}(\bar\iota.\,T).S`)}${QH}${h('ty.pscoped', R`\mathsf{pscoped}\,\bar\iota\,T`)}${QH}${h('E-Send.heads', R`x \prec ${h('ty.payload-at', R`T[x\cdot i]`)}`)}${QH}${act} \\ ${J(R`\Gamma`, R`\Delta`, '', 'F', 'e', R`T' \otimes (S_0@x)\annot{^{a}}`, R`\varepsilon`)}\annraw{${QH}}\annot{${h('E-Send.floor', R`T' - 1 \leq T[x\cdot i]`)}}`,
     J(R`\Gamma`, R`\Delta`, '', 'F', R`\mathsf{send}\,e`, R`(S@${XP})\annot{^{${REF}}}`, R`\varepsilon ${SEQ} ${ONE}`)),
   'The sender holds the payload while it waits at $x$, so $x$ lies below the dual points of the payload. In the lock-free mode the payload remains one transfer and the end returns reset to $N$.');
-T('r-recv', 'E-Recv', 'static/Typing.v: e_recv, d_recv',
+T('r-recv', 'E-Recv', 'static/Typing.v: e_recv; static/Conservativity.v: d_recv',
   rule('E-Recv', R`${UNF('E-Recv.unfold', R`{?}(\bar\iota.\,T).S`)}${QH}${h('ty.pscoped', R`\mathsf{pscoped}\,\bar\iota\,T`)}${QH}${act}${QH}${J(R`\Gamma`, R`\Delta`, '', 'F', 'e', R`(S_0@x)\annot{^{a}}`, R`\varepsilon`)}`,
     J(R`\Gamma`, R`\Delta`, '', 'F', R`\mathsf{recv}\,e`, R`T[x\cdot i] \otimes (S@${XP})\annot{^{${REF}}}`, R`\varepsilon ${SEQ} ${ONE}`)),
   'The payload arrives with its ends at the fields of $x$, and the end continues at $x^{+}$.');
-T('r-close', 'E-Close', 'static/Typing.v: e_close, d_close',
+T('r-close', 'E-Close', 'static/Typing.v: e_close; static/Conservativity.v: d_close',
   rule('E-Close', R`${UNF('E-Close.unfold', R`\mathsf{Close}`)}${QH}${act}${QH}${J(R`\Gamma`, R`\Delta`, '', 'F', 'e', R`(S_0@x)\annot{^{a}}`, R`\varepsilon`)}`,
     J(R`\Gamma`, R`\Delta`, '', 'F', R`\mathsf{close}\,e`, R`\ast`, R`\varepsilon ${SEQ} ${ONE}`)),
   'A close is an action at $x$.');
-T('r-select', 'E-Select', 'static/Typing.v: e_select, d_select',
+T('r-select', 'E-Select', 'static/Typing.v: e_select; static/Conservativity.v: d_select',
   rule('E-Select', R`${UNF('E-Select.unfold', R`\oplus(S_1,S_2)`)}${QH}${act}${QH}${J(R`\Gamma`, R`\Delta`, '', 'F', 'e', R`(S_0@x)\annot{^{a}}`, R`\varepsilon`)}`,
     J(R`\Gamma`, R`\Delta`, '', 'F', R`\mathsf{select}_i\,e`, R`(S_i@${h('pt.sel', R`\overline{x\cdot\kappa_i}`)})\annot{^{${REF}}}`, R`\varepsilon ${SEQ} ${ONE}`)),
   'The selecting end continues at $\\overline{x\\cdot\\kappa_i}$.');
-T('r-branch', 'E-Branch', 'static/Typing.v: e_branch, d_branch',
+T('r-branch', 'E-Branch', 'static/Typing.v: e_branch; static/Conservativity.v: d_branch',
   rule('E-Branch', R`${UNF('E-Branch.unfold', R`\&(S_1,S_2)`)}${QH}${act}${QH}${J(R`\Gamma`, R`\Delta`, '', 'F', 'e', R`(S_0@x)\annot{^{a}}`, R`\varepsilon`)}`,
     J(R`\Gamma`, R`\Delta`, '', 'F', R`\mathsf{branch}\,e`, R`(S_1@${h('pt.bra', R`x\cdot\kappa_1`)})\annot{^{${REF}}} \oplus (S_2@x\cdot\kappa_2)\annot{^{${REF}}}`, R`\varepsilon ${SEQ} ${ONE}`)),
   'The branching end continues at $x\\cdot\\kappa_i$.');
-T('r-link', 'E-Link', 'static/Typing.v: e_link, d_link',
+T('r-link', 'E-Link', 'static/Typing.v: e_link; static/Conservativity.v: d_link',
   rule('E-Link', h('E-Link.dual', J(R`\Gamma`, R`\Delta`, '', 'F', 'e', R`(S@x)\annot{^{a_1}} \otimes (\overline{S}@\overline{x})\annot{^{a_2}}`, R`\varepsilon`)),
     J(R`\Gamma`, R`\Delta`, '', 'F', R`\mathsf{link}\,e`, R`\ast`, R`\varepsilon ${SEQ} (0, ${h('ann.tlink', R`\mathsf{tlink}\,\hat 1`)})`)),
   'A link asks no order fact. In the lock-free mode it uses one ticket.');
-T('r-spawnlam', 'E-SpawnLam', 'static/Typing.v: e_spawn_lam, d_spawn_lam',
+T('r-spawnlam', 'E-SpawnLam', 'static/Typing.v: e_spawn_lam; static/Conservativity.v: d_spawn_lam',
   rule('E-SpawnLam', h('E-SpawnLam.body', J(R`\Gamma`, R`${h('E-SpawnLam.age', AGE(R`\Delta`, '1'))}, \ast`, '', h('E-SpawnLam.future', R`(\varnothing, \cdot)`), 'e', R`\ast`, R`(c', \vartheta')`)),
     J(R`\Gamma`, R`\Delta`, '', 'F', R`\mathsf{spawn}\,(\lambda e)`, R`\ast`, R`(0, ${h('ann.tspawn', R`\mathsf{tspawn}(\vartheta'(0))\,\hat 1`)})`)),
   'The child body runs under the empty future. In the lock-free mode every transferred entry ages by one transfer.');
-T('r-spawn', 'E-Spawn', 'static/Typing.v: e_spawn, d_spawn',
+T('r-spawn', 'E-Spawn', 'static/Typing.v: e_spawn; static/Conservativity.v: d_spawn',
   rule('E-Spawn', R`${J(R`\Gamma`, R`\Delta`, '', 'F', 'e', ARR(R`\ast`, R`\ast`, R`(c', \vartheta')`, 'h', 'a'), R`\varepsilon`)}\annraw{${QH}}\annot{${h('E-Spawn.credit', R`a \geq 1`)}}`,
     J(R`\Gamma`, R`\Delta`, '', 'F', R`\mathsf{spawn}\,e`, R`\ast`, R`\varepsilon ${SEQ} (0, ${h('ann.tspawn', R`\mathsf{tspawn}(\vartheta'(0))\,\hat 1`)})`)),
   'Spawning a closure value transfers over its captured ends to a new thread.');
-T('r-new', 'E-New', 'static/Typing.v: e_new, d_new',
+T('r-new', 'E-New', 'static/Typing.v: e_new; static/Conservativity.v: d_new',
   rule('E-New', R`${UNL}${QH}${h('E-New.pos', R`(\bar\iota, \pi) \in \{(\rho, \rho), (\varnothing, x\cdot\kappa)\}`)}${QH}${h('E-New.strict', R`${h('w.strict', R`\mathsf{strict}`)}(\Gamma \cup C)`)}`,
     J(R`\Gamma`, R`\Delta`, '', 'F', R`\mathsf{new}`, R`\exists^{${h('E-New.bot', R`\bot`)}}\bar\iota.\ ${h('E-New.facts', 'C')}.\ ${h('E-New.dual', R`(S@\pi)\annot{^{${REF}}} \otimes (${h('sty.dual', R`\overline{S}`)}@\overline{\pi})\annot{^{${REF}}}`)}`, ZERO)),
   'The pair sits at a fresh root $\\rho$ or at a field $x\\cdot\\kappa$, with facts $C$ that keep the order strict and lower bound $\\bot$.');
-T('r-struct', 'E-Sub', 'static/Typing.v: e_sub, d_conv',
+T('r-struct', 'E-Sub', 'static/Typing.v: e_sub; static/Conservativity.v: d_conv',
   rule('E-Sub', R`e : T\annot{\ !\ \varepsilon}${QH}${h('sub.tsub', R`T \leq T'`)}\annraw{${QH}}\annot{${h('E-Sub.cost', R`\varepsilon \leq \varepsilon'`)}}`, R`e : T'\annot{\ !\ \varepsilon'}`),
   'A type may lose facts of an existential. In the lock-free mode credits may fall and costs and ticket needs may rise.');
 T('r-admis', 'E-Weak, E-Contract (admissible)', 'static/Weakening.v: e_weak, e_contract, d_weak, d_contract, typed_rename',
   rows(rule('E-Weak', h('E-Weak.drop', R`\Delta' \preceq_{\mathsf{wk}} \Delta`), R`\Delta' \vdash e \Rightarrow \Delta \vdash e`), rule('E-Contract', h('ty.unlimited', R`\mathsf{unlimited}\,U`), R`U, U, \Delta \vdash e \Rightarrow U, \Delta \vdash e[x/x']`)),
   'Both are renamings of the variables, the identity and the map $x \\mapsto x - 1$. They hold because E-Unit, E-Var, E-Chan and E-New accept unused entries of unlimited type.');
-T('r-ex', 'E-Pack, E-Open', 'static/Typing.v: e_pack, e_open, d_pack, d_open',
+T('r-ex', 'E-Pack, E-Open', 'static/Typing.v: e_pack, e_open; static/Conservativity.v: d_pack, d_open',
   rows(rule('E-Pack', R`${h('E-Force.hold', R`\Gamma \vdash C[\bar x]`)}${QH}${h('E-Pack.lb', R`l \preccurlyeq ${h('tp.pinst', R`T[\bar x]`)}`)}${QH}e : T[\bar x]`, R`e : \exists^{l}\bar\iota.\,C.\,T`),
     rule('E-Open', R`${h('E-Open.entry', R`\Delta(i) = \exists^{l}\bar\iota.\,C.\,T\annot{,\ \neg\mathsf{unlimited}\,T}`)}${QH}${h('E-Box.fresh', R`\bar\iota\ \text{fresh}`)}${QH}${h('E-Open.body', J(R`\Gamma, C(\bar\iota)`, R`\Delta[i \mapsto T]`, '', 'F', 'e', 'U', R`\varepsilon`))}`, J(R`\Gamma`, R`\Delta`, '', 'F', 'e', 'U', R`\varepsilon`))),
   'Packing chooses $\\bar x$ with $\\Gamma \\vdash C[\\bar x]$, and opening names the witness by fresh point variables $\\bar\\iota$ with hypothesis $C(\\bar\\iota)$.');
@@ -390,14 +390,14 @@ n("ctx.fvarF", "The variable $\\varphi$ in $F$", "The unknown part of a future, 
 n("ctx.bot", "The flag $\\bot$ in $F$", "$\\bot$ states that the context holds ends at points unknown to the term, which then performs no session action.", "Every action asks $u \\prec F$, which requires $F$ to have no $\\bot$. No point is known to lie below a hidden point, so an action under $\\bot$ could wait above the hidden point.", DEF, "$e_1$ beside a context that holds an unopened $\\exists^{\\bot}$.", "static/Contexts.v: FBot, fs_bot");
 n("ctx.slt", "$\\Gamma \\vdash x \\prec y$", "The least transitive relation containing $\\prec_W$, the facts $C[\\bar x]$ of the instances $(C, \\bar x)$ in $\\Gamma$, and $u \\prec \\varphi$ for every $\\varphi \\mapsto u$ in $\\Gamma$.", "Every order fact a typing rule reads is a judgment $\\Gamma \\vdash x \\prec y$.", DEF, "$\\Gamma \\vdash x \\prec x^{+}$ for every $\\Gamma$ and $x$.", "static/Contexts.v: fl, slt");
 n("ctx.empty", "$\\Delta$ unlimited", "Every non-empty entry of $\\Delta$ has unlimited type.", "A value that mentions no variable uses no linear entry, and an unlimited entry may go unused.", DEF, "$\\ast$ types under every $\\Delta$ whose entries are empty or unlimited.", "static/Contexts.v: lenv_unl");
-n("ctx.only", "The only used entry", "In $\\Delta, x : T$ the entry $x$ is used and every entry of $\\Delta$ has unlimited type.", "Every linear entry is used exactly once, and an unlimited entry may go unused.", DEF, "$x = 0$ types under $0 : T$.", "static/Contexts.v: lenv_only, tenv_only");
+n("ctx.only", "The only used entry", "In $\\Delta, x : T$ the entry $x$ is used and every entry of $\\Delta$ has unlimited type.", "Every linear entry is used exactly once, and an unlimited entry may go unused.", DEF, "$x = 0$ types under $0 : T$.", "static/Contexts.v: lenv_only");
 n("side.act", "$x \\prec F$ at an action", "For an action at $x$ under $F = (X, \\cdot)$, $\\Gamma \\vdash x \\prec y$ for every $y \\in X$, $\\Gamma \\vdash x \\prec \\varphi$ when $F$ has a variable $\\varphi$, and $F$ has no $\\bot$.", "While the term waits at $x$, every point at which its context acts later lies above $x$. This is readiness against the future.", "Without it a term may wait at $x$ while its context must first act at a point below $x$, and the thread waits on itself through the dual end.", "E-Close at $x$ asks $x \\prec F$.", "static/Contexts.v: ub_below_s");
 n("act.refill", "Credit $N$ after an action", "An end returned by an action, or created fresh, has credit $N$.", "The fuel layer sets the counter of an end to $N$ at every action on it, and the static credit is a lower bound on that counter.", DEF, "$\\mathsf{send}$ returns $(S@x^{+})^{N}$.", "static/Typing.v: e_send, e_recv, e_select, e_branch, e_new");
 n("side.ub", "$u \\prec F$", "$u \\prec F \\iff (\\forall y \\in X.\\ \\Gamma \\vdash u \\prec y) \\land \\Gamma \\vdash u \\prec \\varphi \\land \\bot \\notin F$, true for absent $u$.", "It is the condition $x \\prec F$ of an action, stated for the upper point $u$ up to which a callee may wait.", DEF, "E-App asks $u \\prec F$ of the upper point $u$ of the closure.", "static/Contexts.v: ub_below_s");
 n("side.lb", "$l \\preccurlyeq H$", "$l \\preccurlyeq H \\iff \\forall y \\in H.\\ l = y \\lor \\Gamma \\vdash l \\prec y$ for a point $l$, and $H = \\varnothing$ for absent $l$.", "For a holding thread of a closure, the heads of its ends are bounded only through $l$. Hence $l$ must be a lower bound of those heads.", DEF, "$\\overline{\\rho} \\preccurlyeq \\{\\overline{\\rho}\\}$.", "static/Contexts.v: lbx_below_h, lbound_of");
 n("side.hold", "$\\Gamma \\vdash C[\\bar x]$", "For every fact $y \\prec z$ of $C$ instantiated at $\\bar x$, $\\Gamma \\vdash y \\prec z$.", "E-Force and E-Pack choose an instance $\\bar x$, and the box body or the packed value relies on $C[\\bar x]$.", DEF, "The self call of the client loop instantiates $C$ at $(\\iota^{+}, \\kappa^{+}, \\zeta)$.", "static/Contexts.v: hold_at");
 n("age.free", "Aging a type without ends", "$T - c = T$ when $\\mathsf{tfree}\\,T$.", "A type without ends has no counter that could fall, so aging changes nothing.", DEF, "A box variable never ages.", "static/Contexts.v: age_free");
-n("age.credit", "Aging an end or a closure", "$(S@x)^{a} - c = (S@x)^{a - c}$ and $(T \\multimap U)^{a} - c = (T \\multimap U)^{a - c}$, defined when $c \\leq a$.", "While a term of cost $c$ runs, the holding thread performs up to $c$ actions on other ends, and each lowers the counter of every held end by $1$. The premise $c \\leq a$ keeps the credit a lower bound on the counter.", "Without $c \\leq a$ a server holds its client end while it runs a callback of cost $\\infty$ at finite $N$, and the client waits without bound.", "$(S@x)^{3} - 1 = (S@x)^{2}$.", "static/Contexts.v: age_credit");
+n("age.credit", "Aging an end or a closure", "$(S@x)^{a} - c = (S@x)^{a - c}$ and $(T \\multimap U)^{a} - c = (T \\multimap U)^{a - c}$, defined when $c \\leq a$.", "While a term of cost $c$ runs, the holding thread performs up to $c$ actions on other ends, and each lowers the counter of every held end by $1$. The premise $c \\leq a$ keeps the credit a lower bound on the counter.", "Without $c \\leq a$ a server holds its client end while it runs a callback of cost $\\infty$ at finite $N$, and the client waits without bound.", "$(S@x)^{3} - 1 = (S@x)^{2}$.", "static/Contexts.v: age_sess, age_arr");
 n("age.idle", "Aging an idle end", "$(S@x)^{a} - c = (S@x)^{\\max(a - c, 0)}$ when $\\mathsf{unfold}(S) = \\mathsf{Skip}$.", "No thread acts on an idle end, so no action counter bounds an idle end. Truncation keeps its credit at or below its counter, which decrements and truncates at $0$ in the same way.", "With $c \\leq a$ required an idle end held across a loop loses credit every round and no finite $N$ types the loop. Keeping the credit instead exceeds the counter after one decrement.", "$(\\mathsf{Skip}@\\chi)^{0} - 1 = (\\mathsf{Skip}@\\chi)^{0}$.", "static/Contexts.v: age_idle");
 n("age.agg", "Aging a product, sum or existential", "Aging goes into the parts. $(T_1 \\otimes T_2) - c = (T_1 - c) \\otimes (T_2 - c)$, likewise for $\\oplus$, and $\\exists^{l}\\bar\\iota.\\,C.\\,T$ ages its body.", "Only ends and closures have credits, so a compound type ages by aging the ends and closures it contains.", DEF, "$((S@x)^{2} \\otimes \\ast) - 1 = (S@x)^{1} \\otimes \\ast$.", "static/Contexts.v: age_prod, age_sum, age_ex");
 n("age.ctx", "Aging what is held", "$\\Delta - \\varepsilon$ ages every entry of $\\Delta$ by the cost $c$ of $\\varepsilon = (c, \\vartheta)$.", "The entries are held while the subterm with effect $\\varepsilon$ runs, and each of its actions lowers their counters by $1$.", "Without aging a thread holds an end across unboundedly many actions on other ends, and the partner of that end waits without bound.", "In the cycle example main loses $1$ of the credit of $d$ while it closes $c$.", "static/Contexts.v: thage, lage");
@@ -465,7 +465,7 @@ n("P-Connect.right", "Right component at $\\ast$", "$(C_2, E_2)$ is typed over $
 n("P-Connect.cut", "Exact dual cut $\\overline{\\Sigma_C}$", "$\\overline{\\Sigma_C}$ maps $\\overline{o}$ to $\\overline{S}@\\overline{x}$ for every $o \\mapsto S@x$ in $\\Sigma_C$.", "After composition the two ends of each cut channel are restricted, and lock freedom asks their protocols dual up to annotations. An exact dual gives this, a dual up to annotations does not.", "An annotation mismatch on a cut channel breaks the payload credit of a later message.", "$\\overline{\\{c^{+} \\mapsto \\mathsf{Close}@x\\}} = \\{c^{-} \\mapsto \\mathsf{Close}@\\overline{x}\\}$.", "static/Typing.v: senv_dual");
 n("P-Connect.disj", "Disjoint channels", "$\\mathrm{dom}\\,\\Sigma_1 \\cap \\mathrm{dom}\\,\\Sigma_C = \\varnothing$, $\\mathrm{dom}\\,\\Sigma_2 \\cap \\mathrm{dom}\\,\\overline{\\Sigma_C} = \\varnothing$, the channel sets of $\\Sigma_1$, $\\Sigma_2$, $\\Sigma_C$ are pairwise disjoint, $C_1 \\cap C_2 = \\varnothing$, and each $C_i$ is disjoint from the channels of $\\Sigma_1$, $\\Sigma_2$, $\\Sigma_C$.", "Every channel then belongs to one side. The cut $\\Sigma_C$ is the only channel set both sides use, so composition merges no two channels.", DEF, "Two closes cut at $c$ with $\\Sigma_1 = \\Sigma_2 = \\varnothing$ and $C_1 = C_2 = \\varnothing$.", "static/Typing.v: p_connect");
 n("P-Connect.cutfree", "$\\mathsf{pfree}\\,\\Sigma_C$", "The cut holds no partner pair.", "The composite interface stays partner-free, which P-Term establishes for single threads.", DEF, "$\\Sigma_C = \\{c^{+} \\mapsto \\mathsf{Close}@x\\}$.", "static/Typing.v: p_connect");
-n("P-Connect.strict", "Only the shared part is compared", "$\\mathsf{strict}(W_1|_S \\sqcup W_2|_S)$ for $S = A_{W_1} \\cap A_{W_2}$, the roots of both worlds. $W|_S$ keeps the facts $x \\prec_W y$ derivable in $W$ whose roots lie in $S$.", "Each side is strict by its own derivation, so the only new cycles a join can create run through shared roots. Checking the orders the two sides induce on those roots is enough, and the join is then strict.", "If $W_1$ derives $\\rho \\prec \\rho\\cdot 0$ and $W_2$ derives $\\rho\\cdot 0 \\prec \\rho$, the join has a cycle and two threads each wait on the other although each side alone is ready.", "Two worlds without a common root need no check.", "static/Typing.v: p_connect, p_join_iff_connect");
+n("P-Connect.strict", "Only the shared part is compared", "$\\mathsf{strict}(W_1|_S \\sqcup W_2|_S)$ for $S = A_{W_1} \\cap A_{W_2}$, the roots of both worlds. $W|_S$ keeps the facts $x \\prec_W y$ derivable in $W$ whose roots lie in $S$.", "Each side is strict by its own derivation, so the only new cycles a join can create run through shared roots. Checking the orders the two sides induce on those roots is enough, and the join is then strict.", "If $W_1$ derives $\\rho \\prec \\rho\\cdot 0$ and $W_2$ derives $\\rho\\cdot 0 \\prec \\rho$, the join has a cycle and two threads each wait on the other although each side alone is ready.", "Two worlds without a common root need no check.", "static/Typing.v: p_connect, ptyped_strict; types/Worlds.v: strict_join_iff");
 n("P-Term.strict", "$\\mathsf{strict}\\,W$", "The world of a single thread is well formed and acyclic.", "Every process derivation then is over a strict world. P-Connect checks only the shared part, and the joined world is strict again.", "Without it P-Connect would have to check the whole join.", "The empty world.", "static/Typing.v: p_term");
 n("P-Connect.join", "Result in $W_1 \\sqcup W_2$", "The composite is typed in the join of the two worlds.", "Each component keeps its own facts, and the join contains the facts of both.", DEF, "Two closes are typed in the join of their two worlds.", "static/Typing.v: p_connect");
 n("guard.judg", "The guard $\\varnothing \\vdash\\!\\triangleright t$", "$\\Lambda \\vdash\\!\\triangleright t$ holds iff the self of every box in $t$ is used only after a session action of the body.", "$\\kappa_L$ makes $\\beta$ free, so without the guard $!(f = \\mathsf{force}\\,f)$ types and diverges on free steps. Deadlock-free typing does not use the guard.", "$!(f = \\mathsf{force}\\,f)$ types and is in no relation at $\kappa_L$.", "$!(f = \\lambda x.\\,\\mathsf{let}\\ \\langle v, x'\\rangle = \\mathsf{recv}\\,x\\ \\mathsf{in}\\ (\\mathsf{force}\\,f)\\,x')$ is guarded.", "static/Guard.v: lguard");
