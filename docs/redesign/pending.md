@@ -105,6 +105,17 @@ must do, open questions.
    entry 3 done (5907cd0), a merge of redesign (f0b97af) and two WIP
    commits for this entry (2c2168a, b9d0c05) that do not build. Resume
    from b9d0c05: the credits section of the types was next.
+   Done in the Rocq 2026-11-20 (61ad17b, overnight stage 1). Credits sit
+   on `TSess S x a` and `TLolli … a` only, aging and capture recurse
+   structurally, E-Send types its operand at `Tp ⊗ S₀@x^a`, asks
+   `tage 1 Tp Tp'` and `tsub Tp' (payload_at m T x)`, and payloads carry
+   no credit. No proof used the outer offset of an aggregate. Sub-Ex now
+   compares the bodies by `tsub` instead of `teq`, so the lemma that V is
+   monotone along subtyping is proved under every point instantiation
+   (`Vrel_tsub_pinst`). The cost fundamental theorem, both fundamental
+   theorems and every example build unchanged in shape. In the lock-free
+   examples a box result is now the closure `(T ⊸ U)^∞`, and the credits
+   of its argument sit on the ends of `T`.
 
 7. **One rejected example per lock-freedom mechanism (2026-11-19).** The
    map's examples page shows four programs that step forever without a
