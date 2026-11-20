@@ -16,12 +16,21 @@ The author wants the explorer to become a skill that other proof developments ca
    prose rules of the author (today `.claude/tools/lint-map.py`) run on every build.
 4. **Cross-links.** Hovers, "used in" lists and links between blocks resolve, also across sections
    and after blocks are merged.
-5. **Modes as data.** The deadlock-free / lock-free switch and the "planned" tag are instances of
+5. **Justified deviations.** A map may show a definition differently from the raw code
+   (notation, merged clauses, a renamed operator, a planned change). Every such difference carries
+   a reason in the JSON, why the display is faithful to the code or why it is planned, and the
+   page shows the reason next to the item. The checker accepts a difference only with a reason.
+6. **Modes as data.** The deadlock-free / lock-free switch and the "planned" tag are instances of
    generic mechanisms: a map declares its modes and which parts of a formula belong to which mode,
    and marks parts that are planned but not yet in the proof code.
-6. **Design.** No scrollbar anywhere at any zoom level: formulas shrink or wrap, the hover panel
-   never scrolls sideways. A better theme than today's.
-7. **Maintenance.** The skill keeps a map current: after a merge of the proof code it lists what
+7. **Design.** No scrollbar anywhere at any zoom level: formulas shrink or wrap, the hover panel
+   never scrolls sideways. A smoother page, with text and formulas that can be selected and
+   copied. A better theme than today's.
+8. **Layers.** A shareable base skill describes the baseline: the JSON format, the page, the
+   checks against the code, the writing and structure rules. Features for one paper, such as the
+   deadlock-free / lock-free toggle, live in a private skill for that paper built on top of the
+   base, through extension points of the page and of the JSON.
+9. **Maintenance.** The skill keeps a map current: after a merge of the proof code it lists what
    changed, updates the generated parts, and reports what a human must rewrite.
 
 ## What exists today
