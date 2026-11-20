@@ -100,12 +100,24 @@ must do, open questions.
    `∃ r l. erase (r 0) = p ∧ maximal r l ∧ wfair r l`, or package both in
    the definition. Map: add the existence lemma to the theorems section
    once proven.
+   Overnight stage 6, 2026-11-20: not done. A run is a function
+   `nat → config`, so building one picks a step at every position. The
+   semantics gives steps only as propositions (`istep`, with the received
+   value, the fresh channel and the new thread number chosen inside), and
+   a Prop existential does not yield a function without the axiom of
+   dependent choice, which the rules forbid. The lemma needs a function
+   that computes a step of a given thread when it has one: a redex finder
+   for one thread, a partner search for synchronisations, fresh names,
+   and a decision whether the thread is enabled, for the round robin.
+   v2 has none of these, and I did not write them in this run.
 
 5. **Padovani-style lock freedom as a corollary (low priority, queued
    2026-11-19).** From `lock_free p` and item 4: for every q reachable
    from p and every thread pending in q, some q' reachable from q has a
    step in which that thread takes part (Padovani 2014, Def. II.1, in our
    per-thread form). Map: one line in the theorems section once proven.
+   Overnight stage 7, 2026-11-20: not reached. The corollary starts a
+   maximal weakly fair run from the reachable q, which is entry 4.
 
 6. **Decided 2026-11-19 (author): credits only where ends sit.**
    Today every slot of a type carries a credit: components of ⊗ and ⊕,
