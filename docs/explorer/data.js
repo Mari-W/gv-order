@@ -4257,7 +4257,7 @@ window.MAP = {
    "why": "A creation adds a fresh root and the facts its typing chose, so the world of a run grows with every $\\mathsf{new}$ and never loses a fact.",
    "breaks": "If the facts were fixed before the run, the facts of a fresh point would be chosen in advance. A channel between two given channels would then need these facts for each possible pair.",
    "example": "$W \\oplus \\{1 \\prec a,\\ a \\prec \\overline{2}\\}$ with $a$ fresh places $a$ between $1$ and $\\overline{2}$.",
-   "rocq": "types/Worlds.v: wgrow",
+   "rocq": "not yet in the Rocq (docs/redesign/pending.md, entry 2), the Rocq creates with new_ℓ and new_κ over generated roots",
    "sig": "\\cdot \\oplus \\cdot : \\mathsf{World} \\to \\mathcal{P}(\\mathsf{Point} \\times \\mathsf{Point}) \\to \\mathsf{World}",
    "args": [
     {
