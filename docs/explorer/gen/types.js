@@ -23,7 +23,8 @@ block(s, {
   id: 'ty-session', title: 'Session types', rocq: 'types/Types.v: sty, unfoldS',
   tex: R`\begin{array}{rl}
 S ::= & ${h('sty.skip', R`\mathsf{Skip}`)} \mid ${h('sty.seq', R`S.S`)} \mid ${h('sty.recv', R`?(\bar\iota.\ T)`)} \mid ${h('sty.send', R`!(\bar\iota.\ T)`)} \mid ${h('sty.plus', R`\oplus(S_1, S_2)`)} \\
-\mid & ${h('sty.with', R`\&(S_1, S_2)`)} \mid ${h('sty.close', R`\mathsf{Close}`)} \mid ${h('sty.mu', R`\mu\alpha.S`)} \mid ${h('sty.var', R`\alpha`)} \mid ${h('sty.vard', R`\overline{\alpha}`)} \qquad ${h('sty.unfold', R`\mathsf{unfold}(S)`)}
+\mid & ${h('sty.with', R`\&(S_1, S_2)`)} \mid ${h('sty.close', R`\mathsf{Close}`)} \mid ${h('sty.mu', R`\mu\alpha.S`)} \mid ${h('sty.var', R`\alpha`)} \mid ${h('sty.vard', R`\overline{\alpha}`)}  \\
+ & ${h('sty.unfold', R`\mathsf{unfold} : \mathsf{STy} \to \mathsf{STy}`)}
 \end{array}`,
   caption: 'Session types with sequencing $S.S$, read through $\\mathsf{unfold}(S)$, whose payloads bind point variables $\\bar\\iota$ at the fields of the carrier.'
 });
@@ -48,7 +49,7 @@ ${h('sty.sdual', R`\mathsf{sdual}\,S\,S' \iff S' \approx \mathsf{dual}\,S`)}
 block(s, {
   id: 'ty-heads', title: 'Heads and lower bounds', rocq: 'types/Types.v: heads, hbot, types/Points.v: lbound',
   tex: R`\begin{array}{l}
-${h('ty.heads', R`\mathsf{heads}(S@x) = \{\overline{x}\} \quad \mathsf{heads}(T \multimap_{l} U) = \mathsf{heads}(\exists^{l}\ldots) = \{l\} \setminus \{\cdot\} \quad \mathsf{heads}(\Box\ldots) = \varnothing`)} \\
+${h('ty.heads', R`\mathsf{heads}(S@x) = \{\overline{x}\} \qquad \mathsf{heads}(T \multimap^{u}_{l} U) = \mathsf{heads}(\exists^{l}\bar\iota.\ C.\ T) = \{l\} \setminus \{\cdot\}  \\ \mathsf{heads}(\Box(\forall\bar\iota\,\bar\alpha.\ C.\ \ast \multimap^{u} U)) = \varnothing \qquad \mathsf{heads}(\ast) = \varnothing \\ \mathsf{heads}(T \otimes U) = \mathsf{heads}(T \oplus U) = \mathsf{heads}(T) \cup \mathsf{heads}(U)`)} \\
 ${h('ty.lbound', R`l ::= \cdot \mid \bot \mid x`)} \qquad ${h('ty.botord', R`\Gamma \nvdash x \prec \bot \quad \Gamma \nvdash \bot \preccurlyeq y`)}
 \end{array}`,
   caption: '$\\mathsf{heads}(T)$ are the dual points a holding thread of a value of $T$ stays below while it waits. Hidden ends contribute $\\bot$, which no order fact relates to a point, so every check against a held value with hidden ends fails.'
@@ -72,7 +73,7 @@ block(s, {
   modes: ['lf'],
   tex: R`\begin{array}{l}
 ${h('ann.tix', R`\vartheta = (s, b) \qquad \vartheta(r) = 2^{s}\, r + b`)} \qquad ${h('ann.tid', R`\hat 1 = (0, 0),\ \hat 1(r) = r`)} \\
-${h('ann.meets', R`\vartheta(r) \leq tk`)} \quad \text{false when } \vartheta(r) = \infty
+${h('ann.meets', R`\vartheta(r) \leq tk`)} \quad tk \in \mathbb{N}
 \end{array}`,
   caption: 'A term that must leave $r$ link tickets over needs $\\vartheta(r)$ tickets when it starts. A thread with $tk$ tickets runs it if $\\vartheta(r) \\leq tk$.'
 });
@@ -81,7 +82,7 @@ block(s, {
   modes: ['lf'],
   tex: R`\begin{array}{l}
 ${h('ann.tlink', R`\mathsf{tlink}\,(s, b) = (s, b + 1)`)} \qquad ${h('ann.tseq', R`(\vartheta_1 \circ \vartheta_2)(r) = \vartheta_1(\vartheta_2(r))`)} \\
-${h('ann.tspawn', R`\mathsf{tspawn}\,b_c\,(s, b) = (s + 1, \max(2b, 2b_c - 1))`)} \qquad ${h('ann.tok', R`\mathsf{tok}\,\vartheta_1\,\vartheta_2`)}
+${h('ann.tspawn', R`\mathsf{tspawn}\,b_c\,(s, b) = (s + 1, \max(2b, 2b_c - 1))`)} \qquad ${h('ann.tok', R`\mathsf{tok}\,(s_1, b_1)\,(s_2, b_2) \iff b_2 = 0 \lor s_1 < \infty \lor b_1 = \infty`)}
 \end{array}`,
   caption: 'The typing rules build the need of a term from the needs of its parts. A link adds one, a spawn doubles the rest, sequencing composes, and $\\mathsf{tok}$ says when a composition is again a pair.'
 });
@@ -93,8 +94,8 @@ block(s, {
 block(s, {
   id: 'ty-kinds', title: 'Kinds of types', rocq: 'types/Types.v: unlimited, tfree',
   tex: R`\begin{array}{l}
-${h('ty.tfree', R`\mathsf{tfree}\,T ::= \ast \mid \Box\ldots \mid \mathsf{tfree} \otimes \mathsf{tfree} \mid \mathsf{tfree} \oplus \mathsf{tfree}`)} \\
-${h('ty.unlimited', R`\mathsf{unlimited}\,T \iff T = \Box\ldots`)}
+${h('ty.tfree', R`\mathsf{tfree}\,T \iff T \in \mathcal{T}_{0}, \qquad \mathcal{T}_{0} ::= \ast \mid \Box(\forall\bar\iota\,\bar\alpha.\ C.\ \ast \multimap^{u} U) \mid \mathcal{T}_{0} \otimes \mathcal{T}_{0} \mid \mathcal{T}_{0} \oplus \mathcal{T}_{0}`)} \\
+${h('ty.unlimited', R`\mathsf{unlimited}\,T \iff \exists \bar\iota, \bar\alpha, C, u, U.\ T = \Box(\forall\bar\iota\,\bar\alpha.\ C.\ \ast \multimap^{u} U)`)}
 \end{array}`,
   caption: '$\\mathsf{tfree}$ is the shape of a process result, the types whose values hold no end, and $\\mathsf{unlimited}$ the types that admit weakening and contraction.'
 });

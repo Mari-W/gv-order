@@ -39,7 +39,7 @@ ${h('P-Act-Spawn', R`M(i) ${step(R`\mathsf{spawn}\,v`)} e',\ j \notin \mathsf{do
 ${h('P-Act-Msg', R`M(i) ${step(R`o!v`)} e',\ M(j) ${step(R`\overline{o}?v`)} f',\ i \neq j`)} \\ \qquad \Rightarrow\ (C, M[i\mapsto e'][j\mapsto f']) \\[4pt]
 ${h('P-Act-Close', R`M(i) ${step(R`o\,\mathsf{end}`)} e',\ M(j) ${step(R`\overline{o}\,\mathsf{end}`)} f',\ i \neq j,\ ${h('end.ech', R`\mathsf{ech}`)}\,o \in C`)} \\ \qquad \Rightarrow\ (C \setminus \{${h('end.ech', R`\mathsf{ech}`)}\,o\}, M[i\mapsto e'][j\mapsto f']) \\[4pt]
 ${h('P-Act-Choice', R`M(i) ${step(R`o\lhd b`)} e',\ M(j) ${step(R`\overline{o}\rhd b`)} f',\ i \neq j`)} \\ \qquad \Rightarrow\ (C, M[i\mapsto e'][j\mapsto f']) \\[4pt]
-${h('P-Act-Link', R`M(i) ${step(R`\leftrightarrow\{o_1,o_2\}`)} e',\ ${h('end.ech', R`\mathsf{ech}`)}\,o_1 \in C`)} \\ \qquad \Rightarrow\ (C\setminus\{${h('end.ech', R`\mathsf{ech}`)}\,o_1\}, ${h('link.csub', R`\mathsf{csub}\,o_1\,o_2`)}\ \text{on every thread of } M[i\mapsto e']) \\[4pt]
+${h('P-Act-Link', R`M(i) ${step(R`\leftrightarrow\{o_1,o_2\}`)} e',\ ${h('end.ech', R`\mathsf{ech}`)}\,o_1 \in C`)} \\ \qquad \Rightarrow\ (C\setminus\{${h('end.ech', R`\mathsf{ech}`)}\,o_1\}, ${h('link.csub', R`\mathsf{csub}\,o_1\,o_2`)} \circ M[i\mapsto e']) \\[4pt]
 ${h('P-Act-Session', R`M(i) ${step(R`\sigma`)} e',\ ${h('se.subj', R`\mathsf{subj}\,\sigma`)} \cap C = \varnothing`)} \\ \qquad \Rightarrow\ (C \setminus ${h('sem.sentc', R`\mathsf{sentc}\,\sigma`)}, M[i\mapsto e'])
 \end{array}`,
   caption: 'Each rule turns steps of one or two threads into a step of $(C, M)$.'
@@ -48,7 +48,7 @@ block(s, {
   id: 'sem-events', title: 'Events', rocq: 'lang/Process.v: event, ev_parts, ev_admin, ev_tau',
   tex: R`\begin{array}{l}
 ${h('ev.event', R`ev ::= \mathsf{solo}_i\,\alpha\,k \mid \mathsf{sync}_{i,j}\,\sigma \mid \mathsf{offer}_i\,\sigma`)} \qquad ${h('ev.pick', R`k ::= \cdot \mid j \mid (o_1, o_2)`)} \\
-${h('ev.admin', R`\mathsf{admin} = \{\mathsf{solo}_i\,\alpha\,k\}`)} \qquad ${h('ev.tau', R`\tau = \text{all but } \mathsf{offer}`)} \qquad ${h('se.parts', R`\mathsf{parts}(ev)`)}
+${h('ev.admin', R`\mathsf{admin} = \{\mathsf{solo}_i\,\alpha\,k\}`)} \qquad ${h('ev.tau', R`\tau = \mathsf{Event} \setminus \{\mathsf{offer}_i\,\sigma\}`)} \qquad ${h('se.parts', R`\mathsf{parts}(ev)`)}
 \end{array}`,
   caption: 'An event names the threads $\\mathsf{parts}(ev)$ and the labels they take.'
 });

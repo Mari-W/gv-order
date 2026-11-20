@@ -166,7 +166,7 @@ order('theorems', ['th-chain', 'th-sound', 'th-compose', 'th-fund-proc', 'th-ade
 const NEW2 = 'Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field.';
 const planned = {
   'syn-terms': NEW2, 'syn-points': NEW2, 'sem-labels': NEW2, 'sem-head': NEW2, 'sem-proc': NEW2,
-  'w-world': NEW2, 'w-order': NEW2, 'w-ext': NEW2, 'r-new': NEW2, 'e-obl': NEW2,
+  't-consts': NEW2, 'w-world': NEW2, 'w-order': NEW2, 'w-ext': NEW2, 'r-new': NEW2, 'e-obl': NEW2,
   'soup': NEW2 + ' The creation choice χ is a proposal of 2026-11-20.',
   'sj-all': NEW2 + ' The creation choice χ is a proposal of 2026-11-20.',
 };

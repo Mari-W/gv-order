@@ -1,7 +1,7 @@
 const { R, h, n, sa, section, block, rule, DEF } = require('./core');
 
 const s = section('semantic', 'Semantic typing',
-  'One step-indexed relation $(V, E, P)$ parametric in a cost table $\\kappa$, the fuel predicate $F^N$ on counters and tickets, and the lock-free process relation $S^{N,W}_n$ that fixes ownership before the level. The sorts are $\\mathsf{Env} = \\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$, $\\mathsf{TEnv}$ the same with credits, $\\mathsf{PEnv} = \\mathsf{End} \\rightharpoonup \\mathsf{STy}$, $\\mathsf{CEnv} = \\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$, $\\mathsf{Own}$ the ownership maps, $\\mathsf{LFState}$ the annotated configuration, $\\mathsf{CTable} \\subseteq \\mathbb{N}^6$, $\\mathsf{Fam}$ and $\\mathsf{Field}$ the labels, $\\mathsf{SFuture}$ the static futures.');
+  'One step-indexed relation $(V, E, P)$ parametric in a cost table $\\kappa$, the fuel predicate $F^N$ on counters and tickets, and the lock-free process relation $S^{N,W,\chi}_n$ that fixes ownership before the level. The sorts are $\\mathsf{Env} = \\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$, $\\mathsf{TEnv}$ the same with credits, $\\mathsf{PEnv} = \\mathsf{End} \\rightharpoonup \\mathsf{STy}$, $\\mathsf{CEnv} = \\mathsf{End} \\rightharpoonup \\mathbb{N} \\cup \\{\\infty\\}$, $\\mathsf{Own}$ the ownership maps, $\\mathsf{LFState}$ the annotated configuration, $\\mathsf{CTable} \\subseteq \\mathbb{N}^6$, $\\mathsf{Fam}$ and $\\mathsf{Field}$ the labels, $\\mathsf{SFuture}$ the static futures.');
 
 // symbols used across the blocks
 const BIN = (k, t) => R`\mathbin{${h(k, t)}}`;
@@ -31,7 +31,7 @@ const HD = (env, o, form, x) => h('sr.head', R`${env}(${o}) \doteq ${form}@${x}`
 const V = (W, nn, Th, T) => h('th.Vrel', R`V^{${W}}_{${nn}}\llbracket ${Th} \vdash ${T} \rrbracket`);
 const E = (W, nn, Th, T, F) => h('th.Erel', R`E^{${W}}_{${nn}}\llbracket ${Th} \vdash ${T} \rrbracket^{${F}}`);
 const P = (W, nn, Sg, T) => h('th.Prel', R`P^{${W}}_{${nn}}\llbracket ${Sg} \vdash ${T} \rrbracket`);
-const AT = (t) => h('rel.atcost', R`${t}\ \text{at}`);
+const AT = (t) => h('rel.atcost', R`${t}\ \mathsf{at}`);
 const THR = h('fu.rty', R`\mathsf{thread}`);
 const ACT = h('sr.act', R`\mathsf{act}`);
 // tk tickets cover the need of vartheta with r left over
@@ -53,9 +53,9 @@ ${h('th.Vrel', R`v \in V^{W}_{n}\llbracket \Theta \vdash T \rrbracket`)} & \text
 ${h('th.Erel', R`e \in E^{W}_{n}\llbracket \Theta \vdash T \rrbracket^{F}`)} & \text{the term } e \text{, holding } \Theta \text{, is safe until it returns a value of } T \text{, its context acting at } F \text{ afterwards} \\
 ${h('th.Prel', R`p \in P^{W}_{n}\llbracket \Sigma \vdash T \rrbracket`)} & \text{the process } p \text{ is safe with interface } \Sigma \\
 ${h('sr.obl', R`\mathsf{Obl}_\alpha(e')`)} & \text{what a step } e \xrightarrow{\alpha} e' \text{ must preserve} \\
-${h('rel.atcost', R`e'\ \text{at}\ \Theta'`)} & e' \text{ is safe holding } \Theta' \text{, at the same level after a free step and one level lower otherwise}
+${h('rel.atcost', R`e'\ \mathsf{at}\ \Theta'`)} & e' \text{ is safe holding } \Theta' \text{, at the same level after a free step and one level lower otherwise}
 \annraw{\\}\annot{${h('sr.FE', R`e \in F^{N}_{n}\llbracket \Phi ; tk \vdash \sigma\ !\ (d, r) \rrbracket`)}}\annraw{&}\annot{\text{the thread } e \text{, holding } \Phi \text{ with counters and } tk \text{ tickets, has fuel for } n \text{ more steps}}
-\annraw{\\}\annot{${h('th.soup', R`a \in S^{N,W}_{n}\llbracket \Sigma \vdash T \rrbracket`)}}\annraw{&}\annot{\text{every thread of } a \text{ is in } E[\kappa_L] \text{ and has fuel, under one ownership map}}
+\annraw{\\}\annot{${h('th.soup', R`a \in S^{N,W,\chi}_{n}\llbracket \Sigma \vdash T \rrbracket`)}}\annraw{&}\annot{\text{every thread of } a \text{ is in } E[\kappa_L, \chi] \text{ and has fuel, under one ownership map and one creation choice } \chi}
 \end{array}`,
   caption: 'Every relation is indexed by a world $W$, whose order of points it reads, and a level $n$, the number of further steps it promises safety for. A term is safe when it is a safe value, or when it is ready and every step leads to a safe term one level lower that holds the ends the step leaves it. Values are safe by their type, the obligations say which ends each step leaves, and readiness says that a stuck term waits below the dual points of what it holds. Processes are safe in the same way, and closed under fusing their ends, so composing two safe processes needs no new proof. \\annp{The lock-free reading adds fuel, a second predicate on each thread, and the lock-free process relation, which asks both of every thread.}'
 });
@@ -88,7 +88,7 @@ ${h('ct.spawn', R`\mathsf{spawn}`)} & 1 \\
 ${h('ct.link', R`\mathsf{link}`)} & 0 \\
 ${h('ct.give', R`\mathsf{send},\ \mathsf{select},\ \mathsf{close}`)} & 0 \\
 ${h('ct.takek', R`\mathsf{recv},\ \mathsf{branch}`)} & 1 \\
-${h('ct.sync', R`\text{a message, send with recv}`)} & 1
+${h('ct.sync', R`\kappa_{give} + \kappa_{take}`)} & 1
 \end{array}`
   },
   caption: 'The levels each kind of step costs in the deadlock-free relation. \\annp{The lock-free relation uses $\\kappa_L$, and a synchronization costs $\\kappa_{give} + \\kappa_{take}$.}'
@@ -112,7 +112,7 @@ block(s, {
   id: 'v-arrow', title: 'Values of arrow type', rocq: 'relation/Relation.v: Varr',
   tex: RULE('V-Arrow', [
     [h('V-Arrow.exact', R`\mathrm{dom}\,\Theta = ${FENDS}(e)`), h('V-Arrow.lb', R`l ${LEQ} ${HEADS}\,\Theta`)],
-    [R`${h('V-Arrow.kripke', R`\forall W' ${EXT} W`)},\ ${h('V-Arrow.level', LT('j', R`\beta`))},\ \Theta' \mathbin{\#} \Theta,\ ${h('V-Arrow.ub', R`F \text{ with } ${WLT("W'", 'u', 'F')}`)}.`],
+    [R`${h('V-Arrow.kripke', R`\forall W' ${EXT} W`)},\ ${h('V-Arrow.level', LT('j', R`\beta`))},\ \Theta' \mathbin{\#} \Theta,\ ${h('V-Arrow.ub', R`F,\ ${WLT("W'", 'u', 'F')}`)}.`],
     [R`w \in ${V("W'", 'j', R`\Theta'`, 'T')} \ \Longrightarrow\ ${h('V-Arrow.body', R`e[w] \in ${E("W'", 'j', R`\Theta \cup \Theta'`, 'U', 'F')}`)}`]],
     R`\lambda e \in ${V('W', 'n', R`\Theta`, R`T ${ARR}^{u}_{l} U`)}`),
   caption: 'A closure owns exactly the ends it mentions, and $l$ lies at or below their dual points. Calling it is safe in every later world, at every lower level, with every argument owning other ends, and for every caller future above $u$.'
@@ -129,7 +129,7 @@ block(s, {
   id: 'v-box', title: 'Values of box type', rocq: 'relation/Relation.v: Vbody (TBox), Vrel_box_iff',
   tex: RULE('V-Box', [
     [h('V-Box.empty', R`\Theta = \varnothing`), h('V-Box.noends', R`${FENDS}(e) = \varnothing`)],
-    [R`${h('V-Box.kripke', R`\forall W' ${EXT} W`)},\ ${h('V-Box.inst', R`\bar x \text{ with } W' \vdash C[\bar x]`)},\ ${h('V-Box.hc', R`\bar s \text{ contractive}`)}.\quad ${h('V-Box.thunk', R`${h('sr.thunk', R`\mathsf{thunk}(e)`)} \in ${V("W'", 'n', R`\varnothing`, R`\ast ${ARR}^{u[\bar x]} U[\bar s][\bar x]`)}`)}`]],
+    [R`${h('V-Box.kripke', R`\forall W' ${EXT} W`)},\ ${h('V-Box.inst', R`\bar x,\ W' \vdash C[\bar x]`)},\ ${h('V-Box.hc', R`\bar s,\ \mathsf{contractive}\,\bar s`)}.\quad ${h('V-Box.thunk', R`${h('sr.thunk', R`\mathsf{thunk}(e)`)} \in ${V("W'", 'n', R`\varnothing`, R`\ast ${ARR}^{u[\bar x]} U[\bar s][\bar x]`)}`)}`]],
     R`!e \in ${V('W', 'n', R`\varnothing`, R`\Box(\forall\bar\iota\,\bar\alpha.\,C.\ \ast ${ARR}^{u} U)`)}`),
   caption: 'A box owns no end, and every force of it is safe. A force runs $\\mathsf{thunk}(e) = \\lambda\\_.\\,e[!e]$, the body with the box put in for its self, so the box is in $V$ when that thunk is, in every later world and at every instance meeting $C$.'
 });
@@ -142,7 +142,7 @@ block(s, {
 block(s, {
   id: 'v-size', title: 'Recursion of V', rocq: 'relation/Relation.v: tsize, Vtop; relation/Sfix.v: sfix',
   tex: R`\begin{array}{l}
-${h('rel.vsize', R`V_n \text{ by recursion on } (n, ${h('sr.size', R`\mathsf{size}`)}\,T) \text{ ordered lexicographically}`)} \\
+${h('rel.vsize', R`V_n\llbracket\Theta \vdash T\rrbracket \ \text{by recursion on}\ (n, ${h('sr.size', R`\mathsf{size}`)}\,T) \in (\mathbb{N}^2, <_{\mathrm{lex}})`)} \\
 ${h('sr.size', R`\mathsf{size}(\Box(\forall\bar\iota\,\bar\alpha.\,C.\ \ast ${ARR}^{u} U)) = 3 + \mathsf{size}\,U`)} \qquad ${h('sr.size', R`\mathsf{size}(\ast ${ARR}^{u} U) = 2 + \mathsf{size}\,U`)}
 \end{array}`,
   caption: '$V$ at level $n$ recurses on the size of the type inside the level, and the box clause stays inside the recursion.'
@@ -156,7 +156,7 @@ ${h('E.zero', R`\forall e.\ e \in ${E('W', '0', R`\Theta`, 'T', 'F')}`)} \\
 e \in ${E('W', R`n{+}1`, R`\Theta`, 'T', 'F')} \iff ${h('E.kripke', R`\forall W_1 ${EXT} W`)}. \\
 \quad ${h('E.stop', R`(\mathsf{stop})\ ${h('sr.irred', R`\mathsf{irred}`)}\,e \Rightarrow e \in ${V('W_1', R`n{+}1`, R`\Theta`, 'T')}`)} \\
 \quad ${h('E.ready', R`(\mathsf{ready})\ \neg\mathsf{irred}\,e \Rightarrow ${h('sr.ready', R`\mathsf{ready}_{W_1}(\Theta \mid F, e)`)}`)} \\
-\quad ${h('E.step', R`(\mathsf{step})\ \forall \alpha, e'.\ e \xrightarrow{\alpha} e' \Rightarrow ${h('sr.obl', R`\mathsf{Obl}_\alpha(e')`)}`)} \qquad ${h('rel.lfp', R`\text{least fixpoint}`)}
+\quad ${h('E.step', R`(\mathsf{step})\ \forall \alpha, e'.\ e \xrightarrow{\alpha} e' \Rightarrow ${h('sr.obl', R`\mathsf{Obl}_\alpha(e')`)}`)} \qquad ${h('rel.lfp', R`(\mathsf{lfp})`)}
 \end{array}`,
   caption: 'A term in $E$ is a value in $V$ when irreducible, ready when reducible, and every step meets its obligation.'
 });
@@ -192,7 +192,7 @@ block(s, {
 ${h('sr.ready', R`\mathsf{ready}_W(\Theta \mid F, t)`)} & \iff & ${h('rd.stable', R`\mathsf{stable}\,t`)} \Longrightarrow ${h('rd.value', R`\mathsf{done}`)} \land ${h('rd.below-rest', R`\mathsf{ordered}`)} \\[1ex]
 ${h('rd.value', R`\mathsf{done}`)} & \iff & ${h('rd.value', R`O = \varnothing \Rightarrow t \in \mathsf{Val}`)} \\
 ${h('rd.below-rest', R`\mathsf{ordered}`)} & \iff & ${h('rd.link', R`\mathsf{link}\,t`)} \lor {} ${h('rd.below-rest', R`\forall o \in O.\ ${h('rd.below-held', R`(\forall o' \in \mathrm{dom}\,\Theta \setminus O.\ W \vdash x_o \prec \overline{x_{o'}})`)} \land ${h('rd.below-future', R`(\forall y \in F.\ W \vdash x_o \prec y)`)}`)} \\[1ex]
- & & O = ${h('rd.offered', R`\mathsf{offered}_\Theta(t)`)},\ \text{the ends } t \text{ offers} \qquad x_o \text{ the point of } \Theta(o)
+ & & O = ${h('rd.offered', R`\mathsf{offered}_\Theta(t)`)} \qquad \Theta(o) = S@x_o
 \end{array}`,
   caption: 'Readiness only matters when the term is stuck, $\\mathsf{stable}\\,t$, all it can do is offer actions to partners. Then it has finished if it offers nothing, and every end it offers lies below the dual point of every end it keeps and below every point of its future. In a strict order some stuck thread is then at the bottom and its partner can serve it.'
 });
@@ -202,7 +202,7 @@ block(s, {
 ${h('sr.readyp', R`\mathsf{ready}_W(\Sigma, p)`)} & \iff & ${h('rd.p-stable', R`\mathsf{stable}\,p`)} \Longrightarrow ${h('rd.link', R`\mathsf{link}\,p`)} \lor (${h('rd.p-term', R`\mathsf{done}`)} \land ${h('rd.above-offered', R`\mathsf{covered}`)}) \\[1ex]
 ${h('rd.p-term', R`\mathsf{done}`)} & \iff & ${h('rd.p-term', R`O = \varnothing \Rightarrow ${h('prop.terminated', R`\mathsf{terminated}`)}\,p`)} \\
 ${h('rd.above-offered', R`\mathsf{covered}`)} & \iff & ${h('rd.above-offered', R`\forall o \in \mathrm{dom}\,\Sigma \setminus O.\ \exists o' \in O.\ W \vdash x_{o'} \prec \overline{x_o}`)} \\[1ex]
- & & O = ${h('rd.offered', R`\mathsf{offered}_\Sigma(p)`)},\ \text{the interface ends } p \text{ offers}
+ & & O = ${h('rd.offered', R`\mathsf{offered}_\Sigma(p)`)}
 \end{array}`,
   caption: 'Only the interface ends have points, internal channels carry none. A stuck process sits at a link, or has finished if it offers nothing, and every interface end it keeps has an offered end below its dual point. For a closed process this is deadlock freedom itself.'
 });
@@ -215,7 +215,7 @@ p \in ${P('W', R`n{+}1`, R`\Sigma`, 'T')} \iff ${h('P.strict', R`\forall W_1 ${E
 ${h('P.clauses', R`\mathsf{clauses}_{W_1}(\Sigma', p')`)} \iff \\
 \quad ${h('P-Stop', R`(\mathsf{stop})\ ${h('sr.pirred', R`\mathsf{pirred}`)}\,p' \Rightarrow p' = (\varnothing, \{v\} ${BIN('tp.msunion', R`\uplus`)} E) \land v \in ${V('W_1', R`n{+}1`, R`\Sigma'`, 'T')} \land E \subseteq \{\ast\}`)} \\
 \quad ${h('P-Ready', R`(\mathsf{ready})\ \neg\mathsf{pirred}\,p' \Rightarrow ${h('sr.readyp', R`\mathsf{ready}_{W_1}(\Sigma', p')`)}`)} \\
-\quad ${h('P-Step', R`(\mathsf{step})\ p' \xrightarrow{ev} p'' \Rightarrow ${h('sr.pobl', R`\mathsf{Pobl}_{ev}(p'')`)}`)} \qquad ${h('rel.lfp', R`\text{least fixpoint}`)}
+\quad ${h('P-Step', R`(\mathsf{step})\ p' \xrightarrow{ev} p'' \Rightarrow ${h('sr.pobl', R`\mathsf{Pobl}_{ev}(p'')`)}`)} \qquad ${h('rel.lfp', R`(\mathsf{lfp})`)}
 \end{array}`,
   caption: 'A process meets the three clauses of a term, stop, ready and step, in every strict later world and after every admissible fusion $(h, D)$ of its held ends.'
 });
@@ -237,10 +237,10 @@ ${h('fuse.dpairs', R`\mathsf{dpairs}\,D\,\Sigma`)} & \iff & ${h('fuse.dpairs', R
 block(s, {
   id: 'p-obl', title: 'Obligations of process steps', rocq: 'relation/Relation.v: q_tau, q_send, q_recv, q_close, q_select, q_branch, q_link',
   tex: R`\begin{array}{c}
-${RULE('Q-Tau', [[R`C' \cap ${h('tp.chans', R`\mathsf{chans}`)}\,\Sigma = \varnothing`, R`${AT(R`p'`)}\ \Sigma \text{ after cost } ${h('ct.sync', DL(R`${h('ct.DF', R`\kappa_{DF}`)}(ev)`, R`${h('ct.table', R`\kappa`)}(ev)`))}`]], PB('ev'))} \\[2ex]
+${RULE('Q-Tau', [[R`C' \cap ${h('tp.chans', R`\mathsf{chans}`)}\,\Sigma = \varnothing`, R`p'\ ${h('rel.atcost', R`\mathsf{at}`)}_{${h('ct.sync', DL(R`${h('ct.DF', R`\kappa_{DF}`)}(ev)`, R`${h('ct.table', R`\kappa`)}(ev)`))}}\ \Sigma`]], PB('ev'))} \\[2ex]
 ${RULE('Q-Send', [[HD(R`\Sigma`, 'o', R`${SND('U')}.S`, 'x'), R`\Sigma \setminus o = \Sigma_v ${UPL} \Sigma_r`], [h('Q-Send.theta-e', R`\mathrm{dom}\,\Theta_e = \{o' \in ${FENDS}(w) \mid ${ECH}(o') \in C\}`), h('Q-Send.split', R`\mathsf{send\_split}\,\Sigma\,\Sigma_e\,\Theta_e`)], [R`w \in ${V('W', DL('n', R`n-\kappa_{give}`), R`\Sigma_v \cup \Theta_e`, PAY('U', 'x'))}`, R`${AT(R`p'`)}\ (\Sigma_r \cup ${h('Q-Send.sigma-e', R`\Sigma_e`)})[o \mapsto S@x^{+}]`]], PB(R`\mathsf{send}\,o\,w`))} \\[2ex]
 ${RULE('Q-Recv', [[HD(R`\Sigma`, 'o', R`${RCV('U')}.S`, 'x')], [R`\forall j, \Theta_2.\ ${LT('j', 'take')},\ ${ECH}[\mathrm{dom}\,\Theta_2] \cap C = \varnothing,\ ${h('Q-Recv.ok', R`\mathsf{recv\_ok}\,\Sigma'\,\Theta_2`)},\ w \in ${V('W', 'j', R`\Theta_2`, PAY('U', 'x'))}`], [R`\Longrightarrow\ (C' \cup ${h('Q-Recv.back', R`\mathsf{recv\_back}\,\Sigma'\,\Theta_2`)}, E') \in ${P('W', 'j', h('Q-Recv.env', R`\mathsf{recv\_env}\,\Sigma'\,\Theta_2`), 'T')}`]], PB(R`\mathsf{recv}\,o\,w`))} \\[2ex]
-${h('Q-Link', R`\textsf{Q-Close, Q-Select, Q-Branch, Q-Link}\ \text{are the term obligations with } \Sigma \text{ for } \Theta \text{ and } P \text{ for } E`)} \\
+${h('Q-Link', R`\textsf{Q-Close, Q-Select, Q-Branch, Q-Link} = \textsf{O-Close, O-Select, O-Branch, O-Link}\,[\Sigma/\Theta,\ P/E]`)} \\
 p = (C, E),\ p' = (C', E'),\ \Sigma' = \Sigma[o \mapsto S@x^{+}]
 \end{array}`,
   caption: 'Internal steps, including messages between two threads inside $p$, keep the interface. A message with the outside moves ends across it. A send gives away the payload ends, those of internal channels $\\Theta_e$ included, and a receive must be safe for every incoming value at every lower level.'
@@ -303,10 +303,10 @@ block(s, {
   modes: ['lf'],
   tex: R`\begin{array}{l}
 ${h('fu.zero', R`\forall e.\ e \in ${FF('N', '0', R`\Phi`, 'tk', R`\sigma`, 'd', 'r')}`)} \\
-e \in ${FF('N', R`n{+}1`, PHI, h('fu.tk', 'tk'), h('fu.rty', R`\sigma`), h('fu.frame', 'd'), h('fu.reserve', 'r'))} \iff ${h('fu.refill-kripke', R`\forall N' ${RLE} N`)},\ ${h('fu.rename', R`g \text{ injective on } \mathrm{dom}\,\Phi`)}. \\
+e \in ${FF('N', R`n{+}1`, PHI, h('fu.tk', 'tk'), h('fu.rty', R`\sigma`), h('fu.frame', 'd'), h('fu.reserve', 'r'))} \iff ${h('fu.refill-kripke', R`\forall N' ${RLE} N`)},\ ${h('fu.rename', R`g,\ \mathsf{injective}(g|_{\mathrm{dom}\,\Phi})`)}. \\
 \quad ${h('fu.val', R`(\mathsf{stop})\ g(e) \in \mathsf{Val} \Rightarrow r \leq tk \land g(e) \in ${FFV("N'", R`n{+}1`, R`g\Phi`, R`\sigma`)}`)} \\
-\quad ${h('fu.step', R`(\mathsf{step})\ g(e) \xrightarrow{\alpha} e' \Rightarrow ${h('sr.fobl', R`\mathsf{Fobl}^{N'}_{\alpha}(e')`)}`)} \qquad ${h('fu.oneclock', R`\text{every step costs one level}`)} \\[6pt]
-${h('fu.Phi', R`\Phi : o \mapsto S^{f}`)} \quad \text{each held end with its protocol } S \text{ and counter } f
+\quad ${h('fu.step', R`(\mathsf{step})\ g(e) \xrightarrow{\alpha} e' \Rightarrow ${h('sr.fobl', R`\mathsf{Fobl}^{N'}_{\alpha}(e')`)}`)} \\[6pt]
+${h('fu.Phi', R`\Phi : \mathsf{End} \rightharpoonup \mathsf{STy} \times \mathbb{N},\quad \Phi(o) = S^{f}`)}
 \end{array}`,
   caption: 'The thread $e$ holds the ends $\\Phi$, each with its protocol $S$ and counter $f$, and $tk$ link tickets. It has fuel at level $n+1$ when it returns at $\\sigma$ with at most its tickets reserved, or every step meets its fuel obligation at level $n$. $d$ bounds the actions before it returns and $r$ the tickets it keeps. Fuel reads no point, no world and no relation.'
 });
@@ -318,7 +318,7 @@ ${ACT}\,o & \iff & ${h('F-Wait', R`\Phi(o) = S^{f} \land \neg ${h('fu.idle', R`\
  & \land & ${h('F-Tick', R`${SPARE}(\Phi \setminus o)`)} \land ${h('F-Tick.frame', R`1 \leq d`)} & \text{F-Count} \\[4pt]
 ${SPARE}(\Phi) & \iff & ${h('fu.fspare', R`\forall o \mapsto S^{f} \in \Phi.\ \neg\mathsf{idle}\,S \Rightarrow 1 \leq f`)} \\
 ${TICK(R`\Phi`)} & = & ${h('fu.tick', R`\{o \mapsto S^{f ${DM} 1} \mid o \mapsto S^{f} \in \Phi\}`)} \\
-\mathsf{idle}\,S & \iff & ${UNF}\,S = ${h('sty.skip', R`\mathsf{Skip}`)}
+${h('fu.idle', R`\mathsf{idle}`)}\,S & \iff & ${UNF}\,S = ${h('sty.skip', R`\mathsf{Skip}`)}
 \end{array}`,
   caption: 'An action on $o$ asks $o$ held and not idle, and a positive counter on every other live end and on the frame. Afterwards $o$ is back at $N$ and every other counter drops by one, $\\Phi{\\downarrow}[o \\mapsto S^{N}]$. Ends transferred to another thread arrive one lower, $\\Phi|_M{\\downarrow}$.'
 });
@@ -580,8 +580,8 @@ n('sp.pdual', R`Restricted protocols dual`, R`$\mathsf{ech}\,o \in C$, $\Phi(o) 
 n('sp.sig', R`Interface entries in $A$`, R`$\Sigma(o) = y \Rightarrow A(o) = y$.`, R`Restricting a cut makes its channels internal, and their dual entries in $A$ come from $\Sigma$ through this condition.`, R`Without it, a channel restricted at composition could have non-dual entries in $A$.`, R`$A(c^{+}) = \Sigma(c^{+})$.`, 'soup/State.v: sp_sig');
 n('sp.psig', R`Interface protocols in $\Phi$`, R`$\Sigma(o) = S@x$ implies $\Phi(o) = S^{f}$ for some counter $f$.`, R`At composition the protocols of the cut come from $\Sigma$, which typing makes dual.`, DEF, R`$\Sigma(o) = \mathsf{Close}@x$ and $\Phi(o) = \mathsf{Close}^{2}$.`, 'soup/State.v: sp_psig');
 n('sp.fin', R`Finite counters`, R`$\forall o.\ K(o) = (\_, \_, f) \Rightarrow f \in \mathbb{N}$.`, R`The termination measure reads every counter as a natural number.`, DEF, R`$K(a) = (0, \rho, 2)$.`, 'soup/State.v: sp_fin');
-n('sp.lfsem', R`$\Sigma \Vvdash_W p : T$`, R`$\exists N \in \mathbb{N}, a.\ \mathsf{erase}(q_a) = p \land \forall n.\ a \in S^{N,W}_n\llbracket\Sigma \vdash T\rrbracket$.`, R`The lock-free process relation alone suffices, and absence of internal divergence of the lock-free process relation gives what a process conjunct would.`, DEF, R`The lock-free fundamental theorem concludes this judgment.`, 'soup/Soup.v: lf_sem');
-n('sp.exists-before-forall', R`$\exists$ before $\forall n$`, R`$N$ and the state $a$ are fixed before the level quantifier.`, R`Ownership, points and counters are then the same at every level.`, R`A placement chosen per level lets the main thread wait forever in every fair run.`, R`$\exists N\,a.\ \ldots \forall n$.`, 'soup/Soup.v: lf_sem');
+n('sp.lfsem', R`$\Sigma \Vvdash_W p : T$`, R`$\exists N \in \mathbb{N}, a, \chi.\ \mathsf{erase}(q_a) = p \land \forall n.\ a \in S^{N,W,\chi}_n\llbracket\Sigma \vdash T\rrbracket$.`, R`The lock-free process relation alone suffices, and absence of internal divergence of the lock-free process relation gives what a process conjunct would.`, DEF, R`The lock-free fundamental theorem concludes this judgment.`, 'soup/Soup.v: lf_sem');
+n('sp.exists-before-forall', R`$\exists$ before $\forall n$`, R`$N$, the state $a$ and the creation choice $\chi$ are fixed before the level quantifier.`, R`Ownership, points, counters and the placement of new channels are then the same at every level.`, R`A placement chosen per level lets the main thread wait forever in every fair run.`, R`$\exists N\,a.\ \ldots \forall n$.`, 'soup/Soup.v: lf_sem');
 n('sp.chi', R`Creation choice $\chi$`, R`A thread creates a channel from the term $e$ while it holds $\Theta$. For the fresh root $a$, $\chi(e, \Theta)(a) = (\pi, C)$ gives the position $\pi$, either $a$ or a field $x\cdot\kappa$, and the facts $C$ over $a$ and the points of $\Theta$.`, R`The lock-free process relation fixes its annotated configuration before the level, and after a creation it records the point of the new ends. The judgment fixes $\chi$ before the level too, so the point and the facts of each creation are the same at every level. For a typed thread $\chi$ is the choice of its E-New step.`, R`With the choice inside O-New, each level picks its own $\pi$ and $C$, and the recorded point matches no single choice.`, R`$\chi(e, \Theta)(a) = (a\cdot 0, \{\rho \prec \overline{a\cdot 0}\})$ for the second creation of the cycle example.`, 'not yet in the Rocq (docs/redesign/pending.md, entry 2)');
 n('O-New.chi', R`$(\pi, C) = \chi(e, \Theta)(a)$`, R`Under lock freedom the position and the facts of the creation are those of the creation choice $\chi$.`, R`The choice is then the same at every level.`, DEF, R`Under deadlock freedom O-New picks $\pi$ and $C$ at each level.`, 'not yet in the Rocq (docs/redesign/pending.md, entry 2)');
 n('sp.next', R`$\mathsf{lf\_next}^{\chi}$`, R`$\mathsf{lf\_next}^{\chi}\,N\,(q, K, tk)\,ev\,q' = (q', \mathsf{own\_next}^{\chi}\,N\,ev\,K, \mathsf{tk\_next}\,ev\,tk)$.`, R`A creation places the new ends at the position $\chi$ chooses with counter $N$ and grows the world by the facts $\chi$ chooses. An action moves its end to the next point and resets its counter to $N$. A transfer moves the ends to the receiving thread and decrements their counters. A link uses a ticket and renames, and a spawn splits the tickets. None of these depends on the level.`, DEF, R`One step of the lock-free process relation along an event.`, 'soup/Soup.v: lf_next');
@@ -633,7 +633,7 @@ const SIGV = R`v \in V[\kappa]^{W}_{n}\llbracket \Theta \vdash T \rrbracket`;
 const SIGE = R`e \in E[\kappa]^{W}_{n}\llbracket \Theta \vdash T \rrbracket^{F}`;
 const SIGP = R`p \in P[\kappa]^{W}_{n}\llbracket \Sigma \vdash T \rrbracket`;
 const SIGF = R`e \in F^{N}_{n}\llbracket \Phi ; tk \vdash \sigma\ !\ (d, r) \rrbracket`;
-const SIGS = R`a \in S^{N,W}_{n}\llbracket \Sigma \vdash T \rrbracket`;
+const SIGS = R`a \in S^{N,W,\chi}_{n}\llbracket \Sigma \vdash T \rrbracket`;
 const fuelArgs = [aN, an, aPhi, atk, A(R`\sigma`, R`the result, a credited type or $\mathsf{thread}$`), A(R`d`, R`the frame, the actions left before returning, $d \in \mathbb{N} \cup \{\infty\}$`), A(R`r`, R`the reserve, the tickets kept on return, $r \in \mathbb{N}$`), A(R`e`, R`the term`)];
 const soupArgs = [aN, aW, an, aSg, aT, A(R`a = (q, K, tk)`, R`the annotated configuration, with $q = (C, M)$ a configuration`)];
 const vArgs = [ak, aW, an, aTh, aT, A(R`v`, R`the value`)];
@@ -655,7 +655,7 @@ sa('ct.link', R`\kappa_{link} \in \mathbb{N}`, [ak]);
 sa('ct.give', R`\kappa_{give} \in \mathbb{N}`, [ak]);
 sa('ct.takek', R`\kappa_{take} \in \mathbb{N}`, [ak]);
 sa('ct.sync', R`\kappa(\cdot) : \mathsf{Event} \to \mathbb{N}`, [ak, A(R`ev`, R`an event of the instrumented semantics`)]);
-sa('rel.atcost', R`e' \text{ at } \Theta' : \mathsf{Prop}`, [A(R`e'`, R`the successor`), A(R`\Theta'`, R`its environment`), A(R`\kappa(\alpha)`, R`the cost of the step label $\alpha$`), A(R`X`, R`the least fixpoint under construction at level $n$`)]);
+sa('rel.atcost', R`e' \mathsf{at}\ \Theta' : \mathsf{Prop}`, [A(R`e'`, R`the successor`), A(R`\Theta'`, R`its environment`), A(R`\kappa(\alpha)`, R`the cost of the step label $\alpha$`), A(R`X`, R`the least fixpoint under construction at level $n$`)]);
 sa('rel.lfp', R`X : \mathsf{World} \to ${ENV} \to \mathsf{Ty} \to \mathcal{P}(\mathsf{Point}) \to \mathsf{Expr} \to \mathsf{Prop}`, [A(R`X`, R`the least relation closed under the clauses of level $n$`)]);
 sa('V-Unit', SIGV, vArgs);
 sa('V-Sess', SIGV, [...vArgs, A(R`o`, R`the end the value is`), A(R`S'`, R`the session type of $o$ in $\Theta$, with annotations`)]);
@@ -809,7 +809,7 @@ sa('sp.sig', R`\Sigma(o) = y \Rightarrow A(o) = y`, [A(R`y`, R`an entry $S@x$`)]
 sa('sp.psig', R`\Sigma(o) = S@x \Rightarrow \Phi(o) = S^{f}`, [ao]);
 sa('sp.fin', R`\forall o.\ K(o) = (\_, \_, f) \Rightarrow f \in \mathbb{N}`, [A(R`f`, R`the counter of $o$`)]);
 sa('sp.lfsem', R`\Sigma \Vvdash_{W} p : T`, [aSg, aW, ap, aT, A(R`N, a`, R`the counter bound and the annotated configuration, fixed before $n$`)]);
-sa('sp.exists-before-forall', R`\exists N \in \mathbb{N}, a.\ \mathsf{erase}(q_a) = p \land \forall n.\ \ldots`, [aN, A(R`a`, R`the annotated configuration`)]);
+sa('sp.exists-before-forall', R`\exists N \in \mathbb{N}, a, \chi.\ \mathsf{erase}(q_a) = p \land \forall n.\ \ldots`, [aN, A(R`a`, R`the annotated configuration`), A(R`\chi`, R`the creation choice`)]);
 sa('sp.next', R`\mathsf{lf\_next}^{\chi} : \mathbb{N} \to \mathsf{LFState} \to \mathsf{Event} \to \mathsf{Config} \to \mathsf{LFState}`, [aN, A(R`(q, K, tk)`, R`the state`), A(R`ev`, R`the event`), A(R`q'`, R`the configuration after the event`)]);
 sa('sr.FE', SIGF, fuelArgs);
 sa('sr.FV', R`v \in FV^{N}_{n}\llbracket \Phi \vdash \sigma \rrbracket`, [aN, an, aPhi, A(R`\sigma`, R`the result`), A(R`v`, R`the value`)]);

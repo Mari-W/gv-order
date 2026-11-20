@@ -8,17 +8,14 @@ block(s, {
   tex: R`\begin{array}{rl}
 e ::= & ${h('syn.var', 'x')} \mid ${h('syn.unit', R`\ast`)} \mid ${h('syn.end', 'o')} \mid ${h('syn.lam', R`\lambda e`)} \mid ${h('syn.app', R`e_1\,e_2`)} \mid ${h('syn.pair', R`\langle e_1, e_2\rangle`)} \\
 \mid & ${h('syn.letu', R`\mathsf{let}\ \ast = e_1\ \mathsf{in}\ e_2`)} \mid ${h('syn.letp', R`\mathsf{let}\ \langle a,b\rangle = e_1\ \mathsf{in}\ e_2`)} \\
-\mid & ${h('syn.inj', R`\mathsf{inj}_i\,e`)} \mid ${h('syn.case', R`\mathsf{case}\ e\,(a.e_1)\,(a.e_2)`)} \\
+\mid & ${h('syn.inj', R`\mathsf{inj}_i\,e`)} \mid ${h('syn.case', R`\mathsf{case}\ e\,(e_1)\,(e_2)`)} \\
 \mid & ${h('syn.box', R`!e`)} \mid ${h('syn.new', R`\mathsf{new}`)} \mid ${h('syn.op', 'k')}
 \end{array}`,
-  caption: 'Thirteen term formers with de Bruijn variables, a box $!e$ binding itself in $e$, and the constants $k$.'
+  caption: 'Thirteen term formers with de Bruijn variables. $\\lambda e$ and each branch of a $\\mathsf{case}$ bind one variable, $\\mathsf{let}\\ \\langle a, b\\rangle$ binds two, and a box $!e$ binds itself in $e$.'
 });
 block(s, {
   id: 'syn-let', title: 'Derived let', rocq: 'lang/Syntax.v: ELet (notation)',
-  tex: h('syn.let', R`\begin{array}{l}
-\mathsf{let}\ a = e_1\ \mathsf{in}\ e_2 \ \triangleq\ {} \\
-\qquad \mathsf{let}\ \langle a, u\rangle = \langle e_1, \ast\rangle\ \mathsf{in}\ \mathsf{let}\ \ast = u\ \mathsf{in}\ e_2
-\end{array}`),
+  tex: h('syn.let', R`\mathsf{let}\ a = e_1\ \mathsf{in}\ e_2 \ \triangleq\ \mathsf{let}\ \langle a, u\rangle = \langle e_1, \ast\rangle\ \mathsf{in}\ \mathsf{let}\ \ast = u\ \mathsf{in}\ e_2`),
   caption: 'The one-variable $\\mathsf{let}$ is notation over pairs and unit with $u$ fresh.'
 });
 block(s, {
@@ -47,7 +44,7 @@ block(s, {
 block(s, {
   id: 'syn-procs', title: 'Processes and configurations', rocq: 'lang/Syntax.v: proc, lang/Process.v: config, erase',
   tex: R`\begin{array}{l}
-${h('proc.proc', R`p = (C, E)`)} \qquad ${h('proc.config', R`q = (C, M),\ M : \mathbb{N} \rightharpoonup e`)} \\
+${h('proc.proc', R`p = (C, E)`)} \qquad ${h('proc.config', R`q = (C, M),\ M : \mathbb{N} \rightharpoonup \mathsf{Expr}`)} \\
 ${h('proc.erase', R`\mathsf{erase}(C, M) = (C, \{\!|\, M(i) \mid i \,|\!\})`)}
 \end{array}`,
   caption: 'A process is a finite set $C$ of restricted channels with a finite multiset $E$ of threads, and a configuration names threads by $i \\in \\mathrm{dom}\\,M$.'
@@ -75,7 +72,7 @@ block(s, {
 });
 block(s, {
   id: 'syn-csub', title: 'Link substitution', rocq: 'lang/Syntax.v: csub',
-  tex: h('link.csub', R`\mathsf{csub}\,o_1\,o_2 :\ \overline{o_1} \mapsto o_2,\quad o_1 \mapsto \overline{o_2},\quad o \mapsto o\ \text{otherwise}`),
+  tex: h('link.csub', R`\mathsf{csub}\,o_1\,o_2\,(o) = \begin{cases} o_2 & o = \overline{o_1} \\ \overline{o_2} & o = o_1 \\ o & o \notin \{o_1, \overline{o_1}\} \end{cases}`),
   caption: 'The renaming a link applies to every thread, so the thread holding $\\overline{o_1}$ ends up holding $o_2$.'
 });
 
