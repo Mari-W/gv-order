@@ -236,6 +236,16 @@ must do, open questions.
     process soundness theorems follows from the derivation. The map writes
     S = A_{W1} ∩ A_{W2} and no families premise, because entry 2 removes
     families. Map done. Rocq: after the repair run is merged.
+    Done in the Rocq 2026-11-20 (overnight stage 2, 69526fa). p_term
+    asks `strict W`, p_connect asks disjoint families and
+    `strict (W1|_S ⊔ W2|_S)` with `S = wshared W1 W2`, and
+    `ptyped_strict` shows every derivation sits over a strict world. The
+    earlier rule is the lemma `p_connect_join`, and p_join and
+    p_join_iff_connect are gone. fundamental_proc,
+    live_fundamental_proc, soundness, live_soundness, lf_fundamental and
+    lf_soundness lost their `strict W` premise. The source theorems keep
+    it, because P-Term asks it. A world without facts and families is
+    strict (`strict_bare`), which the forwarder uses.
 
 14. **Typing QA against static/Typing.v (2026-11-19).** Beyond entries 2,
     6, 8, 12, 13 the map differed in three places, all fixed on the map:
