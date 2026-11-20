@@ -240,7 +240,40 @@ window.MathJax = {
   function renderModes() {
     document.querySelectorAll('.modes button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
   }
-  const matches = (...fields) => !query || fields.join(' ').toLowerCase().includes(query);
+  // fuzzy filter: every word of the query must occur in the text, or be close to a word of it
+  // (a typo per four letters, or a prefix), searching titles, captions, Rocq names, the TeX and
+  // the titles of the notes a formula hovers
+  const norm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\\(?:mathsf|textsf|mathrm|text|mathit)\{([^}]*)\}/g, ' $1 ').replace(/\\([A-Za-z]+)/g, ' $1 ')
+    .replace(/_/g, ' ').toLowerCase().replace(/[^a-z0-9\-]+/g, ' ');
+  const dist = (a, b) => {
+    const m = a.length, n = b.length; if (Math.abs(m - n) > 2) return 3;
+    let prev = Array.from({ length: n + 1 }, (_, j) => j), pp = prev;
+    for (let i = 1; i <= m; i++) {
+      const cur = [i];
+      for (let j = 1; j <= n; j++) {
+        cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) cur[j] = Math.min(cur[j], pp[j - 2] + 1);
+      }
+      pp = prev; prev = cur;
+    }
+    return prev[n];
+  };
+  const subseq = (t, w) => { let i = 0; for (const ch of w) if (ch === t[i]) i++; return i === t.length; };
+  const termHits = (t, hay, words) => {
+    if (hay.includes(t)) return true;
+    if (t.length >= 3) for (const w of words) if (w[0] === t[0] && w.length <= t.length + 3 && subseq(t, w)) return true;
+    const tol = t.length >= 8 ? 2 : t.length >= 4 ? 1 : 0;
+    if (!tol) return false;
+    for (const w of words) if (w.length >= 3 && (dist(t, w) <= tol || (w.length > t.length && dist(t, w.slice(0, t.length)) <= tol))) return true;
+    return false;
+  };
+  const noteTitles = tex => [...keysIn(tex)].map(k => k + ' ' + ((MAP.notes[k] && MAP.notes[k].title) || '')).join(' ');
+  const matches = (...fields) => {
+    if (!query) return true;
+    const hay = ' ' + norm(fields.join(' ')) + ' ', words = [...new Set(hay.split(/[ -]/).filter(Boolean))];
+    return norm(query).split(' ').filter(Boolean).every(t => termHits(t, hay, words));
+  };
 
   function math(tex, m) {
     const div = document.createElement('div'); div.className = 'math';
@@ -291,7 +324,7 @@ window.MathJax = {
       const modes = b.modes && b.modes.length ? b.modes : ['df', 'lf'];
       if (!modes.includes(mode)) continue;
       const bm = blockMode(b), tex = texOf(b, bm);
-      if (!tex || !matches(b.title, b.caption, b.rocq, tex)) continue;
+      if (!tex || !matches(b.title, b.caption, b.rocq, tex, noteTitles(tex))) continue;
       const lfOnly = !modes.includes('df');
       const el = document.createElement('article'); el.className = 'block' + (lfOnly ? ' lfonly' : ''); el.id = 'b-' + b.id;
       const tags = modes.length === 2 ? '' : `<span class="tags">${modes.map(m => `<span class="tag ${m}">${m === 'df' ? 'DF' : 'LF'}</span>`).join('')}</span>`;
