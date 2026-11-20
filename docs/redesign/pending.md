@@ -1,5 +1,63 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Morning report, overnight run of 2026-11-20
+
+Branch redesign-clean3 in .claude/worktrees/redesign-s4, nothing pushed.
+Step 0 merged redesign (0c7756e). The explorer sources conflicted where
+one side had removed `prim` and the other `hbot`, and the merge removes
+both. One note of the merged map (ev.pick) used the word "holder" and a
+sentence of 37 words, and the merge rewords it.
+
+- Stage 1, entry 6, credits only on ends and closures. Done (61ad17b,
+  dccb8a4). E-Send ages its payload operand by one and subtypes it to the
+  declared payload. Sub-Ex now compares bodies by `tsub`, so V's
+  monotonicity along subtyping is proved under every point instantiation.
+- Stage 2, entry 13, P-Connect over the shared roots. Done (69526fa,
+  f0f9344). `ptyped_strict`, `p_connect_join`, `strict_bare`. p_join is
+  gone and the process theorems lost their `strict W` premise.
+- Stage 3, entry 14, ⊥ folded into heads. Left out by the rule "only if it
+  shortens proofs" (d5ff8e6), with the counts in entry 14.
+- Stage 4, entry 2, one plain new. Stopped at the feasibility check of
+  risk (a) (d5ff8e6). The soup fixes its state for every index and
+  updates it from the event, which names neither the point nor the
+  constraint of a plain new, so a choice per level cannot be fixed. Three
+  repairs and a note on risk (b) are in entry 2. No Rocq change.
+- Stage 5, entry 7. Partly done (f756da5, 86c4991). `fp_unrealizable`
+  (v2/examples/FlagPair.v) shows two threads that branch on one received
+  flag are in E together in no pair of worlds with a strict join. The four
+  programs of rejects.js are not mechanized, v2 can neither build an
+  infinite run nor invert `typed`.
+- Stage 6, entry 4, a weakly fair run exists. Not done (4d37d51). A run is
+  a function, and building it from Prop-level steps needs dependent choice
+  or a step function that v2 lacks.
+- Stage 7, entry 5. Not reached, it needs stage 6.
+- Stage 8, the map's notation in the Rocq. Partly done (96d5f7e, 4d2ec2b).
+  `tfin` is ϑ(0) ∈ ℕ, `cr_le` is cr(Θ) ≤ N, `soup_gen_iff` reads the soup
+  as relation, fuel and `soup_consistent`. Not done: one map Φ in the
+  fuel layer, and Pbody over pstep. The open question is written up
+  under entry 8 and nothing is decided.
+- Stage 9, remove the clause (fuse) of P. Not done (dca9d20, entry 15).
+  A probe that dropped the clause fails first in Relation.v
+  (`Pbody_mapX`), and the clause has uses in 14 files. Entry 15 lists
+  what the work needs. The probe was reverted.
+- Stage 10, entry 11, faithfulness audit. Done for the cited Rocq names and
+  the theorem statements (ca7c7a7). Six dangling names, names cited in
+  the wrong file, and four theorems on the map that still ask `strict W`.
+- Design checks (c258c50, 8823fb2), write-ups only. No future variables
+  holds, checked by two lemmas in a scratch file
+  (docs/redesign/check-future-variables.md). Per-end capture holds on
+  paper and removes the floor h (docs/redesign/check-per-end-capture.md).
+  The type-directed ticket split does not go through as stated
+  (docs/redesign/check-ticket-split.md).
+
+Final state of v2 at e64095d. `make -j2` builds with no error.
+`make test` passes, after the expected outputs of CostNotations,
+FuelNotations, GuardNotations and SoupNotations were updated to the new
+signatures (e64095d). `make check` reports 93 of 93 results closed under
+the global context. No Admitted, no new axiom. Map. No edit after the
+merge. check.js reports 0 mathjax errors and lint-map reports 0 coined
+words and 0 sentences over 35 words.
+
 Since 2026-11-19 the author reviews the explorer map (docs/explorer) and
 asks for changes. Each change goes into the map at once and into this list.
 One proof-repair agent later implements the whole list in the Rocq in a
