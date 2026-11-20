@@ -164,7 +164,7 @@ block(s, {
   id: 'e-obl-admin', title: 'Obligations of internal steps', rocq: 'relation/Relation.v: o_beta, o_new, o_spawn, new_env',
   tex: R`\begin{array}{c}
 ${RULE('O-Beta', [[R`${AT(R`e'`)}\ \Theta`]], OB(R`\beta`))} \qquad ${RULE('O-Spawn', [[h('O-Spawn.split', R`\Theta = \Theta_M ${UPL} \Theta_r`), h('O-Spawn.thunk', R`v \in ${h('sr.vthunk', R`\mathsf{Vthunk}_n(\Theta_M)`)}`), R`${AT(R`e'`)}\ \Theta_r`]], OB(R`\mathsf{spawn}\,v`))} \\[2ex]
-${RULE('O-New', [[h('O-New.cfresh', R`c^{\pm} \notin \mathrm{dom}\,\Theta`)], [R`${h('O-New.forall', R`\forall ${h('O-New.gfresh', R`a \notin A_W`)}`)}.\ ${h('O-New.grow', R`\exists S, \pi, C.\ \pi \in \{a, x\cdot\kappa\},\ \mathsf{strict}(W \oplus C)`)},\ ${AT(R`e'`)}_{W \oplus C}\ ${h('O-New.dual', R`\Theta[c^{+} \mapsto S@\pi,\ c^{-} \mapsto \overline{S}@\overline{\pi}]`)}`]], OB(R`\mathsf{new}\,c`))}
+${RULE('O-New', [[h('O-New.cfresh', R`c^{\pm} \notin \mathrm{dom}\,\Theta`)], [R`${h('O-New.forall', R`\forall ${h('O-New.gfresh', R`a \notin A_W`)}`)}.\ ${h('O-New.grow', R`\exists S, \pi, C.\ \pi \in \{a, x\cdot\kappa\},\ \annot{${h('O-New.chi', R`(\pi, C) = \chi(e, \Theta)(a)`)},\ }\mathsf{strict}(W \oplus C)`)},\ ${AT(R`e'`)}_{W \oplus C}\ ${h('O-New.dual', R`\Theta[c^{+} \mapsto S@\pi,\ c^{-} \mapsto \overline{S}@\overline{\pi}]`)}`]], OB(R`\mathsf{new}\,c`))}
 \end{array}`,
   caption: 'Each step $e \\xrightarrow{\\alpha} e\'$ of a term holding $\\Theta$ must meet the obligation $\\mathsf{Obl}_\\alpha(e\')$. A $\\beta$ step keeps the ends, a spawn gives the child exactly the ends its thunk mentions, and a creation adds the two new ends at a fresh root or a field and grows the world by their facts.'
 });
@@ -372,7 +372,7 @@ block(s, {
   modes: ['lf'],
   tex: R`\begin{array}{c}
 ${h('sp.state', R`a = (q, K, tk)`)} \qquad ${h('sp.hold', R`K : \mathsf{End} \rightharpoonup \mathbb{N} \times \mathsf{Point} \times (\mathbb{N} \cup \{\infty\})`)} \qquad ${h('sp.tk', R`tk : \mathbb{N} \to \mathbb{N}`)} \\
-${h('sp.next', R`\mathsf{lf\_next}\,N\,(q, K, tk)\,ev\,q' = (q',\ \mathsf{own\_next}\,N\,ev\,K,\ \mathsf{tk\_next}\,ev\,tk)`)}
+${h('sp.next', R`\mathsf{lf\_next}^{\chi}\,N\,(q, K, tk)\,ev\,q' = (q',\ \mathsf{own\_next}^{\chi}\,N\,ev\,K,\ \mathsf{tk\_next}\,ev\,tk)`)}
 \end{array}`,
   caption: 'An annotated configuration is a configuration with an ownership map from held ends to holding thread, point and counter, and a ticket count per thread.'
 });
@@ -380,8 +380,8 @@ block(s, {
   id: 'sp-inv', title: 'The lock-free process relation', rocq: 'soup/State.v: soup_gen, soup/Soup.v: soup_inv, Soup',
   modes: ['lf'],
   tex: R`\begin{array}{rcll}
-a \in ${h('th.soup', R`S^{N,W}_n\llbracket\Sigma \vdash T\rrbracket`)} & \iff & ${h('sp.exists', R`\exists A, \Phi`)}.\ ${h('sp.tfree', R`${h('ty.tfree', R`\mathsf{tfree}`)}\,T`)} \land \text{for each thread } t \text{ running } e\text{,} & \\[1ex]
- & & \quad ${h('sp.rel', R`e \in ${h('th.Erel', R`E[\kappa_L]^W_n\llbracket A|_t \vdash U_t\rrbracket^{\varnothing}`)}`)} & \text{the relation} \\
+a \in ${h('th.soup', R`S^{N,W,\chi}_n\llbracket\Sigma \vdash T\rrbracket`)} & \iff & ${h('sp.exists', R`\exists A, \Phi`)}.\ ${h('sp.tfree', R`${h('ty.tfree', R`\mathsf{tfree}`)}\,T`)} \land \text{for each thread } t \text{ running } e\text{,} & \\[1ex]
+ & & \quad ${h('sp.rel', R`e \in ${h('th.Erel', R`E[\kappa_L, \chi]^W_n\llbracket A|_t \vdash U_t\rrbracket^{\varnothing}`)}`)} & \text{the relation} \\
  & & \quad ${h('sp.fuel', R`e \in ${FF('N', 'n', R`\Phi|_t`, R`tk_t`, THR, R`\infty`, '0')}`)} & \text{fuel} \\
  & & \land\ ${OWN}(a, A, \Phi) & \\[2ex]
 A,\ \Phi & & \text{the held ends as } o \mapsto S@x \text{ for the relation and as } o \mapsto S^{f} \text{ for fuel} & \\
@@ -399,9 +399,9 @@ block(s, {
   id: 'sp-lf', title: 'Lock-free semantic judgment', rocq: 'soup/Soup.v: lf_sem, lf_next, own_next, tk_next',
   modes: ['lf'],
   tex: R`\begin{array}{l}
-${h('sp.lfsem', R`\Sigma \Vvdash_W p : T \iff ${h('sp.exists-before-forall', R`\exists N \in \mathbb{N}, a.\ ${h('proc.erase', R`\mathsf{erase}`)}(${h('th.qa', 'q_a')}) = p \land \forall n`)}.\ a \in ${h('th.soup', R`S^{N,W}_n\llbracket\Sigma \vdash T\rrbracket`)}`)}
+${h('sp.lfsem', R`\Sigma \Vvdash_W p : T \iff ${h('sp.exists-before-forall', R`\exists N \in \mathbb{N}, a, ${h('sp.chi', R`\chi`)}.\ ${h('proc.erase', R`\mathsf{erase}`)}(${h('th.qa', 'q_a')}) = p \land \forall n`)}.\ a \in ${h('th.soup', R`S^{N,W,\chi}_n\llbracket\Sigma \vdash T\rrbracket`)}`)}
 \end{array}`,
-  caption: 'The lock-free semantic judgment fixes the counter bound and the annotated configuration once, before the level.'
+  caption: 'The lock-free semantic judgment fixes the counter bound, the annotated configuration and the creation choice $\\chi$ once, before the level.'
 });
 
 // ---- notes ----
@@ -582,7 +582,9 @@ n('sp.psig', R`Interface protocols in $\Phi$`, R`$\Sigma(o) = S@x$ implies $\Phi
 n('sp.fin', R`Finite counters`, R`$\forall o.\ K(o) = (\_, \_, f) \Rightarrow f \in \mathbb{N}$.`, R`The termination measure reads every counter as a natural number.`, DEF, R`$K(a) = (0, \rho, 2)$.`, 'soup/State.v: sp_fin');
 n('sp.lfsem', R`$\Sigma \Vvdash_W p : T$`, R`$\exists N \in \mathbb{N}, a.\ \mathsf{erase}(q_a) = p \land \forall n.\ a \in S^{N,W}_n\llbracket\Sigma \vdash T\rrbracket$.`, R`The lock-free process relation alone suffices, and absence of internal divergence of the lock-free process relation gives what a process conjunct would.`, DEF, R`The lock-free fundamental theorem concludes this judgment.`, 'soup/Soup.v: lf_sem');
 n('sp.exists-before-forall', R`$\exists$ before $\forall n$`, R`$N$ and the state $a$ are fixed before the level quantifier.`, R`Ownership, points and counters are then the same at every level.`, R`A placement chosen per level lets the main thread wait forever in every fair run.`, R`$\exists N\,a.\ \ldots \forall n$.`, 'soup/Soup.v: lf_sem');
-n('sp.next', R`$\mathsf{lf\_next}$`, R`$\mathsf{lf\_next}\,N\,(q, K, tk)\,ev\,q' = (q', \mathsf{own\_next}\,N\,ev\,K, \mathsf{tk\_next}\,ev\,tk)$.`, R`Creation places new ends with counter $N$, actions move and counter bound, transfer move with counter minus one, links use a ticket and rename, spawns split tickets, all independent of the level.`, DEF, R`One step of the lock-free process relation along an event.`, 'soup/Soup.v: lf_next');
+n('sp.chi', R`Creation choice $\chi$`, R`A thread creates a channel from the term $e$ while it holds $\Theta$. For the fresh root $a$, $\chi(e, \Theta)(a) = (\pi, C)$ gives the position $\pi$, either $a$ or a field $x\cdot\kappa$, and the facts $C$ over $a$ and the points of $\Theta$.`, R`The lock-free process relation fixes its annotated configuration before the level, and after a creation it records the point of the new ends. The judgment fixes $\chi$ before the level too, so the point and the facts of each creation are the same at every level. For a typed thread $\chi$ is the choice of its E-New step.`, R`With the choice inside O-New, each level picks its own $\pi$ and $C$, and the recorded point matches no single choice.`, R`$\chi(e, \Theta)(a) = (a\cdot 0, \{\rho \prec \overline{a\cdot 0}\})$ for the second creation of the cycle example.`, 'not yet in the Rocq (docs/redesign/pending.md, entry 2)');
+n('O-New.chi', R`$(\pi, C) = \chi(e, \Theta)(a)$`, R`Under lock freedom the position and the facts of the creation are those of the creation choice $\chi$.`, R`The choice is then the same at every level.`, DEF, R`Under deadlock freedom O-New picks $\pi$ and $C$ at each level.`, 'not yet in the Rocq (docs/redesign/pending.md, entry 2)');
+n('sp.next', R`$\mathsf{lf\_next}^{\chi}$`, R`$\mathsf{lf\_next}^{\chi}\,N\,(q, K, tk)\,ev\,q' = (q', \mathsf{own\_next}^{\chi}\,N\,ev\,K, \mathsf{tk\_next}\,ev\,tk)$.`, R`A creation places the new ends at the position $\chi$ chooses with counter $N$ and grows the world by the facts $\chi$ chooses. An action moves its end to the next point and resets its counter to $N$. A transfer moves the ends to the receiving thread and decrements their counters. A link uses a ticket and renames, and a spawn splits the tickets. None of these depends on the level.`, DEF, R`One step of the lock-free process relation along an event.`, 'soup/Soup.v: lf_next');
 n('sp.own', R`$\mathsf{consistent}(a, A, \Phi)$`, R`The ownership map $K$ of the annotated configuration agrees with $A$ and $\Phi$. Each held end is held by one thread of the configuration and is internal or in the interface. Both ends of an internal channel are held, at dual types, points and protocols. Interface entries come from $\Sigma$, and counters are finite.`, R`Lock-free adequacy reads the thread holding an end, its point and its counter from $K$, and concludes that the dual end of an internal end is held by some thread at the dual protocol.`, R`Without it a thread could wait on an end whose dual end no thread holds, and the chain of waits in the proof of adequacy would break off.`, R`Two threads closing $c^{+}$ and $c^{-}$, each holding one end, with $C = \{c\}$.`, 'soup/State.v: soup_gen');
 // new symbols
 n('sr.FE', R`Fuel $F^N_n\llbracket\Phi ; tk \vdash \sigma\ !\ (d, r)\rrbracket$`, R`The thread holds the ends $\Phi$ and $tk$ tickets and has fuel for $n$ more steps to return at $\sigma$ within $d$ actions with $r$ tickets left, at counter bound $N$.`, R`It bounds postponement and links per thread, independent of points. It is indexed by $n$, as $E$ is, so it is written as membership and not as a judgment.`, DEF, R`$F^{3}_n\llbracket\{a \mapsto S^{3}\} ; 0 \vdash \mathsf{thread}\ !\ (\infty, 0)\rrbracket$.`, 'fuel/Fuel.v: FuelE');
@@ -808,7 +810,7 @@ sa('sp.psig', R`\Sigma(o) = S@x \Rightarrow \Phi(o) = S^{f}`, [ao]);
 sa('sp.fin', R`\forall o.\ K(o) = (\_, \_, f) \Rightarrow f \in \mathbb{N}`, [A(R`f`, R`the counter of $o$`)]);
 sa('sp.lfsem', R`\Sigma \Vvdash_{W} p : T`, [aSg, aW, ap, aT, A(R`N, a`, R`the counter bound and the annotated configuration, fixed before $n$`)]);
 sa('sp.exists-before-forall', R`\exists N \in \mathbb{N}, a.\ \mathsf{erase}(q_a) = p \land \forall n.\ \ldots`, [aN, A(R`a`, R`the annotated configuration`)]);
-sa('sp.next', R`\mathsf{lf\_next} : \mathbb{N} \to \mathsf{LFState} \to \mathsf{Event} \to \mathsf{Config} \to \mathsf{LFState}`, [aN, A(R`(q, K, tk)`, R`the state`), A(R`ev`, R`the event`), A(R`q'`, R`the configuration after the event`)]);
+sa('sp.next', R`\mathsf{lf\_next}^{\chi} : \mathbb{N} \to \mathsf{LFState} \to \mathsf{Event} \to \mathsf{Config} \to \mathsf{LFState}`, [aN, A(R`(q, K, tk)`, R`the state`), A(R`ev`, R`the event`), A(R`q'`, R`the configuration after the event`)]);
 sa('sr.FE', SIGF, fuelArgs);
 sa('sr.FV', R`v \in FV^{N}_{n}\llbracket \Phi \vdash \sigma \rrbracket`, [aN, an, aPhi, A(R`\sigma`, R`the result`), A(R`v`, R`the value`)]);
 sa('sr.act', R`\mathsf{act} : \mathsf{End} \to \mathsf{Prop}`, [ao, aPhi, A(R`d`, R`the frame`)]);

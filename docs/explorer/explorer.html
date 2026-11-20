@@ -74,6 +74,7 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 460px; gap: 24px; ma
 .tags { display: inline-flex; gap: 4px; margin-left: auto; }
 .tag { font: 500 0.68rem var(--body); letter-spacing: 0.04em; text-transform: uppercase; padding: 1px 6px; border-radius: 3px; border: 1px solid currentColor; }
 .tag.df { color: var(--df); } .tag.live { color: var(--live); } .tag.lf { color: var(--lf); }
+.tag.planned { color: var(--muted); border-style: dashed; cursor: help; }
 .math { padding: 6px 0; }
 .math { overflow: hidden; }
 .math mjx-container { display: block !important; margin: 4px 0 !important; max-width: 100%; min-width: 0 !important; }
@@ -295,7 +296,8 @@ window.MathJax = {
       const el = document.createElement('article'); el.className = 'block' + (lfOnly ? ' lfonly' : ''); el.id = 'b-' + b.id;
       const tags = modes.length === 2 ? '' : `<span class="tags">${modes.map(m => `<span class="tag ${m}">${m === 'df' ? 'DF' : 'LF'}</span>`).join('')}</span>`;
       const flip = !lfOnly && differs(b) ? `<span class="tags"><span class="flip" data-flip="${esc(b.id)}">${['df', 'lf'].map(m => `<button type="button" data-m="${m}" aria-pressed="${bm === m}" title="Show this block ${m === 'df' ? 'without' : 'with'} the lock-free additions">${m === 'df' ? 'DF' : 'LF'}</button>`).join('')}</span></span>` : '';
-      el.innerHTML = `<h3 data-block="${esc(b.id)}" tabindex="0">${esc(b.title)}${tags}${flip}</h3>`;
+      const plan = b.planned ? `<span class="tags"><span class="tag planned" title="${esc(b.planned)}">planned</span></span>` : '';
+      el.innerHTML = `<h3 data-block="${esc(b.id)}" tabindex="0">${esc(b.title)}${tags}${plan}${flip}</h3>`;
       el.appendChild(math(tex, bm));
       hitAreas.push(el);
       root.appendChild(el); shown++;

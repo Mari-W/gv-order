@@ -162,6 +162,17 @@ merge('th-adeq', 'Adequacy', ['th-adequacy', 'th-lf-adequacy'], {
 });
 order('theorems', ['th-chain', 'th-sound', 'th-compose', 'th-fund-proc', 'th-adeq', 'th-conserv', 'th-terms']);
 
+// decided or proposed on the map, not yet in the Rocq: the block shows a "planned" tag with this text
+const NEW2 = 'Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field.';
+const planned = {
+  'syn-terms': NEW2, 'syn-points': NEW2, 'sem-labels': NEW2, 'sem-head': NEW2, 'sem-proc': NEW2,
+  'w-world': NEW2, 'w-order': NEW2, 'w-ext': NEW2, 'r-new': NEW2, 'e-obl': NEW2,
+  'sem-events': 'Events as solo, sync and offer are planned (docs/redesign/pending.md, entry 1). The Rocq has one event per kind of step.',
+  'soup': NEW2 + ' The creation choice χ is a proposal of 2026-11-20.',
+  'sj-all': NEW2 + ' The creation choice χ is a proposal of 2026-11-20.',
+};
+for (const [id, why] of Object.entries(planned)) set(id, b => { b.planned = why; });
+
 // every caption sentence about the lock-free mode hides in the deadlock-free mode
 for (const s of sections) for (const b of s.blocks) if (b.modes.includes('df')) b.caption = lfSentences(b.caption);
 

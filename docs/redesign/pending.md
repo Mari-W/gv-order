@@ -69,10 +69,20 @@ must do, open questions.
 
 ## Decisions of the author on the overnight report, 2026-11-20
 
-- **Entry 2, plain `new`.** Families stay in the Rocq for now. First a
-  write-up checks repair (i), a finite menu of (π, C) per creation fixed by
-  Θ, so that downward closure and pigeonhole give one choice for every
-  level. The same write-up checks a condition on C that keeps the union of
+- **Entry 2, plain `new`.** Families stay in the Rocq for now. The author
+  does not want families, facts fixed in the world instead of in the type
+  of `new`. Proposal of 2026-11-20, on the map as planned: a creation
+  choice χ, fixed before the level as A and Φ are. The lock-free semantic
+  judgment reads `∃ N, a, χ. erase(q_a) = p ∧ ∀ n. a ∈ S^{N,W,χ}_n`, the
+  thread relation is `E[κ_L, χ]`, O-New under lock freedom asks
+  `(π, C) = χ(e, Θ)(a)` for the fresh root a, and `lf_next^χ` places the
+  new ends at π and grows the world by C. Under deadlock freedom O-New
+  keeps its existential. For a typed thread χ is the choice of its E-New
+  step. Open: whether χ applied to the creating term counts as reading
+  syntax (it is an existential function the relation applies, no clause
+  inspects the term), and what χ is keyed on if not (e, Θ). A write-up
+  checks the proposal on O-New and the fundamental theorem. The same
+  write-up checks a condition on C that keeps the union of
   the worlds of a run well-founded. Test it against the client-server
   constraint `ι+k ≺ (κ+k)‾` and against the growing chain `rx-chain`. A
   criterion that compares ranks within one position only is unsound,
