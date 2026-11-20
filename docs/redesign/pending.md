@@ -331,6 +331,10 @@ must do, open questions.
     (2026-11-19): per-end capture is important.
     Rocq: after the repair run (entry 6) is merged. Map: after the design
     is confirmed.
+    Design check 2026-11-20 (docs/redesign/check-per-end-capture.md, on
+    paper). Per-end capture holds and removes the floor h. Capture becomes
+    aging by a, FV-Arrow asks `φ′ ≥ φ − a`, Sub-Arr asks `a' ≤ a`. E-SpawnLam
+    then differs from E-Abs plus E-Spawn only in the arrow points.
 
 13. **P-Connect compares only the shared roots (2026-11-19, author).**
     Today p_connect asks world_wf W1, world_wf W2, disjoint families and
@@ -385,6 +389,9 @@ must do, open questions.
         Γ ⊢ x ≼ u. Candidate: F = (X, above u) and no future variables in
         Γ. To check against fl and the semantic den_{ρ,B}. Author
         (2026-11-19): wanted if it holds.
+        Checked 2026-11-20 (docs/redesign/check-future-variables.md). It
+        holds, `fl_to_var` and `fl_from_var` compiled in a scratch file.
+        The relation's future needs the rest "above u" beside its points.
 
 15. **Remove the clause (fuse) of P (author 2026-11-19, overnight stage
     9).** Not done in the overnight run of 2026-11-20, no Rocq change.
@@ -443,6 +450,11 @@ must do, open questions.
   outside the step index without the relation reading types. Discuss
   together with per-end link budgets. No Rocq work. Author (2026-11-19):
   probably good, worth designing.
+  Design check 2026-11-20 (docs/redesign/check-ticket-split.md). Not as
+  stated. The soup needs the split fixed for every index, and a split by
+  the child's need either reads its type or needs a classical pigeonhole
+  over the finitely many splits. With exact splits needs become offsets
+  `r + b` and `tok` goes.
 - **Programs the topological relation accepts and ours rejects.** The
   earlier relation (D'Osualdo, van den Heuvel, Thiemann, Weidner) needs no
   order, only a per-extruded-channel split at the interface. Candidate:
