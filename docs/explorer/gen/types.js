@@ -49,7 +49,8 @@ ${h('sty.sdual', R`\mathsf{sdual}\,S\,S' \iff S' \approx \mathsf{dual}\,S`)}
 block(s, {
   id: 'ty-heads', title: 'Heads and lower bounds', rocq: 'types/Types.v: heads, hbot, types/Points.v: lbound',
   tex: R`\begin{array}{l}
-${h('ty.heads', R`\mathsf{heads}(S@x) = \{\overline{x}\} \qquad \mathsf{heads}(T \multimap^{u}_{l} U) = \mathsf{heads}(\exists^{l}\bar\iota.\ C.\ T) = \{l\} \setminus \{\cdot\}  \\ \mathsf{heads}(\Box(\forall\bar\iota\,\bar\alpha.\ C.\ \ast \multimap^{u} U)) = \varnothing \qquad \mathsf{heads}(\ast) = \varnothing \\ \mathsf{heads}(T \otimes U) = \mathsf{heads}(T \oplus U) = \mathsf{heads}(T) \cup \mathsf{heads}(U)`)} \\
+${h('ty.heads', R`\mathsf{heads}(S@x) = \{\overline{x}\}`)} \qquad ${h('ty.heads', R`\mathsf{heads}(T \multimap^{u}_{l} U) = \mathsf{heads}(\exists^{l}\bar\iota.\ C.\ T) = \{l\} \setminus \{\cdot\}`)} \\
+${h('ty.heads', R`\mathsf{heads}(T \otimes U) = \mathsf{heads}(T \oplus U) = \mathsf{heads}(T) \cup \mathsf{heads}(U)`)} \qquad ${h('ty.heads', R`\mathsf{heads}(\ast) = \mathsf{heads}(\Box(\forall\bar\iota\,\bar\alpha.\ C.\ \ast \multimap^{u} U)) = \varnothing`)} \\
 ${h('ty.lbound', R`l ::= \cdot \mid \bot \mid x`)} \qquad ${h('ty.botord', R`\Gamma \nvdash x \prec \bot \quad \Gamma \nvdash \bot \preccurlyeq y`)}
 \end{array}`,
   caption: '$\\mathsf{heads}(T)$ are the dual points a holding thread of a value of $T$ stays below while it waits. Hidden ends contribute $\\bot$, which no order fact relates to a point, so every check against a held value with hidden ends fails.'

@@ -72,6 +72,7 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 460px; gap: 24px; ma
 .block h3 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 0 0 6px; font: 600 0.95rem var(--body); }
 .block h3 code { font: 0.75rem var(--mono); color: var(--muted); font-weight: 400; }
 .tags { display: inline-flex; gap: 4px; margin-left: auto; }
+.tags + .tags { margin-left: 0; }
 .tag { font: 500 0.68rem var(--body); letter-spacing: 0.04em; text-transform: uppercase; padding: 1px 6px; border-radius: 3px; border: 1px solid currentColor; }
 .tag.df { color: var(--df); } .tag.live { color: var(--live); } .tag.lf { color: var(--lf); }
 .tag.planned { color: var(--muted); border-style: dashed; cursor: help; }
