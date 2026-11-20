@@ -157,6 +157,20 @@ must do, open questions.
    every derivation); then fill the badges' Rocq names. rx-chain depends on
    entry 2's risk (b) once worlds grow. Map: done (badges say "to be
    mechanized").
+   Overnight stage 5, 2026-11-20 (f756da5). Done: v2/examples/FlagPair.v.
+   Two threads branch on one flag that a third party sends, the first on
+   a at x and b at y, the second on ā and b̄. `fp_unrealizable` shows that
+   no pair of worlds with a strict join has both threads in E for both
+   flags. The first thread with inl asks x ≺ ȳ (`fp_gate`), the second
+   with inr asks ȳ ≺ x, a cycle. One thread alone is not rejected, its
+   arms ask x ≺ ȳ and y ≺ x̄. Closed under the global context.
+   Stopped: the four programs of rejects.js. Each needs two proofs that
+   v2 has no tools for. Not lock free needs an explicit infinite maximal
+   weakly fair run with a thread pending at every position, and v2 builds
+   no run, it only reasons about given ones (lockfree/Fair.v). Not typable
+   needs inversion of `typed` through E-Sub, E-Open, E-Pack, E-Box and
+   E-Force, and v2 has no inversion lemma for `typed`. The badges stay
+   "to be mechanized".
 
 8. **Readable typing notation (draft, under review).** Map: draft blocks at
    the end of the typing section (Draft notation, Draft E-App, E-Send,
