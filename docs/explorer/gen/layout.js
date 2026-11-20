@@ -74,14 +74,17 @@ set('ty-grammar', b => {
   b.caption = R`$S@x$ is an end at the point $x$. \annp{Credits $a$ sit on ends and on closures, the two places where a value holds ends of its own. The credit of an end bounds its counter from below, and the credit of a closure bounds the captured counters above its floor $h$. Pairs, sums, existentials and payloads carry no credit, their ends carry their own.}`;
 });
 drop('ty-credit', 'ty-grammar');
+// entry 12 (generalized arrows, per-end capture) shown as planned: capture is aging, a spawned
+// abstraction is E-Abs at (⊤, ⊥) followed by E-Spawn, and a thunk is a value of arrow type
+drop('t-cap', 't-age'); drop('r-spawnlam', 'r-spawn'); drop('v-thunk', 'v-arrow');
 merge('ty-ann', 'Annotations and ticket needs', ['ty-annot', 'ty-tix', 'ty-tix-ops', 'ty-df'], {
   caption: R`Credits $a$, costs $c$, floors $h$ and the counter bound $N$ are numbers, and $\infty$ means unbounded. A term that must leave $r$ link tickets over needs $\vartheta(r)$ tickets when it starts, and a thread with $tk$ tickets runs it if $\mathsf{meets}\,\vartheta\,r\,tk$. A link adds one to the need, a spawn doubles the rest, and sequencing composes. Deadlock-free typing is the instance $\mathsf{ty\_df}$ with every annotation unbounded.`,
   why: 'The numbers lock-free typing adds to types and judgments. At their unbounded values every premise about them holds, which is how deadlock-free typing is an instance.'
 });
 
 // ---- typing ----
-merge('t-agecap', 'Aging and capture', ['t-age', 't-cap'], {
-  why: 'Aging is how typing charges a held value for the actions that run while it is held. Capture is aging for the ends a closure takes along.'
+merge('t-agecap', 'Aging', ['t-age'], {
+  why: 'Aging is how typing charges a held value for the actions that run while it is held. A closure at credit $a$ ages its captured ends by $a$ for its body.'
 });
 merge('r-base', 'Unit, variables and ends', ['r-unit', 'r-var', 'r-chan'], {
   caption: R`$\ast$ uses no entry of $\Delta$, a variable and an end are typed by their own entry, and every other entry must be unlimited.`,
@@ -102,7 +105,7 @@ merge('r-act', 'Actions and link', ['r-send', 'r-recv', 'r-close', 'r-select', '
   caption: R`An action on an end at $x$ waits at $x$ while the thread holds the rest of $\Delta$, so $x$ lies below the future and below the dual points of what is held. Send and receive move the end to $x^{+}$ and the payload to the fields of $x$, a choice moves it to the field of the branch, and a link asks no order fact. \annp{In the lock-free mode every action returns the end reset to $N$ and costs one, and a link uses a ticket.}`,
   why: 'The session primitives. Every order fact the type system asks for is asked here, at the moment a thread waits.'
 });
-merge('r-threads', 'Spawn', ['r-spawnlam', 'r-spawn'], {
+merge('r-threads', 'Spawn', ['r-spawn'], {
   why: 'A spawn transfers ends to a new thread that starts with nothing after it, so the child body is read at the empty future.'
 });
 merge('t-subs', 'Subtyping and structural rules', ['t-sub', 'r-struct', 'r-admis'], {
@@ -119,9 +122,9 @@ order('typing', ['t-lf-credits', 't-lf-tickets', 't-lf-guard', 't-lf-wf', 't-jud
 
 // ---- semantic typing ----
 merge('ct-costs', 'Step costs', ['ct-two', 'ct-table']);
-merge('v-rel', 'The value relation', ['v-base', 'v-arrow', 'v-thunk', 'v-box', 'v-ex', 'v-size'], {
-  caption: R`Each rule is one clause of $V$, read as an equivalence, by recursion on the type inside the level. $\Theta$ maps exactly the ends the value owns. A closure is safe to call in every later world, at every lower level, with every argument and every caller future above $u$. A thunk, the closure $\lambda\_.\,e$ that $\mathsf{spawn}$ runs, is read at the empty future because the child has nothing after it. A box owns no end and is safe when $\mathsf{thunk}(e) = \lambda\_.\,e[!e]$ is safe at every instance. An existential is a value of its body at witness points whose facts hold.`,
-  why: 'What a safe value is at each type. Arrows, thunks and boxes quantify over every later world and lower level, which is what makes the relation compositional.'
+merge('v-rel', 'The value relation', ['v-base', 'v-arrow', 'v-box', 'v-ex', 'v-size'], {
+  caption: R`Each rule is one clause of $V$, read as an equivalence, by recursion on the type inside the level. $\Theta$ maps exactly the ends the value owns. A closure is safe to call in every later world, at every lower level, with every argument and every caller future above $u$. A thunk that $\mathsf{spawn}$ runs is a closure at upper point $\top$, read at the empty future because the child has nothing after it. A box owns no end and is safe when $\mathsf{thunk}(e) = \lambda\_.\,e[!e]$ is safe at every instance. An existential is a value of its body at witness points whose facts hold.`,
+  why: 'What a safe value is at each type. Arrows and boxes quantify over every later world and lower level, which is what makes the relation compositional.'
 });
 merge('e-rel', 'The term relation', ['e-body', 'rel-atcost'], {
   caption: R`A term in $E$ is a value in $V$ when irreducible, ready when reducible, and every step meets its obligation. A successor is read at the level the step leaves, inside the least fixpoint $X$ of level $n$.`
@@ -164,9 +167,12 @@ order('theorems', ['th-chain', 'th-sound', 'th-compose', 'th-fund-proc', 'th-ade
 
 // decided or proposed on the map, not yet in the Rocq: the block shows a "planned" tag with this text
 const NEW2 = 'Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field.';
+const ARROWS = 'Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk.';
 const planned = {
+  'ty-grammar': ARROWS, 'ty-heads': ARROWS, 't-lf-credits': ARROWS, 't-side': ARROWS, 't-agecap': ARROWS,
+  'r-fun': ARROWS, 'r-threads': ARROWS, 't-subs': ARROWS, 'v-rel': ARROWS, 'fv': ARROWS,
   'syn-terms': NEW2, 'syn-points': NEW2, 'sem-labels': NEW2, 'sem-head': NEW2, 'sem-proc': NEW2,
-  't-consts': NEW2, 'w-world': NEW2, 'w-order': NEW2, 'w-ext': NEW2, 'r-new': NEW2, 'e-obl': NEW2,
+  't-consts': NEW2, 'w-world': NEW2, 'w-order': NEW2, 'w-ext': NEW2, 'r-new': NEW2, 'e-obl': NEW2 + ' ' + ARROWS,
   'soup': NEW2 + ' The creation choice χ is a proposal of 2026-11-20.',
   'sj-all': NEW2 + ' The creation choice χ is a proposal of 2026-11-20.',
 };

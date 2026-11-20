@@ -275,7 +275,7 @@ B = case z of inl _ ⇒ let ∗ = close ā in close b̄
              | inr _ ⇒ let ∗ = close b̄ in close ā
 -- a at x, b at y, both threads receive the same flag z`,
     rocq: 'examples/FlagPair.v: fp_gate, fp_unrealizable',
-    accepts: { df: { ok: false, part: 'P-Connect' }, sem: { ok: false, part: 'semantic P-Connect', rocq: 'fp_unrealizable' } } }
+    accepts: { df: { ok: false, part: 'P-Connect' }, sem: { ok: true, part: 'the whole process, by its reductions', rocq: 'argued, no Rocq proof. Thread by thread it fails: fp_unrealizable' } } }
 );
 
 n("th.tpr", "$\\mathsf{thread\\_progress\\_run}$", "For a run $(r, l)$, $\\mathsf{thread\\_progress\\_run}\\,(r, l)$ holds iff each thread $t$ of each position $i$ later stops or acts. That is, some $j \\geq i$ exists at which $t$ is a value in $r\\,j$ or takes part in the step $l\\,j$ by a session action.", "It states lock freedom per run for each thread, including the threads that are not pending. A thread that is neither stopped nor acting forever would be postponed without end.", DEF, "In a run of two threads closing $c^{+}$ and $c^{-}$, both threads take part in the close step.", "lockfree/ThreadProgress.v: thread_progress_run");
