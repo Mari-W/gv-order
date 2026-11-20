@@ -99,6 +99,33 @@ holds, the exact rule and lemma changes.
   Check that the split can be fixed outside the step index without the
   relation reading types, and what replaces `tok` and `2^s r + b`.
 
+## Next run (queued 2026-11-20, start only on the author's go)
+
+The run of 2026-11-20 is done (report at the top of pending.md). The next
+run follows the author's decisions of 2026-11-20 in pending.md, same rules
+as above, incremental `make -j2` per stage, `make test` and `make check`
+once at the end, map updated in docs/explorer/gen for every landed stage
+(and the "planned" tag in gen/layout.js removed where a stage lands).
+
+1. **Entry 12, per-end capture.** Capture becomes aging by a, FV-Arrow
+   asks `φ′ ≥ φ − a`, Sub-Arr asks `a′ ≤ a`, the floor h goes
+   (docs/redesign/check-per-end-capture.md).
+2. **Entry 12, generalized arrows.** Lower point `⊥` and upper point `⊤`
+   on arrows, `spawn (λe)` by E-Abs plus E-Spawn, E-SpawnLam and V-Thunk
+   go. Check every lock-free example still types.
+3. **Entry 14b, no future variables** (docs/redesign/check-future-variables.md).
+4. **Inversion lemmas for `typed`** through E-Case, E-Close, E-Let and
+   P-Connect, then the static rejections: `sb_untypable` (SemBranch), the
+   static half of FlagPair, and the programs of `rejects.js` where an
+   inversion suffices.
+5. **Entry 4, a weakly fair run exists**, with dependent choice as an
+   explicit hypothesis of the lemma, no axiom. Then entry 5.
+
+Deferred by the author (2026-11-20), not in the next run: plain `new`
+(entry 2). Direction: the deadlock-free relation allows more freedom in
+O-New, and the lock-free relation then constrains it (the creation choice
+χ on the map is one proposal). To be worked out with the author.
+
 ## Not in this run
 
 Points on actions (not wanted), named variables in Δ (cosmetic, map
