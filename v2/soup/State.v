@@ -54,3 +54,35 @@ Record soup_gen (Erl : senv → ty → expr → Prop) (Frl : penv → cenv → n
   sp_fin o h : s_K a !! o = Some h → is_Some h.(h_ctr);
   sp_psig o S x : Σ !! o = Some (S, x) → Π !! o = Some S
 }.
+
+(** ** The soup as relation, fuel and consistency
+
+    The map reads a soup state as three parts: every thread in the
+    relation at its result type, every thread fueled, and the state
+    consistent with A and Π ([soup_consistent]). [soup_gen_iff] shows the
+    record is exactly the three parts beside [tfree T]. *)
+Definition soup_consistent (Σ : senv) (a : lfstate) (A : senv) (Π : penv) : Prop :=
+  snd <$> A = h_pt <$> s_K a ∧ dom Π = dom (s_K a) ∧
+  (∀ o h, s_K a !! o = Some h → is_Some ((s_q a).2 !! h.(h_th))) ∧
+  (∀ o, o ∈ dom (s_K a) → ech o ∈ (s_q a).1 ∨ o ∈ dom Σ) ∧
+  (∀ o, o ∈ dom (s_K a) → ech o ∈ (s_q a).1 → edual o ∈ dom (s_K a)) ∧
+  (∀ o S x S' x', A !! o = Some (S, x) → A !! edual o = Some (S', x') →
+     ech o ∈ (s_q a).1 → x' = x‾ ∧ sequiv (sty_df S') (sty_df (dual S))) ∧
+  (∀ o P P', Π !! o = Some P → Π !! edual o = Some P' → ech o ∈ (s_q a).1 → sequiv P' (dual P)) ∧
+  (∀ o y, Σ !! o = Some y → A !! o = Some y) ∧
+  (∀ o h, s_K a !! o = Some h → is_Some h.(h_ctr)) ∧
+  (∀ o S x, Σ !! o = Some (S, x) → Π !! o = Some S).
+
+Lemma soup_gen_iff Erl Frl Σ T a A Π U :
+  soup_gen Erl Frl Σ T a A Π U ↔
+    tfree T ∧
+    (∀ t e, (s_q a).2 !! t = Some e → Erl (kres (s_K a) t A) (U t) e ∧ (U t = T ∨ U t = TUnit)) ∧
+    (∀ t e, (s_q a).2 !! t = Some e → Frl (kres (s_K a) t Π) (ctrs (s_K a) t) (s_tk a t) e) ∧
+    soup_consistent Σ a A Π.
+Proof.
+  split.
+  - intros []. split_and!; try done; intros; split; eauto.
+  - intros (Ht & Hr & Hf & H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
+    exact (SoupGen _ _ _ _ _ _ _ _ Ht (λ t e H, proj1 (Hr t e H)) (λ t e H, proj2 (Hr t e H)) Hf
+             H1 H2 H3 H4 H5 H6 H7 H8 H9 H10).
+Qed.

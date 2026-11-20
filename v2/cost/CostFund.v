@@ -46,7 +46,7 @@ Proof.
 Qed.
 
 Lemma thfuel_id N Θ :
-  (∀ o te, Θ !! o = Some te → fle (te_cr te) N) →
+  cr_le Θ N →
   thfuel Θ id (te_sty <$> Θ) (const N <$> (te_sty <$> Θ)).
 Proof.
   intros HN. split_and!.
@@ -56,15 +56,15 @@ Proof.
   - intros o te Hte. simpl. rewrite !lookup_fmap, Hte. split; [done|]. eexists. split; [done|]. exact (HN o te Hte).
 Qed.
 
-(** A closed thread typed at N, whose ends have credits at most N and
-    whose transformer some ticket count meets at reserve 0, satisfies
-    [fsem N] with the session types of its ends. *)
-Theorem fsem_of_cost W N Θ e T c ϑ tk :
+(** A closed thread typed at N, whose ends have credits at most N
+    (cr(Θ) ≤ N) and whose ticket need at reserve 0 is finite
+    (ϑ(0) ∈ ℕ), satisfies [fsem N] with the session types of its ends. *)
+Theorem fsem_of_cost W N Θ e T c ϑ :
   Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} e : T ▷ c ; ϑ → tfree T →
-  (∀ o te, Θ !! o = Some te → fle (te_cr te) N) → meets ϑ 0 tk →
+  cr_le Θ N → tfin ϑ →
   fsem N (te_sty <$> Θ) e.
 Proof.
-  intros Hty Hp HN Hm. exists tk. intros n.
+  intros Hty Hp HN [tk Hm]. exists tk. intros n.
   pose proof (cost_fundamental _ _ _ _ _ _ _ _ _ _ Hty) as Hcs.
   assert (subst Var (emap id e) ∈ F^N _ n⟦RTy T ▷ c ; 0⟧((te_sty <$> Θ) ∪ ∅,
             (const N <$> (te_sty <$> Θ)) ∪ ∅, tk)) as H.
@@ -76,7 +76,7 @@ Qed.
 (** The forwarder of S7.1 satisfies [fsem] at every refill. *)
 Theorem fw_fsem N o : fsem N {[o := S_fw]} (fw o).
 Proof.
-  pose proof (fsem_of_cost W_fw N _ _ _ _ _ 0 (fw_typed N o (pvar 0)) tfree_unit) as H.
-  rewrite map_fmap_singleton in H. apply H; [|apply fw_tix_met].
+  pose proof (fsem_of_cost W_fw N _ _ _ _ _ (fw_typed N o (pvar 0)) tfree_unit) as H.
+  rewrite map_fmap_singleton in H. apply H; [|exists 0; apply fw_tix_met].
   intros o' te Hte. apply lookup_singleton_Some in Hte as [_ <-]. apply fle_refl.
 Qed.

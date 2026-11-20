@@ -27,7 +27,7 @@ Proof.
     [W Σ ΘB C0 t T c ϑ Hp HB HΣ Hpf Hd Ht Hfin HW
     |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hfam HJ];
     intros Hg; subst.
-  - destruct Hfin as [Hn|[tk Hm]]; [discriminate|].
+  - destruct Hfin as [Hn|Hm]; [discriminate|].
     eapply lf_p_term; [done|done|done|done|exact Hd|exact Ht| |exact Hm].
     apply Hg. simpl. multiset_solver.
   - apply lf_p_connect; auto.

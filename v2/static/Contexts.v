@@ -23,6 +23,9 @@ From GV Require Export types.Types.
 Record tentry := TE { te_sty : sty; te_pt : point; te_cr : fuel }.
 
 Abbreviation tenv := (gmap cend tentry).
+
+(** cr(Θ) ≤ N on the map: every credit of Θ is at most N. *)
+Definition cr_le (Θ : tenv) (N : fuel) : Prop := ∀ o te, Θ !! o = Some te → fle (te_cr te) N.
 Abbreviation lenv := (list (option ty)).
 
 (** Θ = Θ1 ⊎ Θ2. Ends are never shared. *)

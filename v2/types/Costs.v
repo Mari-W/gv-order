@@ -60,8 +60,13 @@ Definition tapp (t : tix) (r : nat) : fuel :=
   | (None, b) => if Nat.eqb r 0 then b else None
   end.
 
+(** ϑ(r) ≤ tk on the map. *)
 Definition meets (t : tix) (r tk : nat) : Prop :=
   match tapp t r with Some m => m ≤ tk | None => False end.
+
+(** ϑ(0) ∈ ℕ on the map: a whole thread keeps no reserve, and some
+    ticket count covers its need. *)
+Definition tfin (t : tix) : Prop := ∃ tk, meets t 0 tk.
 
 (** 1̂, the identity r ↦ r, and the transformer of N = ∞. *)
 Definition tid : tix := (Some 0, Some 0).

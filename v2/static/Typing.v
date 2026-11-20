@@ -220,7 +220,7 @@ Inductive ptyped (N : fuel) : world → senv → proc → ty → Prop :=
       (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 → pfree Σ →
       (∀ c, c ∈ C0 → ∃ S x, ΘB !! (c⁺)%cend = Some (TE S x N) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ N)) →
       typed W N (tenv_of N Σ ∪ ΘB) hc_empty [] (∅, None) t T c ϑ →
-      (N = None ∨ ∃ tk, meets ϑ 0 tk) → strict W →
+      (N = None ∨ tfin ϑ) → strict W →
       ptyped N W Σ (C0, {[+ t +]}) T
   | p_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
       ptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →
