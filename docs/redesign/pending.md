@@ -354,6 +354,30 @@ must do, open questions.
         Γ. To check against fl and the semantic den_{ρ,B}. Author
         (2026-11-19): wanted if it holds.
 
+15. **Remove the clause (fuse) of P (author 2026-11-19, overnight stage
+    9).** Not done in the overnight run of 2026-11-20, no Rocq change.
+    A probe dropped the clause from `Pbody` (relation/Relation.v:505) and
+    built. The first failure is inside Relation.v (`Pbody_mapX`, which
+    maps the clauses under the fusion), and everything that reads P
+    waits behind it. The clause is used in 14 files (counts of
+    `fuse_ok` or `pfuse`): compat/ConnectLink.v 27, ConnectCtx.v 22,
+    Rename.v 17, ConnectP.v 17, Relation.v 14, ConnectSteps.v,
+    ConnectFuse.v, ConnectExt.v, ConnectExtMsg.v 7 each, Connect.v 6,
+    PTerm.v 4, Conv.v 4, ConnectRen.v 2, LiveDF.v 1. `Prel_rename`
+    (compat/Rename.v:915) is the projection `Prel_fuse` at D = ∅ and
+    becomes an induction on the level, as `Erel_rename` is. The link case
+    of P-Connect (compat/ConnectLink.v, 585 lines) reaches the fusion
+    when `csub o1 o2` gives the other component a dual pair, so it needs
+    a second theorem beside renaming, that P at Σ ∪ {c⁺, c⁻} with the two
+    ends dual at dual points gives P at Σ with c restricted. That theorem
+    changes the readiness of the interface (two interface ends become
+    internal, so `above_offered` stops reading them) and turns interface
+    actions on c into internal synchronizations, so its proof has the
+    shape of P-Connect itself. compat/ConnectFuse.v (396 lines), which
+    shows the composite closed under fusions, would go. The question of
+    bound restricted channels (quotient or binder) was not reached. The
+    first test, the counterexample of S4.18, was not run.
+
 ## Done in the Rocq
 
 (entries move here once the repair agent has implemented and merged them)
