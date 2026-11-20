@@ -67,6 +67,28 @@ reports and the author decides.
 Each entry: what changes, where the map already shows it, what the Rocq
 must do, open questions.
 
+## Decisions of the author on the overnight report, 2026-11-20
+
+- **Entry 2, plain `new`.** Families stay in the Rocq for now. First a
+  write-up checks repair (i), a finite menu of (π, C) per creation fixed by
+  Θ, so that downward closure and pigeonhole give one choice for every
+  level. The same write-up checks a condition on C that keeps the union of
+  the worlds of a run well-founded. Test it against the client-server
+  constraint `ι+k ≺ (κ+k)‾` and against the growing chain `rx-chain`. A
+  criterion that compares ranks within one position only is unsound,
+  because it accepts `rx-chain`, which is not lock free. Decide after the
+  write-up.
+- **Entry 15, the clause (fuse).** Kept. The map writes it readably as
+  `(h, D)·p` for `pfuse h D p` and `(h, D) ∈ Fus(Σ, p)` for
+  `fuse_ok h D Σ p`. No removal attempt.
+- **Entries 4, 5 and 7.** Build inversion lemmas for `typed` through
+  E-Case, E-Close, E-Let and P-Connect, then mechanize the static
+  rejections (the flag example `sb_untypable`, `FlagPair`, the programs of
+  `rejects.js`). State "a weakly fair run exists" with dependent choice as
+  an explicit hypothesis of the lemma, no axiom. Entry 5 follows from it.
+- **Entry 14b, no future variables.** Adopt in the Rocq.
+- **Entry 12, per-end capture.** Adopt in the Rocq.
+
 ## Open
 
 1. **Events folded into labels (N.2).** Three cases `solo i α`,
