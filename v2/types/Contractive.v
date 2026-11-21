@@ -519,3 +519,243 @@ Proof.
   simpl. unfold hc_step. pose proof (hd_contr s Hc) as H.
   destruct (hd s); simpl in *; intuition auto.
 Qed.
+
+(** ** Bisimulation up to ≈ *)
+
+Definition eq_view (τ : sty → sty → Prop) (v w : hview) : Prop :=
+  match v, w with
+  | HSkip, HSkip | HEnd, HEnd => True
+  | HRcv m T s', HRcv m' U r' | HSnd m T s', HSnd m' U r' =>
+      m = m' ∧ eqT τ T U ∧ τ s' r'
+  | HVar a s', HVar a' r' | HVarD a s', HVarD a' r' => a = a' ∧ τ s' r'
+  | HPlus s1 s2, HPlus r1 r2 | HWith s1 s2, HWith r1 r2 => τ s1 r1 ∧ τ s2 r2
+  | HStuck u, HStuck v => u = v
+  | _, _ => False
+  end.
+
+Lemma eq_step_view τ s r : eq_step τ s r = eq_view τ (hd s) (hd r).
+Proof. done. Qed.
+
+Lemma eq_view_mono τ τ' v w : (∀ a b, τ a b → τ' a b) → eq_view τ v w → eq_view τ' v w.
+Proof. intros Hτ. destruct v, w; simpl; try done; intuition eauto using eqT_mono. Qed.
+
+Lemma eq_view_refl τ v : (∀ s, τ s s) → eq_view τ v v.
+Proof. intros Hτ. destruct v; simpl; try done; split_and?; auto using eqT_refl. Qed.
+
+Lemma eqT_lim (ρ : nat → sty → sty → Prop) T : ∀ U,
+  (∀ n, eqT (ρ n) T U) → eqT (λ s r, ∀ n, ρ n s r) T U.
+Proof.
+  induction T as [|ub lb c T1 IH1 T2 IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2|n k C ub c T1 IH1|s x a mt|lb n C T1 IH1];
+    intros [|ub' lb' c' U1 U2 a'|U1 U2|U1 U2|n' k' C' ub' c' U1|r y a' mt'|lb' n' C' U1] H;
+    try (by destruct (H 0)); simpl in *.
+  - destruct (H 0) as (-> & -> & -> & -> & _). split_and!; try done.
+    + apply IH1. intros j. apply (H j).
+    + apply IH2. intros j. apply (H j).
+  - split; [apply IH1|apply IH2]; intros j; apply (H j).
+  - split; [apply IH1|apply IH2]; intros j; apply (H j).
+  - destruct (H 0) as (-> & -> & -> & -> & -> & H0). split_and!; try done.
+    destruct k'; [|done]. apply IH1. intros j. apply (H j).
+  - destruct (H 0) as (-> & -> & -> & _). split_and!; try done. intros j. apply (H j).
+  - destruct (H 0) as (-> & -> & -> & _). split_and!; try done. apply IH1. intros j. apply (H j).
+Qed.
+
+Lemma sequiv_hd s r : sequiv s r → eq_step sequiv s r.
+Proof.
+  intros H. assert (∀ n, eq_step (aeq n) s r) as Hn by (intros n; apply (H (S n))).
+  rewrite eq_step_view. unfold eq_step in Hn. destruct (hd s), (hd r); try (by destruct (Hn 0)); simpl.
+  - destruct (Hn 0) as (-> & _). split_and!; [done|apply eqT_lim; intros j; apply (Hn j)|intros j; apply (Hn j)].
+  - destruct (Hn 0) as (-> & _). split_and!; [done|apply eqT_lim; intros j; apply (Hn j)|intros j; apply (Hn j)].
+  - destruct (Hn 0) as (-> & _). split; [done|intros j; apply (Hn j)].
+  - destruct (Hn 0) as (-> & _). split; [done|intros j; apply (Hn j)].
+  - split; intros j; apply (Hn j).
+  - split; intros j; apply (Hn j).
+Qed.
+
+Lemma eqT_comp ρ1 ρ2 T : ∀ U V, eqT ρ1 T U → eqT ρ2 U V → eqT (λ x z, ∃ y, ρ1 x y ∧ ρ2 y z) T V.
+Proof.
+  induction T; intros [] []; simpl; try done; try naive_solver.
+  intros (-> & -> & -> & -> & -> & H1) (-> & -> & -> & -> & -> & H2). split_and!; try done.
+  match goal with |- match ?k with _ => _ end => destruct k end; [by eapply IHT|congruence].
+Qed.
+
+Lemma eq_view_comp τ1 τ2 v1 : ∀ v2 v3, eq_view τ1 v1 v2 → eq_view τ2 v2 v3 →
+  eq_view (λ x z, ∃ y, τ1 x y ∧ τ2 y z) v1 v3.
+Proof.
+  intros v2 v3. destruct v1, v2; try done; destruct v3; try done; simpl; try congruence;
+    intuition (subst; eauto using eqT_comp).
+Qed.
+
+Definition upto (τ : sty → sty → Prop) (a b : sty) : Prop :=
+  sequiv a b ∨ ∃ a' b', sequiv a a' ∧ τ a' b' ∧ sequiv b' b.
+
+Lemma upto_refl τ s : upto τ s s.
+Proof. left. apply sequiv_refl. Qed.
+
+Lemma upto_in τ s r : τ s r → upto τ s r.
+Proof. intros H. right. exists s, r. split_and!; auto using sequiv_refl. Qed.
+
+Lemma upto_equiv τ s s' r' r : sequiv s s' → τ s' r' → sequiv r' r → upto τ s r.
+Proof. intros. right. eauto. Qed.
+
+(** ≈ on both sides of an [upto] pair stays in [upto]. *)
+Lemma eq_view_upto_comp τ v1 v2 v3 v4 :
+  eq_view sequiv v1 v2 → eq_view (upto τ) v2 v3 → eq_view sequiv v3 v4 → eq_view (upto τ) v1 v4.
+Proof.
+  intros H1 H2 H3. eapply eq_view_mono; [|exact (eq_view_comp _ _ _ _ _ H1 (eq_view_comp _ _ _ _ _ H2 H3))].
+  intros x z (y & Hxy & (w & Hyw & Hwz)).
+  destruct Hyw as [Hyw|(y' & w' & G1 & G2 & G3)].
+  - left. eapply sequiv_trans; [exact Hxy|]. by eapply sequiv_trans.
+  - right. exists y', w'. split_and!; [by eapply sequiv_trans|done|by eapply sequiv_trans].
+Qed.
+
+Lemma sequiv_upto τ : (∀ s r, τ s r → eq_step (upto τ) s r) → ∀ s r, τ s r → sequiv s r.
+Proof.
+  intros Hτ s r H. apply (sequiv_coind (upto τ)); [|by apply upto_in].
+  intros a b [Hab|(a' & b' & H1 & H2 & H3)].
+  - eapply eq_step_mono; [|apply sequiv_hd, Hab]. intros; by left.
+  - rewrite eq_step_view. eapply eq_view_upto_comp; [apply (sequiv_hd _ _ H1)|apply (Hτ _ _ H2)|apply (sequiv_hd _ _ H3)].
+Qed.
+
+Lemma sequiv_hd_eq s r : hd s = hd r → sequiv s r.
+Proof.
+  intros H. apply (sequiv_upto (λ s r, hd s = hd r)); [|done].
+  intros x y Hxy. rewrite eq_step_view, Hxy. apply eq_view_refl, upto_refl.
+Qed.
+
+(** ** The head of a sequence *)
+
+Definition sseq' (r b : sty) : sty := match r with SSkip => b | _ => SSeq r b end.
+
+Definition hseqv (v : hview) (b : sty) : hview :=
+  match v with
+  | HSkip => hd b
+  | HRcv m T r => HRcv m T (sseq' r b)
+  | HSnd m T r => HSnd m T (sseq' r b)
+  | HVar a r => HVar a (sseq' r b)
+  | HVarD a r => HVarD a (sseq' r b)
+  | HPlus x y => HPlus (SSeq x b) (SSeq y b)
+  | HWith x y => HWith (SSeq x b) (SSeq y b)
+  | HEnd => HEnd
+  | HStuck u => HStuck (SSeq u b)
+  end.
+
+Lemma hd_seq a b : scontr a → scontr b → hd (SSeq a b) = hseqv (hd a) b.
+Proof.
+  intros Ha Hb. pose proof (unfoldS_hok a Ha) as Hok.
+  unfold hd at 1 2. unfold unfoldS at 1. cbn [sfuel unrN].
+  rewrite (unrN_unfoldS a (sfuel a + sfuel b)) by (done||lia).
+  unfold hok in Hok. destruct (unfoldS a) as [| | | | | | |o r| |]; simpl in Hok; try done.
+  - simpl. unfold hd. by rewrite (unrN_unfoldS b (sfuel a + sfuel b)) by (done||lia).
+  - destruct o; try done; destruct r; done.
+Qed.
+
+Lemma hd_skip : hd SSkip = HSkip.
+Proof. done. Qed.
+Lemma hd_end : hd SEnd = HEnd.
+Proof. done. Qed.
+Lemma hd_plus x y : hd (SPlus x y) = HPlus x y.
+Proof. done. Qed.
+Lemma hd_with x y : hd (SWith x y) = HWith x y.
+Proof. done. Qed.
+Lemma hd_rcv m T : hd (SRcv m T) = HRcv m T SSkip.
+Proof. done. Qed.
+Lemma hd_snd m T : hd (SSnd m T) = HSnd m T SSkip.
+Proof. done. Qed.
+
+Lemma scontr_sseq' r b : scontr r → scontr b → scontr (sseq' r b).
+Proof. intros. destruct r; try done; cbn [sseq' scontr]; apply Is_true_andb; split; done. Qed.
+
+Ltac sc :=
+  repeat match goal with
+  | |- Is_true (scontr (SSeq _ _)) => cbn [scontr]; apply Is_true_andb; split
+  | |- Is_true (scontr (SPlus _ _)) => cbn [scontr]; apply Is_true_andb; split
+  | |- Is_true (scontr (SWith _ _)) => cbn [scontr]; apply Is_true_andb; split
+  | |- Is_true (scontr SSkip) => exact I
+  | |- Is_true (scontr SEnd) => exact I
+  | |- Is_true (scontr (sinst _ _)) => apply scontr_sinst
+  | |- Is_true (tcontr (sinst_ty _ _)) => apply tcontr_sinst
+  | |- Is_true (scontr (dual _)) => rewrite scontr_dual
+  | |- Is_true (scontr (sseq' _ _)) => apply scontr_sseq'
+  end; try done.
+
+Lemma sseq'_cases r : r = SSkip ∨ ∀ b, sseq' r b = SSeq r b.
+Proof. destruct r; first [by left|right; done]. Qed.
+
+Lemma seq_skip_l b : scontr b → sequiv (SSeq SSkip b) b.
+Proof. intros Hb. apply sequiv_hd_eq. by rewrite hd_seq. Qed.
+
+Lemma sseq'_sequiv r b : scontr r → scontr b → sequiv (sseq' r b) (SSeq r b).
+Proof. intros Hr Hb. destruct r; try apply sequiv_refl. apply sequiv_sym. by apply seq_skip_l. Qed.
+
+Lemma seq_skip_r a : scontr a → sequiv (SSeq a SSkip) a.
+Proof.
+  intros Ha. apply (sequiv_upto (λ x y, ∃ a, scontr a ∧ x = SSeq a SSkip ∧ y = a)); [|eauto].
+  intros x y (a' & Ha' & -> & ->). rewrite eq_step_view, hd_seq by done.
+  pose proof (hd_contr a' Ha') as Hv. destruct (hd a'); simpl in *; try done.
+  all: split_and?; try done; try (apply eqT_refl; intros; apply upto_refl).
+  all: try (eapply upto_equiv; [apply sseq'_sequiv; first [done|apply Hv]|by eauto 10|apply sequiv_refl]).
+  all: try (apply upto_in; eexists; split_and!; [apply Hv|done|done]).
+  all: destruct Hv as [? ?].
+  all: try (eapply upto_equiv; [apply sseq'_sequiv; done|by eauto 10|apply sequiv_refl]).
+  all: apply upto_in; eauto.
+Qed.
+
+Lemma seq_assoc a b c : scontr a → scontr b → scontr c →
+  sequiv (SSeq (SSeq a b) c) (SSeq a (SSeq b c)).
+Proof.
+  intros Ha Hb Hc.
+  apply (sequiv_upto (λ x y, ∃ a b c, scontr a ∧ scontr b ∧ scontr c ∧
+    x = SSeq (SSeq a b) c ∧ y = SSeq a (SSeq b c))); [|by eauto 10].
+  intros x y (a' & b' & c' & Ha' & Hb' & Hc' & -> & ->).
+  rewrite eq_step_view, !hd_seq by sc.
+  pose proof (hd_contr a' Ha') as Hv. destruct (hd a') as [|m T r|m T r|v r|v r|x1 x2|x1 x2| |u]; simpl in *; try done.
+  1: rewrite hd_seq by done; apply eq_view_refl, upto_refl.
+  1-4: split_and?; try done; try (apply eqT_refl; intros; apply upto_refl);
+    (destruct (sseq'_cases r) as [->|Hr];
+      [simpl; left; by apply sseq'_sequiv
+      |rewrite !Hr; cbn [sseq'];
+       apply upto_in; exists r, b', c'; split_and!; try done; apply Hv]).
+  all: destruct Hv; split; apply upto_in; eauto 10.
+Qed.
+
+Lemma cong_cont (τ : sty → sty → Prop) r r' b b' : scontr r → scontr r' → scontr b → scontr b' →
+  τ (SSeq r b) (SSeq r' b') → upto τ (sseq' r b) (sseq' r' b').
+Proof. intros. eapply upto_equiv; [apply sseq'_sequiv|done|apply sequiv_sym, sseq'_sequiv]; done. Qed.
+
+Lemma seq_cong a a' b b' : scontr a → scontr a' → scontr b → scontr b' →
+  sequiv a a' → sequiv b b' → sequiv (SSeq a b) (SSeq a' b').
+Proof.
+  intros. apply (sequiv_upto (λ x y, ∃ a a' b b', scontr a ∧ scontr a' ∧ scontr b ∧ scontr b' ∧
+    sequiv a a' ∧ sequiv b b' ∧ x = SSeq a b ∧ y = SSeq a' b')); [|by eauto 20].
+  clear dependent a a' b b'.
+  intros x y (a & a' & b & b' & Ha & Ha' & Hb & Hb' & Haa & Hbb & -> & ->).
+  rewrite eq_step_view, !hd_seq by done.
+  pose proof (sequiv_hd _ _ Haa) as Hh. rewrite eq_step_view in Hh.
+  pose proof (hd_contr a Ha) as Hv. pose proof (hd_contr a' Ha') as Hv'.
+  destruct (hd a) as [|m T r|m T r|v r|v r|x1 x2|x1 x2| |u],
+    (hd a') as [|m' T' r'|m' T' r'|v' r'|v' r'|x1' x2'|x1' x2'| |u']; simpl in *; try done.
+  1: eapply eq_view_mono; [|apply (sequiv_hd _ _ Hbb)]; intros; by left.
+  1-2: destruct Hh as (-> & HT & Hr), Hv, Hv'; split_and!; [done|eapply eqT_mono; [|exact HT]; intros; (by left)|];
+    apply cong_cont; try done; exists r, r', b, b'; split_and!; done.
+  1-2: destruct Hh as (-> & Hr); split; [done|];
+    apply cong_cont; try done; exists r, r', b, b'; split_and!; done.
+  all: destruct Hh, Hv, Hv'; split; apply upto_in; by eauto 20.
+Qed.
+
+Lemma seq_fold b : scontr (SMu b) → sequiv (SMu b) (unroll b).
+Proof.
+  intros Hc. apply sequiv_hd_eq. destruct (unrN_sfuel _ Hc) as [h E].
+  cbn [sfuel unrN] in E. unfold hd, unfoldS at 1. cbn [sfuel unrN]. rewrite E.
+  by rewrite (unrN_unfoldS' (unroll b) _ h (scontr_unroll _ Hc) E).
+Qed.
+
+Lemma seq_end X : scontr X → sequiv (SSeq SEnd X) SEnd.
+Proof. intros. apply sequiv_hd_eq. by rewrite hd_seq. Qed.
+
+Lemma seq_plus a b X : scontr a → scontr b → scontr X →
+  sequiv (SSeq (SPlus a b) X) (SPlus (SSeq a X) (SSeq b X)).
+Proof. intros. apply sequiv_hd_eq. rewrite hd_seq by sc. done. Qed.
+
+Lemma seq_with a b X : scontr a → scontr b → scontr X →
+  sequiv (SSeq (SWith a b) X) (SWith (SSeq a X) (SSeq b X)).
+Proof. intros. apply sequiv_hd_eq. rewrite hd_seq by sc. done. Qed.
