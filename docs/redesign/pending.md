@@ -58,6 +58,57 @@ doubtful. The plain-new planned
 tags and χ are untouched. gen.js, check.js and lint-map report 0
 errors, 0 coined words, 0 sentences over 35 words.
 
+## Report, entries 4 and 5, branch redesign-fair, 2026-11-21
+
+Both entries landed, on top of 4d71675 (redesign-clean3).
+
+- Entry 4 (6e9bcde). New file v2/lockfree/FairRun.v. The hypotheses are
+  two definitions, `excluded_middle := ∀ P : Prop, P ∨ ¬ P` and
+  `dependent_choice := ∀ A (R : A → A → Prop), (∀ x, ∃ y, R x y) →
+  ∀ x0, ∃ f : nat → A, f 0 = x0 ∧ ∀ n, R (f n) (f (S n))`. Both are
+  arguments of the lemmas, no axiom and no Parameter.
+  `fair_run_exists : excluded_middle → dependent_choice → ∀ q : config,
+  ∃ r l, r 0 = q ∧ maximal r l ∧ wfair r l`.
+  `fair_run_exists_proc` gives the same with `erase (r 0) = p`, through
+  `erase_surj`. The scheduler targets thread `rr n = n - ⌊√n⌋²` at
+  position n, which goes round robin over 0, then 0..2, then 0..4, and so
+  on. It steps the target when the target is enabled, any thread
+  otherwise, and repeats a stuck end. Dependent choice picks the steps
+  from `istep`, and excluded middle decides enabledness and stuckness. No
+  step function and no redex finder. The lemma reads only the
+  operational semantics (`itstep`, `tenabled`, `stuck`), no ticket, world,
+  point or step index.
+  `lf_soundness_run N W p T : excluded_middle → dependent_choice →
+  wfworld W → ∅ ⊩^N _ W p : T → lock_free p ∧ ∃ r l, erase (r 0) = p ∧
+  maximal r l ∧ wfair r l` in soup/LFTyped.v. It uses `lf_soundness` only
+  through its conclusion, so it survives the planned change of tickets,
+  χ and wfworld once `lf_soundness` is restated. `lock_free` is unchanged
+  and still quantifies over every maximal weakly fair run.
+- Entry 5 (5bd777a). `lf_padovani p := ∀ q0 q t, erase q0 = p →
+  itsteps q0 q → pend q t → ∃ q1 ev q2, itsteps q q1 ∧ itstep q1 ev q2 ∧
+  t ∈ ev_parts ev`.
+  `lock_free_padovani : excluded_middle → dependent_choice → ∀ p,
+  lock_free p → lf_padovani p`. The proof starts a fair run at q and
+  prefixes it with the path from q0 (`run_prefix`, `run_cons`,
+  `run_itsteps`). `lf_soundness_padovani` states it for typed p, again
+  through `lock_free` only. Checked against Padovani 2014, Def. II.1
+  (pdf p4). Padovani's form is per channel, wait(a, Q) and a reachable
+  R with sync(a, R), a synchronization that is possible and need not be
+  taken. Ours is per thread and asks the step itself, so it is the
+  stronger reading. The fact is in the paper store.
+- Plausibility. `fair_run_two_threads` applies the lemma to
+  `(∅, {[0 := EUnit; 1 := EUnit]})`. `Print lock_free` still shows the
+  universal over runs.
+- Map. Notes `th.fair-run-exists` and `th.lf-padovani` with signatures,
+  both as rows of the soundness block. `gen.js` reports 0 errors.
+- make check: 98 of 98 results closed under the global context (the five
+  new ones included). The first run segfaulted, the retry passed.
+- make test: fails on test/FuelNotations only. The base commit 4d71675
+  renamed `Vfuel_recount` to `Vfuel_age` and left FuelNotations.expected
+  stale. This branch touches neither fuel/ nor test/. Every other
+  notation test passes.
+- Nothing failed in the two entries.
+
 ## Morning report, overnight run of 2026-11-20
 
 Branch redesign-clean3 in .claude/worktrees/redesign-s4, nothing pushed.
