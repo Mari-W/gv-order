@@ -27,13 +27,13 @@ Proof. apply sinst_slist_id_mut. intros a. unfold slist. simpl. f_equal. lia. Qe
 (** ** Equal types *)
 
 Section teq.
-  Context (n : nat).
-  Context (IH : ∀ j, j < n → ∀ N T T' Π φ v, teq T T' →
+  Context (n : Ix).
+  Context (IH : ∀ j, olt j n → ∀ N T T' Π φ v, teq T T' →
     v ∈ FV^N _ j⟦RTy T⟧(Π, φ) ↔ v ∈ FV^N _ j⟦RTy T'⟧(Π, φ)).
 
-  Lemma FuelE_teq_below j N U U' c Π φ e : j < n → teq U U' →
+  Lemma FuelE_teq_below j N U U' c Π φ e : olt j n → teq U U' →
     e ∈ F^N _ j⟦RTy U ▷ c⟧(Π, φ) → e ∈ F^N _ j⟦RTy U' ▷ c⟧(Π, φ).
-  Proof. intros Hj Ht. apply FuelE_res_mono. intros m Π0 φ0 v Hm. apply (IH m ltac:(lia) N U U' Π0 φ0 v Ht). Qed.
+  Proof. intros Hj Ht. apply FuelE_res_mono. intros m Π0 φ0 v Hm. apply (IH m (ole_trans_lt _ _ _ Hm Hj) N U U' Π0 φ0 v Ht). Qed.
 
   Lemma Vty_teq N T : ∀ T' Π φ v, teq T T' →
     Vty N (λ j N, FuelE N j) (λ j N, Vfuel N j) n T Π φ v →
@@ -72,8 +72,8 @@ End teq.
 Lemma Vfuel_teq n : ∀ N T T' Π φ v, teq T T' →
   v ∈ FV^N _ n⟦RTy T⟧(Π, φ) ↔ v ∈ FV^N _ n⟦RTy T'⟧(Π, φ).
 Proof.
-  induction n as [n IH] using lt_wf_ind. intros N T T' Π φ v Ht. rewrite !Vfuel_eq. simpl.
-  assert (HIH : ∀ j, j < n → ∀ N T T' Π φ v, teq T T' →
+  induction n as [n IH] using oind. intros N T T' Π φ v Ht. rewrite !Vfuel_eq. simpl.
+  assert (HIH : ∀ j, olt j n → ∀ N T T' Π φ v, teq T T' →
     v ∈ FV^N _ j⟦RTy T⟧(Π, φ) ↔ v ∈ FV^N _ j⟦RTy T'⟧(Π, φ)) by (intros j Hj; intros; by apply IH).
   split; intros H.
   - eapply Vty_teq; [exact HIH|exact Ht|exact H].
@@ -83,8 +83,8 @@ Qed.
 (** ** Subtyping *)
 
 Section sub.
-  Context (n : nat).
-  Context (IH : ∀ j, j < n → ∀ N T T' Π φ v, tsub T T' →
+  Context (n : Ix).
+  Context (IH : ∀ j, olt j n → ∀ N T T' Π φ v, tsub T T' →
     v ∈ FV^N _ j⟦RTy T⟧(Π, φ) → v ∈ FV^N _ j⟦RTy T'⟧(Π, φ)).
 
   Lemma Vty_sub N T T' Π φ v :
@@ -106,7 +106,7 @@ Section sub.
       + intros o f Ho Hi. eapply fle_trans; [exact Ha|]. by apply (Hf o).
       + intros j φ1 Πu φu u Hj Hd1 Hh1 HΠ Hφ Hu.
         eapply FuelE_res_mono; [|eapply FuelE_frame_mono; [exact Hc|]].
-        * intros m0 Π0 φ0 w Hm0. apply (IH m0 ltac:(lia)). done.
+        * intros m0 Π0 φ0 w Hm0. apply (IH m0 (ole_trans_lt _ _ _ Hm0 Hj)). done.
         * apply H; try done.
           -- intros o f f' Ho Ho'. destruct (Hh1 o f f' Ho Ho') as [E Hle]. split; [done|].
              eapply fle_trans; [by apply fsub_anti_r|exact Hle].
@@ -133,7 +133,7 @@ End sub.
 Lemma Vfuel_sub n : ∀ N T T' Π φ v, tsub T T' →
   v ∈ FV^N _ n⟦RTy T⟧(Π, φ) → v ∈ FV^N _ n⟦RTy T'⟧(Π, φ).
 Proof.
-  induction n as [n IH] using lt_wf_ind. intros N T T' Π φ v Hs. rewrite !Vfuel_eq. simpl.
+  induction n as [n IH] using oind. intros N T T' Π φ v Hs. rewrite !Vfuel_eq. simpl.
   by apply Vty_sub.
 Qed.
 

@@ -52,7 +52,7 @@
     So every value of [Vfuel] is exact ([Vfuel_exact]), and the ends a
     send or a spawn reads off its label are the ends of its map. *)
 
-From GV Require Export lang.Semantics static.Contexts relation.Sfix.
+From GV Require Export lang.Semantics static.Contexts relation.Ord.
 
 (** ** Maps of ends *)
 
@@ -201,10 +201,10 @@ Abbreviation vpred := (fuel → rty → penv → cenv → expr → Prop).
 
 (** ** The obligations of a step (§2.10)
 
-    One per label, for the step e --α--> e' at index n' + 1, given FuelE
-    and Vfuel at the levels up to n'. *)
+    One per label, for the step e --α--> e' at index n, given FuelE
+    and Vfuel at every level below n. *)
 Section obligations.
-  Context (N : fuel) (El : nat → epred) (Vl : nat → vpred) (n' : nat)
+  Context (N : fuel) (El : Ix → epred) (Vl : Ix → vpred) (n : Ix)
     (σ : rty) (d : fuel) (Π : penv) (φ : cenv).
 
   (** An action on o. F-Wait: o is held and not idle. F-Tick: every other
@@ -212,12 +212,12 @@ Section obligations.
   Definition f_act (o : cend) : Prop :=
     ¬ idle_at Π o ∧ o ∈ dom φ ∧ fspare Π φ (dom φ ∖ {[o]}) ∧ fle (Some 1) d.
 
-  Definition f_beta (e' : expr) : Prop := El n' N σ d Π φ e'.
+  Definition f_beta (e' : expr) : Prop := (∀ j, olt j n → El j N σ d Π φ e').
 
   (** new_ℓ starts its ends at N/2 and N − N/2 tickets, new_κ o at the
       tickets m of o and N − m. *)
   Definition f_new (m1 m2 : fuel) (c : chan) (e' : expr) : Prop :=
-    ffresh c Π φ → ∃ S, El n' N σ d (pnew c S Π) (cnew m1 m2 c φ) e'.
+    ffresh c Π φ → ∃ S, (∀ j, olt j n → El j N σ d (pnew c S Π) (cnew m1 m2 c φ) e').
 
   Definition f_new_at (o : cend) (c : chan) (e' : expr) : Prop :=
     ∃ p, φ !! o = Some p ∧ f_new p.2 (ncap N p.2) c e'.
@@ -226,43 +226,43 @@ Section obligations.
       thread. *)
   Definition f_spawn (v e' : expr) : Prop :=
     fends v ⊆ dom φ ∧ fspare Π φ (fends v) ∧
-    El n' N RThread None (mres (fends v) Π) (fhand (fends v) φ) (App v EUnit) ∧
-    El n' N σ d (mrem (fends v) Π) (mrem (fends v) φ) e'.
+    (∀ j, olt j n → El j N RThread None (mres (fends v) Π) (fhand (fends v) φ) (App v EUnit)) ∧
+    (∀ j, olt j n → El j N σ d (mrem (fends v) Π) (mrem (fends v) φ) e').
 
   (** A send hands on held ends other than its subject, at the payload
       type of the session type, with one unit less. *)
   Definition f_send (o : cend) (w e' : expr) : Prop :=
     f_act o ∧ ∃ S0 m T S, Π !! o = Some S0 ∧ unfoldS S0 = SSeq (SSnd m T) S ∧
       fends w ⊆ dom φ ∖ {[o]} ∧ fspare Π φ (fends w) ∧
-      Vl n' N (RTy T) (mres (fends w) Π) (fhand (fends w) φ) w ∧
-      El n' N σ (ftick d) (<[o := S]> (mrem (fends w) Π)) (refill o (mrem (fends w) φ)) e'.
+      (∀ j, olt j n → Vl j N (RTy T) (mres (fends w) Π) (fhand (fends w) φ) w) ∧
+      (∀ j, olt j n → El j N σ (ftick d) (<[o := S]> (mrem (fends w) Π)) (refill o (mrem (fends w) φ)) e').
 
   (** A receive continues for every incoming value at the payload type,
       with any protocols and counters it brings. *)
   Definition f_recv (o : cend) (w e' : expr) : Prop :=
     f_act o ∧ ∃ S0 m T S, Π !! o = Some S0 ∧ unfoldS S0 = SSeq (SRcv m T) S ∧
-      ∀ j Πi φi, j ≤ n' → Πi ##ₘ <[o := S]> Π → φi ##ₘ refill o φ →
+      ∀ j Πi φi, olt j n → Πi ##ₘ <[o := S]> Π → φi ##ₘ refill o φ →
         Vl j N (RTy T) Πi φi w →
         El j N σ (ftick d) (<[o := S]> Π ∪ Πi) (refill o φ ∪ φi) e'.
 
   Definition f_close (o : cend) (e' : expr) : Prop :=
     f_act o ∧ ∃ S0, Π !! o = Some S0 ∧ unfoldS S0 = SEnd ∧
-      El n' N σ (ftick d) (delete o Π) (ctick <$> delete o φ) e'.
+      (∀ j, olt j n → El j N σ (ftick d) (delete o Π) (ctick <$> delete o φ) e').
 
   Definition f_select (o : cend) (i : bool) (e' : expr) : Prop :=
     f_act o ∧ ∃ S0 S1 S2, Π !! o = Some S0 ∧ unfoldS S0 = SPlus S1 S2 ∧
-      El n' N σ (ftick d) (<[o := if i then S2 else S1]> Π) (refill o φ) e'.
+      (∀ j, olt j n → El j N σ (ftick d) (<[o := if i then S2 else S1]> Π) (refill o φ) e').
 
   Definition f_branch (o : cend) (i : bool) (e' : expr) : Prop :=
     f_act o ∧ ∃ S0 S1 S2, Π !! o = Some S0 ∧ unfoldS S0 = SWith S1 S2 ∧
-      El n' N σ (ftick d) (<[o := if i then S2 else S1]> Π) (refill o φ) e'.
+      (∀ j, olt j n → El j N σ (ftick d) (<[o := if i then S2 else S1]> Π) (refill o φ) e').
 
   (** A link forwards held ends whose protocols are dual, and the counter
       of each exceeds what the bound leaves the partner of the other. The
       soup reads the duality: after the link the partners of the two ends
       form one channel (stage S8). *)
   Definition f_link (os : gset cend) (e' : expr) : Prop :=
-    plink Π os ∧ os ⊆ dom φ ∧ lok N φ os ∧ El n' N σ d (mrem os Π) (mrem os φ) e'.
+    plink Π os ∧ os ⊆ dom φ ∧ lok N φ os ∧ (∀ j, olt j n → El j N σ d (mrem os Π) (mrem os φ) e').
 
   Definition Fobl (α : tlabel) (e' : expr) : Prop :=
     match α with
@@ -285,7 +285,7 @@ End obligations.
     constraints are not read. An end reads its credit and its tickets, a
     closure its credit, and a product splits its ends into two disjoint
     parts. *)
-Fixpoint Vty (N : fuel) (El : nat → epred) (Vl : nat → vpred) (n : nat)
+Fixpoint Vty (N : fuel) (El : Ix → epred) (Vl : Ix → vpred) (n : Ix)
     (T : ty) (Π : penv) (φ : cenv) (v : expr) {struct T} : Prop :=
   match T with
   | TUnit => v = EUnit ∧ Π = ∅ ∧ φ = ∅
@@ -294,7 +294,7 @@ Fixpoint Vty (N : fuel) (El : nat → epred) (Vl : nat → vpred) (n : nat)
   | TLolli _ _ c T1 U a =>
       ∃ e, v = Lam e ∧ fends e = dom Π ∧ dom Π = dom φ ∧
         (∀ o f, φ !! o = Some f → ¬ idle_at Π o → fle a f.1) ∧
-        ∀ j φ' Πu φu u, j < n → dom φ' = dom φ →
+        ∀ j φ' Πu φu u, olt j n → dom φ' = dom φ →
           (∀ o f f', φ !! o = Some f → φ' !! o = Some f' → f'.2 = f.2 ∧ fle (fsub f.1 a) f'.1) →
           Π ##ₘ Πu → φ' ##ₘ φu →
           Vl j N (RTy T1) Πu φu u →
@@ -308,12 +308,12 @@ Fixpoint Vty (N : fuel) (El : nat → epred) (Vl : nat → vpred) (n : nat)
       (∃ v', v = Inj true v' ∧ Vty N El Vl n T2 Π φ v')
   | TBox _ k _ _ c U =>
       ∃ e, v = EBox e ∧ fends e = ∅ ∧ Π = ∅ ∧ φ = ∅ ∧
-        ∀ j ss, j < n → length ss = k → sinsts N ss →
+        ∀ j ss, olt j n → length ss = k → sinsts N ss →
           El j N (RTy (sinst_ty (slist ss) U)) c ∅ ∅ (subst1 (EBox e) e)
   | TEx _ _ _ T1 => Vty N El Vl n T1 Π φ v
   end.
 
-Definition Vres (N : fuel) (El : nat → epred) (Vl : nat → vpred) (n : nat)
+Definition Vres (N : fuel) (El : Ix → epred) (Vl : Ix → vpred) (n : Ix)
     (σ : rty) (Π : penv) (φ : cenv) (v : expr) : Prop :=
   match σ with
   | RTy T => Vty N El Vl n T Π φ v
@@ -325,30 +325,35 @@ Definition Vres (N : fuel) (El : nat → epred) (Vl : nat → vpred) (n : nat)
     For every renaming g injective on the held ends, the renamed term
     returns a value in [Vfuel] at σ (val), and every step meets its
     obligation (step). *)
-Definition Fdef (N : fuel) (El : nat → epred) (Vl : nat → vpred) (n' : nat)
+Definition Fdef (N : fuel) (El : Ix → epred) (Vl : Ix → vpred) (n : Ix)
     (σ : rty) (d : fuel) (Π : penv) (φ : cenv) (e : expr) : Prop :=
   ∀ g Π' φ', kinj g Π → kinj g φ → renk g Π Π' → renk g φ φ' →
-    (is_val (emap g e) → Vres N El Vl (S n') σ Π' φ' (emap g e)) ∧    (* (val) *)
-    ∀ α e', tstep (emap g e) α e' → Fobl N El Vl n' σ d Π' φ' α e'.  (* (step) *)
+    (is_val (emap g e) → Vres N El Vl n σ Π' φ' (emap g e)) ∧    (* (val) *)
+    ∀ α e', tstep (emap g e) α e' → Fobl N El Vl n σ d Π' φ' α e'.  (* (step) *)
 
 Record flevel := FLevel { fE : epred; fV : vpred }.
 
-Definition mk_flevel (below : nat → flevel) (n : nat) : flevel :=
-  FLevel
-    (λ N σ d Π φ e,
-       match n with
-       | 0 => True
-       | S n' => Fdef N (λ j, fE (below j)) (λ j, fV (below j)) n' σ d Π φ e
-       end)
-    (λ N σ Π φ v, Vres N (λ j, fE (below j)) (λ j, fV (below j)) n σ Π φ v).
+(** One level is one predicate on the arguments of FuelE and Vfuel, so
+    that the fixpoint [osfix] of relation/Ord.v applies. *)
+Inductive flarg :=
+  | FAE (N : fuel) (σ : rty) (d : fuel) (Π : penv) (φ : cenv) (e : expr)
+  | FAV (N : fuel) (σ : rty) (Π : penv) (φ : cenv) (v : expr).
 
-Definition dummy_flevel : flevel := FLevel (λ _ _ _ _ _ _, False) (λ _ _ _ _ _, False).
+Definition flvl_of (R : flarg → Prop) : flevel :=
+  FLevel (λ N σ d Π φ e, R (FAE N σ d Π φ e)) (λ N σ Π φ v, R (FAV N σ Π φ v)).
 
-Definition FLev (n : nat) : flevel := sfix dummy_flevel mk_flevel n.
+Definition mk_flarg (R : Ix → flarg → Prop) (n : Ix) (a : flarg) : Prop :=
+  match a with
+  | FAE N σ d Π φ e => Fdef N (λ j, fE (flvl_of (R j))) (λ j, fV (flvl_of (R j))) n σ d Π φ e
+  | FAV N σ Π φ v => Vres N (λ j, fE (flvl_of (R j))) (λ j, fV (flvl_of (R j))) n σ Π φ v
+  end.
 
-Definition FuelE (N : fuel) (n : nat) : rty → fuel → penv → cenv → expr → Prop :=
-  fE (FLev n) N.
-Definition Vfuel (N : fuel) (n : nat) : rty → penv → cenv → expr → Prop := fV (FLev n) N.
+Definition FLevA : Ix → flarg → Prop := osfix mk_flarg.
+
+Definition FuelE (N : fuel) (n : Ix) : rty → fuel → penv → cenv → expr → Prop :=
+  λ σ d Π φ e, FLevA n (FAE N σ d Π φ e).
+Definition Vfuel (N : fuel) (n : Ix) : rty → penv → cenv → expr → Prop :=
+  λ σ Π φ v, FLevA n (FAV N σ Π φ v).
 
 (** A thread: result [RThread], frame ∞. *)
 Abbreviation FuelT N n Π φ e := (FuelE N n RThread None Π φ e).
@@ -370,16 +375,17 @@ Notation "v ∈ FV^ N '_' n ⟦ σ ⟧( Π , φ )" := (Vfuel N n σ Π φ v)
 (** ** Unfolding *)
 
 Section ext.
-  Context (El1 El2 : nat → epred) (Vl1 Vl2 : nat → vpred).
+  Context (El1 El2 : Ix → epred) (Vl1 Vl2 : Ix → vpred).
 
-  Lemma Fobl_ext_1 N n' σ d Π φ α e' :
-    (∀ j, j ≤ n' → ∀ N σ d Π φ e, El1 j N σ d Π φ e ↔ El2 j N σ d Π φ e) →
-    (∀ j, j ≤ n' → ∀ N σ Π φ v, Vl1 j N σ Π φ v ↔ Vl2 j N σ Π φ v) →
-    Fobl N El1 Vl1 n' σ d Π φ α e' → Fobl N El2 Vl2 n' σ d Π φ α e'.
+  Lemma Fobl_ext_1 N n σ d Π φ α e' :
+    (∀ j, olt j n → ∀ N σ d Π φ e, El1 j N σ d Π φ e ↔ El2 j N σ d Π φ e) →
+    (∀ j, olt j n → ∀ N σ Π φ v, Vl1 j N σ Π φ v ↔ Vl2 j N σ Π φ v) →
+    Fobl N El1 Vl1 n σ d Π φ α e' → Fobl N El2 Vl2 n σ d Π φ α e'.
   Proof.
     intros HE HV.
-    assert (HE' : ∀ N σ d Π φ e, El1 n' N σ d Π φ e → El2 n' N σ d Π φ e)
-      by (intros; apply HE; [lia|done]).
+    assert (HE' : ∀ N σ d Π φ e, (∀ j, olt j n → El1 j N σ d Π φ e) →
+                                  ∀ j, olt j n → El2 j N σ d Π φ e)
+      by (intros ? ? ? ? ? ? H j Hj; apply HE; [done|by apply H]).
     destruct α as [|ℓ c|κ o c|v|[o w|o w|o|o i|o i|os]]; simpl;
       unfold f_beta, f_new, f_new_at, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link.
     - apply HE'.
@@ -387,7 +393,7 @@ Section ext.
     - intros (p & Hp & H). exists p. split; [done|]. intros Hf. destruct (H Hf) as [S HS]. exists S. by apply HE'.
     - intros (H1 & H2 & H3 & H4). split_and!; [done|done|by apply HE'|by apply HE'].
     - intros (Ha & S0 & m & T & S & H1 & H2 & H3 & H4 & H5 & H6).
-      split; [done|]. exists S0, m, T, S. split_and!; try done; [apply HV; [lia|done]|by apply HE'].
+      split; [done|]. exists S0, m, T, S. split_and!; try done; [intros j Hj; apply HV; [done|by apply H5]|by apply HE'].
     - intros (Ha & S0 & m & T & S & H1 & H2 & H3).
       split; [done|]. exists S0, m, T, S. split_and!; [done|done|].
       intros j Πi φi Hj Hd1 Hd2 Hv. apply HE; [done|]. apply H3; try done. by apply HV.
@@ -400,8 +406,8 @@ Section ext.
   Qed.
 
   Lemma Vty_ext_1 N n T Π φ v :
-    (∀ j, j < n → ∀ N σ d Π φ e, El1 j N σ d Π φ e ↔ El2 j N σ d Π φ e) →
-    (∀ j, j < n → ∀ N σ Π φ v, Vl1 j N σ Π φ v ↔ Vl2 j N σ Π φ v) →
+    (∀ j, olt j n → ∀ N σ d Π φ e, El1 j N σ d Π φ e ↔ El2 j N σ d Π φ e) →
+    (∀ j, olt j n → ∀ N σ Π φ v, Vl1 j N σ Π φ v ↔ Vl2 j N σ Π φ v) →
     Vty N El1 Vl1 n T Π φ v → Vty N El2 Vl2 n T Π φ v.
   Proof.
     intros HE HV. revert Π φ v.
@@ -420,56 +426,51 @@ Section ext.
   Qed.
 
   Lemma Vres_ext_1 N n σ Π φ v :
-    (∀ j, j < n → ∀ N σ d Π φ e, El1 j N σ d Π φ e ↔ El2 j N σ d Π φ e) →
-    (∀ j, j < n → ∀ N σ Π φ v, Vl1 j N σ Π φ v ↔ Vl2 j N σ Π φ v) →
+    (∀ j, olt j n → ∀ N σ d Π φ e, El1 j N σ d Π φ e ↔ El2 j N σ d Π φ e) →
+    (∀ j, olt j n → ∀ N σ Π φ v, Vl1 j N σ Π φ v ↔ Vl2 j N σ Π φ v) →
     Vres N El1 Vl1 n σ Π φ v → Vres N El2 Vl2 n σ Π φ v.
   Proof. intros HE HV. destruct σ; simpl; [by apply Vty_ext_1|done]. Qed.
 
-  Lemma Fdef_ext_1 N n' σ d Π φ e :
-    (∀ j, j ≤ n' → ∀ N σ d Π φ e, El1 j N σ d Π φ e ↔ El2 j N σ d Π φ e) →
-    (∀ j, j ≤ n' → ∀ N σ Π φ v, Vl1 j N σ Π φ v ↔ Vl2 j N σ Π φ v) →
-    Fdef N El1 Vl1 n' σ d Π φ e → Fdef N El2 Vl2 n' σ d Π φ e.
+  Lemma Fdef_ext_1 N n σ d Π φ e :
+    (∀ j, olt j n → ∀ N σ d Π φ e, El1 j N σ d Π φ e ↔ El2 j N σ d Π φ e) →
+    (∀ j, olt j n → ∀ N σ Π φ v, Vl1 j N σ Π φ v ↔ Vl2 j N σ Π φ v) →
+    Fdef N El1 Vl1 n σ d Π φ e → Fdef N El2 Vl2 n σ d Π φ e.
   Proof.
     intros HE HV H g Π' φ' H1 H2 H3 H4.
     destruct (H g Π' φ' H1 H2 H3 H4) as [Hv Hs]. split.
-    - intros Hval. eapply Vres_ext_1; [| |exact (Hv Hval)]; intros j Hj; [apply HE|apply HV]; lia.
+    - intros Hval. eapply Vres_ext_1; [exact HE|exact HV|exact (Hv Hval)].
     - intros α e' Hst. eapply Fobl_ext_1; [exact HE|exact HV|by apply Hs].
   Qed.
 End ext.
 
-Lemma Fdef_ext El1 El2 Vl1 Vl2 N n' σ d Π φ e :
-  (∀ j, j ≤ n' → ∀ N σ d Π φ e, El1 j N σ d Π φ e ↔ El2 j N σ d Π φ e) →
-  (∀ j, j ≤ n' → ∀ N σ Π φ v, Vl1 j N σ Π φ v ↔ Vl2 j N σ Π φ v) →
-  Fdef N El1 Vl1 n' σ d Π φ e ↔ Fdef N El2 Vl2 n' σ d Π φ e.
+Lemma Fdef_ext El1 El2 Vl1 Vl2 N n σ d Π φ e :
+  (∀ j, olt j n → ∀ N σ d Π φ e, El1 j N σ d Π φ e ↔ El2 j N σ d Π φ e) →
+  (∀ j, olt j n → ∀ N σ Π φ v, Vl1 j N σ Π φ v ↔ Vl2 j N σ Π φ v) →
+  Fdef N El1 Vl1 n σ d Π φ e ↔ Fdef N El2 Vl2 n σ d Π φ e.
 Proof.
   intros HE HV. split; apply Fdef_ext_1; try done; intros j Hj; intros; symmetry; auto.
 Qed.
 
 Lemma Vres_ext El1 El2 Vl1 Vl2 N n σ Π φ v :
-  (∀ j, j < n → ∀ N σ d Π φ e, El1 j N σ d Π φ e ↔ El2 j N σ d Π φ e) →
-  (∀ j, j < n → ∀ N σ Π φ v, Vl1 j N σ Π φ v ↔ Vl2 j N σ Π φ v) →
+  (∀ j, olt j n → ∀ N σ d Π φ e, El1 j N σ d Π φ e ↔ El2 j N σ d Π φ e) →
+  (∀ j, olt j n → ∀ N σ Π φ v, Vl1 j N σ Π φ v ↔ Vl2 j N σ Π φ v) →
   Vres N El1 Vl1 n σ Π φ v ↔ Vres N El2 Vl2 n σ Π φ v.
 Proof.
   intros HE HV. split; apply Vres_ext_1; try done; intros j Hj; intros; symmetry; auto.
 Qed.
 
-Lemma FLev_below n j : j < n → sfix_below dummy_flevel mk_flevel n j = FLev j.
-Proof. apply sfix_below_lt. Qed.
-
-Lemma FuelE_0 N σ d Π φ e : e ∈ F^N _ 0⟦σ ▷ d⟧(Π, φ).
-Proof. unfold FuelE, FLev. by rewrite sfix_unfold. Qed.
-
-Lemma FuelE_S N n σ d Π φ e :
-  e ∈ F^N _ (S n)⟦σ ▷ d⟧(Π, φ) ↔ Fdef N (λ j N, FuelE N j) (λ j N, Vfuel N j) n σ d Π φ e.
+Lemma FLev_unfold n a : FLevA n a ↔ mk_flarg FLevA n a.
 Proof.
-  unfold FuelE at 1, FLev. rewrite sfix_unfold. cbn [mk_flevel fE fV].
-  apply Fdef_ext; intros j Hj; intros; unfold FuelE, Vfuel; by rewrite FLev_below by lia.
+  apply (osfix_unfold mk_flarg). intros m R R' H [N σ d Π φ e|N σ Π φ v]; cbn [mk_flarg].
+  - apply Fdef_ext; intros j Hj; intros; cbn; by apply H.
+  - apply Vres_ext; intros j Hj; intros; cbn; by apply H.
 Qed.
+
+Lemma FuelE_eq N n σ d Π φ e :
+  e ∈ F^N _ n⟦σ ▷ d⟧(Π, φ) ↔ Fdef N (λ j N, FuelE N j) (λ j N, Vfuel N j) n σ d Π φ e.
+Proof. unfold FuelE at 1. by rewrite FLev_unfold. Qed.
 
 Lemma Vfuel_eq N n σ Π φ v : v ∈ FV^N _ n⟦σ⟧(Π, φ) ↔ Vres N (λ j N, FuelE N j) (λ j N, Vfuel N j) n σ Π φ v.
-Proof.
-  unfold Vfuel at 1, FLev. rewrite sfix_unfold. cbn [mk_flevel fE fV].
-  apply Vres_ext; intros j Hj; intros; unfold FuelE, Vfuel; by rewrite FLev_below by lia.
-Qed.
+Proof. unfold Vfuel at 1. by rewrite FLev_unfold. Qed.
 
 Global Opaque FuelE Vfuel.

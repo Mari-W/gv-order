@@ -204,8 +204,8 @@ Proof. induction e; simpl; intros H; f_equal; auto; set_solver. Qed.
 (** ** F5: values under injective renamings *)
 
 Section rename.
-  Context (n : nat).
-  Context (IH : ∀ j, j < n → ∀ N σ Π φ v (g : cend → cend) Π' φ',
+  Context (n : Ix).
+  Context (IH : ∀ j, olt j n → ∀ N σ Π φ v (g : cend → cend) Π' φ',
     kinj g Π → kinj g φ → renk g Π Π' → renk g φ φ' →
     v ∈ FV^N _ j⟦σ⟧(Π, φ) → emap g v ∈ FV^N _ j⟦σ⟧(Π', φ')).
 
@@ -214,12 +214,12 @@ Section rename.
       renamed back by [eunfix]. *)
   Lemma Vty_arr_rename N c a T1 U e (Π : penv) (φ : cenv) (g : cend → cend) (Π' : penv) (φ' : cenv) :
     kinj g Π → kinj g φ → renk g Π Π' → renk g φ φ' → dom Π = dom φ →
-    (∀ j φ1 Πu φu u, j < n → dom φ1 = dom φ →
+    (∀ j φ1 Πu φu u, olt j n → dom φ1 = dom φ →
        (∀ o f f', φ !! o = Some f → φ1 !! o = Some f' → f'.2 = f.2 ∧ fle (fsub f.1 a) f'.1) →
        Π ##ₘ Πu → φ1 ##ₘ φu →
        u ∈ FV^N _ j⟦RTy T1⟧(Πu, φu) →
        subst1 u e ∈ F^N _ j⟦RTy U ▷ c⟧(Π ∪ Πu, φ1 ∪ φu)) →
-    ∀ j φ1 Πu φu u, j < n → dom φ1 = dom φ' →
+    ∀ j φ1 Πu φu u, olt j n → dom φ1 = dom φ' →
       (∀ o f f', φ' !! o = Some f → φ1 !! o = Some f' → f'.2 = f.2 ∧ fle (fsub f.1 a) f'.1) →
       Π' ##ₘ Πu → φ1 ##ₘ φu →
       u ∈ FV^N _ j⟦RTy T1⟧(Πu, φu) →
@@ -321,7 +321,7 @@ Lemma Vfuel_rename n : ∀ N σ Π φ v (g : cend → cend) Π' φ',
   kinj g Π → kinj g φ → renk g Π Π' → renk g φ φ' →
   v ∈ FV^N _ n⟦σ⟧(Π, φ) → emap g v ∈ FV^N _ n⟦σ⟧(Π', φ').
 Proof.
-  induction n as [n IH] using lt_wf_ind.
+  induction n as [n IH] using oind.
   intros N σ Π φ v g Π' φ' Hk1 Hk2 HΠ Hφ. rewrite !Vfuel_eq. destruct σ as [T|]; simpl.
   - apply Vty_rename; [exact IH|done..].
   - intros [-> ->]. split; [by apply (renk_empty g)|by apply (renk_empty g)].
@@ -332,8 +332,8 @@ Qed.
 Lemma FuelE_val N n σ d Π φ v :
   is_val v → v ∈ FV^N _ n⟦σ⟧(Π, φ) → v ∈ F^N _ n⟦σ ▷ d⟧(Π, φ).
 Proof.
-  destruct n as [|n]; [intros; apply FuelE_0|]. intros Hv HV.
-  apply FuelE_S. intros g Π' φ' Hk1 Hk2 HΠ Hφ. split.
+  intros Hv HV.
+  apply FuelE_eq. intros g Π' φ' Hk1 Hk2 HΠ Hφ. split.
   - intros _. apply Vfuel_eq. by eapply Vfuel_rename.
   - intros α e' Hst. exfalso. eapply val_no_tstep; [exact Hst|]. by rewrite is_val_emap.
 Qed.
@@ -400,12 +400,12 @@ Lemma head_not_val e α e' : head_step e α e' → ¬ is_val e.
 Proof. intros H Hv. by eapply val_head_step. Qed.
 
 (** A head β step in an evaluation context: FuelE of the successor at
-    level n gives FuelE of the redex at level n + 1. *)
+    every level below n gives FuelE of the redex at level n. *)
 Lemma FuelE_beta N n σ d Π φ K e e' :
   ectx_ok K → head_step e LBeta e' →
-  efill K e' ∈ F^N _ n⟦σ ▷ d⟧(Π, φ) → efill K e ∈ F^N _ (S n)⟦σ ▷ d⟧(Π, φ).
+  (∀ j, olt j n → efill K e' ∈ F^N _ j⟦σ ▷ d⟧(Π, φ)) → efill K e ∈ F^N _ n⟦σ ▷ d⟧(Π, φ).
 Proof.
-  intros HK Hh HF. apply FuelE_S. intros g Π' φ' Hk1 Hk2 HΠ Hφ.
+  intros HK Hh HF. apply FuelE_eq. intros g Π' φ' Hk1 Hk2 HΠ Hφ.
   pose proof (head_not_val _ _ _ Hh) as Hnv.
   assert (Hnv' : ¬ is_val (emap g e)) by (by rewrite is_val_emap).
   assert (HK' := ectx_ok_emap g K HK).
@@ -414,7 +414,7 @@ Proof.
   - intros Hv. exfalso. exact (efill_not_val _ _ Hnv' Hv).
   - intros α e2 Hst. destruct (tstep_efill_inv _ _ _ _ HK' Hnv' Hst) as (e3 & Hst3 & ->).
     destruct (head_beta_det _ _ _ _ Hh' Hst3) as [-> ->]. simpl. unfold f_beta.
-    rewrite <-emap_efill. by eapply FuelE_rename.
+    rewrite <-emap_efill. intros j Hj. by eapply FuelE_rename; [..|apply HF].
 Qed.
 
 (** ** F5: counters and credits *)
@@ -428,7 +428,7 @@ Ltac fix0 :=
   end.
 
 Section credits.
-  Context (El : nat → epred) (Vl : nat → vpred).
+  Context (El : Ix → epred) (Vl : Ix → vpred).
 
   (** A type without ends holds no end and reads no counter. *)
   Lemma Vty_tfree N n T : tfree T → ∀ Π φ v,
@@ -535,20 +535,21 @@ Proof. by rewrite !Vfuel_eq. Qed.
 
 (** A result type whose values are values of another. *)
 Lemma FuelE_res_mono n : ∀ N σ σ' d Π φ e,
-  (∀ m Π φ v, m ≤ n → v ∈ FV^N _ m⟦σ⟧(Π, φ) → v ∈ FV^N _ m⟦σ'⟧(Π, φ)) →
+  (∀ m Π φ v, ole m n → v ∈ FV^N _ m⟦σ⟧(Π, φ) → v ∈ FV^N _ m⟦σ'⟧(Π, φ)) →
   e ∈ F^N _ n⟦σ ▷ d⟧(Π, φ) → e ∈ F^N _ n⟦σ' ▷ d⟧(Π, φ).
 Proof.
-  induction n as [n IH] using lt_wf_ind; intros N σ σ' d Π φ e Hσ H.
-  destruct n as [|n]; [apply FuelE_0|].
-  apply FuelE_S. apply FuelE_S in H. intros g Π' φ' Hk1 Hk2 HΠ Hφ.
+  induction n as [n IH] using oind; intros N σ σ' d Π φ e Hσ H.
+  apply FuelE_eq. apply FuelE_eq in H. intros g Π' φ' Hk1 Hk2 HΠ Hφ.
   destruct (H g Π' φ' Hk1 Hk2 HΠ Hφ) as [Hv Hs].
-  assert (IHj : ∀ j, j ≤ n → ∀ d Π φ e,
-    e ∈ F^N _ j⟦σ ▷ d⟧(Π, φ) → e ∈ F^N _ j⟦σ' ▷ d⟧(Π, φ))
-    by (intros j Hj; intros; apply (IH j ltac:(lia) _ σ); [intros; apply Hσ; [lia|done]|done]).
-  assert (IHn := IHj n ltac:(lia)).
+  assert (IHj : ∀ j, olt j n → ∀ d Π φ e,
+    e ∈ F^N _ j⟦σ ▷ d⟧(Π, φ) → e ∈ F^N _ j⟦σ' ▷ d⟧(Π, φ)).
+  { intros j Hj d0 Π0 φ0 e0 He. apply (IH j Hj _ σ); [|done].
+    intros m Π1 φ1 v Hm. apply Hσ. exact (ole_trans _ _ _ Hm (olt_ole _ _ Hj)). }
+  assert (IHn : ∀ d Π φ e, (∀ j, olt j n → e ∈ F^N _ j⟦σ ▷ d⟧(Π, φ)) →
+    ∀ j, olt j n → e ∈ F^N _ j⟦σ' ▷ d⟧(Π, φ)) by (intros; apply IHj; auto).
   split.
   { intros Hval. pose proof (Hv Hval) as HV.
-    apply Vfuel_eq. apply Hσ; [lia|]. by apply Vfuel_eq. }
+    apply Vfuel_eq. apply Hσ; [apply ole_refl|]. by apply Vfuel_eq. }
   intros α e' Hst. specialize (Hs α e' Hst).
   destruct α as [|ℓ c|κ o c|v|[o w|o w|o|o i|o i|os]]; simpl in Hs |- *;
     unfold f_beta, f_new, f_new_at, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link in *.
@@ -585,14 +586,15 @@ Lemma pinst_sinst_comm ρ σ T : pinst_ty ρ (sinst_ty σ T) = sinst_ty σ (pins
 Proof. induction T in ρ, σ |- *; simpl; f_equal; auto. Qed.
 
 Section pinst.
-  Context (n : nat).
-  Context (IH : ∀ j, j < n → ∀ N ρ T Π φ v,
+  Context (n : Ix).
+  Context (IH : ∀ j, olt j n → ∀ N ρ T Π φ v,
     v ∈ FV^N _ j⟦RTy (pinst_ty ρ T)⟧(Π, φ) ↔ v ∈ FV^N _ j⟦RTy T⟧(Π, φ)).
 
-  Lemma FuelE_pinst_below j N ρ U c Π φ e : j < n →
+  Lemma FuelE_pinst_below j N ρ U c Π φ e : olt j n →
     e ∈ F^N _ j⟦RTy (pinst_ty ρ U) ▷ c⟧(Π, φ) ↔ e ∈ F^N _ j⟦RTy U ▷ c⟧(Π, φ).
   Proof.
-    intros Hj. split; apply FuelE_res_mono; intros m Π0 φ0 v Hm; apply IH; lia.
+    intros Hj. split; apply FuelE_res_mono; intros m Π0 φ0 v Hm; apply IH;
+      exact (ole_trans_lt _ _ _ Hm Hj).
   Qed.
 
   Lemma Vty_pinst N ρ T Π φ v :
@@ -627,6 +629,6 @@ End pinst.
 Lemma Vfuel_pinst n : ∀ N ρ T Π φ v,
   v ∈ FV^N _ n⟦RTy (pinst_ty ρ T)⟧(Π, φ) ↔ v ∈ FV^N _ n⟦RTy T⟧(Π, φ).
 Proof.
-  induction n as [n IH] using lt_wf_ind. intros N ρ T Π φ v. rewrite !Vfuel_eq. simpl.
+  induction n as [n IH] using oind. intros N ρ T Π φ v. rewrite !Vfuel_eq. simpl.
   apply Vty_pinst. exact IH.
 Qed.
