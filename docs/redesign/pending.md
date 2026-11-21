@@ -1101,6 +1101,10 @@ must do, open questions.
   Σ, sound by transitivity as amalgamation is. With either, the type of a
   component reads (Σ, W|roots Σ), and P-Connect checks duality and
   well-foundedness of the two interface orders. Needs the author's go.
+  Update 2026-11-22. Repair (a) is false (examples/SharedRoots.v on
+  redesign-comp, `shared_not_cut`). The author chose repair (b), hiding.
+  P-Connect compares the two interface orders, including roots the two outer
+  interfaces share.
 - **The n-ary connect (2026-11-21, from the Curry-Howard session).** (1) On
   main, `Prel_connect_n` (theories/composition/PConnectN.v:378) asks
   strictness of the full amalgam W1 ⊔ … ⊔ Wn, and v2 has no n-ary connect.
