@@ -13,7 +13,7 @@ Proof.
   eexists _.
   { unfold cy_main, let_new.
   eapply e_let_; [apply lsplit_nil| | | ].
-  { eapply (e_new' _ _ _ _ _ _ SEnd); [spare_tac|apply cy_wf_new]. }
+  { eapply (e_new' _ _ _ _ _ _ SEnd); [spare_tac|apply cy_wf_new|contr_tac]. }
   lage_tac.
   eapply e_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
@@ -22,7 +22,7 @@ Proof.
   { eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_letp_; [lsplit_tac (Pair (Var 1) ENew) EUnit| | | ].
-  { eapply (e_new_at' _ _ _ _ _ _ _ 0 SEnd (pvar 0) _ _ SEnd); [done|shelve|reflexivity|]. spare_tac. }
+  { eapply (e_new_at' _ _ _ _ _ _ _ 0 SEnd (pvar 0) _ _ SEnd); [done|shelve|reflexivity| |contr_tac]. spare_tac. }
   lage_tac.
   eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
   { eapply e_var'; [reflexivity|]. spare_tac. }

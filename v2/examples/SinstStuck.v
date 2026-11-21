@@ -40,7 +40,7 @@ Qed.
 Lemma ss_t_sinsts N : sinsts N [ss_t].
 Proof.
   split; [split|]; [|by repeat constructor|by repeat constructor].
-  constructor; [|constructor]. intros [|[|n]]; vm_compute; done.
+  constructor; [|constructor]. vm_compute. exact I.
 Qed.
 
 Lemma ss_inst_not_sequiv : ¬ sequiv (sinst (slist [ss_t]) ss_s0) (sinst (slist [ss_t]) ss_s1).
@@ -56,7 +56,8 @@ Theorem typed_sinst_false W N Γ F o x a :
 Proof.
   split_and!.
   - apply ss_t_sinsts.
-  - eapply e_sub; [apply e_chan; intros ? Hin; inversion Hin| |apply fle_refl].
+  - eapply e_sub; [apply e_chan; intros ? Hin; inversion Hin| |apply fle_refl|].
+    2: { intros HC. exfalso. vm_compute in HC. exact HC. }
     apply sub_sess; [apply ss_s0_s1|apply fle_refl].
   - intros H. simpl in H. destruct (inv_chan_sty _ _ _ _ _ _ _ _ _ H _ _ _ _ eq_refl) as (e & He & Hs).
     simplify_map_eq. by apply ss_inst_not_sequiv.

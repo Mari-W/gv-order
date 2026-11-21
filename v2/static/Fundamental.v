@@ -340,7 +340,7 @@ Proof. intros H. by rewrite !lenv_df_cons, H. Qed.
 Definition box_rule (κ : ctable) (L : nat → bool) (mk : bool) : Prop :=
   ∀ W Δ F e m kk C ub c U,
     tfacts ∅ Δ (EBox e) → lenv_unl Δ →
-    (∀ W1 xs ss F', W ⊑ W1 → length xs = m → length ss = kk → Forall hcontractive ss ∧ Forall sscoped ss →
+    (∀ W1 xs ss F', W ⊑ W1 → length xs = m → length ss = kk → Forall contractive ss ∧ Forall sscoped ss →
        wholds W1 C xs → ub_lt W1 (pt_inst (plist xs) <$> ub) F' →
        sem_later κ W1 ∅ (Some (TBox m kk C ub c U) :: Δ) (mk .: L) F' e
          (sinst_ty (slist ss) (ty_inst xs U))) →
@@ -384,14 +384,14 @@ Section fund.
       [Γ Δ F HΔ
       |Γ Δ F x T HΔ
       |Γ Δ F o S x a mt HΔ
-      |Θ Θh Γ Δ Δh F e T U ub lb c a Hlb Hth Hlc Hb IH
+      |Θ Θh Γ Δ Δh F e T U ub lb c a Hlb Hth Hlc HTc Hb IH
       |Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 ub lb c T U a1 c1 c2 Hsp Hl Hub H1 IH1 Hta Hla H2 IH2 Hc
       |Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 T1 T1' T2 c1 c2 Hsp Hl H1 IH1 Hta Hla H2 IH2 Hag
       |Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 T c1 c2 Hsp Hl H1 IH1 Hta Hla H2 IH2
       |Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 T1 T2 T c1 c2 Hsp Hl H1 IH1 Hta Hla H2 IH2
-      |i Θ Γ Δ F e T U c H IH
+      |i Θ Γ Δ F e T U c HTc H IH
       |Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e e1 e2 T1 T2 T c0 c1 c2 Hsp Hl H0 IH0 Hta Hla H1 IH1 H2 IH2
-      |Γ Δ F e m k C ub c U HΔ Hb IH
+      |Γ Δ F e m k C ub c U HΔ HUc Hb IH
       |Θ Γ Δ F e m k C ub c U xs ss c0 Hxs HC Hss Hsi Hub H IH
       |Θ Γ Δ F e S0 x m T S aS mS Tp Tp' c0 Hu Hsc Hbot Hh Hub H IH Hag Hsub
       |Θ Γ Δ F e S0 x m T S a mS c0 Hu Hsc Hub H IH
@@ -400,9 +400,9 @@ Section fund.
       |Θ Γ Δ F e S0 x S1 S2 a mS c0 Hu Hub H IH
       |Θ Γ Δ F e S x a1 m1 a2 m2 c0 H IH Hl1 Hl2
       |Θ Γ Δ F e ub lb c' a c0 H IH Hle
-      |Γ Δ F C S m1 m2 HΔ HC Htk
-      |Γ Δ F x κf S m1 m2 HΔ Htk
-      |Θ Γ Δ F e T T' c c' H IH Hsub Hc
+      |Γ Δ F C S m1 m2 HΔ HC Htk HSc
+      |Γ Δ F x κf S m1 m2 HΔ Htk HSc
+      |Θ Γ Δ F e T T' c c' H IH Hsub Hc HTc
       |Θ Γ Δ F e lb m C T xs c Hxs HC Hlbx Hexw H IH
       |Θ Γ Δ F e i lb m C T U c Hi Hnu _ H IH];
       intros L Hgl W1 σ ρ B HW Hs Hr; cbn [pinst_ty]; rewrite ?tenv_pinst_empty, ?tenv_pinst_singleton.

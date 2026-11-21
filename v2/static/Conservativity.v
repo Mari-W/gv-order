@@ -171,7 +171,7 @@ Qed.
 Lemma sinsts_df N ss : sinsts N ss → sinsts None (sty_df <$> ss).
 Proof.
   intros [[Hc Hsc] _]. split; [split|].
-  - apply Forall_fmap. apply Forall_forall. intros s Hs. apply hcontractive_df.
+  - apply Forall_fmap. apply Forall_forall. intros s Hs. change (contractive (sty_df s)). unfold contractive. rewrite scontr_df.
     by eapply Forall_forall in Hc.
   - apply Forall_fmap. apply Forall_forall. intros s Hs. apply (proj2 (proj2 df_pscoped_mut s)).
     by eapply Forall_forall in Hsc.
@@ -189,7 +189,7 @@ Proof. rewrite ty_df_sinst. apply sinst_ty_ext. intros a. by rewrite slist_df. Q
 
 Lemma typed_to_inf W Θ Γ Δ F e T c :
   typed W None Θ Γ Δ F e T c → typed W None Θ Γ Δ F e T None.
-Proof. intros H. eapply e_sub; [exact H|apply tsub_refl|apply fle_inf]. Qed.
+Proof. intros H. eapply e_sub; [exact H|apply tsub_refl|apply fle_inf|by intros]. Qed.
 
 Local Ltac heads_df := rewrite ?tenv_heads_df, ?lenv_heads_df, ?lenv_bot_df, ?heads_df, ?hbot_df.
 
@@ -212,13 +212,14 @@ Lemma d_chan W Γ Δ F o S x a a' m m' : lenv_unl Δ → dftyped W {[o := TE S x
 Proof. intros HΔ. dfr. by eapply e_chan, lenv_unl_df. Qed.
 
 Lemma d_abs W Θ Γ Δ F e T U ub lb c a :
-  lbx_below_h W Γ lb (tenv_heads Θ ∪ lenv_heads Δ) (lenv_bot Δ) →
+  lbx_below_h W Γ lb (tenv_heads Θ ∪ lenv_heads Δ) (lenv_bot Δ) → tcontr T →
   dftyped W Θ Γ (Some T :: Δ) (abs_fut ub) e U →
   dftyped W Θ Γ Δ F (Lam e) (TLolli ub lb c T U a).
 Proof.
-  intros Hlb Hb. dfr.
-  eapply (e_abs _ _ _ _ _ _ _ _ _ _ _ _ _ _ None); [|apply thage_df|apply lage_df|].
+  intros Hlb HT Hb. dfr.
+  eapply (e_abs _ _ _ _ _ _ _ _ _ _ _ _ _ _ None); [|apply thage_df|apply lage_df| |].
   - by heads_df.
+  - by rewrite tcontr_df.
   - exact Hb.
 Qed.
 
@@ -272,8 +273,12 @@ Proof.
 Qed.
 
 Lemma d_inj W (i : bool) Θ Γ Δ F e T U :
+  tcontr (TSum T U) →
   dftyped W Θ Γ Δ F e (if i then U else T) → dftyped W Θ Γ Δ F (Inj i e) (TSum T U).
-Proof. intros H. dfr. destruct i; [apply (e_inj _ _ true)|apply (e_inj _ _ false)]; exact H. Qed.
+Proof.
+  intros HT H. dfr. assert (tcontr (TSum (ty_df T) (ty_df U))) by (change (tcontr (ty_df (TSum T U))); by rewrite tcontr_df).
+  destruct i; [apply (e_inj _ _ true)|apply (e_inj _ _ false)]; done.
+Qed.
 
 Lemma d_case W Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e e1 e2 T1 T2 T :
   tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
@@ -288,15 +293,15 @@ Proof.
 Qed.
 
 Lemma d_box W Γ Δ F e m k C ub c U :
-  lenv_unl Δ →
+  lenv_unl Δ → tcontr U →
   (∀ ss, length ss = k → sinsts None ss →
      dftyped W ∅ (hc_open m C Γ)
        (lenv_pinst (pshift m) (Some (TBox m k C ub c U) :: Δ))
        (∅, Some (FRest (rest_of ub))) e (sinst_ty (slist ss) U)) →
   dftyped W ∅ Γ Δ F (EBox e) (TBox m k C ub c U).
 Proof.
-  intros HΔ H2. dfr.
-  eapply e_box; [by apply lenv_unl_df|].
+  intros HΔ HU H2. dfr.
+  eapply e_box; [by apply lenv_unl_df|by rewrite tcontr_df|].
   intros ss Hk Hss. specialize (H2 ss Hk Hss).
   rewrite (ty_df_sinst_slist ss) in H2 by apply (proj2 Hss eq_refl).
   rewrite lenv_df_pinst, tenv_df_empty in H2. exact H2.
@@ -386,24 +391,25 @@ Lemma d_spawn_lam W Θ Γ Δ F e :
 Proof.
   intros H.
   apply (d_spawn _ _ _ _ _ _ UTop LBot None None).
-  apply (d_abs _ _ _ _ _ _ _ _ _ _ _ _); [done|exact H].
+  apply (d_abs _ _ _ _ _ _ _ _ _ _ _ _); [done|done|exact H].
 Qed.
 
 Lemma d_new W Γ Δ F C S a1 a2 m1 m2 :
-  lenv_unl Δ → wf_new C →
+  lenv_unl Δ → wf_new C → scontr S →
   dftyped W ∅ Γ Δ F ENew
     (TEx LBot 1 C (TProd (TSess S (pvar 0) a1 m1) (TSess (dual S) (pvar 0)‾ a2 m2))).
-Proof. intros HΔ HC. dfr. rewrite sty_df_dual. eapply e_new; [by apply lenv_unl_df|done|done]. Qed.
+Proof. intros HΔ HC HS. dfr. rewrite sty_df_dual. eapply e_new; [by apply lenv_unl_df|done|done|by rewrite scontr_df]. Qed.
 
 Lemma d_new_fld W Γ Δ F x κ S a1 a2 m1 m2 :
-  lenv_unl Δ →
+  lenv_unl Δ → scontr S →
   dftyped W ∅ Γ Δ F ENew (TProd (TSess S (x·κ) a1 m1) (TSess (dual S) (x·κ)‾ a2 m2)).
-Proof. intros HΔ. dfr. rewrite sty_df_dual. eapply e_new_fld; [by apply lenv_unl_df|done]. Qed.
+Proof. intros HΔ HS. dfr. rewrite sty_df_dual. eapply e_new_fld; [by apply lenv_unl_df|done|by rewrite scontr_df]. Qed.
 
 Lemma d_conv W Θ Γ Δ F e T T' :
-  tsub (ty_df T) (ty_df T') → dftyped W Θ Γ Δ F e T → dftyped W Θ Γ Δ F e T'.
+  tsub (ty_df T) (ty_df T') → (tcontr T → tcontr T') →
+  dftyped W Θ Γ Δ F e T → dftyped W Θ Γ Δ F e T'.
 Proof.
-  intros Hs H. dfr. eapply e_sub; [exact H| |apply fle_refl].
+  intros Hs HT H. dfr. eapply e_sub; [exact H| |apply fle_refl|by rewrite !tcontr_df].
   apply tsub_df in Hs. by rewrite !ty_df_idem in Hs.
 Qed.
 
@@ -476,7 +482,7 @@ Proof.
   - eapply d_var. by eapply lenv_only_df.
   - eapply d_chan. by apply lenv_unl_df.
   - df_ctx.
-    eapply d_abs; [|exact IHtyped]. by heads_df.
+    eapply d_abs; [|by rewrite tcontr_df|exact IHtyped]. by heads_df.
   - df_ctx.
     eapply d_app; [by apply tsplit_df|by apply lenv_split_df|done| |exact IHtyped2].
     heads_df. exact IHtyped1.
@@ -492,21 +498,26 @@ Proof.
   - df_ctx.
     eapply d_letp; [by apply tsplit_df|by apply lenv_split_df| |exact IHtyped2].
     heads_df. exact IHtyped1.
-  - destruct i; [apply (d_inj _ true)|apply (d_inj _ false)]; exact IHtyped.
+  - destruct i; [apply (d_inj _ true)|apply (d_inj _ false)];
+      first [exact IHtyped|change (tcontr (ty_df (TSum T U))); by rewrite tcontr_df].
   - df_ctx.
     eapply d_case; [by apply tsplit_df|by apply lenv_split_df| |exact IHtyped2|exact IHtyped3].
     heads_df. exact IHtyped1.
-  - eapply d_box; [by apply lenv_unl_df|].
-    intros ss Hk Hss. specialize (H1 ss Hk (sinsts_inf N ss Hss)).
-    rewrite (ty_df_sinst_slist ss), lenv_df_pinst, tenv_df_empty in H1 by apply (proj2 Hss eq_refl).
-    exact H1.
+  - eapply d_box; [by apply lenv_unl_df|by rewrite tcontr_df|].
+    intros ss Hk Hss. specialize (H2 ss Hk (sinsts_inf N ss Hss)).
+    rewrite (ty_df_sinst_slist ss), lenv_df_pinst, tenv_df_empty in H2 by apply (proj2 Hss eq_refl).
+    exact H2.
   - rewrite ty_df_sinst_map, <-ty_inst_df.
     eapply d_force; [done|done|by rewrite length_fmap|by eapply sinsts_df|done|exact IHtyped].
   - eapply d_send with (T := ty_df T) (S := sty_df S);
       [by rewrite unfoldS_df, H|by apply pscoped_df|by rewrite hbot_df|by rewrite payload_at_df, heads_df|done|].
-    rewrite payload_at_df. eapply d_conv; [|exact IHtyped]. cbn [ty_df]. rewrite !ty_df_idem.
-    apply sub_prod; [|apply tsub_refl].
-    rewrite <-(tage_df_eq _ _ _ H5). by apply tsub_df.
+    rewrite payload_at_df. eapply d_conv; [| |exact IHtyped].
+    + cbn [ty_df]. rewrite !ty_df_idem.
+      apply sub_prod; [|apply tsub_refl].
+      rewrite <-(tage_df_eq _ _ _ H5). by apply tsub_df.
+    + cbn [tcontr]. intros HC. apply Is_true_andb in HC as [_ HC]. apply Is_true_andb. split; [|done].
+      rewrite tcontr_df. unfold payload_at. rewrite tcontr_ty_inst.
+      rewrite scontr_df in HC. pose proof (hd_contr _ HC) as Hv. unfold hd in Hv. rewrite H in Hv. apply Hv.
   - rewrite <-payload_at_df.
     eapply d_recv with (T := ty_df T); [by rewrite unfoldS_df, H|by apply pscoped_df|done|exact IHtyped].
   - eapply d_close; [by rewrite unfoldS_df, H|done|exact IHtyped].
@@ -517,9 +528,9 @@ Proof.
       by (rewrite <-sty_df_dual; exact IHtyped).
     eapply d_link, I.
   - eapply d_spawn, IHtyped.
-  - rewrite sty_df_dual. eapply d_new; [by apply lenv_unl_df|done].
-  - rewrite sty_df_dual. eapply d_new_fld; by apply lenv_unl_df.
-  - eapply d_conv; [|exact IHtyped]. rewrite !ty_df_idem. by eapply tsub_df.
+  - rewrite sty_df_dual. eapply d_new; [by apply lenv_unl_df|done|by rewrite scontr_df].
+  - rewrite sty_df_dual. eapply d_new_fld; [by apply lenv_unl_df|by rewrite scontr_df].
+  - eapply d_conv; [| |exact IHtyped]; rewrite ?tcontr_df; [|done]. rewrite !ty_df_idem. by eapply tsub_df.
   - eapply d_pack; [done|done| | |].
     + rewrite ty_inst_df. by heads_df.
     + unfold ex_wf in *. by heads_df.

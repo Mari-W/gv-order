@@ -28,10 +28,11 @@ Notation "Σ ⊩^ N '_' W p : T" := (ptyped (Some N) W Σ p T ∧ ⊢▷ p)
 Theorem lf_fundamental N W R Σ p T : Σ ⊩^N _ W p : T → wmodels R W → Σ ⊪^N _ R p : T.
 Proof.
   intros [Hty Hg]. remember (Some N) as N' eqn:EN. revert R Hg. induction Hty as
-    [W Σ ΘB C0 t T c Hp HB HΣ Hpf Hd Ht HW
+    [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Ht HW
     |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 HJ];
     intros R Hg HR; subst.
-  - eapply (lf_p_term W); [exact (proj1 HW)|done|done|done|done|exact Hd|exact Ht|].
+  - eapply (lf_p_term W); [exact (proj1 HW)|done|done|done|done| |exact Ht|].
+    { intros ch Hch. destruct (Hd ch Hch) as (S & x & m & m' & ? & _ & ?). eauto 10. }
     apply Hg. simpl. multiset_solver.
   - try specialize (IH1 eq_refl). try specialize (IH2 eq_refl).
     apply lf_p_connect; try done.

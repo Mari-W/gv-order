@@ -56,7 +56,7 @@ Inductive typed (W : sworld) (N : fuel) :
       typed W N {[o := TE S x a m]} Γ Δ F (Chan o) (TSess S x a m) (Some 0)
   | e_abs Θ Θh Γ Δ Δh F e T U ub lb c a :
       lbx_below_h W Γ lb (tenv_heads Θ ∪ lenv_heads Δ) (lenv_bot Δ) →
-      thage a Θ Θh → lage a Δ Δh →
+      thage a Θ Θh → lage a Δ Δh → tcontr T →
       typed W N Θh Γ (Some T :: Δh) (abs_fut ub) e U c →
       typed W N Θ Γ Δ F (Lam e) (TLolli ub lb c T U a) (Some 0)
   | e_app Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 ub lb c T U a1 c1 c2 :
@@ -88,6 +88,7 @@ Inductive typed (W : sworld) (N : fuel) :
       typed W N Θ2' Γ (Some T2 :: Some T1 :: Δ2') F e2 T c2 →
       typed W N Θ Γ Δ F (LetP e1 e2) T (fadd c1 c2)
   | e_inj (i : bool) Θ Γ Δ F e T U c :
+      tcontr (TSum T U) →
       typed W N Θ Γ Δ F e (if i then U else T) c →
       typed W N Θ Γ Δ F (Inj i e) (TSum T U) c
   | e_case Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e e1 e2 T1 T2 T c0 c1 c2 :
@@ -99,7 +100,7 @@ Inductive typed (W : sworld) (N : fuel) :
       typed W N Θ2' Γ (Some T2 :: Δ2') F e2 T c2 →
       typed W N Θ Γ Δ F (Case e e1 e2) T (fadd c0 (fmax c1 c2))
   | e_box Γ Δ F e m k C ub c U :
-      lenv_unl Δ →
+      lenv_unl Δ → tcontr U →
       (∀ ss, length ss = k → sinsts N ss →
          typed W N ∅ (hc_open m C Γ)
            (lenv_pinst (pshift m) (Some (TBox m k C ub c U) :: Δ))
@@ -147,16 +148,16 @@ Inductive typed (W : sworld) (N : fuel) :
       fle (Some 1) a →
       typed W N Θ Γ Δ F (ESpawn e) TUnit c0
   | e_new Γ Δ F C S m1 m2 :
-      lenv_unl Δ → wf_new C → tsum_ok N m1 m2 →
+      lenv_unl Δ → wf_new C → tsum_ok N m1 m2 → scontr S →
       typed W N ∅ Γ Δ F ENew
         (TEx LBot 1 C (TProd (TSess S (pvar 0) m1 m1) (TSess (dual S) (pvar 0)‾ m2 m2)))
         (Some 0)
   | e_new_fld Γ Δ F x κ S m1 m2 :
-      lenv_unl Δ → tsum_ok N m1 m2 →
+      lenv_unl Δ → tsum_ok N m1 m2 → scontr S →
       typed W N ∅ Γ Δ F ENew
         (TProd (TSess S (x·κ) m1 m1) (TSess (dual S) (x·κ)‾ m2 m2)) (Some 0)
   | e_sub Θ Γ Δ F e T T' c c' :
-      typed W N Θ Γ Δ F e T c → tsub T T' → fle c c' →
+      typed W N Θ Γ Δ F e T c → tsub T T' → fle c c' → (tcontr T → tcontr T') →
       typed W N Θ Γ Δ F e T' c'
   | e_pack Θ Γ Δ F e lb m C T xs c :
       length xs = m → hold_at W Γ C xs →
@@ -223,7 +224,8 @@ Inductive ptyped (N : fuel) : sworld → senv → proc → ty → Prop :=
   | p_term W Σ ΘB C0 t T c :
       tfree T →
       (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 → pfree Σ →
-      (∀ c, c ∈ C0 → ∃ S x m m', tsum_ok N m m' ∧
+      (∀ o e, Σ !! o = Some e → scontr e.1) →
+      (∀ c, c ∈ C0 → ∃ S x m m', tsum_ok N m m' ∧ scontr S ∧
          ΘB !! (c⁺)%cend = Some (TE S x m m) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ m' m')) →
       typed W N (tenv_of (fhalf N) Σ ∪ ΘB) hc_empty [] (∅, None) t T c →
       sworld_wf W ∧ swf W →

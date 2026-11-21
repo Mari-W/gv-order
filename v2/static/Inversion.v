@@ -235,12 +235,13 @@ Proof. induction 1; simpl; multiset_solver. Qed.
 Lemma ptyped_one N W Σ C0 t T :
   ptyped N W Σ (C0, {[+ t +]}) T →
   ∃ ΘB c, tfree T ∧ (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) ∧ chans_of Σ ## C0 ∧ pfree Σ ∧
-    (∀ ch, ch ∈ C0 → ∃ S x m m', tsum_ok N m m' ∧
+    (∀ o e, Σ !! o = Some e → scontr e.1) ∧
+    (∀ ch, ch ∈ C0 → ∃ S x m m', tsum_ok N m m' ∧ scontr S ∧
        ΘB !! (ch⁺)%cend = Some (TE S x m m) ∧ ΘB !! (ch⁻)%cend = Some (TE (dual S) x‾ m' m')) ∧
     typed W N (tenv_of (fhalf N) Σ ∪ ΘB) hc_empty [] (∅, None) t T c ∧
     (sworld_wf W ∧ swf W).
 Proof.
-  intros H. remember (C0, {[+ t +]}) as p eqn:Hp. destruct H as [W' Σ' ΘB C0' t' T' c Hf HB HC Hpf HBs Ht Hs|
+  intros H. remember (C0, {[+ t +]}) as p eqn:Hp. destruct H as [W' Σ' ΘB C0' t' T' c Hf HB HC Hpf HΣc HBs Ht Hs|
     W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T' H1 H2].
   - pose proof (f_equal fst Hp) as H1. pose proof (f_equal snd Hp) as Ht'. simpl in H1, Ht'. subst C0'.
     apply (inj (singletonMS (B := gmultiset expr))) in Ht' as ->.

@@ -177,7 +177,7 @@ Section body.
     { eapply d_var'; [reflexivity|]. spare_tac. }
     (* a at Y·0 *)
     eapply d_letp; [apply tsplit_empty|lsplit_tac (Pair (Var 0) ENew) EUnit| |].
-    { eapply (d_new_at _ _ _ _ _ _ 0 (dual Sch) (pvar 1) Sch); [done|reflexivity|]. spare_tac. }
+    { eapply (d_new_at _ _ _ _ _ _ 0 (dual Sch) (pvar 1) Sch); [done|reflexivity| |contr_tac]. spare_tac. }
     eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
     { eapply d_var'; [reflexivity|]. spare_tac. }
     (* the y-thread sends a on y *)
@@ -195,7 +195,7 @@ Section body.
       - eapply d_var'; [reflexivity|]. spare_tac. }
     (* b at X·1, before the receive *)
     eapply d_letp; [apply tsplit_empty|lsplit_tac (Pair (Var 5) ENew) EUnit| |].
-    { eapply (d_new_at _ _ _ _ _ _ 1 Sch (pvar 0) Sch); [done|reflexivity|]. spare_tac. }
+    { eapply (d_new_at _ _ _ _ _ _ 1 Sch (pvar 0) Sch); [done|reflexivity| |contr_tac]. spare_tac. }
     eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
     { eapply d_var'; [reflexivity|]. spare_tac. }
     eapply d_letp; [apply tsplit_empty|lsplit_tac (ERecv (Var 3)) EUnit| |].
@@ -229,7 +229,7 @@ Section body.
 End body.
 
 Lemma ring_typed W Γ n F : dftyped W ∅ Γ (nones n) F ring rg_ty.
-Proof. apply box1_typed; [reflexivity|apply rg_body]. Qed.
+Proof. apply box1_typed; [contr_tac|reflexivity|apply rg_body]. Qed.
 
 (** ** main *)
 
@@ -309,7 +309,7 @@ Theorem rg_dftyped : dftyped W_rg ∅ hc_empty [] (∅, None) rg_main TUnit.
 Proof.
   unfold rg_main, let_new.
   eapply d_let; [apply tsplit_empty|apply lsplit_nil| |].
-  { eapply (d_new' _ _ _ _ _ Sch None None); [spare_tac|apply rg_wf_new]. }
+  { eapply (d_new' _ _ _ _ _ Sch None None); [spare_tac|apply rg_wf_new|contr_tac]. }
   eapply d_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
   fold (Γnew rg_L).

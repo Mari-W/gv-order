@@ -54,10 +54,13 @@ Lemma d_unit' W Γ Δ F : (∀ y o, Δ !! y = Some o → spare o) → dftyped W 
 Proof. intros H. by apply d_unit, spare_unl. Qed.
 
 Lemma d_new' W Γ Δ F (L : fact → Prop) S a1 a2 mt :
-  (∀ y o, Δ !! y = Some o → spare o) → wf_new (bcs_of L) →
+  (∀ y o, Δ !! y = Some o → spare o) → wf_new (bcs_of L) → scontr S →
   dftyped W ∅ Γ Δ F ENew
     (TEx LBot 1 (bcs_of L) (TProd (TSess S (pvar 0) a1 mt) (TSess (dual S) (pvar 0)‾ a2 mt))).
-Proof. intros H HL. apply d_new; [by apply spare_unl|done]. Qed.
+Proof. intros H HL HS. apply d_new; [by apply spare_unl|done|done]. Qed.
+
+(** A session type of the examples is contractive by computation. *)
+Ltac contr_tac := vm_compute; exact I.
 
 (** The split of a context whose only linear entry is y: everything to
     the left, the unlimited entries to both sides. *)
@@ -88,12 +91,13 @@ Qed.
 (** A creation at the field κ of the point x of the end y, ⟨y, new⟩. *)
 Lemma d_new_at W (Θ : tenv) Γ Δ F (y : nat) κ S0 x S a a1 a2 m m1 m2 :
   Θ = ∅ → Δ !! y = Some (Some (TSess S0 x a m)) → (∀ z o, z ≠ y → Δ !! z = Some o → spare o) →
+  scontr S →
   dftyped W Θ Γ Δ F (Pair (Var y) ENew)
     (TProd (TSess S0 x a m) (TProd (TSess S (x·κ) a1 m1) (TSess (dual S) (x·κ)‾ a2 m2))).
 Proof.
-  intros -> Hy Hs. eapply d_pair; [apply tsplit_empty|apply (lsplit_only y), Hs| |].
+  intros -> Hy Hs HS. eapply d_pair; [apply tsplit_empty|apply (lsplit_only y), Hs| |].
   - eapply d_var'; [exact Hy|exact Hs].
-  - apply d_new_fld. by apply lenv_unl_only.
+  - apply d_new_fld; [by apply lenv_unl_only|done].
 Qed.
 
 (** The lexicographic order on triples of natural numbers. *)

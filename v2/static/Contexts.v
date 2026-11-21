@@ -17,7 +17,7 @@
     capture of E-Abs is aging. Credits sit on ends and closures only, so
     both recurse through products, sums and existentials. *)
 
-From GV Require Export types.Types.
+From GV Require Export types.Contractive.
 
 (** ** Environments *)
 
@@ -318,7 +318,7 @@ Inductive tsub : ty → ty → Prop :=
     annotations of N = ∞, because a derivation at N = ∞ never meets
     another one. *)
 Definition sinsts (N : fuel) (ss : list sty) : Prop :=
-  (Forall hcontractive ss ∧ Forall sscoped ss) ∧ (N = None → Forall (λ s, sty_df s = s) ss).
+  (Forall contractive ss ∧ Forall sscoped ss) ∧ (N = None → Forall (λ s, sty_df s = s) ss).
 
 (** ** The annotations of N = ∞ on contexts *)
 

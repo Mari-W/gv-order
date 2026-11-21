@@ -77,7 +77,7 @@ Section body.
     lage_tac.
     (* a at Y·0 *)
     eapply e_letp_; [lsplit_tac (Pair (Var 0) ENew) EUnit| | | ].
-    { eapply (e_new_at' _ _ _ _ _ _ _ 0 (dual Schl) (pvar 1) _ _ Schl); [done|shelve|reflexivity|]. spare_tac. }
+    { eapply (e_new_at' _ _ _ _ _ _ _ 0 (dual Schl) (pvar 1) _ _ Schl); [done|shelve|reflexivity| |contr_tac]. spare_tac. }
     lage_tac.
     eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
     { eapply e_var'; [reflexivity|]. spare_tac. }
@@ -103,7 +103,7 @@ Section body.
     lage_tac.
     (* b at X·1, before the receive *)
     eapply e_letp_; [lsplit_tac (Pair (Var 5) ENew) EUnit| | | ].
-    { eapply (e_new_at' _ _ _ _ _ _ _ 1 Schl (pvar 0) _ _ Schl); [done|shelve|reflexivity|]. spare_tac. }
+    { eapply (e_new_at' _ _ _ _ _ _ _ 1 Schl (pvar 0) _ _ Schl); [done|shelve|reflexivity| |contr_tac]. spare_tac. }
     lage_tac.
     eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
     { eapply e_var'; [reflexivity|]. spare_tac. }
@@ -153,7 +153,7 @@ End body.
 Lemma ringl_typed W Γ n F : typed W (Some 8) ∅ Γ (nones n) F ring rgl_ty (Some 0).
 Proof.
   destruct (rgl_body W Γ n) as (c & Hb).
-  eapply lbox_typed; [reflexivity|exact Hb].
+  eapply lbox_typed; [contr_tac|contr_tac|reflexivity|exact Hb].
 Qed.
 
 (** ** main *)
@@ -173,7 +173,7 @@ Proof.
   eexists _.
   { unfold rg_main, let_new.
   eapply e_let_; [apply lsplit_nil| | | ].
-  { eapply (e_new' _ _ _ _ _ _ Schl); [spare_tac|apply rg_wf_new]. }
+  { eapply (e_new' _ _ _ _ _ _ Schl); [spare_tac|apply rg_wf_new|contr_tac]. }
   lage_tac.
   eapply e_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].

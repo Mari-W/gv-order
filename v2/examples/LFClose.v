@@ -36,6 +36,7 @@ Proof.
   - intros o'. rewrite dom_empty_L. set_solver.
   - set_solver.
   - apply pfree_singleton.
+  - intros o' e' He. apply lookup_singleton_Some in He as [_ <-]. done.
   - set_solver.
   - rewrite map_union_empty. unfold tenv_of. rewrite map_fmap_singleton. apply cl_typed.
   - apply sw_empty_ok.

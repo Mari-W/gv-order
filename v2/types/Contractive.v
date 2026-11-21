@@ -216,6 +216,9 @@ Ltac contr_simpl :=
   | |- Is_true (negb _) => apply Is_true_negb
   end.
 
+(** The predicate form, for lists of instances. *)
+Definition contractive (s : sty) : Prop := scontr s.
+
 (** *** Renaming *)
 
 Lemma sk_sren r s : sk (sren r s) = sk s.
@@ -1059,3 +1062,10 @@ Section unfold_inst.
     destruct o; try done; simpl in H; by destruct H as (_ & _ & H).
   Qed.
 End unfold_inst.
+
+Lemma unfoldS_seq_contr s o S : scontr s → unfoldS s = SSeq o S → scontr o ∧ scontr S.
+Proof. intros Hc E. pose proof (unfoldS_scontr s Hc) as H. rewrite E in H. cbn [scontr] in H. by apply Is_true_andb in H. Qed.
+
+Lemma unfoldS_choice_contr s S1 S2 : scontr s →
+  (unfoldS s = SPlus S1 S2 ∨ unfoldS s = SWith S1 S2) → scontr S1 ∧ scontr S2.
+Proof. intros Hc [E|E]; pose proof (unfoldS_scontr s Hc) as H; rewrite E in H; cbn [scontr] in H; by apply Is_true_andb in H. Qed.

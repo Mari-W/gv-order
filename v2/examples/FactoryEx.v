@@ -88,7 +88,7 @@ Proof.
   eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
   eapply d_let; [apply tsplit_empty|lsplit_tac ENew EUnit| |].
-  { eapply (d_new' _ _ _ _ _ Sd None None); [spare_tac|apply fx_wf_new]. }
+  { eapply (d_new' _ _ _ _ _ Sd None None); [spare_tac|apply fx_wf_new|contr_tac]. }
   eapply d_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_nil', !lenv_pinst_cons', lenv_pinst_nones.
   cbn [fmap option_fmap option_map insert list_insert].
@@ -109,7 +109,7 @@ Proof.
 Qed.
 
 Lemma mk0_typed Γ n F : dftyped W_fx ∅ Γ (nones n) F mk0 mk0_ty.
-Proof. apply boxg_typed; [reflexivity|apply mk0_body]. Qed.
+Proof. apply boxg_typed; [contr_tac|contr_tac|reflexivity|apply mk0_body]. Qed.
 
 (** ** mk₁ *)
 
@@ -119,7 +119,7 @@ Lemma mk1_body Γ n :
 Proof.
   unfold mk1_e.
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Pair (Var 0) ENew) EUnit| |].
-  { eapply (d_new_at _ _ _ _ _ _ 0 Sr (pvar 0) Sd); [done|reflexivity|]. spare_tac. }
+  { eapply (d_new_at _ _ _ _ _ _ 0 Sr (pvar 0) Sd); [done|reflexivity| |contr_tac]. spare_tac. }
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
   eapply d_letu; [apply tsplit_empty|lsplit_tac (ESpawn (worker 2)) EUnit| |].
@@ -131,7 +131,7 @@ Proof.
 Qed.
 
 Lemma mk1_typed Γ n F : dftyped W_fx ∅ Γ (nones n) F mk1 mk1_ty.
-Proof. apply boxg_typed; [reflexivity|apply mk1_body]. Qed.
+Proof. apply boxg_typed; [contr_tac|contr_tac|reflexivity|apply mk1_body]. Qed.
 
 (** ** main *)
 
