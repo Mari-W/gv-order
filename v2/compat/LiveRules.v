@@ -170,7 +170,7 @@ Section rules0.
 
   Lemma beta_det e e' :
     (∀ α e'', tstep e α e'' → α = LBeta ∧ e'' = e') → tstep e LBeta e' →
-    ∀ n W Θ T F, Erel κ (n - c_beta κ) W Θ T F e' → Erel κ n W Θ T F e.
+    ∀ n W Θ T F, (∀ j, ole (oadd j (c_beta κ)) n → Erel κ j W Θ T F e') → Erel κ n W Θ T F e.
   Proof. intros Hd Hs n W Θ T F H. by eapply Erel_beta. Qed.
 
 End rules0.
@@ -257,7 +257,8 @@ Section groundL.
   Proof.
     intros Hm. revert Θ L γ. induction Δ as [|[T|] Δ IH]; intros Θ L γ; simpl; [done| |auto].
     destruct (L 0).
-    - intros [(Hu & Hf & HV) HG]. split; [|auto]. split_and!; [done|done|]. intros j Hj. apply HV. lia.
+    - intros [(Hu & Hf & HV) HG]. split; [|auto]. split_and!; [done|done|]. intros j Hj. apply HV.
+      exact (olt_trans_le _ _ _ Hj Hm).
     - intros (Θ1 & Θ2 & Hd & -> & HV & HG). exists Θ1, Θ2. split_and!; try done; [|auto].
       by eapply Vrel_down.
   Qed.
@@ -270,7 +271,7 @@ Section groundL.
       + intros [(Hu & Hf & HV) HG]. exists ∅, Θ. split_and!; [apply map_disjoint_empty_l
           |by rewrite map_empty_union|by apply HV|]. eapply IH, HG.
       + intros (Θ1 & Θ2 & Hd & -> & HV & HG). exists Θ1, Θ2. split_and!; try done.
-        * eapply Vrel_down; [|exact HV]. lia.
+        * eapply Vrel_down; [|exact HV]. by apply olt_ole.
         * eapply IH, HG.
     - intros HG. eapply IH, HG.
   Qed.
@@ -460,13 +461,15 @@ Proof.
       { eapply wext_trans; [exact HW2|]. by eapply wext_trans. }
       assert (Grel κ j' W4 ∅ (Some (TBox m kk C ub c U) :: Δ) (EBox eb .: γ)) as HG'.
       { exists ∅, ∅. split_and!; [apply map_disjoint_empty_l|by rewrite map_union_empty| |].
-        - apply IH; [lia|lia|done].
-        - eapply Grel_down; [|eapply Grel_mono; [exact HW'4|exact HG]]. lia. }
+        - assert (olt j' j) as Hjj by (apply (oadd_lt _ (c_beta κ)); [lia|exact Hj']).
+          apply IH; [exact Hjj|exact (ole_trans _ _ _ (olt_ole _ _ Hjj) Hj)|done].
+        - eapply Grel_down; [|eapply Grel_mono; [exact HW'4|exact HG]].
+          exact (ole_trans _ _ _ (oadd_le_l _ _ _ Hj') Hj). }
       pose proof (Hbody W4 xs ss F' HW04 Hxs Hss Hsc (wholds_mono _ _ _ _ HW4 HC) (proj1 (ub_ltu_of _ _ _) Hub)
                     j' W4 ∅ (EBox eb .: γ) (wext_refl _)
                     ltac:(rewrite tenv_erase_empty; apply map_disjoint_empty_l) HG') as Hb.
       by rewrite tenv_erase_empty, map_union_empty in Hb. }
-  apply Hlob; [lia|apply wext_refl].
+  apply Hlob; [apply ole_refl|apply wext_refl].
 Qed.
 
 
@@ -617,7 +620,7 @@ Section later.
       apply (Hbody W'' F' (wext_trans _ _ _ HW HW') Hub j W'' (Θ'' ∪ Θ') (w .: γ) (wext_refl _)).
       + apply map_disjoint_union_r. split; [done|done].
       + exists Θ'', Θ'. split_and!; [by symmetry|done|done|].
-        eapply GrelL_down; [|by eapply GrelL_mono]. lia.
+        eapply GrelL_down; [|by eapply GrelL_mono]. exact (oadd_le_l _ _ _ Hj).
   Qed.
 
   (** A box marks its self, at every cost table. *)
@@ -657,13 +660,15 @@ Section later.
         { simpl. split; [split_and!|].
           - done.
           - done.
-          - intros i Hi. apply IH; [lia|lia|done].
-          - eapply GrelL_down; [|eapply GrelL_mono; [exact HW'4|exact HG]]. lia. }
+          - intros i Hi. apply IH; [exact (olt_trans_le _ _ _ Hi (oadd_le_l _ _ _ Hj'))
+              |exact (ole_trans _ _ _ (olt_ole _ _ (olt_trans_le _ _ _ Hi (oadd_le_l _ _ _ Hj'))) Hj)|done].
+          - eapply GrelL_down; [|eapply GrelL_mono; [exact HW'4|exact HG]].
+            exact (ole_trans _ _ _ (oadd_le_l _ _ _ Hj') Hj). }
         pose proof (Hbody W4 xs ss F' HW04 Hxs Hss Hsc (wholds_mono _ _ _ _ HW4 HC) (proj1 (ub_ltu_of _ _ _) Hub)
                       j' W4 ∅ (EBox eb .: γ) (wext_refl _)
                       ltac:(rewrite tenv_erase_empty; apply map_disjoint_empty_l) HG') as Hb.
         by rewrite tenv_erase_empty, map_union_empty in Hb. }
-    apply Hlob; [lia|apply wext_refl].
+    apply Hlob; [apply ole_refl|apply wext_refl].
   Qed.
 
 
@@ -760,7 +765,8 @@ Section later.
     - intros α e'' Hst. assert (head_step (LetU EUnit (subst γ e2)) α e'') as Hh by head_only.
       inversion Hh; by subst.
     - apply tstep_head, t_act_let_unit.
-    - apply He2; [done|done|]. eapply GrelL_down; [|exact HG2]. lia.
+    - intros jb Hjb. apply He2; [done|done|]. eapply GrelL_down; [|exact HG2].
+      exact (oadd_le_l _ _ _ Hjb).
   Qed.
 
   Lemma later_letp W Θ Θ1 Θ2 Δ Δ1 Δ2 L L' F e1 e2 T1 T2 T :
@@ -781,7 +787,8 @@ Section later.
         by head_only.
       inversion Hh; subst. split; [done|]. by rewrite subst2_subst.
     - rewrite <-(subst2_subst v1 v2 γ e2). by apply tstep_head, t_act_let_pair.
-    - apply map_disjoint_union_l in Hdv as [Hda Hdb].
+    - intros jb Hjb. assert (ole jb j) as Hjbj by exact (oadd_le_l _ _ _ Hjb).
+      apply map_disjoint_union_l in Hdv as [Hda Hdb].
       apply map_disjoint_union_r in Hda as [Hda1 Hda2]. apply map_disjoint_union_r in Hdb as [Hdb1 Hdb2].
       assert ((Θa ∪ Θb) ∪ (tenv_erase Θ2 ∪ Θ2') = tenv_erase Θ2 ∪ (Θb ∪ (Θa ∪ Θ2'))) as ->.
       { rewrite (map_union_comm Θa Θb) by done.
@@ -796,10 +803,10 @@ Section later.
       + simpl. exists Θb, (Θa ∪ Θ2'). split_and!.
         * apply map_disjoint_union_r. split; [by symmetry|done].
         * done.
-        * eapply Vrel_down; [|exact H2]. lia.
+        * eapply Vrel_down; [|exact H2]. exact (oadd_le_l _ _ _ Hjb).
         * exists Θa, Θ2'. split_and!; [done|done| |].
-          { eapply Vrel_down; [|exact H1]. lia. }
-          { eapply GrelL_down; [|exact HG2]. lia. }
+          { eapply Vrel_down; [|exact H1]. exact (oadd_le_l _ _ _ Hjb). }
+          { eapply GrelL_down; [|exact HG2]. exact Hjbj. }
   Qed.
 
   Lemma later_case W Θ Θ1 Θ2 Δ Δ1 Δ2 L L' F e e1 e2 T1 T2 T :
@@ -823,21 +830,21 @@ Section later.
           as Hh by head_only.
         inversion Hh; subst. split; [done|]. by rewrite subst1_subst.
       + rewrite <-(subst1_subst v' γ e1). by apply tstep_head, t_act_case_inl.
-      + apply He1; [done| |].
+      + intros jb Hjb. apply He1; [done| |].
         * apply map_disjoint_union_r. split; [by symmetry|done].
         * simpl. exists Θv, Θ2'. split_and!; [done|done| |].
-          { eapply Vrel_down; [|exact HV]. lia. }
-          { eapply GrelL_down; [|exact HG2]. lia. }
+          { eapply Vrel_down; [|exact HV]. exact (oadd_le_l _ _ _ Hjb). }
+          { eapply GrelL_down; [|exact HG2]. exact (oadd_le_l _ _ _ Hjb). }
     - apply (beta_det κ _ (subst (v' .: γ) e2)).
       + intros α e'' Hst. assert (head_step (Case (Inj true v') (subst (up γ) e1) (subst (up γ) e2)) α e'')
           as Hh by head_only.
         inversion Hh; subst. split; [done|]. by rewrite subst1_subst.
       + rewrite <-(subst1_subst v' γ e2). by apply tstep_head, t_act_case_inr.
-      + apply He2; [done| |].
+      + intros jb Hjb. apply He2; [done| |].
         * apply map_disjoint_union_r. split; [by symmetry|done].
         * simpl. exists Θv, Θ2'. split_and!; [done|done| |].
-          { eapply Vrel_down; [|exact HV]. lia. }
-          { eapply GrelL_down; [|exact HG2]. lia. }
+          { eapply Vrel_down; [|exact HV]. exact (oadd_le_l _ _ _ Hjb). }
+          { eapply GrelL_down; [|exact HG2]. exact (oadd_le_l _ _ _ Hjb). }
   Qed.
 
   Lemma later_inj (i : bool) W Θ Δ L F e T U :
