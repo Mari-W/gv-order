@@ -1,5 +1,62 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, next run of 2026-11-21 (stages 1 to 4)
+
+Branch redesign-clean3 in .claude/worktrees/redesign-s4, nothing pushed.
+Step 0 merged redesign by fast forward (78db2c2). Scope by the
+coordinator: stages 1 to 4, then stop. Stages 5 and 6 (fair runs, the
+Padovani corollary) run on branch redesign-fair. No lemma in this run
+builds on ϑ, χ, families or wfworld beyond what the stages touched.
+
+- Stage 1, entry 12, per-end capture. Done (4d71675). `TLolli` lost the
+  floor h, capture is aging by a (`thage`, `lage` at E-Abs), FV-Arrow
+  asks the captured counters of the ends that are not idle at least a
+  and accepts any call counters f′ ≥ f − a, Sub-Arr asks a′ ≤ a.
+  `tcap`, `lcap`, `thcap` and their lemmas are gone.
+- Stage 2, entry 12, generalized arrows. Done (f30a0ed). Upper point
+  `ubound` (none, a point, ⊤), lower point `lbound` (none, a point, ⊥).
+  E-SpawnLam and `Vthunk` are gone, `e_spawn_lam` and `d_spawn_lam`
+  are lemmas (E-Abs at (⊤, ⊥) and credit 1, then E-Spawn), and O-Spawn
+  reads `Varr` at `∗ ⊸^⊤_⊥ ∗`.
+- Stage 3, entry 14b, no future variables. Done (7545c89). Γ holds only
+  constraint instances, the rest of a future is everything above u or
+  everything, and the semantic reading quantifies one set R above u
+  (`rest_ok`). The relation keeps finite futures.
+- Stage 4, entries 7 and 4 to 5 (static half). Partly done (08bc06b).
+  Inversion lemmas for E-Close, E-Case, E-LetU, E-LetP, E-Pair, E-Let,
+  P-Term and P-Connect in v2/static/Inversion.v. Stopped:
+  `sb_untypable`, the static half of FlagPair and rejects.js. E-Open in
+  a dead arm can add facts from an existential that no value inhabits,
+  so facts of an opened Γ do not transfer to W. `sb_dead_arm_typed`
+  shows it on the flag program. A variant of the flag program whose
+  arms read their binder is, on paper, statically typable, against
+  docs/redesign/semantic-example.md (entry 7). The programs of
+  rejects.js need the cost and ticket judgments, not an inversion.
+- Stages 5 and 6. Not reached, moved to redesign-fair by the
+  coordinator.
+
+Plausibility, each stage. The lock-free and deadlock-free examples
+build, `lf_soundness` and `soundness` build with no new axiom, so the
+four programs of rejects.js stay excluded. The S4.18 counterexample
+concerns (fuse), which no stage touched. SemBranch, TreeTopo and
+FlagPair build. The details sit under entries 12, 14 and 7.
+
+Final state at the commit of this report. `make -j2` builds with no
+error. `make test` passes after test/FuelNotations.expected was updated
+to `Vfuel_age`. `make check` reports 93 of 93 results closed under the
+global context. No Admitted, no new axiom.
+
+Map. Stage 1: the floor h, the capture block t-cap and its notes are
+gone, FV-Arrow and E-Abs.cap cite the Rocq, the planned tags of the
+capture blocks are gone. Stage 2: the planned tags of entry 12 are gone,
+the blocks E-SpawnLam and V-Thunk and their notes are gone, ⊤ and ⊥ cite
+`ubound`, `ub_below_u`, `abs_fut`, `Varr_top`. Stage 3: Γ is a list of
+constraint instances, F has the rests ↑u and ↑, E-Abs, E-Box, u ≺ F and
+the semantic reading den_{R,B} follow the Rocq. Stage 4: the static
+rejection of the flag program is marked doubtful. The plain-new planned
+tags and χ are untouched. gen.js, check.js and lint-map report 0
+errors, 0 coined words, 0 sentences over 35 words.
+
 ## Morning report, overnight run of 2026-11-20
 
 Branch redesign-clean3 in .claude/worktrees/redesign-s4, nothing pushed.
@@ -292,7 +349,7 @@ must do, open questions.
    with its binder read by let ∗ = w, in the world Wa that holds only
    x ≺ ȳ: the binder has the type ∃⁰. y ≺ x̄. ∗, and E-Open gives the arm
    y ≺ x̄. On paper this extends to the whole variant of the thread
-   (not given the argument type (∃⁰. y ≺ x̄. ∗) ⊕ ∗, partner in Wb), so
+   (sb_not at the argument type (∃⁰. y ≺ x̄. ∗) ⊕ ∗, partner in Wb), so
    the claim of semantic-example.md that the static system rejects the
    flag program fails for that variant. The program as written binds a
    unit it never reads, and a unit is linear, so it is rejected for that
