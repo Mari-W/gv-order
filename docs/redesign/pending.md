@@ -111,6 +111,10 @@ must do, open questions.
   type. Fuel extension removes N and does not remove K. The author adopts
   layers for the next Rocq run, together with tickets and transfinite indices.
   Tickets stay finite with N and K for now. Ordinal tickets may come later.
+- **Open points of A3 (2026-11-21, awaiting decision).** check-layers-open.md.
+  The restriction on plain `new` is real, O-New needs no change, P-Connect asks
+  `wf (W1|S ⊔ W2|S)`, the other cases change only through `ent_sound`, and
+  ranks are `Ord@{Set}` below step indices `Ord@{s}` from one polymorphic tree.
 
 ## Open
 
