@@ -75,7 +75,7 @@ Section wrapper.
     assert (Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) X2 W1
       (ConnectSplit.fin Σf E2 ∪ fout Σf E2) TUnit (pfuse h D2 p2)) as C2.
     { rewrite <-EE2. by apply B2. }
-    assert (∀ j, olt j n → ConnL κ j W1 T) as L by (intros j Hj; by apply IH).
+    assert (∀ j W', olt j n → ConnL κ j W' T) as L by (intros j W' Hj; by apply IH).
     assert (∀ W Σ U p, X1 W Σ U p → Prel κ n W Σ U p) as X1P by (by intros ? ? ? ? [? _]).
     assert (∀ W Σ U p, X2 W Σ U p → Prel κ n W Σ U p) as X2P by (by intros ? ? ? ? [? _]).
     assert (∀ h' D', fuse_ok h' D' (ConnectSplit.fin Σf E1 ∪ fout Σf E1) (pfuse h D1 p1) →
@@ -86,24 +86,24 @@ Section wrapper.
       Prel κ n W1 (sdrop D' (kren h' (ConnectSplit.fin Σf E2 ∪ fout Σf E2))) TUnit (pfuse h' D' (pfuse h D2 p2))) as HP2.
     { intros h' D' Hh'. apply Prel_fuse; [done|]. rewrite <-EE2. apply Prel_fuse; [done|].
       by eapply Prel_mono. }
-    assert (∀ p1' Σa h' D' Σ1' ΣC' Σ2' ΣD' p2', X1 W1 Σa T p1' → fuse_ok h' D' Σa p1' →
-      sdrop D' (kren h' Σa) = Σ1' ∪ ΣC' → Prel κ n W1 (Σ2' ∪ ΣD') TUnit p2' →
+    assert (∀ W' p1' Σa h' D' Σ1' ΣC' Σ2' ΣD' p2', W1 ⊑ W' → X1 W' Σa T p1' → fuse_ok h' D' Σa p1' →
+      sdrop D' (kren h' Σa) = Σ1' ∪ ΣC' → Prel κ n W' (Σ2' ∪ ΣD') TUnit p2' →
       conn Σ1' ΣC' (pfuse h' D' p1').1 Σ2' ΣD' p2'.1 →
-      Prel κ n W1 (Σ1' ∪ Σ2') T (pconn (pfuse h' D' p1') p2' (chans_of ΣC'))) as G1.
-    { intros p1' Σa h' D' Σ1' ΣC' Σ2' ΣD' p2' [_ HΦ] Hh' EΣ HP Hcc. exact (HΦ h' D' Hh' eq_refl Σ1' ΣC' Σ2' ΣD' p2' EΣ HP Hcc). }
-    assert (∀ p2' Σb h' D' Σ1' ΣC' Σ2' ΣD' h1 D1', X2 W1 Σb TUnit p2' → fuse_ok h' D' Σb p2' →
+      Prel κ n W' (Σ1' ∪ Σ2') T (pconn (pfuse h' D' p1') p2' (chans_of ΣC'))) as G1.
+    { intros W' p1' Σa h' D' Σ1' ΣC' Σ2' ΣD' p2' _ [_ HΦ] Hh' EΣ HP Hcc. exact (HΦ h' D' Hh' eq_refl Σ1' ΣC' Σ2' ΣD' p2' EΣ HP Hcc). }
+    assert (∀ W' p2' Σb h' D' Σ1' ΣC' Σ2' ΣD' h1 D1', W1 ⊑ W' → X2 W' Σb TUnit p2' → fuse_ok h' D' Σb p2' →
       sdrop D' (kren h' Σb) = Σ2' ∪ ΣD' → fuse_ok h1 D1' (ConnectSplit.fin Σf E1 ∪ fout Σf E1) (pfuse h D1 p1) →
       sdrop D1' (kren h1 (ConnectSplit.fin Σf E1 ∪ fout Σf E1)) = Σ1' ∪ ΣC' →
       conn Σ1' ΣC' (pfuse h1 D1' (pfuse h D1 p1)).1 Σ2' ΣD' (pfuse h' D' p2').1 →
-      Prel κ n W1 (Σ1' ∪ Σ2') T (pconn (pfuse h1 D1' (pfuse h D1 p1)) (pfuse h' D' p2') (chans_of ΣC'))) as G2.
-    { intros p2' Σb h' D' Σ1' ΣC' Σ2' ΣD' h1 D1' [_ HΦ] Hh' EΣ Hh1 EΣ1 Hcc.
+      Prel κ n W' (Σ1' ∪ Σ2') T (pconn (pfuse h1 D1' (pfuse h D1 p1)) (pfuse h' D' p2') (chans_of ΣC'))) as G2.
+    { intros W' p2' Σb h' D' Σ1' ΣC' Σ2' ΣD' h1 D1' HW' [_ HΦ] Hh' EΣ Hh1 EΣ1 Hcc.
       apply (HΦ h' D' Hh' eq_refl Σ1' ΣC' Σ2' ΣD' _ EΣ); [|done].
       rewrite <-EΣ1. apply Pbody_fuse; [done|]. rewrite <-EE1. apply Pbody_fuse; [done|].
-      by eapply Pbody_later. }
+      eapply Pbody_later; [|exact B1]. by eapply wext_trans. }
     pose proof (pc_clauses _ _ _ _ _ _ _ _ _ _ _ _
       (CCtx κ n W1 T X1 X2 (ConnectSplit.fin Σf E1) (fout Σf E1)
          (ConnectSplit.fin Σf E2) (fout Σf E2) (pfuse h D1 p1) (pfuse h D2 p2)
-         Hn HS1 HT Hc' C1 C2 L X1P X2P HP1 HP2 G1 G2)) as R.
+         Hn HT Hc' C1 C2 L X1P X2P HP1 HP2 G1 G2)) as R.
     by rewrite Hif in R.
   Qed.
 
@@ -134,15 +134,12 @@ Proof.
   by apply Prel_iff in H.
 Qed.
 
-(** P-Connect: two components in P over a cut compose, at the join of
-    their worlds. *)
-Theorem sem_p_connect κ n W1 W2 Σ1 ΣC Σ2 ΣD p1 p2 T :
+(** P-Connect: two components in P over a cut compose, at one ranked
+    world. The static worlds of the two components meet in a ranked
+    world that models their join (static/FundamentalProc.v). *)
+Theorem sem_p_connect κ n W Σ1 ΣC Σ2 ΣD p1 p2 T :
   tfree T →
-  p1 ∈ P[κ]^W1 _ n⟦Σ1 ∪ ΣC ⊢ T⟧ → p2 ∈ P[κ]^W2 _ n⟦Σ2 ∪ ΣD ⊢ TUnit⟧ →
+  p1 ∈ P[κ]^W _ n⟦Σ1 ∪ ΣC ⊢ T⟧ → p2 ∈ P[κ]^W _ n⟦Σ2 ∪ ΣD ⊢ TUnit⟧ →
   conn Σ1 ΣC p1.1 Σ2 ΣD p2.1 →
-  pconn p1 p2 (chans_of ΣC) ∈ P[κ]^(W1 ⊔ W2) _ n⟦Σ1 ∪ Σ2 ⊢ T⟧.
-Proof.
-  intros HT HP1 HP2 Hc. refine (conn_all κ T HT n (W1 ⊔ W2) Σ1 ΣC Σ2 ΣD p1 p2 _ _ Hc).
-  - eapply Prel_mono; [apply wext_join_l|done].
-  - eapply Prel_mono; [apply wext_join_r|done].
-Qed.
+  pconn p1 p2 (chans_of ΣC) ∈ P[κ]^W _ n⟦Σ1 ∪ Σ2 ⊢ T⟧.
+Proof. intros HT HP1 HP2 Hc. exact (conn_all κ T HT n W Σ1 ΣC Σ2 ΣD p1 p2 HP1 HP2 Hc). Qed.
