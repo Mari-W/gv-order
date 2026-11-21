@@ -48,20 +48,22 @@ Section bind_acts.
     { intros W' j Θv v HW' Hj Hd' HV. apply HK; [by eapply wext_trans|done..]. }
     destruct (Hb W1 HW1) as (Hs & Hr & H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     (* the continuation after a step of cost c *)
-    assert (∀ c Θ1' e', Θ1' ##ₘ Θ2 → (c = 0 → P e') →
+    assert (∀ Wx c Θ1' e', W ⊑ Wx → Θ1' ##ₘ Θ2 → (c = 0 → P e') →
       at_cost_E n c (Erel κ)
         (λ W Θ1 T F' e, Erel κ n W Θ1 T F' e ∧
           (P e → ∀ Θ2, Θ1 ##ₘ Θ2 → F ∪ senv_heads Θ2 ⊆ F' →
             (∀ W' j Θv v, W ⊑ W' → olt j n → Θv ##ₘ Θ2 → Vrel κ j W' Θv T v →
                Erel κ j W' (Θv ∪ Θ2) U F (fill_frame f v)) →
-            Erel κ n W (Θ1 ∪ Θ2) U F (fill_frame f e))) W1 Θ1' T F' e' →
-      at_cost_E n c (Erel κ) (Erel κ n) W1 (Θ1' ∪ Θ2) U F (fill_frame f e')) as Hac.
-    { intros c Θ1' e' Hd' HPc [A1 A2]. split.
-      - intros Hc. destruct (A1 Hc) as [_ HΦ]. apply HΦ; [by apply HPc|done|done|done].
+            Erel κ n W (Θ1 ∪ Θ2) U F (fill_frame f e))) Wx Θ1' T F' e' →
+      at_cost_E n c (Erel κ) (Erel κ n) Wx (Θ1' ∪ Θ2) U F (fill_frame f e')) as HacW.
+    { intros Wx c Θ1' e' HWx Hd' HPc [A1 A2]. split.
+      - intros Hc. destruct (A1 Hc) as [_ HΦ]. apply HΦ; [by apply HPc|done|done|].
+        intros W' j Θv v HW' Hj Hd'' HV. apply HK; [by eapply wext_trans|done..].
       - intros Hc j Hj. eapply (Erel_bind κ j); [done|done| |].
         + eapply Erel_future; [|exact (A2 Hc j Hj)]. done.
-        + intros W' j' Θv v HW' Hj' Hd'' HV. apply HK1; [done| |done|done].
+        + intros W' j' Θv v HW' Hj' Hd'' HV. apply HK; [by eapply wext_trans| |done|done].
           exact (ole_trans_lt _ _ _ Hj' (oadd_lt _ _ _ Hc Hj)). }
+    pose proof (λ c Θ1' e', HacW W1 c Θ1' e' HW1) as Hac.
     split; [|split; [|unfold Esteps; split_and!]].
     - (* (stop) *)
       intros Hirr. exfalso. apply Hnv. eapply Vrel_val, Hs.
@@ -72,21 +74,11 @@ Section bind_acts.
       intros E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
       apply Hac; [done|intros Hc; exact (HPs _ _ _ HPe Hst' Hc)|by apply H1].
     - (* O-New *)
-      intros ℓ c E' Hst [Hc1 Hc2] g Hg. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
+      intros c E' Hst [Hc1 Hc2]. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
       rewrite dom_union_L in Hc1, Hc2.
-      destruct (H2 ℓ c e' Hst' ltac:(split; set_solver) g) as [S HS].
-      { intros o S0 x Ho. apply (Hg o S0 x). by apply lookup_union_Some_l. }
-      exists S. unfold new_env in *. rewrite !insert_union_l.
-      apply Hac; [|intros Hc0; exact (HPs _ _ _ HPe Hst' Hc0)|exact HS].
-      apply map_disjoint_insert_l. split; [apply not_elem_of_dom; set_solver|].
-      apply map_disjoint_insert_l. split; [apply not_elem_of_dom; set_solver|done].
-    - (* O-NewAt *)
-      intros κf o c E' Hst [Hc1 Hc2]. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
-      rewrite dom_union_L in Hc1, Hc2.
-      destruct (H3 κf o c e' Hst' ltac:(split; set_solver)) as (S0 & x & Ho & S & HS).
-      exists S0, x. split; [by apply lookup_union_Some_l|]. exists S.
-      unfold new_env in *. rewrite !insert_union_l.
-      apply Hac; [|intros Hc0; exact (HPs _ _ _ HPe Hst' Hc0)|exact HS].
+      destruct (H2 c e' Hst' ltac:(split; set_solver)) as (S & π & Wn & HWn & HS).
+      exists S, π, Wn. split; [done|]. unfold new_env in *. rewrite !insert_union_l.
+      apply HacW; [by eapply wext_trans| |intros Hc0; exact (HPs _ _ _ HPe Hst' Hc0)|exact HS].
       apply map_disjoint_insert_l. split; [apply not_elem_of_dom; set_solver|].
       apply map_disjoint_insert_l. split; [apply not_elem_of_dom; set_solver|done].
     - (* O-Spawn *)

@@ -51,18 +51,19 @@ Section efacts.
     intros W Θ T F e H F' HF. apply Erel_iff. intros W1 HW1.
     pose proof (fcover_mono _ _ _ _ HW1 HF) as HF1.
     destruct (H W1 HW1) as (Hs & Hr & H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
-    assert (∀ c Θ0 T0 e',
+    assert (∀ Wx c Θ0 T0 e', W1 ⊑ Wx →
       at_cost_E n c (Erel κ) (λ W Θ T F e, Erel κ n W Θ T F e ∧
-                                     ∀ F', fcover W F' F → Erel κ n W Θ T F' e) W1 Θ0 T0 F e' →
-      at_cost_E n c (Erel κ) (Erel κ n) W1 Θ0 T0 F' e') as Hac.
-    { intros c Θ0 T0 e' [A1 A2]. split.
+                                     ∀ F', fcover W F' F → Erel κ n W Θ T F' e) Wx Θ0 T0 F e' →
+      at_cost_E n c (Erel κ) (Erel κ n) Wx Θ0 T0 F' e') as HacW.
+    { intros Wx c Θ0 T0 e' HWx [A1 A2]. pose proof (fcover_mono _ _ _ _ HWx HF1) as HFx. split.
       - intros Hc. by apply A1.
-      - intros Hc j Hj. apply (IHn j (oadd_lt _ _ _ Hc Hj) W1 Θ0 T0 F F' e'); [done|by apply A2]. }
+      - intros Hc j Hj. apply (IHn j (oadd_lt _ _ _ Hc Hj) Wx Θ0 T0 F F' e'); [done|by apply A2]. }
+    pose proof (λ c Θ0 T0 e', HacW W1 c Θ0 T0 e' (wext_refl W1)) as Hac.
     split; [|split; [|unfold Esteps; split_and!]].
     - done.
     - intros Hirr. eapply ready_t_cover; [exact HF1|by apply Hr].
     - intros e' Hst. by apply Hac, H1.
-    - intros c e' Hst Hc. destruct (H2 c e' Hst Hc) as (S & π & Wn & HWn & HS). exists S, π, Wn. split; [done|]. by apply Hac.
+    - intros c e' Hst Hc. destruct (H2 c e' Hst Hc) as (S & π & Wn & HWn & HS). exists S, π, Wn. split; [done|]. by apply HacW.
     - intros v e' Hst. destruct (H4 v e' Hst) as (ΘM & Θr & A1 & A2 & A4 & A5).
       exists ΘM, Θr. split_and!; [done|done| |by apply Hac].
       revert A4. apply Varr_mono; [by intros|by intros|by intros|]. by intros _ ? ? ? ? ? ? [? _].
@@ -94,19 +95,20 @@ Section efacts.
     refine (Erel_ind κ n _ _). intros W Θ T0 F e H HW ->. apply Erel_iff. intros W1 HW1.
     assert (W0 ⊑ W1) as HW01 by (by eapply wext_trans).
     destruct (H W1 HW1) as (Hs & Hr & H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
-    assert (∀ c Θ0 F0 e',
+    assert (∀ Wx c Θ0 F0 e', W1 ⊑ Wx →
       at_cost_E n c (Erel κ) (λ W Θ T0 F e, Erel κ n W Θ T0 F e ∧
-                                     (W0 ⊑ W → T0 = T → Erel κ n W Θ T' F e)) W1 Θ0 T F0 e' →
-      at_cost_E n c (Erel κ) (Erel κ n) W1 Θ0 T' F0 e') as Hac.
-    { intros c Θ0 F0 e' [A1 A2]. split.
+                                     (W0 ⊑ W → T0 = T → Erel κ n W Θ T' F e)) Wx Θ0 T F0 e' →
+      at_cost_E n c (Erel κ) (Erel κ n) Wx Θ0 T' F0 e') as HacW.
+    { intros Wx c Θ0 F0 e' HWx [A1 A2]. assert (W0 ⊑ Wx) as HW0x by (by eapply wext_trans). split.
       - intros Hc. by apply A1.
-      - intros Hc j Hj. apply (IHn j (oadd_lt _ _ _ Hc Hj) W1 T T'); [|by apply A2].
+      - intros Hc j Hj. apply (IHn j (oadd_lt _ _ _ Hc Hj) Wx T T'); [|by apply A2].
         intros m W2 Θ2 v HW2 Hm. apply HV; [by eapply wext_trans|exact (ole_trans _ _ _ Hm (oadd_le_l _ _ _ Hj))]. }
+    pose proof (λ c Θ0 F0 e', HacW W1 c Θ0 F0 e' (wext_refl W1)) as Hac.
     split; [|split; [|unfold Esteps; split_and!]].
     - intros Hirr. apply HV; [done|apply ole_refl|]. by apply Hs.
     - done.
     - intros e' Hst. by apply Hac, H1.
-    - intros c e' Hst Hc. destruct (H2 c e' Hst Hc) as (S & π & Wn & HWn & HS). exists S, π, Wn. split; [done|]. by apply Hac.
+    - intros c e' Hst Hc. destruct (H2 c e' Hst Hc) as (S & π & Wn & HWn & HS). exists S, π, Wn. split; [done|]. by apply HacW.
     - intros v e' Hst. destruct (H4 v e' Hst) as (ΘM & Θr & A1 & A2 & A4 & A5).
       exists ΘM, Θr. split_and!; [done|done| |by apply Hac].
       revert A4. apply Varr_mono; [by intros|by intros|by intros|]. by intros _ ? ? ? ? ? ? [? _].
