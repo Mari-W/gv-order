@@ -6114,10 +6114,10 @@ window.MAP = {
   "P-Connect.wf": {
    "title": "Only the shared part is compared",
    "what": "$\\mathsf{wf}(W_1|_S \\sqcup W_2|_S)$ for $S = A_{W_1} \\cap A_{W_2}$, the roots of both worlds. $W|_S$ keeps the facts $x \\prec_W y$ derivable in $W$ whose roots lie in $S$.",
-   "why": "Each side is well-founded by its own derivation, so each infinite descending chain of the join meets shared points infinitely often. Checking the orders the two sides induce on those roots is enough, and the join is then well-founded. A component exposes this order and no ranks, and the composite reads both sides at one ranked world.",
+   "why": "Each side is well-founded by its own derivation, so each infinite descending chain of the join meets shared points infinitely often. Checking the orders the two sides induce on those roots is enough, and the join is then well-founded. A component exposes this order and no ranks, and the composite reads both sides at one ranked world. Two components can pick the same private constant, so $S$ can hold a root that no point of $\\Sigma_C$ mentions.",
    "breaks": "If $W_1$ derives $\\rho \\prec \\overline{\\tau}$ and $W_2$ derives $\\overline{\\tau} \\prec \\rho$, the join has a cycle and two threads each wait on the other although each side alone is ready.",
    "example": "Two worlds without a common root need no check.",
-   "rocq": "static/Typing.v: p_connect, ptyped_wf; types/Worlds.v: wf_join_iff",
+   "rocq": "static/Typing.v: p_connect, ptyped_wf; types/Worlds.v: wf_join_iff; examples/SharedRoots.v: shared_not_cut",
    "sig": "\\mathsf{wf}(W_1|_S \\sqcup W_2|_S),\\ S = A_{W_1} \\cap A_{W_2}",
    "args": [
     {

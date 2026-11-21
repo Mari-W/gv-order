@@ -1,5 +1,52 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, run of 2026-11-22 on the overlap of P-Connect
+
+Branch redesign-comp, from 97a7a3e, commits 059d27c and the next one,
+nothing pushed. static/Typing.v and the typing rules are untouched.
+
+Repair (a) of the open item "P-Connect's overlap is the shared constants"
+is false, and no normalization that only drops unused constants saves it.
+examples/SharedRoots.v proves `shared_not_cut`. Each component
+P(c, d) = (cl c⁺; cl d⁺) ∥ (cl c⁻; cl d⁻) puts c at the constant 0 and d at
+0·0, and its first closes ask 0 ≺ (0·0)‾ and 0‾ ≺ 0·0. Both components type
+over the empty interface at the world W0 with the one constant 0 and these
+two facts (`comp_typed`). P(c, d) ∥ P(e, f) then types by P-Connect over
+the empty cut, and 0 ∈ `swshared` although Σ_C has no point.
+`fact_needs_zero` shows that every well-formed world deriving the first
+fact holds 0, so each side uses its 0. Both results are closed under the
+global context.
+
+Three things put a constant into S outside the roots of Σ_C.
+
+- P-Term asks nothing of the constants of W beyond well-formedness and
+  well-foundedness, so a world may hold constants no end mentions. Typing
+  reads W only through ≺_W, never through `sw_consts`, so these could be
+  dropped, but `sw_facts` is a predicate and the constants its facts use
+  are not computable without classical logic.
+- Two components may pick the same private constant, as above. Nothing in
+  `ptyped` keeps them apart, and E-New picks fresh roots only under ∃ in
+  the type, so the static world never records a creation. Renaming apart
+  would need a lemma that renames constants through `typed` and `ptyped`,
+  which the development does not have. The coincidence also costs
+  completeness. If P(e, f) closed d first, its world would order
+  0·0 ≺ 0‾ and (0·0)‾ ≺ 0, the join with W0 would hold the cycle
+  0 ≺ (0·0)‾ ≺ 0, and P-Connect would refuse a composition that renaming
+  0 to 1 in one component accepts (argued, not mechanized).
+- Two outer interfaces may share a root. A thread that receives a pair at
+  x·0 and x·1 and spawns one half leaves ends at a·0 and a·1 in two
+  components, and the cut need not mention a. This sharing is genuine,
+  and P-Connect must compare the facts at a.
+
+Repair (b) is therefore needed, in the form the open item states it. With
+hiding, a component's world lives on the roots of its own interface, so S
+lies in roots(Σ1 ∪ Σ_C) ∩ roots(Σ2 ∪ Σ̄_C), which is the roots of Σ_C
+together with the roots both outer interfaces share. The claim "S ⊆ roots
+of Σ_C" holds after neither repair, because of the third case. The right
+target is "P-Connect compares the two interface orders". Soundness of
+hiding is not checked here. The map cites `shared_not_cut` at P-Connect.wf
+(`node docs/explorer/gen/gen.js`, 0 errors).
+
 ## Report, run of 2026-11-21 on compositional lock-free semantics
 
 Branch redesign-comp in .claude/worktrees/redesign-comp, from bb04f3e,
