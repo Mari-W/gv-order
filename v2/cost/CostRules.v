@@ -3,7 +3,7 @@
     One lemma per rule of static/Typing.v, [cost_e_unit] to
     [cost_e_open], each stating the rule for [csem]. The readiness and
     future premises of the typing rules do not appear: [csem] reads no
-    point, world or future. The rules E-Abs, E-Box and E-SpawnLam build
+    point, world or future. The rules E-Abs and E-Box build
     a closure or a box, and take [tfacts] of the term they build, so
     that the value is exact (Q15). *)
 
@@ -166,8 +166,8 @@ Proof.
   apply (proj1 (meets_tid _ _)) in H2. by eapply link_redex.
 Qed.
 
-Lemma cost_e_spawn N Θ Δ e ub lb c' t' h a c0 t0 :
-  csem N Θ Δ e (TLolli ub lb c' t' h TUnit TUnit a) c0 t0 → fle (Some 1) a →
+Lemma cost_e_spawn N Θ Δ e ub lb c' t' a c0 t0 :
+  csem N Θ Δ e (TLolli ub lb c' t' TUnit TUnit a) c0 t0 → fle (Some 1) a →
   tok t0 (tspawn (tapp t' 0) tid) →
   csem N Θ Δ (ESpawn e) TUnit c0 (tseq t0 (tspawn (tapp t' 0) tid)).
 Proof.
@@ -224,9 +224,9 @@ Proof. destruct c1, c2, c; simpl; lia. Qed.
 Lemma fle_frame_mid i c1 c2 c : fle (Some i) c1 → fle c2 (fsub (fadd c1 (fadd c2 c)) (Some i)).
 Proof. destruct c1, c2, c; simpl; lia. Qed.
 
-Lemma cost_e_app N Θ Θ1 Θ2 Θ2' Δ Δ1 Δ2 Δ2' e1 e2 ub lb c t h T U a1 c1 t1 c2 t2 :
+Lemma cost_e_app N Θ Θ1 Θ2 Θ2' Δ Δ1 Δ2 Δ2' e1 e2 ub lb c t T U a1 c1 t1 c2 t2 :
   tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-  csem N Θ1 Δ1 e1 (TLolli ub lb c t h T U a1) c1 t1 →
+  csem N Θ1 Δ1 e1 (TLolli ub lb c t T U a1) c1 t1 →
   thage c1 Θ2 Θ2' → lage c1 Δ2 Δ2' →
   csem N Θ2' Δ2' e2 T c2 t2 →
   fle c2 a1 → tok t2 t → tok t1 (tseq t2 t) →
@@ -397,10 +397,24 @@ Qed.
 
 (** ** Closures and boxes *)
 
-Lemma cost_e_abs N Θ Θh Δ Δh e T U ub lb c t h a :
-  tfacts Θ Δ (Lam e) → thcap h a Θ Θh → lcap h a Δ Δh →
+(** E-Abs with per-end capture. The body sees the context aged by a,
+    at counters at least the counters at creation minus a. *)
+Lemma cle_fminus a (φ φ' : cenv) :
+  dom φ' = dom φ → (∀ o f f', φ !! o = Some f → φ' !! o = Some f' → fle (fsub f a) f') →
+  cle (fminus a <$> φ) φ'.
+Proof.
+  intros Hd Hh o. rewrite lookup_fmap.
+  destruct (φ !! o) as [f|] eqn:E; simpl.
+  - assert (o ∈ dom φ') as [f' Hf']%elem_of_dom by (rewrite Hd; by eapply elem_of_dom_2).
+    rewrite Hf'. exact (Hh o f f' E Hf').
+  - assert (o ∉ dom φ') as Ho by (rewrite Hd; by apply not_elem_of_dom).
+    apply not_elem_of_dom in Ho. by rewrite Ho.
+Qed.
+
+Lemma cost_e_abs N Θ Θh Δ Δh e T U ub lb c t a :
+  tfacts Θ Δ (Lam e) → thage a Θ Θh → lage a Δ Δh →
   csem N Θh (Some T :: Δh) e U c t →
-  csem N Θ Δ (Lam e) (TLolli ub lb c t h T U a) (Some 0) tid.
+  csem N Θ Δ (Lam e) (TLolli ub lb c t T U a) (Some 0) tid.
 Proof.
   intros Hf HcT HcD Hcs N' n g γ Π φ r tk HN HE Hm.
   pose proof (envf_exact _ _ _ _ _ _ _ _ _ Hf HE) as Hx. simpl in Hx |- *.
@@ -409,12 +423,12 @@ Proof.
   - done.
   - done.
   - by eapply envf_dom.
-  - eapply envf_cap_above; [exact HcT|exact HcD|exact HE].
+  - by eapply envf_age_above.
   - intros N'' j φ' Πu φu u r' tk' HN' Hj Hdφ' Hh HdΠ Hdφ Hu Hm'. rewrite subst1_subst.
     apply Hcs; [by eapply rle_trans| |done].
     apply envf_cons; [|done|done|done].
-    apply (envf_mono N' N'' n j _ _ _ _ _ φ'); [exact HN'|lia|apply cle_refl|].
-    by eapply envf_cap.
+    apply (envf_mono N' N'' n j _ _ _ _ _ (fminus a <$> φ) φ'); [exact HN'|lia|by apply cle_fminus|].
+    by eapply envf_age.
 Qed.
 
 Lemma cost_e_box N Δ e m k C ub c t U :
@@ -442,40 +456,4 @@ Proof.
   apply Hlob; [lia|apply rle_refl].
 Qed.
 
-Lemma cost_e_spawn_lam N Θ Θ' Δ Δ' e c' t' :
-  tfacts Θ Δ (Lam e) → thage (Some 1) Θ Θ' → lage (Some 1) Δ Δ' →
-  csem N Θ' (Some TUnit :: Δ') e TUnit c' t' →
-  csem N Θ Δ (ESpawn (Lam e)) TUnit (Some 0) (tspawn (tapp t' 0) tid).
-Proof.
-  intros Hf HaT HaD Hcs N' n g γ Π φ r tk HN HE Hm.
-  destruct (spawn_split_tid _ _ _ Hm) as (Hpar & b & Hb & Hch).
-  pose proof (envf_exact _ _ _ _ _ _ _ _ _ Hf HE) as Hx. simpl in Hx |- *.
-  pose proof (envf_dom _ _ _ _ _ _ _ _ HE) as Hd.
-  pose proof (envf_age_above _ _ _ _ _ _ _ _ _ _ _ HaT HaD HE) as Hab.
-  destruct n as [|n]; [apply FuelE_0|].
-  apply FuelE_S. intros N'' g' Π' φ' HN' Hk1 Hk2 R1 R2. split; [intros Hv; done|].
-  intros α e' Hst. cbn [emap] in Hst. apply op_head_only' in Hst; [|done].
-  inversion Hst; subst. cbn [Fobl]. unfold f_spawn.
-  rewrite emap_subst_up. set (eb := subst (up (λ x, emap g' (γ x))) (emap (g' ∘ g) e)).
-  assert (fends (Lam eb) = dom Π') as HM.
-  { unfold eb. rewrite <-emap_subst_up. simpl. rewrite fends_emap, Hx. symmetry. by apply renk_dom. }
-  assert (dom Π' = dom φ') as Hd'.
-  { rewrite (renk_dom _ _ _ R1), (renk_dom _ _ _ R2). by rewrite Hd. }
-  rewrite HM. split_and!.
-  - by rewrite Hd'.
-  - intros o f _ Ho Hn. destruct (proj2 R2 o f Ho) as (o0 & -> & Ho0). apply (Hab o0 f Ho0).
-    intros (S0 & HS0 & Hi0). apply Hn. exists S0. split; [by apply (proj1 R1)|done].
-  - rewrite mres_self. unfold fhand. rewrite Hd', mres_self.
-    destruct n as [|n]; [apply FuelE_0|].
-    apply (FuelE_beta _ _ _ _ _ _ _ _ [] _ (subst1 EUnit eb)); [constructor|by constructor|]. simpl.
-    unfold eb. rewrite subst1_subst.
-    rewrite <-(map_union_empty Π'), <-(map_union_empty (ftick <$> φ')).
-    eapply FuelE_thread; [constructor|].
-    apply (Hcs N'' n (g' ∘ g) (EUnit .: (λ x, emap g' (γ x))) _ _ 0 (Nat.div2 (S tk)));
-      [by eapply rle_trans| |unfold meets; by rewrite Hb].
-    apply envf_cons; [|apply Vfuel_unit|apply map_disjoint_empty_r|apply map_disjoint_empty_r].
-    rewrite ftick_fminus. apply (envf_age _ _ _ _ _ _ _ _ _ _ _ HaT HaD).
-    apply (envf_mono N'' N'' (S (S n)) n _ _ _ _ _ φ'); [apply rle_refl|lia|apply cle_refl|].
-    apply (envf_mono N' N'' (S (S n)) (S (S n)) _ _ _ _ _ φ'); [exact HN'|lia|apply cle_refl|by eapply envf_rename].
-  - rewrite mrem_self, Hd', mrem_self. apply FuelE_val; [done|done|apply Vfuel_unit].
-Qed.
+

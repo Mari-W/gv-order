@@ -36,7 +36,7 @@ Section body.
   Ltac fbf := apply fbl_hyp; [unfold fbx_P; fb_disj|simpl; lia].
 
   Lemma fbl_body : ∃ c t,
-    typed W (Some 2) ∅ Γb (Some fbl_T :: Some fbl_ty :: nones n) (∅, Some (FVar 1))
+    typed W (Some 2) ∅ Γb (Some fbl_T :: Some fbl_ty :: nones n) (∅, Some (FRest (RAbove (pvar 1))))
       (LetP (Var 0) (LetP (ENewAt 0 (Var 1)) (LetP (Var 0)
         (LetU (ESpawn (Lam (LetU (Var 0) (EClose (Var 1)))))
         (LetU (EClose (Var 3)) (LetU (EClose (Var 1)) (EClose (Var 4))))))))
@@ -62,26 +62,25 @@ Section body.
     lage_tac.
     eapply e_letu_; [lsplit_tac (EClose (Var 3)) EUnit| | | |shelve].
     { eapply e_close with (S0 := SEnd) (x := pvar 0); [done| |eapply e_var'; [reflexivity|spare_tac]].
-      apply (ub_below_varb _ _ _ (pvar 1) _ _ 1); [bot_false|apply Γbox_fv| |right; fbf].
+      apply (ub_below_varb _ _ _ (pvar 1) _ _); [bot_false| |right; fbf].
       intros y Hy. heads_cases Hy; fbf. }
     lage_tac.
     eapply e_letu_; [lsplit_tac (EClose (Var 1)) EUnit| | | |shelve].
     { eapply e_close with (S0 := SEnd) (x := fbd); [done| |eapply e_var'; [reflexivity|spare_tac]].
-      apply (ub_below_varb _ _ _ (pvar 1) _ _ 1); [bot_false|apply Γbox_fv| |right; fbf].
+      apply (ub_below_varb _ _ _ (pvar 1) _ _); [bot_false| |right; fbf].
       intros y Hy. heads_cases Hy; fbf. }
     lage_tac.
     eapply e_close with (S0 := SEnd) (x := pvar 1); [done| |eapply e_var'; [reflexivity|spare_tac]].
-    apply (ub_below_var _ _ _ (pvar 1) _ 1); [apply Γbox_fv|set_solver|by left]. }
+    apply (ub_below_var _ _ _ (pvar 1) _); [set_solver|by left]. }
     reflexivity.
     Unshelve. all: first [tok_tac | exact None | simpl; done].
   Qed.
 End body.
 
-Lemma fbl_box_typed W Γ n F : hc_fv Γ = ∅ →
-  typed W (Some 2) ∅ Γ (nones n) F fb_box fbl_ty (Some 0) tid.
+Lemma fbl_box_typed W Γ n F : typed W (Some 2) ∅ Γ (nones n) F fb_box fbl_ty (Some 0) tid.
 Proof.
-  intros HΓ. destruct (fbl_body W Γ n) as (c & t & Hb & Ht).
-  eapply lbox_typed; [done|reflexivity|exact Hb|exact Ht].
+  destruct (fbl_body W Γ n) as (c & t & Hb & Ht).
+  eapply lbox_typed; [reflexivity|exact Hb|exact Ht].
 Qed.
 
 Lemma fbl_hold : hold_at W_fb (Γnew W_fb 0) fb_C fb_xs.
@@ -127,11 +126,11 @@ Proof.
     eapply e_close with (S0 := SEnd) (x := ((pvar 0)·1)‾); [done|apply ub_below_empty|].
     eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
-  eapply e_app_; [lsplit_tac (EForce fb_box) EUnit|apply ub_below_empty| | | |shelve|shelve|shelve].
+  eapply e_app_; [lsplit_tac (EForce fb_box) EUnit|apply ubu_below_empty| | | |shelve|shelve|shelve].
   { eapply (lbox_force_eq _ _ _ _ _ _ 2 fb_C (Some (pvar 1)) fbl_T TUnit fb_xs _ _
-      (Some ((pvar 0)·1)) (TProd (TSess SEnd (pvar 0) (Some 2)) (TSess SEnd ((pvar 0)·1) (Some 2))));
+      (UPt ((pvar 0)·1)) (TProd (TSess SEnd (pvar 0) (Some 2)) (TSess SEnd ((pvar 0)·1) (Some 2))));
       [done|apply fbl_hold|done|done|done|].
-    apply (fbl_box_typed _ _ 7). done. }
+    apply (fbl_box_typed _ _ 7). }
   lage_tac.
   eapply e_pair_; [lsplit_tac (Var 3) EUnit| | | | |shelve].
   { eapply e_var'; [reflexivity|]. spare_tac. }

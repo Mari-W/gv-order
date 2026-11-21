@@ -31,10 +31,9 @@ FuelE_mono
                → tk ≤ tk'
                  → e ∈ F^N _ n⟦σ ▷ d ; r⟧(Π, φ, tk)
                    → e ∈ F^N' _ n⟦σ ▷ d' ; r'⟧(Π, φ', tk')
-Vfuel_recount
-     : ∀ (N : fuel) (n : nat) (h a : fuel) (T T' : ty) 
-         (Π : penv) (φ φ' : cenv) (v : expr),
-         tcap h a T T'
-         → dom φ' = dom φ
-           → (∀ (o : cend) (f : fuel), φ' !! o = Some f → fle h f)
-             → v ∈ FV^N _ n⟦RTy T⟧(Π, φ) → v ∈ FV^N _ n⟦RTy T'⟧(Π, φ')
+Vfuel_age
+     : ∀ (N : fuel) (n : nat) (c : fuel) (T T' : ty) 
+         (Π : penv) (φ : cenv) (v : expr),
+         tage c T T'
+         → v ∈ FV^N _ n⟦RTy T⟧(Π, φ)
+           → v ∈ FV^N _ n⟦RTy T'⟧(Π, fminus c <$> φ)

@@ -9,7 +9,7 @@
     Every typing rule holds with marks ([later_*]), for every cost
     table, stated at the set form with the facts of the rule read in W.
     The fundamental theorems (static/Fundamental.v) reach these forms
-    by instantiating the point variables and the future variables of Γ.
+    by instantiating the point variables of Γ and the rest of the future.
 
     - A rule that splits its context binds the first premise in a frame
       that holds the other part ([later_bind]). The hole runs with the
@@ -30,8 +30,9 @@
       n ([Erel_bind_acts], compat/BindActs.v), where every marked value
       is in V ([GrelL_clear]). It needs send, select and close to cost
       one or more, true of κ_L and false of κ_DF.
-    - E-SpawnLam builds the thunk of O-Spawn, which reads the body at
-      the empty future ([later_spawn_lam]). *)
+    - O-Spawn reads its thunk as a value at ∗ ⊸^⊤_⊥ ∗, whose body runs
+      at the empty future, so spawn (λe) needs no rule of its own
+      (entry 12). *)
 
 From GV Require Export static.Guard compat.SemTyped compat.Redex compat.EFacts cost.Exact compat.BindActs.
 
@@ -93,8 +94,8 @@ Section rules0.
   (** A spawn of a thunk, in every later world. *)
   Lemma Erel_spawn_thunk n W Θ F v :
     is_val v →
-    (∀ W1, W ⊑ W1 → Vthunk κ n (Vrel κ) (Erel κ) (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit)
-                      (λ W' Θ' F e, Erel κ n W' Θ' TUnit F e) W1 Θ v) →
+    (∀ W1, W ⊑ W1 → Varr κ n (Vrel κ) (Erel κ) (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit)
+                      (λ W' Θ' F e, Erel κ n W' Θ' TUnit F e) TUnit TUnit UTop LBot W1 Θ v) →
     Erel κ n W Θ TUnit F (ESpawn v).
   Proof.
     intros Hv HT. destruct n as [|n]; [apply Erel_0|].
@@ -118,7 +119,7 @@ Section rules0.
     Vrel κ n W Θ (pinst_ty σ T) v → Vrel κ n W Θ (pinst_ty σ T') v.
   Proof.
     induction 1 as [
-      |ub lb c t h T1 U a c' t' h' T1' U' a' _ _ _ _ _ IH1 _ IH2
+      |ub lb c t T1 U a c' t' T1' U' a' _ _ _ _ IH1 _ IH2
       |T1 U T1' U' _ IH1 _ IH2
       |T1 U T1' U' _ IH1 _ IH2
       |m kk C ub c t U U' c' t' _ _ HU
@@ -462,7 +463,7 @@ Proof.
       { exists ∅, ∅. split_and!; [apply map_disjoint_empty_l|by rewrite map_union_empty| |].
         - apply IH; [lia|lia|done].
         - eapply Grel_down; [|eapply Grel_mono; [exact HW'4|exact HG]]. lia. }
-      pose proof (Hbody W4 xs ss F' HW04 Hxs Hss Hsc (wholds_mono _ _ _ _ HW4 HC) Hub
+      pose proof (Hbody W4 xs ss F' HW04 Hxs Hss Hsc (wholds_mono _ _ _ _ HW4 HC) (proj1 (ub_ltu_of _ _ _) Hub)
                     j' W4 ∅ (EBox eb .: γ) (wext_refl _)
                     ltac:(rewrite tenv_erase_empty; apply map_disjoint_empty_l) HG') as Hb.
       by rewrite tenv_erase_empty, map_union_empty in Hb. }
@@ -587,28 +588,30 @@ Section later.
     - intros f Hf. by apply (wext_laws _ _ HW0').
   Qed.
 
-  Lemma later_abs W Θ Δ L F e T U aU ub lb c t h :
-    tfacts Θ Δ (Lam e) → lenv_bot Δ = false → lb_le W lb (tenv_heads Θ ∪ lenv_heads Δ) →
-    (∀ W1 F', W ⊑ W1 → ub_lt W1 ub F' → sem_later κ W1 Θ (Some T :: Δ) (false .: L) F' e U) →
-    sem_later κ W Θ Δ L F (Lam e) (TLolli ub lb c t h T U aU).
+  Lemma later_abs W Θ Δ L F e T U aU ub lb c t :
+    tfacts Θ Δ (Lam e) →
+    (lb = LBot ∨ (lenv_bot Δ = false ∧ lbx_le W lb (tenv_heads Θ ∪ lenv_heads Δ))) →
+    (∀ W1 F', W ⊑ W1 → ub_ltu W1 ub F' → sem_later κ W1 Θ (Some T :: Δ) (false .: L) F' e U) →
+    sem_later κ W Θ Δ L F (Lam e) (TLolli ub lb c t T U aU).
   Proof.
-    intros Htf Hb Hlb Hbody n W' Θ' γ HW Hd HG. apply Vrel_Erel, Vrel_lolli_iff.
+    intros Htf Hlb0 Hbody n W' Θ' γ HW Hd HG. apply Vrel_Erel, Vrel_lolli_iff.
     exists (subst (up γ) e). split_and!.
     - done.
     - pose proof (GrelL_fends κ _ _ _ _ _ _ _ _ Htf HG) as Hx. simpl in Hx.
       by rewrite Hx, dom_union_L, dom_tenv_erase.
-    - destruct lb as [l|]; simpl in Hlb |- *.
-      + intros y Hy. apply senv_heads_union in Hy as [Hy|Hy].
-        * rewrite senv_heads_erase in Hy. eapply w_le_mono; [exact HW|]. apply Hlb. set_solver.
-        * apply elem_of_senv_heads in Hy as (o & S & x & Ho & ->).
-          destruct (GrelL_heads κ _ _ _ _ _ _ HG Hb o S x Ho) as (h0 & Hh & Hle).
-          eapply w_le_trans; [|exact Hle]. eapply w_le_mono; [exact HW|]. apply Hlb. set_solver.
+    - destruct Hlb0 as [->|[Hb Hlb]]; [done|].
+      destruct lb as [| |l]; simpl in Hlb |- *; [| done |].
       + apply senv_heads_empty_iff.
         assert (tenv_heads Θ = ∅ ∧ lenv_heads Δ = ∅) as [H1 H2] by set_solver.
         assert (Θ' = ∅) as ->.
         { apply map_empty. intros o. destruct (Θ' !! o) as [[S x]|] eqn:E; [|done].
           destruct (GrelL_heads κ _ _ _ _ _ _ HG Hb o S x E) as (h0 & Hh & _). set_solver. }
         rewrite map_union_empty. apply senv_heads_empty_iff. by rewrite senv_heads_erase.
+      + intros y Hy. apply senv_heads_union in Hy as [Hy|Hy].
+        * rewrite senv_heads_erase in Hy. eapply w_le_mono; [exact HW|]. apply Hlb. set_solver.
+        * apply elem_of_senv_heads in Hy as (o & S & x & Ho & ->).
+          destruct (GrelL_heads κ _ _ _ _ _ _ HG Hb o S x Ho) as (h0 & Hh & Hle).
+          eapply w_le_trans; [|exact Hle]. eapply w_le_mono; [exact HW|]. apply Hlb. set_solver.
     - intros W'' j Θ'' w F' HW' Hj Hd'' Hub Hw. rewrite subst1_subst.
       apply map_disjoint_union_l in Hd'' as [Hd1 Hd2].
       rewrite <-map_union_assoc, (map_union_comm Θ' Θ'') by done.
@@ -657,7 +660,7 @@ Section later.
           - done.
           - intros i Hi. apply IH; [lia|lia|done].
           - eapply GrelL_down; [|eapply GrelL_mono; [exact HW'4|exact HG]]. lia. }
-        pose proof (Hbody W4 xs ss F' HW04 Hxs Hss Hsc (wholds_mono _ _ _ _ HW4 HC) Hub
+        pose proof (Hbody W4 xs ss F' HW04 Hxs Hss Hsc (wholds_mono _ _ _ _ HW4 HC) (proj1 (ub_ltu_of _ _ _) Hub)
                       j' W4 ∅ (EBox eb .: γ) (wext_refl _)
                       ltac:(rewrite tenv_erase_empty; apply map_disjoint_empty_l) HG') as Hb.
         by rewrite tenv_erase_empty, map_union_empty in Hb. }
@@ -690,30 +693,31 @@ Section later.
     - by apply later_bind_acts.
   Qed.
 
-  Lemma later_app W Θ Θ1 Θ2 Δ Δ1 Δ2 L L' F e1 e2 ub lb c t h T U aU :
-    cmarks L L' e1 → tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_lt W ub F →
+  Lemma later_app W Θ Θ1 Θ2 Δ Δ1 Δ2 L L' F e1 e2 ub lb c t T U aU :
+    cmarks L L' e1 → tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_ltu W ub F →
     (∀ B, sem_later κ W Θ1 Δ1 L (F ∪ tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ (if lenv_bot Δ2 then B else ∅)) e1
-            (TLolli ub lb c t h T U aU)) →
-    sem_later κ W Θ2 Δ2 L' (F ∪ opt_heads lb) e2 T →
+            (TLolli ub lb c t T U aU)) →
+    (∀ B, sem_later κ W Θ2 Δ2 L' (F ∪ lb_heads lb ∪ (if lb_bot lb then B else ∅)) e2 T) →
     sem_later κ W Θ Δ L F (App e1 e2) U.
   Proof.
     intros Hk Hs Hl Hub He1 He2.
     eapply (later_bind_gen (λ γ, FAppL (subst γ e2)) W Θ Θ1 Θ2 Δ Δ1 Δ2 L L' F e1 _
-              (TLolli ub lb c t h T U aU) U Hk Hs Hl); [done|done|exact He1|].
+              (TLolli ub lb c t T U aU) U Hk Hs Hl); [done|done|exact He1|].
     intros W' j Θv v Θ2' γ HW Hd2 HG2 Hdv HV. simpl.
     pose proof (Vrel_val κ _ _ _ _ _ HV) as Hvv.
     pose proof HV as (eb & -> & _ & Hlbv & _)%Vrel_lolli_iff.
     rewrite (map_union_comm Θv) by done.
     change (App (Lam eb) (subst γ e2)) with (fill_frame (FAppR (Lam eb)) (subst γ e2)).
     apply (Erel_bind κ j _ W' _ _ T); [done|by symmetry| |].
-    - eapply Erel_cover; [|exact (He2 j W' Θ2' γ HW Hd2 HG2)].
+    - eapply Erel_cover; [|exact (He2 (senv_heads Θv) j W' Θ2' γ HW Hd2 HG2)].
       intros y [Hy|Hy]%elem_of_union; [exists y; split; [set_solver|by left]|].
-      destruct lb as [l|]; simpl in Hlbv.
-      + exists l. split; [set_solver|by apply Hlbv].
+      destruct lb as [| |l]; simpl in Hlbv.
       + rewrite Hlbv in Hy. set_solver.
+      + exists y. split; [set_solver|by left].
+      + exists l. split; [set_solver|by apply Hlbv].
     - intros W'' j' Θw w HW' Hj' Hdw Hw. simpl. rewrite map_union_comm by done.
-      apply (Erel_app κ j' W'' Θv Θw ub lb c t h T U aU); [by symmetry| | |done].
-      + eapply ub_lt_mono; [eapply wext_trans; [exact HW|exact HW']|exact Hub].
+      apply (Erel_app κ j' W'' Θv Θw ub lb c t T U aU); [by symmetry| | |done].
+      + eapply ub_ltu_mono; [eapply wext_trans; [exact HW|exact HW']|exact Hub].
       + eapply Vrel_down; [exact Hj'|]. by eapply Vrel_mono.
   Qed.
 
@@ -932,8 +936,8 @@ Section later.
     sem_later κ W Θ Δ L F (ELink e) TUnit.
   Proof. apply later_op. intros W' j Θv v HW Hv. by eapply Erel_link. Qed.
 
-  Lemma later_spawn W Θ Δ L F e ub lb c t h aU :
-    sem_later κ W Θ Δ L F e (TLolli ub lb c t h TUnit TUnit aU) →
+  Lemma later_spawn W Θ Δ L F e ub lb c t aU :
+    sem_later κ W Θ Δ L F e (TLolli ub lb c t TUnit TUnit aU) →
     sem_later κ W Θ Δ L F (ESpawn e) TUnit.
   Proof. apply later_op. intros W' j Θv v HW Hv. by eapply Erel_spawn. Qed.
 
@@ -956,28 +960,5 @@ Section later.
     - by eapply ub_lt_mono.
   Qed.
 
-  Lemma later_spawn_lam W Θ Δ L F e :
-    tfacts Θ Δ (Lam e) →
-    (∀ W1, W ⊑ W1 → sem_later κ W1 Θ (Some TUnit :: Δ) (false .: L) ∅ e TUnit) →
-    sem_later κ W Θ Δ L F (ESpawn (Lam e)) TUnit.
-  Proof.
-    intros Htf Hbody n W' Θ' γ HW Hd HG. simpl. apply Erel_spawn_thunk; [done|].
-    intros W1 HW1. exists (subst (up γ) e). split_and!.
-    - done.
-    - pose proof (GrelL_fends κ _ _ _ _ _ _ _ _ Htf HG) as Hx. simpl in Hx.
-      by rewrite Hx, dom_union_L, dom_tenv_erase.
-    - intros W'' j Θ'' w HW'' Hj Hd''.
-      assert (Θ'' = ∅ ∧ w = EUnit → Erel κ j W'' ((tenv_erase Θ ∪ Θ') ∪ Θ'') TUnit ∅
-                (subst1 w (subst (up γ) e))) as Hcase.
-      { intros [-> ->]. rewrite map_union_empty, subst1_subst.
-        rewrite <-(map_empty_union Θ') at 1.
-        apply (Hbody W'' (wext_trans _ _ _ HW (wext_trans _ _ _ HW1 HW'')) j W'' (∅ ∪ Θ') (EUnit .: γ)
-                 (wext_refl _)); [by rewrite map_empty_union|].
-        simpl. exists ∅, Θ'. split_and!; [apply map_disjoint_empty_l|done|by apply Vrel_unit_iff|].
-        eapply GrelL_down; [|eapply GrelL_mono; [eapply wext_trans; [exact HW1|exact HW'']|exact HG]]. lia. }
-      split.
-      + intros _ Hw. apply Hcase. by apply Vrel_unit_iff in Hw.
-      + intros -> Hw. by apply Hcase.
-  Qed.
 End later.
 

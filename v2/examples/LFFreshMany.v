@@ -40,13 +40,13 @@ Section body.
     cbn [hbot orb sf_unionb fst snd fs_var fs_bot].
 
   Ltac fut x :=
-    apply (ub_below_gen _ _ x (pvar 1) 1);
+    apply (ub_below_gen _ _ x (pvar 1));
       [ let y := fresh "y" in let Hy := fresh "Hy" in
         intros y Hy; revert Hy; normF; intros Hy; heads_cases Hy; fmf
-      | normF; reflexivity | apply Γbox_fv | right; fmf | normF; reflexivity ].
+      | normF; reflexivity  | right; fmf | normF; reflexivity ].
 
   Lemma fml_body : ∃ c t,
-    typed W (Some 4) ∅ Γb (Some fml_T :: Some fml_ty :: nones n) (∅, Some (FVar 1))
+    typed W (Some 4) ∅ Γb (Some fml_T :: Some fml_ty :: nones n) (∅, Some (FRest (RAbove (pvar 1))))
       fm_e TUnit c t ∧ t.2 = Some 0.
   Proof.
     eexists _, _. split.
@@ -106,17 +106,16 @@ Section body.
       age_tac. }
     lage_tac.
     eapply e_close with (S0 := SEnd) (x := pvar 1); [done| |eapply e_var'; [reflexivity|spare_tac]].
-    apply (ub_below_var _ _ _ (pvar 1) _ 1); [apply Γbox_fv|set_solver|by left]. }
+    apply (ub_below_var _ _ _ (pvar 1) _); [set_solver|by left]. }
     reflexivity.
     Unshelve. all: first [tok_tac | apply tsub_refl | exact None].
   Qed.
 End body.
 
-Lemma fml_box_typed W Γ n F : hc_fv Γ = ∅ →
-  typed W (Some 4) ∅ Γ (nones n) F fm_box fml_ty (Some 0) tid.
+Lemma fml_box_typed W Γ n F : typed W (Some 4) ∅ Γ (nones n) F fm_box fml_ty (Some 0) tid.
 Proof.
-  intros HΓ. destruct (fml_body W Γ n) as (c & t & Hb & Ht).
-  eapply lbox_typed; [done|reflexivity|exact Hb|exact Ht].
+  destruct (fml_body W Γ n) as (c & t & Hb & Ht).
+  eapply lbox_typed; [reflexivity|exact Hb|exact Ht].
 Qed.
 
 Lemma fml_hold : hold_at W_fm (Γnew W_fm 0) fm_C fm_xs.
@@ -162,11 +161,11 @@ Proof.
     eapply e_close with (S0 := SEnd) (x := ((pvar 0)·1)‾); [done|apply ub_below_empty|].
     eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
-  eapply e_app_; [lsplit_tac (EForce fm_box) EUnit|apply ub_below_empty| | | |shelve|shelve|shelve].
+  eapply e_app_; [lsplit_tac (EForce fm_box) EUnit|apply ubu_below_empty| | | |shelve|shelve|shelve].
   { eapply (lbox_force_eq _ _ _ _ _ _ 2 fm_C (Some (pvar 1)) fml_T TUnit fm_xs _ _
-      (Some ((pvar 0)·1)) (TProd (TSess SEnd (pvar 0) (Some 4)) (TSess SEnd ((pvar 0)·1) (Some 4))));
+      (UPt ((pvar 0)·1)) (TProd (TSess SEnd (pvar 0) (Some 4)) (TSess SEnd ((pvar 0)·1) (Some 4))));
       [done|apply fml_hold|done|done|done|].
-    apply (fml_box_typed _ _ 7). done. }
+    apply (fml_box_typed _ _ 7). }
   lage_tac.
   eapply e_pair_; [lsplit_tac (Var 3) EUnit| | | | |shelve].
   { eapply e_var'; [reflexivity|]. spare_tac. }

@@ -142,15 +142,15 @@ Section body.
     rreach (pvar 0) (pvar 1) X1 Y1 →
     dftyped W ∅ Γb Δ F e rg_ty →
     dftyped W ∅ Γb Δ F (EForce e)
-      (TLolli (Some (sh 1 X1)) None None tinf None
+      (TLolli (UPt (sh 1 X1)) LNone None tinf
          (TProd (TSess Sch X1 None) (TSess (dual Sch) Y1 None)) TUnit None).
   Proof.
     intros HR H.
     assert (sinst_ty (slist []) (ty_inst (X1 :: Y1 :: [])
-              (TLolli (Some (sh 1 (pvar 0))) None None tinf None rg_T TUnit None)) =
-      TLolli (Some (sh 1 X1)) None None tinf None
+              (TLolli (UPt (sh 1 (pvar 0))) LNone None tinf rg_T TUnit None)) =
+      TLolli (UPt (sh 1 X1)) LNone None tinf
          (TProd (TSess Sch X1 None) (TSess (dual Sch) Y1 None)) TUnit None) as <-.
-    { rewrite sinst_nil. unfold ty_inst, rg_T. cbn [pinst_ty fmap option_fmap option_map].
+    { rewrite sinst_nil. unfold ty_inst, rg_T. cbn [pinst_ty fmap option_fmap option_map ub_map lb_map].
       rewrite pt_inst_shift, !pt_inst_pvar_at. reflexivity. }
     eapply d_force with (ub := None) (c := None) (t := tinf) (C := rg_C);
       [done| |done|split; [apply Forall_nil|intros _; apply Forall_nil]|exact I|exact H].
@@ -164,15 +164,15 @@ Section body.
     cbn [hbot orb sf_unionb fst snd fs_var fs_bot].
 
   Ltac fut x :=
-    apply (ub_below_gen _ _ x (sh 1 (pvar 0)) 1);
+    apply (ub_below_gen _ _ x (sh 1 (pvar 0)));
       [ let y := fresh "y" in let Hy := fresh "Hy" in
         intros y Hy; revert Hy; normF; unfold payload_at, ty_inst; cbn [pinst_ty]; intros Hy; heads_cases Hy;
         first [rgf | eapply sl_trans; [apply sl_po|rgf]]
-      | normF; reflexivity | apply Γbox_fv
+      | normF; reflexivity 
       | first [by left | right; apply sl_po] | normF; reflexivity ].
 
   Lemma rg_body :
-    dftyped W ∅ Γb (Some rg_T :: Some rg_ty :: nones n) (∅, Some (FVar 1)) rg_e TUnit.
+    dftyped W ∅ Γb (Some rg_T :: Some rg_ty :: nones n) (∅, Some (FRest (RAbove (sh 1 (pvar 0))))) rg_e TUnit.
   Proof.
     unfold rg_e.
     eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
@@ -213,7 +213,7 @@ Section body.
     { eapply d_spawn_lam.
       eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
       { eapply d_var'; [reflexivity|]. spare_tac. }
-      eapply d_app; [apply tsplit_empty|lsplit_tac (EForce (Var 14)) (Pair (Var 2) (Var 3))|apply ub_below_empty| |].
+      eapply d_app; [apply tsplit_empty|lsplit_tac (EForce (Var 14)) (Pair (Var 2) (Var 3))|apply ubu_below_empty| |].
       - eapply rg_call; [eapply rr_l, rr_root|]. eapply d_var'; [reflexivity|]. spare_tac.
       - eapply d_pair; [apply tsplit_empty|lsplit_tac (Var 2) (Var 3)| |].
         + eapply d_var'; [reflexivity|]. spare_tac.
@@ -221,7 +221,7 @@ Section body.
     eapply d_spawn_lam.
     eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
     { eapply d_var'; [reflexivity|]. spare_tac. }
-    eapply d_app; [apply tsplit_empty|lsplit_tac (EForce (Var 14)) (Pair (Var 4) (Var 7))|apply ub_below_empty| |].
+    eapply d_app; [apply tsplit_empty|lsplit_tac (EForce (Var 14)) (Pair (Var 4) (Var 7))|apply ubu_below_empty| |].
     - eapply rg_call; [eapply rr_r, rr_root|]. eapply d_var'; [reflexivity|]. spare_tac.
     - eapply d_pair; [apply tsplit_empty|lsplit_tac (Var 4) (Var 7)| |].
       + eapply d_var'; [reflexivity|]. spare_tac.
@@ -230,8 +230,8 @@ Section body.
   Qed.
 End body.
 
-Lemma ring_typed W Γ n F : hc_fv Γ = ∅ → dftyped W ∅ Γ (nones n) F ring rg_ty.
-Proof. intros HΓ. apply box1_typed; [done|reflexivity|apply rg_body]. Qed.
+Lemma ring_typed W Γ n F : dftyped W ∅ Γ (nones n) F ring rg_ty.
+Proof. apply box1_typed; [reflexivity|apply rg_body]. Qed.
 
 (** ** main *)
 
@@ -246,13 +246,13 @@ Definition rg_main : expr := let_new 0 (App (EForce ring) (Pair (Var 1) (Var 0))
 Lemma rg_force n F e :
   dftyped W_rg ∅ (Γnew W_rg 0) (nones n) F e rg_ty →
   dftyped W_rg ∅ (Γnew W_rg 0) (nones n) F (EForce e)
-    (TLolli (Some (sh 1 (pvar 0))) None None tinf None
+    (TLolli (UPt (sh 1 (pvar 0))) LNone None tinf
        (TProd (TSess Sch (pvar 0) None) (TSess (dual Sch) (pvar 0)‾ None)) TUnit None).
 Proof.
   intros H.
   assert (sinst_ty (slist []) (ty_inst rg_xs
-            (TLolli (Some (sh 1 (pvar 0))) None None tinf None rg_T TUnit None)) =
-    TLolli (Some (sh 1 (pvar 0))) None None tinf None
+            (TLolli (UPt (sh 1 (pvar 0))) LNone None tinf rg_T TUnit None)) =
+    TLolli (UPt (sh 1 (pvar 0))) LNone None tinf
        (TProd (TSess Sch (pvar 0) None) (TSess (dual Sch) (pvar 0)‾ None)) TUnit None) as <-.
   { rewrite sinst_nil. reflexivity. }
   eapply d_force with (ub := None) (c := None) (t := tinf) (C := rg_C);
@@ -275,7 +275,7 @@ Proof.
   fold (Γnew W_rg 0).
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
-  eapply d_app; [apply tsplit_empty|lsplit_tac (EForce ring) EUnit|apply ub_below_empty| |].
+  eapply d_app; [apply tsplit_empty|lsplit_tac (EForce ring) EUnit|apply ubu_below_empty| |].
   - apply (rg_force 3). by apply ring_typed.
   - eapply d_pair; [apply tsplit_empty|lsplit_tac (Var 1) EUnit| |].
     + eapply d_var'; [reflexivity|]. spare_tac.

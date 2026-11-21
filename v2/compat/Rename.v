@@ -491,7 +491,7 @@ Section rel.
     VR n T.
   Proof.
     intros IHl IHt IHe W Θ v h Hk.
-    destruct T as [|ub lb c t hh T1 U a0|T1 U|T1 U|m kk C ub c t U|s x a0|lb m C T1].
+    destruct T as [|ub lb c t T1 U a0|T1 U|T1 U|m kk C ub c t U|s x a0|lb m C T1].
     - intros [-> ->]%Vrel_unit_iff. apply Vrel_unit_iff. by rewrite kren_empty.
     - intros (e & -> & Hfe & Hlb & H)%Vrel_lolli_iff. apply Vrel_lolli_iff.
       exists (emap h e). split_and!; [done|by rewrite kren_dom, fends_emap, Hfe|by rewrite kren_heads|].
@@ -619,15 +619,15 @@ Section rel.
       exists (kren h ΘM), (kren h Θr). split_and!.
       + by apply kren_disjoint.
       + by apply kren_union.
-      + destruct A4 as (e1 & -> & Hfe & HA). exists (emap h e1).
-        split_and!; [done|by rewrite kren_dom, fends_emap, Hfe|].
-        intros W' j Θ' w' HW Hj Hd. split.
+      + destruct A4 as (e1 & -> & Hfe & _ & HA). exists (emap h e1).
+        split_and!; [done|by rewrite kren_dom, fends_emap, Hfe|done|].
+        intros W' j Θ' w' F0 HW Hj Hd Hub. simpl in Hub. subst F0. split.
         * intros Hjn [-> ->]%Vrel_unit_iff. rewrite map_union_empty.
-          destruct (HA W' j ∅ EUnit HW Hj (map_disjoint_empty_r _)) as [B1 _].
+          destruct (HA W' j ∅ EUnit ∅ HW Hj (map_disjoint_empty_r _) eq_refl) as [B1 _].
           rewrite map_union_empty in B1. change EUnit with (emap h EUnit). rewrite <-emap_subst1.
           apply (proj2 (IHl j Hjn TUnit)); [done|]. apply B1; [done|by apply Vrel_unit_iff].
         * intros -> [-> ->]. rewrite map_union_empty.
-          destruct (HA W' (S n) ∅ EUnit HW Hj (map_disjoint_empty_r _)) as [_ B2].
+          destruct (HA W' (S n) ∅ EUnit ∅ HW Hj (map_disjoint_empty_r _) eq_refl) as [_ B2].
           destruct (B2 eq_refl (conj eq_refl eq_refl)) as [_ B3]. rewrite map_union_empty in B3.
           change EUnit with (emap h EUnit). rewrite <-emap_subst1. apply B3; [by right|done].
       + by apply Hac.

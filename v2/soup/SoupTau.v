@@ -93,8 +93,8 @@ Proof.
     - unfold o_spawn in Ho. destruct Ho as (ΘM & Θr & _ & _ & Hth & Hpar).
       split; [by destruct (proj1 Hpar eq_refl)|].
       intros v -> . destruct (Hsp v eq_refl) as (v1 & [= <-] & ->).
-      destruct Hth as (eb & -> & _ & Hb).
-      destruct (Hb W (S n) ∅ EUnit (wext_refl W) ltac:(cbn; lia) (map_disjoint_empty_r _)) as [_ Hb2].
+      destruct Hth as (eb & -> & _ & _ & Hb).
+      destruct (Hb W (S n) ∅ EUnit ∅ (wext_refl W) ltac:(cbn; lia) (map_disjoint_empty_r _) eq_refl) as [_ Hb2].
       destruct (Hb2 eq_refl (conj eq_refl eq_refl)) as [_ Hacc].
       constructor. intros y' [(α' & x'' & _ & Hs' & ->)|(v' & x'' & Hs' & _)].
       + unfold cerase in Hs'. simpl in Hs'. fold cerase in Hs'.

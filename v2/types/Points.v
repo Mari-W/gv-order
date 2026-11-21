@@ -374,3 +374,38 @@ Proof. by destruct lb. Qed.
 
 Lemma lb_map_id f lb : (∀ x, f x = x) → lb_map f lb = lb.
 Proof. intros H. destruct lb; simpl; by rewrite ?H. Qed.
+
+(** The ⊥ flag of a lower bound. *)
+Definition lb_bot (lb : lbound) : bool := match lb with LBot => true | _ => false end.
+
+Lemma lb_bot_map f lb : lb_bot (lb_map f lb) = lb_bot lb.
+Proof. by destruct lb. Qed.
+
+(** ** Upper points of arrows (entry 12, generalized arrows)
+
+    [UNone]: the body waits nowhere, so a caller owes nothing. [UPt x]:
+    the body waits at most at x. [UTop]: the body runs as the last code
+    of its thread, so a call stands only before the empty future. *)
+Inductive ubound := UNone | UPt (x : point) | UTop.
+
+Global Instance ubound_eq_dec : EqDecision ubound.
+Proof. solve_decision. Defined.
+
+Definition ub_map (f : point → point) (ub : ubound) : ubound :=
+  match ub with UPt x => UPt (f x) | UNone => UNone | UTop => UTop end.
+
+(** The upper point of a box thunk, which is a point or none. *)
+Definition ubound_of (o : option point) : ubound :=
+  match o with Some x => UPt x | None => UNone end.
+
+Lemma ub_map_ext f g ub : (∀ x, f x = g x) → ub_map f ub = ub_map g ub.
+Proof. intros H. destruct ub; simpl; by rewrite ?H. Qed.
+
+Lemma ub_map_comp f g ub : ub_map f (ub_map g ub) = ub_map (f ∘ g) ub.
+Proof. by destruct ub. Qed.
+
+Lemma ub_map_id f ub : (∀ x, f x = x) → ub_map f ub = ub.
+Proof. intros H. destruct ub; simpl; by rewrite ?H. Qed.
+
+Lemma ub_map_of f o : ub_map f (ubound_of o) = ubound_of (f <$> o).
+Proof. by destruct o. Qed.

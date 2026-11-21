@@ -29,7 +29,7 @@ Section closure.
   Lemma Vrel_val n W Θ T v : Vrel κ n W Θ T v → is_val v.
   Proof.
     revert W Θ v. induction T as [T IH] using tsize_ind. intros W Θ v.
-    destruct T as [|ub lb c t h T1 U a|T1 U|T1 U|m kk C ub c t U|s x a|lb m C T1].
+    destruct T as [|ub lb c t T1 U a|T1 U|T1 U|m kk C ub c t U|s x a|lb m C T1].
     - by intros [_ ->]%Vrel_unit_iff.
     - by intros (e & -> & _)%Vrel_lolli_iff.
     - intros (v1 & v2 & Θ1 & Θ2 & -> & _ & _ & H1 & H2)%Vrel_prod_iff. simpl.
@@ -47,10 +47,10 @@ Section closure.
   Lemma Vrel_mono n W W' Θ T v : W ⊑ W' → Vrel κ n W Θ T v → Vrel κ n W' Θ T v.
   Proof.
     intros HW. revert W W' HW Θ v. induction T as [T IH] using tsize_ind. intros W W' HW Θ v.
-    destruct T as [|ub lb c t h T1 U a|T1 U|T1 U|m kk C ub c t U|s x a|lb m C T1].
+    destruct T as [|ub lb c t T1 U a|T1 U|T1 U|m kk C ub c t U|s x a|lb m C T1].
     - by rewrite !Vrel_unit_iff.
     - rewrite !Vrel_lolli_iff. intros (e & -> & Hfe & Hlb & H). exists e.
-      split_and!; [done|done|by eapply lb_le_mono|]. intros W'' j Θ' w F HW'' Hj Hd Hub Hw.
+      split_and!; [done|done|by eapply lbx_le_mono|]. intros W'' j Θ' w F HW'' Hj Hd Hub Hw.
       apply H; [by eapply wext_trans|done..].
     - rewrite !Vrel_prod_iff. intros (v1 & v2 & Θ1 & Θ2 & -> & Hd & -> & H1 & H2).
       exists v1, v2, Θ1, Θ2. split_and!; [done|done|done| |];
@@ -92,7 +92,7 @@ Section closure.
   Lemma Vrel_down n m W Θ T v : m ≤ n → Vrel κ n W Θ T v → Vrel κ m W Θ T v.
   Proof.
     intros Hmn. revert W Θ v. induction T as [T IH] using tsize_ind. intros W Θ v.
-    destruct T as [|ub lb c t h T1 U a|T1 U|T1 U|m' kk C ub c t U|s x a|lb m' C T1].
+    destruct T as [|ub lb c t T1 U a|T1 U|T1 U|m' kk C ub c t U|s x a|lb m' C T1].
     - by rewrite !Vrel_unit_iff.
     - rewrite !Vrel_lolli_iff. intros (e & -> & Hfe & Hlb & H). exists e.
       split_and!; [done|done|done|]. intros W' j Θ' w F HW Hj Hd Hub Hw. apply H; [done|lia|done..].
@@ -145,8 +145,8 @@ Section closure.
       exists S0, x. split; [done|]. exists S. eapply Hac; [done|exact HS].
     - intros v e' Hst. destruct (H4 v e' Hst) as (ΘM & Θr & A1 & A2 & A4 & A5).
       exists ΘM, Θr. split_and!; [done|done| |eapply Hac; [done|exact A5]].
-      destruct A4 as (eb & -> & Hfe & A4). exists eb. split_and!; [done|done|].
-      intros W' j Θ' w HW Hj Hd. destruct (A4 W' j Θ' w HW ltac:(lia) Hd) as [B1 B2].
+      destruct A4 as (eb & -> & Hfe & Hlb & A4). exists eb. split_and!; [done|done|done|].
+      intros W' j Θ' w F0 HW Hj Hd Hub. destruct (A4 W' j Θ' w F0 HW ltac:(lia) Hd Hub) as [B1 B2].
       split; [intros Hjm; apply B1; lia|].
       intros -> [-> ->]. destruct (decide (m = n)) as [->|Hne].
       + by apply B2.
@@ -224,16 +224,16 @@ Section closure.
   Qed.
 
   (** The thunk of O-Spawn is read at the level of the parent, inside
-      the fixpoint when β is free. A value at 1 ⊸^ub_lb 1 is a thunk: its
-      body is read at the empty future, above every upper point, and
-      the lower point is dropped. *)
+      the fixpoint when β is free. A value at 1 ⊸^ub_lb 1 is a value at
+      1 ⊸^⊤_⊥ 1, which O-Spawn reads (entry 12): its body is read at the
+      empty future, above every upper point, and ⊥ claims no bound. *)
   Lemma Vrel_thunk n W Θ ub lb v :
-    Vrel κ n W Θ (TLolli ub lb None tinf None TUnit TUnit None) v →
-    Vthunk κ n (Vrel κ) (Erel κ) (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit)
-      (λ W' Θ' F e, Erel κ n W' Θ' TUnit F e) W Θ v.
+    Vrel κ n W Θ (TLolli ub lb None tinf TUnit TUnit None) v →
+    Varr κ n (Vrel κ) (Erel κ) (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit)
+      (λ W' Θ' F e, Erel κ n W' Θ' TUnit F e) TUnit TUnit UTop LBot W Θ v.
   Proof.
-    rewrite Vrel_lolli_iff, <-Varr_rel_iff. intros HV. apply Varr_thunk in HV. revert HV.
-    apply Vthunk_mono; [intros; done|intros; done| |intros; done].
+    rewrite Vrel_lolli_iff, <-Varr_rel_iff. intros HV. apply Varr_top in HV. revert HV.
+    apply Varr_mono; [intros; done|intros; done| |intros; done].
     intros _ W0 Θ0 w. by rewrite Vrel_unit_iff.
   Qed.
 

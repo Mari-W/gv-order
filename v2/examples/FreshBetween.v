@@ -45,7 +45,7 @@ Section body.
   Ltac fbf := apply fb_hyp; [unfold fbx_P; fb_disj|simpl; lia].
 
   Lemma fb_body :
-    dftyped W ∅ Γb (Some fb_T :: Some fb_ty :: nones n) (∅, Some (FVar 1))
+    dftyped W ∅ Γb (Some fb_T :: Some fb_ty :: nones n) (∅, Some (FRest (RAbove (pvar 1))))
       (LetP (Var 0) (LetP (ENewAt 0 (Var 1)) (LetP (Var 0)
         (LetU (ESpawn (Lam (LetU (Var 0) (EClose (Var 1)))))
         (LetU (EClose (Var 3)) (LetU (EClose (Var 1)) (EClose (Var 4))))))))
@@ -65,20 +65,20 @@ Section body.
       eapply d_var'; [reflexivity|]. spare_tac. }
     eapply d_letu; [apply tsplit_empty|lsplit_tac (EClose (Var 3)) EUnit| |].
     { eapply d_close with (S0 := SEnd) (x := pvar 0); [done| |eapply d_var'; [reflexivity|spare_tac]].
-      apply (ub_below_varb _ _ _ (pvar 1) _ _ 1); [bot_false|apply Γbox_fv| |right; fbf].
+      apply (ub_below_varb _ _ _ (pvar 1) _ _); [bot_false| |right; fbf].
       intros y Hy. heads_cases Hy; fbf. }
     eapply d_letu; [apply tsplit_empty|lsplit_tac (EClose (Var 1)) EUnit| |].
     { eapply d_close with (S0 := SEnd) (x := fbd); [done| |eapply d_var'; [reflexivity|spare_tac]].
-      apply (ub_below_varb _ _ _ (pvar 1) _ _ 1); [bot_false|apply Γbox_fv| |right; fbf].
+      apply (ub_below_varb _ _ _ (pvar 1) _ _); [bot_false| |right; fbf].
       intros y Hy. heads_cases Hy; fbf. }
     eapply d_close with (S0 := SEnd) (x := pvar 1); [done| |eapply d_var'; [reflexivity|spare_tac]].
-    apply (ub_below_var _ _ _ (pvar 1) _ 1); [apply Γbox_fv|set_solver|by left].
+    apply (ub_below_var _ _ _ (pvar 1) _); [set_solver|by left].
     Unshelve. all: exact None.
   Qed.
 End body.
 
-Lemma fb_box_typed W Γ n F : hc_fv Γ = ∅ → dftyped W ∅ Γ (nones n) F fb_box fb_ty.
-Proof. intros HΓ. apply box1_typed; [done|reflexivity|apply fb_body]. Qed.
+Lemma fb_box_typed W Γ n F : dftyped W ∅ Γ (nones n) F fb_box fb_ty.
+Proof. apply box1_typed; [reflexivity|apply fb_body]. Qed.
 
 (** ** main *)
 
@@ -97,13 +97,13 @@ Definition fb_main : expr :=
 Lemma fb_force n F e :
   dftyped W_fb ∅ (Γnew W_fb 0) (nones n) F e fb_ty →
   dftyped W_fb ∅ (Γnew W_fb 0) (nones n) F (EForce e)
-    (TLolli (Some ((pvar 0)·1)) None None tinf None
+    (TLolli (UPt ((pvar 0)·1)) LNone None tinf
        (TProd (TSess SEnd (pvar 0) None) (TSess SEnd ((pvar 0)·1) None)) TUnit None).
 Proof.
   intros H.
   assert (sinst_ty (slist []) (ty_inst fb_xs
-            (TLolli (Some (pvar 1)) None None tinf None fb_T TUnit None)) =
-    TLolli (Some ((pvar 0)·1)) None None tinf None
+            (TLolli (UPt (pvar 1)) LNone None tinf fb_T TUnit None)) =
+    TLolli (UPt ((pvar 0)·1)) LNone None tinf
        (TProd (TSess SEnd (pvar 0) None) (TSess SEnd ((pvar 0)·1) None)) TUnit None) as <-.
   { rewrite sinst_nil. reflexivity. }
   eapply d_force with (ub := None) (c := None) (t := tinf) (C := fb_C);
@@ -140,7 +140,7 @@ Proof.
     { eapply d_var'; [reflexivity|]. spare_tac. }
     eapply d_close with (S0 := SEnd) (x := ((pvar 0)·1)‾); [done|apply ub_below_empty|].
     eapply d_var'; [reflexivity|]. spare_tac. }
-  eapply d_app; [apply tsplit_empty|lsplit_tac (EForce fb_box) EUnit|apply ub_below_empty| |].
+  eapply d_app; [apply tsplit_empty|lsplit_tac (EForce fb_box) EUnit|apply ubu_below_empty| |].
   - apply (fb_force 7). by apply fb_box_typed.
   - eapply d_pair; [apply tsplit_empty|lsplit_tac (Var 3) EUnit| |].
     + eapply d_var'; [reflexivity|]. spare_tac.

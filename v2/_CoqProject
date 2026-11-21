@@ -13,6 +13,7 @@ lockfree/Fair.v
 lockfree/TauThread.v
 lockfree/Criterion.v
 lockfree/ThreadProgress.v
+lockfree/FairRun.v
 types/Points.v
 types/Worlds.v
 types/Costs.v
@@ -27,6 +28,7 @@ static/Constants.v
 static/Weakening.v
 static/Renaming.v
 static/PointSubst.v
+static/Inversion.v
 test/TypeNotations.v
 examples/Tools.v
 examples/ClientServer.v

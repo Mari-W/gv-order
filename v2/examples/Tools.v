@@ -148,9 +148,16 @@ Ltac fact_eq := pt_norm; repeat f_equal; lia.
 Lemma sf_pinst_empty σ : sf_pinst σ (∅, None) = (∅, None).
 Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.
 
-(** {x} ≺ F for a future with no points and no future variable. *)
+(** {x} ≺ F for a future with no points and no rest. *)
 Lemma ub_below_empty W Γ x : ub_below_s W Γ x (∅, None).
 Proof. destruct x; simpl; [split_and!; [set_solver|done|done]|done]. Qed.
+
+(** The same for the upper point of an arrow, ⊤ included. *)
+Lemma ubu_below_empty W Γ ub : ub_below_u W Γ ub (∅, None).
+Proof. destruct ub; simpl; [done|apply (ub_below_empty W Γ (Some x))|done]. Qed.
+
+Lemma ubu_pt W Γ x F : ub_below_s W Γ (Some x) F → ub_below_u W Γ (UPt x) F.
+Proof. done. Qed.
 
 Lemma spare_heads Δ : (∀ y o, Δ !! y = Some o → spare o) → lenv_heads Δ = ∅ ∧ lenv_bot Δ = false.
 Proof.
@@ -161,7 +168,7 @@ Proof.
 Qed.
 
 Lemma lb_below_none W Γ Δ : (∀ y o, Δ !! y = Some o → spare o) →
-  lbx_below_h W Γ (lbound_of None) (tenv_heads ∅ ∪ lenv_heads Δ) (lenv_bot Δ).
+  lbx_below_h W Γ LNone (tenv_heads ∅ ∪ lenv_heads Δ) (lenv_bot Δ).
 Proof.
   intros H. destruct (spare_heads Δ H) as [-> ->]. rewrite tenv_heads_empty.
   simpl. split; [set_solver|done].
@@ -194,20 +201,17 @@ Ltac heads_simpl H :=
   rewrite ?tenv_heads_empty in H; cbn [lenv_heads heads opt_heads lb_heads] in H;
   rewrite ?lenv_heads_nones in H; set_unfold in H.
 
-(** A future (X, φ) under the hypothesis u ≺ φ for an upper point. *)
-Lemma ub_below_var W Γ x u X φ :
-  hc_fv Γ !! φ = Some (Some u) → (∀ y, y ∈ X → slt W Γ x y) → sle W Γ x u →
-  ub_below_s W Γ (Some x) (X, Some (FVar φ)).
-Proof.
-  intros Hφ HX Hu. split_and!; [done| |done]. simpl. intros φ' [= <-].
-  destruct Hu as [->|Hu]; [by apply fl_v|]. eapply fl_trans; [exact Hu|by apply fl_v].
-Qed.
+(** A future (X, everything above u) for an upper point u. *)
+Lemma ub_below_var W Γ x u X :
+  (∀ y, y ∈ X → slt W Γ x y) → sle W Γ x u →
+  ub_below_s W Γ (Some x) (X, Some (FRest (RAbove u))).
+Proof. intros HX Hu. split_and!; [done| |done]. simpl. by intros r [= <-]. Qed.
 
-Lemma ub_below_varb W Γ x u X b φ :
-  b = false → hc_fv Γ !! φ = Some (Some u) → (∀ y, y ∈ X → slt W Γ x y) → sle W Γ x u →
-  ub_below_s W Γ (Some x) (sf_unionb (∅, Some (FVar φ)) X b).
+Lemma ub_below_varb W Γ x u X b :
+  b = false → (∀ y, y ∈ X → slt W Γ x y) → sle W Γ x u →
+  ub_below_s W Γ (Some x) (sf_unionb (∅, Some (FRest (RAbove u))) X b).
 Proof.
-  intros -> Hφ HX Hu. apply ub_below_var with u; [done| |done].
+  intros -> HX Hu. apply ub_below_var; [|done].
   intros y Hy. apply HX. set_solver.
 Qed.
 

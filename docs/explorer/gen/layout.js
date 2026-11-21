@@ -71,14 +71,11 @@ const set = (id, f) => f(locate(id)[1]);
 
 // ---- types and worlds ----
 set('ty-grammar', b => {
-  b.caption = R`$S@x$ is an end at the point $x$. \annp{Credits $a$ sit on ends and on closures, the two places where a value holds ends of its own. The credit of an end bounds its counter from below, and the credit of a closure bounds the captured counters above its floor $h$. Pairs, sums, existentials and payloads carry no credit, their ends carry their own.}`;
+  b.caption = R`$S@x$ is an end at the point $x$. \annp{Credits $a$ sit on ends and on closures, the two places where a value holds ends of its own. The credit of an end bounds its counter from below, and the credit of a closure bounds the captured counters from below and bounds what they lose before a call. Pairs, sums, existentials and payloads carry no credit, their ends carry their own.}`;
 });
 drop('ty-credit', 'ty-grammar');
-// entry 12 (generalized arrows, per-end capture) shown as planned: capture is aging, a spawned
-// abstraction is E-Abs at (⊤, ⊥) followed by E-Spawn, and a thunk is a value of arrow type
-drop('t-cap', 't-age'); drop('r-spawnlam', 'r-spawn'); drop('v-thunk', 'v-arrow');
 merge('ty-ann', 'Annotations and tickets', ['ty-annot', 'ty-tix', 'ty-df'], {
-  caption: R`Credits $a$, costs $c$, floors $h$, tickets $m$ and the bound $N$ are numbers, and $\infty$ means unbounded. An end has $m$ tickets with $a \leq m$, and the tickets of the two ends of a channel sum to at most $N$. Deadlock-free typing is the instance $\mathsf{ty\_df}$ with every annotation unbounded.`,
+  caption: R`Credits $a$, costs $c$, tickets $m$ and the bound $N$ are numbers, and $\infty$ means unbounded. An end has $m$ tickets with $a \leq m$, and the tickets of the two ends of a channel sum to at most $N$. Deadlock-free typing is the instance $\mathsf{ty\_df}$ with every annotation unbounded.`,
   why: 'The numbers lock-free typing adds to types and judgments. At their unbounded values every premise about them holds, which is how deadlock-free typing is an instance.'
 });
 
@@ -169,12 +166,10 @@ order('theorems', ['th-chain', 'th-sound', 'th-compose', 'th-fund-proc', 'th-ade
 const NEW2 = 'Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field.';
 const TICKETS = 'Tickets as one number per end are planned, decided on 2026-11-21 (docs/redesign/check-links-without-tickets.md, last section). An end type is (S@x)^a_m with credit a ≤ m, the tickets of the two ends of a channel sum to at most N, E-Link asks a1 + m2 > N and a2 + m1 > N, an action resets an end to its tickets m, and the measure of lock-free adequacy is the counter of the dual end. The write-up calls the bound K. The Rocq still has the ticket needs ϑ with tix, tlink, tspawn, tseq and tok, the ticket premise of P-Term, the spawn split and s_tk.';
 const TRANSFINITE = 'Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers.';
-const ARROWS = 'Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk.';
 const planned = {
-  'ty-grammar': ARROWS + ' ' + TICKETS, 'ty-heads': ARROWS, 't-lf-credits': ARROWS + ' ' + TICKETS, 't-side': ARROWS, 't-agecap': ARROWS,
-  'r-fun': ARROWS, 'r-threads': ARROWS + ' ' + TICKETS, 't-subs': ARROWS + ' ' + TICKETS, 'v-rel': ARROWS, 'fv': ARROWS + ' ' + TICKETS,
+  'ty-grammar': TICKETS, 't-lf-credits': TICKETS, 'r-threads': TICKETS, 't-subs': TICKETS, 'fv': TICKETS + ' ' + TRANSFINITE, 'v-rel': TRANSFINITE,
   'syn-terms': NEW2, 'syn-points': NEW2, 'sem-labels': NEW2, 'sem-head': NEW2, 'sem-proc': NEW2,
-  't-consts': NEW2 + ' ' + TICKETS, 'w-world': NEW2, 'w-order': NEW2, 'w-ext': NEW2, 'r-new': NEW2 + ' ' + TICKETS, 'e-obl': NEW2 + ' ' + ARROWS + ' ' + TRANSFINITE,
+  't-consts': NEW2 + ' ' + TICKETS, 'w-world': NEW2, 'w-order': NEW2, 'w-ext': NEW2, 'r-new': NEW2 + ' ' + TICKETS, 'e-obl': NEW2 + ' ' + TRANSFINITE,
   'soup': NEW2 + ' ' + TICKETS + ' ' + TRANSFINITE,
   'sj-all': NEW2 + ' ' + TRANSFINITE,
   'ty-ann': TICKETS, 't-lf-tickets': TICKETS, 't-judgment': TICKETS, 'r-act': TICKETS, 'p-typing': TICKETS,

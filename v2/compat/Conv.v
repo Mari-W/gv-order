@@ -226,7 +226,7 @@ Section rel.
     VC n T.
   Proof.
     intros IHl IHt IHe W Θ Θ' v HΘ.
-    destruct T as [|ub lb c t hh T1 U a0|T1 U|T1 U|m kk C ub c t U|s x a0|lb m C T1].
+    destruct T as [|ub lb c t T1 U a0|T1 U|T1 U|m kk C ub c t U|s x a0|lb m C T1].
     - intros [-> ->]%Vrel_unit_iff. apply Vrel_unit_iff. by rewrite (senv_eqv_empty _ HΘ).
     - intros (e & -> & Hfe & Hlb & H)%Vrel_lolli_iff. apply Vrel_lolli_iff.
       exists e. split_and!; [done|by rewrite <-(senv_eqv_dom _ _ HΘ)|by rewrite <-(senv_eqv_heads _ _ HΘ)|].
@@ -288,11 +288,11 @@ Section rel.
     - intros v e' Hst. destruct (H4 v e' Hst) as (ΘM & Θr & A1 & -> & A4 & A5).
       destruct (senv_eqv_split _ _ _ HΘ A1) as (ΘM' & Θr' & -> & Hd' & EM & Er).
       exists ΘM', Θr'. split_and!; [done|done| |by eapply Hac].
-      destruct A4 as (e1 & -> & Hfe & HA). exists e1.
-      split_and!; [done|by rewrite <-(senv_eqv_dom _ _ EM)|].
-      intros W' j Θ0 w HW Hj Hd.
+      destruct A4 as (e1 & -> & Hfe & _ & HA). exists e1.
+      split_and!; [done|by rewrite <-(senv_eqv_dom _ _ EM)|done|].
+      intros W' j Θ0 w F0 HW Hj Hd Hub.
       assert (ΘM ##ₘ Θ0) as Hd0 by (rewrite map_disjoint_dom in Hd |- *; by rewrite (senv_eqv_dom _ _ EM)).
-      destruct (HA W' j Θ0 w HW Hj Hd0) as [B1 B2]. split.
+      destruct (HA W' j Θ0 w F0 HW Hj Hd0 Hub) as [B1 B2]. split.
       + intros Hjn Hw. apply (proj2 (IHl j Hjn TUnit) _ (ΘM ∪ Θ0)).
         * apply senv_eqv_union; [done|apply senv_eqv_refl].
         * by apply B1.

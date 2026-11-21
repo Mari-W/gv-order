@@ -87,7 +87,7 @@ Section body.
     rreach (pvar 0) (pvar 1) X1 Y1 →
     typed W (Some 4) ∅ Γb Δ F e rgl_ty c0 t0 →
     typed W (Some 4) ∅ Γb Δ F (EForce e)
-      (TLolli (Some (sh 1 X1)) None None tz (Some 0) (TProd (TSess Schl X1 (Some 0)) (TSess (dual Schl) Y1 (Some 1))) TUnit None) (fadd c0 (Some 0)) (tseq t0 tid).
+      (TLolli (UPt (sh 1 X1)) LNone None tz (TProd (TSess Schl X1 (Some 0)) (TSess (dual Schl) Y1 (Some 1))) TUnit None) (fadd c0 (Some 0)) (tseq t0 tid).
   Proof.
     intros HR H.
     eapply (lbox_force_eq _ _ _ _ _ _ 2 rg_C (Some (sh 1 (pvar 0))) rgl_T TUnit (X1 :: Y1 :: []));
@@ -104,15 +104,15 @@ Section body.
     cbn [hbot orb sf_unionb fst snd fs_var fs_bot].
 
   Ltac fut x :=
-    apply (ub_below_gen _ _ x (sh 1 (pvar 0)) 1);
+    apply (ub_below_gen _ _ x (sh 1 (pvar 0)));
       [ let y := fresh "y" in let Hy := fresh "Hy" in
         intros y Hy; revert Hy; normF; unfold payload_at, ty_inst; cbn [pinst_ty]; intros Hy; heads_cases Hy;
         first [rgf | eapply sl_trans; [apply sl_po|rgf]]
-      | normF; reflexivity | apply Γbox_fv
+      | normF; reflexivity 
       | first [by left | right; apply sl_po] | normF; reflexivity ].
 
   Lemma rgl_body : ∃ c t,
-    typed W (Some 4) ∅ Γb (Some rgl_T :: Some rgl_ty :: nones n) (∅, Some (FVar 1))
+    typed W (Some 4) ∅ Γb (Some rgl_T :: Some rgl_ty :: nones n) (∅, Some (FRest (RAbove (sh 1 (pvar 0)))))
       rg_e TUnit c t ∧ t.2 = Some 0.
   Proof.
     eexists _, _. split.
@@ -168,7 +168,7 @@ Section body.
       eapply e_letu_; [lsplit_tac (Var 0) EUnit| | | |shelve].
       { eapply e_var'; [reflexivity|]. spare_tac. }
       lage_tac.
-      eapply e_app_; [lsplit_tac (EForce (Var 14)) (Pair (Var 2) (Var 3))|apply ub_below_empty| | | |shelve|shelve|shelve].
+      eapply e_app_; [lsplit_tac (EForce (Var 14)) (Pair (Var 2) (Var 3))|apply ubu_below_empty| | | |shelve|shelve|shelve].
       { eapply rgl_call; [eapply rr_l, rr_root|]. eapply e_var'; [reflexivity|]. spare_tac. }
       lage_tac.
       eapply e_sub_sess2; [|shelve|shelve].
@@ -182,7 +182,7 @@ Section body.
     eapply e_letu_; [lsplit_tac (Var 0) EUnit| | | |shelve].
     { eapply e_var'; [reflexivity|]. spare_tac. }
     lage_tac.
-    eapply e_app_; [lsplit_tac (EForce (Var 14)) (Pair (Var 4) (Var 7))|apply ub_below_empty| | | |shelve|shelve|shelve].
+    eapply e_app_; [lsplit_tac (EForce (Var 14)) (Pair (Var 4) (Var 7))|apply ubu_below_empty| | | |shelve|shelve|shelve].
     { eapply rgl_call; [eapply rr_r, rr_root|]. eapply e_var'; [reflexivity|]. spare_tac. }
     lage_tac.
     eapply e_sub_sess2; [|shelve|shelve].
@@ -196,10 +196,10 @@ Section body.
   Qed.
 End body.
 
-Lemma ringl_typed W Γ n F : hc_fv Γ = ∅ → typed W (Some 4) ∅ Γ (nones n) F ring rgl_ty (Some 0) tid.
+Lemma ringl_typed W Γ n F : typed W (Some 4) ∅ Γ (nones n) F ring rgl_ty (Some 0) tid.
 Proof.
-  intros HΓ. destruct (rgl_body W Γ n) as (c & t & Hb & Ht).
-  eapply lbox_typed; [done|reflexivity|exact Hb|exact Ht].
+  destruct (rgl_body W Γ n) as (c & t & Hb & Ht).
+  eapply lbox_typed; [reflexivity|exact Hb|exact Ht].
 Qed.
 
 (** ** main *)
@@ -227,11 +227,11 @@ Proof.
   eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | |shelve].
   { eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
-  eapply e_app_; [lsplit_tac (EForce ring) EUnit|apply ub_below_empty| | | |shelve|shelve|shelve].
+  eapply e_app_; [lsplit_tac (EForce ring) EUnit|apply ubu_below_empty| | | |shelve|shelve|shelve].
   { eapply (lbox_force_eq _ _ _ _ _ _ 2 rg_C (Some (sh 1 (pvar 0))) rgl_T TUnit rg_xs _ _
-      (Some (sh 1 (pvar 0))) (TProd (TSess Schl (pvar 0) (Some 0)) (TSess (dual Schl) (pvar 0)‾ (Some 1))));
+      (UPt (sh 1 (pvar 0))) (TProd (TSess Schl (pvar 0) (Some 0)) (TSess (dual Schl) (pvar 0)‾ (Some 1))));
       [done|apply rgl_hold|done|done|done|].
-    apply (ringl_typed _ _ 3). done. }
+    apply (ringl_typed _ _ 3). }
   lage_tac.
   eapply e_sub_sess2; [|shelve|shelve].
   eapply e_pair_; [lsplit_tac (Var 1) EUnit| | | | |shelve].

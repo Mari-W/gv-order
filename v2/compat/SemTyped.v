@@ -15,16 +15,14 @@
     for every grounding with an environment disjoint from Θ, the
     instance of t is in E at the union of the environments.
 
-    The static future F of S2 is a set of points with a future variable
-    or the ⊥ flag. [sem_typed] interprets it ([sf_den]): the future
-    variable φ stands for an arbitrary set ρ φ, and the ⊥ flag for an
-    arbitrary set B. A term typed under the ⊥ flag may not block (its
-    context holds ends whose points are hidden), so it must be ready
-    under every future, and a future variable without hypotheses is
-    unconstrained. With Γ = ∅, as in the fundamental theorem of A.3,
-    both readings are exact. A body under a future hypothesis u ≺ φ is
-    stated at the set form, over every future above u, as the old
-    semantic rules did (theories/rules/SemanticRules.v). *)
+    The static future F is a set of points with a rest, everything
+    above u or everything, and the ⊥ flag. [sem_typed] interprets it
+    ([sf_den]): the rest stands for an arbitrary set R, above u for the
+    rest above u ([rest_ok]), and the ⊥ flag for an arbitrary set B. A
+    term typed under the ⊥ flag may not block (its context holds ends
+    whose points are hidden), so it must be ready under every future.
+    There are no future variables (entry 14b of
+    docs/redesign/pending.md). *)
 
 From GV Require Export relation.Adequacy compat.Blind compat.Bind.
 
@@ -48,14 +46,21 @@ Definition sem_typed_at (κ : ctable) (W : world) (Θ : tenv) (Δ : lenv) (F : g
 
 (** ** Static futures *)
 
-(** The points a static future denotes, with ρ φ for the future
-    variable φ and B for the ⊥ flag. *)
-Definition sf_den (ρ : nat → gset point) (B : gset point) (F : sfuture) : gset point :=
-  F.1 ∪ from_option ρ ∅ (fs_var F.2) ∪ (if fs_bot F.2 then B else ∅).
+(** The points a static future denotes, with R for its rest and B for
+    the ⊥ flag (entry 14b, no future variables). *)
+Definition sf_den (R : gset point) (B : gset point) (F : sfuture) : gset point :=
+  F.1 ∪ (if fs_var F.2 then R else ∅) ∪ (if fs_bot F.2 then B else ∅).
+
+(** R lies in the rest of F: above u for the rest "everything above u".
+    Readiness asks x ≺ y of every point y of the future, and E is
+    antitone in the future, so every finite R above u stands for the
+    rest. *)
+Definition rest_ok (W : world) (F : sfuture) (R : gset point) : Prop :=
+  ∀ u, fs_var F.2 = Some (RAbove u) → ∀ y, y ∈ R → W ⊢ u ≺ y.
 
 Definition sem_typed (κ : ctable) (W : world) (Θ : tenv) (Δ : lenv) (F : sfuture)
     (t : expr) (T : ty) : Prop :=
-  ∀ ρ B, sem_typed_at κ W Θ Δ (sf_den ρ B F) t T.
+  ∀ R B, rest_ok W F R → sem_typed_at κ W Θ Δ (sf_den R B F) t T.
 
 Notation "Θ ; Δ ⊨^ F '_' W t : T" := (sem_typed κ_DF W Θ Δ F t T)
   (at level 74, Δ at level 60, F at level 0, W at level 0, t at level 60, T at level 60,
@@ -64,11 +69,11 @@ Notation "Θ ; Δ ⊫^ F '_' W t : T" := (sem_typed κ_L W Θ Δ F t T)
   (at level 74, Δ at level 60, F at level 0, W at level 0, t at level 60, T at level 60,
    format "Θ  ;  Δ  ⊫^ F  '_'  W  t  :  T").
 
-Lemma sf_den_unionb ρ B F X b :
-  sf_den ρ B (sf_unionb F X b) = sf_den ρ B F ∪ X ∪ (if b then B else ∅).
+Lemma sf_den_unionb R B F X b :
+  sf_den R B (sf_unionb F X b) = sf_den R B F ∪ X ∪ (if b then B else ∅).
 Proof.
   destruct F as [P o]. unfold sf_den, sf_unionb. destruct b; simpl; [|set_solver].
-  destruct o as [[φ|o]|]; simpl; set_solver.
+  destruct o as [[r|[r|]]|]; simpl; set_solver.
 Qed.
 
 (** ** Facts about groundings *)

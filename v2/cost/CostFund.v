@@ -3,7 +3,7 @@
       Θ ; Γ ; Δ ⊢^F _{W,N} e : T ▷ c ; ϑ  ⟹  Θ ; Δ ⊨^N e : T ▷ c ; ϑ    [cost_fundamental]
 
     by induction on the derivation, one rule of cost/CostRules.v per
-    case. E-Abs, E-Box and E-SpawnLam take the facts of their term from
+    case. E-Abs and E-Box take the facts of their term from
     [typed_tfacts]. [fsem_of_cost] turns a closed thread into [fsem],
     the premise LF-Term adds to P-Term: every end starts at N, at a
     ticket count that meets ϑ at reserve 0. [fw_fsem] is the forwarder of
@@ -33,10 +33,6 @@ Proof.
   - by eapply cost_e_select.
   - by eapply cost_e_branch.
   - by eapply cost_e_link.
-  - eapply cost_e_spawn_lam; [|done|done|done].
-    assert (tfacts Θ Δ (ESpawn (Lam e))) as Ht
-      by (eapply (typed_tfacts _ _ _ _ _ (∅, None)); eapply e_spawn_lam; eassumption).
-    exact Ht.
   - by eapply cost_e_spawn.
   - by apply cost_e_new.
   - by eapply cost_e_new_at.

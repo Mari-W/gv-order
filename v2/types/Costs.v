@@ -1,6 +1,6 @@
 (** * Credits, costs and ticket transformers (stage S2, proposal §2.11, §2.17)
 
-    A credit, a cost, a floor and a counter range over ℕ ∪ {∞}, with
+    A credit, a cost and a counter range over ℕ ∪ {∞}, with
     [None] for ∞. A ticket transformer ϑ = (s, b) stands for
     r ↦ 2^s·r + b. Both the slope s and the offset b range over ℕ ∪ {∞}
     (decision Q11). A need of ∞ is met at no finite ticket count, so a
@@ -48,6 +48,17 @@ Lemma fadd_0_l a : fadd (Some 0) a = a.
 Proof. by destruct a. Qed.
 Lemma fsub_inf a : fsub None a = None.
 Proof. done. Qed.
+
+(** Per-end capture reads f − a, the most a captured counter f may fall
+    to before a call of a closure at credit a. *)
+Lemma fsub_mono_l a f f' : fle f f' → fle (fsub f a) (fsub f' a).
+Proof. destruct a, f, f'; simpl; lia. Qed.
+Lemma fsub_anti_r f a a' : fle a' a → fle (fsub f a) (fsub f a').
+Proof. destruct f, a, a'; simpl; lia. Qed.
+Lemma fsub_age f a c : fle c a → fle (fsub f a) (fsub (fsub f c) (fsub a c)).
+Proof. destruct f, a, c; simpl; lia. Qed.
+Lemma fsub_le f a : fle (fsub f a) f.
+Proof. destruct f, a; simpl; lia. Qed.
 
 (** ** Ticket transformers *)
 

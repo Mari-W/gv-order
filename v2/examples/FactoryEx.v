@@ -70,8 +70,8 @@ Ltac worker_tac pp j :=
 (** ** mk₀ *)
 
 Lemma mk0_body Γ n :
-  dftyped W_fx ∅ (hc_fvar 1 None (hc_fvar 0 None (hc_open 0 C0 Γ)))
-    (Some TUnit :: Some mk0_ty :: nones n) (∅, Some (FVar 1)) mk0_e Tres.
+  dftyped W_fx ∅ (hc_open 0 C0 Γ)
+    (Some TUnit :: Some mk0_ty :: nones n) (∅, Some (FRest RAll)) mk0_e Tres.
 Proof.
   unfold mk0_e, let_new.
   eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
@@ -90,21 +90,21 @@ Proof.
   eapply d_pack with (xs := pvar 0 :: []); [done| |exact I|].
   - apply hold_at_nil. intros f Hf _. destruct Hf as [->| ->]; simpl.
     + eapply (hyp_slt_ids _ _ (w_laws W_fx 0) 1);
-        [unfold hc_fvar, hc_open; cbn [hc_hyps]; apply elem_of_app; right; apply list_elem_of_here|by left|simpl; lia].
+        [unfold hc_open; cbn [hc_hyps]; apply elem_of_app; right; apply list_elem_of_here|by left|simpl; lia].
     + eapply (hyp_slt_ids _ _ (w_laws W_fx 0) 1);
-        [unfold hc_fvar, hc_open; cbn [hc_hyps]; apply elem_of_app; right; apply list_elem_of_here|by right|simpl; lia].
+        [unfold hc_open; cbn [hc_hyps]; apply elem_of_app; right; apply list_elem_of_here|by right|simpl; lia].
   - eapply d_var'; [reflexivity|]. spare_tac.
   Unshelve. all: exact None.
 Qed.
 
-Lemma mk0_typed Γ n F : hc_fv Γ = ∅ → dftyped W_fx ∅ Γ (nones n) F mk0 mk0_ty.
-Proof. intros HΓ. apply boxg_typed; [done|reflexivity|apply mk0_body]. Qed.
+Lemma mk0_typed Γ n F : dftyped W_fx ∅ Γ (nones n) F mk0 mk0_ty.
+Proof. apply boxg_typed; [reflexivity|apply mk0_body]. Qed.
 
 (** ** mk₁ *)
 
 Lemma mk1_body Γ n :
-  dftyped W_fx ∅ (hc_fvar 1 None (hc_fvar 0 None (hc_open 1 mk1_C Γ)))
-    (Some (TSess Sr (pvar 0) None) :: Some mk1_ty :: nones n) (∅, Some (FVar 1)) mk1_e mk1_res.
+  dftyped W_fx ∅ (hc_open 1 mk1_C Γ)
+    (Some (TSess Sr (pvar 0) None) :: Some mk1_ty :: nones n) (∅, Some (FRest RAll)) mk1_e mk1_res.
 Proof.
   unfold mk1_e.
   eapply d_letp; [apply tsplit_empty|lsplit_tac (ENewAt 0 (Var 0)) EUnit| |].
@@ -119,8 +119,8 @@ Proof.
   Unshelve. all: exact None.
 Qed.
 
-Lemma mk1_typed Γ n F : hc_fv Γ = ∅ → dftyped W_fx ∅ Γ (nones n) F mk1 mk1_ty.
-Proof. intros HΓ. apply boxg_typed; [done|reflexivity|apply mk1_body]. Qed.
+Lemma mk1_typed Γ n F : dftyped W_fx ∅ Γ (nones n) F mk1 mk1_ty.
+Proof. apply boxg_typed; [reflexivity|apply mk1_body]. Qed.
 
 (** ** main *)
 
@@ -134,9 +134,9 @@ Proof.
   unfold fx_main.
   eapply d_let; [apply tsplit_empty|apply lsplit_nil| |].
   { (* the first call needs no point *)
-    eapply d_app; [apply tsplit_empty|apply lsplit_nil|apply ub_below_empty| |apply d_unit'; spare_tac].
-    assert (sinst_ty (slist []) (ty_inst [] (TLolli None None None tinf None TUnit Tres None)) =
-            TLolli None None None tinf None TUnit Tres None) as <- by (rewrite sinst_nil; reflexivity).
+    eapply d_app; [apply tsplit_empty|apply lsplit_nil|apply ubu_below_empty| |apply d_unit'; spare_tac].
+    assert (sinst_ty (slist []) (ty_inst [] (TLolli UNone LNone None tinf TUnit Tres None)) =
+            TLolli UNone LNone None tinf TUnit Tres None) as <- by (rewrite sinst_nil; reflexivity).
     eapply d_force with (ub := None) (c := None) (t := tinf) (C := C0) (m := 0);
       [done| |done|split; [apply Forall_nil|intros _; apply Forall_nil]|exact I|].
     - intros x y (g0 & (f & Hf & _) & _). done.
@@ -145,10 +145,10 @@ Proof.
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
   fold (Γnew W_fx 0).
   eapply d_letp; [apply tsplit_empty|lsplit_tac (App (EForce mk1) (Var 0)) EUnit| |].
-  { eapply d_app; [apply tsplit_empty|lsplit_tac (EForce mk1) (Var 0)|apply ub_below_empty| |].
+  { eapply d_app; [apply tsplit_empty|lsplit_tac (EForce mk1) (Var 0)|apply ubu_below_empty| |].
     - assert (sinst_ty (slist []) (ty_inst ((pvar 0)‾ :: [])
-                (TLolli None None None tinf None (TSess Sr (pvar 0) None) mk1_res None)) =
-              TLolli None None None tinf None (TSess Sr (pvar 0)‾ None)
+                (TLolli UNone LNone None tinf (TSess Sr (pvar 0) None) mk1_res None)) =
+              TLolli UNone LNone None tinf (TSess Sr (pvar 0)‾ None)
                 (TProd (TSess Sr (pvar 0)‾ None) (TSess Sr ((pvar 0)·0)‾ None)) None) as <-
         by (rewrite sinst_nil; reflexivity).
       eapply d_force with (ub := None) (c := None) (t := tinf) (C := mk1_C);

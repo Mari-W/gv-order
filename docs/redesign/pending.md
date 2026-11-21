@@ -1,5 +1,114 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, next run of 2026-11-21 (stages 1 to 4)
+
+Branch redesign-clean3 in .claude/worktrees/redesign-s4, nothing pushed.
+Step 0 merged redesign by fast forward (78db2c2). The coordinator
+limited the run to stages 1 to 4. Stages 5 and 6 (fair runs, the
+Padovani corollary) run on branch redesign-fair. No lemma in this run
+builds on ϑ, χ, families or wfworld beyond what the stages touched.
+
+- Stage 1, entry 12, per-end capture. Done (4d71675). `TLolli` lost the
+  floor h, capture is aging by a (`thage`, `lage` at E-Abs), FV-Arrow
+  asks the captured counters of the ends that are not idle at least a
+  and accepts any call counters f′ ≥ f − a, Sub-Arr asks a′ ≤ a.
+  `tcap`, `lcap`, `thcap` and their lemmas are gone.
+- Stage 2, entry 12, generalized arrows. Done (f30a0ed). Upper point
+  `ubound` (none, a point, ⊤), lower point `lbound` (none, a point, ⊥).
+  E-SpawnLam and `Vthunk` are gone, `e_spawn_lam` and `d_spawn_lam`
+  are lemmas (E-Abs at (⊤, ⊥) and credit 1, then E-Spawn), and O-Spawn
+  reads `Varr` at `∗ ⊸^⊤_⊥ ∗`.
+- Stage 3, entry 14b, no future variables. Done (7545c89). Γ holds only
+  constraint instances, the rest of a future is everything above u or
+  everything, and the semantic reading quantifies one set R above u
+  (`rest_ok`). The relation keeps finite futures.
+- Stage 4, entry 7, inversion and static rejections. Partly done (08bc06b).
+  Inversion lemmas for E-Close, E-Case, E-LetU, E-LetP, E-Pair, E-Let,
+  P-Term and P-Connect in v2/static/Inversion.v. Stopped:
+  `sb_untypable`, the static half of FlagPair and rejects.js. E-Open in
+  a dead arm can add facts from an existential that no value inhabits,
+  so facts of an opened Γ do not transfer to W. `sb_dead_arm_typed`
+  shows it on the flag program. A variant of the flag program whose
+  arms read their binder is, on paper, statically typable, against
+  docs/redesign/semantic-example.md (entry 7). The programs of
+  rejects.js need the cost and ticket judgments, not an inversion.
+- Stages 5 and 6. Not reached, moved to redesign-fair by the
+  coordinator.
+
+Plausibility, each stage. The lock-free and deadlock-free examples
+build, `lf_soundness` and `soundness` build with no new axiom, so the
+four programs of rejects.js stay excluded. The S4.18 counterexample
+concerns (fuse), which no stage touched. SemBranch, TreeTopo and
+FlagPair build. The details sit under entries 12, 14 and 7.
+
+Final state at the commit of this report. `make -j2` builds with no
+error. `make test` passes after test/FuelNotations.expected was updated
+to `Vfuel_age`. `make check` reports 93 of 93 results closed under the
+global context. No Admitted, no new axiom.
+
+Map. After stage 1 the floor h, the capture block t-cap and its notes
+are gone, FV-Arrow and E-Abs.cap cite the Rocq, and the capture blocks
+lost their planned tags. After stage 2 the planned tags of entry 12 are
+gone, the blocks E-SpawnLam and V-Thunk and their notes are gone, and ⊤
+and ⊥ cite `ubound`, `ub_below_u`, `abs_fut` and `Varr_top`. After stage
+3 Γ is a list of constraint instances, F has the rests ↑u and ↑, and
+E-Abs, E-Box, u ≺ F and the semantic reading den_{R,B} follow the Rocq.
+After stage 4 the static rejection of the flag program is marked
+doubtful. The plain-new planned
+tags and χ are untouched. gen.js, check.js and lint-map report 0
+errors, 0 coined words, 0 sentences over 35 words.
+
+## Report, entries 4 and 5, branch redesign-fair, 2026-11-21
+
+Both entries landed, on top of 4d71675 (redesign-clean3).
+
+- Entry 4 (6e9bcde). New file v2/lockfree/FairRun.v. The hypotheses are
+  two definitions, `excluded_middle := ∀ P : Prop, P ∨ ¬ P` and
+  `dependent_choice := ∀ A (R : A → A → Prop), (∀ x, ∃ y, R x y) →
+  ∀ x0, ∃ f : nat → A, f 0 = x0 ∧ ∀ n, R (f n) (f (S n))`. Both are
+  arguments of the lemmas, no axiom and no Parameter.
+  `fair_run_exists : excluded_middle → dependent_choice → ∀ q : config,
+  ∃ r l, r 0 = q ∧ maximal r l ∧ wfair r l`.
+  `fair_run_exists_proc` gives the same with `erase (r 0) = p`, through
+  `erase_surj`. The scheduler targets thread `rr n = n - ⌊√n⌋²` at
+  position n, which goes round robin over 0, then 0..2, then 0..4, and so
+  on. It steps the target when the target is enabled, any thread
+  otherwise, and repeats a stuck end. Dependent choice picks the steps
+  from `istep`, and excluded middle decides enabledness and stuckness. No
+  step function and no redex finder. The lemma reads only the
+  operational semantics (`itstep`, `tenabled`, `stuck`), no ticket, world,
+  point or step index.
+  `lf_soundness_run N W p T : excluded_middle → dependent_choice →
+  wfworld W → ∅ ⊩^N _ W p : T → lock_free p ∧ ∃ r l, erase (r 0) = p ∧
+  maximal r l ∧ wfair r l` in soup/LFTyped.v. It uses `lf_soundness` only
+  through its conclusion, so it survives the planned change of tickets,
+  χ and wfworld once `lf_soundness` is restated. `lock_free` is unchanged
+  and still quantifies over every maximal weakly fair run.
+- Entry 5 (5bd777a). `lf_padovani p := ∀ q0 q t, erase q0 = p →
+  itsteps q0 q → pend q t → ∃ q1 ev q2, itsteps q q1 ∧ itstep q1 ev q2 ∧
+  t ∈ ev_parts ev`.
+  `lock_free_padovani : excluded_middle → dependent_choice → ∀ p,
+  lock_free p → lf_padovani p`. The proof starts a fair run at q and
+  prefixes it with the path from q0 (`run_prefix`, `run_cons`,
+  `run_itsteps`). `lf_soundness_padovani` states it for typed p, again
+  through `lock_free` only. Checked against Padovani 2014, Def. II.1
+  (pdf p4). Padovani's form is per channel, wait(a, Q) and a reachable
+  R with sync(a, R), a synchronization that is possible and need not be
+  taken. Ours is per thread and asks the step itself, so it is the
+  stronger reading. The fact is in the paper store.
+- Plausibility. `fair_run_two_threads` applies the lemma to
+  `(∅, {[0 := EUnit; 1 := EUnit]})`. `Print lock_free` still shows the
+  universal over runs.
+- Map. Notes `th.fair-run-exists` and `th.lf-padovani` with signatures,
+  both as rows of the soundness block. `gen.js` reports 0 errors.
+- make check: 98 of 98 results closed under the global context (the five
+  new ones included). The first run segfaulted, the retry passed.
+- make test: fails on test/FuelNotations only. The base commit 4d71675
+  renamed `Vfuel_recount` to `Vfuel_age` and left FuelNotations.expected
+  stale. This branch touches neither fuel/ nor test/. Every other
+  notation test passes.
+- Nothing failed in the two entries.
+
 ## Morning report, overnight run of 2026-11-20
 
 Branch redesign-clean3 in .claude/worktrees/redesign-s4, nothing pushed.
@@ -296,6 +405,31 @@ must do, open questions.
    needs inversion of `typed` through E-Sub, E-Open, E-Pack, E-Box and
    E-Force, and v2 has no inversion lemma for `typed`. The badges stay
    "to be mechanized".
+   Next run, stage 4 (2026-11-21). Inversion lemmas done in
+   v2/static/Inversion.v: `inv_close`, `inv_case`, `inv_letu`,
+   `inv_letp`, `inv_pair`, `inv_let` (the derived E-Let), and
+   `ptyped_one`, `ptyped_two` for P-Term and P-Connect over one thread
+   on each side. E-Sub and E-Pack change only the type, so the lemmas
+   forget it. E-Open changes the context, so each lemma states the
+   premises of its rule in a context `opened` from the given one.
+   Stopped: `sb_untypable`, the static half of FlagPair and the programs
+   of rejects.js. The ordering argument does not go through. An arm of
+   E-Case may open an existential entry of Δ, and its constraint may
+   state any fact over outer points through its environment. Nothing
+   asks that a value inhabits the type of a λ argument or of a dead arm,
+   so no fact derived in an opened Γ transfers to W. Concretely,
+   `sb_dead_arm_typed` (v2/examples/SemBranch.v) types the dead arm,
+   with its binder read by let ∗ = w, in the world Wa that holds only
+   x ≺ ȳ: the binder has the type ∃⁰. y ≺ x̄. ∗, and E-Open gives the arm
+   y ≺ x̄. On paper this extends to the whole variant of the thread
+   (sb_not at the argument type (∃⁰. y ≺ x̄. ∗) ⊕ ∗, partner in Wb), so
+   the claim of semantic-example.md that the static system rejects the
+   flag program fails for that variant. The program as written binds a
+   unit it never reads, and a unit is linear, so it is rejected for that
+   reason, which needs inversion through E-App and E-Abs as well. The
+   programs of rejects.js need the cost and ticket judgments through
+   boxes, more than an inversion. The map marks the static rejection of
+   the flag program as doubtful.
 
 8. **Readable typing notation (draft, under review).** Map: draft blocks at
    the end of the typing section (Draft notation, Draft E-App, E-Send,
@@ -448,6 +582,51 @@ must do, open questions.
     paper). Per-end capture holds and removes the floor h. Capture becomes
     aging by a, FV-Arrow asks `φ′ ≥ φ − a`, Sub-Arr asks `a' ≤ a`. E-SpawnLam
     then differs from E-Abs plus E-Spawn only in the arrow points.
+    Done in the Rocq 2026-11-21 (next run, stage 1). `TLolli` lost the
+    floor h, and `tcap`, `lcap`, `thcap` with their lemmas are gone. E-Abs
+    asks `thage a Θ Θh` and `lage a Δ Δh`. FV-Arrow (fuel/Fuel.v, `Vty`)
+    asks the captured counters of the ends that are not idle at least a,
+    and at a call accepts any counters `f′ ≥ f − a`. Sub-Arr asks
+    `fle a' a`. `Vty_age` carries the call bound through aging by
+    `fsub_age` (types/Costs.v), and `cost_e_abs` builds the body
+    environment from `envf_age` and `envf_mono` over `cle_fminus`. The
+    capture of a closure inside a closure is aging the inner closure, so
+    Cap-Arr went with the rest. Plausibility. Every lock-free and
+    deadlock-free example builds unchanged in shape, the box results of
+    the lock-free examples are closures at credit ∞, which ages a box by
+    `age_free` as before. The forwarder thunk `T_thk` at credit 2 still
+    types. The four programs of rejects.js stay excluded, because
+    `lf_soundness` still builds with no new axiom and these programs are
+    not lock free. The S4.18 counterexample concerns the clause (fuse) of
+    P, which this stage leaves alone, and `fuse_ok` still forbids new
+    pairs of partners outside D. SemBranch, TreeTopo and FlagPair read
+    no arrow credit and build unchanged. The loss
+    example of this entry (A at N and B at 1 captured at a = 1) now keeps
+    A at N − 1, which is `lage 1` on the two entries.
+    Generalized arrows done in the Rocq 2026-11-21 (next run, stage 2).
+    `TLolli` carries an upper point `ubound` (none, a point, or ⊤,
+    types/Points.v) and a lower point `lbound` (none, a point, or ⊥).
+    E-App asks `ub_below_u`, which at ⊤ is the empty future, and holds
+    the closure under `lb_heads lb` with the ⊥ flag `lb_bot lb`. E-Abs
+    asks `lbx_below_h` of the lower point, which asks nothing at ⊥, and
+    types the body under `abs_hc φ ub Γ` and `abs_fut φ ub`, the empty
+    future at ⊤. `hbot` reports an arrow at ⊥. The rule E-SpawnLam is
+    gone, and `e_spawn_lam` (static/Weakening.v) and `d_spawn_lam`
+    (static/Conservativity.v) are lemmas, E-Abs at (⊤, ⊥) and credit 1
+    followed by E-Spawn. `Vthunk` is gone. O-Spawn reads `Varr` at
+    `∗ ⊸^⊤_⊥ ∗` (relation/Relation.v), and `Varr_top` turns any arrow
+    value at `∗ ⊸ ∗` into one. The semantic side reads ⊤ by `ub_ltu`
+    (relation/Readiness.v), and the fundamental theorem builds the body
+    hypotheses by `hsat_abs`. `lb_le`, `lbound_of`, `lb_sem`,
+    `later_spawn_lam` and `cost_e_spawn_lam` went with the rule.
+    Plausibility. Every deadlock-free and lock-free example builds, the
+    spawned abstractions through the derived lemmas with unchanged
+    calls. A closure at ⊥ cannot be sent, because E-Send asks
+    `hbot T = false` of the payload. A closure at ⊤ is applied only under
+    the empty future, so it runs as the last code of its thread. The
+    programs of rejects.js stay excluded by `lf_soundness`, and the
+    S4.18 counterexample concerns (fuse), which this stage leaves alone.
+    SemBranch, TreeTopo and FlagPair build unchanged.
 
 13. **P-Connect compares only the shared roots (2026-11-19, author).**
     Today p_connect asks world_wf W1, world_wf W2, disjoint families and
@@ -505,6 +684,29 @@ must do, open questions.
         Checked 2026-11-20 (docs/redesign/check-future-variables.md). It
         holds, `fl_to_var` and `fl_from_var` compiled in a scratch file.
         The relation's future needs the rest "above u" beside its points.
+        Done in the Rocq 2026-11-21 (next run, stage 3). Γ holds only the
+        constraint instances (`hctx` lost `hc_fv`), `fl` relates points
+        only, and `node`, `fl_v`, `hc_fvar` and `fhyps` are gone. The rest
+        of a static future is `RAbove u` (everything above u) or `RAll`
+        (everything), with the ⊥ flag beside it (static/Contexts.v,
+        `frest`, `futrest`). `ub_below_s` asks `sle W Γ x u` against the
+        rest `RAbove u` (`rest_below`), and nothing against `RAll`.
+        E-Abs types the body under `abs_fut ub` and E-Box under
+        `rest_of ub`, both with Γ unchanged, and neither rule picks a
+        fresh variable. `sf_pinst` instantiates the point of the rest.
+        The relation keeps its futures as finite sets. Instead the
+        semantic reading quantifies over one set R for the rest with
+        `rest_ok` (R above u, compat/SemTyped.v), and the fundamental
+        theorem carries `rest_ok` beside `hsat`. This is shorter than a
+        predicate future in the relation, which the check note proposed,
+        and reads the same, because a singleton above u already forces
+        `x ≺ y` for every y above u. Plausibility. Every example builds.
+        The body futures of the example boxes changed from a variable φ
+        with `u ≺ φ` to the rest above u, and each `φ_hyp` lemma went.
+        The rejected programs of rejects.js stay excluded by
+        `lf_soundness`. The S4.18 counterexample concerns (fuse), which
+        this stage leaves alone. SemBranch, TreeTopo and FlagPair build
+        unchanged.
 
 15. **Remove the clause (fuse) of P (author 2026-11-19, overnight stage
     9).** Not done in the overnight run of 2026-11-20, no Rocq change.

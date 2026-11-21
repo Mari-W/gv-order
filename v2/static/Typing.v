@@ -16,6 +16,13 @@
     a function is its eta-expansion λy. k y, which types by E-Abs over the
     rule of k (static/Constants.v).
 
+    Arrows are generalized (entry 12 of docs/redesign/pending.md). The
+    upper point is a point, none, or ⊤, and E-App asks ⊤ ≺ F only of the
+    empty future ([ub_below_u]). The lower point is a point, none, or ⊥,
+    and E-Abs asks nothing of ⊥, which [hbot] then reports, so such a
+    closure is never a payload. spawn (λe) types by E-Abs at (⊤, ⊥)
+    followed by E-Spawn ([e_spawn_lam], static/Weakening.v).
+
     [dftyped] is the deadlock-freedom projection, Θ ; Γ ; Δ ⊢^F_W e : T,
     defined as the instance N = ∞ with the annotations of N = ∞. Its
     rules [d_*] (static/Conservativity.v) are those of the merged
@@ -40,18 +47,17 @@ Inductive typed (W : world) (N : fuel) :
   | e_chan Γ Δ F o S x a :
       lenv_unl Δ →
       typed W N {[o := TE S x a]} Γ Δ F (Chan o) (TSess S x a) (Some 0) tid
-  | e_abs Θ Θh Γ Δ Δh F e T U ub lb c t h a φ :
-      φ ∉ dom (hc_fv Γ) →
-      lbx_below_h W Γ (lbound_of lb) (tenv_heads Θ ∪ lenv_heads Δ) (lenv_bot Δ) →
-      thcap h a Θ Θh → lcap h a Δ Δh →
-      typed W N Θh (hc_fvar φ ub Γ) (Some T :: Δh) (∅, Some (FVar φ)) e U c t →
-      typed W N Θ Γ Δ F (Lam e) (TLolli ub lb c t h T U a) (Some 0) tid
-  | e_app Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 ub lb c t h T U a1 c1 t1 c2 t2 :
-      tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_below_s W Γ ub F →
+  | e_abs Θ Θh Γ Δ Δh F e T U ub lb c t a :
+      lbx_below_h W Γ lb (tenv_heads Θ ∪ lenv_heads Δ) (lenv_bot Δ) →
+      thage a Θ Θh → lage a Δ Δh →
+      typed W N Θh Γ (Some T :: Δh) (abs_fut ub) e U c t →
+      typed W N Θ Γ Δ F (Lam e) (TLolli ub lb c t T U a) (Some 0) tid
+  | e_app Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 ub lb c t T U a1 c1 t1 c2 t2 :
+      tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_below_u W Γ ub F →
       typed W N Θ1 Γ Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1
-        (TLolli ub lb c t h T U a1) c1 t1 →
+        (TLolli ub lb c t T U a1) c1 t1 →
       thage c1 Θ2 Θ2' → lage c1 Δ2 Δ2' →
-      typed W N Θ2' Γ Δ2' (sf_unionb F (opt_heads lb) false) e2 T c2 t2 →
+      typed W N Θ2' Γ Δ2' (sf_unionb F (lb_heads lb) (lb_bot lb)) e2 T c2 t2 →
       fle c2 a1 → tok t2 t → tok t1 (tseq t2 t) →
       typed W N Θ Γ Δ F (App e1 e2) U (fadd c1 (fadd c2 c)) (tseq t1 (tseq t2 t))
   | e_pair Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 T1 T1' T2 c1 t1 c2 t2 :
@@ -88,12 +94,12 @@ Inductive typed (W : world) (N : fuel) :
       typed W N Θ2' Γ (Some T2 :: Δ2') F e2 T c2 t2 →
       tok t0 (tmax t1 t2) →
       typed W N Θ Γ Δ F (Case e e1 e2) T (fadd c0 (fmax c1 c2)) (tseq t0 (tmax t1 t2))
-  | e_box Γ Δ F e m k C ub c t U φ :
-      lenv_unl Δ → φ ∉ dom (hc_fv (hc_open m C Γ)) →
+  | e_box Γ Δ F e m k C ub c t U :
+      lenv_unl Δ →
       (∀ ss, length ss = k → sinsts N ss →
-         typed W N ∅ (hc_fvar φ ub (hc_open m C Γ))
+         typed W N ∅ (hc_open m C Γ)
            (lenv_pinst (pshift m) (Some (TBox m k C ub c t U) :: Δ))
-           (∅, Some (FVar φ)) e (sinst_ty (slist ss) U) c t) →
+           (∅, Some (FRest (rest_of ub))) e (sinst_ty (slist ss) U) c t) →
       typed W N ∅ Γ Δ F (EBox e) (TBox m k C ub c t U) (Some 0) tid
   | e_force Θ Γ Δ F e m k C ub c t U xs ss c0 t0 :
       length xs = m → hold_at W Γ C xs → length ss = k → sinsts N ss →
@@ -133,12 +139,8 @@ Inductive typed (W : world) (N : fuel) :
       typed W N Θ Γ Δ F e (TProd (TSess S x a1) (TSess (dual S) x‾ a2)) c0 t0 →
       tok t0 (tlink tid) →
       typed W N Θ Γ Δ F (ELink e) TUnit c0 (tseq t0 (tlink tid))
-  | e_spawn_lam Θ Θ' Γ Δ Δ' F e c' t' :
-      thage (Some 1) Θ Θ' → lage (Some 1) Δ Δ' →
-      typed W N Θ' Γ (Some TUnit :: Δ') (∅, None) e TUnit c' t' →
-      typed W N Θ Γ Δ F (ESpawn (Lam e)) TUnit (Some 0) (tspawn (tapp t' 0) tid)
-  | e_spawn Θ Γ Δ F e ub lb c' t' h a c0 t0 :
-      typed W N Θ Γ Δ F e (TLolli ub lb c' t' h TUnit TUnit a) c0 t0 →
+  | e_spawn Θ Γ Δ F e ub lb c' t' a c0 t0 :
+      typed W N Θ Γ Δ F e (TLolli ub lb c' t' TUnit TUnit a) c0 t0 →
       fle (Some 1) a → tok t0 (tspawn (tapp t' 0) tid) →
       typed W N Θ Γ Δ F (ESpawn e) TUnit c0 (tseq t0 (tspawn (tapp t' 0) tid))
   | e_new Γ Δ F ℓ S :

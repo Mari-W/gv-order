@@ -1,9 +1,13 @@
 (** * Types with points, credits and costs (stage S2, proposal §2.5, §2.17)
 
-    T, U ::= ∗ | (T ⊸^u_l[c ; ϑ ; h] U)^a | T ⊗ U | T ⊕ U | (S@x)^a
+    T, U ::= ∗ | (T ⊸^u_l[c ; ϑ] U)^a | T ⊗ U | T ⊕ U | (S@x)^a
            | □(∀ιs αs. C. ∗ ⊸^u[c ; ϑ] U) | ∃^lb ιs. C. T
     S    ::= Skip | S;S | ?(∃ιs. T) | !(∃ιs. T) | ⊕(S, S) | &(S, S)
            | Close | µα.S | α | α‾
+
+    The upper point u of an arrow is a point, none, or ⊤ ([ubound]), its
+    lower point l is a point, none, or ⊥ ([lbound]) (entry 12,
+    generalized arrows).
 
     Session types are the context-free session types of the old
     development, read through their head normal form [unfoldS]. There is
@@ -12,10 +16,11 @@
     Decision Q11 puts the cost annotations of the cost judgment into the
     types. A credit a sits only where ends sit (decision of 2026-11-19):
     on an end (S@x)^a, a lower bound on its counter, and on a closure
-    (T ⊸ U)^a, a lower bound above the floor h on the counters of the
-    ends it captured. Products, sums, existentials, box results and
+    (T ⊸ U)^a, a lower bound on the counters of the ends it captured
+    and the most those counters may lose before a call (decision of
+    2026-11-20, per-end capture). Products, sums, existentials, box results and
     payloads carry no credit, their ends carry their own. The arrow
-    carries a cost c, a ticket transformer ϑ and a floor h, and the box
+    carries a cost c and a ticket transformer ϑ, and the box
     the cost and transformer of one force. The deadlock-freedom
     relations ignore every annotation. [ty_df] sets them to the values
     of the instance N = ∞. *)
@@ -24,7 +29,7 @@ From GV Require Export types.Costs types.Worlds.
 
 Inductive ty :=
   | TUnit
-  | TLolli (ub lb : option point) (c : fuel) (t : tix) (h : fuel)
+  | TLolli (ub : ubound) (lb : lbound) (c : fuel) (t : tix)
       (T U : ty) (a : fuel)
   | TProd (T U : ty)
   | TSum (T U : ty)
@@ -56,8 +61,8 @@ Notation "S @ x ^ a" := (TSess S x a) (at level 20, x at level 2, a at level 0, 
 Fixpoint pinst_ty (σ : nat → point) (T : ty) : ty :=
   match T with
   | TUnit => TUnit
-  | TLolli ub lb c t h T1 U a =>
-      TLolli (pt_inst σ <$> ub) (pt_inst σ <$> lb) c t h (pinst_ty σ T1) (pinst_ty σ U) a
+  | TLolli ub lb c t T1 U a =>
+      TLolli (ub_map (pt_inst σ) ub) (lb_map (pt_inst σ) lb) c t (pinst_ty σ T1) (pinst_ty σ U) a
   | TProd T1 U => TProd (pinst_ty σ T1) (pinst_ty σ U)
   | TSum T1 U => TSum (pinst_ty σ T1) (pinst_ty σ U)
   | TBox n k C ub c t U =>
@@ -88,7 +93,8 @@ Lemma pinst_ty_ext T : ∀ σ τ, (∀ a, σ a = τ a) → pinst_ty σ T = pinst
 Proof.
   induction T; intros σ τ H1; simpl; try done.
   - rewrite (IHT1 σ τ), (IHT2 σ τ) by done.
-    rewrite !(option_fmap_ext (pt_inst σ) (pt_inst τ)) by (intros; by apply pt_inst_ext). done.
+    rewrite (ub_map_ext (pt_inst σ) (pt_inst τ)), (lb_map_ext (pt_inst σ) (pt_inst τ))
+      by (intros; by apply pt_inst_ext). done.
   - by rewrite (IHT1 σ τ), (IHT2 σ τ).
   - by rewrite (IHT1 σ τ), (IHT2 σ τ).
   - rewrite (IHT (pup n σ) (pup n τ)) by (intros; by apply pup_ext).
@@ -102,8 +108,9 @@ Qed.
 Lemma pinst_ty_comp T : ∀ σ τ, pinst_ty τ (pinst_ty σ T) = pinst_ty (pt_inst τ ∘ σ) T.
 Proof.
   induction T; intros σ τ; simpl; try done.
-  - rewrite IHT1, IHT2, <-!option_fmap_compose.
-    rewrite !(option_fmap_ext (pt_inst τ ∘ pt_inst σ) (pt_inst (pt_inst τ ∘ σ)))
+  - rewrite IHT1, IHT2, ub_map_comp, lb_map_comp.
+    rewrite (ub_map_ext (pt_inst τ ∘ pt_inst σ) (pt_inst (pt_inst τ ∘ σ))),
+      (lb_map_ext (pt_inst τ ∘ pt_inst σ) (pt_inst (pt_inst τ ∘ σ)))
       by (intros; apply pt_inst_comp). done.
   - by rewrite IHT1, IHT2.
   - by rewrite IHT1, IHT2.
@@ -120,7 +127,7 @@ Qed.
 Lemma pinst_ty_pvar T : pinst_ty pvar T = T.
 Proof.
   induction T; simpl; try done.
-  - rewrite IHT1, IHT2. destruct ub, lb; simpl; by rewrite ?pt_inst_pvar.
+  - rewrite IHT1, IHT2, ub_map_id, lb_map_id by apply pt_inst_pvar. done.
   - by rewrite IHT1, IHT2.
   - by rewrite IHT1, IHT2.
   - rewrite (pinst_ty_ext T _ pvar), IHT by apply pup_pvar. rewrite bcs_inst_pvar.
@@ -140,8 +147,8 @@ Definition pt_pscoped (k : nat) (x : point) : Prop :=
 Fixpoint pscoped (k : nat) (T : ty) : Prop :=
   match T with
   | TUnit => True
-  | TLolli ub lb _ _ _ T1 U _ =>
-      (∀ x, ub = Some x → pt_pscoped k x) ∧ (∀ x, lb = Some x → pt_pscoped k x) ∧
+  | TLolli ub lb _ _ T1 U _ =>
+      (∀ x, ub = UPt x → pt_pscoped k x) ∧ (∀ x, lb = LPt x → pt_pscoped k x) ∧
       pscoped k T1 ∧ pscoped k U
   | TProd T1 U | TSum T1 U => pscoped k T1 ∧ pscoped k U
   | TBox n _ C ub _ _ U =>
@@ -162,6 +169,8 @@ with sscoped (s : sty) : Prop :=
 
     heads(S@x) = {x‾}: a thread blocked at u that holds an end at v owes
     u ≺ v‾. The lower point of an arrow and of an existential are heads.
+    An arrow whose lower point is ⊥ (entry 12) raises the flag as well:
+    it claims no bound on the ends it captured.
     The ⊥ flag says a value may hold an unopened existential whose ends
     sit at points not known from outside. *)
 
@@ -174,7 +183,7 @@ Definition lb_heads (lb : lbound) : gset point :=
 Fixpoint heads (T : ty) : gset point :=
   match T with
   | TUnit | TBox _ _ _ _ _ _ _ => ∅
-  | TLolli _ lb _ _ _ _ _ _ => opt_heads lb
+  | TLolli _ lb _ _ _ _ _ => lb_heads lb
   | TProd T1 U | TSum T1 U => heads T1 ∪ heads U
   | TSess _ x _ => {[x‾]}
   | TEx lb _ _ _ => lb_heads lb
@@ -183,12 +192,12 @@ Fixpoint heads (T : ty) : gset point :=
 Fixpoint hbot (T : ty) : bool :=
   match T with
   | TProd T1 U | TSum T1 U => hbot T1 || hbot U
-  | TEx LBot _ _ _ => true
+  | TEx LBot _ _ _ | TLolli _ LBot _ _ _ _ _ => true
   | _ => false
   end.
 
 Lemma hbot_pinst σ T : hbot (pinst_ty σ T) = hbot T.
-Proof. induction T; simpl; try done; try congruence. by destruct lb. Qed.
+Proof. induction T; simpl; try done; try congruence; by destruct lb. Qed.
 
 Lemma opt_heads_pinst σ o : opt_heads (pt_inst σ <$> o) = set_map (pt_inst σ) (opt_heads o).
 Proof. destruct o; simpl; set_solver. Qed.
@@ -196,7 +205,7 @@ Proof. destruct o; simpl; set_solver. Qed.
 Lemma heads_pinst σ T : heads (pinst_ty σ T) = set_map (pt_inst σ) (heads T).
 Proof.
   induction T; simpl; rewrite ?set_map_union_L, ?IHT1, ?IHT2; try set_solver.
-  - apply opt_heads_pinst.
+  - destruct lb; simpl; set_solver.
   - rewrite set_map_singleton_L. by rewrite pt_inst_dual.
   - destruct lb; simpl; set_solver.
 Qed.
@@ -206,7 +215,7 @@ Qed.
 Fixpoint sren_ty (r : nat → nat) (T : ty) : ty :=
   match T with
   | TUnit => TUnit
-  | TLolli ub lb c t h T1 U a => TLolli ub lb c t h (sren_ty r T1) (sren_ty r U) a
+  | TLolli ub lb c t T1 U a => TLolli ub lb c t (sren_ty r T1) (sren_ty r U) a
   | TProd T1 U => TProd (sren_ty r T1) (sren_ty r U)
   | TSum T1 U => TSum (sren_ty r T1) (sren_ty r U)
   | TBox n k C ub c t U => TBox n k C ub c t (sren_ty (Nat.iter k upren r) U)
@@ -231,7 +240,7 @@ with sren (r : nat → nat) (s : sty) : sty :=
 Fixpoint sflip_ty (k : nat) (T : ty) : ty :=
   match T with
   | TUnit => TUnit
-  | TLolli ub lb c t h T1 U a => TLolli ub lb c t h (sflip_ty k T1) (sflip_ty k U) a
+  | TLolli ub lb c t T1 U a => TLolli ub lb c t (sflip_ty k T1) (sflip_ty k U) a
   | TProd T1 U => TProd (sflip_ty k T1) (sflip_ty k U)
   | TSum T1 U => TSum (sflip_ty k T1) (sflip_ty k U)
   | TBox n kk C ub c t U => TBox n kk C ub c t (sflip_ty (kk + k) U)
@@ -272,7 +281,7 @@ Definition sty_up (σ : nat → sty) : nat → sty := SVar 0 .: (sren S ∘ σ).
 Fixpoint sinst_ty (σ : nat → sty) (T : ty) : ty :=
   match T with
   | TUnit => TUnit
-  | TLolli ub lb c t h T1 U a => TLolli ub lb c t h (sinst_ty σ T1) (sinst_ty σ U) a
+  | TLolli ub lb c t T1 U a => TLolli ub lb c t (sinst_ty σ T1) (sinst_ty σ U) a
   | TProd T1 U => TProd (sinst_ty σ T1) (sinst_ty σ U)
   | TSum T1 U => TSum (sinst_ty σ T1) (sinst_ty σ U)
   | TBox n k C ub c t U => TBox n k C ub c t (sinst_ty (Nat.iter k sty_up σ) U)
@@ -412,8 +421,8 @@ Definition hcontractive (s : sty) : Prop := ∀ n, ahc n s.
 Fixpoint eqT (ρ : sty → sty → Prop) (T U : ty) : Prop :=
   match T, U with
   | TUnit, TUnit => True
-  | TLolli ub lb c t h T1 T2 a, TLolli ub' lb' c' t' h' U1 U2 a' =>
-      ub = ub' ∧ lb = lb' ∧ c = c' ∧ t = t' ∧ h = h' ∧ a = a' ∧
+  | TLolli ub lb c t T1 T2 a, TLolli ub' lb' c' t' U1 U2 a' =>
+      ub = ub' ∧ lb = lb' ∧ c = c' ∧ t = t' ∧ a = a' ∧
       eqT ρ T1 U1 ∧ eqT ρ T2 U2
   | TProd T1 T2, TProd U1 U2 | TSum T1 T2, TSum U1 U2 =>
       eqT ρ T1 U1 ∧ eqT ρ T2 U2
@@ -541,12 +550,12 @@ Proof. by destruct U. Qed.
 (** ** The annotations of the instance N = ∞
 
     [ty_df] sets every credit inside a type to ∞, every cost to ∞, every
-    transformer to (∞, ∞) and every floor to ∞. *)
+    transformer to (∞, ∞). *)
 
 Fixpoint ty_df (T : ty) : ty :=
   match T with
   | TUnit => TUnit
-  | TLolli ub lb _ _ _ T1 U _ => TLolli ub lb None tinf None (ty_df T1) (ty_df U) None
+  | TLolli ub lb _ _ T1 U _ => TLolli ub lb None tinf (ty_df T1) (ty_df U) None
   | TProd T1 U => TProd (ty_df T1) (ty_df U)
   | TSum T1 U => TSum (ty_df T1) (ty_df U)
   | TBox n k C ub _ _ U => TBox n k C ub None tinf (ty_df U)

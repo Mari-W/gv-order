@@ -43,7 +43,7 @@ Definition cs_L (g : fact) : Prop :=
 Definition W_cs : world := World ∅ (λ _, False) {[0]} (λ _ g, cs_L g).
 
 Definition cs_arr (S1 S2 : sty) : ty :=
-  TLolli (Some (pvar 2)) None None tinf None
+  TLolli (UPt (pvar 2)) LNone None tinf
     (TProd (TSess S1 (pvar 0) None) (TSess S2 (pvar 1) None)) TUnit None.
 
 Definition cs_box (S1 S2 : sty) : ty := TBox 3 0 cs_C None None tinf (cs_arr S1 S2).
@@ -86,20 +86,16 @@ Proof. reflexivity. Qed.
 (** One box body typing for both loops. [e] is the body after the let
     pair, which binds the end at ι at 1 and the end at κ at 0. *)
 Lemma cs_box_typed W Γ n F (S1 S2 : sty) e :
-  hc_fv Γ = ∅ →
-  dftyped W ∅ (hc_fvar 1 (Some (pvar 2)) (hc_fvar 0 None (hc_open 3 cs_C Γ)))
+  dftyped W ∅ (hc_open 3 cs_C Γ)
     (Some (TSess S2 (pvar 1) None) :: Some (TSess S1 (pvar 0) None) ::
      None :: Some (cs_box S1 S2) :: nones n)
-    (∅, Some (FVar 1)) e TUnit →
+    (∅, Some (FRest (RAbove (pvar 2)))) e TUnit →
   dftyped W ∅ Γ (nones n) F (EBox (Lam (LetP (Var 0) e))) (cs_box S1 S2).
 Proof.
-  intros HΓ He. eapply (d_box _ _ _ _ _ _ _ _ _ _ _ _ 0).
+  intros He. eapply d_box.
   { intros o Ho. apply elem_of_replicate in Ho as [-> _]. by left. }
-  { unfold hc_open. simpl. rewrite HΓ. unfold fhyps_pinst. rewrite fmap_empty. set_solver. }
   intros ss Hk _. destruct ss; [|done]. rewrite sinst_nil, cs_box_shift, lenv_pinst_nones.
-  eapply d_abs with (φ := 1).
-  { unfold hc_fvar. simpl. rewrite HΓ. unfold fhyps_pinst.
-    rewrite fmap_empty, insert_empty, dom_singleton_L. set_solver. }
+  eapply d_abs.
   { apply lb_below_none. spare_tac. }
   eapply d_letp; [apply tsplit_empty| | |].
   - lsplit_tac (Var 0) e.
@@ -109,13 +105,11 @@ Qed.
 
 Section body.
   Context (W : world) (Γ : hctx) (n : nat).
-  Local Definition Γb : hctx := hc_fvar 1 (Some (pvar 2)) (hc_fvar 0 None (hc_open 3 cs_C Γ)).
+  Local Definition Γb : hctx := hc_open 3 cs_C Γ.
 
   Lemma cs_in : (cs_C, ids 3) ∈ hc_hyps Γb.
-  Proof. unfold Γb, hc_fvar, hc_open. simpl. apply elem_of_app. right. by left. Qed.
+  Proof. unfold Γb, hc_open. simpl. apply elem_of_app. right. by left. Qed.
 
-  Lemma φ_hyp : hc_fv Γb !! 1 = Some (Some (pvar 2)).
-  Proof. unfold Γb, hc_fvar. simpl. by rewrite lookup_insert_eq. Qed.
 
   Ltac fct k := apply cs_fact; [apply cs_in|exists k;
     first [left; fact_eq | right; left; fact_eq | right; right; left; fact_eq | right; right; right; fact_eq]].
@@ -124,18 +118,18 @@ Section body.
     lazymatch goal with
     | |- ub_below_s _ _ (Some ?x) ?F =>
         rewrite ?lenv_bot_nones; cbn [lenv_bot hbot orb sf_unionb fst snd];
-        apply (ub_below_var _ _ _ (pvar 2) _ 1 φ_hyp)
+        apply (ub_below_var _ _ _ (pvar 2) _)
     end.
 
   (** The force of the self at (ι⁺, κ⁺, ζ). *)
   Lemma cs_self Δ F S1 S2 :
     dftyped W ∅ Γb Δ F (Var 6) (cs_box S1 S2) →
     dftyped W ∅ Γb Δ F (EForce (Var 6))
-      (TLolli (Some (pvar 2)) None None tinf None
+      (TLolli (UPt (pvar 2)) LNone None tinf
          (TProd (TSess S1 (sh 1 (pvar 0)) None) (TSess S2 (sh 1 (pvar 1)) None)) TUnit None).
   Proof.
     intros H. assert (sinst_ty (slist []) (ty_inst (sh 1 (pvar 0) :: sh 1 (pvar 1) :: pvar 2 :: []) (cs_arr S1 S2)) =
-      TLolli (Some (pvar 2)) None None tinf None
+      TLolli (UPt (pvar 2)) LNone None tinf
          (TProd (TSess S1 (sh 1 (pvar 0)) None) (TSess S2 (sh 1 (pvar 1)) None)) TUnit None) as <-.
     { rewrite sinst_nil. reflexivity. }
     eapply d_force with (ub := None) (c := None) (t := tinf); [done| |done|split; [apply Forall_nil|intros _; apply Forall_nil]|exact I|exact H].
@@ -147,7 +141,7 @@ Section body.
     - fct (S k).
   Qed.
   Ltac dfut x :=
-    apply (ub_below_varb _ _ x (pvar 2) _ _ 1); [bot_false|exact φ_hyp|
+    apply (ub_below_varb _ _ x (pvar 2) _ _); [bot_false|
       let y := fresh "y" in let Hy := fresh "Hy" in intros y Hy; heads_simpl Hy;
       repeat match goal with H : _ ∨ _ |- _ => destruct H end; subst;
       try contradiction; first [fct 0 | fct 1]
@@ -160,7 +154,7 @@ Section body.
   Lemma cli_body :
     dftyped W ∅ Γb (Some (TSess Sb (pvar 1) None) :: Some (TSess Sa (pvar 0) None) ::
                      None :: Some (cs_box Sa Sb) :: nones n)
-      (∅, Some (FVar 1)) cli_e TUnit.
+      (∅, Some (FRest (RAbove (pvar 2)))) cli_e TUnit.
   Proof.
     unfold cli_e.
     eapply d_let; [apply tsplit_empty|lsplit_tac (ESend (Pair EUnit (Var 1))) EUnit| |].
@@ -177,7 +171,7 @@ Section body.
     eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 1) EUnit| |].
     { eapply d_var'; [reflexivity|]. spare_tac. }
     eapply d_app; [apply tsplit_empty|lsplit_tac (EForce (Var 6)) EUnit| | |].
-    - eapply (ub_below_var _ _ _ (pvar 2) _ 1 φ_hyp); [intros y Hy; exfalso; set_solver|by left].
+    - apply ubu_pt; eapply (ub_below_var _ _ _ (pvar 2) _); [intros y Hy; exfalso; set_solver|by left].
     - apply cs_self. eapply d_var'; [reflexivity|]. spare_tac.
     - eapply d_pair; [apply tsplit_empty|lsplit_tac (Var 2) EUnit| |].
       + eapply d_var'; [reflexivity|]. spare_tac.
@@ -192,7 +186,7 @@ Section body.
   Lemma srv_body :
     dftyped W ∅ Γb (Some (TSess Sa (pvar 1) None) :: Some (TSess Sb (pvar 0) None) ::
                      None :: Some (cs_box Sb Sa) :: nones n)
-      (∅, Some (FVar 1)) srv_e TUnit.
+      (∅, Some (FRest (RAbove (pvar 2)))) srv_e TUnit.
   Proof.
     unfold srv_e.
     eapply d_letp;
@@ -209,7 +203,7 @@ Section body.
       - apply d_unit'. spare_tac.
       - eapply d_var'; [reflexivity|]. spare_tac. }
     eapply d_app; [apply tsplit_empty|lsplit_tac (EForce (Var 6)) EUnit| | |].
-    - eapply (ub_below_var _ _ _ (pvar 2) _ 1 φ_hyp); [intros y Hy; exfalso; set_solver|by left].
+    - apply ubu_pt; eapply (ub_below_var _ _ _ (pvar 2) _); [intros y Hy; exfalso; set_solver|by left].
     - apply cs_self. eapply d_var'; [reflexivity|]. spare_tac.
     - eapply d_pair; [apply tsplit_empty|lsplit_tac (Var 1) EUnit| |].
       + eapply d_var'; [reflexivity|]. spare_tac.
@@ -240,13 +234,13 @@ Lemma cs_force n F S1 S2 x1 x2 e (b : bool) :
   x1 = pt_polar b (pvar 0) → x2 = pt_polar b ((pvar 0)·0) →
   dftyped W_cs ∅ Γm (nones n) F e (cs_box S1 S2) →
   dftyped W_cs ∅ Γm (nones n) F (EForce e)
-    (TLolli (Some ((pvar 0)·1)) None None tinf None
+    (TLolli (UPt ((pvar 0)·1)) LNone None tinf
        (TProd (TSess S1 x1 None) (TSess S2 x2 None)) TUnit None).
 Proof.
   intros -> -> H.
   assert (sinst_ty (slist []) (ty_inst (pt_polar b (pvar 0) :: pt_polar b ((pvar 0)·0) :: (pvar 0)·1 :: [])
             (cs_arr S1 S2)) =
-    TLolli (Some ((pvar 0)·1)) None None tinf None
+    TLolli (UPt ((pvar 0)·1)) LNone None tinf
        (TProd (TSess S1 (pt_polar b (pvar 0)) None) (TSess S2 (pt_polar b ((pvar 0)·0)) None)) TUnit None) as <-.
   { rewrite sinst_nil. destruct b; reflexivity. }
   eapply d_force with (ub := None) (c := None) (t := tinf);
@@ -257,10 +251,10 @@ Proof.
 Qed.
 
 Lemma cli_typed n F : dftyped W_cs ∅ Γm (nones n) F cli (cs_box Sa Sb).
-Proof. apply cs_box_typed; [done|apply cli_body]. Qed.
+Proof. apply cs_box_typed, cli_body. Qed.
 
 Lemma srv_typed n F : dftyped W_cs ∅ Γm (nones n) F srv (cs_box Sb Sa).
-Proof. apply cs_box_typed; [done|apply srv_body]. Qed.
+Proof. apply cs_box_typed, srv_body. Qed.
 
 Theorem cs_dftyped : dftyped W_cs ∅ hc_empty [] (∅, None) cs_main TUnit.
 Proof.
@@ -281,12 +275,12 @@ Proof.
   - eapply d_spawn_lam.
     eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
     { eapply d_var'; [reflexivity|]. spare_tac. }
-    eapply d_app; [apply tsplit_empty|lsplit_tac (EForce srv) EUnit|apply ub_below_empty| |].
+    eapply d_app; [apply tsplit_empty|lsplit_tac (EForce srv) EUnit|apply ubu_below_empty| |].
     + eapply (cs_force 8 _ Sb Sa _ _ _ false); [done|done|apply srv_typed].
     + eapply d_pair; [apply tsplit_empty|lsplit_tac (Var 5) EUnit| |].
       * eapply d_var'; [reflexivity|]. spare_tac.
       * eapply d_var'; [reflexivity|]. spare_tac.
-  - eapply d_app; [apply tsplit_empty|lsplit_tac (EForce cli) EUnit|apply ub_below_empty| |].
+  - eapply d_app; [apply tsplit_empty|lsplit_tac (EForce cli) EUnit|apply ubu_below_empty| |].
     + eapply (cs_force 7 _ Sa Sb _ _ _ true); [done|done|apply cli_typed].
     + eapply d_pair; [apply tsplit_empty|lsplit_tac (Var 3) EUnit| |].
       * eapply d_var'; [reflexivity|]. spare_tac.

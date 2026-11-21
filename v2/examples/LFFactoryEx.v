@@ -36,8 +36,8 @@ Ltac lworker_tac pp j :=
 (** ** mk₀ *)
 
 Lemma mk0l_body Γ n : ∃ c t,
-  typed W_fx (Some 2) ∅ (hc_fvar 1 None (hc_fvar 0 None (hc_open 0 C0 Γ)))
-    (Some TUnit :: Some mk0l_ty :: nones n) (∅, Some (FVar 1)) mk0_e Tresl c t
+  typed W_fx (Some 2) ∅ (hc_open 0 C0 Γ)
+    (Some TUnit :: Some mk0l_ty :: nones n) (∅, Some (FRest RAll)) mk0_e Tresl c t
   ∧ t.2 = Some 0.
 Proof.
   eexists _, _. split.
@@ -62,25 +62,25 @@ Proof.
   eapply e_pack with (xs := pvar 0 :: []); [done| |exact I|].
   - apply hold_at_nil. intros f Hf _. destruct Hf as [->| ->]; simpl.
     + eapply (hyp_slt_ids _ _ (w_laws W_fx 0) 1);
-        [unfold hc_fvar, hc_open; cbn [hc_hyps]; apply elem_of_app; right; apply list_elem_of_here|by left|simpl; lia].
+        [unfold hc_open; cbn [hc_hyps]; apply elem_of_app; right; apply list_elem_of_here|by left|simpl; lia].
     + eapply (hyp_slt_ids _ _ (w_laws W_fx 0) 1);
-        [unfold hc_fvar, hc_open; cbn [hc_hyps]; apply elem_of_app; right; apply list_elem_of_here|by right|simpl; lia].
+        [unfold hc_open; cbn [hc_hyps]; apply elem_of_app; right; apply list_elem_of_here|by right|simpl; lia].
   - eapply e_var'; [reflexivity|]. spare_tac. }
   reflexivity.
   Unshelve. all: first [tok_tac | apply tsub_refl | exact None].
 Qed.
 
-Lemma mk0l_typed Γ n F : hc_fv Γ = ∅ → typed W_fx (Some 2) ∅ Γ (nones n) F mk0 mk0l_ty (Some 0) tid.
+Lemma mk0l_typed Γ n F : typed W_fx (Some 2) ∅ Γ (nones n) F mk0 mk0l_ty (Some 0) tid.
 Proof.
-  intros HΓ. destruct (mk0l_body Γ n) as (c & t & Hb & Ht).
-  eapply lbox_typed; [done|reflexivity|exact Hb|exact Ht].
+  destruct (mk0l_body Γ n) as (c & t & Hb & Ht).
+  eapply lbox_typed; [reflexivity|exact Hb|exact Ht].
 Qed.
 
 (** ** mk₁ *)
 
 Lemma mk1l_body Γ n : ∃ c t,
-  typed W_fx (Some 2) ∅ (hc_fvar 1 None (hc_fvar 0 None (hc_open 1 mk1_C Γ)))
-    (Some (TSess Sr (pvar 0) (Some 2)) :: Some mk1l_ty :: nones n) (∅, Some (FVar 1))
+  typed W_fx (Some 2) ∅ (hc_open 1 mk1_C Γ)
+    (Some (TSess Sr (pvar 0) (Some 2)) :: Some mk1l_ty :: nones n) (∅, Some (FRest RAll))
     mk1_e mk1l_res c t ∧ t.2 = Some 0.
 Proof.
   eexists _, _. split.
@@ -103,10 +103,10 @@ Proof.
   Unshelve. all: first [tok_tac | apply tsub_refl | exact None].
 Qed.
 
-Lemma mk1l_typed Γ n F : hc_fv Γ = ∅ → typed W_fx (Some 2) ∅ Γ (nones n) F mk1 mk1l_ty (Some 0) tid.
+Lemma mk1l_typed Γ n F : typed W_fx (Some 2) ∅ Γ (nones n) F mk1 mk1l_ty (Some 0) tid.
 Proof.
-  intros HΓ. destruct (mk1l_body Γ n) as (c & t & Hb & Ht).
-  eapply lbox_typed; [done|reflexivity|exact Hb|exact Ht].
+  destruct (mk1l_body Γ n) as (c & t & Hb & Ht).
+  eapply lbox_typed; [reflexivity|exact Hb|exact Ht].
 Qed.
 
 (** ** main *)
@@ -117,8 +117,8 @@ Proof.
   { unfold fx_main.
   eapply e_let_; [apply lsplit_nil| | | |shelve].
   { (* the first call needs no point *)
-    eapply e_app_; [apply lsplit_nil|apply ub_below_empty| | | |shelve|shelve|shelve].
-    { eapply (lbox_force_eq _ _ _ _ _ _ 0 C0 None TUnit Tresl [] _ _ None TUnit Tresl);
+    eapply e_app_; [apply lsplit_nil|apply ubu_below_empty| | | |shelve|shelve|shelve].
+    { eapply (lbox_force_eq _ _ _ _ _ _ 0 C0 None TUnit Tresl [] _ _ UNone TUnit Tresl);
         [done| |done|done|done|].
       - intros x y (g0 & (f & Hf & _) & _). done.
       - by apply (mk0l_typed _ 0). }
@@ -129,9 +129,9 @@ Proof.
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
   fold (Γnew W_fx 0).
   eapply e_letp_; [lsplit_tac (App (EForce mk1) (Var 0)) EUnit| | | |shelve].
-  { eapply e_app_; [lsplit_tac (EForce mk1) (Var 0)|apply ub_below_empty| | | |shelve|shelve|shelve].
+  { eapply e_app_; [lsplit_tac (EForce mk1) (Var 0)|apply ubu_below_empty| | | |shelve|shelve|shelve].
     { eapply (lbox_force_eq _ _ _ _ _ _ 1 mk1_C None (TSess Sr (pvar 0) (Some 2)) mk1l_res
-        ((pvar 0)‾ :: []) _ _ None (TSess Sr (pvar 0)‾ (Some 2))
+        ((pvar 0)‾ :: []) _ _ UNone (TSess Sr (pvar 0)‾ (Some 2))
         (TProd (TSess Sr (pvar 0)‾ (Some 2)) (TSess Sr ((pvar 0)·0)‾ (Some 2))));
         [done| |done|done|done|].
       + apply hold_at_nil. intros f Hf _. destruct Hf as [->| ->]; simpl.

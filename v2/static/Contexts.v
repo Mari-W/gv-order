@@ -3,18 +3,18 @@
     The judgment Θ ; Γ ; Δ ⊢^F_{W,N} e : T ▷ c ; ϑ reads
 
     - Θ : end ⇀ S@x^a, one entry per end, with the credit of the end,
-    - Γ, the facts and future hypotheses: box constraints in force with
-      their instances, and future variables φ with an upper point u ≺ φ,
+    - Γ, the facts: box constraints in force with their instances,
     - Δ, a de Bruijn list of optional types T,
-    - F, the future, a set of points with a future variable or the ⊥
-      flag.
+    - F, the future, a set of points X with a rest, "everything above u"
+      or "everything", and the ⊥ flag. There are no future variables
+      (entry 14b of docs/redesign/pending.md).
 
     Every fact the judgment reads comes from Γ ⊢ x ≺ y ([slt]), the least
     transitive relation over the order of W, the facts of the
-    hypotheses and u ≺ φ. Aging ([tage]), capture ([tcap]) and
-    subtyping ([tsub]) are the cost relations of static/CostTyping.v,
-    restated over types. Credits sit on ends and closures only, so all
-    three recurse through products, sums and existentials. *)
+    hypotheses and u ≺ φ. Aging ([tage]) and subtyping ([tsub]) are the
+    cost relations of static/CostTyping.v, restated over types, and the
+    capture of E-Abs is aging. Credits sit on ends and closures only, so
+    both recurse through products, sums and existentials. *)
 
 From GV Require Export types.Types.
 
@@ -89,15 +89,19 @@ Definition tenv_of (a : fuel) (Σ : senv) : tenv := (λ e, TE e.1 e.2 a) <$> Σ.
 
 (** ** Futures and hypotheses *)
 
-(** A future variable φ, or the ⊥ flag with or without one. *)
-Inductive futrest := FVar (φ : nat) | FBot (o : option nat).
+(** The unknown rest of a future: everything above u, the future of a
+    body below the upper point u ([RAbove]), or everything, the future
+    of a body with no upper point ([RAll]). *)
+Inductive frest := RAbove (u : point) | RAll.
+
+(** A rest, or the ⊥ flag with or without a rest. *)
+Inductive futrest := FRest (r : frest) | FBot (o : option frest).
 
 Abbreviation sfuture := (gset point * option futrest)%type.
-Abbreviation fhyps := (gmap nat (option point)).
 Abbreviation hyps := (list (bcs * list point)).
 
-Definition fs_var (o : option futrest) : option nat :=
-  match o with Some (FVar φ) => Some φ | Some (FBot o') => o' | None => None end.
+Definition fs_var (o : option futrest) : option frest :=
+  match o with Some (FRest r) => Some r | Some (FBot o') => o' | None => None end.
 
 Definition fs_bot (o : option futrest) : bool :=
   match o with Some (FBot _) => true | _ => false end.
@@ -105,25 +109,21 @@ Definition fs_bot (o : option futrest) : bool :=
 Definition sf_unionb (F : sfuture) (X : gset point) (b : bool) : sfuture :=
   if b then (F.1 ∪ X, Some (FBot (fs_var F.2))) else (F.1 ∪ X, F.2).
 
-(** Γ, one context for the facts and the future hypotheses (A.5). *)
-Record hctx := HCtx { hc_hyps : hyps; hc_fv : fhyps }.
+(** Γ, the facts of the box constraints in force (A.5). *)
+Record hctx := HCtx { hc_hyps : hyps }.
 
-Definition hc_empty : hctx := HCtx [] ∅.
+Definition hc_empty : hctx := HCtx [].
 
 Definition hyp_fact (Ψ : hyps) (g : fact) : Prop :=
   ∃ C xs, (C, xs) ∈ Ψ ∧ bcs_at C xs g.
 
-Inductive node := NP (x : point) | NV (φ : nat).
+(** Γ ⊢ x ≺ y. Program order comes with the order of W. *)
+Inductive fl (W : world) (Γ : hctx) : point → point → Prop :=
+  | fl_w x y : W ⊢ x ≺ y → fl W Γ x y
+  | fl_h x y : hyp_fact (hc_hyps Γ) (FLt x y) → fl W Γ x y
+  | fl_trans x y z : fl W Γ x y → fl W Γ y z → fl W Γ x z.
 
-(** Γ ⊢ a ≺ b over points and future variables. Program order comes with
-    the order of W. *)
-Inductive fl (W : world) (Γ : hctx) : node → node → Prop :=
-  | fl_w x y : W ⊢ x ≺ y → fl W Γ (NP x) (NP y)
-  | fl_h x y : hyp_fact (hc_hyps Γ) (FLt x y) → fl W Γ (NP x) (NP y)
-  | fl_v φ u : hc_fv Γ !! φ = Some (Some u) → fl W Γ (NP u) (NV φ)
-  | fl_trans a y b : fl W Γ a (NP y) → fl W Γ (NP y) b → fl W Γ a b.
-
-Definition slt (W : world) (Γ : hctx) (x y : point) : Prop := fl W Γ (NP x) (NP y).
+Definition slt (W : world) (Γ : hctx) (x y : point) : Prop := fl W Γ x y.
 Definition sle (W : world) (Γ : hctx) (x y : point) : Prop := x = y ∨ slt W Γ x y.
 
 Lemma sl_w W Γ x y : W ⊢ x ≺ y → slt W Γ x y.
@@ -136,14 +136,30 @@ Proof. apply sl_w, w_lt_po. Qed.
 Definition hold_at (W : world) (Γ : hctx) (C : bcs) (xs : list point) : Prop :=
   ∀ x y, bcs_at C xs (FLt x y) → slt W Γ x y.
 
-(** {u} ≺ F, for the points of F and its future variable. *)
+(** x ≺ r for a rest: x ≺ "everything above u" iff x ≼ u (entry 14b,
+    docs/redesign/check-future-variables.md), and nothing lies below
+    "everything". *)
+Definition rest_below (W : world) (Γ : hctx) (x : point) (r : frest) : Prop :=
+  match r with RAbove u => sle W Γ x u | RAll => False end.
+
+(** {u} ≺ F, for the points of F and its rest. *)
 Definition ub_below_s (W : world) (Γ : hctx) (ub : option point) (F : sfuture) : Prop :=
   match ub with
   | None => True
   | Some x => (∀ y, y ∈ F.1 → slt W Γ x y) ∧
-              (∀ φ, fs_var F.2 = Some φ → fl W Γ (NP x) (NV φ)) ∧
+              (∀ r, fs_var F.2 = Some r → rest_below W Γ x r) ∧
               fs_bot F.2 = false
   end.
+
+(** u ≺ F for the upper point of an arrow (entry 12, generalized arrows).
+    No upper point asks nothing, ⊤ asks the empty future. *)
+Definition ub_below_u (W : world) (Γ : hctx) (ub : ubound) (F : sfuture) : Prop :=
+  match ub with
+  | UNone => True
+  | UPt x => ub_below_s W Γ (Some x) F
+  | UTop => F = (∅, None)
+  end.
+
 
 Definition lbx_below_h (W : world) (Γ : hctx) (lb : lbound) (H : gset point) (b : bool) : Prop :=
   match lb with
@@ -152,28 +168,36 @@ Definition lbx_below_h (W : world) (Γ : hctx) (lb : lbound) (H : gset point) (b
   | LPt x => (∀ y, y ∈ H → sle W Γ x y) ∧ b = false
   end.
 
-(** The lower bound of an arrow as a bound of [lbx_below_h]: none, or a
-    point. *)
-Definition lbound_of (lb : option point) : lbound :=
-  match lb with None => LNone | Some x => LPt x end.
 
 (** ** Point instantiation of contexts *)
 
 Definition hyps_inst (σ : nat → point) (Ψ : hyps) : hyps :=
   (λ g : bcs * list point, (bcs_inst σ g.1, pt_inst σ <$> g.2)) <$> Ψ.
 
-Definition fhyps_pinst (σ : nat → point) (Φ : fhyps) : fhyps := fmap (M:=option) (pt_inst σ) <$> Φ.
-
 Definition ids (m : nat) : list point := pvar <$> seq 0 m.
 
 (** The context of a body under m new point variables with the
     constraint C, the box of E-Box and the existential of E-Open. *)
 Definition hc_open (m : nat) (C : bcs) (Γ : hctx) : hctx :=
-  HCtx (hyps_inst (pshift m) (hc_hyps Γ) ++ [(bcs_inst (pshift m) C, ids m)])
-       (fhyps_pinst (pshift m) (hc_fv Γ)).
+  HCtx (hyps_inst (pshift m) (hc_hyps Γ) ++ [(bcs_inst (pshift m) C, ids m)]).
 
-Definition hc_fvar (φ : nat) (ub : option point) (Γ : hctx) : hctx :=
-  HCtx (hc_hyps Γ) (<[φ := ub]> (hc_fv Γ)).
+(** The rest above an optional upper point. *)
+Definition rest_of (ub : option point) : frest :=
+  match ub with Some u => RAbove u | None => RAll end.
+
+(** The future of the body of E-Abs and E-Box. Below a point the body
+    runs under everything above it, with no upper point under
+    everything, and below ⊤ under the empty future. *)
+Definition abs_fut (ub : ubound) : sfuture :=
+  match ub with
+  | UNone => (∅, Some (FRest RAll))
+  | UPt u => (∅, Some (FRest (RAbove u)))
+  | UTop => (∅, None)
+  end.
+
+Lemma abs_fut_of o : abs_fut (ubound_of o) = (∅, Some (FRest (rest_of o))).
+Proof. by destruct o. Qed.
+
 
 Definition tentry_pinst (σ : nat → point) (e : tentry) : tentry :=
   TE (pinst_sty σ (te_sty e)) (pt_inst σ (te_pt e)) (te_cr e).
@@ -183,7 +207,14 @@ Definition tenv_pinst (σ : nat → point) (Θ : tenv) : tenv := tentry_pinst σ
 Definition lenv_pinst (σ : nat → point) (Δ : lenv) : lenv :=
   fmap (M:=option) (pinst_ty σ) <$> Δ.
 
-Definition sf_pinst (σ : nat → point) (F : sfuture) : sfuture := (set_map (pt_inst σ) F.1, F.2).
+Definition frest_pinst (σ : nat → point) (r : frest) : frest :=
+  match r with RAbove u => RAbove (pt_inst σ u) | RAll => RAll end.
+
+Definition futrest_pinst (σ : nat → point) (o : futrest) : futrest :=
+  match o with FRest r => FRest (frest_pinst σ r) | FBot o' => FBot (frest_pinst σ <$> o') end.
+
+Definition sf_pinst (σ : nat → point) (F : sfuture) : sfuture :=
+  (set_map (pt_inst σ) F.1, futrest_pinst σ <$> F.2).
 
 (** ** Aging Γ − c
 
@@ -194,8 +225,8 @@ Inductive tage (c : fuel) : ty → ty → Prop :=
   | age_free T : tfree T → tage c T T
   | age_sess S x a : fle c a → tage c (TSess S x a) (TSess S x (fsub a c))
   | age_idle S x a : idle S → tage c (TSess S x a) (TSess S x (fsub a c))
-  | age_arr ub lb c0 t h T U a : fle c a →
-      tage c (TLolli ub lb c0 t h T U a) (TLolli ub lb c0 t h T U (fsub a c))
+  | age_arr ub lb c0 t T U a : fle c a →
+      tage c (TLolli ub lb c0 t T U a) (TLolli ub lb c0 t T U (fsub a c))
   | age_prod T1 T2 T1' T2' : tage c T1 T1' → tage c T2 T2' → tage c (TProd T1 T2) (TProd T1' T2')
   | age_sum T1 T2 T1' T2' : tage c T1 T1' → tage c T2 T2' → tage c (TSum T1 T2) (TSum T1' T2')
   | age_ex lb n C T T' : tage c T T' → tage c (TEx lb n C T) (TEx lb n C T').
@@ -213,46 +244,27 @@ Definition thage (c : fuel) (Θ Θ' : tenv) : Prop :=
        | _, _ => False
        end.
 
-(** ** Capture at E-Abs
+(** ** Capture at E-Abs is aging
 
-    [tcap h a T T']: the ends of T have current lower bound at least
-    h + a and T' restates them with lower bound exactly h. *)
-Inductive tcap (h a : fuel) : ty → ty → Prop :=
-  | cap_free T : tfree T → tcap h a T T
-  | cap_sess S x a0 : fle (fadd h a) a0 → tcap h a (TSess S x a0) (TSess S x h)
-  | cap_arr ub lb c t h0 T U a0 :
-      fle h0 h → fle (fadd h a) (fadd h0 a0) →
-      tcap h a (TLolli ub lb c t h0 T U a0) (TLolli ub lb c t h0 T U (fsub h h0))
-  | cap_prod T1 T2 T1' T2' : tcap h a T1 T1' → tcap h a T2 T2' → tcap h a (TProd T1 T2) (TProd T1' T2')
-  | cap_sum T1 T2 T1' T2' : tcap h a T1 T1' → tcap h a T2 T2' → tcap h a (TSum T1 T2) (TSum T1' T2')
-  | cap_ex lb n C T T' : tcap h a T T' → tcap h a (TEx lb n C T) (TEx lb n C T').
-
-Inductive lcap (h a : fuel) : lenv → lenv → Prop :=
-  | lcap_nil : lcap h a [] []
-  | lcap_none Δ Δ' : lcap h a Δ Δ' → lcap h a (None :: Δ) (None :: Δ')
-  | lcap_some σ σ' Δ Δ' : tcap h a σ σ' → lcap h a Δ Δ' → lcap h a (Some σ :: Δ) (Some σ' :: Δ').
-
-Definition thcap (h a : fuel) (Θ Θ' : tenv) : Prop :=
-  ∀ o, match Θ !! o, Θ' !! o with
-       | None, None => True
-       | Some e, Some e' => te_sty e' = te_sty e ∧ te_pt e' = te_pt e ∧
-                            fle (fadd h a) (te_cr e) ∧ te_cr e' = h
-       | _, _ => False
-       end.
+    A closure at credit a captures its context aged by a, each end at its
+    own credit minus a (decision of 2026-11-20, per-end capture,
+    docs/redesign/check-per-end-capture.md). E-Abs reads [thage] and
+    [lage] at a, and no floor is left. *)
 
 (** ** Subtyping
 
-    Costs, transformers and floors are covariant, arguments
-    contravariant, results covariant, sessions up to ≈. A credit may
-    fall. At an arrow the current lower bound h + a may not rise. A
+    Costs and transformers are covariant, arguments contravariant,
+    results covariant, sessions up to ≈. A credit may fall. At an arrow
+    the credit a bounds what the captured counters may lose before a
+    call, so it may fall as well (a' ≤ a). A
     product, a sum and an existential compare their parts. An
     existential may drop facts of its constraint. *)
 Inductive tsub : ty → ty → Prop :=
   | sub_unit : tsub TUnit TUnit
-  | sub_arr ub lb c t h T1 U a c' t' h' T1' U' a' :
-      fle c c' → tle t t' → fle h h' → fle (fadd h' a') (fadd h a) →
+  | sub_arr ub lb c t T1 U a c' t' T1' U' a' :
+      fle c c' → tle t t' → fle a' a →
       tsub T1' T1 → tsub U U' →
-      tsub (TLolli ub lb c t h T1 U a) (TLolli ub lb c' t' h' T1' U' a')
+      tsub (TLolli ub lb c t T1 U a) (TLolli ub lb c' t' T1' U' a')
   | sub_prod T1 U T1' U' : tsub T1 T1' → tsub U U' → tsub (TProd T1 U) (TProd T1' U')
   | sub_sum T1 U T1' U' : tsub T1 T1' → tsub U U' → tsub (TSum T1 U) (TSum T1' U')
   | sub_box n k C ub c t U U' c' t' :

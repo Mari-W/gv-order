@@ -21,9 +21,9 @@ Definition div_Ω : expr := App div_ω div_ω.
 
 Definition dead_thunk (q : cend) : expr := Lam (LetU div_Ω (EClose (Chan q))).
 
-(** The thunk type (∗ ⊸ ∗)^2 with frame 0, transformer 1̂, floor 0 and
+(** The thunk type (∗ ⊸ ∗)^2 with frame 0, transformer 1̂ and
     credit 2. *)
-Definition T_thk : ty := TLolli None None (Some 0) tid (Some 0) TUnit TUnit (Some 2).
+Definition T_thk : ty := TLolli UNone LNone (Some 0) tid TUnit TUnit (Some 2).
 
 Lemma fends_dead q : q ∈ fends (dead_thunk q).
 Proof. simpl. set_solver. Qed.
