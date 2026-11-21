@@ -117,7 +117,6 @@ const sections = OLD.sections.map(s => clean({
       modes: modesOf(b.modes),
       source: out,
       usedIn: a.used,
-      introduces: introduces([formula, ...Object.values(variants || {})].join(' ')),
       deviations: devs
     });
   })

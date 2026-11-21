@@ -73,6 +73,24 @@ function topGroups(s) {
   return out;
 }
 
+// Split mutual bodies at "with" outside brackets and outside match ... with ... end.
+function splitWith(s) {
+  const out = [];
+  let depth = 0, matches = 0, last = 0;
+  const re = /[(){}\[\]]|\b(match|end|with|let)\b/g;
+  let m;
+  while ((m = re.exec(s))) {
+    const t = m[0];
+    if ('({['.includes(t)) depth++;
+    else if (')}]'.includes(t)) depth--;
+    else if (depth === 0 && t === 'match') matches++;
+    else if (depth === 0 && t === 'end' && matches > 0) matches--;
+    else if (depth === 0 && t === 'with') { if (matches > 0) continue; out.push(s.slice(last, m.index)); last = m.index + 4; }
+  }
+  out.push(s.slice(last));
+  return out;
+}
+
 // The constructors of one inductive body "name binders : sort := | C1 ... | C2 ...".
 function constructors(body) {
   const at = body.indexOf(':=');
@@ -109,8 +127,8 @@ function recordParts(name, body) {
   const open = rhs.indexOf('{'), close = rhs.lastIndexOf('}');
   if (open >= 0 && close > open) {
     for (const f of rhs.slice(open + 1, close).split(';')) {
-      const m = new RegExp('^\\s*(' + IDENT + ')\\s*(?::>?|:=)', 'u').exec(f);
-      if (m) out.push({ name: m[1], kind: 'field' });
+      const m = new RegExp('^\\s*(' + IDENT + ')(?:\\s+[^:;]*?)?\\s*(?::>?(?!:)|:=)', 'u').exec(f);
+      if (m) out.push({ name: m[1], kind: 'field', text: f });
     }
   }
   return out;
@@ -150,7 +168,7 @@ function indexFile(root, rel) {
       continue;
     }
     // mutual definitions are separated by "with"
-    const bodies = rest.split(/\bwith\b/);
+    const bodies = splitWith(rest);
     let pos = off;
     for (let k = 0; k < bodies.length; k++) {
       const body = bodies[k];
@@ -160,7 +178,7 @@ function indexFile(root, rel) {
       const stmt = text.slice(0, m[0].length).trim() + ' ' + body;
       add(name, kind.toLowerCase(), pos + body.indexOf(name), stmt);
       if (/^(Inductive|CoInductive|Variant)$/.test(kind)) for (const c of constructors(body)) add(c.name, 'constructor', pos + Math.max(0, body.indexOf(c.text)), c.text, name);
-      if (/^(Record|Structure|Class)$/.test(kind)) for (const p of recordParts(name, body)) add(p.name, p.kind, pos + Math.max(0, body.indexOf(p.name)), stmt, name);
+      if (/^(Record|Structure|Class)$/.test(kind)) for (const p of recordParts(name, body)) add(p.name, p.kind, pos + Math.max(0, body.indexOf(p.text || p.name)), p.text || stmt, name);
       pos += body.length + 4;
     }
   }

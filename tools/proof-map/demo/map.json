@@ -97,9 +97,6 @@
       "r-fun",
       "r-boxes"
      ],
-     "introduces": [
-      "e"
-     ],
      "deviations": [
       {
        "kind": "planned",
@@ -151,9 +148,6 @@
      "usedIn": [
       "t-consts",
       "sem-head"
-     ],
-     "introduces": [
-      "k"
      ]
     },
     {
@@ -173,9 +167,6 @@
      "usedIn": [
       "v-rel",
       "e-rel"
-     ],
-     "introduces": [
-      "v"
      ]
     },
     {
@@ -198,9 +189,6 @@
       "syn-fends",
       "syn-csub",
       "t-contexts"
-     ],
-     "introduces": [
-      "o"
      ]
     },
     {
@@ -269,10 +257,6 @@
       "syn-moves",
       "w-world",
       "t-side"
-     ],
-     "introduces": [
-      "r",
-      "x"
      ],
      "deviations": [
       {
@@ -367,10 +351,6 @@
       "sem-head",
       "sem-proc",
       "ct-costs"
-     ],
-     "introduces": [
-      "\\alpha",
-      "\\sigma"
      ],
      "deviations": [
       {
@@ -470,10 +450,6 @@
      "usedIn": [
       "sem-props",
       "th-adeq"
-     ],
-     "introduces": [
-      "v",
-      "k"
      ]
     },
     {
@@ -535,10 +511,6 @@
       "t-judgment",
       "v-rel"
      ],
-     "introduces": [
-      "T",
-      "U"
-     ],
      "deviations": [
       {
        "kind": "planned",
@@ -564,9 +536,6 @@
      "usedIn": [
       "ty-dual",
       "r-act"
-     ],
-     "introduces": [
-      "S"
      ]
     },
     {
@@ -642,10 +611,6 @@
       "t-judgment",
       "r-fun",
       "r-ex"
-     ],
-     "introduces": [
-      "l",
-      "u"
      ],
      "deviations": [
       {
