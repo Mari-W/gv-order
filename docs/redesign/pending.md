@@ -220,6 +220,10 @@ must do, open questions.
   type. Fuel extension removes N and does not remove K. The author adopts
   layers for the next Rocq run, together with tickets and transfinite indices.
   Tickets stay finite with N and K for now. Ordinal tickets may come later.
+  Confirmed after explanation (2026-11-21). Ranks are ordinals, not naturals,
+  because the server end of LFClientServer sits above an unbounded ascending
+  chain of client points (rank ω, ranks up to ω²+1). Ranks reuse the
+  Brouwer-tree type of the step indices.
 - **Open points of A3 (2026-11-21, awaiting decision).** check-layers-open.md.
   The restriction on plain `new` is real, O-New needs no change, P-Connect asks
   `wf (W1|S ⊔ W2|S)`, the other cases change only through `ent_sound`, and
