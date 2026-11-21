@@ -816,3 +816,163 @@ Section inst.
   Lemma sinst_unfoldS s : scontr s → sequiv (sinst σ s) (sinst σ (unfoldS s)).
   Proof. intros Hc. destruct (unrN_sfuel s Hc) as [h E]. unfold unfoldS. rewrite E. by eapply sinst_unrN. Qed.
 End inst.
+
+(** ** Variable heads lower [uc] *)
+
+Lemma uc_sinst_var s : ∀ τ, (∀ a, ugv a s → isvar (τ a)) → uc (sinst τ s) = uc s ∧ sk (sinst τ s) = sk s.
+Proof.
+  induction s as [m T|m T| |b IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; intros τ Hv; try done.
+  - cbn [sinst uc sk]. apply IH. intros [|a] Ha; simpl; [done|]. unfold compose.
+    specialize (Hv a Ha). by destruct (τ a).
+  - cbn [sinst]. specialize (Hv a). simpl in Hv. destruct (τ a); try done; exfalso; apply Hv; by apply bool_decide_pack.
+  - cbn [sinst]. specialize (Hv a). simpl in Hv. destruct (τ a); try done; exfalso; apply Hv; by apply bool_decide_pack.
+  - cbn [sinst uc sk].
+    destruct (IH1 τ) as [E1 S1]; [intros a Ha; apply Hv; cbn [ugv]; by destruct (ugv a s1)|].
+    rewrite E1, S1. destruct (sk s1) eqn:Es; simpl; [|done].
+    destruct (IH2 τ) as [E2 S2]; [|by rewrite E2, S2].
+    intros a Ha. apply Hv. cbn [ugv]. rewrite Es. by destruct (ugv a s1).
+Qed.
+
+Lemma uc_unroll b : scontr (SMu b) → uc (unroll b) = uc b.
+Proof.
+  intros Hc. cbn [scontr] in Hc. apply Is_true_andb in Hc as [Hu _]. apply Is_true_negb in Hu.
+  apply uc_sinst_var. intros [|a] Ha; done.
+Qed.
+
+Lemma unrN_var_uc k : ∀ s o s', scontr s → isvar o → unrN k s = Some (SSeq o s') →
+  uc s' < uc s ∧ (sk s' → sk s).
+Proof.
+  induction k as [|k IH]; intros s o s' Hc Ho H; [done|].
+  destruct s as [m T|m T| |b|a|a| |s1 s2|s1 s2|s1 s2]; cbn [unrN] in H; try done.
+  - injection H as <- <-. done.
+  - injection H as <- <-. done.
+  - destruct (IH _ _ _ (scontr_unroll _ Hc) Ho H) as [H1 H2]. rewrite uc_unroll in H1 by done.
+    split; [done|]. intros Hs. apply H2 in Hs. by apply sk_sinst in Hs.
+  - injection H as <- <-. cbn. split; [lia|done].
+  - injection H as <- <-. cbn. split; [lia|done].
+  - cbn [scontr] in Hc. apply Is_true_andb in Hc as [Hc1 Hc2].
+    destruct (unrN k s1) as [h1|] eqn:E1; [|done].
+    destruct h1 as [| | | | | | |o1 r|x y|x y]; try (destruct o; done).
+    + destruct (IH _ _ _ Hc2 Ho H) as [H1 H2]. pose proof (unrN_skip_sk _ _ E1) as Hs1.
+      cbn [uc sk]. destruct (sk s1); [|done]. split; [lia|]. intros Hs. by apply H2 in Hs.
+    + assert (o1 = o ∧ s' = sseq' r s2) as [-> ->].
+      { destruct r; cbn [hseq sseq'] in H; injection H as <- <-; done. }
+      destruct (IH _ _ _ Hc1 Ho E1) as [H1 H2]. cbn [uc sk].
+      destruct (sseq'_cases r) as [->|Er].
+      * cbn [sseq']. assert (sk s1) as Hs1 by (by apply H2). destruct (sk s1); [|done].
+        cbn in H1. split; [lia|]. intros Hs. done.
+      * rewrite Er. cbn [uc sk].
+        destruct (sk r) eqn:Er'; [assert (sk s1) as Hs1 by (apply H2; done)|];
+          destruct (sk s1); simpl; split; try lia; try done; by destruct (sk s2).
+Qed.
+
+(** ** ≈ is closed under contractive instances *)
+
+Lemma hskip_dec v : v = HSkip ∨ v ≠ HSkip.
+Proof. destruct v; [left|right..]; done. Qed.
+
+Section sequiv_sinst.
+  Context (σ : nat → sty) (Hσ : ∀ a, scontr (σ a)).
+
+  Definition τI (x y : sty) : Prop :=
+    ∃ u s r, scontr u ∧ scontr s ∧ scontr r ∧ sequiv s r ∧
+      x = SSeq u (sinst σ s) ∧ y = SSeq u (sinst σ r).
+
+  Lemma Hsc t : scontr t → scontr (sinst σ t).
+  Proof. intros. by apply scontr_sinst. Qed.
+
+  Lemma τI_base s r : scontr s → scontr r → sequiv s r → upto τI (sinst σ s) (sinst σ r).
+  Proof.
+    intros Hs Hr H. eapply upto_equiv; [apply sequiv_sym, seq_skip_l, Hsc, Hs| |apply seq_skip_l, Hsc, Hr].
+    exists SSkip, s, r. by split_and!.
+  Qed.
+
+  Lemma eqT_sinst_upto T : ∀ U, tcontr T → tcontr U → eqT sequiv T U →
+    eqT (upto τI) (sinst_ty σ T) (sinst_ty σ U).
+  Proof.
+    induction T as [|ub lb c T1 IH1 T2 IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2|n k C ub c T1 IH1|s x a mt|lb n C T1 IH1];
+      intros [|ub' lb' c' U1 U2 a'|U1 U2|U1 U2|n' k' C' ub' c' U1|r y a' mt'|lb' n' C' U1] HT HU H;
+      simpl in *; try done; contr_simpl.
+    - destruct H as (-> & -> & -> & -> & ? & ?). split_and!; auto.
+    - destruct H as [? ?]. split; auto.
+    - destruct H as [? ?]. split; auto.
+    - destruct H as (-> & -> & -> & -> & -> & ?). split_and!; try done.
+      destruct k'; [by apply IH1|by subst].
+    - destruct H as (-> & -> & -> & ?). split_and!; try done. by apply τI_base.
+    - destruct H as (-> & -> & -> & ?). split_and!; auto.
+  Qed.
+
+  Lemma τI_nonskip u s r : scontr u → scontr s → scontr r → sequiv s r → hd u ≠ HSkip →
+    eq_view (upto τI) (hseqv (hd u) (sinst σ s)) (hseqv (hd u) (sinst σ r)).
+  Proof.
+    intros Hu Hs Hr H Hne. pose proof (hd_contr u Hu) as Hv.
+    destruct (hd u) as [|m T u'|m T u'|v u'|v u'|x y|x y| |w]; simpl in *; try done.
+    1-2: destruct Hv as [HT Hu']; split_and!; [done|apply eqT_refl, upto_refl|].
+    3-4: split; [done|].
+    1-4: apply cong_cont; auto using Hsc; exists u', s, r; by split_and!.
+    all: destruct Hv as [Hx Hy]; split; apply upto_in; [exists x, s, r|exists y, s, r]; by split_and!.
+  Qed.
+
+  Lemma τI_hd n : ∀ s r, uc s < n → scontr s → scontr r → sequiv s r →
+    eq_view (upto τI) (hd (sinst σ s)) (hd (sinst σ r)).
+  Proof.
+    induction n as [|n IH]; intros s r Hn Hs Hr H; [lia|].
+    eapply eq_view_upto_comp;
+      [rewrite <-eq_step_view; apply sequiv_hd, sinst_unfoldS; auto
+      |
+      |rewrite <-eq_step_view; apply sequiv_hd, sequiv_sym, sinst_unfoldS; auto].
+    rewrite !unfoldS_unview.
+    pose proof (sequiv_hd _ _ H) as Hh. rewrite eq_step_view in Hh.
+    pose proof (hd_contr s Hs) as Hvs. pose proof (hd_contr r Hr) as Hvr.
+    assert (∀ o s', isvar o → hd s = view (SSeq o s') → uc s' < n) as Hdec.
+    { intros o s' Ho E. destruct (unrN_sfuel s Hs) as [h Eh].
+      assert (h = SSeq o s') as ->.
+      { assert (unfoldS s = h) as Eu by (unfold unfoldS; by rewrite Eh).
+        rewrite <-Eu, unfoldS_unview, E. apply unview_view. }
+      destruct (unrN_var_uc _ _ _ _ Hs Ho Eh). lia. }
+    destruct (hd s) as [|m T s'|m T s'|v s'|v s'|s1 s2|s1 s2| |w] eqn:Es,
+      (hd r) as [|m' T' r'|m' T' r'|v' r'|v' r'|r1 r2|r1 r2| |w'] eqn:Er; simpl in *; try done.
+    - destruct Hh as (-> & HT & Hc), Hvs, Hvr.
+      split_and!; [done|by apply eqT_sinst_upto|by apply τI_base].
+    - destruct Hh as (-> & HT & Hc), Hvs, Hvr.
+      split_and!; [done|by apply eqT_sinst_upto|by apply τI_base].
+    - destruct Hh as (-> & Hc). rewrite !hd_seq by sc.
+      destruct (hskip_dec (hd (σ v'))) as [E|E].
+      + rewrite E. simpl. apply IH; try done. eapply (Hdec (SVar v')); [done|reflexivity].
+      + by apply τI_nonskip.
+    - destruct Hh as (-> & Hc). rewrite !hd_seq by sc.
+      destruct (hskip_dec (hd (dual (σ v')))) as [E|E].
+      + rewrite E. simpl. apply IH; try done. eapply (Hdec (SVarD v')); [done|reflexivity].
+      + apply τI_nonskip; try done. by rewrite scontr_dual.
+    - destruct Hh, Hvs, Hvr. split; by apply τI_base.
+    - destruct Hh, Hvs, Hvr. split; by apply τI_base.
+  Qed.
+
+  Lemma sequiv_sinst s r : scontr s → scontr r → sequiv s r → sequiv (sinst σ s) (sinst σ r).
+  Proof.
+    intros Hs Hr H.
+    eapply sequiv_trans; [apply sequiv_sym, seq_skip_l, Hsc, Hs|].
+    eapply sequiv_trans; [|apply seq_skip_l, Hsc, Hr].
+    apply (sequiv_upto τI); [|exists SSkip, s, r; by split_and!].
+    clear dependent s r. intros x y (u & s & r & Hu & Hs & Hr & H & -> & ->).
+    rewrite eq_step_view, !hd_seq by auto using Hsc.
+    destruct (hskip_dec (hd u)) as [E|E].
+    - rewrite E. cbn [hseqv]. apply (τI_hd (S (uc s))); auto.
+    - by apply τI_nonskip.
+  Qed.
+
+  Lemma teq_sinst T U : tcontr T → tcontr U → teq T U → teq (sinst_ty σ T) (sinst_ty σ U).
+  Proof.
+    revert U.
+    induction T as [|ub lb c T1 IH1 T2 IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2|n k C ub c T1 IH1|s x a mt|lb n C T1 IH1];
+      intros [|ub' lb' c' U1 U2 a'|U1 U2|U1 U2|n' k' C' ub' c' U1|r y a' mt'|lb' n' C' U1] HT HU H;
+      unfold teq in *; simpl in *; try done; contr_simpl.
+    - destruct H as (-> & -> & -> & -> & ? & ?). split_and!; auto.
+    - destruct H as [? ?]. split; auto.
+    - destruct H as [? ?]. split; auto.
+    - destruct H as (-> & -> & -> & -> & -> & ?). split_and!; try done.
+      destruct k'; [by apply IH1|by subst].
+    - destruct H as (-> & -> & -> & ?). split_and!; try done. by apply sequiv_sinst.
+    - destruct H as (-> & -> & -> & ?). split_and!; auto.
+  Qed.
+End sequiv_sinst.
