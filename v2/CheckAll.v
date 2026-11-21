@@ -13,6 +13,7 @@ From GV Require Import examples.LFFreshMany examples.LFClientServer examples.LFF
 From GV Require Import examples.LFController soup.SoupRun soup.SoupTau soup.LFAdequacy.
 From GV Require Import soup.LFCompose soup.LFTyped lockfree.FairRun.
 From GV Require Import examples.SemBranch static.Inversion relation.Ord relation.ExProp relation.Ranks examples.LFLink compat.Redex static.PointSubst.
+From GV Require Import examples.SinstStuck.
 
 (** types/Points.v *)
 Print Assumptions pt_dual_dual.
@@ -169,3 +170,6 @@ Print Assumptions oadd_lt.
 Print Assumptions osfix_unfold.
 Print Assumptions exist_prop.
 Print Assumptions wf_iff_wellfounded.
+(** examples/SinstStuck.v: session instantiation does not preserve typing *)
+Print Assumptions inv_chan_sty.
+Print Assumptions typed_sinst_false.
