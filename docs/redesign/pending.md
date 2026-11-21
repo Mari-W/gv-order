@@ -1118,6 +1118,17 @@ must do, open questions.
   has this, and priority systems only look pairwise because integer
   priorities fix one global order in advance. The map should say this in one
   sentence where it explains why P-Connect checks the overlap.
+- **Tickets as a bounce bound (2026-11-22, from the Curry-Howard session,
+  an analogy).** Read as infinitary proof theory, counters are the progress
+  condition on infinite branches and links are bounces through axioms
+  (baelde2022bouncing, where a bound k on bounce height gives a decidable
+  hierarchy). The note warns against merging the bounce bound into the
+  action counters, which is what the failed A1 candidate did. The decided
+  tickets do not merge them. A ticket bounds a counter from above, and
+  E-Link asks `a1 + m2 > N`, so each bounce strictly lowers the tickets of
+  the partner a wait moves to, and a chain of bounces along one wait has at
+  most N links. The three devices are order (rank), counters (credit, fuel)
+  and tickets (bounce bound). The map can say this where it explains links.
 - **Cross-references everywhere on the map (author 2026-11-19, another
   day).** Every symbol in every formula should be hoverable and lead to
   its definition, which needs a restructure of the generator (one
