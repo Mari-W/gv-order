@@ -55,7 +55,7 @@ Section tau.
 
   (** Every τ step of the composite. *)
   Lemma tau_all q ev q' : erase q = pc → istep q ev q' → ev_tau ev → (erase q').1 ## chans_of (Σ1 ∪ Σ2) →
-    at_cost_P n (ev_cost κ ev) (Prel κ) (Prel κ n) W1 (Σ1 ∪ Σ2) T (erase q').
+    ∃ W', W1 ⊑ W' ∧ at_cost_P n (ev_cost κ ev) (Prel κ) (Prel κ n) W' (Σ1 ∪ Σ2) T (erase q').
   Proof.
     intros Hq Hst Hτ Hfr. destruct (pconn_lift _ _ _ _ Hq) as (M1 & M2 & -> & Hd & HM1 & HM2).
     assert (q1.1 ## q2.1) as HCC by (by destruct Hc).
@@ -64,23 +64,23 @@ Section tau.
     pose proof Hst as Hst0.
     Local Ltac loc1 := eapply tau_l1; try eassumption; split; simpl; [cc_set_solver|try done].
     Local Ltac loc2 := eapply tau_l2; try eassumption; split; simpl; [cc_set_solver|try done].
+    Local Ltac here := exists W1; split; [apply wext_refl|].
     inversion Hst0; subst; try (by unfold ev_tau in Hτ).
-    - side1 i Hi; [loc1|loc2]; eauto.
     - side1 i Hi; [loc1|loc2]; eauto.
     - side1 i Hi; [loc1|loc2]; eauto.
     - side1 i Hi; [loc1|loc2]; eauto.
     - (* message *)
       side1 i Hi; side1 j Hj.
       + loc1; apply D1 in Hi, Hj; cc_set_solver.
-      + simpl. eapply tau_msg12; eassumption.
-      + simpl. eapply tau_msg21; eassumption.
+      + here. simpl. eapply tau_msg12; eassumption.
+      + here. simpl. eapply tau_msg21; eassumption.
       + loc2; apply D2 in Hi, Hj; cc_set_solver.
     - (* close *)
       side1 i Hi; side1 j Hj.
       + destruct (decide (ech o ∈ q1.1)) as [Ho|Ho]; [|exfalso; by eapply (close_same1 M1 i j o)].
         loc1; apply D1 in Hi, Hj; cc_set_solver.
-      + simpl. eapply tau_close; eassumption.
-      + simpl. replace (ech o) with (ech (edual o)) by apply ech_edual.
+      + here. simpl. eapply tau_close; eassumption.
+      + here. simpl. replace (ech o) with (ech (edual o)) by apply ech_edual.
         rewrite insert_insert_ne by (intros ->; eapply (disj_lookup_n M1 M2); eassumption).
         eapply tau_close; try eassumption; [rewrite edual_edual; eassumption|by rewrite ech_edual].
       + destruct (decide (ech o ∈ q2.1)) as [Ho|Ho]; [|exfalso; by eapply (close_same2 M2 i j o)].
@@ -88,18 +88,18 @@ Section tau.
     - (* choice *)
       side1 i Hi; side1 j Hj.
       + loc1; apply D1 in Hi, Hj; cc_set_solver.
-      + simpl. eapply tau_choice12; eassumption.
-      + simpl. eapply tau_choice21; eassumption.
+      + here. simpl. eapply tau_choice12; eassumption.
+      + here. simpl. eapply tau_choice21; eassumption.
       + loc2; apply D2 in Hi, Hj; cc_set_solver.
     - (* link *)
       side1 i Hi.
       + destruct (decide (ech o1 ∈ q1.1)) as [Ho1|Ho1]; [loc1; eauto|].
         destruct (decide (ech o2 ∈ q1.1)) as [Ho2|Ho2].
         * simpl. eapply tau_link_own1; try eassumption. match goal with H : ech o1 ∈ _ ∪ _ ∪ _ |- _ => clear -H Ho1; cc_set_solver end.
-        * simpl. eapply tau_link_ext1; eassumption.
+        * here. simpl. eapply tau_link_ext1; eassumption.
       + destruct (decide (ech o1 ∈ q2.1)) as [Ho1|Ho1]; [loc2; eauto|].
         destruct (decide (ech o2 ∈ q2.1)) as [Ho2|Ho2].
         * simpl. eapply tau_link_own2; try eassumption. match goal with H : ech o1 ∈ _ ∪ _ ∪ _ |- _ => clear -H Ho1; cc_set_solver end.
-        * simpl. eapply tau_link_ext2; eassumption.
+        * here. simpl. eapply tau_link_ext2; eassumption.
   Qed.
 End tau.
