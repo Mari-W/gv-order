@@ -1,5 +1,97 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, second run of 2026-11-21 on transfinite indices and layers
+
+Branch redesign-clean3 in .claude/worktrees/redesign-s4, nothing pushed.
+redesign was merged once (de69df2) and did not move afterwards.
+
+- Stage 2, transfinite step indices. Done.
+  - The port (3b1297f, after the WIP commits 5448493 to 6f1eec9). V, E
+    and P, FuelE and Vfuel and the soup are indexed by `Ix := ord`
+    (relation/Ord.v). `at_cost_E n c` reads the continuation at every `j`
+    with `ole (oadd j c) n`. The fixpoints are `osfix` over one argument sum
+    (`RelA`, `FLevA`), and relation/Sfix.v is gone. The arrow reads its body
+    at every `j` with `j + κ(β) ≤ n` through the readers below n and, when β
+    is free, by unfolding V and E at `j ≤ n` from those readers, so no case
+    split `j < n ∨ j = n` is needed. E is the least fixpoint at every level.
+    P holds every process at a level with nothing below it (`Ptop`), and a
+    payload is also read at level 0 (`at_cost_V`), the truncated level of
+    finite indices. Without these two, composition at level 0 lacks the
+    exactness of payloads. The limit cases of the `induction n` and
+    `destruct n` sites became well-founded induction (`oind`). The joint
+    inductions of renaming and conversion now prove V at every `j ≤ n` by
+    induction on the type. `child` in compat/PTerm.v proves level n and
+    goes down. Deadlock-freedom adequacy reads the finite levels `onat k`.
+  - Scoped instances (2154509). `sinsts` and the V-box ask
+    `Forall hcontractive ss ∧ Forall sscoped ss` (finding 6.1).
+    `typed_sinst` is not proved, see below.
+  - The existential property (c34125c). relation/ExProp.v proves
+    `exist_prop : excluded_middle → functional_choice → ∀ X P, (P down-closed)
+    → (∀ α, ∃ x, P x α) → ∃ x, ∀ α, P x α`, by the limit of one failing
+    level per witness. `functional_choice` is a new definition next to
+    `excluded_middle` and `dependent_choice` in lockfree/FairRun.v, an
+    argument, never an axiom.
+  - Creation tickets. E-New and E-NewAt take tickets `m1 m2` with
+    `tsum_ok N m1 m2`, F-New asks `∃ S m1 m2, tsum_ok N m1 m2 ∧ …`, and the
+    soup update takes the choice (`lf_next tc`, `lf_run_state tcs`).
+    `lfsoup_step : a ∈ S_n → itstep → ∀ lv < n, ∃ tc, tsum_ok ∧ lf_next tc a ev q' ∈ S_lv`.
+    `lfsoup_step_all` picks one tc for every level by `exist_prop`, and
+    `lfsoup_run` builds the run from one choice per state and position by
+    functional choice and recursion, so dependent choice is not needed.
+  - The soup's `∃ a` before `∀`. `lf_sem N W Σ p T := ∀ n, ∃ a, erase (s_q a) = p ∧ a ∈ S_n`.
+    `lf_sem_state` recovers one state for every index under EM and FC.
+    `lf_adequacy`, `lf_thread_progress`, `lf_soundness` and the LF example
+    theorems take `excluded_middle` and `functional_choice`.
+    `soup_no_tau_divergence` stays constructive by a per-level reachability
+    lemma (`lfsoup_isteps`).
+  - Link example (dcd1dd6). examples/LFLink.v proves `lk_typed`, a thread
+    holding c⁺ at x and d⁻ at x‾ at N tickets types `ELink ⟨c⁺, d⁻⟩` for
+    every N ≥ 1, and `lk_new`, E-New gives ends at N and 0 tickets. Under the
+    fixed split this link typed for no even N (finding 6.12). A full closed
+    program with a link was not built.
+  - Not done in stage 2. The interface ends of P-Term keep N/2 tickets
+    (`tenv_of (fhalf N)`, `sp_sigcap`). E-NewAt in the examples keeps the old
+    instance through the wrapper `e_new_at'`.
+- Stage 3, layers. Groundwork only (26f8b7f). relation/Ranks.v defines
+  `rank_ord := ord@{Set}`, `ranked R ρ`, `wf R`, and proves
+  `wf_iff_wellfounded`, constructively, with the rank of a point the limit of
+  the successors of the ranks below it over the subtype of points below it.
+  The obstacle is size, not design. Ranked worlds replace `world` in the
+  relation, every E-New site moves from families to plain `new` with C, and
+  `wfworld`, `strict`, families, laws and generated roots leave Worlds.v, the
+  typing rules, the soup and all eighteen examples. That did not fit after
+  stage 2. Still open are ranked worlds, (wf-new) at E-New, O-New picking ranks
+  through `exist_prop`, `wf (W1|S ⊔ W2|S)` at P-Connect and `wf W` at P-Term,
+  `wf_join_iff`, `ent_sound`, `cons_open` under ranks, the criterion ranking
+  by the end a thread waits on, and the checks of rx-chain, LFClientServer
+  and `sbv_rejected`.
+- Coordinator additions. Finding 6.1 premise landed, `typed_sinst` not
+  proved. It is an induction over every rule of `typed` with session
+  substitution through contexts, aging, subtyping, `unfoldS`, `dual` and the
+  binders of nested boxes. Finding 6.3, well-formed existentials, waits for
+  layers and was not started.
+
+Plausibility. Every LF and DF example builds. `soundness` is closed under the
+global context, and `lf_soundness` takes EM and FC as arguments and is closed
+too. The rejects.js programs and S4.18 rest on mechanisms that stage 2 keeps
+(aging, payload credit, E-Link's `lgt`, `wfworld`, the clause (fuse)).
+rx-relink, rx-chain, rx-postpone and rx-delegate are unchanged in kind,
+because no world or ordering premise changed. Chosen tickets only add
+derivations.
+
+Final state. `make -j2` builds with no error. `make test` passes after the
+.expected files of RelationNotations, FuelNotations, CompatNotations and
+SoupNotations were regenerated. `make check` reports 110 of 110 results
+closed under the global context. No Admitted, no Axiom, no new Parameter.
+
+Map (243c6b2). The TRANSFINITE planned tags are gone. The relation and fuel
+blocks and the theorems use α and β as levels, the soup and the classical
+hypotheses cite the Rocq, the V-box asks scoped instances, and NEW2 no
+longer claims fixed creation tickets. The LAYERS tag stays and mentions
+relation/Ranks.v. gen.js reports 0 errors, check.js 0 mathjax errors,
+lint-map 0 coined words, 0 semicolons, 0 sentences over 35 words, and 323
+every/any/all against 326 before.
+
 ## Report, run of 2026-11-21 on tickets, transfinite indices, layers and E-Open
 
 Branch redesign-clean3 in .claude/worktrees/redesign-s4, nothing pushed.
@@ -270,6 +362,10 @@ must do, open questions.
   is the 43-file change of check-transfinite.md section 4 and did not fit the run
   after stages 1 and 4. The existential property, χ removal and the EM ∧ AC
   hypotheses of lock-free adequacy wait for it.
+  Rocq, stage 2 of the second run of 2026-11-21: landed (3b1297f port, c34125c
+  existential property). Every relation, fuel and the soup are indexed by `Ix`,
+  E-New and E-NewAt choose their tickets, and lock-free adequacy takes
+  `excluded_middle` and `functional_choice` as hypotheses.
 - **Tickets are caps, one number per end (2026-11-21).** The old tickets ϑ go.
   An end type `(S@x)^a_m` carries m tickets, `tk(o) + tk(ō) ≤ K` holds for
   every channel, and E-Link asks `a1 + m2 > K` and `a2 + m1 > K`
@@ -296,6 +392,10 @@ must do, open questions.
   `ent_sound`, (wf-new) at E-New and the wf premises of P-Connect and P-Term
   are open. Ranks can reuse `ord@{Set}` of relation/Ord.v. Stage 4 ran on the
   pre-layer worlds as the coordinator allowed.
+  Rocq, stage 3 of the second run of 2026-11-21: groundwork only (26f8b7f).
+  relation/Ranks.v proves `wf_iff_wellfounded` for rank functions into
+  `ord@{Set}`, constructively. Worlds, (wf-new), `wf_join_iff` and `ent_sound`
+  are open, see the report at the top.
 - **Algorithmic typing (author, 2026-11-21).** A bidirectional system, sound
   and complete for the declarative one, decidable when the constraint theory
   is. Type annotations are allowed where needed, for functions and the like.
