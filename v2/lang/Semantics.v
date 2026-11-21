@@ -8,8 +8,7 @@
     value v. The ends that leave the thread with it are [fends v], the
     set the process semantics extrudes from the restricted channels at an
     external send (§2.7). A
-    [new_ℓ] carries its family ℓ and an anchored [new_κ o] its field κ
-    and its anchor o, and both carry the name c of the new channel. *)
+    [new] carries the name c of the new channel and nothing else. *)
 
 From stdpp Require Import relations.
 From GV Require Export lang.Notations.
@@ -27,8 +26,7 @@ Inductive slabel :=
 
 Inductive tlabel :=
   | LBeta                                    (* β, let, case, force *)
-  | LNew (ℓ : family) (c : chan)             (* new_ℓ creates c *)
-  | LNewAt (κ : field) (o : cend) (c : chan)  (* new_κ o creates c *)
+  | LNew (c : chan)                         (* new creates c *)
   | LSpawn (v : expr)                        (* spawn of the thunk v, moving its ends *)
   | LSess (σ : slabel).
 
@@ -61,12 +59,8 @@ Inductive head_step : expr → tlabel → expr → Prop :=
   | t_act_force e :                                     (* T-Act-Force *)
       (* the body resumes with the thunk for its own bound occurrence *)
       head_step (EForce (EBox e)) LBeta (subst1 (EBox e) e)
-  | t_act_new ℓ c :                                     (* T-Act-New *)
-      head_step (ENew ℓ) (LNew ℓ c) (Pair (Chan c⁺) (Chan c⁻))
-  | t_act_new_at κ o c :                                (* T-Act-NewAt *)
-      (* the anchor is returned untouched beside the new pair *)
-      head_step (ENewAt κ (Chan o)) (LNewAt κ o c)
-        (Pair (Chan o) (Pair (Chan c⁺) (Chan c⁻)))
+  | t_act_new c :                                       (* T-Act-New *)
+      head_step ENew (LNew c) (Pair (Chan c⁺) (Chan c⁻))
   | t_act_spawn v :                                     (* T-Act-Spawn *)
       is_val v →
       head_step (ESpawn v) (LSpawn v) EUnit

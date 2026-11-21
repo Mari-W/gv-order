@@ -21,8 +21,7 @@ From GV Require Export lang.Safety.
 Definition amap (g : cend → cend) (a : action) : action :=
   match a with
   | ABeta => ABeta
-  | ANew ℓ => ANew ℓ
-  | ANewAt κ o => ANewAt κ (g o)
+  | ANew => ANew
   | ASpawn v => ASpawn (emap g v)
   | ARecv o => ARecv (g o)
   | ASend o v => ASend (g o) (emap g v)
@@ -96,7 +95,6 @@ Proof.
   all: eexists _, _; split; [eassumption|]; intros Had; simpl in Had; try contradiction.
   - exists id. rewrite emap_id. by rewrite lookup_insert_eq.
   - exists id. rewrite emap_id. by rewrite lookup_insert_eq.
-  - exists id. rewrite emap_id. by rewrite lookup_insert_eq.
   - exists id. rewrite emap_id. rewrite lookup_insert_ne by (intros ->; congruence).
     by rewrite lookup_insert_eq.
   - exists (csub o1 o2). by rewrite lookup_fmap, lookup_insert_eq.
@@ -120,18 +118,13 @@ Lemma admin_enabled q t e a :
   (∀ o1 o2, a = ALink o1 o2 → ech o1 ∈ q.1 ∨ ech o2 ∈ q.1) → tenabled q t.
 Proof.
   destruct q as [C M]. intros He Ha Had Hln. simpl in *.
-  destruct a as [|ℓ|κ o|v|o|o v|o|o1 o2|o i|o]; try done.
+  destruct a as [| |v|o|o v|o|o1 o2|o i|o]; try done.
   - destruct (act_offer e ABeta LBeta Ha I) as [e' Hs].
     eexists _, _. split; [split; [by eapply p_act_beta|done]|set_solver].
   - set (c := fresh (C ∪ echans (soup M))).
     assert (c ∉ C ∪ echans (soup M)) as Hc by apply is_fresh.
-    destruct (act_offer e (ANew ℓ) (LNew ℓ c) Ha eq_refl) as [e' Hs].
+    destruct (act_offer e ANew (LNew c) Ha I) as [e' Hs].
     eexists _, _. split; [split; [eapply p_act_new; [done|done|set_solver|set_solver]|done]|set_solver].
-  - set (c := fresh (C ∪ echans (soup M))).
-    assert (c ∉ C ∪ echans (soup M)) as Hc by apply is_fresh.
-    destruct (act_offer e (ANewAt κ o) (LNewAt κ o c) Ha (conj eq_refl eq_refl)) as [e' Hs].
-    eexists _, _.
-    split; [split; [eapply p_act_new_at; [done|done|set_solver|set_solver]|done]|set_solver].
   - destruct (act_offer e (ASpawn v) (LSpawn v) Ha eq_refl) as [e' Hs].
     set (j := fresh (dom M)).
     assert (M !! j = None) as Hj by (apply not_elem_of_dom, is_fresh).

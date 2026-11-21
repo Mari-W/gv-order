@@ -99,8 +99,8 @@ Proof. destruct p as [C E]. destruct (soup_surj E) as [M HM]. exists (C, M). by 
 (** ** Events
 
     An event names the threads that take part and the label they take.
-    [EvSolo i α k]: thread i takes the thread label α alone (β, new_ℓ,
-    new_κ, spawn, link), and k is what the process rule picks beyond
+    [EvSolo i α k]: thread i takes the thread label α alone (β, new,
+    spawn, link), and k is what the process rule picks beyond
     α: the identifier of a spawned thread, or the order of the ends of
     a link, whose label is an unordered pair. [EvSync i j σ]: thread i
     takes σ (a send, a close or a select on o) and thread j the dual
@@ -112,7 +112,7 @@ Inductive pick :=
   | PickLink (o1 o2 : cend).       (* the channel of o1 goes, o1‾ becomes o2 *)
 
 Inductive event :=
-  | EvSolo (i : nat) (α : tlabel) (k : pick)   (* P-Act-Beta, -New, -NewAt, -Spawn, -Link *)
+  | EvSolo (i : nat) (α : tlabel) (k : pick)   (* P-Act-Beta, -New, -Spawn, -Link *)
   | EvSync (i j : nat) (σ : slabel)            (* P-Act-Msg, -Close, -Choice *)
   | EvOffer (i : nat) (σ : slabel).            (* P-Act-Session *)
 
@@ -155,15 +155,11 @@ Inductive istep : config → event → config → Prop :=
   | p_act_beta C M i e e' :                            (* P-Act-Beta *)
       M !! i = Some e → tstep e LBeta e' →
       istep (C, M) (EvSolo i LBeta PickNone) (C, <[i := e']> M)
-  | p_act_new C M i e ℓ c e' :                         (* P-Act-New *)
+  | p_act_new C M i e c e' :                           (* P-Act-New *)
       (* the new channel is globally fresh *)
-      M !! i = Some e → tstep e (LNew ℓ c) e' →
+      M !! i = Some e → tstep e (LNew c) e' →
       c ∉ C → c ∉ echans (soup M) →
-      istep (C, M) (EvSolo i (LNew ℓ c) PickNone) (C ∪ {[c]}, <[i := e']> M)
-  | p_act_new_at C M i e κ o c e' :                    (* P-Act-NewAt *)
-      M !! i = Some e → tstep e (LNewAt κ o c) e' →
-      c ∉ C → c ∉ echans (soup M) →
-      istep (C, M) (EvSolo i (LNewAt κ o c) PickNone) (C ∪ {[c]}, <[i := e']> M)
+      istep (C, M) (EvSolo i (LNew c) PickNone) (C ∪ {[c]}, <[i := e']> M)
   | p_act_spawn C M i j e v e' :                    (* P-Act-Spawn *)
       M !! i = Some e → tstep e (LSpawn v) e' → M !! j = None →
       istep (C, M) (EvSolo i (LSpawn v) (PickChild j)) (C, <[j := App v EUnit]> (<[i := e']> M))
@@ -195,8 +191,7 @@ Inductive istep : config → event → config → Prop :=
 (** The events of the P-Act rules, one case per rule. *)
 Lemma istep_event q ev q' : istep q ev q' →
   (∃ i, ev = EvSolo i LBeta PickNone) ∨
-  (∃ i ℓ c, ev = EvSolo i (LNew ℓ c) PickNone) ∨
-  (∃ i κ o c, ev = EvSolo i (LNewAt κ o c) PickNone) ∨
+  (∃ i c, ev = EvSolo i (LNew c) PickNone) ∨
   (∃ i j v, ev = EvSolo i (LSpawn v) (PickChild j)) ∨
   (∃ i j o v, ev = EvSync i j (SSend o v)) ∨
   (∃ i j o, ev = EvSync i j (SClose o)) ∨
@@ -204,7 +199,7 @@ Lemma istep_event q ev q' : istep q ev q' →
   (∃ i o1 o2, ev = EvSolo i (LSess (SLink {[o1; o2]})) (PickLink o1 o2)) ∨
   (∃ i σ, ev = EvOffer i σ).
 Proof. destruct 1; [left|do 1 right; left|do 2 right; left|do 3 right; left|do 4 right; left
-  |do 5 right; left|do 6 right; left|do 7 right; left|do 8 right]; eauto. Qed.
+  |do 5 right; left|do 6 right; left|do 7 right]; eauto. Qed.
 
 (** The steps of a closed configuration. *)
 Definition itstep (q : config) (ev : event) (q' : config) : Prop := istep q ev q' ∧ ev_tau ev.
@@ -231,11 +226,8 @@ Inductive pspec : proc → plabel → proc → Prop :=
   | ps_beta C E e e' :
       tstep e LBeta e' →
       pspec (C, E ⊎ {[+ e +]}) PTau (C, E ⊎ {[+ e' +]})
-  | ps_new C E e ℓ c e' :
-      tstep e (LNew ℓ c) e' → c ∉ C → c ∉ echans E → c ∉ fchans e →
-      pspec (C, E ⊎ {[+ e +]}) PTau (C ∪ {[c]}, E ⊎ {[+ e' +]})
-  | ps_new_at C E e κ o c e' :
-      tstep e (LNewAt κ o c) e' → c ∉ C → c ∉ echans E → c ∉ fchans e →
+  | ps_new C E e c e' :
+      tstep e (LNew c) e' → c ∉ C → c ∉ echans E → c ∉ fchans e →
       pspec (C, E ⊎ {[+ e +]}) PTau (C ∪ {[c]}, E ⊎ {[+ e' +]})
   | ps_spawn C E e v e' :
       tstep e (LSpawn v) e' →
@@ -256,7 +248,7 @@ Inductive pspec : proc → plabel → proc → Prop :=
 (** A step erases to its multiset view. *)
 Theorem istep_pspec q ev q' : istep q ev q' → pspec (erase q) (ev_plabel ev) (erase q').
 Proof.
-  destruct 1 as [C M i e e' Hi Hst|C M i e ℓ c e' Hi Hst HC Hc|C M i e κ o c e' Hi Hst HC Hc
+  destruct 1 as [C M i e e' Hi Hst|C M i e c e' Hi Hst HC Hc
     |C M i j e v e' Hi Hst Hj
     |C M i j o v e e' f f' Hij Hi Hj He Hf|C M i j o e e' f f' Hij Hi Hj He Hf HC
     |C M i j o b e e' f f' Hij Hi Hj He Hf|C M i e o1 o2 e' Hi Hst HC
@@ -265,9 +257,6 @@ Proof.
   - rewrite (soup_update M i e e' Hi). rewrite (soup_delete M i e Hi) in Hc |- *.
     rewrite echans_disj_union, echans_singleton in Hc.
     eapply ps_new; [done|done|set_solver|set_solver].
-  - rewrite (soup_update M i e e' Hi). rewrite (soup_delete M i e Hi) in Hc |- *.
-    rewrite echans_disj_union, echans_singleton in Hc.
-    eapply ps_new_at; [done|done|set_solver|set_solver].
   - assert (i ≠ j) by (intros ->; congruence).
     rewrite soup_insert by (rewrite lookup_insert_ne; done).
     rewrite (soup_update M i e e' Hi), (soup_delete M i e Hi). by eapply ps_spawn.
@@ -285,8 +274,8 @@ Theorem pspec_lift q π p' :
 Proof.
   destruct q as [C M]. unfold erase; simpl. intros H.
   remember (C, soup M) as p0 eqn:Hp0.
-  destruct H as [C0 E e σ e' Hst HC|C0 E e e' Hst|C0 E e ℓ c e' Hst HC HcE Hce
-    |C0 E e κ o c e' Hst HC HcE Hce|C0 E e v e' Hst
+  destruct H as [C0 E e σ e' Hst HC|C0 E e e' Hst|C0 E e c e' Hst HC HcE Hce
+    |C0 E e v e' Hst
     |C0 E o v e e' f f' He Hf|C0 E o e e' f f' He Hf HC
     |C0 E o b e e' f f' He Hf|C0 E e o1 o2 e' Hst HC];
     injection Hp0 as <- HE; symmetry in HE.
@@ -299,12 +288,6 @@ Proof.
   - destruct (soup_extract M E e HE) as (i & Hi & HEi).
     eexists _, _. split_and!.
     + eapply p_act_new; [done|done|done|]. rewrite HE, echans_disj_union, echans_singleton.
-      set_solver.
-    + done.
-    + unfold erase; simpl. by rewrite (soup_update M i e e' Hi), HEi.
-  - destruct (soup_extract M E e HE) as (i & Hi & HEi).
-    eexists _, _. split_and!.
-    + eapply p_act_new_at; [done|done|done|]. rewrite HE, echans_disj_union, echans_singleton.
       set_solver.
     + done.
     + unfold erase; simpl. by rewrite (soup_update M i e e' Hi), HEi.
@@ -390,7 +373,6 @@ Proof.
   destruct Hst; simpl in *.
   - apply Hid. rewrite lookup_insert_ne; set_solver.
   - apply Hid. rewrite lookup_insert_ne; set_solver.
-  - apply Hid. rewrite lookup_insert_ne; set_solver.
   - apply Hid. rewrite lookup_insert_ne; [|intros ->; congruence].
     rewrite lookup_insert_ne; set_solver.
   - apply Hid. rewrite !lookup_insert_ne; set_solver.
@@ -425,7 +407,6 @@ Proof.
     end.
   all: eexists _, _; split; [eassumption|].
   all: intros Had; simpl in Had; try contradiction.
-  - exists id. rewrite emap_id. by rewrite lookup_insert_eq.
   - exists id. rewrite emap_id. by rewrite lookup_insert_eq.
   - exists id. rewrite emap_id. by rewrite lookup_insert_eq.
   - exists id. rewrite emap_id. rewrite lookup_insert_ne by (intros ->; congruence).

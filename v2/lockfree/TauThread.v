@@ -46,12 +46,12 @@ Proof.
   - done.
 Qed.
 
-Lemma padmin_new C E e ℓ c e' :
-  tstep e (LNew ℓ c) e' → c ∉ C → c ∉ echans E → c ∉ fchans e →
+Lemma padmin_new C E e c e' :
+  tstep e (LNew c) e' → c ∉ C → c ∉ echans E → c ∉ fchans e →
   padmin (C, E ⊎ {[+ e +]}) (C ∪ {[c]}, E ⊎ {[+ e' +]}).
 Proof.
   intros Hs HC HE He. destruct (lift_thread C E e) as (M & i & Hi & HM & Hq).
-  exists (C, <[i := e]> M), (EvSolo i (LNew ℓ c) PickNone), (C ∪ {[c]}, <[i := e']> (<[i := e]> M)). split_and!.
+  exists (C, <[i := e]> M), (EvSolo i (LNew c) PickNone), (C ∪ {[c]}, <[i := e']> (<[i := e]> M)). split_and!.
   - done.
   - eapply p_act_new; [by rewrite lookup_insert_eq|done|done|].
     rewrite soup_insert, HM, echans_disj_union, echans_singleton by done. set_solver.
@@ -59,19 +59,6 @@ Proof.
   - done.
 Qed.
 
-Lemma padmin_new_at C E e κ o c e' :
-  tstep e (LNewAt κ o c) e' → c ∉ C → c ∉ echans E → c ∉ fchans e →
-  padmin (C, E ⊎ {[+ e +]}) (C ∪ {[c]}, E ⊎ {[+ e' +]}).
-Proof.
-  intros Hs HC HE He. destruct (lift_thread C E e) as (M & i & Hi & HM & Hq).
-  exists (C, <[i := e]> M), (EvSolo i (LNewAt κ o c) PickNone), (C ∪ {[c]}, <[i := e']> (<[i := e]> M)).
-  split_and!.
-  - done.
-  - eapply p_act_new_at; [by rewrite lookup_insert_eq|done|done|].
-    rewrite soup_insert, HM, echans_disj_union, echans_singleton by done. set_solver.
-  - unfold erase; simpl. by rewrite insert_insert_eq, soup_insert, HM.
-  - done.
-Qed.
 
 Lemma padmin_spawn C E e v e' :
   tstep e (LSpawn v) e' →
@@ -132,8 +119,7 @@ Definition serase (σ : slabel) : slabel :=
 Definition lerase (α : tlabel) : tlabel :=
   match α with
   | LBeta => LBeta
-  | LNew ℓ _ => LNew ℓ ""
-  | LNewAt κ _ _ => LNewAt κ (EPos "") ""
+  | LNew _ => LNew ""
   | LSpawn v => LSpawn (cerase v)
   | LSess σ => LSess (serase σ)
   end.
@@ -143,10 +129,10 @@ Lemma set_map_erase_idem (M : gset cend) :
 Proof. set_solver. Qed.
 
 Lemma lerase_idem α : lerase (lerase α) = lerase α.
-Proof. destruct α as [| | | |[]]; simpl; by rewrite ?cerase_idem, ?set_map_erase_idem. Qed.
+Proof. destruct α as [| | |[]]; simpl; by rewrite ?cerase_idem, ?set_map_erase_idem. Qed.
 
 Lemma admin_lerase α : admin_lbl (lerase α) ↔ admin_lbl α.
-Proof. destruct α as [| | | |[]]; done. Qed.
+Proof. destruct α as [| | |[]]; done. Qed.
 
 (** An erased term steps with the erased label, to the erased result up
     to the names a creation picks. *)
@@ -248,28 +234,20 @@ Proof.
   assert (∀ α0 e0, tstep e α0 e0 → lerase α0 = lerase α → cerase x' = cerase e0) as Hdet.
   { intros α0 e0 Hs0 Hl. destruct (tstep_cerase e α0 e0 Hs0) as (x0 & Hx0 & <-).
     eapply tstep_det_cerase; [exact Hst|exact Hx0|]. by rewrite lerase_idem, Hl. }
-  destruct a as [|ℓ|κ o|v|o|o v|o|o1 o2|o i|o]; simpl in Ho;
-    destruct α as [|ℓ' c1|κ' o' c1|M w|[| | | | |os]]; simpl in Hα; try contradiction.
+  destruct a as [| |v|o|o v|o|o1 o2|o i|o]; simpl in Ho;
+    destruct α as [|c1|M w|[| | | | |os]]; simpl in Hα; try contradiction.
   - (* β *)
     destruct (act_offer e ABeta LBeta Ha I) as [e' He'].
     rewrite (Hdet _ _ He' eq_refl).
     pose proof (padmin_beta C E e e' He') as Hpa.
     exact (IH _ Hpa (Hr' _ Hpa) E e' eq_refl).
-  - (* new_ℓ, at a globally fresh name *)
+  - (* new, at a globally fresh name *)
     set (c0 := fresh (C ∪ echans E ∪ fchans e)).
     assert (c0 ∉ C ∪ echans E ∪ fchans e) as Hc0 by apply is_fresh.
-    destruct (act_offer e (ANew ℓ) (LNew ℓ c0) Ha eq_refl) as [e' He'].
+    destruct (act_offer e ANew (LNew c0) Ha I) as [e' He'].
     rewrite (Hdet _ _ He' ltac:(simpl in *; by subst)).
-    pose proof (padmin_new C E e ℓ c0 e' He' ltac:(set_solver) ltac:(set_solver) ltac:(set_solver))
+    pose proof (padmin_new C E e c0 e' He' ltac:(set_solver) ltac:(set_solver) ltac:(set_solver))
       as Hpa.
-    exact (IH _ Hpa (Hr' _ Hpa) E e' eq_refl).
-  - (* new_κ *)
-    set (c0 := fresh (C ∪ echans E ∪ fchans e)).
-    assert (c0 ∉ C ∪ echans E ∪ fchans e) as Hc0 by apply is_fresh.
-    destruct (act_offer e (ANewAt κ o) (LNewAt κ o c0) Ha (conj eq_refl eq_refl)) as [e' He'].
-    rewrite (Hdet _ _ He' ltac:(simpl in *; destruct Ho; by subst)).
-    pose proof (padmin_new_at C E e κ o c0 e' He' ltac:(set_solver) ltac:(set_solver)
-      ltac:(set_solver)) as Hpa.
     exact (IH _ Hpa (Hr' _ Hpa) E e' eq_refl).
   - (* spawn *)
     destruct (act_offer e (ASpawn v) (LSpawn v) Ha eq_refl) as [e' He'].

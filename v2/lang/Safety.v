@@ -25,8 +25,7 @@ Definition deadlock_free (p : proc) : Prop :=
 
 Inductive action :=
   | ABeta
-  | ANew (ℓ : family)
-  | ANewAt (κ : field) (o : cend)
+  | ANew
   | ASpawn (v : expr)
   | ARecv (o : cend)
   | ASend (o : cend) (v : expr)
@@ -49,7 +48,6 @@ Definition act_op (k : prim) (v : expr) : option action :=
   | PLink, Pair (Chan o1) (Chan o2) => Some (ALink o1 o2)
   | PSpawn, _ => Some (ASpawn v)
   | PForce, EBox _ => Some ABeta
-  | PNewAt κ, Chan o => Some (ANewAt κ o)
   | _, _ => None
   end.
 
@@ -57,7 +55,7 @@ Definition act_op (k : prim) (v : expr) : option action :=
 Fixpoint act (e : expr) : option action :=
   match e with
   | Var _ | EUnit | Chan _ | Lam _ | EBox _ => None
-  | ENew ℓ => Some (ANew ℓ)
+  | ENew => Some ANew
   | App e1 e2 =>
       if is_val e1 then
         if is_val e2 then match e1 with Lam _ => Some ABeta | _ => None end
@@ -81,8 +79,7 @@ Fixpoint act (e : expr) : option action :=
 Definition offers (a : action) (α : tlabel) : Prop :=
   match a, α with
   | ABeta, LBeta => True
-  | ANew ℓ, LNew ℓ' _ => ℓ = ℓ'
-  | ANewAt κ o, LNewAt κ' o' _ => κ = κ' ∧ o = o'
+  | ANew, LNew _ => True
   | ASpawn v, LSpawn w => v = w
   | ARecv o, LSess (SRecv o' w) => o = o' ∧ is_val w
   | ASend o v, LSess (SSend o' w) => o = o' ∧ v = w
@@ -96,7 +93,7 @@ Definition offers (a : action) (α : tlabel) : Prop :=
 (** The channels a session action acts on, [None] for the silent ones. *)
 Definition asubjs (a : action) : option (gset chan) :=
   match a with
-  | ABeta | ANew _ | ANewAt _ _ | ASpawn _ => None
+  | ABeta | ANew | ASpawn _ => None
   | ARecv o | ASend o _ | AClose o | ASel o _ | ABra o => Some {[ech o]}
   | ALink o1 o2 => Some {[ech o1; ech o2]}
   end.
@@ -133,12 +130,12 @@ Proof.
   all: repeat match type of Ha with
     | context [match ?w with _ => _ end] => destruct w; try discriminate
     end.
-  all: injection Ha as <-; destruct α as [| | | |σ]; try destruct σ; simpl in Hoff;
+  all: injection Ha as <-; destruct α as [| | |σ]; try destruct σ; simpl in Hoff;
     try contradiction; destruct_and?; subst.
   all: simpl in Hv; rewrite ?andb_True in Hv; destruct_and?.
   all: eexists; first [apply t_act_send|apply t_act_recv
     |match goal with |- head_step (ESpawn ?w) _ _ => apply (t_act_spawn w) end|apply t_act_close
-    |apply t_act_select|apply t_act_branch|apply t_act_link|apply t_act_force|apply t_act_new_at]; simpl; rewrite ?andb_True; auto.
+    |apply t_act_select|apply t_act_branch|apply t_act_link|apply t_act_force]; simpl; rewrite ?andb_True; auto.
 Qed.
 
 (** [act_offer], once: an offered label has a step, computed. *)
@@ -146,7 +143,7 @@ Lemma act_offer_sig e a α : act e = Some a → offers a α → {e' | tstep e α
 Proof.
   revert a α.
   induction e as [x| |o|e0 IH|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2
-                 |e1 IH1 e2 IH2|b e1 IH|e0 IH0 e1 IH1 e2 IH2|e1 IH|ℓ|k e1 IH];
+                 |e1 IH1 e2 IH2|b e1 IH|e0 IH0 e1 IH1 e2 IH2|e1 IH| |k e1 IH];
     simpl; intros a α Ha Hoff; try discriminate.
   - (* application *)
     destruct (is_val e1) eqn:Hb1;
@@ -188,8 +185,8 @@ Proof.
       injection Ha as <-; destruct α; try done; simpl in Hb0.
     + eexists. apply tstep_head, t_act_case_inr. by rewrite Hb0.
     + eexists. apply tstep_head, t_act_case_inl. by rewrite Hb0.
-  - (* new_ℓ *)
-    injection Ha as <-. destruct α; try done. simpl in Hoff. subst.
+  - (* new *)
+    injection Ha as <-. destruct α; try done.
     eexists. apply tstep_head, t_act_new.
   - (* operator *)
     destruct (is_val e1) eqn:Hb1;
@@ -219,8 +216,7 @@ Qed.
 Definition alabel (a : action) : tlabel :=
   match a with
   | ABeta => LBeta
-  | ANew ℓ => LNew ℓ ""
-  | ANewAt κ o => LNewAt κ o ""
+  | ANew => LNew ""
   | ASpawn v => LSpawn v
   | ARecv o => LSess (SRecv o EUnit)
   | ASend o v => LSess (SSend o v)
@@ -235,10 +231,8 @@ Proof. destruct a; simpl; auto. Qed.
 
 (** ** Reading an action back off a label *)
 
-Lemma offers_new a ℓ c : offers a (LNew ℓ c) → a = ANew ℓ.
-Proof. destruct a; try done. by intros ->. Qed.
-Lemma offers_new_at a κ o c : offers a (LNewAt κ o c) → a = ANewAt κ o.
-Proof. destruct a; try done. by intros [-> ->]. Qed.
+Lemma offers_new a c : offers a (LNew c) → a = ANew.
+Proof. by destruct a. Qed.
 Lemma offers_send a o v : offers a (LSess (SSend o v)) → a = ASend o v.
 Proof. destruct a; try done. by intros (-> & ->). Qed.
 Lemma offers_recv a o v : offers a (LSess (SRecv o v)) → a = ARecv o.
@@ -262,7 +256,7 @@ Qed.
 Lemma asubjs_offers a S :
   asubjs a = Some S → {σ | subjs σ = S ∧ offers a (LSess σ)}.
 Proof.
-  destruct a as [|ℓ|κ o|v|o|o v|o|o1 o2|o i|o]; simpl; intros Hs; try discriminate;
+  destruct a as [| |v|o|o v|o|o1 o2|o i|o]; simpl; intros Hs; try discriminate;
     injection Hs as <-.
   - exists (SRecv o EUnit). by split.
   - exists (SSend o v). by split.
@@ -279,13 +273,13 @@ Qed.
     administrative. It is a session action too, because it names two
     ends. *)
 Definition is_admin (a : action) : Prop :=
-  match a with ABeta | ANew _ | ANewAt _ _ | ASpawn _ | ALink _ _ => True | _ => False end.
+  match a with ABeta | ANew | ASpawn _ | ALink _ _ => True | _ => False end.
 
 Definition is_sess (a : action) : Prop := is_Some (asubjs a).
 
 Definition admin_lbl (α : tlabel) : Prop :=
   match α with
-  | LBeta | LNew _ _ | LNewAt _ _ _ | LSpawn _ | LSess (SLink _) => True
+  | LBeta | LNew _ | LSpawn _ | LSess (SLink _) => True
   | LSess _ => False
   end.
 
@@ -312,7 +306,7 @@ Definition tenabled (q : config) (t : nat) : Prop := ∃ ev q', itstep q ev q' �
 
 Definition partner_need (C : gset chan) (M : gmap nat expr) (t : nat) (a : action) : Prop :=
   match a with
-  | ABeta | ANew _ | ANewAt _ _ | ASpawn _ => True
+  | ABeta | ANew | ASpawn _ => True
   | ALink o1 o2 => ech o1 ∈ C ∨ ech o2 ∈ C
   | AClose o => ech o ∈ C ∧ ∃ j f, j ≠ t ∧ M !! j = Some f ∧ partner_ok a (act f)
   | _ => ∃ j f, j ≠ t ∧ M !! j = Some f ∧ partner_ok a (act f)
@@ -332,8 +326,8 @@ Proof.
   assert (∀ α e', tstep e α e' → offers a α) as Hoff.
   { intros α e' Hs. destruct (act_step _ _ _ Hs) as (a' & Ha' & Ho). congruence. }
   remember (C, M) as q0 eqn:Hq0.
-  destruct Hst as [C0 M0 i e0 e0' Hi Hs|C0 M0 i e0 ℓ c e0' Hi Hs HC Hc
-    |C0 M0 i e0 κ o c e0' Hi Hs HC Hc|C0 M0 i j e0 v e0' Hi Hs Hj
+  destruct Hst as [C0 M0 i e0 e0' Hi Hs|C0 M0 i e0 c e0' Hi Hs HC Hc
+    |C0 M0 i j e0 v e0' Hi Hs Hj
     |C0 M0 i j o v e0 e0' f f' Hij Hi Hj He0 Hf|C0 M0 i j o e0 e0' f f' Hij Hi Hj He0 Hf HC
     |C0 M0 i j o bb e0 e0' f f' Hij Hi Hj He0 Hf|C0 M0 i e0 o1 o2 e0' Hi Hs HC
     |C0 M0 i e0 σ e0' Hi Hs HC];
@@ -343,7 +337,6 @@ Proof.
     | H1 : ?M !! ?i = Some ?x, H2 : ?M !! ?i = Some ?y |- _ =>
         rewrite H1 in H2; injection H2 as <-
     end.
-  - apply Hoff in Hs. destruct a; simpl in Hs |- *; tauto.
   - apply Hoff in Hs. destruct a; simpl in Hs |- *; tauto.
   - apply Hoff in Hs. destruct a; simpl in Hs |- *; tauto.
   - apply Hoff in Hs. destruct a; simpl in Hs |- *; tauto.
@@ -393,26 +386,21 @@ Proof.
   destruct (act e) as [a|] eqn:Ha.
   2:{ right. intros Hen. destruct (tenabled_act _ _ _ Hen He) as [a Ha']. congruence. }
   pose proof (tenabled_partner C M t e a) as Hneed.
-  destruct a as [|ℓ|κ o|v|o|o v|o|o1 o2|o i|o].
+  destruct a as [| |v|o|o v|o|o1 o2|o i|o].
   - left. destruct (act_offer_sig e _ LBeta Ha I) as [e' Hs].
     exists (EvSolo t LBeta PickNone, (C, <[t := e']> M)). split; [split; [by eapply p_act_beta|done]|simpl; set_solver].
   - left. set (c := fresh (C ∪ echans (soup M))).
     assert (c ∉ C ∪ echans (soup M)) as Hc by apply is_fresh.
-    destruct (act_offer_sig e _ (LNew ℓ c) Ha eq_refl) as [e' Hs].
-    exists (EvSolo t (LNew ℓ c) PickNone, (C ∪ {[c]}, <[t := e']> M)).
+    destruct (act_offer_sig e _ (LNew c) Ha I) as [e' Hs].
+    exists (EvSolo t (LNew c) PickNone, (C ∪ {[c]}, <[t := e']> M)).
     split; [split; [eapply p_act_new; [done|done|set_solver|set_solver]|done]|simpl; set_solver].
-  - left. set (c := fresh (C ∪ echans (soup M))).
-    assert (c ∉ C ∪ echans (soup M)) as Hc by apply is_fresh.
-    destruct (act_offer_sig e _ (LNewAt κ o c) Ha (conj eq_refl eq_refl)) as [e' Hs].
-    exists (EvSolo t (LNewAt κ o c) PickNone, (C ∪ {[c]}, <[t := e']> M)).
-    split; [split; [eapply p_act_new_at; [done|done|set_solver|set_solver]|done]|simpl; set_solver].
   - left. destruct (act_offer_sig e _ (LSpawn v) Ha eq_refl) as [e' Hs].
     set (j := fresh (dom M)). assert (M !! j = None) as Hj by (apply not_elem_of_dom, is_fresh).
     exists (EvSolo t (LSpawn v) (PickChild j), (C, <[j := App v EUnit]> (<[t := e']> M))).
     split; [split; [by eapply p_act_spawn|done]|simpl; set_solver].
   - destruct (find_in_map M (λ j f, j ≠ t ∧ partner_ok (ARecv o) (act f)))
       as [[[j f] [Hj [Hjt Hok]]]|Hno].
-    + left. simpl in *. destruct (act f) as [[| | | | |o' w| | | |]|] eqn:Hf; simpl in Hok; try done.
+    + left. simpl in *. destruct (act f) as [[| | | |o' w| | | |]|] eqn:Hf; simpl in Hok; try done.
       subst o'.
       destruct (act_offer_sig f _ (LSess (SSend o‾ w)) Hf
         (conj eq_refl eq_refl)) as [f' Hsf].
@@ -425,7 +413,7 @@ Proof.
       by apply (Hno j f Hj).
   - destruct (find_in_map M (λ j f, j ≠ t ∧ partner_ok (ASend o v) (act f)))
       as [[[j f] [Hj [Hjt Hok]]]|Hno].
-    + left. simpl in *. destruct (act f) as [[| | | |o'| | | | |]|] eqn:Hf; simpl in Hok; try done.
+    + left. simpl in *. destruct (act f) as [[| | |o'| | | | |]|] eqn:Hf; simpl in Hok; try done.
       subst o'.
       destruct (act_offer_sig e _ (LSess (SSend o v)) Ha
         (conj eq_refl eq_refl)) as [e' Hse].
@@ -440,7 +428,7 @@ Proof.
     2:{ right. intros Hen. by destruct (Hneed Hen He Ha) as [? _]. }
     destruct (find_in_map M (λ j f, j ≠ t ∧ partner_ok (AClose o) (act f)))
       as [[[j f] [Hj [Hjt Hok]]]|Hno].
-    + left. simpl in *. destruct (act f) as [[| | | | | |o'| | |]|] eqn:Hf; simpl in Hok; try done.
+    + left. simpl in *. destruct (act f) as [[| | | | |o'| | |]|] eqn:Hf; simpl in Hok; try done.
       subst o'.
       destruct (act_offer_sig e _ (LSess (SClose o)) Ha eq_refl) as [e' Hse].
       destruct (act_offer_sig f _ (LSess (SClose o‾)) Hf eq_refl) as [f' Hsf].
@@ -460,7 +448,7 @@ Proof.
     right. intros Hen. by destruct (Hneed Hen He Ha).
   - destruct (find_in_map M (λ j f, j ≠ t ∧ partner_ok (ASel o i) (act f)))
       as [[[j f] [Hj [Hjt Hok]]]|Hno].
-    + left. simpl in *. destruct (act f) as [[| | | | | | | | |o']|] eqn:Hf; simpl in Hok; try done.
+    + left. simpl in *. destruct (act f) as [[| | | | | | | |o']|] eqn:Hf; simpl in Hok; try done.
       subst o'.
       destruct (act_offer_sig e _ (LSess (SSel o i)) Ha (conj eq_refl eq_refl)) as [e' Hse].
       destruct (act_offer_sig f _ (LSess (SBra o‾ i)) Hf eq_refl) as [f' Hsf].
@@ -471,7 +459,7 @@ Proof.
       by apply (Hno j f Hj).
   - destruct (find_in_map M (λ j f, j ≠ t ∧ partner_ok (ABra o) (act f)))
       as [[[j f] [Hj [Hjt Hok]]]|Hno].
-    + left. simpl in *. destruct (act f) as [[| | | | | | | |o' i|]|] eqn:Hf; simpl in Hok; try done.
+    + left. simpl in *. destruct (act f) as [[| | | | | | |o' i|]|] eqn:Hf; simpl in Hok; try done.
       subst o'.
       destruct (act_offer_sig f _ (LSess (SSel o‾ i)) Hf (conj eq_refl eq_refl)) as [f' Hsf].
       destruct (act_offer_sig e _ (LSess (SBra o i)) Ha eq_refl) as [e' Hse].
@@ -534,7 +522,7 @@ Proof.
   { right. by exists ev, q'. }
   left. intros ev q' Hs. destruct (decide (ev_tau ev)) as [Hτ|Hτ].
   - apply (stuck_of q Hno ev q'). by split.
-  - destruct Hs as [| | | | | | | |C M i e σ e' Hi Hst HC]; try (by apply Hτ).
+  - destruct Hs as [| | | | | | |C M i e σ e' Hi Hst HC]; try (by apply Hτ).
     destruct (act_step _ _ _ Hst) as (a & Ha & Hoff).
     apply (Hnoff i e a (subjs σ) Hi Ha); [by apply offers_asubjs|done].
 Qed.

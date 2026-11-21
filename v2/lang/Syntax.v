@@ -5,11 +5,9 @@
     The name of an end never depends on a point, and no term mentions a
     point.
 
-    Primitives are saturated operators [Op k e] and the nullary [ENew ℓ].
-    [ENew ℓ] carries
-    a family label ℓ and [Op (PNewAt κ) e] a field label κ. The runtime
-    erases both labels into the step label, where the relation reads
-    them (§2.5). *)
+    Primitives are saturated operators [Op k e] and the nullary [ENew].
+    [ENew] is plain new. It carries no label, and its type alone places
+    the new channel at a fresh root or at a field (E-New). *)
 
 From stdpp Require Export base strings gmap gmultiset countable.
 
@@ -51,9 +49,8 @@ Proof. destruct o, o'; simpl; intros ->; auto. Qed.
 
 (** ** Labels
 
-    A family label ℓ of [new_ℓ] and a field label κ of [new_κ]. Both are
-    names drawn from a countable set, like a branch label. *)
-Definition family := nat.
+    A field label κ of a point x·κ, a name drawn from a countable set,
+    like a branch label. *)
 Definition field := nat.
 
 (** ** Saturated primitive operators *)
@@ -66,8 +63,7 @@ Inductive prim :=
   | PBra                  (* branch o *)
   | PLink                 (* link ⟨o1, o2⟩ *)
   | PSpawn                (* spawn v, v a thunk *)
-  | PForce                (* force !e *)
-  | PNewAt (κ : field).   (* new_κ o, anchored creation at the field κ of o *)
+  | PForce.               (* force !e *)
 
 Global Instance prim_eq_dec : EqDecision prim.
 Proof. solve_decision. Defined.
@@ -76,18 +72,16 @@ Global Instance prim_countable : Countable prim.
 Proof.
   apply (inj_countable'
     (λ k, match k with
-          | PSend => inl 0 | PRecv => inl 1 | PClose => inl 2
-          | PSel false => inl 3 | PSel true => inl 4 | PBra => inl 5
-          | PLink => inl 6 | PSpawn => inl 7 | PForce => inl 8
-          | PNewAt κ => inr κ
+          | PSend => 0 | PRecv => 1 | PClose => 2
+          | PSel false => 3 | PSel true => 4 | PBra => 5
+          | PLink => 6 | PSpawn => 7 | PForce => 8
           end)
     (λ n, match n with
-          | inl 0 => PSend | inl 1 => PRecv | inl 2 => PClose
-          | inl 3 => PSel false | inl 4 => PSel true | inl 5 => PBra
-          | inl 6 => PLink | inl 7 => PSpawn | inl _ => PForce
-          | inr κ => PNewAt κ
+          | 0 => PSend | 1 => PRecv | 2 => PClose
+          | 3 => PSel false | 4 => PSel true | 5 => PBra
+          | 6 => PLink | 7 => PSpawn | _ => PForce
           end)).
-  by intros [| | |[]| | | | |].
+  by intros [| | |[]| | | |].
 Qed.
 
 (** ** Terms *)
@@ -107,7 +101,7 @@ Inductive expr :=
                                       binds the payload at index 0 *)
   | EBox (e : expr)                (* !e, a recursive thunk value; binds
                                       the thunk itself at index 0 *)
-  | ENew (ℓ : family)              (* new_ℓ *)
+  | ENew                           (* new *)
   | Op (k : prim) (e : expr).      (* a saturated primitive *)
 
 Abbreviation ESend e := (Op PSend e).
@@ -118,10 +112,6 @@ Abbreviation EBra e := (Op PBra e).
 Abbreviation ELink e := (Op PLink e).
 Abbreviation ESpawn e := (Op PSpawn e).
 Abbreviation EForce e := (Op PForce e).
-Abbreviation ENewAt κ e := (Op (PNewAt κ) e).
-
-(** [new] for a program with one family. *)
-Abbreviation ENew0 := (ENew 0).
 
 (** The injection of a branch: inj₁ for false, inj₂ for true. *)
 
@@ -159,7 +149,7 @@ Proof.
     | Inj b e => GenNode (if b then 7 else 6) [go e]
     | Case e e1 e2 => GenNode 8 [go e; go e1; go e2]
     | EBox e => GenNode 9 [go e]
-    | ENew ℓ => GenNode 10 [GenLeaf (inl (inl ℓ))]
+    | ENew => GenNode 10 []
     | Op k e => GenNode 11 [GenLeaf (inr k); go e]
     end).
   set (dec := fix go t : expr :=
@@ -176,7 +166,7 @@ Proof.
     | GenNode 7 [t] => Inj true (go t)
     | GenNode 8 [t; t1; t2] => Case (go t) (go t1) (go t2)
     | GenNode 9 [t] => EBox (go t)
-    | GenNode 10 [GenLeaf (inl (inl ℓ))] => ENew ℓ
+    | GenNode 10 [] => ENew
     | GenNode 11 [GenLeaf (inr k); t] => Op k (go t)
     | _ => EUnit
     end).
@@ -195,7 +185,7 @@ Definition upren (r : nat → nat) : nat → nat := 0 .: (S ∘ r).
 Fixpoint rename (r : nat → nat) (e : expr) : expr :=
   match e with
   | Var x => Var (r x)
-  | EUnit | Chan _ | ENew _ => e
+  | EUnit | Chan _ | ENew => e
   | Lam e => Lam (rename (upren r) e)
   | App e1 e2 => App (rename r e1) (rename r e2)
   | Pair e1 e2 => Pair (rename r e1) (rename r e2)
@@ -213,7 +203,7 @@ Definition up (σ : nat → expr) : nat → expr := Var 0 .: (rename S ∘ σ).
 Fixpoint subst (σ : nat → expr) (e : expr) : expr :=
   match e with
   | Var x => σ x
-  | EUnit | Chan _ | ENew _ => e
+  | EUnit | Chan _ | ENew => e
   | Lam e => Lam (subst (up σ) e)
   | App e1 e2 => App (subst σ e1) (subst σ e2)
   | Pair e1 e2 => Pair (subst σ e1) (subst σ e2)
@@ -244,7 +234,7 @@ Global Arguments ELet : simpl never.
 (** The ends a term mentions. Terms bind no channel. *)
 Fixpoint fends (e : expr) : gset cend :=
   match e with
-  | Var _ | EUnit | ENew _ => ∅
+  | Var _ | EUnit | ENew => ∅
   | Chan o => {[o]}
   | Lam e | Inj _ e | EBox e | Op _ e => fends e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 | LetP e1 e2 => fends e1 ∪ fends e2
@@ -335,7 +325,7 @@ Definition upP (P : nat → Prop) : nat → Prop :=
 Fixpoint allfv (P : nat → Prop) (e : expr) : Prop :=
   match e with
   | Var x => P x
-  | EUnit | Chan _ | ENew _ => True
+  | EUnit | Chan _ | ENew => True
   | Lam e => allfv (upP P) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => allfv P e1 ∧ allfv P e2
   | LetP e1 e2 => allfv P e1 ∧ allfv (upP (upP P)) e2
@@ -366,7 +356,7 @@ Qed.
 Fixpoint freevar (x : nat) (e : expr) : Prop :=
   match e with
   | Var y => x = y
-  | EUnit | Chan _ | ENew _ => False
+  | EUnit | Chan _ | ENew => False
   | Lam e => freevar (S x) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => freevar x e1 ∨ freevar x e2
   | LetP e1 e2 => freevar x e1 ∨ freevar (S (S x)) e2
@@ -448,7 +438,7 @@ Fixpoint emap (g : cend → cend) (e : expr) : expr :=
   | Inj b e => Inj b (emap g e)
   | Case e e1 e2 => Case (emap g e) (emap g e1) (emap g e2)
   | EBox e => EBox (emap g e)
-  | ENew ℓ => ENew ℓ
+  | ENew => ENew
   | Op k e => Op k (emap g e)
   end.
 
