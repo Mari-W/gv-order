@@ -100,8 +100,11 @@ must do, open questions.
 - **Entry 12, per-end capture.** Adopt in the Rocq.
 - **Classical hypotheses (2026-11-21).** The lock-free adequacy theorem may take
   excluded middle and choice as explicit hypotheses. This admits transfinite
-  step indices (check-transfinite.md) in place of χ. Caps in place of tickets
-  (check-links-without-tickets.md) wait for the author after a worked example.
+  step indices (check-transfinite.md) in place of χ.
+- **Tickets are caps, one number per end (2026-11-21).** The old tickets ϑ go.
+  An end type `(S@x)^a_m` carries m tickets, `tk(o) + tk(ō) ≤ K` holds for
+  every channel, and E-Link asks `a1 + m2 > K` and `a2 + m1 > K`
+  (check-links-without-tickets.md, last section).
 
 ## Open
 

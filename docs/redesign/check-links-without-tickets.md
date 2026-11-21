@@ -198,3 +198,34 @@ proposal, or the existential property of transfinite indices
 (check-transfinite.md). Caps range over a finite set, so a classical pigeonhole
 over `{0..N}²` would also fix them, which v2 rules out together with excluded
 middle (check-ticket-split.md).
+
+## Decided 2026-11-21, one number per end, called tickets
+
+The author adopted caps in a one-number form and named the number tickets,
+after Padovani. The partner bound goes. The judgment keeps one bound K, and
+every channel satisfies
+
+    tk(o) + tk(ō) ≤ K.
+
+The partner bound of an end with m tickets is then `K − m`, readable from its
+own type. An end type is `(S@x)^a_m` with credit `a ≤ m`. E-Link reads
+
+    Θ ; Γ ; Δ ⊢ e : (S@x)^{a1}_{m1} ⊗ (S̄@x̄)^{a2}_{m2} ▷ c0
+    a1 + m2 > K      a2 + m1 > K
+    ──────────────────────────────────────── E-Link
+    Θ ; Γ ; Δ ⊢ link e : ∗ ▷ c0
+
+The link preserves the invariant. The new pair `(o1‾, o2‾)` has
+`tk(o1‾) ≤ K − m1` and `tk(o2‾) ≤ K − m2 < a1 ≤ m1`, so
+`tk(o1‾) + tk(o2‾) < K`. The measure drops as before. The waiter on `o1‾`
+moves from a partner counter of at least a1 to one of at most `K − m2 < a1`.
+`sp_pbound` becomes `sp_tsum`, the invariant above for every internal channel.
+A program without links that needs N on both ends of a channel picks `K = 2N`.
+Interface ends of P-Term get `K/2` each.
+
+The name fits Padovani's tickets. A send of an end as payload costs one
+ticket (hand-over minus one), and an end with no tickets left must be used
+before it travels again. Our tickets also pay for every step of the holder on
+another end, and an action on the end gives its m tickets back, because
+session ends are used many times where Padovani's linear channels are used
+once.
