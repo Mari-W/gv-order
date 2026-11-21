@@ -142,7 +142,11 @@ Print Assumptions soup_no_tau_divergence.
 Print Assumptions lf_adequacy.
 Print Assumptions lf_thread_progress.
 (** soup/LFCompose.v *)
+Print Assumptions lf_soup_connect.
 Print Assumptions lf_p_connect.
+Print Assumptions join_models.
+Print Assumptions lf_sems_adequacy.
+Print Assumptions lf_connect_adequacy.
 Print Assumptions lf_p_term.
 Print Assumptions lf_soundness_source.
 (** soup/LFTyped.v *)
