@@ -87,7 +87,7 @@ Proof.
   unfold mk0_e, let_new.
   eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
-  eapply d_let; [apply tsplit_empty|lsplit_tac (ENew 0) EUnit| |].
+  eapply d_let; [apply tsplit_empty|lsplit_tac ENew EUnit| |].
   { eapply (d_new' _ _ _ _ _ Sd None None); [spare_tac|apply fx_wf_new]. }
   eapply d_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_nil', !lenv_pinst_cons', lenv_pinst_nones.

@@ -37,7 +37,7 @@ Proof.
   eapply e_letu_; [lsplit_tac (Var 0) EUnit| | | ].
   { eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
-  eapply e_let_; [lsplit_tac (ENew 0) EUnit| | | ].
+  eapply e_let_; [lsplit_tac ENew EUnit| | | ].
   { apply (e_new' _ _ _ _ _ _ Sd); [spare_tac|set_solver]. }
   lage_tac.
   eapply e_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
