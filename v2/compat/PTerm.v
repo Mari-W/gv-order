@@ -1013,17 +1013,17 @@ Section core.
   Proof.
     intros HT Hs [A1 A2]. split.
     - intros Hc. exact (HX _ _ _ _ _ _ _ HT Hs (A1 Hc)).
-    - intros Hc. refine (IH (S n - c) _ W Θ T e Σ ΘB C HT Hs (A2 Hc)). lia.
+    - intros Hc j Hj. exact (IH j (oadd_lt _ _ _ Hc Hj) W Θ T e Σ ΘB C HT Hs (A2 Hc j Hj)).
   Qed.
 
-  Lemma core W Θ T e Σ ΘB C : tfree T → sth Θ Σ ΘB C → Erel κ n W Θ T ∅ e →
+  Lemma core W Θ T e Σ ΘB C : olt ozero n → tfree T → sth Θ Σ ΘB C → Erel κ n W Θ T ∅ e →
     Ebody κ n (Vrel κ) (Erel κ) (Vrel κ n) X W Θ T ∅ e →
     (∀ W1, W ⊑ W1 → ∀ v e', tstep e (LSpawn v) e' →
        at_cost_P n (c_spawn κ) (Prel κ) (Prel κ n) W1 Σ T (C, {[+ e' +]} ⊎ {[+ App v EUnit +]})) →
     ∀ W1, W ⊑ W1 → strict W1 →
     Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) (Prel κ n) W1 Σ T (C, {[+ e +]}).
   Proof.
-    intros HT Hs HE Hb Hsp W1 HW1 HS1.
+    intros Hn0 HT Hs HE Hb Hsp W1 HW1 HS1.
     pose proof (Erel_mono κ _ _ _ _ _ _ _ HW1 HE) as HE1.
     destruct (Hb W1 HW1) as (Hstop & Hready & H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     (** An offer of a stable thread without a link offer. *)
@@ -1097,17 +1097,17 @@ Section core.
         assert (at_cost_E n (c_link κ) (Erel κ) X W1 (kren (csub o1 o2) (delete o1 (delete o2 Θ))) T ∅
                   (emap (csub o1 o2) e')) as HA'.
         { destruct HA as [A1' A2']. split; intros Hc; [apply HXr; [done|by apply A1']|].
-          apply Erel_rename; [done|by apply A2']. }
+          intros j Hj. apply Erel_rename; [done|by apply A2']. }
         destruct (ac_EP _ _ _ _ _ _ _ _ HT Hs'' HA') as [B1 B2]. split.
         * intros Hc. eapply Prel_conv; [exact Heqv|by apply B1].
-        * intros Hc. eapply Prel_conv; [exact Heqv|by apply B2].
+        * intros Hc j Hj. eapply Prel_conv; [exact Heqv|by apply B2].
       + exfalso. unfold ev_tau in Hτ. simpl in Hτ. discriminate.
     - (* Q-Send *)
       intros q i o w q' Hq Hst. destruct (istep_single_sess _ _ _ _ _ _ Hq Hst) as (e' & Hs' & Hsub & ->).
       destruct (H5 _ _ _ Hs') as (S0 & x & m & U & S & ΘM & Θr & Ho & Hu & Hd & HΘ & HV & HA).
       assert (HM : dom ΘM = fends w).
       { destruct (decide (c_give κ = 0)) as [Hc0|Hc0];
-          [exact (Vrel_exact _ _ _ _ _ _ (proj1 HV Hc0))|exact (Vrel_exact _ _ _ _ _ _ (proj2 HV Hc0))]. }
+          [exact (Vrel_exact _ _ _ _ _ _ (proj1 HV Hc0))|exact (Vrel_exact _ _ _ _ _ _ (proj2 HV Hc0 ozero Hn0 (or_intror eq_refl)))]. }
       assert (ech o ∉ C) as Hc by (simpl in Hsub; intros Hc'; apply (Hsub (ech o)); [by apply elem_of_singleton|done]).
       destruct (snd_split Θ Σ ΘB C Hs o ΘM Θr Hd HΘ) as [Hd' HΣ].
       exists S0, x, m, U, S, (rout C ΘM), (rout C Θr), (rin C ΘM), (rpart C ΘM Θr). split_and!.
@@ -1134,7 +1134,7 @@ Section core.
         - apply (proj1 (map_disjoint_spec _ _) Hd1 o (S, x⁺) v2); [by rewrite lookup_insert_eq|done].
         - apply (proj1 (map_disjoint_spec _ _) Hd1 o' v1 v2); [by rewrite lookup_insert_ne|done]. }
       rewrite difference_empty_L.
-      refine (IH j _ W1 _ T e' _ _ _ HT (rcv_sth _ _ _ _ Hs1 Θ2 HC2 Hok) _); [lia|]. apply HR; [lia|done|done].
+      refine (IH j (c_take_lt κ n j Hj) W1 _ T e' _ _ _ HT (rcv_sth _ _ _ _ Hs1 Θ2 HC2 Hok) _). apply HR; [exact Hj|done|done].
     - (* Q-Close *)
       intros q i o q' Hq Hst. destruct (istep_single_sess _ _ _ _ _ _ Hq Hst) as (e' & Hs' & Hsub & ->).
       destruct (H7 _ _ Hs') as (S0 & x & Ho & Hu & HA).
@@ -1201,10 +1201,10 @@ Section node.
        at_cost_P n (c_spawn κ) (Prel κ) (Prel κ n) W1 Σ T (C, {[+ e' +]} ⊎ {[+ App v EUnit +]})) →
     Φt W Θ T ∅ e.
   Proof.
-    intros Hb Hsp _ HT Σ ΘB C Hs. apply Prel_iff. intros W1 HW1 HS1 h D Hf. rewrite pfuse_single.
+    intros Hb Hsp _ HT Σ ΘB C Hs. apply Prel_iff. intros Hn0 W1 HW1 HS1 h D Hf. rewrite pfuse_single.
     pose proof (Xt_E _ _ _ _ _ Hb) as HE. pose proof (fs_kinj Θ Σ ΘB C e Hs h D Hf) as Hk.
     pose proof (sth_fuse Θ Σ ΘB C e Hs h D Hf) as Hs'.
-    refine (core κ n IH Xt Xt_ren Xt_P W (kren h Θ) T (emap h e) _ _ _ HT Hs' _ _ _ W1 HW1 HS1).
+    refine (core κ n IH Xt Xt_ren Xt_P W (kren h Θ) T (emap h e) _ _ _ Hn0 HT Hs' _ _ _ W1 HW1 HS1).
     - by apply Erel_rename.
     - by apply Ebody_rename; [apply Xt_ren| | |].
     - intros W2 HW2. exact (Hsp h _ _ _ Hk HT Hs' W2 HW2).
@@ -1228,31 +1228,19 @@ Section node.
     intros (e1 & -> & _ & _ & Hv0) Hs m Hm.
     pose proof (λ W' j Θ' w HW Hj Hd, Hv0 W' j Θ' w ∅ HW Hj Hd eq_refl) as Hv. simpl in Hv. clear Hv0.
     assert (tstep (App (Lam e1) EUnit) LBeta (subst1 EUnit e1)) as Hβ by (by apply tstep_head, t_act_app).
-    assert (∀ j W', ole (oadd j (c_beta κ)) n → j < S n → W ⊑ W' → Erel κ j W' ΘM TUnit ∅ (subst1 EUnit e1)) as Hlow.
-    { intros j W' Hj Hj' HW. destruct (Hv W' j ∅ EUnit HW Hj (map_disjoint_empty_r _)) as [B _].
-      rewrite map_union_empty in B. apply B; [done|]. by apply Vrel_unit_iff. }
-    assert (∀ j W', ole j n → j - c_beta κ < S n → W ⊑ W' → Erel κ (j - c_beta κ) W' ΘM TUnit ∅ (subst1 EUnit e1)) as Hlow'.
-    { intros j W' Hj Hj' HW. destruct (decide (c_beta κ ≤ j)); [apply Hlow; [lia|lia|done]|].
-      replace (j - c_beta κ) with 0 by lia. apply Erel_0. }
     assert (∀ W', W ⊑ W' → ¬ irred (App (Lam e1) EUnit) ∧ ready _ W'(ΘM ∣ ∅, App (Lam e1) EUnit)) as Hrd.
     { intros W' _. split; [intros Hi; exact (Hi _ _ Hβ)|]. intros Hst. destruct (Hst _ _ Hβ) as [σ Hσ]. discriminate. }
-    destruct (decide (m = S n)) as [->|Hmn].
-    - refine (node_beta W ΘM TUnit (App (Lam e1) EUnit) eq_refl _ eq_refl tfree_unit ΣM ΘBM CM Hs).
-      intros W' HW'. destruct (Hrd W' HW') as [Hni Hr].
-      split; [intros Hi; by destruct Hni|split; [by intros _|unfold Esteps; split_and!]].
-      all: intros; match goal with H : tstep _ _ _ |- _ => apply app_thunk_step in H as [Hα ->] end; try discriminate.
-      split.
-      + intros Hc. destruct (Hv W' n ∅ EUnit HW' ltac:(lia) (map_disjoint_empty_r _)) as [_ B].
-        rewrite map_union_empty in B. by apply B.
-      + intros Hc. apply Hlow'; [lia|lia|done].
-    - refine (IH m ltac:(lia) W ΘM TUnit _ ΣM ΘBM CM tfree_unit Hs _).
-      destruct m as [|m]; [apply Erel_0|]. apply Erel_iff. intros W' HW'.
-      destruct (Hrd W' HW') as [Hni Hr].
-      split; [intros Hi; by destruct Hni|split; [by intros _|unfold Esteps; split_and!]].
-      all: intros; match goal with H : tstep _ _ _ |- _ => apply app_thunk_step in H as [Hα ->] end; try discriminate.
-      split.
-      + intros Hc. apply Hlow; [lia|lia|done].
-      + intros Hc. apply Hlow'; [lia|lia|done].
+    apply (Prel_down _ m n); [exact Hm|].
+    refine (node_beta W ΘM TUnit (App (Lam e1) EUnit) eq_refl _ eq_refl tfree_unit ΣM ΘBM CM Hs).
+    intros W' HW'. destruct (Hrd W' HW') as [Hni Hr].
+    split; [intros Hi; by destruct Hni|split; [by intros _|unfold Esteps; split_and!]].
+    all: intros; match goal with H : tstep _ _ _ |- _ => apply app_thunk_step in H as [Hα ->] end; try discriminate.
+    split.
+    - intros Hc. assert (ole (oadd n (c_beta κ)) n) as Hn by (rewrite Hc; apply ole_refl).
+      destruct (Hv W' n ∅ EUnit HW' Hn (map_disjoint_empty_r _)) as [_ B].
+      rewrite map_union_empty in B. by apply B.
+    - intros Hc j Hj. destruct (Hv W' j ∅ EUnit HW' Hj (map_disjoint_empty_r _)) as [B _].
+      rewrite map_union_empty in B. apply B; [exact (oadd_lt _ _ _ Hc Hj)|by apply Vrel_unit_iff].
   Qed.
 
   (** A spawn: the parent and the child compose over the cut of the
@@ -1276,8 +1264,8 @@ Section node.
         by (by rewrite <-HC).
       rewrite Ep, HΣ. exact H. }
     split.
-    - intros Hc0. apply Hcomp; [lia|]. by apply P1.
-    - intros Hc0. apply Hcomp; [lia|]. by apply P2.
+    - intros Hc0. apply Hcomp; [apply ole_refl|]. by apply P1.
+    - intros Hc0 j Hj. apply Hcomp; [exact (olt_ole _ _ (oadd_lt _ _ _ Hc0 Hj))|]. by apply P2.
   Qed.
 
   Lemma node W Θ T e : Ebody κ n (Vrel κ) (Erel κ) (Vrel κ n) Xt W Θ T ∅ e → Φt W Θ T ∅ e.
@@ -1303,9 +1291,7 @@ Qed.
 
 Theorem pterm_all κ m : PTermL κ m.
 Proof.
-  induction (lt_wf m) as [m _ IH]. destruct m as [|n].
-  - intros ? ? ? ? ? ? ? _ _ _. apply Prel_0.
-  - apply pterm_level. intros j Hj. by apply IH.
+  induction m as [m IH] using oind. by apply pterm_level.
 Qed.
 
 (** P-Term: a single thread in E at the empty future, over Σ partner-free

@@ -43,7 +43,7 @@ Section ren_ind.
       at_cost_E n c (Erel κ) X W1 (kren h' Θ') T F (emap h' e')) as Hac.
     { intros c Θ' e' h' Hk' [A1 A2]. split.
       - intros Hc. apply HX; [done|]. by apply A1.
-      - intros Hc. apply (proj2 (rename_level κ (S n - c) T)); [done|]. by apply A2. }
+      - intros Hc j Hj. apply (proj2 (rename_level κ j T)); [done|]. by apply A2. }
     assert (∀ o v w, Θ !! o = Some w → kinj h (<[o := v]> Θ)) as Hkins.
     { intros o v w Ho. eapply kinj_sub; [|exact Hk]. rewrite dom_insert_L.
       apply elem_of_dom_2 in Ho. set_solver. }
@@ -107,13 +107,13 @@ Section ren_ind.
       + destruct A4 as (e1 & -> & Hfe & _ & HA). exists (emap h e1).
         split_and!; [done|by rewrite kren_dom, fends_emap, Hfe|done|].
         intros W' j Θ' w' F0 HW Hj Hd Hub. simpl in Hub. subst F0. split.
-        * intros Hjn [-> ->]%Vrel_unit_iff. rewrite map_union_empty.
+        * intros Hjn Hu. apply Vrel_unit_iff in Hu as [-> ->]. rewrite map_union_empty.
           destruct (HA W' j ∅ EUnit ∅ HW Hj (map_disjoint_empty_r _) eq_refl) as [B1 _].
           rewrite map_union_empty in B1. change EUnit with (emap h EUnit). rewrite <-emap_subst1.
           apply (proj2 (rename_level κ j TUnit)); [done|]. apply B1; [done|by apply Vrel_unit_iff].
-        * intros -> [-> ->]. rewrite map_union_empty.
-          destruct (HA W' n ∅ EUnit ∅ HW Hj (map_disjoint_empty_r _) eq_refl) as [_ B2].
-          pose proof (B2 eq_refl (conj eq_refl eq_refl)) as B3. rewrite map_union_empty in B3.
+        * intros Hb0 [-> ->]. rewrite map_union_empty.
+          destruct (HA W' j ∅ EUnit ∅ HW Hj (map_disjoint_empty_r _) eq_refl) as [_ B2].
+          pose proof (B2 Hb0 (conj eq_refl eq_refl)) as B3. rewrite map_union_empty in B3.
           change EUnit with (emap h EUnit). rewrite <-emap_subst1. by apply HX; [|exact B3].
       + by apply Hac.
     - (* O-Send *)
@@ -135,8 +135,8 @@ Section ren_ind.
       + by apply kren_disjoint.
       + rewrite <-kren_union by done. rewrite <-A4. rewrite kren_delete; [done|done|by eapply elem_of_dom_2].
       + destruct A6 as [B1 B2]. split.
-        * intros Hc. apply (proj1 (rename_level κ (Datatypes.S n) _)); [done|]. by apply B1.
-        * intros Hc. apply (proj1 (rename_level κ (Datatypes.S n - c_give κ) _)); [done|]. by apply B2.
+        * intros Hc. apply (proj1 (rename_level κ n _)); [done|]. by apply B1.
+        * intros Hc j Hj Hj'. apply (proj1 (rename_level κ j _)); [done|]. by apply B2.
       + rewrite <-kren_insert by done. by apply Hac.
     - (* O-Recv *)
       intros o' w x Hst. destruct (tstep_emap_act _ _ _ _ Hst) as (a & Ha & Ho).
@@ -154,7 +154,7 @@ Section ren_ind.
       rewrite (tstep_emap_back h h' e _ x _ e0 Hst He0 I Hl (Hee h' Hext)).
       destruct (H6 _ _ _ He0) as (S0' & x0' & m'' & U' & S' & A1' & A2' & A3').
       rewrite A1 in A1'. injection A1' as <- <-. rewrite A2 in A2'. injection A2' as <- <- <-.
-      assert (Erel κ j W1 (<[o := (S, x0⁺)]> Θ ∪ Θ0) T F e0) as HE0 by (apply A3'; [lia|done|done]).
+      assert (Erel κ j W1 (<[o := (S, x0⁺)]> Θ ∪ Θ0) T F e0) as HE0 by (apply A3'; [exact Hj|done|done]).
       rewrite <-insert_union_l in HE0.
       assert (kinj h' (<[o := (S, x0⁺)]> (Θ ∪ Θ0))) as Hk2.
       { eapply kinj_sub; [|exact Hk']. rewrite dom_insert_L, dom_union_L.
