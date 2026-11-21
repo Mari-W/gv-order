@@ -207,6 +207,23 @@ must do, open questions.
   an explicit hypothesis of the lemma, no axiom. Entry 5 follows from it.
 - **Entry 14b, no future variables.** Adopt in the Rocq.
 - **Entry 12, per-end capture.** Adopt in the Rocq.
+- **Classical hypotheses (2026-11-21).** The lock-free adequacy theorem may take
+  excluded middle and choice as explicit hypotheses. This admits transfinite
+  step indices (check-transfinite.md) in place of χ.
+- **Tickets are caps, one number per end (2026-11-21).** The old tickets ϑ go.
+  An end type `(S@x)^a_m` carries m tickets, `tk(o) + tk(ō) ≤ K` holds for
+  every channel, and E-Link asks `a1 + m2 > K` and `a2 + m1 > K`
+  (check-links-without-tickets.md, last section).
+- **Layers and fuel extension (write-up A3, 2026-11-21, decided).**
+  check-layers.md. Points as ordinal ranks hold with a well-founded C per fresh
+  root and fields ranked in advance. Client-server and every lock-free example
+  type. Fuel extension removes N and does not remove K. The author adopts
+  layers for the next Rocq run, together with tickets and transfinite indices.
+  Tickets stay finite with N and K for now. Ordinal tickets may come later.
+- **Open points of A3 (2026-11-21, awaiting decision).** check-layers-open.md.
+  The restriction on plain `new` is real, O-New needs no change, P-Connect asks
+  `wf (W1|S ⊔ W2|S)`, the other cases change only through `ent_sound`, and
+  ranks are `Ord@{Set}` below step indices `Ord@{s}` from one polymorphic tree.
 
 ## Open
 
