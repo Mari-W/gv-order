@@ -2,10 +2,10 @@
   Θ ; Δ ⊨^N e : T ▷ c
      : fuel → tenv → lenv → expr → ty → fuel → Prop
 cost_fundamental
-     : ∀ (W : world) (N : fuel) (Θ : tenv) (Γ : hctx) 
+     : ∀ (W : sworld) (N : fuel) (Θ : tenv) (Γ : hctx) 
          (Δ : lenv) (F : sfuture) (e : expr) (T : ty) 
          (c : fuel), Θ ; Γ ; Δ ⊢^F _{W,N} e : T ▷ c → Θ ; Δ ⊨^N e : T ▷ c
 fsem_of_cost
-     : ∀ (W : world) (N : fuel) (Θ : tenv) (e : expr) (T : ty) (c : fuel),
+     : ∀ (W : sworld) (N : fuel) (Θ : tenv) (e : expr) (T : ty) (c : fuel),
          Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} e : T ▷ c
          → tfree T → cr_tk Θ → fsem N (te_sty <$> Θ) (tkenv Θ) e

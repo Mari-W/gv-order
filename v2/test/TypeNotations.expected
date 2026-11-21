@@ -5,16 +5,18 @@
      : cend → point → cend * point
 λ (W : world) (x y : point), W ⊢ x ≺ y⁺
      : world → point → point → Prop
-λ W1 W2 : world, W1 ⊑ W1 ⊔ W2
-     : world → world → Prop
+λ W1 W2 : sworld, W1 ⊑ₛ W1 ⊔ W2
+     : sworld → sworld → Prop
+λ (W : sworld) (x y : point), W ⊢ₛ x ≺ y⁺
+     : sworld → point → point → Prop
 λ (S : sty) (x : point) (a m : fuel), S@x‾^a;m
      : sty → point → fuel → fuel → ty
-λ (W : world) (N : fuel) (Θ : tenv) (Γ : hctx) (Δ : lenv) 
+λ (W : sworld) (N : fuel) (Θ : tenv) (Γ : hctx) (Δ : lenv) 
   (F : sfuture) (e : expr) (T : ty) (c : fuel),
   Θ ; Γ ; Δ ⊢^F _{W,N} e : T ▷ c
-     : world → fuel → tenv → hctx → lenv → sfuture → expr → ty → fuel → Prop
-λ (W : world) (Θ : tenv) (Γ : hctx) (Δ : lenv) (F : sfuture) 
+     : sworld → fuel → tenv → hctx → lenv → sfuture → expr → ty → fuel → Prop
+λ (W : sworld) (Θ : tenv) (Γ : hctx) (Δ : lenv) (F : sfuture) 
   (e : expr) (T : ty), Θ ; Γ ; Δ ⊢^F _ W e : T
-     : world → tenv → hctx → lenv → sfuture → expr → ty → Prop
-λ (W : world) (Σ : senv) (p : proc) (T : ty), Σ ⊢_W p : T
-     : world → senv → proc → ty → Prop
+     : sworld → tenv → hctx → lenv → sfuture → expr → ty → Prop
+λ (W : sworld) (Σ : senv) (p : proc) (T : ty), Σ ⊢_W p : T
+     : sworld → senv → proc → ty → Prop

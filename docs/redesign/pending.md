@@ -83,7 +83,11 @@ rx-postpone and rx-delegate rest on tickets, aging and payload credit, which
 this run did not touch. S4.18 concerns (fuse), kept. rx-chain is now
 rejected by (wf-new) instead of `wfworld`.
 
-Final state. See the build line below.
+Final state. On the laptop `make -j8` builds with no error, `make test`
+passes after the .expected files of TypeNotations, RelationNotations,
+CostNotations, GuardNotations and SoupNotations were regenerated for the new
+signatures, and `make check` reports 114 of 114 results closed under the
+global context.
 
 Map (80a5e13, bc4f947). The LAYERS and NEW2 tags are gone, and the rocq
 references of worlds, O-New, E-New, P-Term, P-Connect, the soup and the

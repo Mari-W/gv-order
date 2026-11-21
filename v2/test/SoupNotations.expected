@@ -12,9 +12,10 @@ lfsoup_step
          → itstep (s_q a) ev q'
            → ∀ lv : ord,
                olt lv n
-               → ∃ tc : fuel * fuel,
-                   tsum_ok (Some N) tc.1 tc.2
-                   ∧ lf_next tc a ev q' ∈ S^{N,W} _ lv⟦∅ ⊢ T⟧
+               → ∃ tc : tchoice,
+                   tsum_ok (Some N) (tc_m1 tc) (tc_m2 tc)
+                   ∧ s_W a ⊑ s_W (lf_next tc a ev q')
+                     ∧ lf_next tc a ev q' ∈ S^{N,W} _ lv⟦∅ ⊢ T⟧
 soup_no_tau_divergence
      : ∀ (N : nat) (W : world) (T : ty) (a : lfstate),
          (∀ n : Ix, a ∈ S^{N,W} _ n⟦∅ ⊢ T⟧)
@@ -23,23 +24,20 @@ lf_adequacy
      : excluded_middle
        → functional_choice
          → ∀ (N : nat) (W : world) (T : ty) (p : proc),
-             strict W → wfworld W → ∅ ⊪^N _W p : T → lock_free p
+             ∅ ⊪^N _W p : T → lock_free p
 lf_thread_progress
      : excluded_middle
        → functional_choice
          → ∀ (N : nat) (W : world) (T : ty) (p : proc),
-             strict W
-             → wfworld W
-               → ∅ ⊪^N _W p : T
-                 → ∀ (r : nat → config) (l : nat → option event),
-                     erase (r 0) = p
-                     → maximal r l → wfair r l → thread_progress_run r l
-λ (N : nat) (W : world) (Σ : senv) (p : proc) (T : ty), Σ ⊩^N _ W p : T
-     : nat → world → senv → proc → ty → Prop
+             ∅ ⊪^N _W p : T
+             → ∀ (r : nat → config) (l : nat → option event),
+                 erase (r 0) = p
+                 → maximal r l → wfair r l → thread_progress_run r l
+λ (N : nat) (W : sworld) (Σ : senv) (p : proc) (T : ty), Σ ⊩^N _ W p : T
+     : nat → sworld → senv → proc → ty → Prop
 lf_fundamental
-     : ∀ (N : nat) (W : world) (Σ : senv) (p : proc) (T : ty),
-         Σ ⊩^N _ W p : T → Σ ⊪^N _W p : T
+     : ∀ (N : nat) (W : sworld) (R : world) (Σ : senv) (p : proc) (T : ty),
+         Σ ⊩^N _ W p : T → wmodels R W → Σ ⊪^N _R p : T
 lf_soundness
-     : ∀ (N : nat) (W : world) (p : proc) (T : ty),
-         excluded_middle
-         → functional_choice → wfworld W → ∅ ⊩^N _ W p : T → lock_free p
+     : ∀ (N : nat) (W : sworld) (p : proc) (T : ty),
+         excluded_middle → functional_choice → ∅ ⊩^N _ W p : T → lock_free p
