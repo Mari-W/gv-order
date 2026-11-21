@@ -210,6 +210,16 @@ must do, open questions.
 - **Classical hypotheses (2026-11-21).** The lock-free adequacy theorem may take
   excluded middle and choice as explicit hypotheses. This admits transfinite
   step indices (check-transfinite.md) in place of χ.
+  Rocq, stage 2 of the run of 2026-11-21 (redesign-clean3): groundwork only.
+  relation/Ord.v has universe-polymorphic cumulative Brouwer trees `ord@{u}`,
+  the order `ole`/`olt` by structural recursion (no inversion of a limit, so no
+  dependent-equality axiom), `olt_wf`, `oadd β c` with `oadd_lt`, and `osfix`
+  by well-founded recursion with `osfix_unfold` up to pointwise ↔, no funext.
+  Not done: the port of Rrel, FuelE, the soup relations and the 28 `induction n`
+  and 46 `destruct n` sites to α. Nothing in it is a design obstacle. The port
+  is the 43-file change of check-transfinite.md section 4 and did not fit the run
+  after stages 1 and 4. The existential property, χ removal and the EM ∧ AC
+  hypotheses of lock-free adequacy wait for it.
 - **Tickets are caps, one number per end (2026-11-21).** The old tickets ϑ go.
   An end type `(S@x)^a_m` carries m tickets, `tk(o) + tk(ō) ≤ K` holds for
   every channel, and E-Link asks `a1 + m2 > K` and `a2 + m1 > K`
@@ -229,6 +239,13 @@ must do, open questions.
   because the server end of LFClientServer sits above an unbounded ascending
   chain of client points (rank ω, ranks up to ω²+1). Ranks reuse the
   Brouwer-tree type of the step indices.
+  Rocq, stage 3 of the run of 2026-11-21 (redesign-clean3): not started.
+  O-New picks the ranks inside the relation, which needs the existential
+  property of stage 2, and the removal of families, laws and generated roots
+  rewrites every world and every E-New site of the examples. `wf_join_iff`,
+  `ent_sound`, (wf-new) at E-New and the wf premises of P-Connect and P-Term
+  are open. Ranks can reuse `ord@{Set}` of relation/Ord.v. Stage 4 ran on the
+  pre-layer worlds as the coordinator allowed.
 - **Open points of A3 (2026-11-21, awaiting decision).** check-layers-open.md.
   The restriction on plain `new` is real, O-New needs no change, P-Connect asks
   `wf (W1|S ⊔ W2|S)`, the other cases change only through `ent_sound`, and

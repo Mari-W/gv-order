@@ -12,7 +12,7 @@ From GV Require Import examples.GuardEx examples.LFClose examples.LFCycle exampl
 From GV Require Import examples.LFFreshMany examples.LFClientServer examples.LFFactoryEx examples.LFGrowRing.
 From GV Require Import examples.LFController soup.SoupRun soup.SoupTau soup.LFAdequacy.
 From GV Require Import soup.LFCompose soup.LFTyped lockfree.FairRun.
-From GV Require Import examples.SemBranch static.Inversion.
+From GV Require Import examples.SemBranch static.Inversion relation.Ord.
 
 (** types/Points.v *)
 Print Assumptions pt_dual_dual.
@@ -156,3 +156,7 @@ Print Assumptions opened_cons.
 Print Assumptions Tbad_not_cons.
 Print Assumptions sbv_deadlock_free.
 Print Assumptions sbv_rejected.
+(** relation/Ord.v: ordinals and the transfinite fixpoint *)
+Print Assumptions olt_wf.
+Print Assumptions oadd_lt.
+Print Assumptions osfix_unfold.
