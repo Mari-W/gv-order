@@ -30,7 +30,7 @@ Section bind_acts.
   Proof.
     intros HPv HPs HPe Hf Hd HE HK.
     cut (∀ W Θ1 T F' e, Erel κ n W Θ1 T F' e → P e → ∀ Θ2, Θ1 ##ₘ Θ2 → F ∪ senv_heads Θ2 ⊆ F' →
-           (∀ W' j Θv v, W ⊑ W' → j < S n → Θv ##ₘ Θ2 → Vrel κ j W' Θv T v →
+           (∀ W' j Θv v, W ⊑ W' → olt j n → Θv ##ₘ Θ2 → Vrel κ j W' Θv T v →
               Erel κ j W' (Θv ∪ Θ2) U F (fill_frame f v)) →
            Erel κ n W (Θ1 ∪ Θ2) U F (fill_frame f e)).
     { intros H. eapply H; [exact HE|done|done|done|exact HK]. }
@@ -43,7 +43,7 @@ Section bind_acts.
     assert (¬ is_val e) as Hnv by (by apply HPv).
     apply Erel_iff. intros W1 HW1.
     pose proof (Erel_mono κ _ _ _ _ _ _ _ HW1 HE) as HE1.
-    assert (∀ W' j Θv v, W1 ⊑ W' → j < S n → Θv ##ₘ Θ2 → Vrel κ j W' Θv T v →
+    assert (∀ W' j Θv v, W1 ⊑ W' → olt j n → Θv ##ₘ Θ2 → Vrel κ j W' Θv T v →
               Erel κ j W' (Θv ∪ Θ2) U F (fill_frame f v)) as HK1.
     { intros W' j Θv v HW' Hj Hd' HV. apply HK; [by eapply wext_trans|done..]. }
     destruct (Hb W1 HW1) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
@@ -52,15 +52,16 @@ Section bind_acts.
       at_cost_E n c (Erel κ)
         (λ W Θ1 T F' e, Erel κ n W Θ1 T F' e ∧
           (P e → ∀ Θ2, Θ1 ##ₘ Θ2 → F ∪ senv_heads Θ2 ⊆ F' →
-            (∀ W' j Θv v, W ⊑ W' → j < S n → Θv ##ₘ Θ2 → Vrel κ j W' Θv T v →
+            (∀ W' j Θv v, W ⊑ W' → olt j n → Θv ##ₘ Θ2 → Vrel κ j W' Θv T v →
                Erel κ j W' (Θv ∪ Θ2) U F (fill_frame f v)) →
             Erel κ n W (Θ1 ∪ Θ2) U F (fill_frame f e))) W1 Θ1' T F' e' →
       at_cost_E n c (Erel κ) (Erel κ n) W1 (Θ1' ∪ Θ2) U F (fill_frame f e')) as Hac.
     { intros c Θ1' e' Hd' HPc [A1 A2]. split.
       - intros Hc. destruct (A1 Hc) as [_ HΦ]. apply HΦ; [by apply HPc|done|done|done].
-      - intros Hc. eapply (Erel_bind κ (S n - c)); [done|done| |].
-        + eapply Erel_future; [|exact (A2 Hc)]. done.
-        + intros W' j Θv v HW' Hj Hd'' HV. apply HK1; [done|lia|done|done]. }
+      - intros Hc j Hj. eapply (Erel_bind κ j); [done|done| |].
+        + eapply Erel_future; [|exact (A2 Hc j Hj)]. done.
+        + intros W' j' Θv v HW' Hj' Hd'' HV. apply HK1; [done| |done|done].
+          exact (ole_trans_lt _ _ _ Hj' (oadd_lt _ _ _ Hc Hj)). }
     split; [|split; [|unfold Esteps; split_and!]].
     - (* (stop) *)
       intros Hirr. exfalso. apply Hnv. eapply Vrel_val, Hs.
@@ -119,9 +120,10 @@ Section bind_acts.
       assert (<[o:=(S, x⁺)]> (Θ1 ∪ Θ2) ∪ Θin = (<[o:=(S, x⁺)]> Θ1 ∪ Θin) ∪ Θ2) as ->.
       { rewrite insert_union_l, <-!map_union_assoc. f_equal. by apply map_union_comm. }
       pose proof (c_take_pos κ).
-      eapply (Erel_bind κ j); [done| |eapply Erel_future; [|apply A3; [lia|done|done]]; done|].
+      eapply (Erel_bind κ j); [done| |eapply Erel_future; [|apply A3; [exact Hj|done|done]]; done|].
       + apply map_disjoint_union_l. split; [by apply map_disjoint_insert_l|by symmetry].
-      + intros W' j' Θv v HW' Hj' Hd'' HV. apply HK1; [done|lia|done|done].
+      + intros W' j' Θv v HW' Hj' Hd'' HV. apply HK1; [done| |done|done].
+        exact (ole_trans_lt _ _ _ Hj' (c_take_lt κ n j Hj)).
     - (* O-Close *)
       intros o E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
       destruct (H7 o e' Hst') as (S0 & x & A1 & A2 & A3).

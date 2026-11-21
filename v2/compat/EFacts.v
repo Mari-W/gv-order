@@ -103,9 +103,9 @@ Section efacts.
     { intros c Θ0 F0 e' [A1 A2]. split.
       - intros Hc. by apply A1.
       - intros Hc j Hj. apply (IHn j (oadd_lt _ _ _ Hc Hj) W1 T T'); [|by apply A2].
-        intros m W2 Θ2 v HW2 Hm. apply HV; [by eapply wext_trans|lia]. }
+        intros m W2 Θ2 v HW2 Hm. apply HV; [by eapply wext_trans|exact (ole_trans _ _ _ Hm (oadd_le_l _ _ _ Hj))]. }
     split; [|split; [|unfold Esteps; split_and!]].
-    - intros Hirr. apply HV; [done|lia|]. by apply Hs.
+    - intros Hirr. apply HV; [done|apply ole_refl|]. by apply Hs.
     - done.
     - intros e' Hst. by apply Hac, H1.
     - intros ℓ c e' Hst Hc g Hg. destruct (H2 ℓ c e' Hst Hc g Hg) as [S HS]. exists S. by apply Hac.
@@ -121,7 +121,7 @@ Section efacts.
       exists S0, x, m', U, S. split_and!; [done|done|].
       intros j Θin Hj Hd Hw. pose proof (c_take_pos κ).
       apply (IHn j (c_take_lt κ n j Hj) W1 T T'); [|by apply A3].
-      intros m W2 Θ2 v HW2 Hm. apply HV; [by eapply wext_trans|lia].
+      intros m W2 Θ2 v HW2 Hm. apply HV; [by eapply wext_trans|exact (ole_trans _ _ _ Hm (oadd_le_l _ _ _ Hj))].
     - intros o e' Hst. destruct (H7 o e' Hst) as (S0 & x & A1 & A2 & A3).
       exists S0, x. split_and!; [done|done|by apply Hac].
     - intros o i e' Hst. destruct (H8 o i e' Hst) as (S0 & x & S1 & S2 & A1 & A2 & A3).
