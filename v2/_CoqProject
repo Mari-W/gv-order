@@ -21,7 +21,9 @@ types/Types.v
 types/Erasure.v
 types/Duality.v
 static/Contexts.v
+static/Consts.v
 static/Typing.v
+static/Hiding.v
 static/Conservativity.v
 static/Constants.v
 static/Weakening.v

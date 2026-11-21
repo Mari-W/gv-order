@@ -9,7 +9,7 @@
                        thread of a reachable configuration can take part
                        in a later step
 
-    Σ ⊩^N _ W p : T is process typing [ptyped] at Some N together with
+    Σ ⊩^N _ W p : T is process typing [fptyped] at Some N together with
     the guard of every thread, ⊢▷ p. N bounds the tickets of every
     channel, and P-Connect types the cut at exactly dual types
     ([senv_dual]). The proof reads fsem^N off the typing through
@@ -19,7 +19,7 @@
 From GV Require Import soup.LFAdequacy lockfree.FairRun.
 From GV Require Export soup.LFCompose static.FundamentalProc.
 
-Notation "Σ ⊩^ N '_' W p : T" := (ptyped (Some N) W Σ p T ∧ ⊢▷ p)
+Notation "Σ ⊩^ N '_' W p : T" := (fptyped (Some N) W Σ p T ∧ ⊢▷ p)
   (at level 74, N at level 0, W at level 0, p at level 60, T at level 60,
    format "Σ  ⊩^ N  '_'  W  p  :  T").
 
@@ -47,7 +47,7 @@ Qed.
 Theorem lf_soundness N W p T :
   excluded_middle → functional_choice → ∅ ⊩^N _ W p : T → lock_free p.
 Proof.
-  intros EM FC Hty. destruct (ptyped_wf _ _ _ _ _ (proj1 Hty)) as [Hwf HW].
+  intros EM FC Hty. destruct (fptyped_wf _ _ _ _ _ (proj1 Hty)) as [Hwf HW].
   exact (lf_sems_adequacy EM FC N W p T Hwf HW (lf_fundamental N W ∅ p T Hty)).
 Qed.
 

@@ -80,9 +80,9 @@ Proof.
       * simpl. lia.
 Qed.
 
-Theorem fw_ptyped N o x : ptyped N W_fw {[o := (S_fw, x)]} (∅, {[+ fw o +]}) TUnit.
+Theorem fw_ptyped N o x : fptyped N W_fw {[o := (S_fw, x)]} (∅, {[+ fw o +]}) TUnit.
 Proof.
-  eapply (p_term N W_fw _ ∅ ∅ _ TUnit fw_cost).
+  eapply (fp_term N W_fw _ ∅ ∅ _ TUnit fw_cost).
   - constructor.
   - intros o'. rewrite dom_empty_L. set_solver.
   - set_solver.

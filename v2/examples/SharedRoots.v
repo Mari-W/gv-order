@@ -18,7 +18,7 @@
     point. Any well-formed world that derives the first fact holds 0
     ([fact_needs_zero]), so the constant is private to each component and
     used by each. Two components may pick the same private constant,
-    because nothing in [ptyped] keeps them apart. *)
+    because nothing in [fptyped] keeps them apart. *)
 
 From Stdlib Require Import Wf_nat.
 From GV Require Import static.Typing.
@@ -97,10 +97,10 @@ Definition senv2 (o1 o2 : cend) (x y : point) : senv :=
 
 Lemma cl2_term o1 o2 x y :
   o1 ≠ o2 → (o1‾)%cend ≠ o2 → sw_facts W0 (FLt x y‾) →
-  ptyped None W0 (senv2 o1 o2 x y) (∅, {[+ cl2 o1 o2 +]}) TUnit.
+  fptyped None W0 (senv2 o1 o2 x y) (∅, {[+ cl2 o1 o2 +]}) TUnit.
 Proof.
   intros Hne Hd Hf.
-  apply (p_term None W0 _ ∅ ∅ _ TUnit (fadd (fadd (Some 0) (Some 1)) (fadd (Some 0) (Some 1)))).
+  apply (fp_term None W0 _ ∅ ∅ _ TUnit (fadd (fadd (Some 0) (Some 1)) (fadd (Some 0) (Some 1)))).
   - constructor.
   - intros o'. rewrite dom_empty_L. set_solver.
   - set_solver.
@@ -126,7 +126,7 @@ Lemma chans_of_empty : chans_of ∅ = ∅.
 Proof. unfold chans_of. by rewrite dom_empty_L, set_map_empty. Qed.
 
 Lemma comp_typed c d :
-  c ≠ d → ptyped None (W0 ⊔ W0) ∅ (({[c]} ∪ {[d]}), comp c d) TUnit.
+  c ≠ d → fptyped None (W0 ⊔ W0) ∅ (({[c]} ∪ {[d]}), comp c d) TUnit.
 Proof.
   intros Hcd.
   set (ΣC := senv2 (c⁺)%cend (d⁺)%cend p0 (p0·0)).
@@ -136,7 +136,7 @@ Proof.
   assert (chans_of ΣC = ({[c]} ∪ {[d]})) as Ec.
   { unfold chans_of, ΣC, senv2. rewrite dom_union_L, !dom_singleton_L, set_map_union_L, !set_map_singleton_L.
     done. }
-  pose proof (p_connect_join None W0 W0 ∅ ∅ ΣC ∅ ∅ {[+ cl2 (c⁺)%cend (d⁺)%cend +]}
+  pose proof (fp_connect_join None W0 W0 ∅ ∅ ΣC ∅ ∅ {[+ cl2 (c⁺)%cend (d⁺)%cend +]}
                 {[+ cl2 (c⁻)%cend (d⁻)%cend +]} TUnit) as H.
   rewrite Ec, chans_of_empty, !(left_id_L ∅ (∪)), Ed in H. unfold comp. apply H; clear H.
   - apply cl2_term; [congruence|cbn; congruence|]. by left.
@@ -159,13 +159,13 @@ Qed.
 (** ** Two components over the empty cut share the constant 0 *)
 
 Theorem shared_not_cut :
-  ptyped None ((W0 ⊔ W0) ⊔ (W0 ⊔ W0)) ∅
+  fptyped None ((W0 ⊔ W0) ⊔ (W0 ⊔ W0)) ∅
     (({["c"]} ∪ {["d"]}) ∪ ({["e"]} ∪ {["f"]}) ∪ chans_of ∅, comp "c" "d" ⊎ comp "e" "f") TUnit ∧
   0 ∈ swshared (W0 ⊔ W0) (W0 ⊔ W0) ∧
   (∀ x, x ∈ dom (∅ : senv) → False).
 Proof.
   split_and!; [|unfold swshared; simpl; set_solver|intros x; rewrite dom_empty_L; set_solver].
-  pose proof (p_connect_join None (W0 ⊔ W0) (W0 ⊔ W0) ∅ ∅ ∅ ({["c"]} ∪ {["d"]}) ({["e"]} ∪ {["f"]})
+  pose proof (fp_connect_join None (W0 ⊔ W0) (W0 ⊔ W0) ∅ ∅ ∅ ({["c"]} ∪ {["d"]}) ({["e"]} ∪ {["f"]})
                 (comp "c" "d") (comp "e" "f") TUnit) as H.
   assert (senv_dual ∅ = ∅) as Ed by (unfold senv_dual; by rewrite fmap_empty, kmap_empty).
   rewrite Ed, chans_of_empty, !(left_id_L ∅ (∪)) in H. rewrite chans_of_empty.

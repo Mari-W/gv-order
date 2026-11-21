@@ -522,12 +522,12 @@ Qed.
     its partner is not restricted, so it sits in the interface, at the
     same point in the thread's Θ. *)
 Lemma side_lookup N W Σ C0 u T :
-  ptyped N W Σ (C0, {[+ u +]}) T →
+  fptyped N W Σ (C0, {[+ u +]}) T →
   ∃ Θ c, typed W N Θ hc_empty [] (∅, None) u T c ∧
     ∀ o, o ∈ fends u → edual o ∉ fends u →
       ∃ S x e, Σ !! o = Some (S, x) ∧ Θ !! o = Some e ∧ te_pt e = x.
 Proof.
-  intros H. apply ptyped_one in H as (ΘB & c & _ & HB & _ & _ & HBs & Ht & _).
+  intros H. apply fptyped_one in H as (ΘB & c & _ & HB & _ & _ & HBs & Ht & _).
   pose proof (typed_tfacts _ _ _ _ _ _ _ _ _ Ht) as [Hd _].
   exists (tenv_of (fhalf N) Σ ∪ ΘB), c. split; [done|]. intros o Ho Hn.
   destruct (Σ !! o) as [[S x]|] eqn:HΣ.
@@ -556,11 +556,11 @@ Proof. discriminate. Qed.
 Ltac fends_tac := unfold sbv_thread, sb_partner, sb_flag, sb_not, cl2, oc, od; simpl; set_unfold; intuition congruence.
 
 (** No world and no bound type the closed process of the variant. *)
-Theorem sbv_rejected N W : ¬ ptyped N W ∅ sbv_config TUnit.
+Theorem sbv_rejected N W : ¬ fptyped N W ∅ sbv_config TUnit.
 Proof.
-  intros H. pose proof (ptyped_wf _ _ _ _ _ H) as [_ HWf].
+  intros H. pose proof (fptyped_wf _ _ _ _ _ H) as [_ HWf].
   pose proof (λ x, swf_irrefl _ x HWf) as Hirr.
-  apply ptyped_two in H as (W1 & W2 & Σ1 & Σ2 & ΣC & C1 & C2 & u1 & u2 & -> & HΣ & _ & Hu & H1 & H2 & _).
+  apply fptyped_two in H as (W1 & W2 & Σ1 & Σ2 & ΣC & C1 & C2 & u1 & u2 & -> & HΣ & _ & Hu & H1 & H2 & _).
   symmetry in HΣ. pose proof (map_positive_l _ _ HΣ) as ->. rewrite (left_id_L ∅ (∪)) in HΣ. subst Σ2.
   rewrite !(left_id_L ∅ (∪)) in H1, H2.
   assert ((u1 = sbv_thread ∧ u2 = sb_partner) ∨ (u1 = sb_partner ∧ u2 = sbv_thread)) as Hcase.

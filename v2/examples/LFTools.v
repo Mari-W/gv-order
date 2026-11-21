@@ -21,7 +21,7 @@ Lemma lf_main_typed N W t T c :
   ∅ ⊢▷ t → ∅ ⊩^N _ W (∅, {[+ t +]}) : T.
 Proof.
   intros HS Hp Ht Hg. split.
-  - apply (p_term (Some N) W ∅ ∅ ∅ t T c); [done| | | | | |done].
+  - apply (fp_term (Some N) W ∅ ∅ ∅ t T c); [done| | | | | |done].
     5: { unfold tenv_of. rewrite fmap_empty, map_union_empty. exact Ht. }
     + intros o. rewrite dom_empty_L. set_solver.
     + set_solver.

@@ -23,8 +23,8 @@ Print Assumptions wf_join_iff.
 Print Assumptions wmodels_exists.
 Print Assumptions wchain_lt_wf.
 (** static/Typing.v *)
-Print Assumptions ptyped_wf.
-Print Assumptions p_connect_join.
+Print Assumptions fptyped_wf.
+Print Assumptions fp_connect_join.
 (** static/Conservativity.v *)
 Print Assumptions d_conv.
 Print Assumptions dftyped_typed.
