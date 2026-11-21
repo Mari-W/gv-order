@@ -1228,7 +1228,7 @@ Section node.
     intros (e1 & -> & _ & _ & Hv0) Hs m Hm.
     pose proof (λ W' j Θ' w HW Hj Hd, Hv0 W' j Θ' w ∅ HW Hj Hd eq_refl) as Hv. simpl in Hv. clear Hv0.
     assert (tstep (App (Lam e1) EUnit) LBeta (subst1 EUnit e1)) as Hβ by (by apply tstep_head, t_act_app).
-    assert (∀ j W', j + c_beta κ ≤ n → j < S n → W ⊑ W' → Erel κ j W' ΘM TUnit ∅ (subst1 EUnit e1)) as Hlow.
+    assert (∀ j W', ole (oadd j (c_beta κ)) n → j < S n → W ⊑ W' → Erel κ j W' ΘM TUnit ∅ (subst1 EUnit e1)) as Hlow.
     { intros j W' Hj Hj' HW. destruct (Hv W' j ∅ EUnit HW Hj (map_disjoint_empty_r _)) as [B _].
       rewrite map_union_empty in B. apply B; [done|]. by apply Vrel_unit_iff. }
     assert (∀ j W', ole j n → j - c_beta κ < S n → W ⊑ W' → Erel κ (j - c_beta κ) W' ΘM TUnit ∅ (subst1 EUnit e1)) as Hlow'.

@@ -13,6 +13,14 @@
 
 From GV Require Export compat.Connect.
 
+(** A synchronization of cost κ(give) + κ(take) at level n reads both
+    sides at every level j with j + κ(give) + κ(take) ≤ n. *)
+Lemma oadd_le_part j a b n : ole (oadd j (a + b)) n → ole (oadd j a) n ∧ ole (oadd j b) n.
+Proof. intros H. split; (eapply ole_trans; [|exact H]); apply oadd_mono_r; lia. Qed.
+
+Lemma sync_lt κ j n : ole (oadd j (c_give κ + c_take κ)) n → olt j n.
+Proof. apply oadd_lt. pose proof (c_take_pos κ). lia. Qed.
+
 Definition ConnL (κ : ctable) (j : Ix) (W : world) (T : ty) : Prop :=
   ∀ Σ1 ΣC Σ2 ΣD p1 p2, Prel κ j W (Σ1 ∪ ΣC) T p1 → Prel κ j W (Σ2 ∪ ΣD) TUnit p2 →
     conn Σ1 ΣC p1.1 Σ2 ΣD p2.1 → Prel κ j W (Σ1 ∪ Σ2) T (pconn p1 p2 (chans_of ΣC)).
