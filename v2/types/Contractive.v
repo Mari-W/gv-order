@@ -976,3 +976,86 @@ Section sequiv_sinst.
     - destruct H as (-> & -> & -> & ?). split_and!; auto.
   Qed.
 End sequiv_sinst.
+
+(** ** Unfolding of an instance *)
+
+Definition isact (o : sty) : Prop :=
+  match o with SRcv _ _ | SSnd _ _ => True | _ => False end.
+
+Section unfold_inst.
+  Context (σ : nat → sty) (Hσ : ∀ a, scontr (σ a)).
+
+  Lemma unrN_sinst_skip k : ∀ s, unrN k s = Some SSkip → unrN k (sinst σ s) = Some SSkip.
+  Proof.
+    induction k as [|k IH]; intros s H; [done|].
+    destruct s as [m T|m T| |b|a|a| |s1 s2|s1 s2|s1 s2]; cbn [unrN] in H; try done.
+    - cbn [sinst unrN]. rewrite <-sinst_unroll. by apply IH.
+    - cbn [sinst unrN]. destruct (unrN k s1) as [h1|] eqn:E1; [|done].
+      destruct h1 as [| | | | | | |o r|x y|x y]; cbn [hseq] in H; try done; try (destruct r; done).
+      rewrite (IH _ E1). by apply IH.
+  Qed.
+
+  Lemma unrN_sinst_act k : ∀ s o r, unrN k s = Some (SSeq o r) → isact o →
+    ∃ r', unrN k (sinst σ s) = Some (SSeq (sinst σ o) r').
+  Proof.
+    induction k as [|k IH]; intros s o r H Ho; [done|].
+    destruct s as [m T|m T| |b|a|a| |s1 s2|s1 s2|s1 s2]; cbn [unrN] in H; try done.
+    - injection H as <- <-. by eexists.
+    - injection H as <- <-. by eexists.
+    - cbn [sinst unrN]. rewrite <-sinst_unroll. by eapply IH.
+    - injection H as <- <-. done.
+    - injection H as <- <-. done.
+    - cbn [sinst unrN]. destruct (unrN k s1) as [h1|] eqn:E1; [|done].
+      destruct h1 as [| | | | | | |o1 r1|x y|x y]; cbn [hseq] in H; try done.
+      + rewrite (unrN_sinst_skip _ _ E1). by eapply IH.
+      + assert (o1 = o) as ->. { destruct r1; injection H as -> _; done. }
+        destruct (IH _ _ _ E1 Ho) as [r' E']. rewrite E'.
+        destruct r'; eexists; done.
+  Qed.
+
+  Lemma sinst_hd_equiv s : scontr s →
+    eq_view sequiv (hd (sinst σ s)) (hd (sinst σ (unfoldS s))).
+  Proof. intros Hc. rewrite <-eq_step_view. by apply sequiv_hd, sinst_unfoldS. Qed.
+
+  Lemma unfoldS_sinst_skip s : scontr s → unfoldS s = SSkip → unfoldS (sinst σ s) = SSkip.
+  Proof.
+    intros Hc E. pose proof (sinst_hd_equiv s Hc) as H. rewrite E in H.
+    rewrite unfoldS_unview. destruct (hd (sinst σ s)); done.
+  Qed.
+
+  Lemma idle_sinst s : scontr s → idle s → idle (sinst σ s).
+  Proof. apply unfoldS_sinst_skip. Qed.
+
+  Lemma unfoldS_sinst_end s : scontr s → unfoldS s = SEnd → unfoldS (sinst σ s) = SEnd.
+  Proof.
+    intros Hc E. pose proof (sinst_hd_equiv s Hc) as H. rewrite E in H.
+    rewrite unfoldS_unview. destruct (hd (sinst σ s)); done.
+  Qed.
+
+  Lemma unfoldS_sinst_plus s S1 S2 : scontr s → unfoldS s = SPlus S1 S2 →
+    ∃ S1' S2', unfoldS (sinst σ s) = SPlus S1' S2' ∧ sequiv S1' (sinst σ S1) ∧ sequiv S2' (sinst σ S2).
+  Proof.
+    intros Hc E. pose proof (sinst_hd_equiv s Hc) as H. rewrite E in H.
+    rewrite unfoldS_unview. destruct (hd (sinst σ s)); try done. destruct H. eauto.
+  Qed.
+
+  Lemma unfoldS_sinst_with s S1 S2 : scontr s → unfoldS s = SWith S1 S2 →
+    ∃ S1' S2', unfoldS (sinst σ s) = SWith S1' S2' ∧ sequiv S1' (sinst σ S1) ∧ sequiv S2' (sinst σ S2).
+  Proof.
+    intros Hc E. pose proof (sinst_hd_equiv s Hc) as H. rewrite E in H.
+    rewrite unfoldS_unview. destruct (hd (sinst σ s)); try done. destruct H. eauto.
+  Qed.
+
+  Lemma unfoldS_sinst_act s o S : scontr s → isact o → unfoldS s = SSeq o S →
+    ∃ S', unfoldS (sinst σ s) = SSeq (sinst σ o) S' ∧ sequiv S' (sinst σ S).
+  Proof.
+    intros Hc Ho E. destruct (unrN_sfuel s Hc) as [h Eh].
+    assert (h = SSeq o S) as -> by (unfold unfoldS in E; rewrite Eh in E; done).
+    destruct (unrN_sinst_act _ _ _ _ Eh Ho) as [r' E'].
+    assert (unfoldS (sinst σ s) = SSeq (sinst σ o) r') as Eu.
+    { eapply unrN_unfoldS'; [by apply scontr_sinst|exact E']. }
+    exists r'. split; [done|].
+    pose proof (sinst_hd_equiv s Hc) as H. rewrite E in H. unfold hd at 1 in H. rewrite Eu in H.
+    destruct o; try done; simpl in H; by destruct H as (_ & _ & H).
+  Qed.
+End unfold_inst.
