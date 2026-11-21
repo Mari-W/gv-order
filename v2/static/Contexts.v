@@ -173,14 +173,6 @@ Definition lbx_below_h (W : sworld) (Γ : hctx) (lb : lbound) (H : gset point) (
   end.
 
 
-(** Well-formed existential types (finding 6.3 of
-    docs/redesign/algorithmic-plan.md). The lower bound l of ∃^l ιs. C. T
-    lies below the points of T under C: l ≼ ap(T) at the m new point
-    variables. A static condition on the type, read where E-Pack forms
-    it. *)
-Definition ex_wf (W : sworld) (Γ : hctx) (lb : lbound) (m : nat) (C : bcs) (T : ty) : Prop :=
-  lbx_below_h W (hc_open m C Γ) (lb_map (pt_inst (pshift m)) lb) (heads T) (hbot T).
-
 (** ** Point instantiation of contexts *)
 
 Definition hyps_inst (σ : nat → point) (Ψ : hyps) : hyps :=
@@ -192,6 +184,14 @@ Definition ids (m : nat) : list point := pvar <$> seq 0 m.
     constraint C, the box of E-Box and the existential of E-Open. *)
 Definition hc_open (m : nat) (C : bcs) (Γ : hctx) : hctx :=
   HCtx (hyps_inst (pshift m) (hc_hyps Γ) ++ [(bcs_inst (pshift m) C, ids m)]).
+
+(** Well-formed existential types (finding 6.3 of
+    docs/redesign/algorithmic-plan.md). The lower bound l of ∃^l ιs. C. T
+    lies below the points of T under C: l ≼ ap(T) at the m new point
+    variables. A static condition on the type, read where E-Pack forms
+    it. *)
+Definition ex_wf (W : sworld) (Γ : hctx) (lb : lbound) (m : nat) (C : bcs) (T : ty) : Prop :=
+  lbx_below_h W (hc_open m C Γ) (lb_map (pt_inst (pshift m)) lb) (heads T) (hbot T).
 
 (** Conservativity of an opening. The constraint C under m new point
     variables derives no new fact between points of Γ: a fact between
