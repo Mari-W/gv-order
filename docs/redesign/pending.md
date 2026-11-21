@@ -1101,6 +1101,19 @@ must do, open questions.
   Σ, sound by transitivity as amalgamation is. With either, the type of a
   component reads (Σ, W|roots Σ), and P-Connect checks duality and
   well-foundedness of the two interface orders. Needs the author's go.
+- **The n-ary connect (2026-11-21, from the Curry-Howard session).** (1) On
+  main, `Prel_connect_n` (theories/composition/PConnectN.v:378) asks
+  strictness of the full amalgam W1 ⊔ … ⊔ Wn, and v2 has no n-ary connect.
+  Amalgamation extends to n components. With S_i the roots W_i shares with
+  any other world, wf (⊔ W_i) holds iff wf (⊔ W_i|S_i). A cycle in the union
+  passes through private stretches of single worlds, and transitivity of W_i
+  collapses each stretch into a fact of W_i|S_i. Not proved in Rocq. With it
+  the n-ary premise is an interface check, as the binary one is. (2) The
+  n-ary condition is no conjunction of pairwise conditions. Milner's ring is
+  pairwise consistent and cyclic as a whole. Every system that admits cycles
+  has this, and priority systems only look pairwise because integer
+  priorities fix one global order in advance. The map should say this in one
+  sentence where it explains why P-Connect checks the overlap.
 - **Cross-references everywhere on the map (author 2026-11-19, another
   day).** Every symbol in every formula should be hoverable and lead to
   its definition, which needs a restructure of the generator (one
