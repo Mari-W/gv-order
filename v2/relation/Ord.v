@@ -20,7 +20,7 @@
     The relation and fuel still use the natural-number fixpoint of
     relation/Sfix.v. The port is open (docs/redesign/pending.md). *)
 
-From stdpp Require Import base tactics.
+From stdpp Require Import base tactics numbers.
 
 #[local] Set Universe Polymorphism.
 
@@ -188,3 +188,71 @@ Section osfix.
     - intros Hf. exists Hβ. by apply (osfix_F_irr β (olt_wf β)).
   Qed.
 End osfix.
+
+(** ** Arithmetic of the step index *)
+
+Section arith.
+
+  Lemma olt_trans a b c : olt a b → olt b c → olt a c.
+  Proof. intros H1 H2. apply (olt_trans_le _ b); [exact H1|by apply olt_ole]. Qed.
+
+  Lemma olt_succ_iff a b : olt a (osucc b) ↔ ole a b.
+  Proof. done. Qed.
+
+  Lemma ole_lt_succ a b : ole a b → olt a (osucc b).
+  Proof. done. Qed.
+
+  Lemma oadd_0 b : oadd b 0 = b.
+  Proof. done. Qed.
+
+  Lemma oadd_S b c : oadd b (S c) = osucc (oadd b c).
+  Proof. done. Qed.
+
+  Lemma oadd_add b c1 c2 : oadd (oadd b c1) c2 = oadd b (c1 + c2).
+  Proof. induction c2 as [|c2 IH]; simpl; [by replace (c1 + 0) with c1 by lia|]. by replace (c1 + S c2) with (S (c1 + c2)) by lia; rewrite IH. Qed.
+
+  Lemma oadd_mono_l b b' c : ole b b' → ole (oadd b c) (oadd b' c).
+  Proof. intros H. induction c as [|c IH]; simpl; [exact H|exact IH]. Qed.
+
+  Lemma oadd_mono_r b c c' : c ≤ c' → ole (oadd b c) (oadd b c').
+  Proof.
+    intros H. replace c' with (c + (c' - c)) by lia. rewrite <-oadd_add. apply ole_oadd.
+  Qed.
+
+  Lemma oadd_le_l b c a : ole (oadd b c) a → ole b a.
+  Proof. intros H. exact (ole_trans _ _ _ (ole_oadd b c) H). Qed.
+
+  Lemma oadd_le_lt b c c' a : c < c' → ole (oadd b c') a → olt (oadd b c) a.
+  Proof.
+    intros Hc H. apply (oadd_lt (oadd b c) (c' - c)); [lia|]. rewrite oadd_add.
+    by replace (c + (c' - c)) with c' by lia.
+  Qed.
+
+  Lemma olt_oadd_S b c : olt (oadd b c) (oadd b (S c)).
+  Proof. apply olt_succ. Qed.
+
+  (** Well-founded induction on the step index. *)
+  Lemma oind (P : ord → Prop) : (∀ a, (∀ b, olt b a → P b) → P a) → ∀ a, P a.
+  Proof. intros H a. induction (olt_wf a) as [a _ IH]. by apply H. Qed.
+
+  (** The finite levels. *)
+  Definition onat (n : nat) : ord := oadd ozero n.
+
+  Lemma onat_S n : onat (S n) = osucc (onat n).
+  Proof. done. Qed.
+
+  Lemma onat_le n m : n ≤ m → ole (onat n) (onat m).
+  Proof. apply oadd_mono_r. Qed.
+
+  Lemma onat_lt n m : n < m → olt (onat n) (onat m).
+  Proof. intros H. apply (oadd_le_lt _ n m); [done|apply ole_refl]. Qed.
+
+  Lemma oadd_onat n c : oadd (onat n) c = onat (n + c).
+  Proof. unfold onat. by rewrite oadd_add. Qed.
+
+End arith.
+
+(** The step index of the relations. One monomorphic instance, so that
+    every relation, fuel and the soup share it. *)
+#[local] Unset Universe Polymorphism.
+Definition Ix : Type := ord.

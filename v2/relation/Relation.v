@@ -3,20 +3,22 @@
     One step-indexed relation, parametric in a cost table κ, gives the
     deadlock-freedom relation (κ_DF) and the live relation (κ_L).
 
-      v ∈ V[κ]^W _ n⟦Θ ⊢ T⟧       [Vrel κ n W Θ T v]
-      e ∈ E[κ]^W _ n⟦Θ ⊢ T⟧^F     [Erel κ n W Θ T F e]
-      p ∈ P[κ]^W _ n⟦Σ ⊢ T⟧       [Prel κ n W Σ T p]
+      v ∈ V[κ]^W _ α⟦Θ ⊢ T⟧       [Vrel κ α W Θ T v]
+      e ∈ E[κ]^W _ α⟦Θ ⊢ T⟧^F     [Erel κ α W Θ T F e]
+      p ∈ P[κ]^W _ α⟦Σ ⊢ T⟧       [Prel κ α W Σ T p]
 
-    A step of cost c taken at level n carries its obligation at level
-    n − c. A step of cost 0 is read inductively inside the level: E and
-    P are least fixpoints over those steps ([Eind], [Pind]). In κ_DF the
-    steps of cost 0 are send, select, close and link, which shrink the
-    term, and in κ_L they are the τ steps β, new, spawn and link. The
-    arrow reads its body at every level j with j + κ(β) ≤ n, so the body
-    sits at n − κ(β). For κ_L that is the current level, so V at level n
-    is defined together with E at level n, by fuel on the size of the
-    type ([Vbody]). The step index itself is one generic course-of-values
-    fixpoint ([sfix], relation/Sfix.v).
+    The step index α is an ordinal ([Ix], relation/Ord.v). A step of
+    cost c taken at level α carries its obligation at every level β
+    with β + c ≤ α. At a successor that is the level α − c, at a limit
+    every level below it. A step of cost 0 is read inductively inside
+    the level: E and P are least fixpoints over those steps ([Eind],
+    [Pind]). In κ_DF the steps of cost 0 are send, select, close and
+    link, which shrink the term, and in κ_L they are the τ steps β,
+    new, spawn and link. The arrow reads its body at every level β with
+    β + κ(β) ≤ α. For κ_L that includes α itself, so V at level α is
+    defined together with E at every level β ≤ α, by fuel on the size
+    of the type ([Vbody]). The step index itself is one fixpoint by
+    well-founded recursion on the ordinals ([osfix], relation/Ord.v).
 
     Every unfolding of E holds in every world W1 ⊒ W, and every unfolding
     of P in every strict world W1 ⊒ W (decision Q9, and S4.16), so E and P
@@ -34,7 +36,7 @@
     fuel layer of stage S6 reads each end's cost protocol from the
     environment of the live relation at the same index. *)
 
-From GV Require Export relation.Sfix relation.CostTable relation.Readiness.
+From GV Require Export relation.Ord relation.CostTable relation.Readiness.
 
 Local Set Warnings "-register-all".
 
@@ -229,44 +231,46 @@ Definition recv_env (Σ Θ2 : senv) : senv :=
 
     The bodies below are stated over readers: [Vl j], [El j], [Pl j] the
     relations at a level j < n, [VN] the value relation at level n
-    itself, and [X] the least fixpoint being defined. *)
+    itself, and [X] the least fixpoint being defined. Levels are
+    ordinals, n j : Ix. *)
 
 (** The relation after a step of cost c at level n is X at cost 0 and
-    the relation at level n − c otherwise. They are stated as two
-    implications, so that X occurs strictly positively. *)
-Definition at_cost_V (n c : nat) (Vl : nat → vrel) (VN : vrel)
+    the relation at every level j with j + c ≤ n otherwise. They are
+    stated as two implications, so that X occurs strictly positively. *)
+Definition at_cost_V (n : Ix) (c : nat) (Vl : Ix → vrel) (VN : vrel)
     (W : world) (Θ : senv) (T : ty) (v : expr) : Prop :=
-  (c = 0 → VN W Θ T v) ∧ (c ≠ 0 → Vl (n - c) W Θ T v).
+  (c = 0 → VN W Θ T v) ∧ (c ≠ 0 → ∀ j, ole (oadd j c) n → Vl j W Θ T v).
 
-Definition at_cost_E (n c : nat) (El : nat → erel) (X : erel)
+Definition at_cost_E (n : Ix) (c : nat) (El : Ix → erel) (X : erel)
     (W : world) (Θ : senv) (T : ty) (F : gset point) (e : expr) : Prop :=
-  (c = 0 → X W Θ T F e) ∧ (c ≠ 0 → El (n - c) W Θ T F e).
+  (c = 0 → X W Θ T F e) ∧ (c ≠ 0 → ∀ j, ole (oadd j c) n → El j W Θ T F e).
 
-Definition at_cost_P (n c : nat) (Pl : nat → prel) (X : prel)
+Definition at_cost_P (n : Ix) (c : nat) (Pl : Ix → prel) (X : prel)
     (W : world) (Σ : senv) (T : ty) (p : proc) : Prop :=
-  (c = 0 → X W Σ T p) ∧ (c ≠ 0 → Pl (n - c) W Σ T p).
+  (c = 0 → X W Σ T p) ∧ (c ≠ 0 → ∀ j, ole (oadd j c) n → Pl j W Σ T p).
 
 Section bodies.
   Context (κ : ctable).
 
   (** The arrow T1 ⊸^ub_lb U at level n. Its body is read at every level
-      j with j + κ(β) ≤ n, below n through [Vl] and [El], at n itself
-      through [VNa] and [ENb]. The environment holds exactly the ends
-      the λ mentions (decision Q14). *)
-  Definition Varr (n : nat) (Vl : nat → vrel) (El : nat → erel)
-      (VNa : world → senv → expr → Prop) (ENb : world → senv → gset point → expr → Prop)
+      j with j + κ(β) ≤ n, below n through [Vl] and [El], and, when β
+      is free, at every j ≤ n through [VNa j] and [ENb j], which
+      unfold the relation at j from the readers below n. The
+      environment holds exactly the ends the λ mentions (decision Q14). *)
+  Definition Varr (n : Ix) (Vl : Ix → vrel) (El : Ix → erel)
+      (VNa : Ix → world → senv → expr → Prop) (ENb : Ix → world → senv → gset point → expr → Prop)
       (T1 U : ty) (ub : ubound) (lb : lbound) (W : world) (Θ : senv) (v : expr) : Prop :=
     ∃ e, v = Lam e ∧ dom Θ = fends e ∧ lbx_le W lb (senv_heads Θ) ∧
-      ∀ W' j Θ' w F, W ⊑ W' → j + c_beta κ ≤ n → Θ ##ₘ Θ' → ub_ltu W' ub F →
-        (j < n → Vl j W' Θ' T1 w → El j W' (Θ ∪ Θ') U F (subst1 w e)) ∧
-        (j = n → VNa W' Θ' w → ENb W' (Θ ∪ Θ') F (subst1 w e)).
+      ∀ W' j Θ' w F, W ⊑ W' → ole (oadd j (c_beta κ)) n → Θ ##ₘ Θ' → ub_ltu W' ub F →
+        (olt j n → Vl j W' Θ' T1 w → El j W' (Θ ∪ Θ') U F (subst1 w e)) ∧
+        (c_beta κ = 0 → VNa j W' Θ' w → ENb j W' (Θ ∪ Θ') F (subst1 w e)).
 
   (** ** The obligations of the steps of a term (§2.8)
 
       One per label, at level n, for the step e --α--> e' in Θ with
       future F. *)
   Section obligations.
-    Context (n : nat) (Vl : nat → vrel) (El : nat → erel) (VN : vrel) (X : erel)
+    Context (n : Ix) (Vl : Ix → vrel) (El : Ix → erel) (VN : vrel) (X : erel)
       (W : world) (Θ : senv) (T : ty) (F : gset point).
 
     Definition o_beta (e' : expr) : Prop :=
@@ -282,7 +286,7 @@ Section bodies.
 
     Definition o_spawn (v e' : expr) : Prop :=
       ∃ ΘM Θr, ΘM ##ₘ Θr ∧ Θ = ΘM ∪ Θr ∧
-        Varr n Vl El (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit) (λ W' Θ' F' e0, X W' Θ' TUnit F' e0)
+        Varr n Vl El (λ _ _ Θ' w, Θ' = ∅ ∧ w = EUnit) (λ _ W' Θ' F' e0, X W' Θ' TUnit F' e0)
           TUnit TUnit UTop LBot W ΘM v ∧
         at_cost_E n (c_spawn κ) El X W Θr T F e'.
 
@@ -294,7 +298,7 @@ Section bodies.
 
     Definition o_recv (o : cend) (w e' : expr) : Prop :=
       ∃ S0 x m U S, Θ !! o = Some (S0, x) ∧ unfoldS S0 = SSeq (SRcv m U) S ∧
-        ∀ j Θin, j + c_take κ ≤ n → Θ ##ₘ Θin →
+        ∀ j Θin, ole (oadd j (c_take κ)) n → Θ ##ₘ Θin →
           Vl j W Θin (payload_at m U x) w →
           El j W (<[o := (S, x⁺)]> Θ ∪ Θin) T F e'.
 
@@ -354,23 +358,25 @@ Section bodies.
   End obligations.
 
   (** One unfolding of E at level n, in every W1 ⊒ W. *)
-  Definition Ebody (n : nat) (Vl : nat → vrel) (El : nat → erel) (VN : vrel) (X : erel)
+  Definition Ebody (n : Ix) (Vl : Ix → vrel) (El : Ix → erel) (VN : vrel) (X : erel)
       (W : world) (Θ : senv) (T : ty) (F : gset point) (e : expr) : Prop :=
     ∀ W1, W ⊑ W1 →
       (irred e → VN W1 Θ T e) ∧                                 (* (stop) *)
       (¬ irred e → ready _ W1(Θ ∣ F, e)) ∧                      (* (ready) *)
       Esteps n Vl El VN X W1 Θ T F e.                           (* (step) *)
 
-  Inductive Eind (n : nat) (Vl : nat → vrel) (El : nat → erel) (VN : vrel) : erel :=
+  Inductive Eind (n : Ix) (Vl : Ix → vrel) (El : Ix → erel) (VN : vrel) : erel :=
     | EIntro W Θ T F e :
         Ebody n Vl El VN (Eind n Vl El VN) W Θ T F e → Eind n Vl El VN W Θ T F e.
 
-  (** E at level 0 holds every term. *)
-  Definition Etop (n : nat) (Vl : nat → vrel) (El : nat → erel) (VN : vrel) : erel :=
-    λ W Θ T F e, match n with 0 => True | S _ => Eind n Vl El VN W Θ T F e end.
+  (** E at level n is the least fixpoint at every level. A level with
+      nothing below it obliges no step of positive cost. *)
+  Definition Etop (n : Ix) (Vl : Ix → vrel) (El : Ix → erel) (VN : vrel) : erel :=
+    Eind n Vl El VN.
 
-  (** V at level n by fuel on the size of the type. *)
-  Fixpoint Vbody (n : nat) (Vl : nat → vrel) (El : nat → erel) (k : nat)
+  (** V at level n by fuel on the size of the type. The arrow unfolds V
+      and E at every level j ≤ n from the readers below n. *)
+  Fixpoint Vbody (n : Ix) (Vl : Ix → vrel) (El : Ix → erel) (k : nat)
       (W : world) (Θ : senv) (T : ty) (v : expr) {struct k} : Prop :=
     match k with
     | 0 => False
@@ -379,8 +385,8 @@ Section bodies.
       | TUnit => Θ = ∅ ∧ v = EUnit
       | TSess s x _ _ => ∃ o s', v = Chan o ∧ Θ = {[o := (s', x)]} ∧ seqv s' s
       | TLolli ub lb _ T1 U _ =>
-          Varr n Vl El (λ W' Θ' w, Vbody n Vl El k' W' Θ' T1 w)
-            (λ W' Θ' F e, Etop n Vl El (Vbody n Vl El k') W' Θ' U F e) T1 U ub lb W Θ v
+          Varr n Vl El (λ j W' Θ' w, Vbody j Vl El k' W' Θ' T1 w)
+            (λ j W' Θ' F e, Etop j Vl El (Vbody j Vl El k') W' Θ' U F e) T1 U ub lb W Θ v
       | TProd T1 U =>
           ∃ v1 v2 Θ1 Θ2, v = Pair v1 v2 ∧ Θ1 ##ₘ Θ2 ∧ Θ = Θ1 ∪ Θ2 ∧
             Vbody n Vl El k' W Θ1 T1 v1 ∧ Vbody n Vl El k' W Θ2 U v2
@@ -399,7 +405,7 @@ Section bodies.
       end
     end.
 
-  Definition Vtop (n : nat) (Vl : nat → vrel) (El : nat → erel) : vrel :=
+  Definition Vtop (n : Ix) (Vl : Ix → vrel) (El : Ix → erel) : vrel :=
     λ W Θ T v, Vbody n Vl El (S (tsize T)) W Θ T v.
 
   (** ** The obligations of the steps of a process
@@ -407,7 +413,7 @@ Section bodies.
       One per kind of step, at level n, for the step p → p' with
       interface Σ. *)
   Section qobligations.
-    Context (n : nat) (Vl : nat → vrel) (Pl : nat → prel) (VN : vrel) (X : prel)
+    Context (n : Ix) (Vl : Ix → vrel) (Pl : Ix → prel) (VN : vrel) (X : prel)
       (W : world) (Σ : senv) (T : ty) (p : proc).
 
     (** Q-Admin and Q-Comm. A τ step keeps the interface. *)
@@ -425,7 +431,7 @@ Section bodies.
 
     Definition q_recv (o : cend) (w : expr) (p' : proc) : Prop :=
       ∃ S0 x m U S, Σ !! o = Some (S0, x) ∧ unfoldS S0 = SSeq (SRcv m U) S ∧
-        ∀ j Θ2, j + c_take κ ≤ n → set_map ech (dom Θ2) ## p.1 →
+        ∀ j Θ2, ole (oadd j (c_take κ)) n → set_map ech (dom Θ2) ## p.1 →
           recv_ok (<[o := (S, x⁺)]> Σ) Θ2 → Vl j W Θ2 (payload_at m U x) w →
           Pl j W (recv_env (<[o := (S, x⁺)]> Σ) Θ2) T
             (p'.1 ∪ recv_back (<[o := (S, x⁺)]> Σ) Θ2, p'.2).
@@ -478,7 +484,7 @@ Section bodies.
   End qobligations.
 
   (** The clauses of P at level n in the world W1. *)
-  Definition Pclauses (n : nat) (Vl : nat → vrel) (Pl : nat → prel) (VN : vrel) (X : prel)
+  Definition Pclauses (n : Ix) (Vl : Ix → vrel) (Pl : Ix → prel) (VN : vrel) (X : prel)
       (W1 : world) (Σ : senv) (T : ty) (p : proc) : Prop :=
     (pirred p → ∃ v E, p = (∅, {[+ v +]} ⊎ E) ∧ VN W1 Σ T v ∧    (* P-Stop *)
                        ∀ e, e ∈ E → e = EUnit) ∧
@@ -489,34 +495,53 @@ Section bodies.
       every fusion of the held ends (decision Q16, refined). A later world with
       a cycle would let Q-Recv bring ends that only a cyclic order
       accepts, and composition would fail (progress.md, S4.15). *)
-  Definition Pbody (n : nat) (Vl : nat → vrel) (Pl : nat → prel) (VN : vrel) (X : prel)
+  Definition Pbody (n : Ix) (Vl : Ix → vrel) (Pl : Ix → prel) (VN : vrel) (X : prel)
       (W : world) (Σ : senv) (T : ty) (p : proc) : Prop :=
     ∀ W1, W ⊑ W1 → strict W1 → ∀ h D, fuse_ok h D Σ p →       (* (fuse) *)
       Pclauses n Vl Pl VN X W1 (sdrop D (kren h Σ)) T (pfuse h D p).
 
-  Inductive Pind (n : nat) (Vl : nat → vrel) (Pl : nat → prel) (VN : vrel) : prel :=
+  Inductive Pind (n : Ix) (Vl : Ix → vrel) (Pl : Ix → prel) (VN : vrel) : prel :=
     | PIntro W Σ T p :
         Pbody n Vl Pl VN (Pind n Vl Pl VN) W Σ T p → Pind n Vl Pl VN W Σ T p.
 
-  Definition Ptop (n : nat) (Vl : nat → vrel) (Pl : nat → prel) (VN : vrel) : prel :=
-    λ W Σ T p, match n with 0 => True | S _ => Pind n Vl Pl VN W Σ T p end.
+  Definition Ptop (n : Ix) (Vl : Ix → vrel) (Pl : Ix → prel) (VN : vrel) : prel :=
+    Pind n Vl Pl VN.
 
-  (** ** Levels *)
+  (** ** Levels
 
-  Definition dummy_level : level :=
-    Level (λ _ _ _ _, False) (λ _ _ _ _ _, False) (λ _ _ _ _, False).
+      A level is one predicate on the arguments of V, E and P, so that
+      the fixpoint [osfix] of relation/Ord.v applies. *)
 
-  Definition mk_level (below : nat → level) (n : nat) : level :=
+  Inductive larg :=
+    | LAV (W : world) (Θ : senv) (T : ty) (v : expr)
+    | LAE (W : world) (Θ : senv) (T : ty) (F : gset point) (e : expr)
+    | LAP (W : world) (Σ : senv) (T : ty) (p : proc).
+
+  Definition lvl_of (R : larg → Prop) : level :=
+    Level (λ W Θ T v, R (LAV W Θ T v)) (λ W Θ T F e, R (LAE W Θ T F e))
+      (λ W Σ T p, R (LAP W Σ T p)).
+
+  Definition mk_level (below : Ix → level) (n : Ix) : level :=
     Level (Vtop n (λ j, lV (below j)) (λ j, lE (below j)))
       (Etop n (λ j, lV (below j)) (λ j, lE (below j)) (Vtop n (λ j, lV (below j)) (λ j, lE (below j))))
       (Ptop n (λ j, lV (below j)) (λ j, lP (below j)) (Vtop n (λ j, lV (below j)) (λ j, lE (below j)))).
 
-  Definition Rel (n : nat) : level := sfix dummy_level mk_level n.
+  Definition mk_larg (R : Ix → larg → Prop) (n : Ix) (a : larg) : Prop :=
+    let l := mk_level (λ j, lvl_of (R j)) n in
+    match a with
+    | LAV W Θ T v => lV l W Θ T v
+    | LAE W Θ T F e => lE l W Θ T F e
+    | LAP W Σ T p => lP l W Σ T p
+    end.
+
+  Definition RelA : Ix → larg → Prop := osfix mk_larg.
+
+  Definition Rel (n : Ix) : level := lvl_of (RelA n).
 End bodies.
 
-Definition Vrel (κ : ctable) (n : nat) : vrel := lV (Rel κ n).
-Definition Erel (κ : ctable) (n : nat) : erel := lE (Rel κ n).
-Definition Prel (κ : ctable) (n : nat) : prel := lP (Rel κ n).
+Definition Vrel (κ : ctable) (n : Ix) : vrel := lV (Rel κ n).
+Definition Erel (κ : ctable) (n : Ix) : erel := lE (Rel κ n).
+Definition Prel (κ : ctable) (n : Ix) : prel := lP (Rel κ n).
 
 (** ** Notations (Appendix A) *)
 
@@ -549,14 +574,14 @@ Notation "p ∈ P^ W '_' n ⟦ Σ ⊢ T ⟧" := (Prel κ_DF n W Σ T p)
 Section maps.
   Context (κ : ctable).
 
-  Definition Varr_mapB n Vl El VNa (B1 B2 : world → senv → gset point → expr → Prop)
-      (f : ∀ W Θ F e, B1 W Θ F e → B2 W Θ F e) T1 U ub lb W Θ v :
+  Definition Varr_mapB n Vl El VNa (B1 B2 : Ix → world → senv → gset point → expr → Prop)
+      (f : ∀ j W Θ F e, B1 j W Θ F e → B2 j W Θ F e) T1 U ub lb W Θ v :
     Varr κ n Vl El VNa B1 T1 U ub lb W Θ v → Varr κ n Vl El VNa B2 T1 U ub lb W Θ v.
   Proof.
     intros (e & Hv & Hfe & Hlb & H). exists e. split; [exact Hv|]. split; [exact Hfe|].
     split; [exact Hlb|].
     intros W' j Θ' w F HW Hj Hd Hub. destruct (H W' j Θ' w F HW Hj Hd Hub) as [H1 H2].
-    split; [exact H1|]. intros Hjn Hw. exact (f _ _ _ _ (H2 Hjn Hw)).
+    split; [exact H1|]. intros Hjn Hw. exact (f _ _ _ _ _ (H2 Hjn Hw)).
   Defined.
 
   Definition at_cost_E_map n c El (X1 X2 : erel) W Θ T F e
@@ -585,7 +610,7 @@ Section maps.
     split.
     { intros v e' Hs. destruct (H4 v e' Hs) as (ΘM & Θr & A1 & A2 & A4 & A5).
       exists ΘM, Θr. split; [exact A1|]. split; [exact A2|].
-      split; [exact (Varr_mapB _ _ _ _ _ _ (λ W Θ F e, f W Θ TUnit F e) _ _ _ _ _ _ _ A4)|].
+      split; [exact (Varr_mapB _ _ _ _ _ _ (λ _ W Θ F e, f W Θ TUnit F e) _ _ _ _ _ _ _ A4)|].
       exact (at_cost_E_map _ _ _ _ _ _ _ _ _ _ (f _ _ _ _ _) A5). }
     split.
     { intros o w e' Hs.
@@ -698,20 +723,23 @@ End maps.
 Section mono.
   Context (κ : ctable).
 
-  Lemma Varr_mono n Vl1 Vl2 El1 El2 VNa1 VNa2 (B1 B2 : world → senv → gset point → expr → Prop)
+  Lemma c_take_lt n j : ole (oadd j (c_take κ)) n → olt j n.
+  Proof. apply oadd_lt. pose proof (c_take_pos κ). lia. Qed.
+
+  Lemma Varr_mono n Vl1 Vl2 El1 El2 VNa1 VNa2 (B1 B2 : Ix → world → senv → gset point → expr → Prop)
       T1 U ub lb W Θ v :
-    (∀ j, j < n → ∀ W Θ T v, Vl2 j W Θ T v → Vl1 j W Θ T v) →
-    (∀ j, j < n → ∀ W Θ T F e, El1 j W Θ T F e → El2 j W Θ T F e) →
-    (c_beta κ = 0 → ∀ W Θ w, VNa2 W Θ w → VNa1 W Θ w) →
-    (c_beta κ = 0 → ∀ W Θ F e, B1 W Θ F e → B2 W Θ F e) →
+    (∀ j, olt j n → ∀ W Θ T v, Vl2 j W Θ T v → Vl1 j W Θ T v) →
+    (∀ j, olt j n → ∀ W Θ T F e, El1 j W Θ T F e → El2 j W Θ T F e) →
+    (c_beta κ = 0 → ∀ j, ole j n → ∀ W Θ w, VNa2 j W Θ w → VNa1 j W Θ w) →
+    (c_beta κ = 0 → ∀ j, ole j n → ∀ W Θ F e, B1 j W Θ F e → B2 j W Θ F e) →
     Varr κ n Vl1 El1 VNa1 B1 T1 U ub lb W Θ v → Varr κ n Vl2 El2 VNa2 B2 T1 U ub lb W Θ v.
   Proof.
     intros HVl HEl HVa HB (e & -> & Hfe & Hlb & H). exists e. split_and!; [done|done|done|].
     intros W' j Θ' w F HW Hj Hd Hub. destruct (H W' j Θ' w F HW Hj Hd Hub) as [H1 H2].
     split.
     - intros Hjn Hw. apply HEl; [done|]. apply H1; [done|]. by apply HVl.
-    - intros -> Hw. assert (c_beta κ = 0) as Hb by lia.
-      apply HB; [done|]. apply H2; [done|]. by apply HVa.
+    - intros Hb Hw. rewrite Hb in Hj. simpl in Hj.
+      apply HB; [done|done|]. apply H2; [done|]. by apply HVa.
   Qed.
 
   (** An arrow is an arrow at upper point ⊤ and lower point ⊥: ⊥ claims
@@ -726,35 +754,43 @@ Section mono.
   Qed.
 
   Lemma at_cost_E_mono n c El1 El2 X1 X2 W Θ T F e :
-    n ≠ 0 → (∀ j, j < n → El1 j W Θ T F e → El2 j W Θ T F e) →
+    (∀ j, olt j n → El1 j W Θ T F e → El2 j W Θ T F e) →
     (X1 W Θ T F e → X2 W Θ T F e) →
     at_cost_E n c El1 X1 W Θ T F e → at_cost_E n c El2 X2 W Θ T F e.
-  Proof. intros Hn HEl HX [H1 H2]. split; [auto|]. intros Hc. apply HEl; [lia|auto]. Qed.
+  Proof.
+    intros HEl HX [H1 H2]. split; [auto|]. intros Hc j Hj.
+    apply HEl; [exact (oadd_lt j c n Hc Hj)|auto].
+  Qed.
 
   Lemma at_cost_P_mono n c Pl1 Pl2 X1 X2 W Σ T p :
-    n ≠ 0 → (∀ j, j < n → Pl1 j W Σ T p → Pl2 j W Σ T p) →
+    (∀ j, olt j n → Pl1 j W Σ T p → Pl2 j W Σ T p) →
     (X1 W Σ T p → X2 W Σ T p) →
     at_cost_P n c Pl1 X1 W Σ T p → at_cost_P n c Pl2 X2 W Σ T p.
-  Proof. intros Hn HPl HX [H1 H2]. split; [auto|]. intros Hc. apply HPl; [lia|auto]. Qed.
+  Proof.
+    intros HPl HX [H1 H2]. split; [auto|]. intros Hc j Hj.
+    apply HPl; [exact (oadd_lt j c n Hc Hj)|auto].
+  Qed.
 
   Lemma at_cost_V_mono n c Vl1 Vl2 VN1 VN2 W Θ T v :
-    n ≠ 0 → (∀ j, j < n → Vl1 j W Θ T v → Vl2 j W Θ T v) →
+    (∀ j, olt j n → Vl1 j W Θ T v → Vl2 j W Θ T v) →
     (c = 0 → VN1 W Θ T v → VN2 W Θ T v) →
     at_cost_V n c Vl1 VN1 W Θ T v → at_cost_V n c Vl2 VN2 W Θ T v.
-  Proof. intros Hn HVl HV [H1 H2]. split; [auto|]. intros Hc. apply HVl; [lia|auto]. Qed.
+  Proof.
+    intros HVl HV [H1 H2]. split; [auto|]. intros Hc j Hj.
+    apply HVl; [exact (oadd_lt j c n Hc Hj)|auto].
+  Qed.
 
   Lemma Esteps_mono n Vl1 Vl2 El1 El2 VN1 VN2 X1 X2 W Θ T F e :
-    n ≠ 0 →
-    (∀ j, j < n → ∀ W Θ T v, Vl1 j W Θ T v ↔ Vl2 j W Θ T v) →
-    (∀ j, j < n → ∀ W Θ T F e, El1 j W Θ T F e → El2 j W Θ T F e) →
+    (∀ j, olt j n → ∀ W Θ T v, Vl1 j W Θ T v ↔ Vl2 j W Θ T v) →
+    (∀ j, olt j n → ∀ W Θ T F e, El1 j W Θ T F e → El2 j W Θ T F e) →
     (c_give κ = 0 → ∀ W Θ T v, VN1 W Θ T v → VN2 W Θ T v) →
     (∀ W Θ F e, X1 W Θ T F e → X2 W Θ T F e) →
     (∀ W Θ F e, X1 W Θ TUnit F e → X2 W Θ TUnit F e) →
     Esteps κ n Vl1 El1 VN1 X1 W Θ T F e → Esteps κ n Vl2 El2 VN2 X2 W Θ T F e.
   Proof.
-    intros Hn HVl HEl HVN HX HXu (H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
+    intros HVl HEl HVN HX HXu (H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     assert (∀ c W Θ F e, at_cost_E n c El1 X1 W Θ T F e → at_cost_E n c El2 X2 W Θ T F e) as Hac.
-    { intros c W0 Θ0 F0 e0. apply at_cost_E_mono; [done| |apply HX]. intros j Hj. by apply HEl. }
+    { intros c W0 Θ0 F0 e0. apply at_cost_E_mono; [|apply HX]. intros j Hj. by apply HEl. }
     split_and!.
     - intros e' Hs. apply Hac, H1, Hs.
     - intros ℓ c e' Hs Hc g Hg. destruct (H2 ℓ c e' Hs Hc g Hg) as [S HS]. exists S. by apply Hac.
@@ -766,16 +802,16 @@ Section mono.
       + intros j Hj W0 Θ0 T0 v0. by apply HVl.
       + intros j Hj. by apply HEl.
       + by intros.
-      + intros _ W0 Θ0 F0 e0. apply HXu.
+      + intros _ j _ W0 Θ0 F0 e0. apply HXu.
     - intros o w e' Hs.
       destruct (H5 o w e' Hs) as (S0 & x & m & U & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
       exists S0, x, m, U, S, ΘM, Θr. split_and!; [done..| |by apply Hac].
-      eapply at_cost_V_mono; [done| |intros; by apply HVN|exact A6].
+      eapply at_cost_V_mono; [|intros; by apply HVN|exact A6].
       intros j Hj. by apply HVl.
     - intros o w e' Hs. destruct (H6 o w e' Hs) as (S0 & x & m & U & S & A1 & A2 & A3).
       exists S0, x, m, U, S. split_and!; [done|done|].
-      intros j Θin Hj Hd Hw. pose proof (c_take_pos κ). apply HEl; [lia|].
-      apply A3; [done|done|]. apply HVl; [lia|done].
+      intros j Θin Hj Hd Hw. pose proof (c_take_lt n j Hj) as Hjn. apply HEl; [done|].
+      apply A3; [done|done|]. apply HVl; [done|done].
     - intros o e' Hs. destruct (H7 o e' Hs) as (S0 & x & A1 & A2 & A3).
       exists S0, x. split_and!; [done|done|by apply Hac].
     - intros o i e' Hs. destruct (H8 o i e' Hs) as (S0 & x & S1 & S2 & A1 & A2 & A3).
@@ -787,42 +823,40 @@ Section mono.
   Qed.
 
   Lemma Ebody_mono n Vl1 Vl2 El1 El2 VN1 VN2 X1 X2 W Θ T F e :
-    n ≠ 0 →
-    (∀ j, j < n → ∀ W Θ T v, Vl1 j W Θ T v ↔ Vl2 j W Θ T v) →
-    (∀ j, j < n → ∀ W Θ T F e, El1 j W Θ T F e → El2 j W Θ T F e) →
+    (∀ j, olt j n → ∀ W Θ T v, Vl1 j W Θ T v ↔ Vl2 j W Θ T v) →
+    (∀ j, olt j n → ∀ W Θ T F e, El1 j W Θ T F e → El2 j W Θ T F e) →
     (∀ W Θ v, VN1 W Θ T v → VN2 W Θ T v) →
     (c_give κ = 0 → ∀ W Θ T v, VN1 W Θ T v → VN2 W Θ T v) →
     (∀ W Θ F e, X1 W Θ T F e → X2 W Θ T F e) →
     (∀ W Θ F e, X1 W Θ TUnit F e → X2 W Θ TUnit F e) →
     Ebody κ n Vl1 El1 VN1 X1 W Θ T F e → Ebody κ n Vl2 El2 VN2 X2 W Θ T F e.
   Proof.
-    intros Hn HVl HEl HVT HVN HX HXu H W1 HW. destruct (H W1 HW) as (A & B & C).
+    intros HVl HEl HVT HVN HX HXu H W1 HW. destruct (H W1 HW) as (A & B & C).
     split_and!; [auto|done|]. by eapply Esteps_mono.
   Qed.
 
   Lemma Psteps_mono n Vl1 Vl2 Pl1 Pl2 VN1 VN2 X1 X2 W Σ T p :
-    n ≠ 0 →
-    (∀ j, j < n → ∀ W Θ T v, Vl1 j W Θ T v ↔ Vl2 j W Θ T v) →
-    (∀ j, j < n → ∀ W Σ T p, Pl1 j W Σ T p → Pl2 j W Σ T p) →
+    (∀ j, olt j n → ∀ W Θ T v, Vl1 j W Θ T v ↔ Vl2 j W Θ T v) →
+    (∀ j, olt j n → ∀ W Σ T p, Pl1 j W Σ T p → Pl2 j W Σ T p) →
     (∀ W Θ T v, VN1 W Θ T v → VN2 W Θ T v) →
     (∀ W Σ p, X1 W Σ T p → X2 W Σ T p) →
     Psteps κ n Vl1 Pl1 VN1 X1 W Σ T p → Psteps κ n Vl2 Pl2 VN2 X2 W Σ T p.
   Proof.
-    intros Hn HVl HPl HVN HX (H1 & H2 & H3 & H4 & H5 & H6 & H7).
+    intros HVl HPl HVN HX (H1 & H2 & H3 & H4 & H5 & H6 & H7).
     assert (∀ c W Σ p, at_cost_P n c Pl1 X1 W Σ T p → at_cost_P n c Pl2 X2 W Σ T p) as Hac.
-    { intros c W0 Σ0 p0. apply at_cost_P_mono; [done| |apply HX]. intros j Hj. by apply HPl. }
+    { intros c W0 Σ0 p0. apply at_cost_P_mono; [|apply HX]. intros j Hj. by apply HPl. }
     split_and!.
     - intros q ev q' Hq Hs Hτ Hd. apply Hac. exact (H1 q ev q' Hq Hs Hτ Hd).
     - intros q i o w q' Hq Hs.
       destruct (H2 q i o w q' Hq Hs)
         as (S0 & x & m & U & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A7 & A8 & A9).
       exists S0, x, m, U, S, Σv, Σr, Θe, Σe. split_and!; [done..| |by apply Hac].
-      eapply at_cost_V_mono; [done| |intros; by apply HVN|exact A8].
+      eapply at_cost_V_mono; [|intros; by apply HVN|exact A8].
       intros j Hj. by apply HVl.
     - intros q i o w q' Hq Hs. destruct (H3 q i o w q' Hq Hs) as (S0 & x & m & U & S & A1 & A2 & A3).
       exists S0, x, m, U, S. split_and!; [done|done|].
-      intros j Θ2 Hj Hd Hok Hw. pose proof (c_take_pos κ). apply HPl; [lia|].
-      apply A3; [done|done|done|]. apply HVl; [lia|done].
+      intros j Θ2 Hj Hd Hok Hw. pose proof (c_take_lt n j Hj) as Hjn. apply HPl; [done|].
+      apply A3; [done|done|done|]. apply HVl; [done|done].
     - intros q i o q' Hq Hs. destruct (H4 q i o q' Hq Hs) as (S0 & x & A1 & A2 & A3).
       exists S0, x. split_and!; [done|done|by apply Hac].
     - intros q i o b q' Hq Hs. destruct (H5 q i o b q' Hq Hs) as (S0 & x & S1 & S2 & A1 & A2 & A3).
@@ -835,14 +869,13 @@ Section mono.
   Qed.
 
   Lemma Pbody_mono n Vl1 Vl2 Pl1 Pl2 VN1 VN2 X1 X2 W Σ T p :
-    n ≠ 0 →
-    (∀ j, j < n → ∀ W Θ T v, Vl1 j W Θ T v ↔ Vl2 j W Θ T v) →
-    (∀ j, j < n → ∀ W Σ T p, Pl1 j W Σ T p → Pl2 j W Σ T p) →
+    (∀ j, olt j n → ∀ W Θ T v, Vl1 j W Θ T v ↔ Vl2 j W Θ T v) →
+    (∀ j, olt j n → ∀ W Σ T p, Pl1 j W Σ T p → Pl2 j W Σ T p) →
     (∀ W Θ T v, VN1 W Θ T v → VN2 W Θ T v) →
     (∀ W Σ p, X1 W Σ T p → X2 W Σ T p) →
     Pbody κ n Vl1 Pl1 VN1 X1 W Σ T p → Pbody κ n Vl2 Pl2 VN2 X2 W Σ T p.
   Proof.
-    intros Hn HVl HPl HVN HX H W1 HW HS h D Hh. destruct (H W1 HW HS h D Hh) as (A & B & C).
+    intros HVl HPl HVN HX H W1 HW HS h D Hh. destruct (H W1 HW HS h D Hh) as (A & B & C).
     split_and!; [|done|by eapply Psteps_mono].
     intros Hirr. destruct (A Hirr) as (v & E & Hp & Hv & HE).
     exists v, E. split_and!; [done|by apply HVN|done].
@@ -851,22 +884,22 @@ Section mono.
   (** E at level n depends on V at level n only at its type, at ∗ and,
       when a send is free, at payloads. *)
   Lemma Etop_mono n Vl1 Vl2 El1 El2 VN1 VN2 W Θ T F e :
-    (∀ j, j < n → ∀ W Θ T v, Vl1 j W Θ T v ↔ Vl2 j W Θ T v) →
-    (∀ j, j < n → ∀ W Θ T F e, El1 j W Θ T F e → El2 j W Θ T F e) →
+    (∀ j, olt j n → ∀ W Θ T v, Vl1 j W Θ T v ↔ Vl2 j W Θ T v) →
+    (∀ j, olt j n → ∀ W Θ T F e, El1 j W Θ T F e → El2 j W Θ T F e) →
     (∀ W Θ v, VN1 W Θ T v → VN2 W Θ T v) →
     (∀ W Θ v, VN1 W Θ TUnit v → VN2 W Θ TUnit v) →
     (c_give κ = 0 → ∀ W Θ T v, VN1 W Θ T v → VN2 W Θ T v) →
     Etop κ n Vl1 El1 VN1 W Θ T F e → Etop κ n Vl2 El2 VN2 W Θ T F e.
   Proof.
-    intros HVl HEl HVT HVu HVN. destruct n as [|n]; [done|]. simpl.
+    intros HVl HEl HVT HVu HVN. unfold Etop.
     intros H.
-    assert (∀ W Θ T' F e, Eind κ (S n) Vl1 El1 VN1 W Θ T' F e →
-              (T' = T ∨ T' = TUnit) → Eind κ (S n) Vl2 El2 VN2 W Θ T' F e) as Hgen.
+    assert (∀ W Θ T' F e, Eind κ n Vl1 El1 VN1 W Θ T' F e →
+              (T' = T ∨ T' = TUnit) → Eind κ n Vl2 El2 VN2 W Θ T' F e) as Hgen.
     2: { by apply Hgen; [|left]. }
-    refine (Eind_ind' κ (S n) Vl1 El1 VN1
-      (λ W Θ T' F e, (T' = T ∨ T' = TUnit) → Eind κ (S n) Vl2 El2 VN2 W Θ T' F e) _).
+    refine (Eind_ind' κ n Vl1 El1 VN1
+      (λ W Θ T' F e, (T' = T ∨ T' = TUnit) → Eind κ n Vl2 El2 VN2 W Θ T' F e) _).
     intros W0 Θ0 T' F0 e0 H0 HT'. constructor.
-    revert H0. apply Ebody_mono; [done|done|done| |done| |].
+    revert H0. apply Ebody_mono; [done|done| |done| |].
     - intros W1 Θ1 v1. destruct HT' as [->| ->]; auto.
     - intros W1 Θ1 F1 e1 [_ HΦ]. by apply HΦ.
     - intros W1 Θ1 F1 e1 [_ HΦ]. by apply HΦ; right.
@@ -878,42 +911,66 @@ End mono.
 Section fuel.
   Context (κ : ctable).
 
-  Lemma Vbody_ext n Vl1 Vl2 El1 El2 k W Θ T v :
-    (∀ j, j < n → ∀ W Θ T v, Vl1 j W Θ T v ↔ Vl2 j W Θ T v) →
-    (∀ j, j < n → ∀ W Θ T F e, El1 j W Θ T F e ↔ El2 j W Θ T F e) →
+  Lemma Vbody_ext k : ∀ n Vl1 Vl2 El1 El2 W Θ T v,
+    (∀ j, olt j n → ∀ W Θ T v, Vl1 j W Θ T v ↔ Vl2 j W Θ T v) →
+    (∀ j, olt j n → ∀ W Θ T F e, El1 j W Θ T F e ↔ El2 j W Θ T F e) →
     Vbody κ n Vl1 El1 k W Θ T v ↔ Vbody κ n Vl2 El2 k W Θ T v.
   Proof.
-    intros HVl HEl. revert W Θ T v. induction k as [|k IH]; intros W Θ T v; [done|].
+    induction k as [|k IH]; intros n Vl1 Vl2 El1 El2 W Θ T v HVl HEl; [done|].
+    assert (∀ j, ole j n → ∀ i, olt i j → olt i n) as Hb.
+    { intros j Hj i Hi. exact (olt_trans_le _ _ _ Hi Hj). }
     destruct T as [|ub lb c T1 U a|T1 U|T1 U|m kk C ub c U|s x a mt|lb m C T1];
       cbn [Vbody].
     - done.
-    - split; (apply Varr_mono; [intros; by apply HVl|intros; by apply HEl|intros; by apply IH|]);
-        intros _ W0 Θ0 F0 e0;
-        (apply Etop_mono; [intros; first [by apply HVl|symmetry; by apply HVl]|intros; by apply HEl|..]);
-        intros; by apply IH.
-    - by setoid_rewrite IH.
-    - by setoid_rewrite IH.
-    - by setoid_rewrite IH.
+    - assert (∀ j, ole j n → ∀ W Θ T v,
+                Vbody κ j Vl1 El1 k W Θ T v ↔ Vbody κ j Vl2 El2 k W Θ T v) as IHj.
+      { intros j Hj W0 Θ0 T0 v0. apply IH; intros i Hi; [apply HVl|apply HEl]; exact (Hb j Hj i Hi). }
+      split.
+      + apply Varr_mono; [intros; by apply HVl|intros; by apply HEl|
+          intros _ j Hj ? ? ?; by apply IHj|].
+        intros Hb0 j Hj W0 Θ0 F0 e0. apply Etop_mono.
+        * intros i Hi. apply HVl. exact (Hb j Hj i Hi).
+        * intros i Hi ? ? ? ? ?. apply HEl. exact (Hb j Hj i Hi).
+        * intros. by apply IHj.
+        * intros. by apply IHj.
+        * intros Hg. pose proof (c_give_pos κ Hb0). lia.
+      + apply Varr_mono; [intros; by apply HVl|intros; by apply HEl|
+          intros _ j Hj ? ? ?; by apply IHj|].
+        intros Hb0 j Hj W0 Θ0 F0 e0. apply Etop_mono.
+        * intros i Hi ? ? ? ?. symmetry. apply HVl. exact (Hb j Hj i Hi).
+        * intros i Hi ? ? ? ? ?. apply HEl. exact (Hb j Hj i Hi).
+        * intros. by apply IHj.
+        * intros. by apply IHj.
+        * intros Hg. pose proof (c_give_pos κ Hb0). lia.
+    - by setoid_rewrite (λ W Θ T v, IH n Vl1 Vl2 El1 El2 W Θ T v HVl HEl).
+    - by setoid_rewrite (λ W Θ T v, IH n Vl1 Vl2 El1 El2 W Θ T v HVl HEl).
+    - by setoid_rewrite (λ W Θ T v, IH n Vl1 Vl2 El1 El2 W Θ T v HVl HEl).
     - done.
-    - by setoid_rewrite IH.
+    - by setoid_rewrite (λ W Θ T v, IH n Vl1 Vl2 El1 El2 W Θ T v HVl HEl).
   Qed.
 
-  Lemma Vbody_fuel n Vl El k1 : ∀ k2 W Θ T v, tsize T < k1 → tsize T < k2 →
+  Lemma Vbody_fuel k1 : ∀ n Vl El k2 W Θ T v, tsize T < k1 → tsize T < k2 →
     Vbody κ n Vl El k1 W Θ T v ↔ Vbody κ n Vl El k2 W Θ T v.
   Proof.
-    induction k1 as [|k1 IH]; intros k2 W Θ T v H1 H2; [lia|].
+    induction k1 as [|k1 IH]; intros n Vl El k2 W Θ T v H1 H2; [lia|].
     destruct k2 as [|k2]; [lia|].
     destruct T as [|ub lb c T1 U a|T1 U|T1 U|m kk C ub c U|s x a mt|lb m C T1];
       cbn [Vbody tsize] in *.
     - done.
     - pose proof (tsize_pos T1). pose proof (tsize_pos U).
-      assert (∀ W Θ T v, tsize T ≤ tsize T1 + tsize U →
-                Vbody κ n Vl El k1 W Θ T v ↔ Vbody κ n Vl El k2 W Θ T v) as IH'.
+      assert (∀ j W Θ T v, tsize T ≤ tsize T1 + tsize U →
+                Vbody κ j Vl El k1 W Θ T v ↔ Vbody κ j Vl El k2 W Θ T v) as IH'.
       { intros. apply IH; lia. }
-      split; (eapply Varr_mono; [done|done|intros; apply IH'; [lia|done]|]);
-        intros Hb W0 Θ0 F0 e0;
-        (eapply Etop_mono; [done|done|intros; apply IH'; [lia|done]|intros; apply IH'; [simpl; lia|done]|]);
-        intros Hg; pose proof (c_give_pos κ Hb) as Hgp; lia.
+      split; apply Varr_mono.
+      1,5: intros; assumption.
+      1,4: intros; assumption.
+      1,3: intros _ j _ ? ? ?; apply IH'; lia.
+      all: intros Hb j _ W0 Θ0 F0 e0; apply Etop_mono.
+      1,6: intros i _ ? ? ? ?; reflexivity.
+      1,5: intros; assumption.
+      1,4: intros ? ? ?; apply IH'; lia.
+      1,3: intros ? ? ?; apply IH'; simpl; lia.
+      all: intros Hg; pose proof (c_give_pos κ Hb) as Hgp; lia.
     - split; intros (v1 & v2 & Θ1 & Θ2 & -> & Hd & -> & Hv1 & Hv2);
         (exists v1, v2, Θ1, Θ2); split_and!; try done; (eapply IH; [..|eassumption]; lia).
     - split; (intros [(v' & -> & Hv)|(v' & -> & Hv)]; [left|right]);
@@ -930,6 +987,35 @@ Section fuel.
       apply and_iff_compat_l. split; intros (xs & ? & ? & Hv); (exists xs); split_and!; try done;
         (eapply IH; [..|exact Hv]); rewrite Hts; lia.
   Qed.
+
+  Lemma Ptop_mono n Vl1 Vl2 Pl1 Pl2 VN1 VN2 W Σ T p :
+    (∀ j, olt j n → ∀ W Θ T v, Vl1 j W Θ T v ↔ Vl2 j W Θ T v) →
+    (∀ j, olt j n → ∀ W Σ T p, Pl1 j W Σ T p → Pl2 j W Σ T p) →
+    (∀ W Θ T v, VN1 W Θ T v → VN2 W Θ T v) →
+    Ptop κ n Vl1 Pl1 VN1 W Σ T p → Ptop κ n Vl2 Pl2 VN2 W Σ T p.
+  Proof.
+    intros HVl HPl HVN. unfold Ptop. revert W Σ T p.
+    refine (Pind_ind' κ n Vl1 Pl1 VN1 _ _).
+    intros W0 Σ0 T0 p0 H0. constructor. revert H0. apply Pbody_mono; [done|done|done|].
+    by intros ? ? ? [_ ?].
+  Qed.
+
+  (** One level reads the family only strictly below it. *)
+  Lemma mk_larg_ext n (R R' : Ix → larg → Prop) :
+    (∀ j, olt j n → ∀ a, R j a ↔ R' j a) → ∀ a, mk_larg κ R n a ↔ mk_larg κ R' n a.
+  Proof.
+    intros H a.
+    assert (∀ W Θ T v, Vtop κ n (λ j, lV (lvl_of (R j))) (λ j, lE (lvl_of (R j))) W Θ T v ↔
+                       Vtop κ n (λ j, lV (lvl_of (R' j))) (λ j, lE (lvl_of (R' j))) W Θ T v) as HV.
+    { intros. apply Vbody_ext; intros; cbn; apply H; done. }
+    destruct a as [W Θ T v|W Θ T F e|W Σ T p]; cbn [mk_larg mk_level lV lE lP].
+    - apply HV.
+    - split; apply Etop_mono; intros; first [cbn; apply H; done|cbn; symmetry; apply H; done
+        |cbn; apply H; done|apply HV; done|apply HV; done|idtac].
+      all: try (cbn; apply H; done). all: try (apply HV; done). all: apply HV; done.
+    - split; apply Ptop_mono; intros; first [cbn; apply H; done|cbn; symmetry; apply H; done
+        |apply HV; done].
+  Qed.
 End fuel.
 
 (** ** Characteristic equations
@@ -942,32 +1028,15 @@ End fuel.
 Section equations.
   Context (κ : ctable).
 
-  Local Definition BL (n : nat) : nat → level := sfix_below dummy_level (mk_level κ) n.
+  Lemma Rel_unfold n a : RelA κ n a ↔ mk_larg κ (RelA κ) n a.
+  Proof. apply (osfix_unfold (mk_larg κ)). intros. by apply mk_larg_ext. Qed.
 
-  Local Lemma Rel_unfold n : Rel κ n = mk_level κ (BL n) n.
-  Proof. apply sfix_unfold. Qed.
-
-  Local Lemma BL_lt n j : j < n → BL n j = Rel κ j.
-  Proof. apply sfix_below_lt. Qed.
-
-  Local Lemma BL_V n : ∀ j, j < n → ∀ W Θ T v, lV (BL n j) W Θ T v ↔ Vrel κ j W Θ T v.
-  Proof. intros j Hj. unfold Vrel. by rewrite BL_lt. Qed.
-  Local Lemma BL_E n : ∀ j, j < n → ∀ W Θ T F e, lE (BL n j) W Θ T F e ↔ Erel κ j W Θ T F e.
-  Proof. intros j Hj. unfold Erel. by rewrite BL_lt. Qed.
-  Local Lemma BL_E1 n j W Θ T F e : j < n → lE (BL n j) W Θ T F e → Erel κ j W Θ T F e.
-  Proof. intros Hj. by apply BL_E. Qed.
-  Local Lemma BL_E2 n j W Θ T F e : j < n → Erel κ j W Θ T F e → lE (BL n j) W Θ T F e.
-  Proof. intros Hj. by apply BL_E. Qed.
-  Local Lemma BL_P1 n j W Σ T p : j < n → lP (BL n j) W Σ T p → Prel κ j W Σ T p.
-  Proof. intros Hj. unfold Prel. by rewrite BL_lt. Qed.
-  Local Lemma BL_P2 n j W Σ T p : j < n → Prel κ j W Σ T p → lP (BL n j) W Σ T p.
-  Proof. intros Hj. unfold Prel. by rewrite BL_lt. Qed.
   Lemma Vrel_fuel n k W Θ T v :
     tsize T < k → Vrel κ n W Θ T v ↔ Vbody κ n (Vrel κ) (Erel κ) k W Θ T v.
   Proof.
-    intros Hk. unfold Vrel at 1. rewrite Rel_unfold. cbn [mk_level lV]. unfold Vtop.
-    rewrite (Vbody_fuel κ n _ _ (S (tsize T)) k) by lia.
-    apply Vbody_ext; [apply BL_V|apply BL_E].
+    intros Hk. change (RelA κ n (LAV W Θ T v) ↔ Vbody κ n (Vrel κ) (Erel κ) k W Θ T v).
+    rewrite Rel_unfold. cbn [mk_larg mk_level lV]. unfold Vtop.
+    apply (Vbody_fuel κ (S (tsize T)) n _ _ k); lia.
   Qed.
 
   Lemma Vrel_unfold n W Θ T v :
@@ -977,42 +1046,22 @@ Section equations.
   Lemma Erel_unfold n W Θ T F e :
     Erel κ n W Θ T F e ↔ Etop κ n (Vrel κ) (Erel κ) (Vrel κ n) W Θ T F e.
   Proof.
-    unfold Erel at 1. rewrite Rel_unfold. cbn [mk_level lE].
-    assert (∀ W Θ T v, Vtop κ n (λ j, lV (BL n j)) (λ j, lE (BL n j)) W Θ T v ↔ Vrel κ n W Θ T v)
-      as HV.
-    { intros. rewrite Vrel_unfold. apply Vbody_ext; [apply BL_V|apply BL_E]. }
-    split; apply Etop_mono.
-    all: intros; first [by apply BL_V|symmetry; by apply BL_V|by eapply BL_E1|by eapply BL_E2
-                        |by apply HV].
+    change (RelA κ n (LAE W Θ T F e) ↔ Etop κ n (Vrel κ) (Erel κ) (Vrel κ n) W Θ T F e).
+    rewrite Rel_unfold. cbn [mk_larg mk_level lE].
+    assert (∀ W Θ T v, Vtop κ n (Vrel κ) (Erel κ) W Θ T v ↔ Vrel κ n W Θ T v) as HV.
+    { intros. by rewrite Vrel_unfold. }
+    split; apply Etop_mono; intros; first [done|by apply HV].
   Qed.
 
   Lemma Prel_unfold n W Σ T p :
     Prel κ n W Σ T p ↔ Ptop κ n (Vrel κ) (Prel κ) (Vrel κ n) W Σ T p.
   Proof.
-    unfold Prel at 1. rewrite Rel_unfold. cbn [mk_level lP Ptop].
-    assert (∀ W Θ T v, Vtop κ n (λ j, lV (BL n j)) (λ j, lE (BL n j)) W Θ T v ↔ Vrel κ n W Θ T v)
-      as HV.
-    { intros. rewrite Vrel_unfold. apply Vbody_ext; [apply BL_V|apply BL_E]. }
-    destruct n as [|n]; [done|].
-    assert (∀ (Pl1 Pl2 : nat → prel) VN1 VN2,
-      (∀ j, j < S n → ∀ W Θ T v, lV (BL (S n) j) W Θ T v ↔ Vrel κ j W Θ T v) →
-      (∀ j, j < S n → ∀ W Σ T p, Pl1 j W Σ T p → Pl2 j W Σ T p) →
-      (∀ W Θ T v, VN1 W Θ T v → VN2 W Θ T v) →
-      ∀ Vl1 Vl2, (∀ j, j < S n → ∀ W Θ T v, Vl1 j W Θ T v ↔ Vl2 j W Θ T v) →
-      ∀ W Σ T p, Pind κ (S n) Vl1 Pl1 VN1 W Σ T p → Pind κ (S n) Vl2 Pl2 VN2 W Σ T p) as Hgen.
-    { intros Pl1 Pl2 VN1 VN2 _ HPl HVN Vl1 Vl2 HVl.
-      refine (Pind_ind' κ (S n) Vl1 Pl1 VN1 _ _).
-      intros W0 Σ0 T0 p0 H0. constructor. revert H0. apply Pbody_mono; [done|done|done|done|].
-      by intros ? ? ? [_ ?]. }
-    split; apply Hgen; try done; intros; first [by eapply BL_P1|by eapply BL_P2|by apply HV
-      |by apply BL_V|symmetry; by apply BL_V].
+    change (RelA κ n (LAP W Σ T p) ↔ Ptop κ n (Vrel κ) (Prel κ) (Vrel κ n) W Σ T p).
+    rewrite Rel_unfold. cbn [mk_larg mk_level lP].
+    assert (∀ W Θ T v, Vtop κ n (Vrel κ) (Erel κ) W Θ T v ↔ Vrel κ n W Θ T v) as HV.
+    { intros. by rewrite Vrel_unfold. }
+    split; apply Ptop_mono; intros; first [done|by apply HV].
   Qed.
-
-  Lemma Erel_0 W Θ T F e : Erel κ 0 W Θ T F e.
-  Proof. by apply Erel_unfold. Qed.
-
-  Lemma Prel_0 W Σ T p : Prel κ 0 W Σ T p.
-  Proof. by apply Prel_unfold. Qed.
 
   (** *** V, one equation per type constructor *)
 
@@ -1049,20 +1098,21 @@ Section equations.
   Qed.
 
   (** The arrow reads its body at every level j with j + κ(β) ≤ n. *)
-  Definition Varr_rel (n : nat) (T1 U : ty) (ub : ubound) (lb : lbound) (W : world) (Θ : senv)
+  Definition Varr_rel (n : Ix) (T1 U : ty) (ub : ubound) (lb : lbound) (W : world) (Θ : senv)
       (v : expr) : Prop :=
     ∃ e, v = Lam e ∧ dom Θ = fends e ∧ lbx_le W lb (senv_heads Θ) ∧
-      ∀ W' j Θ' w F, W ⊑ W' → j + c_beta κ ≤ n → Θ ##ₘ Θ' → ub_ltu W' ub F →
+      ∀ W' j Θ' w F, W ⊑ W' → ole (oadd j (c_beta κ)) n → Θ ##ₘ Θ' → ub_ltu W' ub F →
         Vrel κ j W' Θ' T1 w → Erel κ j W' (Θ ∪ Θ') U F (subst1 w e).
 
   Lemma Varr_rel_iff n T1 U ub lb W Θ v :
-    Varr κ n (Vrel κ) (Erel κ) (λ W Θ w, Vrel κ n W Θ T1 w) (λ W Θ F e, Erel κ n W Θ U F e)
+    Varr κ n (Vrel κ) (Erel κ) (λ j W Θ w, Vrel κ j W Θ T1 w) (λ j W Θ F e, Erel κ j W Θ U F e)
       T1 U ub lb W Θ v ↔ Varr_rel n T1 U ub lb W Θ v.
   Proof.
     split; intros (e & -> & Hfe & Hlb & H); exists e; (split; [done|]); (split; [done|]); (split; [done|]).
     - intros W' j Θ' w F HW Hj Hd Hub Hw. destruct (H W' j Θ' w F HW Hj Hd Hub) as [H1 H2].
-      destruct (decide (j < n)); [by apply H1|]. assert (j = n) as -> by lia. by apply H2.
-    - intros W' j Θ' w F HW Hj Hd Hub. split; [intros Hjn Hw; by apply H|]. intros -> Hw. by apply H.
+      destruct (decide (c_beta κ = 0)) as [Hb|Hb]; [by apply H2|].
+      apply H1; [exact (oadd_lt _ _ _ Hb Hj)|done].
+    - intros W' j Θ' w F HW Hj Hd Hub. split; [intros Hjn Hw; by apply H|]. intros _ Hw. by apply H.
   Qed.
 
   Lemma Vrel_lolli_iff n W Θ ub lb c T1 U a v :
@@ -1071,18 +1121,23 @@ Section equations.
     rewrite Vrel_unfold, <-Varr_rel_iff.
     remember (tsize (TLolli ub lb c T1 U a)) as k eqn:Hk. cbn [Vbody].
     cbn [tsize] in Hk. pose proof (tsize_pos T1). pose proof (tsize_pos U).
-    assert (∀ W Θ T v, tsize T < k → Vbody κ n (Vrel κ) (Erel κ) k W Θ T v ↔ Vrel κ n W Θ T v)
+    assert (∀ j W Θ T v, tsize T < k → Vbody κ j (Vrel κ) (Erel κ) k W Θ T v ↔ Vrel κ j W Θ T v)
       as HF.
     { intros. symmetry. by apply Vrel_fuel. }
-    assert (c_beta κ = 0 → ∀ W Θ F e,
-      Etop κ n (Vrel κ) (Erel κ) (Vbody κ n (Vrel κ) (Erel κ) k) W Θ U F e ↔ Erel κ n W Θ U F e)
+    assert (c_beta κ = 0 → ∀ j W Θ F e,
+      Etop κ j (Vrel κ) (Erel κ) (Vbody κ j (Vrel κ) (Erel κ) k) W Θ U F e ↔ Erel κ j W Θ U F e)
       as HE.
-    { intros Hb W0 Θ0 F0 e0. rewrite Erel_unfold. pose proof (c_give_pos κ Hb).
-      split; (apply Etop_mono;
-        [intros; reflexivity|intros; done|intros; apply HF; [lia|done]
-        |intros; apply HF; [simpl; lia|done]|intros; lia]). }
-    split; (apply Varr_mono;
-      [intros; done|intros; done|intros _ ? ? ? ?; apply HF; [lia|done]|intros Hb ? ? ? ? ?; by apply HE]).
+    { intros Hb j W0 Θ0 F0 e0. rewrite Erel_unfold. pose proof (c_give_pos κ Hb).
+      split; apply Etop_mono.
+      1,6: intros; reflexivity.
+      1,5: intros; assumption.
+      1,2,4,5: intros W1 Θ1 v1 Hv; apply (HF j W1 Θ1 _ v1); [simpl; lia|exact Hv].
+      all: intros; lia. }
+    split; apply Varr_mono.
+    1,5: intros; assumption.
+    1,4: intros; assumption.
+    1,3: intros _ j _ W1 Θ1 v1; apply (HF j W1 Θ1 _ v1); lia.
+    all: intros Hb j _ ? ? ? ?; by apply HE.
   Qed.
 
   Lemma Vrel_box_iff n W Θ m kk C ub c U v :
@@ -1114,67 +1169,67 @@ Section equations.
     by setoid_rewrite HF.
   Qed.
 
-  (** *** E and P at a positive level *)
+  (** *** E and P at every level *)
 
-  Lemma Erel_S_iff n W Θ T F e :
-    Erel κ (S n) W Θ T F e ↔
-    Ebody κ (S n) (Vrel κ) (Erel κ) (Vrel κ (S n)) (Erel κ (S n)) W Θ T F e.
+  Lemma Erel_iff n W Θ T F e :
+    Erel κ n W Θ T F e ↔
+    Ebody κ n (Vrel κ) (Erel κ) (Vrel κ n) (Erel κ n) W Θ T F e.
   Proof.
-    rewrite Erel_unfold. cbn [Etop]. split.
+    rewrite Erel_unfold. unfold Etop. split.
     - intros H. destruct H as [W Θ T F e H]. revert H.
-      apply Ebody_mono; [lia|intros; reflexivity|intros ? ? ? ? ? ? ? H; exact H
+      apply Ebody_mono; [intros; reflexivity|intros ? ? ? ? ? ? ? H; exact H
         |intros ? ? ? H; exact H|intros _ ? ? ? ? H; exact H|..].
-      all: intros ? ? ? ? H; exact (proj2 (Erel_unfold (S n) _ _ _ _ _) H).
+      all: intros ? ? ? ? H; exact (proj2 (Erel_unfold n _ _ _ _ _) H).
     - intros H. constructor. revert H.
-      apply Ebody_mono; [lia|intros; reflexivity|intros ? ? ? ? ? ? ? H; exact H
+      apply Ebody_mono; [intros; reflexivity|intros ? ? ? ? ? ? ? H; exact H
         |intros ? ? ? H; exact H|intros _ ? ? ? ? H; exact H|..].
-      all: intros ? ? ? ? H; exact (proj1 (Erel_unfold (S n) _ _ _ _ _) H).
+      all: intros ? ? ? ? H; exact (proj1 (Erel_unfold n _ _ _ _ _) H).
   Qed.
 
-  (** Induction over the steps of cost 0 at a positive level. *)
-  Lemma Erel_S_ind n (Φ : erel) :
+  (** Induction over the steps of cost 0 at one level. *)
+  Lemma Erel_ind n (Φ : erel) :
     (∀ W Θ T F e,
-       Ebody κ (S n) (Vrel κ) (Erel κ) (Vrel κ (S n))
-         (λ W Θ T F e, Erel κ (S n) W Θ T F e ∧ Φ W Θ T F e) W Θ T F e →
+       Ebody κ n (Vrel κ) (Erel κ) (Vrel κ n)
+         (λ W Θ T F e, Erel κ n W Θ T F e ∧ Φ W Θ T F e) W Θ T F e →
        Φ W Θ T F e) →
-    ∀ W Θ T F e, Erel κ (S n) W Θ T F e → Φ W Θ T F e.
+    ∀ W Θ T F e, Erel κ n W Θ T F e → Φ W Θ T F e.
   Proof.
-    intros Hind W Θ T F e H. apply (proj1 (Erel_unfold (S n) _ _ _ _ _)) in H. cbn [Etop] in H.
+    intros Hind W Θ T F e H. apply (proj1 (Erel_unfold n _ _ _ _ _)) in H. unfold Etop in H.
     revert W Θ T F e H.
     apply Eind_ind'. intros W Θ T F e H. apply Hind. revert H.
-    apply Ebody_mono; [lia|intros; reflexivity|intros ? ? ? ? ? ? ? H; exact H
+    apply Ebody_mono; [intros; reflexivity|intros ? ? ? ? ? ? ? H; exact H
       |intros ? ? ? H; exact H|intros _ ? ? ? ? H; exact H|..].
-    all: intros ? ? ? ? [H1 H2]; split; [exact (proj2 (Erel_unfold (S n) _ _ _ _ _) H1)|exact H2].
+    all: intros ? ? ? ? [H1 H2]; split; [exact (proj2 (Erel_unfold n _ _ _ _ _) H1)|exact H2].
   Qed.
 
-  Lemma Prel_S_iff n W Σ T p :
-    Prel κ (S n) W Σ T p ↔
-    Pbody κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) (Prel κ (S n)) W Σ T p.
+  Lemma Prel_iff n W Σ T p :
+    Prel κ n W Σ T p ↔
+    Pbody κ n (Vrel κ) (Prel κ) (Vrel κ n) (Prel κ n) W Σ T p.
   Proof.
-    rewrite Prel_unfold. cbn [Ptop]. split.
+    rewrite Prel_unfold. unfold Ptop. split.
     - intros H. destruct H as [W Σ T p H]. revert H.
-      apply Pbody_mono; [lia|intros; reflexivity|intros ? ? ? ? ? ? H; exact H
+      apply Pbody_mono; [intros; reflexivity|intros ? ? ? ? ? ? H; exact H
         |intros ? ? ? ? H; exact H|].
-      intros ? ? ? H; exact (proj2 (Prel_unfold (S n) _ _ _ _) H).
+      intros ? ? ? H; exact (proj2 (Prel_unfold n _ _ _ _) H).
     - intros H. constructor. revert H.
-      apply Pbody_mono; [lia|intros; reflexivity|intros ? ? ? ? ? ? H; exact H
+      apply Pbody_mono; [intros; reflexivity|intros ? ? ? ? ? ? H; exact H
         |intros ? ? ? ? H; exact H|].
-      intros ? ? ? H; exact (proj1 (Prel_unfold (S n) _ _ _ _) H).
+      intros ? ? ? H; exact (proj1 (Prel_unfold n _ _ _ _) H).
   Qed.
 
-  Lemma Prel_S_ind n (Φ : prel) :
+  Lemma Prel_ind n (Φ : prel) :
     (∀ W Σ T p,
-       Pbody κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n))
-         (λ W Σ T p, Prel κ (S n) W Σ T p ∧ Φ W Σ T p) W Σ T p →
+       Pbody κ n (Vrel κ) (Prel κ) (Vrel κ n)
+         (λ W Σ T p, Prel κ n W Σ T p ∧ Φ W Σ T p) W Σ T p →
        Φ W Σ T p) →
-    ∀ W Σ T p, Prel κ (S n) W Σ T p → Φ W Σ T p.
+    ∀ W Σ T p, Prel κ n W Σ T p → Φ W Σ T p.
   Proof.
-    intros Hind W Σ T p H. apply (proj1 (Prel_unfold (S n) _ _ _ _)) in H. cbn [Ptop] in H.
+    intros Hind W Σ T p H. apply (proj1 (Prel_unfold n _ _ _ _)) in H. unfold Ptop in H.
     revert W Σ T p H.
     apply Pind_ind'. intros W Σ T p H. apply Hind. revert H.
-    apply Pbody_mono; [lia|intros; reflexivity|intros ? ? ? ? ? ? H; exact H
+    apply Pbody_mono; [intros; reflexivity|intros ? ? ? ? ? ? H; exact H
       |intros ? ? ? ? H; exact H|].
-    intros ? ? ? [H1 H2]; split; [exact (proj2 (Prel_unfold (S n) _ _ _ _) H1)|exact H2].
+    intros ? ? ? [H1 H2]; split; [exact (proj2 (Prel_unfold n _ _ _ _) H1)|exact H2].
   Qed.
   (** The clauses at the identity renaming. *)
   Lemma Pbody_id n Vl Pl VN X W Σ T p :
@@ -1184,8 +1239,8 @@ Section equations.
     by rewrite pfuse_empty, sdrop_empty, kren_id_map, pmap_id in H'.
   Qed.
 
-  Lemma Prel_S_clauses n W Σ T p :
-    Prel κ (S n) W Σ T p → ∀ W1, W ⊑ W1 → strict W1 →
-    Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) (Prel κ (S n)) W1 Σ T p.
-  Proof. intros H. apply Pbody_id. by apply Prel_S_iff. Qed.
+  Lemma Prel_clauses n W Σ T p :
+    Prel κ n W Σ T p → ∀ W1, W ⊑ W1 → strict W1 →
+    Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) (Prel κ n) W1 Σ T p.
+  Proof. intros H. apply Pbody_id. by apply Prel_iff. Qed.
 End equations.

@@ -4,8 +4,9 @@
       Σ ⊫_W p : T    [sem_ptyped κ_L W Σ p T]     liveness
 
     A closed process in P at every level is deadlock free, for every
-    cost table ([adequacy_gen]). A τ step lowers the level by at most
-    [cmax κ], so the level reaches every state of a run, and an
+    cost table ([adequacy_gen]). The finite levels suffice. A τ step
+    lowers the level by at most [cmax κ], so the finite level reaches
+    every state of a run, and an
     irreducible state is terminated, because P-Stop asks a value of the
     main thread and no session step is open to an empty interface. In
     κ_L the administrative steps cost nothing, so they are read inside
@@ -32,21 +33,20 @@ Section adequacy.
 
   (** A τ step lowers the level by at most [cmax κ]. *)
   Lemma Prel_tau n W T p p' : strict W →
-    Prel κ (n + S (cmax κ)) W ∅ T p → preduction p p' → Prel κ n W ∅ T p'.
+    Prel κ (onat (n + S (cmax κ))) W ∅ T p → preduction p p' → Prel κ (onat n) W ∅ T p'.
   Proof.
     intros HW HP (q & ev & q' & <- & Hst & <- & Hτ).
-    replace (n + S (cmax κ)) with (S (n + cmax κ)) in HP by lia.
-    destruct (Prel_S_clauses κ _ _ _ _ _ HP W (wext_refl W) HW) as (_ & _ & H1 & _).
+    destruct (Prel_clauses κ _ _ _ _ _ HP W (wext_refl W) HW) as (_ & _ & H1 & _).
     destruct (H1 q ev q' eq_refl Hst Hτ) as [A1 A2].
     { rewrite chans_of_empty. apply disjoint_empty_r. }
     pose proof (ev_cost_le κ ev Hτ).
     destruct (decide (ev_cost κ ev = 0)) as [Hc|Hc].
-    - eapply Prel_down; [|exact (A1 Hc)]. lia.
-    - eapply Prel_down; [|exact (A2 Hc)]. lia.
+    - eapply Prel_down; [|exact (A1 Hc)]. apply onat_le. lia.
+    - apply (A2 Hc). rewrite oadd_onat. apply onat_le. lia.
   Qed.
 
   Lemma Prel_steps m : ∀ W n T p p', strict W →
-    nsteps preduction m p p' → Prel κ (m * S (cmax κ) + n) W ∅ T p → Prel κ n W ∅ T p'.
+    nsteps preduction m p p' → Prel κ (onat (m * S (cmax κ) + n)) W ∅ T p → Prel κ (onat n) W ∅ T p'.
   Proof.
     induction m as [|m IH]; intros W n T p p' HW Hrun HP.
     { by inversion Hrun; subst. }
@@ -56,9 +56,9 @@ Section adequacy.
   Qed.
 
   (** An irreducible closed process in P is terminated. *)
-  Lemma Prel_safe n W T p : strict W → Prel κ (S n) W ∅ T p → safe p.
+  Lemma Prel_safe n W T p : strict W → Prel κ n W ∅ T p → safe p.
   Proof.
-    intros HW HP. destruct (Prel_S_clauses κ _ _ _ _ _ HP W (wext_refl W) HW) as (Hs & _ & Hst).
+    intros HW HP. destruct (Prel_clauses κ _ _ _ _ _ HP W (wext_refl W) HW) as (Hs & _ & Hst).
     destruct (proc_progress p) as [Hirr|(π & p' & Hπ)].
     - left. destruct (Hs Hirr) as (v & E & -> & Hv & HE). exists v, E.
       split_and!; [done|by eapply Vrel_val|done].
@@ -81,7 +81,7 @@ Section adequacy.
   Theorem adequacy_gen W T p : strict W → sem_ptyped κ W ∅ p T → deadlock_free p.
   Proof.
     intros HW HP p' Hsteps. apply rtc_nsteps_1 in Hsteps as [m Hm].
-    apply (Prel_safe 0 W T p' HW), (Prel_steps m W 1 T p p' HW Hm), HP.
+    apply (Prel_safe (onat 0) W T p' HW), (Prel_steps m W 0 T p p' HW Hm), HP.
   Qed.
 End adequacy.
 
@@ -90,12 +90,12 @@ Theorem adequacy W T p : strict W → ∅ ⊨_W p : T → deadlock_free p.
 Proof. apply adequacy_gen. Qed.
 
 (** In κ_L an administrative step costs nothing, so a closed process in
-    P at a positive level admits no infinite sequence of them. *)
-Lemma Prel_acc_live n W T p : strict W → Prel κ_L (S n) W ∅ T p → Acc (λ y x, padmin x y) p.
+    P at any level admits no infinite sequence of them. *)
+Lemma Prel_acc_live n W T p : strict W → Prel κ_L n W ∅ T p → Acc (λ y x, padmin x y) p.
 Proof.
   intros HW HP.
-  cut (∀ W Σ T p, Prel κ_L (S n) W Σ T p → strict W → Σ = ∅ → Acc (λ y x, padmin x y) p); [eauto|].
-  clear. refine (Prel_S_ind κ_L n (λ W Σ T p, strict W → Σ = ∅ → Acc (λ y x, padmin x y) p) _).
+  cut (∀ W Σ T p, Prel κ_L n W Σ T p → strict W → Σ = ∅ → Acc (λ y x, padmin x y) p); [eauto|].
+  clear. refine (Prel_ind κ_L n (λ W Σ T p, strict W → Σ = ∅ → Acc (λ y x, padmin x y) p) _).
   intros W Σ T p H HW ->. constructor. intros p' (q & ev & q' & Hq & Hst & <- & Had).
   destruct (Pbody_id κ_L _ _ _ _ _ _ _ _ _ H W (wext_refl W) HW) as (_ & _ & H1 & _).
   assert (ev_tau ev ∧ ev_cost κ_L ev = 0) as [Hτ Hc].
@@ -110,7 +110,7 @@ Theorem live_adequacy W T p : strict W → ∅ ⊫_W p : T → deadlock_free p �
 Proof.
   intros HW HP. split; [by eapply adequacy_gen|].
   intros q Hq. apply rtc_nsteps_1 in Hq as [m Hm].
-  apply (Prel_acc_live 0 W T q HW), (Prel_steps κ_L m W 1 T p q HW Hm), HP.
+  apply (Prel_acc_live (onat 0) W T q HW), (Prel_steps κ_L m W 0 T p q HW Hm), HP.
 Qed.
 
 (** ** Sanity checks
