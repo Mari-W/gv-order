@@ -162,20 +162,20 @@ Proof.
   intros j v Πv φv i Hi HV. eapply force_redex; try done. by apply fle_frame_op.
 Qed.
 
-Lemma cost_e_new_at N Θ Δ e (κ : field) S0 x a m S m1 m2 c0 :
-  csem N Θ Δ e (TSess S0 x a m) c0 → tsum_ok N m1 m2 →
-  csem N Θ Δ (ENewAt κ e) (TProd (TSess S0 x a m) (TProd (TSess S (x·κ) m1 m1) (TSess (dual S) (x·κ)‾ m2 m2))) c0.
-Proof.
-  intros Hcs Hm. eapply (cost_op _ _ _ _ _ _ _ _ _ Hcs); [apply fle_refl|].
-  intros j v Πv φv i Hi HV. by eapply new_at_redex.
-Qed.
-
-Lemma cost_e_new N Δ (ℓ : family) lb C S m1 m2 :
+Lemma cost_e_new N Δ lb C S m1 m2 :
   lenv_unl Δ → tsum_ok N m1 m2 →
-  csem N ∅ Δ (ENew ℓ) (TEx lb 1 C (TProd (TSess S (pvar 0) m1 m1) (TSess (dual S) (pvar 0)‾ m2 m2))) (Some 0).
+  csem N ∅ Δ ENew (TEx lb 1 C (TProd (TSess S (pvar 0) m1 m1) (TSess (dual S) (pvar 0)‾ m2 m2))) (Some 0).
 Proof.
   intros HΔ Hm n g γ Π φ HE. destruct (envf_unl _ _ _ _ _ _ _ HΔ HE) as [-> ->].
   simpl. by eapply new_redex.
+Qed.
+
+Lemma cost_e_new_fld N Δ y S m1 m2 :
+  lenv_unl Δ → tsum_ok N m1 m2 →
+  csem N ∅ Δ ENew (TProd (TSess S y m1 m1) (TSess (dual S) y‾ m2 m2)) (Some 0).
+Proof.
+  intros HΔ Hm n g γ Π φ HE. destruct (envf_unl _ _ _ _ _ _ _ HΔ HE) as [-> ->].
+  simpl. by eapply new_fld_redex.
 Qed.
 
 (** ** Compound terms *)

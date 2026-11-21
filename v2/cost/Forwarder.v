@@ -43,7 +43,7 @@ Definition fw (o : cend) : expr := LetP (ERecv (Chan o)) (LetU (EClose (Var 0)) 
 
 (** ** The forwarder types, at every bound *)
 
-Definition W_fw : world := World ∅ (λ _, False) ∅ (λ _ _, False).
+Definition W_fw : sworld := sw_empty.
 
 Definition fw_cost : fuel := fadd (fadd (Some 0) (Some 1)) (fadd (fadd (Some 0) (Some 1)) (Some 0)).
 
@@ -89,5 +89,5 @@ Proof.
   - apply pfree_singleton.
   - set_solver.
   - rewrite map_union_empty. unfold tenv_of. rewrite map_fmap_singleton. apply fw_typed.
-  - apply strict_bare; [intros g Hg; exact Hg|done].
+  - apply sw_empty_ok.
 Qed.

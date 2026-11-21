@@ -117,6 +117,12 @@ Qed.
 Lemma sworld_wf_bare W : (∀ g, ¬ sw_facts W g) → sworld_wf W.
 Proof. intros Hf. split. intros x y H. by destruct (Hf _ H). Qed.
 
+(** The static world with no constant and no fact. *)
+Definition sw_empty : sworld := SWorld ∅ (λ _, False).
+
+Lemma sw_empty_ok : sworld_wf sw_empty ∧ swf sw_empty.
+Proof. split; [apply sworld_wf_bare|apply swf_bare]; intros ? []. Qed.
+
 (** A relation contained in a well-founded one is well-founded. *)
 Lemma wf_sub {A} (R R' : A → A → Prop) : (∀ x y, R' x y → R x y) → well_founded R → well_founded R'.
 Proof.

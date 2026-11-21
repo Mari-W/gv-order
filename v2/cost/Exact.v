@@ -176,7 +176,7 @@ Proof.
   - split; done.
   - split; done.
   - split; [by rewrite dom_empty_L|by apply vfacts_empty].
-  - split; done.
+  - split; [by rewrite dom_empty_L|by apply vfacts_empty].
   - split; done.
   - split; done.
   - (* e_open *)

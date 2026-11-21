@@ -35,7 +35,7 @@ Proof.
   - by eapply cost_e_link.
   - by eapply cost_e_spawn.
   - by eapply cost_e_new.
-  - by eapply cost_e_new_at.
+  - by eapply cost_e_new_fld.
   - by eapply cost_e_sub.
   - by eapply cost_e_pack.
   - by eapply cost_e_open.
