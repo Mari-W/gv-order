@@ -75,7 +75,7 @@ set('ty-grammar', b => {
 });
 drop('ty-credit', 'ty-grammar');
 merge('ty-ann', 'Annotations and tickets', ['ty-annot', 'ty-tix', 'ty-df'], {
-  caption: R`Credits $a$, costs $c$, tickets $m$ and the bound $N$ are numbers, and $\infty$ means unbounded. An end has $m$ tickets with $a \leq m$, and the tickets of the two ends of a channel sum to at most $N$. Deadlock-free typing is the instance $\mathsf{ty\_df}$ with every annotation unbounded.`,
+  caption: R`Credits $a$, costs $c$, tickets $m$ and the bound $N$ are numbers, and $\infty$ means unbounded. An end has $m$ tickets with $a \leq m$, and the tickets of the two ends of a channel sum to at most $N$. Deadlock-free typing is the instance $\mathsf{ty\_df}$ with each annotation unbounded.`,
   why: 'The numbers lock-free typing adds to types and judgments. At their unbounded values every premise about them holds, which is how deadlock-free typing is an instance.'
 });
 
@@ -136,11 +136,11 @@ merge('rd', 'Readiness', ['rd-term', 'rd-proc'], {
 merge('p-rel', 'The process relation', ['p-body', 'p-fuse']);
 merge('p-obls', 'Obligations of process steps', ['p-obl', 'p-msg']);
 merge('fu', 'Fuel', ['fu-def', 'fu-fsem'], {
-  caption: R`$e \in F^N_\alpha\llbracket \Phi \vdash \sigma\ !\ d\rrbracket$ says that the thread $e$, holding the ends $\Phi$, each with its protocol, counter and tickets $S^f_m$, has fuel at the ordinal index $\alpha$ to return at $\sigma$ within $d$ actions. At $\alpha > 0$ it returns a value in $FV$, or every step meets its fuel obligation at every $\beta < \alpha$. An action on $o$ asks $o$ held and not idle and a positive counter on every other live end and on the frame, then sets $o$ back to its tickets and decrements the other counters, $\Phi{\downarrow}[o \mapsto S^{m}_{m}]$. A thread has fuel, $\mathsf{fsem}$, when it has fuel at every index with every end at its tickets. Fuel reads no point, no world and no relation.`,
+  caption: R`$e \in F^N_\alpha\llbracket \Phi \vdash \sigma\ !\ d\rrbracket$ says that the thread $e$, holding the ends $\Phi$, each with its protocol, counter and tickets $S^f_m$, has fuel at the ordinal index $\alpha$ to return at $\sigma$ within $d$ actions. At $\alpha > 0$ it returns a value in $FV$, or each step meets its fuel obligation at each $\beta < \alpha$. An action on $o$ asks $o$ held and not idle and a positive counter on the other live ends and on the frame. It then sets $o$ back to its tickets and decrements the other counters, $\Phi{\downarrow}[o \mapsto S^{m}_{m}]$. A thread has fuel, $\mathsf{fsem}$, when it has fuel at each index with each end at its tickets. Fuel reads no point, no world and no relation.`,
   why: 'Fuel is the lock-free half of a thread, its counters and tickets, kept apart from the relation so that it reads no point and no world. Lock-free adequacy measures waiting with it.'
 });
 merge('fu-obls', 'Fuel obligations', ['fu-act', 'fu-obl-int', 'fu-obl'], {
-  caption: R`Internal steps decrement no counter. A new channel starts each end at its tickets, a spawn transfers the ends of the thunk to the child with counters one lower, and a link drops two dual ends whose counters exceed the partner bounds of each other. Every action uses one unit of the frame, advances the protocol of $o$, resets the counter of $o$ to its tickets and decrements the counters of the other ends. A send transfers its payload ends with counters one lower, and a receive continues for every value in $FV$ that may arrive.`
+  caption: R`Internal steps decrement no counter. A new channel starts each end at its tickets, and a spawn transfers the ends of the thunk to the child with counters one lower. A link drops two dual ends whose counters exceed the partner bounds of each other. Each action uses one unit of the frame, advances the protocol of $o$, resets the counter of $o$ to its tickets and decrements the counters of the other ends. A send transfers its payload ends with counters one lower, and a receive continues for each value in $FV$ that may arrive.`
 });
 merge('soup', 'The lock-free process relation', ['sp-state', 'sp-inv'], {
   caption: R`An annotated configuration $a = (q, K)$ is a configuration with an ownership map $K$ from held ends to holding thread, point, counter and tickets. It is in the lock-free process relation at index $\alpha$ when every thread is in the relation $E[\kappa_L]$ at the ends it owns and has fuel at their counters. The rest, $\mathsf{consistent}$ keeps $K$, $A$ and $\Pi$ in agreement. The lock-free process relation is the only place fuel is used.`,
@@ -157,7 +157,7 @@ merge('th-terms', 'Lemmas about terms', ['th-sound-src', 'th-fund-term', 'th-bin
   why: 'They are the per-thread layer under the process results. Each is proved once, rule by rule, and used by the fundamental theorem for processes.'
 });
 merge('th-adeq', 'Adequacy', ['th-adequacy', 'th-lf-adequacy'], {
-  caption: R`For strict $W$, a closed process in the semantic judgment is deadlock free. \annp{For strict and well-founded $W$, a closed process in the lock-free judgment is lock free, and every thread progresses on every weakly fair maximal run.}`,
+  caption: R`A closed process in the semantic judgment is deadlock free. \annp{Under excluded middle and choice, a closed process in the lock-free judgment is lock free, and every thread progresses on every weakly fair maximal run.}`,
   why: 'Adequacy is the only place the relation meets the safety property.'
 });
 order('theorems', ['th-chain', 'th-sound', 'th-compose', 'th-fund-proc', 'th-adeq', 'th-conserv', 'th-terms']);
@@ -174,7 +174,19 @@ const planned = { 'fv': TRANSFINITE, 'v-rel': TRANSFINITE,
   'sr-reading': TRANSFINITE, 'e-rel': TRANSFINITE,
   'th-chain': TRANSFINITE, 'th-adeq': TRANSFINITE,
 };
+const LAYERS = 'Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ.';
+const CONS = 'Conservativity at E-Open is planned, decided on 2026-11-21 (docs/redesign/check-flag-rejection.md, fix (c)). cons W Γ m C says that the opened context derives no fact between points of the old context. The Rocq E-Open has no such premise yet.';
+const FLAG = 'The flag variant whose arms read their binder is the running example, decided on 2026-11-21 (docs/redesign/check-flag-rejection.md). Its static rejection rests on the conservativity premise of E-Open and is argued on paper in section 4 of that write-up. Without the premise the variant types in the Rocq (sbv_typed in the probe), and sb_dead_arm_typed stops holding once the premise lands.';
+const more = {
+  'w-world': LAYERS, 'w-order': LAYERS, 'w-wf': LAYERS, 'w-ext': LAYERS, 't-lf-wf': LAYERS, 't-consts': LAYERS, 'r-new': LAYERS,
+  'p-typing': LAYERS, 'e-obl': LAYERS, 'p-rel': LAYERS, 'th-chain': LAYERS, 'th-sound': LAYERS, 'th-compose': LAYERS,
+  'th-fund-proc': LAYERS, 'th-adeq': LAYERS, 'th-terms': LAYERS, 'r-ex': CONS,
+};
+for (const [id, why] of Object.entries(more)) planned[id] = planned[id] ? planned[id] + ' ' + why : why;
 for (const [id, why] of Object.entries(planned)) set(id, b => { b.planned = why; });
+// examples carry a planned tag the same way
+const exFlag = core.examples.find(x => x.id === 'ex-flag');
+if (exFlag) exFlag.planned = FLAG + ' ' + CONS;
 
 // every caption sentence about the lock-free mode hides in the deadlock-free mode
 for (const s of sections) for (const b of s.blocks) if (b.modes.includes('df')) b.caption = lfSentences(b.caption);

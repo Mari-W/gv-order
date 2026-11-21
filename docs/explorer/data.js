@@ -495,72 +495,73 @@ window.MAP = {
      "id": "w-world",
      "title": "Worlds",
      "rocq": "types/Worlds.v: world",
-     "tex": "\\htmlData{k=w.world}{W = (\\htmlData{k=w.consts}{A}, \\htmlData{k=w.facts}{\\prec_A})}",
-     "caption": "A world $W$ has a set of roots $A$ and facts $\\prec_A$ between points with roots in $A$.",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=w.world}{W = (\\htmlData{k=w.consts}{A}, \\htmlData{k=w.facts}{\\prec_A})} \\\\\n\\htmlData{k=w.rworld}{R = (A, \\varrho)},\\ \\htmlData{k=w.rank}{\\varrho_a : \\htmlData{k=w.tree}{\\mathsf{tree}(a)} \\to \\mathsf{Ord}}\\ \\text{for}\\ a \\in A \\\\\n\\htmlData{k=w.rank}{\\varrho_a(x) < \\varrho_a(x^{+}),\\ \\varrho_a(x) < \\varrho_a(\\overline{x}^{+})}\n\\end{array}",
+     "caption": "A static world $W$ has a set of roots $A$ and facts $\\prec_A$ between points with roots in $A$. A ranked world $R$ has the same roots and gives the tree of each root ordinal ranks that rise along program order.",
      "modes": [
       "df",
       "lf"
      ],
      "about": {
-      "why": "Typing and the relation read the order of one world. Each creation adds roots and facts.",
+      "why": "Typing reads the order of a static world, and the relation reads ranks. Each creation at a fresh root adds a root and ranks its tree.",
       "used": [
        "w-order",
        "w-ext",
        "p-typing"
       ]
      },
-     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m."
+     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m. Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
     },
     {
      "id": "w-order",
      "title": "The order of a world",
      "rocq": "types/Worlds.v: wstep, w_lt",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=w.lt}{\\begin{array}{l} \\prec_W\\ =\\ \\mathsf{tc}\\big(\\htmlData{k=w.ws-fact}{\\prec_A} \\\\ \\qquad\\qquad \\cup\\; \\htmlData{k=w.ws-po}{\\{x \\prec x^{+}\\}} \\;\\cup\\; \\htmlData{k=w.ws-dpo}{\\{x \\prec \\overline{x}^{+}\\}}\\big) \\end{array}} \\\\\n\\htmlData{k=ty2.le}{x \\preceq y \\iff x = y \\lor x \\prec_W y}\n\\end{array}",
-     "caption": "$\\prec_W$ is the transitive closure $\\mathsf{tc}$ of the facts together with $x \\prec x^{+}$ and $x \\prec \\overline{x}^{+}$.",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=w.lt}{\\begin{array}{l} \\prec_W\\ =\\ \\mathsf{tc}\\big(\\htmlData{k=w.ws-fact}{\\prec_A} \\\\ \\qquad\\qquad \\cup\\; \\htmlData{k=w.ws-po}{\\{x \\prec x^{+}\\}} \\;\\cup\\; \\htmlData{k=w.ws-dpo}{\\{x \\prec \\overline{x}^{+}\\}}\\big) \\end{array}} \\\\\n\\htmlData{k=ty2.le}{x \\preceq y \\iff x = y \\lor x \\prec_W y} \\\\\n\\htmlData{k=w.rlt}{R \\vDash x \\prec y \\iff \\varrho(x) < \\varrho(y)} \\\\\n\\htmlData{k=w.sat}{R \\vDash W \\iff \\forall x \\prec_A y.\\ R \\vDash x \\prec y}\n\\end{array}",
+     "caption": "$\\prec_W$ is the transitive closure $\\mathsf{tc}$ of the facts together with $x \\prec x^{+}$ and $x \\prec \\overline{x}^{+}$. A ranked world orders points by their ranks, and it satisfies $W$ when each fact of $W$ holds under these ranks.",
      "modes": [
       "df",
       "lf"
      ],
      "about": {
-      "why": "Besides the stated facts, the order says that an end moves up as its protocol advances.",
+      "why": "Besides the stated facts, the order says that an end moves up as its protocol advances. The semantic judgments at $W$ read the relation at each ranked world that satisfies $W$.",
       "used": [
        "t-contexts",
        "rd"
       ]
      },
-     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m."
+     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m. Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
     },
     {
      "id": "w-wf",
-     "title": "Well-formed, strict and well-founded worlds",
-     "rocq": "types/Worlds.v: world_wf, strict, wfworld",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=w.wf}{\\mathsf{world\\_wf}\\,W} \\\\\n\\htmlData{k=w.strict}{\\mathsf{strict}\\,W \\iff \\mathsf{world\\_wf}\\,W \\land \\forall x.\\ W \\nvdash x \\prec x} \\\\\n\\htmlData{k=w.lfworld}{\\mathsf{wfworld}\\,W \\iff \\prec_W \\text{ is well-founded}}\n\\end{array}",
-     "caption": "Each result asks for a strict world. \\annp{Lock freedom also asks for a well-founded one.}",
+     "title": "Well-formed and well-founded worlds",
+     "rocq": "types/Worlds.v: world_wf; not yet in the Rocq (docs/redesign/check-layers.md, check-layers-open.md)",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=w.wf}{\\mathsf{world\\_wf}\\,W} \\\\\n\\htmlData{k=w.lfworld}{\\mathsf{wf}\\,W \\iff \\prec_W \\text{ is well-founded}} \\\\\n\\htmlData{k=w.wfnew}{\\begin{array}{l} \\mathsf{wf\\_new}\\,\\rho\\,C \\iff (\\forall (x \\prec y) \\in C.\\ y \\in \\htmlData{k=w.tree}{\\mathsf{tree}(\\rho)}) \\\\ \\qquad \\land\\ (C \\cup \\htmlData{k=w.po}{\\mathsf{po}}) \\cap \\mathsf{tree}(\\rho)^{2} \\text{ is well-founded} \\end{array}}\n\\end{array}",
+     "caption": "P-Term and P-Connect ask a well-founded static world, and E-New asks $\\mathsf{wf\\_new}$ of a creation at a fresh root. No theorem asks anything of the world.",
      "modes": [
       "df",
       "lf"
      ],
      "about": {
-      "why": "In a cyclic order two threads waiting on each other would both count as ready, so the results ask for strict worlds. \\annp{Lock-free adequacy proceeds by induction along the order, which needs well-foundedness.}",
+      "why": "A static world has a ranked world that satisfies it exactly when its order is well-founded. A creation at a fresh root needs ranks for the new tree in each ranked world that satisfies its context, which $\\mathsf{wf\\_new}$ guarantees.",
       "used": [
        "p-typing",
        "th-sound",
        "th-adeq"
       ]
-     }
+     },
+     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
     },
     {
      "id": "w-ext",
      "title": "Extension, growth, join, restriction",
-     "rocq": "types/Worlds.v: wext, wjoin, wrestrict, strict_join_iff",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=w.ext}{W \\sqsubseteq W'} \\qquad \\htmlData{k=w.grow}{W \\oplus C = (A \\cup \\mathsf{roots}(C),\\ \\prec_A \\cup\\, C)} \\qquad \\htmlData{k=w.join}{W_1 \\sqcup W_2} \\\\\n\\htmlData{k=w.R7}{\\begin{array}{l} \\mathsf{strict}(W_1 \\sqcup W_2) \\iff {} \\\\ \\qquad \\mathsf{strict}\\,W_1 \\land \\mathsf{strict}\\,W_2 \\land \\mathsf{strict}(\\htmlData{k=w.restrict}{W_1|_S} \\sqcup W_2|_S),\\ S = A_1 \\cap A_2 \\end{array}}\n\\end{array}",
-     "caption": "Extension $\\sqsubseteq$, growth $W \\oplus C$ by the facts of a creation, and the join $\\sqcup$. A join is strict when both worlds are and their restrictions to the shared roots $S = A_1 \\cap A_2$ join strictly.",
+     "rocq": "types/Worlds.v: wext, wjoin, wrestrict; not yet in the Rocq (docs/redesign/check-layers-open.md, wf_join_iff)",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=w.ext}{W \\sqsubseteq W'} \\qquad \\htmlData{k=w.ext}{R \\sqsubseteq R'} \\qquad \\htmlData{k=w.grow}{R \\oplus (a, \\varrho_a) = (A \\cup \\{a\\},\\ \\varrho \\cup \\varrho_a)} \\qquad \\htmlData{k=w.join}{W_1 \\sqcup W_2} \\\\\n\\htmlData{k=w.R7}{\\begin{array}{l} \\htmlData{k=w.lfworld}{\\mathsf{wf}}(W_1 \\sqcup W_2) \\iff {} \\\\ \\qquad \\mathsf{wf}\\,W_1 \\land \\mathsf{wf}\\,W_2 \\land \\mathsf{wf}(\\htmlData{k=w.restrict}{W_1|_S} \\sqcup W_2|_S),\\ S = A_1 \\cap A_2 \\end{array}}\n\\end{array}",
+     "caption": "Extension $\\sqsubseteq$, growth $R \\oplus (a, \\varrho_a)$ by the ranks of a fresh root, and the join $\\sqcup$. A join is well-founded when both worlds are and their restrictions to the shared roots $S = A_1 \\cap A_2$ join to a well-founded order.",
      "modes": [
       "df",
       "lf"
      ],
      "about": {
-      "why": "Worlds grow during a run, and the relation holds in each larger world. Composition joins two worlds and checks only their shared roots.",
+      "why": "Ranked worlds grow during a run and never change a rank, and the relation holds in each larger world. Composition joins two static worlds and checks only their shared roots.",
       "used": [
        "p-typing",
        "v-rel",
@@ -568,7 +569,7 @@ window.MAP = {
        "p-rel"
       ]
      },
-     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m."
+     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m. Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
     }
    ]
   },
@@ -640,21 +641,24 @@ window.MAP = {
     {
      "id": "t-lf-wf",
      "title": "A well-founded world",
-     "rocq": "types/Worlds.v: wfworld; soup/LFAdequacy.v: lf_adequacy",
+     "rocq": "not yet in the Rocq (docs/redesign/check-layers.md, check-layers-open.md), today types/Worlds.v: wfworld; soup/LFAdequacy.v: lf_adequacy",
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{lll}\\htmlData{k=lfi.wf}{\\text{well-founded}} & \\htmlData{k=w.lfworld}{\\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\iff \\prec_W \\text{ is well-founded}} & \\text{the order has no infinite descending chain} \\\\[3pt]  & \\htmlData{k=th.wfworld}{\\mathsf{wfworld}\\,W} & \\text{a premise of lock-free soundness, which no typing rule checks}\\end{array}",
-     "caption": "A waiting thread waits on the thread holding its dual end, which may itself wait at a lower point. In a well-founded order this chain of waits ends, and the thread at its bottom can act.",
+     "tex": "\\begin{array}{lll}\\htmlData{k=lfi.wf}{\\text{ranks}} & \\htmlData{k=w.rank}{\\varrho_a : \\mathsf{tree}(a) \\to \\mathsf{Ord}} & \\text{a ranked world orders points by ordinals} \\\\[3pt]  & \\htmlData{k=w.wfnew}{\\mathsf{wf\\_new}\\,\\rho\\,C} & \\text{E-New at a fresh root asks a well-founded order on the new tree} \\\\[3pt]  & \\htmlData{k=w.lfworld}{\\mathsf{wf}\\,W} & \\text{P-Term and P-Connect ask a well-founded static world} \\\\[3pt]  & \\htmlData{k=lfi.measure}{\\varrho(\\mathsf{pt}\\,o)} & \\text{lock-free adequacy ranks a waiting thread by the end it waits on}\\end{array}",
+     "caption": "A waiting thread waits on the thread holding its dual end, which may itself wait at a lower point. Points have ordinal ranks, so this chain of waits ends, and the thread at its bottom can act. Typing keeps ranks possible, and lock-free adequacy asks nothing of the world.",
      "about": {
       "why": "It rules out a chain of waiting threads that grows forever, each waiting below the previous one.",
-      "example": "The growing waiting chain in the Examples tab is outside lock-free soundness.",
+      "example": "The growing waiting chain in the Examples tab has no typing, because E-New rejects its creation.",
       "used": [
        "th-sound",
        "th-adeq",
-       "w-wf"
+       "w-wf",
+       "r-new",
+       "p-typing"
       ]
-     }
+     },
+     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
     },
     {
      "id": "t-judgment",
@@ -810,25 +814,26 @@ window.MAP = {
      "id": "r-ex",
      "title": "Existentials",
      "rocq": "static/Typing.v: e_pack, e_open; static/Conservativity.v: d_pack, d_open",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\quad \\htmlData{k=E-Pack.lb}{l \\preccurlyeq \\htmlData{k=tp.pinst}{T[\\bar x]}}\\quad \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T[\\bar x]\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : \\exists^{l}\\bar\\iota.\\,C.\\,T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Pack} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Open.entry}{\\Delta(i) = \\exists^{l}\\bar\\iota.\\,C.\\,T\\annot{,\\ \\neg\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}}\\,T}}\\quad \\htmlData{k=E-Box.fresh}{\\bar\\iota\\ \\text{fresh}}\\quad \\htmlData{k=E-Open.body}{\\Gamma, C(\\bar\\iota) ; \\Delta[i \\mapsto T] \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Open}\\end{array}",
-     "caption": "E-Pack chooses witness points $\\bar x$ with $\\Gamma \\vdash C[\\bar x]$. E-Open names the witnesses by fresh point variables $\\bar\\iota$ with the hypothesis $C(\\bar\\iota)$.",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\quad \\htmlData{k=E-Pack.lb}{l \\preccurlyeq \\htmlData{k=tp.pinst}{T[\\bar x]}}\\quad \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T[\\bar x]\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : \\exists^{l}\\bar\\iota.\\,C.\\,T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Pack} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Open.entry}{\\Delta(i) = \\exists^{l}\\bar\\iota.\\,C.\\,T\\annot{,\\ \\neg\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}}\\,T}}\\quad \\htmlData{k=E-Box.fresh}{\\bar\\iota\\ \\text{fresh}}\\quad \\htmlData{k=E-Open.cons}{\\mathsf{cons}\\,W\\,\\Gamma\\,m\\,C}\\quad \\htmlData{k=E-Open.body}{\\Gamma, C(\\bar\\iota) ; \\Delta[i \\mapsto T] \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Open} \\\\[2ex] \\htmlData{k=E-Open.cons}{\\mathsf{cons}\\,W\\,\\Gamma\\,m\\,C \\iff \\forall x, y \\in \\mathsf{Point}_{\\Gamma}.\\ (\\Gamma, C(\\bar\\iota) \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec y \\Rightarrow \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec y),\\ m = |\\bar\\iota|}\\end{array}",
+     "caption": "E-Pack chooses witness points $\\bar x$ with $\\Gamma \\vdash C[\\bar x]$. E-Open names the witnesses by fresh point variables $\\bar\\iota$ with the hypothesis $C(\\bar\\iota)$, and asks that the hypothesis derive no new fact between points of $\\Gamma$.",
      "modes": [
       "df",
       "lf"
      ],
      "about": {
-      "why": "An existential hides the points of a created channel behind the facts it states about these points.",
+      "why": "An existential hides the points of a created channel behind the facts it states about these points. Conservativity keeps an opened binder that no value inhabits from ordering the points the code already holds.",
       "used": [
        "r-new",
        "v-rel"
       ]
-     }
+     },
+     "planned": "Conservativity at E-Open is planned, decided on 2026-11-21 (docs/redesign/check-flag-rejection.md, fix (c)). cons W Γ m C says that the opened context derives no fact between points of the old context. The Rocq E-Open has no such premise yet."
     },
     {
      "id": "t-consts",
      "title": "Types of constants",
      "rocq": "static/Constants.v: k_send_df, k_recv_df, k_close_df, k_select_df, k_branch_df, k_link_df, k_spawn_df, k_force_df, k_send, k_recv, k_close, k_select, k_branch, k_link, k_spawn, k_force",
-     "tex": "\\begin{array}{lll}\n\\htmlData{k=prim.send}{\\mathsf{send}} & : T[x\\cdot i] \\otimes S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S@\\htmlData{k=pt.shift}{x^{+}} & \\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T,\\ \\htmlData{k=E-Send.heads}{x \\prec T[x\\cdot i]} \\\\\n\\htmlData{k=prim.recv}{\\mathsf{recv}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} T[x\\cdot i] \\otimes S@x^{+} & \\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T \\\\\n\\htmlData{k=prim.close}{\\mathsf{close}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} \\ast & \\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}} \\\\\n\\htmlData{k=prim.select}{\\mathsf{select}}_i & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}} & \\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)} \\\\\n\\htmlData{k=prim.branch}{\\mathsf{branch}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2 & \\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)} \\\\\n\\htmlData{k=prim.link}{\\mathsf{link}} & : \\htmlData{k=E-Link.dual}{S@x \\otimes \\overline{S}@\\overline{x}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.spawn}{\\mathsf{spawn}} & : (\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} \\ast) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.force}{\\mathsf{force}} & : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] & \\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]} \\\\\n\\htmlData{k=syn.new}{\\mathsf{new}} & : \\exists^{\\bot}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ (S@\\pi \\otimes \\overline{S}@\\overline{\\pi}) & \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho), (\\varnothing, x\\cdot\\kappa)\\}},\\ \\htmlData{k=E-New.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\Gamma \\cup C)}\n\\end{array}",
+     "tex": "\\begin{array}{lll}\n\\htmlData{k=prim.send}{\\mathsf{send}} & : T[x\\cdot i] \\otimes S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S@\\htmlData{k=pt.shift}{x^{+}} & \\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T,\\ \\htmlData{k=E-Send.heads}{x \\prec T[x\\cdot i]} \\\\\n\\htmlData{k=prim.recv}{\\mathsf{recv}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} T[x\\cdot i] \\otimes S@x^{+} & \\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T \\\\\n\\htmlData{k=prim.close}{\\mathsf{close}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} \\ast & \\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}} \\\\\n\\htmlData{k=prim.select}{\\mathsf{select}}_i & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}} & \\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)} \\\\\n\\htmlData{k=prim.branch}{\\mathsf{branch}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2 & \\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)} \\\\\n\\htmlData{k=prim.link}{\\mathsf{link}} & : \\htmlData{k=E-Link.dual}{S@x \\otimes \\overline{S}@\\overline{x}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.spawn}{\\mathsf{spawn}} & : (\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} \\ast) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.force}{\\mathsf{force}} & : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] & \\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]} \\\\\n\\htmlData{k=syn.new}{\\mathsf{new}} & : \\exists^{\\bot}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ (S@\\pi \\otimes \\overline{S}@\\overline{\\pi}) & \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho), (\\varnothing, x\\cdot\\kappa)\\}},\\ \\htmlData{k=E-New.wf}{\\pi = \\rho \\Rightarrow \\htmlData{k=w.wfnew}{\\mathsf{wf\\_new}}\\,\\rho\\,C},\\ \\htmlData{k=E-New.field}{\\pi = x\\cdot\\kappa \\Rightarrow \\Gamma \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} C}\n\\end{array}",
      "caption": "Each constant has the type of its eta-expansion $\\lambda y.\\,k\\,y$, for each instance of its variables that meets the side conditions. An action on an end at $x$ has upper point $x$. $\\mathsf{new}$ is a term and is typed by E-New. \\annp{The types are shown without credits, tickets and cost.}",
      "modes": [
       "df",
@@ -843,7 +848,7 @@ window.MAP = {
        "r-new"
       ]
      },
-     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m."
+     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m. Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
     },
     {
      "id": "r-act",
@@ -886,8 +891,8 @@ window.MAP = {
      "id": "r-new",
      "title": "Creation",
      "rocq": "static/Typing.v: e_new; static/Conservativity.v: d_new",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\quad \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho), (\\varnothing, x\\cdot\\kappa)\\}}\\quad \\htmlData{k=E-New.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\Gamma \\cup C)}\\annraw{\\quad }\\annot{\\htmlData{k=E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.new}{\\mathsf{new}} : \\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ \\htmlData{k=E-New.dual}{(S@\\pi)\\annot{^{m_1}_{m_1}} \\otimes (\\htmlData{k=sty.dual}{\\overline{S}}@\\overline{\\pi})\\annot{^{m_2}_{m_2}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-New}",
-     "caption": "The two ends of a new channel are at a fresh root $\\rho$ and its dual, or at a field $x\\cdot\\kappa$ and its dual. The facts $C$ keep the order strict, and the lower bound is $\\bot$. \\annp{The creation picks tickets $m_1$ and $m_2$ with $m_1 + m_2 \\leq N$, and each end starts at credit equal to its tickets.}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\quad \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho), (\\varnothing, x\\cdot\\kappa)\\}}\\quad \\htmlData{k=E-New.wf}{\\pi = \\rho \\Rightarrow \\htmlData{k=w.wfnew}{\\mathsf{wf\\_new}}\\,\\rho\\,C}\\quad \\htmlData{k=E-New.field}{\\pi = x\\cdot\\kappa \\Rightarrow \\Gamma \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} C}\\annraw{\\quad }\\annot{\\htmlData{k=E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.new}{\\mathsf{new}} : \\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ \\htmlData{k=E-New.dual}{(S@\\pi)\\annot{^{m_1}_{m_1}} \\otimes (\\htmlData{k=sty.dual}{\\overline{S}}@\\overline{\\pi})\\annot{^{m_2}_{m_2}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-New}",
+     "caption": "The two ends of a new channel are at a fresh root $\\rho$ and its dual, or at a field $x\\cdot\\kappa$ and its dual. At a fresh root each fact of $C$ ends in the tree of $\\rho$, and $C$ with program order is well-founded on that tree. At a field $\\Gamma$ entails $C$. The lower bound is $\\bot$. \\annp{The creation picks tickets $m_1$ and $m_2$ with $m_1 + m_2 \\leq N$, and each end starts at credit equal to its tickets.}",
      "modes": [
       "df",
       "lf"
@@ -899,7 +904,7 @@ window.MAP = {
        "w-ext"
       ]
      },
-     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m."
+     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m. Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
     },
     {
      "id": "t-subs",
@@ -927,14 +932,15 @@ window.MAP = {
       "lf"
      ],
      "rocq": "static/Typing.v: p_term; static/Typing.v: p_connect; static/Typing.v: ptyped, static/FundamentalProc.v: pguard",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=ty.tfree}{\\mathsf{tfree}\\,T}\\quad \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma}\\quad \\htmlData{k=P-Term.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\quad \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = (S@x)\\annot{^{m}_{m}},\\ \\Theta_B(c^{-}) = (\\overline{S}@\\overline{x})\\annot{^{m'}_{m'}}\\annot{,\\ m + m' \\leq N}} \\\\ \\htmlData{k=P-Term.typed}{\\varnothing ; \\htmlData{k=tp.lift}{\\Sigma\\annot{^{N/2}_{N/2}}}, \\Theta_B \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}} t : T\\annot{\\ !\\ c}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1} (C_1, E_1) : T} \\\\ \\htmlData{k=P-Connect.right}{\\Sigma_2 \\cup \\htmlData{k=P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\htmlData{k=P-Connect.disj}{\\mathsf{disjoint}(\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_1, \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_2, \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, C_1, C_2)}\\quad \\htmlData{k=P-Connect.cutfree}{\\htmlData{k=pfree}{\\mathsf{pfree}}\\,\\Sigma_C} \\\\ \\htmlData{k=P-Connect.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\htmlData{k=w.restrict}{W_1|_S} \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2|_S),\\ S = \\htmlData{k=w.consts}{A_{W_1}} \\cap A_{W_2}}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{\\htmlData{k=P-Connect.join}{W_1 \\htmlData{k=w.join}{\\sqcup} W_2}} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect}\\annraw{\\\\[3ex]}\\annot{\\htmlData{k=tp.lfjudg}{\\Sigma \\Vdash^{N}_W p : T \\iff \\htmlData{k=lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_W p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p}}}\\end{array}",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=ty.tfree}{\\mathsf{tfree}\\,T}\\quad \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma}\\quad \\htmlData{k=P-Term.wf}{\\htmlData{k=w.lfworld}{\\mathsf{wf}}\\,W}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\quad \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = (S@x)\\annot{^{m}_{m}},\\ \\Theta_B(c^{-}) = (\\overline{S}@\\overline{x})\\annot{^{m'}_{m'}}\\annot{,\\ m + m' \\leq N}} \\\\ \\htmlData{k=P-Term.typed}{\\varnothing ; \\htmlData{k=tp.lift}{\\Sigma\\annot{^{N/2}_{N/2}}}, \\Theta_B \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}} t : T\\annot{\\ !\\ c}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1} (C_1, E_1) : T} \\\\ \\htmlData{k=P-Connect.right}{\\Sigma_2 \\cup \\htmlData{k=P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\htmlData{k=P-Connect.disj}{\\mathsf{disjoint}(\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_1, \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_2, \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, C_1, C_2)}\\quad \\htmlData{k=P-Connect.cutfree}{\\htmlData{k=pfree}{\\mathsf{pfree}}\\,\\Sigma_C} \\\\ \\htmlData{k=P-Connect.wf}{\\htmlData{k=w.lfworld}{\\mathsf{wf}}(\\htmlData{k=w.restrict}{W_1|_S} \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2|_S),\\ S = \\htmlData{k=w.consts}{A_{W_1}} \\cap A_{W_2}}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{\\htmlData{k=P-Connect.join}{W_1 \\htmlData{k=w.join}{\\sqcup} W_2}} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect}\\annraw{\\\\[3ex]}\\annot{\\htmlData{k=tp.lfjudg}{\\Sigma \\Vdash^{N}_W p : T \\iff \\htmlData{k=lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_W p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p}}}\\end{array}",
      "caption": "P-Term types one thread $t$ that holds both ends of each channel in $C_0$, at dual types and points, over an interface $\\Sigma$ without partner pairs. P-Connect cuts two components at $\\Sigma_C$ against $\\overline{\\Sigma_C}$ and compares only the shared roots of the two worlds. \\annp{Lock-free process typing is process typing at a finite bound $N$ with each thread guarded. \\annp{The ends of a restricted channel have tickets of sum at most $N$, and each interface end has $N/2$.}}",
      "about": {
       "why": "Processes are built from single threads by P-Term and composed by P-Connect.",
       "used": [
        "g-guard"
       ]
-     }
+     },
+     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
     },
     {
      "id": "g-guard",
@@ -1052,7 +1058,7 @@ window.MAP = {
       "lf"
      ],
      "rocq": "relation/Relation.v: o_beta, o_new, o_spawn, new_env; relation/Relation.v: o_send, o_recv; relation/Relation.v: o_close, o_select, o_branch, o_link",
-     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta\\end{array}}{\\htmlData{k=O-Beta}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\beta}(e')}}}\\;\\textsf{O-Beta} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=O-Spawn.split}{\\Theta = \\Theta_M \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Theta_r}\\quad \\htmlData{k=O-Spawn.thunk}{v \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta_M \\vdash \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{\\htmlData{k=ty.ubound}{\\top}}_{\\bot} \\ast \\rrbracket}}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta_r\\end{array}}{\\htmlData{k=O-Spawn}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{spawn}\\,v}(e')}}}\\;\\textsf{O-Spawn} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=O-New.cfresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Theta} \\\\ \\htmlData{k=O-New.forall}{\\forall \\htmlData{k=O-New.gfresh}{a \\notin A_W}}.\\ \\htmlData{k=O-New.grow}{\\exists S, \\pi, C.\\ \\pi \\in \\{a, x\\cdot\\kappa\\},\\ \\mathsf{strict}(W \\oplus C)},\\ \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}_{W \\oplus C}\\ \\htmlData{k=O-New.dual}{\\Theta[c^{+} \\mapsto S@\\pi,\\ c^{-} \\mapsto \\overline{S}@\\overline{\\pi}]}\\end{array}}{\\htmlData{k=O-New}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{new}\\,c}(e')}}}\\;\\textsf{O-New}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.send}{!(\\bar\\iota.\\ U)}.S@x}\\quad \\htmlData{k=O-Send.split}{\\Theta \\setminus o = \\Theta_M \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Theta_r} \\\\ \\htmlData{k=O-Send.payload}{w \\in \\htmlData{k=th.Vrel}{V^{W}_{\\dfo{n}\\annot{n-\\kappa_{give}}}\\llbracket \\Theta_M \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\htmlData{k=O-Send.shift}{\\Theta_r[o \\mapsto S@x^{+}]}\\end{array}}{\\htmlData{k=O-Send}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{send}\\,o\\,w}(e')}}}\\;\\textsf{O-Send} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ U)}.S@x} \\\\ \\htmlData{k=O-Recv.forall}{\\forall j, \\Theta_{in}.\\ \\dfo{j < n}\\annot{j + \\kappa_{take} \\leq n},\\ \\Theta_{in} \\mathbin{\\#} \\Theta,\\ w \\in \\htmlData{k=th.Vrel}{V^{W}_{j}\\llbracket \\Theta_{in} \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}} \\ \\Longrightarrow\\ \\htmlData{k=O-Recv.level}{e' \\in \\htmlData{k=th.Erel}{E^{W}_{j}\\llbracket \\Theta[o \\mapsto S@x^{+}] \\cup \\Theta_{in} \\vdash T \\rrbracket^{F}}}\\end{array}}{\\htmlData{k=O-Recv}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{recv}\\,o\\,w}(e')}}}\\;\\textsf{O-Recv}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.close}{\\mathsf{Close}}@x}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta \\setminus o\\end{array}}{\\htmlData{k=O-Close}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{close}\\,o}(e')}}}\\;\\textsf{O-Close} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=O-Link.distinct}{o_1 \\neq o_2}\\quad \\htmlData{k=O-Link.dual}{\\Theta(o_1) = S_1@x,\\ \\Theta(o_2) = S_2@\\overline{x},\\ \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S_1\\,S_2}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta \\setminus \\{o_1, o_2\\}\\end{array}}{\\htmlData{k=O-Link}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{link}\\,o_1\\,o_2}(e')}}}\\;\\textsf{O-Link} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.plus}{\\oplus(S_1,S_2)}@x}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta[o \\mapsto S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}}]\\end{array}}{\\htmlData{k=O-Select}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{select}_i\\,o}(e')}}}\\;\\textsf{O-Select} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.with}{\\&(S_1,S_2)}@x}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta[o \\mapsto S_i@\\htmlData{k=pt.bra}{x\\cdot\\kappa_i}]\\end{array}}{\\htmlData{k=O-Branch}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{branch}_i\\,o}(e')}}}\\;\\textsf{O-Branch}\n\\end{array}\\end{array}",
+     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta\\end{array}}{\\htmlData{k=O-Beta}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\beta}(e')}}}\\;\\textsf{O-Beta} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=O-Spawn.split}{\\Theta = \\Theta_M \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Theta_r}\\quad \\htmlData{k=O-Spawn.thunk}{v \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta_M \\vdash \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{\\htmlData{k=ty.ubound}{\\top}}_{\\bot} \\ast \\rrbracket}}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta_r\\end{array}}{\\htmlData{k=O-Spawn}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{spawn}\\,v}(e')}}}\\;\\textsf{O-Spawn} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=O-New.cfresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Theta} \\\\ \\htmlData{k=O-New.forall}{\\forall \\htmlData{k=O-New.gfresh}{a \\notin A_W}}.\\ \\htmlData{k=O-New.grow}{\\exists S, \\pi, C, \\varrho_a.\\ (\\pi = a \\land \\htmlData{k=w.grow}{W \\oplus (a, \\varrho_a)} \\htmlData{k=w.rlt}{\\vDash} C \\cup \\htmlData{k=w.po}{\\mathsf{po}}) \\lor (\\pi = x\\cdot\\kappa \\land W \\vDash C)},\\ \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}_{W \\oplus (a, \\varrho_a)}\\ \\htmlData{k=O-New.dual}{\\Theta[c^{+} \\mapsto S@\\pi,\\ c^{-} \\mapsto \\overline{S}@\\overline{\\pi}]}\\end{array}}{\\htmlData{k=O-New}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{new}\\,c}(e')}}}\\;\\textsf{O-New}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.send}{!(\\bar\\iota.\\ U)}.S@x}\\quad \\htmlData{k=O-Send.split}{\\Theta \\setminus o = \\Theta_M \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Theta_r} \\\\ \\htmlData{k=O-Send.payload}{w \\in \\htmlData{k=th.Vrel}{V^{W}_{\\dfo{n}\\annot{n-\\kappa_{give}}}\\llbracket \\Theta_M \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\htmlData{k=O-Send.shift}{\\Theta_r[o \\mapsto S@x^{+}]}\\end{array}}{\\htmlData{k=O-Send}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{send}\\,o\\,w}(e')}}}\\;\\textsf{O-Send} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ U)}.S@x} \\\\ \\htmlData{k=O-Recv.forall}{\\forall j, \\Theta_{in}.\\ \\dfo{j < n}\\annot{j + \\kappa_{take} \\leq n},\\ \\Theta_{in} \\mathbin{\\#} \\Theta,\\ w \\in \\htmlData{k=th.Vrel}{V^{W}_{j}\\llbracket \\Theta_{in} \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}} \\ \\Longrightarrow\\ \\htmlData{k=O-Recv.level}{e' \\in \\htmlData{k=th.Erel}{E^{W}_{j}\\llbracket \\Theta[o \\mapsto S@x^{+}] \\cup \\Theta_{in} \\vdash T \\rrbracket^{F}}}\\end{array}}{\\htmlData{k=O-Recv}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{recv}\\,o\\,w}(e')}}}\\;\\textsf{O-Recv}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.close}{\\mathsf{Close}}@x}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta \\setminus o\\end{array}}{\\htmlData{k=O-Close}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{close}\\,o}(e')}}}\\;\\textsf{O-Close} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=O-Link.distinct}{o_1 \\neq o_2}\\quad \\htmlData{k=O-Link.dual}{\\Theta(o_1) = S_1@x,\\ \\Theta(o_2) = S_2@\\overline{x},\\ \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S_1\\,S_2}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta \\setminus \\{o_1, o_2\\}\\end{array}}{\\htmlData{k=O-Link}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{link}\\,o_1\\,o_2}(e')}}}\\;\\textsf{O-Link} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.plus}{\\oplus(S_1,S_2)}@x}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta[o \\mapsto S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}}]\\end{array}}{\\htmlData{k=O-Select}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{select}_i\\,o}(e')}}}\\;\\textsf{O-Select} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.with}{\\&(S_1,S_2)}@x}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta[o \\mapsto S_i@\\htmlData{k=pt.bra}{x\\cdot\\kappa_i}]\\end{array}}{\\htmlData{k=O-Branch}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{branch}_i\\,o}(e')}}}\\;\\textsf{O-Branch}\n\\end{array}\\end{array}",
      "caption": "Each step $e \\xrightarrow{\\alpha} e'$ of a term holding $\\Theta$ must meet $\\mathsf{Obl}_\\alpha(e')$. A $\\beta$ step keeps the ends. A spawn gives the child exactly the ends of its thunk, and a creation adds two dual ends at a fresh root or at a field. A send gives away exactly the ends of its payload, and a receive is safe for each value that may arrive. A close removes the end, a choice moves it to the field of the branch, and a link removes two dual ends.",
      "about": {
       "why": "The obligations say how each step changes ownership and points. The relation reads step labels only here.",
@@ -1060,7 +1066,7 @@ window.MAP = {
        "e-rel"
       ]
      },
-     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m. Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers."
+     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m. Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers. Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
     },
     {
      "id": "rd",
@@ -1089,8 +1095,8 @@ window.MAP = {
       "lf"
      ],
      "rocq": "relation/Relation.v: Pbody, Pclauses, Pind, Ptop; relation/Relation.v: fuse_ok, pheld, pfuse, sdrop, dpairs, gch",
-     "tex": "\\begin{array}{c}\\begin{array}{l}\np \\in \\htmlData{k=th.Prel}{P^{W}_{n{+}1}\\llbracket \\Sigma \\vdash T \\rrbracket} \\iff \\htmlData{k=P.strict}{\\forall W_1 \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W.\\ \\htmlData{k=w.strict}{\\mathsf{strict}}\\,W_1} \\Rightarrow \\htmlData{k=P.fuse}{\\forall (h, D) \\in \\htmlData{k=sr.fuseok}{\\mathsf{Fus}}(\\Sigma, p)}.\\ \\htmlData{k=P.clauses}{\\mathsf{clauses}_{W_1}}(\\htmlData{k=sr.pfuse}{(h, D) \\cdot \\Sigma}, \\htmlData{k=sr.pfuse}{(h, D) \\cdot p}) \\\\[1ex]\n\\htmlData{k=P.clauses}{\\mathsf{clauses}_{W_1}(\\Sigma', p')} \\iff \\\\\n\\quad \\htmlData{k=P-Stop}{(\\mathsf{stop})\\ \\htmlData{k=sr.pirred}{\\mathsf{pirred}}\\,p' \\Rightarrow p' = (\\varnothing, \\{v\\} \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E) \\land v \\in \\htmlData{k=th.Vrel}{V^{W_1}_{n{+}1}\\llbracket \\Sigma' \\vdash T \\rrbracket} \\land E \\subseteq \\{\\ast\\}} \\\\\n\\quad \\htmlData{k=P-Ready}{(\\mathsf{ready})\\ \\neg\\mathsf{pirred}\\,p' \\Rightarrow \\htmlData{k=sr.readyp}{\\mathsf{ready}_{W_1}(\\Sigma', p')}} \\\\\n\\quad \\htmlData{k=P-Step}{(\\mathsf{step})\\ p' \\xrightarrow{ev} p'' \\Rightarrow \\htmlData{k=sr.pobl}{\\mathsf{Pobl}_{ev}(p'')}} \\qquad \\htmlData{k=rel.lfp}{(\\mathsf{lfp})}\n\\end{array}\\\\[3ex]\\begin{array}{rcll}\n\\htmlData{k=sr.fuseok}{(h, D) \\in \\mathsf{Fus}(\\Sigma, (C, E))} & \\iff & \\htmlData{k=fuse.dcomm}{\\forall o.\\ h(\\overline{o}) = \\overline{h(o)}} \\\\\n & \\land & \\htmlData{k=fuse.inj}{\\forall o_1, o_2 \\in \\mathsf{held}.\\ h(o_1) = h(o_2) \\Rightarrow o_1 = o_2} \\\\\n & \\land & \\htmlData{k=fuse.partners}{\\forall o_1, o_2 \\in \\mathsf{held}.\\ h(o_2) = \\overline{h(o_1)} \\Rightarrow o_2 = \\overline{o_1} \\lor \\htmlData{k=end.ech}{\\mathsf{ech}}(h\\,o_1) \\in D} \\\\\n & \\land & \\htmlData{k=fuse.D}{D \\cap \\htmlData{k=sr.gch}{\\mathsf{gch}_h}[C] = \\varnothing} \\land \\htmlData{k=fuse.dpairs}{\\mathsf{dpairs}\\,D\\,(h\\,\\Sigma)} \\\\[1ex]\n\\htmlData{k=sr.held}{\\mathsf{held}} & = & \\htmlData{k=sr.held}{\\{o \\mid o \\in \\mathrm{dom}\\,\\Sigma \\lor \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C\\}} \\\\\n\\htmlData{k=sr.gch}{\\mathsf{gch}_h(c)} & = & \\htmlData{k=sr.gch}{\\htmlData{k=end.ech}{\\mathsf{ech}}(h(c^{+}))} \\\\\n\\htmlData{k=sr.sdrop}{(h, D) \\cdot \\Sigma} & = & \\htmlData{k=sr.sdrop}{\\{h(o) \\mapsto y \\mid o \\mapsto y \\in \\Sigma,\\ \\htmlData{k=end.ech}{\\mathsf{ech}}(h\\,o) \\notin D\\}} \\\\\n\\htmlData{k=sr.pfuse}{(h, D) \\cdot (C, E)} & = & \\htmlData{k=sr.pfuse}{(\\mathsf{gch}_h[C] \\cup D,\\ h[E])} \\\\\n\\htmlData{k=fuse.dpairs}{\\mathsf{dpairs}\\,D\\,\\Sigma} & \\iff & \\htmlData{k=fuse.dpairs}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in D \\Rightarrow \\Sigma(o) = S@x \\land \\Sigma(\\overline{o}) = S'@\\overline{x} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S'}\n\\end{array}\\end{array}",
-     "caption": "A process satisfies the three clauses of a term, stop, ready and step, in each strict larger world and after each admissible fusion of its held ends. An admissible fusion $(h, D)$ renames held ends injectively, except for the new pairs it restricts in $D$.",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\np \\in \\htmlData{k=th.Prel}{P^{W}_{n{+}1}\\llbracket \\Sigma \\vdash T \\rrbracket} \\iff \\htmlData{k=P.strict}{\\forall W_1 \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W}.\\ \\htmlData{k=P.fuse}{\\forall (h, D) \\in \\htmlData{k=sr.fuseok}{\\mathsf{Fus}}(\\Sigma, p)}.\\ \\htmlData{k=P.clauses}{\\mathsf{clauses}_{W_1}}(\\htmlData{k=sr.pfuse}{(h, D) \\cdot \\Sigma}, \\htmlData{k=sr.pfuse}{(h, D) \\cdot p}) \\\\[1ex]\n\\htmlData{k=P.clauses}{\\mathsf{clauses}_{W_1}(\\Sigma', p')} \\iff \\\\\n\\quad \\htmlData{k=P-Stop}{(\\mathsf{stop})\\ \\htmlData{k=sr.pirred}{\\mathsf{pirred}}\\,p' \\Rightarrow p' = (\\varnothing, \\{v\\} \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E) \\land v \\in \\htmlData{k=th.Vrel}{V^{W_1}_{n{+}1}\\llbracket \\Sigma' \\vdash T \\rrbracket} \\land E \\subseteq \\{\\ast\\}} \\\\\n\\quad \\htmlData{k=P-Ready}{(\\mathsf{ready})\\ \\neg\\mathsf{pirred}\\,p' \\Rightarrow \\htmlData{k=sr.readyp}{\\mathsf{ready}_{W_1}(\\Sigma', p')}} \\\\\n\\quad \\htmlData{k=P-Step}{(\\mathsf{step})\\ p' \\xrightarrow{ev} p'' \\Rightarrow \\htmlData{k=sr.pobl}{\\mathsf{Pobl}_{ev}(p'')}} \\qquad \\htmlData{k=rel.lfp}{(\\mathsf{lfp})}\n\\end{array}\\\\[3ex]\\begin{array}{rcll}\n\\htmlData{k=sr.fuseok}{(h, D) \\in \\mathsf{Fus}(\\Sigma, (C, E))} & \\iff & \\htmlData{k=fuse.dcomm}{\\forall o.\\ h(\\overline{o}) = \\overline{h(o)}} \\\\\n & \\land & \\htmlData{k=fuse.inj}{\\forall o_1, o_2 \\in \\mathsf{held}.\\ h(o_1) = h(o_2) \\Rightarrow o_1 = o_2} \\\\\n & \\land & \\htmlData{k=fuse.partners}{\\forall o_1, o_2 \\in \\mathsf{held}.\\ h(o_2) = \\overline{h(o_1)} \\Rightarrow o_2 = \\overline{o_1} \\lor \\htmlData{k=end.ech}{\\mathsf{ech}}(h\\,o_1) \\in D} \\\\\n & \\land & \\htmlData{k=fuse.D}{D \\cap \\htmlData{k=sr.gch}{\\mathsf{gch}_h}[C] = \\varnothing} \\land \\htmlData{k=fuse.dpairs}{\\mathsf{dpairs}\\,D\\,(h\\,\\Sigma)} \\\\[1ex]\n\\htmlData{k=sr.held}{\\mathsf{held}} & = & \\htmlData{k=sr.held}{\\{o \\mid o \\in \\mathrm{dom}\\,\\Sigma \\lor \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C\\}} \\\\\n\\htmlData{k=sr.gch}{\\mathsf{gch}_h(c)} & = & \\htmlData{k=sr.gch}{\\htmlData{k=end.ech}{\\mathsf{ech}}(h(c^{+}))} \\\\\n\\htmlData{k=sr.sdrop}{(h, D) \\cdot \\Sigma} & = & \\htmlData{k=sr.sdrop}{\\{h(o) \\mapsto y \\mid o \\mapsto y \\in \\Sigma,\\ \\htmlData{k=end.ech}{\\mathsf{ech}}(h\\,o) \\notin D\\}} \\\\\n\\htmlData{k=sr.pfuse}{(h, D) \\cdot (C, E)} & = & \\htmlData{k=sr.pfuse}{(\\mathsf{gch}_h[C] \\cup D,\\ h[E])} \\\\\n\\htmlData{k=fuse.dpairs}{\\mathsf{dpairs}\\,D\\,\\Sigma} & \\iff & \\htmlData{k=fuse.dpairs}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in D \\Rightarrow \\Sigma(o) = S@x \\land \\Sigma(\\overline{o}) = S'@\\overline{x} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S'}\n\\end{array}\\end{array}",
+     "caption": "A process satisfies the three clauses of a term, stop, ready and step, in each larger ranked world and after each admissible fusion of its held ends. An admissible fusion $(h, D)$ renames held ends injectively, except for the new pairs it restricts in $D$.",
      "about": {
       "why": "Composition fuses ends of two processes. Building fusion into the relation lets the semantic P-Connect hold without further proof.",
       "used": [
@@ -1098,7 +1104,8 @@ window.MAP = {
        "sj-all",
        "th-compose"
       ]
-     }
+     },
+     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
     },
     {
      "id": "p-obls",
@@ -1246,13 +1253,13 @@ window.MAP = {
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{rcl}\n\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T & \\overset{\\htmlData{k=th.fundamental-proc}{\\textsf{fundamental\\_proc}}}{\\Longrightarrow} & \\Sigma \\htmlData{k=sj.proc}{\\vDash}_W p : T \\\\[1ex]\n\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T & \\overset{\\htmlData{k=th.adequacy}{\\textsf{adequacy}}}{\\Longrightarrow} & \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\n\\annraw{\\\\[3ex]}\\annot{\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ c \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t}}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.live-fundamental}{\\textsf{live\\_fundamental}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{\\varnothing}_W t : T}\n\\annraw{\\\\[1ex]}\\annot{\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ c \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.crle}{\\mathsf{cr}(\\Delta) \\leq N}}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.fsem-of-cost}{\\textsf{fsem\\_of\\_cost}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\htmlData{k=th.styof}{\\Delta\\annot{^{N}}}\\,t}}\n\\annraw{\\\\[1ex]}\\annot{\\Sigma \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.lf-fundamental}{\\textsf{lf\\_fundamental}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\Sigma \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T}\n\\annraw{\\\\[1ex]}\\annot{\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{AC}} \\land \\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.lf-adequacy}{\\textsf{lf\\_adequacy}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p}\n\\end{array}",
-     "caption": "Typing implies the semantic judgment, and the semantic judgment implies deadlock freedom. Both steps use the relation $(V, E, P)$ at the step costs $\\kappa_{DF}$. \\annp{Lock freedom uses the same relation at $\\kappa_L$, which excludes internal divergence, together with fuel. The lock-free process relation combines both for each thread. Lock-free adequacy measures a wait on $o$ by $\\mu(t) = f$, the counter of the dual end $\\overline{o}$. A step of the thread holding $\\overline{o}$ on another end decreases $f$, which F-Count keeps at $1$ or more. \\annp{A link gives the waiting thread a partner with a lower counter, by the premise of E-Link and the invariant on tickets.} Lock-free adequacy takes excluded middle and choice as hypotheses. The thread holding $\\overline{o}$ therefore acts on $\\overline{o}$ after finitely many steps.}",
+     "tex": "\\begin{array}{rcl}\n\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T & \\overset{\\htmlData{k=th.fundamental-proc}{\\textsf{fundamental\\_proc}}}{\\Longrightarrow} & \\Sigma \\htmlData{k=sj.proc}{\\vDash}_W p : T \\\\[1ex]\n\\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T & \\overset{\\htmlData{k=th.adequacy}{\\textsf{adequacy}}}{\\Longrightarrow} & \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\n\\annraw{\\\\[3ex]}\\annot{\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ c \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t}}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.live-fundamental}{\\textsf{live\\_fundamental}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{\\varnothing}_W t : T}\n\\annraw{\\\\[1ex]}\\annot{\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ c \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.crle}{\\mathsf{cr}(\\Delta) \\leq N}}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.fsem-of-cost}{\\textsf{fsem\\_of\\_cost}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\htmlData{k=th.styof}{\\Delta\\annot{^{N}}}\\,t}}\n\\annraw{\\\\[1ex]}\\annot{\\Sigma \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.lf-fundamental}{\\textsf{lf\\_fundamental}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\Sigma \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T}\n\\annraw{\\\\[1ex]}\\annot{\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{AC}} \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.lf-adequacy}{\\textsf{lf\\_adequacy}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p}\n\\end{array}",
+     "caption": "Typing implies the semantic judgment, and the semantic judgment implies deadlock freedom. Both steps use the relation $(V, E, P)$ at the step costs $\\kappa_{DF}$. \\annp{Lock freedom uses the same relation at $\\kappa_L$, which excludes internal divergence, together with fuel. The lock-free process relation combines both for each thread. Lock-free adequacy measures a wait on $o$ by $\\mu(t) = (\\varrho(\\mathsf{pt}\\,o), f)$, the ordinal rank of the point of $o$ and the counter $f$ of the dual end $\\overline{o}$. A step of the thread holding $\\overline{o}$ on another end decreases $f$, which F-Count keeps at $1$ or more. \\annp{A link gives the waiting thread a partner with a lower counter, by the premise of E-Link and the invariant on tickets.} Lock-free adequacy takes excluded middle and choice as hypotheses. The thread holding $\\overline{o}$ therefore acts on $\\overline{o}$ after finitely many steps.}",
      "about": {
       "why": "Each arrow is one theorem of this section. \\annp{The lock-free rows show what lock freedom adds to the deadlock-free proof.}",
       "used": []
      },
-     "planned": "Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers."
+     "planned": "Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers. Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
     },
     {
      "id": "th-sound",
@@ -1262,11 +1269,12 @@ window.MAP = {
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.soundness}{\\begin{array}{l}\\varnothing \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness}{\\begin{array}{l}\\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}} \\\\[1.5ex] \\htmlData{k=th.fair-run-exists}{\\begin{array}{l}\\mathsf{EM} \\land \\mathsf{DC} \\\\ \\quad\\Longrightarrow\\ \\exists (r, l).\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,(r\\,0) = p \\land \\htmlData{k=prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\htmlData{k=prop.wfair}{\\mathsf{wfair}}\\,(r, l)\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-padovani}{\\begin{array}{l}\\begin{array}{l}\\mathsf{EM} \\land \\mathsf{DC} \\land \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p \\land \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,q_0 = p \\\\ \\land\\ q_0 \\to^{*} q \\land \\htmlData{k=prop.pend}{\\mathsf{pend}(q, t)}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\exists q_1\\,ev\\,q_2.\\ q \\to^{*} q_1 \\xrightarrow{ev} q_2 \\land t \\in \\htmlData{k=se.parts}{\\mathsf{parts}(ev)}\\end{array}}}\\end{array}",
-     "caption": "A closed typed process is deadlock free in a strict world. \\annp{Under excluded middle and choice, a closed process typed at a finite bound $N$, with each thread guarded, is lock free in a strict and well-founded world.}",
+     "tex": "\\begin{array}{l}\\htmlData{k=th.soundness}{\\begin{array}{l}\\varnothing \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness}{\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{AC}} \\land \\varnothing \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}} \\\\[1.5ex] \\htmlData{k=th.fair-run-exists}{\\begin{array}{l}\\mathsf{EM} \\land \\mathsf{DC} \\\\ \\quad\\Longrightarrow\\ \\exists (r, l).\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,(r\\,0) = p \\land \\htmlData{k=prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\htmlData{k=prop.wfair}{\\mathsf{wfair}}\\,(r, l)\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-padovani}{\\begin{array}{l}\\begin{array}{l}\\mathsf{EM} \\land \\mathsf{DC} \\land \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p \\land \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,q_0 = p \\\\ \\land\\ q_0 \\to^{*} q \\land \\htmlData{k=prop.pend}{\\mathsf{pend}(q, t)}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\exists q_1\\,ev\\,q_2.\\ q \\to^{*} q_1 \\xrightarrow{ev} q_2 \\land t \\in \\htmlData{k=se.parts}{\\mathsf{parts}(ev)}\\end{array}}}\\end{array}",
+     "caption": "A closed typed process is deadlock free. \\annp{Under excluded middle and choice, a closed process typed at a finite bound $N$, with each thread guarded, is lock free.}",
      "about": {
       "why": "These are the main results."
-     }
+     },
+     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
     },
     {
      "id": "th-compose",
@@ -1276,14 +1284,15 @@ window.MAP = {
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\htmlData{k=th.Erel}{E\\annot{[\\kappa]}^{W}_{n}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\htmlData{k=th.Prel}{P\\annot{[\\kappa]}^{W}_{n}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.sem-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.conn}{\\mathsf{conn}} \\\\ \\land\\ p_1 \\in \\htmlData{k=th.Prel}{P^{W_1}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket} \\\\ \\land\\ p_2 \\in \\htmlData{k=th.Prel}{P^{W_2}_{n}\\llbracket \\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.par}{p_1 \\parallel_{\\Sigma_C} p_2} \\in \\htmlData{k=th.Prel}{P^{W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket}\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-p-term}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\Sigma \\mathrel{\\htmlData{k=tp.lfjudg}{\\Vdash}}^{N}_{W} (C_0, \\{t\\}) : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W (C_0, \\{t\\}) : T\\end{array}}}\\end{array}",
+     "tex": "\\begin{array}{l}\\htmlData{k=th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\htmlData{k=th.Erel}{E\\annot{[\\kappa]}^{W}_{n}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\htmlData{k=th.Prel}{P\\annot{[\\kappa]}^{W}_{n}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.sem-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.conn}{\\mathsf{conn}} \\\\ \\land\\ p_1 \\in \\htmlData{k=th.Prel}{P^{W}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket} \\\\ \\land\\ p_2 \\in \\htmlData{k=th.Prel}{P^{W}_{n}\\llbracket \\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.par}{p_1 \\parallel_{\\Sigma_C} p_2} \\in \\htmlData{k=th.Prel}{P^{W}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket}\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-p-term}{\\begin{array}{l}\\Sigma \\mathrel{\\htmlData{k=tp.lfjudg}{\\Vdash}}^{N}_{W} (C_0, \\{t\\}) : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W (C_0, \\{t\\}) : T\\end{array}}}\\end{array}",
      "caption": "A safe thread is a safe process, and two safe processes connected at dual interfaces form a safe process. A component proved safe without typing therefore composes with typed components. \\annp{The same holds for the lock-free process relation.}",
      "about": {
       "why": "P-Term and P-Connect hold in the relation, which makes the approach compositional.",
       "used": [
        "th-fund-proc"
       ]
-     }
+     },
+     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
     },
     {
      "id": "th-fund-proc",
@@ -1300,7 +1309,8 @@ window.MAP = {
       "used": [
        "th-sound"
       ]
-     }
+     },
+     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
     },
     {
      "id": "th-adeq",
@@ -1310,15 +1320,15 @@ window.MAP = {
       "lf"
      ],
      "rocq": "relation/Adequacy.v: adequacy, live_adequacy, adequacy_gen; soup/LFAdequacy.v: lf_adequacy, lf_thread_progress; soup/SoupTau.v: soup_no_tau_divergence; soup/SoupRun.v: lfsoup_step",
-     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.adequacy}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\annot{\\htmlData{k=th.lf-adequacy}{\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{AC}} \\land \\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-thread-progress}{\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{AC}} \\land \\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\begin{array}{l}\\forall (r, l).\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,(\\htmlData{k=se.run}{r\\,0}) = p \\land \\htmlData{k=prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\htmlData{k=prop.wfair}{\\mathsf{wfair}}\\,(r, l) \\\\ \\quad \\Longrightarrow\\ \\htmlData{k=th.tpr}{\\mathsf{thread\\_progress\\_run}}\\,(r, l)\\end{array}\\end{array}}}\\end{array}}\\end{array}",
-     "caption": "In a strict world, a closed process in the semantic judgment is deadlock free. \\annp{Under excluded middle and choice, in a strict and well-founded world, a closed process in the lock-free judgment is lock free, and each thread progresses on each weakly fair maximal run.}",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.adequacy}{\\begin{array}{l}\\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\annot{\\htmlData{k=th.lf-adequacy}{\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{AC}} \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-thread-progress}{\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{AC}} \\land \\varnothing \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\begin{array}{l}\\forall (r, l).\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,(\\htmlData{k=se.run}{r\\,0}) = p \\land \\htmlData{k=prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\htmlData{k=prop.wfair}{\\mathsf{wfair}}\\,(r, l) \\\\ \\quad \\Longrightarrow\\ \\htmlData{k=th.tpr}{\\mathsf{thread\\_progress\\_run}}\\,(r, l)\\end{array}\\end{array}}}\\end{array}}\\end{array}",
+     "caption": "A closed process in the semantic judgment is deadlock free. \\annp{Under excluded middle and choice, a closed process in the lock-free judgment is lock free, and each thread progresses on each weakly fair maximal run.}",
      "about": {
       "why": "Adequacy connects the relation with the safety property.",
       "used": [
        "th-sound"
       ]
      },
-     "planned": "Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers."
+     "planned": "Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers. Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
     },
     {
      "id": "th-conserv",
@@ -1341,7 +1351,7 @@ window.MAP = {
       "lf"
      ],
      "rocq": "static/FundamentalProc.v: soundness_source; soup/LFCompose.v: lf_soundness_source; static/Fundamental.v: typed_sem, fundamental, fundamental_typed, live_fundamental, live_fundamental_typed; compat/Bind.v: Erel_bind; cost/CostFund.v: cost_fundamental, fsem_of_cost",
-     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.soundness-source}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{AC}} \\land \\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land N \\in \\mathbb{N} \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\land\\ \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ c \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}\\\\[3ex]\\begin{array}{l}\\htmlData{k=th.fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}^{F}_W t : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.fundamental-typed}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.df}{\\Delta_{df}} \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{F}_W t : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{F}_W t : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-typed}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_W t : T_{df}\\end{array}}}\\end{array}\\\\[3ex]\\htmlData{k=th.Erel-bind}{\\begin{array}{l}\\begin{array}{l}e \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta_1 \\vdash T\\rrbracket^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{ap}}\\,\\Theta_2}} \\\\ \\land\\ \\forall W' \\htmlData{k=w.ext}{\\sqsupseteq} W,\\ j \\leq n,\\ v \\in \\htmlData{k=th.Vrel}{V^{W'}_j\\llbracket\\Theta_v \\vdash T\\rrbracket}. \\\\ \\qquad \\htmlData{k=se.frame}{f[v]} \\in \\htmlData{k=th.Erel}{E^{W'}_{j}\\llbracket \\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=se.frame}{f[e]} \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array}}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\htmlData{k=th.cost-fundamental}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=cs.csem}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{N} e : T\\ !\\ \\varepsilon}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.fsem-of-cost}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} e : T\\ !\\ c \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.crle}{\\mathsf{cr}(\\Delta) \\leq N} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\htmlData{k=th.styof}{\\Delta\\annot{^{N}}}\\,e}\\end{array}}\\end{array}}\\end{array}",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.soundness-source}{\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{AC}} \\land N \\in \\mathbb{N} \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\land\\ \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ c \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}\\\\[3ex]\\begin{array}{l}\\htmlData{k=th.fundamental}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}^{F}_W t : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.fundamental-typed}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.df}{\\Delta_{df}} \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{F}_W t : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{F}_W t : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-typed}{\\begin{array}{l}\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_W t : T_{df}\\end{array}}}\\end{array}\\\\[3ex]\\htmlData{k=th.Erel-bind}{\\begin{array}{l}\\begin{array}{l}e \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta_1 \\vdash T\\rrbracket^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{ap}}\\,\\Theta_2}} \\\\ \\land\\ \\forall W' \\htmlData{k=w.ext}{\\sqsupseteq} W,\\ j \\leq n,\\ v \\in \\htmlData{k=th.Vrel}{V^{W'}_j\\llbracket\\Theta_v \\vdash T\\rrbracket}. \\\\ \\qquad \\htmlData{k=se.frame}{f[v]} \\in \\htmlData{k=th.Erel}{E^{W'}_{j}\\llbracket \\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=se.frame}{f[e]} \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array}}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\htmlData{k=th.cost-fundamental}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=cs.csem}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{N} e : T\\ !\\ \\varepsilon}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.fsem-of-cost}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} e : T\\ !\\ c \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.crle}{\\mathsf{cr}(\\Delta) \\leq N} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\htmlData{k=th.styof}{\\Delta\\annot{^{N}}}\\,e}\\end{array}}\\end{array}}\\end{array}",
      "caption": "A closed program is sound as a one-thread process. Typing a term implies the semantic term judgment, and $E$ is closed under evaluation frames. \\annp{With the guard a typed term is in the relation at $\\kappa_L$, and a typed term at a finite bound $N$ has fuel.}",
      "about": {
       "why": "The proofs of the process results use these lemmas, each proved rule by rule.",
@@ -1349,7 +1359,8 @@ window.MAP = {
        "th-fund-proc",
        "th-adeq"
       ]
-     }
+     },
+     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
     }
    ]
   }
@@ -1581,7 +1592,7 @@ window.MAP = {
     },
     {
      "name": "C",
-     "meaning": "The facts of the creation, with $\\mathsf{strict}(\\Gamma \\cup C)$."
+     "meaning": "The facts of the creation, with $\\mathsf{wf\\_new}\\,\\rho\\,C$ at a fresh root and $\\Gamma \\vdash C$ at a field."
     },
     {
      "name": "S",
@@ -3976,9 +3987,9 @@ window.MAP = {
    ]
   },
   "w.world": {
-   "title": "World",
+   "title": "Static world",
    "what": "$W = (A, \\prec_A)$, roots and facts.",
-   "why": "The order is an order on points, and $W$ is the data that generates the order $\\prec_W$. A creation grows $W$ by its facts.",
+   "why": "Typing reads the order $\\prec_W$ that $W$ generates. The relation reads ranked worlds $R$ with $R \\vDash W$, and a creation adds the ranks of its fresh root.",
    "breaks": "Nothing. It is a definition.",
    "example": "$W$ with $A = \\{1, 2\\}$ and the fact $1 \\prec \\overline{2}$.",
    "rocq": "types/Worlds.v: world",
@@ -3991,6 +4002,131 @@ window.MAP = {
     {
      "name": "\\prec_A",
      "meaning": "The facts."
+    }
+   ]
+  },
+  "w.rworld": {
+   "title": "Ranked world",
+   "what": "$R = (A, \\varrho)$, a finite set $A$ of roots and for each root $a$ a rank function $\\varrho_a$ on $\\mathsf{tree}(a)$.",
+   "why": "The relation reads the order of points through ranks. Ranks are ordinals, so the order of a ranked world is well-founded and acyclic, and no premise on the world remains.",
+   "breaks": "With a symbolic order the union of the worlds of a run may hold an infinite descending chain, and lock-free adequacy then needs a premise that no typing rule checks.",
+   "example": "$R$ with $A = \\{\\rho\\}$ and $\\varrho(\\rho + k) = \\omega \\cdot k$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-layers.md)",
+   "sig": "R = (A, \\varrho) \\in \\mathsf{RWorld}",
+   "args": [
+    {
+     "name": "A",
+     "meaning": "The roots."
+    },
+    {
+     "name": "\\varrho",
+     "meaning": "A rank function for the tree of each root."
+    }
+   ]
+  },
+  "w.rank": {
+   "title": "Rank function $\\varrho_a$",
+   "what": "A map from $\\mathsf{tree}(a)$ to the ordinals with $\\varrho_a(x) < \\varrho_a(x^{+})$ and $\\varrho_a(x) < \\varrho_a(\\overline{x}^{+})$ for each $x$.",
+   "why": "A creation at a fresh root ranks the whole tree of the root, fields included, so a later creation at a field finds its ranks fixed and picks nothing. Ordinals leave no room between $\\alpha$ and $\\alpha + 1$, so the room for later fields is fixed at the root.",
+   "breaks": "If a root ranked only its own shifts, a field creation could need a rank strictly between $k + 1$ and $k + 2$, and no ordinal exists there.",
+   "example": "Client and server rank $\\rho + k$ at $\\omega \\cdot k$ and $\\rho\\cdot 0 + k$ at $\\omega \\cdot k + 1$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-layers.md)",
+   "sig": "\\varrho_a : \\mathsf{tree}(a) \\to \\mathsf{Ord}",
+   "args": [
+    {
+     "name": "a",
+     "meaning": "A root of $A$."
+    },
+    {
+     "name": "x",
+     "meaning": "A point of $\\mathsf{tree}(a)$."
+    }
+   ]
+  },
+  "w.tree": {
+   "title": "Tree $\\mathsf{tree}(a)$",
+   "what": "The points whose root is $a$, that is $a$, its shifts, its dual and its fields at each depth with their shifts and duals.",
+   "why": "A rank function is chosen for the whole tree of a root at once.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\rho\\cdot 0^{+} \\in \\mathsf{tree}(\\rho)$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-layers.md)",
+   "sig": "\\mathsf{tree} : \\mathsf{Root} \\to \\mathcal{P}(\\mathsf{Point})",
+   "args": [
+    {
+     "name": "a",
+     "meaning": "A root."
+    }
+   ]
+  },
+  "w.rlt": {
+   "title": "Order of a ranked world",
+   "what": "$R \\vDash x \\prec y$ iff $\\varrho(x) < \\varrho(y)$.",
+   "why": "Readiness and the obligations compare points in the ranked world. The order is transitive and well-founded because $<$ on ordinals is.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\varrho(\\rho) = 0 < \\omega = \\varrho(\\rho\\cdot 1)$ gives $R \\vDash \\rho \\prec \\rho\\cdot 1$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-layers.md)",
+   "sig": "R \\vDash \\cdot \\prec \\cdot \\subseteq \\mathsf{Point} \\times \\mathsf{Point}",
+   "args": [
+    {
+     "name": "R",
+     "meaning": "A ranked world."
+    },
+    {
+     "name": "x, y",
+     "meaning": "Points."
+    }
+   ]
+  },
+  "w.sat": {
+   "title": "Satisfaction $R \\vDash W$",
+   "what": "Each fact of $W$ holds under the ranks of $R$.",
+   "why": "The semantic judgments at a static world $W$ read the relation at each ranked world $R$ with $R \\vDash W$. Static entailment is sound in such $R$, so each fact a derivation uses holds in $R$.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "A world with no facts is satisfied by each ranked world with its roots.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-layers.md)",
+   "sig": "\\cdot \\vDash \\cdot \\subseteq \\mathsf{RWorld} \\times \\mathsf{World}",
+   "args": [
+    {
+     "name": "R",
+     "meaning": "A ranked world."
+    },
+    {
+     "name": "W",
+     "meaning": "A world."
+    }
+   ]
+  },
+  "w.po": {
+   "title": "Program order $\\mathsf{po}$",
+   "what": "The facts $x \\prec x^{+}$ and $x \\prec \\overline{x}^{+}$ for each point $x$.",
+   "why": "A rank function satisfies program order by definition, so a creation must rank program order together with its facts.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\rho \\prec \\rho^{+} \\in \\mathsf{po}$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-layers.md)",
+   "sig": "\\mathsf{po} \\subseteq \\mathsf{Point} \\times \\mathsf{Point}",
+   "args": [
+    {
+     "name": "x",
+     "meaning": "A point."
+    }
+   ]
+  },
+  "w.wfnew": {
+   "title": "$\\mathsf{wf\\_new}\\,\\rho\\,C$",
+   "what": "Each fact of $C$ ends in $\\mathsf{tree}(\\rho)$, and $C$ with program order is well-founded on $\\mathsf{tree}(\\rho)$.",
+   "why": "A creation at a fresh root must find ranks for the new tree in each ranked world that satisfies its context. Facts from context points up into the new tree are met by ranks above the context points below the tree, and ranks inside the tree exist exactly when the order there is well-founded.",
+   "breaks": "A fact from a new point down to a context point fails at a context point of rank $0$. A chain of creations each below the previous one would need an infinite descending chain of ordinals.",
+   "example": "$\\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ satisfies $\\mathsf{wf\\_new}\\,\\rho$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-layers.md, wf-new)",
+   "sig": "\\mathsf{wf\\_new} : \\mathsf{PVar} \\to \\mathcal{P}(\\mathsf{Point} \\times \\mathsf{Point}) \\to \\mathsf{Prop}",
+   "args": [
+    {
+     "name": "\\rho",
+     "meaning": "The fresh root, a point variable bound by the existential of $\\mathsf{new}$."
+    },
+    {
+     "name": "C",
+     "meaning": "The facts of the creation."
     }
    ]
   },
@@ -4108,33 +4244,14 @@ window.MAP = {
     }
    ]
   },
-  "w.strict": {
-   "title": "$\\mathsf{strict}$",
-   "what": "$\\mathsf{strict}\\,W$ iff $\\mathsf{world\\_wf}\\,W$ and $W \\nvdash x \\prec x$ for every $x$, so $\\prec_W$ is acyclic.",
-   "why": "Readiness of two threads that wait on each other needs $x \\prec y$ and $y \\prec x$, hence $x \\prec x$. Strictness excludes such a cycle.",
-   "breaks": "In a cyclic $W$ two threads that wait on each other both count as ready, and a deadlocked process is in the relation.",
-   "example": "$W$ whose only fact is $1 \\prec \\overline{2}$.",
-   "rocq": "types/Worlds.v: strict",
-   "sig": "\\mathsf{strict} : \\mathsf{World} \\to \\mathsf{Prop}",
-   "args": [
-    {
-     "name": "W",
-     "meaning": "A world."
-    },
-    {
-     "name": "x",
-     "meaning": "Ranges over all points."
-    }
-   ]
-  },
   "w.lfworld": {
-   "title": "$\\mathsf{wfworld}$",
-   "what": "$\\mathsf{wfworld}\\,W$ iff $\\prec_W$ is well-founded, so no infinite chain $\\cdots \\prec x_2 \\prec x_1 \\prec x_0$ exists.",
-   "why": "Lock freedom ranks a pending thread by the point of the end it waits on, and every waiting chain descends in $\\prec_W$. Well-foundedness makes every such chain finite.",
-   "breaks": "Without it, waiting descends forever. Each thread waits on one below it, new threads keep appearing below, and the top thread never proceeds.",
-   "example": "$W$ with no facts satisfies $\\mathsf{wfworld}\\,W$.",
-   "rocq": "types/Worlds.v: wfworld",
-   "sig": "\\mathsf{wfworld} : \\mathsf{World} \\to \\mathsf{Prop}",
+   "title": "$\\mathsf{wf}$",
+   "what": "$\\mathsf{wf}\\,W$ iff $\\prec_W$ is well-founded, so no infinite chain $\\cdots \\prec x_2 \\prec x_1 \\prec x_0$ exists.",
+   "why": "A static world has a ranked world that satisfies it exactly when its order is well-founded, and the rank function of $\\prec_W$ is that ranked world. P-Term and P-Connect ask it, so the world of each process derivation is well-founded.",
+   "breaks": "A cycle or an infinite descending chain in $\\prec_W$ admits no ranks, and the semantic judgment at $W$ would hold vacuously.",
+   "example": "$W$ with no facts satisfies $\\mathsf{wf}\\,W$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-layers-open.md), today types/Worlds.v: strict, wfworld",
+   "sig": "\\mathsf{wf} : \\mathsf{World} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
@@ -4144,35 +4261,43 @@ window.MAP = {
   },
   "w.ext": {
    "title": "Extension $\\sqsubseteq$",
-   "what": "$W \\sqsubseteq W'$ iff $A \\subseteq A'$ and every fact of $W$ is a fact of $W'$.",
-   "why": "$W \\sqsubseteq W'$ implies $\\prec_W \\subseteq \\prec_{W'}$, so every relation stated monotone in $W$ remains growth and composition with another component.",
+   "what": "$W \\sqsubseteq W'$ iff $A \\subseteq A'$ and each fact of $W$ is a fact of $W'$. For ranked worlds $R \\sqsubseteq R'$ iff $A \\subseteq A'$ and $\\varrho'$ agrees with $\\varrho$ on the trees of $A$.",
+   "why": "No rank changes once chosen, so each fact true in $R$ stays true in each $R' \\sqsupseteq R$, and the relation is monotone in the world.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$W \\sqsubseteq W \\oplus C$ and $W \\sqsubseteq W \\sqcup W'$.",
-   "rocq": "types/Worlds.v: wext",
-   "sig": "\\cdot \\sqsubseteq \\cdot \\subseteq \\mathsf{World} \\times \\mathsf{World}",
+   "example": "$R \\sqsubseteq R \\oplus (a, \\varrho_a)$ and $W \\sqsubseteq W \\sqcup W'$.",
+   "rocq": "types/Worlds.v: wext; ranked worlds not yet in the Rocq (docs/redesign/check-layers.md)",
+   "sig": "\\cdot \\sqsubseteq \\cdot \\subseteq \\mathsf{World}^{2} \\cup \\mathsf{RWorld}^{2}",
    "args": [
     {
      "name": "W, W'",
-     "meaning": "The smaller and the larger world."
+     "meaning": "The smaller and the larger static world."
+    },
+    {
+     "name": "R, R'",
+     "meaning": "The smaller and the larger ranked world."
     }
    ]
   },
   "w.grow": {
-   "title": "Growth $W \\oplus C$",
-   "what": "$W \\oplus C$ adds the roots of the facts $C$ to $A$ and the facts $C$ to $\\prec_A$.",
-   "why": "A creation adds a fresh root and the facts its typing chose, so the world of a run grows with every $\\mathsf{new}$ and never loses a fact.",
-   "breaks": "If the facts were fixed before the run, the facts of a fresh point would be chosen in advance. A channel between two given channels would then need these facts for each possible pair.",
-   "example": "$W \\oplus \\{1 \\prec a,\\ a \\prec \\overline{2}\\}$ with $a$ fresh places $a$ between $1$ and $\\overline{2}$.",
-   "rocq": "not yet in the Rocq (docs/redesign/pending.md, entry 2), the Rocq creates with new_ℓ and new_κ over generated roots",
-   "sig": "\\cdot \\oplus \\cdot : \\mathsf{World} \\to \\mathcal{P}(\\mathsf{Point} \\times \\mathsf{Point}) \\to \\mathsf{World}",
+   "title": "Growth $R \\oplus (a, \\varrho_a)$",
+   "what": "$R \\oplus (a, \\varrho_a)$ adds the fresh root $a$ to $A$ and its rank function $\\varrho_a$ to $\\varrho$.",
+   "why": "A creation at a fresh root ranks the new tree, so the ranked world of a run grows with each root creation and never changes a rank. The union of the worlds of a run is one rank assignment, which lock-free adequacy uses as its measure.",
+   "breaks": "If ranks could change along a run, the measure of a waiting thread could rise.",
+   "example": "$R \\oplus (\\rho, \\varrho_\\rho)$ with $\\varrho_\\rho(x) = \\sigma + \\rho_C(x)$ for $\\sigma$ above each context point below the tree.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-layers.md), the Rocq creates with new_ℓ and new_κ over generated roots",
+   "sig": "\\cdot \\oplus \\cdot : \\mathsf{RWorld} \\to \\mathsf{Root} \\times (\\mathsf{Point} \\to \\mathsf{Ord}) \\to \\mathsf{RWorld}",
    "args": [
     {
-     "name": "W",
-     "meaning": "A world."
+     "name": "R",
+     "meaning": "A ranked world."
     },
     {
-     "name": "C",
-     "meaning": "The facts of a creation, over the fresh root and points of $W$."
+     "name": "a",
+     "meaning": "The fresh root, $a \\notin A$."
+    },
+    {
+     "name": "\\varrho_a",
+     "meaning": "Its rank function on $\\mathsf{tree}(a)$."
     }
    ]
   },
@@ -4194,7 +4319,7 @@ window.MAP = {
   "w.restrict": {
    "title": "Restriction $W|_S$",
    "what": "$W|_S$ has the facts $x \\prec_W y$ with roots of $x, y$ in $S$.",
-   "why": "It is the part of $\\prec_W$ that is visible to another component through the shared constants $S$.",
+   "why": "It is the derived order of $W$ on the points of the shared roots $S$, chains through private points included, and the only order a component exposes to another.",
    "breaks": "Nothing. It is a definition.",
    "example": "$W|_{A_1 \\cap A_2}$.",
    "rocq": "types/Worlds.v: wrestrict",
@@ -4211,13 +4336,13 @@ window.MAP = {
    ]
   },
   "w.R7": {
-   "title": "Strict join",
-   "what": "$\\mathsf{strict}(W_1 \\sqcup W_2)$ iff $\\mathsf{strict}\\,W_1$, $\\mathsf{strict}\\,W_2$ and $\\mathsf{strict}(W_1|_S \\sqcup W_2|_S)$ for $S = A_1 \\cap A_2$.",
-   "why": "Strictness of the join is decided on the shared constants $S$ alone.",
+   "title": "Well-founded join",
+   "what": "$\\mathsf{wf}(W_1 \\sqcup W_2)$ iff $\\mathsf{wf}\\,W_1$, $\\mathsf{wf}\\,W_2$ and $\\mathsf{wf}(W_1|_S \\sqcup W_2|_S)$ for $S = A_1 \\cap A_2$.",
+   "why": "A descending chain of the join that meets shared points infinitely often gives a descending chain of the amalgam, and one that meets them finitely often ends in one private zone. So well-foundedness of the join is decided on the shared roots alone.",
    "breaks": "Nothing. It is a definition.",
-   "example": "Two strict worlds with $A_1 \\cap A_2 = \\varnothing$ have a strict join.",
-   "rocq": "types/Worlds.v: strict_join_iff",
-   "sig": "\\mathsf{strict}(W_1 \\sqcup W_2) \\iff \\ldots",
+   "example": "Two well-founded worlds with $A_1 \\cap A_2 = \\varnothing$ have a well-founded join.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-layers-open.md, wf_join_iff), today types/Worlds.v: strict_join_iff",
+   "sig": "\\mathsf{wf}(W_1 \\sqcup W_2) \\iff \\ldots",
    "args": [
     {
      "name": "W_1, W_2",
@@ -4225,7 +4350,7 @@ window.MAP = {
     },
     {
      "name": "S",
-     "meaning": "The shared constants $A_1 \\cap A_2$."
+     "meaning": "The shared roots $A_1 \\cap A_2$."
     }
    ]
   },
@@ -4347,17 +4472,36 @@ window.MAP = {
    ]
   },
   "lfi.wf": {
-   "title": "A well-founded world",
-   "what": "$\\mathsf{wfworld}\\,W$ asks $\\prec_W$ to have no infinite descending chain. It is a premise of the lock-free theorems and no typing rule checks well-foundedness.",
-   "why": "A waiting thread waits on a holding thread whose own waiting point lies lower. With a well-founded order this chain ends, so someone at the bottom can act.",
-   "breaks": "A waiting chain that grows forever, in the Examples tab, spawns threads that each wait below their predecessor, and new ones keep appearing.",
-   "example": "Every world of the lock-free examples is well-founded.",
-   "rocq": "types/Worlds.v: wfworld; soup/LFAdequacy.v: lf_adequacy",
-   "sig": "\\mathsf{wfworld} : \\mathsf{World} \\to \\mathsf{Prop}",
+   "title": "A well-founded world, ranks",
+   "what": "A ranked world gives each point an ordinal rank, and $x \\prec y$ holds iff the rank of $x$ is below the rank of $y$. E-New asks $\\mathsf{wf\\_new}$ at a fresh root, P-Term and P-Connect ask $\\mathsf{wf}$ of the static world, and lock-free adequacy has no premise on the world.",
+   "why": "A waiting thread waits on a holding thread whose own waiting point lies lower. Ranks are ordinals, so this chain ends, and someone at the bottom can act.",
+   "breaks": "A waiting chain that grows forever, in the Examples tab, creates each channel below the previous one, and E-New rejects that creation.",
+   "example": "Client and server rank its points below $\\omega^{2} + 2$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-layers.md), today types/Worlds.v: wfworld; soup/LFAdequacy.v: lf_adequacy",
+   "sig": "\\varrho_a : \\mathsf{tree}(a) \\to \\mathsf{Ord}",
    "args": [
     {
-     "name": "W",
-     "meaning": "a world"
+     "name": "a",
+     "meaning": "a root of the ranked world"
+    }
+   ]
+  },
+  "lfi.measure": {
+   "title": "The measure, rank of the awaited end",
+   "what": "A pending thread $t$ waiting on the end $o$ is ranked by $\\varrho(\\mathsf{pt}\\,o)$, the ordinal of the point of $o$ in the ranked world of the run, and then by the counter of $\\overline{o}$.",
+   "why": "The thread holding $\\overline{o}$ either acts or waits on an end whose point lies below, so the rank falls along each chain of waits. Within one rank the counter of $\\overline{o}$ falls at each step of that thread on other ends and at each link.",
+   "breaks": "Without ranks a chain of waits could descend forever along an infinite chain of points.",
+   "example": "A thread waiting on $c$ at $\\rho$ with $\\varrho(\\rho) = \\omega$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-layers.md, the criterion), today soup/LFAdequacy.v: lf_adequacy",
+   "sig": "\\varrho(\\mathsf{pt}\\,o) \\in \\mathsf{Ord}",
+   "args": [
+    {
+     "name": "o",
+     "meaning": "the end the pending thread waits on"
+    },
+    {
+     "name": "\\mathsf{pt}\\,o",
+     "meaning": "its point, recorded in the ownership map"
     }
    ]
   },
@@ -4478,10 +4622,10 @@ window.MAP = {
   },
   "tj.W": {
    "title": "The world $W$",
-   "what": "The world whose order $\\prec_W$ the rules read.",
+   "what": "The static world whose order $\\prec_W$ the rules read.",
    "why": "Every point fact a rule uses comes from $\\prec_W$ or from $\\Gamma$. Typing is monotone in $W$, so a program typed in $W$ is typed in every $W' \\sqsupseteq W$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "E-New asks $\\mathsf{strict}(\\Gamma \\cup C)$ over $\\prec_W$.",
+   "example": "E-Open asks $\\mathsf{cons}\\,W\\,\\Gamma\\,m\\,C$ over $\\prec_W$.",
    "rocq": "static/Typing.v: typed W",
    "sig": "W : \\mathsf{World}",
    "args": [
@@ -4565,7 +4709,7 @@ window.MAP = {
   },
   "ctx.fvarF": {
    "title": "The rest ${\\uparrow}u$ of $F$",
-   "what": "The unknown part of a future: everything above $u$, or everything when there is no $u$. A term may wait at $x$ under ${\\uparrow}u$ when $\\Gamma \\vdash x \\preccurlyeq u$, and never under ${\\uparrow}$.",
+   "what": "The unknown part of a future, everything above $u$, or everything when there is no $u$. A term may wait at $x$ under ${\\uparrow}u$ when $\\Gamma \\vdash x \\preccurlyeq u$, and never under ${\\uparrow}$.",
    "why": "In the semantics ${\\uparrow}u$ denotes an arbitrary finite set of points above $u$. Readiness asks $x \\prec y$ of every point $y$ of the future, so a body typed under ${\\uparrow}u$ is correct for every caller future above $u$.",
    "breaks": "A future variable $\\varphi$ with the single fact $u \\prec \\varphi$ says the same, $\\Gamma \\vdash x \\prec \\varphi$ holds exactly when $\\Gamma \\vdash x \\preccurlyeq u$.",
    "example": "$F = (\\varnothing, {\\uparrow}u)$ for the body of a closure with upper point $u$.",
@@ -4682,21 +4826,21 @@ window.MAP = {
    ]
   },
   "act.refill": {
-   "title": "Credit $N$ after an action",
-   "what": "An end returned by an action, or created fresh, has credit $N$.",
-   "why": "The fuel layer sets the counter of an end to $N$ at every action on it, and the static credit is a lower bound on that counter.",
+   "title": "Credit $m$ after an action",
+   "what": "An end returned by an action, or created fresh, has credit equal to its tickets $m$.",
+   "why": "The fuel layer sets the counter of an end to its tickets at each action on the end, and the static credit is a lower bound on that counter.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{send}$ returns $(S@x^{+})\\annot{^{N}}$.",
-   "rocq": "static/Typing.v: e_send, e_recv, e_select, e_branch, e_new",
-   "sig": "(S@x)\\annot{^{N}}",
+   "example": "$\\mathsf{send}$ returns $(S@x^{+})^{m}_{m}$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md), today static/Typing.v: e_send, e_recv, e_select, e_branch, e_new",
+   "sig": "(S@x)^{m}_{m}",
    "args": [
     {
      "name": "S@x",
      "meaning": "the end after the action, at its new point"
     },
     {
-     "name": "N",
-     "meaning": "\\annp{the bound on the tickets of a channel, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$}"
+     "name": "m",
+     "meaning": "the tickets of the end"
     }
    ]
   },
@@ -5300,7 +5444,7 @@ window.MAP = {
    "what": "$\\Gamma \\vdash C[\\bar x]$, for points $\\bar x$, one per variable of $\\bar\\iota$.",
    "why": "The body was typed under $C(\\bar\\iota)$. Running it at $\\bar x$ is correct only when $C[\\bar x]$ holds.",
    "breaks": "Nothing. It is a definition.",
-   "example": "main forces $\\mathsf{between}$ at $(\\rho, \\rho\\cdot 1)$, where $\\Lambda_0$ gives $C$.",
+   "example": "main forces $\\mathsf{between}$ at $(\\rho, \\rho\\cdot 1)$, where its creation of $\\rho$ states $C$.",
    "rocq": "static/Typing.v: e_force, e_pack",
    "sig": "\\Gamma \\vdash C[\\bar x]",
    "args": [
@@ -5472,7 +5616,22 @@ window.MAP = {
    "why": "After the link the partner of $o_1$ faces the partner of $o_2$, whose counter is at most $N - m_2 < a_1$, and $a_1$ bounds the counter of $o_1$ from below. The new partner of a waiting thread therefore has a lower counter than the old one, and the invariant on the tickets of a channel holds for the new pair.",
    "breaks": "Without the premise a thread relinks the partner of a waiting end to a new end with a full counter in every round, and the wait never ends.",
    "example": "At $N = 4$ ends at $(S@x)^{3}_{3}$ and $(\\overline{S}@\\overline{x})^{3}_{3}$ can be linked, and ends at credit $1$ cannot.",
-   "rocq": "static/Typing.v: e_link; types/Costs.v: lgt"
+   "rocq": "static/Typing.v: e_link; types/Costs.v: lgt",
+   "sig": "a_1 + m_2 > N \\land a_2 + m_1 > N",
+   "args": [
+    {
+     "name": "a_1, a_2",
+     "meaning": "the credits of the two linked ends"
+    },
+    {
+     "name": "m_1, m_2",
+     "meaning": "their tickets"
+    },
+    {
+     "name": "N",
+     "meaning": "the bound on the tickets of a channel"
+    }
+   ]
   },
   "E-Link.dual": {
    "title": "Linked ends dual",
@@ -5481,7 +5640,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{link}\\,\\langle c^{+}, d^{-}\\rangle$ with $c^{+} : S@x$ and $d^{-} : \\overline{S}@\\overline{x}$.",
    "rocq": "static/Typing.v: e_link",
-   "sig": "\\ldots \\vdash e : (S@x)\\annot{^{a_1}} \\otimes (\\overline{S}@\\overline{x})\\annot{^{a_2}}",
+   "sig": "\\ldots \\vdash e : (S@x)\\annot{^{a_1}}_{m_1} \\otimes (\\overline{S}@\\overline{x})\\annot{^{a_2}}_{m_2}",
    "args": [
     {
      "name": "S@x",
@@ -5558,14 +5717,33 @@ window.MAP = {
     }
    ]
   },
-  "E-New.strict": {
-   "title": "$\\mathsf{strict}(\\Gamma \\cup C)$",
-   "what": "The facts of $\\Gamma$, the order $\\prec_W$ and $C$ together derive no $x \\prec x$.",
-   "why": "Every creation grows the world by $C$, and the results ask a strict world. The check keeps every grown world strict.",
-   "breaks": "Facts $\\overline{\\rho} \\prec \\rho\\cdot 0$ and $\\rho\\cdot 0 \\prec \\overline{\\rho}$ in one $C$ give a cycle, and two threads waiting on each other would both count as ready.",
-   "example": "$\\{\\rho \\prec \\overline{\\rho\\cdot 0}\\}$ is strict.",
-   "rocq": "static/Typing.v: e_new",
-   "sig": "\\mathsf{strict}(\\Gamma \\cup C) : \\mathsf{Prop}",
+  "E-New.wf": {
+   "title": "$\\pi = \\rho \\Rightarrow \\mathsf{wf\\_new}\\,\\rho\\,C$",
+   "what": "At a fresh root each fact of $C$ ends in $\\mathsf{tree}(\\rho)$, and $C$ with program order is well-founded on $\\mathsf{tree}(\\rho)$.",
+   "why": "The fundamental theorem ranks the new tree at $\\sigma + \\rho_C$, with $\\sigma$ above each context point that a fact of $C$ puts below the tree and $\\rho_C$ the rank function of $C$ with program order. Facts from context points up into the tree then hold in each ranked world that satisfies $\\Gamma$.",
+   "breaks": "A fact from a new point down to a context point fails when the context point has rank $0$, a rank that a box instance may choose. The growing waiting chain states such a fact in each round.",
+   "example": "$\\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ ends in $\\mathsf{tree}(\\rho)$ and is well-founded.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-layers.md, wf-new), today static/Typing.v: e_new",
+   "sig": "\\pi = \\rho \\Rightarrow \\mathsf{wf\\_new}\\,\\rho\\,C : \\mathsf{Prop}",
+   "args": [
+    {
+     "name": "\\rho",
+     "meaning": "the fresh root"
+    },
+    {
+     "name": "C",
+     "meaning": "the facts of the creation"
+    }
+   ]
+  },
+  "E-New.field": {
+   "title": "$\\pi = x\\cdot\\kappa \\Rightarrow \\Gamma \\vdash C$",
+   "what": "At a field the context entails each fact of $C$.",
+   "why": "The ranks of a field were fixed with its root, so a field creation picks no rank, and its facts must already hold.",
+   "breaks": "A field creation that stated a new fact could ask a rank that the root left no room for.",
+   "example": "A field creation with $C = \\varnothing$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-layers.md), today static/Typing.v: e_new",
+   "sig": "\\pi = x\\cdot\\kappa \\Rightarrow \\Gamma \\vdash C : \\mathsf{Prop}",
    "args": [
     {
      "name": "\\Gamma",
@@ -5692,7 +5870,7 @@ window.MAP = {
    "what": "$e$ is typed with $C(\\bar\\iota)$ added to $\\Gamma$ and entry $i$ replaced by $T$, under the same future and result.",
    "why": "The fresh variables stand for the unknown witness, and $C$ is the only hypothesis about the witness in the scope. Freshness keeps them out of $F$ and $U$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{let}\\ p = (\\mathsf{force}\\,\\mathsf{mk}_0)\\,\\ast\\ \\mathsf{in}\\ \\ldots$ opens at $\\iota$.",
+   "example": "$\\mathsf{let}\\ p = (\\mathsf{force}\\,\\mathsf{mk}_0)\\,\\ast\\ \\mathsf{in}\\ \\ldots$ opens the returned existential.",
    "rocq": "static/Typing.v: e_open",
    "sig": "\\Gamma, C(\\bar\\iota) ; \\Delta[i \\mapsto T] \\vdash^{F} e : U\\ !\\ \\varepsilon",
    "args": [
@@ -5703,6 +5881,37 @@ window.MAP = {
     {
      "name": "U",
      "meaning": "the result type, which mentions no $\\bar\\iota$"
+    }
+   ]
+  },
+  "E-Open.cons": {
+   "title": "Conservativity $\\mathsf{cons}\\,W\\,\\Gamma\\,m\\,C$",
+   "what": "Each fact $x \\prec y$ between points of $\\Gamma$ that $\\Gamma, C(\\bar\\iota)$ derives, $\\Gamma$ derives already. Opening adds facts about the $m$ fresh points $\\bar\\iota$ and none between old points.",
+   "why": "A dead arm or an uncalled abstraction receives no value, so the type of its binder may state arbitrary facts. Without the premise opening such a binder supplies the arm with an order fact that no world holds. The premise reads only the static order, and each existential that E-New creates satisfies the premise.",
+   "breaks": "Without it the flag variant types. Its dead arm opens a binder whose constraint states $y \\prec \\overline{x}$, and the live arm asks only $x \\prec \\overline{y}$ of the world.",
+   "example": "Opening $\\exists\\annot{^{0}}.\\,\\{y \\prec \\overline{x}\\}.\\,\\ast$ in a world with only $x \\prec \\overline{y}$ fails the premise.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-flag-rejection.md, fix (c))",
+   "sig": "\\mathsf{cons} : \\mathsf{World} \\to \\mathsf{Hyps} \\to \\mathbb{N} \\to \\mathcal{P}(\\mathsf{Point} \\times \\mathsf{Point}) \\to \\mathsf{Prop}",
+   "args": [
+    {
+     "name": "W",
+     "meaning": "the static world"
+    },
+    {
+     "name": "\\Gamma",
+     "meaning": "the fact context before the opening"
+    },
+    {
+     "name": "m",
+     "meaning": "the number of bound points, $m = |\\bar\\iota|$"
+    },
+    {
+     "name": "C",
+     "meaning": "the constraint of the opened existential"
+    },
+    {
+     "name": "\\mathsf{Point}_{\\Gamma}",
+     "meaning": "the points over the roots and variables of $\\Gamma$, which exclude the fresh $\\bar\\iota$"
     }
    ]
   },
@@ -5914,14 +6123,14 @@ window.MAP = {
     }
    ]
   },
-  "P-Connect.strict": {
+  "P-Connect.wf": {
    "title": "Only the shared part is compared",
-   "what": "$\\mathsf{strict}(W_1|_S \\sqcup W_2|_S)$ for $S = A_{W_1} \\cap A_{W_2}$, the roots of both worlds. $W|_S$ keeps the facts $x \\prec_W y$ derivable in $W$ whose roots lie in $S$.",
-   "why": "Each side is strict by its own derivation, so the only new cycles a join can create run through shared roots. Checking the orders the two sides induce on those roots is enough, and the join is then strict.",
-   "breaks": "If $W_1$ derives $\\rho \\prec \\rho\\cdot 0$ and $W_2$ derives $\\rho\\cdot 0 \\prec \\rho$, the join has a cycle and two threads each wait on the other although each side alone is ready.",
+   "what": "$\\mathsf{wf}(W_1|_S \\sqcup W_2|_S)$ for $S = A_{W_1} \\cap A_{W_2}$, the roots of both worlds. $W|_S$ keeps the facts $x \\prec_W y$ derivable in $W$ whose roots lie in $S$.",
+   "why": "Each side is well-founded by its own derivation, so each infinite descending chain of the join meets shared points infinitely often. Checking the orders the two sides induce on those roots is enough, and the join is then well-founded. A component exposes this order and no ranks, and the composite reads both sides at one ranked world.",
+   "breaks": "If $W_1$ derives $\\rho \\prec \\overline{\\tau}$ and $W_2$ derives $\\overline{\\tau} \\prec \\rho$, the join has a cycle and two threads each wait on the other although each side alone is ready.",
    "example": "Two worlds without a common root need no check.",
-   "rocq": "static/Typing.v: p_connect, ptyped_strict; types/Worlds.v: strict_join_iff",
-   "sig": "\\mathsf{strict}(W_1|_S \\sqcup W_2|_S),\\ S = A_{W_1} \\cap A_{W_2}",
+   "rocq": "not yet in the Rocq (docs/redesign/check-layers-open.md), today static/Typing.v: p_connect, ptyped_strict; types/Worlds.v: strict_join_iff",
+   "sig": "\\mathsf{wf}(W_1|_S \\sqcup W_2|_S),\\ S = A_{W_1} \\cap A_{W_2}",
    "args": [
     {
      "name": "A_{W}",
@@ -5933,14 +6142,14 @@ window.MAP = {
     }
    ]
   },
-  "P-Term.strict": {
-   "title": "$\\mathsf{strict}\\,W$",
-   "what": "The world of a single thread is well formed and acyclic.",
-   "why": "Every process derivation then is over a strict world. P-Connect checks only the shared part, and the joined world is strict again.",
+  "P-Term.wf": {
+   "title": "$\\mathsf{wf}\\,W$",
+   "what": "The world of a single thread is well formed and well-founded.",
+   "why": "The world of each process derivation is then well-founded and has a ranked world that satisfies it as a whole. P-Connect checks only the shared part, and the joined world is well-founded again.",
    "breaks": "Without it P-Connect would have to check the whole join.",
    "example": "The empty world.",
-   "rocq": "static/Typing.v: p_term",
-   "sig": "\\mathsf{strict}\\,W",
+   "rocq": "not yet in the Rocq (docs/redesign/check-layers-open.md), today static/Typing.v: p_term",
+   "sig": "\\mathsf{wf}\\,W",
    "args": [
     {
      "name": "W",
@@ -7326,11 +7535,11 @@ window.MAP = {
   },
   "O-New": {
    "title": "O-New",
-   "what": "For a fresh name $c$ and every root $a \\notin A_W$, some $S$, position $\\pi$ and facts $C$ with $\\mathsf{strict}(W \\oplus C)$ place $c^{+}$ at $S@\\pi$ and $c^{-}$ at $\\overline{S}@\\overline{\\pi}$, and the successor runs in $W \\oplus C$.",
-   "why": "It is the semantic counterpart of E-New. The typing chooses $\\pi$ and $C$, and the relation continues in the grown world.",
+   "what": "For a fresh name $c$ and each root $a \\notin A_W$, some $S$, position $\\pi$, facts $C$ and ranks $\\varrho_a$ place $c^{+}$ at $S@\\pi$ and $c^{-}$ at $\\overline{S}@\\overline{\\pi}$. At the fresh root the ranks satisfy $C$ and program order, at a field the world already satisfies $C$, and the successor runs in $W \\oplus (a, \\varrho_a)$.",
+   "why": "It is the semantic counterpart of E-New. The typing chooses $\\pi$ and $C$, the relation picks the ranks of the new tree, and the existential property of ordinal indices fixes the choice once per creation.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{new}$ in the cycle.",
-   "rocq": "relation/Relation.v: o_new",
+   "rocq": "not yet in the Rocq (docs/redesign/check-layers.md), today relation/Relation.v: o_new",
    "sig": "\\mathsf{o\\_new} : \\mathsf{Chan} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
    "args": [
     {
@@ -7376,6 +7585,10 @@ window.MAP = {
     {
      "name": "C",
      "meaning": "the facts of the creation"
+    },
+    {
+     "name": "\\varrho_a",
+     "meaning": "the ranks of the new tree"
     }
    ]
   },
@@ -7433,13 +7646,13 @@ window.MAP = {
    ]
   },
   "O-New.grow": {
-   "title": "Position and growth",
-   "what": "$\\pi$ is the fresh root $a$ or a field $x\\cdot\\kappa$, and $C$ is a set of facts over $\\pi$ and points of $W$ with $\\mathsf{strict}(W \\oplus C)$.",
-   "why": "The witness of the existential that E-New returns is $\\pi$, and the facts it states hold in $W \\oplus C$.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$C = \\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ at $\\pi = \\rho\\cdot 0$.",
-   "rocq": "relation/Relation.v: o_new",
-   "sig": "\\exists S, \\pi, C.\\ \\pi \\in \\{a\\} \\cup \\{x\\cdot\\kappa\\} \\land \\mathsf{strict}(W \\oplus C)",
+   "title": "Position and ranks",
+   "what": "$\\pi$ is the fresh root $a$, with ranks $\\varrho_a$ on $\\mathsf{tree}(a)$ under which $C$ and program order hold, or a field $x\\cdot\\kappa$, with $C$ true in $W$ already.",
+   "why": "The witness of the existential that E-New returns is $\\pi$, and the facts it states hold in $W \\oplus (a, \\varrho_a)$. A field creation picks no rank, because its root ranked the field at its own creation.",
+   "breaks": "If a field creation picked ranks, it could need an ordinal strictly between two consecutive ones.",
+   "example": "$C = \\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ at $\\pi = \\rho$ with $\\varrho(\\rho) = 0$ and $\\varrho(\\rho\\cdot 0) = 1$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-layers.md), today relation/Relation.v: o_new",
+   "sig": "\\exists S, \\pi, C, \\varrho_a.\\ (\\pi = a \\land W \\oplus (a, \\varrho_a) \\vDash C \\cup \\mathsf{po}) \\lor (\\pi = x\\cdot\\kappa \\land W \\vDash C)",
    "args": [
     {
      "name": "\\pi",
@@ -7447,7 +7660,11 @@ window.MAP = {
     },
     {
      "name": "C",
-     "meaning": "the facts added to $W$"
+     "meaning": "the facts of the creation"
+    },
+    {
+     "name": "\\varrho_a",
+     "meaning": "a rank function on $\\mathsf{tree}(a)$"
     }
    ]
   },
@@ -8166,7 +8383,7 @@ window.MAP = {
   "rd.above-offered": {
    "title": "$\\mathsf{above\\_offered}$",
    "what": "Every interface end at $x$ that is not offered has an offered end at $x'$ with $W \\vdash x' \\prec \\overline{x}$.",
-   "why": "The environment can always serve some offered end first, so composing two ready processes over a strict world keeps one of them able to move.",
+   "why": "The environment can always serve some offered end first, so composing two ready processes over a ranked world keeps one of them able to move.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{above\\_offered}\\,W\\,\\Sigma\\,O$.",
    "rocq": "relation/Readiness.v: above_offered",
@@ -8191,13 +8408,13 @@ window.MAP = {
    ]
   },
   "P.strict": {
-   "title": "Strict later worlds only",
-   "what": "Each unfolding of $P$ holds in every $W_1 \\sqsupseteq W$ with $\\mathsf{strict}\\,W_1$.",
-   "why": "In a cyclic $W_1$ a receive could bring ends that only a cyclic order accepts, and both components of a composition would be ready around the cycle.",
-   "breaks": "Two components each holding the partner of the other's second channel are both ready in a cyclic world and deadlock.",
-   "example": "$\\forall W_1 \\sqsupseteq W.\\ \\mathsf{strict}\\,W_1 \\Rightarrow \\ldots$",
-   "rocq": "relation/Relation.v: Pbody",
-   "sig": "\\forall W_1 \\sqsupseteq W.\\ \\mathsf{strict}\\,W_1 \\Rightarrow \\ldots",
+   "title": "Later worlds",
+   "what": "Each unfolding of $P$ holds in each ranked world $W_1 \\sqsupseteq W$.",
+   "why": "Composition places a process into a larger world. A ranked world has no cycle, so no strictness premise remains.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\forall W_1 \\sqsupseteq W.\\ \\ldots$",
+   "rocq": "not yet in the Rocq (docs/redesign/check-layers-open.md), today relation/Relation.v: Pbody with strict W1",
+   "sig": "\\forall W_1 \\sqsupseteq W.\\ \\ldots",
    "args": [
     {
      "name": "W",
@@ -8205,7 +8422,7 @@ window.MAP = {
     },
     {
      "name": "W_1",
-     "meaning": "any strict extension of $W$"
+     "meaning": "a ranked extension of $W$"
     }
    ]
   },
@@ -8220,7 +8437,7 @@ window.MAP = {
    "args": [
     {
      "name": "W_1",
-     "meaning": "the strict later world"
+     "meaning": "the later ranked world"
     },
     {
      "name": "\\Sigma'",
@@ -10476,16 +10693,16 @@ window.MAP = {
   },
   "th.adequacy": {
    "title": "Adequacy",
-   "what": "For strict $W$, if $\\varnothing \\vDash_W p : T$ then $p$ is deadlock free.",
-   "why": "It turns the semantic judgment into the safety property. In a world with a cycle in $\\prec_W$ readiness holds vacuously for threads waiting round the cycle, so strictness is needed.",
-   "breaks": "Without $\\mathsf{strict}\\,W$ the premise holds for a cyclic world in which two threads wait on each other.",
+   "what": "If $\\varnothing \\vDash_W p : T$ then $p$ is deadlock free.",
+   "why": "It turns the semantic judgment into the safety property. The relation reads ranked worlds, whose order has no cycle, so readiness of threads waiting round a cycle never holds and no strictness premise remains.",
+   "breaks": "With a cyclic order the premise would hold for two threads that wait on each other.",
    "example": "Two threads closing the two ends of $c$ are deadlock free.",
-   "rocq": "relation/Adequacy.v: adequacy",
-   "sig": "\\mathsf{strict}\\,W \\land \\varnothing \\vDash_W p : T \\Rightarrow \\mathsf{deadlock\\_free}\\,p",
+   "rocq": "not yet in the Rocq in this form (docs/redesign/check-layers-open.md), today relation/Adequacy.v: adequacy with strict W",
+   "sig": "\\varnothing \\vDash_W p : T \\Rightarrow \\mathsf{deadlock\\_free}\\,p",
    "args": [
     {
      "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
+     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
     },
     {
      "name": "p",
@@ -10499,16 +10716,16 @@ window.MAP = {
   },
   "th.lf-adequacy": {
    "title": "Lock-free adequacy",
-   "what": "Under excluded middle and choice, for $W$ with $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$, if $\\varnothing \\Vvdash_W p : T$ then $p$ is lock free.",
-   "why": "A pending thread waits for the thread holding the partner of its end. The proof follows this chain of waiting threads and shows it is finite. Its measure is the point of the awaited end and the counter of the dual end, which decreases because $\\prec_W$ is well-founded. A link moves a waiting thread to a partner with a lower counter. The existential property turns the annotated configuration chosen at each ordinal index into one that holds at every index, and the run is then a sequence of such configurations.",
-   "breaks": "Without $\\mathsf{wfworld}\\,W$ an infinite descending chain of points lets a thread wait forever along an infinite chain of holding threads.",
+   "what": "Under excluded middle and choice, if $\\varnothing \\Vvdash_W p : T$ then $p$ is lock free.",
+   "why": "A pending thread waits for the thread holding the partner of its end. The proof follows this chain of waiting threads and shows it is finite. Its measure ranks a waiting thread by the ordinal $\\varrho(\\mathsf{pt}\\,o)$ of the end $o$ it waits on and then by the counter of the dual end. Ranks are ordinals, so the chain is finite, and a link moves a waiting thread to a partner with a lower counter. The existential property turns the annotated configuration chosen at each ordinal index into one that holds at every index, and the run is then a sequence of such configurations.",
+   "breaks": "Without ranks an infinite descending chain of points lets a thread wait forever along an infinite chain of holding threads.",
    "example": "Two threads closing the two ends of $c$ are lock free.",
-   "rocq": "not yet in the Rocq in this form (docs/redesign/check-links-without-tickets.md and check-transfinite.md), today soup/LFAdequacy.v: lf_adequacy",
-   "sig": "\\mathsf{EM} \\land \\mathsf{AC} \\land \\mathsf{strict}\\,W \\land \\mathsf{wfworld}\\,W \\land \\varnothing \\Vvdash_W p : T \\Rightarrow \\mathsf{lock\\_free}\\,p",
+   "rocq": "not yet in the Rocq in this form (docs/redesign/check-layers.md, check-links-without-tickets.md and check-transfinite.md), today soup/LFAdequacy.v: lf_adequacy with strict W and wfworld W",
+   "sig": "\\mathsf{EM} \\land \\mathsf{AC} \\land \\varnothing \\Vvdash_W p : T \\Rightarrow \\mathsf{lock\\_free}\\,p",
    "args": [
     {
      "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
+     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
     },
     {
      "name": "p",
@@ -10531,7 +10748,7 @@ window.MAP = {
    "args": [
     {
      "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
+     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
     },
     {
      "name": "p",
@@ -10545,7 +10762,7 @@ window.MAP = {
   },
   "th.fundamental": {
    "title": "Fundamental theorem",
-   "what": "For strict $W$, $\\varnothing ; \\Delta \\vdash^{F}_{W} t : T$ implies $\\Delta \\vDash^{F}_{W} t : T$.",
+   "what": "$\\varnothing ; \\Delta \\vdash^{F}_{W} t : T$ implies $\\Delta \\vDash^{F}_{W} t : T$.",
    "why": "Each typing rule has a semantic counterpart that holds at every level, and the theorem is the induction on the derivation.",
    "breaks": "Nothing. It is a definition.",
    "example": "The main thread of the cycle example satisfies the semantic judgment.",
@@ -10554,7 +10771,7 @@ window.MAP = {
    "args": [
     {
      "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
+     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
     },
     {
      "name": "\\Delta",
@@ -10576,7 +10793,7 @@ window.MAP = {
   },
   "th.fundamental-typed": {
    "title": "Fundamental theorem for annotated typing",
-   "what": "For strict $W$ and every $N$, the annotated typing judgment implies the semantic judgment at $\\Delta_{df}$ and $T_{df}$.",
+   "what": "For each $N$, the annotated typing judgment implies the semantic judgment at $\\Delta_{df}$ and $T_{df}$.",
    "why": "Erasing the annotations of an annotated derivation gives a deadlock-free derivation, to which the fundamental theorem applies.",
    "breaks": "Nothing. It is a definition.",
    "example": "The client and server main at $N = \\infty$.",
@@ -10585,7 +10802,7 @@ window.MAP = {
    "args": [
     {
      "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
+     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
     },
     {
      "name": "\\Delta",
@@ -10599,7 +10816,7 @@ window.MAP = {
   },
   "th.live-fundamental": {
    "title": "Live fundamental theorem",
-   "what": "For strict $W$, $\\varnothing ; \\Delta \\vdash^{F}_{W} t : T$ and $\\varnothing \\vdash\\!\\triangleright t$ imply $\\Delta \\mathrel{|\\!\\!\\vDash}^{F}_{W} t : T$.",
+   "what": "$\\varnothing ; \\Delta \\vdash^{F}_{W} t : T$ and $\\varnothing \\vdash\\!\\triangleright t$ imply $\\Delta \\mathrel{|\\!\\!\\vDash}^{F}_{W} t : T$.",
    "why": "The guard lets a box recurse only after an action, so every recursive call is read at a lower level, as the least fixpoint of the relation at $kappa_L$ requires.",
    "breaks": "Without the guard the statement is false, $!(f = \\mathsf{force}\\,f)$ types and satisfies no live judgment.",
    "example": "The guarded receive loop.",
@@ -10608,7 +10825,7 @@ window.MAP = {
    "args": [
     {
      "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
+     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
     },
     {
      "name": "\\Delta",
@@ -10626,7 +10843,7 @@ window.MAP = {
   },
   "th.live-fundamental-typed": {
    "title": "Live fundamental theorem for annotated typing",
-   "what": "For strict $W$, the annotated typing judgment with $\\varnothing \\vdash\\!\\triangleright t$ implies the live judgment at erased environments and type.",
+   "what": "The annotated typing judgment with $\\varnothing \\vdash\\!\\triangleright t$ implies the live judgment at erased environments and type.",
    "why": "Lock-free soundness obtains the relation at $kappa_L$ of each thread from this theorem.",
    "breaks": "Nothing. It is a definition.",
    "example": "A thread typed by P-Term at finite $N$.",
@@ -10635,7 +10852,7 @@ window.MAP = {
    "args": [
     {
      "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
+     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
     },
     {
      "name": "N",
@@ -10649,7 +10866,7 @@ window.MAP = {
   },
   "th.fundamental-proc": {
    "title": "Fundamental theorem for processes",
-   "what": "$\\Sigma \\vdash\\annot{^{\\infty}}_{W} p : T$ implies $\\Sigma \\vDash_W p : T$. P-Term asks a strict world, and P-Connect keeps the join strict, so the derivation gives $\\mathsf{strict}\\,W$ and the theorem has no such premise.",
+   "what": "$\\Sigma \\vdash\\annot{^{\\infty}}_{W} p : T$ implies $\\Sigma \\vDash_W p : T$. P-Term asks a well-founded world, and P-Connect keeps the join well-founded, so the derivation gives $\\mathsf{wf}\\,W$ and the theorem reads the relation at the ranked worlds that satisfy $W$.",
    "why": "It is an induction on the process derivation with the semantic P-Term and P-Connect as cases.",
    "breaks": "Nothing. It is a definition.",
    "example": "Two threads closing the two ends of $c$.",
@@ -10658,7 +10875,7 @@ window.MAP = {
    "args": [
     {
      "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
+     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
     },
     {
      "name": "\\Sigma",
@@ -10685,7 +10902,7 @@ window.MAP = {
    "args": [
     {
      "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
+     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
     },
     {
      "name": "\\Sigma",
@@ -10769,16 +10986,20 @@ window.MAP = {
   },
   "th.sem-p-connect": {
    "title": "Semantic P-Connect",
-   "what": "If $\\mathsf{tfree}\\,T$, $\\mathsf{conn}$, $p_1 \\in P^{W_1}_n\\llbracket\\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket$ and $p_2 \\in P^{W_2}_n\\llbracket\\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket$, then $p_1 \\parallel_{\\Sigma_C} p_2 \\in P^{W_1 \\sqcup W_2}_n\\llbracket\\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket$.",
-   "why": "It is P-Connect in the relation, for every level $n$ and every cost table.",
+   "what": "If $\\mathsf{tfree}\\,T$, $\\mathsf{conn}$, $p_1 \\in P^{W}_n\\llbracket\\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket$ and $p_2 \\in P^{W}_n\\llbracket\\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket$, then $p_1 \\parallel_{\\Sigma_C} p_2 \\in P^{W}_n\\llbracket\\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket$, with both components at one ranked world $W$.",
+   "why": "It is P-Connect in the relation, for each level $n$ and each cost table. The composite reads both components at one ranked world that satisfies both static worlds, so two rankings are never reconciled, and a fresh root of either side is fresh for that world.",
    "breaks": "Nothing. It is a definition.",
    "example": "Two threads closing $c^{+}$ and $c^{-}$, cut at $c$.",
-   "rocq": "compat/ConnectP.v: sem_p_connect",
-   "sig": "\\mathsf{tfree}\\,T \\land \\mathsf{conn} \\land p_1 \\in P^{W_1}_{n}\\llbracket\\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket \\land p_2 \\in P^{W_2}_{n}\\llbracket\\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket \\Rightarrow p_1 \\parallel_{\\Sigma_C} p_2 \\in P^{W_1 \\sqcup W_2}_{n}\\llbracket\\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket",
+   "rocq": "not yet in the Rocq in this form (docs/redesign/check-layers-open.md), today compat/ConnectP.v: sem_p_connect at W1 ⊔ W2",
+   "sig": "\\mathsf{tfree}\\,T \\land \\mathsf{conn} \\land p_1 \\in P^{W}_{n}\\llbracket\\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket \\land p_2 \\in P^{W}_{n}\\llbracket\\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket \\Rightarrow p_1 \\parallel_{\\Sigma_C} p_2 \\in P^{W}_{n}\\llbracket\\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket",
    "args": [
     {
      "name": "n",
      "meaning": "the level, a natural number"
+    },
+    {
+     "name": "W",
+     "meaning": "one ranked world for both components"
     },
     {
      "name": "\\Sigma_C, \\Sigma_D",
@@ -10792,16 +11013,16 @@ window.MAP = {
   },
   "th.lf-p-term": {
    "title": "P-Term in the lock-free process relation",
-   "what": "For strict $W$, a thread with $\\Sigma \\Vdash^{N}_{W} (C_0, \\{t\\}) : T$ derived by P-Term satisfies $\\Sigma \\Vvdash_W (C_0, \\{t\\}) : T$.",
+   "what": "A thread with $\\Sigma \\Vdash^{N}_{W} (C_0, \\{t\\}) : T$ derived by P-Term satisfies $\\Sigma \\Vvdash_W (C_0, \\{t\\}) : T$.",
    "why": "It is P-Term read in the lock-free process relation.",
    "breaks": "Nothing. It is a definition.",
    "example": "One thread closing its end $c^{+}$.",
    "rocq": "soup/LFCompose.v: lf_p_term",
-   "sig": "\\mathsf{strict}\\,W \\land \\Sigma \\Vdash^{N}_{W} (C_0, \\{t\\}) : T \\Rightarrow \\Sigma \\Vvdash_W (C_0, \\{t\\}) : T",
+   "sig": "\\Sigma \\Vdash^{N}_{W} (C_0, \\{t\\}) : T \\Rightarrow \\Sigma \\Vvdash_W (C_0, \\{t\\}) : T",
    "args": [
     {
      "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
+     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
     },
     {
      "name": "\\Sigma",
@@ -10851,7 +11072,7 @@ window.MAP = {
    "args": [
     {
      "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
+     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
     },
     {
      "name": "p",
@@ -10870,11 +11091,11 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "Every deadlock-free example.",
    "rocq": "static/FundamentalProc.v: soundness_source",
-   "sig": "\\mathsf{strict}\\,W \\land \\mathsf{tfree}\\,T \\land \\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W} t : T \\Rightarrow \\mathsf{deadlock\\_free}(\\varnothing, \\{t\\})",
+   "sig": "\\mathsf{tfree}\\,T \\land \\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W} t : T \\Rightarrow \\mathsf{deadlock\\_free}(\\varnothing, \\{t\\})",
    "args": [
     {
      "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
+     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
     },
     {
      "name": "t",
@@ -10893,11 +11114,11 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "The cycle example is lock free.",
    "rocq": "soup/LFTyped.v: lf_soundness",
-   "sig": "\\mathsf{wfworld}\\,W \\land \\varnothing \\Vdash^{N}_{W} p : T \\Rightarrow \\mathsf{lock\\_free}\\,p",
+   "sig": "\\mathsf{EM} \\land \\mathsf{AC} \\land \\varnothing \\Vdash^{N}_{W} p : T \\Rightarrow \\mathsf{lock\\_free}\\,p",
    "args": [
     {
      "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
+     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
     },
     {
      "name": "N",
@@ -10924,7 +11145,7 @@ window.MAP = {
    "args": [
     {
      "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
+     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
     },
     {
      "name": "N",
@@ -11024,21 +11245,6 @@ window.MAP = {
     }
    ]
   },
-  "th.wfworld": {
-   "title": "$\\mathsf{wfworld}\\,W$",
-   "what": "$\\prec_W$ is well-founded, there is no infinite descending chain $x_0 \\succ_W x_1 \\succ_W \\cdots$.",
-   "why": "A chain of waiting threads descends in $\\prec_W$, so well-foundedness makes it finite. Deadlock freedom does not need well-foundedness.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "Every world of the lock-free examples is well-founded.",
-   "rocq": "types/Worlds.v: wfworld",
-   "sig": "\\mathsf{wfworld} : \\mathsf{World} \\to \\mathsf{Prop}",
-   "args": [
-    {
-     "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
-    }
-   ]
-  },
   "th.cost-fundamental": {
    "title": "Cost fundamental theorem",
    "what": "The annotated typing judgment implies the semantic cost judgment $\\Delta \\vDash^{N} e : T\\ !\\ \\varepsilon$.",
@@ -11107,7 +11313,7 @@ window.MAP = {
     },
     {
      "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
+     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
     },
     {
      "name": "n",
@@ -11138,7 +11344,7 @@ window.MAP = {
     },
     {
      "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
+     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
     },
     {
      "name": "n",
@@ -11169,7 +11375,7 @@ window.MAP = {
    "args": [
     {
      "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
+     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
     },
     {
      "name": "j",
@@ -11200,7 +11406,7 @@ window.MAP = {
     },
     {
      "name": "W",
-     "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
+     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
     },
     {
      "name": "\\alpha",
@@ -11636,21 +11842,22 @@ window.MAP = {
     "df",
     "lf"
    ],
-   "code": "not     = λz. case z of inl w ⇒ inj₂ w | inr w ⇒ inj₁ w\nthread  = case not (inj₂ ∗) of\n            inl _ ⇒ let ∗ = close c in close d      -- runs\n          | inr _ ⇒ let ∗ = close d in close c      -- never runs\npartner = let ∗ = close c̄ in close d̄\n-- the process ({c, d}, {thread, partner}), c at x, d at y",
-   "rocq": "examples/SemBranch.v: sb_thread_E, sb_deadlock_free, sb_dead_arm_typed",
+   "code": "not     = λz. case z of inl w ⇒ inj₂ w | inr w ⇒ inj₁ w\nthread  = case not (inj₂ ∗) of\n            inl w ⇒ let ∗ = w in let ∗ = close c in close d      -- runs\n          | inr w ⇒ let ∗ = w in let ∗ = close d in close c      -- never runs\npartner = let ∗ = close c̄ in close d̄\n-- the process ({c, d}, {thread, partner}), c at x, d at y",
+   "rocq": "examples/SemBranch.v: sb_thread_E, sb_deadlock_free, Tbad, Cbad (for the arms that ignore their binder)",
    "accepts": {
     "df": {
      "ok": false,
      "part": "P-Connect",
-     "rocq": "doubtful, no Rocq proof: E-Open can give the dead arm the fact y ≺ x̄ from an existential that no value inhabits (sb_dead_arm_typed, docs/redesign/pending.md entry 7)"
+     "rocq": "planned, argued in docs/redesign/check-flag-rejection.md section 4, no Rocq proof. E-Open asks cons, so the dead arm needs y ≺ x̄ from its own world, and the joined world has the cycle y ≺ x̄ ≺ y"
     },
     "sem": {
      "ok": true,
-     "rocq": "sb_thread_E, sb_deadlock_free"
+     "rocq": "argued for the variant, which takes one more β step per arm. sb_thread_E and sb_deadlock_free prove the program whose arms ignore their binder"
     }
    },
-   "shows": "The flag is always $\\mathsf{inj}_1\\,\\ast$, so the thread closes $c$ before $d$. E-Case types both arms in one world. The first arm asks $x \\prec \\overline{y}$, the second asks $y \\prec \\overline{x}$, and the partner asks $\\overline{x} \\prec y$. The joint world has the cycle $y \\prec \\overline{x} \\prec y$, and P-Connect asks a strict world. The relation reads only the steps the thread takes. After three $\\beta$ steps the thread is in the first arm, which the fundamental theorem places in $E$ in a world with $x \\prec \\overline{y}$ alone. Semantic P-Connect joins it with the partner, the joint world has no cycle, and adequacy gives deadlock freedom. The rejection holds whatever points $c$ and $d$ get, and the map records it as an argument, with no Rocq proof.",
-   "lead": "A thread that branches on a flag it computes itself is deadlock free, and only semantic typing shows it, because static typing checks the arm that never runs."
+   "planned": "The flag variant whose arms read their binder is the running example, decided on 2026-11-21 (docs/redesign/check-flag-rejection.md). Its static rejection rests on the conservativity premise of E-Open and is argued on paper in section 4 of that write-up. Without the premise the variant types in the Rocq (sbv_typed in the probe), and sb_dead_arm_typed stops holding once the premise lands. Conservativity at E-Open is planned, decided on 2026-11-21 (docs/redesign/check-flag-rejection.md, fix (c)). cons W Γ m C says that the opened context derives no fact between points of the old context. The Rocq E-Open has no such premise yet.",
+   "shows": "The flag is always $\\mathsf{inj}_1\\,\\ast$, so the thread closes $c$ before $d$. E-Case types both arms in one world. The live arm asks $x \\prec \\overline{y}$ and the partner asks $\\overline{x} \\prec y$. The dead arm asks $y \\prec \\overline{x}$. E-Open adds no fact between points of the old context, so no binder type supplies that fact, and the world of the thread must hold $y \\prec \\overline{x}$. The joined world has the cycle $y \\prec \\overline{x} \\prec y$, and P-Connect asks a well-founded join. The relation reads only the steps the thread takes. After the $\\beta$ steps the thread is in the live arm, which the fundamental theorem places in $E$ in a world with $x \\prec \\overline{y}$ alone. Semantic P-Connect joins it with the partner, and adequacy gives deadlock freedom. The static rejection is argued on paper, with no Rocq proof.",
+   "lead": "Only semantic typing shows that a thread branching on a flag it computes itself is deadlock free. Static typing checks the arm that never runs, and that arm closes the two channels in the other order."
   },
   {
    "id": "ex-flagpair",
@@ -11672,7 +11879,7 @@ window.MAP = {
      "rocq": "argued, no Rocq proof. Thread by thread it fails: fp_unrealizable"
     }
    },
-   "shows": "Both threads get the same flag, so they close $a$ and $b$ in the same order in every run. A received flag is any value of $V$ at $\\ast \\oplus \\ast$, so each thread has to be in $E$ for both flags. With $\\mathsf{inl}$ thread A closes $a$ while it holds $b$ and asks $x \\prec \\overline{y}$. With $\\mathsf{inr}$ thread B closes $\\overline{b}$ while it holds $\\overline{a}$ and asks $\\overline{y} \\prec x$. The join of the two worlds then has a cycle, and P-Connect asks a strict join. One such thread alone fits in a strict world, the pair does not. The flag travels on an internal channel, so the process relation of the closed process reads only its actual reductions, in which both threads take the same branch. Following them puts the process in $P$ directly.",
+   "shows": "Both threads get the same flag, so they close $a$ and $b$ in the same order in every run. A received flag is any value of $V$ at $\\ast \\oplus \\ast$, so each thread has to be in $E$ for both flags. With $\\mathsf{inl}$ thread A closes $a$ while it holds $b$ and asks $x \\prec \\overline{y}$. With $\\mathsf{inr}$ thread B closes $\\overline{b}$ while it holds $\\overline{a}$ and asks $\\overline{y} \\prec x$. The join of the two worlds then has a cycle, and P-Connect asks a well-founded join. One such thread alone fits in a well-founded world, the pair does not. The flag travels on an internal channel, so the process relation of the closed process reads only its actual reductions, in which both threads take the same branch. Following them puts the process in $P$ directly.",
    "lead": "Two threads that branch on one flag sent by a third thread are deadlock free. A proof that follows the reductions of the whole process shows it, and a proof that puts each thread into the relation on its own fails."
   },
   {
@@ -11734,11 +11941,12 @@ window.MAP = {
    ],
    "code": "grow = !(f = λw. let ⟨c, c′⟩ = new in                 -- c below the point of w\n                 let ⟨d, d′⟩ = new in let ∗ = spawn (λ_. recvclose d′) in\n                 let ∗ = close (send ⟨∗, d⟩) in              -- one session action\n                 let ∗ = spawn (λ_. (force f) c′) in\n                 let ∗ = close c in close w)                 -- waits on its child\nmain = let ⟨w, w′⟩ = new in let ∗ = spawn (λ_. close w′) in (force grow) w\n-- every thread waits on the one it spawned, close w′ never proceeds",
    "shows": "Each thread spawns a child, waits on it, and the child does the same. Each wait is at a point below the point of the previous one, and the chain grows forever. A well-founded world has no infinite descending chain, and lock-free soundness assumes a well-founded world.",
-   "rocq": "to be mechanized",
+   "rocq": "argued in docs/redesign/check-layers.md, to be mechanized",
+   "planned": "Points as ordinal layers are planned (docs/redesign/check-layers.md). The Rocq rejects nothing here and asks wfworld W of lock-free adequacy instead.",
    "accepts": {
     "lf": {
      "ok": false,
-     "part": "well-founded world"
+     "part": "E-New"
     }
    },
    "lead": "A deadlock-free program in which a chain of waiting threads grows forever."

@@ -367,7 +367,7 @@ window.MathJax = {
     for (const x of MAP.examples || []) {
       const modes = x.modes && x.modes.length ? x.modes : ['df', 'lf'];
       if (!modes.includes(mode) || !matches(x.title, x.shows, x.code, x.rocq)) continue;
-      root.insertAdjacentHTML('beforeend', `<article class="ex${modes.includes('df') ? '' : ' lfonly'}" id="x-${esc(x.id)}"><h3 data-ex="${esc(x.id)}" tabindex="0">${esc(x.title)}</h3>${badges(x.accepts)}${x.lead ? `<p class="lead">${prose(x.lead)}</p>` : ''}${x.code ? `<pre>${hl(x.code)}</pre>` : ''}${x.shows ? `<p>${prose(x.shows)}</p>` : ''}</article>`);
+      root.insertAdjacentHTML('beforeend', `<article class="ex${modes.includes('df') ? '' : ' lfonly'}" id="x-${esc(x.id)}"><h3 data-ex="${esc(x.id)}" tabindex="0">${esc(x.title)}</h3>${x.planned ? `<span class="tags"><span class="tag planned" title="${esc(x.planned)}">planned</span></span>` : ''}${badges(x.accepts)}${x.lead ? `<p class="lead">${prose(x.lead)}</p>` : ''}${x.code ? `<pre>${hl(x.code)}</pre>` : ''}${x.shows ? `<p>${prose(x.shows)}</p>` : ''}</article>`);
       shown++;
     }
     if (!shown) root.insertAdjacentHTML('beforeend', '<p class="empty-state">No example for this instance matches the filter.</p>');
