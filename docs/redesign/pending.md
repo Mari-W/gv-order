@@ -2,7 +2,7 @@
 
 ## Report, run of 2026-11-22 on the overlap of P-Connect
 
-Branch redesign-comp, from 97a7a3e, commits 059d27c and the next one,
+Branch redesign-comp, from 97a7a3e, commits 059d27c and 32ee457,
 nothing pushed. static/Typing.v and the typing rules are untouched.
 
 Repair (a) of the open item "P-Connect's overlap is the shared constants"
