@@ -434,6 +434,13 @@ instance) becomes provable by induction. It needs three lemmas. Unfolding commut
 with `sinst` when the head is an action, `sequiv` is closed under `sinst`, and
 `dual` commutes with `sinst`. `typed_sinst` does not exist today.
 
+Correction of the fourth run (2026-11-21). `typed_sinst` is false even with
+`Forall sscoped` in `sinsts` (`typed_sinst_false`, v2/examples/SinstStuck.v).
+`sequiv` compares stuck terms on the nose, and a contractive instance can
+turn two equivalent session types with a stuck tail into two distinct stuck
+continuations. Checking a box body at the identity instance is sound only for
+bodies whose session types are all contractive.
+
 ### 6.2 The points E-Open introduces have no name
 
 E-Open binds `ῑ` fresh, and the program has no binder for them. Every

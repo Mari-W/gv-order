@@ -1,5 +1,51 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, fourth run of 2026-11-21 on typed_sinst and rx-chain
+
+Branch redesign-clean3 in .claude/worktrees/redesign-s4, nothing pushed,
+commits 1a0a873 to the head.
+
+- Item 1, `typed_sinst`. The lemma as stated is false, and the run proves the
+  negation instead (`typed_sinst_false`, v2/examples/SinstStuck.v).
+  - Counterexample. With X = µβ.β, s0 = α ; X and s1 = (α ; Skip) ; X unfold
+    to the same head α with tail X, so s0 ≈ s1 and
+    c : s0@x ⊢ c : s1@x by E-Chan and E-Sub. The instance
+    α := ?(∗) ; (Skip ; Skip) satisfies `sinsts N`. Under it both heads are the
+    same receive, with tails (Skip ; Skip) ; X and ((Skip ; Skip) ; Skip) ; X.
+    Both tails are stuck, because X never reaches a head, and `sequiv`
+    compares stuck terms on the nose. So the two instances are not
+    equivalent (`ss_inst_not_sequiv`, by computation at depth 2), and no
+    derivation types c at the instance of s1.
+  - New inversion lemma `inv_chan_sty` (static/Inversion.v). A channel typed
+    at an end type has in Θ a session type ≈ to the one of that type.
+  - Consequence for the algorithm (finding 6.1, corrected there). Checking a
+    box body once at the identity instance accepts boxes that E-Box rejects,
+    whenever the body uses a session type that is not contractive. A box
+    whose body creates a channel at s0 and returns its ends at s1 and
+    dual s0 is such a box (argued, not mechanized). Two ways out, both decisions for the author. One
+    is a contractivity premise wherever a session type enters a derivation
+    (E-New, the ends of P-Term, the target of E-Sub). The proof of
+    `typed_sinst` then also needs that `sfuel s` is enough fuel for `unrN` on
+    every contractive s, and that `sequiv` is closed under `sinst` for
+    contractive types. Neither lemma exists. The other is a `sequiv` that
+    does not compare stuck terms syntactically.
+  - CheckAll.v prints the assumptions of `inv_chan_sty` and
+    `typed_sinst_false`. The map cites `typed_sinst_false` at the note
+    E-Box.inst.
+- Item 2, rx-chain. Not started, because item 1 did not land as a theorem.
+  The proof also needs more than inversion through the rules of the
+  program. Inversion.v has no lemma for Lam, App, Box, Force, Spawn, New,
+  Send or Var. More importantly, the box `grow` may carry any constraint C,
+  and `bc_facts` is a predicate, so C may be infinite and closed under the
+  shift of one round. Rejecting the field case needs an induction over the
+  rounds. C at the point of w entails C one level lower, so Γ of main
+  entails an infinite descending chain in the tree of the root of w. That
+  contradicts `wf_new` of the creation in main only through a lemma that
+  `slt` under `hc_open` of a `wf_new` constraint, restricted to the new
+  tree, lies in the transitive closure of C and program order. The fresh
+  root case needs that the point of w lies outside the tree of the new root.
+  rejects.js still says the rejection is argued.
+
 ## Report, third run of 2026-11-21 on layers, plain new and well-formed existentials
 
 Branch redesign-clean3 in .claude/worktrees/redesign-s4, nothing pushed. The
