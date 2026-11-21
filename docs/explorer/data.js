@@ -24,7 +24,7 @@ window.MAP = {
        "r-boxes"
       ]
      },
-     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m."
+     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ o at a field. Both choose the tickets m1 and m2 of the new ends with m1 + m2 ≤ N."
     },
     {
      "id": "syn-let",
@@ -153,7 +153,7 @@ window.MAP = {
        "t-side"
       ]
      },
-     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m."
+     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ o at a field. Both choose the tickets m1 and m2 of the new ends with m1 + m2 ≤ N."
     },
     {
      "id": "syn-moves",
@@ -235,7 +235,7 @@ window.MAP = {
        "ct-costs"
       ]
      },
-     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m."
+     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ o at a field. Both choose the tickets m1 and m2 of the new ends with m1 + m2 ≤ N."
     },
     {
      "id": "sem-head",
@@ -254,7 +254,7 @@ window.MAP = {
        "sem-proc"
       ]
      },
-     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m."
+     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ o at a field. Both choose the tickets m1 and m2 of the new ends with m1 + m2 ≤ N."
     },
     {
      "id": "sem-ctx",
@@ -292,7 +292,7 @@ window.MAP = {
        "sem-props"
       ]
      },
-     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m."
+     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ o at a field. Both choose the tickets m1 and m2 of the new ends with m1 + m2 ≤ N."
     },
     {
      "id": "sem-events",
@@ -509,7 +509,7 @@ window.MAP = {
        "p-typing"
       ]
      },
-     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m. Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
+     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ o at a field. Both choose the tickets m1 and m2 of the new ends with m1 + m2 ≤ N. Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ. relation/Ranks.v has the rank functions into ord@{Set} and the equivalence of wf with well-foundedness, and no world uses them yet."
     },
     {
      "id": "w-order",
@@ -528,7 +528,7 @@ window.MAP = {
        "rd"
       ]
      },
-     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m. Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
+     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ o at a field. Both choose the tickets m1 and m2 of the new ends with m1 + m2 ≤ N. Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ. relation/Ranks.v has the rank functions into ord@{Set} and the equivalence of wf with well-foundedness, and no world uses them yet."
     },
     {
      "id": "w-wf",
@@ -548,7 +548,7 @@ window.MAP = {
        "th-adeq"
       ]
      },
-     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
+     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ. relation/Ranks.v has the rank functions into ord@{Set} and the equivalence of wf with well-foundedness, and no world uses them yet."
     },
     {
      "id": "w-ext",
@@ -569,7 +569,7 @@ window.MAP = {
        "p-rel"
       ]
      },
-     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m. Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
+     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ o at a field. Both choose the tickets m1 and m2 of the new ends with m1 + m2 ≤ N. Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ. relation/Ranks.v has the rank functions into ord@{Set} and the equivalence of wf with well-foundedness, and no world uses them yet."
     }
    ]
   },
@@ -658,7 +658,7 @@ window.MAP = {
        "p-typing"
       ]
      },
-     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
+     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ. relation/Ranks.v has the rank functions into ord@{Set} and the equivalence of wf with well-foundedness, and no world uses them yet."
     },
     {
      "id": "t-judgment",
@@ -847,7 +847,7 @@ window.MAP = {
        "r-new"
       ]
      },
-     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m. Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
+     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ o at a field. Both choose the tickets m1 and m2 of the new ends with m1 + m2 ≤ N. Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ. relation/Ranks.v has the rank functions into ord@{Set} and the equivalence of wf with well-foundedness, and no world uses them yet."
     },
     {
      "id": "r-act",
@@ -903,7 +903,7 @@ window.MAP = {
        "w-ext"
       ]
      },
-     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m. Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
+     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ o at a field. Both choose the tickets m1 and m2 of the new ends with m1 + m2 ≤ N. Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ. relation/Ranks.v has the rank functions into ord@{Set} and the equivalence of wf with well-foundedness, and no world uses them yet."
     },
     {
      "id": "t-subs",
@@ -939,7 +939,7 @@ window.MAP = {
        "g-guard"
       ]
      },
-     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
+     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ. relation/Ranks.v has the rank functions into ord@{Set} and the equivalence of wf with well-foundedness, and no world uses them yet."
     },
     {
      "id": "g-guard",
@@ -981,8 +981,7 @@ window.MAP = {
        "e-rel",
        "p-rel"
       ]
-     },
-     "planned": "Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers. relation/Ord.v has the ordinals, their well-founded order and the fixpoint osfix, and no relation uses them yet."
+     }
     },
     {
      "id": "ct-costs",
@@ -1013,8 +1012,8 @@ window.MAP = {
       "df",
       "lf"
      ],
-     "rocq": "relation/Relation.v: Vbody; relation/Relation.v: Varr; relation/Relation.v: Vbody (TBox), Vrel_box_iff; relation/Relation.v: Vbody (TEx), Vrel_ex_iff; relation/Relation.v: tsize, Vtop; relation/Sfix.v: sfix",
-     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\phantom{x}\\end{array}}{\\htmlData{k=V-Unit}{\\ast \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\varnothing \\vdash \\ast \\rrbracket}}}\\;\\textsf{V-Unit} \\qquad \\dfrac{\\begin{array}{c}S' \\mathrel{\\htmlData{k=sty.seqv}{\\approx}} S\\end{array}}{\\htmlData{k=V-Sess}{o \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\htmlData{k=V-Sess.exact}{\\{o \\mapsto S'@x\\}} \\vdash S@x \\rrbracket}}}\\;\\textsf{V-Sess} \\\\[2ex]\n\\dfrac{\\begin{array}{c}v_1 \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta_1 \\vdash T_1 \\rrbracket}\\quad v_2 \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta_2 \\vdash T_2 \\rrbracket}\\end{array}}{\\htmlData{k=V-Prod}{\\langle v_1, v_2\\rangle \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\htmlData{k=V-Prod.split}{\\Theta_1 \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Theta_2} \\vdash T_1 \\otimes T_2 \\rrbracket}}}\\;\\textsf{V-Prod} \\qquad \\dfrac{\\begin{array}{c}v \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash T_i \\rrbracket}\\end{array}}{\\htmlData{k=V-Sum}{\\htmlData{k=syn.inj}{\\mathsf{inj}_i}\\,v \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash T_1 \\oplus T_2 \\rrbracket}}}\\;\\textsf{V-Sum}\n\\end{array}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=V-Arrow.exact}{\\mathrm{dom}\\,\\Theta = \\htmlData{k=syn.fends}{\\mathsf{fends}}(e)}\\quad \\htmlData{k=V-Arrow.lb}{l \\neq \\bot \\Rightarrow l \\mathrel{\\htmlData{k=ty2.le}{\\preccurlyeq}} \\htmlData{k=ty.heads}{\\mathsf{ap}}\\,\\Theta} \\\\ \\htmlData{k=V-Arrow.kripke}{\\forall W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W},\\ \\htmlData{k=V-Arrow.level}{\\dfo{j < n}\\annot{j + \\kappa_{\\beta} \\leq n}},\\ \\Theta' \\mathbin{\\#} \\Theta,\\ \\htmlData{k=V-Arrow.ub}{F,\\ \\htmlData{k=w.lt}{W' \\vdash u \\prec F}}. \\\\ w \\in \\htmlData{k=th.Vrel}{V^{W'}_{j}\\llbracket \\Theta' \\vdash T \\rrbracket} \\ \\Longrightarrow\\ \\htmlData{k=V-Arrow.body}{e[w] \\in \\htmlData{k=th.Erel}{E^{W'}_{j}\\llbracket \\Theta \\cup \\Theta' \\vdash U \\rrbracket^{F}}}\\end{array}}{\\lambda e \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U \\rrbracket}}\\;\\textsf{V-Arrow}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=V-Box.empty}{\\Theta = \\varnothing}\\quad \\htmlData{k=V-Box.noends}{\\htmlData{k=syn.fends}{\\mathsf{fends}}(e) = \\varnothing} \\\\ \\htmlData{k=V-Box.kripke}{\\forall W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W},\\ \\htmlData{k=V-Box.inst}{\\bar x,\\ W' \\vdash C[\\bar x]},\\ \\htmlData{k=V-Box.hc}{\\bar s,\\ \\mathsf{contractive}\\,\\bar s}.\\quad \\htmlData{k=V-Box.thunk}{\\htmlData{k=sr.thunk}{\\mathsf{thunk}(e)} \\in \\htmlData{k=th.Vrel}{V^{W'}_{n}\\llbracket \\varnothing \\vdash \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] \\rrbracket}}\\end{array}}{!e \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\varnothing \\vdash \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\,C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\rrbracket}}\\;\\textsf{V-Box}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=V-Ex.lb}{l \\mathrel{\\htmlData{k=ty2.le}{\\preccurlyeq}} \\htmlData{k=ty.heads}{\\mathsf{ap}}\\,\\Theta}\\quad \\htmlData{k=V-Ex.witness}{W \\vdash C[\\bar x]}\\quad v \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash T[\\bar x] \\rrbracket}\\end{array}}{v \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash \\exists^{l}\\bar\\iota.\\,C.\\,T \\rrbracket}}\\;\\textsf{V-Ex}\\\\[3ex]\\begin{array}{l}\n\\htmlData{k=rel.vsize}{V_n\\llbracket\\Theta \\vdash T\\rrbracket \\ \\text{by recursion on}\\ (n, \\htmlData{k=sr.size}{\\mathsf{size}}\\,T) \\in (\\mathbb{N}^2, <_{\\mathrm{lex}})} \\\\\n\\htmlData{k=sr.size}{\\mathsf{size}(\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\,C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U)) = 3 + \\mathsf{size}\\,U} \\qquad \\htmlData{k=sr.size}{\\mathsf{size}(\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) = 2 + \\mathsf{size}\\,U}\n\\end{array}\\end{array}",
+     "rocq": "relation/Relation.v: Vbody; relation/Relation.v: Varr; relation/Relation.v: Vbody (TBox), Vrel_box_iff; relation/Relation.v: Vbody (TEx), Vrel_ex_iff; relation/Relation.v: tsize, Vtop, RelA; relation/Ord.v: osfix",
+     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\phantom{x}\\end{array}}{\\htmlData{k=V-Unit}{\\ast \\in \\htmlData{k=th.Vrel}{V^{W}_{\\alpha}\\llbracket \\varnothing \\vdash \\ast \\rrbracket}}}\\;\\textsf{V-Unit} \\qquad \\dfrac{\\begin{array}{c}S' \\mathrel{\\htmlData{k=sty.seqv}{\\approx}} S\\end{array}}{\\htmlData{k=V-Sess}{o \\in \\htmlData{k=th.Vrel}{V^{W}_{\\alpha}\\llbracket \\htmlData{k=V-Sess.exact}{\\{o \\mapsto S'@x\\}} \\vdash S@x \\rrbracket}}}\\;\\textsf{V-Sess} \\\\[2ex]\n\\dfrac{\\begin{array}{c}v_1 \\in \\htmlData{k=th.Vrel}{V^{W}_{\\alpha}\\llbracket \\Theta_1 \\vdash T_1 \\rrbracket}\\quad v_2 \\in \\htmlData{k=th.Vrel}{V^{W}_{\\alpha}\\llbracket \\Theta_2 \\vdash T_2 \\rrbracket}\\end{array}}{\\htmlData{k=V-Prod}{\\langle v_1, v_2\\rangle \\in \\htmlData{k=th.Vrel}{V^{W}_{\\alpha}\\llbracket \\htmlData{k=V-Prod.split}{\\Theta_1 \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Theta_2} \\vdash T_1 \\otimes T_2 \\rrbracket}}}\\;\\textsf{V-Prod} \\qquad \\dfrac{\\begin{array}{c}v \\in \\htmlData{k=th.Vrel}{V^{W}_{\\alpha}\\llbracket \\Theta \\vdash T_i \\rrbracket}\\end{array}}{\\htmlData{k=V-Sum}{\\htmlData{k=syn.inj}{\\mathsf{inj}_i}\\,v \\in \\htmlData{k=th.Vrel}{V^{W}_{\\alpha}\\llbracket \\Theta \\vdash T_1 \\oplus T_2 \\rrbracket}}}\\;\\textsf{V-Sum}\n\\end{array}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=V-Arrow.exact}{\\mathrm{dom}\\,\\Theta = \\htmlData{k=syn.fends}{\\mathsf{fends}}(e)}\\quad \\htmlData{k=V-Arrow.lb}{l \\neq \\bot \\Rightarrow l \\mathrel{\\htmlData{k=ty2.le}{\\preccurlyeq}} \\htmlData{k=ty.heads}{\\mathsf{ap}}\\,\\Theta} \\\\ \\htmlData{k=V-Arrow.kripke}{\\forall W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W},\\ \\htmlData{k=V-Arrow.level}{\\dfo{j < \\alpha}\\annot{j + \\kappa_{\\beta} \\leq \\alpha}},\\ \\Theta' \\mathbin{\\#} \\Theta,\\ \\htmlData{k=V-Arrow.ub}{F,\\ \\htmlData{k=w.lt}{W' \\vdash u \\prec F}}. \\\\ w \\in \\htmlData{k=th.Vrel}{V^{W'}_{j}\\llbracket \\Theta' \\vdash T \\rrbracket} \\ \\Longrightarrow\\ \\htmlData{k=V-Arrow.body}{e[w] \\in \\htmlData{k=th.Erel}{E^{W'}_{j}\\llbracket \\Theta \\cup \\Theta' \\vdash U \\rrbracket^{F}}}\\end{array}}{\\lambda e \\in \\htmlData{k=th.Vrel}{V^{W}_{\\alpha}\\llbracket \\Theta \\vdash T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U \\rrbracket}}\\;\\textsf{V-Arrow}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=V-Box.empty}{\\Theta = \\varnothing}\\quad \\htmlData{k=V-Box.noends}{\\htmlData{k=syn.fends}{\\mathsf{fends}}(e) = \\varnothing} \\\\ \\htmlData{k=V-Box.kripke}{\\forall W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W},\\ \\htmlData{k=V-Box.inst}{\\bar x,\\ W' \\vdash C[\\bar x]},\\ \\htmlData{k=V-Box.hc}{\\bar s,\\ \\mathsf{contractive}\\,\\bar s,\\ \\mathsf{scoped}\\,\\bar s}.\\quad \\htmlData{k=V-Box.thunk}{\\htmlData{k=sr.thunk}{\\mathsf{thunk}(e)} \\in \\htmlData{k=th.Vrel}{V^{W'}_{\\alpha}\\llbracket \\varnothing \\vdash \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] \\rrbracket}}\\end{array}}{!e \\in \\htmlData{k=th.Vrel}{V^{W}_{\\alpha}\\llbracket \\varnothing \\vdash \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\,C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\rrbracket}}\\;\\textsf{V-Box}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=V-Ex.lb}{l \\mathrel{\\htmlData{k=ty2.le}{\\preccurlyeq}} \\htmlData{k=ty.heads}{\\mathsf{ap}}\\,\\Theta}\\quad \\htmlData{k=V-Ex.witness}{W \\vdash C[\\bar x]}\\quad v \\in \\htmlData{k=th.Vrel}{V^{W}_{\\alpha}\\llbracket \\Theta \\vdash T[\\bar x] \\rrbracket}\\end{array}}{v \\in \\htmlData{k=th.Vrel}{V^{W}_{\\alpha}\\llbracket \\Theta \\vdash \\exists^{l}\\bar\\iota.\\,C.\\,T \\rrbracket}}\\;\\textsf{V-Ex}\\\\[3ex]\\begin{array}{l}\n\\htmlData{k=rel.vsize}{V_{\\alpha}\\llbracket\\Theta \\vdash T\\rrbracket \\ \\text{by recursion on}\\ (\\alpha, \\htmlData{k=sr.size}{\\mathsf{size}}\\,T) \\in (\\mathsf{Ord} \\times \\mathbb{N}, <_{\\mathrm{lex}})} \\\\\n\\htmlData{k=sr.size}{\\mathsf{size}(\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\,C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U)) = 3 + \\mathsf{size}\\,U} \\qquad \\htmlData{k=sr.size}{\\mathsf{size}(\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) = 2 + \\mathsf{size}\\,U}\n\\end{array}\\end{array}",
      "caption": "Each rule is one clause of $V$, by recursion on the type within a level, and $\\Theta$ maps exactly the ends the value owns. A closure is safe when its body is safe in each larger world, at each lower level, for each argument and each future of the caller above $u$. A thunk, the closure that $\\mathsf{spawn}$ runs, is read at the empty future. A box owns no end, and it is safe when $\\mathsf{thunk}(e) = \\lambda\\_.\\,e[!e]$ is safe at each instance. An existential value is a value of the body at witness points whose facts hold.",
      "about": {
       "why": "The clauses for closures, thunks and boxes quantify over larger worlds and lower levels. This quantification makes the relation compositional.",
@@ -1025,8 +1024,7 @@ window.MAP = {
        "r-boxes",
        "r-ex"
       ]
-     },
-     "planned": "Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers. relation/Ord.v has the ordinals, their well-founded order and the fixpoint osfix, and no relation uses them yet."
+     }
     },
     {
      "id": "e-rel",
@@ -1046,8 +1044,7 @@ window.MAP = {
        "sj-all",
        "p-obls"
       ]
-     },
-     "planned": "Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers. relation/Ord.v has the ordinals, their well-founded order and the fixpoint osfix, and no relation uses them yet."
+     }
     },
     {
      "id": "e-obl",
@@ -1057,7 +1054,7 @@ window.MAP = {
       "lf"
      ],
      "rocq": "relation/Relation.v: o_beta, o_new, o_spawn, new_env; relation/Relation.v: o_send, o_recv; relation/Relation.v: o_close, o_select, o_branch, o_link",
-     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta\\end{array}}{\\htmlData{k=O-Beta}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\beta}(e')}}}\\;\\textsf{O-Beta} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=O-Spawn.split}{\\Theta = \\Theta_M \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Theta_r}\\quad \\htmlData{k=O-Spawn.thunk}{v \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta_M \\vdash \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{\\htmlData{k=ty.ubound}{\\top}}_{\\bot} \\ast \\rrbracket}}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta_r\\end{array}}{\\htmlData{k=O-Spawn}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{spawn}\\,v}(e')}}}\\;\\textsf{O-Spawn} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=O-New.cfresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Theta} \\\\ \\htmlData{k=O-New.forall}{\\forall \\htmlData{k=O-New.gfresh}{a \\notin A_W}}.\\ \\htmlData{k=O-New.grow}{\\exists S, \\pi, C, \\varrho_a.\\ (\\pi = a \\land \\htmlData{k=w.grow}{W \\oplus (a, \\varrho_a)} \\htmlData{k=w.rlt}{\\vDash} C \\cup \\htmlData{k=w.po}{\\mathsf{po}}) \\lor (\\pi = x\\cdot\\kappa \\land W \\vDash C)},\\ \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}_{W \\oplus (a, \\varrho_a)}\\ \\htmlData{k=O-New.dual}{\\Theta[c^{+} \\mapsto S@\\pi,\\ c^{-} \\mapsto \\overline{S}@\\overline{\\pi}]}\\end{array}}{\\htmlData{k=O-New}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{new}\\,c}(e')}}}\\;\\textsf{O-New}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.send}{!(\\bar\\iota.\\ U)}.S@x}\\quad \\htmlData{k=O-Send.split}{\\Theta \\setminus o = \\Theta_M \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Theta_r} \\\\ \\htmlData{k=O-Send.payload}{w \\in \\htmlData{k=th.Vrel}{V^{W}_{\\dfo{n}\\annot{n-\\kappa_{give}}}\\llbracket \\Theta_M \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\htmlData{k=O-Send.shift}{\\Theta_r[o \\mapsto S@x^{+}]}\\end{array}}{\\htmlData{k=O-Send}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{send}\\,o\\,w}(e')}}}\\;\\textsf{O-Send} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ U)}.S@x} \\\\ \\htmlData{k=O-Recv.forall}{\\forall j, \\Theta_{in}.\\ \\dfo{j < n}\\annot{j + \\kappa_{take} \\leq n},\\ \\Theta_{in} \\mathbin{\\#} \\Theta,\\ w \\in \\htmlData{k=th.Vrel}{V^{W}_{j}\\llbracket \\Theta_{in} \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}} \\ \\Longrightarrow\\ \\htmlData{k=O-Recv.level}{e' \\in \\htmlData{k=th.Erel}{E^{W}_{j}\\llbracket \\Theta[o \\mapsto S@x^{+}] \\cup \\Theta_{in} \\vdash T \\rrbracket^{F}}}\\end{array}}{\\htmlData{k=O-Recv}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{recv}\\,o\\,w}(e')}}}\\;\\textsf{O-Recv}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.close}{\\mathsf{Close}}@x}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta \\setminus o\\end{array}}{\\htmlData{k=O-Close}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{close}\\,o}(e')}}}\\;\\textsf{O-Close} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=O-Link.distinct}{o_1 \\neq o_2}\\quad \\htmlData{k=O-Link.dual}{\\Theta(o_1) = S_1@x,\\ \\Theta(o_2) = S_2@\\overline{x},\\ \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S_1\\,S_2}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta \\setminus \\{o_1, o_2\\}\\end{array}}{\\htmlData{k=O-Link}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{link}\\,o_1\\,o_2}(e')}}}\\;\\textsf{O-Link} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.plus}{\\oplus(S_1,S_2)}@x}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta[o \\mapsto S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}}]\\end{array}}{\\htmlData{k=O-Select}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{select}_i\\,o}(e')}}}\\;\\textsf{O-Select} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.with}{\\&(S_1,S_2)}@x}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta[o \\mapsto S_i@\\htmlData{k=pt.bra}{x\\cdot\\kappa_i}]\\end{array}}{\\htmlData{k=O-Branch}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{branch}_i\\,o}(e')}}}\\;\\textsf{O-Branch}\n\\end{array}\\end{array}",
+     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta\\end{array}}{\\htmlData{k=O-Beta}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\beta}(e')}}}\\;\\textsf{O-Beta} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=O-Spawn.split}{\\Theta = \\Theta_M \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Theta_r}\\quad \\htmlData{k=O-Spawn.thunk}{v \\in \\htmlData{k=th.Vrel}{V^{W}_{\\alpha}\\llbracket \\Theta_M \\vdash \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{\\htmlData{k=ty.ubound}{\\top}}_{\\bot} \\ast \\rrbracket}}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta_r\\end{array}}{\\htmlData{k=O-Spawn}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{spawn}\\,v}(e')}}}\\;\\textsf{O-Spawn} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=O-New.cfresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Theta} \\\\ \\htmlData{k=O-New.forall}{\\forall \\htmlData{k=O-New.gfresh}{a \\notin A_W}}.\\ \\htmlData{k=O-New.grow}{\\exists S, \\pi, C, \\varrho_a.\\ (\\pi = a \\land \\htmlData{k=w.grow}{W \\oplus (a, \\varrho_a)} \\htmlData{k=w.rlt}{\\vDash} C \\cup \\htmlData{k=w.po}{\\mathsf{po}}) \\lor (\\pi = x\\cdot\\kappa \\land W \\vDash C)},\\ \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}_{W \\oplus (a, \\varrho_a)}\\ \\htmlData{k=O-New.dual}{\\Theta[c^{+} \\mapsto S@\\pi,\\ c^{-} \\mapsto \\overline{S}@\\overline{\\pi}]}\\end{array}}{\\htmlData{k=O-New}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{new}\\,c}(e')}}}\\;\\textsf{O-New}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.send}{!(\\bar\\iota.\\ U)}.S@x}\\quad \\htmlData{k=O-Send.split}{\\Theta \\setminus o = \\Theta_M \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Theta_r} \\\\ \\htmlData{k=O-Send.payload}{w \\in \\htmlData{k=th.Vrel}{V^{W}_{\\dfo{\\alpha}\\annot{\\beta}}\\llbracket \\Theta_M \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\htmlData{k=O-Send.shift}{\\Theta_r[o \\mapsto S@x^{+}]}\\end{array}}{\\htmlData{k=O-Send}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{send}\\,o\\,w}(e')}}}\\;\\textsf{O-Send} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ U)}.S@x} \\\\ \\htmlData{k=O-Recv.forall}{\\forall \\beta, \\Theta_{in}.\\ \\dfo{\\beta < \\alpha}\\annot{\\beta + \\kappa_{take} \\leq \\alpha},\\ \\Theta_{in} \\mathbin{\\#} \\Theta,\\ w \\in \\htmlData{k=th.Vrel}{V^{W}_{j}\\llbracket \\Theta_{in} \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}} \\ \\Longrightarrow\\ \\htmlData{k=O-Recv.level}{e' \\in \\htmlData{k=th.Erel}{E^{W}_{j}\\llbracket \\Theta[o \\mapsto S@x^{+}] \\cup \\Theta_{in} \\vdash T \\rrbracket^{F}}}\\end{array}}{\\htmlData{k=O-Recv}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{recv}\\,o\\,w}(e')}}}\\;\\textsf{O-Recv}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.close}{\\mathsf{Close}}@x}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta \\setminus o\\end{array}}{\\htmlData{k=O-Close}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{close}\\,o}(e')}}}\\;\\textsf{O-Close} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=O-Link.distinct}{o_1 \\neq o_2}\\quad \\htmlData{k=O-Link.dual}{\\Theta(o_1) = S_1@x,\\ \\Theta(o_2) = S_2@\\overline{x},\\ \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S_1\\,S_2}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta \\setminus \\{o_1, o_2\\}\\end{array}}{\\htmlData{k=O-Link}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{link}\\,o_1\\,o_2}(e')}}}\\;\\textsf{O-Link} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.plus}{\\oplus(S_1,S_2)}@x}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta[o \\mapsto S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}}]\\end{array}}{\\htmlData{k=O-Select}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{select}_i\\,o}(e')}}}\\;\\textsf{O-Select} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.with}{\\&(S_1,S_2)}@x}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta[o \\mapsto S_i@\\htmlData{k=pt.bra}{x\\cdot\\kappa_i}]\\end{array}}{\\htmlData{k=O-Branch}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{branch}_i\\,o}(e')}}}\\;\\textsf{O-Branch}\n\\end{array}\\end{array}",
      "caption": "Each step $e \\xrightarrow{\\alpha} e'$ of a term holding $\\Theta$ must meet $\\mathsf{Obl}_\\alpha(e')$. A $\\beta$ step keeps the ends. A spawn gives the child exactly the ends of its thunk, and a creation adds two dual ends at a fresh root or at a field. A send gives away exactly the ends of its payload, and a receive is safe for each value that may arrive. A close removes the end, a choice moves it to the field of the branch, and a link removes two dual ends.",
      "about": {
       "why": "The obligations say how each step changes ownership and points. The relation reads step labels only here.",
@@ -1065,7 +1062,7 @@ window.MAP = {
        "e-rel"
       ]
      },
-     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m. Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers. relation/Ord.v has the ordinals, their well-founded order and the fixpoint osfix, and no relation uses them yet. Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
+     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ o at a field. Both choose the tickets m1 and m2 of the new ends with m1 + m2 ≤ N. Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ. relation/Ranks.v has the rank functions into ord@{Set} and the equivalence of wf with well-foundedness, and no world uses them yet."
     },
     {
      "id": "rd",
@@ -1104,7 +1101,7 @@ window.MAP = {
        "th-compose"
       ]
      },
-     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
+     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ. relation/Ranks.v has the rank functions into ord@{Set} and the equivalence of wf with well-foundedness, and no world uses them yet."
     },
     {
      "id": "p-obls",
@@ -1114,7 +1111,7 @@ window.MAP = {
       "lf"
      ],
      "rocq": "relation/Relation.v: q_tau, q_send, q_recv, q_close, q_select, q_branch, q_link; relation/Relation.v: send_split, recv_ok, recv_back, recv_env",
-     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}C' \\cap \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma = \\varnothing\\quad p'\\ \\htmlData{k=rel.atcost}{\\mathsf{at}}_{\\htmlData{k=ct.sync}{\\dfo{\\htmlData{k=ct.DF}{\\kappa_{DF}}(ev)}\\annot{\\htmlData{k=ct.table}{\\kappa}(ev)}}}\\ \\Sigma\\end{array}}{\\htmlData{k=Q-Tau}{\\htmlData{k=sr.pobl}{\\mathsf{Pobl}_{ev}(p')}}}\\;\\textsf{Q-Tau} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Sigma(o) \\doteq \\htmlData{k=sty.send}{!(\\bar\\iota.\\ U)}.S@x}\\quad \\Sigma \\setminus o = \\Sigma_v \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Sigma_r \\\\ \\htmlData{k=Q-Send.theta-e}{\\mathrm{dom}\\,\\Theta_e = \\{o' \\in \\htmlData{k=syn.fends}{\\mathsf{fends}}(w) \\mid \\htmlData{k=end.ech}{\\mathsf{ech}}(o') \\in C\\}}\\quad \\htmlData{k=Q-Send.split}{\\mathsf{send\\_split}\\,\\Sigma\\,\\Sigma_e\\,\\Theta_e} \\\\ w \\in \\htmlData{k=th.Vrel}{V^{W}_{\\dfo{n}\\annot{n-\\kappa_{give}}}\\llbracket \\Sigma_v \\cup \\Theta_e \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}\\quad \\htmlData{k=rel.atcost}{p'\\ \\mathsf{at}}\\ (\\Sigma_r \\cup \\htmlData{k=Q-Send.sigma-e}{\\Sigma_e})[o \\mapsto S@x^{+}]\\end{array}}{\\htmlData{k=Q-Send}{\\htmlData{k=sr.pobl}{\\mathsf{Pobl}_{\\mathsf{send}\\,o\\,w}(p')}}}\\;\\textsf{Q-Send} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Sigma(o) \\doteq \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ U)}.S@x} \\\\ \\forall j, \\Theta_2.\\ \\dfo{j < n}\\annot{j + \\kappa_{take} \\leq n},\\ \\htmlData{k=end.ech}{\\mathsf{ech}}[\\mathrm{dom}\\,\\Theta_2] \\cap C = \\varnothing,\\ \\htmlData{k=Q-Recv.ok}{\\mathsf{recv\\_ok}\\,\\Sigma'\\,\\Theta_2},\\ w \\in \\htmlData{k=th.Vrel}{V^{W}_{j}\\llbracket \\Theta_2 \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket} \\\\ \\Longrightarrow\\ (C' \\cup \\htmlData{k=Q-Recv.back}{\\mathsf{recv\\_back}\\,\\Sigma'\\,\\Theta_2}, E') \\in \\htmlData{k=th.Prel}{P^{W}_{j}\\llbracket \\htmlData{k=Q-Recv.env}{\\mathsf{recv\\_env}\\,\\Sigma'\\,\\Theta_2} \\vdash T \\rrbracket}\\end{array}}{\\htmlData{k=Q-Recv}{\\htmlData{k=sr.pobl}{\\mathsf{Pobl}_{\\mathsf{recv}\\,o\\,w}(p')}}}\\;\\textsf{Q-Recv} \\\\[2ex]\n\\htmlData{k=Q-Link}{\\textsf{Q-Close, Q-Select, Q-Branch, Q-Link} = \\textsf{O-Close, O-Select, O-Branch, O-Link}\\,[\\Sigma/\\Theta,\\ P/E]} \\\\\np = (C, E),\\ p' = (C', E'),\\ \\Sigma' = \\Sigma[o \\mapsto S@x^{+}]\n\\end{array}\\\\[3ex]\\begin{array}{l}\n\\htmlData{k=Q-Send.split}{\\mathsf{send\\_split}\\,\\Sigma\\,\\Sigma_e\\,\\Theta_e} \\iff (\\forall o \\in \\mathrm{dom}\\,\\Theta_e.\\ o, \\overline{o} \\notin \\mathrm{dom}\\,\\Sigma) \\land {} \\\\\n\\quad (\\forall o.\\ o \\in \\mathrm{dom}\\,\\Sigma_e \\iff \\overline{o} \\in \\mathrm{dom}\\,\\Theta_e \\land o \\notin \\mathrm{dom}\\,\\Theta_e) \\land {} \\\\\n\\quad (\\forall o.\\ \\Theta_e(o) = S@y \\Rightarrow \\exists S'.\\ (\\Sigma_e \\cup \\Theta_e)(\\overline{o}) = S'@\\overline{y} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S') \\\\\n\\htmlData{k=Q-Recv.ok}{\\mathsf{recv\\_ok}\\,\\Sigma\\,\\Theta_2} \\iff (\\forall o \\in \\mathrm{dom}\\,\\Theta_2.\\ o \\notin \\mathrm{dom}\\,\\Sigma) \\land {} \\\\\n\\quad (\\forall o.\\ \\Theta_2(o) = S@y \\land (\\Sigma \\cup \\Theta_2)(\\overline{o}) = S'@y' \\Rightarrow y' = \\overline{y} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S') \\\\\n\\htmlData{k=Q-Recv.back}{\\mathsf{recv\\_back}\\,\\Sigma\\,\\Theta_2 = \\htmlData{k=end.ech}{\\mathsf{ech}}[\\{o \\in \\mathrm{dom}\\,\\Theta_2 \\mid \\overline{o} \\in \\mathrm{dom}\\,\\Sigma \\cup \\mathrm{dom}\\,\\Theta_2\\}]} \\\\\n\\htmlData{k=Q-Recv.env}{\\mathsf{recv\\_env}\\,\\Sigma\\,\\Theta_2 = \\{o \\mapsto y \\in \\Sigma \\mid \\overline{o} \\notin \\mathrm{dom}\\,\\Theta_2\\} \\cup {}} \\\\\n\\quad \\htmlData{k=Q-Recv.env}{\\{o \\mapsto y \\in \\Theta_2 \\mid \\overline{o} \\notin \\mathrm{dom}\\,\\Sigma \\cup \\mathrm{dom}\\,\\Theta_2\\}}\n\\end{array}\\end{array}",
+     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}C' \\cap \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma = \\varnothing\\quad p'\\ \\htmlData{k=rel.atcost}{\\mathsf{at}}_{\\htmlData{k=ct.sync}{\\dfo{\\htmlData{k=ct.DF}{\\kappa_{DF}}(ev)}\\annot{\\htmlData{k=ct.table}{\\kappa}(ev)}}}\\ \\Sigma\\end{array}}{\\htmlData{k=Q-Tau}{\\htmlData{k=sr.pobl}{\\mathsf{Pobl}_{ev}(p')}}}\\;\\textsf{Q-Tau} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Sigma(o) \\doteq \\htmlData{k=sty.send}{!(\\bar\\iota.\\ U)}.S@x}\\quad \\Sigma \\setminus o = \\Sigma_v \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Sigma_r \\\\ \\htmlData{k=Q-Send.theta-e}{\\mathrm{dom}\\,\\Theta_e = \\{o' \\in \\htmlData{k=syn.fends}{\\mathsf{fends}}(w) \\mid \\htmlData{k=end.ech}{\\mathsf{ech}}(o') \\in C\\}}\\quad \\htmlData{k=Q-Send.split}{\\mathsf{send\\_split}\\,\\Sigma\\,\\Sigma_e\\,\\Theta_e} \\\\ w \\in \\htmlData{k=th.Vrel}{V^{W}_{\\dfo{\\alpha}\\annot{\\beta}}\\llbracket \\Sigma_v \\cup \\Theta_e \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}\\quad \\htmlData{k=rel.atcost}{p'\\ \\mathsf{at}}\\ (\\Sigma_r \\cup \\htmlData{k=Q-Send.sigma-e}{\\Sigma_e})[o \\mapsto S@x^{+}]\\end{array}}{\\htmlData{k=Q-Send}{\\htmlData{k=sr.pobl}{\\mathsf{Pobl}_{\\mathsf{send}\\,o\\,w}(p')}}}\\;\\textsf{Q-Send} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Sigma(o) \\doteq \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ U)}.S@x} \\\\ \\forall j, \\Theta_2.\\ \\dfo{\\beta < \\alpha}\\annot{\\beta + \\kappa_{take} \\leq \\alpha},\\ \\htmlData{k=end.ech}{\\mathsf{ech}}[\\mathrm{dom}\\,\\Theta_2] \\cap C = \\varnothing,\\ \\htmlData{k=Q-Recv.ok}{\\mathsf{recv\\_ok}\\,\\Sigma'\\,\\Theta_2},\\ w \\in \\htmlData{k=th.Vrel}{V^{W}_{j}\\llbracket \\Theta_2 \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket} \\\\ \\Longrightarrow\\ (C' \\cup \\htmlData{k=Q-Recv.back}{\\mathsf{recv\\_back}\\,\\Sigma'\\,\\Theta_2}, E') \\in \\htmlData{k=th.Prel}{P^{W}_{j}\\llbracket \\htmlData{k=Q-Recv.env}{\\mathsf{recv\\_env}\\,\\Sigma'\\,\\Theta_2} \\vdash T \\rrbracket}\\end{array}}{\\htmlData{k=Q-Recv}{\\htmlData{k=sr.pobl}{\\mathsf{Pobl}_{\\mathsf{recv}\\,o\\,w}(p')}}}\\;\\textsf{Q-Recv} \\\\[2ex]\n\\htmlData{k=Q-Link}{\\textsf{Q-Close, Q-Select, Q-Branch, Q-Link} = \\textsf{O-Close, O-Select, O-Branch, O-Link}\\,[\\Sigma/\\Theta,\\ P/E]} \\\\\np = (C, E),\\ p' = (C', E'),\\ \\Sigma' = \\Sigma[o \\mapsto S@x^{+}]\n\\end{array}\\\\[3ex]\\begin{array}{l}\n\\htmlData{k=Q-Send.split}{\\mathsf{send\\_split}\\,\\Sigma\\,\\Sigma_e\\,\\Theta_e} \\iff (\\forall o \\in \\mathrm{dom}\\,\\Theta_e.\\ o, \\overline{o} \\notin \\mathrm{dom}\\,\\Sigma) \\land {} \\\\\n\\quad (\\forall o.\\ o \\in \\mathrm{dom}\\,\\Sigma_e \\iff \\overline{o} \\in \\mathrm{dom}\\,\\Theta_e \\land o \\notin \\mathrm{dom}\\,\\Theta_e) \\land {} \\\\\n\\quad (\\forall o.\\ \\Theta_e(o) = S@y \\Rightarrow \\exists S'.\\ (\\Sigma_e \\cup \\Theta_e)(\\overline{o}) = S'@\\overline{y} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S') \\\\\n\\htmlData{k=Q-Recv.ok}{\\mathsf{recv\\_ok}\\,\\Sigma\\,\\Theta_2} \\iff (\\forall o \\in \\mathrm{dom}\\,\\Theta_2.\\ o \\notin \\mathrm{dom}\\,\\Sigma) \\land {} \\\\\n\\quad (\\forall o.\\ \\Theta_2(o) = S@y \\land (\\Sigma \\cup \\Theta_2)(\\overline{o}) = S'@y' \\Rightarrow y' = \\overline{y} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S') \\\\\n\\htmlData{k=Q-Recv.back}{\\mathsf{recv\\_back}\\,\\Sigma\\,\\Theta_2 = \\htmlData{k=end.ech}{\\mathsf{ech}}[\\{o \\in \\mathrm{dom}\\,\\Theta_2 \\mid \\overline{o} \\in \\mathrm{dom}\\,\\Sigma \\cup \\mathrm{dom}\\,\\Theta_2\\}]} \\\\\n\\htmlData{k=Q-Recv.env}{\\mathsf{recv\\_env}\\,\\Sigma\\,\\Theta_2 = \\{o \\mapsto y \\in \\Sigma \\mid \\overline{o} \\notin \\mathrm{dom}\\,\\Theta_2\\} \\cup {}} \\\\\n\\quad \\htmlData{k=Q-Recv.env}{\\{o \\mapsto y \\in \\Theta_2 \\mid \\overline{o} \\notin \\mathrm{dom}\\,\\Sigma \\cup \\mathrm{dom}\\,\\Theta_2\\}}\n\\end{array}\\end{array}",
      "caption": "Internal steps, including messages between two threads of $p$, keep the interface. A message with the outside moves ends across the interface. A send gives away its payload ends, including the ends $\\Theta_e$ of internal channels, and a receive must be safe for each value that may arrive at each lower level.",
      "about": {
       "why": "Each case says how the interface changes at a step and where the successor must be safe.",
@@ -1130,7 +1127,7 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{l|l|l}\n & \\text{the relation} & \\text{fuel} \\\\ \\hline\n\\text{a thread} & e \\in \\htmlData{k=th.Erel}{E^{W}_{\\alpha}\\llbracket \\Theta \\vdash T \\rrbracket^{F}} & e \\in \\htmlData{k=sr.FE}{F^{N}_{\\alpha}\\llbracket \\htmlData{k=fu.Phi}{\\Phi} \\vdash \\sigma\\ !\\ d \\rrbracket} \\\\\n\\text{an end} & o \\mapsto S@x \\text{ in } \\Theta & o \\mapsto S^{f}_{m} \\text{ in } \\Phi \\\\\n\\text{a value} & v \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash T \\rrbracket} & v \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\htmlData{k=fu.Phi}{\\Phi} \\vdash T\\annot{^{a}} \\rrbracket} \\\\\n\\text{a step } \\alpha & \\htmlData{k=sr.obl}{\\mathsf{Obl}_\\alpha(e')} & \\htmlData{k=sr.fobl}{\\mathsf{Fobl}_\\alpha(e')} \\\\\n\\text{rules out} & \\text{a stuck wait, and at } \\kappa_L \\text{ a loop of free steps} & \\text{a wait that never ends} \\\\\n\\text{used in} & \\htmlData{k=sj.term}{\\vDash} \\text{ and the lock-free process relation} & \\text{the lock-free process relation only}\n\\end{array}",
+     "tex": "\\begin{array}{l|l|l}\n & \\text{the relation} & \\text{fuel} \\\\ \\hline\n\\text{a thread} & e \\in \\htmlData{k=th.Erel}{E^{W}_{\\alpha}\\llbracket \\Theta \\vdash T \\rrbracket^{F}} & e \\in \\htmlData{k=sr.FE}{F^{N}_{\\alpha}\\llbracket \\htmlData{k=fu.Phi}{\\Phi} \\vdash \\sigma\\ !\\ d \\rrbracket} \\\\\n\\text{an end} & o \\mapsto S@x \\text{ in } \\Theta & o \\mapsto S^{f}_{m} \\text{ in } \\Phi \\\\\n\\text{a value} & v \\in \\htmlData{k=th.Vrel}{V^{W}_{\\alpha}\\llbracket \\Theta \\vdash T \\rrbracket} & v \\in \\htmlData{k=sr.FV}{FV^{N}_{\\alpha}\\llbracket \\htmlData{k=fu.Phi}{\\Phi} \\vdash T\\annot{^{a}} \\rrbracket} \\\\\n\\text{a step } \\alpha & \\htmlData{k=sr.obl}{\\mathsf{Obl}_\\alpha(e')} & \\htmlData{k=sr.fobl}{\\mathsf{Fobl}_\\alpha(e')} \\\\\n\\text{rules out} & \\text{a stuck wait, and at } \\kappa_L \\text{ a loop of free steps} & \\text{a wait that never ends} \\\\\n\\text{used in} & \\htmlData{k=sj.term}{\\vDash} \\text{ and the lock-free process relation} & \\text{the lock-free process relation only}\n\\end{array}",
      "caption": "Fuel is a second predicate on a thread, separate from the relation and with the same shape, a value clause and one obligation per step. The relation gives each end a point, $S@x$, and fuel gives it a counter and tickets, $S^f_m$. The lock-free process relation requires both of each thread. The relation makes a stuck thread ready, and fuel bounds how often the thread holding a dual end acts on other ends first.",
      "about": {
       "why": "This table compares what the relation and fuel read and guarantee, and shows that the lock-free process relation is where they meet.",
@@ -1139,8 +1136,7 @@ window.MAP = {
        "soup",
        "th-chain"
       ]
-     },
-     "planned": "Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers. relation/Ord.v has the ordinals, their well-founded order and the fixpoint osfix, and no relation uses them yet."
+     }
     },
     {
      "id": "fu",
@@ -1158,8 +1154,7 @@ window.MAP = {
        "soup",
        "th-terms"
       ]
-     },
-     "planned": "Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers. relation/Ord.v has the ordinals, their well-founded order and the fixpoint osfix, and no relation uses them yet."
+     }
     },
     {
      "id": "fu-obls",
@@ -1176,7 +1171,7 @@ window.MAP = {
        "fu"
       ]
      },
-     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m. Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers. relation/Ord.v has the ordinals, their well-founded order and the fixpoint osfix, and no relation uses them yet."
+     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ o at a field. Both choose the tickets m1 and m2 of the new ends with m1 + m2 ≤ N."
     },
     {
      "id": "fv",
@@ -1185,7 +1180,7 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}S' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} S\\quad \\htmlData{k=FV-Sess.counter}{a \\leq f}\\end{array}}{\\htmlData{k=FV-Sess}{o \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\{o \\mapsto S'^{f}_{m}\\} \\vdash (S@x)\\annot{^{a}}_{m} \\rrbracket}}}\\;\\textsf{FV-Sess} \\qquad\n\\dfrac{\\begin{array}{c}\\Phi = \\varnothing\\end{array}}{\\htmlData{k=FV-Thread}{v \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\Phi \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}} \\rrbracket}}}\\;\\textsf{FV-Thread} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=FV-Arrow.exact}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\mathrm{dom}\\,\\Phi}\\quad \\htmlData{k=FV-Arrow.floor}{\\Phi(o) = S^{f} \\land \\neg\\htmlData{k=fu.idle}{\\mathsf{idle}}\\,S \\Rightarrow a \\leq f} \\\\ \\forall j < n,\\ \\htmlData{k=FV-Arrow.call}{\\Phi' \\geq \\Phi - a},\\ u \\in \\htmlData{k=sr.FV}{FV^{N}_{j}\\llbracket \\Phi_u \\vdash T \\rrbracket} \\\\ \\htmlData{k=FV-Arrow.body}{e[u] \\in \\htmlData{k=sr.FE}{F^{N}_{j}\\llbracket \\Phi' \\cup \\Phi_u \\vdash U\\ !\\ c \\rrbracket}}\\end{array}}{\\htmlData{k=FV-Arrow}{\\lambda e \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\Phi \\vdash (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[c]\\, U)\\annot{^{a}} \\rrbracket}}}\\;\\textsf{FV-Arrow} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=FV-Box.noends}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\varnothing} \\\\ \\forall j < n,\\ \\bar s \\in \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,N \\\\ \\htmlData{k=FV-Box.body}{e[!e] \\in \\htmlData{k=sr.FE}{F^{N}_{j}\\llbracket \\varnothing \\vdash U[\\bar s]\\ !\\ c \\rrbracket}}\\end{array}}{\\htmlData{k=FV-Box}{!e \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\varnothing \\vdash \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}[c]\\, U) \\rrbracket}}}\\;\\textsf{FV-Box} \\\\[6pt]\n\\htmlData{k=sr.fvagg}{\\langle v_1, v_2\\rangle \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\Phi_1 \\uplus \\Phi_2 \\vdash T_1 \\otimes T_2 \\rrbracket} \\iff v_i \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\Phi_i \\vdash T_i \\rrbracket}}\n\\end{array}",
+     "tex": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}S' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} S\\quad \\htmlData{k=FV-Sess.counter}{a \\leq f}\\end{array}}{\\htmlData{k=FV-Sess}{o \\in \\htmlData{k=sr.FV}{FV^{N}_{\\alpha}\\llbracket \\{o \\mapsto S'^{f}_{m}\\} \\vdash (S@x)\\annot{^{a}}_{m} \\rrbracket}}}\\;\\textsf{FV-Sess} \\qquad\n\\dfrac{\\begin{array}{c}\\Phi = \\varnothing\\end{array}}{\\htmlData{k=FV-Thread}{v \\in \\htmlData{k=sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}} \\rrbracket}}}\\;\\textsf{FV-Thread} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=FV-Arrow.exact}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\mathrm{dom}\\,\\Phi}\\quad \\htmlData{k=FV-Arrow.floor}{\\Phi(o) = S^{f} \\land \\neg\\htmlData{k=fu.idle}{\\mathsf{idle}}\\,S \\Rightarrow a \\leq f} \\\\ \\forall \\beta < \\alpha,\\ \\htmlData{k=FV-Arrow.call}{\\Phi' \\geq \\Phi - a},\\ u \\in \\htmlData{k=sr.FV}{FV^{N}_{j}\\llbracket \\Phi_u \\vdash T \\rrbracket} \\\\ \\htmlData{k=FV-Arrow.body}{e[u] \\in \\htmlData{k=sr.FE}{F^{N}_{j}\\llbracket \\Phi' \\cup \\Phi_u \\vdash U\\ !\\ c \\rrbracket}}\\end{array}}{\\htmlData{k=FV-Arrow}{\\lambda e \\in \\htmlData{k=sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi \\vdash (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[c]\\, U)\\annot{^{a}} \\rrbracket}}}\\;\\textsf{FV-Arrow} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=FV-Box.noends}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\varnothing} \\\\ \\forall \\beta < \\alpha,\\ \\bar s \\in \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,N \\\\ \\htmlData{k=FV-Box.body}{e[!e] \\in \\htmlData{k=sr.FE}{F^{N}_{j}\\llbracket \\varnothing \\vdash U[\\bar s]\\ !\\ c \\rrbracket}}\\end{array}}{\\htmlData{k=FV-Box}{!e \\in \\htmlData{k=sr.FV}{FV^{N}_{\\alpha}\\llbracket \\varnothing \\vdash \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}[c]\\, U) \\rrbracket}}}\\;\\textsf{FV-Box} \\\\[6pt]\n\\htmlData{k=sr.fvagg}{\\langle v_1, v_2\\rangle \\in \\htmlData{k=sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi_1 \\uplus \\Phi_2 \\vdash T_1 \\otimes T_2 \\rrbracket} \\iff v_i \\in \\htmlData{k=sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi_i \\vdash T_i \\rrbracket}}\n\\end{array}",
      "caption": "Values with fuel by recursion on the type. The counter of an end is at least its credit. A closure keeps the counters of its captured ends that are not idle at least at its credit $a$. Its body has fuel at each call whose counters are at least the counters at creation minus $a$. A box holds no end, and its body has fuel at each force.",
      "about": {
       "why": "Values with fuel connect credits in types with counters at run time.",
@@ -1193,8 +1188,7 @@ window.MAP = {
        "fu-obls",
        "th-terms"
       ]
-     },
-     "planned": "Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers. relation/Ord.v has the ordinals, their well-founded order and the fixpoint osfix, and no relation uses them yet."
+     }
     },
     {
      "id": "soup",
@@ -1212,7 +1206,7 @@ window.MAP = {
        "th-adeq"
       ]
      },
-     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m. Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers. relation/Ord.v has the ordinals, their well-founded order and the fixpoint osfix, and no relation uses them yet."
+     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ o at a field. Both choose the tickets m1 and m2 of the new ends with m1 + m2 ≤ N."
     },
     {
      "id": "sj-all",
@@ -1222,10 +1216,10 @@ window.MAP = {
       "lf"
      ],
      "rocq": "compat/SemTyped.v: Grel, sem_typed_at, sf_den, sem_typed; relation/Adequacy.v: sem_ptyped; soup/Soup.v: lf_sem, lf_next, own_next, tk_next",
-     "tex": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash[\\kappa]}}^{X}_W e : T \\iff \\forall n, W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G[\\kappa]^{W'}_n\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\htmlData{k=th.Erel}{E[\\kappa]^{W'}_n\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Delta \\vDash[\\kappa]^{F}_W e : T \\iff \\forall R, B.\\ \\Delta \\vDash[\\kappa]^{\\htmlData{k=sj.den}{\\mathsf{den}_{R,B}(F)}}_W e : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash[\\kappa]_W p : T \\iff \\forall n.\\ p \\in \\htmlData{k=th.Prel}{P[\\kappa]^{W}_n\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\n\\htmlData{k=sp.lfsem}{\\Sigma \\Vvdash_W p : T \\iff \\htmlData{k=sp.exists-before-forall}{\\exists N \\in \\mathbb{N}.\\ \\forall \\alpha.\\ \\exists a.\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}(\\htmlData{k=th.qa}{q_a}) = p} \\land a \\in \\htmlData{k=th.soup}{S^{N,W}_\\alpha\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}}\\end{array}",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash[\\kappa]}}^{X}_W e : T \\iff \\forall n, W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G[\\kappa]^{W'}_{\\alpha}\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\htmlData{k=th.Erel}{E[\\kappa]^{W'}_{\\alpha}\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Delta \\vDash[\\kappa]^{F}_W e : T \\iff \\forall R, B.\\ \\Delta \\vDash[\\kappa]^{\\htmlData{k=sj.den}{\\mathsf{den}_{R,B}(F)}}_W e : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash[\\kappa]_W p : T \\iff \\forall \\alpha.\\ p \\in \\htmlData{k=th.Prel}{P[\\kappa]^{W}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\n\\htmlData{k=sp.lfsem}{\\Sigma \\Vvdash_W p : T \\iff \\htmlData{k=sp.exists-before-forall}{\\exists N \\in \\mathbb{N}.\\ \\forall \\alpha.\\ \\exists a.\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}(\\htmlData{k=th.qa}{q_a}) = p} \\land a \\in \\htmlData{k=th.soup}{S^{N,W}_\\alpha\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}}\\end{array}",
      "caption": "The semantic judgments quantify over ordinal indices, larger worlds and substitutions, and read the static future at each of its denotations. \\annp{The lock-free judgment fixes the bound $N$ once and chooses the annotated configuration at each index. The creation choice of each channel is an existential inside O-New.}",
      "variants": {
-      "df": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{X}_W e : T \\iff \\forall n, W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G^{W'}_n\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\htmlData{k=th.Erel}{E^{W'}_n\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Delta \\vDash^{F}_W e : T \\iff \\forall R, B.\\ \\Delta \\vDash^{\\htmlData{k=sj.den}{\\mathsf{den}_{R,B}(F)}}_W e : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash_W p : T \\iff \\forall n.\\ p \\in \\htmlData{k=th.Prel}{P^{W}_n\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}\\end{array}"
+      "df": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{X}_W e : T \\iff \\forall n, W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G^{W'}_{\\alpha}\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\htmlData{k=th.Erel}{E^{W'}_{\\alpha}\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Delta \\vDash^{F}_W e : T \\iff \\forall R, B.\\ \\Delta \\vDash^{\\htmlData{k=sj.den}{\\mathsf{den}_{R,B}(F)}}_W e : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash_W p : T \\iff \\forall \\alpha.\\ p \\in \\htmlData{k=th.Prel}{P^{W}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}\\end{array}"
      },
      "about": {
       "why": "The fundamental theorems conclude the semantic judgments, and adequacy takes a semantic judgment as its premise.",
@@ -1235,7 +1229,7 @@ window.MAP = {
        "th-adeq"
       ]
      },
-     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m. Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers. relation/Ord.v has the ordinals, their well-founded order and the fixpoint osfix, and no relation uses them yet."
+     "planned": "Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ o at a field. Both choose the tickets m1 and m2 of the new ends with m1 + m2 ≤ N."
     }
    ]
   },
@@ -1258,7 +1252,7 @@ window.MAP = {
       "why": "Each arrow is one theorem of this section. \\annp{The lock-free rows show what lock freedom adds to the deadlock-free proof.}",
       "used": []
      },
-     "planned": "Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers. relation/Ord.v has the ordinals, their well-founded order and the fixpoint osfix, and no relation uses them yet. Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
+     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ. relation/Ranks.v has the rank functions into ord@{Set} and the equivalence of wf with well-foundedness, and no world uses them yet."
     },
     {
      "id": "th-sound",
@@ -1273,7 +1267,7 @@ window.MAP = {
      "about": {
       "why": "These are the main results."
      },
-     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
+     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ. relation/Ranks.v has the rank functions into ord@{Set} and the equivalence of wf with well-foundedness, and no world uses them yet."
     },
     {
      "id": "th-compose",
@@ -1283,7 +1277,7 @@ window.MAP = {
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\htmlData{k=th.Erel}{E\\annot{[\\kappa]}^{W}_{n}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\htmlData{k=th.Prel}{P\\annot{[\\kappa]}^{W}_{n}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.sem-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.conn}{\\mathsf{conn}} \\\\ \\land\\ p_1 \\in \\htmlData{k=th.Prel}{P^{W}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket} \\\\ \\land\\ p_2 \\in \\htmlData{k=th.Prel}{P^{W}_{n}\\llbracket \\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.par}{p_1 \\parallel_{\\Sigma_C} p_2} \\in \\htmlData{k=th.Prel}{P^{W}_{n}\\llbracket \\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket}\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-p-term}{\\begin{array}{l}\\Sigma \\mathrel{\\htmlData{k=tp.lfjudg}{\\Vdash}}^{N}_{W} (C_0, \\{t\\}) : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W (C_0, \\{t\\}) : T\\end{array}}}\\end{array}",
+     "tex": "\\begin{array}{l}\\htmlData{k=th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\htmlData{k=th.Erel}{E\\annot{[\\kappa]}^{W}_{\\alpha}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\htmlData{k=th.Prel}{P\\annot{[\\kappa]}^{W}_{\\alpha}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.sem-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.conn}{\\mathsf{conn}} \\\\ \\land\\ p_1 \\in \\htmlData{k=th.Prel}{P^{W}_{\\alpha}\\llbracket \\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket} \\\\ \\land\\ p_2 \\in \\htmlData{k=th.Prel}{P^{W}_{\\alpha}\\llbracket \\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.par}{p_1 \\parallel_{\\Sigma_C} p_2} \\in \\htmlData{k=th.Prel}{P^{W}_{\\alpha}\\llbracket \\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket}\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-p-term}{\\begin{array}{l}\\Sigma \\mathrel{\\htmlData{k=tp.lfjudg}{\\Vdash}}^{N}_{W} (C_0, \\{t\\}) : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W (C_0, \\{t\\}) : T\\end{array}}}\\end{array}",
      "caption": "A safe thread is a safe process, and two safe processes connected at dual interfaces form a safe process. A component proved safe without typing therefore composes with typed components. \\annp{The same holds for the lock-free process relation.}",
      "about": {
       "why": "P-Term and P-Connect hold in the relation, which makes the approach compositional.",
@@ -1291,7 +1285,7 @@ window.MAP = {
        "th-fund-proc"
       ]
      },
-     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
+     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ. relation/Ranks.v has the rank functions into ord@{Set} and the equivalence of wf with well-foundedness, and no world uses them yet."
     },
     {
      "id": "th-fund-proc",
@@ -1309,7 +1303,7 @@ window.MAP = {
        "th-sound"
       ]
      },
-     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
+     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ. relation/Ranks.v has the rank functions into ord@{Set} and the equivalence of wf with well-foundedness, and no world uses them yet."
     },
     {
      "id": "th-adeq",
@@ -1327,7 +1321,7 @@ window.MAP = {
        "th-sound"
       ]
      },
-     "planned": "Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers. relation/Ord.v has the ordinals, their well-founded order and the fixpoint osfix, and no relation uses them yet. Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
+     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ. relation/Ranks.v has the rank functions into ord@{Set} and the equivalence of wf with well-foundedness, and no world uses them yet."
     },
     {
      "id": "th-conserv",
@@ -1350,7 +1344,7 @@ window.MAP = {
       "lf"
      ],
      "rocq": "static/FundamentalProc.v: soundness_source; soup/LFCompose.v: lf_soundness_source; static/Fundamental.v: typed_sem, fundamental, fundamental_typed, live_fundamental, live_fundamental_typed; compat/Bind.v: Erel_bind; cost/CostFund.v: cost_fundamental, fsem_of_cost",
-     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.soundness-source}{\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{AC}} \\land N \\in \\mathbb{N} \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\land\\ \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ c \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}\\\\[3ex]\\begin{array}{l}\\htmlData{k=th.fundamental}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}^{F}_W t : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.fundamental-typed}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.df}{\\Delta_{df}} \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{F}_W t : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{F}_W t : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-typed}{\\begin{array}{l}\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_W t : T_{df}\\end{array}}}\\end{array}\\\\[3ex]\\htmlData{k=th.Erel-bind}{\\begin{array}{l}\\begin{array}{l}e \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta_1 \\vdash T\\rrbracket^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{ap}}\\,\\Theta_2}} \\\\ \\land\\ \\forall W' \\htmlData{k=w.ext}{\\sqsupseteq} W,\\ j \\leq n,\\ v \\in \\htmlData{k=th.Vrel}{V^{W'}_j\\llbracket\\Theta_v \\vdash T\\rrbracket}. \\\\ \\qquad \\htmlData{k=se.frame}{f[v]} \\in \\htmlData{k=th.Erel}{E^{W'}_{j}\\llbracket \\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=se.frame}{f[e]} \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array}}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\htmlData{k=th.cost-fundamental}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=cs.csem}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{N} e : T\\ !\\ \\varepsilon}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.fsem-of-cost}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} e : T\\ !\\ c \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.crle}{\\mathsf{cr}(\\Delta) \\leq N} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\htmlData{k=th.styof}{\\Delta\\annot{^{N}}}\\,e}\\end{array}}\\end{array}}\\end{array}",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.soundness-source}{\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{AC}} \\land N \\in \\mathbb{N} \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\land\\ \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ c \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}\\\\[3ex]\\begin{array}{l}\\htmlData{k=th.fundamental}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}^{F}_W t : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.fundamental-typed}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.df}{\\Delta_{df}} \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{F}_W t : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{F}_W t : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-typed}{\\begin{array}{l}\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_W t : T_{df}\\end{array}}}\\end{array}\\\\[3ex]\\htmlData{k=th.Erel-bind}{\\begin{array}{l}\\begin{array}{l}e \\in \\htmlData{k=th.Erel}{E^{W}_{\\alpha}\\llbracket \\Theta_1 \\vdash T\\rrbracket^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{ap}}\\,\\Theta_2}} \\\\ \\land\\ \\forall W' \\htmlData{k=w.ext}{\\sqsupseteq} W,\\ \\beta \\leq \\alpha,\\ v \\in \\htmlData{k=th.Vrel}{V^{W'}_{\\beta}\\llbracket\\Theta_v \\vdash T\\rrbracket}. \\\\ \\qquad \\htmlData{k=se.frame}{f[v]} \\in \\htmlData{k=th.Erel}{E^{W'}_{j}\\llbracket \\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=se.frame}{f[e]} \\in \\htmlData{k=th.Erel}{E^{W}_{\\alpha}\\llbracket \\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array}}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\htmlData{k=th.cost-fundamental}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=cs.csem}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{N} e : T\\ !\\ \\varepsilon}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.fsem-of-cost}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} e : T\\ !\\ c \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.crle}{\\mathsf{cr}(\\Delta) \\leq N} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\htmlData{k=th.styof}{\\Delta\\annot{^{N}}}\\,e}\\end{array}}\\end{array}}\\end{array}",
      "caption": "A closed program is sound as a one-thread process. Typing a term implies the semantic term judgment, and $E$ is closed under evaluation frames. \\annp{With the guard a typed term is in the relation at $\\kappa_L$, and a typed term at a finite bound $N$ has fuel.}",
      "about": {
       "why": "The proofs of the process results use these lemmas, each proved rule by rule.",
@@ -1359,7 +1353,7 @@ window.MAP = {
        "th-adeq"
       ]
      },
-     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ."
+     "planned": "Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ. relation/Ranks.v has the rank functions into ord@{Set} and the equivalence of wf with well-foundedness, and no world uses them yet."
     }
    ]
   }
@@ -6554,7 +6548,7 @@ window.MAP = {
   },
   "tp.sinsts": {
    "title": "Allowed session instances $\\mathsf{sinsts}\\,\\bar s$",
-   "what": "The session types a session variable of a box may stand for. Every recursion $\\mu\\alpha.S$ inside each $s \\in \\bar s$, also inside payloads, passes an action before $\\alpha$ recurs. \\annp{At $N = \\infty$ each $s$ also has no finite credit.}",
+   "what": "The session types a session variable of a box may stand for. Every recursion $\\mu\\alpha.S$ inside each $s \\in \\bar s$, also inside payloads, passes an action before $\\alpha$ recurs, and no payload of $s$ mentions a point free below its binder. \\annp{At $N = \\infty$ each $s$ also has no finite credit.}",
    "why": "The rules read the first action of a protocol after unfolding. An instance such as $\\mu\\alpha.\\alpha$ has no first action, so substituting it would give an end no rule can type. \\annp{At $N = \\infty$ every annotation in a derivation is $\\infty$, and an instance with a finite credit inside its payloads would bring one in.}",
    "breaks": "Without the first condition a box with a variable $\\alpha$ could be forced at $\\mu\\alpha.\\alpha$, and an end of type $\\mu\\alpha.\\alpha$ would be stuck with no action to perform.",
    "example": "$\\mu\\alpha.\\,{!}\\ast.\\alpha$ and $\\mathsf{Close}$ are allowed, $\\mu\\alpha.\\alpha$ and $\\mu\\alpha.\\,\\mathsf{Skip}.\\alpha$ are not.",
@@ -6658,7 +6652,7 @@ window.MAP = {
   "ct.take-pos": {
    "title": "$1 \\leq \\kappa_{take}$",
    "what": "Receive and branch cost at least one level.",
-   "why": "A receive reads $V$ of its payload negatively at the level of its continuation, so that level is $j < n$ and $V_n$ is well defined.",
+   "why": "A receive reads $V$ of its payload negatively at the level of its continuation, so that level is $\\beta < \\alpha$ and $V_n$ is well defined.",
    "breaks": "With $\\kappa_{take} = 0$, $V_n$ would quantify negatively over $V_n$ and the fixpoint would not exist.",
    "example": "Both tables have $\\kappa_{take} = 1$.",
    "rocq": "relation/CostTable.v: c_take_pos",
@@ -6723,7 +6717,7 @@ window.MAP = {
   "ct.beta": {
    "title": "Cost $\\kappa_\\beta$",
    "what": "The cost of application, pair and unit elimination, case and force.",
-   "why": "An arrow reads its body at every $j < n$ under $\\kappa_{DF}$. \\annp{Under a general table it reads every $j$ with $j + \\kappa_\\beta \\leq n$, so one arrow clause also serves $j \\leq n$ for $\\kappa_L$.}",
+   "why": "An arrow reads its body at every $\\beta < \\alpha$ under $\\kappa_{DF}$. \\annp{Under a general table it reads the levels $\\beta$ with $\\beta + \\kappa_\\beta \\leq \\alpha$, which for $\\kappa_L$ include $\\alpha$ itself.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$(\\lambda e)\\,v \\xrightarrow{\\beta} e[v]$ costs $\\kappa_\\beta$.",
    "rocq": "relation/CostTable.v: c_beta",
@@ -6783,7 +6777,7 @@ window.MAP = {
   "ct.give": {
    "title": "Cost $\\kappa_{give}$",
    "what": "The cost of $\\mathsf{send}$, $\\mathsf{select}$ and $\\mathsf{close}$.",
-   "why": "The obligation of a give reads the continuation at level $n - \\kappa_{give}$.",
+   "why": "The obligation of a give reads the continuation at the levels $\\beta$ with $\\beta + \\kappa_{give} \\leq \\alpha$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\kappa_{DF}(\\mathsf{send}) = 0$.",
    "rocq": "relation/CostTable.v: c_give",
@@ -6798,7 +6792,7 @@ window.MAP = {
   "ct.takek": {
    "title": "Cost $\\kappa_{take}$",
    "what": "The cost of $\\mathsf{recv}$ and $\\mathsf{branch}$, $1$ in both tables.",
-   "why": "The obligation of a take reads every incoming value at $j \\leq n - \\kappa_{take} < n$.",
+   "why": "The obligation of a take reads every incoming value at the levels $\\beta$ with $\\beta + \\kappa_{take} \\leq \\alpha$, so $\\beta < \\alpha$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\kappa(\\mathsf{recv}) = 1$.",
    "rocq": "relation/CostTable.v: c_take",
@@ -6882,7 +6876,7 @@ window.MAP = {
    "breaks": "Without $\\Theta = \\varnothing$, a thread could end as $\\ast$ while owning an end that its partner waits on forever.",
    "example": "$\\ast \\in V\\llbracket\\varnothing \\vdash \\ast\\rrbracket$.",
    "rocq": "relation/Relation.v: Vbody TUnit",
-   "sig": "v \\in V[\\kappa]^{W}_{n}\\llbracket \\Theta \\vdash T \\rrbracket",
+   "sig": "v \\in V[\\kappa]^{W}_{\\alpha}\\llbracket \\Theta \\vdash T \\rrbracket",
    "args": [
     {
      "name": "\\kappa",
@@ -6893,8 +6887,8 @@ window.MAP = {
      "meaning": "the world, $W \\in \\mathsf{World}$"
     },
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "\\Theta",
@@ -6917,7 +6911,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$c^{+} \\in V\\llbracket\\{c^{+} \\mapsto S'@\\rho\\} \\vdash S@\\rho\\rrbracket$ for $S' \\approx S$.",
    "rocq": "relation/Relation.v: Vbody TSess",
-   "sig": "v \\in V[\\kappa]^{W}_{n}\\llbracket \\Theta \\vdash T \\rrbracket",
+   "sig": "v \\in V[\\kappa]^{W}_{\\alpha}\\llbracket \\Theta \\vdash T \\rrbracket",
    "args": [
     {
      "name": "\\kappa",
@@ -6928,8 +6922,8 @@ window.MAP = {
      "meaning": "the world, $W \\in \\mathsf{World}$"
     },
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "\\Theta",
@@ -6983,7 +6977,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\langle c^{+}, d^{-}\\rangle$ splits $\\{c^{+}, d^{-}\\}$ into $\\{c^{+}\\} \\uplus \\{d^{-}\\}$.",
    "rocq": "relation/Relation.v: Vbody TProd",
-   "sig": "v \\in V[\\kappa]^{W}_{n}\\llbracket \\Theta \\vdash T \\rrbracket",
+   "sig": "v \\in V[\\kappa]^{W}_{\\alpha}\\llbracket \\Theta \\vdash T \\rrbracket",
    "args": [
     {
      "name": "\\kappa",
@@ -6994,8 +6988,8 @@ window.MAP = {
      "meaning": "the world, $W \\in \\mathsf{World}$"
     },
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "\\Theta",
@@ -7041,7 +7035,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{inj}_1\\,c^{+} \\in V\\llbracket\\{c^{+} \\mapsto S_1@x\\cdot\\kappa_1\\} \\vdash S_1@x\\cdot\\kappa_1 \\oplus T\\rrbracket$.",
    "rocq": "relation/Relation.v: Vbody TSum",
-   "sig": "v \\in V[\\kappa]^{W}_{n}\\llbracket \\Theta \\vdash T \\rrbracket",
+   "sig": "v \\in V[\\kappa]^{W}_{\\alpha}\\llbracket \\Theta \\vdash T \\rrbracket",
    "args": [
     {
      "name": "\\kappa",
@@ -7052,8 +7046,8 @@ window.MAP = {
      "meaning": "the world, $W \\in \\mathsf{World}$"
     },
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "\\Theta",
@@ -7132,20 +7126,20 @@ window.MAP = {
   },
   "V-Arrow.level": {
    "title": "Level of the body",
-   "what": "The body is read at every level $j < n$, \\annp{and under a general table at every $j \\leq n - \\kappa_\\beta$.}",
-   "why": "A $\\beta$-step costs one level in the deadlock-free relation. \\annp{Under $\\kappa_L$, where $\\beta$ is free, the body is read at level $n$.}",
+   "what": "The body is read at every level $\\beta < \\alpha$, \\annp{and under a general table at the levels $\\beta$ with $\\beta + \\kappa_\\beta \\leq \\alpha$.}",
+   "why": "A $\\beta$-step costs one level in the deadlock-free relation. \\annp{Under $\\kappa_L$, where $\\beta$ is free, the body is read at the levels $\\beta \\leq \\alpha$.}",
    "breaks": "Nothing. It is a definition.",
    "example": "The body of a closure in $V_3$ is read at levels $0$ to $2$.",
    "rocq": "relation/Relation.v: Varr",
-   "sig": "j + \\kappa_\\beta \\leq n : \\mathsf{Prop}",
+   "sig": "\\beta + \\kappa_\\beta \\leq \\alpha : \\mathsf{Prop}",
    "args": [
     {
-     "name": "j",
+     "name": "\\beta",
      "meaning": "the level at which the body is read"
     },
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     }
    ]
   },
@@ -7170,16 +7164,16 @@ window.MAP = {
   },
   "V-Arrow.body": {
    "title": "Body in $E$",
-   "what": "$e[w] \\in E^{W'}_j\\llbracket\\Theta \\cup \\Theta' \\vdash U\\rrbracket^{F}$ for every argument $w \\in V^{W'}_j\\llbracket\\Theta' \\vdash T\\rrbracket$ with $\\Theta' \\mathbin{\\#} \\Theta$.",
+   "what": "$e[w] \\in E^{W'}_{\\beta}\\llbracket\\Theta \\cup \\Theta' \\vdash U\\rrbracket^{F}$ for every argument $w \\in V^{W'}_{\\beta}\\llbracket\\Theta' \\vdash T\\rrbracket$ with $\\Theta' \\mathbin{\\#} \\Theta$.",
    "why": "The call owns the closure's ends and the argument's ends, which are disjoint, and the compatibility of E-App feeds exactly this union to the body.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{cli}$ applied to $\\langle a, b\\rangle$ runs at $\\{a, b\\}$.",
    "rocq": "relation/Relation.v: Varr",
-   "sig": "e[w] \\in E^{W'}_{j}\\llbracket \\Theta \\cup \\Theta' \\vdash U \\rrbracket^{F}",
+   "sig": "e[w] \\in E^{W'}_{\\beta}\\llbracket \\Theta \\cup \\Theta' \\vdash U \\rrbracket^{F}",
    "args": [
     {
      "name": "w",
-     "meaning": "the argument, in $V^{W'}_j\\llbracket\\Theta' \\vdash T\\rrbracket$"
+     "meaning": "the argument, in $V^{W'}_{\\beta}\\llbracket\\Theta' \\vdash T\\rrbracket$"
     },
     {
      "name": "\\Theta'",
@@ -7284,13 +7278,13 @@ window.MAP = {
    ]
   },
   "V-Box.hc": {
-   "title": "Hereditarily contractive instances",
-   "what": "The thunk is in $V$ at every list $\\bar s$ of $k$ hereditarily contractive session types.",
-   "why": "Session instances must unfold to a head, which hereditary contractiveness guarantees.",
+   "title": "Contractive and scoped instances",
+   "what": "The thunk is in $V$ at each list $\\bar s$ of $k$ session types that are hereditarily contractive and point-scoped.",
+   "why": "Session instances must unfold to a head, which hereditary contractiveness guarantees. A payload of an instance must mention no point free below its binder, which scoping guarantees, as E-Send and E-Recv ask.",
    "breaks": "Nothing. It is a definition.",
    "example": "$k = 0$ in every example.",
-   "rocq": "types/Types.v: hcontractive",
-   "sig": "\\forall s \\in \\bar s.\\ \\mathsf{hcontractive}\\,s",
+   "rocq": "types/Types.v: hcontractive, sscoped; relation/Relation.v: Vbody",
+   "sig": "\\forall s \\in \\bar s.\\ \\mathsf{hcontractive}\\,s \\land \\mathsf{sscoped}\\,s",
    "args": [
     {
      "name": "\\bar s",
@@ -7299,13 +7293,13 @@ window.MAP = {
    ]
   },
   "V-Box.thunk": {
-   "title": "The thunk at level $n$",
-   "what": "$\\mathsf{thunk}(e) \\in V^{W'}_n\\llbracket\\varnothing \\vdash \\ast \\multimap^{u[\\bar x]} U[\\bar s][\\bar x]\\rrbracket$.",
-   "why": "$\\mathsf{size}(\\Box\\ldots) > \\mathsf{size}(\\ast \\multimap U)$, so $V$ at the box reads $V$ at the thunk type inside level $n$.",
+   "title": "The thunk at level $\\alpha$",
+   "what": "$\\mathsf{thunk}(e) \\in V^{W'}_{\\alpha}\\llbracket\\varnothing \\vdash \\ast \\multimap^{u[\\bar x]} U[\\bar s][\\bar x]\\rrbracket$.",
+   "why": "$\\mathsf{size}(\\Box\\ldots) > \\mathsf{size}(\\ast \\multimap U)$, so $V$ at the box reads $V$ at the thunk type inside level $\\alpha$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{thunk}(e) = \\lambda.\\,e[!e]$.",
    "rocq": "relation/Relation.v: thunk, tthunk",
-   "sig": "\\mathsf{thunk}(e) \\in V^{W'}_{n}\\llbracket \\varnothing \\vdash \\ast \\multimap^{u[\\bar x]} U[\\bar s][\\bar x] \\rrbracket",
+   "sig": "\\mathsf{thunk}(e) \\in V^{W'}_{\\alpha}\\llbracket \\varnothing \\vdash \\ast \\multimap^{u[\\bar x]} U[\\bar s][\\bar x] \\rrbracket",
    "args": [
     {
      "name": "u[\\bar x]",
@@ -7343,7 +7337,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "The fresh root $a$ with the facts $C$ of its creation.",
    "rocq": "relation/Relation.v: Vbody TEx",
-   "sig": "\\exists \\bar x \\in \\mathsf{Point}^{m}.\\ W \\vdash C[\\bar x] \\land v \\in V^{W}_{n}\\llbracket \\Theta \\vdash T[\\bar x] \\rrbracket",
+   "sig": "\\exists \\bar x \\in \\mathsf{Point}^{m}.\\ W \\vdash C[\\bar x] \\land v \\in V^{W}_{\\alpha}\\llbracket \\Theta \\vdash T[\\bar x] \\rrbracket",
    "args": [
     {
      "name": "\\bar x",
@@ -7360,17 +7354,17 @@ window.MAP = {
    ]
   },
   "rel.vsize": {
-   "title": "Recursion on $(n, \\mathsf{size}\\,T)$",
-   "what": "$V_n$ is defined by recursion on $n$ and, inside a level, on the size of the type, with all levels built by one course-of-values fixpoint.",
-   "why": "Under $\\kappa_L$, $V_n$ reads $E_n$ and $V_n$ at smaller types, and instantiation preserves size.",
+   "title": "Recursion on $(\\alpha, \\mathsf{size}\\,T)$",
+   "what": "$V_{\\alpha}$ is defined by well-founded recursion on the ordinal $\\alpha$ and, inside a level, on the size of the type, with all levels built by one fixpoint $\\mathsf{osfix}$.",
+   "why": "Under $\\kappa_L$, $V_{\\alpha}$ reads $E_{\\beta}$ and $V_{\\beta}$ at the levels $\\beta \\leq \\alpha$ and at smaller types, and instantiation preserves size.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{size}(\\Box(\\ldots U)) = 3 + \\mathsf{size}\\,U$.",
-   "rocq": "relation/Relation.v: tsize, Vtop; relation/Sfix.v: sfix",
+   "rocq": "relation/Relation.v: tsize, Vtop, RelA; relation/Ord.v: osfix",
    "sig": "V : \\mathbb{N} \\to \\mathsf{World} \\to \\mathsf{Env} \\to \\mathsf{Ty} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
    "args": [
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "\\mathsf{size}\\,T",
@@ -7396,8 +7390,8 @@ window.MAP = {
      "meaning": "the world, $W \\in \\mathsf{World}$"
     },
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "\\Theta",
@@ -7511,8 +7505,8 @@ window.MAP = {
      "meaning": "the world, $W \\in \\mathsf{World}$"
     },
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "\\Theta",
@@ -7546,8 +7540,8 @@ window.MAP = {
      "meaning": "the world, $W \\in \\mathsf{World}$"
     },
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "\\Theta",
@@ -7692,7 +7686,7 @@ window.MAP = {
   },
   "O-Spawn": {
    "title": "O-Spawn",
-   "what": "$\\Theta$ splits into a part $\\Theta_M$ for the thunk, which is in $V^{W}_{n}\\llbracket\\Theta_M \\vdash \\ast \\multimap^{\\top}_{\\bot} \\ast\\rrbracket$, and a rest $\\Theta_r$ for the continuation.",
+   "what": "$\\Theta$ splits into a part $\\Theta_M$ for the thunk, which is in $V^{W}_{\\alpha}\\llbracket\\Theta_M \\vdash \\ast \\multimap^{\\top}_{\\bot} \\ast\\rrbracket$, and a rest $\\Theta_r$ for the continuation.",
    "why": "Exactness of $V$ fixes $\\mathrm{dom}\\,\\Theta_M = \\mathsf{fends}(v)$, so the split is the same at every level.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{spawn}\\,(\\lambda\\_.\\,\\mathsf{close}\\,d')$ gives the child $\\{d'\\}$.",
@@ -7704,8 +7698,8 @@ window.MAP = {
      "meaning": "the world, $W \\in \\mathsf{World}$"
     },
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "\\Theta",
@@ -7772,13 +7766,13 @@ window.MAP = {
    ]
   },
   "O-Spawn.thunk": {
-   "title": "$v \\in V^{W}_{n}\\llbracket\\Theta_M \\vdash \\ast \\multimap^{\\top}_{\\bot} \\ast\\rrbracket$",
+   "title": "$v \\in V^{W}_{\\alpha}\\llbracket\\Theta_M \\vdash \\ast \\multimap^{\\top}_{\\bot} \\ast\\rrbracket$",
    "what": "The thunk is a closure at upper point $\\top$ and lower point $\\bot$, in $V$ at the parent's level $n$. At $u = \\top$ its body is read at the empty future.",
    "why": "For $\\kappa_{spawn} = 0$ the child is read inside the parent's least fixpoint, so an infinite chain of spawns is in no $E_n$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\lambda u.\\,\\mathsf{close}\\,d'$ at $\\Theta_M = \\{d'\\}$.",
    "rocq": "relation/Relation.v: o_spawn, Varr, Varr_top",
-   "sig": "v \\in V^{W}_{n}\\llbracket\\Theta_M \\vdash \\ast \\multimap^{\\top}_{\\bot} \\ast\\rrbracket",
+   "sig": "v \\in V^{W}_{\\alpha}\\llbracket\\Theta_M \\vdash \\ast \\multimap^{\\top}_{\\bot} \\ast\\rrbracket",
    "args": [
     {
      "name": "v",
@@ -7804,8 +7798,8 @@ window.MAP = {
      "meaning": "the world, $W \\in \\mathsf{World}$"
     },
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "\\Theta",
@@ -7889,12 +7883,12 @@ window.MAP = {
   },
   "O-Send.payload": {
    "title": "Payload level",
-   "what": "$w \\in V_{n}\\llbracket\\Theta_M \\vdash U[x\\cdot\\bar\\imath]\\rrbracket$, \\annp{and $V_{n-\\kappa_{give}}$ under a general table.}",
+   "what": "$w \\in V_{\\alpha}\\llbracket\\Theta_M \\vdash U[x\\cdot\\bar\\imath]\\rrbracket$, \\annp{and $V_{\\beta}$ for $\\beta + \\kappa_{give} \\leq \\alpha$ and for $\\beta = 0$ under a general table.}",
    "why": "The payload is read at the level of the continuation, because a send costs no level in the deadlock-free relation. \\annp{Under $\\kappa_L$ it costs one.}",
    "breaks": "Nothing. It is a definition.",
    "example": "The payload $a$ of $\\mathsf{send}\\,\\langle a, y\\rangle$ at $Y\\cdot 0$.",
    "rocq": "relation/Relation.v: o_send",
-   "sig": "w \\in V^{W}_{n-\\kappa_{give}}\\llbracket \\Theta_M \\vdash U[x\\cdot\\bar\\imath] \\rrbracket",
+   "sig": "w \\in V^{W}_{\\beta}\\llbracket \\Theta_M \\vdash U[x\\cdot\\bar\\imath] \\rrbracket",
    "args": [
     {
      "name": "U[x\\cdot\\bar\\imath]",
@@ -7923,7 +7917,7 @@ window.MAP = {
   },
   "O-Recv": {
    "title": "O-Recv",
-   "what": "For every $j < n$ and every incoming $w \\in V_j$ with ends disjoint from $\\Theta$, the continuation is in $E_j$ with those ends added.",
+   "what": "For every $\\beta < \\alpha$ and every incoming $w \\in V_{\\beta}$ with ends disjoint from $\\Theta$, the continuation is in $E_{\\beta}$ with those ends added.",
    "why": "The value that arrives is unknown when the receiver is typed, so it continues for every value its type admits, and the compatibility of E-Recv pairs this with the sender's O-Send.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{let}\\ \\langle u, b\\rangle = \\mathsf{recv}\\,b\\ \\mathsf{in}\\ \\ldots$",
@@ -7935,8 +7929,8 @@ window.MAP = {
      "meaning": "the world, $W \\in \\mathsf{World}$"
     },
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "\\Theta",
@@ -7974,15 +7968,15 @@ window.MAP = {
   },
   "O-Recv.forall": {
    "title": "Every incoming value",
-   "what": "$\\forall j, \\Theta_{in}.\\ j < n \\land \\Theta_{in} \\mathbin{\\#} \\Theta \\land w \\in V_j\\llbracket\\Theta_{in} \\vdash U[x\\cdot\\bar\\imath]\\rrbracket$.",
-   "why": "This negative occurrence of $V$ is at a lower level, so $V$ is well defined. \\annp{Under a general table the bound is $j + \\kappa_{take} \\leq n$, and $1 \\leq \\kappa_{take}$ keeps $j < n$.}",
+   "what": "$\\forall \\beta, \\Theta_{in}.\\ \\beta < \\alpha \\land \\Theta_{in} \\mathbin{\\#} \\Theta \\land w \\in V_{\\beta}\\llbracket\\Theta_{in} \\vdash U[x\\cdot\\bar\\imath]\\rrbracket$.",
+   "why": "This negative occurrence of $V$ is at a lower level, so $V$ is well defined. \\annp{Under a general table the bound is $j + \\kappa_{take} \\leq n$, and $1 \\leq \\kappa_{take}$ keeps $\\beta < \\alpha$.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\forall j\\,\\Theta_{in}$.",
    "rocq": "relation/Relation.v: o_recv",
-   "sig": "\\forall j \\in \\mathbb{N}, \\Theta_{in}.\\ j + \\kappa_{take} \\leq n \\land \\Theta_{in} \\mathbin{\\#} \\Theta \\land w \\in V_j\\llbracket\\Theta_{in} \\vdash U[x\\cdot\\bar\\imath]\\rrbracket",
+   "sig": "\\forall \\beta \\in \\mathsf{Ord}, \\Theta_{in}.\\ \\beta + \\kappa_{take} \\leq \\alpha \\land \\Theta_{in} \\mathbin{\\#} \\Theta \\land w \\in V_{\\beta}\\llbracket\\Theta_{in} \\vdash U[x\\cdot\\bar\\imath]\\rrbracket",
    "args": [
     {
-     "name": "j",
+     "name": "\\beta",
      "meaning": "the level of the incoming value"
     },
     {
@@ -7992,16 +7986,16 @@ window.MAP = {
    ]
   },
   "O-Recv.level": {
-   "title": "Continuation at level $j$",
-   "what": "$e' \\in E_j\\llbracket\\Theta[o \\mapsto S@x^{+}] \\cup \\Theta_{in} \\vdash T\\rrbracket^{F}$.",
+   "title": "Continuation at level $\\beta$",
+   "what": "$e' \\in E_{\\beta}\\llbracket\\Theta[o \\mapsto S@x^{+}] \\cup \\Theta_{in} \\vdash T\\rrbracket^{F}$.",
    "why": "The continuation owns the old ends with $o$ advanced and the received ends, and is read at the level of the value it received.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$E_j\\llbracket\\Theta[o \\mapsto S@x^{+}] \\cup \\Theta_{in} \\vdash T\\rrbracket^{F}$.",
+   "example": "$E_{\\beta}\\llbracket\\Theta[o \\mapsto S@x^{+}] \\cup \\Theta_{in} \\vdash T\\rrbracket^{F}$.",
    "rocq": "relation/Relation.v: o_recv",
-   "sig": "e' \\in E^{W}_{j}\\llbracket \\Theta[o \\mapsto S@x^{+}] \\cup \\Theta_{in} \\vdash T \\rrbracket^{F}",
+   "sig": "e' \\in E^{W}_{\\beta}\\llbracket \\Theta[o \\mapsto S@x^{+}] \\cup \\Theta_{in} \\vdash T \\rrbracket^{F}",
    "args": [
     {
-     "name": "j",
+     "name": "\\beta",
      "meaning": "the level of the incoming value"
     },
     {
@@ -8024,8 +8018,8 @@ window.MAP = {
      "meaning": "the world, $W \\in \\mathsf{World}$"
     },
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "\\Theta",
@@ -8063,8 +8057,8 @@ window.MAP = {
      "meaning": "the world, $W \\in \\mathsf{World}$"
     },
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "\\Theta",
@@ -8106,8 +8100,8 @@ window.MAP = {
      "meaning": "the world, $W \\in \\mathsf{World}$"
     },
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "\\Theta",
@@ -8149,8 +8143,8 @@ window.MAP = {
      "meaning": "the world, $W \\in \\mathsf{World}$"
     },
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "\\Theta",
@@ -8629,8 +8623,8 @@ window.MAP = {
      "meaning": "the world, $W \\in \\mathsf{World}$"
     },
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "\\Sigma",
@@ -8664,8 +8658,8 @@ window.MAP = {
      "meaning": "the world, $W \\in \\mathsf{World}$"
     },
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "\\Sigma",
@@ -8776,8 +8770,8 @@ window.MAP = {
      "meaning": "the world, $W \\in \\mathsf{World}$"
     },
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "\\Sigma",
@@ -8800,7 +8794,7 @@ window.MAP = {
      "meaning": "the received value"
     },
     {
-     "name": "j",
+     "name": "\\beta",
      "meaning": "the level of the value"
     },
     {
@@ -8884,8 +8878,8 @@ window.MAP = {
      "meaning": "the world, $W \\in \\mathsf{World}$"
     },
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "\\Sigma",
@@ -8931,7 +8925,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "For $\\Delta = [T]$, $\\gamma(0) \\in V\\llbracket\\Theta \\vdash T\\rrbracket$.",
    "rocq": "compat/SemTyped.v: Grel",
-   "sig": "\\gamma \\in G^{W}_{n}\\llbracket \\Theta \\vdash \\Delta \\rrbracket",
+   "sig": "\\gamma \\in G^{W}_{\\alpha}\\llbracket \\Theta \\vdash \\Delta \\rrbracket",
    "args": [
     {
      "name": "\\gamma",
@@ -9482,12 +9476,12 @@ window.MAP = {
   },
   "F-Send.payload": {
    "title": "Payload in $FV$",
-   "what": "$w \\in FV^N_n\\llbracket\\Phi|_M{\\downarrow} \\vdash T\\rrbracket$, with every transferred counter lowered by one transfer.",
+   "what": "$w \\in FV^N_{\\alpha}\\llbracket\\Phi|_M{\\downarrow} \\vdash T\\rrbracket$, with every transferred counter lowered by one transfer.",
    "why": "$FV$ reads no point, so the raw payload type and its placed form agree.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$FV^N_n\\llbracket \\{a \\mapsto S^{2}\\} \\vdash (S@x)^{2}\\rrbracket$ for a payload end promised at credit $2$.",
+   "example": "$FV^N_{\\alpha}\\llbracket \\{a \\mapsto S^{2}\\} \\vdash (S@x)^{2}\\rrbracket$ for a payload end promised at credit $2$.",
    "rocq": "fuel/Fuel.v: f_send",
-   "sig": "w \\in FV^{N}_{n}\\llbracket \\Phi|_M{\\downarrow} \\vdash T \\rrbracket",
+   "sig": "w \\in FV^{N}_{\\alpha}\\llbracket \\Phi|_M{\\downarrow} \\vdash T \\rrbracket",
    "args": [
     {
      "name": "w",
@@ -9517,7 +9511,7 @@ window.MAP = {
      "meaning": "the received value"
     },
     {
-     "name": "j, \\Phi_i",
+     "name": "\\beta, \\Phi_i",
      "meaning": "its level and the ends it brings"
     }
    ]
@@ -9624,7 +9618,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$o \\mapsto S^{3}_{3}$ at $(S@x)^2_3$.",
    "rocq": "fuel/Fuel.v: Vty TSess",
-   "sig": "o \\in FV^{N}_{n}\\llbracket \\{o \\mapsto S'^{f}_{m}\\} \\vdash (S@x)\\annot{^{a}}_{m} \\rrbracket",
+   "sig": "o \\in FV^{N}_{\\alpha}\\llbracket \\{o \\mapsto S'^{f}_{m}\\} \\vdash (S@x)\\annot{^{a}}_{m} \\rrbracket",
    "args": [
     {
      "name": "o",
@@ -9667,7 +9661,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "A loop body at cost $\\infty$.",
    "rocq": "fuel/Fuel.v: Vty TLolli",
-   "sig": "\\lambda e \\in FV^{N}_{n}\\llbracket \\Phi \\vdash (T \\multimap\\annot{[c; h]}\\, U)\\annot{^{a}} \\rrbracket",
+   "sig": "\\lambda e \\in FV^{N}_{\\alpha}\\llbracket \\Phi \\vdash (T \\multimap\\annot{[c; h]}\\, U)\\annot{^{a}} \\rrbracket",
    "args": [
     {
      "name": "c, h",
@@ -9717,15 +9711,15 @@ window.MAP = {
   },
   "FV-Arrow.body": {
    "title": "Body fuel",
-   "what": "$e[u] \\in F^{N}_j\\llbracket\\Phi' \\cup \\Phi_u \\vdash U\\ !\\ c\\rrbracket$.",
+   "what": "$e[u] \\in F^{N}_{\\beta}\\llbracket\\Phi' \\cup \\Phi_u \\vdash U\\ !\\ c\\rrbracket$.",
    "why": "The caller supplies an argument and counters lowered by at most $a$ by its own actions, and the body guarantees fuel with frame $c$.",
    "breaks": "Nothing. It is a definition.",
    "example": "A call of a closure of cost $1$.",
    "rocq": "fuel/Fuel.v: Vty TLolli",
-   "sig": "e[u] \\in F^{N}_{j}\\llbracket \\Phi' \\cup \\Phi_u \\vdash U\\ !\\ c \\rrbracket",
+   "sig": "e[u] \\in F^{N}_{\\beta}\\llbracket \\Phi' \\cup \\Phi_u \\vdash U\\ !\\ c \\rrbracket",
    "args": [
     {
-     "name": "j",
+     "name": "\\beta",
      "meaning": "a lower level"
     },
     {
@@ -9749,7 +9743,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{ring}$ at $N = 4$.",
    "rocq": "fuel/Fuel.v: Vty TBox",
-   "sig": "!e \\in FV^{N}_{n}\\llbracket \\varnothing \\vdash \\Box(\\ldots) \\rrbracket",
+   "sig": "!e \\in FV^{N}_{\\alpha}\\llbracket \\varnothing \\vdash \\Box(\\ldots) \\rrbracket",
    "args": [
     {
      "name": "e",
@@ -9774,15 +9768,15 @@ window.MAP = {
   },
   "FV-Box.body": {
    "title": "Body per force",
-   "what": "$e[!e] \\in F^{N}_j\\llbracket\\varnothing \\vdash U[\\bar s]\\ !\\ c\\rrbracket$ for every $j < n$ and $\\bar s \\in \\mathsf{sinsts}\\,N$.",
+   "what": "$e[!e] \\in F^{N}_{\\beta}\\llbracket\\varnothing \\vdash U[\\bar s]\\ !\\ c\\rrbracket$ for every $\\beta < \\alpha$ and $\\bar s \\in \\mathsf{sinsts}\\,N$.",
    "why": "Each force unrolls the box once, at an instance the forcing context chooses.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\bar s \\in \\mathsf{sinsts}\\,N$.",
    "rocq": "fuel/Fuel.v: Vty TBox",
-   "sig": "e[!e] \\in F^{N}_{j}\\llbracket \\varnothing \\vdash U[\\bar s]\\ !\\ c \\rrbracket",
+   "sig": "e[!e] \\in F^{N}_{\\beta}\\llbracket \\varnothing \\vdash U[\\bar s]\\ !\\ c \\rrbracket",
    "args": [
     {
-     "name": "j",
+     "name": "\\beta",
      "meaning": "a lower level"
     },
     {
@@ -9802,7 +9796,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Phi = \\varnothing$.",
    "rocq": "fuel/Fuel.v: Vres",
-   "sig": "v \\in FV^{N}_{n}\\llbracket \\Phi \\vdash \\mathsf{thread} \\rrbracket",
+   "sig": "v \\in FV^{N}_{\\alpha}\\llbracket \\Phi \\vdash \\mathsf{thread} \\rrbracket",
    "args": [
     {
      "name": "v",
@@ -10325,21 +10319,21 @@ window.MAP = {
    ]
   },
   "sr.FV": {
-   "title": "Values with fuel, $FV^N_n\\llbracket\\Phi \\vdash \\sigma\\rrbracket$",
+   "title": "Values with fuel, $FV^N_{\\alpha}\\llbracket\\Phi \\vdash \\sigma\\rrbracket$",
    "what": "The value holds exactly the ends $\\Phi$, and their counters meet the credits of $\\sigma$.",
    "why": "Values have the protocols and counters of their ends.",
    "breaks": "Nothing. It is a definition.",
    "example": "$o \\in FV\\llbracket\\{o \\mapsto S^{3}\\} \\vdash (S@x)^2\\rrbracket$.",
    "rocq": "fuel/Fuel.v: Vfuel, Vty",
-   "sig": "v \\in FV^{N}_{n}\\llbracket \\Phi \\vdash \\sigma \\rrbracket",
+   "sig": "v \\in FV^{N}_{\\alpha}\\llbracket \\Phi \\vdash \\sigma \\rrbracket",
    "args": [
     {
      "name": "N",
      "meaning": "the bound on the tickets of a channel, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "\\Phi",
@@ -10923,20 +10917,20 @@ window.MAP = {
   },
   "th.sem-p-term": {
    "title": "Semantic P-Term",
-   "what": "If $\\mathsf{tfree}\\,T$, $\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C$ and $t \\in E[\\kappa]^{W}_{n}\\llbracket\\Theta \\vdash T\\rrbracket^{\\varnothing}$, then $(C, \\{t\\}) \\in P[\\kappa]^{W}_{n}\\llbracket\\Sigma \\vdash T\\rrbracket$.",
+   "what": "If $\\mathsf{tfree}\\,T$, $\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C$ and $t \\in E[\\kappa]^{W}_{\\alpha}\\llbracket\\Theta \\vdash T\\rrbracket^{\\varnothing}$, then $(C, \\{t\\}) \\in P[\\kappa]^{W}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket$.",
    "why": "It is P-Term in the relation. When $t$ spawns $v$, the child receives exactly the ends $\\mathsf{fends}(v)$, which $V$ fixes by $\\mathrm{dom}\\,\\Theta = \\mathsf{fends}(v)$, and the proof composes parent and child as P-Connect does.",
    "breaks": "Nothing. It is a definition.",
    "example": "A single thread with $\\Sigma = \\varnothing$ and $C = \\varnothing$.",
    "rocq": "compat/PTerm.v: sem_p_term",
-   "sig": "\\mathsf{tfree}\\,T \\land \\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C \\land t \\in E[\\kappa]^{W}_{n}\\llbracket\\Theta \\vdash T\\rrbracket^{\\varnothing} \\Rightarrow (C, \\{t\\}) \\in P[\\kappa]^{W}_{n}\\llbracket\\Sigma \\vdash T\\rrbracket",
+   "sig": "\\mathsf{tfree}\\,T \\land \\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C \\land t \\in E[\\kappa]^{W}_{\\alpha}\\llbracket\\Theta \\vdash T\\rrbracket^{\\varnothing} \\Rightarrow (C, \\{t\\}) \\in P[\\kappa]^{W}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket",
    "args": [
     {
      "name": "\\kappa",
      "meaning": "a cost table, $\\kappa_{DF}$ for deadlock freedom and $\\kappa_L$ for liveness"
     },
     {
-     "name": "n",
-     "meaning": "the level, a natural number"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "\\Sigma",
@@ -10985,16 +10979,16 @@ window.MAP = {
   },
   "th.sem-p-connect": {
    "title": "Semantic P-Connect",
-   "what": "If $\\mathsf{tfree}\\,T$, $\\mathsf{conn}$, $p_1 \\in P^{W}_n\\llbracket\\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket$ and $p_2 \\in P^{W}_n\\llbracket\\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket$, then $p_1 \\parallel_{\\Sigma_C} p_2 \\in P^{W}_n\\llbracket\\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket$, with both components at one ranked world $W$.",
+   "what": "If $\\mathsf{tfree}\\,T$, $\\mathsf{conn}$, $p_1 \\in P^{W}_{\\alpha}\\llbracket\\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket$ and $p_2 \\in P^{W}_{\\alpha}\\llbracket\\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket$, then $p_1 \\parallel_{\\Sigma_C} p_2 \\in P^{W}_{\\alpha}\\llbracket\\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket$, with both components at one ranked world $W$.",
    "why": "It is P-Connect in the relation, for each level $n$ and each cost table. The composite reads both components at one ranked world that satisfies both static worlds, so two rankings are never reconciled, and a fresh root of either side is fresh for that world.",
    "breaks": "Nothing. It is a definition.",
    "example": "Two threads closing $c^{+}$ and $c^{-}$, cut at $c$.",
    "rocq": "not yet in the Rocq in this form (docs/redesign/check-layers-open.md), today compat/ConnectP.v: sem_p_connect at W1 ⊔ W2",
-   "sig": "\\mathsf{tfree}\\,T \\land \\mathsf{conn} \\land p_1 \\in P^{W}_{n}\\llbracket\\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket \\land p_2 \\in P^{W}_{n}\\llbracket\\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket \\Rightarrow p_1 \\parallel_{\\Sigma_C} p_2 \\in P^{W}_{n}\\llbracket\\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket",
+   "sig": "\\mathsf{tfree}\\,T \\land \\mathsf{conn} \\land p_1 \\in P^{W}_{\\alpha}\\llbracket\\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket \\land p_2 \\in P^{W}_{\\alpha}\\llbracket\\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket \\Rightarrow p_1 \\parallel_{\\Sigma_C} p_2 \\in P^{W}_{\\alpha}\\llbracket\\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket",
    "args": [
     {
-     "name": "n",
-     "meaning": "the level, a natural number"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "W",
@@ -11039,12 +11033,12 @@ window.MAP = {
   },
   "th.Erel-bind": {
    "title": "Bind",
-   "what": "For every cost table, if $e \\in E^{W}_{n}\\llbracket\\Theta_1 \\vdash T\\rrbracket^{F \\cup \\mathsf{ap}\\,\\Theta_2}$ and $f[v] \\in E^{W'}_{j}\\llbracket\\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}$ for all $W' \\sqsupseteq W$, $j \\leq n$ and $v \\in V^{W'}_{j}\\llbracket\\Theta_v \\vdash T\\rrbracket$, then $f[e] \\in E^{W}_{n}\\llbracket\\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}$.",
+   "what": "For every cost table, if $e \\in E^{W}_{\\alpha}\\llbracket\\Theta_1 \\vdash T\\rrbracket^{F \\cup \\mathsf{ap}\\,\\Theta_2}$ and $f[v] \\in E^{W'}_{\\beta}\\llbracket\\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}$ for all $W' \\sqsupseteq W$, $j \\leq n$ and $v \\in V^{W'}_{\\beta}\\llbracket\\Theta_v \\vdash T\\rrbracket$, then $f[e] \\in E^{W}_{\\alpha}\\llbracket\\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}$.",
    "why": "Every rule with a subterm runs the subterm first. The frame holds $\\Theta_2$ while the hole runs, so the hole must not wait above $\\mathsf{ap}\\,\\Theta_2$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{let}\\ \\ast = \\mathsf{close}\\,c\\ \\mathsf{in}\\ \\mathsf{close}\\,d$ runs $\\mathsf{close}\\,c$ with $\\overline{x_d}$ in its future.",
    "rocq": "compat/Bind.v: Erel_bind",
-   "sig": "e \\in E^{W}_{n}\\llbracket\\Theta_1 \\vdash T\\rrbracket^{F \\cup \\mathsf{ap}\\,\\Theta_2} \\land (\\forall W' \\sqsupseteq W, j \\leq n, v.\\ \\ldots) \\Rightarrow f[e] \\in E^{W}_{n}\\llbracket\\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}",
+   "sig": "e \\in E^{W}_{\\alpha}\\llbracket\\Theta_1 \\vdash T\\rrbracket^{F \\cup \\mathsf{ap}\\,\\Theta_2} \\land (\\forall W' \\sqsupseteq W, \\beta \\leq \\alpha, v.\\ \\ldots) \\Rightarrow f[e] \\in E^{W}_{\\alpha}\\llbracket\\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}",
    "args": [
     {
      "name": "f",
@@ -11056,7 +11050,7 @@ window.MAP = {
     },
     {
      "name": "W', j, v",
-     "meaning": "every later world, every level $j \\leq n$ and every value $v$ in $V^{W'}_{j}$ that $e$ may return"
+     "meaning": "every later world, every level $\\beta \\leq \\alpha$ and every value $v$ in $V^{W'}_{\\beta}$ that $e$ may return"
     }
    ]
   },
@@ -11299,12 +11293,12 @@ window.MAP = {
   },
   "th.Prel": {
    "title": "The process relation $P$",
-   "what": "$P[\\kappa]^{W}_{n}\\llbracket\\Sigma \\vdash T\\rrbracket$, the processes in the relation at table $\\kappa$, world $W$, level $n$, interface $\\Sigma$ and result $T$.",
+   "what": "$P[\\kappa]^{W}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket$, the processes in the relation at table $\\kappa$, world $W$, level $n$, interface $\\Sigma$ and result $T$.",
    "why": "The semantic process judgment asks membership at every level $n$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "Two threads closing $c^{+}$ and $c^{-}$ lie in $P^{W}_{n}\\llbracket\\varnothing \\vdash \\ast\\rrbracket$ for every $n$.",
+   "example": "Two threads closing $c^{+}$ and $c^{-}$ lie in $P^{W}_{\\alpha}\\llbracket\\varnothing \\vdash \\ast\\rrbracket$ for every $n$.",
    "rocq": "relation/Relation.v: Prel",
-   "sig": "P[\\kappa]^{W}_{n}\\llbracket\\Sigma \\vdash T\\rrbracket \\subseteq \\mathsf{Proc}",
+   "sig": "P[\\kappa]^{W}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket \\subseteq \\mathsf{Proc}",
    "args": [
     {
      "name": "\\kappa",
@@ -11315,8 +11309,8 @@ window.MAP = {
      "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
     },
     {
-     "name": "n",
-     "meaning": "the level, a natural number"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "\\Sigma",
@@ -11330,12 +11324,12 @@ window.MAP = {
   },
   "th.Erel": {
    "title": "The term relation $E$",
-   "what": "$E[\\kappa]^{W}_{n}\\llbracket\\Theta \\vdash T\\rrbracket^{F}$ is the set of terms in the relation at cost table $\\kappa$, world $W$ and level $n$, for ends $\\Theta$, result $T$ and future $F$.",
+   "what": "$E[\\kappa]^{W}_{\\alpha}\\llbracket\\Theta \\vdash T\\rrbracket^{F}$ is the set of terms in the relation at cost table $\\kappa$, world $W$ and level $n$, for ends $\\Theta$, result $T$ and future $F$.",
    "why": "The semantic term judgment asks membership at each level and for each grounding of the variables.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{close}\\,c^{+} \\in E^{W}_{n}\\llbracket\\{c^{+} \\mapsto \\mathsf{Close}@x\\} \\vdash \\ast\\rrbracket^{\\varnothing}$.",
+   "example": "$\\mathsf{close}\\,c^{+} \\in E^{W}_{\\alpha}\\llbracket\\{c^{+} \\mapsto \\mathsf{Close}@x\\} \\vdash \\ast\\rrbracket^{\\varnothing}$.",
    "rocq": "relation/Relation.v: Erel",
-   "sig": "E[\\kappa]^{W}_{n}\\llbracket\\Theta \\vdash T\\rrbracket^{F} \\subseteq \\mathsf{Expr}",
+   "sig": "E[\\kappa]^{W}_{\\alpha}\\llbracket\\Theta \\vdash T\\rrbracket^{F} \\subseteq \\mathsf{Expr}",
    "args": [
     {
      "name": "\\kappa",
@@ -11346,8 +11340,8 @@ window.MAP = {
      "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
     },
     {
-     "name": "n",
-     "meaning": "the level, a natural number"
+     "name": "\\alpha",
+     "meaning": "the level, an ordinal"
     },
     {
      "name": "\\Theta",
@@ -11365,19 +11359,19 @@ window.MAP = {
   },
   "th.Vrel": {
    "title": "The value relation $V$",
-   "what": "$V^{W}_{j}\\llbracket\\Theta \\vdash T\\rrbracket$ is the set of values in the relation at world $W$ and level $j$, for ends $\\Theta$ and type $T$.",
+   "what": "$V^{W}_{\\beta}\\llbracket\\Theta \\vdash T\\rrbracket$ is the set of values in the relation at world $W$ and level $j$, for ends $\\Theta$ and type $T$.",
    "why": "A term in $E$ that is irreducible is a value in $V$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$c^{+} \\in V^{W}_{j}\\llbracket\\{c^{+} \\mapsto \\mathsf{Close}@x\\} \\vdash \\mathsf{Close}@x\\rrbracket$.",
+   "example": "$c^{+} \\in V^{W}_{\\beta}\\llbracket\\{c^{+} \\mapsto \\mathsf{Close}@x\\} \\vdash \\mathsf{Close}@x\\rrbracket$.",
    "rocq": "relation/Relation.v: Vrel",
-   "sig": "V^{W}_{j}\\llbracket\\Theta \\vdash T\\rrbracket \\subseteq \\mathsf{Val}",
+   "sig": "V^{W}_{\\beta}\\llbracket\\Theta \\vdash T\\rrbracket \\subseteq \\mathsf{Val}",
    "args": [
     {
      "name": "W",
      "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
     },
     {
-     "name": "j",
+     "name": "\\beta",
      "meaning": "the level"
     },
     {
@@ -11396,7 +11390,7 @@ window.MAP = {
    "why": "The lock-free judgment chooses $a$ at each index, and the existential property gives one $a$ for every index.",
    "breaks": "Nothing. It is a definition.",
    "example": "The state of two threads closing $c^{+}$ and $c^{-}$.",
-   "rocq": "not yet in the Rocq (docs/redesign/check-transfinite.md)",
+   "rocq": "soup/Soup.v: Soup, lf_sem; soup/SoupRun.v: lfsoup_step, lfsoup_step_all, lfsoup_run",
    "sig": "S^{N,W}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket \\subseteq \\mathsf{LFState}",
    "args": [
     {
@@ -11442,7 +11436,7 @@ window.MAP = {
    "why": "The existential property of ordinal indices, $\\forall \\alpha.\\ \\exists a$ to $\\exists a.\\ \\forall \\alpha$, is proved by contradiction.",
    "breaks": "Without it the creation choice cannot be fixed once along a run, and the lock-free judgment needs the choice $\\chi$ before the index again.",
    "example": "Transfinite Iris assumes it in its model.",
-   "rocq": "not yet in the Rocq (docs/redesign/check-transfinite.md)",
+   "rocq": "lockfree/FairRun.v: excluded_middle; relation/ExProp.v: exist_prop",
    "sig": "\\mathsf{EM} := \\forall P : \\mathsf{Prop}.\\ P \\lor \\neg P",
    "args": [
     {
@@ -11454,10 +11448,10 @@ window.MAP = {
   "th.ac": {
    "title": "Choice $\\mathsf{AC}$",
    "what": "A total relation contains a function, as an explicit hypothesis.",
-   "why": "The existential property picks one failing index per witness, and the run picks one annotated configuration per step, which is dependent choice.",
-   "breaks": "Without it the configurations chosen per step do not form one sequence along the run.",
-   "example": "Dependent choice along a run of the lock-free process relation.",
-   "rocq": "not yet in the Rocq (docs/redesign/check-transfinite.md)",
+   "why": "The existential property picks one failing index per witness, and the run picks one choice of tickets per state and position, from which a recursion builds the states of the run.",
+   "breaks": "Without it the states chosen per index do not form one sequence along the run.",
+   "example": "One choice of tickets per position of a run of the lock-free process relation.",
+   "rocq": "lockfree/FairRun.v: functional_choice; relation/ExProp.v: exist_prop; soup/SoupRun.v: lfsoup_run",
    "sig": "\\mathsf{AC} := \\forall R : X \\to Y \\to \\mathsf{Prop}.\\ (\\forall x.\\ \\exists y.\\ R\\,x\\,y) \\Rightarrow \\exists f.\\ \\forall x.\\ R\\,x\\,(f\\,x)",
    "args": [
     {
