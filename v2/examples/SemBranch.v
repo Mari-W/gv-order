@@ -56,22 +56,22 @@ Definition py : point := MkPt (NConst 1) true 0.
 (** ** Worlds
 
     The thread's world holds x ≺ ȳ and the partner's holds x̄ ≺ y. A world
-    with constants 0 and 1, no families and facts that raise the constant
-    is strict, by a lexicographic order on (constant, offset). *)
+    with constants 0 and 1 and facts that raise the constant is
+    well-founded, by a lexicographic order on (constant, offset). *)
 
 Definition rk (x : point) : nat := match pt_root x with NConst a => a | _ => 0 end.
 
-Definition Wa : world := World ({[0]} ∪ {[1]}) (λ f, f = FLt px (py‾)) ∅ (λ _ _, False).
-Definition Wb : world := World ({[0]} ∪ {[1]}) (λ f, f = FLt (px‾) py) ∅ (λ _ _, False).
+Definition Wa : sworld := SWorld ({[0]} ∪ {[1]}) (λ f, f = FLt px (py‾)).
+Definition Wb : sworld := SWorld ({[0]} ∪ {[1]}) (λ f, f = FLt (px‾) py).
 
-Lemma Wa_wf : world_wf Wa.
+Lemma Wa_wf : sworld_wf Wa.
 Proof.
-  split; simpl; [|done]. intros x y H. injection H as Hx Hy. subst. split; eexists; (split; [reflexivity|set_solver]).
+  split; simpl. intros x y H. injection H as Hx Hy. subst. split; eexists; (split; [reflexivity|set_solver]).
 Qed.
 
-Lemma Wb_wf : world_wf Wb.
+Lemma Wb_wf : sworld_wf Wb.
 Proof.
-  split; simpl; [|done]. intros x y H. injection H as Hx Hy. subst. split; eexists; (split; [reflexivity|set_solver]).
+  split; simpl. intros x y H. injection H as Hx Hy. subst. split; eexists; (split; [reflexivity|set_solver]).
 Qed.
 
 Lemma rk_shift n x : rk (pt_shift n x) = rk x.
@@ -86,41 +86,36 @@ Proof. reflexivity. Qed.
 Lemma off_dual x : pt_off (x‾) = pt_off x.
 Proof. reflexivity. Qed.
 
-Lemma strict_rank W :
-  world_wf W → w_fams W = ∅ → (∀ x y, w_facts W (FLt x y) → rk x < rk y) → strict W.
+Lemma swf_rank W : (∀ x y, sw_facts W (FLt x y) → rk x < rk y) → swf W.
 Proof.
-  intros Hwf Hf Hr. split; [done|]. intros x Hx.
-  assert (∀ a b, wstep W a b → rk a < rk b ∨ (rk a = rk b ∧ pt_off a < pt_off b)) as Hs.
-  { intros a b Hs. destruct Hs as [a b H|ℓ g a b Hℓ _|a|a].
+  intros Hr. apply swf_iff.
+  assert (∀ a b, swstep W a b → lex3 (rk a, pt_off a, 0) (rk b, pt_off b, 0)) as Hs.
+  { intros a b Hs. destruct Hs as [a b H|a|a]; cbv beta iota delta [lex3].
     - left. by apply Hr.
-    - rewrite Hf in Hℓ. set_solver.
-    - right. rewrite rk_shift, off_shift. lia.
-    - right. rewrite rk_shift, rk_dual, off_shift, off_dual. lia. }
-  assert (∀ a b, W ⊢ a ≺ b → rk a < rk b ∨ (rk a = rk b ∧ pt_off a < pt_off b)) as H.
+    - right. split; [by rewrite rk_shift|left; rewrite off_shift; lia].
+    - right. split; [by rewrite rk_shift, rk_dual|left; rewrite off_shift, off_dual; lia]. }
+  assert (∀ a b, W ⊢ₛ a ≺ b → lex3 (rk a, pt_off a, 0) (rk b, pt_off b, 0)) as H.
   { intros a b Hab. induction Hab as [a b H|a b c H _ IH]; [by apply Hs|].
-    apply Hs in H. lia. }
-  destruct (H x x Hx); lia.
+    apply Hs in H. by transitivity (rk b, pt_off b, 0). }
+  assert (∀ m x, (rk x, pt_off x, 0) = m → Acc (sw_lt W) x) as Hacc.
+  { intros m. induction (lex3_wf m) as [m _ IH]. intros x <-. constructor.
+    intros y Hy. eapply IH; [apply H, Hy|done]. }
+  intros x. by apply (Hacc (rk x, pt_off x, 0) x).
 Qed.
 
-Lemma Wab_strict : strict (Wa ⊔ Wb).
+Lemma Wab_wf : swf (Wa ⊔ Wb).
 Proof.
-  apply strict_rank.
-  - apply wjoin_wf; [apply Wa_wf|apply Wb_wf].
-  - simpl. set_solver.
-  - simpl. intros x y [H|H]; injection H as Hx Hy; subst; unfold rk, px, py, pt_dual; simpl; lia.
+  apply swf_rank. simpl. intros x y [H|H]; injection H as Hx Hy; subst; unfold rk, px, py, pt_dual; simpl; lia.
 Qed.
 
-Lemma Wa_strict : strict Wa.
-Proof. apply (strict_mono _ (Wa ⊔ Wb)); [apply Wa_wf|apply wext_join_l|apply Wab_strict]. Qed.
+Lemma Wab_ok : sworld_wf (Wa ⊔ Wb) ∧ swf (Wa ⊔ Wb).
+Proof. split; [apply swjoin_wf; [apply Wa_wf|apply Wb_wf]|apply Wab_wf]. Qed.
 
-Lemma Wb_strict : strict Wb.
-Proof. apply (strict_mono _ (Wa ⊔ Wb)); [apply Wb_wf|apply wext_join_r|apply Wab_strict]. Qed.
+Lemma Wa_lt : Wa ⊢ₛ px ≺ py‾.
+Proof. apply sw_lt_fact. simpl. reflexivity. Qed.
 
-Lemma Wa_lt : Wa ⊢ px ≺ py‾.
-Proof. apply w_lt_fact. simpl. reflexivity. Qed.
-
-Lemma Wb_lt : Wb ⊢ px‾ ≺ py.
-Proof. apply w_lt_fact. simpl. reflexivity. Qed.
+Lemma Wb_lt : Wb ⊢ₛ px‾ ≺ py.
+Proof. apply sw_lt_fact. simpl. reflexivity. Qed.
 
 (** ** Static typing of close a; close b *)
 
@@ -211,23 +206,33 @@ Proof.
   all: first [reflexivity|apply _].
 Qed.
 
-(** A term typed in the DF projection is in E at the erased environment. *)
-Lemma typed_E_df W Θ t n :
-  strict W → tenv_df Θ = Θ → dftyped W Θ hc_empty [] (∅, None) t TUnit →
-  Erel κ_DF n W (tenv_erase Θ) TUnit ∅ t.
+(** A term typed in the DF projection is in E at the erased environment,
+    in every ranked world that models its static world. *)
+Lemma typed_E_df W R Θ t n :
+  sworld_wf W → wmodels R W → tenv_df Θ = Θ → dftyped W Θ hc_empty [] (∅, None) t TUnit →
+  Erel κ_DF n R (tenv_erase Θ) TUnit ∅ t.
 Proof.
-  intros HW Hd Ht. apply (typed_E κ_DF W Θ t TUnit n). rewrite Hd.
-  exact (fundamental W Θ [] (∅, None) t TUnit HW Ht).
+  intros HW HR Hd Ht. apply (typed_E κ_DF R Θ t TUnit n). rewrite Hd.
+  exact (fundamental W R Θ [] (∅, None) t TUnit HW Ht HR).
 Qed.
 
-Lemma arm_E n : Erel κ_DF n Wa (tenv_erase Θa) TUnit ∅ (cl2 oc od).
+(** The semantic side reads one ranked world R that models both static
+    worlds. *)
+Section sem.
+  Context (R : world) (HR : wmodels R (Wa ⊔ Wb)).
+  Local Lemma HRa : wmodels R Wa.
+  Proof. by eapply wmodels_ext; [apply swext_join_l|]. Qed.
+  Local Lemma HRb : wmodels R Wb.
+  Proof. by eapply wmodels_ext; [apply swext_join_r|]. Qed.
+
+Lemma arm_E n : Erel κ_DF n R (tenv_erase Θa) TUnit ∅ (cl2 oc od).
 Proof.
-  apply typed_E_df; [apply Wa_strict|apply Θa_df|].
+  apply (typed_E_df Wa); [apply Wa_wf|apply HRa|apply Θa_df|].
   apply cl2_typed; [apply oc_od|]. apply sl_w. exact Wa_lt.
 Qed.
 
 (** The thread is in E: three deterministic β steps, then the live arm. *)
-Theorem sb_thread_E n : Erel κ_DF n Wa (tenv_erase Θa) TUnit ∅ sb_thread.
+Theorem sb_thread_E n : Erel κ_DF n R (tenv_erase Θa) TUnit ∅ sb_thread.
 Proof.
   unfold sb_thread, sb_flag, sb_not.
   apply (Erel_det _ _ _ _ _ _ _
@@ -241,9 +246,9 @@ Proof.
 Qed.
 
 (** The partner is in E, typed statically at x̄ ≺ y. *)
-Lemma partner_E n : Erel κ_DF n Wb (tenv_erase Θb) TUnit ∅ sb_partner.
+Lemma partner_E n : Erel κ_DF n R (tenv_erase Θb) TUnit ∅ sb_partner.
 Proof.
-  apply typed_E_df; [apply Wb_strict|apply Θb_df|].
+  apply (typed_E_df Wb); [apply Wb_wf|apply HRb|apply Θb_df|].
   apply cl2_typed; [unfold oc, od; simpl; congruence|]. apply sl_w. exact Wb_lt.
 Qed.
 
@@ -300,16 +305,16 @@ Qed.
 (** The closed process: the thread and the partner over the cut {c, d}. *)
 Definition sb_config : proc := (({["c"]} ∪ {["d"]}), {[+ sb_thread +]} ⊎ {[+ sb_partner +]}).
 
-Theorem sb_deadlock_free : deadlock_free sb_config.
+Lemma sb_deadlock_free_R : deadlock_free sb_config.
 Proof.
-  apply (adequacy (Wa ⊔ Wb) TUnit sb_config Wab_strict). intros n.
-  assert (Prel κ_DF n Wa (∅ ∪ ΣC) TUnit (∅, {[+ sb_thread +]})) as H1.
-  { rewrite (left_id_L ∅ (∪)). refine (sem_p_term κ_DF n Wa _ ΣC ∅ ∅ _ TUnit _ sth_a (sb_thread_E n)).
+  apply (adequacy R TUnit sb_config). intros n.
+  assert (Prel κ_DF n R (∅ ∪ ΣC) TUnit (∅, {[+ sb_thread +]})) as H1.
+  { rewrite (left_id_L ∅ (∪)). refine (sem_p_term κ_DF n R _ ΣC ∅ ∅ _ TUnit _ sth_a (sb_thread_E n)).
     constructor. }
-  assert (Prel κ_DF n Wb (∅ ∪ senv_dual ΣC) TUnit (∅, {[+ sb_partner +]})) as H2.
-  { rewrite (left_id_L ∅ (∪)). refine (sem_p_term κ_DF n Wb _ _ ∅ ∅ _ TUnit _ sth_b (partner_E n)).
+  assert (Prel κ_DF n R (∅ ∪ senv_dual ΣC) TUnit (∅, {[+ sb_partner +]})) as H2.
+  { rewrite (left_id_L ∅ (∪)). refine (sem_p_term κ_DF n R _ _ ∅ ∅ _ TUnit _ sth_b (partner_E n)).
     constructor. }
-  pose proof (sem_p_connect κ_DF n Wa Wb ∅ ΣC ∅ (senv_dual ΣC) _ _ TUnit ltac:(constructor) H1 H2 sb_conn) as H.
+  pose proof (sem_p_connect κ_DF n R ∅ ΣC ∅ (senv_dual ΣC) _ _ TUnit ltac:(constructor) H1 H2 sb_conn) as H.
   unfold pconn in H. simpl in H. rewrite chans_ΣC in H. rewrite !(left_id_L ∅ (∪)) in H.
   exact H.
 Qed.
@@ -325,31 +330,30 @@ Qed.
 Definition Cbad : bcs := BCs (py :: px‾ :: []) (λ f, f = FLt (pvar 0) (pvar 1)).
 Definition Tbad : ty := TEx LNone 0 Cbad TUnit.
 
-Lemma slt_empty_w W x y : slt W hc_empty x y → W ⊢ x ≺ y.
+Lemma slt_empty_w W x y : slt W hc_empty x y → W ⊢ₛ x ≺ y.
 Proof.
   unfold slt. induction 1 as [x y H|x y (C & xs & Hin & _)|x y z _ IH1 _ IH2].
   - done.
   - by apply not_elem_of_nil in Hin.
-  - by eapply w_lt_trans.
+  - by eapply sw_lt_trans.
 Qed.
 
 (** In Wa the constant never decreases along ≺. *)
-Lemma Wa_rk_step x y : wstep Wa x y → rk x ≤ rk y.
+Lemma Wa_rk_step x y : swstep Wa x y → rk x ≤ rk y.
 Proof.
-  destruct 1 as [x y Hf|ℓ g x y Hℓ _|x|x].
+  destruct 1 as [x y Hf|x|x].
   - simpl in Hf. injection Hf as -> ->. unfold rk, px, py, pt_dual. simpl. lia.
-  - simpl in Hℓ. set_solver.
   - unfold rk. by rewrite pt_root_shift.
   - unfold rk. by rewrite pt_root_shift, pt_root_dual.
 Qed.
 
-Lemma Wa_rk x y : Wa ⊢ x ≺ y → rk x ≤ rk y.
+Lemma Wa_rk x y : Wa ⊢ₛ x ≺ y → rk x ≤ rk y.
 Proof.
   induction 1 as [x y Hs|x y z Hs _ IH]; [by apply Wa_rk_step|].
   apply Wa_rk_step in Hs. lia.
 Qed.
 
-Lemma Wa_not_yx : ¬ Wa ⊢ py ≺ px‾.
+Lemma Wa_not_yx : ¬ Wa ⊢ₛ py ≺ px‾.
 Proof. intros H. apply Wa_rk in H. unfold rk, py, px, pt_dual in H. simpl in H. lia. Qed.
 
 Lemma Tbad_not_cons : ¬ cons_open Wa hc_empty 0 Cbad.
@@ -374,9 +378,9 @@ Definition sbv_thread : expr :=
   Case sb_flag (LetU (Var 0) (cl2 oc od)) (LetU (Var 0) (cl2 od oc)).
 Definition sbv_config : proc := (({["c"]} ∪ {["d"]}), {[+ sbv_thread +]} ⊎ {[+ sb_partner +]}).
 
-Lemma arm_v_E n : Erel κ_DF n Wa (tenv_erase Θa) TUnit ∅ (LetU EUnit (cl2 oc od)).
+Lemma arm_v_E n : Erel κ_DF n R (tenv_erase Θa) TUnit ∅ (LetU EUnit (cl2 oc od)).
 Proof.
-  apply typed_E_df; [apply Wa_strict|apply Θa_df|].
+  apply (typed_E_df Wa); [apply Wa_wf|apply HRa|apply Θa_df|].
   eapply d_letu with (Θ1 := ∅) (Θ2 := Θa).
   - split; [apply map_disjoint_empty_l|by rewrite map_empty_union].
   - apply lsplit_nil.
@@ -385,7 +389,7 @@ Proof.
 Unshelve. all: try exact None.
 Qed.
 
-Theorem sbv_thread_E n : Erel κ_DF n Wa (tenv_erase Θa) TUnit ∅ sbv_thread.
+Theorem sbv_thread_E n : Erel κ_DF n R (tenv_erase Θa) TUnit ∅ sbv_thread.
 Proof.
   unfold sbv_thread, sb_flag, sb_not.
   apply (Erel_det _ _ _ _ _ _ _
@@ -399,19 +403,26 @@ Proof.
   intros j3 _. apply arm_v_E.
 Qed.
 
-Theorem sbv_deadlock_free : deadlock_free sbv_config.
+Lemma sbv_deadlock_free_R : deadlock_free sbv_config.
 Proof.
-  apply (adequacy (Wa ⊔ Wb) TUnit sbv_config Wab_strict). intros n.
-  assert (Prel κ_DF n Wa (∅ ∪ ΣC) TUnit (∅, {[+ sbv_thread +]})) as H1.
-  { rewrite (left_id_L ∅ (∪)). refine (sem_p_term κ_DF n Wa _ ΣC ∅ ∅ _ TUnit _ sth_a (sbv_thread_E n)).
+  apply (adequacy R TUnit sbv_config). intros n.
+  assert (Prel κ_DF n R (∅ ∪ ΣC) TUnit (∅, {[+ sbv_thread +]})) as H1.
+  { rewrite (left_id_L ∅ (∪)). refine (sem_p_term κ_DF n R _ ΣC ∅ ∅ _ TUnit _ sth_a (sbv_thread_E n)).
     constructor. }
-  assert (Prel κ_DF n Wb (∅ ∪ senv_dual ΣC) TUnit (∅, {[+ sb_partner +]})) as H2.
-  { rewrite (left_id_L ∅ (∪)). refine (sem_p_term κ_DF n Wb _ _ ∅ ∅ _ TUnit _ sth_b (partner_E n)).
+  assert (Prel κ_DF n R (∅ ∪ senv_dual ΣC) TUnit (∅, {[+ sb_partner +]})) as H2.
+  { rewrite (left_id_L ∅ (∪)). refine (sem_p_term κ_DF n R _ _ ∅ ∅ _ TUnit _ sth_b (partner_E n)).
     constructor. }
-  pose proof (sem_p_connect κ_DF n Wa Wb ∅ ΣC ∅ (senv_dual ΣC) _ _ TUnit ltac:(constructor) H1 H2 sb_conn) as H.
+  pose proof (sem_p_connect κ_DF n R ∅ ΣC ∅ (senv_dual ΣC) _ _ TUnit ltac:(constructor) H1 H2 sb_conn) as H.
   unfold pconn in H. simpl in H. rewrite chans_ΣC in H. rewrite !(left_id_L ∅ (∪)) in H.
   exact H.
 Qed.
+End sem.
+
+Theorem sb_deadlock_free : deadlock_free sb_config.
+Proof. destruct (wmodels_exists _ (proj1 Wab_ok) (proj2 Wab_ok)) as [R HR]. exact (sb_deadlock_free_R R HR). Qed.
+
+Theorem sbv_deadlock_free : deadlock_free sbv_config.
+Proof. destruct (wmodels_exists _ (proj1 Wab_ok) (proj2 Wab_ok)) as [R HR]. exact (sbv_deadlock_free_R R HR). Qed.
 
 (** ** The static rejection of the variant
 
@@ -547,7 +558,8 @@ Ltac fends_tac := unfold sbv_thread, sb_partner, sb_flag, sb_not, cl2, oc, od; s
 (** No world and no bound type the closed process of the variant. *)
 Theorem sbv_rejected N W : ¬ ptyped N W ∅ sbv_config TUnit.
 Proof.
-  intros H. pose proof (ptyped_strict _ _ _ _ _ H) as [_ Hirr].
+  intros H. pose proof (ptyped_wf _ _ _ _ _ H) as [_ HWf].
+  pose proof (λ x, swf_irrefl _ x HWf) as Hirr.
   apply ptyped_two in H as (W1 & W2 & Σ1 & Σ2 & ΣC & C1 & C2 & u1 & u2 & -> & HΣ & _ & Hu & H1 & H2 & _).
   symmetry in HΣ. pose proof (map_positive_l _ _ HΣ) as ->. rewrite (left_id_L ∅ (∪)) in HΣ. subst Σ2.
   rewrite !(left_id_L ∅ (∪)) in H1, H2.
@@ -579,8 +591,8 @@ Proof.
     pose proof (slt_empty_w _ _ _ (cl2_needs _ _ _ _ _ _ _ _ _ _ _ _
       ocd_dual_ne Hp Hec' Hed')) as Hb.
     rewrite <-Hx', <-Hy', pt_dual_dual in Hb.
-    apply (Hirr (te_pt ed)). eapply w_lt_trans; [eapply w_lt_mono; [apply wext_join_l|exact Ha]|].
-    eapply w_lt_mono; [apply wext_join_r|exact Hb].
+    apply (Hirr (te_pt ed)). eapply sw_lt_trans; [eapply sw_lt_mono; [apply swext_join_l|exact Ha]|].
+    eapply sw_lt_mono; [apply swext_join_r|exact Hb].
   - destruct (side_lookup _ _ _ _ _ _ H2) as (Θt & ct & Ht & Hlt).
     destruct (side_lookup _ _ _ _ _ _ H1) as (Θp & cp & Hp & Hlp).
     destruct (Hlt oc) as (Sc & x & ec & Hc & Hec & <-); [fends_tac|fends_tac|].
@@ -594,8 +606,8 @@ Proof.
     pose proof (slt_empty_w _ _ _ (cl2_needs _ _ _ _ _ _ _ _ _ _ _ _
       ocd_dual_ne Hp Hec' Hed')) as Hb.
     rewrite <-Hx, <-Hy, pt_dual_dual in Ha.
-    apply (Hirr (te_pt ec')). eapply w_lt_trans; [eapply w_lt_mono; [apply wext_join_l|exact Hb]|].
-    eapply w_lt_mono; [apply wext_join_r|exact Ha].
+    apply (Hirr (te_pt ec')). eapply sw_lt_trans; [eapply sw_lt_mono; [apply swext_join_l|exact Hb]|].
+    eapply sw_lt_mono; [apply swext_join_r|exact Ha].
 Qed.
 
 Print Assumptions sb_thread_E.

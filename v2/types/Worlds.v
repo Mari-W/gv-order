@@ -642,3 +642,6 @@ Section chain.
     - by apply (Hin _ j y Hy eq_refl).
   Qed.
 End chain.
+
+Lemma swf_irrefl W x : swf W → ¬ W ⊢ₛ x ≺ x.
+Proof. intros [ρ Hρ] H. exact (olt_irrefl _ (Hρ x x H)). Qed.

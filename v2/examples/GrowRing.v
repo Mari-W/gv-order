@@ -239,14 +239,36 @@ Definition rg_L (g : fact) : Prop := ∃ f, rg_P f ∧ g = fact_map (pt_inst (pl
 
 Definition W_rg : sworld := sw_empty.
 
+Lemma rreach_root X Y : rreach (pvar 0) (pvar 1) X Y →
+  (pt_root X = NVar 0 ∨ pt_root X = NVar 1) ∧ (pt_root Y = NVar 0 ∨ pt_root Y = NVar 1).
+Proof.
+  induction 1 as [|X Y _ [IH1 IH2]|X Y _ [IH1 IH2]]; [auto|..];
+    rewrite ?pt_root_dual, !pt_root_field; auto.
+Qed.
+
+Lemma rreach_depth X Y : rreach (pvar 0) (pvar 1) X Y → pt_depth X = pt_depth Y.
+Proof. induction 1; unfold pt_depth in *; simpl in *; lia. Qed.
+
+Lemma pn_depth_inst σ p : (∀ a, pt_depth (σ a) = 0) → pn_depth (pt_name (pn_inst σ p)) = pn_depth p.
+Proof. intros Hσ. induction p as [|a|p IH b κ]; simpl; auto. apply Hσ. Qed.
+
+Lemma pt_depth_inst σ x : (∀ a, pt_depth (σ a) = 0) → pt_depth (pt_inst σ x) = pt_depth x.
+Proof. intros Hσ. unfold pt_inst, pt_depth. destruct (pt_pol x); simpl; by apply pn_depth_inst. Qed.
+
+Lemma rg_xs_depth a : pt_depth (plist rg_xs a) = 0.
+Proof. by destruct a as [|[|a]]. Qed.
+
 Lemma rg_wf_new : wf_new (bcs_of rg_L).
 Proof.
   apply (wf_new_lex3 _ (λ x, (pt_depth x, pt_off x, 0))).
   - intros x y (f & (X & Y & HR & HF) & E).
-    pose proof (rreach_depth X Y HR) as HD.
-
+    destruct (rreach_root X Y HR) as [HX HY].
+    assert (∀ u, pt_root u = pt_root X ∨ pt_root u = pt_root Y →
+              pt_root (pt_inst (plist rg_xs) u) = NVar 0) as Hr.
+    { intros u Hu. rewrite pt_root_inst_var.
+      destruct Hu as [->| ->]; [destruct HX as [->| ->]|destruct HY as [->| ->]]; done. }
     unfold rg_F in HF. repeat destruct HF as [HF|HF]; subst f; simpl in E; injection E as -> ->;
-      split; reflexivity.
+      split; apply Hr; rewrite ?pt_root_shift, ?pt_root_dual, ?pt_root_field; auto.
   - intros x. unfold lex3, pt_fsum, pt_depth. simpl. lia.
   - intros x y (f & (X & Y & HR & HF) & E).
     pose proof (rreach_depth X Y HR) as HD.
