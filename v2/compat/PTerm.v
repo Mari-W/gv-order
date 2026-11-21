@@ -1221,10 +1221,12 @@ Section node.
 
   (** The spawned thread. *)
   Lemma child W ΘM v ΣM ΘBM CM :
-    Vthunk κ (S n) (Vrel κ) (Erel κ) (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit) (λ W' Θ' F' e0, Xt W' Θ' TUnit F' e0) W ΘM v →
+    Varr κ (S n) (Vrel κ) (Erel κ) (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit) (λ W' Θ' F' e0, Xt W' Θ' TUnit F' e0)
+      TUnit TUnit UTop LBot W ΘM v →
     sth ΘM ΣM ΘBM CM → ∀ m, m ≤ S n → Prel κ m W ΣM TUnit (CM, {[+ App v EUnit +]}).
   Proof.
-    intros (e1 & -> & _ & Hv) Hs m Hm.
+    intros (e1 & -> & _ & _ & Hv0) Hs m Hm.
+    pose proof (λ W' j Θ' w HW Hj Hd, Hv0 W' j Θ' w ∅ HW Hj Hd eq_refl) as Hv. simpl in Hv. clear Hv0.
     assert (tstep (App (Lam e1) EUnit) LBeta (subst1 EUnit e1)) as Hβ by (by apply tstep_head, t_act_app).
     assert (∀ j W', j + c_beta κ ≤ S n → j < S n → W ⊑ W' → Erel κ j W' ΘM TUnit ∅ (subst1 EUnit e1)) as Hlow.
     { intros j W' Hj Hj' HW. destruct (Hv W' j ∅ EUnit HW Hj (map_disjoint_empty_r _)) as [B _].

@@ -33,7 +33,7 @@ Section gmap_types.
     match T with
     | TUnit => TUnit
     | TLolli ub lb c t T1 U a =>
-        TLolli (pt_gmap r <$> ub) (pt_gmap r <$> lb) c t (gmap_ty T1) (gmap_ty U) a
+        TLolli (ub_map (pt_gmap r) ub) (lb_map (pt_gmap r) lb) c t (gmap_ty T1) (gmap_ty U) a
     | TProd T1 U => TProd (gmap_ty T1) (gmap_ty U)
     | TSum T1 U => TSum (gmap_ty T1) (gmap_ty U)
     | TBox n k C ub c t U => TBox n k (bcs_gmap r C) (pt_gmap r <$> ub) c t (gmap_ty U)
@@ -64,7 +64,7 @@ Section gmap_types.
   Qed.
 
   Lemma hbot_gmap T : hbot (gmap_ty T) = hbot T.
-  Proof. induction T; simpl; try done; try congruence. by destruct lb. Qed.
+  Proof. induction T; simpl; try done; try congruence; by destruct lb. Qed.
 
   (** *** Session operations *)
 

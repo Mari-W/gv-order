@@ -74,9 +74,6 @@ set('ty-grammar', b => {
   b.caption = R`$S@x$ is an end at the point $x$. \annp{Credits $a$ sit on ends and on closures, the two places where a value holds ends of its own. The credit of an end bounds its counter from below, and the credit of a closure bounds the captured counters from below and bounds what they lose before a call. Pairs, sums, existentials and payloads carry no credit, their ends carry their own.}`;
 });
 drop('ty-credit', 'ty-grammar');
-// entry 12, generalized arrows, shown as planned: a spawned abstraction is E-Abs at (⊤, ⊥)
-// followed by E-Spawn, and a thunk is a value of arrow type. Capture is aging in the Rocq.
-drop('r-spawnlam', 'r-spawn'); drop('v-thunk', 'v-arrow');
 merge('ty-ann', 'Annotations and ticket needs', ['ty-annot', 'ty-tix', 'ty-tix-ops', 'ty-df'], {
   caption: R`Credits $a$, costs $c$ and the counter bound $N$ are numbers, and $\infty$ means unbounded. A term that must leave $r$ link tickets over needs $\vartheta(r)$ tickets when it starts, and a thread with $tk$ tickets runs it if $\mathsf{meets}\,\vartheta\,r\,tk$. A link adds one to the need, a spawn doubles the rest, and sequencing composes. Deadlock-free typing is the instance $\mathsf{ty\_df}$ with every annotation unbounded.`,
   why: 'The numbers lock-free typing adds to types and judgments. At their unbounded values every premise about them holds, which is how deadlock-free typing is an instance.'
@@ -167,12 +164,9 @@ order('theorems', ['th-chain', 'th-sound', 'th-compose', 'th-fund-proc', 'th-ade
 
 // decided or proposed on the map, not yet in the Rocq: the block shows a "planned" tag with this text
 const NEW2 = 'Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field.';
-const ARROWS = 'Generalized arrows (upper point ⊤, lower point ⊥) are planned (docs/redesign/pending.md, entry 12). The Rocq still has E-SpawnLam and V-Thunk. Per-end capture is in the Rocq.';
 const planned = {
-  'ty-heads': ARROWS, 't-side': ARROWS,
-  'r-fun': ARROWS, 'r-threads': ARROWS, 'v-rel': ARROWS,
   'syn-terms': NEW2, 'syn-points': NEW2, 'sem-labels': NEW2, 'sem-head': NEW2, 'sem-proc': NEW2,
-  't-consts': NEW2, 'w-world': NEW2, 'w-order': NEW2, 'w-ext': NEW2, 'r-new': NEW2, 'e-obl': NEW2 + ' ' + ARROWS,
+  't-consts': NEW2, 'w-world': NEW2, 'w-order': NEW2, 'w-ext': NEW2, 'r-new': NEW2, 'e-obl': NEW2,
   'soup': NEW2 + ' The creation choice χ is a proposal of 2026-11-20.',
   'sj-all': NEW2 + ' The creation choice χ is a proposal of 2026-11-20.',
 };

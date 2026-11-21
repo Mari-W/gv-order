@@ -431,8 +431,7 @@ window.MAP = {
        "r-fun",
        "r-ex"
       ]
-     },
-     "planned": "Generalized arrows (upper point ⊤, lower point ⊥) are planned (docs/redesign/pending.md, entry 12). The Rocq still has E-SpawnLam and V-Thunk. Per-end capture is in the Rocq."
+     }
     },
     {
      "id": "ty-payload",
@@ -582,7 +581,7 @@ window.MAP = {
     {
      "id": "t-lf-credits",
      "title": "Credits",
-     "rocq": "types/Types.v: TSess, TLolli; static/Contexts.v: tage, lage, thage; static/Typing.v: e_abs, e_send, e_spawn_lam, e_spawn",
+     "rocq": "types/Types.v: TSess, TLolli; static/Contexts.v: tage, lage, thage; static/Typing.v: e_abs, e_send, e_spawn; static/Weakening.v: e_spawn_lam",
      "modes": [
       "lf"
      ],
@@ -715,8 +714,7 @@ window.MAP = {
        "r-boxes",
        "r-ex"
       ]
-     },
-     "planned": "Generalized arrows (upper point ⊤, lower point ⊥) are planned (docs/redesign/pending.md, entry 12). The Rocq still has E-SpawnLam and V-Thunk. Per-end capture is in the Rocq."
+     }
     },
     {
      "id": "t-agecap",
@@ -763,7 +761,7 @@ window.MAP = {
      ],
      "rocq": "static/Typing.v: e_abs; static/Conservativity.v: d_abs; static/Typing.v: e_app; static/Conservativity.v: d_app",
      "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Abs.fut}{(\\Gamma_u, F_u) = \\begin{cases} (\\Gamma, u \\prec \\varphi,\\ (\\varnothing, \\varphi)) & u \\neq \\top,\\ \\varphi \\notin \\Gamma \\\\ (\\Gamma,\\ (\\varnothing, \\cdot)) & u = \\top \\end{cases}}\\quad \\htmlData{k=E-Abs.lb}{l \\neq \\bot \\Rightarrow l \\preccurlyeq \\Delta} \\\\ \\htmlData{k=E-Abs.body}{\\Gamma_u ; \\htmlData{k=E-Abs.cap}{\\Delta\\annot{ - a}}, T \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F_u} e : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\lambda e : (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[\\varepsilon]}\\, U)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-Abs}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\htmlData{k=tj.held}{\\triangleleft} \\Delta_2} e_1 : (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[\\varepsilon]}\\, U)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1}} \\\\ \\htmlData{k=E-App.fut2}{\\Gamma ; \\Delta_2\\annot{ \\htmlData{k=age.ctx}{- \\varepsilon_1}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\htmlData{k=tj.held}{\\triangleleft} (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U)\\annot{\\annot{^{a}}}} e_2 : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_2}}\\quad \\htmlData{k=E-App.ub}{u \\prec F}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_1\\,e_2 : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon_2 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{E-App}\\end{array}",
-     "caption": "E-Abs types the body under a fresh future variable $\\varphi$ above the upper point $u$, and requires $l$ at or below the dual points of the captured entries. E-App holds $\\Delta_2$ while $e_1$ runs and the closure while $e_2$ runs, and the call requires $u \\prec F$. \\annp{The closure records the effect of its body. Holding it while $e_2$ runs ages it by the cost of $e_2$.}",
+     "caption": "E-Abs types the body under a fresh future variable $\\varphi$ above the upper point $u$, or under the empty future when $u = \\top$. It requires $l$ at or below the dual points of the captured entries unless $l = \\bot$. E-App holds $\\Delta_2$ while $e_1$ runs and the closure while $e_2$ runs, and the call requires $u \\prec F$. \\annp{The closure records the effect of its body. Holding it while $e_2$ runs ages it by the cost of $e_2$.}",
      "about": {
       "why": "A closure delays its body until a call. Its type records the bounds the body needs, and the call site checks them against its own future.",
       "used": [
@@ -771,8 +769,7 @@ window.MAP = {
        "v-rel",
        "th-terms"
       ]
-     },
-     "planned": "Generalized arrows (upper point ⊤, lower point ⊥) are planned (docs/redesign/pending.md, entry 12). The Rocq still has E-SpawnLam and V-Thunk. Per-end capture is in the Rocq."
+     }
     },
     {
      "id": "r-data",
@@ -876,14 +873,14 @@ window.MAP = {
      ],
      "rocq": "static/Typing.v: e_spawn; static/Conservativity.v: d_spawn",
      "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : (\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[(c', \\vartheta')]}\\, \\ast)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\annraw{\\quad }\\annot{\\htmlData{k=E-Spawn.credit}{a \\geq 1}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.spawn}{\\mathsf{spawn}}\\,e : \\ast\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon \\htmlData{k=tj.seq}{\\cdot} (0, \\htmlData{k=ann.tspawn}{\\mathsf{tspawn}(\\vartheta'(0))\\,\\hat 1})}}\\;\\textsf{E-Spawn}\\end{array}",
-     "caption": "E-SpawnLam types the child body under the empty future, and E-Spawn spawns a closure value with the ends it captured. \\annp{The transferred entries age by one step.}",
+     "caption": "E-Spawn spawns a closure value with the ends it captured. A written abstraction $\\mathsf{spawn}\\,(\\lambda e)$ types by E-Abs at upper point $\\top$ and lower point $\\bot$, so the child body runs under the empty future. \\annp{At credit $a = 1$ the transferred entries age by one.}",
      "about": {
       "why": "A spawned thread has no code after it, so the child body is typed at the empty future.",
       "used": [
+       "v-rel",
        "e-obl"
       ]
-     },
-     "planned": "Generalized arrows (upper point ⊤, lower point ⊥) are planned (docs/redesign/pending.md, entry 12). The Rocq still has E-SpawnLam and V-Thunk. Per-end capture is in the Rocq."
+     }
     },
     {
      "id": "r-new",
@@ -1025,8 +1022,7 @@ window.MAP = {
        "r-boxes",
        "r-ex"
       ]
-     },
-     "planned": "Generalized arrows (upper point ⊤, lower point ⊥) are planned (docs/redesign/pending.md, entry 12). The Rocq still has E-SpawnLam and V-Thunk. Per-end capture is in the Rocq."
+     }
     },
     {
      "id": "e-rel",
@@ -1064,7 +1060,7 @@ window.MAP = {
        "e-rel"
       ]
      },
-     "planned": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field. Generalized arrows (upper point ⊤, lower point ⊥) are planned (docs/redesign/pending.md, entry 12). The Rocq still has E-SpawnLam and V-Thunk. Per-end capture is in the Rocq."
+     "planned": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
     },
     {
      "id": "rd",
@@ -3300,7 +3296,7 @@ window.MAP = {
    "why": "With $u = \\top$ the body runs as the last code of its thread. A spawned abstraction is such a closure, so E-Abs at $u = \\top$ and $l = \\bot$ followed by E-Spawn types it, and V-Arrow at $(\\top, \\bot)$ is the predicate of a spawned thunk.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{spawn}\\,(\\lambda e)$ uses $\\lambda e : \\ast \\multimap^{\\top}_{\\bot} \\ast$.",
-   "rocq": "not yet in the Rocq (docs/redesign/pending.md, entry 12)",
+   "rocq": "types/Points.v: ubound; static/Contexts.v: ub_below_u; relation/Readiness.v: ub_ltu",
    "sig": "u \\in \\mathsf{UBound} = \\{\\cdot, \\top\\} \\cup \\mathsf{Point}",
    "args": []
   },
@@ -5183,7 +5179,7 @@ window.MAP = {
    "why": "A caller applies the closure only under a future $F$ with $u \\prec F$, and $\\top \\prec F$ holds only for the empty future, so a closure at $\\top$ is the last code of its thread.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\lambda e : \\ast \\multimap^{\\top}_{\\bot} \\ast$ for a thunk that is spawned.",
-   "rocq": "not yet in the Rocq (docs/redesign/pending.md, entry 12)",
+   "rocq": "static/Typing.v: e_abs; static/Contexts.v: abs_hc, abs_fut",
    "sig": "(\\Gamma_u, F_u)",
    "args": [
     {
@@ -5202,7 +5198,7 @@ window.MAP = {
    "why": "The upper point $\\top$ lies above every point, so nothing may follow a call of such a closure. E-Spawn runs it as a new thread, where nothing follows.",
    "breaks": "Nothing. It is a definition.",
    "example": "E-App with $u = \\top$ needs $F = (\\varnothing, \\cdot)$, a call in tail position of a thread.",
-   "rocq": "not yet in the Rocq (docs/redesign/pending.md, entry 12)",
+   "rocq": "static/Contexts.v: ub_below_u",
    "sig": "\\top \\prec F \\iff F = (\\varnothing, \\cdot)",
    "args": [
     {
@@ -5626,51 +5622,6 @@ window.MAP = {
     {
      "name": "\\overline{S}@\\overline{x}",
      "meaning": "the second, at the dual type and dual point"
-    }
-   ]
-  },
-  "E-SpawnLam.age": {
-   "title": "Transferred ends lose $1$",
-   "what": "$\\Delta - 1$ lowers the credit of each transferred entry by one.",
-   "why": "A transfer passes each counter minus $1$. A spawn is no action, so this loss is the only bound on how often an end is transferred by spawns.",
-   "breaks": "Under truncation a counter $0$ is transferred as $0$ again, and an end is passed from thread to thread forever.",
-   "example": "In the cycle example the thunk receives $d'$ with credit $1$ less.",
-   "rocq": "static/Typing.v: e_spawn_lam",
-   "sig": "\\Delta - 1",
-   "args": [
-    {
-     "name": "\\Delta",
-     "meaning": "the context transferred to the child"
-    }
-   ]
-  },
-  "E-SpawnLam.body": {
-   "title": "Body of a spawned $\\lambda$",
-   "what": "$e$ is typed under the transferred $\\Delta$ extended by the unit argument, and the empty future.",
-   "why": "A spawned $\\lambda$ needs no lower point, because no thread holds it as a closure. Each spawned body therefore gets its own floor.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{spawn}\\,(\\lambda u.\\,\\mathsf{let}\\ \\ast = u\\ \\mathsf{in}\\ \\mathsf{close}\\,d')$.",
-   "rocq": "static/Typing.v: e_spawn_lam",
-   "sig": "\\Gamma ; \\Delta\\annot{ - 1}, \\ast \\vdash^{(\\varnothing, \\cdot)} e : \\ast\\annot{\\ !\\ (c', \\vartheta')}",
-   "args": [
-    {
-     "name": "\\ast",
-     "meaning": "the unit argument of the thunk"
-    }
-   ]
-  },
-  "E-SpawnLam.future": {
-   "title": "Empty future of the child",
-   "what": "The child body runs under $(\\varnothing, \\cdot)$, a future with no point, no variable and no $\\bot$.",
-   "why": "The child is a new thread with no context, so no point of any context lies in its future.",
-   "breaks": "Typing the child under every future above an upper point fails for a body that creates a channel at a fresh root and waits on that channel.",
-   "example": "P-Term types every thread under $(\\varnothing, \\cdot)$.",
-   "rocq": "static/Typing.v: e_spawn_lam",
-   "sig": "F = (\\varnothing, \\cdot)",
-   "args": [
-    {
-     "name": "(\\varnothing, \\cdot)",
-     "meaning": "the future with no point, no variable and no $\\bot$"
     }
    ]
   },
@@ -7180,21 +7131,6 @@ window.MAP = {
     }
    ]
   },
-  "V-Thunk.empty": {
-   "title": "Empty future $\\varnothing$",
-   "what": "The spawned body is read at $F = \\varnothing$ with no lower and no upper point.",
-   "why": "The thunk leaves the parent and starts a thread with no context, so no readiness of the parent reads its active points and no code of the parent runs after the thunk in the child.",
-   "breaks": "With a lower point, a thread holding ends at unrelated points $1$ and $2$ could not spawn a thunk that closes both.",
-   "example": "$\\mathsf{spawn}\\,(\\lambda u.\\,\\mathsf{close}\\,d')$.",
-   "rocq": "relation/Relation.v: Vthunk",
-   "sig": "F = \\varnothing",
-   "args": [
-    {
-     "name": "F",
-     "meaning": "the future of the spawned body"
-    }
-   ]
-  },
   "V-Box.empty": {
    "title": "$\\Theta = \\varnothing$",
    "what": "A box value owns no end.",
@@ -7744,8 +7680,8 @@ window.MAP = {
    "what": "The thunk is a closure at upper point $\\top$ and lower point $\\bot$, in $V$ at the parent's level $n$. At $u = \\top$ its body is read at the empty future.",
    "why": "For $\\kappa_{spawn} = 0$ the child is read inside the parent's least fixpoint, so an infinite chain of spawns is in no $E_n$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{Vthunk}_n(\\{d'\\})$.",
-   "rocq": "relation/Relation.v: o_spawn",
+   "example": "$\\lambda u.\\,\\mathsf{close}\\,d'$ at $\\Theta_M = \\{d'\\}$.",
+   "rocq": "relation/Relation.v: o_spawn, Varr, Varr_top",
    "sig": "v \\in V^{W}_{n}\\llbracket\\Theta_M \\vdash \\ast \\multimap^{\\top}_{\\bot} \\ast\\rrbracket",
    "args": [
     {
@@ -10420,29 +10356,6 @@ window.MAP = {
     {
      "name": "d",
      "meaning": "the frame"
-    }
-   ]
-  },
-  "sr.vthunk": {
-   "title": "$\\mathsf{Vthunk}^W_n(\\Theta)$",
-   "what": "The predicate of a spawned thunk owning $\\Theta$.",
-   "why": "A spawned thunk needs neither lower nor upper point.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\lambda u.\\,\\mathsf{close}\\,d' \\in \\mathsf{Vthunk}_n(\\{d'\\})$.",
-   "rocq": "relation/Relation.v: Vthunk",
-   "sig": "\\mathsf{Vthunk}^{W}_{n} : \\mathsf{Env} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
-   "args": [
-    {
-     "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
-    },
-    {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
-    },
-    {
-     "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
     }
    ]
   },

@@ -166,7 +166,7 @@ Section bind.
       exists ΘM, (Θr ∪ Θ2). split_and!.
       + by apply map_disjoint_union_r.
       + by rewrite map_union_assoc.
-      + revert A4. apply Vthunk_mono; [by intros|by intros|by intros|]. by intros _ ? ? ? ? [? _].
+      + revert A4. apply Varr_mono; [by intros|by intros|by intros|]. by intros _ ? ? ? ? [? _].
       + by apply Hac.
     - (* O-Send *)
       intros o w E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).

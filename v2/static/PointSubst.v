@@ -118,8 +118,8 @@ Proof.
   { intros k σ τ H n a Ha. unfold pup. case_decide; [done|]. rewrite H by lia. done. }
   induction T; intros k0 σ τ HT H; simpl in *; destruct_and?; try done.
   - f_equal; try by eauto.
-    + destruct ub; simpl; [|done]. f_equal. eauto.
-    + destruct lb; simpl; [|done]. f_equal. eauto.
+    + destruct ub; simpl; try done. f_equal. eauto.
+    + destruct lb; simpl; try done. f_equal. eauto.
   - f_equal; eauto.
   - f_equal; eauto.
   - f_equal.

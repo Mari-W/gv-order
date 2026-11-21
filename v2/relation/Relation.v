@@ -62,7 +62,7 @@ Proof. induction T in σ |- *; simpl; auto. Qed.
 (** The type of a thunk ∗ ⊸^u U, with the annotations of N = ∞, which
     the relation does not read. *)
 Definition tthunk (ub : option point) (U : ty) : ty :=
-  TLolli ub None None tinf TUnit U None.
+  TLolli (ubound_of ub) LNone None tinf TUnit U None.
 
 Lemma tsize_tthunk ub U : tsize (tthunk ub U) = 2 + tsize U.
 Proof. simpl. lia. Qed.
@@ -255,24 +255,11 @@ Section bodies.
       the λ mentions (decision Q14). *)
   Definition Varr (n : nat) (Vl : nat → vrel) (El : nat → erel)
       (VNa : world → senv → expr → Prop) (ENb : world → senv → gset point → expr → Prop)
-      (T1 U : ty) (ub lb : option point) (W : world) (Θ : senv) (v : expr) : Prop :=
-    ∃ e, v = Lam e ∧ dom Θ = fends e ∧ lb_le W lb (senv_heads Θ) ∧
-      ∀ W' j Θ' w F, W ⊑ W' → j + c_beta κ ≤ n → Θ ##ₘ Θ' → ub_lt W' ub F →
+      (T1 U : ty) (ub : ubound) (lb : lbound) (W : world) (Θ : senv) (v : expr) : Prop :=
+    ∃ e, v = Lam e ∧ dom Θ = fends e ∧ lbx_le W lb (senv_heads Θ) ∧
+      ∀ W' j Θ' w F, W ⊑ W' → j + c_beta κ ≤ n → Θ ##ₘ Θ' → ub_ltu W' ub F →
         (j < n → Vl j W' Θ' T1 w → El j W' (Θ ∪ Θ') U F (subst1 w e)) ∧
         (j = n → VNa W' Θ' w → ENb W' (Θ ∪ Θ') F (subst1 w e)).
-
-  (** The thunk of O-Spawn, a λ whose body is read at the empty future,
-      with no lower and no upper point. The thunk leaves the parent and
-      starts a thread with no context, so no readiness of the parent
-      reads its heads and nothing it waits for lies in a future
-      (delegated decisions after S5.5 and S5.6). *)
-  Definition Vthunk (n : nat) (Vl : nat → vrel) (El : nat → erel)
-      (VNa : world → senv → expr → Prop) (ENb : world → senv → gset point → expr → Prop)
-      (W : world) (Θ : senv) (v : expr) : Prop :=
-    ∃ e, v = Lam e ∧ dom Θ = fends e ∧
-      ∀ W' j Θ' w, W ⊑ W' → j + c_beta κ ≤ n → Θ ##ₘ Θ' →
-        (j < n → Vl j W' Θ' TUnit w → El j W' (Θ ∪ Θ') TUnit ∅ (subst1 w e)) ∧
-        (j = n → VNa W' Θ' w → ENb W' (Θ ∪ Θ') ∅ (subst1 w e)).
 
   (** ** The obligations of the steps of a term (§2.8)
 
@@ -295,8 +282,8 @@ Section bodies.
 
     Definition o_spawn (v e' : expr) : Prop :=
       ∃ ΘM Θr, ΘM ##ₘ Θr ∧ Θ = ΘM ∪ Θr ∧
-        Vthunk n Vl El (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit) (λ W' Θ' F' e0, X W' Θ' TUnit F' e0)
-          W ΘM v ∧
+        Varr n Vl El (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit) (λ W' Θ' F' e0, X W' Θ' TUnit F' e0)
+          TUnit TUnit UTop LBot W ΘM v ∧
         at_cost_E n (c_spawn κ) El X W Θr T F e'.
 
     Definition o_send (o : cend) (w e' : expr) : Prop :=
@@ -562,12 +549,13 @@ Notation "p ∈ P^ W '_' n ⟦ Σ ⊢ T ⟧" := (Prel κ_DF n W Σ T p)
 Section maps.
   Context (κ : ctable).
 
-  Definition Vthunk_mapB n Vl El VNa (B1 B2 : world → senv → gset point → expr → Prop)
-      (f : ∀ W Θ F e, B1 W Θ F e → B2 W Θ F e) W Θ v :
-    Vthunk κ n Vl El VNa B1 W Θ v → Vthunk κ n Vl El VNa B2 W Θ v.
+  Definition Varr_mapB n Vl El VNa (B1 B2 : world → senv → gset point → expr → Prop)
+      (f : ∀ W Θ F e, B1 W Θ F e → B2 W Θ F e) T1 U ub lb W Θ v :
+    Varr κ n Vl El VNa B1 T1 U ub lb W Θ v → Varr κ n Vl El VNa B2 T1 U ub lb W Θ v.
   Proof.
-    intros (e & Hv & Hfe & H). exists e. split; [exact Hv|]. split; [exact Hfe|].
-    intros W' j Θ' w HW Hj Hd. destruct (H W' j Θ' w HW Hj Hd) as [H1 H2].
+    intros (e & Hv & Hfe & Hlb & H). exists e. split; [exact Hv|]. split; [exact Hfe|].
+    split; [exact Hlb|].
+    intros W' j Θ' w F HW Hj Hd Hub. destruct (H W' j Θ' w F HW Hj Hd Hub) as [H1 H2].
     split; [exact H1|]. intros Hjn Hw. exact (f _ _ _ _ (H2 Hjn Hw)).
   Defined.
 
@@ -597,7 +585,7 @@ Section maps.
     split.
     { intros v e' Hs. destruct (H4 v e' Hs) as (ΘM & Θr & A1 & A2 & A4 & A5).
       exists ΘM, Θr. split; [exact A1|]. split; [exact A2|].
-      split; [exact (Vthunk_mapB _ _ _ _ _ _ (λ W Θ F e, f W Θ TUnit F e) _ _ _ A4)|].
+      split; [exact (Varr_mapB _ _ _ _ _ _ (λ W Θ F e, f W Θ TUnit F e) _ _ _ _ _ _ _ A4)|].
       exact (at_cost_E_map _ _ _ _ _ _ _ _ _ _ (f _ _ _ _ _) A5). }
     split.
     { intros o w e' Hs.
@@ -726,29 +714,15 @@ Section mono.
       apply HB; [done|]. apply H2; [done|]. by apply HVa.
   Qed.
 
-  Lemma Vthunk_mono n Vl1 Vl2 El1 El2 VNa1 VNa2 (B1 B2 : world → senv → gset point → expr → Prop)
-      W Θ v :
-    (∀ j, j < n → ∀ W Θ T v, Vl2 j W Θ T v → Vl1 j W Θ T v) →
-    (∀ j, j < n → ∀ W Θ T F e, El1 j W Θ T F e → El2 j W Θ T F e) →
-    (c_beta κ = 0 → ∀ W Θ w, VNa2 W Θ w → VNa1 W Θ w) →
-    (c_beta κ = 0 → ∀ W Θ F e, B1 W Θ F e → B2 W Θ F e) →
-    Vthunk κ n Vl1 El1 VNa1 B1 W Θ v → Vthunk κ n Vl2 El2 VNa2 B2 W Θ v.
+  (** An arrow is an arrow at upper point ⊤ and lower point ⊥: ⊥ claims
+      no bound, and ⊤ admits only the empty future, which lies above
+      every upper point. O-Spawn reads its thunk there (entry 12). *)
+  Lemma Varr_top n Vl El VNa ENb T1 U ub lb W Θ v :
+    Varr κ n Vl El VNa ENb T1 U ub lb W Θ v → Varr κ n Vl El VNa ENb T1 U UTop LBot W Θ v.
   Proof.
-    intros HVl HEl HVa HB (e & -> & Hfe & H). exists e. split_and!; [done|done|].
-    intros W' j Θ' w HW Hj Hd. destruct (H W' j Θ' w HW Hj Hd) as [H1 H2].
-    split.
-    - intros Hjn Hw. apply HEl; [done|]. apply H1; [done|]. by apply HVl.
-    - intros -> Hw. assert (c_beta κ = 0) as Hb by lia.
-      apply HB; [done|]. apply H2; [done|]. by apply HVa.
-  Qed.
-
-  (** The arrow gives the thunk: drop the lower point and read the body
-      at the empty future, above every upper point. *)
-  Lemma Varr_thunk n Vl El VNa ENb ub lb W Θ v :
-    Varr κ n Vl El VNa ENb TUnit TUnit ub lb W Θ v → Vthunk κ n Vl El VNa ENb W Θ v.
-  Proof.
-    intros (e & -> & Hfe & _ & H). exists e. split_and!; [done|done|].
-    intros W' j Θ' w HW Hj Hd. apply H; [done|done|done|]. destruct ub; simpl; [set_solver|done].
+    intros (e & -> & Hfe & _ & H). exists e. split_and!; [done|done|done|].
+    intros W' j Θ' w F HW Hj Hd Hub. simpl in Hub. subst F.
+    apply H; [done|done|done|apply ub_ltu_empty].
   Qed.
 
   Lemma at_cost_E_mono n c El1 El2 X1 X2 W Θ T F e :
@@ -788,7 +762,7 @@ Section mono.
       exists S0, x. split; [done|]. exists S. by apply Hac.
     - intros v e' Hs. destruct (H4 v e' Hs) as (ΘM & Θr & A1 & A2 & A4 & A5).
       exists ΘM, Θr. split_and!; [done|done| |by apply Hac].
-      revert A4. apply Vthunk_mono.
+      revert A4. apply Varr_mono.
       + intros j Hj W0 Θ0 T0 v0. by apply HVl.
       + intros j Hj. by apply HEl.
       + by intros.
@@ -1075,10 +1049,10 @@ Section equations.
   Qed.
 
   (** The arrow reads its body at every level j with j + κ(β) ≤ n. *)
-  Definition Varr_rel (n : nat) (T1 U : ty) (ub lb : option point) (W : world) (Θ : senv)
+  Definition Varr_rel (n : nat) (T1 U : ty) (ub : ubound) (lb : lbound) (W : world) (Θ : senv)
       (v : expr) : Prop :=
-    ∃ e, v = Lam e ∧ dom Θ = fends e ∧ lb_le W lb (senv_heads Θ) ∧
-      ∀ W' j Θ' w F, W ⊑ W' → j + c_beta κ ≤ n → Θ ##ₘ Θ' → ub_lt W' ub F →
+    ∃ e, v = Lam e ∧ dom Θ = fends e ∧ lbx_le W lb (senv_heads Θ) ∧
+      ∀ W' j Θ' w F, W ⊑ W' → j + c_beta κ ≤ n → Θ ##ₘ Θ' → ub_ltu W' ub F →
         Vrel κ j W' Θ' T1 w → Erel κ j W' (Θ ∪ Θ') U F (subst1 w e).
 
   Lemma Varr_rel_iff n T1 U ub lb W Θ v :

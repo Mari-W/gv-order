@@ -51,11 +51,11 @@ Section values.
     revert W Θ v. induction T as [T IH] using tsize_ind. intros W Θ v.
     destruct T as [|ub lb c t T1 U a|T1 U|T1 U|m kk C ub c t U|s x0 a|lb m C T1].
     - intros [-> ->]%Vrel_unit_iff _ o S x Hx. by rewrite lookup_empty in Hx.
-    - intros (e & -> & _ & Hlb & _)%Vrel_lolli_iff _ o S x Hx.
+    - intros (e & -> & _ & Hlb & _)%Vrel_lolli_iff Hb o S x Hx.
       assert (x‾ ∈ senv_heads Θ) as Hh by (apply elem_of_senv_heads; eauto).
-      destruct lb as [l|]; simpl in Hlb |- *.
-      + exists l. split; [set_solver|by apply Hlb].
+      destruct lb as [| |l]; simpl in Hlb, Hb |- *; try discriminate.
       + rewrite Hlb in Hh. set_solver.
+      + exists l. split; [set_solver|by apply Hlb].
     - intros (v1 & v2 & Θ1 & Θ2 & -> & _ & -> & H1 & H2)%Vrel_prod_iff Hb o S x Hx.
       simpl in Hb. apply orb_false_iff in Hb as [Hb1 Hb2].
       apply lookup_union_Some_raw in Hx as [Hx|[_ Hx]].
@@ -173,7 +173,7 @@ Section redex.
   Qed.
 
   Lemma Erel_app n W Θ1 Θ2 ub lb c t T1 U a2 F f w :
-    Θ1 ##ₘ Θ2 → ub_lt W ub F →
+    Θ1 ##ₘ Θ2 → ub_ltu W ub F →
     Vrel κ n W Θ1 (TLolli ub lb c t T1 U a2) f → Vrel κ n W Θ2 T1 w →
     Erel κ n W (Θ1 ∪ Θ2) U F (App f w).
   Proof.
@@ -382,10 +382,10 @@ Section redex.
         apply at_cost_val. by apply Vrel_unit_iff.
   Qed.
 
-  Lemma Vthunk_of_Vrel n W Θ ub lb c t aU v :
+  Lemma Varr_top_of_Vrel n W Θ ub lb c t aU v :
     Vrel κ n W Θ (TLolli ub lb c t TUnit TUnit aU) v →
-    Vthunk κ n (Vrel κ) (Erel κ) (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit)
-      (λ W' Θ' F e, Erel κ n W' Θ' TUnit F e) W Θ v.
+    Varr κ n (Vrel κ) (Erel κ) (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit)
+      (λ W' Θ' F e, Erel κ n W' Θ' TUnit F e) TUnit TUnit UTop LBot W Θ v.
   Proof.
     intros HV. apply (Vrel_thunk κ _ _ _ ub lb).
     eapply (Vrel_blind κ); [|exact HV]. done.
@@ -405,7 +405,7 @@ Section redex.
       exists Θ, ∅. split_and!.
       + apply map_disjoint_empty_r.
       + by rewrite map_union_empty.
-      + eapply Vthunk_of_Vrel, Vrel_mono; [exact HW1|exact HV].
+      + eapply Varr_top_of_Vrel, Vrel_mono; [exact HW1|exact HV].
       + apply at_cost_val. by apply Vrel_unit_iff.
   Qed.
 
@@ -495,6 +495,6 @@ Section redex.
       destruct (decide (n ≤ c_beta κ)) as [Hle|Hlt].
       + replace (n - c_beta κ) with 0 by lia. apply Erel_0.
       + rewrite <-(thunk_app EUnit), <-(map_union_empty ∅).
-        apply H; [apply wext_refl|lia|apply map_disjoint_empty_l|done|]. by apply Vrel_unit_iff.
+        apply H; [apply wext_refl|lia|apply map_disjoint_empty_l|by apply ub_ltu_of|]. by apply Vrel_unit_iff.
   Qed.
 End redex.

@@ -523,8 +523,6 @@ Proof.
   - eapply e_select; eauto.
   - eapply e_branch; eauto.
   - eapply e_link; eauto.
-  - destruct (lren_lage _ _ _ _ _ H0 Hr) as (Δr' & Ha & Hr').
-    eapply e_spawn_lam; [done|exact Ha|]. by apply IHtyped, lren_up.
   - eapply e_spawn; eauto.
   - apply e_new; [exact (lren_unl _ _ _ H Hr)|done].
   - eapply e_new_at; eauto.
@@ -698,6 +696,19 @@ Section let_admissible.
       + simpl. by apply typed_weaken_head.
       + right. left. done.
     - rewrite tseq_tid_r, tseq_tid_l. exact Hok.
+  Qed.
+
+  (** E-SpawnLam is admissible (entry 12, generalized arrows): E-Abs at
+      upper point ⊤ and lower point ⊥ with credit 1, then E-Spawn. *)
+  Lemma e_spawn_lam W N Θ Θ' Γ Δ Δ' F e c' t' :
+    thage (Some 1) Θ Θ' → lage (Some 1) Δ Δ' →
+    typed W N Θ' Γ (Some TUnit :: Δ') (∅, None) e TUnit c' t' →
+    typed W N Θ Γ Δ F (ESpawn (Lam e)) TUnit (Some 0) (tspawn (tapp t' 0) tid).
+  Proof.
+    intros Ht Ha H. set (φ := fresh (dom (hc_fv Γ))).
+    rewrite <-(tseq_tid_l (tspawn (tapp t' 0) tid)).
+    eapply (e_spawn _ _ _ _ _ _ _ UTop LBot c' t' (Some 1)); [|simpl; lia|right; left; discriminate].
+    eapply (e_abs _ _ _ _ _ _ _ _ _ _ _ UTop LBot c' t' (Some 1) φ); [apply is_fresh|done|exact Ht|exact Ha|exact H].
   Qed.
 
   (** D-Let *)

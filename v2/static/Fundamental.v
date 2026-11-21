@@ -125,14 +125,24 @@ Section facts.
       by apply (fl_sem σ ρ Γ (NP x) (NV φ) Hs (H2 φ eq_refl)).
   Qed.
 
-  Lemma lb_sem σ ρ Γ lb H b :
-    hsat W σ ρ Γ → lbx_below_h W0 Γ (lbound_of lb) H b →
-    b = false ∧ lb_le W (pt_inst σ <$> lb) (set_map (pt_inst σ) H).
+  Lemma ubu_sem σ ρ B Γ ub F :
+    hsat W σ ρ Γ → ub_below_u W0 Γ ub F →
+    ub_ltu W (ub_map (pt_inst σ) ub) (sf_den ρ B (sf_pinst σ F)).
   Proof.
-    intros Hs. destruct lb as [l|]; simpl; intros [Hl ->]; split; try done.
-    - intros y (y0 & -> & Hy0)%elem_of_map. by eapply sle_sem, Hl.
-    - by rewrite Hl, set_map_empty.
+    intros Hs. destruct ub as [|x|]; simpl; [done| |].
+    - intros H. exact (ub_sem σ ρ B Γ (Some x) F Hs H).
+    - intros ->. rewrite den_nil. apply den_none.
   Qed.
+
+  Lemma lbu_sem σ ρ Γ lb H b :
+    hsat W σ ρ Γ → lbx_below_h W0 Γ lb H b →
+    lb_map (pt_inst σ) lb = LBot ∨ (b = false ∧ lbx_le W (lb_map (pt_inst σ) lb) (set_map (pt_inst σ) H)).
+  Proof.
+    intros Hs. destruct lb as [| |l]; simpl; [intros [Hl ->]|by left|intros [Hl ->]]; right; split; try done.
+    - by rewrite Hl, set_map_empty.
+    - intros y (y0 & -> & Hy0)%elem_of_map. by eapply sle_sem, Hl.
+  Qed.
+
 
   Lemma lbx_sem σ ρ Γ lb X :
     hsat W σ ρ Γ → lbx_below_h W0 Γ lb (heads X) (hbot X) →
@@ -144,6 +154,23 @@ Section facts.
       intros (y0 & -> & Hy0)%elem_of_map. by eapply sle_sem, Hh.
   Qed.
 End facts.
+
+(** The body of E-Abs, below a point, no point or ⊤ (entry 12). *)
+Lemma hsat_abs W σ ρ Γ φ ub B F' :
+  φ ∉ dom (hc_fv Γ) → hsat W σ ρ Γ → ub_ltu W (ub_map (pt_inst σ) ub) F' →
+  ∃ ρ', hsat W σ ρ' (abs_hc φ ub Γ) ∧ sf_den ρ' B (sf_pinst σ (abs_fut φ ub)) = F'.
+Proof.
+  intros Hφ [H1 H2] Hub. destruct ub as [|x|]; simpl in Hub |- *.
+  - exists (λ ψ, if decide (ψ = φ) then F' else ρ ψ). split; [|by rewrite den_nil, den_fresh].
+    split; [done|]. intros ψ u Hu. simpl in Hu. destruct (decide (ψ = φ)) as [->|Hne].
+    + by rewrite lookup_insert_eq in Hu.
+    + rewrite lookup_insert_ne in Hu by done. by eapply H2.
+  - exists (λ ψ, if decide (ψ = φ) then F' else ρ ψ). split; [|by rewrite den_nil, den_fresh].
+    split; [done|]. intros ψ u Hu y Hy. simpl in Hu. destruct (decide (ψ = φ)) as [->|Hne].
+    + rewrite lookup_insert_eq in Hu. simplify_eq. by apply Hub.
+    + rewrite lookup_insert_ne in Hu by done. by eapply H2.
+  - subst F'. exists ρ. split; [done|]. by rewrite den_nil, den_none.
+Qed.
 
 Lemma hsat_fvar W σ ρ Γ φ ub F' :
   φ ∉ dom (hc_fv Γ) → hsat W σ ρ Γ → ub_lt W (pt_inst σ <$> ub) F' →
@@ -380,7 +407,6 @@ Section fund.
       |i Θ Γ Δ F e S0 x S1 S2 a c0 t0 Hu Hub H IH
       |Θ Γ Δ F e S0 x S1 S2 a c0 t0 Hu Hub H IH
       |Θ Γ Δ F e S x a1 a2 c0 t0 H IH Hok
-      |Θ Θ' Γ Δ Δ' F e c' t' Hta Hla H IH
       |Θ Γ Δ F e ub lb c' t' a c0 t0 H IH Hle Hok
       |Γ Δ F ℓ S HΔ Hℓ
       |Θ Γ Δ F e κf S0 x a S c0 t0 H IH
@@ -396,27 +422,27 @@ Section fund.
       by apply later_chan, lenv_unl_pinst.
     - (* E-Abs *)
       assert (tfacts Θ Δ (Lam e)) as Htf by (eapply (typed_tfacts W N _ _ _ F), e_abs; eassumption).
-      destruct (lb_sem W W1 Hwf HW σ ρ Γ _ _ _ Hs Hlb) as [Hbot Hlb'].
       apply later_abs.
       + by apply tfacts_pinst.
-      + by rewrite lenv_bot_pinst.
-      + heads_p. rewrite <-set_map_union_L. exact Hlb'.
+      + destruct (lbu_sem W W1 Hwf HW σ ρ Γ _ _ _ Hs Hlb) as [Hl|[Hbot Hlb']]; [by left|right].
+        split; [by rewrite lenv_bot_pinst|]. heads_p. rewrite <-set_map_union_L. exact Hlb'.
       + intros W2 F' HW2 Hub'.
-        pose proof (IH _ (HGlam _ _ Hgl) W2 σ _ B (wext_trans _ _ _ HW HW2)
-                      (hsat_fvar _ _ _ _ _ _ _ Hφ (hsat_mono _ _ _ _ _ HW2 Hs) Hub')) as Hb'.
-        rewrite den_nil, den_fresh in Hb'.
+        destruct (hsat_abs W2 σ ρ Γ φ ub B F' Hφ (hsat_mono _ _ _ _ _ HW2 Hs) Hub') as (ρ' & Hs' & Hden).
+        pose proof (IH _ (HGlam _ _ Hgl) W2 σ ρ' B (wext_trans _ _ _ HW HW2) Hs') as Hb'.
+        rewrite Hden in Hb'.
         eapply sem_later_ctx; [exact (thage_erase _ _ _ _ Hth)| |exact Hb'].
         apply (lenv_df_pinst_eq σ (Some T :: Δ) (Some T :: Δh)), lenv_df_cons_eq.
         exact (lage_df_eq _ _ _ Hlc).
     - (* E-App *)
       destruct (HGapp _ _ _ Hgl) as (L' & Hk & Hg1 & Hg2).
       eapply later_app; [exact Hk|by apply tsplit_pinst|by apply lenv_split_pinst
-                        |exact (ub_sem W W1 Hwf HW σ ρ B Γ ub F Hs Hub)| |].
+                        |exact (ubu_sem W W1 Hwf HW σ ρ B Γ ub F Hs Hub)| |].
       + intros B'. eapply sem_later_future; [|apply (IH1 L Hg1 W1 σ ρ (B ∪ B') HW Hs)].
         heads_p. fut.
-      + eapply sem_later_future; [|eapply sem_later_ctx; [exact (thage_erase _ _ _ _ Hta)
-          |exact (lenv_df_pinst_eq _ _ _ (lage_df_eq _ _ _ Hla))|apply (IH2 L' Hg2 W1 σ ρ B HW Hs)]].
-        rewrite den_union, opt_heads_pinst. done.
+      + intros B'. eapply sem_later_future; [|eapply sem_later_ctx; [exact (thage_erase _ _ _ _ Hta)
+          |exact (lenv_df_pinst_eq _ _ _ (lage_df_eq _ _ _ Hla))|apply (IH2 L' Hg2 W1 σ ρ (B ∪ B') HW Hs)]].
+        rewrite lb_bot_map. assert (lb_heads (lb_map (pt_inst σ) lb) = set_map (pt_inst σ) (lb_heads lb)) as ->
+          by (destruct lb; simpl; set_solver). fut.
     - (* E-Pair *)
       destruct (HGpair _ _ _ Hgl) as (L' & Hk & Hg1 & Hg2).
       apply tage_df_eq in Hag. simpl in Hag.
@@ -519,16 +545,6 @@ Section fund.
     - (* E-Link *)
       pose proof (IH L (HGop _ _ _ Hgl) W1 σ ρ B HW Hs) as IH'. cbn [pinst_ty] in IH'.
       rewrite pt_inst_dual in IH'. eapply later_link, IH'.
-    - (* E-SpawnLam *)
-      assert (tfacts Θ Δ (ESpawn (Lam e))) as Htf by (eapply (typed_tfacts W N _ _ _ F), e_spawn_lam; eassumption).
-      apply (later_spawn_lam κ _ _ _ _ _ _).
-      + apply tfacts_pinst. destruct Htf as [Hf Hv]. by split.
-      + intros W2 HW2.
-        pose proof (IH _ (HGlam _ _ (HGop _ _ _ Hgl)) W2 σ ρ B (wext_trans _ _ _ HW HW2)
-                      (hsat_mono _ _ _ _ _ HW2 Hs)) as H'.
-        rewrite den_nil, den_none in H'.
-        eapply sem_later_ctx; [exact (thage_erase _ _ _ _ Hta)| |exact H'].
-        apply (lenv_df_pinst_eq σ (Some TUnit :: Δ) (Some TUnit :: Δ')), lenv_df_cons_eq. exact (lage_df_eq _ _ _ Hla).
     - (* E-Spawn *)
       pose proof (IH L (HGop _ _ _ Hgl) W1 σ ρ B HW Hs) as IH'. cbn [pinst_ty] in IH'.
       eapply later_spawn, IH'.

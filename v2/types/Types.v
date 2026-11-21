@@ -5,6 +5,10 @@
     S    ::= Skip | S;S | ?(∃ιs. T) | !(∃ιs. T) | ⊕(S, S) | &(S, S)
            | Close | µα.S | α | α‾
 
+    The upper point u of an arrow is a point, none, or ⊤ ([ubound]), its
+    lower point l is a point, none, or ⊥ ([lbound]) (entry 12,
+    generalized arrows).
+
     Session types are the context-free session types of the old
     development, read through their head normal form [unfoldS]. There is
     no point type: programs never mention a point (decision Q1).
@@ -25,7 +29,7 @@ From GV Require Export types.Costs types.Worlds.
 
 Inductive ty :=
   | TUnit
-  | TLolli (ub lb : option point) (c : fuel) (t : tix)
+  | TLolli (ub : ubound) (lb : lbound) (c : fuel) (t : tix)
       (T U : ty) (a : fuel)
   | TProd (T U : ty)
   | TSum (T U : ty)
@@ -58,7 +62,7 @@ Fixpoint pinst_ty (σ : nat → point) (T : ty) : ty :=
   match T with
   | TUnit => TUnit
   | TLolli ub lb c t T1 U a =>
-      TLolli (pt_inst σ <$> ub) (pt_inst σ <$> lb) c t (pinst_ty σ T1) (pinst_ty σ U) a
+      TLolli (ub_map (pt_inst σ) ub) (lb_map (pt_inst σ) lb) c t (pinst_ty σ T1) (pinst_ty σ U) a
   | TProd T1 U => TProd (pinst_ty σ T1) (pinst_ty σ U)
   | TSum T1 U => TSum (pinst_ty σ T1) (pinst_ty σ U)
   | TBox n k C ub c t U =>
@@ -89,7 +93,8 @@ Lemma pinst_ty_ext T : ∀ σ τ, (∀ a, σ a = τ a) → pinst_ty σ T = pinst
 Proof.
   induction T; intros σ τ H1; simpl; try done.
   - rewrite (IHT1 σ τ), (IHT2 σ τ) by done.
-    rewrite !(option_fmap_ext (pt_inst σ) (pt_inst τ)) by (intros; by apply pt_inst_ext). done.
+    rewrite (ub_map_ext (pt_inst σ) (pt_inst τ)), (lb_map_ext (pt_inst σ) (pt_inst τ))
+      by (intros; by apply pt_inst_ext). done.
   - by rewrite (IHT1 σ τ), (IHT2 σ τ).
   - by rewrite (IHT1 σ τ), (IHT2 σ τ).
   - rewrite (IHT (pup n σ) (pup n τ)) by (intros; by apply pup_ext).
@@ -103,8 +108,9 @@ Qed.
 Lemma pinst_ty_comp T : ∀ σ τ, pinst_ty τ (pinst_ty σ T) = pinst_ty (pt_inst τ ∘ σ) T.
 Proof.
   induction T; intros σ τ; simpl; try done.
-  - rewrite IHT1, IHT2, <-!option_fmap_compose.
-    rewrite !(option_fmap_ext (pt_inst τ ∘ pt_inst σ) (pt_inst (pt_inst τ ∘ σ)))
+  - rewrite IHT1, IHT2, ub_map_comp, lb_map_comp.
+    rewrite (ub_map_ext (pt_inst τ ∘ pt_inst σ) (pt_inst (pt_inst τ ∘ σ))),
+      (lb_map_ext (pt_inst τ ∘ pt_inst σ) (pt_inst (pt_inst τ ∘ σ)))
       by (intros; apply pt_inst_comp). done.
   - by rewrite IHT1, IHT2.
   - by rewrite IHT1, IHT2.
@@ -121,7 +127,7 @@ Qed.
 Lemma pinst_ty_pvar T : pinst_ty pvar T = T.
 Proof.
   induction T; simpl; try done.
-  - rewrite IHT1, IHT2. destruct ub, lb; simpl; by rewrite ?pt_inst_pvar.
+  - rewrite IHT1, IHT2, ub_map_id, lb_map_id by apply pt_inst_pvar. done.
   - by rewrite IHT1, IHT2.
   - by rewrite IHT1, IHT2.
   - rewrite (pinst_ty_ext T _ pvar), IHT by apply pup_pvar. rewrite bcs_inst_pvar.
@@ -142,7 +148,7 @@ Fixpoint pscoped (k : nat) (T : ty) : Prop :=
   match T with
   | TUnit => True
   | TLolli ub lb _ _ T1 U _ =>
-      (∀ x, ub = Some x → pt_pscoped k x) ∧ (∀ x, lb = Some x → pt_pscoped k x) ∧
+      (∀ x, ub = UPt x → pt_pscoped k x) ∧ (∀ x, lb = LPt x → pt_pscoped k x) ∧
       pscoped k T1 ∧ pscoped k U
   | TProd T1 U | TSum T1 U => pscoped k T1 ∧ pscoped k U
   | TBox n _ C ub _ _ U =>
@@ -163,6 +169,8 @@ with sscoped (s : sty) : Prop :=
 
     heads(S@x) = {x‾}: a thread blocked at u that holds an end at v owes
     u ≺ v‾. The lower point of an arrow and of an existential are heads.
+    An arrow whose lower point is ⊥ (entry 12) raises the flag as well:
+    it claims no bound on the ends it captured.
     The ⊥ flag says a value may hold an unopened existential whose ends
     sit at points not known from outside. *)
 
@@ -175,7 +183,7 @@ Definition lb_heads (lb : lbound) : gset point :=
 Fixpoint heads (T : ty) : gset point :=
   match T with
   | TUnit | TBox _ _ _ _ _ _ _ => ∅
-  | TLolli _ lb _ _ _ _ _ => opt_heads lb
+  | TLolli _ lb _ _ _ _ _ => lb_heads lb
   | TProd T1 U | TSum T1 U => heads T1 ∪ heads U
   | TSess _ x _ => {[x‾]}
   | TEx lb _ _ _ => lb_heads lb
@@ -184,12 +192,12 @@ Fixpoint heads (T : ty) : gset point :=
 Fixpoint hbot (T : ty) : bool :=
   match T with
   | TProd T1 U | TSum T1 U => hbot T1 || hbot U
-  | TEx LBot _ _ _ => true
+  | TEx LBot _ _ _ | TLolli _ LBot _ _ _ _ _ => true
   | _ => false
   end.
 
 Lemma hbot_pinst σ T : hbot (pinst_ty σ T) = hbot T.
-Proof. induction T; simpl; try done; try congruence. by destruct lb. Qed.
+Proof. induction T; simpl; try done; try congruence; by destruct lb. Qed.
 
 Lemma opt_heads_pinst σ o : opt_heads (pt_inst σ <$> o) = set_map (pt_inst σ) (opt_heads o).
 Proof. destruct o; simpl; set_solver. Qed.
@@ -197,7 +205,7 @@ Proof. destruct o; simpl; set_solver. Qed.
 Lemma heads_pinst σ T : heads (pinst_ty σ T) = set_map (pt_inst σ) (heads T).
 Proof.
   induction T; simpl; rewrite ?set_map_union_L, ?IHT1, ?IHT2; try set_solver.
-  - apply opt_heads_pinst.
+  - destruct lb; simpl; set_solver.
   - rewrite set_map_singleton_L. by rewrite pt_inst_dual.
   - destruct lb; simpl; set_solver.
 Qed.

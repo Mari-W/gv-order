@@ -145,6 +145,18 @@ Definition ub_below_s (W : world) (Γ : hctx) (ub : option point) (F : sfuture) 
               fs_bot F.2 = false
   end.
 
+(** u ≺ F for the upper point of an arrow (entry 12, generalized arrows).
+    No upper point asks nothing, ⊤ asks the empty future. *)
+Definition ub_below_u (W : world) (Γ : hctx) (ub : ubound) (F : sfuture) : Prop :=
+  match ub with
+  | UNone => True
+  | UPt x => ub_below_s W Γ (Some x) F
+  | UTop => F = (∅, None)
+  end.
+
+Definition ub_opt (ub : ubound) : option point :=
+  match ub with UPt x => Some x | _ => None end.
+
 Definition lbx_below_h (W : world) (Γ : hctx) (lb : lbound) (H : gset point) (b : bool) : Prop :=
   match lb with
   | LBot => True
@@ -152,10 +164,6 @@ Definition lbx_below_h (W : world) (Γ : hctx) (lb : lbound) (H : gset point) (b
   | LPt x => (∀ y, y ∈ H → sle W Γ x y) ∧ b = false
   end.
 
-(** The lower bound of an arrow as a bound of [lbx_below_h]: none, or a
-    point. *)
-Definition lbound_of (lb : option point) : lbound :=
-  match lb with None => LNone | Some x => LPt x end.
 
 (** ** Point instantiation of contexts *)
 
@@ -174,6 +182,21 @@ Definition hc_open (m : nat) (C : bcs) (Γ : hctx) : hctx :=
 
 Definition hc_fvar (φ : nat) (ub : option point) (Γ : hctx) : hctx :=
   HCtx (hc_hyps Γ) (<[φ := ub]> (hc_fv Γ)).
+
+(** The facts and the future of the body of E-Abs. Below a point or no
+    upper point the body runs under a fresh future variable φ above it.
+    Below ⊤ the body runs under the empty future and Γ stays. *)
+Definition abs_hc (φ : nat) (ub : ubound) (Γ : hctx) : hctx :=
+  match ub with UTop => Γ | _ => hc_fvar φ (ub_opt ub) Γ end.
+
+Definition abs_fut (φ : nat) (ub : ubound) : sfuture :=
+  match ub with UTop => (∅, None) | _ => (∅, Some (FVar φ)) end.
+
+Lemma abs_hc_of φ o Γ : abs_hc φ (ubound_of o) Γ = hc_fvar φ o Γ.
+Proof. by destruct o. Qed.
+Lemma abs_fut_of φ o : abs_fut φ (ubound_of o) = (∅, Some (FVar φ)).
+Proof. by destruct o. Qed.
+
 
 Definition tentry_pinst (σ : nat → point) (e : tentry) : tentry :=
   TE (pinst_sty σ (te_sty e)) (pt_inst σ (te_pt e)) (te_cr e).

@@ -3,7 +3,7 @@
     One lemma per rule of static/Typing.v, [cost_e_unit] to
     [cost_e_open], each stating the rule for [csem]. The readiness and
     future premises of the typing rules do not appear: [csem] reads no
-    point, world or future. The rules E-Abs, E-Box and E-SpawnLam build
+    point, world or future. The rules E-Abs and E-Box build
     a closure or a box, and take [tfacts] of the term they build, so
     that the value is exact (Q15). *)
 
@@ -456,40 +456,4 @@ Proof.
   apply Hlob; [lia|apply rle_refl].
 Qed.
 
-Lemma cost_e_spawn_lam N Θ Θ' Δ Δ' e c' t' :
-  tfacts Θ Δ (Lam e) → thage (Some 1) Θ Θ' → lage (Some 1) Δ Δ' →
-  csem N Θ' (Some TUnit :: Δ') e TUnit c' t' →
-  csem N Θ Δ (ESpawn (Lam e)) TUnit (Some 0) (tspawn (tapp t' 0) tid).
-Proof.
-  intros Hf HaT HaD Hcs N' n g γ Π φ r tk HN HE Hm.
-  destruct (spawn_split_tid _ _ _ Hm) as (Hpar & b & Hb & Hch).
-  pose proof (envf_exact _ _ _ _ _ _ _ _ _ Hf HE) as Hx. simpl in Hx |- *.
-  pose proof (envf_dom _ _ _ _ _ _ _ _ HE) as Hd.
-  pose proof (envf_age_above _ _ _ _ _ _ _ _ _ _ _ HaT HaD HE) as Hab.
-  destruct n as [|n]; [apply FuelE_0|].
-  apply FuelE_S. intros N'' g' Π' φ' HN' Hk1 Hk2 R1 R2. split; [intros Hv; done|].
-  intros α e' Hst. cbn [emap] in Hst. apply op_head_only' in Hst; [|done].
-  inversion Hst; subst. cbn [Fobl]. unfold f_spawn.
-  rewrite emap_subst_up. set (eb := subst (up (λ x, emap g' (γ x))) (emap (g' ∘ g) e)).
-  assert (fends (Lam eb) = dom Π') as HM.
-  { unfold eb. rewrite <-emap_subst_up. simpl. rewrite fends_emap, Hx. symmetry. by apply renk_dom. }
-  assert (dom Π' = dom φ') as Hd'.
-  { rewrite (renk_dom _ _ _ R1), (renk_dom _ _ _ R2). by rewrite Hd. }
-  rewrite HM. split_and!.
-  - by rewrite Hd'.
-  - intros o f _ Ho Hn. destruct (proj2 R2 o f Ho) as (o0 & -> & Ho0). apply (Hab o0 f Ho0).
-    intros (S0 & HS0 & Hi0). apply Hn. exists S0. split; [by apply (proj1 R1)|done].
-  - rewrite mres_self. unfold fhand. rewrite Hd', mres_self.
-    destruct n as [|n]; [apply FuelE_0|].
-    apply (FuelE_beta _ _ _ _ _ _ _ _ [] _ (subst1 EUnit eb)); [constructor|by constructor|]. simpl.
-    unfold eb. rewrite subst1_subst.
-    rewrite <-(map_union_empty Π'), <-(map_union_empty (ftick <$> φ')).
-    eapply FuelE_thread; [constructor|].
-    apply (Hcs N'' n (g' ∘ g) (EUnit .: (λ x, emap g' (γ x))) _ _ 0 (Nat.div2 (S tk)));
-      [by eapply rle_trans| |unfold meets; by rewrite Hb].
-    apply envf_cons; [|apply Vfuel_unit|apply map_disjoint_empty_r|apply map_disjoint_empty_r].
-    rewrite ftick_fminus. apply (envf_age _ _ _ _ _ _ _ _ _ _ _ HaT HaD).
-    apply (envf_mono N'' N'' (S (S n)) n _ _ _ _ _ φ'); [apply rle_refl|lia|apply cle_refl|].
-    apply (envf_mono N' N'' (S (S n)) (S (S n)) _ _ _ _ _ φ'); [exact HN'|lia|apply cle_refl|by eapply envf_rename].
-  - rewrite mrem_self, Hd', mrem_self. apply FuelE_val; [done|done|apply Vfuel_unit].
-Qed.
+

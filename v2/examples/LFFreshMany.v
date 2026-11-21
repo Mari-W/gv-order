@@ -162,9 +162,9 @@ Proof.
     eapply e_close with (S0 := SEnd) (x := ((pvar 0)·1)‾); [done|apply ub_below_empty|].
     eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
-  eapply e_app_; [lsplit_tac (EForce fm_box) EUnit|apply ub_below_empty| | | |shelve|shelve|shelve].
+  eapply e_app_; [lsplit_tac (EForce fm_box) EUnit|apply ubu_below_empty| | | |shelve|shelve|shelve].
   { eapply (lbox_force_eq _ _ _ _ _ _ 2 fm_C (Some (pvar 1)) fml_T TUnit fm_xs _ _
-      (Some ((pvar 0)·1)) (TProd (TSess SEnd (pvar 0) (Some 4)) (TSess SEnd ((pvar 0)·1) (Some 4))));
+      (UPt ((pvar 0)·1)) (TProd (TSess SEnd (pvar 0) (Some 4)) (TSess SEnd ((pvar 0)·1) (Some 4))));
       [done|apply fml_hold|done|done|done|].
     apply (fml_box_typed _ _ 7). done. }
   lage_tac.

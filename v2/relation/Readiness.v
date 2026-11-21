@@ -36,11 +36,20 @@ Qed.
 Lemma senv_heads_empty : senv_heads ∅ = ∅.
 Proof. unfold senv_heads. by rewrite map_to_list_empty. Qed.
 
-Definition lb_le (W : world) (lb : option point) (H : gset point) : Prop :=
-  match lb with None => H = ∅ | Some x => ∀ y, y ∈ H → w_le W x y end.
 
 Definition ub_lt (W : world) (ub : option point) (F : gset point) : Prop :=
   match ub with None => True | Some x => ∀ y, y ∈ F → W ⊢ x ≺ y end.
+
+(** u ≺ F for the upper point of an arrow (entry 12). ⊤ admits only the
+    empty future. *)
+Definition ub_ltu (W : world) (ub : ubound) (F : gset point) : Prop :=
+  match ub with UNone => True | UPt x => ∀ y, y ∈ F → W ⊢ x ≺ y | UTop => F = ∅ end.
+
+Lemma ub_ltu_of W o F : ub_ltu W (ubound_of o) F ↔ ub_lt W o F.
+Proof. by destruct o. Qed.
+
+Lemma ub_ltu_empty W ub : ub_ltu W ub ∅.
+Proof. destruct ub; simpl; set_solver. Qed.
 
 Definition lbx_le (W : world) (lb : lbound) (H : gset point) : Prop :=
   match lb with LBot => True | LNone => H = ∅ | LPt x => ∀ y, y ∈ H → w_le W x y end.
@@ -52,11 +61,12 @@ Definition wholds (W : world) (C : bcs) (xs : list point) : Prop :=
 Lemma w_le_mono W W' x y : W ⊑ W' → w_le W x y → w_le W' x y.
 Proof. intros HW [->|H]; [by left|right; by eapply w_lt_mono]. Qed.
 
-Lemma lb_le_mono W W' lb H : W ⊑ W' → lb_le W lb H → lb_le W' lb H.
-Proof. intros HW. destruct lb; simpl; [|done]. intros Hl y Hy. eauto using w_le_mono. Qed.
 
 Lemma ub_lt_mono W W' ub F : W ⊑ W' → ub_lt W ub F → ub_lt W' ub F.
 Proof. intros HW. destruct ub; simpl; [|done]. intros Hl y Hy. eauto using w_lt_mono. Qed.
+
+Lemma ub_ltu_mono W W' ub F : W ⊑ W' → ub_ltu W ub F → ub_ltu W' ub F.
+Proof. intros HW. destruct ub; simpl; try done. intros Hl y Hy. eauto using w_lt_mono. Qed.
 
 Lemma lbx_le_mono W W' lb H : W ⊑ W' → lbx_le W lb H → lbx_le W' lb H.
 Proof. intros HW. destruct lb; simpl; try done. intros Hl y Hy. eauto using w_le_mono. Qed.

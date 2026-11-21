@@ -152,6 +152,13 @@ Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.
 Lemma ub_below_empty W Γ x : ub_below_s W Γ x (∅, None).
 Proof. destruct x; simpl; [split_and!; [set_solver|done|done]|done]. Qed.
 
+(** The same for the upper point of an arrow, ⊤ included. *)
+Lemma ubu_below_empty W Γ ub : ub_below_u W Γ ub (∅, None).
+Proof. destruct ub; simpl; [done|apply (ub_below_empty W Γ (Some x))|done]. Qed.
+
+Lemma ubu_pt W Γ x F : ub_below_s W Γ (Some x) F → ub_below_u W Γ (UPt x) F.
+Proof. done. Qed.
+
 Lemma spare_heads Δ : (∀ y o, Δ !! y = Some o → spare o) → lenv_heads Δ = ∅ ∧ lenv_bot Δ = false.
 Proof.
   induction Δ as [|[U|] Δ IH]; intros H; simpl; [done| |].
@@ -161,7 +168,7 @@ Proof.
 Qed.
 
 Lemma lb_below_none W Γ Δ : (∀ y o, Δ !! y = Some o → spare o) →
-  lbx_below_h W Γ (lbound_of None) (tenv_heads ∅ ∪ lenv_heads Δ) (lenv_bot Δ).
+  lbx_below_h W Γ LNone (tenv_heads ∅ ∪ lenv_heads Δ) (lenv_bot Δ).
 Proof.
   intros H. destruct (spare_heads Δ H) as [-> ->]. rewrite tenv_heads_empty.
   simpl. split; [set_solver|done].

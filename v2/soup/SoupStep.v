@@ -468,8 +468,8 @@ Section step.
     assert (HMi : (fends v) ⊆ dom (kth K i)).
     { rewrite <-HM, dom_mres, dom_kres. set_solver. }
     (* the child *)
-    destruct Hth as (e0 & -> & _ & Hb).
-    destruct (Hb W n ∅ EUnit (wext_refl W) ltac:(cbn; lia) (map_disjoint_empty_r _)) as [Hb1 _].
+    destruct Hth as (e0 & -> & _ & _ & Hb).
+    destruct (Hb W n ∅ EUnit ∅ (wext_refl W) ltac:(cbn; lia) (map_disjoint_empty_r _) eq_refl) as [Hb1 _].
     pose proof (Hb1 ltac:(lia) (proj2 (Vrel_unit_iff _ _ _ _ _) (conj eq_refl eq_refl))) as Hbody.
     rewrite map_union_empty in Hbody.
     assert (Erel live n W (mres (fends (Lam e0)) (kres K i A)) TUnit ∅ (App (Lam e0) EUnit)) as Hchild.

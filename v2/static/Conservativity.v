@@ -215,8 +215,8 @@ Proof. intros HΔ. dfr. by eapply e_chan, lenv_unl_df. Qed.
 
 Lemma d_abs W Θ Γ Δ F e T U ub lb c t a φ :
   φ ∉ dom (hc_fv Γ) →
-  lbx_below_h W Γ (lbound_of lb) (tenv_heads Θ ∪ lenv_heads Δ) (lenv_bot Δ) →
-  dftyped W Θ (hc_fvar φ ub Γ) (Some T :: Δ) (∅, Some (FVar φ)) e U →
+  lbx_below_h W Γ lb (tenv_heads Θ ∪ lenv_heads Δ) (lenv_bot Δ) →
+  dftyped W Θ (abs_hc φ ub Γ) (Some T :: Δ) (abs_fut φ ub) e U →
   dftyped W Θ Γ Δ F (Lam e) (TLolli ub lb c t T U a).
 Proof.
   intros Hφ Hlb Hb. dfr.
@@ -226,10 +226,10 @@ Proof.
 Qed.
 
 Lemma d_app W Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e1 e2 ub lb c t T U a :
-  tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_below_s W Γ ub F →
+  tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_below_u W Γ ub F →
   dftyped W Θ1 Γ Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1
     (TLolli ub lb c t T U a) →
-  dftyped W Θ2 Γ Δ2 (sf_unionb F (opt_heads lb) false) e2 T →
+  dftyped W Θ2 Γ Δ2 (sf_unionb F (lb_heads lb) (lb_bot lb)) e2 T →
   dftyped W Θ Γ Δ F (App e1 e2) U.
 Proof.
   intros Hs Hl Hub H1 H2. dfr.
@@ -379,15 +379,21 @@ Proof.
   eapply e_link; [exact I|apply tok_inf].
 Qed.
 
-Lemma d_spawn_lam W Θ Γ Δ F e :
-  dftyped W Θ Γ (Some TUnit :: Δ) (∅, None) e TUnit →
-  dftyped W Θ Γ Δ F (ESpawn (Lam e)) TUnit.
-Proof. intros H. dfr. eapply e_spawn_lam; [apply thage_df|apply lage_df|exact H]. Qed.
-
 Lemma d_spawn W Θ Γ Δ F e ub lb c' t' a :
   dftyped W Θ Γ Δ F e (TLolli ub lb c' t' TUnit TUnit a) →
   dftyped W Θ Γ Δ F (ESpawn e) TUnit.
 Proof. intros H. dfr. eapply e_spawn; [exact H|done|apply tok_inf]. Qed.
+
+(** D-SpawnLam is admissible (entry 12): E-Abs at upper point ⊤ and lower
+    point ⊥ followed by E-Spawn. *)
+Lemma d_spawn_lam W Θ Γ Δ F e :
+  dftyped W Θ Γ (Some TUnit :: Δ) (∅, None) e TUnit →
+  dftyped W Θ Γ Δ F (ESpawn (Lam e)) TUnit.
+Proof.
+  intros H. set (φ := fresh (dom (hc_fv Γ))).
+  apply (d_spawn _ _ _ _ _ _ UTop LBot None tinf None).
+  apply (d_abs _ _ _ _ _ _ _ _ _ _ _ _ _ φ); [apply is_fresh|done|exact H].
+Qed.
 
 Lemma d_new W Γ Δ F ℓ S a1 a2 :
   lenv_unl Δ → ℓ ∈ w_fams W →
@@ -515,8 +521,6 @@ Proof.
               (TProd (TSess (sty_df S) x None) (TSess (dual (sty_df S)) x‾ None))) as I
       by (rewrite <-sty_df_dual; exact IHtyped).
     eapply d_link, I.
-  - df_ctx.
-    eapply d_spawn_lam, IHtyped.
   - eapply d_spawn, IHtyped.
   - rewrite sty_df_dual. eapply d_new; [by apply lenv_unl_df|done].
   - rewrite sty_df_dual. eapply d_new_at, IHtyped.

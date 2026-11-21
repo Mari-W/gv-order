@@ -448,6 +448,30 @@ must do, open questions.
     no arrow credit and build unchanged. The loss
     example of this entry (A at N and B at 1 captured at a = 1) now keeps
     A at N − 1, which is `lage 1` on the two entries.
+    Generalized arrows done in the Rocq 2026-11-21 (next run, stage 2).
+    `TLolli` carries an upper point `ubound` (none, a point, or ⊤,
+    types/Points.v) and a lower point `lbound` (none, a point, or ⊥).
+    E-App asks `ub_below_u`, which at ⊤ is the empty future, and holds
+    the closure under `lb_heads lb` with the ⊥ flag `lb_bot lb`. E-Abs
+    asks `lbx_below_h` of the lower point, which asks nothing at ⊥, and
+    types the body under `abs_hc φ ub Γ` and `abs_fut φ ub`, the empty
+    future at ⊤. `hbot` reports an arrow at ⊥. The rule E-SpawnLam is
+    gone, and `e_spawn_lam` (static/Weakening.v) and `d_spawn_lam`
+    (static/Conservativity.v) are lemmas, E-Abs at (⊤, ⊥) and credit 1
+    followed by E-Spawn. `Vthunk` is gone. O-Spawn reads `Varr` at
+    `∗ ⊸^⊤_⊥ ∗` (relation/Relation.v), and `Varr_top` turns any arrow
+    value at `∗ ⊸ ∗` into one. The semantic side reads ⊤ by `ub_ltu`
+    (relation/Readiness.v), and the fundamental theorem builds the body
+    hypotheses by `hsat_abs`. `lb_le`, `lbound_of`, `lb_sem`,
+    `later_spawn_lam` and `cost_e_spawn_lam` went with the rule.
+    Plausibility. Every deadlock-free and lock-free example builds, the
+    spawned abstractions through the derived lemmas with unchanged
+    calls. A closure at ⊥ cannot be sent, because E-Send asks
+    `hbot T = false` of the payload. A closure at ⊤ is applied only under
+    the empty future, so it runs as the last code of its thread. The
+    programs of rejects.js stay excluded by `lf_soundness`, and the
+    S4.18 counterexample concerns (fuse), which this stage leaves alone.
+    SemBranch, TreeTopo and FlagPair build unchanged.
 
 13. **P-Connect compares only the shared roots (2026-11-19, author).**
     Today p_connect asks world_wf W1, world_wf W2, disjoint families and

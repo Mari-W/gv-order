@@ -169,7 +169,7 @@ Section body.
   Lemma ctl_self Δ F S1 S2 :
     Δ !! 8 = Some (Some (ctl_box S1 S2)) → (∀ y o, y ≠ 8 → Δ !! y = Some o → spare o) →
     typed W (Some 3) ∅ Γc Δ F (EForce (Var 8))
-      (TLolli (Some (pvar 2)) None None tz (TProd (TProd (TSess S1 (sh 1 (pvar 0)) (Some 1)) (TSess S2 (sh 1 (pvar 1)) (Some 2)))
+      (TLolli (UPt (pvar 2)) LNone None tz (TProd (TProd (TSess S1 (sh 1 (pvar 0)) (Some 1)) (TSess S2 (sh 1 (pvar 1)) (Some 2)))
                 (TSess SSkip (pvar 3) (Some 0))) TUnit None) (fadd (Some 0) (Some 0)) (tseq tid tid).
   Proof.
     intros H8 Hs. eapply (lbox_force_eq _ _ _ _ _ _ 4 ctl_C (Some (pvar 2)) (ctl_T S1 S2) TUnit
@@ -209,7 +209,7 @@ Section body.
     { eapply e_var'; [reflexivity|]. spare_tac. }
     lage_tac.
     eapply e_app_; [lsplit_tac (EForce (Var 8)) EUnit| | | | |shelve|shelve|shelve].
-    { eapply (ub_below_var _ _ _ (pvar 2) _ 1 φc_hyp); [intros y Hy; exfalso; set_solver|by left]. }
+    { apply ubu_pt; eapply (ub_below_var _ _ _ (pvar 2) _ 1 φc_hyp); [intros y Hy; exfalso; set_solver|by left]. }
     { apply ctl_self; [reflexivity|spare_tac]. }
     lage_tac.
     eapply e_sub_ctl; [|shelve|shelve|shelve].
@@ -258,7 +258,7 @@ Section body.
       age_tac. }
     lage_tac.
     eapply e_app_; [lsplit_tac (EForce (Var 8)) EUnit| | | | |shelve|shelve|shelve].
-    { eapply (ub_below_var _ _ _ (pvar 2) _ 1 φc_hyp); [intros y Hy; exfalso; set_solver|by left]. }
+    { apply ubu_pt; eapply (ub_below_var _ _ _ (pvar 2) _ 1 φc_hyp); [intros y Hy; exfalso; set_solver|by left]. }
     { apply ctl_self; [reflexivity|spare_tac]. }
     lage_tac.
     eapply e_sub_ctl; [|shelve|shelve|shelve].
@@ -332,10 +332,10 @@ Proof.
     eapply e_letu_; [lsplit_tac (Var 0) EUnit| | | |shelve].
     { eapply e_var'; [reflexivity|]. spare_tac. }
     lage_tac.
-    eapply e_app_; [lsplit_tac (EForce ctl_srv) EUnit|apply ub_below_empty| | | |shelve|shelve|shelve].
+    eapply e_app_; [lsplit_tac (EForce ctl_srv) EUnit|apply ubu_below_empty| | | |shelve|shelve|shelve].
     { eapply (lbox_force_eq _ _ _ _ _ _ 4 ctl_C (Some (pvar 2)) (ctl_T Sb Sa) TUnit
         (pt_polar false (pvar 0) :: pt_polar false ((pvar 0)·0) :: (pvar 0)·1 :: pt_polar false ((pvar 0)·2) :: [])
-        _ _ (Some ((pvar 0)·1))
+        _ _ (UPt ((pvar 0)·1))
         (TProd (TProd (TSess Sb (pvar 0)‾ (Some 1)) (TSess Sa ((pvar 0)·0)‾ (Some 2)))
                (TSess SSkip ((pvar 0)·2)‾ (Some 0))));
         [done|apply ctl_hold_main|done|done|done|].
@@ -352,10 +352,10 @@ Proof.
     { eapply e_var'; [reflexivity|]. spare_tac. }
     age_tac. }
   lage_tac.
-  eapply e_app_; [lsplit_tac (EForce ctl_cli) EUnit|apply ub_below_empty| | | |shelve|shelve|shelve].
+  eapply e_app_; [lsplit_tac (EForce ctl_cli) EUnit|apply ubu_below_empty| | | |shelve|shelve|shelve].
   { eapply (lbox_force_eq _ _ _ _ _ _ 4 ctl_C (Some (pvar 2)) (ctl_T Sa Sb) TUnit
       (pt_polar true (pvar 0) :: pt_polar true ((pvar 0)·0) :: (pvar 0)·1 :: pt_polar true ((pvar 0)·2) :: [])
-      _ _ (Some ((pvar 0)·1))
+      _ _ (UPt ((pvar 0)·1))
       (TProd (TProd (TSess Sa (pvar 0) (Some 1)) (TSess Sb ((pvar 0)·0) (Some 2)))
              (TSess SSkip ((pvar 0)·2) (Some 0))));
       [done|apply ctl_hold_main|done|done|done|].

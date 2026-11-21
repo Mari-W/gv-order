@@ -58,8 +58,8 @@ Qed.
 (** E-Abs for a closure that captures nothing. *)
 Lemma eta_df W Γ Δ F ub e T U c t a :
   lenv_unl Δ →
-  (∀ φ, φ ∉ dom (hc_fv Γ) → dftyped W ∅ (hc_fvar φ ub Γ) (Some T :: Δ) (∅, Some (FVar φ)) e U) →
-  dftyped W ∅ Γ Δ F (Lam e) (TLolli ub None c t T U a).
+  (∀ φ, φ ∉ dom (hc_fv Γ) → dftyped W ∅ (abs_hc φ ub Γ) (Some T :: Δ) (abs_fut φ ub) e U) →
+  dftyped W ∅ Γ Δ F (Lam e) (TLolli ub LNone c t T U a).
 Proof.
   intros HΔ H. set (φ := fresh (dom (hc_fv Γ))).
   assert (φ ∉ dom (hc_fv Γ)) as Hφ by apply is_fresh.
@@ -70,8 +70,8 @@ Qed.
 
 Lemma eta W N Γ Δ F ub e T U c t a :
   lenv_unl Δ →
-  (∀ φ, φ ∉ dom (hc_fv Γ) → typed W N ∅ (hc_fvar φ ub Γ) (Some T :: Δ) (∅, Some (FVar φ)) e U c t) →
-  typed W N ∅ Γ Δ F (Lam e) (TLolli ub None c t T U a) (Some 0) tid.
+  (∀ φ, φ ∉ dom (hc_fv Γ) → typed W N ∅ (abs_hc φ ub Γ) (Some T :: Δ) (abs_fut φ ub) e U c t) →
+  typed W N ∅ Γ Δ F (Lam e) (TLolli ub LNone c t T U a) (Some 0) tid.
 Proof.
   intros HΔ H. set (φ := fresh (dom (hc_fv Γ))).
   assert (φ ∉ dom (hc_fv Γ)) as Hφ by apply is_fresh.
@@ -91,7 +91,7 @@ Lemma k_send_df W Γ Δ F x S0 m T S aS c t a :
   lenv_unl Δ → unfoldS S0 = SSeq (SSnd m T) S → pscoped m T → hbot T = false →
   (∀ y, y ∈ heads (payload_at m T x) → slt W Γ x y) →
   dftyped W ∅ Γ Δ F (Lam (ESend (Var 0)))
-    (TLolli (Some x) None c t (TProd (payload_at m T x) (TSess S0 x aS)) (TSess S x⁺ aS) a).
+    (TLolli (UPt x) LNone c t (TProd (payload_at m T x) (TSess S0 x aS)) (TSess S x⁺ aS) a).
 Proof.
   intros HΔ Hu Hsc Hb Hh. apply eta_df; [done|]. intros φ Hφ.
   eapply d_send; [done|done|done| |apply ub_fvar|var_df HΔ].
@@ -102,7 +102,7 @@ Qed.
 Lemma k_recv_df W Γ Δ F x S0 m T S aS aS' c t a :
   lenv_unl Δ → unfoldS S0 = SSeq (SRcv m T) S → pscoped m T →
   dftyped W ∅ Γ Δ F (Lam (ERecv (Var 0)))
-    (TLolli (Some x) None c t (TSess S0 x aS) (TProd (payload_at m T x) (TSess S x⁺ aS')) a).
+    (TLolli (UPt x) LNone c t (TSess S0 x aS) (TProd (payload_at m T x) (TSess S x⁺ aS')) a).
 Proof.
   intros HΔ Hu Hsc. apply eta_df; [done|]. intros φ Hφ.
   eapply d_recv; [done|done|apply ub_fvar|var_df HΔ].
@@ -111,7 +111,7 @@ Qed.
 (** close : S₀@x ⊸^x ∗. *)
 Lemma k_close_df W Γ Δ F x S0 aS c t a :
   lenv_unl Δ → unfoldS S0 = SEnd →
-  dftyped W ∅ Γ Δ F (Lam (EClose (Var 0))) (TLolli (Some x) None c t (TSess S0 x aS) TUnit a).
+  dftyped W ∅ Γ Δ F (Lam (EClose (Var 0))) (TLolli (UPt x) LNone c t (TSess S0 x aS) TUnit a).
 Proof.
   intros HΔ Hu. apply eta_df; [done|]. intros φ Hφ.
   eapply d_close; [done|apply ub_fvar|var_df HΔ].
@@ -121,7 +121,7 @@ Qed.
 Lemma k_select_df W (i : bool) Γ Δ F x S0 S1 S2 aS aS' c t a :
   lenv_unl Δ → unfoldS S0 = SPlus S1 S2 →
   dftyped W ∅ Γ Δ F (Lam (ESel i (Var 0)))
-    (TLolli (Some x) None c t (TSess S0 x aS) (TSess (if i then S2 else S1) (sel_pt x i) aS') a).
+    (TLolli (UPt x) LNone c t (TSess S0 x aS) (TSess (if i then S2 else S1) (sel_pt x i) aS') a).
 Proof.
   intros HΔ Hu. apply eta_df; [done|]. intros φ Hφ.
   eapply d_select; [done|apply ub_fvar|var_df HΔ].
@@ -131,7 +131,7 @@ Qed.
 Lemma k_branch_df W Γ Δ F x S0 S1 S2 aS a1 a2 c t a :
   lenv_unl Δ → unfoldS S0 = SWith S1 S2 →
   dftyped W ∅ Γ Δ F (Lam (EBra (Var 0)))
-    (TLolli (Some x) None c t (TSess S0 x aS)
+    (TLolli (UPt x) LNone c t (TSess S0 x aS)
        (TSum (TSess S1 (bra_pt x false) a1) (TSess S2 (bra_pt x true) a2)) a).
 Proof.
   intros HΔ Hu. apply eta_df; [done|]. intros φ Hφ.
@@ -142,7 +142,7 @@ Qed.
 Lemma k_link_df W Γ Δ F S x a1 a2 c t a :
   lenv_unl Δ →
   dftyped W ∅ Γ Δ F (Lam (ELink (Var 0)))
-    (TLolli None None c t (TProd (TSess S x a1) (TSess (dual S) x‾ a2)) TUnit a).
+    (TLolli UNone LNone c t (TProd (TSess S x a1) (TSess (dual S) x‾ a2)) TUnit a).
 Proof.
   intros HΔ. apply eta_df; [done|]. intros φ Hφ.
   eapply d_link; var_df HΔ.
@@ -152,7 +152,7 @@ Qed.
 Lemma k_spawn_df W Γ Δ F ub lb c' t' a' c t a :
   lenv_unl Δ →
   dftyped W ∅ Γ Δ F (Lam (ESpawn (Var 0)))
-    (TLolli None None c t (TLolli ub lb c' t' TUnit TUnit a') TUnit a).
+    (TLolli UNone LNone c t (TLolli ub lb c' t' TUnit TUnit a') TUnit a).
 Proof.
   intros HΔ. apply eta_df; [done|]. intros φ Hφ.
   eapply d_spawn; var_df HΔ.
@@ -162,10 +162,11 @@ Qed.
 Lemma k_force_df W Γ Δ F m k C ub c0 t0 U xs ss c t a :
   lenv_unl Δ → length xs = m → hold_at W Γ C xs → length ss = k → sinsts None ss →
   dftyped W ∅ Γ Δ F (Lam (EForce (Var 0)))
-    (TLolli (pt_inst (plist xs) <$> ub) None c t (TBox m k C ub c0 t0 U)
+    (TLolli (ubound_of (pt_inst (plist xs) <$> ub)) LNone c t (TBox m k C ub c0 t0 U)
        (sinst_ty (slist ss) (ty_inst xs U)) a).
 Proof.
   intros HΔ Hxs HC Hk Hss. apply eta_df; [done|]. intros φ Hφ.
+  rewrite abs_hc_of, abs_fut_of.
   eapply d_force; [done| |done|done|apply ub_fvar|var_df HΔ].
   intros y z Hg. apply slt_fvar; [done|by apply HC].
 Qed.
@@ -183,7 +184,7 @@ Lemma k_send W N Γ Δ F x S0 m T S aS Tp Tp' a :
   (∀ y, y ∈ heads (payload_at m T x) → slt W Γ x y) →
   tage (Some 1) Tp Tp' → tsub Tp' (payload_at m T x) →
   typed W N ∅ Γ Δ F (Lam (ESend (Var 0)))
-    (TLolli (Some x) None (Some 1) tid (TProd Tp (TSess S0 x aS)) (TSess S x⁺ N) a) (Some 0) tid.
+    (TLolli (UPt x) LNone (Some 1) tid (TProd Tp (TSess S0 x aS)) (TSess S x⁺ N) a) (Some 0) tid.
 Proof.
   intros HΔ Hu Hsc Hb Hh Ha Hs. apply eta; [done|]. intros φ Hφ.
   change (Some 1) with (fadd (Some 0) (Some 1)). eapply e_send; [done|done|done| |apply ub_fvar|var HΔ|exact Ha|exact Hs].
@@ -193,7 +194,7 @@ Qed.
 Lemma k_recv W N Γ Δ F x S0 m T S aS a :
   lenv_unl Δ → unfoldS S0 = SSeq (SRcv m T) S → pscoped m T →
   typed W N ∅ Γ Δ F (Lam (ERecv (Var 0)))
-    (TLolli (Some x) None (Some 1) tid (TSess S0 x aS) (TProd (payload_at m T x) (TSess S x⁺ N)) a)
+    (TLolli (UPt x) LNone (Some 1) tid (TSess S0 x aS) (TProd (payload_at m T x) (TSess S x⁺ N)) a)
     (Some 0) tid.
 Proof.
   intros HΔ Hu Hsc. apply eta; [done|]. intros φ Hφ.
@@ -203,7 +204,7 @@ Qed.
 Lemma k_close W N Γ Δ F x S0 aS a :
   lenv_unl Δ → unfoldS S0 = SEnd →
   typed W N ∅ Γ Δ F (Lam (EClose (Var 0)))
-    (TLolli (Some x) None (Some 1) tid (TSess S0 x aS) TUnit a) (Some 0) tid.
+    (TLolli (UPt x) LNone (Some 1) tid (TSess S0 x aS) TUnit a) (Some 0) tid.
 Proof.
   intros HΔ Hu. apply eta; [done|]. intros φ Hφ.
   change (Some 1) with (fadd (Some 0) (Some 1)). eapply e_close; [done|apply ub_fvar|var HΔ].
@@ -212,7 +213,7 @@ Qed.
 Lemma k_select W N (i : bool) Γ Δ F x S0 S1 S2 aS a :
   lenv_unl Δ → unfoldS S0 = SPlus S1 S2 →
   typed W N ∅ Γ Δ F (Lam (ESel i (Var 0)))
-    (TLolli (Some x) None (Some 1) tid (TSess S0 x aS) (TSess (if i then S2 else S1) (sel_pt x i) N) a)
+    (TLolli (UPt x) LNone (Some 1) tid (TSess S0 x aS) (TSess (if i then S2 else S1) (sel_pt x i) N) a)
     (Some 0) tid.
 Proof.
   intros HΔ Hu. apply eta; [done|]. intros φ Hφ.
@@ -222,7 +223,7 @@ Qed.
 Lemma k_branch W N Γ Δ F x S0 S1 S2 aS a :
   lenv_unl Δ → unfoldS S0 = SWith S1 S2 →
   typed W N ∅ Γ Δ F (Lam (EBra (Var 0)))
-    (TLolli (Some x) None (Some 1) tid (TSess S0 x aS)
+    (TLolli (UPt x) LNone (Some 1) tid (TSess S0 x aS)
        (TSum (TSess S1 (bra_pt x false) N) (TSess S2 (bra_pt x true) N)) a)
     (Some 0) tid.
 Proof.
@@ -233,7 +234,7 @@ Qed.
 Lemma k_link W N Γ Δ F S x a1 a2 a :
   lenv_unl Δ →
   typed W N ∅ Γ Δ F (Lam (ELink (Var 0)))
-    (TLolli None None (Some 0) (tseq tid (tlink tid)) (TProd (TSess S x a1) (TSess (dual S) x‾ a2))
+    (TLolli UNone LNone (Some 0) (tseq tid (tlink tid)) (TProd (TSess S x a1) (TSess (dual S) x‾ a2))
        TUnit a)
     (Some 0) tid.
 Proof.
@@ -244,7 +245,7 @@ Qed.
 Lemma k_spawn W N Γ Δ F ub lb c' t' a' a :
   lenv_unl Δ → fle (Some 1) a' →
   typed W N ∅ Γ Δ F (Lam (ESpawn (Var 0)))
-    (TLolli None None (Some 0) (tseq tid (tspawn (tapp t' 0) tid))
+    (TLolli UNone LNone (Some 0) (tseq tid (tspawn (tapp t' 0) tid))
        (TLolli ub lb c' t' TUnit TUnit a') TUnit a)
     (Some 0) tid.
 Proof.
@@ -255,11 +256,12 @@ Qed.
 Lemma k_force W N Γ Δ F m k C ub c0 t0 U xs ss a :
   lenv_unl Δ → length xs = m → hold_at W Γ C xs → length ss = k → sinsts N ss →
   typed W N ∅ Γ Δ F (Lam (EForce (Var 0)))
-    (TLolli (pt_inst (plist xs) <$> ub) None (fadd (Some 0) c0) (tseq tid t0) (TBox m k C ub c0 t0 U)
+    (TLolli (ubound_of (pt_inst (plist xs) <$> ub)) LNone (fadd (Some 0) c0) (tseq tid t0) (TBox m k C ub c0 t0 U)
        (sinst_ty (slist ss) (ty_inst xs U)) a)
     (Some 0) tid.
 Proof.
   intros HΔ Hxs HC Hk Hss. apply eta; [done|]. intros φ Hφ.
+  rewrite abs_hc_of, abs_fut_of.
   eapply e_force; [done| |done|done|apply ub_fvar|var HΔ|right; left; discriminate].
   intros y z Hg. apply slt_fvar; [done|by apply HC].
 Qed.

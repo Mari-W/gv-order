@@ -137,13 +137,13 @@ Definition fm_main : expr :=
 Lemma fm_force n F e :
   dftyped W_fm ∅ (Γnew W_fm 0) (nones n) F e fm_ty →
   dftyped W_fm ∅ (Γnew W_fm 0) (nones n) F (EForce e)
-    (TLolli (Some ((pvar 0)·1)) None None tinf
+    (TLolli (UPt ((pvar 0)·1)) LNone None tinf
        (TProd (TSess SEnd (pvar 0) None) (TSess SEnd ((pvar 0)·1) None)) TUnit None).
 Proof.
   intros H.
   assert (sinst_ty (slist []) (ty_inst fm_xs
-            (TLolli (Some (pvar 1)) None None tinf fm_T TUnit None)) =
-    TLolli (Some ((pvar 0)·1)) None None tinf
+            (TLolli (UPt (pvar 1)) LNone None tinf fm_T TUnit None)) =
+    TLolli (UPt ((pvar 0)·1)) LNone None tinf
        (TProd (TSess SEnd (pvar 0) None) (TSess SEnd ((pvar 0)·1) None)) TUnit None) as <-.
   { rewrite sinst_nil. reflexivity. }
   eapply d_force with (ub := None) (c := None) (t := tinf) (C := fm_C);
@@ -180,7 +180,7 @@ Proof.
     { eapply d_var'; [reflexivity|]. spare_tac. }
     eapply d_close with (S0 := SEnd) (x := ((pvar 0)·1)‾); [done|apply ub_below_empty|].
     eapply d_var'; [reflexivity|]. spare_tac. }
-  eapply d_app; [apply tsplit_empty|lsplit_tac (EForce fm_box) EUnit|apply ub_below_empty| |].
+  eapply d_app; [apply tsplit_empty|lsplit_tac (EForce fm_box) EUnit|apply ubu_below_empty| |].
   - apply (fm_force 7). by apply fm_box_typed.
   - eapply d_pair; [apply tsplit_empty|lsplit_tac (Var 3) EUnit| |].
     + eapply d_var'; [reflexivity|]. spare_tac.

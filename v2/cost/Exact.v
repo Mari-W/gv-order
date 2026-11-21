@@ -4,7 +4,7 @@
     the ends of Θ, every free variable has an entry in Δ, and every
     entry that is not unlimited occurs. [fends_ground] then computes the
     ends of a grounded instance: those of Θ and those of the values the
-    grounding puts in. E-Abs, E-Box and E-SpawnLam need it to show the
+    grounding puts in. E-Abs and E-Box need it to show the
     closure or box they build exact, as Q15 asks of [Vfuel].
 
     These are lemmas about derivations and terms. No relation reads
@@ -175,8 +175,6 @@ Proof.
   - split; done.
   - split; done.
   - split; done.
-  - (* e_spawn_lam *)
-    split; [done|]. eapply vfacts_lsame; [by eapply lage_lsame|]. by eapply (vfacts_under _ _ (λ x, freevar x _)).
   - split; done.
   - split; [by rewrite dom_empty_L|by apply vfacts_empty].
   - split; done.
