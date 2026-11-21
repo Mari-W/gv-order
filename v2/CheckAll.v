@@ -87,6 +87,7 @@ Print Assumptions fundamental_typed.
 Print Assumptions live_fundamental.
 Print Assumptions live_fundamental_typed.
 (** static/FundamentalProc.v *)
+Print Assumptions sem_p_connect_sw.
 Print Assumptions fundamental_proc.
 Print Assumptions live_fundamental_proc.
 Print Assumptions soundness.

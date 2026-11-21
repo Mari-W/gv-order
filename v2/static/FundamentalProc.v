@@ -93,6 +93,27 @@ Proof.
   destruct (Θ !! o) as [te|]; constructor. split; [done|]. unfold seqv. simpl. rewrite sty_df_idem. apply sequiv_refl.
 Qed.
 
+(** ** P-Connect at static worlds
+
+    The deadlock-free judgment composes the way the lock-free one does
+    (soup/LFCompose.v, [lf_p_connect]). Each component is read at every
+    ranked world that models its own static world, and a ranked world of
+    the join models both. P holds a process itself at a ranked world, with
+    no starting state, so both components are read at that one world. *)
+Definition sem_ptyped_sw (κ : ctable) (W : sworld) (Σ : senv) (p : proc) (T : ty) : Prop :=
+  ∀ R, wmodels R W → sem_ptyped κ R Σ p T.
+
+Lemma sem_p_connect_sw κ W1 W2 Σ1 ΣC Σ2 ΣD p1 p2 T :
+  tfree T →
+  sem_ptyped_sw κ W1 (Σ1 ∪ ΣC) p1 T → sem_ptyped_sw κ W2 (Σ2 ∪ ΣD) p2 TUnit →
+  conn Σ1 ΣC p1.1 Σ2 ΣD p2.1 →
+  sem_ptyped_sw κ (W1 ⊔ W2) (Σ1 ∪ Σ2) (pconn p1 p2 (chans_of ΣC)) T.
+Proof.
+  intros HT H1 H2 Hc R HR n. apply (sem_p_connect κ n R Σ1 ΣC Σ2 ΣD); [done| | |done].
+  - apply H1. by eapply wmodels_ext; [apply swext_join_l|].
+  - apply H2. by eapply wmodels_ext; [apply swext_join_r|].
+Qed.
+
 (** ** One induction for every cost table *)
 
 Section proc.
