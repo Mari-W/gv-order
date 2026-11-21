@@ -7,7 +7,7 @@
         Ebody … X W Θ T F e → Ebody … X W (kren h Θ) T F (emap h e)
 
     and from it the induction over the steps of cost 0 whose predicate is
-    closed under renaming ([Erel_S_ind_ren]). P-Term reads the clause
+    closed under renaming ([Erel_ind_ren]). P-Term reads the clause
     (fuse) of P through it: a fusion of a single thread is a single thread
     renamed. *)
 
@@ -21,9 +21,9 @@ Section ren_ind.
     ∀ W Θ T F e h, kinj h Θ → X W Θ T F e → X W (kren h Θ) T F (emap h e).
 
   Lemma Ebody_rename n (X : erel) W Θ T F e h :
-    erel_ren X → kinj h Θ → Erel κ (S n) W Θ T F e →
-    Ebody κ (S n) (Vrel κ) (Erel κ) (Vrel κ (S n)) X W Θ T F e →
-    Ebody κ (S n) (Vrel κ) (Erel κ) (Vrel κ (S n)) X W (kren h Θ) T F (emap h e).
+    erel_ren X → kinj h Θ → Erel κ n W Θ T F e →
+    Ebody κ n (Vrel κ) (Erel κ) (Vrel κ n) X W Θ T F e →
+    Ebody κ n (Vrel κ) (Erel κ) (Vrel κ n) X W (kren h Θ) T F (emap h e).
   Proof.
     intros HX Hk HE Hb.
     set (Xc := set_map (D:=gset chan) ech (dom Θ) ∪ fchans e).
@@ -39,8 +39,8 @@ Section ren_ind.
     assert (∀ σ e', tstep e (LSess σ) e' → sends σ ⊆ dom Θ) as Hsends.
     { intros σ e' Hst. exact (Erel_sends κ n W Θ T F e σ e' HE Hst). }
     assert (∀ c Θ' e' h', kinj h' Θ' →
-      at_cost_E (S n) c (Erel κ) X W1 Θ' T F e' →
-      at_cost_E (S n) c (Erel κ) X W1 (kren h' Θ') T F (emap h' e')) as Hac.
+      at_cost_E n c (Erel κ) X W1 Θ' T F e' →
+      at_cost_E n c (Erel κ) X W1 (kren h' Θ') T F (emap h' e')) as Hac.
     { intros c Θ' e' h' Hk' [A1 A2]. split.
       - intros Hc. apply HX; [done|]. by apply A1.
       - intros Hc. apply (proj2 (rename_level κ (S n - c) T)); [done|]. by apply A2. }
@@ -51,7 +51,7 @@ Section ren_ind.
     { intros o. eapply kinj_sub; [|exact Hk]. set_solver. }
     split; [|split; [|unfold Esteps; split_and!]].
     - (* (stop) *)
-      intros Hi. apply irred_emap in Hi. apply (proj1 (rename_level κ (S n) T)); [done|]. by apply Hs.
+      intros Hi. apply irred_emap in Hi. apply (proj1 (rename_level κ n T)); [done|]. by apply Hs.
     - (* (ready) *)
       intros Hni. apply ready_rename; [done|done|]. apply Hr. intros Hi. by apply Hni, irred_emap.
     - (* O-Beta *)
@@ -112,7 +112,7 @@ Section ren_ind.
           rewrite map_union_empty in B1. change EUnit with (emap h EUnit). rewrite <-emap_subst1.
           apply (proj2 (rename_level κ j TUnit)); [done|]. apply B1; [done|by apply Vrel_unit_iff].
         * intros -> [-> ->]. rewrite map_union_empty.
-          destruct (HA W' (S n) ∅ EUnit ∅ HW Hj (map_disjoint_empty_r _) eq_refl) as [_ B2].
+          destruct (HA W' n ∅ EUnit ∅ HW Hj (map_disjoint_empty_r _) eq_refl) as [_ B2].
           pose proof (B2 eq_refl (conj eq_refl eq_refl)) as B3. rewrite map_union_empty in B3.
           change EUnit with (emap h EUnit). rewrite <-emap_subst1. by apply HX; [|exact B3].
       + by apply Hac.
@@ -209,16 +209,16 @@ Section ren_ind.
   Definition Φren (Φ : erel) : erel :=
     λ W Θ T F e, ∀ h, kinj h Θ → Φ W (kren h Θ) T F (emap h e).
 
-  Lemma Erel_S_ind_ren n (Φ : erel) :
+  Lemma Erel_ind_ren n (Φ : erel) :
     (∀ W Θ T F e,
-       Ebody κ (S n) (Vrel κ) (Erel κ) (Vrel κ (S n))
-         (λ W Θ T F e, Erel κ (S n) W Θ T F e ∧ Φren Φ W Θ T F e) W Θ T F e →
+       Ebody κ n (Vrel κ) (Erel κ) (Vrel κ n)
+         (λ W Θ T F e, Erel κ n W Θ T F e ∧ Φren Φ W Θ T F e) W Θ T F e →
        Φ W Θ T F e) →
-    ∀ W Θ T F e, Erel κ (S n) W Θ T F e → Φren Φ W Θ T F e.
+    ∀ W Θ T F e, Erel κ n W Θ T F e → Φren Φ W Θ T F e.
   Proof.
-    intros Hind. refine (Erel_S_ind κ n _ _). intros W Θ T F e Hb h Hk.
-    assert (Erel κ (S n) W Θ T F e) as HE.
-    { apply Erel_S_iff. revert Hb. apply Ebody_mapX. by intros ? ? ? ? ? [? _]. }
+    intros Hind. refine (Erel_ind κ n _ _). intros W Θ T F e Hb h Hk.
+    assert (Erel κ n W Θ T F e) as HE.
+    { apply Erel_iff. revert Hb. apply Ebody_mapX. by intros ? ? ? ? ? [? _]. }
     apply Hind. apply Ebody_rename; [|done|done|done].
     intros W' Θ' T' F' e' h' Hk' [H1 H2]. split; [by apply Erel_rename|].
     intros g Hg. rewrite kren_kren by done. rewrite emap_emap. apply H2. by apply kinj_kren.

@@ -76,12 +76,12 @@ Section extmsg.
   Local Lemma HKD : chans_of ΣD = K.
   Proof. apply cut_dual_chans. by destruct Hc. Qed.
 
-  Local Lemma HP1id j : j ≤ S n → Prel κ j W1 (Σ1 ∪ ΣC) T q1.
+  Local Lemma HP1id j : ole j n → Prel κ j W1 (Σ1 ∪ ΣC) T q1.
   Proof.
     intros Hj. pose proof (HP1 id ∅ (fuse_ok_id _ _)) as P. rewrite sdrop_empty, kren_id_map, pfuse_empty, pmap_id in P.
     eapply Prel_down; [|exact P]. lia.
   Qed.
-  Local Lemma HP2id j : j ≤ S n → Prel κ j W1 (Σ2 ∪ ΣD) TUnit q2.
+  Local Lemma HP2id j : ole j n → Prel κ j W1 (Σ2 ∪ ΣD) TUnit q2.
   Proof.
     intros Hj. pose proof (HP2 id ∅ (fuse_ok_id _ _)) as P. rewrite sdrop_empty, kren_id_map, pfuse_empty, pmap_id in P.
     eapply Prel_down; [|exact P]. lia.
@@ -89,9 +89,9 @@ Section extmsg.
 
   (** A step of p1 after which the cut is re-split. *)
   Lemma ext_comp1' c E1 Σ1' ΣC' Σ2' ΣD' p1' :
-    at_cost_P (S n) c (Prel κ) X1 W1 E1 T p1' → E1 = Σ1' ∪ ΣC' → Σ2 ∪ ΣD = Σ2' ∪ ΣD' →
+    at_cost_P n c (Prel κ) X1 W1 E1 T p1' → E1 = Σ1' ∪ ΣC' → Σ2 ∪ ΣD = Σ2' ∪ ΣD' →
     conn Σ1' ΣC' p1'.1 Σ2' ΣD' q2.1 →
-    at_cost_P (S n) c (Prel κ) (Prel κ (S n)) W1 (Σ1' ∪ Σ2') T (pconn p1' q2 (chans_of ΣC')).
+    at_cost_P n c (Prel κ) (Prel κ n) W1 (Σ1' ∪ Σ2') T (pconn p1' q2 (chans_of ΣC')).
   Proof.
     intros [A0 A1] -> E2 Hc'. split.
     - intros Hz. pose proof (G1 p1' _ id ∅ Σ1' ΣC' Σ2' ΣD' q2 (A0 Hz) (fuse_ok_id _ _)) as HG.
@@ -103,9 +103,9 @@ Section extmsg.
 
   (** A step of p2 after which the cut is re-split. *)
   Lemma ext_comp2' c E2 Σ1' ΣC' Σ2' ΣD' p2' :
-    at_cost_P (S n) c (Prel κ) X2 W1 E2 TUnit p2' → E2 = Σ2' ∪ ΣD' → Σ1 ∪ ΣC = Σ1' ∪ ΣC' →
+    at_cost_P n c (Prel κ) X2 W1 E2 TUnit p2' → E2 = Σ2' ∪ ΣD' → Σ1 ∪ ΣC = Σ1' ∪ ΣC' →
     conn Σ1' ΣC' q1.1 Σ2' ΣD' p2'.1 →
-    at_cost_P (S n) c (Prel κ) (Prel κ (S n)) W1 (Σ1' ∪ Σ2') T (pconn q1 p2' (chans_of ΣC')).
+    at_cost_P n c (Prel κ) (Prel κ n) W1 (Σ1' ∪ Σ2') T (pconn q1 p2' (chans_of ΣC')).
   Proof.
     intros [A0 A1] -> E1 Hc'. split.
     - intros Hz. pose proof (G2 p2' _ id ∅ Σ1' ΣC' Σ2' ΣD' id ∅ (A0 Hz) (fuse_ok_id _ _)) as HG.
@@ -117,7 +117,7 @@ Section extmsg.
 
   (** Q-Send of the composite. *)
   Lemma ext_send q i o w q' : erase q = pc → istep q (EvOffer i (SSend o w)) q' →
-    q_send κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T pc o w (erase q').
+    q_send κ n (Vrel κ) (Prel κ) (Vrel κ n) (Prel κ n) W1 (Σ1 ∪ Σ2) T pc o w (erase q').
   Proof.
     intros Hq Hst. destruct (ext_split _ _ _ _ Hq Hst) as (M1 & M2 & e & e' & Hd & HM1 & HM2 & He & Hsub & [(Hi & Hs & Eq)|(Hi & Hs & Eq)]);
       simpl in Hsub; assert (ech o ∉ K) as HnK by (clear -Hsub; cc_set_solver); rewrite Eq.
@@ -144,7 +144,7 @@ Section extmsg.
         match type of Hif with _ = ?S => set (Σ' := S) in * end.
         pose proof (ext_comp1' _ _ _ _ _ _ _ AP (eq_sym (fin_fout Σ' E1)) (eq_sym (fin_fout Σ' (Σ2 ∪ ΣD)))) as R.
         unfold erase in R at 2. simpl in R. specialize (R Hc').
-        refine (eq_rect _ (λ p, at_cost_P (S n) (c_give κ) (Prel κ) (Prel κ (S n)) W1 _ T p) R _ _).
+        refine (eq_rect _ (λ p, at_cost_P n (c_give κ) (Prel κ) (Prel κ n) W1 _ T p) R _ _).
         unfold pconn, erase. simpl. unfold fchans. rewrite HM, Hch. f_equal.
     - rewrite HΣ12. pose proof (conn_sym _ _ _ _ _ _ Hc) as Hcs.
       destruct H2 as (_ & _ & (_ & S2 & _)).
@@ -174,7 +174,7 @@ Section extmsg.
         pose proof (ext_comp2' _ _ _ _ _ _ _ AP (eq_sym (fin_fout Σ' E2)) (eq_sym (fin_fout Σ' (Σ1 ∪ ΣC)))) as R.
         unfold erase in R at 2. simpl in R. specialize (R Hc'').
         rewrite map_union_comm by (apply chans_disj_map; clear -H123; cc_set_solver).
-        refine (eq_rect _ (λ p, at_cost_P (S n) (c_give κ) (Prel κ) (Prel κ (S n)) W1 _ T p) R _ _).
+        refine (eq_rect _ (λ p, at_cost_P n (c_give κ) (Prel κ) (Prel κ n) W1 _ T p) R _ _).
         unfold pconn, erase. simpl. unfold fchans. rewrite HM, Hch'. f_equal.
         rewrite <-HKD. assert (q1.1 ∪ q2.1 ∪ chans_of ΣD = q2.1 ∪ q1.1 ∪ chans_of ΣD) as -> by (clear; cc_set_solver).
         rewrite Hch. clear. cc_set_solver.
@@ -182,7 +182,7 @@ Section extmsg.
 
   (** Q-Recv of the composite. *)
   Lemma ext_recv q i o w q' : erase q = pc → istep q (EvOffer i (SRecv o w)) q' →
-    q_recv κ (S n) (Vrel κ) (Prel κ) W1 (Σ1 ∪ Σ2) T pc o w (erase q').
+    q_recv κ n (Vrel κ) (Prel κ) W1 (Σ1 ∪ Σ2) T pc o w (erase q').
   Proof.
     intros Hq Hst. destruct (ext_split _ _ _ _ Hq Hst) as (M1 & M2 & e & e' & Hd & HM1 & HM2 & He & Hsub & [(Hi & Hs & Eq)|(Hi & Hs & Eq)]);
       simpl in Hsub; assert (ech o ∉ K) as HnK by (clear -Hsub; cc_set_solver); rewrite Eq.
@@ -240,7 +240,7 @@ Section extmsg.
   Qed.
 
   (** The clauses of P for the composite. *)
-  Lemma pc_clauses : Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T pc.
+  Lemma pc_clauses : Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) (Prel κ n) W1 (Σ1 ∪ Σ2) T pc.
   Proof.
     split_and!.
     - intros Hi. exact (pc_stop κ n W1 HS T TUnit X1 X2 Σ1 ΣC Σ2 ΣD q1 q2 Hc H1 H2 HT tfree_unit eq_refl Hi).

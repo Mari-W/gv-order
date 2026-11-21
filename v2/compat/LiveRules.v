@@ -3,7 +3,7 @@
     The semantic judgment with marks L, [sem_later κ W Θ Δ L F t T],
     reads a grounding that holds a marked variable of Δ only below the
     current level ([GrelL]): at level n a marked value is in V at every
-    level j < n, with no ends. Marks are the selves of boxes. At L = ∅
+    level olt j n, with no ends. Marks are the selves of boxes. At L = ∅
     it is [sem_typed_at] ([sem_later_empty]).
 
     Every typing rule holds with marks ([later_*]), for every cost
@@ -22,7 +22,7 @@
     - A marked variable is not a term of the judgment ([later_var] asks
       the mark off).
     - A box marks its self ([later_box]). The thunk of the box at level
-      n reads the body at levels j ≤ n − κ(β), where the self is in V
+      n reads the body at levels ole j n − κ(β), where the self is in V
       below j by induction on the level. A box that leaves its self
       unmarked needs a positive cost of β ([gen_e_box]), true of κ_DF.
     - A hole that acts before it returns clears the marks of its frame
@@ -94,12 +94,11 @@ Section rules0.
   (** A spawn of a thunk, in every later world. *)
   Lemma Erel_spawn_thunk n W Θ F v :
     is_val v →
-    (∀ W1, W ⊑ W1 → Varr κ n (Vrel κ) (Erel κ) (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit)
-                      (λ W' Θ' F e, Erel κ n W' Θ' TUnit F e) TUnit TUnit UTop LBot W1 Θ v) →
+    (∀ W1, W ⊑ W1 → Varr κ n (Vrel κ) (Erel κ) (λ _ _ Θ' w, Θ' = ∅ ∧ w = EUnit)
+                      (λ _ W' Θ' F e, Erel κ n W' Θ' TUnit F e) TUnit TUnit UTop LBot W1 Θ v) →
     Erel κ n W Θ TUnit F (ESpawn v).
   Proof.
-    intros Hv HT. destruct n as [|n]; [apply Erel_0|].
-    assert (tstep (ESpawn v) (LSpawn v) EUnit) as Hst by (by apply tstep_head, t_act_spawn).
+    intros Hv HT.    assert (tstep (ESpawn v) (LSpawn v) EUnit) as Hst by (by apply tstep_head, t_act_spawn).
     assert (∀ α e', tstep (ESpawn v) α e' → α = LSpawn v ∧ e' = EUnit) as Hdet.
     { intros α e' Hs. apply op_head_only in Hs; [|done]. inversion Hs; by subst. }
     apply Erel_S_intro.
@@ -213,7 +212,7 @@ Fixpoint GrelL (κ : ctable) (n : nat) (W : world) (Θ : senv) (Δ : lenv) (L : 
   | None :: Δ' => GrelL κ n W Θ Δ' (λ x, L (S x)) (λ x, γ (S x))
   | Some T :: Δ' =>
       if L 0 then
-        (unlimited T ∧ fends (γ 0) = ∅ ∧ ∀ j, j < n → Vrel κ j W ∅ T (γ 0)) ∧
+        (unlimited T ∧ fends (γ 0) = ∅ ∧ ∀ j, olt j n → Vrel κ j W ∅ T (γ 0)) ∧
         GrelL κ n W Θ Δ' (λ x, L (S x)) (λ x, γ (S x))
       else
         ∃ Θ1 Θ2, Θ1 ##ₘ Θ2 ∧ Θ = Θ1 ∪ Θ2 ∧
@@ -254,7 +253,7 @@ Section groundL.
       by eapply Vrel_mono.
   Qed.
 
-  Lemma GrelL_down n m W Θ Δ L γ : m ≤ n → GrelL κ n W Θ Δ L γ → GrelL κ m W Θ Δ L γ.
+  Lemma GrelL_down n m W Θ Δ L γ : ole m n → GrelL κ n W Θ Δ L γ → GrelL κ m W Θ Δ L γ.
   Proof.
     intros Hm. revert Θ L γ. induction Δ as [|[T|] Δ IH]; intros Θ L γ; simpl; [done| |auto].
     destruct (L 0).
@@ -264,7 +263,7 @@ Section groundL.
   Qed.
 
   (** Below the level, a marked value is in V. *)
-  Lemma GrelL_clear n j W Θ Δ L γ : j < n → GrelL κ n W Θ Δ L γ → GrelL κ j W Θ Δ ∅ γ.
+  Lemma GrelL_clear n j W Θ Δ L γ : olt j n → GrelL κ n W Θ Δ L γ → GrelL κ j W Θ Δ ∅ γ.
   Proof.
     intros Hj. revert Θ L γ. induction Δ as [|[T|] Δ IH]; intros Θ L γ; simpl; [done| |].
     - destruct (L 0).
@@ -441,8 +440,8 @@ Proof.
   rewrite tenv_erase_empty, map_union_empty. simpl in Hx. rewrite !dom_empty_L, union_empty_r_L in Hx.
   set (eb := subst (up γ) e). fold eb in Hx.
   apply Vrel_Erel.
-  assert (∀ j W2, j ≤ n → W' ⊑ W2 → Vrel κ j W2 ∅ (TBox m kk C ub c U) (EBox eb)) as Hlob.
-  { induction j as [j IH] using lt_wf_ind. intros W2 Hj HW2. apply Vrel_box_iff.
+  assert (∀ j W2, ole j n → W' ⊑ W2 → Vrel κ j W2 ∅ (TBox m kk C ub c U) (EBox eb)) as Hlob.
+  { induction j as [j IH] using oind. intros W2 Hj HW2. apply Vrel_box_iff.
     split; [done|]. exists eb. split_and!; [done|done|].
     intros W3 xs ss HW3 Hxs Hss Hsc HC. apply Vrel_lolli_iff.
     exists (rename S (subst1 (EBox eb) eb)). split_and!.
@@ -636,8 +635,8 @@ Section later.
     rewrite tenv_erase_empty, map_union_empty. simpl in Hx. rewrite !dom_empty_L, union_empty_r_L in Hx.
     set (eb := subst (up γ) e). fold eb in Hx.
     apply Vrel_Erel.
-    assert (∀ j W2, j ≤ n → W' ⊑ W2 → Vrel κ j W2 ∅ (TBox m kk C ub c U) (EBox eb)) as Hlob.
-    { induction j as [j IH] using lt_wf_ind. intros W2 Hj HW2. apply Vrel_box_iff.
+    assert (∀ j W2, ole j n → W' ⊑ W2 → Vrel κ j W2 ∅ (TBox m kk C ub c U) (EBox eb)) as Hlob.
+    { induction j as [j IH] using oind. intros W2 Hj HW2. apply Vrel_box_iff.
       split; [done|]. exists eb. split_and!; [done|done|].
       intros W3 xs ss HW3 Hxs Hss Hsc HC. apply Vrel_lolli_iff.
       exists (rename S (subst1 (EBox eb) eb)). split_and!.

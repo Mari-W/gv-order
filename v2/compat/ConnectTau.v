@@ -55,7 +55,7 @@ Section tau.
 
   (** Every τ step of the composite. *)
   Lemma tau_all q ev q' : erase q = pc → istep q ev q' → ev_tau ev → (erase q').1 ## chans_of (Σ1 ∪ Σ2) →
-    at_cost_P (S n) (ev_cost κ ev) (Prel κ) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T (erase q').
+    at_cost_P n (ev_cost κ ev) (Prel κ) (Prel κ n) W1 (Σ1 ∪ Σ2) T (erase q').
   Proof.
     intros Hq Hst Hτ Hfr. destruct (pconn_lift _ _ _ _ Hq) as (M1 & M2 & -> & Hd & HM1 & HM2).
     assert (q1.1 ## q2.1) as HCC by (by destruct Hc).

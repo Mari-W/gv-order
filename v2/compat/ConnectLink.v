@@ -84,11 +84,11 @@ Section links.
 
   (** A renaming of the composite after a step of p1 alone. *)
   Lemma ren_comp1 c p1' h :
-    at_cost_P (S n) c (Prel κ) X1 W1 (Σ1 ∪ ΣC) T p1' →
+    at_cost_P n c (Prel κ) X1 W1 (Σ1 ∪ ΣC) T p1' →
     conn Σ1 ΣC p1'.1 Σ2 ΣD q2.1 →
     pren_ok h (Σ1 ∪ Σ2) (pconn p1' q2 K) →
     (∀ o, o ∈ dom (Σ1 ∪ Σ2) → h o = o) →
-    at_cost_P (S n) c (Prel κ) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T (pconn (pmap h p1') (pmap h q2) (set_map (gch h) K)).
+    at_cost_P n c (Prel κ) (Prel κ n) W1 (Σ1 ∪ Σ2) T (pconn (pmap h p1') (pmap h q2) (set_map (gch h) K)).
   Proof.
     intros [A0 A1] Hc1 Hok Hfix.
     assert (pren_ok h (Σ1 ∪ ΣC) p1') as Hok1 by (eapply pren_ok_sub; [exact Hok|]; intros o; apply pheld_pconn_1).
@@ -104,7 +104,7 @@ Section links.
     assert (chans_of (kren h ΣC) = set_map (gch h) K) as HK.
     { apply chans_of_kren; [by destruct Hok|]. intros a b va vb Ha Hb. apply Hok; apply pheld_pconn_1; left;
         rewrite dom_union_L; apply elem_of_union_r; by eapply elem_of_dom_2. }
-    assert (Prel κ (S n) W1 (Σ2 ∪ kren h ΣD) TUnit (pmap h q2)) as P2.
+    assert (Prel κ n W1 (Σ2 ∪ kren h ΣD) TUnit (pmap h q2)) as P2.
     { pose proof (HP2 h ∅ (pren_fuse_ok _ _ _ Hok2)) as H. by rewrite sdrop_empty, E2, pfuse_empty in H. }
     rewrite <-HK. split.
     - intros Hc0. pose proof (G1 p1' (Σ1 ∪ ΣC) h ∅ Σ1 (kren h ΣC) Σ2 (kren h ΣD) (pmap h q2) (A0 Hc0) (pren_fuse_ok _ _ _ Hok1)) as HG.
@@ -115,11 +115,11 @@ Section links.
 
   (** A renaming of the composite after a step of p2 alone. *)
   Lemma ren_comp2 c p2' h :
-    at_cost_P (S n) c (Prel κ) X2 W1 (Σ2 ∪ ΣD) TUnit p2' →
+    at_cost_P n c (Prel κ) X2 W1 (Σ2 ∪ ΣD) TUnit p2' →
     conn Σ1 ΣC q1.1 Σ2 ΣD p2'.1 →
     pren_ok h (Σ1 ∪ Σ2) (pconn q1 p2' K) →
     (∀ o, o ∈ dom (Σ1 ∪ Σ2) → h o = o) →
-    at_cost_P (S n) c (Prel κ) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T (pconn (pmap h q1) (pmap h p2') (set_map (gch h) K)).
+    at_cost_P n c (Prel κ) (Prel κ n) W1 (Σ1 ∪ Σ2) T (pconn (pmap h q1) (pmap h p2') (set_map (gch h) K)).
   Proof.
     intros [A0 A1] Hc2 Hok Hfix.
     assert (pren_ok h (Σ1 ∪ ΣC) q1) as Hok1 by (eapply pren_ok_sub; [exact Hok|]; intros o; apply pheld_pconn_1).
@@ -174,7 +174,7 @@ Section links.
   Lemma tau_link_own1 M1 M2 i e e' o1 o2 :
     M1 ##ₘ M2 → soup M1 = q1.2 → soup M2 = q2.2 → M1 !! i = Some e →
     tstep e (LSess (SLink ({[o1]} ∪ {[o2]}))) e' → ech o1 ∈ q2.1 ∪ K → ech o2 ∈ q1.1 →
-    at_cost_P (S n) (c_link κ) (Prel κ) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T
+    at_cost_P n (c_link κ) (Prel κ) (Prel κ n) W1 (Σ1 ∪ Σ2) T
       (erase ((q1.1 ∪ q2.1 ∪ K) ∖ {[ech o1]}, emap (csub o1 o2) <$> (<[i := e']> (M1 ∪ M2)))).
   Proof.
     intros Hd HM1 HM2 Hi He Ho1 Ho2.
@@ -211,7 +211,7 @@ Section links.
   Lemma tau_link_own2 M1 M2 i e e' o1 o2 :
     M1 ##ₘ M2 → soup M1 = q1.2 → soup M2 = q2.2 → M2 !! i = Some e →
     tstep e (LSess (SLink ({[o1]} ∪ {[o2]}))) e' → ech o1 ∈ q1.1 ∪ K → ech o2 ∈ q2.1 →
-    at_cost_P (S n) (c_link κ) (Prel κ) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T
+    at_cost_P n (c_link κ) (Prel κ) (Prel κ n) W1 (Σ1 ∪ Σ2) T
       (erase ((q1.1 ∪ q2.1 ∪ K) ∖ {[ech o1]}, emap (csub o1 o2) <$> (<[i := e']> (M1 ∪ M2)))).
   Proof.
     intros Hd HM1 HM2 Hi He Ho1 Ho2.
@@ -251,7 +251,7 @@ Section links.
   Lemma tau_link_ext1 M1 M2 i e e' o1 o2 :
     M1 ##ₘ M2 → soup M1 = q1.2 → soup M2 = q2.2 → M1 !! i = Some e →
     tstep e (LSess (SLink ({[o1]} ∪ {[o2]}))) e' → ech o1 ∈ q1.1 ∪ q2.1 ∪ K → ech o1 ∉ q1.1 → ech o2 ∉ q1.1 →
-    at_cost_P (S n) (c_link κ) (Prel κ) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T
+    at_cost_P n (c_link κ) (Prel κ) (Prel κ n) W1 (Σ1 ∪ Σ2) T
       (erase ((q1.1 ∪ q2.1 ∪ K) ∖ {[ech o1]}, emap (csub o1 o2) <$> (<[i := e']> (M1 ∪ M2)))).
   Proof.
     intros Hd HM1 HM2 Hi He HoC Hn1 Hn2.
@@ -263,7 +263,7 @@ Section links.
     destruct (Hl1 _ _ _ _ (Hq1e M1 HM1) Hst1) as (oa & ob & Sa & Sb & x & Eab & Nab & La & Lb & Hab & A).
     simpl in A. rewrite difference_empty_L in A.
     assert (∃ S1 S2 y, (Σ1 ∪ ΣC) !! o1 = Some (S1, y) ∧ (Σ1 ∪ ΣC) !! o2 = Some (S2, y‾) ∧ sdual S1 S2 ∧ o1 ≠ o2 ∧
-      at_cost_P (S n) (c_link κ) (Prel κ) X1 W1 (delete o1 (delete o2 (Σ1 ∪ ΣC))) T (erase (q1.1, <[i := e']> M1)))
+      at_cost_P n (c_link κ) (Prel κ) X1 W1 (delete o1 (delete o2 (Σ1 ∪ ΣC))) T (erase (q1.1, <[i := e']> M1)))
       as (S1 & S2 & y & L1 & L2 & H12' & No & A').
     { destruct (pair_eq _ _ _ _ Eab Nab) as [[-> ->]|[-> ->]].
       - exists Sa, Sb, x. done.
@@ -307,7 +307,7 @@ Section links.
       assert (pren_ok h (Σ2 ∪ ΣD) q2) as Hok2.
       { apply pren_ok_csub; [by apply not_eq_sym| | |]; intros [H|H]; rewrite ?dom_union_L in H; simpl in H;
           rewrite ?ech_edual in H; clear -H Co1 Co2 Hn1'; cc_set_solver. }
-      assert (Prel κ (S n) W1 (<[o2 := (S2, y‾)]> Σ2 ∪ delete (edual o1) ΣD) TUnit (pmap h q2)) as P2.
+      assert (Prel κ n W1 (<[o2 := (S2, y‾)]> Σ2 ∪ delete (edual o1) ΣD) TUnit (pmap h q2)) as P2.
       { pose proof (HP2 h ∅ (pren_fuse_ok _ _ _ Hok2)) as P. rewrite sdrop_empty, pfuse_empty, Kh in P.
         rewrite <-insert_union_l. revert P. apply Prel_conv. apply senv_eqv_insert; [apply senv_eqv_refl|].
         eapply sdual_trans_l; [exact Hd1'|exact H12']. }
@@ -412,7 +412,7 @@ Section links.
   Lemma tau_link_ext2 M1 M2 i e e' o1 o2 :
     M1 ##ₘ M2 → soup M1 = q1.2 → soup M2 = q2.2 → M2 !! i = Some e →
     tstep e (LSess (SLink ({[o1]} ∪ {[o2]}))) e' → ech o1 ∈ q1.1 ∪ q2.1 ∪ K → ech o1 ∉ q2.1 → ech o2 ∉ q2.1 →
-    at_cost_P (S n) (c_link κ) (Prel κ) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T
+    at_cost_P n (c_link κ) (Prel κ) (Prel κ n) W1 (Σ1 ∪ Σ2) T
       (erase ((q1.1 ∪ q2.1 ∪ K) ∖ {[ech o1]}, emap (csub o1 o2) <$> (<[i := e']> (M1 ∪ M2)))).
   Proof.
     intros Hd HM1 HM2 Hi He HoC Hn1 Hn2.
@@ -424,7 +424,7 @@ Section links.
     destruct (Hl2 _ _ _ _ (Hq2e M2 HM2) Hst2) as (oa & ob & Sa & Sb & x & Eab & Nab & La & Lb & Hab & A).
     simpl in A. rewrite difference_empty_L in A.
     assert (∃ S1 S2 y, (Σ2 ∪ ΣD) !! o1 = Some (S1, y) ∧ (Σ2 ∪ ΣD) !! o2 = Some (S2, y‾) ∧ sdual S1 S2 ∧ o1 ≠ o2 ∧
-      at_cost_P (S n) (c_link κ) (Prel κ) X2 W1 (delete o1 (delete o2 (Σ2 ∪ ΣD))) TUnit (erase (q2.1, <[i := e']> M2)))
+      at_cost_P n (c_link κ) (Prel κ) X2 W1 (delete o1 (delete o2 (Σ2 ∪ ΣD))) TUnit (erase (q2.1, <[i := e']> M2)))
       as (S1 & S2 & y & L1 & L2 & H12' & No & A').
     { destruct (pair_eq _ _ _ _ Eab Nab) as [[-> ->]|[-> ->]].
       - exists Sa, Sb, x. done.
@@ -469,7 +469,7 @@ Section links.
       { apply pren_ok_csub; [by apply not_eq_sym| | |]; intros [H|H]; rewrite ?dom_union_L in H; simpl in H;
           rewrite ?ech_edual in H; clear -H Co1 Co2 Hn1'; cc_set_solver. }
       set (Σ1' := <[o2 := (S1', y‾)]> Σ1).
-      assert (Prel κ (S n) W1 (Σ1' ∪ delete (edual o1) ΣC) T (pmap h q1)) as P1.
+      assert (Prel κ n W1 (Σ1' ∪ delete (edual o1) ΣC) T (pmap h q1)) as P1.
       { pose proof (HP1 h ∅ (pren_fuse_ok _ _ _ Hok1)) as P. rewrite sdrop_empty, pfuse_empty, Kh in P.
         unfold Σ1'. by rewrite <-insert_union_l. }
       assert (delete o1 (delete o2 (Σ2 ∪ ΣD)) = delete o2 Σ2 ∪ delete o1 ΣD) as E2.

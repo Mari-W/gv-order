@@ -114,26 +114,25 @@ Section blind.
   (** ** E reads its type only through V *)
 
   Lemma Erel_teq_1 n : ∀ T T',
-    (∀ m W Θ v, m ≤ n → Vrel κ m W Θ T v → Vrel κ m W Θ T' v) →
+    (∀ m W Θ v, ole m n → Vrel κ m W Θ T v → Vrel κ m W Θ T' v) →
     ∀ W Θ F e, Erel κ n W Θ T F e → Erel κ n W Θ T' F e.
   Proof.
-    induction n as [n IHn] using lt_wf_ind. intros T T' HV W Θ F e HE.
-    destruct n as [|n]; [apply Erel_0|].
+    induction n as [n IHn] using oind. intros T T' HV W Θ F e HE.
     revert W Θ F e HE.
-    cut (∀ W Θ T0 F e, Erel κ (S n) W Θ T0 F e → T0 = T → Erel κ (S n) W Θ T' F e).
+    cut (∀ W Θ T0 F e, Erel κ n W Θ T0 F e → T0 = T → Erel κ n W Θ T' F e).
     { intros H W Θ F e HE. by eapply H. }
-    refine (Erel_S_ind κ n _ _). intros W Θ T0 F e H ->. apply Erel_S_iff. intros W1 HW1.
+    refine (Erel_ind κ n _ _). intros W Θ T0 F e H ->. apply Erel_iff. intros W1 HW1.
     destruct (H W1 HW1) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     assert (∀ c W Θ F e',
-      at_cost_E (S n) c (Erel κ) (λ W Θ T0 F e, Erel κ (S n) W Θ T0 F e ∧
-                                     (T0 = T → Erel κ (S n) W Θ T' F e)) W Θ T F e' →
-      at_cost_E (S n) c (Erel κ) (Erel κ (S n)) W Θ T' F e') as Hac.
+      at_cost_E n c (Erel κ) (λ W Θ T0 F e, Erel κ n W Θ T0 F e ∧
+                                     (T0 = T → Erel κ n W Θ T' F e)) W Θ T F e' →
+      at_cost_E n c (Erel κ) (Erel κ n) W Θ T' F e') as Hac.
     { intros c W0 Θ0 F0 e' [A1 A2]. split.
       - intros Hc. by apply A1.
-      - intros Hc. apply (IHn (S n - c) ltac:(lia) T T'); [|by apply A2].
-        intros m W2 Θ2 v Hm. apply HV. lia. }
+      - intros Hc j Hj. apply (IHn j (oadd_lt _ _ _ Hc Hj) T T'); [|by apply A2].
+        intros m W2 Θ2 v Hm. apply HV. exact (ole_trans _ _ _ Hm (oadd_le_l _ _ _ Hj)). }
     split; [|split; [|unfold Esteps; split_and!]].
-    - intros Hirr. apply HV; [lia|]. by apply Hs.
+    - intros Hirr. apply HV; [apply ole_refl|]. by apply Hs.
     - done.
     - intros e' Hst. by apply Hac, H1.
     - intros ℓ c e' Hst Hc g Hg. destruct (H2 ℓ c e' Hst Hc g Hg) as [S HS]. exists S. by apply Hac.
@@ -141,15 +140,15 @@ Section blind.
       exists S0, x. split; [done|]. exists S. by apply Hac.
     - intros v e' Hst. destruct (H4 v e' Hst) as (ΘM & Θr & A1 & A2 & A4 & A5).
       exists ΘM, Θr. split_and!; [done|done| |by apply Hac].
-      revert A4. apply Varr_mono; [by intros|by intros|by intros|]. by intros _ ? ? ? ? [? _].
+      revert A4. apply Varr_mono; [by intros|by intros|by intros|]. by intros _ ? ? ? ? ? ? [? _].
     - intros o w e' Hst.
       destruct (H5 o w e' Hst) as (S0 & x & m' & U & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
       exists S0, x, m', U, S, ΘM, Θr. split_and!; [done..|by apply Hac].
     - intros o w e' Hst. destruct (H6 o w e' Hst) as (S0 & x & m' & U & S & A1 & A2 & A3).
       exists S0, x, m', U, S. split_and!; [done|done|].
       intros j Θin Hj Hd Hw. pose proof (c_take_pos κ).
-      apply (IHn j ltac:(lia) T T'); [|by apply A3].
-      intros m W2 Θ2 v Hm. apply HV. lia.
+      apply (IHn j (c_take_lt κ n j Hj) T T'); [|by apply A3].
+      intros m W2 Θ2 v Hm. apply HV. exact (ole_trans _ _ _ Hm (oadd_le_l _ _ _ Hj)).
     - intros o e' Hst. destruct (H7 o e' Hst) as (S0 & x & A1 & A2 & A3).
       exists S0, x. split_and!; [done|done|by apply Hac].
     - intros o i e' Hst. destruct (H8 o i e' Hst) as (S0 & x & S1 & S2 & A1 & A2 & A3).
@@ -161,7 +160,7 @@ Section blind.
   Qed.
 
   Lemma Erel_teq n T T' :
-    (∀ m W Θ v, m ≤ n → Vrel κ m W Θ T v ↔ Vrel κ m W Θ T' v) →
+    (∀ m W Θ v, ole m n → Vrel κ m W Θ T v ↔ Vrel κ m W Θ T' v) →
     ∀ W Θ F e, Erel κ n W Θ T F e ↔ Erel κ n W Θ T' F e.
   Proof.
     intros HV W Θ F e. split; apply Erel_teq_1; intros m W' Θ' v Hm; by apply HV.

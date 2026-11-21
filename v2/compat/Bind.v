@@ -1,7 +1,7 @@
 (** * The bind lemma, once for every cost table (stage S4, proposal §2.8)
 
       e ∈ E[κ]^W _ n⟦Θ1 ⊢ T⟧^(F ∪ heads Θ2)
-      ∀ W' ⊒ W, j ≤ n, Θv. v ∈ V[κ]^W' _ j⟦Θv ⊢ T⟧ ⟹ K[v] ∈ E[κ]^W' _ j⟦Θv ∪ Θ2 ⊢ U⟧^F
+      ∀ W' ⊒ W, ole j n, Θv. v ∈ V[κ]^W' _ j⟦Θv ⊢ T⟧ ⟹ K[v] ∈ E[κ]^W' _ j⟦Θv ∪ Θ2 ⊢ U⟧^F
       ───────────────────────────────────────────────────────────────────────────
       K[e] ∈ E[κ]^W _ n⟦Θ1 ∪ Θ2 ⊢ U⟧^F
 
@@ -21,18 +21,18 @@ Section bind.
 
   (** ** The clauses of E at a positive level, in the current world *)
 
-  Lemma Erel_S_stop n W Θ T F e : Erel κ (S n) W Θ T F e → irred e → Vrel κ (S n) W Θ T e.
-  Proof. intros HE. apply Erel_S_iff in HE. by destruct (HE W (wext_refl W)) as (? & _). Qed.
+  Lemma Erel_stop n W Θ T F e : Erel κ n W Θ T F e → irred e → Vrel κ n W Θ T e.
+  Proof. intros HE. apply Erel_iff in HE. by destruct (HE W (wext_refl W)) as (? & _). Qed.
 
-  Lemma Erel_S_ready n W Θ T F e :
-    Erel κ (S n) W Θ T F e → ¬ irred e → ready _ W(Θ ∣ F, e).
-  Proof. intros HE. apply Erel_S_iff in HE. by destruct (HE W (wext_refl W)) as (_ & ? & _). Qed.
+  Lemma Erel_ready n W Θ T F e :
+    Erel κ n W Θ T F e → ¬ irred e → ready _ W(Θ ∣ F, e).
+  Proof. intros HE. apply Erel_iff in HE. by destruct (HE W (wext_refl W)) as (_ & ? & _). Qed.
 
   (** The ends a step acts on are held. *)
   Lemma Erel_sends n W Θ T F e σ e' :
-    Erel κ (S n) W Θ T F e → tstep e (LSess σ) e' → sends σ ⊆ dom Θ.
+    Erel κ n W Θ T F e → tstep e (LSess σ) e' → sends σ ⊆ dom Θ.
   Proof.
-    intros HE Hst. pose proof (Erel_S_step κ n W W Θ T F e _ e' HE (wext_refl W) Hst) as H.
+    intros HE Hst. pose proof (Erel_step κ n W W Θ T F e _ e' HE (wext_refl W) Hst) as H.
     destruct σ as [o w|o w|o|o i|o i|os]; simpl in H |- *.
     - destruct H as (? & ? & ? & ? & ? & ? & ? & Ho & _). apply elem_of_dom_2 in Ho. set_solver.
     - destruct H as (? & ? & ? & ? & ? & Ho & _). apply elem_of_dom_2 in Ho. set_solver.
@@ -46,10 +46,10 @@ Section bind.
   (** ** Readiness under a frame *)
 
   Section readiness.
-    Context (n : nat) (W : world) (Θ1 Θ2 : senv) (T : ty) (F F' : gset point).
+    Context (n : Ix) (W : world) (Θ1 Θ2 : senv) (T : ty) (F F' : gset point).
     Context (f : frame) (e : expr) (Hf : frame_val f) (Hv : ¬ is_val e).
     Context (Hd : Θ1 ##ₘ Θ2) (HF : F ∪ senv_heads Θ2 ⊆ F').
-    Context (HE : Erel κ (S n) W Θ1 T F' e).
+    Context (HE : Erel κ n W Θ1 T F' e).
 
     Lemma bind_offered_up o : offered_t Θ1 e o → offered_t (Θ1 ∪ Θ2) (fill_frame f e) o.
     Proof.
@@ -67,10 +67,10 @@ Section bind.
     Lemma bind_ready : ready _ W(Θ1 ∪ Θ2 ∣ F, fill_frame f e).
     Proof.
       assert (¬ irred e) as Hni.
-      { intros Hi. apply Hv. eapply Vrel_val, (Erel_S_stop _ _ _ _ _ _ HE Hi). }
+      { intros Hi. apply Hv. eapply Vrel_val, (Erel_stop _ _ _ _ _ _ HE Hi). }
       intros Hs. assert (stable_t e) as Hse.
       { intros α e' Hst. exact (Hs _ _ (tstep_fill _ _ _ _ Hf Hst)). }
-      destruct (Erel_S_ready _ _ _ _ _ _ HE Hni Hse) as [Hval Hab]. split.
+      destruct (Erel_ready _ _ _ _ _ _ HE Hni Hse) as [Hval Hab]. split.
       - intros Hno. exfalso. apply Hv, Hval. intros o Ho. by apply (Hno o), bind_offered_up.
       - destruct Hab as [(os & e1 & Hl)|Hab].
         { left. exists os, (fill_frame f e1). by apply tstep_fill. }
@@ -92,48 +92,48 @@ Section bind.
   Lemma Erel_bind n : ∀ f W Θ1 Θ2 T U F e,
     frame_val f → Θ1 ##ₘ Θ2 →
     e ∈ E[κ]^W _ n⟦Θ1 ⊢ T⟧^(F ∪ senv_heads Θ2) →
-    (∀ W' j Θv v, W ⊑ W' → j ≤ n → Θv ##ₘ Θ2 → v ∈ V[κ]^W' _ j⟦Θv ⊢ T⟧ →
+    (∀ W' j Θv v, W ⊑ W' → ole j n → Θv ##ₘ Θ2 → v ∈ V[κ]^W' _ j⟦Θv ⊢ T⟧ →
        fill_frame f v ∈ E[κ]^W' _ j⟦Θv ∪ Θ2 ⊢ U⟧^F) →
     fill_frame f e ∈ E[κ]^W _ n⟦Θ1 ∪ Θ2 ⊢ U⟧^F.
   Proof.
-    induction n as [n IHn] using lt_wf_ind.
+    induction n as [n IHn] using oind.
     intros f W Θ1 Θ2 T U F e Hf Hd HE HK.
-    destruct n as [|n]; [apply Erel_0|].
-    cut (∀ W Θ1 T F' e, Erel κ (S n) W Θ1 T F' e → ∀ Θ2, Θ1 ##ₘ Θ2 → F ∪ senv_heads Θ2 ⊆ F' →
-           (∀ W' j Θv v, W ⊑ W' → j ≤ S n → Θv ##ₘ Θ2 → Vrel κ j W' Θv T v →
+    cut (∀ W Θ1 T F' e, Erel κ n W Θ1 T F' e → ∀ Θ2, Θ1 ##ₘ Θ2 → F ∪ senv_heads Θ2 ⊆ F' →
+           (∀ W' j Θv v, W ⊑ W' → ole j n → Θv ##ₘ Θ2 → Vrel κ j W' Θv T v →
               Erel κ j W' (Θv ∪ Θ2) U F (fill_frame f v)) →
-           Erel κ (S n) W (Θ1 ∪ Θ2) U F (fill_frame f e)).
+           Erel κ n W (Θ1 ∪ Θ2) U F (fill_frame f e)).
     { intros H. eapply H; [exact HE|done|done|exact HK]. }
     clear W Θ1 Θ2 T e Hd HE HK.
-    refine (Erel_S_ind κ n _ _).
+    refine (Erel_ind κ n _ _).
     intros W Θ1 T F' e Hb Θ2 Hd HF HK.
-    assert (Erel κ (S n) W Θ1 T F' e) as HE.
-    { apply Erel_S_iff. revert Hb. apply Ebody_mono; [lia|intros; reflexivity|by intros
+    assert (Erel κ n W Θ1 T F' e) as HE.
+    { apply Erel_iff. revert Hb. apply Ebody_mono; [intros; reflexivity|by intros
         |by intros|by intros|by intros ? ? ? ? []|by intros ? ? ? ? []]. }
     destruct (is_val e) eqn:Hv.
-    { apply (HK W (S n) Θ1 e); [apply wext_refl|lia|done|].
-      apply (Erel_S_stop _ _ _ _ _ _ HE), val_irred. by rewrite Hv. }
+    { apply (HK W n Θ1 e); [apply wext_refl|apply ole_refl|done|].
+      apply (Erel_stop _ _ _ _ _ _ HE), val_irred. by rewrite Hv. }
     assert (¬ is_val e) as Hnv by (rewrite Hv; intros []).
-    apply Erel_S_iff. intros W1 HW1.
+    apply Erel_iff. intros W1 HW1.
     pose proof (Erel_mono κ _ _ _ _ _ _ _ HW1 HE) as HE1.
-    assert (∀ W' j Θv v, W1 ⊑ W' → j ≤ S n → Θv ##ₘ Θ2 → Vrel κ j W' Θv T v →
+    assert (∀ W' j Θv v, W1 ⊑ W' → ole j n → Θv ##ₘ Θ2 → Vrel κ j W' Θv T v →
               Erel κ j W' (Θv ∪ Θ2) U F (fill_frame f v)) as HK1.
     { intros W' j Θv v HW' Hj Hd' HV. apply HK; [by eapply wext_trans|done..]. }
     destruct (Hb W1 HW1) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     (* the continuation after a step of cost c *)
     assert (∀ c Θ1' e', Θ1' ##ₘ Θ2 →
-      at_cost_E (S n) c (Erel κ)
-        (λ W Θ1 T F' e, Erel κ (S n) W Θ1 T F' e ∧
+      at_cost_E n c (Erel κ)
+        (λ W Θ1 T F' e, Erel κ n W Θ1 T F' e ∧
           ∀ Θ2, Θ1 ##ₘ Θ2 → F ∪ senv_heads Θ2 ⊆ F' →
-            (∀ W' j Θv v, W ⊑ W' → j ≤ S n → Θv ##ₘ Θ2 → Vrel κ j W' Θv T v →
+            (∀ W' j Θv v, W ⊑ W' → ole j n → Θv ##ₘ Θ2 → Vrel κ j W' Θv T v →
                Erel κ j W' (Θv ∪ Θ2) U F (fill_frame f v)) →
-            Erel κ (S n) W (Θ1 ∪ Θ2) U F (fill_frame f e)) W1 Θ1' T F' e' →
-      at_cost_E (S n) c (Erel κ) (Erel κ (S n)) W1 (Θ1' ∪ Θ2) U F (fill_frame f e')) as Hac.
+            Erel κ n W (Θ1 ∪ Θ2) U F (fill_frame f e)) W1 Θ1' T F' e' →
+      at_cost_E n c (Erel κ) (Erel κ n) W1 (Θ1' ∪ Θ2) U F (fill_frame f e')) as Hac.
     { intros c Θ1' e' Hd' [A1 A2]. split.
       - intros Hc. destruct (A1 Hc) as [_ HΦ]. by apply HΦ.
-      - intros Hc. eapply (IHn (S n - c)); [lia|done|done| |].
-        + eapply Erel_future; [|exact (A2 Hc)]. done.
-        + intros W' j Θv v HW' Hj Hd'' HV. apply HK1; [done|lia|done|done]. }
+      - intros Hc j Hj. eapply (IHn j (oadd_lt _ _ _ Hc Hj)); [done|done| |].
+        + eapply Erel_future; [|exact (A2 Hc j Hj)]. done.
+        + intros W' j' Θv v HW' Hj' Hd'' HV. apply HK1; [done| |done|done].
+          exact (ole_trans _ _ _ Hj' (oadd_le_l _ _ _ Hj)). }
     split; [|split; [|unfold Esteps; split_and!]].
     - (* (stop) *)
       intros Hirr. exfalso. apply Hnv. eapply Vrel_val, Hs.
@@ -166,7 +166,7 @@ Section bind.
       exists ΘM, (Θr ∪ Θ2). split_and!.
       + by apply map_disjoint_union_r.
       + by rewrite map_union_assoc.
-      + revert A4. apply Varr_mono; [by intros|by intros|by intros|]. by intros _ ? ? ? ? [? _].
+      + revert A4. apply Varr_mono; [by intros|by intros|by intros|]. by intros _ ? ? ? ? ? ? [? _].
       + by apply Hac.
     - (* O-Send *)
       intros o w E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
@@ -189,10 +189,10 @@ Section bind.
       apply map_disjoint_union_l in Hdin as [Hd1 Hd2].
       assert (<[o:=(S, x⁺)]> (Θ1 ∪ Θ2) ∪ Θin = (<[o:=(S, x⁺)]> Θ1 ∪ Θin) ∪ Θ2) as ->.
       { rewrite insert_union_l, <-!map_union_assoc. f_equal. by apply map_union_comm. }
-      pose proof (c_take_pos κ).
-      eapply (IHn j); [lia|done| |eapply Erel_future; [|apply A3; [lia|done|done]]; done|].
+      eapply (IHn j (c_take_lt κ n j Hj)); [done| |eapply Erel_future; [|apply A3; [exact Hj|done|done]]; done|].
       + apply map_disjoint_union_l. split; [by apply map_disjoint_insert_l|by symmetry].
-      + intros W' j' Θv v HW' Hj' Hd'' HV. apply HK1; [done|lia|done|done].
+      + intros W' j' Θv v HW' Hj' Hd'' HV. apply HK1; [done| |done|done].
+        exact (ole_trans _ _ _ Hj' (oadd_le_l _ _ _ Hj)).
     - (* O-Close *)
       intros o E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
       destruct (H7 o e' Hst') as (S0 & x & A1 & A2 & A3).

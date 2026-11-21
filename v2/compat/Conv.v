@@ -220,7 +220,7 @@ Section rel.
     ∀ W Θ Θ' F e, senv_eqv Θ Θ' → Erel κ n W Θ T F e → Erel κ n W Θ' T F e.
 
   Lemma Vconv_step n T :
-    (∀ j, j < n → ∀ T, VC j T ∧ EC j T) →
+    (∀ j, olt j n → ∀ T, VC j T ∧ EC j T) →
     (∀ T', tsize T' < tsize T → VC n T') →
     (c_beta κ = 0 → ∀ U, tsize U < tsize T → EC n U) →
     VC n T.
@@ -232,7 +232,7 @@ Section rel.
       exists e. split_and!; [done|by rewrite <-(senv_eqv_dom _ _ HΘ)|by rewrite <-(senv_eqv_heads _ _ HΘ)|].
       intros W' j Θw w F HW Hj Hd Hub Hw.
       assert (EC j U) as HEU.
-      { destruct (decide (j < n)); [by apply IHl|]. assert (j = n) as -> by lia. apply IHe; [lia|simpl; lia]. }
+      { destruct (decide (olt j n)); [by apply IHl|]. assert (j = n) as -> by lia. apply IHe; [lia|simpl; lia]. }
       apply (HEU W' (Θ ∪ Θw)); [apply senv_eqv_union; [done|apply senv_eqv_refl]|].
       apply H; [done|done| |done|done]. rewrite map_disjoint_dom in Hd |- *. by rewrite (senv_eqv_dom _ _ HΘ).
     - intros (v1 & v2 & Θ1 & Θ2 & -> & Hd & -> & H1 & H2)%Vrel_prod_iff. apply Vrel_prod_iff.
@@ -253,25 +253,25 @@ Section rel.
   Qed.
 
   Lemma Econv_step n T :
-    (∀ j, j < n → ∀ T, VC j T ∧ EC j T) → VC n T → VC n TUnit →
+    (∀ j, olt j n → ∀ T, VC j T ∧ EC j T) → VC n T → VC n TUnit →
     (c_give κ = 0 → ∀ T', VC n T') →
     EC n T.
   Proof.
     intros IHl HVT HVU HVP. destruct n as [|n]; [unfold EC; intros; apply Erel_0|].
     intros W Θ Θ' F e HΘ HE.
-    cut (∀ W Θ T0 F e, Erel κ (S n) W Θ T0 F e → T0 = T ∨ T0 = TUnit →
-           ∀ Θ', senv_eqv Θ Θ' → Erel κ (S n) W Θ' T0 F e);
+    cut (∀ W Θ T0 F e, Erel κ n W Θ T0 F e → T0 = T ∨ T0 = TUnit →
+           ∀ Θ', senv_eqv Θ Θ' → Erel κ n W Θ' T0 F e);
       [intros H; by apply (H W Θ T F e HE (or_introl eq_refl))|].
     clear W Θ Θ' F e HΘ HE.
-    refine (Erel_S_ind κ n _ _). intros W Θ T0 F e Hb HT0 Θ' HΘ.
-    assert (VC (S n) T0) as HV0 by (destruct HT0 as [->| ->]; done).
-    apply Erel_S_iff. intros W1 HW1.
+    refine (Erel_ind κ n _ _). intros W Θ T0 F e Hb HT0 Θ' HΘ.
+    assert (VC n T0) as HV0 by (destruct HT0 as [->| ->]; done).
+    apply Erel_iff. intros W1 HW1.
     destruct (Hb W1 HW1) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     assert (∀ c Θa Θb e', senv_eqv Θa Θb →
-      at_cost_E (S n) c (Erel κ) (λ W Θ T0 F e, Erel κ (S n) W Θ T0 F e ∧
-          (T0 = T ∨ T0 = TUnit → ∀ Θ', senv_eqv Θ Θ' → Erel κ (S n) W Θ' T0 F e))
+      at_cost_E n c (Erel κ) (λ W Θ T0 F e, Erel κ n W Θ T0 F e ∧
+          (T0 = T ∨ T0 = TUnit → ∀ Θ', senv_eqv Θ Θ' → Erel κ n W Θ' T0 F e))
         W1 Θa T0 F e' →
-      at_cost_E (S n) c (Erel κ) (Erel κ (S n)) W1 Θb T0 F e') as Hac.
+      at_cost_E n c (Erel κ) (Erel κ n) W1 Θb T0 F e') as Hac.
     { intros c Θa Θb e' Hab [A1 A2]. split.
       - intros Hc. by apply A1.
       - intros Hc. apply (proj2 (IHl (S n - c) ltac:(lia) T0) _ Θa); [done|]. by apply A2. }
@@ -344,7 +344,7 @@ Section rel.
 
   Lemma conv_level n : ∀ T, VC n T ∧ EC n T.
   Proof.
-    induction n as [n IHn] using lt_wf_ind.
+    induction n as [n IHn] using oind.
     assert (VC n TUnit) as HVU.
     { apply Vconv_step; [done|intros T' HT|intros _ U HU]; [pose proof (tsize_pos T')|pose proof (tsize_pos U)];
         simpl in *; lia. }
@@ -437,9 +437,9 @@ Section prel.
   Lemma Prel_conv_lvl m : ∀ W Σ T p, Prel κ m W Σ T p →
     ∀ Σ', senv_eqv Σ Σ' → Prel κ m W Σ' T p.
   Proof.
-    induction m as [m IHm] using lt_wf_ind. destruct m as [|n]; [intros; apply Prel_0|].
-    refine (Prel_S_ind κ n _ _). intros W Σ T p Hb Σ' HΣ.
-    apply Prel_S_iff. intros W1 HW1 HS1 h D Hh.
+    induction m as [m IHm] using oind. destruct m as [|n]; [intros; apply Prel_0|].
+    refine (Prel_ind κ n _ _). intros W Σ T p Hb Σ' HΣ.
+    apply Prel_iff. intros W1 HW1 HS1 h D Hh.
     pose proof (fuse_ok_conv h D Σ Σ' p HΣ Hh) as Hh0.
     destruct (Hb W1 HW1 HS1 h D Hh0) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
     assert (senv_eqv (sdrop D (kren h Σ)) (sdrop D (kren h Σ'))) as HΣh
@@ -449,9 +449,9 @@ Section prel.
     remember (sdrop D (kren h Σ')) as Σ0' eqn:EΣ'.
     clear Ep EΣ EΣ' p Σ Σ' h D. rename p0 into p, Σ0 into Σ, Σ0' into Σ', HΣh into HΣ.
     assert (∀ c Σa Σb p', senv_eqv Σa Σb →
-      at_cost_P (S n) c (Prel κ) (λ W Σ T p, Prel κ (S n) W Σ T p ∧
-          (∀ Σ', senv_eqv Σ Σ' → Prel κ (S n) W Σ' T p)) W1 Σa T p' →
-      at_cost_P (S n) c (Prel κ) (Prel κ (S n)) W1 Σb T p') as Hac.
+      at_cost_P n c (Prel κ) (λ W Σ T p, Prel κ n W Σ T p ∧
+          (∀ Σ', senv_eqv Σ Σ' → Prel κ n W Σ' T p)) W1 Σa T p' →
+      at_cost_P n c (Prel κ) (Prel κ n) W1 Σb T p') as Hac.
     { intros c Σa Σb p' Hab [A1 A2]. split.
       - intros Hc. by apply A1.
       - intros Hc. apply (IHm (S n - c) ltac:(lia) _ Σa); [by apply A2|done]. }

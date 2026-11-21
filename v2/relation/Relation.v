@@ -236,10 +236,14 @@ Definition recv_env (Σ Θ2 : senv) : senv :=
 
 (** The relation after a step of cost c at level n is X at cost 0 and
     the relation at every level j with j + c ≤ n otherwise. They are
-    stated as two implications, so that X occurs strictly positively. *)
+    stated as two implications, so that X occurs strictly positively.
+    A value is read below n at every such level and at level 0, the
+    truncated level n − c of finite step indices, so that its ends are
+    known at every positive level n. *)
 Definition at_cost_V (n : Ix) (c : nat) (Vl : Ix → vrel) (VN : vrel)
     (W : world) (Θ : senv) (T : ty) (v : expr) : Prop :=
-  (c = 0 → VN W Θ T v) ∧ (c ≠ 0 → ∀ j, ole (oadd j c) n → Vl j W Θ T v).
+  (c = 0 → VN W Θ T v) ∧
+  (c ≠ 0 → ∀ j, olt j n → ole (oadd j c) n ∨ j = ozero → Vl j W Θ T v).
 
 Definition at_cost_E (n : Ix) (c : nat) (El : Ix → erel) (X : erel)
     (W : world) (Θ : senv) (T : ty) (F : gset point) (e : expr) : Prop :=
@@ -504,8 +508,10 @@ Section bodies.
     | PIntro W Σ T p :
         Pbody n Vl Pl VN (Pind n Vl Pl VN) W Σ T p → Pind n Vl Pl VN W Σ T p.
 
+  (** P at a level with nothing below it holds every process, as P at
+      level 0 of finite step indices. *)
   Definition Ptop (n : Ix) (Vl : Ix → vrel) (Pl : Ix → prel) (VN : vrel) : prel :=
-    Pind n Vl Pl VN.
+    λ W Σ T p, olt ozero n → Pind n Vl Pl VN W Σ T p.
 
   (** ** Levels
 
@@ -776,8 +782,8 @@ Section mono.
     (c = 0 → VN1 W Θ T v → VN2 W Θ T v) →
     at_cost_V n c Vl1 VN1 W Θ T v → at_cost_V n c Vl2 VN2 W Θ T v.
   Proof.
-    intros HVl HV [H1 H2]. split; [auto|]. intros Hc j Hj.
-    apply HVl; [exact (oadd_lt j c n Hc Hj)|auto].
+    intros HVl HV [H1 H2]. split; [auto|]. intros Hc j Hj Hj'.
+    apply HVl; [exact Hj|auto].
   Qed.
 
   Lemma Esteps_mono n Vl1 Vl2 El1 El2 VN1 VN2 X1 X2 W Θ T F e :
@@ -994,7 +1000,7 @@ Section fuel.
     (∀ W Θ T v, VN1 W Θ T v → VN2 W Θ T v) →
     Ptop κ n Vl1 Pl1 VN1 W Σ T p → Ptop κ n Vl2 Pl2 VN2 W Σ T p.
   Proof.
-    intros HVl HPl HVN. unfold Ptop. revert W Σ T p.
+    intros HVl HPl HVN. unfold Ptop. intros H Hz. specialize (H Hz). revert W Σ T p H.
     refine (Pind_ind' κ n Vl1 Pl1 VN1 _ _).
     intros W0 Σ0 T0 p0 H0. constructor. revert H0. apply Pbody_mono; [done|done|done|].
     by intros ? ? ? [_ ?].
@@ -1204,32 +1210,32 @@ Section equations.
 
   Lemma Prel_iff n W Σ T p :
     Prel κ n W Σ T p ↔
-    Pbody κ n (Vrel κ) (Prel κ) (Vrel κ n) (Prel κ n) W Σ T p.
+    (olt ozero n → Pbody κ n (Vrel κ) (Prel κ) (Vrel κ n) (Prel κ n) W Σ T p).
   Proof.
     rewrite Prel_unfold. unfold Ptop. split.
-    - intros H. destruct H as [W Σ T p H]. revert H.
+    - intros H H0. specialize (H H0). destruct H as [W Σ T p H]. revert H.
       apply Pbody_mono; [intros; reflexivity|intros ? ? ? ? ? ? H; exact H
         |intros ? ? ? ? H; exact H|].
-      intros ? ? ? H; exact (proj2 (Prel_unfold n _ _ _ _) H).
-    - intros H. constructor. revert H.
+      intros ? ? ? H; apply (proj2 (Prel_unfold n _ _ _ _)). intros _. exact H.
+    - intros H H0. specialize (H H0). constructor. revert H.
       apply Pbody_mono; [intros; reflexivity|intros ? ? ? ? ? ? H; exact H
         |intros ? ? ? ? H; exact H|].
-      intros ? ? ? H; exact (proj1 (Prel_unfold n _ _ _ _) H).
+      intros ? ? ? H; exact (proj1 (Prel_unfold n _ _ _ _) H H0).
   Qed.
 
-  Lemma Prel_ind n (Φ : prel) :
+  Lemma Prel_ind n (Φ : prel) : olt ozero n →
     (∀ W Σ T p,
        Pbody κ n (Vrel κ) (Prel κ) (Vrel κ n)
          (λ W Σ T p, Prel κ n W Σ T p ∧ Φ W Σ T p) W Σ T p →
        Φ W Σ T p) →
     ∀ W Σ T p, Prel κ n W Σ T p → Φ W Σ T p.
   Proof.
-    intros Hind W Σ T p H. apply (proj1 (Prel_unfold n _ _ _ _)) in H. unfold Ptop in H.
-    revert W Σ T p H.
+    intros H0 Hind W Σ T p H. apply (proj1 (Prel_unfold n _ _ _ _)) in H. unfold Ptop in H.
+    specialize (H H0). revert W Σ T p H.
     apply Pind_ind'. intros W Σ T p H. apply Hind. revert H.
     apply Pbody_mono; [intros; reflexivity|intros ? ? ? ? ? ? H; exact H
       |intros ? ? ? ? H; exact H|].
-    intros ? ? ? [H1 H2]; split; [exact (proj2 (Prel_unfold n _ _ _ _) H1)|exact H2].
+    intros ? ? ? [H1 H2]; split; [apply (proj2 (Prel_unfold n _ _ _ _)); intros _; exact H1|exact H2].
   Qed.
   (** The clauses at the identity renaming. *)
   Lemma Pbody_id n Vl Pl VN X W Σ T p :
@@ -1240,7 +1246,10 @@ Section equations.
   Qed.
 
   Lemma Prel_clauses n W Σ T p :
-    Prel κ n W Σ T p → ∀ W1, W ⊑ W1 → strict W1 →
+    olt ozero n → Prel κ n W Σ T p → ∀ W1, W ⊑ W1 → strict W1 →
     Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) (Prel κ n) W1 Σ T p.
-  Proof. intros H. apply Pbody_id. by apply Prel_iff. Qed.
+  Proof. intros H0 H. apply Pbody_id. by apply Prel_iff. Qed.
+
+  Lemma Prel_0 n W Σ T p : ¬ olt ozero n → Prel κ n W Σ T p.
+  Proof. intros H. apply Prel_iff. by intros H0. Qed.
 End equations.

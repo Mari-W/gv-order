@@ -84,7 +84,7 @@ Section closure.
   Lemma Prel_mono n W W' Σ T p : W ⊑ W' → Prel κ n W Σ T p → Prel κ n W' Σ T p.
   Proof.
     intros HW. rewrite !Prel_iff.
-    intros H W1 HW1. apply H. by eapply wext_trans.
+    intros H H0 W1 HW1. apply H; [done|]. by eapply wext_trans.
   Qed.
 
   (** ** Downward closed in the step index *)
@@ -115,7 +115,8 @@ Section closure.
     ole m n → at_cost_V n c (Vrel κ) (Vrel κ n) W Θ T v → at_cost_V m c (Vrel κ) (Vrel κ m) W Θ T v.
   Proof.
     intros Hmn [H1 H2]. split; intros Hc; [eapply Vrel_down; [exact Hmn|by apply H1]|].
-    intros j Hj. apply H2; [done|exact (ole_trans _ _ _ Hj Hmn)].
+    intros j Hj Hj'. apply H2; [done|exact (olt_trans_le _ _ _ Hj Hmn)|].
+    destruct Hj' as [Hj2|Hj2]; [left; exact (ole_trans _ _ _ Hj2 Hmn)|by right].
   Qed.
 
   (** E at level n and future F is E at every level m ≤ n and every
@@ -180,15 +181,17 @@ Section closure.
   Lemma Prel_down m : ∀ n W Σ T p, ole m n → Prel κ n W Σ T p → Prel κ m W Σ T p.
   Proof.
     induction m as [m IHm] using oind. intros n W Σ T p Hmn HP.
+    apply Prel_iff. intros Hm0. assert (olt ozero n) as Hn0 by exact (olt_trans_le _ _ _ Hm0 Hmn).
     revert W Σ T p HP.
-    refine (Prel_ind κ n (λ W Σ T p, Prel κ m W Σ T p) _).
-    intros W Σ T p H. apply Prel_iff. intros W1 HW1 HS1 h D Hh.
+    refine (Prel_ind κ n (λ W Σ T p, Pbody κ m (Vrel κ) (Prel κ) (Vrel κ m) (Prel κ m) W Σ T p) Hn0 _).
+    intros W Σ T p H. intros W1 HW1 HS1 h D Hh.
     destruct (H W1 HW1 HS1 h D Hh) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
     assert (∀ c W Σ T0 p', at_cost_P n c (Prel κ)
-        (λ W Σ T p, Prel κ n W Σ T p ∧ Prel κ m W Σ T p) W Σ T0 p' →
+        (λ W Σ T p, Prel κ n W Σ T p ∧ Pbody κ m (Vrel κ) (Prel κ) (Vrel κ m) (Prel κ m) W Σ T p)
+        W Σ T0 p' →
       at_cost_P m c (Prel κ) (Prel κ m) W Σ T0 p') as Hac.
     { intros c W0 Σ0 T0 p' [A1 A2]. split.
-      - intros Hc. by apply A1.
+      - intros Hc. apply Prel_iff. intros _. by apply A1.
       - intros Hc j Hj. apply (IHm j (oadd_lt _ _ _ Hc Hj) j); [apply ole_refl|].
         apply A2; [done|exact (ole_trans _ _ _ Hj Hmn)]. }
     split; [|split; [|unfold Psteps; split_and!]].

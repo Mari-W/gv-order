@@ -24,7 +24,7 @@ Section core.
   Proof. intros H. unfold erase. simpl. rewrite H. by destruct q2. Qed.
 
   Local Lemma HP2r g : dcomm g → (∀ o, pheld (Σ2 ∪ ΣD) q2 o → g o = o) →
-    ∀ j, j ≤ S n → Prel κ j W1 (Σ2 ∪ ΣD) TUnit (pmap g q2).
+    ∀ j, ole j n → Prel κ j W1 (Σ2 ∪ ΣD) TUnit (pmap g q2).
   Proof.
     intros Hd Hid j Hj. destruct (ren_held_id g _ _ Hd Hid) as (Hok & Hk & _).
     pose proof (HP2 g ∅ (pren_fuse_ok _ _ _ Hok)) as H. rewrite sdrop_empty, Hk, pfuse_empty in H.
@@ -32,7 +32,7 @@ Section core.
   Qed.
 
   Local Lemma HP1r g : dcomm g → (∀ o, pheld (Σ1 ∪ ΣC) q1 o → g o = o) →
-    ∀ j, j ≤ S n → Prel κ j W1 (Σ1 ∪ ΣC) T (pmap g q1).
+    ∀ j, ole j n → Prel κ j W1 (Σ1 ∪ ΣC) T (pmap g q1).
   Proof.
     intros Hd Hid j Hj. destruct (ren_held_id g _ _ Hd Hid) as (Hok & Hk & _).
     pose proof (HP1 g ∅ (pren_fuse_ok _ _ _ Hok)) as H. rewrite sdrop_empty, Hk, pfuse_empty in H.
@@ -52,7 +52,7 @@ Section core.
     M1 ##ₘ M2 → soup M1 = q1.2 → soup M2 = q2.2 →
     istep (q1.1 ∪ q2.1 ∪ K, M1 ∪ M2) ev q' → ev_tau ev → ev_local q1.1 M1 ev →
     q'.1 ## chans_of (Σ1 ∪ Σ2) →
-    at_cost_P (S n) (ev_cost κ ev) (Prel κ) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T (erase q').
+    at_cost_P n (ev_cost κ ev) (Prel κ) (Prel κ n) W1 (Σ1 ∪ Σ2) T (erase q').
   Proof.
     intros Hd HM1 HM2 Hst Hτ Hloc Hfr.
     assert (q1.1 ## q2.1 ∪ K) as HC12 by (destruct Hc; cc_set_solver).
@@ -93,7 +93,7 @@ Section core.
     M1 ##ₘ M2 → soup M1 = q1.2 → soup M2 = q2.2 →
     istep (q1.1 ∪ q2.1 ∪ K, M1 ∪ M2) ev q' → ev_tau ev → ev_local q2.1 M2 ev →
     q'.1 ## chans_of (Σ1 ∪ Σ2) →
-    at_cost_P (S n) (ev_cost κ ev) (Prel κ) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T (erase q').
+    at_cost_P n (ev_cost κ ev) (Prel κ) (Prel κ n) W1 (Σ1 ∪ Σ2) T (erase q').
   Proof.
     intros Hd HM1 HM2 Hst Hτ Hloc Hfr.
     assert (q2.1 ## q1.1 ∪ K) as HC21 by (destruct Hc; cc_set_solver).
@@ -126,19 +126,19 @@ Section core.
     - intros Hc0. apply (L (S n - ev_cost κ ev) ltac:(lia) Σ1 ΣC Σ2 ΣD); [apply HP1r; [done|done|lia]|by apply A1|done].
   Qed.
 
-  Local Lemma at_cost_down c Σ T' p j : at_cost_P (S n) c (Prel κ) (λ W Σ T p, X1 W Σ T p ∨ X2 W Σ T p) W1 Σ T' p →
-    j ≤ S n - c → Prel κ j W1 Σ T' p.
+  Local Lemma at_cost_down c Σ T' p j : at_cost_P n c (Prel κ) (λ W Σ T p, X1 W Σ T p ∨ X2 W Σ T p) W1 Σ T' p →
+    ole j n - c → Prel κ j W1 Σ T' p.
   Proof.
     intros [A0 A1] Hj. destruct (decide (c = 0)) as [->|Hcz].
     - destruct (A0 eq_refl) as [?|?]; eapply Prel_down; [|by apply X1P| |by apply X2P]; lia.
     - eapply Prel_down; [|by apply A1]. lia.
   Qed.
 
-  Local Lemma at_cost_or1 c Σ T' p : at_cost_P (S n) c (Prel κ) X1 W1 Σ T' p →
-    at_cost_P (S n) c (Prel κ) (λ W Σ T p, X1 W Σ T p ∨ X2 W Σ T p) W1 Σ T' p.
+  Local Lemma at_cost_or1 c Σ T' p : at_cost_P n c (Prel κ) X1 W1 Σ T' p →
+    at_cost_P n c (Prel κ) (λ W Σ T p, X1 W Σ T p ∨ X2 W Σ T p) W1 Σ T' p.
   Proof. intros [A0 A1]. split; [intros; left; by apply A0|done]. Qed.
-  Local Lemma at_cost_or2 c Σ T' p : at_cost_P (S n) c (Prel κ) X2 W1 Σ T' p →
-    at_cost_P (S n) c (Prel κ) (λ W Σ T p, X1 W Σ T p ∨ X2 W Σ T p) W1 Σ T' p.
+  Local Lemma at_cost_or2 c Σ T' p : at_cost_P n c (Prel κ) X2 W1 Σ T' p →
+    at_cost_P n c (Prel κ) (λ W Σ T p, X1 W Σ T p ∨ X2 W Σ T p) W1 Σ T' p.
   Proof. intros [A0 A1]. split; [intros; right; by apply A0|done]. Qed.
 
   Local Lemma lookup_cut o S x : (Σ1 ∪ ΣC) !! o = Some (S, x) → ech o ∈ K → ΣC !! o = Some (S, x).
@@ -195,7 +195,7 @@ Section core.
     M1 ##ₘ M2 → soup M1 = q1.2 → soup M2 = q2.2 →
     M1 !! i = Some e → M2 !! j = Some f →
     tstep e (LSess (SClose o)) e' → tstep f (LSess (SClose (edual o))) f' → ech o ∈ q1.1 ∪ q2.1 ∪ K →
-    at_cost_P (S n) (c_give κ + c_take κ) (Prel κ) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T
+    at_cost_P n (c_give κ + c_take κ) (Prel κ) (Prel κ n) W1 (Σ1 ∪ Σ2) T
       (erase ((q1.1 ∪ q2.1 ∪ K) ∖ {[ech o]}, <[j := f']> (<[i := e']> (M1 ∪ M2)))).
   Proof.
     intros Hd HM1 HM2 Hi Hj He Hf HoC.
@@ -204,11 +204,11 @@ Section core.
     destruct H1 as (_ & _ & (_ & _ & _ & S1c & _)). destruct H2 as (_ & _ & (_ & _ & _ & S2c & _)).
     assert (istep (q1.1, M1) (EvOffer i (SClose o)) (q1.1 ∖ sentc (SClose o), <[i := e']> M1) → ech o ∉ q1.1 →
       ∃ S0 x, (Σ1 ∪ ΣC) !! o = Some (S0, x) ∧ unfoldS S0 = SEnd ∧
-        at_cost_P (S n) (c_give κ) (Prel κ) X1 W1 (delete o (Σ1 ∪ ΣC)) T (erase (q1.1 ∖ sentc (SClose o), <[i := e']> M1))) as C1.
+        at_cost_P n (c_give κ) (Prel κ) X1 W1 (delete o (Σ1 ∪ ΣC)) T (erase (q1.1 ∖ sentc (SClose o), <[i := e']> M1))) as C1.
     { intros Hs _. exact (S1c _ _ _ _ (Hq1e M1 HM1) Hs). }
     assert (istep (q2.1, M2) (EvOffer j (SClose (edual o))) (q2.1 ∖ sentc (SClose (edual o)), <[j := f']> M2) →
       ∃ S0 x, (Σ2 ∪ ΣD) !! edual o = Some (S0, x) ∧ unfoldS S0 = SEnd ∧
-        at_cost_P (S n) (c_give κ) (Prel κ) X2 W1 (delete (edual o) (Σ2 ∪ ΣD)) TUnit (erase (q2.1 ∖ sentc (SClose (edual o)), <[j := f']> M2))) as C2.
+        at_cost_P n (c_give κ) (Prel κ) X2 W1 (delete (edual o) (Σ2 ∪ ΣD)) TUnit (erase (q2.1 ∖ sentc (SClose (edual o)), <[j := f']> M2))) as C2.
     { intros Hs. exact (S2c _ _ _ _ (Hq2e M2 HM2) Hs). }
     assert (ech o ∉ q1.1) as Hn1.
     { intros Ho. destruct C2 as (S0 & x & Hl & _).
@@ -288,7 +288,7 @@ Section core.
     M1 ##ₘ M2 → soup M1 = q1.2 → soup M2 = q2.2 →
     M1 !! i = Some e → M2 !! j = Some f →
     tstep e (LSess (SSel o b)) e' → tstep f (LSess (SBra (edual o) b)) f' →
-    at_cost_P (S n) (c_give κ + c_take κ) (Prel κ) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T
+    at_cost_P n (c_give κ + c_take κ) (Prel κ) (Prel κ n) W1 (Σ1 ∪ Σ2) T
       (erase (q1.1 ∪ q2.1 ∪ K, <[j := f']> (<[i := e']> (M1 ∪ M2)))).
   Proof.
     intros Hd HM1 HM2 Hi Hj He Hf.
@@ -296,11 +296,11 @@ Section core.
     pose proof (cut_dual_chans _ _ Hcut) as HKD.
     destruct H1 as (_ & _ & (_ & _ & _ & _ & S1c & _)). destruct H2 as (_ & _ & (_ & _ & _ & _ & _ & S2c & _)).
     assert (ech o ∉ q1.1 → ∃ S0 x S1 S2, (Σ1 ∪ ΣC) !! o = Some (S0, x) ∧ unfoldS S0 = SPlus S1 S2 ∧
-        at_cost_P (S n) (c_give κ) (Prel κ) X1 W1 (<[o := (bsel b S1 S2, sel_pt x b)]> (Σ1 ∪ ΣC)) T
+        at_cost_P n (c_give κ) (Prel κ) X1 W1 (<[o := (bsel b S1 S2, sel_pt x b)]> (Σ1 ∪ ΣC)) T
           (erase (q1.1 ∖ sentc (SSel o b), <[i := e']> M1))) as C1.
     { intros Hn. eapply (S1c _ _ _ _ _ (Hq1e M1 HM1)). eapply p_act_session; [exact Hi|exact He|simpl; clear -Hn; cc_set_solver]. }
     assert (ech o ∉ q2.1 → ∃ S0 x S1 S2, (Σ2 ∪ ΣD) !! edual o = Some (S0, x) ∧ unfoldS S0 = SWith S1 S2 ∧
-        at_cost_P (S n) (c_take κ) (Prel κ) X2 W1 (<[edual o := (bsel b S1 S2, bra_pt x b)]> (Σ2 ∪ ΣD)) TUnit
+        at_cost_P n (c_take κ) (Prel κ) X2 W1 (<[edual o := (bsel b S1 S2, bra_pt x b)]> (Σ2 ∪ ΣD)) TUnit
           (erase (q2.1 ∖ sentc (SBra (edual o) b), <[j := f']> M2))) as C2.
     { intros Hn. eapply (S2c _ _ _ _ _ (Hq2e M2 HM2)). eapply p_act_session; [exact Hj|exact Hf|simpl; rewrite ech_edual; clear -Hn; cc_set_solver]. }
     assert (ech o ∉ q1.1) as Hn1.
@@ -343,7 +343,7 @@ Section core.
     M1 ##ₘ M2 → soup M1 = q1.2 → soup M2 = q2.2 →
     M2 !! i = Some e → M1 !! j = Some f →
     tstep e (LSess (SSel o b)) e' → tstep f (LSess (SBra (edual o) b)) f' →
-    at_cost_P (S n) (c_give κ + c_take κ) (Prel κ) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T
+    at_cost_P n (c_give κ + c_take κ) (Prel κ) (Prel κ n) W1 (Σ1 ∪ Σ2) T
       (erase (q1.1 ∪ q2.1 ∪ K, <[j := f']> (<[i := e']> (M1 ∪ M2)))).
   Proof.
     intros Hd HM1 HM2 Hi Hj He Hf.
@@ -351,11 +351,11 @@ Section core.
     pose proof (cut_dual_chans _ _ Hcut) as HKD.
     destruct H1 as (_ & _ & (_ & _ & _ & _ & _ & S1c & _)). destruct H2 as (_ & _ & (_ & _ & _ & _ & S2c & _)).
     assert (ech o ∉ q2.1 → ∃ S0 x S1 S2, (Σ2 ∪ ΣD) !! o = Some (S0, x) ∧ unfoldS S0 = SPlus S1 S2 ∧
-        at_cost_P (S n) (c_give κ) (Prel κ) X2 W1 (<[o := (bsel b S1 S2, sel_pt x b)]> (Σ2 ∪ ΣD)) TUnit
+        at_cost_P n (c_give κ) (Prel κ) X2 W1 (<[o := (bsel b S1 S2, sel_pt x b)]> (Σ2 ∪ ΣD)) TUnit
           (erase (q2.1 ∖ sentc (SSel o b), <[i := e']> M2))) as C2.
     { intros Hn. eapply (S2c _ _ _ _ _ (Hq2e M2 HM2)). eapply p_act_session; [exact Hi|exact He|simpl; clear -Hn; cc_set_solver]. }
     assert (ech o ∉ q1.1 → ∃ S0 x S1 S2, (Σ1 ∪ ΣC) !! edual o = Some (S0, x) ∧ unfoldS S0 = SWith S1 S2 ∧
-        at_cost_P (S n) (c_take κ) (Prel κ) X1 W1 (<[edual o := (bsel b S1 S2, bra_pt x b)]> (Σ1 ∪ ΣC)) T
+        at_cost_P n (c_take κ) (Prel κ) X1 W1 (<[edual o := (bsel b S1 S2, bra_pt x b)]> (Σ1 ∪ ΣC)) T
           (erase (q1.1 ∖ sentc (SBra (edual o) b), <[j := f']> M1))) as C1.
     { intros Hn. eapply (S1c _ _ _ _ _ (Hq1e M1 HM1)). eapply p_act_session; [exact Hj|exact Hf|simpl; rewrite ech_edual; clear -Hn; cc_set_solver]. }
     assert (ech o ∉ q1.1) as Hn1.

@@ -14,7 +14,7 @@
 
     The proof is a strong induction on the level and, inside it, an
     induction over the steps of cost 0 whose predicate is closed under
-    renaming ([Erel_S_ind_ren]). The clause (fuse) of P reads a fusion of
+    renaming ([Erel_ind_ren]). The clause (fuse) of P reads a fusion of
     the thread as the renamed thread over a fused interface ([sth_fuse]).
     A spawn splits the environment of the thread by O-Spawn: the channels
     with one end on each side become the cut of P-Connect, which composes
@@ -1005,23 +1005,23 @@ Section core.
   Context (κ : ctable) (n : nat) (IH : ∀ j, j < S n → PTermL κ j).
   Context (X : erel) (HXr : erel_ren X).
   Context (HX : ∀ W Θ T e Σ ΘB C, tfree T → sth Θ Σ ΘB C → X W Θ T ∅ e →
-                 Prel κ (S n) W Σ T (C, {[+ e +]})).
+                 Prel κ n W Σ T (C, {[+ e +]})).
 
   Lemma ac_EP W Θ T e Σ ΘB C c : tfree T → sth Θ Σ ΘB C →
-    at_cost_E (S n) c (Erel κ) X W Θ T ∅ e →
-    at_cost_P (S n) c (Prel κ) (Prel κ (S n)) W Σ T (C, {[+ e +]}).
+    at_cost_E n c (Erel κ) X W Θ T ∅ e →
+    at_cost_P n c (Prel κ) (Prel κ n) W Σ T (C, {[+ e +]}).
   Proof.
     intros HT Hs [A1 A2]. split.
     - intros Hc. exact (HX _ _ _ _ _ _ _ HT Hs (A1 Hc)).
     - intros Hc. refine (IH (S n - c) _ W Θ T e Σ ΘB C HT Hs (A2 Hc)). lia.
   Qed.
 
-  Lemma core W Θ T e Σ ΘB C : tfree T → sth Θ Σ ΘB C → Erel κ (S n) W Θ T ∅ e →
-    Ebody κ (S n) (Vrel κ) (Erel κ) (Vrel κ (S n)) X W Θ T ∅ e →
+  Lemma core W Θ T e Σ ΘB C : tfree T → sth Θ Σ ΘB C → Erel κ n W Θ T ∅ e →
+    Ebody κ n (Vrel κ) (Erel κ) (Vrel κ n) X W Θ T ∅ e →
     (∀ W1, W ⊑ W1 → ∀ v e', tstep e (LSpawn v) e' →
-       at_cost_P (S n) (c_spawn κ) (Prel κ) (Prel κ (S n)) W1 Σ T (C, {[+ e' +]} ⊎ {[+ App v EUnit +]})) →
+       at_cost_P n (c_spawn κ) (Prel κ) (Prel κ n) W1 Σ T (C, {[+ e' +]} ⊎ {[+ App v EUnit +]})) →
     ∀ W1, W ⊑ W1 → strict W1 →
-    Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) (Prel κ (S n)) W1 Σ T (C, {[+ e +]}).
+    Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) (Prel κ n) W1 Σ T (C, {[+ e +]}).
   Proof.
     intros HT Hs HE Hb Hsp W1 HW1 HS1.
     pose proof (Erel_mono κ _ _ _ _ _ _ _ HW1 HE) as HE1.
@@ -1094,7 +1094,7 @@ Section core.
         destruct (link_norm Θ o1 o2 p1 p2 S1 S2 x Hos Hne L1 L2 Hd) as (A1 & A2 & y & Hne' & K1 & K2 & Hd' & Edel).
         rewrite <-Edel in HA.
         destruct (lk_res Θ Σ ΘB C Hs o1 o2 A1 A2 y K1 K2 Hd' Hne' Hc1) as [Hk (Σ'' & ΘB'' & Hs'' & Heqv)].
-        assert (at_cost_E (S n) (c_link κ) (Erel κ) X W1 (kren (csub o1 o2) (delete o1 (delete o2 Θ))) T ∅
+        assert (at_cost_E n (c_link κ) (Erel κ) X W1 (kren (csub o1 o2) (delete o1 (delete o2 Θ))) T ∅
                   (emap (csub o1 o2) e')) as HA'.
         { destruct HA as [A1' A2']. split; intros Hc; [apply HXr; [done|by apply A1']|].
           apply Erel_rename; [done|by apply A2']. }
@@ -1177,8 +1177,8 @@ Section node.
   Context (κ : ctable) (n : nat) (IH : ∀ j, j < S n → PTermL κ j).
 
   Definition Φt : erel := λ W Θ T F e, F = ∅ → tfree T → ∀ Σ ΘB C, sth Θ Σ ΘB C →
-    Prel κ (S n) W Σ T (C, {[+ e +]}).
-  Definition Xt : erel := λ W Θ T F e, Erel κ (S n) W Θ T F e ∧ Φren Φt W Θ T F e.
+    Prel κ n W Σ T (C, {[+ e +]}).
+  Definition Xt : erel := λ W Θ T F e, Erel κ n W Θ T F e ∧ Φren Φt W Θ T F e.
 
   Lemma Xt_ren : erel_ren Xt.
   Proof.
@@ -1186,22 +1186,22 @@ Section node.
     intros g Hg. rewrite kren_kren by done. rewrite emap_emap. apply H2. by apply kinj_kren.
   Qed.
 
-  Lemma Xt_P W Θ T e Σ ΘB C : tfree T → sth Θ Σ ΘB C → Xt W Θ T ∅ e → Prel κ (S n) W Σ T (C, {[+ e +]}).
+  Lemma Xt_P W Θ T e Σ ΘB C : tfree T → sth Θ Σ ΘB C → Xt W Θ T ∅ e → Prel κ n W Σ T (C, {[+ e +]}).
   Proof.
     intros HT Hs [_ H]. pose proof (H id (kinj_id Θ)) as H'. rewrite kren_id_map, emap_id in H'. exact (H' eq_refl HT Σ ΘB C Hs).
   Qed.
 
-  Lemma Xt_E W Θ T F e : Ebody κ (S n) (Vrel κ) (Erel κ) (Vrel κ (S n)) Xt W Θ T F e → Erel κ (S n) W Θ T F e.
-  Proof. intros Hb. apply Erel_S_iff. revert Hb. apply Ebody_mapX. by intros ? ? ? ? ? [? _]. Qed.
+  Lemma Xt_E W Θ T F e : Ebody κ n (Vrel κ) (Erel κ) (Vrel κ n) Xt W Θ T F e → Erel κ n W Θ T F e.
+  Proof. intros Hb. apply Erel_iff. revert Hb. apply Ebody_mapX. by intros ? ? ? ? ? [? _]. Qed.
 
   (** The fusions of a single thread, given its spawns. *)
   Lemma node_gen W Θ T e :
-    Ebody κ (S n) (Vrel κ) (Erel κ) (Vrel κ (S n)) Xt W Θ T ∅ e →
+    Ebody κ n (Vrel κ) (Erel κ) (Vrel κ n) Xt W Θ T ∅ e →
     (∀ h Σ ΘB C, kinj h Θ → tfree T → sth (kren h Θ) Σ ΘB C → ∀ W1, W ⊑ W1 → ∀ v e', tstep (emap h e) (LSpawn v) e' →
-       at_cost_P (S n) (c_spawn κ) (Prel κ) (Prel κ (S n)) W1 Σ T (C, {[+ e' +]} ⊎ {[+ App v EUnit +]})) →
+       at_cost_P n (c_spawn κ) (Prel κ) (Prel κ n) W1 Σ T (C, {[+ e' +]} ⊎ {[+ App v EUnit +]})) →
     Φt W Θ T ∅ e.
   Proof.
-    intros Hb Hsp _ HT Σ ΘB C Hs. apply Prel_S_iff. intros W1 HW1 HS1 h D Hf. rewrite pfuse_single.
+    intros Hb Hsp _ HT Σ ΘB C Hs. apply Prel_iff. intros W1 HW1 HS1 h D Hf. rewrite pfuse_single.
     pose proof (Xt_E _ _ _ _ _ Hb) as HE. pose proof (fs_kinj Θ Σ ΘB C e Hs h D Hf) as Hk.
     pose proof (sth_fuse Θ Σ ΘB C e Hs h D Hf) as Hs'.
     refine (core κ n IH Xt Xt_ren Xt_P W (kren h Θ) T (emap h e) _ _ _ HT Hs' _ _ _ W1 HW1 HS1).
@@ -1212,7 +1212,7 @@ Section node.
 
   (** A thread whose redex is a β-redex spawns nothing. *)
   Lemma node_beta W Θ T e : act e = Some ABeta →
-    Ebody κ (S n) (Vrel κ) (Erel κ) (Vrel κ (S n)) Xt W Θ T ∅ e → Φt W Θ T ∅ e.
+    Ebody κ n (Vrel κ) (Erel κ) (Vrel κ n) Xt W Θ T ∅ e → Φt W Θ T ∅ e.
   Proof.
     intros Ha Hb. apply node_gen; [done|]. intros h Σ ΘB C _ _ _ W1 _ v e' Hs. exfalso.
     destruct (act_step _ _ _ Hs) as (a & Ha' & Hoff). rewrite act_emap, Ha in Ha'. simpl in Ha'.
@@ -1221,17 +1221,17 @@ Section node.
 
   (** The spawned thread. *)
   Lemma child W ΘM v ΣM ΘBM CM :
-    Varr κ (S n) (Vrel κ) (Erel κ) (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit) (λ W' Θ' F' e0, Xt W' Θ' TUnit F' e0)
+    Varr κ n (Vrel κ) (Erel κ) (λ _ _ Θ' w, Θ' = ∅ ∧ w = EUnit) (λ _ W' Θ' F' e0, Xt W' Θ' TUnit F' e0)
       TUnit TUnit UTop LBot W ΘM v →
-    sth ΘM ΣM ΘBM CM → ∀ m, m ≤ S n → Prel κ m W ΣM TUnit (CM, {[+ App v EUnit +]}).
+    sth ΘM ΣM ΘBM CM → ∀ m, ole m n → Prel κ m W ΣM TUnit (CM, {[+ App v EUnit +]}).
   Proof.
     intros (e1 & -> & _ & _ & Hv0) Hs m Hm.
     pose proof (λ W' j Θ' w HW Hj Hd, Hv0 W' j Θ' w ∅ HW Hj Hd eq_refl) as Hv. simpl in Hv. clear Hv0.
     assert (tstep (App (Lam e1) EUnit) LBeta (subst1 EUnit e1)) as Hβ by (by apply tstep_head, t_act_app).
-    assert (∀ j W', j + c_beta κ ≤ S n → j < S n → W ⊑ W' → Erel κ j W' ΘM TUnit ∅ (subst1 EUnit e1)) as Hlow.
+    assert (∀ j W', j + c_beta κ ≤ n → j < S n → W ⊑ W' → Erel κ j W' ΘM TUnit ∅ (subst1 EUnit e1)) as Hlow.
     { intros j W' Hj Hj' HW. destruct (Hv W' j ∅ EUnit HW Hj (map_disjoint_empty_r _)) as [B _].
       rewrite map_union_empty in B. apply B; [done|]. by apply Vrel_unit_iff. }
-    assert (∀ j W', j ≤ S n → j - c_beta κ < S n → W ⊑ W' → Erel κ (j - c_beta κ) W' ΘM TUnit ∅ (subst1 EUnit e1)) as Hlow'.
+    assert (∀ j W', ole j n → j - c_beta κ < S n → W ⊑ W' → Erel κ (j - c_beta κ) W' ΘM TUnit ∅ (subst1 EUnit e1)) as Hlow'.
     { intros j W' Hj Hj' HW. destruct (decide (c_beta κ ≤ j)); [apply Hlow; [lia|lia|done]|].
       replace (j - c_beta κ) with 0 by lia. apply Erel_0. }
     assert (∀ W', W ⊑ W' → ¬ irred (App (Lam e1) EUnit) ∧ ready _ W'(ΘM ∣ ∅, App (Lam e1) EUnit)) as Hrd.
@@ -1242,11 +1242,11 @@ Section node.
       split; [intros Hi; by destruct Hni|split; [by intros _|unfold Esteps; split_and!]].
       all: intros; match goal with H : tstep _ _ _ |- _ => apply app_thunk_step in H as [Hα ->] end; try discriminate.
       split.
-      + intros Hc. destruct (Hv W' (S n) ∅ EUnit HW' ltac:(lia) (map_disjoint_empty_r _)) as [_ B].
+      + intros Hc. destruct (Hv W' n ∅ EUnit HW' ltac:(lia) (map_disjoint_empty_r _)) as [_ B].
         rewrite map_union_empty in B. by apply B.
       + intros Hc. apply Hlow'; [lia|lia|done].
     - refine (IH m ltac:(lia) W ΘM TUnit _ ΣM ΘBM CM tfree_unit Hs _).
-      destruct m as [|m]; [apply Erel_0|]. apply Erel_S_iff. intros W' HW'.
+      destruct m as [|m]; [apply Erel_0|]. apply Erel_iff. intros W' HW'.
       destruct (Hrd W' HW') as [Hni Hr].
       split; [intros Hi; by destruct Hni|split; [by intros _|unfold Esteps; split_and!]].
       all: intros; match goal with H : tstep _ _ _ |- _ => apply app_thunk_step in H as [Hα ->] end; try discriminate.
@@ -1258,16 +1258,16 @@ Section node.
   (** A spawn: the parent and the child compose over the cut of the
       channels with one end on each side (P-Connect). *)
   Lemma spawn_case W Θ T e Σ ΘB C : tfree T → sth Θ Σ ΘB C →
-    Ebody κ (S n) (Vrel κ) (Erel κ) (Vrel κ (S n)) Xt W Θ T ∅ e →
+    Ebody κ n (Vrel κ) (Erel κ) (Vrel κ n) Xt W Θ T ∅ e →
     ∀ W1, W ⊑ W1 → ∀ v e', tstep e (LSpawn v) e' →
-      at_cost_P (S n) (c_spawn κ) (Prel κ) (Prel κ (S n)) W1 Σ T (C, {[+ e' +]} ⊎ {[+ App v EUnit +]}).
+      at_cost_P n (c_spawn κ) (Prel κ) (Prel κ n) W1 Σ T (C, {[+ e' +]} ⊎ {[+ App v EUnit +]}).
   Proof.
     intros HT Hs Hb W1 HW1 v e' Hst.
     destruct (Hb W1 HW1) as (_ & _ & _ & _ & _ & H4 & _).
     destruct (H4 _ _ Hst) as (ΘM & Θr & Hd & HΘ & Hth & HA).
     destruct (spawn_split Θ Σ ΘB C ΘM Θr Hs Hd HΘ) as (Hr & HM & Hc & HΣ & HC).
     pose proof (ac_EP κ n IH Xt Xt_P W1 Θr T e' _ _ _ _ HT Hr HA) as [P1 P2].
-    assert (∀ m, m ≤ S n → Prel κ m W1 (s_if C Θr ∪ s_cut C Θr) T (s_ch C Θr, {[+ e' +]}) →
+    assert (∀ m, ole m n → Prel κ m W1 (s_if C Θr ∪ s_cut C Θr) T (s_ch C Θr, {[+ e' +]}) →
               Prel κ m W1 Σ T (C, {[+ e' +]} ⊎ {[+ App v EUnit +]})) as Hcomp.
     { intros m Hm H1. pose proof (child W1 ΘM v _ _ _ Hth HM m Hm) as H2.
       pose proof (conn_all κ T HT m W1 _ _ _ _ _ _ H1 H2 Hc) as H. unfold pconn in H. simpl in H.
@@ -1280,7 +1280,7 @@ Section node.
     - intros Hc0. apply Hcomp; [lia|]. by apply P2.
   Qed.
 
-  Lemma node W Θ T e : Ebody κ (S n) (Vrel κ) (Erel κ) (Vrel κ (S n)) Xt W Θ T ∅ e → Φt W Θ T ∅ e.
+  Lemma node W Θ T e : Ebody κ n (Vrel κ) (Erel κ) (Vrel κ n) Xt W Θ T ∅ e → Φt W Θ T ∅ e.
   Proof.
     intros Hb. apply node_gen; [done|]. intros h Σ ΘB C Hk HT Hs W1 HW1 v e' Hst.
     pose proof (Xt_E _ _ _ _ _ Hb) as HE.
@@ -1290,14 +1290,14 @@ End node.
 
 (** ** P-Term *)
 
-Lemma pterm_level κ n : (∀ j, j < S n → PTermL κ j) → PTermL κ (S n).
+Lemma pterm_level κ n : (∀ j, j < S n → PTermL κ j) → PTermL κ n.
 Proof.
   intros IH W Θ T t Σ ΘB C HT Hs Ht.
-  assert (∀ W Θ T F e, Ebody κ (S n) (Vrel κ) (Erel κ) (Vrel κ (S n))
-            (λ W Θ T F e, Erel κ (S n) W Θ T F e ∧ Φren (Φt κ n) W Θ T F e) W Θ T F e →
+  assert (∀ W Θ T F e, Ebody κ n (Vrel κ) (Erel κ) (Vrel κ n)
+            (λ W Θ T F e, Erel κ n W Θ T F e ∧ Φren (Φt κ n) W Θ T F e) W Θ T F e →
             Φt κ n W Θ T F e) as Hnode.
   { intros W' Θ' T' F e Hb ->. by apply (node κ n IH). }
-  pose proof (Erel_S_ind_ren κ n (Φt κ n) Hnode W Θ T ∅ t Ht id (kinj_id Θ)) as H.
+  pose proof (Erel_ind_ren κ n (Φt κ n) Hnode W Θ T ∅ t Ht id (kinj_id Θ)) as H.
   rewrite kren_id_map, emap_id in H. exact (H eq_refl HT Σ ΘB C Hs).
 Qed.
 

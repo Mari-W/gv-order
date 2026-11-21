@@ -38,10 +38,10 @@ Section values.
   Qed.
 
   Lemma at_cost_V_exact n c m W Θ T v :
-    at_cost_V n c (Vrel κ) (Vrel κ m) W Θ T v → dom Θ = fends v.
+    olt ozero n → at_cost_V n c (Vrel κ) (Vrel κ m) W Θ T v → dom Θ = fends v.
   Proof.
-    intros [H0 H1]. destruct (decide (c = 0)) as [Hc|Hc];
-      [exact (Vrel_exact _ _ _ _ _ (H0 Hc))|exact (Vrel_exact _ _ _ _ _ (H1 Hc))].
+    intros Hn [H0 H1]. destruct (decide (c = 0)) as [Hc|Hc];
+      [exact (Vrel_exact _ _ _ _ _ (H0 Hc))|exact (Vrel_exact _ _ _ _ _ (H1 Hc ozero Hn (or_intror eq_refl)))].
   Qed.
 
   Lemma Vrel_heads n W Θ T v :
@@ -132,10 +132,10 @@ Section redex.
     ¬ irred e →
     (∀ W1, W ⊑ W1 → ready _ W1(Θ ∣ F, e)) →
     (∀ W1 α e', W ⊑ W1 → tstep e α e' →
-       Eobl κ (S n) (Vrel κ) (Erel κ) (Vrel κ (S n)) (Erel κ (S n)) W1 Θ T F α e') →
-    Erel κ (S n) W Θ T F e.
+       Eobl κ n (Vrel κ) (Erel κ) (Vrel κ n) (Erel κ n) W1 Θ T F α e') →
+    Erel κ n W Θ T F e.
   Proof.
-    intros Hni Hr Hs. apply Erel_S_iff. intros W1 HW1. split_and!.
+    intros Hni Hr Hs. apply Erel_iff. intros W1 HW1. split_and!.
     - intros Hi. by destruct Hni.
     - intros _. by apply Hr.
     - apply Esteps_iff. intros α e' Hst. by apply Hs.
@@ -143,33 +143,33 @@ Section redex.
 
   (** A value after a step of cost c. *)
   Lemma at_cost_val n c W Θ T F v :
-    Vrel κ (S n) W Θ T v → at_cost_E (S n) c (Erel κ) (Erel κ (S n)) W Θ T F v.
+    Vrel κ n W Θ T v → at_cost_E n c (Erel κ) (Erel κ n) W Θ T F v.
   Proof.
-    intros HV. split; intros _; apply Vrel_Erel; [done|]. eapply Vrel_down; [|exact HV]. lia.
+    intros HV. split; [intros _; by apply Vrel_Erel|]. intros _ j Hj. apply Vrel_Erel.
+    eapply Vrel_down; [|exact HV]. exact (oadd_le_l _ _ _ Hj).
   Qed.
 
   Lemma at_cost_payload n c W Θ T T' v :
     teq (ty_df T) (ty_df T') →
-    Vrel κ (S n) W Θ T v → at_cost_V (S n) c (Vrel κ) (Vrel κ (S n)) W Θ T' v.
+    Vrel κ n W Θ T v → at_cost_V n c (Vrel κ) (Vrel κ n) W Θ T' v.
   Proof.
     intros Heq HV. apply (Vrel_teq κ _ _ _ _ _ _ Heq) in HV.
-    split; intros _; [done|]. eapply Vrel_down; [|exact HV]. lia.
+    split; [by intros _|]. intros _ j Hj _. eapply Vrel_down; [|exact HV]. by apply olt_ole.
   Qed.
 
   (** ** β redexes *)
 
   Lemma Erel_beta n W Θ T F e e' :
     (∀ α e'', tstep e α e'' → α = LBeta ∧ e'' = e') → tstep e LBeta e' →
-    Erel κ (n - c_beta κ) W Θ T F e' → Erel κ n W Θ T F e.
+    (∀ j, ole (oadd j (c_beta κ)) n → Erel κ j W Θ T F e') → Erel κ n W Θ T F e.
   Proof.
-    intros Hdet Hst HE. destruct n as [|n]; [apply Erel_0|].
-    apply Erel_S_intro.
+    intros Hdet Hst HE. apply Erel_S_intro.
     - intros Hi. exact (Hi _ _ Hst).
     - intros W1 _. eapply ready_tau; [exact Hst|done].
     - intros W1 α e'' HW1 Hs. destruct (Hdet _ _ Hs) as [-> ->]. simpl.
-      split; intros Hc.
-      + rewrite Hc, Nat.sub_0_r in HE. by eapply Erel_mono.
-      + by eapply Erel_mono.
+      split.
+      + intros Hc. eapply Erel_mono; [done|]. apply HE. rewrite Hc. apply ole_refl.
+      + intros Hc j Hj. eapply Erel_mono; [done|]. by apply HE.
   Qed.
 
   Lemma Erel_app n W Θ1 Θ2 ub lb c T1 U a2 F f w :
@@ -183,9 +183,8 @@ Section redex.
     - intros α e'' Hs. assert (head_step (App (Lam e) w) α e'') as Hh by head_only.
       inversion Hh; by subst.
     - by apply tstep_head, t_act_app.
-    - destruct (decide (n ≤ c_beta κ)) as [Hle|Hlt].
-      + replace (n - c_beta κ) with 0 by lia. apply Erel_0.
-      + apply H; [apply wext_refl|lia|done|done|]. eapply Vrel_down; [|exact Hw]. lia.
+    - intros j Hj. apply H; [apply wext_refl|exact Hj|done|done|].
+      eapply Vrel_down; [|exact Hw]. exact (oadd_le_l _ _ _ Hj).
   Qed.
 
   (** ** Session operators *)
@@ -196,8 +195,7 @@ Section redex.
     Vrel κ n W Θ (TProd (payload_at m U x) (TSess S0 x aq1 mt1)) v →
     Erel κ n W Θ (TSess S x⁺ aq2 mt2) F (ESend v).
   Proof.
-    intros Hu Hb Hh HF HV. destruct n as [|n]; [apply Erel_0|].
-    apply Vrel_prod_iff in HV as (w & vo & Θw & Θo & -> & Hd & -> & Hw & Ho).
+    intros Hu Hb Hh HF HV.    apply Vrel_prod_iff in HV as (w & vo & Θw & Θo & -> & Hd & -> & Hw & Ho).
     apply Vrel_sess_iff in Ho as (o & s' & -> & -> & Hs').
     destruct (seqv_unfold_snd _ _ _ _ _ Hs' Hu) as (U' & S' & Hu' & HU & HS).
     pose proof (Vrel_val κ _ _ _ _ _ Hw) as Hwv.
@@ -238,8 +236,7 @@ Section redex.
     Vrel κ n W Θ (TSess S0 x aq1 mt1) v →
     Erel κ n W Θ (TProd (payload_at m U x) (TSess S x⁺ aq2 mt2)) F (ERecv v).
   Proof.
-    intros Hu HF HV. destruct n as [|n]; [apply Erel_0|].
-    apply Vrel_sess_iff in HV as (o & s' & -> & -> & Hs').
+    intros Hu HF HV.    apply Vrel_sess_iff in HV as (o & s' & -> & -> & Hs').
     destruct (seqv_unfold_rcv _ _ _ _ _ Hs' Hu) as (U' & S' & Hu' & HU & HS).
     assert (tstep (ERecv (Chan o)) (LSess (SRecv o EUnit)) (Pair EUnit (Chan o))) as Hst
       by (by apply tstep_head, t_act_recv).
@@ -270,8 +267,7 @@ Section redex.
     unfoldS S0 = SEnd → (∀ y, y ∈ F → W ⊢ x ≺ y) →
     Vrel κ n W Θ (TSess S0 x aq1 mt) v → Erel κ n W Θ TUnit F (EClose v).
   Proof.
-    intros Hu HF HV. destruct n as [|n]; [apply Erel_0|].
-    apply Vrel_sess_iff in HV as (o & s' & -> & -> & Hs').
+    intros Hu HF HV.    apply Vrel_sess_iff in HV as (o & s' & -> & -> & Hs').
     pose proof (seqv_unfold_end _ _ Hs' Hu) as Hu'.
     assert (tstep (EClose (Chan o)) (LSess (SClose o)) EUnit) as Hst
       by (by apply tstep_head, t_act_close).
@@ -294,8 +290,7 @@ Section redex.
     Vrel κ n W Θ (TSess S0 x aq1 mt1) v →
     Erel κ n W Θ (TSess (if i then S2 else S1) (sel_pt x i) aq2 mt2) F (ESel i v).
   Proof.
-    intros Hu HF HV. destruct n as [|n]; [apply Erel_0|].
-    apply Vrel_sess_iff in HV as (o & s' & -> & -> & Hs').
+    intros Hu HF HV.    apply Vrel_sess_iff in HV as (o & s' & -> & -> & Hs').
     destruct (seqv_unfold_plus _ _ _ _ Hs' Hu) as (S1' & S2' & Hu' & H1 & H2).
     assert (tstep (ESel i (Chan o)) (LSess (SSel o i)) (Chan o)) as Hst
       by (by apply tstep_head, t_act_select).
@@ -319,8 +314,7 @@ Section redex.
     Vrel κ n W Θ (TSess S0 x aq1 mt1) v →
     Erel κ n W Θ (TSum (TSess S1 (bra_pt x false) aq2 mt2) (TSess S2 (bra_pt x true) aq3 mt3)) F (EBra v).
   Proof.
-    intros Hu HF HV. destruct n as [|n]; [apply Erel_0|].
-    apply Vrel_sess_iff in HV as (o & s' & -> & -> & Hs').
+    intros Hu HF HV.    apply Vrel_sess_iff in HV as (o & s' & -> & -> & Hs').
     destruct (seqv_unfold_with _ _ _ _ Hs' Hu) as (S1' & S2' & Hu' & H1 & H2).
     assert (tstep (EBra (Chan o)) (LSess (SBra o false)) (Inj false (Chan o))) as Hst
       by (by apply tstep_head, t_act_branch).
@@ -349,8 +343,7 @@ Section redex.
   Lemma Erel_link aq1 aq2 n W Θ S x F v mt1 mt2 :
     Vrel κ n W Θ (TProd (TSess S x aq1 mt1) (TSess (dual S) x‾ aq2 mt2)) v → Erel κ n W Θ TUnit F (ELink v).
   Proof.
-    intros HV. destruct n as [|n]; [apply Erel_0|].
-    apply Vrel_prod_iff in HV as (v1 & v2 & Θ1 & Θ2 & -> & Hd & -> & H1 & H2).
+    intros HV.    apply Vrel_prod_iff in HV as (v1 & v2 & Θ1 & Θ2 & -> & Hd & -> & H1 & H2).
     apply Vrel_sess_iff in H1 as (o1 & s1 & -> & -> & Hs1).
     apply Vrel_sess_iff in H2 as (o2 & s2 & -> & -> & Hs2).
     assert (o1 ≠ o2) as Hne.
@@ -384,8 +377,8 @@ Section redex.
 
   Lemma Varr_top_of_Vrel n W Θ ub lb c aU v :
     Vrel κ n W Θ (TLolli ub lb c TUnit TUnit aU) v →
-    Varr κ n (Vrel κ) (Erel κ) (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit)
-      (λ W' Θ' F e, Erel κ n W' Θ' TUnit F e) TUnit TUnit UTop LBot W Θ v.
+    Varr κ n (Vrel κ) (Erel κ) (λ _ _ Θ' w, Θ' = ∅ ∧ w = EUnit)
+      (λ _ W' Θ' F e, Erel κ n W' Θ' TUnit F e) TUnit TUnit UTop LBot W Θ v.
   Proof.
     intros HV. apply (Vrel_thunk κ _ _ _ ub lb).
     eapply (Vrel_blind κ); [|exact HV]. done.
@@ -393,8 +386,7 @@ Section redex.
   Lemma Erel_spawn n W Θ ub lb c aU F v :
     Vrel κ n W Θ (TLolli ub lb c TUnit TUnit aU) v → Erel κ n W Θ TUnit F (ESpawn v).
   Proof.
-    intros HV. destruct n as [|n]; [apply Erel_0|].
-    pose proof (Vrel_val κ _ _ _ _ _ HV) as Hv.
+    intros HV.    pose proof (Vrel_val κ _ _ _ _ _ HV) as Hv.
     assert (tstep (ESpawn v) (LSpawn v) EUnit) as Hst by (by apply tstep_head, t_act_spawn).
     assert (∀ α e', tstep (ESpawn v) α e' → α = LSpawn v ∧ e' = EUnit) as Hdet.
     { intros α e' Hs. apply op_head_only in Hs; [|done]. inversion Hs; by subst. }
@@ -416,8 +408,7 @@ Section redex.
     Erel κ n W Θ (TProd (TSess S0 x aq2 mt2) (TProd (TSess S (x·κf) aq3 mt3) (TSess (dual S) (x·κf)‾ aq4 mt4))) F
       (ENewAt κf v).
   Proof.
-    intros HV. destruct n as [|n]; [apply Erel_0|].
-    apply Vrel_sess_iff in HV as (o & s' & -> & -> & Hs').
+    intros HV.    apply Vrel_sess_iff in HV as (o & s' & -> & -> & Hs').
     assert (tstep (ENewAt κf (Chan o)) (LNewAt κf o "") (Pair (Chan o) (Pair (Chan ""⁺) (Chan ""⁻))))
       as Hst by (by apply tstep_head, t_act_new_at).
     assert (∀ α e', tstep (ENewAt κf (Chan o)) α e' →
@@ -450,8 +441,7 @@ Section redex.
       (TEx LBot 1 (bcs_of P) (TProd (TSess S (pvar 0) aq1 mt1) (TSess (dual S) (pvar 0)‾ aq2 mt2)))
       F (ENew ℓ).
   Proof.
-    intros Hℓ HP. destruct n as [|n]; [apply Erel_0|].
-    assert (tstep (ENew ℓ) (LNew ℓ "") (Pair (Chan ""⁺) (Chan ""⁻))) as Hst
+    intros Hℓ HP.    assert (tstep (ENew ℓ) (LNew ℓ "") (Pair (Chan ""⁺) (Chan ""⁻))) as Hst
       by (by apply tstep_head, t_act_new).
     assert (∀ α e', tstep (ENew ℓ) α e' → ∃ c, α = LNew ℓ c ∧ e' = Pair (Chan c⁺) (Chan c⁻)) as Hdet.
     { intros α e' Hs. apply tstep_head_only in Hs; [|by intros []]. inversion Hs; subst; eauto. }
@@ -492,9 +482,7 @@ Section redex.
     - intros α e'' Hs. apply op_head_only in Hs; [|done]. inversion Hs; by subst.
     - by apply tstep_head, t_act_force.
     - apply Vrel_lolli_iff in H as (e0 & He0 & _ & _ & H). injection He0 as <-.
-      destruct (decide (n ≤ c_beta κ)) as [Hle|Hlt].
-      + replace (n - c_beta κ) with 0 by lia. apply Erel_0.
-      + rewrite <-(thunk_app EUnit), <-(map_union_empty ∅).
-        apply H; [apply wext_refl|lia|apply map_disjoint_empty_l|by apply ub_ltu_of|]. by apply Vrel_unit_iff.
+      intros j Hj. rewrite <-(thunk_app EUnit), <-(map_union_empty ∅).
+      apply H; [apply wext_refl|exact Hj|apply map_disjoint_empty_l|by apply ub_ltu_of|]. by apply Vrel_unit_iff.
   Qed.
 End redex.

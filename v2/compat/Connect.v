@@ -259,8 +259,8 @@ Qed.
 Section offers.
   Context (κ : ctable) (n : nat) (W1 : world) (T1 T2 : ty) (X1 X2 : prel).
   Context (Σ1 ΣC Σ2 ΣD : senv) (q1 q2 : proc) (Hc : conn Σ1 ΣC q1.1 Σ2 ΣD q2.1).
-  Context (H1 : Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X1 W1 (Σ1 ∪ ΣC) T1 q1).
-  Context (H2 : Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X2 W1 (Σ2 ∪ ΣD) T2 q2).
+  Context (H1 : Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) X1 W1 (Σ1 ∪ ΣC) T1 q1).
+  Context (H2 : Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) X2 W1 (Σ2 ∪ ΣD) T2 q2).
   Local Abbreviation K := (chans_of ΣC).
   Local Abbreviation pc := (pconn q1 q2 K).
 
@@ -329,8 +329,8 @@ Proof. intros Hd H1 H2. exact (proj1 (map_disjoint_spec m1 m2) Hd i x y H1 H2). 
 (** An offer on a cut end and an offer on its partner meet. *)
 Lemma dual_offers κ n W1 T1 T2 X1 X2 Σ1 ΣC Σ2 ΣD q1 q2 o :
   conn Σ1 ΣC q1.1 Σ2 ΣD q2.1 →
-  Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X1 W1 (Σ1 ∪ ΣC) T1 q1 →
-  Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X2 W1 (Σ2 ∪ ΣD) T2 q2 →
+  Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) X1 W1 (Σ1 ∪ ΣC) T1 q1 →
+  Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) X2 W1 (Σ2 ∪ ΣD) T2 q2 →
   o ∈ dom ΣC → offered_p (Σ1 ∪ ΣC) q1 o → offered_p (Σ2 ∪ ΣD) q2 (edual o) →
   ¬ stable_p (pconn q1 q2 (chans_of ΣC)).
 Proof.
@@ -417,12 +417,12 @@ Qed.
 (** One component, stable and without a link offer, at a primitive
     type. *)
 Lemma comp_ready κ n W1 T X Σ q :
-  tfree T → Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X W1 Σ T q →
+  tfree T → Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) X W1 Σ T q →
   stable_p q →
   link_p q ∨
   (above_offered W1 Σ (offered_p Σ q) ∧
    ((∀ o, ¬ offered_p Σ q o) →
-      ∃ v E, q = (∅, {[+ v +]} ⊎ E) ∧ Vrel κ (S n) W1 Σ T v ∧ ∀ e, e ∈ E → e = EUnit)).
+      ∃ v E, q = (∅, {[+ v +]} ⊎ E) ∧ Vrel κ n W1 Σ T v ∧ ∀ e, e ∈ E → e = EUnit)).
 Proof.
   intros HT (Hs & Hr & _) Hstab.
   assert (pirred q → Σ = ∅) as HΣ.
@@ -450,8 +450,8 @@ Qed.
 
 Lemma link_p_lift κ n W1 T1 T2 X1 X2 Σ1 ΣC Σ2 ΣD q1 q2 :
   conn Σ1 ΣC q1.1 Σ2 ΣD q2.1 →
-  Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X1 W1 (Σ1 ∪ ΣC) T1 q1 →
-  Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X2 W1 (Σ2 ∪ ΣD) T2 q2 →
+  Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) X1 W1 (Σ1 ∪ ΣC) T1 q1 →
+  Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) X2 W1 (Σ2 ∪ ΣD) T2 q2 →
   link_p q1 → stable_p (pconn q1 q2 (chans_of ΣC)) → link_p (pconn q1 q2 (chans_of ΣC)).
 Proof.
   intros Hc H1 H2 (os & p1' & Hst) Hs. set (K := chans_of ΣC).
@@ -480,8 +480,8 @@ Proof. intros Hd H. by apply lookup_union_Some_r. Qed.
 Section rdy.
   Context (κ : ctable) (n : nat) (W1 : world) (HS : strict W1) (T1 T2 : ty) (X1 X2 : prel).
   Context (Σ1 ΣC Σ2 ΣD : senv) (q1 q2 : proc) (Hc : conn Σ1 ΣC q1.1 Σ2 ΣD q2.1).
-  Context (H1 : Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X1 W1 (Σ1 ∪ ΣC) T1 q1).
-  Context (H2 : Pclauses κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n)) X2 W1 (Σ2 ∪ ΣD) T2 q2).
+  Context (H1 : Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) X1 W1 (Σ1 ∪ ΣC) T1 q1).
+  Context (H2 : Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) X2 W1 (Σ2 ∪ ΣD) T2 q2).
   Context (HT1 : tfree T1) (HT2 : tfree T2).
   Local Abbreviation K := (chans_of ΣC).
   Local Abbreviation pc := (pconn q1 q2 K).
@@ -624,7 +624,7 @@ Section rdy.
   Qed.
 
   Lemma pc_stop : T2 = TUnit → pirred pc →
-    ∃ v E, pc = (∅, {[+ v +]} ⊎ E) ∧ Vrel κ (S n) W1 (Σ1 ∪ Σ2) T1 v ∧ ∀ e, e ∈ E → e = EUnit.
+    ∃ v E, pc = (∅, {[+ v +]} ⊎ E) ∧ Vrel κ n W1 (Σ1 ∪ Σ2) T1 v ∧ ∀ e, e ∈ E → e = EUnit.
   Proof.
     intros HTU Hi.
     assert (stable_p pc) as Hs by (intros p' Hp; by apply (Hi PTau p')).
@@ -730,14 +730,14 @@ Proof.
   apply HP; [done|done|]. by apply fuse_ok_compose.
 Qed.
 
-Lemma Prel_S_ind_fuse κ n (Φ : prel) :
+Lemma Prel_ind_fuse κ n (Φ : prel) :
   (∀ W Σ T p,
-     Pbody κ (S n) (Vrel κ) (Prel κ) (Vrel κ (S n))
-       (λ W Σ T p, Prel κ (S n) W Σ T p ∧ Φfuse Φ W Σ T p) W Σ T p →
+     Pbody κ n (Vrel κ) (Prel κ) (Vrel κ n)
+       (λ W Σ T p, Prel κ n W Σ T p ∧ Φfuse Φ W Σ T p) W Σ T p →
      Φ W Σ T p) →
-  ∀ W Σ T p, Prel κ (S n) W Σ T p → Φfuse Φ W Σ T p.
+  ∀ W Σ T p, Prel κ n W Σ T p → Φfuse Φ W Σ T p.
 Proof.
-  intros Hind. refine (Prel_S_ind κ n _ _). intros W Σ T p Hb h D Hh.
+  intros Hind. refine (Prel_ind κ n _ _). intros W Σ T p Hb h D Hh.
   apply Hind. by apply Pbody_fuse.
 Qed.
 

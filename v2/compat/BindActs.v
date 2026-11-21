@@ -1,7 +1,7 @@
 (** * The bind lemma for a hole that acts before it returns (stage S5)
 
       P e     e ∈ E[κ]^W _ n⟦Θ1 ⊢ T⟧^(F ∪ heads Θ2)
-      ∀ W' ⊒ W, j < n, Θv. v ∈ V[κ]^W' _ j⟦Θv ⊢ T⟧ ⟹ K[v] ∈ E[κ]^W' _ j⟦Θv ∪ Θ2 ⊢ U⟧^F
+      ∀ W' ⊒ W, olt j n, Θv. v ∈ V[κ]^W' _ j⟦Θv ⊢ T⟧ ⟹ K[v] ∈ E[κ]^W' _ j⟦Θv ∪ Θ2 ⊢ U⟧^F
       ───────────────────────────────────────────────────────────────────────────
       K[e] ∈ E[κ]^W _ n⟦Θ1 ∪ Θ2 ⊢ U⟧^F                              [Erel_bind_acts]
 
@@ -24,25 +24,24 @@ Section bind_acts.
     (∀ e α e', P e → tstep e α e' → tcost κ α = 0 → P e') →
     P e → frame_val f → Θ1 ##ₘ Θ2 →
     e ∈ E[κ]^W _ n⟦Θ1 ⊢ T⟧^(F ∪ senv_heads Θ2) →
-    (∀ W' j Θv v, W ⊑ W' → j < n → Θv ##ₘ Θ2 → v ∈ V[κ]^W' _ j⟦Θv ⊢ T⟧ →
+    (∀ W' j Θv v, W ⊑ W' → olt j n → Θv ##ₘ Θ2 → v ∈ V[κ]^W' _ j⟦Θv ⊢ T⟧ →
        fill_frame f v ∈ E[κ]^W' _ j⟦Θv ∪ Θ2 ⊢ U⟧^F) →
     fill_frame f e ∈ E[κ]^W _ n⟦Θ1 ∪ Θ2 ⊢ U⟧^F.
   Proof.
     intros HPv HPs HPe Hf Hd HE HK.
-    destruct n as [|n]; [apply Erel_0|].
-    cut (∀ W Θ1 T F' e, Erel κ (S n) W Θ1 T F' e → P e → ∀ Θ2, Θ1 ##ₘ Θ2 → F ∪ senv_heads Θ2 ⊆ F' →
+    cut (∀ W Θ1 T F' e, Erel κ n W Θ1 T F' e → P e → ∀ Θ2, Θ1 ##ₘ Θ2 → F ∪ senv_heads Θ2 ⊆ F' →
            (∀ W' j Θv v, W ⊑ W' → j < S n → Θv ##ₘ Θ2 → Vrel κ j W' Θv T v →
               Erel κ j W' (Θv ∪ Θ2) U F (fill_frame f v)) →
-           Erel κ (S n) W (Θ1 ∪ Θ2) U F (fill_frame f e)).
+           Erel κ n W (Θ1 ∪ Θ2) U F (fill_frame f e)).
     { intros H. eapply H; [exact HE|done|done|done|exact HK]. }
     clear W Θ1 Θ2 T e Hd HE HK HPe.
-    refine (Erel_S_ind κ n _ _).
+    refine (Erel_ind κ n _ _).
     intros W Θ1 T F' e Hb HPe Θ2 Hd HF HK.
-    assert (Erel κ (S n) W Θ1 T F' e) as HE.
-    { apply Erel_S_iff. revert Hb. apply Ebody_mono; [lia|intros; reflexivity|by intros
+    assert (Erel κ n W Θ1 T F' e) as HE.
+    { apply Erel_iff. revert Hb. apply Ebody_mono; [intros; reflexivity|by intros
         |by intros|by intros|by intros ? ? ? ? []|by intros ? ? ? ? []]. }
     assert (¬ is_val e) as Hnv by (by apply HPv).
-    apply Erel_S_iff. intros W1 HW1.
+    apply Erel_iff. intros W1 HW1.
     pose proof (Erel_mono κ _ _ _ _ _ _ _ HW1 HE) as HE1.
     assert (∀ W' j Θv v, W1 ⊑ W' → j < S n → Θv ##ₘ Θ2 → Vrel κ j W' Θv T v →
               Erel κ j W' (Θv ∪ Θ2) U F (fill_frame f v)) as HK1.
@@ -50,13 +49,13 @@ Section bind_acts.
     destruct (Hb W1 HW1) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     (* the continuation after a step of cost c *)
     assert (∀ c Θ1' e', Θ1' ##ₘ Θ2 → (c = 0 → P e') →
-      at_cost_E (S n) c (Erel κ)
-        (λ W Θ1 T F' e, Erel κ (S n) W Θ1 T F' e ∧
+      at_cost_E n c (Erel κ)
+        (λ W Θ1 T F' e, Erel κ n W Θ1 T F' e ∧
           (P e → ∀ Θ2, Θ1 ##ₘ Θ2 → F ∪ senv_heads Θ2 ⊆ F' →
             (∀ W' j Θv v, W ⊑ W' → j < S n → Θv ##ₘ Θ2 → Vrel κ j W' Θv T v →
                Erel κ j W' (Θv ∪ Θ2) U F (fill_frame f v)) →
-            Erel κ (S n) W (Θ1 ∪ Θ2) U F (fill_frame f e))) W1 Θ1' T F' e' →
-      at_cost_E (S n) c (Erel κ) (Erel κ (S n)) W1 (Θ1' ∪ Θ2) U F (fill_frame f e')) as Hac.
+            Erel κ n W (Θ1 ∪ Θ2) U F (fill_frame f e))) W1 Θ1' T F' e' →
+      at_cost_E n c (Erel κ) (Erel κ n) W1 (Θ1' ∪ Θ2) U F (fill_frame f e')) as Hac.
     { intros c Θ1' e' Hd' HPc [A1 A2]. split.
       - intros Hc. destruct (A1 Hc) as [_ HΦ]. apply HΦ; [by apply HPc|done|done|done].
       - intros Hc. eapply (Erel_bind κ (S n - c)); [done|done| |].
@@ -96,7 +95,7 @@ Section bind_acts.
       exists ΘM, (Θr ∪ Θ2). split_and!.
       + by apply map_disjoint_union_r.
       + by rewrite map_union_assoc.
-      + revert A4. apply Varr_mono; [by intros|by intros|by intros|]. by intros _ ? ? ? ? [? _].
+      + revert A4. apply Varr_mono; [by intros|by intros|by intros|]. by intros _ ? ? ? ? ? ? [? _].
       + apply Hac; [done|intros Hc0; exact (HPs _ _ _ HPe Hst' Hc0)|exact A5].
     - (* O-Send *)
       intros o w E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).

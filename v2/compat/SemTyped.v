@@ -28,7 +28,7 @@ From GV Require Export relation.Adequacy compat.Blind compat.Bind.
 
 (** ** Grounding substitutions *)
 
-Fixpoint Grel (κ : ctable) (n : nat) (W : world) (Θ : senv) (Δ : lenv) (γ : nat → expr) : Prop :=
+Fixpoint Grel (κ : ctable) (n : Ix) (W : world) (Θ : senv) (Δ : lenv) (γ : nat → expr) : Prop :=
   match Δ with
   | [] => Θ = ∅
   | None :: Δ' => Grel κ n W Θ Δ' (λ x, γ (S x))
@@ -88,7 +88,7 @@ Section grel.
     by eapply Vrel_mono.
   Qed.
 
-  Lemma Grel_down n m W Θ Δ γ : m ≤ n → Grel κ n W Θ Δ γ → Grel κ m W Θ Δ γ.
+  Lemma Grel_down n m W Θ Δ γ : ole m n → Grel κ n W Θ Δ γ → Grel κ m W Θ Δ γ.
   Proof.
     intros Hm. revert Θ γ. induction Δ as [|[T|] Δ IH]; intros Θ γ; simpl; [done| |auto].
     intros (Θ1 & Θ2 & Hd & -> & HV & HG). exists Θ1, Θ2. split_and!; try done; [|auto].

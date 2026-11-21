@@ -22,8 +22,8 @@ Section cross.
   Local Lemma Hq2e' M2 : soup M2 = q2.2 → erase (q2.1, M2) = q2.
   Proof. intros H. unfold erase. simpl. rewrite H. by destruct q2. Qed.
 
-  Local Lemma at_cost_lvl {X : prel} (XP : ∀ W Σ T p, X W Σ T p → Prel κ (S n) W Σ T p) c Σ T' p j :
-    at_cost_P (S n) c (Prel κ) X W1 Σ T' p → j ≤ S n - c → Prel κ j W1 Σ T' p.
+  Local Lemma at_cost_lvl {X : prel} (XP : ∀ W Σ T p, X W Σ T p → Prel κ n W Σ T p) c Σ T' p j :
+    at_cost_P n c (Prel κ) X W1 Σ T' p → ole j n - c → Prel κ j W1 Σ T' p.
   Proof.
     intros [A0 A1] Hj. destruct (decide (c = 0)) as [->|Hcz].
     - eapply Prel_down; [|by apply XP, A0]. lia.
@@ -31,7 +31,7 @@ Section cross.
   Qed.
 
   Local Lemma at_cost_V_lvl c Θ U v j :
-    at_cost_V (S n) c (Vrel κ) (Vrel κ (S n)) W1 Θ U v → j ≤ S n - c → Vrel κ j W1 Θ U v.
+    at_cost_V n c (Vrel κ) (Vrel κ n) W1 Θ U v → ole j n - c → Vrel κ j W1 Θ U v.
   Proof.
     intros [A0 A1] Hj. destruct (decide (c = 0)) as [->|Hcz].
     - eapply Vrel_down; [|by apply A0]. lia.
@@ -55,7 +55,7 @@ Section cross.
     M1 ##ₘ M2 → soup M1 = q1.2 → soup M2 = q2.2 →
     M1 !! i = Some e → M2 !! j = Some f →
     tstep e (LSess (SSend o w)) e' → tstep f (LSess (SRecv (edual o) w)) f' →
-    at_cost_P (S n) (c_give κ + c_take κ) (Prel κ) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T
+    at_cost_P n (c_give κ + c_take κ) (Prel κ) (Prel κ n) W1 (Σ1 ∪ Σ2) T
       (erase (q1.1 ∪ q2.1 ∪ K, <[j := f']> (<[i := e']> (M1 ∪ M2)))).
   Proof.
     intros Hd HM1 HM2 Hi Hj He Hf.
@@ -66,13 +66,13 @@ Section cross.
         unfoldS S0 = SSeq (SSnd m U) Sc ∧ Σv ##ₘ Σr ∧ delete o (Σ1 ∪ ΣC) = Σv ∪ Σr ∧
         (∀ o', o' ∈ dom Θe ↔ o' ∈ (fends w) ∧ ech o' ∈ q1.1) ∧
         send_split (Σ1 ∪ ΣC) Σe Θe ∧
-        at_cost_V (S n) (c_give κ) (Vrel κ) (Vrel κ (S n)) W1 (Σv ∪ Θe) (payload_at m U x) w ∧
-        at_cost_P (S n) (c_give κ) (Prel κ) X1 W1 (<[o := (Sc, x⁺)]> (Σr ∪ Σe)) T
+        at_cost_V n (c_give κ) (Vrel κ) (Vrel κ n) W1 (Σv ∪ Θe) (payload_at m U x) w ∧
+        at_cost_P n (c_give κ) (Prel κ) X1 W1 (<[o := (Sc, x⁺)]> (Σr ∪ Σe)) T
           (erase (q1.1 ∖ sentc (SSend o w), <[i := e']> M1))) as C1.
     { intros Hn. eapply (S1s _ _ _ _ _ (Hq1e' M1 HM1)). eapply p_act_session; [exact Hi|exact He|simpl; clear -Hn; cc_set_solver]. }
     assert (ech o ∉ q2.1 → ∃ S0 x m U Sc, (Σ2 ∪ ΣD) !! edual o = Some (S0, x) ∧
         unfoldS S0 = SSeq (SRcv m U) Sc ∧
-        ∀ jl Θ2, jl + c_take κ ≤ S n → set_map ech (dom Θ2) ## q2.1 →
+        ∀ jl Θ2, jl + c_take κ ≤ n → set_map ech (dom Θ2) ## q2.1 →
           recv_ok (<[edual o := (Sc, x⁺)]> (Σ2 ∪ ΣD)) Θ2 → Vrel κ jl W1 Θ2 (payload_at m U x) w →
           Prel κ jl W1 (recv_env (<[edual o := (Sc, x⁺)]> (Σ2 ∪ ΣD)) Θ2) TUnit
             ((erase (q2.1 ∖ sentc (SRecv (edual o) w), <[j := f']> M2)).1 ∪ recv_back (<[edual o := (Sc, x⁺)]> (Σ2 ∪ ΣD)) Θ2,
@@ -104,7 +104,7 @@ Section cross.
     assert (∀ o', o' ∈ dom Θe → ech o' ∈ q1.1) as HΘe' by (intros o' Ho'; by apply HΘe).
     set (jj := S n - (c_give κ + c_take κ)).
     split; [intros Hz; pose proof (c_take_pos κ) as Ht; lia|]. intros _. fold jj.
-    destruct (decide (c_give κ + c_take κ ≤ S n)) as [Hle|Hgt]; [|replace jj with 0 by (unfold jj; lia); apply Prel_0].
+    destruct (decide (c_give κ + c_take κ ≤ n)) as [Hle|Hgt]; [|replace jj with 0 by (unfold jj; lia); apply Prel_0].
     assert (Vrel κ jj W1 (Σv ∪ Θe) (payload_at m U' x‾) w) as HV.
     { rewrite payload_at_dual. apply (Vrel_teq κ _ _ _ _ _ _ (teq_payload m U U' x Hteq)).
       eapply at_cost_V_lvl; [exact AV|]. unfold jj. lia. }
@@ -130,7 +130,7 @@ Section cross.
     M1 ##ₘ M2 → soup M1 = q1.2 → soup M2 = q2.2 →
     M2 !! i = Some e → M1 !! j = Some f →
     tstep e (LSess (SSend o w)) e' → tstep f (LSess (SRecv (edual o) w)) f' →
-    at_cost_P (S n) (c_give κ + c_take κ) (Prel κ) (Prel κ (S n)) W1 (Σ1 ∪ Σ2) T
+    at_cost_P n (c_give κ + c_take κ) (Prel κ) (Prel κ n) W1 (Σ1 ∪ Σ2) T
       (erase (q1.1 ∪ q2.1 ∪ K, <[j := f']> (<[i := e']> (M1 ∪ M2)))).
   Proof.
     intros Hd HM1 HM2 Hi Hj He Hf.
@@ -141,13 +141,13 @@ Section cross.
         unfoldS S0 = SSeq (SSnd m U) Sc ∧ Σv ##ₘ Σr ∧ delete o (Σ2 ∪ ΣD) = Σv ∪ Σr ∧
         (∀ o', o' ∈ dom Θe ↔ o' ∈ (fends w) ∧ ech o' ∈ q2.1) ∧
         send_split (Σ2 ∪ ΣD) Σe Θe ∧
-        at_cost_V (S n) (c_give κ) (Vrel κ) (Vrel κ (S n)) W1 (Σv ∪ Θe) (payload_at m U x) w ∧
-        at_cost_P (S n) (c_give κ) (Prel κ) X2 W1 (<[o := (Sc, x⁺)]> (Σr ∪ Σe)) TUnit
+        at_cost_V n (c_give κ) (Vrel κ) (Vrel κ n) W1 (Σv ∪ Θe) (payload_at m U x) w ∧
+        at_cost_P n (c_give κ) (Prel κ) X2 W1 (<[o := (Sc, x⁺)]> (Σr ∪ Σe)) TUnit
           (erase (q2.1 ∖ sentc (SSend o w), <[i := e']> M2))) as C2.
     { intros Hn. eapply (S2s _ _ _ _ _ (Hq2e' M2 HM2)). eapply p_act_session; [exact Hi|exact He|simpl; clear -Hn; cc_set_solver]. }
     assert (ech o ∉ q1.1 → ∃ S0 x m U Sc, (Σ1 ∪ ΣC) !! edual o = Some (S0, x) ∧
         unfoldS S0 = SSeq (SRcv m U) Sc ∧
-        ∀ jl Θ2, jl + c_take κ ≤ S n → set_map ech (dom Θ2) ## q1.1 →
+        ∀ jl Θ2, jl + c_take κ ≤ n → set_map ech (dom Θ2) ## q1.1 →
           recv_ok (<[edual o := (Sc, x⁺)]> (Σ1 ∪ ΣC)) Θ2 → Vrel κ jl W1 Θ2 (payload_at m U x) w →
           Prel κ jl W1 (recv_env (<[edual o := (Sc, x⁺)]> (Σ1 ∪ ΣC)) Θ2) T
             ((erase (q1.1 ∖ sentc (SRecv (edual o) w), <[j := f']> M1)).1 ∪ recv_back (<[edual o := (Sc, x⁺)]> (Σ1 ∪ ΣC)) Θ2,
@@ -179,7 +179,7 @@ Section cross.
     assert (∀ o', o' ∈ dom Θe → ech o' ∈ q2.1) as HΘe' by (intros o' Ho'; by apply HΘe).
     set (jj := S n - (c_give κ + c_take κ)).
     split; [intros Hz; pose proof (c_take_pos κ) as Ht; lia|]. intros _. fold jj.
-    destruct (decide (c_give κ + c_take κ ≤ S n)) as [Hle|Hgt]; [|replace jj with 0 by (unfold jj; lia); apply Prel_0].
+    destruct (decide (c_give κ + c_take κ ≤ n)) as [Hle|Hgt]; [|replace jj with 0 by (unfold jj; lia); apply Prel_0].
     assert (Vrel κ jj W1 (Σv ∪ Θe) (payload_at m U' x‾) w) as HV.
     { rewrite payload_at_dual. apply (Vrel_teq κ _ _ _ _ _ _ (teq_payload m U U' x Hteq)).
       eapply at_cost_V_lvl; [exact AV|]. unfold jj. lia. }

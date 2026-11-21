@@ -48,8 +48,8 @@ Section ext.
 
   (** A step of p1 that changes only its interface. *)
   Lemma ext_comp1 c Σ1' p1' :
-    at_cost_P (S n) c (Prel κ) X1 W1 (Σ1' ∪ ΣC) T p1' → conn Σ1' ΣC p1'.1 Σ2 ΣD q2.1 →
-    at_cost_P (S n) c (Prel κ) (Prel κ (S n)) W1 (Σ1' ∪ Σ2) T (pconn p1' q2 K).
+    at_cost_P n c (Prel κ) X1 W1 (Σ1' ∪ ΣC) T p1' → conn Σ1' ΣC p1'.1 Σ2 ΣD q2.1 →
+    at_cost_P n c (Prel κ) (Prel κ n) W1 (Σ1' ∪ Σ2) T (pconn p1' q2 K).
   Proof.
     intros [A0 A1] Hc'. split.
     - intros Hz. pose proof (G1 p1' _ id ∅ Σ1' ΣC Σ2 ΣD q2 (A0 Hz) (fuse_ok_id _ _)) as HG.
@@ -62,8 +62,8 @@ Section ext.
 
   (** A step of p2 that changes only its interface. *)
   Lemma ext_comp2 c Σ2' p2' :
-    at_cost_P (S n) c (Prel κ) X2 W1 (Σ2' ∪ ΣD) TUnit p2' → conn Σ1 ΣC q1.1 Σ2' ΣD p2'.1 →
-    at_cost_P (S n) c (Prel κ) (Prel κ (S n)) W1 (Σ1 ∪ Σ2') T (pconn q1 p2' K).
+    at_cost_P n c (Prel κ) X2 W1 (Σ2' ∪ ΣD) TUnit p2' → conn Σ1 ΣC q1.1 Σ2' ΣD p2'.1 →
+    at_cost_P n c (Prel κ) (Prel κ n) W1 (Σ1 ∪ Σ2') T (pconn q1 p2' K).
   Proof.
     intros [A0 A1] Hc'. split.
     - intros Hz. pose proof (G2 p2' _ id ∅ Σ1 ΣC Σ2' ΣD id ∅ (A0 Hz) (fuse_ok_id _ _)) as HG.
@@ -150,7 +150,7 @@ Section ext.
   (** Q-Close of the composite. *)
   Lemma ext_close q i o q' : erase q = pc → istep q (EvOffer i (SClose o)) q' →
     ∃ S0 x, (Σ1 ∪ Σ2) !! o = Some (S0, x) ∧ unfoldS S0 = SEnd ∧
-      at_cost_P (S n) (c_give κ) (Prel κ) (Prel κ (S n)) W1 (delete o (Σ1 ∪ Σ2)) T (erase q').
+      at_cost_P n (c_give κ) (Prel κ) (Prel κ n) W1 (delete o (Σ1 ∪ Σ2)) T (erase q').
   Proof.
     intros Hq Hst. destruct (ext_split _ _ _ _ Hq Hst) as (M1 & M2 & e & e' & Hd & HM1 & HM2 & He & Hsub & [(Hi & Hs & Eq)|(Hi & Hs & Eq)]);
       simpl in Hsub; assert (ech o ∉ K) as HnK by (clear -Hsub; cc_set_solver); rewrite Eq.
@@ -167,7 +167,7 @@ Section ext.
   (** Q-Select of the composite. *)
   Lemma ext_select q i o b q' : erase q = pc → istep q (EvOffer i (SSel o b)) q' →
     ∃ S0 x S1 S2, (Σ1 ∪ Σ2) !! o = Some (S0, x) ∧ unfoldS S0 = SPlus S1 S2 ∧
-      at_cost_P (S n) (c_give κ) (Prel κ) (Prel κ (S n)) W1 (<[o := (bsel b S1 S2, sel_pt x b)]> (Σ1 ∪ Σ2)) T (erase q').
+      at_cost_P n (c_give κ) (Prel κ) (Prel κ n) W1 (<[o := (bsel b S1 S2, sel_pt x b)]> (Σ1 ∪ Σ2)) T (erase q').
   Proof.
     intros Hq Hst. destruct (ext_split _ _ _ _ Hq Hst) as (M1 & M2 & e & e' & Hd & HM1 & HM2 & He & Hsub & [(Hi & Hs & Eq)|(Hi & Hs & Eq)]);
       simpl in Hsub; assert (ech o ∉ K) as HnK by (clear -Hsub; cc_set_solver); rewrite Eq.
@@ -184,7 +184,7 @@ Section ext.
   (** Q-Branch of the composite. *)
   Lemma ext_branch q i o b q' : erase q = pc → istep q (EvOffer i (SBra o b)) q' →
     ∃ S0 x S1 S2, (Σ1 ∪ Σ2) !! o = Some (S0, x) ∧ unfoldS S0 = SWith S1 S2 ∧
-      at_cost_P (S n) (c_take κ) (Prel κ) (Prel κ (S n)) W1 (<[o := (bsel b S1 S2, bra_pt x b)]> (Σ1 ∪ Σ2)) T (erase q').
+      at_cost_P n (c_take κ) (Prel κ) (Prel κ n) W1 (<[o := (bsel b S1 S2, bra_pt x b)]> (Σ1 ∪ Σ2)) T (erase q').
   Proof.
     intros Hq Hst. destruct (ext_split _ _ _ _ Hq Hst) as (M1 & M2 & e & e' & Hd & HM1 & HM2 & He & Hsub & [(Hi & Hs & Eq)|(Hi & Hs & Eq)]);
       simpl in Hsub; assert (ech o ∉ K) as HnK by (clear -Hsub; cc_set_solver); rewrite Eq.
@@ -202,7 +202,7 @@ Section ext.
   Lemma ext_link q i os q' : erase q = pc → istep q (EvOffer i (SLink os)) q' →
     ∃ o1 o2 S1 S2 x, os = {[o1]} ∪ {[o2]} ∧ o1 ≠ o2 ∧
       (Σ1 ∪ Σ2) !! o1 = Some (S1, x) ∧ (Σ1 ∪ Σ2) !! o2 = Some (S2, x‾) ∧ sdual S1 S2 ∧
-      at_cost_P (S n) (c_link κ) (Prel κ) (Prel κ (S n)) W1 (delete o1 (delete o2 (Σ1 ∪ Σ2))) T (erase q').
+      at_cost_P n (c_link κ) (Prel κ) (Prel κ n) W1 (delete o1 (delete o2 (Σ1 ∪ Σ2))) T (erase q').
   Proof.
     intros Hq Hst. destruct (ext_split _ _ _ _ Hq Hst) as (M1 & M2 & e & e' & Hd & HM1 & HM2 & He & Hsub & [(Hi & Hs & Eq)|(Hi & Hs & Eq)]);
       cbn [subjs] in Hsub; rewrite Eq.
