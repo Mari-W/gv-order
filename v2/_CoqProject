@@ -98,6 +98,7 @@ examples/LFCycle.v
 examples/LFFreshBetween.v
 examples/LFFreshMany.v
 examples/LFClientServer.v
+examples/LFClientServerSplit.v
 examples/LFFactoryEx.v
 examples/LFGrowRing.v
 examples/LFController.v

@@ -9,7 +9,7 @@ From GV Require Import examples.FactoryEx examples.GrowRing relation.Relation re
 From GV Require Import cost.Forwarder cost.CostFund compat.Bind compat.LiveDF.
 From GV Require Import compat.ConnectP compat.PTerm static.Fundamental static.FundamentalProc.
 From GV Require Import examples.GuardEx examples.LFClose examples.LFCycle examples.LFFreshBetween.
-From GV Require Import examples.LFFreshMany examples.LFClientServer examples.LFFactoryEx examples.LFGrowRing.
+From GV Require Import examples.LFFreshMany examples.LFClientServer examples.LFClientServerSplit examples.LFFactoryEx examples.LFGrowRing.
 From GV Require Import examples.LFController soup.SoupRun soup.SoupTau soup.LFAdequacy.
 From GV Require Import soup.LFCompose soup.LFTyped lockfree.FairRun.
 From GV Require Import examples.SemBranch static.Inversion relation.Ord relation.ExProp relation.Ranks examples.LFLink compat.Redex static.PointSubst.
@@ -118,6 +118,8 @@ Print Assumptions fm_lock_free.
 Print Assumptions cs_guarded.
 Print Assumptions cs_lftyped.
 Print Assumptions cs_lock_free.
+(** examples/LFClientServerSplit.v *)
+Print Assumptions cs_split_lock_free.
 (** examples/LFFactoryEx.v *)
 Print Assumptions fx_guarded.
 Print Assumptions fx_lftyped.
