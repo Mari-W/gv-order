@@ -52,12 +52,12 @@ From GV Require Export types.Names.
     The clauses are the generic record [soup_gen] of soup/State.v at the
     live relation and at FuelE^N. *)
 
-Definition soup_inv (N n : nat) (W : world) (Σ : senv) (T : ty) (a : lfstate)
+Definition soup_inv (N : nat) (n : Ix) (W : world) (Σ : senv) (T : ty) (a : lfstate)
     (A : senv) (Π : penv) (U : nat → ty) : Prop :=
   soup_gen (Some N) (λ Θ U e, e ∈ E[live]^W _ n⟦Θ ⊢ U⟧^∅)
     (λ Π φ e, e ∈ F^(Some N) _ n⟦RThread ▷ None⟧(Π, φ)) Σ T a A Π U.
 
-Definition Soup (N : nat) (W : world) (n : nat) (Σ : senv) (T : ty) (a : lfstate) : Prop :=
+Definition Soup (N : nat) (W : world) (n : Ix) (Σ : senv) (T : ty) (a : lfstate) : Prop :=
   ∃ A Π U, soup_inv N n W Σ T a A Π U.
 
 Notation "a ∈ S^{ N , W } '_' n ⟦ Σ ⊢ T ⟧" := (Soup N W n Σ T a)
