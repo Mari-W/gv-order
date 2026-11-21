@@ -1,16 +1,16 @@
 (** * The semantic cost judgment (stage S7, proposal §2.11, decisions Q11, Q15)
 
-      Θ ; Δ ⊨^N e : T ▷ c ; ϑ        [csem N Θ Δ e T c ϑ]
+      Θ ; Δ ⊨^N e : T ▷ c        [csem N Θ Δ e T c]
 
-    The cost half of the merged judgment. For every refill N′ above N
-    ([rle]), every level n, every renaming g of the ends of Θ, every
-    grounding γ of Δ by values of [Vfuel] at N′ and n, and every reserve
-    r and ticket count tk that meet ϑ, the instance subst γ (emap g e)
-    is in FuelE at N′ and n, at the result T, frame c and reserve r,
-    with the maps of the renamed Θ and of the grounding.
+    The cost half of the merged judgment. For every level n, every
+    renaming g of the ends of Θ and every grounding γ of Δ by values of
+    [Vfuel] at N and n, the instance subst γ (emap g e) is in FuelE at N
+    and n, at the result T and frame c, with the maps of the renamed Θ
+    and of the grounding.
 
     Θ enters through [thfuel]: each end o of Θ becomes g o, with the
-    session type of Θ and a counter at or above its credit. Δ enters
+    session type of Θ, a counter at or above its credit and the tickets
+    of Θ. Δ enters
     through [gfuel]: each entry gets a value of [Vfuel] at its type with
     its own part of the maps. [envf] bundles the two.
 
@@ -18,7 +18,7 @@
     future, so the facts of Γ and the static future F of the typing
     judgment play no part. Like FuelE it reads no syntax of the term. *)
 
-From GV Require Export fuel.FuelSub cost.Transformers cost.Exact.
+From GV Require Export fuel.FuelSub cost.Exact.
 
 (** ** The ends of Θ *)
 
@@ -26,7 +26,7 @@ Definition thfuel (Θ : tenv) (g : cend → cend) (Π : penv) (φ : cenv) : Prop
   (∀ o1 o2, o1 ∈ dom Θ → o2 ∈ dom Θ → g o1 = g o2 → o1 = o2) ∧
   dom Π = set_map g (dom Θ) ∧ dom φ = dom Π ∧
   ∀ o te, Θ !! o = Some te →
-    Π !! g o = Some (te_sty te) ∧ ∃ f, φ !! g o = Some f ∧ fle (te_cr te) f.
+    Π !! g o = Some (te_sty te) ∧ ∃ f, φ !! g o = Some f ∧ fle (te_cr te) f.1 ∧ f.2 = te_tk te.
 
 (** ** Groundings *)
 
@@ -46,14 +46,14 @@ Definition envf (N : fuel) (n : nat) (Θ : tenv) (Δ : lenv) (g : cend → cend)
 
 (** ** The judgment *)
 
-Definition csem (N : fuel) (Θ : tenv) (Δ : lenv) (e : expr) (T : ty) (c : fuel) (ϑ : tix) : Prop :=
-  ∀ N' n g γ Π φ r tk, rle N N' → envf N' n Θ Δ g γ Π φ → meets ϑ r tk →
-    subst γ (emap g e) ∈ F^N' _ n⟦RTy T ▷ c ; r⟧(Π, φ, tk).
+Definition csem (N : fuel) (Θ : tenv) (Δ : lenv) (e : expr) (T : ty) (c : fuel) : Prop :=
+  ∀ n g γ Π φ, envf N n Θ Δ g γ Π φ →
+    subst γ (emap g e) ∈ F^N _ n⟦RTy T ▷ c⟧(Π, φ).
 
-Notation "Θ ; Δ ⊨^ N e : T ▷ c ; ϑ" := (csem N Θ Δ e T c ϑ)
+Notation "Θ ; Δ ⊨^ N e : T ▷ c" := (csem N Θ Δ e T c)
   (at level 74, Δ at level 60, N at level 0, e at level 60, T at level 29,
-   c at level 60, ϑ at level 60,
-   format "Θ  ;  Δ  ⊨^ N  e  :  T  ▷  c  ;  ϑ").
+   c at level 60,
+   format "Θ  ;  Δ  ⊨^ N  e  :  T  ▷  c").
 
 (** ** Arithmetic *)
 
@@ -78,12 +78,12 @@ Section above.
     tage c T T' → Vty N El Vl n T Π φ v → fabove c Π φ.
   Proof.
     intros Ha. revert Π φ v.
-    induction Ha as [T Hf|S x a Hle|S x a Hi|ub lb c0 t T U a Hle
+    induction Ha as [T Hf|S x a mt Hle|S x a mt Hi|ub lb c0 T U a Hle
                     |T1 T2 T1' T2' H1 IH1 H2 IH2|T1 T2 T1' T2' H1 IH1 H2 IH2|lb m C T T' H1 IH1];
       intros Π φ v; simpl.
     - intros Hv. destruct (Vty_tfree _ _ _ _ _ Hf _ _ _ Hv) as (-> & -> & _). intros o f. by rewrite lookup_empty.
     - intros (o' & S' & f' & _ & _ & -> & _ & Hf) o f Ho _.
-      apply lookup_singleton_Some in Ho as [<- <-]. by eapply fle_trans.
+      apply lookup_singleton_Some in Ho as [<- <-]. simpl. by eapply fle_trans.
     - intros (o' & S' & f' & _ & -> & -> & Hs & _) o f Ho Hn.
       apply lookup_singleton_Some in Ho as [<- <-]. exfalso. apply Hn.
       exists S'. rewrite lookup_singleton_eq. split; [done|]. by apply (idle_sequiv _ _ Hs).
@@ -111,7 +111,7 @@ Proof.
     [by apply lookup_union_Some_l|by apply lookup_union_Some; [|right]].
 Qed.
 
-Lemma fabove_of c Π φ : (∀ o f, φ !! o = Some f → fle c f) → fabove c Π φ.
+Lemma fabove_of c Π φ : (∀ o f, φ !! o = Some f → fle c f.1) → fabove c Π φ.
 Proof. intros H o f Ho _. exact (H o f Ho). Qed.
 
 (** ** Facts about groundings *)
@@ -188,10 +188,10 @@ Proof.
     + exists ∅, Π2, ∅, φ2. rewrite !map_empty_union. split_and!; try done; apply map_disjoint_empty_l.
 Qed.
 
-Lemma gfuel_mono N N' n m Δ : ∀ γ Π φ φ', rle N N' → m ≤ n → cle φ φ' →
-  gfuel N n Δ γ Π φ → gfuel N' m Δ γ Π φ'.
+Lemma gfuel_mono N n m Δ : ∀ γ Π φ φ', m ≤ n → cle φ φ' →
+  gfuel N n Δ γ Π φ → gfuel N m Δ γ Π φ'.
 Proof.
-  induction Δ as [|[T|] Δ IH]; intros γ Π φ φ' HN Hm Hc; simpl.
+  induction Δ as [|[T|] Δ IH]; intros γ Π φ φ' Hm Hc; simpl.
   - intros [-> ->]. split; [done|by apply cle_empty_l].
   - intros (Π1 & Π2 & φ1 & φ2 & Hd1 & Hd2 & -> & -> & Hv & HG).
     destruct (cle_union_split _ _ _ Hd2 Hc) as (φ1' & φ2' & -> & Hd' & C1 & C2).
@@ -284,9 +284,9 @@ Proof.
 Qed.
 
 Lemma thfuel_single o te g Π φ :
-  thfuel {[o := te]} g Π φ → Π = {[g o := te_sty te]} ∧ ∃ f, φ = {[g o := f]} ∧ fle (te_cr te) f.
+  thfuel {[o := te]} g Π φ → Π = {[g o := te_sty te]} ∧ ∃ f, φ = {[g o := f]} ∧ fle (te_cr te) f.1 ∧ f.2 = te_tk te.
 Proof.
-  intros (_ & HΠ & Hφ & H). destruct (H o te ltac:(by rewrite lookup_singleton_eq)) as (Hp & f & Hf & Hle).
+  intros (_ & HΠ & Hφ & H). destruct (H o te ltac:(by rewrite lookup_singleton_eq)) as (Hp & f & Hf & Hle & Hm).
   rewrite dom_singleton_L, set_map_singleton_L in HΠ.
   assert (∀ {Y} (m : gmap cend Y) y, dom m = {[g o]} → m !! g o = Some y → m = {[g o := y]}) as Hs.
   { intros Y m y Hd Hy. apply map_eq. intros o'. destruct (decide (g o = o')) as [<-|Hne];
@@ -341,7 +341,7 @@ Proof.
 Qed.
 
 Lemma thage_lookup c Θ Θ' o te' : thage c Θ Θ' → Θ' !! o = Some te' →
-  ∃ te, Θ !! o = Some te ∧ te_sty te' = te_sty te ∧ fle c (te_cr te) ∧ te_cr te' = fsub (te_cr te) c.
+  ∃ te, Θ !! o = Some te ∧ te_sty te' = te_sty te ∧ te_tk te' = te_tk te ∧ fle c (te_cr te) ∧ te_cr te' = fsub (te_cr te) c.
 Proof. intros H Ho. specialize (H o). rewrite Ho in H. destruct (Θ !! o); naive_solver. Qed.
 
 Lemma thfuel_age c Θ Θ' g Π φ : thage c Θ Θ' → thfuel Θ g Π φ → thfuel Θ' g Π (fminus c <$> φ).
@@ -350,25 +350,26 @@ Proof.
   - rewrite Hd. done.
   - by rewrite Hd.
   - by rewrite dom_fmap_L.
-  - intros o te' Ho. destruct (thage_lookup _ _ _ _ _ Ha Ho) as (te & Hte & Hs & Hc & Hcr).
-    destruct (H o te Hte) as (Hp & f & Hf & Hle). split; [by rewrite Hs|].
-    exists (fminus c f). rewrite lookup_fmap, Hf. split; [done|]. rewrite Hcr. by apply fle_fsub_mono.
+  - intros o te' Ho. destruct (thage_lookup _ _ _ _ _ Ha Ho) as (te & Hte & Hs & Hm & Hc & Hcr).
+    destruct (H o te Hte) as (Hp & f & Hf & Hle & Hfm). split; [by rewrite Hs|].
+    exists (fminus c f). rewrite lookup_fmap, Hf. split; [done|]. rewrite Hcr, Hm. split; [by apply fle_fsub_mono|done].
 Qed.
 
-Lemma thfuel_age_above c Θ Θ' g Π φ : thage c Θ Θ' → thfuel Θ g Π φ → ∀ o f, φ !! o = Some f → fle c f.
+Lemma thfuel_age_above c Θ Θ' g Π φ : thage c Θ Θ' → thfuel Θ g Π φ → ∀ o f, φ !! o = Some f → fle c f.1.
 Proof.
   intros Ha Ht o f Ho. pose proof Ht as (Hi & HΠ & Hφ & H).
   destruct (thfuel_lookup Θ g Π φ o Ht ltac:(rewrite <-Hφ; by eapply elem_of_dom_2)) as (o0 & te & -> & Hte).
-  destruct (H o0 te Hte) as (_ & f' & Hf' & Hle). rewrite Ho in Hf'. injection Hf' as <-.
+  destruct (H o0 te Hte) as (_ & f' & Hf' & Hle & _). rewrite Ho in Hf'. injection Hf' as <-.
   specialize (Ha o0). rewrite Hte in Ha. destruct (Θ' !! o0); [|done].
-  destruct Ha as (_ & _ & Hc & _). by eapply fle_trans.
+  destruct Ha as (_ & _ & _ & Hc & _). by eapply fle_trans.
 Qed.
 
 Lemma thfuel_cle Θ g Π φ φ' : cle φ φ' → thfuel Θ g Π φ → thfuel Θ g Π φ'.
 Proof.
   intros Hc (Hi & HΠ & Hφ & H). split_and!; [done|done|by rewrite <-(cle_dom _ _ Hc)|].
-  intros o te Hte. destruct (H o te Hte) as (Hp & f & Hf & Hle). split; [done|].
-  destruct (cle_lookup _ _ _ _ Hc Hf) as (f' & Hf' & Hle'). exists f'. split; [done|]. by eapply fle_trans.
+  intros o te Hte. destruct (H o te Hte) as (Hp & f & Hf & Hle & Hm). split; [done|].
+  destruct (cle_lookup _ _ _ _ Hc Hf) as (f' & Hf' & [Hle' E]). exists f'. split; [done|].
+  split; [by eapply fle_trans|congruence].
 Qed.
 
 Lemma thfuel_rename Θ g Π φ (g' : cend → cend) Π' φ' :
@@ -464,16 +465,16 @@ Proof.
     + apply (kinj_dom g' (φΘ ∪ φγ)); [rewrite dom_union_L; set_solver|done].
 Qed.
 
-Lemma envf_mono N N' n m Θ Δ g γ Π φ φ' :
-  rle N N' → m ≤ n → cle φ φ' → envf N n Θ Δ g γ Π φ → envf N' m Θ Δ g γ Π φ'.
+Lemma envf_mono N n m Θ Δ g γ Π φ φ' :
+  m ≤ n → cle φ φ' → envf N n Θ Δ g γ Π φ → envf N m Θ Δ g γ Π φ'.
 Proof.
-  intros HN Hm Hc (ΠΘ & φΘ & Πγ & φγ & HT & HG & Hd1 & Hd2 & -> & ->).
+  intros Hm Hc (ΠΘ & φΘ & Πγ & φγ & HT & HG & Hd1 & Hd2 & -> & ->).
   destruct (cle_union_split _ _ _ Hd2 Hc) as (a & b & -> & Dab & Ca & Cb).
   exists ΠΘ, a, Πγ, b. split_and!; try done; [by eapply thfuel_cle|by eapply gfuel_mono].
 Qed.
 
 Lemma envf_down N n m Θ Δ g γ Π φ : m ≤ n → envf N n Θ Δ g γ Π φ → envf N m Θ Δ g γ Π φ.
-Proof. intros Hm. apply envf_mono; [apply rle_refl|done|apply cle_refl]. Qed.
+Proof. intros Hm. apply envf_mono; [done|apply cle_refl]. Qed.
 
 Lemma envf_unl N n Δ g γ Π φ : lenv_unl Δ → envf N n ∅ Δ g γ Π φ → Π = ∅ ∧ φ = ∅.
 Proof.
@@ -491,7 +492,7 @@ Qed.
 
 Lemma envf_single N n o te Δ g γ Π φ :
   lenv_unl Δ → envf N n {[o := te]} Δ g γ Π φ →
-  Π = {[g o := te_sty te]} ∧ ∃ f, φ = {[g o := f]} ∧ fle (te_cr te) f.
+  Π = {[g o := te_sty te]} ∧ ∃ f, φ = {[g o := f]} ∧ fle (te_cr te) f.1 ∧ f.2 = te_tk te.
 Proof.
   intros HΔ (ΠΘ & φΘ & Πγ & φγ & HT & HG & Hd1 & Hd2 & -> & ->).
   destruct (gfuel_unl _ _ _ _ _ _ HΔ HG) as [-> ->]. rewrite !map_union_empty.

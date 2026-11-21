@@ -123,10 +123,10 @@ Proof. unfold tenv_heads. rewrite map_to_list_singleton. simpl. set_solver. Qed.
 
 Lemma cl2_typed W a b xa xb :
   a ≠ b → slt W hc_empty xa (xb‾) →
-  dftyped W ({[a := TE SEnd xa None]} ∪ {[b := TE SEnd xb None]}) hc_empty [] (∅, None) (cl2 a b) TUnit.
+  dftyped W ({[a := TE SEnd xa None None]} ∪ {[b := TE SEnd xb None None]}) hc_empty [] (∅, None) (cl2 a b) TUnit.
 Proof.
   intros Hab Hlt. unfold cl2.
-  eapply d_letu with (Θ1 := {[a := TE SEnd xa None]}) (Θ2 := {[b := TE SEnd xb None]}); [|apply lsplit_nil| |].
+  eapply d_letu with (Θ1 := {[a := TE SEnd xa None None]}) (Θ2 := {[b := TE SEnd xb None None]}); [|apply lsplit_nil| |].
   - split; [by apply map_disjoint_singleton_l_2; rewrite lookup_singleton_ne|reflexivity].
   - eapply d_close with (S0 := SEnd) (x := xa) (a := None); [done| |].
     + cbn. split_and!; [|done|done]. intros y Hy.
@@ -135,6 +135,7 @@ Proof.
     + apply d_chan; intros o Ho; inversion Ho.
   - eapply d_close with (S0 := SEnd) (x := xb) (a := None); [done|apply ub_below_empty|].
     apply d_chan; intros o Ho; inversion Ho.
+Unshelve. all: try exact None.
 Qed.
 
 (** ** The thread in E
@@ -179,11 +180,11 @@ Lemma Erel_det κ n W Θ T F e e' : det_beta e e' →
 Proof. intros [Hs Hd] H. exact (Erel_beta κ n W Θ T F e e' Hd Hs H). Qed.
 
 (** The ends of the thread, c at x and d at y, and the cut. *)
-Definition Θa : tenv := {[oc := TE SEnd px None]} ∪ {[od := TE SEnd py None]}.
+Definition Θa : tenv := {[oc := TE SEnd px None None]} ∪ {[od := TE SEnd py None None]}.
 Definition ΣC : senv := {[oc := (SEnd, px)]} ∪ {[od := (SEnd, py)]}.
 
 (** The ends of the partner, c̄ at x̄ and d̄ at ȳ. *)
-Definition Θb : tenv := {[edual oc := TE SEnd (px‾) None]} ∪ {[edual od := TE SEnd (py‾) None]}.
+Definition Θb : tenv := {[edual oc := TE SEnd (px‾) None None]} ∪ {[edual od := TE SEnd (py‾) None None]}.
 
 Lemma oc_od : oc ≠ od.
 Proof. unfold oc, od. congruence. Qed.
@@ -324,13 +325,13 @@ Definition Cbad : bcs := BCs (py :: px‾ :: []) (λ f, f = FLt (pvar 0) (pvar 1
 Definition Tbad : ty := TEx LNone 0 Cbad TUnit.
 
 Lemma sb_dead_arm_typed :
-  dftyped Wa ({[od := TE SEnd py None]} ∪ {[oc := TE SEnd px None]}) hc_empty [Some Tbad] (∅, None)
+  dftyped Wa ({[od := TE SEnd py None None]} ∪ {[oc := TE SEnd px None None]}) hc_empty [Some Tbad] (∅, None)
     (LetU (Var 0) (cl2 od oc)) TUnit.
 Proof.
   apply (d_open _ _ _ _ _ _ 0 LNone 0 Cbad TUnit TUnit); [done|by intros ?|].
   rewrite sf_pinst_nil. cbn [fmap option_fmap option_map].
-  assert (tenv_pinst (pshift 0) ({[od := TE SEnd py None]} ∪ {[oc := TE SEnd px None]}) =
-          {[od := TE SEnd py None]} ∪ {[oc := TE SEnd px None]}) as ->.
+  assert (tenv_pinst (pshift 0) ({[od := TE SEnd py None None]} ∪ {[oc := TE SEnd px None None]}) =
+          {[od := TE SEnd py None None]} ∪ {[oc := TE SEnd px None None]}) as ->.
   { unfold tenv_pinst. by rewrite map_fmap_union, !map_fmap_singleton. }
   set (Γo := hc_open 0 Cbad hc_empty).
   assert (slt Wa Γo py (px‾)) as Hf.
@@ -342,7 +343,7 @@ Proof.
     [split; [apply map_disjoint_empty_l|by rewrite map_empty_union]|by constructor; constructor| |].
   - apply d_var. split; [done|]. intros [|y] σ' Hne Hy; [done|]. done.
   - unfold cl2.
-    eapply d_letu with (Θ1 := {[od := TE SEnd py None]}) (Θ2 := {[oc := TE SEnd px None]}) (Δ1 := [None]) (Δ2 := [None]);
+    eapply d_letu with (Θ1 := {[od := TE SEnd py None None]}) (Θ2 := {[oc := TE SEnd px None None]}) (Δ1 := [None]) (Δ2 := [None]);
       [|by constructor; constructor| |].
     + split; [apply map_disjoint_singleton_l_2; by rewrite lookup_singleton_ne|reflexivity].
     + eapply d_close with (S0 := SEnd) (x := py) (a := None); [done| |].
@@ -352,6 +353,7 @@ Proof.
       * apply d_chan. intros o Ho. apply list_elem_of_singleton in Ho as ->. by left.
     + eapply d_close with (S0 := SEnd) (x := px) (a := None); [done|apply ub_below_empty|].
       apply d_chan. intros o Ho. apply list_elem_of_singleton in Ho as ->. by left.
+Unshelve. all: try exact None.
 Qed.
 
 Print Assumptions sb_thread_E.

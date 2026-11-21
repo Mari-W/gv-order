@@ -29,7 +29,7 @@ Section closure.
   Lemma Vrel_val n W Θ T v : Vrel κ n W Θ T v → is_val v.
   Proof.
     revert W Θ v. induction T as [T IH] using tsize_ind. intros W Θ v.
-    destruct T as [|ub lb c t T1 U a|T1 U|T1 U|m kk C ub c t U|s x a|lb m C T1].
+    destruct T as [|ub lb c T1 U a|T1 U|T1 U|m kk C ub c U|s x a mt|lb m C T1].
     - by intros [_ ->]%Vrel_unit_iff.
     - by intros (e & -> & _)%Vrel_lolli_iff.
     - intros (v1 & v2 & Θ1 & Θ2 & -> & _ & _ & H1 & H2)%Vrel_prod_iff. simpl.
@@ -47,7 +47,7 @@ Section closure.
   Lemma Vrel_mono n W W' Θ T v : W ⊑ W' → Vrel κ n W Θ T v → Vrel κ n W' Θ T v.
   Proof.
     intros HW. revert W W' HW Θ v. induction T as [T IH] using tsize_ind. intros W W' HW Θ v.
-    destruct T as [|ub lb c t T1 U a|T1 U|T1 U|m kk C ub c t U|s x a|lb m C T1].
+    destruct T as [|ub lb c T1 U a|T1 U|T1 U|m kk C ub c U|s x a mt|lb m C T1].
     - by rewrite !Vrel_unit_iff.
     - rewrite !Vrel_lolli_iff. intros (e & -> & Hfe & Hlb & H). exists e.
       split_and!; [done|done|by eapply lbx_le_mono|]. intros W'' j Θ' w F HW'' Hj Hd Hub Hw.
@@ -92,7 +92,7 @@ Section closure.
   Lemma Vrel_down n m W Θ T v : m ≤ n → Vrel κ n W Θ T v → Vrel κ m W Θ T v.
   Proof.
     intros Hmn. revert W Θ v. induction T as [T IH] using tsize_ind. intros W Θ v.
-    destruct T as [|ub lb c t T1 U a|T1 U|T1 U|m' kk C ub c t U|s x a|lb m' C T1].
+    destruct T as [|ub lb c T1 U a|T1 U|T1 U|m' kk C ub c t U|s x a mt|lb m' C T1].
     - by rewrite !Vrel_unit_iff.
     - rewrite !Vrel_lolli_iff. intros (e & -> & Hfe & Hlb & H). exists e.
       split_and!; [done|done|done|]. intros W' j Θ' w F HW Hj Hd Hub Hw. apply H; [done|lia|done..].
@@ -228,7 +228,7 @@ Section closure.
       1 ⊸^⊤_⊥ 1, which O-Spawn reads (entry 12): its body is read at the
       empty future, above every upper point, and ⊥ claims no bound. *)
   Lemma Vrel_thunk n W Θ ub lb v :
-    Vrel κ n W Θ (TLolli ub lb None tinf TUnit TUnit None) v →
+    Vrel κ n W Θ (TLolli ub lb None TUnit TUnit None) v →
     Varr κ n (Vrel κ) (Erel κ) (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit)
       (λ W' Θ' F e, Erel κ n W' Θ' TUnit F e) TUnit TUnit UTop LBot W Θ v.
   Proof.

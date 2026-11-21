@@ -62,13 +62,14 @@ Qed.
 
 Lemma pterm_sth N Σ (ΘB : tenv) C0 :
   (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 → pfree Σ →
-  (∀ c, c ∈ C0 → ∃ S x, ΘB !! (c⁺)%cend = Some (TE S x N) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ N)) →
-  sth (tenv_erase (tenv_of N Σ ∪ ΘB)) Σ (tenv_erase ΘB) C0.
+  (∀ c, c ∈ C0 → ∃ S x m m', tsum_ok N m m' ∧
+     ΘB !! (c⁺)%cend = Some (TE S x m m) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ m' m')) →
+  sth (tenv_erase (tenv_of (fhalf N) Σ ∪ ΘB)) Σ (tenv_erase ΘB) C0.
 Proof.
   intros HB HΣ Hf Hd. constructor; [|intros o; unfold tenv_erase; rewrite dom_fmap_L; apply HB|done|done|].
   - unfold tenv_erase, tenv_of. rewrite map_fmap_union, <-map_fmap_compose. f_equal.
     rewrite <-(map_fmap_id Σ) at 2. apply map_fmap_ext. by intros ? [? ?] _.
-  - intros o Ho. destruct (Hd (ech o) Ho) as (S & x & H1 & H2). unfold tenv_erase.
+  - intros o Ho. destruct (Hd (ech o) Ho) as (S & x & m & m' & _ & H1 & H2). unfold tenv_erase.
     destruct o as [c|c]; cbn [ech] in H1, H2; simpl.
     + exists S, x, (dual S). rewrite !lookup_fmap, H1, H2. split_and!; [done|done|apply seqv_refl].
     + exists (dual S), x‾, S. rewrite !lookup_fmap, H1, H2. simpl. rewrite pt_dual_dual.
@@ -94,18 +95,18 @@ Qed.
 
 Section proc.
   Context (κ : ctable) (G : expr → Prop).
-  Context (Hthr : ∀ W N Θ t T c ϑ, strict W → Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} t : T ▷ c ; ϑ →
+  Context (Hthr : ∀ W N Θ t T c, strict W → Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} t : T ▷ c →
                     G t → sem_typed κ W (tenv_df Θ) (lenv_df []) (∅, None) t (ty_df T)).
 
   Lemma proc_gen N W Σ p T : ptyped N W Σ p T → (∀ t, t ∈ p.2 → G t) → sem_ptyped κ W Σ p T.
   Proof.
     induction 1 as
-      [W Σ ΘB C0 t T c ϑ Hp HB HΣ Hpf Hd Ht _ HW
+      [W Σ ΘB C0 t T c Hp HB HΣ Hpf Hd Ht HW
       |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T H1 IH1 H2 IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hfam HJ];
       intros HG n; simpl in HG.
     - apply (sem_p_term κ n W _ Σ (tenv_erase ΘB) C0 t T Hp (pterm_sth N Σ ΘB C0 HB HΣ Hpf Hd)).
       assert (G t) as Hg by (apply HG; multiset_solver).
-      apply typed_E. exact (Hthr W N _ t T c ϑ HW Ht Hg).
+      apply typed_E. exact (Hthr W N _ t T c HW Ht Hg).
     - pose proof (ptyped_conn _ _ _ _ _ _ _ _ _ _ _ H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2) as Hc.
       refine (sem_p_connect κ n W1 W2 Σ1 ΣC Σ2 (senv_dual ΣC) (C1, E1) (C2, E2) T (ptyped_tfree _ _ _ _ _ H1)
                 (IH1 _ n) (IH2 _ n) Hc); intros t Ht; apply HG; simpl; multiset_solver.
@@ -117,13 +118,13 @@ End proc.
 Theorem fundamental_proc W Σ p T : Σ ⊢_W p : T → Σ ⊨_W p : T.
 Proof.
   intros Hty. refine (proc_gen κ_DF (λ _, True) _ None W Σ p T Hty _); [|done].
-  intros W' N Θ t T' c ϑ HW' Ht _. exact (fundamental_typed W' N Θ [] (∅, None) t T' c ϑ HW' Ht).
+  intros W' N Θ t T' c HW' Ht _. exact (fundamental_typed W' N Θ [] (∅, None) t T' c HW' Ht).
 Qed.
 
 Theorem live_fundamental_proc W Σ p T : Σ ⊢_W p : T → ⊢▷ p → Σ ⊫_W p : T.
 Proof.
   intros Hty Hg. refine (proc_gen κ_L (lguard ∅) _ None W Σ p T Hty Hg).
-  intros W' N Θ t T' c ϑ HW' Ht Hgt. exact (live_fundamental_typed W' N Θ [] (∅, None) t T' c ϑ HW' Ht Hgt).
+  intros W' N Θ t T' c HW' Ht Hgt. exact (live_fundamental_typed W' N Θ [] (∅, None) t T' c HW' Ht Hgt).
 Qed.
 
 Theorem soundness W p T : ∅ ⊢_W p : T → deadlock_free p.

@@ -3,7 +3,7 @@
     [Vfuel_teq]: Vfuel does not tell types apart that are equal up to
     ≈ of their session types. [Vfuel_sub]: Vfuel follows the subtyping
     [tsub] of the merged judgment (static/Contexts.v): costs, ticket
-    transformers are covariant, arguments contravariant,
+    costs are covariant, arguments contravariant,
     results covariant, and the credit of an end or a closure may fall. [FuelE_sub]: FuelE follows
     it in the result type. *)
 
@@ -31,39 +31,39 @@ Section teq.
   Context (IH : ∀ j, j < n → ∀ N T T' Π φ v, teq T T' →
     v ∈ FV^N _ j⟦RTy T⟧(Π, φ) ↔ v ∈ FV^N _ j⟦RTy T'⟧(Π, φ)).
 
-  Lemma FuelE_teq_below j N U U' c r Π φ tk e : j < n → teq U U' →
-    e ∈ F^N _ j⟦RTy U ▷ c ; r⟧(Π, φ, tk) → e ∈ F^N _ j⟦RTy U' ▷ c ; r⟧(Π, φ, tk).
-  Proof. intros Hj Ht. apply FuelE_res_mono. intros N' m Π0 φ0 v Hm. apply (IH m ltac:(lia) N' U U' Π0 φ0 v Ht). Qed.
+  Lemma FuelE_teq_below j N U U' c Π φ e : j < n → teq U U' →
+    e ∈ F^N _ j⟦RTy U ▷ c⟧(Π, φ) → e ∈ F^N _ j⟦RTy U' ▷ c⟧(Π, φ).
+  Proof. intros Hj Ht. apply FuelE_res_mono. intros m Π0 φ0 v Hm. apply (IH m ltac:(lia) N U U' Π0 φ0 v Ht). Qed.
 
   Lemma Vty_teq N T : ∀ T' Π φ v, teq T T' →
     Vty N (λ j N, FuelE N j) (λ j N, Vfuel N j) n T Π φ v →
     Vty N (λ j N, FuelE N j) (λ j N, Vfuel N j) n T' Π φ v.
   Proof.
-    induction T as [|ub lb c t T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
-                   |m k C ub c t U IHU|s x a|lb m C T1 IHT];
-      intros [|ub' lb' c' t' T1' U' a'|T1' T2'|T1' T2'
-             |m' k' C' ub' c' t' U'|s' x' a'|lb' m' C' T1'] Π φ v Ht; simpl in Ht |- *;
+    induction T as [|ub lb c T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
+                   |m k C ub c U IHU|s x a mt|lb m C T1 IHT];
+      intros [|ub' lb' c' T1' U' a'|T1' T2'|T1' T2'
+             |m' k' C' ub' c' U'|s' x' a' mt'|lb' m' C' T1'] Π φ v Ht; simpl in Ht |- *;
       try contradiction.
     - done.
-    - destruct Ht as (<- & <- & <- & <- & <- & H1 & H2).
+    - destruct Ht as (<- & <- & <- & <- & H1 & H2).
       intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|done|done|].
-      intros N' j φ1 Πu φu u r tk HN Hj Hd1 Hh HΠ Hφ Hu Hm.
-      apply (FuelE_teq_below j N' U); [done|done|]. apply H; try done.
-      apply (IH j Hj N' T1 T1'); [done|]. done.
+      intros j φ1 Πu φu u Hj Hd1 Hh HΠ Hφ Hu.
+      apply (FuelE_teq_below j N U); [done|done|]. apply H; try done.
+      apply (IH j Hj N T1 T1'); [done|]. done.
     - destruct Ht as (H1 & H2).
       intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & -> & HΠ & Hφ & -> & -> & Hv1 & Hv2).
       exists v1, v2, Π1, Π2, φ1, φ2. split_and!; try done; [by apply (IH1 T1')|by apply (IH2 T2')].
     - destruct Ht as (H1 & H2).
       intros [(v' & -> & Hv)|(v' & -> & Hv)]; [left|right]; exists v'; split; try done;
         [by apply (IH1 T1')|by apply (IH2 T2')].
-    - destruct Ht as (<- & <- & <- & <- & <- & <- & HU).
+    - destruct Ht as (<- & <- & <- & <- & <- & HU).
       intros (e & -> & Hx & -> & -> & H). exists e. split_and!; [done|done|done|done|].
-      intros N' j ss r tk HN Hj Hl Hs Hm. specialize (H N' j ss r tk HN Hj Hl Hs Hm).
+      intros j ss Hj Hl Hs. specialize (H j ss Hj Hl Hs).
       destruct k as [|k].
       + destruct ss; [|done]. rewrite !sinst_slist_nil in H |- *.
-        by apply (FuelE_teq_below j N' U).
+        by apply (FuelE_teq_below j N U).
       + by subst.
-    - destruct Ht as (<- & <- & Hs). intros (o & S' & f & -> & -> & -> & HS & Hf).
+    - destruct Ht as (<- & <- & <- & Hs). intros (o & S' & f & -> & -> & -> & HS & Hf).
       exists o, S', f. split_and!; try done. by eapply sequiv_trans.
     - destruct Ht as (<- & <- & <- & H1). apply IHT. done.
   Qed.
@@ -94,34 +94,34 @@ Section sub.
   Proof.
     intros Hs. revert Π φ v.
     induction Hs as [
-                    |ub lb c t T1 U a c' t' T1' U' a' Hc Ht Ha HT HU IHT IHU
+                    |ub lb c T1 U a c' T1' U' a' Hc Ha HT HU IHT IHU
                     |T1 U T1' U' H1 IH1 H2 IH2
                     |T1 U T1' U' H1 IH1 H2 IH2
-                    |m k C ub c t U U' c' t' Hc Ht HU
-                    |s s' x a a' Hss Ha
+                    |m k C ub c U U' c' Hc HU
+                    |s s' x a a' mt Hss Ha
                     |lb m C C' T T' HC HC' HT IHT];
       intros Π φ v; simpl.
     - done.
     - intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|done| |].
       + intros o f Ho Hi. eapply fle_trans; [exact Ha|]. by apply (Hf o).
-      + intros N' j φ1 Πu φu u r tk HN Hj Hd1 Hh1 HΠ Hφ Hu Hm.
+      + intros j φ1 Πu φu u Hj Hd1 Hh1 HΠ Hφ Hu.
         eapply FuelE_res_mono; [|eapply FuelE_frame_mono; [exact Hc|]].
-        * intros N'' m0 Π0 φ0 w Hm0. apply (IH m0 ltac:(lia)). done.
+        * intros m0 Π0 φ0 w Hm0. apply (IH m0 ltac:(lia)). done.
         * apply H; try done.
-          -- intros o f f' Ho Ho'. eapply fle_trans; [by apply fsub_anti_r|]. by apply (Hh1 o).
-          -- apply (IH j Hj N' T1' T1); done.
-          -- by apply Ht.
+          -- intros o f f' Ho Ho'. destruct (Hh1 o f f' Ho Ho') as [E Hle]. split; [done|].
+             eapply fle_trans; [by apply fsub_anti_r|exact Hle].
+          -- apply (IH j Hj N T1' T1); done.
     - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & -> & HΠ & Hφ & -> & -> & Hv1 & Hv2).
       exists v1, v2, Π1, Π2, φ1, φ2. split_and!; auto.
     - intros [(v' & -> & Hv)|(v' & -> & Hv)]; [left|right]; exists v'; split; auto.
     - intros (e & -> & Hx & -> & -> & H). exists e. split_and!; [done|done|done|done|].
-      intros N' j ss r tk HN Hj Hl Hss Hm.
+      intros j ss Hj Hl Hss.
       eapply FuelE_frame_mono; [exact Hc|].
-      specialize (H N' j ss r tk HN Hj Hl Hss (Ht r tk Hm)).
+      specialize (H j ss Hj Hl Hss).
       destruct k as [|k].
       + destruct ss; [|done]. rewrite !sinst_slist_nil in H |- *.
         eapply FuelE_res_mono; [|exact H].
-        intros N'' m0 Π0 φ0 w Hm0 Hw. by apply (Vfuel_teq m0 N'' U U').
+        intros m0 Π0 φ0 w Hm0 Hw. by apply (Vfuel_teq m0 N U U').
       + by subst.
     - intros (o & S' & f & -> & -> & -> & HS & Hf).
       exists o, S', f. split_and!; try done; [by eapply sequiv_trans|by eapply fle_trans].
@@ -138,7 +138,7 @@ Proof.
 Qed.
 
 (** F4 along ⊑: FuelE follows subtyping of its result type. *)
-Lemma FuelE_sub N n T T' d r Π φ tk e :
+Lemma FuelE_sub N n T T' d Π φ e :
   tsub T T' →
-  e ∈ F^N _ n⟦RTy T ▷ d ; r⟧(Π, φ, tk) → e ∈ F^N _ n⟦RTy T' ▷ d ; r⟧(Π, φ, tk).
+  e ∈ F^N _ n⟦RTy T ▷ d⟧(Π, φ) → e ∈ F^N _ n⟦RTy T' ▷ d⟧(Π, φ).
 Proof. intros Hs. apply FuelE_res_mono. intros. by eapply Vfuel_sub. Qed.

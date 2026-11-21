@@ -27,13 +27,13 @@
 
 From GV Require Export examples.Tools2.
 
-Definition Sch : sty := SMu (SSeq (SRcv 1 (TSess (SVar 0) (pvar 0) None)) SEnd).
+Definition Sch : sty := SMu (SSeq (SRcv 1 (TSess (SVar 0) (pvar 0) None None)) SEnd).
 
-Lemma unfold_Sch : unfoldS Sch = SSeq (SRcv 1 (TSess Sch (pvar 0) None)) SEnd.
+Lemma unfold_Sch : unfoldS Sch = SSeq (SRcv 1 (TSess Sch (pvar 0) None None)) SEnd.
 Proof. done. Qed.
-Lemma unfold_dSch : unfoldS (dual Sch) = SSeq (SSnd 1 (TSess Sch (pvar 0) None)) SEnd.
+Lemma unfold_dSch : unfoldS (dual Sch) = SSeq (SSnd 1 (TSess Sch (pvar 0) None None)) SEnd.
 Proof. done. Qed.
-Lemma pscoped_SchT : pscoped 1 (TSess Sch (pvar 0) None).
+Lemma pscoped_SchT : pscoped 1 (TSess Sch (pvar 0) None None).
 Proof. simpl. split_and?; try done; intros a Ha; injection Ha as <-; lia. Qed.
 
 Abbreviation sh := pt_shift.
@@ -89,7 +89,7 @@ Proof. intros HX HY H. repeat destruct H as [H|H]; injection H as -> ->; simpl; 
 Definition rg_P (g : fact) : Prop := ∃ X Y, rreach (pvar 0) (pvar 1) X Y ∧ rg_F X Y g.
 Definition rg_C : bcs := BCs [] rg_P.
 
-Definition rg_T : ty := TProd (TSess Sch (pvar 0) None) (TSess (dual Sch) (pvar 1) None).
+Definition rg_T : ty := TProd (TSess Sch (pvar 0) None None) (TSess (dual Sch) (pvar 1) None None).
 Definition rg_ty : ty := box1 2 rg_C (sh 1 (pvar 0)) rg_T.
 
 Definition rg_e : expr :=
@@ -142,17 +142,15 @@ Section body.
     rreach (pvar 0) (pvar 1) X1 Y1 →
     dftyped W ∅ Γb Δ F e rg_ty →
     dftyped W ∅ Γb Δ F (EForce e)
-      (TLolli (UPt (sh 1 X1)) LNone None tinf
-         (TProd (TSess Sch X1 None) (TSess (dual Sch) Y1 None)) TUnit None).
+      (TLolli (UPt (sh 1 X1)) LNone None (TProd (TSess Sch X1 None None) (TSess (dual Sch) Y1 None None)) TUnit None).
   Proof.
     intros HR H.
     assert (sinst_ty (slist []) (ty_inst (X1 :: Y1 :: [])
-              (TLolli (UPt (sh 1 (pvar 0))) LNone None tinf rg_T TUnit None)) =
-      TLolli (UPt (sh 1 X1)) LNone None tinf
-         (TProd (TSess Sch X1 None) (TSess (dual Sch) Y1 None)) TUnit None) as <-.
+              (TLolli (UPt (sh 1 (pvar 0))) LNone None rg_T TUnit None)) =
+      TLolli (UPt (sh 1 X1)) LNone None (TProd (TSess Sch X1 None None) (TSess (dual Sch) Y1 None None)) TUnit None) as <-.
     { rewrite sinst_nil. unfold ty_inst, rg_T. cbn [pinst_ty fmap option_fmap option_map ub_map lb_map].
       rewrite pt_inst_shift, !pt_inst_pvar_at. reflexivity. }
-    eapply d_force with (ub := None) (c := None) (t := tinf) (C := rg_C);
+    eapply d_force with (ub := None) (c := None) (C := rg_C);
       [done| |done|split; [apply Forall_nil|intros _; apply Forall_nil]|exact I|exact H].
     apply hold_at_nil. intros f Hf _.
     destruct (fact_map (pt_inst (plist (X1 :: Y1 :: []))) f) as [x y] eqn:E.
@@ -189,7 +187,7 @@ Section body.
       eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
       { eapply d_var'; [reflexivity|]. spare_tac. }
       eapply d_close with (S0 := SEnd) (x := sh 1 (pvar 1)); [done|apply ub_below_empty|].
-      eapply d_send with (x := pvar 1) (m := 1) (T := TSess Sch (pvar 0) None) (S0 := dual Sch);
+      eapply d_send with (x := pvar 1) (m := 1) (T := TSess Sch (pvar 0) None None) (S0 := dual Sch);
         [exact unfold_dSch|exact pscoped_SchT|done| |apply ub_below_empty|].
       { intros y Hy. cbn in Hy. apply elem_of_singleton in Hy as ->. rgf. }
       eapply d_pair; [apply tsplit_empty|lsplit_tac (Var 2) (Var 4)| |].
@@ -201,7 +199,7 @@ Section body.
     eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
     { eapply d_var'; [reflexivity|]. spare_tac. }
     eapply d_letp; [apply tsplit_empty|lsplit_tac (ERecv (Var 3)) EUnit| |].
-    { eapply d_recv with (x := pvar 0) (m := 1) (T := TSess Sch (pvar 0) None) (S0 := Sch);
+    { eapply d_recv with (x := pvar 0) (m := 1) (T := TSess Sch (pvar 0) None None) (S0 := Sch);
         [exact unfold_Sch|exact pscoped_SchT|fut (pvar 0)|].
       eapply d_var'; [reflexivity|]. spare_tac. }
     eapply d_letu; [apply tsplit_empty|lsplit_tac (EClose (Var 0)) EUnit| |].
@@ -246,16 +244,14 @@ Definition rg_main : expr := let_new 0 (App (EForce ring) (Pair (Var 1) (Var 0))
 Lemma rg_force n F e :
   dftyped W_rg ∅ (Γnew W_rg 0) (nones n) F e rg_ty →
   dftyped W_rg ∅ (Γnew W_rg 0) (nones n) F (EForce e)
-    (TLolli (UPt (sh 1 (pvar 0))) LNone None tinf
-       (TProd (TSess Sch (pvar 0) None) (TSess (dual Sch) (pvar 0)‾ None)) TUnit None).
+    (TLolli (UPt (sh 1 (pvar 0))) LNone None (TProd (TSess Sch (pvar 0) None None) (TSess (dual Sch) (pvar 0)‾ None None)) TUnit None).
 Proof.
   intros H.
   assert (sinst_ty (slist []) (ty_inst rg_xs
-            (TLolli (UPt (sh 1 (pvar 0))) LNone None tinf rg_T TUnit None)) =
-    TLolli (UPt (sh 1 (pvar 0))) LNone None tinf
-       (TProd (TSess Sch (pvar 0) None) (TSess (dual Sch) (pvar 0)‾ None)) TUnit None) as <-.
+            (TLolli (UPt (sh 1 (pvar 0))) LNone None rg_T TUnit None)) =
+    TLolli (UPt (sh 1 (pvar 0))) LNone None (TProd (TSess Sch (pvar 0) None None) (TSess (dual Sch) (pvar 0)‾ None None)) TUnit None) as <-.
   { rewrite sinst_nil. reflexivity. }
-  eapply d_force with (ub := None) (c := None) (t := tinf) (C := rg_C);
+  eapply d_force with (ub := None) (c := None) (C := rg_C);
     [done| |done|split; [apply Forall_nil|intros _; apply Forall_nil]|exact I|exact H].
   apply hold_at_nil. intros f Hf Hs.
   destruct (fact_map (pt_inst (plist rg_xs)) f) as [x y] eqn:E.
@@ -283,5 +279,5 @@ Proof.
   Unshelve. all: exact None.
 Qed.
 
-Theorem rg_typed : typed W_rg None ∅ hc_empty [] (∅, None) rg_main TUnit None tinf.
+Theorem rg_typed : typed W_rg None ∅ hc_empty [] (∅, None) rg_main TUnit None.
 Proof. apply (dftyped_typed _ _ _ _ _ _ _ rg_dftyped). Qed.

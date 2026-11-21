@@ -67,5 +67,5 @@ Proof.
   Unshelve. all: exact None.
 Qed.
 
-Theorem cy_typed : typed W_cy None ∅ hc_empty [] (∅, None) cy_main TUnit None tinf.
+Theorem cy_typed : typed W_cy None ∅ hc_empty [] (∅, None) cy_main TUnit None.
 Proof. apply (dftyped_typed _ _ _ _ _ _ _ cy_dftyped). Qed.

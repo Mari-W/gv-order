@@ -9,8 +9,7 @@
       lies at or above a point y of F asks less of a blocked end than y
       does, because x ≺ y and y ≼ y′ give x ≺ y′. The bind lemma puts
       the heads of the frame's environment into the hole's future, and
-      a value of a typed grounding holds its ends at or above the static
-      heads of its type ([Vrel_heads]), so S5 needs E at the static
+      a value of a typed grounding holds its ends at or above the static of its type ([Vrel_heads]), so S5 needs E at the static
       heads to give E at the heads of the grounding.
     - [Erel_ty_mono]. E reads its type only through the (stop) clause,
       so V at T included in V at T′ in every world above W gives E at T

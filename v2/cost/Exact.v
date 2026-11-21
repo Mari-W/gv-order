@@ -1,7 +1,6 @@
 (** * The ends of a typed term (stage S7, decision Q15)
 
-    [typed_tfacts]: a term typed by the merged judgment mentions exactly
-    the ends of Θ, every free variable has an entry in Δ, and every
+    [typed_tfacts]: a term typed by the merged judgment mentions exactly the ends of, every free variable has an entry in Δ, and every
     entry that is not unlimited occurs. [fends_ground] then computes the
     ends of a grounded instance: those of Θ and those of the values the
     grounding puts in. E-Abs and E-Box need it to show the
@@ -136,7 +135,7 @@ Proof.
   split; [|intros _]; induction k; simpl; constructor; auto; apply hcontractive_end.
 Qed.
 
-Theorem typed_tfacts W N Θ Γ Δ F e T c t : typed W N Θ Γ Δ F e T c t → tfacts Θ Δ e.
+Theorem typed_tfacts W N Θ Γ Δ F e T c : typed W N Θ Γ Δ F e T c → tfacts Θ Δ e.
 Proof.
   induction 1; unfold tfacts in *; simpl; destruct_and?.
   all: try match goal with H : tsplit _ _ _ |- _ => rewrite (tsplit_dom _ _ _ H) end.

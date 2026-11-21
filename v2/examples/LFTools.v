@@ -1,8 +1,8 @@
 (** * Tools for lock-free example derivations (stage S9)
 
     A closed program t is lock free by [lf_soundness] when it types at a
-    finite refill N with the empty future, is guarded, meets its ticket
-    transformer at 0 and lives in a strict, well-founded world ([lf_main]).
+    finite bound N with the empty future, is guarded and lives in a
+    strict, well-founded world ([lf_main]).
 
     A world is well founded when some measure into a well-founded
     transitive order rises along every generating step of ≺
@@ -73,12 +73,13 @@ Qed.
 
 (** ** Closed programs *)
 
-Lemma lf_main_typed N W t T c ϑ tk :
-  strict W → tfree T → typed W (Some N) ∅ hc_empty [] (∅, None) t T c ϑ →
-  ∅ ⊢▷ t → meets ϑ 0 tk → ∅ ⊩^N _ W (∅, {[+ t +]}) : T.
+Lemma lf_main_typed N W t T c :
+  strict W → tfree T → typed W (Some N) ∅ hc_empty [] (∅, None) t T c →
+  ∅ ⊢▷ t → ∅ ⊩^N _ W (∅, {[+ t +]}) : T.
 Proof.
-  intros HS Hp Ht Hg Hm. split.
-  - apply (p_term (Some N) W ∅ ∅ ∅ t T c ϑ); [done| | | | |done|by right; exists tk|done].
+  intros HS Hp Ht Hg. split.
+  - apply (p_term (Some N) W ∅ ∅ ∅ t T c); [done| | | | | |done].
+    5: { unfold tenv_of. rewrite fmap_empty, map_union_empty. exact Ht. }
     + intros o. rewrite dom_empty_L. set_solver.
     + set_solver.
     + apply pfree_empty.
@@ -86,28 +87,28 @@ Proof.
   - intros t' Ht'. simpl in Ht'. apply gmultiset_elem_of_singleton in Ht' as ->. done.
 Qed.
 
-Lemma lf_main N W t T c ϑ tk :
-  strict W → wfworld W → tfree T → typed W (Some N) ∅ hc_empty [] (∅, None) t T c ϑ →
-  ∅ ⊢▷ t → meets ϑ 0 tk → lock_free (∅, {[+ t +]}).
-Proof. intros HS HW Hp Ht Hg Hm. eapply (lf_soundness N W _ T HW), lf_main_typed; eauto. Qed.
+Lemma lf_main N W t T c :
+  strict W → wfworld W → tfree T → typed W (Some N) ∅ hc_empty [] (∅, None) t T c →
+  ∅ ⊢▷ t → lock_free (∅, {[+ t +]}).
+Proof. intros HS HW Hp Ht Hg. eapply (lf_soundness N W _ T HW), lf_main_typed; eauto. Qed.
 
 (** ** Rules of the merged judgment with weakening built in *)
 
 Lemma e_var' W N Γ Δ F x T :
   Δ !! x = Some (Some T) → (∀ y o, y ≠ x → Δ !! y = Some o → spare o) →
-  typed W N ∅ Γ Δ F (Var x) T (Some 0) tid.
+  typed W N ∅ Γ Δ F (Var x) T (Some 0).
 Proof.
   intros Hx Hs. eapply e_var. by apply spare_only.
 Qed.
 
 Lemma e_unit' W N Γ Δ F : (∀ y o, Δ !! y = Some o → spare o) →
-  typed W N ∅ Γ Δ F EUnit TUnit (Some 0) tid.
+  typed W N ∅ Γ Δ F EUnit TUnit (Some 0).
 Proof. intros H. by apply e_unit, spare_unl. Qed.
 
 Lemma e_new' W N Γ Δ F ℓ S :
   (∀ y o, Δ !! y = Some o → spare o) → ℓ ∈ w_fams W →
-  typed W N ∅ Γ Δ F (ENew ℓ)
-    (TEx LBot 1 (bcs_of (w_laws W ℓ)) (TProd (TSess S (pvar 0) N) (TSess (dual S) (pvar 0)‾ N))) (Some 0) tid.
+  typed W N ∅ Γ Δ F (ENew ℓ) (TEx LBot 1 (bcs_of (w_laws W ℓ))
+    (TProd (TSess S (pvar 0) (fhalf N) (fhalf N)) (TSess (dual S) (pvar 0)‾ (ncap N (fhalf N)) (ncap N (fhalf N))))) (Some 0).
 Proof. intros H Hℓ. apply e_new; [by apply spare_unl|done]. Qed.
 
 Lemma thage_empty c : thage c ∅ ∅.
@@ -117,60 +118,55 @@ Proof. intros o. by rewrite lookup_empty. Qed.
     a derivation meets them: the first operand fixes the cost that ages
     the context of the second. *)
 
-Lemma e_let_ W N Γ Δ Δ1 Δ2 Δ2' F e1 e2 T1 T c1 t1 c2 t2 :
+Lemma e_let_ W N Γ Δ Δ1 Δ2 Δ2' F e1 e2 T1 T c1 c2 :
   lenv_split Δ Δ1 Δ2 →
-  typed W N ∅ Γ Δ1 (sf_unionb F (tenv_heads ∅ ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 T1 c1 t1 →
+  typed W N ∅ Γ Δ1 (sf_unionb F (tenv_heads ∅ ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 T1 c1 →
   lage c1 Δ2 Δ2' →
-  typed W N ∅ Γ (Some T1 :: Δ2') F e2 T c2 t2 →
-  tok t1 t2 →
-  typed W N ∅ Γ Δ F (ELet e1 e2) T (fadd c1 c2) (tseq t1 t2).
+  typed W N ∅ Γ (Some T1 :: Δ2') F e2 T c2 →
+  typed W N ∅ Γ Δ F (ELet e1 e2) T (fadd c1 c2).
 Proof. intros. eapply e_let; eauto using tsplit_empty, thage_empty. Qed.
 
-Lemma e_letu_ W N Γ Δ Δ1 Δ2 Δ2' F e1 e2 T c1 t1 c2 t2 :
+Lemma e_letu_ W N Γ Δ Δ1 Δ2 Δ2' F e1 e2 T c1 c2 :
   lenv_split Δ Δ1 Δ2 →
-  typed W N ∅ Γ Δ1 (sf_unionb F (tenv_heads ∅ ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 TUnit c1 t1 →
+  typed W N ∅ Γ Δ1 (sf_unionb F (tenv_heads ∅ ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 TUnit c1 →
   lage c1 Δ2 Δ2' →
-  typed W N ∅ Γ Δ2' F e2 T c2 t2 →
-  tok t1 t2 →
-  typed W N ∅ Γ Δ F (LetU e1 e2) T (fadd c1 c2) (tseq t1 t2).
+  typed W N ∅ Γ Δ2' F e2 T c2 →
+  typed W N ∅ Γ Δ F (LetU e1 e2) T (fadd c1 c2).
 Proof. intros. eapply e_letu; eauto using tsplit_empty, thage_empty. Qed.
 
-Lemma e_letp_ W N Γ Δ Δ1 Δ2 Δ2' F e1 e2 T1 T2 T c1 t1 c2 t2 :
+Lemma e_letp_ W N Γ Δ Δ1 Δ2 Δ2' F e1 e2 T1 T2 T c1 c2 :
   lenv_split Δ Δ1 Δ2 →
-  typed W N ∅ Γ Δ1 (sf_unionb F (tenv_heads ∅ ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1
-    (TProd T1 T2) c1 t1 →
+  typed W N ∅ Γ Δ1 (sf_unionb F (tenv_heads ∅ ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 (TProd T1 T2) c1 →
   lage c1 Δ2 Δ2' →
-  typed W N ∅ Γ (Some T2 :: Some T1 :: Δ2') F e2 T c2 t2 →
-  tok t1 t2 →
-  typed W N ∅ Γ Δ F (LetP e1 e2) T (fadd c1 c2) (tseq t1 t2).
+  typed W N ∅ Γ (Some T2 :: Some T1 :: Δ2') F e2 T c2 →
+  typed W N ∅ Γ Δ F (LetP e1 e2) T (fadd c1 c2).
 Proof. intros. eapply e_letp; eauto using tsplit_empty, thage_empty. Qed.
 
-Lemma e_pair_ W N Γ Δ Δ1 Δ2 Δ2' F e1 e2 T1 T1' T2 c1 t1 c2 t2 :
+Lemma e_pair_ W N Γ Δ Δ1 Δ2 Δ2' F e1 e2 T1 T1' T2 c1 c2 :
   lenv_split Δ Δ1 Δ2 →
-  typed W N ∅ Γ Δ1 (sf_unionb F (tenv_heads ∅ ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 T1 c1 t1 →
+  typed W N ∅ Γ Δ1 (sf_unionb F (tenv_heads ∅ ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 T1 c1 →
   lage c1 Δ2 Δ2' →
-  typed W N ∅ Γ Δ2' (sf_unionb F (heads T1) (hbot T1)) e2 T2 c2 t2 →
-  tage c2 T1 T1' → tok t1 t2 →
-  typed W N ∅ Γ Δ F (Pair e1 e2) (TProd T1' T2) (fadd c1 c2) (tseq t1 t2).
+  typed W N ∅ Γ Δ2' (sf_unionb F (heads T1) (hbot T1)) e2 T2 c2 →
+  tage c2 T1 T1' →
+  typed W N ∅ Γ Δ F (Pair e1 e2) (TProd T1' T2) (fadd c1 c2).
 Proof. intros. eapply e_pair; eauto using tsplit_empty, thage_empty. Qed.
 
-Lemma e_app_ W N Γ Δ Δ1 Δ2 Δ2' F e1 e2 ub lb c t T U a1 c1 t1 c2 t2 :
+Lemma e_app_ W N Γ Δ Δ1 Δ2 Δ2' F e1 e2 ub lb c T U a1 c1 c2 :
   lenv_split Δ Δ1 Δ2 → ub_below_u W Γ ub F →
-  typed W N ∅ Γ Δ1 (sf_unionb F (tenv_heads ∅ ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1
-    (TLolli ub lb c t T U a1) c1 t1 →
+  typed W N ∅ Γ Δ1 (sf_unionb F (tenv_heads ∅ ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 (TLolli ub lb c T U a1) c1 →
   lage c1 Δ2 Δ2' →
-  typed W N ∅ Γ Δ2' (sf_unionb F (lb_heads lb) (lb_bot lb)) e2 T c2 t2 →
-  fle c2 a1 → tok t2 t → tok t1 (tseq t2 t) →
-  typed W N ∅ Γ Δ F (App e1 e2) U (fadd c1 (fadd c2 c)) (tseq t1 (tseq t2 t)).
+  typed W N ∅ Γ Δ2' (sf_unionb F (lb_heads lb) (lb_bot lb)) e2 T c2 →
+  fle c2 a1 →
+  typed W N ∅ Γ Δ F (App e1 e2) U (fadd c1 (fadd c2 c)).
 Proof. intros. eapply e_app; eauto using tsplit_empty, thage_empty. Qed.
 
 (** A pair of ends whose credits fall. *)
-Lemma e_sub_sess2 W N Γ Δ F e S1 x S2 y a1 a2 b1 b2 c t :
-  typed W N ∅ Γ Δ F e (TProd (TSess S1 x a1) (TSess S2 y a2)) c t →
+Lemma e_sub_sess2 W N Γ Δ F e S1 x S2 y a1 a2 b1 b2 c m1 m2 :
+  typed W N ∅ Γ Δ F e (TProd (TSess S1 x a1 m1) (TSess S2 y a2 m2)) c →
   fle b1 a1 → fle b2 a2 →
-  typed W N ∅ Γ Δ F e (TProd (TSess S1 x b1) (TSess S2 y b2)) c t.
+  typed W N ∅ Γ Δ F e (TProd (TSess S1 x b1 m1) (TSess S2 y b2 m2)) c.
 Proof.
-  intros He H1 H2. eapply e_sub; [exact He| |apply fle_refl|apply tle_refl].
+  intros He H1 H2. eapply e_sub; [exact He| |apply fle_refl].
   apply sub_prod; apply sub_sess; rewrite ?fadd_0_l; auto using sequiv_refl.
 Qed.
 
@@ -189,8 +185,6 @@ Ltac age_tac :=
 Ltac lage_tac :=
   solve [repeat first [ apply lage_nones | apply lage_nil | apply lage_none
                       | apply lage_some; [age_tac|] ]].
-
-Ltac tok_tac := first [ left; reflexivity | right; left; discriminate | right; right; reflexivity ].
 
 Ltac acts_tac :=
   first [ apply acts_op; exact I
@@ -214,35 +208,21 @@ Ltac guard_tac :=
         | apply gl_inj; guard_tac
         | eapply gl_case; [guard_tac|left; reflexivity|guard_tac|guard_tac] ].
 
-Ltac meets_tac := unfold meets; simpl; lia.
-
 (** ** Boxes of one arrow
 
-    □∀ιs. C. (T ⊸^ub U)^∞ with box cost 0 and transformer 1̂. The arrow
-    has cost ∞ and transformer (∞, 0), which every body with offset 0
-    meets ([tle_tz]). A call is then a last step of its thread or of a
-    box body: whatever is held across it would age by ∞. *)
-
-Definition tz : tix := (None, Some 0).
-
-Lemma tle_tz t : t.2 = Some 0 → tle t tz.
-Proof.
-  destruct t as [s b]. simpl. intros -> r tk. unfold meets, tz, tapp.
-  destruct (Nat.eqb_spec r 0) as [->|]; [|done]. simpl. intros H.
-  destruct s; simpl; lia.
-Qed.
+    □∀ιs. C. (T ⊸^ub U)^∞ with box cost 0. The arrow has cost ∞. A call
+    is then a last step of its thread or of a box body: whatever is held
+    across it would age by ∞. *)
 
 Definition lbox (m : nat) (C : bcs) (ub : option point) (T U : ty) : ty :=
-  TBox m 0 C None (Some 0) tid (TLolli (ubound_of ub) LNone None tz T U None).
+  TBox m 0 C None (Some 0) (TLolli (ubound_of ub) LNone None T U None).
 
-Lemma lbox_typed W N Γ n F m C ub T U e c t :
+Lemma lbox_typed W N Γ n F m C ub T U e c :
   pinst_ty (pshift m) (lbox m C ub T U) = lbox m C ub T U →
-  typed W N ∅ (hc_open m C Γ)
-    (Some T :: Some (lbox m C ub T U) :: nones n) (∅, Some (FRest (rest_of ub))) e U c t →
-  t.2 = Some 0 →
-  typed W N ∅ Γ (nones n) F (EBox (Lam e)) (lbox m C ub T U) (Some 0) tid.
+  typed W N ∅ (hc_open m C Γ) (Some T :: Some (lbox m C ub T U) :: nones n) (∅, Some (FRest (rest_of ub))) e U c →
+  typed W N ∅ Γ (nones n) F (EBox (Lam e)) (lbox m C ub T U) (Some 0).
 Proof.
-  intros HB He Ht. unfold lbox at 1. eapply e_box.
+  intros HB He. unfold lbox at 1. eapply e_box.
   { intros o Ho. apply elem_of_replicate in Ho as [-> _]. by left. }
   intros ss Hk _. destruct ss; [|done]. rewrite sinst_nil.
   rewrite lenv_pinst_cons'. cbn [fmap option_fmap option_map]. fold (lbox m C ub T U).
@@ -251,26 +231,25 @@ Proof.
   { apply lb_below_none. spare_tac. }
   { intros o. by rewrite !lookup_empty. }
   { apply lage_some; [apply age_free; constructor|apply lage_nones]. }
-  eapply e_sub; [exact He|apply tsub_refl|apply fle_inf|by apply tle_tz].
+  eapply e_sub; [exact He|apply tsub_refl|apply fle_inf].
 Qed.
 
-Lemma lbox_force W N Γ Δ F e m C ub T U xs c0 t0 :
+Lemma lbox_force W N Γ Δ F e m C ub T U xs c0 :
   length xs = m → hold_at W Γ C xs →
-  typed W N ∅ Γ Δ F e (lbox m C ub T U) c0 t0 →
-  typed W N ∅ Γ Δ F (EForce e)
-    (TLolli (ubound_of (pt_inst (plist xs) <$> ub)) LNone None tz (ty_inst xs T) (ty_inst xs U) None) (fadd c0 (Some 0)) (tseq t0 tid).
+  typed W N ∅ Γ Δ F e (lbox m C ub T U) c0 →
+  typed W N ∅ Γ Δ F (EForce e) (TLolli (ubound_of (pt_inst (plist xs) <$> ub)) LNone None (ty_inst xs T) (ty_inst xs U) None) (fadd c0 (Some 0)).
 Proof.
   intros Hm HC He. rewrite <-ub_map_of.
-  rewrite <-(sinst_nil (TLolli _ _ _ _ _ _ _)).
-  eapply (e_force W N ∅ Γ Δ F e m 0 C None (Some 0) tid
-            (TLolli (ubound_of ub) LNone None tz T U None) xs []);
+  rewrite <-(sinst_nil (TLolli _ _ _ _ _ _)).
+  eapply (e_force W N ∅ Γ Δ F e m 0 C None (Some 0)
+            (TLolli (ubound_of ub) LNone None T U None) xs []);
     first [done | split; [apply Forall_nil|intros _; apply Forall_nil] | left; done].
 Qed.
 
 (** The force at a list of points, with the instantiated types given. *)
-Lemma lbox_force_eq W N Γ Δ F e m C ub T U xs c0 t0 ub' T' U' :
+Lemma lbox_force_eq W N Γ Δ F e m C ub T U xs c0 ub' T' U' :
   length xs = m → hold_at W Γ C xs →
   ubound_of (pt_inst (plist xs) <$> ub) = ub' → ty_inst xs T = T' → ty_inst xs U = U' →
-  typed W N ∅ Γ Δ F e (lbox m C ub T U) c0 t0 →
-  typed W N ∅ Γ Δ F (EForce e) (TLolli ub' LNone None tz T' U' None) (fadd c0 (Some 0)) (tseq t0 tid).
+  typed W N ∅ Γ Δ F e (lbox m C ub T U) c0 →
+  typed W N ∅ Γ Δ F (EForce e) (TLolli ub' LNone None T' U' None) (fadd c0 (Some 0)).
 Proof. intros ?? <- <- <-. by apply lbox_force. Qed.

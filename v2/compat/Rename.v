@@ -491,7 +491,7 @@ Section rel.
     VR n T.
   Proof.
     intros IHl IHt IHe W Θ v h Hk.
-    destruct T as [|ub lb c t T1 U a0|T1 U|T1 U|m kk C ub c t U|s x a0|lb m C T1].
+    destruct T as [|ub lb c T1 U a0|T1 U|T1 U|m kk C ub c U|s x a0 mt0|lb m C T1].
     - intros [-> ->]%Vrel_unit_iff. apply Vrel_unit_iff. by rewrite kren_empty.
     - intros (e & -> & Hfe & Hlb & H)%Vrel_lolli_iff. apply Vrel_lolli_iff.
       exists (emap h e). split_and!; [done|by rewrite kren_dom, fends_emap, Hfe|by rewrite kren_heads|].

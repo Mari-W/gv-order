@@ -88,13 +88,14 @@ Qed.
 
 (** ** The leaves in E *)
 
-Definition Θl (o : cend) (x : point) : tenv := {[o := TE SEnd x None]}.
+Definition Θl (o : cend) (x : point) : tenv := {[o := TE SEnd x None None]}.
 
 Lemma leaf_typed W o x :
   dftyped W (Θl o x) hc_empty [] (∅, None) (EClose (Chan o)) TUnit.
 Proof.
   eapply d_close with (S0 := SEnd) (x := x) (a := None); [done|apply ub_below_empty|].
   apply d_chan; intros o' Ho; inversion Ho.
+Unshelve. all: try exact None.
 Qed.
 
 Lemma leaf_E o x n :

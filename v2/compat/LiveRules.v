@@ -52,7 +52,7 @@ Proof. unfold tenv_erase. apply dom_fmap_L. Qed.
 Lemma tenv_erase_empty : tenv_erase ∅ = ∅.
 Proof. apply fmap_empty. Qed.
 
-Lemma tenv_erase_singleton o S x a : tenv_erase {[o := TE S x a]} = {[o := (S, x)]}.
+Lemma tenv_erase_singleton o S x a mt : tenv_erase {[o := TE S x a mt]} = {[o := (S, x)]}.
 Proof. unfold tenv_erase. by rewrite map_fmap_singleton. Qed.
 
 Lemma senv_heads_union Θ1 Θ2 y :
@@ -119,11 +119,11 @@ Section rules0.
     Vrel κ n W Θ (pinst_ty σ T) v → Vrel κ n W Θ (pinst_ty σ T') v.
   Proof.
     induction 1 as [
-      |ub lb c t T1 U a c' t' T1' U' a' _ _ _ _ IH1 _ IH2
+      |ub lb c T1 U a c' T1' U' a' _ _ _ IH1 _ IH2
       |T1 U T1' U' _ IH1 _ IH2
       |T1 U T1' U' _ IH1 _ IH2
-      |m kk C ub c t U U' c' t' _ _ HU
-      |s s' x a a' Hs _
+      |m kk C ub c U U' c' _ HU
+      |s s' x a a' mt Hs _
       |lb m C C' T T' Henv Hf _ IH]; intros σ n W Θ v; simpl.
     - done.
     - rewrite !Vrel_lolli_iff. intros (e & -> & Hfe & Hlb & H). exists e. split_and!; [done|done|done|].
@@ -427,13 +427,13 @@ Proof.
 Qed.
 
 (** A box at a positive cost of β, unmarked. *)
-Lemma gen_e_box κ W Δ F e m kk C ub c t U :
+Lemma gen_e_box κ W Δ F e m kk C ub c U :
   1 ≤ c_beta κ → tfacts ∅ Δ (EBox e) → lenv_unl Δ →
   (∀ W1 xs ss F', W ⊑ W1 → length xs = m → length ss = kk → Forall hcontractive ss →
      wholds W1 C xs → ub_lt W1 (pt_inst (plist xs) <$> ub) F' →
-     sem_typed_at κ W1 ∅ (Some (TBox m kk C ub c t U) :: Δ) F' e
+     sem_typed_at κ W1 ∅ (Some (TBox m kk C ub c U) :: Δ) F' e
        (sinst_ty (slist ss) (ty_inst xs U))) →
-  sem_typed_at κ W ∅ Δ F (EBox e) (TBox m kk C ub c t U).
+  sem_typed_at κ W ∅ Δ F (EBox e) (TBox m kk C ub c U).
 Proof.
   intros Hβ Htf Hu Hbody n W' Θ' γ HW Hd HG.
   pose proof (GrelL_fends κ _ _ _ _ _ _ _ _ Htf (proj2 (GrelL_unmarked κ _ _ _ _ _) HG)) as Hx.
@@ -441,7 +441,7 @@ Proof.
   rewrite tenv_erase_empty, map_union_empty. simpl in Hx. rewrite !dom_empty_L, union_empty_r_L in Hx.
   set (eb := subst (up γ) e). fold eb in Hx.
   apply Vrel_Erel.
-  assert (∀ j W2, j ≤ n → W' ⊑ W2 → Vrel κ j W2 ∅ (TBox m kk C ub c t U) (EBox eb)) as Hlob.
+  assert (∀ j W2, j ≤ n → W' ⊑ W2 → Vrel κ j W2 ∅ (TBox m kk C ub c U) (EBox eb)) as Hlob.
   { induction j as [j IH] using lt_wf_ind. intros W2 Hj HW2. apply Vrel_box_iff.
     split; [done|]. exists eb. split_and!; [done|done|].
     intros W3 xs ss HW3 Hxs Hss Hsc HC. apply Vrel_lolli_iff.
@@ -459,7 +459,7 @@ Proof.
       { eapply wext_trans; [exact HW|]. eapply wext_trans; [exact HW2|]. by eapply wext_trans. }
       assert (W' ⊑ W4) as HW'4.
       { eapply wext_trans; [exact HW2|]. by eapply wext_trans. }
-      assert (Grel κ j' W4 ∅ (Some (TBox m kk C ub c t U) :: Δ) (EBox eb .: γ)) as HG'.
+      assert (Grel κ j' W4 ∅ (Some (TBox m kk C ub c U) :: Δ) (EBox eb .: γ)) as HG'.
       { exists ∅, ∅. split_and!; [apply map_disjoint_empty_l|by rewrite map_union_empty| |].
         - apply IH; [lia|lia|done].
         - eapply Grel_down; [|eapply Grel_mono; [exact HW'4|exact HG]]. lia. }
@@ -568,17 +568,17 @@ Section later.
     apply Vrel_Erel. by eapply GrelL_only.
   Qed.
 
-  Lemma later_chan aq1 W Δ L F o S x a :
-    lenv_unl Δ → sem_later κ W {[o := TE S x a]} Δ L F (Chan o) (TSess S x aq1).
+  Lemma later_chan aq1 W Δ L F o S x a mt mt' :
+    lenv_unl Δ → sem_later κ W {[o := TE S x a mt]} Δ L F (Chan o) (TSess S x aq1 mt').
   Proof.
     intros HΔ n W' Θ' γ HW Hd HG. rewrite (GrelL_unl κ _ _ _ _ _ _ HΔ HG), map_union_empty, tenv_erase_singleton.
     apply Vrel_Erel. apply Vrel_sess_iff. exists o, S. split_and!; [done|done|apply seqv_refl].
   Qed.
 
-  Lemma later_new_ext (ℓ : family) W0 W Δ L F S a1 a2 :
+  Lemma later_new_ext (ℓ : family) W0 W Δ L F S a1 a2 mt mt2 :
     W0 ⊑ W → lenv_unl Δ → ℓ ∈ w_fams W0 →
     sem_later κ W ∅ Δ L F (ENew ℓ)
-      (TEx LBot 1 (bcs_of (w_laws W0 ℓ)) (TProd (TSess S (pvar 0) a1) (TSess (dual S) (pvar 0)‾ a2))).
+      (TEx LBot 1 (bcs_of (w_laws W0 ℓ)) (TProd (TSess S (pvar 0) a1 mt) (TSess (dual S) (pvar 0)‾ a2 mt2))).
   Proof.
     intros HW0 HΔ Hℓ n W' Θ' γ HW Hd HG. simpl.
     rewrite (GrelL_unl κ _ _ _ _ _ _ HΔ HG), tenv_erase_empty, map_union_empty.
@@ -588,11 +588,11 @@ Section later.
     - intros f Hf. by apply (wext_laws _ _ HW0').
   Qed.
 
-  Lemma later_abs W Θ Δ L F e T U aU ub lb c t :
+  Lemma later_abs W Θ Δ L F e T U aU ub lb c :
     tfacts Θ Δ (Lam e) →
     (lb = LBot ∨ (lenv_bot Δ = false ∧ lbx_le W lb (tenv_heads Θ ∪ lenv_heads Δ))) →
     (∀ W1 F', W ⊑ W1 → ub_ltu W1 ub F' → sem_later κ W1 Θ (Some T :: Δ) (false .: L) F' e U) →
-    sem_later κ W Θ Δ L F (Lam e) (TLolli ub lb c t T U aU).
+    sem_later κ W Θ Δ L F (Lam e) (TLolli ub lb c T U aU).
   Proof.
     intros Htf Hlb0 Hbody n W' Θ' γ HW Hd HG. apply Vrel_Erel, Vrel_lolli_iff.
     exists (subst (up γ) e). split_and!.
@@ -622,13 +622,13 @@ Section later.
   Qed.
 
   (** A box marks its self, at every cost table. *)
-  Lemma later_box W Δ L F e m kk C ub c t U :
+  Lemma later_box W Δ L F e m kk C ub c U :
     tfacts ∅ Δ (EBox e) → lenv_unl Δ →
     (∀ W1 xs ss F', W ⊑ W1 → length xs = m → length ss = kk → Forall hcontractive ss →
        wholds W1 C xs → ub_lt W1 (pt_inst (plist xs) <$> ub) F' →
-       sem_later κ W1 ∅ (Some (TBox m kk C ub c t U) :: Δ) (true .: L) F' e
+       sem_later κ W1 ∅ (Some (TBox m kk C ub c U) :: Δ) (true .: L) F' e
          (sinst_ty (slist ss) (ty_inst xs U))) →
-    sem_later κ W ∅ Δ L F (EBox e) (TBox m kk C ub c t U).
+    sem_later κ W ∅ Δ L F (EBox e) (TBox m kk C ub c U).
   Proof.
     intros Htf Hu Hbody n W' Θ' γ HW Hd HG.
     pose proof (GrelL_fends κ _ _ _ _ _ _ _ _ Htf HG) as Hx.
@@ -636,7 +636,7 @@ Section later.
     rewrite tenv_erase_empty, map_union_empty. simpl in Hx. rewrite !dom_empty_L, union_empty_r_L in Hx.
     set (eb := subst (up γ) e). fold eb in Hx.
     apply Vrel_Erel.
-    assert (∀ j W2, j ≤ n → W' ⊑ W2 → Vrel κ j W2 ∅ (TBox m kk C ub c t U) (EBox eb)) as Hlob.
+    assert (∀ j W2, j ≤ n → W' ⊑ W2 → Vrel κ j W2 ∅ (TBox m kk C ub c U) (EBox eb)) as Hlob.
     { induction j as [j IH] using lt_wf_ind. intros W2 Hj HW2. apply Vrel_box_iff.
       split; [done|]. exists eb. split_and!; [done|done|].
       intros W3 xs ss HW3 Hxs Hss Hsc HC. apply Vrel_lolli_iff.
@@ -654,7 +654,7 @@ Section later.
         { eapply wext_trans; [exact HW|]. eapply wext_trans; [exact HW2|]. by eapply wext_trans. }
         assert (W' ⊑ W4) as HW'4.
         { eapply wext_trans; [exact HW2|]. by eapply wext_trans. }
-        assert (GrelL κ j' W4 ∅ (Some (TBox m kk C ub c t U) :: Δ) (true .: L) (EBox eb .: γ)) as HG'.
+        assert (GrelL κ j' W4 ∅ (Some (TBox m kk C ub c U) :: Δ) (true .: L) (EBox eb .: γ)) as HG'.
         { simpl. split; [split_and!|].
           - done.
           - done.
@@ -693,16 +693,16 @@ Section later.
     - by apply later_bind_acts.
   Qed.
 
-  Lemma later_app W Θ Θ1 Θ2 Δ Δ1 Δ2 L L' F e1 e2 ub lb c t T U aU :
+  Lemma later_app W Θ Θ1 Θ2 Δ Δ1 Δ2 L L' F e1 e2 ub lb c T U aU :
     cmarks L L' e1 → tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_ltu W ub F →
     (∀ B, sem_later κ W Θ1 Δ1 L (F ∪ tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ (if lenv_bot Δ2 then B else ∅)) e1
-            (TLolli ub lb c t T U aU)) →
+            (TLolli ub lb c T U aU)) →
     (∀ B, sem_later κ W Θ2 Δ2 L' (F ∪ lb_heads lb ∪ (if lb_bot lb then B else ∅)) e2 T) →
     sem_later κ W Θ Δ L F (App e1 e2) U.
   Proof.
     intros Hk Hs Hl Hub He1 He2.
     eapply (later_bind_gen (λ γ, FAppL (subst γ e2)) W Θ Θ1 Θ2 Δ Δ1 Δ2 L L' F e1 _
-              (TLolli ub lb c t T U aU) U Hk Hs Hl); [done|done|exact He1|].
+              (TLolli ub lb c T U aU) U Hk Hs Hl); [done|done|exact He1|].
     intros W' j Θv v Θ2' γ HW Hd2 HG2 Hdv HV. simpl.
     pose proof (Vrel_val κ _ _ _ _ _ HV) as Hvv.
     pose proof HV as (eb & -> & _ & Hlbv & _)%Vrel_lolli_iff.
@@ -716,7 +716,7 @@ Section later.
       + exists y. split; [set_solver|by left].
       + exists l. split; [set_solver|by apply Hlbv].
     - intros W'' j' Θw w HW' Hj' Hdw Hw. simpl. rewrite map_union_comm by done.
-      apply (Erel_app κ j' W'' Θv Θw ub lb c t T U aU); [by symmetry| | |done].
+      apply (Erel_app κ j' W'' Θv Θw ub lb c T U aU); [by symmetry| | |done].
       + eapply ub_ltu_mono; [eapply wext_trans; [exact HW|exact HW']|exact Hub].
       + eapply Vrel_down; [exact Hj'|]. by eapply Vrel_mono.
   Qed.
@@ -886,71 +886,71 @@ Section later.
 
   Local Ltac lt_mono := intros; eapply w_lt_mono; [eassumption|]; auto.
 
-  Lemma later_send aq1 W Θ Δ L F e S0 x m U S aS :
+  Lemma later_send aq1 W Θ Δ L F e S0 x m U S aS mt mt' :
     unfoldS S0 = SSeq (SSnd m U) S → hbot (payload_at m U x) = false →
     (∀ y, y ∈ heads (payload_at m U x) → W ⊢ x ≺ y) → (∀ y, y ∈ F → W ⊢ x ≺ y) →
-    sem_later κ W Θ Δ L F e (TProd (payload_at m U x) (TSess S0 x aS)) →
-    sem_later κ W Θ Δ L F (ESend e) (TSess S x⁺ aq1).
+    sem_later κ W Θ Δ L F e (TProd (payload_at m U x) (TSess S0 x aS mt)) →
+    sem_later κ W Θ Δ L F (ESend e) (TSess S x⁺ aq1 mt').
   Proof.
     intros Hu Hb Hh HF. apply later_op. intros W' j Θv v HW Hv.
     eapply Erel_send; [done|done| | |exact Hv]; lt_mono.
   Qed.
 
-  Lemma later_recv aq1 W Θ Δ L F e S0 x m U S a' :
+  Lemma later_recv aq1 W Θ Δ L F e S0 x m U S a' mt mt' :
     unfoldS S0 = SSeq (SRcv m U) S → (∀ y, y ∈ F → W ⊢ x ≺ y) →
-    sem_later κ W Θ Δ L F e (TSess S0 x aq1) →
-    sem_later κ W Θ Δ L F (ERecv e) (TProd (payload_at m U x) (TSess S x⁺ a')).
+    sem_later κ W Θ Δ L F e (TSess S0 x aq1 mt) →
+    sem_later κ W Θ Δ L F (ERecv e) (TProd (payload_at m U x) (TSess S x⁺ a' mt')).
   Proof.
     intros Hu HF. apply later_op. intros W' j Θv v HW Hv.
     eapply Erel_recv; [done| |exact Hv]; lt_mono.
   Qed.
 
-  Lemma later_close aq1 W Θ Δ L F e S0 x :
+  Lemma later_close aq1 W Θ Δ L F e S0 x mt :
     unfoldS S0 = SEnd → (∀ y, y ∈ F → W ⊢ x ≺ y) →
-    sem_later κ W Θ Δ L F e (TSess S0 x aq1) → sem_later κ W Θ Δ L F (EClose e) TUnit.
+    sem_later κ W Θ Δ L F e (TSess S0 x aq1 mt) → sem_later κ W Θ Δ L F (EClose e) TUnit.
   Proof.
     intros Hu HF. apply later_op. intros W' j Θv v HW Hv.
     eapply Erel_close; [done| |exact Hv]; lt_mono.
   Qed.
 
-  Lemma later_select aq1 aq2 (i : bool) W Θ Δ L F e S0 x S1 S2 :
+  Lemma later_select aq1 aq2 (i : bool) W Θ Δ L F e S0 x S1 S2 mt mt' :
     unfoldS S0 = SPlus S1 S2 → (∀ y, y ∈ F → W ⊢ x ≺ y) →
-    sem_later κ W Θ Δ L F e (TSess S0 x aq1) →
-    sem_later κ W Θ Δ L F (ESel i e) (TSess (if i then S2 else S1) (sel_pt x i) aq2).
+    sem_later κ W Θ Δ L F e (TSess S0 x aq1 mt) →
+    sem_later κ W Θ Δ L F (ESel i e) (TSess (if i then S2 else S1) (sel_pt x i) aq2 mt').
   Proof.
     intros Hu HF. apply later_op. intros W' j Θv v HW Hv.
     eapply Erel_select; [done| |exact Hv]; lt_mono.
   Qed.
 
-  Lemma later_branch aq1 W Θ Δ L F e S0 x S1 S2 a1 a2 :
+  Lemma later_branch aq1 W Θ Δ L F e S0 x S1 S2 a1 a2 mt m1 m2 :
     unfoldS S0 = SWith S1 S2 → (∀ y, y ∈ F → W ⊢ x ≺ y) →
-    sem_later κ W Θ Δ L F e (TSess S0 x aq1) →
-    sem_later κ W Θ Δ L F (EBra e) (TSum (TSess S1 (bra_pt x false) a1) (TSess S2 (bra_pt x true) a2)).
+    sem_later κ W Θ Δ L F e (TSess S0 x aq1 mt) →
+    sem_later κ W Θ Δ L F (EBra e) (TSum (TSess S1 (bra_pt x false) a1 m1) (TSess S2 (bra_pt x true) a2 m2)).
   Proof.
     intros Hu HF. apply later_op. intros W' j Θv v HW Hv.
     eapply Erel_branch; [done| |exact Hv]; lt_mono.
   Qed.
 
-  Lemma later_link W Θ Δ L F e S x a1 a2 :
-    sem_later κ W Θ Δ L F e (TProd (TSess S x a1) (TSess (dual S) x‾ a2)) →
+  Lemma later_link W Θ Δ L F e S x a1 a2 mt mt2 :
+    sem_later κ W Θ Δ L F e (TProd (TSess S x a1 mt) (TSess (dual S) x‾ a2 mt2)) →
     sem_later κ W Θ Δ L F (ELink e) TUnit.
   Proof. apply later_op. intros W' j Θv v HW Hv. by eapply Erel_link. Qed.
 
-  Lemma later_spawn W Θ Δ L F e ub lb c t aU :
-    sem_later κ W Θ Δ L F e (TLolli ub lb c t TUnit TUnit aU) →
+  Lemma later_spawn W Θ Δ L F e ub lb c aU :
+    sem_later κ W Θ Δ L F e (TLolli ub lb c TUnit TUnit aU) →
     sem_later κ W Θ Δ L F (ESpawn e) TUnit.
   Proof. apply later_op. intros W' j Θv v HW Hv. by eapply Erel_spawn. Qed.
 
-  Lemma later_new_at aq1 (κf : field) W Θ Δ L F e S0 x S a a1 a2 :
-    sem_later κ W Θ Δ L F e (TSess S0 x aq1) →
+  Lemma later_new_at aq1 (κf : field) W Θ Δ L F e S0 x S a a1 a2 mt mt0 m1 m2 :
+    sem_later κ W Θ Δ L F e (TSess S0 x aq1 mt) →
     sem_later κ W Θ Δ L F (ENewAt κf e)
-      (TProd (TSess S0 x a) (TProd (TSess S (x·κf) a1) (TSess (dual S) (x·κf)‾ a2))).
+      (TProd (TSess S0 x a mt0) (TProd (TSess S (x·κf) a1 m1) (TSess (dual S) (x·κf)‾ a2 m2))).
   Proof. apply later_op. intros W' j Θv v HW Hv. by eapply Erel_new_at. Qed.
 
-  Lemma later_force W Θ Δ L F e m kk C ub c t U xs ss :
+  Lemma later_force W Θ Δ L F e m kk C ub c U xs ss :
     length xs = m → length ss = kk → Forall hcontractive ss → wholds W C xs →
     ub_lt W (pt_inst (plist xs) <$> ub) F →
-    sem_later κ W Θ Δ L F e (TBox m kk C ub c t U) →
+    sem_later κ W Θ Δ L F e (TBox m kk C ub c U) →
     sem_later κ W Θ Δ L F (EForce e) (sinst_ty (slist ss) (ty_inst xs U)).
   Proof.
     intros Hxs Hss Hsc HC Hub. apply later_op. intros W' j Θv v HW Hv.

@@ -172,8 +172,8 @@ Qed.
 Lemma tenv_pinst_empty σ : tenv_pinst σ ∅ = ∅.
 Proof. apply fmap_empty. Qed.
 
-Lemma tenv_pinst_singleton σ o S x a :
-  tenv_pinst σ {[o := TE S x a]} = {[o := TE S (pt_inst σ x) a]}.
+Lemma tenv_pinst_singleton σ o S x a mt :
+  tenv_pinst σ {[o := TE S x a mt]} = {[o := TE S (pt_inst σ x) a mt]}.
 Proof. unfold tenv_pinst. by rewrite map_fmap_singleton. Qed.
 
 Lemma tsplit_pinst σ Θ Θ1 Θ2 :

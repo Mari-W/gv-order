@@ -3,9 +3,11 @@
     P-Act-Link: thread i links o1 and o2, which it holds at dual points
     and dual session types. The channel of o1 goes, and every thread is
     renamed by [csub o1 o2], so the partner of o1 now holds o2. The
-    linker's obligations remove both ends and spend a ticket. Every other
-    thread keeps its term, renamed ([Erel_rename], [FuelE_rename]), and
-    the partners of o1 and o2 form one channel ([link_pair]). *)
+    linker's obligations remove both ends, and its fuel gives the
+    tickets of the link ([lok]). Every other thread keeps its term,
+    renamed ([Erel_rename], [FuelE_rename]), and the partners of o1 and
+    o2 form one channel ([link_pair]), whose tickets meet the bound
+    ([link_tsum]). No counter changes. *)
 
 From stdpp Require Import relations.
 From GV Require Export soup.SoupSync soup.LinkMaps.
@@ -44,8 +46,8 @@ Qed.
 
 Section link.
   Context (N n : nat) (W : world) (T : ty) (C : gset chan) (Mq : gmap nat expr) (K : own)
-    (tk : nat → nat) (A : senv) (Π : penv) (U : nat → ty).
-  Context (Hs : soup_inv N (S n) W ∅ T (LFState (C, Mq) K tk) A Π U).
+    (A : senv) (Π : penv) (U : nat → ty).
+  Context (Hs : soup_inv N (S n) W ∅ T (LFState (C, Mq) K) A Π U).
 
   Local Lemma owner_of' t o v : kres K t A !! o = Some v → ∃ h, K !! o = Some h ∧ h.(h_th) = t.
   Proof. intros H. apply lookup_kres in H as [_ H]. done. Qed.
@@ -64,10 +66,10 @@ Section link.
     (∃ Sa Sb xa, A !! o1 = Some (Sa, xa) ∧ A !! o2 = Some (Sb, pt_dual xa) ∧ sdual Sa Sb) ∧
     (∃ Pa Pb, Π !! o1 = Some Pa ∧ Π !! o2 = Some Pb ∧ sequiv Pb (dual Pa)) ∧
     e' ∈ E[live]^W _ n⟦kdel2 o1 o2 (kres K i A) ⊢ U i⟧^∅ ∧
-    1 ≤ tk i ∧
-    e' ∈ F^(Some N) _ n⟦RThread ▷ None ; 0⟧(kdel2 o1 o2 (kres K i Π), kdel2 o1 o2 (ctrs K i), tk i - 1).
+    lok (Some N) (ctrs K i) ({[o1]} ∪ {[o2]}) ∧
+    e' ∈ F^(Some N) _ n⟦RThread ▷ None⟧(kdel2 o1 o2 (kres K i Π), kdel2 o1 o2 (ctrs K i)).
   Proof.
-    intros He Hst. destruct (s_obl _ _ _ _ _ _ _ _ _ _ _ Hs i e _ e' He Hst) as [HE HF].
+    intros He Hst. destruct (s_obl _ _ _ _ _ _ _ _ _ _ Hs i e _ e' He Hst) as [HE HF].
     cbn [Eobl Fobl] in HE, HF. unfold o_link in HE. unfold f_link in HF.
     destruct HE as (p1 & p2 & S1 & S2 & x & Hos & Hp12 & Hp1 & Hp2 & Hsd & HE').
     destruct HF as (Hpl & _ & Htk & HF').
@@ -103,14 +105,14 @@ Section link.
   Lemma step_link i e o1 o2 e' :
     Mq !! i = Some e → tstep e (LSess (SLink ({[o1]} ∪ {[o2]}))) e' →
     ∃ A' Π', soup_inv N n W ∅ T
-      (lf_next N (LFState (C, Mq) K tk) (EvSolo i (LSess (SLink ({[o1]} ∪ {[o2]}))) (PickLink o1 o2))
+      (lf_next N (LFState (C, Mq) K) (EvSolo i (LSess (SLink ({[o1]} ∪ {[o2]}))) (PickLink o1 o2))
         (C ∖ {[ech o1]}, emap (csub o1 o2) <$> (<[i := e']> Mq))) A' Π' U.
   Proof.
     intros He Hst.
     destruct (link_obl i e o1 o2 e' He Hst) as (H12 & Ho1 & Ho2 & (Sa & Sb & xa & HA1 & HA2 & Hsab) &
-      (Pa & Pb & HB1 & HB2 & Hpab) & HE & Htk & HF).
+      (Pa & Pb & HB1 & HB2 & Hpab) & HE & Hlok & HF).
     exists (kmapr (csub o1 o2) (kdel2 o1 o2 A)), (kmapr (csub o1 o2) (kdel2 o1 o2 Π)).
-    unfold lf_next. cbn [own_next tk_next s_K s_tk s_q].
+    unfold lf_next. cbn [own_next s_K s_q].
     change (delete o1 (delete o2 K)) with (kdel2 o1 o2 K).
     pose proof (kinj_csub o1 o2 K) as HkK.
     pose proof (s_domA _ _ _ _ _ _ _ _ Hs) as HdA. cbn [s_K] in HdA.
@@ -120,29 +122,29 @@ Section link.
     destruct Ho1 as (h1 & Kh1 & Eh1). destruct Ho2 as (h2 & Kh2 & Eh2).
     assert (Hown : ∀ t, t ≠ i → (¬ ∃ h, K !! o1 = Some h ∧ h.(h_th) = t) ∧ (¬ ∃ h, K !! o2 = Some h ∧ h.(h_th) = t)).
     { intros t Hti. split; intros (h & Hh & Ht); simplify_eq; congruence. }
-    apply (soup_build _ _ _ _ _ _ _ _ _ _ _ Hs).
+    apply (soup_build _ _ _ _ _ _ _ _ _ _ Hs).
     - intros t e1 He1. apply lookup_fmap_Some in He1 as (e0 & <- & He0).
       rewrite (kres_kmapr _ _ t), (kres_kmapr _ _ t), ctrs_kmapr, kres_kdel2, kres_kdel2, ctrs_kdel2 by done.
-      unfold tupd. apply lookup_insert_Some in He0 as [[<- <-]|[Hti He0]].
-      + rewrite decide_True by done. split_and!.
+      apply lookup_insert_Some in He0 as [[<- <-]|[Hti He0]].
+      + split_and!.
         * rewrite <-kren_kmapr. apply Erel_rename; [apply kinj_csub|exact HE].
         * exact (s_ty Hs i e He).
-        * eapply (FuelE_rename _ _ _ _ _ _ _ _ _ (csub o1 o2)); [apply kinj_csub|apply kinj_csub|
+        * eapply (FuelE_rename _ _ _ _ _ _ _ (csub o1 o2)); [apply kinj_csub|apply kinj_csub|
             apply kmapr_renk, kinj_csub|apply kmapr_renk, kinj_csub|exact HF].
-      + rewrite decide_False by done. destruct (Hown t (not_eq_sym Hti)) as [Hn1 Hn2].
-        destruct (s_other _ _ _ _ _ _ _ _ _ _ _ Hs t e0 He0) as [H1 H2].
+      + destruct (Hown t (not_eq_sym Hti)) as [Hn1 Hn2].
+        destruct (s_other _ _ _ _ _ _ _ _ _ _ Hs t e0 He0) as [H1 H2].
         rewrite <-(kdel2_notown K t A o1 o2 Hn1 Hn2) in H1.
         rewrite <-(kdel2_notown K t Π o1 o2 Hn1 Hn2), <-(ctrs_notown K t o1 o2 Hn1 Hn2) in H2.
         split_and!.
         * rewrite <-kren_kmapr. apply Erel_rename; [apply kinj_csub|exact H1].
         * exact (s_ty Hs t e0 He0).
-        * eapply (FuelE_rename _ _ _ _ _ _ _ _ _ (csub o1 o2)); [apply kinj_csub|apply kinj_csub|
+        * eapply (FuelE_rename _ _ _ _ _ _ _ (csub o1 o2)); [apply kinj_csub|apply kinj_csub|
             apply kmapr_renk, kinj_csub|apply kmapr_renk, kinj_csub|exact H2].
     - rewrite !fmap_kmapr by apply kinj_csub. f_equal. unfold kdel2. rewrite !fmap_delete. f_equal. f_equal.
-      apply (sp_pts _ _ _ _ _ _ _ _ Hs).
+      apply (sp_pts _ _ _ _ _ _ _ _ _ Hs).
     - rewrite !dom_kmapr by apply kinj_csub. f_equal. by apply dom_kdel2_eq.
     - intros o' h Ho'. apply kmapr_lookup_inv in Ho' as (a & -> & Ha). apply lookup_kdel2 in Ha as (_ & _ & Ha).
-      pose proof (s_threads _ _ _ _ _ _ _ _ _ _ _ Hs a h Ha) as Ht.
+      pose proof (s_threads _ _ _ _ _ _ _ _ _ _ Hs a h Ha) as Ht.
       rewrite lookup_fmap, fmap_is_Some, lookup_insert_is_Some'.
       destruct (decide (i = h.(h_th))); [by left|by right].
     - apply (link_dom_closed K C o1 o2 H12); [by apply elem_of_dom_2 in Kh2|].
@@ -178,6 +180,23 @@ Section link.
           pose proof (s_pdual _ _ _ _ _ _ _ _ Hs o1 Pa R1 HB1 H5) as Hd1.
           pose proof (s_pdual _ _ _ _ _ _ _ _ Hs o2 Pb R2 HB2 H6) as Hd2.
           exact (pdual_link Pa Pb R1 R2 Hpab Hd1 Hd2).
-    - apply kfin_kmapr. unfold kdel2. apply kfin_delete, kfin_delete. exact (sp_fin _ _ _ _ _ _ _ _ Hs).
+    - apply kfin_kmapr. unfold kdel2. apply kfin_delete, kfin_delete. exact (sp_fin _ _ _ _ _ _ _ _ _ Hs).
+    - intros o' h Ho'. apply kmapr_lookup_inv in Ho' as (a & -> & Ha). apply lookup_kdel2 in Ha as (_ & _ & Ha).
+      exact (s_kcap_ok _ _ _ _ _ _ _ _ _ _ Hs a h Ha).
+    - intros o' h h' H3 H4. destruct (decide (o2 = edual o1)) as [->|Hns].
+      + rewrite kmapr_id_ext in H3, H4 by apply csub_self.
+        apply lookup_kdel2 in H3 as (_ & _ & H3). apply lookup_kdel2 in H4 as (_ & _ & H4).
+        exact (s_ktsum_ok _ _ _ _ _ _ _ _ _ _ Hs o' h h' H3 H4).
+      + refine (link_pair (λ v v' : hold, tsum_ok (Some N) v.(h_cap) v'.(h_cap)) K o1 o2 H12 Hns
+          _ _ _ o' h h' H3 H4).
+        * intros v v' Hv. by apply tsum_ok_comm.
+        * intros a v v' H5 H6. exact (s_ktsum_ok _ _ _ _ _ _ _ _ _ _ Hs a v v' H5 H6).
+        * intros r1 r2 H5 H6.
+          assert (ctrs K i !! o1 = Some (hctr h1)) as G1 by (apply lookup_ctrs; by exists h1).
+          assert (ctrs K i !! o2 = Some (hctr h2)) as G2 by (apply lookup_ctrs; by exists h2).
+          destruct (Hlok o1 o2 _ _ eq_refl H12 G1 G2) as [L1 _]. simpl in L1.
+          exact (link_tsum N _ _ _ _ _ L1 (proj1 (s_kcap_ok _ _ _ _ _ _ _ _ _ _ Hs o1 h1 Kh1))
+                   (s_ktsum_ok _ _ _ _ _ _ _ _ _ _ Hs o1 h1 r1 Kh1 H5)
+                   (s_ktsum_ok _ _ _ _ _ _ _ _ _ _ Hs o2 h2 r2 Kh2 H6)).
   Qed.
 End link.

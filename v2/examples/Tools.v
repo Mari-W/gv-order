@@ -52,10 +52,10 @@ Qed.
 Lemma d_unit' W Γ Δ F : (∀ y o, Δ !! y = Some o → spare o) → dftyped W ∅ Γ Δ F EUnit TUnit.
 Proof. intros H. by apply d_unit, spare_unl. Qed.
 
-Lemma d_new' W Γ Δ F ℓ S a1 a2 :
+Lemma d_new' W Γ Δ F ℓ S a1 a2 mt :
   (∀ y o, Δ !! y = Some o → spare o) → ℓ ∈ w_fams W →
   dftyped W ∅ Γ Δ F (ENew ℓ)
-    (TEx LBot 1 (bcs_of (w_laws W ℓ)) (TProd (TSess S (pvar 0) a1) (TSess (dual S) (pvar 0)‾ a2))).
+    (TEx LBot 1 (bcs_of (w_laws W ℓ)) (TProd (TSess S (pvar 0) a1 mt) (TSess (dual S) (pvar 0)‾ a2 mt))).
 Proof. intros H Hℓ. apply d_new; [by apply spare_unl|done]. Qed.
 
 (** A tail of absent entries. *)

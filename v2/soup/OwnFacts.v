@@ -36,7 +36,7 @@ Section own.
       intros Hh. assert (kres K t m !! o = Some y) as E' by (by apply lookup_kres). congruence.
   Qed.
 
-  Lemma lookup_ctrs K t o f : ctrs K t !! o = Some f ↔ ∃ h, K !! o = Some h ∧ h.(h_th) = t ∧ h.(h_ctr) = f.
+  Lemma lookup_ctrs K t o f : ctrs K t !! o = Some f ↔ ∃ h, K !! o = Some h ∧ h.(h_th) = t ∧ hctr h = f.
   Proof.
     unfold ctrs. rewrite lookup_fmap_Some. split.
     - intros (h & <- & Hh). apply lookup_kth in Hh as [? ?]. eauto.
@@ -47,7 +47,7 @@ Section own.
   Proof.
     destruct (ctrs K t !! o) eqn:E.
     - apply lookup_ctrs in E as (h & ? & ? & _). split; [done|]. intros Hn. exfalso. eauto.
-    - split; [|done]. intros _ (h & Hh & Ht). assert (ctrs K t !! o = Some h.(h_ctr)) as E'.
+    - split; [|done]. intros _ (h & Hh & Ht). assert (ctrs K t !! o = Some (hctr h)) as E'.
       { apply lookup_ctrs. eauto. }
       congruence.
   Qed.
@@ -167,9 +167,45 @@ Proof.
   apply kfin_kmod. intros o h Hh. case_decide; [|done]. simpl. by apply ftick_some.
 Qed.
 
-Lemma kfin_ksync N i j o y y' M K : kfin K → kfin (ksync N i j o y y' M K).
+Lemma kcap_lookup K o h : K !! o = Some h → kcap K o = h.(h_cap).
+Proof. intros H. unfold kcap. by rewrite H. Qed.
+
+(** Every end has finite tickets. *)
+Definition kcfin (K : own) : Prop := ∀ o h, K !! o = Some h → is_Some h.(h_cap).
+
+Lemma kcap_fin K o : kcfin K → is_Some (kcap K o).
+Proof. intros HK. unfold kcap. destruct (K !! o) as [h|] eqn:E; simpl; [exact (HK o h E)|by eexists]. Qed.
+
+Lemma kcfin_insert K o h : is_Some h.(h_cap) → kcfin K → kcfin (<[o := h]> K).
+Proof. intros Hh HK o' h' Ho'. apply lookup_insert_Some in Ho' as [[<- <-]|[_ Ho']]; [done|by apply (HK o')]. Qed.
+
+Lemma kcfin_kmod f K : (∀ o h, (f o h).(h_cap) = h.(h_cap)) → kcfin K → kcfin (kmod f K).
 Proof.
-  intros HK. unfold ksync, kact. apply kfin_insert; [by eexists|]. apply kfin_insert; [by eexists|].
+  intros Hf HK o h Ho. rewrite lookup_kmod in Ho. apply fmap_Some in Ho as (h0 & Ho & ->).
+  rewrite Hf. by apply (HK o).
+Qed.
+
+Lemma kcfin_ktick i j M K : kcfin K → kcfin (ktick i j M K).
+Proof. apply kcfin_kmod. intros o h. by case_decide. Qed.
+
+Lemma kcfin_khand M j K : kcfin K → kcfin (khand M j K).
+Proof. apply kcfin_kmod. intros o h. by case_decide. Qed.
+
+Lemma kfin_ksync i j o y y' M K : kfin K → kcfin K → kfin (ksync i j o y y' M K).
+Proof.
+  intros HK HC. unfold ksync, kact. apply kfin_insert.
+  { apply kcap_fin, kcfin_insert; [apply kcap_fin, kcfin_khand, kcfin_ktick, HC|].
+    by apply kcfin_khand, kcfin_ktick. }
+  apply kfin_insert; [apply kcap_fin, kcfin_khand, kcfin_ktick, HC|].
   by apply kfin_khand, kfin_ktick.
+Qed.
+
+Lemma kcfin_ksync i j o y y' M K : kcfin K → kcfin (ksync i j o y y' M K).
+Proof.
+  intros HC. unfold ksync, kact. apply kcfin_insert.
+  { apply kcap_fin, kcfin_insert; [apply kcap_fin, kcfin_khand, kcfin_ktick, HC|].
+    by apply kcfin_khand, kcfin_ktick. }
+  apply kcfin_insert; [apply kcap_fin, kcfin_khand, kcfin_ktick, HC|].
+  by apply kcfin_khand, kcfin_ktick.
 Qed.
 

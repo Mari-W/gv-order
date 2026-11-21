@@ -43,10 +43,9 @@ Definition cs_L (g : fact) : Prop :=
 Definition W_cs : world := World ∅ (λ _, False) {[0]} (λ _ g, cs_L g).
 
 Definition cs_arr (S1 S2 : sty) : ty :=
-  TLolli (UPt (pvar 2)) LNone None tinf
-    (TProd (TSess S1 (pvar 0) None) (TSess S2 (pvar 1) None)) TUnit None.
+  TLolli (UPt (pvar 2)) LNone None (TProd (TSess S1 (pvar 0) None None) (TSess S2 (pvar 1) None None)) TUnit None.
 
-Definition cs_box (S1 S2 : sty) : ty := TBox 3 0 cs_C None None tinf (cs_arr S1 S2).
+Definition cs_box (S1 S2 : sty) : ty := TBox 3 0 cs_C None None (cs_arr S1 S2).
 
 Definition cli : expr :=
   EBox (Lam (LetP (Var 0) (ELet (ESend (Pair EUnit (Var 1)))
@@ -79,7 +78,7 @@ Proof.
 Qed.
 
 Lemma cs_box_shift S1 S2 Δ :
-  lenv_pinst (pshift 3) (Some (TBox 3 0 cs_C None None tinf (cs_arr S1 S2)) :: Δ) =
+  lenv_pinst (pshift 3) (Some (TBox 3 0 cs_C None None (cs_arr S1 S2)) :: Δ) =
   Some (cs_box S1 S2) :: lenv_pinst (pshift 3) Δ.
 Proof. reflexivity. Qed.
 
@@ -87,7 +86,7 @@ Proof. reflexivity. Qed.
     pair, which binds the end at ι at 1 and the end at κ at 0. *)
 Lemma cs_box_typed W Γ n F (S1 S2 : sty) e :
   dftyped W ∅ (hc_open 3 cs_C Γ)
-    (Some (TSess S2 (pvar 1) None) :: Some (TSess S1 (pvar 0) None) ::
+    (Some (TSess S2 (pvar 1) None None) :: Some (TSess S1 (pvar 0) None None) ::
      None :: Some (cs_box S1 S2) :: nones n)
     (∅, Some (FRest (RAbove (pvar 2)))) e TUnit →
   dftyped W ∅ Γ (nones n) F (EBox (Lam (LetP (Var 0) e))) (cs_box S1 S2).
@@ -125,14 +124,12 @@ Section body.
   Lemma cs_self Δ F S1 S2 :
     dftyped W ∅ Γb Δ F (Var 6) (cs_box S1 S2) →
     dftyped W ∅ Γb Δ F (EForce (Var 6))
-      (TLolli (UPt (pvar 2)) LNone None tinf
-         (TProd (TSess S1 (sh 1 (pvar 0)) None) (TSess S2 (sh 1 (pvar 1)) None)) TUnit None).
+      (TLolli (UPt (pvar 2)) LNone None (TProd (TSess S1 (sh 1 (pvar 0)) None None) (TSess S2 (sh 1 (pvar 1)) None None)) TUnit None).
   Proof.
     intros H. assert (sinst_ty (slist []) (ty_inst (sh 1 (pvar 0) :: sh 1 (pvar 1) :: pvar 2 :: []) (cs_arr S1 S2)) =
-      TLolli (UPt (pvar 2)) LNone None tinf
-         (TProd (TSess S1 (sh 1 (pvar 0)) None) (TSess S2 (sh 1 (pvar 1)) None)) TUnit None) as <-.
+      TLolli (UPt (pvar 2)) LNone None (TProd (TSess S1 (sh 1 (pvar 0)) None None) (TSess S2 (sh 1 (pvar 1)) None None)) TUnit None) as <-.
     { rewrite sinst_nil. reflexivity. }
-    eapply d_force with (ub := None) (c := None) (t := tinf); [done| |done|split; [apply Forall_nil|intros _; apply Forall_nil]|exact I|exact H].
+    eapply d_force with (ub := None) (c := None); [done| |done|split; [apply Forall_nil|intros _; apply Forall_nil]|exact I|exact H].
     apply hold_at_nil. intros f (k & Hf) _.
     destruct Hf as [->|[->|[->| ->]]]; simpl.
     - fct (S k).
@@ -152,7 +149,7 @@ Section body.
       (LetP (ERecv (Var 1)) (LetU (Var 1) (App (EForce (Var 6)) (Pair (Var 2) (Var 0))))).
 
   Lemma cli_body :
-    dftyped W ∅ Γb (Some (TSess Sb (pvar 1) None) :: Some (TSess Sa (pvar 0) None) ::
+    dftyped W ∅ Γb (Some (TSess Sb (pvar 1) None None) :: Some (TSess Sa (pvar 0) None None) ::
                      None :: Some (cs_box Sa Sb) :: nones n)
       (∅, Some (FRest (RAbove (pvar 2)))) cli_e TUnit.
   Proof.
@@ -184,7 +181,7 @@ Section body.
       (ELet (ESend (Pair EUnit (Var 2))) (App (EForce (Var 6)) (Pair (Var 1) (Var 0))))).
 
   Lemma srv_body :
-    dftyped W ∅ Γb (Some (TSess Sa (pvar 1) None) :: Some (TSess Sb (pvar 0) None) ::
+    dftyped W ∅ Γb (Some (TSess Sa (pvar 1) None None) :: Some (TSess Sb (pvar 0) None None) ::
                      None :: Some (cs_box Sb Sa) :: nones n)
       (∅, Some (FRest (RAbove (pvar 2)))) srv_e TUnit.
   Proof.
@@ -234,16 +231,14 @@ Lemma cs_force n F S1 S2 x1 x2 e (b : bool) :
   x1 = pt_polar b (pvar 0) → x2 = pt_polar b ((pvar 0)·0) →
   dftyped W_cs ∅ Γm (nones n) F e (cs_box S1 S2) →
   dftyped W_cs ∅ Γm (nones n) F (EForce e)
-    (TLolli (UPt ((pvar 0)·1)) LNone None tinf
-       (TProd (TSess S1 x1 None) (TSess S2 x2 None)) TUnit None).
+    (TLolli (UPt ((pvar 0)·1)) LNone None (TProd (TSess S1 x1 None None) (TSess S2 x2 None None)) TUnit None).
 Proof.
   intros -> -> H.
   assert (sinst_ty (slist []) (ty_inst (pt_polar b (pvar 0) :: pt_polar b ((pvar 0)·0) :: (pvar 0)·1 :: [])
             (cs_arr S1 S2)) =
-    TLolli (UPt ((pvar 0)·1)) LNone None tinf
-       (TProd (TSess S1 (pt_polar b (pvar 0)) None) (TSess S2 (pt_polar b ((pvar 0)·0)) None)) TUnit None) as <-.
+    TLolli (UPt ((pvar 0)·1)) LNone None (TProd (TSess S1 (pt_polar b (pvar 0)) None None) (TSess S2 (pt_polar b ((pvar 0)·0)) None None)) TUnit None) as <-.
   { rewrite sinst_nil. destruct b; reflexivity. }
-  eapply d_force with (ub := None) (c := None) (t := tinf);
+  eapply d_force with (ub := None) (c := None);
     [done| |done|split; [apply Forall_nil|intros _; apply Forall_nil]|exact I|exact H].
   apply hold_at_nil. intros f (k & Hf) _.
   destruct Hf as [->|[->|[->| ->]]]; simpl; apply law_fact; exists k, b; destruct b;
@@ -289,5 +284,5 @@ Proof.
 Qed.
 
 (** The merged judgment at N = ∞ types main, by conservativity. *)
-Theorem cs_typed : typed W_cs None ∅ hc_empty [] (∅, None) cs_main TUnit None tinf.
+Theorem cs_typed : typed W_cs None ∅ hc_empty [] (∅, None) cs_main TUnit None.
 Proof. apply (dftyped_typed _ _ _ _ _ _ _ cs_dftyped). Qed.

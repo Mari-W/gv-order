@@ -1,8 +1,9 @@
 (** * Contexts, futures, the fact theory and the cost relations (stage S2)
 
-    The judgment Θ ; Γ ; Δ ⊢^F_{W,N} e : T ▷ c ; ϑ reads
+    The judgment Θ ; Γ ; Δ ⊢^F_{W,N} e : T ▷ c reads
 
-    - Θ : end ⇀ S@x^a, one entry per end, with the credit of the end,
+    - Θ : end ⇀ (S@x)^a_m, one entry per end, with the credit and the
+      tickets of the end,
     - Γ, the facts: box constraints in force with their instances,
     - Δ, a de Bruijn list of optional types T,
     - F, the future, a set of points X with a rest, "everything above u"
@@ -20,12 +21,15 @@ From GV Require Export types.Types.
 
 (** ** Environments *)
 
-Record tentry := TE { te_sty : sty; te_pt : point; te_cr : fuel }.
+Record tentry := TE { te_sty : sty; te_pt : point; te_cr : fuel; te_tk : fuel }.
 
 Abbreviation tenv := (gmap cend tentry).
 
 (** cr(Θ) ≤ N on the map: every credit of Θ is at most N. *)
 Definition cr_le (Θ : tenv) (N : fuel) : Prop := ∀ o te, Θ !! o = Some te → fle (te_cr te) N.
+
+(** Every credit of Θ is at most the tickets of its end. *)
+Definition cr_tk (Θ : tenv) : Prop := ∀ o te, Θ !! o = Some te → fle (te_cr te) (te_tk te).
 Abbreviation lenv := (list (option ty)).
 
 (** Θ = Θ1 ⊎ Θ2. Ends are never shared. *)
@@ -82,10 +86,10 @@ Fixpoint lenv_bot (Δ : lenv) : bool :=
   | Some T :: Δ' => hbot T || lenv_bot Δ'
   end.
 
-(** The process interface Σ and its entries at credit a. *)
+(** The process interface Σ and its entries at credit and tickets a. *)
 Abbreviation senv := (gmap cend (sty * point)).
 
-Definition tenv_of (a : fuel) (Σ : senv) : tenv := (λ e, TE e.1 e.2 a) <$> Σ.
+Definition tenv_of (a : fuel) (Σ : senv) : tenv := (λ e, TE e.1 e.2 a a) <$> Σ.
 
 (** ** Futures and hypotheses *)
 
@@ -200,7 +204,7 @@ Proof. by destruct o. Qed.
 
 
 Definition tentry_pinst (σ : nat → point) (e : tentry) : tentry :=
-  TE (pinst_sty σ (te_sty e)) (pt_inst σ (te_pt e)) (te_cr e).
+  TE (pinst_sty σ (te_sty e)) (pt_inst σ (te_pt e)) (te_cr e) (te_tk e).
 
 Definition tenv_pinst (σ : nat → point) (Θ : tenv) : tenv := tentry_pinst σ <$> Θ.
 
@@ -223,10 +227,10 @@ Definition sf_pinst (σ : nat → point) (F : sfuture) : sfuture :=
     not cover c. A product, a sum and an existential age their parts. *)
 Inductive tage (c : fuel) : ty → ty → Prop :=
   | age_free T : tfree T → tage c T T
-  | age_sess S x a : fle c a → tage c (TSess S x a) (TSess S x (fsub a c))
-  | age_idle S x a : idle S → tage c (TSess S x a) (TSess S x (fsub a c))
-  | age_arr ub lb c0 t T U a : fle c a →
-      tage c (TLolli ub lb c0 t T U a) (TLolli ub lb c0 t T U (fsub a c))
+  | age_sess S x a mt : fle c a → tage c (TSess S x a mt) (TSess S x (fsub a c) mt)
+  | age_idle S x a mt : idle S → tage c (TSess S x a mt) (TSess S x (fsub a c) mt)
+  | age_arr ub lb c0 T U a : fle c a →
+      tage c (TLolli ub lb c0 T U a) (TLolli ub lb c0 T U (fsub a c))
   | age_prod T1 T2 T1' T2' : tage c T1 T1' → tage c T2 T2' → tage c (TProd T1 T2) (TProd T1' T2')
   | age_sum T1 T2 T1' T2' : tage c T1 T1' → tage c T2 T2' → tage c (TSum T1 T2) (TSum T1' T2')
   | age_ex lb n C T T' : tage c T T' → tage c (TEx lb n C T) (TEx lb n C T').
@@ -239,7 +243,7 @@ Inductive lage (c : fuel) : lenv → lenv → Prop :=
 Definition thage (c : fuel) (Θ Θ' : tenv) : Prop :=
   ∀ o, match Θ !! o, Θ' !! o with
        | None, None => True
-       | Some e, Some e' => te_sty e' = te_sty e ∧ te_pt e' = te_pt e ∧
+       | Some e, Some e' => te_sty e' = te_sty e ∧ te_pt e' = te_pt e ∧ te_tk e' = te_tk e ∧
                             fle c (te_cr e) ∧ te_cr e' = fsub (te_cr e) c
        | _, _ => False
        end.
@@ -253,7 +257,7 @@ Definition thage (c : fuel) (Θ Θ' : tenv) : Prop :=
 
 (** ** Subtyping
 
-    Costs and transformers are covariant, arguments contravariant,
+    Costs are covariant, arguments contravariant,
     results covariant, sessions up to ≈. A credit may fall. At an arrow
     the credit a bounds what the captured counters may lose before a
     call, so it may fall as well (a' ≤ a). A
@@ -261,17 +265,17 @@ Definition thage (c : fuel) (Θ Θ' : tenv) : Prop :=
     existential may drop facts of its constraint. *)
 Inductive tsub : ty → ty → Prop :=
   | sub_unit : tsub TUnit TUnit
-  | sub_arr ub lb c t T1 U a c' t' T1' U' a' :
-      fle c c' → tle t t' → fle a' a →
+  | sub_arr ub lb c T1 U a c' T1' U' a' :
+      fle c c' → fle a' a →
       tsub T1' T1 → tsub U U' →
-      tsub (TLolli ub lb c t T1 U a) (TLolli ub lb c' t' T1' U' a')
+      tsub (TLolli ub lb c T1 U a) (TLolli ub lb c' T1' U' a')
   | sub_prod T1 U T1' U' : tsub T1 T1' → tsub U U' → tsub (TProd T1 U) (TProd T1' U')
   | sub_sum T1 U T1' U' : tsub T1 T1' → tsub U U' → tsub (TSum T1 U) (TSum T1' U')
-  | sub_box n k C ub c t U U' c' t' :
-      fle c c' → tle t t' → (match k with 0 => teq U U' | S _ => U = U' end) →
-      tsub (TBox n k C ub c t U) (TBox n k C ub c' t' U')
-  | sub_sess s s' x a a' :
-      sequiv s s' → fle a' a → tsub (TSess s x a) (TSess s' x a')
+  | sub_box n k C ub c U U' c' :
+      fle c c' → (match k with 0 => teq U U' | S _ => U = U' end) →
+      tsub (TBox n k C ub c U) (TBox n k C ub c' U')
+  | sub_sess s s' x a a' mt :
+      sequiv s s' → fle a' a → tsub (TSess s x a mt) (TSess s' x a' mt)
   | sub_ex lb n C C' T T' :
       bc_env C = bc_env C' → (∀ g, bc_facts C' g → bc_facts C g) →
       tsub T T' → tsub (TEx lb n C T) (TEx lb n C' T').
@@ -286,6 +290,6 @@ Definition sinsts (N : fuel) (ss : list sty) : Prop :=
 
 (** ** The annotations of N = ∞ on contexts *)
 
-Definition tentry_df (e : tentry) : tentry := TE (sty_df (te_sty e)) (te_pt e) None.
+Definition tentry_df (e : tentry) : tentry := TE (sty_df (te_sty e)) (te_pt e) None None.
 Definition tenv_df (Θ : tenv) : tenv := tentry_df <$> Θ.
 Definition lenv_df (Δ : lenv) : lenv := fmap (M:=option) ty_df <$> Δ.

@@ -1,6 +1,6 @@
 (** * The client and server cycle is lock free (stage S9)
 
-    The program of examples/ClientServer.v types at the refill N = 3.
+    The program of examples/ClientServer.v types at the bound N = 6, so every end has N/2 = 3 tickets.
     Both loops take ⟨a, b⟩ at credits 1 and 2. A send or receive returns
     its end at credit 3, and the end held across it loses 1, so each
     self call passes credits 2 and 3, which fall to 1 and 2 by
@@ -26,7 +26,7 @@ Proof.
     destruct b; destruct Hk as [E|[E|[E|E]]]; injection E as -> ->; unfold pt_fsum, pt_depth; simpl; lia.
 Qed.
 
-Definition csl_T (S1 S2 : sty) : ty := TProd (TSess S1 (pvar 0) (Some 1)) (TSess S2 (pvar 1) (Some 2)).
+Definition csl_T (S1 S2 : sty) : ty := TProd (TSess S1 (pvar 0) (Some 1) (Some 3)) (TSess S2 (pvar 1) (Some 2) (Some 3)).
 Definition csl_box (S1 S2 : sty) : ty := lbox 3 cs_C (Some (pvar 2)) (csl_T S1 S2) TUnit.
 
 Section body.
@@ -56,103 +56,98 @@ Section body.
 
   Lemma csl_self Δ F S1 S2 :
     Δ !! 6 = Some (Some (csl_box S1 S2)) → (∀ y o, y ≠ 6 → Δ !! y = Some o → spare o) →
-    typed W (Some 3) ∅ Γl Δ F (EForce (Var 6))
-      (TLolli (UPt (pvar 2)) LNone None tz (TProd (TSess S1 (sh 1 (pvar 0)) (Some 1)) (TSess S2 (sh 1 (pvar 1)) (Some 2))) TUnit None) (fadd (Some 0) (Some 0)) (tseq tid tid).
+    typed W (Some 6) ∅ Γl Δ F (EForce (Var 6)) (TLolli (UPt (pvar 2)) LNone None (TProd (TSess S1 (sh 1 (pvar 0)) (Some 1) (Some 3)) (TSess S2 (sh 1 (pvar 1)) (Some 2) (Some 3))) TUnit None) (fadd (Some 0) (Some 0)).
   Proof.
     intros H6 Hs. eapply (lbox_force_eq _ _ _ _ _ _ 3 cs_C (Some (pvar 2)) (csl_T S1 S2) TUnit
       (sh 1 (pvar 0) :: sh 1 (pvar 1) :: pvar 2 :: [])); [done|apply csl_hold|done|done|done|].
     by apply e_var'.
   Qed.
 
-  Lemma csl_cli : ∃ c t,
-    typed W (Some 3) ∅ Γl (Some (csl_T Sa Sb) :: Some (csl_box Sa Sb) :: nones n)
-      (∅, Some (FRest (RAbove (pvar 2)))) (LetP (Var 0) cli_e) TUnit c t ∧ t.2 = Some 0.
+  Lemma csl_cli : ∃ c,
+    typed W (Some 6) ∅ Γl (Some (csl_T Sa Sb) :: Some (csl_box Sa Sb) :: nones n) (∅, Some (FRest (RAbove (pvar 2)))) (LetP (Var 0) cli_e) TUnit c.
   Proof.
-    eexists _, _. split.
-    { eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | |shelve].
+    eexists _.
+    { eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
     { eapply e_var'; [reflexivity|]. spare_tac. }
     lage_tac. unfold cli_e.
-    eapply e_let_; [lsplit_tac (ESend (Pair EUnit (Var 1))) EUnit| | | |shelve].
+    eapply e_let_; [lsplit_tac (ESend (Pair EUnit (Var 1))) EUnit| | | ].
     { eapply e_send with (x := pvar 0) (m := 0) (T := TUnit) (Tp := TUnit) (S0 := Sa);
         [exact unfold_Sa|exact I|done|cbn; set_solver|dfut (pvar 0)| |age_tac|shelve].
-      eapply e_pair_; [lsplit_tac EUnit (Var 1)| | | | |shelve].
+      eapply e_pair_; [lsplit_tac EUnit (Var 1)| | | | ].
       { apply e_unit'. spare_tac. }
       lage_tac.
       { eapply e_var'; [reflexivity|]. spare_tac. }
       age_tac. }
     lage_tac.
-    eapply e_letp_; [lsplit_tac (ERecv (Var 1)) EUnit| | | |shelve].
+    eapply e_letp_; [lsplit_tac (ERecv (Var 1)) EUnit| | | ].
     { eapply e_recv with (x := pvar 1) (m := 0) (T := TUnit) (S0 := Sb);
         [exact unfold_Sb|exact I|dfut (pvar 1)|].
       eapply e_var'; [reflexivity|]. spare_tac. }
     lage_tac.
-    eapply e_letu_; [lsplit_tac (Var 1) EUnit| | | |shelve].
+    eapply e_letu_; [lsplit_tac (Var 1) EUnit| | | ].
     { eapply e_var'; [reflexivity|]. spare_tac. }
     lage_tac.
-    eapply e_app_; [lsplit_tac (EForce (Var 6)) EUnit| | | | |shelve|shelve|shelve].
+    eapply e_app_; [lsplit_tac (EForce (Var 6)) EUnit| | | | |shelve].
     { apply ubu_pt; eapply (ub_below_var _ _ _ (pvar 2) _); [intros y Hy; exfalso; set_solver|by left]. }
     { apply csl_self; [reflexivity|spare_tac]. }
     lage_tac.
     eapply e_sub_sess2; [|shelve|shelve].
-    eapply e_pair_; [lsplit_tac (Var 2) EUnit| | | | |shelve].
+    eapply e_pair_; [lsplit_tac (Var 2) EUnit| | | | ].
     { eapply e_var'; [reflexivity|]. spare_tac. }
     lage_tac.
     { eapply e_var'; [reflexivity|]. spare_tac. }
     age_tac. }
-    reflexivity.
-    Unshelve. all: first [tok_tac | apply tsub_refl | exact None | simpl; lia | simpl; done].
+    Unshelve. all: first [apply tsub_refl | exact None | simpl; lia | simpl; done].
   Qed.
 
-  Lemma csl_srv : ∃ c t,
-    typed W (Some 3) ∅ Γl (Some (csl_T Sb Sa) :: Some (csl_box Sb Sa) :: nones n)
-      (∅, Some (FRest (RAbove (pvar 2)))) (LetP (Var 0) srv_e) TUnit c t ∧ t.2 = Some 0.
+  Lemma csl_srv : ∃ c,
+    typed W (Some 6) ∅ Γl (Some (csl_T Sb Sa) :: Some (csl_box Sb Sa) :: nones n) (∅, Some (FRest (RAbove (pvar 2)))) (LetP (Var 0) srv_e) TUnit c.
   Proof.
-    eexists _, _. split.
-    { eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | |shelve].
+    eexists _.
+    { eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
     { eapply e_var'; [reflexivity|]. spare_tac. }
     lage_tac. unfold srv_e.
-    eapply e_letp_; [lsplit_tac (ERecv (Var 1)) EUnit| | | |shelve].
+    eapply e_letp_; [lsplit_tac (ERecv (Var 1)) EUnit| | | ].
     { eapply e_recv with (x := pvar 0) (m := 0) (T := TUnit) (S0 := Sb);
         [exact unfold_Sb|exact I|dfut (pvar 0)|].
       eapply e_var'; [reflexivity|]. spare_tac. }
     lage_tac.
-    eapply e_letu_; [lsplit_tac (Var 1) EUnit| | | |shelve].
+    eapply e_letu_; [lsplit_tac (Var 1) EUnit| | | ].
     { eapply e_var'; [reflexivity|]. spare_tac. }
     lage_tac.
-    eapply e_let_; [lsplit_tac (ESend (Pair EUnit (Var 2))) EUnit| | | |shelve].
+    eapply e_let_; [lsplit_tac (ESend (Pair EUnit (Var 2))) EUnit| | | ].
     { eapply e_send with (x := pvar 1) (m := 0) (T := TUnit) (Tp := TUnit) (S0 := Sa);
         [exact unfold_Sa|exact I|done|cbn; set_solver|dfut (pvar 1)| |age_tac|shelve].
-      eapply e_pair_; [lsplit_tac EUnit (Var 2)| | | | |shelve].
+      eapply e_pair_; [lsplit_tac EUnit (Var 2)| | | | ].
       { apply e_unit'. spare_tac. }
       lage_tac.
       { eapply e_var'; [reflexivity|]. spare_tac. }
       age_tac. }
     lage_tac.
-    eapply e_app_; [lsplit_tac (EForce (Var 6)) EUnit| | | | |shelve|shelve|shelve].
+    eapply e_app_; [lsplit_tac (EForce (Var 6)) EUnit| | | | |shelve].
     { apply ubu_pt; eapply (ub_below_var _ _ _ (pvar 2) _); [intros y Hy; exfalso; set_solver|by left]. }
     { apply csl_self; [reflexivity|spare_tac]. }
     lage_tac.
     eapply e_sub_sess2; [|shelve|shelve].
-    eapply e_pair_; [lsplit_tac (Var 1) EUnit| | | | |shelve].
+    eapply e_pair_; [lsplit_tac (Var 1) EUnit| | | | ].
     { eapply e_var'; [reflexivity|]. spare_tac. }
     lage_tac.
     { eapply e_var'; [reflexivity|]. spare_tac. }
     age_tac. }
-    reflexivity.
-    Unshelve. all: first [tok_tac | apply tsub_refl | exact None | simpl; lia | simpl; done].
+    Unshelve. all: first [apply tsub_refl | exact None | simpl; lia | simpl; done].
   Qed.
 End body.
 
-Lemma csl_cli_typed Γ n F : typed W_cs (Some 3) ∅ Γ (nones n) F cli (csl_box Sa Sb) (Some 0) tid.
+Lemma csl_cli_typed Γ n F : typed W_cs (Some 6) ∅ Γ (nones n) F cli (csl_box Sa Sb) (Some 0).
 Proof.
-  destruct (csl_cli W_cs Γ n) as (c & t & Hb & Ht).
-  eapply lbox_typed; [reflexivity|exact Hb|exact Ht].
+  destruct (csl_cli W_cs Γ n) as (c & Hb).
+  eapply lbox_typed; [reflexivity|exact Hb].
 Qed.
 
-Lemma csl_srv_typed Γ n F : typed W_cs (Some 3) ∅ Γ (nones n) F srv (csl_box Sb Sa) (Some 0) tid.
+Lemma csl_srv_typed Γ n F : typed W_cs (Some 6) ∅ Γ (nones n) F srv (csl_box Sb Sa) (Some 0).
 Proof.
-  destruct (csl_srv W_cs Γ n) as (c & t & Hb & Ht).
-  eapply lbox_typed; [reflexivity|exact Hb|exact Ht].
+  destruct (csl_srv W_cs Γ n) as (c & Hb).
+  eapply lbox_typed; [reflexivity|exact Hb].
 Qed.
 
 Lemma csl_hold_main (b : bool) :
@@ -163,60 +158,55 @@ Proof.
     first [left; fact_eq | right; left; fact_eq | right; right; left; fact_eq | right; right; right; fact_eq].
 Qed.
 
-Lemma csl_typedN : ∃ c ϑ, typed W_cs (Some 3) ∅ hc_empty [] (∅, None) cs_main TUnit c ϑ ∧ meets ϑ 0 0.
+Lemma csl_typedN : ∃ c, typed W_cs (Some 6) ∅ hc_empty [] (∅, None) cs_main TUnit c.
 Proof.
-  eexists _, _. split.
+  eexists _.
   { unfold cs_main, let_new.
-  eapply e_let_; [apply lsplit_nil| | | |shelve].
+  eapply e_let_; [apply lsplit_nil| | | ].
   { apply (e_new' _ _ _ _ _ _ Sa); [spare_tac|set_solver]. }
   lage_tac.
   eapply e_open with (i := 0); [reflexivity|cbn; tauto|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
   fold Γm.
-  eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | |shelve].
+  eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
   { eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
-  eapply e_letp_; [lsplit_tac (ENewAt 0 (Var 1)) EUnit| | | |shelve].
-  { eapply (e_new_at _ _ _ _ _ _ _ 0 Sa (pvar 0) _ Sb). eapply e_var'; [reflexivity|]. spare_tac. }
+  eapply e_letp_; [lsplit_tac (ENewAt 0 (Var 1)) EUnit| | | ].
+  { eapply (e_new_at _ _ _ _ _ _ _ 0 Sa (pvar 0) _ _ Sb); [|shelve]. eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
-  eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | |shelve].
+  eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
   { eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_letu_; [lsplit_tac (ESpawn (Lam (LetU (Var 0) (App (EForce srv) (Pair (Var 5) (Var 1)))))) EUnit
-                  | | | |shelve].
+                  | | |].
   { eapply e_spawn_lam; [apply thage_empty|lage_tac|].
-    eapply e_letu_; [lsplit_tac (Var 0) EUnit| | | |shelve].
+    eapply e_letu_; [lsplit_tac (Var 0) EUnit| | | ].
     { eapply e_var'; [reflexivity|]. spare_tac. }
     lage_tac.
-    eapply e_app_; [lsplit_tac (EForce srv) EUnit|apply ubu_below_empty| | | |shelve|shelve|shelve].
-    { eapply (lbox_force_eq _ _ _ _ _ _ 3 cs_C (Some (pvar 2)) (csl_T Sb Sa) TUnit
-        (pt_polar false (pvar 0) :: pt_polar false ((pvar 0)·0) :: (pvar 0)·1 :: []) _ _
-        (UPt ((pvar 0)·1)) (TProd (TSess Sb (pvar 0)‾ (Some 1)) (TSess Sa ((pvar 0)·0)‾ (Some 2))));
+    eapply e_app_; [lsplit_tac (EForce srv) EUnit|apply ubu_below_empty| | | |shelve].
+    { eapply (lbox_force_eq _ _ _ _ _ _ 3 cs_C (Some (pvar 2)) (csl_T Sb Sa) TUnit (pt_polar false (pvar 0) :: pt_polar false ((pvar 0)·0) :: (pvar 0)·1 :: []) _ (UPt ((pvar 0)·1)) (TProd (TSess Sb (pvar 0)‾ (Some 1) (Some 3)) (TSess Sa ((pvar 0)·0)‾ (Some 2) (Some 3))));
         [done|apply csl_hold_main|done|done|done|].
       apply (csl_srv_typed _ 8). }
     lage_tac.
     eapply e_sub_sess2; [|shelve|shelve].
-    eapply e_pair_; [lsplit_tac (Var 5) EUnit| | | | |shelve].
+    eapply e_pair_; [lsplit_tac (Var 5) EUnit| | | | ].
     { eapply e_var'; [reflexivity|]. spare_tac. }
     lage_tac.
     { eapply e_var'; [reflexivity|]. spare_tac. }
     age_tac. }
   lage_tac.
-  eapply e_app_; [lsplit_tac (EForce cli) EUnit|apply ubu_below_empty| | | |shelve|shelve|shelve].
-  { eapply (lbox_force_eq _ _ _ _ _ _ 3 cs_C (Some (pvar 2)) (csl_T Sa Sb) TUnit
-      (pt_polar true (pvar 0) :: pt_polar true ((pvar 0)·0) :: (pvar 0)·1 :: []) _ _
-      (UPt ((pvar 0)·1)) (TProd (TSess Sa (pvar 0) (Some 1)) (TSess Sb ((pvar 0)·0) (Some 2))));
+  eapply e_app_; [lsplit_tac (EForce cli) EUnit|apply ubu_below_empty| | | |shelve].
+  { eapply (lbox_force_eq _ _ _ _ _ _ 3 cs_C (Some (pvar 2)) (csl_T Sa Sb) TUnit (pt_polar true (pvar 0) :: pt_polar true ((pvar 0)·0) :: (pvar 0)·1 :: []) _ (UPt ((pvar 0)·1)) (TProd (TSess Sa (pvar 0) (Some 1) (Some 3)) (TSess Sb ((pvar 0)·0) (Some 2) (Some 3))));
       [done|apply csl_hold_main|done|done|done|].
     apply (csl_cli_typed _ 7). }
   lage_tac.
   eapply e_sub_sess2; [|shelve|shelve].
-  eapply e_pair_; [lsplit_tac (Var 3) EUnit| | | | |shelve].
+  eapply e_pair_; [lsplit_tac (Var 3) EUnit| | | | ].
   { eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
   { eapply e_var'; [reflexivity|]. spare_tac. }
   age_tac. }
-  meets_tac.
-  Unshelve. all: first [tok_tac | exact None | simpl; lia | simpl; done].
+  Unshelve. all: first [exact None | simpl; lia | simpl; done].
 Qed.
 
 Lemma cs_guarded : ∅ ⊢▷ cs_main.
@@ -224,12 +214,12 @@ Proof. unfold cs_main, cli, srv, let_new. guard_tac. Qed.
 
 Theorem cs_lftyped : ∃ N, ∅ ⊩^N _ W_cs (∅, {[+ cs_main +]}) : TUnit.
 Proof.
-  destruct csl_typedN as (c & ϑ & Ht & Hm). exists 3.
-  eapply lf_main_typed; [apply strict_wfworld; [apply W_cs_wf|apply W_cs_wfworld]|constructor|exact Ht|apply cs_guarded|exact Hm].
+  destruct csl_typedN as (c & Ht). exists 6.
+  eapply lf_main_typed; [apply strict_wfworld; [apply W_cs_wf|apply W_cs_wfworld]|constructor|exact Ht|apply cs_guarded].
 Qed.
 
 Theorem cs_lock_free : lock_free (∅, {[+ cs_main +]}).
 Proof.
-  destruct csl_typedN as (c & ϑ & Ht & Hm).
-  eapply lf_main; [apply (strict_wfworld _ W_cs_wf W_cs_wfworld)|apply W_cs_wfworld|constructor|exact Ht|apply cs_guarded|exact Hm].
+  destruct csl_typedN as (c & Ht).
+  eapply lf_main; [apply (strict_wfworld _ W_cs_wf W_cs_wfworld)|apply W_cs_wfworld|constructor|exact Ht|apply cs_guarded].
 Qed.

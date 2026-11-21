@@ -32,12 +32,12 @@ Section gmap_types.
   Fixpoint gmap_ty (T : ty) : ty :=
     match T with
     | TUnit => TUnit
-    | TLolli ub lb c t T1 U a =>
-        TLolli (ub_map (pt_gmap r) ub) (lb_map (pt_gmap r) lb) c t (gmap_ty T1) (gmap_ty U) a
+    | TLolli ub lb c T1 U a =>
+        TLolli (ub_map (pt_gmap r) ub) (lb_map (pt_gmap r) lb) c (gmap_ty T1) (gmap_ty U) a
     | TProd T1 U => TProd (gmap_ty T1) (gmap_ty U)
     | TSum T1 U => TSum (gmap_ty T1) (gmap_ty U)
-    | TBox n k C ub c t U => TBox n k (bcs_gmap r C) (pt_gmap r <$> ub) c t (gmap_ty U)
-    | TSess s x a => TSess (gmap_sty s) (pt_gmap r x) a
+    | TBox n k C ub c U => TBox n k (bcs_gmap r C) (pt_gmap r <$> ub) c (gmap_ty U)
+    | TSess s x a mt => TSess (gmap_sty s) (pt_gmap r x) a mt
     | TEx lb n C T1 => TEx (lb_map (pt_gmap r) lb) n (bcs_gmap r C) (gmap_ty T1)
     end
   with gmap_sty (s : sty) : sty :=
@@ -78,7 +78,7 @@ Section gmap_ctx.
   Context (r : family * nat → family * nat).
 
   Definition tentry_gmap (e : tentry) : tentry :=
-    TE (gmap_sty r (te_sty e)) (pt_gmap r (te_pt e)) (te_cr e).
+    TE (gmap_sty r (te_sty e)) (pt_gmap r (te_pt e)) (te_cr e) (te_tk e).
   Definition tenv_gmap (Θ : tenv) : tenv := tentry_gmap <$> Θ.
   Definition lenv_gmap (Δ : lenv) : lenv := fmap (M:=option) (gmap_ty r) <$> Δ.
   Definition sf_gmap (F : sfuture) : sfuture := (set_map (pt_gmap r) F.1, F.2).

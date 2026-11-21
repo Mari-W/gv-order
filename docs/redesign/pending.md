@@ -214,6 +214,11 @@ must do, open questions.
   An end type `(S@x)^a_m` carries m tickets, `tk(o) + tk(ō) ≤ K` holds for
   every channel, and E-Link asks `a1 + m2 > K` and `a2 + m1 > K`
   (check-links-without-tickets.md, last section).
+  Rocq, stage 1 of the run of 2026-11-21 (redesign-clean3): landed. `TSess S x a m`,
+  `lgt`, `tsum_ok`, `sp_cap`, `sp_tsum`, `sp_sigcap`, measure `fu` on ℕ with `<`.
+  The bound keeps the name N. new_ℓ starts its ends at N/2 and N − N/2, new_κ o at m
+  and N − m, interface ends at N/2, because the caps of a creation need an index-free
+  source until the existential property lands.
 - **Layers and fuel extension (write-up A3, 2026-11-21, decided).**
   check-layers.md. Points as ordinal ranks hold with a well-founded C per fresh
   root and fields ranked in advance. Client-server and every lock-free example

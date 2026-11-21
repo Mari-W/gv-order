@@ -1,29 +1,37 @@
 (** * Fuel: the clauses, downward closure, monotonicity and renaming (stage S6)
 
     - The clauses of FuelE at index n + 1 at the identity renaming
-      ([fuel_val], [fuel_obl], F-Wait, F-Tick, the hand-over, a link's
-      ticket) and the two facts adequacy reads at counter 0
+      ([fuel_val], [fuel_obl], F-Wait, F-Tick, the hand-over, the
+      tickets of a link) and the two facts adequacy reads at counter 0
       ([fuel_zero_act], [fuel_zero_nospawn]).
     - Downward closure in the index ([FuelE_down], [Vfuel_down]).
-    - F4, [FuelE_mono]: FuelE is monotone in the refill N, in the
-      counters ([cle]), the frame and the tickets, and antitone in the
-      reserve. [Vfuel_mono] is the same for values.
+    - F4, [FuelE_mono]: FuelE is monotone in the counters ([cle], the
+      tickets stay) and the frame. [Vfuel_mono] is the same for values.
     - [FuelE_rename]: closure under injective renamings of ends. *)
 
 From GV Require Export fuel.Fuel.
 
 (** ** Counters at or above *)
 
-(** φ' has the ends of φ, each at a counter at least as large. *)
+(** An entry at a counter at least as large, at the same tickets. *)
+Definition ple (p p' : fuel * fuel) : Prop := fle p.1 p'.1 ∧ p'.2 = p.2.
+
+Lemma ple_refl p : ple p p.
+Proof. split; [apply fle_refl|done]. Qed.
+Lemma ple_trans p1 p2 p3 : ple p1 p2 → ple p2 p3 → ple p1 p3.
+Proof. intros [H1 E1] [H2 E2]. split; [by eapply fle_trans|congruence]. Qed.
+
+(** φ' has the ends of φ, each at a counter at least as large and at the
+    same tickets. *)
 Definition cle (φ φ' : cenv) : Prop :=
   ∀ o, match φ !! o, φ' !! o with
-       | Some f, Some f' => fle f f'
+       | Some f, Some f' => ple f f'
        | None, None => True
        | _, _ => False
        end.
 
 Lemma cle_refl φ : cle φ φ.
-Proof. intros o. destruct (φ !! o); [apply fle_refl|done]. Qed.
+Proof. intros o. destruct (φ !! o); [apply ple_refl|done]. Qed.
 
 Lemma cle_dom φ φ' : cle φ φ' → dom φ = dom φ'.
 Proof.
@@ -31,10 +39,10 @@ Proof.
   destruct (φ !! o), (φ' !! o); naive_solver.
 Qed.
 
-Lemma cle_lookup φ φ' o f : cle φ φ' → φ !! o = Some f → ∃ f', φ' !! o = Some f' ∧ fle f f'.
+Lemma cle_lookup φ φ' o f : cle φ φ' → φ !! o = Some f → ∃ f', φ' !! o = Some f' ∧ ple f f'.
 Proof. intros H Hf. specialize (H o). rewrite Hf in H. destruct (φ' !! o); naive_solver. Qed.
 
-Lemma cle_lookup_r φ φ' o f' : cle φ φ' → φ' !! o = Some f' → ∃ f, φ !! o = Some f ∧ fle f f'.
+Lemma cle_lookup_r φ φ' o f' : cle φ φ' → φ' !! o = Some f' → ∃ f, φ !! o = Some f ∧ ple f f'.
 Proof. intros H Hf. specialize (H o). rewrite Hf in H. destruct (φ !! o); naive_solver. Qed.
 
 Lemma cle_empty_l φ' : cle ∅ φ' → φ' = ∅.
@@ -43,7 +51,7 @@ Proof.
   by destruct (φ' !! o).
 Qed.
 
-Lemma cle_insert φ φ' o f f' : fle f f' → cle φ φ' → cle (<[o := f]> φ) (<[o := f']> φ').
+Lemma cle_insert φ φ' o f f' : ple f f' → cle φ φ' → cle (<[o := f]> φ) (<[o := f']> φ').
 Proof.
   intros Hf H o'. destruct (decide (o = o')) as [<-|Hne].
   - by rewrite !lookup_insert_eq.
@@ -60,10 +68,13 @@ Qed.
 Lemma fle_ftick f f' : fle f f' → fle (ftick f) (ftick f').
 Proof. destruct f, f'; simpl; lia. Qed.
 
-Lemma cle_tick φ φ' : cle φ φ' → cle (ftick <$> φ) (ftick <$> φ').
+Lemma ple_ctick p p' : ple p p' → ple (ctick p) (ctick p').
+Proof. intros [H E]. split; [by apply fle_ftick|done]. Qed.
+
+Lemma cle_tick φ φ' : cle φ φ' → cle (ctick <$> φ) (ctick <$> φ').
 Proof.
   intros H o. rewrite !lookup_fmap. specialize (H o).
-  destruct (φ !! o), (φ' !! o); simpl; try done. by apply fle_ftick.
+  destruct (φ !! o), (φ' !! o); simpl; try done. by apply ple_ctick.
 Qed.
 
 Lemma lookup_mres {Y : Type} (X : gset cend) (m : gmap cend Y) o :
@@ -96,14 +107,20 @@ Proof.
   destruct (φ1 !! o), (φ1' !! o), (φ2 !! o), (φ2' !! o); simpl; done.
 Qed.
 
-Lemma cle_refill N o φ φ' : cle φ φ' → cle (refill N o φ) (refill N o φ').
-Proof. intros H. apply cle_insert; [apply fle_refl|]. by apply cle_tick, cle_delete. Qed.
+Lemma cle_refill o φ φ' : cle φ φ' → cle (refill o φ) (refill o φ').
+Proof.
+  intros H. unfold refill. pose proof (H o) as Ho.
+  destruct (φ !! o) as [[f m]|], (φ' !! o) as [[f' m']|]; try done.
+  - destruct Ho as [_ E]. simpl in E. subst m'.
+    apply cle_insert; [apply ple_refl|]. by apply cle_tick, cle_delete.
+  - by apply cle_tick.
+Qed.
 
 Lemma cle_fhand M φ φ' : cle φ φ' → cle (fhand M φ) (fhand M φ').
 Proof. intros H. by apply cle_tick, cle_mres. Qed.
 
-Lemma cle_cnew N c φ φ' : cle φ φ' → cle (cnew N c φ) (cnew N c φ').
-Proof. intros H. apply cle_insert; [apply fle_refl|]. apply cle_insert; [apply fle_refl|done]. Qed.
+Lemma cle_cnew m1 m2 c φ φ' : cle φ φ' → cle (cnew m1 m2 c φ) (cnew m1 m2 c φ').
+Proof. intros H. apply cle_insert; [apply ple_refl|]. apply cle_insert; [apply ple_refl|done]. Qed.
 
 Lemma map_disjoint_cle_r (m : cenv) φ φ' : cle φ φ' → m ##ₘ φ' → m ##ₘ φ.
 Proof. intros H. rewrite !map_disjoint_dom. by rewrite (cle_dom φ φ' H). Qed.
@@ -199,8 +216,8 @@ Section vty.
   Lemma Vty_dom N n T Π φ v : Vty N El Vl n T Π φ v → dom Π = dom φ.
   Proof.
     revert Π φ v.
-    induction T as [|ub lb c t T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
-                   |m k C ub c t U IH|s x a|lb m C T1 IH];
+    induction T as [|ub lb c T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
+                   |m k C ub c U IH|s x a mt|lb m C T1 IH];
       intros Π φ v; simpl.
     - intros (_ & -> & ->). by rewrite !dom_empty_L.
     - by intros (e & _ & _ & Hd & _).
@@ -216,16 +233,17 @@ Section vty.
     cle φ φ' → Vty N El Vl n T Π φ v → Vty N El Vl n T Π φ' v.
   Proof.
     revert Π φ φ' v.
-    induction T as [|ub lb c t T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
-                   |m k C ub c t U IH|s x a|lb m C T1 IH];
+    induction T as [|ub lb c T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
+                   |m k C ub c U IH|s x a mt|lb m C T1 IH];
       intros Π φ φ' v Hc; simpl.
     - intros (-> & -> & ->). by rewrite (cle_empty_l _ Hc).
     - intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|by rewrite <-(cle_dom _ _ Hc)| |].
-      + intros o f' Ho Hi. destruct (cle_lookup_r _ _ _ _ Hc Ho) as (f & Hf' & Hle).
+      + intros o f' Ho Hi. destruct (cle_lookup_r _ _ _ _ Hc Ho) as (f & Hf' & [Hle _]).
         eapply fle_trans; [|exact Hle]. exact (Hf o f Hf' Hi).
-      + intros N' j φ2 Πu φu u r tk HN Hj Hd2 Hh2. apply H; [done|done|by rewrite (cle_dom _ _ Hc)|].
-        intros o f f2 Hf' Hf2. destruct (cle_lookup _ _ _ _ Hc Hf') as (f' & Hf'' & Hle).
-        eapply fle_trans; [by apply fsub_mono_l|exact (Hh2 o f' f2 Hf'' Hf2)].
+      + intros j φ2 Πu φu u Hj Hd2 Hh2. apply H; [done|by rewrite (cle_dom _ _ Hc)|].
+        intros o f f2 Hf' Hf2. destruct (cle_lookup _ _ _ _ Hc Hf') as (f' & Hf'' & [Hle E]).
+        destruct (Hh2 o f' f2 Hf'' Hf2) as [E2 H2]. split; [congruence|].
+        eapply fle_trans; [by apply fsub_mono_l|exact H2].
     - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & -> & HΠ & Hφ & -> & -> & H1 & H2).
       destruct (cle_union_split _ _ _ Hφ Hc) as (φ1' & φ2' & -> & Hd' & C1 & C2).
       exists v1, v2, Π1, Π2, φ1', φ2'. split_and!; try done.
@@ -236,7 +254,8 @@ Section vty.
       + eapply IH2; [exact Hc|exact H].
     - intros (e & -> & Hx & -> & -> & H). rewrite (cle_empty_l _ Hc). exists e. by split_and!.
     - intros (o & S' & f & -> & -> & -> & Hs & Hf).
-      destruct (cle_lookup _ _ o f Hc ltac:(by rewrite lookup_singleton_eq)) as (f' & Hf' & Hle).
+      destruct (cle_lookup _ _ o (f, mt) Hc ltac:(by rewrite lookup_singleton_eq)) as ([f' m'] & Hf' & [Hle E]).
+      simpl in Hle, E. subst m'.
       exists o, S', f'. split_and!; try done.
       + apply map_eq. intros o'. specialize (Hc o').
         destruct (decide (o = o')) as [<-|Hne]; [by rewrite lookup_singleton_eq|].
@@ -245,45 +264,28 @@ Section vty.
     - intros H. eapply IH; [exact Hc|exact H].
   Qed.
 
-  Lemma Vty_refill_mono N N1 n T Π φ v :
-    rle N N1 → Vty N El Vl n T Π φ v → Vty N1 El Vl n T Π φ v.
-  Proof.
-    intros HN. revert Π φ v.
-    induction T as [|ub lb c t T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
-                   |m k C ub c t U IH|s x a|lb m C T1 IH];
-      intros Π φ v; simpl; try done.
-    - intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|done|done|].
-      intros N' j φ' Πu φu u r tk HN'. apply H. by eapply rle_trans.
-    - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & -> & HΠ & Hφ & -> & -> & H1 & H2).
-      exists v1, v2, Π1, Π2, φ1, φ2. split_and!; auto.
-    - intros [(v' & -> & H)|(v' & -> & H)]; [left|right]; eauto.
-    - intros (e & -> & Hx & -> & -> & H). exists e. split_and!; [done|done|done|done|].
-      intros N' j ss r tk HN'. apply H. by eapply rle_trans.
-    - auto.
-  Qed.
-
   Lemma Vty_down N m n T Π φ v :
     m ≤ n → Vty N El Vl n T Π φ v → Vty N El Vl m T Π φ v.
   Proof.
     intros Hmn. revert Π φ v.
-    induction T as [|ub lb c t T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
-                   |k0 k C ub c t U IH|s x a|lb k0 C T1 IH];
+    induction T as [|ub lb c T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
+                   |k0 k C ub c U IH|s x a mt|lb k0 C T1 IH];
       intros Π φ v; simpl; try done.
     - intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|done|done|].
-      intros N' j φ' Πu φu u r tk HN' Hj. apply H; [done|lia].
+      intros j φ' Πu φu u Hj. apply H. lia.
     - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & -> & HΠ & Hφ & -> & -> & H1 & H2).
       exists v1, v2, Π1, Π2, φ1, φ2. split_and!; auto.
     - intros [(v' & -> & H)|(v' & -> & H)]; [left|right]; eauto.
     - intros (e & -> & Hx & -> & -> & H). exists e. split_and!; [done|done|done|done|].
-      intros N' j ss r tk HN' Hj. apply H; [done|lia].
+      intros j ss Hj. apply H. lia.
     - auto.
   Qed.
 
   Lemma Vty_val N n T Π φ v : Vty N El Vl n T Π φ v → is_val v.
   Proof.
     revert Π φ v.
-    induction T as [|ub lb c t T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
-                   |m k C ub c t U IH|s x a|lb m C T1 IH];
+    induction T as [|ub lb c T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
+                   |m k C ub c U IH|s x a mt|lb m C T1 IH];
       intros Π φ v; simpl.
     - by intros (-> & _ & _).
     - by intros (e & -> & _).
@@ -299,8 +301,8 @@ Section vty.
   Lemma Vty_exact N n T Π φ v : Vty N El Vl n T Π φ v → fends v = dom Π.
   Proof.
     revert Π φ v.
-    induction T as [|ub lb c t T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
-                   |m k C ub c t U IH|s x a|lb m C T1 IH];
+    induction T as [|ub lb c T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
+                   |m k C ub c U IH|s x a mt|lb m C T1 IH];
       intros Π φ v; simpl.
     - intros (-> & -> & _). by rewrite dom_empty_L.
     - by intros (e & -> & Hx & _).
@@ -322,12 +324,12 @@ Proof. rewrite Vfuel_eq. apply Vty_val. Qed.
 Lemma Vfuel_exact N n T Π φ v : v ∈ FV^N _ n⟦RTy T⟧(Π, φ) → fends v = dom Π.
 Proof. rewrite Vfuel_eq. apply Vty_exact. Qed.
 
-(** F5, monotonicity of values: a larger refill, larger counters. *)
-Lemma Vfuel_mono N N' n σ Π φ φ' v :
-  rle N N' → cle φ φ' → v ∈ FV^N _ n⟦σ⟧(Π, φ) → v ∈ FV^N' _ n⟦σ⟧(Π, φ').
+(** F5, monotonicity of values: larger counters. *)
+Lemma Vfuel_mono N n σ Π φ φ' v :
+  cle φ φ' → v ∈ FV^N _ n⟦σ⟧(Π, φ) → v ∈ FV^N _ n⟦σ⟧(Π, φ').
 Proof.
-  intros HN Hc. rewrite !Vfuel_eq. destruct σ as [T|]; simpl.
-  - intros H. eapply Vty_refill_mono; [exact HN|]. eapply Vty_counters; [exact Hc|exact H].
+  intros Hc. rewrite !Vfuel_eq. destruct σ as [T|]; simpl.
+  - intros H. eapply Vty_counters; [exact Hc|exact H].
   - intros [-> ->]. by rewrite (cle_empty_l _ Hc).
 Qed.
 
@@ -340,22 +342,21 @@ Qed.
 (** ** The clauses at the identity *)
 
 Section clauses.
-  Context (N : fuel) (n : nat) {σ : rty} {d : fuel} {r : nat} (Π : penv) (φ : cenv)
-    (tk : nat) (e : expr).
-  Context (HF : e ∈ F^N _ (S n)⟦σ ▷ d ; r⟧(Π, φ, tk)).
+  Context (N : fuel) (n : nat) {σ : rty} {d : fuel} (Π : penv) (φ : cenv) (e : expr).
+  Context (HF : e ∈ F^N _ (S n)⟦σ ▷ d⟧(Π, φ)).
 
   Local Lemma fuel_self :
-    (is_val e → r ≤ tk ∧ Vres N (λ j N, FuelE N j) (λ j N, Vfuel N j) (S n) σ Π φ e) ∧
-    ∀ α e', tstep e α e' → Fobl N (λ j N, FuelE N j) (λ j N, Vfuel N j) n σ d r Π φ tk α e'.
+    (is_val e → Vres N (λ j N, FuelE N j) (λ j N, Vfuel N j) (S n) σ Π φ e) ∧
+    ∀ α e', tstep e α e' → Fobl N (λ j N, FuelE N j) (λ j N, Vfuel N j) n σ d Π φ α e'.
   Proof.
     apply FuelE_S in HF.
-    pose proof (HF N id Π φ (rle_refl N) (kinj_id Π) (kinj_id φ) (renk_id Π) (renk_id φ)) as H.
+    pose proof (HF id Π φ (kinj_id Π) (kinj_id φ) (renk_id Π) (renk_id φ)) as H.
     by rewrite emap_id in H.
   Qed.
 
   (** (step). *)
   Lemma fuel_obl α e' :
-    tstep e α e' → Fobl N (λ j N, FuelE N j) (λ j N, Vfuel N j) n σ d r Π φ tk α e'.
+    tstep e α e' → Fobl N (λ j N, FuelE N j) (λ j N, Vfuel N j) n σ d Π φ α e'.
   Proof. intros Hst. destruct fuel_self as [_ Hs]. by apply Hs. Qed.
 
   (** The end of a session action, and whether the action ticks. *)
@@ -387,30 +388,29 @@ Section clauses.
   Lemma fuel_spawn_hand v e' : tstep e (LSpawn v) e' → fends v ⊆ dom φ ∧ fspare Π φ (fends v).
   Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (H1 & H2 & _). Qed.
 
-  (** A link needs a ticket. *)
-  Lemma fuel_link os e' : tstep e (LSess (SLink os)) e' → 1 ≤ tk ∧ os ⊆ dom φ.
-  Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (_ & H1 & H2 & _). Qed.
-
-  (** ** At counter 0 *)
+  (** A link reads the tickets of its ends. *)
+  Lemma fuel_link os e' : tstep e (LSess (SLink os)) e' → plink Π os ∧ os ⊆ dom φ ∧ lok N φ os.
+  Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (H0 & H1 & H2 & _). Qed.
 
 End clauses.
 
 (** ** Downward closure in the index *)
 
-Lemma FuelE_S_down N n σ d r Π φ tk e :
-  e ∈ F^N _ (S n)⟦σ ▷ d ; r⟧(Π, φ, tk) → e ∈ F^N _ n⟦σ ▷ d ; r⟧(Π, φ, tk).
+Lemma FuelE_S_down N n σ d Π φ e :
+  e ∈ F^N _ (S n)⟦σ ▷ d⟧(Π, φ) → e ∈ F^N _ n⟦σ ▷ d⟧(Π, φ).
 Proof.
-  revert N σ d r Π φ tk e. induction n as [|n IH]; intros N σ d r Π φ tk e H; [apply FuelE_0|].
-  apply FuelE_S. apply FuelE_S in H. intros N' g Π' φ' HN Hk1 Hk2 Hr1 Hr2.
-  destruct (H N' g Π' φ' HN Hk1 Hk2 Hr1 Hr2) as [Hv Hs]. split.
-  { intros Hval. destruct (Hv Hval) as [Hr HV]. split; [done|].
+  revert N σ d Π φ e. induction n as [|n IH]; intros N σ d Π φ e H; [apply FuelE_0|].
+  apply FuelE_S. apply FuelE_S in H. intros g Π' φ' Hk1 Hk2 Hr1 Hr2.
+  destruct (H g Π' φ' Hk1 Hk2 Hr1 Hr2) as [Hv Hs]. split.
+  { intros Hval. pose proof (Hv Hval) as HV.
     apply Vfuel_eq. apply (Vfuel_down _ (S n) (S (S n))); [lia|]. by apply Vfuel_eq. }
   intros α e' Hst. specialize (Hs α e' Hst).
   destruct α as [|ℓ c|κ o c|v|[o w|o w|o|o i|o i|os]]; simpl in Hs |- *;
-    unfold f_beta, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link in *.
+    unfold f_beta, f_new, f_new_at, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link in *.
   - by apply IH.
   - intros Hf. destruct (Hs Hf) as [Sn HS]. exists Sn. by apply IH.
-  - intros Hf. destruct (Hs Hf) as [Sn HS]. exists Sn. by apply IH.
+  - destruct Hs as (p & Hp & Hs). exists p. split; [done|].
+    intros Hf. destruct (Hs Hf) as [Sn HS]. exists Sn. by apply IH.
   - destruct Hs as (H1 & H2 & H3 & H4). split_and!; auto.
   - destruct Hs as (Ha & S0 & m & T & Sc & H1 & H2 & H3 & H4 & H5 & H6).
     split; [done|]. exists S0, m, T, Sc. split_and!; auto. by apply (Vfuel_down _ n (S n)); [lia|].
@@ -423,108 +423,113 @@ Proof.
   - destruct Hs as (H0 & H1 & H2 & H3). split_and!; auto.
 Qed.
 
-Lemma FuelE_down N m n σ d r Π φ tk e :
-  m ≤ n → e ∈ F^N _ n⟦σ ▷ d ; r⟧(Π, φ, tk) → e ∈ F^N _ m⟦σ ▷ d ; r⟧(Π, φ, tk).
+Lemma FuelE_down N m n σ d Π φ e :
+  m ≤ n → e ∈ F^N _ n⟦σ ▷ d⟧(Π, φ) → e ∈ F^N _ m⟦σ ▷ d⟧(Π, φ).
 Proof. induction 1; eauto using FuelE_S_down. Qed.
 
 (** ** F4: monotonicity *)
 
-Lemma div2_mono a b : a ≤ b → Nat.div2 a ≤ Nat.div2 b.
-Proof. intros H. rewrite !Nat.div2_div. by apply Nat.Div0.div_le_mono. Qed.
-
 Lemma fspare_mono Π φ φ' X : cle φ φ' → fspare Π φ X → fspare Π φ' X.
 Proof.
-  intros Hc H o f' Ho Hf' Hi. destruct (cle_lookup_r _ _ _ _ Hc Hf') as (f & Hf & Hle).
+  intros Hc H o f' Ho Hf' Hi. destruct (cle_lookup_r _ _ _ _ Hc Hf') as (f & Hf & [Hle _]).
   eapply fle_trans; [|exact Hle]. by apply (H o).
 Qed.
 
 Lemma ffresh_cle c Π φ φ' : cle φ φ' → ffresh c Π φ' → ffresh c Π φ.
 Proof. intros Hc. unfold ffresh. by rewrite (cle_dom _ _ Hc). Qed.
 
-(** FuelE^N is monotone in the refill N and the counters, the frame and
-    the tickets, and antitone in the reserve. More counters never hurt,
-    because every check asks a lower bound (G3). *)
-Lemma FuelE_mono n : ∀ N N' σ d d' r r' Π φ φ' tk tk' e,
-  rle N N' → cle φ φ' → fle d d' → r' ≤ r → tk ≤ tk' →
-  e ∈ F^N _ n⟦σ ▷ d ; r⟧(Π, φ, tk) → e ∈ F^N' _ n⟦σ ▷ d' ; r'⟧(Π, φ', tk').
+Lemma lok_mono N φ φ' os : cle φ φ' → lok N φ os → lok N φ' os.
+Proof.
+  intros Hc H o1 o2 p1' p2' Hos Hne H1 H2.
+  destruct (cle_lookup_r _ _ _ _ Hc H1) as (p1 & G1 & [L1 E1]).
+  destruct (cle_lookup_r _ _ _ _ Hc H2) as (p2 & G2 & [L2 E2]).
+  destruct (H o1 o2 p1 p2 Hos Hne G1 G2) as [A B].
+  split.
+  - eapply lgt_mono; [exact L1| |exact A]. rewrite E2. apply fle_refl.
+  - eapply lgt_mono; [exact L2| |exact B]. rewrite E1. apply fle_refl.
+Qed.
+
+(** FuelE^N is monotone in the counters and the frame. More counters
+    never hurt, because every check asks a lower bound (G3), and the
+    tickets stay. *)
+Lemma FuelE_mono n : ∀ N σ d d' Π φ φ' e,
+  cle φ φ' → fle d d' →
+  e ∈ F^N _ n⟦σ ▷ d⟧(Π, φ) → e ∈ F^N _ n⟦σ ▷ d'⟧(Π, φ').
 Proof.
   induction n as [n IH] using lt_wf_ind.
-  intros N N1 σ d d' r r' Π φ φ1 tk tk' e HN Hc Hd Hr Htk H.
+  intros N σ d d' Π φ φ1 e Hc Hd H.
   destruct n as [|n]; [apply FuelE_0|].
-  apply FuelE_S. apply FuelE_S in H. intros N' g Π' φ' HN' Hk1 Hk2 Hr1 Hr2.
+  apply FuelE_S. apply FuelE_S in H. intros g Π' φ' Hk1 Hk2 Hr1 Hr2.
   assert (Hkφ : kinj g φ) by (apply (kinj_dom g φ1); [by rewrite (cle_dom _ _ Hc)|done]).
   destruct (renk_exists g φ Hkφ) as [φ0 Hr0].
   assert (Hc0 : cle φ0 φ') by exact (renk_cle g φ φ1 φ0 φ' Hk2 Hc Hr0 Hr2).
-  destruct (H N' g Π' φ0 ltac:(by eapply rle_trans) Hk1 Hkφ Hr1 Hr0) as [Hv Hs].
-  assert (IHn : ∀ j, j ≤ n → ∀ N σ d d' r r' Π φ φ' tk tk' e,
-    fle d d' → r' ≤ r → tk ≤ tk' → cle φ φ' →
-    e ∈ F^N _ j⟦σ ▷ d ; r⟧(Π, φ, tk) → e ∈ F^N _ j⟦σ ▷ d' ; r'⟧(Π, φ', tk')).
-  { intros j Hj N0 σ0 d0 d0' r0 r0' Π0 φ2 φ2' tk0 tk0' e0 H1 H2 H3 H4.
-    apply (IH j ltac:(lia)); [apply rle_refl|done..]. }
+  destruct (H g Π' φ0 Hk1 Hkφ Hr1 Hr0) as [Hv Hs].
+  assert (IHn : ∀ j, j ≤ n → ∀ σ d d' Π φ φ' e,
+    fle d d' → cle φ φ' →
+    e ∈ F^N _ j⟦σ ▷ d⟧(Π, φ) → e ∈ F^N _ j⟦σ ▷ d'⟧(Π, φ')).
+  { intros j Hj σ0 d0 d0' Π0 φ2 φ2' e0 H1 H2.
+    apply (IH j ltac:(lia)); done. }
   split.
-  { intros Hval. destruct (Hv Hval) as [Hr0' HV]. split; [lia|].
-    apply Vfuel_eq. eapply Vfuel_mono; [apply rle_refl|exact Hc0|]. by apply Vfuel_eq. }
+  { intros Hval. pose proof (Hv Hval) as HV.
+    apply Vfuel_eq. eapply Vfuel_mono; [exact Hc0|]. by apply Vfuel_eq. }
   intros α e' Hst. specialize (Hs α e' Hst).
   assert (Hdd := fle_ftick _ _ Hd).
   assert (Hact : ∀ o, f_act d Π' φ0 o → f_act d' Π' φ' o).
   { intros o (H1 & H2 & H3 & H4). split_and!; [done|by rewrite <-(cle_dom _ _ Hc0)| |by eapply fle_trans].
     rewrite <-(cle_dom _ _ Hc0). by eapply fspare_mono. }
   destruct α as [|ℓ c|κ o c|v|[o w|o w|o|o i|o i|os]]; simpl in Hs |- *;
-    unfold f_beta, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link in *.
+    unfold f_beta, f_new, f_new_at, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link in *.
   - eapply IHn; [lia|done..].
   - intros Hf. destruct (Hs (ffresh_cle _ _ _ _ Hc0 Hf)) as [Sn HS]. exists Sn.
-    eapply IHn; [lia|done|done|done|by apply cle_cnew|done].
-  - intros Hf. destruct (Hs (ffresh_cle _ _ _ _ Hc0 Hf)) as [Sn HS]. exists Sn.
-    eapply IHn; [lia|done|done|done|by apply cle_cnew|done].
+    eapply IHn; [lia|done|by apply cle_cnew|done].
+  - destruct Hs as (p & Hp & Hs). destruct (cle_lookup _ _ _ _ Hc0 Hp) as (p' & Hp' & [_ E]).
+    exists p'. split; [done|]. rewrite E.
+    intros Hf. destruct (Hs (ffresh_cle _ _ _ _ Hc0 Hf)) as [Sn HS]. exists Sn.
+    eapply IHn; [lia|done|by apply cle_cnew|done].
   - destruct Hs as (H1 & H2 & H3 & H4). split_and!.
     + by rewrite <-(cle_dom _ _ Hc0).
     + by eapply fspare_mono.
-    + eapply IHn; [lia|apply fle_refl|lia| |by apply cle_fhand|exact H3].
-      apply (div2_mono (S tk) (S tk')). lia.
-    + eapply IHn; [lia|done|done|by apply div2_mono|by apply cle_mrem|exact H4].
+    + eapply IHn; [lia|apply fle_refl|by apply cle_fhand|exact H3].
+    + eapply IHn; [lia|done|by apply cle_mrem|exact H4].
   - destruct Hs as (Ha & S0 & m & T & Sc & H1 & H2 & H3 & H4 & H5 & H6).
     split; [by apply Hact|]. exists S0, m, T, Sc. split_and!; try done.
     + by rewrite <-(cle_dom _ _ Hc0).
     + by eapply fspare_mono.
-    + eapply Vfuel_mono; [apply rle_refl|by apply cle_fhand|exact H5].
-    + eapply IHn; [lia|done|done|done|by apply cle_refill, cle_mrem|exact H6].
+    + eapply Vfuel_mono; [by apply cle_fhand|exact H5].
+    + eapply IHn; [lia|done|by apply cle_refill, cle_mrem|exact H6].
   - destruct Hs as (Ha & S0 & m & T & Sc & H1 & H2 & H3).
     split; [by apply Hact|]. exists S0, m, T, Sc. split_and!; [done|done|].
     intros j Πi φi Hj HΠi Hφi Hw.
-    eapply IHn; [lia|done|done|done| |].
+    eapply IHn; [lia|done| |].
     + apply cle_union; [by apply cle_refill|apply cle_refl].
     + apply H3; try done. eapply map_disjoint_cle_r; [|exact Hφi]. by apply cle_refill.
   - destruct Hs as (Ha & S0 & H1 & H2 & H3). split; [by apply Hact|]. exists S0. split_and!; try done.
-    eapply IHn; [lia|done|done|done|by apply cle_tick, cle_delete|exact H3].
+    eapply IHn; [lia|done|by apply cle_tick, cle_delete|exact H3].
   - destruct Hs as (Ha & S0 & S1 & S2 & H1 & H2 & H3). split; [by apply Hact|].
     exists S0, S1, S2. split_and!; try done.
-    eapply IHn; [lia|done|done|done|by apply cle_refill|exact H3].
+    eapply IHn; [lia|done|by apply cle_refill|exact H3].
   - destruct Hs as (Ha & S0 & S1 & S2 & H1 & H2 & H3). split; [by apply Hact|].
     exists S0, S1, S2. split_and!; try done.
-    eapply IHn; [lia|done|done|done|by apply cle_refill|exact H3].
+    eapply IHn; [lia|done|by apply cle_refill|exact H3].
   - destruct Hs as (H0 & H1 & H2 & H3). split_and!; [done| | |].
     + by rewrite <-(cle_dom _ _ Hc0).
-    + lia.
-    + eapply (IHn n); [lia|exact Hd|exact Hr| |by apply cle_mrem|exact H3]. lia.
+    + by eapply lok_mono.
+    + eapply (IHn n); [lia|exact Hd|by apply cle_mrem|exact H3].
 Qed.
 
-Lemma FuelE_refill_mono N N' n σ d r Π φ tk e :
-  rle N N' → e ∈ F^N _ n⟦σ ▷ d ; r⟧(Π, φ, tk) → e ∈ F^N' _ n⟦σ ▷ d ; r⟧(Π, φ, tk).
-Proof. intros HN. apply FuelE_mono; [done|apply cle_refl|apply fle_refl|lia|lia]. Qed.
-
-Lemma FuelE_frame_mono N n σ d d' r Π φ tk e :
-  fle d d' → e ∈ F^N _ n⟦σ ▷ d ; r⟧(Π, φ, tk) → e ∈ F^N _ n⟦σ ▷ d' ; r⟧(Π, φ, tk).
-Proof. intros Hd. apply FuelE_mono; [apply rle_refl|apply cle_refl|done|lia|lia]. Qed.
+Lemma FuelE_frame_mono N n σ d d' Π φ e :
+  fle d d' → e ∈ F^N _ n⟦σ ▷ d⟧(Π, φ) → e ∈ F^N _ n⟦σ ▷ d'⟧(Π, φ).
+Proof. intros Hd. apply FuelE_mono; [apply cle_refl|done]. Qed.
 
 (** ** Renaming of ends (a link renames the partner of its removed end) *)
 
-Lemma FuelE_rename N n σ d r Π φ tk e (h : cend → cend) Π1 φ1 :
+Lemma FuelE_rename N n σ d Π φ e (h : cend → cend) Π1 φ1 :
   kinj h Π → kinj h φ → renk h Π Π1 → renk h φ φ1 →
-  e ∈ F^N _ n⟦σ ▷ d ; r⟧(Π, φ, tk) → emap h e ∈ F^N _ n⟦σ ▷ d ; r⟧(Π1, φ1, tk).
+  e ∈ F^N _ n⟦σ ▷ d⟧(Π, φ) → emap h e ∈ F^N _ n⟦σ ▷ d⟧(Π1, φ1).
 Proof.
   destruct n as [|n]; [intros; apply FuelE_0|]. rewrite !FuelE_S.
-  intros Hi1 Hi2 H1 H2 HF N' g Π' φ' HN Hg1 Hg2 G1 G2. rewrite emap_emap.
-  apply HF; [done| | |eapply renk_compose; eauto|eapply renk_compose; eauto].
+  intros Hi1 Hi2 H1 H2 HF g Π' φ' Hg1 Hg2 G1 G2. rewrite emap_emap.
+  apply HF; [| |eapply renk_compose; eauto|eapply renk_compose; eauto].
   - by apply (kinj_compose g h Π Π1).
   - by apply (kinj_compose g h φ φ1).
 Qed.

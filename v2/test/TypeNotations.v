@@ -5,11 +5,11 @@
 
 From GV Require Import static.Typing.
 
-Check (λ (c : chan) (x : point) (κ : field) (a : fuel), (Chan c⁺, TSess SEnd (x⁺·κ)‾ a)).
+Check (λ (c : chan) (x : point) (κ : field) (a m : fuel), (Chan c⁺, TSess SEnd (x⁺·κ)‾ a m)).
 Check (λ (o : cend) (x : point), ((o‾)%cend, (x‾)%pt)).
 Check (λ (W : world) (x y : point), W ⊢ x ≺ y⁺).
 Check (λ W1 W2 : world, W1 ⊑ W1 ⊔ W2).
-Check (λ (S : sty) (x : point) (a : fuel), S@x‾^a).
-Check (λ W N Θ Γ Δ F e T c ϑ, Θ ; Γ ; Δ ⊢^F _{W,N} e : T ▷ c ; ϑ).
+Check (λ (S : sty) (x : point) (a m : fuel), S@x‾^a;m).
+Check (λ W N Θ Γ Δ F e T c, Θ ; Γ ; Δ ⊢^F _{W,N} e : T ▷ c).
 Check (λ W Θ Γ Δ F e T, Θ ; Γ ; Δ ⊢^F _ W e : T).
 Check (λ W Σ p T, Σ ⊢_W p : T).

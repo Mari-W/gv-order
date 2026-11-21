@@ -3,7 +3,7 @@
 From GV Require Import soup.LFAdequacy soup.LFTyped.
 
 Check (λ N W n Σ T a, a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧).
-Check (λ W Σ p T, Σ ⊪_W p : T).
+Check (λ N W Σ p T, Σ ⊪^N _ W p : T).
 Check idle_dual.
 Check lfsoup_step.
 Check soup_no_tau_divergence.

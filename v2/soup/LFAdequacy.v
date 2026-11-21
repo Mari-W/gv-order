@@ -1,7 +1,7 @@
 (** * Adequacy of the lock-free judgment (stage S8, proposal §2.13, A.3)
 
-      lf_adequacy        : strict W → wfworld W → ∅ ⊪_W p : T → lock_free p
-      lf_thread_progress : strict W → wfworld W → ∅ ⊪_W p : T →
+      lf_adequacy        : strict W → wfworld W → ∅ ⊪^N _ W p : T → lock_free p
+      lf_thread_progress : strict W → wfworld W → ∅ ⊪^N _ W p : T →
                            every weakly fair maximal run makes every thread progress
 
     The proof instantiates [lf_run_criterion] along one weakly fair maximal
@@ -17,12 +17,14 @@
       the point, ordered by ≺_W.
     - The rank of t is the point of its end in K_k. A thread that does not
       step keeps it, a link renames the end and keeps the point.
-    - The measure of t is the pair of the tickets left and the counter of
-      the partner end in K_k, ordered lexicographically. A link spends a
-      ticket. Every other step of the holder on another end ticks the
-      counter, which F-Tick keeps at 1 or more because the partner is not
-      idle (F-Wait of t and [idle_dual]), and a hand-over passes it on
-      with one unit less. Every other step keeps it.
+    - The measure of t is the counter of the partner end in K_k, ordered
+      by < on ℕ. A step of the holder on another end ticks the counter,
+      which F-Tick keeps at 1 or more because the partner is not idle
+      (F-Wait of t and [idle_dual]), and a hand-over passes it on with one
+      unit less. A link of the partner end gives t a new partner, whose
+      counter lies below the old one by the tickets of the link
+      (F-Link, [sp_cap], [sp_tsum], [lgt_tsum_lt]). Every other step keeps
+      it.
     - No τ-divergence comes from the soup ([soup_no_tau_divergence]), and
       restricted links from the live relation of each thread. *)
 
@@ -55,9 +57,8 @@ Section run.
   Definition wt (k t s : nat) : Prop :=
     pend (r k) t ∧ ∃ o, rend (r k) t = Some o ∧ owns (s_K (ak k)) (edual o) s.
 
-  Definition fu (k t : nat) : nat * nat :=
-    (ksum (s_tk (ak k)) (r k),
-     match rend (r k) t with Some o => kval (s_K (ak k)) (edual o) | None => 0 end).
+  Definition fu (k t : nat) : nat :=
+    match rend (r k) t with Some o => kval (s_K (ak k)) (edual o) | None => 0 end.
 
   Definition we (k t : nat) : point :=
     match rend (r k) t with Some o => kpt (s_K (ak k)) o | None => pvar 0 end.
@@ -130,7 +131,7 @@ Section run.
   Lemma wt_holder k t s : wt k t s → ∃ es, (r k).2 !! s = Some es.
   Proof.
     intros (_ & o & _ & h & Kh & <-). destruct (ak_inv k 0) as (A & Π & U & Hs).
-    rewrite <-(ak_q k). exact (sp_owner _ _ _ _ _ _ _ _ Hs _ _ Kh).
+    rewrite <-(ak_q k). exact (sp_owner _ _ _ _ _ _ _ _ _ Hs _ _ Kh).
   Qed.
 
   Lemma wt_uniq k t s s' : npend (r k) t → wt k t s → wt k t s' → s = s'.
@@ -166,18 +167,17 @@ Section run.
 
   (** ** One step of the run *)
 
-  Lemma ak_next k ev : l k = Some ev →
-    s_K (ak (S k)) = own_next N ev (s_K (ak k)) ∧ s_tk (ak (S k)) = tk_next ev (s_tk (ak k)).
+  Lemma ak_next k ev : l k = Some ev → s_K (ak (S k)) = own_next N ev (s_K (ak k)).
   Proof. intros Hl. simpl. unfold lf_upd. by rewrite Hl. Qed.
 
-  Lemma ak_stutter k : l k = None → s_K (ak (S k)) = s_K (ak k) ∧ s_tk (ak (S k)) = s_tk (ak k).
+  Lemma ak_stutter k : l k = None → s_K (ak (S k)) = s_K (ak k).
   Proof. intros Hl. simpl. unfold lf_upd. by rewrite Hl. Qed.
 
   Lemma ak_ev_ends k ev : itstep (r k) ev (r (S k)) → ev_ends (s_K (ak k)) ev.
   Proof.
     intros [Hst Hτ]. destruct (ak_inv k 1) as (A & Π & U & Hs). pose proof (ak_q k) as Hq.
-    remember (ak k) as a eqn:Ea. clear Ea. destruct a as [[C Mq] K tk]. simpl in Hq |- *. rewrite <-Hq in Hst.
-    exact (s_ev_ends _ _ _ _ _ _ _ _ _ _ _ _ _ Hs HWs Hst Hτ).
+    remember (ak k) as a eqn:Ea. clear Ea. destruct a as [[C Mq] K]. simpl in Hq |- *. rewrite <-Hq in Hst.
+    exact (s_ev_ends _ _ _ _ _ _ _ _ _ _ _ _ Hs HWs Hst Hτ).
   Qed.
 
   Lemma rend_emap q t g e a1 o : q.2 !! t = Some (emap g e) → act e = Some a1 → aend a1 = Some o →
@@ -195,7 +195,7 @@ Section run.
   Lemma closed_at k o t : owns (s_K (ak k)) o t → ech o ∈ (r k).1.
   Proof.
     intros (h & Kh & _). destruct (ak_inv k 0) as (A & Π & U & Hs). rewrite <-(ak_q k).
-    destruct (sp_closed _ _ _ _ _ _ _ _ Hs o (elem_of_dom_2 _ _ _ Kh)) as [?|Hd]; [done|].
+    destruct (sp_closed _ _ _ _ _ _ _ _ _ Hs o (elem_of_dom_2 _ _ _ Kh)) as [?|Hd]; [done|].
     by rewrite dom_empty_L in Hd.
   Qed.
 
@@ -206,7 +206,7 @@ Section run.
     intros Hp Ht. destruct (npend_end _ _ Hp) as (e & a1 & o & He & Ha & Ho & Hr).
     unfold we. rewrite Hr.
     destruct (Hmax k) as [(ev & Hl & Hst)|(_ & Heq & Hl)].
-    - rewrite Hl in Ht. simpl in Ht. destruct (ak_next k ev Hl) as [HK _].
+    - rewrite Hl in Ht. simpl in Ht. pose proof (ak_next k ev Hl) as HK.
       pose proof (ak_ev_ends k ev Hst) as Hen. destruct (held_at k t e a1 o He Ha Ho) as (h & Kh & Eh).
       destruct ev as [u α [|j|o1 o2]|i j σ|i σ];
         try (rewrite (rend_emap _ t id e a1 o); [|rewrite emap_id; apply (istep_other_eq _ _ _ t e (proj1 Hst));
@@ -219,7 +219,7 @@ Section run.
       assert (o ≠ o2) by (eapply owns_ne; [exact Kh|exact Eh|exact H2|done]).
       unfold kpt. rewrite HK. cbn [own_next]. change (delete o1 (delete o2 (s_K (ak k)))) with (kdel2 o1 o2 (s_K (ak k))).
       rewrite (kmapr_lookup _ _ o h); [by rewrite Kh|apply kinj_csub|]. by apply lookup_kdel2.
-    - rewrite Heq, Hr. by rewrite (proj1 (ak_stutter k Hl)).
+    - rewrite Heq, Hr. by rewrite (ak_stutter k Hl).
   Qed.
 
   (** ** An enabled pending thread stays enabled *)
@@ -285,7 +285,7 @@ Section run.
     assert (act_end σ = Some o) as Hae.
     { destruct (act_step _ _ _ Hst) as (a' & Ha' & Hoff). rewrite Ha in Ha'. injection Ha' as <-.
       exact (act_end_of _ _ _ Ho Hoff). }
-    destruct (fuel_wait _ _ _ _ _ _ HF σ e' o Hst Hae) as [Hni Hdom].
+    destruct (fuel_wait _ _ _ _ _ HF σ e' o Hst Hae) as [Hni Hdom].
     rewrite dom_ctrs in Hdom. apply elem_of_dom_kth in Hdom as (h & Kh & Eh).
     pose proof (s_dom _ _ _ _ _ _ _ _ Hs) as Hd.
     assert (o ∈ dom Π) as HoΠ by (rewrite Hd; by apply elem_of_dom_2 in Kh).
@@ -300,39 +300,48 @@ Section run.
   Lemma rend_of q t e a1 o : q.2 !! t = Some e → act e = Some a1 → aend a1 = Some o → rend q t = Some o.
   Proof. intros He Ha Ho. unfold rend. by rewrite He; simpl; rewrite Ha. Qed.
 
-  Lemma fspare_one Πs φs X x m : fspare Πs φs X → x ∈ X → φs !! x = Some (Some m) → ¬ idle_at Πs x → 1 ≤ m.
-  Proof. intros H Hx Hφ Hi. pose proof (H x (Some m) Hx Hφ Hi) as Hle. simpl in Hle. lia. Qed.
+  Lemma fspare_one Πs φs X x m c : fspare Πs φs X → x ∈ X → φs !! x = Some (Some m, c) → ¬ idle_at Πs x → 1 ≤ m.
+  Proof. intros H Hx Hφ Hi. pose proof (H x (Some m, c) Hx Hφ Hi) as Hle. simpl in Hle. lia. Qed.
+
+  (** The new partner after a link: the partner of o1 now holds o2. *)
+  Lemma link_lookup (K : own) o1 o2 a :
+    a ≠ o1 → a ≠ o2 → kmapr (csub o1 o2) (kdel2 o1 o2 K) !! csub o1 o2 a = K !! a.
+  Proof.
+    intros H1 H2. destruct (K !! a) as [h|] eqn:E.
+    - apply kmapr_lookup; [apply kinj_csub|]. by apply lookup_kdel2.
+    - destruct (kmapr (csub o1 o2) (kdel2 o1 o2 K) !! csub o1 o2 a) as [h|] eqn:E'; [|done].
+      apply kmapr_lookup_inv in E' as (b & Hb & Hb'). apply lookup_kdel2 in Hb' as (Hb1 & Hb2 & Hb').
+      assert (b = a) as ->.
+      { unfold csub in Hb. repeat case_decide; subst; first [done|congruence]. }
+      congruence.
+  Qed.
 
   (** The measure falls, or stays while the holder steps administratively. *)
   Lemma lf_fuel k t : npend (r k) t → t ∉ lparts (l k) →
-    lexlt (fu (S k) t) (fu k t) ∨
+    fu (S k) t < fu k t ∨
     (fu (S k) t = fu k t ∧ (∀ s, wt (S k) t s ↔ wt k t s) ∧
      ∀ s, wt k t s → s ∈ lparts (l k) → admin_at (r k) s).
   Proof.
     intros Hp Ht. destruct (npend_end _ _ Hp) as (e & a1 & o & He & Ha & Ho & Hr).
     destruct (Hmax k) as [(ev & Hl & Hst)|(_ & Heq & Hl)].
-    2: { right. unfold fu, wt. rewrite Heq. destruct (ak_stutter k Hl) as [-> ->].
+    2: { right. unfold fu, wt. rewrite Heq. rewrite (ak_stutter k Hl).
          split_and!; [done|done|]. intros s _ Hs. rewrite Hl in Hs. simpl in Hs. set_solver. }
     rewrite Hl in Ht. simpl in Ht.
-    destruct (ak_next k ev Hl) as [HK Htk].
+    pose proof (ak_next k ev Hl) as HK.
     destruct (ak_inv k 1) as (A & Π & U & Hs). pose proof (ak_q k) as Hq.
     pose proof (ak_ev_ends k ev Hst) as Hen.
     destruct (held_at k t e a1 o He Ha Ho) as (ht & Kht & Eht).
     pose proof He as He0. rewrite <-Hq in He0.
     destruct (s_partner _ _ _ _ _ _ _ _ Hs HWs t e a1 o He0 Ha Ho) as (s & es & h' & Kh' & Eh' & Hes & Hst').
     pose proof (partner_busy k t e a1 o A Π U Hs He Ha Ho s (ex_intro _ h' (conj Kh' Eh'))) as Hbusy.
-    destruct (sp_fin _ _ _ _ _ _ _ _ Hs (edual o) h' Kh') as [m Hm].
-    assert (Hφs : ctrs (s_K (ak k)) s !! edual o = Some (Some m)).
-    { apply lookup_ctrs. exists h'. split_and!; [done|done|done]. }
-    assert (Hwt_s : ∀ s0, wt k t s0 → s0 = s).
-    { intros s0 (_ & o0 & Ho0 & Hown). rewrite Hr in Ho0. injection Ho0 as <-.
-      exact (owns_unique _ _ _ _ Hown (ex_intro _ h' (conj Kh' Eh'))). }
+    destruct (sp_fin _ _ _ _ _ _ _ _ _ Hs (edual o) h' Kh') as [m Hm].
+    assert (Hφs : ctrs (s_K (ak k)) s !! edual o = Some (Some m, h'.(h_cap))).
+    { apply lookup_ctrs. exists h'. split_and!; [done|done|]. unfold hctr. by rewrite Hm. }
     assert (Hright : rend (r (S k)) t = Some o →
-       ksum (s_tk (ak (S k))) (r (S k)) = ksum (s_tk (ak k)) (r k) →
        own_next N ev (s_K (ak k)) !! edual o = Some h' → (s ∈ ev_parts ev → admin_at (r k) s) →
        fu (S k) t = fu k t ∧ (∀ s0, wt (S k) t s0 ↔ wt k t s0) ∧
        ∀ s0, wt k t s0 → s0 ∈ lparts (l k) → admin_at (r k) s0).
-    { intros Hr' Hks HK' Had. unfold fu, wt. rewrite Hr', Hr, Hks, HK. unfold kval. rewrite HK', Kh'.
+    { intros Hr' HK' Had. unfold fu, wt. rewrite Hr', Hr, HK. unfold kval. rewrite HK', Kh'.
       split_and!; [done| |].
       - intros s0. split.
         + intros (_ & o0 & Ho0 & Hown). injection Ho0 as <-. split; [exact (proj1 Hp)|]. exists o.
@@ -343,46 +352,39 @@ Section run.
           rewrite Kh' in Kh0. by injection Kh0 as <-.
       - intros s0 (_ & o0 & Ho0 & Hown) Hsin. injection Ho0 as <-. rewrite (owns_unique _ _ _ _ Hown (ex_intro _ h' (conj Kh' Eh'))) in Hsin |- *. rewrite Hl in Hsin. by apply Had. }
     assert (Hdrop : rend (r (S k)) t = Some o →
-       ksum (s_tk (ak (S k))) (r (S k)) = ksum (s_tk (ak k)) (r k) →
-       kval (own_next N ev (s_K (ak k))) (edual o) < kval (s_K (ak k)) (edual o) → lexlt (fu (S k) t) (fu k t)).
-    { intros Hr' Hks Hlt. unfold fu, lexlt. rewrite Hr', Hr, Hks, HK. simpl. right. split; [done|exact Hlt]. }
+       kval (own_next N ev (s_K (ak k))) (edual o) < kval (s_K (ak k)) (edual o) → fu (S k) t < fu k t).
+    { intros Hr' Hlt. unfold fu. rewrite Hr', Hr, HK. exact Hlt. }
     assert (Hnl : (∀ u α o1 o2, ev ≠ EvSolo u α (PickLink o1 o2)) → rend (r (S k)) t = Some o).
     { intros Hne. apply (rend_of _ t e a1 o); [|done|done].
       by apply (istep_other_eq _ _ _ t e (proj1 Hst) Ht). }
-    assert (Hks : (∀ u α j, ev ≠ EvSolo u α (PickChild j)) → s_tk (ak (S k)) = s_tk (ak k) →
-                  ksum (s_tk (ak (S k))) (r (S k)) = ksum (s_tk (ak k)) (r k)).
-    { intros Hns Htk'. apply ksum_ext; [exact (istep_dom _ _ _ (proj1 Hst) Hns)|]. intros t0 _. by rewrite Htk'. }
     destruct (istep_event _ _ _ (proj1 Hst)) as [(u & ->)|[(u & ℓ & c & ->)|[(u & κ & o' & c & ->)|[(u & j & v & ->)
       |[(i & j & o' & w & ->)|[(i & j & o' & ->)|[(i & j & o' & b & ->)|[(u & o1 & o2 & ->)|(u & σ & ->)]]]]]]]].
-    - right. apply Hright; [(apply Hnl; intros ?????; discriminate)|(apply Hks; [intros ????; discriminate|by rewrite Htk])|exact Kh'|].
+    - right. apply Hright; [(apply Hnl; intros ?????; discriminate)|exact Kh'|].
       intros Hsu. exact (istep_admin_actor _ _ _ s (proj1 Hst) I Hsu).
-    - right. apply Hright; [(apply Hnl; intros ?????; discriminate)|(apply Hks; [intros ????; discriminate|by rewrite Htk])| |].
+    - right. apply Hright; [(apply Hnl; intros ?????; discriminate)| |].
       + cbn [own_next]. destruct Hen as [Hp1 Hp2]. unfold knew. pose proof (elem_of_dom_2 _ _ _ Kh') as Hd.
         rewrite !lookup_insert_ne; [done|intros Hx; rewrite <-Hx in Hd; done|intros Hx; rewrite <-Hx in Hd; done].
       + intros Hsu. exact (istep_admin_actor _ _ _ s (proj1 Hst) I Hsu).
-    - right. apply Hright; [(apply Hnl; intros ?????; discriminate)|(apply Hks; [intros ????; discriminate|by rewrite Htk])| |].
+    - right. apply Hright; [(apply Hnl; intros ?????; discriminate)| |].
       + cbn [own_next]. destruct Hen as [Hp1 Hp2]. unfold knew. pose proof (elem_of_dom_2 _ _ _ Kh') as Hd.
         rewrite !lookup_insert_ne; [done|intros Hx; rewrite <-Hx in Hd; done|intros Hx; rewrite <-Hx in Hd; done].
       + intros Hsu. exact (istep_admin_actor _ _ _ s (proj1 Hst) I Hsu).
     - destruct (istep_spawn_inv _ _ _ _ _ (proj1 Hst)) as (eu & e' & Heu & Hsu & Hj & Hdom).
-      assert (Hksp : ksum (s_tk (ak (S k))) (r (S k)) = ksum (s_tk (ak k)) (r k)).
-      { rewrite Htk. cbn [tk_next]. apply ksum_spawn; [by apply elem_of_dom_2 in Heu|by apply not_elem_of_dom|done]. }
       destruct (decide (edual o ∈ fends v)) as [HM|HM].
-      + left. apply Hdrop; [(apply Hnl; intros ?????; discriminate)|done|].
+      + left. apply Hdrop; [(apply Hnl; intros ?????; discriminate)|].
         assert (s = u) as ->.
         { simpl in Hen. exact (owns_unique _ _ _ _ (ex_intro _ h' (conj Kh' Eh')) (Hen _ HM)). }
         rewrite <-Hq in Heu. pose proof (s_fuel Hs u eu Heu) as HF.
-        destruct (fuel_spawn_hand _ _ _ _ _ _ HF v e' Hsu) as [_ Hsp].
-        pose proof (fspare_one _ _ _ _ _ Hsp HM Hφs Hbusy) as H1.
-        apply (kval_tick _ _ _ h' m (Hold j h'.(h_pt) (ftick h'.(h_ctr))) Kh' Hm H1); [|done].
+        destruct (fuel_spawn_hand _ _ _ _ _ HF v e' Hsu) as [_ Hsp].
+        pose proof (fspare_one _ _ _ _ _ _ Hsp HM Hφs Hbusy) as H1.
+        apply (kval_tick _ _ _ h' m (Hold j h'.(h_pt) (ftick h'.(h_ctr)) h'.(h_cap)) Kh' Hm H1); [|done].
         cbn [own_next]. rewrite lookup_khand, Kh'. simpl. by rewrite decide_True.
-      + right. apply Hright; [(apply Hnl; intros ?????; discriminate)|done| |].
+      + right. apply Hright; [(apply Hnl; intros ?????; discriminate)| |].
         * cbn [own_next]. rewrite lookup_khand, Kh'. simpl. by rewrite decide_False.
         * intros Hsu'. exact (istep_admin_actor _ _ _ s (proj1 Hst) I Hsu').
-    - assert (Hks' : ksum (s_tk (ak (S k))) (r (S k)) = ksum (s_tk (ak k)) (r k)) by (apply Hks; [intros ????; discriminate|by rewrite Htk]).
-      simpl in Hen. destruct Hen as (H1 & H2 & H3).
+    - simpl in Hen. destruct Hen as (H1 & H2 & H3).
       destruct (decide (s = i ∨ s = j)) as [Hsij|Hsij].
-      + left. apply Hdrop; [(apply Hnl; intros ?????; discriminate)|done|].
+      + left. apply Hdrop; [(apply Hnl; intros ?????; discriminate)|].
         assert (edual o ≠ o') as Hn1.
         { intros Hx. assert (owns (s_K (ak k)) o j) as Hoj by (rewrite <-(edual_edual o), Hx; exact H2).
           rewrite <-(owns_unique _ _ _ _ (ex_intro _ ht (conj Kht Eht)) Hoj) in Ht. set_solver. }
@@ -395,23 +397,22 @@ Section run.
         assert ((r k).2 !! s = Some es) as Hes2 by (by rewrite <-Hq).
         destruct (istep_sync_step _ _ _ s es p (proj1 Hst) Hp' Hes2) as (σ & es' & Hσ & Hae).
         pose proof (s_fuel Hs s es Hes) as HF.
-        pose proof (fuel_tick _ _ _ _ _ _ HF σ es' p Hσ Hae) as Htick.
+        pose proof (fuel_tick _ _ _ _ _ HF σ es' p Hσ Hae) as Htick.
         assert (edual o ≠ p) as Hnp by (unfold p; destruct (decide (s = i)); done).
         assert (1 ≤ m) as Hm1.
-        { apply (fspare_one _ _ _ (edual o) _ Htick); [|done|done]. apply elem_of_difference.
+        { eapply (fspare_one _ _ _ (edual o) _ _ Htick); [|exact Hφs|done]. apply elem_of_difference.
           split; [by apply elem_of_dom_2 in Hφs|by rewrite elem_of_singleton]. }
-        cbn [own_next]. destruct (ksync N i j o' (pt_shift 1 (kpt (s_K (ak k)) o'))
+        cbn [own_next]. destruct (ksync i j o' (pt_shift 1 (kpt (s_K (ak k)) o'))
           (pt_shift 1 (kpt (s_K (ak k)) (edual o'))) (fends w) (s_K (ak k)) !! edual o) as [h1|] eqn:Eh1.
         * apply (kval_tick _ _ _ h' m h1 Kh' Hm Hm1 Eh1). rewrite lookup_ksync, !decide_False, Kh' in Eh1 by done.
           simpl in Eh1. injection Eh1 as <-. case_decide; [done|]. rewrite decide_True; [done|]. by rewrite Eh'.
         * rewrite lookup_ksync, !decide_False, Kh' in Eh1 by done. done.
-      + right. apply Hright; [(apply Hnl; intros ?????; discriminate)|done| |].
+      + right. apply Hright; [(apply Hnl; intros ?????; discriminate)| |].
         * apply (own_next_keep N _ _ s); [split_and!; done|intros ?????; discriminate|simpl; set_solver|done|done].
         * intros Hx. simpl in Hx. exfalso. apply Hsij. set_solver.
-    - assert (Hks' : ksum (s_tk (ak (S k))) (r (S k)) = ksum (s_tk (ak k)) (r k)) by (apply Hks; [intros ????; discriminate|by rewrite Htk]).
-      simpl in Hen. destruct Hen as (H1 & H2).
+    - simpl in Hen. destruct Hen as (H1 & H2).
       destruct (decide (s = i ∨ s = j)) as [Hsij|Hsij].
-      + left. apply Hdrop; [(apply Hnl; intros ?????; discriminate)|done|].
+      + left. apply Hdrop; [(apply Hnl; intros ?????; discriminate)|].
         assert (edual o ≠ o') as Hn1.
         { intros Hx. assert (owns (s_K (ak k)) o j) as Hoj by (rewrite <-(edual_edual o), Hx; exact H2).
           rewrite <-(owns_unique _ _ _ _ (ex_intro _ ht (conj Kht Eht)) Hoj) in Ht. set_solver. }
@@ -424,21 +425,20 @@ Section run.
         assert ((r k).2 !! s = Some es) as Hes2 by (by rewrite <-Hq).
         destruct (istep_sync_step _ _ _ s es p (proj1 Hst) Hp' Hes2) as (σ & es' & Hσ & Hae).
         pose proof (s_fuel Hs s es Hes) as HF.
-        pose proof (fuel_tick _ _ _ _ _ _ HF σ es' p Hσ Hae) as Htick.
+        pose proof (fuel_tick _ _ _ _ _ HF σ es' p Hσ Hae) as Htick.
         assert (edual o ≠ p) as Hnp by (unfold p; destruct (decide (s = i)); done).
         assert (1 ≤ m) as Hm1.
-        { apply (fspare_one _ _ _ (edual o) _ Htick); [|done|done]. apply elem_of_difference.
+        { eapply (fspare_one _ _ _ (edual o) _ _ Htick); [|exact Hφs|done]. apply elem_of_difference.
           split; [by apply elem_of_dom_2 in Hφs|by rewrite elem_of_singleton]. }
         apply (kval_tick _ _ _ h' m (htick h') Kh' Hm Hm1); [|done].
         cbn [own_next]. unfold ktick. rewrite lookup_kmod, !lookup_delete_ne by done. rewrite Kh'. simpl.
         rewrite decide_True; [done|]. rewrite Eh'. set_solver.
-      + right. apply Hright; [(apply Hnl; intros ?????; discriminate)|done| |].
+      + right. apply Hright; [(apply Hnl; intros ?????; discriminate)| |].
         * apply (own_next_keep N _ _ s); [split; done|intros ?????; discriminate|simpl; set_solver|done|done].
         * intros Hx. simpl in Hx. exfalso. apply Hsij. set_solver.
-    - assert (Hks' : ksum (s_tk (ak (S k))) (r (S k)) = ksum (s_tk (ak k)) (r k)) by (apply Hks; [intros ????; discriminate|by rewrite Htk]).
-      simpl in Hen. destruct Hen as (H1 & H2).
+    - simpl in Hen. destruct Hen as (H1 & H2).
       destruct (decide (s = i ∨ s = j)) as [Hsij|Hsij].
-      + left. apply Hdrop; [(apply Hnl; intros ?????; discriminate)|done|].
+      + left. apply Hdrop; [(apply Hnl; intros ?????; discriminate)|].
         assert (edual o ≠ o') as Hn1.
         { intros Hx. assert (owns (s_K (ak k)) o j) as Hoj by (rewrite <-(edual_edual o), Hx; exact H2).
           rewrite <-(owns_unique _ _ _ _ (ex_intro _ ht (conj Kht Eht)) Hoj) in Ht. set_solver. }
@@ -451,25 +451,87 @@ Section run.
         assert ((r k).2 !! s = Some es) as Hes2 by (by rewrite <-Hq).
         destruct (istep_sync_step _ _ _ s es p (proj1 Hst) Hp' Hes2) as (σ & es' & Hσ & Hae).
         pose proof (s_fuel Hs s es Hes) as HF.
-        pose proof (fuel_tick _ _ _ _ _ _ HF σ es' p Hσ Hae) as Htick.
+        pose proof (fuel_tick _ _ _ _ _ HF σ es' p Hσ Hae) as Htick.
         assert (edual o ≠ p) as Hnp by (unfold p; destruct (decide (s = i)); done).
         assert (1 ≤ m) as Hm1.
-        { apply (fspare_one _ _ _ (edual o) _ Htick); [|done|done]. apply elem_of_difference.
+        { eapply (fspare_one _ _ _ (edual o) _ _ Htick); [|exact Hφs|done]. apply elem_of_difference.
           split; [by apply elem_of_dom_2 in Hφs|by rewrite elem_of_singleton]. }
-        cbn [own_next]. destruct (ksync N i j o' (sel_pt (kpt (s_K (ak k)) o') b)
+        cbn [own_next]. destruct (ksync i j o' (sel_pt (kpt (s_K (ak k)) o') b)
           (bra_pt (kpt (s_K (ak k)) (edual o')) b) ∅ (s_K (ak k)) !! edual o) as [h1|] eqn:Eh1.
         * apply (kval_tick _ _ _ h' m h1 Kh' Hm Hm1 Eh1). rewrite lookup_ksync, !decide_False, Kh' in Eh1 by done.
           simpl in Eh1. injection Eh1 as <-. rewrite decide_False by set_solver. rewrite decide_True; [done|].
           by rewrite Eh'.
         * rewrite lookup_ksync, !decide_False, Kh' in Eh1 by done. done.
-      + right. apply Hright; [(apply Hnl; intros ?????; discriminate)|done| |].
+      + right. apply Hright; [(apply Hnl; intros ?????; discriminate)| |].
         * apply (own_next_keep N _ _ s); [split; done|intros ?????; discriminate|simpl; set_solver|done|done].
         * intros Hx. simpl in Hx. exfalso. apply Hsij. set_solver.
-    - left. left. unfold fu. cbn [fst]. rewrite Htk. cbn [tk_next].
+    - (* a link: no counter changes, the partner of a linked end changes *)
+      simpl in Ht. assert (t ≠ u) as Htu by set_solver.
+      simpl in Hen. destruct Hen as (H1 & H2 & H12).
       destruct (istep_link_inv _ _ _ _ _ _ (proj1 Hst)) as (eu & e' & Heu & Hsu).
-      apply ksum_link; [by apply elem_of_dom_2 in Heu|exact (istep_dom _ _ _ (proj1 Hst) ltac:(intros ????; discriminate))|].
-      rewrite <-Hq in Heu. pose proof (s_fuel Hs u eu Heu) as HF.
-      by destruct (fuel_link _ _ _ _ _ _ HF _ e' Hsu) as [? _].
+      pose proof (istep_link_other _ _ _ _ _ _ t e (proj1 Hst) Htu He) as He'.
+      assert (o ≠ o1) as Ho1 by (eapply owns_ne; [exact Kht|exact Eht|exact H1|done]).
+      assert (o ≠ o2) as Ho2 by (eapply owns_ne; [exact Kht|exact Eht|exact H2|done]).
+      cbn [own_next] in HK. change (delete o1 (delete o2 (s_K (ak k)))) with (kdel2 o1 o2 (s_K (ak k))) in HK.
+      destruct H1 as (h1 & Kh1 & Eh1). destruct H2 as (h2 & Kh2 & Eh2).
+      assert (Hcap : ∀ x h, s_K (ak k) !! x = Some h → fle h.(h_ctr) h.(h_cap) ∧ fle h.(h_cap) (Some N))
+        by exact (s_cap _ _ _ _ _ _ _ _ Hs).
+      assert (Hts : ∀ x h h0, s_K (ak k) !! x = Some h → s_K (ak k) !! edual x = Some h0 →
+                tsum_ok (Some N) h.(h_cap) h0.(h_cap)) by exact (s_tsum _ _ _ _ _ _ _ _ Hs).
+      assert (Hlok : lok (Some N) (ctrs (s_K (ak k)) u) ({[o1]} ∪ {[o2]})).
+      { rewrite <-Hq in Heu. pose proof (s_fuel Hs u eu Heu) as HF.
+        by destruct (fuel_link _ _ _ _ _ HF _ e' Hsu) as (_ & _ & ?). }
+      assert (G1 : ctrs (s_K (ak k)) u !! o1 = Some (hctr h1)) by (apply lookup_ctrs; by exists h1).
+      assert (G2 : ctrs (s_K (ak k)) u !! o2 = Some (hctr h2)) by (apply lookup_ctrs; by exists h2).
+      destruct (Hlok o1 o2 _ _ eq_refl H12 G1 G2) as [L1 L2]. simpl in L1, L2.
+      destruct (decide (edual o = o1)) as [Eo1|Ne1]; [|destruct (decide (edual o = o2)) as [Eo2|Ne2]].
+      + (* t waits on the partner of o1, which now faces the partner of o2 *)
+        left. subst o1. rewrite Kh' in Kh1. injection Kh1 as <-.
+        assert (o2 ≠ edual (edual o)) as Hn2 by (rewrite edual_edual; done).
+        assert (Hc : csub (edual o) o2 o = o2) by (unfold csub; rewrite edual_edual, decide_True; done).
+        assert (rend (r (S k)) t = Some o2) as Hr'.
+        { rewrite <-Hc. exact (rend_emap _ t (csub (edual o) o2) e a1 o He' Ha Ho). }
+        assert (edual o2 ≠ edual o) as Hd1 by (intros Hx; apply Ho2; symmetry; by apply edual_inj).
+        assert (edual o2 ≠ o2) as Hd2 by apply edual_ne.
+        assert (Hc2 : csub (edual o) o2 (edual o2) = edual o2).
+        { apply csub_eq_off; [|done]. rewrite edual_edual. intros Hx. apply H12. by rewrite <-Hx, edual_edual. }
+        destruct (s_K (ak k) !! edual o2) as [r2|] eqn:Kr2.
+        2: { exfalso. assert (edual o2 ∈ dom (s_K (ak k))) as Hd by (apply (s_pair _ _ _ _ _ _ _ _ Hs); by apply elem_of_dom_2 in Kh2).
+             apply elem_of_dom in Hd as [? Hx]. congruence. }
+        destruct (lgt_tsum_lt N m _ _ (eq_ind _ (λ x, lgt (Some N) x _) L1 _ Hm) (Hts o2 h2 r2 Kh2 Kr2)) as (kr & Ekr & Hkr).
+        unfold fu. rewrite Hr', Hr, HK. unfold kval.
+        rewrite <-Hc2, link_lookup by done. rewrite Kr2, Kh', Hm.
+        destruct (Hcap _ r2 Kr2) as [Hc3 _]. rewrite Ekr in Hc3. simpl.
+        destruct (h_ctr r2) as [c2|]; simpl in *; lia.
+      + (* t waits on o2, whose partner is now the partner of o1 *)
+        left. subst o2. rewrite Kh' in Kh2. injection Kh2 as <-.
+        assert (o ≠ edual o1) as Hn1 by (intros Hx; apply Ne1; by rewrite Hx, edual_edual).
+        assert (Hc : csub o1 (edual o) o = o) by (apply csub_eq_off; done).
+        assert (rend (r (S k)) t = Some o) as Hr'.
+        { rewrite <-Hc. exact (rend_emap _ t (csub o1 (edual o)) e a1 o He' Ha Ho). }
+        assert (edual o1 ≠ o1) as Hd1 by apply edual_ne.
+        assert (edual o1 ≠ edual o) as Hd2 by (intros Hx; apply Ho1; symmetry; by apply edual_inj).
+        assert (Hc1 : csub o1 (edual o) (edual o1) = edual o) by (unfold csub; by rewrite decide_True).
+        destruct (s_K (ak k) !! edual o1) as [r1|] eqn:Kr1.
+        2: { exfalso. assert (edual o1 ∈ dom (s_K (ak k))) as Hd by (apply (s_pair _ _ _ _ _ _ _ _ Hs); by apply elem_of_dom_2 in Kh1).
+             apply elem_of_dom in Hd as [? Hx]. congruence. }
+        destruct (lgt_tsum_lt N m _ _ (eq_ind _ (λ x, lgt (Some N) x _) L2 _ Hm) (Hts o1 h1 r1 Kh1 Kr1)) as (kr & Ekr & Hkr).
+        assert (Hlk : kmapr (csub o1 (edual o)) (kdel2 o1 (edual o) (s_K (ak k))) !! edual o = s_K (ak k) !! edual o1).
+        { rewrite <-(link_lookup _ o1 (edual o) (edual o1)) by done. by rewrite Hc1. }
+        unfold fu. rewrite Hr', Hr, HK. unfold kval.
+        rewrite Hlk. rewrite Kr1, Kh', Hm.
+        destruct (Hcap _ r1 Kr1) as [Hc3 _]. rewrite Ekr in Hc3. simpl.
+        destruct (h_ctr r1) as [c1|]; simpl in *; lia.
+      + (* the link does not touch the partner of t *)
+        right. assert (o ≠ edual o1) as Hn1 by (intros Hx; apply Ne1; by rewrite Hx, edual_edual).
+        assert (Hc : csub o1 o2 o = o) by (apply csub_eq_off; done).
+        assert (edual o ≠ edual o1) as Hd by (intros Hx; apply Ho1; by apply edual_inj).
+        assert (Hc' : csub o1 o2 (edual o) = edual o) by (apply csub_eq_off; done).
+        apply Hright.
+        * rewrite <-Hc. exact (rend_emap _ t (csub o1 o2) e a1 o He' Ha Ho).
+        * cbn [own_next]. change (delete o1 (delete o2 (s_K (ak k)))) with (kdel2 o1 o2 (s_K (ak k))).
+          rewrite <-Hc', link_lookup by done. exact Kh'.
+        * intros Hsu'. exact (istep_admin_actor _ _ _ s (proj1 Hst) I Hsu').
     - exfalso. by destruct Hst as [_ Hτ].
   Qed.
 End run.
@@ -479,10 +541,10 @@ Lemma soup_lifting N W T a q :
   (∀ n, a ∈ S^{N,W} _ n⟦∅ ⊢ T⟧) → erase q = erase (s_q a) →
   ∃ a', s_q a' = q ∧ ∀ n, a' ∈ S^{N,W} _ n⟦∅ ⊢ T⟧.
 Proof.
-  destruct a as [[C1 M1] K tk], q as [C2 M2]. intros Hs Hq. unfold erase in Hq. simpl in Hq.
+  destruct a as [[C1 M1] K], q as [C2 M2]. intros Hs Hq. unfold erase in Hq. simpl in Hq.
   injection Hq as -> HM. destruct (relabel_map M1 M2 (eq_sym HM)) as (f & g & H1 & H2).
-  exists (LFState (C1, M2) (krelabel f K) (tk ∘ g)). split; [done|]. intros n.
-  destruct (Hs n) as (A & Π & U & Hsi). exists A, Π, (U ∘ g). exact (soup_relabel _ _ _ _ _ _ M1 M2 _ _ _ _ _ f g H1 H2 Hsi).
+  exists (LFState (C1, M2) (krelabel f K)). split; [done|]. intros n.
+  destruct (Hs n) as (A & Π & U & Hsi). exists A, Π, (U ∘ g). exact (soup_relabel _ _ _ _ _ _ M1 M2 _ _ _ _ f g H1 H2 Hsi).
 Qed.
 
 Lemma soup_links_restricted N W T a :
@@ -504,7 +566,7 @@ Proof.
   intros HS HW Hs r l Hr0 Hmax Hfair.
   destruct (soup_lifting N W T a (r 0) Hs Hr0) as (a0 & Ha0 & Hs0).
   refine (lf_run_criterion (erase (s_q a)) r l Hr0 Hmax Hfair (wt N a0 r l) _ _ _ _ _
-    (nat * nat) lexlt (fu N a0 r l) lexlt_wf _ _ _ point (w_lt W) (we N a0 r l) HW _ _).
+    nat lt (fu N a0 r l) lt_wf _ _ _ point (w_lt W) (we N a0 r l) HW _ _).
   - intros k t s. apply (wt_pend N W HS HW T a0 Hs0 r l Ha0 Hmax).
   - intros k t s. apply (wt_holder N W HS HW T a0 Hs0 r l Ha0 Hmax).
   - intros k t. apply (lf_local_progress N W HS HW T a0 Hs0 r l Ha0 Hmax).
@@ -517,17 +579,17 @@ Proof.
   - intros k t s. apply (lf_rank N W HS HW T a0 Hs0 r l Ha0 Hmax).
 Qed.
 
-(** strict W ∧ wfworld W ∧ ∅ ⊪_W p : T ⟹ lock_free p. *)
-Theorem lf_adequacy W T p : strict W → wfworld W → ∅ ⊪_W p : T → lock_free p.
-Proof. intros HS HW (N & a & <- & Hs). by apply (lf_adequacy_soup N W T a). Qed.
+(** strict W ∧ wfworld W ∧ ∅ ⊪^N _ W p : T ⟹ lock_free p. *)
+Theorem lf_adequacy N W T p : strict W → wfworld W → ∅ ⊪^N _ W p : T → lock_free p.
+Proof. intros HS HW (a & <- & Hs). by apply (lf_adequacy_soup N W T a). Qed.
 
-(** strict W ∧ wfworld W ∧ ∅ ⊪_W p : T ⟹ every weakly fair maximal run makes every
+(** strict W ∧ wfworld W ∧ ∅ ⊪^N _ W p : T ⟹ every weakly fair maximal run makes every
     thread progress: from every position on, every thread later stops or
     takes part in a channel step. *)
-Theorem lf_thread_progress W T p :
-  strict W → wfworld W → ∅ ⊪_W p : T →
+Theorem lf_thread_progress N W T p :
+  strict W → wfworld W → ∅ ⊪^N _ W p : T →
   ∀ r l, erase (r 0) = p → maximal r l → wfair r l → thread_progress_run r l.
 Proof.
-  intros HS HW HP. pose proof (lf_adequacy W T p HS HW HP) as Hlf. destruct HP as (N & a & <- & Hs).
+  intros HS HW HP. pose proof (lf_adequacy N W T p HS HW HP) as Hlf. destruct HP as (a & <- & Hs).
   apply thread_progress; [done|exact (soup_no_tau_divergence N W T a Hs)|exact (soup_links_restricted N W T a HS Hs)].
 Qed.

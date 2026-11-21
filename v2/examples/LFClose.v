@@ -50,9 +50,9 @@ Proof. constructor; simpl; [done|set_solver]. Qed.
 
 Definition cl (o : cend) : expr := EClose (Chan o).
 
-Lemma cl_typed N o x :
-  typed W_cl (Some N) {[o := TE SEnd x (Some N)]} hc_empty [] (∅, None) (cl o) TUnit
-    (fadd (Some 0) (Some 1)) tid.
+Lemma cl_typed N o x a m :
+  typed W_cl (Some N) {[o := TE SEnd x a m]} hc_empty [] (∅, None) (cl o) TUnit
+    (fadd (Some 0) (Some 1)).
 Proof.
   eapply (e_close W_cl (Some N) _ _ _ _ _ SEnd); [reflexivity| |].
   - simpl. split_and!; [intros y Hy; exfalso; set_solver|done|done].
@@ -61,14 +61,13 @@ Qed.
 
 Lemma cl_term N o x : ptyped (Some N) W_cl {[o := (SEnd, x)]} (∅, {[+ cl o +]}) TUnit.
 Proof.
-  apply (p_term (Some N) W_cl _ ∅ ∅ _ TUnit (fadd (Some 0) (Some 1)) tid).
+  apply (p_term (Some N) W_cl _ ∅ ∅ _ TUnit (fadd (Some 0) (Some 1))).
   - constructor.
   - intros o'. rewrite dom_empty_L. set_solver.
   - set_solver.
   - apply pfree_singleton.
   - set_solver.
   - rewrite map_union_empty. unfold tenv_of. rewrite map_fmap_singleton. apply cl_typed.
-  - right. exists 0. unfold meets, tid. simpl. lia.
   - apply (strict_mono _ (W_cl ⊔ W_cl)); [apply W_cl_wf|apply wext_join_l|apply W_cl_strict].
 Qed.
 

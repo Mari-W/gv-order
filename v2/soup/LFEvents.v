@@ -35,8 +35,8 @@ Proof. intros (h & H1 & <-) (h' & H2 & <-). congruence. Qed.
 Lemma owns_of {Y : Type} (K : own) t (m : gmap cend Y) o v : kres K t m !! o = Some v → owns K o t.
 Proof. intros H. apply lookup_kres in H as [_ H]. done. Qed.
 
-Lemma s_ev_ends N n W T C Mq K tk A Π U ev q' :
-  soup_inv N (S n) W ∅ T (LFState (C, Mq) K tk) A Π U → strict W →
+Lemma s_ev_ends N n W T C Mq K A Π U ev q' :
+  soup_inv N (S n) W ∅ T (LFState (C, Mq) K) A Π U → strict W →
   istep (C, Mq) ev q' → ev_tau ev → ev_ends K ev.
 Proof.
   intros Hs HW Hst Hτ.
@@ -71,7 +71,7 @@ Proof.
   - pose proof (Hobl i e _ e' Hi He) as H1. pose proof (Hobl j f _ f' Hj Hf) as H2. cbn [Eobl] in H1, H2.
     destruct H1 as (S0 & x & S1 & S2 & Ho & _). destruct H2 as (S0' & x' & S1' & S2' & Ho' & _).
     split; [exact (owns_of _ _ _ _ _ Ho)|exact (owns_of _ _ _ _ _ Ho')].
-  - destruct (link_obl _ _ _ _ _ _ _ _ _ _ _ Hs i e o1 o2 e' Hi Hs') as (H12 & H1 & H2 & _). done.
+  - destruct (link_obl _ _ _ _ _ _ _ _ _ _ Hs i e o1 o2 e' Hi Hs') as (H12 & H1 & H2 & _). done.
 Qed.
 
 (** ** Entries after an event *)

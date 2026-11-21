@@ -78,7 +78,7 @@ Qed.
 
 Fixpoint boxfree (T : ty) : Prop :=
   match T with
-  | TBox _ _ _ _ _ _ _ => False
+  | TBox _ _ _ _ _ _ => False
   | TProd A B | TSum A B => boxfree A ∧ boxfree B
   | _ => True
   end.

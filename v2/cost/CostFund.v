@@ -1,18 +1,18 @@
 (** * The cost half of the merged judgment (stage S7, A.3)
 
-      Θ ; Γ ; Δ ⊢^F _{W,N} e : T ▷ c ; ϑ  ⟹  Θ ; Δ ⊨^N e : T ▷ c ; ϑ    [cost_fundamental]
+      Θ ; Γ ; Δ ⊢^F _{W,N} e : T ▷ c  ⟹  Θ ; Δ ⊨^N e : T ▷ c    [cost_fundamental]
 
     by induction on the derivation, one rule of cost/CostRules.v per
     case. E-Abs and E-Box take the facts of their term from
     [typed_tfacts]. [fsem_of_cost] turns a closed thread into [fsem],
-    the premise LF-Term adds to P-Term: every end starts at N, at a
-    ticket count that meets ϑ at reserve 0. [fw_fsem] is the forwarder of
+    the premise LF-Term adds to P-Term: every end starts at its tickets.
+    [fw_fsem] is the forwarder of
     S7.1, which now has its [fsem]. *)
 
 From GV Require Export cost.CostRules cost.Forwarder.
 
-Theorem cost_fundamental W N Θ Γ Δ F e T c ϑ :
-  Θ ; Γ ; Δ ⊢^F _{W,N} e : T ▷ c ; ϑ → Θ ; Δ ⊨^N e : T ▷ c ; ϑ.
+Theorem cost_fundamental W N Θ Γ Δ F e T c :
+  Θ ; Γ ; Δ ⊢^F _{W,N} e : T ▷ c → Θ ; Δ ⊨^N e : T ▷ c.
 Proof.
   induction 1.
   - by apply cost_e_unit.
@@ -41,38 +41,41 @@ Proof.
   - by eapply cost_e_open.
 Qed.
 
-Lemma thfuel_id N Θ :
-  cr_le Θ N →
-  thfuel Θ id (te_sty <$> Θ) (const N <$> (te_sty <$> Θ)).
+(** The counters of Θ at the tickets of its ends. *)
+Definition tkenv (Θ : tenv) : cenv := (λ te, (te_tk te, te_tk te)) <$> Θ.
+
+Lemma thfuel_id Θ :
+  cr_tk Θ →
+  thfuel Θ id (te_sty <$> Θ) (tkenv Θ).
 Proof.
   intros HN. split_and!.
   - by intros o1 o2 _ _.
   - rewrite dom_fmap_L. apply set_eq. intros o. rewrite elem_of_map. split; [intros; by exists o|by intros (? & -> & ?)].
-  - by rewrite !dom_fmap_L.
-  - intros o te Hte. simpl. rewrite !lookup_fmap, Hte. split; [done|]. eexists. split; [done|]. exact (HN o te Hte).
+  - unfold tkenv. by rewrite !dom_fmap_L.
+  - intros o te Hte. unfold tkenv. simpl. rewrite !lookup_fmap, Hte. split; [done|]. eexists. split; [done|].
+    split; [exact (HN o te Hte)|done].
 Qed.
 
-(** A closed thread typed at N, whose ends have credits at most N
-    (cr(Θ) ≤ N) and whose ticket need at reserve 0 is finite
-    (ϑ(0) ∈ ℕ), satisfies [fsem N] with the session types of its ends. *)
-Theorem fsem_of_cost W N Θ e T c ϑ :
-  Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} e : T ▷ c ; ϑ → tfree T →
-  cr_le Θ N → tfin ϑ →
-  fsem N (te_sty <$> Θ) e.
+(** A closed thread typed at N, whose ends have credits at most their
+    tickets, satisfies [fsem N] with the session types of its ends,
+    each end at its tickets. *)
+Theorem fsem_of_cost W N Θ e T c :
+  Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} e : T ▷ c → tfree T →
+  cr_tk Θ →
+  fsem N (te_sty <$> Θ) (tkenv Θ) e.
 Proof.
-  intros Hty Hp HN [tk Hm]. exists tk. intros n.
-  pose proof (cost_fundamental _ _ _ _ _ _ _ _ _ _ Hty) as Hcs.
-  assert (subst Var (emap id e) ∈ F^N _ n⟦RTy T ▷ c ; 0⟧((te_sty <$> Θ) ∪ ∅,
-            (const N <$> (te_sty <$> Θ)) ∪ ∅, tk)) as H.
-  { apply (Hcs N n id Var); [apply rle_refl| |exact Hm].
+  intros Hty Hp HN n.
+  pose proof (cost_fundamental _ _ _ _ _ _ _ _ _ Hty) as Hcs.
+  assert (subst Var (emap id e) ∈ F^N _ n⟦RTy T ▷ c⟧((te_sty <$> Θ) ∪ ∅, tkenv Θ ∪ ∅)) as H.
+  { apply (Hcs n id Var).
     apply envf_intro; [by apply thfuel_id|done|apply map_disjoint_empty_r]. }
   rewrite !map_union_empty, emap_id, subst_ids in H. eapply FuelE_thread; [exact Hp|exact H].
 Qed.
 
-(** The forwarder of S7.1 satisfies [fsem] at every refill. *)
-Theorem fw_fsem N o : fsem N {[o := S_fw]} (fw o).
+(** The forwarder of S7.1 satisfies [fsem] at every bound. *)
+Theorem fw_fsem N o m : fsem N {[o := S_fw]} {[o := (m, m)]} (fw o).
 Proof.
-  pose proof (fsem_of_cost W_fw N _ _ _ _ _ (fw_typed N o (pvar 0)) tfree_unit) as H.
-  rewrite map_fmap_singleton in H. apply H; [|exists 0; apply fw_tix_met].
+  pose proof (fsem_of_cost W_fw N _ _ _ _ (fw_typed N o (pvar 0) m m) tfree_unit) as H.
+  unfold tkenv in H. rewrite !map_fmap_singleton in H. apply H.
   intros o' te Hte. apply lookup_singleton_Some in Hte as [_ <-]. apply fle_refl.
 Qed.

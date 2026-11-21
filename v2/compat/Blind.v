@@ -182,8 +182,8 @@ Section blind.
               ∀ n W Θ v, Vrel κ n W Θ T1 v ↔ Vrel κ n W Θ T1' v) as IH.
     { intros T1 T1' H1 H2. apply (IHk (tsize T1)); [lia|lia|done]. }
     clear IHk.
-    destruct T as [|ub lb c t T1 U a|T1 U|T1 U|m kk C ub c t U|s x a|lb m C T1],
-      T' as [|ub' lb' c' t' T1' U' a'|T1' U'|T1' U'|m' kk' C' ub' c' t' U'|s' x' a'|lb' m' C' T1'];
+    destruct T as [|ub lb c T1 U a|T1 U|T1 U|m kk C ub c U|s x a mt|lb m C T1],
+      T' as [|ub' lb' c' T1' U' a'|T1' U'|T1' U'|m' kk' C' ub' c' U'|s' x' a' mt'|lb' m' C' T1'];
       unfold teq in Heq; simpl in Heq; try done; destruct_and?; subst.
     - rewrite !Vrel_lolli_iff. unfold Varr_rel.
       assert (∀ j W Θ w, Vrel κ j W Θ T1 w ↔ Vrel κ j W Θ T1' w) as E1.
@@ -320,7 +320,7 @@ Proof. by destruct i. Qed.
 (** A value of a [tfree] type holds no end. *)
 Lemma Vrel_tfree_empty κ n W Θ T v : tfree T → Vrel κ n W Θ T v → Θ = ∅.
 Proof.
-  intros Hp. revert Θ v. induction Hp as [|m k C ub c t U|U V HU IHU HV IHV|U V HU IHU HV IHV];
+  intros Hp. revert Θ v. induction Hp as [|m k C ub c U|U V HU IHU HV IHV|U V HU IHU HV IHV];
     intros Θ v.
   - by intros [-> _]%Vrel_unit_iff.
   - by intros [-> _]%Vrel_box_iff.

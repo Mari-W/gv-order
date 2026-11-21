@@ -1,23 +1,26 @@
 (** * The soup and the lock-free judgment (stage S8, proposal §2.12)
 
       a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧      [Soup N W n Σ T a]
-      Σ ⊪_W p : T                 [lf_sem W Σ p T]
+      Σ ⊪^N _ W p : T              [lf_sem N W Σ p T]
 
     A soup state a fixes, outside the index, the configuration q (threads
-    with identifiers), the ownership K and the tickets tk. K maps every
-    held end to its holder, its point and its counter ([hold]). So the
-    ends a thread holds, their points and their counters are the same at
-    every index ("∃ before ∀ n", F20). The refill N is finite.
+    with identifiers) and the ownership K. K maps every held end to its
+    holder, its point, its counter and its tickets ([hold]). So the ends a
+    thread holds, their points, counters and tickets are the same at every
+    index ("∃ before ∀ n", F20). The bound N on the tickets of a channel
+    is finite.
 
     At each index n the soup chooses an environment A of the relation
     (an end to S@x), a protocol map Π of the fuel layer (an end to a
     session type) and a result type per thread. Every thread t is in the
     live relation E[live] at its part of A and in FuelE^N at its part of
-    Π, its counters and its tickets. The points of A are those of K, the
+    Π and its counters with their tickets. The points of A are those of K, the
     ends of A and Π are those of K, the two ends of an internal channel
     are both held, at dual points, at dual session types up to
     annotations in A, and at dual protocols up to ≈ in Π. An end of the
-    interface Σ is held at its entry of Σ. Every counter is finite. The soup reads no term but
+    interface Σ is held at its entry of Σ. Every counter is finite and at
+    most the tickets of its end, and the tickets of the two ends of an
+    internal channel sum to at most N. The soup reads no term but
     through E[live] and FuelE.
 
     Π is chosen per index next to A and is not read off A. The fuel layer
@@ -26,14 +29,15 @@
     the other (docs/redesign/progress.md, S8).
 
     Along a run the state follows the events by one index-free update
-    ([lf_next]): a new end starts at a fresh generated root of its family
-    or at the field of its anchor with counter N, an action moves the end
-    to x⁺ (or to the point of its branch) and refills it to N, every other
-    end of an actor ticks, the ends of a sent or spawned value move to the receiver or the
-    child with its counters minus one, a close removes both ends, a link
-    removes its two ends, spends a ticket and renames the partner of the
-    removed channel ([csub]), and a spawn splits the tickets ⌈tk/2⌉ for
-    the child and ⌊tk/2⌋ for the parent.
+    ([lf_next]): a new end starts at a fresh generated root of its family,
+    with N/2 and N − N/2 tickets, or at the field of its anchor, with the
+    tickets m of the anchor and N − m, each end with counter equal to its
+    tickets. An action moves the end to x⁺ (or to the point of its
+    branch) and sets its counter back to its tickets, every other end of
+    an actor ticks, the ends of a sent or spawned value move to the
+    receiver or the child with their counters minus one, a close removes
+    both ends, and a link removes its two ends and renames the partner of
+    the removed channel ([csub]). No counter changes at a link.
 
     The lock-free judgment is the soup alone (Q12, decided 2026-11-18).
     [soup_no_tau_divergence] (soup/SoupTau.v) gives what the live process
@@ -50,8 +54,8 @@ From GV Require Export types.Names.
 
 Definition soup_inv (N n : nat) (W : world) (Σ : senv) (T : ty) (a : lfstate)
     (A : senv) (Π : penv) (U : nat → ty) : Prop :=
-  soup_gen (λ Θ U e, e ∈ E[live]^W _ n⟦Θ ⊢ U⟧^∅)
-    (λ Π φ tk e, e ∈ F^(Some N) _ n⟦RThread ▷ None ; 0⟧(Π, φ, tk)) Σ T a A Π U.
+  soup_gen (Some N) (λ Θ U e, e ∈ E[live]^W _ n⟦Θ ⊢ U⟧^∅)
+    (λ Π φ e, e ∈ F^(Some N) _ n⟦RThread ▷ None⟧(Π, φ)) Σ T a A Π U.
 
 Definition Soup (N : nat) (W : world) (n : nat) (Σ : senv) (T : ty) (a : lfstate) : Prop :=
   ∃ A Π U, soup_inv N n W Σ T a A Π U.
@@ -62,12 +66,12 @@ Notation "a ∈ S^{ N , W } '_' n ⟦ Σ ⊢ T ⟧" := (Soup N W n Σ T a)
 
 (** ** The lock-free judgment *)
 
-Definition lf_sem (W : world) (Σ : senv) (p : proc) (T : ty) : Prop :=
-  ∃ N a, erase (s_q a) = p ∧ ∀ n, a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧.
+Definition lf_sem (N : nat) (W : world) (Σ : senv) (p : proc) (T : ty) : Prop :=
+  ∃ a, erase (s_q a) = p ∧ ∀ n, a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧.
 
-Notation "Σ ⊪_ W p : T" := (lf_sem W Σ p T)
-  (at level 74, W at level 0, p at level 60, T at level 60,
-   format "Σ  ⊪_ W  p  :  T").
+Notation "Σ ⊪^ N '_' W p : T" := (lf_sem N W Σ p T)
+  (at level 74, N at level 0, W at level 0, p at level 60, T at level 60,
+   format "Σ  ⊪^ N  '_' W  p  :  T").
 
 (** ** The index-free update *)
 
@@ -79,14 +83,18 @@ Definition kgens (ℓ : family) (K : own) : gset nat :=
 
 Definition kfresh (ℓ : family) (K : own) : nat := fresh (kgens ℓ K).
 
-(** The two ends of a new channel c of thread i at x and x‾. *)
-Definition knew (N : nat) (i : nat) (c : chan) (x : point) (K : own) : own :=
-  <[EPos c := Hold i x (Some N)]> (<[ENeg c := Hold i x‾ (Some N)]> K).
+(** The tickets of an end. *)
+Definition kcap (K : own) (o : cend) : fuel := default (Some 0) (h_cap <$> K !! o).
+
+(** The two ends of a new channel c of thread i at x and x‾, with m1 and
+    m2 tickets, each at a counter equal to its tickets. *)
+Definition knew (m1 m2 : fuel) (i : nat) (c : chan) (x : point) (K : own) : own :=
+  <[EPos c := Hold i x m1 m1]> (<[ENeg c := Hold i x‾ m2 m2]> K).
 
 (** Change every entry by f. *)
 Definition kmod (f : cend → hold → hold) (K : own) : own := map_imap (λ o h, Some (f o h)) K.
 
-Definition htick (h : hold) : hold := Hold h.(h_th) h.(h_pt) (ftick h.(h_ctr)).
+Definition htick (h : hold) : hold := Hold h.(h_th) h.(h_pt) (ftick h.(h_ctr)) h.(h_cap).
 
 (** Every entry of the actors i and j outside the moved ends M ticks. *)
 Definition ktick (i j : nat) (M : gset cend) (K : own) : own :=
@@ -94,11 +102,12 @@ Definition ktick (i j : nat) (M : gset cend) (K : own) : own :=
 
 (** The ends M move to thread j with one unit less. *)
 Definition khand (M : gset cend) (j : nat) (K : own) : own :=
-  kmod (λ o h, if decide (o ∈ M) then Hold j h.(h_pt) (ftick h.(h_ctr)) else h) K.
+  kmod (λ o h, if decide (o ∈ M) then Hold j h.(h_pt) (ftick h.(h_ctr)) h.(h_cap) else h) K.
 
-(** An action of thread i on o moves o to y and refills it. *)
-Definition kact (N : nat) (o : cend) (i : nat) (y : point) (K : own) : own :=
-  <[o := Hold i y (Some N)]> K.
+(** An action of thread i on o moves o to y and sets its counter back to
+    its tickets. *)
+Definition kact (o : cend) (i : nat) (y : point) (K : own) : own :=
+  <[o := Hold i y (kcap K o) (kcap K o)]> K.
 
 Definition kpt (K : own) (o : cend) : point := default (pvar 0) (h_pt <$> K !! o).
 
@@ -106,14 +115,11 @@ Definition kpt (K : own) (o : cend) : point := default (pvar 0) (h_pt <$> K !! o
 Definition kmapr {Y : Type} (g : cend → cend) (m : gmap cend Y) : gmap cend Y :=
   list_to_map ((λ p : cend * Y, (g p.1, p.2)) <$> map_to_list m).
 
-Definition tupd (tk : nat → nat) (i : nat) (k : nat) : nat → nat :=
-  λ t, if decide (t = i) then k else tk t.
-
 (** A synchronization of thread i on o with thread j on o‾: the actors
     tick their other ends, the ends M of the moved value go to j, and the two
-    ends move to y and y′ and refill. *)
-Definition ksync (N i j : nat) (o : cend) (y y' : point) (M : gset cend) (K : own) : own :=
-  kact N o i y (kact N (edual o) j y' (khand M j (ktick i j M K))).
+    ends move to y and y′ and go back to their tickets. *)
+Definition ksync (i j : nat) (o : cend) (y y' : point) (M : gset cend) (K : own) : own :=
+  kact o i y (kact (edual o) j y' (khand M j (ktick i j M K))).
 
 (** The ownership after an event. The actors of a message, a close and
     a choice tick their other ends first, then the acted ends refill and
@@ -122,8 +128,8 @@ Definition own_next (N : nat) (ev : event) (K : own) : own :=
   match ev with
   | EvSolo i α k =>
       let kn := match α with
-                | LNew ℓ c => knew N i c (pgen ℓ (kfresh ℓ K)) K
-                | LNewAt κ o c => knew N i c ((kpt K o)·κ) K
+                | LNew ℓ c => knew (fhalf (Some N)) (ncap (Some N) (fhalf (Some N))) i c (pgen ℓ (kfresh ℓ K)) K
+                | LNewAt κ o c => knew (kcap K o) (ncap (Some N) (kcap K o)) i c ((kpt K o)·κ) K
                 | _ => K
                 end in
       match k with
@@ -131,26 +137,18 @@ Definition own_next (N : nat) (ev : event) (K : own) : own :=
       | PickChild j => match α with LSpawn v => khand (fends v) j K | _ => kn end
       | PickNone => kn
       end
-  | EvSync i j (SSend o v) => ksync N i j o (pt_shift 1 (kpt K o)) (pt_shift 1 (kpt K (edual o))) (fends v) K
+  | EvSync i j (SSend o v) => ksync i j o (pt_shift 1 (kpt K o)) (pt_shift 1 (kpt K (edual o))) (fends v) K
   | EvSync i j (SClose o) => ktick i j ∅ (delete o (delete o‾ K))
-  | EvSync i j (SSel o b) => ksync N i j o (sel_pt (kpt K o) b) (bra_pt (kpt K (edual o)) b) ∅ K
+  | EvSync i j (SSel o b) => ksync i j o (sel_pt (kpt K o) b) (bra_pt (kpt K (edual o)) b) ∅ K
   | _ => K
   end.
 
-Definition tk_next (ev : event) (tk : nat → nat) : nat → nat :=
-  match ev with
-  | EvSolo i α (PickLink _ _) => tupd tk i (tk i - 1)
-  | EvSolo i α (PickChild j) =>
-      match α with LSpawn _ => tupd (tupd tk i (Nat.div2 (tk i))) j (Nat.div2 (S (tk i))) | _ => tk end
-  | _ => tk
-  end.
-
 Definition lf_next (N : nat) (a : lfstate) (ev : event) (q' : config) : lfstate :=
-  LFState q' (own_next N ev (s_K a)) (tk_next ev (s_tk a)).
+  LFState q' (own_next N ev (s_K a)).
 
 (** Along a run, a stutter keeps the state. *)
 Definition lf_upd (N : nat) (a : lfstate) (l : option event) (q' : config) : lfstate :=
-  match l with Some ev => lf_next N a ev q' | None => LFState q' (s_K a) (s_tk a) end.
+  match l with Some ev => lf_next N a ev q' | None => LFState q' (s_K a) end.
 
 Fixpoint lf_run_state (N : nat) (a0 : lfstate) (r : nat → config) (l : nat → option event)
     (k : nat) : lfstate :=

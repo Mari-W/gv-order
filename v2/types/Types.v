@@ -1,7 +1,7 @@
 (** * Types with points, credits and costs (stage S2, proposal §2.5, §2.17)
 
-    T, U ::= ∗ | (T ⊸^u_l[c ; ϑ] U)^a | T ⊗ U | T ⊕ U | (S@x)^a
-           | □(∀ιs αs. C. ∗ ⊸^u[c ; ϑ] U) | ∃^lb ιs. C. T
+    T, U ::= ∗ | (T ⊸^u_l[c] U)^a | T ⊗ U | T ⊕ U | (S@x)^a_m
+           | □(∀ιs αs. C. ∗ ⊸^u[c] U) | ∃^lb ιs. C. T
     S    ::= Skip | S;S | ?(∃ιs. T) | !(∃ιs. T) | ⊕(S, S) | &(S, S)
            | Close | µα.S | α | α‾
 
@@ -15,13 +15,15 @@
 
     Decision Q11 puts the cost annotations of the cost judgment into the
     types. A credit a sits only where ends sit (decision of 2026-11-19):
-    on an end (S@x)^a, a lower bound on its counter, and on a closure
+    on an end (S@x)^a_m, a lower bound on its counter, and on a closure
     (T ⊸ U)^a, a lower bound on the counters of the ends it captured
     and the most those counters may lose before a call (decision of
     2026-11-20, per-end capture). Products, sums, existentials, box results and
-    payloads carry no credit, their ends carry their own. The arrow
-    carries a cost c and a ticket transformer ϑ, and the box
-    the cost and transformer of one force. The deadlock-freedom
+    payloads carry no credit, their ends carry their own. An end also
+    carries its tickets m, an upper bound on its counter, and every action
+    on the end sets the counter back to m (decision of 2026-11-21). The
+    arrow carries a cost c, and the box the cost of one force. The
+    deadlock-freedom
     relations ignore every annotation. [ty_df] sets them to the values
     of the instance N = ∞. *)
 
@@ -29,12 +31,11 @@ From GV Require Export types.Costs types.Worlds.
 
 Inductive ty :=
   | TUnit
-  | TLolli (ub : ubound) (lb : lbound) (c : fuel) (t : tix)
-      (T U : ty) (a : fuel)
+  | TLolli (ub : ubound) (lb : lbound) (c : fuel) (T U : ty) (a : fuel)
   | TProd (T U : ty)
   | TSum (T U : ty)
-  | TBox (n k : nat) (C : bcs) (ub : option point) (c : fuel) (t : tix) (U : ty)
-  | TSess (S : sty) (x : point) (a : fuel)
+  | TBox (n k : nat) (C : bcs) (ub : option point) (c : fuel) (U : ty)
+  | TSess (S : sty) (x : point) (a : fuel) (m : fuel)
   | TEx (lb : lbound) (n : nat) (C : bcs) (T : ty)
 with sty :=
   | SRcv (m : nat) (T : ty)   (* ?(∃ι₀…ιₘ₋₁. T) *)
@@ -52,7 +53,7 @@ Scheme ty_mut_ind := Induction for ty Sort Prop
   with sty_mut_ind := Induction for sty Sort Prop.
 Combined Scheme ty_sty_mut_ind from ty_mut_ind, sty_mut_ind.
 
-Notation "S @ x ^ a" := (TSess S x a) (at level 20, x at level 2, a at level 0, format "S @ x ^ a").
+Notation "S @ x ^ a ; m" := (TSess S x a m) (at level 20, x at level 2, a at level 0, m at level 0, format "S @ x ^ a ; m").
 
 (** ** Point instantiation
 
@@ -61,13 +62,13 @@ Notation "S @ x ^ a" := (TSess S x a) (at level 20, x at level 2, a at level 0, 
 Fixpoint pinst_ty (σ : nat → point) (T : ty) : ty :=
   match T with
   | TUnit => TUnit
-  | TLolli ub lb c t T1 U a =>
-      TLolli (ub_map (pt_inst σ) ub) (lb_map (pt_inst σ) lb) c t (pinst_ty σ T1) (pinst_ty σ U) a
+  | TLolli ub lb c T1 U a =>
+      TLolli (ub_map (pt_inst σ) ub) (lb_map (pt_inst σ) lb) c (pinst_ty σ T1) (pinst_ty σ U) a
   | TProd T1 U => TProd (pinst_ty σ T1) (pinst_ty σ U)
   | TSum T1 U => TSum (pinst_ty σ T1) (pinst_ty σ U)
-  | TBox n k C ub c t U =>
-      TBox n k (bcs_inst σ C) (pt_inst (pup n σ) <$> ub) c t (pinst_ty (pup n σ) U)
-  | TSess s x a => TSess s (pt_inst σ x) a
+  | TBox n k C ub c U =>
+      TBox n k (bcs_inst σ C) (pt_inst (pup n σ) <$> ub) c (pinst_ty (pup n σ) U)
+  | TSess s x a mt => TSess s (pt_inst σ x) a mt
   | TEx lb n C T1 =>
       TEx (lb_map (pt_inst σ) lb) n (bcs_inst σ C) (pinst_ty (pup n σ) T1)
   end.
@@ -147,13 +148,13 @@ Definition pt_pscoped (k : nat) (x : point) : Prop :=
 Fixpoint pscoped (k : nat) (T : ty) : Prop :=
   match T with
   | TUnit => True
-  | TLolli ub lb _ _ T1 U _ =>
+  | TLolli ub lb _ T1 U _ =>
       (∀ x, ub = UPt x → pt_pscoped k x) ∧ (∀ x, lb = LPt x → pt_pscoped k x) ∧
       pscoped k T1 ∧ pscoped k U
   | TProd T1 U | TSum T1 U => pscoped k T1 ∧ pscoped k U
-  | TBox n _ C ub _ _ U =>
+  | TBox n _ C ub _ U =>
       Forall (pt_pscoped k) (bc_env C) ∧ (∀ x, ub = Some x → pt_pscoped (n + k) x) ∧ pscoped (n + k) U
-  | TSess s x _ => sscoped s ∧ pt_pscoped k x
+  | TSess s x _ _ => sscoped s ∧ pt_pscoped k x
   | TEx lb n C T1 =>
       (∀ x, lb = LPt x → pt_pscoped k x) ∧ Forall (pt_pscoped k) (bc_env C) ∧ pscoped (n + k) T1
   end
@@ -182,17 +183,17 @@ Definition lb_heads (lb : lbound) : gset point :=
 
 Fixpoint heads (T : ty) : gset point :=
   match T with
-  | TUnit | TBox _ _ _ _ _ _ _ => ∅
-  | TLolli _ lb _ _ _ _ _ => lb_heads lb
+  | TUnit | TBox _ _ _ _ _ _ => ∅
+  | TLolli _ lb _ _ _ _ => lb_heads lb
   | TProd T1 U | TSum T1 U => heads T1 ∪ heads U
-  | TSess _ x _ => {[x‾]}
+  | TSess _ x _ _ => {[x‾]}
   | TEx lb _ _ _ => lb_heads lb
   end.
 
 Fixpoint hbot (T : ty) : bool :=
   match T with
   | TProd T1 U | TSum T1 U => hbot T1 || hbot U
-  | TEx LBot _ _ _ | TLolli _ LBot _ _ _ _ _ => true
+  | TEx LBot _ _ _ | TLolli _ LBot _ _ _ _ => true
   | _ => false
   end.
 
@@ -215,11 +216,11 @@ Qed.
 Fixpoint sren_ty (r : nat → nat) (T : ty) : ty :=
   match T with
   | TUnit => TUnit
-  | TLolli ub lb c t T1 U a => TLolli ub lb c t (sren_ty r T1) (sren_ty r U) a
+  | TLolli ub lb c T1 U a => TLolli ub lb c (sren_ty r T1) (sren_ty r U) a
   | TProd T1 U => TProd (sren_ty r T1) (sren_ty r U)
   | TSum T1 U => TSum (sren_ty r T1) (sren_ty r U)
-  | TBox n k C ub c t U => TBox n k C ub c t (sren_ty (Nat.iter k upren r) U)
-  | TSess s x a => TSess (sren r s) x a
+  | TBox n k C ub c U => TBox n k C ub c (sren_ty (Nat.iter k upren r) U)
+  | TSess s x a mt => TSess (sren r s) x a mt
   | TEx lb n C T1 => TEx lb n C (sren_ty r T1)
   end
 with sren (r : nat → nat) (s : sty) : sty :=
@@ -240,11 +241,11 @@ with sren (r : nat → nat) (s : sty) : sty :=
 Fixpoint sflip_ty (k : nat) (T : ty) : ty :=
   match T with
   | TUnit => TUnit
-  | TLolli ub lb c t T1 U a => TLolli ub lb c t (sflip_ty k T1) (sflip_ty k U) a
+  | TLolli ub lb c T1 U a => TLolli ub lb c (sflip_ty k T1) (sflip_ty k U) a
   | TProd T1 U => TProd (sflip_ty k T1) (sflip_ty k U)
   | TSum T1 U => TSum (sflip_ty k T1) (sflip_ty k U)
-  | TBox n kk C ub c t U => TBox n kk C ub c t (sflip_ty (kk + k) U)
-  | TSess s x a => TSess (sflip k s) x a
+  | TBox n kk C ub c U => TBox n kk C ub c (sflip_ty (kk + k) U)
+  | TSess s x a mt => TSess (sflip k s) x a mt
   | TEx lb n C T1 => TEx lb n C (sflip_ty k T1)
   end
 with sflip (k : nat) (s : sty) : sty :=
@@ -281,11 +282,11 @@ Definition sty_up (σ : nat → sty) : nat → sty := SVar 0 .: (sren S ∘ σ).
 Fixpoint sinst_ty (σ : nat → sty) (T : ty) : ty :=
   match T with
   | TUnit => TUnit
-  | TLolli ub lb c t T1 U a => TLolli ub lb c t (sinst_ty σ T1) (sinst_ty σ U) a
+  | TLolli ub lb c T1 U a => TLolli ub lb c (sinst_ty σ T1) (sinst_ty σ U) a
   | TProd T1 U => TProd (sinst_ty σ T1) (sinst_ty σ U)
   | TSum T1 U => TSum (sinst_ty σ T1) (sinst_ty σ U)
-  | TBox n k C ub c t U => TBox n k C ub c t (sinst_ty (Nat.iter k sty_up σ) U)
-  | TSess s x a => TSess (sinst σ s) x a
+  | TBox n k C ub c U => TBox n k C ub c (sinst_ty (Nat.iter k sty_up σ) U)
+  | TSess s x a mt => TSess (sinst σ s) x a mt
   | TEx lb n C T1 => TEx lb n C (sinst_ty σ T1)
   end
 with sinst (σ : nat → sty) (s : sty) : sty :=
@@ -421,15 +422,15 @@ Definition hcontractive (s : sty) : Prop := ∀ n, ahc n s.
 Fixpoint eqT (ρ : sty → sty → Prop) (T U : ty) : Prop :=
   match T, U with
   | TUnit, TUnit => True
-  | TLolli ub lb c t T1 T2 a, TLolli ub' lb' c' t' U1 U2 a' =>
-      ub = ub' ∧ lb = lb' ∧ c = c' ∧ t = t' ∧ a = a' ∧
+  | TLolli ub lb c T1 T2 a, TLolli ub' lb' c' U1 U2 a' =>
+      ub = ub' ∧ lb = lb' ∧ c = c' ∧ a = a' ∧
       eqT ρ T1 U1 ∧ eqT ρ T2 U2
   | TProd T1 T2, TProd U1 U2 | TSum T1 T2, TSum U1 U2 =>
       eqT ρ T1 U1 ∧ eqT ρ T2 U2
-  | TBox n k C ub c t T1, TBox n' k' C' ub' c' t' U1 =>
-      n = n' ∧ k = k' ∧ C = C' ∧ ub = ub' ∧ c = c' ∧ t = t' ∧
+  | TBox n k C ub c T1, TBox n' k' C' ub' c' U1 =>
+      n = n' ∧ k = k' ∧ C = C' ∧ ub = ub' ∧ c = c' ∧
       match k with 0 => eqT ρ T1 U1 | S _ => T1 = U1 end
-  | TSess s x a, TSess r y a' => x = y ∧ a = a' ∧ ρ s r
+  | TSess s x a mt, TSess r y a' mt' => x = y ∧ a = a' ∧ mt = mt' ∧ ρ s r
   | TEx lb n C T1, TEx lb' n' C' U1 => lb = lb' ∧ n = n' ∧ C = C' ∧ eqT ρ T1 U1
   | _, _ => False
   end.
@@ -531,13 +532,13 @@ Proof. apply eqT_sym, sequiv_sym. Qed.
 
 (** The types whose variables admit contraction and weakening. *)
 Definition unlimited (T : ty) : Prop :=
-  match T with TBox _ _ _ _ _ _ _ => True | _ => False end.
+  match T with TBox _ _ _ _ _ _ => True | _ => False end.
 
 (** Finite evidence that a type holds no end. It carries no credit, so
     aging and capture leave it alone. *)
 Inductive tfree : ty → Prop :=
   | tfree_unit : tfree TUnit
-  | tfree_box n k C ub c t U : tfree (TBox n k C ub c t U)
+  | tfree_box n k C ub c U : tfree (TBox n k C ub c U)
   | tfree_prod T U : tfree T → tfree U → tfree (TProd T U)
   | tfree_sum T U : tfree T → tfree U → tfree (TSum T U).
 
@@ -550,16 +551,16 @@ Proof. by destruct U. Qed.
 (** ** The annotations of the instance N = ∞
 
     [ty_df] sets every credit inside a type to ∞, every cost to ∞, every
-    transformer to (∞, ∞). *)
+    ticket to ∞. *)
 
 Fixpoint ty_df (T : ty) : ty :=
   match T with
   | TUnit => TUnit
-  | TLolli ub lb _ _ T1 U _ => TLolli ub lb None tinf (ty_df T1) (ty_df U) None
+  | TLolli ub lb _ T1 U _ => TLolli ub lb None (ty_df T1) (ty_df U) None
   | TProd T1 U => TProd (ty_df T1) (ty_df U)
   | TSum T1 U => TSum (ty_df T1) (ty_df U)
-  | TBox n k C ub _ _ U => TBox n k C ub None tinf (ty_df U)
-  | TSess s x _ => TSess (sty_df s) x None
+  | TBox n k C ub _ U => TBox n k C ub None (ty_df U)
+  | TSess s x _ _ => TSess (sty_df s) x None None
   | TEx lb n C T1 => TEx lb n C (ty_df T1)
   end
 with sty_df (s : sty) : sty :=

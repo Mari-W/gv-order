@@ -33,16 +33,16 @@ Proof.
         rewrite lookup_insert_ne by done. split; [done|]. by rewrite decide_False.
 Qed.
 
-Definition krelabel (f : nat → nat) (K : own) : own := (λ h, Hold (f h.(h_th)) h.(h_pt) h.(h_ctr)) <$> K.
+Definition krelabel (f : nat → nat) (K : own) : own := (λ h, Hold (f h.(h_th)) h.(h_pt) h.(h_ctr) h.(h_cap)) <$> K.
 
-Lemma soup_relabel N n W Σ T C M1 M2 K tk A Π U (f g : nat → nat) :
+Lemma soup_relabel N n W Σ T C M1 M2 K A Π U (f g : nat → nat) :
   (∀ t e, M1 !! t = Some e → M2 !! f t = Some e ∧ g (f t) = t) →
   (∀ t' e, M2 !! t' = Some e → M1 !! g t' = Some e ∧ f (g t') = t') →
-  soup_inv N n W Σ T (LFState (C, M1) K tk) A Π U →
-  soup_inv N n W Σ T (LFState (C, M2) (krelabel f K) (tk ∘ g)) A Π (U ∘ g).
+  soup_inv N n W Σ T (LFState (C, M1) K) A Π U →
+  soup_inv N n W Σ T (LFState (C, M2) (krelabel f K)) A Π (U ∘ g).
 Proof.
   intros H1 H2 Hs.
-  assert (Hth : ∀ o h, K !! o = Some h → is_Some (M1 !! h.(h_th))) by apply (sp_owner _ _ _ _ _ _ _ _ Hs).
+  assert (Hth : ∀ o h, K !! o = Some h → is_Some (M1 !! h.(h_th))) by apply (sp_owner _ _ _ _ _ _ _ _ _ Hs).
   assert (Hown : ∀ t' e, M2 !! t' = Some e → ∀ o,
     (∃ h, krelabel f K !! o = Some h ∧ h.(h_th) = t') ↔ (∃ h, K !! o = Some h ∧ h.(h_th) = g t')).
   { intros t' e He o. destruct (H2 t' e He) as [Hg Hfg]. unfold krelabel. rewrite lookup_fmap. split.
@@ -58,26 +58,33 @@ Proof.
       destruct (K !! o) as [h0|] eqn:E; [|done]. simpl in Kh. injection Kh as <-. simpl in *.
       exists h0. split_and!; [done| |done]. destruct (Hth o h0 E) as [e0 He0].
       destruct (H1 _ e0 He0) as [_ Hgf]. by rewrite <-Ht, Hgf.
-    - intros (h & Kh & Ht & Hc). exists (Hold (f h.(h_th)) h.(h_pt) h.(h_ctr)).
+    - intros (h & Kh & Ht & Hc). exists (Hold (f h.(h_th)) h.(h_pt) h.(h_ctr) h.(h_cap)).
       unfold krelabel. rewrite lookup_fmap, Kh. simpl. split_and!; [done| |done].
       destruct (H2 t' e He) as [_ Hfg]. by rewrite Ht, Hfg. }
   unfold soup_inv in *. constructor; simpl in *.
-  - exact (sp_tfree _ _ _ _ _ _ _ _ Hs).
-  - intros t e He. rewrite (Hkres _ t e A He). destruct (H2 t e He) as [Hg _]. by apply (sp_rel _ _ _ _ _ _ _ _ Hs).
-  - intros t e He. destruct (H2 t e He) as [Hg _]. by apply ((sp_ty _ _ _ _ _ _ _ _ Hs) (g t) e).
+  - exact (sp_tfree _ _ _ _ _ _ _ _ _ Hs).
+  - intros t e He. rewrite (Hkres _ t e A He). destruct (H2 t e He) as [Hg _]. by apply (sp_rel _ _ _ _ _ _ _ _ _ Hs).
+  - intros t e He. destruct (H2 t e He) as [Hg _]. by apply ((sp_ty _ _ _ _ _ _ _ _ _ Hs) (g t) e).
   - intros t e He. rewrite (Hkres _ t e Π He), (Hctrs t e He). destruct (H2 t e He) as [Hg _].
-    by apply ((sp_fuel _ _ _ _ _ _ _ _ Hs) (g t) e).
-  - unfold krelabel. rewrite <-map_fmap_compose. exact (sp_pts _ _ _ _ _ _ _ _ Hs).
-  - unfold krelabel. rewrite dom_fmap_L. exact (sp_dom _ _ _ _ _ _ _ _ Hs).
+    by apply ((sp_fuel _ _ _ _ _ _ _ _ _ Hs) (g t) e).
+  - unfold krelabel. rewrite <-map_fmap_compose. exact (sp_pts _ _ _ _ _ _ _ _ _ Hs).
+  - unfold krelabel. rewrite dom_fmap_L. exact (sp_dom _ _ _ _ _ _ _ _ _ Hs).
   - intros o h Ho. unfold krelabel in Ho. rewrite lookup_fmap in Ho.
     destruct (K !! o) as [h0|] eqn:E; [|done]. simpl in Ho. injection Ho as <-. simpl.
-    destruct ((sp_owner _ _ _ _ _ _ _ _ Hs) o h0 E) as [e0 He0]. destruct (H1 _ e0 He0) as [Hf _]. by eexists.
-  - intros o. unfold krelabel. rewrite dom_fmap_L. apply (sp_closed _ _ _ _ _ _ _ _ Hs).
-  - intros o. unfold krelabel. rewrite !dom_fmap_L. apply (sp_pair _ _ _ _ _ _ _ _ Hs).
-  - exact (sp_sdual _ _ _ _ _ _ _ _ Hs).
-  - exact (sp_pdual _ _ _ _ _ _ _ _ Hs).
-  - exact (sp_sig _ _ _ _ _ _ _ _ Hs).
+    destruct ((sp_owner _ _ _ _ _ _ _ _ _ Hs) o h0 E) as [e0 He0]. destruct (H1 _ e0 He0) as [Hf _]. by eexists.
+  - intros o. unfold krelabel. rewrite dom_fmap_L. apply (sp_closed _ _ _ _ _ _ _ _ _ Hs).
+  - intros o. unfold krelabel. rewrite !dom_fmap_L. apply (sp_pair _ _ _ _ _ _ _ _ _ Hs).
+  - exact (sp_sdual _ _ _ _ _ _ _ _ _ Hs).
+  - exact (sp_pdual _ _ _ _ _ _ _ _ _ Hs).
+  - exact (sp_sig _ _ _ _ _ _ _ _ _ Hs).
   - intros o h Ho. unfold krelabel in Ho. rewrite lookup_fmap in Ho.
-    destruct (K !! o) as [h0|] eqn:E; [|done]. simpl in Ho. injection Ho as <-. simpl. by apply ((sp_fin _ _ _ _ _ _ _ _ Hs) o h0).
-  - exact (sp_psig _ _ _ _ _ _ _ _ Hs).
+    destruct (K !! o) as [h0|] eqn:E; [|done]. simpl in Ho. injection Ho as <-. simpl. by apply ((sp_fin _ _ _ _ _ _ _ _ _ Hs) o h0).
+  - exact (sp_psig _ _ _ _ _ _ _ _ _ Hs).
+  - intros o h Ho. unfold krelabel in Ho. rewrite lookup_fmap in Ho.
+    destruct (K !! o) as [h0|] eqn:E; [|done]. simpl in Ho. injection Ho as <-. simpl. by apply ((sp_cap _ _ _ _ _ _ _ _ _ Hs) o h0).
+  - intros o h h' Ho Ho' Hc. unfold krelabel in Ho, Ho'. rewrite lookup_fmap in Ho, Ho'.
+    destruct (K !! o) as [h0|] eqn:E; [|done]. destruct (K !! edual o) as [h1|] eqn:E'; [|done].
+    simpl in Ho, Ho'. injection Ho as <-. injection Ho' as <-. simpl. by apply ((sp_tsum _ _ _ _ _ _ _ _ _ Hs) o h0 h1).
+  - intros o h HΣ Ho. unfold krelabel in Ho. rewrite lookup_fmap in Ho.
+    destruct (K !! o) as [h0|] eqn:E; [|done]. simpl in Ho. injection Ho as <-. simpl. by apply ((sp_sigcap _ _ _ _ _ _ _ _ _ Hs) o h0).
 Qed.

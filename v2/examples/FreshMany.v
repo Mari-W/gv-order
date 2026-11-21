@@ -28,7 +28,7 @@ Definition fm_C : bcs := BCs [] fmx_P.
 Definition Sd1 : sty := SSeq (SSnd 0 TUnit) SEnd.
 Definition Sdd : sty := SSeq (SSnd 0 TUnit) Sd1.
 
-Definition fm_T : ty := TProd (TSess SEnd (pvar 0) None) (TSess SEnd (pvar 1) None).
+Definition fm_T : ty := TProd (TSess SEnd (pvar 0) None None) (TSess SEnd (pvar 1) None None).
 Definition fm_ty : ty := box1 2 fm_C (pvar 1) fm_T.
 
 Definition fm_thunk : expr :=
@@ -137,16 +137,14 @@ Definition fm_main : expr :=
 Lemma fm_force n F e :
   dftyped W_fm ∅ (Γnew W_fm 0) (nones n) F e fm_ty →
   dftyped W_fm ∅ (Γnew W_fm 0) (nones n) F (EForce e)
-    (TLolli (UPt ((pvar 0)·1)) LNone None tinf
-       (TProd (TSess SEnd (pvar 0) None) (TSess SEnd ((pvar 0)·1) None)) TUnit None).
+    (TLolli (UPt ((pvar 0)·1)) LNone None (TProd (TSess SEnd (pvar 0) None None) (TSess SEnd ((pvar 0)·1) None None)) TUnit None).
 Proof.
   intros H.
   assert (sinst_ty (slist []) (ty_inst fm_xs
-            (TLolli (UPt (pvar 1)) LNone None tinf fm_T TUnit None)) =
-    TLolli (UPt ((pvar 0)·1)) LNone None tinf
-       (TProd (TSess SEnd (pvar 0) None) (TSess SEnd ((pvar 0)·1) None)) TUnit None) as <-.
+            (TLolli (UPt (pvar 1)) LNone None fm_T TUnit None)) =
+    TLolli (UPt ((pvar 0)·1)) LNone None (TProd (TSess SEnd (pvar 0) None None) (TSess SEnd ((pvar 0)·1) None None)) TUnit None) as <-.
   { rewrite sinst_nil. reflexivity. }
-  eapply d_force with (ub := None) (c := None) (t := tinf) (C := fm_C);
+  eapply d_force with (ub := None) (c := None) (C := fm_C);
     [done| |done|split; [apply Forall_nil|intros _; apply Forall_nil]|exact I|exact H].
   apply hold_at_nil. intros f Hf _.
   destruct (fact_map (pt_inst (plist fm_xs)) f) as [x y] eqn:E.
@@ -188,5 +186,5 @@ Proof.
   Unshelve. all: exact None.
 Qed.
 
-Theorem fm_typed : typed W_fm None ∅ hc_empty [] (∅, None) fm_main TUnit None tinf.
+Theorem fm_typed : typed W_fm None ∅ hc_empty [] (∅, None) fm_main TUnit None.
 Proof. apply (dftyped_typed _ _ _ _ _ _ _ fm_dftyped). Qed.

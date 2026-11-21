@@ -24,7 +24,7 @@ Section values.
   Lemma Vrel_exact n W Θ T v : Vrel κ n W Θ T v → dom Θ = fends v.
   Proof.
     revert W Θ v. induction T as [T IH] using tsize_ind. intros W Θ v.
-    destruct T as [|ub lb c t T1 U a|T1 U|T1 U|m kk C ub c t U|s x a|lb m C T1].
+    destruct T as [|ub lb c T1 U a|T1 U|T1 U|m kk C ub c U|s x a mt|lb m C T1].
     - intros [-> ->]%Vrel_unit_iff. by rewrite dom_empty_L.
     - by intros (e & -> & Hfe & _)%Vrel_lolli_iff.
     - intros (v1 & v2 & Θ1 & Θ2 & -> & _ & -> & H1 & H2)%Vrel_prod_iff. simpl.
@@ -49,7 +49,7 @@ Section values.
     ∀ o S x, Θ !! o = Some (S, x) → ∃ h, h ∈ heads T ∧ w_le W h x‾.
   Proof.
     revert W Θ v. induction T as [T IH] using tsize_ind. intros W Θ v.
-    destruct T as [|ub lb c t T1 U a|T1 U|T1 U|m kk C ub c t U|s x0 a|lb m C T1].
+    destruct T as [|ub lb c T1 U a|T1 U|T1 U|m kk C ub c U|s x0 a mt|lb m C T1].
     - intros [-> ->]%Vrel_unit_iff _ o S x Hx. by rewrite lookup_empty in Hx.
     - intros (e & -> & _ & Hlb & _)%Vrel_lolli_iff Hb o S x Hx.
       assert (x‾ ∈ senv_heads Θ) as Hh by (apply elem_of_senv_heads; eauto).
@@ -172,9 +172,9 @@ Section redex.
       + by eapply Erel_mono.
   Qed.
 
-  Lemma Erel_app n W Θ1 Θ2 ub lb c t T1 U a2 F f w :
+  Lemma Erel_app n W Θ1 Θ2 ub lb c T1 U a2 F f w :
     Θ1 ##ₘ Θ2 → ub_ltu W ub F →
-    Vrel κ n W Θ1 (TLolli ub lb c t T1 U a2) f → Vrel κ n W Θ2 T1 w →
+    Vrel κ n W Θ1 (TLolli ub lb c T1 U a2) f → Vrel κ n W Θ2 T1 w →
     Erel κ n W (Θ1 ∪ Θ2) U F (App f w).
   Proof.
     intros Hd Hub (e & -> & _ & _ & H)%Vrel_lolli_iff Hw.
@@ -190,11 +190,11 @@ Section redex.
 
   (** ** Session operators *)
 
-  Lemma Erel_send aq1 aq2 n W Θ m U S0 S x F v :
+  Lemma Erel_send aq1 aq2 n W Θ m U S0 S x F v mt1 mt2 :
     unfoldS S0 = SSeq (SSnd m U) S → hbot (payload_at m U x) = false →
     (∀ y, y ∈ heads (payload_at m U x) → W ⊢ x ≺ y) → (∀ y, y ∈ F → W ⊢ x ≺ y) →
-    Vrel κ n W Θ (TProd (payload_at m U x) (TSess S0 x aq1)) v →
-    Erel κ n W Θ (TSess S x⁺ aq2) F (ESend v).
+    Vrel κ n W Θ (TProd (payload_at m U x) (TSess S0 x aq1 mt1)) v →
+    Erel κ n W Θ (TSess S x⁺ aq2 mt2) F (ESend v).
   Proof.
     intros Hu Hb Hh HF HV. destruct n as [|n]; [apply Erel_0|].
     apply Vrel_prod_iff in HV as (w & vo & Θw & Θo & -> & Hd & -> & Hw & Ho).
@@ -233,10 +233,10 @@ Section redex.
         exists o, S'. split_and!; [done|done|done].
   Qed.
 
-  Lemma Erel_recv aq1 aq2 n W Θ m U S0 S x F v :
+  Lemma Erel_recv aq1 aq2 n W Θ m U S0 S x F v mt1 mt2 :
     unfoldS S0 = SSeq (SRcv m U) S → (∀ y, y ∈ F → W ⊢ x ≺ y) →
-    Vrel κ n W Θ (TSess S0 x aq1) v →
-    Erel κ n W Θ (TProd (payload_at m U x) (TSess S x⁺ aq2)) F (ERecv v).
+    Vrel κ n W Θ (TSess S0 x aq1 mt1) v →
+    Erel κ n W Θ (TProd (payload_at m U x) (TSess S x⁺ aq2 mt2)) F (ERecv v).
   Proof.
     intros Hu HF HV. destruct n as [|n]; [apply Erel_0|].
     apply Vrel_sess_iff in HV as (o & s' & -> & -> & Hs').
@@ -266,9 +266,9 @@ Section redex.
       + apply Vrel_sess_iff. exists o, S'. done.
   Qed.
 
-  Lemma Erel_close aq1 n W Θ S0 x F v :
+  Lemma Erel_close aq1 n W Θ S0 x F v mt :
     unfoldS S0 = SEnd → (∀ y, y ∈ F → W ⊢ x ≺ y) →
-    Vrel κ n W Θ (TSess S0 x aq1) v → Erel κ n W Θ TUnit F (EClose v).
+    Vrel κ n W Θ (TSess S0 x aq1 mt) v → Erel κ n W Θ TUnit F (EClose v).
   Proof.
     intros Hu HF HV. destruct n as [|n]; [apply Erel_0|].
     apply Vrel_sess_iff in HV as (o & s' & -> & -> & Hs').
@@ -289,10 +289,10 @@ Section redex.
       rewrite delete_singleton_eq. apply at_cost_val. by apply Vrel_unit_iff.
   Qed.
 
-  Lemma Erel_select aq1 aq2 (i : bool) n W Θ S0 x S1 S2 F v :
+  Lemma Erel_select aq1 aq2 (i : bool) n W Θ S0 x S1 S2 F v mt1 mt2 :
     unfoldS S0 = SPlus S1 S2 → (∀ y, y ∈ F → W ⊢ x ≺ y) →
-    Vrel κ n W Θ (TSess S0 x aq1) v →
-    Erel κ n W Θ (TSess (if i then S2 else S1) (sel_pt x i) aq2) F (ESel i v).
+    Vrel κ n W Θ (TSess S0 x aq1 mt1) v →
+    Erel κ n W Θ (TSess (if i then S2 else S1) (sel_pt x i) aq2 mt2) F (ESel i v).
   Proof.
     intros Hu HF HV. destruct n as [|n]; [apply Erel_0|].
     apply Vrel_sess_iff in HV as (o & s' & -> & -> & Hs').
@@ -314,10 +314,10 @@ Section redex.
       exists o, (bsel i S1' S2'). split_and!; [done|done|]. by destruct i.
   Qed.
 
-  Lemma Erel_branch aq1 aq2 aq3 n W Θ S0 x S1 S2 F v :
+  Lemma Erel_branch aq1 aq2 aq3 n W Θ S0 x S1 S2 F v mt1 mt2 mt3 :
     unfoldS S0 = SWith S1 S2 → (∀ y, y ∈ F → W ⊢ x ≺ y) →
-    Vrel κ n W Θ (TSess S0 x aq1) v →
-    Erel κ n W Θ (TSum (TSess S1 (bra_pt x false) aq2) (TSess S2 (bra_pt x true) aq3)) F (EBra v).
+    Vrel κ n W Θ (TSess S0 x aq1 mt1) v →
+    Erel κ n W Θ (TSum (TSess S1 (bra_pt x false) aq2 mt2) (TSess S2 (bra_pt x true) aq3 mt3)) F (EBra v).
   Proof.
     intros Hu HF HV. destruct n as [|n]; [apply Erel_0|].
     apply Vrel_sess_iff in HV as (o & s' & -> & -> & Hs').
@@ -346,8 +346,8 @@ Section redex.
     eapply sequiv_trans; [exact H2|]. apply sequiv_dual, sequiv_sym, H1.
   Qed.
 
-  Lemma Erel_link aq1 aq2 n W Θ S x F v :
-    Vrel κ n W Θ (TProd (TSess S x aq1) (TSess (dual S) x‾ aq2)) v → Erel κ n W Θ TUnit F (ELink v).
+  Lemma Erel_link aq1 aq2 n W Θ S x F v mt1 mt2 :
+    Vrel κ n W Θ (TProd (TSess S x aq1 mt1) (TSess (dual S) x‾ aq2 mt2)) v → Erel κ n W Θ TUnit F (ELink v).
   Proof.
     intros HV. destruct n as [|n]; [apply Erel_0|].
     apply Vrel_prod_iff in HV as (v1 & v2 & Θ1 & Θ2 & -> & Hd & -> & H1 & H2).
@@ -382,16 +382,16 @@ Section redex.
         apply at_cost_val. by apply Vrel_unit_iff.
   Qed.
 
-  Lemma Varr_top_of_Vrel n W Θ ub lb c t aU v :
-    Vrel κ n W Θ (TLolli ub lb c t TUnit TUnit aU) v →
+  Lemma Varr_top_of_Vrel n W Θ ub lb c aU v :
+    Vrel κ n W Θ (TLolli ub lb c TUnit TUnit aU) v →
     Varr κ n (Vrel κ) (Erel κ) (λ _ Θ' w, Θ' = ∅ ∧ w = EUnit)
       (λ W' Θ' F e, Erel κ n W' Θ' TUnit F e) TUnit TUnit UTop LBot W Θ v.
   Proof.
     intros HV. apply (Vrel_thunk κ _ _ _ ub lb).
     eapply (Vrel_blind κ); [|exact HV]. done.
   Qed.
-  Lemma Erel_spawn n W Θ ub lb c t aU F v :
-    Vrel κ n W Θ (TLolli ub lb c t TUnit TUnit aU) v → Erel κ n W Θ TUnit F (ESpawn v).
+  Lemma Erel_spawn n W Θ ub lb c aU F v :
+    Vrel κ n W Θ (TLolli ub lb c TUnit TUnit aU) v → Erel κ n W Θ TUnit F (ESpawn v).
   Proof.
     intros HV. destruct n as [|n]; [apply Erel_0|].
     pose proof (Vrel_val κ _ _ _ _ _ HV) as Hv.
@@ -411,9 +411,9 @@ Section redex.
 
   (** ** Creation *)
 
-  Lemma Erel_new_at aq1 aq2 aq3 aq4 (κf : field) n W Θ S0 x S F v :
-    Vrel κ n W Θ (TSess S0 x aq1) v →
-    Erel κ n W Θ (TProd (TSess S0 x aq2) (TProd (TSess S (x·κf) aq3) (TSess (dual S) (x·κf)‾ aq4))) F
+  Lemma Erel_new_at aq1 aq2 aq3 aq4 (κf : field) n W Θ S0 x S F v mt1 mt2 mt3 mt4 :
+    Vrel κ n W Θ (TSess S0 x aq1 mt1) v →
+    Erel κ n W Θ (TProd (TSess S0 x aq2 mt2) (TProd (TSess S (x·κf) aq3 mt3) (TSess (dual S) (x·κf)‾ aq4 mt4))) F
       (ENewAt κf v).
   Proof.
     intros HV. destruct n as [|n]; [apply Erel_0|].
@@ -444,10 +444,10 @@ Section redex.
   Qed.
 
   (** The constraint may name the laws of ℓ in a smaller world. *)
-  Lemma Erel_new_sub aq1 aq2 (ℓ : family) n W P S F :
+  Lemma Erel_new_sub aq1 aq2 (ℓ : family) n W P S F mt1 mt2 :
     ℓ ∈ w_fams W → (∀ f, P f → w_laws W ℓ f) →
     Erel κ n W ∅
-      (TEx LBot 1 (bcs_of P) (TProd (TSess S (pvar 0) aq1) (TSess (dual S) (pvar 0)‾ aq2)))
+      (TEx LBot 1 (bcs_of P) (TProd (TSess S (pvar 0) aq1 mt1) (TSess (dual S) (pvar 0)‾ aq2 mt2)))
       F (ENew ℓ).
   Proof.
     intros Hℓ HP. destruct n as [|n]; [apply Erel_0|].
@@ -480,10 +480,10 @@ Section redex.
 
   (** ** Force *)
 
-  Lemma Erel_force n W m kk C ub c t U xs ss F v :
+  Lemma Erel_force n W m kk C ub c U xs ss F v :
     length xs = m → length ss = kk → Forall hcontractive ss → wholds W C xs →
     ub_lt W (pt_inst (plist xs) <$> ub) F →
-    Vrel κ n W ∅ (TBox m kk C ub c t U) v →
+    Vrel κ n W ∅ (TBox m kk C ub c U) v →
     Erel κ n W ∅ (sinst_ty (slist ss) (ty_inst xs U)) F (EForce v).
   Proof.
     intros Hxs Hss Hsc HC Hub (_ & e & -> & Hfe & H)%Vrel_box_iff.

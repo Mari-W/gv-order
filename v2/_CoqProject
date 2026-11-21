@@ -54,7 +54,6 @@ fuel/FuelValues.v
 fuel/FuelBind.v
 fuel/FuelSub.v
 test/FuelNotations.v
-cost/Transformers.v
 cost/Forwarder.v
 cost/Exact.v
 cost/CostSem.v

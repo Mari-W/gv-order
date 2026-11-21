@@ -28,7 +28,7 @@ Definition W_fx : world := World ∅ (λ _, False) {[0]} (λ _ g, fx_L g).
 Lemma W_fx_wf : world_wf W_fx.
 Proof. split; simpl; [done|]. intros ℓ x y _ [E|E]; injection E as -> ->; done. Qed.
 
-Definition Tres : ty := TEx LBot 1 (bcs_of (w_laws W_fx 0)) (TSess Sr (pvar 0)‾ None).
+Definition Tres : ty := TEx LBot 1 (bcs_of (w_laws W_fx 0)) (TSess Sr (pvar 0)‾ None None).
 
 Definition C0 : bcs := bcs_of (λ _, False).
 Definition mk0_ty : ty := boxg 0 C0 None TUnit Tres.
@@ -36,8 +36,8 @@ Definition mk0_ty : ty := boxg 0 C0 None TUnit Tres.
 Definition mk1_P (g : fact) : Prop :=
   g = FLt (pvar 0) ((pvar 0)·0) ∨ g = FLt (pt_shift 1 (pvar 0)) ((pvar 0)·0).
 Definition mk1_C : bcs := BCs [] mk1_P.
-Definition mk1_res : ty := TProd (TSess Sr (pvar 0) None) (TSess Sr ((pvar 0)·0)‾ None).
-Definition mk1_ty : ty := boxg 1 mk1_C None (TSess Sr (pvar 0) None) mk1_res.
+Definition mk1_res : ty := TProd (TSess Sr (pvar 0) None None) (TSess Sr ((pvar 0)·0)‾ None None).
+Definition mk1_ty : ty := boxg 1 mk1_C None (TSess Sr (pvar 0) None None) mk1_res.
 
 (** The worker sends ∗ on c and closes it. *)
 Definition worker (i : nat) : expr := Lam (LetU (Var 0) (EClose (ESend (Pair EUnit (Var i))))).
@@ -104,7 +104,7 @@ Proof. apply boxg_typed; [reflexivity|apply mk0_body]. Qed.
 
 Lemma mk1_body Γ n :
   dftyped W_fx ∅ (hc_open 1 mk1_C Γ)
-    (Some (TSess Sr (pvar 0) None) :: Some mk1_ty :: nones n) (∅, Some (FRest RAll)) mk1_e mk1_res.
+    (Some (TSess Sr (pvar 0) None None) :: Some mk1_ty :: nones n) (∅, Some (FRest RAll)) mk1_e mk1_res.
 Proof.
   unfold mk1_e.
   eapply d_letp; [apply tsplit_empty|lsplit_tac (ENewAt 0 (Var 0)) EUnit| |].
@@ -135,9 +135,9 @@ Proof.
   eapply d_let; [apply tsplit_empty|apply lsplit_nil| |].
   { (* the first call needs no point *)
     eapply d_app; [apply tsplit_empty|apply lsplit_nil|apply ubu_below_empty| |apply d_unit'; spare_tac].
-    assert (sinst_ty (slist []) (ty_inst [] (TLolli UNone LNone None tinf TUnit Tres None)) =
-            TLolli UNone LNone None tinf TUnit Tres None) as <- by (rewrite sinst_nil; reflexivity).
-    eapply d_force with (ub := None) (c := None) (t := tinf) (C := C0) (m := 0);
+    assert (sinst_ty (slist []) (ty_inst [] (TLolli UNone LNone None TUnit Tres None)) =
+            TLolli UNone LNone None TUnit Tres None) as <- by (rewrite sinst_nil; reflexivity).
+    eapply d_force with (ub := None) (c := None) (C := C0) (m := 0);
       [done| |done|split; [apply Forall_nil|intros _; apply Forall_nil]|exact I|].
     - intros x y (g0 & (f & Hf & _) & _). done.
     - by apply (mk0_typed _ 0). }
@@ -147,11 +147,10 @@ Proof.
   eapply d_letp; [apply tsplit_empty|lsplit_tac (App (EForce mk1) (Var 0)) EUnit| |].
   { eapply d_app; [apply tsplit_empty|lsplit_tac (EForce mk1) (Var 0)|apply ubu_below_empty| |].
     - assert (sinst_ty (slist []) (ty_inst ((pvar 0)‾ :: [])
-                (TLolli UNone LNone None tinf (TSess Sr (pvar 0) None) mk1_res None)) =
-              TLolli UNone LNone None tinf (TSess Sr (pvar 0)‾ None)
-                (TProd (TSess Sr (pvar 0)‾ None) (TSess Sr ((pvar 0)·0)‾ None)) None) as <-
+                (TLolli UNone LNone None (TSess Sr (pvar 0) None None) mk1_res None)) =
+              TLolli UNone LNone None (TSess Sr (pvar 0)‾ None None) (TProd (TSess Sr (pvar 0)‾ None None) (TSess Sr ((pvar 0)·0)‾ None None)) None) as <-
         by (rewrite sinst_nil; reflexivity).
-      eapply d_force with (ub := None) (c := None) (t := tinf) (C := mk1_C);
+      eapply d_force with (ub := None) (c := None) (C := mk1_C);
         [done| |done|split; [apply Forall_nil|intros _; apply Forall_nil]|exact I|].
       + apply hold_at_nil. intros f Hf _. destruct Hf as [->| ->]; simpl.
         * apply fx_law; [by left|simpl; lia].
@@ -185,5 +184,5 @@ Proof.
   Unshelve. all: exact None.
 Qed.
 
-Theorem fx_typed : typed W_fx None ∅ hc_empty [] (∅, None) fx_main TUnit None tinf.
+Theorem fx_typed : typed W_fx None ∅ hc_empty [] (∅, None) fx_main TUnit None.
 Proof. apply (dftyped_typed _ _ _ _ _ _ _ fx_dftyped). Qed.

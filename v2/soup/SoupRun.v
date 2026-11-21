@@ -14,23 +14,23 @@ From GV Require Export soup.SoupLink.
 Theorem lfsoup_step N W T a n ev q' :
   a ∈ S^{N,W} _ (S n)⟦∅ ⊢ T⟧ → itstep (s_q a) ev q' → lf_next N a ev q' ∈ S^{N,W} _ n⟦∅ ⊢ T⟧.
 Proof.
-  destruct a as [[C Mq] K tk]. intros (A & Π & U & Hs) [Hst Hτ]. cbn [s_q] in Hst.
+  destruct a as [[C Mq] K]. intros (A & Π & U & Hs) [Hst Hτ]. cbn [s_q] in Hst.
   inversion Hst as [C0 M0 i e e' Hi Hs'|C0 M0 i e ℓ c e' Hi Hs' HC Hc|C0 M0 i e κ o c e' Hi Hs' HC Hc
     |C0 M0 i j e v e' Hi Hs' Hj
     |C0 M0 i j o v e e' f f' Hij Hi Hj He Hf|C0 M0 i j o e e' f f' Hij Hi Hj He Hf HC
     |C0 M0 i j o b e e' f f' Hij Hi Hj He Hf|C0 M0 i e o1 o2 e' Hi Hs' HC
     |C0 M0 i e σ e' Hi Hs' HC]; subst.
-  - exists A, Π, U. exact (step_beta _ _ _ _ _ _ _ _ _ _ _ Hs i e e' Hi Hs').
-  - destruct (step_new _ _ _ _ _ _ _ _ _ _ _ Hs i e ℓ c e' Hi Hs' HC) as (A' & Π' & H). by exists A', Π', U.
-  - destruct (step_new_at _ _ _ _ _ _ _ _ _ _ _ Hs i e κ o c e' Hi Hs' HC) as (A' & Π' & H). by exists A', Π', U.
-  - eexists _, _, _. exact (step_spawn _ _ _ _ _ _ _ _ _ _ _ Hs i j e v e' Hi Hs' Hj).
-  - destruct (step_msg _ _ _ _ _ _ _ _ _ _ _ Hs i j e e' f f' o v Hij Hi Hj He Hf) as (A' & Π' & H).
+  - exists A, Π, U. exact (step_beta _ _ _ _ _ _ _ _ _ _ Hs i e e' Hi Hs').
+  - destruct (step_new _ _ _ _ _ _ _ _ _ _ Hs i e ℓ c e' Hi Hs' HC) as (A' & Π' & H). by exists A', Π', U.
+  - destruct (step_new_at _ _ _ _ _ _ _ _ _ _ Hs i e κ o c e' Hi Hs' HC) as (A' & Π' & H). by exists A', Π', U.
+  - eexists _, _, _. exact (step_spawn _ _ _ _ _ _ _ _ _ _ Hs i j e v e' Hi Hs' Hj).
+  - destruct (step_msg _ _ _ _ _ _ _ _ _ _ Hs i j e e' f f' o v Hij Hi Hj He Hf) as (A' & Π' & H).
     by exists A', Π', U.
-  - destruct (step_close _ _ _ _ _ _ _ _ _ _ _ Hs i j e e' f f' o Hij Hi Hj He Hf) as (A' & Π' & H).
+  - destruct (step_close _ _ _ _ _ _ _ _ _ _ Hs i j e e' f f' o Hij Hi Hj He Hf) as (A' & Π' & H).
     by exists A', Π', U.
-  - destruct (step_choice _ _ _ _ _ _ _ _ _ _ _ Hs i j e e' f f' o b Hij Hi Hj He Hf) as (A' & Π' & H).
+  - destruct (step_choice _ _ _ _ _ _ _ _ _ _ Hs i j e e' f f' o b Hij Hi Hj He Hf) as (A' & Π' & H).
     by exists A', Π', U.
-  - destruct (step_link _ _ _ _ _ _ _ _ _ _ _ Hs i e o1 o2 e' Hi Hs') as (A' & Π' & H).
+  - destruct (step_link _ _ _ _ _ _ _ _ _ _ Hs i e o1 o2 e' Hi Hs') as (A' & Π' & H).
     by exists A', Π', U.
   - by unfold ev_tau in Hτ.
 Qed.
@@ -50,7 +50,7 @@ Proof.
   intros Hmax H0 Hs k. induction k as [|k IH]; [done|]. intros n. simpl. unfold lf_upd.
   destruct (Hmax k) as [(ev & Hl & Hst)|(_ & Heq & Hl)]; rewrite Hl.
   - apply (lfsoup_step_all N W T _ ev); [done|]. by rewrite lf_run_state_q.
-  - destruct (lf_run_state N a0 r l k) as [q K tk] eqn:E. rewrite Heq.
+  - destruct (lf_run_state N a0 r l k) as [q K] eqn:E. rewrite Heq.
     pose proof (lf_run_state_q N a0 r l k H0) as Hq. rewrite E in Hq. simpl in Hq. subst q. apply IH.
 Qed.
 

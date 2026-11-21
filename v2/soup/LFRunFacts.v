@@ -3,7 +3,7 @@
     Facts of the semantics that adequacy reads at one step: a thread
     outside a step other than a link keeps its term, a link renames it,
     an enabled session redex has a partner whose redex fits, and the
-    tickets of a configuration. *)
+    counter of an end. *)
 
 From stdpp Require Import relations.
 From GV Require Export soup.LFLocal.
@@ -86,69 +86,10 @@ Qed.
 Lemma aend_amap g a o : aend a = Some o → aend (amap g a) = Some (g o).
 Proof. destruct a; simpl; intros [= <-]; done. Qed.
 
-(** ** Tickets and counters *)
+(** ** Counters *)
 
 Definition kval (K : own) (o : cend) : nat :=
   match K !! o with Some h => default 0 h.(h_ctr) | None => 0 end.
-
-Definition ksum (tk : nat → nat) (q : config) : nat := sum_list_with tk (elements (dom q.2)).
-
-
-Lemma sum_list_with_ext' (f g : nat → nat) (xs : list nat) :
-  (∀ x, x ∈ xs → f x = g x) → sum_list_with f xs = sum_list_with g xs.
-Proof.
-  induction xs as [|x xs IH]; intros H; [done|]. simpl.
-  rewrite (H x (list_elem_of_here _ _)), IH; [done|]. intros y Hy. apply H. by apply list_elem_of_further.
-Qed.
-
-Lemma ksum_ext tk tk' (q q' : config) :
-  dom q'.2 = dom q.2 → (∀ t, t ∈ dom q.2 → tk' t = tk t) → ksum tk' q' = ksum tk q.
-Proof.
-  intros Hd Ht. unfold ksum. rewrite Hd. apply sum_list_with_ext'. intros t Hin. apply Ht.
-  by apply elem_of_elements.
-Qed.
-
-Lemma kset_split tk (X : gset nat) t :
-  t ∈ X → sum_list_with tk (elements X) = tk t + sum_list_with tk (elements (X ∖ {[t]})).
-Proof.
-  intros Ht. transitivity (sum_list_with tk (elements ({[t]} ∪ X ∖ {[t]}))).
-  - by rewrite <-(union_difference_singleton_L t X Ht).
-  - rewrite (elements_union_singleton (X ∖ {[t]}) t) by set_solver. done.
-Qed.
-
-Lemma div2_split x : Nat.div2 (S x) + Nat.div2 x = x.
-Proof.
-  induction x as [x IH] using lt_wf_ind. destruct x as [|[|x]]; [done|done|].
-  simpl. pose proof (IH x ltac:(lia)) as H. simpl in H. lia.
-Qed.
-
-Lemma ksum_link tk u (q q' : config) :
-  u ∈ dom q.2 → dom q'.2 = dom q.2 → 1 ≤ tk u → ksum (tupd tk u (tk u - 1)) q' < ksum tk q.
-Proof.
-  intros Hu Hd Htk. unfold ksum. rewrite Hd, !(kset_split _ _ u Hu).
-  unfold tupd at 1. rewrite decide_True by done.
-  rewrite (sum_list_with_ext' (tupd tk u (tk u - 1)) tk); [lia|].
-  intros t Ht. apply elem_of_elements in Ht. unfold tupd. rewrite decide_False; [done|set_solver].
-Qed.
-
-Lemma ksum_spawn tk u j (q q' : config) :
-  u ∈ dom q.2 → j ∉ dom q.2 → dom q'.2 = {[j]} ∪ dom q.2 →
-  ksum (tupd (tupd tk u (Nat.div2 (tk u))) j (Nat.div2 (S (tk u)))) q' = ksum tk q.
-Proof.
-  intros Hu Hj Hd. unfold ksum. rewrite Hd.
-  rewrite (kset_split _ ({[j]} ∪ dom q.2) j) by set_solver.
-  replace (({[j]} ∪ dom q.2) ∖ {[j]}) with (dom q.2) by set_solver.
-  rewrite (kset_split _ (dom q.2) u Hu), (kset_split tk (dom q.2) u Hu).
-  assert (u ≠ j) as Huj by (intros ->; done).
-  assert (tupd (tupd tk u (Nat.div2 (tk u))) j (Nat.div2 (S (tk u))) j = Nat.div2 (S (tk u))) as -> 
-    by (unfold tupd; by rewrite decide_True).
-  assert (tupd (tupd tk u (Nat.div2 (tk u))) j (Nat.div2 (S (tk u))) u = Nat.div2 (tk u)) as ->
-    by (unfold tupd; by rewrite decide_False, decide_True).
-  rewrite (sum_list_with_ext' _ tk (elements (dom q.2 ∖ {[u]}))).
-  - pose proof (div2_split (tk u)). lia.
-  - intros t Ht. apply elem_of_elements in Ht. unfold tupd.
-    rewrite decide_False by set_solver. rewrite decide_False; [done|set_solver].
-Qed.
 
 (** ** Inversion of one step, by event *)
 

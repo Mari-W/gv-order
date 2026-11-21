@@ -7,10 +7,9 @@
     composite's frame d, so the counters of the context's ends that are
     not idle must be at least c1 ([fabove]). The continuation ([fkont])
     holds after any i ≤ c1 actions of the hole, for every value the hole
-    returns at its result type σ1 with reserve r1, at every refill
-    N′ ≥ N and under every injective renaming of the context, because
-    FuelE quantifies over both. Tickets flow unchanged, the child of a
-    spawn is the hole's child, and a receive adds ends to the hole. *)
+    returns at its result type σ1 and under every injective renaming of
+    the context, because FuelE quantifies over it. The child of a spawn
+    is the hole's child, and a receive adds ends to the hole. *)
 
 From GV Require Export fuel.FuelValues.
 
@@ -36,17 +35,19 @@ Lemma delete_union_l {Y : Type} o (m1 m2 : gmap cend Y) :
   o ∉ dom m2 → delete o (m1 ∪ m2) = delete o m1 ∪ m2.
 Proof. intros Hd. rewrite delete_union. f_equal. apply delete_id. by apply not_elem_of_dom. Qed.
 
-Lemma refill_union N o (φ1 φK : cenv) :
-  o ∉ dom φK → refill N o (φ1 ∪ φK) = refill N o φ1 ∪ (ftick <$> φK).
+Lemma refill_union o (φ1 φK : cenv) :
+  o ∈ dom φ1 → o ∉ dom φK → refill o (φ1 ∪ φK) = refill o φ1 ∪ (ctick <$> φK).
 Proof.
-  intros Ho. unfold refill. rewrite delete_union_l by done.
+  intros Ho1 Ho. unfold refill. apply elem_of_dom in Ho1 as [[f m] Hf].
+  rewrite (lookup_union_Some_l _ _ _ _ Hf), Hf. rewrite delete_union_l by done.
   by rewrite map_fmap_union, insert_union_l.
 Qed.
 
-Lemma dom_refill N o (φ : cenv) : dom (refill N o φ) = {[o]} ∪ dom φ.
+Lemma dom_refill o (φ : cenv) : o ∈ dom φ → dom (refill o φ) = {[o]} ∪ dom φ.
 Proof.
-  unfold refill. rewrite dom_insert_L, dom_fmap_L, dom_delete_L.
-  apply set_eq. intros o'. destruct (decide (o' = o)); set_solver.
+  intros Ho. unfold refill. apply elem_of_dom in Ho as [[f m] Hf]. rewrite Hf.
+  rewrite dom_insert_L, dom_fmap_L, dom_delete_L.
+  apply set_eq. intros o'. apply elem_of_dom_2 in Hf. destruct (decide (o' = o)); set_solver.
 Qed.
 
 Lemma union_swap {Y : Type} (m1 m2 m3 : gmap cend Y) : m2 ##ₘ m3 → (m1 ∪ m2) ∪ m3 = (m1 ∪ m3) ∪ m2.
@@ -79,11 +80,11 @@ Definition dupd (d : fuel) (α : tlabel) : fuel :=
   match α with LSess s => match act_end s with Some _ => ftick d | None => d end | _ => d end.
 
 Definition kupd (α : tlabel) (φ : cenv) : cenv :=
-  match α with LSess s => match act_end s with Some _ => ftick <$> φ | None => φ end | _ => φ end.
+  match α with LSess s => match act_end s with Some _ => ctick <$> φ | None => φ end | _ => φ end.
 
 (** The counters of the context's ends that are not idle: each at least c. *)
 Definition fabove (c : fuel) (Π : penv) (φ : cenv) : Prop :=
-  ∀ o f, φ !! o = Some f → ¬ idle_at Π o → fle c f.
+  ∀ o f, φ !! o = Some f → ¬ idle_at Π o → fle c f.1.
 
 Lemma dom_kupd α φ : dom (kupd α φ) = dom φ.
 Proof. destruct α as [| | | |s]; simpl; try done. destruct (act_end s); [apply dom_fmap_L|done]. Qed.
@@ -91,7 +92,7 @@ Proof. destruct α as [| | | |s]; simpl; try done. destruct (act_end s); [apply 
 Lemma fabove_kupd c Π φ α : fabove c Π φ → fabove (dupd c α) Π (kupd α φ).
 Proof.
   intros H. destruct α as [| | | |s]; simpl; try done. destruct (act_end s); [|done].
-  intros o f Ho Hi. apply lookup_fmap_Some in Ho as (f0 & <- & Ho). apply fle_ftick. by apply (H o).
+  intros o f Ho Hi. apply lookup_fmap_Some in Ho as (f0 & <- & Ho). apply fle_ftick. by apply (H o f0).
 Qed.
 
 Lemma fle_dupd c d α : fle c d → fle (dupd c α) (dupd d α).
@@ -106,67 +107,68 @@ Qed.
 
 Lemma fminus_0_map (m : cenv) : fminus (Some 0) <$> m = m.
 Proof.
-  rewrite <-(map_fmap_id m) at 2. apply map_fmap_ext. intros o f _. unfold fminus.
-  destruct f; simpl; [f_equal; lia|done].
+  rewrite <-(map_fmap_id m) at 2. apply map_fmap_ext. intros o [f m'] _. unfold fminus.
+  destruct f; simpl; [repeat f_equal; lia|done].
 Qed.
 
 Lemma fsub_0 d : fsub d (Some 0) = d.
 Proof. destruct d; simpl; [f_equal; lia|done]. Qed.
 
-Lemma fminus_tick i f : fminus (Some i) (ftick f) = fminus (Some (S i)) f.
-Proof. unfold fminus, ftick. destruct f; simpl; [f_equal; lia|done]. Qed.
+Lemma fsub_tick i f : fsub (ftick f) (Some i) = fsub f (Some (S i)).
+Proof. unfold ftick. destruct f; simpl; [f_equal; lia|done]. Qed.
+
+Lemma fminus_tick i f : fminus (Some i) (ctick f) = fminus (Some (S i)) f.
+Proof. unfold fminus, ctick. destruct f as [f m]; simpl. by rewrite fsub_tick. Qed.
 
 (** ** The continuation
 
     After i ≤ c1 actions of the hole, for every value v the hole returns
-    at σ1 with protocols Π1 and counters φ1, at every level j ≤ n, every
-    ticket count that holds the reserve r1, every refill N′ ≥ N and every
-    injective renaming of the context. *)
-Definition fkont (n : nat) (N : fuel) (σ1 : rty) (r1 : nat) (σ : rty) (r : nat) (c1 d : fuel)
+    at σ1 with protocols Π1 and counters φ1, at every level j ≤ n and
+    every injective renaming of the context. *)
+Definition fkont (n : nat) (N : fuel) (σ1 : rty) (σ : rty) (c1 d : fuel)
     (ΠK : penv) (φK : cenv) (K : ectx) : Prop :=
-  ∀ N' (g : cend → cend) ΠK' φK' i j v Π1 φ1 tk,
-    rle N N' → kinj g ΠK → kinj g φK → renk g ΠK ΠK' → renk g φK φK' →
-    fle (Some i) c1 → j ≤ n → is_val v → r1 ≤ tk →
-    Π1 ##ₘ ΠK' → φ1 ##ₘ φK' → v ∈ FV^N' _ j⟦σ1⟧(Π1, φ1) →
-    efill (kemap g K) v ∈ F^N' _ j⟦σ ▷ fsub d (Some i) ; r⟧(Π1 ∪ ΠK', φ1 ∪ (fminus (Some i) <$> φK'), tk).
+  ∀ (g : cend → cend) ΠK' φK' i j v Π1 φ1,
+    kinj g ΠK → kinj g φK → renk g ΠK ΠK' → renk g φK φK' →
+    fle (Some i) c1 → j ≤ n → is_val v →
+    Π1 ##ₘ ΠK' → φ1 ##ₘ φK' → v ∈ FV^N _ j⟦σ1⟧(Π1, φ1) →
+    efill (kemap g K) v ∈ F^N _ j⟦σ ▷ fsub d (Some i)⟧(Π1 ∪ ΠK', φ1 ∪ (fminus (Some i) <$> φK')).
 
-Lemma fkont_down m n N σ1 r1 σ r c1 d ΠK φK K :
-  m ≤ n → fkont n N σ1 r1 σ r c1 d ΠK φK K → fkont m N σ1 r1 σ r c1 d ΠK φK K.
-Proof. intros Hmn H N' g ΠK' φK' i j v Π1 φ1 tk HN Hk1 Hk2 H1 H2 Hi Hj. apply H; try done. lia. Qed.
+Lemma fkont_down m n N σ1 σ c1 d ΠK φK K :
+  m ≤ n → fkont n N σ1 σ c1 d ΠK φK K → fkont m N σ1 σ c1 d ΠK φK K.
+Proof. intros Hmn H g ΠK' φK' i j v Π1 φ1 Hk1 Hk2 H1 H2 Hi Hj. apply H; try done. lia. Qed.
 
-Lemma fkont_rename n N σ1 r1 σ r c1 d ΠK φK K N0 (g : cend → cend) ΠK0 φK0 :
-  rle N N0 → kinj g ΠK → kinj g φK → renk g ΠK ΠK0 → renk g φK φK0 →
-  fkont n N σ1 r1 σ r c1 d ΠK φK K → fkont n N0 σ1 r1 σ r c1 d ΠK0 φK0 (kemap g K).
+Lemma fkont_rename n N σ1 σ c1 d ΠK φK K (g : cend → cend) ΠK0 φK0 :
+  kinj g ΠK → kinj g φK → renk g ΠK ΠK0 → renk g φK φK0 →
+  fkont n N σ1 σ c1 d ΠK φK K → fkont n N σ1 σ c1 d ΠK0 φK0 (kemap g K).
 Proof.
-  intros HN Hk1 Hk2 HΠ Hφ H N' g' ΠK' φK' i j v Π1 φ1 tk HN' Hk1' Hk2' HΠ' Hφ'.
-  rewrite kemap_kemap. apply (H N' (g' ∘ g) ΠK' φK').
-  - by eapply rle_trans.
+  intros Hk1 Hk2 HΠ Hφ H g' ΠK' φK' i j v Π1 φ1 Hk1' Hk2' HΠ' Hφ'.
+  rewrite kemap_kemap. apply (H (g' ∘ g) ΠK' φK').
   - by apply (kinj_compose g' g ΠK ΠK0).
   - by apply (kinj_compose g' g φK φK0).
   - by apply (renk_compose g' g ΠK ΠK0 ΠK').
   - by apply (renk_compose g' g φK φK0 φK').
 Qed.
 
-Lemma fkont_tick n N σ1 r1 σ r c1 d ΠK φK K :
+Lemma fkont_tick n N σ1 σ c1 d ΠK φK K :
   fle (Some 1) c1 →
-  fkont n N σ1 r1 σ r c1 d ΠK φK K → fkont n N σ1 r1 σ r (ftick c1) (ftick d) ΠK (ftick <$> φK) K.
+  fkont n N σ1 σ c1 d ΠK φK K → fkont n N σ1 σ (ftick c1) (ftick d) ΠK (ctick <$> φK) K.
 Proof.
-  intros H1 H N' g ΠK' φK'' i j v Π1 φ1 tk HN Hk1 Hk2 HΠ Hφ Hi.
-  assert (kinj g φK) as HkK by (apply (kinj_dom g (ftick <$> φK)); [by rewrite dom_fmap_L|done]).
+  intros H1 H g ΠK' φK'' i j v Π1 φ1 Hk1 Hk2 HΠ Hφ Hi.
+  assert (kinj g φK) as HkK by (apply (kinj_dom g (ctick <$> φK)); [by rewrite dom_fmap_L|done]).
   destruct (renk_exists g φK HkK) as [φK' HφK].
-  assert (φK'' = ftick <$> φK') as -> by (eapply renk_functional; [exact Hφ|by apply renk_fmap]).
-  assert (Heq : fminus (Some i) <$> (ftick <$> φK') = fminus (Some (S i)) <$> φK').
+  assert (φK'' = ctick <$> φK') as -> by (eapply renk_functional; [exact Hφ|by apply renk_fmap]).
+  assert (Heq : fminus (Some i) <$> (ctick <$> φK') = fminus (Some (S i)) <$> φK').
   { rewrite <-map_fmap_compose. apply map_fmap_ext. intros o f _. apply fminus_tick. }
-  assert (Hd : fsub (ftick d) (Some i) = fsub d (Some (S i))) by apply fminus_tick.
-  intros Hj Hv Hr HdΠ Hdφ HV. rewrite Heq, Hd.
-  apply (H N' g ΠK' φK' (S i)); try done.
+  assert (Hd : fsub (ftick d) (Some i) = fsub d (Some (S i))) by apply fsub_tick.
+  intros Hj Hv HdΠ Hdφ HV. rewrite Heq, Hd.
+  apply (H g ΠK' φK' (S i)); try done.
   - destruct c1; simpl in *; lia.
   - by rewrite map_disjoint_dom, dom_fmap_L, <-map_disjoint_dom in Hdφ.
 Qed.
 
-Lemma fkont_upd n N σ1 r1 σ r c1 d ΠK φK K α :
+Lemma fkont_upd n N σ1 σ c1 d ΠK φK K α :
   (is_act α → fle (Some 1) c1) →
-  fkont n N σ1 r1 σ r c1 d ΠK φK K → fkont n N σ1 r1 σ r (dupd c1 α) (dupd d α) ΠK (kupd α φK) K.
+  fkont n N σ1 σ c1 d ΠK φK K → fkont n N σ1 σ (dupd c1 α) (dupd d α) ΠK (kupd α φK) K.
 Proof.
   intros H1 H. destruct α as [| | | |s]; simpl; try done.
   destruct (act_end s) as [o|] eqn:E; [|done]. apply fkont_tick; [|done].
@@ -176,8 +178,8 @@ Qed.
 (** ** One step of the hole is one step of the composite *)
 
 Section obl_bind.
-  Context (n : nat) (N : fuel) (σ1 σ : rty) (r1 r : nat) (Π1 ΠK : penv) (φ1 φK : cenv)
-    (tk : nat) (c1 d : fuel) (K : ectx).
+  Context (n : nat) (N : fuel) (σ1 σ : rty) (Π1 ΠK : penv) (φ1 φK : cenv)
+    (c1 d : fuel) (K : ectx).
   Context (HdΠ1 : dom Π1 = dom φ1) (HdΠK : dom ΠK = dom φK) (Hd : dom φ1 ## dom φK)
     (Hab : fabove c1 ΠK φK) (Hcd : fle c1 d).
 
@@ -210,30 +212,31 @@ Section obl_bind.
     apply (Hs o f Ho Hf). intros Hi2. apply Hi. by apply idle_at_union_l.
   Qed.
 
-  Context (Hcont : ∀ α j tk' Πh φh e3, j ≤ n → dom Πh = dom φh → dom φh ## dom φK →
+  Context (Hcont : ∀ α j Πh φh e3, j ≤ n → dom Πh = dom φh → dom φh ## dom φK →
      (is_act α → fle (Some 1) c1) →
-     e3 ∈ F^N _ j⟦σ1 ▷ dupd c1 α ; r1⟧(Πh, φh, tk') →
-     efill K e3 ∈ F^N _ j⟦σ ▷ dupd d α ; r⟧(Πh ∪ ΠK, φh ∪ kupd α φK, tk')).
+     e3 ∈ F^N _ j⟦σ1 ▷ dupd c1 α⟧(Πh, φh) →
+     efill K e3 ∈ F^N _ j⟦σ ▷ dupd d α⟧(Πh ∪ ΠK, φh ∪ kupd α φK)).
 
   Lemma Fobl_bind α e3 :
-    Fobl N El Vl n σ1 c1 r1 Π1 φ1 tk α e3 →
-    Fobl N El Vl n σ d r (Π1 ∪ ΠK) (φ1 ∪ φK) tk α (efill K e3).
+    Fobl N El Vl n σ1 c1 Π1 φ1 α e3 →
+    Fobl N El Vl n σ d (Π1 ∪ ΠK) (φ1 ∪ φK) α (efill K e3).
   Proof.
     unfold El, Vl.
     destruct α as [|ℓ c|κ o0 c|v|[o w|o w|o|o i|o i|os]]; simpl;
-      unfold f_beta, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link.
-    - intros H. apply (Hcont LBeta n tk Π1 φ1 e3); [lia|done|done|by intros []|exact H].
+      unfold f_beta, f_new, f_new_at, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link.
+    - intros H. apply (Hcont LBeta n Π1 φ1 e3); [lia|done|done|by intros []|exact H].
     - intros H Hf. destruct H as [S HS].
       { destruct Hf as (H1 & H2 & H3 & H4). rewrite dom_union_L in *. unfold ffresh. set_solver. }
       exists S. destruct Hf as (H1 & H2 & H3 & H4). rewrite !dom_union_L in *.
-      pose proof (Hcont (LNew ℓ c) n tk (pnew c S Π1) (cnew N c φ1) e3 ltac:(lia)) as HC.
+      pose proof (Hcont (LNew ℓ c) n (pnew c S Π1) (cnew (fhalf N) (ncap N (fhalf N)) c φ1) e3 ltac:(lia)) as HC.
       unfold pnew, cnew in *. rewrite !insert_union_l. apply HC; [| |by intros []|exact HS].
       + rewrite !dom_insert_L. set_solver.
       + rewrite !dom_insert_L. set_solver.
-    - intros H Hf. destruct H as [S HS].
+    - intros (p & Hp & H). exists p. split; [by apply lookup_union_Some_l|].
+      intros Hf. destruct H as [S HS].
       { destruct Hf as (H1 & H2 & H3 & H4). rewrite dom_union_L in *. unfold ffresh. set_solver. }
       exists S. destruct Hf as (H1 & H2 & H3 & H4). rewrite !dom_union_L in *.
-      pose proof (Hcont (LNewAt κ o0 c) n tk (pnew c S Π1) (cnew N c φ1) e3 ltac:(lia)) as HC.
+      pose proof (Hcont (LNewAt κ o0 c) n (pnew c S Π1) (cnew p.2 (ncap N p.2) c φ1) e3 ltac:(lia)) as HC.
       unfold pnew, cnew in *. rewrite !insert_union_l. apply HC; [| |by intros []|exact HS].
       + rewrite !dom_insert_L. set_solver.
       + rewrite !dom_insert_L. set_solver.
@@ -256,10 +259,10 @@ Section obl_bind.
       + apply fspare_bind; [set_solver|done].
       + unfold fhand. rewrite mres_union_l, (mres_union_l _ φ1) by (rewrite ?HdΠK; done). exact H5.
       + rewrite mrem_union_l, (mrem_union_l _ φ1) by (rewrite ?HdΠK; done).
-        rewrite refill_union by done. rewrite insert_union_l.
+        rewrite refill_union by (rewrite ?dom_mrem; set_solver). rewrite insert_union_l.
         apply (Hcont (LSess (SSend o w)) n); [lia| | | |exact H6].
-        * rewrite dom_insert_L, dom_refill, !dom_mrem, HdΠ1. done.
-        * rewrite dom_refill, dom_mrem. set_solver.
+        * rewrite dom_insert_L, dom_refill, !dom_mrem, HdΠ1 by (rewrite dom_mrem; set_solver). done.
+        * rewrite dom_refill, dom_mrem by (rewrite dom_mrem; set_solver). set_solver.
         * intros _. by destruct Ha as (_ & _ & _ & ?).
     - intros (Ha & S0 & m & T & Sc & H1 & H2 & H3).
       assert (Ho : o ∈ dom φ1) by (by destruct Ha as (_ & Ho & _)).
@@ -270,12 +273,12 @@ Section obl_bind.
       rewrite insert_union_l in HΠi |- *. rewrite refill_union in Hφi |- * by done.
       apply map_disjoint_union_r in HΠi as [HΠi1 HΠiK].
       apply map_disjoint_union_r in Hφi as [Hφi1 HφiK].
-      rewrite (union_swap _ ΠK Πi), (union_swap _ (ftick <$> φK) φi) by (by apply map_disjoint_sym).
+      rewrite (union_swap _ ΠK Πi), (union_swap _ (ctick <$> φK) φi) by (by apply map_disjoint_sym).
       assert (HdΠi := Vfuel_dom _ _ _ _ _ _ Hw).
       apply (Hcont (LSess (SRecv o w)) j); [lia| | | |by apply H3].
-      + rewrite !dom_union_L, dom_insert_L, dom_refill, HdΠ1, HdΠi. done.
+      + rewrite !dom_union_L, dom_insert_L, dom_refill, HdΠ1, HdΠi by done. done.
       + apply map_disjoint_dom in HφiK. rewrite dom_fmap_L in HφiK.
-        rewrite dom_union_L, dom_refill. set_solver.
+        rewrite dom_union_L, dom_refill by done. set_solver.
       + intros _. by destruct Ha as (_ & _ & _ & ?).
     - intros (Ha & S0 & H1 & H2 & H3).
       assert (Ho : o ∈ dom φ1) by (by destruct Ha as (_ & Ho & _)).
@@ -292,8 +295,8 @@ Section obl_bind.
       split; [by apply f_act_bind|]. exists S0, S1, S2. split_and!; [by rewrite lookup_union_l'|done|].
       rewrite insert_union_l, refill_union by done.
       apply (Hcont (LSess (SSel o i)) n); [lia| | | |exact H3].
-      + rewrite dom_insert_L, dom_refill, HdΠ1. done.
-      + rewrite dom_refill. set_solver.
+      + rewrite dom_insert_L, dom_refill, HdΠ1 by done. done.
+      + rewrite dom_refill by done. set_solver.
       + intros _. by destruct Ha as (_ & _ & _ & ?).
     - intros (Ha & S0 & S1 & S2 & H1 & H2 & H3).
       assert (Ho : o ∈ dom φ1) by (by destruct Ha as (_ & Ho & _)).
@@ -301,14 +304,20 @@ Section obl_bind.
       split; [by apply f_act_bind|]. exists S0, S1, S2. split_and!; [by rewrite lookup_union_l'|done|].
       rewrite insert_union_l, refill_union by done.
       apply (Hcont (LSess (SBra o i)) n); [lia| | | |exact H3].
-      + rewrite dom_insert_L, dom_refill, HdΠ1. done.
-      + rewrite dom_refill. set_solver.
+      + rewrite dom_insert_L, dom_refill, HdΠ1 by done. done.
+      + rewrite dom_refill by done. set_solver.
       + intros _. by destruct Ha as (_ & _ & _ & ?).
     - intros (Hpl & Hos & Htk & H3). assert (HoK : os ## dom φK) by set_solver.
-      split_and!; [|rewrite dom_union_L; set_solver|done|].
+      split_and!; [|rewrite dom_union_L; set_solver| |].
       { destruct Hpl as (o1 & o2 & S1 & S2 & -> & Hne & H1 & H2 & Hdu).
         exists o1, o2, S1, S2. split_and!; [done|done|by apply lookup_union_Some_l|
           by apply lookup_union_Some_l|done]. }
+      { intros o1 o2 p1 p2 Hos' Hne G1 G2. subst os.
+        apply (Htk o1 o2 p1 p2 eq_refl Hne).
+        - apply lookup_union_Some in G1 as [G1|G1]; [done| |by apply map_disjoint_dom].
+          exfalso. apply elem_of_dom_2 in G1. set_solver.
+        - apply lookup_union_Some in G2 as [G2|G2]; [done| |by apply map_disjoint_dom].
+          exfalso. apply elem_of_dom_2 in G2. set_solver. }
       rewrite mrem_union_l, (mrem_union_l _ φ1) by (rewrite ?HdΠK; done).
       apply (Hcont (LSess (SLink os)) n); [lia| | |intros H; exfalso; by apply H|exact H3].
       + by rewrite !dom_mrem, HdΠ1.
@@ -321,17 +330,17 @@ Proof. induction K as [|f K IH]; simpl; [done|]. rewrite IH. f_equal. destruct f
 
 (** F1. A hole whose result, after any number i ≤ c1 of its actions,
     the context continues, runs in the context. *)
-Lemma FuelE_bind n : ∀ N σ1 r1 σ r Π1 φ1 ΠK φK tk c1 d K e,
+Lemma FuelE_bind n : ∀ N σ1 σ Π1 φ1 ΠK φK c1 d K e,
   ectx_ok K → dom Π1 = dom φ1 → dom ΠK = dom φK → dom φ1 ## dom φK →
   fabove c1 ΠK φK → fle c1 d →
-  fkont n N σ1 r1 σ r c1 d ΠK φK K →
-  e ∈ F^N _ n⟦σ1 ▷ c1 ; r1⟧(Π1, φ1, tk) →
-  efill K e ∈ F^N _ n⟦σ ▷ d ; r⟧(Π1 ∪ ΠK, φ1 ∪ φK, tk).
+  fkont n N σ1 σ c1 d ΠK φK K →
+  e ∈ F^N _ n⟦σ1 ▷ c1⟧(Π1, φ1) →
+  efill K e ∈ F^N _ n⟦σ ▷ d⟧(Π1 ∪ ΠK, φ1 ∪ φK).
 Proof.
   induction n as [n IH] using lt_wf_ind.
-  intros N σ1 r1 σ r Π1 φ1 ΠK φK tk c1 d K e HK HdΠ1 HdΠK Hd Hab Hcd Hkont HF.
+  intros N σ1 σ Π1 φ1 ΠK φK c1 d K e HK HdΠ1 HdΠK Hd Hab Hcd Hkont HF.
   destruct n as [|n]; [apply FuelE_0|].
-  apply FuelE_S. intros N' g Π' φ' HN Hk1 Hk2 HΠ Hφ.
+  apply FuelE_S. intros g Π' φ' Hk1 Hk2 HΠ Hφ.
   assert (HdisΠ : Π1 ##ₘ ΠK) by (apply map_disjoint_dom; by rewrite HdΠ1, HdΠK).
   assert (Hdisφ : φ1 ##ₘ φK) by (by apply map_disjoint_dom).
   destruct (renk_union_split g Π1 ΠK Π' Hk1 HdisΠ HΠ) as (Π1' & ΠK' & -> & RΠ1 & RΠK & HdΠ').
@@ -344,27 +353,27 @@ Proof.
   assert (HdΠK' : dom ΠK' = dom φK') by (by rewrite (renk_dom _ _ _ RΠK), (renk_dom _ _ _ RφK), HdΠK).
   assert (Hd' : dom φ1' ## dom φK') by (by apply map_disjoint_dom).
   assert (Hab' : fabove c1 ΠK' φK') by (by eapply fabove_rename).
-  assert (Hkont' : fkont (S n) N' σ1 r1 σ r c1 d ΠK' φK' (kemap g K)) by (by eapply fkont_rename).
+  assert (Hkont' : fkont (S n) N σ1 σ c1 d ΠK' φK' (kemap g K)) by (by eapply fkont_rename).
   assert (HK' : ectx_ok (kemap g K)) by (by apply ectx_ok_emap).
-  apply FuelE_S in HF. destruct (HF N' g Π1' φ1' HN Hk1Π Hk1φ RΠ1 Rφ1) as [Hv1 Hs1].
+  apply FuelE_S in HF. destruct (HF g Π1' φ1' Hk1Π Hk1φ RΠ1 Rφ1) as [Hv1 Hs1].
   rewrite emap_efill.
   assert (Hdec : is_val (emap g e) ∨ ¬ is_val (emap g e)) by (destruct (is_val (emap g e)); simpl; auto).
   destruct Hdec as [Hve|Hve'].
   - (* the hole returned: the continuation after no action *)
-    destruct (Hv1 Hve) as [Hr1 HV1].
-    pose proof (Hkont' N' id ΠK' φK' 0 (S n) (emap g e) Π1' φ1' tk (rle_refl N')
+    pose proof (Hv1 Hve) as HV1.
+    pose proof (Hkont' id ΠK' φK' 0 (S n) (emap g e) Π1' φ1'
       (kinj_id _) (kinj_id _) (renk_id _) (renk_id _) ltac:(by destruct c1; simpl; lia) ltac:(lia)
-      Hve Hr1 HdΠ' Hdφ' ltac:(by apply Vfuel_eq)) as HC.
+      Hve HdΠ' Hdφ' ltac:(by apply Vfuel_eq)) as HC.
     rewrite kemap_id, fminus_0_map, fsub_0 in HC.
     apply FuelE_S in HC.
-    pose proof (HC N' id _ _ (rle_refl N') (kinj_id _) (kinj_id _) (renk_id _) (renk_id _)) as HC'.
+    pose proof (HC id _ _ (kinj_id _) (kinj_id _) (renk_id _) (renk_id _)) as HC'.
     by rewrite emap_id in HC'.
   - split.
     + intros Hv. exfalso. exact (efill_not_val _ _ Hve' Hv).
     + intros α e2 Hst. destruct (tstep_efill_inv _ _ _ _ HK' Hve' Hst) as (e3 & Hst3 & ->).
-      apply (Fobl_bind n N' σ1 σ r1 r Π1' ΠK' φ1' φK' tk c1 d (kemap g K)); try done.
-      * intros α' j tk' Πh φh e4 Hj Hdh Hdh' H1 Hh.
-        apply (IH j ltac:(lia) N' σ1 r1 σ r Πh φh ΠK' (kupd α' φK') tk' (dupd c1 α') (dupd d α')
+      apply (Fobl_bind n N σ1 σ Π1' ΠK' φ1' φK' c1 d (kemap g K)); try done.
+      * intros α' j Πh φh e4 Hj Hdh Hdh' H1 Hh.
+        apply (IH j ltac:(lia) N σ1 σ Πh φh ΠK' (kupd α' φK') (dupd c1 α') (dupd d α')
           (kemap g K) e4); try done.
         -- by rewrite dom_kupd.
         -- by rewrite dom_kupd.
@@ -373,10 +382,3 @@ Proof.
         -- apply (fkont_down j (S n)); [lia|]. by apply fkont_upd.
       * by apply Hs1.
 Qed.
-
-(** ** Link loops exhaust the tickets
-
-    A thread that links in every state of a family Q, and stays in Q
-    after the link, has no fuel at tk tickets and index tk + 1. A link
-    loop with chatter (C3, Appendix B #5) is of this shape between its
-    chatter steps, so no ticket count gives it fuel at every index. *)

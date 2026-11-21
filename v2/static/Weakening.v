@@ -469,9 +469,9 @@ Local Ltac ren_split Hr :=
       destruct (lren_lage _ _ _ _ _ Ha0 Hr2) as (Δ2r' & Ha & Hr2')
   end.
 
-Theorem typed_rename W N Θ Γ Δ F e T c t :
-  typed W N Θ Γ Δ F e T c t →
-  ∀ r Δ', lren r Δ Δ' → typed W N Θ Γ Δ' F (rename r e) T c t.
+Theorem typed_rename W N Θ Γ Δ F e T c :
+  typed W N Θ Γ Δ F e T c →
+  ∀ r Δ', lren r Δ Δ' → typed W N Θ Γ Δ' F (rename r e) T c.
 Proof.
   induction 1; intros r Δr Hr; simpl.
   - by apply e_unit, (lren_unl _ _ _ H Hr).
@@ -492,24 +492,24 @@ Proof.
     + by apply IHtyped, lren_up.
   - (* E-App *)
     ren_split Hr.
-    eapply e_app; [done|exact Hs|done| |done|exact Ha| |done|done|done].
+    eapply e_app; [done|exact Hs|done| |done|exact Ha| |done].
     + rewrite (lren_heads _ _ _ Hr2), (lren_bot _ _ _ Hr2). by apply IHtyped1.
     + by apply IHtyped2.
   - ren_split Hr.
-    eapply e_pair; [done|exact Hs| |done|exact Ha| |done|done].
+    eapply e_pair; [done|exact Hs| |done|exact Ha| |done].
     + rewrite (lren_heads _ _ _ Hr2), (lren_bot _ _ _ Hr2). by apply IHtyped1.
     + by apply IHtyped2.
   - ren_split Hr.
-    eapply e_letu; [done|exact Hs| |done|exact Ha| |done].
+    eapply e_letu; [done|exact Hs| |done|exact Ha| ].
     + rewrite (lren_heads _ _ _ Hr2), (lren_bot _ _ _ Hr2). by apply IHtyped1.
     + by apply IHtyped2.
   - ren_split Hr.
-    eapply e_letp; [done|exact Hs| |done|exact Ha| |done].
+    eapply e_letp; [done|exact Hs| |done|exact Ha| ].
     + rewrite (lren_heads _ _ _ Hr2), (lren_bot _ _ _ Hr2). by apply IHtyped1.
     + by apply IHtyped2, lren_up, lren_up.
   - by eapply e_inj, IHtyped.
   - ren_split Hr.
-    eapply e_case; [done|exact Hs| |done|exact Ha| | |done].
+    eapply e_case; [done|exact Hs| |done|exact Ha| | ].
     + rewrite (lren_heads _ _ _ Hr2), (lren_bot _ _ _ Hr2). by apply IHtyped1.
     + by apply IHtyped2, lren_up.
     + by apply IHtyped3, lren_up.
@@ -536,8 +536,8 @@ Proof.
     by rewrite lenv_pinst_lookup, H.
 Qed.
 
-Corollary typed_weaken_head W N Θ Γ Δ F e T c t :
-  typed W N Θ Γ Δ F e T c t → typed W N Θ Γ (None :: Δ) F (rename S e) T c t.
+Corollary typed_weaken_head W N Θ Γ Δ F e T c :
+  typed W N Θ Γ Δ F e T c → typed W N Θ Γ (None :: Δ) F (rename S e) T c.
 Proof.
   intros H. eapply typed_rename; [exact H|]. apply lren_inj; [done|by intros ?? [=]|].
   intros [|y] σ Hy; [done|]. by exists y.
@@ -551,8 +551,8 @@ Proof. apply lren_inj; [done|done|]. intros y σ _. by exists y. Qed.
 
 (** E-Weak is admissible: the identity renaming into a context with more
     unlimited entries. *)
-Lemma e_weak W N Θ Γ Δ' Δ F e T c t :
-  lenv_wk Δ' Δ → typed W N Θ Γ Δ' F e T c t → typed W N Θ Γ Δ F e T c t.
+Lemma e_weak W N Θ Γ Δ' Δ F e T c :
+  lenv_wk Δ' Δ → typed W N Θ Γ Δ' F e T c → typed W N Θ Γ Δ F e T c.
 Proof.
   intros Hw H. rewrite <-(rename_id e). eapply typed_rename; [exact H|].
   exact (lren_wk _ _ _ _ Hw (lren_refl Δ)).
@@ -560,10 +560,10 @@ Qed.
 
 (** E-Contract is admissible: the renaming pred merges two copies of an
     unlimited entry. *)
-Lemma e_contract W N Θ Γ Δ U F e T c t :
+Lemma e_contract W N Θ Γ Δ U F e T c :
   unlimited U →
-  typed W N Θ Γ (Some U :: Some U :: Δ) F e T c t →
-  typed W N Θ Γ (Some U :: Δ) F (rename pred e) T c t.
+  typed W N Θ Γ (Some U :: Some U :: Δ) F e T c →
+  typed W N Θ Γ (Some U :: Δ) F (rename pred e) T c.
 Proof.
   intros Hu H. eapply typed_rename; [exact H|].
   exact (lren_contract id U _ _ Hu (lren_refl _)).
@@ -613,8 +613,8 @@ Qed.
 
     [ELet] is ⟨e1, ∗⟩ split by LetP, then u matched by LetU. E-Pair
     gives e1 the whole context and ∗ none, aging by 0 leaves every
-    entry as it is, and E-LetU consumes u. Costs and transformers come
-    out as fadd c1 c2 and tseq t1 t2 up to the units 0 and [tid]. *)
+    entry as it is, and E-LetU consumes u. Costs come
+    out as fadd c1 c2 up to the unit 0. *)
 
 Section let_admissible.
   Local Abbreviation lnone Δ := ((λ _ : option (ty), None) <$> Δ).
@@ -642,7 +642,7 @@ Section let_admissible.
   Proof. destruct a; simpl; lia. Qed.
   Local Lemma tage_0 T : tage (Some 0) T T.
   Proof.
-    induction T as [|ub lb c t T1 IH1 U IH2 a|T1 IH1 U IH2|T1 IH1 U IH2|n k C ub c t U IH|S x a|lb n C T1 IH];
+    induction T as [|ub lb c T1 IH1 U IH2 a|T1 IH1 U IH2|T1 IH1 U IH2|n k C ub c U IH|S x a m|lb n C T1 IH];
       try solve [apply age_free; constructor]; try by constructor.
     - rewrite <-(fsub_0 a) at 2. apply age_arr, fle_0.
     - rewrite <-(fsub_0 a) at 2. apply age_sess, fle_0.
@@ -651,7 +651,7 @@ Section let_admissible.
   Proof. induction Δ as [|[σ|] Δ IH]; constructor; auto using tage_0. Qed.
   Local Lemma thage_0 Θ : thage (Some 0) Θ Θ.
   Proof.
-    intros o. destruct (Θ !! o) as [[S x a]|]; [|done]. simpl. split_and!; [done|done|apply fle_0|by rewrite fsub_0].
+    intros o. destruct (Θ !! o) as [[S x a m]|]; [|done]. simpl. split_and!; [done|done|done|apply fle_0|by rewrite fsub_0].
   Qed.
   Local Lemma thage_nil c : thage c ∅ ∅.
   Proof. intros o. by rewrite lookup_empty. Qed.
@@ -661,10 +661,6 @@ Section let_admissible.
   Proof. split; [apply map_disjoint_empty_l|by rewrite map_empty_union]. Qed.
   Local Lemma fadd_0_r a : fadd a (Some 0) = a.
   Proof. destruct a as [m|]; [simpl; by rewrite Nat.add_0_r|done]. Qed.
-  Local Lemma tseq_tid_r t : tseq t tid = t.
-  Proof. destruct t as [[s|] [b|]]; unfold tseq, tid, fmul; simpl; rewrite ?Nat.add_0_r, ?Nat.mul_0_r; done. Qed.
-  Local Lemma tseq_tid_l t : tseq tid t = t.
-  Proof. destruct t as [[s|] [b|]]; unfold tseq, tid, fmul; simpl; rewrite ?Nat.add_0_r; done. Qed.
   Local Lemma sf_union_nil F : sf_unionb F (tenv_heads ∅ ∪ ∅) false = F.
   Proof.
     destruct F as [X o]. unfold sf_unionb. simpl. f_equal.
@@ -673,42 +669,37 @@ Section let_admissible.
   Qed.
 
   (** E-Let *)
-  Lemma e_let W N Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 T1 T c1 t1 c2 t2 :
+  Lemma e_let W N Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 T1 T c1 c2 :
     tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-    typed W N Θ1 Γ Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 T1 c1 t1 →
+    typed W N Θ1 Γ Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 T1 c1 →
     thage c1 Θ2 Θ2' → lage c1 Δ2 Δ2' →
-    typed W N Θ2' Γ (Some T1 :: Δ2') F e2 T c2 t2 →
-    tok t1 t2 →
-    typed W N Θ Γ Δ F (ELet e1 e2) T (fadd c1 c2) (tseq t1 t2).
+    typed W N Θ2' Γ (Some T1 :: Δ2') F e2 T c2 →
+    typed W N Θ Γ Δ F (ELet e1 e2) T (fadd c1 c2).
   Proof.
-    intros Hs Hl H1 Ht Ha H2 Hok. unfold ELet.
+    intros Hs Hl H1 Ht Ha H2. unfold ELet.
     enough (typed W N Θ Γ Δ F (LetP (Pair e1 EUnit) (LetU (Var 0) (rename S e2))) T
-              (fadd (fadd c1 (Some 0)) (fadd (Some 0) c2)) (tseq (tseq t1 tid) (tseq tid t2))) as H.
-    { by rewrite fadd_0_r, fadd_0_l, tseq_tid_r, tseq_tid_l in H. }
-    eapply e_letp; [exact Hs|exact Hl| |by rewrite fadd_0_r|by rewrite fadd_0_r| |].
-    - eapply e_pair; [apply tsplit_l|apply lsplit_all| |apply thage_nil|apply lage_lnone| |apply tage_0|].
+              (fadd (fadd c1 (Some 0)) (fadd (Some 0) c2))) as H.
+    { by rewrite fadd_0_r, fadd_0_l in H. }
+    eapply e_letp; [exact Hs|exact Hl| |by rewrite fadd_0_r|by rewrite fadd_0_r|].
+    - eapply e_pair; [apply tsplit_l|apply lsplit_all| |apply thage_nil|apply lage_lnone| |apply tage_0].
       + by rewrite lheads_lnone, lbot_lnone, sf_union_nil.
       + apply e_unit, lempty_lnone.
-      + left. done.
-    -       eapply e_letu; [apply tsplit_r|apply lsplit_l, lsplit_allr| |apply thage_0|apply lage_0| |].
+    - eapply e_letu; [apply tsplit_r|apply lsplit_l, lsplit_allr| |apply thage_0|apply lage_0|].
       + apply e_var. split; [done|]. intros y σ' Hne Hy. destruct y; [done|].
         by destruct (lnone_lookup_S _ _ _ _ Hy).
       + simpl. by apply typed_weaken_head.
-      + right. left. done.
-    - rewrite tseq_tid_r, tseq_tid_l. exact Hok.
   Qed.
 
   (** E-SpawnLam is admissible (entry 12, generalized arrows): E-Abs at
       upper point ⊤ and lower point ⊥ with credit 1, then E-Spawn. *)
-  Lemma e_spawn_lam W N Θ Θ' Γ Δ Δ' F e c' t' :
+  Lemma e_spawn_lam W N Θ Θ' Γ Δ Δ' F e c' :
     thage (Some 1) Θ Θ' → lage (Some 1) Δ Δ' →
-    typed W N Θ' Γ (Some TUnit :: Δ') (∅, None) e TUnit c' t' →
-    typed W N Θ Γ Δ F (ESpawn (Lam e)) TUnit (Some 0) (tspawn (tapp t' 0) tid).
+    typed W N Θ' Γ (Some TUnit :: Δ') (∅, None) e TUnit c' →
+    typed W N Θ Γ Δ F (ESpawn (Lam e)) TUnit (Some 0).
   Proof.
     intros Ht Ha H.
-    rewrite <-(tseq_tid_l (tspawn (tapp t' 0) tid)).
-    eapply (e_spawn _ _ _ _ _ _ _ UTop LBot c' t' (Some 1)); [|simpl; lia|right; left; discriminate].
-    eapply (e_abs _ _ _ _ _ _ _ _ _ _ _ UTop LBot c' t' (Some 1)); [done|exact Ht|exact Ha|exact H].
+    eapply (e_spawn _ _ _ _ _ _ _ UTop LBot c' (Some 1)); [|simpl; lia].
+    eapply (e_abs _ _ _ _ _ _ _ _ _ _ _ UTop LBot c' (Some 1)); [done|exact Ht|exact Ha|exact H].
   Qed.
 
   (** D-Let *)

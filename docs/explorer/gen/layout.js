@@ -163,19 +163,16 @@ merge('th-adeq', 'Adequacy', ['th-adequacy', 'th-lf-adequacy'], {
 order('theorems', ['th-chain', 'th-sound', 'th-compose', 'th-fund-proc', 'th-adeq', 'th-conserv', 'th-terms']);
 
 // decided or proposed on the map, not yet in the Rocq: the block shows a "planned" tag with this text
-const NEW2 = 'Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field.';
-const TICKETS = 'Tickets as one number per end are planned, decided on 2026-11-21 (docs/redesign/check-links-without-tickets.md, last section). An end type is (S@x)^a_m with credit a ≤ m, the tickets of the two ends of a channel sum to at most N, E-Link asks a1 + m2 > N and a2 + m1 > N, an action resets an end to its tickets m, and the measure of lock-free adequacy is the counter of the dual end. The write-up calls the bound K. The Rocq still has the ticket needs ϑ with tix, tlink, tspawn, tseq and tok, the ticket premise of P-Term, the spawn split and s_tk.';
+const NEW2 = 'Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, its ends at N/2 and N − N/2 tickets, and with new_κ o at a field, its ends at the tickets m of o and N − m.';
 const TRANSFINITE = 'Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers.';
-const planned = {
-  'ty-grammar': TICKETS, 't-lf-credits': TICKETS, 'r-threads': TICKETS, 't-subs': TICKETS, 'fv': TICKETS + ' ' + TRANSFINITE, 'v-rel': TRANSFINITE,
+const planned = { 'fv': TRANSFINITE, 'v-rel': TRANSFINITE,
   'syn-terms': NEW2, 'syn-points': NEW2, 'sem-labels': NEW2, 'sem-head': NEW2, 'sem-proc': NEW2,
-  't-consts': NEW2 + ' ' + TICKETS, 'w-world': NEW2, 'w-order': NEW2, 'w-ext': NEW2, 'r-new': NEW2 + ' ' + TICKETS, 'e-obl': NEW2 + ' ' + TRANSFINITE,
-  'soup': NEW2 + ' ' + TICKETS + ' ' + TRANSFINITE,
+  't-consts': NEW2, 'w-world': NEW2, 'w-order': NEW2, 'w-ext': NEW2, 'r-new': NEW2, 'e-obl': NEW2 + ' ' + TRANSFINITE,
+  'soup': NEW2 + ' ' + TRANSFINITE,
   'sj-all': NEW2 + ' ' + TRANSFINITE,
-  'ty-ann': TICKETS, 't-lf-tickets': TICKETS, 't-judgment': TICKETS, 'r-act': TICKETS, 'p-typing': TICKETS,
-  'fu-vs': TICKETS + ' ' + TRANSFINITE, 'fu': TICKETS + ' ' + TRANSFINITE, 'fu-obls': TICKETS + ' ' + TRANSFINITE,
-  'sr-reading': TICKETS + ' ' + TRANSFINITE, 'e-rel': TRANSFINITE,
-  'th-chain': TICKETS + ' ' + TRANSFINITE, 'th-adeq': TICKETS + ' ' + TRANSFINITE, 'th-terms': TICKETS,
+  'fu-vs': TRANSFINITE, 'fu': TRANSFINITE, 'fu-obls': NEW2 + ' ' + TRANSFINITE,
+  'sr-reading': TRANSFINITE, 'e-rel': TRANSFINITE,
+  'th-chain': TRANSFINITE, 'th-adeq': TRANSFINITE,
 };
 for (const [id, why] of Object.entries(planned)) set(id, b => { b.planned = why; });
 
