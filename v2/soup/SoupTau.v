@@ -26,7 +26,7 @@ Definition tRs (y x : expr) : Prop :=
 Lemma admin_back e α x' (X : gset chan) :
   tstep (cerase e) α x' → admin_lbl α →
   ∃ α0 e0, tstep e α0 e0 ∧ admin_lbl α0 ∧ cerase x' = cerase e0 ∧
-    (∀ ℓ c, α0 = LNew ℓ c → c ∉ X) ∧ (∀ κ o c, α0 = LNewAt κ o c → c ∉ X) ∧
+    (∀ c, α0 = LNew c → c ∉ X) ∧
     (∀ v, α = LSpawn v → ∃ v0, α0 = LSpawn v0 ∧ cerase (App v EUnit) = cerase (App v0 EUnit)).
 Proof.
   intros Hst Hα.
@@ -36,34 +36,22 @@ Proof.
   { intros α0 e0 Hs0 Hl. destruct (tstep_cerase e α0 e0 Hs0) as (x0 & Hx0 & <-).
     eapply tstep_det_cerase; [exact Hst|exact Hx0|]. by rewrite lerase_idem, Hl. }
   set (c0 := fresh (X ∪ fchans e)). assert (c0 ∉ X ∪ fchans e) as Hc0 by apply is_fresh.
-  destruct a as [|ℓ|v|o|o v|o|o1 o2|o i|o]; simpl in Ho;
-    destruct α as [|ℓ' c1|κ' o' c1|w|[| | | | |os]]; simpl in Hα; try contradiction.
+  destruct a as [| |v|o|o v|o|o1 o2|o i|o]; simpl in Ho;
+    destruct α as [|c1|w|[| | | | |os]]; simpl in Hα; try contradiction.
   - destruct (act_offer e ABeta LBeta Ha I) as [e0 He0].
     exists LBeta, e0. split_and!; [done|done|by apply (Hdet _ _ He0)|intros; discriminate..].
-  - destruct (act_offer e (ANew ℓ) (LNew ℓ c0) Ha eq_refl) as [e0 He0].
-    exists (LNew ℓ c0), e0. split_and!; [done|done| |intros ? ? [= _ <-]; set_solver|intros; discriminate|intros; discriminate].
-    apply (Hdet _ _ He0). simpl in *. by subst.
-  - destruct (act_offer e (ANewAt κ o) (LNewAt κ o c0) Ha (conj eq_refl eq_refl)) as [e0 He0].
-    exists (LNewAt κ o c0), e0. split_and!; [done|done| |intros; discriminate|intros ? ? ? [= _ _ <-]; set_solver|intros; discriminate].
-    apply (Hdet _ _ He0). simpl in *. destruct Ho. by subst.
+  - destruct (act_offer e ANew (LNew c0) Ha I) as [e0 He0].
+    exists (LNew c0), e0. split_and!; [done|done| |intros ? [= <-]; set_solver|intros; discriminate].
+    apply (Hdet _ _ He0). done.
   - destruct (act_offer e (ASpawn v) (LSpawn v) Ha eq_refl) as [e0 He0].
     simpl in Ho. subst w.
-    exists (LSpawn v), e0. split_and!; [done|done| |intros; discriminate|intros; discriminate|].
+    exists (LSpawn v), e0. split_and!; [done|done| |intros; discriminate|].
     + apply (Hdet _ _ He0). simpl. fold cerase. by rewrite cerase_idem.
     + intros v' [= <-]. exists v. split; [done|]. unfold cerase. simpl. by rewrite emap_emap.
   - destruct (act_offer e (ALink o1 o2) (LSess (SLink ({[o1]} ∪ {[o2]}))) Ha eq_refl) as [e0 He0].
     simpl in Ho. subst os. exists (LSess (SLink ({[o1]} ∪ {[o2]}))), e0.
-    split_and!; [done|done| |intros; discriminate|intros; discriminate|intros; discriminate].
+    split_and!; [done|done| |intros; discriminate|intros; discriminate].
     apply (Hdet _ _ He0). simpl. f_equal. f_equal. set_solver.
-Qed.
-
-Lemma gfresh_exists ℓ (Θ : senv) : ∃ g, gfresh ℓ g Θ.
-Proof.
-  set (G := list_to_set (omap (λ p : cend * (sty * point),
-    match pt_root p.2.2 with NGen ℓ' g => if decide (ℓ' = ℓ) then Some g else None | _ => None end)
-    (map_to_list Θ)) : gset nat).
-  exists (fresh G). intros o S x Ho Hr. apply (is_fresh G). apply elem_of_list_to_set, list_elem_of_omap.
-  exists (o, (S, x)). split; [by apply elem_of_map_to_list|]. simpl. rewrite Hr. by rewrite decide_True.
 Qed.
 
 (** A thread in E[live] at a positive level, with its children, takes
@@ -77,19 +65,15 @@ Proof.
   assert (∀ α x', tstep (cerase e) α x' → admin_lbl α → Acc tRs (cerase x') ∧
             ∀ v, α = LSpawn v → Acc tRs (cerase (App v EUnit))) as Hall.
   { intros α x' Hst Hα.
-    destruct (admin_back e α x' (set_map ech (dom Θ)) Hst Hα) as (α0 & e0 & Hs0 & Hα0 & -> & Hn1 & Hn2 & Hsp).
+    destruct (admin_back e α x' (set_map ech (dom Θ)) Hst Hα) as (α0 & e0 & Hs0 & Hα0 & -> & Hn1 & Hsp).
     pose proof (Hobl α0 e0 Hs0) as Ho.
-    destruct α0 as [|ℓ c|κ o c|v0|[| | | | |os]]; simpl in Hα0; try contradiction; cbn [Eobl] in Ho.
+    destruct α0 as [|c|v0|[| | | | |os]]; simpl in Hα0; try contradiction; cbn [Eobl] in Ho.
     - split; [|intros v1 Hα1; destruct (Hsp v1 Hα1) as (? & Heq & _); discriminate Heq]. by destruct (proj1 Ho eq_refl).
     - split; [|intros v1 Hα1; destruct (Hsp v1 Hα1) as (? & Heq & _); discriminate Heq]. unfold o_new in Ho.
       assert (cfresh c Θ) as Hcf.
-      { pose proof (Hn1 ℓ c eq_refl) as Hc. split; intros Hd; apply Hc; apply elem_of_map; [exists (EPos c)|exists (ENeg c)]; done. }
-      destruct (gfresh_exists ℓ Θ) as [g Hg]. destruct (Ho Hcf g Hg) as [S HS].
+      { pose proof (Hn1 c eq_refl) as Hc. split; intros Hd; apply Hc; apply elem_of_map; [exists (EPos c)|exists (ENeg c)]; done. }
+      destruct (Ho Hcf) as (S & π & Wn & _ & HS).
       by destruct (proj1 HS eq_refl).
-    - split; [|intros v1 Hα1; destruct (Hsp v1 Hα1) as (? & Heq & _); discriminate Heq]. unfold o_new_at in Ho.
-      assert (cfresh c Θ) as Hcf.
-      { pose proof (Hn2 κ o c eq_refl) as Hc. split; intros Hd; apply Hc; apply elem_of_map; [exists (EPos c)|exists (ENeg c)]; done. }
-      destruct (Ho Hcf) as (S0 & x & _ & S & HS). by destruct (proj1 HS eq_refl).
     - unfold o_spawn in Ho. destruct Ho as (ΘM & Θr & _ & _ & Hth & Hpar).
       split; [by destruct (proj1 Hpar eq_refl)|].
       intros v -> . destruct (Hsp v eq_refl) as (v1 & [= <-] & ->).
@@ -192,11 +176,8 @@ Qed.
 Lemma padmin_mstep p p' : padmin p p' → mstep tRs (cmset p'.2) (cmset p.2).
 Proof.
   intros (q & ev & q' & <- & Hst & <- & Had).
-  destruct Hst as [C M i e e' Hi Hs|C M i e ℓ c e' Hi Hs|C M i e κ o c e' Hi Hs|C M i j e v e' Hi Hs Hj
+  destruct Hst as [C M i e e' Hi Hs|C M i e c e' Hi Hs|C M i j e v e' Hi Hs Hj
     | | | |C M i e o1 o2 e' Hi Hs HC|]; simpl in Had; try contradiction; unfold erase; cbn [fst snd].
-  - rewrite (soup_update M i e e' Hi), (soup_delete M i e Hi), !cmset_union, !cmset_singleton.
-    exists (cerase e), {[+ cerase e' +]}, (cmset (soup (delete i M))). split_and!; [done|done|].
-    intros y Hy. apply gmultiset_elem_of_singleton in Hy as ->. left. by eapply tR_step; [|exact Hs].
   - rewrite (soup_update M i e e' Hi), (soup_delete M i e Hi), !cmset_union, !cmset_singleton.
     exists (cerase e), {[+ cerase e' +]}, (cmset (soup (delete i M))). split_and!; [done|done|].
     intros y Hy. apply gmultiset_elem_of_singleton in Hy as ->. left. by eapply tR_step; [|exact Hs].
@@ -237,6 +218,6 @@ Proof.
   apply (padmin_acc (cmset (soup (s_q a').2))); [|done].
   apply mstep_acc. intros x Hx. unfold cmset in Hx. apply elem_of_gmultiset_map in Hx as (e & -> & He).
   apply elem_of_soup in He as [t Ht].
-  destruct Hsa' as (A & Π & U & Hsi).
-  exact (Erel_tacc ozero W _ _ _ e (s_rel Hsi t e Ht)).
+  destruct Hsa' as (_ & A & Π & U & Hsi).
+  exact (Erel_tacc ozero (s_W a') _ _ _ e (s_rel Hsi t e Ht)).
 Qed.

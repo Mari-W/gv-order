@@ -18,7 +18,7 @@ Definition ev_ends (K : own) (ev : event) : Prop :=
   | EvSync i j (SClose o) | EvSync i j (SSel o _) => owns K o i ∧ owns K (edual o) j
   | EvSolo u α k =>
       let fr := match α with
-                | LNew _ c | LNewAt _ _ c => (EPos c ∉ dom K) ∧ (ENeg c ∉ dom K)
+                | LNew c => (EPos c ∉ dom K) ∧ (ENeg c ∉ dom K)
                 | _ => True
                 end in
       match k with
@@ -35,18 +35,17 @@ Proof. intros (h & H1 & <-) (h' & H2 & <-). congruence. Qed.
 Lemma owns_of {Y : Type} (K : own) t (m : gmap cend Y) o v : kres K t m !! o = Some v → owns K o t.
 Proof. intros H. apply lookup_kres in H as [_ H]. done. Qed.
 
-Lemma s_ev_ends N n W T C Mq K A Π U ev q' :
-  olt ozero n → soup_inv N n W ∅ T (LFState (C, Mq) K) A Π U → strict W →
+Lemma s_ev_ends N n W T C Mq K Ws A Π U ev q' :
+  olt ozero n → soup_inv N n W ∅ T (LFState (C, Mq) K Ws) A Π U →
   istep (C, Mq) ev q' → ev_tau ev → ev_ends K ev.
 Proof.
-  intros Hn Hs HW Hst Hτ.
-  pose proof (l_obl _ _ _ _ _ _ _ _ Hs HW) as Hobl. cbn [s_q s_K] in Hobl.
-  inversion Hst as [C0 M0 i e e' Hi Hs'|C0 M0 i e ℓ c e' Hi Hs' HC Hc|C0 M0 i e κ o c e' Hi Hs' HC Hc
+  intros Hn Hs Hst Hτ.
+  pose proof (l_obl _ _ _ _ _ _ _ _ Hs) as Hobl. cbn [s_q s_K] in Hobl.
+  inversion Hst as [C0 M0 i e e' Hi Hs'|C0 M0 i e c e' Hi Hs' HC Hc
     |C0 M0 i j e v e' Hi Hs' Hj
     |C0 M0 i j o v e e' f f' Hij Hi Hj He Hf|C0 M0 i j o e e' f f' Hij Hi Hj He Hf HC
     |C0 M0 i j o b e e' f f' Hij Hi Hj He Hf|C0 M0 i e o1 o2 e' Hi Hs' HC
     |C0 M0 i e σ e' Hi Hs' HC]; subst; simpl; try done.
-  - split; intros Hd; apply HC; exact (s_closed _ _ _ _ _ _ _ _ Hs _ Hd).
   - split; intros Hd; apply HC; exact (s_closed _ _ _ _ _ _ _ _ Hs _ Hd).
   - pose proof (Hobl i e _ e' Hi Hs') as H. cbn [Eobl] in H.
     destruct H as (ΘM & Θr & Hd & HΘ & Hth & _).
@@ -71,7 +70,7 @@ Proof.
   - pose proof (Hobl i e _ e' Hi He) as H1. pose proof (Hobl j f _ f' Hj Hf) as H2. cbn [Eobl] in H1, H2.
     destruct H1 as (S0 & x & S1 & S2 & Ho & _). destruct H2 as (S0' & x' & S1' & S2' & Ho' & _).
     split; [exact (owns_of _ _ _ _ _ Ho)|exact (owns_of _ _ _ _ _ Ho')].
-  - destruct (link_obl _ _ ozero Hn _ _ _ _ _ _ _ _ Hs i e o1 o2 e' Hi Hs') as (H12 & H1 & H2 & _). done.
+  - destruct (link_obl _ _ ozero Hn _ _ _ _ _ _ _ _ _ Hs i e o1 o2 e' Hi Hs') as (H12 & H1 & H2 & _). done.
 Qed.
 
 (** ** Entries after an event *)
@@ -89,7 +88,7 @@ Lemma own_next_keep tc ev K t o h :
 Proof.
   intros Hen Hnl Ht Ho Eh.
   destruct ev as [i α [|j|o1 o2]|i j [o' M|o' M|o'|o' b|o' b|os]|i σ];
-    [destruct α as [|ℓ c|κ o' c|M|σ]..| | | | | | | ]; simpl in Hen, Ht |- *; try done.
+    [destruct α as [|c|M|σ]..| | | | | | | ]; simpl in Hen, Ht |- *; try done.
   all: try (exfalso; eapply Hnl; reflexivity).
   all: try (destruct Hen as [H1 H2]; unfold knew; pose proof (elem_of_dom_2 _ _ _ Ho) as Hd;
     rewrite !lookup_insert_ne; [done|intros <-; done|intros <-; done]).

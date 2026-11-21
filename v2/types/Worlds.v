@@ -609,3 +609,36 @@ Proof. intros H. simpl. unfold wgrow_rank. by rewrite decide_False. Qed.
 
 Lemma wgrow_rin W B ρ Hρ x : pt_root x ∈ B → rin (wgrow W B ρ Hρ) x.
 Proof. intros H. unfold rin. simpl. set_solver. Qed.
+
+(** ** A chain of worlds
+
+    The worlds of a run only grow. The order of the chain, x ≺ y in some
+    world of it, is well-founded: every rank stays fixed once chosen. *)
+Section chain.
+  Context (Wc : nat → world) (Hc : ∀ k, Wc k ⊑ Wc (S k)).
+
+  Lemma wchain_le k j : k ≤ j → Wc k ⊑ Wc j.
+  Proof.
+    induction 1 as [|j _ IH]; [apply wext_refl|]. eapply wext_trans; [exact IH|apply Hc].
+  Qed.
+
+  Definition wchain_lt (x y : point) : Prop := ∃ k, Wc k ⊢ x ≺ y.
+
+  Lemma wchain_lt_wf : well_founded wchain_lt.
+  Proof.
+    assert (∀ a k x, rin (Wc k) x → w_rank (Wc k) x = a → Acc wchain_lt x) as Hin.
+    { intros a. induction a as [a IH] using oind. intros k x Hx <-. constructor.
+      intros y [j Hy]. set (m := k `max` j).
+      assert (Wc k ⊑ Wc m) as Hk by (apply wchain_le; lia).
+      assert (Wc j ⊑ Wc m) as Hj by (apply wchain_le; lia).
+      pose proof (w_lt_mono _ _ _ _ Hj Hy) as Hym.
+      assert (rin (Wc m) x) as Hxm by exact (rin_mono _ _ _ Hk Hx).
+      destruct Hym as [Hp|(Hy' & _ & Hlt)].
+      - assert (rin (Wc m) y) as Hym by exact (proj2 (rin_po _ y x Hp) Hxm).
+        apply (IH (w_rank (Wc m) y) ltac:(rewrite <-(wext_rank _ _ Hk x Hx); by apply rank_po) m y Hym eq_refl).
+      - apply (IH (w_rank (Wc m) y) ltac:(by rewrite <-(wext_rank _ _ Hk x Hx)) m y Hy' eq_refl). }
+    intros x. induction (po_wf x) as [x _ IH]. constructor. intros y [j [Hy|(Hy & _ & _)]].
+    - by apply IH.
+    - by apply (Hin _ j y Hy eq_refl).
+  Qed.
+End chain.

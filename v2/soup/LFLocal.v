@@ -123,7 +123,7 @@ Proof. by destruct a. Qed.
 Section local.
   #[local] Set Default Proof Using "All".
   Context (N : nat) (n : Ix) (W : world) (T : ty) (a : lfstate) (A : senv) (Π : penv) (U : nat → ty).
-  Context (Hs : soup_inv N n W ∅ T a A Π U) (HW : strict W).
+  Context (Hs : soup_inv N n W ∅ T a A Π U).
 
   Local Abbreviation q := (s_q a).
   Local Abbreviation K := (s_K a).
@@ -216,7 +216,7 @@ Section local.
     destruct (s_sdual _ _ _ _ _ _ _ _ Hs o S0 x S' x' HA HA') as [-> _].
     pose proof (s_ready t e a1 o S0 x (edual o) S' (pt_dual x) He Ha Ho (proj2 (lookup_kres K t A o (S0, x))
       (conj HA (ex_intro _ h (conj Kh Eh)))) Hx' (edual_ne o)) as Hlt.
-    rewrite pt_dual_dual in Hlt. exact (proj2 HW x Hlt).
+    rewrite pt_dual_dual in Hlt. exact (w_lt_irrefl W x Hlt).
   Qed.
 
   (** A holder of an end is not a value. *)
