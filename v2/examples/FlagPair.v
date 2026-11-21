@@ -14,18 +14,18 @@
     is any value of V at ∗ ⊕ ∗, so each thread must be in E for both
     flags. A with the flag inl closes a while it holds b and asks
     x ≺ ȳ. B with the flag inr closes b̄ while it holds ā and asks
-    ȳ ≺ x. No strict world holds both, and P-Connect composes the two
-    threads only over worlds whose join is strict.
+    ȳ ≺ x. No ranked world holds both, and P-Connect composes the two
+    threads at one ranked world.
 
     - [fp_gate]           : a thread in E at close a; close b with b held
                             asks the point of a below the partner point of b.
-    - [fp_unrealizable]   : A in E at W1 for both flags and B in E at W2
-                            for both flags contradict strict (W1 ⊔ W2).
+    - [fp_unrealizable]   : A and B in E at one ranked world W for both
+                            flags contradict the irreflexivity of W.
 
     The theorem plays the part [db_component_unrealizable] played for the
     dispatcher of theories/examples/DataBranch.v, at the end points of
     the redesign. One thread alone is not outside the relation, its two
-    arms ask x ≺ ȳ and y ≺ x̄, which one strict world can hold. *)
+    arms ask x ≺ ȳ and y ≺ x̄, which one ranked world can hold. *)
 
 From GV Require Export examples.SemBranch.
 
@@ -100,19 +100,18 @@ Proof.
   - exact (proj2 H H0 n (ole_refl _)).
 Qed.
 
-(** ** No strict world takes both threads *)
+(** ** No ranked world takes both threads *)
 
 Definition fp_a : cend := EPos "a".
 Definition fp_b : cend := EPos "b".
 
-Theorem fp_unrealizable κ n W1 W2 x y :
-  strict (W1 ⊔ W2) →
-  (∀ i, Erel κ (oadd n (c_beta κ)) W1 (fp_env fp_a fp_b x y) TUnit ∅ (fp_case fp_a fp_b (Inj i EUnit))) →
-  (∀ i, Erel κ (oadd n (c_beta κ)) W2 (fp_env (edual fp_a) (edual fp_b) (x‾) (y‾)) TUnit ∅
+Theorem fp_unrealizable κ n W x y :
+  (∀ i, Erel κ (oadd n (c_beta κ)) W (fp_env fp_a fp_b x y) TUnit ∅ (fp_case fp_a fp_b (Inj i EUnit))) →
+  (∀ i, Erel κ (oadd n (c_beta κ)) W (fp_env (edual fp_a) (edual fp_b) (x‾) (y‾)) TUnit ∅
            (fp_case (edual fp_a) (edual fp_b) (Inj i EUnit))) →
   False.
 Proof.
-  intros [_ HS] HA HB.
+  intros HA HB.
   pose proof (fp_case_E _ _ _ _ _ _ _ false (HA false)) as HA'. cbn iota in HA'.
   pose proof (fp_case_E _ _ _ _ _ _ _ true (HB true)) as HB'. cbn iota in HB'.
   assert (fp_env (edual fp_a) (edual fp_b) (x‾) (y‾) = fp_env (edual fp_b) (edual fp_a) (y‾) (x‾)) as E.
@@ -121,7 +120,5 @@ Proof.
   pose proof (fp_gate _ _ _ fp_a fp_b _ _ ltac:(done) HA') as G1.
   pose proof (fp_gate _ _ _ (edual fp_b) (edual fp_a) _ _ ltac:(done) HB') as G2.
   rewrite pt_dual_dual in G2.
-  apply (HS x). eapply w_lt_trans.
-  - eapply w_lt_mono; [apply wext_join_l|exact G1].
-  - eapply w_lt_mono; [apply wext_join_r|exact G2].
+  apply (w_lt_irrefl W x). eapply w_lt_trans; [exact G1|exact G2].
 Qed.
