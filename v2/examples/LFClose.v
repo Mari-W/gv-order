@@ -3,48 +3,20 @@
       cl c⁺ ∥ cl c⁻,   cl o = close o
 
     Each thread is typed by P-Term at Some N over its end of c, and
-    P-Connect cuts c at exactly dual types. The world has no constants,
-    facts or families, and it is a lock-free world because every step of
-    ≺ raises the offset of a point ([wfworld_bare]), and strict. [lf_soundness] then
+    P-Connect cuts c at exactly dual types. The world has no constants
+    and no facts, so it is well-founded ([swf_bare]). [lf_soundness] then
     gives lock freedom. *)
 
 From Stdlib Require Import Wf_nat.
 From GV Require Import lockfree.FairRun.
 From GV Require Import soup.LFTyped.
 
-Definition W_cl : world := World ∅ (λ _, False) ∅ (λ _ _, False).
+Definition W_cl : sworld := sw_empty.
 
-(** A world without facts and families is well formed and well founded. *)
-Lemma wfworld_bare W : (∀ f, ¬ w_facts W f) → w_fams W = ∅ → world_wf W ∧ wfworld W.
+Lemma W_cl_join : sworld_wf (W_cl ⊔ W_cl) ∧ swf (W_cl ⊔ W_cl).
 Proof.
-  intros Hf Hfam.
-  assert (∀ x y, wstep W x y → pt_off x < pt_off y) as Hs.
-  { intros x y H. destruct H as [x y H|ℓ g x y Hℓ _| x | x].
-    - by destruct (Hf _ H).
-    - rewrite Hfam in Hℓ. set_solver.
-    - simpl. lia.
-    - simpl. lia. }
-  assert (∀ x y, W ⊢ x ≺ y → pt_off x < pt_off y) as Hlt.
-  { induction 1 as [x y H|x z y H _ IH]; [by apply Hs|]. apply Hs in H. lia. }
-  split.
-  - constructor.
-    + intros x y H. by destruct (Hf _ H).
-    + intros ℓ x y Hℓ. rewrite Hfam in Hℓ. set_solver.
-  - apply (well_founded_lt_compat _ pt_off). intros x y H. by apply Hlt.
+  split; [apply swjoin_wf; apply sw_empty_ok|]. apply swf_bare. intros g [H|H]; done.
 Qed.
-
-Lemma W_cl_bare : world_wf (W_cl ⊔ W_cl) ∧ wfworld (W_cl ⊔ W_cl).
-Proof.
-  apply wfworld_bare.
-  - intros f [H|H]; done.
-  - simpl. apply (left_id_L ∅ (∪)).
-Qed.
-
-Lemma W_cl_wfworld : wfworld (W_cl ⊔ W_cl).
-Proof. exact (proj2 W_cl_bare). Qed.
-
-Lemma W_cl_strict : strict (W_cl ⊔ W_cl).
-Proof. exact (strict_wfworld _ (proj1 W_cl_bare) W_cl_wfworld). Qed.
 
 Definition cl (o : cend) : expr := EClose (Chan o).
 
@@ -66,7 +38,7 @@ Proof.
   - apply pfree_singleton.
   - set_solver.
   - rewrite map_union_empty. unfold tenv_of. rewrite map_fmap_singleton. apply cl_typed.
-  - apply (strict_mono _ (W_cl ⊔ W_cl)); [apply W_cl_wf|apply wext_join_l|apply W_cl_strict].
+  - apply sw_empty_ok.
 Qed.
 
 Theorem cl_lftyped N c (x : point) :
@@ -94,13 +66,12 @@ Proof.
   - set_solver.
   - set_solver.
   - set_solver.
-  - simpl. set_solver.
-  - exact (proj2 (proj2 (proj1 (strict_join_iff W_cl W_cl W_cl_wf W_cl_wf ltac:(simpl; set_solver))
-      W_cl_strict))).
+  - exact (proj2 (proj2 (proj1 (wf_join_iff W_cl W_cl (proj1 sw_empty_ok) (proj1 sw_empty_ok))
+      (proj2 W_cl_join)))).
 Qed.
 
 Theorem cl_lock_free c : excluded_middle → functional_choice →
   lock_free ({[c]}, {[+ cl (c⁺)%cend +]} ⊎ {[+ cl (c⁻)%cend +]}).
 Proof.
-  intros EM FC. exact (lf_soundness 0 _ _ TUnit EM FC W_cl_wfworld (cl_lftyped 0 c (MkPt (NConst 0) true 0))).
+  intros EM FC. exact (lf_soundness 0 _ _ TUnit EM FC (cl_lftyped 0 c (MkPt (NConst 0) true 0))).
 Qed.

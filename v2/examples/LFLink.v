@@ -19,11 +19,11 @@ Section link.
   Definition lc : cend := EPos "c".
   Definition ld : cend := ENeg "d".
 
-  Lemma lk_new Γ ℓ : ℓ ∈ w_fams W →
-    typed W (Some N) ∅ Γ [] (∅, None) (ENew ℓ) (TEx LBot 1 (bcs_of (w_laws W ℓ))
+  Lemma lk_new Γ (L : fact → Prop) : wf_new (bcs_of L) →
+    typed W (Some N) ∅ Γ [] (∅, None) ENew (TEx LBot 1 (bcs_of L)
       (TProd (TSess S (pvar 0) (Some N) (Some N)) (TSess (dual S) (pvar 0)‾ (Some 0) (Some 0)))) (Some 0).
   Proof.
-    intros Hℓ. apply e_new_tk; [intros y o Hy; by rewrite lookup_nil in Hy|done|].
+    intros HL. apply e_new_tk; [intros y o Hy; by rewrite lookup_nil in Hy|done|].
     unfold tsum_ok. simpl. lia.
   Qed.
 

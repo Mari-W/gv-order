@@ -74,21 +74,27 @@ Definition ctl_L (g : fact) : Prop :=
     g = FLt (sh k α) ((pvar 0)·1) ∨ g = FLt (sh k β) ((pvar 0)·1) ∨
     g = FLt (sh k α) γ‾ ∨ g = FLt (sh k β) γ‾.
 
-Definition W_ctl : world := World ∅ (λ _, False) {[0]} (λ _ g, ctl_L g).
+Definition W_ctl : sworld := sw_empty.
 
 Ltac pick6 := first [ left; fact_eq | right; left; fact_eq | right; right; left; fact_eq
                     | right; right; right; left; fact_eq | right; right; right; right; left; fact_eq
                     | right; right; right; right; right; fact_eq ].
 
-Lemma W_ctl_wfworld : wfworld W_ctl.
+Lemma ctl_wf_new : wf_new (bcs_of ctl_L).
 Proof.
-  apply (wfworld_lex3 W_ctl (λ x, (pt_fsum x, pt_off x, pt_depth x))); [intros f []| |].
-  - intros x. unfold pt_fsum, pt_depth. simpl. lia.
-  - intros ℓ g x y _ (k & b & Hk).
+  apply (wf_new_lex3 _ (λ x, (pt_fsum x, pt_off x, pt_depth x))).
+  - intros x y (k & b & Hk).
+    destruct b; destruct Hk as [E|[E|[E|[E|[E|E]]]]]; injection E as -> ->; split; reflexivity.
+  - intros x. unfold lex3, pt_fsum, pt_depth. simpl. lia.
+  - intros x y (k & b & Hk).
     destruct b; destruct Hk as [E|[E|[E|[E|[E|E]]]]]; injection E as -> ->; unfold pt_fsum, pt_depth; simpl; lia.
 Qed.
+#[global] Hint Resolve ctl_wf_new : wfnew.
 
-Definition Γmc : hctx := hc_open 1 (bcs_of (w_laws W_ctl 0)) hc_empty.
+Lemma W_ctl_wf : sworld_wf W_ctl ∧ swf W_ctl.
+Proof. apply sw_empty_ok. Qed.
+
+Definition Γmc : hctx := hc_open 1 (bcs_of (ctl_L)) hc_empty.
 
 Lemma ctl_law_fact x y :
   (∃ k (b : bool), let α := pt_polar b (pvar 0) in let β := pt_polar b ((pvar 0)·0) in
@@ -288,7 +294,7 @@ Proof.
   eexists _.
   { unfold ctl_main, let_new.
   eapply e_let_; [apply lsplit_nil| | | ].
-  { eapply (e_new' _ _ _ _ _ _ Sa); [spare_tac|set_solver]. }
+  { eapply (e_new' _ _ _ _ _ _ Sa); [spare_tac|apply ctl_wf_new]. }
   lage_tac.
   eapply e_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
@@ -357,11 +363,11 @@ Proof. unfold ctl_main, ctl_cli, ctl_srv, let_new. guard_tac. Qed.
 Theorem ctl_lftyped : ∃ N, ∅ ⊩^N _ W_ctl (∅, {[+ ctl_main +]}) : TUnit.
 Proof.
   destruct ctl_typedN as (c & Ht). exists 6.
-  eapply lf_main_typed; [apply strict_wfworld; [apply W_ctl_wf|apply W_ctl_wfworld]|constructor|exact Ht|apply ctl_guarded].
+  eapply lf_main_typed; [apply W_ctl_wf|constructor|exact Ht|apply ctl_guarded].
 Qed.
 
 Theorem ctl_lock_free : excluded_middle → functional_choice → lock_free (∅, {[+ ctl_main +]}).
 Proof.
   intros EM FC. destruct ctl_typedN as (c & Ht).
-  eapply (lf_main EM FC); [apply (strict_wfworld _ W_ctl_wf W_ctl_wfworld)|apply W_ctl_wfworld|constructor|exact Ht|apply ctl_guarded].
+  eapply (lf_main EM FC); [apply W_ctl_wf|constructor|exact Ht|apply ctl_guarded].
 Qed.
