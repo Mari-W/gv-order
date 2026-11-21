@@ -1,22 +1,22 @@
-λ (κ : ctable) (n : nat) (W : world) (Θ : senv) (T : ty) (v : expr),
+λ (κ : ctable) (n : Ix) (W : world) (Θ : senv) (T : ty) (v : expr),
   v ∈ V[κ]^W _ n⟦Θ ⊢ T⟧
-     : ctable → nat → vrel
-λ (κ : ctable) (n : nat) (W : world) (Θ : senv) (T : ty) 
+     : ctable → Ix → vrel
+λ (κ : ctable) (n : Ix) (W : world) (Θ : senv) (T : ty) 
   (F : gset point) (e : expr), e ∈ E[κ]^W _ n⟦Θ ⊢ T⟧^F
-     : ctable → nat → erel
-λ (κ : ctable) (n : nat) (W : world) (Σ : senv) (T : ty) (p : proc),
+     : ctable → Ix → erel
+λ (κ : ctable) (n : Ix) (W : world) (Σ : senv) (T : ty) (p : proc),
   p ∈ P[κ]^W _ n⟦Σ ⊢ T⟧
-     : ctable → nat → prel
-λ (n : nat) (W : world) (Θ : senv) (T : ty) (v : expr), v ∈ V^W _ n⟦Θ ⊢ T⟧
-     : nat → vrel
-λ (n : nat) (W : world) (Θ : senv) (T : ty) (F : gset point) (e : expr),
+     : ctable → Ix → prel
+λ (n : Ix) (W : world) (Θ : senv) (T : ty) (v : expr), v ∈ V^W _ n⟦Θ ⊢ T⟧
+     : Ix → vrel
+λ (n : Ix) (W : world) (Θ : senv) (T : ty) (F : gset point) (e : expr),
   e ∈ E^W _ n⟦Θ ⊢ T⟧^F
-     : nat → erel
-λ (n : nat) (W : world) (Σ : senv) (T : ty) (p : proc), p ∈ P^W _ n⟦Σ ⊢ T⟧
-     : nat → prel
-λ (n : nat) (W : world) (Θ : senv) (T : ty) (v : expr),
+     : Ix → erel
+λ (n : Ix) (W : world) (Σ : senv) (T : ty) (p : proc), p ∈ P^W _ n⟦Σ ⊢ T⟧
+     : Ix → prel
+λ (n : Ix) (W : world) (Θ : senv) (T : ty) (v : expr),
   v ∈ V[live]^W _ n⟦Θ ⊢ T⟧
-     : nat → vrel
+     : Ix → vrel
 λ (W : world) (Θ : senv) (F : gset point) (t : expr), ready _ W(Θ ∣ F, t)
      : world → senv → gset point → expr → Prop
 λ (W : world) (Σ : senv) (p : proc), ready _ W(Σ, p)

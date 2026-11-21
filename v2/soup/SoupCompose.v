@@ -94,7 +94,7 @@ Qed.
 (** ** The facts of one soup *)
 
 Section facts.
-  Context (N n : nat) (W : world) (Σ : senv) (T : ty) (a : lfstate) (A : senv) (Π : penv) (U : nat → ty).
+  Context (N : nat) (n : Ix) (W : world) (Σ : senv) (T : ty) (a : lfstate) (A : senv) (Π : penv) (U : nat → ty).
   Context (Hs : soup_inv N n W Σ T a A Π U).
 
   Lemma soup_dom_A : dom A = dom (s_K a).
@@ -136,7 +136,7 @@ Definition tsel {Y : Type} (X : gset nat) (f g : nat → Y) : nat → Y :=
 (** ** Parallel composition *)
 
 Section par.
-  Context (N n : nat) (W1 W2 : world) (Σa Σb : senv) (T : ty) (C1 C2 : gset chan)
+  Context (N : nat) (n : Ix) (W1 W2 : world) (Σa Σb : senv) (T : ty) (C1 C2 : gset chan)
     (M1 M2 : gmap nat expr) (K1 K2 : own)
     (A1 A2 : senv) (Π1 Π2 : penv) (U1 U2 : nat → ty).
   Context (Hs1 : soup_inv N n W1 Σa T (LFState (C1, M1) K1) A1 Π1 U1).
@@ -323,7 +323,7 @@ End par.
 (** ** Restriction *)
 
 Section nu.
-  Context (N n : nat) (W : world) (Σ ΣR : senv) (T : ty) (C : gset chan) (M : gmap nat expr)
+  Context (N : nat) (n : Ix) (W : world) (Σ ΣR : senv) (T : ty) (C : gset chan) (M : gmap nat expr)
     (K : own) (A : senv) (Π : penv) (U : nat → ty).
   Context (Hs : soup_inv N n W (Σ ∪ ΣR) T (LFState (C, M) K) A Π U).
   Context (HCR : C ## chans_of ΣR) (HΣR : chans_of Σ ## chans_of ΣR)
@@ -445,7 +445,7 @@ Qed.
 Definition kterm (Θ : tenv) : own := (λ te, Hold 0 (te_pt te) (te_tk te) (te_tk te)) <$> Θ.
 
 Section term.
-  Context (N n : nat) (W : world) (Σ : senv) (ΘB : tenv) (C0 : gset chan) (t : expr) (T : ty).
+  Context (N : nat) (n : Ix) (W : world) (Σ : senv) (ΘB : tenv) (C0 : gset chan) (t : expr) (T : ty).
   Local Abbreviation Θ := (tenv_of (fhalf (Some N)) Σ ∪ ΘB).
   Context (Hp : tfree T) (HB : ∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) (HΣ : chans_of Σ ## C0)
     (Hd : ∀ c, c ∈ C0 → ∃ S (x : point) m m', tsum_ok (Some N) m m' ∧

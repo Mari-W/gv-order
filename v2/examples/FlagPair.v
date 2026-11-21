@@ -61,11 +61,11 @@ Qed.
 (** ** The gate of close a; close b *)
 
 Lemma fp_gate κ n W a b x y :
-  a ≠ b → Erel κ (S n) W (fp_env a b x y) TUnit ∅ (cl2 a b) → W ⊢ x ≺ y‾.
+  a ≠ b → Erel κ n W (fp_env a b x y) TUnit ∅ (cl2 a b) → W ⊢ x ≺ y‾.
 Proof.
   intros Hab HE.
   assert (¬ irred (cl2 a b)) as Hnr by (intros Hi; exact (Hi _ _ (fp_cl2_close a b))).
-  pose proof (Erel_S_ready κ n W _ TUnit ∅ _ HE Hnr) as Hr.
+  pose proof (Erel_ready κ n W _ TUnit ∅ _ HE Hnr) as Hr.
   assert (stable_t (cl2 a b)) as Hst.
   { intros α e' Hs. destruct (fp_cl2_step _ _ _ _ Hs) as [-> _]. by eexists. }
   destruct (Hr Hst) as [_ [Hl|Hb]].
@@ -87,17 +87,17 @@ Qed.
 (** ** One case step *)
 
 Lemma fp_case_E κ n W a b x y (i : bool) :
-  Erel κ (S (c_beta κ + n)) W (fp_env a b x y) TUnit ∅ (fp_case a b (Inj i EUnit)) →
-  Erel κ (S n) W (fp_env a b x y) TUnit ∅ (if i then cl2 b a else cl2 a b).
+  Erel κ (oadd n (c_beta κ)) W (fp_env a b x y) TUnit ∅ (fp_case a b (Inj i EUnit)) →
+  Erel κ n W (fp_env a b x y) TUnit ∅ (if i then cl2 b a else cl2 a b).
 Proof.
   intros HE. unfold fp_case in HE.
   assert (tstep (Case (Inj i EUnit) (cl2 a b) (cl2 b a)) LBeta (if i then cl2 b a else cl2 a b)) as Hs.
   { destruct i; apply tstep_head; constructor; done. }
-  pose proof (Erel_S_step κ _ W W _ TUnit ∅ _ _ _ HE (wext_refl W) Hs) as H. cbn [Eobl] in H.
+  pose proof (Erel_step κ _ W W _ TUnit ∅ _ _ _ HE (wext_refl W) Hs) as H. cbn [Eobl] in H.
   unfold o_beta, at_cost_E in H.
   destruct (decide (c_beta κ = 0)) as [H0|H0].
   - rewrite H0 in H. exact (proj1 H eq_refl).
-  - replace (S (c_beta κ + n) - c_beta κ) with (S n) in H by lia. exact (proj2 H H0).
+  - exact (proj2 H H0 n (ole_refl _)).
 Qed.
 
 (** ** No strict world takes both threads *)
@@ -107,8 +107,8 @@ Definition fp_b : cend := EPos "b".
 
 Theorem fp_unrealizable κ n W1 W2 x y :
   strict (W1 ⊔ W2) →
-  (∀ i, Erel κ (S (c_beta κ + n)) W1 (fp_env fp_a fp_b x y) TUnit ∅ (fp_case fp_a fp_b (Inj i EUnit))) →
-  (∀ i, Erel κ (S (c_beta κ + n)) W2 (fp_env (edual fp_a) (edual fp_b) (x‾) (y‾)) TUnit ∅
+  (∀ i, Erel κ (oadd n (c_beta κ)) W1 (fp_env fp_a fp_b x y) TUnit ∅ (fp_case fp_a fp_b (Inj i EUnit))) →
+  (∀ i, Erel κ (oadd n (c_beta κ)) W2 (fp_env (edual fp_a) (edual fp_b) (x‾) (y‾)) TUnit ∅
            (fp_case (edual fp_a) (edual fp_b) (Inj i EUnit))) →
   False.
 Proof.

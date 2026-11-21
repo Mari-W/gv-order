@@ -55,7 +55,7 @@ Print Assumptions fx_typed.
 Print Assumptions rg_dftyped.
 Print Assumptions rg_typed.
 (** relation/Relation.v *)
-Print Assumptions Erel_0.
+Print Assumptions Erel_iff.
 Print Assumptions Vrel_box_iff.
 Print Assumptions Vrel_ex_iff.
 (** relation/Adequacy.v *)

@@ -41,7 +41,6 @@ examples/GrowRing.v
 examples/SemBranch.v
 examples/FlagPair.v
 examples/TreeTopo.v
-relation/Sfix.v
 relation/Ord.v
 relation/CostTable.v
 relation/Readiness.v
