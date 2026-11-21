@@ -1,5 +1,18 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Progress, third run of 2026-11-21 (stage 3, in progress)
+
+Branch redesign-clean3. WIP commits after 1e4c755. Done so far: plain
+`new` in the syntax (no family, no `new_κ`), static worlds `sworld`
+without families, ranked worlds `world` (roots, ranks, program order) in
+types/Worlds.v, `wf_join_iff` constructive, E-New with (wf-new) and the
+field rule, `cons_new`, O-New `∃ S π W'` growing the world, `q_tau` growing
+the world, DF adequacy, compat, `Erel_new` ranking the tree of a fresh
+root above its context, fundamental theorems over `wmodels R W`,
+`soundness` building. Open: the soup (world in the state, creation
+choice with point and world, criterion over the chain of worlds), the
+examples, the map.
+
 ## Report, second run of 2026-11-21 on transfinite indices and layers
 
 Branch redesign-clean3 in .claude/worktrees/redesign-s4, nothing pushed.
