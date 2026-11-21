@@ -12,17 +12,17 @@ Ltac heads_cases Hy :=
   heads_simpl Hy; repeat match goal with H : _ ∨ _ |- _ => destruct H end; subst;
   try contradiction.
 
-(** The context after opening a [new_ℓ] at the top: the laws of ℓ at ι₀. *)
-Definition Γnew (W : world) (ℓ : family) : hctx := hc_open 1 (bcs_of (w_laws W ℓ)) hc_empty.
+(** The context after opening a [new] at the top: its constraint L at ι₀. *)
+Definition Γnew (L : fact → Prop) : hctx := hc_open 1 (bcs_of L) hc_empty.
 
-Lemma Γnew_in W ℓ : (bcs_of (w_laws W ℓ), ids 1) ∈ hc_hyps (Γnew W ℓ).
+Lemma Γnew_in L : (bcs_of L, ids 1) ∈ hc_hyps (Γnew L).
 Proof. unfold Γnew, hc_open. simpl. by left. Qed.
 
-(** A law of ℓ at the opened root. *)
-Lemma law_slt W ℓ f x y :
-  w_laws W ℓ f → fact_scoped 1 f → fact_map (pt_inst (plist (ids 1))) f = FLt x y →
-  slt W (Γnew W ℓ) x y.
-Proof. intros Hf Hs Hxy. eapply (slt_hyp _ _ (w_laws W ℓ) (ids 1) f); [apply Γnew_in|done|done|done]. Qed.
+(** A fact of L at the opened root. *)
+Lemma law_slt W (L : fact → Prop) f x y :
+  L f → fact_scoped 1 f → fact_map (pt_inst (plist (ids 1))) f = FLt x y →
+  slt W (Γnew L) x y.
+Proof. intros Hf Hs Hxy. eapply (slt_hyp _ _ L (ids 1) f); [apply Γnew_in|done|done|done]. Qed.
 
 Lemma pt_inst_ids k x : pn_vb k (pt_name x) → pt_inst (plist (ids k)) x = x.
 Proof.
@@ -41,8 +41,8 @@ Proof.
   - destruct Hs as [Hx Hy]. simpl. by rewrite !pt_inst_ids.
 Qed.
 
-Lemma law_slt' W ℓ x y :
-  w_laws W ℓ (FLt x y) → fact_scoped 1 (FLt x y) → slt W (Γnew W ℓ) x y.
+Lemma law_slt' W (L : fact → Prop) x y :
+  L (FLt x y) → fact_scoped 1 (FLt x y) → slt W (Γnew L) x y.
 Proof. intros Hf Hs. eapply hyp_slt_ids; [apply Γnew_in|done|done]. Qed.
 
 (** A box □∀ιs. C. T ⊸^u ∗ whose body is λp. e, typed under the

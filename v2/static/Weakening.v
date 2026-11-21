@@ -636,18 +636,18 @@ Section let_admissible.
   Proof. by induction Δ. Qed.
   Local Lemma lage_lnone c Δ : lage c (lnone Δ) (lnone Δ).
   Proof. induction Δ; simpl; constructor; done. Qed.
-  Local Lemma fsub_0 a : fsub a (Some 0) = a.
+  Lemma fsub_0 a : fsub a (Some 0) = a.
   Proof. destruct a as [[|m]|]; done. Qed.
-  Local Lemma fle_0 a : fle (Some 0) a.
+  Lemma fle_0 a : fle (Some 0) a.
   Proof. destruct a; simpl; lia. Qed.
-  Local Lemma tage_0 T : tage (Some 0) T T.
+  Lemma tage_0 T : tage (Some 0) T T.
   Proof.
     induction T as [|ub lb c T1 IH1 U IH2 a|T1 IH1 U IH2|T1 IH1 U IH2|n k C ub c U IH|S x a m|lb n C T1 IH];
       try solve [apply age_free; constructor]; try by constructor.
     - rewrite <-(fsub_0 a) at 2. apply age_arr, fle_0.
     - rewrite <-(fsub_0 a) at 2. apply age_sess, fle_0.
   Qed.
-  Local Lemma lage_0 Δ : lage (Some 0) Δ Δ.
+  Lemma lage_0 Δ : lage (Some 0) Δ Δ.
   Proof. induction Δ as [|[σ|] Δ IH]; constructor; auto using tage_0. Qed.
   Local Lemma thage_0 Θ : thage (Some 0) Θ Θ.
   Proof.
@@ -659,7 +659,7 @@ Section let_admissible.
   Proof. split; [apply map_disjoint_empty_r|by rewrite map_union_empty]. Qed.
   Local Lemma tsplit_r Θ : tsplit Θ ∅ Θ.
   Proof. split; [apply map_disjoint_empty_l|by rewrite map_empty_union]. Qed.
-  Local Lemma fadd_0_r a : fadd a (Some 0) = a.
+  Lemma fadd_0_r a : fadd a (Some 0) = a.
   Proof. destruct a as [m|]; [simpl; by rewrite Nat.add_0_r|done]. Qed.
   Local Lemma sf_union_nil F : sf_unionb F (tenv_heads ∅ ∪ ∅) false = F.
   Proof.

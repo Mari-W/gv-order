@@ -2,19 +2,20 @@
 
     Examples are typed in the deadlock-freedom projection [dftyped] and
     lifted to the merged judgment at N = ∞ by [dftyped_typed]
-    (static/Conservativity.v). Programs create every channel with
-    [new_ℓ] or [new_κ], so Θ is empty throughout. *)
+    (static/Conservativity.v). Programs create every channel with plain
+    [new], so Θ is empty throughout. A creation at a field reads
+    ⟨y, new⟩ for the end y it extends ([d_new_at]). *)
 
 From GV Require Export static.Conservativity static.Weakening static.PointSubst.
 
-(** let (a, b) = new_ℓ in e, the ∃ of new bound at index 2 and opened. *)
-Definition let_new (ℓ : family) (e : expr) : expr := ELet (ENew ℓ) (LetP (Var 0) e).
+(** let (a, b) = new in e, the ∃ of new bound at index 2 and opened. *)
+Definition let_new (e : expr) : expr := ELet ENew (LetP (Var 0) e).
 
 (** Occurrence of a variable, decidable. *)
 Fixpoint occ (i : nat) (e : expr) : bool :=
   match e with
   | Var x => Nat.eqb x i
-  | EUnit | Chan _ | ENew _ => false
+  | EUnit | Chan _ | ENew => false
   | Lam e | EBox e => occ (S i) e
   | App e1 e2 | Pair e1 e2 | LetU e1 e2 => occ i e1 || occ i e2
   | LetP e1 e2 => occ i e1 || occ (S (S i)) e2
@@ -52,11 +53,95 @@ Qed.
 Lemma d_unit' W Γ Δ F : (∀ y o, Δ !! y = Some o → spare o) → dftyped W ∅ Γ Δ F EUnit TUnit.
 Proof. intros H. by apply d_unit, spare_unl. Qed.
 
-Lemma d_new' W Γ Δ F ℓ S a1 a2 mt :
-  (∀ y o, Δ !! y = Some o → spare o) → ℓ ∈ w_fams W →
-  dftyped W ∅ Γ Δ F (ENew ℓ)
-    (TEx LBot 1 (bcs_of (w_laws W ℓ)) (TProd (TSess S (pvar 0) a1 mt) (TSess (dual S) (pvar 0)‾ a2 mt))).
-Proof. intros H Hℓ. apply d_new; [by apply spare_unl|done]. Qed.
+Lemma d_new' W Γ Δ F (L : fact → Prop) S a1 a2 mt :
+  (∀ y o, Δ !! y = Some o → spare o) → wf_new (bcs_of L) →
+  dftyped W ∅ Γ Δ F ENew
+    (TEx LBot 1 (bcs_of L) (TProd (TSess S (pvar 0) a1 mt) (TSess (dual S) (pvar 0)‾ a2 mt))).
+Proof. intros H HL. apply d_new; [by apply spare_unl|done]. Qed.
+
+(** The split of a context whose only linear entry is y: everything to
+    the left, the unlimited entries to both sides. *)
+Lemma lsplit_only y (Δ : lenv) : (∀ z o, z ≠ y → Δ !! z = Some o → spare o) →
+  lenv_split Δ Δ (<[y := None]> Δ).
+Proof.
+  revert y. induction Δ as [|o Δ IH]; intros y H; [apply lsplit_nil|].
+  destruct y as [|y]; simpl.
+  - destruct o as [U|]; [apply lsplit_l|apply lsplit_none].
+    all: clear IH; induction Δ as [|o' Δ IH'] in H |- *; [apply lsplit_nil|].
+    all: assert (spare o') as Ho' by (apply (H 1); done).
+    all: destruct o' as [U'|]; [apply lsplit_unl; [done|]|apply lsplit_none];
+      apply IH'; intros [|z] o Hz Hzo; [done|by apply (H (S (S z)))| |by apply (H (S (S z)))];
+      try done.
+  - assert (spare o) as Ho by (apply (H 0); done).
+    destruct o as [U|]; [apply lsplit_unl; [done|]|apply lsplit_none];
+      apply IH; intros z o' Hz Hzo; apply (H (S z)); [lia|done|lia|done].
+Qed.
+
+Lemma lenv_unl_only y (Δ : lenv) : (∀ z o, z ≠ y → Δ !! z = Some o → spare o) →
+  lenv_unl (<[y := None]> Δ).
+Proof.
+  intros H. apply spare_unl. intros z o Hz. destruct (decide (z = y)) as [->|Hne].
+  - apply list_lookup_insert_Some in Hz as [(_ & <- & _)|[? _]]; [done|done].
+  - rewrite list_lookup_insert_ne in Hz by done. by apply (H z).
+Qed.
+
+(** A creation at the field κ of the point x of the end y, ⟨y, new⟩. *)
+Lemma d_new_at W (Θ : tenv) Γ Δ F (y : nat) κ S0 x S a a1 a2 m m1 m2 :
+  Θ = ∅ → Δ !! y = Some (Some (TSess S0 x a m)) → (∀ z o, z ≠ y → Δ !! z = Some o → spare o) →
+  dftyped W Θ Γ Δ F (Pair (Var y) ENew)
+    (TProd (TSess S0 x a m) (TProd (TSess S (x·κ) a1 m1) (TSess (dual S) (x·κ)‾ a2 m2))).
+Proof.
+  intros -> Hy Hs. eapply d_pair; [apply tsplit_empty|apply (lsplit_only y), Hs| |].
+  - eapply d_var'; [exact Hy|exact Hs].
+  - apply d_new_fld. by apply lenv_unl_only.
+Qed.
+
+(** The lexicographic order on triples of natural numbers. *)
+Definition lex3 (a b : nat * nat * nat) : Prop :=
+  let '(a1, a2, a3) := a in let '(b1, b2, b3) := b in
+  a1 < b1 ∨ (a1 = b1 ∧ (a2 < b2 ∨ (a2 = b2 ∧ a3 < b3))).
+
+Lemma lex3_wf : well_founded lex3.
+Proof.
+  intros [[a1 a2] a3]. revert a2 a3. induction a1 as [a1 IH1] using lt_wf_ind.
+  intros a2. induction a2 as [a2 IH2] using lt_wf_ind.
+  intros a3. induction a3 as [a3 IH3] using lt_wf_ind.
+  constructor. intros [[b1 b2] b3] H. simpl in H.
+  destruct H as [H|[<- [H|[<- H]]]]; eauto.
+Qed.
+
+Global Instance lex3_trans : Transitive lex3.
+Proof. intros [[a1 a2] a3] [[b1 b2] b3] [[c1 c2] c3]; simpl; lia. Qed.
+
+(** The number of fields of a name and the sum of their labels. *)
+Fixpoint pn_depth (p : pname) : nat :=
+  match p with NField q _ _ => S (pn_depth q) | _ => 0 end.
+Fixpoint pn_fsum (p : pname) : nat :=
+  match p with NField q _ κ => κ + pn_fsum q | _ => 0 end.
+
+Definition pt_depth (x : point) : nat := pn_depth (pt_name x).
+Definition pt_fsum (x : point) : nat := pn_fsum (pt_name x).
+
+(** (wf-new) for a constraint on the new root alone, by a measure that
+    rises along its facts and along program order. *)
+Lemma wf_new_lex3 (L : fact → Prop) (m : point → nat * nat * nat) :
+  (∀ x y, L (FLt x y) → in_tree0 x ∧ in_tree0 y) →
+  (∀ x, lex3 (m x) (m x⁺) ∧ lex3 (m x) (m x‾⁺)) →
+  (∀ x y, L (FLt x y) → lex3 (m x) (m y)) →
+  wf_new (bcs_of L).
+Proof.
+  intros HL Hpo Hm. split.
+  - intros x y Hf _. apply (HL x y Hf).
+  - assert (∀ a x, m x = a → Acc (new_step (bcs_of L)) x) as Hacc.
+    { intros a. induction (lex3_wf a) as [a _ IH]. intros x <-. constructor.
+      intros y (_ & _ & [[Hf _]|[->| ->]]); eapply IH; try reflexivity.
+      - by apply Hm.
+      - apply Hpo.
+      - apply Hpo. }
+    intros x. by apply (Hacc (m x)).
+Qed.
+
+#[global] Hint Extern 1 (facts_const _) => (by intros ?? []) : core.
 
 (** A tail of absent entries. *)
 Abbreviation nones n := (replicate n (@None ty)).
@@ -93,8 +178,9 @@ Ltac spare_tac :=
   first [ spare_all | apply spare_but; spare_all ].
 
 (** The conservativity premise of E-Open at the existential of E-New, in
-    a world without facts. *)
-Ltac cons_tac := apply cons_law; [by intros ?? []|set_solver].
+    a world without facts, from (wf-new) in the hint base [wfnew]. *)
+Create HintDb wfnew.
+Ltac cons_tac := apply cons_new; [by intros ?? []|solve [eauto with wfnew]].
 
 (** Split by occurrence. An unlimited entry goes to both sides. *)
 Ltac lsplit_go i e1 e2 :=
