@@ -23,6 +23,14 @@
     a function is its eta-expansion λy. k y, which types by E-Abs over the
     rule of k (static/Constants.v).
 
+    A session type enters a derivation only contractive ([scontr],
+    types/Contractive.v). E-New asks it of its protocol, E-Abs of the
+    argument, E-Inj of the sum, E-Box of the result, P-Term of its ends,
+    and E-Sub asks the target contractive when the source is. Over
+    contractive contexts every derived type is contractive
+    ([typed_scontr]), and a derivation instantiated at contractive
+    instances is a derivation ([typed_sinst], static/Sinst.v).
+
     Arrows are generalized (entry 12 of docs/redesign/pending.md). The
     upper point is a point, none, or ⊤, and E-App asks ⊤ ≺ F only of the
     empty future ([ub_below_u]). The lower point is a point, none, or ⊥,
