@@ -182,7 +182,7 @@ Proof.
 Qed.
 
 Lemma Erel_det κ n W Θ T F e e' : det_beta e e' →
-  Erel κ (n - c_beta κ) W Θ T F e' → Erel κ n W Θ T F e.
+  (∀ j, ole (oadd j (c_beta κ)) n → Erel κ j W Θ T F e') → Erel κ n W Θ T F e.
 Proof. intros [Hs Hd] H. exact (Erel_beta κ n W Θ T F e e' Hd Hs H). Qed.
 
 (** The ends of the thread, c at x and d at y, and the cut. *)
@@ -233,11 +233,11 @@ Proof.
   apply (Erel_det _ _ _ _ _ _ _
     (Case (Case (Inj true EUnit) (Inj true (Var 0)) (Inj false (Var 0))) (cl2 oc od) (cl2 od oc))).
   { apply det_beta_case. apply det_beta_app. done. }
-  apply (Erel_det _ _ _ _ _ _ _ (Case (Inj false EUnit) (cl2 oc od) (cl2 od oc))).
+  intros j1 _. apply (Erel_det _ _ _ _ _ _ _ (Case (Inj false EUnit) (cl2 oc od) (cl2 od oc))).
   { apply det_beta_case. apply (det_beta_inr EUnit). done. }
-  apply (Erel_det _ _ _ _ _ _ _ (cl2 oc od)).
+  intros j2 _. apply (Erel_det _ _ _ _ _ _ _ (cl2 oc od)).
   { apply (det_beta_inl EUnit). done. }
-  apply arm_E.
+  intros j3 _. apply arm_E.
 Qed.
 
 (** The partner is in E, typed statically at x̄ ≺ y. *)
@@ -392,11 +392,11 @@ Proof.
     (Case (Case (Inj true EUnit) (Inj true (Var 0)) (Inj false (Var 0)))
       (LetU (Var 0) (cl2 oc od)) (LetU (Var 0) (cl2 od oc)))).
   { apply det_beta_case. apply det_beta_app. done. }
-  apply (Erel_det _ _ _ _ _ _ _ (Case (Inj false EUnit) (LetU (Var 0) (cl2 oc od)) (LetU (Var 0) (cl2 od oc)))).
+  intros j1 _. apply (Erel_det _ _ _ _ _ _ _ (Case (Inj false EUnit) (LetU (Var 0) (cl2 oc od)) (LetU (Var 0) (cl2 od oc)))).
   { apply det_beta_case. apply (det_beta_inr EUnit). done. }
-  apply (Erel_det _ _ _ _ _ _ _ (LetU EUnit (cl2 oc od))).
+  intros j2 _. apply (Erel_det _ _ _ _ _ _ _ (LetU EUnit (cl2 oc od))).
   { apply (det_beta_inl EUnit). done. }
-  apply arm_v_E.
+  intros j3 _. apply arm_v_E.
 Qed.
 
 Theorem sbv_deadlock_free : deadlock_free sbv_config.
