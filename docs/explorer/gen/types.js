@@ -1,13 +1,13 @@
 const { R, h, n, section, block, rule, Q, DEF } = require('./core');
 
 const s = section('types', 'Types and worlds',
-  'This section introduces types $T$, credits $a$, session types $S$ with $\\mathsf{unfold}$, $\\mathsf{dual}$, $\\simeq$ and $\\approx$, the sets $\\mathsf{ap}$, payloads, costs $c$ and ticket needs $\\vartheta$, the kinds $\\mathsf{unlimited}$ and $\\mathsf{tfree}$, and worlds $W$ with the order $\\prec_W$, the predicates $\\mathsf{world\\_wf}$, $\\mathsf{strict}$, $\\mathsf{wfworld}$, extension $\\sqsubseteq$ and join $\\sqcup$. Signatures name the sorts $\\mathsf{Ty}$ of types, $\\mathsf{STy}$ of session types, $\\mathsf{Tix}$ of ticket needs, $\\mathsf{LBound}$ of lower bounds and $\\mathsf{World}$ of worlds, and $X_{\\bot}$ adds an absent element to $X$.');
+  'This section introduces types $T$, credits $a$, session types $S$ with $\\mathsf{unfold}$, $\\mathsf{dual}$, $\\simeq$ and $\\approx$, the sets $\\mathsf{ap}$, payloads, costs $c$ and tickets $m$, the kinds $\\mathsf{unlimited}$ and $\\mathsf{tfree}$, and worlds $W$ with the order $\\prec_W$, the predicates $\\mathsf{world\\_wf}$, $\\mathsf{strict}$, $\\mathsf{wfworld}$, extension $\\sqsubseteq$ and join $\\sqcup$. Signatures name the sorts $\\mathsf{Ty}$ of types, $\\mathsf{STy}$ of session types, $\\mathsf{LBound}$ of lower bounds and $\\mathsf{World}$ of worlds, and $X_{\\bot}$ adds an absent element to $X$.');
 
 block(s, {
   id: 'ty-grammar', title: 'Types', rocq: 'types/Types.v: ty',
   tex: R`\begin{array}{rl}
-T, U ::= & ${h('ty.unit', R`\ast`)} \mid ${h('ty.arrow', R`(T \multimap^{${h('ty.arrow.ub', 'u')}}_{${h('ty.arrow.lb', 'l')}}[${h('ty.arrow.cost', 'c')} ; ${h('ty.arrow.tix', R`\vartheta`)}]\, U)^{${h('ty.credit', 'a')}}`)} \mid ${h('ty.prod', R`T \otimes U`)} \mid ${h('ty.sum', R`T \oplus U`)} \mid ${h('ty.sess', R`(S@x)^{${h('ty.credit', 'a')}}`)} \\
-\mid & ${h('ty.box', R`\Box(\forall ${h('pt.var', R`\bar\iota`)}\, ${h('ty.box.svars', R`\bar\alpha`)}.\ ${h('ty.box.constraint', 'C')}.\ \ast \multimap^{u}[c ; \vartheta]\, U)`)} \mid ${h('ty.ex', R`\exists^{${h('ty.ex.lb', 'l')}} \bar\iota.\ C.\ T`)}
+T, U ::= & ${h('ty.unit', R`\ast`)} \mid ${h('ty.arrow', R`(T \multimap^{${h('ty.arrow.ub', 'u')}}_{${h('ty.arrow.lb', 'l')}}[${h('ty.arrow.cost', 'c')}]\, U)^{${h('ty.credit', 'a')}}`)} \mid ${h('ty.prod', R`T \otimes U`)} \mid ${h('ty.sum', R`T \oplus U`)} \mid ${h('ty.sess', R`(S@x)^{${h('ty.credit', 'a')}}_{${h('ty.tickets', 'm')}}`)} \\
+\mid & ${h('ty.box', R`\Box(\forall ${h('pt.var', R`\bar\iota`)}\, ${h('ty.box.svars', R`\bar\alpha`)}.\ ${h('ty.box.constraint', 'C')}.\ \ast \multimap^{u}[c]\, U)`)} \mid ${h('ty.ex', R`\exists^{${h('ty.ex.lb', 'l')}} \bar\iota.\ C.\ T`)}
 \end{array}`,
   variants: { df: R`\begin{array}{rl} T, U ::= & ${h('ty.unit', R`\ast`)} \mid ${h('ty.arrow', R`T \multimap^{${h('ty.arrow.ub', 'u')}}_{${h('ty.arrow.lb', 'l')}} U`)} \mid ${h('ty.prod', R`T \otimes U`)} \mid ${h('ty.sum', R`T \oplus U`)} \mid ${h('ty.sess', R`S@x`)} \\ \mid & ${h('ty.box', R`\Box(\forall ${h('pt.var', R`\bar\iota`)}\, ${h('ty.box.svars', R`\bar\alpha`)}.\ ${h('ty.box.constraint', 'C')}.\ \ast \multimap^{u} U)`)} \mid ${h('ty.ex', R`\exists^{${h('ty.ex.lb', 'l')}} \bar\iota.\ C.\ T`)} \end{array}`,
     live: R`\begin{array}{rl} T, U ::= & ${h('ty.unit', R`\ast`)} \mid ${h('ty.arrow', R`T \multimap^{${h('ty.arrow.ub', 'u')}}_{${h('ty.arrow.lb', 'l')}} U`)} \mid ${h('ty.prod', R`T \otimes U`)} \mid ${h('ty.sum', R`T \oplus U`)} \mid ${h('ty.sess', R`S@x`)} \\ \mid & ${h('ty.box', R`\Box(\forall ${h('pt.var', R`\bar\iota`)}\, ${h('ty.box.svars', R`\bar\alpha`)}.\ ${h('ty.box.constraint', 'C')}.\ \ast \multimap^{u} U)`)} \mid ${h('ty.ex', R`\exists^{${h('ty.ex.lb', 'l')}} \bar\iota.\ C.\ T`)} \end{array}` },
@@ -70,26 +70,17 @@ block(s, {
   caption: 'Credits $a$, costs $c$ and the counter bound $N$ are numbers, and $\\infty$ means unbounded.'
 });
 block(s, {
-  id: 'ty-tix', title: 'Ticket needs', rocq: 'types/Costs.v: tix, tapp, tid, meets',
+  id: 'ty-tix', title: 'Tickets', rocq: 'not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)',
   modes: ['lf'],
   tex: R`\begin{array}{l}
-${h('ann.tix', R`\vartheta = (s, b) \qquad \vartheta(r) = 2^{s}\, r + b`)} \qquad ${h('ann.tid', R`\hat 1 = (0, 0),\ \hat 1(r) = r`)} \\
-${h('ann.meets', R`\vartheta(r) \leq tk`)} \quad tk \in \mathbb{N}
+${h('ty.tickets', R`(S@x)^{a}_{m} \qquad a \leq m \qquad m \in \mathbb{N} \cup \{\infty\}`)} \\
+${h('ann.tsum', R`\mathsf{tk}(o) + \mathsf{tk}(\overline{o}) \leq N`)}
 \end{array}`,
-  caption: 'A term that must leave $r$ link tickets over needs $\\vartheta(r)$ tickets when it starts. A thread with $tk$ tickets runs it if $\\vartheta(r) \\leq tk$.'
-});
-block(s, {
-  id: 'ty-tix-ops', title: 'Combining ticket needs', rocq: 'types/Costs.v: tlink, tspawn, tseq, tok',
-  modes: ['lf'],
-  tex: R`\begin{array}{l}
-${h('ann.tlink', R`\mathsf{tlink}\,(s, b) = (s, b + 1)`)} \qquad ${h('ann.tseq', R`(\vartheta_1 \circ \vartheta_2)(r) = \vartheta_1(\vartheta_2(r))`)} \\
-${h('ann.tspawn', R`\mathsf{tspawn}\,b_c\,(s, b) = (s + 1, \max(2b, 2b_c - 1))`)} \qquad ${h('ann.tok', R`\mathsf{tok}\,(s_1, b_1)\,(s_2, b_2) \iff b_2 = 0 \lor s_1 < \infty \lor b_1 = \infty`)}
-\end{array}`,
-  caption: 'The typing rules build the need of a term from the needs of its parts. A link adds one, a spawn doubles the rest, sequencing composes, and $\\mathsf{tok}$ says when a composition is again a pair.'
+  caption: 'An end has $m$ tickets, an upper bound on its counter, and its credit is at most $m$. The tickets of the two ends of a channel sum to at most $N$.'
 });
 block(s, {
   id: 'ty-df', title: 'Deadlock-free typing as an instance', rocq: 'types/Types.v: ty_df', modes: ['lf'],
-  tex: h('ann.tydf', R`\mathsf{ty\_df}:\quad a = c = h = N = \infty \qquad \vartheta = (\infty, \infty)`),
+  tex: h('ann.tydf', R`\mathsf{ty\_df}:\quad a = c = h = m = N = \infty`),
   caption: 'Deadlock-free typing is the annotated typing with every annotation at its unbounded value. $\\mathsf{ty\\_df}$ sets a type to these values, and then every premise about annotations holds.'
 });
 block(s, {
@@ -178,6 +169,8 @@ n('ann.tspawn', '$\\mathsf{tspawn}$', 'The need of a spawn followed by code of n
 n('ann.tlink', '$\\mathsf{tlink}$', 'The need of a link followed by code of need $(s, b)$ is $(s, b + 1)$.', 'The link uses one ticket before the rest runs. No step creates tickets, so a run performs at most as many links as its threads held tickets at the start.', DEF, '$\\mathsf{tlink}\\,\\hat 1 = (0, 1)$, a single link.', 'types/Costs.v: tlink');
 n('ann.tseq', 'Sequencing $\\vartheta_1 \\circ \\vartheta_2$', 'Code of need $\\vartheta_1$ followed by code of need $\\vartheta_2$ needs $\\vartheta_1(\\vartheta_2(r))$. The first part must leave what the second part needs.', 'Application and the two lets run their parts one after the other.', DEF, '$(0, 1) \\circ (0, 1) = (0, 2)$, two links in a row.', 'types/Costs.v: tseq');
 n('ann.tok', '$\\mathsf{tok}$', '$\\mathsf{tok}\\,\\vartheta_1\\,\\vartheta_2$ holds when $\\vartheta_2$ needs nothing at $0$, $\\vartheta_1$ has a finite $s$, or $\\vartheta_1$ is met by no ticket count. Then the pair computed for $\\vartheta_1 \\circ \\vartheta_2$ is exact.', 'With $s_1 = \\infty$ the first part runs only if it leaves nothing, so a second part that needs tickets cannot follow. The rules that sequence two parts ask $\\mathsf{tok}$.', DEF, '$\\mathsf{tok}\\,(0, 1)\\,(0, 1)$, the first need has a finite $s$.', 'types/Costs.v: tok');
+n('ty.tickets', 'Tickets $m$', '$m \\in \\mathbb{N} \\cup \\{\\infty\\}$ on an end type $(S@x)^{a}_{m}$ bounds the counter of the end from above, and the credit satisfies $a \\leq m$. An action on the end sets its counter back to $m$, and the tickets stay with the end, also in a payload.', 'The thread holding the partner of an end acts on other ends at most as often as the counter of the partner allows, and the tickets of the partner bound that counter. A link compares the credit of one end with this bound, so the new partner of a waiting thread has a lower counter than the old one.', 'Without tickets a link can give a waiting thread a partner with a full counter in every round, and the wait never ends.', 'A new channel at $N = 4$ may give its ends $3$ and $1$ tickets.', 'not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)');
+n('ann.tsum', '$\\mathsf{tk}(o) + \\mathsf{tk}(\\overline{o}) \\leq N$', 'The tickets of the two ends of a channel sum to at most $N$, the bound of the judgment. An end with $m$ tickets has a partner with at most $N - m$ tickets, a bound read off its own type.', 'E-Link compares the credit of each linked end with the partner bound of the other. Then the new partner of each waiting thread has a counter below the counter of the old one, and the measure of lock-free adequacy falls at every link.', 'Without the bound no premise of a link relates the counters of ends that other threads hold, and relinking a waiting end forever is accepted.', 'At $N = 4$ the two ends of a channel have $3$ and $1$ or $2$ and $2$ tickets.', 'not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)');
 n('ann.tydf', '$\\mathsf{ty\\_df}$', '$\\mathsf{ty\\_df}(T)$ is $T$ with every annotation at its unbounded value. Credits and costs become $\\infty$ and every ticket need becomes $(\\infty, \\infty)$.', 'Deadlock-free typing is the annotated typing at counter bound $N = \\infty$ with these annotations. One set of rules then serves both systems, and every premise about annotations holds at $\\infty$.', DEF, '$\\mathsf{ty\\_df}((S@x)^{3}) = (S@x)^{\\infty}$.', 'types/Types.v: ty_df');
 n('ty.unlimited', '$\\mathsf{unlimited}$', '$\\mathsf{unlimited}\\,T$ iff $T$ is a box type, so its variables admit weakening and contraction.', '$V$ at a box type asks $\\Theta = \\varnothing$, so copying or dropping the value duplicates or loses no end.', DEF, 'The self of a box is unlimited.', 'types/Types.v: unlimited');
 n('ty.tfree', '$\\mathsf{tfree}$', '$\\mathsf{tfree}\\,T$ iff $T$ is built from $\\ast$, boxes, $\\otimes$ and $\\oplus$. A value of such a type holds no end, because $V$ at a box asks $\\Theta = \\varnothing$.', 'Aging and capture leave an entry at a $\\mathsf{tfree}$ type unchanged. P-Term asks it of the result, so no partner waits on the result of a process.', 'A main thread that returns an end holds it forever, and its partner waits forever.', '$\\mathsf{tfree}(\\ast \\otimes \\Box\\ldots)$.', 'types/Types.v: tfree');
@@ -215,8 +208,10 @@ sa('ty.arrow.tix', R`\vartheta = (s, b) \in \mathsf{Tix} = (\mathbb{N} \cup \{\i
 sa('ty.credit', R`a \in \mathbb{N} \cup \{\infty\}`, [A('a', R`A lower bound on the counter of an end, or of the ends a closure captured.`)]);
 sa('ty.prod', R`T \otimes U \in \mathsf{Ty}`, [A(R`T, U`, R`The component types.`)]);
 sa('ty.sum', R`T \oplus U \in \mathsf{Ty}`, [A(R`T, U`, R`The types of the two injections.`)]);
-sa('ty.sess', R`(S@x)^{a} \in \mathsf{Ty}`, [A('S', R`The protocol the end runs.`), A('x', R`The point of its next action.`), A('a', R`Its credit, a lower bound on its counter.`)]);
-sa('ty.box', R`\Box(\forall\bar\iota\,\bar\alpha.\ C.\ \ast \multimap^{u}[c ; \vartheta]\,U) \in \mathsf{Ty}`, [A(R`\bar\iota`, R`$m$ point variables, instantiated at each $\mathsf{force}$ by points $\bar x$ with $C[\bar x]$.`), A(R`\bar\alpha`, R`$k$ session variables, instantiated at each $\mathsf{force}$.`), A('C', R`The constraint over $\bar\iota$ and outer points.`), A('u', R`The upper point of the thunk.`), A(R`c, \vartheta`, R`Cost and ticket need of one force.`), A('U', R`The result type.`)]);
+sa('ty.sess', R`(S@x)^{a}_{m} \in \mathsf{Ty}`, [A('S', R`The protocol the end runs.`), A('x', R`The point of its next action.`), A('a', R`Its credit, a lower bound on its counter.`), A('m', R`Its tickets, an upper bound on its counter, with $a \leq m$.`)]);
+sa('ty.tickets', R`m \in \mathbb{N} \cup \{\infty\}`, [A('m', R`The tickets of an end, the value an action resets its counter to.`), A('a', R`The credit of the end, $a \leq m$.`)]);
+sa('ann.tsum', R`\mathsf{tk}(o) + \mathsf{tk}(\overline{o}) \leq N : \mathsf{Prop}`, [A('o', R`An end of a channel and $\overline{o}$ its partner.`), A(R`\mathsf{tk}(o)`, R`The tickets $m$ of $o$, read off its type $(S@x)^{a}_{m}$.`), A('N', R`The bound of the judgment.`)]);
+sa('ty.box', R`\Box(\forall\bar\iota\,\bar\alpha.\ C.\ \ast \multimap^{u}[c]\,U) \in \mathsf{Ty}`, [A(R`\bar\iota`, R`$m$ point variables, instantiated at each $\mathsf{force}$ by points $\bar x$ with $C[\bar x]$.`), A(R`\bar\alpha`, R`$k$ session variables, instantiated at each $\mathsf{force}$.`), A('C', R`The constraint over $\bar\iota$ and outer points.`), A('u', R`The upper point of the thunk.`), A('c', R`The cost of one force.`), A('U', R`The result type.`)]);
 sa('ty.box.svars', R`\bar\alpha = \alpha_1, \ldots, \alpha_k`, [A('k', R`The number of session variables.`)]);
 sa('ty.box.constraint', R`C \subseteq \{x \prec y \mid x, y \in \mathsf{Point}\}`, [A('C', R`A set of facts over $\bar\iota$ and outer points, possibly infinite.`)]);
 sa('ty.ex', R`\exists^{l}\bar\iota.\ C.\ T \in \mathsf{Ty}`, [A('l', R`The lower bound, $\cdot$, $\bot$ or a point.`), A(R`\bar\iota`, R`$m$ point variables, the witness $\bar x$ is hidden.`), A('C', R`The facts the witness satisfies.`), A('T', R`The body type.`)]);
@@ -245,13 +240,6 @@ sa('ty.ubound', R`u \in \mathsf{UBound} = \{\cdot, \top\} \cup \mathsf{Point}`, 
 sa('ty.payload-at', R`\mathsf{payload\_at} : \mathbb{N} \to \mathsf{Ty} \to \mathsf{Point} \to \mathsf{Ty}`, [A('m', R`The number of point variables of the payload.`), A('T', R`The payload type over $\iota_0, \ldots, \iota_{m-1}$.`), A('x', R`The point of the carrier end.`)]);
 sa('ty.pscoped', R`\mathsf{pscoped} : \mathsf{PVar}^{*} \to \mathsf{Ty} \to \mathsf{Prop}`, [A(R`\bar\iota`, R`The point variables the payload binds.`), A('T', R`The payload type.`)]);
 sa('ann.fuel', R`\mathbb{N} \cup \{\infty\}`, []);
-sa('ann.tix', R`\vartheta = (s, b) \in \mathsf{Tix} = (\mathbb{N} \cup \{\infty\})^{2}`, [A('s', R`The doubling exponent.`), A('b', R`The offset.`), A('r', R`The reserve of tickets on return.`)]);
-sa('ann.tid', R`\hat 1 \in \mathsf{Tix}`, []);
-sa('ann.meets', R`\vartheta(r) \leq tk : \mathsf{Prop}`, [TH, A('r', R`The reserve on return.`), A('tk', R`The available tickets.`)]);
-sa('ann.tspawn', R`\mathsf{tspawn} : (\mathbb{N} \cup \{\infty\}) \to \mathsf{Tix} \to \mathsf{Tix}`, [A(R`b_c`, R`The offset the child needs.`), A(R`\vartheta`, R`The ticket need $(s, b)$ of the parent continuation.`)]);
-sa('ann.tlink', R`\mathsf{tlink} : \mathsf{Tix} \to \mathsf{Tix}`, [A(R`\vartheta`, R`The ticket need $(s, b)$ after the link.`)]);
-sa('ann.tseq', R`\cdot \circ \cdot : \mathsf{Tix} \to \mathsf{Tix} \to \mathsf{Tix}`, [A(R`\vartheta_1, \vartheta_2`, R`The ticket needs of the first and the second part.`)]);
-sa('ann.tok', R`\mathsf{tok} : \mathsf{Tix} \to \mathsf{Tix} \to \mathsf{Prop}`, [A(R`\vartheta_1 = (s_1, b_1)`, R`The first ticket need.`), A(R`\vartheta_2 = (s_2, b_2)`, R`The second ticket need.`)]);
 sa('ann.tydf', R`\mathsf{ty\_df} : \mathsf{Ty} \to \mathsf{Ty}`, [Tt]);
 sa('ty.unlimited', R`\mathsf{unlimited} : \mathsf{Ty} \to \mathsf{Prop}`, [Tt]);
 sa('ty.tfree', R`\mathsf{tfree} : \mathsf{Ty} \to \mathsf{Prop}`, [Tt]);

@@ -341,7 +341,7 @@ window.MAP = {
      "id": "ty-grammar",
      "title": "Types",
      "rocq": "types/Types.v: ty",
-     "tex": "\\begin{array}{rl}\nT, U ::= & \\htmlData{k=ty.unit}{\\ast} \\mid \\htmlData{k=ty.arrow}{(T \\multimap^{\\htmlData{k=ty.arrow.ub}{u}}_{\\htmlData{k=ty.arrow.lb}{l}}\\annot{[\\htmlData{k=ty.arrow.cost}{c} ; \\htmlData{k=ty.arrow.tix}{\\vartheta}]}\\, U)\\annot{^{\\htmlData{k=ty.credit}{a}}}} \\mid \\htmlData{k=ty.prod}{T \\otimes U} \\mid \\htmlData{k=ty.sum}{T \\oplus U} \\mid \\htmlData{k=ty.sess}{(S@x)\\annot{^{\\htmlData{k=ty.credit}{a}}}} \\\\\n\\mid & \\htmlData{k=ty.box}{\\Box(\\forall \\htmlData{k=pt.var}{\\bar\\iota}\\, \\htmlData{k=ty.box.svars}{\\bar\\alpha}.\\ \\htmlData{k=ty.box.constraint}{C}.\\ \\ast \\multimap^{u}\\annot{[c ; \\vartheta]}\\, U)} \\mid \\htmlData{k=ty.ex}{\\exists^{\\htmlData{k=ty.ex.lb}{l}} \\bar\\iota.\\ C.\\ T}\n\\end{array}",
+     "tex": "\\begin{array}{rl}\nT, U ::= & \\htmlData{k=ty.unit}{\\ast} \\mid \\htmlData{k=ty.arrow}{(T \\multimap^{\\htmlData{k=ty.arrow.ub}{u}}_{\\htmlData{k=ty.arrow.lb}{l}}[\\annot{\\htmlData{k=ty.arrow.cost}{c}}]\\, U)\\annot{^{\\htmlData{k=ty.credit}{a}}}} \\mid \\htmlData{k=ty.prod}{T \\otimes U} \\mid \\htmlData{k=ty.sum}{T \\oplus U} \\mid \\htmlData{k=ty.sess}{(S@x)\\annot{^{\\htmlData{k=ty.credit}{a}}}_{\\annot{\\htmlData{k=ty.tickets}{m}}}} \\\\\n\\mid & \\htmlData{k=ty.box}{\\Box(\\forall \\htmlData{k=pt.var}{\\bar\\iota}\\, \\htmlData{k=ty.box.svars}{\\bar\\alpha}.\\ \\htmlData{k=ty.box.constraint}{C}.\\ \\ast \\multimap^{u}[c]\\, U)} \\mid \\htmlData{k=ty.ex}{\\exists^{\\htmlData{k=ty.ex.lb}{l}} \\bar\\iota.\\ C.\\ T}\n\\end{array}",
      "variants": {
       "df": "\\begin{array}{rl} T, U ::= & \\htmlData{k=ty.unit}{\\ast} \\mid \\htmlData{k=ty.arrow}{T \\multimap^{\\htmlData{k=ty.arrow.ub}{u}}_{\\htmlData{k=ty.arrow.lb}{l}} U} \\mid \\htmlData{k=ty.prod}{T \\otimes U} \\mid \\htmlData{k=ty.sum}{T \\oplus U} \\mid \\htmlData{k=ty.sess}{S@x} \\\\ \\mid & \\htmlData{k=ty.box}{\\Box(\\forall \\htmlData{k=pt.var}{\\bar\\iota}\\, \\htmlData{k=ty.box.svars}{\\bar\\alpha}.\\ \\htmlData{k=ty.box.constraint}{C}.\\ \\ast \\multimap^{u} U)} \\mid \\htmlData{k=ty.ex}{\\exists^{\\htmlData{k=ty.ex.lb}{l}} \\bar\\iota.\\ C.\\ T} \\end{array}"
      },
@@ -356,7 +356,8 @@ window.MAP = {
        "t-judgment",
        "v-rel"
       ]
-     }
+     },
+     "planned": "Tickets as one number per end are planned, decided on 2026-11-21 (docs/redesign/check-links-without-tickets.md, last section). An end type is (S@x)^a_m with credit a ≤ m, the tickets of the two ends of a channel sum to at most N, E-Link asks a1 + m2 > N and a2 + m1 > N, an action resets an end to its tickets m, and the measure of lock-free adequacy is the counter of the dual end. The write-up calls the bound K. The Rocq still has the ticket needs ϑ with tix, tlink, tspawn, tseq and tok, the ticket premise of P-Term, the spawn split and s_tk."
     },
     {
      "id": "ty-session",
@@ -453,12 +454,12 @@ window.MAP = {
     },
     {
      "id": "ty-ann",
-     "title": "Annotations and ticket needs",
+     "title": "Annotations and tickets",
      "modes": [
       "lf"
      ],
-     "rocq": "types/Costs.v: fuel; types/Costs.v: tix, tapp, tid, meets; types/Costs.v: tlink, tspawn, tseq, tok; types/Types.v: ty_df",
-     "tex": "\\begin{array}{c}\\htmlData{k=ann.fuel}{a, c, h, N \\in \\mathbb{N} \\cup \\{\\infty\\} \\qquad \\infty - c = \\infty}\\\\[3ex]\\begin{array}{l}\n\\htmlData{k=ann.tix}{\\vartheta = (s, b) \\qquad \\vartheta(r) = 2^{s}\\, r + b} \\qquad \\htmlData{k=ann.tid}{\\hat 1 = (0, 0),\\ \\hat 1(r) = r} \\\\\n\\htmlData{k=ann.meets}{\\vartheta(r) \\leq tk} \\quad tk \\in \\mathbb{N}\n\\end{array}\\\\[3ex]\\begin{array}{l}\n\\htmlData{k=ann.tlink}{\\mathsf{tlink}\\,(s, b) = (s, b + 1)} \\qquad \\htmlData{k=ann.tseq}{(\\vartheta_1 \\circ \\vartheta_2)(r) = \\vartheta_1(\\vartheta_2(r))} \\\\\n\\htmlData{k=ann.tspawn}{\\mathsf{tspawn}\\,b_c\\,(s, b) = (s + 1, \\max(2b, 2b_c - 1))} \\qquad \\htmlData{k=ann.tok}{\\mathsf{tok}\\,(s_1, b_1)\\,(s_2, b_2) \\iff b_2 = 0 \\lor s_1 < \\infty \\lor b_1 = \\infty}\n\\end{array}\\\\[3ex]\\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}:\\quad a = c = h = N = \\infty \\qquad \\vartheta = (\\infty, \\infty)}\\end{array}",
+     "rocq": "types/Costs.v: fuel; not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21); types/Types.v: ty_df",
+     "tex": "\\begin{array}{c}\\htmlData{k=ann.fuel}{a, c, h, N \\in \\mathbb{N} \\cup \\{\\infty\\} \\qquad \\infty - c = \\infty}\\\\[3ex]\\begin{array}{l}\n\\htmlData{k=ty.tickets}{(S@x)\\annot{^{a}}_{m} \\qquad a \\leq m \\qquad m \\in \\mathbb{N} \\cup \\{\\infty\\}} \\\\\n\\htmlData{k=ann.tsum}{\\mathsf{tk}(o) + \\mathsf{tk}(\\overline{o}) \\leq N}\n\\end{array}\\\\[3ex]\\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}:\\quad a = c = h = m = N = \\infty}\\end{array}",
      "caption": "Credits $a$, costs $c$ and the counter bound $N$ are numbers or $\\infty$. A term that must keep $r$ link tickets needs $\\vartheta(r)$ tickets when it starts, and $tk$ tickets suffice when $\\vartheta(r) \\leq tk$. A link adds one to the need, a spawn doubles the rest, and sequencing composes needs. With every annotation at $\\infty$, written $\\mathsf{ty\\_df}$, lock-free typing is deadlock-free typing.",
      "about": {
       "why": "These are the numbers lock-free typing adds to types and judgments. At $\\infty$ each premise about them holds.",
@@ -467,11 +468,11 @@ window.MAP = {
        "r-act",
        "r-threads",
        "p-typing",
-       "t-judgment",
        "th-conserv",
        "th-terms"
       ]
-     }
+     },
+     "planned": "Tickets as one number per end are planned, decided on 2026-11-21 (docs/redesign/check-links-without-tickets.md, last section). An end type is (S@x)^a_m with credit a ≤ m, the tickets of the two ends of a channel sum to at most N, E-Link asks a1 + m2 > N and a2 + m1 > N, an action resets an end to its tickets m, and the measure of lock-free adequacy is the counter of the dual end. The write-up calls the bound K. The Rocq still has the ticket needs ϑ with tix, tlink, tspawn, tseq and tok, the ticket premise of P-Term, the spawn split and s_tk."
     },
     {
      "id": "ty-kinds",
@@ -576,7 +577,7 @@ window.MAP = {
   {
    "id": "typing",
    "title": "Typing",
-   "intro": "The typing judgment assigns each term a type under a context of facts, ends and variables, and a future, the points at which the context acts after the term. Its rules check the order facts a thread needs when it waits. Process typing builds processes from typed threads. \\annp{Lock-free typing adds credits, costs and ticket needs at a finite counter bound $N$, and the guard.}",
+   "intro": "The typing judgment assigns each term a type under a context of facts, ends and variables, and a future, the points at which the context acts after the term. Its rules check the order facts a thread needs when it waits. Process typing builds processes from typed threads. \\annp{Lock-free typing adds credits, tickets and costs at a finite bound $N$, and the guard.}",
    "blocks": [
     {
      "id": "t-lf-credits",
@@ -585,8 +586,8 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{lll}\\htmlData{k=lfi.credit}{\\text{credit}} & \\htmlData{k=ty.credit}{(S@x)\\annot{^{a}},\\ (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} U)\\annot{^{a}}} & \\text{a lower bound on the counter of an end, or of the ends a closure captured} \\\\[3pt] \\htmlData{k=lfi.cost}{\\text{cost}} & \\htmlData{k=tj.eff}{e : T\\ !\\ (c, \\vartheta)} & \\text{the term performs at most $c$ actions before it returns} \\\\[3pt]  & \\htmlData{k=age.ctx}{\\Delta - c} & \\text{what is held while $e$ runs loses $c$, and each credit must be at least $c$} \\\\[3pt]  & \\htmlData{k=age.idle}{(\\mathsf{Skip}@x)\\annot{^{a}} - c} & \\text{an idle end loses credit without the check} \\\\[3pt]  & \\htmlData{k=act.refill}{(S@x^{+})\\annot{^{N}}} & \\text{an action returns its end with credit $N$} \\\\[3pt] \\htmlData{k=lfi.hop}{\\text{transfer}} & \\htmlData{k=E-Send.floor}{T' - 1 \\leq T[x\\cdot i]} & \\text{a sent end loses one} \\\\[3pt]  & \\htmlData{k=E-Abs.cap}{(T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} U)\\annot{^{a}} : \\Delta - a} & \\text{the body of a closure sees each captured end at its credit minus $a$} \\\\[3pt]  & \\htmlData{k=E-Spawn.credit}{a \\geq 1} & \\text{a spawned closure has credit at least one, so the ends of the child lose one}\\end{array}",
-     "caption": "Each end has a counter at run time, the number of actions the thread holding it may perform on other ends before it must act on this end. A credit is a lower bound on that counter, so the holding thread postpones an end only finitely often. Aging lowers the credits of held values by the cost of the code that runs, an action restores its own end to $N$, and transferring an end to another thread lowers its credit by one.",
+     "tex": "\\begin{array}{lll}\\htmlData{k=lfi.credit}{\\text{credit}} & \\htmlData{k=ty.credit}{(S@x)\\annot{^{a}},\\ (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} U)\\annot{^{a}}} & \\text{a lower bound on the counter of an end, or of the ends a closure captured} \\\\[3pt] \\htmlData{k=lfi.cost}{\\text{cost}} & \\htmlData{k=tj.eff}{e : T\\ !\\ c} & \\text{the term performs at most $c$ actions before it returns} \\\\[3pt]  & \\htmlData{k=age.ctx}{\\Delta - c} & \\text{what is held while $e$ runs loses $c$, and each credit must be at least $c$} \\\\[3pt]  & \\htmlData{k=age.idle}{(\\mathsf{Skip}@x)\\annot{^{a}} - c} & \\text{an idle end loses credit without the check} \\\\[3pt]  & \\htmlData{k=act.refill}{(S@x^{+})^{m}_{m}} & \\text{an action returns its end with credit $m$, its tickets} \\\\[3pt] \\htmlData{k=lfi.hop}{\\text{transfer}} & \\htmlData{k=E-Send.floor}{T' - 1 \\leq T[x\\cdot i]} & \\text{a sent end loses one} \\\\[3pt]  & \\htmlData{k=E-Abs.cap}{(T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} U)\\annot{^{a}} : \\Delta - a} & \\text{the body of a closure sees each captured end at its credit minus $a$} \\\\[3pt]  & \\htmlData{k=E-Spawn.credit}{a \\geq 1} & \\text{a spawned closure has credit at least one, so the ends of the child lose one}\\end{array}",
+     "caption": "Each end has a counter at run time, the number of actions the thread holding it may perform on other ends before it must act on this end. A credit is a lower bound on that counter, so the holding thread postpones an end only finitely often. Aging lowers the credits of held values by the cost of the code that runs. An action restores its own end to its tickets $m$, and transferring an end to another thread lowers its credit by one.",
      "about": {
       "why": "Credits rule out a holding thread that acts on other ends forever while a partner waits, and an end that is passed between threads forever.",
       "example": "Postponement and endless delegation in the Examples tab have no lock-free typing.",
@@ -597,27 +598,30 @@ window.MAP = {
        "r-threads",
        "fv"
       ]
-     }
+     },
+     "planned": "Tickets as one number per end are planned, decided on 2026-11-21 (docs/redesign/check-links-without-tickets.md, last section). An end type is (S@x)^a_m with credit a ≤ m, the tickets of the two ends of a channel sum to at most N, E-Link asks a1 + m2 > N and a2 + m1 > N, an action resets an end to its tickets m, and the measure of lock-free adequacy is the counter of the dual end. The write-up calls the bound K. The Rocq still has the ticket needs ϑ with tix, tlink, tspawn, tseq and tok, the ticket premise of P-Term, the spawn split and s_tk."
     },
     {
      "id": "t-lf-tickets",
      "title": "Tickets",
-     "rocq": "types/Costs.v: tix, tapp, tlink, tspawn, tseq, tok; static/Typing.v: e_link, p_term",
+     "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)",
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{lll}\\htmlData{k=lfi.tickets}{\\text{need}} & \\htmlData{k=ann.tix}{\\vartheta = (s, b),\\ \\ \\vartheta(r) = 2^{s} r + b} & \\text{the tickets a term needs at its start to keep $r$ tickets at its end} \\\\[3pt]  & \\htmlData{k=ann.meets}{\\vartheta(r) \\leq tk} & \\text{$tk$ tickets suffice} \\\\[3pt]  & \\htmlData{k=ann.tlink}{\\mathsf{tlink}\\,(s, b) = (s, b + 1)} & \\text{a link uses one ticket} \\\\[3pt]  & \\htmlData{k=ann.tspawn}{\\mathsf{tspawn}\\,b_c\\,(s, b)} & \\text{a spawn gives the child half the tickets, so the need doubles} \\\\[3pt]  & \\htmlData{k=tj.seq}{\\varepsilon_1 \\cdot \\varepsilon_2} & \\text{sequencing composes needs, and is defined when the result is again a pair} \\\\[3pt]  & \\htmlData{k=lf.meets}{N \\in \\mathbb{N} \\Rightarrow \\vartheta(0) \\in \\mathbb{N}} & \\text{P-Term requires a finite need for each thread}\\end{array}",
-     "caption": "Each thread has a number of link tickets, a link uses one, and no step creates tickets. A ticket need $\\vartheta$ says how many tickets a term needs, and P-Term requires the need of each thread to be finite. A thread therefore performs finitely many links.",
+     "tex": "\\begin{array}{lll}\\htmlData{k=lfi.tickets}{\\text{tickets}} & \\htmlData{k=ty.tickets}{(S@x)\\annot{^{a}}_{m},\\ a \\leq m} & \\text{an upper bound on the counter of an end, at least its credit} \\\\[3pt]  & \\htmlData{k=ann.tsum}{\\mathsf{tk}(o) + \\mathsf{tk}(\\overline{o}) \\leq N} & \\text{the two ends of a channel have at most $N$ tickets together} \\\\[3pt]  & \\htmlData{k=act.refill}{(S@x^{+})^{m}_{m}} & \\text{an action sets the counter of its end back to $m$} \\\\[3pt]  & \\htmlData{k=E-Send.floor}{T' - 1 \\leq T[x\\cdot i]} & \\text{an end sent as payload loses one from its counter} \\\\[3pt]  & \\htmlData{k=E-Link.tickets}{a_1 + m_2 > N,\\ a_2 + m_1 > N} & \\text{a link asks the credit of each end to exceed the partner bound $N - m$ of the other}\\end{array}",
+     "caption": "An end has $m$ tickets, an upper bound on its counter, and every action on the end sets its counter back to $m$. The two ends of a channel have at most $N$ tickets together, so an end with $m$ tickets has a partner with at most $N - m$. A link asks the credit of each linked end to exceed this bound of the other end, so the new partner of a waiting thread has a lower counter than the old one.",
      "about": {
-      "why": "A link acts on no end, so counters do not bound links, and a link gives the waiting thread a new dual end with a full counter. Tickets rule out a thread that relinks forever.",
+      "why": "A link acts on no end, so no counter falls at a link, and it gives a waiting thread a new partner. Tickets make the counter of the new partner lower than the counter of the old one, so a thread that relinks a waiting end forever has no typing.",
       "example": "Link refresh in the Examples tab has no lock-free typing.",
       "used": [
        "r-act",
-       "r-threads",
+       "r-new",
        "p-typing",
-       "ty-ann"
+       "ty-ann",
+       "soup"
       ]
-     }
+     },
+     "planned": "Tickets as one number per end are planned, decided on 2026-11-21 (docs/redesign/check-links-without-tickets.md, last section). An end type is (S@x)^a_m with credit a ≤ m, the tickets of the two ends of a channel sum to at most N, E-Link asks a1 + m2 > N and a2 + m1 > N, an action resets an end to its tickets m, and the measure of lock-free adequacy is the counter of the dual end. The write-up calls the bound K. The Rocq still has the ticket needs ϑ with tix, tlink, tspawn, tseq and tok, the ticket premise of P-Term, the spawn split and s_tk."
     },
     {
      "id": "t-lf-guard",
@@ -660,8 +664,8 @@ window.MAP = {
      "id": "t-judgment",
      "title": "The typing judgment",
      "rocq": "static/Typing.v: typed, dftyped",
-     "tex": "\\begin{array}{l}\\htmlData{k=tj.Gamma}{\\Gamma} ; \\htmlData{k=tj.Delta}{\\Delta} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=tj.F}{F}}_{\\htmlData{k=tj.W}{W}\\annot{,\\htmlData{k=tj.N}{N}}} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon} \\\\ \\htmlData{k=tj.held}{F \\triangleleft H = F \\cup \\htmlData{k=ty.heads}{\\mathsf{ap}}(H)}\\annot{\\ \\land\\ \\htmlData{k=tj.hage}{\\mathsf{def}(H - c)}}\\annraw{ \\\\ }\\annot{\\htmlData{k=tj.eff}{\\varepsilon = (c, \\vartheta)} \\qquad \\htmlData{k=tj.seq}{\\htmlData{k=ann.tok}{\\mathsf{tok}}\\,\\vartheta_1\\,\\vartheta_2 \\Rightarrow \\varepsilon_1 \\cdot \\varepsilon_2 = (c_1 + c_2,\\ \\vartheta_1 \\circ \\vartheta_2)}}\\annraw{ \\\\ }\\annot{\\htmlData{k=tj.zero}{0 = (0, \\hat 1)} \\qquad \\htmlData{k=tj.one}{1 = (1, \\hat 1)} \\qquad \\htmlData{k=tp.max}{\\max(\\varepsilon_1, \\varepsilon_2)} \\qquad \\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}",
-     "caption": "$\\Gamma$ holds facts, $\\Delta$ the ends and variables, and $F$ is the future. $F \\triangleleft H$ adds to the future the active points of what the thread holds while $e$ runs. The world $W$ and the counter bound $N$ stay fixed for a whole derivation, and the rules leave them implicit. In the lock-free mode $\\varepsilon$ is the effect of $e$.",
+     "tex": "\\begin{array}{l}\\htmlData{k=tj.Gamma}{\\Gamma} ; \\htmlData{k=tj.Delta}{\\Delta} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=tj.F}{F}}_{\\htmlData{k=tj.W}{W}\\annot{,\\htmlData{k=tj.N}{N}}} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon} \\\\ \\htmlData{k=tj.held}{F \\triangleleft H = F \\cup \\htmlData{k=ty.heads}{\\mathsf{ap}}(H)}\\annot{\\ \\land\\ \\htmlData{k=tj.hage}{\\mathsf{def}(H - c)}}\\annraw{ \\\\ }\\annot{\\htmlData{k=tj.eff}{\\varepsilon = c \\in \\mathbb{N} \\cup \\{\\infty\\}} \\qquad \\htmlData{k=tj.seq}{\\varepsilon_1 \\cdot \\varepsilon_2 = c_1 + c_2}}\\annraw{ \\\\ }\\annot{\\htmlData{k=tj.zero}{0} \\qquad \\htmlData{k=tj.one}{1} \\qquad \\htmlData{k=tp.max}{\\max(\\varepsilon_1, \\varepsilon_2)} \\qquad \\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}",
+     "caption": "$\\Gamma$ holds facts, $\\Delta$ the ends and variables, and $F$ is the future. $F \\triangleleft H$ adds to the future the active points of what the thread holds while $e$ runs. The world $W$ and the bound $N$ stay fixed for a whole derivation, and the rules leave them implicit. In the lock-free mode $\\varepsilon$ is the cost of $e$.",
      "modes": [
       "df",
       "lf"
@@ -673,7 +677,8 @@ window.MAP = {
        "r-fun",
        "r-data"
       ]
-     }
+     },
+     "planned": "Tickets as one number per end are planned, decided on 2026-11-21 (docs/redesign/check-links-without-tickets.md, last section). An end type is (S@x)^a_m with credit a ≤ m, the tickets of the two ends of a channel sum to at most N, E-Link asks a1 + m2 > N and a2 + m1 > N, an action resets an end to its tickets m, and the measure of lock-free adequacy is the counter of the dual end. The write-up calls the bound K. The Rocq still has the ticket needs ϑ with tix, tlink, tspawn, tseq and tok, the ticket premise of P-Term, the spawn split and s_tk."
     },
     {
      "id": "t-contexts",
@@ -829,7 +834,7 @@ window.MAP = {
      "title": "Types of constants",
      "rocq": "static/Constants.v: k_send_df, k_recv_df, k_close_df, k_select_df, k_branch_df, k_link_df, k_spawn_df, k_force_df, k_send, k_recv, k_close, k_select, k_branch, k_link, k_spawn, k_force",
      "tex": "\\begin{array}{lll}\n\\htmlData{k=prim.send}{\\mathsf{send}} & : T[x\\cdot i] \\otimes S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S@\\htmlData{k=pt.shift}{x^{+}} & \\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T,\\ \\htmlData{k=E-Send.heads}{x \\prec T[x\\cdot i]} \\\\\n\\htmlData{k=prim.recv}{\\mathsf{recv}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} T[x\\cdot i] \\otimes S@x^{+} & \\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T \\\\\n\\htmlData{k=prim.close}{\\mathsf{close}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} \\ast & \\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}} \\\\\n\\htmlData{k=prim.select}{\\mathsf{select}}_i & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}} & \\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)} \\\\\n\\htmlData{k=prim.branch}{\\mathsf{branch}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2 & \\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)} \\\\\n\\htmlData{k=prim.link}{\\mathsf{link}} & : \\htmlData{k=E-Link.dual}{S@x \\otimes \\overline{S}@\\overline{x}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.spawn}{\\mathsf{spawn}} & : (\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} \\ast) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.force}{\\mathsf{force}} & : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] & \\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]} \\\\\n\\htmlData{k=syn.new}{\\mathsf{new}} & : \\exists^{\\bot}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ (S@\\pi \\otimes \\overline{S}@\\overline{\\pi}) & \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho), (\\varnothing, x\\cdot\\kappa)\\}},\\ \\htmlData{k=E-New.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\Gamma \\cup C)}\n\\end{array}",
-     "caption": "Each constant has the type of its eta-expansion $\\lambda y.\\,k\\,y$, for each instance of its variables that meets the side conditions. An action on an end at $x$ has upper point $x$. $\\mathsf{new}$ is a term and is typed by E-New. \\annp{The types are shown without credits, cost and ticket need.}",
+     "caption": "Each constant has the type of its eta-expansion $\\lambda y.\\,k\\,y$, for each instance of its variables that meets the side conditions. An action on an end at $x$ has upper point $x$. $\\mathsf{new}$ is a term and is typed by E-New. \\annp{The types are shown without credits, tickets and cost.}",
      "modes": [
       "df",
       "lf"
@@ -843,7 +848,7 @@ window.MAP = {
        "r-new"
       ]
      },
-     "planned": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
+     "planned": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field. Tickets as one number per end are planned, decided on 2026-11-21 (docs/redesign/check-links-without-tickets.md, last section). An end type is (S@x)^a_m with credit a ≤ m, the tickets of the two ends of a channel sum to at most N, E-Link asks a1 + m2 > N and a2 + m1 > N, an action resets an end to its tickets m, and the measure of lock-free adequacy is the counter of the dual end. The write-up calls the bound K. The Rocq still has the ticket needs ϑ with tix, tlink, tspawn, tseq and tok, the ticket premise of P-Term, the spawn split and s_tk."
     },
     {
      "id": "r-act",
@@ -853,8 +858,8 @@ window.MAP = {
       "lf"
      ],
      "rocq": "static/Typing.v: e_send; static/Conservativity.v: d_send; static/Typing.v: e_recv; static/Conservativity.v: d_recv; static/Typing.v: e_close; static/Conservativity.v: d_close; static/Typing.v: e_select; static/Conservativity.v: d_select; static/Typing.v: e_branch; static/Conservativity.v: d_branch; static/Typing.v: e_link; static/Conservativity.v: d_link",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S}\\quad \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\quad \\htmlData{k=E-Send.heads}{x \\prec \\htmlData{k=ty.payload-at}{T[x\\cdot i]}}\\quad \\htmlData{k=side.act}{x \\prec F} \\\\ \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T' \\otimes (S_0@x)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\annraw{\\quad }\\annot{\\htmlData{k=E-Send.floor}{T' - 1 \\leq T[x\\cdot i]}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.send}{\\mathsf{send}}\\,e : (S@\\htmlData{k=pt.shift}{x^{+}})\\annot{^{\\htmlData{k=act.refill}{N}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon \\htmlData{k=tj.seq}{\\cdot} \\htmlData{k=tj.one}{1}}}\\;\\textsf{E-Send}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S}\\quad \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\quad \\htmlData{k=side.act}{x \\prec F}\\quad \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : (S_0@x)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.recv}{\\mathsf{recv}}\\,e : T[x\\cdot i] \\otimes (S@\\htmlData{k=pt.shift}{x^{+}})\\annot{^{\\htmlData{k=act.refill}{N}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon \\htmlData{k=tj.seq}{\\cdot} \\htmlData{k=tj.one}{1}}}\\;\\textsf{E-Recv}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}}\\quad \\htmlData{k=side.act}{x \\prec F}\\quad \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : (S_0@x)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.close}{\\mathsf{close}}\\,e : \\ast\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon \\htmlData{k=tj.seq}{\\cdot} \\htmlData{k=tj.one}{1}}}\\;\\textsf{E-Close}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)}\\quad \\htmlData{k=side.act}{x \\prec F}\\quad \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : (S_0@x)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.select}{\\mathsf{select}}_i\\,e : (S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}})\\annot{^{\\htmlData{k=act.refill}{N}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon \\htmlData{k=tj.seq}{\\cdot} \\htmlData{k=tj.one}{1}}}\\;\\textsf{E-Select}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)}\\quad \\htmlData{k=side.act}{x \\prec F}\\quad \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : (S_0@x)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.branch}{\\mathsf{branch}}\\,e : (S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1})\\annot{^{\\htmlData{k=act.refill}{N}}} \\oplus (S_2@x\\cdot\\kappa_2)\\annot{^{\\htmlData{k=act.refill}{N}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon \\htmlData{k=tj.seq}{\\cdot} \\htmlData{k=tj.one}{1}}}\\;\\textsf{E-Branch}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-Link.dual}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : (S@x)\\annot{\\annot{^{a_1}}} \\otimes (\\overline{S}@\\overline{x})\\annot{\\annot{^{a_2}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.link}{\\mathsf{link}}\\,e : \\ast\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon \\htmlData{k=tj.seq}{\\cdot} (0, \\htmlData{k=ann.tlink}{\\mathsf{tlink}\\,\\hat 1})}}\\;\\textsf{E-Link}\\end{array}",
-     "caption": "An action on an end at $x$ waits at $x$ while the thread holds the rest of $\\Delta$. The rules therefore require $x$ below the future and below the dual points of the held values. Send and receive move the end to $x^{+}$ and the payload to the fields of $x$, a choice moves the end to the field of the branch, and a link requires no order fact. \\annp{An action costs one and returns the end\\annp{ with credit} $N$, and a link uses one ticket.}",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S}\\quad \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\quad \\htmlData{k=E-Send.heads}{x \\prec \\htmlData{k=ty.payload-at}{T[x\\cdot i]}}\\quad \\htmlData{k=side.act}{x \\prec F} \\\\ \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T' \\otimes (S_0@x)\\annot{\\annot{^{a}}_{\\htmlData{k=ty.tickets}{m}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\annraw{\\quad }\\annot{\\htmlData{k=E-Send.floor}{T' - 1 \\leq T[x\\cdot i]}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.send}{\\mathsf{send}}\\,e : (S@\\htmlData{k=pt.shift}{x^{+}})\\annot{^{\\htmlData{k=act.refill}{m}}_{m}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon \\htmlData{k=tj.seq}{\\cdot} \\htmlData{k=tj.one}{1}}}\\;\\textsf{E-Send}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S}\\quad \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\quad \\htmlData{k=side.act}{x \\prec F}\\quad \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : (S_0@x)\\annot{\\annot{^{a}}_{\\htmlData{k=ty.tickets}{m}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.recv}{\\mathsf{recv}}\\,e : T[x\\cdot i] \\otimes (S@\\htmlData{k=pt.shift}{x^{+}})\\annot{^{\\htmlData{k=act.refill}{m}}_{m}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon \\htmlData{k=tj.seq}{\\cdot} \\htmlData{k=tj.one}{1}}}\\;\\textsf{E-Recv}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}}\\quad \\htmlData{k=side.act}{x \\prec F}\\quad \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : (S_0@x)\\annot{\\annot{^{a}}_{\\htmlData{k=ty.tickets}{m}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.close}{\\mathsf{close}}\\,e : \\ast\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon \\htmlData{k=tj.seq}{\\cdot} \\htmlData{k=tj.one}{1}}}\\;\\textsf{E-Close}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)}\\quad \\htmlData{k=side.act}{x \\prec F}\\quad \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : (S_0@x)\\annot{\\annot{^{a}}_{\\htmlData{k=ty.tickets}{m}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.select}{\\mathsf{select}}_i\\,e : (S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}})\\annot{^{\\htmlData{k=act.refill}{m}}_{m}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon \\htmlData{k=tj.seq}{\\cdot} \\htmlData{k=tj.one}{1}}}\\;\\textsf{E-Select}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)}\\quad \\htmlData{k=side.act}{x \\prec F}\\quad \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : (S_0@x)\\annot{\\annot{^{a}}_{\\htmlData{k=ty.tickets}{m}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.branch}{\\mathsf{branch}}\\,e : (S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1})\\annot{^{\\htmlData{k=act.refill}{m}}_{m}} \\oplus (S_2@x\\cdot\\kappa_2)\\annot{^{\\htmlData{k=act.refill}{m}}_{m}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon \\htmlData{k=tj.seq}{\\cdot} \\htmlData{k=tj.one}{1}}}\\;\\textsf{E-Branch}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-Link.dual}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : (S@x)\\annot{\\annot{^{a_1}}} \\otimes (\\overline{S}@\\overline{x})\\annot{\\annot{^{a_2}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.link}{\\mathsf{link}}\\,e : \\ast\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon \\htmlData{k=tj.seq}{\\cdot} (0, \\htmlData{k=ann.tlink}{\\mathsf{tlink}\\,\\hat 1})}}\\;\\textsf{E-Link}\\end{array}",
+     "caption": "An action on an end at $x$ waits at $x$ while the thread holds the rest of $\\Delta$. The rules therefore require $x$ below the future and below the dual points of the held values. Send and receive move the end to $x^{+}$ and the payload to the fields of $x$, a choice moves the end to the field of the branch, and a link requires no order fact. \\annp{An action costs one and returns the end\\annp{ with credit} $m$, its tickets. \\annp{A link asks the credit of each linked end to exceed the partner bound $N - m$ of the other.}}",
      "about": {
       "why": "A thread waits only at actions, so the order facts of the type system are required here.",
       "used": [
@@ -862,7 +867,8 @@ window.MAP = {
        "r-data",
        "syn-csub"
       ]
-     }
+     },
+     "planned": "Tickets as one number per end are planned, decided on 2026-11-21 (docs/redesign/check-links-without-tickets.md, last section). An end type is (S@x)^a_m with credit a ≤ m, the tickets of the two ends of a channel sum to at most N, E-Link asks a1 + m2 > N and a2 + m1 > N, an action resets an end to its tickets m, and the measure of lock-free adequacy is the counter of the dual end. The write-up calls the bound K. The Rocq still has the ticket needs ϑ with tix, tlink, tspawn, tseq and tok, the ticket premise of P-Term, the spawn split and s_tk."
     },
     {
      "id": "r-threads",
@@ -872,7 +878,7 @@ window.MAP = {
       "lf"
      ],
      "rocq": "static/Typing.v: e_spawn; static/Conservativity.v: d_spawn",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : (\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[(c', \\vartheta')]}\\, \\ast)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\annraw{\\quad }\\annot{\\htmlData{k=E-Spawn.credit}{a \\geq 1}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.spawn}{\\mathsf{spawn}}\\,e : \\ast\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon \\htmlData{k=tj.seq}{\\cdot} (0, \\htmlData{k=ann.tspawn}{\\mathsf{tspawn}(\\vartheta'(0))\\,\\hat 1})}}\\;\\textsf{E-Spawn}\\end{array}",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : (\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[c']}\\, \\ast)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\annraw{\\quad }\\annot{\\htmlData{k=E-Spawn.credit}{a \\geq 1}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.spawn}{\\mathsf{spawn}}\\,e : \\ast\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Spawn}\\end{array}",
      "caption": "E-Spawn spawns a closure value with the ends it captured. A written abstraction $\\mathsf{spawn}\\,(\\lambda e)$ types by E-Abs at upper point $\\top$ and lower point $\\bot$, so the child body runs under the empty future. \\annp{At credit $a = 1$ the transferred entries age by one.}",
      "about": {
       "why": "A spawned thread has no code after it, so the child body is typed at the empty future.",
@@ -880,14 +886,15 @@ window.MAP = {
        "v-rel",
        "e-obl"
       ]
-     }
+     },
+     "planned": "Tickets as one number per end are planned, decided on 2026-11-21 (docs/redesign/check-links-without-tickets.md, last section). An end type is (S@x)^a_m with credit a ≤ m, the tickets of the two ends of a channel sum to at most N, E-Link asks a1 + m2 > N and a2 + m1 > N, an action resets an end to its tickets m, and the measure of lock-free adequacy is the counter of the dual end. The write-up calls the bound K. The Rocq still has the ticket needs ϑ with tix, tlink, tspawn, tseq and tok, the ticket premise of P-Term, the spawn split and s_tk."
     },
     {
      "id": "r-new",
      "title": "Creation",
      "rocq": "static/Typing.v: e_new; static/Conservativity.v: d_new",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\quad \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho), (\\varnothing, x\\cdot\\kappa)\\}}\\quad \\htmlData{k=E-New.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\Gamma \\cup C)}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.new}{\\mathsf{new}} : \\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ \\htmlData{k=E-New.dual}{(S@\\pi)\\annot{^{\\htmlData{k=act.refill}{N}}} \\otimes (\\htmlData{k=sty.dual}{\\overline{S}}@\\overline{\\pi})\\annot{^{\\htmlData{k=act.refill}{N}}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-New}",
-     "caption": "The two ends of a new channel are at a fresh root $\\rho$ and its dual, or at a field $x\\cdot\\kappa$ and its dual. The facts $C$ keep the order strict, and the lower bound is $\\bot$.",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\quad \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho), (\\varnothing, x\\cdot\\kappa)\\}}\\quad \\htmlData{k=E-New.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\Gamma \\cup C)}\\annraw{\\quad }\\annot{\\htmlData{k=E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.new}{\\mathsf{new}} : \\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ \\htmlData{k=E-New.dual}{(S@\\pi)\\annot{^{m_1}_{m_1}} \\otimes (\\htmlData{k=sty.dual}{\\overline{S}}@\\overline{\\pi})\\annot{^{m_2}_{m_2}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-New}",
+     "caption": "The two ends of a new channel are at a fresh root $\\rho$ and its dual, or at a field $x\\cdot\\kappa$ and its dual. The facts $C$ keep the order strict, and the lower bound is $\\bot$. \\annp{The creation picks tickets $m_1$ and $m_2$ with $m_1 + m_2 \\leq N$, and each end starts at credit equal to its tickets.}",
      "modes": [
       "df",
       "lf"
@@ -899,7 +906,7 @@ window.MAP = {
        "w-ext"
       ]
      },
-     "planned": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
+     "planned": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field. Tickets as one number per end are planned, decided on 2026-11-21 (docs/redesign/check-links-without-tickets.md, last section). An end type is (S@x)^a_m with credit a ≤ m, the tickets of the two ends of a channel sum to at most N, E-Link asks a1 + m2 > N and a2 + m1 > N, an action resets an end to its tickets m, and the measure of lock-free adequacy is the counter of the dual end. The write-up calls the bound K. The Rocq still has the ticket needs ϑ with tix, tlink, tspawn, tseq and tok, the ticket premise of P-Term, the spawn split and s_tk."
     },
     {
      "id": "t-subs",
@@ -917,7 +924,8 @@ window.MAP = {
      "about": {
       "why": "A value may forget facts it does not need. Admissible weakening and contraction keep the rule set free of structural rules.",
       "used": []
-     }
+     },
+     "planned": "Tickets as one number per end are planned, decided on 2026-11-21 (docs/redesign/check-links-without-tickets.md, last section). An end type is (S@x)^a_m with credit a ≤ m, the tickets of the two ends of a channel sum to at most N, E-Link asks a1 + m2 > N and a2 + m1 > N, an action resets an end to its tickets m, and the measure of lock-free adequacy is the counter of the dual end. The write-up calls the bound K. The Rocq still has the ticket needs ϑ with tix, tlink, tspawn, tseq and tok, the ticket premise of P-Term, the spawn split and s_tk."
     },
     {
      "id": "p-typing",
@@ -927,17 +935,15 @@ window.MAP = {
       "lf"
      ],
      "rocq": "static/Typing.v: p_term; static/Typing.v: p_connect; static/Typing.v: ptyped, static/FundamentalProc.v: pguard",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=ty.tfree}{\\mathsf{tfree}\\,T}\\quad \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma}\\quad \\htmlData{k=P-Term.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\quad \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = S@x\\annot{^{N}},\\ \\Theta_B(c^{-}) = \\overline{S}@\\overline{x}\\annot{^{N}}} \\\\ \\htmlData{k=P-Term.typed}{\\varnothing ; \\htmlData{k=tp.lift}{\\Sigma\\annot{\\annot{^{N}}}}, \\Theta_B \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}} t : T\\annot{\\ !\\ (c, \\vartheta)}}\\annraw{ \\\\ }\\annot{\\boxed{\\htmlData{k=lf.meets}{N \\in \\mathbb{N} \\Rightarrow \\htmlData{k=ann.fin0}{\\vartheta(0) \\in \\mathbb{N}}}}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1} (C_1, E_1) : T} \\\\ \\htmlData{k=P-Connect.right}{\\Sigma_2 \\cup \\htmlData{k=P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\htmlData{k=P-Connect.disj}{\\mathsf{disjoint}(\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_1, \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_2, \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, C_1, C_2)}\\quad \\htmlData{k=P-Connect.cutfree}{\\htmlData{k=pfree}{\\mathsf{pfree}}\\,\\Sigma_C} \\\\ \\htmlData{k=P-Connect.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\htmlData{k=w.restrict}{W_1|_S} \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2|_S),\\ S = \\htmlData{k=w.consts}{A_{W_1}} \\cap A_{W_2}}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{\\htmlData{k=P-Connect.join}{W_1 \\htmlData{k=w.join}{\\sqcup} W_2}} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect}\\annraw{\\\\[3ex]}\\annot{\\htmlData{k=tp.lfjudg}{\\Sigma \\Vdash^{N}_W p : T \\iff \\htmlData{k=lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_W p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p}}}\\end{array}",
-     "caption": "P-Term types one thread $t$ that holds both ends of each channel in $C_0$, at dual types and points, over an interface $\\Sigma$ without partner pairs. P-Connect cuts two components at $\\Sigma_C$ against $\\overline{\\Sigma_C}$ and compares only the shared roots of the two worlds. \\annp{Lock-free process typing is process typing at a finite counter bound $N$ with each thread guarded.}",
-     "variants": {
-      "df": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=ty.tfree}{\\mathsf{tfree}\\,T}\\quad \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma}\\quad \\htmlData{k=P-Term.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\quad \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = S@x\\annot{^{N}},\\ \\Theta_B(c^{-}) = \\overline{S}@\\overline{x}\\annot{^{N}}} \\\\ \\htmlData{k=P-Term.typed}{\\varnothing ; \\htmlData{k=tp.lift}{\\Sigma\\annot{\\annot{^{N}}}}, \\Theta_B \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}} t : T\\annot{\\ !\\ (c, \\vartheta)}}\\annraw{ \\\\ }\\annot{\\htmlData{k=lf.meets}{N \\in \\mathbb{N} \\Rightarrow \\htmlData{k=ann.fin0}{\\vartheta(0) \\in \\mathbb{N}}}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1} (C_1, E_1) : T} \\\\ \\htmlData{k=P-Connect.right}{\\Sigma_2 \\cup \\htmlData{k=P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\htmlData{k=P-Connect.disj}{\\mathsf{disjoint}(\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_1, \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_2, \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, C_1, C_2)}\\quad \\htmlData{k=P-Connect.cutfree}{\\htmlData{k=pfree}{\\mathsf{pfree}}\\,\\Sigma_C} \\\\ \\htmlData{k=P-Connect.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\htmlData{k=w.restrict}{W_1|_S} \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2|_S),\\ S = \\htmlData{k=w.consts}{A_{W_1}} \\cap A_{W_2}}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{\\htmlData{k=P-Connect.join}{W_1 \\htmlData{k=w.join}{\\sqcup} W_2}} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect}\\end{array}"
-     },
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=ty.tfree}{\\mathsf{tfree}\\,T}\\quad \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma}\\quad \\htmlData{k=P-Term.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\quad \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = (S@x)\\annot{^{m}_{m}},\\ \\Theta_B(c^{-}) = (\\overline{S}@\\overline{x})\\annot{^{m'}_{m'}}\\annot{,\\ m + m' \\leq N}} \\\\ \\htmlData{k=P-Term.typed}{\\varnothing ; \\htmlData{k=tp.lift}{\\Sigma\\annot{^{N/2}_{N/2}}}, \\Theta_B \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}} t : T\\annot{\\ !\\ c}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1} (C_1, E_1) : T} \\\\ \\htmlData{k=P-Connect.right}{\\Sigma_2 \\cup \\htmlData{k=P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\htmlData{k=P-Connect.disj}{\\mathsf{disjoint}(\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_1, \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_2, \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, C_1, C_2)}\\quad \\htmlData{k=P-Connect.cutfree}{\\htmlData{k=pfree}{\\mathsf{pfree}}\\,\\Sigma_C} \\\\ \\htmlData{k=P-Connect.strict}{\\htmlData{k=w.strict}{\\mathsf{strict}}(\\htmlData{k=w.restrict}{W_1|_S} \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2|_S),\\ S = \\htmlData{k=w.consts}{A_{W_1}} \\cap A_{W_2}}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{\\htmlData{k=P-Connect.join}{W_1 \\htmlData{k=w.join}{\\sqcup} W_2}} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect}\\annraw{\\\\[3ex]}\\annot{\\htmlData{k=tp.lfjudg}{\\Sigma \\Vdash^{N}_W p : T \\iff \\htmlData{k=lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_W p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p}}}\\end{array}",
+     "caption": "P-Term types one thread $t$ that holds both ends of each channel in $C_0$, at dual types and points, over an interface $\\Sigma$ without partner pairs. P-Connect cuts two components at $\\Sigma_C$ against $\\overline{\\Sigma_C}$ and compares only the shared roots of the two worlds. \\annp{Lock-free process typing is process typing at a finite bound $N$ with each thread guarded. \\annp{The ends of a restricted channel have tickets of sum at most $N$, and each interface end has $N/2$.}}",
      "about": {
       "why": "Processes are built from single threads by P-Term and composed by P-Connect.",
       "used": [
        "g-guard"
       ]
-     }
+     },
+     "planned": "Tickets as one number per end are planned, decided on 2026-11-21 (docs/redesign/check-links-without-tickets.md, last section). An end type is (S@x)^a_m with credit a ≤ m, the tickets of the two ends of a channel sum to at most N, E-Link asks a1 + m2 > N and a2 + m1 > N, an action resets an end to its tickets m, and the measure of lock-free adequacy is the counter of the dual end. The write-up calls the bound K. The Rocq still has the ticket needs ϑ with tix, tlink, tspawn, tseq and tok, the ticket premise of P-Term, the spawn split and s_tk."
     },
     {
      "id": "g-guard",
@@ -966,8 +972,8 @@ window.MAP = {
      "id": "sr-reading",
      "title": "Reading the relations",
      "rocq": "relation/Relation.v: Vrel, Erel, Prel, at_cost_E",
-     "tex": "\\begin{array}{ll}\n\\htmlData{k=th.Vrel}{v \\in V^{W}_{n}\\llbracket \\Theta \\vdash T \\rrbracket} & \\text{the value } v \\text{ owns exactly the ends } \\Theta \\text{ and is safe at } T \\\\\n\\htmlData{k=th.Erel}{e \\in E^{W}_{n}\\llbracket \\Theta \\vdash T \\rrbracket^{F}} & \\text{the term } e \\text{, holding } \\Theta \\text{, is safe until it returns a value of } T \\text{, its context acting at } F \\text{ afterwards} \\\\\n\\htmlData{k=th.Prel}{p \\in P^{W}_{n}\\llbracket \\Sigma \\vdash T \\rrbracket} & \\text{the process } p \\text{ is safe with interface } \\Sigma \\\\\n\\htmlData{k=sr.obl}{\\mathsf{Obl}_\\alpha(e')} & \\text{what a step } e \\xrightarrow{\\alpha} e' \\text{ must preserve} \\\\\n\\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}\\ \\Theta'} & e' \\text{ is safe holding } \\Theta' \\text{, at the same level after a free step and one level lower otherwise}\n\\annraw{\\\\}\\annot{\\htmlData{k=sr.FE}{e \\in F^{N}_{n}\\llbracket \\Phi ; tk \\vdash \\sigma\\ !\\ (d, r) \\rrbracket}}\\annraw{&}\\annot{\\text{the thread } e \\text{, holding } \\Phi \\text{ with counters and } tk \\text{ tickets, has fuel for } n \\text{ more steps}}\n\\annraw{\\\\}\\annot{\\htmlData{k=th.soup}{a \\in S^{N,W,\\chi}_{n}\\llbracket \\Sigma \\vdash T \\rrbracket}}\\annraw{&}\\annot{\\text{every thread of } a \\text{ is in } E[\\kappa_L, \\chi] \\text{ and has fuel, under one ownership map and one creation choice } \\chi}\n\\end{array}",
-     "caption": "The relations are indexed by a world $W$, whose order they read, and a level $n$, the number of steps for which they guarantee safety. A term is safe when it is a safe value, or when it is ready and each of its steps leads to a safe term one level lower. Readiness says that a stuck term waits below the dual points of the ends it holds. Processes are safe in the same way and remain safe when their ends are fused, so composing two safe processes needs no further proof. \\annp{Fuel is a second predicate on each thread, and the lock-free process relation requires both of every thread.}",
+     "tex": "\\begin{array}{ll}\n\\htmlData{k=th.Vrel}{v \\in V^{W}_{\\alpha}\\llbracket \\Theta \\vdash T \\rrbracket} & \\text{the value } v \\text{ owns exactly the ends } \\Theta \\text{ and is safe at } T \\\\\n\\htmlData{k=th.Erel}{e \\in E^{W}_{\\alpha}\\llbracket \\Theta \\vdash T \\rrbracket^{F}} & \\text{the term } e \\text{, holding } \\Theta \\text{, is safe until it returns a value of } T \\text{, its context acting at } F \\text{ afterwards} \\\\\n\\htmlData{k=th.Prel}{p \\in P^{W}_{\\alpha}\\llbracket \\Sigma \\vdash T \\rrbracket} & \\text{the process } p \\text{ is safe with interface } \\Sigma \\\\\n\\htmlData{k=sr.obl}{\\mathsf{Obl}_\\ell(e')} & \\text{what a step } e \\xrightarrow{\\ell} e' \\text{ must preserve} \\\\\n\\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}\\ \\Theta'} & e' \\text{ is safe holding } \\Theta' \\text{, at the same index after a free step and at every } \\beta \\text{ with } \\beta + c \\leq \\alpha \\text{ after a step of cost } c\n\\annraw{\\\\}\\annot{\\htmlData{k=sr.FE}{e \\in F^{N}_{\\alpha}\\llbracket \\Phi \\vdash \\sigma\\ !\\ d \\rrbracket}}\\annraw{&}\\annot{\\text{the thread } e \\text{, holding } \\Phi \\text{ with counters and tickets, has fuel at index } \\alpha}\n\\annraw{\\\\}\\annot{\\htmlData{k=th.soup}{a \\in S^{N,W}_{\\alpha}\\llbracket \\Sigma \\vdash T \\rrbracket}}\\annraw{&}\\annot{\\text{every thread of } a \\text{ is in } E[\\kappa_L] \\text{ and has fuel, under one ownership map}}\n\\end{array}",
+     "caption": "The relations are indexed by a world $W$, whose order they read, and an ordinal index $\\alpha$. A term is safe when it is a safe value, or when it is ready and each of its steps leads to a safe term at every lower index the cost of the step allows. Readiness says that a stuck term waits below the dual points of the ends it holds. Processes are safe in the same way and remain safe when their ends are fused, so composing two safe processes needs no further proof. \\annp{Fuel is a second predicate on each thread, and the lock-free process relation requires both of every thread.}",
      "modes": [
       "df",
       "lf"
@@ -979,7 +985,8 @@ window.MAP = {
        "e-rel",
        "p-rel"
       ]
-     }
+     },
+     "planned": "Tickets as one number per end are planned, decided on 2026-11-21 (docs/redesign/check-links-without-tickets.md, last section). An end type is (S@x)^a_m with credit a ≤ m, the tickets of the two ends of a channel sum to at most N, E-Link asks a1 + m2 > N and a2 + m1 > N, an action resets an end to its tickets m, and the measure of lock-free adequacy is the counter of the dual end. The write-up calls the bound K. The Rocq still has the ticket needs ϑ with tix, tlink, tspawn, tseq and tok, the ticket premise of P-Term, the spawn split and s_tk. Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers."
     },
     {
      "id": "ct-costs",
@@ -1022,7 +1029,8 @@ window.MAP = {
        "r-boxes",
        "r-ex"
       ]
-     }
+     },
+     "planned": "Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers."
     },
     {
      "id": "e-rel",
@@ -1032,8 +1040,8 @@ window.MAP = {
       "lf"
      ],
      "rocq": "relation/Relation.v: Ebody, Eind, Etop; relation/Relation.v: at_cost_E, at_cost_V, at_cost_P",
-     "tex": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=E.zero}{\\forall e.\\ e \\in \\htmlData{k=th.Erel}{E^{W}_{0}\\llbracket \\Theta \\vdash T \\rrbracket^{F}}} \\\\\ne \\in \\htmlData{k=th.Erel}{E^{W}_{n{+}1}\\llbracket \\Theta \\vdash T \\rrbracket^{F}} \\iff \\htmlData{k=E.kripke}{\\forall W_1 \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W}. \\\\\n\\quad \\htmlData{k=E.stop}{(\\mathsf{stop})\\ \\htmlData{k=sr.irred}{\\mathsf{irred}}\\,e \\Rightarrow e \\in \\htmlData{k=th.Vrel}{V^{W_1}_{n{+}1}\\llbracket \\Theta \\vdash T \\rrbracket}} \\\\\n\\quad \\htmlData{k=E.ready}{(\\mathsf{ready})\\ \\neg\\mathsf{irred}\\,e \\Rightarrow \\htmlData{k=sr.ready}{\\mathsf{ready}_{W_1}(\\Theta \\mid F, e)}} \\\\\n\\quad \\htmlData{k=E.step}{(\\mathsf{step})\\ \\forall \\alpha, e'.\\ e \\xrightarrow{\\alpha} e' \\Rightarrow \\htmlData{k=sr.obl}{\\mathsf{Obl}_\\alpha(e')}} \\qquad \\htmlData{k=rel.lfp}{(\\mathsf{lfp})}\n\\end{array}\\\\[3ex]\\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta' \\iff \\begin{cases} \\htmlData{k=rel.lfp}{X(W, \\Theta', T, F, e')} & \\dfo{\\htmlData{k=ct.DF}{\\kappa_{DF}}(\\alpha)}\\annot{\\htmlData{k=ct.table}{\\kappa}(\\alpha)} = 0 \\\\ e' \\in \\htmlData{k=th.Erel}{E^{W}_{n-\\dfo{\\htmlData{k=ct.DF}{\\kappa_{DF}}(\\alpha)}\\annot{\\htmlData{k=ct.table}{\\kappa}(\\alpha)}}\\llbracket \\Theta' \\vdash T \\rrbracket^{F}} & \\dfo{\\htmlData{k=ct.DF}{\\kappa_{DF}}(\\alpha)}\\annot{\\htmlData{k=ct.table}{\\kappa}(\\alpha)} > 0 \\end{cases}\\end{array}",
-     "caption": "A term in $E$ is a value in $V$ when it is irreducible and ready when it is reducible, and each of its steps meets its obligation. The successor is read one level lower, or at the same level after a free step.",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=E.zero}{\\forall e.\\ e \\in \\htmlData{k=th.Erel}{E^{W}_{0}\\llbracket \\Theta \\vdash T \\rrbracket^{F}}} \\\\\ne \\in \\htmlData{k=th.Erel}{E^{W}_{\\alpha}\\llbracket \\Theta \\vdash T \\rrbracket^{F}},\\ \\alpha > 0 \\iff \\htmlData{k=E.kripke}{\\forall W_1 \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W}. \\\\\n\\quad \\htmlData{k=E.stop}{(\\mathsf{stop})\\ \\htmlData{k=sr.irred}{\\mathsf{irred}}\\,e \\Rightarrow e \\in \\htmlData{k=th.Vrel}{V^{W_1}_{\\alpha}\\llbracket \\Theta \\vdash T \\rrbracket}} \\\\\n\\quad \\htmlData{k=E.ready}{(\\mathsf{ready})\\ \\neg\\mathsf{irred}\\,e \\Rightarrow \\htmlData{k=sr.ready}{\\mathsf{ready}_{W_1}(\\Theta \\mid F, e)}} \\\\\n\\quad \\htmlData{k=E.step}{(\\mathsf{step})\\ \\forall \\ell, e'.\\ e \\xrightarrow{\\ell} e' \\Rightarrow \\htmlData{k=sr.obl}{\\mathsf{Obl}_\\ell(e')}} \\qquad \\htmlData{k=rel.lfp}{(\\mathsf{lfp})}\n\\end{array}\\\\[3ex]\\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta' \\iff \\begin{cases} \\htmlData{k=rel.lfp}{X(W, \\Theta', T, F, e')} & c = 0 \\\\ \\forall \\beta.\\ \\beta + c \\leq \\alpha \\Rightarrow e' \\in \\htmlData{k=th.Erel}{E^{W}_{\\beta}\\llbracket \\Theta' \\vdash T \\rrbracket^{F}} & c > 0 \\end{cases} \\qquad c = \\dfo{\\htmlData{k=ct.DF}{\\kappa_{DF}}(\\ell)}\\annot{\\htmlData{k=ct.table}{\\kappa}(\\ell)}\\end{array}",
+     "caption": "A term in $E$ is a value in $V$ when it is irreducible and ready when it is reducible, and each of its steps meets its obligation. After a step of cost $c > 0$ at the ordinal index $\\alpha$ the successor is read at every $\\beta$ with $\\beta + c \\leq \\alpha$, and after a free step at $\\alpha$ itself. At a limit index this is every smaller index.",
      "about": {
       "why": "The term relation is the center of the logical relation. Values, obligations and readiness are its three clauses.",
       "used": [
@@ -1042,7 +1050,8 @@ window.MAP = {
        "sj-all",
        "p-obls"
       ]
-     }
+     },
+     "planned": "Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers."
     },
     {
      "id": "e-obl",
@@ -1052,7 +1061,7 @@ window.MAP = {
       "lf"
      ],
      "rocq": "relation/Relation.v: o_beta, o_new, o_spawn, new_env; relation/Relation.v: o_send, o_recv; relation/Relation.v: o_close, o_select, o_branch, o_link",
-     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta\\end{array}}{\\htmlData{k=O-Beta}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\beta}(e')}}}\\;\\textsf{O-Beta} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=O-Spawn.split}{\\Theta = \\Theta_M \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Theta_r}\\quad \\htmlData{k=O-Spawn.thunk}{v \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta_M \\vdash \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{\\htmlData{k=ty.ubound}{\\top}}_{\\bot} \\ast \\rrbracket}}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta_r\\end{array}}{\\htmlData{k=O-Spawn}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{spawn}\\,v}(e')}}}\\;\\textsf{O-Spawn} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=O-New.cfresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Theta} \\\\ \\htmlData{k=O-New.forall}{\\forall \\htmlData{k=O-New.gfresh}{a \\notin A_W}}.\\ \\htmlData{k=O-New.grow}{\\exists S, \\pi, C.\\ \\pi \\in \\{a, x\\cdot\\kappa\\},\\ \\annot{\\htmlData{k=O-New.chi}{(\\pi, C) = \\chi(e, \\Theta)(a)},\\ }\\mathsf{strict}(W \\oplus C)},\\ \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}_{W \\oplus C}\\ \\htmlData{k=O-New.dual}{\\Theta[c^{+} \\mapsto S@\\pi,\\ c^{-} \\mapsto \\overline{S}@\\overline{\\pi}]}\\end{array}}{\\htmlData{k=O-New}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{new}\\,c}(e')}}}\\;\\textsf{O-New}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.send}{!(\\bar\\iota.\\ U)}.S@x}\\quad \\htmlData{k=O-Send.split}{\\Theta \\setminus o = \\Theta_M \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Theta_r} \\\\ \\htmlData{k=O-Send.payload}{w \\in \\htmlData{k=th.Vrel}{V^{W}_{\\dfo{n}\\annot{n-\\kappa_{give}}}\\llbracket \\Theta_M \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\htmlData{k=O-Send.shift}{\\Theta_r[o \\mapsto S@x^{+}]}\\end{array}}{\\htmlData{k=O-Send}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{send}\\,o\\,w}(e')}}}\\;\\textsf{O-Send} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ U)}.S@x} \\\\ \\htmlData{k=O-Recv.forall}{\\forall j, \\Theta_{in}.\\ \\dfo{j < n}\\annot{j + \\kappa_{take} \\leq n},\\ \\Theta_{in} \\mathbin{\\#} \\Theta,\\ w \\in \\htmlData{k=th.Vrel}{V^{W}_{j}\\llbracket \\Theta_{in} \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}} \\ \\Longrightarrow\\ \\htmlData{k=O-Recv.level}{e' \\in \\htmlData{k=th.Erel}{E^{W}_{j}\\llbracket \\Theta[o \\mapsto S@x^{+}] \\cup \\Theta_{in} \\vdash T \\rrbracket^{F}}}\\end{array}}{\\htmlData{k=O-Recv}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{recv}\\,o\\,w}(e')}}}\\;\\textsf{O-Recv}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.close}{\\mathsf{Close}}@x}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta \\setminus o\\end{array}}{\\htmlData{k=O-Close}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{close}\\,o}(e')}}}\\;\\textsf{O-Close} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=O-Link.distinct}{o_1 \\neq o_2}\\quad \\htmlData{k=O-Link.dual}{\\Theta(o_1) = S_1@x,\\ \\Theta(o_2) = S_2@\\overline{x},\\ \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S_1\\,S_2}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta \\setminus \\{o_1, o_2\\}\\end{array}}{\\htmlData{k=O-Link}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{link}\\,o_1\\,o_2}(e')}}}\\;\\textsf{O-Link} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.plus}{\\oplus(S_1,S_2)}@x}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta[o \\mapsto S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}}]\\end{array}}{\\htmlData{k=O-Select}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{select}_i\\,o}(e')}}}\\;\\textsf{O-Select} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.with}{\\&(S_1,S_2)}@x}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta[o \\mapsto S_i@\\htmlData{k=pt.bra}{x\\cdot\\kappa_i}]\\end{array}}{\\htmlData{k=O-Branch}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{branch}_i\\,o}(e')}}}\\;\\textsf{O-Branch}\n\\end{array}\\end{array}",
+     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta\\end{array}}{\\htmlData{k=O-Beta}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\beta}(e')}}}\\;\\textsf{O-Beta} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=O-Spawn.split}{\\Theta = \\Theta_M \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Theta_r}\\quad \\htmlData{k=O-Spawn.thunk}{v \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta_M \\vdash \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{\\htmlData{k=ty.ubound}{\\top}}_{\\bot} \\ast \\rrbracket}}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta_r\\end{array}}{\\htmlData{k=O-Spawn}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{spawn}\\,v}(e')}}}\\;\\textsf{O-Spawn} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=O-New.cfresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Theta} \\\\ \\htmlData{k=O-New.forall}{\\forall \\htmlData{k=O-New.gfresh}{a \\notin A_W}}.\\ \\htmlData{k=O-New.grow}{\\exists S, \\pi, C.\\ \\pi \\in \\{a, x\\cdot\\kappa\\},\\ \\mathsf{strict}(W \\oplus C)},\\ \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}_{W \\oplus C}\\ \\htmlData{k=O-New.dual}{\\Theta[c^{+} \\mapsto S@\\pi,\\ c^{-} \\mapsto \\overline{S}@\\overline{\\pi}]}\\end{array}}{\\htmlData{k=O-New}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{new}\\,c}(e')}}}\\;\\textsf{O-New}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.send}{!(\\bar\\iota.\\ U)}.S@x}\\quad \\htmlData{k=O-Send.split}{\\Theta \\setminus o = \\Theta_M \\mathbin{\\htmlData{k=ctx.tsplit}{\\uplus}} \\Theta_r} \\\\ \\htmlData{k=O-Send.payload}{w \\in \\htmlData{k=th.Vrel}{V^{W}_{\\dfo{n}\\annot{n-\\kappa_{give}}}\\llbracket \\Theta_M \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\htmlData{k=O-Send.shift}{\\Theta_r[o \\mapsto S@x^{+}]}\\end{array}}{\\htmlData{k=O-Send}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{send}\\,o\\,w}(e')}}}\\;\\textsf{O-Send} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ U)}.S@x} \\\\ \\htmlData{k=O-Recv.forall}{\\forall j, \\Theta_{in}.\\ \\dfo{j < n}\\annot{j + \\kappa_{take} \\leq n},\\ \\Theta_{in} \\mathbin{\\#} \\Theta,\\ w \\in \\htmlData{k=th.Vrel}{V^{W}_{j}\\llbracket \\Theta_{in} \\vdash \\htmlData{k=ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}} \\ \\Longrightarrow\\ \\htmlData{k=O-Recv.level}{e' \\in \\htmlData{k=th.Erel}{E^{W}_{j}\\llbracket \\Theta[o \\mapsto S@x^{+}] \\cup \\Theta_{in} \\vdash T \\rrbracket^{F}}}\\end{array}}{\\htmlData{k=O-Recv}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{recv}\\,o\\,w}(e')}}}\\;\\textsf{O-Recv}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.close}{\\mathsf{Close}}@x}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta \\setminus o\\end{array}}{\\htmlData{k=O-Close}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{close}\\,o}(e')}}}\\;\\textsf{O-Close} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=O-Link.distinct}{o_1 \\neq o_2}\\quad \\htmlData{k=O-Link.dual}{\\Theta(o_1) = S_1@x,\\ \\Theta(o_2) = S_2@\\overline{x},\\ \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S_1\\,S_2}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta \\setminus \\{o_1, o_2\\}\\end{array}}{\\htmlData{k=O-Link}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{link}\\,o_1\\,o_2}(e')}}}\\;\\textsf{O-Link} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.plus}{\\oplus(S_1,S_2)}@x}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta[o \\mapsto S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}}]\\end{array}}{\\htmlData{k=O-Select}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{select}_i\\,o}(e')}}}\\;\\textsf{O-Select} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=sr.head}{\\Theta(o) \\doteq \\htmlData{k=sty.with}{\\&(S_1,S_2)}@x}\\quad \\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta[o \\mapsto S_i@\\htmlData{k=pt.bra}{x\\cdot\\kappa_i}]\\end{array}}{\\htmlData{k=O-Branch}{\\htmlData{k=sr.obl}{\\mathsf{Obl}_{\\mathsf{branch}_i\\,o}(e')}}}\\;\\textsf{O-Branch}\n\\end{array}\\end{array}",
      "caption": "Each step $e \\xrightarrow{\\alpha} e'$ of a term holding $\\Theta$ must meet $\\mathsf{Obl}_\\alpha(e')$. A $\\beta$ step keeps the ends. A spawn gives the child exactly the ends of its thunk, and a creation adds two dual ends at a fresh root or at a field. A send gives away exactly the ends of its payload, and a receive is safe for each value that may arrive. A close removes the end, a choice moves it to the field of the branch, and a link removes two dual ends.",
      "about": {
       "why": "The obligations say how each step changes ownership and points. The relation reads step labels only here.",
@@ -1060,7 +1069,7 @@ window.MAP = {
        "e-rel"
       ]
      },
-     "planned": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
+     "planned": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field. Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers."
     },
     {
      "id": "rd",
@@ -1124,8 +1133,8 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{l|l|l}\n & \\text{the relation} & \\text{fuel} \\\\ \\hline\n\\text{a thread} & e \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta \\vdash T \\rrbracket^{F}} & e \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.Phi}{\\Phi} ; tk \\vdash \\sigma\\ !\\ (d, r) \\rrbracket} \\\\\n\\text{an end} & o \\mapsto S@x \\text{ in } \\Theta & o \\mapsto S^{f} \\text{ in } \\Phi \\\\\n\\text{a value} & v \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash T \\rrbracket} & v \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\htmlData{k=fu.Phi}{\\Phi} \\vdash T\\annot{^{a}} \\rrbracket} \\\\\n\\text{a step } \\alpha & \\htmlData{k=sr.obl}{\\mathsf{Obl}_\\alpha(e')} & \\htmlData{k=sr.fobl}{\\mathsf{Fobl}_\\alpha(e')} \\\\\n\\text{rules out} & \\text{a stuck wait, and at } \\kappa_L \\text{ a loop of free steps} & \\text{a wait that never ends} \\\\\n\\text{used in} & \\htmlData{k=sj.term}{\\vDash} \\text{ and the lock-free process relation} & \\text{the lock-free process relation only}\n\\end{array}",
-     "caption": "Fuel is a second predicate on a thread, separate from the relation and with the same shape, a value clause and one obligation per step. The relation gives each end a point, $S@x$, and fuel gives it a counter, $S^f$, and also counts link tickets $tk$. The lock-free process relation requires both of each thread. The relation makes a stuck thread ready, and fuel bounds how often the thread holding a dual end acts on other ends first.",
+     "tex": "\\begin{array}{l|l|l}\n & \\text{the relation} & \\text{fuel} \\\\ \\hline\n\\text{a thread} & e \\in \\htmlData{k=th.Erel}{E^{W}_{\\alpha}\\llbracket \\Theta \\vdash T \\rrbracket^{F}} & e \\in \\htmlData{k=sr.FE}{F^{N}_{\\alpha}\\llbracket \\htmlData{k=fu.Phi}{\\Phi} \\vdash \\sigma\\ !\\ d \\rrbracket} \\\\\n\\text{an end} & o \\mapsto S@x \\text{ in } \\Theta & o \\mapsto S^{f}_{m} \\text{ in } \\Phi \\\\\n\\text{a value} & v \\in \\htmlData{k=th.Vrel}{V^{W}_{n}\\llbracket \\Theta \\vdash T \\rrbracket} & v \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\htmlData{k=fu.Phi}{\\Phi} \\vdash T\\annot{^{a}} \\rrbracket} \\\\\n\\text{a step } \\alpha & \\htmlData{k=sr.obl}{\\mathsf{Obl}_\\alpha(e')} & \\htmlData{k=sr.fobl}{\\mathsf{Fobl}_\\alpha(e')} \\\\\n\\text{rules out} & \\text{a stuck wait, and at } \\kappa_L \\text{ a loop of free steps} & \\text{a wait that never ends} \\\\\n\\text{used in} & \\htmlData{k=sj.term}{\\vDash} \\text{ and the lock-free process relation} & \\text{the lock-free process relation only}\n\\end{array}",
+     "caption": "Fuel is a second predicate on a thread, separate from the relation and with the same shape, a value clause and one obligation per step. The relation gives each end a point, $S@x$, and fuel gives it a counter and tickets, $S^f_m$. The lock-free process relation requires both of each thread. The relation makes a stuck thread ready, and fuel bounds how often the thread holding a dual end acts on other ends first.",
      "about": {
       "why": "This table compares what the relation and fuel read and guarantee, and shows that the lock-free process relation is where they meet.",
       "used": [
@@ -1133,7 +1142,8 @@ window.MAP = {
        "soup",
        "th-chain"
       ]
-     }
+     },
+     "planned": "Tickets as one number per end are planned, decided on 2026-11-21 (docs/redesign/check-links-without-tickets.md, last section). An end type is (S@x)^a_m with credit a ≤ m, the tickets of the two ends of a channel sum to at most N, E-Link asks a1 + m2 > N and a2 + m1 > N, an action resets an end to its tickets m, and the measure of lock-free adequacy is the counter of the dual end. The write-up calls the bound K. The Rocq still has the ticket needs ϑ with tix, tlink, tspawn, tseq and tok, the ticket premise of P-Term, the spawn split and s_tk. Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers."
     },
     {
      "id": "fu",
@@ -1142,7 +1152,7 @@ window.MAP = {
       "lf"
      ],
      "rocq": "fuel/Fuel.v: Fdef, FuelE, FLev; fuel/Fuel.v: fsem; cost/CostSem.v: csem",
-     "tex": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=fu.zero}{\\forall e.\\ e \\in \\htmlData{k=sr.FE}{F^{N}_{0}\\llbracket \\Phi ; tk \\vdash \\sigma\\ !\\ (d, r) \\rrbracket}} \\\\\ne \\in \\htmlData{k=sr.FE}{F^{N}_{n{+}1}\\llbracket \\htmlData{k=fu.Phi}{\\Phi} ; \\htmlData{k=fu.tk}{tk} \\vdash \\htmlData{k=fu.rty}{\\sigma}\\ !\\ (\\htmlData{k=fu.frame}{d}, \\htmlData{k=fu.reserve}{r}) \\rrbracket} \\iff \\htmlData{k=fu.refill-kripke}{\\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N},\\ \\htmlData{k=fu.rename}{g,\\ \\mathsf{injective}(g|_{\\mathrm{dom}\\,\\Phi})}. \\\\\n\\quad \\htmlData{k=fu.val}{(\\mathsf{stop})\\ g(e) \\in \\mathsf{Val} \\Rightarrow r \\leq tk \\land g(e) \\in \\htmlData{k=sr.FV}{FV^{N'}_{n{+}1}\\llbracket g\\Phi \\vdash \\sigma \\rrbracket}} \\\\\n\\quad \\htmlData{k=fu.step}{(\\mathsf{step})\\ g(e) \\xrightarrow{\\alpha} e' \\Rightarrow \\htmlData{k=sr.fobl}{\\mathsf{Fobl}^{N'}_{\\alpha}(e')}} \\\\[6pt]\n\\htmlData{k=fu.Phi}{\\Phi : \\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathbb{N},\\quad \\Phi(o) = S^{f}}\n\\end{array}\\\\[3ex]\\begin{array}{l}\n\\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\Phi\\,e \\iff \\exists tk.\\ \\forall n.\\ e \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\Phi ; tk \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}}\\ !\\ (\\infty, 0) \\rrbracket}} \\qquad \\text{each counter of } \\Phi \\text{ is } N \\\\\n\\htmlData{k=cs.csem}{\\Delta \\vDash^{N} e : T\\ !\\ \\varepsilon}\n\\end{array}\\end{array}",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=fu.zero}{\\forall e.\\ e \\in \\htmlData{k=sr.FE}{F^{N}_{0}\\llbracket \\Phi \\vdash \\sigma\\ !\\ d \\rrbracket}} \\\\\ne \\in \\htmlData{k=sr.FE}{F^{N}_{\\alpha}\\llbracket \\htmlData{k=fu.Phi}{\\Phi} \\vdash \\htmlData{k=fu.rty}{\\sigma}\\ !\\ \\htmlData{k=fu.frame}{d} \\rrbracket},\\ \\alpha > 0 \\iff \\htmlData{k=fu.refill-kripke}{\\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N},\\ \\htmlData{k=fu.rename}{g,\\ \\mathsf{injective}(g|_{\\mathrm{dom}\\,\\Phi})}. \\\\\n\\quad \\htmlData{k=fu.val}{(\\mathsf{stop})\\ g(e) \\in \\mathsf{Val} \\Rightarrow g(e) \\in \\htmlData{k=sr.FV}{FV^{N'}_{\\alpha}\\llbracket g\\Phi \\vdash \\sigma \\rrbracket}} \\\\\n\\quad \\htmlData{k=fu.step}{(\\mathsf{step})\\ g(e) \\xrightarrow{\\ell} e' \\Rightarrow \\forall \\beta < \\alpha.\\ \\htmlData{k=sr.fobl}{\\mathsf{Fobl}^{N'}_{\\ell}(e')}} \\\\[6pt]\n\\htmlData{k=fu.Phi}{\\Phi : \\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathbb{N} \\times \\mathbb{N},\\quad \\Phi(o) = S^{f}_{m},\\ f \\leq m}\n\\end{array}\\\\[3ex]\\begin{array}{l}\n\\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\Phi\\,e \\iff (\\forall o \\mapsto S^{f}_{m} \\in \\Phi.\\ f = m) \\land \\forall \\alpha.\\ e \\in \\htmlData{k=sr.FE}{F^{N}_{\\alpha}\\llbracket \\Phi \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}}\\ !\\ \\infty \\rrbracket}} \\\\\n\\htmlData{k=cs.csem}{\\Delta \\vDash^{N} e : T\\ !\\ \\varepsilon}\n\\end{array}\\end{array}",
      "caption": "Fuel has the shape of the term relation $E$ without the ready clause. $e \\in F^N_n\\llbracket \\Phi ; tk \\vdash \\sigma\\ !\\ (d, r)\\rrbracket$ says that the thread $e$, which holds the ends $\\Phi$ and $tk$ link tickets, has fuel for $n$ more steps. When $e$ is a value it is in $FV$ at $\\sigma$ and keeps $r$ tickets. Otherwise each step meets its fuel obligation one level lower. The clauses hold for each larger counter bound $N'$ and each injective renaming $g$ of ends, because a link in another thread renames ends. $\\mathsf{fsem}$ is fuel at each level with each counter at $N$, and it is the only fuel statement independent of the level.",
      "about": {
       "why": "Fuel bounds how often a thread acts on other ends before it acts on an end it holds. Lock-free adequacy measures waits with these counters and tickets.",
@@ -1151,7 +1161,8 @@ window.MAP = {
        "soup",
        "th-terms"
       ]
-     }
+     },
+     "planned": "Tickets as one number per end are planned, decided on 2026-11-21 (docs/redesign/check-links-without-tickets.md, last section). An end type is (S@x)^a_m with credit a ≤ m, the tickets of the two ends of a channel sum to at most N, E-Link asks a1 + m2 > N and a2 + m1 > N, an action resets an end to its tickets m, and the measure of lock-free adequacy is the counter of the dual end. The write-up calls the bound K. The Rocq still has the ticket needs ϑ with tix, tlink, tspawn, tseq and tok, the ticket premise of P-Term, the spawn split and s_tk. Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers."
     },
     {
      "id": "fu-obls",
@@ -1160,14 +1171,15 @@ window.MAP = {
       "lf"
      ],
      "rocq": "fuel/Fuel.v: f_act, fspare, idle_at, refill, ftick, fhand; fuel/Fuel.v: f_beta, f_new, f_spawn, f_link, plink; fuel/Fuel.v: f_send, f_recv, f_close, f_select, f_branch",
-     "tex": "\\begin{array}{c}\\begin{array}{rcll}\n\\htmlData{k=sr.act}{\\mathsf{act}}\\,o & \\iff & \\htmlData{k=F-Wait}{\\Phi(o) = S^{f} \\land \\neg \\htmlData{k=fu.idle}{\\mathsf{idle}}\\,S} & \\text{F-Wait} \\\\\n & \\land & \\htmlData{k=F-Tick}{\\htmlData{k=fu.fspare}{\\mathsf{positive}}(\\Phi \\setminus o)} \\land \\htmlData{k=F-Tick.frame}{1 \\leq d} & \\text{F-Count} \\\\[4pt]\n\\htmlData{k=fu.fspare}{\\mathsf{positive}}(\\Phi) & \\iff & \\htmlData{k=fu.fspare}{\\forall o \\mapsto S^{f} \\in \\Phi.\\ \\neg\\mathsf{idle}\\,S \\Rightarrow 1 \\leq f} \\\\\n\\htmlData{k=fu.tick}{\\Phi{\\downarrow}} & = & \\htmlData{k=fu.tick}{\\{o \\mapsto S^{f \\mathbin{\\dot-} 1} \\mid o \\mapsto S^{f} \\in \\Phi\\}} \\\\\n\\htmlData{k=fu.idle}{\\mathsf{idle}}\\,S & \\iff & \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S = \\htmlData{k=sty.skip}{\\mathsf{Skip}}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}e' \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\Phi ; tk \\vdash \\sigma\\ !\\ (d, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-Beta}{\\mathsf{Fobl}_{\\beta}(e')}}\\;\\textsf{F-Beta} \\qquad\n\\dfrac{\\begin{array}{c}\\htmlData{k=F-New.fresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Phi} \\Rightarrow \\exists S.\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=F-New.cnew}{\\Phi[c^{+} \\mapsto S\\annot{^{N}}, c^{-} \\mapsto \\overline{S}\\annot{^{N}}]} ; tk \\vdash \\sigma\\ !\\ (d, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-New}{\\mathsf{Fobl}_{\\mathsf{new}\\,c}(e')}}\\;\\textsf{F-New} \\\\[10pt]\n\\dfrac{\\begin{array}{c}M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(v)\\quad \\htmlData{k=F-Spawn.held}{M \\subseteq \\mathrm{dom}\\,\\Phi}\\quad \\htmlData{k=fu.fspare}{\\mathsf{positive}}(\\Phi|_M) \\\\ \\htmlData{k=F-Spawn.child}{v\\,\\ast \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.tick}{\\Phi|_M{\\downarrow}} ; \\lceil tk/2 \\rceil \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}}\\ !\\ (\\infty, 0) \\rrbracket}} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\Phi \\setminus M ; \\htmlData{k=F-Spawn.tickets}{\\lfloor tk/2 \\rfloor} \\vdash \\sigma\\ !\\ (d, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-Spawn}{\\mathsf{Fobl}_{\\mathsf{spawn}\\,v}(e')}}\\;\\textsf{F-Spawn} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=F-Link.plink}{\\Phi(o_1) = S^{f},\\ \\Phi(o_2) = S'^{f'},\\ o_1 \\neq o_2,\\ S' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{S}}\\quad \\htmlData{k=F-Link.ticket}{1 \\leq tk} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\Phi \\setminus \\{o_1,o_2\\} ; tk - 1 \\vdash \\sigma\\ !\\ (d, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-Link}{\\mathsf{Fobl}_{\\mathsf{link}\\,o_1\\,o_2}(e')}}\\;\\textsf{F-Link}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S_0^{f}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.send}{!(\\bar\\iota.\\ T)}.S\\quad M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(w)\\quad \\htmlData{k=F-Send.notsubj}{o \\notin M \\subseteq \\mathrm{dom}\\,\\Phi}\\quad \\htmlData{k=fu.fspare}{\\mathsf{positive}}(\\Phi|_M) \\\\ \\htmlData{k=F-Send.payload}{w \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\htmlData{k=fu.tick}{\\Phi|_M{\\downarrow}} \\vdash T \\rrbracket}} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.tick}{(\\Phi \\setminus M){\\downarrow}}[o \\mapsto S\\annot{^{N}}] ; tk \\vdash \\sigma\\ !\\ (d \\mathbin{\\dot-} 1, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-Send}{\\mathsf{Fobl}_{\\mathsf{send}\\,o\\,w}(e')}}\\;\\textsf{F-Send} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S_0^{f}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ T)}.S \\\\ \\htmlData{k=F-Recv.forall}{\\forall j \\leq n,\\ \\Phi_i \\mathbin{\\#} \\Phi.\\ w \\in \\htmlData{k=sr.FV}{FV^{N}_{j}\\llbracket \\Phi_i \\vdash T \\rrbracket}} \\Rightarrow e' \\in \\htmlData{k=sr.FE}{F^{N}_{j}\\llbracket \\htmlData{k=fu.tick}{\\Phi{\\downarrow}}[o \\mapsto S\\annot{^{N}}] \\cup \\Phi_i ; tk \\vdash \\sigma\\ !\\ (d \\mathbin{\\dot-} 1, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-Recv}{\\mathsf{Fobl}_{\\mathsf{recv}\\,o\\,w}(e')}}\\;\\textsf{F-Recv} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S_0^{f}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.close}{\\mathsf{Close}} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.tick}{(\\Phi \\setminus o){\\downarrow}} ; tk \\vdash \\sigma\\ !\\ (d \\mathbin{\\dot-} 1, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-Close}{\\mathsf{Fobl}_{\\mathsf{close}\\,o}(e')}}\\;\\textsf{F-Close} \\qquad\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S_0^{f}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 \\in \\{\\oplus(S_1,S_2), \\&(S_1,S_2)\\} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\htmlData{k=fu.tick}{\\Phi{\\downarrow}}[o \\mapsto S_i\\annot{^{N}}] ; tk \\vdash \\sigma\\ !\\ (d \\mathbin{\\dot-} 1, r) \\rrbracket}\\end{array}}{\\htmlData{k=F-Close}{\\mathsf{Fobl}_{\\mathsf{sel}_i\\,o}(e'),\\ \\mathsf{Fobl}_{\\mathsf{bra}_i\\,o}(e')}}\\;\\textsf{F-Choice}\n\\end{array}\\end{array}",
+     "tex": "\\begin{array}{c}\\begin{array}{rcll}\n\\htmlData{k=sr.act}{\\mathsf{act}}\\,o & \\iff & \\htmlData{k=F-Wait}{\\Phi(o) = S^{f}_{m} \\land \\neg \\htmlData{k=fu.idle}{\\mathsf{idle}}\\,S} & \\text{F-Wait} \\\\\n & \\land & \\htmlData{k=F-Tick}{\\htmlData{k=fu.fspare}{\\mathsf{positive}}(\\Phi \\setminus o)} \\land \\htmlData{k=F-Tick.frame}{1 \\leq d} & \\text{F-Count} \\\\[4pt]\n\\htmlData{k=fu.fspare}{\\mathsf{positive}}(\\Phi) & \\iff & \\htmlData{k=fu.fspare}{\\forall o \\mapsto S^{f}_{m} \\in \\Phi.\\ \\neg\\mathsf{idle}\\,S \\Rightarrow 1 \\leq f} \\\\\n\\htmlData{k=fu.tick}{\\Phi{\\downarrow}} & = & \\htmlData{k=fu.tick}{\\{o \\mapsto S^{f \\mathbin{\\dot-} 1}_{m} \\mid o \\mapsto S^{f}_{m} \\in \\Phi\\}} \\\\\n\\htmlData{k=fu.idle}{\\mathsf{idle}}\\,S & \\iff & \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S = \\htmlData{k=sty.skip}{\\mathsf{Skip}}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\htmlData{k=F-Beta}{\\mathsf{Fobl}_{\\beta}(e')}}\\;\\textsf{F-Beta} \\qquad\n\\dfrac{\\begin{array}{c}\\htmlData{k=F-New.fresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Phi} \\Rightarrow \\exists S, m_1, m_2.\\ m_1 + m_2 \\leq N \\land e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\htmlData{k=F-New.cnew}{\\Phi[c^{+} \\mapsto S^{m_1}_{m_1}, c^{-} \\mapsto \\overline{S}^{m_2}_{m_2}]} \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\htmlData{k=F-New}{\\mathsf{Fobl}_{\\mathsf{new}\\,c}(e')}}\\;\\textsf{F-New} \\\\[10pt]\n\\dfrac{\\begin{array}{c}M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(v)\\quad \\htmlData{k=F-Spawn.held}{M \\subseteq \\mathrm{dom}\\,\\Phi}\\quad \\htmlData{k=fu.fspare}{\\mathsf{positive}}(\\Phi|_M) \\\\ \\htmlData{k=F-Spawn.child}{v\\,\\ast \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\htmlData{k=fu.tick}{\\Phi|_M{\\downarrow}} \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}}\\ !\\ \\infty \\rrbracket}} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi \\setminus M \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\htmlData{k=F-Spawn}{\\mathsf{Fobl}_{\\mathsf{spawn}\\,v}(e')}}\\;\\textsf{F-Spawn} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=F-Link.plink}{\\Phi(o_1) = S^{f_1}_{m_1},\\ \\Phi(o_2) = S'^{f_2}_{m_2},\\ o_1 \\neq o_2,\\ S' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{S}}\\quad \\htmlData{k=F-Link.ticket}{f_1 + m_2 > N,\\ f_2 + m_1 > N} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi \\setminus \\{o_1,o_2\\} \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\htmlData{k=F-Link}{\\mathsf{Fobl}_{\\mathsf{link}\\,o_1\\,o_2}(e')}}\\;\\textsf{F-Link}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S_0{}^{f}_{m}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.send}{!(\\bar\\iota.\\ T)}.S\\quad M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(w)\\quad \\htmlData{k=F-Send.notsubj}{o \\notin M \\subseteq \\mathrm{dom}\\,\\Phi}\\quad \\htmlData{k=fu.fspare}{\\mathsf{positive}}(\\Phi|_M) \\\\ \\htmlData{k=F-Send.payload}{w \\in \\htmlData{k=sr.FV}{FV^{N}_{\\beta}\\llbracket \\htmlData{k=fu.tick}{\\Phi|_M{\\downarrow}} \\vdash T \\rrbracket}} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\htmlData{k=fu.tick}{(\\Phi \\setminus M){\\downarrow}}[o \\mapsto S^{m}_{m}] \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\htmlData{k=F-Send}{\\mathsf{Fobl}_{\\mathsf{send}\\,o\\,w}(e')}}\\;\\textsf{F-Send} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S_0{}^{f}_{m}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ T)}.S \\\\ \\htmlData{k=F-Recv.forall}{\\forall \\gamma \\leq \\beta,\\ \\Phi_i \\mathbin{\\#} \\Phi.\\ w \\in \\htmlData{k=sr.FV}{FV^{N}_{\\gamma}\\llbracket \\Phi_i \\vdash T \\rrbracket}} \\Rightarrow e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\gamma}\\llbracket \\htmlData{k=fu.tick}{\\Phi{\\downarrow}}[o \\mapsto S^{m}_{m}] \\cup \\Phi_i \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\htmlData{k=F-Recv}{\\mathsf{Fobl}_{\\mathsf{recv}\\,o\\,w}(e')}}\\;\\textsf{F-Recv} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S_0{}^{f}_{m}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.close}{\\mathsf{Close}} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\htmlData{k=fu.tick}{(\\Phi \\setminus o){\\downarrow}} \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\htmlData{k=F-Close}{\\mathsf{Fobl}_{\\mathsf{close}\\,o}(e')}}\\;\\textsf{F-Close} \\qquad\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S_0{}^{f}_{m}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 \\in \\{\\oplus(S_1,S_2), \\&(S_1,S_2)\\} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\htmlData{k=fu.tick}{\\Phi{\\downarrow}}[o \\mapsto S_i{}^{m}_{m}] \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\htmlData{k=F-Close}{\\mathsf{Fobl}_{\\mathsf{sel}_i\\,o}(e'),\\ \\mathsf{Fobl}_{\\mathsf{bra}_i\\,o}(e')}}\\;\\textsf{F-Choice}\n\\end{array}\\end{array}",
      "caption": "An action on $o$ requires $o$ held and not idle, and a positive counter on the other ends that are not idle and on the frame. It uses one unit of the frame, advances the protocol of $o$, resets the counter of $o$ to $N$ and decrements the other counters, written $\\Phi{\\downarrow}[o \\mapsto S^{N}]$. Internal steps decrement no counter. A new channel starts both ends at $N$. A spawn transfers the ends of the thunk to the child with counters one lower and gives the child half the tickets. A link removes two dual ends and uses one ticket. A send transfers its payload ends with counters one lower, and a receive continues for each value in $FV$ that may arrive.",
      "about": {
       "why": "Each kind of step changes the held ends, counters and tickets in one way, the same at each level.",
       "used": [
        "fu"
       ]
-     }
+     },
+     "planned": "Tickets as one number per end are planned, decided on 2026-11-21 (docs/redesign/check-links-without-tickets.md, last section). An end type is (S@x)^a_m with credit a ≤ m, the tickets of the two ends of a channel sum to at most N, E-Link asks a1 + m2 > N and a2 + m1 > N, an action resets an end to its tickets m, and the measure of lock-free adequacy is the counter of the dual end. The write-up calls the bound K. The Rocq still has the ticket needs ϑ with tix, tlink, tspawn, tseq and tok, the ticket premise of P-Term, the spawn split and s_tk. Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers."
     },
     {
      "id": "fv",
@@ -1176,7 +1188,7 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}S' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} S\\quad \\htmlData{k=FV-Sess.counter}{a \\leq f}\\end{array}}{\\htmlData{k=FV-Sess}{o \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\{o \\mapsto S'^{f}\\} \\vdash (S@x)\\annot{^{a}} \\rrbracket}}}\\;\\textsf{FV-Sess} \\qquad\n\\dfrac{\\begin{array}{c}\\Phi = \\varnothing\\end{array}}{\\htmlData{k=FV-Thread}{v \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\Phi \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}} \\rrbracket}}}\\;\\textsf{FV-Thread} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=FV-Arrow.exact}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\mathrm{dom}\\,\\Phi}\\quad \\htmlData{k=FV-Arrow.floor}{\\Phi(o) = S^{f} \\land \\neg\\htmlData{k=fu.idle}{\\mathsf{idle}}\\,S \\Rightarrow a \\leq f} \\\\ \\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N,\\ j < n,\\ \\htmlData{k=FV-Arrow.call}{\\Phi' \\geq \\Phi - a},\\ u \\in \\htmlData{k=sr.FV}{FV^{N'}_{j}\\llbracket \\Phi_u \\vdash T \\rrbracket},\\ \\htmlData{k=ann.meets}{\\vartheta(r) \\leq tk} \\\\ \\htmlData{k=FV-Arrow.body}{e[u] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket \\Phi' \\cup \\Phi_u ; tk \\vdash U\\ !\\ (c, r) \\rrbracket}}\\end{array}}{\\htmlData{k=FV-Arrow}{\\lambda e \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\Phi \\vdash (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[(c,\\vartheta)]\\, U)\\annot{^{a}} \\rrbracket}}}\\;\\textsf{FV-Arrow} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=FV-Box.noends}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\varnothing} \\\\ \\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N,\\ j < n,\\ \\bar s \\in \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,N',\\ \\htmlData{k=ann.meets}{\\vartheta(r) \\leq tk} \\\\ \\htmlData{k=FV-Box.body}{e[!e] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket \\varnothing ; tk \\vdash U[\\bar s]\\ !\\ (c, r) \\rrbracket}}\\end{array}}{\\htmlData{k=FV-Box}{!e \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\varnothing \\vdash \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}[(c,\\vartheta)]\\, U) \\rrbracket}}}\\;\\textsf{FV-Box} \\\\[6pt]\n\\htmlData{k=sr.fvagg}{\\langle v_1, v_2\\rangle \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\Phi_1 \\uplus \\Phi_2 \\vdash T_1 \\otimes T_2 \\rrbracket} \\iff v_i \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\Phi_i \\vdash T_i \\rrbracket}}\n\\end{array}",
+     "tex": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}S' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} S\\quad \\htmlData{k=FV-Sess.counter}{a \\leq f}\\end{array}}{\\htmlData{k=FV-Sess}{o \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\{o \\mapsto S'^{f}_{m}\\} \\vdash (S@x)\\annot{^{a}}_{m} \\rrbracket}}}\\;\\textsf{FV-Sess} \\qquad\n\\dfrac{\\begin{array}{c}\\Phi = \\varnothing\\end{array}}{\\htmlData{k=FV-Thread}{v \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\Phi \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}} \\rrbracket}}}\\;\\textsf{FV-Thread} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=FV-Arrow.exact}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\mathrm{dom}\\,\\Phi}\\quad \\htmlData{k=FV-Arrow.floor}{\\Phi(o) = S^{f} \\land \\neg\\htmlData{k=fu.idle}{\\mathsf{idle}}\\,S \\Rightarrow a \\leq f} \\\\ \\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N,\\ j < n,\\ \\htmlData{k=FV-Arrow.call}{\\Phi' \\geq \\Phi - a},\\ u \\in \\htmlData{k=sr.FV}{FV^{N'}_{j}\\llbracket \\Phi_u \\vdash T \\rrbracket} \\\\ \\htmlData{k=FV-Arrow.body}{e[u] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket \\Phi' \\cup \\Phi_u \\vdash U\\ !\\ c \\rrbracket}}\\end{array}}{\\htmlData{k=FV-Arrow}{\\lambda e \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\Phi \\vdash (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[c]\\, U)\\annot{^{a}} \\rrbracket}}}\\;\\textsf{FV-Arrow} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=FV-Box.noends}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\varnothing} \\\\ \\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N,\\ j < n,\\ \\bar s \\in \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,N' \\\\ \\htmlData{k=FV-Box.body}{e[!e] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket \\varnothing \\vdash U[\\bar s]\\ !\\ c \\rrbracket}}\\end{array}}{\\htmlData{k=FV-Box}{!e \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\varnothing \\vdash \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}[c]\\, U) \\rrbracket}}}\\;\\textsf{FV-Box} \\\\[6pt]\n\\htmlData{k=sr.fvagg}{\\langle v_1, v_2\\rangle \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\Phi_1 \\uplus \\Phi_2 \\vdash T_1 \\otimes T_2 \\rrbracket} \\iff v_i \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\Phi_i \\vdash T_i \\rrbracket}}\n\\end{array}",
      "caption": "Values with fuel by recursion on the type. The counter of an end is at least its credit. A closure keeps the counters of its captured ends that are not idle at least at its credit $a$. Its body has fuel at each call whose counters are at least the counters at creation minus $a$. A box holds no end, and its body has fuel at each force.",
      "about": {
       "why": "Values with fuel connect credits in types with counters at run time.",
@@ -1184,7 +1196,8 @@ window.MAP = {
        "fu-obls",
        "th-terms"
       ]
-     }
+     },
+     "planned": "Tickets as one number per end are planned, decided on 2026-11-21 (docs/redesign/check-links-without-tickets.md, last section). An end type is (S@x)^a_m with credit a ≤ m, the tickets of the two ends of a channel sum to at most N, E-Link asks a1 + m2 > N and a2 + m1 > N, an action resets an end to its tickets m, and the measure of lock-free adequacy is the counter of the dual end. The write-up calls the bound K. The Rocq still has the ticket needs ϑ with tix, tlink, tspawn, tseq and tok, the ticket premise of P-Term, the spawn split and s_tk. Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers."
     },
     {
      "id": "soup",
@@ -1193,16 +1206,16 @@ window.MAP = {
       "lf"
      ],
      "rocq": "soup/State.v: hold, lfstate; soup/State.v: soup_gen, soup/Soup.v: soup_inv, Soup",
-     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\htmlData{k=sp.state}{a = (q, K, tk)} \\qquad \\htmlData{k=sp.hold}{K : \\mathsf{End} \\rightharpoonup \\mathbb{N} \\times \\mathsf{Point} \\times (\\mathbb{N} \\cup \\{\\infty\\})} \\qquad \\htmlData{k=sp.tk}{tk : \\mathbb{N} \\to \\mathbb{N}} \\\\\n\\htmlData{k=sp.next}{\\mathsf{lf\\_next}^{\\chi}\\,N\\,(q, K, tk)\\,ev\\,q' = (q',\\ \\mathsf{own\\_next}^{\\chi}\\,N\\,ev\\,K,\\ \\mathsf{tk\\_next}\\,ev\\,tk)}\n\\end{array}\\\\[3ex]\\begin{array}{rcll}\na \\in \\htmlData{k=th.soup}{S^{N,W,\\chi}_n\\llbracket\\Sigma \\vdash T\\rrbracket} & \\iff & \\htmlData{k=sp.exists}{\\exists A, \\Phi}.\\ \\htmlData{k=sp.tfree}{\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T} \\land \\text{for each thread } t \\text{ running } e\\text{,} & \\\\[1ex]\n & & \\quad \\htmlData{k=sp.rel}{e \\in \\htmlData{k=th.Erel}{E[\\kappa_L, \\chi]^W_n\\llbracket A|_t \\vdash U_t\\rrbracket^{\\varnothing}}} & \\text{the relation} \\\\\n & & \\quad \\htmlData{k=sp.fuel}{e \\in \\htmlData{k=sr.FE}{F^{N}_{n}\\llbracket \\Phi|_t ; tk_t \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}}\\ !\\ (\\infty, 0) \\rrbracket}} & \\text{fuel} \\\\\n & & \\land\\ \\htmlData{k=sp.own}{\\mathsf{consistent}}(a, A, \\Phi) & \\\\[2ex]\nA,\\ \\Phi & & \\text{the held ends as } o \\mapsto S@x \\text{ for the relation and as } o \\mapsto S^{f} \\text{ for fuel} & \\\\\nA|_t,\\ \\Phi|_t & & \\text{their restrictions to the ends } K \\text{ gives } t & \\htmlData{k=sp.ty}{U_t \\in \\{T, \\ast\\}} \\\\[2ex]\n\\htmlData{k=sp.own}{\\mathsf{consistent}}(a, A, \\Phi) & \\iff & \\htmlData{k=sp.dom}{\\mathrm{dom}\\,A = \\mathrm{dom}\\,\\Phi = \\mathrm{dom}\\,K} \\land \\htmlData{k=sp.owner}{K(o) = (t, x, f) \\Rightarrow t \\in \\mathrm{dom}\\,q} & \\text{owners} \\\\\n & \\land & \\htmlData{k=sp.pts}{K(o) = (t, x, f) \\Rightarrow A(o) = \\_@x \\land \\Phi(o) = \\_^{f}} \\land \\htmlData{k=sp.fin}{f \\in \\mathbb{N}} & \\\\\n & \\land & \\htmlData{k=sp.closed}{o \\in \\mathrm{dom}\\,K \\Rightarrow \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\lor o \\in \\mathrm{dom}\\,\\Sigma} \\land \\htmlData{k=sp.pair}{o \\in \\mathrm{dom}\\,K \\land \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow \\overline{o} \\in \\mathrm{dom}\\,K} & \\text{closed} \\\\\n & \\land & \\htmlData{k=sp.sdual}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\land A(o) = S@x \\land A(\\overline{o}) = S'@x' \\Rightarrow x' = \\overline{x} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S'} & \\text{dual} \\\\\n & \\land & \\htmlData{k=sp.pdual}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\land \\Phi(o) = P^{f} \\land \\Phi(\\overline{o}) = P'^{f'} \\Rightarrow P' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{P}} & \\\\\n & \\land & \\htmlData{k=sp.sig}{\\Sigma(o) = S@x \\Rightarrow A(o) = S@x} \\land \\htmlData{k=sp.psig}{\\Phi(o) = S^{f}} & \\text{interface}\n\\end{array}\\end{array}",
-     "caption": "An annotated configuration $a = (q, K, tk)$ is a configuration $q$ with an ownership map $K$ and a ticket count per thread. $K$ gives each held end the thread that holds it, its point and its counter. The configuration is in the lock-free process relation at level $n$ when each thread is in $E[\\kappa_L]$ at the ends it owns and has fuel at their counters. $A$ and $\\Phi$ describe the held ends for the relation and for fuel, and $\\mathsf{consistent}$ requires $A$, $\\Phi$ and $K$ to agree. Fuel occurs only in this definition.",
+     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\htmlData{k=sp.state}{a = (q, K)} \\qquad \\htmlData{k=sp.hold}{K : \\mathsf{End} \\rightharpoonup \\mathbb{N} \\times \\mathsf{Point} \\times \\mathbb{N} \\times \\mathbb{N}} \\\\\n\\htmlData{k=sp.next}{\\mathsf{lf\\_next}\\,N\\,(q, K)\\,ev\\,(q', K') \\iff K' \\in \\mathsf{own\\_next}\\,N\\,ev\\,K}\n\\end{array}\\\\[3ex]\\begin{array}{rcll}\na \\in \\htmlData{k=th.soup}{S^{N,W}_\\alpha\\llbracket\\Sigma \\vdash T\\rrbracket} & \\iff & \\htmlData{k=sp.exists}{\\exists A, \\Phi}.\\ \\htmlData{k=sp.tfree}{\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T} \\land \\text{for each thread } t \\text{ running } e\\text{,} & \\\\[1ex]\n & & \\quad \\htmlData{k=sp.rel}{e \\in \\htmlData{k=th.Erel}{E[\\kappa_L]^W_\\alpha\\llbracket A|_t \\vdash U_t\\rrbracket^{\\varnothing}}} & \\text{the relation} \\\\\n & & \\quad \\htmlData{k=sp.fuel}{e \\in \\htmlData{k=sr.FE}{F^{N}_{\\alpha}\\llbracket \\Phi|_t \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}}\\ !\\ \\infty \\rrbracket}} & \\text{fuel} \\\\\n & & \\land\\ \\htmlData{k=sp.own}{\\mathsf{consistent}}(a, A, \\Phi) & \\\\[2ex]\nA,\\ \\Phi & & \\text{the held ends as } o \\mapsto S@x \\text{ for the relation and as } o \\mapsto S^{f}_{m} \\text{ for fuel} & \\\\\nA|_t,\\ \\Phi|_t & & \\text{their restrictions to the ends } K \\text{ gives } t & \\htmlData{k=sp.ty}{U_t \\in \\{T, \\ast\\}} \\\\[2ex]\n\\htmlData{k=sp.own}{\\mathsf{consistent}}(a, A, \\Phi) & \\iff & \\htmlData{k=sp.dom}{\\mathrm{dom}\\,A = \\mathrm{dom}\\,\\Phi = \\mathrm{dom}\\,K} \\land \\htmlData{k=sp.owner}{K(o) = (t, x, f, m) \\Rightarrow t \\in \\mathrm{dom}\\,q} & \\text{owners} \\\\\n & \\land & \\htmlData{k=sp.pts}{K(o) = (t, x, f, m) \\Rightarrow A(o) = \\_@x \\land \\Phi(o) = \\_^{f}_{m}} \\land \\htmlData{k=sp.fin}{f \\in \\mathbb{N}} \\land \\htmlData{k=sp.cap}{f \\leq m} & \\\\\n & \\land & \\htmlData{k=sp.closed}{o \\in \\mathrm{dom}\\,K \\Rightarrow \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\lor o \\in \\mathrm{dom}\\,\\Sigma} \\land \\htmlData{k=sp.pair}{o \\in \\mathrm{dom}\\,K \\land \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow \\overline{o} \\in \\mathrm{dom}\\,K} & \\text{closed} \\\\\n & \\land & \\htmlData{k=sp.sdual}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\land A(o) = S@x \\land A(\\overline{o}) = S'@x' \\Rightarrow x' = \\overline{x} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S'} & \\text{dual} \\\\\n & \\land & \\htmlData{k=sp.pdual}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\land \\Phi(o) = P^{f}_{m} \\land \\Phi(\\overline{o}) = P'^{f'}_{m'} \\Rightarrow P' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{P}} & \\\\\n & \\land & \\htmlData{k=sp.tsum}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\land K(o) = (\\_, \\_, \\_, m) \\land K(\\overline{o}) = (\\_, \\_, \\_, m') \\Rightarrow m + m' \\leq N} & \\text{tickets} \\\\\n & \\land & \\htmlData{k=sp.sig}{\\Sigma(o) = S@x \\Rightarrow A(o) = S@x} \\land \\htmlData{k=sp.psig}{\\Phi(o) = S^{f}_{m}} & \\text{interface}\n\\end{array}\\end{array}",
+     "caption": "An annotated configuration $a = (q, K)$ is a configuration $q$ with an ownership map $K$. $K$ gives each held end the thread that holds it, its point, its counter and its tickets. The configuration is in the lock-free process relation at the ordinal index $\\alpha$ when each thread is in $E[\\kappa_L]$ at the ends it owns and has fuel at their counters. $A$ and $\\Phi$ describe the held ends for the relation and for fuel, and $\\mathsf{consistent}$ requires $A$, $\\Phi$ and $K$ to agree. It also bounds each counter by its tickets and the tickets of the two ends of an internal channel by $N$. Fuel occurs only in this definition.",
      "about": {
-      "why": "The lock-free process relation combines the relation and the fuel of each thread over one ownership map, fixed for all levels. Lock-free adequacy reads the points and counters that $K$ records.",
+      "why": "The lock-free process relation combines the relation and the fuel of each thread over one ownership map. Lock-free adequacy reads the points and counters that $K$ records, and the invariant on tickets makes the measure fall at a link.",
       "used": [
        "sj-all",
        "th-adeq"
       ]
      },
-     "planned": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field. The creation choice χ is a proposal of 2026-11-20."
+     "planned": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field. Tickets as one number per end are planned, decided on 2026-11-21 (docs/redesign/check-links-without-tickets.md, last section). An end type is (S@x)^a_m with credit a ≤ m, the tickets of the two ends of a channel sum to at most N, E-Link asks a1 + m2 > N and a2 + m1 > N, an action resets an end to its tickets m, and the measure of lock-free adequacy is the counter of the dual end. The write-up calls the bound K. The Rocq still has the ticket needs ϑ with tix, tlink, tspawn, tseq and tok, the ticket premise of P-Term, the spawn split and s_tk. Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers."
     },
     {
      "id": "sj-all",
@@ -1212,8 +1225,8 @@ window.MAP = {
       "lf"
      ],
      "rocq": "compat/SemTyped.v: Grel, sem_typed_at, sf_den, sem_typed; relation/Adequacy.v: sem_ptyped; soup/Soup.v: lf_sem, lf_next, own_next, tk_next",
-     "tex": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash[\\kappa]}}^{X}_W e : T \\iff \\forall n, W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G[\\kappa]^{W'}_n\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\htmlData{k=th.Erel}{E[\\kappa]^{W'}_n\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Delta \\vDash[\\kappa]^{F}_W e : T \\iff \\forall R, B.\\ \\Delta \\vDash[\\kappa]^{\\htmlData{k=sj.den}{\\mathsf{den}_{R,B}(F)}}_W e : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash[\\kappa]_W p : T \\iff \\forall n.\\ p \\in \\htmlData{k=th.Prel}{P[\\kappa]^{W}_n\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\n\\htmlData{k=sp.lfsem}{\\Sigma \\Vvdash_W p : T \\iff \\htmlData{k=sp.exists-before-forall}{\\exists N \\in \\mathbb{N}, a, \\htmlData{k=sp.chi}{\\chi}.\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}(\\htmlData{k=th.qa}{q_a}) = p \\land \\forall n}.\\ a \\in \\htmlData{k=th.soup}{S^{N,W,\\chi}_n\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}}\\end{array}",
-     "caption": "The semantic judgments quantify over levels, larger worlds and substitutions, and read the static future at each of its denotations. \\annp{The lock-free judgment fixes the counter bound and the annotated configuration once, for all levels.}",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash[\\kappa]}}^{X}_W e : T \\iff \\forall n, W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G[\\kappa]^{W'}_n\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\htmlData{k=th.Erel}{E[\\kappa]^{W'}_n\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Delta \\vDash[\\kappa]^{F}_W e : T \\iff \\forall R, B.\\ \\Delta \\vDash[\\kappa]^{\\htmlData{k=sj.den}{\\mathsf{den}_{R,B}(F)}}_W e : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash[\\kappa]_W p : T \\iff \\forall n.\\ p \\in \\htmlData{k=th.Prel}{P[\\kappa]^{W}_n\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\n\\htmlData{k=sp.lfsem}{\\Sigma \\Vvdash_W p : T \\iff \\htmlData{k=sp.exists-before-forall}{\\exists N \\in \\mathbb{N}.\\ \\forall \\alpha.\\ \\exists a.\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}(\\htmlData{k=th.qa}{q_a}) = p} \\land a \\in \\htmlData{k=th.soup}{S^{N,W}_\\alpha\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}}\\end{array}",
+     "caption": "The semantic judgments quantify over ordinal indices, larger worlds and substitutions, and read the static future at each of its denotations. \\annp{The lock-free judgment fixes the bound $N$ once and chooses the annotated configuration at each index. The creation choice of each channel is an existential inside O-New.}",
      "variants": {
       "df": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{X}_W e : T \\iff \\forall n, W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G^{W'}_n\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\htmlData{k=th.Erel}{E^{W'}_n\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Delta \\vDash^{F}_W e : T \\iff \\forall R, B.\\ \\Delta \\vDash^{\\htmlData{k=sj.den}{\\mathsf{den}_{R,B}(F)}}_W e : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash_W p : T \\iff \\forall n.\\ p \\in \\htmlData{k=th.Prel}{P^{W}_n\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}\\end{array}"
      },
@@ -1225,7 +1238,7 @@ window.MAP = {
        "th-adeq"
       ]
      },
-     "planned": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field. The creation choice χ is a proposal of 2026-11-20."
+     "planned": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field. Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers."
     }
    ]
   },
@@ -1242,12 +1255,13 @@ window.MAP = {
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{rcl}\n\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T & \\overset{\\htmlData{k=th.fundamental-proc}{\\textsf{fundamental\\_proc}}}{\\Longrightarrow} & \\Sigma \\htmlData{k=sj.proc}{\\vDash}_W p : T \\\\[1ex]\n\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T & \\overset{\\htmlData{k=th.adequacy}{\\textsf{adequacy}}}{\\Longrightarrow} & \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\n\\annraw{\\\\[3ex]}\\annot{\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ (c, \\vartheta) \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t}}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.live-fundamental}{\\textsf{live\\_fundamental}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{\\varnothing}_W t : T}\n\\annraw{\\\\[1ex]}\\annot{\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ (c, \\vartheta) \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.crle}{\\mathsf{cr}(\\Delta) \\leq N} \\land \\htmlData{k=ann.fin0}{\\vartheta(0) \\in \\mathbb{N}}}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.fsem-of-cost}{\\textsf{fsem\\_of\\_cost}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\htmlData{k=th.styof}{\\Delta\\annot{^{N}}}\\,t}}\n\\annraw{\\\\[1ex]}\\annot{\\Sigma \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.lf-fundamental}{\\textsf{lf\\_fundamental}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\Sigma \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T}\n\\annraw{\\\\[1ex]}\\annot{\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.lf-adequacy}{\\textsf{lf\\_adequacy}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p}\n\\end{array}",
-     "caption": "Typing implies the semantic judgment, and the semantic judgment implies deadlock freedom. Both steps use the relation $(V, E, P)$ at the step costs $\\kappa_{DF}$. \\annp{Lock freedom uses the same relation at $\\kappa_L$, which excludes internal divergence, together with fuel. The lock-free process relation combines both for each thread. Lock-free adequacy measures a wait on $o$ by $\\mu(t) = (\\sum_s tk_s, f)$, where $f$ is the counter of $\\overline{o}$. A step of the thread holding $\\overline{o}$ on another end decreases $f$, which F-Count keeps at $1$ or more. \\annp{A link uses one ticket.} The thread holding $\\overline{o}$ therefore acts on $\\overline{o}$ after finitely many steps.}",
+     "tex": "\\begin{array}{rcl}\n\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T & \\overset{\\htmlData{k=th.fundamental-proc}{\\textsf{fundamental\\_proc}}}{\\Longrightarrow} & \\Sigma \\htmlData{k=sj.proc}{\\vDash}_W p : T \\\\[1ex]\n\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T & \\overset{\\htmlData{k=th.adequacy}{\\textsf{adequacy}}}{\\Longrightarrow} & \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\n\\annraw{\\\\[3ex]}\\annot{\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ c \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t}}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.live-fundamental}{\\textsf{live\\_fundamental}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{\\varnothing}_W t : T}\n\\annraw{\\\\[1ex]}\\annot{\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ c \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.crle}{\\mathsf{cr}(\\Delta) \\leq N}}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.fsem-of-cost}{\\textsf{fsem\\_of\\_cost}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\htmlData{k=th.styof}{\\Delta\\annot{^{N}}}\\,t}}\n\\annraw{\\\\[1ex]}\\annot{\\Sigma \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.lf-fundamental}{\\textsf{lf\\_fundamental}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\Sigma \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T}\n\\annraw{\\\\[1ex]}\\annot{\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{AC}} \\land \\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.lf-adequacy}{\\textsf{lf\\_adequacy}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p}\n\\end{array}",
+     "caption": "Typing implies the semantic judgment, and the semantic judgment implies deadlock freedom. Both steps use the relation $(V, E, P)$ at the step costs $\\kappa_{DF}$. \\annp{Lock freedom uses the same relation at $\\kappa_L$, which excludes internal divergence, together with fuel. The lock-free process relation combines both for each thread. Lock-free adequacy measures a wait on $o$ by $\\mu(t) = f$, the counter of the dual end $\\overline{o}$. A step of the thread holding $\\overline{o}$ on another end decreases $f$, which F-Count keeps at $1$ or more. \\annp{A link gives the waiting thread a partner with a lower counter, by the premise of E-Link and the invariant on tickets.} Lock-free adequacy takes excluded middle and choice as hypotheses. The thread holding $\\overline{o}$ therefore acts on $\\overline{o}$ after finitely many steps.}",
      "about": {
       "why": "Each arrow is one theorem of this section. \\annp{The lock-free rows show what lock freedom adds to the deadlock-free proof.}",
       "used": []
-     }
+     },
+     "planned": "Tickets as one number per end are planned, decided on 2026-11-21 (docs/redesign/check-links-without-tickets.md, last section). An end type is (S@x)^a_m with credit a ≤ m, the tickets of the two ends of a channel sum to at most N, E-Link asks a1 + m2 > N and a2 + m1 > N, an action resets an end to its tickets m, and the measure of lock-free adequacy is the counter of the dual end. The write-up calls the bound K. The Rocq still has the ticket needs ϑ with tix, tlink, tspawn, tseq and tok, the ticket premise of P-Term, the spawn split and s_tk. Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers."
     },
     {
      "id": "th-sound",
@@ -1258,7 +1272,7 @@ window.MAP = {
       "lf"
      ],
      "tex": "\\begin{array}{l}\\htmlData{k=th.soundness}{\\begin{array}{l}\\varnothing \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness}{\\begin{array}{l}\\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}} \\\\[1.5ex] \\htmlData{k=th.fair-run-exists}{\\begin{array}{l}\\mathsf{EM} \\land \\mathsf{DC} \\\\ \\quad\\Longrightarrow\\ \\exists (r, l).\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,(r\\,0) = p \\land \\htmlData{k=prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\htmlData{k=prop.wfair}{\\mathsf{wfair}}\\,(r, l)\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-padovani}{\\begin{array}{l}\\begin{array}{l}\\mathsf{EM} \\land \\mathsf{DC} \\land \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p \\land \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,q_0 = p \\\\ \\land\\ q_0 \\to^{*} q \\land \\htmlData{k=prop.pend}{\\mathsf{pend}(q, t)}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\exists q_1\\,ev\\,q_2.\\ q \\to^{*} q_1 \\xrightarrow{ev} q_2 \\land t \\in \\htmlData{k=se.parts}{\\mathsf{parts}(ev)}\\end{array}}}\\end{array}",
-     "caption": "A closed typed process is deadlock free in a strict world. \\annp{A closed process typed at a finite counter bound, with each thread guarded, is lock free in a strict and well-founded world.}",
+     "caption": "A closed typed process is deadlock free in a strict world. \\annp{Under excluded middle and choice, a closed process typed at a finite bound $N$, with each thread guarded, is lock free in a strict and well-founded world.}",
      "about": {
       "why": "These are the main results."
      }
@@ -1305,14 +1319,15 @@ window.MAP = {
       "lf"
      ],
      "rocq": "relation/Adequacy.v: adequacy, live_adequacy, adequacy_gen; soup/LFAdequacy.v: lf_adequacy, lf_thread_progress; soup/SoupTau.v: soup_no_tau_divergence; soup/SoupRun.v: lfsoup_step",
-     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.adequacy}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\annot{\\htmlData{k=th.lf-adequacy}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-thread-progress}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\begin{array}{l}\\forall (r, l).\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,(\\htmlData{k=se.run}{r\\,0}) = p \\land \\htmlData{k=prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\htmlData{k=prop.wfair}{\\mathsf{wfair}}\\,(r, l) \\\\ \\quad \\Longrightarrow\\ \\htmlData{k=th.tpr}{\\mathsf{thread\\_progress\\_run}}\\,(r, l)\\end{array}\\end{array}}}\\end{array}}\\end{array}",
-     "caption": "In a strict world, a closed process in the semantic judgment is deadlock free. \\annp{In a strict and well-founded world, a closed process in the lock-free judgment is lock free, and each thread progresses on each weakly fair maximal run.}",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.adequacy}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\annot{\\htmlData{k=th.lf-adequacy}{\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{AC}} \\land \\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-thread-progress}{\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{AC}} \\land \\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\begin{array}{l}\\forall (r, l).\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,(\\htmlData{k=se.run}{r\\,0}) = p \\land \\htmlData{k=prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\htmlData{k=prop.wfair}{\\mathsf{wfair}}\\,(r, l) \\\\ \\quad \\Longrightarrow\\ \\htmlData{k=th.tpr}{\\mathsf{thread\\_progress\\_run}}\\,(r, l)\\end{array}\\end{array}}}\\end{array}}\\end{array}",
+     "caption": "In a strict world, a closed process in the semantic judgment is deadlock free. \\annp{Under excluded middle and choice, in a strict and well-founded world, a closed process in the lock-free judgment is lock free, and each thread progresses on each weakly fair maximal run.}",
      "about": {
       "why": "Adequacy connects the relation with the safety property.",
       "used": [
        "th-sound"
       ]
-     }
+     },
+     "planned": "Tickets as one number per end are planned, decided on 2026-11-21 (docs/redesign/check-links-without-tickets.md, last section). An end type is (S@x)^a_m with credit a ≤ m, the tickets of the two ends of a channel sum to at most N, E-Link asks a1 + m2 > N and a2 + m1 > N, an action resets an end to its tickets m, and the measure of lock-free adequacy is the counter of the dual end. The write-up calls the bound K. The Rocq still has the ticket needs ϑ with tix, tlink, tspawn, tseq and tok, the ticket premise of P-Term, the spawn split and s_tk. Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers."
     },
     {
      "id": "th-conserv",
@@ -1335,15 +1350,16 @@ window.MAP = {
       "lf"
      ],
      "rocq": "static/FundamentalProc.v: soundness_source; soup/LFCompose.v: lf_soundness_source; static/Fundamental.v: typed_sem, fundamental, fundamental_typed, live_fundamental, live_fundamental_typed; compat/Bind.v: Erel_bind; cost/CostFund.v: cost_fundamental, fsem_of_cost",
-     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.soundness-source}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land N \\in \\mathbb{N} \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\land\\ \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ (c, \\vartheta) \\land \\htmlData{k=ann.fin0}{\\vartheta(0) \\in \\mathbb{N}} \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}\\\\[3ex]\\begin{array}{l}\\htmlData{k=th.fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}^{F}_W t : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.fundamental-typed}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.df}{\\Delta_{df}} \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{F}_W t : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{F}_W t : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-typed}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_W t : T_{df}\\end{array}}}\\end{array}\\\\[3ex]\\htmlData{k=th.Erel-bind}{\\begin{array}{l}\\begin{array}{l}e \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta_1 \\vdash T\\rrbracket^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{ap}}\\,\\Theta_2}} \\\\ \\land\\ \\forall W' \\htmlData{k=w.ext}{\\sqsupseteq} W,\\ j \\leq n,\\ v \\in \\htmlData{k=th.Vrel}{V^{W'}_j\\llbracket\\Theta_v \\vdash T\\rrbracket}. \\\\ \\qquad \\htmlData{k=se.frame}{f[v]} \\in \\htmlData{k=th.Erel}{E^{W'}_{j}\\llbracket \\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=se.frame}{f[e]} \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array}}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\htmlData{k=th.cost-fundamental}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=cs.csem}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{N} e : T\\ !\\ \\varepsilon}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.fsem-of-cost}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} e : T\\ !\\ (c, \\vartheta) \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.crle}{\\mathsf{cr}(\\Delta) \\leq N} \\land \\htmlData{k=ann.fin0}{\\vartheta(0) \\in \\mathbb{N}} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\htmlData{k=th.styof}{\\Delta\\annot{^{N}}}\\,e}\\end{array}}\\end{array}}\\end{array}",
-     "caption": "A closed program is sound as a one-thread process. Typing a term implies the semantic term judgment, and $E$ is closed under evaluation frames. \\annp{With the guard a typed term is in the relation at $\\kappa_L$, and a typed term at a finite counter bound has fuel.}",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.soundness-source}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{AC}} \\land \\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land N \\in \\mathbb{N} \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\land\\ \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ c \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}\\\\[3ex]\\begin{array}{l}\\htmlData{k=th.fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}^{F}_W t : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.fundamental-typed}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.df}{\\Delta_{df}} \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{F}_W t : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental}{\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{F}_W t : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-typed}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.strict}{\\mathsf{strict}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_W t : T_{df}\\end{array}}}\\end{array}\\\\[3ex]\\htmlData{k=th.Erel-bind}{\\begin{array}{l}\\begin{array}{l}e \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta_1 \\vdash T\\rrbracket^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{ap}}\\,\\Theta_2}} \\\\ \\land\\ \\forall W' \\htmlData{k=w.ext}{\\sqsupseteq} W,\\ j \\leq n,\\ v \\in \\htmlData{k=th.Vrel}{V^{W'}_j\\llbracket\\Theta_v \\vdash T\\rrbracket}. \\\\ \\qquad \\htmlData{k=se.frame}{f[v]} \\in \\htmlData{k=th.Erel}{E^{W'}_{j}\\llbracket \\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=se.frame}{f[e]} \\in \\htmlData{k=th.Erel}{E^{W}_{n}\\llbracket \\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array}}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\htmlData{k=th.cost-fundamental}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=cs.csem}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{N} e : T\\ !\\ \\varepsilon}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.fsem-of-cost}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} e : T\\ !\\ c \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.crle}{\\mathsf{cr}(\\Delta) \\leq N} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\htmlData{k=th.styof}{\\Delta\\annot{^{N}}}\\,e}\\end{array}}\\end{array}}\\end{array}",
+     "caption": "A closed program is sound as a one-thread process. Typing a term implies the semantic term judgment, and $E$ is closed under evaluation frames. \\annp{With the guard a typed term is in the relation at $\\kappa_L$, and a typed term at a finite bound $N$ has fuel.}",
      "about": {
       "why": "The proofs of the process results use these lemmas, each proved rule by rule.",
       "used": [
        "th-fund-proc",
        "th-adeq"
       ]
-     }
+     },
+     "planned": "Tickets as one number per end are planned, decided on 2026-11-21 (docs/redesign/check-links-without-tickets.md, last section). An end type is (S@x)^a_m with credit a ≤ m, the tickets of the two ends of a channel sum to at most N, E-Link asks a1 + m2 > N and a2 + m1 > N, an action resets an end to its tickets m, and the measure of lock-free adequacy is the counter of the dual end. The write-up calls the bound K. The Rocq still has the ticket needs ϑ with tix, tlink, tspawn, tseq and tok, the ticket premise of P-Term, the spawn split and s_tk."
     }
    ]
   }
@@ -1716,7 +1732,7 @@ window.MAP = {
   "prim.link": {
    "title": "$\\mathsf{link}$",
    "what": "$\\mathsf{link}\\,\\langle o_1, o_2\\rangle \\xrightarrow{\\leftrightarrow\\{o_1, o_2\\}} \\ast$. The process step removes $\\mathsf{ech}\\,o_1$ and renames every thread by $\\mathsf{csub}\\,o_1\\,o_2$.",
-   "why": "A link forwards a conversation without relaying messages. \\annp{It acts on no protocol, so it costs $0$ in both cost tables, and in the fuel layer it uses one link ticket.}",
+   "why": "A link forwards a conversation without relaying messages. It acts on no protocol, so it costs $0$ in both cost tables, and in the fuel layer it lowers no counter.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{link}\\,\\langle c^{+}, d^{-}\\rangle$.",
    "rocq": "lang/Syntax.v: PLink",
@@ -3413,7 +3429,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$(!\\ast.\\mathsf{Close})@\\rho$.",
    "rocq": "types/Types.v: TSess",
-   "sig": "(S@x)\\annot{^{a}} \\in \\mathsf{Ty}",
+   "sig": "(S@x)\\annot{^{a}}_{m} \\in \\mathsf{Ty}",
    "args": [
     {
      "name": "S",
@@ -3427,6 +3443,10 @@ window.MAP = {
      "name": "a",
      "meaning": "Its credit, a lower bound on its counter.",
      "ann": true
+    },
+    {
+     "name": "m",
+     "meaning": "\\annp{Its tickets, an upper bound on its counter, with $a \\leq m$.}"
     }
    ]
   },
@@ -3437,7 +3457,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "A client loop has type $\\Box\\forall\\iota\\,\\kappa\\,\\zeta.\\ C.\\ \\ast \\multimap (S_1@\\iota \\otimes S_2@\\kappa \\multimap^{\\zeta} \\ast)$.",
    "rocq": "types/Types.v: TBox",
-   "sig": "\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u}\\annot{[c ; \\vartheta]}\\,U) \\in \\mathsf{Ty}",
+   "sig": "\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u}[c]\\,U) \\in \\mathsf{Ty}",
    "args": [
     {
      "name": "\\bar\\iota",
@@ -3456,9 +3476,8 @@ window.MAP = {
      "meaning": "The upper point of the thunk."
     },
     {
-     "name": "c, \\vartheta",
-     "meaning": "Cost and ticket need of one force.",
-     "ann": true
+     "name": "c",
+     "meaning": "The cost of one force."
     },
     {
      "name": "U",
@@ -3905,22 +3924,7 @@ window.MAP = {
    "why": "Each link uses one ticket of its thread and each spawn transfers half of the tickets to the child. A pair $(s, b)$ describes every need these two operations produce, so the typing can compute needs by arithmetic.",
    "breaks": "Without a closed form the typing would need arbitrary functions from tickets to tickets.",
    "example": "$(0, 1)$ is one link, needing $r + 1$. $(1, 1)$ is a spawn whose child links once, needing $2r + 1$. $(0, \\infty)$ is met by no ticket count.",
-   "rocq": "types/Costs.v: tix, tapp",
-   "sig": "\\vartheta = (s, b) \\in \\mathsf{Tix} = (\\mathbb{N} \\cup \\{\\infty\\})^{2}",
-   "args": [
-    {
-     "name": "s",
-     "meaning": "The doubling exponent."
-    },
-    {
-     "name": "b",
-     "meaning": "The offset."
-    },
-    {
-     "name": "r",
-     "meaning": "The reserve of tickets on return."
-    }
-   ]
+   "rocq": "types/Costs.v: tix, tapp"
   },
   "ann.tid": {
    "title": "No need $\\hat 1$",
@@ -3928,9 +3932,7 @@ window.MAP = {
    "why": "Values and most rules need nothing of their own.",
    "breaks": "Nothing. It is a definition.",
    "example": "Every value has need $\\hat 1$.",
-   "rocq": "types/Costs.v: tid",
-   "sig": "\\hat 1 \\in \\mathsf{Tix}",
-   "args": []
+   "rocq": "types/Costs.v: tid"
   },
   "ann.meets": {
    "title": "$\\vartheta(r) \\leq tk$",
@@ -3938,23 +3940,7 @@ window.MAP = {
    "why": "A thread starts with finitely many tickets, and every link uses one.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(0, 1)(0) = 1 \\leq 1$, one ticket covers one link.",
-   "rocq": "types/Costs.v: meets",
-   "sig": "\\vartheta(r) \\leq tk : \\mathsf{Prop}",
-   "args": [
-    {
-     "name": "\\vartheta",
-     "meaning": "A ticket need $(s, b)$ with $s, b \\in \\mathbb{N} \\cup \\{\\infty\\}$, the function $r \\mapsto 2^{s} r + b$ from tickets left to tickets needed.",
-     "ann": true
-    },
-    {
-     "name": "r",
-     "meaning": "The reserve on return."
-    },
-    {
-     "name": "tk",
-     "meaning": "The available tickets."
-    }
-   ]
+   "rocq": "types/Costs.v: meets"
   },
   "ann.tspawn": {
    "title": "$\\mathsf{tspawn}$",
@@ -3962,18 +3948,7 @@ window.MAP = {
    "why": "Tickets belong to threads and a spawn creates a thread, so the child takes its tickets from the parent and no spawn creates any. Otherwise a loop that spawns a linking child in every round performs infinitely many links. The split is a fixed function of $tk$, the same in each run and at each step index. A split chosen freely could differ between indices, and the relation does not see how many tickets the child needs.",
    "breaks": "With fresh tickets for every child, a loop that spawns a child which links once, forever, is accepted, and a waiting thread whose partner is linked away in every round waits forever.",
    "example": "A thread spawns a child that links once and then links once itself. After the spawn the parent needs $(0, 1)$, one ticket, and the child needs $b_c = 1$. The start needs $\\max(2 \\cdot 1, 2 \\cdot 1 - 1) = 2$ tickets, with $\\lceil 2/2 \\rceil = 1$ for the child and $\\lfloor 2/2 \\rfloor = 1$ for the parent, and $\\mathsf{tspawn}\\,1\\,(0, 1) = (1, 2)$.",
-   "rocq": "types/Costs.v: tspawn",
-   "sig": "\\mathsf{tspawn} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to \\mathsf{Tix} \\to \\mathsf{Tix}",
-   "args": [
-    {
-     "name": "b_c",
-     "meaning": "The offset the child needs."
-    },
-    {
-     "name": "\\vartheta",
-     "meaning": "The ticket need $(s, b)$ of the parent continuation."
-    }
-   ]
+   "rocq": "types/Costs.v: tspawn"
   },
   "ann.tlink": {
    "title": "$\\mathsf{tlink}$",
@@ -3981,14 +3956,7 @@ window.MAP = {
    "why": "The link uses one ticket before the rest runs. No step creates tickets, so a run performs at most as many links as its threads held tickets at the start.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{tlink}\\,\\hat 1 = (0, 1)$, a single link.",
-   "rocq": "types/Costs.v: tlink",
-   "sig": "\\mathsf{tlink} : \\mathsf{Tix} \\to \\mathsf{Tix}",
-   "args": [
-    {
-     "name": "\\vartheta",
-     "meaning": "The ticket need $(s, b)$ after the link."
-    }
-   ]
+   "rocq": "types/Costs.v: tlink"
   },
   "ann.tseq": {
    "title": "Sequencing $\\vartheta_1 \\circ \\vartheta_2$",
@@ -3996,14 +3964,7 @@ window.MAP = {
    "why": "Application and the two lets run their parts one after the other.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(0, 1) \\circ (0, 1) = (0, 2)$, two links in a row.",
-   "rocq": "types/Costs.v: tseq",
-   "sig": "\\cdot \\circ \\cdot : \\mathsf{Tix} \\to \\mathsf{Tix} \\to \\mathsf{Tix}",
-   "args": [
-    {
-     "name": "\\vartheta_1, \\vartheta_2",
-     "meaning": "The ticket needs of the first and the second part."
-    }
-   ]
+   "rocq": "types/Costs.v: tseq"
   },
   "ann.tok": {
    "title": "$\\mathsf{tok}$",
@@ -4011,16 +3972,48 @@ window.MAP = {
    "why": "With $s_1 = \\infty$ the first part runs only if it leaves nothing, so a second part that needs tickets cannot follow. The rules that sequence two parts ask $\\mathsf{tok}$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{tok}\\,(0, 1)\\,(0, 1)$, the first need has a finite $s$.",
-   "rocq": "types/Costs.v: tok",
-   "sig": "\\mathsf{tok} : \\mathsf{Tix} \\to \\mathsf{Tix} \\to \\mathsf{Prop}",
+   "rocq": "types/Costs.v: tok"
+  },
+  "ty.tickets": {
+   "title": "Tickets $m$",
+   "what": "$m \\in \\mathbb{N} \\cup \\{\\infty\\}$ on an end type $(S@x)\\annot{^{a}}_{m}$ bounds the counter of the end from above, and the credit satisfies $a \\leq m$. An action on the end sets its counter back to $m$, and the tickets stay with the end, also in a payload.",
+   "why": "The thread holding the partner of an end acts on other ends at most as often as the counter of the partner allows, and the tickets of the partner bound that counter. A link compares the credit of one end with this bound, so the new partner of a waiting thread has a lower counter than the old one.",
+   "breaks": "Without tickets a link can give a waiting thread a partner with a full counter in every round, and the wait never ends.",
+   "example": "A new channel at $N = 4$ may give its ends $3$ and $1$ tickets.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)",
+   "sig": "m \\in \\mathbb{N} \\cup \\{\\infty\\}",
    "args": [
     {
-     "name": "\\vartheta_1 = (s_1, b_1)",
-     "meaning": "The first ticket need."
+     "name": "m",
+     "meaning": "The tickets of an end, the value an action resets its counter to."
     },
     {
-     "name": "\\vartheta_2 = (s_2, b_2)",
-     "meaning": "The second ticket need."
+     "name": "a",
+     "meaning": "The credit of the end, $a \\leq m$.",
+     "ann": true
+    }
+   ]
+  },
+  "ann.tsum": {
+   "title": "$\\mathsf{tk}(o) + \\mathsf{tk}(\\overline{o}) \\leq N$",
+   "what": "The tickets of the two ends of a channel sum to at most $N$, the bound of the judgment. An end with $m$ tickets has a partner with at most $N - m$ tickets, a bound read off its own type.",
+   "why": "E-Link compares the credit of each linked end with the partner bound of the other. Then the new partner of each waiting thread has a counter below the counter of the old one, and the measure of lock-free adequacy falls at every link.",
+   "breaks": "Without the bound no premise of a link relates the counters of ends that other threads hold, and relinking a waiting end forever is accepted.",
+   "example": "At $N = 4$ the two ends of a channel have $3$ and $1$ or $2$ and $2$ tickets.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)",
+   "sig": "\\mathsf{tk}(o) + \\mathsf{tk}(\\overline{o}) \\leq N : \\mathsf{Prop}",
+   "args": [
+    {
+     "name": "o",
+     "meaning": "An end of a channel and $\\overline{o}$ its partner."
+    },
+    {
+     "name": "\\mathsf{tk}(o)",
+     "meaning": "The tickets $m$ of $o$, read off its type $(S@x)\\annot{^{a}}_{m}$."
+    },
+    {
+     "name": "N",
+     "meaning": "The bound of the judgment."
     }
    ]
   },
@@ -4407,17 +4400,21 @@ window.MAP = {
    ]
   },
   "lfi.tickets": {
-   "title": "Tickets, a bound on links",
-   "what": "Each thread holds a number of link tickets. A link uses one, and a spawn splits the tickets between parent and child. The ticket need $\\vartheta$ of a term says how many tickets it needs, $\\mathsf{tlink}$ adds one for a link and $\\mathsf{tspawn}$ accounts for the split. P-Term asks the thread to start with enough.",
-   "why": "A link acts on no end, so counters cannot bound the number of links. Worse, it gives the waiting thread a fresh dual end at full counter, so a thread could link forever while every counter stays full.",
-   "breaks": "Link refresh in the Examples tab relinks the partner of a waiting end to a fresh channel every round, so the waiting thread always faces a new end. Each round uses a ticket and none is ever created.",
-   "example": "A thread that links twice needs $\\vartheta(0) \\geq 2$.",
-   "rocq": "types/Costs.v: tlink, tspawn; static/Typing.v: e_link, p_term",
-   "sig": "\\vartheta = (s, b),\\ \\vartheta(r) = 2^{s} r + b",
+   "title": "Tickets, one number per end",
+   "what": "An end of type $(S@x)\\annot{^{a}}_{m}$ has tickets $m \\geq a$, an upper bound on its counter. An action on the end sets its counter back to $m$, and a send of the end as payload lowers its counter by one. The two ends of a channel have at most $N$ tickets together, so the partner of an end with $m$ tickets has at most $N - m$. E-Link asks $a_1 + m_2 > N$ and $a_2 + m_1 > N$.",
+   "why": "A link acts on no end, so no counter falls at a link, and it gives the waiting thread a new partner. The premise of E-Link makes the counter of the new partner lower than the counter of the old one, so the measure of lock-free adequacy falls at every link.",
+   "breaks": "Link refresh in the Examples tab relinks the partner of a waiting end to a new channel every round. The new end has a full counter, and no typing of the loop meets the premise of E-Link.",
+   "example": "At $N = 4$ a link of ends with credits $3$ and $3$ and tickets $3$ and $3$ satisfies $3 + 3 > 4$ twice.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)",
+   "sig": "(S@x)\\annot{^{a}}_{m},\\ a \\leq m,\\ \\mathsf{tk}(o) + \\mathsf{tk}(\\overline{o}) \\leq N",
    "args": [
     {
-     "name": "\\vartheta",
-     "meaning": "the ticket need, the tickets a term needs to leave $r$ behind"
+     "name": "m",
+     "meaning": "the tickets of an end, an upper bound on its counter"
+    },
+    {
+     "name": "N",
+     "meaning": "the bound of the judgment"
     }
    ]
   },
@@ -4476,30 +4473,26 @@ window.MAP = {
   },
   "tj.eff": {
    "title": "Effect $\\varepsilon$",
-   "what": "$\\varepsilon = (c, \\vartheta)$ pairs the cost $c$ of a term, an upper bound on its channel actions before it returns, with its ticket need $\\vartheta$.",
-   "why": "Cost and ticket need appear together and combine at the same places, so one symbol has both. Aging reads the cost, and the tickets of links read $\\vartheta$.",
+   "what": "$\\varepsilon = c$ is the cost of a term, an upper bound on its channel actions before it returns.",
+   "why": "Aging reads the cost. With tickets on ends the effect has no second component.",
    "breaks": "Nothing. It is a definition.",
    "example": "A send has effect $\\varepsilon \\cdot 1$, one more action than its argument.",
    "rocq": "static/Typing.v: typed",
-   "sig": "\\varepsilon = (c, \\vartheta) \\in \\mathsf{Eff} = (\\mathbb{N} \\cup \\{\\infty\\}) \\times \\mathsf{Tix}",
+   "sig": "\\varepsilon = c \\in \\mathsf{Eff} = \\mathbb{N} \\cup \\{\\infty\\}",
    "args": [
     {
      "name": "c",
      "meaning": "the cost"
-    },
-    {
-     "name": "\\vartheta",
-     "meaning": "the ticket need"
     }
    ]
   },
   "tj.seq": {
    "title": "Sequencing $\\varepsilon_1 \\cdot \\varepsilon_2$",
-   "what": "$\\varepsilon_1 \\cdot \\varepsilon_2 = (c_1 + c_2, \\vartheta_1 \\circ \\vartheta_2)$, defined when $\\mathsf{tok}\\,\\vartheta_1\\,\\vartheta_2$.",
-   "why": "A term that runs two parts in sequence adds their costs and composes their ticket needs. The side condition $\\mathsf{tok}$ becomes definedness, so no rule lists $\\mathsf{tok}$.",
+   "what": "$\\varepsilon_1 \\cdot \\varepsilon_2 = c_1 + c_2$ in $\\mathbb{N} \\cup \\{\\infty\\}$.",
+   "why": "A term that runs two parts in sequence adds their costs.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$1 \\cdot 1 = (2, \\hat 1)$.",
-   "rocq": "types/Costs.v: tseq, tok",
+   "example": "$1 \\cdot 1 = 2$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)",
    "sig": "\\cdot : \\mathsf{Eff} \\times \\mathsf{Eff} \\rightharpoonup \\mathsf{Eff}",
    "args": [
     {
@@ -4510,22 +4503,22 @@ window.MAP = {
   },
   "tj.zero": {
    "title": "No effect $0$",
-   "what": "$0 = (0, \\hat 1)$, the effect of a value.",
-   "why": "A value performs no action and no link.",
+   "what": "$0$, the effect of a value.",
+   "why": "A value performs no action.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\lambda e$ has effect $0$.",
-   "rocq": "types/Costs.v: tid",
-   "sig": "0 = (0, \\hat 1) \\in \\mathsf{Eff}",
+   "rocq": "static/Typing.v: e_abs, e_box, e_new",
+   "sig": "0 \\in \\mathsf{Eff}",
    "args": []
   },
   "tj.one": {
    "title": "One action $1$",
-   "what": "$1 = (1, \\hat 1)$, the effect of one channel action.",
-   "why": "Every action adds one to the cost and needs no ticket.",
+   "what": "$1$, the effect of one channel action.",
+   "why": "Every action adds one to the cost.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{close}\\,e$ has effect $\\varepsilon \\cdot 1$.",
    "rocq": "static/Typing.v: e_send, e_recv, e_close, e_select, e_branch",
-   "sig": "1 = (1, \\hat 1) \\in \\mathsf{Eff}",
+   "sig": "1 \\in \\mathsf{Eff}",
    "args": []
   },
   "tj.Delta": {
@@ -4586,9 +4579,9 @@ window.MAP = {
    ]
   },
   "tj.N": {
-   "title": "The counter bound $N$",
-   "what": "$N \\in \\mathbb{N} \\cup \\{\\infty\\}$ is the credit of a fresh end and of an end after an action on that end.",
-   "why": "A credit is a lower bound on a counter, and each action of a holding thread on another end lowers the counter by $1$. A finite $N$ bounds the number of such actions between two actions on one end, which lock freedom needs, and $N = \\infty$ gives deadlock-free typing.",
+   "title": "The bound $N$",
+   "what": "$N \\in \\mathbb{N} \\cup \\{\\infty\\}$ bounds the tickets of the two ends of each channel, $\\mathsf{tk}(o) + \\mathsf{tk}(\\overline{o}) \\leq N$.",
+   "why": "A credit is a lower bound on a counter, the tickets of an end an upper bound, and each action of the thread holding an end on another end lowers its counter by $1$. A finite $N$ bounds the number of such actions between two actions on one end, which lock freedom needs, and $N = \\infty$ gives deadlock-free typing.",
    "breaks": "Nothing. It is a definition.",
    "example": "The client and server loop types at $N = 3$.",
    "rocq": "static/Typing.v: typed N",
@@ -4596,7 +4589,7 @@ window.MAP = {
    "args": [
     {
      "name": "N",
-     "meaning": "the credit of a fresh end and of an end after an action on it, $\\infty$ for deadlock-free typing"
+     "meaning": "the bound on the tickets of the two ends of a channel, $\\infty$ for deadlock-free typing"
     }
    ]
   },
@@ -5560,6 +5553,14 @@ window.MAP = {
     }
    ]
   },
+  "E-Link.tickets": {
+   "title": "$a_1 + m_2 > N$ and $a_2 + m_1 > N$",
+   "what": "The credit of each linked end exceeds $N - m$ for the tickets $m$ of the other linked end, the bound on the tickets of the partner of that end.",
+   "why": "After the link the partner of $o_1$ faces the partner of $o_2$, whose counter is at most $N - m_2 < a_1$, and $a_1$ bounds the counter of $o_1$ from below. The new partner of a waiting thread therefore has a lower counter than the old one, and the invariant on the tickets of a channel holds for the new pair.",
+   "breaks": "Without the premise a thread relinks the partner of a waiting end to a new end with a full counter in every round, and the wait never ends.",
+   "example": "At $N = 4$ ends at $(S@x)^{3}_{3}$ and $(\\overline{S}@\\overline{x})^{3}_{3}$ can be linked, and ends at credit $1$ cannot.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)"
+  },
   "E-Link.dual": {
    "title": "Linked ends dual",
    "what": "$e$ returns $S@x \\otimes \\overline{S}@\\overline{x}$, two ends at dual types and dual points.",
@@ -5664,17 +5665,36 @@ window.MAP = {
    ]
   },
   "E-New.dual": {
-   "title": "Dual pair at $N$",
-   "what": "$c^{+}$ has type $S@\\pi$ and $c^{-}$ type $\\overline{S}@\\overline{\\pi}$, both\\annp{ at credit $N$}.",
-   "why": "The fuel layer starts both counters of a new channel at $N$\\annp{, and the credits} are lower bounds on these counters.",
+   "title": "Dual pair at its tickets",
+   "what": "\\annp{$c^{+}$ has type $(S@\\pi)^{m_1}_{m_1}$ and $c^{-}$ type $(\\overline{S}@\\overline{\\pi})^{m_2}_{m_2}$, each at credit equal to its tickets.}",
+   "why": "\\annp{Fuel starts each counter of a new channel at the tickets of its end\\annp{, and the credits} are lower bounds on these counters.}",
    "breaks": "Nothing. It is a definition.",
-   "example": "$(S_a@\\pi)\\annot{^{N}} \\otimes (S_b@\\overline{\\pi})\\annot{^{N}}$ with $S_b = \\overline{S_a}$.",
-   "rocq": "static/Typing.v: e_new",
-   "sig": "(S@\\pi)\\annot{^{N}} \\otimes (\\overline{S}@\\overline{\\pi})\\annot{^{N}}",
+   "example": "$(S@\\pi)^{3}_{3} \\otimes (\\overline{S}@\\overline{\\pi})^{1}_{1}$ at $N = 4$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)",
+   "sig": "(S@\\pi)^{m_1}_{m_1} \\otimes (\\overline{S}@\\overline{\\pi})^{m_2}_{m_2}",
    "args": [
     {
      "name": "S",
      "meaning": "any session type, chosen by the derivation"
+    },
+    {
+     "name": "m_1, m_2",
+     "meaning": "\\annp{the tickets of the two ends, chosen by the derivation}"
+    }
+   ]
+  },
+  "E-New.tickets": {
+   "title": "$m_1 + m_2 \\leq N$",
+   "what": "The creation picks the tickets of the two new ends with sum at most $N$.",
+   "why": "The invariant on the tickets of a channel holds for every new channel, so E-Link can read the partner bound of an end off its type.",
+   "breaks": "Tickets above the bound break the premise of E-Link, which compares a credit with $N - m$.",
+   "example": "$m_1 = m_2 = 2$ at $N = 4$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)",
+   "sig": "m_1 + m_2 \\leq N",
+   "args": [
+    {
+     "name": "m_1, m_2",
+     "meaning": "the tickets of the new ends"
     },
     {
      "name": "N",
@@ -5684,19 +5704,19 @@ window.MAP = {
   },
   "E-Sub.cost": {
    "title": "Effects may rise",
-   "what": "$\\varepsilon \\leq \\varepsilon'$, so $c \\leq c'$ in $\\mathbb{N} \\cup \\{\\infty\\}$ and $\\vartheta \\leq \\vartheta'$ pointwise.",
-   "why": "The cost and the ticket need are upper bounds, so a larger bound is also correct. The branches of a case and closures passed to one parameter have different effects, and the larger bound covers both.",
+   "what": "$\\varepsilon \\leq \\varepsilon'$, so $c \\leq c'$ in $\\mathbb{N} \\cup \\{\\infty\\}$.",
+   "why": "The cost is an upper bound, so a larger bound is also correct. The branches of a case and closures passed to one parameter have different effects, and the larger bound covers both.",
    "breaks": "Nothing. It is a definition.",
    "example": "Every cost may rise to $\\infty$.",
    "rocq": "static/Typing.v: e_sub, types/Costs.v: tle",
-   "sig": "\\varepsilon \\leq \\varepsilon' \\iff c \\leq c' \\land \\vartheta \\leq \\vartheta'",
+   "sig": "\\varepsilon \\leq \\varepsilon' \\iff c \\leq c'",
    "args": [
     {
-     "name": "\\varepsilon = (c, \\vartheta)",
+     "name": "\\varepsilon = c",
      "meaning": "the effect derived"
     },
     {
-     "name": "\\varepsilon' = (c', \\vartheta')",
+     "name": "\\varepsilon' = c'",
      "meaning": "the weaker one concluded"
     }
    ]
@@ -5828,12 +5848,12 @@ window.MAP = {
   },
   "P-Term.pairs": {
    "title": "Restricted pairs dual",
-   "what": "For every $c \\in C_0$ there are $S$ and $x$ with $\\Theta_B(c^{+}) = S@x\\annot{^{N}}$ and $\\Theta_B(c^{-}) = \\overline{S}@\\overline{x}\\annot{^{N}}$.",
-   "why": "A restricted channel has both ends inside the process. They synchronize with each other only, so they need dual types at dual points.",
+   "what": "For every $c \\in C_0$ there are $S$, $x$, $m$ and $m'$ with $\\Theta_B(c^{+}) = (S@x)^{m}_{m}$, $\\Theta_B(c^{-}) = (\\overline{S}@\\overline{x})^{m'}_{m'}$ and $m + m' \\leq N$.",
+   "why": "A restricted channel has both ends inside the process. \\annp{They synchronize with each other only, so they need dual types at dual points, and their tickets meet the bound of every channel.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$c^{+} : S@x$ and $c^{-} : \\overline{S}@\\overline{x}$.",
    "rocq": "static/Typing.v: p_term",
-   "sig": "\\forall c \\in C_0.\\ \\exists S\\,x.\\ \\Theta_B(c^{+}) = S@x\\annot{^{N}} \\land \\Theta_B(c^{-}) = \\overline{S}@\\overline{x}\\annot{^{N}}",
+   "sig": "\\forall c \\in C_0.\\ \\exists S\\,x\\,m\\,m'.\\ \\Theta_B(c^{+}) = (S@x)^{m}_{m} \\land \\Theta_B(c^{-}) = (\\overline{S}@\\overline{x})^{m'}_{m'} \\land m + m' \\leq N",
    "args": [
     {
      "name": "c",
@@ -5842,6 +5862,10 @@ window.MAP = {
     {
      "name": "S, x",
      "meaning": "the type and point of its positive end"
+    },
+    {
+     "name": "m, m'",
+     "meaning": "\\annp{the tickets of its two ends}"
     }
    ]
   },
@@ -5852,15 +5876,15 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "The client and server main.",
    "rocq": "static/Typing.v: p_term",
-   "sig": "\\varnothing ; \\Sigma\\annot{^{N}}, \\Theta_B \\vdash^{(\\varnothing,\\cdot)}_{W\\annot{,N}} t : T\\annot{\\ !\\ (c, \\vartheta)}",
+   "sig": "\\varnothing ; \\Sigma^{N/2}_{N/2}, \\Theta_B \\vdash^{(\\varnothing,\\cdot)}_{W\\annot{,N}} t : T\\annot{\\ !\\ c}",
    "args": [
     {
      "name": "t",
      "meaning": "the thread"
     },
     {
-     "name": "\\Sigma\\annot{^{N}}",
-     "meaning": "the interface\\annp{ at credit $N$}"
+     "name": "\\Sigma^{N/2}_{N/2}",
+     "meaning": "\\annp{the interface at\\annp{ credit and }tickets $N/2$}"
     }
    ]
   },
@@ -5876,25 +5900,6 @@ window.MAP = {
     {
      "name": "F",
      "meaning": "the future of a top-level thread"
-    }
-   ]
-  },
-  "lf.meets": {
-   "title": "$N \\in \\mathbb{N} \\Rightarrow \\vartheta(0) \\in \\mathbb{N}$",
-   "what": "At a finite counter bound the ticket need of the thread is finite, trivial at $N = \\infty$.",
-   "why": "Lock freedom needs a finite number of link tickets per thread, and typing at a finite $N$ does not give one, because a ticket need may have offset $\\infty$.",
-   "breaks": "A loop that links once per round has no finite ticket need and is rejected at finite $N$.",
-   "example": "$\\vartheta = \\hat 1$, need $0$, in the examples without links.",
-   "rocq": "static/Typing.v: p_term",
-   "sig": "N \\in \\mathbb{N} \\Rightarrow \\vartheta(0) \\in \\mathbb{N}",
-   "args": [
-    {
-     "name": "N",
-     "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
-    },
-    {
-     "name": "\\vartheta",
-     "meaning": "the ticket need of the thread, read at reserve $0$"
     }
    ]
   },
@@ -6355,13 +6360,13 @@ window.MAP = {
    ]
   },
   "tp.lift": {
-   "title": "$\\Sigma\\annot{^{N}}$",
-   "what": "$\\Sigma$ with every entry\\annp{ at credit $N$}.",
-   "why": "Interface ends start a thread\\annp{ at credit $N$}, as fresh ends do.",
+   "title": "$\\Sigma^{N/2}_{N/2}$",
+   "what": "\\annp{$\\Sigma$ with every entry at\\annp{ credit and }tickets $N/2$.}",
+   "why": "The partner of an interface end belongs to another component. \\annp{Half of $N$ on each side keeps the bound on the tickets of a channel when P-Connect joins the two ends.}",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\{c^{+} \\mapsto \\mathsf{Close}@x\\}\\annot{^{N}} = \\{c^{+} \\mapsto \\mathsf{Close}@x\\annot{^{N}}\\}$.",
-   "rocq": "static/Contexts.v: tenv_of",
-   "sig": "\\Sigma\\annot{^{N}} : \\mathsf{End} \\rightharpoonup \\mathsf{Sty} \\times \\mathsf{Pt} \\times \\mathsf{Fuel}",
+   "example": "$\\{c^{+} \\mapsto \\mathsf{Close}@x\\}^{N/2}_{N/2} = \\{c^{+} \\mapsto (\\mathsf{Close}@x)^{N/2}_{N/2}\\}$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)",
+   "sig": "\\Sigma^{N/2}_{N/2} : \\mathsf{End} \\rightharpoonup \\mathsf{Sty} \\times \\mathsf{Pt} \\times \\mathsf{Fuel} \\times \\mathsf{Fuel}",
    "args": [
     {
      "name": "\\Sigma",
@@ -6447,11 +6452,11 @@ window.MAP = {
   },
   "tp.max": {
    "title": "$\\max(\\varepsilon_1, \\varepsilon_2)$",
-   "what": "The larger of two effects, $(\\max(c_1, c_2), \\max(\\vartheta_1, \\vartheta_2))$ with the ticket needs compared pointwise.",
+   "what": "The larger of two costs, $\\max(c_1, c_2)$.",
    "why": "Only one branch of a case runs, so its effect is bounded by the larger of the two.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\max(1, (0, \\mathsf{tlink}\\,\\hat 1)) = (1, \\mathsf{tlink}\\,\\hat 1)$.",
-   "rocq": "types/Costs.v: fmax, tmax",
+   "example": "$\\max(1, 2) = 2$.",
+   "rocq": "types/Costs.v: fmax",
    "sig": "\\max : \\mathsf{Eff} \\times \\mathsf{Eff} \\to \\mathsf{Eff}",
    "args": [
     {
@@ -6495,7 +6500,7 @@ window.MAP = {
     },
     {
      "name": "\\varepsilon",
-     "meaning": "\\annp{the effect of $e$, its cost and ticket need, lock-free mode only}"
+     "meaning": "the effect of $e$, its cost, lock-free mode only"
     }
    ]
   },
@@ -6705,11 +6710,11 @@ window.MAP = {
   },
   "rel.atcost": {
    "title": "$e'$ at $\\Theta'$",
-   "what": "The successor of a step of cost $c$ at level $n$ is read in the fixpoint $X$ if $c = 0$ and in $E_{n-c}$ if $c > 0$.",
-   "why": "Stated as two implications, $X$ occurs strictly positively and the inductive definition is admissible.",
+   "what": "Take a step $\\ell$ of cost $c = \\kappa(\\ell)$ at the ordinal index $\\alpha$. Its successor is read in the fixpoint $X$ if $c = 0$, and in $E_\\beta$ for each ordinal $\\beta$ with $\\beta + c \\leq \\alpha$ if $c > 0$, with $\\beta + c$ the $c$-fold successor of $\\beta$.",
+   "why": "Stated as two implications, $X$ occurs strictly positively and the inductive definition is admissible. At a successor $\\alpha = \\gamma + c$ the second case is the index $\\gamma$, and at a limit $\\lambda$ it is every $\\beta < \\lambda$, the later modality of transfinite step indexing.",
    "breaks": "Nothing. It is a definition.",
-   "example": "Under $\\kappa_L$ a $\\beta$ step stays at level $n$.",
-   "rocq": "relation/Relation.v: at_cost_E, at_cost_V, at_cost_P",
+   "example": "Under $\\kappa_L$ a $\\beta$ step stays at index $\\alpha$, and at the limit $\\omega$ a step of cost $2$ obliges the successor at every finite index.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-transfinite.md)",
    "sig": "e' \\mathsf{at}\\ \\Theta' : \\mathsf{Prop}",
    "args": [
     {
@@ -6721,12 +6726,16 @@ window.MAP = {
      "meaning": "its environment"
     },
     {
-     "name": "\\kappa(\\alpha)",
-     "meaning": "the cost of the step label $\\alpha$"
+     "name": "c = \\kappa(\\ell)",
+     "meaning": "the cost of the step label $\\ell$"
+    },
+    {
+     "name": "\\alpha, \\beta",
+     "meaning": "ordinal indices"
     },
     {
      "name": "X",
-     "meaning": "the least fixpoint under construction at level $n$"
+     "meaning": "the least fixpoint under construction at index $\\alpha$"
     }
    ]
   },
@@ -7308,12 +7317,12 @@ window.MAP = {
   },
   "E.stop": {
    "title": "(stop)",
-   "what": "$\\mathsf{irred}\\,e \\Rightarrow e \\in V^{W_1}_{n+1}\\llbracket\\Theta \\vdash T\\rrbracket$.",
-   "why": "A term that takes no step must be a value in $V$, so a stuck term is in no $E_n$ for $n \\geq 1$ and adequacy reads termination off $V$.",
+   "what": "$\\mathsf{irred}\\,e \\Rightarrow e \\in V^{W_1}_{\\alpha}\\llbracket\\Theta \\vdash T\\rrbracket$.",
+   "why": "A term that takes no step must be a value in $V$, so a stuck term is in no $E_\\alpha$ for $\\alpha > 0$ and adequacy reads termination off $V$.",
    "breaks": "A stuck non-value would count as well typed, and adequacy would fail.",
    "example": "$\\ast \\in E_1\\llbracket\\varnothing \\vdash \\ast\\rrbracket^{\\varnothing}$.",
    "rocq": "relation/Relation.v: Ebody",
-   "sig": "\\mathsf{irred}\\,e \\Rightarrow e \\in V^{W_1}_{n+1}\\llbracket \\Theta \\vdash T \\rrbracket",
+   "sig": "\\mathsf{irred}\\,e \\Rightarrow e \\in V^{W_1}_{\\alpha}\\llbracket \\Theta \\vdash T \\rrbracket",
    "args": [
     {
      "name": "e",
@@ -7322,6 +7331,10 @@ window.MAP = {
     {
      "name": "W_1",
      "meaning": "the extension of $W$"
+    },
+    {
+     "name": "\\alpha",
+     "meaning": "the ordinal index, $\\alpha > 0$"
     }
    ]
   },
@@ -7346,15 +7359,15 @@ window.MAP = {
   },
   "E.step": {
    "title": "(step)",
-   "what": "$\\forall \\alpha, e'.\\ e \\xrightarrow{\\alpha} e' \\Rightarrow \\mathsf{Obl}_\\alpha(e')$.",
+   "what": "$\\forall \\ell, e'.\\ e \\xrightarrow{\\ell} e' \\Rightarrow \\mathsf{Obl}_\\ell(e')$.",
    "why": "One conjunct per kind of label keeps $X$ strictly positive.",
    "breaks": "Nothing. It is a definition.",
    "example": "A send step meets O-Send.",
    "rocq": "relation/Relation.v: Esteps, Eobl",
-   "sig": "\\forall \\alpha, e'.\\ e \\xrightarrow{\\alpha} e' \\Rightarrow \\mathsf{Obl}_\\alpha(e')",
+   "sig": "\\forall \\ell, e'.\\ e \\xrightarrow{\\ell} e' \\Rightarrow \\mathsf{Obl}_\\ell(e')",
    "args": [
     {
-     "name": "\\alpha",
+     "name": "\\ell",
      "meaning": "a step label"
     },
     {
@@ -8761,7 +8774,7 @@ window.MAP = {
   },
   "sj.at": {
    "title": "Judgment at a set of points $X$",
-   "what": "For every level, later world, environment $\\Theta'$ disjoint from the ends $|\\Delta|$ and grounding $\\gamma$ of the variables of $\\Delta$ in $\\Theta'$, $\\gamma(e) \\in E_n\\llbracket|\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}$.",
+   "what": "For every level, later world, environment $\\Theta'$ disjoint from the ends $|\\Delta|$ and grounding $\\gamma$ of the variables of $\\Delta$ in $\\Theta'$, $\\gamma(e) \\in E_\\alpha\\llbracket|\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}$, over every ordinal index $\\alpha$.",
    "why": "It quantifies over everything a context may supply, so it composes by the compatibility lemmas.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Delta \\vDash^{X}_W e : T$.",
@@ -8857,7 +8870,7 @@ window.MAP = {
   },
   "sj.proc": {
    "title": "$\\Sigma \\vDash_W p : T$",
-   "what": "$\\forall n.\\ p \\in P^W_n\\llbracket\\Sigma \\vdash T\\rrbracket$.",
+   "what": "$\\forall \\alpha.\\ p \\in P^W_\\alpha\\llbracket\\Sigma \\vdash T\\rrbracket$, over every ordinal index $\\alpha$.",
    "why": "Adequacy turns it into deadlock freedom. \\annp{With $\\kappa_L$ it also gives absence of internal divergence.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\varnothing \\vDash_W p : \\ast$.",
@@ -8883,29 +8896,25 @@ window.MAP = {
    ]
   },
   "fu.zero": {
-   "title": "Level $0$",
+   "title": "Index $0$",
    "what": "$F_0$ holds every term.",
    "why": "Step indexing starts from the trivial predicate.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\forall e.\\ e \\in F^N_0\\llbracket\\Phi ; tk \\vdash \\sigma\\ !\\ (d, r)\\rrbracket$.",
+   "example": "$\\forall e.\\ e \\in F^N_0\\llbracket\\Phi \\vdash \\sigma\\ !\\ d\\rrbracket$.",
    "rocq": "fuel/Fuel.v: mk_flevel",
-   "sig": "e \\in F^{N}_{n}\\llbracket \\Phi ; tk \\vdash \\sigma\\ !\\ (d, r) \\rrbracket",
+   "sig": "e \\in F^{N}_{\\alpha}\\llbracket \\Phi \\vdash \\sigma\\ !\\ d \\rrbracket",
    "args": [
     {
      "name": "N",
      "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the ordinal index"
     },
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
-    },
-    {
-     "name": "tk",
-     "meaning": "the tickets of the thread, $tk \\in \\mathbb{N}$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     },
     {
      "name": "\\sigma",
@@ -8914,10 +8923,6 @@ window.MAP = {
     {
      "name": "d",
      "meaning": "the frame, the actions left before returning, $d \\in \\mathbb{N} \\cup \\{\\infty\\}$"
-    },
-    {
-     "name": "r",
-     "meaning": "the reserve, the tickets kept on return, $r \\in \\mathbb{N}$"
     },
     {
      "name": "e",
@@ -8950,55 +8955,35 @@ window.MAP = {
    "sig": "d \\in \\mathbb{N} \\cup \\{\\infty\\}",
    "args": []
   },
-  "fu.reserve": {
-   "title": "Reserve $r$",
-   "what": "$r \\in \\mathbb{N}$ is the number of tickets the term must still hold when it returns.",
-   "why": "The context of the term uses these tickets on its own links afterwards, which the ticket need of the term guarantees through $\\vartheta(r) \\leq tk$.",
-   "breaks": "Without a reserve, a term could use tickets its context needs, and a context link would find $tk = 0$.",
-   "example": "A thread has reserve $0$.",
-   "rocq": "fuel/Fuel.v: Fdef",
-   "sig": "r \\in \\mathbb{N}",
-   "args": []
-  },
   "fu.Phi": {
    "title": "Held ends $\\Phi$",
-   "what": "$\\Phi$ maps each end the thread holds to its protocol $S$, a session type with annotations, and its counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$, written $o \\mapsto S^{f}$. In the Rocq these are two maps $\\Pi$ and $\\varphi$ with one domain.",
-   "why": "The counter bounds how many actions of the thread holding it may pass before the end acts again, and the protocol says when the end is idle and what it sends and receives. Where the relation gives an end a point, fuel gives it a counter.",
+   "what": "$\\Phi$ maps each end the thread holds to its protocol $S$, a session type with annotations, its counter $f$ and its tickets $m \\geq f$, written $o \\mapsto S^{f}_{m}$.",
+   "why": "The counter bounds how many actions of the thread holding it may pass before the end acts again, and an action sets it back to $m$. The protocol says when the end is idle and what it sends and receives. Where the relation gives an end a point, fuel gives it a counter and tickets.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\Phi = \\{a \\mapsto S^{3}\\}$.",
-   "rocq": "fuel/Fuel.v: penv, cenv",
-   "sig": "\\Phi : \\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times (\\mathbb{N} \\cup \\{\\infty\\})",
+   "example": "$\\Phi = \\{a \\mapsto S^{3}_{3}\\}$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)",
+   "sig": "\\Phi : \\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathbb{N} \\times \\mathbb{N}",
    "args": [
     {
-     "name": "S^{f}",
-     "meaning": "the protocol $S$ and counter $f$ of an end"
+     "name": "S^{f}_{m}",
+     "meaning": "the protocol $S$, counter $f$ and tickets $m$ of an end, $f \\leq m$"
     }
    ]
   },
   "fu.tick": {
    "title": "$\\Phi{\\downarrow}$",
-   "what": "Every counter of $\\Phi$ lowered by one, truncated at $0$, with $\\infty$ kept.",
+   "what": "Every counter of $\\Phi$ lowered by one, truncated at $0$, with the tickets kept.",
    "why": "An action decrements the counters of the other ends of the thread holding it, and a transfer passes counters on one lower. Both use this operation.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\{a \\mapsto S^{3}, b \\mapsto S'^{1}\\}{\\downarrow} = \\{a \\mapsto S^{2}, b \\mapsto S'\\annot{^{0}}\\}$.",
-   "rocq": "fuel/Fuel.v: ftick, refill, fhand",
-   "sig": "\\Phi{\\downarrow} = \\{o \\mapsto S^{f \\mathbin{\\dot-} 1} \\mid o \\mapsto S^{f} \\in \\Phi\\}",
+   "example": "$\\{a \\mapsto S^{3}_{3}, b \\mapsto S'^{1}_{2}\\}{\\downarrow} = \\{a \\mapsto S^{2}_{3}, b \\mapsto S'\\annot{^{0}}_{2}\\}$.",
+   "rocq": "fuel/Fuel.v: ftick, fhand",
+   "sig": "\\Phi{\\downarrow} = \\{o \\mapsto S^{f \\mathbin{\\dot-} 1}_{m} \\mid o \\mapsto S^{f}_{m} \\in \\Phi\\}",
    "args": [
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     }
    ]
-  },
-  "fu.tk": {
-   "title": "Tickets $tk$",
-   "what": "$tk \\in \\mathbb{N}$ is the thread's count of link tickets.",
-   "why": "Each link uses one ticket and tickets are conserved, so a thread performs finitely many links between actions.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$tk = 0$ in every example.",
-   "rocq": "fuel/Fuel.v: Fdef",
-   "sig": "tk \\in \\mathbb{N}",
-   "args": []
   },
   "fu.refill-kripke": {
    "title": "Every counter bound above $N$",
@@ -9032,12 +9017,12 @@ window.MAP = {
   },
   "fu.val": {
    "title": "(val)",
-   "what": "$g(e) \\in \\mathsf{Val} \\Rightarrow r \\leq tk \\land g(e) \\in FV^{N'}_{n+1}\\llbracket g\\Phi \\vdash \\sigma\\rrbracket$.",
-   "why": "A returning term transfers its context the reserve it promised and a value whose counters meet its credits, which the bind lemma of fuel consumes.",
-   "breaks": "Without $r \\leq tk$, a context link after the term could find no ticket.",
-   "example": "$\\ast$ returns with $r = 0 \\leq tk$.",
+   "what": "$g(e) \\in \\mathsf{Val} \\Rightarrow g(e) \\in FV^{N'}_{\\alpha}\\llbracket g\\Phi \\vdash \\sigma\\rrbracket$.",
+   "why": "A returning term gives its context a value whose counters meet its credits, which the bind lemma of fuel consumes.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\ast$ returns at $\\Phi = \\varnothing$.",
    "rocq": "fuel/Fuel.v: Fdef",
-   "sig": "g(e) \\in \\mathsf{Val} \\Rightarrow r \\leq tk \\land g(e) \\in FV^{N'}_{n+1}\\llbracket g\\Phi \\vdash \\sigma \\rrbracket",
+   "sig": "g(e) \\in \\mathsf{Val} \\Rightarrow g(e) \\in FV^{N'}_{\\alpha}\\llbracket g\\Phi \\vdash \\sigma \\rrbracket",
    "args": [
     {
      "name": "g, N'",
@@ -9047,16 +9032,20 @@ window.MAP = {
   },
   "fu.step": {
    "title": "(step)",
-   "what": "$\\forall \\alpha, e'.\\ g(e) \\xrightarrow{\\alpha} e' \\Rightarrow \\mathsf{Fobl}^{N'}_\\alpha(e')$ at level $n$.",
-   "why": "Each step updates the state by one index-free rule, which the lock-free process relation follows along a run.",
+   "what": "$\\forall \\ell, e'.\\ g(e) \\xrightarrow{\\ell} e' \\Rightarrow \\mathsf{Fobl}^{N'}_\\ell(e')$ at every ordinal $\\beta < \\alpha$.",
+   "why": "Each step updates the state by one index-free rule, which the lock-free process relation follows along a run. At a limit $\\alpha$ the obligation holds at every smaller index.",
    "breaks": "Nothing. It is a definition.",
    "example": "A send step meets F-Send.",
-   "rocq": "fuel/Fuel.v: Fdef, Fobl",
-   "sig": "\\forall \\alpha, e'.\\ g(e) \\xrightarrow{\\alpha} e' \\Rightarrow \\mathsf{Fobl}^{N'}_{\\alpha}(e')",
+   "rocq": "not yet in the Rocq (docs/redesign/check-transfinite.md)",
+   "sig": "\\forall \\ell, e'.\\ g(e) \\xrightarrow{\\ell} e' \\Rightarrow \\forall \\beta < \\alpha.\\ \\mathsf{Fobl}^{N'}_{\\ell}(e')",
    "args": [
     {
-     "name": "\\alpha, e'",
+     "name": "\\ell, e'",
      "meaning": "the step label and the successor"
+    },
+    {
+     "name": "\\beta",
+     "meaning": "the index of the successor"
     }
    ]
   },
@@ -9082,11 +9071,11 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "An end at $\\mathsf{Skip}$ cannot act.",
    "rocq": "fuel/Fuel.v: f_act",
-   "sig": "\\Phi(o) = S^{f} \\land \\neg\\mathsf{idle}\\,S",
+   "sig": "\\Phi(o) = S^{f}_{m} \\land \\neg\\mathsf{idle}\\,S",
    "args": [
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     },
     {
      "name": "o",
@@ -9105,7 +9094,7 @@ window.MAP = {
    "args": [
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     },
     {
      "name": "o",
@@ -9145,8 +9134,8 @@ window.MAP = {
   },
   "F-Beta": {
    "title": "F-Beta",
-   "what": "$e'$ in $F_n$ at the same state.",
-   "why": "A $\\beta$ step changes no counter and costs one level.",
+   "what": "$e'$ in $F_\\beta$ at the same state.",
+   "why": "A $\\beta$ step changes no counter and costs one index.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(\\lambda x.\\,x)\\,\\ast$.",
    "rocq": "fuel/Fuel.v: f_beta",
@@ -9157,16 +9146,12 @@ window.MAP = {
      "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the ordinal index"
     },
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
-    },
-    {
-     "name": "tk",
-     "meaning": "the tickets of the thread, $tk \\in \\mathbb{N}$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     },
     {
      "name": "\\sigma",
@@ -9175,10 +9160,6 @@ window.MAP = {
     {
      "name": "d",
      "meaning": "the frame, the actions left before returning, $d \\in \\mathbb{N} \\cup \\{\\infty\\}$"
-    },
-    {
-     "name": "r",
-     "meaning": "the reserve, the tickets kept on return, $r \\in \\mathbb{N}$"
     },
     {
      "name": "e",
@@ -9192,11 +9173,11 @@ window.MAP = {
   },
   "F-New": {
    "title": "F-New",
-   "what": "For a fresh $c$, some $S$ adds $c^{+} \\mapsto S\\annot{^{N}}$ and $c^{-} \\mapsto \\overline{S}\\annot{^{N}}$ to $\\Phi$.",
-   "why": "A new channel starts with both ends at the counter bound $N$, the credit E-New gives to fresh ends.",
+   "what": "For a fresh $c$, some $S$, $m_1$ and $m_2$ with $m_1 + m_2 \\leq N$ add $c^{+} \\mapsto S^{m_1}_{m_1}$ and $c^{-} \\mapsto \\overline{S}^{m_2}_{m_2}$ to $\\Phi$.",
+   "why": "A new channel starts each end at its tickets, the credit E-New gives to the new ends.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{new}$ adds $c^{\\pm}$ at $N$.",
-   "rocq": "fuel/Fuel.v: f_new",
+   "example": "$\\mathsf{new}$ adds $c^{\\pm}$ at $2$ and $2$ for $N = 4$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)",
    "sig": "\\mathsf{f\\_new} : \\mathsf{Chan} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
    "args": [
     {
@@ -9206,6 +9187,10 @@ window.MAP = {
     {
      "name": "S",
      "meaning": "the protocol of $c^{+}$"
+    },
+    {
+     "name": "m_1, m_2",
+     "meaning": "the tickets of the two ends"
     },
     {
      "name": "e'",
@@ -9228,22 +9213,22 @@ window.MAP = {
     },
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     }
    ]
   },
   "F-New.cnew": {
-   "title": "New ends at $N$",
-   "what": "$\\Phi[c^{+} \\mapsto S\\annot{^{N}}, c^{-} \\mapsto \\overline{S}\\annot{^{N}}]$.",
-   "why": "One counter bound $N$ serves fresh ends and ends after an action.",
+   "title": "New ends at their tickets",
+   "what": "$\\Phi[c^{+} \\mapsto S^{m_1}_{m_1}, c^{-} \\mapsto \\overline{S}^{m_2}_{m_2}]$.",
+   "why": "An action sets the counter of an end back to its tickets, and a new end starts there too.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\{c^{+} \\mapsto S^{3}, c^{-} \\mapsto \\overline{S}^{3}\\}$ at $N = 3$.",
-   "rocq": "fuel/Fuel.v: pnew, cnew",
-   "sig": "\\Phi[c^{+} \\mapsto S\\annot{^{N}}, c^{-} \\mapsto \\overline{S}\\annot{^{N}}]",
+   "example": "$\\{c^{+} \\mapsto S^{3}_{3}, c^{-} \\mapsto \\overline{S}^{1}_{1}\\}$ at $N = 4$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)",
+   "sig": "\\Phi[c^{+} \\mapsto S^{m_1}_{m_1}, c^{-} \\mapsto \\overline{S}^{m_2}_{m_2}]",
    "args": [
     {
-     "name": "N",
-     "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "name": "m_1, m_2",
+     "meaning": "the tickets of the new ends, $m_1 + m_2 \\leq N$"
     },
     {
      "name": "c",
@@ -9255,17 +9240,17 @@ window.MAP = {
     },
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     }
    ]
   },
   "F-Spawn": {
    "title": "F-Spawn",
-   "what": "The child takes $\\Phi|_M{\\downarrow}$ for $M = \\mathsf{fends}(v)$ and $\\lceil tk/2 \\rceil$ tickets and runs as a thread, the parent keeps $\\Phi \\setminus M$ and $\\lfloor tk/2 \\rfloor$.",
-   "why": "The split is a function of $v$ and $tk$, so it is the same at each level.",
+   "what": "The child takes $\\Phi|_M{\\downarrow}$ for $M = \\mathsf{fends}(v)$ and runs as a thread, the parent keeps $\\Phi \\setminus M$.",
+   "why": "The split is a function of $v$, so it is the same at each index.",
    "breaks": "Nothing. It is a definition.",
    "example": "The thunk takes $d'$ at $1$ in the cycle.",
-   "rocq": "fuel/Fuel.v: f_spawn",
+   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)",
    "sig": "\\mathsf{f\\_spawn} : \\mathsf{Val} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
    "args": [
     {
@@ -9304,22 +9289,22 @@ window.MAP = {
    "breaks": "A transfer at counter $0$ under truncation passes $0$ again and an end is passed on forever.",
    "example": "$\\mathsf{positive}(\\{d' \\mapsto S^{1}\\})$.",
    "rocq": "fuel/Fuel.v: fspare",
-   "sig": "\\mathsf{positive}(\\Phi) \\iff \\forall o \\mapsto S^{f} \\in \\Phi.\\ \\neg\\mathsf{idle}\\,S \\Rightarrow 1 \\leq f",
+   "sig": "\\mathsf{positive}(\\Phi) \\iff \\forall o \\mapsto S^{f}_{m} \\in \\Phi.\\ \\neg\\mathsf{idle}\\,S \\Rightarrow 1 \\leq f",
    "args": [
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     }
    ]
   },
   "F-Spawn.child": {
    "title": "The child",
-   "what": "$v\\,\\ast \\in F^N_n\\llbracket\\Phi|_M{\\downarrow} ; \\lceil tk/2 \\rceil \\vdash \\mathsf{thread}\\ !\\ (\\infty, 0)\\rrbracket$.",
-   "why": "The child is a new lock-free process relation thread, so it must have thread fuel at exactly the ends, counters and tickets the lock-free process relation moves to the child.",
+   "what": "$v\\,\\ast \\in F^N_\\beta\\llbracket\\Phi|_M{\\downarrow} \\vdash \\mathsf{thread}\\ !\\ \\infty\\rrbracket$.",
+   "why": "The child is a new thread of the lock-free process relation, so it must have thread fuel at exactly the ends and counters the lock-free process relation moves to the child.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(\\lambda u.\\,\\mathsf{close}\\,d')\\,\\ast$.",
    "rocq": "fuel/Fuel.v: f_spawn",
-   "sig": "v\\,\\ast \\in F^{N}_{n}\\llbracket \\Phi|_M{\\downarrow} ; \\lceil tk/2 \\rceil \\vdash \\mathsf{thread}\\ !\\ (\\infty, 0) \\rrbracket",
+   "sig": "v\\,\\ast \\in F^{N}_{\\beta}\\llbracket \\Phi|_M{\\downarrow} \\vdash \\mathsf{thread}\\ !\\ \\infty \\rrbracket",
    "args": [
     {
      "name": "v\\,\\ast",
@@ -9331,24 +9316,9 @@ window.MAP = {
     }
    ]
   },
-  "F-Spawn.tickets": {
-   "title": "Ticket split",
-   "what": "Child $\\lceil tk/2 \\rceil$, parent $\\lfloor tk/2 \\rfloor$.",
-   "why": "A fixed split is the only split independent of the level.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$tk = 3$ gives $2$ and $1$.",
-   "rocq": "fuel/Fuel.v: f_spawn",
-   "sig": "(\\lceil tk/2 \\rceil, \\lfloor tk/2 \\rfloor)",
-   "args": [
-    {
-     "name": "tk",
-     "meaning": "the tickets of the thread, $tk \\in \\mathbb{N}$"
-    }
-   ]
-  },
   "F-Send": {
    "title": "F-Send",
-   "what": "An action on $o$ that passes on $M = \\mathsf{fends}(w)$ one lower, the payload in $FV$, and the continuation with $o$ back at $N$.",
+   "what": "An action on $o$ that passes on $M = \\mathsf{fends}(w)$ one lower, the payload in $FV$, and the continuation with $o$ back at its tickets $m$.",
    "why": "A send is an action, so F-Count applies, and a transfer, so $\\mathsf{positive}$ applies.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{send}\\,\\langle a, y\\rangle$ in the growing ring.",
@@ -9417,7 +9387,7 @@ window.MAP = {
   },
   "F-Recv": {
    "title": "F-Recv",
-   "what": "An action on $o$ that continues for every incoming value in $FV$ at every level $j \\leq n$ with ends disjoint from $\\Phi$.",
+   "what": "An action on $o$ that continues for every incoming value in $FV$ at every index $\\gamma \\leq \\beta$ with ends disjoint from $\\Phi$.",
    "why": "The receiver continues for every value its type admits, and the lock-free process relation supplies the sender's transferred ends.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{recv}\\,b$ in the client loop.",
@@ -9440,22 +9410,26 @@ window.MAP = {
   },
   "F-Recv.forall": {
    "title": "Every incoming value",
-   "what": "$\\forall j \\leq n, \\Phi_i.\\ w \\in FV^N_j\\llbracket\\Phi_i \\vdash T\\rrbracket$.",
+   "what": "$\\forall \\gamma \\leq \\beta, \\Phi_i.\\ w \\in FV^N_\\gamma\\llbracket\\Phi_i \\vdash T\\rrbracket$.",
    "why": "Every value in $FV$ is exact, so incoming closures hold exactly what they mention.",
    "breaks": "Without exactness, a received closure owning nothing but mentioning an end could not be spawned.",
-   "example": "$\\Phi_i = \\{e \\mapsto S^{2}\\}$.",
+   "example": "$\\Phi_i = \\{e \\mapsto S^{2}_{2}\\}$.",
    "rocq": "fuel/Fuel.v: f_recv",
-   "sig": "\\forall j \\leq n, \\Phi_i \\mathbin{\\#} \\Phi.\\ w \\in FV^{N}_{j}\\llbracket \\Phi_i \\vdash T \\rrbracket \\Rightarrow \\ldots",
+   "sig": "\\forall \\gamma \\leq \\beta, \\Phi_i \\mathbin{\\#} \\Phi.\\ w \\in FV^{N}_{\\gamma}\\llbracket \\Phi_i \\vdash T \\rrbracket \\Rightarrow \\ldots",
    "args": [
     {
      "name": "\\Phi_i",
      "meaning": "the ends of the received value, disjoint from $\\Phi$"
+    },
+    {
+     "name": "\\gamma",
+     "meaning": "an ordinal index at most $\\beta$"
     }
    ]
   },
   "F-Close": {
    "title": "F-Close, F-Select, F-Branch",
-   "what": "Actions that drop $o$ and decrement the rest at a close, or advance the protocol of $o$ to $S_i$ and set it back to $N$ at a choice.",
+   "what": "Actions that drop $o$ and decrement the rest at a close, or advance the protocol of $o$ to $S_i$ and set it back to its tickets $m$ at a choice.",
    "why": "They are the fuel forms of O-Close, O-Select and O-Branch, and each is an action, so F-Count applies.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{close}\\,c^{+}$.",
@@ -9474,11 +9448,11 @@ window.MAP = {
   },
   "F-Link": {
    "title": "F-Link",
-   "what": "Two distinct held ends at dual protocols leave, and one ticket is used.",
-   "why": "Tickets bound the links between actions.",
+   "what": "Two distinct held ends at dual protocols leave, and the counter of each exceeds the partner bound $N - m$ of the other.",
+   "why": "The link lowers no counter. Its premise makes the partner of a waiting thread after the link have a lower counter than before.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{link}\\,\\langle c^{+}, d^{-}\\rangle$ with $tk = 1$.",
-   "rocq": "fuel/Fuel.v: f_link",
+   "example": "$\\mathsf{link}\\,\\langle c^{+}, d^{-}\\rangle$ with counters $3$ and $3$ and tickets $3$ and $3$ at $N = 4$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)",
    "sig": "\\mathsf{f\\_link} : \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{End}) \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
    "args": [
     {
@@ -9492,13 +9466,13 @@ window.MAP = {
    "what": "$o_1 \\neq o_2$, both held, at protocols $S$ and $S' \\simeq \\overline{S}$, with annotations.",
    "why": "After the link the partners form one channel, whose protocols are dual only if the two linked protocols were, and annotations must match for later payload credits.",
    "breaks": "A credit mismatch at a link breaks the payload credit of a later message.",
-   "example": "$c^{+} \\mapsto S^{2}$ and $d^{-} \\mapsto \\overline{S}^{1}$.",
+   "example": "$c^{+} \\mapsto S^{2}_{3}$ and $d^{-} \\mapsto \\overline{S}^{1}_{3}$.",
    "rocq": "fuel/Fuel.v: plink",
-   "sig": "\\Phi(o_1) = S^{f},\\ \\Phi(o_2) = S'^{f'},\\ o_1 \\neq o_2,\\ S' \\simeq \\overline{S}",
+   "sig": "\\Phi(o_1) = S^{f_1}_{m_1},\\ \\Phi(o_2) = S'^{f_2}_{m_2},\\ o_1 \\neq o_2,\\ S' \\simeq \\overline{S}",
    "args": [
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     },
     {
      "name": "o_1, o_2",
@@ -9507,36 +9481,44 @@ window.MAP = {
    ]
   },
   "F-Link.ticket": {
-   "title": "$1 \\leq tk$",
-   "what": "A link uses one ticket.",
-   "why": "Tickets are conserved and used, so links cannot repeat forever.",
-   "breaks": "A box that links once per round forever.",
-   "example": "$tk - 1$.",
-   "rocq": "fuel/Fuel.v: f_link",
-   "sig": "1 \\leq tk",
+   "title": "$f_1 + m_2 > N$ and $f_2 + m_1 > N$",
+   "what": "The counter of each linked end exceeds $N - m$ for the tickets $m$ of the other linked end.",
+   "why": "The partner of $o_2$ has at most $N - m_2$ tickets, so its counter is below $f_1$. The thread waiting on the partner of $o_1$ then faces a lower counter after the link, and the measure of lock-free adequacy falls.",
+   "breaks": "Without it a link can give a waiting thread a partner with a full counter in every round.",
+   "example": "$3 + 3 > 4$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)",
+   "sig": "f_1 + m_2 > N \\land f_2 + m_1 > N",
    "args": [
     {
-     "name": "tk",
-     "meaning": "the tickets of the thread, $tk \\in \\mathbb{N}$"
+     "name": "f_1, f_2",
+     "meaning": "the counters of the linked ends"
+    },
+    {
+     "name": "m_1, m_2",
+     "meaning": "their tickets"
+    },
+    {
+     "name": "N",
+     "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     }
    ]
   },
   "FV-Sess": {
    "title": "$FV$ at $S@x$",
-   "what": "An end with protocol $S' \\simeq S$ and counter $f \\geq a$.",
-   "why": "Credits are lower bounds on counters.",
+   "what": "An end with protocol $S' \\simeq S$, counter $f \\geq a$ and the tickets $m$ of its type.",
+   "why": "Credits are lower bounds on counters, and the tickets of the type are those fuel resets the counter to.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$o \\mapsto S^{3}$ at $(S@x)^2$.",
-   "rocq": "fuel/Fuel.v: Vty TSess",
-   "sig": "o \\in FV^{N}_{n}\\llbracket \\{o \\mapsto S'^{f}\\} \\vdash (S@x)\\annot{^{a}} \\rrbracket",
+   "example": "$o \\mapsto S^{3}_{3}$ at $(S@x)^2_3$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)",
+   "sig": "o \\in FV^{N}_{n}\\llbracket \\{o \\mapsto S'^{f}_{m}\\} \\vdash (S@x)\\annot{^{a}}_{m} \\rrbracket",
    "args": [
     {
      "name": "o",
      "meaning": "the subject end, $o \\in \\mathsf{End}$"
     },
     {
-     "name": "S@x, a",
-     "meaning": "the end type and its credit"
+     "name": "S@x, a, m",
+     "meaning": "the end type, its credit and its tickets"
     },
     {
      "name": "S', f",
@@ -9571,11 +9553,11 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "A loop body at cost $\\infty$.",
    "rocq": "fuel/Fuel.v: Vty TLolli",
-   "sig": "\\lambda e \\in FV^{N}_{n}\\llbracket \\Phi \\vdash (T \\multimap[(c, \\vartheta); h]\\, U)\\annot{^{a}} \\rrbracket",
+   "sig": "\\lambda e \\in FV^{N}_{n}\\llbracket \\Phi \\vdash (T \\multimap\\annot{[c; h]}\\, U)\\annot{^{a}} \\rrbracket",
    "args": [
     {
-     "name": "c, \\vartheta, h",
-     "meaning": "the cost, ticket need and floor of the arrow"
+     "name": "c, h",
+     "meaning": "the cost and floor of the arrow"
     },
     {
      "name": "a",
@@ -9626,7 +9608,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\vartheta(r) \\leq tk$.",
    "rocq": "fuel/Fuel.v: Vty TLolli",
-   "sig": "e[u] \\in F^{N'}_{j}\\llbracket \\Phi' \\cup \\Phi_u ; tk \\vdash U\\ !\\ (c, r) \\rrbracket",
+   "sig": "e[u] \\in F^{N'}_{j}\\llbracket \\Phi' \\cup \\Phi_u \\vdash U\\ !\\ c \\rrbracket",
    "args": [
     {
      "name": "N', j",
@@ -9641,8 +9623,8 @@ window.MAP = {
      "meaning": "the ends of the argument"
     },
     {
-     "name": "r, tk",
-     "meaning": "with $\\vartheta(r) \\leq tk$"
+     "name": "c",
+     "meaning": "the frame, the cost of the arrow"
     }
    ]
   },
@@ -9678,12 +9660,12 @@ window.MAP = {
   },
   "FV-Box.body": {
    "title": "Body per force",
-   "what": "$e[!e] \\in F^{N'}_j\\llbracket\\varnothing ; tk \\vdash U[\\bar s]\\ !\\ (c, r)\\rrbracket$ for every $N' \\sqsupseteq_{\\mathsf{rle}} N$, $j < n$, $\\bar s \\in \\mathsf{sinsts}\\,N'$ and $tk \\geq \\vartheta(r)$.",
+   "what": "$e[!e] \\in F^{N'}_j\\llbracket\\varnothing \\vdash U[\\bar s]\\ !\\ c\\rrbracket$ for every $N' \\sqsupseteq_{\\mathsf{rle}} N$, $j < n$ and $\\bar s \\in \\mathsf{sinsts}\\,N'$.",
    "why": "Each force unrolls the box once, at a counter bound and instance the forcing context chooses.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\bar s \\in \\mathsf{sinsts}\\,N'$.",
    "rocq": "fuel/Fuel.v: Vty TBox",
-   "sig": "e[!e] \\in F^{N'}_{j}\\llbracket \\varnothing ; tk \\vdash U[\\bar s]\\ !\\ (c, r) \\rrbracket",
+   "sig": "e[!e] \\in F^{N'}_{j}\\llbracket \\varnothing \\vdash U[\\bar s]\\ !\\ c \\rrbracket",
    "args": [
     {
      "name": "N', j",
@@ -9694,8 +9676,8 @@ window.MAP = {
      "meaning": "a session instance in $\\mathsf{sinsts}\\,N'$"
     },
     {
-     "name": "r, tk",
-     "meaning": "with $\\vartheta(r) \\leq tk$"
+     "name": "c",
+     "meaning": "the frame, the cost of one force"
     }
    ]
   },
@@ -9716,12 +9698,12 @@ window.MAP = {
   },
   "fu.fsem": {
    "title": "$\\mathsf{fsem}$",
-   "what": "$\\mathsf{fsem}\\,N\\,\\Phi\\,e \\iff \\exists tk.\\ \\forall n.\\ e \\in F^N_n\\llbracket\\Phi ; tk \\vdash \\mathsf{thread}\\ !\\ (\\infty, 0)\\rrbracket$, where each counter of $\\Phi$ is $N$.",
-   "why": "It is the fuel of a thread that the lock-free process relation requires, and the cost fundamental theorem derives it from typing. It is the one fuel statement that holds at every level.",
+   "what": "$\\mathsf{fsem}\\,N\\,\\Phi\\,e$ iff every end of $\\Phi$ has its counter at its tickets and $e \\in F^N_\\alpha\\llbracket\\Phi \\vdash \\mathsf{thread}\\ !\\ \\infty\\rrbracket$ for every ordinal $\\alpha$.",
+   "why": "It is the fuel of a thread that the lock-free process relation requires, and the cost fundamental theorem derives it from typing. It is the one fuel statement that holds at every index.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{fsem}\\,N\\,\\{c^{+} \\mapsto \\mathsf{Close}\\annot{^{N}}\\}\\,(\\mathsf{close}\\,c^{+})$.",
-   "rocq": "fuel/Fuel.v: fsem",
-   "sig": "\\mathsf{fsem} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to (\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times (\\mathbb{N} \\cup \\{\\infty\\})) \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "example": "$\\mathsf{fsem}\\,N\\,\\{c^{+} \\mapsto \\mathsf{Close}^{2}_{2}\\}\\,(\\mathsf{close}\\,c^{+})$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md and check-transfinite.md)",
+   "sig": "\\mathsf{fsem} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to (\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathbb{N} \\times \\mathbb{N}) \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "N",
@@ -9729,21 +9711,21 @@ window.MAP = {
     },
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     },
     {
      "name": "e",
      "meaning": "the thread"
     },
     {
-     "name": "tk",
-     "meaning": "the ticket count, fixed for all levels"
+     "name": "\\alpha",
+     "meaning": "every ordinal index"
     }
    ]
   },
   "cs.csem": {
    "title": "$\\Delta \\vDash^{N} e : T\\ !\\ \\varepsilon$",
-   "what": "For every larger counter bound, level, injective renaming of the ends of $\\Delta$, grounding in $FV$ and ticket count meeting $\\vartheta$, the instance has fuel at $T$ with frame $c$, for $\\varepsilon = (c, \\vartheta)$.",
+   "what": "For every larger counter bound, level, injective renaming of the ends of $\\Delta$, grounding in $FV$, the instance has fuel at $T$ with frame $c$, for $\\varepsilon = c$.",
    "why": "It reads no $\\Gamma$, world or future, because fuel reads none of these.",
    "breaks": "Nothing. It is a definition.",
    "example": "The cost fundamental theorem concludes this judgment.",
@@ -9764,18 +9746,18 @@ window.MAP = {
     },
     {
      "name": "\\varepsilon",
-     "meaning": "the effect, cost and ticket need"
+     "meaning": "the effect, the cost $c$"
     }
    ]
   },
   "sp.state": {
-   "title": "Annotated configuration $a = (q, K, tk)$",
-   "what": "A configuration $q$, an ownership map $K$ and a ticket count per thread.",
-   "why": "Ranks and counters of the termination measure are read off $K$, so ownership is fixed outside the index.",
-   "breaks": "Placement chosen per level lets a waiting main thread wait forever in every fair run.",
-   "example": "$(q, K, tk)$.",
-   "rocq": "soup/State.v: lfstate",
-   "sig": "a = (q, K, tk) \\in \\mathsf{Config} \\times \\mathsf{Own} \\times (\\mathbb{N} \\to \\mathbb{N})",
+   "title": "Annotated configuration $a = (q, K)$",
+   "what": "A configuration $q$ and an ownership map $K$.",
+   "why": "Ranks and counters of the termination measure are read off $K$.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$(q, K)$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)",
+   "sig": "a = (q, K) \\in \\mathsf{Config} \\times \\mathsf{Own}",
    "args": [
     {
      "name": "q",
@@ -9784,40 +9766,21 @@ window.MAP = {
     {
      "name": "K",
      "meaning": "the ownership map of the annotated configuration"
-    },
-    {
-     "name": "tk",
-     "meaning": "the tickets per thread"
     }
    ]
   },
   "sp.hold": {
-   "title": "$K(o) = (t, x, f)$",
-   "what": "The holding thread thread $t$, point $x$ and counter $f$ of a held end $o$.",
-   "why": "One map records all data the measure reads.",
+   "title": "$K(o) = (t, x, f, m)$",
+   "what": "The holding thread $t$, point $x$, counter $f$ and tickets $m$ of a held end $o$.",
+   "why": "One map records all data the measure and the invariant on tickets read.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$K(a) = (0, \\rho, 2)$.",
-   "rocq": "soup/State.v: hold",
-   "sig": "K : \\mathsf{End} \\rightharpoonup \\mathbb{N} \\times \\mathsf{Point} \\times (\\mathbb{N} \\cup \\{\\infty\\})",
+   "example": "$K(a) = (0, \\rho, 2, 3)$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)",
+   "sig": "K : \\mathsf{End} \\rightharpoonup \\mathbb{N} \\times \\mathsf{Point} \\times \\mathbb{N} \\times \\mathbb{N}",
    "args": [
     {
-     "name": "t, x, f",
-     "meaning": "holding thread thread, point and counter"
-    }
-   ]
-  },
-  "sp.tk": {
-   "title": "$tk : \\mathbb{N} \\to \\mathbb{N}$",
-   "what": "$tk_t$ is the ticket count of thread $t$.",
-   "why": "The termination measure of lock-free adequacy sums the tickets of all threads with their reserves, and links lower that sum.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$tk_0 = 0$.",
-   "rocq": "soup/State.v: s_tk",
-   "sig": "tk : \\mathbb{N} \\to \\mathbb{N}",
-   "args": [
-    {
-     "name": "t",
-     "meaning": "a thread identifier"
+     "name": "t, x, f, m",
+     "meaning": "holding thread, point, counter and tickets"
     }
    ]
   },
@@ -9861,12 +9824,12 @@ window.MAP = {
   },
   "sp.rel": {
    "title": "Every thread live",
-   "what": "$\\forall t.\\ q(t) \\in E[\\kappa_L]^W_n\\llbracket K_t(A) \\vdash U_t\\rrbracket^{\\varnothing}$, where $K_t(A)$ restricts $A$ to the ends held by $t$.",
+   "what": "$\\forall t.\\ q(t) \\in E[\\kappa_L]^W_\\alpha\\llbracket K_t(A) \\vdash U_t\\rrbracket^{\\varnothing}$, where $K_t(A)$ restricts $A$ to the ends held by $t$.",
    "why": "The per-thread relation at $\\kappa_L$ excludes internal divergence and infinite chains of spawns.",
    "breaks": "Nothing. It is a definition.",
    "example": "$q(0) \\in E[\\kappa_L]\\llbracket K_0(A) \\vdash T\\rrbracket^{\\varnothing}$.",
    "rocq": "soup/State.v: sp_rel",
-   "sig": "\\forall t, e.\\ q(t) = e \\Rightarrow e \\in E[\\kappa_L]^{W}_{n}\\llbracket K_t(A) \\vdash U_t \\rrbracket^{\\varnothing}",
+   "sig": "\\forall t, e.\\ q(t) = e \\Rightarrow e \\in E[\\kappa_L]^{W}_{\\alpha}\\llbracket K_t(A) \\vdash U_t \\rrbracket^{\\varnothing}",
    "args": [
     {
      "name": "t",
@@ -9895,12 +9858,12 @@ window.MAP = {
   },
   "sp.fuel": {
    "title": "Each thread has fuel",
-   "what": "$\\forall t.\\ q(t) \\in F^N_n\\llbracket\\Phi|_t ; tk_t \\vdash \\mathsf{thread}\\ !\\ (\\infty, 0)\\rrbracket$, where $\\Phi|_t$ is $\\Phi$ on the ends that $K$ gives to $t$.",
-   "why": "The counters of $\\Phi$ are those recorded in $K$, so they are the same at every level.",
+   "what": "$\\forall t.\\ q(t) \\in F^N_\\alpha\\llbracket\\Phi|_t \\vdash \\mathsf{thread}\\ !\\ \\infty\\rrbracket$, where $\\Phi|_t$ is $\\Phi$ on the ends that $K$ gives to $t$.",
+   "why": "The counters and tickets of $\\Phi$ are those recorded in $K$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\Phi|_0 = \\{a \\mapsto S^{2}\\}$.",
+   "example": "$\\Phi|_0 = \\{a \\mapsto S^{2}_{3}\\}$.",
    "rocq": "soup/State.v: sp_fuel",
-   "sig": "e \\in F^{N}_{n}\\llbracket \\Phi|_t ; tk_t \\vdash \\mathsf{thread}\\ !\\ (\\infty, 0) \\rrbracket",
+   "sig": "e \\in F^{N}_{\\alpha}\\llbracket \\Phi|_t \\vdash \\mathsf{thread}\\ !\\ \\infty \\rrbracket",
    "args": [
     {
      "name": "t",
@@ -9913,13 +9876,13 @@ window.MAP = {
    ]
   },
   "sp.pts": {
-   "title": "Points and counters from $K$",
-   "what": "$K(o) = (t, x, f)$ implies that $o$ is at $x$ in $A$ and has counter $f$ in $\\Phi$.",
-   "why": "Points and counters are fixed outside the step index.",
+   "title": "Points, counters and tickets from $K$",
+   "what": "$K(o) = (t, x, f, m)$ implies that $o$ is at $x$ in $A$ and has counter $f$ and tickets $m$ in $\\Phi$.",
+   "why": "The relation and fuel read the data that $K$ records.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$A(a) = S@\\rho$, $\\Phi(a) = S^{2}$ and $K(a) = (0, \\rho, 2)$.",
+   "example": "$A(a) = S@\\rho$, $\\Phi(a) = S^{2}_{3}$ and $K(a) = (0, \\rho, 2, 3)$.",
    "rocq": "soup/State.v: sp_pts, ctrs",
-   "sig": "K(o) = (t, x, f) \\Rightarrow A(o) = \\_@x \\land \\Phi(o) = \\_^{f}",
+   "sig": "K(o) = (t, x, f, m) \\Rightarrow A(o) = \\_@x \\land \\Phi(o) = \\_^{f}_{m}",
    "args": [
     {
      "name": "o",
@@ -9938,7 +9901,7 @@ window.MAP = {
    "args": [
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     },
     {
      "name": "K",
@@ -9953,7 +9916,7 @@ window.MAP = {
    "breaks": "Without it, an end could be held by a thread that no longer exists, and its partner would wait forever.",
    "example": "$K(a) = (0, \\rho, 2)$ with $q(0)$ defined.",
    "rocq": "soup/State.v: sp_owner",
-   "sig": "\\forall o.\\ K(o) = (t, \\_, \\_) \\Rightarrow t \\in \\mathrm{dom}\\,q",
+   "sig": "\\forall o.\\ K(o) = (t, \\_, \\_, \\_) \\Rightarrow t \\in \\mathrm{dom}\\,q",
    "args": [
     {
      "name": "o, t",
@@ -10017,7 +9980,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Phi(c^{+}) = \\mathsf{Close}^{2}$ and $\\Phi(c^{-}) = \\mathsf{Close}^{1}$.",
    "rocq": "soup/State.v: sp_pdual",
-   "sig": "\\mathsf{ech}\\,o \\in C \\land \\Phi(o) = P^{f} \\land \\Phi(\\overline{o}) = P'^{f'} \\Rightarrow P' \\simeq \\overline{P}",
+   "sig": "\\mathsf{ech}\\,o \\in C \\land \\Phi(o) = P^{f}_{m} \\land \\Phi(\\overline{o}) = P'^{f'}_{m'} \\Rightarrow P' \\simeq \\overline{P}",
    "args": [
     {
      "name": "P, P'",
@@ -10047,7 +10010,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Sigma(o) = \\mathsf{Close}@x$ and $\\Phi(o) = \\mathsf{Close}^{2}$.",
    "rocq": "soup/State.v: sp_psig",
-   "sig": "\\Sigma(o) = S@x \\Rightarrow \\Phi(o) = S^{f}",
+   "sig": "\\Sigma(o) = S@x \\Rightarrow \\Phi(o) = S^{f}_{m}",
    "args": [
     {
      "name": "o",
@@ -10072,11 +10035,11 @@ window.MAP = {
   },
   "sp.lfsem": {
    "title": "$\\Sigma \\Vvdash_W p : T$",
-   "what": "$\\exists N \\in \\mathbb{N}, a, \\chi.\\ \\mathsf{erase}(q_a) = p \\land \\forall n.\\ a \\in S^{N,W,\\chi}_n\\llbracket\\Sigma \\vdash T\\rrbracket$.",
+   "what": "$\\exists N \\in \\mathbb{N}.\\ \\forall \\alpha.\\ \\exists a.\\ \\mathsf{erase}(q_a) = p \\land a \\in S^{N,W}_\\alpha\\llbracket\\Sigma \\vdash T\\rrbracket$, over every ordinal index $\\alpha$.",
    "why": "The lock-free process relation alone suffices, and absence of internal divergence of the lock-free process relation gives what a process conjunct would.",
    "breaks": "Nothing. It is a definition.",
    "example": "The lock-free fundamental theorem concludes this judgment.",
-   "rocq": "soup/Soup.v: lf_sem",
+   "rocq": "not yet in the Rocq (docs/redesign/check-transfinite.md)",
    "sig": "\\Sigma \\Vvdash_{W} p : T",
    "args": [
     {
@@ -10096,91 +10059,53 @@ window.MAP = {
      "meaning": "the type, $T \\in \\mathsf{Ty}$"
     },
     {
-     "name": "N, a",
-     "meaning": "the counter bound and the annotated configuration, fixed before $n$"
+     "name": "N",
+     "meaning": "the bound, fixed before $\\alpha$"
+    },
+    {
+     "name": "a",
+     "meaning": "the annotated configuration, chosen at each index $\\alpha$"
     }
    ]
   },
   "sp.exists-before-forall": {
-   "title": "$\\exists$ before $\\forall n$",
-   "what": "$N$, the state $a$ and the creation choice $\\chi$ are fixed before the level quantifier.",
-   "why": "Ownership, points, counters and the placement of new channels are then the same at every level.",
-   "breaks": "A placement chosen per level lets the main thread wait forever in every fair run.",
-   "example": "$\\exists N\\,a.\\ \\ldots \\forall n$.",
-   "rocq": "soup/Soup.v: lf_sem",
-   "sig": "\\exists N \\in \\mathbb{N}, a, \\chi.\\ \\mathsf{erase}(q_a) = p \\land \\forall n.\\ \\ldots",
+   "title": "$\\forall \\alpha$ before $\\exists a$",
+   "what": "$N$ is fixed before the index, and the annotated configuration $a$ is an ordinary existential at each ordinal index $\\alpha$. The creation of a channel chooses its position, facts and tickets inside O-New.",
+   "why": "The relation holds at every ordinal of a universe above the space of creation choices. The existential property, proved from excluded middle and choice, turns $\\forall \\alpha.\\ \\exists a$ into $\\exists a.\\ \\forall \\alpha$, so along a run every choice holds at every index.",
+   "breaks": "At the finite indices alone the existential property fails for an infinite space of choices, the example $\\exists n.\\ \\triangleright^{n}\\bot$ of transfinite step indexing.",
+   "example": "$\\exists N.\\ \\forall \\alpha.\\ \\exists a.\\ \\ldots$",
+   "rocq": "not yet in the Rocq (docs/redesign/check-transfinite.md)",
+   "sig": "\\exists N \\in \\mathbb{N}.\\ \\forall \\alpha.\\ \\exists a.\\ \\mathsf{erase}(q_a) = p \\land \\ldots",
    "args": [
     {
      "name": "N",
      "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+    },
+    {
+     "name": "\\alpha",
+     "meaning": "an ordinal index"
     },
     {
      "name": "a",
      "meaning": "the annotated configuration"
-    },
-    {
-     "name": "\\chi",
-     "meaning": "the creation choice"
-    }
-   ]
-  },
-  "sp.chi": {
-   "title": "Creation choice $\\chi$",
-   "what": "A thread creates a channel from the term $e$ while it holds $\\Theta$. For the fresh root $a$, $\\chi(e, \\Theta)(a) = (\\pi, C)$ gives the position $\\pi$, either $a$ or a field $x\\cdot\\kappa$, and the facts $C$ over $a$ and the points of $\\Theta$.",
-   "why": "The lock-free process relation fixes its annotated configuration before the level, and after a creation it records the point of the new ends. The judgment fixes $\\chi$ before the level too, so the point and the facts of each creation are the same at every level. For a typed thread $\\chi$ is the choice of its E-New step.",
-   "breaks": "With the choice inside O-New, each level picks its own $\\pi$ and $C$, and the recorded point matches no single choice.",
-   "example": "$\\chi(e, \\Theta)(a) = (a\\cdot 0, \\{\\rho \\prec \\overline{a\\cdot 0}\\})$ for the second creation of the cycle example.",
-   "rocq": "not yet in the Rocq (docs/redesign/pending.md, entry 2)",
-   "sig": "\\chi : \\mathsf{Expr} \\times \\mathsf{Env} \\to \\mathsf{Root} \\to \\mathsf{Point} \\times \\mathcal{P}(\\mathsf{Point} \\times \\mathsf{Point})",
-   "args": [
-    {
-     "name": "e",
-     "meaning": "the creating term"
-    },
-    {
-     "name": "\\Theta",
-     "meaning": "its held ends"
-    },
-    {
-     "name": "a",
-     "meaning": "the fresh root"
-    }
-   ]
-  },
-  "O-New.chi": {
-   "title": "$(\\pi, C) = \\chi(e, \\Theta)(a)$",
-   "what": "Under lock freedom the position and the facts of the creation are those of the creation choice $\\chi$.",
-   "why": "The choice is then the same at every level.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "Under deadlock freedom O-New picks $\\pi$ and $C$ at each level.",
-   "rocq": "not yet in the Rocq (docs/redesign/pending.md, entry 2)",
-   "sig": "(\\pi, C) = \\chi(e, \\Theta)(a)",
-   "args": [
-    {
-     "name": "\\pi",
-     "meaning": "the position of the new channel"
-    },
-    {
-     "name": "C",
-     "meaning": "its facts"
     }
    ]
   },
   "sp.next": {
-   "title": "$\\mathsf{lf\\_next}^{\\chi}$",
-   "what": "$\\mathsf{lf\\_next}^{\\chi}\\,N\\,(q, K, tk)\\,ev\\,q' = (q', \\mathsf{own\\_next}^{\\chi}\\,N\\,ev\\,K, \\mathsf{tk\\_next}\\,ev\\,tk)$.",
-   "why": "A creation places the new ends at the position $\\chi$ chooses with counter $N$ and grows the world by the facts $\\chi$ chooses. An action moves its end to the next point and resets its counter to $N$. A transfer moves the ends to the receiving thread and decrements their counters. A link uses a ticket and renames, and a spawn splits the tickets. None of these depends on the level.",
+   "title": "$\\mathsf{lf\\_next}$",
+   "what": "$\\mathsf{lf\\_next}\\,N\\,(q, K)\\,ev\\,(q', K')$ holds when $K'$ is one of the ownership maps $\\mathsf{own\\_next}\\,N\\,ev\\,K$ allows.",
+   "why": "A creation places the new ends at a position, with facts and with tickets of sum at most $N$, each counter at its tickets. An action moves its end to the next point and resets its counter to its tickets. A transfer moves the ends to the receiving thread and decrements their counters. A link renames. None of these depends on the index, and the choices of a creation come from O-New and F-New.",
    "breaks": "Nothing. It is a definition.",
    "example": "One step of the lock-free process relation along an event.",
-   "rocq": "soup/Soup.v: lf_next",
-   "sig": "\\mathsf{lf\\_next}^{\\chi} : \\mathbb{N} \\to \\mathsf{LFState} \\to \\mathsf{Event} \\to \\mathsf{Config} \\to \\mathsf{LFState}",
+   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md and check-transfinite.md)",
+   "sig": "\\mathsf{lf\\_next} : \\mathbb{N} \\to \\mathsf{LFState} \\to \\mathsf{Event} \\to \\mathsf{LFState} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "N",
      "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
-     "name": "(q, K, tk)",
+     "name": "(q, K)",
      "meaning": "the state"
     },
     {
@@ -10188,23 +10113,57 @@ window.MAP = {
      "meaning": "the event"
     },
     {
-     "name": "q'",
-     "meaning": "the configuration after the event"
+     "name": "(q', K')",
+     "meaning": "the state after the event"
+    }
+   ]
+  },
+  "sp.cap": {
+   "title": "$f \\leq m$",
+   "what": "Each counter recorded in $K$ is at most the tickets of its end.",
+   "why": "The partner bound $N - m$ of an end bounds the counter of its partner only through this inequality, which E-Link and F-Link use.",
+   "breaks": "A counter above its tickets would let the new partner after a link have a counter above the bound the link premise checks.",
+   "example": "$K(a) = (0, \\rho, 2, 3)$ with $2 \\leq 3$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)",
+   "sig": "K(o) = (\\_, \\_, f, m) \\Rightarrow f \\leq m",
+   "args": [
+    {
+     "name": "f, m",
+     "meaning": "the counter and the tickets of $o$"
+    }
+   ]
+  },
+  "sp.tsum": {
+   "title": "$m + m' \\leq N$ on internal channels",
+   "what": "For an internal channel the tickets of its two ends, read from $K$, sum to at most $N$.",
+   "why": "It is the invariant $\\mathsf{tk}(o) + \\mathsf{tk}(\\overline{o}) \\leq N$ of typing, kept along a run. A creation chooses tickets with that sum, an action keeps the tickets, and a link joins two ends whose tickets meet it by the premise of F-Link. Lock-free adequacy measures a wait by the counter of the dual end, and this invariant bounds the counter of a new partner after a link.",
+   "breaks": "Without it the measure need not fall at a link.",
+   "example": "$K(c^{+}) = (0, x, 3, 3)$ and $K(c^{-}) = (1, \\overline{x}, 1, 1)$ at $N = 4$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)",
+   "sig": "\\mathsf{ech}\\,o \\in C \\land K(o) = (\\_, \\_, \\_, m) \\land K(\\overline{o}) = (\\_, \\_, \\_, m') \\Rightarrow m + m' \\leq N",
+   "args": [
+    {
+     "name": "m, m'",
+     "meaning": "the tickets of the two ends of an internal channel"
+    },
+    {
+     "name": "N",
+     "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     }
    ]
   },
   "sp.own": {
    "title": "$\\mathsf{consistent}(a, A, \\Phi)$",
-   "what": "The ownership map $K$ of the annotated configuration agrees with $A$ and $\\Phi$. Each held end is held by one thread of the configuration and is internal or in the interface. Both ends of an internal channel are held, at dual types, points and protocols. Interface entries come from $\\Sigma$, and counters are finite.",
+   "what": "The ownership map $K$ of the annotated configuration agrees with $A$ and $\\Phi$. Each held end is held by one thread of the configuration and is internal or in the interface. Both ends of an internal channel are held, at dual types, points and protocols. Interface entries come from $\\Sigma$, counters are finite and at most the tickets, and the tickets of the two ends of an internal channel sum to at most $N$.",
    "why": "Lock-free adequacy reads the thread holding an end, its point and its counter from $K$, and concludes that the dual end of an internal end is held by some thread at the dual protocol.",
    "breaks": "Without it a thread could wait on an end whose dual end no thread holds, and the chain of waits in the proof of adequacy would break off.",
    "example": "Two threads closing $c^{+}$ and $c^{-}$, each holding one end, with $C = \\{c\\}$.",
    "rocq": "soup/State.v: soup_gen",
-   "sig": "\\mathsf{consistent} : \\mathsf{LFState} \\to \\mathsf{Env} \\to (\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathbb{N}) \\to \\mathsf{Prop}",
+   "sig": "\\mathsf{consistent} : \\mathsf{LFState} \\to \\mathsf{Env} \\to (\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathbb{N} \\times \\mathbb{N}) \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "a",
-     "meaning": "the annotated configuration $(q, K, tk)$"
+     "meaning": "the annotated configuration $(q, K)$"
     },
     {
      "name": "A",
@@ -10217,29 +10176,25 @@ window.MAP = {
    ]
   },
   "sr.FE": {
-   "title": "Fuel $F^N_n\\llbracket\\Phi ; tk \\vdash \\sigma\\ !\\ (d, r)\\rrbracket$",
-   "what": "The thread holds the ends $\\Phi$ and $tk$ tickets and has fuel for $n$ more steps to return at $\\sigma$ within $d$ actions with $r$ tickets left, at counter bound $N$.",
-   "why": "It bounds postponement and links per thread, independent of points. It is indexed by $n$, as $E$ is, so it is written as membership and not as a judgment.",
+   "title": "Fuel $F^N_\\alpha\\llbracket\\Phi \\vdash \\sigma\\ !\\ d\\rrbracket$",
+   "what": "The thread holds the ends $\\Phi$, each with counter and tickets, and has fuel at the ordinal index $\\alpha$ to return at $\\sigma$ within $d$ actions.",
+   "why": "It bounds postponement per thread, independent of points. It is indexed by $\\alpha$, as $E$ is, so it is written as membership and not as a judgment.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$F^{3}_n\\llbracket\\{a \\mapsto S^{3}\\} ; 0 \\vdash \\mathsf{thread}\\ !\\ (\\infty, 0)\\rrbracket$.",
-   "rocq": "fuel/Fuel.v: FuelE",
-   "sig": "e \\in F^{N}_{n}\\llbracket \\Phi ; tk \\vdash \\sigma\\ !\\ (d, r) \\rrbracket",
+   "example": "$F^{4}_\\alpha\\llbracket\\{a \\mapsto S^{3}_{3}\\} \\vdash \\mathsf{thread}\\ !\\ \\infty\\rrbracket$.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md and check-transfinite.md)",
+   "sig": "e \\in F^{N}_{\\alpha}\\llbracket \\Phi \\vdash \\sigma\\ !\\ d \\rrbracket",
    "args": [
     {
      "name": "N",
      "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
-     "name": "n",
-     "meaning": "the level, $n \\in \\mathbb{N}$"
+     "name": "\\alpha",
+     "meaning": "the ordinal index"
     },
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
-    },
-    {
-     "name": "tk",
-     "meaning": "the tickets of the thread, $tk \\in \\mathbb{N}$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     },
     {
      "name": "\\sigma",
@@ -10248,10 +10203,6 @@ window.MAP = {
     {
      "name": "d",
      "meaning": "the frame, the actions left before returning, $d \\in \\mathbb{N} \\cup \\{\\infty\\}$"
-    },
-    {
-     "name": "r",
-     "meaning": "the reserve, the tickets kept on return, $r \\in \\mathbb{N}$"
     },
     {
      "name": "e",
@@ -10278,7 +10229,7 @@ window.MAP = {
     },
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     },
     {
      "name": "\\sigma",
@@ -10305,7 +10256,7 @@ window.MAP = {
     },
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}$ from ends to a protocol and a counter $f \\in \\mathbb{N} \\cup \\{\\infty\\}$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     },
     {
      "name": "d",
@@ -10409,8 +10360,8 @@ window.MAP = {
    ]
   },
   "sr.obl": {
-   "title": "$\\mathsf{Obl}_\\alpha(e')$",
-   "what": "The obligation of the step label $\\alpha$, one of O-Beta to O-Link.",
+   "title": "$\\mathsf{Obl}_\\ell(e')$",
+   "what": "The obligation of the step label $\\ell$, one of O-Beta to O-Link.",
    "why": "Each label has its own obligation, read off the label.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{Obl}_{\\beta}(e') = $ O-Beta.",
@@ -10418,7 +10369,7 @@ window.MAP = {
    "sig": "\\mathsf{Obl} : \\mathsf{TLabel} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
    "args": [
     {
-     "name": "\\alpha",
+     "name": "\\ell",
      "meaning": "the step label"
     },
     {
@@ -10447,8 +10398,8 @@ window.MAP = {
    ]
   },
   "sr.fobl": {
-   "title": "$\\mathsf{Fobl}^N_\\alpha(e')$",
-   "what": "The fuel obligation of the step label $\\alpha$, one of F-Beta to F-Link.",
+   "title": "$\\mathsf{Fobl}^N_\\ell(e')$",
+   "what": "The fuel obligation of the step label $\\ell$, one of F-Beta to F-Link, read at an index $\\beta$.",
    "why": "Each label has its own fuel update.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{Fobl}$ of a send is F-Send.",
@@ -10460,7 +10411,7 @@ window.MAP = {
      "meaning": "the counter bound, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$"
     },
     {
-     "name": "\\alpha",
+     "name": "\\ell",
      "meaning": "the step label"
     },
     {
@@ -10650,12 +10601,12 @@ window.MAP = {
   },
   "th.lf-adequacy": {
    "title": "Lock-free adequacy",
-   "what": "For $W$ with $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$, if $\\varnothing \\Vvdash_W p : T$ then $p$ is lock free.",
-   "why": "A pending thread waits for the thread holding the partner of its end. The proof follows this chain of waiting threads and shows it is finite, by a measure of the point of the awaited end, the tickets left and the counter, which decreases because $\\prec_W$ is well-founded.",
+   "what": "Under excluded middle and choice, for $W$ with $\\mathsf{strict}\\,W$ and $\\mathsf{wfworld}\\,W$, if $\\varnothing \\Vvdash_W p : T$ then $p$ is lock free.",
+   "why": "A pending thread waits for the thread holding the partner of its end. The proof follows this chain of waiting threads and shows it is finite. Its measure is the point of the awaited end and the counter of the dual end, which decreases because $\\prec_W$ is well-founded. A link moves a waiting thread to a partner with a lower counter. The existential property turns the annotated configuration chosen at each ordinal index into one that holds at every index, and the run is then a sequence of such configurations.",
    "breaks": "Without $\\mathsf{wfworld}\\,W$ an infinite descending chain of points lets a thread wait forever along an infinite chain of holding threads.",
    "example": "Two threads closing the two ends of $c$ are lock free.",
-   "rocq": "soup/LFAdequacy.v: lf_adequacy",
-   "sig": "\\mathsf{strict}\\,W \\land \\mathsf{wfworld}\\,W \\land \\varnothing \\Vvdash_W p : T \\Rightarrow \\mathsf{lock\\_free}\\,p",
+   "rocq": "not yet in the Rocq in this form (docs/redesign/check-links-without-tickets.md and check-transfinite.md), today soup/LFAdequacy.v: lf_adequacy",
+   "sig": "\\mathsf{EM} \\land \\mathsf{AC} \\land \\mathsf{strict}\\,W \\land \\mathsf{wfworld}\\,W \\land \\varnothing \\Vvdash_W p : T \\Rightarrow \\mathsf{lock\\_free}\\,p",
    "args": [
     {
      "name": "W",
@@ -10673,7 +10624,7 @@ window.MAP = {
   },
   "th.lf-thread-progress": {
    "title": "Thread progress",
-   "what": "Under the premises of lock-free adequacy, every run $(r, l)$ with $\\mathsf{erase}(r\\,0) = p$, $\\mathsf{maximal}\\,(r, l)$ and $\\mathsf{wfair}\\,(r, l)$ satisfies $\\mathsf{thread\\_progress\\_run}\\,(r, l)$.",
+   "what": "Under the premises of lock-free adequacy, excluded middle and choice included, every run $(r, l)$ with $\\mathsf{erase}(r\\,0) = p$, $\\mathsf{maximal}\\,(r, l)$ and $\\mathsf{wfair}\\,(r, l)$ satisfies $\\mathsf{thread\\_progress\\_run}\\,(r, l)$.",
    "why": "Every thread eventually returns a value or takes part in a session step, so no thread, pending or not, is postponed forever.",
    "breaks": "Nothing. It is a definition.",
    "example": "Every lock-free example.",
@@ -10828,7 +10779,7 @@ window.MAP = {
   "th.lf-fundamental": {
    "title": "Lock-free fundamental theorem",
    "what": "$\\Sigma \\Vdash^{N}_{W} p : T$ implies $\\Sigma \\Vvdash_W p : T$.",
-   "why": "The fuel of each thread comes from its cost typing at finite $N$ with the ticket premise of P-Term, and its relation at $kappa_L$ from its guarded typing.",
+   "why": "The fuel of each thread comes from its cost typing at finite $N$, and its relation at $kappa_L$ from its guarded typing.",
    "breaks": "Nothing. It is a definition.",
    "example": "The cycle example.",
    "rocq": "soup/LFTyped.v: lf_fundamental",
@@ -11215,25 +11166,25 @@ window.MAP = {
   },
   "th.fsem-of-cost": {
    "title": "Fuel from cost typing",
-   "what": "If $\\varnothing ; \\Delta \\vdash^{\\varnothing}_{W\\annot{,N}} e : T\\ !\\ (c, \\vartheta)$, $\\mathsf{tfree}\\,T$, $\\mathsf{cr}(\\Delta) \\leq N$ and $\\vartheta(0) \\in \\mathbb{N}$, then $\\mathsf{fsem}\\,N\\,(\\mathsf{sty} \\circ \\Delta)\\,e$.",
-   "why": "P-Term gives every end credit $N$, so the cost judgment yields the per-thread fuel that lock freedom needs.",
+   "what": "If $\\varnothing ; \\Delta \\vdash^{\\varnothing}_{W\\annot{,N}} e : T\\ !\\ c$, $\\mathsf{tfree}\\,T$ and $\\mathsf{cr}(\\Delta) \\leq N$, then $\\mathsf{fsem}\\,N\\,\\Delta\\annot{^{N}}\\,e$.",
+   "why": "P-Term gives every end credit equal to its tickets, so the cost judgment yields the per-thread fuel that lock freedom needs.",
    "breaks": "If a closure could mention an end it does not own, the forwarder could receive a closure that owns nothing and would have no fuel after spawning the closure.",
    "example": "The forwarder $\\mathsf{fw}$.",
    "rocq": "cost/CostFund.v: fsem_of_cost",
-   "sig": "\\varnothing ; \\Delta \\vdash^{\\varnothing}_{W\\annot{,N}} e : T\\ !\\ (c, \\vartheta) \\land \\mathsf{tfree}\\,T \\land \\mathsf{cr}(\\Delta) \\leq N \\land \\vartheta(0) \\in \\mathbb{N} \\Rightarrow \\mathsf{fsem}\\,N\\,\\Delta\\annot{^{N}}\\,e",
+   "sig": "\\varnothing ; \\Delta \\vdash^{\\varnothing}_{W\\annot{,N}} e : T\\ !\\ c \\land \\mathsf{tfree}\\,T \\land \\mathsf{cr}(\\Delta) \\leq N \\Rightarrow \\mathsf{fsem}\\,N\\,\\Delta\\annot{^{N}}\\,e",
    "args": [
     {
      "name": "\\Delta",
-     "meaning": "the ends of the thread with their credits"
+     "meaning": "the ends of the thread with their credits and tickets"
     }
    ]
   },
   "th.crle": {
    "title": "$\\mathsf{cr}(\\Delta) \\leq N$",
-   "what": "Every credit in $\\Delta$ is at most the counter bound $N$, that is $a \\leq N$ for every entry $(S@x)\\annot{^{a}}$ or $(T \\multimap U)\\annot{^{a}}$ of $\\Delta$.",
-   "why": "A thread starts with every counter at $N$, so its credits may guarantee no more than $N$.",
+   "what": "Every credit in $\\Delta$ is at most the bound $N$, that is $a \\leq N$ for every entry $(S@x)\\annot{^{a}}_{m}$ or $(T \\multimap U)\\annot{^{a}}$ of $\\Delta$.",
+   "why": "A thread starts with every counter at its tickets, which are at most $N$, so its credits may guarantee no more than $N$.",
    "breaks": "A credit above $N$ would allow more postponement than a fresh counter allows.",
-   "example": "$\\mathsf{cr}(\\{o \\mapsto (S@x)^{2}\\}) \\leq 3$.",
+   "example": "$\\mathsf{cr}(\\{o \\mapsto (S@x)^{2}_{3}\\}) \\leq 4$.",
    "rocq": "cost/CostFund.v: fsem_of_cost",
    "sig": "\\mathsf{cr} : \\mathsf{TEnv} \\to \\mathbb{N} \\cup \\{\\infty\\}",
    "args": [
@@ -11244,21 +11195,6 @@ window.MAP = {
     {
      "name": "N",
      "meaning": "the counter bound"
-    }
-   ]
-  },
-  "ann.fin0": {
-   "title": "$\\vartheta(0) \\in \\mathbb{N}$",
-   "what": "The ticket need of a whole thread, which keeps no reserve, is a finite number.",
-   "why": "Then some ticket count $tk \\geq \\vartheta(0)$ covers every link of the thread.",
-   "breaks": "A need that is $\\infty$ at reserve $0$ belongs to a thread that may link without bound.",
-   "example": "$(0, 1)(0) = 1$, one link.",
-   "rocq": "types/Costs.v: meets, tapp",
-   "sig": "\\vartheta(0) \\in \\mathbb{N} : \\mathsf{Prop}",
-   "args": [
-    {
-     "name": "\\vartheta",
-     "meaning": "the ticket need of the thread"
     }
    ]
   },
@@ -11356,13 +11292,13 @@ window.MAP = {
    ]
   },
   "th.soup": {
-   "title": "The lock-free process relation $S^{N,W,chi}_{n}$",
-   "what": "$a \\in S^{N,W,chi}_{n}\\llbracket\\Sigma \\vdash T\\rrbracket$ holds of an annotated configuration $a$ when every thread of $a$ is in the relation at $kappa_L$ and has fuel at index $n$, with the ownership, points and counters that $a$ records.",
-   "why": "The state $a$ is fixed outside the index, so ownership is the same at every index $n$.",
+   "title": "The lock-free process relation $S^{N,W}_{\\alpha}$",
+   "what": "$a \\in S^{N,W}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket$ holds of an annotated configuration $a$ when each thread of $a$ is in the relation at $\\kappa_L$ and has fuel at the ordinal index $\\alpha$. Ownership, points, counters and tickets are those that $a$ records.",
+   "why": "The lock-free judgment chooses $a$ at each index, and the existential property gives one $a$ for every index.",
    "breaks": "Nothing. It is a definition.",
    "example": "The state of two threads closing $c^{+}$ and $c^{-}$.",
-   "rocq": "soup/Soup.v: Soup",
-   "sig": "S^{N,W,\\chi}_{n}\\llbracket\\Sigma \\vdash T\\rrbracket \\subseteq \\mathsf{LFState}",
+   "rocq": "not yet in the Rocq (docs/redesign/check-transfinite.md)",
+   "sig": "S^{N,W}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket \\subseteq \\mathsf{LFState}",
    "args": [
     {
      "name": "N",
@@ -11373,8 +11309,8 @@ window.MAP = {
      "meaning": "a world, the order $\\prec_W$ the semantic judgments read"
     },
     {
-     "name": "n",
-     "meaning": "the level, a natural number"
+     "name": "\\alpha",
+     "meaning": "the ordinal index"
     },
     {
      "name": "\\Sigma",
@@ -11389,7 +11325,7 @@ window.MAP = {
   "th.qa": {
    "title": "$q_a$",
    "what": "The configuration of the annotated configuration $a$.",
-   "why": "An annotated configuration is a configuration together with ownership and tickets.",
+   "why": "An annotated configuration is a configuration together with ownership, counters and tickets.",
    "breaks": "Nothing. It is a definition.",
    "example": "$q_a = (C, M)$.",
    "rocq": "soup/State.v: s_q",
@@ -11398,6 +11334,44 @@ window.MAP = {
     {
      "name": "a",
      "meaning": "an annotated configuration"
+    }
+   ]
+  },
+  "th.em": {
+   "title": "Excluded middle $\\mathsf{EM}$",
+   "what": "Each proposition holds or fails, $\\forall P.\\ P \\lor \\neg P$, as an explicit hypothesis.",
+   "why": "The existential property of ordinal indices, $\\forall \\alpha.\\ \\exists a$ to $\\exists a.\\ \\forall \\alpha$, is proved by contradiction.",
+   "breaks": "Without it the creation choice cannot be fixed once along a run, and the lock-free judgment needs the choice $\\chi$ before the index again.",
+   "example": "Transfinite Iris assumes it in its model.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-transfinite.md)",
+   "sig": "\\mathsf{EM} := \\forall P : \\mathsf{Prop}.\\ P \\lor \\neg P",
+   "args": [
+    {
+     "name": "P",
+     "meaning": "a proposition"
+    }
+   ]
+  },
+  "th.ac": {
+   "title": "Choice $\\mathsf{AC}$",
+   "what": "A total relation contains a function, as an explicit hypothesis.",
+   "why": "The existential property picks one failing index per witness, and the run picks one annotated configuration per step, which is dependent choice.",
+   "breaks": "Without it the configurations chosen per step do not form one sequence along the run.",
+   "example": "Dependent choice along a run of the lock-free process relation.",
+   "rocq": "not yet in the Rocq (docs/redesign/check-transfinite.md)",
+   "sig": "\\mathsf{AC} := \\forall R : X \\to Y \\to \\mathsf{Prop}.\\ (\\forall x.\\ \\exists y.\\ R\\,x\\,y) \\Rightarrow \\exists f.\\ \\forall x.\\ R\\,x\\,(f\\,x)",
+   "args": [
+    {
+     "name": "R",
+     "meaning": "a total relation"
+    },
+    {
+     "name": "f",
+     "meaning": "a choice function"
+    },
+    {
+     "name": "X, Y",
+     "meaning": "two types"
     }
    ]
   },
@@ -11445,7 +11419,7 @@ window.MAP = {
   },
   "th.df": {
    "title": "Erasure $X_{df}$",
-   "what": "$\\Delta_{df}$ and $T_{df}$ drop every credit, cost and ticket need and keep session types, points and facts.",
+   "what": "$\\Delta_{df}$ and $T_{df}$ drop every credit, ticket and cost and keep session types, points and facts.",
    "why": "Deadlock-free typing and the relations read no annotation.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(S@x)^{3}$ erases to $S@x$.",
@@ -11460,12 +11434,12 @@ window.MAP = {
   },
   "th.styof": {
    "title": "$\\Delta\\annot{^{N}}$",
-   "what": "The held ends of $\\Delta$ for fuel, each at counter $N$. An entry $o \\mapsto (S@x)\\annot{^{a}}$ of $\\Delta$ becomes $o \\mapsto S\\annot{^{N}}$.",
-   "why": "Fuel reads protocols and counters and ignores points and credits. A thread starts with each counter at $N$.",
+   "what": "The held ends of $\\Delta$ for fuel, each counter at its tickets. An entry $o \\mapsto (S@x)\\annot{^{a}}_{m}$ of $\\Delta$ becomes $o \\mapsto S^{m}_{m}$.",
+   "why": "Fuel reads protocols, counters and tickets and ignores points and credits. A thread starts with each counter at its tickets.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\{a \\mapsto (S@x)^{2}\\}\\annot{^{N}} = \\{a \\mapsto S\\annot{^{N}}\\}$.",
+   "example": "$\\{a \\mapsto (S@x)^{2}_{3}\\}\\annot{^{N}} = \\{a \\mapsto S^{3}_{3}\\}$.",
    "rocq": "cost/CostFund.v: fsem_of_cost",
-   "sig": "\\Delta\\annot{^{N}} : \\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathbb{N}",
+   "sig": "\\Delta\\annot{^{N}} : \\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathbb{N} \\times \\mathbb{N}",
    "args": [
     {
      "name": "\\Delta",
@@ -11848,7 +11822,7 @@ window.MAP = {
     "lf"
    ],
    "code": "refresh = !(f = λ⟨w, k⟩. let ⟨c, c′⟩ = new in\n                     let ∗ = link ⟨w, c⟩ in          -- the waiting thread now talks to c′\n                     let k = send ⟨∗, k⟩ in           -- one step on another channel\n                     (force f) ⟨c′, k⟩)\nsink    = !(f = λk. let ⟨u, k⟩ = recv k in let ∗ = u in (force f) k)\nmain = let ⟨w, w′⟩ = new in let ⟨k, k′⟩ = new in\n       let ∗ = spawn (λ_. close w′) in              -- waits forever\n       let ∗ = spawn (λ_. (force sink) k′) in\n       (force refresh) ⟨w, k⟩",
-   "shows": "Each round links the partner of the waiting end to a new channel. The waiting thread then faces a new end with a full counter, and no counter decreases to $0$. Each link uses one ticket of its thread and no step creates tickets, so the program has no lock-free typing.",
+   "shows": "Each round links the partner of the waiting end to a new channel. The waiting thread then faces a new end with a full counter, and no counter decreases to $0$. E-Link asks the credit of the linked end to exceed the partner bound of the new end. After the send that credit is too low for the recursive call, so the program has no lock-free typing.",
    "rocq": "to be mechanized",
    "accepts": {
     "lf": {
