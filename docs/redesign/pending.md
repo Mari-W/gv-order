@@ -246,6 +246,14 @@ must do, open questions.
   `ent_sound`, (wf-new) at E-New and the wf premises of P-Connect and P-Term
   are open. Ranks can reuse `ord@{Set}` of relation/Ord.v. Stage 4 ran on the
   pre-layer worlds as the coordinator allowed.
+- **Algorithmic typing (author, 2026-11-21).** A bidirectional system, sound
+  and complete for the declarative one, decidable when the constraint theory
+  is. Type annotations are allowed where needed, for functions and the like.
+  Equivalence of context-free session types is a postulated oracle, decided by
+  Almeida et al. 2020, and its cost does not matter. The decidable fragment has
+  no schematic constraints, so C is finite and (wf-new) is a cycle check. A plan
+  starts now (algorithmic-plan.md). The full draft waits until the declarative
+  system is final.
 - **Open points of A3 (2026-11-21, awaiting decision).** check-layers-open.md.
   The restriction on plain `new` is real, O-New needs no change, P-Connect asks
   `wf (W1|S ⊔ W2|S)`, the other cases change only through `ent_sound`, and
