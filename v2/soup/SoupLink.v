@@ -45,9 +45,9 @@ Proof.
 Qed.
 
 Section link.
-  Context (N n : nat) (W : world) (T : ty) (C : gset chan) (Mq : gmap nat expr) (K : own)
+  Context (N : nat) (n lv : Ix) (Hlv : olt lv n) (W : world) (T : ty) (C : gset chan) (Mq : gmap nat expr) (K : own)
     (A : senv) (Π : penv) (U : nat → ty).
-  Context (Hs : soup_inv N (S n) W ∅ T (LFState (C, Mq) K) A Π U).
+  Context (Hs : soup_inv N n W ∅ T (LFState (C, Mq) K) A Π U).
 
   Local Lemma owner_of' t o v : kres K t A !! o = Some v → ∃ h, K !! o = Some h ∧ h.(h_th) = t.
   Proof. intros H. apply lookup_kres in H as [_ H]. done. Qed.
@@ -65,14 +65,14 @@ Section link.
     (∃ h, K !! o1 = Some h ∧ h.(h_th) = i) ∧ (∃ h, K !! o2 = Some h ∧ h.(h_th) = i) ∧
     (∃ Sa Sb xa, A !! o1 = Some (Sa, xa) ∧ A !! o2 = Some (Sb, pt_dual xa) ∧ sdual Sa Sb) ∧
     (∃ Pa Pb, Π !! o1 = Some Pa ∧ Π !! o2 = Some Pb ∧ sequiv Pb (dual Pa)) ∧
-    e' ∈ E[live]^W _ n⟦kdel2 o1 o2 (kres K i A) ⊢ U i⟧^∅ ∧
+    e' ∈ E[live]^W _ lv⟦kdel2 o1 o2 (kres K i A) ⊢ U i⟧^∅ ∧
     lok (Some N) (ctrs K i) ({[o1]} ∪ {[o2]}) ∧
-    e' ∈ F^(Some N) _ n⟦RThread ▷ None⟧(kdel2 o1 o2 (kres K i Π), kdel2 o1 o2 (ctrs K i)).
+    e' ∈ F^(Some N) _ lv⟦RThread ▷ None⟧(kdel2 o1 o2 (kres K i Π), kdel2 o1 o2 (ctrs K i)).
   Proof.
     intros He Hst. destruct (s_obl _ _ _ _ _ _ _ _ _ _ Hs i e _ e' He Hst) as [HE HF].
     cbn [Eobl Fobl] in HE, HF. unfold o_link in HE. unfold f_link in HF.
     destruct HE as (p1 & p2 & S1 & S2 & x & Hos & Hp12 & Hp1 & Hp2 & Hsd & HE').
-    destruct HF as (Hpl & _ & Htk & HF').
+    destruct HF as (Hpl & _ & Htk & HF'). specialize (HF' lv Hlv).
     rewrite mrem_kdel2, mrem_kdel2 in HF'.
     destruct Hpl as (q1 & q2 & P1 & P2 & Hqs & Hq12 & Hq1 & Hq2 & Hqd).
     destruct (owner_of' _ _ _ Hp1) as (h1 & Kh1 & Eh1). destruct (owner_of' _ _ _ Hp2) as (h2 & Kh2 & Eh2).
@@ -86,13 +86,13 @@ Section link.
     - exists S1, S2, x. done.
     - destruct (pair_set_eq _ _ _ _ Hqs Hq12) as [[-> ->]|[-> ->]]; [by exists P1, P2|].
       exists P2, P1. split_and!; [done|done|by apply pdual_sym].
-    - eapply at_cost_E_live; [|exact HE']. cbn; lia.
+    - eapply at_cost_E_live; [|exact HE'|exact Hlv]. cbn; lia.
     - done.
     - exact HF'.
     - exists S2, S1, (pt_dual x). split_and!; [done|by rewrite pt_dual_dual|by apply sdual_sym].
     - destruct (pair_set_eq _ _ _ _ Hqs Hq12) as [[-> ->]|[-> ->]]; [by exists P1, P2|].
       exists P2, P1. split_and!; [done|done|by apply pdual_sym].
-    - eapply at_cost_E_live; [|exact HE']. cbn; lia.
+    - eapply at_cost_E_live; [|exact HE'|exact Hlv]. cbn; lia.
     - done.
     - exact HF'.
   Qed.
@@ -104,7 +104,7 @@ Section link.
   (** P-Act-Link. *)
   Lemma step_link i e o1 o2 e' :
     Mq !! i = Some e → tstep e (LSess (SLink ({[o1]} ∪ {[o2]}))) e' →
-    ∃ A' Π', soup_inv N n W ∅ T
+    ∃ A' Π', soup_inv N lv W ∅ T
       (lf_next N (LFState (C, Mq) K) (EvSolo i (LSess (SLink ({[o1]} ∪ {[o2]}))) (PickLink o1 o2))
         (C ∖ {[ech o1]}, emap (csub o1 o2) <$> (<[i := e']> Mq))) A' Π' U.
   Proof.
@@ -122,7 +122,7 @@ Section link.
     destruct Ho1 as (h1 & Kh1 & Eh1). destruct Ho2 as (h2 & Kh2 & Eh2).
     assert (Hown : ∀ t, t ≠ i → (¬ ∃ h, K !! o1 = Some h ∧ h.(h_th) = t) ∧ (¬ ∃ h, K !! o2 = Some h ∧ h.(h_th) = t)).
     { intros t Hti. split; intros (h & Hh & Ht); simplify_eq; congruence. }
-    apply (soup_build _ _ _ _ _ _ _ _ _ _ Hs).
+    apply (soup_build _ _ _ _ _ _ _ _ _ _ _ Hs).
     - intros t e1 He1. apply lookup_fmap_Some in He1 as (e0 & <- & He0).
       rewrite (kres_kmapr _ _ t), (kres_kmapr _ _ t), ctrs_kmapr, kres_kdel2, kres_kdel2, ctrs_kdel2 by done.
       apply lookup_insert_Some in He0 as [[<- <-]|[Hti He0]].
@@ -132,7 +132,7 @@ Section link.
         * eapply (FuelE_rename _ _ _ _ _ _ _ (csub o1 o2)); [apply kinj_csub|apply kinj_csub|
             apply kmapr_renk, kinj_csub|apply kmapr_renk, kinj_csub|exact HF].
       + destruct (Hown t (not_eq_sym Hti)) as [Hn1 Hn2].
-        destruct (s_other _ _ _ _ _ _ _ _ _ _ Hs t e0 He0) as [H1 H2].
+        destruct (s_other _ _ _ Hlv _ _ _ _ _ _ _ _ Hs t e0 He0) as [H1 H2].
         rewrite <-(kdel2_notown K t A o1 o2 Hn1 Hn2) in H1.
         rewrite <-(kdel2_notown K t Π o1 o2 Hn1 Hn2), <-(ctrs_notown K t o1 o2 Hn1 Hn2) in H2.
         split_and!.
