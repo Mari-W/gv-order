@@ -3,8 +3,8 @@
 ## Report, next run of 2026-11-21 (stages 1 to 4)
 
 Branch redesign-clean3 in .claude/worktrees/redesign-s4, nothing pushed.
-Step 0 merged redesign by fast forward (78db2c2). Scope by the
-coordinator: stages 1 to 4, then stop. Stages 5 and 6 (fair runs, the
+Step 0 merged redesign by fast forward (78db2c2). The coordinator
+limited the run to stages 1 to 4. Stages 5 and 6 (fair runs, the
 Padovani corollary) run on branch redesign-fair. No lemma in this run
 builds on ϑ, χ, families or wfworld beyond what the stages touched.
 
@@ -22,7 +22,7 @@ builds on ϑ, χ, families or wfworld beyond what the stages touched.
   constraint instances, the rest of a future is everything above u or
   everything, and the semantic reading quantifies one set R above u
   (`rest_ok`). The relation keeps finite futures.
-- Stage 4, entries 7 and 4 to 5 (static half). Partly done (08bc06b).
+- Stage 4, entry 7, inversion and static rejections. Partly done (08bc06b).
   Inversion lemmas for E-Close, E-Case, E-LetU, E-LetP, E-Pair, E-Let,
   P-Term and P-Connect in v2/static/Inversion.v. Stopped:
   `sb_untypable`, the static half of FlagPair and rejects.js. E-Open in
@@ -46,14 +46,15 @@ error. `make test` passes after test/FuelNotations.expected was updated
 to `Vfuel_age`. `make check` reports 93 of 93 results closed under the
 global context. No Admitted, no new axiom.
 
-Map. Stage 1: the floor h, the capture block t-cap and its notes are
-gone, FV-Arrow and E-Abs.cap cite the Rocq, the planned tags of the
-capture blocks are gone. Stage 2: the planned tags of entry 12 are gone,
-the blocks E-SpawnLam and V-Thunk and their notes are gone, ⊤ and ⊥ cite
-`ubound`, `ub_below_u`, `abs_fut`, `Varr_top`. Stage 3: Γ is a list of
-constraint instances, F has the rests ↑u and ↑, E-Abs, E-Box, u ≺ F and
-the semantic reading den_{R,B} follow the Rocq. Stage 4: the static
-rejection of the flag program is marked doubtful. The plain-new planned
+Map. After stage 1 the floor h, the capture block t-cap and its notes
+are gone, FV-Arrow and E-Abs.cap cite the Rocq, and the capture blocks
+lost their planned tags. After stage 2 the planned tags of entry 12 are
+gone, the blocks E-SpawnLam and V-Thunk and their notes are gone, and ⊤
+and ⊥ cite `ubound`, `ub_below_u`, `abs_fut` and `Varr_top`. After stage
+3 Γ is a list of constraint instances, F has the rests ↑u and ↑, and
+E-Abs, E-Box, u ≺ F and the semantic reading den_{R,B} follow the Rocq.
+After stage 4 the static rejection of the flag program is marked
+doubtful. The plain-new planned
 tags and χ are untouched. gen.js, check.js and lint-map report 0
 errors, 0 coined words, 0 sentences over 35 words.
 
