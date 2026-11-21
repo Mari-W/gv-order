@@ -256,3 +256,5 @@ End arith.
     every relation, fuel and the soup share it. *)
 #[local] Unset Universe Polymorphism.
 Definition Ix : Type := ord.
+
+#[global] Hint Resolve ole_refl : core.

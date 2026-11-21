@@ -213,7 +213,7 @@ Definition hd_ok (σ : slabel) (u : sty) : Prop :=
   end.
 
 Section psteps.
-  Context (κ : ctable) (n : nat) (Vl : nat → vrel) (Pl : nat → prel) (VN : vrel) (X : prel)
+  Context (κ : ctable) (n : Ix) (Vl : Ix → vrel) (Pl : Ix → prel) (VN : vrel) (X : prel)
     (W : world) (Σ : senv) (T : ty) (p : proc).
   Context (HP : Psteps κ n Vl Pl VN X W Σ T p).
 
@@ -257,7 +257,7 @@ Qed.
 (** ** Offers of the composite *)
 
 Section offers.
-  Context (κ : ctable) (n : nat) (W1 : world) (T1 T2 : ty) (X1 X2 : prel).
+  Context (κ : ctable) (n : Ix) (W1 : world) (T1 T2 : ty) (X1 X2 : prel).
   Context (Σ1 ΣC Σ2 ΣD : senv) (q1 q2 : proc) (Hc : conn Σ1 ΣC q1.1 Σ2 ΣD q2.1).
   Context (H1 : Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) X1 W1 (Σ1 ∪ ΣC) T1 q1).
   Context (H2 : Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) X2 W1 (Σ2 ∪ ΣD) T2 q2).
@@ -478,7 +478,7 @@ Lemma lookup_union_disj_r (m1 m2 : senv) o v : m1 ##ₘ m2 → m2 !! o = Some v 
 Proof. intros Hd H. by apply lookup_union_Some_r. Qed.
 
 Section rdy.
-  Context (κ : ctable) (n : nat) (W1 : world) (HS : strict W1) (T1 T2 : ty) (X1 X2 : prel).
+  Context (κ : ctable) (n : Ix) (W1 : world) (HS : strict W1) (T1 T2 : ty) (X1 X2 : prel).
   Context (Σ1 ΣC Σ2 ΣD : senv) (q1 q2 : proc) (Hc : conn Σ1 ΣC q1.1 Σ2 ΣD q2.1).
   Context (H1 : Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) X1 W1 (Σ1 ∪ ΣC) T1 q1).
   Context (H2 : Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) X2 W1 (Σ2 ∪ ΣD) T2 q2).
@@ -730,14 +730,14 @@ Proof.
   apply HP; [done|done|]. by apply fuse_ok_compose.
 Qed.
 
-Lemma Prel_ind_fuse κ n (Φ : prel) :
+Lemma Prel_ind_fuse κ n (Φ : prel) : olt ozero n →
   (∀ W Σ T p,
      Pbody κ n (Vrel κ) (Prel κ) (Vrel κ n)
        (λ W Σ T p, Prel κ n W Σ T p ∧ Φfuse Φ W Σ T p) W Σ T p →
      Φ W Σ T p) →
   ∀ W Σ T p, Prel κ n W Σ T p → Φfuse Φ W Σ T p.
 Proof.
-  intros Hind. refine (Prel_ind κ n _ _). intros W Σ T p Hb h D Hh.
+  intros H0 Hind. refine (Prel_ind κ n _ H0 _). intros W Σ T p Hb h D Hh.
   apply Hind. by apply Pbody_fuse.
 Qed.
 

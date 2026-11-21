@@ -1,10 +1,10 @@
 (** * P-Connect, the context of the step clause (stage S4)
 
     [ConnL κ j W T] is P-Connect at level j. [cctx] packs what the step
-    clause of the composite knows at a level S n: the world W1 is strict
-    and T primitive, the two components q1 and q2 are connected over the
-    cut ([conn]), their clauses at S n over X1 and X2, P-Connect below
-    S n ([L]), X1 and X2 inside P, every fusion of a component in P
+    clause of the composite knows at a level n above 0: the world W1 is
+    strict and T primitive, the two components q1 and q2 are connected
+    over the cut ([conn]), their clauses at n over X1 and X2, P-Connect
+    below n ([L]), X1 and X2 inside P, every fusion of a component in P
     ([HP1], [HP2]), and the composite of a fused step of one component
     with the other in P ([G1], [G2]). The sections of
     compat/ConnectSteps.v, ConnectCross.v, ConnectLink.v, ConnectTau.v,
@@ -13,22 +13,23 @@
 
 From GV Require Export compat.Connect.
 
-Definition ConnL (κ : ctable) (j : nat) (W : world) (T : ty) : Prop :=
+Definition ConnL (κ : ctable) (j : Ix) (W : world) (T : ty) : Prop :=
   ∀ Σ1 ΣC Σ2 ΣD p1 p2, Prel κ j W (Σ1 ∪ ΣC) T p1 → Prel κ j W (Σ2 ∪ ΣD) TUnit p2 →
     conn Σ1 ΣC p1.1 Σ2 ΣD p2.1 → Prel κ j W (Σ1 ∪ Σ2) T (pconn p1 p2 (chans_of ΣC)).
 
 (** One constructor with named premises, as [sth] (compat/PTerm.v). A
     [Record] does not parse here, because the typing notation
     Θ ; Γ ; Δ ⊢ … makes ';' a term token. *)
-Inductive cctx (κ : ctable) (n : nat) (W1 : world) (T : ty) (X1 X2 : prel)
+Inductive cctx (κ : ctable) (n : Ix) (W1 : world) (T : ty) (X1 X2 : prel)
     (Σ1 ΣC Σ2 ΣD : senv) (q1 q2 : proc) : Prop :=
   | CCtx
+      (cc_Hn : olt ozero n)
       (cc_HS : strict W1)
       (cc_HT : tfree T)
       (cc_Hc : conn Σ1 ΣC q1.1 Σ2 ΣD q2.1)
       (cc_H1 : Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) X1 W1 (Σ1 ∪ ΣC) T q1)
       (cc_H2 : Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) X2 W1 (Σ2 ∪ ΣD) TUnit q2)
-      (cc_L : ∀ j, j < S n → ConnL κ j W1 T)
+      (cc_L : ∀ j, olt j n → ConnL κ j W1 T)
       (cc_X1P : ∀ W Σ T p, X1 W Σ T p → Prel κ n W Σ T p)
       (cc_X2P : ∀ W Σ T p, X2 W Σ T p → Prel κ n W Σ T p)
       (cc_HP1 : ∀ h D, fuse_ok h D (Σ1 ∪ ΣC) q1 →
@@ -47,6 +48,8 @@ Inductive cctx (κ : ctable) (n : nat) (W1 : world) (T : ty) (X1 X2 : prel)
 
 Section cctx_proj.
   Context κ n W1 T X1 X2 Σ1 ΣC Σ2 ΣD q1 q2 (H : cctx κ n W1 T X1 X2 Σ1 ΣC Σ2 ΣD q1 q2).
+  Lemma cc_Hn : olt ozero n.
+  Proof. by destruct H. Qed.
   Lemma cc_HS : strict W1.
   Proof. by destruct H. Qed.
   Lemma cc_HT : tfree T.
@@ -57,7 +60,7 @@ Section cctx_proj.
   Proof. by destruct H. Qed.
   Lemma cc_H2 : Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) X2 W1 (Σ2 ∪ ΣD) TUnit q2.
   Proof. by destruct H. Qed.
-  Lemma cc_L : ∀ j, j < S n → ConnL κ j W1 T.
+  Lemma cc_L : ∀ j, olt j n → ConnL κ j W1 T.
   Proof. by destruct H. Qed.
   Lemma cc_X1P : ∀ W Σ T p, X1 W Σ T p → Prel κ n W Σ T p.
   Proof. by destruct H. Qed.
@@ -81,6 +84,7 @@ Section cctx_proj.
     Prel κ n W1 (Σ1' ∪ Σ2') T (pconn (pfuse h1 D1 q1) (pfuse h D p2') (chans_of ΣC')).
   Proof. by destruct H. Qed.
 End cctx_proj.
+Arguments cc_Hn {_ _ _ _ _ _ _ _ _ _ _ _} _.
 Arguments cc_HS {_ _ _ _ _ _ _ _ _ _ _ _} _.
 Arguments cc_HT {_ _ _ _ _ _ _ _ _ _ _ _} _.
 Arguments cc_Hc {_ _ _ _ _ _ _ _ _ _ _ _} _.
@@ -102,5 +106,5 @@ Ltac cc_set_solver :=
   | H := cc_G1 _ |- _ => clear H | H := cc_G2 _ |- _ => clear H
   | H := cc_HP1 _ |- _ => clear H | H := cc_HP2 _ |- _ => clear H
   | H := cc_H1 _ |- _ => clear H | H := cc_H2 _ |- _ => clear H
-  | H := cc_L _ |- _ => clear H | H := cc_X1P _ |- _ => clear H | H := cc_X2P _ |- _ => clear H
+  | H := cc_L _ |- _ => clear H | H := cc_Hn _ |- _ => clear H | H := cc_X1P _ |- _ => clear H | H := cc_X2P _ |- _ => clear H
   end; set_solver.

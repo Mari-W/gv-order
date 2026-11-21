@@ -9,7 +9,7 @@ From GV Require Import fuel.FuelMono.
 (** ** The step clause of the composite *)
 
 Section core.
-  Context (κ : ctable) (n : nat) (W1 : world) (T : ty) (X1 X2 : prel).
+  Context (κ : ctable) (n : Ix) (W1 : world) (T : ty) (X1 X2 : prel).
   Context (Σ1 ΣC Σ2 ΣD : senv) (q1 q2 : proc) (CC : cctx κ n W1 T X1 X2 Σ1 ΣC Σ2 ΣD q1 q2).
   Let HS := cc_HS CC. Let HT := cc_HT CC. Let Hc := cc_Hc CC.
   Let H1 := cc_H1 CC. Let H2 := cc_H2 CC. Let L := cc_L CC.
@@ -77,7 +77,7 @@ Section core.
       pose proof (G1 (erase q1') (Σ1 ∪ ΣC) id ∅ Σ1 ΣC Σ2 ΣD (pmap (ev_ren ev) q2) HX (fuse_ok_id _ _)) as HG.
       rewrite sdrop_empty, kren_id_map, pfuse_empty, pmap_id in HG.
       apply HG; [done|by apply HP2r|done].
-    - intros Hc0. apply (L (S n - ev_cost κ ev) ltac:(lia) Σ1 ΣC Σ2 ΣD); [by apply A1|apply HP2r; [done|done|lia]|done].
+    - intros Hc0 j Hj. apply (L j (oadd_lt _ _ _ Hc0 Hj) Σ1 ΣC Σ2 ΣD); [by apply A1|apply HP2r; [done|done|exact (olt_ole _ _ (oadd_lt _ _ _ Hc0 Hj))]|done].
   Qed.
 
   Local Lemma ev_ren_ok2 ev : (match ev with EvSolo _ _ (PickLink o1 _) => ech o1 ∈ q2.1 | _ => True end) →
@@ -123,16 +123,24 @@ Section core.
       pose proof (G2 (erase q2') (Σ2 ∪ ΣD) id ∅ Σ1 ΣC Σ2 ΣD (ev_ren ev) ∅ HX (fuse_ok_id _ _)) as HG.
       rewrite !sdrop_empty, !pfuse_empty, kren_id_map, pmap_id, Hk in HG.
       apply HG; [done|by apply pren_fuse_ok|done|done].
-    - intros Hc0. apply (L (S n - ev_cost κ ev) ltac:(lia) Σ1 ΣC Σ2 ΣD); [apply HP1r; [done|done|lia]|by apply A1|done].
+    - intros Hc0 j Hj. apply (L j (oadd_lt _ _ _ Hc0 Hj) Σ1 ΣC Σ2 ΣD); [apply HP1r; [done|done|exact (olt_ole _ _ (oadd_lt _ _ _ Hc0 Hj))]|by apply A1|done].
   Qed.
 
   Local Lemma at_cost_down c Σ T' p j : at_cost_P n c (Prel κ) (λ W Σ T p, X1 W Σ T p ∨ X2 W Σ T p) W1 Σ T' p →
-    ole j n - c → Prel κ j W1 Σ T' p.
+    ole (oadd j c) n → Prel κ j W1 Σ T' p.
   Proof.
     intros [A0 A1] Hj. destruct (decide (c = 0)) as [->|Hcz].
-    - destruct (A0 eq_refl) as [?|?]; eapply Prel_down; [|by apply X1P| |by apply X2P]; lia.
-    - eapply Prel_down; [|by apply A1]. lia.
+    - destruct (A0 eq_refl) as [?|?]; eapply Prel_down; [exact Hj|by apply X1P|exact Hj|by apply X2P].
+    - by apply A1.
   Qed.
+
+  Local Lemma oadd_le_part j a b : ole (oadd j (a + b)) n → ole (oadd j a) n ∧ ole (oadd j b) n.
+  Proof.
+    intros H. split; (eapply ole_trans; [|exact H]); apply oadd_mono_r; lia.
+  Qed.
+
+  Local Lemma sync_lt j : ole (oadd j (c_give κ + c_take κ)) n → olt j n.
+  Proof. apply oadd_lt. pose proof (c_take_pos κ). lia. Qed.
 
   Local Lemma at_cost_or1 c Σ T' p : at_cost_P n c (Prel κ) X1 W1 Σ T' p →
     at_cost_P n c (Prel κ) (λ W Σ T p, X1 W Σ T p ∨ X2 W Σ T p) W1 Σ T' p.
@@ -239,10 +247,11 @@ Section core.
       rewrite insert_union_l, insert_union_r by (by rewrite lookup_insert_ne by (intros ->; congruence)).
       rewrite soup_union; [done|]. apply map_disjoint_insert_l. split; [by rewrite lookup_insert_ne by (intros ->; congruence)|].
       apply map_disjoint_insert_r. split; [done|done]. }
-    rewrite Ee. split; [intros Hz; pose proof (c_take_pos κ) as Ht; lia|]. intros _.
-    apply (L (S n - (c_give κ + c_take κ)) ltac:(pose proof (c_take_pos κ) as Ht; lia) Σ1 (delete o ΣC) Σ2 (delete (edual o) ΣD)).
-    - eapply at_cost_down; [apply at_cost_or1, A1|lia].
-    - eapply at_cost_down; [apply at_cost_or2, A2|lia].
+    rewrite Ee. split; [intros Hz; pose proof (c_take_pos κ) as Ht; lia|]. intros _ lv Hlv.
+    destruct (oadd_le_part lv _ _ Hlv) as [Hj1 Hj2].
+    apply (L lv (sync_lt lv Hlv) Σ1 (delete o ΣC) Σ2 (delete (edual o) ΣD)).
+    - eapply at_cost_down; [apply at_cost_or1, A1|assumption].
+    - eapply at_cost_down; [apply at_cost_or2, A2|assumption].
     - done.
   Qed.
 
@@ -333,10 +342,11 @@ Section core.
       rewrite insert_union_l, insert_union_r by (by rewrite lookup_insert_ne by (intros ->; congruence)).
       rewrite soup_union; [done|]. apply map_disjoint_insert_l. split; [by rewrite lookup_insert_ne by (intros ->; congruence)|].
       apply map_disjoint_insert_r. split; [done|done]. }
-    rewrite Ee. split; [intros Hz; pose proof (c_take_pos κ) as Ht; lia|]. intros _.
-    apply (L (S n - (c_give κ + c_take κ)) ltac:(pose proof (c_take_pos κ) as Ht; lia) Σ1 (<[o := (bsel b S1 S2, sel_pt x b)]> ΣC) Σ2 (<[edual o := (bsel b T1 T2, bra_pt (x‾) b)]> ΣD)); [| |exact Hc'].
-    - eapply at_cost_down; [apply at_cost_or1, A1|lia].
-    - eapply at_cost_down; [apply at_cost_or2, A2|lia].
+    rewrite Ee. split; [intros Hz; pose proof (c_take_pos κ) as Ht; lia|]. intros _ lv Hlv.
+    destruct (oadd_le_part lv _ _ Hlv) as [Hj1 Hj2].
+    apply (L lv (sync_lt lv Hlv) Σ1 (<[o := (bsel b S1 S2, sel_pt x b)]> ΣC) Σ2 (<[edual o := (bsel b T1 T2, bra_pt (x‾) b)]> ΣD)); [| |exact Hc'].
+    - eapply at_cost_down; [apply at_cost_or1, A1|assumption].
+    - eapply at_cost_down; [apply at_cost_or2, A2|assumption].
   Qed.
   (** A choice across the cut, p2 selecting. *)
   Lemma tau_choice21 M1 M2 i j o b e e' f f' :
@@ -388,9 +398,10 @@ Section core.
       rewrite insert_union_r, insert_union_l by (by rewrite ?lookup_insert_ne by (intros ->; congruence)).
       rewrite soup_union; [done|]. apply map_disjoint_insert_l. split; [by rewrite lookup_insert_ne by (intros ->; congruence)|].
       apply map_disjoint_insert_r. split; [done|done]. }
-    rewrite Ee. split; [intros Hz; pose proof (c_take_pos κ) as Ht; lia|]. intros _.
-    apply (L (S n - (c_give κ + c_take κ)) ltac:(pose proof (c_take_pos κ) as Ht; lia) Σ1 (<[edual o := (bsel b S1' S2', bra_pt x' b)]> ΣC) Σ2 (<[o := (bsel b S1 S2, sel_pt (x'‾) b)]> ΣD)); [| |exact Hc'].
-    - eapply at_cost_down; [apply at_cost_or1, A1|lia].
-    - eapply at_cost_down; [apply at_cost_or2, A2|lia].
+    rewrite Ee. split; [intros Hz; pose proof (c_take_pos κ) as Ht; lia|]. intros _ lv Hlv.
+    destruct (oadd_le_part lv _ _ Hlv) as [Hj1 Hj2].
+    apply (L lv (sync_lt lv Hlv) Σ1 (<[edual o := (bsel b S1' S2', bra_pt x' b)]> ΣC) Σ2 (<[o := (bsel b S1 S2, sel_pt (x'‾) b)]> ΣD)); [| |exact Hc'].
+    - eapply at_cost_down; [apply at_cost_or1, A1|assumption].
+    - eapply at_cost_down; [apply at_cost_or2, A2|assumption].
   Qed.
 End core.

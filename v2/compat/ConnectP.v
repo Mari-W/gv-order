@@ -11,7 +11,7 @@ From GV Require Export compat.ConnectExtMsg compat.ConnectFuse.
 From GV Require Import fuel.FuelMono.
 
 Section wrapper.
-  Context (κ : ctable) (n : nat) (T : ty) (HT : tfree T).
+  Context (κ : ctable) (n : Ix) (T : ty) (HT : tfree T).
   Context (IH : ∀ j W, j < S n → ConnL κ j W T).
 
   (** The predicate of the induction on p1. *)
@@ -75,7 +75,7 @@ Section wrapper.
     assert (Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) X2 W1
       (ConnectSplit.fin Σf E2 ∪ fout Σf E2) TUnit (pfuse h D2 p2)) as C2.
     { rewrite <-EE2. by apply B2. }
-    assert (∀ j, j < S n → ConnL κ j W1 T) as L by (intros j Hj; by apply IH).
+    assert (∀ j, olt j n → ConnL κ j W1 T) as L by (intros j Hj; by apply IH).
     assert (∀ W Σ U p, X1 W Σ U p → Prel κ n W Σ U p) as X1P by (by intros ? ? ? ? [? _]).
     assert (∀ W Σ U p, X2 W Σ U p → Prel κ n W Σ U p) as X2P by (by intros ? ? ? ? [? _]).
     assert (∀ h' D', fuse_ok h' D' (ConnectSplit.fin Σf E1 ∪ fout Σf E1) (pfuse h D1 p1) →

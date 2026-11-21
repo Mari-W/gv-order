@@ -960,7 +960,7 @@ End link.
 
 (** ** The clauses of a single thread *)
 
-Definition PTermL (κ : ctable) (m : nat) : Prop :=
+Definition PTermL (κ : ctable) (m : Ix) : Prop :=
   ∀ W Θ T t Σ ΘB C, tfree T → sth Θ Σ ΘB C → t ∈ E[κ]^W _ m⟦Θ ⊢ T⟧^∅ →
     (C, {[+ t +]}) ∈ P[κ]^W _ m⟦Σ ⊢ T⟧.
 
@@ -1002,7 +1002,7 @@ Proof.
 Qed.
 
 Section core.
-  Context (κ : ctable) (n : nat) (IH : ∀ j, j < S n → PTermL κ j).
+  Context (κ : ctable) (n : Ix) (IH : ∀ j, olt j n → PTermL κ j).
   Context (X : erel) (HXr : erel_ren X).
   Context (HX : ∀ W Θ T e Σ ΘB C, tfree T → sth Θ Σ ΘB C → X W Θ T ∅ e →
                  Prel κ n W Σ T (C, {[+ e +]})).
@@ -1174,7 +1174,7 @@ Proof.
 Qed.
 
 Section node.
-  Context (κ : ctable) (n : nat) (IH : ∀ j, j < S n → PTermL κ j).
+  Context (κ : ctable) (n : Ix) (IH : ∀ j, olt j n → PTermL κ j).
 
   Definition Φt : erel := λ W Θ T F e, F = ∅ → tfree T → ∀ Σ ΘB C, sth Θ Σ ΘB C →
     Prel κ n W Σ T (C, {[+ e +]}).
@@ -1290,7 +1290,7 @@ End node.
 
 (** ** P-Term *)
 
-Lemma pterm_level κ n : (∀ j, j < S n → PTermL κ j) → PTermL κ n.
+Lemma pterm_level κ n : (∀ j, olt j n → PTermL κ j) → PTermL κ n.
 Proof.
   intros IH W Θ T t Σ ΘB C HT Hs Ht.
   assert (∀ W Θ T F e, Ebody κ n (Vrel κ) (Erel κ) (Vrel κ n)

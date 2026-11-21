@@ -8,7 +8,7 @@ From GV Require Export compat.ConnectCross compat.ConnectLink.
 From GV Require Import fuel.FuelMono.
 
 Section tau.
-  Context (κ : ctable) (n : nat) (W1 : world) (T : ty) (X1 X2 : prel).
+  Context (κ : ctable) (n : Ix) (W1 : world) (T : ty) (X1 X2 : prel).
   Context (Σ1 ΣC Σ2 ΣD : senv) (q1 q2 : proc) (CC : cctx κ n W1 T X1 X2 Σ1 ΣC Σ2 ΣD q1 q2).
   Let HS := cc_HS CC. Let HT := cc_HT CC. Let Hc := cc_Hc CC.
   Let H1 := cc_H1 CC. Let H2 := cc_H2 CC. Let L := cc_L CC.

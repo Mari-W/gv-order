@@ -10,7 +10,7 @@ From GV Require Export compat.ConnectExt compat.ConnectSendEnv.
 From GV Require Import fuel.FuelMono.
 
 Section extmsg.
-  Context (κ : ctable) (n : nat) (W1 : world) (T : ty) (X1 X2 : prel).
+  Context (κ : ctable) (n : Ix) (W1 : world) (T : ty) (X1 X2 : prel).
   Context (Σ1 ΣC Σ2 ΣD : senv) (q1 q2 : proc) (CC : cctx κ n W1 T X1 X2 Σ1 ΣC Σ2 ΣD q1 q2).
   Let HS := cc_HS CC. Let HT := cc_HT CC. Let Hc := cc_Hc CC.
   Let H1 := cc_H1 CC. Let H2 := cc_H2 CC. Let L := cc_L CC.
@@ -97,7 +97,7 @@ Section extmsg.
     - intros Hz. pose proof (G1 p1' _ id ∅ Σ1' ΣC' Σ2' ΣD' q2 (A0 Hz) (fuse_ok_id _ _)) as HG.
       rewrite sdrop_empty, kren_id_map, pfuse_empty, pmap_id in HG. apply HG; [done| |done].
       rewrite <-E2. by apply HP2id.
-    - intros Hz. apply (L (S n - c) ltac:(lia) Σ1' ΣC' Σ2' ΣD'); [by apply A1| |done].
+    - intros Hz j Hj. apply (L j (oadd_lt _ _ _ Hz Hj) Σ1' ΣC' Σ2' ΣD'); [by apply A1| |done].
       rewrite <-E2. apply HP2id. lia.
   Qed.
 
@@ -111,7 +111,7 @@ Section extmsg.
     - intros Hz. pose proof (G2 p2' _ id ∅ Σ1' ΣC' Σ2' ΣD' id ∅ (A0 Hz) (fuse_ok_id _ _)) as HG.
       rewrite !sdrop_empty, !kren_id_map, !pfuse_empty, !pmap_id in HG.
       apply HG; [done|apply fuse_ok_id|by rewrite E1|done].
-    - intros Hz. apply (L (S n - c) ltac:(lia) Σ1' ΣC' Σ2' ΣD'); [|by apply A1|done].
+    - intros Hz j Hj. apply (L j (oadd_lt _ _ _ Hz Hj) Σ1' ΣC' Σ2' ΣD'); [|by apply A1|done].
       rewrite <-E1. apply HP1id. lia.
   Qed.
 

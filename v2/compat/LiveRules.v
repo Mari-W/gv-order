@@ -205,7 +205,7 @@ Qed.
 
 (** ** Groundings with marks *)
 
-Fixpoint GrelL (κ : ctable) (n : nat) (W : world) (Θ : senv) (Δ : lenv) (L : nat → bool)
+Fixpoint GrelL (κ : ctable) (n : Ix) (W : world) (Θ : senv) (Δ : lenv) (L : nat → bool)
     (γ : nat → expr) : Prop :=
   match Δ with
   | [] => Θ = ∅
