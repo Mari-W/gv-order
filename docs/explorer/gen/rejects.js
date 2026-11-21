@@ -45,7 +45,6 @@ main = let ⟨w, w′⟩ = new in let ⟨k, k′⟩ = new in
 main = let ⟨w, w′⟩ = new in let ∗ = spawn (λ_. close w′) in (force grow) w
 -- every thread waits on the one it spawned, close w′ never proceeds`,
     shows: "Each thread waits on a point below the point of its predecessor, and new threads keep appearing. At a fresh root the creation states a fact from the new point down to the point of $w$, and $\\mathsf{wf\\_new}$ forbids it. At a field the box needs that fact one level lower in every round, so the tree of the root of main holds an infinite descending chain, and E-New rejects main.",
-    rocq: 'argued in docs/redesign/check-layers.md, to be mechanized',
-    planned: 'Points as ordinal layers are planned (docs/redesign/check-layers.md). The Rocq rejects nothing here and asks wfworld W of lock-free adequacy instead.',
+    rocq: 'argued in docs/redesign/check-layers.md, E-New asks wf_new (static/Contexts.v), not mechanized as a rejection',
     accepts: { lf: { ok: false, part: 'E-New' } } }
 );

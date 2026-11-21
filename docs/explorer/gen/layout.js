@@ -163,19 +163,7 @@ merge('th-adeq', 'Adequacy', ['th-adequacy', 'th-lf-adequacy'], {
 order('theorems', ['th-chain', 'th-sound', 'th-compose', 'th-fund-proc', 'th-adeq', 'th-conserv', 'th-terms']);
 
 // decided or proposed on the map, not yet in the Rocq: the block shows a "planned" tag with this text
-const NEW2 = 'Plain new, with position, facts and the tickets of its ends in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ o at a field. Both choose the tickets m1 and m2 of the new ends with m1 + m2 ≤ N.';
-const planned = {
-  'syn-terms': NEW2, 'syn-points': NEW2, 'sem-labels': NEW2, 'sem-head': NEW2, 'sem-proc': NEW2,
-  't-consts': NEW2, 'w-world': NEW2, 'w-order': NEW2, 'w-ext': NEW2, 'r-new': NEW2, 'e-obl': NEW2,
-  'soup': NEW2, 'sj-all': NEW2, 'fu-obls': NEW2,
-};
-const LAYERS = 'Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ. relation/Ranks.v has the rank functions into ord@{Set} and the equivalence of wf with well-foundedness, and no world uses them yet.';
-const more = {
-  'w-world': LAYERS, 'w-order': LAYERS, 'w-wf': LAYERS, 'w-ext': LAYERS, 't-lf-wf': LAYERS, 't-consts': LAYERS, 'r-new': LAYERS,
-  'p-typing': LAYERS, 'e-obl': LAYERS, 'p-rel': LAYERS, 'th-chain': LAYERS, 'th-sound': LAYERS, 'th-compose': LAYERS,
-  'th-fund-proc': LAYERS, 'th-adeq': LAYERS, 'th-terms': LAYERS,
-};
-for (const [id, why] of Object.entries(more)) planned[id] = planned[id] ? planned[id] + ' ' + why : why;
+const planned = {};
 for (const [id, why] of Object.entries(planned)) set(id, b => { b.planned = why; });
 
 // every caption sentence about the lock-free mode hides in the deadlock-free mode
