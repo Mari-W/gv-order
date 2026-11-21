@@ -373,8 +373,8 @@ Proof.
   assert (∀ ev q', istep (q1.1 ∪ q2.1 ∪ K, M1 ∪ M2) ev q' → ev_tau ev → False) as Hno.
   { intros ev q' Hst Hτ. apply (Hstab (erase q')). unfold preduction. rewrite <-(pc_erase ΣC q1 q2 M1 M2) by done.
     rewrite <-Hτ. by exists (q1.1 ∪ q2.1 ∪ chans_of ΣC, M1 ∪ M2), ev, q'. }
-  inversion Hi1 as [| | | | | | | |C0 M0 j e σ e1 Hj He HsC]; subst.
-  inversion Hi2 as [| | | | | | | |C0' M0' j' f σ' f1 Hj' Hf HsC']; subst.
+  inversion Hi1 as [| | | | | | |C0 M0 j e σ e1 Hj He HsC]; subst.
+  inversion Hi2 as [| | | | | | |C0' M0' j' f σ' f1 Hj' Hf HsC']; subst.
   assert ((M1 ∪ M2) !! i1 = Some e) as Hl1 by (by apply lookup_union_Some_l).
   assert ((M1 ∪ M2) !! i2 = Some f) as Hl2 by (by apply lookup_union_Some_r).
   assert (i1 ≠ i2) as Hne by (intros ->; eapply (disj_lookup_n M1 M2); eassumption).

@@ -2,7 +2,9 @@
 
       ∅ ⊫_W p : T  ⟹  ∅ ⊨_W p : T        when T is tfree and box-free
 
-    [live_sub_df]. A closed process has a [tfree] result, and without □
+    [live_sub_df], under excluded middle and functional choice, which
+    fix one world for every level after a creation ([exist_prop]). A
+    closed process has a [tfree] result, and without □
     it is built from ∗, ⊗ and ⊕. For such T the value relation reads no
     E, so V at T is the same for both cost tables and every level
     ([Vrel_boxfree]). A closed process takes τ steps only, so
@@ -17,13 +19,13 @@
     negative position, and V of κ_DF is not included in V of κ_L (a
     divergent closure is in the first only). *)
 
-From GV Require Export relation.Adequacy compat.Blind.
+From GV Require Export relation.Adequacy relation.ExProp compat.Blind.
 
 (** ** Sizes *)
 
 Fixpoint esize (e : expr) : nat :=
   match e with
-  | Var _ | EUnit | Chan _ | ENew _ => 1
+  | Var _ | EUnit | Chan _ | ENew => 1
   | Lam e | Inj _ e | EBox e | Op _ e => S (esize e)
   | App a b | Pair a b | LetU a b | LetP a b => S (esize a + esize b)
   | Case a b c => S (esize a + esize b + esize c)
@@ -65,7 +67,7 @@ Definition psize (p : proc) : nat := msize p.2.
 (** A link step makes the soup smaller. *)
 Lemma psize_link q i o1 o2 q' : istep q (EvSolo i (LSess (SLink ({[o1]} ∪ {[o2]}))) (PickLink o1 o2)) q' → psize (erase q') < psize (erase q).
 Proof.
-  intros Hst. inversion Hst as [| | | | | | |C M i' e o1' o2' e' Hi Hs HC| ]; subst.
+  intros Hst. inversion Hst as [| | | | | |C M i' e o1' o2' e' Hi Hs HC| ]; subst.
   unfold psize, erase. simpl. rewrite soup_fmap, msize_emap.
   rewrite (soup_update _ _ _ _ Hi), (soup_delete _ _ _ Hi), !msize_disj_union, !msize_singleton.
   apply tstep_link_size in Hs. lia.
@@ -106,7 +108,8 @@ Proof.
     destruct (H (oadd m c) (ole_trans_lt ozero m _ I Hm)) as [_ H2]. apply (H2 Hc). apply ole_refl.
 Qed.
 
-Lemma live_sub_df_n n : ∀ W T p, tfree T → boxfree T → (∀ m, Prel κ_L m W ∅ T p) → Prel κ_DF n W ∅ T p.
+Lemma live_sub_df_n (EM : excluded_middle) (FC : functional_choice) n :
+  ∀ W T p, tfree T → boxfree T → (∀ m, Prel κ_L m W ∅ T p) → Prel κ_DF n W ∅ T p.
 Proof.
   induction n as [n IHn] using oind. intros W T p HT Hb.
   revert W.
@@ -122,9 +125,18 @@ Proof.
     split_and!; [done| |done]. by apply (Vrel_boxfree κ_L κ_DF T HT Hb (onat 1) n).
   - done.
   - intros q ev q' Hq Hst Hτ Hd.
-    assert (∀ m, Prel κ_L m W1 ∅ T (erase q')) as HL'.
-    { apply (at_cost_all κ_L (ev_cost κ_L ev)). intros m Hm.
-      destruct (HC m Hm) as (_ & _ & A & _). exact (A q ev q' Hq Hst Hτ Hd). }
+    assert (∃ W', W1 ⊑ W' ∧ ∀ m, Prel κ_L m W' ∅ T (erase q')) as (W' & HW' & HL').
+    { destruct (exist_prop EM FC world (λ W' m, W1 ⊑ W' ∧ Prel κ_L m W' ∅ T (erase q'))) as [W' HW'].
+      - intros W' a b Hab [HW' Hb']. split; [done|]. by eapply Prel_down.
+      - intros m.
+        assert (∃ W', W1 ⊑ W' ∧ at_cost_P (osucc (oadd m (ev_cost κ_L ev))) (ev_cost κ_L ev) (Prel κ_L)
+                  (Prel κ_L (osucc (oadd m (ev_cost κ_L ev)))) W' ∅ T (erase q')) as (W' & HW' & A).
+        { destruct (HC (osucc (oadd m (ev_cost κ_L ev))) I) as (_ & _ & A & _). exact (A q ev q' Hq Hst Hτ Hd). }
+        exists W'. split; [done|]. destruct (decide (ev_cost κ_L ev = 0)) as [Hc|Hc].
+        + eapply Prel_down; [|exact (proj1 A Hc)]. rewrite Hc, oadd_0. by apply olt_ole, olt_succ.
+        + apply (proj2 A Hc). by apply olt_ole, olt_succ.
+      - exists W'. split; [apply (HW' ozero)|]. intros m. apply HW'. }
+    exists W'. split; [done|].
     split.
     + intros Hc. assert (∃ i o1 o2, ev = EvSolo i (LSess (SLink ({[o1]} ∪ {[o2]}))) (PickLink o1 o2)) as (i & o1 & o2 & ->).
       { clear -Hst Hc Hτ. destruct Hst; simpl in Hc, Hτ; try discriminate; eauto; by unfold ev_tau in Hτ. }
@@ -148,5 +160,6 @@ Proof.
 Qed.
 
 (** live ⊆ DF, for a closed process at a box-free result. *)
-Theorem live_sub_df W T p : tfree T → boxfree T → ∅ ⊫_W p : T → ∅ ⊨_W p : T.
-Proof. intros HT Hb HL n. by apply live_sub_df_n. Qed.
+Theorem live_sub_df W T p : excluded_middle → functional_choice →
+  tfree T → boxfree T → ∅ ⊫_W p : T → ∅ ⊨_W p : T.
+Proof. intros EM FC HT Hb HL n. by apply live_sub_df_n. Qed.

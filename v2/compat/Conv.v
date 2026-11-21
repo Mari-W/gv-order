@@ -141,11 +141,6 @@ Section eqv.
   Lemma senv_eqv_cfresh Θ Θ' c : senv_eqv Θ Θ' → cfresh c Θ' → cfresh c Θ.
   Proof. intros H. unfold cfresh. by rewrite (senv_eqv_dom _ _ H). Qed.
 
-  Lemma senv_eqv_gfresh Θ Θ' ℓ g : senv_eqv Θ Θ' → gfresh ℓ g Θ' → gfresh ℓ g Θ.
-  Proof.
-    intros H Hg o S x Ho. destruct (senv_eqv_lookup _ _ _ _ _ H Ho) as (S' & Ho' & _). by eapply Hg.
-  Qed.
-
   Lemma senv_eqv_kinj Θ Θ' (h : cend → cend) : senv_eqv Θ Θ' → kinj h Θ → kinj h Θ'.
   Proof.
     intros H Hk o1 o2 v1 v2 H1 H2. apply elem_of_dom_2 in H1, H2.
@@ -268,21 +263,22 @@ Section rel.
     assert (VC n T0) as HV0 by (destruct HT0 as [->| ->]; done).
     apply Erel_iff. intros W1 HW1.
     destruct (Hb W1 HW1) as (Hs & Hr & H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
-    assert (∀ c Θa Θb e', senv_eqv Θa Θb →
+    assert (∀ Wx c Θa Θb e', senv_eqv Θa Θb →
       at_cost_E n c (Erel κ) (λ W Θ T0 F e, Erel κ n W Θ T0 F e ∧
           (T0 = T ∨ T0 = TUnit → ∀ Θ', senv_eqv Θ Θ' → Erel κ n W Θ' T0 F e))
-        W1 Θa T0 F e' →
-      at_cost_E n c (Erel κ) (Erel κ n) W1 Θb T0 F e') as Hac.
-    { intros c Θa Θb e' Hab [A1 A2]. split.
+        Wx Θa T0 F e' →
+      at_cost_E n c (Erel κ) (Erel κ n) Wx Θb T0 F e') as HacW.
+    { intros Wx c Θa Θb e' Hab [A1 A2]. split.
       - intros Hc. by apply A1.
       - intros Hc j Hj. apply (proj2 (IHl j (oadd_lt _ _ _ Hc Hj) T0) _ Θa); [done|]. by apply A2. }
+    pose proof (HacW W1) as Hac.
     split; [|split; [|unfold Esteps; split_and!]].
     - intros Hi. apply (HV0 _ Θ); [done|]. by apply Hs.
     - intros Hni. eapply ready_t_conv; [exact HΘ|]. by apply Hr.
     - intros e' Hst. apply (Hac _ Θ); [done|]. by apply H1.
-    - intros ℓ c e' Hst Hc g Hg.
-      destruct (H2 ℓ c e' Hst (senv_eqv_cfresh _ _ _ HΘ Hc) g (senv_eqv_gfresh _ _ _ _ HΘ Hg)) as [S HS].
-      exists S. eapply Hac; [|exact HS]. by apply senv_eqv_new_env.
+    - intros c e' Hst Hc.
+      destruct (H2 c e' Hst (senv_eqv_cfresh _ _ _ HΘ Hc)) as (S & π & Wn & HWn & HS).
+      exists S, π, Wn. split; [done|]. eapply HacW; [|exact HS]. by apply senv_eqv_new_env.
     - intros v e' Hst. destruct (H4 v e' Hst) as (ΘM & Θr & A1 & -> & A4 & A5).
       destruct (senv_eqv_split _ _ _ HΘ A1) as (ΘM' & Θr' & -> & Hd' & EM & Er).
       exists ΘM', Θr'. split_and!; [done|done| |by eapply Hac].
@@ -451,19 +447,21 @@ Section prel.
     remember (pfuse h D p) as p0 eqn:Ep. remember (sdrop D (kren h Σ)) as Σ0 eqn:EΣ.
     remember (sdrop D (kren h Σ')) as Σ0' eqn:EΣ'.
     clear Ep EΣ EΣ' p Σ Σ' h D. rename p0 into p, Σ0 into Σ, Σ0' into Σ', HΣh into HΣ.
-    assert (∀ c Σa Σb p', senv_eqv Σa Σb →
+    assert (∀ Wx c Σa Σb p', senv_eqv Σa Σb →
       at_cost_P n c (Prel κ) (λ W Σ T p, Prel κ n W Σ T p ∧
-          (∀ Σ', senv_eqv Σ Σ' → Pbody κ n (Vrel κ) (Prel κ) (Vrel κ n) (Prel κ n) W Σ' T p)) W1 Σa T p' →
-      at_cost_P n c (Prel κ) (Prel κ n) W1 Σb T p') as Hac.
-    { intros c Σa Σb p' Hab [A1 A2]. split.
+          (∀ Σ', senv_eqv Σ Σ' → Pbody κ n (Vrel κ) (Prel κ) (Vrel κ n) (Prel κ n) W Σ' T p)) Wx Σa T p' →
+      at_cost_P n c (Prel κ) (Prel κ n) Wx Σb T p') as HacW.
+    { intros Wx c Σa Σb p' Hab [A1 A2]. split.
       - intros Hc. apply Prel_iff. intros _. by apply A1.
       - intros Hc j Hj. apply (IHm j (oadd_lt _ _ _ Hc Hj) _ _ _ _ (A2 Hc j Hj) _ Hab). }
+    pose proof (HacW W1) as Hac.
     split; [|split; [|unfold Psteps; split_and!]].
     - intros Hi. destruct (Hs Hi) as (v & E & -> & Hv & HE). exists v, E. split_and!; [done| |done].
       by apply (Vrel_conv κ _ _ Σ).
     - intros Hni. eapply ready_p_conv; [exact HΣ|]. by apply Hr.
-    - intros q ev q' Hq Hst Hτ Hd. apply (Hac _ Σ); [done|]. apply (H1 q ev q' Hq Hst Hτ).
-      by rewrite (chans_of_conv _ _ HΣ).
+    - intros q ev q' Hq Hst Hτ Hd. destruct (H1 q ev q' Hq Hst Hτ) as (Wn & HWn & A).
+      { by rewrite (chans_of_conv _ _ HΣ). }
+      exists Wn. split; [done|]. apply (HacW Wn _ Σ); [done|exact A].
     - intros q i o w q' Hq Hst.
       destruct (H2 q i o w q' Hq Hst)
         as (S0 & x & m & U & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A7 & A8 & A9).

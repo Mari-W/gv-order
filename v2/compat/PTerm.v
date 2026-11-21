@@ -516,7 +516,7 @@ Lemma single_link_tau C e os e' o : tstep e (LSess (SLink os)) e' → o ∈ os �
   ∃ p', preduction (C, {[+ e +]}) p'.
 Proof.
   intros Hs Ho Hc. destruct (act_step _ _ _ Hs) as (a & Ha & Hoff).
-  destruct a as [| | | | | | |o1 o2| |]; simpl in Hoff; try contradiction. subst os.
+  destruct a as [| | | | | |o1 o2| |]; simpl in Hoff; try contradiction. subst os.
   assert (∃ o', tstep e (LSess (SLink ({[o]} ∪ {[o']}))) e') as [o' Hs'].
   { apply elem_of_union in Ho as [Ho|Ho]; apply elem_of_singleton in Ho.
     - exists o2. by rewrite Ho.
@@ -529,7 +529,7 @@ Qed.
 Global Instance link_t_dec e : Decision (link_t e).
 Proof.
   destruct (act e) as [a|] eqn:Ha.
-  - destruct a as [| | | | | | |o1 o2| |];
+  - destruct a as [| | | | | |o1 o2| |];
       try (right; intros (os & e' & Hs); destruct (act_step _ _ _ Hs) as (a' & Ha' & Hoff);
            rewrite Ha in Ha'; injection Ha' as <-; simpl in Hoff; done).
     left. destruct (act_offer e (ALink o1 o2) (LSess (SLink ({[o1]} ∪ {[o2]}))) Ha eq_refl) as [e' He']. by eexists _, _.

@@ -38,12 +38,13 @@ Section ren_ind.
     destruct (Hb W1 HW1) as (Hs & Hr & H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     assert (∀ σ e', tstep e (LSess σ) e' → sends σ ⊆ dom Θ) as Hsends.
     { intros σ e' Hst. exact (Erel_sends κ n W Θ T F e σ e' HE Hst). }
-    assert (∀ c Θ' e' h', kinj h' Θ' →
-      at_cost_E n c (Erel κ) X W1 Θ' T F e' →
-      at_cost_E n c (Erel κ) X W1 (kren h' Θ') T F (emap h' e')) as Hac.
-    { intros c Θ' e' h' Hk' [A1 A2]. split.
+    assert (∀ Wx c Θ' e' h', kinj h' Θ' →
+      at_cost_E n c (Erel κ) X Wx Θ' T F e' →
+      at_cost_E n c (Erel κ) X Wx (kren h' Θ') T F (emap h' e')) as HacW.
+    { intros Wx c Θ' e' h' Hk' [A1 A2]. split.
       - intros Hc. apply HX; [done|]. by apply A1.
       - intros Hc j Hj. apply (proj2 (rename_level κ j T)); [done|]. by apply A2. }
+    pose proof (HacW W1) as Hac.
     assert (∀ o v w, Θ !! o = Some w → kinj h (<[o := v]> Θ)) as Hkins.
     { intros o v w Ho. eapply kinj_sub; [|exact Hk]. rewrite dom_insert_L.
       apply elem_of_dom_2 in Ho. set_solver. }
@@ -61,40 +62,23 @@ Section ren_ind.
       rewrite (tstep_emap_back h h e LBeta x LBeta e0 Hst He0 I eq_refl eq_refl).
       apply (Hac _ _ _ h Hk). by apply H1.
     - (* O-New *)
-      intros ℓ c x Hst Hc g Hg. destruct (tstep_emap_act _ _ _ _ Hst) as (a & Ha & Ho).
-      assert (a = ANew ℓ) as -> by (destruct a; simpl in Ho; try contradiction; by subst).
+      intros c x Hst Hc. destruct (tstep_emap_act _ _ _ _ Hst) as (a & Ha & Ho).
+      assert (a = ANew) as -> by (destruct a; simpl in Ho; try contradiction; by subst).
       destruct (fresh_pull h {[c]} Xc) as (kc & h' & K1 & _ & K3 & K4 & _).
       assert (kc c ∉ Xc) as Hc'' by (apply K1; set_solver).
       assert (h' (EPos (kc c)) = EPos c) as Hp by (apply (K3 (EPos c)); set_solver).
       assert (h' (ENeg (kc c)) = ENeg c) as Hn by (apply (K3 (ENeg c)); set_solver).
-      destruct (act_offer e (ANew ℓ) (LNew ℓ (kc c)) Ha eq_refl) as [e0 He0].
-      assert (lnew_ok h' (LNew ℓ (kc c))) as Hok by (unfold lnew_ok, gpol, gch; rewrite Hp; simpl; by rewrite Hn).
-      assert (lmap h' (LNew ℓ (kc c)) = LNew ℓ c) as Hl by (simpl; unfold gch; by rewrite Hp).
+      destruct (act_offer e ANew (LNew (kc c)) Ha I) as [e0 He0].
+      assert (lnew_ok h' (LNew (kc c))) as Hok by (unfold lnew_ok, gpol, gch; rewrite Hp; simpl; by rewrite Hn).
+      assert (lmap h' (LNew (kc c)) = LNew c) as Hl by (simpl; unfold gch; by rewrite Hp).
       rewrite (tstep_emap_back h h' e _ x _ e0 Hst He0 Hok Hl (Hee h' K4)).
-      destruct (H2 ℓ (kc c) e0 He0 (Hcf _ Hc'') g (gfresh_kren h ℓ g Θ Hk Hg)) as [S HS]. exists S.
-      destruct (kren_new_env h h' Θ c (kc c) S (pgen ℓ g) Hk Hc (Hcf _ Hc'') Hp Hn) as [Hk1 Heq].
+      destruct (H2 (kc c) e0 He0 (Hcf _ Hc'')) as (S & π & Wn & HWn & HS). exists S, π, Wn. split; [done|].
+      destruct (kren_new_env h h' Θ c (kc c) S π Hk Hc (Hcf _ Hc'') Hp Hn) as [Hk1 Heq].
       { intros o1 Ho1. by apply K4, HXd. }
-      rewrite <-Heq. by apply Hac.
-    - (* O-NewAt *)
-      intros κf o' c x Hst Hc. destruct (tstep_emap_act _ _ _ _ Hst) as (a & Ha & Ho).
-      destruct a as [| |κa o| | | | | | |]; simpl in Ho; try contradiction. destruct Ho as [<- <-].
-      destruct (fresh_pull h {[c]} Xc) as (kc & h' & K1 & _ & K3 & K4 & _).
-      assert (kc c ∉ Xc) as Hc'' by (apply K1; set_solver).
-      assert (h' (EPos (kc c)) = EPos c) as Hp by (apply (K3 (EPos c)); set_solver).
-      assert (h' (ENeg (kc c)) = ENeg c) as Hn by (apply (K3 (ENeg c)); set_solver).
-      destruct (act_offer e (ANewAt κa o) (LNewAt κa o (kc c)) Ha (conj eq_refl eq_refl)) as [e0 He0].
-      destruct (H3 κa o (kc c) e0 He0 (Hcf _ Hc'')) as (S0 & x0 & Ho0 & S & HS).
-      assert (h' o = h o) as Hho by (apply K4, HXd; by eapply elem_of_dom_2).
-      assert (lnew_ok h' (LNewAt κa o (kc c))) as Hok by (unfold lnew_ok, gpol, gch; rewrite Hp; simpl; by rewrite Hn).
-      assert (lmap h' (LNewAt κa o (kc c)) = LNewAt κa (h o) c) as Hl by (simpl; unfold gch; by rewrite Hp, Hho).
-      rewrite (tstep_emap_back h h' e _ x _ e0 Hst He0 Hok Hl (Hee h' K4)).
-      exists S0, x0. split; [by apply kren_lookup|]. exists S.
-      destruct (kren_new_env h h' Θ c (kc c) S (x0·κa) Hk Hc (Hcf _ Hc'') Hp Hn) as [Hk1 Heq].
-      { intros o1 Ho1. by apply K4, HXd. }
-      rewrite <-Heq. by apply Hac.
+      rewrite <-Heq. by apply HacW.
     - (* O-Spawn *)
       intros w x Hst. destruct (tstep_emap_act _ _ _ _ Hst) as (a & Ha & Ho).
-      destruct a as [| | |v| | | | | |]; simpl in Ho; try contradiction. subst w.
+      destruct a as [| |v| | | | | |]; simpl in Ho; try contradiction. subst w.
       destruct (act_offer e (ASpawn v) (LSpawn v) Ha eq_refl) as [e0 He0].
       assert (lmap h (LSpawn v) = LSpawn (emap h v)) as Hl by reflexivity.
       rewrite (tstep_emap_back h h e _ x _ e0 Hst He0 I Hl eq_refl).
@@ -118,7 +102,7 @@ Section ren_ind.
       + by apply Hac.
     - (* O-Send *)
       intros o' w x Hst. destruct (tstep_emap_act _ _ _ _ Hst) as (a & Ha & Ho).
-      destruct a as [| | | | |o v| | | |]; simpl in Ho; try contradiction. destruct Ho as (<- & <-).
+      destruct a as [| | | |o v| | | |]; simpl in Ho; try contradiction. destruct Ho as (<- & <-).
       destruct (act_offer e (ASend o v) (LSess (SSend o v)) Ha
         (conj eq_refl eq_refl)) as [e0 He0].
       assert (lmap h (LSess (SSend o v)) = LSess (SSend (h o) (emap h v))) as Hl by reflexivity.
@@ -140,7 +124,7 @@ Section ren_ind.
       + rewrite <-kren_insert by done. by apply Hac.
     - (* O-Recv *)
       intros o' w x Hst. destruct (tstep_emap_act _ _ _ _ Hst) as (a & Ha & Ho).
-      destruct a as [| | | |o| | | | |]; simpl in Ho; try contradiction. destruct Ho as [<- Hw].
+      destruct a as [| | |o| | | | |]; simpl in Ho; try contradiction. destruct Ho as [<- Hw].
       destruct (act_offer e (ARecv o) (LSess (SRecv o EUnit)) Ha (conj eq_refl I)) as [e00 He00].
       destruct (H6 _ _ _ He00) as (S0 & x0 & m' & U & S & A1 & A2 & _).
       exists S0, x0, m', U, S. split_and!; [by apply kren_lookup|done|].
@@ -163,7 +147,7 @@ Section ren_ind.
       rewrite kren_insert, Hren, Hho, insert_union_l in HR by done. exact HR.
     - (* O-Close *)
       intros o' x Hst. destruct (tstep_emap_act _ _ _ _ Hst) as (a & Ha & Ho).
-      destruct a as [| | | | | |o| | |]; simpl in Ho; try contradiction. subst o'.
+      destruct a as [| | | | |o| | |]; simpl in Ho; try contradiction. subst o'.
       destruct (act_offer e (AClose o) (LSess (SClose o)) Ha eq_refl) as [e0 He0].
       rewrite (tstep_emap_back h h e _ x _ e0 Hst He0 I eq_refl eq_refl).
       destruct (H7 _ _ He0) as (S0 & x0 & A1 & A2 & A3).
@@ -171,7 +155,7 @@ Section ren_ind.
       rewrite <-kren_delete; [by apply Hac|done|by eapply elem_of_dom_2].
     - (* O-Select *)
       intros o' i x Hst. destruct (tstep_emap_act _ _ _ _ Hst) as (a & Ha & Ho).
-      destruct a as [| | | | | | | |o i0|]; simpl in Ho; try contradiction. destruct Ho as [<- <-].
+      destruct a as [| | | | | | |o i0|]; simpl in Ho; try contradiction. destruct Ho as [<- <-].
       destruct (act_offer e (ASel o i0) (LSess (SSel o i0)) Ha (conj eq_refl eq_refl)) as [e0 He0].
       rewrite (tstep_emap_back h h e _ x _ e0 Hst He0 I eq_refl eq_refl).
       destruct (H8 _ _ _ He0) as (S0 & x0 & S1 & S2 & A1 & A2 & A3).
@@ -179,7 +163,7 @@ Section ren_ind.
       rewrite <-kren_insert by (by eapply Hkins). by apply Hac; [eapply Hkins|].
     - (* O-Branch *)
       intros o' i x Hst. destruct (tstep_emap_act _ _ _ _ Hst) as (a & Ha & Ho).
-      destruct a as [| | | | | | | | |o]; simpl in Ho; try contradiction. subst o'.
+      destruct a as [| | | | | | | |o]; simpl in Ho; try contradiction. subst o'.
       destruct (act_offer e (ABra o) (LSess (SBra o i)) Ha eq_refl) as [e0 He0].
       rewrite (tstep_emap_back h h e _ x _ e0 Hst He0 I eq_refl eq_refl).
       destruct (H9 _ _ _ He0) as (S0 & x0 & S1 & S2 & A1 & A2 & A3).
@@ -187,7 +171,7 @@ Section ren_ind.
       rewrite <-kren_insert by (by eapply Hkins). by apply Hac; [eapply Hkins|].
     - (* O-Link *)
       intros os' x Hst. destruct (tstep_emap_act _ _ _ _ Hst) as (a & Ha & Ho).
-      destruct a as [| | | | | | |o1 o2| |]; simpl in Ho; try contradiction. subst os'.
+      destruct a as [| | | | | |o1 o2| |]; simpl in Ho; try contradiction. subst os'.
       destruct (act_offer e (ALink o1 o2) (LSess (SLink ({[o1]} ∪ {[o2]}))) Ha eq_refl) as [e0 He0].
       assert (lmap h (LSess (SLink ({[o1]} ∪ {[o2]}))) = LSess (SLink ({[h o1]} ∪ {[h o2]}))) as Hl
         by (simpl; by rewrite set_map_upair).

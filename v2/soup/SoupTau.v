@@ -36,7 +36,7 @@ Proof.
   { intros α0 e0 Hs0 Hl. destruct (tstep_cerase e α0 e0 Hs0) as (x0 & Hx0 & <-).
     eapply tstep_det_cerase; [exact Hst|exact Hx0|]. by rewrite lerase_idem, Hl. }
   set (c0 := fresh (X ∪ fchans e)). assert (c0 ∉ X ∪ fchans e) as Hc0 by apply is_fresh.
-  destruct a as [|ℓ|κ o|v|o|o v|o|o1 o2|o i|o]; simpl in Ho;
+  destruct a as [|ℓ|v|o|o v|o|o1 o2|o i|o]; simpl in Ho;
     destruct α as [|ℓ' c1|κ' o' c1|w|[| | | | |os]]; simpl in Hα; try contradiction.
   - destruct (act_offer e ABeta LBeta Ha I) as [e0 He0].
     exists LBeta, e0. split_and!; [done|done|by apply (Hdet _ _ He0)|intros; discriminate..].

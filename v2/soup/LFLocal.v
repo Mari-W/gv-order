@@ -80,7 +80,7 @@ Lemma compat_enabled C M t s e es a1 a2 :
   (∀ o, a1 = AClose o → ech o ∈ C) → tenabled (C, M) t.
 Proof.
   intros Hts He Hes Ha1 Ha2 Hc Hcl.
-  destruct a1 as [| | | |o|o w|o|o1 o2|o b|o]; destruct a2 as [| | | |o'|o' w'|o'|o1' o2'|o' b'|o']; simpl in Hc;
+  destruct a1 as [| | |o|o w|o|o1 o2|o b|o]; destruct a2 as [| | |o'|o' w'|o'|o1' o2'|o' b'|o']; simpl in Hc;
     try done; subst.
   - (* t receives, s sends *)
     pose proof (act_send_val _ _ _ Ha2) as Hv.
@@ -140,7 +140,7 @@ Section local.
   Lemma s_held_end t e a1 o : q.2 !! t = Some e → act e = Some a1 → aend a1 = Some o →
     ∃ S0 x, kres K t A !! o = Some (S0, x) ∧ akind a1 S0.
   Proof.
-    intros He Ha Ho. destruct a1 as [| | | |o'|o' w|o'|o1 o2|o' b|o']; simpl in Ho; simplify_eq.
+    intros He Ha Ho. destruct a1 as [| | |o'|o' w|o'|o1 o2|o' b|o']; simpl in Ho; simplify_eq.
     - destruct (act_offer e (ARecv o) (LSess (SRecv o EUnit)) Ha (conj eq_refl I)) as [e' He'].
       pose proof (l_obl t e _ e' He He') as H. cbn [Eobl] in H.
       destruct H as (S0 & x & m & U0 & S & Ho & Hu & _). exists S0, x. split; [done|]. simpl. eauto.
