@@ -73,42 +73,74 @@ Qed.
 (** ** P-Connect and P-Join *)
 
 Theorem lf_soup_connect N W Σ1 Σ2 ΣC C1 C2 E1 E2 T :
-  (Σ1 ∪ ΣC) ⊪^N _ W (C1, E1) : T → (Σ2 ∪ senv_dual ΣC) ⊪^N _ W (C2, E2) : TUnit →
+  (Σ1 ∪ ΣC) ⊪^N _ W (C1, E1) : T →
+  (∀ W', wext W W' → (Σ2 ∪ senv_dual ΣC) ⊪^N _ W' (C2, E2) : TUnit) →
   (∀ o, o ∈ dom ΣC → edual o ∉ dom ΣC) →
   chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
   C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
   (Σ1 ∪ Σ2) ⊪^N _ W (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) : T.
 Proof.
   intros Hl1 Hl2 Hf H12 H1C H2C HC HC1 HC2 n.
-  destruct (Hl1 n) as ([[C1' M1] K1 Wa1] & He1 & HW1 & Hs1). destruct (Hl2 n) as (a2 & He2 & HW2 & Hs2).
-  unfold erase in He1. simpl in He1. injection He1 as -> <-. simpl in HW1. subst Wa1.
+  destruct (Hl1 n) as ([[C1' M1] K1 V1] & He1 & Hs1).
+  unfold erase in He1. simpl in He1. injection He1 as -> <-.
+  destruct Hs1 as (HV1 & A1 & Π1 & U1 & H1). simpl in HV1, H1.
   set (k := S (max_list (elements (dom M1)))).
-  destruct a2 as [[C2' M2'] K2' Wa2]. unfold erase in He2. simpl in He2. injection He2 as -> <-.
-  simpl in HW2. subst Wa2.
-  destruct (soup_lift1 N W _ TUnit _ (C2, tshift k M2') n Hs2) as ([[C2'' M2] K2 Wa2] & Hq & HWq & Hs2');
+  destruct (Hl2 V1 HV1 n) as ([[C2' M2'] K2' V2] & He2 & Hs2).
+  unfold erase in He2. simpl in He2. injection He2 as -> <-.
+  destruct (soup_lift1 N V1 _ TUnit _ (C2, tshift k M2') n Hs2) as ([[C2'' M2] K2 V2'] & Hq & HWq & Hs2');
     [unfold erase; simpl; by rewrite soup_tshift|].
-  simpl in Hq, HWq. injection Hq as -> ->. subst Wa2.
+  simpl in Hq, HWq. injection Hq as -> ->. subst V2'.
+  destruct Hs2' as (HV2 & A2 & Π2 & U2 & H2). simpl in HV2, H2.
   assert (M1 ##ₘ tshift k M2') as HM.
   { apply tshift_disj. intros t Ht. subst k. apply Nat.lt_succ_r, max_list_elem_of_le.
     by apply elem_of_elements. }
-  exists (LFState (C1 ∪ C2 ∪ chans_of ΣC, M1 ∪ tshift k M2') (K1 ∪ K2) W).
-  split; [|split; [done|]].
+  exists (LFState (C1 ∪ C2 ∪ chans_of ΣC, M1 ∪ tshift k M2') (K1 ∪ K2) V2). split.
   - unfold erase. simpl. by rewrite soup_union_c, soup_tshift.
-  - destruct Hs1 as (_ & A1 & Π1 & U1 & H1). destruct Hs2' as (_ & A2 & Π2 & U2 & H2).
-    simpl in H1, H2. split; [apply wext_refl|].
-    eexists _, _, _. eapply soup_connect; [exact H1|exact H2|done..].
+  - split; [simpl; by eapply wext_trans|]. eexists _, _, _.
+    eapply soup_connect; [exact (soup_inv_mono _ _ _ _ _ _ _ _ _ _ HV2 H1)|exact H2|done..].
 Qed.
 
+(** ** The judgment at a static world
+
+    A component typed at the static world W is read at every ranked
+    world that models W. P-Connect reads both components at one ranked
+    world R that models the join, so R models each side. A ranked world
+    for the join exists when the two static worlds are well-founded
+    together at their shared constants ([join_models]). Its ranks come
+    from the joined order ([wmodels_exists]), never from the ranks of a
+    component. *)
+Definition lf_sems (N : nat) (W : sworld) (Σ : senv) (p : proc) (T : ty) : Prop :=
+  ∀ R, wmodels R W → Σ ⊪^N _ R p : T.
+
 (** The rule P-Connect, with the premises of [p_connect]. The soup uses
-    the channel conditions only. *)
-Theorem lf_p_connect N W Σ1 Σ2 ΣC C1 C2 E1 E2 T :
-  (Σ1 ∪ ΣC) ⊪^N _ W (C1, E1) : T → (Σ2 ∪ senv_dual ΣC) ⊪^N _ W (C2, E2) : TUnit →
+    the channel conditions only. The second component is read at the
+    world the first one starts at, so the fresh roots of the two cannot
+    collide. *)
+Theorem lf_p_connect N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
+  lf_sems N W1 (Σ1 ∪ ΣC) (C1, E1) T → lf_sems N W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
   Σ1 ##ₘ ΣC → Σ2 ##ₘ senv_dual ΣC →
   (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
   chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
   C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
-  (Σ1 ∪ Σ2) ⊪^N _ W (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) : T.
-Proof. intros H1 H2 _ _ Hf H12 H1C H2C HC HC1 HC2. by apply lf_soup_connect. Qed.
+  lf_sems N (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
+Proof.
+  intros H1 H2 _ _ Hf H12 H1C H2C HC HC1 HC2 R HR. apply lf_soup_connect; try done.
+  - apply H1. by eapply wmodels_ext; [apply swext_join_l|].
+  - intros W' HW'. apply H2. eapply wmodels_mono; [exact HW'|].
+    by eapply wmodels_ext; [apply swext_join_r|].
+Qed.
+
+(** The composite world: the join is ranked by its own order, which is
+    well-founded when the two sides are and their restrictions to the
+    shared constants are together ([wf_join_iff]). *)
+Lemma join_models W1 W2 :
+  sworld_wf W1 → sworld_wf W2 → swf W1 → swf W2 →
+  swf (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)) →
+  ∃ R, wmodels R (W1 ⊔ W2).
+Proof.
+  intros Hw1 Hw2 HS1 HS2 HS. apply wmodels_exists; [by apply swjoin_wf|].
+  by apply (wf_join_iff W1 W2 Hw1 Hw2).
+Qed.
 
 (** ** P-Term *)
 
@@ -122,7 +154,7 @@ Theorem lf_soup_term N W Σ ΘB C0 t T :
   Σ ⊪^N _ W (C0, {[+ t +]}) : T.
 Proof.
   intros Hp HB HΣ Hd He Hf n. exists (LFState (C0, {[0 := t]}) (kterm (tenv_of (fhalf (Some N)) Σ ∪ ΘB)) W).
-  split; [|split; [done|]].
+  split.
   - unfold erase. simpl. by rewrite <-insert_empty, soup_insert, soup_empty, (left_id_L ∅ (⊎)).
   - split; [apply wext_refl|]. eexists _, _, _. by apply soup_term.
 Qed.
@@ -143,17 +175,17 @@ Proof.
 Qed.
 
 (** The rule P-Term: the premises of [p_term] at Some N and a guarded
-    thread, read at a ranked world R that models the static world W. *)
-Theorem lf_p_term W R N Σ ΘB C0 t T c :
-  sworld_wf W → wmodels R W → tfree T →
+    thread, read at every ranked world R that models the static world W. *)
+Theorem lf_p_term W N Σ ΘB C0 t T c :
+  sworld_wf W → tfree T →
   (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 →
   (∀ c, c ∈ C0 → ∃ S (x : point) m m', tsum_ok (Some N) m m' ∧
      ΘB !! (c⁺)%cend = Some (TE S x m m) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) (pt_dual x) m' m')) →
   tenv_of (fhalf (Some N)) Σ ∪ ΘB ; hc_empty ; [] ⊢^(∅, None) _{W,(Some N)} t : T ▷ c →
   ∅ ⊢▷ t →
-  Σ ⊪^N _ R (C0, {[+ t +]}) : T.
+  lf_sems N W Σ (C0, {[+ t +]}) T.
 Proof.
-  intros HW HR Hp HB HΣ Hd Hty Hg.
+  intros HW Hp HB HΣ Hd Hty Hg R HR.
   assert (cr_tk (tenv_of (fhalf (Some N)) Σ ∪ ΘB)) as Hcr.
   { intros o te Hte. apply lookup_union_Some_raw in Hte as [Hte|[_ Hte]].
     - unfold tenv_of in Hte. apply lookup_fmap_Some in Hte as (y & <- & _). apply fle_refl.
@@ -166,6 +198,37 @@ Proof.
   intros n. by eapply (typed_live W).
 Qed.
 
+(** ** Adequacy at a static world
+
+    A closed component at a well-founded static world is lock free: the
+    rank function of its order gives the ranked world to start from. *)
+Theorem lf_sems_adequacy (EM : excluded_middle) (FC : functional_choice) N W p T :
+  sworld_wf W → swf W → lf_sems N W ∅ p T → lock_free p.
+Proof.
+  intros Hwf HW Hs. destruct (wmodels_exists W Hwf HW) as [R HR].
+  exact (lf_adequacy EM FC N R T p (Hs R HR)).
+Qed.
+
+(** Two closed components over a cut, each at its own static world, are
+    lock free when the two worlds are well-founded together at their
+    shared constants. *)
+Theorem lf_connect_adequacy (EM : excluded_middle) (FC : functional_choice) N W1 W2 ΣC C1 C2 E1 E2 T :
+  lf_sems N W1 ΣC (C1, E1) T → lf_sems N W2 (senv_dual ΣC) (C2, E2) TUnit →
+  (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
+  C1 ## C2 → C1 ## chans_of ΣC → C2 ## chans_of ΣC →
+  sworld_wf W1 → sworld_wf W2 → swf W1 → swf W2 →
+  swf (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)) →
+  lock_free (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2).
+Proof.
+  intros H1 H2 Hf HC HC1 HC2 Hw1 Hw2 HS1 HS2 HS.
+  destruct (join_models W1 W2 Hw1 Hw2 HS1 HS2 HS) as [R HR].
+  apply (lf_adequacy EM FC N R T).
+  pose proof (lf_p_connect N W1 W2 ∅ ∅ ΣC C1 C2 E1 E2 T) as Hc.
+  assert (chans_of (∅ : senv) = ∅) as E0 by (unfold chans_of; by rewrite dom_empty_L, set_map_empty).
+  rewrite E0, !(left_id_L ∅ (∪)) in Hc.
+  apply (Hc H1 H2); try done; first [apply map_disjoint_empty_l|set_solver].
+Qed.
+
 (** ** One closed thread
 
     A guarded closed thread of primitive type, typed at a finite N, is
@@ -175,10 +238,10 @@ Theorem lf_soundness_source (EM : excluded_middle) (FC : functional_choice) W N 
   ∅ ; hc_empty ; [] ⊢^(∅, None) _{W,(Some N)} t : T ▷ c →
   lock_free (∅, {[+ t +]}).
 Proof.
-  intros Hwf HW Hg Hp Hty. destruct (wmodels_exists W Hwf HW) as [R HR].
+  intros Hwf HW Hg Hp Hty.
   assert (tenv_of (fhalf (Some N)) ∅ ∪ ∅ = (∅ : tenv)) as E by (unfold tenv_of; by rewrite fmap_empty, map_union_empty).
   rewrite <-E in Hty.
   assert (∀ o, o ∈ dom (∅ : tenv) ↔ ech o ∈ (∅ : gset chan)) as HB by (intros o; rewrite dom_empty_L; set_solver).
-  apply (lf_adequacy EM FC N R T).
-  exact (lf_p_term W R N ∅ ∅ ∅ t T c Hwf HR Hp HB ltac:(set_solver) ltac:(set_solver) Hty Hg).
+  apply (lf_sems_adequacy EM FC N W _ T Hwf HW).
+  exact (lf_p_term W N ∅ ∅ ∅ t T c Hwf Hp HB ltac:(set_solver) ltac:(set_solver) Hty Hg).
 Qed.

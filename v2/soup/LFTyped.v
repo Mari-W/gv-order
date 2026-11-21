@@ -1,7 +1,7 @@
 (** * The lock-free judgment Σ ⊩^N _ W p : T and its soundness (stage S9,
       proposal §2.12, A.3)
 
-      lf_fundamental : Σ ⊩^N _ W p : T → R ⊨ W → Σ ⊪^N _ R p : T
+      lf_fundamental : Σ ⊩^N _ W p : T → ∀ R ⊨ W, Σ ⊪^N _ R p : T
       lf_soundness   : ∅ ⊩^N _ W p : T → lock_free p
       lf_soundness_run : with excluded middle and dependent choice, also
                        a maximal weakly fair run starts from p
@@ -25,20 +25,18 @@ Notation "Σ ⊩^ N '_' W p : T" := (ptyped (Some N) W Σ p T ∧ ⊢▷ p)
 
 (** ** The fundamental theorem *)
 
-Theorem lf_fundamental N W R Σ p T : Σ ⊩^N _ W p : T → wmodels R W → Σ ⊪^N _ R p : T.
+Theorem lf_fundamental N W Σ p T : Σ ⊩^N _ W p : T → lf_sems N W Σ p T.
 Proof.
-  intros [Hty Hg]. remember (Some N) as N' eqn:EN. revert R Hg. induction Hty as
+  intros [Hty Hg]. remember (Some N) as N' eqn:EN. revert Hg. induction Hty as
     [W Σ ΘB C0 t T c Hp HB HΣ Hpf Hd Ht HW
     |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 HJ];
-    intros R Hg HR; subst.
-  - eapply (lf_p_term W); [exact (proj1 HW)|done|done|done|done|exact Hd|exact Ht|].
+    intros Hg; subst.
+  - eapply (lf_p_term W); [exact (proj1 HW)|done|done|done|exact Hd|exact Ht|].
     apply Hg. simpl. multiset_solver.
   - try specialize (IH1 eq_refl). try specialize (IH2 eq_refl).
     apply lf_p_connect; try done.
-    + apply IH1; [intros t Ht; apply Hg; simpl; multiset_solver|].
-      by eapply wmodels_ext; [apply swext_join_l|].
-    + apply IH2; [intros t Ht; apply Hg; simpl; multiset_solver|].
-      by eapply wmodels_ext; [apply swext_join_r|].
+    + apply IH1. intros t Ht; apply Hg; simpl; multiset_solver.
+    + apply IH2. intros t Ht; apply Hg; simpl; multiset_solver.
 Qed.
 
 (** ** Soundness *)
@@ -50,8 +48,7 @@ Theorem lf_soundness N W p T :
   excluded_middle → functional_choice → ∅ ⊩^N _ W p : T → lock_free p.
 Proof.
   intros EM FC Hty. destruct (ptyped_wf _ _ _ _ _ (proj1 Hty)) as [Hwf HW].
-  destruct (wmodels_exists W Hwf HW) as [R HR].
-  apply (lf_adequacy EM FC N R T p). exact (lf_fundamental N W R ∅ p T Hty HR).
+  exact (lf_sems_adequacy EM FC N W p T Hwf HW (lf_fundamental N W ∅ p T Hty)).
 Qed.
 
 (** ** Soundness with a run, and Padovani-style lock freedom
