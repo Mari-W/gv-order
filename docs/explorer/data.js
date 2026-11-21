@@ -955,7 +955,7 @@ window.MAP = {
      "id": "sr-reading",
      "title": "Reading the relations",
      "rocq": "relation/Relation.v: Vrel, Erel, Prel, at_cost_E",
-     "tex": "\\begin{array}{ll}\n\\htmlData{k=th.Vrel}{v \\in V^{W}_{\\alpha}\\llbracket \\Theta \\vdash T \\rrbracket} & \\text{the value } v \\text{ owns exactly the ends } \\Theta \\text{ and is safe at } T \\\\\n\\htmlData{k=th.Erel}{e \\in E^{W}_{\\alpha}\\llbracket \\Theta \\vdash T \\rrbracket^{F}} & \\text{the term } e \\text{, holding } \\Theta \\text{, is safe until it returns a value of } T \\text{, its context acting at } F \\text{ afterwards} \\\\\n\\htmlData{k=th.Prel}{p \\in P^{W}_{\\alpha}\\llbracket \\Sigma \\vdash T \\rrbracket} & \\text{the process } p \\text{ is safe with interface } \\Sigma \\\\\n\\htmlData{k=sr.obl}{\\mathsf{Obl}_\\ell(e')} & \\text{what a step } e \\xrightarrow{\\ell} e' \\text{ must preserve} \\\\\n\\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}\\ \\Theta'} & e' \\text{ is safe holding } \\Theta' \\text{, at the same index after a free step and at every } \\beta \\text{ with } \\beta + c \\leq \\alpha \\text{ after a step of cost } c\n\\annraw{\\\\}\\annot{\\htmlData{k=sr.FE}{e \\in F^{N}_{\\alpha}\\llbracket \\Phi \\vdash \\sigma\\ !\\ d \\rrbracket}}\\annraw{&}\\annot{\\text{the thread } e \\text{, holding } \\Phi \\text{ with counters and tickets, has fuel at index } \\alpha}\n\\annraw{\\\\}\\annot{\\htmlData{k=th.soup}{a \\in S^{N,W}_{\\alpha}\\llbracket \\Sigma \\vdash T \\rrbracket}}\\annraw{&}\\annot{\\text{every thread of } a \\text{ is in } E[\\kappa_L] \\text{ and has fuel, under one ownership map}}\n\\end{array}",
+     "tex": "\\begin{array}{ll}\n\\htmlData{k=th.Vrel}{v \\in V^{W}_{\\alpha}\\llbracket \\Theta \\vdash T \\rrbracket} & \\text{the value } v \\text{ owns exactly the ends } \\Theta \\text{ and is safe at } T \\\\\n\\htmlData{k=th.Erel}{e \\in E^{W}_{\\alpha}\\llbracket \\Theta \\vdash T \\rrbracket^{F}} & \\text{the term } e \\text{, holding } \\Theta \\text{, is safe until it returns a value of } T \\text{, its context acting at } F \\text{ afterwards} \\\\\n\\htmlData{k=th.Prel}{p \\in P^{W}_{\\alpha}\\llbracket \\Sigma \\vdash T \\rrbracket} & \\text{the process } p \\text{ is safe with interface } \\Sigma \\\\\n\\htmlData{k=sr.obl}{\\mathsf{Obl}_\\ell(e')} & \\text{what a step } e \\xrightarrow{\\ell} e' \\text{ must preserve} \\\\\n\\htmlData{k=rel.atcost}{e'\\ \\mathsf{at}\\ \\Theta'} & e' \\text{ is safe holding } \\Theta' \\text{, at the same index after a free step and at every } \\beta \\text{ with } \\beta + c \\leq \\alpha \\text{ after a step of cost } c\n\\annraw{\\\\}\\annot{\\htmlData{k=sr.FE}{e \\in F^{N}_{\\alpha}\\llbracket \\Phi \\vdash \\sigma\\ !\\ d \\rrbracket}}\\annraw{&}\\annot{\\text{the thread } e \\text{, holding } \\Phi \\text{ with counters and tickets, has fuel at index } \\alpha}\n\\annraw{\\\\}\\annot{\\htmlData{k=th.soup}{a \\in S^{N,R}_{\\alpha}\\llbracket \\Sigma \\vdash T \\rrbracket}}\\annraw{&}\\annot{\\text{every thread of } a \\text{ is in } E[\\kappa_L] \\text{ and has fuel, under one ownership map}}\n\\end{array}",
      "caption": "The relations are indexed by a world $W$, whose order they read, and an ordinal index $\\alpha$. A term is safe when it is a safe value, or when it is ready and each of its steps leads to a safe term at every lower index the cost of the step allows. Readiness says that a stuck term waits below the dual points of the ends it holds. Processes are safe in the same way and remain safe when their ends are fused, so composing two safe processes needs no further proof. \\annp{Fuel is a second predicate on each thread, and the lock-free process relation requires both of every thread.}",
      "modes": [
       "df",
@@ -1181,7 +1181,7 @@ window.MAP = {
       "lf"
      ],
      "rocq": "soup/State.v: hold, lfstate; soup/State.v: soup_gen, soup/Soup.v: soup_inv, Soup",
-     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\htmlData{k=sp.state}{a = (q, K)} \\qquad \\htmlData{k=sp.hold}{K : \\mathsf{End} \\rightharpoonup \\mathbb{N} \\times \\mathsf{Point} \\times \\mathbb{N} \\times \\mathbb{N}} \\\\\n\\htmlData{k=sp.next}{\\mathsf{lf\\_next}\\,N\\,(q, K)\\,ev\\,(q', K') \\iff K' \\in \\mathsf{own\\_next}\\,N\\,ev\\,K}\n\\end{array}\\\\[3ex]\\begin{array}{rcll}\na \\in \\htmlData{k=th.soup}{S^{N,W}_\\alpha\\llbracket\\Sigma \\vdash T\\rrbracket} & \\iff & \\htmlData{k=sp.exists}{\\exists A, \\Phi}.\\ \\htmlData{k=sp.tfree}{\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T} \\land \\text{for each thread } t \\text{ running } e\\text{,} & \\\\[1ex]\n & & \\quad \\htmlData{k=sp.rel}{e \\in \\htmlData{k=th.Erel}{E[\\kappa_L]^W_\\alpha\\llbracket A|_t \\vdash U_t\\rrbracket^{\\varnothing}}} & \\text{the relation} \\\\\n & & \\quad \\htmlData{k=sp.fuel}{e \\in \\htmlData{k=sr.FE}{F^{N}_{\\alpha}\\llbracket \\Phi|_t \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}}\\ !\\ \\infty \\rrbracket}} & \\text{fuel} \\\\\n & & \\land\\ \\htmlData{k=sp.own}{\\mathsf{consistent}}(a, A, \\Phi) & \\\\[2ex]\nA,\\ \\Phi & & \\text{the held ends as } o \\mapsto S@x \\text{ for the relation and as } o \\mapsto S^{f}_{m} \\text{ for fuel} & \\\\\nA|_t,\\ \\Phi|_t & & \\text{their restrictions to the ends } K \\text{ gives } t & \\htmlData{k=sp.ty}{U_t \\in \\{T, \\ast\\}} \\\\[2ex]\n\\htmlData{k=sp.own}{\\mathsf{consistent}}(a, A, \\Phi) & \\iff & \\htmlData{k=sp.dom}{\\mathrm{dom}\\,A = \\mathrm{dom}\\,\\Phi = \\mathrm{dom}\\,K} \\land \\htmlData{k=sp.owner}{K(o) = (t, x, f, m) \\Rightarrow t \\in \\mathrm{dom}\\,q} & \\text{owners} \\\\\n & \\land & \\htmlData{k=sp.pts}{K(o) = (t, x, f, m) \\Rightarrow A(o) = \\_@x \\land \\Phi(o) = \\_^{f}_{m}} \\land \\htmlData{k=sp.fin}{f \\in \\mathbb{N}} \\land \\htmlData{k=sp.cap}{f \\leq m} & \\\\\n & \\land & \\htmlData{k=sp.closed}{o \\in \\mathrm{dom}\\,K \\Rightarrow \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\lor o \\in \\mathrm{dom}\\,\\Sigma} \\land \\htmlData{k=sp.pair}{o \\in \\mathrm{dom}\\,K \\land \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow \\overline{o} \\in \\mathrm{dom}\\,K} & \\text{closed} \\\\\n & \\land & \\htmlData{k=sp.sdual}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\land A(o) = S@x \\land A(\\overline{o}) = S'@x' \\Rightarrow x' = \\overline{x} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S'} & \\text{dual} \\\\\n & \\land & \\htmlData{k=sp.pdual}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\land \\Phi(o) = P^{f}_{m} \\land \\Phi(\\overline{o}) = P'^{f'}_{m'} \\Rightarrow P' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{P}} & \\\\\n & \\land & \\htmlData{k=sp.tsum}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\land K(o) = (\\_, \\_, \\_, m) \\land K(\\overline{o}) = (\\_, \\_, \\_, m') \\Rightarrow m + m' \\leq N} & \\text{tickets} \\\\\n & \\land & \\htmlData{k=sp.sig}{\\Sigma(o) = S@x \\Rightarrow A(o) = S@x} \\land \\htmlData{k=sp.psig}{\\Phi(o) = S^{f}_{m}} & \\text{interface}\n\\end{array}\\end{array}",
+     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\htmlData{k=sp.state}{a = (q, K, R_a)} \\qquad \\htmlData{k=sp.hold}{K : \\mathsf{End} \\rightharpoonup \\mathbb{N} \\times \\mathsf{Point} \\times \\mathbb{N} \\times \\mathbb{N}} \\\\\n\\htmlData{k=sp.next}{\\mathsf{lf\\_next}\\,N\\,(q, K)\\,ev\\,(q', K') \\iff K' \\in \\mathsf{own\\_next}\\,N\\,ev\\,K}\n\\end{array}\\\\[3ex]\\begin{array}{rcll}\na \\in \\htmlData{k=th.soup}{S^{N,R}_\\alpha\\llbracket\\Sigma \\vdash T\\rrbracket} & \\iff & \\htmlData{k=sp.world}{R \\sqsubseteq R_a} \\land \\htmlData{k=sp.exists}{\\exists A, \\Phi}.\\ \\htmlData{k=sp.tfree}{\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T} \\land \\text{for each thread } t \\text{ running } e\\text{,} & \\\\[1ex]\n & & \\quad \\htmlData{k=sp.rel}{e \\in \\htmlData{k=th.Erel}{E[\\kappa_L]^{R_a}_\\alpha\\llbracket A|_t \\vdash U_t\\rrbracket^{\\varnothing}}} & \\text{the relation} \\\\\n & & \\quad \\htmlData{k=sp.fuel}{e \\in \\htmlData{k=sr.FE}{F^{N}_{\\alpha}\\llbracket \\Phi|_t \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}}\\ !\\ \\infty \\rrbracket}} & \\text{fuel} \\\\\n & & \\land\\ \\htmlData{k=sp.own}{\\mathsf{consistent}}(a, A, \\Phi) & \\\\[2ex]\nA,\\ \\Phi & & \\text{the held ends as } o \\mapsto S@x \\text{ for the relation and as } o \\mapsto S^{f}_{m} \\text{ for fuel} & \\\\\nA|_t,\\ \\Phi|_t & & \\text{their restrictions to the ends } K \\text{ gives } t & \\htmlData{k=sp.ty}{U_t \\in \\{T, \\ast\\}} \\\\[2ex]\n\\htmlData{k=sp.own}{\\mathsf{consistent}}(a, A, \\Phi) & \\iff & \\htmlData{k=sp.dom}{\\mathrm{dom}\\,A = \\mathrm{dom}\\,\\Phi = \\mathrm{dom}\\,K} \\land \\htmlData{k=sp.owner}{K(o) = (t, x, f, m) \\Rightarrow t \\in \\mathrm{dom}\\,q} & \\text{owners} \\\\\n & \\land & \\htmlData{k=sp.pts}{K(o) = (t, x, f, m) \\Rightarrow A(o) = \\_@x \\land \\Phi(o) = \\_^{f}_{m}} \\land \\htmlData{k=sp.fin}{f \\in \\mathbb{N}} \\land \\htmlData{k=sp.cap}{f \\leq m} & \\\\\n & \\land & \\htmlData{k=sp.closed}{o \\in \\mathrm{dom}\\,K \\Rightarrow \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\lor o \\in \\mathrm{dom}\\,\\Sigma} \\land \\htmlData{k=sp.pair}{o \\in \\mathrm{dom}\\,K \\land \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow \\overline{o} \\in \\mathrm{dom}\\,K} & \\text{closed} \\\\\n & \\land & \\htmlData{k=sp.sdual}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\land A(o) = S@x \\land A(\\overline{o}) = S'@x' \\Rightarrow x' = \\overline{x} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S'} & \\text{dual} \\\\\n & \\land & \\htmlData{k=sp.pdual}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\land \\Phi(o) = P^{f}_{m} \\land \\Phi(\\overline{o}) = P'^{f'}_{m'} \\Rightarrow P' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{P}} & \\\\\n & \\land & \\htmlData{k=sp.tsum}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\land K(o) = (\\_, \\_, \\_, m) \\land K(\\overline{o}) = (\\_, \\_, \\_, m') \\Rightarrow m + m' \\leq N} & \\text{tickets} \\\\\n & \\land & \\htmlData{k=sp.sig}{\\Sigma(o) = S@x \\Rightarrow A(o) = S@x} \\land \\htmlData{k=sp.psig}{\\Phi(o) = S^{f}_{m}} & \\text{interface}\n\\end{array}\\end{array}",
      "caption": "An annotated configuration $a = (q, K)$ is a configuration $q$ with an ownership map $K$. $K$ gives each held end the thread that holds it, its point, its counter and its tickets. The configuration is in the lock-free process relation at the ordinal index $\\alpha$ when each thread is in $E[\\kappa_L]$ at the ends it owns and has fuel at their counters. $A$ and $\\Phi$ describe the held ends for the relation and for fuel, and $\\mathsf{consistent}$ requires $A$, $\\Phi$ and $K$ to agree. It also bounds each counter by its tickets and the tickets of the two ends of an internal channel by $N$. Fuel occurs only in this definition.",
      "about": {
       "why": "The lock-free process relation combines the relation and the fuel of each thread over one ownership map. Lock-free adequacy reads the points and counters that $K$ records, and the invariant on tickets makes the measure fall at a link.",
@@ -1198,8 +1198,8 @@ window.MAP = {
       "df",
       "lf"
      ],
-     "rocq": "compat/SemTyped.v: Grel, sem_typed_at, sf_den, sem_typed; relation/Adequacy.v: sem_ptyped; soup/Soup.v: lf_sem, lf_next, own_next, world_next; soup/State.v: tchoice",
-     "tex": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash[\\kappa]}}^{X}_W e : T \\iff \\forall n, W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G[\\kappa]^{W'}_{\\alpha}\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\htmlData{k=th.Erel}{E[\\kappa]^{W'}_{\\alpha}\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Delta \\vDash[\\kappa]^{F}_W e : T \\iff \\forall R, B.\\ \\Delta \\vDash[\\kappa]^{\\htmlData{k=sj.den}{\\mathsf{den}_{R,B}(F)}}_W e : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash[\\kappa]_W p : T \\iff \\forall \\alpha.\\ p \\in \\htmlData{k=th.Prel}{P[\\kappa]^{W}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\n\\htmlData{k=sp.lfsem}{\\Sigma \\Vvdash_W p : T \\iff \\htmlData{k=sp.exists-before-forall}{\\exists N \\in \\mathbb{N}.\\ \\forall \\alpha.\\ \\exists a.\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}(\\htmlData{k=th.qa}{q_a}) = p} \\land a \\in \\htmlData{k=th.soup}{S^{N,W}_\\alpha\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}}\\end{array}",
+     "rocq": "compat/SemTyped.v: Grel, sem_typed_at, sf_den, sem_typed; relation/Adequacy.v: sem_ptyped; soup/Soup.v: lf_sem, lf_next, own_next, world_next; soup/State.v: tchoice; soup/LFCompose.v: lf_sems",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash[\\kappa]}}^{X}_W e : T \\iff \\forall n, W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G[\\kappa]^{W'}_{\\alpha}\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\htmlData{k=th.Erel}{E[\\kappa]^{W'}_{\\alpha}\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Delta \\vDash[\\kappa]^{F}_W e : T \\iff \\forall R, B.\\ \\Delta \\vDash[\\kappa]^{\\htmlData{k=sj.den}{\\mathsf{den}_{R,B}(F)}}_W e : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash[\\kappa]_W p : T \\iff \\forall \\alpha.\\ p \\in \\htmlData{k=th.Prel}{P[\\kappa]^{W}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\n\\htmlData{k=sp.lfsem}{\\Sigma \\Vvdash_W p : T \\iff \\htmlData{k=sp.exists-before-forall}{\\exists N \\in \\mathbb{N}.\\ \\htmlData{k=sp.allR}{\\forall R \\vDash W}.\\ \\forall \\alpha.\\ \\exists a.\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}(\\htmlData{k=th.qa}{q_a}) = p} \\land a \\in \\htmlData{k=th.soup}{S^{N,R}_\\alpha\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}}\\end{array}",
      "caption": "The semantic judgments quantify over ordinal indices, larger worlds and substitutions, and read the static future at each of its denotations. \\annp{The lock-free judgment fixes the bound $N$ once and chooses the annotated configuration at each index. The creation choice of each channel is an existential inside O-New.}",
      "variants": {
       "df": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{X}_W e : T \\iff \\forall n, W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G^{W'}_{\\alpha}\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\htmlData{k=th.Erel}{E^{W'}_{\\alpha}\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Delta \\vDash^{F}_W e : T \\iff \\forall R, B.\\ \\Delta \\vDash^{\\htmlData{k=sj.den}{\\mathsf{den}_{R,B}(F)}}_W e : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash_W p : T \\iff \\forall \\alpha.\\ p \\in \\htmlData{k=th.Prel}{P^{W}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}\\end{array}"
@@ -1252,12 +1252,12 @@ window.MAP = {
     {
      "id": "th-compose",
      "title": "Semantic composition rules",
-     "rocq": "compat/PTerm.v: sem_p_term; compat/ConnectP.v: sem_p_connect; soup/LFCompose.v: lf_p_term, lf_p_connect",
+     "rocq": "compat/PTerm.v: sem_p_term; compat/ConnectP.v: sem_p_connect; soup/LFCompose.v: lf_p_term, lf_p_connect, join_models, lf_connect_adequacy",
      "modes": [
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\htmlData{k=th.Erel}{E\\annot{[\\kappa]}^{W}_{\\alpha}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\htmlData{k=th.Prel}{P\\annot{[\\kappa]}^{W}_{\\alpha}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.sem-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.conn}{\\mathsf{conn}} \\\\ \\land\\ p_1 \\in \\htmlData{k=th.Prel}{P^{W}_{\\alpha}\\llbracket \\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket} \\\\ \\land\\ p_2 \\in \\htmlData{k=th.Prel}{P^{W}_{\\alpha}\\llbracket \\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.par}{p_1 \\parallel_{\\Sigma_C} p_2} \\in \\htmlData{k=th.Prel}{P^{W}_{\\alpha}\\llbracket \\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket}\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-p-term}{\\begin{array}{l}\\Sigma \\mathrel{\\htmlData{k=tp.lfjudg}{\\Vdash}}^{N}_{W} (C_0, \\{t\\}) : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W (C_0, \\{t\\}) : T\\end{array}}}\\end{array}",
+     "tex": "\\begin{array}{l}\\htmlData{k=th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\htmlData{k=th.Erel}{E\\annot{[\\kappa]}^{W}_{\\alpha}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\htmlData{k=th.Prel}{P\\annot{[\\kappa]}^{W}_{\\alpha}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.sem-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.conn}{\\mathsf{conn}} \\\\ \\land\\ p_1 \\in \\htmlData{k=th.Prel}{P^{W}_{\\alpha}\\llbracket \\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket} \\\\ \\land\\ p_2 \\in \\htmlData{k=th.Prel}{P^{W}_{\\alpha}\\llbracket \\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.par}{p_1 \\parallel_{\\Sigma_C} p_2} \\in \\htmlData{k=th.Prel}{P^{W}_{\\alpha}\\llbracket \\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket}\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-p-term}{\\begin{array}{l}\\Sigma \\mathrel{\\htmlData{k=tp.lfjudg}{\\Vdash}}^{N}_{W} (C_0, \\{t\\}) : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W (C_0, \\{t\\}) : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=th.conn}{\\mathsf{conn}} \\land \\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_{W_1} p_1 : T \\\\ \\land\\ \\Sigma_2 \\cup \\Sigma_D \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_{W_2} p_2 : \\ast\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_{W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T\\end{array}}}\\end{array}",
      "caption": "A safe thread is a safe process, and two safe processes connected at dual interfaces form a safe process. A component proved safe without typing therefore composes with typed components. \\annp{The same holds for the lock-free process relation.}",
      "about": {
       "why": "P-Term and P-Connect hold in the relation, which makes the approach compositional.",
@@ -9808,13 +9808,13 @@ window.MAP = {
    ]
   },
   "sp.state": {
-   "title": "Annotated configuration $a = (q, K)$",
-   "what": "A configuration $q$ and an ownership map $K$.",
+   "title": "Annotated configuration $a = (q, K, R_a)$",
+   "what": "A configuration $q$, an ownership map $K$ and the ranked world $R_a$ of the run so far.",
    "why": "Ranks and counters of the termination measure are read off $K$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$(q, K)$.",
+   "example": "$(q, K, R)$.",
    "rocq": "soup/State.v: lfstate",
-   "sig": "a = (q, K) \\in \\mathsf{Config} \\times \\mathsf{Own}",
+   "sig": "a = (q, K, R_a) \\in \\mathsf{Config} \\times \\mathsf{Own} \\times \\mathsf{RWorld}",
    "args": [
     {
      "name": "q",
@@ -9823,6 +9823,48 @@ window.MAP = {
     {
      "name": "K",
      "meaning": "the ownership map of the annotated configuration"
+    },
+    {
+     "name": "R_a",
+     "meaning": "the ranked world of the run so far"
+    }
+   ]
+  },
+  "sp.world": {
+   "title": "$R \\sqsubseteq R_a$",
+   "what": "The ranked world $R_a$ of the configuration extends the ranked world $R$ the relation is read at.",
+   "why": "A configuration may start at an extension of $R$, and a creation grows $R_a$ along a run. Composition reads the second component at the ranked world the first one starts at, so the fresh roots of the two never collide.",
+   "breaks": "Asking $R_a = R$ would make each component start at the world of the composite, which only a common ranked world of both sides provides.",
+   "example": "$R_a = R \\oplus (a, \\varrho_a)$ after one creation at the fresh root $a$.",
+   "rocq": "soup/Soup.v: Soup, soup_inv_mono",
+   "sig": "R \\sqsubseteq R_a",
+   "args": [
+    {
+     "name": "R",
+     "meaning": "the ranked world the relation is read at"
+    },
+    {
+     "name": "R_a",
+     "meaning": "the ranked world of the configuration"
+    }
+   ]
+  },
+  "sp.allR": {
+   "title": "$\\forall R \\vDash W$",
+   "what": "The judgment holds at each ranked world $R$ that satisfies the static world $W$.",
+   "why": "Each component of P-Connect is read at the ranked worlds of its own static world. A ranked world of the join satisfies both static worlds, so both components hold there, and only the shared roots are compared, through $\\mathsf{wf}\\,(W_1|_S \\sqcup W_2|_S)$, which makes such a ranked world exist.",
+   "breaks": "At one fixed ranked world per component composition fails. A ranked world orders two ranked points whenever their ranks differ, so $R_1$ may put $y \\prec \\overline{x}$ and $R_2$ put $\\overline{x} \\prec y$ for shared points that no fact relates. A thread holding an end at $x$ and waiting at $y$ is ready in $R_1$, its partner holding an end at $\\overline{y}$ and waiting at $\\overline{x}$ is ready in $R_2$, and the two deadlock.",
+   "example": "The client at $W_{cli}$ and the server at $W_{srv}$, which share the root $\\rho$.",
+   "rocq": "soup/LFCompose.v: lf_sems, join_models",
+   "sig": "\\forall R \\in \\mathsf{RWorld}.\\ R \\vDash W \\Rightarrow \\ldots",
+   "args": [
+    {
+     "name": "R",
+     "meaning": "a ranked world"
+    },
+    {
+     "name": "W",
+     "meaning": "the static world of the judgment"
     }
    ]
   },
@@ -9881,12 +9923,12 @@ window.MAP = {
   },
   "sp.rel": {
    "title": "Every thread live",
-   "what": "$\\forall t.\\ q(t) \\in E[\\kappa_L]^W_\\alpha\\llbracket K_t(A) \\vdash U_t\\rrbracket^{\\varnothing}$, where $K_t(A)$ restricts $A$ to the ends held by $t$.",
+   "what": "$\\forall t.\\ q(t) \\in E[\\kappa_L]^{R_a}_\\alpha\\llbracket K_t(A) \\vdash U_t\\rrbracket^{\\varnothing}$, where $K_t(A)$ restricts $A$ to the ends held by $t$.",
    "why": "The per-thread relation at $\\kappa_L$ excludes internal divergence and infinite chains of spawns.",
    "breaks": "Nothing. It is a definition.",
    "example": "$q(0) \\in E[\\kappa_L]\\llbracket K_0(A) \\vdash T\\rrbracket^{\\varnothing}$.",
    "rocq": "soup/State.v: sp_rel",
-   "sig": "\\forall t, e.\\ q(t) = e \\Rightarrow e \\in E[\\kappa_L]^{W}_{\\alpha}\\llbracket K_t(A) \\vdash U_t \\rrbracket^{\\varnothing}",
+   "sig": "\\forall t, e.\\ q(t) = e \\Rightarrow e \\in E[\\kappa_L]^{R_a}_{\\alpha}\\llbracket K_t(A) \\vdash U_t \\rrbracket^{\\varnothing}",
    "args": [
     {
      "name": "t",
@@ -10092,11 +10134,11 @@ window.MAP = {
   },
   "sp.lfsem": {
    "title": "$\\Sigma \\Vvdash_W p : T$",
-   "what": "$\\exists N \\in \\mathbb{N}.\\ \\forall \\alpha.\\ \\exists a.\\ \\mathsf{erase}(q_a) = p \\land a \\in S^{N,W}_\\alpha\\llbracket\\Sigma \\vdash T\\rrbracket$, over every ordinal index $\\alpha$.",
+   "what": "$\\exists N \\in \\mathbb{N}.\\ \\forall R \\vDash W.\\ \\forall \\alpha.\\ \\exists a.\\ \\mathsf{erase}(q_a) = p \\land a \\in S^{N,R}_\\alpha\\llbracket\\Sigma \\vdash T\\rrbracket$, at each ranked world $R$ that satisfies the static world $W$ and each ordinal index $\\alpha$.",
    "why": "The lock-free process relation alone suffices, and absence of internal divergence of the lock-free process relation gives what a process conjunct would.",
    "breaks": "Nothing. It is a definition.",
    "example": "The lock-free fundamental theorem concludes this judgment.",
-   "rocq": "not yet in the Rocq (docs/redesign/check-transfinite.md)",
+   "rocq": "soup/Soup.v: lf_sem; soup/LFCompose.v: lf_sems",
    "sig": "\\Sigma \\Vvdash_{W} p : T",
    "args": [
     {
@@ -10953,6 +10995,29 @@ window.MAP = {
     }
    ]
   },
+  "th.lf-p-connect": {
+   "title": "P-Connect in the lock-free judgment",
+   "what": "If $\\mathsf{conn}$, $\\Sigma_1 \\cup \\Sigma_C \\Vvdash_{W_1} p_1 : T$ and $\\Sigma_2 \\cup \\Sigma_D \\Vvdash_{W_2} p_2 : \\ast$, then $\\Sigma_1 \\cup \\Sigma_2 \\Vvdash_{W_1 \\sqcup W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T$. With $\\mathsf{wf}\\,W_1$, $\\mathsf{wf}\\,W_2$ and $\\mathsf{wf}\\,(W_1|_S \\sqcup W_2|_S)$ a closed composite is lock free.",
+   "why": "Each component is read at the ranked worlds of its own static world. A ranked world $R$ of the join satisfies both. The first component starts at some $R_1 \\sqsupseteq R$, the second is read at $R_1$ and starts at some $R_2 \\sqsupseteq R_1$, and the first moves up to $R_2$ because the relation is monotone in the world. A ranked world of the join exists exactly when the join is well-founded, which the condition on the shared roots gives. Its ranks come from the order of the join, never from the ranks of a component.",
+   "breaks": "Two components at fixed ranked worlds $R_1$ and $R_2$ do not compose, because the two rankings may order shared points that no fact relates in opposite directions.",
+   "example": "The client at $W_{cli}$ and the server at $W_{srv}$, which share the root $\\rho$, compose over the cut $\\{a, b\\}$.",
+   "rocq": "soup/LFCompose.v: lf_p_connect, lf_soup_connect, join_models, lf_connect_adequacy; examples/LFClientServerSplit.v: cs_split_lock_free",
+   "sig": "\\mathsf{conn} \\land \\Sigma_1 \\cup \\Sigma_C \\Vvdash_{W_1} p_1 : T \\land \\Sigma_2 \\cup \\Sigma_D \\Vvdash_{W_2} p_2 : \\ast \\Rightarrow \\Sigma_1 \\cup \\Sigma_2 \\Vvdash_{W_1 \\sqcup W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T",
+   "args": [
+    {
+     "name": "W_1, W_2",
+     "meaning": "the static worlds of the two components"
+    },
+    {
+     "name": "\\Sigma_C, \\Sigma_D",
+     "meaning": "the cut and its partners"
+    },
+    {
+     "name": "p_1, p_2",
+     "meaning": "the two components"
+    }
+   ]
+  },
   "th.lf-p-term": {
    "title": "P-Term in the lock-free process relation",
    "what": "A thread with $\\Sigma \\Vdash^{N}_{W} (C_0, \\{t\\}) : T$ derived by P-Term satisfies $\\Sigma \\Vvdash_W (C_0, \\{t\\}) : T$.",
@@ -11334,21 +11399,21 @@ window.MAP = {
    ]
   },
   "th.soup": {
-   "title": "The lock-free process relation $S^{N,W}_{\\alpha}$",
-   "what": "$a \\in S^{N,W}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket$ holds of an annotated configuration $a$ when each thread of $a$ is in the relation at $\\kappa_L$ and has fuel at the ordinal index $\\alpha$. Ownership, points, counters and tickets are those that $a$ records.",
+   "title": "The lock-free process relation $S^{N,R}_{\\alpha}$",
+   "what": "$a \\in S^{N,R}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket$ holds of an annotated configuration $a$ when each thread of $a$ is in the relation at $\\kappa_L$ and has fuel at the ordinal index $\\alpha$. Ownership, points, counters and tickets are those that $a$ records.",
    "why": "The lock-free judgment chooses $a$ at each index, and the existential property gives one $a$ for every index.",
    "breaks": "Nothing. It is a definition.",
    "example": "The state of two threads closing $c^{+}$ and $c^{-}$.",
    "rocq": "soup/Soup.v: Soup, lf_sem; soup/SoupRun.v: lfsoup_step, lfsoup_step_all, lfsoup_run",
-   "sig": "S^{N,W}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket \\subseteq \\mathsf{LFState}",
+   "sig": "S^{N,R}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket \\subseteq \\mathsf{LFState}",
    "args": [
     {
      "name": "N",
      "meaning": "the bound on the tickets of a channel, a natural number for lock freedom"
     },
     {
-     "name": "W",
-     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
+     "name": "R",
+     "meaning": "a ranked world, which the world of each configuration extends"
     },
     {
      "name": "\\alpha",

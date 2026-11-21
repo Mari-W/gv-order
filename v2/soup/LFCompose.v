@@ -1,16 +1,25 @@
 (** * The semantic composition rules of the lock-free judgment (stage S9,
       proposal §2.14, A.3)
 
-    Σ ⊪^N _ W p : T is the soup alone (soup/Soup.v). Its rules:
+    Σ ⊪^N _ R p : T is the soup alone at a ranked world R (soup/Soup.v).
+    [lf_sems N W] reads it at every ranked world that models the static
+    world W. Its rules:
 
-      lf_p_term    : R ⊨ W, the premises of P-Term at Some N, a guarded
-                     thread
-                     ⟹ Σ ⊪^N _ R (C0, {t}) : T
-      lf_p_connect : the premises of P-Connect, at ⊪^N ⟹ (Σ1 ∪ Σ2) ⊪^N _R …
+      lf_p_term    : the premises of P-Term at Some N, a guarded thread
+                     ⟹ lf_sems N W Σ (C0, {t}) T
+      lf_p_connect : lf_sems N W1 (Σ1 ∪ ΣC) p1 T, lf_sems N W2 (Σ2 ∪ Σ̄C) p2 ∗,
+                     the channel premises of P-Connect
+                     ⟹ lf_sems N (W1 ⊔ W2) (Σ1 ∪ Σ2) (p1 ∥ p2) T
 
-    P-Connect is one soup lemma ([lf_soup_connect]) at one ranked world. The world enters only through
-    E[live] at P-Term. A closed thread is lock free
-    ([lf_soundness_source]). *)
+    Each component is read at its own static world. At a ranked world R
+    of the join, R models both sides. The first component gives a state
+    at some R1 ⊒ R, the second is read at R1 and gives a state at
+    R2 ⊒ R1, and the soup of the first moves up to R2 ([soup_inv_mono],
+    [lf_soup_connect]). A ranked world of the join exists when the two
+    static worlds are well-founded together at their shared constants
+    ([join_models]), and its ranks come from the joined order. Two closed
+    components are then lock free ([lf_connect_adequacy]), and so is a
+    closed thread ([lf_soundness_source]). *)
 
 From stdpp Require Import relations.
 From GV Require Import soup.LFAdequacy.
