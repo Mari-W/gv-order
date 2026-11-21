@@ -25,9 +25,15 @@
     because the join is strict.
 
     - [sb_thread_E]       : the thread is in E at every level.
-    - [sb_deadlock_free]  : the closed process is deadlock free. *)
+    - [sb_deadlock_free]  : the closed process is deadlock free.
+    - [Tbad_not_cons]     : E-Open cannot open an existential whose
+                            constraint states y ≺ x̄ in Wa.
+    - [sbv_thread_E], [sbv_deadlock_free] : the same for the variant
+                            whose arms read their binder.
+    - [sbv_rejected]      : no world and no bound type the variant. *)
 
 From GV Require Export examples.Tools static.FundamentalProc compat.Redex.
+From GV Require Import static.Inversion cost.Exact.
 
 (** ** The program *)
 
@@ -308,53 +314,293 @@ Proof.
   exact H.
 Qed.
 
-(** ** The dead arm under an uninhabited existential (next run, stage 4)
+(** ** The opening of an uninhabited existential is not conservative
 
-    The header claims that the static system rejects the thread because
-    E-Case types both arms under one Γ. A derivation may give the bound
-    variable of the dead arm an existential type whose constraint states
-    y ≺ x̄ over the outer points, and no value needs to inhabit it: the
-    arm is dead, and the argument of [sb_not] is the variable of a λ, so
-    E-Pack never checks the constraint. E-Open then puts y ≺ x̄ into Γ and
-    the dead arm closes d before c in a world that holds only x ≺ ȳ. The
-    arm below consumes its binder with let ∗ = w, which the arms of
-    [sb_thread] do not, so this shows the mechanism for the variant of
-    the thread whose arms read their binder. *)
+    A derivation may give the binder of the dead arm an existential type
+    whose constraint states y ≺ x̄ over the outer points. No value needs
+    to inhabit it. E-Open asks [cons_open], and opening this existential
+    in Wa would derive y ≺ x̄ between the outer points, which Wa does not
+    derive. *)
 
 Definition Cbad : bcs := BCs (py :: px‾ :: []) (λ f, f = FLt (pvar 0) (pvar 1)).
 Definition Tbad : ty := TEx LNone 0 Cbad TUnit.
 
-Lemma sb_dead_arm_typed :
-  dftyped Wa ({[od := TE SEnd py None None]} ∪ {[oc := TE SEnd px None None]}) hc_empty [Some Tbad] (∅, None)
-    (LetU (Var 0) (cl2 od oc)) TUnit.
+Lemma slt_empty_w W x y : slt W hc_empty x y → W ⊢ x ≺ y.
 Proof.
-  apply (d_open _ _ _ _ _ _ 0 LNone 0 Cbad TUnit TUnit); [done|by intros ?|].
-  rewrite sf_pinst_nil. cbn [fmap option_fmap option_map].
-  assert (tenv_pinst (pshift 0) ({[od := TE SEnd py None None]} ∪ {[oc := TE SEnd px None None]}) =
-          {[od := TE SEnd py None None]} ∪ {[oc := TE SEnd px None None]}) as ->.
-  { unfold tenv_pinst. by rewrite map_fmap_union, !map_fmap_singleton. }
-  set (Γo := hc_open 0 Cbad hc_empty).
-  assert (slt Wa Γo py (px‾)) as Hf.
-  { apply fl_h. exists (bcs_inst (pshift 0) Cbad), (ids 0). split; [by left|].
-    exists (FLt py (px‾)). split; [|reflexivity].
-    exists (FLt (pvar 0) (pvar 1)). split_and!; [reflexivity| |reflexivity].
-    split; apply pn_vb_root; eexists; (split; [reflexivity|simpl; lia]). }
-  eapply d_letu with (Θ1 := ∅) (Δ1 := [Some TUnit]) (Δ2 := [None]);
-    [split; [apply map_disjoint_empty_l|by rewrite map_empty_union]|by constructor; constructor| |].
-  - apply d_var. split; [done|]. intros [|y] σ' Hne Hy; [done|]. done.
-  - unfold cl2.
-    eapply d_letu with (Θ1 := {[od := TE SEnd py None None]}) (Θ2 := {[oc := TE SEnd px None None]}) (Δ1 := [None]) (Δ2 := [None]);
-      [|by constructor; constructor| |].
-    + split; [apply map_disjoint_singleton_l_2; by rewrite lookup_singleton_ne|reflexivity].
-    + eapply d_close with (S0 := SEnd) (x := py) (a := None); [done| |].
-      * rewrite tenv_heads_one'. cbn. split_and!; [|done|done]. intros y Hy.
-        assert (y = px‾) as -> by set_solver.
-        exact Hf.
-      * apply d_chan. intros o Ho. apply list_elem_of_singleton in Ho as ->. by left.
-    + eapply d_close with (S0 := SEnd) (x := px) (a := None); [done|apply ub_below_empty|].
-      apply d_chan. intros o Ho. apply list_elem_of_singleton in Ho as ->. by left.
+  unfold slt. induction 1 as [x y H|x y (C & xs & Hin & _)|x y z _ IH1 _ IH2].
+  - done.
+  - by apply not_elem_of_nil in Hin.
+  - by eapply w_lt_trans.
+Qed.
+
+(** In Wa the constant never decreases along ≺. *)
+Lemma Wa_rk_step x y : wstep Wa x y → rk x ≤ rk y.
+Proof.
+  destruct 1 as [x y Hf|ℓ g x y Hℓ _|x|x].
+  - simpl in Hf. injection Hf as -> ->. unfold rk, px, py, pt_dual. simpl. lia.
+  - simpl in Hℓ. set_solver.
+  - unfold rk. by rewrite pt_root_shift.
+  - unfold rk. by rewrite pt_root_shift, pt_root_dual.
+Qed.
+
+Lemma Wa_rk x y : Wa ⊢ x ≺ y → rk x ≤ rk y.
+Proof.
+  induction 1 as [x y Hs|x y z Hs _ IH]; [by apply Wa_rk_step|].
+  apply Wa_rk_step in Hs. lia.
+Qed.
+
+Lemma Wa_not_yx : ¬ Wa ⊢ py ≺ px‾.
+Proof. intros H. apply Wa_rk in H. unfold rk, py, px, pt_dual in H. simpl in H. lia. Qed.
+
+Lemma Tbad_not_cons : ¬ cons_open Wa hc_empty 0 Cbad.
+Proof.
+  intros Hc. apply Wa_not_yx, slt_empty_w, Hc.
+  rewrite !pt_inst_novar by (intros ?; unfold px, py, pt_dual, pt_root; simpl; congruence).
+  apply fl_h. exists (bcs_inst (pshift 0) Cbad), (ids 0). split; [by left|].
+  exists (FLt py (px‾)). split; [|reflexivity].
+  exists (FLt (pvar 0) (pvar 1)). split_and!; [reflexivity| |reflexivity].
+  split; apply pn_vb_root; eexists; (split; [reflexivity|simpl; lia]).
+Qed.
+
+(** ** The variant whose arms read their binder
+
+      sbv_thread = case sb_not (inj₂ ∗) of inl w ⇒ let ∗ = w in close c; close d
+                                         | inr w ⇒ let ∗ = w in close d; close c
+
+    It is semantically typed as [sb_thread] is, and statically rejected
+    in every world and at every bound ([sbv_rejected]). *)
+
+Definition sbv_thread : expr :=
+  Case sb_flag (LetU (Var 0) (cl2 oc od)) (LetU (Var 0) (cl2 od oc)).
+Definition sbv_config : proc := (({["c"]} ∪ {["d"]}), {[+ sbv_thread +]} ⊎ {[+ sb_partner +]}).
+
+Lemma arm_v_E n : Erel κ_DF n Wa (tenv_erase Θa) TUnit ∅ (LetU EUnit (cl2 oc od)).
+Proof.
+  apply typed_E_df; [apply Wa_strict|apply Θa_df|].
+  eapply d_letu with (Θ1 := ∅) (Θ2 := Θa).
+  - split; [apply map_disjoint_empty_l|by rewrite map_empty_union].
+  - apply lsplit_nil.
+  - apply d_unit. intros ? Hin. by apply not_elem_of_nil in Hin.
+  - apply cl2_typed; [apply oc_od|]. apply sl_w. exact Wa_lt.
 Unshelve. all: try exact None.
+Qed.
+
+Theorem sbv_thread_E n : Erel κ_DF n Wa (tenv_erase Θa) TUnit ∅ sbv_thread.
+Proof.
+  unfold sbv_thread, sb_flag, sb_not.
+  apply (Erel_det _ _ _ _ _ _ _
+    (Case (Case (Inj true EUnit) (Inj true (Var 0)) (Inj false (Var 0)))
+      (LetU (Var 0) (cl2 oc od)) (LetU (Var 0) (cl2 od oc)))).
+  { apply det_beta_case. apply det_beta_app. done. }
+  apply (Erel_det _ _ _ _ _ _ _ (Case (Inj false EUnit) (LetU (Var 0) (cl2 oc od)) (LetU (Var 0) (cl2 od oc)))).
+  { apply det_beta_case. apply (det_beta_inr EUnit). done. }
+  apply (Erel_det _ _ _ _ _ _ _ (LetU EUnit (cl2 oc od))).
+  { apply (det_beta_inl EUnit). done. }
+  apply arm_v_E.
+Qed.
+
+Theorem sbv_deadlock_free : deadlock_free sbv_config.
+Proof.
+  apply (adequacy (Wa ⊔ Wb) TUnit sbv_config Wab_strict). intros n.
+  assert (Prel κ_DF n Wa (∅ ∪ ΣC) TUnit (∅, {[+ sbv_thread +]})) as H1.
+  { rewrite (left_id_L ∅ (∪)). refine (sem_p_term κ_DF n Wa _ ΣC ∅ ∅ _ TUnit _ sth_a (sbv_thread_E n)).
+    constructor. }
+  assert (Prel κ_DF n Wb (∅ ∪ senv_dual ΣC) TUnit (∅, {[+ sb_partner +]})) as H2.
+  { rewrite (left_id_L ∅ (∪)). refine (sem_p_term κ_DF n Wb _ _ ∅ ∅ _ TUnit _ sth_b (partner_E n)).
+    constructor. }
+  pose proof (sem_p_connect κ_DF n Wa Wb ∅ ΣC ∅ (senv_dual ΣC) _ _ TUnit ltac:(constructor) H1 H2 sb_conn) as H.
+  unfold pconn in H. simpl in H. rewrite chans_ΣC in H. rewrite !(left_id_L ∅ (∪)) in H.
+  exact H.
+Qed.
+
+(** ** The static rejection of the variant
+
+    [cl2_needs]: close a; close b asks a ≺ b̄ in the context it is typed
+    in, through any openings, by [opened_cons]. The dead arm of the
+    variant asks y ≺ x̄ at Γ = ∅, so its world derives it. The partner's
+    world derives x̄ ≺ y, and the join of the two is not strict. *)
+
+Lemma te_pt_pinst σ e : te_pt (tentry_pinst σ e) = pt_inst σ (te_pt e).
+Proof. done. Qed.
+
+Lemma thage_pt c Θ Θ' o e : thage c Θ Θ' → Θ !! o = Some e → ∃ e', Θ' !! o = Some e' ∧ te_pt e' = te_pt e.
+Proof.
+  intros H Ho. specialize (H o). rewrite Ho in H.
+  destruct (Θ' !! o) as [e'|]; [|done]. exists e'. split; [done|]. naive_solver.
+Qed.
+
+Lemma tsplit_lookup_l Θ Θ1 Θ2 o e : tsplit Θ Θ1 Θ2 → o ∉ dom Θ2 → Θ !! o = Some e → Θ1 !! o = Some e.
+Proof.
+  intros [Hd ->] Ho H. apply not_elem_of_dom in Ho. apply lookup_union_Some in H as [H|H]; [done| |done].
+  congruence.
+Qed.
+
+Lemma tsplit_lookup_r Θ Θ1 Θ2 o e : tsplit Θ Θ1 Θ2 → o ∉ dom Θ1 → Θ !! o = Some e → Θ2 !! o = Some e.
+Proof.
+  intros [Hd ->] Ho H. apply not_elem_of_dom in Ho. apply lookup_union_Some in H as [H|H]; [congruence|done|done].
+Qed.
+
+Lemma sf_unionb_fst F X b : (sf_unionb F X b).1 = F.1 ∪ X.
+Proof. by destruct b. Qed.
+
+Lemma cl2_needs W N Θ Γ Δ F a b T c ea eb :
+  a ≠ b → typed W N Θ Γ Δ F (cl2 a b) T c →
+  Θ !! a = Some ea → Θ !! b = Some eb → slt W Γ (te_pt ea) (te_pt eb)‾.
+Proof.
+  intros Hab H Ha Hb. unfold cl2 in H.
+  apply inv_letu in H as (Θ' & Γ' & Δ' & F' & Θ1 & Θ2 & Θ2' & Δ1 & Δ2 & Δ2' & T' & c1 & c2
+    & Ho & Hs & _ & H1 & Hage & _ & H2).
+  destruct (opened_cons _ _ _ _ _ _ _ _ _ Ho) as (σ & Hσl & _ & Hσs).
+  pose proof (typed_tfacts _ _ _ _ _ _ _ _ _ H1) as [Hd1 _].
+  pose proof (typed_tfacts _ _ _ _ _ _ _ _ _ H2) as [Hd2 _].
+  rewrite (thage_dom _ _ _ Hage) in Hd2. simpl in Hd1, Hd2.
+  assert (Θ1 !! a = Some (tentry_pinst σ ea)) as Ha1.
+  { eapply tsplit_lookup_l; [done| |by apply Hσl]. rewrite <-Hd2. set_solver. }
+  assert (Θ2 !! b = Some (tentry_pinst σ eb)) as Hb2.
+  { eapply tsplit_lookup_r; [done| |by apply Hσl]. rewrite <-Hd1. set_solver. }
+  apply inv_close in H1 as (Θ'' & Γ'' & Δ'' & F'' & S0 & x & a0 & mS & c0 & Ho2 & _ & Hub & Hch).
+  destruct (opened_cons _ _ _ _ _ _ _ _ _ Ho2) as (σ2 & Hl2 & Hf2 & Hs2).
+  destruct (inv_chan _ _ _ _ _ _ _ _ _ Hch _ _ _ _ eq_refl) as (e & He & Hx).
+  rewrite (Hl2 _ _ Ha1) in He. injection He as <-.
+  destruct Hub as [Hub _].
+  assert (pt_inst σ2 (te_pt (tentry_pinst σ eb))‾ ∈ F''.1) as Hy.
+  { apply Hf2. rewrite sf_unionb_fst. apply elem_of_union_r, elem_of_union_l.
+    apply elem_of_tenv_heads. eauto. }
+  apply Hub in Hy. rewrite <-Hx, !te_pt_pinst in Hy.
+  apply Hσs. rewrite pt_inst_dual. apply Hs2. first [exact Hy | (rewrite pt_inst_dual; exact Hy) | (rewrite <-pt_inst_dual; exact Hy) | (rewrite pt_inst_dual in Hy; exact Hy) | (rewrite <-pt_inst_dual in Hy; exact Hy)].
+Qed.
+
+Lemma letu_cl2_needs W N Θ Γ Δ F a b T c ea eb :
+  a ≠ b → typed W N Θ Γ Δ F (LetU (Var 0) (cl2 a b)) T c →
+  Θ !! a = Some ea → Θ !! b = Some eb → slt W Γ (te_pt ea) (te_pt eb)‾.
+Proof.
+  intros Hab H Ha Hb.
+  apply inv_letu in H as (Θ' & Γ' & Δ' & F' & Θ1 & Θ2 & Θ2' & Δ1 & Δ2 & Δ2' & T' & c1 & c2
+    & Ho & Hs & _ & H1 & Hage & _ & H2).
+  destruct (opened_cons _ _ _ _ _ _ _ _ _ Ho) as (σ & Hσl & _ & Hσs).
+  pose proof (typed_tfacts _ _ _ _ _ _ _ _ _ H1) as [Hd1 _]. simpl in Hd1.
+  assert (∀ o, o ∉ dom Θ1) as Hn1 by (intros o; rewrite <-Hd1; set_solver).
+  destruct (thage_pt _ _ _ _ _ Hage (tsplit_lookup_r _ _ _ _ _ Hs (Hn1 a) (Hσl _ _ Ha)))
+    as (ea' & Ha' & Hpa).
+  destruct (thage_pt _ _ _ _ _ Hage (tsplit_lookup_r _ _ _ _ _ Hs (Hn1 b) (Hσl _ _ Hb)))
+    as (eb' & Hb' & Hpb).
+  pose proof (cl2_needs _ _ _ _ _ _ _ _ _ _ _ _ Hab H2 Ha' Hb') as H.
+  rewrite Hpa, Hpb, !te_pt_pinst, <-pt_inst_dual in H. by apply Hσs.
+Qed.
+
+(** The dead arm: the thread asks y ≺ x̄. *)
+Lemma sbv_thread_needs W N Θ Γ Δ F T c ec ed :
+  typed W N Θ Γ Δ F sbv_thread T c →
+  Θ !! oc = Some ec → Θ !! od = Some ed → slt W Γ (te_pt ed) (te_pt ec)‾.
+Proof.
+  intros H Hc Hd. unfold sbv_thread in H.
+  apply inv_case in H as (Θ' & Γ' & Δ' & F' & Θ1 & Θ2 & Θ2' & Δ1 & Δ2 & Δ2' & T1 & T2 & T' & c0 & c1 & c2
+    & Ho & Hs & _ & H0 & Hage & _ & _ & H2).
+  destruct (opened_cons _ _ _ _ _ _ _ _ _ Ho) as (σ & Hσl & _ & Hσs).
+  pose proof (typed_tfacts _ _ _ _ _ _ _ _ _ H0) as [Hd0 _]. unfold sb_flag, sb_not in Hd0. simpl in Hd0.
+  assert (∀ o, o ∉ dom Θ1) as Hn1 by (intros o; rewrite <-Hd0; set_solver).
+  destruct (thage_pt _ _ _ _ _ Hage (tsplit_lookup_r _ _ _ _ _ Hs (Hn1 oc) (Hσl _ _ Hc)))
+    as (ec' & Hc' & Hpc).
+  destruct (thage_pt _ _ _ _ _ Hage (tsplit_lookup_r _ _ _ _ _ Hs (Hn1 od) (Hσl _ _ Hd)))
+    as (ed' & Hd' & Hpd).
+  pose proof (letu_cl2_needs _ _ _ _ _ _ _ _ _ _ _ _ (not_eq_sym oc_od) H2 Hd' Hc') as H.
+  rewrite Hpc, Hpd, !te_pt_pinst, <-pt_inst_dual in H. by apply Hσs.
+Qed.
+
+(** The ends of one side of P-Connect. An end the thread mentions without
+    its partner is not restricted, so it sits in the interface, at the
+    same point in the thread's Θ. *)
+Lemma side_lookup N W Σ C0 u T :
+  ptyped N W Σ (C0, {[+ u +]}) T →
+  ∃ Θ c, typed W N Θ hc_empty [] (∅, None) u T c ∧
+    ∀ o, o ∈ fends u → edual o ∉ fends u →
+      ∃ S x e, Σ !! o = Some (S, x) ∧ Θ !! o = Some e ∧ te_pt e = x.
+Proof.
+  intros H. apply ptyped_one in H as (ΘB & c & _ & HB & _ & _ & HBs & Ht & _).
+  pose proof (typed_tfacts _ _ _ _ _ _ _ _ _ Ht) as [Hd _].
+  exists (tenv_of (fhalf N) Σ ∪ ΘB), c. split; [done|]. intros o Ho Hn.
+  destruct (Σ !! o) as [[S x]|] eqn:HΣ.
+  - exists S, x, (TE S x (fhalf N) (fhalf N)). split_and!; [done| |done].
+    apply lookup_union_Some_l. unfold tenv_of. by rewrite lookup_fmap, HΣ.
+  - exfalso. apply Hn. rewrite Hd, dom_union_L. apply elem_of_union_r.
+    assert (o ∈ dom ΘB) as HoB.
+    { rewrite Hd, dom_union_L in Ho. apply elem_of_union in Ho as [Ho|Ho]; [|done].
+      unfold tenv_of in Ho. rewrite dom_fmap_L in Ho. by apply not_elem_of_dom in HΣ. }
+    apply HB in HoB. destruct (HBs _ HoB) as (S & x & m & m' & _ & H1 & H2).
+    destruct o; simpl; apply elem_of_dom; eauto.
+Qed.
+
+Lemma sdual_lookup (Σ : senv) o S (x : point) : Σ !! o = Some (S, x) → senv_dual Σ !! edual o = Some (dual S, x‾).
+Proof.
+  intros H. unfold senv_dual. rewrite lookup_kmap; [by rewrite lookup_fmap, H|].
+  intros o1 o2 E. by rewrite <-(edual_edual o1), E, edual_edual.
+Qed.
+
+Lemma ocd_dual_ne : edual oc ≠ edual od.
+Proof. intros E. apply oc_od. apply (f_equal edual) in E. by rewrite !edual_edual in E. Qed.
+
+Lemma sbv_partner_ne : sbv_thread ≠ sb_partner.
+Proof. discriminate. Qed.
+
+Ltac fends_tac := unfold sbv_thread, sb_partner, sb_flag, sb_not, cl2, oc, od; simpl; set_unfold; intuition congruence.
+
+(** No world and no bound type the closed process of the variant. *)
+Theorem sbv_rejected N W : ¬ ptyped N W ∅ sbv_config TUnit.
+Proof.
+  intros H. pose proof (ptyped_strict _ _ _ _ _ H) as [_ Hirr].
+  apply ptyped_two in H as (W1 & W2 & Σ1 & Σ2 & ΣC & C1 & C2 & u1 & u2 & -> & HΣ & _ & Hu & H1 & H2 & _).
+  symmetry in HΣ. pose proof (map_positive_l _ _ HΣ) as ->. rewrite (left_id_L ∅ (∪)) in HΣ. subst Σ2.
+  rewrite !(left_id_L ∅ (∪)) in H1, H2.
+  assert ((u1 = sbv_thread ∧ u2 = sb_partner) ∨ (u1 = sb_partner ∧ u2 = sbv_thread)) as Hcase.
+  { pose proof sbv_partner_ne as Hne.
+    assert (u1 ∈ ({[+ u1 +]} ⊎ {[+ u2 +]} : gmultiset expr)) as Hu1 by multiset_solver.
+    assert (u2 ∈ ({[+ u1 +]} ⊎ {[+ u2 +]} : gmultiset expr)) as Hu2 by multiset_solver.
+    rewrite Hu in Hu1, Hu2. apply gmultiset_elem_of_disj_union in Hu1, Hu2.
+    rewrite !gmultiset_elem_of_singleton in Hu1, Hu2.
+    destruct Hu1 as [->| ->], Hu2 as [->| ->]; auto; exfalso.
+    - assert (sb_partner ∈ ({[+ sbv_thread +]} ⊎ {[+ sbv_thread +]} : gmultiset expr)) as Hp
+        by (rewrite Hu; multiset_solver).
+      apply gmultiset_elem_of_disj_union in Hp. rewrite !gmultiset_elem_of_singleton in Hp.
+      destruct Hp as [Hp|Hp]; by apply Hne.
+    - assert (sbv_thread ∈ ({[+ sb_partner +]} ⊎ {[+ sb_partner +]} : gmultiset expr)) as Hp
+        by (rewrite Hu; multiset_solver).
+      apply gmultiset_elem_of_disj_union in Hp. rewrite !gmultiset_elem_of_singleton in Hp.
+      destruct Hp as [Hp|Hp]; by apply Hne. }
+  destruct Hcase as [[-> ->]|[-> ->]].
+  - destruct (side_lookup _ _ _ _ _ _ H1) as (Θt & ct & Ht & Hlt).
+    destruct (side_lookup _ _ _ _ _ _ H2) as (Θp & cp & Hp & Hlp).
+    destruct (Hlt oc) as (Sc & x & ec & Hc & Hec & <-); [fends_tac|fends_tac|].
+    destruct (Hlt od) as (Sd & y & ed & Hd & Hed & <-); [fends_tac|fends_tac|].
+    destruct (Hlp (edual oc)) as (Sc' & x' & ec' & Hc' & Hec' & <-); [fends_tac|fends_tac|].
+    destruct (Hlp (edual od)) as (Sd' & y' & ed' & Hd' & Hed' & <-); [fends_tac|fends_tac|].
+    rewrite (sdual_lookup _ _ _ _ Hc) in Hc'. rewrite (sdual_lookup _ _ _ _ Hd) in Hd'.
+    injection Hc' as _ Hx'. injection Hd' as _ Hy'.
+    pose proof (slt_empty_w _ _ _ (sbv_thread_needs _ _ _ _ _ _ _ _ _ _ Ht Hec Hed)) as Ha.
+    pose proof (slt_empty_w _ _ _ (cl2_needs _ _ _ _ _ _ _ _ _ _ _ _
+      ocd_dual_ne Hp Hec' Hed')) as Hb.
+    rewrite <-Hx', <-Hy', pt_dual_dual in Hb.
+    apply (Hirr (te_pt ed)). eapply w_lt_trans; [eapply w_lt_mono; [apply wext_join_l|exact Ha]|].
+    eapply w_lt_mono; [apply wext_join_r|exact Hb].
+  - destruct (side_lookup _ _ _ _ _ _ H2) as (Θt & ct & Ht & Hlt).
+    destruct (side_lookup _ _ _ _ _ _ H1) as (Θp & cp & Hp & Hlp).
+    destruct (Hlt oc) as (Sc & x & ec & Hc & Hec & <-); [fends_tac|fends_tac|].
+    destruct (Hlt od) as (Sd & y & ed & Hd & Hed & <-); [fends_tac|fends_tac|].
+    destruct (Hlp (edual oc)) as (Sc' & p & ec' & Hc' & Hec' & <-); [fends_tac|fends_tac|].
+    destruct (Hlp (edual od)) as (Sd' & q & ed' & Hd' & Hed' & <-); [fends_tac|fends_tac|].
+    pose proof (sdual_lookup _ _ _ _ Hc') as Hc2. pose proof (sdual_lookup _ _ _ _ Hd') as Hd2.
+    rewrite edual_edual in Hc2, Hd2. rewrite Hc2 in Hc. rewrite Hd2 in Hd.
+    injection Hc as _ Hx. injection Hd as _ Hy.
+    pose proof (slt_empty_w _ _ _ (sbv_thread_needs _ _ _ _ _ _ _ _ _ _ Ht Hec Hed)) as Ha.
+    pose proof (slt_empty_w _ _ _ (cl2_needs _ _ _ _ _ _ _ _ _ _ _ _
+      ocd_dual_ne Hp Hec' Hed')) as Hb.
+    rewrite <-Hx, <-Hy, pt_dual_dual in Ha.
+    apply (Hirr (te_pt ec')). eapply w_lt_trans; [eapply w_lt_mono; [apply wext_join_l|exact Hb]|].
+    eapply w_lt_mono; [apply wext_join_r|exact Ha].
 Qed.
 
 Print Assumptions sb_thread_E.
 Print Assumptions sb_deadlock_free.
+Print Assumptions sbv_thread_E.
+Print Assumptions sbv_deadlock_free.
+Print Assumptions Tbad_not_cons.
+Print Assumptions sbv_rejected.

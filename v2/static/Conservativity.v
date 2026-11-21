@@ -418,14 +418,14 @@ Proof.
 Qed.
 
 Lemma d_open W Θ Γ Δ F e i lb m C T U :
-  Δ !! i = Some (Some (TEx lb m C T)) → ¬ unlimited T →
+  Δ !! i = Some (Some (TEx lb m C T)) → ¬ unlimited T → cons_open W Γ m C →
   dftyped W (tenv_pinst (pshift m) Θ) (hc_open m C Γ)
     (<[i := Some T]> (lenv_pinst (pshift m) Δ))
     (sf_pinst (pshift m) F) e (pinst_ty (pshift m) U) →
   dftyped W Θ Γ Δ F e U.
 Proof.
-  intros Hi Hu H. dfr.
-  eapply e_open; [by rewrite lenv_df_lookup, Hi|by rewrite unlimited_df|].
+  intros Hi Hu Hc H. dfr.
+  eapply e_open; [by rewrite lenv_df_lookup, Hi|by rewrite unlimited_df|exact Hc|].
   rewrite <-tenv_df_pinst, <-lenv_df_pinst.
   rewrite lenv_df_insert in H. rewrite <-ty_df_pinst. exact H.
 Qed.
@@ -521,7 +521,7 @@ Proof.
     + rewrite ty_inst_df. by heads_df.
     + rewrite ty_inst_df. exact IHtyped.
   - rewrite lenv_df_insert, lenv_df_pinst, tenv_df_pinst, ty_df_pinst in IHtyped.
-    eapply d_open; [by rewrite lenv_df_lookup, H|by rewrite unlimited_df|exact IHtyped].
+    eapply d_open; [by rewrite lenv_df_lookup, H|by rewrite unlimited_df|done|exact IHtyped].
   Unshelve. all: exact None.
 Qed.
 

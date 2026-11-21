@@ -237,6 +237,13 @@ must do, open questions.
   E-Open gains `cons W Γ m C`. Opening adds no fact between points of the old
   context. The running example becomes the flag variant whose arms read their
   binder, statically rejected by ordering, not linearity.
+  Rocq, stage 4 of the run of 2026-11-21 (redesign-clean3): landed on the
+  pre-layer worlds. E-Open, `op_step` and `d_open` ask `cons_open W Γ m C`
+  (static/Contexts.v), the 15 example sites discharge it by `cons_law`
+  (static/PointSubst.v), `opened_cons` and `inv_chan` are in
+  static/Inversion.v, and examples/SemBranch.v proves `Tbad_not_cons`,
+  `sbv_thread_E`, `sbv_deadlock_free` and `sbv_rejected` (no world and no
+  bound type the variant). `sb_dead_arm_typed` is gone.
 
 ## Open
 

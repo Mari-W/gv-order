@@ -22,7 +22,7 @@ Proof.
   eapply e_let_; [apply lsplit_nil| | | ].
   { apply (e_new' _ _ _ _ _ _ SEnd); [spare_tac|set_solver]. }
   lage_tac.
-  eapply e_open with (i := 0); [reflexivity|cbn; tauto|].
+  eapply e_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
   fold (Γnew W_cy 0).
   eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].

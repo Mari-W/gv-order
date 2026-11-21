@@ -1,14 +1,12 @@
-λ (N : fuel) (n : nat) (σ : rty) (c : fuel) (r : nat) 
-  (Π : penv) (φ : cenv) (tk : nat) (e : expr),
-  e ∈ F^N _ n⟦σ ▷ c ; r⟧(Π, φ, tk)
-     : fuel → nat → rty → fuel → nat → penv → cenv → nat → expr → Prop
+λ (N : fuel) (n : nat) (σ : rty) (c : fuel) (Π : penv) (φ : cenv) (e : expr),
+  e ∈ F^N _ n⟦σ ▷ c⟧(Π, φ)
+     : fuel → nat → rty → fuel → penv → cenv → expr → Prop
 λ (N : fuel) (n : nat) (σ : rty) (Π : penv) (φ : cenv) (v : expr),
   v ∈ FV^N _ n⟦σ⟧(Π, φ)
      : fuel → nat → rty → penv → cenv → expr → Prop
 FuelE_bind
-     : ∀ (n : nat) (N : fuel) (σ1 : rty) (r1 : nat) 
-         (σ : rty) (r : nat) (Π1 : penv) (φ1 : cenv) 
-         (ΠK : penv) (φK : cenv) (tk : nat) (c1 d : fuel) 
+     : ∀ (n : nat) (N : fuel) (σ1 σ : rty) (Π1 : penv) 
+         (φ1 : cenv) (ΠK : penv) (φK : cenv) (c1 d : fuel) 
          (K : ectx) (e : expr),
          ectx_ok K
          → dom Π1 = dom φ1
@@ -16,21 +14,15 @@ FuelE_bind
              → dom φ1 ## dom φK
                → fabove c1 ΠK φK
                  → fle c1 d
-                   → fkont n N σ1 r1 σ r c1 d ΠK φK K
-                     → e ∈ F^N _ n⟦σ1 ▷ c1 ; r1⟧(Π1, φ1, tk)
-                       → efill K e ∈ F^N _ n⟦σ ▷ d ; r⟧(
-                       Π1 ∪ ΠK, φ1 ∪ φK, tk)
+                   → fkont n N σ1 σ c1 d ΠK φK K
+                     → e ∈ F^N _ n⟦σ1 ▷ c1⟧(Π1, φ1)
+                       → efill K e ∈ F^N _ n⟦σ ▷ d⟧(
+                       Π1 ∪ ΠK, φ1 ∪ φK)
 FuelE_mono
-     : ∀ (n : nat) (N N' : fuel) (σ : rty) (d d' : fuel) 
-         (r r' : nat) (Π : penv) (φ φ' : cenv) (tk tk' : nat) 
-         (e : expr),
-         rle N N'
-         → cle φ φ'
-           → fle d d'
-             → r' ≤ r
-               → tk ≤ tk'
-                 → e ∈ F^N _ n⟦σ ▷ d ; r⟧(Π, φ, tk)
-                   → e ∈ F^N' _ n⟦σ ▷ d' ; r'⟧(Π, φ', tk')
+     : ∀ (n : nat) (N : fuel) (σ : rty) (d d' : fuel) 
+         (Π : penv) (φ φ' : cenv) (e : expr),
+         cle φ φ'
+         → fle d d' → e ∈ F^N _ n⟦σ ▷ d⟧(Π, φ) → e ∈ F^N _ n⟦σ ▷ d'⟧(Π, φ')
 Vfuel_age
      : ∀ (N : fuel) (n : nat) (c : fuel) (T T' : ty) 
          (Π : penv) (φ : cenv) (v : expr),

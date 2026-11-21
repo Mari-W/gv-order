@@ -12,6 +12,7 @@ From GV Require Import examples.GuardEx examples.LFClose examples.LFCycle exampl
 From GV Require Import examples.LFFreshMany examples.LFClientServer examples.LFFactoryEx examples.LFGrowRing.
 From GV Require Import examples.LFController soup.SoupRun soup.SoupTau soup.LFAdequacy.
 From GV Require Import soup.LFCompose soup.LFTyped lockfree.FairRun.
+From GV Require Import examples.SemBranch static.Inversion.
 
 (** types/Points.v *)
 Print Assumptions pt_dual_dual.
@@ -147,3 +148,11 @@ Print Assumptions lf_soundness_padovani.
 Print Assumptions fair_run_exists.
 Print Assumptions fair_run_exists_proc.
 Print Assumptions lock_free_padovani.
+
+(** static/PointSubst.v, static/Inversion.v: conservativity at E-Open *)
+Print Assumptions cons_law.
+Print Assumptions opened_cons.
+(** examples/SemBranch.v: the flag variant *)
+Print Assumptions Tbad_not_cons.
+Print Assumptions sbv_deadlock_free.
+Print Assumptions sbv_rejected.

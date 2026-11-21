@@ -164,7 +164,7 @@ Inductive typed (W : world) (N : fuel) :
       typed W N Θ Γ Δ F e (ty_inst xs T) c →
       typed W N Θ Γ Δ F e (TEx lb m C T) c
   | e_open Θ Γ Δ F e i lb m C T U c :
-      Δ !! i = Some (Some (TEx lb m C T)) → ¬ unlimited T →
+      Δ !! i = Some (Some (TEx lb m C T)) → ¬ unlimited T → cons_open W Γ m C →
       typed W N (tenv_pinst (pshift m) Θ) (hc_open m C Γ)
         (<[i := Some T]> (lenv_pinst (pshift m) Δ))
         (sf_pinst (pshift m) F) e (pinst_ty (pshift m) U) c →

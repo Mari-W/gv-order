@@ -266,8 +266,8 @@ thread  = case not (inj₂ ∗) of
           | inr w ⇒ let ∗ = w in let ∗ = close d in close c      -- never runs
 partner = let ∗ = close c̄ in close d̄
 -- the process ({c, d}, {thread, partner}), c at x, d at y`,
-    rocq: 'examples/SemBranch.v: sb_thread_E, sb_deadlock_free, Tbad, Cbad (for the arms that ignore their binder)',
-    accepts: { df: { ok: false, part: 'P-Connect', rocq: 'planned, argued in docs/redesign/check-flag-rejection.md section 4, no Rocq proof. E-Open asks cons, so the dead arm needs y ≺ x̄ from its own world, and the joined world has the cycle y ≺ x̄ ≺ y' }, sem: { ok: true, rocq: 'argued for the variant, which takes one more β step per arm. sb_thread_E and sb_deadlock_free prove the program whose arms ignore their binder' } } },
+    rocq: 'examples/SemBranch.v: sbv_thread_E, sbv_deadlock_free, sbv_rejected, Tbad_not_cons',
+    accepts: { df: { ok: false, part: 'P-Connect', rocq: 'sbv_rejected, for every world and every bound. E-Open asks cons, so the dead arm needs y ≺ x̄ from its own world, and the joined world has the cycle y ≺ x̄ ≺ y' }, sem: { ok: true, rocq: 'sbv_thread_E and sbv_deadlock_free' } } },
   { id: 'ex-flagpair', title: 'Two threads on one received flag', modes: ['df', 'live', 'lf'],
     code: `A = case z of inl _ ⇒ let ∗ = close a in close b
              | inr _ ⇒ let ∗ = close b in close a

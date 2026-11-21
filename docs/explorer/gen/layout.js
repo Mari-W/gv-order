@@ -175,18 +175,13 @@ const planned = { 'fv': TRANSFINITE, 'v-rel': TRANSFINITE,
   'th-chain': TRANSFINITE, 'th-adeq': TRANSFINITE,
 };
 const LAYERS = 'Points as ordinal layers are planned, decided on 2026-11-21 (docs/redesign/check-layers.md and check-layers-open.md). A ranked world gives each root a rank function into the ordinals and reads x ≺ y as rank(x) < rank(y). E-New at a fresh root asks that every fact of C ends in the new tree and that C with program order is well-founded there, O-New picks the ranks, P-Term asks wf W, P-Connect asks wf (W1|S ⊔ W2|S), and lock-free adequacy ranks a waiting thread by the ordinal of the end it waits on, with no premise on the world. The relation blocks keep the letter W where they read a ranked world. The Rocq still asks strict W and wfworld W and creates at generated roots of families with laws Λ_ℓ.';
-const CONS = 'Conservativity at E-Open is planned, decided on 2026-11-21 (docs/redesign/check-flag-rejection.md, fix (c)). cons W Γ m C says that the opened context derives no fact between points of the old context. The Rocq E-Open has no such premise yet.';
-const FLAG = 'The flag variant whose arms read their binder is the running example, decided on 2026-11-21 (docs/redesign/check-flag-rejection.md). Its static rejection rests on the conservativity premise of E-Open and is argued on paper in section 4 of that write-up. Without the premise the variant types in the Rocq (sbv_typed in the probe), and sb_dead_arm_typed stops holding once the premise lands.';
 const more = {
   'w-world': LAYERS, 'w-order': LAYERS, 'w-wf': LAYERS, 'w-ext': LAYERS, 't-lf-wf': LAYERS, 't-consts': LAYERS, 'r-new': LAYERS,
   'p-typing': LAYERS, 'e-obl': LAYERS, 'p-rel': LAYERS, 'th-chain': LAYERS, 'th-sound': LAYERS, 'th-compose': LAYERS,
-  'th-fund-proc': LAYERS, 'th-adeq': LAYERS, 'th-terms': LAYERS, 'r-ex': CONS,
+  'th-fund-proc': LAYERS, 'th-adeq': LAYERS, 'th-terms': LAYERS,
 };
 for (const [id, why] of Object.entries(more)) planned[id] = planned[id] ? planned[id] + ' ' + why : why;
 for (const [id, why] of Object.entries(planned)) set(id, b => { b.planned = why; });
-// examples carry a planned tag the same way
-const exFlag = core.examples.find(x => x.id === 'ex-flag');
-if (exFlag) exFlag.planned = FLAG + ' ' + CONS;
 
 // every caption sentence about the lock-free mode hides in the deadlock-free mode
 for (const s of sections) for (const b of s.blocks) if (b.modes.includes('df')) b.caption = lfSentences(b.caption);

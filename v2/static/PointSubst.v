@@ -248,11 +248,18 @@ Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.
 Lemma pn_root_law_inst ℓ g p a : pt_root (pn_inst (λ _, pgen ℓ g) p) ≠ NVar a.
 Proof. induction p; simpl; try done. Qed.
 
-Lemma w_lt_pinst W σ x y : world_wf W → W ⊢ x ≺ y → W ⊢ pt_inst σ x ≺ pt_inst σ y.
+(** The facts of W sit at constant roots, the first half of [world_wf]. *)
+Definition facts_const (W : world) : Prop :=
+  ∀ x y, w_facts W (FLt x y) → croot_in (w_consts W) x ∧ croot_in (w_consts W) y.
+
+Lemma facts_const_wf W : world_wf W → facts_const W.
+Proof. intros Hwf. exact (wf_facts _ Hwf). Qed.
+
+Lemma w_lt_pinst_fc W σ x y : facts_const W → W ⊢ x ≺ y → W ⊢ pt_inst σ x ≺ pt_inst σ y.
 Proof.
   intros Hwf. apply tc_congruence. intros a b Hs.
   destruct Hs as [a b Hf|ℓ g a b Hℓ Hl|a|a].
-  - destruct (wf_facts _ Hwf a b Hf) as [[c [Hc _]] [d [Hd _]]].
+  - destruct (Hwf a b Hf) as [[c [Hc _]] [d [Hd _]]].
     rewrite !pt_inst_novar by (intros ?; congruence). by apply ws_fact.
   - rewrite !(pt_inst_novar σ (law_inst ℓ g _)); [by apply ws_law| |];
       intros a'; unfold law_inst; rewrite pt_root_inst_var; apply pn_root_law_inst.
@@ -260,10 +267,80 @@ Proof.
   - rewrite pt_inst_shift, pt_inst_dual. apply ws_dpo.
 Qed.
 
-Section facts.
-  Context (W : world) (Hwf : world_wf W).
+Lemma w_lt_pinst W σ x y : world_wf W → W ⊢ x ≺ y → W ⊢ pt_inst σ x ≺ pt_inst σ y.
+Proof. intros Hwf. by apply w_lt_pinst_fc, facts_const_wf. Qed.
 
-End facts.
+(** ** Conservativity of an opening
+
+    [cons_of_hold]: an opening whose constraint holds at some instance is
+    conservative. [cons_law]: the opening of the existential of E-New is
+    conservative, the laws of the family hold at its generated root. Both
+    ask only that the facts of W sit at constant roots. *)
+
+Lemma pshift_back xs m x : length xs = m → pt_inst (plist xs) (pt_inst (pshift m) x) = x.
+Proof.
+  intros Hl. rewrite pt_inst_comp, (pt_inst_ext _ pvar); [apply pt_inst_pvar|].
+  intros a. unfold compose, pshift. rewrite pt_inst_pvar_at. by apply plist_shift.
+Qed.
+
+Lemma slt_inst W Γ Γ' τ x y : facts_const W → slt W Γ' x y →
+  (∀ u v, hyp_fact (hc_hyps Γ') (FLt u v) → slt W Γ (pt_inst τ u) (pt_inst τ v)) →
+  slt W Γ (pt_inst τ x) (pt_inst τ y).
+Proof.
+  intros Hwf H Hh. unfold slt in H. induction H as [x y Hw|x y Hf|x y z _ IH1 _ IH2].
+  - apply sl_w. by apply w_lt_pinst_fc.
+  - by apply Hh.
+  - eapply sl_trans; [apply IH1|apply IH2].
+Qed.
+
+Lemma length_ids m : length (ids m) = m.
+Proof. unfold ids. by rewrite length_fmap, length_seq. Qed.
+
+Lemma ids_lookup m a : a < m → ids m !! a = Some (pvar a).
+Proof. intros Ha. unfold ids. rewrite list_lookup_fmap, lookup_seq_lt by done. done. Qed.
+
+Lemma cons_of_hold W Γ m C xs : facts_const W → length xs = m → hold_at W Γ C xs → cons_open W Γ m C.
+Proof.
+  intros Hwf Hl HC x y H.
+  rewrite <-(pshift_back xs m x), <-(pshift_back xs m y) by done.
+  apply (slt_inst W Γ (hc_open m C Γ)); [done|done|].
+  intros u v (C' & ys & Hin & Hat). simpl in Hin. apply elem_of_app in Hin as [Hin|Hin].
+  - unfold hyps_inst in Hin. apply list_elem_of_fmap in Hin as ([C0 ys0] & Heq & Hin).
+    injection Heq as -> ->.
+    apply bcs_at_inst in Hat as ([u0 v0] & Hat & Heq). injection Heq as -> ->.
+    rewrite !pshift_back by done. apply fl_h. by exists C0, ys0.
+  - apply list_elem_of_singleton in Hin. injection Hin as -> ->.
+    apply HC. destruct C as [env P]. apply bcs_at_iff in Hat as (f0 & Hf & Hs & Heq).
+    apply bcs_at_iff. simpl in *. rewrite length_ids, length_fmap in Hs.
+    exists f0. split_and!; [done|by rewrite Hl|].
+    change (FLt (pt_inst (plist xs) u) (pt_inst (plist xs) v)) with (fact_map (pt_inst (plist xs)) (FLt u v)).
+    rewrite Heq, fact_map_comp, (fact_map_ext _ (pt_inst (pt_inst (plist xs) ∘ plist (ids m ++ (pt_inst (pshift m) <$> env)))))
+      by (intros; apply pt_inst_comp).
+    apply fact_map_ext_scoped with (k := m + length env); [done|].
+    intros a Ha. unfold compose. unfold plist at 2 3.
+    destruct (decide (a < m)) as [Hm|Hm].
+    + rewrite lookup_app_l by (by rewrite length_ids). rewrite ids_lookup by done.
+      rewrite lookup_app_l by lia. rewrite pt_inst_pvar_at. unfold plist.
+      destruct (xs !! a) eqn:E; [done|]. apply lookup_ge_None in E. lia.
+    + rewrite lookup_app_r by (rewrite length_ids; lia). rewrite lookup_app_r by lia.
+      rewrite length_ids, list_lookup_fmap, Hl.
+      destruct (env !! (a - m)) eqn:E; simpl.
+      * by apply pshift_back.
+      * apply lookup_ge_None in E. lia.
+Qed.
+
+Lemma law_hold W Γ ℓ : ℓ ∈ w_fams W → hold_at W Γ (bcs_of (w_laws W ℓ)) [pgen ℓ 0].
+Proof.
+  intros Hℓ x y Hat. apply bcs_at_iff in Hat as (f0 & Hf & Hs & Heq). simpl in *.
+  destruct f0 as [x0 y0]. apply sl_w.
+  assert (fact_map (pt_inst (plist [pgen ℓ 0])) (FLt x0 y0) = fact_map (law_inst ℓ 0) (FLt x0 y0)) as E.
+  { unfold law_inst. apply fact_map_ext_scoped with (k := 1); [done|].
+    intros a Ha. assert (a = 0) as -> by lia. done. }
+  rewrite <-Heq in E. simpl in E. injection E as -> ->. by apply w_lt_law.
+Qed.
+
+Lemma cons_law W Γ ℓ : facts_const W → ℓ ∈ w_fams W → cons_open W Γ 1 (bcs_of (w_laws W ℓ)).
+Proof. intros Hwf Hℓ. apply (cons_of_hold _ _ _ _ [pgen ℓ 0]); [done|done|by apply law_hold]. Qed.
 
 (** ** The substitution lemma *)
 

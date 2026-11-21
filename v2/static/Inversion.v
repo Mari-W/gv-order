@@ -16,17 +16,17 @@
       with P-Term, a typed process of two threads ends with P-Connect
       over one thread on each side. *)
 
-From GV Require Export static.Weakening.
+From GV Require Export static.PointSubst.
 
 (** ** Contexts reached by E-Open *)
 
-Inductive opened : tenv → hctx → lenv → sfuture → tenv → hctx → lenv → sfuture → Prop :=
-  | op_refl Θ Γ Δ F : opened Θ Γ Δ F Θ Γ Δ F
+Inductive opened (W : world) : tenv → hctx → lenv → sfuture → tenv → hctx → lenv → sfuture → Prop :=
+  | op_refl Θ Γ Δ F : opened W Θ Γ Δ F Θ Γ Δ F
   | op_step Θ Γ Δ F Θ' Γ' Δ' F' i lb m C T :
-      Δ !! i = Some (Some (TEx lb m C T)) → ¬ unlimited T →
-      opened (tenv_pinst (pshift m) Θ) (hc_open m C Γ)
+      Δ !! i = Some (Some (TEx lb m C T)) → ¬ unlimited T → cons_open W Γ m C →
+      opened W (tenv_pinst (pshift m) Θ) (hc_open m C Γ)
         (<[i := Some T]> (lenv_pinst (pshift m) Δ)) (sf_pinst (pshift m) F) Θ' Γ' Δ' F' →
-      opened Θ Γ Δ F Θ' Γ' Δ' F'.
+      opened W Θ Γ Δ F Θ' Γ' Δ' F'.
 
 (** ** Term forms *)
 
@@ -35,7 +35,7 @@ Section inversion.
 
   Lemma inv_close Θ Γ Δ F e T c :
     typed W N Θ Γ Δ F (EClose e) T c →
-    ∃ Θ' Γ' Δ' F' S0 x a mS c0, opened Θ Γ Δ F Θ' Γ' Δ' F' ∧
+    ∃ Θ' Γ' Δ' F' S0 x a mS c0, opened W Θ Γ Δ F Θ' Γ' Δ' F' ∧
       unfoldS S0 = SEnd ∧ ub_below_s W Γ' (Some x) F' ∧
       typed W N Θ' Γ' Δ' F' e (TSess S0 x a mS) c0.
   Proof.
@@ -50,7 +50,7 @@ Section inversion.
   Lemma inv_case Θ Γ Δ F e e1 e2 T c :
     typed W N Θ Γ Δ F (Case e e1 e2) T c →
     ∃ Θ' Γ' Δ' F' Θ1 Θ2 Θ2' Δ1 Δ2 Δ2' T1 T2 T' c0 c1 c2,
-      opened Θ Γ Δ F Θ' Γ' Δ' F' ∧ tsplit Θ' Θ1 Θ2 ∧ lenv_split Δ' Δ1 Δ2 ∧
+      opened W Θ Γ Δ F Θ' Γ' Δ' F' ∧ tsplit Θ' Θ1 Θ2 ∧ lenv_split Δ' Δ1 Δ2 ∧
       typed W N Θ1 Γ' Δ1 (sf_unionb F' (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e (TSum T1 T2) c0 ∧
       thage c0 Θ2 Θ2' ∧ lage c0 Δ2 Δ2' ∧
       typed W N Θ2' Γ' (Some T1 :: Δ2') F' e1 T' c1 ∧
@@ -71,7 +71,7 @@ Section inversion.
   Lemma inv_letu Θ Γ Δ F e1 e2 T c :
     typed W N Θ Γ Δ F (LetU e1 e2) T c →
     ∃ Θ' Γ' Δ' F' Θ1 Θ2 Θ2' Δ1 Δ2 Δ2' T' c1 c2,
-      opened Θ Γ Δ F Θ' Γ' Δ' F' ∧ tsplit Θ' Θ1 Θ2 ∧ lenv_split Δ' Δ1 Δ2 ∧
+      opened W Θ Γ Δ F Θ' Γ' Δ' F' ∧ tsplit Θ' Θ1 Θ2 ∧ lenv_split Δ' Δ1 Δ2 ∧
       typed W N Θ1 Γ' Δ1 (sf_unionb F' (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 TUnit c1 ∧
       thage c1 Θ2 Θ2' ∧ lage c1 Δ2 Δ2' ∧
       typed W N Θ2' Γ' Δ2' F' e2 T' c2.
@@ -89,7 +89,7 @@ Section inversion.
   Lemma inv_letp Θ Γ Δ F e1 e2 T c :
     typed W N Θ Γ Δ F (LetP e1 e2) T c →
     ∃ Θ' Γ' Δ' F' Θ1 Θ2 Θ2' Δ1 Δ2 Δ2' T1 T2 T' c1 c2,
-      opened Θ Γ Δ F Θ' Γ' Δ' F' ∧ tsplit Θ' Θ1 Θ2 ∧ lenv_split Δ' Δ1 Δ2 ∧
+      opened W Θ Γ Δ F Θ' Γ' Δ' F' ∧ tsplit Θ' Θ1 Θ2 ∧ lenv_split Δ' Δ1 Δ2 ∧
       typed W N Θ1 Γ' Δ1 (sf_unionb F' (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 (TProd T1 T2) c1 ∧
       thage c1 Θ2 Θ2' ∧ lage c1 Δ2 Δ2' ∧
       typed W N Θ2' Γ' (Some T2 :: Some T1 :: Δ2') F' e2 T' c2.
@@ -108,7 +108,7 @@ Section inversion.
   Lemma inv_pair Θ Γ Δ F e1 e2 T c :
     typed W N Θ Γ Δ F (Pair e1 e2) T c →
     ∃ Θ' Γ' Δ' F' Θ1 Θ2 Θ2' Δ1 Δ2 Δ2' T1 T2 c1 c2,
-      opened Θ Γ Δ F Θ' Γ' Δ' F' ∧ tsplit Θ' Θ1 Θ2 ∧ lenv_split Δ' Δ1 Δ2 ∧
+      opened W Θ Γ Δ F Θ' Γ' Δ' F' ∧ tsplit Θ' Θ1 Θ2 ∧ lenv_split Δ' Δ1 Δ2 ∧
       typed W N Θ1 Γ' Δ1 (sf_unionb F' (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1 T1 c1 ∧
       thage c1 Θ2 Θ2' ∧ lage c1 Δ2 Δ2' ∧
       typed W N Θ2' Γ' Δ2' (sf_unionb F' (heads T1) (hbot T1)) e2 T2 c2.
@@ -130,9 +130,9 @@ Section inversion.
   Lemma inv_let Θ Γ Δ F e1 e2 T c :
     typed W N Θ Γ Δ F (ELet e1 e2) T c →
     ∃ Θ' Γ' Δ' F' Θ1 Θ2 Θ2' Δ1 Δ2 Δ2' T1 T2 T' c1 c2,
-      opened Θ Γ Δ F Θ' Γ' Δ' F' ∧ tsplit Θ' Θ1 Θ2 ∧ lenv_split Δ' Δ1 Δ2 ∧
+      opened W Θ Γ Δ F Θ' Γ' Δ' F' ∧ tsplit Θ' Θ1 Θ2 ∧ lenv_split Δ' Δ1 Δ2 ∧
       (∃ Θ'' Γ'' Δ'' F'' Θ3 Θ4 Θ4' Δ3 Δ4 Δ4' T3 T4 c3 c4,
-         opened Θ1 Γ' Δ1 (sf_unionb F' (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2))
+         opened W Θ1 Γ' Δ1 (sf_unionb F' (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2))
            Θ'' Γ'' Δ'' F'' ∧ tsplit Θ'' Θ3 Θ4 ∧ lenv_split Δ'' Δ3 Δ4 ∧
          typed W N Θ3 Γ'' Δ3 (sf_unionb F'' (tenv_heads Θ4 ∪ lenv_heads Δ4) (lenv_bot Δ4)) e1 T3 c3 ∧
          thage c3 Θ4 Θ4' ∧ lage c3 Δ4 Δ4' ∧
@@ -145,7 +145,58 @@ Section inversion.
     exists Θ', Γ', Δ', F', Θ1, Θ2, Θ2', Δ1, Δ2, Δ2', T1, T2, T', c1, c2.
     split_and!; try done. by apply inv_pair in H1.
   Qed.
+
+  (** A channel typed at an end type sits at the point of that type in Θ.
+      E-Sub keeps the point of a session type, E-Pack yields no session
+      type, and E-Open shifts Θ and the type alike. *)
+  Lemma inv_chan Θ Γ Δ F o T c :
+    typed W N Θ Γ Δ F (Chan o) T c →
+    ∀ S x a mS, T = TSess S x a mS → ∃ e, Θ !! o = Some e ∧ te_pt e = x.
+  Proof.
+    remember (Chan o) as e0 eqn:He. induction 1; try discriminate.
+    - injection He as ->. intros S' x' a' m' HT. injection HT as -> -> -> ->.
+      exists (TE S' x' a' m'). split; [by simplify_map_eq|done].
+    - intros S' x' a' m' ->. inversion H0; subst. by eapply IHtyped.
+    - intros S' x' a' m' ->. destruct (IHtyped He S' (pt_inst (pshift m) x') a' m' eq_refl) as (e' & Hl & Hx).
+      unfold tenv_pinst in Hl. rewrite lookup_fmap in Hl.
+      destruct (Θ !! o) as [e0|] eqn:E; [|discriminate]. injection Hl as <-.
+      exists e0. split; [done|]. simpl in Hx.
+      rewrite <-(pshift_back (replicate m (pvar 0)) m (te_pt e0)), <-(pshift_back (replicate m (pvar 0)) m x')
+        by apply length_replicate.
+      by rewrite Hx.
+  Qed.
 End inversion.
+
+(** ** Conservativity along openings
+
+    A sequence of openings instantiates the points of Θ and F by one σ,
+    the composite of the shifts, and every fact the opened context
+    derives between instantiated points holds in the given one. *)
+
+Lemma tentry_pinst_pvar e : tentry_pinst pvar e = e.
+Proof. destruct e. unfold tentry_pinst, pinst_sty. simpl. by rewrite pt_inst_pvar. Qed.
+
+Lemma tentry_pinst_comp τ σ e : tentry_pinst τ (tentry_pinst σ e) = tentry_pinst (pt_inst τ ∘ σ) e.
+Proof. destruct e. unfold tentry_pinst, pinst_sty. simpl. by rewrite pt_inst_comp. Qed.
+
+Lemma opened_cons W Θ Γ Δ F Θ' Γ' Δ' F' :
+  opened W Θ Γ Δ F Θ' Γ' Δ' F' →
+  ∃ σ, (∀ o e, Θ !! o = Some e → Θ' !! o = Some (tentry_pinst σ e)) ∧
+       (∀ y, y ∈ F.1 → pt_inst σ y ∈ F'.1) ∧
+       (∀ x y, slt W Γ' (pt_inst σ x) (pt_inst σ y) → slt W Γ x y).
+Proof.
+  induction 1 as [Θ Γ Δ F|Θ Γ Δ F Θ' Γ' Δ' F' i lb m C T Hi Hu Hc _ (σ & Hl & Hf & Hs)].
+  - exists pvar. split_and!.
+    + intros o e ->. by rewrite tentry_pinst_pvar.
+    + intros y Hy. by rewrite pt_inst_pvar.
+    + intros x y. by rewrite !pt_inst_pvar.
+  - exists (pt_inst σ ∘ pshift m). split_and!.
+    + intros o e Ho. rewrite <-tentry_pinst_comp. apply Hl.
+      unfold tenv_pinst. by rewrite lookup_fmap, Ho.
+    + intros y Hy. rewrite <-pt_inst_comp. apply Hf. unfold sf_pinst. simpl.
+      by apply elem_of_map_2.
+    + intros x y H. rewrite <-!pt_inst_comp in H. by apply Hc, Hs.
+Qed.
 
 (** ** Processes *)
 

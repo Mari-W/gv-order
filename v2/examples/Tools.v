@@ -92,6 +92,10 @@ Proof. intros H y o Hyx Hy. apply (H y). by rewrite list_lookup_insert_ne. Qed.
 Ltac spare_tac :=
   first [ spare_all | apply spare_but; spare_all ].
 
+(** The conservativity premise of E-Open at the existential of E-New, in
+    a world without facts. *)
+Ltac cons_tac := apply cons_law; [by intros ?? []|set_solver].
+
 (** Split by occurrence. An unlimited entry goes to both sides. *)
 Ltac lsplit_go i e1 e2 :=
   lazymatch goal with

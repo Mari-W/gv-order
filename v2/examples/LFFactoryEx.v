@@ -47,7 +47,7 @@ Proof.
   eapply e_let_; [lsplit_tac (ENew 0) EUnit| | | ].
   { apply (e_new' _ _ _ _ _ _ Sd); [spare_tac|set_solver]. }
   lage_tac.
-  eapply e_open with (i := 0); [reflexivity|cbn; tauto|].
+  eapply e_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_nil', !lenv_pinst_cons', lenv_pinst_nones.
   cbn [fmap option_fmap option_map insert list_insert].
   eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
@@ -120,7 +120,7 @@ Proof.
     lage_tac.
     apply e_unit'. spare_tac. }
   lage_tac.
-  eapply e_open with (i := 0); [reflexivity|cbn; tauto|].
+  eapply e_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
   fold (Γnew W_fx 0).
   eapply e_letp_; [lsplit_tac (App (EForce mk1) (Var 0)) EUnit| | | ].

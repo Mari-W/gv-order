@@ -403,7 +403,7 @@ Section fund.
       |Θ Γ Δ F e κf S0 x a mS S c0 H IH HmN
       |Θ Γ Δ F e T T' c c' H IH Hsub Hc
       |Θ Γ Δ F e lb m C T xs c Hxs HC Hlbx H IH
-      |Θ Γ Δ F e i lb m C T U c Hi Hnu H IH];
+      |Θ Γ Δ F e i lb m C T U c Hi Hnu _ H IH];
       intros L Hgl W1 σ ρ B HW Hs Hr; cbn [pinst_ty]; rewrite ?tenv_pinst_empty, ?tenv_pinst_singleton.
     - (* E-Unit *)
       by apply later_unit, lenv_unl_pinst.

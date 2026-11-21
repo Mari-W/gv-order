@@ -185,6 +185,13 @@ Definition ids (m : nat) : list point := pvar <$> seq 0 m.
 Definition hc_open (m : nat) (C : bcs) (Γ : hctx) : hctx :=
   HCtx (hyps_inst (pshift m) (hc_hyps Γ) ++ [(bcs_inst (pshift m) C, ids m)]).
 
+(** Conservativity of an opening. The constraint C under m new point
+    variables derives no new fact between points of Γ: a fact between
+    two shifted outer points in [hc_open m C Γ] holds in Γ already
+    (docs/redesign/check-flag-rejection.md, fix (c)). *)
+Definition cons_open (W : world) (Γ : hctx) (m : nat) (C : bcs) : Prop :=
+  ∀ x y, slt W (hc_open m C Γ) (pt_inst (pshift m) x) (pt_inst (pshift m) y) → slt W Γ x y.
+
 (** The rest above an optional upper point. *)
 Definition rest_of (ub : option point) : frest :=
   match ub with Some u => RAbove u | None => RAll end.

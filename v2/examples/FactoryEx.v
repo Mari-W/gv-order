@@ -78,7 +78,7 @@ Proof.
   { eapply d_var'; [reflexivity|]. spare_tac. }
   eapply d_let; [apply tsplit_empty|lsplit_tac (ENew 0) EUnit| |].
   { eapply (d_new' _ _ _ _ _ Sd None None); [spare_tac|set_solver]. }
-  eapply d_open with (i := 0); [reflexivity|cbn; tauto|].
+  eapply d_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_nil', !lenv_pinst_cons', lenv_pinst_nones.
   cbn [fmap option_fmap option_map insert list_insert].
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
@@ -141,7 +141,7 @@ Proof.
       [done| |done|split; [apply Forall_nil|intros _; apply Forall_nil]|exact I|].
     - intros x y (g0 & (f & Hf & _) & _). done.
     - by apply (mk0_typed _ 0). }
-  eapply d_open with (i := 0); [reflexivity|cbn; tauto|].
+  eapply d_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
   fold (Γnew W_fx 0).
   eapply d_letp; [apply tsplit_empty|lsplit_tac (App (EForce mk1) (Var 0)) EUnit| |].

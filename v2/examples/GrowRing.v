@@ -266,7 +266,7 @@ Proof.
   unfold rg_main, let_new.
   eapply d_let; [apply tsplit_empty|apply lsplit_nil| |].
   { eapply (d_new' _ _ _ _ _ Sch None None); [spare_tac|set_solver]. }
-  eapply d_open with (i := 0); [reflexivity|cbn; tauto|].
+  eapply d_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
   fold (Γnew W_rg 0).
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].

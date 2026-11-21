@@ -826,8 +826,7 @@ window.MAP = {
        "r-new",
        "v-rel"
       ]
-     },
-     "planned": "Conservativity at E-Open is planned, decided on 2026-11-21 (docs/redesign/check-flag-rejection.md, fix (c)). cons W Γ m C says that the opened context derives no fact between points of the old context. The Rocq E-Open has no such premise yet."
+     }
     },
     {
      "id": "t-consts",
@@ -5890,7 +5889,7 @@ window.MAP = {
    "why": "A dead arm or an uncalled abstraction receives no value, so the type of its binder may state arbitrary facts. Without the premise opening such a binder supplies the arm with an order fact that no world holds. The premise reads only the static order, and each existential that E-New creates satisfies the premise.",
    "breaks": "Without it the flag variant types. Its dead arm opens a binder whose constraint states $y \\prec \\overline{x}$, and the live arm asks only $x \\prec \\overline{y}$ of the world.",
    "example": "Opening $\\exists\\annot{^{0}}.\\,\\{y \\prec \\overline{x}\\}.\\,\\ast$ in a world with only $x \\prec \\overline{y}$ fails the premise.",
-   "rocq": "not yet in the Rocq (docs/redesign/check-flag-rejection.md, fix (c))",
+   "rocq": "static/Contexts.v: cons_open; static/PointSubst.v: cons_of_hold, cons_law; examples/SemBranch.v: Tbad_not_cons",
    "sig": "\\mathsf{cons} : \\mathsf{World} \\to \\mathsf{Hyps} \\to \\mathbb{N} \\to \\mathcal{P}(\\mathsf{Point} \\times \\mathsf{Point}) \\to \\mathsf{Prop}",
    "args": [
     {
@@ -11843,20 +11842,19 @@ window.MAP = {
     "lf"
    ],
    "code": "not     = λz. case z of inl w ⇒ inj₂ w | inr w ⇒ inj₁ w\nthread  = case not (inj₂ ∗) of\n            inl w ⇒ let ∗ = w in let ∗ = close c in close d      -- runs\n          | inr w ⇒ let ∗ = w in let ∗ = close d in close c      -- never runs\npartner = let ∗ = close c̄ in close d̄\n-- the process ({c, d}, {thread, partner}), c at x, d at y",
-   "rocq": "examples/SemBranch.v: sb_thread_E, sb_deadlock_free, Tbad, Cbad (for the arms that ignore their binder)",
+   "rocq": "examples/SemBranch.v: sbv_thread_E, sbv_deadlock_free, sbv_rejected, Tbad_not_cons",
    "accepts": {
     "df": {
      "ok": false,
      "part": "P-Connect",
-     "rocq": "planned, argued in docs/redesign/check-flag-rejection.md section 4, no Rocq proof. E-Open asks cons, so the dead arm needs y ≺ x̄ from its own world, and the joined world has the cycle y ≺ x̄ ≺ y"
+     "rocq": "sbv_rejected, for every world and every bound. E-Open asks cons, so the dead arm needs y ≺ x̄ from its own world, and the joined world has the cycle y ≺ x̄ ≺ y"
     },
     "sem": {
      "ok": true,
-     "rocq": "argued for the variant, which takes one more β step per arm. sb_thread_E and sb_deadlock_free prove the program whose arms ignore their binder"
+     "rocq": "sbv_thread_E and sbv_deadlock_free"
     }
    },
-   "planned": "The flag variant whose arms read their binder is the running example, decided on 2026-11-21 (docs/redesign/check-flag-rejection.md). Its static rejection rests on the conservativity premise of E-Open and is argued on paper in section 4 of that write-up. Without the premise the variant types in the Rocq (sbv_typed in the probe), and sb_dead_arm_typed stops holding once the premise lands. Conservativity at E-Open is planned, decided on 2026-11-21 (docs/redesign/check-flag-rejection.md, fix (c)). cons W Γ m C says that the opened context derives no fact between points of the old context. The Rocq E-Open has no such premise yet.",
-   "shows": "The flag is always $\\mathsf{inj}_1\\,\\ast$, so the thread closes $c$ before $d$. E-Case types both arms in one world. The live arm asks $x \\prec \\overline{y}$ and the partner asks $\\overline{x} \\prec y$. The dead arm asks $y \\prec \\overline{x}$. E-Open adds no fact between points of the old context, so no binder type supplies that fact, and the world of the thread must hold $y \\prec \\overline{x}$. The joined world has the cycle $y \\prec \\overline{x} \\prec y$, and P-Connect asks a well-founded join. The relation reads only the steps the thread takes. After the $\\beta$ steps the thread is in the live arm, which the fundamental theorem places in $E$ in a world with $x \\prec \\overline{y}$ alone. Semantic P-Connect joins it with the partner, and adequacy gives deadlock freedom. The static rejection is argued on paper, with no Rocq proof.",
+   "shows": "The flag is always $\\mathsf{inj}_1\\,\\ast$, so the thread closes $c$ before $d$. E-Case types both arms in one world. The live arm asks $x \\prec \\overline{y}$ and the partner asks $\\overline{x} \\prec y$. The dead arm asks $y \\prec \\overline{x}$. E-Open adds no fact between points of the old context, so no binder type supplies that fact, and the world of the thread must hold $y \\prec \\overline{x}$. The joined world has the cycle $y \\prec \\overline{x} \\prec y$, and P-Connect asks a strict join. The relation reads only the steps the thread takes. After the $\\beta$ steps the thread is in the live arm, which the fundamental theorem places in $E$ in a world with $x \\prec \\overline{y}$ alone. Semantic P-Connect joins it with the partner, and adequacy gives deadlock freedom.",
    "lead": "Only semantic typing shows that a thread branching on a flag it computes itself is deadlock free. Static typing checks the arm that never runs, and that arm closes the two channels in the other order."
   },
   {

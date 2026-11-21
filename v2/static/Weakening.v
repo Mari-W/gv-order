@@ -530,7 +530,7 @@ Proof.
   - eapply e_pack; eauto.
   - (* E-Open *)
     pose proof Hr as (_ & Hl2 & _). pose proof (Hl2 _ _ H ltac:(simpl; tauto)) as Hri.
-    eapply e_open; [exact Hri|done|]. apply IHtyped.
+    eapply e_open; [exact Hri|done|done|]. apply IHtyped.
     eapply (lren_insert _ _ _ _ (pinst_ty (pshift m) (TEx lb m C T)));
       [by apply lren_pinst| |simpl; tauto|done].
     by rewrite lenv_pinst_lookup, H.
