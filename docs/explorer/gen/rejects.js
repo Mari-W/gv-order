@@ -33,7 +33,7 @@ main = let ⟨w, w′⟩ = new in let ⟨k, k′⟩ = new in
        let ∗ = spawn (λ_. close w′) in              -- waits forever
        let ∗ = spawn (λ_. (force sink) k′) in
        (force refresh) ⟨w, k⟩`,
-    shows: "Each round links the partner of the waiting end to a fresh channel, so the waiting thread always faces a fresh end with a full counter and no counter runs out. Each link uses one ticket of its thread and no step creates tickets.",
+    shows: "Each round links the partner of the waiting end to a fresh channel, so the waiting thread always faces a fresh end with a full counter and no counter runs out. E-Link asks the credit of each linked end to exceed the partner bound $N - m$ of the other, and a fresh end with a full counter fails it.",
     rocq: 'to be mechanized',
     accepts: { lf: { ok: false, part: 'tickets' } } },
   { id: 'rx-chain', title: 'A waiting chain that grows forever', modes: ['lf'],
@@ -44,7 +44,8 @@ main = let ⟨w, w′⟩ = new in let ⟨k, k′⟩ = new in
                  let ∗ = close c in close w)                 -- waits on its child
 main = let ⟨w, w′⟩ = new in let ∗ = spawn (λ_. close w′) in (force grow) w
 -- every thread waits on the one it spawned, close w′ never proceeds`,
-    shows: "Each thread waits on a point below the point of its predecessor, and new threads keep appearing. A well-founded order has no infinite descending chain, so lock-free typing asks $\\mathsf{wfworld}\\,W$ of every world the run reaches.",
-    rocq: 'to be mechanized',
-    accepts: { lf: { ok: false, part: 'well-founded world' } } }
+    shows: "Each thread waits on a point below the point of its predecessor, and new threads keep appearing. At a fresh root the creation states a fact from the new point down to the point of $w$, and $\\mathsf{wf\\_new}$ forbids it. At a field the box needs that fact one level lower in every round, so the tree of the root of main holds an infinite descending chain, and E-New rejects main.",
+    rocq: 'argued in docs/redesign/check-layers.md, to be mechanized',
+    planned: 'Points as ordinal layers are planned (docs/redesign/check-layers.md). The Rocq rejects nothing here and asks wfworld W of lock-free adequacy instead.',
+    accepts: { lf: { ok: false, part: 'E-New' } } }
 );
