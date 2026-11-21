@@ -304,6 +304,16 @@ must do, open questions.
   no schematic constraints, so C is finite and (wf-new) is a cycle check. A plan
   starts now (algorithmic-plan.md). The full draft waits until the declarative
   system is final.
+- **Decisions on the algorithmic plan (author, 2026-11-21).**
+  - E-Box. `sinsts` gains `Forall sscoped ss` and `typed_sinst` is proved
+    (plan 6.1). Fixed now in the Rocq run.
+  - Opened points are named by an erased `unpack x as ῑ` (plan 6.2).
+  - Existential types are well formed, `l ≼ ap(T)` under C (plan 6.3). Rocq
+    after layers.
+  - The decidable fragment admits facts schematic in one offset k, with
+    entailment by one-counter reachability (plan 6.4). GrowRing stays outside.
+  - Defaults proposed with the plan and not yet confirmed. Keep `new_κ e` as
+    surface syntax (6.3), and numbers inside session types are literals (6.6).
 - **Open points of A3 (2026-11-21, awaiting decision).** check-layers-open.md.
   The restriction on plain `new` is real, O-New needs no change, P-Connect asks
   `wf (W1|S ⊔ W2|S)`, the other cases change only through `ent_sound`, and
