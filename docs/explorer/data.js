@@ -11715,12 +11715,12 @@ window.MAP = {
     "lf"
    ],
    "code": "not     = λz. case z of inl w ⇒ inj₂ w | inr w ⇒ inj₁ w\nthread  = case not (inj₂ ∗) of\n            inl _ ⇒ let ∗ = close c in close d      -- runs\n          | inr _ ⇒ let ∗ = close d in close c      -- never runs\npartner = let ∗ = close c̄ in close d̄\n-- the process ({c, d}, {thread, partner}), c at x, d at y",
-   "rocq": "examples/SemBranch.v: sb_thread_E, sb_deadlock_free",
+   "rocq": "examples/SemBranch.v: sb_thread_E, sb_deadlock_free, sb_dead_arm_typed",
    "accepts": {
     "df": {
      "ok": false,
      "part": "P-Connect",
-     "rocq": "argued in docs/redesign/semantic-example.md, no Rocq proof"
+     "rocq": "doubtful, no Rocq proof: E-Open can give the dead arm the fact y ≺ x̄ from an existential that no value inhabits (sb_dead_arm_typed, docs/redesign/pending.md entry 7)"
     },
     "sem": {
      "ok": true,

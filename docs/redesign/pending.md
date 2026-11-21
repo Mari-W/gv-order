@@ -275,6 +275,31 @@ must do, open questions.
    needs inversion of `typed` through E-Sub, E-Open, E-Pack, E-Box and
    E-Force, and v2 has no inversion lemma for `typed`. The badges stay
    "to be mechanized".
+   Next run, stage 4 (2026-11-21). Inversion lemmas done in
+   v2/static/Inversion.v: `inv_close`, `inv_case`, `inv_letu`,
+   `inv_letp`, `inv_pair`, `inv_let` (the derived E-Let), and
+   `ptyped_one`, `ptyped_two` for P-Term and P-Connect over one thread
+   on each side. E-Sub and E-Pack change only the type, so the lemmas
+   forget it. E-Open changes the context, so each lemma states the
+   premises of its rule in a context `opened` from the given one.
+   Stopped: `sb_untypable`, the static half of FlagPair and the programs
+   of rejects.js. The ordering argument does not go through. An arm of
+   E-Case may open an existential entry of Δ, and its constraint may
+   state any fact over outer points through its environment. Nothing
+   asks that a value inhabits the type of a λ argument or of a dead arm,
+   so no fact derived in an opened Γ transfers to W. Concretely,
+   `sb_dead_arm_typed` (v2/examples/SemBranch.v) types the dead arm,
+   with its binder read by let ∗ = w, in the world Wa that holds only
+   x ≺ ȳ: the binder has the type ∃⁰. y ≺ x̄. ∗, and E-Open gives the arm
+   y ≺ x̄. On paper this extends to the whole variant of the thread
+   (not given the argument type (∃⁰. y ≺ x̄. ∗) ⊕ ∗, partner in Wb), so
+   the claim of semantic-example.md that the static system rejects the
+   flag program fails for that variant. The program as written binds a
+   unit it never reads, and a unit is linear, so it is rejected for that
+   reason, which needs inversion through E-App and E-Abs as well. The
+   programs of rejects.js need the cost and ticket judgments through
+   boxes, more than an inversion. The map marks the static rejection of
+   the flag program as doubtful.
 
 8. **Readable typing notation (draft, under review).** Map: draft blocks at
    the end of the typing section (Draft notation, Draft E-App, E-Send,

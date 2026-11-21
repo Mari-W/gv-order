@@ -307,5 +307,52 @@ Proof.
   exact H.
 Qed.
 
+(** ** The dead arm under an uninhabited existential (next run, stage 4)
+
+    The header claims that the static system rejects the thread because
+    E-Case types both arms under one Γ. A derivation may give the bound
+    variable of the dead arm an existential type whose constraint states
+    y ≺ x̄ over the outer points, and no value needs to inhabit it: the
+    arm is dead, and the argument of [sb_not] is the variable of a λ, so
+    E-Pack never checks the constraint. E-Open then puts y ≺ x̄ into Γ and
+    the dead arm closes d before c in a world that holds only x ≺ ȳ. The
+    arm below consumes its binder with let ∗ = w, which the arms of
+    [sb_thread] do not, so this shows the mechanism for the variant of
+    the thread whose arms read their binder. *)
+
+Definition Cbad : bcs := BCs (py :: px‾ :: []) (λ f, f = FLt (pvar 0) (pvar 1)).
+Definition Tbad : ty := TEx LNone 0 Cbad TUnit.
+
+Lemma sb_dead_arm_typed :
+  dftyped Wa ({[od := TE SEnd py None]} ∪ {[oc := TE SEnd px None]}) hc_empty [Some Tbad] (∅, None)
+    (LetU (Var 0) (cl2 od oc)) TUnit.
+Proof.
+  apply (d_open _ _ _ _ _ _ 0 LNone 0 Cbad TUnit TUnit); [done|by intros ?|].
+  rewrite sf_pinst_nil. cbn [fmap option_fmap option_map].
+  assert (tenv_pinst (pshift 0) ({[od := TE SEnd py None]} ∪ {[oc := TE SEnd px None]}) =
+          {[od := TE SEnd py None]} ∪ {[oc := TE SEnd px None]}) as ->.
+  { unfold tenv_pinst. by rewrite map_fmap_union, !map_fmap_singleton. }
+  set (Γo := hc_open 0 Cbad hc_empty).
+  assert (slt Wa Γo py (px‾)) as Hf.
+  { apply fl_h. exists (bcs_inst (pshift 0) Cbad), (ids 0). split; [by left|].
+    exists (FLt py (px‾)). split; [|reflexivity].
+    exists (FLt (pvar 0) (pvar 1)). split_and!; [reflexivity| |reflexivity].
+    split; apply pn_vb_root; eexists; (split; [reflexivity|simpl; lia]). }
+  eapply d_letu with (Θ1 := ∅) (Δ1 := [Some TUnit]) (Δ2 := [None]);
+    [split; [apply map_disjoint_empty_l|by rewrite map_empty_union]|by constructor; constructor| |].
+  - apply d_var. split; [done|]. intros [|y] σ' Hne Hy; [done|]. done.
+  - unfold cl2.
+    eapply d_letu with (Θ1 := {[od := TE SEnd py None]}) (Θ2 := {[oc := TE SEnd px None]}) (Δ1 := [None]) (Δ2 := [None]);
+      [|by constructor; constructor| |].
+    + split; [apply map_disjoint_singleton_l_2; by rewrite lookup_singleton_ne|reflexivity].
+    + eapply d_close with (S0 := SEnd) (x := py) (a := None); [done| |].
+      * rewrite tenv_heads_one'. cbn. split_and!; [|done|done]. intros y Hy.
+        assert (y = px‾) as -> by set_solver.
+        exact Hf.
+      * apply d_chan. intros o Ho. apply list_elem_of_singleton in Ho as ->. by left.
+    + eapply d_close with (S0 := SEnd) (x := px) (a := None); [done|apply ub_below_empty|].
+      apply d_chan. intros o Ho. apply list_elem_of_singleton in Ho as ->. by left.
+Qed.
+
 Print Assumptions sb_thread_E.
 Print Assumptions sb_deadlock_free.

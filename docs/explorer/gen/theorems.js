@@ -266,8 +266,8 @@ thread  = case not (inj₂ ∗) of
           | inr _ ⇒ let ∗ = close d in close c      -- never runs
 partner = let ∗ = close c̄ in close d̄
 -- the process ({c, d}, {thread, partner}), c at x, d at y`,
-    rocq: 'examples/SemBranch.v: sb_thread_E, sb_deadlock_free',
-    accepts: { df: { ok: false, part: 'P-Connect', rocq: 'argued in docs/redesign/semantic-example.md, no Rocq proof' }, sem: { ok: true, rocq: 'sb_thread_E, sb_deadlock_free' } } },
+    rocq: 'examples/SemBranch.v: sb_thread_E, sb_deadlock_free, sb_dead_arm_typed',
+    accepts: { df: { ok: false, part: 'P-Connect', rocq: 'doubtful, no Rocq proof: E-Open can give the dead arm the fact y ≺ x̄ from an existential that no value inhabits (sb_dead_arm_typed, docs/redesign/pending.md entry 7)' }, sem: { ok: true, rocq: 'sb_thread_E, sb_deadlock_free' } } },
   { id: 'ex-flagpair', title: 'Two threads on one received flag', modes: ['df', 'live', 'lf'],
     code: `A = case z of inl _ ⇒ let ∗ = close a in close b
              | inr _ ⇒ let ∗ = close b in close a
