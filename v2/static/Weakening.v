@@ -486,8 +486,8 @@ Proof.
     destruct (decide (unlimited T)) as [HU|HU]; [by eapply e_var, Hk, H1|by eapply e_var, Hk, H2].
   - by apply e_chan, (lren_unl _ _ _ H Hr).
   - (* E-Abs *)
-    destruct (lren_lage _ _ _ _ _ H2 Hr) as (Δhr & Hc & Hr').
-    eapply e_abs; [done| |done|exact Hc|].
+    destruct (lren_lage _ _ _ _ _ H1 Hr) as (Δhr & Hc & Hr').
+    eapply e_abs; [|done|exact Hc|].
     + by rewrite (lren_heads _ _ _ Hr), (lren_bot _ _ _ Hr).
     + by apply IHtyped, lren_up.
   - (* E-App *)
@@ -514,8 +514,8 @@ Proof.
     + by apply IHtyped2, lren_up.
     + by apply IHtyped3, lren_up.
   - (* E-Box *)
-    eapply e_box; [by eapply lren_unl|done|].
-    intros ss Hk Hss. apply H2; [done|done|]. by apply lren_pinst, lren_up.
+    eapply e_box; [by eapply lren_unl|].
+    intros ss Hk Hss. apply H1; [done|done|]. by apply lren_pinst, lren_up.
   - eapply e_force; eauto.
   - eapply e_send; eauto.
   - eapply e_recv; eauto.
@@ -705,10 +705,10 @@ Section let_admissible.
     typed W N Θ' Γ (Some TUnit :: Δ') (∅, None) e TUnit c' t' →
     typed W N Θ Γ Δ F (ESpawn (Lam e)) TUnit (Some 0) (tspawn (tapp t' 0) tid).
   Proof.
-    intros Ht Ha H. set (φ := fresh (dom (hc_fv Γ))).
+    intros Ht Ha H.
     rewrite <-(tseq_tid_l (tspawn (tapp t' 0) tid)).
     eapply (e_spawn _ _ _ _ _ _ _ UTop LBot c' t' (Some 1)); [|simpl; lia|right; left; discriminate].
-    eapply (e_abs _ _ _ _ _ _ _ _ _ _ _ UTop LBot c' t' (Some 1) φ); [apply is_fresh|done|exact Ht|exact Ha|exact H].
+    eapply (e_abs _ _ _ _ _ _ _ _ _ _ _ UTop LBot c' t' (Some 1)); [done|exact Ht|exact Ha|exact H].
   Qed.
 
   (** D-Let *)

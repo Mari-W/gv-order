@@ -81,9 +81,9 @@ Lemma typed_E κ W Θ t T n :
   sem_typed κ W (tenv_df Θ) (lenv_df []) (∅, None) t (ty_df T) →
   t ∈ E[κ]^W _ n⟦tenv_erase Θ ⊢ T⟧^∅.
 Proof.
-  intros Hs. pose proof (Hs (λ _, ∅) ∅ n W ∅ Var (wext_refl _) (map_disjoint_empty_r _) eq_refl) as H.
+  intros Hs. pose proof (Hs ∅ ∅ ltac:(by intros u Hu) n W ∅ Var (wext_refl _) (map_disjoint_empty_r _) eq_refl) as H.
   rewrite subst_ids, map_union_empty in H.
-  assert (sf_den (λ _, ∅) ∅ (∅, None) = ∅) as E.
+  assert (sf_den ∅ ∅ (∅, None) = ∅) as E.
   { unfold sf_den. simpl. destruct (fs_bot None); set_solver. }
   rewrite E in H. apply (Erel_blind _ _ _ _ (ty_df T)); [apply ty_df_idem|].
   refine (Erel_conv _ _ _ _ _ _ _ _ _ H). intros o. unfold tenv_erase, tenv_df. rewrite !lookup_fmap.
@@ -142,10 +142,10 @@ Theorem soundness_source W t T : strict W → tfree T → ∅ ; hc_empty ; [] �
   deadlock_free (∅, {[+ t +]}).
 Proof.
   intros HW HT Ht. apply (adequacy W T _ HW). intros n.
-  pose proof (fundamental W ∅ [] (∅, None) t T HW Ht (λ _, ∅) ∅ n W ∅ Var (wext_refl _)
+  pose proof (fundamental W ∅ [] (∅, None) t T HW Ht ∅ ∅ ltac:(by intros u Hu) n W ∅ Var (wext_refl _)
                 (map_disjoint_empty_r _) eq_refl) as H.
   rewrite subst_ids, map_union_empty, tenv_erase_empty in H.
-  assert (sf_den (λ _, ∅) ∅ (∅, None) = ∅) as E.
+  assert (sf_den ∅ ∅ (∅, None) = ∅) as E.
   { unfold sf_den. simpl. destruct (fs_bot None); set_solver. }
   rewrite E in H. apply (sem_p_term κ_DF n W ∅ ∅ ∅ ∅ t T HT); [|exact H].
   constructor; [by rewrite map_union_empty|intros o; rewrite dom_empty_L; set_solver

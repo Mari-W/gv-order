@@ -679,8 +679,8 @@ window.MAP = {
      "id": "t-contexts",
      "title": "Contexts and the fact theory",
      "rocq": "static/Contexts.v: tentry, tsplit, lenv_split, hctx, fl, sfuture",
-     "tex": "\\begin{array}{l}\\htmlData{k=tj.Delta}{\\Delta : o \\mapsto (S@x)\\annot{\\annot{^{a}}},\\ i \\mapsto T} \\qquad \\htmlData{k=ctx.lsplit}{\\Delta = \\Delta_1, \\Delta_2} \\\\ \\htmlData{k=tj.Gamma}{\\Gamma = (\\htmlData{k=ctx.hyps}{(C, \\bar x)^{*}}, \\htmlData{k=ctx.fvar}{\\varphi \\mapsto u})} \\qquad \\htmlData{k=ctx.slt}{\\Gamma \\vdash x \\prec y} \\\\ \\htmlData{k=tj.F}{F = (X, \\htmlData{k=ctx.fvarF}{\\varphi} \\mid \\htmlData{k=ctx.bot}{\\bot})}\\end{array}",
-     "caption": "The rules read order facts only through $\\Gamma \\vdash x \\prec y$. It is the least transitive relation containing $\\prec_W$, the facts $C[\\bar x]$ of the instances in $\\Gamma$, and $u \\prec \\varphi$ for the future variables $\\varphi \\mapsto u$ in $\\Gamma$.",
+     "tex": "\\begin{array}{l}\\htmlData{k=tj.Delta}{\\Delta : o \\mapsto (S@x)\\annot{\\annot{^{a}}},\\ i \\mapsto T} \\qquad \\htmlData{k=ctx.lsplit}{\\Delta = \\Delta_1, \\Delta_2} \\\\ \\htmlData{k=tj.Gamma}{\\Gamma = \\htmlData{k=ctx.hyps}{(C, \\bar x)^{*}}} \\qquad \\htmlData{k=ctx.slt}{\\Gamma \\vdash x \\prec y} \\\\ \\htmlData{k=tj.F}{F = (X, \\htmlData{k=ctx.fvarF}{{\\uparrow}u \\mid {\\uparrow}} \\mid \\htmlData{k=ctx.bot}{\\bot})}\\end{array}",
+     "caption": "The rules read order facts only through $\\Gamma \\vdash x \\prec y$. It is the least transitive relation containing $\\prec_W$ and the facts $C[\\bar x]$ of the instances in $\\Gamma$.",
      "modes": [
       "df",
       "lf"
@@ -698,8 +698,8 @@ window.MAP = {
     {
      "id": "t-side",
      "title": "Side conditions on points",
-     "rocq": "static/Contexts.v: ub_below_s, lbx_below_h, lbound_of, hold_at",
-     "tex": "\\begin{array}{l}\\htmlData{k=side.ub}{u \\prec F \\iff (\\forall y \\in X.\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} u \\prec y) \\land (F = (X, \\varphi) \\Rightarrow \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} u \\prec \\varphi) \\land F \\neq (X, \\bot)} \\\\ \\htmlData{k=side.top}{\\top \\prec F \\iff F = (\\varnothing, \\cdot)} \\qquad \\htmlData{k=E-Send.heads}{x \\prec T \\iff \\forall y \\in \\htmlData{k=ty.heads}{\\mathsf{ap}}(T).\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec y} \\qquad \\htmlData{k=side.lb}{l \\preccurlyeq \\Delta \\iff \\forall y \\in \\htmlData{k=ty.heads}{\\mathsf{ap}}(\\Delta).\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} l \\preccurlyeq y} \\qquad \\htmlData{k=side.hold}{\\Gamma \\vdash C[\\bar x]}\\end{array}",
+     "rocq": "static/Contexts.v: ub_below_s, rest_below, ub_below_u, lbx_below_h, hold_at",
+     "tex": "\\begin{array}{l}\\htmlData{k=side.ub}{u \\prec F \\iff (\\forall y \\in X.\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} u \\prec y) \\land (F = (X, {\\uparrow}v) \\Rightarrow \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} u \\preccurlyeq v) \\land F \\neq (X, {\\uparrow}) \\land F \\neq (X, \\bot)} \\\\ \\htmlData{k=side.top}{\\top \\prec F \\iff F = (\\varnothing, \\cdot)} \\qquad \\htmlData{k=E-Send.heads}{x \\prec T \\iff \\forall y \\in \\htmlData{k=ty.heads}{\\mathsf{ap}}(T).\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec y} \\qquad \\htmlData{k=side.lb}{l \\preccurlyeq \\Delta \\iff \\forall y \\in \\htmlData{k=ty.heads}{\\mathsf{ap}}(\\Delta).\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} l \\preccurlyeq y} \\qquad \\htmlData{k=side.hold}{\\Gamma \\vdash C[\\bar x]}\\end{array}",
      "caption": "$u \\prec F$ says that $u$ lies below the points of $F$. $x \\prec T$ says that $x$ lies below the dual points of the ends in $T$. $l \\preccurlyeq \\Delta$ says that $l$ lies at or below the dual points of $\\Delta$, and $\\Gamma \\vdash C[\\bar x]$ that the facts of $C$ at $\\bar x$ are derivable.",
      "modes": [
       "df",
@@ -760,8 +760,8 @@ window.MAP = {
       "lf"
      ],
      "rocq": "static/Typing.v: e_abs; static/Conservativity.v: d_abs; static/Typing.v: e_app; static/Conservativity.v: d_app",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Abs.fut}{(\\Gamma_u, F_u) = \\begin{cases} (\\Gamma, u \\prec \\varphi,\\ (\\varnothing, \\varphi)) & u \\neq \\top,\\ \\varphi \\notin \\Gamma \\\\ (\\Gamma,\\ (\\varnothing, \\cdot)) & u = \\top \\end{cases}}\\quad \\htmlData{k=E-Abs.lb}{l \\neq \\bot \\Rightarrow l \\preccurlyeq \\Delta} \\\\ \\htmlData{k=E-Abs.body}{\\Gamma_u ; \\htmlData{k=E-Abs.cap}{\\Delta\\annot{ - a}}, T \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F_u} e : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\lambda e : (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[\\varepsilon]}\\, U)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-Abs}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\htmlData{k=tj.held}{\\triangleleft} \\Delta_2} e_1 : (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[\\varepsilon]}\\, U)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1}} \\\\ \\htmlData{k=E-App.fut2}{\\Gamma ; \\Delta_2\\annot{ \\htmlData{k=age.ctx}{- \\varepsilon_1}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\htmlData{k=tj.held}{\\triangleleft} (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U)\\annot{\\annot{^{a}}}} e_2 : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_2}}\\quad \\htmlData{k=E-App.ub}{u \\prec F}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_1\\,e_2 : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon_2 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{E-App}\\end{array}",
-     "caption": "E-Abs types the body under a fresh future variable $\\varphi$ above the upper point $u$, or under the empty future when $u = \\top$. It requires $l$ at or below the dual points of the captured entries unless $l = \\bot$. E-App holds $\\Delta_2$ while $e_1$ runs and the closure while $e_2$ runs, and the call requires $u \\prec F$. \\annp{The closure records the effect of its body. Holding it while $e_2$ runs ages it by the cost of $e_2$.}",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Abs.fut}{F_u = \\begin{cases} (\\varnothing, {\\uparrow}u) & u \\text{ a point} \\\\ (\\varnothing, {\\uparrow}) & u = \\cdot \\\\ (\\varnothing, \\cdot) & u = \\top \\end{cases}}\\quad \\htmlData{k=E-Abs.lb}{l \\neq \\bot \\Rightarrow l \\preccurlyeq \\Delta} \\\\ \\htmlData{k=E-Abs.body}{\\Gamma ; \\htmlData{k=E-Abs.cap}{\\Delta\\annot{ - a}}, T \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F_u} e : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\lambda e : (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[\\varepsilon]}\\, U)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-Abs}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\htmlData{k=tj.held}{\\triangleleft} \\Delta_2} e_1 : (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[\\varepsilon]}\\, U)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1}} \\\\ \\htmlData{k=E-App.fut2}{\\Gamma ; \\Delta_2\\annot{ \\htmlData{k=age.ctx}{- \\varepsilon_1}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\htmlData{k=tj.held}{\\triangleleft} (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U)\\annot{\\annot{^{a}}}} e_2 : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_2}}\\quad \\htmlData{k=E-App.ub}{u \\prec F}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_1\\,e_2 : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon_2 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{E-App}\\end{array}",
+     "caption": "E-Abs types the body under everything above the upper point $u$, under everything when there is no $u$, and under the empty future when $u = \\top$. It requires $l$ at or below the dual points of the captured entries unless $l = \\bot$. E-App holds $\\Delta_2$ while $e_1$ runs and the closure while $e_2$ runs, and the call requires $u \\prec F$. \\annp{The closure records the effect of its body. Holding it while $e_2$ runs ages it by the cost of $e_2$.}",
      "about": {
       "why": "A closure delays its body until a call. Its type records the bounds the body needs, and the call site checks them against its own future.",
       "used": [
@@ -796,7 +796,7 @@ window.MAP = {
       "lf"
      ],
      "rocq": "static/Typing.v: e_box; static/Conservativity.v: d_box; static/Typing.v: e_force; static/Conservativity.v: d_force",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Box.self}{B = \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}\\annot{[\\varepsilon]}\\,U)}\\quad \\htmlData{k=E-Box.unl}{\\Delta\\ \\text{unlimited}}\\quad \\htmlData{k=E-Abs.phi}{\\varphi\\ \\text{fresh}}\\quad \\htmlData{k=E-Box.fresh}{\\bar\\iota\\ \\text{fresh}}\\quad \\htmlData{k=E-Box.inst}{\\forall \\bar s.\\ \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s} \\\\ \\htmlData{k=E-Box.body}{\\htmlData{k=E-Box.open}{\\Gamma, C(\\bar\\iota), u \\prec \\varphi} ; \\htmlData{k=E-Box.self}{\\Delta, f : B} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing,\\varphi)} e : \\htmlData{k=tp.sinst}{U[\\bar s]}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\ !e : B\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-Box}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\quad \\htmlData{k=E-Box.inst}{\\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s}\\quad \\htmlData{k=E-Force.ub}{u[\\bar x] \\prec F} \\\\ \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}\\annot{[\\varepsilon]}\\,U)\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_0}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.force}{\\mathsf{force}}\\,e : \\htmlData{k=tp.sinst}{U[\\bar s]}\\htmlData{k=tp.pinst}{[\\bar x]}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_0 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{E-Force}\\end{array}",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Box.self}{B = \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}\\annot{[\\varepsilon]}\\,U)}\\quad \\htmlData{k=E-Box.unl}{\\Delta\\ \\text{unlimited}}\\quad \\htmlData{k=E-Box.fresh}{\\bar\\iota\\ \\text{fresh}}\\quad \\htmlData{k=E-Box.inst}{\\forall \\bar s.\\ \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s} \\\\ \\htmlData{k=E-Box.body}{\\htmlData{k=E-Box.open}{\\Gamma, C(\\bar\\iota)} ; \\htmlData{k=E-Box.self}{\\Delta, f : B} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing,{\\uparrow}u)} e : \\htmlData{k=tp.sinst}{U[\\bar s]}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\ !e : B\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-Box}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\quad \\htmlData{k=E-Box.inst}{\\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s}\\quad \\htmlData{k=E-Force.ub}{u[\\bar x] \\prec F} \\\\ \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}\\annot{[\\varepsilon]}\\,U)\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_0}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.force}{\\mathsf{force}}\\,e : \\htmlData{k=tp.sinst}{U[\\bar s]}\\htmlData{k=tp.pinst}{[\\bar x]}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_0 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{E-Force}\\end{array}",
      "caption": "E-Box types the body once, with fresh point variables $\\bar\\iota$, the hypothesis $C(\\bar\\iota)$ and a fresh future variable above $u$, for each allowed session instance $\\bar s$. The context is unlimited, because a box may be copied. E-Force picks points $\\bar x$ and session types $\\bar s$, requires $C[\\bar x]$ and $u[\\bar x] \\prec F$, and gives the instantiated result type.",
      "about": {
       "why": "Boxes provide recursion and polymorphism over points and session types. Each force chooses an instance.",
@@ -1212,10 +1212,10 @@ window.MAP = {
       "lf"
      ],
      "rocq": "compat/SemTyped.v: Grel, sem_typed_at, sf_den, sem_typed; relation/Adequacy.v: sem_ptyped; soup/Soup.v: lf_sem, lf_next, own_next, tk_next",
-     "tex": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash[\\kappa]}}^{X}_W e : T \\iff \\forall n, W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G[\\kappa]^{W'}_n\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\htmlData{k=th.Erel}{E[\\kappa]^{W'}_n\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Delta \\vDash[\\kappa]^{F}_W e : T \\iff \\forall \\rho, B.\\ \\Delta \\vDash[\\kappa]^{\\htmlData{k=sj.den}{\\mathsf{den}_{\\rho,B}(F)}}_W e : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash[\\kappa]_W p : T \\iff \\forall n.\\ p \\in \\htmlData{k=th.Prel}{P[\\kappa]^{W}_n\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\n\\htmlData{k=sp.lfsem}{\\Sigma \\Vvdash_W p : T \\iff \\htmlData{k=sp.exists-before-forall}{\\exists N \\in \\mathbb{N}, a, \\htmlData{k=sp.chi}{\\chi}.\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}(\\htmlData{k=th.qa}{q_a}) = p \\land \\forall n}.\\ a \\in \\htmlData{k=th.soup}{S^{N,W,\\chi}_n\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}}\\end{array}",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash[\\kappa]}}^{X}_W e : T \\iff \\forall n, W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G[\\kappa]^{W'}_n\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\htmlData{k=th.Erel}{E[\\kappa]^{W'}_n\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Delta \\vDash[\\kappa]^{F}_W e : T \\iff \\forall R, B.\\ \\Delta \\vDash[\\kappa]^{\\htmlData{k=sj.den}{\\mathsf{den}_{R,B}(F)}}_W e : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash[\\kappa]_W p : T \\iff \\forall n.\\ p \\in \\htmlData{k=th.Prel}{P[\\kappa]^{W}_n\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\n\\htmlData{k=sp.lfsem}{\\Sigma \\Vvdash_W p : T \\iff \\htmlData{k=sp.exists-before-forall}{\\exists N \\in \\mathbb{N}, a, \\htmlData{k=sp.chi}{\\chi}.\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}(\\htmlData{k=th.qa}{q_a}) = p \\land \\forall n}.\\ a \\in \\htmlData{k=th.soup}{S^{N,W,\\chi}_n\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}}\\end{array}",
      "caption": "The semantic judgments quantify over levels, larger worlds and substitutions, and read the static future at each of its denotations. \\annp{The lock-free judgment fixes the counter bound and the annotated configuration once, for all levels.}",
      "variants": {
-      "df": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{X}_W e : T \\iff \\forall n, W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G^{W'}_n\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\htmlData{k=th.Erel}{E^{W'}_n\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Delta \\vDash^{F}_W e : T \\iff \\forall \\rho, B.\\ \\Delta \\vDash^{\\htmlData{k=sj.den}{\\mathsf{den}_{\\rho,B}(F)}}_W e : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash_W p : T \\iff \\forall n.\\ p \\in \\htmlData{k=th.Prel}{P^{W}_n\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}\\end{array}"
+      "df": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{X}_W e : T \\iff \\forall n, W' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} W, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G^{W'}_n\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\htmlData{k=th.Erel}{E^{W'}_n\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Delta \\vDash^{F}_W e : T \\iff \\forall R, B.\\ \\Delta \\vDash^{\\htmlData{k=sj.den}{\\mathsf{den}_{R,B}(F)}}_W e : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash_W p : T \\iff \\forall n.\\ p \\in \\htmlData{k=th.Prel}{P^{W}_n\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}\\end{array}"
      },
      "about": {
       "why": "The fundamental theorems conclude the semantic judgments, and adequacy takes a semantic judgment as its premise.",
@@ -4324,21 +4324,17 @@ window.MAP = {
    ]
   },
   "tj.Gamma": {
-   "title": "$\\Gamma$, facts and future hypotheses",
-   "what": "$\\Gamma$ consists of a list of constraint instances $(C, \\bar x)$ and a finite map of future variables $\\varphi \\mapsto u$, read as $u \\prec \\varphi$.",
+   "title": "$\\Gamma$, facts",
+   "what": "$\\Gamma$ is a list of constraint instances $(C, \\bar x)$.",
    "why": "Every order fact a rule may use beyond $\\prec_W$ is recorded in $\\Gamma$. The derivable facts are exactly the judgments $\\Gamma \\vdash x \\prec y$.",
    "breaks": "Nothing. It is a definition.",
    "example": "In the body of the client loop $\\Gamma$ holds $(C, [\\iota, \\kappa, \\zeta])$.",
    "rocq": "static/Contexts.v: hctx",
-   "sig": "\\Gamma : (\\mathsf{Bcs} \\times \\mathsf{Pt}^{*})^{*} \\times (\\mathsf{FVar} \\rightharpoonup_{\\mathrm{fin}} \\mathsf{Pt})",
+   "sig": "\\Gamma : (\\mathsf{Bcs} \\times \\mathsf{Pt}^{*})^{*}",
    "args": [
     {
      "name": "(C, \\bar x)",
      "meaning": "a constraint $C$ instantiated at the list of points $\\bar x$"
-    },
-    {
-     "name": "\\varphi \\mapsto u",
-     "meaning": "a future variable $\\varphi$ with the fact $u \\prec \\varphi$"
     }
    ]
   },
@@ -4553,20 +4549,20 @@ window.MAP = {
   },
   "tj.F": {
    "title": "The future $F$",
-   "what": "$F = (X, \\varphi)$, $(X, \\bot)$ or $(X, \\cdot)$ with $X$ the points the context acts at after the term, $\\varphi$ an unknown rest above a known point and $\\bot$ a rest at hidden points.",
+   "what": "$F = (X, {\\uparrow}u)$, $(X, {\\uparrow})$, $(X, \\bot)$ or $(X, \\cdot)$ with $X$ the points the context acts at after the term. ${\\uparrow}u$ is the unknown rest above a known point $u$, ${\\uparrow}$ an unknown rest with no bound, and $\\bot$ a rest at hidden points.",
    "why": "Every action at $x$ asks $x \\prec F$. Hence a term never waits at a point above a point at which its own context still acts.",
    "breaks": "Without $F$ the thread $\\mathsf{let}\\ \\ast = \\mathsf{close}\\,c\\ \\mathsf{in}\\ \\mathsf{close}\\,d$ types for every placement of $c$ and $d$, and beside a partner that closes $d$ before $c$ both threads wait forever.",
    "example": "$e_1$ of E-App runs under $F \\cup \\mathsf{ap}(\\Delta_2)$.",
-   "rocq": "static/Contexts.v: sfuture",
-   "sig": "F : \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Pt}) \\times (\\mathsf{FVar} + \\{\\bot, \\cdot\\})",
+   "rocq": "static/Contexts.v: sfuture, frest",
+   "sig": "F : \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Pt}) \\times (\\{{\\uparrow}u \\mid u \\in \\mathsf{Pt}\\} + \\{{\\uparrow}, \\bot, \\cdot\\})",
    "args": [
     {
      "name": "X",
      "meaning": "the finite set of points the context acts at after the term"
     },
     {
-     "name": "\\varphi",
-     "meaning": "a future variable standing for an unknown set of points above its bound"
+     "name": "{\\uparrow}u",
+     "meaning": "the unknown rest above the point $u$"
     },
     {
      "name": "\\bot",
@@ -4661,37 +4657,18 @@ window.MAP = {
     }
    ]
   },
-  "ctx.fvar": {
-   "title": "Future variables $\\varphi \\mapsto u$",
-   "what": "$\\varphi \\mapsto u \\in \\Gamma$ states $u \\prec \\varphi$ for an unknown future $\\varphi$ above $u$.",
-   "why": "A $\\lambda$ or box body is typed once for all its callers. By E-App every caller future $F$ satisfies $u \\prec F$, and $\\varphi$ stands for every such $F$.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "A $\\lambda$-body under $(\\varnothing, \\varphi)$ with $u \\prec \\varphi$.",
-   "rocq": "static/Contexts.v: hc_fvar",
-   "sig": "(\\varphi \\mapsto u) \\in \\Gamma",
-   "args": [
-    {
-     "name": "\\varphi",
-     "meaning": "a future variable naming the unknown future of a caller"
-    },
-    {
-     "name": "u",
-     "meaning": "the upper point of the closure or box, with $u \\prec \\varphi$"
-    }
-   ]
-  },
   "ctx.fvarF": {
-   "title": "The variable $\\varphi$ in $F$",
-   "what": "The unknown part of a future, read only through $\\Gamma \\vdash u \\prec \\varphi$.",
-   "why": "In the semantics $\\varphi$ denotes an arbitrary set of points above $u$. A body typed under $\\varphi$ is therefore correct for every caller future above $u$.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$F = (\\varnothing, \\varphi)$.",
-   "rocq": "static/Contexts.v: futrest",
-   "sig": "F = (X, \\varphi)",
+   "title": "The rest ${\\uparrow}u$ of $F$",
+   "what": "The unknown part of a future: everything above $u$, or everything when there is no $u$. A term may wait at $x$ under ${\\uparrow}u$ when $\\Gamma \\vdash x \\preccurlyeq u$, and never under ${\\uparrow}$.",
+   "why": "In the semantics ${\\uparrow}u$ denotes an arbitrary finite set of points above $u$. Readiness asks $x \\prec y$ of every point $y$ of the future, so a body typed under ${\\uparrow}u$ is correct for every caller future above $u$.",
+   "breaks": "A future variable $\\varphi$ with the single fact $u \\prec \\varphi$ says the same, $\\Gamma \\vdash x \\prec \\varphi$ holds exactly when $\\Gamma \\vdash x \\preccurlyeq u$.",
+   "example": "$F = (\\varnothing, {\\uparrow}u)$ for the body of a closure with upper point $u$.",
+   "rocq": "static/Contexts.v: frest, rest_below",
+   "sig": "F = (X, {\\uparrow}u)",
    "args": [
     {
-     "name": "\\varphi",
-     "meaning": "the variable part of the future"
+     "name": "{\\uparrow}u",
+     "meaning": "the rest, everything above $u$"
     },
     {
      "name": "X",
@@ -4720,7 +4697,7 @@ window.MAP = {
   },
   "ctx.slt": {
    "title": "$\\Gamma \\vdash x \\prec y$",
-   "what": "The least transitive relation containing $\\prec_W$, the facts $C[\\bar x]$ of the instances $(C, \\bar x)$ in $\\Gamma$, and $u \\prec \\varphi$ for every $\\varphi \\mapsto u$ in $\\Gamma$.",
+   "what": "The least transitive relation containing $\\prec_W$ and the facts $C[\\bar x]$ of the instances $(C, \\bar x)$ in $\\Gamma$.",
    "why": "Every order fact a typing rule reads is a judgment $\\Gamma \\vdash x \\prec y$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Gamma \\vdash x \\prec x^{+}$ for every $\\Gamma$ and $x$.",
@@ -4729,7 +4706,7 @@ window.MAP = {
    "args": [
     {
      "name": "\\Gamma",
-     "meaning": "the hypotheses, constraint instances $(C, \\bar x)$ and future variables $\\varphi \\mapsto u$"
+     "meaning": "the facts, constraint instances $(C, \\bar x)$"
     },
     {
      "name": "x, y",
@@ -4777,12 +4754,12 @@ window.MAP = {
   },
   "side.act": {
    "title": "$x \\prec F$ at an action",
-   "what": "For an action at $x$ under $F = (X, \\cdot)$, $\\Gamma \\vdash x \\prec y$ for every $y \\in X$, $\\Gamma \\vdash x \\prec \\varphi$ when $F$ has a variable $\\varphi$, and $F$ has no $\\bot$.",
+   "what": "For an action at $x$ under $F$, $\\Gamma \\vdash x \\prec y$ for every $y \\in X$, $\\Gamma \\vdash x \\preccurlyeq u$ when the rest of $F$ is ${\\uparrow}u$, and $F$ has neither the rest ${\\uparrow}$ nor $\\bot$.",
    "why": "While the term waits at $x$, every point at which its context acts later lies above $x$. This is readiness against the future.",
    "breaks": "Without it a term may wait at $x$ while its context must first act at a point below $x$, and the thread waits on itself through the dual end.",
    "example": "E-Close at $x$ asks $x \\prec F$.",
    "rocq": "static/Contexts.v: ub_below_s",
-   "sig": "x \\prec F \\iff (\\forall y \\in X.\\ \\Gamma \\vdash x \\prec y) \\land (F = (X, \\varphi) \\Rightarrow \\Gamma \\vdash x \\prec \\varphi) \\land F \\neq (X, \\bot)",
+   "sig": "x \\prec F \\iff (\\forall y \\in X.\\ \\Gamma \\vdash x \\prec y) \\land (F = (X, {\\uparrow}u) \\Rightarrow \\Gamma \\vdash x \\preccurlyeq u) \\land F \\neq (X, {\\uparrow}) \\land F \\neq (X, \\bot)",
    "args": [
     {
      "name": "x",
@@ -4794,7 +4771,7 @@ window.MAP = {
     },
     {
      "name": "\\Gamma",
-     "meaning": "the hypotheses, constraint instances $(C, \\bar x)$ and future variables $\\varphi \\mapsto u$"
+     "meaning": "the facts, constraint instances $(C, \\bar x)$"
     }
    ]
   },
@@ -4819,12 +4796,12 @@ window.MAP = {
   },
   "side.ub": {
    "title": "$u \\prec F$",
-   "what": "$u \\prec F \\iff (\\forall y \\in X.\\ \\Gamma \\vdash u \\prec y) \\land \\Gamma \\vdash u \\prec \\varphi \\land \\bot \\notin F$, true for absent $u$.",
+   "what": "$u \\prec F \\iff (\\forall y \\in X.\\ \\Gamma \\vdash u \\prec y) \\land (F = (X, {\\uparrow}v) \\Rightarrow \\Gamma \\vdash u \\preccurlyeq v)$, and $F$ has neither the rest ${\\uparrow}$ nor $\\bot$, true for absent $u$.",
    "why": "It is the condition $x \\prec F$ of an action, stated for the upper point $u$ up to which a callee may wait.",
    "breaks": "Nothing. It is a definition.",
    "example": "E-App asks $u \\prec F$ of the upper point $u$ of the closure.",
-   "rocq": "static/Contexts.v: ub_below_s",
-   "sig": "u \\prec F \\iff (\\forall y \\in X.\\ \\Gamma \\vdash u \\prec y) \\land (F = (X, \\varphi) \\Rightarrow \\Gamma \\vdash u \\prec \\varphi) \\land F \\neq (X, \\bot)",
+   "rocq": "static/Contexts.v: ub_below_s, ub_below_u",
+   "sig": "u \\prec F \\iff (\\forall y \\in X.\\ \\Gamma \\vdash u \\prec y) \\land (F = (X, {\\uparrow}v) \\Rightarrow \\Gamma \\vdash u \\preccurlyeq v) \\land F \\neq (X, {\\uparrow}) \\land F \\neq (X, \\bot)",
    "args": [
     {
      "name": "u",
@@ -4836,7 +4813,7 @@ window.MAP = {
     },
     {
      "name": "\\Gamma",
-     "meaning": "the hypotheses, constraint instances $(C, \\bar x)$ and future variables $\\varphi \\mapsto u$"
+     "meaning": "the facts, constraint instances $(C, \\bar x)$"
     }
    ]
   },
@@ -4878,7 +4855,7 @@ window.MAP = {
     },
     {
      "name": "\\Gamma",
-     "meaning": "the hypotheses, constraint instances $(C, \\bar x)$ and future variables $\\varphi \\mapsto u$"
+     "meaning": "the facts, constraint instances $(C, \\bar x)$"
     }
    ]
   },
@@ -5110,25 +5087,6 @@ window.MAP = {
     }
    ]
   },
-  "E-Abs.phi": {
-   "title": "Fresh future variable",
-   "what": "The body is typed under $(\\varnothing, \\varphi)$ for a $\\varphi \\notin \\mathrm{dom}\\,\\Gamma$ with $u \\prec \\varphi$.",
-   "why": "The body runs when a caller applies the closure, and by E-App every caller future $F$ satisfies $u \\prec F$. Typing under a fresh $\\varphi$ covers all such $F$.",
-   "breaks": "A body typed under the future of its definition is checked against facts that fail at another call site.",
-   "example": "The body of $\\mathsf{between}$ runs under $\\varphi$ with $\\kappa \\prec \\varphi$.",
-   "rocq": "static/Typing.v: e_abs, e_box",
-   "sig": "\\varphi \\notin \\mathrm{dom}\\,\\Gamma",
-   "args": [
-    {
-     "name": "\\varphi",
-     "meaning": "the future variable of the body"
-    },
-    {
-     "name": "\\Gamma",
-     "meaning": "the hypotheses, constraint instances $(C, \\bar x)$ and future variables $\\varphi \\mapsto u$"
-    }
-   ]
-  },
   "E-Abs.lb": {
    "title": "Lower point of a closure",
    "what": "$l \\neq \\bot \\Rightarrow l \\preccurlyeq \\Delta$. A point $l$ lies at or below every element of $\\mathsf{ap}(\\Delta)$, and $l = \\bot$ claims no bound.",
@@ -5175,20 +5133,16 @@ window.MAP = {
   },
   "E-Abs.fut": {
    "title": "Future of the body",
-   "what": "For $u \\neq \\top$ the body runs under a fresh variable $\\varphi$ with the hypothesis $u \\prec \\varphi$. For $u = \\top$ it runs under the empty future $(\\varnothing, \\cdot)$.",
+   "what": "For a point $u$ the body runs under everything above $u$, with no upper point under everything, and for $u = \\top$ under the empty future $(\\varnothing, \\cdot)$.",
    "why": "A caller applies the closure only under a future $F$ with $u \\prec F$, and $\\top \\prec F$ holds only for the empty future, so a closure at $\\top$ is the last code of its thread.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\lambda e : \\ast \\multimap^{\\top}_{\\bot} \\ast$ for a thunk that is spawned.",
-   "rocq": "static/Typing.v: e_abs; static/Contexts.v: abs_hc, abs_fut",
-   "sig": "(\\Gamma_u, F_u)",
+   "rocq": "static/Typing.v: e_abs; static/Contexts.v: abs_fut",
+   "sig": "F_u",
    "args": [
     {
      "name": "u",
      "meaning": "the upper point of the arrow"
-    },
-    {
-     "name": "\\varphi",
-     "meaning": "a fresh future variable, for $u \\neq \\top$"
     }
    ]
   },
@@ -5209,12 +5163,12 @@ window.MAP = {
   },
   "E-Abs.body": {
    "title": "Body of a $\\lambda$",
-   "what": "$e$ is typed under $\\Gamma$ extended by $u \\prec \\varphi$, the captured $\\Delta$ extended by the argument $T$, and the future $(\\varnothing, \\varphi)$. \\annp{In the lock-free mode the captured entries are restated at the floor $h$.}",
-   "why": "The body runs at a later call. It may rely only on its captured entries, its argument and $u \\prec \\varphi$, and E-App establishes $u \\prec F$ at every call.",
+   "what": "$e$ is typed under $\\Gamma$, the captured $\\Delta$ extended by the argument $T$, and the future $F_u$. \\annp{In the lock-free mode the captured entries are aged by the credit $a$.}",
+   "why": "The body runs at a later call. It may rely only on its captured entries, its argument and the rest above $u$, and E-App establishes $u \\prec F$ at every call.",
    "breaks": "Nothing. It is a definition.",
    "example": "The body of the client loop with argument $S_1@\\iota \\otimes S_2@\\kappa$.",
    "rocq": "static/Typing.v: e_abs",
-   "sig": "\\Gamma, u \\prec \\varphi ; \\Delta^{h}, T \\vdash^{(\\varnothing, \\varphi)} e : U\\ !\\ \\varepsilon",
+   "sig": "\\Gamma ; \\Delta\\annot{ - a}, T \\vdash^{F_u} e : U\\ !\\ \\varepsilon",
    "args": [
     {
      "name": "T",
@@ -5384,12 +5338,12 @@ window.MAP = {
   },
   "E-Box.body": {
    "title": "Body of a box",
-   "what": "The body is typed with no end, the fresh point variables $\\bar\\iota$, the hypothesis $C(\\bar\\iota)$, the box as $f$, and the future $(\\varnothing, \\varphi)$.",
-   "why": "Each force instantiates $\\bar\\iota$ and the session variables anew. The body may assume only $C(\\bar\\iota)$ and $u \\prec \\varphi$.",
+   "what": "The body is typed with no end, the fresh point variables $\\bar\\iota$, the hypothesis $C(\\bar\\iota)$, the box as $f$, and the future $(\\varnothing, {\\uparrow}u)$.",
+   "why": "Each force instantiates $\\bar\\iota$ and the session variables anew. The body may assume only $C(\\bar\\iota)$ and the rest above $u$.",
    "breaks": "Nothing. It is a definition.",
    "example": "The body of the client loop.",
    "rocq": "static/Typing.v: e_box",
-   "sig": "\\Gamma, C(\\bar\\iota), u \\prec \\varphi ; \\Delta, f \\vdash^{(\\varnothing, \\varphi)} e : U[\\bar s]\\ !\\ \\varepsilon",
+   "sig": "\\Gamma, C(\\bar\\iota) ; \\Delta, f \\vdash^{(\\varnothing, {\\uparrow}u)} e : U[\\bar s]\\ !\\ \\varepsilon",
    "args": [
     {
      "name": "\\bar\\iota",
@@ -5400,8 +5354,8 @@ window.MAP = {
      "meaning": "the box itself at index $0$"
     },
     {
-     "name": "\\varphi",
-     "meaning": "the future variable of the body"
+     "name": "{\\uparrow}u",
+     "meaning": "the rest above the upper point of the box"
     }
    ]
   },
@@ -6517,7 +6471,7 @@ window.MAP = {
    "args": [
     {
      "name": "\\Gamma",
-     "meaning": "the hypotheses, constraint instances $(C, \\bar x)$ and future variables $\\varphi \\mapsto u$"
+     "meaning": "the facts, constraint instances $(C, \\bar x)$"
     },
     {
      "name": "\\Delta",
@@ -8235,7 +8189,7 @@ window.MAP = {
    "what": "$\\forall y \\in F.\\ W \\vdash x \\prec y$.",
    "why": "The context acts at the points of $F$ after the term returns.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\kappa \\prec \\varphi$ in $\\mathsf{between}$.",
+   "example": "$\\kappa \\prec y$ for every $y$ above the upper point in $\\mathsf{between}$.",
    "rocq": "relation/Readiness.v: below_rest",
    "sig": "\\forall y \\in F.\\ W \\vdash x \\prec y",
    "args": [
@@ -8852,17 +8806,17 @@ window.MAP = {
    ]
   },
   "sj.den": {
-   "title": "$\\mathsf{den}_{\\rho,B}(F)$",
-   "what": "$\\mathsf{den}_{\\rho,B}(F_1, f) = F_1 \\cup \\rho(\\varphi) \\cup B$, with $\\rho(\\varphi)$ only if $f$ has the variable $\\varphi$ and $B$ only if $f$ has the flag $\\bot$.",
-   "why": "A future variable and the flag $\\bot$ stand for unknown sets of points, so the judgment holds at each choice of these sets.",
+   "title": "$\\mathsf{den}_{R,B}(F)$",
+   "what": "$\\mathsf{den}_{R,B}(F_1, f) = F_1 \\cup R \\cup B$, with $R$ only if $f$ has a rest and $B$ only if $f$ has the flag $\\bot$. For the rest $ {\\uparrow}u$ every point of $R$ lies above $u$.",
+   "why": "The rest and the flag $\\bot$ stand for unknown sets of points, so the judgment holds at each choice of these sets.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{den}_{\\rho,B}(\\varnothing, \\varphi) = \\rho(\\varphi)$.",
-   "rocq": "compat/SemTyped.v: sf_den",
-   "sig": "\\mathsf{den} : (\\mathbb{N} \\to \\mathcal{P}(\\mathsf{Point})) \\to \\mathcal{P}(\\mathsf{Point}) \\to \\mathsf{SFuture} \\to \\mathcal{P}(\\mathsf{Point})",
+   "example": "$\\mathsf{den}_{R,B}(\\varnothing, {\\uparrow}u) = R$.",
+   "rocq": "compat/SemTyped.v: sf_den, rest_ok",
+   "sig": "\\mathsf{den} : \\mathcal{P}(\\mathsf{Point}) \\to \\mathcal{P}(\\mathsf{Point}) \\to \\mathsf{SFuture} \\to \\mathcal{P}(\\mathsf{Point})",
    "args": [
     {
-     "name": "\\rho",
-     "meaning": "the denotation of future variables"
+     "name": "R",
+     "meaning": "the denotation of the rest"
     },
     {
      "name": "B",

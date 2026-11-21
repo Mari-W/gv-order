@@ -47,11 +47,10 @@ Inductive typed (W : world) (N : fuel) :
   | e_chan Γ Δ F o S x a :
       lenv_unl Δ →
       typed W N {[o := TE S x a]} Γ Δ F (Chan o) (TSess S x a) (Some 0) tid
-  | e_abs Θ Θh Γ Δ Δh F e T U ub lb c t a φ :
-      φ ∉ dom (hc_fv Γ) →
+  | e_abs Θ Θh Γ Δ Δh F e T U ub lb c t a :
       lbx_below_h W Γ lb (tenv_heads Θ ∪ lenv_heads Δ) (lenv_bot Δ) →
       thage a Θ Θh → lage a Δ Δh →
-      typed W N Θh (abs_hc φ ub Γ) (Some T :: Δh) (abs_fut φ ub) e U c t →
+      typed W N Θh Γ (Some T :: Δh) (abs_fut ub) e U c t →
       typed W N Θ Γ Δ F (Lam e) (TLolli ub lb c t T U a) (Some 0) tid
   | e_app Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 ub lb c t T U a1 c1 t1 c2 t2 :
       tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_below_u W Γ ub F →
@@ -95,12 +94,12 @@ Inductive typed (W : world) (N : fuel) :
       typed W N Θ2' Γ (Some T2 :: Δ2') F e2 T c2 t2 →
       tok t0 (tmax t1 t2) →
       typed W N Θ Γ Δ F (Case e e1 e2) T (fadd c0 (fmax c1 c2)) (tseq t0 (tmax t1 t2))
-  | e_box Γ Δ F e m k C ub c t U φ :
-      lenv_unl Δ → φ ∉ dom (hc_fv (hc_open m C Γ)) →
+  | e_box Γ Δ F e m k C ub c t U :
+      lenv_unl Δ →
       (∀ ss, length ss = k → sinsts N ss →
-         typed W N ∅ (hc_fvar φ ub (hc_open m C Γ))
+         typed W N ∅ (hc_open m C Γ)
            (lenv_pinst (pshift m) (Some (TBox m k C ub c t U) :: Δ))
-           (∅, Some (FVar φ)) e (sinst_ty (slist ss) U) c t) →
+           (∅, Some (FRest (rest_of ub))) e (sinst_ty (slist ss) U) c t) →
       typed W N ∅ Γ Δ F (EBox e) (TBox m k C ub c t U) (Some 0) tid
   | e_force Θ Γ Δ F e m k C ub c t U xs ss c0 t0 :
       length xs = m → hold_at W Γ C xs → length ss = k → sinsts N ss →

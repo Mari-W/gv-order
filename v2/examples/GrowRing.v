@@ -164,15 +164,15 @@ Section body.
     cbn [hbot orb sf_unionb fst snd fs_var fs_bot].
 
   Ltac fut x :=
-    apply (ub_below_gen _ _ x (sh 1 (pvar 0)) 1);
+    apply (ub_below_gen _ _ x (sh 1 (pvar 0)));
       [ let y := fresh "y" in let Hy := fresh "Hy" in
         intros y Hy; revert Hy; normF; unfold payload_at, ty_inst; cbn [pinst_ty]; intros Hy; heads_cases Hy;
         first [rgf | eapply sl_trans; [apply sl_po|rgf]]
-      | normF; reflexivity | apply Γbox_fv
+      | normF; reflexivity 
       | first [by left | right; apply sl_po] | normF; reflexivity ].
 
   Lemma rg_body :
-    dftyped W ∅ Γb (Some rg_T :: Some rg_ty :: nones n) (∅, Some (FVar 1)) rg_e TUnit.
+    dftyped W ∅ Γb (Some rg_T :: Some rg_ty :: nones n) (∅, Some (FRest (RAbove (sh 1 (pvar 0))))) rg_e TUnit.
   Proof.
     unfold rg_e.
     eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
@@ -230,8 +230,8 @@ Section body.
   Qed.
 End body.
 
-Lemma ring_typed W Γ n F : hc_fv Γ = ∅ → dftyped W ∅ Γ (nones n) F ring rg_ty.
-Proof. intros HΓ. apply box1_typed; [done|reflexivity|apply rg_body]. Qed.
+Lemma ring_typed W Γ n F : dftyped W ∅ Γ (nones n) F ring rg_ty.
+Proof. apply box1_typed; [reflexivity|apply rg_body]. Qed.
 
 (** ** main *)
 

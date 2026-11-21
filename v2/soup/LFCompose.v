@@ -121,10 +121,10 @@ Lemma typed_live W N Θ t T c ϑ n :
   strict W → ∅ ⊢▷ t → Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} t : T ▷ c ; ϑ →
   t ∈ E[live]^W _ n⟦tenv_erase Θ ⊢ T⟧^∅.
 Proof.
-  intros HW Hg Hty. pose proof (live_fundamental_typed _ _ _ _ _ _ _ _ _ HW Hty Hg (λ _, ∅) ∅
+  intros HW Hg Hty. pose proof (live_fundamental_typed _ _ _ _ _ _ _ _ _ HW Hty Hg ∅ ∅ ltac:(by intros u Hu)
     n W ∅ Var (wext_refl _) (map_disjoint_empty_r _) eq_refl) as H.
   rewrite subst_ids, map_union_empty in H.
-  assert (sf_den (λ _, ∅) ∅ (∅, None) = ∅) as E.
+  assert (sf_den ∅ ∅ (∅, None) = ∅) as E.
   { unfold sf_den. simpl. destruct (fs_bot None); set_solver. }
   rewrite E in H. apply (Erel_blind _ _ _ _ (ty_df T)); [apply ty_df_idem|].
   refine (Erel_conv _ _ _ _ _ _ _ _ _ H). intros o. unfold tenv_erase, tenv_df. rewrite !lookup_fmap.

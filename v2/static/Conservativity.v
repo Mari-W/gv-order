@@ -213,14 +213,13 @@ Proof. intros HΔ. dfr. eapply e_var. by eapply lenv_only_df. Qed.
 Lemma d_chan W Γ Δ F o S x a a' : lenv_unl Δ → dftyped W {[o := TE S x a]} Γ Δ F (Chan o) (TSess S x a').
 Proof. intros HΔ. dfr. by eapply e_chan, lenv_unl_df. Qed.
 
-Lemma d_abs W Θ Γ Δ F e T U ub lb c t a φ :
-  φ ∉ dom (hc_fv Γ) →
+Lemma d_abs W Θ Γ Δ F e T U ub lb c t a :
   lbx_below_h W Γ lb (tenv_heads Θ ∪ lenv_heads Δ) (lenv_bot Δ) →
-  dftyped W Θ (abs_hc φ ub Γ) (Some T :: Δ) (abs_fut φ ub) e U →
+  dftyped W Θ Γ (Some T :: Δ) (abs_fut ub) e U →
   dftyped W Θ Γ Δ F (Lam e) (TLolli ub lb c t T U a).
 Proof.
-  intros Hφ Hlb Hb. dfr.
-  eapply (e_abs _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ None φ); [done| |apply thage_df|apply lage_df|].
+  intros Hlb Hb. dfr.
+  eapply (e_abs _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ None); [|apply thage_df|apply lage_df|].
   - by heads_df.
   - exact Hb.
 Qed.
@@ -293,16 +292,16 @@ Proof.
   heads_df. exact H0.
 Qed.
 
-Lemma d_box W Γ Δ F e m k C ub c t U φ :
-  lenv_unl Δ → φ ∉ dom (hc_fv (hc_open m C Γ)) →
+Lemma d_box W Γ Δ F e m k C ub c t U :
+  lenv_unl Δ →
   (∀ ss, length ss = k → sinsts None ss →
-     dftyped W ∅ (hc_fvar φ ub (hc_open m C Γ))
+     dftyped W ∅ (hc_open m C Γ)
        (lenv_pinst (pshift m) (Some (TBox m k C ub c t U) :: Δ))
-       (∅, Some (FVar φ)) e (sinst_ty (slist ss) U)) →
+       (∅, Some (FRest (rest_of ub))) e (sinst_ty (slist ss) U)) →
   dftyped W ∅ Γ Δ F (EBox e) (TBox m k C ub c t U).
 Proof.
-  intros HΔ Hφ H2. dfr.
-  eapply e_box with (φ := φ); [by apply lenv_unl_df|done|].
+  intros HΔ H2. dfr.
+  eapply e_box; [by apply lenv_unl_df|].
   intros ss Hk Hss. specialize (H2 ss Hk Hss).
   rewrite (ty_df_sinst_slist ss) in H2 by apply (proj2 Hss eq_refl).
   rewrite lenv_df_pinst, tenv_df_empty in H2. exact H2.
@@ -390,9 +389,9 @@ Lemma d_spawn_lam W Θ Γ Δ F e :
   dftyped W Θ Γ (Some TUnit :: Δ) (∅, None) e TUnit →
   dftyped W Θ Γ Δ F (ESpawn (Lam e)) TUnit.
 Proof.
-  intros H. set (φ := fresh (dom (hc_fv Γ))).
+  intros H.
   apply (d_spawn _ _ _ _ _ _ UTop LBot None tinf None).
-  apply (d_abs _ _ _ _ _ _ _ _ _ _ _ _ _ φ); [apply is_fresh|done|exact H].
+  apply (d_abs _ _ _ _ _ _ _ _ _ _ _ _ _); [done|exact H].
 Qed.
 
 Lemma d_new W Γ Δ F ℓ S a1 a2 :
@@ -481,7 +480,7 @@ Proof.
   - eapply d_var. by eapply lenv_only_df.
   - eapply d_chan. by apply lenv_unl_df.
   - df_ctx.
-    eapply d_abs; [done| |exact IHtyped]. by heads_df.
+    eapply d_abs; [|exact IHtyped]. by heads_df.
   - df_ctx.
     eapply d_app; [by apply tsplit_df|by apply lenv_split_df|done| |exact IHtyped2].
     heads_df. exact IHtyped1.
@@ -501,10 +500,10 @@ Proof.
   - df_ctx.
     eapply d_case; [by apply tsplit_df|by apply lenv_split_df| |exact IHtyped2|exact IHtyped3].
     heads_df. exact IHtyped1.
-  - eapply d_box with (φ := φ); [by apply lenv_unl_df|done|].
-    intros ss Hk Hss. specialize (H2 ss Hk (sinsts_inf N ss Hss)).
-    rewrite (ty_df_sinst_slist ss), lenv_df_pinst, tenv_df_empty in H2 by apply (proj2 Hss eq_refl).
-    exact H2.
+  - eapply d_box; [by apply lenv_unl_df|].
+    intros ss Hk Hss. specialize (H1 ss Hk (sinsts_inf N ss Hss)).
+    rewrite (ty_df_sinst_slist ss), lenv_df_pinst, tenv_df_empty in H1 by apply (proj2 Hss eq_refl).
+    exact H1.
   - rewrite ty_df_sinst_map, <-ty_inst_df.
     eapply d_force; [done|done|by rewrite length_fmap|by eapply sinsts_df|done|exact IHtyped].
   - eapply d_send with (T := ty_df T) (S := sty_df S);

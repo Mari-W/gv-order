@@ -236,21 +236,18 @@ Definition lbox (m : nat) (C : bcs) (ub : option point) (T U : ty) : ty :=
   TBox m 0 C None (Some 0) tid (TLolli (ubound_of ub) LNone None tz T U None).
 
 Lemma lbox_typed W N Γ n F m C ub T U e c t :
-  hc_fv Γ = ∅ → pinst_ty (pshift m) (lbox m C ub T U) = lbox m C ub T U →
-  typed W N ∅ (hc_fvar 1 ub (hc_fvar 0 None (hc_open m C Γ)))
-    (Some T :: Some (lbox m C ub T U) :: nones n) (∅, Some (FVar 1)) e U c t →
+  pinst_ty (pshift m) (lbox m C ub T U) = lbox m C ub T U →
+  typed W N ∅ (hc_open m C Γ)
+    (Some T :: Some (lbox m C ub T U) :: nones n) (∅, Some (FRest (rest_of ub))) e U c t →
   t.2 = Some 0 →
   typed W N ∅ Γ (nones n) F (EBox (Lam e)) (lbox m C ub T U) (Some 0) tid.
 Proof.
-  intros HΓ HB He Ht. unfold lbox at 1. eapply e_box with (φ := 0).
+  intros HB He Ht. unfold lbox at 1. eapply e_box.
   { intros o Ho. apply elem_of_replicate in Ho as [-> _]. by left. }
-  { unfold hc_open. simpl. rewrite HΓ. unfold fhyps_pinst. rewrite fmap_empty. set_solver. }
   intros ss Hk _. destruct ss; [|done]. rewrite sinst_nil.
   rewrite lenv_pinst_cons'. cbn [fmap option_fmap option_map]. fold (lbox m C ub T U).
   rewrite HB, lenv_pinst_nones.
-  eapply e_abs with (φ := 1) (a := None) (Θh := ∅); rewrite ?abs_hc_of, ?abs_fut_of.
-  { unfold hc_fvar. simpl. rewrite HΓ. unfold fhyps_pinst.
-    rewrite fmap_empty, insert_empty, dom_singleton_L. set_solver. }
+  eapply e_abs with (a := None) (Θh := ∅); rewrite ?abs_fut_of.
   { apply lb_below_none. spare_tac. }
   { intros o. by rewrite !lookup_empty. }
   { apply lage_some; [apply age_free; constructor|apply lage_nones]. }

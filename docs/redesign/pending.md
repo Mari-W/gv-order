@@ -529,6 +529,29 @@ must do, open questions.
         Checked 2026-11-20 (docs/redesign/check-future-variables.md). It
         holds, `fl_to_var` and `fl_from_var` compiled in a scratch file.
         The relation's future needs the rest "above u" beside its points.
+        Done in the Rocq 2026-11-21 (next run, stage 3). Γ holds only the
+        constraint instances (`hctx` lost `hc_fv`), `fl` relates points
+        only, and `node`, `fl_v`, `hc_fvar` and `fhyps` are gone. The rest
+        of a static future is `RAbove u` (everything above u) or `RAll`
+        (everything), with the ⊥ flag beside it (static/Contexts.v,
+        `frest`, `futrest`). `ub_below_s` asks `sle W Γ x u` against the
+        rest `RAbove u` (`rest_below`), and nothing against `RAll`.
+        E-Abs types the body under `abs_fut ub` and E-Box under
+        `rest_of ub`, both with Γ unchanged, and neither rule picks a
+        fresh variable. `sf_pinst` instantiates the point of the rest.
+        The relation keeps its futures as finite sets. Instead the
+        semantic reading quantifies over one set R for the rest with
+        `rest_ok` (R above u, compat/SemTyped.v), and the fundamental
+        theorem carries `rest_ok` beside `hsat`. This is shorter than a
+        predicate future in the relation, which the check note proposed,
+        and reads the same, because a singleton above u already forces
+        `x ≺ y` for every y above u. Plausibility. Every example builds.
+        The body futures of the example boxes changed from a variable φ
+        with `u ≺ φ` to the rest above u, and each `φ_hyp` lemma went.
+        The rejected programs of rejects.js stay excluded by
+        `lf_soundness`. The S4.18 counterexample concerns (fuse), which
+        this stage leaves alone. SemBranch, TreeTopo and FlagPair build
+        unchanged.
 
 15. **Remove the clause (fuse) of P (author 2026-11-19, overnight stage
     9).** Not done in the overnight run of 2026-11-20, no Rocq change.

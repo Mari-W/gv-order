@@ -9,7 +9,7 @@
     Every typing rule holds with marks ([later_*]), for every cost
     table, stated at the set form with the facts of the rule read in W.
     The fundamental theorems (static/Fundamental.v) reach these forms
-    by instantiating the point variables and the future variables of Γ.
+    by instantiating the point variables of Γ and the rest of the future.
 
     - A rule that splits its context binds the first premise in a frame
       that holds the other part ([later_bind]). The hole runs with the

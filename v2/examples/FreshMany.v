@@ -63,13 +63,13 @@ Section body.
     cbn [hbot orb sf_unionb fst snd fs_var fs_bot].
 
   Ltac fut x :=
-    apply (ub_below_gen _ _ x (pvar 1) 1);
+    apply (ub_below_gen _ _ x (pvar 1));
       [ let y := fresh "y" in let Hy := fresh "Hy" in
         intros y Hy; revert Hy; normF; intros Hy; heads_cases Hy; fmf
-      | normF; reflexivity | apply Γbox_fv | right; fmf | normF; reflexivity ].
+      | normF; reflexivity  | right; fmf | normF; reflexivity ].
 
   Lemma fm_body :
-    dftyped W ∅ Γb (Some fm_T :: Some fm_ty :: nones n) (∅, Some (FVar 1)) fm_e TUnit.
+    dftyped W ∅ Γb (Some fm_T :: Some fm_ty :: nones n) (∅, Some (FRest (RAbove (pvar 1)))) fm_e TUnit.
   Proof.
     unfold fm_e.
     eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
@@ -112,13 +112,13 @@ Section body.
         + apply d_unit'. spare_tac.
         + eapply d_var'; [reflexivity|]. spare_tac. }
     eapply d_close with (S0 := SEnd) (x := pvar 1); [done| |eapply d_var'; [reflexivity|spare_tac]].
-    apply (ub_below_var _ _ _ (pvar 1) _ 1); [apply Γbox_fv|set_solver|by left].
+    apply (ub_below_var _ _ _ (pvar 1) _); [set_solver|by left].
     Unshelve. all: exact None.
   Qed.
 End body.
 
-Lemma fm_box_typed W Γ n F : hc_fv Γ = ∅ → dftyped W ∅ Γ (nones n) F fm_box fm_ty.
-Proof. intros HΓ. apply box1_typed; [done|reflexivity|apply fm_body]. Qed.
+Lemma fm_box_typed W Γ n F : dftyped W ∅ Γ (nones n) F fm_box fm_ty.
+Proof. apply box1_typed; [reflexivity|apply fm_body]. Qed.
 
 (** ** main *)
 

@@ -70,8 +70,8 @@ Ltac worker_tac pp j :=
 (** ** mk₀ *)
 
 Lemma mk0_body Γ n :
-  dftyped W_fx ∅ (hc_fvar 1 None (hc_fvar 0 None (hc_open 0 C0 Γ)))
-    (Some TUnit :: Some mk0_ty :: nones n) (∅, Some (FVar 1)) mk0_e Tres.
+  dftyped W_fx ∅ (hc_open 0 C0 Γ)
+    (Some TUnit :: Some mk0_ty :: nones n) (∅, Some (FRest RAll)) mk0_e Tres.
 Proof.
   unfold mk0_e, let_new.
   eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
@@ -90,21 +90,21 @@ Proof.
   eapply d_pack with (xs := pvar 0 :: []); [done| |exact I|].
   - apply hold_at_nil. intros f Hf _. destruct Hf as [->| ->]; simpl.
     + eapply (hyp_slt_ids _ _ (w_laws W_fx 0) 1);
-        [unfold hc_fvar, hc_open; cbn [hc_hyps]; apply elem_of_app; right; apply list_elem_of_here|by left|simpl; lia].
+        [unfold hc_open; cbn [hc_hyps]; apply elem_of_app; right; apply list_elem_of_here|by left|simpl; lia].
     + eapply (hyp_slt_ids _ _ (w_laws W_fx 0) 1);
-        [unfold hc_fvar, hc_open; cbn [hc_hyps]; apply elem_of_app; right; apply list_elem_of_here|by right|simpl; lia].
+        [unfold hc_open; cbn [hc_hyps]; apply elem_of_app; right; apply list_elem_of_here|by right|simpl; lia].
   - eapply d_var'; [reflexivity|]. spare_tac.
   Unshelve. all: exact None.
 Qed.
 
-Lemma mk0_typed Γ n F : hc_fv Γ = ∅ → dftyped W_fx ∅ Γ (nones n) F mk0 mk0_ty.
-Proof. intros HΓ. apply boxg_typed; [done|reflexivity|apply mk0_body]. Qed.
+Lemma mk0_typed Γ n F : dftyped W_fx ∅ Γ (nones n) F mk0 mk0_ty.
+Proof. apply boxg_typed; [reflexivity|apply mk0_body]. Qed.
 
 (** ** mk₁ *)
 
 Lemma mk1_body Γ n :
-  dftyped W_fx ∅ (hc_fvar 1 None (hc_fvar 0 None (hc_open 1 mk1_C Γ)))
-    (Some (TSess Sr (pvar 0) None) :: Some mk1_ty :: nones n) (∅, Some (FVar 1)) mk1_e mk1_res.
+  dftyped W_fx ∅ (hc_open 1 mk1_C Γ)
+    (Some (TSess Sr (pvar 0) None) :: Some mk1_ty :: nones n) (∅, Some (FRest RAll)) mk1_e mk1_res.
 Proof.
   unfold mk1_e.
   eapply d_letp; [apply tsplit_empty|lsplit_tac (ENewAt 0 (Var 0)) EUnit| |].
@@ -119,8 +119,8 @@ Proof.
   Unshelve. all: exact None.
 Qed.
 
-Lemma mk1_typed Γ n F : hc_fv Γ = ∅ → dftyped W_fx ∅ Γ (nones n) F mk1 mk1_ty.
-Proof. intros HΓ. apply boxg_typed; [done|reflexivity|apply mk1_body]. Qed.
+Lemma mk1_typed Γ n F : dftyped W_fx ∅ Γ (nones n) F mk1 mk1_ty.
+Proof. apply boxg_typed; [reflexivity|apply mk1_body]. Qed.
 
 (** ** main *)
 
