@@ -13,7 +13,7 @@ From GV Require Import examples.LFFreshMany examples.LFClientServer examples.LFC
 From GV Require Import examples.LFController soup.SoupRun soup.SoupTau soup.LFAdequacy.
 From GV Require Import soup.LFCompose soup.LFTyped lockfree.FairRun.
 From GV Require Import examples.SemBranch static.Inversion relation.Ord relation.ExProp relation.Ranks examples.LFLink compat.Redex static.PointSubst.
-From GV Require Import examples.SinstStuck.
+From GV Require Import examples.SinstStuck examples.SharedRoots.
 
 (** types/Points.v *)
 Print Assumptions pt_dual_dual.
@@ -180,3 +180,6 @@ Print Assumptions wf_iff_wellfounded.
 (** examples/SinstStuck.v: session instantiation does not preserve typing *)
 Print Assumptions inv_chan_sty.
 Print Assumptions typed_sinst_false.
+(** examples/SharedRoots.v: the shared constants of P-Connect are not the roots of the cut *)
+Print Assumptions shared_not_cut.
+Print Assumptions fact_needs_zero.
