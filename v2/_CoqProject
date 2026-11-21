@@ -43,6 +43,7 @@ examples/FlagPair.v
 examples/TreeTopo.v
 relation/Ord.v
 relation/ExProp.v
+relation/Ranks.v
 relation/CostTable.v
 relation/Readiness.v
 relation/Relation.v
