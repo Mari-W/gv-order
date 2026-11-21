@@ -486,8 +486,8 @@ Section rel.
   (** One level of V, given E where the arrow reads it. *)
   Lemma V_step n T :
     (∀ j, olt j n → ∀ T, VR j T ∧ ER j T) →
-    (∀ T', tsize T' < tsize T → VR n T') →
-    (c_beta κ = 0 → ∀ U, tsize U < tsize T → ER n U) →
+    (∀ T', tsize T' < tsize T → ∀ j, ole j n → VR j T') →
+    (c_beta κ = 0 → ∀ U, tsize U < tsize T → ∀ j, ole j n → ER j U) →
     VR n T.
   Proof.
     intros IHl IHt IHe W Θ v h Hk.
@@ -497,9 +497,10 @@ Section rel.
       exists (emap h e). split_and!; [done|by rewrite kren_dom, fends_emap, Hfe|by rewrite kren_heads|].
       intros W' j Θw w F HW Hj Hd Hub Hw.
       assert (VR j T1) as HV1.
-      { destruct (decide (olt j n)); [by apply IHl|]. assert (j = n) as -> by lia. apply IHt. simpl; lia. }
+      { apply IHt; [simpl; lia|exact (oadd_le_l _ _ _ Hj)]. }
       assert (ER j U) as HEU.
-      { destruct (decide (olt j n)); [by apply IHl|]. assert (j = n) as -> by lia. apply IHe; [lia|simpl; lia]. }
+      { destruct (decide (c_beta κ = 0)) as [Hb|Hb]; [apply IHe; [done|simpl; lia|exact (oadd_le_l _ _ _ Hj)]|].
+        by apply IHl, (oadd_lt _ _ _ Hb Hj). }
       destruct (pull_value j W' T1 h Θ Θw w (set_map ech (dom Θ) ∪ fchans e) HV1 Hk
         ltac:(set_solver) Hd Hw) as (h' & w0 & Θ0 & Hw0 & Hd0 & Hww & Hext & Hk' & Hren & _).
       assert (emap h' e = emap h e) as He.
@@ -508,19 +509,19 @@ Section rel.
     - intros (v1 & v2 & Θ1 & Θ2 & -> & Hd & -> & H1 & H2)%Vrel_prod_iff. apply Vrel_prod_iff.
       exists (emap h v1), (emap h v2), (kren h Θ1), (kren h Θ2).
       split_and!; [done|by apply kren_disjoint|by apply kren_union| |].
-      + apply IHt; [simpl; lia| |done]. eapply kinj_sub; [|exact Hk]. rewrite dom_union_L. set_solver.
-      + apply IHt; [simpl; lia| |done]. eapply kinj_sub; [|exact Hk]. rewrite dom_union_L. set_solver.
+      + apply IHt; [simpl; lia|apply ole_refl| |done]. eapply kinj_sub; [|exact Hk]. rewrite dom_union_L. set_solver.
+      + apply IHt; [simpl; lia|apply ole_refl| |done]. eapply kinj_sub; [|exact Hk]. rewrite dom_union_L. set_solver.
     - intros [(v' & -> & H)|(v' & -> & H)]%Vrel_sum_iff; apply Vrel_sum_iff; [left|right]; exists (emap h v');
-        (split; [done|]); apply IHt; first [simpl; lia|done].
+        (split; [done|]); (apply IHt; [simpl; lia|apply ole_refl|done|done]).
     - intros (-> & e & -> & Hfe & H)%Vrel_box_iff. apply Vrel_box_iff. rewrite kren_empty.
       split; [done|]. exists (emap h e). split_and!; [done|by rewrite fends_emap, Hfe, set_map_empty|].
       intros W' xs ss HW Hxs Hss Hsc HC. rewrite <-emap_thunk, <-(kren_empty h).
-      apply IHt; [|apply kinj_nil|by apply H].
+      apply IHt; [|apply ole_refl|apply kinj_nil|by apply H].
       rewrite tsize_tthunk. unfold ty_inst. rewrite tsize_sinst, tsize_pinst. simpl. lia.
     - intros (o & s' & -> & -> & Hs)%Vrel_sess_iff. apply Vrel_sess_iff. exists (h o), s'.
       by rewrite kren_singleton.
     - intros (Hlb & xs & Hxs & HC & H)%Vrel_ex_iff. apply Vrel_ex_iff. rewrite kren_heads by done.
-      split; [done|]. exists xs. split_and!; [done|done|]. apply IHt; [|done|done].
+      split; [done|]. exists xs. split_and!; [done|done|]. apply IHt; [|apply ole_refl|done|done].
       unfold ty_inst. rewrite tsize_pinst. simpl. lia.
   Qed.
   (** One level of E at T, given V at T and at the payloads of free sends. *)
@@ -529,7 +530,7 @@ Section rel.
     (c_give κ = 0 → ∀ T', VR n T') →
     ER n T.
   Proof.
-    intros IHl HVT HVU HVP. destruct n as [|n]; [unfold ER; intros; apply Erel_0|].
+    intros IHl HVT HVU HVP.
     intros W Θ F e h Hk HE.
     cut (∀ W Θ T0 F e, Erel κ n W Θ T0 F e → T0 = T ∨ T0 = TUnit →
            ∀ h, kinj h Θ → Erel κ n W (kren h Θ) T0 F (emap h e));
@@ -558,7 +559,7 @@ Section rel.
       at_cost_E n c (Erel κ) (Erel κ n) W1 (kren h' Θ') T0 F (emap h' e')) as Hac.
     { intros c Θ' e' h' Hk' [A1 A2]. split.
       - intros Hc. by apply A1.
-      - intros Hc. apply (proj2 (IHl (S n - c) ltac:(lia) T0)); [done|]. by apply A2. }
+      - intros Hc j Hj. apply (proj2 (IHl j (oadd_lt _ _ _ Hc Hj) T0)); [done|]. by apply A2. }
     assert (∀ o v w, Θ !! o = Some w → kinj h (<[o := v]> Θ)) as Hkins.
     { intros o v w Ho. eapply kinj_sub; [|exact Hk]. rewrite dom_insert_L.
       apply elem_of_dom_2 in Ho. set_solver. }
@@ -622,13 +623,13 @@ Section rel.
       + destruct A4 as (e1 & -> & Hfe & _ & HA). exists (emap h e1).
         split_and!; [done|by rewrite kren_dom, fends_emap, Hfe|done|].
         intros W' j Θ' w' F0 HW Hj Hd Hub. simpl in Hub. subst F0. split.
-        * intros Hjn [-> ->]%Vrel_unit_iff. rewrite map_union_empty.
+        * intros Hjn Hu. apply Vrel_unit_iff in Hu as [-> ->]. rewrite map_union_empty.
           destruct (HA W' j ∅ EUnit ∅ HW Hj (map_disjoint_empty_r _) eq_refl) as [B1 _].
           rewrite map_union_empty in B1. change EUnit with (emap h EUnit). rewrite <-emap_subst1.
           apply (proj2 (IHl j Hjn TUnit)); [done|]. apply B1; [done|by apply Vrel_unit_iff].
-        * intros -> [-> ->]. rewrite map_union_empty.
-          destruct (HA W' n ∅ EUnit ∅ HW Hj (map_disjoint_empty_r _) eq_refl) as [_ B2].
-          destruct (B2 eq_refl (conj eq_refl eq_refl)) as [_ B3]. rewrite map_union_empty in B3.
+        * intros Hb0 [-> ->]. rewrite map_union_empty.
+          destruct (HA W' j ∅ EUnit ∅ HW Hj (map_disjoint_empty_r _) eq_refl) as [_ B2].
+          destruct (B2 Hb0 (conj eq_refl eq_refl)) as [_ B3]. rewrite map_union_empty in B3.
           change EUnit with (emap h EUnit). rewrite <-emap_subst1. apply B3; [by right|done].
       + by apply Hac.
     - (* O-Send *)
@@ -651,7 +652,7 @@ Section rel.
       + rewrite <-kren_union by done. rewrite <-A4. rewrite kren_delete; [done|done|by eapply elem_of_dom_2].
       + destruct A6 as [B1 B2]. split.
         * intros Hc. apply HVP; [done|done|]. by apply B1.
-        * intros Hc. apply (proj1 (IHl (Datatypes.S n - c_give κ) ltac:(lia) _)); [done|]. by apply B2.
+        * intros Hc j Hj Hj'. apply (proj1 (IHl j Hj _)); [done|]. by apply B2.
       + rewrite <-kren_insert by done. by apply Hac.
     - (* O-Recv *)
       intros o' w x Hst. destruct (tstep_emap_act _ _ _ _ Hst) as (a & Ha & Ho).
@@ -660,7 +661,7 @@ Section rel.
       destruct (H6 _ _ _ He00) as (S0 & x0 & m' & U & S & A1 & A2 & _).
       exists S0, x0, m', U, S. split_and!; [by apply kren_lookup|done|].
       intros j Θw Hj Hd HVw. pose proof (c_take_pos κ).
-      destruct (pull_value j W1 (payload_at m' U x0) h Θ Θw w X (proj1 (IHl j ltac:(lia) _)) Hk
+      destruct (pull_value j W1 (payload_at m' U x0) h Θ Θw w X (proj1 (IHl j (c_take_lt κ n j Hj) _)) Hk
         ltac:(set_solver) Hd HVw) as (h' & w0 & Θ0 & Hw0 & Hd0 & Hww & Hext & Hk' & Hren & _).
       assert (is_val w0) as Hv0 by (rewrite <-Hww, is_val_emap in Hw; done).
       destruct (act_offer e (ARecv o) (LSess (SRecv o w0)) Ha (conj eq_refl Hv0)) as [e0 He0].
@@ -669,12 +670,12 @@ Section rel.
       rewrite (tstep_emap_back h h' e _ x _ e0 Hst He0 I Hl (Hee h' Hext)).
       destruct (H6 _ _ _ He0) as (S0' & x0' & m'' & U' & S' & A1' & A2' & A3').
       rewrite A1 in A1'. injection A1' as <- <-. rewrite A2 in A2'. injection A2' as <- <- <-.
-      assert (Erel κ j W1 (<[o := (S, x0⁺)]> Θ ∪ Θ0) T0 F e0) as HE0 by (apply A3'; [lia|done|done]).
+      assert (Erel κ j W1 (<[o := (S, x0⁺)]> Θ ∪ Θ0) T0 F e0) as HE0 by (apply A3'; [exact Hj|done|done]).
       rewrite <-insert_union_l in HE0.
       assert (kinj h' (<[o := (S, x0⁺)]> (Θ ∪ Θ0))) as Hk2.
       { eapply kinj_sub; [|exact Hk']. rewrite dom_insert_L, dom_union_L.
         apply elem_of_dom_2 in A1. set_solver. }
-      pose proof (proj2 (IHl j ltac:(lia) T0) W1 _ F e0 h' Hk2 HE0) as HR.
+      pose proof (proj2 (IHl j (c_take_lt κ n j Hj) T0) W1 _ F e0 h' Hk2 HE0) as HR.
       rewrite kren_insert, Hren, Hho, insert_union_l in HR by done. exact HR.
     - (* O-Close *)
       intros o' x Hst. destruct (tstep_emap_act _ _ _ _ Hst) as (a & Ha & Ho).
@@ -723,18 +724,21 @@ Section rel.
   Lemma rename_level n : ∀ T, VR n T ∧ ER n T.
   Proof.
     induction n as [n IHn] using oind.
-    assert (VR n TUnit) as HVU.
-    { apply V_step; [done|intros T' HT|intros _ U HU]; [pose proof (tsize_pos T')|pose proof (tsize_pos U)];
-        simpl in *; lia. }
-    destruct (decide (c_give κ = 0)) as [Hg|Hg].
-    - assert (∀ T, VR n T) as HV.
-      { intros T. induction T as [T IH] using tsize_ind. apply V_step; [done|done|].
-        intros Hb. pose proof (c_give_pos κ Hb). lia. }
-      intros T. split; [done|]. by apply E_step.
-    - intros T. induction T as [T IH] using tsize_ind.
-      assert (VR n T) as HVT.
-      { apply V_step; [done| |]; intros; by apply IH. }
-      split; [done|]. by apply E_step.
+    assert (∀ j, ole j n → ∀ i, olt i j → ∀ T, VR i T ∧ ER i T) as IHj.
+    { intros j Hj i Hi. apply IHn. exact (olt_trans_le _ _ _ Hi Hj). }
+    assert (∀ j, ole j n → VR j TUnit) as HVU.
+    { intros j Hj. apply V_step; [by apply IHj|intros T' HT|intros _ U HU];
+        [pose proof (tsize_pos T')|pose proof (tsize_pos U)]; simpl in *; lia. }
+    assert (∀ T j, ole j n → VR j T) as HV.
+    { intros T. induction T as [T IH] using tsize_ind. intros j Hj.
+      apply V_step; [by apply IHj| |].
+      - intros T' HT j' Hj'. apply IH; [done|exact (ole_trans _ _ _ Hj' Hj)].
+      - intros Hb U HU j' Hj'. assert (ole j' n) as Hj'n by exact (ole_trans _ _ _ Hj' Hj).
+        apply E_step; [by apply IHj|by apply IH|by apply HVU|].
+        intros Hg. pose proof (c_give_pos κ Hb). lia. }
+    intros T. split; [by apply HV, ole_refl|].
+    apply E_step; [done|by apply HV, ole_refl|by apply HVU, ole_refl|].
+    intros _ T'. by apply HV, ole_refl.
   Qed.
 End rel.
 
@@ -905,9 +909,9 @@ End fuse_compose.
 Theorem Prel_fuse κ n W Σ T p h D :
   fuse_ok h D Σ p → p ∈ P[κ]^W _ n⟦Σ ⊢ T⟧ → pfuse h D p ∈ P[κ]^W _ n⟦sdrop D (kren h Σ) ⊢ T⟧.
 Proof.
-  intros Hh HP.  apply Prel_iff in HP. apply Prel_iff. intros W1 HW1 HS1 g D' Hg.
+  intros Hh HP. rewrite Prel_iff in HP. apply Prel_iff. intros Hn0 W1 HW1 HS1 g D' Hg.
   rewrite (fuse_sdrop_compose h g D D' Σ p Hh Hg), (pfuse_compose h g D D' Σ p Hh Hg).
-  apply HP; [done|done|]. by apply fuse_ok_compose.
+  apply HP; [done|done|done|]. by apply fuse_ok_compose.
 Qed.
 
 (** Decision Q16 for P, D = ∅. *)

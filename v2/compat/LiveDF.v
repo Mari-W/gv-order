@@ -98,11 +98,12 @@ Qed.
 
 (** A step of cost c at every level gives every level. *)
 Lemma at_cost_all κ c W Σ T p :
-  (∀ m, at_cost_P (S m) c (Prel κ) (Prel κ (S m)) W Σ T p) → ∀ m, Prel κ m W Σ T p.
+  (∀ m, olt ozero m → at_cost_P m c (Prel κ) (Prel κ m) W Σ T p) → ∀ m, Prel κ m W Σ T p.
 Proof.
-  intros H m. destruct (H (m + c)) as [H1 H2]. destruct (decide (c = 0)) as [->|Hc].
-  - eapply Prel_down; [|exact (H1 eq_refl)]. lia.
-  - eapply Prel_down; [|exact (H2 Hc)]. lia.
+  intros H m. destruct (decide (c = 0)) as [->|Hc].
+  - destruct (H (osucc m) I) as [H1 _]. eapply Prel_down; [|exact (H1 eq_refl)]. by apply olt_ole, olt_succ.
+  - assert (olt m (oadd m c)) as Hm by exact (oadd_lt m c _ Hc (ole_refl _)).
+    destruct (H (oadd m c) (ole_trans_lt ozero m _ I Hm)) as [_ H2]. apply (H2 Hc). apply ole_refl.
 Qed.
 
 Lemma live_sub_df_n n : ∀ W T p, tfree T → boxfree T → (∀ m, Prel κ_L m W ∅ T p) → Prel κ_DF n W ∅ T p.
@@ -110,27 +111,27 @@ Proof.
   induction n as [n IHn] using oind. intros W T p HT Hb.
   revert W.
   induction p as [p IHp] using (well_founded_induction (well_founded_ltof _ psize)).
-  intros W HL. apply Prel_iff. intros W1 HW1 HS1 h D Hh.
-  assert (∀ m, Pbody κ_L (S m) (Vrel κ_L) (Prel κ_L) (Vrel κ_L (S m)) (Prel κ_L (S m)) W ∅ T p) as HB
-    by (intros m; apply Prel_iff, HL).
-  pose proof (λ m, HB m W1 HW1 HS1 h D Hh) as HC.
+  intros W HL. apply Prel_iff. intros Hn0 W1 HW1 HS1 h D Hh.
+  assert (∀ m, olt ozero m → Pbody κ_L m (Vrel κ_L) (Prel κ_L) (Vrel κ_L m) (Prel κ_L m) W ∅ T p) as HB
+    by (intros m Hm; by apply Prel_iff).
+  pose proof (λ m Hm, HB m Hm W1 HW1 HS1 h D Hh) as HC.
   rewrite (fuse_ok_empty _ _ _ Hh), pfuse_empty, kren_empty, sdrop_empty in HC |- *.
-  destruct (HC 0) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
+  destruct (HC (onat 1) (onat_lt 0 1 ltac:(lia))) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
   split; [|split; [|unfold Psteps; split_and!]].
   - intros Hirr. destruct (Hs Hirr) as (v & E & -> & Hv & HE). exists v, E.
-    split_and!; [done| |done]. by apply (Vrel_boxfree κ_L κ_DF T HT Hb 1 n).
+    split_and!; [done| |done]. by apply (Vrel_boxfree κ_L κ_DF T HT Hb (onat 1) n).
   - done.
   - intros q ev q' Hq Hst Hτ Hd.
     assert (∀ m, Prel κ_L m W1 ∅ T (erase q')) as HL'.
-    { apply (at_cost_all κ_L (ev_cost κ_L ev)). intros m.
-      destruct (HC m) as (_ & _ & A & _). exact (A q ev q' Hq Hst Hτ Hd). }
+    { apply (at_cost_all κ_L (ev_cost κ_L ev)). intros m Hm.
+      destruct (HC m Hm) as (_ & _ & A & _). exact (A q ev q' Hq Hst Hτ Hd). }
     split.
     + intros Hc. assert (∃ i o1 o2, ev = EvSolo i (LSess (SLink ({[o1]} ∪ {[o2]}))) (PickLink o1 o2)) as (i & o1 & o2 & ->).
       { clear -Hst Hc Hτ. destruct Hst; simpl in Hc, Hτ; try discriminate; eauto; by unfold ev_tau in Hτ. }
       apply (IHp (erase q')); [|exact HL'].
       unfold ltof. replace (psize p) with (psize (pmap h p)) by (unfold psize, pmap, emapE; simpl; apply msize_emap).
       rewrite <-Hq. by eapply psize_link.
-    + intros Hc. eapply (IHn (S n - _)); [lia|done|done|]. intros m. apply HL'.
+    + intros Hc j Hj. eapply (IHn j (oadd_lt _ _ _ Hc Hj)); [done|done|]. intros m. apply HL'.
   - intros q i o w q' Hq Hst. exfalso.
     destruct (H2 q i o w q' Hq Hst) as (? & ? & ? & ? & ? & ? & ? & ? & ? & A & _).
     by rewrite lookup_empty in A.
