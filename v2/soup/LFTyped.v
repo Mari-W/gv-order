@@ -5,6 +5,9 @@
       lf_soundness   : wfworld W → ∅ ⊩^N _ W p : T → lock_free p
       lf_soundness_run : with excluded middle and dependent choice, also
                        a maximal weakly fair run starts from p
+      lf_soundness_padovani : with the same hypotheses, every pending
+                       thread of a reachable configuration can take part
+                       in a later step
 
     Σ ⊩^N _ W p : T is process typing [ptyped] at Some N together with
     the guard of every thread, ⊢▷ p. P-Term of [ptyped] asks at a finite
@@ -45,11 +48,13 @@ Proof.
   exact (lf_fundamental N W ∅ p T Hty).
 Qed.
 
-(** ** Soundness with a run
+(** ** Soundness with a run, and Padovani-style lock freedom
 
     [lock_free p] quantifies over every maximal weakly fair run. With
     excluded middle and dependent choice as hypotheses such a run exists
-    ([fair_run_exists_proc]), so the statement is not vacuous. *)
+    ([fair_run_exists_proc]), so the statement is not vacuous, and the
+    reachability form of Padovani 2014, Def. II.1 follows per thread
+    ([lock_free_padovani]). *)
 
 Corollary lf_soundness_run N W p T :
   excluded_middle → dependent_choice → wfworld W → ∅ ⊩^N _ W p : T →
@@ -59,3 +64,8 @@ Proof.
   exact (fair_run_exists_proc EM DC p).
 Qed.
 
+Corollary lf_soundness_padovani N W p T :
+  excluded_middle → dependent_choice → wfworld W → ∅ ⊩^N _ W p : T → lf_padovani p.
+Proof.
+  intros EM DC HW Hty. exact (lock_free_padovani EM DC p (lf_soundness N W p T HW Hty)).
+Qed.

@@ -142,6 +142,8 @@ Print Assumptions lf_soundness_source.
 Print Assumptions lf_fundamental.
 Print Assumptions lf_soundness.
 Print Assumptions lf_soundness_run.
+Print Assumptions lf_soundness_padovani.
 (** lockfree/FairRun.v *)
 Print Assumptions fair_run_exists.
 Print Assumptions fair_run_exists_proc.
+Print Assumptions lock_free_padovani.

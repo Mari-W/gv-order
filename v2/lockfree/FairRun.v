@@ -1,4 +1,4 @@
-(** * A maximal weakly fair run exists
+(** * A maximal weakly fair run exists, and Padovani-style lock freedom
 
     Every configuration starts a maximal weakly fair run
     ([fair_run_exists]). The run follows a round robin over thread
@@ -13,8 +13,14 @@
     Picking a step at every position is dependent choice, and deciding
     whether the target is enabled is excluded middle. Both are explicit
     hypotheses of the lemma, never axioms.
-    [lock_free] keeps quantifying over every maximal weakly fair run. *)
 
+    [lock_free] keeps quantifying over every maximal weakly fair run.
+    From it and the existence of runs follows the reachability form of
+    Padovani 2014, Def. II.1, per thread ([lock_free_padovani]). Every
+    thread pending in a configuration reachable from p takes part in a
+    step of some configuration reachable from there. *)
+
+From stdpp Require Import relations.
 From GV Require Export lockfree.Fair.
 
 (** ** Classical hypotheses *)
@@ -86,6 +92,62 @@ Proof.
   destruct (erase_surj p) as [q Hq].
   destruct (fair_run_exists EM DC q) as (r & l & Hr0 & Hmax & Hfair).
   exists r, l. rewrite Hr0. auto.
+Qed.
+
+(** ** Runs with a finite prefix *)
+
+Definition rcons {A} (a : A) (f : nat → A) (i : nat) : A :=
+  match i with 0 => a | S i => f i end.
+
+Lemma run_cons q0 ev r l :
+  itstep q0 ev (r 0) → maximal r l → wfair r l →
+  maximal (rcons q0 r) (rcons (Some ev) l) ∧ wfair (rcons q0 r) (rcons (Some ev) l).
+Proof.
+  intros Hs Hmax Hfair. split.
+  - intros [|i]; [left; eauto|exact (Hmax i)].
+  - intros t i. destruct (Hfair t (pred i)) as (j & Hij & Hj).
+    exists (S j). split; [lia|exact Hj].
+Qed.
+
+Lemma run_prefix q0 q :
+  itsteps q0 q → ∀ r l, r 0 = q → maximal r l → wfair r l →
+  ∃ r' l' k, r' 0 = q0 ∧ maximal r' l' ∧ wfair r' l' ∧ ∀ i, r' (k + i) = r i ∧ l' (k + i) = l i.
+Proof.
+  induction 1 as [q|q0 q1 q Hs _ IH]; intros r l Hr0 Hmax Hfair.
+  - subst q. exists r, l, 0. auto.
+  - destruct (IH r l Hr0 Hmax Hfair) as (r' & l' & k & Hr'0 & Hmax' & Hfair' & Hk).
+    destruct Hs as [ev Hs]. rewrite <-Hr'0 in Hs.
+    destruct (run_cons q0 ev r' l' Hs Hmax' Hfair') as [Hmax'' Hfair''].
+    exists (rcons q0 r'), (rcons (Some ev) l'), (S k). split_and!; auto.
+Qed.
+
+Lemma run_itsteps r l : maximal r l → ∀ i n, itsteps (r i) (r (i + n)).
+Proof.
+  intros Hmax i n. induction n as [|n IH]; [by rewrite Nat.add_0_r|].
+  rewrite Nat.add_succ_r. destruct (Hmax (i + n)) as [(ev & _ & Hs)|(_ & -> & _)]; [|done].
+  eapply rtc_r; [exact IH|]. by exists ev.
+Qed.
+
+(** ** Padovani-style lock freedom, per thread *)
+
+Definition lf_padovani (p : proc) : Prop :=
+  ∀ q0 q t, erase q0 = p → itsteps q0 q → pend q t →
+  ∃ q1 ev q2, itsteps q q1 ∧ itstep q1 ev q2 ∧ t ∈ ev_parts ev.
+
+Theorem lock_free_padovani (EM : excluded_middle) (DC : dependent_choice) p :
+  lock_free p → lf_padovani p.
+Proof.
+  intros Hlf q0 q t H0 Hs Hp.
+  destruct (fair_run_exists EM DC q) as (r & l & Hr0 & Hmax & Hfair).
+  destruct (run_prefix q0 q Hs r l Hr0 Hmax Hfair)
+    as (r' & l' & k & Hr'0 & Hmax' & Hfair' & Hk).
+  assert (r' k = q) as Hrk.
+  { destruct (Hk 0) as [Hk0 _]. by rewrite Nat.add_0_r, Hr0 in Hk0. }
+  rewrite <-Hrk in Hp.
+  destruct (Hlf r' l' ltac:(by rewrite Hr'0) Hmax' Hfair' k t Hp) as (j & Hkj & Hj).
+  destruct (Hmax' j) as [(ev & Hl & Hst)|(_ & _ & Hl)]; rewrite Hl in Hj; [|set_solver].
+  exists (r' j), ev, (r' (S j)). split_and!; [|done|done].
+  rewrite <-Hrk. replace j with (k + (j - k)) by lia. apply (run_itsteps r' l' Hmax').
 Qed.
 
 (** ** Plausibility: a configuration with two threads starts such a run *)
