@@ -366,3 +366,156 @@ Lemma tcontr_df T : tcontr (ty_df T) = tcontr T.
 Proof. apply contr_df_mut. Qed.
 Lemma scontr_df s : scontr (sty_df s) = scontr s.
 Proof. apply contr_df_mut. Qed.
+
+(** ** Fuel *)
+
+Lemma unrN_mono k : ∀ s h, unrN k s = Some h → unrN (S k) s = Some h.
+Proof.
+  induction k as [|k IH]; intros s h H; [done|].
+  destruct s as [?m ?T|?m ?T| |b|?a|?a| |s1 s2|s1 s2|s1 s2]; cbn [unrN] in *; try done.
+  - by apply IH.
+  - destruct (unrN k s1) as [h1|] eqn:E1; [|done]. rewrite (IH _ _ E1).
+    destruct h1; try done. by apply IH.
+Qed.
+
+Lemma unrN_mono_le k k' s h : k ≤ k' → unrN k s = Some h → unrN k' s = Some h.
+Proof. intros Hk H. induction Hk; [done|]. by apply unrN_mono. Qed.
+
+(** What [unrN] returns has a head. *)
+Definition hok (h : sty) : Prop :=
+  match view h with HStuck _ => False | _ => True end.
+
+Lemma hseq_hok h s2 : hok h → h ≠ SSkip → hok (hseq h s2).
+Proof.
+  unfold hok. destruct h as [| | | | | | |o r| |]; simpl; try done.
+  destruct o, r; simpl; done.
+Qed.
+
+Lemma unrN_hok k : ∀ s h, unrN k s = Some h → hok h.
+Proof.
+  induction k as [|k IH]; intros s h H; [done|].
+  destruct s as [?m ?T|?m ?T| |b|?a|?a| |s1 s2|s1 s2|s1 s2]; cbn [unrN] in H; try (injection H as <-; unfold hok; simpl; done).
+  - by eapply IH.
+  - destruct (unrN k s1) as [h1|] eqn:E1; [|done].
+    pose proof (IH _ _ E1) as Hh.
+    destruct h1 as [| | | | | | |o r| |]; try (unfold hok in Hh; simpl in Hh; done); try (by eapply IH).
+    all: injection H as <-; try done; unfold hok in *; simpl in *; try done; destruct o, r; simpl in *; done.
+Qed.
+
+Lemma unrN_skip_sk k : ∀ s, unrN k s = Some SSkip → sk s.
+Proof.
+  induction k as [|k IH]; intros s H; [done|].
+  destruct s as [?m ?T|?m ?T| |b|?a|?a| |s1 s2|s1 s2|s1 s2]; cbn [unrN] in H; try done.
+  - apply IH in H. by apply (sk_sinst _ _ H).
+  - destruct (unrN k s1) as [h1|] eqn:E1; [|done].
+    destruct h1 as [| | | | | | |o r| |]; simpl in H; try discriminate H; try (destruct r; discriminate H).
+    cbn [sk]. apply Is_true_andb. split; by apply IH.
+Qed.
+
+Definition isvar (s : sty) : Prop :=
+  match s with SVar _ | SVarD _ => True | _ => False end.
+
+Lemma isvar_dual s : isvar s → isvar (dual s).
+Proof. by destruct s. Qed.
+
+Lemma sfuel_pos s : 1 ≤ sfuel s.
+Proof. destruct s; simpl; lia. Qed.
+
+(** The fuel of a contractive type suffices, also under an instance
+    that sets the unguarded variables to variables. *)
+Lemma unrN_sinst_var s : ∀ σ k, scontr s → (∀ a, ugv a s → isvar (σ a)) → sfuel s ≤ k →
+  is_Some (unrN k (sinst σ s)).
+Proof.
+  induction s; intros σ k Hc Hv Hk; (destruct k as [|k]; [exfalso; cbn [sfuel] in Hk; lia|]);
+    cbn [sinst unrN]; try by eauto.
+  - cbn [scontr] in Hc. apply Is_true_andb in Hc as [Hu Hc]. apply Is_true_negb in Hu.
+    rewrite <-sinst_unroll. unfold unroll. rewrite sinst_sinst.
+    apply IHs; [done| |simpl in Hk; lia].
+    intros [|a] Ha; [done|]. simpl. unfold compose. simpl. by apply Hv.
+  - specialize (Hv a). simpl in Hv. destruct (σ a); try done; exfalso; apply Hv; by apply bool_decide_pack.
+  - specialize (Hv a). simpl in Hv. destruct (σ a); simpl; try done; exfalso; apply Hv; by apply bool_decide_pack.
+  - cbn [scontr] in Hc. apply Is_true_andb in Hc as [Hc1 Hc2]. simpl in Hk.
+    destruct (IHs1 σ k Hc1) as [h1 E1]; [intros a Ha; apply Hv; cbn [ugv]; by destruct (ugv a s1)|lia|].
+    rewrite E1. destruct h1; try by eauto.
+    apply IHs2; [done| |lia]. intros a Ha. apply Hv. simpl.
+    pose proof (sk_sinst _ _ (unrN_skip_sk _ _ E1)) as Hs.
+    destruct (ugv a s1), (sk s1); simpl; done.
+Qed.
+
+Lemma unrN_sfuel s : scontr s → ∃ h, unrN (sfuel s) s = Some h.
+Proof.
+  intros Hc. destruct (unrN_sinst_var s SVar (sfuel s) Hc) as [h E]; [done|done|].
+  rewrite sinst_ids in E. eauto.
+Qed.
+
+(** At any fuel above [sfuel s], [unrN] gives [unfoldS s]. *)
+Lemma unrN_unfoldS s k : scontr s → sfuel s ≤ k → unrN k s = Some (unfoldS s).
+Proof.
+  intros Hc Hk. destruct (unrN_sfuel s Hc) as [h E]. unfold unfoldS. rewrite E.
+  by apply (unrN_mono_le (sfuel s)).
+Qed.
+
+Lemma unrN_det k k' s h h' : unrN k s = Some h → unrN k' s = Some h' → h = h'.
+Proof.
+  intros H H'. destruct (decide (k ≤ k')).
+  - apply (unrN_mono_le _ k') in H; [|done]. congruence.
+  - apply (unrN_mono_le _ k) in H'; [|lia]. congruence.
+Qed.
+
+Lemma unrN_unfoldS' s k h : scontr s → unrN k s = Some h → unfoldS s = h.
+Proof.
+  intros Hc H. eapply unrN_det; [|exact H]. by apply unrN_unfoldS.
+Qed.
+
+(** Unfolding keeps contractivity. *)
+Lemma hseq_scontr h s2 : scontr h → scontr s2 → scontr (hseq h s2).
+Proof.
+  intros H1 H2. destruct h as [| | | | | | |o r| |]; simpl; try done.
+  - destruct r; cbn [scontr] in *; apply Is_true_andb in H1 as [? ?]; contr_simpl; done.
+  - cbn [scontr] in *. apply Is_true_andb in H1 as [? ?]. contr_simpl; done.
+  - cbn [scontr] in *. apply Is_true_andb in H1 as [? ?]. contr_simpl; done.
+Qed.
+
+Lemma unrN_scontr k : ∀ s h, unrN k s = Some h → scontr s → scontr h.
+Proof.
+  induction k as [|k IH]; intros s h H Hc; [done|].
+  destruct s as [?m ?T|?m ?T| |b|?a|?a| |s1 s2|s1 s2|s1 s2]; cbn [unrN] in H;
+    try (injection H as <-; first [exact Hc|cbn [scontr] in *; repeat (apply Is_true_andb; split); done]).
+  - eapply IH; [exact H|]. by apply scontr_unroll.
+  - cbn [scontr] in Hc. apply Is_true_andb in Hc as [Hc1 Hc2].
+    destruct (unrN k s1) as [h1|] eqn:E1; [|done].
+    pose proof (hseq_scontr h1 s2 (IH _ _ E1 Hc1) Hc2) as Hh.
+    destruct h1; first [by eapply IH|injection H as <-; exact Hh].
+Qed.
+
+Lemma unfoldS_scontr s : scontr s → scontr (unfoldS s).
+Proof. intros Hc. destruct (unrN_sfuel s Hc) as [h E]. unfold unfoldS. rewrite E. by eapply unrN_scontr. Qed.
+
+Lemma unfoldS_hok s : scontr s → hok (unfoldS s).
+Proof. intros Hc. destruct (unrN_sfuel s Hc) as [h E]. unfold unfoldS. rewrite E. by eapply unrN_hok. Qed.
+
+(** The parts of the head of a contractive type are contractive. *)
+Definition hv_contr (v : hview) : Prop :=
+  match v with
+  | HRcv _ T s' | HSnd _ T s' => tcontr T ∧ scontr s'
+  | HVar _ s' | HVarD _ s' => scontr s'
+  | HPlus a b | HWith a b => scontr a ∧ scontr b
+  | HSkip | HEnd => True
+  | HStuck _ => False
+  end.
+
+Lemma hd_contr s : scontr s → hv_contr (hd s).
+Proof.
+  intros Hc. pose proof (unfoldS_scontr s Hc) as H1. pose proof (unfoldS_hok s Hc) as H2.
+  unfold hd, hok in *. destruct (unfoldS s) as [| | | | | | |o r| |]; simpl in *; try done;
+    contr_simpl; try done.
+  destruct o; simpl in *; contr_simpl; done.
+Qed.
+
+(** Contractive types are contractive in the sense of [hcontractive]. *)
+Lemma scontr_hcontractive s : scontr s → hcontractive s.
+Proof.
+  intros Hc n. revert s Hc. induction n as [|n IH]; intros s Hc; [done|].
+  simpl. unfold hc_step. pose proof (hd_contr s Hc) as H.
+  destruct (hd s); simpl in *; intuition auto.
+Qed.
