@@ -12,15 +12,17 @@ From GV Require Import examples.GuardEx examples.LFClose examples.LFCycle exampl
 From GV Require Import examples.LFFreshMany examples.LFClientServer examples.LFFactoryEx examples.LFGrowRing.
 From GV Require Import examples.LFController soup.SoupRun soup.SoupTau soup.LFAdequacy.
 From GV Require Import soup.LFCompose soup.LFTyped lockfree.FairRun.
-From GV Require Import examples.SemBranch static.Inversion relation.Ord relation.ExProp relation.Ranks examples.LFLink.
+From GV Require Import examples.SemBranch static.Inversion relation.Ord relation.ExProp relation.Ranks examples.LFLink compat.Redex static.PointSubst.
 
 (** types/Points.v *)
 Print Assumptions pt_dual_dual.
 Print Assumptions pt_field_dual.
 (** types/Worlds.v *)
-Print Assumptions strict_join_iff.
+Print Assumptions wf_join_iff.
+Print Assumptions wmodels_exists.
+Print Assumptions wchain_lt_wf.
 (** static/Typing.v *)
-Print Assumptions ptyped_strict.
+Print Assumptions ptyped_wf.
 Print Assumptions p_connect_join.
 (** static/Conservativity.v *)
 Print Assumptions d_conv.
@@ -153,7 +155,9 @@ Print Assumptions fair_run_exists_proc.
 Print Assumptions lock_free_padovani.
 
 (** static/PointSubst.v, static/Inversion.v: conservativity at E-Open *)
-Print Assumptions cons_law.
+Print Assumptions cons_new.
+Print Assumptions Erel_new.
+Print Assumptions Erel_new_fld.
 Print Assumptions opened_cons.
 (** examples/SemBranch.v: the flag variant *)
 Print Assumptions Tbad_not_cons.
