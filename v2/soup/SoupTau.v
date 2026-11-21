@@ -68,9 +68,9 @@ Qed.
 
 (** A thread in E[live] at a positive level, with its children, takes
     no infinite sequence of administrative steps. *)
-Lemma Erel_tacc n : ∀ W Θ T F e, Erel live (S n) W Θ T F e → Acc tRs (cerase e).
+Lemma Erel_tacc n : ∀ W Θ T F e, Erel live n W Θ T F e → Acc tRs (cerase e).
 Proof.
-  apply (Erel_S_ind live n (λ W Θ T F e, Acc tRs (cerase e))).
+  apply (Erel_ind live n (λ W Θ T F e, Acc tRs (cerase e))).
   intros W Θ T F e H. destruct (H W (wext_refl W)) as (_ & _ & Hsteps).
   pose proof (proj1 (Esteps_iff _ _ _ _ _ _ _ _ _ _ _) Hsteps) as Hobl. clear H Hsteps.
   constructor. intros y Hy.
@@ -94,7 +94,7 @@ Proof.
       split; [by destruct (proj1 Hpar eq_refl)|].
       intros v -> . destruct (Hsp v eq_refl) as (v1 & [= <-] & ->).
       destruct Hth as (eb & -> & _ & _ & Hb).
-      destruct (Hb W (S n) ∅ EUnit ∅ (wext_refl W) ltac:(cbn; lia) (map_disjoint_empty_r _) eq_refl) as [_ Hb2].
+      destruct (Hb W n ∅ EUnit ∅ (wext_refl W) ltac:(cbn; apply ole_refl) (map_disjoint_empty_r _) eq_refl) as [_ Hb2].
       destruct (Hb2 eq_refl (conj eq_refl eq_refl)) as [_ Hacc].
       constructor. intros y' [(α' & x'' & _ & Hs' & ->)|(v' & x'' & Hs' & _)].
       + unfold cerase in Hs'. simpl in Hs'. fold cerase in Hs'.
@@ -236,6 +236,6 @@ Proof.
   apply (padmin_acc (cmset (soup (s_q a').2))); [|done].
   apply mstep_acc. intros x Hx. unfold cmset in Hx. apply elem_of_gmultiset_map in Hx as (e & -> & He).
   apply elem_of_soup in He as [t Ht].
-  destruct (Hs' 1) as (A & Π & U & Hsi).
-  exact (Erel_tacc 0 W _ _ _ e (s_rel Hsi t e Ht)).
+  destruct (Hs' ozero) as (A & Π & U & Hsi).
+  exact (Erel_tacc ozero W _ _ _ e (s_rel Hsi t e Ht)).
 Qed.

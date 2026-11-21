@@ -87,7 +87,7 @@ Section run.
   Lemma lp_end k : ∀ x t e a1 o, (r k).2 !! t = Some e → act e = Some a1 → aend a1 = Some o →
     kpt (s_K (ak k)) o = x → ∃ s, rtc (wt k) t s ∧ tenabled (r k) s.
   Proof.
-    destruct (ak_inv k 1) as (A & Π & U & Hs). pose proof (ak_q k) as Hq.
+    destruct (ak_inv k (onat 1)) as (A & Π & U & Hs). pose proof (ak_q k) as Hq.
     intros x. induction x as [x IH] using (well_founded_ind HW).
     intros t e a1 o He Ha Ho Hx. rewrite <-Hq in He.
     destruct (s_partner _ _ _ _ _ _ _ _ Hs HWs t e a1 o He Ha Ho) as (s & es & h' & Kh' & Eh' & Hes & Hst).
@@ -117,7 +117,7 @@ Section run.
   Lemma lf_local_progress k t : pend (r k) t → ∃ s, rtc (wt k) t s ∧ tenabled (r k) s.
   Proof.
     intros Hp. destruct (pend_cases _ _ Hp) as (e & a1 & He & Ha & [(o1 & o2 & ->)|(o & Ho & _)]).
-    - exists t. split; [done|]. destruct (ak_inv k 1) as (A & Π & U & Hs). pose proof (ak_q k) as Hq.
+    - exists t. split; [done|]. destruct (ak_inv k (onat 1)) as (A & Π & U & Hs). pose proof (ak_q k) as Hq.
       apply (admin_enabled _ t e _ He Ha I). intros p1 p2 [= <- <-]. rewrite <-Hq in He |- *.
       exact (s_link _ _ _ _ _ _ _ _ Hs HWs t e o1 o2 He Ha).
     - exact (lp_end k _ t e a1 o He Ha Ho eq_refl).
@@ -130,7 +130,7 @@ Section run.
 
   Lemma wt_holder k t s : wt k t s → ∃ es, (r k).2 !! s = Some es.
   Proof.
-    intros (_ & o & _ & h & Kh & <-). destruct (ak_inv k 0) as (A & Π & U & Hs).
+    intros (_ & o & _ & h & Kh & <-). destruct (ak_inv k ozero) as (A & Π & U & Hs).
     rewrite <-(ak_q k). exact (sp_owner _ _ _ _ _ _ _ _ _ Hs _ _ Kh).
   Qed.
 
@@ -148,7 +148,7 @@ Section run.
     intros Hpt (_ & o & Ho & Hown) Hps.
     destruct (npend_end _ _ Hpt) as (e & a1 & o' & He & Ha & Ho1 & Hr). rewrite Ho in Hr. injection Hr as <-.
     destruct (npend_end _ _ Hps) as (es & a2 & o2 & Hes & Ha2 & Ho2 & Hr2).
-    destruct (ak_inv k 1) as (A & Π & U & Hs). pose proof (ak_q k) as Hq.
+    destruct (ak_inv k (onat 1)) as (A & Π & U & Hs). pose proof (ak_q k) as Hq.
     unfold we. rewrite Ho, Hr2.
     rewrite <-Hq in He, Hes.
     destruct (decide (o2 = edual o)) as [->|Hne].
@@ -175,9 +175,9 @@ Section run.
 
   Lemma ak_ev_ends k ev : itstep (r k) ev (r (S k)) → ev_ends (s_K (ak k)) ev.
   Proof.
-    intros [Hst Hτ]. destruct (ak_inv k 1) as (A & Π & U & Hs). pose proof (ak_q k) as Hq.
+    intros [Hst Hτ]. destruct (ak_inv k (onat 1)) as (A & Π & U & Hs). pose proof (ak_q k) as Hq.
     remember (ak k) as a eqn:Ea. clear Ea. destruct a as [[C Mq] K]. simpl in Hq |- *. rewrite <-Hq in Hst.
-    exact (s_ev_ends _ _ _ _ _ _ _ _ _ _ _ _ Hs HWs Hst Hτ).
+    exact (s_ev_ends _ _ _ _ _ _ _ _ _ _ _ _ (onat_lt 0 1 ltac:(lia)) Hs HWs Hst Hτ).
   Qed.
 
   Lemma rend_emap q t g e a1 o : q.2 !! t = Some (emap g e) → act e = Some a1 → aend a1 = Some o →
@@ -187,14 +187,14 @@ Section run.
   Lemma held_at k t e a1 o : (r k).2 !! t = Some e → act e = Some a1 → aend a1 = Some o →
     owns (s_K (ak k)) o t.
   Proof.
-    intros He Ha Ho. destruct (ak_inv k 1) as (A & Π & U & Hs). rewrite <-(ak_q k) in He.
+    intros He Ha Ho. destruct (ak_inv k (onat 1)) as (A & Π & U & Hs). rewrite <-(ak_q k) in He.
     destruct (s_held_end _ _ _ _ _ _ _ _ Hs HWs t e a1 o He Ha Ho) as (S0 & x & Hx & _).
     exact (owns_of _ _ _ _ _ Hx).
   Qed.
 
   Lemma closed_at k o t : owns (s_K (ak k)) o t → ech o ∈ (r k).1.
   Proof.
-    intros (h & Kh & _). destruct (ak_inv k 0) as (A & Π & U & Hs). rewrite <-(ak_q k).
+    intros (h & Kh & _). destruct (ak_inv k ozero) as (A & Π & U & Hs). rewrite <-(ak_q k).
     destruct (sp_closed _ _ _ _ _ _ _ _ _ Hs o (elem_of_dom_2 _ _ _ Kh)) as [?|Hd]; [done|].
     by rewrite dom_empty_L in Hd.
   Qed.
@@ -275,7 +275,7 @@ Section run.
 
   (** The partner of a pending end is not idle. *)
   Lemma partner_busy k t e a1 o (A : senv) (Π : penv) U :
-    soup_inv N 1 W ∅ T (ak k) A Π U →
+    soup_inv N (onat 1) W ∅ T (ak k) A Π U →
     (r k).2 !! t = Some e → act e = Some a1 → aend a1 = Some o →
     ∀ s, owns (s_K (ak k)) (edual o) s → ¬ idle_at (kres (s_K (ak k)) s Π) (edual o).
   Proof.
@@ -328,7 +328,7 @@ Section run.
          split_and!; [done|done|]. intros s _ Hs. rewrite Hl in Hs. simpl in Hs. set_solver. }
     rewrite Hl in Ht. simpl in Ht.
     pose proof (ak_next k ev Hl) as HK.
-    destruct (ak_inv k 1) as (A & Π & U & Hs). pose proof (ak_q k) as Hq.
+    destruct (ak_inv k (onat 1)) as (A & Π & U & Hs). pose proof (ak_q k) as Hq.
     pose proof (ak_ev_ends k ev Hst) as Hen.
     destruct (held_at k t e a1 o He Ha Ho) as (ht & Kht & Eht).
     pose proof He as He0. rewrite <-Hq in He0.
@@ -552,7 +552,7 @@ Lemma soup_links_restricted N W T a :
 Proof.
   intros HW Hs0 q E e o1 o2 Hq HE Ha. destruct (pred_star_lift _ _ Hq) as (q' & Hq' & <-).
   destruct (lfsoup_isteps N W T a q' Hs0 Hq') as (a' & <- & Hs').
-  destruct (Hs' 1) as (A & Π & U & Hs). simpl in HE.
+  destruct (Hs' (onat 1)) as (A & Π & U & Hs). simpl in HE.
   assert (e ∈ soup (s_q a').2) as Hin by (rewrite HE; multiset_solver).
   apply elem_of_soup in Hin as [t Ht]. exact (s_link _ _ _ _ _ _ _ _ Hs HW t e o1 o2 Ht Ha).
 Qed.

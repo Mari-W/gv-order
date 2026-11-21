@@ -36,10 +36,10 @@ Lemma owns_of {Y : Type} (K : own) t (m : gmap cend Y) o v : kres K t m !! o = S
 Proof. intros H. apply lookup_kres in H as [_ H]. done. Qed.
 
 Lemma s_ev_ends N n W T C Mq K A Π U ev q' :
-  soup_inv N (S n) W ∅ T (LFState (C, Mq) K) A Π U → strict W →
+  olt ozero n → soup_inv N n W ∅ T (LFState (C, Mq) K) A Π U → strict W →
   istep (C, Mq) ev q' → ev_tau ev → ev_ends K ev.
 Proof.
-  intros Hs HW Hst Hτ.
+  intros Hn Hs HW Hst Hτ.
   pose proof (l_obl _ _ _ _ _ _ _ _ Hs HW) as Hobl. cbn [s_q s_K] in Hobl.
   inversion Hst as [C0 M0 i e e' Hi Hs'|C0 M0 i e ℓ c e' Hi Hs' HC Hc|C0 M0 i e κ o c e' Hi Hs' HC Hc
     |C0 M0 i j e v e' Hi Hs' Hj
@@ -58,7 +58,7 @@ Proof.
     destruct H1 as (S0 & x & m & U0 & S & ΘM & Θr & Ho & _ & Hd & HΘ & HV & _).
     assert (HM : dom ΘM = fends v).
     { destruct (decide (c_give live = 0)) as [Hc|Hc];
-        [exact (Vrel_exact _ _ _ _ _ _ (proj1 HV Hc))|exact (Vrel_exact _ _ _ _ _ _ (proj2 HV Hc))]. }
+        [exact (Vrel_exact _ _ _ _ _ _ (proj1 HV Hc))|exact (Vrel_exact _ _ _ _ _ _ (proj2 HV Hc ozero Hn (or_intror eq_refl)))]. }
     destruct H2 as (S0' & x' & m' & U0' & S' & Ho' & _).
     split_and!; [exact (owns_of _ _ _ _ _ Ho)|exact (owns_of _ _ _ _ _ Ho')|].
     intros m1 Hm. destruct (split_mres _ _ _ _ Hd HΘ HM) as [-> _].
@@ -71,7 +71,7 @@ Proof.
   - pose proof (Hobl i e _ e' Hi He) as H1. pose proof (Hobl j f _ f' Hj Hf) as H2. cbn [Eobl] in H1, H2.
     destruct H1 as (S0 & x & S1 & S2 & Ho & _). destruct H2 as (S0' & x' & S1' & S2' & Ho' & _).
     split; [exact (owns_of _ _ _ _ _ Ho)|exact (owns_of _ _ _ _ _ Ho')].
-  - destruct (link_obl _ _ _ _ _ _ _ _ _ _ Hs i e o1 o2 e' Hi Hs') as (H12 & H1 & H2 & _). done.
+  - destruct (link_obl _ _ ozero Hn _ _ _ _ _ _ _ _ Hs i e o1 o2 e' Hi Hs') as (H12 & H1 & H2 & _). done.
 Qed.
 
 (** ** Entries after an event *)

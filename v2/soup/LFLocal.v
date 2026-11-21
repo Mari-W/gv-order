@@ -122,18 +122,18 @@ Proof. by destruct a. Qed.
 
 Section local.
   #[local] Set Default Proof Using "All".
-  Context (N n : nat) (W : world) (T : ty) (a : lfstate) (A : senv) (Π : penv) (U : nat → ty).
-  Context (Hs : soup_inv N (S n) W ∅ T a A Π U) (HW : strict W).
+  Context (N : nat) (n : Ix) (W : world) (T : ty) (a : lfstate) (A : senv) (Π : penv) (U : nat → ty).
+  Context (Hs : soup_inv N n W ∅ T a A Π U) (HW : strict W).
 
   Local Abbreviation q := (s_q a).
   Local Abbreviation K := (s_K a).
 
-  Lemma l_E t e : q.2 !! t = Some e → e ∈ E[live]^W _ (S n)⟦kres K t A ⊢ U t⟧^∅.
+  Lemma l_E t e : q.2 !! t = Some e → e ∈ E[live]^W _ n⟦kres K t A ⊢ U t⟧^∅.
   Proof. apply (s_rel Hs). Qed.
 
   Lemma l_obl t e α e' : q.2 !! t = Some e → tstep e α e' →
-    Eobl live (S n) (Vrel live) (Erel live) (Vrel live (S n)) (Erel live (S n)) W (kres K t A) (U t) ∅ α e'.
-  Proof. intros He Hst. exact (Erel_S_step live n W W _ _ _ _ _ _ (l_E t e He) (wext_refl W) Hst). Qed.
+    Eobl live n (Vrel live) (Erel live) (Vrel live n) (Erel live n) W (kres K t A) (U t) ∅ α e'.
+  Proof. intros He Hst. exact (Erel_step live n W W _ _ _ _ _ _ (l_E t e He) (wext_refl W) Hst). Qed.
 
   (** A session redex acts on an end its thread holds, at a session type
       of the redex's kind. *)
@@ -165,7 +165,7 @@ Section local.
   (** A value holds no end. *)
   Lemma s_value_empty t e : q.2 !! t = Some e → act e = None → kres K t A = ∅.
   Proof.
-    intros He Ha. pose proof (l_E t e He) as HE. apply Erel_S_iff in HE.
+    intros He Ha. pose proof (l_E t e He) as HE. apply Erel_iff in HE.
     destruct (HE W (wext_refl W)) as (Hstop & _ & _).
     pose proof (Hstop (proj2 (irred_act e) Ha)) as HV.
     destruct (s_ty Hs t e He) as [Ht|Ht]; rewrite Ht in HV.
@@ -179,7 +179,7 @@ Section local.
     q.2 !! t = Some e → act e = Some a1 → aend a1 = Some o →
     kres K t A !! o = Some (S0, x) → kres K t A !! o' = Some (S', x') → o' ≠ o → W ⊢ x ≺ pt_dual x'.
   Proof.
-    intros He Ha Ho Hx Hx' Hne. pose proof (l_E t e He) as HE. apply Erel_S_iff in HE.
+    intros He Ha Ho Hx Hx' Hne. pose proof (l_E t e He) as HE. apply Erel_iff in HE.
     destruct (HE W (wext_refl W)) as (_ & Hready & _).
     assert (¬ irred e) as Hni by (rewrite irred_act, Ha; done).
     assert (Hsends : ∀ σ e', tstep e (LSess σ) e' → sends σ = {[o]}).

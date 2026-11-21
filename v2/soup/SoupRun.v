@@ -1,7 +1,7 @@
 (** * The soup along runs (stage S8, proposal §2.12)
 
-      lfsoup_step : a ∈ S^{N,W} _ (S n)⟦∅ ⊢ T⟧ → itstep (s_q a) ev q' →
-                    lf_next N a ev q' ∈ S^{N,W} _ n⟦∅ ⊢ T⟧
+      lfsoup_step : a ∈ S^{N,W} _ α⟦∅ ⊢ T⟧ → itstep (s_q a) ev q' →
+                    ∀ β < α, lf_next N a ev q' ∈ S^{N,W} _ β⟦∅ ⊢ T⟧
 
     The state after a step is a function of the state, the event and the
     next configuration ([lf_next]). So a soup at every index at the start
@@ -12,25 +12,26 @@ From stdpp Require Import relations.
 From GV Require Export soup.SoupLink.
 
 Theorem lfsoup_step N W T a n ev q' :
-  a ∈ S^{N,W} _ (S n)⟦∅ ⊢ T⟧ → itstep (s_q a) ev q' → lf_next N a ev q' ∈ S^{N,W} _ n⟦∅ ⊢ T⟧.
+  a ∈ S^{N,W} _ n⟦∅ ⊢ T⟧ → itstep (s_q a) ev q' →
+  ∀ lv, olt lv n → lf_next N a ev q' ∈ S^{N,W} _ lv⟦∅ ⊢ T⟧.
 Proof.
-  destruct a as [[C Mq] K]. intros (A & Π & U & Hs) [Hst Hτ]. cbn [s_q] in Hst.
+  destruct a as [[C Mq] K]. intros (A & Π & U & Hs) [Hst Hτ] lv Hlv. cbn [s_q] in Hst.
   inversion Hst as [C0 M0 i e e' Hi Hs'|C0 M0 i e ℓ c e' Hi Hs' HC Hc|C0 M0 i e κ o c e' Hi Hs' HC Hc
     |C0 M0 i j e v e' Hi Hs' Hj
     |C0 M0 i j o v e e' f f' Hij Hi Hj He Hf|C0 M0 i j o e e' f f' Hij Hi Hj He Hf HC
     |C0 M0 i j o b e e' f f' Hij Hi Hj He Hf|C0 M0 i e o1 o2 e' Hi Hs' HC
     |C0 M0 i e σ e' Hi Hs' HC]; subst.
-  - exists A, Π, U. exact (step_beta _ _ _ _ _ _ _ _ _ _ Hs i e e' Hi Hs').
-  - destruct (step_new _ _ _ _ _ _ _ _ _ _ Hs i e ℓ c e' Hi Hs' HC) as (A' & Π' & H). by exists A', Π', U.
-  - destruct (step_new_at _ _ _ _ _ _ _ _ _ _ Hs i e κ o c e' Hi Hs' HC) as (A' & Π' & H). by exists A', Π', U.
-  - eexists _, _, _. exact (step_spawn _ _ _ _ _ _ _ _ _ _ Hs i j e v e' Hi Hs' Hj).
-  - destruct (step_msg _ _ _ _ _ _ _ _ _ _ Hs i j e e' f f' o v Hij Hi Hj He Hf) as (A' & Π' & H).
+  - exists A, Π, U. exact (step_beta _ _ lv Hlv _ _ _ _ _ _ _ _ Hs i e e' Hi Hs').
+  - destruct (step_new _ _ lv Hlv _ _ _ _ _ _ _ _ Hs i e ℓ c e' Hi Hs' HC) as (A' & Π' & H). by exists A', Π', U.
+  - destruct (step_new_at _ _ lv Hlv _ _ _ _ _ _ _ _ Hs i e κ o c e' Hi Hs' HC) as (A' & Π' & H). by exists A', Π', U.
+  - eexists _, _, _. exact (step_spawn _ _ lv Hlv _ _ _ _ _ _ _ _ Hs i j e v e' Hi Hs' Hj).
+  - destruct (step_msg _ _ lv Hlv _ _ _ _ _ _ _ _ Hs i j e e' f f' o v Hij Hi Hj He Hf) as (A' & Π' & H).
     by exists A', Π', U.
-  - destruct (step_close _ _ _ _ _ _ _ _ _ _ Hs i j e e' f f' o Hij Hi Hj He Hf) as (A' & Π' & H).
+  - destruct (step_close _ _ lv Hlv _ _ _ _ _ _ _ _ Hs i j e e' f f' o Hij Hi Hj He Hf) as (A' & Π' & H).
     by exists A', Π', U.
-  - destruct (step_choice _ _ _ _ _ _ _ _ _ _ Hs i j e e' f f' o b Hij Hi Hj He Hf) as (A' & Π' & H).
+  - destruct (step_choice _ _ lv Hlv _ _ _ _ _ _ _ _ Hs i j e e' f f' o b Hij Hi Hj He Hf) as (A' & Π' & H).
     by exists A', Π', U.
-  - destruct (step_link _ _ _ _ _ _ _ _ _ _ Hs i e o1 o2 e' Hi Hs') as (A' & Π' & H).
+  - destruct (step_link _ _ lv Hlv _ _ _ _ _ _ _ _ Hs i e o1 o2 e' Hi Hs') as (A' & Π' & H).
     by exists A', Π', U.
   - by unfold ev_tau in Hτ.
 Qed.
@@ -38,7 +39,7 @@ Qed.
 (** A soup at every index stays one along a step. *)
 Corollary lfsoup_step_all N W T a ev q' :
   (∀ n, a ∈ S^{N,W} _ n⟦∅ ⊢ T⟧) → itstep (s_q a) ev q' → ∀ n, lf_next N a ev q' ∈ S^{N,W} _ n⟦∅ ⊢ T⟧.
-Proof. intros H Hst n. apply (lfsoup_step N W T a n ev q'); [apply H|done]. Qed.
+Proof. intros H Hst n. apply (lfsoup_step N W T a (osucc n) ev q'); [apply H|done|apply olt_succ]. Qed.
 
 Lemma lf_run_state_q N a0 r l k : s_q a0 = r 0 → s_q (lf_run_state N a0 r l k) = r k.
 Proof. intros H0. destruct k as [|k]; [done|]. simpl. unfold lf_upd. by destruct (l k). Qed.
