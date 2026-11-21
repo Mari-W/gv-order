@@ -387,7 +387,7 @@ Section ext.
     assert (HE' : ∀ N σ d Π φ e, (∀ j, olt j n → El1 j N σ d Π φ e) →
                                   ∀ j, olt j n → El2 j N σ d Π φ e)
       by (intros ? ? ? ? ? ? H j Hj; apply HE; [done|by apply H]).
-    destruct α as [|ℓ c|κ o c|v|[o w|o w|o|o i|o i|os]]; simpl;
+    destruct α as [|c|v|[o w|o w|o|o i|o i|os]]; simpl;
       unfold f_beta, f_new, f_new_at, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link.
     - apply HE'.
     - intros H Hf. destruct (H Hf) as (S & m1 & m2 & Hm & HS). exists S, m1, m2. split; [done|]. by apply HE'.

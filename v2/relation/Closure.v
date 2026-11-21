@@ -128,7 +128,7 @@ Section closure.
     revert W Θ T F e HE F' HF.
     refine (Erel_ind κ n (λ W Θ T F e, ∀ F', F' ⊆ F → Erel κ m W Θ T F' e) _).
     intros W Θ T F e H F' HF. apply Erel_iff. intros W1 HW1.
-    destruct (H W1 HW1) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
+    destruct (H W1 HW1) as (Hs & Hr & H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     (* the continuation after a step of cost c *)
     assert (∀ c W Θ T0 F0 F0' e', F0' ⊆ F0 →
       at_cost_E n c (Erel κ) (λ W Θ T F e, Erel κ n W Θ T F e ∧
@@ -142,10 +142,8 @@ Section closure.
     - intros Hirr. eapply Vrel_down; [exact Hmn|by apply Hs].
     - intros Hirr. eapply ready_t_future; [done|by apply Hr].
     - intros e' Hst. eapply Hac; [done|by apply H1].
-    - intros ℓ c e' Hst Hc g Hg. destruct (H2 ℓ c e' Hst Hc g Hg) as [S HS].
-      exists S. eapply Hac; [done|exact HS].
-    - intros κf o c e' Hst Hc. destruct (H3 κf o c e' Hst Hc) as (S0 & x & Ho & S & HS).
-      exists S0, x. split; [done|]. exists S. eapply Hac; [done|exact HS].
+    - intros c e' Hst Hc. destruct (H2 c e' Hst Hc) as (S & π & Wn & HWn & HS).
+      exists S, π, Wn. split; [done|]. eapply Hac; [done|exact HS].
     - intros v e' Hst. destruct (H4 v e' Hst) as (ΘM & Θr & A1 & A2 & A4 & A5).
       exists ΘM, Θr. split_and!; [done|done| |eapply Hac; [done|exact A5]].
       destruct A4 as (eb & -> & Hfe & Hlb & A4). exists eb. split_and!; [done|done|done|].
@@ -184,8 +182,8 @@ Section closure.
     apply Prel_iff. intros Hm0. assert (olt ozero n) as Hn0 by exact (olt_trans_le _ _ _ Hm0 Hmn).
     revert W Σ T p HP.
     refine (Prel_ind κ n (λ W Σ T p, Pbody κ m (Vrel κ) (Prel κ) (Vrel κ m) (Prel κ m) W Σ T p) Hn0 _).
-    intros W Σ T p H. intros W1 HW1 HS1 h D Hh.
-    destruct (H W1 HW1 HS1 h D Hh) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
+    intros W Σ T p H. intros W1 HW1 h D Hh.
+    destruct (H W1 HW1 h D Hh) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
     assert (∀ c W Σ T0 p', at_cost_P n c (Prel κ)
         (λ W Σ T p, Prel κ n W Σ T p ∧ Pbody κ m (Vrel κ) (Prel κ) (Vrel κ m) (Prel κ m) W Σ T p)
         W Σ T0 p' →
@@ -198,7 +196,7 @@ Section closure.
     - intros Hirr. destruct (Hs Hirr) as (v & E & -> & Hv & HE). exists v, E.
       split_and!; [done| |done]. eapply Vrel_down; [exact Hmn|exact Hv].
     - done.
-    - intros q ev q' Hq Hst Hτ Hd. apply Hac. exact (H1 q ev q' Hq Hst Hτ Hd).
+    - intros q ev q' Hq Hst Hτ Hd. destruct (H1 q ev q' Hq Hst Hτ Hd) as (Wn & HWn & Hqn). exists Wn. split; [done|]. apply Hac. exact Hqn.
     - intros q i o w q' Hq Hst.
       destruct (H2 q i o w q' Hq Hst)
         as (S0 & x & m' & U & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A7 & A8 & A9).

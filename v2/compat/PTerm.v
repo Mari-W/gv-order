@@ -544,7 +544,7 @@ Section single_ready.
   Lemma single_stable : stable_p (C, {[+ e +]}) → stable_t e ∧ (link_t e → link_p (C, {[+ e +]})).
   Proof.
     intros Hst. split.
-    - intros α e' Hs'. destruct α as [| | | |σ]; [..|by eauto];
+    - intros α e' Hs'. destruct α as [| | |σ]; [..|by eauto];
         (destruct (single_tau C e _ e' Hs') as [p' Hp']; [done|]; by destruct (Hst p')).
     - intros (os & e' & Hl). destruct (decide (subjs (SLink os) ## C)) as [Hd|Hd].
       + exists os, (C ∖ sentc (SLink os), {[+ e' +]}). by apply single_sess.

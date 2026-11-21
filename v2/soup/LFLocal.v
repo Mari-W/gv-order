@@ -25,7 +25,7 @@ Proof. destruct a; simpl; intros H; try discriminate; (split; [unfold is_sess; s
 
 Lemma aend_offers a α o : aend a = Some o → offers a α → ∃ σ, α = LSess σ ∧ sends σ = {[o]}.
 Proof.
-  destruct a, α as [| | | |[]]; simpl; intros [= <-] Ho; try done; destruct_and?; subst; eauto.
+  destruct a, α as [| | |[]]; simpl; intros [= <-] Ho; try done; destruct_and?; subst; eauto.
 Qed.
 
 Lemma aend_step e a o : act e = Some a → aend a = Some o → ∃ σ e', tstep e (LSess σ) e' ∧ sends σ = {[o]}.

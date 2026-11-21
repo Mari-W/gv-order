@@ -43,7 +43,7 @@ Definition scost (κ : ctable) (σ : slabel) : nat :=
 Definition tcost (κ : ctable) (α : tlabel) : nat :=
   match α with
   | LBeta => c_beta κ
-  | LNew _ _ | LNewAt _ _ _ => c_new κ
+  | LNew _ => c_new κ
   | LSpawn _ => c_spawn κ
   | LSess σ => scost κ σ
   end.
@@ -63,7 +63,7 @@ Definition cmax (κ : ctable) : nat :=
 Lemma ev_cost_le κ ev : ev_tau ev → ev_cost κ ev ≤ cmax κ.
 Proof.
   unfold ev_tau, cmax. destruct ev as [? α ?| |]; simpl; try discriminate; [|lia].
-  intros _. destruct α as [| | | |σ]; simpl; try lia. destruct σ; simpl; lia.
+  intros _. destruct α as [| | |σ]; simpl; try lia. destruct σ; simpl; lia.
 Qed.
 
 (** An administrative step is a τ step and costs nothing in κ_L. *)

@@ -20,9 +20,11 @@
     of the type ([Vbody]). The step index itself is one fixpoint by
     well-founded recursion on the ordinals ([osfix], relation/Ord.v).
 
-    Every unfolding of E holds in every world W1 ⊒ W, and every unfolding
-    of P in every strict world W1 ⊒ W (decision Q9, and S4.16), so E and P
-    are monotone in the world by definition.
+    Every unfolding of E and of P holds in every world W1 ⊒ W (decision
+    Q9), so E and P are monotone in the world by definition. A world is
+    ranked (types/Worlds.v), so its order is well-founded and needs no
+    strictness premise. O-New lets the creation pick the point of the new
+    channel and a grown world, which ranks the roots it needs.
 
     The relation reads no syntax of a term but the labels of its steps,
     and from a label only the value a send or a spawn moves. V fixes the
@@ -95,9 +97,6 @@ Definition new_env (c : chan) (S : sty) (x : point) (Θ : senv) : senv :=
 
 Definition cfresh (c : chan) (Θ : senv) : Prop := (EPos c ∉ dom Θ) ∧ (ENeg c ∉ dom Θ).
 
-(** The generated root g of family ℓ is the root of no point of Θ. *)
-Definition gfresh (ℓ : family) (g : nat) (Θ : senv) : Prop :=
-  ∀ o S x, Θ !! o = Some (S, x) → pt_root x ≠ NGen ℓ g.
 
 (** The environment of the relation for a typing environment. The
     credits go. *)
@@ -280,13 +279,9 @@ Section bodies.
     Definition o_beta (e' : expr) : Prop :=
       at_cost_E n (c_beta κ) El X W Θ T F e'.
 
-    Definition o_new (ℓ : family) (c : chan) (e' : expr) : Prop :=
-      cfresh c Θ → ∀ g, gfresh ℓ g Θ →
-        ∃ S, at_cost_E n (c_new κ) El X W (new_env c S (pgen ℓ g) Θ) T F e'.
-
-    Definition o_new_at (κf : field) (o : cend) (c : chan) (e' : expr) : Prop :=
-      cfresh c Θ → ∃ S0 x, Θ !! o = Some (S0, x) ∧
-        ∃ S, at_cost_E n (c_new κ) El X W (new_env c S (x·κf) Θ) T F e'.
+    Definition o_new (c : chan) (e' : expr) : Prop :=
+      cfresh c Θ → ∃ S π W', W ⊑ W' ∧
+        at_cost_E n (c_new κ) El X W' (new_env c S π Θ) T F e'.
 
     Definition o_spawn (v e' : expr) : Prop :=
       ∃ ΘM Θr, ΘM ##ₘ Θr ∧ Θ = ΘM ∪ Θr ∧
@@ -327,8 +322,7 @@ Section bodies.
     Definition Eobl (α : tlabel) (e' : expr) : Prop :=
       match α with
       | LBeta => o_beta e'
-      | LNew ℓ c => o_new ℓ c e'
-      | LNewAt κf o c => o_new_at κf o c e'
+      | LNew c => o_new c e'
       | LSpawn v => o_spawn v e'
       | LSess (SSend o w) => o_send o w e'
       | LSess (SRecv o w) => o_recv o w e'
@@ -342,8 +336,7 @@ Section bodies.
         strictly positively. *)
     Definition Esteps (e : expr) : Prop :=
       (∀ e', tstep e LBeta e' → o_beta e') ∧                          (* O-Beta *)
-      (∀ ℓ c e', tstep e (LNew ℓ c) e' → o_new ℓ c e') ∧              (* O-New *)
-      (∀ κf o c e', tstep e (LNewAt κf o c) e' → o_new_at κf o c e') ∧ (* O-NewAt *)
+      (∀ c e', tstep e (LNew c) e' → o_new c e') ∧                    (* O-New *)
       (∀ v e', tstep e (LSpawn v) e' → o_spawn v e') ∧              (* O-Spawn *)
       (∀ o w e', tstep e (LSess (SSend o w)) e' → o_send o w e') ∧  (* O-Send *)
       (∀ o w e', tstep e (LSess (SRecv o w)) e' → o_recv o w e') ∧    (* O-Recv *)
@@ -355,8 +348,8 @@ Section bodies.
     Lemma Esteps_iff e : Esteps e ↔ ∀ α e', tstep e α e' → Eobl α e'.
     Proof.
       split.
-      - intros (H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10) α e' Hst.
-        destruct α as [|ℓ c|κf o c|v|[o w|o w|o|o i|o i|os]]; simpl; eauto.
+      - intros (H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10) α e' Hst.
+        destruct α as [|c|v|[o w|o w|o|o i|o i|os]]; simpl; eauto.
       - intros H. split_and!; intros; match goal with Hs : tstep _ ?α ?e' |- _ => exact (H α e' Hs) end.
     Qed.
   End obligations.
@@ -420,9 +413,10 @@ Section bodies.
     Context (n : Ix) (Vl : Ix → vrel) (Pl : Ix → prel) (VN : vrel) (X : prel)
       (W : world) (Σ : senv) (T : ty) (p : proc).
 
-    (** Q-Admin and Q-Comm. A τ step keeps the interface. *)
+    (** Q-Admin and Q-Comm. A τ step keeps the interface. A creation
+        among them may grow the world. *)
     Definition q_tau (ev : event) (p' : proc) : Prop :=
-      p'.1 ## chans_of Σ → at_cost_P n (ev_cost κ ev) Pl X W Σ T p'.
+      p'.1 ## chans_of Σ → ∃ W', W ⊑ W' ∧ at_cost_P n (ev_cost κ ev) Pl X W' Σ T p'.
 
     Definition q_send (o : cend) (w : expr) (p' : proc) : Prop :=
       ∃ S0 x m U S Σv Σr Θe Σe, Σ !! o = Some (S0, x) ∧
@@ -495,13 +489,12 @@ Section bodies.
     (¬ pirred p → ready _ W1(Σ, p)) ∧                           (* P-Ready *)
     Psteps n Vl Pl VN X W1 Σ T p.                               (* P-Step *)
 
-  (** One unfolding of P at level n, in every strict W1 ⊒ W and under
-      every fusion of the held ends (decision Q16, refined). A later world with
-      a cycle would let Q-Recv bring ends that only a cyclic order
-      accepts, and composition would fail (progress.md, S4.15). *)
+  (** One unfolding of P at level n, in every W1 ⊒ W and under every
+      fusion of the held ends (decision Q16, refined). Every ranked world
+      is acyclic, so the strictness premise of S4.15 is gone. *)
   Definition Pbody (n : Ix) (Vl : Ix → vrel) (Pl : Ix → prel) (VN : vrel) (X : prel)
       (W : world) (Σ : senv) (T : ty) (p : proc) : Prop :=
-    ∀ W1, W ⊑ W1 → strict W1 → ∀ h D, fuse_ok h D Σ p →       (* (fuse) *)
+    ∀ W1, W ⊑ W1 → ∀ h D, fuse_ok h D Σ p →                   (* (fuse) *)
       Pclauses n Vl Pl VN X W1 (sdrop D (kren h Σ)) T (pfuse h D p).
 
   Inductive Pind (n : Ix) (Vl : Ix → vrel) (Pl : Ix → prel) (VN : vrel) : prel :=
@@ -604,15 +597,11 @@ Section maps.
       (f : ∀ W Θ T F e, X1 W Θ T F e → X2 W Θ T F e) W Θ T F e :
     Esteps κ n Vl El VN X1 W Θ T F e → Esteps κ n Vl El VN X2 W Θ T F e.
   Proof.
-    intros (H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
+    intros (H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     split; [intros e' Hs; exact (at_cost_E_map _ _ _ _ _ _ _ _ _ _ (f _ _ _ _ _) (H1 e' Hs))|].
     split.
-    { intros ℓ c e' Hs Hc g Hg. destruct (H2 ℓ c e' Hs Hc g Hg) as [S HS].
-      exists S. exact (at_cost_E_map _ _ _ _ _ _ _ _ _ _ (f _ _ _ _ _) HS). }
-    split.
-    { intros κf o c e' Hs Hc. destruct (H3 κf o c e' Hs Hc) as (S0 & x & Ho & S & HS).
-      exists S0, x. split; [exact Ho|]. exists S.
-      exact (at_cost_E_map _ _ _ _ _ _ _ _ _ _ (f _ _ _ _ _) HS). }
+    { intros c e' Hs Hc. destruct (H2 c e' Hs Hc) as (S & π & W' & HW & HS).
+      exists S, π, W'. split; [exact HW|]. exact (at_cost_E_map _ _ _ _ _ _ _ _ _ _ (f _ _ _ _ _) HS). }
     split.
     { intros v e' Hs. destruct (H4 v e' Hs) as (ΘM & Θr & A1 & A2 & A4 & A5).
       exists ΘM, Θr. split; [exact A1|]. split; [exact A2|].
@@ -669,7 +658,8 @@ Section maps.
     intros (H1 & H2 & H3 & H4 & H5 & H6 & H7).
     split.
     { intros q ev q' Hq Hs Hτ Hd.
-      exact (at_cost_P_map _ _ _ _ _ _ _ _ _ (f _ _ _ _) (H1 q ev q' Hq Hs Hτ Hd)). }
+      destruct (H1 q ev q' Hq Hs Hτ Hd) as (W' & HW' & A).
+      exists W'. split; [exact HW'|]. exact (at_cost_P_map _ _ _ _ _ _ _ _ _ (f _ _ _ _) A). }
     split.
     { intros q i o w q' Hq Hs.
       destruct (H2 q i o w q' Hq Hs)
@@ -702,7 +692,7 @@ Section maps.
       (f : ∀ W Σ T p, X1 W Σ T p → X2 W Σ T p) W Σ T p :
     Pbody κ n Vl Pl VN X1 W Σ T p → Pbody κ n Vl Pl VN X2 W Σ T p.
   Proof.
-    intros H W1 HW HS h D Hh. destruct (H W1 HW HS h D Hh) as (A & B & C).
+    intros H W1 HW h D Hh. destruct (H W1 HW h D Hh) as (A & B & C).
     split; [exact A|]. split; [exact B|].
     exact (Psteps_mapX n Vl Pl VN X1 X2 f W1 (sdrop D (kren h Σ)) T (pfuse h D p) C).
   Defined.
@@ -794,14 +784,13 @@ Section mono.
     (∀ W Θ F e, X1 W Θ TUnit F e → X2 W Θ TUnit F e) →
     Esteps κ n Vl1 El1 VN1 X1 W Θ T F e → Esteps κ n Vl2 El2 VN2 X2 W Θ T F e.
   Proof.
-    intros HVl HEl HVN HX HXu (H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
+    intros HVl HEl HVN HX HXu (H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     assert (∀ c W Θ F e, at_cost_E n c El1 X1 W Θ T F e → at_cost_E n c El2 X2 W Θ T F e) as Hac.
     { intros c W0 Θ0 F0 e0. apply at_cost_E_mono; [|apply HX]. intros j Hj. by apply HEl. }
     split_and!.
     - intros e' Hs. apply Hac, H1, Hs.
-    - intros ℓ c e' Hs Hc g Hg. destruct (H2 ℓ c e' Hs Hc g Hg) as [S HS]. exists S. by apply Hac.
-    - intros κf o c e' Hs Hc. destruct (H3 κf o c e' Hs Hc) as (S0 & x & Ho & S & HS).
-      exists S0, x. split; [done|]. exists S. by apply Hac.
+    - intros c e' Hs Hc. destruct (H2 c e' Hs Hc) as (S & π & W' & HW & HS).
+      exists S, π, W'. split; [done|]. by apply Hac.
     - intros v e' Hs. destruct (H4 v e' Hs) as (ΘM & Θr & A1 & A2 & A4 & A5).
       exists ΘM, Θr. split_and!; [done|done| |by apply Hac].
       revert A4. apply Varr_mono.
@@ -852,7 +841,8 @@ Section mono.
     assert (∀ c W Σ p, at_cost_P n c Pl1 X1 W Σ T p → at_cost_P n c Pl2 X2 W Σ T p) as Hac.
     { intros c W0 Σ0 p0. apply at_cost_P_mono; [|apply HX]. intros j Hj. by apply HPl. }
     split_and!.
-    - intros q ev q' Hq Hs Hτ Hd. apply Hac. exact (H1 q ev q' Hq Hs Hτ Hd).
+    - intros q ev q' Hq Hs Hτ Hd. destruct (H1 q ev q' Hq Hs Hτ Hd) as (W' & HW' & A).
+      exists W'. split; [done|]. by apply Hac.
     - intros q i o w q' Hq Hs.
       destruct (H2 q i o w q' Hq Hs)
         as (S0 & x & m & U & S & Σv & Σr & Θe & Σe & A1 & A2 & A3 & A4 & A5 & A7 & A8 & A9).
@@ -881,7 +871,7 @@ Section mono.
     (∀ W Σ p, X1 W Σ T p → X2 W Σ T p) →
     Pbody κ n Vl1 Pl1 VN1 X1 W Σ T p → Pbody κ n Vl2 Pl2 VN2 X2 W Σ T p.
   Proof.
-    intros HVl HPl HVN HX H W1 HW HS h D Hh. destruct (H W1 HW HS h D Hh) as (A & B & C).
+    intros HVl HPl HVN HX H W1 HW h D Hh. destruct (H W1 HW h D Hh) as (A & B & C).
     split_and!; [|done|by eapply Psteps_mono].
     intros Hirr. destruct (A Hirr) as (v & E & Hp & Hv & HE).
     exists v, E. split_and!; [done|by apply HVN|done].
@@ -1239,14 +1229,14 @@ Section equations.
   Qed.
   (** The clauses at the identity renaming. *)
   Lemma Pbody_id n Vl Pl VN X W Σ T p :
-    Pbody κ n Vl Pl VN X W Σ T p → ∀ W1, W ⊑ W1 → strict W1 → Pclauses κ n Vl Pl VN X W1 Σ T p.
+    Pbody κ n Vl Pl VN X W Σ T p → ∀ W1, W ⊑ W1 → Pclauses κ n Vl Pl VN X W1 Σ T p.
   Proof.
-    intros H W1 HW HS. pose proof (H W1 HW HS id ∅ (fuse_ok_id Σ p)) as H'.
+    intros H W1 HW. pose proof (H W1 HW id ∅ (fuse_ok_id Σ p)) as H'.
     by rewrite pfuse_empty, sdrop_empty, kren_id_map, pmap_id in H'.
   Qed.
 
   Lemma Prel_clauses n W Σ T p :
-    olt ozero n → Prel κ n W Σ T p → ∀ W1, W ⊑ W1 → strict W1 →
+    olt ozero n → Prel κ n W Σ T p → ∀ W1, W ⊑ W1 →
     Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) (Prel κ n) W1 Σ T p.
   Proof. intros H0 H. apply Pbody_id. by apply Prel_iff. Qed.
 

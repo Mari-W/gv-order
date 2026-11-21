@@ -87,16 +87,16 @@ Definition fabove (c : fuel) (Π : penv) (φ : cenv) : Prop :=
   ∀ o f, φ !! o = Some f → ¬ idle_at Π o → fle c f.1.
 
 Lemma dom_kupd α φ : dom (kupd α φ) = dom φ.
-Proof. destruct α as [| | | |s]; simpl; try done. destruct (act_end s); [apply dom_fmap_L|done]. Qed.
+Proof. destruct α as [| | |s]; simpl; try done. destruct (act_end s); [apply dom_fmap_L|done]. Qed.
 
 Lemma fabove_kupd c Π φ α : fabove c Π φ → fabove (dupd c α) Π (kupd α φ).
 Proof.
-  intros H. destruct α as [| | | |s]; simpl; try done. destruct (act_end s); [|done].
+  intros H. destruct α as [| | |s]; simpl; try done. destruct (act_end s); [|done].
   intros o f Ho Hi. apply lookup_fmap_Some in Ho as (f0 & <- & Ho). apply fle_ftick. by apply (H o f0).
 Qed.
 
 Lemma fle_dupd c d α : fle c d → fle (dupd c α) (dupd d α).
-Proof. intros H. destruct α as [| | | |s]; simpl; try done. destruct (act_end s); [by apply fle_ftick|done]. Qed.
+Proof. intros H. destruct α as [| | |s]; simpl; try done. destruct (act_end s); [by apply fle_ftick|done]. Qed.
 
 Lemma fabove_rename c Π φ (g : cend → cend) Π' φ' :
   kinj g Π → renk g Π Π' → renk g φ φ' → dom Π = dom φ → fabove c Π φ → fabove c Π' φ'.
@@ -170,7 +170,7 @@ Lemma fkont_upd n N σ1 σ c1 d ΠK φK K α :
   (is_act α → fle (Some 1) c1) →
   fkont n N σ1 σ c1 d ΠK φK K → fkont n N σ1 σ (dupd c1 α) (dupd d α) ΠK (kupd α φK) K.
 Proof.
-  intros H1 H. destruct α as [| | | |s]; simpl; try done.
+  intros H1 H. destruct α as [| | |s]; simpl; try done.
   destruct (act_end s) as [o|] eqn:E; [|done]. apply fkont_tick; [|done].
   apply H1. simpl. by rewrite E.
 Qed.
