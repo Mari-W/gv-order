@@ -1,5 +1,27 @@
 # Next plan (draft for the author, 2026-11-20)
 
+## Current plan (author, 2026-11-21), supersedes the phases below where they differ
+
+1. Running now. The Rocq stages 2 to 4 of overnight.md on redesign-clean3
+   (generalized arrows, no future variables, inversion lemmas and static
+   rejections). Entries 4 and 5 (fair runs, the Padovani corollary) on
+   redesign-fair, with dependent choice and excluded middle as explicit
+   hypotheses.
+2. Decided. Tickets are one cap per end, `tk(o) + tk(ō) ≤ K`, and the old
+   tickets ϑ go (check-links-without-tickets.md, last section). Excluded middle
+   and choice are allowed as explicit hypotheses of lock-free adequacy, so
+   transfinite step indices replace χ (check-transfinite.md).
+3. Design write-up A3, running (check-layers.md). Points mean ordinal layers
+   at run time, as in Lantana (`obl_new`, strict `obl_move`,
+   `nonstrict_move.v`), so the union of the worlds of a run is well-founded
+   and `wfworld` and the family laws go. Fuel extension
+   (`oblP_fuel_extend`) in place of a fixed N and K. The client-server
+   constraint is tested against both.
+4. Then one Rocq run for 2 and 3 together (tickets, transfinite indices,
+   layers), then plain `new` (entry 2) on top, then the map drafts. Until then
+   no Rocq work builds new proofs on ϑ, χ, families or `wfworld` beyond what a
+   running stage needs.
+
 Nothing here starts before the author's go. Order is the author's: two design investigations
 first, then several agents for Rocq, plausibility and the paper, then the map skill.
 
