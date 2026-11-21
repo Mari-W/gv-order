@@ -5821,8 +5821,8 @@ window.MAP = {
   },
   "E-Pack.wf": {
    "title": "Well-formed existential",
-   "what": "Under $\\Gamma$ and $C$ at the bound variables $\\bar\\iota$, $l \\preccurlyeq T$: every head of $T$ lies at or above $l$, and $l = \\cdot$ asks that $T$ holds no end.",
-   "why": "The condition is on the type, not on the instance. It makes opening at the binder complete for every lower bound, so the algorithmic system can open eagerly.",
+   "what": "Under $\\Gamma$ and $C$ at the bound variables $\\bar\\iota$, $l \\preccurlyeq T$: each head of $T$ lies at or above $l$, and $l = \\cdot$ asks that $T$ holds no end.",
+   "why": "The condition reads the type alone. It makes opening at the binder complete for each lower bound, so the algorithmic system can open eagerly.",
    "breaks": "Without it an existential at a point lower bound may be packed at one instance and need a later instance to be repacked, and no single place to open it is best.",
    "example": "$\\exists^{\\bot}\\iota.\\,C.\\,T$ is always well formed.",
    "rocq": "static/Contexts.v: ex_wf; static/Typing.v: e_pack",
