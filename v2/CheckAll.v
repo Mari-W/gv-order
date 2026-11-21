@@ -160,3 +160,4 @@ Print Assumptions sbv_rejected.
 Print Assumptions olt_wf.
 Print Assumptions oadd_lt.
 Print Assumptions osfix_unfold.
+Print Assumptions exist_prop.

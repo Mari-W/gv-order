@@ -20,6 +20,17 @@ From GV Require Import compat.Conv.
 
 (** ** Liftings at an interface *)
 
+Lemma soup_lift1 N W Σ T a q n :
+  a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧ → erase q = erase (s_q a) →
+  ∃ a', s_q a' = q ∧ a' ∈ S^{N,W} _ n⟦Σ ⊢ T⟧.
+Proof.
+  destruct a as [[C1 M1] K], q as [C2 M2]. intros Hs Hq. unfold erase in Hq. simpl in Hq.
+  injection Hq as -> HM. destruct (relabel_map M1 M2 (eq_sym HM)) as (f & g & H1 & H2).
+  exists (LFState (C1, M2) (krelabel f K)). split; [done|].
+  destruct Hs as (A & Π & U & Hsi). exists A, Π, (U ∘ g).
+  exact (soup_relabel _ _ _ _ _ _ M1 M2 _ _ _ _ f g H1 H2 Hsi).
+Qed.
+
 Lemma soup_lift N W Σ T a q :
   (∀ n, a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧) → erase q = erase (s_q a) →
   ∃ a', s_q a' = q ∧ ∀ n, a' ∈ S^{N,W} _ n⟦Σ ⊢ T⟧.
@@ -69,11 +80,12 @@ Theorem lf_soup_connect N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
   C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
   (Σ1 ∪ Σ2) ⊪^N _ (wjoin W1 W2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) : T.
 Proof.
-  intros ([[C1' M1] K1] & He1 & Hs1) (a2 & He2 & Hs2) Hf H12 H1C H2C HC HC1 HC2.
+  intros Hl1 Hl2 Hf H12 H1C H2C HC HC1 HC2 n.
+  destruct (Hl1 n) as ([[C1' M1] K1] & He1 & Hs1). destruct (Hl2 n) as (a2 & He2 & Hs2).
   unfold erase in He1. simpl in He1. injection He1 as -> <-.
   set (k := S (max_list (elements (dom M1)))).
   destruct a2 as [[C2' M2'] K2']. unfold erase in He2. simpl in He2. injection He2 as -> <-.
-  destruct (soup_lift N W2 _ TUnit _ (C2, tshift k M2') Hs2) as ([[C2'' M2] K2] & Hq & Hs2');
+  destruct (soup_lift1 N W2 _ TUnit _ (C2, tshift k M2') n Hs2) as ([[C2'' M2] K2] & Hq & Hs2');
     [unfold erase; simpl; by rewrite soup_tshift|].
   simpl in Hq. injection Hq as -> ->.
   assert (M1 ##ₘ tshift k M2') as HM.
@@ -82,7 +94,7 @@ Proof.
   exists (LFState (C1 ∪ C2 ∪ chans_of ΣC, M1 ∪ tshift k M2') (K1 ∪ K2)).
   split.
   - unfold erase. simpl. by rewrite soup_union_c, soup_tshift.
-  - intros n. destruct (Hs1 n) as (A1 & Π1 & U1 & H1). destruct (Hs2' n) as (A2 & Π2 & U2 & H2).
+  - destruct Hs1 as (A1 & Π1 & U1 & H1). destruct Hs2' as (A2 & Π2 & U2 & H2).
     eexists _, _, _. by apply soup_connect.
 Qed.
 
@@ -110,10 +122,10 @@ Theorem lf_soup_term N W Σ ΘB C0 t T :
           (tkenv (tenv_of (fhalf (Some N)) Σ ∪ ΘB)) t) →
   Σ ⊪^N _ W (C0, {[+ t +]}) : T.
 Proof.
-  intros Hp HB HΣ Hd He Hf. exists (LFState (C0, {[0 := t]}) (kterm (tenv_of (fhalf (Some N)) Σ ∪ ΘB))).
+  intros Hp HB HΣ Hd He Hf n. exists (LFState (C0, {[0 := t]}) (kterm (tenv_of (fhalf (Some N)) Σ ∪ ΘB))).
   split.
   - unfold erase. simpl. by rewrite <-insert_empty, soup_insert, soup_empty, (left_id_L ∅ (⊎)).
-  - intros n. eexists _, _, _. by apply soup_term.
+  - eexists _, _, _. by apply soup_term.
 Qed.
 
 (** The thread of P-Term, typed at a finite N and guarded, in E[live]. *)
@@ -158,8 +170,8 @@ Qed.
 (** ** One closed thread
 
     A guarded closed thread of primitive type, typed at a finite N, is
-    lock free. *)
-Theorem lf_soundness_source W N t T c :
+    lock free, under excluded middle and functional choice. *)
+Theorem lf_soundness_source (EM : excluded_middle) (FC : functional_choice) W N t T c :
   strict W → wfworld W → ∅ ⊢▷ t → tfree T →
   ∅ ; hc_empty ; [] ⊢^(∅, None) _{W,(Some N)} t : T ▷ c →
   lock_free (∅, {[+ t +]}).
@@ -168,7 +180,6 @@ Proof.
   assert (tenv_of (fhalf (Some N)) ∅ ∪ ∅ = (∅ : tenv)) as E by (unfold tenv_of; by rewrite fmap_empty, map_union_empty).
   rewrite <-E in Hty.
   assert (∀ o, o ∈ dom (∅ : tenv) ↔ ech o ∈ (∅ : gset chan)) as HB by (intros o; rewrite dom_empty_L; set_solver).
-  destruct (lf_p_term W N ∅ ∅ ∅ t T c HS Hp HB
-    ltac:(set_solver) ltac:(set_solver) Hty Hg) as (a' & He & Hs).
-  rewrite <-He. by apply (lf_adequacy_soup N W T a').
+  apply (lf_adequacy EM FC N W T); [done|done|].
+  exact (lf_p_term W N ∅ ∅ ∅ t T c HS Hp HB ltac:(set_solver) ltac:(set_solver) Hty Hg).
 Qed.

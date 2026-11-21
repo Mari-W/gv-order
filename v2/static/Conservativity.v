@@ -393,7 +393,7 @@ Lemma d_new W Γ Δ F ℓ S a1 a2 m1 m2 :
   lenv_unl Δ → ℓ ∈ w_fams W →
   dftyped W ∅ Γ Δ F (ENew ℓ)
     (TEx LBot 1 (bcs_of (w_laws W ℓ)) (TProd (TSess S (pvar 0) a1 m1) (TSess (dual S) (pvar 0)‾ a2 m2))).
-Proof. intros HΔ Hℓ. dfr. rewrite sty_df_dual. eapply e_new; [by apply lenv_unl_df|done]. Qed.
+Proof. intros HΔ Hℓ. dfr. rewrite sty_df_dual. eapply e_new; [by apply lenv_unl_df|done|done]. Qed.
 
 Lemma d_new_at W Θ Γ Δ F e κ S0 x S a a' a1 a2 m m' m1 m2 :
   dftyped W Θ Γ Δ F e (TSess S0 x a m) →

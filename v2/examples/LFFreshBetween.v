@@ -45,7 +45,7 @@ Section body.
     { eapply e_var'; [reflexivity|]. spare_tac. }
     lage_tac.
     eapply e_letp_; [lsplit_tac (ENewAt 0 (Var 1)) EUnit| | | ].
-    { eapply (e_new_at _ _ _ _ _ _ _ 0 SEnd (pvar 0) _ _ SEnd); [|shelve]. eapply e_var'; [reflexivity|]. spare_tac. }
+    { eapply (e_new_at' _ _ _ _ _ _ _ 0 SEnd (pvar 0) _ _ SEnd); [|shelve]. eapply e_var'; [reflexivity|]. spare_tac. }
     lage_tac.
     eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
     { eapply e_var'; [reflexivity|]. spare_tac. }
@@ -102,7 +102,7 @@ Proof.
   { eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_letp_; [lsplit_tac (ENewAt 1 (Var 1)) EUnit| | | ].
-  { eapply (e_new_at _ _ _ _ _ _ _ 1 SEnd (pvar 0) _ _ SEnd); [|shelve]. eapply e_var'; [reflexivity|]. spare_tac. }
+  { eapply (e_new_at' _ _ _ _ _ _ _ 1 SEnd (pvar 0) _ _ SEnd); [|shelve]. eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
   { eapply e_var'; [reflexivity|]. spare_tac. }
@@ -145,8 +145,8 @@ Proof.
   eapply lf_main_typed; [apply strict_wfworld; [apply W_fb_wf|apply W_fb_wfworld]|constructor|exact Ht|apply fb_guarded].
 Qed.
 
-Theorem fb_lock_free : lock_free (∅, {[+ fb_main +]}).
+Theorem fb_lock_free : excluded_middle → functional_choice → lock_free (∅, {[+ fb_main +]}).
 Proof.
-  destruct fbl_typedN as (c & Ht).
-  eapply lf_main; [apply (strict_wfworld _ W_fb_wf W_fb_wfworld)|apply W_fb_wfworld|constructor|exact Ht|apply fb_guarded].
+  intros EM FC. destruct fbl_typedN as (c & Ht).
+  eapply (lf_main EM FC); [apply (strict_wfworld _ W_fb_wf W_fb_wfworld)|apply W_fb_wfworld|constructor|exact Ht|apply fb_guarded].
 Qed.

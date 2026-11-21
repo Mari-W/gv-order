@@ -102,10 +102,10 @@ Section link.
   Proof. intros H. unfold kdel2. by rewrite !dom_delete_L, H. Qed.
 
   (** P-Act-Link. *)
-  Lemma step_link i e o1 o2 e' :
+  Lemma step_link tc i e o1 o2 e' :
     Mq !! i = Some e → tstep e (LSess (SLink ({[o1]} ∪ {[o2]}))) e' →
     ∃ A' Π', soup_inv N lv W ∅ T
-      (lf_next N (LFState (C, Mq) K) (EvSolo i (LSess (SLink ({[o1]} ∪ {[o2]}))) (PickLink o1 o2))
+      (lf_next tc (LFState (C, Mq) K) (EvSolo i (LSess (SLink ({[o1]} ∪ {[o2]}))) (PickLink o1 o2))
         (C ∖ {[ech o1]}, emap (csub o1 o2) <$> (<[i := e']> Mq))) A' Π' U.
   Proof.
     intros He Hst.

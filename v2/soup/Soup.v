@@ -3,12 +3,13 @@
       a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧      [Soup N W n Σ T a]
       Σ ⊪^N _ W p : T              [lf_sem N W Σ p T]
 
-    A soup state a fixes, outside the index, the configuration q (threads
-    with identifiers) and the ownership K. K maps every held end to its
-    holder, its point, its counter and its tickets ([hold]). So the ends a
-    thread holds, their points, counters and tickets are the same at every
-    index ("∃ before ∀ n", F20). The bound N on the tickets of a channel
-    is finite.
+    A soup state a fixes the configuration q (threads with identifiers)
+    and the ownership K. K maps every held end to its holder, its point,
+    its counter and its tickets ([hold]). The lock-free judgment chooses
+    a state at each index α. One state for every index follows by the
+    existential property of the step index (soup/SoupRun.v,
+    relation/ExProp.v). The bound N on the tickets of a channel is
+    finite.
 
     At each index n the soup chooses an environment A of the relation
     (an end to S@x), a protocol map Π of the fuel layer (an end to a
@@ -29,10 +30,9 @@
     the other (docs/redesign/progress.md, S8).
 
     Along a run the state follows the events by one index-free update
-    ([lf_next]): a new end starts at a fresh generated root of its family,
-    with N/2 and N − N/2 tickets, or at the field of its anchor, with the
-    tickets m of the anchor and N − m, each end with counter equal to its
-    tickets. An action moves the end to x⁺ (or to the point of its
+    ([lf_next]): a new end starts at a fresh generated root of its family
+    or at the field of its anchor, with the tickets m1 and m2 the creation
+    chose, each end with counter equal to its tickets. An action moves the end to x⁺ (or to the point of its
     branch) and sets its counter back to its tickets, every other end of
     an actor ticks, the ends of a sent or spawned value move to the
     receiver or the child with their counters minus one, a close removes
@@ -67,7 +67,7 @@ Notation "a ∈ S^{ N , W } '_' n ⟦ Σ ⊢ T ⟧" := (Soup N W n Σ T a)
 (** ** The lock-free judgment *)
 
 Definition lf_sem (N : nat) (W : world) (Σ : senv) (p : proc) (T : ty) : Prop :=
-  ∃ a, erase (s_q a) = p ∧ ∀ n, a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧.
+  ∀ n, ∃ a, erase (s_q a) = p ∧ a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧.
 
 Notation "Σ ⊪^ N '_' W p : T" := (lf_sem N W Σ p T)
   (at level 74, N at level 0, W at level 0, p at level 60, T at level 60,
@@ -124,12 +124,12 @@ Definition ksync (i j : nat) (o : cend) (y y' : point) (M : gset cend) (K : own)
 (** The ownership after an event. The actors of a message, a close and
     a choice tick their other ends first, then the acted ends refill and
     the ends of the moved value move. *)
-Definition own_next (N : nat) (ev : event) (K : own) : own :=
+Definition own_next (tc : fuel * fuel) (ev : event) (K : own) : own :=
   match ev with
   | EvSolo i α k =>
       let kn := match α with
-                | LNew ℓ c => knew (fhalf (Some N)) (ncap (Some N) (fhalf (Some N))) i c (pgen ℓ (kfresh ℓ K)) K
-                | LNewAt κ o c => knew (kcap K o) (ncap (Some N) (kcap K o)) i c ((kpt K o)·κ) K
+                | LNew ℓ c => knew tc.1 tc.2 i c (pgen ℓ (kfresh ℓ K)) K
+                | LNewAt κ o c => knew tc.1 tc.2 i c ((kpt K o)·κ) K
                 | _ => K
                 end in
       match k with
@@ -143,16 +143,18 @@ Definition own_next (N : nat) (ev : event) (K : own) : own :=
   | _ => K
   end.
 
-Definition lf_next (N : nat) (a : lfstate) (ev : event) (q' : config) : lfstate :=
-  LFState q' (own_next N ev (s_K a)).
+(** The update takes the tickets tc of the two ends of a creation,
+    which the creation chooses (F-New). Every other event ignores tc. *)
+Definition lf_next (tc : fuel * fuel) (a : lfstate) (ev : event) (q' : config) : lfstate :=
+  LFState q' (own_next tc ev (s_K a)).
 
 (** Along a run, a stutter keeps the state. *)
-Definition lf_upd (N : nat) (a : lfstate) (l : option event) (q' : config) : lfstate :=
-  match l with Some ev => lf_next N a ev q' | None => LFState q' (s_K a) end.
+Definition lf_upd (tc : fuel * fuel) (a : lfstate) (l : option event) (q' : config) : lfstate :=
+  match l with Some ev => lf_next tc a ev q' | None => LFState q' (s_K a) end.
 
-Fixpoint lf_run_state (N : nat) (a0 : lfstate) (r : nat → config) (l : nat → option event)
-    (k : nat) : lfstate :=
+Fixpoint lf_run_state (tcs : nat → fuel * fuel) (a0 : lfstate) (r : nat → config)
+    (l : nat → option event) (k : nat) : lfstate :=
   match k with
   | 0 => a0
-  | S k' => lf_upd N (lf_run_state N a0 r l k') (l k') (r k)
+  | S k' => lf_upd (tcs k') (lf_run_state tcs a0 r l k') (l k') (r k)
   end.

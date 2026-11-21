@@ -120,7 +120,7 @@ Section body.
     lage_tac.
     (* a at Y·0 *)
     eapply e_letp_; [lsplit_tac (ENewAt 0 (Var 0)) EUnit| | | ].
-    { eapply (e_new_at _ _ _ _ _ _ _ 0 (dual Schl) (pvar 1) _ _ Schl); [|shelve]. eapply e_var'; [reflexivity|]. spare_tac. }
+    { eapply (e_new_at' _ _ _ _ _ _ _ 0 (dual Schl) (pvar 1) _ _ Schl); [|shelve]. eapply e_var'; [reflexivity|]. spare_tac. }
     lage_tac.
     eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
     { eapply e_var'; [reflexivity|]. spare_tac. }
@@ -146,7 +146,7 @@ Section body.
     lage_tac.
     (* b at X·1, before the receive *)
     eapply e_letp_; [lsplit_tac (ENewAt 1 (Var 5)) EUnit| | | ].
-    { eapply (e_new_at _ _ _ _ _ _ _ 1 Schl (pvar 0) _ _ Schl); [|shelve]. eapply e_var'; [reflexivity|]. spare_tac. }
+    { eapply (e_new_at' _ _ _ _ _ _ _ 1 Schl (pvar 0) _ _ Schl); [|shelve]. eapply e_var'; [reflexivity|]. spare_tac. }
     lage_tac.
     eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
     { eapply e_var'; [reflexivity|]. spare_tac. }
@@ -247,8 +247,8 @@ Proof.
   eapply lf_main_typed; [apply strict_wfworld; [apply W_rg_wf|apply W_rg_wfworld]|constructor|exact Ht|apply rg_guarded].
 Qed.
 
-Theorem rg_lock_free : lock_free (∅, {[+ rg_main +]}).
+Theorem rg_lock_free : excluded_middle → functional_choice → lock_free (∅, {[+ rg_main +]}).
 Proof.
-  destruct rgl_typedN as (c & Ht).
-  eapply lf_main; [apply (strict_wfworld _ W_rg_wf W_rg_wfworld)|apply W_rg_wfworld|constructor|exact Ht|apply rg_guarded].
+  intros EM FC. destruct rgl_typedN as (c & Ht).
+  eapply (lf_main EM FC); [apply (strict_wfworld _ W_rg_wf W_rg_wfworld)|apply W_rg_wfworld|constructor|exact Ht|apply rg_guarded].
 Qed.

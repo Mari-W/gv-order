@@ -34,7 +34,7 @@ Proof.
   - by eapply cost_e_branch.
   - by eapply cost_e_link.
   - by eapply cost_e_spawn.
-  - by apply cost_e_new.
+  - by eapply cost_e_new.
   - by eapply cost_e_new_at.
   - by eapply cost_e_sub.
   - by eapply cost_e_pack.

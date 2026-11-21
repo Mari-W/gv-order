@@ -232,10 +232,11 @@ Theorem soup_no_tau_divergence N W T a :
   (∀ n, a ∈ S^{N,W} _ n⟦∅ ⊢ T⟧) → no_tau_divergence (erase (s_q a)).
 Proof.
   intros Hs p Hp. destruct (pred_star_lift _ _ Hp) as (q' & Hq' & <-).
-  destruct (lfsoup_isteps N W T a q' Hs Hq') as (a' & <- & Hs').
+  destruct (lfsoup_isteps N W T (s_q a) q' (λ n, ex_intro _ a (conj eq_refl (Hs n))) Hq' ozero)
+    as (a' & <- & Hsa').
   apply (padmin_acc (cmset (soup (s_q a').2))); [|done].
   apply mstep_acc. intros x Hx. unfold cmset in Hx. apply elem_of_gmultiset_map in Hx as (e & -> & He).
   apply elem_of_soup in He as [t Ht].
-  destruct (Hs' ozero) as (A & Π & U & Hsi).
+  destruct Hsa' as (A & Π & U & Hsi).
   exact (Erel_tacc ozero W _ _ _ e (s_rel Hsi t e Ht)).
 Qed.

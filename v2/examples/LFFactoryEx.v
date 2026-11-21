@@ -82,7 +82,7 @@ Proof.
   eexists _.
   { unfold mk1_e.
   eapply e_letp_; [lsplit_tac (ENewAt 0 (Var 0)) EUnit| | | ].
-  { eapply (e_new_at _ _ _ _ _ _ _ 0 Sr (pvar 0) _ _ Sd); [|shelve]. eapply e_var'; [reflexivity|]. spare_tac. }
+  { eapply (e_new_at' _ _ _ _ _ _ _ 0 Sr (pvar 0) _ _ Sd); [|shelve]. eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
   { eapply e_var'; [reflexivity|]. spare_tac. }
@@ -176,8 +176,8 @@ Proof.
   eapply lf_main_typed; [apply strict_wfworld; [apply W_fx_wf|apply W_fx_wfworld]|constructor|exact Ht|apply fx_guarded].
 Qed.
 
-Theorem fx_lock_free : lock_free (∅, {[+ fx_main +]}).
+Theorem fx_lock_free : excluded_middle → functional_choice → lock_free (∅, {[+ fx_main +]}).
 Proof.
-  destruct fxl_typedN as (c & Ht).
-  eapply lf_main; [apply (strict_wfworld _ W_fx_wf W_fx_wfworld)|apply W_fx_wfworld|constructor|exact Ht|apply fx_guarded].
+  intros EM FC. destruct fxl_typedN as (c & Ht).
+  eapply (lf_main EM FC); [apply (strict_wfworld _ W_fx_wf W_fx_wfworld)|apply W_fx_wfworld|constructor|exact Ht|apply fx_guarded].
 Qed.

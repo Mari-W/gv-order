@@ -29,7 +29,7 @@ Proof.
   { eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_letp_; [lsplit_tac (ENewAt 0 (Var 1)) EUnit| | | ].
-  { eapply (e_new_at _ _ _ _ _ _ _ 0 SEnd (pvar 0) _ _ SEnd); [|shelve]. eapply e_var'; [reflexivity|]. spare_tac. }
+  { eapply (e_new_at' _ _ _ _ _ _ _ 0 SEnd (pvar 0) _ _ SEnd); [|shelve]. eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
   { eapply e_var'; [reflexivity|]. spare_tac. }
@@ -65,8 +65,8 @@ Proof.
   eapply lf_main_typed; [apply strict_wfworld; [apply W_cy_wf|apply W_cy_wfworld]|constructor|exact Ht|apply cy_guarded].
 Qed.
 
-Theorem cy_lock_free : lock_free (∅, {[+ cy_main +]}).
+Theorem cy_lock_free : excluded_middle → functional_choice → lock_free (∅, {[+ cy_main +]}).
 Proof.
-  destruct cy_typedN as (c & Ht).
-  eapply lf_main; [apply (strict_wfworld _ W_cy_wf W_cy_wfworld)|apply W_cy_wfworld|constructor|exact Ht|apply cy_guarded].
+  intros EM FC. destruct cy_typedN as (c & Ht).
+  eapply (lf_main EM FC); [apply (strict_wfworld _ W_cy_wf W_cy_wfworld)|apply W_cy_wfworld|constructor|exact Ht|apply cy_guarded].
 Qed.

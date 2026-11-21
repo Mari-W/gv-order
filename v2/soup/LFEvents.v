@@ -83,9 +83,9 @@ Ltac ne_tac Ho Eh :=
   first [ eapply (owns_ne _ _ _ _ _ _ Ho Eh); [eassumption|set_solver] ].
 
 
-Lemma own_next_keep N ev K t o h :
+Lemma own_next_keep tc ev K t o h :
   ev_ends K ev → (∀ u α o1 o2, ev ≠ EvSolo u α (PickLink o1 o2)) → t ∉ ev_parts ev →
-  K !! o = Some h → h.(h_th) = t → own_next N ev K !! o = Some h.
+  K !! o = Some h → h.(h_th) = t → own_next tc ev K !! o = Some h.
 Proof.
   intros Hen Hnl Ht Ho Eh.
   destruct ev as [i α [|j|o1 o2]|i j [o' M|o' M|o'|o' b|o' b|os]|i σ];

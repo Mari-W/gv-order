@@ -31,11 +31,11 @@ Section sync.
   Local Ltac pw := apply map_eq_some; intros o0 v0.
 
   (** P-Act-Msg. *)
-  Lemma step_msg i j e e' f f' o w :
+  Lemma step_msg tc i j e e' f f' o w :
     i ≠ j → Mq !! i = Some e → Mq !! j = Some f →
     tstep e (LSess (SSend o w)) e' → tstep f (LSess (SRecv (edual o) w)) f' →
     ∃ A' Π', soup_inv N lv W ∅ T
-      (lf_next N (LFState (C, Mq) K) (EvSync i j (SSend o w)) (C, <[j := f']> (<[i := e']> Mq))) A' Π' U.
+      (lf_next tc (LFState (C, Mq) K) (EvSync i j (SSend o w)) (C, <[j := f']> (<[i := e']> Mq))) A' Π' U.
   Proof.
     intros Hij He Hf Hst Hst'.
     destruct (s_obl _ _ _ _ _ _ _ _ _ _ Hs i e _ e' He Hst) as [HEi HFi].
@@ -170,11 +170,11 @@ Section sync.
   Qed.
 
   (** P-Act-Close. *)
-  Lemma step_close i j e e' f f' o :
+  Lemma step_close tc i j e e' f f' o :
     i ≠ j → Mq !! i = Some e → Mq !! j = Some f →
     tstep e (LSess (SClose o)) e' → tstep f (LSess (SClose (edual o))) f' →
     ∃ A' Π', soup_inv N lv W ∅ T
-      (lf_next N (LFState (C, Mq) K) (EvSync i j (SClose o)) (C ∖ {[ech o]}, <[j := f']> (<[i := e']> Mq))) A' Π' U.
+      (lf_next tc (LFState (C, Mq) K) (EvSync i j (SClose o)) (C ∖ {[ech o]}, <[j := f']> (<[i := e']> Mq))) A' Π' U.
   Proof.
     intros Hij He Hf Hst Hst'.
     destruct (s_obl _ _ _ _ _ _ _ _ _ _ Hs i e _ e' He Hst) as [HEi HFi].
@@ -240,11 +240,11 @@ Section sync.
   Qed.
 
   (** P-Act-Choice. *)
-  Lemma step_choice i j e e' f f' o b :
+  Lemma step_choice tc i j e e' f f' o b :
     i ≠ j → Mq !! i = Some e → Mq !! j = Some f →
     tstep e (LSess (SSel o b)) e' → tstep f (LSess (SBra (edual o) b)) f' →
     ∃ A' Π', soup_inv N lv W ∅ T
-      (lf_next N (LFState (C, Mq) K) (EvSync i j (SSel o b)) (C, <[j := f']> (<[i := e']> Mq))) A' Π' U.
+      (lf_next tc (LFState (C, Mq) K) (EvSync i j (SSel o b)) (C, <[j := f']> (<[i := e']> Mq))) A' Π' U.
   Proof.
     intros Hij He Hf Hst Hst'.
     destruct (s_obl _ _ _ _ _ _ _ _ _ _ Hs i e _ e' He Hst) as [HEi HFi].

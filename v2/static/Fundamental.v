@@ -399,8 +399,8 @@ Section fund.
       |Θ Γ Δ F e S0 x S1 S2 a mS c0 Hu Hub H IH
       |Θ Γ Δ F e S x a1 m1 a2 m2 c0 H IH Hl1 Hl2
       |Θ Γ Δ F e ub lb c' a c0 H IH Hle
-      |Γ Δ F ℓ S HΔ Hℓ
-      |Θ Γ Δ F e κf S0 x a mS S c0 H IH HmN
+      |Γ Δ F ℓ S m1 m2 HΔ Hℓ Htk
+      |Θ Γ Δ F e κf S0 x a mS S m1 m2 c0 H IH HmN
       |Θ Γ Δ F e T T' c c' H IH Hsub Hc
       |Θ Γ Δ F e lb m C T xs c Hxs HC Hlbx H IH
       |Θ Γ Δ F e i lb m C T U c Hi Hnu _ H IH];

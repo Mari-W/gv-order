@@ -13,6 +13,11 @@
 
 From GV Require Export examples.Tools2.
 From GV Require Export soup.LFTyped.
+From GV Require lockfree.FairRun.
+
+(** The classical hypotheses of lock-free adequacy, by name. *)
+Notation excluded_middle := lockfree.FairRun.excluded_middle.
+Notation functional_choice := lockfree.FairRun.functional_choice.
 
 (** ** Lock-free worlds by a measure *)
 
@@ -87,10 +92,10 @@ Proof.
   - intros t' Ht'. simpl in Ht'. apply gmultiset_elem_of_singleton in Ht' as ->. done.
 Qed.
 
-Lemma lf_main N W t T c :
+Lemma lf_main (EM : excluded_middle) (FC : functional_choice) N W t T c :
   strict W → wfworld W → tfree T → typed W (Some N) ∅ hc_empty [] (∅, None) t T c →
   ∅ ⊢▷ t → lock_free (∅, {[+ t +]}).
-Proof. intros HS HW Hp Ht Hg. eapply (lf_soundness N W _ T HW), lf_main_typed; eauto. Qed.
+Proof. intros HS HW Hp Ht Hg. eapply (lf_soundness N W _ T EM FC HW), lf_main_typed; eauto. Qed.
 
 (** ** Rules of the merged judgment with weakening built in *)
 
@@ -109,7 +114,21 @@ Lemma e_new' W N Γ Δ F ℓ S :
   (∀ y o, Δ !! y = Some o → spare o) → ℓ ∈ w_fams W →
   typed W N ∅ Γ Δ F (ENew ℓ) (TEx LBot 1 (bcs_of (w_laws W ℓ))
     (TProd (TSess S (pvar 0) (fhalf N) (fhalf N)) (TSess (dual S) (pvar 0)‾ (ncap N (fhalf N)) (ncap N (fhalf N))))) (Some 0).
-Proof. intros H Hℓ. apply e_new; [by apply spare_unl|done]. Qed.
+Proof. intros H Hℓ. apply e_new; [by apply spare_unl|done|apply tsum_half]. Qed.
+
+(** E-NewAt at the tickets m of the anchor and N − m. *)
+Lemma e_new_at' W N Θ Γ Δ F e κ S0 x a m S c0 :
+  typed W N Θ Γ Δ F e (TSess S0 x a m) c0 → fle m N →
+  typed W N Θ Γ Δ F (ENewAt κ e)
+    (TProd (TSess S0 x a m) (TProd (TSess S (x·κ) m m) (TSess (dual S) (x·κ)‾ (ncap N m) (ncap N m)))) c0.
+Proof. intros H Hm. apply e_new_at; [exact H|by apply tsum_ncap]. Qed.
+
+(** E-New at any tickets m1 + m2 ≤ N. *)
+Lemma e_new_tk W N Γ Δ F ℓ S m1 m2 :
+  (∀ y o, Δ !! y = Some o → spare o) → ℓ ∈ w_fams W → tsum_ok N m1 m2 →
+  typed W N ∅ Γ Δ F (ENew ℓ) (TEx LBot 1 (bcs_of (w_laws W ℓ))
+    (TProd (TSess S (pvar 0) m1 m1) (TSess (dual S) (pvar 0)‾ m2 m2))) (Some 0).
+Proof. intros H Hℓ Hm. apply e_new; [by apply spare_unl|done|done]. Qed.
 
 Lemma thage_empty c : thage c ∅ ∅.
 Proof. intros o. by rewrite lookup_empty. Qed.

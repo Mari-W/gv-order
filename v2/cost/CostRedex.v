@@ -394,16 +394,17 @@ Proof.
   - apply Vfuel_sess_intro; [apply sequiv_refl|apply fle_refl].
 Qed.
 
-Lemma new_at_redex (κ : field) N n S0 x a m S Π φ d v :
+Lemma new_at_redex (κ : field) N n S0 x a m S m1 m2 Π φ d v :
+  tsum_ok N m1 m2 →
   v ∈ FV^N _ n⟦RTy (TSess S0 x a m)⟧(Π, φ) →
-  ENewAt κ v ∈ F^N _ n⟦RTy (TProd (TSess S0 x a m) (TProd (TSess S (x·κ) m m) (TSess (dual S) (x·κ)‾ (ncap N m) (ncap N m)))) ▷ d⟧(Π, φ).
+  ENewAt κ v ∈ F^N _ n⟦RTy (TProd (TSess S0 x a m) (TProd (TSess S (x·κ) m1 m1) (TSess (dual S) (x·κ)‾ m2 m2))) ▷ d⟧(Π, φ).
 Proof.
-  intros HV.
+  intros Hm HV.
   eapply FuelE_op; [exact HV|]. intros v' Π' φ' HV' Hv' α e' Hst.
   destruct (Vfuel_sess_inv _ _ _ _ _ _ _ _ _ HV') as (o & s' & f & -> & -> & -> & Hq & Hf).
   op_step Hst. inversion Hst; subst. cbn [Fobl]. unfold f_new_at, f_new.
-  exists (f, m). split; [by rewrite lookup_singleton_eq|]. simpl.
-  intros (H1 & H2 & H3 & H4). exists S. intros j Hj. rewrite pnew_union, cnew_union.
+  split; [rewrite lookup_singleton_eq; by eexists|].
+  intros (H1 & H2 & H3 & H4). exists S, m1, m2. split; [done|]. intros j Hj. rewrite pnew_union, cnew_union.
   rewrite dom_singleton_L in H1, H2. rewrite dom_singleton_L in H3, H4.
   rewrite (map_union_comm _ {[o := s']}), (map_union_comm _ {[o := (f, m)]}).
   2,3: apply map_disjoint_union_l; split; apply map_disjoint_singleton_l, lookup_singleton_ne; set_solver.
@@ -414,16 +415,15 @@ Proof.
   - apply Vfuel_newpair.
 Qed.
 
-Lemma new_redex (ℓ : family) N n lb C S d :
-  ENew ℓ ∈ F^N _ n⟦RTy (TEx lb 1 C (TProd (TSess S (pvar 0) (fhalf N) (fhalf N))
-                        (TSess (dual S) (pvar 0)‾ (ncap N (fhalf N)) (ncap N (fhalf N))))) ▷ d⟧(∅, ∅).
+Lemma new_redex (ℓ : family) N n lb C S m1 m2 d :
+  tsum_ok N m1 m2 →
+  ENew ℓ ∈ F^N _ n⟦RTy (TEx lb 1 C (TProd (TSess S (pvar 0) m1 m1) (TSess (dual S) (pvar 0)‾ m2 m2))) ▷ d⟧(∅, ∅).
 Proof.
- 
-  apply FuelE_eq. intros g Π' φ' _ _ R1 R2.
+  intros Hm. apply FuelE_eq. intros g Π' φ' _ _ R1 R2.
   rewrite (renk_empty g Π' R1), (renk_empty g φ' R2). simpl. split; [done|].
   intros α e' Hst. apply tstep_inv in Hst as [Hh|(f & e0 & e0' & _ & Heq & _ & _)];
     [|by destruct f].
-  inversion Hh; subst. cbn [Fobl]. unfold f_new. intros _. exists S.
+  inversion Hh; subst. cbn [Fobl]. unfold f_new. intros _. exists S, m1, m2. split; [done|].
   intros j Hj. rewrite pnew_union, cnew_union, !map_union_empty.
   apply FuelE_val; [done|]. apply Vfuel_pack. apply Vfuel_newpair.
 Qed.

@@ -24,8 +24,8 @@
     the counter of o back to its tickets and ticks every other counter of
     the thread by one (truncated at 0). A send and a spawn hand the ends
     of the value they move on with their counters minus one. New ends
-    start at their tickets, N/2 and N − N/2 at a fresh root, m and N − m
-    at a field of an end with m tickets. A link moves no counter, and
+    start at their tickets m1 and m2, which the creation chooses with
+    m1 + m2 ≤ N. A link moves no counter, and
     the counter of each linked end exceeds what the bound leaves the
     partner of the other ([lok]). The checks are F-Tick (an action asks
     every other counter at least 1, and the frame at least 1), the
@@ -214,13 +214,14 @@ Section obligations.
 
   Definition f_beta (e' : expr) : Prop := (∀ j, olt j n → El j N σ d Π φ e').
 
-  (** new_ℓ starts its ends at N/2 and N − N/2 tickets, new_κ o at the
-      tickets m of o and N − m. *)
-  Definition f_new (m1 m2 : fuel) (c : chan) (e' : expr) : Prop :=
-    ffresh c Π φ → ∃ S, (∀ j, olt j n → El j N σ d (pnew c S Π) (cnew m1 m2 c φ) e').
+  (** A creation chooses the protocol and the tickets m1 and m2 of the
+      two new ends, with m1 + m2 ≤ N. new_κ o asks o held. *)
+  Definition f_new (c : chan) (e' : expr) : Prop :=
+    ffresh c Π φ → ∃ S m1 m2, tsum_ok N m1 m2 ∧
+      (∀ j, olt j n → El j N σ d (pnew c S Π) (cnew m1 m2 c φ) e').
 
   Definition f_new_at (o : cend) (c : chan) (e' : expr) : Prop :=
-    ∃ p, φ !! o = Some p ∧ f_new p.2 (ncap N p.2) c e'.
+    is_Some (φ !! o) ∧ f_new c e'.
 
   (** The child takes the ends of v with one unit less and runs as a
       thread. *)
@@ -267,7 +268,7 @@ Section obligations.
   Definition Fobl (α : tlabel) (e' : expr) : Prop :=
     match α with
     | LBeta => f_beta e'                                  (* F-Beta *)
-    | LNew _ c => f_new (fhalf N) (ncap N (fhalf N)) c e'  (* F-New *)
+    | LNew _ c => f_new c e'                              (* F-New *)
     | LNewAt _ o c => f_new_at o c e'                     (* F-New at a field *)
     | LSpawn v => f_spawn v e'                          (* F-Spawn *)
     | LSess (SSend o w) => f_send o w e'                (* F-Send *)
@@ -389,8 +390,9 @@ Section ext.
     destruct α as [|ℓ c|κ o c|v|[o w|o w|o|o i|o i|os]]; simpl;
       unfold f_beta, f_new, f_new_at, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link.
     - apply HE'.
-    - intros H Hf. destruct (H Hf) as [S HS]. exists S. by apply HE'.
-    - intros (p & Hp & H). exists p. split; [done|]. intros Hf. destruct (H Hf) as [S HS]. exists S. by apply HE'.
+    - intros H Hf. destruct (H Hf) as (S & m1 & m2 & Hm & HS). exists S, m1, m2. split; [done|]. by apply HE'.
+    - intros (Hp & H). split; [done|]. intros Hf. destruct (H Hf) as (S & m1 & m2 & Hm & HS).
+      exists S, m1, m2. split; [done|]. by apply HE'.
     - intros (H1 & H2 & H3 & H4). split_and!; [done|done|by apply HE'|by apply HE'].
     - intros (Ha & S0 & m & T & S & H1 & H2 & H3 & H4 & H5 & H6).
       split; [done|]. exists S0, m, T, S. split_and!; try done; [intros j Hj; apply HV; [done|by apply H5]|by apply HE'].

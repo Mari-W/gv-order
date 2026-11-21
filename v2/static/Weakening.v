@@ -524,7 +524,7 @@ Proof.
   - eapply e_branch; eauto.
   - eapply e_link; eauto.
   - eapply e_spawn; eauto.
-  - apply e_new; [exact (lren_unl _ _ _ H Hr)|done].
+  - apply e_new; [exact (lren_unl _ _ _ H Hr)|done|done].
   - eapply e_new_at; eauto.
   - eapply e_sub; eauto.
   - eapply e_pack; eauto.

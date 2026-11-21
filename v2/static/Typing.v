@@ -8,9 +8,9 @@
     (theories/static/CostTyping.v). N bounds the tickets of the two ends
     of every channel, tk(o) + tk(ō) ≤ N. An end of type (S@x)^a_m has m
     tickets and credit a ≤ m, an action returns its end at credit m, and
-    E-Link asks a1 + m2 > N and a2 + m1 > N ([lgt]). A new channel at a
-    fresh root starts its ends at N/2 and N − N/2 tickets, one at a field
-    of an end with m tickets at m and N − m. Deadlock-freedom typing is
+    E-Link asks a1 + m2 > N and a2 + m1 > N ([lgt]). A new channel, at a
+    fresh root or at a field, starts its ends at any tickets m1 and m2
+    with m1 + m2 ≤ N ([tsum_ok]). Deadlock-freedom typing is
     the instance N = ∞ ([conservative] in static/Conservativity.v).
 
     No program mentions a point. [new_ℓ] opens a fresh generated root ρ
@@ -143,18 +143,17 @@ Inductive typed (W : world) (N : fuel) :
       typed W N Θ Γ Δ F e (TLolli ub lb c' TUnit TUnit a) c0 →
       fle (Some 1) a →
       typed W N Θ Γ Δ F (ESpawn e) TUnit c0
-  | e_new Γ Δ F ℓ S :
-      lenv_unl Δ → ℓ ∈ w_fams W →
+  | e_new Γ Δ F ℓ S m1 m2 :
+      lenv_unl Δ → ℓ ∈ w_fams W → tsum_ok N m1 m2 →
       typed W N ∅ Γ Δ F (ENew ℓ)
         (TEx LBot 1 (bcs_of (w_laws W ℓ))
-           (TProd (TSess S (pvar 0) (fhalf N) (fhalf N))
-                  (TSess (dual S) (pvar 0)‾ (ncap N (fhalf N)) (ncap N (fhalf N)))))
+           (TProd (TSess S (pvar 0) m1 m1) (TSess (dual S) (pvar 0)‾ m2 m2)))
         (Some 0)
-  | e_new_at Θ Γ Δ F e κ S0 x a m S c0 :
+  | e_new_at Θ Γ Δ F e κ S0 x a m S m1 m2 c0 :
       typed W N Θ Γ Δ F e (TSess S0 x a m) c0 →
-      fle m N →
+      tsum_ok N m1 m2 →
       typed W N Θ Γ Δ F (ENewAt κ e)
-        (TProd (TSess S0 x a m) (TProd (TSess S (x·κ) m m) (TSess (dual S) (x·κ)‾ (ncap N m) (ncap N m)))) c0
+        (TProd (TSess S0 x a m) (TProd (TSess S (x·κ) m1 m1) (TSess (dual S) (x·κ)‾ m2 m2))) c0
   | e_sub Θ Γ Δ F e T T' c c' :
       typed W N Θ Γ Δ F e T c → tsub T T' → fle c c' →
       typed W N Θ Γ Δ F e T' c'

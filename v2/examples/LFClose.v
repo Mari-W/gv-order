@@ -9,6 +9,7 @@
     gives lock freedom. *)
 
 From Stdlib Require Import Wf_nat.
+From GV Require Import lockfree.FairRun.
 From GV Require Import soup.LFTyped.
 
 Definition W_cl : world := World ∅ (λ _, False) ∅ (λ _ _, False).
@@ -101,6 +102,8 @@ Proof.
       W_cl_strict))).
 Qed.
 
-Theorem cl_lock_free c :
+Theorem cl_lock_free c : excluded_middle → functional_choice →
   lock_free ({[c]}, {[+ cl (c⁺)%cend +]} ⊎ {[+ cl (c⁻)%cend +]}).
-Proof. exact (lf_soundness 0 _ _ TUnit W_cl_wfworld (cl_lftyped 0 c (MkPt (NConst 0) true 0))). Qed.
+Proof.
+  intros EM FC. exact (lf_soundness 0 _ _ TUnit EM FC W_cl_wfworld (cl_lftyped 0 c (MkPt (NConst 0) true 0))).
+Qed.

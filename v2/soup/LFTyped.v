@@ -41,9 +41,12 @@ Qed.
 
 (** ** Soundness *)
 
-Theorem lf_soundness N W p T : wfworld W → ∅ ⊩^N _ W p : T → lock_free p.
+(** Excluded middle and functional choice are hypotheses of lock-free
+    adequacy (relation/ExProp.v). *)
+Theorem lf_soundness N W p T :
+  excluded_middle → functional_choice → wfworld W → ∅ ⊩^N _ W p : T → lock_free p.
 Proof.
-  intros HW Hty. apply (lf_adequacy N W T p (ptyped_strict _ _ _ _ _ (proj1 Hty)) HW).
+  intros EM FC HW Hty. apply (lf_adequacy EM FC N W T p (ptyped_strict _ _ _ _ _ (proj1 Hty)) HW).
   exact (lf_fundamental N W ∅ p T Hty).
 Qed.
 
@@ -56,15 +59,16 @@ Qed.
     ([lock_free_padovani]). *)
 
 Corollary lf_soundness_run N W p T :
-  excluded_middle → dependent_choice → wfworld W → ∅ ⊩^N _ W p : T →
+  excluded_middle → dependent_choice → functional_choice → wfworld W → ∅ ⊩^N _ W p : T →
   lock_free p ∧ ∃ r l, erase (r 0) = p ∧ maximal r l ∧ wfair r l.
 Proof.
-  intros EM DC HW Hty. split; [exact (lf_soundness N W p T HW Hty)|].
+  intros EM DC FC HW Hty. split; [exact (lf_soundness N W p T EM FC HW Hty)|].
   exact (fair_run_exists_proc EM DC p).
 Qed.
 
 Corollary lf_soundness_padovani N W p T :
-  excluded_middle → dependent_choice → wfworld W → ∅ ⊩^N _ W p : T → lf_padovani p.
+  excluded_middle → dependent_choice → functional_choice → wfworld W → ∅ ⊩^N _ W p : T →
+  lf_padovani p.
 Proof.
-  intros EM DC HW Hty. exact (lock_free_padovani EM DC p (lf_soundness N W p T HW Hty)).
+  intros EM DC FC HW Hty. exact (lock_free_padovani EM DC p (lf_soundness N W p T EM FC HW Hty)).
 Qed.

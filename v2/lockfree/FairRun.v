@@ -31,6 +31,11 @@ Definition dependent_choice : Prop :=
   ∀ (A : Type) (R : A → A → Prop), (∀ x, ∃ y, R x y) →
   ∀ x0, ∃ f : nat → A, f 0 = x0 ∧ ∀ n, R (f n) (f (S n)).
 
+(** Functional choice, the hypothesis of the existential property of the
+    transfinite step indices (relation/ExProp.v). *)
+Definition functional_choice : Prop :=
+  ∀ (A B : Type) (R : A → B → Prop), (∀ x, ∃ y, R x y) → ∃ f : A → B, ∀ x, R x (f x).
+
 (** ** Round robin over thread numbers *)
 
 Definition rr (n : nat) : nat := n - Nat.sqrt n * Nat.sqrt n.

@@ -10,22 +10,30 @@ lfsoup_step
          (n : Ix) (ev : event) (q' : config),
          a ∈ S^{N,W} _ n⟦∅ ⊢ T⟧
          → itstep (s_q a) ev q'
-           → ∀ lv : ord, olt lv n → lf_next N a ev q' ∈ S^{N,W} _ lv⟦∅ ⊢ T⟧
+           → ∀ lv : ord,
+               olt lv n
+               → ∃ tc : fuel * fuel,
+                   tsum_ok (Some N) tc.1 tc.2
+                   ∧ lf_next tc a ev q' ∈ S^{N,W} _ lv⟦∅ ⊢ T⟧
 soup_no_tau_divergence
      : ∀ (N : nat) (W : world) (T : ty) (a : lfstate),
          (∀ n : Ix, a ∈ S^{N,W} _ n⟦∅ ⊢ T⟧)
          → no_tau_divergence (erase (s_q a))
 lf_adequacy
-     : ∀ (N : nat) (W : world) (T : ty) (p : proc),
-         strict W → wfworld W → ∅ ⊪^N _W p : T → lock_free p
+     : excluded_middle
+       → functional_choice
+         → ∀ (N : nat) (W : world) (T : ty) (p : proc),
+             strict W → wfworld W → ∅ ⊪^N _W p : T → lock_free p
 lf_thread_progress
-     : ∀ (N : nat) (W : world) (T : ty) (p : proc),
-         strict W
-         → wfworld W
-           → ∅ ⊪^N _W p : T
-             → ∀ (r : nat → config) (l : nat → option event),
-                 erase (r 0) = p
-                 → maximal r l → wfair r l → thread_progress_run r l
+     : excluded_middle
+       → functional_choice
+         → ∀ (N : nat) (W : world) (T : ty) (p : proc),
+             strict W
+             → wfworld W
+               → ∅ ⊪^N _W p : T
+                 → ∀ (r : nat → config) (l : nat → option event),
+                     erase (r 0) = p
+                     → maximal r l → wfair r l → thread_progress_run r l
 λ (N : nat) (W : world) (Σ : senv) (p : proc) (T : ty), Σ ⊩^N _ W p : T
      : nat → world → senv → proc → ty → Prop
 lf_fundamental
@@ -33,4 +41,5 @@ lf_fundamental
          Σ ⊩^N _ W p : T → Σ ⊪^N _W p : T
 lf_soundness
      : ∀ (N : nat) (W : world) (p : proc) (T : ty),
-         wfworld W → ∅ ⊩^N _ W p : T → lock_free p
+         excluded_middle
+         → functional_choice → wfworld W → ∅ ⊩^N _ W p : T → lock_free p

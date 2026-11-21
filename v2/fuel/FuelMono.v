@@ -408,9 +408,11 @@ Proof.
   destruct α as [|ℓ c|κ o c|v|[o w|o w|o|o i|o i|os]]; simpl in Hs |- *;
     unfold f_beta, f_new, f_new_at, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link in *.
   - intros j Hj. by apply Hs, Hlt.
-  - intros Hf. destruct (Hs Hf) as [Sn HS]. exists Sn. intros j Hj. by apply HS, Hlt.
-  - destruct Hs as (p & Hp & Hs). exists p. split; [done|].
-    intros Hf. destruct (Hs Hf) as [Sn HS]. exists Sn. intros j Hj. by apply HS, Hlt.
+  - intros Hf. destruct (Hs Hf) as (Sn & m1 & m2 & Hm & HS). exists Sn, m1, m2. split; [done|].
+    intros j Hj. by apply HS, Hlt.
+  - destruct Hs as (Hp & Hs). split; [done|].
+    intros Hf. destruct (Hs Hf) as (Sn & m1 & m2 & Hm & HS). exists Sn, m1, m2. split; [done|].
+    intros j Hj. by apply HS, Hlt.
   - destruct Hs as (H1 & H2 & H3 & H4). split_and!; [done|done|intros j Hj; by apply H3, Hlt
       |intros j Hj; by apply H4, Hlt].
   - destruct Hs as (Ha & S0 & m' & T & Sc & H1 & H2 & H3 & H4 & H5 & H6).
@@ -480,12 +482,12 @@ Proof.
   destruct α as [|ℓ c|κ o c|v|[o w|o w|o|o i|o i|os]]; simpl in Hs |- *;
     unfold f_beta, f_new, f_new_at, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link in *.
   - eapply IHn; [done..].
-  - intros Hf. destruct (Hs (ffresh_cle _ _ _ _ Hc0 Hf)) as [Sn HS]. exists Sn.
-    eapply IHn; [done|by apply cle_cnew|done].
-  - destruct Hs as (p & Hp & Hs). destruct (cle_lookup _ _ _ _ Hc0 Hp) as (p' & Hp' & [_ E]).
-    exists p'. split; [done|]. rewrite E.
-    intros Hf. destruct (Hs (ffresh_cle _ _ _ _ Hc0 Hf)) as [Sn HS]. exists Sn.
-    eapply IHn; [done|by apply cle_cnew|done].
+  - intros Hf. destruct (Hs (ffresh_cle _ _ _ _ Hc0 Hf)) as (Sn & m1 & m2 & Hm & HS). exists Sn, m1, m2.
+    split; [done|]. eapply IHn; [done|by apply cle_cnew|done].
+  - destruct Hs as ([p Hp] & Hs). destruct (cle_lookup _ _ _ _ Hc0 Hp) as (p' & Hp' & _).
+    split; [by exists p'|].
+    intros Hf. destruct (Hs (ffresh_cle _ _ _ _ Hc0 Hf)) as (Sn & m1 & m2 & Hm & HS). exists Sn, m1, m2.
+    split; [done|]. eapply IHn; [done|by apply cle_cnew|done].
   - destruct Hs as (H1 & H2 & H3 & H4). split_and!.
     + by rewrite <-(cle_dom _ _ Hc0).
     + by eapply fspare_mono.
