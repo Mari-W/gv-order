@@ -28,6 +28,7 @@ static/Constants.v
 static/Weakening.v
 static/PointSubst.v
 static/Inversion.v
+static/Sinst.v
 test/TypeNotations.v
 examples/Tools.v
 examples/ClientServer.v
