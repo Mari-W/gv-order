@@ -68,7 +68,7 @@ Proof. apply soup_fmap. Qed.
 Section links.
   Context (κ : ctable) (n : Ix) (W1 : world) (T : ty) (X1 X2 : prel).
   Context (Σ1 ΣC Σ2 ΣD : senv) (q1 q2 : proc) (CC : cctx κ n W1 T X1 X2 Σ1 ΣC Σ2 ΣD q1 q2).
-  Let HS := cc_HS CC. Let HT := cc_HT CC. Let Hc := cc_Hc CC.
+  Let HT := cc_HT CC. Let Hc := cc_Hc CC.
   Let H1 := cc_H1 CC. Let H2 := cc_H2 CC. Let L := cc_L CC.
   Let X1P := cc_X1P CC. Let X2P := cc_X2P CC. Let HP1 := cc_HP1 CC. Let HP2 := cc_HP2 CC.
   Let G1 := cc_G1 CC. Let G2 := cc_G2 CC.

@@ -11,7 +11,7 @@ From GV Require Import fuel.FuelMono.
 Section core.
   Context (κ : ctable) (n : Ix) (W1 : world) (T : ty) (X1 X2 : prel).
   Context (Σ1 ΣC Σ2 ΣD : senv) (q1 q2 : proc) (CC : cctx κ n W1 T X1 X2 Σ1 ΣC Σ2 ΣD q1 q2).
-  Let HS := cc_HS CC. Let HT := cc_HT CC. Let Hc := cc_Hc CC.
+  Let HT := cc_HT CC. Let Hc := cc_Hc CC.
   Let H1 := cc_H1 CC. Let H2 := cc_H2 CC. Let L := cc_L CC.
   Let X1P := cc_X1P CC. Let X2P := cc_X2P CC. Let HP1 := cc_HP1 CC. Let HP2 := cc_HP2 CC.
   Let G1 := cc_G1 CC. Let G2 := cc_G2 CC.
@@ -52,7 +52,7 @@ Section core.
     M1 ##ₘ M2 → soup M1 = q1.2 → soup M2 = q2.2 →
     istep (q1.1 ∪ q2.1 ∪ K, M1 ∪ M2) ev q' → ev_tau ev → ev_local q1.1 M1 ev →
     q'.1 ## chans_of (Σ1 ∪ Σ2) →
-    at_cost_P n (ev_cost κ ev) (Prel κ) (Prel κ n) W1 (Σ1 ∪ Σ2) T (erase q').
+    ∃ W', W1 ⊑ W' ∧ at_cost_P n (ev_cost κ ev) (Prel κ) (Prel κ n) W' (Σ1 ∪ Σ2) T (erase q').
   Proof.
     intros Hd HM1 HM2 Hst Hτ Hloc Hfr.
     assert (q1.1 ## q2.1 ∪ K) as HC12 by (destruct Hc; cc_set_solver).
@@ -60,7 +60,7 @@ Section core.
     destruct (ev_ren_ok1 ev) as [Hgd Hgid].
     { destruct ev as [? ? [| |? ?]| |]; simpl; try done. by destruct Hloc as [_ ?]. }
     destruct H1 as (_ & _ & Ht1 & _).
-    destruct (Ht1 (q1.1, M1) ev q1' (Hq1e M1 HM1) Hst1 Hτ) as [A0 A1].
+    destruct (Ht1 (q1.1, M1) ev q1' (Hq1e M1 HM1) Hst1 Hτ) as (W' & HW' & A0 & A1).
     { rewrite chans_of_union. simpl in Hfr. rewrite chans_of_union in Hfr. unfold erase. simpl. cc_set_solver. }
     assert (erase (q1'.1 ∪ q2.1 ∪ K, q1'.2 ∪ (emap (ev_ren ev) <$> M2)) =
       pconn (erase q1') (pmap (ev_ren ev) q2) K) as He.
@@ -72,12 +72,12 @@ Section core.
     { destruct (ren_held_id _ _ _ Hgd Hgid) as (_ & _ & ->). apply (conn_C1 _ _ q1.1); [done| |].
       - unfold erase. simpl. cc_set_solver.
       - unfold erase. simpl. rewrite chans_of_union in Hfr. simpl in Hfr. cc_set_solver. }
-    split.
+    exists W'. split; [done|]. split.
     - intros Hc0. pose proof (A0 Hc0) as HX.
-      pose proof (G1 (erase q1') (Σ1 ∪ ΣC) id ∅ Σ1 ΣC Σ2 ΣD (pmap (ev_ren ev) q2) HX (fuse_ok_id _ _)) as HG.
+      pose proof (cc_G1W CC W' (erase q1') (Σ1 ∪ ΣC) id ∅ Σ1 ΣC Σ2 ΣD (pmap (ev_ren ev) q2) HW' HX (fuse_ok_id _ _)) as HG.
       rewrite sdrop_empty, kren_id_map, pfuse_empty, pmap_id in HG.
-      apply HG; [done|by apply HP2r|done].
-    - intros Hc0 j Hj. apply (L j (oadd_lt _ _ _ Hc0 Hj) Σ1 ΣC Σ2 ΣD); [by apply A1|apply HP2r; [done|done|exact (olt_ole _ _ (oadd_lt _ _ _ Hc0 Hj))]|done].
+      apply HG; [done|eapply Prel_mono; [exact HW'|by apply HP2r]|done].
+    - intros Hc0 j Hj. apply (cc_LW CC j W' (oadd_lt _ _ _ Hc0 Hj) Σ1 ΣC Σ2 ΣD); [by apply A1|eapply Prel_mono; [exact HW'|apply HP2r; [done|done|exact (olt_ole _ _ (oadd_lt _ _ _ Hc0 Hj))]]|done].
   Qed.
 
   Local Lemma ev_ren_ok2 ev : (match ev with EvSolo _ _ (PickLink o1 _) => ech o1 ∈ q2.1 | _ => True end) →
@@ -93,7 +93,7 @@ Section core.
     M1 ##ₘ M2 → soup M1 = q1.2 → soup M2 = q2.2 →
     istep (q1.1 ∪ q2.1 ∪ K, M1 ∪ M2) ev q' → ev_tau ev → ev_local q2.1 M2 ev →
     q'.1 ## chans_of (Σ1 ∪ Σ2) →
-    at_cost_P n (ev_cost κ ev) (Prel κ) (Prel κ n) W1 (Σ1 ∪ Σ2) T (erase q').
+    ∃ W', W1 ⊑ W' ∧ at_cost_P n (ev_cost κ ev) (Prel κ) (Prel κ n) W' (Σ1 ∪ Σ2) T (erase q').
   Proof.
     intros Hd HM1 HM2 Hst Hτ Hloc Hfr.
     assert (q2.1 ## q1.1 ∪ K) as HC21 by (destruct Hc; cc_set_solver).
@@ -104,7 +104,7 @@ Section core.
     destruct (ev_ren_ok2 ev) as [Hgd Hgid].
     { destruct ev as [? ? [| |? ?]| |]; simpl; try done. by destruct Hloc as [_ ?]. }
     destruct H2 as (_ & _ & Ht2 & _).
-    destruct (Ht2 (q2.1, M2) ev q2' (Hq2e M2 HM2) Hst2 Hτ) as [A0 A1].
+    destruct (Ht2 (q2.1, M2) ev q2' (Hq2e M2 HM2) Hst2 Hτ) as (W' & HW' & A0 & A1).
     { rewrite chans_of_union. simpl in Hfr. rewrite chans_of_union in Hfr. unfold erase. simpl.
       rewrite (cut_dual_chans ΣC ΣD) by (by destruct Hc). cc_set_solver. }
     destruct (ren_held_id _ _ _ Hgd Hgid) as (Hok & Hk & E1).
@@ -118,12 +118,12 @@ Section core.
     { rewrite E1. apply (conn_C2 _ _ _ _ _ q2.1); [done| |].
       - unfold erase. simpl. cc_set_solver.
       - unfold erase. simpl. rewrite chans_of_union in Hfr. simpl in Hfr. cc_set_solver. }
-    split.
+    exists W'. split; [done|]. split.
     - intros Hc0. pose proof (A0 Hc0) as HX.
-      pose proof (G2 (erase q2') (Σ2 ∪ ΣD) id ∅ Σ1 ΣC Σ2 ΣD (ev_ren ev) ∅ HX (fuse_ok_id _ _)) as HG.
+      pose proof (cc_G2W CC W' (erase q2') (Σ2 ∪ ΣD) id ∅ Σ1 ΣC Σ2 ΣD (ev_ren ev) ∅ HW' HX (fuse_ok_id _ _)) as HG.
       rewrite !sdrop_empty, !pfuse_empty, kren_id_map, pmap_id, Hk in HG.
       apply HG; [done|by apply pren_fuse_ok|done|done].
-    - intros Hc0 j Hj. apply (L j (oadd_lt _ _ _ Hc0 Hj) Σ1 ΣC Σ2 ΣD); [apply HP1r; [done|done|exact (olt_ole _ _ (oadd_lt _ _ _ Hc0 Hj))]|by apply A1|done].
+    - intros Hc0 j Hj. apply (cc_LW CC j W' (oadd_lt _ _ _ Hc0 Hj) Σ1 ΣC Σ2 ΣD); [eapply Prel_mono; [exact HW'|apply HP1r; [done|done|exact (olt_ole _ _ (oadd_lt _ _ _ Hc0 Hj))]]|by apply A1|done].
   Qed.
 
   Local Lemma at_cost_down c Σ T' p j : at_cost_P n c (Prel κ) (λ W Σ T p, X1 W Σ T p ∨ X2 W Σ T p) W1 Σ T' p →

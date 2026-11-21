@@ -12,7 +12,7 @@
     A message across the cut is Q-Send of one side and Q-Recv of the
     other. A link of a cut end renames or fuses the other side by the
     clause (fuse). Readiness of the composite is a chain of cut ends
-    whose points descend in a strict world, so it stops at an offer of
+    whose points descend in a ranked world, so it stops at an offer of
     the interface. *)
 
 From GV Require Export compat.Conv.
@@ -113,15 +113,16 @@ Proof.
     + done.
 Qed.
 
-(** ** Chains in a strict world stop
+(** ** Chains stop
 
     Over a finite list of points, ≺ restricted to the list is well
-    founded in a strict world. No decision of ≺ is needed. *)
+    founded, because a ranked world is irreflexive. No decision of ≺ is
+    needed. *)
 
 Lemma finite_lt_acc (W : world) (X : list point) :
-  strict W → ∀ y, Acc (λ a b, a ∈ X ∧ W ⊢ a ≺ b) y.
+  ∀ y, Acc (λ a b, a ∈ X ∧ W ⊢ a ≺ b) y.
 Proof.
-  intros [_ Hirr]. induction X as [|x X IH]; intros y.
+  pose proof (w_lt_irrefl W) as Hirr. induction X as [|x X IH]; intros y.
   - constructor. intros a [Ha _]. by apply not_elem_of_nil in Ha.
   - assert (∀ b, ¬ W ⊢ x ≺ b → Acc (λ a b, a ∈ x :: X ∧ W ⊢ a ≺ b) b) as Hnot.
     { intros b. induction (IH b) as [b _ IHb]. intros Hb. constructor. intros a [Ha Hab].
@@ -134,16 +135,10 @@ Qed.
 
 (** ** Steps of one component inside the composite *)
 
-Lemma new_retarget e ℓ c e' c' : tstep e (LNew ℓ c) e' → ∃ e'', tstep e (LNew ℓ c') e''.
+Lemma new_retarget e c e' c' : tstep e (LNew c) e' → ∃ e'', tstep e (LNew c') e''.
 Proof.
   intros H. destruct (act_step _ _ _ H) as (a & Ha & Ho). apply offers_new in Ho as ->.
   by apply (act_offer _ _ _ Ha).
-Qed.
-
-Lemma new_at_retarget e κf o c e' c' : tstep e (LNewAt κf o c) e' → ∃ e'', tstep e (LNewAt κf o c') e''.
-Proof.
-  intros H. destruct (act_step _ _ _ H) as (a & Ha & Ho). apply offers_new_at in Ho as ->.
-  apply (act_offer _ _ _ Ha). by split.
 Qed.
 
 (** Every lifting of a composite splits into liftings of the two
@@ -166,11 +161,8 @@ Proof.
   inversion Hst; subst; try (exfalso; by unfold ev_tau in Hτ).
   - eexists _, _. split; [eapply p_act_beta; eauto|done].
   - destruct (exist_fresh (C ∪ echans (soup (M1 ∪ M2)))) as [c' Hc'].
-    match goal with H : tstep _ (LNew _ _) _ |- _ => destruct (new_retarget _ _ _ _ c' H) as [e'' He''] end.
+    match goal with H : tstep _ (LNew _) _ |- _ => destruct (new_retarget _ _ _ c' H) as [e'' He''] end.
     eexists _, _. split; [eapply p_act_new; [eauto|eauto|set_solver|set_solver]|done].
-  - destruct (exist_fresh (C ∪ echans (soup (M1 ∪ M2)))) as [c' Hc'].
-    match goal with H : tstep _ (LNewAt _ _ _) _ |- _ => destruct (new_at_retarget _ _ _ _ _ c' H) as [e'' He''] end.
-    eexists _, _. split; [eapply p_act_new_at; [eauto|eauto|set_solver|set_solver]|done].
   - destruct (exist_fresh (dom (M1 ∪ M2))) as [j' Hj'].
     eexists _, _. split; [eapply p_act_spawn; [eauto|eauto|by apply not_elem_of_dom]|done].
   - eexists _, _. split; [eapply p_act_msg; eauto|done].
@@ -478,7 +470,7 @@ Lemma lookup_union_disj_r (m1 m2 : senv) o v : m1 ##ₘ m2 → m2 !! o = Some v 
 Proof. intros Hd H. by apply lookup_union_Some_r. Qed.
 
 Section rdy.
-  Context (κ : ctable) (n : Ix) (W1 : world) (HS : strict W1) (T1 T2 : ty) (X1 X2 : prel).
+  Context (κ : ctable) (n : Ix) (W1 : world) (T1 T2 : ty) (X1 X2 : prel).
   Context (Σ1 ΣC Σ2 ΣD : senv) (q1 q2 : proc) (Hc : conn Σ1 ΣC q1.1 Σ2 ΣD q2.1).
   Context (H1 : Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) X1 W1 (Σ1 ∪ ΣC) T1 q1).
   Context (H2 : Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) X2 W1 (Σ2 ∪ ΣD) T2 q2).
@@ -534,7 +526,7 @@ Section rdy.
              (ΣD !! e = Some (S, y) ∧ offered_p (Σ2 ∪ ΣD) q2 e) →
     ∃ o' S' y', offered_p (Σ1 ∪ Σ2) pc o' ∧ (Σ1 ∪ Σ2) !! o' = Some (S', y') ∧ W1 ⊢ y' ≺ y.
   Proof.
-    intros y. induction (finite_lt_acc W1 (pts ΣC ++ pts ΣD) HS y) as [y _ IH].
+    intros y. induction (finite_lt_acc W1 (pts ΣC ++ pts ΣD) y) as [y _ IH].
     pose proof Hc as Hc0. destruct Hc0 as [_ _ Hcut ? ? HfC ? ? ? ? ? ?].
     pose proof (cut_dual_sym _ _ HfC Hcut) as Hcut'.
     intros e S [[He Ho]|[He Ho]].
@@ -700,10 +692,6 @@ Proof.
     { intros Hc. match goal with H : c ∉ echans _ |- _ => apply H end. rewrite soup_union by done.
       rewrite echans_disj_union. set_solver. }
     simpl. rewrite fmap_emap_id. split; [f_equal; [set_solver|by rewrite insert_union_l]|]. split; [set_solver|]. split; [set_solver|]. apply map_disjoint_dom; rewrite ?dom_fmap_L, ?dom_insert_L; apply map_disjoint_dom in Hd; repeat match goal with H : (M1 ∪ M2) !! _ = None |- _ => apply lookup_union_None in H as [? ?] end; repeat match goal with H : _ !! _ = None |- _ => apply not_elem_of_dom in H end; set_solver.
-  - eexists (_, _). split; [eapply p_act_new_at; [apply Hlk; [eassumption|set_solver]|eassumption|set_solver|]|].
-    { intros Hc. match goal with H : c ∉ echans _ |- _ => apply H end. rewrite soup_union by done.
-      rewrite echans_disj_union. set_solver. }
-    simpl. rewrite fmap_emap_id. split; [f_equal; [set_solver|by rewrite insert_union_l]|]. split; [set_solver|]. split; [set_solver|]. apply map_disjoint_dom; rewrite ?dom_fmap_L, ?dom_insert_L; apply map_disjoint_dom in Hd; repeat match goal with H : (M1 ∪ M2) !! _ = None |- _ => apply lookup_union_None in H as [? ?] end; repeat match goal with H : _ !! _ = None |- _ => apply not_elem_of_dom in H end; set_solver.
   - eexists (_, _). split; [eapply p_act_spawn; [apply Hlk; [eassumption|set_solver]|eassumption|]|].
     { match goal with H : (M1 ∪ M2) !! j = None |- _ => apply lookup_union_None in H as [? _]; done end. }
     simpl. rewrite fmap_emap_id. split; [by rewrite !insert_union_l|]. split; [set_solver|]. split; [set_solver|]. apply map_disjoint_dom; rewrite ?dom_fmap_L, ?dom_insert_L; apply map_disjoint_dom in Hd; repeat match goal with H : (M1 ∪ M2) !! _ = None |- _ => apply lookup_union_None in H as [? ?] end; repeat match goal with H : _ !! _ = None |- _ => apply not_elem_of_dom in H end; set_solver.
@@ -725,9 +713,9 @@ Definition Φfuse (Φ : prel) : prel :=
 Lemma Pbody_fuse κ n Vl Pl VN X W Σ T p h D :
   fuse_ok h D Σ p → Pbody κ n Vl Pl VN X W Σ T p → Pbody κ n Vl Pl VN X W (sdrop D (kren h Σ)) T (pfuse h D p).
 Proof.
-  intros Hh HP W1 HW1 HS1 g D' Hg.
+  intros Hh HP W1 HW1 g D' Hg.
   rewrite (fuse_sdrop_compose h g D D' Σ p Hh Hg), (pfuse_compose h g D D' Σ p Hh Hg).
-  apply HP; [done|done|]. by apply fuse_ok_compose.
+  apply HP; [done|]. by apply fuse_ok_compose.
 Qed.
 
 Lemma Prel_ind_fuse κ n (Φ : prel) : olt ozero n →
