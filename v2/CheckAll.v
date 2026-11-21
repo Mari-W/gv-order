@@ -12,7 +12,7 @@ From GV Require Import examples.GuardEx examples.LFClose examples.LFCycle exampl
 From GV Require Import examples.LFFreshMany examples.LFClientServer examples.LFFactoryEx examples.LFGrowRing.
 From GV Require Import examples.LFController soup.SoupRun soup.SoupTau soup.LFAdequacy.
 From GV Require Import soup.LFCompose soup.LFTyped lockfree.FairRun.
-From GV Require Import examples.SemBranch static.Inversion relation.Ord.
+From GV Require Import examples.SemBranch static.Inversion relation.Ord relation.ExProp examples.LFLink.
 
 (** types/Points.v *)
 Print Assumptions pt_dual_dual.
@@ -128,6 +128,9 @@ Print Assumptions ctl_typedN.
 Print Assumptions ctl_guarded.
 Print Assumptions ctl_lftyped.
 Print Assumptions ctl_lock_free.
+(** examples/LFLink.v *)
+Print Assumptions lk_new.
+Print Assumptions lk_typed.
 (** soup/SoupRun.v *)
 Print Assumptions lfsoup_step.
 (** soup/SoupTau.v *)
