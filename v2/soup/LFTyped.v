@@ -3,6 +3,8 @@
 
       lf_fundamental : Σ ⊩^N _ W p : T → Σ ⊪_W p : T
       lf_soundness   : wfworld W → ∅ ⊩^N _ W p : T → lock_free p
+      lf_soundness_run : with excluded middle and dependent choice, also
+                       a maximal weakly fair run starts from p
 
     Σ ⊩^N _ W p : T is process typing [ptyped] at Some N together with
     the guard of every thread, ⊢▷ p. P-Term of [ptyped] asks at a finite
@@ -12,7 +14,7 @@
     [fsem_of_cost] and the live relation through
     [live_fundamental_typed], inside [lf_p_term]. *)
 
-From GV Require Import soup.LFAdequacy.
+From GV Require Import soup.LFAdequacy lockfree.FairRun.
 From GV Require Export soup.LFCompose static.FundamentalProc.
 
 Notation "Σ ⊩^ N '_' W p : T" := (ptyped (Some N) W Σ p T ∧ ⊢▷ p)
@@ -42,3 +44,18 @@ Proof.
   intros HW Hty. apply (lf_adequacy W T p (ptyped_strict _ _ _ _ _ (proj1 Hty)) HW).
   exact (lf_fundamental N W ∅ p T Hty).
 Qed.
+
+(** ** Soundness with a run
+
+    [lock_free p] quantifies over every maximal weakly fair run. With
+    excluded middle and dependent choice as hypotheses such a run exists
+    ([fair_run_exists_proc]), so the statement is not vacuous. *)
+
+Corollary lf_soundness_run N W p T :
+  excluded_middle → dependent_choice → wfworld W → ∅ ⊩^N _ W p : T →
+  lock_free p ∧ ∃ r l, erase (r 0) = p ∧ maximal r l ∧ wfair r l.
+Proof.
+  intros EM DC HW Hty. split; [exact (lf_soundness N W p T HW Hty)|].
+  exact (fair_run_exists_proc EM DC p).
+Qed.
+

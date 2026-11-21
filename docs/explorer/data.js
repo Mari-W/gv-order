@@ -1256,12 +1256,12 @@ window.MAP = {
     {
      "id": "th-sound",
      "title": "Soundness",
-     "rocq": "static/FundamentalProc.v: soundness; soup/LFTyped.v: lf_soundness",
+     "rocq": "static/FundamentalProc.v: soundness; soup/LFTyped.v: lf_soundness, lf_soundness_run; lockfree/FairRun.v: fair_run_exists",
      "modes": [
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.soundness}{\\begin{array}{l}\\varnothing \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness}{\\begin{array}{l}\\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\end{array}",
+     "tex": "\\begin{array}{l}\\htmlData{k=th.soundness}{\\begin{array}{l}\\varnothing \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness}{\\begin{array}{l}\\htmlData{k=th.wfworld}{\\mathsf{wfworld}}\\,W \\land \\varnothing \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}} \\\\[1.5ex] \\htmlData{k=th.fair-run-exists}{\\begin{array}{l}\\mathsf{EM} \\land \\mathsf{DC} \\\\ \\quad\\Longrightarrow\\ \\exists (r, l).\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,(r\\,0) = p \\land \\htmlData{k=prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\htmlData{k=prop.wfair}{\\mathsf{wfair}}\\,(r, l)\\end{array}}\\end{array}",
      "caption": "A closed typed process is deadlock free in a strict world. \\annp{A closed process typed at a finite counter bound, with each thread guarded, is lock free in a strict and well-founded world.}",
      "about": {
       "why": "These are the main results."
@@ -11221,6 +11221,33 @@ window.MAP = {
     {
      "name": "tk",
      "meaning": "a ticket count with $\\vartheta(0) \\in \\mathbb{N}$"
+    }
+   ]
+  },
+  "th.fair-run-exists": {
+   "title": "A maximal weakly fair run exists",
+   "what": "Assume excluded middle and dependent choice. For every configuration $q$ there is a run $(r, l)$ with $r\\,0 = q$, $\\mathsf{maximal}\\,(r, l)$ and $\\mathsf{wfair}\\,(r, l)$. Hence every process $p$ has such a run with $\\mathsf{erase}(r\\,0) = p$, and lock-free soundness also gives one for every typed $p$.",
+   "why": "The scheduler goes round robin over thread numbers and at each position takes a step of the targeted thread when that thread is enabled. Dependent choice picks the steps and excluded middle decides enabledness. Lock freedom still quantifies over every such run.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "Two threads $\\ast$ and $\\ast$ start a maximal weakly fair run.",
+   "rocq": "lockfree/FairRun.v: fair_run_exists, fair_run_exists_proc; soup/LFTyped.v: lf_soundness_run",
+   "sig": "\\mathsf{EM} \\land \\mathsf{DC} \\Rightarrow \\exists (r, l).\\ r\\,0 = q \\land \\mathsf{maximal}\\,(r, l) \\land \\mathsf{wfair}\\,(r, l)",
+   "args": [
+    {
+     "name": "\\mathsf{EM}",
+     "meaning": "excluded middle, $P \\lor \\lnot P$ for every proposition $P$, a hypothesis and no axiom"
+    },
+    {
+     "name": "\\mathsf{DC}",
+     "meaning": "dependent choice, a total relation on a type has an infinite chain from every element, a hypothesis and no axiom"
+    },
+    {
+     "name": "q",
+     "meaning": "a configuration, a lifting of $p$ for the process form"
+    },
+    {
+     "name": "(r, l)",
+     "meaning": "a run, $r\\,i$ the configuration and $l\\,i$ the event at position $i$"
     }
    ]
   },

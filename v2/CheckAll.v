@@ -11,7 +11,7 @@ From GV Require Import compat.ConnectP compat.PTerm static.Fundamental static.Fu
 From GV Require Import examples.GuardEx examples.LFClose examples.LFCycle examples.LFFreshBetween.
 From GV Require Import examples.LFFreshMany examples.LFClientServer examples.LFFactoryEx examples.LFGrowRing.
 From GV Require Import examples.LFController soup.SoupRun soup.SoupTau soup.LFAdequacy.
-From GV Require Import soup.LFCompose soup.LFTyped.
+From GV Require Import soup.LFCompose soup.LFTyped lockfree.FairRun.
 
 (** types/Points.v *)
 Print Assumptions pt_dual_dual.
@@ -141,3 +141,7 @@ Print Assumptions lf_soundness_source.
 (** soup/LFTyped.v *)
 Print Assumptions lf_fundamental.
 Print Assumptions lf_soundness.
+Print Assumptions lf_soundness_run.
+(** lockfree/FairRun.v *)
+Print Assumptions fair_run_exists.
+Print Assumptions fair_run_exists_proc.
