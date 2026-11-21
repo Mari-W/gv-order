@@ -3,7 +3,7 @@
     Two structural lemmas of the judgment [typed].
 
     - [typed_wext]: a derivation at W is a derivation at every extension
-      W ⊑ W'. Every fact the judgment reads is monotone in W. E-New reads
+      W ⊑ₛ W'. Every fact the judgment reads is monotone in W. E-New reads
       the laws of W, and an existential may drop facts of its constraint,
       so E-New at W' followed by E-Sub gives the type at W.
     - [typed_rename]: a renaming of term variables that moves every entry
@@ -18,7 +18,7 @@ From GV Require Export static.Conservativity.
 (** ** Monotonicity in the world *)
 
 Section wext.
-  Context (W W' : world) (HW : W ⊑ W').
+  Context (W W' : sworld) (HW : W ⊑ₛ W').
 
 End wext.
 
@@ -525,7 +525,7 @@ Proof.
   - eapply e_link; eauto.
   - eapply e_spawn; eauto.
   - apply e_new; [exact (lren_unl _ _ _ H Hr)|done|done].
-  - eapply e_new_at; eauto.
+  - apply e_new_fld; [exact (lren_unl _ _ _ H Hr)|done].
   - eapply e_sub; eauto.
   - eapply e_pack; eauto.
   - (* E-Open *)

@@ -13,9 +13,12 @@
     with m1 + m2 ≤ N ([tsum_ok]). Deadlock-freedom typing is
     the instance N = ∞ ([conservative] in static/Conservativity.v).
 
-    No program mentions a point. [new_ℓ] opens a fresh generated root ρ
-    of family ℓ with the laws Λ_ℓ(ρ) of W (E-New), [new_κ o] creates at
-    the field x·κ of the point x of o and returns o (E-NewAt). Every
+    No program mentions a point. Plain [new] creates at a fresh root ρ
+    with a constraint C under (wf-new) and returns the pair under ∃ρ. C
+    (E-New), or at a field x·κ of any point x (E-New-Field). A field
+    creation picks no constraint, because the facts about x·κ were fixed
+    with the root of x, so its existential would bind nothing and assume
+    only what Γ entails. Every
     primitive has its own rule (E-Send, …, E-Force). A constant k passed as
     a function is its eta-expansion λy. k y, which types by E-Abs over the
     rule of k (static/Constants.v).
@@ -35,12 +38,12 @@
     the derived form [ELet] of lang/Syntax.v, and E-Let and D-Let are
     admissible ([e_let] and [d_let] in static/Weakening.v). [ptyped] is process typing with P-Term and P-Connect
     in the two-world form. P-Connect compares the two worlds only at
-    their shared roots, and every derivation sits over a strict world
-    ([ptyped_strict]). *)
+    their shared roots, and every derivation sits over a well-founded
+    world ([ptyped_wf]). *)
 
 From GV Require Export static.Contexts.
 
-Inductive typed (W : world) (N : fuel) :
+Inductive typed (W : sworld) (N : fuel) :
     tenv → hctx → lenv → sfuture → expr → ty → fuel → Prop :=
   | e_unit Γ Δ F :
       lenv_unl Δ →
@@ -143,17 +146,15 @@ Inductive typed (W : world) (N : fuel) :
       typed W N Θ Γ Δ F e (TLolli ub lb c' TUnit TUnit a) c0 →
       fle (Some 1) a →
       typed W N Θ Γ Δ F (ESpawn e) TUnit c0
-  | e_new Γ Δ F ℓ S m1 m2 :
-      lenv_unl Δ → ℓ ∈ w_fams W → tsum_ok N m1 m2 →
-      typed W N ∅ Γ Δ F (ENew ℓ)
-        (TEx LBot 1 (bcs_of (w_laws W ℓ))
-           (TProd (TSess S (pvar 0) m1 m1) (TSess (dual S) (pvar 0)‾ m2 m2)))
+  | e_new Γ Δ F C S m1 m2 :
+      lenv_unl Δ → wf_new C → tsum_ok N m1 m2 →
+      typed W N ∅ Γ Δ F ENew
+        (TEx LBot 1 C (TProd (TSess S (pvar 0) m1 m1) (TSess (dual S) (pvar 0)‾ m2 m2)))
         (Some 0)
-  | e_new_at Θ Γ Δ F e κ S0 x a m S m1 m2 c0 :
-      typed W N Θ Γ Δ F e (TSess S0 x a m) c0 →
-      tsum_ok N m1 m2 →
-      typed W N Θ Γ Δ F (ENewAt κ e)
-        (TProd (TSess S0 x a m) (TProd (TSess S (x·κ) m1 m1) (TSess (dual S) (x·κ)‾ m2 m2))) c0
+  | e_new_fld Γ Δ F x κ S m1 m2 :
+      lenv_unl Δ → tsum_ok N m1 m2 →
+      typed W N ∅ Γ Δ F ENew
+        (TProd (TSess S (x·κ) m1 m1) (TSess (dual S) (x·κ)‾ m2 m2)) (Some 0)
   | e_sub Θ Γ Δ F e T T' c c' :
       typed W N Θ Γ Δ F e T c → tsub T T' → fle c c' →
       typed W N Θ Γ Δ F e T' c'
@@ -176,7 +177,7 @@ Inductive typed (W : world) (N : fuel) :
     (static/Conservativity.v), and [conservative] shows that any
     derivation at N = ∞ gives one. *)
 
-Definition dftyped (W : world) (Θ : tenv) (Γ : hctx) (Δ : lenv) (F : sfuture) (e : expr) (T : ty) : Prop :=
+Definition dftyped (W : sworld) (Θ : tenv) (Γ : hctx) (Δ : lenv) (F : sfuture) (e : expr) (T : ty) : Prop :=
   typed W None (tenv_df Θ) Γ (lenv_df Δ) F e (ty_df T) None.
 
 (** ** Process typing
@@ -186,15 +187,13 @@ Definition dftyped (W : world) (Θ : tenv) (Γ : hctx) (Δ : lenv) (F : sfuture)
     end at credit equal to its tickets, the tickets of the two ends of a
     channel summing to at most N. The interface ends sit at credit and
     tickets N/2, so a cut of P-Connect also meets the bound. P-Term asks
-    its world strict.
-    P-Connect composes two components typed at their own worlds, whose
-    families are apart, over the cut Σ_C, and asks only the restrictions
-    of the two worlds to their shared roots S = A_{W1} ∩ A_{W2} strict
-    together (entry 13 of docs/redesign/pending.md). Both components sit
-    over strict worlds by induction, so the join is strict
-    ([strict_join_iff], [ptyped_strict]) and the earlier form of the
-    rule, which asked the join strict, is admissible
-    ([p_connect_join]). *)
+    its world well formed and well-founded.
+    P-Connect composes two components typed at their own worlds over the
+    cut Σ_C, and asks only the restrictions of the two worlds to their
+    shared roots S = A_{W1} ∩ A_{W2} well-founded together. Both
+    components sit over well-founded worlds by induction, so the join is
+    well-founded ([wf_join_iff], [ptyped_wf]) and the form of the rule
+    that asks the join well-founded is admissible ([p_connect_join]). *)
 
 Definition chans_of (Σ : senv) : gset chan := set_map ech (dom Σ).
 
@@ -219,14 +218,14 @@ Proof.
   subst. destruct o; discriminate.
 Qed.
 
-Inductive ptyped (N : fuel) : world → senv → proc → ty → Prop :=
+Inductive ptyped (N : fuel) : sworld → senv → proc → ty → Prop :=
   | p_term W Σ ΘB C0 t T c :
       tfree T →
       (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 → pfree Σ →
       (∀ c, c ∈ C0 → ∃ S x m m', tsum_ok N m m' ∧
          ΘB !! (c⁺)%cend = Some (TE S x m m) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ m' m')) →
       typed W N (tenv_of (fhalf N) Σ ∪ ΘB) hc_empty [] (∅, None) t T c →
-      strict W →
+      sworld_wf W ∧ swf W →
       ptyped N W Σ (C0, {[+ t +]}) T
   | p_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
       ptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →
@@ -235,8 +234,7 @@ Inductive ptyped (N : fuel) : world → senv → proc → ty → Prop :=
       (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
       chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
       C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
-      w_fams W1 ## w_fams W2 →
-      strict (wrestrict W1 (wshared W1 W2) ⊔ wrestrict W2 (wshared W1 W2)) →
+      swf (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)) →
       ptyped N (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
 
 (** ** Notations (Appendix A) *)
@@ -255,15 +253,16 @@ Notation "Σ ⊢_ W p : T" := (ptyped None W Σ p T)
   (at level 74, W at level 0, p at level 60, T at level 60,
    format "Σ  ⊢_ W  p  :  T").
 
-(** Every process derivation sits over a strict world. *)
-Lemma ptyped_strict N W Σ p T : ptyped N W Σ p T → strict W.
+(** Every process derivation sits over a well-formed, well-founded world. *)
+Lemma ptyped_wf N W Σ p T : ptyped N W Σ p T → sworld_wf W ∧ swf W.
 Proof.
-  induction 1 as [|W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 _ _ _ _ _ _ _ _ _ Hfam HS]; [done|].
-  apply (strict_join_iff W1 W2 (proj1 IH1) (proj1 IH2) Hfam). by split_and!.
+  induction 1 as [|W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 _ _ _ _ _ _ _ _ _ HS]; [done|].
+  split; [by apply swjoin_wf; [apply IH1|apply IH2]|].
+  apply (wf_join_iff W1 W2 (proj1 IH1) (proj1 IH2)). split_and!; [apply IH1|apply IH2|done].
 Qed.
 
-(** The earlier P-Connect, which asked the join strict and both worlds
-    well formed, is admissible. *)
+(** P-Connect asking the join well-founded and both worlds well formed
+    is admissible. *)
 Lemma p_connect_join N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
   ptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →
   ptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
@@ -271,12 +270,13 @@ Lemma p_connect_join N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
   (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
   chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
   C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
-  world_wf W1 → world_wf W2 → w_fams W1 ## w_fams W2 →
-  strict (W1 ⊔ W2) →
+  sworld_wf W1 → sworld_wf W2 →
+  swf (W1 ⊔ W2) →
   ptyped N (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
 Proof.
-  intros H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hw1 Hw2 Hfam HS.
-  apply p_connect; try done. by apply (strict_join_iff W1 W2 Hw1 Hw2 Hfam).
+  intros H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hw1 Hw2 HS.
+  apply p_connect; [exact H1|exact H2|exact HD1|exact HD2|exact Hf|exact H12|exact H1C|exact H2C
+    |exact HC|exact HC1|exact HC2|]. by apply (wf_join_iff W1 W2 Hw1 Hw2).
 Qed.
 
 Lemma ptyped_tfree N W Σ p T : ptyped N W Σ p T → tfree T.

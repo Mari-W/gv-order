@@ -64,7 +64,7 @@ Inductive lguard : (nat → bool) → expr → Prop :=
   | gl_var L y : L y = false → L ⊢▷ (Var y)
   | gl_unit L : L ⊢▷ EUnit
   | gl_chan L o : L ⊢▷ (Chan o)
-  | gl_new L ℓ : L ⊢▷ (ENew ℓ)
+  | gl_new L : L ⊢▷ ENew
   | gl_lam L b : (false .: L) ⊢▷ b → L ⊢▷ (Lam b)
   | gl_box L b : (true .: L) ⊢▷ b → L ⊢▷ (EBox b)
   | gl_op L k e : L ⊢▷ e → L ⊢▷ (Op k e)

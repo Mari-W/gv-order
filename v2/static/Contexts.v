@@ -192,6 +192,23 @@ Definition hc_open (m : nat) (C : bcs) (Γ : hctx) : hctx :=
 Definition cons_open (W : sworld) (Γ : hctx) (m : nat) (C : bcs) : Prop :=
   ∀ x y, slt W (hc_open m C Γ) (pt_inst (pshift m) x) (pt_inst (pshift m) y) → slt W Γ x y.
 
+(** ** The constraint of a creation at a fresh root (wf-new)
+
+    The constraint C of E-New at a fresh root speaks of the bound point
+    variable 0, the new root ρ, and of the points of its environment.
+    Every fact of C ends in the tree of ρ, so a context point lies only
+    below new points, and C with program order is well-founded on the
+    tree of ρ. The premise reads no semantics. *)
+Definition in_tree0 (x : point) : Prop := pt_root x = NVar 0.
+
+Definition new_step (C : bcs) (x y : point) : Prop :=
+  in_tree0 x ∧ in_tree0 y ∧
+  ((bc_facts C (FLt x y) ∧ fact_scoped (1 + length (bc_env C)) (FLt x y)) ∨ y = x⁺ ∨ y = x‾⁺).
+
+Definition wf_new (C : bcs) : Prop :=
+  (∀ x y, bc_facts C (FLt x y) → fact_scoped (1 + length (bc_env C)) (FLt x y) → in_tree0 y) ∧
+  well_founded (new_step C).
+
 (** The rest above an optional upper point. *)
 Definition rest_of (ub : option point) : frest :=
   match ub with Some u => RAbove u | None => RAll end.

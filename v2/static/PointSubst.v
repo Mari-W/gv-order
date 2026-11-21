@@ -245,37 +245,34 @@ Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.
 
 (** ** Facts *)
 
-Lemma pn_root_law_inst ℓ g p a : pt_root (pn_inst (λ _, pgen ℓ g) p) ≠ NVar a.
-Proof. induction p; simpl; try done. Qed.
+(** The facts of W sit at constant roots, the first half of [sworld_wf]. *)
+Definition facts_const (W : sworld) : Prop :=
+  ∀ x y, sw_facts W (FLt x y) → croot_in (sw_consts W) x ∧ croot_in (sw_consts W) y.
 
-(** The facts of W sit at constant roots, the first half of [world_wf]. *)
-Definition facts_const (W : world) : Prop :=
-  ∀ x y, w_facts W (FLt x y) → croot_in (w_consts W) x ∧ croot_in (w_consts W) y.
-
-Lemma facts_const_wf W : world_wf W → facts_const W.
+Lemma facts_const_wf W : sworld_wf W → facts_const W.
 Proof. intros Hwf. exact (wf_facts _ Hwf). Qed.
 
-Lemma w_lt_pinst_fc W σ x y : facts_const W → W ⊢ x ≺ y → W ⊢ pt_inst σ x ≺ pt_inst σ y.
+Lemma sw_lt_pinst_fc W σ x y : facts_const W → W ⊢ₛ x ≺ y → W ⊢ₛ pt_inst σ x ≺ pt_inst σ y.
 Proof.
   intros Hwf. apply tc_congruence. intros a b Hs.
-  destruct Hs as [a b Hf|ℓ g a b Hℓ Hl|a|a].
+  destruct Hs as [a b Hf|a|a].
   - destruct (Hwf a b Hf) as [[c [Hc _]] [d [Hd _]]].
     rewrite !pt_inst_novar by (intros ?; congruence). by apply ws_fact.
-  - rewrite !(pt_inst_novar σ (law_inst ℓ g _)); [by apply ws_law| |];
-      intros a'; unfold law_inst; rewrite pt_root_inst_var; apply pn_root_law_inst.
   - rewrite pt_inst_shift. apply ws_po.
   - rewrite pt_inst_shift, pt_inst_dual. apply ws_dpo.
 Qed.
 
-Lemma w_lt_pinst W σ x y : world_wf W → W ⊢ x ≺ y → W ⊢ pt_inst σ x ≺ pt_inst σ y.
-Proof. intros Hwf. by apply w_lt_pinst_fc, facts_const_wf. Qed.
+Lemma sw_lt_pinst W σ x y : sworld_wf W → W ⊢ₛ x ≺ y → W ⊢ₛ pt_inst σ x ≺ pt_inst σ y.
+Proof. intros Hwf. by apply sw_lt_pinst_fc, facts_const_wf. Qed.
 
 (** ** Conservativity of an opening
 
     [cons_of_hold]: an opening whose constraint holds at some instance is
     conservative. [cons_law]: the opening of the existential of E-New is
-    conservative, the laws of the family hold at its generated root. Both
-    ask only that the facts of W sit at constant roots. *)
+    [cons_new]: the opening of the existential of E-New is conservative
+    under (wf-new), because every fact of its constraint ends in the tree
+    of the new root, which no outer point reaches. Both ask only that the
+    facts of W sit at constant roots. *)
 
 Lemma pshift_back xs m x : length xs = m → pt_inst (plist xs) (pt_inst (pshift m) x) = x.
 Proof.
@@ -288,7 +285,7 @@ Lemma slt_inst W Γ Γ' τ x y : facts_const W → slt W Γ' x y →
   slt W Γ (pt_inst τ x) (pt_inst τ y).
 Proof.
   intros Hwf H Hh. unfold slt in H. induction H as [x y Hw|x y Hf|x y z _ IH1 _ IH2].
-  - apply sl_w. by apply w_lt_pinst_fc.
+  - apply sl_w. by apply sw_lt_pinst_fc.
   - by apply Hh.
   - eapply sl_trans; [apply IH1|apply IH2].
 Qed.
@@ -329,18 +326,60 @@ Proof.
       * apply lookup_ge_None in E. lia.
 Qed.
 
-Lemma law_hold W Γ ℓ : ℓ ∈ w_fams W → hold_at W Γ (bcs_of (w_laws W ℓ)) [pgen ℓ 0].
+(** A chain of the world never leaves the tree of the variable 0. *)
+Lemma sw_lt_tree0 W x y : facts_const W → W ⊢ₛ x ≺ y → in_tree0 x → in_tree0 y.
 Proof.
-  intros Hℓ x y Hat. apply bcs_at_iff in Hat as (f0 & Hf & Hs & Heq). simpl in *.
-  destruct f0 as [x0 y0]. apply sl_w.
-  assert (fact_map (pt_inst (plist [pgen ℓ 0])) (FLt x0 y0) = fact_map (law_inst ℓ 0) (FLt x0 y0)) as E.
-  { unfold law_inst. apply fact_map_ext_scoped with (k := 1); [done|].
-    intros a Ha. assert (a = 0) as -> by lia. done. }
-  rewrite <-Heq in E. simpl in E. injection E as -> ->. by apply w_lt_law.
+  intros Hwf. induction 1 as [x y Hs|x y z Hs _ IH]; intros Hx.
+  - destruct Hs as [x y Hf|x|x]; [|done|done].
+    destruct (Hwf x y Hf) as [[c [Hc _]] _]. unfold in_tree0 in Hx. congruence.
+  - apply IH. destruct Hs as [x y Hf|x|x]; [|done|done].
+    destruct (Hwf x y Hf) as [[c [Hc _]] _]. unfold in_tree0 in Hx. congruence.
 Qed.
 
-Lemma cons_law W Γ ℓ : facts_const W → ℓ ∈ w_fams W → cons_open W Γ 1 (bcs_of (w_laws W ℓ)).
-Proof. intros Hwf Hℓ. apply (cons_of_hold _ _ _ _ [pgen ℓ 0]); [done|done|by apply law_hold]. Qed.
+Lemma pshift_not_tree0 x : ¬ in_tree0 (pt_inst (pshift 1) x).
+Proof.
+  unfold in_tree0. rewrite pt_root_inst_var. unfold pt_root at 2.
+  induction (pt_name x) as [a|a|p IH b κ]; simpl; try done.
+  unfold pshift. simpl. intros [=]. lia.
+Qed.
+
+(** Every fact of an opened (wf-new) constraint ends in the tree of 0. *)
+Lemma wf_new_tree0 C x y :
+  wf_new C → bcs_at (bcs_inst (pshift 1) C) (ids 1) (FLt x y) → in_tree0 y.
+Proof.
+  intros [HC _] Hat. destruct C as [env P].
+  apply bcs_at_iff in Hat as ([x0 y0] & Hf & Hs & Heq). cbn [bcs_inst bc_env bc_facts] in *.
+  rewrite length_fmap in Hs. injection Heq as -> ->.
+  pose proof (HC x0 y0 Hf Hs) as Hy0.
+  unfold in_tree0 in *. rewrite pt_root_inst_var, Hy0. done.
+Qed.
+
+Lemma slt_open_out W Γ C x y : facts_const W → wf_new C →
+  slt W (hc_open 1 C Γ) x y → ¬ in_tree0 y →
+  ¬ in_tree0 x ∧ ∀ z, slt W Γ (pt_inst (plist [z]) x) (pt_inst (plist [z]) y).
+Proof.
+  intros Hwf HC H. unfold slt in H. induction H as [x y Hw|x y Hf|x y w _ IH1 _ IH2]; intros Hy.
+  - split; [intros Hx; by apply Hy, (sw_lt_tree0 W x y)|].
+    intros z. apply sl_w. by apply sw_lt_pinst_fc.
+  - destruct Hf as (C' & ys & Hin & Hat). simpl in Hin. apply elem_of_app in Hin as [Hin|Hin].
+    + unfold hyps_inst in Hin. apply list_elem_of_fmap in Hin as ([C0 ys0] & Heq & Hin).
+      injection Heq as -> ->.
+      apply bcs_at_inst in Hat as ([u0 v0] & Hat & Heq). injection Heq as -> ->.
+      split; [apply pshift_not_tree0|]. intros z.
+      rewrite !pshift_back by done. apply fl_h. by exists C0, ys0.
+    + apply list_elem_of_singleton in Hin. injection Hin as -> ->.
+      exfalso. apply Hy. by apply (wf_new_tree0 C x y).
+  - destruct (IH2 Hy) as [Hw IH2']. destruct (IH1 Hw) as [Hx IH1'].
+    split; [done|]. intros z. eapply sl_trans; [apply IH1'|apply IH2'].
+Qed.
+
+(** Conservativity under (wf-new). *)
+Lemma cons_new W Γ C : facts_const W → wf_new C → cons_open W Γ 1 C.
+Proof.
+  intros Hwf HC x y H.
+  destruct (slt_open_out W Γ C _ _ Hwf HC H (pshift_not_tree0 y)) as [_ H'].
+  specialize (H' (pvar 0)). by rewrite !pshift_back in H' by done.
+Qed.
 
 (** ** The substitution lemma *)
 

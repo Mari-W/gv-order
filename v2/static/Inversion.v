@@ -20,7 +20,7 @@ From GV Require Export static.PointSubst.
 
 (** ** Contexts reached by E-Open *)
 
-Inductive opened (W : world) : tenv → hctx → lenv → sfuture → tenv → hctx → lenv → sfuture → Prop :=
+Inductive opened (W : sworld) : tenv → hctx → lenv → sfuture → tenv → hctx → lenv → sfuture → Prop :=
   | op_refl Θ Γ Δ F : opened W Θ Γ Δ F Θ Γ Δ F
   | op_step Θ Γ Δ F Θ' Γ' Δ' F' i lb m C T :
       Δ !! i = Some (Some (TEx lb m C T)) → ¬ unlimited T → cons_open W Γ m C →
@@ -31,7 +31,7 @@ Inductive opened (W : world) : tenv → hctx → lenv → sfuture → tenv → h
 (** ** Term forms *)
 
 Section inversion.
-  Context (W : world) (N : fuel).
+  Context (W : sworld) (N : fuel).
 
   Lemma inv_close Θ Γ Δ F e T c :
     typed W N Θ Γ Δ F (EClose e) T c →
@@ -219,13 +219,13 @@ Lemma ptyped_one N W Σ C0 t T :
     (∀ ch, ch ∈ C0 → ∃ S x m m', tsum_ok N m m' ∧
        ΘB !! (ch⁺)%cend = Some (TE S x m m) ∧ ΘB !! (ch⁻)%cend = Some (TE (dual S) x‾ m' m')) ∧
     typed W N (tenv_of (fhalf N) Σ ∪ ΘB) hc_empty [] (∅, None) t T c ∧
-    strict W.
+    (sworld_wf W ∧ swf W).
 Proof.
   intros H. remember (C0, {[+ t +]}) as p eqn:Hp. destruct H as [W' Σ' ΘB C0' t' T' c Hf HB HC Hpf HBs Ht Hs|
     W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T' H1 H2].
   - pose proof (f_equal fst Hp) as H1. pose proof (f_equal snd Hp) as Ht'. simpl in H1, Ht'. subst C0'.
     apply (inj (singletonMS (B := gmultiset expr))) in Ht' as ->.
-    exists ΘB, c. split_and!; done.
+    exists ΘB, c. split_and!; try done; apply Hs.
   - exfalso. pose proof (f_equal snd Hp) as HE. simpl in HE.
     apply ptyped_nonempty in H1, H2. simpl in *.
     assert (size (E1 ⊎ E2) = 1) as Hsz by (by rewrite HE, gmultiset_size_singleton).
@@ -242,10 +242,10 @@ Lemma ptyped_two N W Σ C t1 t2 T :
     (({[+ u1 +]} ⊎ {[+ u2 +]}) : gmultiset expr) = ({[+ t1 +]} ⊎ {[+ t2 +]}) ∧
     ptyped N W1 (Σ1 ∪ ΣC) (C1, {[+ u1 +]}) T ∧
     ptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, {[+ u2 +]}) TUnit ∧
-    strict (wrestrict W1 (wshared W1 W2) ⊔ wrestrict W2 (wshared W1 W2)).
+    swf (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)).
 Proof.
   intros H. remember (C, ({[+ t1 +]} ⊎ {[+ t2 +]})) as p eqn:Hp. destruct H as [W' Σ' ΘB C0' t' T' c|
-    W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T' H1 H2 _ _ _ _ _ _ _ _ _ _ HS].
+    W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T' H1 H2 _ _ _ _ _ _ _ _ _ HS].
   - exfalso. pose proof (f_equal snd Hp) as HE. simpl in HE.
     assert (size (({[+ t1 +]} ⊎ {[+ t2 +]}) : gmultiset expr) = 1) as Hsz by (by rewrite <-HE, gmultiset_size_singleton).
     rewrite gmultiset_size_disj_union, !gmultiset_size_singleton in Hsz. lia.

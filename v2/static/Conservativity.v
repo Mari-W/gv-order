@@ -389,17 +389,16 @@ Proof.
   apply (d_abs _ _ _ _ _ _ _ _ _ _ _ _); [done|exact H].
 Qed.
 
-Lemma d_new W Γ Δ F ℓ S a1 a2 m1 m2 :
-  lenv_unl Δ → ℓ ∈ w_fams W →
-  dftyped W ∅ Γ Δ F (ENew ℓ)
-    (TEx LBot 1 (bcs_of (w_laws W ℓ)) (TProd (TSess S (pvar 0) a1 m1) (TSess (dual S) (pvar 0)‾ a2 m2))).
-Proof. intros HΔ Hℓ. dfr. rewrite sty_df_dual. eapply e_new; [by apply lenv_unl_df|done|done]. Qed.
+Lemma d_new W Γ Δ F C S a1 a2 m1 m2 :
+  lenv_unl Δ → wf_new C →
+  dftyped W ∅ Γ Δ F ENew
+    (TEx LBot 1 C (TProd (TSess S (pvar 0) a1 m1) (TSess (dual S) (pvar 0)‾ a2 m2))).
+Proof. intros HΔ HC. dfr. rewrite sty_df_dual. eapply e_new; [by apply lenv_unl_df|done|done]. Qed.
 
-Lemma d_new_at W Θ Γ Δ F e κ S0 x S a a' a1 a2 m m' m1 m2 :
-  dftyped W Θ Γ Δ F e (TSess S0 x a m) →
-  dftyped W Θ Γ Δ F (ENewAt κ e)
-    (TProd (TSess S0 x a' m') (TProd (TSess S (x·κ) a1 m1) (TSess (dual S) (x·κ)‾ a2 m2))).
-Proof. intros H. dfr. rewrite sty_df_dual. eapply e_new_at; [exact H|done]. Qed.
+Lemma d_new_fld W Γ Δ F x κ S a1 a2 m1 m2 :
+  lenv_unl Δ →
+  dftyped W ∅ Γ Δ F ENew (TProd (TSess S (x·κ) a1 m1) (TSess (dual S) (x·κ)‾ a2 m2)).
+Proof. intros HΔ. dfr. rewrite sty_df_dual. eapply e_new_fld; [by apply lenv_unl_df|done]. Qed.
 
 Lemma d_conv W Θ Γ Δ F e T T' :
   tsub (ty_df T) (ty_df T') → dftyped W Θ Γ Δ F e T → dftyped W Θ Γ Δ F e T'.
@@ -517,7 +516,7 @@ Proof.
     eapply d_link, I.
   - eapply d_spawn, IHtyped.
   - rewrite sty_df_dual. eapply d_new; [by apply lenv_unl_df|done].
-  - rewrite sty_df_dual. eapply d_new_at, IHtyped.
+  - rewrite sty_df_dual. eapply d_new_fld; by apply lenv_unl_df.
   - eapply d_conv; [|exact IHtyped]. rewrite !ty_df_idem. by eapply tsub_df.
   - eapply d_pack; [done|done| |].
     + rewrite ty_inst_df. by heads_df.
