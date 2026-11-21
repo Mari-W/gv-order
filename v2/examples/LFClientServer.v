@@ -12,12 +12,6 @@
 
 From GV Require Export examples.LFTools examples.ClientServer.
 
-Lemma W_cs_wf : world_wf W_cs.
-Proof.
-  split; simpl; [done|]. intros ℓ x y _ (k & b & Hk).
-  destruct b; destruct Hk as [E|[E|[E|E]]]; injection E as -> ->; done.
-Qed.
-
 Definition csl_T (S1 S2 : sty) : ty := TProd (TSess S1 (pvar 0) (Some 1) (Some 3)) (TSess S2 (pvar 1) (Some 2) (Some 3)).
 Definition csl_box (S1 S2 : sty) : ty := lbox 3 cs_C (Some (pvar 2)) (csl_T S1 S2) TUnit.
 
@@ -155,7 +149,7 @@ Proof.
   eexists _.
   { unfold cs_main, let_new.
   eapply e_let_; [apply lsplit_nil| | | ].
-  { apply (e_new' _ _ _ _ _ _ Sa); [spare_tac|set_solver]. }
+  { eapply (e_new' _ _ _ _ _ _ Sa); [spare_tac|apply cs_wf_new]. }
   lage_tac.
   eapply e_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].

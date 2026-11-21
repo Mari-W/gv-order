@@ -38,7 +38,7 @@ Proof.
   { eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_let_; [lsplit_tac ENew EUnit| | | ].
-  { apply (e_new' _ _ _ _ _ _ Sd); [spare_tac|set_solver]. }
+  { eapply (e_new' _ _ _ _ _ _ Sd); [spare_tac|apply fx_wf_new]. }
   lage_tac.
   eapply e_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_nil', !lenv_pinst_cons', lenv_pinst_nones.

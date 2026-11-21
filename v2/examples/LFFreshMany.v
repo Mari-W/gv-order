@@ -9,12 +9,6 @@
 
 From GV Require Export examples.LFTools examples.FreshMany.
 
-Lemma W_fm_wf : world_wf W_fm.
-Proof.
-  split; simpl; [done|]. intros ℓ x y _ (f & Hf & E).
-  destruct Hf as [->|[->|[->|(k & [->| ->])]]]; simpl in E; injection E as -> ->; done.
-Qed.
-
 Definition fml_T : ty := TProd (TSess SEnd (pvar 0) (Some 4) (Some 4)) (TSess SEnd (pvar 1) (Some 4) (Some 4)).
 Definition fml_ty : ty := lbox 2 fm_C (Some (pvar 1)) fml_T TUnit.
 
@@ -121,7 +115,7 @@ Proof.
   eexists _.
   { unfold fm_main, let_new.
   eapply e_let_; [apply lsplit_nil| | | ].
-  { apply (e_new' _ _ _ _ _ _ SEnd); [spare_tac|set_solver]. }
+  { eapply (e_new' _ _ _ _ _ _ SEnd); [spare_tac|apply fm_wf_new]. }
   lage_tac.
   eapply e_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].

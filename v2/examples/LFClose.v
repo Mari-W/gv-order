@@ -46,9 +46,6 @@ Proof. exact (proj2 W_cl_bare). Qed.
 Lemma W_cl_strict : strict (W_cl ⊔ W_cl).
 Proof. exact (strict_wfworld _ (proj1 W_cl_bare) W_cl_wfworld). Qed.
 
-Lemma W_cl_wf : world_wf W_cl.
-Proof. constructor; simpl; [done|set_solver]. Qed.
-
 Definition cl (o : cend) : expr := EClose (Chan o).
 
 Lemma cl_typed N o x a m :

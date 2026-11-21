@@ -25,7 +25,10 @@ Proof.
   - intros x. unfold lex3, pt_depth. simpl. lia.
   - intros x y [E|E]; injection E as -> ->; unfold lex3, pt_depth; simpl; lia.
 Qed.
-#[local] Hint Resolve cy_wf_new : wfnew.
+#[global] Hint Resolve cy_wf_new : wfnew.
+
+Lemma W_cy_wf : sworld_wf W_cy ∧ swf W_cy.
+Proof. apply sw_empty_ok. Qed.
 
 Definition cy_thunk : expr := Lam (LetU (Var 0) (LetU (EClose (Var 5)) (EClose (Var 1)))).
 

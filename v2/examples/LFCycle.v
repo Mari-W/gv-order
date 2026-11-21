@@ -8,27 +8,20 @@
 
 From GV Require Export examples.LFTools examples.Cycle.
 
-Lemma W_cy_wfworld : wfworld W_cy.
-Proof.
-  apply (wfworld_lex3 W_cy (λ x, (pt_fsum x, pt_off x, pt_depth x))); [intros f []| |].
-  - intros x. unfold pt_fsum, pt_depth. simpl. lia.
-  - intros ℓ g x y _ [E|E]; injection E as -> ->; unfold pt_fsum, pt_depth; simpl; lia.
-Qed.
-
 Lemma cy_typedN : ∃ c, typed W_cy (Some 4) ∅ hc_empty [] (∅, None) cy_main TUnit c.
 Proof.
   eexists _.
   { unfold cy_main, let_new.
   eapply e_let_; [apply lsplit_nil| | | ].
-  { apply (e_new' _ _ _ _ _ _ SEnd); [spare_tac|set_solver]. }
+  { eapply (e_new' _ _ _ _ _ _ SEnd); [spare_tac|apply cy_wf_new]. }
   lage_tac.
   eapply e_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
-  fold (Γnew W_cy 0).
+  fold (Γnew cy_L).
   eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
   { eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
-  eapply e_letp_; [lsplit_tac (ENewAt 0 (Var 1)) EUnit| | | ].
+  eapply e_letp_; [lsplit_tac (Pair (Var 1) ENew) EUnit| | | ].
   { eapply (e_new_at' _ _ _ _ _ _ _ 0 SEnd (pvar 0) _ _ SEnd); [done|shelve|reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
@@ -62,11 +55,11 @@ Proof. unfold cy_main, let_new, cy_thunk. guard_tac. Qed.
 Theorem cy_lftyped : ∃ N, ∅ ⊩^N _ W_cy (∅, {[+ cy_main +]}) : TUnit.
 Proof.
   destruct cy_typedN as (c & Ht). exists 4.
-  eapply lf_main_typed; [apply strict_wfworld; [apply W_cy_wf|apply W_cy_wfworld]|constructor|exact Ht|apply cy_guarded].
+  eapply lf_main_typed; [apply W_cy_wf|constructor|exact Ht|apply cy_guarded].
 Qed.
 
 Theorem cy_lock_free : excluded_middle → functional_choice → lock_free (∅, {[+ cy_main +]}).
 Proof.
   intros EM FC. destruct cy_typedN as (c & Ht).
-  eapply (lf_main EM FC); [apply (strict_wfworld _ W_cy_wf W_cy_wfworld)|apply W_cy_wfworld|constructor|exact Ht|apply cy_guarded].
+  eapply (lf_main EM FC); [apply W_cy_wf|constructor|exact Ht|apply cy_guarded].
 Qed.

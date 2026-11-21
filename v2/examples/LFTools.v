@@ -2,14 +2,9 @@
 
     A closed program t is lock free by [lf_soundness] when it types at a
     finite bound N with the empty future, is guarded and lives in a
-    strict, well-founded world ([lf_main]).
-
-    A world is well founded when some measure into a well-founded
-    transitive order rises along every generating step of ≺
-    ([wfworld_measure]), and a well-formed well-founded world is strict
-    ([strict_wfworld]). The measures of the examples are lexicographic
-    triples ([lex3]) of the field sum, the depth and the offset of a
-    point. *)
+    well-formed, well-founded static world ([lf_main]). The constraints
+    of the creations meet (wf-new) by lexicographic measures
+    ([wf_new_lex3], examples/Tools.v). *)
 
 From GV Require Export examples.Tools2.
 From GV Require Export soup.LFTyped.
@@ -19,67 +14,10 @@ From GV Require lockfree.FairRun.
 Notation excluded_middle := lockfree.FairRun.excluded_middle.
 Notation functional_choice := lockfree.FairRun.functional_choice.
 
-(** ** Lock-free worlds by a measure *)
-
-Lemma wfworld_measure {A} (R : relation A) (m : point → A) W :
-  well_founded R → Transitive R →
-  (∀ x y, wstep W x y → R (m x) (m y)) → wfworld W.
-Proof.
-  intros HR HT Hs.
-  assert (∀ x y, W ⊢ x ≺ y → R (m x) (m y)) as Hlt.
-  { induction 1 as [x y H|x z y H _ IH]; [by apply Hs|]. apply Hs in H. by transitivity (m z). }
-  assert (∀ a x, m x = a → Acc (w_lt W) x) as Hacc.
-  { intros a. induction (HR a) as [a _ IH]. intros x <-. constructor.
-    intros y Hy. eapply IH; [apply Hlt, Hy|done]. }
-  intros x. by apply (Hacc (m x)).
-Qed.
-
-(** The lexicographic order on triples of natural numbers. *)
-Definition lex3 (a b : nat * nat * nat) : Prop :=
-  let '(a1, a2, a3) := a in let '(b1, b2, b3) := b in
-  a1 < b1 ∨ (a1 = b1 ∧ (a2 < b2 ∨ (a2 = b2 ∧ a3 < b3))).
-
-Lemma lex3_wf : well_founded lex3.
-Proof.
-  intros [[a1 a2] a3]. revert a2 a3. induction a1 as [a1 IH1] using lt_wf_ind.
-  intros a2. induction a2 as [a2 IH2] using lt_wf_ind.
-  intros a3. induction a3 as [a3 IH3] using lt_wf_ind.
-  constructor. intros [[b1 b2] b3] H. simpl in H.
-  destruct H as [H|[<- [H|[<- H]]]]; eauto.
-Qed.
-
-Global Instance lex3_trans : Transitive lex3.
-Proof. intros [[a1 a2] a3] [[b1 b2] b3] [[c1 c2] c3]; simpl; lia. Qed.
-
-(** The number of fields of a name and the sum of their labels. *)
-Fixpoint pn_depth (p : pname) : nat :=
-  match p with NField q _ _ => S (pn_depth q) | _ => 0 end.
-Fixpoint pn_fsum (p : pname) : nat :=
-  match p with NField q _ κ => κ + pn_fsum q | _ => 0 end.
-
-Definition pt_depth (x : point) : nat := pn_depth (pt_name x).
-Definition pt_fsum (x : point) : nat := pn_fsum (pt_name x).
-
-(** A measure that rises on the laws and on x ≺ x⁺, x ≺ x‾⁺ through the
-    offset, for a world without facts. *)
-Lemma wfworld_lex3 W (m : point → nat * nat * nat) :
-  (∀ f, ¬ w_facts W f) →
-  (∀ x, lex3 (m x) (m x⁺) ∧ lex3 (m x) (m x‾⁺)) →
-  (∀ ℓ g x y, ℓ ∈ w_fams W → w_laws W ℓ (FLt x y) → lex3 (m (law_inst ℓ g x)) (m (law_inst ℓ g y))) →
-  wfworld W.
-Proof.
-  intros Hf Hpo Hlaw. apply (wfworld_measure lex3 m W lex3_wf _).
-  intros x y H. destruct H as [x y H|ℓ g x y Hℓ Hl|x|x].
-  - by destruct (Hf _ H).
-  - by apply Hlaw.
-  - apply Hpo.
-  - apply Hpo.
-Qed.
-
 (** ** Closed programs *)
 
 Lemma lf_main_typed N W t T c :
-  strict W → tfree T → typed W (Some N) ∅ hc_empty [] (∅, None) t T c →
+  sworld_wf W ∧ swf W → tfree T → typed W (Some N) ∅ hc_empty [] (∅, None) t T c →
   ∅ ⊢▷ t → ∅ ⊩^N _ W (∅, {[+ t +]}) : T.
 Proof.
   intros HS Hp Ht Hg. split.
@@ -93,9 +31,9 @@ Proof.
 Qed.
 
 Lemma lf_main (EM : excluded_middle) (FC : functional_choice) N W t T c :
-  strict W → wfworld W → tfree T → typed W (Some N) ∅ hc_empty [] (∅, None) t T c →
+  sworld_wf W ∧ swf W → tfree T → typed W (Some N) ∅ hc_empty [] (∅, None) t T c →
   ∅ ⊢▷ t → lock_free (∅, {[+ t +]}).
-Proof. intros HS HW Hp Ht Hg. eapply (lf_soundness N W _ T EM FC HW), lf_main_typed; eauto. Qed.
+Proof. intros HS Hp Ht Hg. eapply (lf_soundness N W _ T EM FC), lf_main_typed; eauto. Qed.
 
 (** ** Rules of the merged judgment with weakening built in *)
 
@@ -110,25 +48,31 @@ Lemma e_unit' W N Γ Δ F : (∀ y o, Δ !! y = Some o → spare o) →
   typed W N ∅ Γ Δ F EUnit TUnit (Some 0).
 Proof. intros H. by apply e_unit, spare_unl. Qed.
 
-Lemma e_new' W N Γ Δ F ℓ S :
-  (∀ y o, Δ !! y = Some o → spare o) → ℓ ∈ w_fams W →
-  typed W N ∅ Γ Δ F (ENew ℓ) (TEx LBot 1 (bcs_of (w_laws W ℓ))
+Lemma e_new' W N Γ Δ F (L : fact → Prop) S :
+  (∀ y o, Δ !! y = Some o → spare o) → wf_new (bcs_of L) →
+  typed W N ∅ Γ Δ F ENew (TEx LBot 1 (bcs_of L)
     (TProd (TSess S (pvar 0) (fhalf N) (fhalf N)) (TSess (dual S) (pvar 0)‾ (ncap N (fhalf N)) (ncap N (fhalf N))))) (Some 0).
-Proof. intros H Hℓ. apply e_new; [by apply spare_unl|done|apply tsum_half]. Qed.
+Proof. intros H HL. apply e_new; [by apply spare_unl|done|apply tsum_half]. Qed.
 
-(** E-NewAt at the tickets m of the anchor and N − m. *)
-Lemma e_new_at' W N Θ Γ Δ F e κ S0 x a m S c0 :
-  typed W N Θ Γ Δ F e (TSess S0 x a m) c0 → fle m N →
-  typed W N Θ Γ Δ F (ENewAt κ e)
-    (TProd (TSess S0 x a m) (TProd (TSess S (x·κ) m m) (TSess (dual S) (x·κ)‾ (ncap N m) (ncap N m)))) c0.
-Proof. intros H Hm. apply e_new_at; [exact H|by apply tsum_ncap]. Qed.
+(** A creation at the field κ of the point x of the end y, ⟨y, new⟩, at
+    the tickets m of the anchor and N − m. *)
+Lemma e_new_at' W N (Θ : tenv) Γ Δ F (y : nat) κ S0 x a m S :
+  Θ = ∅ → fle m N → Δ !! y = Some (Some (TSess S0 x a m)) → (∀ z o, z ≠ y → Δ !! z = Some o → spare o) →
+  typed W N Θ Γ Δ F (Pair (Var y) ENew)
+    (TProd (TSess S0 x a m) (TProd (TSess S (x·κ) m m) (TSess (dual S) (x·κ)‾ (ncap N m) (ncap N m)))) (Some 0).
+Proof.
+  intros -> Hm Hy Hs. rewrite <-(fadd_0_r (Some 0)).
+  eapply (e_pair _ _ ∅ ∅ ∅ ∅); [apply tsplit_empty|apply (lsplit_only y), Hs| |intros o; by rewrite lookup_empty|apply lage_0| |apply tage_0].
+  - eapply e_var'; [exact Hy|exact Hs].
+  - apply e_new_fld; [by apply lenv_unl_only|by apply tsum_ncap].
+Qed.
 
 (** E-New at any tickets m1 + m2 ≤ N. *)
-Lemma e_new_tk W N Γ Δ F ℓ S m1 m2 :
-  (∀ y o, Δ !! y = Some o → spare o) → ℓ ∈ w_fams W → tsum_ok N m1 m2 →
-  typed W N ∅ Γ Δ F (ENew ℓ) (TEx LBot 1 (bcs_of (w_laws W ℓ))
+Lemma e_new_tk W N Γ Δ F (L : fact → Prop) S m1 m2 :
+  (∀ y o, Δ !! y = Some o → spare o) → wf_new (bcs_of L) → tsum_ok N m1 m2 →
+  typed W N ∅ Γ Δ F ENew (TEx LBot 1 (bcs_of L)
     (TProd (TSess S (pvar 0) m1 m1) (TSess (dual S) (pvar 0)‾ m2 m2))) (Some 0).
-Proof. intros H Hℓ Hm. apply e_new; [by apply spare_unl|done|done]. Qed.
+Proof. intros H HL Hm. apply e_new; [by apply spare_unl|done|done]. Qed.
 
 Lemma thage_empty c : thage c ∅ ∅.
 Proof. intros o. by rewrite lookup_empty. Qed.

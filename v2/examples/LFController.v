@@ -80,12 +80,6 @@ Ltac pick6 := first [ left; fact_eq | right; left; fact_eq | right; right; left;
                     | right; right; right; left; fact_eq | right; right; right; right; left; fact_eq
                     | right; right; right; right; right; fact_eq ].
 
-Lemma W_ctl_wf : world_wf W_ctl.
-Proof.
-  split; simpl; [done|]. intros ℓ x y _ (k & b & Hk).
-  destruct b; destruct Hk as [E|[E|[E|[E|[E|E]]]]]; injection E as -> ->; done.
-Qed.
-
 Lemma W_ctl_wfworld : wfworld W_ctl.
 Proof.
   apply (wfworld_lex3 W_ctl (λ x, (pt_fsum x, pt_off x, pt_depth x))); [intros f []| |].
@@ -294,7 +288,7 @@ Proof.
   eexists _.
   { unfold ctl_main, let_new.
   eapply e_let_; [apply lsplit_nil| | | ].
-  { apply (e_new' _ _ _ _ _ _ Sa); [spare_tac|set_solver]. }
+  { eapply (e_new' _ _ _ _ _ _ Sa); [spare_tac|set_solver]. }
   lage_tac.
   eapply e_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].

@@ -173,7 +173,7 @@ Proof.
   eexists _.
   { unfold rg_main, let_new.
   eapply e_let_; [apply lsplit_nil| | | ].
-  { apply (e_new' _ _ _ _ _ _ Schl); [spare_tac|set_solver]. }
+  { eapply (e_new' _ _ _ _ _ _ Schl); [spare_tac|apply rg_wf_new]. }
   lage_tac.
   eapply e_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].

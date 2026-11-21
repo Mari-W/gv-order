@@ -9,12 +9,6 @@
 
 From GV Require Export examples.LFTools examples.FreshBetween.
 
-Lemma W_fb_wf : world_wf W_fb.
-Proof.
-  split; simpl; [done|]. intros ℓ x y _ (f & Hf & E).
-  destruct Hf as [->|[->|[->|[->| ->]]]]; simpl in E; injection E as -> ->; done.
-Qed.
-
 Definition fbl_T : ty := TProd (TSess SEnd (pvar 0) (Some 2) (Some 2)) (TSess SEnd (pvar 1) (Some 2) (Some 2)).
 Definition fbl_ty : ty := lbox 2 fb_C (Some (pvar 1)) fbl_T TUnit.
 
@@ -85,7 +79,7 @@ Proof.
   eexists _.
   { unfold fb_main, let_new.
   eapply e_let_; [apply lsplit_nil| | | ].
-  { apply (e_new' _ _ _ _ _ _ SEnd); [spare_tac|set_solver]. }
+  { eapply (e_new' _ _ _ _ _ _ SEnd); [spare_tac|apply fb_wf_new]. }
   lage_tac.
   eapply e_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
