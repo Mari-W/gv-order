@@ -414,12 +414,51 @@ window.MathJax = {
   // ---------- formulas ----------
   function math(tex, md) {
     const div = document.createElement('div'); div.className = 'math';
-    try {
-      const node = MathJax.tex2svg(toMJ(tex, md), { display: true });
-      node.setAttribute('data-tex', plainTeX(tex, md));
-      div.appendChild(node);
-    } catch (e) { div.textContent = tex; }
+    div.dataset.tex = plainTeX(tex, md);
+    div._src = [tex, md];
+    try { div.appendChild(MathJax.tex2svg(toMJ(tex, md), { display: true })); }
+    catch (e) { div.textContent = tex; }
     return div;
+  }
+  // the rows of a formula that is one array: [head, rows, tail], or null
+  function rowsOf(tex) {
+    const t = tex.trim(), m = /^\\begin\{array\}\s*\{[^}]*\}/.exec(t);
+    if (!m || !t.endsWith('\\end{array}')) return null;
+    const body = t.slice(m[0].length, t.length - 11), rows = [];
+    let depth = 0, last = 0;
+    for (let i = 0; i < body.length; i++) {
+      const c = body[i];
+      if (c === '\\' && body[i + 1] === '\\' && depth === 0) {
+        rows.push(body.slice(last, i)); i += 2;
+        const opt = /^\s*\[[^\]]*\]/.exec(body.slice(i)); if (opt) i += opt[0].length;
+        last = i; i--; continue;
+      }
+      if (body.startsWith('\\begin{', i)) { depth++; i += 6; continue; }
+      if (body.startsWith('\\end{', i)) { depth--; i += 4; continue; }
+      if (c === '\\') { i++; continue; }
+      if (c === '{') depth++; else if (c === '}') depth--;
+    }
+    rows.push(body.slice(last));
+    return rows.filter(r => r.trim()).length > 1 ? [m[0], rows.filter(r => r.trim()), '\\end{array}'] : null;
+  }
+  // a formula that would shrink below 60 % of its size is split into its rows, each shrinking on its own
+  function fit(root) {
+    root.querySelectorAll('.math').forEach(div => {
+      if (!div._src || div.dataset.split) return;
+      const svg = div.querySelector('mjx-container > svg'); if (!svg) return;
+      const probe = document.createElement('span'); probe.style.cssText = 'position:absolute;visibility:hidden;width:100ex'; div.appendChild(probe);
+      const ex = probe.getBoundingClientRect().width / 100; probe.remove();
+      const natural = parseFloat(svg.getAttribute('width')) * ex, avail = div.clientWidth;
+      if (!natural || natural * 0.6 <= avail) return;
+      const [tex, md] = div._src, parts = rowsOf(tex); if (!parts) return;
+      const [head, rows, tail] = parts;
+      div.replaceChildren(); div.dataset.split = '1';
+      for (const r of rows) { try { div.appendChild(MathJax.tex2svg(toMJ(head + r + tail, md), { display: true })); } catch (e) {} }
+      // one scale for every row, so the rows keep one font size
+      const svgs = [...div.querySelectorAll('mjx-container > svg')], nat = svgs.map(x => parseFloat(x.getAttribute('width')) * ex);
+      const scale = Math.min(1, avail / Math.max(...nat));
+      svgs.forEach((x, i) => { x.style.width = (nat[i] * scale) + 'px'; });
+    });
   }
   // a transparent rectangle over each hover target, drawn first inside it, so gaps between glyphs
   // count as inside and nested targets (drawn later) stay on top
@@ -476,6 +515,7 @@ window.MathJax = {
       for (const b of shown) root.appendChild(blockEl(s, b));
       if (!shown.length) noMatches(root);
     }
+    fit(root);
     requestAnimationFrame(() => addHits(root));
     typeset(root);
     if (pinned) markAll(pinned);
@@ -563,6 +603,7 @@ window.MathJax = {
   function textOf(node) {
     if (node.nodeType === 3) return node.nodeValue;
     if (node.nodeType !== 1 && node.nodeType !== 11) return '';
+    if (node.matches && node.matches('.math[data-tex]')) return `\n$$${node.dataset.tex}$$\n`;
     if (node.matches && node.matches('mjx-container')) { const t = node.getAttribute('data-tex') || (node.querySelector('[data-tex]') || {}).dataset?.tex || ''; return node.getAttribute('display') === 'true' ? `\n$$${t}$$\n` : `$${t}$`; }
     if (node.matches && node.matches('button, .tbtn, .tag, .mini, mjx-assistive-mml')) return '';
     let s = ''; for (const c of node.childNodes) s += textOf(c);
@@ -574,9 +615,10 @@ window.MathJax = {
     const frag = sel.getRangeAt(0).cloneContents();
     if (!frag.querySelector('mjx-container')) {
       // a selection inside one formula: copy that formula
-      const c = sel.anchorNode && (sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement).closest('mjx-container');
+      const at = sel.anchorNode && (sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement);
+      const c = at && (at.closest('.math[data-tex]') || at.closest('mjx-container'));
       if (!c) return;
-      e.clipboardData.setData('text/plain', c.getAttribute('data-tex') || ''); e.preventDefault(); return;
+      e.clipboardData.setData('text/plain', c.dataset.tex || c.getAttribute('data-tex') || ''); e.preventDefault(); return;
     }
     e.clipboardData.setData('text/plain', textOf(frag).replace(/\n{3,}/g, '\n\n').trim());
     e.preventDefault();
@@ -608,7 +650,7 @@ window.MathJax = {
         const id = f.dataset.flip, x = blockIndex.get(id), el = document.getElementById('b-' + id);
         if (f.dataset.m === mode) local.delete(id); else local.set(id, f.dataset.m);
         el.replaceWith(blockEl(x.s, x.b));
-        const nu = document.getElementById('b-' + id); requestAnimationFrame(() => addHits(nu)); typeset(nu);
+        const nu = document.getElementById('b-' + id); fit(nu); requestAnimationFrame(() => addHits(nu)); typeset(nu);
         if (pinned) { markAll(pinned); shown = null; showNote(pinned, true, blockMode(x.b)); }
         return;
       }
@@ -643,7 +685,12 @@ window.MathJax = {
       else if (e.key === 'Escape') { if (document.activeElement === $('#q') && query) { $('#q').value = ''; query = ''; renderTabs(); renderSection(); } else if (pinned) unpin(); }
     });
     addEventListener('hashchange', () => { const before = renderSection.sec, r = route(); if (before !== r.sec) { renderTabs(); renderSection(); scrollTo(0, 0); } else if (r.block) jump(r.block); renderSection.sec = r.sec; renderTabs(); });
-    addEventListener('resize', () => document.documentElement.style.setProperty('--head', ($('header').offsetHeight + 12) + 'px'));
+    let lastW = innerWidth;
+    addEventListener('resize', () => {
+      document.documentElement.style.setProperty('--head', ($('header').offsetHeight + 12) + 'px');
+      // a width change of more than 15 % may split or join formulas: render again
+      clearTimeout(wire.rt); wire.rt = setTimeout(() => { if (Math.abs(innerWidth - lastW) > 0.15 * lastW) { lastW = innerWidth; const y = scrollY; renderSection(); scrollTo(0, y); } }, 250);
+    });
   }
   function goTo(id) {
     const x = blockIndex.get(id), e = (MAP.examples || []).find(e => e.id === id);
