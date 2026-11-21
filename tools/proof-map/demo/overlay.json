@@ -1,0 +1,15 @@
+{
+ "conventions": [
+  { "symbol": "i, j", "meaning": "Names of threads in a configuration, and indices." },
+  { "symbol": "k", "meaning": "A constant of the language, or a natural number used as an index." },
+  { "symbol": "m, n", "meaning": "Natural numbers. The step index of the relation is $n$." },
+  { "symbol": "N", "meaning": "The counter bound of the lock-free relation." },
+  { "symbol": "M", "meaning": "A configuration, a finite map from thread names to threads." }
+ ],
+ "deviationRules": [
+  { "kind": "renamed", "reason": "Constructors are shown by their surface keyword.", "appliesTo": "constructors" }
+ ],
+ "reasons": {
+  "syn-let": { "notation": "Derived form, defined in Syntax.v as an application of a $\\lambda$." }
+ }
+}

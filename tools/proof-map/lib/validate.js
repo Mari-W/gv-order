@@ -53,6 +53,10 @@ function validate(schema, data) {
         if (s.additionalProperties !== undefined) check(s.additionalProperties, x, where);
       }
     }
+    if (s.anyOf) {
+      const n = s.anyOf.filter(o => { const save = errors.length; check(o, v, at); const ok = errors.length === save; errors.length = save; return ok; }).length;
+      if (!n) errors.push(`${at}: matches none of the alternatives`);
+    }
     if (s.oneOf) {
       const n = s.oneOf.filter(o => { const save = errors.length; check(o, v, at); const ok = errors.length === save; errors.length = save; return ok; }).length;
       if (n !== 1) errors.push(`${at}: matches ${n} alternatives, expected one`);

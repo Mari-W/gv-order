@@ -2,7 +2,10 @@
 // Convert a map in the older explorer format (a data.js that sets window.MAP, with
 // \htmlData{k=..}{..} hovers and \annot, \annraw, \dfo, \annp mode markers) into proof-map/1 JSON.
 //
-// usage: node convert-explorer.js <data.js> <out.json> [--root <rocq root relative to out.json>]
+// usage: node convert-explorer.js <data.js> <out.json> [--root <rocq root relative to out.json>] [--overlay <json>]
+//
+// The overlay holds what a human decided and the old data lacks: conventions, deviationRules,
+// and reasons for deviations by item id and kind, {"reasons": {"block-id": {"notation": "..."}}}.
 //
 // The conversion is mechanical. It infers a deviation only where the old data states one: a
 // "planned" text becomes a planned deviation with that text as its reason, and a Rocq citation
@@ -14,8 +17,10 @@ const path = require('path');
 const args = process.argv.slice(2);
 const opt = (name, dflt) => { const i = args.indexOf(name); if (i < 0) return dflt; const v = args[i + 1]; args.splice(i, 2); return v; };
 const root = opt('--root', null);
+const overlayFile = opt('--overlay', null);
+const OVERLAY = overlayFile ? JSON.parse(fs.readFileSync(overlayFile, 'utf8')) : {};
 const [inFile, outFile] = args;
-if (!inFile || !outFile) { console.error('usage: node convert-explorer.js <data.js> <out.json> [--root <dir>]'); process.exit(2); }
+if (!inFile || !outFile) { console.error('usage: node convert-explorer.js <data.js> <out.json> [--root <dir>] [--overlay <json>]'); process.exit(2); }
 
 const src = fs.readFileSync(inFile, 'utf8');
 const OLD = JSON.parse(src.slice(src.indexOf('=') + 1).trim().replace(/;\s*$/, ''));
@@ -87,6 +92,47 @@ function introduces(t) {
   return [...out];
 }
 
+// An overview block written as one array whose rows end in \text{...}: rows of a label, a formula
+// and a sentence, so the words leave the formula.
+function topSplit(body, sep) {
+  const out = []; let depth = 0, last = 0;
+  for (let i = 0; i < body.length; i++) {
+    if (body.startsWith('\\begin{', i)) { depth++; i += 6; continue; }
+    if (body.startsWith('\\end{', i)) { depth--; i += 4; continue; }
+    const c = body[i];
+    if (sep === '\\\\' && c === '\\' && body[i + 1] === '\\' && depth === 0) {
+      out.push(body.slice(last, i)); i += 2;
+      const o = /^\s*\[[^\]]*\]/.exec(body.slice(i)); if (o) i += o[0].length;
+      last = i; i--; continue;
+    }
+    if (c === '\\') { i++; continue; }
+    if (c === '{') depth++; else if (c === '}') depth--;
+    else if (sep === '&' && c === '&' && depth === 0) { out.push(body.slice(last, i)); last = i + 1; }
+  }
+  out.push(body.slice(last));
+  return out;
+}
+function tableOf(f) {
+  const m = /^\s*\\begin\{array\}\{([lcr]{2,3})\}([\s\S]*)\\end\{array\}\s*$/.exec(f || '');
+  if (!m || /\\inmodeplain|\\hline|\\begin\{array\}/.test(m[2])) return null;
+  const cols = m[1].length, rows = [];
+  for (const r of topSplit(m[2], '\\\\')) {
+    if (!r.trim()) continue;
+    const cells = topSplit(r, '&').map(c => c.trim());
+    if (cells.length !== cols) return null;
+    const text = /^\\text\{([\s\S]*)\}$/.exec(cells[cols - 1]);
+    if (!text || /\\text\{/.test(text[1])) return null;
+    const row = { formula: cells[cols - 2], text: text[1].trim() };
+    if (cols === 3 && cells[0]) {
+      const l = /^(?:\\sym\{([^}]*)\}\{)?\\text\{([^{}]*)\}\}?$/.exec(cells[0]);
+      if (!l) return null;
+      row.label = l[2]; if (l[1]) row.labelKey = l[1];
+    }
+    rows.push(row);
+  }
+  return rows.length ? { rows } : null;
+}
+
 const ALL = ['df', 'lf'];
 const modesOf = ms => {
   const m = [...new Set((ms || ALL).map(x => x === 'live' ? 'lf' : x))];
@@ -105,10 +151,14 @@ const sections = OLD.sections.map(s => clean({
     if (!out.length) devs.push({ kind: 'unsourced', reason: MISSING });
     const variants = b.variants ? Object.fromEntries(Object.entries(b.variants).filter(([m]) => m !== 'live').map(([m, t]) => [m, tex(t)])) : undefined;
     const formula = tex(b.tex);
+    const table = !(variants && Object.keys(variants).length) && tableOf(formula);
+    const reasons = (OVERLAY.reasons || {})[b.id] || {};
+    for (const d of devs) if (d.reason === MISSING && reasons[d.kind]) d.reason = reasons[d.kind];
     return clean({
       id: b.id,
       title: b.title,
-      formula,
+      formula: table ? undefined : formula,
+      table: table || undefined,
       variants: variants && Object.keys(variants).length ? variants : undefined,
       caption: prose(b.caption),
       why: prose(a.why),
@@ -176,6 +226,8 @@ const map = {
       { id: 'lf', label: 'Lock free', short: 'LF', description: 'Deadlock freedom plus credits, ticket needs, the guard and fuel.', color: { light: '#7b4d8f', dark: '#c6a2dc' } }
     ]
   },
+  conventions: OVERLAY.conventions,
+  deviationRules: OVERLAY.deviationRules,
   sections,
   notes,
   examples,

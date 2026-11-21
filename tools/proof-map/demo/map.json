@@ -71,6 +71,35 @@
    }
   ]
  },
+ "conventions": [
+  {
+   "symbol": "i, j",
+   "meaning": "Names of threads in a configuration, and indices."
+  },
+  {
+   "symbol": "k",
+   "meaning": "A constant of the language, or a natural number used as an index."
+  },
+  {
+   "symbol": "m, n",
+   "meaning": "Natural numbers. The step index of the relation is $n$."
+  },
+  {
+   "symbol": "N",
+   "meaning": "The counter bound of the lock-free relation."
+  },
+  {
+   "symbol": "M",
+   "meaning": "A configuration, a finite map from thread names to threads."
+  }
+ ],
+ "deviationRules": [
+  {
+   "kind": "renamed",
+   "reason": "Constructors are shown by their surface keyword.",
+   "appliesTo": "constructors"
+  }
+ ],
  "sections": [
   {
    "id": "syntax",
@@ -124,7 +153,7 @@
      "deviations": [
       {
        "kind": "notation",
-       "reason": "REASON MISSING",
+       "reason": "Derived form, defined in Syntax.v as an application of a $\\lambda$.",
        "names": [
         "ELet"
        ]
@@ -815,7 +844,48 @@
     {
      "id": "t-lf-credits",
      "title": "Credits",
-     "formula": "\\begin{array}{lll}\\sym{lfi.credit}{\\text{credit}} & \\sym{ty.credit}{(S@x)\\inmode{lf}{^{a}},\\ (T \\mathrel{\\sym{ty.arrow}{\\multimap}} U)\\inmode{lf}{^{a}}} & \\text{a lower bound on the counter of an end, or of the ends a closure captured} \\\\[3pt] \\sym{lfi.cost}{\\text{cost}} & \\sym{tj.eff}{e : T\\ !\\ (c, \\vartheta)} & \\text{the term performs at most $c$ actions before it returns} \\\\[3pt]  & \\sym{age.ctx}{\\Delta - c} & \\text{what is held while $e$ runs loses $c$, and each credit must be at least $c$} \\\\[3pt]  & \\sym{age.idle}{(\\mathsf{Skip}@x)\\inmode{lf}{^{a}} - c} & \\text{an idle end loses credit without the check} \\\\[3pt]  & \\sym{act.refill}{(S@x^{+})\\inmode{lf}{^{N}}} & \\text{an action returns its end with credit $N$} \\\\[3pt] \\sym{lfi.hop}{\\text{transfer}} & \\sym{E-Send.floor}{T' - 1 \\leq T[x\\cdot i]} & \\text{a sent end loses one} \\\\[3pt]  & \\sym{E-Abs.cap}{(T \\mathrel{\\sym{ty.arrow}{\\multimap}} U)\\inmode{lf}{^{a}} : \\Delta - a} & \\text{the body of a closure sees each captured end at its credit minus $a$} \\\\[3pt]  & \\sym{E-Spawn.credit}{a \\geq 1} & \\text{a spawned closure has credit at least one, so the ends of the child lose one}\\end{array}",
+     "table": {
+      "rows": [
+       {
+        "formula": "\\sym{ty.credit}{(S@x)\\inmode{lf}{^{a}},\\ (T \\mathrel{\\sym{ty.arrow}{\\multimap}} U)\\inmode{lf}{^{a}}}",
+        "text": "a lower bound on the counter of an end, or of the ends a closure captured",
+        "label": "credit",
+        "labelKey": "lfi.credit"
+       },
+       {
+        "formula": "\\sym{tj.eff}{e : T\\ !\\ (c, \\vartheta)}",
+        "text": "the term performs at most $c$ actions before it returns",
+        "label": "cost",
+        "labelKey": "lfi.cost"
+       },
+       {
+        "formula": "\\sym{age.ctx}{\\Delta - c}",
+        "text": "what is held while $e$ runs loses $c$, and each credit must be at least $c$"
+       },
+       {
+        "formula": "\\sym{age.idle}{(\\mathsf{Skip}@x)\\inmode{lf}{^{a}} - c}",
+        "text": "an idle end loses credit without the check"
+       },
+       {
+        "formula": "\\sym{act.refill}{(S@x^{+})\\inmode{lf}{^{N}}}",
+        "text": "an action returns its end with credit $N$"
+       },
+       {
+        "formula": "\\sym{E-Send.floor}{T' - 1 \\leq T[x\\cdot i]}",
+        "text": "a sent end loses one",
+        "label": "transfer",
+        "labelKey": "lfi.hop"
+       },
+       {
+        "formula": "\\sym{E-Abs.cap}{(T \\mathrel{\\sym{ty.arrow}{\\multimap}} U)\\inmode{lf}{^{a}} : \\Delta - a}",
+        "text": "the body of a closure sees each captured end at its credit minus $a$"
+       },
+       {
+        "formula": "\\sym{E-Spawn.credit}{a \\geq 1}",
+        "text": "a spawned closure has credit at least one, so the ends of the child lose one"
+       }
+      ]
+     },
      "caption": "Each end has a counter at run time, the number of actions the thread holding it may perform on other ends before it must act on this end. A credit is a lower bound on that counter, so the holding thread postpones an end only finitely often. Aging lowers the credits of held values by the cost of the code that runs, an action restores its own end to $N$, and transferring an end to another thread lowers its credit by one.",
      "why": "Credits rule out a holding thread that acts on other ends forever while a partner waits, and an end that is passed between threads forever.",
      "example": "Postponement and endless delegation in the Examples tab have no lock-free typing.",
@@ -863,7 +933,36 @@
     {
      "id": "t-lf-tickets",
      "title": "Tickets",
-     "formula": "\\begin{array}{lll}\\sym{lfi.tickets}{\\text{need}} & \\sym{ann.tix}{\\vartheta = (s, b),\\ \\ \\vartheta(r) = 2^{s} r + b} & \\text{the tickets a term needs at its start to keep $r$ tickets at its end} \\\\[3pt]  & \\sym{ann.meets}{\\vartheta(r) \\leq tk} & \\text{$tk$ tickets suffice} \\\\[3pt]  & \\sym{ann.tlink}{\\mathsf{tlink}\\,(s, b) = (s, b + 1)} & \\text{a link uses one ticket} \\\\[3pt]  & \\sym{ann.tspawn}{\\mathsf{tspawn}\\,b_c\\,(s, b)} & \\text{a spawn gives the child half the tickets, so the need doubles} \\\\[3pt]  & \\sym{tj.seq}{\\varepsilon_1 \\cdot \\varepsilon_2} & \\text{sequencing composes needs, and is defined when the result is again a pair} \\\\[3pt]  & \\sym{lf.meets}{N \\in \\mathbb{N} \\Rightarrow \\vartheta(0) \\in \\mathbb{N}} & \\text{P-Term requires a finite need for each thread}\\end{array}",
+     "table": {
+      "rows": [
+       {
+        "formula": "\\sym{ann.tix}{\\vartheta = (s, b),\\ \\ \\vartheta(r) = 2^{s} r + b}",
+        "text": "the tickets a term needs at its start to keep $r$ tickets at its end",
+        "label": "need",
+        "labelKey": "lfi.tickets"
+       },
+       {
+        "formula": "\\sym{ann.meets}{\\vartheta(r) \\leq tk}",
+        "text": "$tk$ tickets suffice"
+       },
+       {
+        "formula": "\\sym{ann.tlink}{\\mathsf{tlink}\\,(s, b) = (s, b + 1)}",
+        "text": "a link uses one ticket"
+       },
+       {
+        "formula": "\\sym{ann.tspawn}{\\mathsf{tspawn}\\,b_c\\,(s, b)}",
+        "text": "a spawn gives the child half the tickets, so the need doubles"
+       },
+       {
+        "formula": "\\sym{tj.seq}{\\varepsilon_1 \\cdot \\varepsilon_2}",
+        "text": "sequencing composes needs, and is defined when the result is again a pair"
+       },
+       {
+        "formula": "\\sym{lf.meets}{N \\in \\mathbb{N} \\Rightarrow \\vartheta(0) \\in \\mathbb{N}}",
+        "text": "P-Term requires a finite need for each thread"
+       }
+      ]
+     },
      "caption": "Each thread has a number of link tickets, a link uses one, and no step creates tickets. A ticket need $\\vartheta$ says how many tickets a term needs, and P-Term requires the need of each thread to be finite. A thread therefore performs finitely many links.",
      "why": "A link acts on no end, so counters do not bound links, and a link gives the waiting thread a new dual end with a full counter. Tickets rule out a thread that relinks forever.",
      "example": "Link refresh in the Examples tab has no lock-free typing.",
@@ -900,7 +999,32 @@
     {
      "id": "t-lf-guard",
      "title": "The guard",
-     "formula": "\\begin{array}{lll}\\sym{lfi.guard}{\\text{guard}} & \\sym{guard.judg}{\\Lambda \\vdash\\!\\triangleright t} & \\text{$t$ uses the variable of a box only after a session action} \\\\[3pt]  & \\sym{guard.box}{\\Lambda \\mathrel{\\sym{guard.judg}{\\vdash\\!\\triangleright}}\\ !b \\iff \\sym{guard.marks}{\\mathsf{true}}.\\Lambda \\mathrel{\\sym{guard.judg}{\\vdash\\!\\triangleright}} b} & \\text{a box marks its own variable} \\\\[3pt]  & \\sym{guard.var}{\\Lambda(y) = \\sym{guard.marks}{\\mathsf{false}}} & \\text{a marked variable cannot be used} \\\\[3pt]  & \\sym{guard.acts}{\\mathsf{acts}\\,e} & \\text{each evaluation of $e$ to a value performs a session action, after which the marks are cleared} \\\\[3pt]  & \\sym{guard.proc}{\\vdash\\!\\triangleright p} & \\text{each thread of the process is guarded}\\end{array}",
+     "table": {
+      "rows": [
+       {
+        "formula": "\\sym{guard.judg}{\\Lambda \\vdash\\!\\triangleright t}",
+        "text": "$t$ uses the variable of a box only after a session action",
+        "label": "guard",
+        "labelKey": "lfi.guard"
+       },
+       {
+        "formula": "\\sym{guard.box}{\\Lambda \\mathrel{\\sym{guard.judg}{\\vdash\\!\\triangleright}}\\ !b \\iff \\sym{guard.marks}{\\mathsf{true}}.\\Lambda \\mathrel{\\sym{guard.judg}{\\vdash\\!\\triangleright}} b}",
+        "text": "a box marks its own variable"
+       },
+       {
+        "formula": "\\sym{guard.var}{\\Lambda(y) = \\sym{guard.marks}{\\mathsf{false}}}",
+        "text": "a marked variable cannot be used"
+       },
+       {
+        "formula": "\\sym{guard.acts}{\\mathsf{acts}\\,e}",
+        "text": "each evaluation of $e$ to a value performs a session action, after which the marks are cleared"
+       },
+       {
+        "formula": "\\sym{guard.proc}{\\vdash\\!\\triangleright p}",
+        "text": "each thread of the process is guarded"
+       }
+      ]
+     },
      "caption": "Internal steps ($\\beta$, $\\mathsf{new}$, $\\mathsf{spawn}$, $\\mathsf{link}$) change no counter. The guard requires each recursive call to come after a session action, so a thread cannot take internal steps forever.",
      "why": "A loop made only of internal steps runs forever without acting with any other thread. Deadlock freedom allows such a loop and lock freedom does not.",
      "example": "Guard rejections in the Examples tab, such as $!(f = \\mathsf{force}\\,f)$.",
@@ -924,7 +1048,20 @@
     {
      "id": "t-lf-wf",
      "title": "A well-founded world",
-     "formula": "\\begin{array}{lll}\\sym{lfi.wf}{\\text{well-founded}} & \\sym{w.lfworld}{\\sym{th.wfworld}{\\mathsf{wfworld}}\\,W \\iff \\prec_W \\text{ is well-founded}} & \\text{the order has no infinite descending chain} \\\\[3pt]  & \\sym{th.wfworld}{\\mathsf{wfworld}\\,W} & \\text{a premise of lock-free soundness, which no typing rule checks}\\end{array}",
+     "table": {
+      "rows": [
+       {
+        "formula": "\\sym{w.lfworld}{\\sym{th.wfworld}{\\mathsf{wfworld}}\\,W \\iff \\prec_W \\text{ is well-founded}}",
+        "text": "the order has no infinite descending chain",
+        "label": "well-founded",
+        "labelKey": "lfi.wf"
+       },
+       {
+        "formula": "\\sym{th.wfworld}{\\mathsf{wfworld}\\,W}",
+        "text": "a premise of lock-free soundness, which no typing rule checks"
+       }
+      ]
+     },
      "caption": "A waiting thread waits on the thread holding its dual end, which may itself wait at a lower point. In a well-founded order this chain of waits ends, and the thread at its bottom can act.",
      "why": "It rules out a chain of waiting threads that grows forever, each waiting below the previous one.",
      "example": "The growing waiting chain in the Examples tab is outside lock-free soundness.",

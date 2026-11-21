@@ -14,7 +14,8 @@ and one for prose.
 | `tex.macros` | no | MathJax macros, `"name": "body"` or `"name": ["body", n]` for `n` arguments. |
 | `syntax` | no | `keywords` and `comment` delimiters for example code, such as `["(* *)", "--"]`. |
 | `modes` | no | The views of the map, see below. |
-| `conventions` | no | Symbols fixed for the whole map, `{symbol, meaning}`. They count as introduced before the first block. |
+| `conventions` | no | Symbols fixed for the whole map, `{symbol, meaning}`. The symbol may list several letters, such as `i, j`. They count as introduced before the first block. |
+| `deviationRules` | no | Deviations declared once, `{kind, reason, appliesTo}`, see Deviations. |
 | `sections` | yes | The stages of the story, in reading order. |
 | `notes` | yes | One note per hover key. |
 | `examples` | no | Programs with what the development proves about them. |
@@ -30,7 +31,8 @@ A block shows one definition or one rule group.
 | Field | Meaning |
 |---|---|
 | `id`, `title` | The id is unique across sections, blocks and examples. |
-| `formula` | TeX of the block, with the markup below. |
+| `formula` | TeX of the block, with the markup below. A block has a `formula` or a `table`. |
+| `table` | Rows `{label?, labelKey?, formula, text}` for an overview that pairs each formula with a sentence. The label is a word with an optional note, the text is prose. |
 | `variants` | A whole formula for one mode, used instead of `formula` in that mode. |
 | `caption` | What the formula says, in words. The reader sees it under the formula. |
 | `why`, `breaks`, `example` | The note behind the title. Why the block exists, what fails without it, an instance. |
@@ -76,6 +78,10 @@ the code lacks.
 `unsourced` and `other`. `reason` is mandatory. A converter that cannot infer one writes
 `REASON MISSING`, which the page shows in red and the checker rejects. `part` names the part of
 the formula concerned, `names` the Rocq names, `modes` the modes the deviation applies to.
+
+A reason shared by many items is declared once under `deviationRules`. `appliesTo` is
+`"constructors"`, for notes that cite a constructor of an inductive type, or `{"keys": [...]}`
+with patterns where `*` matches any text. The checker accepts the items a rule covers.
 
 The page shows every reason under its block and in its note. A tag in the block header names the
 kinds.

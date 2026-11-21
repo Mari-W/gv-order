@@ -110,6 +110,14 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 420px)
 .math mjx-container svg { max-width: 100% !important; height: auto !important; }
 mjx-container { user-select: text; }
 mjx-container.sel { background: color-mix(in srgb, var(--accent) 22%, transparent); border-radius: 3px; }
+.ptable { display: grid; grid-template-columns: max-content minmax(0, max-content) minmax(0, 1fr); gap: 8px 18px; align-items: baseline; margin: 12px 0 4px; }
+.ptable .lab { font-family: var(--display); font-size: 0.98rem; color: var(--muted); }
+.ptable .lab[class*="k-"] { cursor: help; border-bottom: 1px dotted var(--line-strong); justify-self: start; }
+.ptable .lab[class*="k-"]:hover, .ptable .lab.hot { color: var(--ink); background: var(--hot-soft); }
+.ptable .math { margin: 0; }
+.ptable .math mjx-container { text-align: left !important; }
+.ptable .txt { font-size: 0.95rem; }
+@media (max-width: 700px) { .ptable { grid-template-columns: max-content minmax(0, 1fr); } .ptable .txt { grid-column: 2; margin-top: -4px; color: var(--muted); } }
 .caption { color: var(--muted); font-size: 0.95rem; margin: 8px 0 0; max-width: 78ch; }
 .devs { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
 .devs li { display: flex; gap: 8px; align-items: baseline; font-size: 0.88rem; padding: 6px 10px; border-radius: 8px; background: var(--sunk); }
@@ -382,9 +390,10 @@ window.MathJax = {
   const refsText = rs => (rs || []).map(r => r.file + ' ' + r.names.join(' ')).join(' ');
   function blockHay(b) {
     return hay('b:' + b.id, () => {
-      const texs = [b.formula, ...Object.values(b.variants || {})];
-      const keys = new Set(texs.flatMap(t => [...keysIn(t)]));
-      return [b.title, b.caption, b.why, refsText(b.source), ...texs, ...[...keys].map(k => k + ' ' + ((MAP.notes[k] && MAP.notes[k].title) || ''))];
+      const rows = (b.table && b.table.rows) || [];
+      const texs = [b.formula, ...Object.values(b.variants || {}), ...rows.map(r => r.formula)];
+      const keys = new Set(texs.flatMap(t => [...keysIn(t)]).concat(rows.map(r => r.labelKey).filter(Boolean)));
+      return [b.title, b.caption, b.why, refsText(b.source), ...rows.map(r => (r.label || '') + ' ' + (r.text || '')), ...texs, ...[...keys].map(k => k + ' ' + ((MAP.notes[k] && MAP.notes[k].title) || ''))];
     });
   }
   const exHay = x => hay('x:' + x.id, () => [x.title, x.lead, x.meaning, x.code, refsText(x.source)]);
@@ -511,6 +520,7 @@ window.MathJax = {
       let head = s.intro ? `<p class="intro">${prose(s.intro)}</p>` : '';
       if (!query && shown.length > 3) head += `<ul class="toc">${shown.map(b => `<li><a href="#${esc(s.id)}/${esc(b.id)}" data-jump="${esc(b.id)}">${esc(b.title)}</a></li>`).join('')}</ul>`;
       if (isFirst && !query && (MAP.conventions || []).length) head += `<div class="conventions"><h2>Conventions</h2><dl>${MAP.conventions.map(c => `<dt>$${esc(c.symbol)}$</dt><dd>${prose(c.meaning)}</dd>`).join('')}</dl></div>`;
+      if (isFirst && !query && (MAP.deviationRules || []).length) head += `<div class="conventions"><h2>Display rules</h2>${devList(MAP.deviationRules.map(r => ({ kind: r.kind, reason: r.reason + (r.appliesTo === 'constructors' ? ' It covers each symbol whose note cites a constructor.' : ' It covers the notes ' + r.appliesTo.keys.join(', ') + '.') })))}</div>`;
       root.insertAdjacentHTML('beforeend', head);
       for (const b of shown) root.appendChild(blockEl(s, b));
       if (!shown.length) noMatches(root);
@@ -532,9 +542,22 @@ window.MathJax = {
     const flip = differs(b) ? `<span class="mini" role="group" aria-label="Show this block in">${MODES.map(m => `<button type="button" data-flip="${esc(b.id)}" data-m="${esc(m.id)}" data-mc="${esc(m.id)}" aria-pressed="${bm === m.id}" title="${esc(m.label)}">${esc(m.short || m.label)}</button>`).join('')}</span>` : '';
     el.innerHTML = `<div class="bhead"><h3 data-block="${esc(b.id)}" tabindex="0">${esc(b.title)}</h3><span class="tools">${tags}${hook('blockTags', b)}${flip}<button class="tbtn" type="button" data-copy="${esc(b.id)}" title="Copy the TeX of this formula">${ICON.copy}</button><a class="tbtn" href="#${esc(s.id)}/${esc(b.id)}" title="Link to this block">${ICON.link}</a></span></div>`
       + (b.source && b.source.length ? `<code class="src">${esc(refLine(b.source))}</code>` : '');
-    el.appendChild(math(texOf(b, bm), bm));
+    if (b.table && !texOf(b, bm)) el.appendChild(tableEl(b, bm)); else el.appendChild(math(texOf(b, bm), bm));
     el.insertAdjacentHTML('beforeend', (b.caption ? `<p class="caption">${prose(b.caption, bm)}</p>` : '') + devList(b.deviations) + hook('blockFooter', b));
     return el;
+  }
+  // an overview block: rows of a label, a formula and a sentence
+  function tableEl(b, md) {
+    const g = document.createElement('div'); g.className = 'ptable';
+    for (const r of b.table.rows) {
+      const lab = document.createElement('span');
+      lab.className = 'lab' + (r.labelKey ? ' ' + cls(r.labelKey) : ''); lab.textContent = r.label || '';
+      const f = math(r.formula, md);
+      const t = document.createElement('span'); t.className = 'txt'; t.innerHTML = prose(r.text || '', md);
+      g.append(lab, f, t);
+    }
+    g.dataset.tex = b.table.rows.map(r => plainTeX(r.formula, md)).join(' \\\\\n');
+    return g;
   }
   function noMatches(root) {
     const c = counts(), others = SECS().filter(s => c[s.id]);
@@ -655,7 +678,7 @@ window.MathJax = {
         return;
       }
       const c = e.target.closest('[data-copy]');
-      if (c) { const x = blockIndex.get(c.dataset.copy); copyText(plainTeX(texOf(x.b, blockMode(x.b)), blockMode(x.b))); return; }
+      if (c) { const x = blockIndex.get(c.dataset.copy), bm = blockMode(x.b); copyText(texOf(x.b, bm) ? plainTeX(texOf(x.b, bm), bm) : x.b.table.rows.map(r => plainTeX(r.formula, bm)).join(' \\\\\n')); return; }
       const j = e.target.closest('[data-jump]');
       if (j) { e.preventDefault(); goTo(j.dataset.jump); return; }
       if (e.target.closest('a, button')) return;
@@ -728,7 +751,11 @@ window.MathJax = {
     mode = MODES.length ? (MODES.some(m => m.id === want) ? want : MAP.modes.default) : null;
     if (MAP.tex && MAP.tex.macros) { const tex = MathJax.config.tex; tex.macros = Object.assign({}, tex.macros, MAP.tex.macros); MathJax.startup.getComponents(); }
     blockIndex = new Map(MAP.sections.flatMap(s => s.blocks.map(b => [b.id, { s, b }])));
-    for (const { s, b } of blockIndex.values()) for (const t of [b.formula, ...Object.values(b.variants || {})]) for (const k of keysIn(t)) { if (!uses.has(k)) uses.set(k, new Map()); uses.get(k).set(b.id, { s, b }); }
+    for (const { s, b } of blockIndex.values()) {
+      const rows = (b.table && b.table.rows) || [];
+      const keys = new Set([b.formula, ...Object.values(b.variants || {}), ...rows.map(r => r.formula)].flatMap(t => [...keysIn(t)]).concat(rows.map(r => r.labelKey).filter(Boolean)));
+      for (const k of keys) { if (!uses.has(k)) uses.set(k, new Map()); uses.get(k).set(b.id, { s, b }); }
+    }
     for (const src of (base && MAP.extensions && MAP.extensions.page) || []) { try { await script(new URL(src, base).href); } catch (e) { console.warn('extension not loaded', src); } }
     const css = window.ProofMap.exts.map(e => e.css || '').join('\n'); if (css) document.head.insertAdjacentHTML('beforeend', `<style>${css}</style>`);
     modeCSS(); renderModes(); renderTabs(); renderSection.sec = route().sec; renderSection(); wire(); restore(); watch();

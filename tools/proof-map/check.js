@@ -91,7 +91,10 @@ const items = [
   ...Object.entries(notes).map(([k, n]) => ({ kind: 'note', id: k, where: `note ${k}`, it: n })),
   ...examples.map(x => ({ kind: 'example', id: x.id, where: `example ${x.id}`, it: x }))
 ];
-const formulas = b => [b.formula, ...Object.values(b.variants || {})].filter(x => typeof x === 'string');
+const rowsOf = b => (b.table && b.table.rows) || [];
+const formulas = b => [b.formula, ...Object.values(b.variants || {}), ...rowsOf(b).map(r => r.formula)].filter(x => typeof x === 'string');
+// the formula a reader of one mode sees, a table counting as its formulas one below the other
+const formulaIn = (b, mode) => (mode && b.variants && b.variants[mode]) || b.formula || rowsOf(b).map(r => r.formula).join(' \\\\ ');
 const visibleIn = (x, m) => !x.modes || x.modes.includes(m);
 
 // ---------- ids, links, modes ----------
@@ -109,12 +112,14 @@ function proseFields() {
   const out = [];
   if (MAP.subtitle) out.push(['map subtitle', MAP.subtitle]);
   for (const c of MAP.conventions || []) out.push([`convention ${c.symbol}`, c.meaning]);
+  for (const r of MAP.deviationRules || []) out.push([`deviation rule ${r.kind}`, r.reason]);
   for (const m of (MAP.modes && MAP.modes.options) || []) if (m.description) out.push([`mode ${m.id}`, m.description]);
   for (const s of sections) if (s.intro) out.push([`${s.id}.intro`, s.intro]);
   for (const { kind, where, it } of items) {
     const f = kind === 'block' ? ['caption', 'why', 'breaks', 'example'] : kind === 'note' ? ['title', 'meaning', 'why', 'breaks', 'example'] : ['lead', 'meaning'];
     for (const k of f) if (typeof it[k] === 'string' && it[k].trim()) out.push([`${where}.${k}`, it[k]]);
     for (const a of it.args || []) if (a.meaning) out.push([`${where}.arg ${a.name}`, a.meaning]);
+    rowsOf(it).forEach((r, i) => { if (r.text) out.push([`${where}.row ${i + 1}`, r.text]); });
     for (const d of it.deviations || []) if (d.reason && d.reason !== 'REASON MISSING') out.push([`${where}.deviation`, d.reason]);
   }
   return out;
@@ -154,6 +159,7 @@ const usedKeys = new Set();
       usedKeys.add(x.key);
       if (!notes[x.key]) report('note-missing', 'error', where, x.key);
     }
+    for (const r of rowsOf(it)) if (r.labelKey) { usedKeys.add(r.labelKey); if (!notes[r.labelKey]) report('note-missing', 'error', where, r.labelKey); }
     for (const t of formulas(it)) {
       const cov = T.covered(t), miss = new Set();
       for (const m of t.matchAll(named)) if (!cov[m.index]) miss.add(m[0]);
@@ -168,7 +174,7 @@ const usedKeys = new Set();
 // ---------- variables in reading order ----------
 {
   const base = s => { const t = T.tokens(s).find(x => x.t === 'var'); return t ? t.base : s.trim(); };
-  const conv = new Set((MAP.conventions || []).map(c => base(c.symbol)));
+  const conv = new Set((MAP.conventions || []).flatMap(c => T.tokens(c.symbol).filter(x => x.t === 'var').map(x => x.base)));
   // where each variable is introduced, for the message
   const introAt = new Map();
   for (const { s, b } of blocks) for (const v of T.introducedBy(b)) if (!introAt.has(v)) introAt.set(v, `${s.id}/${b.id}`);
@@ -177,7 +183,7 @@ const usedKeys = new Set();
     const known = new Set(conv);
     for (const { s, b } of blocks) {
       if (mode && !visibleIn(b, mode)) continue;
-      const tex = T.resolve((mode && b.variants && b.variants[mode]) || b.formula, mode);
+      const tex = T.resolve(formulaIn(b, mode), mode);
       const own = T.introducedBy(b, mode);
       const { used, bound } = T.variables(tex);
       for (const v of used.keys()) {
@@ -254,6 +260,13 @@ if (idx) {
 }
 
 // ---------- names shown differently from the Rocq ----------
+// a map-wide deviation rule covers a note by its key pattern, or because it cites a constructor
+function ruleCovers(k, n) {
+  return (MAP.deviationRules || []).some(r => {
+    if (r.appliesTo === 'constructors') return !!idx && (n.source || []).some(ref => ref.names.some(name => (idx.byName.get(name) || []).some(e => e.kind === 'constructor')));
+    return ((r.appliesTo && r.appliesTo.keys) || []).some(p => new RegExp('^' + p.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$').test(k));
+  });
+}
 {
   const norm = s => s.toLowerCase().normalize('NFD').replace(/[^a-z0-9]/g, '');
   const shown = new Map();
@@ -270,6 +283,7 @@ if (idx) {
     const n = notes[k];
     if (!n || !(n.source || []).length) continue;
     if ((n.deviations || []).some(d => ['renamed', 'notation', 'simplified', 'merged'].includes(d.kind))) continue;
+    if (ruleCovers(k, n)) continue;
     const rocq = n.source.flatMap(r => r.names).map(norm);
     const disp = [...names].map(s => s.replace(/\\[A-Za-z]+|[{}\\_^]/g, '')).filter(s => /[A-Za-z]{2,}/.test(s));
     if (!disp.length) continue;
@@ -297,7 +311,7 @@ function mathjax() {
   for (const mode of modeIds.length ? modeIds : [null]) for (const { where, it } of items) {
     if (mode && !visibleIn(it, mode)) continue;
     const t = (mode && it.variants && it.variants[mode]) || it.formula;
-    for (const [what, x] of [['formula', t], ['signature', it.signature]]) {
+    for (const [what, x] of [['formula', t], ['signature', it.signature], ...rowsOf(it).map((r, i) => ['row ' + (i + 1), r.formula])]) {
       if (!x) continue;
       try { doc.convert(toMJ(x, mode), { display: true }); } catch (e) { report('mathjax', 'error', `${where} ${what}${mode ? ' (' + mode + ')' : ''}`, String(e.message).slice(0, 140)); }
     }

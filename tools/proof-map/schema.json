@@ -49,6 +49,26 @@
       }
     },
     "modes": { "$ref": "#/$defs/modes" },
+    "deviationRules": {
+      "description": "Deviations declared once for many items. The page lists them with the conventions, the checker accepts the items they cover.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "reason", "appliesTo"],
+        "additionalProperties": false,
+        "properties": {
+          "kind": { "enum": ["notation", "renamed", "simplified", "omitted"] },
+          "reason": { "type": "string", "minLength": 1 },
+          "appliesTo": {
+            "description": "constructors: notes whose cited names include a constructor of an inductive type. keys: notes whose key matches one of the patterns, with * as a wildcard.",
+            "oneOf": [
+              { "const": "constructors" },
+              { "type": "object", "required": ["keys"], "additionalProperties": false, "properties": { "keys": { "type": "array", "minItems": 1, "items": { "type": "string" } } } }
+            ]
+          }
+        }
+      }
+    },
     "conventions": {
       "description": "Symbols fixed for the whole map, introduced before the first section.",
       "type": "array",
@@ -154,13 +174,37 @@
     },
     "block": {
       "type": "object",
-      "required": ["id", "title", "formula", "source"],
+      "required": ["id", "title", "source"],
+      "anyOf": [{ "required": ["formula"] }, { "required": ["table"] }],
       "additionalProperties": false,
       "patternProperties": { "^x-": {} },
       "properties": {
         "id": { "$ref": "#/$defs/id" },
         "title": { "type": "string" },
         "formula": { "$ref": "#/$defs/tex" },
+        "table": {
+          "description": "Rows of a label, a formula and a sentence, for overview blocks. The words stay out of the formula.",
+          "type": "object",
+          "required": ["rows"],
+          "additionalProperties": false,
+          "properties": {
+            "rows": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["formula"],
+                "additionalProperties": false,
+                "properties": {
+                  "label": { "type": "string", "description": "A word naming the group the row starts." },
+                  "labelKey": { "$ref": "#/$defs/key", "description": "The note behind the label." },
+                  "formula": { "$ref": "#/$defs/tex" },
+                  "text": { "$ref": "#/$defs/prose" }
+                }
+              }
+            }
+          }
+        },
         "variants": {
           "description": "A whole formula for one mode, replacing formula in that mode.",
           "type": "object",

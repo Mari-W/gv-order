@@ -38,7 +38,9 @@ checker knows a particular development.
 A generated map follows the same steps with a script in place of the hand. The script emits the
 JSON, and the checker treats generated and written maps alike. When an older map exists, write a
 converter in the style of `convert-explorer.js`. It translates markup mechanically and writes
-`REASON MISSING` wherever a deviation needs a human reason.
+`REASON MISSING` wherever a deviation needs a human reason. Human decisions live in an overlay
+file that the converter merges on every run (`--overlay demo/overlay.json`), so a reconversion
+keeps them.
 
 ## B. Check a map against the code
 
@@ -102,7 +104,8 @@ still need a person. Report the three lists to the author, who does the rewritin
    lemmas in the order of the proof.
 6. An overview block may open a section and show how the blocks after it fit together. It cites
    the definitions it summarizes, or carries an `unsourced` deviation.
-7. A block shows mathematics. Words go into the caption and the notes, never into `\text`.
+7. A block shows mathematics. Words go into the caption and the notes, never into `\text`. An
+   overview that pairs each formula with a sentence uses a `table` of rows instead of a formula.
 
 ### Ordering
 
@@ -118,16 +121,15 @@ still need a person. Report the three lists to the author, who does the rewritin
 1. Lead with the claim. A caption opens with what the formula states, never with background.
 2. One idea per sentence, at most 35 words.
 3. Name the definition and say what it does. A rule restricts, a relation relates, a function
-   returns. No metaphors of money, travel or conversation.
-4. Quantify only where the definition quantifies. Write `each` for a universal premise and leave
-   out `every`, `any` and `all` elsewhere.
-5. No colons, semicolons or dashes in running prose. Split the sentence.
-6. Write `because`, never `since`, for a cause. State facts without hedges.
-7. Use the standard term of the field. A private skill lists the coined words its project forbids.
-8. Each field says something new. Drop a `why` that restates the caption.
+   returns.
+4. No colons, semicolons or dashes in running prose. Split the sentence.
+5. Write `because`, never `since`, for a cause. State facts without hedges.
+6. Use the standard term of the field. A private skill lists the coined words its project forbids.
+7. Each field says something new. Drop a `why` that restates the caption.
 
-The checker runs rules 2 to 6 and the lists of the private skill. A rule that does not fit a
-project goes into the `disableProse` list of its extension.
+The checker runs rules 2, 4 and 5 and the lists of the private skill. Stricter house rules, such
+as banned metaphors or quantifiers, belong to the private skill as `proseRules`. A base rule that
+does not fit a project goes into the `disableProse` list of its extension.
 
 ### Deviations
 
@@ -135,6 +137,11 @@ The display may differ from the raw code. Notation, merged clauses, a renamed op
 omitted argument and a planned change are all fine, each with a reason the reader sees. A reason
 says why the display is faithful to the code, or what the plan is and where it is recorded. The
 checker rejects a deviation without a reason and warns about renamed symbols without one.
+
+A reason shared by many items is declared once under `deviationRules`. The rule
+`{"kind": "renamed", "reason": "Constructors are shown by their surface keyword.", "appliesTo": "constructors"}`
+covers each note that cites a constructor of an inductive type. A list of key patterns, such as
+`{"keys": ["prim.*"]}`, covers notes by key. The page lists these rules next to the conventions.
 
 ## D. Extending the base in a private skill
 
@@ -187,8 +194,9 @@ Its map shows both views in one set of blocks. `demo/` holds the converted map a
    A rule whose two views differ too much for markup has `variants.df`.
 4. The private checker module `demo/ext/gv-check.js` adds three checks the base cannot know. A
    formula or note a deadlock-free reader reaches must not mention credits, ticket needs or the
-   guard. The project's coined words are banned in prose. The Rocq names behind the verdicts of
-   examples must exist.
+   guard. The author's strict prose rules (metaphors, quantifiers, `like`, pronoun endings) and the
+   project's coined words apply to prose. The Rocq names behind the verdicts of examples must
+   exist.
 5. The private page script `demo/ext/gv-page.js` reads `x-gv-accepts` on examples and draws one
    badge per judgment, such as "statically typed, lock free at N = 3". The deadlock-free view
    shows only the deadlock-free verdicts.

@@ -141,7 +141,7 @@ function introducedBy(b, mode = null) {
   const out = new Set();
   const baseOf = s => { const t = tokens(s).find(x => x.t === 'var'); return t ? t.base : null; };
   for (const v of b.introduces || []) { const x = baseOf(v); if (x) out.add(x); }
-  const f = resolve((mode && b.variants && b.variants[mode]) || b.formula, mode).replace(/\\sym\s*\{[^}]*\}/g, '');
+  const f = resolve((mode && b.variants && b.variants[mode]) || b.formula || ((b.table && b.table.rows) || []).map(r => r.formula).join(' '), mode).replace(/\\sym\s*\{[^}]*\}/g, '');
   const VAR = String.raw`(?:\\[A-Za-z]+|[A-Za-z])(?:\s*_\{?[A-Za-z0-9]+\}?|\s*'|\s*\^\{?[A-Za-z0-9+]+\}?)*`;
   for (const m of f.matchAll(new RegExp('(' + VAR + '(?:\\s*,\\s*' + VAR + ')*)\\s*\\}*\\s*(?:&\\s*)?::=', 'g')))
     for (const v of m[1].split(',')) { const x = baseOf(v.replace(/[{}]/g, '')); if (x) out.add(x); }
