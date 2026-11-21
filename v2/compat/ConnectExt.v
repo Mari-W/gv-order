@@ -57,7 +57,7 @@ Section ext.
       pose proof (HP2 id ∅ (fuse_ok_id _ _)) as P. by rewrite sdrop_empty, kren_id_map, pfuse_empty, pmap_id in P.
     - intros Hz j Hj. apply (L j (oadd_lt _ _ _ Hz Hj) Σ1' ΣC Σ2 ΣD); [by apply A1| |done].
       pose proof (HP2 id ∅ (fuse_ok_id _ _)) as P. rewrite sdrop_empty, kren_id_map, pfuse_empty, pmap_id in P.
-      eapply Prel_down; [|exact P]. lia.
+      eapply Prel_down; [|exact P]. exact (olt_ole _ _ (oadd_lt _ _ _ Hz Hj)).
   Qed.
 
   (** A step of p2 that changes only its interface. *)
@@ -70,7 +70,7 @@ Section ext.
       rewrite !sdrop_empty, !kren_id_map, !pfuse_empty, !pmap_id in HG. apply HG; [done|apply fuse_ok_id|done|done].
     - intros Hz j Hj. apply (L j (oadd_lt _ _ _ Hz Hj) Σ1 ΣC Σ2' ΣD); [|by apply A1|done].
       pose proof (HP1 id ∅ (fuse_ok_id _ _)) as P. rewrite sdrop_empty, kren_id_map, pfuse_empty, pmap_id in P.
-      eapply Prel_down; [|exact P]. lia.
+      eapply Prel_down; [|exact P]. exact (olt_ole _ _ (oadd_lt _ _ _ Hz Hj)).
   Qed.
 
   Local Lemma iface1 o v : (Σ1 ∪ ΣC) !! o = Some v → ech o ∉ K → Σ1 !! o = Some v ∧ o ∈ dom Σ1.

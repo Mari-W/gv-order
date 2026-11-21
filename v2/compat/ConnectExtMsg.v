@@ -79,12 +79,12 @@ Section extmsg.
   Local Lemma HP1id j : ole j n → Prel κ j W1 (Σ1 ∪ ΣC) T q1.
   Proof.
     intros Hj. pose proof (HP1 id ∅ (fuse_ok_id _ _)) as P. rewrite sdrop_empty, kren_id_map, pfuse_empty, pmap_id in P.
-    eapply Prel_down; [|exact P]. lia.
+    eapply Prel_down; [|exact P]. exact Hj.
   Qed.
   Local Lemma HP2id j : ole j n → Prel κ j W1 (Σ2 ∪ ΣD) TUnit q2.
   Proof.
     intros Hj. pose proof (HP2 id ∅ (fuse_ok_id _ _)) as P. rewrite sdrop_empty, kren_id_map, pfuse_empty, pmap_id in P.
-    eapply Prel_down; [|exact P]. lia.
+    eapply Prel_down; [|exact P]. exact Hj.
   Qed.
 
   (** A step of p1 after which the cut is re-split. *)
@@ -98,7 +98,7 @@ Section extmsg.
       rewrite sdrop_empty, kren_id_map, pfuse_empty, pmap_id in HG. apply HG; [done| |done].
       rewrite <-E2. by apply HP2id.
     - intros Hz j Hj. apply (L j (oadd_lt _ _ _ Hz Hj) Σ1' ΣC' Σ2' ΣD'); [by apply A1| |done].
-      rewrite <-E2. apply HP2id. lia.
+      rewrite <-E2. apply HP2id. exact (olt_ole _ _ (oadd_lt _ _ _ Hz Hj)).
   Qed.
 
   (** A step of p2 after which the cut is re-split. *)
@@ -112,7 +112,7 @@ Section extmsg.
       rewrite !sdrop_empty, !kren_id_map, !pfuse_empty, !pmap_id in HG.
       apply HG; [done|apply fuse_ok_id|by rewrite E1|done].
     - intros Hz j Hj. apply (L j (oadd_lt _ _ _ Hz Hj) Σ1' ΣC' Σ2' ΣD'); [|by apply A1|done].
-      rewrite <-E1. apply HP1id. lia.
+      rewrite <-E1. apply HP1id. exact (olt_ole _ _ (oadd_lt _ _ _ Hz Hj)).
   Qed.
 
   (** Q-Send of the composite. *)
@@ -124,7 +124,7 @@ Section extmsg.
     - destruct H1 as (_ & _ & (_ & S1 & _)).
       destruct (S1 _ _ _ _ _ (Hq1e M1 HM1) Hs) as (S0 & x & m & U & Sc & Σv1 & Σr1 & Θe1 & Σe1 & Lo & Uo & Dvr & Edel & HΘ1 & Hss & AV & AP).
       assert (fends w = dom Σv1 ∪ dom Θe1) as HM
-        by (rewrite <-dom_union_L; symmetry; exact (at_cost_V_exact κ _ _ _ _ _ _ _ AV)).
+        by (rewrite <-dom_union_L; symmetry; exact (at_cost_V_exact κ _ _ _ _ _ _ _ (cc_Hn CC) AV)).
       destruct (iface1 _ _ Lo HnK) as [Lo' Do].
       assert (∀ o', o' ∈ dom Θe1 → ech o' ∈ q1.1) as HΘe by (intros o' Ho'; by apply HΘ1).
       destruct (snd_moved Σ1 ΣC Σ2 ΣD q1.1 q2.1 Hc o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺) (fends w) HΘ1 HM) as [HΘ HM'].
@@ -150,7 +150,7 @@ Section extmsg.
       destruct H2 as (_ & _ & (_ & S2 & _)).
       destruct (S2 _ _ _ _ _ (Hq2e M2 HM2) Hs) as (S0 & x & m & U & Sc & Σv1 & Σr1 & Θe1 & Σe1 & Lo & Uo & Dvr & Edel & HΘ1 & Hss & AV & AP).
       assert (fends w = dom Σv1 ∪ dom Θe1) as HM
-        by (rewrite <-dom_union_L; symmetry; exact (at_cost_V_exact κ _ _ _ _ _ _ _ AV)).
+        by (rewrite <-dom_union_L; symmetry; exact (at_cost_V_exact κ _ _ _ _ _ _ _ (cc_Hn CC) AV)).
       destruct (iface2 _ _ Lo HnK) as [Lo' Do].
       assert (∀ o', o' ∈ dom Θe1 → ech o' ∈ q2.1) as HΘe by (intros o' Ho'; by apply HΘ1).
       destruct (snd_moved Σ2 ΣD Σ1 ΣC q2.1 q1.1 Hcs o Do Σv1 Σr1 Θe1 Σe1 Dvr Edel HΘe Hss (Sc, x⁺) (fends w) HΘ1 HM) as [HΘ HM'].
@@ -203,8 +203,8 @@ Section extmsg.
       set (E1 := recv_env (<[o := (Sc, x⁺)]> Σ1 ∪ ΣC) Θ2) in *.
       unfold erase in P1. simpl in P1. rewrite difference_empty_L in P1.
       rewrite <-(fin_fout Σ' E1) in P1.
-      pose proof (HP2id j ltac:(lia)) as P2. rewrite <-(fin_fout Σ' (Σ2 ∪ ΣD)) in P2.
-      pose proof (L j ltac:(lia) _ _ _ _ _ _ P1 P2 Hc') as HL. rewrite Hif in HL.
+      pose proof (HP2id j (olt_ole _ _ (c_take_lt κ n j Hj))) as P2. rewrite <-(fin_fout Σ' (Σ2 ∪ ΣD)) in P2.
+      pose proof (L j (c_take_lt κ n j Hj) _ _ _ _ _ _ P1 P2 Hc') as HL. rewrite Hif in HL.
       refine (eq_rect _ (λ p, Prel κ j W1 Σ' T p) HL _ _).
       unfold pconn, erase. simpl. rewrite !difference_empty_L. f_equal. rewrite <-Hch. done.
     - rewrite HΣ12. pose proof (conn_sym _ _ _ _ _ _ Hc) as Hcs.
@@ -229,8 +229,8 @@ Section extmsg.
       pose proof (cut_dual_chans _ _ Hcut3) as Hch'.
       unfold erase in P2. simpl in P2. rewrite difference_empty_L in P2.
       rewrite <-(fin_fout Σ' E2) in P2.
-      pose proof (HP1id j ltac:(lia)) as P1. rewrite <-(fin_fout Σ' (Σ1 ∪ ΣC)) in P1.
-      pose proof (L j ltac:(lia) _ _ _ _ _ _ P1 P2 Hc'') as HL.
+      pose proof (HP1id j (olt_ole _ _ (c_take_lt κ n j Hj))) as P1. rewrite <-(fin_fout Σ' (Σ1 ∪ ΣC)) in P1.
+      pose proof (L j (c_take_lt κ n j Hj) _ _ _ _ _ _ P1 P2 Hc'') as HL.
       rewrite map_union_comm in HL by (apply chans_disj_map; clear -H123; cc_set_solver).
       rewrite Hif in HL.
       refine (eq_rect _ (λ p, Prel κ j W1 Σ' T p) HL _ _).
