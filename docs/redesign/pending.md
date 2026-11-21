@@ -1,5 +1,75 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, run of 2026-11-21 on compositional lock-free semantics
+
+Branch redesign-comp in .claude/worktrees/redesign-comp, from bb04f3e,
+commits d4858e4 to 6b0995e, nothing pushed. static/Typing.v and the typing
+rules are untouched.
+
+- `lf_sem` (soup/Soup.v, d4858e4) no longer asks `s_W a = W`. It reads
+  `∀ n, ∃ a, erase (s_q a) = p ∧ a ∈ S^{N,W}_n⟦Σ ⊢ T⟧`, and `Soup` keeps
+  `W ⊑ s_W a`, so a state may start at any extension of the ranked world.
+  New `soup_inv_mono`: the soup at one index is monotone in the world it
+  reads its threads at.
+- The judgment at a static world (soup/LFCompose.v). `lf_sems N W Σ p T :=
+  ∀ R, wmodels R W → Σ ⊪^N _R p : T`. `lf_p_term` and `lf_fundamental`
+  conclude `lf_sems`, the latter by an induction with no world argument.
+- Semantic P-Connect. `lf_p_connect : lf_sems N W1 (Σ1 ∪ ΣC) p1 T →
+  lf_sems N W2 (Σ2 ∪ Σ̄C) p2 ∗ → (channel premises) → lf_sems N (W1 ⊔ W2) …`.
+  At a ranked world R of the join, R models W1 and W2. The first component
+  gives a state at some R1 ⊒ R. The second is read at R1, which models W2,
+  and gives a state at R2 ⊒ R1. The soup of the first moves up to R2 by
+  `soup_inv_mono` (`lf_soup_connect`). Reading the second component at R1
+  keeps the fresh roots of the two from colliding, so no renaming of roots
+  is needed.
+- The composite world. `join_models : sworld_wf W1 → sworld_wf W2 → swf W1
+  → swf W2 → swf (W1|S ⊔ W2|S) → ∃ R, wmodels R (W1 ⊔ W2)`, by
+  `wf_join_iff` and `wmodels_exists`. The ranks of R are the rank function
+  of the joined order (check-layers-open.md §2), never the ranks of a
+  component. `lf_sems_adequacy` and `lf_connect_adequacy` (two closed
+  components over a cut, at their own static worlds, with the condition on
+  the shared constants) conclude lock freedom under EM and FC.
+- Why the components are read at every ranked world of their static world,
+  and not at one fixed R1 and R2 each. A ranked world orders two ranked
+  points whenever their ranks differ. So R1 ⊨ W1 may put y ≺ x̄ and
+  R2 ⊨ W2 put x̄ ≺ y for shared points that no fact relates. A thread that
+  holds c⁺ at x and waits on d⁺ at y is ready in R1, its partner that holds
+  d⁻ at ȳ and waits on c⁻ at x̄ is ready in R2, and the composite deadlocks,
+  with W1 = W2 free of facts and `swf (W1|S ⊔ W2|S)` true. A semantic
+  P-Connect from fixed R1 and R2 is therefore unsound, whatever re-ranking
+  of the join is chosen (argued, not mechanized). The universal reading
+  compares the components only through their static worlds, at the shared
+  roots, as the static P-Connect does.
+- Deadlock-free side. It already composes this way. `proc_gen` proves
+  `∀ R, wmodels R W → sem_ptyped κ R Σ p T`, and P holds a process itself at
+  a ranked world with no starting state, so both components are read at one
+  R that models the join. `sem_p_connect_sw` (static/FundamentalProc.v,
+  6b0995e) states it at static worlds, with `sem_ptyped_sw`.
+- Test (5fd3db7). examples/LFClientServerSplit.v splits the client-server
+  program into two components over the cut {a⁺ at ρ, b⁺ at ρ·0}. The client
+  lives in W_cli, the laws `cs_L` at the constant 0 and polarity true, the
+  server in W_srv at polarity false. Each thread is `App (EForce box)
+  (Pair ends)`, typed by P-Term at N = 6, and the box constraint holds by
+  the facts of its own world. The join is well-founded by the measure
+  (field sum, offset, depth) (`swf_lex3`), which gives the condition on
+  the shared constant through `wf_join_iff`. `cs_split_lock_free` follows
+  from `lf_p_term` on each side and `lf_connect_adequacy`.
+- Checks on the laptop. `make -j8` builds with no error, `make test` passes
+  after SoupNotations.expected was regenerated for the new
+  `lf_fundamental`, and `make check` reports 122 of 122 results closed
+  under the global context (new: `lf_soup_connect`, `join_models`,
+  `lf_sems_adequacy`, `lf_connect_adequacy`, `cs_split_lock_free`,
+  `sem_p_connect_sw`). No Admitted, no Axiom, no new Parameter. EM and FC
+  stay hypotheses. Every LF example and `lf_soundness` build unchanged.
+- Map (b0040f4, 6b0995e). The annotated configuration carries its ranked
+  world R_a, the lock-free process relation reads threads at R_a with
+  R ⊑ R_a, the lock-free judgment reads `∀ R ⊨ W`, and the composition
+  block has a row for P-Connect in the lock-free judgment with the note
+  `th.lf-p-connect`. New notes `sp.world` and `sp.allR`. gen.js reports 0
+  errors, check.js 0 mathjax errors, lint-map 0 semicolons, 0 coined words,
+  0 sentences over 35 words, 161 metaphor and 322 every/any/all against 323
+  before.
+
 ## Report, fourth run of 2026-11-21 on typed_sinst and rx-chain
 
 Branch redesign-clean3 in .claude/worktrees/redesign-s4, nothing pushed,
