@@ -14,12 +14,12 @@
     deterministic β steps, then the fundamental theorem for the live arm).
     The leaves are closed single-close terms and use the fundamental
     theorem. [sem_p_term] makes each thread a process, [sem_p_connect] joins
-    A to M over c and then B to the result over d, and [adequacy] applies
-    because the join of the worlds is strict.
+    A to M over c and then B to the result over d, all at one ranked world
+    that models [Wa ⊔ Wb], and [adequacy] applies.
 
     - [tt_deadlock_free]  : the closed process is deadlock free.
-    - [tt_dead_world_strict] : one world holds both arm facts x ≺ ȳ and
-      y ≺ x̄ and is strict, so a static derivation exists for this tree
+    - [tt_dead_world_wf] : one world holds both arm facts x ≺ ȳ and
+      y ≺ x̄ and is well-founded, so a static derivation exists for this tree
       (see docs/redesign/tree-example.md). *)
 
 From GV Require Export examples.SemBranch.
@@ -35,55 +35,42 @@ Definition tt_config : proc :=
 
 (** ** Worlds
 
-    All three threads live in [Wa]. The leaves close a channel that is
-    their only one and need no fact. *)
-
-Definition Wtt : world := (Wa ⊔ Wa) ⊔ Wa.
-
-Lemma Wtt_strict : strict Wtt.
-Proof.
-  apply strict_rank.
-  - apply wjoin_wf; [apply wjoin_wf|]; apply Wa_wf.
-  - simpl. set_solver.
-  - simpl. intros x y [[H|H]|H]; injection H as Hx Hy; subst; unfold rk, px, py, pt_dual; simpl; lia.
-Qed.
-
-Lemma Wt_strict : strict (Wa ⊔ Wa).
-Proof.
-  apply (strict_mono _ Wtt); [apply wjoin_wf; apply Wa_wf|apply wext_join_l|apply Wtt_strict].
-Qed.
+    All three threads live in one ranked world R that models [Wa ⊔ Wb].
+    The leaves close a channel that is their only one and need no fact. *)
 
 (** ** Static world of the dead arm
 
     The static system types both arms of the middle thread under one
-    world, so it needs x ≺ ȳ and y ≺ x̄ together. That world is strict.
-    The potential 10·offset + (0 for a positive point, 1 for a negative
-    one) grows along both facts and along both kinds of step. *)
+    world, so it needs x ≺ ȳ and y ≺ x̄ together. That world is
+    well-founded. The potential 10·offset + (0 for a positive point, 1 for
+    a negative one) grows along both facts and along both kinds of step. *)
 
-Definition Wd : world :=
-  World ({[0]} ∪ {[1]}) (λ f, f = FLt px (py‾) ∨ f = FLt py (px‾)) ∅ (λ _ _, False).
+Definition Wd : sworld :=
+  SWorld ({[0]} ∪ {[1]}) (λ f, f = FLt px (py‾) ∨ f = FLt py (px‾)).
 
-Lemma Wd_wf : world_wf Wd.
+Lemma Wd_wf : sworld_wf Wd.
 Proof.
-  split; simpl; [|done]. intros x y [H|H]; injection H as Hx Hy; subst;
+  split; simpl. intros x y [H|H]; injection H as Hx Hy; subst;
     split; eexists; (split; [reflexivity|set_solver]).
 Qed.
 
 Definition pot (x : point) : nat := 10 * pt_off x + (if pt_pol x then 0 else 1).
 
-Lemma tt_dead_world_strict : strict Wd.
+Lemma tt_dead_world_wf : swf Wd.
 Proof.
-  split; [apply Wd_wf|]. intros x Hx.
-  assert (∀ a b, wstep Wd a b → pot a < pot b) as Hs.
-  { intros a b Hs. destruct Hs as [a b H|ℓ g a b Hℓ _|a|a].
+  apply swf_iff.
+  assert (∀ a b, swstep Wd a b → pot a < pot b) as Hs.
+  { intros a b Hs. destruct Hs as [a b H|a|a].
     - simpl in H. destruct H as [H|H]; injection H as Hx' Hy'; subst; unfold pot, px, py, pt_dual; simpl; lia.
-    - simpl in Hℓ. set_solver.
     - unfold pot. simpl. destruct (pt_pol a); simpl; lia.
     - unfold pot. simpl. destruct (pt_pol a); simpl; lia. }
-  assert (∀ a b, Wd ⊢ a ≺ b → pot a < pot b) as H.
+  assert (∀ a b, Wd ⊢ₛ a ≺ b → pot a < pot b) as H.
   { intros a b Hab. induction Hab as [a b H|a b c H _ IH]; [by apply Hs|].
     apply Hs in H. lia. }
-  specialize (H x x Hx). lia.
+  assert (∀ m x, pot x = m → Acc (sw_lt Wd) x) as Hacc.
+  { intros m. induction m as [m IH] using lt_wf_ind. intros x <-. constructor.
+    intros y Hy. eapply IH; [apply H, Hy|done]. }
+  intros x. by apply (Hacc (pot x)).
 Qed.
 
 (** ** The leaves in E *)
@@ -98,10 +85,13 @@ Proof.
 Unshelve. all: try exact None.
 Qed.
 
+Section sem.
+  Context (R : world) (HR : wmodels R (Wa ⊔ Wb)).
+
 Lemma leaf_E o x n :
-  Erel κ_DF n Wa (tenv_erase (Θl o x)) TUnit ∅ (EClose (Chan o)).
+  Erel κ_DF n R (tenv_erase (Θl o x)) TUnit ∅ (EClose (Chan o)).
 Proof.
-  apply typed_E_df; [apply Wa_strict| |apply leaf_typed].
+  apply (typed_E_df Wa); [apply Wa_wf|by eapply wmodels_ext; [apply swext_join_l|]| |apply leaf_typed].
   unfold tenv_df, Θl. by rewrite map_fmap_singleton.
 Qed.
 
@@ -148,10 +138,10 @@ Proof. apply pfree_dual. Qed.
 
 (** ** The threads as processes *)
 
-Lemma mid_P n : Prel κ_DF n Wa (Sd ∪ Sc) TUnit (∅, {[+ tt_mid +]}).
+Lemma mid_P n : Prel κ_DF n R (Sd ∪ Sc) TUnit (∅, {[+ tt_mid +]}).
 Proof.
   rewrite <-ΣC_split.
-  refine (sem_p_term κ_DF n Wa _ ΣC ∅ ∅ _ TUnit _ sth_a (sb_thread_E n)). constructor.
+  refine (sem_p_term κ_DF n R _ ΣC ∅ ∅ _ TUnit _ (sth_a R HR) (sb_thread_E R HR n)). constructor.
 Qed.
 
 Lemma sth_leaf o x Σ : tenv_erase (Θl o x) = Σ → pfree Σ → sth Σ Σ ∅ ∅.
@@ -165,17 +155,17 @@ Proof.
 Qed.
 
 Lemma leaf_P o x Σ n : tenv_erase (Θl o x) = Σ → pfree Σ →
-  Prel κ_DF n Wa Σ TUnit (∅, {[+ EClose (Chan o) +]}).
+  Prel κ_DF n R Σ TUnit (∅, {[+ EClose (Chan o) +]}).
 Proof.
   intros He Hf.
-  assert (Erel κ_DF n Wa Σ TUnit ∅ (EClose (Chan o))) as HE by (rewrite <-He; apply leaf_E).
-  refine (sem_p_term κ_DF n Wa Σ Σ ∅ ∅ _ TUnit _ (sth_leaf o x Σ He Hf) HE). constructor.
+  assert (Erel κ_DF n R Σ TUnit ∅ (EClose (Chan o))) as HE by (rewrite <-He; apply leaf_E).
+  refine (sem_p_term κ_DF n R Σ Σ ∅ ∅ _ TUnit _ (sth_leaf o x Σ He Hf) HE). constructor.
 Qed.
 
-Lemma a_P n : Prel κ_DF n Wa (senv_dual Sc) TUnit (∅, {[+ tt_a +]}).
+Lemma a_P n : Prel κ_DF n R (senv_dual Sc) TUnit (∅, {[+ tt_a +]}).
 Proof. apply (leaf_P _ (px‾)); [apply erase_Θl_c|apply pfree_dual', pfree_Sc]. Qed.
 
-Lemma b_P n : Prel κ_DF n Wa (senv_dual Sd) TUnit (∅, {[+ tt_b +]}).
+Lemma b_P n : Prel κ_DF n R (senv_dual Sd) TUnit (∅, {[+ tt_b +]}).
 Proof. apply (leaf_P _ (py‾)); [apply erase_Θl_d|apply pfree_dual', pfree_Sd]. Qed.
 
 (** ** The two connections *)
@@ -197,19 +187,23 @@ Qed.
 
 (** ** Main theorem *)
 
-Theorem tt_deadlock_free : deadlock_free tt_config.
+Lemma tt_deadlock_free_R : deadlock_free tt_config.
 Proof.
-  apply (adequacy Wtt TUnit tt_config Wtt_strict). intros n.
-  pose proof (sem_p_connect κ_DF n Wa Wa Sd Sc ∅ (senv_dual Sc) _ _ TUnit ltac:(constructor)
-    (mid_P n) (eq_rect_r (λ S, Prel κ_DF n Wa S TUnit (∅, {[+ tt_a +]})) (a_P n) (left_id_L ∅ (∪) _)) conn_c) as H1.
+  apply (adequacy R TUnit tt_config). intros n.
+  pose proof (sem_p_connect κ_DF n R Sd Sc ∅ (senv_dual Sc) _ _ TUnit ltac:(constructor)
+    (mid_P n) (eq_rect_r (λ S, Prel κ_DF n R S TUnit (∅, {[+ tt_a +]})) (a_P n) (left_id_L ∅ (∪) _)) conn_c) as H1.
   unfold pconn in H1. simpl in H1. rewrite chans_Sc, (right_id_L ∅ (∪)) in H1.
-  assert (Prel κ_DF n (Wa ⊔ Wa) (∅ ∪ Sd) TUnit (∅ ∪ ∅ ∪ {["c"]}, {[+ tt_mid +]} ⊎ {[+ tt_a +]})) as H1' by (rewrite (left_id_L ∅ (∪)); exact H1).
+  assert (Prel κ_DF n R (∅ ∪ Sd) TUnit (∅ ∪ ∅ ∪ {["c"]}, {[+ tt_mid +]} ⊎ {[+ tt_a +]})) as H1' by (rewrite (left_id_L ∅ (∪)); exact H1).
   clear H1. rename H1' into H1.
-  pose proof (sem_p_connect κ_DF n (Wa ⊔ Wa) Wa ∅ Sd ∅ (senv_dual Sd) _ _ TUnit ltac:(constructor)
-    H1 (eq_rect_r (λ S, Prel κ_DF n Wa S TUnit (∅, {[+ tt_b +]})) (b_P n) (left_id_L ∅ (∪) _)) conn_d) as H2.
+  pose proof (sem_p_connect κ_DF n R ∅ Sd ∅ (senv_dual Sd) _ _ TUnit ltac:(constructor)
+    H1 (eq_rect_r (λ S, Prel κ_DF n R S TUnit (∅, {[+ tt_b +]})) (b_P n) (left_id_L ∅ (∪) _)) conn_d) as H2.
   unfold pconn in H2. simpl in H2. rewrite chans_Sd, !(left_id_L ∅ (∪)), !(right_id_L ∅ (∪)) in H2.
   exact H2.
 Qed.
+End sem.
 
-Print Assumptions tt_dead_world_strict.
+Theorem tt_deadlock_free : deadlock_free tt_config.
+Proof. destruct (wmodels_exists _ (proj1 Wab_ok) (proj2 Wab_ok)) as [R HR]. exact (tt_deadlock_free_R R HR). Qed.
+
+Print Assumptions tt_dead_world_wf.
 Print Assumptions tt_deadlock_free.
