@@ -70,3 +70,46 @@ Lemma ranked_sub (R R' : point → point → Prop) ρ :
   (∀ x y, R' x y → R x y) → ranked R ρ → ranked R' ρ.
 Proof. intros H Hρ x y Hxy. by apply Hρ, H. Qed.
 
+
+(** ** Ranks above a base
+
+    [rank_base R b] ranks a well-founded R so that every rank lies at or
+    above its base b and rises along R. E-New ranks the tree of a fresh
+    root this way, with the base above the ranks of the context points
+    below it. *)
+Section rank_base.
+  Context (R : point → point → Prop) (b : point → rank_ord).
+
+  Fixpoint rank_bacc (x : point) (a : Acc R x) {struct a} : rank_ord :=
+    match a with
+    | Acc_intro _ h =>
+        olim (λ t : bool, if t then b x
+          else olim (λ s : {y : point | R y x}, osucc (rank_bacc (proj1_sig s) (h _ (proj2_sig s)))))
+    end.
+
+  Lemma rank_bacc_irr x (a1 : Acc R x) : ∀ a2 : Acc R x, ole (rank_bacc x a1) (rank_bacc x a2).
+  Proof.
+    induction a1 as [x h1 IH] using Acc_ind_dep. intros [h2]. cbn [rank_bacc].
+    apply ole_lim_l. intros [|].
+    - apply (ole_lim_r _ _ true). apply ole_refl.
+    - apply (ole_lim_r _ _ false). apply ole_lim_l. intros s. apply (ole_lim_r _ _ s).
+      apply ole_succ_succ, IH.
+  Qed.
+
+  Context (Hwf : well_founded R).
+
+  Definition rank_base (x : point) : rank_ord := rank_bacc x (Hwf x).
+
+  Lemma rank_base_lt y x : R y x → olt (rank_base y) (rank_base x).
+  Proof.
+    intros Hy. unfold rank_base at 2. generalize (Hwf x). intros [h]. cbn [rank_bacc].
+    unfold olt. apply (ole_lim_r _ _ false). apply (ole_lim_r _ _ (exist _ y Hy)).
+    apply ole_succ_succ, rank_bacc_irr.
+  Qed.
+
+  Lemma rank_base_ge x : ole (b x) (rank_base x).
+  Proof.
+    unfold rank_base. generalize (Hwf x). intros [h]. cbn [rank_bacc].
+    apply (ole_lim_r _ _ true). apply ole_refl.
+  Qed.
+End rank_base.

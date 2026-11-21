@@ -50,7 +50,7 @@ Section wrapper.
     Pbody κ n (Vrel κ) (Prel κ) (Vrel κ n) X2 W (Σ2 ∪ ΣD) TUnit p2 →
     conn Σ1 ΣC p1.1 Σ2 ΣD p2.1 → Prel κ n W (Σ1 ∪ Σ2) T (pconn p1 p2 (chans_of ΣC)).
   Proof.
-    intros B1 B2 Hc. apply Prel_iff. intros _ W1 HW1 HS1 h D Hh.
+    intros B1 B2 Hc. apply Prel_iff. intros _ W1 HW1 h D Hh.
     pose proof (Pbody_P _ _ _ _ _ B1) as P1. pose proof (Pbody_P _ _ _ _ _ B2) as P2.
     pose proof (conn_sym _ _ _ _ _ _ Hc) as Hcs.
     pose proof (fs_sym _ _ _ _ _ _ _ _ _ Hc Hh) as Hhs.

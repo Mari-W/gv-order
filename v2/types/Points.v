@@ -384,3 +384,65 @@ Proof. intros H. destruct ub; simpl; by rewrite ?H. Qed.
 
 Lemma ub_map_of f o : ub_map f (ubound_of o) = ubound_of (f <$> o).
 Proof. by destruct o. Qed.
+
+(** ** The tree of a constant read back as the tree of the variable 0
+
+    A creation at a fresh constant a instantiates the variable 0 of its
+    constraint at the root a. [pt_unroot a] inverts that instance on the
+    tree of a, so a rank of the static tree of 0 ranks the tree of a. *)
+Fixpoint pn_unroot (a : nat) (p : pname) : pname :=
+  match p with
+  | NConst b => if decide (b = a) then NVar 0 else NConst b
+  | NField q b κ => NField (pn_unroot a q) b κ
+  | q => q
+  end.
+
+Definition pt_unroot (a : nat) (x : point) : point :=
+  MkPt (pn_unroot a (pt_name x)) (pt_pol x) (pt_off x).
+
+Lemma pt_unroot_shift a n x : pt_unroot a (pt_shift n x) = pt_shift n (pt_unroot a x).
+Proof. done. Qed.
+Lemma pt_unroot_dual a x : pt_unroot a x‾ = (pt_unroot a x)‾.
+Proof. done. Qed.
+
+Section unroot.
+  Context (a : nat) (σ : nat → point) (Hσ : σ 0 = MkPt (NConst a) true 0).
+
+  Lemma pn_unroot_inst p : pn_root p = NVar 0 →
+    pt_pol (pn_inst σ p) = true ∧ pt_off (pn_inst σ p) = 0 ∧ pn_unroot a (pt_name (pn_inst σ p)) = p.
+  Proof.
+    induction p as [b|b|q IH b κ]; simpl; try discriminate.
+    - intros [= ->]. rewrite Hσ. simpl. by rewrite decide_True.
+    - intros Hq. destruct (IH Hq) as (_ & Ho & Hn). simpl. by rewrite Ho, Hn.
+  Qed.
+
+  Lemma pt_unroot_inst x : pt_root x = NVar 0 → pt_unroot a (pt_inst σ x) = x.
+  Proof.
+    intros Hx. destruct x as [p b k]. unfold pt_root in Hx. simpl in Hx.
+    destruct (pn_unroot_inst p Hx) as (Hp & Ho & Hn).
+    unfold pt_inst, pt_unroot. simpl. destruct (pn_inst σ p) as [q b' k'] eqn:E. simpl in *. subst.
+    destruct b; simpl; f_equal; lia.
+  Qed.
+
+  Lemma pn_inst_unroot p : pn_root p = NConst a → pn_inst σ (pn_unroot a p) = MkPt p true 0.
+  Proof.
+    induction p as [b|b|q IH b κ]; simpl; try discriminate.
+    - intros [= ->]. by rewrite decide_True.
+    - intros Hq. rewrite (IH Hq). done.
+  Qed.
+
+  Lemma pt_inst_unroot x : pt_root x = NConst a → pt_inst σ (pt_unroot a x) = x.
+  Proof.
+    intros Hx. destruct x as [p b k]. unfold pt_root in Hx. simpl in Hx.
+    unfold pt_inst, pt_unroot. simpl. rewrite (pn_inst_unroot p Hx).
+    destruct b; unfold pt_polar, pt_shift, pt_dual; simpl; f_equal; lia.
+  Qed.
+
+  Lemma pt_root_unroot x : pt_root x = NConst a → pt_root (pt_unroot a x) = NVar 0.
+  Proof.
+    destruct x as [p b k]. unfold pt_root, pt_unroot. simpl.
+    induction p as [c|c|q IH c κ]; simpl; try discriminate.
+    - intros [= ->]. by rewrite decide_True.
+    - apply IH.
+  Qed.
+End unroot.

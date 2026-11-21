@@ -267,7 +267,7 @@ Section rel.
     refine (Erel_ind κ n _ _). intros W Θ T0 F e Hb HT0 Θ' HΘ.
     assert (VC n T0) as HV0 by (destruct HT0 as [->| ->]; done).
     apply Erel_iff. intros W1 HW1.
-    destruct (Hb W1 HW1) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
+    destruct (Hb W1 HW1) as (Hs & Hr & H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     assert (∀ c Θa Θb e', senv_eqv Θa Θb →
       at_cost_E n c (Erel κ) (λ W Θ T0 F e, Erel κ n W Θ T0 F e ∧
           (T0 = T ∨ T0 = TUnit → ∀ Θ', senv_eqv Θ Θ' → Erel κ n W Θ' T0 F e))
@@ -283,9 +283,6 @@ Section rel.
     - intros ℓ c e' Hst Hc g Hg.
       destruct (H2 ℓ c e' Hst (senv_eqv_cfresh _ _ _ HΘ Hc) g (senv_eqv_gfresh _ _ _ _ HΘ Hg)) as [S HS].
       exists S. eapply Hac; [|exact HS]. by apply senv_eqv_new_env.
-    - intros κf o c e' Hst Hc. destruct (H3 κf o c e' Hst (senv_eqv_cfresh _ _ _ HΘ Hc)) as (S0 & x & Ho & S & HS).
-      destruct (senv_eqv_lookup _ _ _ _ _ HΘ Ho) as (S0' & Ho' & _).
-      exists S0', x. split; [done|]. exists S. eapply Hac; [|exact HS]. by apply senv_eqv_new_env.
     - intros v e' Hst. destruct (H4 v e' Hst) as (ΘM & Θr & A1 & -> & A4 & A5).
       destruct (senv_eqv_split _ _ _ HΘ A1) as (ΘM' & Θr' & -> & Hd' & EM & Er).
       exists ΘM', Θr'. split_and!; [done|done| |by eapply Hac].
@@ -445,9 +442,9 @@ Section prel.
     apply Prel_iff. intros Hn0. revert W Σ T p HP Σ' HΣ0.
     refine (Prel_ind κ n (λ W Σ T p, ∀ Σ', senv_eqv Σ Σ' →
       Pbody κ n (Vrel κ) (Prel κ) (Vrel κ n) (Prel κ n) W Σ' T p) Hn0 _).
-    intros W Σ T p Hb Σ' HΣ. intros W1 HW1 HS1 h D Hh.
+    intros W Σ T p Hb Σ' HΣ. intros W1 HW1 h D Hh.
     pose proof (fuse_ok_conv h D Σ Σ' p HΣ Hh) as Hh0.
-    destruct (Hb W1 HW1 HS1 h D Hh0) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
+    destruct (Hb W1 HW1 h D Hh0) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
     assert (senv_eqv (sdrop D (kren h Σ)) (sdrop D (kren h Σ'))) as HΣh
       by (apply senv_eqv_sdrop, senv_eqv_kren; [by eapply fuse_ok_kinj|done]).
     clear Hb HΣ Hh Hh0.

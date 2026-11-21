@@ -122,7 +122,7 @@ Section blind.
     cut (∀ W Θ T0 F e, Erel κ n W Θ T0 F e → T0 = T → Erel κ n W Θ T' F e).
     { intros H W Θ F e HE. by eapply H. }
     refine (Erel_ind κ n _ _). intros W Θ T0 F e H ->. apply Erel_iff. intros W1 HW1.
-    destruct (H W1 HW1) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
+    destruct (H W1 HW1) as (Hs & Hr & H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     assert (∀ c W Θ F e',
       at_cost_E n c (Erel κ) (λ W Θ T0 F e, Erel κ n W Θ T0 F e ∧
                                      (T0 = T → Erel κ n W Θ T' F e)) W Θ T F e' →
@@ -135,9 +135,7 @@ Section blind.
     - intros Hirr. apply HV; [apply ole_refl|]. by apply Hs.
     - done.
     - intros e' Hst. by apply Hac, H1.
-    - intros ℓ c e' Hst Hc g Hg. destruct (H2 ℓ c e' Hst Hc g Hg) as [S HS]. exists S. by apply Hac.
-    - intros κf o c e' Hst Hc. destruct (H3 κf o c e' Hst Hc) as (S0 & x & Ho & S & HS).
-      exists S0, x. split; [done|]. exists S. by apply Hac.
+    - intros c e' Hst Hc. destruct (H2 c e' Hst Hc) as (S & π & Wn & HWn & HS). exists S, π, Wn. split; [done|]. by apply Hac.
     - intros v e' Hst. destruct (H4 v e' Hst) as (ΘM & Θr & A1 & A2 & A4 & A5).
       exists ΘM, Θr. split_and!; [done|done| |by apply Hac].
       revert A4. apply Varr_mono; [by intros|by intros|by intros|]. by intros _ ? ? ? ? ? ? [? _].

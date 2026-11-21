@@ -549,7 +549,7 @@ Section rel.
     assert (∀ c, c ∉ X → cfresh c Θ) as Hcf.
     { intros c Hc. split; intros Hin; apply Hc, elem_of_union_l, elem_of_map; eexists; (split; [|exact Hin]); done. }
     apply Erel_iff. intros W1 HW1.
-    destruct (Hb W1 HW1) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
+    destruct (Hb W1 HW1) as (Hs & Hr & H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     assert (∀ σ e', tstep e (LSess σ) e' → sends σ ⊆ dom Θ) as Hsends.
     { intros σ e' Hst. exact (Erel_sends κ n W Θ T0 F e σ e' HE Hst). }
     assert (∀ c Θ' e' h', kinj h' Θ' →

@@ -46,7 +46,7 @@ Section bind_acts.
     assert (∀ W' j Θv v, W1 ⊑ W' → olt j n → Θv ##ₘ Θ2 → Vrel κ j W' Θv T v →
               Erel κ j W' (Θv ∪ Θ2) U F (fill_frame f v)) as HK1.
     { intros W' j Θv v HW' Hj Hd' HV. apply HK; [by eapply wext_trans|done..]. }
-    destruct (Hb W1 HW1) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
+    destruct (Hb W1 HW1) as (Hs & Hr & H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     (* the continuation after a step of cost c *)
     assert (∀ c Θ1' e', Θ1' ##ₘ Θ2 → (c = 0 → P e') →
       at_cost_E n c (Erel κ)

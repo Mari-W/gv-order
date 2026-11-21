@@ -1025,7 +1025,7 @@ Section core.
   Proof.
     intros Hn0 HT Hs HE Hb Hsp W1 HW1 HS1.
     pose proof (Erel_mono κ _ _ _ _ _ _ _ HW1 HE) as HE1.
-    destruct (Hb W1 HW1) as (Hstop & Hready & H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
+    destruct (Hb W1 HW1) as (Hstop & Hready & H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     (** An offer of a stable thread without a link offer. *)
     assert (∀ a, act e = Some a → stable_t e → ¬ link_t e →
               ∃ o, o ∈ dom Σ ∧ offered_p Σ (C, {[+ e +]}) o ∧ offered_t Θ e o ∧
@@ -1201,7 +1201,7 @@ Section node.
        at_cost_P n (c_spawn κ) (Prel κ) (Prel κ n) W1 Σ T (C, {[+ e' +]} ⊎ {[+ App v EUnit +]})) →
     Φt W Θ T ∅ e.
   Proof.
-    intros Hb Hsp _ HT Σ ΘB C Hs. apply Prel_iff. intros Hn0 W1 HW1 HS1 h D Hf. rewrite pfuse_single.
+    intros Hb Hsp _ HT Σ ΘB C Hs. apply Prel_iff. intros Hn0 W1 HW1 h D Hf. rewrite pfuse_single.
     pose proof (Xt_E _ _ _ _ _ Hb) as HE. pose proof (fs_kinj Θ Σ ΘB C e Hs h D Hf) as Hk.
     pose proof (sth_fuse Θ Σ ΘB C e Hs h D Hf) as Hs'.
     refine (core κ n IH Xt Xt_ren Xt_P W (kren h Θ) T (emap h e) _ _ _ Hn0 HT Hs' _ _ _ W1 HW1 HS1).

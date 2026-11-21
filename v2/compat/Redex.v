@@ -403,69 +403,116 @@ Section redex.
 
   (** ** Creation *)
 
-  Lemma Erel_new_at aq1 aq2 aq3 aq4 (κf : field) n W Θ S0 x S F v mt1 mt2 mt3 mt4 :
-    Vrel κ n W Θ (TSess S0 x aq1 mt1) v →
-    Erel κ n W Θ (TProd (TSess S0 x aq2 mt2) (TProd (TSess S (x·κf) aq3 mt3) (TSess (dual S) (x·κf)‾ aq4 mt4))) F
-      (ENewAt κf v).
+  Lemma Vrel_newpair n W c S y aq1 aq2 mt1 mt2 :
+    Vrel κ n W (new_env c S y ∅) (TProd (TSess S y aq1 mt1) (TSess (dual S) y‾ aq2 mt2))
+      (Pair (Chan c⁺) (Chan c⁻)).
   Proof.
-    intros HV.    apply Vrel_sess_iff in HV as (o & s' & -> & -> & Hs').
-    assert (tstep (ENewAt κf (Chan o)) (LNewAt κf o "") (Pair (Chan o) (Pair (Chan ""⁺) (Chan ""⁻))))
-      as Hst by (by apply tstep_head, t_act_new_at).
-    assert (∀ α e', tstep (ENewAt κf (Chan o)) α e' →
-              ∃ c, α = LNewAt κf o c ∧ e' = Pair (Chan o) (Pair (Chan c⁺) (Chan c⁻))) as Hdet.
-    { intros α e' Hs. apply op_head_only in Hs; [|done]. inversion Hs; subst; eauto. }
-    apply Erel_S_intro.
-    - intros Hi. exact (Hi _ _ Hst).
-    - intros W1 _. eapply ready_tau; [exact Hst|done].
-    - intros W1 α e' HW1 Hs. destruct (Hdet _ _ Hs) as (c & -> & ->). simpl.
-      intros [Hc1 Hc2]. rewrite dom_singleton_L in Hc1, Hc2.
-      exists s', x. split; [apply lookup_singleton_eq|]. exists S. apply at_cost_val.
-      assert (o ≠ EPos c ∧ o ≠ ENeg c) as [Ho1 Ho2] by set_solver.
-      assert (new_env c S (x·κf) {[o := (s', x)]} = {[o := (s', x)]} ∪ new_env c S (x·κf) ∅) as ->.
-      { unfold new_env. rewrite <-(map_union_empty {[o := (s', x)]}) at 1.
-        rewrite !insert_union_r; [done| |]; apply lookup_singleton_ne; congruence. }
-      unfold new_env. rewrite insert_empty, insert_union_singleton_l.
-      apply Vrel_prod_iff. eexists _, _, _, _. split_and!; [done| |done| |].
-      + apply map_disjoint_union_r. split; apply map_disjoint_singleton_l, lookup_singleton_ne; congruence.
-      + apply Vrel_sess_iff. eexists _, _. done.
-      + apply Vrel_prod_iff. eexists _, _, _, _. split_and!; [done| |done| |].
-        * apply map_disjoint_singleton_l, lookup_singleton_ne; done.
-        * apply Vrel_sess_iff. eexists _, _. split_and!; [done|done|apply seqv_refl].
-        * apply Vrel_sess_iff. eexists _, _. split_and!; [done|done|apply seqv_refl].
+    unfold new_env. rewrite insert_empty, insert_union_singleton_l.
+    apply Vrel_prod_iff. eexists _, _, _, _. split_and!; [done| |done| |].
+    - apply map_disjoint_singleton_l, lookup_singleton_ne; done.
+    - apply Vrel_sess_iff. eexists _, _. split_and!; [done|done|apply seqv_refl].
+    - apply Vrel_sess_iff. eexists _, _. split_and!; [done|done|apply seqv_refl].
   Qed.
 
-  (** The constraint may name the laws of ℓ in a smaller world. *)
-  Lemma Erel_new_sub aq1 aq2 (ℓ : family) n W P S F mt1 mt2 :
-    ℓ ∈ w_fams W → (∀ f, P f → w_laws W ℓ f) →
-    Erel κ n W ∅
-      (TEx LBot 1 (bcs_of P) (TProd (TSess S (pvar 0) aq1 mt1) (TSess (dual S) (pvar 0)‾ aq2 mt2)))
-      F (ENew ℓ).
+  Lemma ENew_step α e' : tstep ENew α e' → ∃ c, α = LNew c ∧ e' = Pair (Chan c⁺) (Chan c⁻).
+  Proof. intros Hs. apply tstep_head_only in Hs; [|by intros []]. inversion Hs; subst; eauto. Qed.
+
+  (** A creation at a field: the point is fixed, the world stays. *)
+  Lemma Erel_new_fld aq1 aq2 n W S y F mt1 mt2 :
+    Erel κ n W ∅ (TProd (TSess S y aq1 mt1) (TSess (dual S) y‾ aq2 mt2)) F ENew.
   Proof.
-    intros Hℓ HP.    assert (tstep (ENew ℓ) (LNew ℓ "") (Pair (Chan ""⁺) (Chan ""⁻))) as Hst
+    assert (tstep ENew (LNew "") (Pair (Chan ""⁺) (Chan ""⁻))) as Hst
       by (by apply tstep_head, t_act_new).
-    assert (∀ α e', tstep (ENew ℓ) α e' → ∃ c, α = LNew ℓ c ∧ e' = Pair (Chan c⁺) (Chan c⁻)) as Hdet.
-    { intros α e' Hs. apply tstep_head_only in Hs; [|by intros []]. inversion Hs; subst; eauto. }
     apply Erel_S_intro.
     - intros Hi. exact (Hi _ _ Hst).
     - intros W1 _. eapply ready_tau; [exact Hst|done].
-    - intros W1 α e' HW1 Hs. destruct (Hdet _ _ Hs) as (c & -> & ->). simpl.
-      intros _ g _. exists S. apply at_cost_val. apply Vrel_ex_iff. split; [done|].
-      exists [pgen ℓ g]. split_and!; [done| |].
-      + intros y z (g0 & (f & Hf & Hsc & ->) & Heq). simpl in Hf, Hsc.
-        destruct f as [a b0]. simpl in Heq, Hsc. injection Heq as -> ->.
-        assert (∀ p, pn_vb 1 (pt_name p) →
-                  pt_inst (plist [pgen ℓ g]) (pt_inst (pup 1 (plist [])) p) = law_inst ℓ g p) as Hl.
-        { intros p Hp. rewrite pt_inst_comp. unfold law_inst. apply pt_inst_ext_root.
-          intros a0 Ha0. apply pn_vb_root in Hp as (a1' & Ha1 & Hlt). unfold pt_root in Ha0.
-          rewrite Ha0 in Ha1. injection Ha1 as <-. assert (a0 = 0) as -> by lia.
-          simpl. unfold pup. rewrite decide_True by lia. by rewrite pt_inst_pvar_at. }
-        rewrite !Hl by tauto. eapply w_lt_mono; [exact HW1|]. apply w_lt_law; [done|by apply HP].
-      + unfold ty_inst. simpl. rewrite pt_inst_dual, !pt_inst_pvar_at. simpl.
-        unfold new_env. rewrite insert_empty, insert_union_singleton_l.
-        apply Vrel_prod_iff. eexists _, _, _, _. split_and!; [done| |done| |].
-        * apply map_disjoint_singleton_l, lookup_singleton_ne; done.
-        * apply Vrel_sess_iff. eexists _, _. split_and!; [done|done|apply seqv_refl].
-        * apply Vrel_sess_iff. eexists _, _. split_and!; [done|done|apply seqv_refl].
+    - intros W1 α e' HW1 Hs. destruct (ENew_step _ _ Hs) as (c & -> & ->). simpl.
+      intros _. exists S, y, W1. split; [apply wext_refl|]. apply at_cost_val, Vrel_newpair.
+  Qed.
+
+  (** A constant root that W ranks nowhere and no point of env has. *)
+  Lemma fresh_const (W : world) (env : list point) :
+    ∃ a, NConst a ∉ w_roots W ∧ ∀ y, y ∈ env → pt_root y ≠ NConst a.
+  Proof.
+    set (cs := omap (λ r, match r with NConst n => Some n | _ => None end)
+                 (elements (w_roots W) ++ (pt_root <$> env))).
+    exists (fresh (list_to_set cs : gset nat)).
+    pose proof (is_fresh (list_to_set cs : gset nat)) as Hf. split.
+    - intros Hin. apply Hf, elem_of_list_to_set, list_elem_of_omap. exists (NConst (fresh (list_to_set cs : gset nat))).
+      split; [|done]. apply elem_of_app. left. by apply elem_of_elements.
+    - intros y Hy Hr. apply Hf, elem_of_list_to_set, list_elem_of_omap. exists (pt_root y).
+      split; [|by rewrite Hr]. apply elem_of_app. right. apply list_elem_of_fmap. by exists y.
+  Qed.
+
+  (** A creation at a fresh root under (wf-new). The creation grows the
+      world by the fresh constant a and by the roots of the context
+      points of C. The tree of a gets the ranks of C with program order,
+      each above the ranks of the context points below it ([rank_base]). *)
+  Lemma Erel_new aq1 aq2 n W C S F mt1 mt2 :
+    wf_new C →
+    Erel κ n W ∅ (TEx LBot 1 C (TProd (TSess S (pvar 0) aq1 mt1) (TSess (dual S) (pvar 0)‾ aq2 mt2))) F ENew.
+  Proof.
+    intros [HC Hwf].
+    assert (tstep ENew (LNew "") (Pair (Chan ""⁺) (Chan ""⁻))) as Hst
+      by (by apply tstep_head, t_act_new).
+    apply Erel_S_intro.
+    - intros Hi. exact (Hi _ _ Hst).
+    - intros W1 _. eapply ready_tau; [exact Hst|done].
+    - intros W1 α e' HW1 Hs. destruct (ENew_step _ _ Hs) as (c & -> & ->). simpl. intros _.
+      destruct (fresh_const W1 (bc_env C)) as (a & Ha1 & Ha2).
+      set (π := MkPt (NConst a) true 0).
+      set (σ := plist (π :: bc_env C)).
+      assert (σ 0 = MkPt (NConst a) true 0) as Hσ by done.
+      set (rk0 := wgrow_rank W1 (λ y, onat (pt_off y))).
+      set (b0 := λ u0 : point, olim (λ s : {y : point | pt_root y ≠ NConst a ∧ bcs_at C [π] (FLt y (pt_inst σ u0))},
+                   osucc (rk0 (proj1_sig s)))).
+      set (ρ := λ x, if decide (pt_root x = NConst a) then rank_base (new_step C) b0 Hwf (pt_unroot a x)
+                     else onat (pt_off x)).
+      set (B := {[NConst a]} ∪ (list_to_set (pt_root <$> bc_env C) : gset pname)).
+      assert (ranks_po B ρ) as Hρ.
+      { intros x _. unfold ρ. change (pt_root x⁺) with (pt_root x). change (pt_root x‾⁺) with (pt_root x).
+        destruct (decide (pt_root x = NConst a)) as [Hx|Hx].
+        - pose proof (pt_root_unroot a x Hx) as H0.
+          split; apply rank_base_lt; (split; [done|split; [done|right]]);
+            [left|right]; done.
+        - split; apply onat_lt; simpl; lia. }
+      set (W' := wgrow W1 B ρ Hρ).
+      assert (∀ x, pt_root x = NConst a → w_rank W' x = rank_base (new_step C) b0 Hwf (pt_unroot a x)) as Hra.
+      { intros x Hx. unfold W'. rewrite wgrow_rank_new; [unfold ρ; by rewrite decide_True|]. unfold rin. rewrite Hx. done. }
+      assert (∀ x, pt_root x ≠ NConst a → w_rank W' x = rk0 x) as Hro.
+      { intros x Hx. unfold W'. simpl. unfold rk0, wgrow_rank. case_decide; [done|].
+        unfold ρ. by rewrite decide_False. }
+      exists S, π, W'. split; [apply wgrow_ext|].
+      apply at_cost_val. apply Vrel_ex_iff. split; [done|]. exists [π]. split_and!; [done| |].
+      + intros x y Hf. pose proof Hf as Hf0.
+        apply bcs_at_iff in Hf as ([x0 y0] & Hf & Hsc & Heq). simpl in Heq. injection Heq as -> ->.
+        try change (plist ([π] ++ bc_env C)) with σ in Hf0 |- *. try change (plist (π :: bc_env C)) with σ in Hf0 |- *.
+        pose proof (HC x0 y0 Hf Hsc) as Hy0. unfold in_tree0 in Hy0.
+        assert (pt_root (pt_inst σ y0) = NConst a) as Hy.
+        { rewrite pt_root_inst_var, Hy0. done. }
+        right. split_and!; [|apply wgrow_rin; rewrite Hy; set_solver|].
+        { destruct (decide (pt_root x0 = NVar 0)) as [Hx0|Hx0].
+          - apply wgrow_rin. rewrite pt_root_inst_var, Hx0. set_solver.
+          - destruct Hsc as [Hs1 _]. apply pn_vb_root in Hs1 as (k & Hk & Hkl).
+            destruct k as [|j]; [unfold pt_root in Hx0; congruence|].
+            simpl in Hkl. destruct (lookup_lt_is_Some_2 (bc_env C) j ltac:(lia)) as [yj Hyj].
+            apply wgrow_rin. rewrite pt_root_inst_var. change (pt_root x0) with (pn_root (pt_name x0)). rewrite Hk.
+            simpl. unfold σ, plist. simpl. rewrite Hyj. apply elem_of_union_r, elem_of_list_to_set.
+            apply list_elem_of_fmap. exists yj. split; [done|]. by eapply list_elem_of_lookup_2. }
+        rewrite (Hra _ Hy), (pt_unroot_inst a σ Hσ y0 Hy0).
+        destruct (decide (pt_root x0 = NVar 0)) as [Hx0|Hx0].
+        * assert (pt_root (pt_inst σ x0) = NConst a) as Hx by (rewrite pt_root_inst_var, Hx0; done).
+          rewrite (Hra _ Hx), (pt_unroot_inst a σ Hσ x0 Hx0). apply rank_base_lt.
+          split; [done|split; [done|left; by split]].
+        * assert (pt_root (pt_inst σ x0) ≠ NConst a) as Hx.
+          { destruct Hsc as [Hs1 _]. apply pn_vb_root in Hs1 as (k & Hk & Hkl).
+            destruct k as [|j]; [unfold pt_root in Hx0; congruence|].
+            simpl in Hkl. destruct (lookup_lt_is_Some_2 (bc_env C) j ltac:(lia)) as [yj Hyj].
+            rewrite pt_root_inst_var. change (pt_root x0) with (pn_root (pt_name x0)). rewrite Hk.
+            simpl. unfold σ, plist. simpl. rewrite Hyj. apply Ha2. by eapply list_elem_of_lookup_2. }
+          rewrite (Hro _ Hx). eapply olt_trans_le; [|apply rank_base_ge].
+          unfold b0, olt. apply (ole_lim_r _ _ (exist _ (pt_inst σ x0) (conj Hx Hf0))). apply ole_refl.
+      + unfold ty_inst. simpl. rewrite pt_inst_dual, !pt_inst_pvar_at. simpl. apply Vrel_newpair.
   Qed.
 
   (** ** Force *)

@@ -111,10 +111,10 @@ Proof.
   induction n as [n IHn] using oind. intros W T p HT Hb.
   revert W.
   induction p as [p IHp] using (well_founded_induction (well_founded_ltof _ psize)).
-  intros W HL. apply Prel_iff. intros Hn0 W1 HW1 HS1 h D Hh.
+  intros W HL. apply Prel_iff. intros Hn0 W1 HW1 h D Hh.
   assert (∀ m, olt ozero m → Pbody κ_L m (Vrel κ_L) (Prel κ_L) (Vrel κ_L m) (Prel κ_L m) W ∅ T p) as HB
     by (intros m Hm; by apply Prel_iff).
-  pose proof (λ m Hm, HB m Hm W1 HW1 HS1 h D Hh) as HC.
+  pose proof (λ m Hm, HB m Hm W1 HW1 h D Hh) as HC.
   rewrite (fuse_ok_empty _ _ _ Hh), pfuse_empty, kren_empty, sdrop_empty in HC |- *.
   destruct (HC (onat 1) (onat_lt 0 1 ltac:(lia))) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
   split; [|split; [|unfold Psteps; split_and!]].
