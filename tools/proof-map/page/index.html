@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Proof Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Source+Sans+3:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* One page renders any proof-map/1 JSON. Layout: sticky header (title, modes, filter, theme,
+   sections), the blocks of one section on the left, the note panel on the right, a bottom sheet
+   on narrow screens. Nothing scrolls sideways: formulas shrink to their column. */
+:root {
+  --bg: #f6f4ef;
+  --surface: #fffdf9;
+  --sunk: #f0ede6;
+  --ink: #23262b;
+  --muted: #676c73;
+  --line: #e3dfd6;
+  --line-strong: #cfc9bd;
+  --accent: #35577d;
+  --accent-soft: #e4ebf3;
+  --hot: #b8792a;
+  --hot-soft: #fbefd9;
+  --warn: #a8432f;
+  --warn-soft: #f8e3dc;
+  --plan: #6b6f5a;
+  --display: "Source Serif 4", "Iowan Old Style", Georgia, serif;
+  --body: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --radius: 10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #15171a; --surface: #1c1f23; --sunk: #23272c; --ink: #e7e4dd; --muted: #9da2a8; --line: #2d3137; --line-strong: #3d424a;
+  --accent: #93b4d8; --accent-soft: #24303d; --hot: #e2a95a; --hot-soft: #3a2f1e; --warn: #ec8f78; --warn-soft: #3b2420; --plan: #b5b89f; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #15171a; --surface: #1c1f23; --sunk: #23272c; --ink: #e7e4dd; --muted: #9da2a8; --line: #2d3137; --line-strong: #3d424a;
+  --accent: #93b4d8; --accent-soft: #24303d; --hot: #e2a95a; --hot-soft: #3a2f1e; --warn: #ec8f78; --warn-soft: #3b2420; --plan: #b5b89f; color-scheme: dark }
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 var(--body); overflow-wrap: break-word; }
+.wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+a { color: var(--accent); }
+code, kbd { font-family: var(--mono); font-size: 0.86em; overflow-wrap: anywhere; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+::selection { background: color-mix(in srgb, var(--accent) 28%, transparent); }
+
+/* header */
+header { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); padding-top: env(safe-area-inset-top, 0px); }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding-block: 12px 8px; max-width: 1800px; margin: 0 auto; }
+.brand { min-width: 0; margin-right: auto; }
+h1 { font: 600 1.3rem/1.2 var(--display); margin: 0; letter-spacing: 0.002em; }
+.brand p { margin: 2px 0 0; color: var(--muted); font-size: 0.86rem; }
+.seg { display: inline-flex; padding: 2px; gap: 2px; border-radius: 8px; background: var(--sunk); border: 1px solid var(--line); }
+.seg button { border: 0; background: transparent; padding: 5px 12px; border-radius: 6px; font-size: 0.86rem; font-weight: 500; color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); }
+.seg button[aria-pressed="true"] .dot { opacity: 1; }
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; opacity: 0.55; }
+.search { position: relative; flex: 1 1 200px; max-width: 320px; }
+.search input { width: 100%; font: 0.9rem var(--body); padding: 6px 10px 6px 30px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
+.search svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; stroke: var(--muted); fill: none; }
+.icon-btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 5px 8px; cursor: pointer; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; }
+.icon-btn:hover { color: var(--ink); border-color: var(--line-strong); }
+.icon-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+nav.tabs { display: flex; flex-wrap: wrap; gap: 2px 4px; max-width: 1800px; margin: 0 auto; padding-bottom: 6px; }
+nav.tabs a { font-size: 0.9rem; font-weight: 500; color: var(--muted); text-decoration: none; padding: 4px 10px; border-radius: 6px; }
+nav.tabs a:hover { color: var(--ink); background: var(--sunk); }
+nav.tabs a[aria-current="page"] { color: var(--ink); background: var(--accent-soft); }
+nav.tabs .count { font-size: 0.72rem; color: var(--accent); margin-left: 5px; font-weight: 600; }
+nav.tabs a.none { opacity: 0.45; }
+
+/* main grid */
+main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 420px); gap: 28px; max-width: 1800px; margin: 0 auto; padding-block: 22px 80px; }
+@media (max-width: 960px) { main { grid-template-columns: minmax(0, 1fr); padding-bottom: 52vh; } }
+#content { min-width: 0; }
+.intro { font: 1.12rem/1.6 var(--display); max-width: 70ch; margin: 0 0 10px; }
+.toc { display: flex; flex-wrap: wrap; gap: 4px 6px; margin: 4px 0 22px; padding: 0; list-style: none; }
+.toc a { font-size: 0.8rem; color: var(--muted); text-decoration: none; padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+.toc a:hover { color: var(--accent); border-color: var(--accent); }
+.conventions { margin: 0 0 22px; padding: 12px 16px; border: 1px dashed var(--line-strong); border-radius: var(--radius); font-size: 0.92rem; }
+.conventions h2 { font: 600 0.74rem var(--body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+.conventions dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 0; }
+.conventions dd { margin: 0; }
+
+/* blocks */
+.block, .ex { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px 14px; margin-bottom: 16px; }
+.block.only { background: color-mix(in srgb, var(--mc) 6%, var(--surface)); border-color: color-mix(in srgb, var(--mc) 35%, var(--line)); }
+.block.flash, .ex.flash { box-shadow: 0 0 0 2px var(--hot); }
+.bhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.bhead h3 { font: 600 1rem/1.35 var(--body); margin: 0; cursor: pointer; min-width: 0; }
+.bhead h3:hover { color: var(--accent); }
+.bhead .tools { margin-left: auto; display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.src { display: block; font: 0.74rem/1.4 var(--mono); color: var(--muted); margin-top: 2px; overflow-wrap: anywhere; }
+.tag { font: 600 0.66rem/1.5 var(--body); letter-spacing: 0.06em; text-transform: uppercase; padding: 0 6px; border-radius: 4px; border: 1px solid currentColor; white-space: nowrap; }
+.tag.mode { color: var(--mc); }
+.tag.planned { color: var(--plan); border-style: dashed; }
+.tag.dev { color: var(--muted); }
+.tag.missing { color: var(--warn); }
+.mini { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.mini button { border: 0; background: transparent; padding: 0 7px; font: 600 0.66rem/1.7 var(--body); letter-spacing: 0.05em; color: var(--muted); cursor: pointer; }
+.mini button[aria-pressed="true"] { background: var(--mc); color: var(--surface); }
+.tbtn { border: 0; background: transparent; padding: 2px; cursor: pointer; color: var(--muted); border-radius: 4px; display: inline-flex; }
+.tbtn:hover { color: var(--ink); background: var(--sunk); }
+.tbtn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+.math { margin: 10px 0 4px; min-width: 0; }
+.math mjx-container[display="true"] { display: block !important; margin: 0 !important; max-width: 100%; min-width: 0 !important; text-align: center; }
+.math mjx-container svg { max-width: 100% !important; height: auto !important; }
+mjx-container { user-select: text; }
+mjx-container.sel { background: color-mix(in srgb, var(--accent) 22%, transparent); border-radius: 3px; }
+.caption { color: var(--muted); font-size: 0.95rem; margin: 8px 0 0; max-width: 78ch; }
+.devs { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+.devs li { display: flex; gap: 8px; align-items: baseline; font-size: 0.88rem; padding: 6px 10px; border-radius: 8px; background: var(--sunk); }
+.devs li .tag { flex: none; }
+.devs li.missing { background: var(--warn-soft); }
+.devs li.missing .reason { color: var(--warn); font-weight: 600; }
+.devs .part { font-size: 0.82rem; color: var(--muted); }
+
+/* hover targets inside formulas */
+.math [class*="k-"] { cursor: help; }
+.math rect.pm-hit { fill: transparent; stroke: none; pointer-events: all; }
+.math rect.pm-box { fill: var(--hot-soft); stroke: var(--hot); stroke-width: 14; pointer-events: none; }
+.math rect.pm-box.pin { stroke-width: 30; }
+.planned { opacity: 0.6; }
+
+/* note panel */
+aside { position: sticky; top: var(--head, 110px); align-self: start; max-height: calc(100vh - var(--head, 110px) - 16px); overflow-y: auto; overflow-x: hidden; scrollbar-width: none; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px 18px; min-width: 0; }
+aside::-webkit-scrollbar { display: none; }
+@media (max-width: 960px) {
+  aside { position: fixed; left: 0; right: 0; bottom: 0; top: auto; max-height: 48vh; border-radius: 14px 14px 0 0; z-index: 6; box-shadow: 0 -8px 28px rgb(0 0 0 / 0.14);
+    padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px)); padding-left: max(18px, env(safe-area-inset-left, 0px)); padding-right: max(18px, env(safe-area-inset-right, 0px)); }
+  aside.empty { display: none; }
+}
+.eyebrow { display: flex; justify-content: space-between; align-items: center; font: 600 0.7rem var(--body); letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
+.eyebrow button { font: 500 0.76rem var(--body); letter-spacing: 0; text-transform: none; border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 6px; padding: 1px 8px; cursor: pointer; }
+aside h2 { font: 600 1.3rem/1.3 var(--display); margin: 6px 0 12px; text-wrap: balance; }
+aside dl { margin: 0; display: grid; gap: 12px; }
+aside dt { font: 600 0.7rem var(--body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+aside dd { margin: 2px 0 0; font-size: 0.97rem; min-width: 0; }
+aside dd.breaks { border-left: 3px solid var(--hot); padding-left: 10px; }
+aside dd.sig { overflow: hidden; }
+aside mjx-container { max-width: 100%; }
+aside mjx-container svg { max-width: 100% !important; height: auto !important; }
+aside dd.sig mjx-container { display: block !important; margin: 4px 0 !important; min-width: 0 !important; text-align: left !important; }
+aside ul.args { margin: 2px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 0.93rem; }
+aside .refs { list-style: none; padding: 0; margin: 2px 0 0; display: grid; gap: 2px; font: 0.8rem/1.45 var(--mono); }
+aside .refs .q { color: var(--muted); font-family: var(--body); }
+aside .uses { margin-top: 16px; }
+aside .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+aside .chips a, aside .chips span { font-size: 0.82rem; color: var(--accent); text-decoration: none; padding: 1px 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); max-width: 100%; overflow-wrap: anywhere; cursor: pointer; }
+aside .chips a:hover { border-color: var(--accent); }
+aside .placeholder { color: var(--muted); font-size: 0.93rem; }
+aside .devs li { font-size: 0.86rem; }
+
+/* examples */
+.ex pre { margin: 10px 0; padding: 10px 12px; background: var(--sunk); border-radius: 8px; white-space: pre-wrap; overflow-wrap: anywhere; font: 0.84rem/1.55 var(--mono); }
+.ex pre .kw { color: var(--accent); font-weight: 500; }
+.ex pre .com { color: var(--muted); font-style: italic; }
+.ex pre .num { color: var(--hot); }
+.ex p { margin: 6px 0 0; font-size: 0.95rem; }
+.ex p.lead { font-family: var(--display); font-size: 1.02rem; }
+.empty-state { color: var(--muted); padding: 30px 0; }
+.empty-state a { margin-right: 10px; }
+
+/* opening a map by hand */
+.drop { border: 2px dashed var(--line-strong); border-radius: var(--radius); padding: 30px; text-align: center; color: var(--muted); }
+.drop.over { border-color: var(--accent); color: var(--ink); }
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 6px 14px; border-radius: 8px; font-size: 0.86rem; z-index: 20; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.toast.on { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) { .block, .ex { transition: box-shadow .25s; } }
+@media print { header, aside { display: none; } main { display: block; } .block { break-inside: avoid; } }
+</style>
+<style id="mode-css"></style>
+</head>
+<body>
+<header class="wrap">
+  <div class="bar">
+    <div class="brand"><h1 id="title">Proof Map</h1><p id="subtitle"></p></div>
+    <div class="seg" id="modes" role="group" hidden></div>
+    <label class="search"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="m11 11 4 4"/></svg><input id="q" type="search" placeholder="Filter  ( / )" aria-label="Filter blocks and examples" autocomplete="off"></label>
+    <button class="icon-btn" id="theme" type="button" title="Theme: follows the system"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 2a6 6 0 0 0 0 12z" fill="currentColor"/></svg><span>Auto</span></button>
+  </div>
+  <nav class="tabs" id="tabs" aria-label="Sections"></nav>
+</header>
+<main class="wrap">
+  <section id="content" aria-live="polite"><p class="empty-state">Loading the map…</p></section>
+  <aside id="note" class="empty" aria-label="Note"><div class="placeholder">Point at a part of a formula or at a title.</div></aside>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+// Extensions call ProofMap.register({...}) from the scripts the map lists under extensions.page.
+window.ProofMap = { exts: [], register(e) { this.exts.push(e); } };
+window.MathJax = {
+  loader: { load: ['[tex]/html'] },
+  tex: { inlineMath: [['$', '$']], processEscapes: true, packages: { '[+]': ['html'] } },
+  svg: { fontCache: 'global' },
+  startup: { typeset: false, ready() { MathJax.startup.defaultReady(); MathJax.startup.promise.then(() => window.__mjReady && window.__mjReady()); } }
+};
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js"></script>
+<script>
+(function () {
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const store = { get(k) { try { return localStorage.getItem('proofmap:' + k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem('proofmap:' + k, v); } catch (e) {} } };
+  const params = new URLSearchParams(location.search);
+  const ICON = {
+    copy: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5"/></svg>',
+    link: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 9.5a3 3 0 0 0 4.2 0l2.6-2.6a3 3 0 0 0-4.2-4.2L8 3.8"/><path d="M9.5 6.5a3 3 0 0 0-4.2 0L2.7 9.1a3 3 0 0 0 4.2 4.2L8 12.2"/></svg>'
+  };
+
+  // ---------- theme ----------
+  const THEMES = ['auto', 'light', 'dark'];
+  let theme = store.get('theme') || 'auto';
+  function applyTheme() {
+    if (theme === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', theme);
+    const b = $('#theme'); b.querySelector('span').textContent = theme[0].toUpperCase() + theme.slice(1);
+    b.title = theme === 'auto' ? 'Theme: follows the system' : 'Theme: ' + theme;
+  }
+  applyTheme();
+  $('#theme').addEventListener('click', () => { theme = THEMES[(THEMES.indexOf(theme) + 1) % 3]; store.set('theme', theme); applyTheme(); });
+
+  // ---------- loading ----------
+  function xhr(url, asText) {
+    return new Promise((ok, fail) => {
+      const r = new XMLHttpRequest();
+      r.open('GET', url); r.responseType = 'text';
+      r.onload = () => (r.status === 200 || (r.status === 0 && r.responseText)) ? ok(r.responseText) : fail(new Error(url + ': ' + r.status));
+      r.onerror = () => fail(new Error(url + ': cannot load'));
+      r.send();
+    });
+  }
+  const script = src => new Promise((ok, fail) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => fail(new Error(src)); document.head.appendChild(s); });
+  async function loadMap() {
+    const src = params.get('map') || 'map.json';
+    const base = new URL(src, location.href);
+    if (/\.js$/.test(src)) { await script(base.href); return { map: window.PROOF_MAP, base }; }
+    try { return { map: JSON.parse(await xhr(base.href)), base }; }
+    catch (e) {
+      // file:// without --allow-file-access-from-files: try a sibling .js that sets window.PROOF_MAP
+      try { await script(base.href.replace(/\.json$/, '.js')); if (window.PROOF_MAP) return { map: window.PROOF_MAP, base }; } catch (e2) {}
+      throw e;
+    }
+  }
+  function askForFile(err) {
+    $('#content').innerHTML = `<div class="drop" id="drop"><p>No map loaded${err ? ` (${esc(err.message)})` : ''}.</p><p>Drop a map JSON here, or <label><a href="#" onclick="return false">choose a file</a><input type="file" accept=".json,application/json" hidden id="file"></label>. To load one by URL, serve this directory and open <code>index.html?map=path/to/map.json</code>.</p></div>`;
+    const drop = $('#drop'), read = f => f.text().then(t => start(JSON.parse(t), null)).catch(e => toast('Not a map: ' + e.message));
+    $('#file').addEventListener('change', e => e.target.files[0] && read(e.target.files[0]));
+    drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+    drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); e.dataTransfer.files[0] && read(e.dataTransfer.files[0]); });
+  }
+  function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 1600); }
+
+  // ---------- state ----------
+  let MAP, MODES = [], mode = null, query = '', pinned = null;
+  const local = new Map();               // block id -> mode chosen on the block itself
+  let blockIndex = new Map();            // block id -> {s, b}
+  const uses = new Map();                // note key -> Map(block id -> {s, b})
+
+  // ---------- markup ----------
+  // index just past the group opening at s[open] === '{'
+  function close(s, open) { let d = 1, k = open + 1; while (k < s.length && d) { if (s[k] === '\\') { k += 2; continue; } if (s[k] === '{') d++; else if (s[k] === '}') d--; k++; } return k; }
+  function arg(s, i) { while (s[i] === ' ') i++; if (s[i] !== '{') return [null, i]; const k = close(s, i); return [s.slice(i + 1, k - 1), k]; }
+  // \inmode{ms}{X} and \inmodeplain{ms}{X}: X in the listed modes only, \inmode coloured
+  function resolve(s, md, colour) {
+    s = String(s ?? ''); let out = '', i = 0; const re = /\\(inmode|inmodeplain)\s*\{/g;
+    for (;;) {
+      re.lastIndex = i; const m = re.exec(s); if (!m) return out + s.slice(i);
+      const [ms, k1] = arg(s, m.index + m[1].length + 1), [body, k2] = arg(s, k1);
+      if (body === null) { out += s.slice(i, k1); i = k1; continue; }
+      const list = ms.split(',').map(x => x.trim()), inner = resolve(body, md, colour);
+      const keep = md === null || !MODES.length || list.includes(md);
+      out += s.slice(i, m.index) + (keep ? (m[1] === 'inmode' && colour ? colour(inner, list.includes(md) ? md : list[0], out + s.slice(i, m.index)) : inner) : '');
+      i = k2;
+    }
+  }
+  const cls = k => 'k-' + k.replace(/[^A-Za-z0-9_-]/g, c => '_' + c.charCodeAt(0).toString(16) + '_');
+  const keyOf = el => { for (const c of el.classList) if (c.startsWith('k-')) return c.slice(2).replace(/_([0-9a-f]+)_/g, (_, h) => String.fromCharCode(parseInt(h, 16))); return null; };
+  // formula -> MathJax input, with hovers and mode colours as classes
+  const toMJ = (tex, md) => resolve(tex, md, x => `\\class{mode-${md}}{${x}}`)
+    .replace(/\\sym\s*\{([^}]*)\}\s*\{/g, (_, k) => `\\class{${cls(k)}}{`)
+    .replace(/\\planned\s*\{/g, '\\class{planned}{');
+  // formula -> the TeX a reader copies: no hovers, no markers, the parts of one mode
+  function plainTeX(tex, md) {
+    let s = resolve(tex, md);
+    for (;;) { const m = /\\(?:sym\s*\{[^}]*\}|planned)\s*\{/.exec(s); if (!m) return s; const open = m.index + m[0].length - 1, k = close(s, open); s = s.slice(0, m.index) + s.slice(open + 1, k - 1) + s.slice(k); }
+  }
+  const keysIn = tex => { const out = new Set(); String(tex || '').replace(/\\sym\s*\{([^}]*)\}/g, (_, k) => out.add(k)); return out; };
+
+  // prose: $math$, `code`, [[block]] or [[block|label]] links, \inmode{ms}{...}
+  function prose(s, md = mode) {
+    if (!s) return '';
+    // \inmode inside math becomes \class, outside it a span (marked with control characters until escaped)
+    const t = resolve(s, md, (x, m, before) => {
+      const inMath = ((before.match(/(?<!\\)\$/g) || []).length % 2) === 1;
+      return inMath && !/\$/.test(x) ? `\\class{mode-${m}}{${x}}` : `\u0001${m}\u0002${x}\u0003`;
+    });
+    return esc(t)
+      .replace(/\u0001([^\u0002]*)\u0002/g, '<span class="mode-$1">').replace(/\u0003/g, '</span>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\[\[([^\]|]+)(?:\|([^\]]*))?\]\]/g, (_, id, label) => {
+        const x = blockIndex.get(id); const sec = MAP.sections.find(s => s.id === id);
+        const text = label || (x ? x.b.title : sec ? sec.title : id);
+        return x ? `<a href="#${esc(x.s.id)}/${esc(id)}" data-jump="${esc(id)}">${esc(text)}</a>` : sec ? `<a href="#${esc(id)}">${esc(text)}</a>` : esc(text);
+      });
+  }
+  // example code: keywords and comments from the map
+  function highlight(code) {
+    const kw = new Set((MAP.syntax && MAP.syntax.keywords) || []);
+    const coms = ((MAP.syntax && MAP.syntax.comment) || []).map(c => c.split(' '));
+    const rx = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const comRe = coms.map(c => c.length === 2 ? rx(c[0]) + '[\\s\\S]*?' + rx(c[1]) : rx(c[0]) + '[^\\n]*').join('|');
+    const re = new RegExp((comRe ? '(' + comRe + ')|' : '()') + "(\\b[A-Za-z_][A-Za-z0-9_']*\\b)|(\\b\\d+\\b)", 'g');
+    let out = '', last = 0, m;
+    while ((m = re.exec(code))) {
+      if (!m[0]) { re.lastIndex++; continue; }
+      out += esc(code.slice(last, m.index)); last = re.lastIndex;
+      if (m[1]) out += `<span class="com">${esc(m[1])}</span>`;
+      else if (m[2]) out += kw.has(m[2]) ? `<span class="kw">${esc(m[2])}</span>` : esc(m[2]);
+      else out += `<span class="num">${esc(m[3])}</span>`;
+    }
+    return out + esc(code.slice(last));
+  }
+
+  // ---------- modes ----------
+  const modeOf = id => MODES.find(m => m.id === id);
+  const visible = x => !MODES.length || !x.modes || x.modes.includes(mode);
+  const onlyMode = x => MODES.length && x.modes && x.modes.length < MODES.length ? x.modes : null;
+  const blockMode = b => local.get(b.id) || (visible(b) ? mode : b.modes[0]);
+  const texOf = (b, md) => (b.variants && b.variants[md]) || b.formula;
+  const differs = b => !onlyMode(b) && MODES.length > 1 && new Set(MODES.map(m => plainTeX(texOf(b, m.id), m.id))).size > 1;
+  function modeCSS() {
+    const pal = ['#3b5b92', '#7b4d8f', '#2f7a5f', '#9a5b2b'], palD = ['#93acdc', '#c6a2dc', '#7fc8a8', '#e0a878'];
+    const light = MODES.map((m, i) => `--m-${m.id}: ${(m.color && m.color.light) || pal[i % 4]};`).join(' ');
+    const dark = MODES.map((m, i) => `--m-${m.id}: ${(m.color && m.color.dark) || palD[i % 4]};`).join(' ');
+    const rules = MODES.map(m => `.mode-${m.id} { color: var(--m-${m.id}); fill: var(--m-${m.id}); } [data-mc="${m.id}"] { --mc: var(--m-${m.id}); }`).join('\n');
+    $('#mode-css').textContent = `:root { ${light} }\n@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { ${dark} } }\n:root[data-theme="dark"] { ${dark} }\n${rules}`;
+  }
+  function renderModes() {
+    const box = $('#modes');
+    if (!MODES.length) { box.hidden = true; return; }
+    box.hidden = false; box.setAttribute('aria-label', (MAP.modes && MAP.modes.label) || 'Mode');
+    box.innerHTML = MODES.map(m => `<button type="button" data-mode="${esc(m.id)}" data-mc="${esc(m.id)}" aria-pressed="${m.id === mode}" title="${esc(m.description ? m.description.replace(/\$/g, '') : m.label)}"><span class="dot" style="background:var(--m-${esc(m.id)})"></span>${esc(m.label)}</button>`).join('');
+  }
+
+  // ---------- filter ----------
+  const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/\\(?:mathsf|textsf|mathrm|text|mathit|operatorname)\{([^}]*)\}/g, ' $1 ').replace(/\\sym\{[^}]*\}/g, ' ').replace(/\\([A-Za-z]+)/g, ' $1 ')
+    .replace(/_/g, ' ').toLowerCase().replace(/[^a-z0-9\-]+/g, ' ');
+  function dist(a, b) {
+    const m = a.length, n = b.length; if (Math.abs(m - n) > 2) return 3;
+    let prev = Array.from({ length: n + 1 }, (_, j) => j), pp = prev;
+    for (let i = 1; i <= m; i++) {
+      const cur = [i];
+      for (let j = 1; j <= n; j++) {
+        cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) cur[j] = Math.min(cur[j], pp[j - 2] + 1);
+      }
+      pp = prev; prev = cur;
+    }
+    return prev[n];
+  }
+  const subseq = (t, w) => { let i = 0; for (const ch of w) if (ch === t[i]) i++; return i === t.length; };
+  function termHits(t, hay, words) {
+    if (hay.includes(t)) return true;
+    if (t.length >= 3) for (const w of words) if (w[0] === t[0] && w.length <= t.length + 3 && subseq(t, w)) return true;
+    const tol = t.length >= 8 ? 2 : t.length >= 4 ? 1 : 0;
+    if (!tol) return false;
+    for (const w of words) if (w.length >= 3 && (dist(t, w) <= tol || (w.length > t.length && dist(t, w.slice(0, t.length)) <= tol))) return true;
+    return false;
+  }
+  const hayCache = new Map();
+  function hay(id, fields) {
+    if (!hayCache.has(id)) { const h = ' ' + norm(fields().join(' ')) + ' '; hayCache.set(id, [h, [...new Set(h.split(/[ -]/).filter(Boolean))]]); }
+    return hayCache.get(id);
+  }
+  const refsText = rs => (rs || []).map(r => r.file + ' ' + r.names.join(' ')).join(' ');
+  function blockHay(b) {
+    return hay('b:' + b.id, () => {
+      const texs = [b.formula, ...Object.values(b.variants || {})];
+      const keys = new Set(texs.flatMap(t => [...keysIn(t)]));
+      return [b.title, b.caption, b.why, refsText(b.source), ...texs, ...[...keys].map(k => k + ' ' + ((MAP.notes[k] && MAP.notes[k].title) || ''))];
+    });
+  }
+  const exHay = x => hay('x:' + x.id, () => [x.title, x.lead, x.meaning, x.code, refsText(x.source)]);
+  function matches(h) { if (!query) return true; const [s, w] = h; return norm(query).split(' ').filter(Boolean).every(t => termHits(t, s, w)); }
+
+  // ---------- sections and tabs ----------
+  const SECS = () => [...MAP.sections.map(s => ({ id: s.id, title: s.title })), ...((MAP.examples || []).length ? [{ id: 'examples', title: 'Examples' }] : [])];
+  function route() {
+    const [sec, block] = decodeURIComponent(location.hash.slice(1)).split('/');
+    const secs = SECS();
+    if (secs.some(s => s.id === sec)) return { sec, block };
+    const x = blockIndex.get(sec); if (x) return { sec: x.s.id, block: sec };
+    return { sec: secs[0].id, block: null };
+  }
+  function counts() {
+    const c = {};
+    for (const s of MAP.sections) c[s.id] = s.blocks.filter(b => visible(b) && matches(blockHay(b))).length;
+    c.examples = (MAP.examples || []).filter(x => visible(x) && matches(exHay(x))).length;
+    return c;
+  }
+  function renderTabs() {
+    const cur = route().sec, c = query ? counts() : null;
+    $('#tabs').innerHTML = SECS().map(s => `<a href="#${esc(s.id)}"${s.id === cur ? ' aria-current="page"' : ''}${c && !c[s.id] ? ' class="none"' : ''}>${esc(s.title)}${c ? `<span class="count">${c[s.id]}</span>` : ''}</a>`).join('');
+    document.documentElement.style.setProperty('--head', ($('header').offsetHeight + 12) + 'px');
+  }
+
+  // ---------- formulas ----------
+  function math(tex, md) {
+    const div = document.createElement('div'); div.className = 'math';
+    try {
+      const node = MathJax.tex2svg(toMJ(tex, md), { display: true });
+      node.setAttribute('data-tex', plainTeX(tex, md));
+      div.appendChild(node);
+    } catch (e) { div.textContent = tex; }
+    return div;
+  }
+  // a transparent rectangle over each hover target, drawn first inside it, so gaps between glyphs
+  // count as inside and nested targets (drawn later) stay on top
+  function addHits(root) {
+    root.querySelectorAll('.math [class*="k-"]').forEach(g => {
+      if (g.querySelector(':scope > rect.pm-hit')) return;
+      let b; try { b = g.getBBox(); } catch (e) { return; }
+      if (!b || !b.width) return;
+      const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      r.setAttribute('x', b.x - 30); r.setAttribute('y', b.y - 30); r.setAttribute('width', b.width + 60); r.setAttribute('height', b.height + 60);
+      r.setAttribute('class', 'pm-hit'); g.insertBefore(r, g.firstChild);
+    });
+  }
+  function boxOn(el, c) {
+    let b; try { b = el.getBBox(); } catch (e) { return; }
+    if (!b || !b.width) return;
+    const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    r.setAttribute('x', b.x - 10); r.setAttribute('y', b.y - 10); r.setAttribute('width', b.width + 20); r.setAttribute('height', b.height + 20);
+    r.setAttribute('rx', 70); r.setAttribute('class', 'pm-box ' + c); el.insertBefore(r, el.firstChild);
+  }
+  const boxesOff = c => document.querySelectorAll('.math rect.pm-box.' + c).forEach(r => r.remove());
+  function markAll(key) { boxesOff('pin'); if (key && !key.startsWith('@')) document.querySelectorAll('.math .' + CSS.escape(cls(key))).forEach(e => boxOn(e, 'pin')); }
+  let hotEl = null;
+  function hot(el) { if (el === hotEl) return; boxesOff('hot'); hotEl = el; if (el) boxOn(el, 'hot'); }
+  function typeset(el) { if (window.MathJax && MathJax.typesetPromise) return MathJax.typesetPromise([el]).then(() => markSel()).catch(() => {}); }
+
+  // ---------- extension hooks ----------
+  const ctx = () => ({ map: MAP, mode, esc, prose, plainTeX, modes: MODES });
+  const hook = (name, ...a) => window.ProofMap.exts.map(e => { try { return typeof e[name] === 'function' ? e[name](...a, ctx()) || '' : ''; } catch (err) { console.error(err); return ''; } }).join('');
+
+  // ---------- deviations ----------
+  const KIND = { notation: 'notation', merged: 'merged', renamed: 'renamed', simplified: 'simplified', omitted: 'omitted', planned: 'planned', unsourced: 'no source', other: 'differs' };
+  const missing = d => !d.reason || /REASON MISSING/.test(d.reason);
+  function devList(devs) {
+    const ds = (devs || []).filter(d => !d.modes || !MODES.length || d.modes.includes(mode));
+    if (!ds.length) return '';
+    return `<ul class="devs">${ds.map(d => `<li class="${missing(d) ? 'missing' : ''}"><span class="tag ${d.kind === 'planned' ? 'planned' : missing(d) ? 'missing' : 'dev'}">${esc(KIND[d.kind] || d.kind)}</span><span><span class="reason">${missing(d) ? 'Reason missing.' : prose(d.reason)}</span>${d.names ? ` <code>${esc(d.names.join(', '))}</code>` : ''}${d.part ? ` <span class="part">at $${esc(plainTeX(d.part, mode))}$</span>` : ''}</span></li>`).join('')}</ul>`;
+  }
+  const refLine = rs => (rs || []).map(r => `${r.file}: ${r.names.join(', ')}${r.qualifier ? ' (' + r.qualifier + ')' : ''}`).join(' · ');
+
+  // ---------- rendering a section ----------
+  function renderSection() {
+    const { sec, block } = route(), root = $('#content');
+    root.innerHTML = ''; hotEl = null;
+    if (sec === 'examples') renderExamples(root);
+    else {
+      const s = MAP.sections.find(x => x.id === sec);
+      const isFirst = MAP.sections[0] === s;
+      const shown = s.blocks.filter(b => visible(b) && matches(blockHay(b)));
+      let head = s.intro ? `<p class="intro">${prose(s.intro)}</p>` : '';
+      if (!query && shown.length > 3) head += `<ul class="toc">${shown.map(b => `<li><a href="#${esc(s.id)}/${esc(b.id)}" data-jump="${esc(b.id)}">${esc(b.title)}</a></li>`).join('')}</ul>`;
+      if (isFirst && !query && (MAP.conventions || []).length) head += `<div class="conventions"><h2>Conventions</h2><dl>${MAP.conventions.map(c => `<dt>$${esc(c.symbol)}$</dt><dd>${prose(c.meaning)}</dd>`).join('')}</dl></div>`;
+      root.insertAdjacentHTML('beforeend', head);
+      for (const b of shown) root.appendChild(blockEl(s, b));
+      if (!shown.length) noMatches(root);
+    }
+    requestAnimationFrame(() => addHits(root));
+    typeset(root);
+    if (pinned) markAll(pinned);
+    else idle(sec);
+    if (block) jump(block, false);
+  }
+  function blockEl(s, b) {
+    const el = document.createElement('article');
+    const only = onlyMode(b), bm = blockMode(b);
+    el.className = 'block' + (only ? ' only' : ''); el.id = 'b-' + b.id;
+    if (only) el.dataset.mc = only[0];
+    const tags = (only ? only.map(m => `<span class="tag mode" data-mc="${esc(m)}">${esc((modeOf(m) || {}).short || m)}</span>`).join('') : '')
+      + [...new Set((b.deviations || []).map(d => d.kind))].map(k => { const m = (b.deviations || []).some(d => d.kind === k && missing(d)); return `<span class="tag ${k === 'planned' ? 'planned' : m ? 'missing' : 'dev'}" title="${esc(m ? 'Reason missing' : 'See the reason below the block')}">${esc(KIND[k] || k)}</span>`; }).join('');
+    const flip = differs(b) ? `<span class="mini" role="group" aria-label="Show this block in">${MODES.map(m => `<button type="button" data-flip="${esc(b.id)}" data-m="${esc(m.id)}" data-mc="${esc(m.id)}" aria-pressed="${bm === m.id}" title="${esc(m.label)}">${esc(m.short || m.label)}</button>`).join('')}</span>` : '';
+    el.innerHTML = `<div class="bhead"><h3 data-block="${esc(b.id)}" tabindex="0">${esc(b.title)}</h3><span class="tools">${tags}${hook('blockTags', b)}${flip}<button class="tbtn" type="button" data-copy="${esc(b.id)}" title="Copy the TeX of this formula">${ICON.copy}</button><a class="tbtn" href="#${esc(s.id)}/${esc(b.id)}" title="Link to this block">${ICON.link}</a></span></div>`
+      + (b.source && b.source.length ? `<code class="src">${esc(refLine(b.source))}</code>` : '');
+    el.appendChild(math(texOf(b, bm), bm));
+    el.insertAdjacentHTML('beforeend', (b.caption ? `<p class="caption">${prose(b.caption, bm)}</p>` : '') + devList(b.deviations) + hook('blockFooter', b));
+    return el;
+  }
+  function noMatches(root) {
+    const c = counts(), others = SECS().filter(s => c[s.id]);
+    root.insertAdjacentHTML('beforeend', `<p class="empty-state">Nothing here matches the filter${MODES.length ? ' in this mode' : ''}.${others.length ? ' Matches in ' + others.map(s => `<a href="#${esc(s.id)}">${esc(s.title)} (${c[s.id]})</a>`).join('') : ''}</p>`);
+  }
+  function renderExamples(root) {
+    const xs = (MAP.examples || []).filter(x => visible(x) && matches(exHay(x)));
+    for (const x of xs) {
+      const only = onlyMode(x);
+      root.insertAdjacentHTML('beforeend', `<article class="ex${only ? ' block only' : ''}" id="x-${esc(x.id)}"${only ? ` data-mc="${esc(only[0])}"` : ''}><div class="bhead"><h3 data-ex="${esc(x.id)}" tabindex="0">${esc(x.title)}</h3><span class="tools">${only ? only.map(m => `<span class="tag mode" data-mc="${esc(m)}">${esc((modeOf(m) || {}).short || m)}</span>`).join('') : ''}<a class="tbtn" href="#examples/${esc(x.id)}" title="Link to this example">${ICON.link}</a></span></div>${x.source && x.source.length ? `<code class="src">${esc(refLine(x.source))}</code>` : ''}${hook('exampleHeader', x)}${x.lead ? `<p class="lead">${prose(x.lead)}</p>` : ''}${x.code ? `<pre>${highlight(x.code)}</pre>` : ''}${x.meaning ? `<p>${prose(x.meaning)}</p>` : ''}${devList(x.deviations)}</article>`);
+    }
+    if (!xs.length) noMatches(root);
+  }
+
+  // ---------- the note panel ----------
+  function noteHTML(n, opts = {}) {
+    const md = opts.mode || mode;
+    const row = (t, v, c) => v && String(v).trim() ? `<div><dt>${t}</dt><dd${c ? ` class="${c}"` : ''}>${prose(v, md)}</dd></div>` : '';
+    const args = (n.args || []).filter(a => !a.modes || !MODES.length || a.modes.includes(md));
+    let h = `<h2>${prose(n.title, md)}</h2><dl>`;
+    if (n.signature) h += `<div><dt>Signature</dt><dd class="sig">$\\displaystyle ${esc(plainTeX(n.signature, md))}$</dd></div>`;
+    if (args.length) h += `<div><dt>Arguments</dt><dd><ul class="args">${args.map(a => `<li>$${esc(plainTeX(a.name, md))}$ ${prose(a.meaning, md)}</li>`).join('')}</ul></dd></div>`;
+    h += row('Meaning', n.meaning) + row('Why', n.why) + row('Without it', n.breaks, 'breaks') + row('Example', n.example);
+    for (const [label, html] of window.ProofMap.exts.flatMap(e => { try { return (e.noteRows && e.noteRows(n, ctx())) || []; } catch (err) { return []; } })) h += `<div><dt>${esc(label)}</dt><dd>${html}</dd></div>`;
+    if ((n.deviations || []).length) h += `<div><dt>Differs from the code</dt><dd>${devList(n.deviations)}</dd></div>`;
+    if ((n.source || []).length) h += `<div><dt>Rocq</dt><dd><ul class="refs">${n.source.map(r => `<li>${esc(r.file)}: ${esc(r.names.join(', '))}${r.qualifier ? ` <span class="q">(${esc(r.qualifier)})</span>` : ''}</li>`).join('')}</ul></dd></div>`;
+    h += '</dl>';
+    const chip = id => { const x = blockIndex.get(id); if (x) return `<a href="#${esc(x.s.id)}/${esc(id)}" data-jump="${esc(id)}">${esc(x.b.title)}</a>`; const e = (MAP.examples || []).find(e => e.id === id); return e ? `<a href="#examples/${esc(id)}" data-jump="${esc(id)}">${esc(e.title)}</a>` : `<span>${esc(id)}</span>`; };
+    if ((n.usedIn || []).length) h += `<div class="uses"><dt>Used in</dt><div class="chips">${n.usedIn.map(chip).join('')}</div></div>`;
+    if (opts.key && uses.has(opts.key)) {
+      const u = [...uses.get(opts.key).keys()].filter(id => id !== opts.from);
+      if (u.length) h += `<div class="uses"><dt>${opts.from ? 'Also in' : 'Appears in'}</dt><div class="chips">${u.map(chip).join('')}</div></div>`;
+    }
+    return h;
+  }
+  let shown = null;
+  function showNote(key, isPinned, md = mode, from = null) {
+    const sig = [key, isPinned, md].join('|');
+    if (shown === sig) return; shown = sig;
+    let n;
+    if (key.startsWith('@b:')) { const x = blockIndex.get(key.slice(3)); if (!x) return; const b = x.b; n = { title: b.title, meaning: b.caption, why: b.why, breaks: b.breaks, example: b.example, source: b.source, usedIn: b.usedIn, deviations: b.deviations }; }
+    else if (key.startsWith('@x:')) { const x = (MAP.examples || []).find(e => e.id === key.slice(3)); if (!x) return; n = { title: x.title, meaning: [x.lead, x.meaning].filter(Boolean).join(' '), source: x.source, deviations: x.deviations }; }
+    else if (key.startsWith('@s:')) { const s = MAP.sections.find(s => s.id === key.slice(3)); n = s ? { title: s.title, meaning: s.intro } : { title: 'Examples', meaning: 'Programs and what the development proves about them. Point at a title for what an example shows.' }; }
+    else n = MAP.notes[key] || { title: key, meaning: 'No note for this key.' };
+    const aside = $('#note');
+    aside.classList.remove('empty');
+    aside.innerHTML = `<div class="eyebrow"><span>${isPinned ? 'Pinned' : key.startsWith('@s:') ? 'Section' : 'Hover'}</span>${isPinned ? '<button type="button" id="unpin">Unpin  (Esc)</button>' : ''}</div>` + noteHTML(n, { mode: md, key: key.startsWith('@') ? null : key, from });
+    typeset(aside);
+  }
+  function idle(sec) { if (!pinned && !matchMedia('(max-width: 960px)').matches) showNote('@s:' + sec, false); }
+  function pin(key, md, from) { pinned = key; markAll(key); showNote(key, true, md, from); }
+  function unpin() { pinned = null; shown = null; boxesOff('pin'); if (matchMedia('(max-width: 960px)').matches) { $('#note').classList.add('empty'); } else idle(route().sec); }
+  function jump(id, flash = true) {
+    setTimeout(() => {
+      const el = document.getElementById('b-' + id) || document.getElementById('x-' + id); if (!el) return;
+      const top = el.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--head') || 110);
+      scrollTo({ top, behavior: 'smooth' });
+      if (flash) { el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1400); }
+    }, 40);
+  }
+  const modeAt = el => { const a = el.closest && el.closest('article.block'); if (!a) return mode; const x = blockIndex.get(a.id.slice(2)); return x ? blockMode(x.b) : mode; };
+  const blockAt = el => { const a = el.closest && el.closest('article.block'); return a ? a.id.slice(2) : null; };
+
+  // ---------- copying ----------
+  // a selection copies formulas as $TeX$ and keeps line breaks between blocks
+  function textOf(node) {
+    if (node.nodeType === 3) return node.nodeValue;
+    if (node.nodeType !== 1 && node.nodeType !== 11) return '';
+    if (node.matches && node.matches('mjx-container')) { const t = node.getAttribute('data-tex') || (node.querySelector('[data-tex]') || {}).dataset?.tex || ''; return node.getAttribute('display') === 'true' ? `\n$$${t}$$\n` : `$${t}$`; }
+    if (node.matches && node.matches('button, .tbtn, .tag, .mini, mjx-assistive-mml')) return '';
+    let s = ''; for (const c of node.childNodes) s += textOf(c);
+    if (node.matches && node.matches('p, h2, h3, li, pre, article, div, dt, dd, code.src')) s = '\n' + s.trim() + '\n';
+    return s;
+  }
+  document.addEventListener('copy', e => {
+    const sel = getSelection(); if (!sel.rangeCount || sel.isCollapsed) return;
+    const frag = sel.getRangeAt(0).cloneContents();
+    if (!frag.querySelector('mjx-container')) {
+      // a selection inside one formula: copy that formula
+      const c = sel.anchorNode && (sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement).closest('mjx-container');
+      if (!c) return;
+      e.clipboardData.setData('text/plain', c.getAttribute('data-tex') || ''); e.preventDefault(); return;
+    }
+    e.clipboardData.setData('text/plain', textOf(frag).replace(/\n{3,}/g, '\n\n').trim());
+    e.preventDefault();
+  });
+  // formulas inside a selection get a background, SVG glyphs have no selection colour of their own
+  function markSel() {
+    const sel = getSelection(), r = sel.rangeCount && !sel.isCollapsed ? sel.getRangeAt(0) : null;
+    document.querySelectorAll('mjx-container').forEach(c => c.classList.toggle('sel', !!r && r.intersectsNode(c)));
+  }
+  document.addEventListener('selectionchange', () => { cancelAnimationFrame(markSel.f); markSel.f = requestAnimationFrame(markSel); });
+  async function copyText(t) { try { await navigator.clipboard.writeText(t); toast('Copied the TeX'); } catch (e) { toast('Copy failed'); } }
+
+  // ---------- events ----------
+  function wire() {
+    const content = $('#content');
+    content.addEventListener('mouseover', e => {
+      if (pinned) { const t = e.target.closest('[class*="k-"]'); if (t) hot(t); return; }
+      const h = e.target.closest('h3[data-block], h3[data-ex]');
+      if (h) { showNote(h.dataset.block ? '@b:' + h.dataset.block : '@x:' + h.dataset.ex, false, modeAt(h)); return; }
+      const t = e.target.closest('[class*="k-"]'); if (!t) return;
+      const k = keyOf(t); if (!k) return;
+      hot(t); showNote(k, false, modeAt(t), blockAt(t));
+    });
+    content.addEventListener('mouseout', e => { if (e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('[class*="k-"]')) return; clearTimeout(content.t); content.t = setTimeout(() => hot(null), 120); });
+    content.addEventListener('mouseover', () => clearTimeout(content.t), true);
+    content.addEventListener('click', e => {
+      const f = e.target.closest('[data-flip]');
+      if (f) {
+        const id = f.dataset.flip, x = blockIndex.get(id), el = document.getElementById('b-' + id);
+        if (f.dataset.m === mode) local.delete(id); else local.set(id, f.dataset.m);
+        el.replaceWith(blockEl(x.s, x.b));
+        const nu = document.getElementById('b-' + id); requestAnimationFrame(() => addHits(nu)); typeset(nu);
+        if (pinned) { markAll(pinned); shown = null; showNote(pinned, true, blockMode(x.b)); }
+        return;
+      }
+      const c = e.target.closest('[data-copy]');
+      if (c) { const x = blockIndex.get(c.dataset.copy); copyText(plainTeX(texOf(x.b, blockMode(x.b)), blockMode(x.b))); return; }
+      const j = e.target.closest('[data-jump]');
+      if (j) { e.preventDefault(); goTo(j.dataset.jump); return; }
+      if (e.target.closest('a, button')) return;
+      if (!getSelection().isCollapsed) return;   // a click that ends a selection pins nothing
+      const h = e.target.closest('h3[data-block], h3[data-ex]');
+      if (h) { pin(h.dataset.block ? '@b:' + h.dataset.block : '@x:' + h.dataset.ex, modeAt(h)); return; }
+      const t = e.target.closest('[class*="k-"]');
+      if (t) { const k = keyOf(t); if (k) pin(k, modeAt(t), blockAt(t)); return; }
+      const xa = e.target.closest('article.ex'); if (xa) pin('@x:' + xa.id.slice(2), mode);
+    });
+    content.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('h3[data-block], h3[data-ex]')) e.target.click(); });
+    $('#note').addEventListener('click', e => {
+      if (e.target.id === 'unpin') { unpin(); return; }
+      const j = e.target.closest('[data-jump]'); if (j) { e.preventDefault(); goTo(j.dataset.jump); }
+    });
+    $('#modes').addEventListener('click', e => {
+      const b = e.target.closest('button[data-mode]'); if (!b) return;
+      mode = b.dataset.mode; local.clear(); store.set('mode:' + MAP.title, mode);
+      const u = new URL(location.href); u.searchParams.set('mode', mode); history.replaceState(null, '', u);
+      renderModes(); renderTabs(); renderSection();
+      if (pinned) { shown = null; showNote(pinned, true); }
+    });
+    let qt = null;
+    $('#q').addEventListener('input', e => { clearTimeout(qt); qt = setTimeout(() => { query = e.target.value.trim(); renderTabs(); renderSection(); }, 90); });
+    addEventListener('keydown', e => {
+      if (e.key === '/' && document.activeElement !== $('#q')) { e.preventDefault(); $('#q').focus(); }
+      else if (e.key === 'Escape') { if (document.activeElement === $('#q') && query) { $('#q').value = ''; query = ''; renderTabs(); renderSection(); } else if (pinned) unpin(); }
+    });
+    addEventListener('hashchange', () => { const before = renderSection.sec, r = route(); if (before !== r.sec) { renderTabs(); renderSection(); scrollTo(0, 0); } else if (r.block) jump(r.block); renderSection.sec = r.sec; renderTabs(); });
+    addEventListener('resize', () => document.documentElement.style.setProperty('--head', ($('header').offsetHeight + 12) + 'px'));
+  }
+  function goTo(id) {
+    const x = blockIndex.get(id), e = (MAP.examples || []).find(e => e.id === id);
+    const sec = x ? x.s.id : e ? 'examples' : null; if (!sec) return;
+    if (x && !visible(x.b)) { mode = x.b.modes[0]; renderModes(); }
+    if (query && !(x ? matches(blockHay(x.b)) : matches(exHay(e)))) { query = ''; $('#q').value = ''; }
+    if (route().sec !== sec) { location.hash = sec + '/' + id; } else { history.replaceState(null, '', '#' + sec + '/' + id); jump(id); }
+  }
+
+  // under serve.py, reload when the page or the map changes, keeping the scroll position and pin
+  function watch() {
+    if (!/^https?:$/.test(location.protocol)) return;
+    let seen = null;
+    const tick = () => xhr('__version?map=' + encodeURIComponent(params.get('map') || 'map.json')).then(v => {
+      if (seen !== null && v !== seen) { try { sessionStorage.setItem('proofmap:keep', JSON.stringify({ y: scrollY, pinned })); } catch (e) {} location.reload(); }
+      seen = v; setTimeout(tick, 1000);
+    }).catch(() => {});
+    tick();
+  }
+  function restore() {
+    let k = null; try { k = JSON.parse(sessionStorage.getItem('proofmap:keep')); sessionStorage.removeItem('proofmap:keep'); } catch (e) {}
+    if (k) setTimeout(() => { scrollTo(0, k.y || 0); if (k.pinned) pin(k.pinned, mode); }, 300);
+    // ?note=KEY opens with that note pinned, for links to a symbol
+    else if (params.get('note')) setTimeout(() => pin(params.get('note'), mode), 200);
+  }
+
+  // ---------- start ----------
+  async function start(map, base) {
+    MAP = map;
+    if (!MAP || MAP.format !== 'proof-map/1') { askForFile(new Error('not a proof-map/1 file')); return; }
+    document.title = MAP.title;
+    $('#title').textContent = MAP.title; $('#subtitle').textContent = MAP.subtitle || '';
+    MODES = (MAP.modes && MAP.modes.options) || [];
+    const want = params.get('mode') || store.get('mode:' + MAP.title);
+    mode = MODES.length ? (MODES.some(m => m.id === want) ? want : MAP.modes.default) : null;
+    if (MAP.tex && MAP.tex.macros) { const tex = MathJax.config.tex; tex.macros = Object.assign({}, tex.macros, MAP.tex.macros); MathJax.startup.getComponents(); }
+    blockIndex = new Map(MAP.sections.flatMap(s => s.blocks.map(b => [b.id, { s, b }])));
+    for (const { s, b } of blockIndex.values()) for (const t of [b.formula, ...Object.values(b.variants || {})]) for (const k of keysIn(t)) { if (!uses.has(k)) uses.set(k, new Map()); uses.get(k).set(b.id, { s, b }); }
+    for (const src of (base && MAP.extensions && MAP.extensions.page) || []) { try { await script(new URL(src, base).href); } catch (e) { console.warn('extension not loaded', src); } }
+    const css = window.ProofMap.exts.map(e => e.css || '').join('\n'); if (css) document.head.insertAdjacentHTML('beforeend', `<style>${css}</style>`);
+    modeCSS(); renderModes(); renderTabs(); renderSection.sec = route().sec; renderSection(); wire(); restore(); watch();
+  }
+  async function boot() {
+    try { const { map, base } = await loadMap(); await start(map, base); }
+    catch (e) { console.error(e); askForFile(e); }
+  }
+  if (window.MathJax && MathJax.tex2svg) boot(); else window.__mjReady = boot;
+})();
+</script>
+</body>
+</html>

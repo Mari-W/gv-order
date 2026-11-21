@@ -128,7 +128,7 @@ function recordParts(name, body) {
   if (open >= 0 && close > open) {
     for (const f of rhs.slice(open + 1, close).split(';')) {
       const m = new RegExp('^\\s*(' + IDENT + ')(?:\\s+[^:;]*?)?\\s*(?::>?(?!:)|:=)', 'u').exec(f);
-      if (m) out.push({ name: m[1], kind: 'field', text: f });
+      if (m) out.push({ name: m[1], kind: 'field', text: f.trim() });
     }
   }
   return out;
