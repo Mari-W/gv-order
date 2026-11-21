@@ -1,6 +1,56 @@
 # Pending changes: the map leads, the Rocq follows
 
-## Report, next run of 2026-11-21 (stages 1 to 4)
+## Report, run of 2026-11-21 on tickets, transfinite indices, layers and E-Open
+
+Branch redesign-clean3 in .claude/worktrees/redesign-s4, nothing pushed.
+Step 0 merged redesign. Later merges of redesign are 829beea and 933ca2e.
+
+- Stage 1, tickets as one cap per end. Done (22d7a0a). `TSess S x a m`,
+  `lgt N a m := a + m > N`, `tsum_ok N m1 m2 := m1 + m2 ≤ N`. E-Link asks
+  `lgt N a1 m2` and `lgt N a2 m1`. P-Term asks `tsum_ok` of each restricted
+  channel. The soup keeps `sp_cap`, `sp_tsum` and `sp_sigcap`, and adequacy
+  measures on ℕ with `<`. ϑ, `tix`, the refill monotonicity in N and
+  cost/Transformers.v are gone. Creation tickets are fixed: new_ℓ starts at
+  N/2 and N − N/2, new_κ o at m and N − m, interface ends at N/2, until the
+  existential property gives a free choice. `lf_sem` is parametric in N, so the
+  sides of P-Connect share N. The LF examples type at twice their old bound.
+- Stage 2, transfinite step indices. Groundwork only (8769bc2).
+  relation/Ord.v proves `olt_wf`, `oadd_lt` and `osfix_unfold` (well-founded
+  recursion, unfolding up to pointwise ↔, no funext, no axiom). The port of the
+  relation, fuel and the soup to α is not done. It is the 43-file change of
+  check-transfinite.md and no design obstacle was found.
+- Stage 3, layers. Not started. O-New picks ranks through the existential
+  property of stage 2, and the removal of families, laws and generated roots
+  rewrites every world and E-New site. `wf_join_iff` and `ent_sound` are open.
+- Stage 4, E-Open conservativity and the flag variant. Done on the pre-layer
+  worlds (3381fd4). `cons_open W Γ m C := ∀ x y, slt W (hc_open m C Γ)
+  (pt_inst (pshift m) x) (pt_inst (pshift m) y) → slt W Γ x y` is a premise of
+  E-Open (Rocq name `cons_open`, because `cons` is the list constructor).
+  `cons_law` discharges the 15 example sites. It asks only that the facts of W
+  sit at constant roots (`facts_const`). `opened_cons` and `inv_chan` are in
+  static/Inversion.v. SemBranch proves `Tbad_not_cons`, `sbv_thread_E`,
+  `sbv_deadlock_free` and `sbv_rejected : ∀ N W, ¬ ptyped N W ∅ sbv_config TUnit`.
+  `sb_dead_arm_typed` is gone.
+
+Plausibility. All LF and DF examples build, `lf_soundness` and `soundness`
+are closed under the global context, and stage 4 only removes derivations.
+The rejects.js programs are argued, not mechanized, and their mechanisms
+(aging, payload credit, E-Link's `lgt`, wfworld) are as before. S4.18 concerns
+(fuse), which no stage touched.
+
+Final state. `make -j2` builds with no error. `make test` passes after the
+.expected files of TypeNotations, FuelNotations, CostNotations and
+SoupNotations were regenerated for the stage 1 judgments. `make check`
+reports 106 of 106 results closed under the global context. No Admitted, no
+Axiom, no new Parameter.
+
+Map. Stage 1 removed the TICKETS tags. Stage 4 removed the planned tags of
+E-Open and the flag example, and the flag example now cites `sbv_rejected`.
+The TRANSFINITE note says that relation/Ord.v exists. The LAYERS and NEW2
+tags stay. gen.js reports 0 errors, check.js 0 mathjax errors, lint-map 0
+coined words, 0 semicolons, 0 sentences over 35 words.
+
+## Report, earlier next run of 2026-11-21 (stages 1 to 4)
 
 Branch redesign-clean3 in .claude/worktrees/redesign-s4, nothing pushed.
 Step 0 merged redesign by fast forward (78db2c2). The coordinator
