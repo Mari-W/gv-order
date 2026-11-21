@@ -15,7 +15,14 @@ Proof. solve_decision. Defined.
 
 Abbreviation own := (gmap cend hold).
 
-Record lfstate := LFState { s_q : config; s_K : own }.
+(** A state carries the ranked world of its run so far. A creation may
+    grow it, and no step shrinks it. *)
+Record lfstate := LFState { s_q : config; s_K : own; s_W : world }.
+
+(** The choice of a creation: the tickets of its two ends, the point of
+    its positive end and the grown world (O-New, F-New). Every other
+    event ignores it. *)
+Record tchoice := TChoice { tc_m1 : fuel; tc_m2 : fuel; tc_pt : point; tc_W : world }.
 
 (** The entries of thread t, its counters with their tickets, and the
     part of a map on its ends. *)

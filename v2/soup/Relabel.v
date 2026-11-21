@@ -35,11 +35,11 @@ Qed.
 
 Definition krelabel (f : nat → nat) (K : own) : own := (λ h, Hold (f h.(h_th)) h.(h_pt) h.(h_ctr) h.(h_cap)) <$> K.
 
-Lemma soup_relabel N n W Σ T C M1 M2 K A Π U (f g : nat → nat) :
+Lemma soup_relabel N n W Σ T C M1 M2 K Ws Ws' A Π U (f g : nat → nat) :
   (∀ t e, M1 !! t = Some e → M2 !! f t = Some e ∧ g (f t) = t) →
   (∀ t' e, M2 !! t' = Some e → M1 !! g t' = Some e ∧ f (g t') = t') →
-  soup_inv N n W Σ T (LFState (C, M1) K) A Π U →
-  soup_inv N n W Σ T (LFState (C, M2) (krelabel f K)) A Π (U ∘ g).
+  soup_inv N n W Σ T (LFState (C, M1) K Ws) A Π U →
+  soup_inv N n W Σ T (LFState (C, M2) (krelabel f K) Ws') A Π (U ∘ g).
 Proof.
   intros H1 H2 Hs.
   assert (Hth : ∀ o h, K !! o = Some h → is_Some (M1 !! h.(h_th))) by apply (sp_owner _ _ _ _ _ _ _ _ _ Hs).

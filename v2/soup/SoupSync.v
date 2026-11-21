@@ -12,9 +12,9 @@ From GV Require Export soup.SoupStep soup.SyncMaps.
 From GV Require Import compat.Redex.
 
 Section sync.
-  Context (N : nat) (n lv : Ix) (Hlv : olt lv n) (W : world) (T : ty) (C : gset chan) (Mq : gmap nat expr) (K : own)
+  Context (N : nat) (n lv : Ix) (Hlv : olt lv n) (W : world) (T : ty) (C : gset chan) (Mq : gmap nat expr) (K : own) (Ws : world)
     (A : senv) (Π : penv) (U : nat → ty).
-  Context (Hs : soup_inv N n W ∅ T (LFState (C, Mq) K) A Π U).
+  Context (Hs : soup_inv N n W ∅ T (LFState (C, Mq) K Ws) A Π U).
 
   Local Lemma owner_of t o v : kres K t A !! o = Some v → ∃ h, K !! o = Some h ∧ h.(h_th) = t.
   Proof. intros H. apply lookup_kres in H as [_ H]. done. Qed.
@@ -35,11 +35,11 @@ Section sync.
     i ≠ j → Mq !! i = Some e → Mq !! j = Some f →
     tstep e (LSess (SSend o w)) e' → tstep f (LSess (SRecv (edual o) w)) f' →
     ∃ A' Π', soup_inv N lv W ∅ T
-      (lf_next tc (LFState (C, Mq) K) (EvSync i j (SSend o w)) (C, <[j := f']> (<[i := e']> Mq))) A' Π' U.
+      (lf_next tc (LFState (C, Mq) K Ws) (EvSync i j (SSend o w)) (C, <[j := f']> (<[i := e']> Mq))) A' Π' U.
   Proof.
     intros Hij He Hf Hst Hst'.
-    destruct (s_obl _ _ _ _ _ _ _ _ _ _ Hs i e _ e' He Hst) as [HEi HFi].
-    destruct (s_obl _ _ _ _ _ _ _ _ _ _ Hs j f _ f' Hf Hst') as [HEj HFj].
+    destruct (s_obl _ _ _ _ _ _ _ _ _ _ _ Hs i e _ e' He Hst) as [HEi HFi].
+    destruct (s_obl _ _ _ _ _ _ _ _ _ _ _ Hs j f _ f' Hf Hst') as [HEj HFj].
     cbn [Eobl Fobl] in HEi, HFi, HEj, HFj. unfold o_send in HEi. unfold o_recv in HEj.
     unfold f_send in HFi. unfold f_recv in HFj.
     destruct HEi as (S0 & x & m & U0 & S & ΘM & Θr & Ho & Hu & Hd & HΘ & HV & HE').
@@ -119,13 +119,13 @@ Section sync.
       - intros [-> | ->]; [right|left]; [done|apply edual_edual].
       - intros [H|H]; [right; by rewrite <-H, edual_edual|left; by apply edual_inj]. }
     unfold ftick in HF', HFr. rewrite fsub_inf in HF', HFr.
-    apply (soup_build _ _ _ _ _ _ _ _ _ _ _ Hs).
+    apply (soup_build _ _ _ _ _ _ _ _ _ _ _ _ Hs).
     - intros t e1 He1. apply lookup_insert_Some in He1 as [[<- <-]|[Htj He1]].
       + rewrite Kj, Kj', Cj. split_and!; [exact HEr|exact (s_ty Hs j f Hf)|exact HFr].
       + apply lookup_insert_Some in He1 as [[<- <-]|[Hti He1]].
         * rewrite Ki, Ki', Ci. split_and!; [|exact (s_ty Hs i e He)|exact HF'].
           eapply at_cost_E_live; [|exact HE'|exact Hlv]. cbn; lia.
-        * rewrite !Kt, Ct by done. destruct (s_other _ _ _ Hlv _ _ _ _ _ _ _ _ Hs t e1 He1) as [H1 H2].
+        * rewrite !Kt, Ct by done. destruct (s_other _ _ _ Hlv _ _ _ _ _ _ _ _ _ Hs t e1 He1) as [H1 H2].
           split_and!; [done|exact (s_ty Hs t e1 He1)|done].
     - apply map_eq. intros o0. rewrite !lookup_fmap, HK'.
       pose proof (s_pts _ _ _ _ _ _ _ _ Hs o0) as Hp. cbn [s_K] in Hp.
@@ -139,7 +139,7 @@ Section sync.
     - intros o0 h0 Ho0. rewrite HK' in Ho0. rewrite !lookup_insert_is_Some'.
       destruct (decide (o0 = o)); [simplify_eq; simpl; by right; left|].
       destruct (decide (o0 = edual o)); [simplify_eq; simpl; by left|].
-      apply fmap_Some in Ho0 as (h1 & Ho1 & ->). pose proof (s_threads _ _ _ _ _ _ _ _ _ _ Hs o0 h1 Ho1).
+      apply fmap_Some in Ho0 as (h1 & Ho1 & ->). pose proof (s_threads _ _ _ _ _ _ _ _ _ _ _ Hs o0 h1 Ho1).
       own_cases; simpl; auto.
     - intros o0. rewrite HdK. apply (s_closed _ _ _ _ _ _ _ _ Hs).
     - intros o0. rewrite HdK. apply (s_pair _ _ _ _ _ _ _ _ Hs).
@@ -165,8 +165,8 @@ Section sync.
         * rewrite edual_edual, lookup_insert_eq in H6. rewrite lookup_insert_ne, lookup_insert_eq in H5 by done.
           simplify_eq. by apply pdual_sym.
     - apply kfin_ksync; [exact (sp_fin _ _ _ _ _ _ _ _ _ Hs)|exact (s_kcfin _ _ _ _ _ _ _ _ Hs)].
-    - apply kcap_ok_ksync; [exact (s_kcap_ok _ _ _ _ _ _ _ _ _ _ Hs)|by apply elem_of_dom_2 in Khi|by apply elem_of_dom_2 in Khj].
-    - apply ktsum_ok_ksync; [exact (s_ktsum_ok _ _ _ _ _ _ _ _ _ _ Hs)|by apply elem_of_dom_2 in Khi|by apply elem_of_dom_2 in Khj].
+    - apply kcap_ok_ksync; [exact (s_kcap_ok _ _ _ _ _ _ _ _ _ _ _ Hs)|by apply elem_of_dom_2 in Khi|by apply elem_of_dom_2 in Khj].
+    - apply ktsum_ok_ksync; [exact (s_ktsum_ok _ _ _ _ _ _ _ _ _ _ _ Hs)|by apply elem_of_dom_2 in Khi|by apply elem_of_dom_2 in Khj].
   Qed.
 
   (** P-Act-Close. *)
@@ -174,11 +174,11 @@ Section sync.
     i ≠ j → Mq !! i = Some e → Mq !! j = Some f →
     tstep e (LSess (SClose o)) e' → tstep f (LSess (SClose (edual o))) f' →
     ∃ A' Π', soup_inv N lv W ∅ T
-      (lf_next tc (LFState (C, Mq) K) (EvSync i j (SClose o)) (C ∖ {[ech o]}, <[j := f']> (<[i := e']> Mq))) A' Π' U.
+      (lf_next tc (LFState (C, Mq) K Ws) (EvSync i j (SClose o)) (C ∖ {[ech o]}, <[j := f']> (<[i := e']> Mq))) A' Π' U.
   Proof.
     intros Hij He Hf Hst Hst'.
-    destruct (s_obl _ _ _ _ _ _ _ _ _ _ Hs i e _ e' He Hst) as [HEi HFi].
-    destruct (s_obl _ _ _ _ _ _ _ _ _ _ Hs j f _ f' Hf Hst') as [HEj HFj].
+    destruct (s_obl _ _ _ _ _ _ _ _ _ _ _ Hs i e _ e' He Hst) as [HEi HFi].
+    destruct (s_obl _ _ _ _ _ _ _ _ _ _ _ Hs j f _ f' Hf Hst') as [HEj HFj].
     cbn [Eobl Fobl] in HEi, HFi, HEj, HFj. unfold o_close in HEi, HEj. unfold f_close in HFi, HFj.
     destruct HEi as (S0 & x & Ho & _ & HE1). destruct HEj as (S0' & x' & Ho' & _ & HE2).
     destruct HFi as (_ & P0 & _ & _ & HF1). destruct HFj as (_ & P0' & _ & _ & HF2).
@@ -201,14 +201,14 @@ Section sync.
     assert (HdK : ∀ o0, o0 ∈ dom (ktick i j ∅ (delete o (delete (edual o) K))) ↔
                         o0 ∈ dom K ∧ ¬ (o0 = o ∨ o0 = edual o)).
     { apply (dom_kclose K i j o Hij Hoi Hoj Hoo). }
-    apply (soup_build _ _ _ _ _ _ _ _ _ _ _ Hs).
+    apply (soup_build _ _ _ _ _ _ _ _ _ _ _ _ Hs).
     - intros t e1 He1. apply lookup_insert_Some in He1 as [[<- <-]|[Htj He1]].
       + rewrite Kj, Kj, Cj. split_and!; [|exact (s_ty Hs j f Hf)|exact HF2].
         eapply at_cost_E_live; [|exact HE2|exact Hlv]. cbn; lia.
       + apply lookup_insert_Some in He1 as [[<- <-]|[Hti He1]].
         * rewrite Ki, Ki, Ci. split_and!; [|exact (s_ty Hs i e He)|exact HF1].
           eapply at_cost_E_live; [|exact HE1|exact Hlv]. cbn; lia.
-        * rewrite !Kt, Ct by done. destruct (s_other _ _ _ Hlv _ _ _ _ _ _ _ _ Hs t e1 He1) as [H1 H2].
+        * rewrite !Kt, Ct by done. destruct (s_other _ _ _ Hlv _ _ _ _ _ _ _ _ _ Hs t e1 He1) as [H1 H2].
           split_and!; [done|exact (s_ty Hs t e1 He1)|done].
     - apply map_eq. intros o0. rewrite !lookup_fmap, HK'.
       pose proof (s_pts _ _ _ _ _ _ _ _ Hs o0) as Hp. cbn [s_K] in Hp.
@@ -221,7 +221,7 @@ Section sync.
       + intros [[H0 H5] H6]. split; [done|]. intros [?|?]; contradiction.
       + intros [H0 Hn]. split_and!; [done|intros ->; apply Hn; auto|intros ->; apply Hn; auto].
     - intros o0 h0 Ho0. rewrite HK' in Ho0. case_decide; [done|].
-      apply fmap_Some in Ho0 as (h1 & Ho1 & ->). pose proof (s_threads _ _ _ _ _ _ _ _ _ _ Hs o0 h1 Ho1).
+      apply fmap_Some in Ho0 as (h1 & Ho1 & ->). pose proof (s_threads _ _ _ _ _ _ _ _ _ _ _ Hs o0 h1 Ho1).
       rewrite !lookup_insert_is_Some'. own_cases; simpl; auto.
     - intros o0 Ho0. apply HdK in Ho0 as [Ho0 Hne]. apply elem_of_difference.
       split; [exact (s_closed _ _ _ _ _ _ _ _ Hs o0 Ho0)|]. rewrite elem_of_singleton.
@@ -235,8 +235,8 @@ Section sync.
       apply lookup_delete_Some in H4 as [_ H4]. apply lookup_delete_Some in H4 as [_ H4].
       exact (s_pdual _ _ _ _ _ _ _ _ Hs o0 P1 P2 H3 H4).
     - apply kfin_ktick, kfin_delete, kfin_delete. exact (sp_fin _ _ _ _ _ _ _ _ _ Hs).
-    - apply kcap_ok_ktick, kcap_ok_delete, kcap_ok_delete. exact (s_kcap_ok _ _ _ _ _ _ _ _ _ _ Hs).
-    - apply ktsum_ok_ktick, ktsum_ok_delete, ktsum_ok_delete. exact (s_ktsum_ok _ _ _ _ _ _ _ _ _ _ Hs).
+    - apply kcap_ok_ktick, kcap_ok_delete, kcap_ok_delete. exact (s_kcap_ok _ _ _ _ _ _ _ _ _ _ _ Hs).
+    - apply ktsum_ok_ktick, ktsum_ok_delete, ktsum_ok_delete. exact (s_ktsum_ok _ _ _ _ _ _ _ _ _ _ _ Hs).
   Qed.
 
   (** P-Act-Choice. *)
@@ -244,11 +244,11 @@ Section sync.
     i ≠ j → Mq !! i = Some e → Mq !! j = Some f →
     tstep e (LSess (SSel o b)) e' → tstep f (LSess (SBra (edual o) b)) f' →
     ∃ A' Π', soup_inv N lv W ∅ T
-      (lf_next tc (LFState (C, Mq) K) (EvSync i j (SSel o b)) (C, <[j := f']> (<[i := e']> Mq))) A' Π' U.
+      (lf_next tc (LFState (C, Mq) K Ws) (EvSync i j (SSel o b)) (C, <[j := f']> (<[i := e']> Mq))) A' Π' U.
   Proof.
     intros Hij He Hf Hst Hst'.
-    destruct (s_obl _ _ _ _ _ _ _ _ _ _ Hs i e _ e' He Hst) as [HEi HFi].
-    destruct (s_obl _ _ _ _ _ _ _ _ _ _ Hs j f _ f' Hf Hst') as [HEj HFj].
+    destruct (s_obl _ _ _ _ _ _ _ _ _ _ _ Hs i e _ e' He Hst) as [HEi HFi].
+    destruct (s_obl _ _ _ _ _ _ _ _ _ _ _ Hs j f _ f' Hf Hst') as [HEj HFj].
     cbn [Eobl Fobl] in HEi, HFi, HEj, HFj. unfold o_select in HEi. unfold o_branch in HEj.
     unfold f_select in HFi. unfold f_branch in HFj.
     destruct HEi as (S0 & x & S1 & S2 & Ho & Hu & HE1).
@@ -292,14 +292,14 @@ Section sync.
     { intros o0. rewrite !elem_of_union, !elem_of_singleton. split.
       - intros [-> | ->]; [right|left]; [done|apply edual_edual].
       - intros [H|H]; [right; by rewrite <-H, edual_edual|left; by apply edual_inj]. }
-    apply (soup_build _ _ _ _ _ _ _ _ _ _ _ Hs).
+    apply (soup_build _ _ _ _ _ _ _ _ _ _ _ _ Hs).
     - intros t e1 He1. apply lookup_insert_Some in He1 as [[<- <-]|[Htj He1]].
       + rewrite Kj', Kj', Cj, !mres_empty, !map_union_empty. split_and!; [|exact (s_ty Hs j f Hf)|exact HF2].
         eapply at_cost_E_live; [|exact HE2|exact Hlv]. cbn; lia.
       + apply lookup_insert_Some in He1 as [[<- <-]|[Hti He1]].
         * rewrite Ki', Ki', Ci, !mrem_empty. split_and!; [|exact (s_ty Hs i e He)|exact HF1].
           eapply at_cost_E_live; [|exact HE1|exact Hlv]. cbn; lia.
-        * rewrite !Kt, Ct by done. destruct (s_other _ _ _ Hlv _ _ _ _ _ _ _ _ Hs t e1 He1) as [H1 H2].
+        * rewrite !Kt, Ct by done. destruct (s_other _ _ _ Hlv _ _ _ _ _ _ _ _ _ Hs t e1 He1) as [H1 H2].
           split_and!; [done|exact (s_ty Hs t e1 He1)|done].
     - apply map_eq. intros o0. rewrite !lookup_fmap, HK'.
       pose proof (s_pts _ _ _ _ _ _ _ _ Hs o0) as Hp. cbn [s_K] in Hp.
@@ -313,7 +313,7 @@ Section sync.
     - intros o0 h0 Ho0. rewrite HK' in Ho0. rewrite !lookup_insert_is_Some'.
       destruct (decide (o0 = o)); [simplify_eq; simpl; by right; left|].
       destruct (decide (o0 = edual o)); [simplify_eq; simpl; by left|].
-      apply fmap_Some in Ho0 as (h1 & Ho1 & ->). pose proof (s_threads _ _ _ _ _ _ _ _ _ _ Hs o0 h1 Ho1).
+      apply fmap_Some in Ho0 as (h1 & Ho1 & ->). pose proof (s_threads _ _ _ _ _ _ _ _ _ _ _ Hs o0 h1 Ho1).
       own_cases; simpl; auto.
     - intros o0. rewrite HdK. apply (s_closed _ _ _ _ _ _ _ _ Hs).
     - intros o0. rewrite HdK. apply (s_pair _ _ _ _ _ _ _ _ Hs).
@@ -341,7 +341,7 @@ Section sync.
         * rewrite edual_edual, lookup_insert_eq in H6. rewrite lookup_insert_ne, lookup_insert_eq in H5 by done.
           simplify_eq. apply pdual_sym. by destruct b.
     - apply kfin_ksync; [exact (sp_fin _ _ _ _ _ _ _ _ _ Hs)|exact (s_kcfin _ _ _ _ _ _ _ _ Hs)].
-    - apply kcap_ok_ksync; [exact (s_kcap_ok _ _ _ _ _ _ _ _ _ _ Hs)|by apply elem_of_dom_2 in Khi|by apply elem_of_dom_2 in Khj].
-    - apply ktsum_ok_ksync; [exact (s_ktsum_ok _ _ _ _ _ _ _ _ _ _ Hs)|by apply elem_of_dom_2 in Khi|by apply elem_of_dom_2 in Khj].
+    - apply kcap_ok_ksync; [exact (s_kcap_ok _ _ _ _ _ _ _ _ _ _ _ Hs)|by apply elem_of_dom_2 in Khi|by apply elem_of_dom_2 in Khj].
+    - apply ktsum_ok_ksync; [exact (s_ktsum_ok _ _ _ _ _ _ _ _ _ _ _ Hs)|by apply elem_of_dom_2 in Khi|by apply elem_of_dom_2 in Khj].
   Qed.
 End sync.

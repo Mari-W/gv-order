@@ -109,16 +109,6 @@ Arguments s_rel {_ _ _ _ _ _ _ _} _ _ _ _.
 Arguments s_ty {_ _ _ _ _ _ _ _} _ _ _ _.
 Arguments s_fuel {_ _ _ _ _ _ _ _} _ _ _ _.
 
-(** ** Fresh generated roots *)
-
-Lemma kfresh_spec ℓ K o h : K !! o = Some h → pt_root h.(h_pt) ≠ NGen ℓ (kfresh ℓ K).
-Proof.
-  intros Ho Heq. apply (is_fresh (kgens ℓ K)). unfold kgens. apply elem_of_list_to_set.
-  apply list_elem_of_omap. exists h. split.
-  - apply list_elem_of_fmap. exists (o, h). split; [done|]. by apply elem_of_map_to_list.
-  - rewrite Heq. by rewrite decide_True.
-Qed.
-
 (** ** Lookups of the update *)
 
 Lemma lookup_khand M j K o :
@@ -324,8 +314,8 @@ Qed.
 
 Section step.
   Context (N : nat) (n lv : Ix) (Hlv : olt lv n) (W : world) (T : ty) (C : gset chan) (Mq : gmap nat expr) (K : own)
-    (A : senv) (Π : penv) (U : nat → ty).
-  Context (Hs : soup_inv N n W ∅ T (LFState (C, Mq) K) A Π U).
+    (Ws : world) (A : senv) (Π : penv) (U : nat → ty).
+  Context (Hs : soup_inv N n W ∅ T (LFState (C, Mq) K Ws) A Π U).
 
 
   Lemma s_E t e : Mq !! t = Some e → e ∈ E[live]^W _ n⟦kres K t A ⊢ U t⟧^∅.
@@ -358,7 +348,7 @@ Section step.
     (∀ t e', Mq' !! t = Some e' →
        e' ∈ E[live]^W _ lv⟦kres K t A ⊢ U' t⟧^∅ ∧ (U' t = T ∨ U' t = TUnit) ∧
        e' ∈ F^(Some N) _ lv⟦RThread ▷ None⟧(kres K t Π, ctrs K t)) →
-    soup_inv N lv W ∅ T (LFState (C', Mq') K) A Π U'.
+    soup_inv N lv W ∅ T (LFState (C', Mq') K Ws) A Π U'.
   Proof.
     intros -> Hdom Ht. unfold soup_inv. constructor; simpl.
     - apply (sp_tfree _ _ _ _ _ _ _ _ _ Hs).
@@ -383,7 +373,7 @@ Section step.
   (** P-Act-Beta. *)
   Lemma step_beta i e e' :
     Mq !! i = Some e → tstep e LBeta e' →
-    soup_inv N lv W ∅ T (LFState (C, <[i := e']> Mq) K) A Π U.
+    soup_inv N lv W ∅ T (LFState (C, <[i := e']> Mq) K Ws) A Π U.
   Proof.
     intros He Hst. destruct (s_obl i e _ e' He Hst) as [HE HF]. cbn [Eobl Fobl] in HE, HF.
     unfold o_beta in HE. unfold f_beta in HF.
@@ -393,9 +383,9 @@ Section step.
     - destruct (s_other t e0 He0) as [H1 H2]. split_and!; [done|exact (s_ty Hs t e0 He0)|done].
   Qed.
   (** A new state from its clauses. *)
-  Lemma soup_build C' Mq' K' A' Π' U' :
+  Lemma soup_build Wx Wy C' Mq' K' A' Π' U' :
     (∀ t e', Mq' !! t = Some e' →
-       e' ∈ E[live]^W _ lv⟦kres K' t A' ⊢ U' t⟧^∅ ∧ (U' t = T ∨ U' t = TUnit) ∧
+       e' ∈ E[live]^Wx _ lv⟦kres K' t A' ⊢ U' t⟧^∅ ∧ (U' t = T ∨ U' t = TUnit) ∧
        e' ∈ F^(Some N) _ lv⟦RThread ▷ None⟧(kres K' t Π', ctrs K' t)) →
     snd <$> A' = h_pt <$> K' → dom Π' = dom K' →
     (∀ o h, K' !! o = Some h → is_Some (Mq' !! h.(h_th))) →
@@ -404,7 +394,7 @@ Section step.
     (∀ o S x S' x', A' !! o = Some (S, x) → A' !! edual o = Some (S', x') → x' = pt_dual x ∧ sdual S S') →
     (∀ o P P', Π' !! o = Some P → Π' !! edual o = Some P' → sequiv P' (dual P)) →
     kfin K' → kcap_ok (Some N) K' → ktsum_ok (Some N) K' →
-    soup_inv N lv W ∅ T (LFState (C', Mq') K') A' Π' U'.
+    soup_inv N lv Wx ∅ T (LFState (C', Mq') K' Wy) A' Π' U'.
   Proof.
     intros Ht Hp Hd Ho Hc Hpr Hsd Hpd Hfin Hcap Hts. unfold soup_inv. constructor; simpl.
     - apply (sp_tfree _ _ _ _ _ _ _ _ _ Hs).
@@ -449,14 +439,14 @@ Section step.
   Qed.
 
   (** A new channel at x, given the obligations of the actor. *)
-  Lemma step_create i e' c x S S' m1 m2 :
+  Lemma step_create Wx i e' c x S S' m1 m2 : W ⊑ Wx →
     Mq !! i = Some (default EUnit (Mq !! i)) → c ∉ C → tsum_ok (Some N) m1 m2 →
-    e' ∈ E[live]^W _ lv⟦new_env c S x (kres K i A) ⊢ U i⟧^∅ →
+    e' ∈ E[live]^Wx _ lv⟦new_env c S x (kres K i A) ⊢ U i⟧^∅ →
     e' ∈ F^(Some N) _ lv⟦RThread ▷ None⟧(pnew c S' (kres K i Π), cnew m1 m2 c (ctrs K i)) →
-    soup_inv N lv W ∅ T (LFState (C ∪ {[c]}, <[i := e']> Mq) (knew m1 m2 i c x K))
+    soup_inv N lv Wx ∅ T (LFState (C ∪ {[c]}, <[i := e']> Mq) (knew m1 m2 i c x K) Wx)
       (new_env c S x A) (pnew c S' Π) U.
   Proof.
-    intros Hi Hc Hm HE HF. destruct (s_notin_K c Hc) as [Hp Hn].
+    intros HWx Hi Hc Hm HE HF. destruct (s_notin_K c Hc) as [Hp Hn].
     assert (∃ a b, m1 = Some a ∧ m2 = Some b ∧ a + b ≤ N) as (a1 & a2 & -> & -> & Hab).
     { destruct m1 as [a|], m2 as [b|]; simpl in Hm; try done. by exists a, b. }
     assert (∀ {Y} (m : gmap cend Y) t, t ≠ i → delete (EPos c) (delete (ENeg c) (kres K t m)) = kres K t m)
@@ -470,7 +460,7 @@ Section step.
         exact (s_ty Hs i _ Hi).
       + rewrite !decide_False by done. rewrite !Hdel by done.
         rewrite (ctrs_notin _ _ (ENeg c)), ctrs_notin by done.
-        destruct (s_other t e0 He0) as [H1 H2]. split_and!; [done|exact (s_ty Hs t e0 He0)|done].
+        destruct (s_other t e0 He0) as [H1 H2]. split_and!; [by eapply Erel_mono|exact (s_ty Hs t e0 He0)|done].
     - rewrite !fmap_insert. simpl. f_equal. f_equal. apply (sp_pts _ _ _ _ _ _ _ _ _ Hs).
     - rewrite !dom_insert_L. by rewrite (sp_dom _ _ _ _ _ _ _ _ _ Hs).
     - intros o h Ho. apply lookup_insert_Some in Ho as [[<- <-]|[_ Ho]].
@@ -534,41 +524,22 @@ Section step.
     unfold ffresh. split_and!; intros Hin; [apply Hp|apply Hn|apply Hp|apply Hn]; first [by apply Hd|by apply Hd'].
   Qed.
 
-  (** P-Act-New. *)
-  Lemma step_new i e ℓ c e' :
-    Mq !! i = Some e → tstep e (LNew ℓ c) e' → c ∉ C →
-    ∃ tn A' Π', tsum_ok (Some N) tn.1 tn.2 ∧ soup_inv N lv W ∅ T
-      (lf_next tn (LFState (C, Mq) K) (EvSolo i (LNew ℓ c) PickNone) (C ∪ {[c]}, <[i := e']> Mq)) A' Π' U.
+  (** P-Act-New. The creation picks the point, the world and the tickets. *)
+  Lemma step_new i e c e' :
+    Mq !! i = Some e → tstep e (LNew c) e' → c ∉ C →
+    ∃ tn A' Π', tsum_ok (Some N) (tc_m1 tn) (tc_m2 tn) ∧ W ⊑ tc_W tn ∧ soup_inv N lv (tc_W tn) ∅ T
+      (lf_next tn (LFState (C, Mq) K Ws) (EvSolo i (LNew c) PickNone) (C ∪ {[c]}, <[i := e']> Mq)) A' Π' U.
   Proof.
     intros He Hst Hc. destruct (s_obl i e _ e' He Hst) as [HE HF]. cbn [Eobl Fobl] in HE, HF.
     unfold o_new in HE. unfold f_new in HF.
-    destruct (HE (s_cfresh i c Hc) (kfresh ℓ K)) as [S HS].
-    { intros o S0 x0 Ho Hr. destruct (s_held K i A o _ Ho) as (h & Hh & _ & HA).
-      pose proof (s_kpt _ _ _ _ _ _ _ _ Hs o S0 x0 HA) as Hk. cbn [s_K] in Hk. unfold kpt in Hk. rewrite Hh in Hk.
-      simpl in Hk. subst x0. exact (kfresh_spec ℓ K o h Hh Hr). }
+    destruct (HE (s_cfresh i c Hc)) as (S & π & Wn & HWn & HS).
     destruct (HF (s_ffresh i c Hc)) as (S' & m1 & m2 & Hm & HS').
-    exists (m1, m2). eexists _, _. split; [done|]. unfold lf_next. cbn [own_next s_K s_q].
-    apply (step_create i e' c _ S S' m1 m2); [by rewrite He|done|done| |exact (HS' lv Hlv)].
+    exists (TChoice m1 m2 π Wn). eexists _, _. split; [done|]. split; [done|].
+    unfold lf_next. cbn [own_next world_next s_K s_q s_W tc_m1 tc_m2 tc_pt tc_W].
+    apply (step_create Wn i e' c _ S S' m1 m2); [done|by rewrite He|done|done| |exact (HS' lv Hlv)].
     eapply at_cost_E_live; [|exact HS|exact Hlv]. cbn; lia.
   Qed.
 
-  (** P-Act-NewAt. *)
-  Lemma step_new_at i e κf o c e' :
-    Mq !! i = Some e → tstep e (LNewAt κf o c) e' → c ∉ C →
-    ∃ tn A' Π', tsum_ok (Some N) tn.1 tn.2 ∧ soup_inv N lv W ∅ T
-      (lf_next tn (LFState (C, Mq) K) (EvSolo i (LNewAt κf o c) PickNone) (C ∪ {[c]}, <[i := e']> Mq)) A' Π' U.
-  Proof.
-    intros He Hst Hc. destruct (s_obl i e _ e' He Hst) as [HE HF]. cbn [Eobl Fobl] in HE, HF.
-    unfold o_new_at in HE. unfold f_new_at, f_new in HF.
-    destruct (HE (s_cfresh i c Hc)) as (S0 & x & Ho & S & HS).
-    destruct (s_held K i A o _ Ho) as (h & Hh & Hhi & HA).
-    pose proof (s_kpt _ _ _ _ _ _ _ _ Hs o S0 x HA) as Hk. cbn [s_K] in Hk.
-    destruct HF as (_ & HF).
-    destruct (HF (s_ffresh i c Hc)) as (S' & m1 & m2 & Hm & HS').
-    exists (m1, m2). eexists _, _. split; [done|]. unfold lf_next. cbn [own_next s_K s_q]. rewrite Hk.
-    apply (step_create i e' c _ S S' m1 m2); [by rewrite He|done|done| |exact (HS' lv Hlv)].
-    eapply at_cost_E_live; [|exact HS|exact Hlv]. cbn; lia.
-  Qed.
   Lemma s_threads o h : K !! o = Some h → is_Some (Mq !! h.(h_th)).
   Proof. apply (s_owner _ _ _ _ _ _ _ _ Hs). Qed.
 
@@ -576,7 +547,7 @@ Section step.
   Lemma step_spawn tc i j e v e' :
     Mq !! i = Some e → tstep e (LSpawn v) e' → Mq !! j = None →
     soup_inv N lv W ∅ T
-      (lf_next tc (LFState (C, Mq) K) (EvSolo i (LSpawn v) (PickChild j)) (C, <[j := App v EUnit]> (<[i := e']> Mq)))
+      (lf_next tc (LFState (C, Mq) K Ws) (EvSolo i (LSpawn v) (PickChild j)) (C, <[j := App v EUnit]> (<[i := e']> Mq)))
       A Π (λ t, if decide (t = j) then TUnit else U t).
   Proof.
     intros He Hst Hj. assert (i ≠ j) as Hij by (intros ->; congruence).

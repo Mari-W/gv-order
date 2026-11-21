@@ -30,9 +30,8 @@
     the other (docs/redesign/progress.md, S8).
 
     Along a run the state follows the events by one index-free update
-    ([lf_next]): a new end starts at a fresh generated root of its family
-    or at the field of its anchor, with the tickets m1 and m2 the creation
-    chose, each end with counter equal to its tickets. An action moves the end to x⁺ (or to the point of its
+    ([lf_next]): a new end starts at the point the creation chose, in the
+    world it grew to, with the tickets m1 and m2 it chose, each end with counter equal to its tickets. An action moves the end to x⁺ (or to the point of its
     branch) and sets its counter back to its tickets, every other end of
     an actor ticks, the ends of a sent or spawned value move to the
     receiver or the child with their counters minus one, a close removes
@@ -57,8 +56,10 @@ Definition soup_inv (N : nat) (n : Ix) (W : world) (Σ : senv) (T : ty) (a : lfs
   soup_gen (Some N) (λ Θ U e, e ∈ E[live]^W _ n⟦Θ ⊢ U⟧^∅)
     (λ Π φ e, e ∈ F^(Some N) _ n⟦RThread ▷ None⟧(Π, φ)) Σ T a A Π U.
 
+(** The soup reads its threads at the world of the state, which extends
+    the world W of the judgment. *)
 Definition Soup (N : nat) (W : world) (n : Ix) (Σ : senv) (T : ty) (a : lfstate) : Prop :=
-  ∃ A Π U, soup_inv N n W Σ T a A Π U.
+  wext W (s_W a) ∧ ∃ A Π U, soup_inv N n (s_W a) Σ T a A Π U.
 
 Notation "a ∈ S^{ N , W } '_' n ⟦ Σ ⊢ T ⟧" := (Soup N W n Σ T a)
   (at level 70, N at level 0, W at level 0, n at level 0, Σ at level 60,
@@ -74,14 +75,6 @@ Notation "Σ ⊪^ N '_' W p : T" := (lf_sem N W Σ p T)
    format "Σ  ⊪^ N  '_' W  p  :  T").
 
 (** ** The index-free update *)
-
-(** A generated root of family ℓ that is the root of no point of K. *)
-Definition kgens (ℓ : family) (K : own) : gset nat :=
-  list_to_set (omap (λ h : hold,
-    match pt_root h.(h_pt) with NGen ℓ' g => if decide (ℓ' = ℓ) then Some g else None | _ => None end)
-    (map_to_list K).*2).
-
-Definition kfresh (ℓ : family) (K : own) : nat := fresh (kgens ℓ K).
 
 (** The tickets of an end. *)
 Definition kcap (K : own) (o : cend) : fuel := default (Some 0) (h_cap <$> K !! o).
@@ -124,12 +117,11 @@ Definition ksync (i j : nat) (o : cend) (y y' : point) (M : gset cend) (K : own)
 (** The ownership after an event. The actors of a message, a close and
     a choice tick their other ends first, then the acted ends refill and
     the ends of the moved value move. *)
-Definition own_next (tc : fuel * fuel) (ev : event) (K : own) : own :=
+Definition own_next (tc : tchoice) (ev : event) (K : own) : own :=
   match ev with
   | EvSolo i α k =>
       let kn := match α with
-                | LNew ℓ c => knew tc.1 tc.2 i c (pgen ℓ (kfresh ℓ K)) K
-                | LNewAt κ o c => knew tc.1 tc.2 i c ((kpt K o)·κ) K
+                | LNew c => knew (tc_m1 tc) (tc_m2 tc) i c (tc_pt tc) K
                 | _ => K
                 end in
       match k with
@@ -143,16 +135,20 @@ Definition own_next (tc : fuel * fuel) (ev : event) (K : own) : own :=
   | _ => K
   end.
 
-(** The update takes the tickets tc of the two ends of a creation,
-    which the creation chooses (F-New). Every other event ignores tc. *)
-Definition lf_next (tc : fuel * fuel) (a : lfstate) (ev : event) (q' : config) : lfstate :=
-  LFState q' (own_next tc ev (s_K a)).
+(** The world after an event: a creation takes the world it chose. *)
+Definition world_next (tc : tchoice) (ev : event) (W : world) : world :=
+  match ev with EvSolo _ (LNew _) _ => tc_W tc | _ => W end.
+
+(** The update takes the choice tc of a creation. Every other event
+    ignores tc. *)
+Definition lf_next (tc : tchoice) (a : lfstate) (ev : event) (q' : config) : lfstate :=
+  LFState q' (own_next tc ev (s_K a)) (world_next tc ev (s_W a)).
 
 (** Along a run, a stutter keeps the state. *)
-Definition lf_upd (tc : fuel * fuel) (a : lfstate) (l : option event) (q' : config) : lfstate :=
-  match l with Some ev => lf_next tc a ev q' | None => LFState q' (s_K a) end.
+Definition lf_upd (tc : tchoice) (a : lfstate) (l : option event) (q' : config) : lfstate :=
+  match l with Some ev => lf_next tc a ev q' | None => LFState q' (s_K a) (s_W a) end.
 
-Fixpoint lf_run_state (tcs : nat → fuel * fuel) (a0 : lfstate) (r : nat → config)
+Fixpoint lf_run_state (tcs : nat → tchoice) (a0 : lfstate) (r : nat → config)
     (l : nat → option event) (k : nat) : lfstate :=
   match k with
   | 0 => a0
