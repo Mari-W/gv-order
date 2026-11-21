@@ -281,7 +281,11 @@ Proof.
   - rewrite !Vrel_sum_iff. intros [(v' & -> & H)|(v' & -> & H)]; [left|right]; eauto.
   - rewrite !Vrel_box_iff. intros (-> & e & -> & Hfe & H). split; [done|]. exists e. split_and!; [done|done|].
     intros W' xs ss HW' Hxs Hss' Hsc HC. specialize (H W' xs ss HW' Hxs Hss' Hsc HC).
-    destruct kk as [|kk]; simpl in HU; [|by subst].
+    destruct kk as [|kk]; simpl in HU.
+    2: { destruct HU as [->|(HU & HcU & HcU')]; [done|].
+         eapply Vrel_teq; [|exact H]. apply teq_thunk. apply teq_df.
+         unfold ty_inst. apply teq_sinst; [apply scontr_slist, Hsc|by rewrite !tcontr_pinst|by rewrite !tcontr_pinst|].
+         by apply teq_pinst, teq_pinst, teq_sym. }
     destruct ss; [|simpl in Hss'; lia]. rewrite !sinst_ty_slist_nil in H |- *.
     eapply Vrel_teq; [|exact H]. apply teq_thunk. rewrite <-!ty_inst_df. apply teq_pinst.
     rewrite !ty_df_pinst. apply teq_pinst. apply teq_df. by apply teq_sym.

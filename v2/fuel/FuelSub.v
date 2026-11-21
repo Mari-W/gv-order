@@ -122,7 +122,10 @@ Section sub.
       + destruct ss; [|done]. rewrite !sinst_slist_nil in H |- *.
         eapply FuelE_res_mono; [|exact H].
         intros m0 Π0 φ0 w Hm0 Hw. by apply (Vfuel_teq m0 N U U').
-      + by subst.
+      + destruct HU as [->|(HU & HcU & HcU')]; [done|].
+        eapply FuelE_res_mono; [|exact H].
+        intros m0 Π0 φ0 w Hm0 Hw. apply (Vfuel_teq m0 N (sinst_ty (slist ss) U)); [|done].
+        apply teq_sinst; [apply scontr_slist, Hss|done|done|done].
     - intros (o & S' & f & -> & -> & -> & HS & Hf).
       exists o, S', f. split_and!; try done; [by eapply sequiv_trans|by eapply fle_trans].
     - intros Hv. by apply IHT.

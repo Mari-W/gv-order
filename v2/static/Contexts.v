@@ -299,7 +299,9 @@ Definition thage (c : fuel) (Θ Θ' : tenv) : Prop :=
     finding 6.7 of docs/redesign/algorithmic-plan.md), so
     e : ∃ιs. C. T types at ∃ιs. C'. T whenever let x = e in x does with
     the same lower bound. The bodies of the two existentials compare
-    under Γ extended by C. *)
+    under Γ extended by C. A box with session variables may change its
+    result up to ≈ when both results are contractive, because
+    contractive instances keep ≈ ([teq_sinst]). *)
 Inductive tsub (W : sworld) : hctx → ty → ty → Prop :=
   | sub_unit Γ : tsub W Γ TUnit TUnit
   | sub_arr Γ ub lb c T1 U a c' T1' U' a' :
@@ -309,7 +311,8 @@ Inductive tsub (W : sworld) : hctx → ty → ty → Prop :=
   | sub_prod Γ T1 U T1' U' : tsub W Γ T1 T1' → tsub W Γ U U' → tsub W Γ (TProd T1 U) (TProd T1' U')
   | sub_sum Γ T1 U T1' U' : tsub W Γ T1 T1' → tsub W Γ U U' → tsub W Γ (TSum T1 U) (TSum T1' U')
   | sub_box Γ n k C ub c U U' c' :
-      fle c c' → (match k with 0 => teq U U' | S _ => U = U' end) →
+      fle c c' →
+      (match k with 0 => teq U U' | S _ => U = U' ∨ (teq U U' ∧ tcontr U ∧ tcontr U') end) →
       tsub W Γ (TBox n k C ub c U) (TBox n k C ub c' U')
   | sub_sess Γ s s' x a a' mt :
       sequiv s s' → fle a' a → tsub W Γ (TSess s x a mt) (TSess s' x a' mt)

@@ -327,7 +327,9 @@ Proof.
   - apply sub_arr; auto.
   - apply sub_prod; auto.
   - apply sub_sum; auto.
-  - apply sub_box; [done|]. destruct k; [|by subst]. simpl. by apply teq_sinst.
+  - apply sub_box; [done|]. destruct k; [simpl; by apply teq_sinst|].
+    destruct H0 as [->|(? & ? & ?)]; [by left|right].
+    split_and!; [apply teq_sinst; auto using scontr_iter_sty_up|apply tcontr_sinst; auto using scontr_iter_sty_up..].
   - apply sub_sess; [|done]. by apply sequiv_sinst.
   - apply sub_ex; auto.
 Qed.
