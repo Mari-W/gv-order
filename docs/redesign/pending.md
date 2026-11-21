@@ -1,17 +1,95 @@
 # Pending changes: the map leads, the Rocq follows
 
-## Progress, third run of 2026-11-21 (stage 3, in progress)
+## Report, third run of 2026-11-21 on layers, plain new and well-formed existentials
 
-Branch redesign-clean3. WIP commits after 1e4c755. Done so far: plain
-`new` in the syntax (no family, no `new_κ`), static worlds `sworld`
-without families, ranked worlds `world` (roots, ranks, program order) in
-types/Worlds.v, `wf_join_iff` constructive, E-New with (wf-new) and the
-field rule, `cons_new`, O-New `∃ S π W'` growing the world, `q_tau` growing
-the world, DF adequacy, compat, `Erel_new` ranking the tree of a fresh
-root above its context, fundamental theorems over `wmodels R W`,
-`soundness` building. Open: the soup (world in the state, creation
-choice with point and world, criterion over the chain of worlds), the
-examples, the map.
+Branch redesign-clean3 in .claude/worktrees/redesign-s4, nothing pushed. The
+session crashed three times. Every sub-step that built was committed, from
+4066cf1 to the head. redesign did not move and needed no merge.
+
+- Stage 3, layers together with plain `new`. Done.
+  - Syntax (4066cf1). `ENew` carries no label, `new_κ` and `LNewAt` are gone,
+    and `LNew c` names only the channel. A creation at a field is written
+    `⟨y, new⟩` in the examples.
+  - Worlds (1bd3062, types/Worlds.v). A static world `sworld` has constants
+    and facts, no families and no laws. A ranked world `world` has a finite
+    set of roots `w_roots`, a rank `w_rank : point → ord@{Set}` and program
+    order on its roots (`w_po`). `W ⊢ x ≺ y` is program order or a rise of
+    rank between ranked points, so it is transitive, irreflexive
+    (`w_lt_irrefl`) and well-founded (`w_lt_wf`) in every world. An extension
+    keeps the roots and their ranks. `wmodels R W` says that R ranks every
+    fact of W, `wmodels_exists : sworld_wf W → swf W → ∃ R, wmodels R W`.
+    `swf W := wf (sw_lt W)` with `wf` of relation/Ranks.v.
+    `wf_join_iff : swf (W1 ⊔ W2) ↔ swf W1 ∧ swf W2 ∧ swf (W1|S ⊔ W2|S)` is
+    constructive, by nested accessibility on the amalgam and on each side.
+    `strict`, `wfworld`, families, laws, generated roots, `wfrename` and
+    static/Renaming.v are gone.
+  - Typing (b64f02e). E-New at a fresh root asks `wf_new C` (static/Contexts.v):
+    every fact of C ends in the tree of the variable 0, and C with program
+    order is well-founded on that tree. E-New-Field (`e_new_fld`) creates at
+    any `x·κ` and returns the pair, its constraint would be entailed. P-Term
+    asks `sworld_wf W ∧ swf W`, P-Connect asks `swf (W1|S ⊔ W2|S)`,
+    `ptyped_wf` replaces `ptyped_strict`. (wf-new⁺) is not implemented.
+  - `cons_new : facts_const W → wf_new C → cons_open W Γ 1 C`
+    (static/PointSubst.v) replaces `cons_law` at every E-Open site.
+  - Relation (55626a6). O-New is `cfresh c Θ → ∃ S π W', W ⊑ W' ∧ e' at W'`,
+    and `q_tau` lets a τ step of P continue at some `W' ⊒ W`. `Pbody` lost
+    `strict W1`. DF adequacy follows the worlds of a run.
+  - `Erel_new` (6585afc, compat/Redex.v). Under (wf-new) the creation picks a
+    constant a that the world and the context points do not use, grows the
+    world by a and the roots of the context points (`wgrow`), and ranks the
+    tree of a by `rank_base` (relation/Ranks.v) through `pt_unroot`
+    (types/Points.v), above each context point below the tree.
+  - Fundamental theorem (e194e57, 14d166c). `typed_sem` reads every ranked
+    `W1` with `wmodels W1 W`, and `ent_sound` is `slt_sem` through
+    `wmodels_lt`. `fundamental_proc W R`, `soundness` builds R by
+    `wmodels_exists`. `live_sub_df` takes `excluded_middle` and
+    `functional_choice` to fix one world for every level after a creation.
+  - P-Connect composes at one ranked world (`sem_p_connect`, `soup_connect`).
+    The composition context `cctx` carries `G1W`, `G2W` and `LW` for the
+    worlds a τ step grows to.
+  - Soup (bb89e8c to de0aa79). A state carries its world `s_W`, and
+    `Soup N W n Σ T a := W ⊑ s_W a ∧ soup_inv at s_W a`. A creation choice
+    `tchoice` holds the tickets, the point and the grown world, and
+    `lf_next` takes them. `lfsoup_run` gives one choice per position and the
+    chain `s_W (a k) ⊑ s_W (a (k+1))`. `lf_sem` starts at the world itself,
+    so two components meet at one world.
+  - Criterion (67a20ac). The order of the run is `wchain_lt`, a fact in some
+    world of the chain, well-founded by `wchain_lt_wf`. A waiting thread is
+    ranked by the point of the end it waits on. `lf_adequacy`,
+    `lf_thread_progress` and `lf_soundness` have no premise on the world.
+  - Examples (55d1616 to d61152d). All eighteen move. Each creation at a
+    fresh root states its old family laws as C and proves `wf_new` by a
+    lexicographic measure (`wf_new_lex3`), the measures of the old
+    `W_*_wfworld` lemmas. Static worlds of the examples are `sw_empty`, or
+    the constant worlds of SemBranch and TreeTopo. The semantic parts of
+    SemBranch, TreeTopo and FlagPair read one ranked world.
+    LFClientServer uses the measure (field sum, offset, depth), whose ranks
+    lie below ω³.
+  - Checks. rx-chain is excluded by `wf_new` (a fact down to a context point
+    fails its first clause), argued, not mechanized. `sbv_rejected` holds,
+    now from `swf_irrefl` of the joined world. `lk_typed` holds.
+    `fp_unrealizable` holds at one ranked world. Every LF and DF example
+    builds.
+- Stage 4, `typed_sinst`. Not started. The run spent its time on stage 3.
+- Stage 5, well-formed existential types (c7a7e60). `ex_wf W Γ lb m C T :=
+  lbx_below_h W (hc_open m C Γ) (lb_map (pt_inst (pshift m)) lb) (heads T) (hbot T)`
+  (static/Contexts.v) is a premise of E-Pack and of `d_pack`. The two pack
+  sites of the examples (FactoryEx, LFFactoryEx) pack at ⊥ and discharge it
+  by `I`. The fundamental theorem ignores it. The map shows it as the
+  premise `Γ, C ⊢ l ≼ T` of E-Pack (`E-Pack.wf`).
+
+Plausibility. No Admitted, no Axiom, no new Parameter. rx-relink,
+rx-postpone and rx-delegate rest on tickets, aging and payload credit, which
+this run did not touch. S4.18 concerns (fuse), kept. rx-chain is now
+rejected by (wf-new) instead of `wfworld`.
+
+Final state. See the build line below.
+
+Map (80a5e13, bc4f947). The LAYERS and NEW2 tags are gone, and the rocq
+references of worlds, O-New, E-New, P-Term, P-Connect, the soup and the
+theorems name the new definitions. O-New and Q-Tau read `∃ S, π, W' ⊒ W`.
+gen.js reports 0 errors, check.js 0 mathjax errors, lint-map the counts of
+before (323 every/any/all, 161 metaphor, 0 elsewhere).
 
 ## Report, second run of 2026-11-21 on transfinite indices and layers
 
@@ -409,6 +487,10 @@ must do, open questions.
   relation/Ranks.v proves `wf_iff_wellfounded` for rank functions into
   `ord@{Set}`, constructively. Worlds, (wf-new), `wf_join_iff` and `ent_sound`
   are open, see the report at the top.
+  Rocq, stage 3 of the third run of 2026-11-21: landed with plain `new`
+  (4066cf1 to d61152d). Ranked worlds, (wf-new), `wf_join_iff`, growing
+  worlds in O-New, the soup and the criterion, no premise on the world in
+  adequacy. See the report at the top.
 - **Algorithmic typing (author, 2026-11-21).** A bidirectional system, sound
   and complete for the declarative one, decidable when the constraint theory
   is. Type annotations are allowed where needed, for functions and the like.
@@ -422,7 +504,8 @@ must do, open questions.
     (plan 6.1). Fixed now in the Rocq run.
   - Opened points are named by an erased `unpack x as ῑ` (plan 6.2).
   - Existential types are well formed, `l ≼ ap(T)` under C (plan 6.3). Rocq
-    after layers.
+    after layers. Rocq, third run: `ex_wf`, a premise of E-Pack (c7a7e60).
+    `typed_sinst` (plan 6.1) is still open.
   - The decidable fragment admits facts schematic in one offset k, with
     entailment by one-counter reachability (plan 6.4). GrowRing stays outside.
   - Plain `new` stays. Where its position is not fixed by the expected type,
