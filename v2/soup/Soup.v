@@ -67,8 +67,10 @@ Notation "a ∈ S^{ N , W } '_' n ⟦ Σ ⊢ T ⟧" := (Soup N W n Σ T a)
 
 (** ** The lock-free judgment *)
 
+(** A state of the judgment starts at the world W itself, so that two
+    components of P-Connect meet at one world. *)
 Definition lf_sem (N : nat) (W : world) (Σ : senv) (p : proc) (T : ty) : Prop :=
-  ∀ n, ∃ a, erase (s_q a) = p ∧ a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧.
+  ∀ n, ∃ a, erase (s_q a) = p ∧ s_W a = W ∧ a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧.
 
 Notation "Σ ⊪^ N '_' W p : T" := (lf_sem N W Σ p T)
   (at level 74, N at level 0, W at level 0, p at level 60, T at level 60,

@@ -601,7 +601,7 @@ Section adequacy.
       constructor; try apply Hs.
       + intros t e He. eapply Erel_down; [exact Hn|]. by apply (sp_rel _ _ _ _ _ _ _ _ _ Hs).
       + intros t e He. eapply FuelE_down; [exact Hn|]. by apply (sp_fuel _ _ _ _ _ _ _ _ _ Hs).
-    - exact HP.
+    - intros n. destruct (HP n) as (a & H1 & _ & H2). by exists a.
     - exists a. split; [exact (proj1 (Ha ozero))|]. intros n. exact (proj2 (Ha n)).
   Qed.
 

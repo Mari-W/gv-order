@@ -10,10 +10,9 @@
       soup_connect : soup_nu after soup_par, at the cut Σ_C ∪ Σ̄_C of
                      P-Connect and P-Join
 
-    A soup reads its world only through E[live], so the composite lives
-    at W1 ⊔ W2 by monotonicity of E in the world. Both sides share the
-    bound N. No clause compares the points of two threads, so the
-    families of the two sides need no renaming. The ownership and the
+    A soup reads its world only through E[live], and both sides sit at
+    one ranked world. Both sides share the bound N. No clause compares
+    the points of two threads. The ownership and the
     result types are the unions of the two sides, split by the thread
     ids of the first. A channel of the cut joins two interface ends of
     at most N/2 tickets each, so its tickets meet the bound.
@@ -136,11 +135,11 @@ Definition tsel {Y : Type} (X : gset nat) (f g : nat → Y) : nat → Y :=
 (** ** Parallel composition *)
 
 Section par.
-  Context (N : nat) (n : Ix) (W1 W2 : world) (Σa Σb : senv) (T : ty) (C1 C2 : gset chan)
-    (M1 M2 : gmap nat expr) (K1 K2 : own)
+  Context (N : nat) (n : Ix) (W : world) (Σa Σb : senv) (T : ty) (C1 C2 : gset chan)
+    (M1 M2 : gmap nat expr) (K1 K2 : own) (Ws1 Ws2 Ws : world)
     (A1 A2 : senv) (Π1 Π2 : penv) (U1 U2 : nat → ty).
-  Context (Hs1 : soup_inv N n W1 Σa T (LFState (C1, M1) K1) A1 Π1 U1).
-  Context (Hs2 : soup_inv N n W2 Σb TUnit (LFState (C2, M2) K2) A2 Π2 U2).
+  Context (Hs1 : soup_inv N n W Σa T (LFState (C1, M1) K1 Ws1) A1 Π1 U1).
+  Context (Hs2 : soup_inv N n W Σb TUnit (LFState (C2, M2) K2 Ws2) A2 Π2 U2).
   Context (HM : M1 ##ₘ M2) (HΣ : dom Σa ## dom Σb) (HC : C1 ## C2)
     (HC1 : C1 ## chans_of Σb) (HC2 : C2 ## chans_of Σa).
 
@@ -224,20 +223,20 @@ Section par.
   Proof. intros H1 H2 H. apply elem_of_dom_2 in H. by rewrite dom_union_L, <-H1, <-H2, <-dom_union_L. Qed.
 
   Theorem soup_par :
-    soup_inv N n (wjoin W1 W2) (Σa ∪ Σb) T
-      (LFState (C1 ∪ C2, M1 ∪ M2) (K1 ∪ K2))
+    soup_inv N n W (Σa ∪ Σb) T
+      (LFState (C1 ∪ C2, M1 ∪ M2) (K1 ∪ K2) Ws)
       (A1 ∪ A2) (Π1 ∪ Π2) (tsel (dom M1) U1 U2).
   Proof.
     unfold soup_inv. constructor; simpl.
     - exact (sp_tfree _ _ _ _ _ _ _ _ _ Hs1).
     - intros t e He. unfold tsel. apply (lookup_union_Some _ _ _ _ HM) in He as [He|He].
       + assert (t ∈ dom M1) as Ht by (by eapply elem_of_dom_2). rewrite decide_True by done.
-        rewrite kres1 by (done || exact dA1). eapply Erel_mono; [apply wext_join_l|].
+        rewrite kres1 by (done || exact dA1).
         exact (sp_rel _ _ _ _ _ _ _ _ _ Hs1 t e He).
       + assert (t ∈ dom M2) as Ht by (by eapply elem_of_dom_2).
         assert (t ∉ dom M1) as Ht1 by (apply (map_disjoint_dom M1 M2) in HM; set_solver).
         rewrite decide_False by done. rewrite kres2 by (done || exact Adisj || exact dA2).
-        eapply Erel_mono; [apply wext_join_r|]. exact (sp_rel _ _ _ _ _ _ _ _ _ Hs2 t e He).
+        exact (sp_rel _ _ _ _ _ _ _ _ _ Hs2 t e He).
     - intros t e He. unfold tsel. apply (lookup_union_Some _ _ _ _ HM) in He as [He|He].
       + rewrite decide_True by (by eapply elem_of_dom_2). exact (sp_ty _ _ _ _ _ _ _ _ _ Hs1 t e He).
       + assert (t ∉ dom M1) as Ht1.
@@ -324,8 +323,8 @@ End par.
 
 Section nu.
   Context (N : nat) (n : Ix) (W : world) (Σ ΣR : senv) (T : ty) (C : gset chan) (M : gmap nat expr)
-    (K : own) (A : senv) (Π : penv) (U : nat → ty).
-  Context (Hs : soup_inv N n W (Σ ∪ ΣR) T (LFState (C, M) K) A Π U).
+    (K : own) (Ws : world) (A : senv) (Π : penv) (U : nat → ty).
+  Context (Hs : soup_inv N n W (Σ ∪ ΣR) T (LFState (C, M) K Ws) A Π U).
   Context (HCR : C ## chans_of ΣR) (HΣR : chans_of Σ ## chans_of ΣR)
     (Hpair : ∀ o S (x : point), ΣR !! o = Some (S, x) → ΣR !! edual o = Some (dual S, (pt_dual x))).
 
@@ -356,7 +355,7 @@ Section nu.
     - exact (sp_psig _ _ _ _ _ _ _ _ _ Hs _ _ _ (lookup_R _ _ HR')).
   Qed.
 
-  Theorem soup_nu : soup_inv N n W Σ T (LFState (C ∪ chans_of ΣR, M) K) A Π U.
+  Theorem soup_nu : soup_inv N n W Σ T (LFState (C ∪ chans_of ΣR, M) K Ws) A Π U.
   Proof.
     pose proof (soup_dom_A _ _ _ _ _ _ _ _ _ Hs) as HdA. pose proof (soup_dom_P _ _ _ _ _ _ _ _ _ Hs) as HdP.
     simpl in HdA, HdP. unfold soup_inv. constructor; simpl.
@@ -400,17 +399,16 @@ End nu.
 (** ** P-Connect and P-Join *)
 
 (** The two components of P-Connect over the cut Σ_C, with the side
-    conditions of [p_connect] (static/Typing.v). P-Join has the same
-    soup, because the soup reads no strictness of the world. *)
-Theorem soup_connect N n W1 W2 Σ1 Σ2 ΣC T C1 C2 M1 M2 K1 K2 A1 A2 Π1 Π2 U1 U2 :
-  soup_inv N n W1 (Σ1 ∪ ΣC) T (LFState (C1, M1) K1) A1 Π1 U1 →
-  soup_inv N n W2 (Σ2 ∪ senv_dual ΣC) TUnit (LFState (C2, M2) K2) A2 Π2 U2 →
+    conditions of [p_connect] (static/Typing.v), both at one ranked world. *)
+Theorem soup_connect N n W Σ1 Σ2 ΣC T C1 C2 M1 M2 K1 K2 Ws1 Ws2 Ws A1 A2 Π1 Π2 U1 U2 :
+  soup_inv N n W (Σ1 ∪ ΣC) T (LFState (C1, M1) K1 Ws1) A1 Π1 U1 →
+  soup_inv N n W (Σ2 ∪ senv_dual ΣC) TUnit (LFState (C2, M2) K2 Ws2) A2 Π2 U2 →
   M1 ##ₘ M2 →
   (∀ o, o ∈ dom ΣC → edual o ∉ dom ΣC) →
   chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
   C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
-  soup_inv N n (wjoin W1 W2) (Σ1 ∪ Σ2) T
-    (LFState (C1 ∪ C2 ∪ chans_of ΣC, M1 ∪ M2) (K1 ∪ K2))
+  soup_inv N n W (Σ1 ∪ Σ2) T
+    (LFState (C1 ∪ C2 ∪ chans_of ΣC, M1 ∪ M2) (K1 ∪ K2) Ws)
     (A1 ∪ A2) (Π1 ∪ Π2) (tsel (dom M1) U1 U2).
 Proof.
   intros Hs1 Hs2 HM Hf H12 H1C H2C HC HC1 HC2.
@@ -421,7 +419,7 @@ Proof.
   assert (ΣC ##ₘ Σ2) as HC2m by (apply map_disjoint_dom, chans_dom_disj; set_solver).
   assert ((Σ1 ∪ ΣC) ∪ (Σ2 ∪ ΣD) = (Σ1 ∪ Σ2) ∪ (ΣC ∪ ΣD)) as Heq.
   { rewrite <-!(assoc_L (∪)). f_equal. rewrite !(assoc_L (∪)). f_equal. by apply map_union_comm. }
-  pose proof (soup_par N n W1 W2 (Σ1 ∪ ΣC) (Σ2 ∪ ΣD) T C1 C2 M1 M2 K1 K2 A1 A2 Π1 Π2 U1 U2
+  pose proof (soup_par N n W (Σ1 ∪ ΣC) (Σ2 ∪ ΣD) T C1 C2 M1 M2 K1 K2 Ws1 Ws2 Ws A1 A2 Π1 Π2 U1 U2
     Hs1 Hs2 HM) as Hp.
   rewrite Heq in Hp.
   assert (chans_of (ΣC ∪ ΣD) = chans_of ΣC) as Hcu.
@@ -505,7 +503,7 @@ Section term.
   Qed.
 
   Theorem soup_term :
-    soup_inv N n W Σ T (LFState (C0, {[0 := t]}) (kterm Θ))
+    soup_inv N n W Σ T (LFState (C0, {[0 := t]}) (kterm Θ) W)
       (tenv_erase Θ) (te_sty <$> Θ) (λ _, T).
   Proof.
     assert (dom (tenv_erase Θ) = dom Θ) as HdA by (unfold tenv_erase; apply dom_fmap_L).
