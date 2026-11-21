@@ -10,7 +10,7 @@
       or "everything", and the ⊥ flag. There are no future variables
       (entry 14b of docs/redesign/pending.md).
 
-    Every fact the judgment reads comes from Γ ⊢ x ≺ y ([slt]), the least
+    Every fact the judgment reads comes from Γ ⊢ₛ x ≺ y ([slt]), the least
     transitive relation over the order of W, the facts of the
     hypotheses and u ≺ φ. Aging ([tage]) and subtyping ([tsub]) are the
     cost relations of static/CostTyping.v, restated over types, and the
@@ -121,33 +121,33 @@ Definition hc_empty : hctx := HCtx [].
 Definition hyp_fact (Ψ : hyps) (g : fact) : Prop :=
   ∃ C xs, (C, xs) ∈ Ψ ∧ bcs_at C xs g.
 
-(** Γ ⊢ x ≺ y. Program order comes with the order of W. *)
-Inductive fl (W : world) (Γ : hctx) : point → point → Prop :=
-  | fl_w x y : W ⊢ x ≺ y → fl W Γ x y
+(** Γ ⊢ₛ x ≺ y. Program order comes with the order of W. *)
+Inductive fl (W : sworld) (Γ : hctx) : point → point → Prop :=
+  | fl_w x y : W ⊢ₛ x ≺ y → fl W Γ x y
   | fl_h x y : hyp_fact (hc_hyps Γ) (FLt x y) → fl W Γ x y
   | fl_trans x y z : fl W Γ x y → fl W Γ y z → fl W Γ x z.
 
-Definition slt (W : world) (Γ : hctx) (x y : point) : Prop := fl W Γ x y.
-Definition sle (W : world) (Γ : hctx) (x y : point) : Prop := x = y ∨ slt W Γ x y.
+Definition slt (W : sworld) (Γ : hctx) (x y : point) : Prop := fl W Γ x y.
+Definition sle (W : sworld) (Γ : hctx) (x y : point) : Prop := x = y ∨ slt W Γ x y.
 
-Lemma sl_w W Γ x y : W ⊢ x ≺ y → slt W Γ x y.
+Lemma sl_w W Γ x y : W ⊢ₛ x ≺ y → slt W Γ x y.
 Proof. apply fl_w. Qed.
 Lemma sl_trans W Γ x y z : slt W Γ x y → slt W Γ y z → slt W Γ x z.
 Proof. apply fl_trans. Qed.
 Lemma sl_po W Γ x : slt W Γ x x⁺.
-Proof. apply sl_w, w_lt_po. Qed.
+Proof. apply sl_w, sw_lt_po. Qed.
 (** C holds at the instance xs. *)
-Definition hold_at (W : world) (Γ : hctx) (C : bcs) (xs : list point) : Prop :=
+Definition hold_at (W : sworld) (Γ : hctx) (C : bcs) (xs : list point) : Prop :=
   ∀ x y, bcs_at C xs (FLt x y) → slt W Γ x y.
 
 (** x ≺ r for a rest: x ≺ "everything above u" iff x ≼ u (entry 14b,
     docs/redesign/check-future-variables.md), and nothing lies below
     "everything". *)
-Definition rest_below (W : world) (Γ : hctx) (x : point) (r : frest) : Prop :=
+Definition rest_below (W : sworld) (Γ : hctx) (x : point) (r : frest) : Prop :=
   match r with RAbove u => sle W Γ x u | RAll => False end.
 
 (** {u} ≺ F, for the points of F and its rest. *)
-Definition ub_below_s (W : world) (Γ : hctx) (ub : option point) (F : sfuture) : Prop :=
+Definition ub_below_s (W : sworld) (Γ : hctx) (ub : option point) (F : sfuture) : Prop :=
   match ub with
   | None => True
   | Some x => (∀ y, y ∈ F.1 → slt W Γ x y) ∧
@@ -157,7 +157,7 @@ Definition ub_below_s (W : world) (Γ : hctx) (ub : option point) (F : sfuture) 
 
 (** u ≺ F for the upper point of an arrow (entry 12, generalized arrows).
     No upper point asks nothing, ⊤ asks the empty future. *)
-Definition ub_below_u (W : world) (Γ : hctx) (ub : ubound) (F : sfuture) : Prop :=
+Definition ub_below_u (W : sworld) (Γ : hctx) (ub : ubound) (F : sfuture) : Prop :=
   match ub with
   | UNone => True
   | UPt x => ub_below_s W Γ (Some x) F
@@ -165,7 +165,7 @@ Definition ub_below_u (W : world) (Γ : hctx) (ub : ubound) (F : sfuture) : Prop
   end.
 
 
-Definition lbx_below_h (W : world) (Γ : hctx) (lb : lbound) (H : gset point) (b : bool) : Prop :=
+Definition lbx_below_h (W : sworld) (Γ : hctx) (lb : lbound) (H : gset point) (b : bool) : Prop :=
   match lb with
   | LBot => True
   | LNone => H = ∅ ∧ b = false
@@ -189,7 +189,7 @@ Definition hc_open (m : nat) (C : bcs) (Γ : hctx) : hctx :=
     variables derives no new fact between points of Γ: a fact between
     two shifted outer points in [hc_open m C Γ] holds in Γ already
     (docs/redesign/check-flag-rejection.md, fix (c)). *)
-Definition cons_open (W : world) (Γ : hctx) (m : nat) (C : bcs) : Prop :=
+Definition cons_open (W : sworld) (Γ : hctx) (m : nat) (C : bcs) : Prop :=
   ∀ x y, slt W (hc_open m C Γ) (pt_inst (pshift m) x) (pt_inst (pshift m) y) → slt W Γ x y.
 
 (** The rest above an optional upper point. *)

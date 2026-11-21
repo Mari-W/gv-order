@@ -18,7 +18,6 @@ types/Points.v
 types/Worlds.v
 types/Costs.v
 types/Types.v
-types/Names.v
 types/Erasure.v
 types/Duality.v
 static/Contexts.v
@@ -26,7 +25,6 @@ static/Typing.v
 static/Conservativity.v
 static/Constants.v
 static/Weakening.v
-static/Renaming.v
 static/PointSubst.v
 static/Inversion.v
 test/TypeNotations.v

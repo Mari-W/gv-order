@@ -1,7 +1,6 @@
 (** * Points (stage S2, proposal §2.3)
 
-    root   r ::= a | g_ℓ | ι        a constant, a generated root of the
-                                    family ℓ, a point variable
+    root   r ::= a | ι              a constant, a point variable
     point  x ::= r | x⁺ | x·κ | x‾
 
     A point is a name with a polarity and an offset. A name is a root or
@@ -9,12 +8,12 @@
     polarity, the shift x⁺ raises the offset and keeps the polarity, and
     the field x·κ ignores the polarity of x (x‾·κ = x·κ) and is positive
     at offset 0. Point variables occur only in types, bound by □∀ and by
-    a payload ∃ or the ∃ of [new_ℓ]. No point mentions a channel.
+    a payload ∃ or the ∃ of [new]. No point mentions a channel.
 
     An action moves an end from x to x⁺, a select of branch i to
     (x·κ_i)‾ and a branch to x·κ_i. The ends a message on x carries sit
-    at the fields x·0, x·1, …, and [new_κ o] creates at x·κ for the point
-    x of o. The continuation of choice i and the i-th payload field share
+    at the fields x·0, x·1, …, and [new] creates at a fresh root or at a
+    field x·κ. The continuation of choice i and the i-th payload field share
     a point by design (proposal §2.3). *)
 
 From stdpp Require Export base gmap countable relations.
@@ -22,7 +21,6 @@ From GV Require Export lang.Notations.
 
 Inductive pname :=
   | NConst (a : nat)                         (* a constant a *)
-  | NGen (ℓ : family) (g : nat)              (* the generated root g of family ℓ *)
   | NVar (a : nat)                           (* a point variable, de Bruijn *)
   | NField (p : pname) (b : nat) (κ : field). (* (p, b)·κ *)
 
@@ -36,14 +34,12 @@ Proof.
   set (enc := fix go p : gen_tree nat :=
     match p with
     | NConst a => GenNode 0 [GenLeaf a]
-    | NGen ℓ g => GenNode 1 [GenLeaf ℓ; GenLeaf g]
     | NVar a => GenNode 2 [GenLeaf a]
     | NField p b κ => GenNode 3 [go p; GenLeaf b; GenLeaf κ]
     end).
   set (dec := fix go t : pname :=
     match t with
     | GenNode 0 [GenLeaf a] => NConst a
-    | GenNode 1 [GenLeaf ℓ; GenLeaf g] => NGen ℓ g
     | GenNode 2 [GenLeaf a] => NVar a
     | GenNode 3 [t; GenLeaf b; GenLeaf κ] => NField (go t) b κ
     | _ => NVar 0
@@ -93,7 +89,6 @@ Fixpoint pn_root (p : pname) : pname :=
   match p with NField q _ _ => pn_root q | r => r end.
 Definition pt_root (x : point) : pname := pn_root (pt_name x).
 
-Definition pgen (ℓ : family) (g : nat) : point := MkPt (NGen ℓ g) true 0.
 Definition pvar (a : nat) : point := MkPt (NVar a) true 0.
 
 (** The field where branch i continues: κ_0 = 0 for [false], κ_1 = 1
@@ -128,7 +123,6 @@ Proof. by destruct b. Qed.
 Fixpoint pn_inst (σ : nat → point) (p : pname) : point :=
   match p with
   | NConst a => MkPt (NConst a) true 0
-  | NGen ℓ g => MkPt (NGen ℓ g) true 0
   | NVar a => σ a
   | NField p b κ => (pt_shift b (pn_inst σ p))·κ
   end.
@@ -177,7 +171,7 @@ Proof. destruct b; simpl; [done|apply pt_inst_dual]. Qed.
 
 Lemma pn_inst_comp τ σ p : pt_inst τ (pn_inst σ p) = pn_inst (pt_inst τ ∘ σ) p.
 Proof.
-  induction p as [a|ℓ g|a|p IH b κ]; simpl; try done.
+  induction p as [a|a|p IH b κ]; simpl; try done.
   by rewrite pt_inst_field, pt_inst_shift, IH.
 Qed.
 
@@ -263,22 +257,6 @@ Qed.
 Lemma plist_lookup xs i x : xs !! i = Some x → plist xs i = x.
 Proof. unfold plist. by intros ->. Qed.
 
-(** ** Renamings of generated roots
-
-    [pn_gmap r] renames every generated root (ℓ, g) to r (ℓ, g) and
-    leaves constants, variables and the rest of the name alone. A
-    renaming of families is the instance r (ℓ, g) = (f ℓ, g), and a
-    renaming of the roots of one family keeps ℓ. *)
-Fixpoint pn_gmap (r : family * nat → family * nat) (p : pname) : pname :=
-  match p with
-  | NGen ℓ g => NGen (r (ℓ, g)).1 (r (ℓ, g)).2
-  | NField q b κ => NField (pn_gmap r q) b κ
-  | q => q
-  end.
-
-Definition pt_gmap (r : family * nat → family * nat) (x : point) : point :=
-  MkPt (pn_gmap r (pt_name x)) (pt_pol x) (pt_off x).
-
 (** ** Facts *)
 
 Inductive fact := FLt (x y : point).
@@ -319,9 +297,6 @@ Record bcs := BCs { bc_env : list point; bc_facts : fact → Prop }.
 
 Definition bcs_inst (σ : nat → point) (C : bcs) : bcs :=
   BCs (pt_inst σ <$> bc_env C) (bc_facts C).
-
-Definition bcs_gmap (r : family * nat → family * nat) (C : bcs) : bcs :=
-  BCs (pt_gmap r <$> bc_env C) (bc_facts C).
 
 (** The facts of C under its binder of n variables. *)
 Definition bcs_open (n : nat) (C : bcs) (g : fact) : Prop :=

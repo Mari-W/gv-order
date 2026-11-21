@@ -45,7 +45,7 @@
 
 From stdpp Require Import relations.
 From GV Require Export soup.State soup.Idle relation.Adequacy lockfree.ThreadProgress.
-From GV Require Export types.Names.
+
 
 (** ** The soup at one index
 
