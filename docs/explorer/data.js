@@ -5343,10 +5343,10 @@ window.MAP = {
   "E-Box.inst": {
    "title": "Typed for every instance",
    "what": "The premise has one derivation of the body for every list $\\bar s$ with $\\mathsf{sinsts}\\,\\bar s$, one session type per session variable $\\bar\\alpha$ of the box.",
-   "why": "A force may pick any allowed $\\bar s$, and the derivation for that $\\bar s$ is the one that justifies the call. Checking every instance up front keeps E-Force a plain lookup.",
+   "why": "A force may pick any allowed $\\bar s$, and the derivation for that $\\bar s$ is the one that justifies the call. Checking every instance up front keeps E-Force a plain lookup. A derivation at one instance does not give one at another, because a session type of the body that is not contractive can separate two instances.",
    "breaks": "Nothing. It is a definition.",
    "example": "A box with no session variable has exactly one instance, the empty list, so the premise is one derivation.",
-   "rocq": "static/Typing.v: e_box",
+   "rocq": "static/Typing.v: e_box; examples/SinstStuck.v: typed_sinst_false",
    "sig": "\\forall \\bar s.\\ \\mathsf{sinsts}\\,\\bar s \\Rightarrow \\ldots",
    "args": [
     {
