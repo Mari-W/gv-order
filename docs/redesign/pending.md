@@ -312,8 +312,12 @@ must do, open questions.
     after layers.
   - The decidable fragment admits facts schematic in one offset k, with
     entailment by one-counter reachability (plan 6.4). GrowRing stays outside.
-  - Defaults proposed with the plan and not yet confirmed. Keep `new_κ e` as
-    surface syntax (6.3), and numbers inside session types are literals (6.6).
+  - Plain `new` stays. Where its position is not fixed by the expected type,
+    a type annotation names it, `(new : (S@x·κ) ⊗ …)` for a field or a fresh
+    point for a root. No `new_κ` surface syntax (author, replacing plan 6.3).
+  - Numbers inside payload types of session types are written in annotations,
+    never unknowns of the solver, because the equivalence oracle only decides
+    finished types (plan 6.6, explained to the author).
 - **Open points of A3 (2026-11-21, awaiting decision).** check-layers-open.md.
   The restriction on plain `new` is real, O-New needs no change, P-Connect asks
   `wf (W1|S ⊔ W2|S)`, the other cases change only through `ent_sound`, and
