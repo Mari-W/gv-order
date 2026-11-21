@@ -98,6 +98,10 @@ must do, open questions.
   an explicit hypothesis of the lemma, no axiom. Entry 5 follows from it.
 - **Entry 14b, no future variables.** Adopt in the Rocq.
 - **Entry 12, per-end capture.** Adopt in the Rocq.
+- **Classical hypotheses (2026-11-21).** The lock-free adequacy theorem may take
+  excluded middle and choice as explicit hypotheses. This admits transfinite
+  step indices (check-transfinite.md) in place of χ. Caps in place of tickets
+  (check-links-without-tickets.md) wait for the author after a worked example.
 
 ## Open
 
