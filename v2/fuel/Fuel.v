@@ -215,13 +215,10 @@ Section obligations.
   Definition f_beta (e' : expr) : Prop := (∀ j, olt j n → El j N σ d Π φ e').
 
   (** A creation chooses the protocol and the tickets m1 and m2 of the
-      two new ends, with m1 + m2 ≤ N. new_κ o asks o held. *)
+      two new ends, with m1 + m2 ≤ N. *)
   Definition f_new (c : chan) (e' : expr) : Prop :=
     ffresh c Π φ → ∃ S m1 m2, tsum_ok N m1 m2 ∧
       (∀ j, olt j n → El j N σ d (pnew c S Π) (cnew m1 m2 c φ) e').
-
-  Definition f_new_at (o : cend) (c : chan) (e' : expr) : Prop :=
-    is_Some (φ !! o) ∧ f_new c e'.
 
   (** The child takes the ends of v with one unit less and runs as a
       thread. *)
@@ -268,8 +265,7 @@ Section obligations.
   Definition Fobl (α : tlabel) (e' : expr) : Prop :=
     match α with
     | LBeta => f_beta e'                                  (* F-Beta *)
-    | LNew _ c => f_new c e'                              (* F-New *)
-    | LNewAt _ o c => f_new_at o c e'                     (* F-New at a field *)
+    | LNew c => f_new c e'                                (* F-New *)
     | LSpawn v => f_spawn v e'                          (* F-Spawn *)
     | LSess (SSend o w) => f_send o w e'                (* F-Send *)
     | LSess (SRecv o w) => f_recv o w e'                  (* F-Recv *)
@@ -388,11 +384,9 @@ Section ext.
                                   ∀ j, olt j n → El2 j N σ d Π φ e)
       by (intros ? ? ? ? ? ? H j Hj; apply HE; [done|by apply H]).
     destruct α as [|c|v|[o w|o w|o|o i|o i|os]]; simpl;
-      unfold f_beta, f_new, f_new_at, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link.
+      unfold f_beta, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link.
     - apply HE'.
     - intros H Hf. destruct (H Hf) as (S & m1 & m2 & Hm & HS). exists S, m1, m2. split; [done|]. by apply HE'.
-    - intros (Hp & H). split; [done|]. intros Hf. destruct (H Hf) as (S & m1 & m2 & Hm & HS).
-      exists S, m1, m2. split; [done|]. by apply HE'.
     - intros (H1 & H2 & H3 & H4). split_and!; [done|done|by apply HE'|by apply HE'].
     - intros (Ha & S0 & m & T & S & H1 & H2 & H3 & H4 & H5 & H6).
       split; [done|]. exists S0, m, T, S. split_and!; try done; [intros j Hj; apply HV; [done|by apply H5]|by apply HE'].

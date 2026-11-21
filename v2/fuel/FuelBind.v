@@ -222,21 +222,13 @@ Section obl_bind.
     Fobl N El Vl n σ d (Π1 ∪ ΠK) (φ1 ∪ φK) α (efill K e3).
   Proof.
     unfold El, Vl.
-    destruct α as [|ℓ c|κ o0 c|v|[o w|o w|o|o i|o i|os]]; simpl;
-      unfold f_beta, f_new, f_new_at, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link.
+    destruct α as [|c|v|[o w|o w|o|o i|o i|os]]; simpl;
+      unfold f_beta, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link.
     - intros H j Hj. apply (Hcont LBeta j Π1 φ1 e3); [done|done|done|by intros []|exact (H j Hj)].
     - intros H Hf. destruct H as (S & m1 & m2 & Hm & HS).
       { destruct Hf as (H1 & H2 & H3 & H4). rewrite dom_union_L in *. unfold ffresh. set_solver. }
       exists S, m1, m2. split; [done|]. destruct Hf as (H1 & H2 & H3 & H4). rewrite !dom_union_L in *.
-      intros j Hj. pose proof (Hcont (LNew ℓ c) j (pnew c S Π1) (cnew m1 m2 c φ1) e3 Hj) as HC.
-      unfold pnew, cnew in *. rewrite !insert_union_l. apply HC; [| |by intros []|exact (HS j Hj)].
-      + rewrite !dom_insert_L. set_solver.
-      + rewrite !dom_insert_L. set_solver.
-    - intros ([p Hp] & H). split; [exists p; by apply lookup_union_Some_l|].
-      intros Hf. destruct H as (S & m1 & m2 & Hm & HS).
-      { destruct Hf as (H1 & H2 & H3 & H4). rewrite dom_union_L in *. unfold ffresh. set_solver. }
-      exists S, m1, m2. split; [done|]. destruct Hf as (H1 & H2 & H3 & H4). rewrite !dom_union_L in *.
-      intros j Hj. pose proof (Hcont (LNewAt κ o0 c) j (pnew c S Π1) (cnew m1 m2 c φ1) e3 Hj) as HC.
+      intros j Hj. pose proof (Hcont (LNew c) j (pnew c S Π1) (cnew m1 m2 c φ1) e3 Hj) as HC.
       unfold pnew, cnew in *. rewrite !insert_union_l. apply HC; [| |by intros []|exact (HS j Hj)].
       + rewrite !dom_insert_L. set_solver.
       + rewrite !dom_insert_L. set_solver.

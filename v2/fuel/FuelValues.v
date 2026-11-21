@@ -552,11 +552,9 @@ Proof.
     apply Vfuel_eq. apply Hσ; [apply ole_refl|]. by apply Vfuel_eq. }
   intros α e' Hst. specialize (Hs α e' Hst).
   destruct α as [|c|v|[o w|o w|o|o i|o i|os]]; simpl in Hs |- *;
-    unfold f_beta, f_new, f_new_at, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link in *.
+    unfold f_beta, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link in *.
   - by apply IHn.
   - intros Hf. destruct (Hs Hf) as (Sn & m1 & m2 & Hm & HS). exists Sn, m1, m2. split; [done|]. by apply IHn.
-  - destruct Hs as (Hp & Hs). split; [done|].
-    intros Hf. destruct (Hs Hf) as (Sn & m1 & m2 & Hm & HS). exists Sn, m1, m2. split; [done|]. by apply IHn.
   - destruct Hs as (H1 & H2 & H3 & H4). split_and!; auto.
   - destruct Hs as (Ha & S0 & m & T & Sc & H1 & H2 & H3 & H4 & H5 & H6).
     split; [done|]. exists S0, m, T, Sc. split_and!; auto.
