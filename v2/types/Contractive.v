@@ -759,3 +759,60 @@ Proof. intros. apply sequiv_hd_eq. rewrite hd_seq by sc. done. Qed.
 Lemma seq_with a b X : scontr a → scontr b → scontr X →
   sequiv (SSeq (SWith a b) X) (SWith (SSeq a X) (SSeq b X)).
 Proof. intros. apply sequiv_hd_eq. rewrite hd_seq by sc. done. Qed.
+
+(** ** Instantiation commutes with unfolding up to ≈ *)
+
+Section inst.
+  Context (σ : nat → sty) (Hσ : ∀ a, scontr (σ a)).
+
+  Lemma scontr_seq a b : scontr a → scontr b → scontr (SSeq a b).
+  Proof. intros. cbn [scontr]. by apply Is_true_andb. Qed.
+
+  Lemma sinst_unrN k : ∀ s h, scontr s → unrN k s = Some h → sequiv (sinst σ s) (sinst σ h).
+  Proof.
+    induction k as [|k IH]; intros s h Hc H; [done|].
+    destruct s as [m T|m T| |b|a|a| |s1 s2|s1 s2|s1 s2]; cbn [unrN] in H;
+      try (injection H as <-; apply sequiv_refl).
+    - injection H as <-. cbn [sinst]. apply sequiv_sym, seq_skip_r. cbn [scontr] in *. by apply tcontr_sinst.
+    - injection H as <-. cbn [sinst]. apply sequiv_sym, seq_skip_r. cbn [scontr] in *. by apply tcontr_sinst.
+    - eapply sequiv_trans; [|apply (IH _ _ (scontr_unroll _ Hc) H)].
+      rewrite sinst_unroll. cbn [sinst]. apply seq_fold.
+      apply (scontr_sinst σ (SMu b)); done.
+    - injection H as <-. cbn [sinst]. apply sequiv_sym, seq_skip_r. done.
+    - injection H as <-. cbn [sinst]. apply sequiv_sym, seq_skip_r. by rewrite scontr_dual.
+    - cbn [scontr] in Hc. apply Is_true_andb in Hc as [Hc1 Hc2].
+      destruct (unrN k s1) as [h1|] eqn:E1; [|done].
+      pose proof (unrN_scontr _ _ _ E1 Hc1) as Hh1. pose proof (unrN_hok _ _ _ E1) as Hok.
+      pose proof (IH _ _ Hc1 E1) as IH1.
+      assert (∀ t, scontr t → scontr (sinst σ t)) as Hs by (intros; by apply scontr_sinst).
+      destruct h1 as [| | | | | | |o r|x y|x y]; unfold hok in Hok; simpl in Hok; try done.
+      + injection H as <-. cbn [sinst].
+        eapply sequiv_trans; [apply (seq_cong _ SEnd _ (sinst σ s2)); auto using sequiv_refl|].
+        by apply seq_end, Hs.
+      + pose proof (IH _ _ Hc2 H) as IH2. cbn [sinst].
+        eapply sequiv_trans; [apply (seq_cong _ SSkip _ (sinst σ h)); auto|].
+        { apply Hs. by eapply unrN_scontr. }
+        apply seq_skip_l, Hs. by eapply unrN_scontr.
+      + assert (h = hseq (SSeq o r) s2) as -> by congruence.
+        cbn [scontr] in Hh1. apply Is_true_andb in Hh1 as [Ho Hr].
+        eapply sequiv_trans; [cbn [sinst]; apply (seq_cong _ (sinst σ (SSeq o r)) _ (sinst σ s2)); auto using sequiv_refl|].
+        { by apply Hs, scontr_seq. }
+        destruct (sseq'_cases r) as [->|Er].
+        * cbn [hseq sinst]. apply seq_cong; auto using sequiv_refl.
+          { apply (Hs (SSeq o SSkip)). by apply scontr_seq. }
+          by apply seq_skip_r, Hs.
+        * assert (hseq (SSeq o r) s2 = SSeq o (SSeq r s2)) as -> by (destruct r; try done; specialize (Er SEnd); discriminate Er).
+          cbn [sinst]. by apply seq_assoc; apply Hs.
+      + injection H as <-. cbn [scontr] in Hh1. apply Is_true_andb in Hh1 as [Hx Hy].
+        eapply sequiv_trans; [cbn [sinst]; apply (seq_cong _ (sinst σ (SPlus x y)) _ (sinst σ s2)); auto using sequiv_refl|].
+        { apply Hs. cbn [scontr]. by apply Is_true_andb. }
+        cbn [hseq sinst]. by apply seq_plus; apply Hs.
+      + injection H as <-. cbn [scontr] in Hh1. apply Is_true_andb in Hh1 as [Hx Hy].
+        eapply sequiv_trans; [cbn [sinst]; apply (seq_cong _ (sinst σ (SWith x y)) _ (sinst σ s2)); auto using sequiv_refl|].
+        { apply Hs. cbn [scontr]. by apply Is_true_andb. }
+        cbn [hseq sinst]. by apply seq_with; apply Hs.
+  Qed.
+
+  Lemma sinst_unfoldS s : scontr s → sequiv (sinst σ s) (sinst σ (unfoldS s)).
+  Proof. intros Hc. destruct (unrN_sfuel s Hc) as [h E]. unfold unfoldS. rewrite E. by eapply sinst_unrN. Qed.
+End inst.
