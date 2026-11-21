@@ -115,6 +115,10 @@ must do, open questions.
   The restriction on plain `new` is real, O-New needs no change, P-Connect asks
   `wf (W1|S ⊔ W2|S)`, the other cases change only through `ent_sound`, and
   ranks are `Ord@{Set}` below step indices `Ord@{s}` from one polymorphic tree.
+- **E-Open asks conservativity (author, 2026-11-21).** check-flag-rejection.md.
+  E-Open gains `cons W Γ m C`. Opening adds no fact between points of the old
+  context. The running example becomes the flag variant whose arms read their
+  binder, statically rejected by ordering, not linearity.
 
 ## Open
 
