@@ -419,3 +419,236 @@ Proof.
     rewrite iter_sty_up_ge, slist_shift. simpl.
     rewrite <-(length_fmap (sinst σ) ss) at 2. by rewrite sinst_slist_shift.
 Qed.
+
+(** ** Instances *)
+
+Definition sinst_ok (N : fuel) (σ : nat → sty) : Prop :=
+  (∀ a, scontr (σ a)) ∧ (∀ a, sscoped (σ a)) ∧ (N = None → ∀ a, sty_df (σ a) = σ a).
+
+Lemma sinst_ok_slist N ss : sinsts N ss → sinst_ok N (slist ss).
+Proof.
+  intros [[Hc Hs] Hd]. split_and!.
+  - by apply scontr_slist.
+  - intros a. unfold slist. destruct (ss !! a) eqn:E; [|done]. by apply (Forall_lookup_1 _ _ _ _ Hs E).
+  - intros HN a. unfold slist. destruct (ss !! a) eqn:E; [|done]. by apply (Forall_lookup_1 _ _ _ _ (Hd HN) E).
+Qed.
+
+Lemma sinsts_sinst N σ ss : sinst_ok N σ → sinsts N ss → sinsts N (sinst σ <$> ss).
+Proof.
+  intros (Hc & Hs & Hd) [[Hc' Hs'] Hd']. split; [split|].
+  - apply Forall_fmap, Forall_forall. intros s Hin. change (contractive (sinst σ s)).
+    apply scontr_sinst; [done|]. by eapply Forall_forall in Hc'.
+  - apply Forall_fmap, Forall_forall. intros s Hin. change (sscoped (sinst σ s)).
+    apply scoped_sinst_mut; [done|]. by eapply Forall_forall in Hs'.
+  - intros HN. apply Forall_fmap, Forall_forall. intros s Hin. change (sty_df (sinst σ s) = sinst σ s).
+    rewrite sty_df_sinst. eapply Forall_forall in Hin; [|exact (Hd' HN)]. rewrite Hin.
+    apply sinst_ext. intros a. unfold compose. by apply Hd.
+Qed.
+
+Lemma sinsts_shift N M ss : sinsts N ss → sinsts N (sren (Nat.add M) <$> ss).
+Proof.
+  intros [[Hc Hs] Hd]. split; [split|].
+  - apply Forall_fmap, Forall_forall. intros s Hin. change (contractive (sren (Nat.add M) s)).
+    apply scontr_sren. by eapply Forall_forall in Hc.
+  - apply Forall_fmap, Forall_forall. intros s Hin. change (sscoped (sren (Nat.add M) s)).
+    apply (proj2 scoped_sren_mut). by eapply Forall_forall in Hs.
+  - intros HN. apply Forall_fmap, Forall_forall. intros s Hin. change (sty_df (sren (Nat.add M) s) = sren (Nat.add M) s).
+    rewrite sty_df_sren. eapply Forall_forall in Hin; [|exact (Hd HN)]. by rewrite Hin.
+Qed.
+
+Definition sinst_above (σ : nat → sty) (M : nat) : nat → sty :=
+  λ b, if decide (b < M) then σ b else SVar (b - M).
+
+Lemma sinst_ok_above N σ M : sinst_ok N σ → sinst_ok N (sinst_above σ M).
+Proof.
+  intros (Hc & Hs & Hd). unfold sinst_above. split_and!.
+  - intros a. case_decide; [apply Hc|done].
+  - intros a. case_decide; [apply Hs|done].
+  - intros HN a. case_decide; [by apply Hd|done].
+Qed.
+
+Local Ltac tc_split2 H := cbn [tcontr] in H; apply Is_true_andb in H as [? ?].
+
+Theorem typed_sinst W N Θ Γ Δ F e T c :
+  typed W N Θ Γ Δ F e T c → ∀ σ, sinst_ok N σ → tenv_contr Θ → lenv_contr Δ →
+  typed W N (tenv_sinst σ Θ) Γ (lenv_sinst σ Δ) F e (sinst_ty σ T) c.
+Proof.
+  induction 1 as
+    [Γ Δ F HΔ
+    |Γ Δ F x T HΔ
+    |Γ Δ F o S x a mt HΔ
+    |Θ Θh Γ Δ Δh F e T U ub lb c a Hlb Hth Hlc HTc Hb IH
+    |Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 ub lb c T U a1 c1 c2 Hsp Hl Hub H1 IH1 Hta Hla H2 IH2 Hc
+    |Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 T1 T1' T2 c1 c2 Hsp Hl H1 IH1 Hta Hla H2 IH2 Hag
+    |Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 T c1 c2 Hsp Hl H1 IH1 Hta Hla H2 IH2
+    |Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 T1 T2 T c1 c2 Hsp Hl H1 IH1 Hta Hla H2 IH2
+    |i Θ Γ Δ F e T U c HTc H IH
+    |Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e e1 e2 T1 T2 T c0 c1 c2 Hsp Hl H0 IH0 Hta Hla H1 IH1 H2 IH2
+    |Γ Δ F e m k C ub c U HΔ HUc Hb IH
+    |Θ Γ Δ F e m k C ub c U xs ss c0 Hxs HC Hss Hsi Hub H IH
+    |Θ Γ Δ F e S0 x m T S aS mS Tp Tp' c0 Hu Hsc Hbot Hh Hub H IH Hag Hsub
+    |Θ Γ Δ F e S0 x m T S a mS c0 Hu Hsc Hub H IH
+    |Θ Γ Δ F e S0 x a mS c0 Hu Hub H IH
+    |i Θ Γ Δ F e S0 x S1 S2 a mS c0 Hu Hub H IH
+    |Θ Γ Δ F e S0 x S1 S2 a mS c0 Hu Hub H IH
+    |Θ Γ Δ F e S x a1 m1 a2 m2 c0 H IH Hl1 Hl2
+    |Θ Γ Δ F e ub lb c' a c0 H IH Hle
+    |Γ Δ F C S m1 m2 HΔ HC Htk HSc
+    |Γ Δ F x κf S m1 m2 HΔ Htk HSc
+    |Θ Γ Δ F e T T' c c' H IH Hsub Hc HTc
+    |Θ Γ Δ F e lb m C T xs c Hxs HC Hlb Hwf H IH
+    |Θ Γ Δ F e i lb m C T U c Hi Hun Hcons H IH]; intros σ Hok HΘ HΔc;
+    pose proof (proj1 Hok) as Hσ.
+  - rewrite tenv_sinst_empty. by apply e_unit, lenv_unl_sinst.
+  - rewrite tenv_sinst_empty. by apply e_var, lenv_only_sinst.
+  - rewrite tenv_sinst_singleton. by apply e_chan, lenv_unl_sinst.
+  - (* E-Abs *)
+    cbn [sinst_ty]. eapply e_abs.
+    + rewrite tenv_heads_sinst, lenv_heads_sinst, lenv_bot_sinst. exact Hlb.
+    + by apply thage_sinst.
+    + by apply lage_sinst.
+    + by apply tcontr_sinst.
+    + apply (IH σ Hok); [by eapply thage_contr|apply lenv_contr_some; [done|by eapply lage_contr]].
+  - (* E-App *)
+    destruct (tsplit_contr _ _ _ Hsp HΘ) as [HΘ1 HΘ2], (lenv_split_contr _ _ _ Hl HΔc) as [HΔ1 HΔ2].
+    eapply e_app; [by apply tsplit_sinst|by apply lenv_split_sinst|exact Hub| |by apply thage_sinst|by apply lage_sinst| |exact Hc].
+    + rewrite tenv_heads_sinst, lenv_heads_sinst, lenv_bot_sinst. exact (IH1 σ Hok HΘ1 HΔ1).
+    + apply (IH2 σ Hok); [by eapply thage_contr|by eapply lage_contr].
+  - (* E-Pair *)
+    destruct (tsplit_contr _ _ _ Hsp HΘ) as [HΘ1 HΘ2], (lenv_split_contr _ _ _ Hl HΔc) as [HΔ1 HΔ2].
+    pose proof (typed_scontr _ _ _ _ _ _ _ _ _ H1 HΘ1 HΔ1) as HT1.
+    cbn [sinst_ty]. eapply e_pair; [by apply tsplit_sinst|by apply lenv_split_sinst| |by apply thage_sinst|by apply lage_sinst| |by apply tage_sinst].
+    + rewrite tenv_heads_sinst, lenv_heads_sinst, lenv_bot_sinst. exact (IH1 σ Hok HΘ1 HΔ1).
+    + rewrite heads_sinst, hbot_sinst. apply (IH2 σ Hok); [by eapply thage_contr|by eapply lage_contr].
+  - (* E-LetU *)
+    destruct (tsplit_contr _ _ _ Hsp HΘ) as [HΘ1 HΘ2], (lenv_split_contr _ _ _ Hl HΔc) as [HΔ1 HΔ2].
+    eapply e_letu; [by apply tsplit_sinst|by apply lenv_split_sinst| |by apply thage_sinst|by apply lage_sinst|].
+    + rewrite tenv_heads_sinst, lenv_heads_sinst, lenv_bot_sinst. exact (IH1 σ Hok HΘ1 HΔ1).
+    + apply (IH2 σ Hok); [by eapply thage_contr|by eapply lage_contr].
+  - (* E-LetP *)
+    destruct (tsplit_contr _ _ _ Hsp HΘ) as [HΘ1 HΘ2], (lenv_split_contr _ _ _ Hl HΔc) as [HΔ1 HΔ2].
+    pose proof (typed_scontr _ _ _ _ _ _ _ _ _ H1 HΘ1 HΔ1) as HP. tc_split2 HP.
+    eapply e_letp; [by apply tsplit_sinst|by apply lenv_split_sinst| |by apply thage_sinst|by apply lage_sinst|].
+    + rewrite tenv_heads_sinst, lenv_heads_sinst, lenv_bot_sinst. exact (IH1 σ Hok HΘ1 HΔ1).
+    + apply (IH2 σ Hok); [by eapply thage_contr|].
+      apply lenv_contr_some; [done|]. apply lenv_contr_some; [done|]. by eapply lage_contr.
+  - (* E-Inj *)
+    pose proof (tcontr_sinst σ (TSum T U) Hσ HTc) as HTc'.
+    destruct i; cbn [sinst_ty]; apply e_inj; try exact HTc'; exact (IH σ Hok HΘ HΔc).
+  - (* E-Case *)
+    destruct (tsplit_contr _ _ _ Hsp HΘ) as [HΘ1 HΘ2], (lenv_split_contr _ _ _ Hl HΔc) as [HΔ1 HΔ2].
+    pose proof (typed_scontr _ _ _ _ _ _ _ _ _ H0 HΘ1 HΔ1) as HS. tc_split2 HS.
+    eapply e_case; [by apply tsplit_sinst|by apply lenv_split_sinst| |by apply thage_sinst|by apply lage_sinst| |].
+    + rewrite tenv_heads_sinst, lenv_heads_sinst, lenv_bot_sinst. exact (IH0 σ Hok HΘ1 HΔ1).
+    + apply (IH1 σ Hok); [by eapply thage_contr|]. apply lenv_contr_some; [done|]. by eapply lage_contr.
+    + apply (IH2 σ Hok); [by eapply thage_contr|]. apply lenv_contr_some; [done|]. by eapply lage_contr.
+  - (* E-Box *)
+    rewrite tenv_sinst_empty. cbn [sinst_ty].
+    apply e_box; [by apply lenv_unl_sinst|apply tcontr_sinst; [by apply scontr_iter_sty_up|done]|].
+    intros ss'' Hk Hss''.
+    set (M := (tfv U - k) `max` lfv Δ).
+    set (φ := sinst_above σ M).
+    set (ss' := sren (Nat.add M) <$> ss'').
+    assert (length ss' = k) as Hk' by (unfold ss'; by rewrite length_fmap).
+    assert (lenv_contr (lenv_pinst (pshift m) (Some (TBox m k C ub c U) :: Δ))) as Hctx
+      by (apply lenv_contr_pinst, lenv_contr_some; done).
+    pose proof (IH ss' Hk' (sinsts_shift N M ss'' Hss'') φ (sinst_ok_above N σ M Hok) tenv_contr_empty Hctx) as Hb'.
+    rewrite tenv_sinst_empty in Hb'.
+    assert (lenv_sinst φ (lenv_pinst (pshift m) (Some (TBox m k C ub c U) :: Δ)) =
+            lenv_pinst (pshift m) (Some (TBox m k C ub c (sinst_ty (Nat.iter k sty_up σ) U)) :: lenv_sinst σ Δ)) as E1.
+    { rewrite lenv_sinst_pinst. f_equal.
+      transitivity (lenv_sinst σ (Some (TBox m k C ub c U) :: Δ)); [|done].
+      apply lenv_sinst_fv. intros a Ha. unfold φ, sinst_above. case_decide; [done|].
+      exfalso. simpl in Ha. lia. }
+    assert (sinst_ty φ (sinst_ty (slist ss') U) = sinst_ty (slist ss'') (sinst_ty (Nat.iter k sty_up σ) U)) as E2.
+    { rewrite !sinst_ty_sinst. apply sinst_fv_mut. intros a Ha. unfold compose.
+      destruct (decide (a < k)) as [Hak|Hak].
+      - rewrite iter_sty_up_lt by done. cbn [sinst]. unfold slist at 1 2. unfold ss'.
+        rewrite list_lookup_fmap. destruct (ss'' !! a) as [s|] eqn:E; [|apply lookup_ge_None in E; lia].
+        simpl. rewrite sinst_sren. transitivity (sinst SVar s); [|apply sinst_ids].
+        apply sinst_ext. intros b. unfold compose, φ, sinst_above. case_decide; [lia|]. f_equal. lia.
+      - assert (slist ss' a = SVar (a - k)) as ->.
+        { unfold slist. rewrite lookup_ge_None_2 by lia. f_equal. lia. }
+        cbn [sinst]. unfold φ, sinst_above. case_decide; [|lia].
+        replace a with (k + (a - k)) at 2 by lia. rewrite iter_sty_up_ge, <-Hk.
+        symmetry. apply sinst_slist_shift. }
+    rewrite E1, E2 in Hb'. exact Hb'.
+  - (* E-Force *)
+    rewrite sinst_force, Hss, ty_inst_sinst.
+    eapply e_force; [done|done|by rewrite length_fmap|by apply sinsts_sinst|done|].
+    exact (IH σ Hok HΘ HΔc).
+  - (* E-Send *)
+    pose proof (typed_scontr _ _ _ _ _ _ _ _ _ H HΘ HΔc) as HP. tc_split2 HP.
+    rename H0 into HTp, H1 into HS0. cbn [tcontr] in HS0.
+    destruct (unfoldS_seq_contr _ _ _ HS0 Hu) as [HT HS].
+    destruct (unfoldS_sinst_act σ Hσ S0 (SSnd m T) S HS0 I Hu) as (S' & Hu' & HS').
+    cbn [sinst_ty]. eapply e_sub; [|apply sub_sess; [exact HS'|apply fle_refl]|apply fle_refl|intros _; by apply scontr_sinst].
+    eapply e_send with (T := sinst_ty σ T) (S := S'); [exact Hu'| | | |exact Hub|exact (IH σ Hok HΘ HΔc)| |].
+    + apply scoped_sinst_mut; [apply Hok|done].
+    + by rewrite hbot_sinst.
+    + intros y Hy. apply Hh. by rewrite <-payload_at_sinst, heads_sinst in Hy.
+    + by apply tage_sinst.
+    + rewrite <-payload_at_sinst. apply tsub_sinst; [done|done| |].
+      * by rewrite (tage_tcontr _ _ _ Hag).
+      * unfold payload_at. by rewrite tcontr_ty_inst.
+  - (* E-Recv *)
+    pose proof (typed_scontr _ _ _ _ _ _ _ _ _ H HΘ HΔc) as HS0. cbn [tcontr] in HS0.
+    destruct (unfoldS_seq_contr _ _ _ HS0 Hu) as [HT HS].
+    destruct (unfoldS_sinst_act σ Hσ S0 (SRcv m T) S HS0 I Hu) as (S' & Hu' & HS').
+    cbn [sinst_ty]. rewrite payload_at_sinst.
+    eapply e_sub; [|apply sub_prod; [apply tsub_refl|apply sub_sess; [exact HS'|apply fle_refl]]|apply fle_refl|].
+    + eapply e_recv with (T := sinst_ty σ T) (S := S'); [exact Hu'| |exact Hub|exact (IH σ Hok HΘ HΔc)].
+      apply scoped_sinst_mut; [apply Hok|done].
+    + intros _. cbn [tcontr]. apply Is_true_andb. split; [|by apply scontr_sinst].
+      unfold payload_at. rewrite tcontr_ty_inst. by apply tcontr_sinst.
+  - (* E-Close *)
+    pose proof (typed_scontr _ _ _ _ _ _ _ _ _ H HΘ HΔc) as HS0. cbn [tcontr] in HS0.
+    eapply e_close; [by apply unfoldS_sinst_end|exact Hub|exact (IH σ Hok HΘ HΔc)].
+  - (* E-Select *)
+    pose proof (typed_scontr _ _ _ _ _ _ _ _ _ H HΘ HΔc) as HS0. cbn [tcontr] in HS0.
+    destruct (unfoldS_choice_contr S0 S1 S2 HS0 (or_introl Hu)) as [HS1 HS2].
+    destruct (unfoldS_sinst_plus σ Hσ S0 S1 S2 HS0 Hu) as (S1' & S2' & Hu' & E1 & E2).
+    eapply e_sub; [eapply (e_select _ _ i) with (S1 := S1') (S2 := S2'); [exact Hu'|exact Hub|exact (IH σ Hok HΘ HΔc)]
+      | |apply fle_refl|].
+    + destruct i; cbn [sinst_ty]; apply sub_sess; first [done|apply fle_refl].
+    + intros _. destruct i; cbn [sinst_ty tcontr]; by apply scontr_sinst.
+  - (* E-Branch *)
+    pose proof (typed_scontr _ _ _ _ _ _ _ _ _ H HΘ HΔc) as HS0. cbn [tcontr] in HS0.
+    destruct (unfoldS_choice_contr S0 S1 S2 HS0 (or_intror Hu)) as [HS1 HS2].
+    destruct (unfoldS_sinst_with σ Hσ S0 S1 S2 HS0 Hu) as (S1' & S2' & Hu' & E1 & E2).
+    eapply e_sub; [eapply e_branch with (S1 := S1') (S2 := S2'); [exact Hu'|exact Hub|exact (IH σ Hok HΘ HΔc)]
+      | |apply fle_refl|].
+    + cbn [sinst_ty]. apply sub_sum; apply sub_sess; first [done|apply fle_refl].
+    + intros _. cbn [sinst_ty tcontr]. apply Is_true_andb. split; by apply scontr_sinst.
+  - (* E-Link *)
+    pose proof (IH σ Hok HΘ HΔc) as IH'. cbn [sinst_ty] in IH'. rewrite <-dual_sinst in IH'.
+    eapply e_link; [exact IH'|done|done].
+  - (* E-Spawn *)
+    eapply e_spawn; [exact (IH σ Hok HΘ HΔc)|done].
+  - (* E-New *)
+    rewrite tenv_sinst_empty. cbn [sinst_ty]. rewrite <-dual_sinst.
+    apply e_new; [by apply lenv_unl_sinst|done|done|by apply scontr_sinst].
+  - (* E-New-Field *)
+    rewrite tenv_sinst_empty. cbn [sinst_ty]. rewrite <-dual_sinst.
+    apply e_new_fld; [by apply lenv_unl_sinst|done|by apply scontr_sinst].
+  - (* E-Sub *)
+    pose proof (typed_scontr _ _ _ _ _ _ _ _ _ H HΘ HΔc) as HT.
+    eapply e_sub; [exact (IH σ Hok HΘ HΔc)|apply tsub_sinst; auto|done|intros _; apply tcontr_sinst; auto].
+  - (* E-Pack *)
+    cbn [sinst_ty]. eapply e_pack; [done|done| | |].
+    + rewrite <-ty_inst_sinst, heads_sinst, hbot_sinst. exact Hlb.
+    + unfold ex_wf in *. by rewrite heads_sinst, hbot_sinst.
+    + rewrite <-ty_inst_sinst. exact (IH σ Hok HΘ HΔc).
+  - (* E-Open *)
+    eapply e_open; [by rewrite lenv_sinst_lookup, Hi|by rewrite unlimited_sinst|exact Hcons|].
+    assert (tcontr T) as HT by (by apply (HΔc i (TEx lb m C T))).
+    pose proof (IH σ Hok (tenv_contr_pinst _ _ HΘ) (lenv_contr_insert _ _ _ HT (lenv_contr_pinst _ _ HΔc))) as IH'.
+    rewrite tenv_sinst_pinst, lenv_sinst_insert, lenv_sinst_pinst, <-pinst_sinst in IH'. exact IH'.
+Qed.
+
+(** Typing a box body at the identity instance types it at every
+    instance, the converse of reading E-Box at one instance. *)
+Corollary typed_sinst_slist W N Θ Γ Δ F e T c ss :
+  typed W N Θ Γ Δ F e T c → sinsts N ss → tenv_contr Θ → lenv_contr Δ →
+  typed W N (tenv_sinst (slist ss) Θ) Γ (lenv_sinst (slist ss) Δ) F e (sinst_ty (slist ss) T) c.
+Proof. intros H Hss. apply typed_sinst; [exact H|]. by apply sinst_ok_slist. Qed.
