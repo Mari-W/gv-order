@@ -48,7 +48,7 @@ Proof. intros Hf Hs. eapply hyp_slt_ids; [apply Γnew_in|done|done]. Qed.
 (** A box □∀ιs. C. T ⊸^u ∗ whose body is λp. e, typed under the
     context of the box body. *)
 Definition box1 (m : nat) (C : bcs) (u : point) (T : ty) : ty :=
-  TBox m 0 C None None tinf (TLolli (Some u) None None tinf None T TUnit None).
+  TBox m 0 C None None tinf (TLolli (Some u) None None tinf T TUnit None).
 
 Definition Γbox (m : nat) (C : bcs) (u : point) (Γ : hctx) : hctx :=
   hc_fvar 1 (Some u) (hc_fvar 0 None (hc_open m C Γ)).
@@ -101,7 +101,7 @@ Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.
 
 (** A box □∀ιs. C. T ⊸^ub U whose body is λp. e. *)
 Definition boxg (m : nat) (C : bcs) (ub : option point) (T U : ty) : ty :=
-  TBox m 0 C None None tinf (TLolli ub None None tinf None T U None).
+  TBox m 0 C None None tinf (TLolli ub None None tinf T U None).
 
 Lemma boxg_typed W Γ n F m C ub T U e :
   hc_fv Γ = ∅ → pinst_ty (pshift m) (boxg m C ub T U) = boxg m C ub T U →

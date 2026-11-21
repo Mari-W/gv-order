@@ -29,7 +29,7 @@
     environments map an end to a session type at a
     point ([senv]) and carry no credit. The relation reads no annotation
     of a type. A session type is compared after erasing its annotations
-    ([seqv]), and costs, transformers, floors and credits are never read.
+    ([seqv]), and costs, transformers and credits are never read.
     The session types of the environments keep their annotations, so the
     fuel layer of stage S6 reads each end's cost protocol from the
     environment of the live relation at the same index. *)
@@ -45,7 +45,7 @@ Local Set Warnings "-register-all".
 Fixpoint tsize (T : ty) : nat :=
   match T with
   | TUnit | TSess _ _ _ => 1
-  | TLolli _ _ _ _ _ T1 U _ | TProd T1 U | TSum T1 U => S (tsize T1 + tsize U)
+  | TLolli _ _ _ _ T1 U _ | TProd T1 U | TSum T1 U => S (tsize T1 + tsize U)
   | TBox _ _ _ _ _ _ U => 3 + tsize U
   | TEx _ _ _ T1 => S (tsize T1)
   end.
@@ -62,7 +62,7 @@ Proof. induction T in σ |- *; simpl; auto. Qed.
 (** The type of a thunk ∗ ⊸^u U, with the annotations of N = ∞, which
     the relation does not read. *)
 Definition tthunk (ub : option point) (U : ty) : ty :=
-  TLolli ub None None tinf None TUnit U None.
+  TLolli ub None None tinf TUnit U None.
 
 Lemma tsize_tthunk ub U : tsize (tthunk ub U) = 2 + tsize U.
 Proof. simpl. lia. Qed.
@@ -391,7 +391,7 @@ Section bodies.
       match T with
       | TUnit => Θ = ∅ ∧ v = EUnit
       | TSess s x _ => ∃ o s', v = Chan o ∧ Θ = {[o := (s', x)]} ∧ seqv s' s
-      | TLolli ub lb _ _ _ T1 U _ =>
+      | TLolli ub lb _ _ T1 U _ =>
           Varr n Vl El (λ W' Θ' w, Vbody n Vl El k' W' Θ' T1 w)
             (λ W' Θ' F e, Etop n Vl El (Vbody n Vl El k') W' Θ' U F e) T1 U ub lb W Θ v
       | TProd T1 U =>
@@ -910,7 +910,7 @@ Section fuel.
     Vbody κ n Vl1 El1 k W Θ T v ↔ Vbody κ n Vl2 El2 k W Θ T v.
   Proof.
     intros HVl HEl. revert W Θ T v. induction k as [|k IH]; intros W Θ T v; [done|].
-    destruct T as [|ub lb c t h T1 U a|T1 U|T1 U|m kk C ub c t U|s x a|lb m C T1];
+    destruct T as [|ub lb c t T1 U a|T1 U|T1 U|m kk C ub c t U|s x a|lb m C T1];
       cbn [Vbody].
     - done.
     - split; (apply Varr_mono; [intros; by apply HVl|intros; by apply HEl|intros; by apply IH|]);
@@ -929,7 +929,7 @@ Section fuel.
   Proof.
     induction k1 as [|k1 IH]; intros k2 W Θ T v H1 H2; [lia|].
     destruct k2 as [|k2]; [lia|].
-    destruct T as [|ub lb c t h T1 U a|T1 U|T1 U|m kk C ub c t U|s x a|lb m C T1];
+    destruct T as [|ub lb c t T1 U a|T1 U|T1 U|m kk C ub c t U|s x a|lb m C T1];
       cbn [Vbody tsize] in *.
     - done.
     - pose proof (tsize_pos T1). pose proof (tsize_pos U).
@@ -1091,11 +1091,11 @@ Section equations.
     - intros W' j Θ' w F HW Hj Hd Hub. split; [intros Hjn Hw; by apply H|]. intros -> Hw. by apply H.
   Qed.
 
-  Lemma Vrel_lolli_iff n W Θ ub lb c t h T1 U a v :
-    Vrel κ n W Θ (TLolli ub lb c t h T1 U a) v ↔ Varr_rel n T1 U ub lb W Θ v.
+  Lemma Vrel_lolli_iff n W Θ ub lb c t T1 U a v :
+    Vrel κ n W Θ (TLolli ub lb c t T1 U a) v ↔ Varr_rel n T1 U ub lb W Θ v.
   Proof.
     rewrite Vrel_unfold, <-Varr_rel_iff.
-    remember (tsize (TLolli ub lb c t h T1 U a)) as k eqn:Hk. cbn [Vbody].
+    remember (tsize (TLolli ub lb c t T1 U a)) as k eqn:Hk. cbn [Vbody].
     cbn [tsize] in Hk. pose proof (tsize_pos T1). pose proof (tsize_pos U).
     assert (∀ W Θ T v, tsize T < k → Vbody κ n (Vrel κ) (Erel κ) k W Θ T v ↔ Vrel κ n W Θ T v)
       as HF.

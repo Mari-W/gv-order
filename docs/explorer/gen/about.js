@@ -24,7 +24,7 @@ const ABOUT = {
   'sem-props': { why: 'These are the guarantees the theorems prove. Deadlock freedom says a stuck program has finished. \\annp{Lock freedom says every waiting thread eventually takes part in a step on every fair run.}', used: ['th-adequacy', 'th-sound', 'th-lf-adequacy'] },
   // types
   'ty-grammar': { why: 'Types say what a value is and, for ends, where it is in the order. \\annp{In the lock-free mode credits say how long an end may be postponed.}', used: ['t-judgment', 'v-base', 'v-arrow'] },
-  'ty-credit': { why: 'Credits let typing bound how long a holding thread postpones an end. Only ends and closures have them, because only they hold ends of their own.', used: ['t-age', 't-cap', 'fv', 't-lf-intro'] },
+  'ty-credit': { why: 'Credits let typing bound how long a holding thread postpones an end. Only ends and closures have them, because only they hold ends of their own.', used: ['t-age', 'fv', 't-lf-intro'] },
   'ty-session': { why: 'Session types describe the protocol of one end. The rules read the first action after unfolding recursion and leading $\\mathsf{Skip}$.', used: ['ty-dual', 'r-send', 'r-recv'] },
   'ty-dual': { why: 'The two ends of a channel follow opposite protocols. Creation, linking and composition check duality.', used: ['r-new', 'r-link', 'p-term', 'p-connect'] },
   'ty-equiv': { why: 'One protocol has many spellings once recursion and $\\mathsf{Skip}$ exist. Equivalence compares them by behaviour.', used: ['t-sub', 'v-base'] },

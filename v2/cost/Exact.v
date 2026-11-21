@@ -71,19 +71,8 @@ Qed.
 Lemma lsame_nil : lsame [] [].
 Proof. intros x. split; intros; rewrite lookup_nil in *; done. Qed.
 
-Lemma tcap_unl h a T T' : tcap h a T T' → unlimited T' ↔ unlimited T.
-Proof. inversion 1; subst; done. Qed.
-
 Lemma tage_unl c T T' : tage c T T' → unlimited T' ↔ unlimited T.
 Proof. inversion 1; subst; done. Qed.
-
-Lemma lcap_lsame h a Δ Δ' : lcap h a Δ Δ' → lsame Δ Δ'.
-Proof.
-  induction 1 as [|Δ Δ' _ IH|T T' Δ Δ' Hc _ IH]; [apply lsame_nil| |].
-  - apply lsame_cons; [done|done|done].
-  - apply lsame_cons; [eauto|intros U [= ->] Hu; exists T'; split; [done|]|done].
-    by rewrite (tcap_unl _ _ _ _ Hc).
-Qed.
 
 Lemma lage_lsame c Δ Δ' : lage c Δ Δ' → lsame Δ Δ'.
 Proof.
@@ -130,12 +119,6 @@ Proof.
   destruct (decide (y = x)) as [->|Hne]; [done|]. by destruct (Hu (H y _ Hne Hy)).
 Qed.
 
-Lemma thcap_dom h a Θ Θ' : thcap h a Θ Θ' → dom Θ' = dom Θ.
-Proof.
-  intros H. apply set_eq. intros o. rewrite !elem_of_dom. specialize (H o).
-  destruct (Θ !! o), (Θ' !! o); naive_solver.
-Qed.
-
 Lemma thage_dom c Θ Θ' : thage c Θ Θ' → dom Θ' = dom Θ.
 Proof.
   intros H. apply set_eq. intros o. rewrite !elem_of_dom. specialize (H o).
@@ -162,8 +145,8 @@ Proof.
   - split; [by rewrite dom_empty_L|by eapply vfacts_only].
   - split; [by rewrite dom_singleton_L|by apply vfacts_empty].
   - (* e_abs *)
-    split; [by erewrite <-thcap_dom|].
-    eapply vfacts_lsame; [by eapply lcap_lsame|]. by eapply (vfacts_under _ _ (λ x, freevar x _)).
+    split; [done|].
+    eapply vfacts_lsame; [by eapply lage_lsame|]. by eapply (vfacts_under _ _ (λ x, freevar x _)).
   - (* e_app *)
     split; [congruence|]. eapply vfacts_split; [done|done|].
     eapply vfacts_lsame; [by eapply lage_lsame|done].

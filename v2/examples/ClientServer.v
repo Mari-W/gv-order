@@ -43,7 +43,7 @@ Definition cs_L (g : fact) : Prop :=
 Definition W_cs : world := World ∅ (λ _, False) {[0]} (λ _ g, cs_L g).
 
 Definition cs_arr (S1 S2 : sty) : ty :=
-  TLolli (Some (pvar 2)) None None tinf None
+  TLolli (Some (pvar 2)) None None tinf
     (TProd (TSess S1 (pvar 0) None) (TSess S2 (pvar 1) None)) TUnit None.
 
 Definition cs_box (S1 S2 : sty) : ty := TBox 3 0 cs_C None None tinf (cs_arr S1 S2).
@@ -131,11 +131,11 @@ Section body.
   Lemma cs_self Δ F S1 S2 :
     dftyped W ∅ Γb Δ F (Var 6) (cs_box S1 S2) →
     dftyped W ∅ Γb Δ F (EForce (Var 6))
-      (TLolli (Some (pvar 2)) None None tinf None
+      (TLolli (Some (pvar 2)) None None tinf
          (TProd (TSess S1 (sh 1 (pvar 0)) None) (TSess S2 (sh 1 (pvar 1)) None)) TUnit None).
   Proof.
     intros H. assert (sinst_ty (slist []) (ty_inst (sh 1 (pvar 0) :: sh 1 (pvar 1) :: pvar 2 :: []) (cs_arr S1 S2)) =
-      TLolli (Some (pvar 2)) None None tinf None
+      TLolli (Some (pvar 2)) None None tinf
          (TProd (TSess S1 (sh 1 (pvar 0)) None) (TSess S2 (sh 1 (pvar 1)) None)) TUnit None) as <-.
     { rewrite sinst_nil. reflexivity. }
     eapply d_force with (ub := None) (c := None) (t := tinf); [done| |done|split; [apply Forall_nil|intros _; apply Forall_nil]|exact I|exact H].
@@ -240,13 +240,13 @@ Lemma cs_force n F S1 S2 x1 x2 e (b : bool) :
   x1 = pt_polar b (pvar 0) → x2 = pt_polar b ((pvar 0)·0) →
   dftyped W_cs ∅ Γm (nones n) F e (cs_box S1 S2) →
   dftyped W_cs ∅ Γm (nones n) F (EForce e)
-    (TLolli (Some ((pvar 0)·1)) None None tinf None
+    (TLolli (Some ((pvar 0)·1)) None None tinf
        (TProd (TSess S1 x1 None) (TSess S2 x2 None)) TUnit None).
 Proof.
   intros -> -> H.
   assert (sinst_ty (slist []) (ty_inst (pt_polar b (pvar 0) :: pt_polar b ((pvar 0)·0) :: (pvar 0)·1 :: [])
             (cs_arr S1 S2)) =
-    TLolli (Some ((pvar 0)·1)) None None tinf None
+    TLolli (Some ((pvar 0)·1)) None None tinf
        (TProd (TSess S1 (pt_polar b (pvar 0)) None) (TSess S2 (pt_polar b ((pvar 0)·0)) None)) TUnit None) as <-.
   { rewrite sinst_nil. destruct b; reflexivity. }
   eapply d_force with (ub := None) (c := None) (t := tinf);

@@ -166,8 +166,8 @@ Proof.
   apply (proj1 (meets_tid _ _)) in H2. by eapply link_redex.
 Qed.
 
-Lemma cost_e_spawn N Θ Δ e ub lb c' t' h a c0 t0 :
-  csem N Θ Δ e (TLolli ub lb c' t' h TUnit TUnit a) c0 t0 → fle (Some 1) a →
+Lemma cost_e_spawn N Θ Δ e ub lb c' t' a c0 t0 :
+  csem N Θ Δ e (TLolli ub lb c' t' TUnit TUnit a) c0 t0 → fle (Some 1) a →
   tok t0 (tspawn (tapp t' 0) tid) →
   csem N Θ Δ (ESpawn e) TUnit c0 (tseq t0 (tspawn (tapp t' 0) tid)).
 Proof.
@@ -224,9 +224,9 @@ Proof. destruct c1, c2, c; simpl; lia. Qed.
 Lemma fle_frame_mid i c1 c2 c : fle (Some i) c1 → fle c2 (fsub (fadd c1 (fadd c2 c)) (Some i)).
 Proof. destruct c1, c2, c; simpl; lia. Qed.
 
-Lemma cost_e_app N Θ Θ1 Θ2 Θ2' Δ Δ1 Δ2 Δ2' e1 e2 ub lb c t h T U a1 c1 t1 c2 t2 :
+Lemma cost_e_app N Θ Θ1 Θ2 Θ2' Δ Δ1 Δ2 Δ2' e1 e2 ub lb c t T U a1 c1 t1 c2 t2 :
   tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-  csem N Θ1 Δ1 e1 (TLolli ub lb c t h T U a1) c1 t1 →
+  csem N Θ1 Δ1 e1 (TLolli ub lb c t T U a1) c1 t1 →
   thage c1 Θ2 Θ2' → lage c1 Δ2 Δ2' →
   csem N Θ2' Δ2' e2 T c2 t2 →
   fle c2 a1 → tok t2 t → tok t1 (tseq t2 t) →
@@ -397,10 +397,24 @@ Qed.
 
 (** ** Closures and boxes *)
 
-Lemma cost_e_abs N Θ Θh Δ Δh e T U ub lb c t h a :
-  tfacts Θ Δ (Lam e) → thcap h a Θ Θh → lcap h a Δ Δh →
+(** E-Abs with per-end capture. The body sees the context aged by a,
+    at counters at least the counters at creation minus a. *)
+Lemma cle_fminus a (φ φ' : cenv) :
+  dom φ' = dom φ → (∀ o f f', φ !! o = Some f → φ' !! o = Some f' → fle (fsub f a) f') →
+  cle (fminus a <$> φ) φ'.
+Proof.
+  intros Hd Hh o. rewrite lookup_fmap.
+  destruct (φ !! o) as [f|] eqn:E; simpl.
+  - assert (o ∈ dom φ') as [f' Hf']%elem_of_dom by (rewrite Hd; by eapply elem_of_dom_2).
+    rewrite Hf'. exact (Hh o f f' E Hf').
+  - assert (o ∉ dom φ') as Ho by (rewrite Hd; by apply not_elem_of_dom).
+    apply not_elem_of_dom in Ho. by rewrite Ho.
+Qed.
+
+Lemma cost_e_abs N Θ Θh Δ Δh e T U ub lb c t a :
+  tfacts Θ Δ (Lam e) → thage a Θ Θh → lage a Δ Δh →
   csem N Θh (Some T :: Δh) e U c t →
-  csem N Θ Δ (Lam e) (TLolli ub lb c t h T U a) (Some 0) tid.
+  csem N Θ Δ (Lam e) (TLolli ub lb c t T U a) (Some 0) tid.
 Proof.
   intros Hf HcT HcD Hcs N' n g γ Π φ r tk HN HE Hm.
   pose proof (envf_exact _ _ _ _ _ _ _ _ _ Hf HE) as Hx. simpl in Hx |- *.
@@ -409,12 +423,12 @@ Proof.
   - done.
   - done.
   - by eapply envf_dom.
-  - eapply envf_cap_above; [exact HcT|exact HcD|exact HE].
+  - by eapply envf_age_above.
   - intros N'' j φ' Πu φu u r' tk' HN' Hj Hdφ' Hh HdΠ Hdφ Hu Hm'. rewrite subst1_subst.
     apply Hcs; [by eapply rle_trans| |done].
     apply envf_cons; [|done|done|done].
-    apply (envf_mono N' N'' n j _ _ _ _ _ φ'); [exact HN'|lia|apply cle_refl|].
-    by eapply envf_cap.
+    apply (envf_mono N' N'' n j _ _ _ _ _ (fminus a <$> φ) φ'); [exact HN'|lia|by apply cle_fminus|].
+    by eapply envf_age.
 Qed.
 
 Lemma cost_e_box N Δ e m k C ub c t U :

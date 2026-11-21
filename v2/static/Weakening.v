@@ -145,14 +145,6 @@ Proof.
     destruct o, o'; simpl in Ho; try done; constructor; auto.
 Qed.
 
-Lemma lcap_Forall2 h a Δ Δ' : lcap h a Δ Δ' ↔ Forall2 (orel (tcap h a)) Δ Δ'.
-Proof.
-  split.
-  - induction 1; constructor; simpl; auto.
-  - induction 1 as [|o o' Δ Δ' Ho _ IH]; [constructor|].
-    destruct o, o'; simpl in Ho; try done; constructor; auto.
-Qed.
-
 Lemma Forall2_orel_l R Δ Δ2 x σ :
   Forall2 (orel R) Δ Δ2 → Δ !! x = Some (Some σ) → ∃ σ2, Δ2 !! x = Some (Some σ2) ∧ R σ σ2.
 Proof.
@@ -166,7 +158,7 @@ Proof.
 Qed.
 
 (** A pointwise relation on entries that keeps unlimited entries and
-    linearity carries along a renaming. Aging and capture are two. *)
+    linearity carries along a renaming. Aging is one. *)
 Lemma lren_rel (R : ty → ty → Prop) r Δ Δ2 Δr :
   (∀ U, unlimited U → R U U) →
   (∀ T T', R T T' → unlimited T → T' = T) →
@@ -215,12 +207,6 @@ Proof. inversion 1; subst; simpl; done. Qed.
 Lemma tage_unl_r c T T' : tage c T T' → unlimited T' → unlimited T.
 Proof. inversion 1; subst; simpl; done. Qed.
 
-Lemma tcap_unl h b T T' : tcap h b T T' → unlimited T → T' = T.
-Proof. inversion 1; subst; simpl; done. Qed.
-
-Lemma tcap_unl_r h b T T' : tcap h b T T' → unlimited T' → unlimited T.
-Proof. inversion 1; subst; simpl; done. Qed.
-
 Lemma lren_lage c r Δ Δ2 Δr :
   lage c Δ Δ2 → lren r Δ Δr → ∃ Δr', lage c Δr Δr' ∧ lren r Δ2 Δr'.
 Proof.
@@ -230,17 +216,6 @@ Proof.
   - apply tage_unl.
   - apply tage_unl_r.
   - exists Δr'. by rewrite lage_Forall2.
-Qed.
-
-Lemma lren_lcap h b r Δ Δ2 Δr :
-  lcap h b Δ Δ2 → lren r Δ Δr → ∃ Δr', lcap h b Δr Δr' ∧ lren r Δ2 Δr'.
-Proof.
-  intros HF Hr. apply lcap_Forall2 in HF.
-  destruct (lren_rel (tcap h b) r Δ Δ2 Δr) as (Δr' & ? & ?); try done.
-  - intros U HU. by apply cap_free, unlimited_tfree.
-  - apply tcap_unl.
-  - apply tcap_unl_r.
-  - exists Δr'. by rewrite lcap_Forall2.
 Qed.
 
 (** *** Splits *)
@@ -511,7 +486,7 @@ Proof.
     destruct (decide (unlimited T)) as [HU|HU]; [by eapply e_var, Hk, H1|by eapply e_var, Hk, H2].
   - by apply e_chan, (lren_unl _ _ _ H Hr).
   - (* E-Abs *)
-    destruct (lren_lcap _ _ _ _ _ _ H2 Hr) as (Δhr & Hc & Hr').
+    destruct (lren_lage _ _ _ _ _ H2 Hr) as (Δhr & Hc & Hr').
     eapply e_abs; [done| |done|exact Hc|].
     + by rewrite (lren_heads _ _ _ Hr), (lren_bot _ _ _ Hr).
     + by apply IHtyped, lren_up.
@@ -669,7 +644,7 @@ Section let_admissible.
   Proof. destruct a; simpl; lia. Qed.
   Local Lemma tage_0 T : tage (Some 0) T T.
   Proof.
-    induction T as [|ub lb c t h T1 IH1 U IH2 a|T1 IH1 U IH2|T1 IH1 U IH2|n k C ub c t U IH|S x a|lb n C T1 IH];
+    induction T as [|ub lb c t T1 IH1 U IH2 a|T1 IH1 U IH2|T1 IH1 U IH2|n k C ub c t U IH|S x a|lb n C T1 IH];
       try solve [apply age_free; constructor]; try by constructor.
     - rewrite <-(fsub_0 a) at 2. apply age_arr, fle_0.
     - rewrite <-(fsub_0 a) at 2. apply age_sess, fle_0.

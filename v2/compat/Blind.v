@@ -182,8 +182,8 @@ Section blind.
               ∀ n W Θ v, Vrel κ n W Θ T1 v ↔ Vrel κ n W Θ T1' v) as IH.
     { intros T1 T1' H1 H2. apply (IHk (tsize T1)); [lia|lia|done]. }
     clear IHk.
-    destruct T as [|ub lb c t h T1 U a|T1 U|T1 U|m kk C ub c t U|s x a|lb m C T1],
-      T' as [|ub' lb' c' t' h' T1' U' a'|T1' U'|T1' U'|m' kk' C' ub' c' t' U'|s' x' a'|lb' m' C' T1'];
+    destruct T as [|ub lb c t T1 U a|T1 U|T1 U|m kk C ub c t U|s x a|lb m C T1],
+      T' as [|ub' lb' c' t' T1' U' a'|T1' U'|T1' U'|m' kk' C' ub' c' t' U'|s' x' a'|lb' m' C' T1'];
       unfold teq in Heq; simpl in Heq; try done; destruct_and?; subst.
     - rewrite !Vrel_lolli_iff. unfold Varr_rel.
       assert (∀ j W Θ w, Vrel κ j W Θ T1 w ↔ Vrel κ j W Θ T1' w) as E1.

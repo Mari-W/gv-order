@@ -78,7 +78,7 @@ Section above.
     tage c T T' → Vty N El Vl n T Π φ v → fabove c Π φ.
   Proof.
     intros Ha. revert Π φ v.
-    induction Ha as [T Hf|S x a Hle|S x a Hi|ub lb c0 t h T U a Hle
+    induction Ha as [T Hf|S x a Hle|S x a Hi|ub lb c0 t T U a Hle
                     |T1 T2 T1' T2' H1 IH1 H2 IH2|T1 T2 T1' T2' H1 IH1 H2 IH2|lb m C T T' H1 IH1];
       intros Π φ v; simpl.
     - intros Hv. destruct (Vty_tfree _ _ _ _ _ Hf _ _ _ Hv) as (-> & -> & _). intros o f. by rewrite lookup_empty.
@@ -87,8 +87,7 @@ Section above.
     - intros (o' & S' & f' & _ & -> & -> & Hs & _) o f Ho Hn.
       apply lookup_singleton_Some in Ho as [<- <-]. exfalso. apply Hn.
       exists S'. rewrite lookup_singleton_eq. split; [done|]. by apply (idle_sequiv _ _ Hs).
-    - intros (e & _ & _ & _ & Hf & _) o f Ho _. eapply fle_trans; [exact Hle|].
-      eapply fle_trans; [apply fle_fadd_r'|exact (Hf o f Ho)].
+    - intros (e & _ & _ & _ & Hf & _) o f Ho Hn. eapply fle_trans; [exact Hle|exact (Hf o f Ho Hn)].
     - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & _ & HdΠ & _ & -> & -> & Hv1 & Hv2) o f Ho Hn.
       apply lookup_union_Some_raw in Ho as [Ho|[_ Ho]];
         [apply (IH1 _ _ _ Hv1 o f Ho)|apply (IH2 _ _ _ Hv2 o f Ho)];
@@ -98,24 +97,6 @@ Section above.
     - intros Hv. exact (IH1 _ _ _ Hv).
   Qed.
 
-  Lemma Vty_cap_above N n h a T T' Π φ v :
-    tcap h a T T' → Vty N El Vl n T Π φ v → ∀ o f, φ !! o = Some f → fle (fadd h a) f.
-  Proof.
-    intros Hc. revert Π φ v.
-    induction Hc as [T0 Hf|S x b Hle|ub lb c t h0 T1 U b Hh0 Hle
-                    |T1 T2 T1' T2' H1 IH1 H2 IH2
-                    |T1 T2 T1' T2' H1 IH1 H2 IH2
-                    |lb m C T1 T1' H1 IH1];
-      intros Π φ v; simpl.
-    - intros Hv. destruct (Vty_tfree _ _ _ _ _ Hf _ _ _ Hv) as (_ & -> & _). intros o f. by rewrite lookup_empty.
-    - intros (o' & S' & f' & _ & _ & -> & _ & Hf) o f Ho.
-      apply lookup_singleton_Some in Ho as [<- <-]. by eapply fle_trans.
-    - intros (e & _ & _ & _ & Hf & _) o f Ho. eapply fle_trans; [exact Hle|exact (Hf o f Ho)].
-    - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & _ & _ & _ & _ & -> & Hv1 & Hv2) o f Ho.
-      apply lookup_union_Some_raw in Ho as [Ho|[_ Ho]]; [exact (IH1 _ _ _ Hv1 o f Ho)|exact (IH2 _ _ _ Hv2 o f Ho)].
-    - intros [(v' & _ & Hv)|(v' & _ & Hv)]; [exact (IH1 _ _ _ Hv)|exact (IH2 _ _ _ Hv)].
-    - intros Hv. exact (IH1 _ _ _ Hv).
-  Qed.
 End above.
 
 Lemma Vfuel_age_above N n c T T' Π φ v :
@@ -132,10 +113,6 @@ Qed.
 
 Lemma fabove_of c Π φ : (∀ o f, φ !! o = Some f → fle c f) → fabove c Π φ.
 Proof. intros H o f Ho _. exact (H o f Ho). Qed.
-
-Lemma Vfuel_cap_above N n h a0 T T' Π φ v :
-  tcap h a0 T T' → v ∈ FV^N _ n⟦RTy T⟧(Π, φ) → ∀ o f, φ !! o = Some f → fle (fadd h a0) f.
-Proof. rewrite Vfuel_eq. intros Ha. apply (Vty_cap_above _ _ N n h a0 T T'). done. Qed.
 
 (** ** Facts about groundings *)
 
@@ -245,31 +222,6 @@ Proof.
   - apply IH.
   - intros (Π1 & Π2 & φ1 & φ2 & Hd1 & Hd2 & -> & -> & Hv & HG).
     apply fabove_union; [done|exact (Vfuel_age_above _ _ _ _ _ _ _ _ Ha Hv)|exact (IH _ _ _ HG)].
-Qed.
-
-Lemma gfuel_cap_above N n h a Δ Δ' : lcap h a Δ Δ' → ∀ γ Π φ, gfuel N n Δ γ Π φ →
-  ∀ o f, φ !! o = Some f → fle (fadd h a) f.
-Proof.
-  induction 1 as [|Δ Δ' _ IH|T T' Δ Δ' Ha _ IH]; intros γ Π φ; simpl.
-  - intros [-> ->] o f. by rewrite lookup_empty.
-  - apply IH.
-  - intros (Π1 & Π2 & φ1 & φ2 & Hd1 & Hd2 & -> & -> & Hv & HG) o f Ho.
-    apply lookup_union_Some_raw in Ho as [Ho|[_ Ho]];
-      [exact (Vfuel_cap_above _ _ _ _ _ _ _ _ _ Ha Hv o f Ho)|exact (IH _ _ _ HG o f Ho)].
-Qed.
-
-Lemma gfuel_cap N n h a Δ Δ' : lcap h a Δ Δ' → ∀ γ Π φ φ', gfuel N n Δ γ Π φ →
-  dom φ' = dom φ → (∀ o f, φ' !! o = Some f → fle h f) → gfuel N n Δ' γ Π φ'.
-Proof.
-  induction 1 as [|Δ Δ' _ IH|T T' Δ Δ' Ha _ IH]; intros γ Π φ φ'; simpl.
-  - intros [-> ->] Hd _. split; [done|]. rewrite dom_empty_L in Hd. by apply dom_empty_inv_L.
-  - apply IH.
-  - intros (Π1 & Π2 & φ1 & φ2 & Hd1 & Hd2 & -> & -> & Hv & HG) Hd Hh.
-    destruct (map_split_dom φ1 φ2 φ' Hd2 Hd) as (Heq & Hd' & D1 & D2).
-    exists Π1, Π2, (mres (dom φ1) φ'), (mres (dom φ2) φ'). split_and!; try done.
-    + eapply Vfuel_recount; [exact Ha|exact D1| |exact Hv].
-      intros o f Ho. apply lookup_mres_Some in Ho as [Ho _]. by apply (Hh o).
-    + eapply IH; [exact HG|exact D2|]. intros o f Ho. apply lookup_mres_Some in Ho as [Ho _]. by apply (Hh o).
 Qed.
 
 Lemma gfuel_rename N n Δ : ∀ γ Π φ (g : cend → cend) Π' φ',
@@ -392,10 +344,6 @@ Lemma thage_lookup c Θ Θ' o te' : thage c Θ Θ' → Θ' !! o = Some te' →
   ∃ te, Θ !! o = Some te ∧ te_sty te' = te_sty te ∧ fle c (te_cr te) ∧ te_cr te' = fsub (te_cr te) c.
 Proof. intros H Ho. specialize (H o). rewrite Ho in H. destruct (Θ !! o); naive_solver. Qed.
 
-Lemma thcap_lookup h a Θ Θ' o te' : thcap h a Θ Θ' → Θ' !! o = Some te' →
-  ∃ te, Θ !! o = Some te ∧ te_sty te' = te_sty te ∧ fle (fadd h a) (te_cr te) ∧ te_cr te' = h.
-Proof. intros H Ho. specialize (H o). rewrite Ho in H. destruct (Θ !! o); naive_solver. Qed.
-
 Lemma thfuel_age c Θ Θ' g Π φ : thage c Θ Θ' → thfuel Θ g Π φ → thfuel Θ' g Π (fminus c <$> φ).
 Proof.
   intros Ha (Hi & HΠ & Hφ & H). pose proof (thage_dom _ _ _ Ha) as Hd. split_and!.
@@ -414,28 +362,6 @@ Proof.
   destruct (H o0 te Hte) as (_ & f' & Hf' & Hle). rewrite Ho in Hf'. injection Hf' as <-.
   specialize (Ha o0). rewrite Hte in Ha. destruct (Θ' !! o0); [|done].
   destruct Ha as (_ & _ & Hc & _). by eapply fle_trans.
-Qed.
-
-Lemma thfuel_cap_above h a Θ Θ' g Π φ : thcap h a Θ Θ' → thfuel Θ g Π φ → ∀ o f, φ !! o = Some f → fle (fadd h a) f.
-Proof.
-  intros Ha Ht o f Ho. pose proof Ht as (Hi & HΠ & Hφ & H).
-  destruct (thfuel_lookup Θ g Π φ o Ht ltac:(rewrite <-Hφ; by eapply elem_of_dom_2)) as (o0 & te & -> & Hte).
-  destruct (H o0 te Hte) as (_ & f' & Hf' & Hle). rewrite Ho in Hf'. injection Hf' as <-.
-  specialize (Ha o0). rewrite Hte in Ha. destruct (Θ' !! o0); [|done].
-  destruct Ha as (_ & _ & Hc & _). by eapply fle_trans.
-Qed.
-
-Lemma thfuel_cap h a Θ Θ' g Π φ φ' : thcap h a Θ Θ' → thfuel Θ g Π φ →
-  dom φ' = dom φ → (∀ o f, φ' !! o = Some f → fle h f) → thfuel Θ' g Π φ'.
-Proof.
-  intros Ha (Hi & HΠ & Hφ & H) Hd Hh. pose proof (thcap_dom _ _ _ _ Ha) as HdΘ. split_and!.
-  - by rewrite HdΘ.
-  - by rewrite HdΘ.
-  - congruence.
-  - intros o te' Ho. destruct (thcap_lookup _ _ _ _ _ _ Ha Ho) as (te & Hte & Hs & Hc & Hcr).
-    destruct (H o te Hte) as (Hp & f & Hf & Hle). split; [by rewrite Hs|].
-    assert (g o ∈ dom φ') as [f' Hf']%elem_of_dom by (rewrite Hd; by eapply elem_of_dom_2).
-    exists f'. split; [done|]. rewrite Hcr. by apply (Hh (g o)).
 Qed.
 
 Lemma thfuel_cle Θ g Π φ φ' : cle φ φ' → thfuel Θ g Π φ → thfuel Θ g Π φ'.
@@ -521,27 +447,6 @@ Lemma envf_age_above N n c Θ Θ' Δ Δ' g γ Π φ :
 Proof.
   intros HaT HaD (ΠΘ & φΘ & Πγ & φγ & HT & HG & Hd1 & Hd2 & -> & ->).
   apply fabove_union; [done|apply fabove_of, (thfuel_age_above _ _ _ _ _ _ HaT HT)|exact (gfuel_age_above _ _ _ _ _ HaD _ _ _ HG)].
-Qed.
-
-Lemma envf_cap_above N n h a Θ Θ' Δ Δ' g γ Π φ :
-  thcap h a Θ Θ' → lcap h a Δ Δ' → envf N n Θ Δ g γ Π φ → ∀ o f, φ !! o = Some f → fle (fadd h a) f.
-Proof.
-  intros HaT HaD (ΠΘ & φΘ & Πγ & φγ & HT & HG & Hd1 & Hd2 & -> & ->) o f Ho.
-  apply lookup_union_Some_raw in Ho as [Ho|[_ Ho]];
-    [exact (thfuel_cap_above _ _ _ _ _ _ _ HaT HT o f Ho)|exact (gfuel_cap_above _ _ _ _ _ _ HaD _ _ _ HG o f Ho)].
-Qed.
-
-Lemma envf_cap N n h a Θ Θ' Δ Δ' g γ Π φ φ' :
-  thcap h a Θ Θ' → lcap h a Δ Δ' → envf N n Θ Δ g γ Π φ →
-  dom φ' = dom φ → (∀ o f, φ' !! o = Some f → fle h f) → envf N n Θ' Δ' g γ Π φ'.
-Proof.
-  intros HaT HaD (ΠΘ & φΘ & Πγ & φγ & HT & HG & Hd1 & Hd2 & -> & ->) Hd Hh.
-  destruct (map_split_dom φΘ φγ φ' Hd2 Hd) as (Heq & Hd' & D1 & D2).
-  exists ΠΘ, (mres (dom φΘ) φ'), Πγ, (mres (dom φγ) φ'). split_and!; try done.
-  - eapply thfuel_cap; [exact HaT|exact HT|exact D1|].
-    intros o f Ho. apply lookup_mres_Some in Ho as [Ho _]. by apply (Hh o).
-  - eapply gfuel_cap; [exact HaD|exact HG|exact D2|].
-    intros o f Ho. apply lookup_mres_Some in Ho as [Ho _]. by apply (Hh o).
 Qed.
 
 Lemma envf_rename N n Θ Δ g γ Π φ (g' : cend → cend) Π' φ' :

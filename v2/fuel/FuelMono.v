@@ -199,7 +199,7 @@ Section vty.
   Lemma Vty_dom N n T Π φ v : Vty N El Vl n T Π φ v → dom Π = dom φ.
   Proof.
     revert Π φ v.
-    induction T as [|ub lb c t h T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
+    induction T as [|ub lb c t T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
                    |m k C ub c t U IH|s x a|lb m C T1 IH];
       intros Π φ v; simpl.
     - intros (_ & -> & ->). by rewrite !dom_empty_L.
@@ -216,14 +216,16 @@ Section vty.
     cle φ φ' → Vty N El Vl n T Π φ v → Vty N El Vl n T Π φ' v.
   Proof.
     revert Π φ φ' v.
-    induction T as [|ub lb c t h T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
+    induction T as [|ub lb c t T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
                    |m k C ub c t U IH|s x a|lb m C T1 IH];
       intros Π φ φ' v Hc; simpl.
     - intros (-> & -> & ->). by rewrite (cle_empty_l _ Hc).
     - intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|by rewrite <-(cle_dom _ _ Hc)| |].
-      + intros o f' Ho. destruct (cle_lookup_r _ _ _ _ Hc Ho) as (f & Hf' & Hle).
-        eapply fle_trans; [|exact Hle]. exact (Hf o f Hf').
-      + intros N' j φ2 Πu φu u r tk HN Hj Hd2. apply H; [done|done|by rewrite (cle_dom _ _ Hc)].
+      + intros o f' Ho Hi. destruct (cle_lookup_r _ _ _ _ Hc Ho) as (f & Hf' & Hle).
+        eapply fle_trans; [|exact Hle]. exact (Hf o f Hf' Hi).
+      + intros N' j φ2 Πu φu u r tk HN Hj Hd2 Hh2. apply H; [done|done|by rewrite (cle_dom _ _ Hc)|].
+        intros o f f2 Hf' Hf2. destruct (cle_lookup _ _ _ _ Hc Hf') as (f' & Hf'' & Hle).
+        eapply fle_trans; [by apply fsub_mono_l|exact (Hh2 o f' f2 Hf'' Hf2)].
     - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & -> & HΠ & Hφ & -> & -> & H1 & H2).
       destruct (cle_union_split _ _ _ Hφ Hc) as (φ1' & φ2' & -> & Hd' & C1 & C2).
       exists v1, v2, Π1, Π2, φ1', φ2'. split_and!; try done.
@@ -247,7 +249,7 @@ Section vty.
     rle N N1 → Vty N El Vl n T Π φ v → Vty N1 El Vl n T Π φ v.
   Proof.
     intros HN. revert Π φ v.
-    induction T as [|ub lb c t h T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
+    induction T as [|ub lb c t T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
                    |m k C ub c t U IH|s x a|lb m C T1 IH];
       intros Π φ v; simpl; try done.
     - intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|done|done|].
@@ -264,7 +266,7 @@ Section vty.
     m ≤ n → Vty N El Vl n T Π φ v → Vty N El Vl m T Π φ v.
   Proof.
     intros Hmn. revert Π φ v.
-    induction T as [|ub lb c t h T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
+    induction T as [|ub lb c t T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
                    |k0 k C ub c t U IH|s x a|lb k0 C T1 IH];
       intros Π φ v; simpl; try done.
     - intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|done|done|].
@@ -280,7 +282,7 @@ Section vty.
   Lemma Vty_val N n T Π φ v : Vty N El Vl n T Π φ v → is_val v.
   Proof.
     revert Π φ v.
-    induction T as [|ub lb c t h T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
+    induction T as [|ub lb c t T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
                    |m k C ub c t U IH|s x a|lb m C T1 IH];
       intros Π φ v; simpl.
     - by intros (-> & _ & _).
@@ -297,7 +299,7 @@ Section vty.
   Lemma Vty_exact N n T Π φ v : Vty N El Vl n T Π φ v → fends v = dom Π.
   Proof.
     revert Π φ v.
-    induction T as [|ub lb c t h T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
+    induction T as [|ub lb c t T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
                    |m k C ub c t U IH|s x a|lb m C T1 IH];
       intros Π φ v; simpl.
     - intros (-> & -> & _). by rewrite dom_empty_L.

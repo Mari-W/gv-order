@@ -137,13 +137,13 @@ Definition fm_main : expr :=
 Lemma fm_force n F e :
   dftyped W_fm ∅ (Γnew W_fm 0) (nones n) F e fm_ty →
   dftyped W_fm ∅ (Γnew W_fm 0) (nones n) F (EForce e)
-    (TLolli (Some ((pvar 0)·1)) None None tinf None
+    (TLolli (Some ((pvar 0)·1)) None None tinf
        (TProd (TSess SEnd (pvar 0) None) (TSess SEnd ((pvar 0)·1) None)) TUnit None).
 Proof.
   intros H.
   assert (sinst_ty (slist []) (ty_inst fm_xs
-            (TLolli (Some (pvar 1)) None None tinf None fm_T TUnit None)) =
-    TLolli (Some ((pvar 0)·1)) None None tinf None
+            (TLolli (Some (pvar 1)) None None tinf fm_T TUnit None)) =
+    TLolli (Some ((pvar 0)·1)) None None tinf
        (TProd (TSess SEnd (pvar 0) None) (TSess SEnd ((pvar 0)·1) None)) TUnit None) as <-.
   { rewrite sinst_nil. reflexivity. }
   eapply d_force with (ub := None) (c := None) (t := tinf) (C := fm_C);

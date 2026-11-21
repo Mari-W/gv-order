@@ -3,7 +3,7 @@
     [Vfuel_teq]: Vfuel does not tell types apart that are equal up to
     ≈ of their session types. [Vfuel_sub]: Vfuel follows the subtyping
     [tsub] of the merged judgment (static/Contexts.v): costs, ticket
-    transformers and floors are covariant, arguments contravariant,
+    transformers are covariant, arguments contravariant,
     results covariant, and the credit of an end or a closure may fall. [FuelE_sub]: FuelE follows
     it in the result type. *)
 
@@ -39,13 +39,13 @@ Section teq.
     Vty N (λ j N, FuelE N j) (λ j N, Vfuel N j) n T Π φ v →
     Vty N (λ j N, FuelE N j) (λ j N, Vfuel N j) n T' Π φ v.
   Proof.
-    induction T as [|ub lb c t h T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
+    induction T as [|ub lb c t T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
                    |m k C ub c t U IHU|s x a|lb m C T1 IHT];
-      intros [|ub' lb' c' t' h' T1' U' a'|T1' T2'|T1' T2'
+      intros [|ub' lb' c' t' T1' U' a'|T1' T2'|T1' T2'
              |m' k' C' ub' c' t' U'|s' x' a'|lb' m' C' T1'] Π φ v Ht; simpl in Ht |- *;
       try contradiction.
     - done.
-    - destruct Ht as (<- & <- & <- & <- & <- & <- & H1 & H2).
+    - destruct Ht as (<- & <- & <- & <- & <- & H1 & H2).
       intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|done|done|].
       intros N' j φ1 Πu φu u r tk HN Hj Hd1 Hh HΠ Hφ Hu Hm.
       apply (FuelE_teq_below j N' U); [done|done|]. apply H; try done.
@@ -94,7 +94,7 @@ Section sub.
   Proof.
     intros Hs. revert Π φ v.
     induction Hs as [
-                    |ub lb c t h T1 U a c' t' h' T1' U' a' Hc Ht Hh Ha HT HU IHT IHU
+                    |ub lb c t T1 U a c' t' T1' U' a' Hc Ht Ha HT HU IHT IHU
                     |T1 U T1' U' H1 IH1 H2 IH2
                     |T1 U T1' U' H1 IH1 H2 IH2
                     |m k C ub c t U U' c' t' Hc Ht HU
@@ -103,12 +103,12 @@ Section sub.
       intros Π φ v; simpl.
     - done.
     - intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|done| |].
-      + intros o f Ho. eapply fle_trans; [exact Ha|]. by apply (Hf o).
+      + intros o f Ho Hi. eapply fle_trans; [exact Ha|]. by apply (Hf o).
       + intros N' j φ1 Πu φu u r tk HN Hj Hd1 Hh1 HΠ Hφ Hu Hm.
         eapply FuelE_res_mono; [|eapply FuelE_frame_mono; [exact Hc|]].
         * intros N'' m0 Π0 φ0 w Hm0. apply (IH m0 ltac:(lia)). done.
         * apply H; try done.
-          -- intros o f Ho. eapply fle_trans; [exact Hh|]. by apply (Hh1 o).
+          -- intros o f f' Ho Ho'. eapply fle_trans; [by apply fsub_anti_r|]. by apply (Hh1 o).
           -- apply (IH j Hj N' T1' T1); done.
           -- by apply Ht.
     - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & -> & HΠ & Hφ & -> & -> & Hv1 & Hv2).

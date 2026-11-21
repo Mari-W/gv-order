@@ -97,13 +97,13 @@ Definition fb_main : expr :=
 Lemma fb_force n F e :
   dftyped W_fb ∅ (Γnew W_fb 0) (nones n) F e fb_ty →
   dftyped W_fb ∅ (Γnew W_fb 0) (nones n) F (EForce e)
-    (TLolli (Some ((pvar 0)·1)) None None tinf None
+    (TLolli (Some ((pvar 0)·1)) None None tinf
        (TProd (TSess SEnd (pvar 0) None) (TSess SEnd ((pvar 0)·1) None)) TUnit None).
 Proof.
   intros H.
   assert (sinst_ty (slist []) (ty_inst fb_xs
-            (TLolli (Some (pvar 1)) None None tinf None fb_T TUnit None)) =
-    TLolli (Some ((pvar 0)·1)) None None tinf None
+            (TLolli (Some (pvar 1)) None None tinf fb_T TUnit None)) =
+    TLolli (Some ((pvar 0)·1)) None None tinf
        (TProd (TSess SEnd (pvar 0) None) (TSess SEnd ((pvar 0)·1) None)) TUnit None) as <-.
   { rewrite sinst_nil. reflexivity. }
   eapply d_force with (ub := None) (c := None) (t := tinf) (C := fb_C);

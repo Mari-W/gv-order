@@ -113,11 +113,12 @@ Proof. rewrite Vfuel_eq. simpl. setoid_rewrite Vfuel_eq. simpl. done. Qed.
 Lemma Vfuel_unit_inv N n Π φ v : v ∈ FV^N _ n⟦RTy TUnit⟧(Π, φ) → v = EUnit ∧ Π = ∅ ∧ φ = ∅.
 Proof. rewrite Vfuel_eq. simpl. done. Qed.
 
-Lemma Vfuel_lolli_inv N n ub lb c t h T U a Π φ v :
-  v ∈ FV^N _ n⟦RTy (TLolli ub lb c t h T U a)⟧(Π, φ) →
-  ∃ e, v = Lam e ∧ fends e = dom Π ∧ dom Π = dom φ ∧ (∀ o f, φ !! o = Some f → fle (fadd h a) f) ∧
+Lemma Vfuel_lolli_inv N n ub lb c t T U a Π φ v :
+  v ∈ FV^N _ n⟦RTy (TLolli ub lb c t T U a)⟧(Π, φ) →
+  ∃ e, v = Lam e ∧ fends e = dom Π ∧ dom Π = dom φ ∧
+    (∀ o f, φ !! o = Some f → ¬ idle_at Π o → fle a f) ∧
     ∀ N' j φ' Πu φu u r tk, rle N N' → j < n → dom φ' = dom φ →
-      (∀ o f, φ' !! o = Some f → fle h f) → Π ##ₘ Πu → φ' ##ₘ φu →
+      (∀ o f f', φ !! o = Some f → φ' !! o = Some f' → fle (fsub f a) f') → Π ##ₘ Πu → φ' ##ₘ φu →
       u ∈ FV^N' _ j⟦RTy T⟧(Πu, φu) → meets t r tk →
       subst1 u e ∈ F^N' _ j⟦RTy U ▷ c ; r⟧(Π ∪ Πu, φ' ∪ φu, tk).
 Proof. rewrite Vfuel_eq. simpl. done. Qed.
@@ -155,17 +156,17 @@ Local Ltac op_step Hst := apply op_head_only' in Hst; [|simpl; rewrite ?andb_Tru
 
 (** ** Application *)
 
-Lemma app_redex N n ub lb c t h T U a1 Π1 φ1 Π2 φ2 tk d r v1 v2 :
-  v1 ∈ FV^N _ n⟦RTy (TLolli ub lb c t h T U a1)⟧(Π1, φ1) → v2 ∈ FV^N _ n⟦RTy T⟧(Π2, φ2) →
+Lemma app_redex N n ub lb c t T U a1 Π1 φ1 Π2 φ2 tk d r v1 v2 :
+  v1 ∈ FV^N _ n⟦RTy (TLolli ub lb c t T U a1)⟧(Π1, φ1) → v2 ∈ FV^N _ n⟦RTy T⟧(Π2, φ2) →
   Π1 ##ₘ Π2 → φ1 ##ₘ φ2 → meets t r tk → fle c d →
   App v1 v2 ∈ F^N _ n⟦RTy U ▷ d ; r⟧(Π1 ∪ Π2, φ1 ∪ φ2, tk).
 Proof.
   intros HV1 HV2 HdΠ Hdφ Hm Hcd. destruct n as [|n]; [apply FuelE_0|].
-  destruct (Vfuel_lolli_inv _ _ _ _ _ _ _ _ _ _ _ _ _ HV1) as (e & -> & _ & _ & Hfl & HF).
+  destruct (Vfuel_lolli_inv _ _ _ _ _ _ _ _ _ _ _ _ HV1) as (e & -> & _ & _ & Hfl & HF).
   apply (FuelE_beta _ _ _ _ _ _ _ _ [] _ (subst1 v2 e)); [constructor|by apply t_act_app; eapply Vfuel_val|].
   simpl. eapply FuelE_frame_mono; [exact Hcd|].
   apply (HF N n φ1 Π2 φ2 v2 r tk (rle_refl N) ltac:(lia) eq_refl); [|done|done| |done].
-  - intros o f Ho. eapply fle_trans; [|exact (Hfl o f Ho)]. apply fle_fadd_l'.
+  - intros o f f' Ho Ho'. rewrite Ho in Ho'. injection Ho' as <-. apply fsub_le.
   - eapply Vfuel_down; [|exact HV2]; lia.
 Qed.
 
@@ -325,21 +326,21 @@ Proof.
   intros H. simpl in H. pose proof (div2_bounds tk). pose proof (div2_bounds (S tk)). split; [lia|]. exists b. split; [done|lia].
 Qed.
 
-Lemma spawn_redex N n ub lb c' t' h a Π φ tk d r v :
+Lemma spawn_redex N n ub lb c' t' a Π φ tk d r v :
   fle (Some 1) a → meets (tspawn (tapp t' 0) tid) r tk →
-  v ∈ FV^N _ n⟦RTy (TLolli ub lb c' t' h TUnit TUnit a)⟧(Π, φ) →
+  v ∈ FV^N _ n⟦RTy (TLolli ub lb c' t' TUnit TUnit a)⟧(Π, φ) →
   ESpawn v ∈ F^N _ n⟦RTy TUnit ▷ d ; r⟧(Π, φ, tk).
 Proof.
   intros Ha Hm HV. destruct (spawn_split_tid _ _ _ Hm) as (Hpar & b & Hb & Hch).
   destruct n as [|n]; [apply FuelE_0|].
   eapply FuelE_op; [exact HV|]. intros N' v' Π' φ' HN HV' Hv' α e' Hst.
-  destruct (Vfuel_lolli_inv _ _ _ _ _ _ _ _ _ _ _ _ _ HV') as (e & -> & Hfe & Hd & Hfl & HF).
+  destruct (Vfuel_lolli_inv _ _ _ _ _ _ _ _ _ _ _ _ HV') as (e & -> & Hfe & Hd & Hfl & HF).
   op_step Hst. inversion Hst; subst. cbn [Fobl]. unfold f_spawn. simpl fends. rewrite Hfe.
-  assert (∀ o f, φ' !! o = Some f → fle (Some 1) f) as H1.
-  { intros o f Ho. eapply fle_trans; [|exact (Hfl o f Ho)]. eapply fle_trans; [exact Ha|apply fle_fadd_r']. }
+  assert (∀ o f, φ' !! o = Some f → ¬ idle_at Π' o → fle (Some 1) f) as H1.
+  { intros o f Ho Hi. eapply fle_trans; [exact Ha|exact (Hfl o f Ho Hi)]. }
   split_and!.
   - by rewrite Hd.
-  - intros o f _ Ho _. by apply (H1 o f).
+  - intros o f _ Ho Hi. by apply (H1 o f).
   - rewrite mres_self. unfold fhand. rewrite Hd, mres_self.
     destruct n as [|n]; [apply FuelE_0|].
     apply (FuelE_beta _ _ _ _ _ _ _ _ [] _ (subst1 EUnit e)); [constructor|by apply t_act_app|]. simpl.
@@ -347,8 +348,8 @@ Proof.
     eapply FuelE_thread; [constructor|].
     apply (HF N' n (ftick <$> φ') ∅ ∅ EUnit 0 (Nat.div2 (S tk)) (rle_refl _) ltac:(lia));
       [by rewrite dom_fmap_L| |apply map_disjoint_empty_r|apply map_disjoint_empty_r|apply Vfuel_unit|].
-    + intros o f Ho. apply lookup_fmap_Some in Ho as (f0 & <- & Ho). specialize (Hfl o f0 Ho).
-      destruct h, a, f0; simpl in *; lia.
+    + intros o f f' Ho Ho'. rewrite lookup_fmap, Ho in Ho'. injection Ho' as <-.
+      unfold ftick. destruct a as [[|a']|], f as [f0|]; simpl in *; lia.
     + unfold meets. rewrite Hb. done.
   - rewrite mrem_self, Hd, mrem_self. apply FuelE_val; [done|done|apply Vfuel_unit].
 Qed.

@@ -169,7 +169,7 @@ Section body.
   Lemma ctl_self Δ F S1 S2 :
     Δ !! 8 = Some (Some (ctl_box S1 S2)) → (∀ y o, y ≠ 8 → Δ !! y = Some o → spare o) →
     typed W (Some 3) ∅ Γc Δ F (EForce (Var 8))
-      (TLolli (Some (pvar 2)) None None tz (Some 0) (TProd (TProd (TSess S1 (sh 1 (pvar 0)) (Some 1)) (TSess S2 (sh 1 (pvar 1)) (Some 2)))
+      (TLolli (Some (pvar 2)) None None tz (TProd (TProd (TSess S1 (sh 1 (pvar 0)) (Some 1)) (TSess S2 (sh 1 (pvar 1)) (Some 2)))
                 (TSess SSkip (pvar 3) (Some 0))) TUnit None) (fadd (Some 0) (Some 0)) (tseq tid tid).
   Proof.
     intros H8 Hs. eapply (lbox_force_eq _ _ _ _ _ _ 4 ctl_C (Some (pvar 2)) (ctl_T S1 S2) TUnit

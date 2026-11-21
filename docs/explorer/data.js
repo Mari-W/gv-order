@@ -345,7 +345,7 @@ window.MAP = {
      "variants": {
       "df": "\\begin{array}{rl} T, U ::= & \\htmlData{k=ty.unit}{\\ast} \\mid \\htmlData{k=ty.arrow}{T \\multimap^{\\htmlData{k=ty.arrow.ub}{u}}_{\\htmlData{k=ty.arrow.lb}{l}} U} \\mid \\htmlData{k=ty.prod}{T \\otimes U} \\mid \\htmlData{k=ty.sum}{T \\oplus U} \\mid \\htmlData{k=ty.sess}{S@x} \\\\ \\mid & \\htmlData{k=ty.box}{\\Box(\\forall \\htmlData{k=pt.var}{\\bar\\iota}\\, \\htmlData{k=ty.box.svars}{\\bar\\alpha}.\\ \\htmlData{k=ty.box.constraint}{C}.\\ \\ast \\multimap^{u} U)} \\mid \\htmlData{k=ty.ex}{\\exists^{\\htmlData{k=ty.ex.lb}{l}} \\bar\\iota.\\ C.\\ T} \\end{array}"
      },
-     "caption": "$S@x$ is an end with session type $S$ at the point $x$. An arrow has an upper point $u$ and a lower bound $l$, and a box quantifies over points and session types under a constraint $C$. \\annp{Credits $a$ appear on ends and on closures, the two kinds of value that hold ends themselves. \\annp{The credit of an end is a lower bound on its counter.} \\annp{The credit of a closure is a lower bound on its captured counters above the floor $h$.}}",
+     "caption": "$S@x$ is an end with session type $S$ at the point $x$. An arrow has an upper point $u$ and a lower bound $l$, and a box quantifies over points and session types under a constraint $C$. \\annp{Credits $a$ appear on ends and on closures, the two kinds of value that hold ends themselves. \\annp{The credit of an end is a lower bound on its counter.} \\annp{The credit of a closure is a lower bound on its captured counters and bounds what they lose before a call.}}",
      "modes": [
       "df",
       "lf"
@@ -356,8 +356,7 @@ window.MAP = {
        "t-judgment",
        "v-rel"
       ]
-     },
-     "planned": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
+     }
     },
     {
      "id": "ty-session",
@@ -433,7 +432,7 @@ window.MAP = {
        "r-ex"
       ]
      },
-     "planned": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
+     "planned": "Generalized arrows (upper point ⊤, lower point ⊥) are planned (docs/redesign/pending.md, entry 12). The Rocq still has E-SpawnLam and V-Thunk. Per-end capture is in the Rocq."
     },
     {
      "id": "ty-payload",
@@ -461,7 +460,7 @@ window.MAP = {
      ],
      "rocq": "types/Costs.v: fuel; types/Costs.v: tix, tapp, tid, meets; types/Costs.v: tlink, tspawn, tseq, tok; types/Types.v: ty_df",
      "tex": "\\begin{array}{c}\\htmlData{k=ann.fuel}{a, c, h, N \\in \\mathbb{N} \\cup \\{\\infty\\} \\qquad \\infty - c = \\infty}\\\\[3ex]\\begin{array}{l}\n\\htmlData{k=ann.tix}{\\vartheta = (s, b) \\qquad \\vartheta(r) = 2^{s}\\, r + b} \\qquad \\htmlData{k=ann.tid}{\\hat 1 = (0, 0),\\ \\hat 1(r) = r} \\\\\n\\htmlData{k=ann.meets}{\\vartheta(r) \\leq tk} \\quad tk \\in \\mathbb{N}\n\\end{array}\\\\[3ex]\\begin{array}{l}\n\\htmlData{k=ann.tlink}{\\mathsf{tlink}\\,(s, b) = (s, b + 1)} \\qquad \\htmlData{k=ann.tseq}{(\\vartheta_1 \\circ \\vartheta_2)(r) = \\vartheta_1(\\vartheta_2(r))} \\\\\n\\htmlData{k=ann.tspawn}{\\mathsf{tspawn}\\,b_c\\,(s, b) = (s + 1, \\max(2b, 2b_c - 1))} \\qquad \\htmlData{k=ann.tok}{\\mathsf{tok}\\,(s_1, b_1)\\,(s_2, b_2) \\iff b_2 = 0 \\lor s_1 < \\infty \\lor b_1 = \\infty}\n\\end{array}\\\\[3ex]\\htmlData{k=ann.tydf}{\\mathsf{ty\\_df}:\\quad a = c = h = N = \\infty \\qquad \\vartheta = (\\infty, \\infty)}\\end{array}",
-     "caption": "Credits $a$, costs $c$, floors $h$ and the counter bound $N$ are numbers or $\\infty$. A term that must keep $r$ link tickets needs $\\vartheta(r)$ tickets when it starts, and $tk$ tickets suffice when $\\vartheta(r) \\leq tk$. A link adds one to the need, a spawn doubles the rest, and sequencing composes needs. With every annotation at $\\infty$, written $\\mathsf{ty\\_df}$, lock-free typing is deadlock-free typing.",
+     "caption": "Credits $a$, costs $c$ and the counter bound $N$ are numbers or $\\infty$. A term that must keep $r$ link tickets needs $\\vartheta(r)$ tickets when it starts, and $tk$ tickets suffice when $\\vartheta(r) \\leq tk$. A link adds one to the need, a spawn doubles the rest, and sequencing composes needs. With every annotation at $\\infty$, written $\\mathsf{ty\\_df}$, lock-free typing is deadlock-free typing.",
      "about": {
       "why": "These are the numbers lock-free typing adds to types and judgments. At $\\infty$ each premise about them holds.",
       "used": [
@@ -583,7 +582,7 @@ window.MAP = {
     {
      "id": "t-lf-credits",
      "title": "Credits",
-     "rocq": "types/Types.v: TSess, TLolli; static/Contexts.v: tage, tcap; static/Typing.v: e_send, e_spawn_lam, e_spawn",
+     "rocq": "types/Types.v: TSess, TLolli; static/Contexts.v: tage, lage, thage; static/Typing.v: e_abs, e_send, e_spawn_lam, e_spawn",
      "modes": [
       "lf"
      ],
@@ -599,8 +598,7 @@ window.MAP = {
        "r-threads",
        "fv"
       ]
-     },
-     "planned": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
+     }
     },
     {
      "id": "t-lf-tickets",
@@ -718,7 +716,7 @@ window.MAP = {
        "r-ex"
       ]
      },
-     "planned": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
+     "planned": "Generalized arrows (upper point ⊤, lower point ⊥) are planned (docs/redesign/pending.md, entry 12). The Rocq still has E-SpawnLam and V-Thunk. Per-end capture is in the Rocq."
     },
     {
      "id": "t-agecap",
@@ -728,7 +726,7 @@ window.MAP = {
      ],
      "rocq": "static/Contexts.v: tage, lage, thage, types/Types.v: idle",
      "tex": "\\begin{array}{c}\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=age.free}{\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T}\\end{array}}{T - c = T}\\;\\textsf{Age-Free} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=age.credit}{c \\leq a}\\end{array}}{(S@x)\\annot{^{a}} - c = (S@x)^{a - c}}\\;\\textsf{Age-Credit} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=age.idle}{\\htmlData{k=fu.idle}{\\mathsf{idle}}\\,S}\\end{array}}{(S@x)\\annot{^{a}} - c = (S@x)^{\\max(a - c, 0)}}\\;\\textsf{Age-Idle} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=age.credit}{c \\leq a}\\end{array}}{(T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} U)\\annot{^{a}} - c = (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} U)^{a - c}}\\;\\textsf{Age-Arr} \\\\[2ex] \\htmlData{k=age.agg}{(T_1 \\otimes T_2) - c = (T_1 - c) \\otimes (T_2 - c) \\qquad (T_1 \\oplus T_2) - c = (T_1 - c) \\oplus (T_2 - c) \\qquad (\\exists^{l}\\bar\\iota.\\,C.\\,T) - c = \\exists^{l}\\bar\\iota.\\,C.\\,(T - c)}\\end{array}\\end{array}",
-     "caption": "$T - c$ lowers the credits of the ends and closures in $T$ by $c$. It requires $c \\leq a$ for ends that are not idle and for closures, and leaves $\\mathsf{tfree}$ types unchanged. A captured end needs credit $h + a$, and the body of the closure sees it at credit $h$.",
+     "caption": "$T - c$ lowers the credits of the ends and closures in $T$ by $c$. It requires $c \\leq a$ for ends that are not idle and for closures, and leaves $\\mathsf{tfree}$ types unchanged. A closure at credit $a$ captures its context aged by $a$, so its body sees each captured end at its own credit minus $a$.",
      "about": {
       "why": "An action of the thread postpones the ends the thread holds by one step. Aging records this on the types of held values, and capture records it for the ends a closure takes along.",
       "used": [
@@ -736,8 +734,7 @@ window.MAP = {
        "r-fun",
        "r-data"
       ]
-     },
-     "planned": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
+     }
     },
     {
      "id": "r-base",
@@ -775,7 +772,7 @@ window.MAP = {
        "th-terms"
       ]
      },
-     "planned": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
+     "planned": "Generalized arrows (upper point ⊤, lower point ⊥) are planned (docs/redesign/pending.md, entry 12). The Rocq still has E-SpawnLam and V-Thunk. Per-end capture is in the Rocq."
     },
     {
      "id": "r-data",
@@ -886,7 +883,7 @@ window.MAP = {
        "e-obl"
       ]
      },
-     "planned": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
+     "planned": "Generalized arrows (upper point ⊤, lower point ⊥) are planned (docs/redesign/pending.md, entry 12). The Rocq still has E-SpawnLam and V-Thunk. Per-end capture is in the Rocq."
     },
     {
      "id": "r-new",
@@ -916,15 +913,14 @@ window.MAP = {
      ],
      "rocq": "static/Contexts.v: tsub, static/Typing.v: e_sub; static/Conservativity.v: d_conv; static/Typing.v: e_sub; static/Conservativity.v: d_conv; static/Weakening.v: e_weak, e_contract, d_weak, d_contract, typed_rename",
      "tex": "\\begin{array}{c}\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-sess}{S \\htmlData{k=sty.sequiv}{\\simeq} S'}\\quad \\annot{\\htmlData{k=tp.sub-credit}{a' \\leq a}}\\end{array}}{\\htmlData{k=sub.tsub}{(S@x)\\annot{^{a}} \\leq (S'@x)\\annot{^{a'}}}}\\;\\textsf{Sub-Sess} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}\\quad \\annot{\\htmlData{k=tp.sub-credit}{a' \\leq a}} \\\\ \\htmlData{k=tp.sub-var}{\\htmlData{k=sub.tsub}{T_1' \\leq T_1} \\quad \\htmlData{k=sub.tsub}{U \\leq U'}}\\end{array}}{(T_1 \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}[\\varepsilon]\\,U)\\annot{^{a}} \\leq (T_1' \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}[\\varepsilon']\\,U')\\annot{^{a'}}}\\;\\textsf{Sub-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}\\quad \\htmlData{k=tp.sub-teq}{U \\equiv U'}\\end{array}}{\\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}[\\varepsilon]\\,U) \\leq \\Box(\\ldots[\\varepsilon']\\,U')}\\;\\textsf{Sub-Box} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-ex}{\\mathsf{facts}\\,C' \\subseteq \\mathsf{facts}\\,C}\\quad \\htmlData{k=tp.sub-teq}{T \\equiv T'}\\end{array}}{\\htmlData{k=sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-agg}{\\htmlData{k=sub.tsub}{T_1 \\leq T_1'} \\quad \\htmlData{k=sub.tsub}{T_2 \\leq T_2'}}\\end{array}}{T_1 \\otimes T_2 \\leq T_1' \\otimes T_2' \\qquad T_1 \\oplus T_2 \\leq T_1' \\oplus T_2'}\\;\\textsf{Sub-Prod, Sub-Sum}\\end{array}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\quad \\htmlData{k=sub.tsub}{T \\leq T'}\\annraw{\\quad }\\annot{\\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T'\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon'}}\\;\\textsf{E-Sub}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\quad \\Gamma ; \\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,U}\\quad \\Gamma ; \\Delta, U, U \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta, U \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e[1 \\mapsto 0] : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Contract}\\end{array}\\end{array}",
-     "caption": "Subtyping is $\\approx$ on session types, and an existential may drop facts. \\annp{Credits may decrease, and costs, ticket needs and floors may increase.} Weakening and contraction are admissible, because they are renamings of variables.",
+     "caption": "Subtyping is $\\approx$ on session types, and an existential may drop facts. \\annp{Credits may decrease, and costs and ticket needs may increase.} Weakening and contraction are admissible, because they are renamings of variables.",
      "variants": {
       "df": "\\begin{array}{c}\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-sess}{S \\htmlData{k=sty.seqv}{\\approx} S'}\\end{array}}{\\htmlData{k=sub.tsub}{S@x \\leq S'@x}}\\;\\textsf{Sub-Sess} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-ex}{\\mathsf{facts}\\,C' \\subseteq \\mathsf{facts}\\,C}\\quad \\htmlData{k=tp.sub-teq}{T \\equiv T'}\\end{array}}{\\htmlData{k=sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-agg}{\\htmlData{k=sub.tsub}{T_1 \\leq T_1'} \\quad \\htmlData{k=sub.tsub}{T_2 \\leq T_2'}}\\end{array}}{T_1 \\otimes T_2 \\leq T_1' \\otimes T_2' \\qquad T_1 \\oplus T_2 \\leq T_1' \\oplus T_2'}\\;\\textsf{Sub-Prod, Sub-Sum} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-var}{\\htmlData{k=sub.tsub}{T_1' \\leq T_1} \\quad \\htmlData{k=sub.tsub}{U \\leq U'}}\\end{array}}{T_1 \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U \\leq T_1' \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U'}\\;\\textsf{Sub-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-teq}{U \\equiv U'}\\end{array}}{\\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\leq \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U')}\\;\\textsf{Sub-Box}\\end{array}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\quad \\htmlData{k=sub.tsub}{T \\leq T'}\\annraw{\\quad }\\annot{\\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T'\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon'}}\\;\\textsf{E-Sub}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\quad \\Gamma ; \\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,U}\\quad \\Gamma ; \\Delta, U, U \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta, U \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e[1 \\mapsto 0] : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Contract}\\end{array}\\end{array}"
      },
      "about": {
       "why": "A value may forget facts it does not need. Admissible weakening and contraction keep the rule set free of structural rules.",
       "used": []
-     },
-     "planned": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
+     }
     },
     {
      "id": "p-typing",
@@ -1030,7 +1026,7 @@ window.MAP = {
        "r-ex"
       ]
      },
-     "planned": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
+     "planned": "Generalized arrows (upper point ⊤, lower point ⊥) are planned (docs/redesign/pending.md, entry 12). The Rocq still has E-SpawnLam and V-Thunk. Per-end capture is in the Rocq."
     },
     {
      "id": "e-rel",
@@ -1068,7 +1064,7 @@ window.MAP = {
        "e-rel"
       ]
      },
-     "planned": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field. Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
+     "planned": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field. Generalized arrows (upper point ⊤, lower point ⊥) are planned (docs/redesign/pending.md, entry 12). The Rocq still has E-SpawnLam and V-Thunk. Per-end capture is in the Rocq."
     },
     {
      "id": "rd",
@@ -1185,15 +1181,14 @@ window.MAP = {
       "lf"
      ],
      "tex": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}S' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} S\\quad \\htmlData{k=FV-Sess.counter}{a \\leq f}\\end{array}}{\\htmlData{k=FV-Sess}{o \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\{o \\mapsto S'^{f}\\} \\vdash (S@x)\\annot{^{a}} \\rrbracket}}}\\;\\textsf{FV-Sess} \\qquad\n\\dfrac{\\begin{array}{c}\\Phi = \\varnothing\\end{array}}{\\htmlData{k=FV-Thread}{v \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\Phi \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}} \\rrbracket}}}\\;\\textsf{FV-Thread} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=FV-Arrow.exact}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\mathrm{dom}\\,\\Phi}\\quad \\htmlData{k=FV-Arrow.floor}{\\Phi(o) = S^{f} \\land \\neg\\htmlData{k=fu.idle}{\\mathsf{idle}}\\,S \\Rightarrow a \\leq f} \\\\ \\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N,\\ j < n,\\ \\htmlData{k=FV-Arrow.call}{\\Phi' \\geq \\Phi - a},\\ u \\in \\htmlData{k=sr.FV}{FV^{N'}_{j}\\llbracket \\Phi_u \\vdash T \\rrbracket},\\ \\htmlData{k=ann.meets}{\\vartheta(r) \\leq tk} \\\\ \\htmlData{k=FV-Arrow.body}{e[u] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket \\Phi' \\cup \\Phi_u ; tk \\vdash U\\ !\\ (c, r) \\rrbracket}}\\end{array}}{\\htmlData{k=FV-Arrow}{\\lambda e \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\Phi \\vdash (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[(c,\\vartheta)]\\, U)\\annot{^{a}} \\rrbracket}}}\\;\\textsf{FV-Arrow} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=FV-Box.noends}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\varnothing} \\\\ \\forall N' \\mathrel{\\htmlData{k=fu.refill-kripke}{\\sqsupseteq_{\\mathsf{rle}}}} N,\\ j < n,\\ \\bar s \\in \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,N',\\ \\htmlData{k=ann.meets}{\\vartheta(r) \\leq tk} \\\\ \\htmlData{k=FV-Box.body}{e[!e] \\in \\htmlData{k=sr.FE}{F^{N'}_{j}\\llbracket \\varnothing ; tk \\vdash U[\\bar s]\\ !\\ (c, r) \\rrbracket}}\\end{array}}{\\htmlData{k=FV-Box}{!e \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\varnothing \\vdash \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}[(c,\\vartheta)]\\, U) \\rrbracket}}}\\;\\textsf{FV-Box} \\\\[6pt]\n\\htmlData{k=sr.fvagg}{\\langle v_1, v_2\\rangle \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\Phi_1 \\uplus \\Phi_2 \\vdash T_1 \\otimes T_2 \\rrbracket} \\iff v_i \\in \\htmlData{k=sr.FV}{FV^{N}_{n}\\llbracket \\Phi_i \\vdash T_i \\rrbracket}}\n\\end{array}",
-     "caption": "Values with fuel by recursion on the type. The counter of an end is at least its credit. A closure keeps its captured counters at least at the floor $h$ plus its credit, and its body has fuel at each call. A box holds no end, and its body has fuel at each force.",
+     "caption": "Values with fuel by recursion on the type. The counter of an end is at least its credit. A closure keeps the counters of its captured ends that are not idle at least at its credit $a$. Its body has fuel at each call whose counters are at least the counters at creation minus $a$. A box holds no end, and its body has fuel at each force.",
      "about": {
       "why": "Values with fuel connect credits in types with counters at run time.",
       "used": [
        "fu-obls",
        "th-terms"
       ]
-     },
-     "planned": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
+     }
     },
     {
      "id": "soup",
@@ -3265,7 +3260,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\ast \\multimap \\ast$ is the type of a spawned thunk.",
    "rocq": "types/Types.v: TLolli",
-   "sig": "(T \\multimap^{u}_{l}\\annot{[c ; \\vartheta ; h]}\\,U)\\annot{^{a}} \\in \\mathsf{Ty}",
+   "sig": "(T \\multimap^{u}_{l}\\annot{[c ; \\vartheta]}\\,U)\\annot{^{a}} \\in \\mathsf{Ty}",
    "args": [
     {
      "name": "T",
@@ -3277,7 +3272,7 @@ window.MAP = {
     },
     {
      "name": "a",
-     "meaning": "The credit of the captured ends above the floor $h$.",
+     "meaning": "The credit of the closure, a lower bound on its captured counters and what they lose before a call.",
      "ann": true
     },
     {
@@ -3295,11 +3290,6 @@ window.MAP = {
     {
      "name": "\\vartheta",
      "meaning": "A ticket need $(s, b)$ with $s, b \\in \\mathbb{N} \\cup \\{\\infty\\}$, the function $r \\mapsto 2^{s} r + b$ from tickets left to tickets needed.",
-     "ann": true
-    },
-    {
-     "name": "h",
-     "meaning": "The floor of the captured ends.",
      "ann": true
     }
    ]
@@ -3375,21 +3365,6 @@ window.MAP = {
     }
    ]
   },
-  "ty.arrow.floor": {
-   "title": "Floor $h$",
-   "what": "Every captured end must have counter at least $h + a$ when the closure is built, and the body is typed with each captured end at credit $h$.",
-   "why": "The counters of the captured ends at the time of a call are unknown when the body is typed. $h$ is the lower bound it may assume.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "Deadlock-freedom typing has $h = \\infty$.",
-   "rocq": "types/Types.v: TLolli h",
-   "sig": "h \\in \\mathbb{N} \\cup \\{\\infty\\}",
-   "args": [
-    {
-     "name": "h",
-     "meaning": "The credit of each captured end in the typing of the body."
-    }
-   ]
-  },
   "ty.credit": {
    "title": "Credit $a$",
    "what": "$a \\in \\mathbb{N} \\cup \\{\\infty\\}$ on an end type $(S@x)\\annot{^{a}}$ is a lower bound on the counter of that end. On a closure type $(T \\multimap [\\ldots ; h]\\, U)\\annot{^{a}}$ every captured end has counter at least $h + a$.",
@@ -3401,7 +3376,7 @@ window.MAP = {
    "args": [
     {
      "name": "a",
-     "meaning": "A lower bound on the counter of an end, or of the ends a closure captured above its floor."
+     "meaning": "A lower bound on the counter of an end, or of the ends a closure captured."
     }
    ]
   },
@@ -3920,7 +3895,7 @@ window.MAP = {
   },
   "ann.fuel": {
    "title": "Numbers with $\\infty$",
-   "what": "Credits, costs, floors, counters and the counter bound range over $\\mathbb{N} \\cup \\{\\infty\\}$, where $\\infty$ means unbounded and $\\infty - c = \\infty$.",
+   "what": "Credits, costs, counters and the counter bound range over $\\mathbb{N} \\cup \\{\\infty\\}$, where $\\infty$ means unbounded and $\\infty - c = \\infty$.",
    "why": "Deadlock-free typing sets every annotation to $\\infty$. Then a held end remains arbitrarily many actions, and the checks on credits hold.",
    "breaks": "Nothing. It is a definition.",
    "example": "A credit $\\infty$ aged by $3$ stays $\\infty$.",
@@ -4055,7 +4030,7 @@ window.MAP = {
   },
   "ann.tydf": {
    "title": "$\\mathsf{ty\\_df}$",
-   "what": "$\\mathsf{ty\\_df}(T)$ is $T$ with every annotation at its unbounded value. Credits, costs and floors become $\\infty$ and every ticket need becomes $(\\infty, \\infty)$.",
+   "what": "$\\mathsf{ty\\_df}(T)$ is $T$ with every annotation at its unbounded value. Credits and costs become $\\infty$ and every ticket need becomes $(\\infty, \\infty)$.",
    "why": "Deadlock-free typing is the annotated typing at counter bound $N = \\infty$ with these annotations. One set of rules then serves both systems, and every premise about annotations holds at $\\infty$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{ty\\_df}((S@x)^{3}) = (S@x)^{\\infty}$.",
@@ -4421,21 +4396,6 @@ window.MAP = {
     {
      "name": "N",
      "meaning": "the counter bound"
-    }
-   ]
-  },
-  "lfi.floor": {
-   "title": "Floors, credit inside a closure",
-   "what": "A closure $T \\multimap[\\varepsilon ; h]\\, U$ records the floor $h$, the credit its body may assume of every captured end when it is called. At creation each captured end needs $h + a$, the floor plus what the closure itself may lose while it is held.",
-   "why": "Between creating a closure and calling it, the thread holding it may act elsewhere, which lowers the counters of the captured ends. The credit $a$ of the closure absorbs that loss, and $h$ is what remains for the body.",
-   "breaks": "Without the floor the body could not hold a captured end across any action.",
-   "example": "A callback with $h = 1$ and $a = 1$ needs its captured ends at credit $2$.",
-   "rocq": "static/Contexts.v: tcap, thcap",
-   "sig": "T \\multimap[\\varepsilon ; h]\\, U",
-   "args": [
-    {
-     "name": "h",
-     "meaning": "the credit the body may assume of every captured end"
     }
    ]
   },
@@ -5031,70 +4991,6 @@ window.MAP = {
     }
    ]
   },
-  "cap.sess": {
-   "title": "Capturing an end",
-   "what": "$(S@x)\\annot{^{a_0}} \\leadsto_{h,a} (S@x)^{h}$, defined when $h + a \\leq a_0$.",
-   "why": "The closure itself has credit $a$ and ages by up to $a$ before its body runs. The body may assume credit $h$ on the end, so the end needs $h + a$.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$h = 1$ and $a = 1$ need $a_0 \\geq 2$.",
-   "rocq": "static/Contexts.v: cap_sess",
-   "sig": "h + a \\leq a_0 \\Rightarrow (S@x)\\annot{^{a_0}} \\leadsto_{h,a} (S@x)^{h}",
-   "args": [
-    {
-     "name": "h",
-     "meaning": "the floor of the closure, the credit its body may assume of every captured end"
-    },
-    {
-     "name": "a",
-     "meaning": "the credit of the closure",
-     "ann": true
-    },
-    {
-     "name": "a_0",
-     "meaning": "the credit of the captured end",
-     "ann": true
-    }
-   ]
-  },
-  "cap.arr": {
-   "title": "Capturing a closure",
-   "what": "$(T \\multimap[\\varepsilon;h_0] U)\\annot{^{a_0}} \\leadsto_{h,a} (T \\multimap[\\varepsilon;h_0] U)^{h - h_0}$, defined when $h_0 \\leq h$ and $h + a \\leq h_0 + a_0$.",
-   "why": "A captured closure guarantees credit $h_0 + a_0$ on its own ends, and the premise asks this to cover $h + a$. The new credit $h - h_0$ places those ends at exactly the floor $h$ of the outer closure.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "A callback with $h_0 = 1$ and $a_0 = 2$, captured at $h = 2$ and $a = 1$, gets credit $1$.",
-   "rocq": "static/Contexts.v: cap_arr",
-   "sig": "h_0 \\leq h \\land h + a \\leq h_0 + a_0 \\Rightarrow (T \\multimap[\\varepsilon;h_0] U)\\annot{^{a_0}} \\leadsto_{h,a} (T \\multimap[\\varepsilon;h_0] U)^{h - h_0}",
-   "args": [
-    {
-     "name": "h_0",
-     "meaning": "the floor of the captured closure"
-    },
-    {
-     "name": "a_0",
-     "meaning": "its credit",
-     "ann": true
-    },
-    {
-     "name": "h, a",
-     "meaning": "the floor and credit of the capturing closure"
-    }
-   ]
-  },
-  "cap.agg": {
-   "title": "Capture of other types",
-   "what": "Capture goes into the parts of $\\otimes$, $\\oplus$ and $\\exists$ and leaves types with $\\mathsf{tfree}$ unchanged.",
-   "why": "Only ends and closures have credits, so only they are restated.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$((S@x)^{2} \\otimes \\ast) \\leadsto_{1,1} (S@x)^{1} \\otimes \\ast$.",
-   "rocq": "static/Contexts.v: tcap",
-   "sig": "(T_1 \\otimes T_2) \\leadsto_{h,a} (T_1' \\otimes T_2') \\iff T_i \\leadsto_{h,a} T_i'",
-   "args": [
-    {
-     "name": "h, a",
-     "meaning": "the floor and credit of the capturing closure"
-    }
-   ]
-  },
   "sub.tsub": {
    "title": "Subtyping $T \\leq T'$",
    "what": "The least relation closed under Sub-Sess, Sub-Arr, Sub-Box, Sub-Ex and componentwise on $\\otimes$ and $\\oplus$, used by E-Sub.",
@@ -5132,25 +5028,6 @@ window.MAP = {
      "name": "a'",
      "meaning": "the credit in the supertype",
      "ann": true
-    }
-   ]
-  },
-  "tp.sub-floor": {
-   "title": "The wait bound of an arrow",
-   "what": "$h \\leq h'$ and $h' + a' \\leq h + a$ for the floors $h, h'$ and credits $a, a'$ of two arrows.",
-   "why": "The body of a closure may assume that every captured end has credit $h$, and the holding thread guarantees $h + a$ in total. Raising the floor to $h'$ is sound only when the guarantee $h' + a'$ does not exceed the old $h + a$.",
-   "breaks": "Without $h' + a' \\leq h + a$ a closure could claim a floor above the credit its captured ends have.",
-   "example": "$h = 1, a = 1$ converts to $h' = 2, a' = 0$.",
-   "rocq": "static/Contexts.v: tsub",
-   "sig": "h \\leq h' \\land h' + a' \\leq h + a",
-   "args": [
-    {
-     "name": "h, a",
-     "meaning": "floor and credit of the arrow subtype"
-    },
-    {
-     "name": "h', a'",
-     "meaning": "floor and credit of the arrow supertype"
     }
    ]
   },
@@ -5279,9 +5156,9 @@ window.MAP = {
    "title": "Capture as aging",
    "what": "\\annp{The body of a closure\\annp{ at credit $a$} sees $\\Delta - a$, each captured end and closure at its own credit minus $a$.}",
    "why": "The thread holding the closure performs up to $a$ actions before the call. \\annp{The body may therefore assume each captured credit minus $a$.} \\annp{Each end keeps its own credit, so an end at $N$ captured next to an end at $1$ stays at $N - a$.}",
-   "breaks": "\\annp{With one floor for every captured end, an end at $N$ captured next to an end at $1$ drops to $0$.} A child that acts on the second end while it holds the first then has no typing.",
+   "breaks": "\\annp{A single shared credit puts an end at $N$ captured next to an end at $1$ at $0$, and a child that acts on the second end while it holds the first has no typing.}",
    "example": "$a^{+}$\\annp{ at credit $3$} in a closure\\annp{ at credit $1$} is seen\\annp{ at credit $2$}.",
-   "rocq": "not yet in the Rocq (docs/redesign/pending.md, entry 12), today static/Contexts.v: thcap, lcap",
+   "rocq": "static/Typing.v: e_abs; static/Contexts.v: thage, lage",
    "sig": "\\Delta \\leadsto_{h,a} \\Delta^{h}",
    "args": [
     {
@@ -7285,7 +7162,7 @@ window.MAP = {
    "why": "Aging a closure by $c \\leq a$ lowers $a$ and the counters by $c$ together, so the difference stays, and the body was typed at each credit minus $a$.",
    "breaks": "Nothing. It is a definition.",
    "example": "A closure at credit $1$ created with counter $3$ on $o$ is called with counter $2$ or more on $o$.",
-   "rocq": "not yet in the Rocq (docs/redesign/pending.md, entry 12)",
+   "rocq": "fuel/Fuel.v: Vty TLolli; cost/CostRules.v: cle_fminus, cost_e_abs",
    "sig": "\\forall o.\\ \\Phi(o) = S^{f} \\Rightarrow \\Phi'(o) = S^{f'} \\land f' \\geq f - a",
    "args": [
     {
@@ -9799,8 +9676,8 @@ window.MAP = {
   },
   "FV-Arrow": {
    "title": "$FV$ at an arrow",
-   "what": "A closure whose body has fuel for every larger counter bound, lower level, counters at or above the floor and argument in $FV$.",
-   "why": "The clause reads costs, ticket needs, floors and credits, the data typing attaches to arrows.",
+   "what": "A closure whose body has fuel for every larger counter bound, lower level, counters at or above the counters at creation minus its credit and argument in $FV$.",
+   "why": "The clause reads costs, ticket needs and credits, the data typing attaches to arrows.",
    "breaks": "Nothing. It is a definition.",
    "example": "A loop body at cost $\\infty$.",
    "rocq": "fuel/Fuel.v: Vty TLolli",
@@ -9838,7 +9715,7 @@ window.MAP = {
    "why": "The closure's credit $a$ is a lower bound on each captured counter, as the credit of an end is on its own counter.",
    "breaks": "Nothing. It is a definition.",
    "example": "$a = 1$ needs counters $\\geq 1$.",
-   "rocq": "not yet in the Rocq (docs/redesign/pending.md, entry 12), today fuel/Fuel.v: Vty TLolli with the floor h",
+   "rocq": "fuel/Fuel.v: Vty TLolli",
    "sig": "\\Phi(o) = S^{f} \\Rightarrow h + a \\leq f",
    "args": [
     {
@@ -9855,7 +9732,7 @@ window.MAP = {
   "FV-Arrow.body": {
    "title": "Body fuel",
    "what": "$e[u] \\in F^{N'}_j\\llbracket\\Phi' \\cup \\Phi_u ; tk \\vdash U\\ !\\ (c, r)\\rrbracket$ for every $tk$ with $\\vartheta(r) \\leq tk$.",
-   "why": "The caller supplies an argument, counters lowered to the floor by its own actions, and a ticket count covering the arrow's ticket need, and the body guarantees fuel with frame $c$.",
+   "why": "The caller supplies an argument, counters lowered by at most $a$ by its own actions, and a ticket count covering the arrow's ticket need, and the body guarantees fuel with frame $c$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\vartheta(r) \\leq tk$.",
    "rocq": "fuel/Fuel.v: Vty TLolli",

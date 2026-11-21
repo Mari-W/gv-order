@@ -427,6 +427,27 @@ must do, open questions.
     paper). Per-end capture holds and removes the floor h. Capture becomes
     aging by a, FV-Arrow asks `φ′ ≥ φ − a`, Sub-Arr asks `a' ≤ a`. E-SpawnLam
     then differs from E-Abs plus E-Spawn only in the arrow points.
+    Done in the Rocq 2026-11-21 (next run, stage 1). `TLolli` lost the
+    floor h, and `tcap`, `lcap`, `thcap` with their lemmas are gone. E-Abs
+    asks `thage a Θ Θh` and `lage a Δ Δh`. FV-Arrow (fuel/Fuel.v, `Vty`)
+    asks the captured counters of the ends that are not idle at least a,
+    and at a call accepts any counters `f′ ≥ f − a`. Sub-Arr asks
+    `fle a' a`. `Vty_age` carries the call bound through aging by
+    `fsub_age` (types/Costs.v), and `cost_e_abs` builds the body
+    environment from `envf_age` and `envf_mono` over `cle_fminus`. The
+    capture of a closure inside a closure is aging the inner closure, so
+    Cap-Arr went with the rest. Plausibility. Every lock-free and
+    deadlock-free example builds unchanged in shape, the box results of
+    the lock-free examples are closures at credit ∞, which ages a box by
+    `age_free` as before. The forwarder thunk `T_thk` at credit 2 still
+    types. The four programs of rejects.js stay excluded, because
+    `lf_soundness` still builds with no new axiom and these programs are
+    not lock free. The S4.18 counterexample concerns the clause (fuse) of
+    P, which this stage leaves alone, and `fuse_ok` still forbids new
+    pairs of partners outside D. SemBranch, TreeTopo and FlagPair read
+    no arrow credit and build unchanged. The loss
+    example of this entry (A at N and B at 1 captured at a = 1) now keeps
+    A at N − 1, which is `lage 1` on the two entries.
 
 13. **P-Connect compares only the shared roots (2026-11-19, author).**
     Today p_connect asks world_wf W1, world_wf W2, disjoint families and

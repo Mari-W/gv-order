@@ -309,13 +309,6 @@ Proof.
   simpl in *. destruct_and!. by subst.
 Qed.
 
-Lemma thcap_erase σ h a Θ Θ' : thcap h a Θ Θ' → tenv_erase (tenv_pinst σ Θ') = tenv_erase (tenv_pinst σ Θ).
-Proof.
-  intros H. apply map_eq. intros o. specialize (H o). unfold tenv_erase, tenv_pinst. rewrite !lookup_fmap.
-  destruct (Θ !! o) as [[S x a0]|], (Θ' !! o) as [[S' x' a']|]; try done.
-  simpl in *. destruct_and!. by subst.
-Qed.
-
 Lemma lenv_df_pinst_eq σ Δ Δ' : lenv_df Δ' = lenv_df Δ → lenv_df (lenv_pinst σ Δ') = lenv_df (lenv_pinst σ Δ).
 Proof. intros H. by rewrite !lenv_df_pinst, H. Qed.
 
@@ -372,8 +365,8 @@ Section fund.
       [Γ Δ F HΔ
       |Γ Δ F x T HΔ
       |Γ Δ F o S x a HΔ
-      |Θ Θh Γ Δ Δh F e T U ub lb c t h a φ Hφ Hlb Hth Hlc Hb IH
-      |Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 ub lb c t h T U a1 c1 t1 c2 t2 Hsp Hl Hub H1 IH1 Hta Hla H2 IH2 Hc Ht1 Ht2
+      |Θ Θh Γ Δ Δh F e T U ub lb c t a φ Hφ Hlb Hth Hlc Hb IH
+      |Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 ub lb c t T U a1 c1 t1 c2 t2 Hsp Hl Hub H1 IH1 Hta Hla H2 IH2 Hc Ht1 Ht2
       |Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 T1 T1' T2 c1 t1 c2 t2 Hsp Hl H1 IH1 Hta Hla H2 IH2 Hag Hok
       |Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 T c1 t1 c2 t2 Hsp Hl H1 IH1 Hta Hla H2 IH2 Hok
       |Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e1 e2 T1 T2 T c1 t1 c2 t2 Hsp Hl H1 IH1 Hta Hla H2 IH2 Hok
@@ -388,7 +381,7 @@ Section fund.
       |Θ Γ Δ F e S0 x S1 S2 a c0 t0 Hu Hub H IH
       |Θ Γ Δ F e S x a1 a2 c0 t0 H IH Hok
       |Θ Θ' Γ Δ Δ' F e c' t' Hta Hla H IH
-      |Θ Γ Δ F e ub lb c' t' h a c0 t0 H IH Hle Hok
+      |Θ Γ Δ F e ub lb c' t' a c0 t0 H IH Hle Hok
       |Γ Δ F ℓ S HΔ Hℓ
       |Θ Γ Δ F e κf S0 x a S c0 t0 H IH
       |Θ Γ Δ F e T T' c c' t t' H IH Hsub Hc Ht
@@ -412,9 +405,9 @@ Section fund.
         pose proof (IH _ (HGlam _ _ Hgl) W2 σ _ B (wext_trans _ _ _ HW HW2)
                       (hsat_fvar _ _ _ _ _ _ _ Hφ (hsat_mono _ _ _ _ _ HW2 Hs) Hub')) as Hb'.
         rewrite den_nil, den_fresh in Hb'.
-        eapply sem_later_ctx; [exact (thcap_erase _ _ _ _ _ Hth)| |exact Hb'].
+        eapply sem_later_ctx; [exact (thage_erase _ _ _ _ Hth)| |exact Hb'].
         apply (lenv_df_pinst_eq σ (Some T :: Δ) (Some T :: Δh)), lenv_df_cons_eq.
-        exact (lcap_df_eq _ _ _ _ Hlc).
+        exact (lage_df_eq _ _ _ Hlc).
     - (* E-App *)
       destruct (HGapp _ _ _ Hgl) as (L' & Hk & Hg1 & Hg2).
       eapply later_app; [exact Hk|by apply tsplit_pinst|by apply lenv_split_pinst

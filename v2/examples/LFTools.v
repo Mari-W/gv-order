@@ -154,10 +154,10 @@ Lemma e_pair_ W N Γ Δ Δ1 Δ2 Δ2' F e1 e2 T1 T1' T2 c1 t1 c2 t2 :
   typed W N ∅ Γ Δ F (Pair e1 e2) (TProd T1' T2) (fadd c1 c2) (tseq t1 t2).
 Proof. intros. eapply e_pair; eauto using tsplit_empty, thage_empty. Qed.
 
-Lemma e_app_ W N Γ Δ Δ1 Δ2 Δ2' F e1 e2 ub lb c t h T U a1 c1 t1 c2 t2 :
+Lemma e_app_ W N Γ Δ Δ1 Δ2 Δ2' F e1 e2 ub lb c t T U a1 c1 t1 c2 t2 :
   lenv_split Δ Δ1 Δ2 → ub_below_s W Γ ub F →
   typed W N ∅ Γ Δ1 (sf_unionb F (tenv_heads ∅ ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1
-    (TLolli ub lb c t h T U a1) c1 t1 →
+    (TLolli ub lb c t T U a1) c1 t1 →
   lage c1 Δ2 Δ2' →
   typed W N ∅ Γ Δ2' (sf_unionb F (opt_heads lb) false) e2 T c2 t2 →
   fle c2 a1 → tok t2 t → tok t1 (tseq t2 t) →
@@ -232,11 +232,8 @@ Proof.
   destruct s; simpl; lia.
 Qed.
 
-Lemma lcap_nones h a n : lcap h a (nones n) (nones n).
-Proof. induction n; simpl; constructor; done. Qed.
-
 Definition lbox (m : nat) (C : bcs) (ub : option point) (T U : ty) : ty :=
-  TBox m 0 C None (Some 0) tid (TLolli ub None None tz (Some 0) T U None).
+  TBox m 0 C None (Some 0) tid (TLolli ub None None tz T U None).
 
 Lemma lbox_typed W N Γ n F m C ub T U e c t :
   hc_fv Γ = ∅ → pinst_ty (pshift m) (lbox m C ub T U) = lbox m C ub T U →
@@ -251,12 +248,12 @@ Proof.
   intros ss Hk _. destruct ss; [|done]. rewrite sinst_nil.
   rewrite lenv_pinst_cons'. cbn [fmap option_fmap option_map]. fold (lbox m C ub T U).
   rewrite HB, lenv_pinst_nones.
-  eapply e_abs with (φ := 1) (h := Some 0) (a := None) (Θh := ∅).
+  eapply e_abs with (φ := 1) (a := None) (Θh := ∅).
   { unfold hc_fvar. simpl. rewrite HΓ. unfold fhyps_pinst.
     rewrite fmap_empty, insert_empty, dom_singleton_L. set_solver. }
   { apply lb_below_none. spare_tac. }
   { intros o. by rewrite !lookup_empty. }
-  { apply lcap_some; [apply cap_free; constructor|apply lcap_nones]. }
+  { apply lage_some; [apply age_free; constructor|apply lage_nones]. }
   eapply e_sub; [exact He|apply tsub_refl|apply fle_inf|by apply tle_tz].
 Qed.
 
@@ -264,12 +261,12 @@ Lemma lbox_force W N Γ Δ F e m C ub T U xs c0 t0 :
   length xs = m → hold_at W Γ C xs →
   typed W N ∅ Γ Δ F e (lbox m C ub T U) c0 t0 →
   typed W N ∅ Γ Δ F (EForce e)
-    (TLolli (pt_inst (plist xs) <$> ub) None None tz (Some 0) (ty_inst xs T) (ty_inst xs U) None) (fadd c0 (Some 0)) (tseq t0 tid).
+    (TLolli (pt_inst (plist xs) <$> ub) None None tz (ty_inst xs T) (ty_inst xs U) None) (fadd c0 (Some 0)) (tseq t0 tid).
 Proof.
   intros Hm HC He.
-  rewrite <-(sinst_nil (TLolli _ _ _ _ _ _ _ _)).
+  rewrite <-(sinst_nil (TLolli _ _ _ _ _ _ _)).
   eapply (e_force W N ∅ Γ Δ F e m 0 C None (Some 0) tid
-            (TLolli ub None None tz (Some 0) T U None) xs []);
+            (TLolli ub None None tz T U None) xs []);
     first [done | split; [apply Forall_nil|intros _; apply Forall_nil] | left; done].
 Qed.
 
@@ -278,5 +275,5 @@ Lemma lbox_force_eq W N Γ Δ F e m C ub T U xs c0 t0 ub' T' U' :
   length xs = m → hold_at W Γ C xs →
   (pt_inst (plist xs) <$> ub) = ub' → ty_inst xs T = T' → ty_inst xs U = U' →
   typed W N ∅ Γ Δ F e (lbox m C ub T U) c0 t0 →
-  typed W N ∅ Γ Δ F (EForce e) (TLolli ub' None None tz (Some 0) T' U' None) (fadd c0 (Some 0)) (tseq t0 tid).
+  typed W N ∅ Γ Δ F (EForce e) (TLolli ub' None None tz T' U' None) (fadd c0 (Some 0)) (tseq t0 tid).
 Proof. intros ?? <- <- <-. by apply lbox_force. Qed.

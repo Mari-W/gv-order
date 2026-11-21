@@ -118,7 +118,7 @@ Section rules0.
     Vrel κ n W Θ (pinst_ty σ T) v → Vrel κ n W Θ (pinst_ty σ T') v.
   Proof.
     induction 1 as [
-      |ub lb c t h T1 U a c' t' h' T1' U' a' _ _ _ _ _ IH1 _ IH2
+      |ub lb c t T1 U a c' t' T1' U' a' _ _ _ _ IH1 _ IH2
       |T1 U T1' U' _ IH1 _ IH2
       |T1 U T1' U' _ IH1 _ IH2
       |m kk C ub c t U U' c' t' _ _ HU
@@ -587,10 +587,10 @@ Section later.
     - intros f Hf. by apply (wext_laws _ _ HW0').
   Qed.
 
-  Lemma later_abs W Θ Δ L F e T U aU ub lb c t h :
+  Lemma later_abs W Θ Δ L F e T U aU ub lb c t :
     tfacts Θ Δ (Lam e) → lenv_bot Δ = false → lb_le W lb (tenv_heads Θ ∪ lenv_heads Δ) →
     (∀ W1 F', W ⊑ W1 → ub_lt W1 ub F' → sem_later κ W1 Θ (Some T :: Δ) (false .: L) F' e U) →
-    sem_later κ W Θ Δ L F (Lam e) (TLolli ub lb c t h T U aU).
+    sem_later κ W Θ Δ L F (Lam e) (TLolli ub lb c t T U aU).
   Proof.
     intros Htf Hb Hlb Hbody n W' Θ' γ HW Hd HG. apply Vrel_Erel, Vrel_lolli_iff.
     exists (subst (up γ) e). split_and!.
@@ -690,16 +690,16 @@ Section later.
     - by apply later_bind_acts.
   Qed.
 
-  Lemma later_app W Θ Θ1 Θ2 Δ Δ1 Δ2 L L' F e1 e2 ub lb c t h T U aU :
+  Lemma later_app W Θ Θ1 Θ2 Δ Δ1 Δ2 L L' F e1 e2 ub lb c t T U aU :
     cmarks L L' e1 → tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_lt W ub F →
     (∀ B, sem_later κ W Θ1 Δ1 L (F ∪ tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ (if lenv_bot Δ2 then B else ∅)) e1
-            (TLolli ub lb c t h T U aU)) →
+            (TLolli ub lb c t T U aU)) →
     sem_later κ W Θ2 Δ2 L' (F ∪ opt_heads lb) e2 T →
     sem_later κ W Θ Δ L F (App e1 e2) U.
   Proof.
     intros Hk Hs Hl Hub He1 He2.
     eapply (later_bind_gen (λ γ, FAppL (subst γ e2)) W Θ Θ1 Θ2 Δ Δ1 Δ2 L L' F e1 _
-              (TLolli ub lb c t h T U aU) U Hk Hs Hl); [done|done|exact He1|].
+              (TLolli ub lb c t T U aU) U Hk Hs Hl); [done|done|exact He1|].
     intros W' j Θv v Θ2' γ HW Hd2 HG2 Hdv HV. simpl.
     pose proof (Vrel_val κ _ _ _ _ _ HV) as Hvv.
     pose proof HV as (eb & -> & _ & Hlbv & _)%Vrel_lolli_iff.
@@ -712,7 +712,7 @@ Section later.
       + exists l. split; [set_solver|by apply Hlbv].
       + rewrite Hlbv in Hy. set_solver.
     - intros W'' j' Θw w HW' Hj' Hdw Hw. simpl. rewrite map_union_comm by done.
-      apply (Erel_app κ j' W'' Θv Θw ub lb c t h T U aU); [by symmetry| | |done].
+      apply (Erel_app κ j' W'' Θv Θw ub lb c t T U aU); [by symmetry| | |done].
       + eapply ub_lt_mono; [eapply wext_trans; [exact HW|exact HW']|exact Hub].
       + eapply Vrel_down; [exact Hj'|]. by eapply Vrel_mono.
   Qed.
@@ -932,8 +932,8 @@ Section later.
     sem_later κ W Θ Δ L F (ELink e) TUnit.
   Proof. apply later_op. intros W' j Θv v HW Hv. by eapply Erel_link. Qed.
 
-  Lemma later_spawn W Θ Δ L F e ub lb c t h aU :
-    sem_later κ W Θ Δ L F e (TLolli ub lb c t h TUnit TUnit aU) →
+  Lemma later_spawn W Θ Δ L F e ub lb c t aU :
+    sem_later κ W Θ Δ L F e (TLolli ub lb c t TUnit TUnit aU) →
     sem_later κ W Θ Δ L F (ESpawn e) TUnit.
   Proof. apply later_op. intros W' j Θv v HW Hv. by eapply Erel_spawn. Qed.
 

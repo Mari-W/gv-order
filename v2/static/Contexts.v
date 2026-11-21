@@ -11,10 +11,10 @@
 
     Every fact the judgment reads comes from Γ ⊢ x ≺ y ([slt]), the least
     transitive relation over the order of W, the facts of the
-    hypotheses and u ≺ φ. Aging ([tage]), capture ([tcap]) and
-    subtyping ([tsub]) are the cost relations of static/CostTyping.v,
-    restated over types. Credits sit on ends and closures only, so all
-    three recurse through products, sums and existentials. *)
+    hypotheses and u ≺ φ. Aging ([tage]) and subtyping ([tsub]) are the
+    cost relations of static/CostTyping.v, restated over types, and the
+    capture of E-Abs is aging. Credits sit on ends and closures only, so
+    both recurse through products, sums and existentials. *)
 
 From GV Require Export types.Types.
 
@@ -194,8 +194,8 @@ Inductive tage (c : fuel) : ty → ty → Prop :=
   | age_free T : tfree T → tage c T T
   | age_sess S x a : fle c a → tage c (TSess S x a) (TSess S x (fsub a c))
   | age_idle S x a : idle S → tage c (TSess S x a) (TSess S x (fsub a c))
-  | age_arr ub lb c0 t h T U a : fle c a →
-      tage c (TLolli ub lb c0 t h T U a) (TLolli ub lb c0 t h T U (fsub a c))
+  | age_arr ub lb c0 t T U a : fle c a →
+      tage c (TLolli ub lb c0 t T U a) (TLolli ub lb c0 t T U (fsub a c))
   | age_prod T1 T2 T1' T2' : tage c T1 T1' → tage c T2 T2' → tage c (TProd T1 T2) (TProd T1' T2')
   | age_sum T1 T2 T1' T2' : tage c T1 T1' → tage c T2 T2' → tage c (TSum T1 T2) (TSum T1' T2')
   | age_ex lb n C T T' : tage c T T' → tage c (TEx lb n C T) (TEx lb n C T').
@@ -213,46 +213,27 @@ Definition thage (c : fuel) (Θ Θ' : tenv) : Prop :=
        | _, _ => False
        end.
 
-(** ** Capture at E-Abs
+(** ** Capture at E-Abs is aging
 
-    [tcap h a T T']: the ends of T have current lower bound at least
-    h + a and T' restates them with lower bound exactly h. *)
-Inductive tcap (h a : fuel) : ty → ty → Prop :=
-  | cap_free T : tfree T → tcap h a T T
-  | cap_sess S x a0 : fle (fadd h a) a0 → tcap h a (TSess S x a0) (TSess S x h)
-  | cap_arr ub lb c t h0 T U a0 :
-      fle h0 h → fle (fadd h a) (fadd h0 a0) →
-      tcap h a (TLolli ub lb c t h0 T U a0) (TLolli ub lb c t h0 T U (fsub h h0))
-  | cap_prod T1 T2 T1' T2' : tcap h a T1 T1' → tcap h a T2 T2' → tcap h a (TProd T1 T2) (TProd T1' T2')
-  | cap_sum T1 T2 T1' T2' : tcap h a T1 T1' → tcap h a T2 T2' → tcap h a (TSum T1 T2) (TSum T1' T2')
-  | cap_ex lb n C T T' : tcap h a T T' → tcap h a (TEx lb n C T) (TEx lb n C T').
-
-Inductive lcap (h a : fuel) : lenv → lenv → Prop :=
-  | lcap_nil : lcap h a [] []
-  | lcap_none Δ Δ' : lcap h a Δ Δ' → lcap h a (None :: Δ) (None :: Δ')
-  | lcap_some σ σ' Δ Δ' : tcap h a σ σ' → lcap h a Δ Δ' → lcap h a (Some σ :: Δ) (Some σ' :: Δ').
-
-Definition thcap (h a : fuel) (Θ Θ' : tenv) : Prop :=
-  ∀ o, match Θ !! o, Θ' !! o with
-       | None, None => True
-       | Some e, Some e' => te_sty e' = te_sty e ∧ te_pt e' = te_pt e ∧
-                            fle (fadd h a) (te_cr e) ∧ te_cr e' = h
-       | _, _ => False
-       end.
+    A closure at credit a captures its context aged by a, each end at its
+    own credit minus a (decision of 2026-11-20, per-end capture,
+    docs/redesign/check-per-end-capture.md). E-Abs reads [thage] and
+    [lage] at a, and no floor is left. *)
 
 (** ** Subtyping
 
-    Costs, transformers and floors are covariant, arguments
-    contravariant, results covariant, sessions up to ≈. A credit may
-    fall. At an arrow the current lower bound h + a may not rise. A
+    Costs and transformers are covariant, arguments contravariant,
+    results covariant, sessions up to ≈. A credit may fall. At an arrow
+    the credit a bounds what the captured counters may lose before a
+    call, so it may fall as well (a' ≤ a). A
     product, a sum and an existential compare their parts. An
     existential may drop facts of its constraint. *)
 Inductive tsub : ty → ty → Prop :=
   | sub_unit : tsub TUnit TUnit
-  | sub_arr ub lb c t h T1 U a c' t' h' T1' U' a' :
-      fle c c' → tle t t' → fle h h' → fle (fadd h' a') (fadd h a) →
+  | sub_arr ub lb c t T1 U a c' t' T1' U' a' :
+      fle c c' → tle t t' → fle a' a →
       tsub T1' T1 → tsub U U' →
-      tsub (TLolli ub lb c t h T1 U a) (TLolli ub lb c' t' h' T1' U' a')
+      tsub (TLolli ub lb c t T1 U a) (TLolli ub lb c' t' T1' U' a')
   | sub_prod T1 U T1' U' : tsub T1 T1' → tsub U U' → tsub (TProd T1 U) (TProd T1' U')
   | sub_sum T1 U T1' U' : tsub T1 T1' → tsub U U' → tsub (TSum T1 U) (TSum T1' U')
   | sub_box n k C ub c t U U' c' t' :

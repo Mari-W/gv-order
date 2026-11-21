@@ -87,7 +87,7 @@ Section body.
     rreach (pvar 0) (pvar 1) X1 Y1 →
     typed W (Some 4) ∅ Γb Δ F e rgl_ty c0 t0 →
     typed W (Some 4) ∅ Γb Δ F (EForce e)
-      (TLolli (Some (sh 1 X1)) None None tz (Some 0) (TProd (TSess Schl X1 (Some 0)) (TSess (dual Schl) Y1 (Some 1))) TUnit None) (fadd c0 (Some 0)) (tseq t0 tid).
+      (TLolli (Some (sh 1 X1)) None None tz (TProd (TSess Schl X1 (Some 0)) (TSess (dual Schl) Y1 (Some 1))) TUnit None) (fadd c0 (Some 0)) (tseq t0 tid).
   Proof.
     intros HR H.
     eapply (lbox_force_eq _ _ _ _ _ _ 2 rg_C (Some (sh 1 (pvar 0))) rgl_T TUnit (X1 :: Y1 :: []));

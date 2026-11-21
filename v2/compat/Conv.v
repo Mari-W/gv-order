@@ -226,7 +226,7 @@ Section rel.
     VC n T.
   Proof.
     intros IHl IHt IHe W Θ Θ' v HΘ.
-    destruct T as [|ub lb c t hh T1 U a0|T1 U|T1 U|m kk C ub c t U|s x a0|lb m C T1].
+    destruct T as [|ub lb c t T1 U a0|T1 U|T1 U|m kk C ub c t U|s x a0|lb m C T1].
     - intros [-> ->]%Vrel_unit_iff. apply Vrel_unit_iff. by rewrite (senv_eqv_empty _ HΘ).
     - intros (e & -> & Hfe & Hlb & H)%Vrel_lolli_iff. apply Vrel_lolli_iff.
       exists e. split_and!; [done|by rewrite <-(senv_eqv_dom _ _ HΘ)|by rewrite <-(senv_eqv_heads _ _ HΘ)|].

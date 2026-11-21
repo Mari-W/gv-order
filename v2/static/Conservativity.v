@@ -14,9 +14,9 @@
 
     Two choices of the merged judgment make the lifting go through, and
     they are deviations from the text of §2.17 (docs/redesign/progress.md).
-    The floor h of an arrow ranges over ℕ ∪ {∞} and the lifting takes
-    h = ∞, because E-Abs restates a captured end at credit h and an end
-    at credit 0 cannot be aged by ∞ inside the body. And at N = ∞ box
+    The credit a of an arrow ranges over ℕ ∪ {∞} and the lifting takes
+    a = ∞, because E-Abs ages the captured context by a, which every
+    credit ∞ of N = ∞ covers. And at N = ∞ box
     bodies and forces meet only session instances with the annotations
     of N = ∞ ([sinsts]). *)
 
@@ -103,13 +103,13 @@ Qed.
 Lemma lenv_df_idem Δ : lenv_df (lenv_df Δ) = lenv_df Δ.
 Proof. induction Δ as [|[T|] Δ IH]; simpl; [done| |by f_equal]. by rewrite ty_df_idem, IH. Qed.
 
-(** ** Aging and capture of contexts with the annotations of N = ∞ *)
+(** ** Aging of contexts with the annotations of N = ∞ *)
 
 Lemma tage_df c T : tage c (ty_df T) (ty_df T).
 Proof.
   induction T; simpl.
   - apply age_free. constructor.
-  - exact (age_arr c _ _ _ _ _ _ _ None (fle_inf c)).
+  - exact (age_arr c _ _ _ _ _ _ None (fle_inf c)).
   - by apply age_prod.
   - by apply age_sum.
   - apply age_free. constructor.
@@ -124,27 +124,6 @@ Lemma thage_df c Θ : thage c (tenv_df Θ) (tenv_df Θ).
 Proof.
   intros o. unfold tenv_df. rewrite lookup_fmap. destruct (Θ !! o); simpl; [|done].
   split_and!; try done. apply fle_inf.
-Qed.
-
-Lemma tcap_df T : tcap None None (ty_df T) (ty_df T).
-Proof.
-  induction T; simpl.
-  - apply cap_free. constructor.
-  - exact (cap_arr None None _ _ _ _ None _ _ None I I).
-  - by apply cap_prod.
-  - by apply cap_sum.
-  - apply cap_free. constructor.
-  - exact (cap_sess None None _ _ None I).
-  - by apply cap_ex.
-Qed.
-
-Lemma lcap_df Δ : lcap None None (lenv_df Δ) (lenv_df Δ).
-Proof. induction Δ as [|[T|] Δ IH]; simpl; constructor; auto using tcap_df. Qed.
-
-Lemma thcap_df Θ : thcap None None (tenv_df Θ) (tenv_df Θ).
-Proof.
-  intros o. unfold tenv_df. rewrite lookup_fmap. destruct (Θ !! o); simpl; [|done].
-  split_and!; done.
 Qed.
 
 (** ** Subtyping *)
@@ -234,22 +213,22 @@ Proof. intros HΔ. dfr. eapply e_var. by eapply lenv_only_df. Qed.
 Lemma d_chan W Γ Δ F o S x a a' : lenv_unl Δ → dftyped W {[o := TE S x a]} Γ Δ F (Chan o) (TSess S x a').
 Proof. intros HΔ. dfr. by eapply e_chan, lenv_unl_df. Qed.
 
-Lemma d_abs W Θ Γ Δ F e T U ub lb c t h a φ :
+Lemma d_abs W Θ Γ Δ F e T U ub lb c t a φ :
   φ ∉ dom (hc_fv Γ) →
   lbx_below_h W Γ (lbound_of lb) (tenv_heads Θ ∪ lenv_heads Δ) (lenv_bot Δ) →
   dftyped W Θ (hc_fvar φ ub Γ) (Some T :: Δ) (∅, Some (FVar φ)) e U →
-  dftyped W Θ Γ Δ F (Lam e) (TLolli ub lb c t h T U a).
+  dftyped W Θ Γ Δ F (Lam e) (TLolli ub lb c t T U a).
 Proof.
   intros Hφ Hlb Hb. dfr.
-  eapply (e_abs _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ None None φ); [done| |apply thcap_df|apply lcap_df|].
+  eapply (e_abs _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ None φ); [done| |apply thage_df|apply lage_df|].
   - by heads_df.
   - exact Hb.
 Qed.
 
-Lemma d_app W Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e1 e2 ub lb c t h T U a :
+Lemma d_app W Θ Θ1 Θ2 Γ Δ Δ1 Δ2 F e1 e2 ub lb c t T U a :
   tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_below_s W Γ ub F →
   dftyped W Θ1 Γ Δ1 (sf_unionb F (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1
-    (TLolli ub lb c t h T U a) →
+    (TLolli ub lb c t T U a) →
   dftyped W Θ2 Γ Δ2 (sf_unionb F (opt_heads lb) false) e2 T →
   dftyped W Θ Γ Δ F (App e1 e2) U.
 Proof.
@@ -405,8 +384,8 @@ Lemma d_spawn_lam W Θ Γ Δ F e :
   dftyped W Θ Γ Δ F (ESpawn (Lam e)) TUnit.
 Proof. intros H. dfr. eapply e_spawn_lam; [apply thage_df|apply lage_df|exact H]. Qed.
 
-Lemma d_spawn W Θ Γ Δ F e ub lb c' t' h a :
-  dftyped W Θ Γ Δ F e (TLolli ub lb c' t' h TUnit TUnit a) →
+Lemma d_spawn W Θ Γ Δ F e ub lb c' t' a :
+  dftyped W Θ Γ Δ F e (TLolli ub lb c' t' TUnit TUnit a) →
   dftyped W Θ Γ Δ F (ESpawn e) TUnit.
 Proof. intros H. dfr. eapply e_spawn; [exact H|done|apply tok_inf]. Qed.
 
@@ -465,32 +444,16 @@ Proof. done. Qed.
 Lemma tage_df_eq c T T' : tage c T T' → ty_df T' = ty_df T.
 Proof. induction 1; simpl in *; congruence. Qed.
 
-Lemma tcap_df_eq h a T T' : tcap h a T T' → ty_df T' = ty_df T.
-Proof. induction 1; simpl in *; congruence. Qed.
-
 Lemma lage_df_eq c Δ Δ' : lage c Δ Δ' → lenv_df Δ' = lenv_df Δ.
 Proof.
   induction 1 as [|? ? _ IH|T T' ? ? Ht _ IH]; simpl; [done|by f_equal|].
   apply tage_df_eq in Ht. rewrite Ht. by f_equal.
 Qed.
 
-Lemma lcap_df_eq h a Δ Δ' : lcap h a Δ Δ' → lenv_df Δ' = lenv_df Δ.
-Proof.
-  induction 1 as [|? ? _ IH|T T' ? ? Ht _ IH]; simpl; [done|by f_equal|].
-  apply tcap_df_eq in Ht. rewrite Ht. by f_equal.
-Qed.
-
 Lemma thage_df_eq c Θ Θ' : thage c Θ Θ' → tenv_df Θ' = tenv_df Θ.
 Proof.
   intros H. apply map_eq. intros o. specialize (H o). unfold tenv_df. rewrite !lookup_fmap.
   destruct (Θ !! o) as [[S x a]|], (Θ' !! o) as [[S' x' a']|]; try done.
-  simpl in *. destruct_and!. subst. done.
-Qed.
-
-Lemma thcap_df_eq h a Θ Θ' : thcap h a Θ Θ' → tenv_df Θ' = tenv_df Θ.
-Proof.
-  intros H. apply map_eq. intros o. specialize (H o). unfold tenv_df. rewrite !lookup_fmap.
-  destruct (Θ !! o) as [[S x a0]|], (Θ' !! o) as [[S' x' a']|]; try done.
   simpl in *. destruct_and!. subst. done.
 Qed.
 
@@ -502,8 +465,6 @@ Local Ltac df_ctx :=
   repeat match goal with
   | Hl : lage _ ?Δ ?Δ', IH : context [lenv_df ?Δ'] |- _ => rewrite (lage_df_eq _ _ _ Hl) in IH
   | Ht : thage _ ?Θ ?Θ', IH : context [tenv_df ?Θ'] |- _ => rewrite (thage_df_eq _ _ _ Ht) in IH
-  | Hl : lcap _ _ ?Δ ?Δ', IH : context [lenv_df ?Δ'] |- _ => rewrite (lcap_df_eq _ _ _ _ Hl) in IH
-  | Ht : thcap _ _ ?Θ ?Θ', IH : context [tenv_df ?Θ'] |- _ => rewrite (thcap_df_eq _ _ _ _ Ht) in IH
   end.
 
 Theorem typed_dftyped W N Θ Γ Δ F e T c t :

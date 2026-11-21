@@ -38,9 +38,11 @@
     FuelE^N holds for every refill N′ ≥ N and is closed under injective
     renamings of ends (a link renames the partner of the removed end in
     another thread). [Vfuel] recurses on the type. A closure at
-    (T ⊸[c ; ϑ ; h] U)^a has captured counters at least h + a,
-    and for every refill N′ ≥ N, lower level, counters at or above the
-    floor h and argument in [Vfuel] at T, its body satisfies [FuelE] at U
+    (T ⊸[c ; ϑ] U)^a has captured counters at least a on the ends that
+    are not idle, and for every refill N′ ≥ N, lower level, counters at
+    or above the counters at creation minus a (per-end capture,
+    decision of 2026-11-20) and argument in [Vfuel] at T, its body
+    satisfies [FuelE] at U
     with frame c and every reserve and ticket count that meet ϑ. A box
     does the same per force, for every session instance of its
     variables.
@@ -291,10 +293,12 @@ Fixpoint Vty (N : fuel) (El : nat → epred) (Vl : nat → vpred) (n : nat)
   | TUnit => v = EUnit ∧ Π = ∅ ∧ φ = ∅
   | TSess s _ a =>
       ∃ o S' f, v = Chan o ∧ Π = {[o := S']} ∧ φ = {[o := f]} ∧ sequiv S' s ∧ fle a f
-  | TLolli _ _ c t h T1 U a =>
-      ∃ e, v = Lam e ∧ fends e = dom Π ∧ dom Π = dom φ ∧ (∀ o f, φ !! o = Some f → fle (fadd h a) f) ∧
+  | TLolli _ _ c t T1 U a =>
+      ∃ e, v = Lam e ∧ fends e = dom Π ∧ dom Π = dom φ ∧
+        (∀ o f, φ !! o = Some f → ¬ idle_at Π o → fle a f) ∧
         ∀ N' j φ' Πu φu u r tk, rle N N' → j < n → dom φ' = dom φ →
-          (∀ o f, φ' !! o = Some f → fle h f) → Π ##ₘ Πu → φ' ##ₘ φu →
+          (∀ o f f', φ !! o = Some f → φ' !! o = Some f' → fle (fsub f a) f') →
+          Π ##ₘ Πu → φ' ##ₘ φu →
           Vl j N' (RTy T1) Πu φu u → meets t r tk →
           El j N' (RTy U) c r (Π ∪ Πu) (φ' ∪ φu) tk (subst1 u e)
   | TProd T1 T2 =>
@@ -402,7 +406,7 @@ Section ext.
     Vty N El1 Vl1 n T Π φ v → Vty N El2 Vl2 n T Π φ v.
   Proof.
     intros HE HV. revert Π φ v.
-    induction T as [|ub lb c t h T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
+    induction T as [|ub lb c t T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
                    |m k C ub c t U IH|s x a|lb m C T1 IH];
       intros Π φ v; simpl; try done.
     - intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|done|done|].

@@ -142,13 +142,13 @@ Section body.
     rreach (pvar 0) (pvar 1) X1 Y1 →
     dftyped W ∅ Γb Δ F e rg_ty →
     dftyped W ∅ Γb Δ F (EForce e)
-      (TLolli (Some (sh 1 X1)) None None tinf None
+      (TLolli (Some (sh 1 X1)) None None tinf
          (TProd (TSess Sch X1 None) (TSess (dual Sch) Y1 None)) TUnit None).
   Proof.
     intros HR H.
     assert (sinst_ty (slist []) (ty_inst (X1 :: Y1 :: [])
-              (TLolli (Some (sh 1 (pvar 0))) None None tinf None rg_T TUnit None)) =
-      TLolli (Some (sh 1 X1)) None None tinf None
+              (TLolli (Some (sh 1 (pvar 0))) None None tinf rg_T TUnit None)) =
+      TLolli (Some (sh 1 X1)) None None tinf
          (TProd (TSess Sch X1 None) (TSess (dual Sch) Y1 None)) TUnit None) as <-.
     { rewrite sinst_nil. unfold ty_inst, rg_T. cbn [pinst_ty fmap option_fmap option_map].
       rewrite pt_inst_shift, !pt_inst_pvar_at. reflexivity. }
@@ -246,13 +246,13 @@ Definition rg_main : expr := let_new 0 (App (EForce ring) (Pair (Var 1) (Var 0))
 Lemma rg_force n F e :
   dftyped W_rg ∅ (Γnew W_rg 0) (nones n) F e rg_ty →
   dftyped W_rg ∅ (Γnew W_rg 0) (nones n) F (EForce e)
-    (TLolli (Some (sh 1 (pvar 0))) None None tinf None
+    (TLolli (Some (sh 1 (pvar 0))) None None tinf
        (TProd (TSess Sch (pvar 0) None) (TSess (dual Sch) (pvar 0)‾ None)) TUnit None).
 Proof.
   intros H.
   assert (sinst_ty (slist []) (ty_inst rg_xs
-            (TLolli (Some (sh 1 (pvar 0))) None None tinf None rg_T TUnit None)) =
-    TLolli (Some (sh 1 (pvar 0))) None None tinf None
+            (TLolli (Some (sh 1 (pvar 0))) None None tinf rg_T TUnit None)) =
+    TLolli (Some (sh 1 (pvar 0))) None None tinf
        (TProd (TSess Sch (pvar 0) None) (TSess (dual Sch) (pvar 0)‾ None)) TUnit None) as <-.
   { rewrite sinst_nil. reflexivity. }
   eapply d_force with (ub := None) (c := None) (t := tinf) (C := rg_C);
