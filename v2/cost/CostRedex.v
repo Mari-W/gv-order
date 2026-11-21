@@ -120,7 +120,7 @@ Lemma Vfuel_lolli_inv N n ub lb c T U a Π φ v :
   v ∈ FV^N _ n⟦RTy (TLolli ub lb c T U a)⟧(Π, φ) →
   ∃ e, v = Lam e ∧ fends e = dom Π ∧ dom Π = dom φ ∧
     (∀ o f, φ !! o = Some f → ¬ idle_at Π o → fle a f.1) ∧
-    ∀ j φ' Πu φu u, j < n → dom φ' = dom φ →
+    ∀ j φ' Πu φu u, olt j n → dom φ' = dom φ →
       (∀ o f f', φ !! o = Some f → φ' !! o = Some f' → f'.2 = f.2 ∧ fle (fsub f.1 a) f'.1) →
       Π ##ₘ Πu → φ' ##ₘ φu →
       u ∈ FV^N _ j⟦RTy T⟧(Πu, φu) →
@@ -130,19 +130,19 @@ Proof. rewrite Vfuel_eq. simpl. done. Qed.
 Lemma Vfuel_box_inv N n m k C ub c U Π φ v :
   v ∈ FV^N _ n⟦RTy (TBox m k C ub c U)⟧(Π, φ) →
   ∃ e, v = EBox e ∧ fends e = ∅ ∧ Π = ∅ ∧ φ = ∅ ∧
-    ∀ j ss, j < n → length ss = k → sinsts N ss →
+    ∀ j ss, olt j n → length ss = k → sinsts N ss →
       subst1 (EBox e) e ∈ F^N _ j⟦RTy (sinst_ty (slist ss) U) ▷ c⟧(∅, ∅).
 Proof. rewrite Vfuel_eq. simpl. done. Qed.
 
 (** ** Unfolding at an operator *)
 
 Lemma FuelE_op k N n σ d Π φ v T :
-  v ∈ FV^N _ (S n)⟦RTy T⟧(Π, φ) →
-  (∀ v' Π' φ', v' ∈ FV^N _ (S n)⟦RTy T⟧(Π', φ') → is_val v' →
+  v ∈ FV^N _ n⟦RTy T⟧(Π, φ) →
+  (∀ v' Π' φ', v' ∈ FV^N _ n⟦RTy T⟧(Π', φ') → is_val v' →
      ∀ α e', tstep (Op k v') α e' → Fobl N (λ j N, FuelE N j) (λ j N, Vfuel N j) n σ d Π' φ' α e') →
-  Op k v ∈ F^N _ (S n)⟦σ ▷ d⟧(Π, φ).
+  Op k v ∈ F^N _ n⟦σ ▷ d⟧(Π, φ).
 Proof.
-  intros HV H. apply FuelE_S. intros g Π' φ' Hk1 Hk2 R1 R2. split.
+  intros HV H. apply FuelE_eq. intros g Π' φ' Hk1 Hk2 R1 R2. split.
   - intros Hv. done.
   - intros α e' Hst. apply (H (emap g v) Π' φ'); [| |exact Hst].
     + by eapply Vfuel_rename.
@@ -165,13 +165,13 @@ Lemma app_redex N n ub lb c T U a1 Π1 φ1 Π2 φ2 d v1 v2 :
   Π1 ##ₘ Π2 → φ1 ##ₘ φ2 → fle c d →
   App v1 v2 ∈ F^N _ n⟦RTy U ▷ d⟧(Π1 ∪ Π2, φ1 ∪ φ2).
 Proof.
-  intros HV1 HV2 HdΠ Hdφ Hcd. destruct n as [|n]; [apply FuelE_0|].
+  intros HV1 HV2 HdΠ Hdφ Hcd.
   destruct (Vfuel_lolli_inv _ _ _ _ _ _ _ _ _ _ _ HV1) as (e & -> & _ & _ & Hfl & HF).
   apply (FuelE_beta _ _ _ _ _ _ [] _ (subst1 v2 e)); [constructor|by apply t_act_app; eapply Vfuel_val|].
-  simpl. eapply FuelE_frame_mono; [exact Hcd|].
-  apply (HF n φ1 Π2 φ2 v2 ltac:(lia) eq_refl); [|done|done|].
+  intros j Hj. simpl. eapply FuelE_frame_mono; [exact Hcd|].
+  apply (HF j φ1 Π2 φ2 v2 Hj eq_refl); [|done|done|].
   - intros o f f' Ho Ho'. rewrite Ho in Ho'. injection Ho' as <-. split; [done|apply fsub_le].
-  - eapply Vfuel_down; [|exact HV2]; lia.
+  - eapply Vfuel_down; [|exact HV2]. by apply olt_ole.
 Qed.
 
 (** ** Session operators *)
@@ -183,7 +183,7 @@ Lemma send_redex N n m T S0 S x aS mS Tp Tp' Π φ d v :
   v ∈ FV^N _ n⟦RTy (TProd Tp (TSess S0 x aS mS))⟧(Π, φ) →
   ESend v ∈ F^N _ n⟦RTy (TSess S x⁺ mS mS) ▷ d⟧(Π, φ).
 Proof.
-  intros Hu Ha Hs Hd HV. destruct n as [|n]; [apply FuelE_0|].
+  intros Hu Ha Hs Hd HV.
   eapply FuelE_op; [exact HV|]. intros v' Π' φ' HV' Hv' α e' Hst.
   destruct (Vfuel_prod_inv _ _ _ _ _ _ _ HV') as (w & c & Π1 & Π2 & φ1 & φ2 & -> & HdΠ & Hdφ & -> & -> & Hw & Hc).
   destruct (Vfuel_sess_inv _ _ _ _ _ _ _ _ _ Hc) as (o & s' & f & -> & -> & -> & Hq & Hf).
@@ -213,11 +213,11 @@ Proof.
     pose proof (Vfuel_age _ _ _ _ _ _ _ _ Ha Hw) as H1.
     pose proof (Vfuel_sub _ _ _ _ _ _ _ Hs H1) as H2.
     unfold payload_at, ty_inst in H2. apply Vfuel_pinst in H2.
-    apply (Vfuel_down _ _ (Datatypes.S n)); [lia|].
+    intros j Hj. apply (Vfuel_down _ _ n); [by apply olt_ole|].
     exact (proj1 (Vfuel_teq _ _ T T' _ _ _ (teq_sym _ _ HT)) H2).
   - rewrite Hfw, <-HdΠφ, mrem_union_self by done. rewrite HdΠφ, mrem_union_self by done.
     rewrite refill_single, insert_singleton, decide_True by done.
-    apply FuelE_val; [done|]. apply Vfuel_sess_intro; [done|apply fle_refl].
+    intros j Hj. apply FuelE_val; [done|]. apply Vfuel_sess_intro; [done|apply fle_refl].
 Qed.
 
 Lemma recv_redex N n m T S0 S x a mS Π φ d v :
@@ -225,7 +225,7 @@ Lemma recv_redex N n m T S0 S x a mS Π φ d v :
   v ∈ FV^N _ n⟦RTy (TSess S0 x a mS)⟧(Π, φ) →
   ERecv v ∈ F^N _ n⟦RTy (TProd (payload_at m T x) (TSess S x⁺ mS mS)) ▷ d⟧(Π, φ).
 Proof.
-  intros Hu Hd HV. destruct n as [|n]; [apply FuelE_0|].
+  intros Hu Hd HV.
   eapply FuelE_op; [exact HV|]. intros v' Π' φ' HV' Hv' α e' Hst.
   destruct (Vfuel_sess_inv _ _ _ _ _ _ _ _ _ HV') as (o & s' & f & -> & -> & -> & Hq & Hf).
   destruct (sequiv_unfold_rcv _ _ _ _ _ Hq Hu) as (T' & S' & Hu' & HT & HS).
@@ -247,7 +247,7 @@ Lemma close_redex N n S0 x a Π φ d v mt :
   v ∈ FV^N _ n⟦RTy (TSess S0 x a mt)⟧(Π, φ) →
   EClose v ∈ F^N _ n⟦RTy TUnit ▷ d⟧(Π, φ).
 Proof.
-  intros Hu Hd HV. destruct n as [|n]; [apply FuelE_0|].
+  intros Hu Hd HV.
   eapply FuelE_op; [exact HV|]. intros v' Π' φ' HV' Hv' α e' Hst.
   destruct (Vfuel_sess_inv _ _ _ _ _ _ _ _ _ HV') as (o & s' & f & -> & -> & -> & Hq & Hf).
   pose proof (sequiv_unfold_end _ _ Hq Hu) as Hu'.
@@ -255,7 +255,7 @@ Proof.
   { split_and!; [apply not_idle_single; congruence|rewrite dom_singleton_L; set_solver| |done].
     intros o' f' Ho'. rewrite dom_singleton_L in Ho'. set_solver. }
   exists s'. split_and!; [by rewrite lookup_singleton_eq|done|].
-  rewrite !delete_singleton_eq, fmap_empty_c. apply FuelE_val; [done|apply Vfuel_unit].
+  rewrite !delete_singleton_eq, fmap_empty_c. intros j Hj. apply FuelE_val; [done|apply Vfuel_unit].
 Qed.
 
 Lemma select_redex (i : bool) N n S0 x S1 S2 a mS Π φ d v :
@@ -263,7 +263,7 @@ Lemma select_redex (i : bool) N n S0 x S1 S2 a mS Π φ d v :
   v ∈ FV^N _ n⟦RTy (TSess S0 x a mS)⟧(Π, φ) →
   ESel i v ∈ F^N _ n⟦RTy (TSess (if i then S2 else S1) (sel_pt x i) mS mS) ▷ d⟧(Π, φ).
 Proof.
-  intros Hu Hd HV. destruct n as [|n]; [apply FuelE_0|].
+  intros Hu Hd HV.
   eapply FuelE_op; [exact HV|]. intros v' Π' φ' HV' Hv' α e' Hst.
   destruct (Vfuel_sess_inv _ _ _ _ _ _ _ _ _ HV') as (o & s' & f & -> & -> & -> & Hq & Hf).
   destruct (sequiv_unfold_plus _ _ _ _ Hq Hu) as (S1' & S2' & Hu' & H1 & H2).
@@ -272,7 +272,7 @@ Proof.
     intros o' f' Ho'. rewrite dom_singleton_L in Ho'. set_solver. }
   exists s', S1', S2'. split_and!; [by rewrite lookup_singleton_eq|done|].
   rewrite refill_single, insert_singleton, decide_True by done.
-  apply FuelE_val; [done|]. apply Vfuel_sess_intro; [by destruct i|apply fle_refl].
+  intros j Hj. apply FuelE_val; [done|]. apply Vfuel_sess_intro; [by destruct i|apply fle_refl].
 Qed.
 
 Lemma branch_redex N n S0 x S1 S2 a mS Π φ d v :
@@ -280,7 +280,7 @@ Lemma branch_redex N n S0 x S1 S2 a mS Π φ d v :
   v ∈ FV^N _ n⟦RTy (TSess S0 x a mS)⟧(Π, φ) →
   EBra v ∈ F^N _ n⟦RTy (TSum (TSess S1 (bra_pt x false) mS mS) (TSess S2 (bra_pt x true) mS mS)) ▷ d⟧(Π, φ).
 Proof.
-  intros Hu Hd HV. destruct n as [|n]; [apply FuelE_0|].
+  intros Hu Hd HV.
   eapply FuelE_op; [exact HV|]. intros v' Π' φ' HV' Hv' α e' Hst.
   destruct (Vfuel_sess_inv _ _ _ _ _ _ _ _ _ HV') as (o & s' & f & -> & -> & -> & Hq & Hf).
   destruct (sequiv_unfold_with _ _ _ _ Hq Hu) as (S1' & S2' & Hu' & H1 & H2).
@@ -289,7 +289,7 @@ Proof.
     intros o' f' Ho'. rewrite dom_singleton_L in Ho'. set_solver. }
   exists s', S1', S2'. split_and!; [by rewrite lookup_singleton_eq|done|].
   rewrite refill_single, insert_singleton, decide_True by done.
-  apply FuelE_val; [by destruct i|]. destruct i; simpl.
+  intros j Hj. apply FuelE_val; [by destruct i|]. destruct i; simpl.
   - apply (Vfuel_inj true). apply Vfuel_sess_intro; [done|apply fle_refl].
   - apply (Vfuel_inj false). apply Vfuel_sess_intro; [done|apply fle_refl].
 Qed.
@@ -302,7 +302,7 @@ Lemma link_redex N n S x a1 m1 a2 m2 Π φ d v :
   v ∈ FV^N _ n⟦RTy (TProd (TSess S x a1 m1) (TSess (dual S) x‾ a2 m2))⟧(Π, φ) →
   ELink v ∈ F^N _ n⟦RTy TUnit ▷ d⟧(Π, φ).
 Proof.
-  intros Hl1 Hl2 HV. destruct n as [|n]; [apply FuelE_0|].
+  intros Hl1 Hl2 HV.
   eapply FuelE_op; [exact HV|]. intros v' Π' φ' HV' Hv' α e' Hst.
   destruct (Vfuel_prod_inv _ _ _ _ _ _ _ HV') as (u & w & Π1 & Π2 & φ1 & φ2 & -> & HdΠ & Hdφ & -> & -> & Hu & Hw).
   destruct (Vfuel_sess_inv _ _ _ _ _ _ _ _ _ Hu) as (o1 & s1 & f1 & -> & -> & -> & Hs1 & Hf1).
@@ -330,7 +330,7 @@ Proof.
   - assert (∀ {Y} (m : gmap cend Y), dom m = ({[o1]} ∪ {[o2]}) → mrem ({[o1]} ∪ {[o2]}) m = ∅) as Hm.
     { intros Y m Hd. rewrite <-Hd. apply mrem_self. }
     rewrite !Hm by (rewrite dom_union_L, !dom_singleton_L; set_solver).
-    apply FuelE_val; [done|apply Vfuel_unit].
+    intros j Hj. apply FuelE_val; [done|apply Vfuel_unit].
 Qed.
 
 Lemma spawn_redex N n ub lb c' a Π φ d v :
@@ -339,7 +339,7 @@ Lemma spawn_redex N n ub lb c' a Π φ d v :
   ESpawn v ∈ F^N _ n⟦RTy TUnit ▷ d⟧(Π, φ).
 Proof.
   intros Ha HV.
-  destruct n as [|n]; [apply FuelE_0|].
+ 
   eapply FuelE_op; [exact HV|]. intros v' Π' φ' HV' Hv' α e' Hst.
   destruct (Vfuel_lolli_inv _ _ _ _ _ _ _ _ _ _ _ HV') as (e & -> & Hfe & Hd & Hfl & HF).
   op_step Hst. inversion Hst; subst. cbn [Fobl]. unfold f_spawn. simpl fends. rewrite Hfe.
@@ -349,15 +349,17 @@ Proof.
   - by rewrite Hd.
   - intros o f _ Ho Hi. by apply (H1 o f).
   - rewrite mres_self. unfold fhand. rewrite Hd, mres_self.
-    destruct n as [|n]; [apply FuelE_0|].
-    apply (FuelE_beta _ _ _ _ _ _ [] _ (subst1 EUnit e)); [constructor|by apply t_act_app|]. simpl.
+   
+    intros j Hj.
+    apply (FuelE_beta _ _ _ _ _ _ [] _ (subst1 EUnit e)); [constructor|by apply t_act_app|].
+    intros i Hi. simpl.
     rewrite <-(map_union_empty Π'), <-(map_union_empty (ctick <$> φ')).
     eapply FuelE_thread; [constructor|].
-    apply (HF n (ctick <$> φ') ∅ ∅ EUnit ltac:(lia));
+    apply (HF i (ctick <$> φ') ∅ ∅ EUnit (olt_trans _ _ _ Hi Hj));
       [by rewrite dom_fmap_L| |apply map_disjoint_empty_r|apply map_disjoint_empty_r|apply Vfuel_unit].
     intros o f f' Ho Ho'. rewrite lookup_fmap, Ho in Ho'. injection Ho' as <-.
     split; [done|]. unfold ctick, ftick. destruct a as [[|a']|], f as [[f0|] m]; simpl in *; lia.
-  - rewrite mrem_self, Hd, mrem_self. apply FuelE_val; [done|apply Vfuel_unit].
+  - rewrite mrem_self, Hd, mrem_self. intros j Hj. apply FuelE_val; [done|apply Vfuel_unit].
 Qed.
 
 Lemma force_redex N n m k C ub c U xs ss Π φ d v :
@@ -365,12 +367,12 @@ Lemma force_redex N n m k C ub c U xs ss Π φ d v :
   v ∈ FV^N _ n⟦RTy (TBox m k C ub c U)⟧(Π, φ) →
   EForce v ∈ F^N _ n⟦RTy (sinst_ty (slist ss) (ty_inst xs U)) ▷ d⟧(Π, φ).
 Proof.
-  intros Hl Hs Hcd HV. destruct n as [|n]; [apply FuelE_0|].
+  intros Hl Hs Hcd HV.
   destruct (Vfuel_box_inv _ _ _ _ _ _ _ _ _ _ _ HV) as (e & -> & _ & -> & -> & HF).
-  apply (FuelE_beta _ _ _ _ _ _ [] _ (subst1 (EBox e) e)); [constructor|constructor|]. simpl.
-  eapply FuelE_frame_mono; [exact Hcd|].
-  eapply FuelE_res_mono; [|apply (HF n ss ltac:(lia) Hl Hs)].
-  intros j Π0 φ0 w _ Hw. unfold ty_inst. rewrite <-pinst_sinst_comm. by apply Vfuel_pinst.
+  apply (FuelE_beta _ _ _ _ _ _ [] _ (subst1 (EBox e) e)); [constructor|constructor|].
+  intros j Hj. simpl. eapply FuelE_frame_mono; [exact Hcd|].
+  eapply FuelE_res_mono; [|apply (HF j ss Hj Hl Hs)].
+  intros j0 Π0 φ0 w _ Hw. unfold ty_inst. rewrite <-pinst_sinst_comm. by apply Vfuel_pinst.
 Qed.
 
 (** ** Creation *)
@@ -396,12 +398,12 @@ Lemma new_at_redex (κ : field) N n S0 x a m S Π φ d v :
   v ∈ FV^N _ n⟦RTy (TSess S0 x a m)⟧(Π, φ) →
   ENewAt κ v ∈ F^N _ n⟦RTy (TProd (TSess S0 x a m) (TProd (TSess S (x·κ) m m) (TSess (dual S) (x·κ)‾ (ncap N m) (ncap N m)))) ▷ d⟧(Π, φ).
 Proof.
-  intros HV. destruct n as [|n]; [apply FuelE_0|].
+  intros HV.
   eapply FuelE_op; [exact HV|]. intros v' Π' φ' HV' Hv' α e' Hst.
   destruct (Vfuel_sess_inv _ _ _ _ _ _ _ _ _ HV') as (o & s' & f & -> & -> & -> & Hq & Hf).
   op_step Hst. inversion Hst; subst. cbn [Fobl]. unfold f_new_at, f_new.
   exists (f, m). split; [by rewrite lookup_singleton_eq|]. simpl.
-  intros (H1 & H2 & H3 & H4). exists S. rewrite pnew_union, cnew_union.
+  intros (H1 & H2 & H3 & H4). exists S. intros j Hj. rewrite pnew_union, cnew_union.
   rewrite dom_singleton_L in H1, H2. rewrite dom_singleton_L in H3, H4.
   rewrite (map_union_comm _ {[o := s']}), (map_union_comm _ {[o := (f, m)]}).
   2,3: apply map_disjoint_union_l; split; apply map_disjoint_singleton_l, lookup_singleton_ne; set_solver.
@@ -416,12 +418,12 @@ Lemma new_redex (ℓ : family) N n lb C S d :
   ENew ℓ ∈ F^N _ n⟦RTy (TEx lb 1 C (TProd (TSess S (pvar 0) (fhalf N) (fhalf N))
                         (TSess (dual S) (pvar 0)‾ (ncap N (fhalf N)) (ncap N (fhalf N))))) ▷ d⟧(∅, ∅).
 Proof.
-  destruct n as [|n]; [apply FuelE_0|].
-  apply FuelE_S. intros g Π' φ' _ _ R1 R2.
+ 
+  apply FuelE_eq. intros g Π' φ' _ _ R1 R2.
   rewrite (renk_empty g Π' R1), (renk_empty g φ' R2). simpl. split; [done|].
   intros α e' Hst. apply tstep_inv in Hst as [Hh|(f & e0 & e0' & _ & Heq & _ & _)];
     [|by destruct f].
   inversion Hh; subst. cbn [Fobl]. unfold f_new. intros _. exists S.
-  rewrite pnew_union, cnew_union, !map_union_empty.
+  intros j Hj. rewrite pnew_union, cnew_union, !map_union_empty.
   apply FuelE_val; [done|]. apply Vfuel_pack. apply Vfuel_newpair.
 Qed.

@@ -275,10 +275,9 @@ Proof.
     |done|done|done|done|].
   intros j g' γ' Π' φ' i v Πv φv Hj Hi Hv HE' HV HdΠ' Hdφ'. simpl.
   destruct (Vfuel_unit_inv _ _ _ _ _ HV) as (-> & -> & ->). rewrite !map_empty_union.
-  destruct j as [|j]; [apply FuelE_0|].
-  apply (FuelE_beta _ _ _ _ _ _ [] _ (subst γ' (emap g' e2))); [constructor|constructor|]. simpl.
+  apply (FuelE_beta _ _ _ _ _ _ [] _ (subst γ' (emap g' e2))); [constructor|constructor|]. intros j0 Hj0. simpl.
   eapply FuelE_frame_mono; [by apply fle_frame_seq|].
-  apply Hc2. eapply envf_down; [|exact HE']; lia.
+  apply Hc2. eapply envf_down; [|exact HE']; by apply olt_ole.
 Qed.
 
 Lemma cost_e_letp N Θ Θ1 Θ2 Θ2' Δ Δ1 Δ2 Δ2' e1 e2 T1 T2 T c1 c2 :
@@ -297,20 +296,19 @@ Proof.
     |done|done|done|done|].
   intros j g' γ' Π' φ' i v Πv φv Hj Hi Hv HE' HV HdΠ' Hdφ'. simpl.
   destruct (Vfuel_prod_inv _ _ _ _ _ _ _ HV) as (u & w & Πu & Πw & φu & φw & -> & Duw & Duw' & -> & -> & HU & HW).
-  destruct j as [|j]; [apply FuelE_0|].
   apply (FuelE_beta _ _ _ _ _ _ [] _ (subst2 u w (subst (up (up γ')) (emap g' e2))));
-    [constructor|constructor; by eapply Vfuel_val|]. simpl. rewrite subst2_subst.
+    [constructor|constructor; by eapply Vfuel_val|]. intros j0 Hj0. simpl. rewrite subst2_subst.
   apply map_disjoint_union_l in HdΠ' as [D1 D2]. apply map_disjoint_union_l in Hdφ' as [D1' D2'].
   rewrite (map_union_comm (Πu ∪ Πw) Π'), (map_union_comm (φu ∪ φw) φ'), !map_union_assoc
     by (apply map_disjoint_union_l; split; by apply map_disjoint_sym).
   eapply FuelE_frame_mono; [by apply fle_frame_seq|].
   apply Hc2.
   apply envf_cons; [apply envf_cons| | |].
-  - eapply envf_down; [|exact HE']; lia.
-  - eapply Vfuel_down; [|exact HU]; lia.
+  - eapply envf_down; [|exact HE']; by apply olt_ole.
+  - eapply Vfuel_down; [|exact HU]; by apply olt_ole.
   - by apply map_disjoint_sym.
   - by apply map_disjoint_sym.
-  - eapply Vfuel_down; [|exact HW]; lia.
+  - eapply Vfuel_down; [|exact HW]; by apply olt_ole.
   - apply map_disjoint_union_l. split; [by apply map_disjoint_sym|done].
   - apply map_disjoint_union_l. split; [by apply map_disjoint_sym|done].
 Qed.
@@ -337,19 +335,18 @@ Proof.
   intros j g' γ' Π' φ' i v Πv φv Hj Hi Hv HE' HV HdΠ' Hdφ'. simpl.
   destruct (fle_frame_case i c0 c1 c2 Hi) as [F1 F2].
   rewrite (map_union_comm Πv Π'), (map_union_comm φv φ') by done.
-  destruct j as [|j]; [apply FuelE_0|].
   destruct (Vfuel_sum_inv _ _ _ _ _ _ _ HV) as [(v' & -> & HV')|(v' & -> & HV')].
   - apply (FuelE_beta _ _ _ _ _ _ [] _ (subst1 v' (subst (up γ') (emap g' e1))));
-      [constructor|constructor; by eapply Vfuel_val|]. simpl. rewrite subst1_subst.
+      [constructor|constructor; by eapply Vfuel_val|]. intros j0 Hj0. simpl. rewrite subst1_subst.
     eapply FuelE_frame_mono; [exact F1|].
     apply Hc1.
-    apply envf_cons; [(eapply envf_down; [|exact HE']; lia)|(eapply Vfuel_down; [|exact HV']; lia)
+    apply envf_cons; [(eapply envf_down; [|exact HE']; by apply olt_ole)|(eapply Vfuel_down; [|exact HV']; by apply olt_ole)
                      |by apply map_disjoint_sym|by apply map_disjoint_sym].
   - apply (FuelE_beta _ _ _ _ _ _ [] _ (subst1 v' (subst (up γ') (emap g' e2))));
-      [constructor|constructor; by eapply Vfuel_val|]. simpl. rewrite subst1_subst.
+      [constructor|constructor; by eapply Vfuel_val|]. intros j0 Hj0. simpl. rewrite subst1_subst.
     eapply FuelE_frame_mono; [exact F2|].
     apply Hc2.
-    apply envf_cons; [(eapply envf_down; [|exact HE']; lia)|(eapply Vfuel_down; [|exact HV']; lia)
+    apply envf_cons; [(eapply envf_down; [|exact HE']; by apply olt_ole)|(eapply Vfuel_down; [|exact HV']; by apply olt_ole)
                      |by apply map_disjoint_sym|by apply map_disjoint_sym].
 Qed.
 
@@ -386,7 +383,7 @@ Proof.
   - intros j φ' Πu φu u Hj Hdφ' Hh HdΠ Hdφ Hu. rewrite subst1_subst.
     apply Hcs.
     apply envf_cons; [|done|done|done].
-    apply (envf_mono N n j _ _ _ _ _ (fminus a <$> φ) φ'); [lia|by apply cle_fminus|].
+    apply (envf_mono N n j _ _ _ _ _ (fminus a <$> φ) φ'); [by apply olt_ole|by apply cle_fminus|].
     by eapply envf_age.
 Qed.
 
@@ -401,15 +398,16 @@ Proof.
   destruct (envf_unl _ _ _ _ _ _ _ Hu HE) as [-> ->]. simpl in Hx |- *. rewrite dom_empty_L in Hx.
   set (eb := subst (up γ) (emap g e)). fold eb in Hx.
   apply FuelE_val; [done|].
-  assert (Hlob : ∀ j, j ≤ n → EBox eb ∈ FV^N _ j⟦RTy (TBox m k C ub c U)⟧(∅, ∅)).
-  { induction j as [j IH] using lt_wf_ind. intros Hj. apply Vfuel_eq. simpl.
+  assert (Hlob : ∀ j, ole j n → EBox eb ∈ FV^N _ j⟦RTy (TBox m k C ub c U)⟧(∅, ∅)).
+  { induction j as [j IH] using oind. intros Hj. apply Vfuel_eq. simpl.
     exists eb. split_and!; [done|done|done|done|].
     intros j' ss Hj' Hl Hss. unfold eb. rewrite subst1_subst.
     rewrite <-(map_empty_union (∅ : penv)), <-(map_empty_union (∅ : cenv)).
     apply (Hcs ss Hl Hss j' g (EBox eb .: γ)).
     assert (envf N j' ∅ (Some (TBox m k C ub c U) :: Δ) g (EBox eb .: γ) (∅ ∪ ∅) (∅ ∪ ∅)) as H.
-    { apply envf_cons; [|apply IH; lia|apply map_disjoint_empty_l|apply map_disjoint_empty_l].
-      apply (envf_mono N n j' _ _ _ _ _ ∅ ∅); [lia|apply cle_refl|exact HE]. }
+    { assert (ole j' n) as Hj'n by exact (ole_trans _ _ _ (olt_ole _ _ Hj') Hj).
+      apply envf_cons; [|apply IH; [exact Hj'|exact Hj'n]|apply map_disjoint_empty_l|apply map_disjoint_empty_l].
+      apply (envf_mono N n j' _ _ _ _ _ ∅ ∅); [exact Hj'n|apply cle_refl|exact HE]. }
     apply (envf_pinst _ _ (pshift m)) in H. unfold tenv_pinst in H. rewrite fmap_empty in H. exact H. }
-  apply Hlob; lia.
+  apply Hlob, ole_refl.
 Qed.

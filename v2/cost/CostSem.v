@@ -30,7 +30,7 @@ Definition thfuel (Θ : tenv) (g : cend → cend) (Π : penv) (φ : cenv) : Prop
 
 (** ** Groundings *)
 
-Fixpoint gfuel (N : fuel) (n : nat) (Δ : lenv) (γ : nat → expr) (Π : penv) (φ : cenv) : Prop :=
+Fixpoint gfuel (N : fuel) (n : Ix) (Δ : lenv) (γ : nat → expr) (Π : penv) (φ : cenv) : Prop :=
   match Δ with
   | [] => Π = ∅ ∧ φ = ∅
   | None :: Δ' => gfuel N n Δ' (λ x, γ (S x)) Π φ
@@ -39,7 +39,7 @@ Fixpoint gfuel (N : fuel) (n : nat) (Δ : lenv) (γ : nat → expr) (Π : penv) 
         γ 0 ∈ FV^N _ n⟦RTy T⟧(Π1, φ1) ∧ gfuel N n Δ' (λ x, γ (S x)) Π2 φ2
   end.
 
-Definition envf (N : fuel) (n : nat) (Θ : tenv) (Δ : lenv) (g : cend → cend) (γ : nat → expr)
+Definition envf (N : fuel) (n : Ix) (Θ : tenv) (Δ : lenv) (g : cend → cend) (γ : nat → expr)
     (Π : penv) (φ : cenv) : Prop :=
   ∃ ΠΘ φΘ Πγ φγ, thfuel Θ g ΠΘ φΘ ∧ gfuel N n Δ γ Πγ φγ ∧ ΠΘ ##ₘ Πγ ∧ φΘ ##ₘ φγ ∧
     Π = ΠΘ ∪ Πγ ∧ φ = φΘ ∪ φγ.
@@ -68,7 +68,7 @@ Lemma Vfuel_unl_empty N n U Π φ v : unlimited U → v ∈ FV^N _ n⟦RTy U⟧(
 Proof. destruct U; try done. intros _. rewrite Vfuel_eq. simpl. by intros (? & _ & _ & -> & -> & _). Qed.
 
 Section above.
-  Context (El : nat → epred) (Vl : nat → vpred).
+  Context (El : Ix → epred) (Vl : Ix → vpred).
 
   (** Aging by c leaves every counter of an end that is not idle at or
       above c. An end and a closure cover c by their credit, which their
@@ -188,7 +188,7 @@ Proof.
     + exists ∅, Π2, ∅, φ2. rewrite !map_empty_union. split_and!; try done; apply map_disjoint_empty_l.
 Qed.
 
-Lemma gfuel_mono N n m Δ : ∀ γ Π φ φ', m ≤ n → cle φ φ' →
+Lemma gfuel_mono N n m Δ : ∀ γ Π φ φ', ole m n → cle φ φ' →
   gfuel N n Δ γ Π φ → gfuel N m Δ γ Π φ'.
 Proof.
   induction Δ as [|[T|] Δ IH]; intros γ Π φ φ' Hm Hc; simpl.
@@ -466,14 +466,14 @@ Proof.
 Qed.
 
 Lemma envf_mono N n m Θ Δ g γ Π φ φ' :
-  m ≤ n → cle φ φ' → envf N n Θ Δ g γ Π φ → envf N m Θ Δ g γ Π φ'.
+  ole m n → cle φ φ' → envf N n Θ Δ g γ Π φ → envf N m Θ Δ g γ Π φ'.
 Proof.
   intros Hm Hc (ΠΘ & φΘ & Πγ & φγ & HT & HG & Hd1 & Hd2 & -> & ->).
   destruct (cle_union_split _ _ _ Hd2 Hc) as (a & b & -> & Dab & Ca & Cb).
   exists ΠΘ, a, Πγ, b. split_and!; try done; [by eapply thfuel_cle|by eapply gfuel_mono].
 Qed.
 
-Lemma envf_down N n m Θ Δ g γ Π φ : m ≤ n → envf N n Θ Δ g γ Π φ → envf N m Θ Δ g γ Π φ.
+Lemma envf_down N n m Θ Δ g γ Π φ : ole m n → envf N n Θ Δ g γ Π φ → envf N m Θ Δ g γ Π φ.
 Proof. intros Hm. apply envf_mono; [done|apply cle_refl]. Qed.
 
 Lemma envf_unl N n Δ g γ Π φ : lenv_unl Δ → envf N n ∅ Δ g γ Π φ → Π = ∅ ∧ φ = ∅.
