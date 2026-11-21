@@ -77,8 +77,8 @@ drop('ty-credit', 'ty-grammar');
 // entry 12 (generalized arrows, per-end capture) shown as planned: capture is aging, a spawned
 // abstraction is E-Abs at (⊤, ⊥) followed by E-Spawn, and a thunk is a value of arrow type
 drop('t-cap', 't-age'); drop('r-spawnlam', 'r-spawn'); drop('v-thunk', 'v-arrow');
-merge('ty-ann', 'Annotations and ticket needs', ['ty-annot', 'ty-tix', 'ty-tix-ops', 'ty-df'], {
-  caption: R`Credits $a$, costs $c$, floors $h$ and the counter bound $N$ are numbers, and $\infty$ means unbounded. A term that must leave $r$ link tickets over needs $\vartheta(r)$ tickets when it starts, and a thread with $tk$ tickets runs it if $\mathsf{meets}\,\vartheta\,r\,tk$. A link adds one to the need, a spawn doubles the rest, and sequencing composes. Deadlock-free typing is the instance $\mathsf{ty\_df}$ with every annotation unbounded.`,
+merge('ty-ann', 'Annotations and tickets', ['ty-annot', 'ty-tix', 'ty-df'], {
+  caption: R`Credits $a$, costs $c$, floors $h$, tickets $m$ and the bound $N$ are numbers, and $\infty$ means unbounded. An end has $m$ tickets with $a \leq m$, and the tickets of the two ends of a channel sum to at most $N$. Deadlock-free typing is the instance $\mathsf{ty\_df}$ with every annotation unbounded.`,
   why: 'The numbers lock-free typing adds to types and judgments. At their unbounded values every premise about them holds, which is how deadlock-free typing is an instance.'
 });
 
@@ -102,7 +102,7 @@ merge('r-boxes', 'Boxes', ['r-box', 'r-force'], {
 set('r-ex', b => { b.title = 'Existentials'; });
 set('r-new', b => { b.title = 'Creation'; });
 merge('r-act', 'Actions and link', ['r-send', 'r-recv', 'r-close', 'r-select', 'r-branch', 'r-link'], {
-  caption: R`An action on an end at $x$ waits at $x$ while the thread holds the rest of $\Delta$, so $x$ lies below the future and below the dual points of what is held. Send and receive move the end to $x^{+}$ and the payload to the fields of $x$, a choice moves it to the field of the branch, and a link asks no order fact. \annp{In the lock-free mode every action returns the end reset to $N$ and costs one, and a link uses a ticket.}`,
+  caption: R`An action on an end at $x$ waits at $x$ while the thread holds the rest of $\Delta$, so $x$ lies below the future and below the dual points of what is held. Send and receive move the end to $x^{+}$ and the payload to the fields of $x$, a choice moves it to the field of the branch, and a link asks no order fact. \annp{In the lock-free mode every action returns the end reset to its tickets $m$ and costs one, and a link asks the credit of each linked end to exceed the partner bound of the other.}`,
   why: 'The session primitives. Every order fact the type system asks for is asked here, at the moment a thread waits.'
 });
 merge('r-threads', 'Spawn', ['r-spawn'], {
@@ -139,18 +139,18 @@ merge('rd', 'Readiness', ['rd-term', 'rd-proc'], {
 merge('p-rel', 'The process relation', ['p-body', 'p-fuse']);
 merge('p-obls', 'Obligations of process steps', ['p-obl', 'p-msg']);
 merge('fu', 'Fuel', ['fu-def', 'fu-fsem'], {
-  caption: R`$e \in F^N_n\llbracket \Phi ; tk \vdash \sigma\ !\ (d, r)\rrbracket$ says that the thread $e$, holding the ends $\Phi$, each with its protocol and counter $S^f$, and $tk$ link tickets, has fuel for $n$ more steps to return at $\sigma$ within $d$ actions with $r$ tickets left. At level $n+1$ it returns a value in $FV$, or every step meets its fuel obligation at level $n$. An action on $o$ asks $o$ held and not idle and a positive counter on every other live end and on the frame, then sets $o$ back to $N$ and decrements the other counters, $\Phi{\downarrow}[o \mapsto S^{N}]$. A thread has fuel, $\mathsf{fsem}$, when it has fuel at every level with every end at $N$. Fuel reads no point, no world and no relation.`,
+  caption: R`$e \in F^N_\alpha\llbracket \Phi \vdash \sigma\ !\ d\rrbracket$ says that the thread $e$, holding the ends $\Phi$, each with its protocol, counter and tickets $S^f_m$, has fuel at the ordinal index $\alpha$ to return at $\sigma$ within $d$ actions. At $\alpha > 0$ it returns a value in $FV$, or every step meets its fuel obligation at every $\beta < \alpha$. An action on $o$ asks $o$ held and not idle and a positive counter on every other live end and on the frame, then sets $o$ back to its tickets and decrements the other counters, $\Phi{\downarrow}[o \mapsto S^{m}_{m}]$. A thread has fuel, $\mathsf{fsem}$, when it has fuel at every index with every end at its tickets. Fuel reads no point, no world and no relation.`,
   why: 'Fuel is the lock-free half of a thread, its counters and tickets, kept apart from the relation so that it reads no point and no world. Lock-free adequacy measures waiting with it.'
 });
 merge('fu-obls', 'Fuel obligations', ['fu-act', 'fu-obl-int', 'fu-obl'], {
-  caption: R`Internal steps decrement no counter. A new channel starts both ends at $N$, a spawn transfers the ends of the thunk to the child with counters one lower with half the tickets, and a link drops two dual ends and uses a ticket. Every action uses one unit of the frame, advances the protocol of $o$, resets the counter of $o$ to $N$ and decrements the counters of the other ends. A send transfers its payload ends with counters one lower, and a receive continues for every value in $FV$ that may arrive.`
+  caption: R`Internal steps decrement no counter. A new channel starts each end at its tickets, a spawn transfers the ends of the thunk to the child with counters one lower, and a link drops two dual ends whose counters exceed the partner bounds of each other. Every action uses one unit of the frame, advances the protocol of $o$, resets the counter of $o$ to its tickets and decrements the counters of the other ends. A send transfers its payload ends with counters one lower, and a receive continues for every value in $FV$ that may arrive.`
 });
 merge('soup', 'The lock-free process relation', ['sp-state', 'sp-inv'], {
-  caption: R`An annotated configuration $a = (q, K, tk)$ is a configuration with an ownership map $K$ from held ends to holding thread, point and counter, and tickets per thread. It is in the lock-free process relation at level $n$ when every thread is in the relation $E[\kappa_L]$ at the ends it owns and has fuel at their counters. The rest, $\mathsf{consistent}$ keeps $K$, $A$ and $\Pi$ in agreement. The lock-free process relation is the only place fuel is used.`,
+  caption: R`An annotated configuration $a = (q, K)$ is a configuration with an ownership map $K$ from held ends to holding thread, point, counter and tickets. It is in the lock-free process relation at index $\alpha$ when every thread is in the relation $E[\kappa_L]$ at the ends it owns and has fuel at their counters. The rest, $\mathsf{consistent}$ keeps $K$, $A$ and $\Pi$ in agreement. The lock-free process relation is the only place fuel is used.`,
   why: 'The lock-free process relation joins the two halves of every thread, its relation at $\\kappa_L$ and its fuel, over one ownership map fixed outside the level. Lock-free adequacy reads the counters and points it records.'
 });
 merge('sj-all', 'Semantic judgments', ['sj', 'sp-lf'], {
-  why: 'The semantic judgments are what the fundamental theorems conclude and what adequacy consumes. \\annp{The lock-free judgment is the lock-free process relation at every level, with the counter bound and the annotated configuration chosen once.}'
+  why: 'The semantic judgments are what the fundamental theorems conclude and what adequacy consumes. \\annp{The lock-free judgment is the lock-free process relation at every ordinal index, with the bound $N$ chosen once and the annotated configuration chosen at each index.}'
 });
 order('semantic', ['sr-reading', 'ct-costs', 'v-rel', 'e-rel', 'e-obl', 'rd', 'p-rel', 'p-obls', 'fu-vs', 'fu', 'fu-obls', 'fv', 'soup', 'sj-all']);
 
@@ -167,14 +167,20 @@ order('theorems', ['th-chain', 'th-sound', 'th-compose', 'th-fund-proc', 'th-ade
 
 // decided or proposed on the map, not yet in the Rocq: the block shows a "planned" tag with this text
 const NEW2 = 'Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field.';
+const TICKETS = 'Tickets as one number per end are planned, decided on 2026-11-21 (docs/redesign/check-links-without-tickets.md, last section). An end type is (S@x)^a_m with credit a ≤ m, the tickets of the two ends of a channel sum to at most N, E-Link asks a1 + m2 > N and a2 + m1 > N, an action resets an end to its tickets m, and the measure of lock-free adequacy is the counter of the dual end. The write-up calls the bound K. The Rocq still has the ticket needs ϑ with tix, tlink, tspawn, tseq and tok, the ticket premise of P-Term, the spawn split and s_tk.';
+const TRANSFINITE = 'Transfinite step indices are planned (docs/redesign/check-transfinite.md). Indices are ordinals α, a step of cost c obliges the successor at every β with β + c ≤ α, the creation choice is an ordinary existential inside O-New, and lock-free adequacy takes excluded middle and choice as hypotheses. The creation choice χ of the proposal of 2026-11-20 is gone. The Rocq still indexes by natural numbers.';
 const ARROWS = 'Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk.';
 const planned = {
-  'ty-grammar': ARROWS, 'ty-heads': ARROWS, 't-lf-credits': ARROWS, 't-side': ARROWS, 't-agecap': ARROWS,
-  'r-fun': ARROWS, 'r-threads': ARROWS, 't-subs': ARROWS, 'v-rel': ARROWS, 'fv': ARROWS,
+  'ty-grammar': ARROWS + ' ' + TICKETS, 'ty-heads': ARROWS, 't-lf-credits': ARROWS + ' ' + TICKETS, 't-side': ARROWS, 't-agecap': ARROWS,
+  'r-fun': ARROWS, 'r-threads': ARROWS + ' ' + TICKETS, 't-subs': ARROWS + ' ' + TICKETS, 'v-rel': ARROWS, 'fv': ARROWS + ' ' + TICKETS,
   'syn-terms': NEW2, 'syn-points': NEW2, 'sem-labels': NEW2, 'sem-head': NEW2, 'sem-proc': NEW2,
-  't-consts': NEW2, 'w-world': NEW2, 'w-order': NEW2, 'w-ext': NEW2, 'r-new': NEW2, 'e-obl': NEW2 + ' ' + ARROWS,
-  'soup': NEW2 + ' The creation choice χ is a proposal of 2026-11-20.',
-  'sj-all': NEW2 + ' The creation choice χ is a proposal of 2026-11-20.',
+  't-consts': NEW2 + ' ' + TICKETS, 'w-world': NEW2, 'w-order': NEW2, 'w-ext': NEW2, 'r-new': NEW2 + ' ' + TICKETS, 'e-obl': NEW2 + ' ' + ARROWS + ' ' + TRANSFINITE,
+  'soup': NEW2 + ' ' + TICKETS + ' ' + TRANSFINITE,
+  'sj-all': NEW2 + ' ' + TRANSFINITE,
+  'ty-ann': TICKETS, 't-lf-tickets': TICKETS, 't-judgment': TICKETS, 'r-act': TICKETS, 'p-typing': TICKETS,
+  'fu-vs': TICKETS + ' ' + TRANSFINITE, 'fu': TICKETS + ' ' + TRANSFINITE, 'fu-obls': TICKETS + ' ' + TRANSFINITE,
+  'sr-reading': TICKETS + ' ' + TRANSFINITE, 'e-rel': TRANSFINITE,
+  'th-chain': TICKETS + ' ' + TRANSFINITE, 'th-adeq': TICKETS + ' ' + TRANSFINITE, 'th-terms': TICKETS,
 };
 for (const [id, why] of Object.entries(planned)) set(id, b => { b.planned = why; });
 
