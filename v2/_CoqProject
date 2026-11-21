@@ -20,6 +20,7 @@ types/Costs.v
 types/Types.v
 types/Erasure.v
 types/Duality.v
+types/Contractive.v
 static/Contexts.v
 static/Typing.v
 static/Conservativity.v
