@@ -84,33 +84,33 @@ Qed.
 
 Section sub.
   Context (n : Ix).
-  Context (IH : ∀ j, olt j n → ∀ N T T' Π φ v, tsub T T' →
+  Context (IH : ∀ j, olt j n → ∀ N W Γ T T' Π φ v, tsub W Γ T T' →
     v ∈ FV^N _ j⟦RTy T⟧(Π, φ) → v ∈ FV^N _ j⟦RTy T'⟧(Π, φ)).
 
-  Lemma Vty_sub N T T' Π φ v :
-    tsub T T' →
+  Lemma Vty_sub N W Γ T T' Π φ v :
+    tsub W Γ T T' →
     Vty N (λ j N, FuelE N j) (λ j N, Vfuel N j) n T Π φ v →
     Vty N (λ j N, FuelE N j) (λ j N, Vfuel N j) n T' Π φ v.
   Proof.
     intros Hs. revert Π φ v.
-    induction Hs as [
-                    |ub lb c T1 U a c' T1' U' a' Hc Ha HT HU IHT IHU
-                    |T1 U T1' U' H1 IH1 H2 IH2
-                    |T1 U T1' U' H1 IH1 H2 IH2
-                    |m k C ub c U U' c' Hc HU
-                    |s s' x a a' mt Hss Ha
-                    |lb m C C' T T' HC HC' HT IHT];
+    induction Hs as [Γ0
+                    |Γ0 ub lb c T1 U a c' T1' U' a' Hc Ha HT HU IHT IHU
+                    |Γ0 T1 U T1' U' H1 IH1 H2 IH2
+                    |Γ0 T1 U T1' U' H1 IH1 H2 IH2
+                    |Γ0 m k C ub c U U' c' Hc HU
+                    |Γ0 s s' x a a' mt Hss Ha
+                    |Γ0 lb m C C' T T' HC HT IHT];
       intros Π φ v; simpl.
     - done.
     - intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|done| |].
       + intros o f Ho Hi. eapply fle_trans; [exact Ha|]. by apply (Hf o).
       + intros j φ1 Πu φu u Hj Hd1 Hh1 HΠ Hφ Hu.
         eapply FuelE_res_mono; [|eapply FuelE_frame_mono; [exact Hc|]].
-        * intros m0 Π0 φ0 w Hm0. apply (IH m0 (ole_trans_lt _ _ _ Hm0 Hj)). done.
+        * intros m0 Π0 φ0 w Hm0. eapply (IH m0 (ole_trans_lt _ _ _ Hm0 Hj) N W Γ0 U U'); done.
         * apply H; try done.
           -- intros o f f' Ho Ho'. destruct (Hh1 o f f' Ho Ho') as [E Hle]. split; [done|].
              eapply fle_trans; [by apply fsub_anti_r|exact Hle].
-          -- apply (IH j Hj N T1' T1); done.
+          -- apply (IH j Hj N W Γ0 T1' T1); done.
     - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & -> & HΠ & Hφ & -> & -> & Hv1 & Hv2).
       exists v1, v2, Π1, Π2, φ1, φ2. split_and!; auto.
     - intros [(v' & -> & Hv)|(v' & -> & Hv)]; [left|right]; exists v'; split; auto.
@@ -130,15 +130,15 @@ Section sub.
 End sub.
 
 (** F5 along ⊑. *)
-Lemma Vfuel_sub n : ∀ N T T' Π φ v, tsub T T' →
+Lemma Vfuel_sub n : ∀ N W Γ T T' Π φ v, tsub W Γ T T' →
   v ∈ FV^N _ n⟦RTy T⟧(Π, φ) → v ∈ FV^N _ n⟦RTy T'⟧(Π, φ).
 Proof.
-  induction n as [n IH] using oind. intros N T T' Π φ v Hs. rewrite !Vfuel_eq. simpl.
-  by apply Vty_sub.
+  induction n as [n IH] using oind. intros N W Γ T T' Π φ v Hs. rewrite !Vfuel_eq. simpl.
+  by apply (Vty_sub n IH N W Γ T T').
 Qed.
 
 (** F4 along ⊑: FuelE follows subtyping of its result type. *)
-Lemma FuelE_sub N n T T' d Π φ e :
-  tsub T T' →
+Lemma FuelE_sub N n W Γ T T' d Π φ e :
+  tsub W Γ T T' →
   e ∈ F^N _ n⟦RTy T ▷ d⟧(Π, φ) → e ∈ F^N _ n⟦RTy T' ▷ d⟧(Π, φ).
 Proof. intros Hs. apply FuelE_res_mono. intros. by eapply Vfuel_sub. Qed.

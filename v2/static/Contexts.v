@@ -289,28 +289,33 @@ Definition thage (c : fuel) (Θ Θ' : tenv) : Prop :=
 
 (** ** Subtyping
 
-    Costs are covariant, arguments contravariant,
+    W ; Γ ⊢ T ≤ T'. Costs are covariant, arguments contravariant,
     results covariant, sessions up to ≈. A credit may fall. At an arrow
     the credit a bounds what the captured counters may lose before a
     call, so it may fall as well (a' ≤ a). A
     product, a sum and an existential compare their parts. An
-    existential may drop facts of its constraint. *)
-Inductive tsub : ty → ty → Prop :=
-  | sub_unit : tsub TUnit TUnit
-  | sub_arr ub lb c T1 U a c' T1' U' a' :
+    existential may weaken its constraint to one that Γ and the
+    constraint entail at the bound points (item 2 of 2026-11-21,
+    finding 6.7 of docs/redesign/algorithmic-plan.md), so
+    e : ∃ιs. C. T types at ∃ιs. C'. T whenever let x = e in x does with
+    the same lower bound. The bodies of the two existentials compare
+    under Γ extended by C. *)
+Inductive tsub (W : sworld) : hctx → ty → ty → Prop :=
+  | sub_unit Γ : tsub W Γ TUnit TUnit
+  | sub_arr Γ ub lb c T1 U a c' T1' U' a' :
       fle c c' → fle a' a →
-      tsub T1' T1 → tsub U U' →
-      tsub (TLolli ub lb c T1 U a) (TLolli ub lb c' T1' U' a')
-  | sub_prod T1 U T1' U' : tsub T1 T1' → tsub U U' → tsub (TProd T1 U) (TProd T1' U')
-  | sub_sum T1 U T1' U' : tsub T1 T1' → tsub U U' → tsub (TSum T1 U) (TSum T1' U')
-  | sub_box n k C ub c U U' c' :
+      tsub W Γ T1' T1 → tsub W Γ U U' →
+      tsub W Γ (TLolli ub lb c T1 U a) (TLolli ub lb c' T1' U' a')
+  | sub_prod Γ T1 U T1' U' : tsub W Γ T1 T1' → tsub W Γ U U' → tsub W Γ (TProd T1 U) (TProd T1' U')
+  | sub_sum Γ T1 U T1' U' : tsub W Γ T1 T1' → tsub W Γ U U' → tsub W Γ (TSum T1 U) (TSum T1' U')
+  | sub_box Γ n k C ub c U U' c' :
       fle c c' → (match k with 0 => teq U U' | S _ => U = U' end) →
-      tsub (TBox n k C ub c U) (TBox n k C ub c' U')
-  | sub_sess s s' x a a' mt :
-      sequiv s s' → fle a' a → tsub (TSess s x a mt) (TSess s' x a' mt)
-  | sub_ex lb n C C' T T' :
-      bc_env C = bc_env C' → (∀ g, bc_facts C' g → bc_facts C g) →
-      tsub T T' → tsub (TEx lb n C T) (TEx lb n C' T').
+      tsub W Γ (TBox n k C ub c U) (TBox n k C ub c' U')
+  | sub_sess Γ s s' x a a' mt :
+      sequiv s s' → fle a' a → tsub W Γ (TSess s x a mt) (TSess s' x a' mt)
+  | sub_ex Γ lb n C C' T T' :
+      hold_at W (hc_open n C Γ) (bcs_inst (pshift n) C') (ids n) →
+      tsub W (hc_open n C Γ) T T' → tsub W Γ (TEx lb n C T) (TEx lb n C' T').
 
 (** ** Instances of session variables
 

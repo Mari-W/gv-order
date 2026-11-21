@@ -39,8 +39,8 @@ Proof.
   simpl. apply FuelE_val; [done|]. by apply Vfuel_sess_intro; [apply sequiv_refl|].
 Qed.
 
-Lemma cost_e_sub N Θ Δ e T T' c c' :
-  csem N Θ Δ e T c → tsub T T' → fle c c' → csem N Θ Δ e T' c'.
+Lemma cost_e_sub N W Γ Θ Δ e T T' c c' :
+  csem N Θ Δ e T c → tsub W Γ T T' → fle c c' → csem N Θ Δ e T' c'.
 Proof.
   intros Hcs Hs Hc n g γ Π φ HE.
   eapply FuelE_sub; [exact Hs|]. eapply FuelE_frame_mono; [exact Hc|]. by apply Hcs.
@@ -94,10 +94,10 @@ Qed.
 Lemma fle_one_frame i c0 : fle (Some i) c0 → fle (Some 1) (fsub (fadd c0 (Some 1)) (Some i)).
 Proof. destruct c0; simpl; lia. Qed.
 
-Lemma cost_e_send N Θ Δ e S0 x m T S aS mS Tp Tp' c0 :
+Lemma cost_e_send N W Γ Θ Δ e S0 x m T S aS mS Tp Tp' c0 :
   unfoldS S0 = SSeq (SSnd m T) S →
   csem N Θ Δ e (TProd Tp (TSess S0 x aS mS)) c0 →
-  tage (Some 1) Tp Tp' → tsub Tp' (payload_at m T x) →
+  tage (Some 1) Tp Tp' → tsub W Γ Tp' (payload_at m T x) →
   csem N Θ Δ (ESend e) (TSess S x⁺ mS mS) (fadd c0 (Some 1)).
 Proof.
   intros Hu Hcs Ha Hs. eapply (cost_op _ _ _ _ _ _ _ _ _ Hcs); [apply fle_fadd_l'|].

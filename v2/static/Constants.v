@@ -166,7 +166,7 @@ Qed.
 Lemma k_send W N Γ Δ F x S0 m T S aS mS Tp Tp' a :
   lenv_unl Δ → unfoldS S0 = SSeq (SSnd m T) S → pscoped m T → hbot T = false →
   (∀ y, y ∈ heads (payload_at m T x) → slt W Γ x y) →
-  tage (Some 1) Tp Tp' → tsub Tp' (payload_at m T x) → tcontr Tp → scontr S0 →
+  tage (Some 1) Tp Tp' → tsub W Γ Tp' (payload_at m T x) → tcontr Tp → scontr S0 →
   typed W N ∅ Γ Δ F (Lam (ESend (Var 0)))
     (TLolli (UPt x) LNone (Some 1) (TProd Tp (TSess S0 x aS mS)) (TSess S x⁺ mS mS) a) (Some 0).
 Proof.

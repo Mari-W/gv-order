@@ -160,13 +160,6 @@ Qed.
 Lemma teq_pinst σ T U : teq T U → teq (pinst_ty σ T) (pinst_ty σ U).
 Proof. apply eqT_pinst. Qed.
 
-Lemma tsub_pinst σ T T' : tsub T T' → tsub (pinst_ty σ T) (pinst_ty σ T').
-Proof.
-  intros H. revert σ. induction H; intros σ; simpl; constructor; auto using teq_pinst.
-  - destruct k; [by apply teq_pinst|by subst].
-  - simpl. by rewrite H.
-Qed.
-
 (** ** Contexts *)
 
 Lemma tenv_pinst_empty σ : tenv_pinst σ ∅ = ∅.

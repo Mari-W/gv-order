@@ -113,47 +113,6 @@ Section rules0.
       + apply at_cost_val. by apply Vrel_unit_iff.
   Qed.
 
-  (** V is monotone along subtyping, under every point instantiation. *)
-  Lemma Vrel_tsub_pinst T T' : tsub T T' → ∀ σ n W Θ v,
-    Vrel κ n W Θ (pinst_ty σ T) v → Vrel κ n W Θ (pinst_ty σ T') v.
-  Proof.
-    induction 1 as [
-      |ub lb c T1 U a c' T1' U' a' _ _ _ IH1 _ IH2
-      |T1 U T1' U' _ IH1 _ IH2
-      |T1 U T1' U' _ IH1 _ IH2
-      |m kk C ub c U U' c' _ HU
-      |s s' x a a' mt Hs _
-      |lb m C C' T T' Henv Hf _ IH]; intros σ n W Θ v; simpl.
-    - done.
-    - rewrite !Vrel_lolli_iff. intros (e & -> & Hfe & Hlb & H). exists e. split_and!; [done|done|done|].
-      intros W' j Θ' w F HW Hj Hd Hub Hw. eapply Erel_ty_mono; [|apply H; [done..|by apply IH1]].
-      intros m' W2 Θ2 v' _ _. apply IH2.
-    - rewrite !Vrel_prod_iff. intros (v1 & v2 & Θ1 & Θ2 & -> & Hd & -> & H1 & H2).
-      exists v1, v2, Θ1, Θ2. split_and!; auto.
-    - rewrite !Vrel_sum_iff. intros [(v' & -> & H)|(v' & -> & H)]; [left|right]; eauto.
-    - rewrite !Vrel_box_iff. intros (-> & e & -> & Hfe & H). split; [done|]. exists e. split_and!; [done|done|].
-      intros W' xs ss HW Hxs Hss Hsc HC. specialize (H W' xs ss HW Hxs Hss Hsc HC).
-      destruct kk as [|kk]; simpl in HU; [|by subst].
-      destruct ss; [|simpl in Hss; lia]. rewrite !sinst_ty_slist_nil in H |- *.
-      eapply Vrel_teq; [|exact H]. apply teq_thunk. rewrite <-!ty_inst_df. apply teq_pinst.
-      rewrite !ty_df_pinst. apply teq_pinst. apply teq_df. by apply teq_sym.
-    - rewrite !Vrel_sess_iff. intros (o & s0 & -> & -> & Hs0). exists o, s0. split_and!; [done|done|].
-      unfold seqv in *. eapply sequiv_trans; [exact Hs0|]. by apply sequiv_df.
-    - rewrite !Vrel_ex_iff. intros (Hlb & xs & Hxs & HC & H). split; [done|].
-      exists xs. split_and!; [done| |].
-      + intros x y (g0 & (f & Hf' & Hsc & ->) & Hg). apply HC.
-        unfold bcs_inst in *; simpl in *.
-        exists (fact_map (pt_inst (pup (length xs) (plist (pt_inst σ <$> bc_env C)))) f).
-        split; [|by rewrite Henv].
-        exists f. split_and!; [by apply Hf|by rewrite Henv|by rewrite Henv].
-      + unfold ty_inst in *. rewrite pinst_ty_comp in H |- *. by apply IH.
-  Qed.
-
-  Lemma Vrel_tsub T T' : tsub T T' → ∀ n W Θ v, Vrel κ n W Θ T v → Vrel κ n W Θ T' v.
-  Proof.
-    intros Hs n W Θ v H. rewrite <-(pinst_ty_pvar T') . apply (Vrel_tsub_pinst T); [done|].
-    by rewrite pinst_ty_pvar.
-  Qed.
   (** The lower bound of an existential, read in W. *)
   Definition lbx_ok (W : world) (lb : lbound) (X : ty) : Prop :=
     match lb with
@@ -862,13 +821,16 @@ Section later.
 
   (** *** Structure *)
 
+  (** A conversion of values in the worlds above W. Subtyping gives one
+      under the facts of the context ([Vrel_tsub] in static/Fundamental.v). *)
   Lemma later_conv W Θ Δ L F e T T' :
-    tsub (ty_df T) (ty_df T') → sem_later κ W Θ Δ L F e T → sem_later κ W Θ Δ L F e T'.
+    (∀ m W2 Θ2 v, W ⊑ W2 → Vrel κ m W2 Θ2 (ty_df T) v → Vrel κ m W2 Θ2 (ty_df T') v) →
+    sem_later κ W Θ Δ L F e T → sem_later κ W Θ Δ L F e T'.
   Proof.
     intros Hsub He n W' Θ' γ HW Hd HG. specialize (He n W' Θ' γ HW Hd HG).
     rewrite (Erel_blind κ _ _ _ T' (ty_df T')) by (by rewrite ty_df_idem).
     rewrite (Erel_blind κ _ _ _ T (ty_df T)) in He by (by rewrite ty_df_idem).
-    eapply Erel_ty_mono; [|exact He]. intros m W2 Θ2 v _ _. by apply (Vrel_tsub κ _ _ Hsub).
+    eapply Erel_ty_mono; [|exact He]. intros m W2 Θ2 v HW2 _. apply Hsub. by eapply wext_trans.
   Qed.
 
   Lemma later_pack W Θ Δ L F e lb m C T xs :

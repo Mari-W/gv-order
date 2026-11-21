@@ -127,19 +127,25 @@ Qed.
 
 (** ** Subtyping *)
 
-Lemma tsub_refl T : tsub T T.
+Lemma hold_open_self W Γ n C : hold_at W (hc_open n C Γ) (bcs_inst (pshift n) C) (ids n).
 Proof.
-  induction T.
+  intros x y Hf. apply fl_h. exists (bcs_inst (pshift n) C), (ids n). split; [|done].
+  unfold hc_open. simpl. apply elem_of_app. right. by left.
+Qed.
+
+Lemma tsub_refl W Γ T : tsub W Γ T T.
+Proof.
+  revert Γ. induction T; intros Γ.
   - apply sub_unit.
   - apply sub_arr; auto using fle_refl.
   - apply sub_prod; auto.
   - apply sub_sum; auto.
   - apply sub_box; [apply fle_refl|]. destruct k; [apply teq_refl|done].
   - apply sub_sess; [apply sequiv_refl|apply fle_refl].
-  - apply sub_ex; auto.
+  - apply sub_ex; [apply hold_open_self|auto].
 Qed.
 
-Lemma tsub_df T T' : tsub T T' → tsub (ty_df T) (ty_df T').
+Lemma tsub_df W Γ T T' : tsub W Γ T T' → tsub W Γ (ty_df T) (ty_df T').
 Proof.
   induction 1; cbn [ty_df].
   - apply sub_unit.
@@ -406,7 +412,7 @@ Lemma d_new_fld W Γ Δ F x κ S a1 a2 m1 m2 :
 Proof. intros HΔ HS. dfr. rewrite sty_df_dual. eapply e_new_fld; [by apply lenv_unl_df|done|by rewrite scontr_df]. Qed.
 
 Lemma d_conv W Θ Γ Δ F e T T' :
-  tsub (ty_df T) (ty_df T') → (tcontr T → tcontr T') →
+  tsub W Γ (ty_df T) (ty_df T') → (tcontr T → tcontr T') →
   dftyped W Θ Γ Δ F e T → dftyped W Θ Γ Δ F e T'.
 Proof.
   intros Hs HT H. dfr. eapply e_sub; [exact H| |apply fle_refl|by rewrite !tcontr_df].

@@ -319,8 +319,8 @@ Qed.
 
 (** *** Subtyping *)
 
-Lemma tsub_sinst σ T U : (∀ a, scontr (σ a)) → tsub T U → tcontr T → tcontr U →
-  tsub (sinst_ty σ T) (sinst_ty σ U).
+Lemma tsub_sinst σ W Γ T U : (∀ a, scontr (σ a)) → tsub W Γ T U → tcontr T → tcontr U →
+  tsub W Γ (sinst_ty σ T) (sinst_ty σ U).
 Proof.
   intros Hσ. induction 1; intros HT HU; simpl in *; contr_simpl.
   - constructor.
