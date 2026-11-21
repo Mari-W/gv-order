@@ -804,7 +804,7 @@ window.MAP = {
      "id": "r-ex",
      "title": "Existentials",
      "rocq": "static/Typing.v: e_pack, e_open; static/Conservativity.v: d_pack, d_open",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\quad \\htmlData{k=E-Pack.lb}{l \\preccurlyeq \\htmlData{k=tp.pinst}{T[\\bar x]}}\\quad \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T[\\bar x]\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : \\exists^{l}\\bar\\iota.\\,C.\\,T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Pack} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Open.entry}{\\Delta(i) = \\exists^{l}\\bar\\iota.\\,C.\\,T\\annot{,\\ \\neg\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}}\\,T}}\\quad \\htmlData{k=E-Box.fresh}{\\bar\\iota\\ \\text{fresh}}\\quad \\htmlData{k=E-Open.cons}{\\mathsf{cons}\\,W\\,\\Gamma\\,m\\,C}\\quad \\htmlData{k=E-Open.body}{\\Gamma, C(\\bar\\iota) ; \\Delta[i \\mapsto T] \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Open} \\\\[2ex] \\htmlData{k=E-Open.cons}{\\mathsf{cons}\\,W\\,\\Gamma\\,m\\,C \\iff \\forall x, y \\in \\mathsf{Point}_{\\Gamma}.\\ (\\Gamma, C(\\bar\\iota) \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec y \\Rightarrow \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec y),\\ m = |\\bar\\iota|}\\end{array}",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\quad \\htmlData{k=E-Pack.lb}{l \\preccurlyeq \\htmlData{k=tp.pinst}{T[\\bar x]}}\\quad \\htmlData{k=E-Pack.wf}{\\Gamma, C \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} l \\preccurlyeq T}\\quad \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T[\\bar x]\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : \\exists^{l}\\bar\\iota.\\,C.\\,T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Pack} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Open.entry}{\\Delta(i) = \\exists^{l}\\bar\\iota.\\,C.\\,T\\annot{,\\ \\neg\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}}\\,T}}\\quad \\htmlData{k=E-Box.fresh}{\\bar\\iota\\ \\text{fresh}}\\quad \\htmlData{k=E-Open.cons}{\\mathsf{cons}\\,W\\,\\Gamma\\,m\\,C}\\quad \\htmlData{k=E-Open.body}{\\Gamma, C(\\bar\\iota) ; \\Delta[i \\mapsto T] \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Open} \\\\[2ex] \\htmlData{k=E-Open.cons}{\\mathsf{cons}\\,W\\,\\Gamma\\,m\\,C \\iff \\forall x, y \\in \\mathsf{Point}_{\\Gamma}.\\ (\\Gamma, C(\\bar\\iota) \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec y \\Rightarrow \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec y),\\ m = |\\bar\\iota|}\\end{array}",
      "caption": "E-Pack chooses witness points $\\bar x$ with $\\Gamma \\vdash C[\\bar x]$. E-Open names the witnesses by fresh point variables $\\bar\\iota$ with the hypothesis $C(\\bar\\iota)$, and asks that the hypothesis derive no new fact between points of $\\Gamma$.",
      "modes": [
       "df",
@@ -5816,6 +5816,25 @@ window.MAP = {
     {
      "name": "\\bar x",
      "meaning": "the witness points"
+    }
+   ]
+  },
+  "E-Pack.wf": {
+   "title": "Well-formed existential",
+   "what": "Under $\\Gamma$ and $C$ at the bound variables $\\bar\\iota$, $l \\preccurlyeq T$: every head of $T$ lies at or above $l$, and $l = \\cdot$ asks that $T$ holds no end.",
+   "why": "The condition is on the type, not on the instance. It makes opening at the binder complete for every lower bound, so the algorithmic system can open eagerly.",
+   "breaks": "Without it an existential at a point lower bound may be packed at one instance and need a later instance to be repacked, and no single place to open it is best.",
+   "example": "$\\exists^{\\bot}\\iota.\\,C.\\,T$ is always well formed.",
+   "rocq": "static/Contexts.v: ex_wf; static/Typing.v: e_pack",
+   "sig": "\\Gamma, C \\vdash l \\preccurlyeq T",
+   "args": [
+    {
+     "name": "l",
+     "meaning": "the lower bound of the existential"
+    },
+    {
+     "name": "C",
+     "meaning": "the constraint at the bound variables"
     }
    ]
   },
