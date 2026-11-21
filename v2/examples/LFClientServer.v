@@ -18,19 +18,11 @@ Proof.
   destruct b; destruct Hk as [E|[E|[E|E]]]; injection E as -> ->; done.
 Qed.
 
-Lemma W_cs_wfworld : wfworld W_cs.
-Proof.
-  apply (wfworld_lex3 W_cs (λ x, (pt_fsum x, pt_off x, pt_depth x))); [intros f []| |].
-  - intros x. unfold pt_fsum, pt_depth. simpl. lia.
-  - intros ℓ g x y _ (k & b & Hk).
-    destruct b; destruct Hk as [E|[E|[E|E]]]; injection E as -> ->; unfold pt_fsum, pt_depth; simpl; lia.
-Qed.
-
 Definition csl_T (S1 S2 : sty) : ty := TProd (TSess S1 (pvar 0) (Some 1) (Some 3)) (TSess S2 (pvar 1) (Some 2) (Some 3)).
 Definition csl_box (S1 S2 : sty) : ty := lbox 3 cs_C (Some (pvar 2)) (csl_T S1 S2) TUnit.
 
 Section body.
-  Context (W : world) (Γ : hctx) (n : nat).
+  Context (W : sworld) (Γ : hctx) (n : nat).
   Local Definition Γl : hctx := hc_open 3 cs_C Γ.
 
   Lemma csl_in : (cs_C, ids 3) ∈ hc_hyps Γl.
@@ -171,8 +163,8 @@ Proof.
   eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
   { eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
-  eapply e_letp_; [lsplit_tac (ENewAt 0 (Var 1)) EUnit| | | ].
-  { eapply (e_new_at' _ _ _ _ _ _ _ 0 Sa (pvar 0) _ _ Sb); [|shelve]. eapply e_var'; [reflexivity|]. spare_tac. }
+  eapply e_letp_; [lsplit_tac (Pair (Var 1) ENew) EUnit| | | ].
+  { eapply (e_new_at' _ _ _ _ _ _ _ 0 Sa (pvar 0) _ _ Sb); [done|shelve|reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
   { eapply e_var'; [reflexivity|]. spare_tac. }
@@ -215,11 +207,11 @@ Proof. unfold cs_main, cli, srv, let_new. guard_tac. Qed.
 Theorem cs_lftyped : ∃ N, ∅ ⊩^N _ W_cs (∅, {[+ cs_main +]}) : TUnit.
 Proof.
   destruct csl_typedN as (c & Ht). exists 6.
-  eapply lf_main_typed; [apply strict_wfworld; [apply W_cs_wf|apply W_cs_wfworld]|constructor|exact Ht|apply cs_guarded].
+  eapply lf_main_typed; [apply W_cs_wf|constructor|exact Ht|apply cs_guarded].
 Qed.
 
 Theorem cs_lock_free : excluded_middle → functional_choice → lock_free (∅, {[+ cs_main +]}).
 Proof.
   intros EM FC. destruct csl_typedN as (c & Ht).
-  eapply (lf_main EM FC); [apply (strict_wfworld _ W_cs_wf W_cs_wfworld)|apply W_cs_wfworld|constructor|exact Ht|apply cs_guarded].
+  eapply (lf_main EM FC); [apply W_cs_wf|constructor|exact Ht|apply cs_guarded].
 Qed.

@@ -36,7 +36,7 @@ Definition fm_thunk : expr :=
     (LetP (ERecv (Var 0)) (LetU (Var 1) (EClose (Var 0))))))).
 
 Definition fm_e : expr :=
-  LetP (Var 0) (LetP (ENewAt 0 (Var 1)) (LetP (Var 0)
+  LetP (Var 0) (LetP (Pair (Var 1) ENew) (LetP (Var 0)
     (LetU (ESpawn fm_thunk)
     (LetU (EClose (Var 3))
     (LetU (EClose (ESend (Pair EUnit (ESend (Pair EUnit (Var 1))))))
@@ -50,7 +50,7 @@ Ltac fm_disj :=
         | right; right; right; eexists; right; reflexivity ].
 
 Section body.
-  Context (W : world) (Γ : hctx) (n : nat).
+  Context (W : sworld) (Γ : hctx) (n : nat).
   Local Abbreviation Γb := (Γbox 2 fm_C (pvar 1) Γ).
 
   Lemma fm_hyp x y : fmx_P (FLt x y) → fact_scoped 2 (FLt x y) → slt W Γb x y.
@@ -74,8 +74,8 @@ Section body.
     unfold fm_e.
     eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
     { eapply d_var'; [reflexivity|]. spare_tac. }
-    eapply d_letp; [apply tsplit_empty|lsplit_tac (ENewAt 0 (Var 1)) EUnit| |].
-    { eapply (d_new_at _ _ _ _ _ _ 0 SEnd (pvar 0) Sdd). eapply d_var'; [reflexivity|]. spare_tac. }
+    eapply d_letp; [apply tsplit_empty|lsplit_tac (Pair (Var 1) ENew) EUnit| |].
+    { eapply (d_new_at _ _ _ _ _ _ 0 SEnd (pvar 0) Sdd); [done|reflexivity|]. spare_tac. }
     eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
     { eapply d_var'; [reflexivity|]. spare_tac. }
     eapply d_letu; [apply tsplit_empty|lsplit_tac (ESpawn fm_thunk) EUnit| |].
@@ -126,17 +126,32 @@ Definition fm_xs : list point := pvar 0 :: (pvar 0)·1 :: [].
 
 Definition fm_L (g : fact) : Prop := ∃ f, fmx_P f ∧ g = fact_map (pt_inst (plist fm_xs)) f.
 
-Definition W_fm : world := World ∅ (λ _, False) {[0]} (λ _ g, fm_L g).
+Definition W_fm : sworld := sw_empty.
+
+Lemma fm_wf_new : wf_new (bcs_of fm_L).
+Proof.
+  apply (wf_new_lex3 _ (λ x, (pt_fsum x, pt_off x, pt_depth x))).
+  - intros x y (f & Hf & E).
+    destruct Hf as [->|[->|[->|(k & [->| ->])]]]; simpl in E; injection E as -> ->; split; reflexivity.
+  - intros x. unfold lex3, pt_fsum, pt_depth. simpl. lia.
+  - intros x y (f & Hf & E).
+    destruct Hf as [->|[->|[->|(k & [->| ->])]]]; simpl in E; injection E as -> ->; unfold pt_fsum, pt_depth; simpl; lia.
+Qed.
+#[global] Hint Resolve fm_wf_new : wfnew.
+
+Lemma W_fm_wf : sworld_wf W_fm ∧ swf W_fm.
+Proof. apply sw_empty_ok. Qed.
+
 
 Definition fm_main : expr :=
-  let_new 0 (LetP (ENewAt 1 (Var 1)) (LetP (Var 0)
+  let_new (LetP (Pair (Var 1) ENew) (LetP (Var 0)
     (LetU (ESpawn (Lam (LetU (Var 0) (EClose (Var 5)))))
     (LetU (ESpawn (Lam (LetU (Var 0) (EClose (Var 1)))))
       (App (EForce fm_box) (Pair (Var 3) (Var 1))))))).
 
 Lemma fm_force n F e :
-  dftyped W_fm ∅ (Γnew W_fm 0) (nones n) F e fm_ty →
-  dftyped W_fm ∅ (Γnew W_fm 0) (nones n) F (EForce e)
+  dftyped W_fm ∅ (Γnew fm_L) (nones n) F e fm_ty →
+  dftyped W_fm ∅ (Γnew fm_L) (nones n) F (EForce e)
     (TLolli (UPt ((pvar 0)·1)) LNone None (TProd (TSess SEnd (pvar 0) None None) (TSess SEnd ((pvar 0)·1) None None)) TUnit None).
 Proof.
   intros H.
@@ -156,14 +171,14 @@ Theorem fm_dftyped : dftyped W_fm ∅ hc_empty [] (∅, None) fm_main TUnit.
 Proof.
   unfold fm_main, let_new.
   eapply d_let; [apply tsplit_empty|apply lsplit_nil| |].
-  { eapply (d_new' _ _ _ _ _ SEnd None None); [spare_tac|set_solver]. }
+  { eapply (d_new' _ _ _ _ _ SEnd None None); [spare_tac|apply fm_wf_new]. }
   eapply d_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
-  fold (Γnew W_fm 0).
+  fold (Γnew fm_L).
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
-  eapply d_letp; [apply tsplit_empty|lsplit_tac (ENewAt 1 (Var 1)) EUnit| |].
-  { eapply (d_new_at _ _ _ _ _ _ 1 SEnd (pvar 0) SEnd). eapply d_var'; [reflexivity|]. spare_tac. }
+  eapply d_letp; [apply tsplit_empty|lsplit_tac (Pair (Var 1) ENew) EUnit| |].
+  { eapply (d_new_at _ _ _ _ _ _ 1 SEnd (pvar 0) SEnd); [done|reflexivity|]. spare_tac. }
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
   eapply d_letu; [apply tsplit_empty|lsplit_tac (ESpawn (Lam (LetU (Var 0) (EClose (Var 5))))) EUnit| |].

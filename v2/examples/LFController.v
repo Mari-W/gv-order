@@ -48,8 +48,8 @@ Definition ctl_srv : expr :=
       (App (EForce (Var 8)) (Pair (Pair (Var 1) (Var 0)) (Var 5))))))))).
 
 Definition ctl_main : expr :=
-  let_new 0 (LetP (ENewAt 0 (Var 1)) (LetP (Var 0)
-    (LetP (ENewAt 2 (Var 3)) (LetP (Var 0)
+  let_new (LetP (Pair (Var 1) ENew) (LetP (Var 0)
+    (LetP (Pair (Var 3) ENew) (LetP (Var 0)
       (LetU (ESpawn (Lam (LetU (Var 0) (App (EForce ctl_srv) (Pair (Pair (Var 9) (Var 5)) (Var 1))))))
             (App (EForce ctl_cli) (Pair (Pair (Var 3) (Var 5)) (Var 1)))))))).
 
@@ -141,7 +141,7 @@ Proof.
 Qed.
 
 Section body.
-  Context (W : world) (Γ : hctx) (n : nat).
+  Context (W : sworld) (Γ : hctx) (n : nat).
   Local Definition Γc : hctx := hc_open 4 ctl_C Γ.
 
   Lemma ctl_in : (ctl_C, ids 4) ∈ hc_hyps Γc.
@@ -302,14 +302,14 @@ Proof.
   eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
   { eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
-  eapply e_letp_; [lsplit_tac (ENewAt 0 (Var 1)) EUnit| | | ].
-  { eapply (e_new_at' _ _ _ _ _ _ _ 0 Sa (pvar 0) _ _ Sb); [|shelve]. eapply e_var'; [reflexivity|]. spare_tac. }
+  eapply e_letp_; [lsplit_tac (Pair (Var 1) ENew) EUnit| | | ].
+  { eapply (e_new_at' _ _ _ _ _ _ _ 0 Sa (pvar 0) _ _ Sb); [done|shelve|reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
   { eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
-  eapply e_letp_; [lsplit_tac (ENewAt 2 (Var 3)) EUnit| | | ].
-  { eapply (e_new_at' _ _ _ _ _ _ _ 2 Sa (pvar 0) _ _ SSkip); [|shelve]. eapply e_var'; [reflexivity|]. spare_tac. }
+  eapply e_letp_; [lsplit_tac (Pair (Var 3) ENew) EUnit| | | ].
+  { eapply (e_new_at' _ _ _ _ _ _ _ 2 Sa (pvar 0) _ _ SSkip); [done|shelve|reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
   { eapply e_var'; [reflexivity|]. spare_tac. }

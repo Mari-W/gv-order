@@ -15,19 +15,11 @@ Proof.
   destruct Hf as [->|[->|[->|(k & [->| ->])]]]; simpl in E; injection E as -> ->; done.
 Qed.
 
-Lemma W_fm_wfworld : wfworld W_fm.
-Proof.
-  apply (wfworld_lex3 W_fm (λ x, (pt_fsum x, pt_off x, pt_depth x))); [intros f []| |].
-  - intros x. unfold pt_fsum, pt_depth. simpl. lia.
-  - intros ℓ g x y _ (f & Hf & E).
-    destruct Hf as [->|[->|[->|(k & [->| ->])]]]; simpl in E; injection E as -> ->; unfold pt_fsum, pt_depth; simpl; lia.
-Qed.
-
 Definition fml_T : ty := TProd (TSess SEnd (pvar 0) (Some 4) (Some 4)) (TSess SEnd (pvar 1) (Some 4) (Some 4)).
 Definition fml_ty : ty := lbox 2 fm_C (Some (pvar 1)) fml_T TUnit.
 
 Section body.
-  Context (W : world) (Γ : hctx) (n : nat).
+  Context (W : sworld) (Γ : hctx) (n : nat).
   Local Abbreviation Γb := (Γbox 2 fm_C (pvar 1) Γ).
 
   Lemma fml_hyp x y : fmx_P (FLt x y) → fact_scoped 2 (FLt x y) → slt W Γb x y.
@@ -53,8 +45,8 @@ Section body.
     eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
     { eapply e_var'; [reflexivity|]. spare_tac. }
     lage_tac.
-    eapply e_letp_; [lsplit_tac (ENewAt 0 (Var 1)) EUnit| | | ].
-    { eapply (e_new_at' _ _ _ _ _ _ _ 0 SEnd (pvar 0) _ _ Sdd); [|shelve]. eapply e_var'; [reflexivity|]. spare_tac. }
+    eapply e_letp_; [lsplit_tac (Pair (Var 1) ENew) EUnit| | | ].
+    { eapply (e_new_at' _ _ _ _ _ _ _ 0 SEnd (pvar 0) _ _ Sdd); [done|shelve|reflexivity|]. spare_tac. }
     lage_tac.
     eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
     { eapply e_var'; [reflexivity|]. spare_tac. }
@@ -116,7 +108,7 @@ Proof.
   eapply lbox_typed; [reflexivity|exact Hb].
 Qed.
 
-Lemma fml_hold : hold_at W_fm (Γnew W_fm 0) fm_C fm_xs.
+Lemma fml_hold : hold_at W_fm (Γnew fm_L) fm_C fm_xs.
 Proof.
   apply hold_at_nil. intros f Hf _.
   destruct (fact_map (pt_inst (plist fm_xs)) f) as [x y] eqn:E.
@@ -133,12 +125,12 @@ Proof.
   lage_tac.
   eapply e_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
-  fold (Γnew W_fm 0).
+  fold (Γnew fm_L).
   eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
   { eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
-  eapply e_letp_; [lsplit_tac (ENewAt 1 (Var 1)) EUnit| | | ].
-  { eapply (e_new_at' _ _ _ _ _ _ _ 1 SEnd (pvar 0) _ _ SEnd); [|shelve]. eapply e_var'; [reflexivity|]. spare_tac. }
+  eapply e_letp_; [lsplit_tac (Pair (Var 1) ENew) EUnit| | | ].
+  { eapply (e_new_at' _ _ _ _ _ _ _ 1 SEnd (pvar 0) _ _ SEnd); [done|shelve|reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
   { eapply e_var'; [reflexivity|]. spare_tac. }
@@ -178,11 +170,11 @@ Proof. unfold fm_main, fm_box, fm_e, fm_thunk, let_new. guard_tac. Qed.
 Theorem fm_lftyped : ∃ N, ∅ ⊩^N _ W_fm (∅, {[+ fm_main +]}) : TUnit.
 Proof.
   destruct fml_typedN as (c & Ht). exists 8.
-  eapply lf_main_typed; [apply strict_wfworld; [apply W_fm_wf|apply W_fm_wfworld]|constructor|exact Ht|apply fm_guarded].
+  eapply lf_main_typed; [apply W_fm_wf|constructor|exact Ht|apply fm_guarded].
 Qed.
 
 Theorem fm_lock_free : excluded_middle → functional_choice → lock_free (∅, {[+ fm_main +]}).
 Proof.
   intros EM FC. destruct fml_typedN as (c & Ht).
-  eapply (lf_main EM FC); [apply (strict_wfworld _ W_fm_wf W_fm_wfworld)|apply W_fm_wfworld|constructor|exact Ht|apply fm_guarded].
+  eapply (lf_main EM FC); [apply W_fm_wf|constructor|exact Ht|apply fm_guarded].
 Qed.

@@ -48,18 +48,6 @@ Proof.
     split; apply Hr; rewrite ?pt_root_shift, ?pt_root_dual, ?pt_root_field; auto.
 Qed.
 
-Lemma W_rg_wfworld : wfworld W_rg.
-Proof.
-  apply (wfworld_lex3 W_rg (λ x, (pt_depth x, pt_off x, 0))); [intros f []| |].
-  - intros x. unfold pt_depth. simpl. lia.
-  - intros ℓ g x y _ (f & (X & Y & HR & HF) & E).
-    pose proof (rreach_depth X Y HR) as HD.
-    cbv beta iota delta [lex3]. left. unfold law_inst.
-    unfold rg_F in HF. repeat destruct HF as [HF|HF]; subst f; simpl in E; injection E as -> ->;
-      rewrite !pt_depth_inst by (done || apply rg_xs_depth);
-      unfold pt_depth in *; simpl; lia.
-Qed.
-
 (** ** Types at a finite refill *)
 
 Definition Schl : sty := SMu (SSeq (SRcv 1 (TSess (SVar 0) (pvar 0) (Some 2) (Some 4))) SEnd).
@@ -77,7 +65,7 @@ Definition rgl_ty : ty := lbox 2 rg_C (Some (sh 1 (pvar 0))) rgl_T TUnit.
 Ltac tsub_tac := first [apply tsub_refl | apply sub_sess; [apply sequiv_refl|simpl; lia]].
 
 Section body.
-  Context (W : world) (Γ : hctx) (n : nat).
+  Context (W : sworld) (Γ : hctx) (n : nat).
   Local Abbreviation Γb := (Γbox 2 rg_C (sh 1 (pvar 0)) Γ).
 
   Ltac rgf := apply rg_hyp; exists (pvar 0), (pvar 1); split; [apply rr_root|unfold rg_F; rg_disj].
@@ -119,8 +107,8 @@ Section body.
     { eapply e_var'; [reflexivity|]. spare_tac. }
     lage_tac.
     (* a at Y·0 *)
-    eapply e_letp_; [lsplit_tac (ENewAt 0 (Var 0)) EUnit| | | ].
-    { eapply (e_new_at' _ _ _ _ _ _ _ 0 (dual Schl) (pvar 1) _ _ Schl); [|shelve]. eapply e_var'; [reflexivity|]. spare_tac. }
+    eapply e_letp_; [lsplit_tac (Pair (Var 0) ENew) EUnit| | | ].
+    { eapply (e_new_at' _ _ _ _ _ _ _ 0 (dual Schl) (pvar 1) _ _ Schl); [done|shelve|reflexivity|]. spare_tac. }
     lage_tac.
     eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
     { eapply e_var'; [reflexivity|]. spare_tac. }
@@ -145,8 +133,8 @@ Section body.
       tsub_tac. }
     lage_tac.
     (* b at X·1, before the receive *)
-    eapply e_letp_; [lsplit_tac (ENewAt 1 (Var 5)) EUnit| | | ].
-    { eapply (e_new_at' _ _ _ _ _ _ _ 1 Schl (pvar 0) _ _ Schl); [|shelve]. eapply e_var'; [reflexivity|]. spare_tac. }
+    eapply e_letp_; [lsplit_tac (Pair (Var 5) ENew) EUnit| | | ].
+    { eapply (e_new_at' _ _ _ _ _ _ _ 1 Schl (pvar 0) _ _ Schl); [done|shelve|reflexivity|]. spare_tac. }
     lage_tac.
     eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
     { eapply e_var'; [reflexivity|]. spare_tac. }
@@ -201,7 +189,7 @@ Qed.
 
 (** ** main *)
 
-Lemma rgl_hold : hold_at W_rg (Γnew W_rg 0) rg_C rg_xs.
+Lemma rgl_hold : hold_at W_rg (Γnew rg_L) rg_C rg_xs.
 Proof.
   apply hold_at_nil. intros f Hf Hs.
   destruct (fact_map (pt_inst (plist rg_xs)) f) as [x y] eqn:E.
@@ -220,7 +208,7 @@ Proof.
   lage_tac.
   eapply e_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
-  fold (Γnew W_rg 0).
+  fold (Γnew rg_L).
   eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
   { eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
@@ -244,11 +232,11 @@ Proof. unfold rg_main, ring, rg_e, let_new. guard_tac. Qed.
 Theorem rg_lftyped : ∃ N, ∅ ⊩^N _ W_rg (∅, {[+ rg_main +]}) : TUnit.
 Proof.
   destruct rgl_typedN as (c & Ht). exists 8.
-  eapply lf_main_typed; [apply strict_wfworld; [apply W_rg_wf|apply W_rg_wfworld]|constructor|exact Ht|apply rg_guarded].
+  eapply lf_main_typed; [apply W_rg_wf|constructor|exact Ht|apply rg_guarded].
 Qed.
 
 Theorem rg_lock_free : excluded_middle → functional_choice → lock_free (∅, {[+ rg_main +]}).
 Proof.
   intros EM FC. destruct rgl_typedN as (c & Ht).
-  eapply (lf_main EM FC); [apply (strict_wfworld _ W_rg_wf W_rg_wfworld)|apply W_rg_wfworld|constructor|exact Ht|apply rg_guarded].
+  eapply (lf_main EM FC); [apply W_rg_wf|constructor|exact Ht|apply rg_guarded].
 Qed.

@@ -64,7 +64,7 @@ Qed.
 Definition stage : expr :=
   EBox (Lam (LetP (ERecv (Var 0))
     (LetU (EClose (Var 0))
-      (LetP ENew0
+      (LetP ENew
         (LetU (ESpawn (Lam (App (EForce (Var 6)) (Var 1))))
           (EClose (ESend (Pair (Var 3) (Var 1))))))))).
 

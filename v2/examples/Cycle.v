@@ -5,29 +5,35 @@
               let () = spawn (λu. let () = u in let () = close c′ in close d′) in
               let () = close c in close d
 
-    c, c′ sit at ρ and ρ‾ for a fresh root ρ of family 0, and d, d′ at
-    the field ρ·0 and (ρ·0)‾. Main closes c while it holds d, so it needs
-    ρ ≺ (ρ·0)‾. The thunk closes c′ while it holds d′, so it needs
-    ρ‾ ≺ ρ·0. The laws of family 0 state exactly these two facts. *)
+    c, c′ sit at ρ and ρ‾ for a fresh root ρ, and d, d′ at the field ρ·0
+    and (ρ·0)‾. Main closes c while it holds d, so it needs ρ ≺ (ρ·0)‾.
+    The thunk closes c′ while it holds d′, so it needs ρ‾ ≺ ρ·0. The
+    constraint of the first creation states exactly these two facts. *)
 
 From GV Require Export examples.Tools2.
 
-(** The laws of family 0 over the root r = ι₀. *)
+(** The constraint of the first creation over the new root ι₀. *)
 Definition cy_L (g : fact) : Prop :=
   g = FLt (pvar 0) ((pvar 0)·0)‾ ∨ g = FLt (pvar 0)‾ ((pvar 0)·0).
 
-Definition W_cy : world := World ∅ (λ _, False) {[0]} (λ _ g, cy_L g).
+Definition W_cy : sworld := sw_empty.
 
-Lemma W_cy_wf : world_wf W_cy.
-Proof. split; simpl; [done|]. intros ℓ x y _ [E|E]; injection E as -> ->; done. Qed.
+Lemma cy_wf_new : wf_new (bcs_of cy_L).
+Proof.
+  apply (wf_new_lex3 _ (λ x, (pt_depth x, pt_off x, 0))).
+  - intros x y [E|E]; injection E as -> ->; split; reflexivity.
+  - intros x. unfold lex3, pt_depth. simpl. lia.
+  - intros x y [E|E]; injection E as -> ->; unfold lex3, pt_depth; simpl; lia.
+Qed.
+#[local] Hint Resolve cy_wf_new : wfnew.
 
 Definition cy_thunk : expr := Lam (LetU (Var 0) (LetU (EClose (Var 5)) (EClose (Var 1)))).
 
 Definition cy_main : expr :=
-  let_new 0 (LetP (ENewAt 0 (Var 1)) (LetP (Var 0)
+  let_new (LetP (Pair (Var 1) ENew) (LetP (Var 0)
     (LetU (ESpawn cy_thunk) (LetU (EClose (Var 3)) (EClose (Var 1)))))).
 
-Abbreviation Γc := (Γnew W_cy 0).
+Abbreviation Γc := (Γnew cy_L).
 
 Lemma cy_law1 : slt W_cy Γc (pvar 0) ((pvar 0)·0)‾.
 Proof. eapply (law_slt _ _ (FLt (pvar 0) ((pvar 0)·0)‾)); [by left|simpl; lia|fact_eq]. Qed.
@@ -39,14 +45,14 @@ Theorem cy_dftyped : dftyped W_cy ∅ hc_empty [] (∅, None) cy_main TUnit.
 Proof.
   unfold cy_main, let_new.
   eapply d_let; [apply tsplit_empty|apply lsplit_nil| |].
-  { eapply (d_new' _ _ _ _ _ SEnd None None); [spare_tac|set_solver]. }
+  { eapply (d_new' _ _ _ _ _ SEnd None None); [spare_tac|apply cy_wf_new]. }
   eapply d_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
-  fold (Γnew W_cy 0).
+  fold (Γnew cy_L).
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
-  eapply d_letp; [apply tsplit_empty|lsplit_tac (ENewAt 0 (Var 1)) EUnit| |].
-  { eapply (d_new_at _ _ _ _ _ _ 0 SEnd (pvar 0) SEnd). eapply d_var'; [reflexivity|]. spare_tac. }
+  eapply d_letp; [apply tsplit_empty|lsplit_tac (Pair (Var 1) ENew) EUnit| |].
+  { eapply (d_new_at _ _ _ _ _ _ 0 SEnd (pvar 0) SEnd); [done|reflexivity|]. spare_tac. }
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
   eapply d_letu; [apply tsplit_empty|lsplit_tac (ESpawn cy_thunk) EUnit| |].

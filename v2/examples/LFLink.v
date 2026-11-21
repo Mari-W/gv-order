@@ -14,7 +14,7 @@
 From GV Require Import examples.LFTools.
 
 Section link.
-  Context (W : world) (N : nat) (HN : 1 ≤ N) (S : sty) (x : point).
+  Context (W : sworld) (N : nat) (HN : 1 ≤ N) (S : sty) (x : point).
 
   Definition lc : cend := EPos "c".
   Definition ld : cend := ENeg "d".

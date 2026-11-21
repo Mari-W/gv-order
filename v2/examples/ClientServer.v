@@ -40,7 +40,22 @@ Definition cs_L (g : fact) : Prop :=
     g = FLt (sh k α) (sh k β)‾ ∨ g = FLt (sh k β) (sh (S k) α)‾ ∨
     g = FLt (sh k α) ((pvar 0)·1) ∨ g = FLt (sh k β) ((pvar 0)·1).
 
-Definition W_cs : world := World ∅ (λ _, False) {[0]} (λ _ g, cs_L g).
+Definition W_cs : sworld := sw_empty.
+
+Lemma cs_wf_new : wf_new (bcs_of cs_L).
+Proof.
+  apply (wf_new_lex3 _ (λ x, (pt_fsum x, pt_off x, pt_depth x))).
+  - intros x y (k & b & Hk).
+    destruct b; destruct Hk as [E|[E|[E|E]]]; injection E as -> ->; split; reflexivity.
+  - intros x. unfold lex3, pt_fsum, pt_depth. simpl. lia.
+  - intros x y (k & b & Hk).
+    destruct b; destruct Hk as [E|[E|[E|E]]]; injection E as -> ->; unfold pt_fsum, pt_depth; simpl; lia.
+Qed.
+#[global] Hint Resolve cs_wf_new : wfnew.
+
+Lemma W_cs_wf : sworld_wf W_cs ∧ swf W_cs.
+Proof. apply sw_empty_ok. Qed.
+
 
 Definition cs_arr (S1 S2 : sty) : ty :=
   TLolli (UPt (pvar 2)) LNone None (TProd (TSess S1 (pvar 0) None None) (TSess S2 (pvar 1) None None)) TUnit None.
@@ -56,7 +71,7 @@ Definition srv : expr :=
     (ELet (ESend (Pair EUnit (Var 2))) (App (EForce (Var 6)) (Pair (Var 1) (Var 0)))))))).
 
 Definition cs_main : expr :=
-  let_new 0 (LetP (ENewAt 0 (Var 1)) (LetP (Var 0)
+  let_new (LetP (Pair (Var 1) ENew) (LetP (Var 0)
     (LetU (ESpawn (Lam (LetU (Var 0) (App (EForce srv) (Pair (Var 5) (Var 1))))))
           (App (EForce cli) (Pair (Var 3) (Var 1)))))).
 
@@ -103,7 +118,7 @@ Proof.
 Qed.
 
 Section body.
-  Context (W : world) (Γ : hctx) (n : nat).
+  Context (W : sworld) (Γ : hctx) (n : nat).
   Local Definition Γb : hctx := hc_open 3 cs_C Γ.
 
   Lemma cs_in : (cs_C, ids 3) ∈ hc_hyps Γb.
@@ -211,7 +226,7 @@ End body.
 
 (** ** main *)
 
-Definition Γm : hctx := hc_open 1 (bcs_of (w_laws W_cs 0)) hc_empty.
+Definition Γm : hctx := hc_open 1 (bcs_of (cs_L)) hc_empty.
 
 Lemma law_fact x y :
   (∃ k (b : bool), let α := pt_polar b (pvar 0) in let β := pt_polar b ((pvar 0)·0) in
@@ -255,14 +270,14 @@ Theorem cs_dftyped : dftyped W_cs ∅ hc_empty [] (∅, None) cs_main TUnit.
 Proof.
   unfold cs_main, let_new.
   eapply d_let; [apply tsplit_empty|apply lsplit_nil| |].
-  { eapply (d_new' _ _ _ _ _ Sa None None); [spare_tac|set_solver]. }
+  { eapply (d_new' _ _ _ _ _ Sa None None); [spare_tac|apply cs_wf_new]. }
   eapply d_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
   fold Γm.
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
-  eapply d_letp; [apply tsplit_empty|lsplit_tac (ENewAt 0 (Var 1)) EUnit| |].
-  { eapply (d_new_at _ _ _ _ _ _ 0 Sa (pvar 0) Sb). eapply d_var'; [reflexivity|]. spare_tac. }
+  eapply d_letp; [apply tsplit_empty|lsplit_tac (Pair (Var 1) ENew) EUnit| |].
+  { eapply (d_new_at _ _ _ _ _ _ 0 Sa (pvar 0) Sb); [done|reflexivity|]. spare_tac. }
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
   eapply d_letu; [apply tsplit_empty

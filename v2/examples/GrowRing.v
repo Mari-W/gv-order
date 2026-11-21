@@ -93,9 +93,9 @@ Definition rg_T : ty := TProd (TSess Sch (pvar 0) None None) (TSess (dual Sch) (
 Definition rg_ty : ty := box1 2 rg_C (sh 1 (pvar 0)) rg_T.
 
 Definition rg_e : expr :=
-  LetP (Var 0) (LetP (ENewAt 0 (Var 0)) (LetP (Var 0)
+  LetP (Var 0) (LetP (Pair (Var 0) ENew) (LetP (Var 0)
   (LetU (ESpawn (Lam (LetU (Var 0) (EClose (ESend (Pair (Var 2) (Var 4)))))))
-  (LetP (ENewAt 1 (Var 5)) (LetP (Var 0)
+  (LetP (Pair (Var 5) ENew) (LetP (Var 0)
   (LetP (ERecv (Var 3)) (LetU (EClose (Var 0))
   (LetU (ESpawn (Lam (LetU (Var 0) (App (EForce (Var 14)) (Pair (Var 2) (Var 3))))))
         (ESpawn (Lam (LetU (Var 0) (App (EForce (Var 14)) (Pair (Var 4) (Var 7)))))))))))))).
@@ -126,7 +126,7 @@ Ltac rg_disj :=
         | right; right; right; left; reflexivity | right; right; right; right; reflexivity ].
 
 Section body.
-  Context (W : world) (Γ : hctx) (n : nat).
+  Context (W : sworld) (Γ : hctx) (n : nat).
   Local Abbreviation Γb := (Γbox 2 rg_C (sh 1 (pvar 0)) Γ).
 
   Lemma rg_hyp x y : rg_P (FLt x y) → slt W Γb x y.
@@ -176,8 +176,8 @@ Section body.
     eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
     { eapply d_var'; [reflexivity|]. spare_tac. }
     (* a at Y·0 *)
-    eapply d_letp; [apply tsplit_empty|lsplit_tac (ENewAt 0 (Var 0)) EUnit| |].
-    { eapply (d_new_at _ _ _ _ _ _ 0 (dual Sch) (pvar 1) Sch). eapply d_var'; [reflexivity|]. spare_tac. }
+    eapply d_letp; [apply tsplit_empty|lsplit_tac (Pair (Var 0) ENew) EUnit| |].
+    { eapply (d_new_at _ _ _ _ _ _ 0 (dual Sch) (pvar 1) Sch); [done|reflexivity|]. spare_tac. }
     eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
     { eapply d_var'; [reflexivity|]. spare_tac. }
     (* the y-thread sends a on y *)
@@ -194,8 +194,8 @@ Section body.
       - eapply d_var'; [reflexivity|]. spare_tac.
       - eapply d_var'; [reflexivity|]. spare_tac. }
     (* b at X·1, before the receive *)
-    eapply d_letp; [apply tsplit_empty|lsplit_tac (ENewAt 1 (Var 5)) EUnit| |].
-    { eapply (d_new_at _ _ _ _ _ _ 1 Sch (pvar 0) Sch). eapply d_var'; [reflexivity|]. spare_tac. }
+    eapply d_letp; [apply tsplit_empty|lsplit_tac (Pair (Var 5) ENew) EUnit| |].
+    { eapply (d_new_at _ _ _ _ _ _ 1 Sch (pvar 0) Sch); [done|reflexivity|]. spare_tac. }
     eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
     { eapply d_var'; [reflexivity|]. spare_tac. }
     eapply d_letp; [apply tsplit_empty|lsplit_tac (ERecv (Var 3)) EUnit| |].
@@ -237,13 +237,35 @@ Definition rg_xs : list point := pvar 0 :: (pvar 0)‾ :: [].
 
 Definition rg_L (g : fact) : Prop := ∃ f, rg_P f ∧ g = fact_map (pt_inst (plist rg_xs)) f.
 
-Definition W_rg : world := World ∅ (λ _, False) {[0]} (λ _ g, rg_L g).
+Definition W_rg : sworld := sw_empty.
 
-Definition rg_main : expr := let_new 0 (App (EForce ring) (Pair (Var 1) (Var 0))).
+Lemma rg_wf_new : wf_new (bcs_of rg_L).
+Proof.
+  apply (wf_new_lex3 _ (λ x, (pt_depth x, pt_off x, 0))).
+  - intros x y (f & (X & Y & HR & HF) & E).
+    pose proof (rreach_depth X Y HR) as HD.
+
+    unfold rg_F in HF. repeat destruct HF as [HF|HF]; subst f; simpl in E; injection E as -> ->;
+      split; reflexivity.
+  - intros x. unfold lex3, pt_fsum, pt_depth. simpl. lia.
+  - intros x y (f & (X & Y & HR & HF) & E).
+    pose proof (rreach_depth X Y HR) as HD.
+    cbv beta iota delta [lex3]. left.
+    unfold rg_F in HF. repeat destruct HF as [HF|HF]; subst f; simpl in E; injection E as -> ->;
+      rewrite !pt_depth_inst by (done || apply rg_xs_depth);
+      unfold pt_depth in *; simpl; lia.
+Qed.
+#[global] Hint Resolve rg_wf_new : wfnew.
+
+Lemma W_rg_wf : sworld_wf W_rg ∧ swf W_rg.
+Proof. apply sw_empty_ok. Qed.
+
+
+Definition rg_main : expr := let_new (App (EForce ring) (Pair (Var 1) (Var 0))).
 
 Lemma rg_force n F e :
-  dftyped W_rg ∅ (Γnew W_rg 0) (nones n) F e rg_ty →
-  dftyped W_rg ∅ (Γnew W_rg 0) (nones n) F (EForce e)
+  dftyped W_rg ∅ (Γnew rg_L) (nones n) F e rg_ty →
+  dftyped W_rg ∅ (Γnew rg_L) (nones n) F (EForce e)
     (TLolli (UPt (sh 1 (pvar 0))) LNone None (TProd (TSess Sch (pvar 0) None None) (TSess (dual Sch) (pvar 0)‾ None None)) TUnit None).
 Proof.
   intros H.
@@ -265,10 +287,10 @@ Theorem rg_dftyped : dftyped W_rg ∅ hc_empty [] (∅, None) rg_main TUnit.
 Proof.
   unfold rg_main, let_new.
   eapply d_let; [apply tsplit_empty|apply lsplit_nil| |].
-  { eapply (d_new' _ _ _ _ _ Sch None None); [spare_tac|set_solver]. }
+  { eapply (d_new' _ _ _ _ _ Sch None None); [spare_tac|apply rg_wf_new]. }
   eapply d_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
-  fold (Γnew W_rg 0).
+  fold (Γnew rg_L).
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
   eapply d_app; [apply tsplit_empty|lsplit_tac (EForce ring) EUnit|apply ubu_below_empty| |].

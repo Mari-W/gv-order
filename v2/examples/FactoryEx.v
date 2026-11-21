@@ -23,12 +23,23 @@ Definition Sr : sty := SSeq (SRcv 0 TUnit) SEnd.
 Definition fx_L (g : fact) : Prop :=
   g = FLt (pvar 0)‾ ((pvar 0)·0) ∨ g = FLt (pt_shift 1 (pvar 0)‾) ((pvar 0)·0).
 
-Definition W_fx : world := World ∅ (λ _, False) {[0]} (λ _ g, fx_L g).
+Definition W_fx : sworld := sw_empty.
 
-Lemma W_fx_wf : world_wf W_fx.
-Proof. split; simpl; [done|]. intros ℓ x y _ [E|E]; injection E as -> ->; done. Qed.
+Lemma fx_wf_new : wf_new (bcs_of fx_L).
+Proof.
+  apply (wf_new_lex3 _ (λ x, (pt_fsum x, pt_depth x, pt_off x))).
+  - intros x y [E|E]; injection E as -> ->; split; reflexivity.
+  - intros x. unfold lex3, pt_fsum, pt_depth. simpl. lia.
+  - intros x y [E|E]; injection E as -> ->; unfold pt_fsum, pt_depth; simpl; lia.
+Qed.
+#[global] Hint Resolve fx_wf_new : wfnew.
 
-Definition Tres : ty := TEx LBot 1 (bcs_of (w_laws W_fx 0)) (TSess Sr (pvar 0)‾ None None).
+Lemma W_fx_wf : sworld_wf W_fx ∧ swf W_fx.
+Proof. apply sw_empty_ok. Qed.
+
+
+
+Definition Tres : ty := TEx LBot 1 (bcs_of (fx_L)) (TSess Sr (pvar 0)‾ None None).
 
 Definition C0 : bcs := bcs_of (λ _, False).
 Definition mk0_ty : ty := boxg 0 C0 None TUnit Tres.
@@ -43,11 +54,11 @@ Definition mk1_ty : ty := boxg 1 mk1_C None (TSess Sr (pvar 0) None None) mk1_re
 Definition worker (i : nat) : expr := Lam (LetU (Var 0) (EClose (ESend (Pair EUnit (Var i))))).
 
 Definition mk0_e : expr :=
-  LetU (Var 0) (let_new 0 (LetU (ESpawn (worker 2)) (Var 0))).
+  LetU (Var 0) (let_new (LetU (ESpawn (worker 2)) (Var 0))).
 Definition mk0 : expr := EBox (Lam mk0_e).
 
 Definition mk1_e : expr :=
-  LetP (ENewAt 0 (Var 0)) (LetP (Var 0) (LetU (ESpawn (worker 2)) (Pair (Var 3) (Var 0)))).
+  LetP (Pair (Var 0) ENew) (LetP (Var 0) (LetU (ESpawn (worker 2)) (Pair (Var 3) (Var 0)))).
 Definition mk1 : expr := EBox (Lam mk1_e).
 
 Definition fx_main : expr :=
@@ -77,7 +88,7 @@ Proof.
   eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
   eapply d_let; [apply tsplit_empty|lsplit_tac (ENew 0) EUnit| |].
-  { eapply (d_new' _ _ _ _ _ Sd None None); [spare_tac|set_solver]. }
+  { eapply (d_new' _ _ _ _ _ Sd None None); [spare_tac|apply fx_wf_new]. }
   eapply d_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_nil', !lenv_pinst_cons', lenv_pinst_nones.
   cbn [fmap option_fmap option_map insert list_insert].
@@ -89,9 +100,9 @@ Proof.
   change (pinst_ty (pshift 1) Tres) with Tres. unfold Tres.
   eapply d_pack with (xs := pvar 0 :: []); [done| |exact I|].
   - apply hold_at_nil. intros f Hf _. destruct Hf as [->| ->]; simpl.
-    + eapply (hyp_slt_ids _ _ (w_laws W_fx 0) 1);
+    + eapply (hyp_slt_ids _ _ (fx_L) 1);
         [unfold hc_open; cbn [hc_hyps]; apply elem_of_app; right; apply list_elem_of_here|by left|simpl; lia].
-    + eapply (hyp_slt_ids _ _ (w_laws W_fx 0) 1);
+    + eapply (hyp_slt_ids _ _ (fx_L) 1);
         [unfold hc_open; cbn [hc_hyps]; apply elem_of_app; right; apply list_elem_of_here|by right|simpl; lia].
   - eapply d_var'; [reflexivity|]. spare_tac.
   Unshelve. all: exact None.
@@ -107,8 +118,8 @@ Lemma mk1_body Γ n :
     (Some (TSess Sr (pvar 0) None None) :: Some mk1_ty :: nones n) (∅, Some (FRest RAll)) mk1_e mk1_res.
 Proof.
   unfold mk1_e.
-  eapply d_letp; [apply tsplit_empty|lsplit_tac (ENewAt 0 (Var 0)) EUnit| |].
-  { eapply (d_new_at _ _ _ _ _ _ 0 Sr (pvar 0) Sd). eapply d_var'; [reflexivity|]. spare_tac. }
+  eapply d_letp; [apply tsplit_empty|lsplit_tac (Pair (Var 0) ENew) EUnit| |].
+  { eapply (d_new_at _ _ _ _ _ _ 0 Sr (pvar 0) Sd); [done|reflexivity|]. spare_tac. }
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
   eapply d_letu; [apply tsplit_empty|lsplit_tac (ESpawn (worker 2)) EUnit| |].
@@ -124,7 +135,7 @@ Proof. apply boxg_typed; [reflexivity|apply mk1_body]. Qed.
 
 (** ** main *)
 
-Abbreviation Γx := (Γnew W_fx 0).
+Abbreviation Γx := (Γnew fx_L).
 
 Lemma fx_law x y : fx_L (FLt x y) → fact_scoped 1 (FLt x y) → slt W_fx Γx x y.
 Proof. intros Hf Hs. by apply law_slt'. Qed.
@@ -143,7 +154,7 @@ Proof.
     - by apply (mk0_typed _ 0). }
   eapply d_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
-  fold (Γnew W_fx 0).
+  fold (Γnew fx_L).
   eapply d_letp; [apply tsplit_empty|lsplit_tac (App (EForce mk1) (Var 0)) EUnit| |].
   { eapply d_app; [apply tsplit_empty|lsplit_tac (EForce mk1) (Var 0)|apply ubu_below_empty| |].
     - assert (sinst_ty (slist []) (ty_inst ((pvar 0)‾ :: [])

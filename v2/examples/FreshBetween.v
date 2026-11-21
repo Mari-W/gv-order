@@ -27,7 +27,7 @@ Definition fb_T : ty := TProd (TSess SEnd (pvar 0) None None) (TSess SEnd (pvar 
 Definition fb_ty : ty := box1 2 fb_C (pvar 1) fb_T.
 
 Definition fb_box : expr :=
-  EBox (Lam (LetP (Var 0) (LetP (ENewAt 0 (Var 1)) (LetP (Var 0)
+  EBox (Lam (LetP (Var 0) (LetP (Pair (Var 1) ENew) (LetP (Var 0)
     (LetU (ESpawn (Lam (LetU (Var 0) (EClose (Var 1)))))
     (LetU (EClose (Var 3)) (LetU (EClose (Var 1)) (EClose (Var 4))))))))).
 
@@ -36,7 +36,7 @@ Ltac fb_disj :=
         | right; right; right; left; reflexivity | right; right; right; right; reflexivity ].
 
 Section body.
-  Context (W : world) (Γ : hctx) (n : nat).
+  Context (W : sworld) (Γ : hctx) (n : nat).
   Local Abbreviation Γb := (Γbox 2 fb_C (pvar 1) Γ).
 
   Lemma fb_hyp x y : fbx_P (FLt x y) → fact_scoped 2 (FLt x y) → slt W Γb x y.
@@ -46,15 +46,15 @@ Section body.
 
   Lemma fb_body :
     dftyped W ∅ Γb (Some fb_T :: Some fb_ty :: nones n) (∅, Some (FRest (RAbove (pvar 1))))
-      (LetP (Var 0) (LetP (ENewAt 0 (Var 1)) (LetP (Var 0)
+      (LetP (Var 0) (LetP (Pair (Var 1) ENew) (LetP (Var 0)
         (LetU (ESpawn (Lam (LetU (Var 0) (EClose (Var 1)))))
         (LetU (EClose (Var 3)) (LetU (EClose (Var 1)) (EClose (Var 4))))))))
       TUnit.
   Proof.
     eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
     { eapply d_var'; [reflexivity|]. spare_tac. }
-    eapply d_letp; [apply tsplit_empty|lsplit_tac (ENewAt 0 (Var 1)) EUnit| |].
-    { eapply (d_new_at _ _ _ _ _ _ 0 SEnd (pvar 0) SEnd). eapply d_var'; [reflexivity|]. spare_tac. }
+    eapply d_letp; [apply tsplit_empty|lsplit_tac (Pair (Var 1) ENew) EUnit| |].
+    { eapply (d_new_at _ _ _ _ _ _ 0 SEnd (pvar 0) SEnd); [done|reflexivity|]. spare_tac. }
     eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
     { eapply d_var'; [reflexivity|]. spare_tac. }
     eapply d_letu; [apply tsplit_empty|lsplit_tac (ESpawn (Lam (LetU (Var 0) (EClose (Var 1))))) EUnit| |].
@@ -86,17 +86,32 @@ Definition fb_xs : list point := pvar 0 :: (pvar 0)·1 :: [].
 
 Definition fb_L (g : fact) : Prop := ∃ f, fbx_P f ∧ g = fact_map (pt_inst (plist fb_xs)) f.
 
-Definition W_fb : world := World ∅ (λ _, False) {[0]} (λ _ g, fb_L g).
+Definition W_fb : sworld := sw_empty.
+
+Lemma fb_wf_new : wf_new (bcs_of fb_L).
+Proof.
+  apply (wf_new_lex3 _ (λ x, (pt_fsum x, pt_off x, pt_depth x))).
+  - intros x y (f & Hf & E).
+    destruct Hf as [->|[->|[->|[->| ->]]]]; simpl in E; injection E as -> ->; split; reflexivity.
+  - intros x. unfold lex3, pt_fsum, pt_depth. simpl. lia.
+  - intros x y (f & Hf & E).
+    destruct Hf as [->|[->|[->|[->| ->]]]]; simpl in E; injection E as -> ->; unfold pt_fsum, pt_depth; simpl; lia.
+Qed.
+#[global] Hint Resolve fb_wf_new : wfnew.
+
+Lemma W_fb_wf : sworld_wf W_fb ∧ swf W_fb.
+Proof. apply sw_empty_ok. Qed.
+
 
 Definition fb_main : expr :=
-  let_new 0 (LetP (ENewAt 1 (Var 1)) (LetP (Var 0)
+  let_new (LetP (Pair (Var 1) ENew) (LetP (Var 0)
     (LetU (ESpawn (Lam (LetU (Var 0) (EClose (Var 5)))))
     (LetU (ESpawn (Lam (LetU (Var 0) (EClose (Var 1)))))
       (App (EForce fb_box) (Pair (Var 3) (Var 1))))))).
 
 Lemma fb_force n F e :
-  dftyped W_fb ∅ (Γnew W_fb 0) (nones n) F e fb_ty →
-  dftyped W_fb ∅ (Γnew W_fb 0) (nones n) F (EForce e)
+  dftyped W_fb ∅ (Γnew fb_L) (nones n) F e fb_ty →
+  dftyped W_fb ∅ (Γnew fb_L) (nones n) F (EForce e)
     (TLolli (UPt ((pvar 0)·1)) LNone None (TProd (TSess SEnd (pvar 0) None None) (TSess SEnd ((pvar 0)·1) None None)) TUnit None).
 Proof.
   intros H.
@@ -116,14 +131,14 @@ Theorem fb_dftyped : dftyped W_fb ∅ hc_empty [] (∅, None) fb_main TUnit.
 Proof.
   unfold fb_main, let_new.
   eapply d_let; [apply tsplit_empty|apply lsplit_nil| |].
-  { eapply (d_new' _ _ _ _ _ SEnd None None); [spare_tac|set_solver]. }
+  { eapply (d_new' _ _ _ _ _ SEnd None None); [spare_tac|apply fb_wf_new]. }
   eapply d_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
-  fold (Γnew W_fb 0).
+  fold (Γnew fb_L).
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
-  eapply d_letp; [apply tsplit_empty|lsplit_tac (ENewAt 1 (Var 1)) EUnit| |].
-  { eapply (d_new_at _ _ _ _ _ _ 1 SEnd (pvar 0) SEnd). eapply d_var'; [reflexivity|]. spare_tac. }
+  eapply d_letp; [apply tsplit_empty|lsplit_tac (Pair (Var 1) ENew) EUnit| |].
+  { eapply (d_new_at _ _ _ _ _ _ 1 SEnd (pvar 0) SEnd); [done|reflexivity|]. spare_tac. }
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
   eapply d_letu; [apply tsplit_empty|lsplit_tac (ESpawn (Lam (LetU (Var 0) (EClose (Var 5))))) EUnit| |].

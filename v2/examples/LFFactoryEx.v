@@ -10,14 +10,7 @@
 
 From GV Require Export examples.LFTools examples.FactoryEx.
 
-Lemma W_fx_wfworld : wfworld W_fx.
-Proof.
-  apply (wfworld_lex3 W_fx (λ x, (pt_fsum x, pt_depth x, pt_off x))); [intros f []| |].
-  - intros x. unfold pt_fsum, pt_depth. simpl. lia.
-  - intros ℓ g x y _ [E|E]; injection E as -> ->; unfold pt_fsum, pt_depth; simpl; lia.
-Qed.
-
-Definition Tresl : ty := TEx LBot 1 (bcs_of (w_laws W_fx 0)) (TSess Sr (pvar 0)‾ (Some 2) (Some 2)).
+Definition Tresl : ty := TEx LBot 1 (bcs_of (fx_L)) (TSess Sr (pvar 0)‾ (Some 2) (Some 2)).
 Definition mk0l_ty : ty := lbox 0 C0 None TUnit Tresl.
 Definition mk1l_res : ty := TProd (TSess Sr (pvar 0) (Some 2) (Some 2)) (TSess Sr ((pvar 0)·0)‾ (Some 2) (Some 2)).
 Definition mk1l_ty : ty := lbox 1 mk1_C None (TSess Sr (pvar 0) (Some 2) (Some 2)) mk1l_res.
@@ -60,9 +53,9 @@ Proof.
   change (pinst_ty (pshift 1) Tresl) with Tresl. unfold Tresl.
   eapply e_pack with (xs := pvar 0 :: []); [done| |exact I|].
   - apply hold_at_nil. intros f Hf _. destruct Hf as [->| ->]; simpl.
-    + eapply (hyp_slt_ids _ _ (w_laws W_fx 0) 1);
+    + eapply (hyp_slt_ids _ _ (fx_L) 1);
         [unfold hc_open; cbn [hc_hyps]; apply elem_of_app; right; apply list_elem_of_here|by left|simpl; lia].
-    + eapply (hyp_slt_ids _ _ (w_laws W_fx 0) 1);
+    + eapply (hyp_slt_ids _ _ (fx_L) 1);
         [unfold hc_open; cbn [hc_hyps]; apply elem_of_app; right; apply list_elem_of_here|by right|simpl; lia].
   - eapply e_var'; [reflexivity|]. spare_tac. }
   Unshelve. all: first [apply tsub_refl | exact None | simpl; lia].
@@ -81,8 +74,8 @@ Lemma mk1l_body Γ n : ∃ c,
 Proof.
   eexists _.
   { unfold mk1_e.
-  eapply e_letp_; [lsplit_tac (ENewAt 0 (Var 0)) EUnit| | | ].
-  { eapply (e_new_at' _ _ _ _ _ _ _ 0 Sr (pvar 0) _ _ Sd); [|shelve]. eapply e_var'; [reflexivity|]. spare_tac. }
+  eapply e_letp_; [lsplit_tac (Pair (Var 0) ENew) EUnit| | | ].
+  { eapply (e_new_at' _ _ _ _ _ _ _ 0 Sr (pvar 0) _ _ Sd); [done|shelve|reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
   { eapply e_var'; [reflexivity|]. spare_tac. }
@@ -122,7 +115,7 @@ Proof.
   lage_tac.
   eapply e_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
-  fold (Γnew W_fx 0).
+  fold (Γnew fx_L).
   eapply e_letp_; [lsplit_tac (App (EForce mk1) (Var 0)) EUnit| | | ].
   { eapply e_app_; [lsplit_tac (EForce mk1) (Var 0)|apply ubu_below_empty| | | |shelve].
     { eapply (lbox_force_eq _ _ _ _ _ _ 1 mk1_C None (TSess Sr (pvar 0) (Some 2) (Some 2)) mk1l_res ((pvar 0)‾ :: []) _ UNone (TSess Sr (pvar 0)‾ (Some 2) (Some 2))
@@ -173,11 +166,11 @@ Proof. unfold fx_main, mk0, mk1, mk0_e, mk1_e, worker, let_new. guard_tac. Qed.
 Theorem fx_lftyped : ∃ N, ∅ ⊩^N _ W_fx (∅, {[+ fx_main +]}) : TUnit.
 Proof.
   destruct fxl_typedN as (c & Ht). exists 4.
-  eapply lf_main_typed; [apply strict_wfworld; [apply W_fx_wf|apply W_fx_wfworld]|constructor|exact Ht|apply fx_guarded].
+  eapply lf_main_typed; [apply W_fx_wf|constructor|exact Ht|apply fx_guarded].
 Qed.
 
 Theorem fx_lock_free : excluded_middle → functional_choice → lock_free (∅, {[+ fx_main +]}).
 Proof.
   intros EM FC. destruct fxl_typedN as (c & Ht).
-  eapply (lf_main EM FC); [apply (strict_wfworld _ W_fx_wf W_fx_wfworld)|apply W_fx_wfworld|constructor|exact Ht|apply fx_guarded].
+  eapply (lf_main EM FC); [apply W_fx_wf|constructor|exact Ht|apply fx_guarded].
 Qed.
