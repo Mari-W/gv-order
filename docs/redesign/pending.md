@@ -1089,6 +1089,18 @@ must do, open questions.
 
 ## Open discussion (not scheduled)
 
+- **P-Connect's overlap is the shared constants, not the interface (2026-11-21,
+  from the Curry-Howard session).** P-Connect asks `swf (W1|S ⊔ W2|S)` with
+  `S = swshared W1 W2 = sw_consts W1 ∩ sw_consts W2` (static/Typing.v,
+  types/Worlds.v). S is the set of constants both worlds know, not the roots
+  of the cut interface Σ_C. The rule composes by the interface only if the
+  two coincide. Two repairs. (a) A lemma that in every derivation S ⊆ the
+  roots of the points of Σ_C. Private constants are fresh and families are
+  gone, so it may hold already, but nothing states it. (b) A hiding step, so a
+  judgment's world lives on its interface only, W restricted to the roots of
+  Σ, sound by transitivity as amalgamation is. With either, the type of a
+  component reads (Σ, W|roots Σ), and P-Connect checks duality and
+  well-foundedness of the two interface orders. Needs the author's go.
 - **Cross-references everywhere on the map (author 2026-11-19, another
   day).** Every symbol in every formula should be hoverable and lead to
   its definition, which needs a restructure of the generator (one
