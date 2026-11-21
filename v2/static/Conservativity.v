@@ -410,11 +410,13 @@ Qed.
 Lemma d_pack W Θ Γ Δ F e lb m C T xs :
   length xs = m → hold_at W Γ C xs →
   lbx_below_h W Γ lb (heads (ty_inst xs T)) (hbot (ty_inst xs T)) →
+  ex_wf W Γ lb m C T →
   dftyped W Θ Γ Δ F e (ty_inst xs T) →
   dftyped W Θ Γ Δ F e (TEx lb m C T).
 Proof.
-  intros Hxs HC Hlb H. dfr. eapply e_pack; [done|done| |].
+  intros Hxs HC Hlb Hwf H. dfr. eapply e_pack; [done|done| | |].
   - rewrite ty_inst_df. by heads_df.
+  - unfold ex_wf. by heads_df.
   - rewrite ty_inst_df. exact H.
 Qed.
 
@@ -518,8 +520,9 @@ Proof.
   - rewrite sty_df_dual. eapply d_new; [by apply lenv_unl_df|done].
   - rewrite sty_df_dual. eapply d_new_fld; by apply lenv_unl_df.
   - eapply d_conv; [|exact IHtyped]. rewrite !ty_df_idem. by eapply tsub_df.
-  - eapply d_pack; [done|done| |].
+  - eapply d_pack; [done|done| | |].
     + rewrite ty_inst_df. by heads_df.
+    + unfold ex_wf in *. by heads_df.
     + rewrite ty_inst_df. exact IHtyped.
   - rewrite lenv_df_insert, lenv_df_pinst, tenv_df_pinst, ty_df_pinst in IHtyped.
     eapply d_open; [by rewrite lenv_df_lookup, H|by rewrite unlimited_df|done|exact IHtyped].

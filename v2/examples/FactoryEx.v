@@ -98,7 +98,7 @@ Proof.
   { worker_tac (pvar 0) 2. }
   (* pack c′ at the fresh root *)
   change (pinst_ty (pshift 1) Tres) with Tres. unfold Tres.
-  eapply d_pack with (xs := pvar 0 :: []); [done| |exact I|].
+  eapply d_pack with (xs := pvar 0 :: []); [done| |exact I|exact I|].
   - apply hold_at_nil. intros f Hf _. destruct Hf as [->| ->]; simpl.
     + eapply (hyp_slt_ids _ _ (fx_L) 1);
         [unfold hc_open; cbn [hc_hyps]; apply elem_of_app; right; apply list_elem_of_here|by left|simpl; lia].

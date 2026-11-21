@@ -161,6 +161,7 @@ Inductive typed (W : sworld) (N : fuel) :
   | e_pack Θ Γ Δ F e lb m C T xs c :
       length xs = m → hold_at W Γ C xs →
       lbx_below_h W Γ lb (heads (ty_inst xs T)) (hbot (ty_inst xs T)) →
+      ex_wf W Γ lb m C T →
       typed W N Θ Γ Δ F e (ty_inst xs T) c →
       typed W N Θ Γ Δ F e (TEx lb m C T) c
   | e_open Θ Γ Δ F e i lb m C T U c :
