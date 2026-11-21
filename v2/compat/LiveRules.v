@@ -429,7 +429,7 @@ Qed.
 (** A box at a positive cost of β, unmarked. *)
 Lemma gen_e_box κ W Δ F e m kk C ub c U :
   1 ≤ c_beta κ → tfacts ∅ Δ (EBox e) → lenv_unl Δ →
-  (∀ W1 xs ss F', W ⊑ W1 → length xs = m → length ss = kk → Forall hcontractive ss →
+  (∀ W1 xs ss F', W ⊑ W1 → length xs = m → length ss = kk → Forall hcontractive ss ∧ Forall sscoped ss →
      wholds W1 C xs → ub_lt W1 (pt_inst (plist xs) <$> ub) F' →
      sem_typed_at κ W1 ∅ (Some (TBox m kk C ub c U) :: Δ) F' e
        (sinst_ty (slist ss) (ty_inst xs U))) →
@@ -626,7 +626,7 @@ Section later.
   (** A box marks its self, at every cost table. *)
   Lemma later_box W Δ L F e m kk C ub c U :
     tfacts ∅ Δ (EBox e) → lenv_unl Δ →
-    (∀ W1 xs ss F', W ⊑ W1 → length xs = m → length ss = kk → Forall hcontractive ss →
+    (∀ W1 xs ss F', W ⊑ W1 → length xs = m → length ss = kk → Forall hcontractive ss ∧ Forall sscoped ss →
        wholds W1 C xs → ub_lt W1 (pt_inst (plist xs) <$> ub) F' →
        sem_later κ W1 ∅ (Some (TBox m kk C ub c U) :: Δ) (true .: L) F' e
          (sinst_ty (slist ss) (ty_inst xs U))) →
@@ -954,7 +954,7 @@ Section later.
   Proof. apply later_op. intros W' j Θv v HW Hv. by eapply Erel_new_at. Qed.
 
   Lemma later_force W Θ Δ L F e m kk C ub c U xs ss :
-    length xs = m → length ss = kk → Forall hcontractive ss → wholds W C xs →
+    length xs = m → length ss = kk → Forall hcontractive ss ∧ Forall sscoped ss → wholds W C xs →
     ub_lt W (pt_inst (plist xs) <$> ub) F →
     sem_later κ W Θ Δ L F e (TBox m kk C ub c U) →
     sem_later κ W Θ Δ L F (EForce e) (sinst_ty (slist ss) (ty_inst xs U)).

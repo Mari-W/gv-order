@@ -129,7 +129,7 @@ Section body.
     intros H. assert (sinst_ty (slist []) (ty_inst (sh 1 (pvar 0) :: sh 1 (pvar 1) :: pvar 2 :: []) (cs_arr S1 S2)) =
       TLolli (UPt (pvar 2)) LNone None (TProd (TSess S1 (sh 1 (pvar 0)) None None) (TSess S2 (sh 1 (pvar 1)) None None)) TUnit None) as <-.
     { rewrite sinst_nil. reflexivity. }
-    eapply d_force with (ub := None) (c := None); [done| |done|split; [apply Forall_nil|intros _; apply Forall_nil]|exact I|exact H].
+    eapply d_force with (ub := None) (c := None); [done| |done|split; [split; apply Forall_nil|intros _; apply Forall_nil]|exact I|exact H].
     apply hold_at_nil. intros f (k & Hf) _.
     destruct Hf as [->|[->|[->| ->]]]; simpl.
     - fct (S k).
@@ -239,7 +239,7 @@ Proof.
     TLolli (UPt ((pvar 0)·1)) LNone None (TProd (TSess S1 (pt_polar b (pvar 0)) None None) (TSess S2 (pt_polar b ((pvar 0)·0)) None None)) TUnit None) as <-.
   { rewrite sinst_nil. destruct b; reflexivity. }
   eapply d_force with (ub := None) (c := None);
-    [done| |done|split; [apply Forall_nil|intros _; apply Forall_nil]|exact I|exact H].
+    [done| |done|split; [split; apply Forall_nil|intros _; apply Forall_nil]|exact I|exact H].
   apply hold_at_nil. intros f (k & Hf) _.
   destruct Hf as [->|[->|[->| ->]]]; simpl; apply law_fact; exists k, b; destruct b;
     first [left; fact_eq | right; left; fact_eq | right; right; left; fact_eq | right; right; right; fact_eq].

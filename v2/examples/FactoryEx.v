@@ -138,7 +138,7 @@ Proof.
     assert (sinst_ty (slist []) (ty_inst [] (TLolli UNone LNone None TUnit Tres None)) =
             TLolli UNone LNone None TUnit Tres None) as <- by (rewrite sinst_nil; reflexivity).
     eapply d_force with (ub := None) (c := None) (C := C0) (m := 0);
-      [done| |done|split; [apply Forall_nil|intros _; apply Forall_nil]|exact I|].
+      [done| |done|split; [split; apply Forall_nil|intros _; apply Forall_nil]|exact I|].
     - intros x y (g0 & (f & Hf & _) & _). done.
     - by apply (mk0_typed _ 0). }
   eapply d_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
@@ -151,7 +151,7 @@ Proof.
               TLolli UNone LNone None (TSess Sr (pvar 0)‾ None None) (TProd (TSess Sr (pvar 0)‾ None None) (TSess Sr ((pvar 0)·0)‾ None None)) None) as <-
         by (rewrite sinst_nil; reflexivity).
       eapply d_force with (ub := None) (c := None) (C := mk1_C);
-        [done| |done|split; [apply Forall_nil|intros _; apply Forall_nil]|exact I|].
+        [done| |done|split; [split; apply Forall_nil|intros _; apply Forall_nil]|exact I|].
       + apply hold_at_nil. intros f Hf _. destruct Hf as [->| ->]; simpl.
         * apply fx_law; [by left|simpl; lia].
         * apply fx_law; [by right|simpl; lia].

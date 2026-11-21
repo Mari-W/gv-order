@@ -145,7 +145,7 @@ Proof.
     TLolli (UPt ((pvar 0)·1)) LNone None (TProd (TSess SEnd (pvar 0) None None) (TSess SEnd ((pvar 0)·1) None None)) TUnit None) as <-.
   { rewrite sinst_nil. reflexivity. }
   eapply d_force with (ub := None) (c := None) (C := fm_C);
-    [done| |done|split; [apply Forall_nil|intros _; apply Forall_nil]|exact I|exact H].
+    [done| |done|split; [split; apply Forall_nil|intros _; apply Forall_nil]|exact I|exact H].
   apply hold_at_nil. intros f Hf _.
   destruct (fact_map (pt_inst (plist fm_xs)) f) as [x y] eqn:E.
   apply law_slt'; [exists f; by rewrite E|].

@@ -170,9 +170,11 @@ Qed.
 
 Lemma sinsts_df N ss : sinsts N ss → sinsts None (sty_df <$> ss).
 Proof.
-  intros [Hc _]. split.
+  intros [[Hc Hsc] _]. split; [split|].
   - apply Forall_fmap. apply Forall_forall. intros s Hs. apply hcontractive_df.
     by eapply Forall_forall in Hc.
+  - apply Forall_fmap. apply Forall_forall. intros s Hs. apply (proj2 (proj2 df_pscoped_mut s)).
+    by eapply Forall_forall in Hsc.
   - intros _. apply Forall_fmap. apply Forall_forall. intros s _. apply sty_df_idem.
 Qed.
 

@@ -132,7 +132,7 @@ Proof. intros [|n]; done. Qed.
 
 Lemma sinsts_end N k : sinsts N (repeat SEnd k).
 Proof.
-  split; [|intros _]; induction k; simpl; constructor; auto; apply hcontractive_end.
+  split; [split|intros _]; induction k; simpl; constructor; auto; first [apply hcontractive_end|done].
 Qed.
 
 Theorem typed_tfacts W N Θ Γ Δ F e T c : typed W N Θ Γ Δ F e T c → tfacts Θ Δ e.

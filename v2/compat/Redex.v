@@ -471,7 +471,7 @@ Section redex.
   (** ** Force *)
 
   Lemma Erel_force n W m kk C ub c U xs ss F v :
-    length xs = m → length ss = kk → Forall hcontractive ss → wholds W C xs →
+    length xs = m → length ss = kk → Forall hcontractive ss ∧ Forall sscoped ss → wholds W C xs →
     ub_lt W (pt_inst (plist xs) <$> ub) F →
     Vrel κ n W ∅ (TBox m kk C ub c U) v →
     Erel κ n W ∅ (sinst_ty (slist ss) (ty_inst xs U)) F (EForce v).

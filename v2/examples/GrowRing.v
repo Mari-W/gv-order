@@ -151,7 +151,7 @@ Section body.
     { rewrite sinst_nil. unfold ty_inst, rg_T. cbn [pinst_ty fmap option_fmap option_map ub_map lb_map].
       rewrite pt_inst_shift, !pt_inst_pvar_at. reflexivity. }
     eapply d_force with (ub := None) (c := None) (C := rg_C);
-      [done| |done|split; [apply Forall_nil|intros _; apply Forall_nil]|exact I|exact H].
+      [done| |done|split; [split; apply Forall_nil|intros _; apply Forall_nil]|exact I|exact H].
     apply hold_at_nil. intros f Hf _.
     destruct (fact_map (pt_inst (plist (X1 :: Y1 :: []))) f) as [x y] eqn:E.
     apply rg_hyp. rewrite <-E. by apply rg_inst.
@@ -252,7 +252,7 @@ Proof.
     TLolli (UPt (sh 1 (pvar 0))) LNone None (TProd (TSess Sch (pvar 0) None None) (TSess (dual Sch) (pvar 0)‾ None None)) TUnit None) as <-.
   { rewrite sinst_nil. reflexivity. }
   eapply d_force with (ub := None) (c := None) (C := rg_C);
-    [done| |done|split; [apply Forall_nil|intros _; apply Forall_nil]|exact I|exact H].
+    [done| |done|split; [split; apply Forall_nil|intros _; apply Forall_nil]|exact I|exact H].
   apply hold_at_nil. intros f Hf Hs.
   destruct (fact_map (pt_inst (plist rg_xs)) f) as [x y] eqn:E.
   apply law_slt'; [exists f; by rewrite E|].

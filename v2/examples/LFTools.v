@@ -243,7 +243,7 @@ Proof.
   rewrite <-(sinst_nil (TLolli _ _ _ _ _ _)).
   eapply (e_force W N ∅ Γ Δ F e m 0 C None (Some 0)
             (TLolli (ubound_of ub) LNone None T U None) xs []);
-    first [done | split; [apply Forall_nil|intros _; apply Forall_nil] | left; done].
+    first [done | split; [split; apply Forall_nil|intros _; apply Forall_nil] | left; done].
 Qed.
 
 (** The force at a list of points, with the instantiated types given. *)

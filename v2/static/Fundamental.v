@@ -339,7 +339,7 @@ Proof. intros H. by rewrite !lenv_df_cons, H. Qed.
 Definition box_rule (κ : ctable) (L : nat → bool) (mk : bool) : Prop :=
   ∀ W Δ F e m kk C ub c U,
     tfacts ∅ Δ (EBox e) → lenv_unl Δ →
-    (∀ W1 xs ss F', W ⊑ W1 → length xs = m → length ss = kk → Forall hcontractive ss →
+    (∀ W1 xs ss F', W ⊑ W1 → length xs = m → length ss = kk → Forall hcontractive ss ∧ Forall sscoped ss →
        wholds W1 C xs → ub_lt W1 (pt_inst (plist xs) <$> ub) F' →
        sem_later κ W1 ∅ (Some (TBox m kk C ub c U) :: Δ) (mk .: L) F' e
          (sinst_ty (slist ss) (ty_inst xs U))) →
