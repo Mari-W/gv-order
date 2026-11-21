@@ -577,17 +577,23 @@ Section later.
     apply Vrel_Erel. apply Vrel_sess_iff. exists o, S. split_and!; [done|done|apply seqv_refl].
   Qed.
 
-  Lemma later_new_ext (ℓ : family) W0 W Δ L F S a1 a2 mt mt2 :
-    W0 ⊑ W → lenv_unl Δ → ℓ ∈ w_fams W0 →
-    sem_later κ W ∅ Δ L F (ENew ℓ)
-      (TEx LBot 1 (bcs_of (w_laws W0 ℓ)) (TProd (TSess S (pvar 0) a1 mt) (TSess (dual S) (pvar 0)‾ a2 mt2))).
+  Lemma later_new W Δ L F C S a1 a2 mt mt2 :
+    lenv_unl Δ → wf_new C →
+    sem_later κ W ∅ Δ L F ENew
+      (TEx LBot 1 C (TProd (TSess S (pvar 0) a1 mt) (TSess (dual S) (pvar 0)‾ a2 mt2))).
   Proof.
-    intros HW0 HΔ Hℓ n W' Θ' γ HW Hd HG. simpl.
+    intros HΔ HC n W' Θ' γ HW Hd HG. simpl.
     rewrite (GrelL_unl κ _ _ _ _ _ _ HΔ HG), tenv_erase_empty, map_union_empty.
-    assert (W0 ⊑ W') as HW0' by by eapply wext_trans.
-    apply Erel_new_sub.
-    - by apply (wext_fams _ _ HW0').
-    - intros f Hf. by apply (wext_laws _ _ HW0').
+    by apply Erel_new.
+  Qed.
+
+  Lemma later_new_fld W Δ L F y S a1 a2 mt mt2 :
+    lenv_unl Δ →
+    sem_later κ W ∅ Δ L F ENew (TProd (TSess S y a1 mt) (TSess (dual S) y‾ a2 mt2)).
+  Proof.
+    intros HΔ n W' Θ' γ HW Hd HG. simpl.
+    rewrite (GrelL_unl κ _ _ _ _ _ _ HΔ HG), tenv_erase_empty, map_union_empty.
+    apply Erel_new_fld.
   Qed.
 
   Lemma later_abs W Θ Δ L F e T U aU ub lb c :
@@ -947,11 +953,6 @@ Section later.
     sem_later κ W Θ Δ L F (ESpawn e) TUnit.
   Proof. apply later_op. intros W' j Θv v HW Hv. by eapply Erel_spawn. Qed.
 
-  Lemma later_new_at aq1 (κf : field) W Θ Δ L F e S0 x S a a1 a2 mt mt0 m1 m2 :
-    sem_later κ W Θ Δ L F e (TSess S0 x aq1 mt) →
-    sem_later κ W Θ Δ L F (ENewAt κf e)
-      (TProd (TSess S0 x a mt0) (TProd (TSess S (x·κf) a1 m1) (TSess (dual S) (x·κf)‾ a2 m2))).
-  Proof. apply later_op. intros W' j Θv v HW Hv. by eapply Erel_new_at. Qed.
 
   Lemma later_force W Θ Δ L F e m kk C ub c U xs ss :
     length xs = m → length ss = kk → Forall hcontractive ss ∧ Forall sscoped ss → wholds W C xs →

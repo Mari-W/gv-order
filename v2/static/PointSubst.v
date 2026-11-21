@@ -381,6 +381,11 @@ Proof.
   specialize (H' (pvar 0)). by rewrite !pshift_back in H' by done.
 Qed.
 
+(** (wf-new) reads the facts and the number of outer points of C, which
+    an instantiation keeps. *)
+Lemma wf_new_inst σ C : wf_new C → wf_new (bcs_inst σ C).
+Proof. destruct C as [env P]. unfold wf_new, new_step, bcs_inst. simpl. by rewrite length_fmap. Qed.
+
 (** ** The substitution lemma *)
 
 Lemma pt_inst_pup1_0 σ : pt_inst (pup 1 σ) (pvar 0) = pvar 0.
