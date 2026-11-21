@@ -221,8 +221,8 @@ Section rel.
 
   Lemma Vconv_step n T :
     (∀ j, olt j n → ∀ T, VC j T ∧ EC j T) →
-    (∀ T', tsize T' < tsize T → VC n T') →
-    (c_beta κ = 0 → ∀ U, tsize U < tsize T → EC n U) →
+    (∀ T', tsize T' < tsize T → ∀ j, ole j n → VC j T') →
+    (c_beta κ = 0 → ∀ U, tsize U < tsize T → ∀ j, ole j n → EC j U) →
     VC n T.
   Proof.
     intros IHl IHt IHe W Θ Θ' v HΘ.
@@ -232,23 +232,24 @@ Section rel.
       exists e. split_and!; [done|by rewrite <-(senv_eqv_dom _ _ HΘ)|by rewrite <-(senv_eqv_heads _ _ HΘ)|].
       intros W' j Θw w F HW Hj Hd Hub Hw.
       assert (EC j U) as HEU.
-      { destruct (decide (olt j n)); [by apply IHl|]. assert (j = n) as -> by lia. apply IHe; [lia|simpl; lia]. }
+      { destruct (decide (c_beta κ = 0)) as [Hb|Hb]; [apply IHe; [done|simpl; lia|exact (oadd_le_l _ _ _ Hj)]|].
+        by apply IHl, (oadd_lt _ _ _ Hb Hj). }
       apply (HEU W' (Θ ∪ Θw)); [apply senv_eqv_union; [done|apply senv_eqv_refl]|].
       apply H; [done|done| |done|done]. rewrite map_disjoint_dom in Hd |- *. by rewrite (senv_eqv_dom _ _ HΘ).
     - intros (v1 & v2 & Θ1 & Θ2 & -> & Hd & -> & H1 & H2)%Vrel_prod_iff. apply Vrel_prod_iff.
       destruct (senv_eqv_split _ _ _ HΘ Hd) as (Θ1' & Θ2' & -> & Hd' & E1 & E2).
       exists v1, v2, Θ1', Θ2'. split_and!; [done|done|done| |].
-      + apply (IHt T1 ltac:(simpl; lia) W Θ1); done.
-      + apply (IHt U ltac:(simpl; lia) W Θ2); done.
+      + apply (IHt T1 ltac:(simpl; lia) n (ole_refl n) W Θ1); done.
+      + apply (IHt U ltac:(simpl; lia) n (ole_refl n) W Θ2); done.
     - intros [(v' & -> & H)|(v' & -> & H)]%Vrel_sum_iff; apply Vrel_sum_iff; [left|right]; exists v';
-        (split; [done|]); (eapply IHt; [simpl; lia|exact HΘ|exact H]).
+        (split; [done|]); (eapply IHt; [simpl; lia|apply ole_refl|exact HΘ|exact H]).
     - intros (-> & e & -> & Hfe & H)%Vrel_box_iff. apply Vrel_box_iff. rewrite (senv_eqv_empty _ HΘ).
       split; [done|]. exists e. split_and!; [done|done|]. exact H.
     - intros (o & s' & -> & -> & Hs)%Vrel_sess_iff. apply Vrel_sess_iff.
       destruct (senv_eqv_singleton _ _ _ _ HΘ) as (s'' & -> & Hs'). exists o, s''. split_and!; [done|done|].
       eapply seqv_trans; [apply seqv_sym, Hs'|exact Hs].
     - intros (Hlb & xs & Hxs & HC & H)%Vrel_ex_iff. apply Vrel_ex_iff. rewrite <-(senv_eqv_heads _ _ HΘ).
-      split; [done|]. exists xs. split_and!; [done|done|]. eapply IHt; [|exact HΘ|exact H].
+      split; [done|]. exists xs. split_and!; [done|done|]. eapply IHt; [|apply ole_refl|exact HΘ|exact H].
       unfold ty_inst. rewrite tsize_pinst. simpl. lia.
   Qed.
 
@@ -257,7 +258,7 @@ Section rel.
     (c_give κ = 0 → ∀ T', VC n T') →
     EC n T.
   Proof.
-    intros IHl HVT HVU HVP. destruct n as [|n]; [unfold EC; intros; apply Erel_0|].
+    intros IHl HVT HVU HVP.
     intros W Θ Θ' F e HΘ HE.
     cut (∀ W Θ T0 F e, Erel κ n W Θ T0 F e → T0 = T ∨ T0 = TUnit →
            ∀ Θ', senv_eqv Θ Θ' → Erel κ n W Θ' T0 F e);
@@ -274,7 +275,7 @@ Section rel.
       at_cost_E n c (Erel κ) (Erel κ n) W1 Θb T0 F e') as Hac.
     { intros c Θa Θb e' Hab [A1 A2]. split.
       - intros Hc. by apply A1.
-      - intros Hc. apply (proj2 (IHl (S n - c) ltac:(lia) T0) _ Θa); [done|]. by apply A2. }
+      - intros Hc j Hj. apply (proj2 (IHl j (oadd_lt _ _ _ Hc Hj) T0) _ Θa); [done|]. by apply A2. }
     split; [|split; [|unfold Esteps; split_and!]].
     - intros Hi. apply (HV0 _ Θ); [done|]. by apply Hs.
     - intros Hni. eapply ready_t_conv; [exact HΘ|]. by apply Hr.
@@ -296,7 +297,7 @@ Section rel.
       + intros Hjn Hw. apply (proj2 (IHl j Hjn TUnit) _ (ΘM ∪ Θ0)).
         * apply senv_eqv_union; [done|apply senv_eqv_refl].
         * by apply B1.
-      + intros -> Hw. destruct (B2 eq_refl Hw) as [_ B3]. apply B3; [by right|].
+      + intros Hb0 Hw. destruct (B2 Hb0 Hw) as [_ B3]. apply B3; [by right|].
         apply senv_eqv_union; [done|apply senv_eqv_refl].
     - intros o w e' Hst.
       destruct (H5 o w e' Hst) as (S0 & x & m & U & S & ΘM & Θr & A1 & A2 & A3 & A4 & A6 & A7).
@@ -308,15 +309,15 @@ Section rel.
       + destruct A6 as [B1 B2]. split.
         * intros Hc. apply (proj2 (Vrel_teq κ _ _ _ _ _ _ (teq_payload m U U' x HU))).
           apply (HVP Hc _ _ ΘM); [done|by apply B1].
-        * intros Hc. apply (proj2 (Vrel_teq κ _ _ _ _ _ _ (teq_payload m U U' x HU))).
-          apply (proj1 (IHl (Datatypes.S n - c_give κ) ltac:(lia) _) _ ΘM); [done|by apply B2].
+        * intros Hc j Hj Hj'. apply (proj2 (Vrel_teq κ _ _ _ _ _ _ (teq_payload m U U' x HU))).
+          apply (proj1 (IHl j Hj _) _ ΘM); [done|by apply B2].
       + eapply Hac; [|exact A7]. apply senv_eqv_insert; [done|by apply seqv_sym].
     - intros o w e' Hst. destruct (H6 o w e' Hst) as (S0 & x & m & U & S & A1 & A2 & A3).
       destruct (senv_eqv_lookup _ _ _ _ _ HΘ A1) as (S0' & A1' & Hs0).
       destruct (seqv_unfold_rcv S0' S0 m U S (seqv_sym _ _ Hs0) A2) as (U' & S' & A2' & HU & HS).
       exists S0', x, m, U', S'. split_and!; [done|done|].
       intros j Θin Hj Hd Hw. pose proof (c_take_pos κ).
-      apply (proj2 (IHl j ltac:(lia) T0) _ (<[o := (S, x⁺)]> Θ ∪ Θin)).
+      apply (proj2 (IHl j (c_take_lt κ n j Hj) T0) _ (<[o := (S, x⁺)]> Θ ∪ Θin)).
       + apply senv_eqv_union; [|apply senv_eqv_refl]. apply senv_eqv_insert; [done|by apply seqv_sym].
       + apply A3; [done| |].
         * rewrite map_disjoint_dom in Hd |- *. by rewrite (senv_eqv_dom _ _ HΘ).
@@ -345,18 +346,21 @@ Section rel.
   Lemma conv_level n : ∀ T, VC n T ∧ EC n T.
   Proof.
     induction n as [n IHn] using oind.
-    assert (VC n TUnit) as HVU.
-    { apply Vconv_step; [done|intros T' HT|intros _ U HU]; [pose proof (tsize_pos T')|pose proof (tsize_pos U)];
-        simpl in *; lia. }
-    destruct (decide (c_give κ = 0)) as [Hg|Hg].
-    - assert (∀ T, VC n T) as HV.
-      { intros T. induction T as [T IH] using tsize_ind. apply Vconv_step; [done|done|].
-        intros Hb. pose proof (c_give_pos κ Hb). lia. }
-      intros T. split; [done|]. by apply Econv_step.
-    - intros T. induction T as [T IH] using tsize_ind.
-      assert (VC n T) as HVT.
-      { apply Vconv_step; [done| |]; intros; by apply IH. }
-      split; [done|]. by apply Econv_step.
+    assert (∀ j, ole j n → ∀ i, olt i j → ∀ T, VC i T ∧ EC i T) as IHj.
+    { intros j Hj i Hi. apply IHn. exact (olt_trans_le _ _ _ Hi Hj). }
+    assert (∀ j, ole j n → VC j TUnit) as HVU.
+    { intros j Hj. apply Vconv_step; [by apply IHj|intros T' HT|intros _ U HU];
+        [pose proof (tsize_pos T')|pose proof (tsize_pos U)]; simpl in *; lia. }
+    assert (∀ T j, ole j n → VC j T) as HV.
+    { intros T. induction T as [T IH] using tsize_ind. intros j Hj.
+      apply Vconv_step; [by apply IHj| |].
+      - intros T' HT j' Hj'. apply IH; [done|exact (ole_trans _ _ _ Hj' Hj)].
+      - intros Hb U HU j' Hj'. assert (ole j' n) as Hj'n by exact (ole_trans _ _ _ Hj' Hj).
+        apply Econv_step; [by apply IHj|by apply IH|by apply HVU|].
+        intros Hg. pose proof (c_give_pos κ Hb). lia. }
+    intros T. split; [by apply HV, ole_refl|].
+    apply Econv_step; [done|by apply HV, ole_refl|by apply HVU, ole_refl|].
+    intros _ T'. by apply HV, ole_refl.
   Qed.
 End rel.
 
@@ -437,9 +441,11 @@ Section prel.
   Lemma Prel_conv_lvl m : ∀ W Σ T p, Prel κ m W Σ T p →
     ∀ Σ', senv_eqv Σ Σ' → Prel κ m W Σ' T p.
   Proof.
-    induction m as [m IHm] using oind. destruct m as [|n]; [intros; apply Prel_0|].
-    refine (Prel_ind κ n _ _). intros W Σ T p Hb Σ' HΣ.
-    apply Prel_iff. intros W1 HW1 HS1 h D Hh.
+    induction m as [n IHm] using oind. intros W Σ T p HP Σ' HΣ0.
+    apply Prel_iff. intros Hn0. revert W Σ T p HP Σ' HΣ0.
+    refine (Prel_ind κ n (λ W Σ T p, ∀ Σ', senv_eqv Σ Σ' →
+      Pbody κ n (Vrel κ) (Prel κ) (Vrel κ n) (Prel κ n) W Σ' T p) Hn0 _).
+    intros W Σ T p Hb Σ' HΣ. intros W1 HW1 HS1 h D Hh.
     pose proof (fuse_ok_conv h D Σ Σ' p HΣ Hh) as Hh0.
     destruct (Hb W1 HW1 HS1 h D Hh0) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
     assert (senv_eqv (sdrop D (kren h Σ)) (sdrop D (kren h Σ'))) as HΣh
@@ -450,11 +456,11 @@ Section prel.
     clear Ep EΣ EΣ' p Σ Σ' h D. rename p0 into p, Σ0 into Σ, Σ0' into Σ', HΣh into HΣ.
     assert (∀ c Σa Σb p', senv_eqv Σa Σb →
       at_cost_P n c (Prel κ) (λ W Σ T p, Prel κ n W Σ T p ∧
-          (∀ Σ', senv_eqv Σ Σ' → Prel κ n W Σ' T p)) W1 Σa T p' →
+          (∀ Σ', senv_eqv Σ Σ' → Pbody κ n (Vrel κ) (Prel κ) (Vrel κ n) (Prel κ n) W Σ' T p)) W1 Σa T p' →
       at_cost_P n c (Prel κ) (Prel κ n) W1 Σb T p') as Hac.
     { intros c Σa Σb p' Hab [A1 A2]. split.
-      - intros Hc. by apply A1.
-      - intros Hc. apply (IHm (S n - c) ltac:(lia) _ Σa); [by apply A2|done]. }
+      - intros Hc. apply Prel_iff. intros _. by apply A1.
+      - intros Hc j Hj. apply (IHm j (oadd_lt _ _ _ Hc Hj) _ _ _ _ (A2 Hc j Hj) _ Hab). }
     split; [|split; [|unfold Psteps; split_and!]].
     - intros Hi. destruct (Hs Hi) as (v & E & -> & Hv & HE). exists v, E. split_and!; [done| |done].
       by apply (Vrel_conv κ _ _ Σ).
@@ -475,7 +481,7 @@ Section prel.
         split.
         * intros Hc. apply (proj2 (Vrel_teq κ _ _ _ _ _ _ (teq_payload m U U' x HU))).
           apply (Vrel_conv κ _ _ (Σv ∪ Θe)); [done|by apply B1].
-        * intros Hc. apply (proj2 (Vrel_teq κ _ _ _ _ _ _ (teq_payload m U U' x HU))).
+        * intros Hc j Hj Hj'. apply (proj2 (Vrel_teq κ _ _ _ _ _ _ (teq_payload m U U' x HU))).
           apply (Vrel_conv κ _ _ (Σv ∪ Θe)); [done|by apply B2].
       + eapply Hac; [|exact A9]. apply senv_eqv_insert; [|by apply seqv_sym].
         apply senv_eqv_union; [done|apply senv_eqv_refl].
@@ -489,8 +495,7 @@ Section prel.
       pose proof (A3 j Θ2 Hj Hd (recv_ok_conv _ _ _ HΣ2 Hok)
         (proj1 (Vrel_teq κ _ _ _ _ _ _ (teq_payload m U U' x HU)) Hw)) as HP.
       rewrite (recv_back_conv _ _ _ HΣ2) in HP.
-      pose proof (c_take_pos κ).
-      apply (IHm j ltac:(lia) _ (recv_env (<[o := (S, x⁺)]> Σ) Θ2)); [done|]. by apply recv_env_conv.
+      eapply (IHm j (c_take_lt κ n j Hj)); [exact HP|]. by apply recv_env_conv.
     - intros q i o q' Hq Hst. destruct (H4 q i o q' Hq Hst) as (S0 & x & A1 & A2 & A3).
       destruct (senv_eqv_lookup _ _ _ _ _ HΣ A1) as (S0' & A1' & Hs0).
       exists S0', x. split_and!; [done|by eapply seqv_unfold_end; [apply seqv_sym|]|].
