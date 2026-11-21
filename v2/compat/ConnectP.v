@@ -1,6 +1,6 @@
 (** * P-Connect (stage S4)
 
-    Strong induction on the level. At a level S n, an induction over the
+    Well-founded induction on the level. At a level n above 0, an induction over the
     steps of p1 (closed under fusion), and inside it one over the steps
     of p2, establish the clauses of every fusion of the composite: a
     fusion of the composite is a composite of fusions of the components
@@ -12,7 +12,7 @@ From GV Require Import fuel.FuelMono.
 
 Section wrapper.
   Context (κ : ctable) (n : Ix) (T : ty) (HT : tfree T).
-  Context (IH : ∀ j W, j < S n → ConnL κ j W T).
+  Context (Hn : olt ozero n) (IH : ∀ j W, olt j n → ConnL κ j W T).
 
   (** The predicate of the induction on p1. *)
   Local Definition Φ1 : prel := λ W Σa U p1,
@@ -34,7 +34,7 @@ Section wrapper.
     Pbody κ n (Vrel κ) (Prel κ) (Vrel κ n) (λ W Σ U p, Prel κ n W Σ U p ∧ Φ W Σ U p) W Σ U p →
     Prel κ n W Σ U p.
   Proof.
-    intros H. apply Prel_iff. revert H.
+    intros H. apply Prel_iff. intros _. revert H.
     apply Pbody_mono; [intros; reflexivity|intros ? ? ? ? ? ? H; exact H|intros ? ? ? ? H; exact H|].
     intros ? ? ? [H _]; exact H.
   Qed.
@@ -50,7 +50,7 @@ Section wrapper.
     Pbody κ n (Vrel κ) (Prel κ) (Vrel κ n) X2 W (Σ2 ∪ ΣD) TUnit p2 →
     conn Σ1 ΣC p1.1 Σ2 ΣD p2.1 → Prel κ n W (Σ1 ∪ Σ2) T (pconn p1 p2 (chans_of ΣC)).
   Proof.
-    intros B1 B2 Hc. apply Prel_iff. intros W1 HW1 HS1 h D Hh.
+    intros B1 B2 Hc. apply Prel_iff. intros _ W1 HW1 HS1 h D Hh.
     pose proof (Pbody_P _ _ _ _ _ B1) as P1. pose proof (Pbody_P _ _ _ _ _ B2) as P2.
     pose proof (conn_sym _ _ _ _ _ _ Hc) as Hcs.
     pose proof (fs_sym _ _ _ _ _ _ _ _ _ Hc Hh) as Hhs.
@@ -103,19 +103,19 @@ Section wrapper.
     pose proof (pc_clauses _ _ _ _ _ _ _ _ _ _ _ _
       (CCtx κ n W1 T X1 X2 (ConnectSplit.fin Σf E1) (fout Σf E1)
          (ConnectSplit.fin Σf E2) (fout Σf E2) (pfuse h D1 p1) (pfuse h D2 p2)
-         HS1 HT Hc' C1 C2 L X1P X2P HP1 HP2 G1 G2)) as R.
+         Hn HS1 HT Hc' C1 C2 L X1P X2P HP1 HP2 G1 G2)) as R.
     by rewrite Hif in R.
   Qed.
 
   Local Lemma ind2 W Σb U p2 : Prel κ n W Σb U p2 → Φfuse Φ2 W Σb U p2.
   Proof.
-    apply Prel_ind_fuse. intros W' Σb' U' p2' B2 -> Σ1 ΣC Σ2 ΣD p1 -> B1 Hc.
+    apply Prel_ind_fuse; [done|]. intros W' Σb' U' p2' B2 -> Σ1 ΣC Σ2 ΣD p1 -> B1 Hc.
     by apply (step W' Σ1 ΣC Σ2 ΣD).
   Qed.
 
   Local Lemma ind1 W Σa U p1 : Prel κ n W Σa U p1 → Φfuse Φ1 W Σa U p1.
   Proof.
-    apply Prel_ind_fuse. intros W' Σa' U' p1' B1 -> Σ1 ΣC Σ2 ΣD p2 -> HP2 Hc.
+    apply Prel_ind_fuse; [done|]. intros W' Σa' U' p1' B1 -> Σ1 ΣC Σ2 ΣD p2 -> HP2 Hc.
     exact (Φfuse_id _ _ _ _ _ (ind2 _ _ _ _ HP2) eq_refl Σ1 ΣC Σ2 ΣD p1' eq_refl B1 Hc).
   Qed.
 
@@ -128,9 +128,10 @@ End wrapper.
 
 Lemma conn_all κ T : tfree T → ∀ j W, ConnL κ j W T.
 Proof.
-  intros HT j. induction (lt_wf j) as [j _ IH]. intros W. destruct j as [|n].
-  - intros ? ? ? ? ? ? _ _ _. apply Prel_0.
-  - apply conn_level; [done|]. intros j' W' Hj. by apply IH.
+  intros HT j. induction j as [j IH] using oind. intros W Σ1 ΣC Σ2 ΣD p1 p2 HP1 HP2 Hc.
+  apply Prel_iff. intros Hj0.
+  pose proof (conn_level κ j T HT Hj0 (λ j' W' Hj', IH j' Hj' W') W Σ1 ΣC Σ2 ΣD p1 p2 HP1 HP2 Hc) as H.
+  by apply Prel_iff in H.
 Qed.
 
 (** P-Connect: two components in P over a cut compose, at the join of
