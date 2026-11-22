@@ -1250,7 +1250,7 @@
      "id": "r-boxes",
      "title": "Boxes",
      "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-Box.self}{B = \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}\\inmode{lf}{[\\varepsilon]}\\,U)}\\quad \\sym{E-Box.unl}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{E-Box.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,U}\\quad \\sym{E-Box.fresh}{\\bar\\iota \\mathrel{\\#} \\Gamma, \\Delta, F}\\quad \\sym{E-Box.inst}{\\forall \\bar s.\\ \\sym{tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s} \\\\ \\sym{E-Box.body}{\\sym{E-Box.open}{\\Gamma, C(\\bar\\iota)} ; \\sym{E-Box.self}{\\Delta, f : B} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{(\\varnothing,{\\uparrow}u)} e : \\sym{tp.sinst}{U[\\bar s]}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\ !e : B\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-Box}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{E-Force.hold}{\\Gamma \\mathrel{\\sym{side.hold}{\\vdash}} C[\\bar x]}\\quad \\sym{E-Box.inst}{\\sym{tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s}\\quad \\sym{E-Force.ub}{u[\\bar x] \\prec F} \\\\ \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}\\inmode{lf}{[\\varepsilon]}\\,U)\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_0}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{prim.force}{\\mathsf{force}}\\,e : \\sym{tp.sinst}{U[\\bar s]}\\sym{tp.pinst}{[\\bar x]}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_0 \\sym{tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{E-Force}\\end{array}",
-     "caption": "E-Box types the body of a [[syn-terms|box]] once, with fresh point variables $\\bar\\iota$, the hypothesis $C(\\bar\\iota)$ added to $\\Gamma$ of [[t-contexts]] and the future of everything above $u$, for each allowed list $\\bar s$ of session types $s$. The body refers to the box itself through a variable $f$ of the box type $B$. The context is unlimited, because a box may be copied. E-Force picks points $\\bar x$ and session types $\\bar s$, requires $C[\\bar x]$ and $u[\\bar x] \\prec F$ by [[t-side]], and gives the instantiated result type, which is the [[t-consts|type of the constant]] $\\mathsf{force}$. The [[v-rel|value relation]] at a box asks the same of each instance.",
+     "caption": "E-Box types the body of a [[syn-terms|box]] once for each allowed list $\\bar s$ of session types $s$. The body is typed with fresh point variables $\\bar\\iota$, the hypothesis $C(\\bar\\iota)$ added to $\\Gamma$ of [[t-contexts]], and the future of everything above $u$. The body refers to the box itself through a variable $f$ of the box type $B$. The context is unlimited, because a box may be copied. E-Force picks points $\\bar x$ and session types $\\bar s$, requires $C[\\bar x]$ and $u[\\bar x] \\prec F$ by [[t-side]], and gives the instantiated result type, which is the [[t-consts|type of the constant]] $\\mathsf{force}$. The [[v-rel|value relation]] at a box asks the same of each instance.",
      "why": "Boxes provide recursion and polymorphism over points and session types. Each force chooses an instance, so a loop can order the points of its rounds by one constraint that mentions the round through $\\bar\\iota$.",
      "source": [
       {
@@ -1303,7 +1303,7 @@
     {
      "id": "t-consts",
      "title": "Types of constants",
-     "formula": "\\begin{array}{lll}\n\\sym{prim.send}{\\mathsf{send}} & : T[x\\cdot i] \\otimes S_x \\mathrel{\\sym{ty.arrow}{\\multimap}}^{x} {S'}_{\\sym{pt.shift}{x^{+}}} & \\sym{E-Send.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = {!}(\\bar\\iota.\\,T).S'},\\ \\sym{ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T,\\ \\sym{E-Send.heads}{x \\prec T[x\\cdot i]} \\\\\n\\sym{prim.recv}{\\mathsf{recv}} & : S_x \\mathrel{\\sym{ty.arrow}{\\multimap}}^{x} T[x\\cdot i] \\otimes {S'}_{x^{+}} & \\sym{E-Recv.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = {?}(\\bar\\iota.\\,T).S'},\\ \\sym{ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T \\\\\n\\sym{prim.close}{\\mathsf{close}} & : S_x \\mathrel{\\sym{ty.arrow}{\\multimap}}^{x} \\ast & \\sym{E-Close.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = \\sym{sty.close}{\\mathsf{Close}}} \\\\\n\\sym{prim.select}{\\mathsf{select}}_i & : S_x \\mathrel{\\sym{ty.arrow}{\\multimap}}^{x} \\sym{sty.choice}{(\\mathsf{if}\\ i\\ \\mathsf{then}\\ S''\\ \\mathsf{else}\\ S')}_{\\sym{pt.sel}{\\overline{x\\cdot\\kappa_i}}} & \\sym{E-Select.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = \\oplus(S',S'')} \\\\\n\\sym{prim.branch}{\\mathsf{branch}} & : S_x \\mathrel{\\sym{ty.arrow}{\\multimap}}^{x} {S'}_{\\sym{pt.bra}{x\\cdot\\sym{sx.kappai}{\\kappa_{\\mathsf{false}}}}} \\oplus {S''}_{x\\cdot\\sym{sx.kappai}{\\kappa_{\\mathsf{true}}}} & \\sym{E-Branch.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = \\&(S',S'')} \\\\\n\\sym{prim.link}{\\mathsf{link}} & : \\sym{E-Link.dual}{S_x \\otimes \\overline{S}_{\\overline{x}}} \\mathrel{\\sym{ty.arrow}{\\multimap}} \\ast & \\\\\n\\sym{prim.spawn}{\\mathsf{spawn}} & : (\\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l} \\ast) \\mathrel{\\sym{ty.arrow}{\\multimap}} \\ast & \\\\\n\\sym{prim.force}{\\mathsf{force}} & : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\sym{ty.arrow}{\\multimap}}^{u} U) \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] & \\sym{E-Force.hold}{\\Gamma \\mathrel{\\sym{side.hold}{\\vdash}} C[\\bar x]}\n\\end{array}",
+     "formula": "\\begin{array}{lll}\n\\sym{prim.send}{\\mathsf{send}} & : T[x\\cdot i] \\otimes \\sym{ty.sess}{S_x} \\mathrel{\\sym{ty.arrow}{\\multimap}}^{x} {S'}_{\\sym{pt.shift}{x^{+}}} & \\sym{E-Send.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = {!}(\\bar\\iota.\\,T).S'},\\ \\sym{ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T,\\ \\sym{E-Send.heads}{x \\prec T[x\\cdot i]} \\\\\n\\sym{prim.recv}{\\mathsf{recv}} & : \\sym{ty.sess}{S_x} \\mathrel{\\sym{ty.arrow}{\\multimap}}^{x} T[x\\cdot i] \\otimes \\sym{ty.sess}{{S'}_{x}^{+}} & \\sym{E-Recv.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = {?}(\\bar\\iota.\\,T).S'},\\ \\sym{ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T \\\\\n\\sym{prim.close}{\\mathsf{close}} & : \\sym{ty.sess}{S_x} \\mathrel{\\sym{ty.arrow}{\\multimap}}^{x} \\ast & \\sym{E-Close.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = \\sym{sty.close}{\\mathsf{Close}}} \\\\\n\\sym{prim.select}{\\mathsf{select}}_i & : \\sym{ty.sess}{S_x} \\mathrel{\\sym{ty.arrow}{\\multimap}}^{x} \\sym{sty.choice}{(\\mathsf{if}\\ i\\ \\mathsf{then}\\ S''\\ \\mathsf{else}\\ S')}_{\\sym{pt.sel}{\\overline{x\\cdot\\kappa_i}}} & \\sym{E-Select.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = \\oplus(S',S'')} \\\\\n\\sym{prim.branch}{\\mathsf{branch}} & : \\sym{ty.sess}{S_x} \\mathrel{\\sym{ty.arrow}{\\multimap}}^{x} {S'}_{\\sym{pt.bra}{x\\cdot\\sym{sx.kappai}{\\kappa_{\\mathsf{false}}}}} \\oplus {S''}_{x\\cdot\\sym{sx.kappai}{\\kappa_{\\mathsf{true}}}} & \\sym{E-Branch.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = \\&(S',S'')} \\\\\n\\sym{prim.link}{\\mathsf{link}} & : \\sym{E-Link.dual}{\\sym{ty.sess}{S_x} \\otimes \\sym{ty.sess}{\\overline{S}_{\\overline{x}}}} \\mathrel{\\sym{ty.arrow}{\\multimap}} \\ast & \\\\\n\\sym{prim.spawn}{\\mathsf{spawn}} & : (\\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l} \\ast) \\mathrel{\\sym{ty.arrow}{\\multimap}} \\ast & \\\\\n\\sym{prim.force}{\\mathsf{force}} & : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\sym{ty.arrow}{\\multimap}}^{u} U) \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] & \\sym{E-Force.hold}{\\Gamma \\mathrel{\\sym{side.hold}{\\vdash}} C[\\bar x]}\n\\end{array}",
      "caption": "Each [[syn-prims|constant]] has the type of its eta-expansion $\\lambda y.\\,k\\,y$, for each instance of its variables that meets the side conditions. An action on an end at $x$ has upper point $x$. $\\mathsf{new}$ is a term and is typed by [[r-new|E-New]]. The table summarizes the rules in [[r-act]], [[r-threads]] and [[r-boxes]]. \\inmode{lf}{The types are shown without credits, tickets and cost.}",
      "why": "Constants are values and therefore need types. The upper point $x$ means that a caller may apply an action at $x$ only while its future lies above $x$.",
      "source": [
@@ -1339,8 +1339,8 @@
     {
      "id": "r-act",
      "title": "Actions and link",
-     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-Send.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = {!}(\\bar\\iota.\\,T).S'}\\quad \\sym{ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\quad \\sym{E-Send.heads}{x \\prec \\sym{ty.payload-at}{T[x\\cdot i]}}\\quad \\sym{side.act}{x \\prec F} \\\\ \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T' \\otimes S_x\\inmode{lf}{^{a,\\sym{ty.tickets}{m}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\quad \\sym{E-Send.floor}{T'\\inmode{lf}{ - 1} \\leq T[x\\cdot i]}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{prim.send}{\\mathsf{send}}\\,e : {S'}_{\\sym{pt.shift}{x^{+}}}\\inmode{lf}{^{\\sym{act.refill}{m},m}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon \\sym{tj.seq}{\\cdot} \\sym{tj.one}{1}}}\\;\\textsf{E-Send}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{E-Recv.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = {?}(\\bar\\iota.\\,T).S'}\\quad \\sym{ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\quad \\sym{side.act}{x \\prec F}\\quad \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : S_x\\inmode{lf}{^{a,\\sym{ty.tickets}{m}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{prim.recv}{\\mathsf{recv}}\\,e : T[x\\cdot i] \\otimes {S'}_{\\sym{pt.shift}{x^{+}}}\\inmode{lf}{^{\\sym{act.refill}{m},m}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon \\sym{tj.seq}{\\cdot} \\sym{tj.one}{1}}}\\;\\textsf{E-Recv}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{E-Close.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = \\sym{sty.close}{\\mathsf{Close}}}\\quad \\sym{side.act}{x \\prec F}\\quad \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : S_x\\inmode{lf}{^{a,\\sym{ty.tickets}{m}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{prim.close}{\\mathsf{close}}\\,e : \\ast\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon \\sym{tj.seq}{\\cdot} \\sym{tj.one}{1}}}\\;\\textsf{E-Close}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{E-Select.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = \\oplus(S',S'')}\\quad \\sym{side.act}{x \\prec F}\\quad \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : S_x\\inmode{lf}{^{a,\\sym{ty.tickets}{m}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{prim.select}{\\mathsf{select}}_i\\,e : \\sym{sty.choice}{(\\mathsf{if}\\ i\\ \\mathsf{then}\\ S''\\ \\mathsf{else}\\ S')}_{\\sym{pt.sel}{\\overline{x\\cdot\\kappa_i}}}\\inmode{lf}{^{\\sym{act.refill}{m},m}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon \\sym{tj.seq}{\\cdot} \\sym{tj.one}{1}}}\\;\\textsf{E-Select}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{E-Branch.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = \\&(S',S'')}\\quad \\sym{side.act}{x \\prec F}\\quad \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : S_x\\inmode{lf}{^{a,\\sym{ty.tickets}{m}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{prim.branch}{\\mathsf{branch}}\\,e : {S'}_{\\sym{pt.bra}{x\\cdot\\sym{sx.kappai}{\\kappa_{\\mathsf{false}}}}}\\inmode{lf}{^{\\sym{act.refill}{m},m}} \\oplus {S''}_{x\\cdot\\sym{sx.kappai}{\\kappa_{\\mathsf{true}}}}\\inmode{lf}{^{\\sym{act.refill}{m},m}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon \\sym{tj.seq}{\\cdot} \\sym{tj.one}{1}}}\\;\\textsf{E-Branch}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{E-Link.dual}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : S_x\\inmode{lf}{^{a_1,m_1}} \\otimes \\overline{S}_{\\overline{x}}\\inmode{lf}{^{a_2,m_2}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-Link.tickets}{a_1 + m_2 > N,\\ a_2 + m_1 > N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{prim.link}{\\mathsf{link}}\\,e : \\ast\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Link}\\end{array}",
-     "caption": "An [[syn-prims|action]] on an end at $x$ waits at $x$ while the thread holds the rest of $\\Delta$. The rules therefore require $x$ below the future and below the dual points of the held values, the checks of [[t-side]]. Send and receive read the first action of the [[ty-session|session type]], move the end to $x^{+}$ and the [[ty-payload|payload]] to the fields of $x$ as in [[syn-moves]], a choice moves the end to the field of the branch, and a link requires two [[ty-dual|dual]] ends and no order fact. The sent value is a subtype of the payload type. The types of [[t-consts]] summarize the rules. \\inmode{lf}{An action costs one and returns the end with credit $m$, its [[ty-ann|tickets]]. The payload loses one credit at the send. \\inmode{lf}{A link asks the credit of each linked end to exceed the partner bound $N - m$ of the other, so each link lowers the counter of the partner a waiting thread faces, as the [[t-lf-counters|counters block]] explains.} The fundamental theorem proves each action against the obligations of [[e-obl]] and the readiness of [[rd]].} After the derived [[r-data|let]] has bound the result, the thread continues with the end at its new point.",
+     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-Send.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = {!}(\\bar\\iota.\\,T).S'}\\quad \\sym{ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\quad \\sym{E-Send.heads}{x \\prec \\sym{ty.payload-at}{T[x\\cdot i]}}\\quad \\sym{side.act}{x \\prec F} \\\\ \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T' \\otimes \\sym{ty.sess}{S_x\\inmode{lf}{^{a,\\sym{ty.tickets}{m}}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\quad \\sym{E-Send.floor}{T'\\inmode{lf}{ - 1} \\leq T[x\\cdot i]}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{prim.send}{\\mathsf{send}}\\,e : {S'}_{\\sym{pt.shift}{x^{+}}}\\inmode{lf}{^{\\sym{act.refill}{m},m}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon \\sym{tj.seq}{\\cdot} \\sym{tj.one}{1}}}\\;\\textsf{E-Send}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{E-Recv.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = {?}(\\bar\\iota.\\,T).S'}\\quad \\sym{ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\\quad \\sym{side.act}{x \\prec F}\\quad \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : \\sym{ty.sess}{S_x\\inmode{lf}{^{a,\\sym{ty.tickets}{m}}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{prim.recv}{\\mathsf{recv}}\\,e : T[x\\cdot i] \\otimes {S'}_{\\sym{pt.shift}{x^{+}}}\\inmode{lf}{^{\\sym{act.refill}{m},m}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon \\sym{tj.seq}{\\cdot} \\sym{tj.one}{1}}}\\;\\textsf{E-Recv}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{E-Close.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = \\sym{sty.close}{\\mathsf{Close}}}\\quad \\sym{side.act}{x \\prec F}\\quad \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : \\sym{ty.sess}{S_x\\inmode{lf}{^{a,\\sym{ty.tickets}{m}}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{prim.close}{\\mathsf{close}}\\,e : \\ast\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon \\sym{tj.seq}{\\cdot} \\sym{tj.one}{1}}}\\;\\textsf{E-Close}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{E-Select.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = \\oplus(S',S'')}\\quad \\sym{side.act}{x \\prec F}\\quad \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : \\sym{ty.sess}{S_x\\inmode{lf}{^{a,\\sym{ty.tickets}{m}}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{prim.select}{\\mathsf{select}}_i\\,e : \\sym{sty.choice}{(\\mathsf{if}\\ i\\ \\mathsf{then}\\ S''\\ \\mathsf{else}\\ S')}_{\\sym{pt.sel}{\\overline{x\\cdot\\kappa_i}}}\\inmode{lf}{^{\\sym{act.refill}{m},m}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon \\sym{tj.seq}{\\cdot} \\sym{tj.one}{1}}}\\;\\textsf{E-Select}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{E-Branch.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = \\&(S',S'')}\\quad \\sym{side.act}{x \\prec F}\\quad \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : \\sym{ty.sess}{S_x\\inmode{lf}{^{a,\\sym{ty.tickets}{m}}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{prim.branch}{\\mathsf{branch}}\\,e : {S'}_{\\sym{pt.bra}{x\\cdot\\sym{sx.kappai}{\\kappa_{\\mathsf{false}}}}}\\inmode{lf}{^{\\sym{act.refill}{m},m}} \\oplus {S''}_{x\\cdot\\sym{sx.kappai}{\\kappa_{\\mathsf{true}}}}\\inmode{lf}{^{\\sym{act.refill}{m},m}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon \\sym{tj.seq}{\\cdot} \\sym{tj.one}{1}}}\\;\\textsf{E-Branch}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{E-Link.dual}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : \\sym{ty.sess}{S_x\\inmode{lf}{^{a_1,m_1}}} \\otimes \\sym{ty.sess}{\\overline{S}_{\\overline{x}}\\inmode{lf}{^{a_2,m_2}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-Link.tickets}{a_1 + m_2 > N,\\ a_2 + m_1 > N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{prim.link}{\\mathsf{link}}\\,e : \\ast\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Link}\\end{array}",
+     "caption": "An [[syn-prims|action]] on an end at $x$ waits at $x$ while the thread holds the rest of $\\Delta$. The rules therefore require $x$ below the future and below the dual points of the held values, the checks of [[t-side]]. Send and receive read the first action of the [[ty-session|session type]]. They move the end to $x^{+}$ and the [[ty-payload|payload]] to the fields of $x$ as in [[syn-moves]]. A choice moves the end to the field of the branch. A link requires two [[ty-dual|dual]] ends and no order fact. The sent value is a subtype of the payload type. The types of [[t-consts]] summarize the rules. \\inmode{lf}{An action costs one and returns the end with credit $m$, its [[ty-ann|tickets]]. The payload loses one credit at the send. \\inmode{lf}{A link asks the credit of each linked end to exceed the partner bound $N - m$ of the other. Each link then lowers the counter of the partner a waiting thread faces, as the [[t-lf-counters|counters block]] explains.}} The fundamental theorem proves each action against the obligations of [[e-obl]] and the readiness of [[rd]]. After the derived [[r-data|let]] has bound the result, the thread continues with the end at its new point.",
      "why": "A thread waits only at actions, so the order facts of the type system are required here. A link needs no fact because it waits on nothing, and the [[syn-csub|renaming]] it causes keeps the typing of the other threads.",
      "source": [
       {
@@ -1400,7 +1400,7 @@
     {
      "id": "r-new",
      "title": "Creation",
-     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{E-New.wf}{\\inmodeplain{df}{\\sym{new.acyc}{\\mathsf{acyc\\_new}}}\\inmode{lf}{\\sym{new.ok}{\\mathsf{new\\_ok}_N}}\\,\\Gamma\\,\\rho\\,C}\\quad \\sym{E-New.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,S}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.new}{\\mathsf{new}} : \\exists^{\\sym{E-New.bot}{\\bot}}\\rho.\\ \\sym{E-New.facts}{C}.\\ \\sym{E-New.dual}{S_{\\rho}\\inmode{lf}{^{m_1,m_1}} \\otimes \\sym{sty.dual}{\\overline{S}}_{\\overline{\\rho}}\\inmode{lf}{^{m_2,m_2}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-New} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{E-New.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,S}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.new}{\\mathsf{new}} : \\sym{E-New.dual}{S_{\\sym{E-New.field}{x\\cdot\\kappa}}\\inmode{lf}{^{m_1,m_1}} \\otimes \\sym{sty.dual}{\\overline{S}}_{\\overline{\\sym{E-New.field}{x\\cdot\\kappa}}}\\inmode{lf}{^{m_2,m_2}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-New-Field} \\\\[2ex] \\sym{new.step}{x \\prec^{\\rho}_{C} y \\iff x, y \\in \\sym{w.tree}{\\mathsf{tree}(\\rho)} \\land ((x \\prec y) \\in C \\lor y = x^{+} \\lor y = \\overline{x}^{+})} \\\\[2ex] \\sym{new.bridge}{\\mathsf{bridge}_C(z, y) \\iff (z \\prec y) \\in C \\lor \\exists v, u.\\ (z \\prec v) \\in C \\land v \\mathrel{(\\sym{new.step}{\\prec^{\\rho}_{C}})^{*}} u \\land (u \\prec y) \\in C} \\\\[2ex] \\sym{new.acyc}{\\begin{array}{l} \\mathsf{acyc\\_new}\\,\\Gamma\\,\\rho\\,C \\iff (\\forall x \\in \\mathsf{tree}(\\rho).\\ \\neg\\, x \\mathrel{(\\sym{new.step}{\\prec^{\\rho}_{C}})^{+}} x) \\\\ \\qquad \\land\\ \\forall z, y \\notin \\mathsf{tree}(\\rho).\\ \\sym{new.bridge}{\\mathsf{bridge}_C(z, y)} \\Rightarrow \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} z \\prec y \\end{array}}\\inmodeplain{lf}{ \\\\[2ex] }\\inmode{lf}{\\sym{new.gen}{\\begin{array}{l} \\mathsf{gen\\_new}\\,\\Gamma\\,\\rho\\,C \\iff \\sym{w.lfworld}{\\mathsf{wf}}(\\sym{new.step}{\\prec^{\\rho}_{C}}) \\land \\forall (z \\prec y) \\in C.\\ z, y \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} z \\prec y \\\\ \\quad \\land\\ \\exists \\mathcal{S} \\subseteq \\mathsf{tree}(\\rho) \\times \\mathcal{P}^{+}_{\\mathrm{fin}}(\\mathsf{Point}_{\\Gamma}). \\\\ \\qquad (\\forall (u \\prec y) \\in C.\\ u \\in \\mathsf{tree}(\\rho),\\ y \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists (u, Y) \\in \\mathcal{S}.\\ \\forall t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} t \\prec y) \\\\ \\qquad \\land\\ (\\forall (s, Y) \\in \\mathcal{S}.\\ \\forall s' \\sym{new.step}{\\prec^{\\rho}_{C}} s.\\ \\exists (s', Y') \\in \\mathcal{S}.\\ \\forall t' \\in Y'.\\ \\exists t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} t' \\prec t) \\\\ \\qquad \\land\\ (\\forall (s, Y) \\in \\mathcal{S}.\\ \\forall (z \\prec s) \\in C.\\ z \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} z \\prec t) \\end{array}}}\\inmodeplain{lf}{ \\\\[2ex] }\\inmode{lf}{\\sym{new.ok}{\\mathsf{new\\_ok}_N = \\begin{cases} \\sym{new.acyc}{\\mathsf{acyc\\_new}} & N = \\infty \\\\ \\sym{new.gen}{\\mathsf{gen\\_new}} & N \\in \\mathbb{N} \\end{cases}} \\qquad \\sym{new.lemmaC}{\\sym{new.gen}{\\mathsf{gen\\_new}}\\,\\Gamma\\,\\rho\\,C \\Rightarrow \\sym{new.acyc}{\\mathsf{acyc\\_new}}\\,\\Gamma\\,\\rho\\,C}}\\end{array}",
+     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{E-New.wf}{\\inmodeplain{df}{\\sym{new.acyc}{\\mathsf{acyc\\_new}}}\\inmode{lf}{\\sym{new.ok}{\\mathsf{new\\_ok}_N}}\\,\\Gamma\\,\\rho\\,C}\\quad \\sym{E-New.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,S}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.new}{\\mathsf{new}} : \\exists^{\\sym{E-New.bot}{\\bot}}\\rho.\\ \\sym{E-New.facts}{C}.\\ \\sym{E-New.dual}{\\sym{ty.sess}{S_{\\rho}\\inmode{lf}{^{m_1,m_1}}} \\otimes \\sym{sty.dual}{\\overline{S}}_{\\overline{\\rho}}\\inmode{lf}{^{m_2,m_2}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-New} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{E-New.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,S}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.new}{\\mathsf{new}} : \\sym{E-New.dual}{S_{\\sym{E-New.field}{x\\cdot\\kappa}}\\inmode{lf}{^{m_1,m_1}} \\otimes \\sym{sty.dual}{\\overline{S}}_{\\overline{\\sym{E-New.field}{x\\cdot\\kappa}}}\\inmode{lf}{^{m_2,m_2}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-New-Field} \\\\[2ex] \\sym{new.step}{x \\prec^{\\rho}_{C} y \\iff x, y \\in \\sym{w.tree}{\\mathsf{tree}(\\rho)} \\land ((x \\prec y) \\in C \\lor y = x^{+} \\lor y = \\overline{x}^{+})} \\\\[2ex] \\sym{new.bridge}{\\mathsf{bridge}_C(z, y) \\iff (z \\prec y) \\in C \\lor \\exists v, u.\\ (z \\prec v) \\in C \\land v \\mathrel{(\\sym{new.step}{\\prec^{\\rho}_{C}})^{*}} u \\land (u \\prec y) \\in C} \\\\[2ex] \\sym{new.acyc}{\\begin{array}{l} \\mathsf{acyc\\_new}\\,\\Gamma\\,\\rho\\,C \\iff (\\forall x \\in \\mathsf{tree}(\\rho).\\ \\neg\\, x \\mathrel{(\\sym{new.step}{\\prec^{\\rho}_{C}})^{+}} x) \\\\ \\qquad \\land\\ \\forall z, y \\notin \\mathsf{tree}(\\rho).\\ \\sym{new.bridge}{\\mathsf{bridge}_C(z, y)} \\Rightarrow \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} z \\prec y \\end{array}}\\inmodeplain{lf}{ \\\\[2ex] }\\inmode{lf}{\\sym{new.gen}{\\begin{array}{l} \\mathsf{gen\\_new}\\,\\Gamma\\,\\rho\\,C \\iff \\sym{w.lfworld}{\\mathsf{wf}}(\\sym{new.step}{\\prec^{\\rho}_{C}}) \\land \\forall (z \\prec y) \\in C.\\ z, y \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} z \\prec y \\\\ \\quad \\land\\ \\exists \\mathcal{S} \\subseteq \\mathsf{tree}(\\rho) \\times \\mathcal{P}^{+}_{\\mathrm{fin}}(\\mathsf{Point}_{\\Gamma}). \\\\ \\qquad (\\forall (u \\prec y) \\in C.\\ u \\in \\mathsf{tree}(\\rho),\\ y \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists (u, Y) \\in \\mathcal{S}.\\ \\forall t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} t \\prec y) \\\\ \\qquad \\land\\ (\\forall (s, Y) \\in \\mathcal{S}.\\ \\forall s' \\sym{new.step}{\\prec^{\\rho}_{C}} s.\\ \\exists (s', Y') \\in \\mathcal{S}.\\ \\forall t' \\in Y'.\\ \\exists t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} t' \\prec t) \\\\ \\qquad \\land\\ (\\forall (s, Y) \\in \\mathcal{S}.\\ \\forall (z \\prec s) \\in C.\\ z \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} z \\prec t) \\end{array}}}\\inmodeplain{lf}{ \\\\[2ex] }\\inmode{lf}{\\sym{new.ok}{\\mathsf{new\\_ok}_N = \\begin{cases} \\sym{new.acyc}{\\mathsf{acyc\\_new}} & N = \\infty \\\\ \\sym{new.gen}{\\mathsf{gen\\_new}} & N \\in \\mathbb{N} \\end{cases}} \\qquad \\sym{new.lemmaC}{\\sym{new.gen}{\\mathsf{gen\\_new}}\\,\\Gamma\\,\\rho\\,C \\Rightarrow \\sym{new.acyc}{\\mathsf{acyc\\_new}}\\,\\Gamma\\,\\rho\\,C}}\\end{array}",
      "caption": "E-New creates a channel at a fresh root $\\rho$ and its [[ty-dual|dual]], hidden in an [[r-ex|existential]] whose constraint $C$ states what the program needs about the new points. The order $\\prec^{\\rho}_{C}$ that $C$ and program order induce on $\\mathsf{tree}(\\rho)$ must have no cycle. A bridge enters the tree from a context point $z$ and leaves it towards a context point $y$, and $\\Gamma$ must derive $z \\prec y$ for each bridge. Then the creation adds no cycle to an acyclic world. E-New-Field creates a channel at a [[syn-labels|field]] $x\\cdot\\kappa$ and its dual, with no constraint, because the order around a field was fixed with its root. The lower bound $\\bot$ records that no fact of the context mentions the new points. \\inmode{lf}{At a finite bound $N$ the premise is $\\mathsf{gen\\_new}$ in place of $\\mathsf{acyc\\_new}$. \\inmode{lf}{It asks $\\prec^{\\rho}_{C}$ well-founded and bounds each tree point $s$ by a finite set $Y$ of context points, so that ranks for the new tree exist in each [[t-lf-wf|ranked world]].} It implies $\\mathsf{acyc\\_new}$. \\inmode{lf}{Each creation picks [[ty-ann|tickets]] $m_1$ and $m_2$ with $m_1 + m_2 \\leq N$, and each end starts at credit equal to its tickets, as the [[t-lf-counters|counters block]] explains.} The fundamental theorem proves E-New against the obligation O-New of [[e-obl]], and the world grows as in [[w-ext]]. The [[t-consts|constants]] have no entry for $\\mathsf{new}$.}",
      "why": "Creation places a new channel in the order. One term $\\mathsf{new}$ has two rules for the two places a channel can go. A fresh root needs facts and hides its points, a field needs neither. Why not one rule. A rule with a position would have to take the facts in the term, and because ends are linear each held end the facts mention would have to be passed to $\\mathsf{new}$ and returned. Why fields at all. A channel created to be sent must be placed where the message delivers its payload, the field $x\\cdot j$ of the carrier, and a root with a constraint cannot name that point without a bridge. Why hide the root. A box body that creates a channel per round would otherwise need one point variable per round in the box type.",
      "example": "Two threads that close $c$ and $d$ in the same order type with $d$ at the field $\\rho\\cdot 0$ of the root $\\rho$ of $c$. A creation at a fresh root $\\rho$ with $C = \\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ states the two facts the threads need. $\\prec^{\\rho}_{C}$ has no cycle, and $C$ has no bridge. The cycle example in the examples tab is this program.",
@@ -1483,8 +1483,8 @@
     {
      "id": "p-typing",
      "title": "Process typing",
-     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{ty.tfree}{\\mathsf{tfree}\\,T}\\quad \\sym{pfree}{\\mathsf{pfree}\\,\\Sigma}\\quad \\sym{P-Term.wf}{\\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}\\,W}\\quad \\sym{P-Term.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,\\Sigma, \\Theta_B}\\\\ \\sym{P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\sym{tp.ends}{\\mathsf{ends}}(C_0)}\\quad \\sym{P-Term.disj}{\\sym{tp.chans}{\\mathsf{chans}}\\,\\sym{tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing} \\\\ \\sym{P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = S_x\\inmode{lf}{^{m,m}},\\ \\Theta_B(c^{-}) = \\overline{S}_{\\overline{x}}\\inmode{lf}{^{m',m'}}\\inmode{lf}{,\\ m + m' \\leq N}} \\\\ \\sym{P-Term.typed}{\\varnothing ; \\sym{tp.lift}{\\Sigma\\inmode{lf}{^{N/2,N/2}}}, \\Theta_B \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sym{P-Term.future}{(\\varnothing,\\cdot)}} t : T\\inmode{lf}{\\ !\\ c}}\\end{array}}{\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{N}}}_{\\sym{P-Term.hide}{W|_{\\sym{tp.iface}{\\mathsf{I}(\\Sigma, T)}}}} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_1} (C_1, E_1) : T} \\\\ \\sym{P-Connect.right}{\\Sigma_2 \\cup \\sym{P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\sym{P-Connect.disj}{\\mathsf{disjoint}(\\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_1, \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_2, \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, C_1, C_2)}\\quad \\sym{P-Connect.cutfree}{\\sym{pfree}{\\mathsf{pfree}}\\,\\Sigma_C} \\\\ \\sym{P-Connect.wf}{\\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{\\sym{P-Connect.join}{(W_1 \\sym{w.join}{\\sqcup} W_2)\\sym{w.restrict}{|}_{\\sym{tp.iface}{\\mathsf{I}(\\Sigma_1 \\cup \\Sigma_2, T)}}}} \\\\ (C_1 \\cup C_2 \\cup \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\sym{tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect} \\\\[2ex] \\sym{P-Connect.n}{\\dfrac{\\begin{array}{c}\\Sigma_1 \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_1} p_1 : T \\qquad \\Sigma_i \\cup \\overline{\\Sigma_{C,i}} \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_i} p_i : \\ast\\ \\ (2 \\leq i \\leq n) \\\\ \\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n)\\end{array}}{\\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W} \\textstyle\\parallel_i p_i : T,\\ \\ \\sym{w.facts}{\\mathsf{facts}}\\,W \\subseteq \\mathsf{facts}((W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n)|_{\\mathsf{I}(\\Sigma, T)})}\\;\\textsf{P-Connect$^{n}$}}\\end{array}\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\sym{tp.lfjudg}{\\Sigma \\Vdash^{N}_W p : T \\iff \\sym{lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_W p : T \\land \\sym{guard.proc}{\\vdash\\!\\triangleright p}}}\\end{array}",
-     "caption": "P-Term types one thread $t$ that holds both ends of each channel in $C_0$, at [[ty-dual|dual]] types and points, over an interface $\\Sigma$ without partner pairs, with the ends $\\Theta_B$ of these channels. The thread is typed by the [[t-judgment|term judgment]] with no facts and the empty future, so that [[r-base|E-Chan]] closes each end it holds, and its result type is [[ty-kinds|end-free]]. Its world is hidden to the constants of the interface, $W|_{\\mathsf{I}(\\Sigma, T)}$ by the restriction of [[w-ext]]. P-Connect cuts two components at $\\Sigma_C$ against $\\overline{\\Sigma_C}$ and asks the join of their two interface [[w-world|worlds]] acyclic, the condition of [[w-wf]]. The check reads the joined order, never two worlds at a time, so a ring of three threads whose worlds are acyclic in pairs and cyclic together is rejected. The [[syn-procs|process]] of the conclusion restricts the cut channels. \\inmode{lf}{At a finite bound $N$ the worlds must be well-founded in place of acyclic, which [[t-lf-wf]] explains. \\inmode{lf}{Lock-free process typing is process typing at a finite bound with each thread [[g-guard|guarded]].} \\inmode{lf}{The ends of a restricted channel have [[ty-ann|tickets]] of sum at most $N$, and each interface end has $N/2$, as the [[t-lf-counters|counters block]] explains.} [[th-compose]] proves both rules in the relation, and [[w-wf]] gives the world a model.}",
+     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{ty.tfree}{\\mathsf{tfree}\\,T}\\quad \\sym{pfree}{\\mathsf{pfree}\\,\\Sigma}\\quad \\sym{P-Term.wf}{\\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}\\,W}\\quad \\sym{P-Term.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,\\Sigma, \\Theta_B}\\\\ \\sym{P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\sym{tp.ends}{\\mathsf{ends}}(C_0)}\\quad \\sym{P-Term.disj}{\\sym{tp.chans}{\\mathsf{chans}}\\,\\sym{tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing} \\\\ \\sym{P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = \\sym{ty.sess}{S_x\\inmode{lf}{^{m,m}}},\\ \\Theta_B(c^{-}) = \\sym{ty.sess}{\\overline{S}_{\\overline{x}}\\inmode{lf}{^{m',m'}}}\\inmode{lf}{,\\ m + m' \\leq N}} \\\\ \\sym{P-Term.typed}{\\varnothing ; \\sym{tp.lift}{\\Sigma\\inmode{lf}{^{N/2,N/2}}}, \\Theta_B \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sym{P-Term.future}{(\\varnothing,\\cdot)}} t : T\\inmode{lf}{\\ !\\ c}}\\end{array}}{\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{N}}}_{\\sym{P-Term.hide}{W|_{\\sym{tp.iface}{\\mathsf{I}(\\Sigma, T)}}}} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_1} (C_1, E_1) : T} \\\\ \\sym{P-Connect.right}{\\Sigma_2 \\cup \\sym{P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\sym{P-Connect.disj}{\\mathsf{disjoint}(\\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_1, \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_2, \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, C_1, C_2)}\\quad \\sym{P-Connect.cutfree}{\\sym{pfree}{\\mathsf{pfree}}\\,\\Sigma_C} \\\\ \\sym{P-Connect.wf}{\\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{\\sym{P-Connect.join}{(W_1 \\sym{w.join}{\\sqcup} W_2)\\sym{w.restrict}{|}_{\\sym{tp.iface}{\\mathsf{I}(\\Sigma_1 \\cup \\Sigma_2, T)}}}} \\\\ (C_1 \\cup C_2 \\cup \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\sym{tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect} \\\\[2ex] \\sym{P-Connect.n}{\\dfrac{\\begin{array}{c}\\Sigma_1 \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_1} p_1 : T \\qquad \\Sigma_i \\cup \\overline{\\Sigma_{C,i}} \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_i} p_i : \\ast\\ \\ (2 \\leq i \\leq n) \\\\ \\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n)\\end{array}}{\\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W} \\textstyle\\parallel_i p_i : T,\\ \\ \\sym{w.facts}{\\mathsf{facts}}\\,W \\subseteq \\mathsf{facts}((W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n)|_{\\mathsf{I}(\\Sigma, T)})}\\;\\textsf{P-Connect$^{n}$}}\\end{array}\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\sym{tp.lfjudg}{\\Sigma \\Vdash^{N}_W p : T \\iff \\sym{lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_W p : T \\land \\sym{guard.proc}{\\vdash\\!\\triangleright p}}}\\end{array}",
+     "caption": "P-Term types one thread $t$ that holds both ends of each channel in $C_0$, at [[ty-dual|dual]] types and points, over an interface $\\Sigma$ without partner pairs, with the ends $\\Theta_B$ of these channels. The thread is typed by the [[t-judgment|term judgment]] with no facts and the empty future, so that [[r-base|E-Chan]] closes each end it holds, and its result type is [[ty-kinds|end-free]]. Its world is hidden to the constants of the interface, $W|_{\\mathsf{I}(\\Sigma, T)}$ by the restriction of [[w-ext]]. P-Connect cuts two components at $\\Sigma_C$ against $\\overline{\\Sigma_C}$ and asks the join of their two interface [[w-world|worlds]] acyclic, the condition of [[w-wf]]. The check reads the joined order, never two worlds at a time, so a ring of three threads whose worlds are acyclic in pairs and cyclic together is rejected. The [[syn-procs|process]] of the conclusion restricts the cut channels. \\inmode{lf}{At a finite bound $N$ the worlds must be well-founded in place of acyclic, which [[t-lf-wf]] explains. \\inmode{lf}{Lock-free process typing is process typing at a finite bound with each thread [[g-guard|guarded]].} \\inmode{lf}{The ends of a restricted channel have [[ty-ann|tickets]] of sum at most $N$, and each interface end has $N/2$, as the [[t-lf-counters|counters block]] explains.}} [[th-compose]] proves both rules in the relation, and [[w-wf]] gives the world a model.",
      "why": "Processes are built from single threads by P-Term and composed by P-Connect. Hiding buys compositionality. A component exposes only the order between the points of its interface, so two components that use the same private constant in opposite orders still compose, and the soundness proof renames private constants apart. Without hiding the type of a component would mention points that no other component names.",
      "source": [
       {
@@ -1519,12 +1519,12 @@
   {
    "id": "semantic",
    "title": "Semantic typing",
-   "intro": "The logical relation defines when a value, a term and a process are safe, by induction on an ordinal step index. Safe means two things. A term that cannot act is a value, and a term that waits does so below the dual points of the ends it holds, so that in a stuck configuration some thread waits at a minimal point and its partner can act. Typed programs are safe by the fundamental theorems, and safe closed processes are deadlock free by adequacy. \\inmode{lf}{For lock freedom we read the same relation with other step costs, add fuel to each thread, and combine the two in the lock-free process relation.}",
+   "intro": "The logical relation defines when a value, a term and a process are safe, by induction on an ordinal step index. Safe means two things. A term that cannot act is a value. A term that waits does so below the dual points of the ends it holds. In a stuck configuration some thread then waits at a minimal point, and its partner can act. Typed programs are safe by the fundamental theorems, and safe closed processes are deadlock free by adequacy. \\inmode{lf}{For lock freedom we read the same relation with other step costs, add fuel to each thread, and combine the two in the lock-free process relation.}",
    "blocks": [
     {
      "id": "sr-reading",
      "title": "Reading the relations",
-     "caption": "The relations $V$, $E$ and $P$ relate a value, a term or a process to the environment $\\Theta$ of the ends it owns. The relations are indexed by a world $R$ of the relation of [[w-world]], whose order they read, and an ordinal index $\\alpha$ of [[sr-ord]]. The deadlock-free relation reads strict worlds. \\inmode{lf}{The threads of the lock-free process relation read ranked worlds.} A term is safe when it is a safe value, or when it is ready and each of its steps leads to a safe term at every lower index the cost of the step allows. Readiness says that a stuck term waits below the dual points of the ends it holds. Processes are safe in the same way and remain safe when their ends are fused, so composing two safe processes needs no further proof. The [[v-rel|value]], [[e-rel|term]] and [[p-rel|process]] relations follow. \\inmode{lf}{Fuel is a second predicate on each thread, which holds the ends $\\Phi$ with their counters and returns within $d$ actions. \\inmode{lf}{The lock-free process relation requires both of every thread.}}",
+     "caption": "The relations $V$, $E$ and $P$ relate a value, a term or a process to the environment $\\Theta$ of the ends it owns. The relations are indexed by a world $R$ of the relation of [[w-world]], whose order they read, and an ordinal index $\\alpha$ of [[sr-ord]]. The deadlock-free relation reads strict worlds. \\inmode{lf}{The threads of the lock-free process relation read ranked worlds.} A term is safe when it is a safe value, or when it is ready and each of its steps leads to a safe term at each lower index the cost of the step allows. Readiness says that a stuck term waits below the dual points of the ends it holds. Processes are safe in the same way and remain safe when their ends are fused, so composing two safe processes needs no further proof. The [[v-rel|value]], [[e-rel|term]] and [[p-rel|process]] relations follow. \\inmode{lf}{Fuel is a second predicate on each thread, which holds the ends $\\Phi$ with their counters and returns within $d$ actions. \\inmode{lf}{The lock-free process relation requires both of each thread.}}",
      "why": "Each row says in words what one judgment of this section means. The relation proves the typing rules as follows. Each rule becomes a lemma, the compatibility lemma, which says that if the subterms are in $E$ then the term is in $E$. The fundamental theorem is the induction over a derivation that applies these lemmas. Adequacy then reads deadlock freedom off readiness. A premise of a rule is justified exactly when its compatibility lemma needs it.",
      "source": [
       {
@@ -1562,7 +1562,7 @@
        },
        {
         "formula": "\\sym{rel.atcost}{e'\\ \\mathsf{at}\\ \\Theta'}",
-        "text": "$e'$ is safe holding $\\Theta'$, at the same index after a free step and at every $\\beta$ with $\\beta + c \\leq \\alpha$ after a step of cost $c$"
+        "text": "$e'$ is safe holding $\\Theta'$, at the same index after a free step and at each $\\beta$ with $\\beta + c \\leq \\alpha$ after a step of cost $c$"
        },
        {
         "formula": "\\sym{sr.FE}{e \\in F^{N}_{\\alpha}\\llbracket \\Phi \\vdash \\sigma\\ !\\ d \\rrbracket}",
@@ -1573,7 +1573,7 @@
        },
        {
         "formula": "\\sym{th.soup}{a \\in S^{N,R}_{\\alpha}\\llbracket \\Sigma \\vdash T \\rrbracket}",
-        "text": "every thread of $a$ is in $E[\\kappa_L]$ and has fuel, under one ownership map",
+        "text": "each thread of $a$ is in $E[\\kappa_L]$ and has fuel, under one ownership map",
         "modes": [
          "lf"
         ]
@@ -1616,7 +1616,7 @@
       "df": "\\begin{array}{c}\\begin{array}{lc}\n & \\sym{ct.DF}{\\kappa_{DF}} \\\\ \\hline\n\\sym{ct.beta}{\\beta} & 1 \\\\\n\\sym{ct.new}{\\mathsf{new}} & 1 \\\\\n\\sym{ct.spawn}{\\mathsf{spawn}} & 1 \\\\\n\\sym{ct.link}{\\mathsf{link}} & 0 \\\\\n\\sym{ct.give}{\\mathsf{send},\\ \\mathsf{select},\\ \\mathsf{close}} & 0 \\\\\n\\sym{ct.takek}{\\mathsf{recv},\\ \\mathsf{branch}} & 1 \\\\\n\\sym{ct.sync}{\\kappa_{\\mathrm{give}} + \\kappa_{\\mathrm{take}}} & 1\n\\end{array}\\end{array}"
      },
      "caption": "The number of levels each kind of step of [[sem-labels]] consumes in the deadlock-free relation. \\inmode{lf}{A cost table $\\kappa$ assigns these numbers subject to three conditions. \\inmode{lf}{The lock-free relation uses $\\kappa_L$, in which internal steps are free.}} The [[e-rel|term relation]], the [[e-obl|obligations]] and the [[p-obls|process obligations]] read the cost of a step.",
-     "why": "The costs fix how far the level drops at a step. A send costs nothing, so the payload is passed on at the level of the continuation, and a receive costs one, so the received value is read one level lower, where the relation is already defined. \\inmode{lf}{A step of cost $0$ is read at the same level, so a thread cannot take infinitely many of them.}",
+     "why": "The costs fix how far the level drops at a step. A send costs nothing, so the payload is passed on at the level of the continuation. A receive costs one, so the received value is read one level lower, where the relation is already defined. \\inmode{lf}{A step of cost $0$ is read at the same level, so a thread cannot take infinitely many of them.}",
      "source": [
       {
        "file": "relation/CostTable.v",
@@ -1641,8 +1641,8 @@
     {
      "id": "v-rel",
      "title": "The value relation",
-     "formula": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\phantom{x}\\end{array}}{\\sym{V-Unit}{\\ast \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\varnothing \\vdash \\ast \\rrbracket}}}\\;\\textsf{V-Unit} \\qquad \\dfrac{\\begin{array}{c}S' \\mathrel{\\sym{sty.seqv}{\\approx}} S\\end{array}}{\\sym{V-Sess}{o \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\sym{V-Sess.exact}{\\{o \\mapsto {S'}_x\\}} \\vdash S_x \\rrbracket}}}\\;\\textsf{V-Sess} \\\\[2ex]\n\\dfrac{\\begin{array}{c}v_1 \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\Theta_1 \\vdash T_1 \\rrbracket}\\quad v_2 \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\Theta_2 \\vdash T_2 \\rrbracket}\\end{array}}{\\sym{V-Prod}{\\langle v_1, v_2\\rangle \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\sym{V-Prod.split}{\\Theta_1 \\mathbin{\\sym{ctx.tsplit}{\\uplus}} \\Theta_2} \\vdash T_1 \\otimes T_2 \\rrbracket}}}\\;\\textsf{V-Prod} \\qquad \\dfrac{\\begin{array}{c}v \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\Theta \\vdash T_i \\rrbracket}\\end{array}}{\\sym{V-Sum}{\\sym{syn.inj}{\\mathsf{inj}_i}\\,v \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\Theta \\vdash T_1 \\oplus T_2 \\rrbracket}}}\\;\\textsf{V-Sum}\n\\end{array}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{V-Arrow.exact}{\\mathrm{dom}\\,\\Theta = \\sym{syn.fends}{\\mathsf{fends}}(e)}\\quad \\sym{V-Arrow.lb}{l \\neq \\bot \\Rightarrow l \\mathrel{\\sym{ty2.le}{\\preccurlyeq}} \\sym{ty.heads}{\\mathsf{ap}}\\,\\Theta} \\\\ \\sym{V-Arrow.kripke}{\\forall R' \\mathrel{\\sym{w.ext}{\\sqsupseteq}} R},\\ \\sym{V-Arrow.level}{\\inmodeplain{df}{j < \\alpha}\\inmode{lf}{j + \\kappa_{\\beta} \\leq \\alpha}},\\ \\Theta' \\mathbin{\\#} \\Theta,\\ \\sym{V-Arrow.ub}{F,\\ \\sym{w.rlt}{R' \\vdash u \\prec F}}. \\\\ w \\in \\sym{th.Vrel}{V^{R'}_{j}\\llbracket \\Theta' \\vdash T \\rrbracket} \\ \\Longrightarrow\\ \\sym{V-Arrow.body}{e[w] \\in \\sym{th.Erel}{E^{R'}_{j}\\llbracket \\Theta \\cup \\Theta' \\vdash U \\rrbracket^{F}}}\\end{array}}{\\lambda e \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\Theta \\vdash T \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l} U \\rrbracket}}\\;\\textsf{V-Arrow}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{V-Box.empty}{\\Theta = \\varnothing}\\quad \\sym{V-Box.noends}{\\sym{syn.fends}{\\mathsf{fends}}(e) = \\varnothing} \\\\ \\sym{V-Box.kripke}{\\forall R' \\mathrel{\\sym{w.ext}{\\sqsupseteq}} R},\\ \\sym{V-Box.inst}{\\bar x,\\ R' \\vdash C[\\bar x]},\\ \\sym{V-Box.hc}{\\bar s,\\ \\mathsf{contractive}\\,\\bar s,\\ \\mathsf{scoped}\\,\\bar s}.\\quad \\sym{V-Box.thunk}{\\sym{sr.thunk}{\\mathsf{thunk}(e)} \\in \\sym{th.Vrel}{V^{R'}_{\\alpha}\\llbracket \\varnothing \\vdash \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] \\rrbracket}}\\end{array}}{!e \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\varnothing \\vdash \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\,C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u} U) \\rrbracket}}\\;\\textsf{V-Box}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{V-Ex.lb}{l \\mathrel{\\sym{ty2.le}{\\preccurlyeq}} \\sym{ty.heads}{\\mathsf{ap}}\\,\\Theta}\\quad \\sym{V-Ex.witness}{R \\vdash C[\\bar x]}\\quad v \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\Theta \\vdash T[\\bar x] \\rrbracket}\\end{array}}{v \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\Theta \\vdash \\exists^{l}\\bar\\iota.\\,C.\\,T \\rrbracket}}\\;\\textsf{V-Ex}\\\\[3ex]\\begin{array}{l}\n\\sym{rel.vsize}{\\mathsf{measure}(V_{\\alpha}\\llbracket\\Theta \\vdash T\\rrbracket) = (\\alpha, \\sym{sr.size}{\\mathsf{size}}\\,T) \\in (\\mathsf{Ord} \\times \\mathbb{N}, <_{\\mathrm{lex}})} \\\\\n\\sym{sr.size}{\\mathsf{size}(\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\,C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u} U)) = 3 + \\mathsf{size}\\,U} \\qquad \\sym{sr.size}{\\mathsf{size}(\\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u} U) = 2 + \\mathsf{size}\\,U}\n\\end{array}\\end{array}",
-     "caption": "Each rule is one clause of $V$ at a type of [[ty-grammar]], by recursion on the type within a level, and $\\Theta$ maps exactly the ends the [[syn-values|value]] owns, $\\mathrm{dom}\\,\\Theta = \\mathsf{fends}(v)$ of [[syn-fends]]. An end is related at a session type [[ty-equiv|up to annotations]]. A closure is safe when its body is safe in each larger world of [[w-ext]], at each lower level, for each argument $w$ and each future of the caller above $u$, which is the semantic form of [[r-fun|E-Abs]]. A thunk, the closure that [[r-threads|$\\mathsf{spawn}$]] runs, is read at the empty future. A box owns no end, and it is safe when $\\mathsf{thunk}(e) = \\lambda\\_.\\,e[!e]$ is safe at each instance, as [[r-boxes|E-Force]] may pick. An existential value is a value of the body at witness points whose facts hold, as [[r-ex|E-Pack]] states.",
+     "formula": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\phantom{x}\\end{array}}{\\sym{V-Unit}{\\ast \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\varnothing \\vdash \\ast \\rrbracket}}}\\;\\textsf{V-Unit} \\qquad \\dfrac{\\begin{array}{c}S' \\mathrel{\\sym{sty.seqv}{\\approx}} S\\end{array}}{\\sym{V-Sess}{o \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\sym{V-Sess.exact}{\\{o \\mapsto \\sym{ty.sess}{{S'}_x}\\}} \\vdash \\sym{ty.sess}{S_x} \\rrbracket}}}\\;\\textsf{V-Sess} \\\\[2ex]\n\\dfrac{\\begin{array}{c}v_1 \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\Theta_1 \\vdash T_1 \\rrbracket}\\quad v_2 \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\Theta_2 \\vdash T_2 \\rrbracket}\\end{array}}{\\sym{V-Prod}{\\langle v_1, v_2\\rangle \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\sym{V-Prod.split}{\\Theta_1 \\mathbin{\\sym{ctx.tsplit}{\\uplus}} \\Theta_2} \\vdash T_1 \\otimes T_2 \\rrbracket}}}\\;\\textsf{V-Prod} \\qquad \\dfrac{\\begin{array}{c}v \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\Theta \\vdash T_i \\rrbracket}\\end{array}}{\\sym{V-Sum}{\\sym{syn.inj}{\\mathsf{inj}_i}\\,v \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\Theta \\vdash T_1 \\oplus T_2 \\rrbracket}}}\\;\\textsf{V-Sum}\n\\end{array}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{V-Arrow.exact}{\\mathrm{dom}\\,\\Theta = \\sym{syn.fends}{\\mathsf{fends}}(e)}\\quad \\sym{V-Arrow.lb}{l \\neq \\bot \\Rightarrow l \\mathrel{\\sym{ty2.le}{\\preccurlyeq}} \\sym{ty.heads}{\\mathsf{ap}}\\,\\Theta} \\\\ \\sym{V-Arrow.kripke}{\\forall R' \\mathrel{\\sym{w.ext}{\\sqsupseteq}} R},\\ \\sym{V-Arrow.level}{\\inmodeplain{df}{j < \\alpha}\\inmode{lf}{j + \\kappa_{\\beta} \\leq \\alpha}},\\ \\Theta' \\mathbin{\\#} \\Theta,\\ \\sym{V-Arrow.ub}{F,\\ \\sym{w.rlt}{R' \\vdash u \\prec F}}. \\\\ w \\in \\sym{th.Vrel}{V^{R'}_{j}\\llbracket \\Theta' \\vdash T \\rrbracket} \\ \\Longrightarrow\\ \\sym{V-Arrow.body}{e[w] \\in \\sym{th.Erel}{E^{R'}_{j}\\llbracket \\Theta \\cup \\Theta' \\vdash U \\rrbracket^{F}}}\\end{array}}{\\lambda e \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\Theta \\vdash T \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l} U \\rrbracket}}\\;\\textsf{V-Arrow}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{V-Box.empty}{\\Theta = \\varnothing}\\quad \\sym{V-Box.noends}{\\sym{syn.fends}{\\mathsf{fends}}(e) = \\varnothing} \\\\ \\sym{V-Box.kripke}{\\forall R' \\mathrel{\\sym{w.ext}{\\sqsupseteq}} R},\\ \\sym{V-Box.inst}{\\bar x,\\ R' \\vdash C[\\bar x]},\\ \\sym{V-Box.hc}{\\bar s,\\ \\mathsf{contractive}\\,\\bar s,\\ \\mathsf{scoped}\\,\\bar s}.\\quad \\sym{V-Box.thunk}{\\sym{sr.thunk}{\\mathsf{thunk}(e)} \\in \\sym{th.Vrel}{V^{R'}_{\\alpha}\\llbracket \\varnothing \\vdash \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] \\rrbracket}}\\end{array}}{!e \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\varnothing \\vdash \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\,C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u} U) \\rrbracket}}\\;\\textsf{V-Box}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{V-Ex.lb}{l \\mathrel{\\sym{ty2.le}{\\preccurlyeq}} \\sym{ty.heads}{\\mathsf{ap}}\\,\\Theta}\\quad \\sym{V-Ex.witness}{R \\vdash C[\\bar x]}\\quad v \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\Theta \\vdash T[\\bar x] \\rrbracket}\\end{array}}{v \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\Theta \\vdash \\exists^{l}\\bar\\iota.\\,C.\\,T \\rrbracket}}\\;\\textsf{V-Ex}\\\\[3ex]\\begin{array}{l}\n\\sym{rel.vsize}{\\mathsf{measure}(V_{\\alpha}\\llbracket\\Theta \\vdash T\\rrbracket) = (\\alpha, \\sym{sr.size}{\\mathsf{size}}\\,T) \\in (\\mathsf{Ord} \\times \\mathbb{N}, <_{\\mathrm{lex}})} \\\\\n\\sym{sr.size}{\\mathsf{size}(\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\,C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u} U)) = 3 + \\mathsf{size}\\,U} \\qquad \\sym{sr.size}{\\mathsf{size}(\\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u} U) = 2 + \\mathsf{size}\\,U}\n\\end{array}\\end{array}",
+     "caption": "Each rule is one clause of $V$ at a type of [[ty-grammar]], by recursion on the type within a level, and $\\Theta$ maps exactly the ends the [[syn-values|value]] owns, $\\mathrm{dom}\\,\\Theta = \\mathsf{fends}(v)$ of [[syn-fends]]. An end is related at a session type [[ty-equiv|up to annotations]]. A closure is safe when its body is safe in each larger world of [[w-ext]], at each lower level, for each argument $w$ and each future of the caller above $u$. This is the semantic form of [[r-fun|E-Abs]]. A thunk, the closure that [[r-threads|$\\mathsf{spawn}$]] runs, is read at the empty future. A box owns no end, and it is safe when $\\mathsf{thunk}(e) = \\lambda\\_.\\,e[!e]$ is safe at each instance, as [[r-boxes|E-Force]] may pick. An existential value is a value of the body at witness points whose facts hold, as [[r-ex|E-Pack]] states.",
      "why": "The clauses for closures, thunks and boxes quantify over larger worlds and lower levels. This quantification makes the relation compositional. A closure received from another component is safe in the joined world because it was safe in each extension of its own.",
      "source": [
       {
@@ -1690,7 +1690,7 @@
      "id": "e-rel",
      "title": "The term relation",
      "formula": "\\begin{array}{c}\\begin{array}{l}\ne \\in \\sym{th.Erel}{E^{R}_{\\alpha}\\llbracket \\Theta \\vdash T \\rrbracket^{F}} \\iff \\sym{E.kripke}{\\forall R_1 \\mathrel{\\sym{w.ext}{\\sqsupseteq}} R}. \\\\\n\\quad \\sym{E.stop}{(\\mathsf{stop})\\ \\sym{sr.irred}{\\mathsf{irred}}\\,e \\Rightarrow e \\in \\sym{th.Vrel}{V^{R_1}_{\\alpha}\\llbracket \\Theta \\vdash T \\rrbracket}} \\\\\n\\quad \\sym{E.ready}{(\\mathsf{ready})\\ \\neg\\mathsf{irred}\\,e \\Rightarrow \\sym{sr.ready}{\\mathsf{ready}_{R_1}(\\Theta \\mid F, e)}} \\\\\n\\quad \\sym{E.step}{(\\mathsf{step})\\ \\forall \\ell, e'.\\ e \\xrightarrow{\\ell} e' \\Rightarrow \\sym{sr.obl}{\\mathsf{Obl}_\\ell(e')}} \\qquad \\sym{rel.lfp}{(\\mathsf{lfp})}\n\\end{array}\\\\[3ex]\\sym{rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta' \\iff \\begin{cases} \\sym{rel.lfp}{X(R, \\Theta', T, F, e')} & c = 0 \\\\ \\forall \\beta.\\ \\beta + c \\leq \\alpha \\Rightarrow e' \\in \\sym{th.Erel}{E^{R}_{\\beta}\\llbracket \\Theta' \\vdash T \\rrbracket^{F}} & c > 0 \\end{cases} \\qquad c = \\inmodeplain{df}{\\sym{ct.DF}{\\kappa_{DF}}(\\ell)}\\inmode{lf}{\\sym{ct.table}{\\kappa}(\\ell)}\\end{array}",
-     "caption": "A term in $E$ is a [[syn-values|value]] in [[v-rel|$V$]] when it is irreducible and [[rd|ready]] when it is reducible, and each of its steps meets its [[e-obl|obligation]], at each index, $0$ included, and in each larger world of [[w-ext]]. After a step of cost $c > 0$ from [[ct-costs]] at the ordinal index $\\alpha$ the successor is read at every $\\beta$ with $\\beta + c \\leq \\alpha$, and after a free step at $\\alpha$ itself. At a limit index this is every smaller index. The three rows of [[sr-reading]] say the same in words.",
+     "caption": "A term in $E$ is a [[syn-values|value]] in [[v-rel|$V$]] when it is irreducible and [[rd|ready]] when it is reducible. Each of its steps meets its [[e-obl|obligation]]. This holds at each index, $0$ included, and in each larger world of [[w-ext]]. After a step of cost $c > 0$ from [[ct-costs]] at the ordinal index $\\alpha$ the successor is read at each $\\beta$ with $\\beta + c \\leq \\alpha$, and after a free step at $\\alpha$ itself. At a limit index this is each smaller index. The three rows of [[sr-reading]] say the same in words.",
      "why": "The term relation is the center of the logical relation. Values, obligations and readiness are its three clauses. A free step is read inside the least fixpoint at the same level, so a term may take only finitely many free steps in a row before a step of positive cost.",
      "source": [
       {
@@ -1715,7 +1715,7 @@
     {
      "id": "e-obl",
      "title": "Obligations of term steps",
-     "formula": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\sym{rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta\\end{array}}{\\sym{O-Beta}{\\sym{sr.obl}{\\mathsf{Obl}_{\\beta}(e')}}}\\;\\textsf{O-Beta} \\qquad \\dfrac{\\begin{array}{c}\\sym{O-Spawn.split}{\\Theta = \\Theta_M \\mathbin{\\sym{ctx.tsplit}{\\uplus}} \\Theta_r}\\quad \\sym{O-Spawn.thunk}{v \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\Theta_M \\vdash \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{\\sym{ty.ubound}{\\top}}_{\\bot} \\ast \\rrbracket}}\\quad \\sym{rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta_r\\end{array}}{\\sym{O-Spawn}{\\sym{sr.obl}{\\mathsf{Obl}_{\\mathsf{spawn}\\,v}(e')}}}\\;\\textsf{O-Spawn} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\sym{O-New.cfresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Theta} \\\\ \\sym{O-New.grow}{\\exists S, \\pi, R'.\\ R \\sym{w.ext}{\\sqsubseteq} R'},\\ \\sym{rel.atcost}{e'\\ \\mathsf{at}}_{R'}\\ \\sym{O-New.dual}{\\Theta[c^{+} \\mapsto S_{\\pi},\\ c^{-} \\mapsto \\overline{S}_{\\overline{\\pi}}]}\\end{array}}{\\sym{O-New}{\\sym{sr.obl}{\\mathsf{Obl}_{\\mathsf{new}\\,c}(e')}}}\\;\\textsf{O-New}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\sym{sr.head}{\\Theta(o) \\doteq (\\sym{sty.send}{!(\\bar\\iota.\\ U)}.S)_{x}}\\quad \\sym{O-Send.split}{\\Theta \\setminus o = \\Theta_M \\mathbin{\\sym{ctx.tsplit}{\\uplus}} \\Theta_r} \\\\ \\sym{O-Send.payload}{w \\in \\sym{th.Vrel}{V^{R}_{\\inmodeplain{df}{\\alpha}\\inmode{lf}{\\beta}}\\llbracket \\Theta_M \\vdash \\sym{ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}}\\quad \\sym{rel.atcost}{e'\\ \\mathsf{at}}\\ \\sym{O-Send.shift}{\\Theta_r[o \\mapsto S_{x^{+}}]}\\end{array}}{\\sym{O-Send}{\\sym{sr.obl}{\\mathsf{Obl}_{\\mathsf{send}\\,o\\,w}(e')}}}\\;\\textsf{O-Send} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\sym{sr.head}{\\Theta(o) \\doteq (\\sym{sty.recv}{?(\\bar\\iota.\\ U)}.S)_{x}} \\\\ \\sym{O-Recv.forall}{\\forall \\beta, \\Theta_{in}.\\ \\inmodeplain{df}{\\beta < \\alpha}\\inmode{lf}{\\beta + \\kappa_{\\mathrm{take}} \\leq \\alpha},\\ \\Theta_{in} \\mathbin{\\#} \\Theta,\\ w \\in \\sym{th.Vrel}{V^{R}_{j}\\llbracket \\Theta_{in} \\vdash \\sym{ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}} \\ \\Longrightarrow\\ \\sym{O-Recv.level}{e' \\in \\sym{th.Erel}{E^{R}_{j}\\llbracket \\Theta[o \\mapsto S_{x^{+}}] \\cup \\Theta_{in} \\vdash T \\rrbracket^{F}}}\\end{array}}{\\sym{O-Recv}{\\sym{sr.obl}{\\mathsf{Obl}_{\\mathsf{recv}\\,o\\,w}(e')}}}\\;\\textsf{O-Recv}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\sym{sr.head}{\\Theta(o) \\doteq \\sym{sty.close}{\\mathsf{Close}}_{x}}\\quad \\sym{rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta \\setminus o\\end{array}}{\\sym{O-Close}{\\sym{sr.obl}{\\mathsf{Obl}_{\\mathsf{close}\\,o}(e')}}}\\;\\textsf{O-Close} \\qquad \\dfrac{\\begin{array}{c}\\sym{O-Link.distinct}{o_1 \\neq o_2}\\quad \\sym{O-Link.dual}{\\Theta(o_1) = S_x,\\ \\Theta(o_2) = {S'}_{\\overline{x}},\\ \\sym{sty.sdual}{\\mathsf{sdual}}\\,S\\,S'}\\quad \\sym{rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta \\setminus \\{o_1, o_2\\}\\end{array}}{\\sym{O-Link}{\\sym{sr.obl}{\\mathsf{Obl}_{\\mathsf{link}\\,o_1\\,o_2}(e')}}}\\;\\textsf{O-Link} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\sym{sr.head}{\\Theta(o) \\doteq (\\sym{sty.plus}{\\oplus(S',S'')})_{x}}\\quad \\sym{rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta[o \\mapsto \\sym{sty.choice}{(\\mathsf{if}\\ i\\ \\mathsf{then}\\ S''\\ \\mathsf{else}\\ S')}_{\\sym{pt.sel}{\\overline{x\\cdot\\kappa_i}}}]\\end{array}}{\\sym{O-Select}{\\sym{sr.obl}{\\mathsf{Obl}_{\\mathsf{select}_i\\,o}(e')}}}\\;\\textsf{O-Select} \\qquad \\dfrac{\\begin{array}{c}\\sym{sr.head}{\\Theta(o) \\doteq (\\sym{sty.with}{\\&(S',S'')})_{x}}\\quad \\sym{rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta[o \\mapsto \\sym{sty.choice}{(\\mathsf{if}\\ i\\ \\mathsf{then}\\ S''\\ \\mathsf{else}\\ S')}_{\\sym{pt.bra}{x\\cdot\\kappa_i}}]\\end{array}}{\\sym{O-Branch}{\\sym{sr.obl}{\\mathsf{Obl}_{\\mathsf{branch}_i\\,o}(e')}}}\\;\\textsf{O-Branch}\n\\end{array}\\end{array}",
+     "formula": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\sym{rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta\\end{array}}{\\sym{O-Beta}{\\sym{sr.obl}{\\mathsf{Obl}_{\\beta}(e')}}}\\;\\textsf{O-Beta} \\qquad \\dfrac{\\begin{array}{c}\\sym{O-Spawn.split}{\\Theta = \\Theta_M \\mathbin{\\sym{ctx.tsplit}{\\uplus}} \\Theta_r}\\quad \\sym{O-Spawn.thunk}{v \\in \\sym{th.Vrel}{V^{R}_{\\alpha}\\llbracket \\Theta_M \\vdash \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{\\sym{ty.ubound}{\\top}}_{\\bot} \\ast \\rrbracket}}\\quad \\sym{rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta_r\\end{array}}{\\sym{O-Spawn}{\\sym{sr.obl}{\\mathsf{Obl}_{\\mathsf{spawn}\\,v}(e')}}}\\;\\textsf{O-Spawn} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\sym{O-New.cfresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Theta} \\\\ \\sym{O-New.grow}{\\exists S, \\pi, R'.\\ R \\sym{w.ext}{\\sqsubseteq} R'},\\ \\sym{rel.atcost}{e'\\ \\mathsf{at}}_{R'}\\ \\sym{O-New.dual}{\\Theta[c^{+} \\mapsto S_{\\pi},\\ c^{-} \\mapsto \\overline{S}_{\\overline{\\pi}}]}\\end{array}}{\\sym{O-New}{\\sym{sr.obl}{\\mathsf{Obl}_{\\mathsf{new}\\,c}(e')}}}\\;\\textsf{O-New}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\sym{sr.head}{\\Theta(o) \\doteq (\\sym{sty.send}{!(\\bar\\iota.\\ U)}.S)_{x}}\\quad \\sym{O-Send.split}{\\Theta \\setminus o = \\Theta_M \\mathbin{\\sym{ctx.tsplit}{\\uplus}} \\Theta_r} \\\\ \\sym{O-Send.payload}{w \\in \\sym{th.Vrel}{V^{R}_{\\inmodeplain{df}{\\alpha}\\inmode{lf}{\\beta}}\\llbracket \\Theta_M \\vdash \\sym{ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}}\\quad \\sym{rel.atcost}{e'\\ \\mathsf{at}}\\ \\sym{O-Send.shift}{\\Theta_r[o \\mapsto \\sym{ty.sess}{S_{x}^{+}}]}\\end{array}}{\\sym{O-Send}{\\sym{sr.obl}{\\mathsf{Obl}_{\\mathsf{send}\\,o\\,w}(e')}}}\\;\\textsf{O-Send} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\sym{sr.head}{\\Theta(o) \\doteq (\\sym{sty.recv}{?(\\bar\\iota.\\ U)}.S)_{x}} \\\\ \\sym{O-Recv.forall}{\\forall \\beta, \\Theta_{in}.\\ \\inmodeplain{df}{\\beta < \\alpha}\\inmode{lf}{\\beta + \\kappa_{\\mathrm{take}} \\leq \\alpha},\\ \\Theta_{in} \\mathbin{\\#} \\Theta,\\ w \\in \\sym{th.Vrel}{V^{R}_{j}\\llbracket \\Theta_{in} \\vdash \\sym{ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}} \\ \\Longrightarrow\\ \\sym{O-Recv.level}{e' \\in \\sym{th.Erel}{E^{R}_{j}\\llbracket \\Theta[o \\mapsto \\sym{ty.sess}{S_{x}^{+}}] \\cup \\Theta_{in} \\vdash T \\rrbracket^{F}}}\\end{array}}{\\sym{O-Recv}{\\sym{sr.obl}{\\mathsf{Obl}_{\\mathsf{recv}\\,o\\,w}(e')}}}\\;\\textsf{O-Recv}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\sym{sr.head}{\\Theta(o) \\doteq \\sym{sty.close}{\\mathsf{Close}}_{x}}\\quad \\sym{rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta \\setminus o\\end{array}}{\\sym{O-Close}{\\sym{sr.obl}{\\mathsf{Obl}_{\\mathsf{close}\\,o}(e')}}}\\;\\textsf{O-Close} \\qquad \\dfrac{\\begin{array}{c}\\sym{O-Link.distinct}{o_1 \\neq o_2}\\quad \\sym{O-Link.dual}{\\Theta(o_1) = \\sym{ty.sess}{S_x},\\ \\Theta(o_2) = \\sym{ty.sess}{{S'}_{\\overline{x}}},\\ \\sym{sty.sdual}{\\mathsf{sdual}}\\,S\\,S'}\\quad \\sym{rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta \\setminus \\{o_1, o_2\\}\\end{array}}{\\sym{O-Link}{\\sym{sr.obl}{\\mathsf{Obl}_{\\mathsf{link}\\,o_1\\,o_2}(e')}}}\\;\\textsf{O-Link} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\sym{sr.head}{\\Theta(o) \\doteq (\\sym{sty.plus}{\\oplus(S',S'')})_{x}}\\quad \\sym{rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta[o \\mapsto \\sym{sty.choice}{(\\mathsf{if}\\ i\\ \\mathsf{then}\\ S''\\ \\mathsf{else}\\ S')}_{\\sym{pt.sel}{\\overline{x\\cdot\\kappa_i}}}]\\end{array}}{\\sym{O-Select}{\\sym{sr.obl}{\\mathsf{Obl}_{\\mathsf{select}_i\\,o}(e')}}}\\;\\textsf{O-Select} \\qquad \\dfrac{\\begin{array}{c}\\sym{sr.head}{\\Theta(o) \\doteq (\\sym{sty.with}{\\&(S',S'')})_{x}}\\quad \\sym{rel.atcost}{e'\\ \\mathsf{at}}\\ \\Theta[o \\mapsto \\sym{sty.choice}{(\\mathsf{if}\\ i\\ \\mathsf{then}\\ S''\\ \\mathsf{else}\\ S')}_{\\sym{pt.bra}{x\\cdot\\kappa_i}}]\\end{array}}{\\sym{O-Branch}{\\sym{sr.obl}{\\mathsf{Obl}_{\\mathsf{branch}_i\\,o}(e')}}}\\;\\textsf{O-Branch}\n\\end{array}\\end{array}",
      "caption": "Each step $e \\xrightarrow{\\ell} e'$ of a term holding $\\Theta$ must meet $\\mathsf{Obl}_\\ell(e')$, and the successor is read at the lower indices the cost of [[ct-costs]] allows, as [[e-rel]] states. A $\\beta$ step keeps the ends. A [[r-threads|spawn]] gives the child exactly the ends of its thunk, by $\\mathsf{fends}$ of [[syn-fends]], and a [[r-new|creation]] adds two dual ends at a fresh root or at a field. A send gives away exactly the ends of its payload, instantiated as in [[ty-payload]], and a receive is safe for each value that may arrive. A close removes the end, a choice moves it to the field of the branch, and a link removes two dual ends. These are the semantic counterparts of the [[r-act|action rules]]. A creation places $c^{+}$ at a position $\\pi$, and a message has a payload value $w$.",
      "why": "The obligations say how each step changes ownership and points. The relation reads step labels only here. O-New chooses the position and the facts of the new channel inside the relation, so the semantics never reads a type annotation, and the fundamental theorem supplies the choice of E-New.",
      "source": [
@@ -1773,7 +1773,7 @@
      "id": "p-rel",
      "title": "The process relation",
      "formula": "\\begin{array}{c}\\begin{array}{l}\n\\sym{P.zero}{\\forall p.\\ p \\in \\sym{th.Prel}{P^{R}_{0}\\llbracket \\Sigma \\vdash T \\rrbracket}} \\\\\np \\in \\sym{th.Prel}{P^{R}_{\\alpha}\\llbracket \\Sigma \\vdash T \\rrbracket},\\ \\alpha > 0 \\iff \\sym{P.strict}{\\forall R_1 \\mathrel{\\sym{w.ext}{\\sqsupseteq}} R}.\\ \\sym{P.fuse}{\\forall (h, D) \\in \\sym{sr.fuseok}{\\mathsf{Fus}}(\\Sigma, p)}.\\ \\sym{P.clauses}{\\mathsf{clauses}_{R_1}}(\\sym{sr.pfuse}{(h, D) \\cdot \\Sigma}, \\sym{sr.pfuse}{(h, D) \\cdot p}) \\\\[1ex]\n\\sym{P.clauses}{\\mathsf{clauses}_{R_1}(\\Sigma', p')} \\iff \\\\\n\\quad \\sym{P-Stop}{(\\mathsf{stop})\\ \\sym{sr.pirred}{\\mathsf{pirred}}\\,p' \\Rightarrow p' = (\\varnothing, \\{v\\} \\mathbin{\\sym{tp.msunion}{\\uplus}} E) \\land v \\in \\sym{th.Vrel}{V^{R_1}_{\\alpha}\\llbracket \\Sigma' \\vdash T \\rrbracket} \\land E \\subseteq \\{\\ast\\}} \\\\\n\\quad \\sym{P-Ready}{(\\mathsf{ready})\\ \\neg\\mathsf{pirred}\\,p' \\Rightarrow \\sym{sr.readyp}{\\mathsf{ready}_{R_1}(\\Sigma', p')}} \\\\\n\\quad \\sym{P-Step}{(\\mathsf{step})\\ p' \\xrightarrow{ev} p'' \\Rightarrow \\sym{sr.pobl}{\\mathsf{Pobl}_{ev}(p'')}} \\qquad \\sym{rel.lfp}{(\\mathsf{lfp})}\n\\end{array}\\\\[3ex]\\begin{array}{rcll}\n\\sym{sr.fuseok}{(h, D) \\in \\mathsf{Fus}(\\Sigma, (C, E))} & \\iff & \\sym{fuse.dcomm}{\\forall o.\\ h(\\overline{o}) = \\overline{h(o)}} \\\\\n & \\land & \\sym{fuse.inj}{\\forall o_1, o_2 \\in \\mathsf{held}.\\ h(o_1) = h(o_2) \\Rightarrow o_1 = o_2} \\\\\n & \\land & \\sym{fuse.partners}{\\forall o_1, o_2 \\in \\mathsf{held}.\\ h(o_2) = \\overline{h(o_1)} \\Rightarrow o_2 = \\overline{o_1} \\lor \\sym{end.ech}{\\mathsf{ech}}(h\\,o_1) \\in D} \\\\\n & \\land & \\sym{fuse.D}{D \\cap \\sym{sr.gch}{\\mathsf{gch}_h}[C] = \\varnothing} \\land \\sym{fuse.dpairs}{\\mathsf{dpairs}\\,D\\,(h\\,\\Sigma)} \\\\[1ex]\n\\sym{sr.held}{\\mathsf{held}} & = & \\sym{sr.held}{\\{o \\mid o \\in \\mathrm{dom}\\,\\Sigma \\lor \\sym{end.ech}{\\mathsf{ech}}\\,o \\in C\\}} \\\\\n\\sym{sr.gch}{\\mathsf{gch}_h(c)} & = & \\sym{sr.gch}{\\sym{end.ech}{\\mathsf{ech}}(h(c^{+}))} \\\\\n\\sym{sr.sdrop}{(h, D) \\cdot \\Sigma} & = & \\sym{sr.sdrop}{\\{h(o) \\mapsto y \\mid o \\mapsto y \\in \\Sigma,\\ \\sym{end.ech}{\\mathsf{ech}}(h\\,o) \\notin D\\}} \\\\\n\\sym{sr.pfuse}{(h, D) \\cdot (C, E)} & = & \\sym{sr.pfuse}{(\\mathsf{gch}_h[C] \\cup D,\\ h[E])} \\\\\n\\sym{fuse.dpairs}{\\mathsf{dpairs}\\,D\\,\\Sigma} & \\iff & \\sym{fuse.dpairs}{\\sym{end.ech}{\\mathsf{ech}}\\,o \\in D \\Rightarrow \\Sigma(o) = S_x \\land \\Sigma(\\overline{o}) = {S'}_{\\overline{x}} \\land \\sym{sty.sdual}{\\mathsf{sdual}}\\,S\\,S'}\n\\end{array}\\end{array}",
-     "caption": "A [[syn-procs|process]] at an index $\\alpha > 0$ satisfies the three clauses of a term, stop, [[rd|ready]] and step with the [[p-obls|process obligations]], in each larger world of [[w-ext]] and after each admissible fusion of its held ends. At index $0$ it holds of each process. A terminated process has a [[v-rel|value]] in its main thread. An admissible fusion $(h, D)$ renames held ends by a map $h$ injectively, except for the new pairs it restricts in $D$. [[sem-proc|Process steps]] drive the step clause, and [[sr-reading]] says the clauses in words.",
+     "caption": "A [[syn-procs|process]] at an index $\\alpha > 0$ satisfies the three clauses of a term, stop, [[rd|ready]] and step with the [[p-obls|process obligations]]. It does so in each larger world of [[w-ext]] and after each admissible fusion of its held ends. At index $0$ it holds of each process. A terminated process has a [[v-rel|value]] in its main thread. An admissible fusion $(h, D)$ renames held ends by a map $h$ injectively, except for the new pairs it restricts in $D$. [[sem-proc|Process steps]] drive the step clause, and [[sr-reading]] says the clauses in words.",
      "why": "Composition fuses ends of two processes. Building fusion into the relation lets the semantic P-Connect hold without further proof. The alternative, a relation closed under composition by a separate lemma, needs an induction over the steps of two processes at once, which fusion avoids.",
      "source": [
       {
@@ -1801,7 +1801,7 @@
     {
      "id": "p-obls",
      "title": "Obligations of process steps",
-     "formula": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}C' \\cap \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma = \\varnothing\\quad p'\\ \\sym{rel.atcost}{\\mathsf{at}}_{\\sym{ct.sync}{\\inmodeplain{df}{\\sym{ct.DF}{\\kappa_{DF}}(ev)}\\inmode{lf}{\\sym{ct.table}{\\kappa}(ev)}}}\\ \\Sigma\\end{array}}{\\sym{Q-Tau}{\\sym{sr.pobl}{\\mathsf{Pobl}_{ev}(p')}}}\\;\\textsf{Q-Tau} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\sym{sr.head}{\\Sigma(o) \\doteq (\\sym{sty.send}{!(\\bar\\iota.\\ U)}.S)_{x}}\\quad \\Sigma \\setminus o = \\Sigma_v \\mathbin{\\sym{ctx.tsplit}{\\uplus}} \\Sigma_r \\\\ \\sym{Q-Send.theta-e}{\\mathrm{dom}\\,\\Theta_e = \\{o' \\in \\sym{syn.fends}{\\mathsf{fends}}(w) \\mid \\sym{end.ech}{\\mathsf{ech}}(o') \\in C\\}}\\quad \\sym{Q-Send.split}{\\mathsf{send\\_split}\\,\\Sigma\\,\\Sigma_e\\,\\Theta_e} \\\\ w \\in \\sym{th.Vrel}{V^{R}_{\\inmodeplain{df}{\\alpha}\\inmode{lf}{\\beta}}\\llbracket \\Sigma_v \\cup \\Theta_e \\vdash \\sym{ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}\\quad \\sym{rel.atcost}{p'\\ \\mathsf{at}}\\ (\\Sigma_r \\cup \\sym{Q-Send.sigma-e}{\\Sigma_e})[o \\mapsto S_{x^{+}}]\\end{array}}{\\sym{Q-Send}{\\sym{sr.pobl}{\\mathsf{Pobl}_{\\mathsf{send}\\,o\\,w}(p')}}}\\;\\textsf{Q-Send} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\sym{sr.head}{\\Sigma(o) \\doteq (\\sym{sty.recv}{?(\\bar\\iota.\\ U)}.S)_{x}} \\\\ \\forall j, \\Theta_2.\\ \\inmodeplain{df}{\\beta < \\alpha}\\inmode{lf}{\\beta + \\kappa_{\\mathrm{take}} \\leq \\alpha},\\ \\sym{end.ech}{\\mathsf{ech}}[\\mathrm{dom}\\,\\Theta_2] \\cap C = \\varnothing,\\ \\sym{Q-Recv.ok}{\\mathsf{recv\\_ok}\\,\\Sigma'\\,\\Theta_2},\\ w \\in \\sym{th.Vrel}{V^{R}_{j}\\llbracket \\Theta_2 \\vdash \\sym{ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket} \\\\ \\Longrightarrow\\ (C' \\cup \\sym{Q-Recv.back}{\\mathsf{recv\\_back}\\,\\Sigma'\\,\\Theta_2}, E') \\in \\sym{th.Prel}{P^{R}_{j}\\llbracket \\sym{Q-Recv.env}{\\mathsf{recv\\_env}\\,\\Sigma'\\,\\Theta_2} \\vdash T \\rrbracket}\\end{array}}{\\sym{Q-Recv}{\\sym{sr.pobl}{\\mathsf{Pobl}_{\\mathsf{recv}\\,o\\,w}(p')}}}\\;\\textsf{Q-Recv} \\\\[2ex]\n\\sym{Q-Link}{\\textsf{Q-Close, Q-Select, Q-Branch, Q-Link} = \\textsf{O-Close, O-Select, O-Branch, O-Link}\\,[\\Sigma/\\Theta,\\ P/E]} \\\\\np = (C, E),\\ p' = (C', E'),\\ \\Sigma' = \\Sigma[o \\mapsto S_{x^{+}}]\n\\end{array}\\\\[3ex]\\begin{array}{l}\n\\sym{Q-Send.split}{\\mathsf{send\\_split}\\,\\Sigma\\,\\Sigma_e\\,\\Theta_e} \\iff (\\forall o \\in \\mathrm{dom}\\,\\Theta_e.\\ o, \\overline{o} \\notin \\mathrm{dom}\\,\\Sigma) \\land {} \\\\\n\\quad (\\forall o.\\ o \\in \\mathrm{dom}\\,\\Sigma_e \\iff \\overline{o} \\in \\mathrm{dom}\\,\\Theta_e \\land o \\notin \\mathrm{dom}\\,\\Theta_e) \\land {} \\\\\n\\quad (\\forall o.\\ \\Theta_e(o) = S_y \\Rightarrow \\exists S'.\\ (\\Sigma_e \\cup \\Theta_e)(\\overline{o}) = {S'}_{\\overline{y}} \\land \\sym{sty.sdual}{\\mathsf{sdual}}\\,S\\,S') \\\\\n\\sym{Q-Recv.ok}{\\mathsf{recv\\_ok}\\,\\Sigma\\,\\Theta_2} \\iff (\\forall o \\in \\mathrm{dom}\\,\\Theta_2.\\ o \\notin \\mathrm{dom}\\,\\Sigma) \\land {} \\\\\n\\quad (\\forall o.\\ \\Theta_2(o) = S_y \\land (\\Sigma \\cup \\Theta_2)(\\overline{o}) = {S'}_{y'} \\Rightarrow y' = \\overline{y} \\land \\sym{sty.sdual}{\\mathsf{sdual}}\\,S\\,S') \\\\\n\\sym{Q-Recv.back}{\\mathsf{recv\\_back}\\,\\Sigma\\,\\Theta_2 = \\sym{end.ech}{\\mathsf{ech}}[\\{o \\in \\mathrm{dom}\\,\\Theta_2 \\mid \\overline{o} \\in \\mathrm{dom}\\,\\Sigma \\cup \\mathrm{dom}\\,\\Theta_2\\}]} \\\\\n\\sym{Q-Recv.env}{\\mathsf{recv\\_env}\\,\\Sigma\\,\\Theta_2 = \\{o \\mapsto y \\in \\Sigma \\mid \\overline{o} \\notin \\mathrm{dom}\\,\\Theta_2\\} \\cup {}} \\\\\n\\quad \\sym{Q-Recv.env}{\\{o \\mapsto y \\in \\Theta_2 \\mid \\overline{o} \\notin \\mathrm{dom}\\,\\Sigma \\cup \\mathrm{dom}\\,\\Theta_2\\}}\n\\end{array}\\end{array}",
+     "formula": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}C' \\cap \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma = \\varnothing\\quad p'\\ \\sym{rel.atcost}{\\mathsf{at}}_{\\sym{ct.sync}{\\inmodeplain{df}{\\sym{ct.DF}{\\kappa_{DF}}(ev)}\\inmode{lf}{\\sym{ct.table}{\\kappa}(ev)}}}\\ \\Sigma\\end{array}}{\\sym{Q-Tau}{\\sym{sr.pobl}{\\mathsf{Pobl}_{ev}(p')}}}\\;\\textsf{Q-Tau} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\sym{sr.head}{\\Sigma(o) \\doteq (\\sym{sty.send}{!(\\bar\\iota.\\ U)}.S)_{x}}\\quad \\Sigma \\setminus o = \\Sigma_v \\mathbin{\\sym{ctx.tsplit}{\\uplus}} \\Sigma_r \\\\ \\sym{Q-Send.theta-e}{\\mathrm{dom}\\,\\Theta_e = \\{o' \\in \\sym{syn.fends}{\\mathsf{fends}}(w) \\mid \\sym{end.ech}{\\mathsf{ech}}(o') \\in C\\}}\\quad \\sym{Q-Send.split}{\\mathsf{send\\_split}\\,\\Sigma\\,\\Sigma_e\\,\\Theta_e} \\\\ w \\in \\sym{th.Vrel}{V^{R}_{\\inmodeplain{df}{\\alpha}\\inmode{lf}{\\beta}}\\llbracket \\Sigma_v \\cup \\Theta_e \\vdash \\sym{ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket}\\quad \\sym{rel.atcost}{p'\\ \\mathsf{at}}\\ (\\Sigma_r \\cup \\sym{Q-Send.sigma-e}{\\Sigma_e})[o \\mapsto \\sym{ty.sess}{S_{x}^{+}}]\\end{array}}{\\sym{Q-Send}{\\sym{sr.pobl}{\\mathsf{Pobl}_{\\mathsf{send}\\,o\\,w}(p')}}}\\;\\textsf{Q-Send} \\\\[2ex]\n\\dfrac{\\begin{array}{c}\\sym{sr.head}{\\Sigma(o) \\doteq (\\sym{sty.recv}{?(\\bar\\iota.\\ U)}.S)_{x}} \\\\ \\forall j, \\Theta_2.\\ \\inmodeplain{df}{\\beta < \\alpha}\\inmode{lf}{\\beta + \\kappa_{\\mathrm{take}} \\leq \\alpha},\\ \\sym{end.ech}{\\mathsf{ech}}[\\mathrm{dom}\\,\\Theta_2] \\cap C = \\varnothing,\\ \\sym{Q-Recv.ok}{\\mathsf{recv\\_ok}\\,\\Sigma'\\,\\Theta_2},\\ w \\in \\sym{th.Vrel}{V^{R}_{j}\\llbracket \\Theta_2 \\vdash \\sym{ty.payload-at}{U[x\\cdot\\bar\\imath]} \\rrbracket} \\\\ \\Longrightarrow\\ (C' \\cup \\sym{Q-Recv.back}{\\mathsf{recv\\_back}\\,\\Sigma'\\,\\Theta_2}, E') \\in \\sym{th.Prel}{P^{R}_{j}\\llbracket \\sym{Q-Recv.env}{\\mathsf{recv\\_env}\\,\\Sigma'\\,\\Theta_2} \\vdash T \\rrbracket}\\end{array}}{\\sym{Q-Recv}{\\sym{sr.pobl}{\\mathsf{Pobl}_{\\mathsf{recv}\\,o\\,w}(p')}}}\\;\\textsf{Q-Recv} \\\\[2ex]\n\\sym{Q-Link}{\\textsf{Q-Close, Q-Select, Q-Branch, Q-Link} = \\textsf{O-Close, O-Select, O-Branch, O-Link}\\,[\\Sigma/\\Theta,\\ P/E]} \\\\\np = (C, E),\\ p' = (C', E'),\\ \\Sigma' = \\Sigma[o \\mapsto \\sym{ty.sess}{S_{x}^{+}}]\n\\end{array}\\\\[3ex]\\begin{array}{l}\n\\sym{Q-Send.split}{\\mathsf{send\\_split}\\,\\Sigma\\,\\Sigma_e\\,\\Theta_e} \\iff (\\forall o \\in \\mathrm{dom}\\,\\Theta_e.\\ o, \\overline{o} \\notin \\mathrm{dom}\\,\\Sigma) \\land {} \\\\\n\\quad (\\forall o.\\ o \\in \\mathrm{dom}\\,\\Sigma_e \\iff \\overline{o} \\in \\mathrm{dom}\\,\\Theta_e \\land o \\notin \\mathrm{dom}\\,\\Theta_e) \\land {} \\\\\n\\quad (\\forall o.\\ \\Theta_e(o) = S_y \\Rightarrow \\exists S'.\\ (\\Sigma_e \\cup \\Theta_e)(\\overline{o}) = {S'}_{\\overline{y}} \\land \\sym{sty.sdual}{\\mathsf{sdual}}\\,S\\,S') \\\\\n\\sym{Q-Recv.ok}{\\mathsf{recv\\_ok}\\,\\Sigma\\,\\Theta_2} \\iff (\\forall o \\in \\mathrm{dom}\\,\\Theta_2.\\ o \\notin \\mathrm{dom}\\,\\Sigma) \\land {} \\\\\n\\quad (\\forall o.\\ \\Theta_2(o) = S_y \\land (\\Sigma \\cup \\Theta_2)(\\overline{o}) = {S'}_{y'} \\Rightarrow y' = \\overline{y} \\land \\sym{sty.sdual}{\\mathsf{sdual}}\\,S\\,S') \\\\\n\\sym{Q-Recv.back}{\\mathsf{recv\\_back}\\,\\Sigma\\,\\Theta_2 = \\sym{end.ech}{\\mathsf{ech}}[\\{o \\in \\mathrm{dom}\\,\\Theta_2 \\mid \\overline{o} \\in \\mathrm{dom}\\,\\Sigma \\cup \\mathrm{dom}\\,\\Theta_2\\}]} \\\\\n\\sym{Q-Recv.env}{\\mathsf{recv\\_env}\\,\\Sigma\\,\\Theta_2 = \\{o \\mapsto y \\in \\Sigma \\mid \\overline{o} \\notin \\mathrm{dom}\\,\\Theta_2\\} \\cup {}} \\\\\n\\quad \\sym{Q-Recv.env}{\\{o \\mapsto y \\in \\Theta_2 \\mid \\overline{o} \\notin \\mathrm{dom}\\,\\Sigma \\cup \\mathrm{dom}\\,\\Theta_2\\}}\n\\end{array}\\end{array}",
      "caption": "Internal steps, including messages between two threads of $p$, keep the interface and read the successor at the lower indices the cost of the event in [[ct-costs]] allows. A message with the outside moves ends across the interface. A send gives away its payload ends, including the ends $\\Theta_e$ of internal channels, and a receive must be safe for each value that may arrive at each lower level. The [[p-rel|process relation]] asks these at each step, and they mirror the [[e-rel|term obligations]] with the interface $\\Sigma$ in place of $\\Theta$.",
      "why": "Each case says how the interface changes at a step and where the successor must be safe.",
      "source": [
@@ -2601,7 +2601,7 @@
      "id": "th-terms",
      "title": "Lemmas about terms",
      "formula": "\\begin{array}{c}\\begin{array}{l}\\sym{th.soundness-source}{\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\sym{w.acyc}{\\mathsf{acyc}}\\,W \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\varnothing ; \\varnothing \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\sym{prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\sym{th.em}{\\mathsf{EM}} \\land \\sym{th.ac}{\\mathsf{FC}} \\land \\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\sym{w.lfworld}{\\mathsf{wf}}\\,W \\land N \\in \\mathbb{N} \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\land\\ \\varnothing ; \\varnothing \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_{W\\inmode{lf}{,N}} t : T\\ !\\ c \\land \\sym{guard.judg}{\\varnothing \\vdash\\!\\triangleright t}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\sym{prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}\\\\[3ex]\\begin{array}{l}\\sym{th.wfit}{\\mathsf{fit}\\inmode{lf}{_N}\\,R \\iff \\sym{w.strict}{\\mathsf{strict}}\\,R\\inmode{lf}{\\ \\lor\\ (\\sym{w.kind}{\\mathsf{ranked}}\\,R \\land N \\in \\mathbb{N} \\land \\sym{th.em}{\\mathsf{EM}})}} \\\\[1.5ex] \\sym{th.fundamental}{\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\sym{w.sat}{R \\mathrel{\\sym{sj.proc}{\\vDash}} W} \\land \\sym{w.strict}{\\mathsf{strict}}\\,R \\\\ \\quad\\Longrightarrow\\ \\Delta \\sym{sj.term}{\\mathrel{\\sym{sj.proc}{\\vDash}}}^{F}_R t : T\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.fundamental-typed}{\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} t : T\\ !\\ \\varepsilon \\land \\sym{w.sat}{R \\mathrel{\\sym{sj.proc}{\\vDash}} W} \\land \\sym{w.strict}{\\mathsf{strict}}\\,R \\\\ \\quad\\Longrightarrow\\ \\sym{th.df}{\\Delta_{df}} \\mathrel{\\sym{sj.term}{\\vDash}}^{F}_R t : T_{df}\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.live-fundamental}{\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\sym{guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\land \\sym{w.sat}{R \\mathrel{\\sym{sj.proc}{\\vDash}} W} \\land \\sym{w.strict}{\\mathsf{strict}}\\,R \\\\ \\quad\\Longrightarrow\\ \\Delta \\sym{sj.term}{\\mathrel{\\sym{sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{F}_R t : T\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.live-fundamental-typed}{\\begin{array}{l}\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ \\varnothing \\mathrel{\\sym{guard.judg}{\\vdash\\!\\triangleright}} t \\land \\sym{w.sat}{R \\mathrel{\\sym{sj.proc}{\\vDash}} W} \\land \\sym{w.strict}{\\mathsf{strict}}\\,R\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\sym{sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_R t : T_{df}\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.live-fundamental-ranked}{\\begin{array}{l}\\begin{array}{l}\\sym{th.em}{\\mathsf{EM}} \\land \\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ N \\in \\mathbb{N} \\land \\varnothing \\mathrel{\\sym{guard.judg}{\\vdash\\!\\triangleright}} t \\land \\sym{w.sat}{R \\mathrel{\\sym{sj.proc}{\\vDash}} W}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\sym{sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_R t : T_{df}\\end{array}}}\\end{array}\\\\[3ex]\\sym{th.cl2-needs}{\\begin{array}{l}a \\neq b \\land \\Delta(a) = S_x \\land \\Delta(b) = {S'}_y \\land \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} \\sym{syn.letu}{\\mathsf{let}}\\ \\ast = \\sym{prim.close}{\\mathsf{close}}\\,a\\ \\sym{syn.letu}{\\mathsf{in}}\\ \\sym{prim.close}{\\mathsf{close}}\\,b : T \\\\ \\quad\\Longrightarrow\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} x \\prec \\overline{y}\\end{array}}\\\\[3ex]\\sym{th.Erel-bind}{\\begin{array}{l}\\begin{array}{l}e \\in \\sym{th.Erel}{E^{R}_{\\alpha}\\llbracket \\Theta_1 \\vdash T\\rrbracket^{F \\cup \\sym{ty.heads}{\\mathsf{ap}}\\,\\Theta_2}} \\\\ \\land\\ \\forall R' \\sym{w.ext}{\\sqsupseteq} R,\\ \\beta \\leq \\alpha,\\ v \\in \\sym{th.Vrel}{V^{R'}_{\\beta}\\llbracket\\Theta_v \\vdash T\\rrbracket}. \\\\ \\qquad \\sym{se.frame}{f[v]} \\in \\sym{th.Erel}{E^{R'}_{\\beta}\\llbracket \\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\sym{se.frame}{f[e]} \\in \\sym{th.Erel}{E^{R}_{\\alpha}\\llbracket \\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array}}\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\begin{array}{l}\\sym{th.cost-fundamental}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\sym{cs.csem}{\\Delta \\mathrel{\\sym{sj.term}{\\vDash}}^{N} e : T\\ !\\ \\varepsilon}\\end{array}} \\\\[1.5ex] \\sym{th.fsem-of-cost}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_{W\\inmode{lf}{,N}} e : T\\ !\\ c \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\sym{th.crle}{\\mathsf{cr}(\\Delta) \\leq N} \\\\ \\quad\\Longrightarrow\\ \\sym{fu.fsem}{\\mathsf{fsem}\\,N\\,\\sym{th.styof}{\\Delta\\inmode{lf}{^{N}}}\\,e}\\end{array}}\\end{array}}\\end{array}",
-     "caption": "A closed program is sound as a one-thread process over an acyclic world. Typing a term implies the semantic term judgment of [[sj-all]] at each strict world that models the static world, and $E$ is closed under the evaluation frames of [[sem-ctx]], which the case of [[r-fun|E-App]] and the other rules with subterms use. Two closes in sequence need the point of the first below the dual point of the second, which the examples use for rejections. \\inmode{lf}{With the guard a typed term is in the relation at $\\kappa_L$. \\inmode{lf}{At a finite bound and under excluded middle this holds at each model, ranked ones included, and a typed term at a finite bound with the annotations of [[ty-ann]] has [[fu|fuel]], with its values in [[fv]].}}",
+     "caption": "A closed program is sound as a one-thread process over an acyclic world. Typing a term implies the semantic term judgment of [[sj-all]] at each strict world that models the static world. $E$ is closed under the evaluation frames of [[sem-ctx]], which the case of [[r-fun|E-App]] and the other rules with subterms use. Two closes in sequence need the point of the first below the dual point of the second, which the examples use for rejections. \\inmode{lf}{With the guard a typed term is in the relation at $\\kappa_L$. \\inmode{lf}{At a finite bound and under excluded middle this holds at each model, ranked ones included, and a typed term at a finite bound with the annotations of [[ty-ann]] has [[fu|fuel]], with its values in [[fv]].}}",
      "why": "The proofs of the process results use these lemmas, each proved rule by rule. Each typing rule has one compatibility lemma, and the fundamental theorem is the induction over the derivation.",
      "source": [
       {
@@ -3074,7 +3074,7 @@
   },
   "prim.recv": {
    "title": "$\\mathsf{recv}$",
-   "meaning": "$\\mathsf{recv}\\,o \\xrightarrow{o?v} \\langle v, o\\rangle$ for every value $v$.",
+   "meaning": "$\\mathsf{recv}\\,o \\xrightarrow{o?v} \\langle v, o\\rangle$ for each value $v$.",
    "why": "A receive has a step for each value, so it can match the send of the partner whatever value is sent. The session type of $o$ restricts the $v$ the relation considers.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{let}\\ \\langle u, b\\rangle = \\mathsf{recv}\\,b\\ \\mathsf{in}\\ e$.",
@@ -3885,7 +3885,7 @@
   },
   "se.upd": {
    "title": "Map update $M[i \\mapsto e]$",
-   "meaning": "$M[i \\mapsto e]$ maps $i$ to $e$ and every $j \\neq i$ to $M(j)$.",
+   "meaning": "$M[i \\mapsto e]$ maps $i$ to $e$ and each $j \\neq i$ to $M(j)$.",
    "why": "A plain definition.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\{0 \\mapsto e\\}[0 \\mapsto e'] = \\{0 \\mapsto e'\\}$.",
@@ -3990,7 +3990,7 @@
    "meaning": "$p \\to^{*} p'$ when finitely many $\\tau$ steps lead from $p$ to $p'$.",
    "why": "A plain definition. Deadlock freedom and absence of internal divergence quantify over the $p'$ with $p \\to^{*} p'$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$p \\to^{*} p$ for every $p$.",
+   "example": "$p \\to^{*} p$ for each $p$.",
    "signature": "\\cdot \\to^{*} \\cdot \\subseteq \\mathsf{Proc} \\times \\mathsf{Proc}",
    "args": [
     {
@@ -4623,15 +4623,15 @@
   },
   "sem.frameval": {
    "title": "$\\mathsf{frame\\_val}$",
-   "meaning": "$\\mathsf{frame\\_val}\\,f$ holds when every subterm of $f$ left of the hole is a value.",
-   "why": "It fixes left-to-right evaluation, so every term has at most one redex position.",
+   "meaning": "$\\mathsf{frame\\_val}\\,f$ holds when each subterm of $f$ left of the hole is a value.",
+   "why": "It fixes left-to-right evaluation, so each term has at most one redex position.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{frame\\_val}(v_1\\,\\square)$ requires $v_1$ to be a value.",
    "signature": "\\mathsf{frame\\_val} : \\mathsf{Frame} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "f",
-     "meaning": "A frame, $\\mathsf{frame\\_val}\\,f$ iff every subterm of $f$ left of the hole is a value."
+     "meaning": "A frame, $\\mathsf{frame\\_val}\\,f$ iff each subterm of $f$ left of the hole is a value."
     }
    ],
    "source": [
@@ -4979,7 +4979,7 @@
   },
   "sem.sentc": {
    "title": "$\\mathsf{sentc}$",
-   "meaning": "$\\mathsf{sentc}(o!v) = \\mathsf{fchans}(v) = \\{\\mathsf{ech}\\,o' \\mid o' \\in \\mathsf{fends}(v)\\}$, and $\\mathsf{sentc}\\,\\sigma = \\varnothing$ for every other $\\sigma$.",
+   "meaning": "$\\mathsf{sentc}(o!v) = \\mathsf{fchans}(v) = \\{\\mathsf{ech}\\,o' \\mid o' \\in \\mathsf{fends}(v)\\}$, and $\\mathsf{sentc}\\,\\sigma = \\varnothing$ for each other $\\sigma$.",
    "why": "These are the channels a message to the environment moves out of the process.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{sentc}(o!d^{+}) = \\{d\\}$.",
@@ -5044,7 +5044,7 @@
   },
   "ev.pick": {
    "title": "Pick $k$",
-   "meaning": "What a process rule chooses beyond the thread label. $k = j$ names the new thread of a spawn. $k = (o_1, o_2)$ orders the ends of a link, so the channel of $o_1$ goes and the thread with $\\overline{o_1}$ then holds $o_2$. Every other solo step has $k = \\cdot$.",
+   "meaning": "What a process rule chooses beyond the thread label. $k = j$ names the new thread of a spawn. $k = (o_1, o_2)$ orders the ends of a link, so the channel of $o_1$ goes and the thread with $\\overline{o_1}$ then holds $o_2$. Each other solo step has $k = \\cdot$.",
    "why": "The thread label of a link is the unordered set $\\{o_1, o_2\\}$, and the thread label of a spawn names no thread, so the event records the choice the rule makes.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{solo}_0\\,(\\leftrightarrow\\{c^{+}, d^{-}\\})\\,(c^{+}, d^{-})$ removes $c$.",
@@ -5143,7 +5143,7 @@
   },
   "prop.df": {
    "title": "$\\mathsf{deadlock\\_free}$",
-   "meaning": "$\\mathsf{deadlock\\_free}\\,p$ iff for every $p'$ with $p \\to^{*} p'$, $\\mathsf{terminated}\\,p'$ or $p' \\to p''$ for some $p''$.",
+   "meaning": "$\\mathsf{deadlock\\_free}\\,p$ iff for each $p'$ with $p \\to^{*} p'$, $\\mathsf{terminated}\\,p'$ or $p' \\to p''$ for some $p''$.",
    "why": "It is the safety property the deadlock-free results prove of closed typed processes. A stuck configuration is one that has not terminated and cannot step.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(\\{c\\}, \\{\\!|\\mathsf{close}\\,c^{+}, \\mathsf{close}\\,c^{-}|\\!\\})$ is deadlock free.",
@@ -5173,7 +5173,7 @@
   },
   "prop.notau": {
    "title": "$\\mathsf{no\\_tau\\_divergence}$",
-   "meaning": "For every $q$ with $p \\to^{*} q$, $\\mathsf{Acc}\\ {\\to_{\\mathsf{admin}}}\\ q$, so no infinite chain of administrative steps starts at $q$.",
+   "meaning": "For each $q$ with $p \\to^{*} q$, $\\mathsf{Acc}\\ {\\to_{\\mathsf{admin}}}\\ q$, so no infinite chain of administrative steps starts at $q$.",
    "why": "Lock freedom requires that a thread eventually performs its next action. An infinite chain of $\\beta$, spawn or link steps never performs one.",
    "breaks": "$\\mathsf{force}\\,!(f = \\mathsf{force}\\,f)$ takes $\\beta$ steps forever, and a forwarder that spawns a new forwarder at each round spawns forever.",
    "example": "$\\mathsf{force}\\,!(f = \\mathsf{force}\\,f)$ violates the property.",
@@ -5682,7 +5682,7 @@
    "meaning": "$k$ session variables, instantiated at each $\\mathsf{force}$ by contractive session types.",
    "why": "One box serves each protocol the caller substitutes for $\\bar\\alpha$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "A forwarder box for every protocol $\\alpha$.",
+   "example": "A forwarder box for each protocol $\\alpha$.",
    "signature": "\\bar\\alpha = \\alpha_1, \\ldots, \\alpha_k",
    "args": [
     {
@@ -5705,7 +5705,7 @@
    "meaning": "A set of facts $x \\prec y$ over $\\bar\\iota$ and outer points, which may be infinite.",
    "why": "A loop orders the points of its rounds at once, and an infinite $C$ states the facts of each round.",
    "breaks": "Without $C$ a box cannot type a loop that waits on one end while it holds another across rounds.",
-   "example": "$C$ states $\\iota \\prec \\overline{\\kappa}$ for the points of every round of a client loop.",
+   "example": "$C$ states $\\iota \\prec \\overline{\\kappa}$ for the points of each round of a client loop.",
    "signature": "C \\subseteq \\{x \\prec y \\mid x, y \\in \\mathsf{Point}\\}",
    "args": [
     {
@@ -6256,7 +6256,7 @@
    "meaning": "No order judgment relates $\\bot$ to a point $x$. Neither $x \\prec \\bot$ nor $\\bot \\preccurlyeq x$ holds.",
    "why": "Hidden ends are at points that no fact outside the existential mentions. A holding thread of such ends can be ordered against nothing, so it may not block.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$x \\prec \\{\\overline{\\rho}, \\bot\\}$ fails for every $x$.",
+   "example": "$x \\prec \\{\\overline{\\rho}, \\bot\\}$ fails for each $x$.",
    "signature": "x \\not\\prec \\bot,\\ \\bot \\not\\preccurlyeq x",
    "args": [
     {
@@ -7618,7 +7618,7 @@
   "tj.Gamma": {
    "title": "$\\Gamma$, facts",
    "meaning": "$\\Gamma$ is a list of constraint instances $(C, \\bar x)$.",
-   "why": "Every order fact a rule may use beyond $\\prec_W$ is recorded in $\\Gamma$. The derivable facts are exactly the judgments $\\Gamma \\vdash x \\prec y$.",
+   "why": "Each order fact a rule may use beyond $\\prec_W$ is recorded in $\\Gamma$. The derivable facts are exactly the judgments $\\Gamma \\vdash x \\prec y$.",
    "breaks": "Nothing. It is a definition.",
    "example": "In the body of the client loop $\\Gamma$ holds $(C, [\\iota, \\kappa, \\zeta])$.",
    "signature": "\\Gamma : (\\mathsf{Bcs} \\times \\mathsf{Pt}^{*})^{*}",
@@ -7639,7 +7639,7 @@
   },
   "tj.hage": {
    "title": "$\\mathsf{def}(H - c)$, aging what is held",
-   "meaning": "$H - c$ ages every entry of $H$ by the cost $c$ of $e$. It is defined when every end and closure in $H$ that is not idle has credit at least $c$.",
+   "meaning": "$H - c$ ages each entry of $H$ by the cost $c$ of $e$. It is defined when each end and closure in $H$ that is not idle has credit at least $c$.",
    "why": "The thread holds $H$ while $e$ runs, and each of the up to $c$ actions of $e$ lowers the counters of the held ends by $1$.",
    "breaks": "Without it a thread holds an end across unboundedly many actions on other ends, and the partner of that end waits without bound.",
    "example": "$S_x^{2} - 1 = S_x^{1}$ is defined, $S_x\\inmode{lf}{^{0}} - 1$ is not.",
@@ -7705,7 +7705,7 @@
   },
   "lfi.cost": {
    "title": "Cost, aging and tickets, the counting",
-   "meaning": "The cost $c$ of a term bounds its actions before it returns. Every rule that runs a subterm while holding $\\Delta$ ages $\\Delta$ by that cost, $\\Delta - c$, which asks each credit to be at least the cost. An action on an end resets its counter to its tickets $m$, so the end returns as $S_{x^{+}}\\inmode{lf}{^{m,m}}$. Idle ends, $\\mathsf{Skip}$, age without the check, because no thread waits on an idle end.",
+   "meaning": "The cost $c$ of a term bounds its actions before it returns. Each rule that runs a subterm while holding $\\Delta$ ages $\\Delta$ by that cost, $\\Delta - c$, which asks each credit to be at least the cost. An action on an end resets its counter to its tickets $m$, so the end returns as $S_{x^{+}}\\inmode{lf}{^{m,m}}$. Idle ends, $\\mathsf{Skip}$, age without the check, because no thread waits on an idle end.",
    "why": "Credits bound postponement only if the holding thread's actions lower the credits. The cost says how much, aging applies it to everything held, and the reset starts the count again after the holding thread acted on the end.",
    "breaks": "Without the reset a long-running protocol would run out of credit after $m$ actions.",
    "example": "$\\langle c, \\mathsf{send}\\,\\langle\\ast, d\\rangle\\rangle$ ages $c$ by $1$ while the send on $d$ runs.",
@@ -7898,7 +7898,7 @@
   "tj.held": {
    "title": "Holding $F \\triangleleft H$",
    "meaning": "$\\Delta \\vdash^{F \\triangleleft H} e$ types $e$ while the thread holds $H$. The future $F \\triangleleft H = F \\cup \\mathsf{ap}(H)$ adds the active points of $H$, \\inmode{lf}{and in the lock-free mode the judgment also asks that $H - c$ is defined for the cost $c$ of $e$.}",
-   "why": "Every rule that runs one part while it holds another states the same facts about the held part, and the notation states them once. $H$ is a context, as in E-App, or a type, as in E-Pair.",
+   "why": "Each rule that runs one part while it holds another states the same facts about the held part, and the notation states them once. $H$ is a context, as in E-App, or a type, as in E-Pair.",
    "breaks": "Without the future part a thread waits above an end it holds, and the partner of that end waits on the thread.",
    "example": "$\\Delta_1 \\vdash^{F \\triangleleft \\Delta_2} e_1$ in E-App.",
    "signature": "F \\triangleleft H = F \\cup \\mathsf{ap}(H)",
@@ -7997,7 +7997,7 @@
   "tj.one": {
    "title": "One action $1$",
    "meaning": "$1$, the effect of one channel action.",
-   "why": "Every action adds one to the cost.",
+   "why": "Each action adds one to the cost.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{close}\\,e$ has effect $\\varepsilon \\cdot 1$.",
    "signature": "1 \\in \\mathsf{Eff}",
@@ -8044,8 +8044,8 @@
   "tj.F": {
    "title": "The future $F$",
    "meaning": "$F = (X, {\\uparrow}u)$, $(X, {\\uparrow})$, $(X, \\bot)$ or $(X, \\cdot)$ with $X$ the points the context acts at after the term. ${\\uparrow}u$ is the unknown rest above a known point $u$, ${\\uparrow}$ an unknown rest with no bound, and $\\bot$ a rest at hidden points.",
-   "why": "Every action at $x$ asks $x \\prec F$. Hence a term never waits at a point above a point at which its own context still acts.",
-   "breaks": "Without $F$ the thread $\\mathsf{let}\\ \\ast = \\mathsf{close}\\,c\\ \\mathsf{in}\\ \\mathsf{close}\\,d$ types for every placement of $c$ and $d$, and beside a partner that closes $d$ before $c$ both threads wait forever.",
+   "why": "Each action at $x$ asks $x \\prec F$. Hence a term never waits at a point above a point at which its own context still acts.",
+   "breaks": "Without $F$ the thread $\\mathsf{let}\\ \\ast = \\mathsf{close}\\,c\\ \\mathsf{in}\\ \\mathsf{close}\\,d$ types for each placement of $c$ and $d$, and beside a partner that closes $d$ before $c$ both threads wait forever.",
    "example": "$e_1$ of E-App runs under $F \\cup \\mathsf{ap}(\\Delta_2)$.",
    "signature": "F : \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Pt}) \\times (\\{{\\uparrow}u \\mid u \\in \\mathsf{Pt}\\} + \\{{\\uparrow}, \\bot, \\cdot\\})",
    "args": [
@@ -8075,7 +8075,7 @@
   "tj.W": {
    "title": "The world $W$",
    "meaning": "The static world whose order $\\prec_W$ the rules read.",
-   "why": "Every point fact a rule uses comes from $\\prec_W$ or from $\\Gamma$. Typing is monotone in $W$, so a program typed in $W$ is typed in every $W' \\sqsupseteq W$.",
+   "why": "Each point fact a rule uses comes from $\\prec_W$ or from $\\Gamma$. Typing is monotone in $W$, so a program typed in $W$ is typed in each $W' \\sqsupseteq W$.",
    "breaks": "Nothing. It is a definition.",
    "example": "E-Open asks $\\mathsf{cons}\\,W\\,\\Gamma\\,m\\,C$ over $\\prec_W$.",
    "signature": "W : \\mathsf{World}",
@@ -8142,7 +8142,7 @@
   },
   "ctx.lsplit": {
    "title": "$\\Delta = \\Delta_1, \\Delta_2$",
-   "meaning": "Every end of $\\Delta$ goes to exactly one of $\\Delta_1$ and $\\Delta_2$. For every index $i$, a linear entry goes to one side and the other side has an empty entry, and an entry of unlimited type goes to both.",
+   "meaning": "Each end of $\\Delta$ goes to exactly one of $\\Delta_1$ and $\\Delta_2$. For each index $i$, a linear entry goes to one side and the other side has an empty entry, and an entry of unlimited type goes to both.",
    "why": "An end and a linear entry are used exactly once. An entry of unlimited type holds no end, so using it twice duplicates no end.",
    "breaks": "Nothing. It is a definition.",
    "example": "A box variable $f$ may be forced in both $e_1$ and $e_2$.",
@@ -8201,7 +8201,7 @@
   "ctx.fvarF": {
    "title": "The rest ${\\uparrow}u$ of $F$",
    "meaning": "The unknown part of a future, everything above $u$, or everything when there is no $u$. A term may wait at $x$ under ${\\uparrow}u$ when $\\Gamma \\vdash x \\preccurlyeq u$, and never under ${\\uparrow}$.",
-   "why": "In the semantics ${\\uparrow}u$ denotes an arbitrary finite set of points above $u$. Readiness asks $x \\prec y$ of every point $y$ of the future, so a body typed under ${\\uparrow}u$ is correct for every caller future above $u$.",
+   "why": "In the semantics ${\\uparrow}u$ denotes an arbitrary finite set of points above $u$. Readiness asks $x \\prec y$ of each point $y$ of the future, so a body typed under ${\\uparrow}u$ is correct for each caller future above $u$.",
    "breaks": "A future variable $\\varphi$ with the single fact $u \\prec \\varphi$ says the same, $\\Gamma \\vdash x \\prec \\varphi$ holds exactly when $\\Gamma \\vdash x \\preccurlyeq u$.",
    "example": "$F = (\\varnothing, {\\uparrow}u)$ for the body of a closure with upper point $u$.",
    "signature": "F = (X, {\\uparrow}u)",
@@ -8228,7 +8228,7 @@
   "ctx.bot": {
    "title": "The flag $\\bot$ in $F$",
    "meaning": "$\\bot$ states that the context holds ends at points unknown to the term, which then performs no session action.",
-   "why": "Every action asks $u \\prec F$, which requires $F$ to have no $\\bot$. No point is known to lie below a hidden point, so an action under $\\bot$ could wait above the hidden point.",
+   "why": "Each action asks $u \\prec F$, which requires $F$ to have no $\\bot$. No point is known to lie below a hidden point, so an action under $\\bot$ could wait above the hidden point.",
    "breaks": "Nothing. It is a definition.",
    "example": "$e_1$ beside a context that holds an unopened $\\exists^{\\bot}$.",
    "signature": "F = (X, \\bot)",
@@ -8255,9 +8255,9 @@
   "ctx.slt": {
    "title": "$\\Gamma \\vdash x \\prec y$",
    "meaning": "The least transitive relation containing $\\prec_W$ and the facts $C[\\bar x]$ of the instances $(C, \\bar x)$ in $\\Gamma$.",
-   "why": "Every order fact a typing rule reads is a judgment $\\Gamma \\vdash x \\prec y$.",
+   "why": "Each order fact a typing rule reads is a judgment $\\Gamma \\vdash x \\prec y$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\Gamma \\vdash x \\prec x^{+}$ for every $\\Gamma$ and $x$.",
+   "example": "$\\Gamma \\vdash x \\prec x^{+}$ for each $\\Gamma$ and $x$.",
    "signature": "\\Gamma \\vdash x \\prec y \\subseteq \\mathsf{Hctx} \\times \\mathsf{Pt} \\times \\mathsf{Pt}",
    "args": [
     {
@@ -8281,10 +8281,10 @@
   },
   "ctx.empty": {
    "title": "$\\Delta$ unlimited",
-   "meaning": "Every non-empty entry of $\\Delta$ has unlimited type.",
+   "meaning": "Each non-empty entry of $\\Delta$ has unlimited type.",
    "why": "A value that mentions no variable uses no linear entry, and an unlimited entry may go unused.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\ast$ types under every $\\Delta$ whose entries are empty or unlimited.",
+   "example": "$\\ast$ types under each $\\Delta$ whose entries are empty or unlimited.",
    "signature": "\\mathsf{unlimited}\\,\\Delta \\iff \\forall i.\\ \\Delta(i) = \\bot \\lor \\mathsf{unlimited}\\,\\Delta(i)",
    "args": [
     {
@@ -8303,8 +8303,8 @@
   },
   "ctx.only": {
    "title": "The only used entry",
-   "meaning": "In $\\Delta, x : T$ the entry $x$ is used and every entry of $\\Delta$ has unlimited type.",
-   "why": "Every linear entry is used exactly once, and an unlimited entry may go unused.",
+   "meaning": "In $\\Delta, x : T$ the entry $x$ is used and each entry of $\\Delta$ has unlimited type.",
+   "why": "Each linear entry is used exactly once, and an unlimited entry may go unused.",
    "breaks": "Nothing. It is a definition.",
    "example": "$x = 0$ types under $0 : T$.",
    "signature": "\\Delta, x : T",
@@ -8333,8 +8333,8 @@
   },
   "side.act": {
    "title": "$x \\prec F$ at an action",
-   "meaning": "For an action at $x$ under $F$, $\\Gamma \\vdash x \\prec y$ for every $y \\in X$, $\\Gamma \\vdash x \\preccurlyeq u$ when the rest of $F$ is ${\\uparrow}u$, and $F$ has neither the rest ${\\uparrow}$ nor $\\bot$.",
-   "why": "While the term waits at $x$, every point at which its context acts later lies above $x$. This is readiness against the future.",
+   "meaning": "For an action at $x$ under $F$, $\\Gamma \\vdash x \\prec y$ for each $y \\in X$, $\\Gamma \\vdash x \\preccurlyeq u$ when the rest of $F$ is ${\\uparrow}u$, and $F$ has neither the rest ${\\uparrow}$ nor $\\bot$.",
+   "why": "While the term waits at $x$, each point at which its context acts later lies above $x$. This is readiness against the future.",
    "breaks": "Without it a term may wait at $x$ while its context must first act at a point below $x$, and the thread waits on itself through the dual end.",
    "example": "E-Close at $x$ asks $x \\prec F$.",
    "signature": "x \\prec F \\iff (\\forall y \\in X.\\ \\Gamma \\vdash x \\prec y) \\land (F = (X, {\\uparrow}u) \\Rightarrow \\Gamma \\vdash x \\preccurlyeq u) \\land F \\neq (X, {\\uparrow}) \\land F \\neq (X, \\bot)",
@@ -8453,7 +8453,7 @@
   },
   "side.hold": {
    "title": "$\\Gamma \\vdash C[\\bar x]$",
-   "meaning": "For every fact $y \\prec z$ of $C$ instantiated at $\\bar x$, $\\Gamma \\vdash y \\prec z$.",
+   "meaning": "For each fact $y \\prec z$ of $C$ instantiated at $\\bar x$, $\\Gamma \\vdash y \\prec z$.",
    "why": "E-Force and E-Pack choose an instance $\\bar x$, and the box body or the packed value relies on $C[\\bar x]$.",
    "breaks": "Nothing. It is a definition.",
    "example": "The recursive call of the client loop instantiates $C$ at $(\\iota^{+}, \\kappa^{+}, \\zeta)$.",
@@ -8510,7 +8510,7 @@
   "age.credit": {
    "title": "Aging an end or a closure",
    "meaning": "$S_x\\inmode{lf}{^{a}} - c = S_x^{a - c}$ and $(T \\multimap U)\\inmode{lf}{^{a}} - c = (T \\multimap U)^{a - c}$, defined when $c \\leq a$.",
-   "why": "While a term of cost $c$ runs, the holding thread performs up to $c$ actions on other ends, and each lowers the counter of every held end by $1$. The premise $c \\leq a$ keeps the credit a lower bound on the counter.",
+   "why": "While a term of cost $c$ runs, the holding thread performs up to $c$ actions on other ends, and each lowers the counter of each held end by $1$. The premise $c \\leq a$ keeps the credit a lower bound on the counter.",
    "breaks": "Without $c \\leq a$ a server holds its client end while it runs a callback of cost $\\infty$ at finite $N$, and the client waits without bound.",
    "example": "$S_x^{3} - 1 = S_x^{2}$.",
    "signature": "c \\leq a \\Rightarrow S_x\\inmode{lf}{^{a}} - c = S_x^{a - c}",
@@ -8541,7 +8541,7 @@
    "title": "Aging an idle end",
    "meaning": "$S_x\\inmode{lf}{^{a}} - c = S_x\\inmode{lf}{^{\\max(a - c, 0)}}$ when $\\mathsf{unfold}(S) = \\mathsf{Skip}$.",
    "why": "No thread acts on an idle end, so no action counter bounds an idle end. Truncation keeps its credit at or below its counter, which decrements and truncates at $0$ in the same way.",
-   "breaks": "With $c \\leq a$ required an idle end held across a loop loses credit every round and no finite $N$ types the loop. Keeping the credit instead exceeds the counter after one decrement.",
+   "breaks": "With $c \\leq a$ required an idle end held across a loop loses credit each round and no finite $N$ types the loop. Keeping the credit instead exceeds the counter after one decrement.",
    "example": "$\\mathsf{Skip}_{\\chi}\\inmode{lf}{^{0}} - 1 = \\mathsf{Skip}_{\\chi}\\inmode{lf}{^{0}}$.",
    "signature": "\\mathsf{idle}\\,S \\Rightarrow S_x\\inmode{lf}{^{a}} - c = S_x\\inmode{lf}{^{\\max(a - c, 0)}}",
    "args": [
@@ -8658,7 +8658,7 @@
   "tp.sub-credit": {
    "title": "Credits may fall",
    "meaning": "$a' \\leq a$ for the credits of an end.",
-   "why": "A credit is a lower bound on the counter of an end, so a smaller credit guarantees less. $\\mathsf{new}$ and every action return credit $N$, and a parameter or a payload asks a fixed credit $b \\leq N$.",
+   "why": "A credit is a lower bound on the counter of an end, so a smaller credit guarantees less. $\\mathsf{new}$ and each action return credit $N$, and a parameter or a payload asks a fixed credit $b \\leq N$.",
    "breaks": "Without it a fresh end at credit $N$ fits only a parameter at credit exactly $N$, and no loop that ages an end before its recursive call types.",
    "example": "$S_x^{3} \\leq S_x^{2}$.",
    "signature": "a' \\leq a",
@@ -8887,7 +8887,7 @@
   },
   "E-Abs.lb": {
    "title": "Lower point of a closure",
-   "meaning": "$l \\neq \\bot \\Rightarrow l \\preccurlyeq \\Delta$. A point $l$ lies at or below every element of $\\mathsf{ap}(\\Delta)$, and $l = \\bot$ claims no bound.",
+   "meaning": "$l \\neq \\bot \\Rightarrow l \\preccurlyeq \\Delta$. A point $l$ lies at or below each element of $\\mathsf{ap}(\\Delta)$, and $l = \\bot$ claims no bound.",
    "why": "A thread holding the closure reads the dual points of its ends only through $l$. A closure at $l = \\bot$ puts $\\bot$ into the future of the thread holding it, so that thread may not wait while it holds the closure, as for $\\exists^{\\bot}$.",
    "breaks": "A thread holding ends at the unrelated points $1$ and $2$ has no common lower point. A $\\lambda$ that captures both types at $l = \\bot$ and can then only be spawned or called in tail position.",
    "example": "Capturing $a^{+}$ at $\\rho$ gives $l = \\overline{\\rho}$.",
@@ -8899,7 +8899,7 @@
     },
     {
      "name": "\\mathsf{ap}(\\Delta)",
-     "meaning": "the dual points of every captured end, with $\\bot$ for hidden ends"
+     "meaning": "the dual points of each captured end, with $\\bot$ for hidden ends"
     }
    ],
    "source": [
@@ -8987,7 +8987,7 @@
   "side.top": {
    "title": "$\\top \\prec F$",
    "meaning": "$\\top \\prec F$ holds exactly for the empty future $F = (\\varnothing, \\cdot)$.",
-   "why": "The upper point $\\top$ lies above every point, so nothing may follow a call of such a closure. E-Spawn runs it as a new thread, where nothing follows.",
+   "why": "The upper point $\\top$ lies above each point, so nothing may follow a call of such a closure. E-Spawn runs it as a new thread, where nothing follows.",
    "breaks": "Nothing. It is a definition.",
    "example": "E-App with $u = \\top$ needs $F = (\\varnothing, \\cdot)$, a call in tail position of a thread.",
    "signature": "\\top \\prec F \\iff F = (\\varnothing, \\cdot)",
@@ -9009,7 +9009,7 @@
   "E-Abs.body": {
    "title": "Body of a $\\lambda$",
    "meaning": "$e$ is typed under $\\Gamma$, the captured $\\Delta$ extended by the argument $T$, and the future $F_u$. \\inmode{lf}{In the lock-free mode the captured entries are aged by the credit $a$.}",
-   "why": "The body runs at a later call. It may rely only on its captured entries, its argument and the rest above $u$, and E-App establishes $u \\prec F$ at every call.",
+   "why": "The body runs at a later call. It may rely only on its captured entries, its argument and the rest above $u$, and E-App establishes $u \\prec F$ at each call.",
    "breaks": "Nothing. It is a definition.",
    "example": "The body of the client loop with argument $S_{\\iota} \\otimes {S'}_{\\kappa}$.",
    "signature": "\\Gamma ; \\Delta\\inmode{lf}{ - a}, T \\vdash^{F_u} e : U\\ !\\ \\varepsilon",
@@ -9039,7 +9039,7 @@
   "E-App.ub": {
    "title": "$u \\prec F$ at a call",
    "meaning": "The upper point $u$ of the closure satisfies $u \\prec F$.",
-   "why": "The callee waits only at points up to $u$. Every point at which the caller acts afterwards lies above $u$.",
+   "why": "The callee waits only at points up to $u$. Each point at which the caller acts afterwards lies above $u$.",
    "breaks": "A call of a closure that waits at $\\kappa$, while the caller must still act at a point below $\\kappa$, makes the caller wait on itself.",
    "example": "main forces $\\mathsf{between}$ last, so $F = \\varnothing$.",
    "signature": "u \\prec F",
@@ -9215,7 +9215,7 @@
   },
   "E-Box.unl": {
    "title": "$\\Delta$ unlimited",
-   "meaning": "Every entry of $\\Delta$ has unlimited type, so $\\Delta$ holds no end.",
+   "meaning": "Each entry of $\\Delta$ has unlimited type, so $\\Delta$ holds no end.",
    "why": "A box value is copied freely. If it held an end, a copy would duplicate that end.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{ring}$ captures no variable.",
@@ -9442,7 +9442,7 @@
   "E-Box.open": {
    "title": "Opened constraint",
    "meaning": "$\\Gamma$ extended by the instance $C(\\bar\\iota)$ at the fresh variables.",
-   "why": "The body relies on $C$ at its own point variables, and every force checks $C$ at the chosen instance.",
+   "why": "The body relies on $C$ at its own point variables, and each force checks $C$ at the chosen instance.",
    "breaks": "Without $C$ the client loop cannot order the points of two consecutive rounds.",
    "example": "$\\Gamma, C(\\iota, \\kappa, \\zeta)$.",
    "signature": "\\Gamma, C(\\bar\\iota)",
@@ -9508,7 +9508,7 @@
   },
   "E-Force.ub": {
    "title": "$u[\\bar x] \\prec F$",
-   "meaning": "The highest point the body waits at, $u$ with the chosen points put in, lies below every point of the future $F$.",
+   "meaning": "The highest point the body waits at, $u$ with the chosen points put in, lies below each point of the future $F$.",
    "why": "After the force returns, the caller still acts at the points of $F$. If the body waited at a point above one of them, a partner could wait on the caller while the caller waits inside the body. This is the condition $u \\prec F$ of E-App for a box.",
    "breaks": "Nothing. It is a definition.",
    "example": "The recursive call of a loop at $\\zeta$ under $F = \\varnothing$.",
@@ -9560,7 +9560,7 @@
   },
   "E-Send.heads": {
    "title": "$x \\prec T$, the action point below a held value",
-   "meaning": "$x \\prec T$ states $\\Gamma \\vdash x \\prec y$ for every $y \\in \\mathsf{ap}(T)$. If $T$ holds hidden ends, $\\bot \\in \\mathsf{ap}(T)$ and the check fails.",
+   "meaning": "$x \\prec T$ states $\\Gamma \\vdash x \\prec y$ for each $y \\in \\mathsf{ap}(T)$. If $T$ holds hidden ends, $\\bot \\in \\mathsf{ap}(T)$ and the check fails.",
    "why": "A thread waiting at $x$ while it holds a value of $T$ does not offer the ends in $T$, so readiness asks $x$ below the dual point of each. Hidden ends have no known dual point, so a thread holding them may not wait.",
    "breaks": "Without $\\bot$ in the active points, $\\mathsf{send}\\,\\langle p, o\\rangle$ with the unopened pair $p$ of a $\\mathsf{new}$ types, and the sender waits while holding ends at points nothing orders.",
    "example": "The growing ring needs $Y \\prec \\overline{Y\\cdot 0}$ for the payload $a$ of the send on $y$ at $Y$.",
@@ -9729,7 +9729,7 @@
    "title": "$a_1 + m_2 > N$ and $a_2 + m_1 > N$",
    "meaning": "The credit of each linked end exceeds $N - m$ for the tickets $m$ of the other linked end, the bound on the tickets of the partner of that end.",
    "why": "After the link the partner of $o_1$ faces the partner of $o_2$, whose counter is at most $N - m_2 < a_1$, and $a_1$ bounds the counter of $o_1$ from below. The new partner of a waiting thread therefore has a lower counter than the old one, and the invariant on the tickets of a channel holds for the new pair.",
-   "breaks": "Without the premise a thread relinks the partner of a waiting end to a new end with a full counter in every round, and the wait never ends.",
+   "breaks": "Without the premise a thread relinks the partner of a waiting end to a new end with a full counter in each round, and the wait never ends.",
    "example": "At $N = 4$ ends at $S_x\\inmode{lf}{^{3,3}}$ and $\\overline{S}_{\\overline{x}}\\inmode{lf}{^{3,3}}$ can be linked, and ends at credit $1$ cannot.",
    "signature": "a_1 + m_2 > N \\land a_2 + m_1 > N",
    "args": [
@@ -9815,7 +9815,7 @@
   "E-New.bot": {
    "title": "Lower bound $\\bot$",
    "meaning": "The pair is at a root $\\rho$ that no point of the context is related to.",
-   "why": "$\\exists^{\\bot}$ records that the ends of the value are at points without a known lower bound, and $\\bot$ propagates into every future that holds the value.",
+   "why": "$\\exists^{\\bot}$ records that the ends of the value are at points without a known lower bound, and $\\bot$ propagates into each future that holds the value.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{mk}_0$ returns $\\exists^{\\bot}\\iota.\\,C.\\,({?}\\ast.\\mathsf{Close})_{\\overline{\\iota}}$.",
    "signature": "\\exists^{\\bot}",
@@ -9993,7 +9993,7 @@
    "meaning": "$\\varepsilon \\leq \\varepsilon'$, so $c \\leq c'$ in $\\mathbb{N} \\cup \\{\\infty\\}$.",
    "why": "The cost is an upper bound, so a larger bound is also correct. The branches of a case and closures passed to one parameter have different effects, and the larger bound covers both.",
    "breaks": "Nothing. It is a definition.",
-   "example": "Every cost may rise to $\\infty$.",
+   "example": "Each cost may rise to $\\infty$.",
    "signature": "\\varepsilon \\leq \\varepsilon' \\iff c \\leq c'",
    "args": [
     {
@@ -10048,7 +10048,7 @@
   },
   "E-Pack.lb": {
    "title": "Lower bound of a pack",
-   "meaning": "$l = \\bot$, the ends become hidden, or $l \\preccurlyeq T[\\bar x]$, every head of the packed value lies at or above $l$, where $l = \\cdot$ asks that $T[\\bar x]$ holds no end.",
+   "meaning": "$l = \\bot$, the ends become hidden, or $l \\preccurlyeq T[\\bar x]$, each head of the packed value lies at or above $l$, where $l = \\cdot$ asks that $T[\\bar x]$ holds no end.",
    "why": "After packing, a holding thread refers to the ends only through $l$, so $l$ must bound the active points of the packed value from below. The value relation at an existential states exactly this bound.",
    "breaks": "Nothing. It is a definition.",
    "example": "Packing a fresh pair at $\\bot$.",
@@ -10207,8 +10207,8 @@
   },
   "pfree": {
    "title": "$\\mathsf{pfree}\\,\\Sigma$",
-   "meaning": "For every $o \\in \\mathrm{dom}\\,\\Sigma$, $\\overline{o} \\notin \\mathrm{dom}\\,\\Sigma$.",
-   "why": "P-Term puts every channel whose two ends the thread holds into $C_0$. Hence an interface never holds both ends of a channel, which the semantic P-Connect needs.",
+   "meaning": "For each $o \\in \\mathrm{dom}\\,\\Sigma$, $\\overline{o} \\notin \\mathrm{dom}\\,\\Sigma$.",
+   "why": "P-Term puts each channel whose two ends the thread holds into $C_0$. Hence an interface never holds both ends of a channel, which the semantic P-Connect needs.",
    "breaks": "No program is lost, because such a channel always moves into $C_0$.",
    "example": "$\\Sigma = \\{c^{+}, c^{-}\\}$ is rejected, and $(\\{c\\}, \\ldots)$ with $\\Sigma = \\varnothing$ types instead.",
    "signature": "\\mathsf{pfree}\\,\\Sigma \\iff \\forall o \\in \\mathrm{dom}\\,\\Sigma.\\ \\overline{o} \\notin \\mathrm{dom}\\,\\Sigma",
@@ -10230,7 +10230,7 @@
   "P-Term.C0": {
    "title": "$\\mathrm{dom}\\,\\Theta_B = \\mathsf{ends}(C_0)$",
    "meaning": "$o \\in \\mathrm{dom}\\,\\Theta_B$ iff the channel of $o$ is in $C_0$.",
-   "why": "Every end of the thread is an interface end or an end of a restricted channel, and the second kind is exactly $\\Theta_B$.",
+   "why": "Each end of the thread is an interface end or an end of a restricted channel, and the second kind is exactly $\\Theta_B$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$C_0 = \\varnothing$ and $\\Theta_B = \\varnothing$ for a source program.",
    "signature": "\\forall o.\\ o \\in \\mathrm{dom}\\,\\Theta_B \\iff \\mathsf{ech}(o) \\in C_0",
@@ -10256,7 +10256,7 @@
   "P-Term.disj": {
    "title": "$\\mathsf{chans}\\,\\Sigma \\cap C_0 = \\varnothing$",
    "meaning": "No channel of the interface is restricted.",
-   "why": "Then every end of $\\Sigma\\inmode{lf}{^{N}} \\cup \\Theta_B$ lies in exactly one part, and the interface is the environment restricted to the channels outside $C_0$.",
+   "why": "Then each end of $\\Sigma\\inmode{lf}{^{N}} \\cup \\Theta_B$ lies in exactly one part, and the interface is the environment restricted to the channels outside $C_0$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Sigma = \\{c^{+} \\mapsto \\mathsf{Close}_x\\}$ with $C_0 = \\varnothing$.",
    "signature": "\\mathsf{chans}\\,\\Sigma \\cap C_0 = \\varnothing",
@@ -10281,8 +10281,8 @@
   },
   "P-Term.pairs": {
    "title": "Restricted pairs dual",
-   "meaning": "For every $c \\in C_0$ there are $S$, $x$, $m$ and $m'$ with $\\Theta_B(c^{+}) = S_x\\inmode{lf}{^{m,m}}$, $\\Theta_B(c^{-}) = \\overline{S}_{\\overline{x}}\\inmode{lf}{^{m',m'}}$ and $m + m' \\leq N$.",
-   "why": "A restricted channel has both ends inside the process. \\inmode{lf}{They synchronize with each other only, so they need dual types at dual points, and their tickets meet the bound of every channel.}",
+   "meaning": "For each $c \\in C_0$ there are $S$, $x$, $m$ and $m'$ with $\\Theta_B(c^{+}) = S_x\\inmode{lf}{^{m,m}}$, $\\Theta_B(c^{-}) = \\overline{S}_{\\overline{x}}\\inmode{lf}{^{m',m'}}$ and $m + m' \\leq N$.",
+   "why": "A restricted channel has both ends inside the process. \\inmode{lf}{They synchronize with each other only, so they need dual types at dual points, and their tickets meet the bound of each channel.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$c^{+} : S_x$ and $c^{-} : \\overline{S}_{\\overline{x}}$.",
    "signature": "\\forall c \\in C_0.\\ \\exists S\\,x\\,m\\,m'.\\ \\Theta_B(c^{+}) = S_x\\inmode{lf}{^{m,m}} \\land \\Theta_B(c^{-}) = \\overline{S}_{\\overline{x}}\\inmode{lf}{^{m',m'}} \\land m + m' \\leq N",
@@ -10360,7 +10360,7 @@
   "lf.N": {
    "title": "$N \\in \\mathbb{N}$",
    "meaning": "The bound of lock-free typing is a natural number.",
-   "why": "Lock freedom ranks waiting threads by counters as natural numbers, and at $N = \\infty$ every counter is $\\infty$.",
+   "why": "Lock freedom ranks waiting threads by counters as natural numbers, and at $N = \\infty$ each counter is $\\infty$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$N = 4$ for the growing ring.",
    "signature": "N \\in \\mathbb{N}",
@@ -10408,7 +10408,7 @@
   "P-Connect.right": {
    "title": "Right component at $\\ast$",
    "meaning": "$(C_2, E_2)$ is typed over $\\Sigma_2 \\cup \\overline{\\Sigma_C}$ in $W_2$ at result $\\ast$.",
-   "why": "Only the main thread returns a value, and every other thread returns $\\ast$.",
+   "why": "Only the main thread returns a value, and each other thread returns $\\ast$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{close}\\,c^{-}$.",
    "signature": "\\Sigma_2 \\cup \\overline{\\Sigma_C} \\vdash\\inmode{lf}{^{N}}_{W_2} (C_2, E_2) : \\ast",
@@ -10433,7 +10433,7 @@
   },
   "P-Connect.cut": {
    "title": "Exact dual cut $\\overline{\\Sigma_C}$",
-   "meaning": "$\\overline{\\Sigma_C}$ maps $\\overline{o}$ to $\\overline{S}_{\\overline{x}}$ for every $o \\mapsto S_x$ in $\\Sigma_C$.",
+   "meaning": "$\\overline{\\Sigma_C}$ maps $\\overline{o}$ to $\\overline{S}_{\\overline{x}}$ for each $o \\mapsto S_x$ in $\\Sigma_C$.",
    "why": "\\inmode{lf}{After composition the two ends of each cut channel are restricted, and lock freedom asks their protocols dual up to annotations.} An exact dual gives this, a dual up to annotations does not.",
    "breaks": "\\inmode{lf}{An annotation mismatch on a cut channel breaks the payload credit of a later message.}",
    "example": "$\\overline{\\{c^{+} \\mapsto \\mathsf{Close}_x\\}} = \\{c^{-} \\mapsto \\mathsf{Close}_{\\overline{x}}\\}$.",
@@ -10456,7 +10456,7 @@
   "P-Connect.disj": {
    "title": "Disjoint channels",
    "meaning": "$\\mathrm{dom}\\,\\Sigma_1 \\cap \\mathrm{dom}\\,\\Sigma_C = \\varnothing$, $\\mathrm{dom}\\,\\Sigma_2 \\cap \\mathrm{dom}\\,\\overline{\\Sigma_C} = \\varnothing$, the channel sets of $\\Sigma_1$, $\\Sigma_2$, $\\Sigma_C$ are pairwise disjoint, $C_1 \\cap C_2 = \\varnothing$, and each $C_i$ is disjoint from the channels of $\\Sigma_1$, $\\Sigma_2$, $\\Sigma_C$.",
-   "why": "Every channel then belongs to one side. The cut $\\Sigma_C$ is the only channel set both sides use, so composition merges no two channels.",
+   "why": "Each channel then belongs to one side. The cut $\\Sigma_C$ is the only channel set both sides use, so composition merges no two channels.",
    "breaks": "Nothing. It is a definition.",
    "example": "Two closes cut at $c$ with $\\Sigma_1 = \\Sigma_2 = \\varnothing$ and $C_1 = C_2 = \\varnothing$.",
    "signature": "\\mathsf{chans}\\,\\Sigma_1, \\mathsf{chans}\\,\\Sigma_2, \\mathsf{chans}\\,\\Sigma_C, C_1, C_2\\ \\mathsf{pairwise\\ disjoint}",
@@ -10616,7 +10616,7 @@
   "P-Connect.join": {
    "title": "Result in the hidden join",
    "meaning": "The composite is typed in $(W_1 \\sqcup W_2)|_{\\mathsf{I}(\\Sigma_1 \\cup \\Sigma_2, T)}$.",
-   "why": "The join keeps the facts of both components. Restricting it to the constants of the outer interface hides the constants of the cut that no outer point mentions, and keeps every fact the join derives between outer points, through the cut too.",
+   "why": "The join keeps the facts of both components. Restricting it to the constants of the outer interface hides the constants of the cut that no outer point mentions, and keeps each fact the join derives between outer points, through the cut too.",
    "breaks": "Nothing. It is a definition.",
    "example": "Two closes cut at $c$ type in a world with no constant.",
    "signature": "(W_1 \\sqcup W_2)|_{\\mathsf{I}(\\Sigma_1 \\cup \\Sigma_2, T)}",
@@ -10692,7 +10692,7 @@
   },
   "guard.judg": {
    "title": "The guard $\\varnothing \\vdash\\!\\triangleright t$",
-   "meaning": "$\\Lambda \\vdash\\!\\triangleright t$ holds iff the variable of every box in $t$ is used only after a session action of the body.",
+   "meaning": "$\\Lambda \\vdash\\!\\triangleright t$ holds iff the variable of each box in $t$ is used only after a session action of the body.",
    "why": "$\\kappa_L$ makes $\\beta$ free, so without the guard $!(f = \\mathsf{force}\\,f)$ types and diverges on free steps. Deadlock-free typing does not use the guard.",
    "breaks": "$!(f = \\mathsf{force}\\,f)$ types and is in no relation at $kappa_L$.",
    "example": "$!(f = \\lambda x.\\,\\mathsf{let}\\ \\langle v, x'\\rangle = \\mathsf{recv}\\,x\\ \\mathsf{in}\\ (\\mathsf{force}\\,f)\\,x')$ is guarded.",
@@ -10819,7 +10819,7 @@
   "guard.cong": {
    "title": "Frames",
    "meaning": "A frame checks its first subterm $e_1$ under $\\Lambda$ and the rest under the marks $\\Lambda'$ that $e_1$ leaves.",
-   "why": "Without an action no step of positive cost happens, so every mark stays in force until $e_1$ acts.",
+   "why": "Without an action no step of positive cost happens, so each mark stays in force until $e_1$ acts.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Lambda \\vdash\\!\\triangleright e_1\\,e_2$ from $\\Lambda \\vdash\\!\\triangleright e_1$ and $\\Lambda \\vdash\\!\\triangleright e_2$ with $\\Lambda' = \\Lambda$.",
    "signature": "\\Lambda \\vdash\\!\\triangleright e_1 \\land \\mathsf{kmarks}\\,\\Lambda\\,\\Lambda'\\,e_1 \\land \\Lambda' \\vdash\\!\\triangleright e_2",
@@ -10853,7 +10853,7 @@
   "guard.tick": {
    "title": "$\\mathsf{kmarks}\\,\\Lambda\\,\\Lambda'\\,e$",
    "meaning": "$\\Lambda' = \\Lambda$, or $\\Lambda' = \\varnothing$ and $\\mathsf{acts}\\,e$.",
-   "why": "After a session action the rest runs one level lower, where every box variable is available.",
+   "why": "After a session action the rest runs one level lower, where each box variable is available.",
    "breaks": "Without the second case no loop that recurses after an action is guarded.",
    "example": "$\\mathsf{let}\\ \\langle v, x'\\rangle = \\mathsf{recv}\\,x\\ \\mathsf{in}\\ (\\mathsf{force}\\,f)\\,x'$ takes $\\Lambda' = \\varnothing$.",
    "signature": "\\mathsf{kmarks}\\,\\Lambda\\,\\Lambda'\\,e \\iff \\Lambda' = \\Lambda \\lor (\\Lambda' = \\varnothing \\land \\mathsf{acts}\\,e)",
@@ -10909,7 +10909,7 @@
   },
   "guard.acts": {
    "title": "$\\mathsf{acts}\\,e$",
-   "meaning": "$\\mathsf{acts}$ is the least predicate closed under the clauses shown, so every evaluation of $e$ to a value performs a step $k\\,v$ with $k \\in \\{\\mathsf{send}, \\mathsf{recv}, \\mathsf{close}, \\mathsf{select}_i, \\mathsf{branch}\\}$.",
+   "meaning": "$\\mathsf{acts}$ is the least predicate closed under the clauses shown, so each evaluation of $e$ to a value performs a step $k\\,v$ with $k \\in \\{\\mathsf{send}, \\mathsf{recv}, \\mathsf{close}, \\mathsf{select}_i, \\mathsf{branch}\\}$.",
    "why": "Each such step costs at least one level in the table $kappa_L$, so the rest after an acting $e_1$ runs one level lower, where the selves are in $V$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{acts}\\,(\\mathsf{recv}\\,x)$.",
@@ -10936,7 +10936,7 @@
   },
   "guard.proc": {
    "title": "Guard of a process $\\vdash\\!\\triangleright p$",
-   "meaning": "Every thread $t$ of $p$ satisfies $\\varnothing \\vdash\\!\\triangleright t$.",
+   "meaning": "Each thread $t$ of $p$ satisfies $\\varnothing \\vdash\\!\\triangleright t$.",
    "why": "Soundness without internal divergence and lock-free typing ask it beside process typing.",
    "breaks": "Nothing. It is a definition.",
    "example": "The client and server main is guarded.",
@@ -11037,7 +11037,7 @@
    "meaning": "$\\Sigma \\Vdash^{N}_{W} p : T$ iff $N \\in \\mathbb{N}$, $\\Sigma \\vdash\\inmode{lf}{^{N}}_{W} p : T$ and $\\vdash\\!\\triangleright p$.",
    "why": "Lock freedom needs finite counters and no infinite run of free steps, and the guard excludes the latter.",
    "breaks": "Nothing. It is a definition.",
-   "example": "Two threads closing $c^{+}$ and $c^{-}$, at every $N \\in \\mathbb{N}$.",
+   "example": "Two threads closing $c^{+}$ and $c^{-}$, at each $N \\in \\mathbb{N}$.",
    "signature": "\\Sigma \\Vdash^{N}_{W} p : T \\iff N \\in \\mathbb{N} \\land \\Sigma \\vdash\\inmode{lf}{^{N}}_{W} p : T \\land \\vdash\\!\\triangleright p",
    "args": [
     {
@@ -11126,7 +11126,7 @@
   },
   "tp.lift": {
    "title": "$\\Sigma^{N/2,N/2}$",
-   "meaning": "\\inmode{lf}{$\\Sigma$ with every entry at\\inmode{lf}{ credit and }tickets $N/2$.}",
+   "meaning": "\\inmode{lf}{$\\Sigma$ with each entry at\\inmode{lf}{ credit and }tickets $N/2$.}",
    "why": "The partner of an interface end belongs to another component. \\inmode{lf}{Half of $N$ on each side keeps the bound on the tickets of a channel when P-Connect joins the two ends.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\{c^{+} \\mapsto \\mathsf{Close}_x\\}^{N/2,N/2} = \\{c^{+} \\mapsto \\mathsf{Close}_x\\inmode{lf}{^{N/2,N/2}}\\}$.",
@@ -11300,8 +11300,8 @@
   },
   "tp.vdash": {
    "title": "The term turnstile $\\vdash$",
-   "meaning": "The least relation closed under E-Unit to E-Open. \\inmode{lf}{The deadlock-free judgment $\\Gamma ; \\Delta \\vdash^{F} t : T$ is the instance $N = \\infty$ with every annotation $\\infty$.}",
-   "why": "\\inmode{lf}{One relation has the session type, the points and, in the lock-free mode, the\\inmode{lf}{ credits and }the effect of $e$, so every mode reads its premises off one derivation.}",
+   "meaning": "The least relation closed under E-Unit to E-Open. \\inmode{lf}{The deadlock-free judgment $\\Gamma ; \\Delta \\vdash^{F} t : T$ is the instance $N = \\infty$ with each annotation $\\infty$.}",
+   "why": "\\inmode{lf}{One relation has the session type, the points and, in the lock-free mode, the\\inmode{lf}{ credits and }the effect of $e$, so each mode reads its premises off one derivation.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\varnothing ; \\varnothing \\vdash^{(\\varnothing, \\cdot)} \\ast : \\ast$.",
    "signature": "\\Gamma ; \\Delta \\vdash^{F} e : T\\ !\\ \\varepsilon",
@@ -11347,7 +11347,7 @@
   },
   "tp.msunion": {
    "title": "Multiset union $E_1 \\uplus E_2$",
-   "meaning": "$E_1 \\uplus E_2$, the multiset sum, counts every thread as often as $E_1$ and $E_2$ together.",
+   "meaning": "$E_1 \\uplus E_2$, the multiset sum, counts each thread as often as $E_1$ and $E_2$ together.",
    "why": "A composite process runs the threads of both components side by side.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\{t_1\\} \\uplus \\{t_2\\} = \\{t_1, t_2\\}$.",
@@ -11507,7 +11507,7 @@
   "sj.sw": {
    "title": "Semantic judgment at a static world",
    "meaning": "$\\Sigma \\vDash_W p : T$ holds when $\\Sigma \\vDash_R p : T$ holds at each strict world $R$ that models the static world $W$.",
-   "why": "A typing derivation fixes a static world, and the relation reads worlds of the relation. The semantic judgment at $W$ reads every strict model of $W$, and semantic P-Connect at static worlds composes two components at one model of the join.",
+   "why": "A typing derivation fixes a static world, and the relation reads worlds of the relation. The semantic judgment at $W$ reads each strict model of $W$, and semantic P-Connect at static worlds composes two components at one model of the join.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\varnothing \\vDash_{W} p : \\ast$ for the empty world $W$.",
    "signature": "\\Sigma \\vDash_{W} p : T",
@@ -11759,7 +11759,7 @@
    "title": "$\\kappa_L$, the lock-free table",
    "meaning": "The table $(0,0,0,0,1,1)$. Internal steps, $\\beta$, $\\mathsf{new}$, $\\mathsf{spawn}$ and $\\mathsf{link}$, cost nothing, and only session actions cost a level.",
    "why": "A free step is checked inside the least fixpoint of the current level, and a least fixpoint admits only finitely many steps in a row. So a term in the relation at $\\kappa_L$ cannot take infinitely many internal steps without an action, which is absence of internal divergence. Lock freedom needs it, because a thread that loops internally never serves its partner. It is not about paying for messages.",
-   "breaks": "$!(f = \\\\mathsf{force}\\\\,f)$ steps by $\\\\beta$ forever and is in no level at $\\\\kappa_L$, while it is in every level at $\\\\kappa_{DF}$.",
+   "breaks": "$!(f = \\\\mathsf{force}\\\\,f)$ steps by $\\\\beta$ forever and is in no level at $\\\\kappa_L$, while it is in each level at $\\\\kappa_{DF}$.",
    "example": "Under $\\kappa_L$ a synchronization costs $2$, one level for each side.",
    "signature": "\\kappa_L = (0,0,0,0,1,1) \\in \\mathsf{CTable}",
    "source": [
@@ -11774,7 +11774,7 @@
   "ct.beta": {
    "title": "Cost $\\kappa_\\beta$",
    "meaning": "The cost of application, pair and unit elimination, case and force.",
-   "why": "An arrow reads its body at every $\\beta < \\alpha$ under $\\kappa_{DF}$. \\inmode{lf}{Under a general table it reads the levels $\\beta$ with $\\beta + \\kappa_\\beta \\leq \\alpha$, which for $\\kappa_L$ include $\\alpha$ itself.}",
+   "why": "An arrow reads its body at each $\\beta < \\alpha$ under $\\kappa_{DF}$. \\inmode{lf}{Under a general table it reads the levels $\\beta$ with $\\beta + \\kappa_\\beta \\leq \\alpha$, which for $\\kappa_L$ include $\\alpha$ itself.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$(\\lambda e)\\,v \\xrightarrow{\\beta} e[v]$ costs $\\kappa_\\beta$.",
    "signature": "\\kappa_\\beta \\in \\mathbb{N}",
@@ -11950,9 +11950,9 @@
   "rel.atcost": {
    "title": "$e'$ at $\\Theta'$",
    "meaning": "Take a step $\\ell$ of cost $c = \\kappa(\\ell)$ at the ordinal index $\\alpha$. Its successor is read in the fixpoint $X$ if $c = 0$, and in $E_\\beta$ for each ordinal $\\beta$ with $\\beta + c \\leq \\alpha$ if $c > 0$, with $\\beta + c$ the $c$-fold successor of $\\beta$.",
-   "why": "Stated as two implications, $X$ occurs strictly positively and the inductive definition is admissible. At a successor $\\alpha = \\gamma + c$ the second case is the index $\\gamma$, and at a limit $\\lambda$ it is every $\\beta < \\lambda$, the later modality of transfinite step indexing.",
+   "why": "Stated as two implications, $X$ occurs strictly positively and the inductive definition is admissible. At a successor $\\alpha = \\gamma + c$ the second case is the index $\\gamma$, and at a limit $\\lambda$ it is each $\\beta < \\lambda$, the later modality of transfinite step indexing.",
    "breaks": "Nothing. It is a definition.",
-   "example": "\\inmode{lf}{Under $\\kappa_L$ a $\\beta$ step stays at index $\\alpha$, and at the limit $\\omega$ a step of cost $2$ obliges the successor at every finite index.}",
+   "example": "\\inmode{lf}{Under $\\kappa_L$ a $\\beta$ step stays at index $\\alpha$, and at the limit $\\omega$ a step of cost $2$ obliges the successor at each finite index.}",
    "signature": "e' \\mathsf{at}\\ \\Theta' : \\mathsf{Prop}",
    "args": [
     {
@@ -12276,7 +12276,7 @@
    "title": "$\\mathrm{dom}\\,\\Theta = \\mathsf{fends}(e)$",
    "meaning": "A closure owns exactly the ends its body mentions.",
    "why": "With it, each $v \\in V$ satisfies $\\mathrm{dom}\\,\\Theta = \\mathsf{fends}(v)$, so the ends a send or spawn passes on are $\\mathsf{fends}$ of the value.",
-   "breaks": "$\\lambda\\_.\\,\\mathsf{let}\\ \\ast = \\Omega\\ \\mathsf{in}\\ \\mathsf{close}\\,q^{+}$ owns nothing and is in $V$ at every level, and then a send of it next to $q^{+}$ fails E-Send.",
+   "breaks": "$\\lambda\\_.\\,\\mathsf{let}\\ \\ast = \\Omega\\ \\mathsf{in}\\ \\mathsf{close}\\,q^{+}$ owns nothing and is in $V$ at each level, and then a send of it next to $q^{+}$ fails E-Send.",
    "example": "$\\lambda\\_.\\,\\mathsf{close}\\,a$ owns $\\{a\\}$.",
    "signature": "\\mathrm{dom}\\,\\Theta = \\mathsf{fends}(e) : \\mathsf{Prop}",
    "args": [
@@ -12387,7 +12387,7 @@
    "meaning": "The body is in $E$ under each future $F$ with $\\forall y \\in F.\\ R' \\vdash u \\prec y$.",
    "why": "A closure may block up to $u$, so its caller must still act only above $u$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "The body of $\\mathsf{between}$ runs under every $F$ above $\\kappa$.",
+   "example": "The body of $\\mathsf{between}$ runs under each $F$ above $\\kappa$.",
    "signature": "R' \\vdash u \\prec F : \\mathsf{Prop}",
    "args": [
     {
@@ -12583,7 +12583,7 @@
    "meaning": "The thunk is in $V$ at each list $\\bar s$ of $k$ session types that are hereditarily contractive and point-scoped.",
    "why": "Session instances must unfold to a head, which hereditary contractiveness guarantees. A payload of an instance must mention no point free below its binder, which scoping guarantees, as E-Send and E-Recv ask.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$k = 0$ in every example.",
+   "example": "$k = 0$ in each example.",
    "signature": "\\forall s \\in \\bar s.\\ \\mathsf{hcontractive}\\,s \\land \\mathsf{sscoped}\\,s",
    "args": [
     {
@@ -12739,7 +12739,7 @@
   },
   "P.zero": {
    "title": "Index $0$",
-   "meaning": "$P_0$ holds every process.",
+   "meaning": "$P_0$ holds each process.",
    "why": "At an index with nothing below it no step of a process can be read, so the clauses start at $\\alpha > 0$. The term relation has no such case, because a term at index $0$ still meets its stop and ready clauses and its steps of cost $0$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\forall p.\\ p \\in P^{R}_0\\llbracket\\Sigma \\vdash T\\rrbracket$.",
@@ -12900,7 +12900,7 @@
   "O-Beta": {
    "title": "O-Beta",
    "meaning": "$e'$ at $\\Theta$.",
-   "why": "A $\\beta$ step changes no end, and the compatibility of every elimination rule discharges it by reading the redex at the same environment.",
+   "why": "A $\\beta$ step changes no end, and the compatibility of each elimination rule discharges it by reading the redex at the same environment.",
    "breaks": "Nothing. It is a definition.",
    "example": "\\inmode{lf}{Under $\\kappa_L$ a $\\beta$ step stays at level $n$.}",
    "signature": "\\mathsf{o\\_beta} : \\mathsf{Expr} \\to \\mathsf{Prop}",
@@ -13034,7 +13034,7 @@
   },
   "O-New.grow": {
    "title": "Position and world",
-   "meaning": "$\\exists S, \\pi, R'.\\ R \\sqsubseteq R'$. The point $\\pi$ is any point, and $R'$ extends $R$, with the same kind and every rank kept.",
+   "meaning": "$\\exists S, \\pi, R'.\\ R \\sqsubseteq R'$. The point $\\pi$ is any point, and $R'$ extends $R$, with the same kind and each rank kept.",
    "why": "E-New at a fresh root picks a constant $a$ that is no root of $R$ and orders its tree in $R'$ so that $C$ holds there. \\inmode{lf}{A strict world takes the transitive closure, and a ranked world ranks the tree.} E-New at a field picks $x\\cdot\\kappa$ and keeps $R$. No order is lost and no rank changes, so the worlds of a run form a chain.",
    "breaks": "If a creation could change a rank, the measure of a waiting thread could rise.",
    "example": "At $\\pi = \\rho$ with $C = \\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ the ranks $\\varrho(\\rho) = 0$ and $\\varrho(\\rho\\cdot 0) = 1$.",
@@ -13046,7 +13046,7 @@
     },
     {
      "name": "R'",
-     "meaning": "a world that keeps every rank of $R$"
+     "meaning": "a world that keeps each rank of $R$"
     }
    ],
    "source": [
@@ -13103,7 +13103,7 @@
   "O-Spawn": {
    "title": "O-Spawn",
    "meaning": "$\\Theta$ splits into a part $\\Theta_M$ for the thunk, which is in $V^{R}_{\\alpha}\\llbracket\\Theta_M \\vdash \\ast \\multimap^{\\top}_{\\bot} \\ast\\rrbracket$, and a rest $\\Theta_r$ for the continuation.",
-   "why": "Exactness of $V$ fixes $\\mathrm{dom}\\,\\Theta_M = \\mathsf{fends}(v)$, so the split is the same at every level.",
+   "why": "Exactness of $V$ fixes $\\mathrm{dom}\\,\\Theta_M = \\mathsf{fends}(v)$, so the split is the same at each level.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{spawn}\\,(\\lambda\\_.\\,\\mathsf{close}\\,d')$ gives the child $\\{d'\\}$.",
    "signature": "\\mathsf{o\\_spawn} : \\mathsf{Val} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
@@ -13295,7 +13295,7 @@
   "sr.head": {
    "title": "Head of an end $\\Theta(o) \\doteq H_x$",
    "meaning": "$\\Theta(o) \\doteq H_x$ states $\\Theta(o) = S_x$ for some $S$ with $\\mathsf{unfold}\\,S = H$.",
-   "why": "Every obligation reads the first action of the subject end after unfolding, so the notation states it once.",
+   "why": "Each obligation reads the first action of the subject end after unfolding, so the notation states it once.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Theta(o) \\doteq {!}(\\bar\\iota.\\,\\ast).\\mathsf{Close}_x$ for $\\Theta(o) = (\\mu\\alpha.\\,{!}\\ast.\\mathsf{Close})_x$.",
    "signature": "\\Theta(o) \\doteq H_x \\iff \\exists S.\\ \\Theta(o) = S_x \\land \\mathsf{unfold}\\,S = H",
@@ -13351,7 +13351,7 @@
   "O-Send.shift": {
    "title": "$o : S_{x^{+}}$",
    "meaning": "The subject continues at $S$ and the next point $x^{+}$.",
-   "why": "$x \\prec x^{+}$ holds in every world, so successive actions on one end are ordered.",
+   "why": "$x \\prec x^{+}$ holds in each world, so successive actions on one end are ordered.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Theta_r[o \\mapsto S_{x^{+}}]$.",
    "signature": "\\Theta_r[o \\mapsto S_{x^{+}}] \\in \\mathsf{Env}",
@@ -13376,8 +13376,8 @@
   },
   "O-Recv": {
    "title": "O-Recv",
-   "meaning": "For every $\\beta < \\alpha$ and every incoming $w \\in V_{\\beta}$ with ends disjoint from $\\Theta$, the continuation is in $E_{\\beta}$ with those ends added.",
-   "why": "The value that arrives is unknown when the receiver is typed, so it continues for every value its type admits, and the compatibility of E-Recv pairs this with the sender's O-Send.",
+   "meaning": "For each $\\beta < \\alpha$ and each incoming $w \\in V_{\\beta}$ with ends disjoint from $\\Theta$, the continuation is in $E_{\\beta}$ with those ends added.",
+   "why": "The value that arrives is unknown when the receiver is typed, so it continues for each value its type admits, and the compatibility of E-Recv pairs this with the sender's O-Send.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{let}\\ \\langle u, b\\rangle = \\mathsf{recv}\\,b\\ \\mathsf{in}\\ \\ldots$",
    "signature": "\\mathsf{o\\_recv} : \\mathsf{End} \\to \\mathsf{Val} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
@@ -13811,7 +13811,7 @@
    "title": "$\\mathsf{link}\\,t$",
    "meaning": "$\\exists os, t'.\\ t \\xrightarrow{\\leftrightarrow os} t'$, and a term at a link is ready.",
    "why": "A link step at process level needs no partner thread, so a link never waits and readiness need not order the link.",
-   "breaks": "Asking the order of a link would reject every link next to an end held at an unrelated point, and E-Link has no order premise.",
+   "breaks": "Asking the order of a link would reject each link next to an end held at an unrelated point, and E-Link has no order premise.",
    "example": "$\\mathsf{link}\\,\\langle c^{+}, d^{-}\\rangle$.",
    "signature": "\\mathsf{link} : \\mathsf{Expr} \\to \\mathsf{Prop}",
    "args": [
@@ -13835,7 +13835,7 @@
   },
   "rd.below-rest": {
    "title": "$\\mathsf{below\\_rest}$",
-   "meaning": "Every offered end at $x$ lies below the dual point of every held end it does not offer and below every point of $F$.",
+   "meaning": "Each offered end at $x$ lies below the dual point of each held end it does not offer and below each point of $F$.",
    "why": "It excludes circular waiting, because a waiting thread's offer is minimal among what it holds and what its context still does.",
    "breaks": "Client and server each blocked on their second channel while holding the first, under a cyclic order.",
    "example": "Closing $c$ at $\\rho$ while $d$ is held at $\\rho\\cdot 0$ needs $\\rho \\prec \\overline{\\rho\\cdot 0}$.",
@@ -13907,7 +13907,7 @@
    "meaning": "$\\forall y \\in F.\\ R \\vdash x \\prec y$.",
    "why": "The context acts at the points of $F$ after the term returns.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\kappa \\prec y$ for every $y$ above the upper point in $\\mathsf{between}$.",
+   "example": "$\\kappa \\prec y$ for each $y$ above the upper point in $\\mathsf{between}$.",
    "signature": "\\forall y \\in F.\\ R \\vdash x \\prec y",
    "args": [
     {
@@ -13987,7 +13987,7 @@
   },
   "rd.above-offered": {
    "title": "$\\mathsf{above\\_offered}$",
-   "meaning": "Every interface end at $x$ that is not offered has an offered end at $x'$ with $R \\vdash x' \\prec \\overline{x}$.",
+   "meaning": "Each interface end at $x$ that is not offered has an offered end at $x'$ with $R \\vdash x' \\prec \\overline{x}$.",
    "why": "The environment can always serve some offered end first, so composing two ready processes over one world keeps one of them able to move.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{above\\_offered}\\,R\\,\\Sigma\\,O$.",
@@ -14086,7 +14086,7 @@
   },
   "P.fuse": {
    "title": "Closed under fusions",
-   "meaning": "Each unfolding holds at $(h, D)\\cdot\\Sigma$ and $(h, D)\\cdot p$ for every $(h, D) \\in \\mathsf{Fus}(\\Sigma, p)$.",
+   "meaning": "Each unfolding holds at $(h, D)\\cdot\\Sigma$ and $(h, D)\\cdot p$ for each $(h, D) \\in \\mathsf{Fus}(\\Sigma, p)$.",
    "why": "Renaming, internalizing a pair of interface ends and the renaming done by a link are all fusions, and closure by definition makes each of them a projection.",
    "breaks": "With renamings alone, a link could join two unrelated interface ends into one channel and composition would fail.",
    "example": "$h = \\mathsf{id}$ internalizes pairs, $D = \\varnothing$ renames.",
@@ -14113,7 +14113,7 @@
   "P-Stop": {
    "title": "P-Stop",
    "meaning": "$\\mathsf{pirred}\\,p' \\Rightarrow \\exists v, E.\\ p' = (\\varnothing, \\{v\\} \\uplus E) \\land v \\in V\\llbracket\\Sigma' \\vdash T\\rrbracket \\land \\forall e \\in E.\\ e = \\ast$.",
-   "why": "An irreducible process in $P$ has no restricted channel left, its main thread returned a value in $V$ and every other thread returned $\\ast$, which is the definition of terminated.",
+   "why": "An irreducible process in $P$ has no restricted channel left, its main thread returned a value in $V$ and each other thread returned $\\ast$, which is the definition of terminated.",
    "breaks": "Without it, a process stuck with restricted channels would be in $P$, and adequacy would fail.",
    "example": "$(\\varnothing, \\{\\ast, \\ast\\})$ at $T = \\ast$.",
    "signature": "\\mathsf{pirred}\\,p' \\Rightarrow \\exists v, E.\\ p' = (\\varnothing, \\{v\\} \\uplus E) \\land \\ldots",
@@ -14186,7 +14186,7 @@
   },
   "P-Step": {
    "title": "P-Step",
-   "meaning": "Every step $p' \\xrightarrow{ev} p''$ meets $\\mathsf{Pobl}_{ev}$. A process steps when some numbering of its threads steps, $p \\xrightarrow{ev} p' \\iff \\exists q, q'.\\ \\mathsf{erase}\\,q = p \\land q \\xrightarrow{ev} q' \\land \\mathsf{erase}\\,q' = p'$.",
+   "meaning": "Each step $p' \\xrightarrow{ev} p''$ meets $\\mathsf{Pobl}_{ev}$. A process steps when some numbering of its threads steps, $p \\xrightarrow{ev} p' \\iff \\exists q, q'.\\ \\mathsf{erase}\\,q = p \\land q \\xrightarrow{ev} q' \\land \\mathsf{erase}\\,q' = p'$.",
    "why": "The obligations read the event and the result, and no thread number. \\inmode{lf}{Thread numbers matter only to the lock-free process relation, which records the thread holding each end.}",
    "breaks": "Nothing. It is a definition.",
    "example": "A message between two threads meets Q-Tau.",
@@ -14335,7 +14335,7 @@
   },
   "fuse.dpairs": {
    "title": "$\\mathsf{dpairs}\\,D\\,\\Sigma$",
-   "meaning": "Both ends of every channel of $D$ are in $\\Sigma$, at dual points and dual types.",
+   "meaning": "Both ends of each channel of $D$ are in $\\Sigma$, at dual points and dual types.",
    "why": "They become restricted, and restricted channels are dual pairs.",
    "breaks": "Nothing. It is a definition.",
    "example": "Internalizing $c$ with $\\Sigma(c^{+}) = S_x$ and $\\Sigma(c^{-}) = \\overline{S}_{\\overline{x}}$.",
@@ -14549,7 +14549,7 @@
   },
   "Q-Recv": {
    "title": "Q-Recv",
-   "meaning": "For every incoming environment and value, the process continues with the received ends added and the channels both of whose ends it now holds restricted.",
+   "meaning": "For each incoming environment and value, the process continues with the received ends added and the channels both of whose ends it now holds restricted.",
    "why": "It is O-Recv at the process level, and composition feeds one component's Q-Send into the other's Q-Recv.",
    "breaks": "Nothing. It is a definition.",
    "example": "Receiving $d^{-}$ while holding $d^{+}$ restricts $d$.",
@@ -14607,7 +14607,7 @@
   },
   "Q-Recv.ok": {
    "title": "$\\mathsf{recv\\_ok}$",
-   "meaning": "Incoming ends are new to $\\Sigma$, and every incoming end whose partner is held or received is at the dual point with the dual type.",
+   "meaning": "Incoming ends are new to $\\Sigma$, and each incoming end whose partner is held or received is at the dual point with the dual type.",
    "why": "Composition delivers one component's payload only under this condition, and it is what makes a newly restricted pair dual.",
    "breaks": "Without the duality conjunct, receiving the partner of a held end at a mismatched type would restrict an ill-typed channel.",
    "example": "$\\mathsf{recv\\_ok}\\,\\Sigma\\,\\Theta_2$.",
@@ -14738,7 +14738,7 @@
   },
   "sj.at": {
    "title": "Judgment at a set of points $X$",
-   "meaning": "For every level, later world, environment $\\Theta'$ disjoint from the ends $|\\Delta|$ and grounding $\\gamma$ of the variables of $\\Delta$ in $\\Theta'$, $\\gamma(e) \\in E_\\alpha\\llbracket|\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}$, over every ordinal index $\\alpha$.",
+   "meaning": "For each level, later world, environment $\\Theta'$ disjoint from the ends $|\\Delta|$ and grounding $\\gamma$ of the variables of $\\Delta$ in $\\Theta'$, $\\gamma(e) \\in E_\\alpha\\llbracket|\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}$, over each ordinal index $\\alpha$.",
    "why": "It quantifies over everything a context may supply, so it composes by the compatibility lemmas.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Delta \\vDash^{X}_R e : T$.",
@@ -14754,7 +14754,7 @@
     },
     {
      "name": "n, R', \\Theta', \\gamma",
-     "meaning": "every level, extension, environment of the grounding and grounding"
+     "meaning": "each level, extension, environment of the grounding and grounding"
     }
    ],
    "source": [
@@ -14798,7 +14798,7 @@
   },
   "sj.den": {
    "title": "$\\mathsf{den}_{Y,Z}(F)$",
-   "meaning": "$\\mathsf{den}_{Y,Z}(F_1, f) = F_1 \\cup Y \\cup Z$, with $Y$ only if $f$ has a rest and $Z$ only if $f$ has the flag $\\bot$. For the rest $ {\\uparrow}u$ every point of $Y$ lies above $u$.",
+   "meaning": "$\\mathsf{den}_{Y,Z}(F_1, f) = F_1 \\cup Y \\cup Z$, with $Y$ only if $f$ has a rest and $Z$ only if $f$ has the flag $\\bot$. For the rest $ {\\uparrow}u$ each point of $Y$ lies above $u$.",
    "why": "The rest and the flag $\\bot$ stand for unknown sets of points, so the judgment holds at each choice of these sets.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{den}_{Y,Z}(\\varnothing, {\\uparrow}u) = Y$.",
@@ -14863,7 +14863,7 @@
   },
   "sj.proc": {
    "title": "$\\Sigma \\vDash_R p : T$",
-   "meaning": "$\\forall \\alpha.\\ p \\in P^R_\\alpha\\llbracket\\Sigma \\vdash T\\rrbracket$, over every ordinal index $\\alpha$.",
+   "meaning": "$\\forall \\alpha.\\ p \\in P^R_\\alpha\\llbracket\\Sigma \\vdash T\\rrbracket$, over each ordinal index $\\alpha$.",
    "why": "Adequacy turns it into deadlock freedom. \\inmode{lf}{With $\\kappa_L$ it also gives absence of internal divergence.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\varnothing \\vDash_R p : \\ast$.",
@@ -14929,7 +14929,7 @@
   "fu.frame": {
    "title": "Frame $d$",
    "meaning": "$d \\in \\mathbb{N} \\cup \\{\\infty\\}$ bounds the channel actions the term performs before it returns.",
-   "why": "Every action asks $1 \\leq d$ and lowers $d$ by one, so the frame bounds how often the context decrements its own ends during the term.",
+   "why": "Each action asks $1 \\leq d$ and lowers $d$ by one, so the frame bounds how often the context decrements its own ends during the term.",
    "breaks": "Nothing. It is a definition.",
    "example": "A thread has frame $\\infty$.",
    "signature": "d \\in \\mathbb{N} \\cup \\{\\infty\\}",
@@ -14975,7 +14975,7 @@
   },
   "fu.tick": {
    "title": "$\\Phi{\\downarrow}$",
-   "meaning": "Every counter of $\\Phi$ lowered by one, truncated at $0$, with the tickets kept.",
+   "meaning": "Each counter of $\\Phi$ lowered by one, truncated at $0$, with the tickets kept.",
    "why": "An action decrements the counters of the other ends of the thread holding it, and a transfer passes counters on one lower. Both use this operation.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\{a \\mapsto S^{3,3}, b \\mapsto S'^{1,2}\\}{\\downarrow} = \\{a \\mapsto S^{2,3}, b \\mapsto S'^{0,2}\\}$.",
@@ -14998,7 +14998,7 @@
   },
   "fu.rename": {
    "title": "Injective renamings",
-   "meaning": "Fuel holds for every renaming $g$ of ends injective on $\\mathrm{dom}\\,\\Phi$.",
+   "meaning": "Fuel holds for each renaming $g$ of ends injective on $\\mathrm{dom}\\,\\Phi$.",
    "why": "A link renames the partner of a removed end in another thread, so fuel must remain renaming.",
    "breaks": "A renaming that merges two held ends would merge their counters.",
    "example": "$g = \\{c^{+} \\mapsto d^{+}\\}$ on $\\Phi = \\{c^{+} \\mapsto S^{2}\\}$.",
@@ -15062,8 +15062,8 @@
   },
   "fu.step": {
    "title": "(step)",
-   "meaning": "$\\forall \\ell, e'.\\ g(e) \\xrightarrow{\\ell} e' \\Rightarrow \\mathsf{Fobl}\\inmode{lf}{^{N}}_\\ell(e')$ at every ordinal $\\beta < \\alpha$.",
-   "why": "Each step updates the state by one index-free rule, which the lock-free process relation follows along a run. At a limit $\\alpha$ the obligation holds at every smaller index.",
+   "meaning": "$\\forall \\ell, e'.\\ g(e) \\xrightarrow{\\ell} e' \\Rightarrow \\mathsf{Fobl}\\inmode{lf}{^{N}}_\\ell(e')$ at each ordinal $\\beta < \\alpha$.",
+   "why": "Each step updates the state by one index-free rule, which the lock-free process relation follows along a run. At a limit $\\alpha$ the obligation holds at each smaller index.",
    "breaks": "Nothing. It is a definition.",
    "example": "A send step meets F-Send.",
    "signature": "\\forall \\ell, e'.\\ g(e) \\xrightarrow{\\ell} e' \\Rightarrow \\forall \\beta < \\alpha.\\ \\mathsf{Fobl}\\inmode{lf}{^{N}}_{\\ell}(e')",
@@ -15125,7 +15125,7 @@
   },
   "F-Tick": {
    "title": "F-Count",
-   "meaning": "$\\mathsf{positive}(\\Phi \\setminus o)$, every other end that is not idle has counter at least $1$.",
+   "meaning": "$\\mathsf{positive}(\\Phi \\setminus o)$, each other end that is not idle has counter at least $1$.",
    "why": "Each action decrements the counters of the other ends, so an end can wait only as many actions of the thread holding it as its counter allows.",
    "breaks": "A holding thread that loops on other ends forever while its partner waits on a held end.",
    "example": "At $\\Phi = \\{a \\mapsto S^{2}, b \\mapsto S'\\inmode{lf}{^{0}}\\}$ no action on $a$ is allowed unless $b$ is idle.",
@@ -15404,7 +15404,7 @@
   },
   "fu.fspare": {
    "title": "$\\mathsf{positive}$",
-   "meaning": "$\\mathsf{positive}(\\Phi) \\iff$ every end of $\\Phi$ that is not idle has counter at least $1$.",
+   "meaning": "$\\mathsf{positive}(\\Phi) \\iff$ each end of $\\Phi$ that is not idle has counter at least $1$.",
    "why": "A transfer passes the counter minus one, so a non-idle end must have a positive counter. A spawn is no action, so this is its only check.",
    "breaks": "A transfer at counter $0$ under truncation passes $0$ again and an end is passed on forever.",
    "example": "$\\mathsf{positive}(\\{d' \\mapsto S^{1}\\})$.",
@@ -15525,7 +15525,7 @@
   },
   "F-Send.payload": {
    "title": "Payload in $FV$",
-   "meaning": "$w \\in FV^N_{\\alpha}\\llbracket\\Phi|_M{\\downarrow} \\vdash T\\rrbracket$, with every transferred counter lowered by one transfer.",
+   "meaning": "$w \\in FV^N_{\\alpha}\\llbracket\\Phi|_M{\\downarrow} \\vdash T\\rrbracket$, with each transferred counter lowered by one transfer.",
    "why": "$FV$ reads no point, so the raw payload type and its placed form agree.",
    "breaks": "Nothing. It is a definition.",
    "example": "$FV^N_{\\alpha}\\llbracket \\{a \\mapsto S^{2}\\} \\vdash S_x^{2}\\rrbracket$ for a payload end promised at credit $2$.",
@@ -15551,8 +15551,8 @@
   },
   "F-Recv": {
    "title": "F-Recv",
-   "meaning": "An action on $o$ that continues for every incoming value in $FV$ at every index $\\gamma \\leq \\beta$ with ends disjoint from $\\Phi$.",
-   "why": "The receiver continues for every value its type admits, and the lock-free process relation supplies the sender's transferred ends.",
+   "meaning": "An action on $o$ that continues for each incoming value in $FV$ at each index $\\gamma \\leq \\beta$ with ends disjoint from $\\Phi$.",
+   "why": "The receiver continues for each value its type admits, and the lock-free process relation supplies the sender's transferred ends.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{recv}\\,b$ in the client loop.",
    "signature": "\\mathsf{f\\_recv} : \\mathsf{End} \\to \\mathsf{Val} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
@@ -15582,7 +15582,7 @@
   "F-Recv.forall": {
    "title": "Every incoming value",
    "meaning": "$\\forall \\gamma \\leq \\beta, \\Phi_i.\\ w \\in FV^N_\\gamma\\llbracket\\Phi_i \\vdash T\\rrbracket$.",
-   "why": "Every value in $FV$ is exact, so incoming closures hold exactly what they mention.",
+   "why": "Each value in $FV$ is exact, so incoming closures hold exactly what they mention.",
    "breaks": "Without exactness, a received closure owning nothing but mentioning an end could not be spawned.",
    "example": "$\\Phi_i = \\{e \\mapsto S^{2,2}\\}$.",
    "signature": "\\forall \\gamma \\leq \\beta, \\Phi_i \\mathbin{\\#} \\Phi.\\ w \\in FV^{N}_{\\gamma}\\llbracket \\Phi_i \\vdash T \\rrbracket \\Rightarrow \\ldots",
@@ -15685,7 +15685,7 @@
    "title": "$f_1 + m_2 > N$ and $f_2 + m_1 > N$",
    "meaning": "The counter of each linked end exceeds $N - m$ for the tickets $m$ of the other linked end.",
    "why": "The partner of $o_2$ has at most $N - m_2$ tickets, so its counter is below $f_1$. The thread waiting on the partner of $o_1$ then faces a lower counter after the link, and the measure of lock-free adequacy falls.",
-   "breaks": "Without it a link can give a waiting thread a partner with a full counter in every round.",
+   "breaks": "Without it a link can give a waiting thread a partner with a full counter in each round.",
    "example": "$3 + 3 > 4$.",
    "signature": "f_1 + m_2 > N \\land f_2 + m_1 > N",
    "args": [
@@ -15745,7 +15745,7 @@
   "FV-Sess.counter": {
    "title": "$a \\leq f$",
    "meaning": "The counter meets the credit.",
-   "why": "Typing reasons with credits and the lock-free process relation with counters, and this inequality transfers every credit bound of typing to the counters.",
+   "why": "Typing reasons with credits and the lock-free process relation with counters, and this inequality transfers each credit bound of typing to the counters.",
    "breaks": "Without it, a context could age an end below its actual counter and F-Count would fail on an end whose credit typing treats as positive.",
    "example": "$2 \\leq 3$.",
    "signature": "a \\leq f",
@@ -15774,7 +15774,7 @@
   },
   "FV-Arrow": {
    "title": "$FV$ at an arrow",
-   "meaning": "A closure whose body has fuel at every lower level, counters at or above the counters at creation minus its credit and argument in $FV$.",
+   "meaning": "A closure whose body has fuel at each lower level, counters at or above the counters at creation minus its credit and argument in $FV$.",
    "why": "The clause reads costs and credits, the data typing attaches to arrows.",
    "breaks": "Nothing. It is a definition.",
    "example": "A loop body at cost $\\infty$.",
@@ -15827,7 +15827,7 @@
   },
   "FV-Arrow.floor": {
    "title": "Counters $\\geq a$",
-   "meaning": "Every captured counter $f$ of an end that is not idle has $a \\leq f$.",
+   "meaning": "Each captured counter $f$ of an end that is not idle has $a \\leq f$.",
    "why": "The closure's credit $a$ is a lower bound on each captured counter, as the credit of an end is on its own counter.",
    "breaks": "Nothing. It is a definition.",
    "example": "$a = 1$ needs counters $\\geq 1$.",
@@ -15892,8 +15892,8 @@
   },
   "FV-Box": {
    "title": "$FV$ at a box",
-   "meaning": "A box with no ends whose body has fuel per force at every lower level and session instance in $\\mathsf{sinsts}\\,N$.",
-   "why": "A box is unlimited, so it holds no counters and works at every use.",
+   "meaning": "A box with no ends whose body has fuel per force at each lower level and session instance in $\\mathsf{sinsts}\\,N$.",
+   "why": "A box is unlimited, so it holds no counters and works at each use.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{ring}$ at $N = 4$.",
    "signature": "!e \\in FV^{N}_{\\alpha}\\llbracket \\varnothing \\vdash \\Box(\\ldots) \\rrbracket",
@@ -15938,7 +15938,7 @@
   },
   "FV-Box.body": {
    "title": "Body per force",
-   "meaning": "$e[!e] \\in F^{N}_{\\beta}\\llbracket\\varnothing \\vdash U[\\bar s]\\ !\\ c\\rrbracket$ for every $\\beta < \\alpha$ and $\\bar s \\in \\mathsf{sinsts}\\,N$.",
+   "meaning": "$e[!e] \\in F^{N}_{\\beta}\\llbracket\\varnothing \\vdash U[\\bar s]\\ !\\ c\\rrbracket$ for each $\\beta < \\alpha$ and $\\bar s \\in \\mathsf{sinsts}\\,N$.",
    "why": "Each force unrolls the box once, at an instance the forcing context chooses.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\bar s \\in \\mathsf{sinsts}\\,N$.",
@@ -15991,8 +15991,8 @@
   },
   "fu.fsem": {
    "title": "$\\mathsf{fsem}$",
-   "meaning": "$\\mathsf{fsem}\\,N\\,\\Phi\\,e$ iff $e \\in F^N_\\alpha\\llbracket\\Phi \\vdash \\mathsf{thread}\\ !\\ \\infty\\rrbracket$ for every ordinal $\\alpha$.",
-   "why": "It is the fuel of a thread that the lock-free process relation requires, and the cost fundamental theorem derives it from typing. It is the one fuel statement that holds at every index.",
+   "meaning": "$\\mathsf{fsem}\\,N\\,\\Phi\\,e$ iff $e \\in F^N_\\alpha\\llbracket\\Phi \\vdash \\mathsf{thread}\\ !\\ \\infty\\rrbracket$ for each ordinal $\\alpha$.",
+   "why": "It is the fuel of a thread that the lock-free process relation requires, and the cost fundamental theorem derives it from typing. It is the one fuel statement that holds at each index.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{fsem}\\,N\\,\\{c^{+} \\mapsto \\mathsf{Close}^{2,2}\\}\\,(\\mathsf{close}\\,c^{+})$.",
    "signature": "\\mathsf{fsem} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to (\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathbb{N} \\times \\mathbb{N}) \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
@@ -16011,7 +16011,7 @@
     },
     {
      "name": "\\alpha",
-     "meaning": "every ordinal index"
+     "meaning": "each ordinal index"
     }
    ],
    "source": [
@@ -16026,7 +16026,7 @@
   },
   "cs.csem": {
    "title": "$\\Delta \\vDash^{N} e : T\\ !\\ \\varepsilon$",
-   "meaning": "For every larger counter bound, level, injective renaming of the ends of $\\Delta$, grounding in $FV$, the instance has fuel at $T$ with frame $c$, for $\\varepsilon = c$.",
+   "meaning": "For each larger counter bound, level, injective renaming of the ends of $\\Delta$, grounding in $FV$, the instance has fuel at $T$ with frame $c$, for $\\varepsilon = c$.",
    "why": "It reads no $\\Gamma$, world or future, because fuel reads none of these.",
    "breaks": "Nothing. It is a definition.",
    "example": "The cost fundamental theorem concludes this judgment.",
@@ -16510,7 +16510,7 @@
   "sp.fin": {
    "title": "Finite counters",
    "meaning": "$\\forall o.\\ K(o) = (\\_, \\_, f) \\Rightarrow f \\in \\mathbb{N}$.",
-   "why": "The termination measure reads every counter as a natural number.",
+   "why": "The termination measure reads each counter as a natural number.",
    "breaks": "Nothing. It is a definition.",
    "example": "$K(a) = (0, \\rho, 2)$.",
    "signature": "\\forall o.\\ K(o) = (\\_, \\_, f) \\Rightarrow f \\in \\mathbb{N}",
@@ -16580,7 +16580,7 @@
   "sp.exists-before-forall": {
    "title": "$\\forall \\alpha$ before $\\exists a$",
    "meaning": "The bound $N$ is a parameter of the judgment, and the annotated configuration $a$ is an ordinary existential at each ordinal index $\\alpha$. The creation of a channel chooses its position, facts and tickets inside O-New.",
-   "why": "The relation holds at every ordinal of a universe above the space of creation choices. The existential property, proved from excluded middle and choice, turns $\\forall \\alpha.\\ \\exists a$ into $\\exists a.\\ \\forall \\alpha$, so along a run every choice holds at every index.",
+   "why": "The relation holds at each ordinal of a universe above the space of creation choices. The existential property, proved from excluded middle and choice, turns $\\forall \\alpha.\\ \\exists a$ into $\\exists a.\\ \\forall \\alpha$, so along a run each choice holds at each index.",
    "breaks": "At the finite indices alone the existential property fails for an infinite space of choices, the example $\\exists n.\\ \\triangleright^{n}\\bot$ of transfinite step indexing.",
    "example": "$\\forall \\alpha.\\ \\exists a.\\ \\ldots$ for the fixed bound $N$.",
    "signature": "\\exists N \\in \\mathbb{N}.\\ \\forall \\alpha.\\ \\exists a.\\ \\mathsf{erase}(q_a) = p \\land \\ldots",
@@ -16838,7 +16838,7 @@
   },
   "sr.act": {
    "title": "$\\mathsf{act}\\,o$",
-   "meaning": "The common premise of every action on $o$, F-Wait and F-Count.",
+   "meaning": "The common premise of each action on $o$, F-Wait and F-Count.",
    "why": "Send, receive, close, select and branch share this premise.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{act}\\,a$ at $\\Phi = \\{a \\mapsto S\\inmode{lf}{^{0}}, b \\mapsto S'^{1}\\}$ holds.",
@@ -17207,7 +17207,7 @@
   "sr.held": {
    "title": "Held ends",
    "meaning": "$\\mathsf{held} = \\{o \\mid o \\in \\mathrm{dom}\\,\\Sigma \\lor \\mathsf{ech}\\,o \\in C\\}$.",
-   "why": "A process holds its interface ends and both ends of every restricted channel.",
+   "why": "A process holds its interface ends and both ends of each restricted channel.",
    "breaks": "Nothing. It is a definition.",
    "example": "For $\\Sigma = \\{d^{+}\\}$ and $C = \\{c\\}$, $\\mathsf{held} = \\{d^{+}, c^{+}, c^{-}\\}$.",
    "signature": "\\mathsf{held} \\subseteq \\mathsf{End}",
@@ -17404,7 +17404,7 @@
   "th.fundamental": {
    "title": "Fundamental theorem",
    "meaning": "If $W$ is well formed and $\\varnothing ; \\Delta \\vdash^{F}_{W} t : T$, then $\\Delta \\vDash^{F}_{R} t : T$ at each strict world $R \\vDash W$.",
-   "why": "Each typing rule has a semantic counterpart that holds at every index, and the theorem is the induction on the derivation. A creation grows the strict world by the facts of $C$. \\inmode{lf}{No excluded middle and no choice enter the proof.}",
+   "why": "Each typing rule has a semantic counterpart that holds at each index, and the theorem is the induction on the derivation. A creation grows the strict world by the facts of $C$. \\inmode{lf}{No excluded middle and no choice enter the proof.}",
    "breaks": "Nothing. It is a definition.",
    "example": "The main thread of the cycle example satisfies the semantic judgment.",
    "signature": "\\mathsf{world\\_wf}\\,W \\land \\varnothing ; \\Delta \\vdash^{F}_{W} t : T \\land R \\vDash W \\land \\mathsf{strict}\\,R \\Rightarrow \\Delta \\vDash^{F}_{R} t : T",
@@ -17687,7 +17687,7 @@
   },
   "th.sth": {
    "title": "$\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C$",
-   "meaning": "$\\Theta = \\Sigma \\cup \\Theta_B$, $\\mathrm{dom}\\,\\Theta_B = \\mathsf{ends}(C)$, $\\mathsf{chans}\\,\\Sigma \\cap C = \\varnothing$, $\\mathsf{pfree}\\,\\Sigma$, and for every $c \\in C$ the two entries of $\\Theta_B$ are dual at dual points.",
+   "meaning": "$\\Theta = \\Sigma \\cup \\Theta_B$, $\\mathrm{dom}\\,\\Theta_B = \\mathsf{ends}(C)$, $\\mathsf{chans}\\,\\Sigma \\cap C = \\varnothing$, $\\mathsf{pfree}\\,\\Sigma$, and for each $c \\in C$ the two entries of $\\Theta_B$ are dual at dual points.",
    "why": "These are the environment premises of P-Term, as the semantic proof uses these premises.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Sigma = \\varnothing$ and $C = \\varnothing$ for a source program.",
@@ -17837,8 +17837,8 @@
   },
   "th.Erel-bind": {
    "title": "Bind",
-   "meaning": "For every cost table, if $e \\in E^{R}_{\\alpha}\\llbracket\\Theta_1 \\vdash T\\rrbracket^{F \\cup \\mathsf{ap}\\,\\Theta_2}$ and $f[v] \\in E^{R'}_{\\beta}\\llbracket\\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}$ for all $R' \\sqsupseteq R$, $\\beta \\leq \\alpha$ and $v \\in V^{R'}_{\\beta}\\llbracket\\Theta_v \\vdash T\\rrbracket$, then $f[e] \\in E^{R}_{\\alpha}\\llbracket\\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}$.",
-   "why": "Every rule with a subterm runs the subterm first. The frame holds $\\Theta_2$ while the hole runs, so the hole must not wait above $\\mathsf{ap}\\,\\Theta_2$.",
+   "meaning": "For each cost table, if $e \\in E^{R}_{\\alpha}\\llbracket\\Theta_1 \\vdash T\\rrbracket^{F \\cup \\mathsf{ap}\\,\\Theta_2}$ and $f[v] \\in E^{R'}_{\\beta}\\llbracket\\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}$ for all $R' \\sqsupseteq R$, $\\beta \\leq \\alpha$ and $v \\in V^{R'}_{\\beta}\\llbracket\\Theta_v \\vdash T\\rrbracket$, then $f[e] \\in E^{R}_{\\alpha}\\llbracket\\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}$.",
+   "why": "Each rule with a subterm runs the subterm first. The frame holds $\\Theta_2$ while the hole runs, so the hole must not wait above $\\mathsf{ap}\\,\\Theta_2$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{let}\\ \\ast = \\mathsf{close}\\,c\\ \\mathsf{in}\\ \\mathsf{close}\\,d$ runs $\\mathsf{close}\\,c$ with $\\overline{x_d}$ in its future.",
    "signature": "e \\in E^{R}_{\\alpha}\\llbracket\\Theta_1 \\vdash T\\rrbracket^{F \\cup \\mathsf{ap}\\,\\Theta_2} \\land (\\forall R' \\sqsupseteq R, \\beta \\leq \\alpha, v.\\ \\ldots) \\Rightarrow f[e] \\in E^{R}_{\\alpha}\\llbracket\\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}",
@@ -17853,7 +17853,7 @@
     },
     {
      "name": "W', j, v",
-     "meaning": "every later world, every level $\\beta \\leq \\alpha$ and every value $v$ in $V^{W'}_{\\beta}$ that $e$ may return"
+     "meaning": "each later world, each level $\\beta \\leq \\alpha$ and each value $v$ in $V^{W'}_{\\beta}$ that $e$ may return"
     }
    ],
    "source": [
@@ -17993,19 +17993,19 @@
   },
   "th.fair-run-exists": {
    "title": "A maximal weakly fair run exists",
-   "meaning": "Assume excluded middle and dependent choice. For every configuration $q$ there is a run $(r, l)$ with $r\\,0 = q$, $\\mathsf{maximal}\\,(r, l)$ and $\\mathsf{wfair}\\,(r, l)$. Hence every process $p$ has such a run with $\\mathsf{erase}(r\\,0) = p$, and lock-free soundness also gives one for every typed $p$.",
-   "why": "The scheduler goes round robin over thread numbers and at each position takes a step of the targeted thread when that thread is enabled. Dependent choice picks the steps and excluded middle decides enabledness. Lock freedom still quantifies over every such run.",
+   "meaning": "Assume excluded middle and dependent choice. For each configuration $q$ there is a run $(r, l)$ with $r\\,0 = q$, $\\mathsf{maximal}\\,(r, l)$ and $\\mathsf{wfair}\\,(r, l)$. Hence each process $p$ has such a run with $\\mathsf{erase}(r\\,0) = p$, and lock-free soundness also gives one for each typed $p$.",
+   "why": "The scheduler goes round robin over thread numbers and at each position takes a step of the targeted thread when that thread is enabled. Dependent choice picks the steps and excluded middle decides enabledness. Lock freedom still quantifies over each such run.",
    "breaks": "Nothing. It is a definition.",
    "example": "Two threads $\\ast$ and $\\ast$ start a maximal weakly fair run.",
    "signature": "\\mathsf{EM} \\land \\mathsf{DC} \\Rightarrow \\exists (r, l).\\ r\\,0 = q \\land \\mathsf{maximal}\\,(r, l) \\land \\mathsf{wfair}\\,(r, l)",
    "args": [
     {
      "name": "\\mathsf{EM}",
-     "meaning": "excluded middle, $P \\lor \\lnot P$ for every proposition $P$, a hypothesis and no axiom"
+     "meaning": "excluded middle, $P \\lor \\lnot P$ for each proposition $P$, a hypothesis and no axiom"
     },
     {
      "name": "\\mathsf{DC}",
-     "meaning": "dependent choice, a total relation on a type has an infinite chain from every element, a hypothesis and no axiom"
+     "meaning": "dependent choice, a total relation on a type has an infinite chain from each element, a hypothesis and no axiom"
     },
     {
      "name": "q",
@@ -18048,16 +18048,16 @@
    "meaning": "Assume excluded middle and dependent choice. If $p$ is lock free, $\\mathsf{erase}\\,q_0 = p$, $q_0 \\to^{*} q$ and thread $t$ is pending in $q$, then there are $q_1$ and a step $q_1 \\to q_2$ with event $ev$ such that $q \\to^{*} q_1$ and $t \\in \\mathsf{parts}(ev)$.",
    "why": "It is the reachability form of lock freedom, stated per thread. A maximal weakly fair run from $q$, prefixed with the steps from $q_0$, is a run from $p$, and lock freedom of that run makes $t$ take part in a later step.",
    "breaks": "Nothing. It is a definition.",
-   "example": "Every lock-free example.",
+   "example": "Each lock-free example.",
    "signature": "\\mathsf{EM} \\land \\mathsf{DC} \\land \\mathsf{lock\\_free}\\,p \\land \\mathsf{erase}\\,q_0 = p \\land q_0 \\to^{*} q \\land \\mathsf{pend}(q, t) \\Rightarrow \\exists q_1\\,ev\\,q_2.\\ q \\to^{*} q_1 \\xrightarrow{ev} q_2 \\land t \\in \\mathsf{parts}(ev)",
    "args": [
     {
      "name": "\\mathsf{EM}",
-     "meaning": "excluded middle, $P \\lor \\lnot P$ for every proposition $P$, a hypothesis and no axiom"
+     "meaning": "excluded middle, $P \\lor \\lnot P$ for each proposition $P$, a hypothesis and no axiom"
     },
     {
      "name": "\\mathsf{DC}",
-     "meaning": "dependent choice, a total relation on a type has an infinite chain from every element, a hypothesis and no axiom"
+     "meaning": "dependent choice, a total relation on a type has an infinite chain from each element, a hypothesis and no axiom"
     },
     {
      "name": "p",
@@ -18121,8 +18121,8 @@
   },
   "th.typed-dftyped": {
    "title": "Erasure to deadlock-free typing",
-   "meaning": "For every $N$, erasing the annotations of an annotated derivation gives a deadlock-free derivation.",
-   "why": "Hence every lock-free typing is also a deadlock-free typing.",
+   "meaning": "For each $N$, erasing the annotations of an annotated derivation gives a deadlock-free derivation.",
+   "why": "Hence each lock-free typing is also a deadlock-free typing.",
    "breaks": "Nothing. It is a definition.",
    "example": "The cycle at $N = 2$ erases to its deadlock-free typing.",
    "signature": "\\Gamma ; \\Delta \\vdash^{F}_{W\\inmode{lf}{,N}} e : T\\ !\\ \\varepsilon \\Rightarrow \\Gamma ; \\Delta_{df} \\vdash^{F}_{W} e : T_{df}",
@@ -18170,7 +18170,7 @@
   "th.fsem-of-cost": {
    "title": "Fuel from cost typing",
    "meaning": "If $\\varnothing ; \\Delta \\vdash^{\\varnothing}_{W\\inmode{lf}{,N}} e : T\\ !\\ c$, $\\mathsf{tfree}\\,T$ and $\\mathsf{cr}(\\Delta) \\leq N$, then $\\mathsf{fsem}\\,N\\,\\Delta\\inmode{lf}{^{N}}\\,e$.",
-   "why": "P-Term gives every end credit equal to its tickets, so the cost judgment yields the per-thread fuel that lock freedom needs.",
+   "why": "P-Term gives each end credit equal to its tickets, so the cost judgment yields the per-thread fuel that lock freedom needs.",
    "breaks": "If a closure could mention an end it does not own, the forwarder could receive a closure that owns nothing and would have no fuel after spawning the closure.",
    "example": "The forwarder $\\mathsf{fw}$.",
    "signature": "\\varnothing ; \\Delta \\vdash^{\\varnothing}_{W\\inmode{lf}{,N}} e : T\\ !\\ c \\land \\mathsf{tfree}\\,T \\land \\mathsf{cr}(\\Delta) \\leq N \\Rightarrow \\mathsf{fsem}\\,N\\,\\Delta\\inmode{lf}{^{N}}\\,e",
@@ -18191,8 +18191,8 @@
   },
   "th.crle": {
    "title": "$\\mathsf{cr}(\\Delta) \\leq N$",
-   "meaning": "Every credit in $\\Delta$ is at most the bound $N$, that is $a \\leq N$ for every entry $S_x\\inmode{lf}{^{a,m}}$ or $(T \\multimap U)\\inmode{lf}{^{a}}$ of $\\Delta$.",
-   "why": "A thread starts with every counter at its tickets, which are at most $N$, so its credits may guarantee no more than $N$.",
+   "meaning": "Each credit in $\\Delta$ is at most the bound $N$, that is $a \\leq N$ for each entry $S_x\\inmode{lf}{^{a,m}}$ or $(T \\multimap U)\\inmode{lf}{^{a}}$ of $\\Delta$.",
+   "why": "A thread starts with each counter at its tickets, which are at most $N$, so its credits may guarantee no more than $N$.",
    "breaks": "A credit above $N$ would allow more postponement than a fresh counter allows.",
    "example": "$\\mathsf{cr}(\\{o \\mapsto S_x\\inmode{lf}{^{2,3}}\\}) \\leq 4$.",
    "signature": "\\mathsf{cr} : \\mathsf{TEnv} \\to \\mathbb{N} \\cup \\{\\infty\\}",
@@ -18341,7 +18341,7 @@
   "th.soup": {
    "title": "The lock-free process relation $S^{N,R}_{\\alpha}$",
    "meaning": "$a \\in S^{N,R}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket$ holds of an annotated configuration $a$ when each thread of $a$ is in the relation at $\\kappa_L$ and has fuel at the ordinal index $\\alpha$. Ownership, points, counters and tickets are those that $a$ records.",
-   "why": "The lock-free judgment chooses $a$ at each index, and the existential property gives one $a$ for every index.",
+   "why": "The lock-free judgment chooses $a$ at each index, and the existential property gives one $a$ for each index.",
    "breaks": "Nothing. It is a definition.",
    "example": "The state of two threads closing $c^{+}$ and $c^{-}$.",
    "signature": "S^{N,R}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket \\subseteq \\mathsf{LFState}",
@@ -18511,7 +18511,7 @@
   "th.conn": {
    "title": "$\\mathsf{conn}$",
    "meaning": "The side conditions of P-Connect, with $\\Sigma_D$ the partners of $\\Sigma_C$ dual up to $\\approx$ at dual points.",
-   "why": "They make the composite a process in which every channel belongs to one side.",
+   "why": "They make the composite a process in which each channel belongs to one side.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Sigma_C = \\{c^{+} \\mapsto \\mathsf{Close}_x\\}$ and $\\Sigma_D = \\{c^{-} \\mapsto \\mathsf{Close}_{\\overline{x}}\\}$.",
    "signature": "\\mathsf{conn}\\,\\Sigma_1\\,\\Sigma_C\\,C_1\\,\\Sigma_2\\,\\Sigma_D\\,C_2",
@@ -18567,7 +18567,7 @@
   },
   "th.df": {
    "title": "Erasure $X_{df}$",
-   "meaning": "$\\Delta_{df}$ and $T_{df}$ drop every credit, ticket and cost and keep session types, points and facts.",
+   "meaning": "$\\Delta_{df}$ and $T_{df}$ drop each credit, ticket and cost and keep session types, points and facts.",
    "why": "Deadlock-free typing and the relations read no annotation.",
    "breaks": "Nothing. It is a definition.",
    "example": "$S_x^{3}$ erases to $S_x$.",
@@ -19070,7 +19070,7 @@
   "th.lf-tp-gen": {
    "title": "Thread progress from lock freedom",
    "meaning": "A lock-free process without internal divergence, whose links each restrict a channel, makes each thread progress on each maximal weakly fair run.",
-   "why": "It is the step from lock freedom to progress of every thread, pending or not. Lock-free adequacy establishes its three premises.",
+   "why": "It is the step from lock freedom to progress of each thread, pending or not. Lock-free adequacy establishes its three premises.",
    "breaks": "Nothing. It is a definition.",
    "example": "Each lock-free example.",
    "signature": "\\mathsf{lock\\_free}\\,p \\land \\mathsf{no\\_tau\\_divergence}\\,p \\land \\mathsf{links\\_restricted}\\,p \\Rightarrow \\ldots",
@@ -19282,7 +19282,7 @@
   },
   "th.lf-soup-term": {
    "title": "Semantic P-Term in the lock-free judgment",
-   "meaning": "A thread that meets the channel premises of P-Term at a finite $N$, is in the relation at $\\kappa_L$ and has fuel at every index is a process in the lock-free judgment at $R$.",
+   "meaning": "A thread that meets the channel premises of P-Term at a finite $N$, is in the relation at $\\kappa_L$ and has fuel at each index is a process in the lock-free judgment at $R$.",
    "why": "It is P-Term in the lock-free process relation, stated on the relation and fuel of the thread and not on its typing. A thread proved by hand composes with typed ones.",
    "breaks": "Nothing. It is a definition.",
    "example": "One thread closing its end $c^{+}$.",
@@ -19800,7 +19800,7 @@
    "title": "Two threads on one received flag",
    "lead": "Two threads that branch on one flag sent by a third thread are deadlock free. A proof that follows the reductions of the whole process in the [[p-rel|process relation]] shows it, and a proof that puts each thread into the [[e-rel|term relation]] on its own fails.",
    "code": "A = case z of inl _ ⇒ let ∗ = close a in close b\n             | inr _ ⇒ let ∗ = close b in close a\nB = case z of inl _ ⇒ let ∗ = close ā in close b̄\n             | inr _ ⇒ let ∗ = close b̄ in close ā\n-- a at x, b at y, both threads receive the same flag z",
-   "meaning": "Both threads get the same flag, so they close $a$ and $b$ in the same order in every run. A received flag is any value of $V$ at $\\ast \\oplus \\ast$, so each thread has to be in $E$ for both flags. With $\\mathsf{inl}$ thread A closes $a$ while it holds $b$ and asks $x \\prec \\overline{y}$. With $\\mathsf{inr}$ thread B closes $\\overline{b}$ while it holds $\\overline{a}$ and asks $\\overline{y} \\prec x$. The join of the two worlds then has a cycle, and P-Connect asks an acyclic join. One such thread alone fits in an acyclic world, the pair does not. The flag is sent on an internal channel, so the process relation of the closed process reads only its actual reductions, in which both threads take the same branch. Following them puts the process in $P$ directly.",
+   "meaning": "Both threads get the same flag, so they close $a$ and $b$ in the same order in each run. A received flag is any value of $V$ at $\\ast \\oplus \\ast$, so each thread has to be in $E$ for both flags. With $\\mathsf{inl}$ thread A closes $a$ while it holds $b$ and asks $x \\prec \\overline{y}$. With $\\mathsf{inr}$ thread B closes $\\overline{b}$ while it holds $\\overline{a}$ and asks $\\overline{y} \\prec x$. The join of the two worlds then has a cycle, and P-Connect asks an acyclic join. One such thread alone fits in an acyclic world, the pair does not. The flag is sent on an internal channel, so the process relation of the closed process reads only its actual reductions, in which both threads take the same branch. Following them puts the process in $P$ directly.",
    "source": [
     {
      "file": "examples/FlagPair.v",
@@ -19973,7 +19973,7 @@
   {
    "id": "ex-forkjoin",
    "title": "Recursive fork-join with replies",
-   "lead": "A worker that forks two copies of itself and waits for their replies is deadlock free at every depth, by [[r-new|E-New]] under $\\mathsf{acyc\\_new}$ over a world of [[w-wf]] that is acyclic and not well-founded.",
+   "lead": "A worker that forks two copies of itself and waits for their replies is deadlock free at each depth, by [[r-new|E-New]] under $\\mathsf{acyc\\_new}$ over a world of [[w-wf]] that is acyclic and not well-founded.",
    "code": "main = let ⟨w, w′⟩ = new in                      -- w at ρ, facts H at ρ̄\n       let ∗ = spawn (λu. (force wk) w′) in close w\nwk   = !(f = λw. let ⟨c₁, c₁′⟩ = new in let ⟨c₂, c₂′⟩ = new in   -- at ι·0 and ι·1\n             let ∗ = spawn (λu. (force f) c₁′) in\n             let ∗ = spawn (λu. (force f) c₂′) in\n             let ∗ = close c₁ in let ∗ = close c₂ in close w)    -- reply after both",
    "meaning": "Each worker holds its end at a point $\\iota$, creates the two child channels at the fields $\\iota\\cdot 0$ and $\\iota\\cdot 1$ and spawns itself on their dual ends. It closes $c_1$, then $c_2$, then $w$, so it needs $\\iota\\cdot 0 \\prec \\overline{\\iota\\cdot 1}$, $\\iota\\cdot 0 \\prec \\overline{\\iota}$ and $\\iota\\cdot 1 \\prec \\overline{\\iota}$. The box hypothesis states these facts at each depth of the tree, and the creation in main orders an infinite descending chain on the tree of $\\rho$, acyclic and not well-founded. At $N = \\infty$ [[r-new|E-New]] asks $\\mathsf{acyc\\_new}$, the program types, and it is deadlock free with no classical hypothesis. \\inmode{lf}{The program has no lock-free typing by this route. Each typing of $\\mathsf{close}\\,c$ followed by $\\mathsf{close}\\,w$, at each bound, asks the point of $c$ below the dual point of $w$ ([[th-terms|what two closes ask]]). The child holds $c$ at that dual point and forces the same box there, so the box hypothesis must descend one level in each round. At a finite bound E-New asks $\\mathsf{gen\\_new}$, whose order on the tree is well-founded, and no box admits the infinite descent. This last step is argued on paper and not mechanized.} One round of fork-join types as well. Padovani's factorial and Fibonacci processes type the same way, with unit messages because the language has no numbers.",
    "source": [

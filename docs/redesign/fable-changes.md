@@ -172,3 +172,16 @@ definition in `\sym`. The "Also in" chips of the page are going away.
   guard, aging, E-Send, E-Link, P-Term, P-Connect, composition, adequacy,
   soundness, the join of worlds, `gen_new`, contractivity).
 - `xref-missing` of the merged checker: 0.
+
+## Final pass (whole map)
+
+- "every" became "each" in 173 places of prose (the house rule counts every,
+  any and all; "each" states the same quantification). 44 hits remain, most
+  of them "all" and "any" inside definitions that quantify.
+- Ten long sentences split (section intro of semantic typing, `r-boxes`,
+  `r-act`, `p-typing`, `v-rel`, `e-rel`, `p-rel`, `th-terms`, `ct-costs`).
+- End types $S_x$, $\overline{S}_{\overline{x}}$, $S_\rho$ in the formulas of
+  `r-base`, `r-act`, `r-new`, `r-threads`, `r-fun`, `t-consts`, `p-typing`,
+  `e-obl`, `p-obls` and `v-rel` are hover targets (`\sym{ty.sess}`), 26 sites,
+  so a reader can click the type of an argument.
+- Checker merged from redesign (391f64b): `xref-missing` is 0.
