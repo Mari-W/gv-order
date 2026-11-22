@@ -1,8 +1,10 @@
 (** * Point substitution (stage S2)
 
-    [typed_pinst]: a derivation over Γ instantiates along σ to a
-    derivation over any Γ' that proves the instantiated hypotheses of Γ
-    ([hinst]). Terms mention no point and stay. Session types carry no
+    The lemmas on points, constraints, types and contexts that
+    [typed_pinst] (static/PointSubstTyped.v) uses: a derivation over Γ
+    instantiates along σ to a derivation over any Γ' that proves the
+    instantiated hypotheses of Γ ([hinst]). Terms mention no point and
+    stay. Session types carry no
     free point variable, so σ leaves them alone and commutes with
     unfolding and session substitution. A payload read at E-Send and
     E-Recv is point-closed below its binder ([pscoped]), so σ moves only

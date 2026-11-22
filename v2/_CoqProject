@@ -31,6 +31,7 @@ static/Constants.v
 static/Weakening.v
 static/PointSubst.v
 static/Inversion.v
+static/PointSubstTyped.v
 static/Sinst.v
 static/LetVar.v
 test/TypeNotations.v
@@ -98,6 +99,7 @@ static/Guard.v
 compat/LiveRules.v
 static/FundamentalProc.v
 static/ConnectN.v
+static/ConnectNExact.v
 examples/GuardEx.v
 examples/LFClose.v
 examples/LFTools.v
@@ -116,6 +118,7 @@ examples/Ring.v
 examples/GenNew.v
 examples/Copycat.v
 examples/CopycatTwo.v
+examples/CopycatTwoN.v
 examples/LetVarCounter.v
 examples/ForkJoin.v
 test/CompatNotations.v
