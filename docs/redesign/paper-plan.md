@@ -796,3 +796,8 @@ statement. "none" means no classical hypothesis.
   predecessor "(wf-new)".
 - Measured boxes (branch redesign-mbox) stay out, at most one sentence
   of future work.
+
+
+## Author's answers, 2026-11-22
+
+No paper writing for now, only the map. Subsumption stays in the paper as argued, marked as not mechanized. Porting the theories/ examples comes later. The six defaults are accepted: payload notation `!^{ƛσ}(T).S`, term variables from letters that never name points, harmony appendix cut, ordinal indices from the start, title kept, the map example renamed to three-thread ring (done on redesign).
