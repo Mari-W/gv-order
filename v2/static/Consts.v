@@ -846,8 +846,9 @@ Proof.
   - apply sub_box; [done|]. destruct k; [by apply teq_ren|].
     destruct H0 as [->|(He & H1 & H2)]; [by left|right]. rewrite !tcontr_ren. split_and!; [by apply teq_ren|done|done].
   - apply sub_sess; [by apply sequiv_ren|done].
-  - apply sub_ex; [|by rewrite <-hc_open_ren].
-    apply (hold_at_ren π) in H. by rewrite hc_open_ren, bcs_inst_pshift_ren, ids_ren in H.
+  - apply sub_ex; [| |by rewrite <-hc_open_ren].
+    + apply (hold_at_ren π) in H. by rewrite hc_open_ren, bcs_inst_pshift_ren, ids_ren in H.
+    + destruct H0 as [->|H0]; [by left|right]. exact (ex_wf_ren π W Γ lb' n C T H0).
 Qed.
 
 (** The constraint of a creation renames with its environment. Its facts
@@ -870,13 +871,18 @@ Proof.
   assert (∀ x y, cfact C x y → ctx_pt (bcs_ren (cb_f π) C) x = pt_ren (cb_f π) (ctx_pt C x) ∧
     ctx_pt (bcs_ren (cb_f π) C) y = pt_ren (cb_f π) (ctx_pt C y)) as Hp.
   { intros x y [_ [Hx Hy]]. split; by apply ctx_pt_ren. }
-  intros (Hwf & Hctx & Sr & H1 & H2 & H3). split_and!.
+  intros (Hwf & Hctx & Sr & H0 & H1 & H2 & H3). split_and!.
   - intros a. induction (Hwf a) as [a _ IH]. constructor. intros b Hb. by apply IH, Hn.
   - intros x y Hf Hx Hy. apply Hc in Hf. destruct (Hp _ _ Hf) as [-> ->]. by apply slt_ren, Hctx.
-  - exists (λ s t', ∃ t, Sr s t ∧ t' = pt_ren (cb_f π) t). split_and!.
-    + intros u y Hf Hu Hy. apply Hc in Hf. destruct (H1 u y Hf Hu Hy) as (t & HS & Hlt).
-      exists (pt_ren (cb_f π) t). split; [by exists t|]. destruct (Hp _ _ Hf) as [_ ->]. by apply slt_ren.
-    + intros s t' s' (t & HS & ->) Hst. apply Hn in Hst. destruct (H2 s t s' HS Hst) as (t2 & HS2 & Hlt).
-      exists (pt_ren (cb_f π) t2). split; [by exists t2|]. by apply slt_ren.
-    + intros s t' z (t & HS & ->) Hf Hz. apply Hc in Hf. destruct (Hp _ _ Hf) as [-> _]. by apply slt_ren, (H3 s).
+  - exists (λ s T', ∃ T, Sr s T ∧ T' = pt_ren (cb_f π) <$> T). split_and!.
+    + intros s T' (T & HS & ->). destruct T as [|t T]; [exfalso; by apply (H0 s [] HS)|simpl; congruence].
+    + intros u y Hf Hu Hy. apply Hc in Hf. destruct (H1 u y Hf Hu Hy) as (T & HS & Hlt).
+      exists (pt_ren (cb_f π) <$> T). split; [by exists T|]. destruct (Hp _ _ Hf) as [_ ->].
+      intros t' Ht'. apply list_elem_of_fmap in Ht' as (t & -> & Ht). by apply slt_ren, Hlt.
+    + intros s T' s' (T & HS & ->) Hst. apply Hn in Hst. destruct (H2 s T s' HS Hst) as (T2 & HS2 & Hlt).
+      exists (pt_ren (cb_f π) <$> T2). split; [by exists T2|].
+      intros t2' Ht2'. apply list_elem_of_fmap in Ht2' as (t2 & -> & Ht2). destruct (Hlt t2 Ht2) as (t & Ht & Hl).
+      exists (pt_ren (cb_f π) t). split; [by apply list_elem_of_fmap_2|by apply slt_ren].
+    + intros s T' z (T & HS & ->) Hf Hz. apply Hc in Hf. destruct (H3 s T z HS Hf Hz) as (t & Ht & Hl).
+      destruct (Hp _ _ Hf) as [-> _]. exists (pt_ren (cb_f π) t). split; [by apply list_elem_of_fmap_2|by apply slt_ren].
 Qed.
