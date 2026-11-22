@@ -320,6 +320,8 @@ goes. Weakening in the future (`ready_t_future`) is unchanged.
 
 **Status (fx-contr).** Not done, the branch has no commit. `ty` and `sty` are one mutual inductive, so a guarded body `SMu {b | ugv 0 b = false}` needs the fixpoint `ugv` inside the definition of `sty`, and Rocq has neither induction-recursion nor induction-induction. A subset type of contractive session types at `TSess` or at a payload fails for the same reason. The grammar that works puts an action prefix on µ, as µα. ?T;S, µα. !T;S, µα. ⊕(S1, S2);S and µα. &(S1, S2);S, four constructors in place of `SMu`. It changes the 11 fixpoints on `sty` (among them `sren`, `sflip`, `dual`, `sinst`, `unroll`, `unrN`, `sty_ren`, `sty_df`), the 41 mutual inductions on `ty` and `sty` in 10 files, and types/Contractive.v, types/Duality.v and static/Sinst.v, which are built on the present `SMu`. Contractiveness appears 381 times in 32 files. That is the stop condition of the brief. A cheaper change, reading an unguarded µ as a stuck head in `unfoldS`, alters what unfolding computes and is a separate decision.
 
+**Decision (author, 2026-11-23).** Rewrite the grammar with the action-prefixed µ, later. The stuck-head route is out. Nothing is scheduled.
+
 **Current.** `tcontr T` at `e_abs` (static/Typing.v:68), `tcontr (TSum T U)`
 at `e_inj` (101), `tcontr U` at `e_box` (113), `scontr S` at `e_new` (161) and
 `e_new_fld` (166), `(tcontr T → tcontr T')` at `e_sub` (170), `scontr` of
