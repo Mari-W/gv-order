@@ -16,7 +16,7 @@
       end, of credit at most m₂', where the parameter asks the credit of
       the linked end, at least a. *)
 
-From GV Require Export static.Skeleton examples.Tools.
+From GV Require Export static.Skeleton examples.Tools static.FundamentalProc examples.GuardEx.
 
 Lemma skle_prod_inv A B C D : skle (TProd A B) (TProd C D) → skle A C ∧ skle B D.
 Proof. by inversion 1. Qed.
@@ -517,4 +517,32 @@ Corollary rx_delegate_proc_rejected n W T : ¬ fptyped (Some n) W ∅ (∅, {[+ 
 Proof.
   intros H. apply fptyped_one in H as (ΘB & c & _ & _ & _ & _ & _ & _ & H & _).
   exact (rx_delegate_rejected _ _ _ _ _ _ _ _ H).
+Qed.
+
+(** ** spawn_loop
+
+    !(f = λc. spawn (λ_. (force f) c)) spawns the forced self before any
+    action. The lock-free judgment Σ ⊩^N_W p : T (soup/LFTyped.v) is
+    process typing at the finite bound N together with the guard of every
+    thread, and the guard rejects the box under any marks. A thread that
+    forces it is therefore never lock-free typed. *)
+
+Local Ltac ginv_all :=
+  repeat match goal with
+  | H : lguard _ _ |- _ => inversion H; subst; clear H
+  | H : kmarks _ _ _ |- _ => destruct H as [->|[-> ?]]
+  | H : acts _ |- _ => inversion H; subst; clear H
+  | H : sprim _ |- _ => simpl in H; done
+  end.
+
+Lemma spawn_loop_unguarded L : ¬ L ⊢▷ spawn_loop.
+Proof. intros H. unfold spawn_loop in H. ginv_all; done. Qed.
+
+Theorem spawn_loop_lf_rejected N W Σ C e T :
+  ¬ (fptyped (Some N) W Σ (C, {[+ App (EForce spawn_loop) e +]}) T ∧
+     ⊢▷ (C, {[+ App (EForce spawn_loop) e +]})).
+Proof.
+  intros [_ Hg]. specialize (Hg (App (EForce spawn_loop) e) ltac:(simpl; multiset_solver)).
+  inversion Hg; subst. match goal with H : lguard _ (EForce _) |- _ => inversion H; subst end.
+  by eapply spawn_loop_unguarded.
 Qed.

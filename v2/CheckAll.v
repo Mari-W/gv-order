@@ -17,6 +17,7 @@ From GV Require Import examples.SinstStuck static.Sinst examples.SharedRoots sta
 From GV Require Import soup.LFConnectN examples.Ring.
 From GV Require Import examples.Copycat examples.ForkJoin.
 From GV Require Import static.ChanRen examples.CopycatTwo static.LetVar examples.LetVarCounter.
+From GV Require Import static.Skeleton examples.Rejects.
 
 (** types/Points.v *)
 Print Assumptions pt_dual_dual.
@@ -309,3 +310,24 @@ Print Assumptions fct_deadlock_free.
 Print Assumptions fb_acyc.
 Print Assumptions fib_dftyped.
 Print Assumptions fib_deadlock_free.
+(** static/Inversion.v, the rules of boxes, closures, spawn, link and new *)
+Print Assumptions inv_abs.
+Print Assumptions inv_app.
+Print Assumptions inv_spawn.
+Print Assumptions inv_link.
+Print Assumptions inv_force.
+Print Assumptions inv_box.
+Print Assumptions inv_new.
+(** static/Skeleton.v *)
+Print Assumptions typed_skel.
+Print Assumptions sk_occ.
+(** examples/Rejects.v *)
+Print Assumptions rl_refresh_untyped.
+Print Assumptions rx_relink_rejected.
+Print Assumptions rx_relink_box_rejected.
+Print Assumptions rx_relink_proc_rejected.
+Print Assumptions rx_postpone_rejected.
+Print Assumptions rx_postpone_proc_rejected.
+Print Assumptions rx_delegate_rejected.
+Print Assumptions rx_delegate_proc_rejected.
+Print Assumptions spawn_loop_lf_rejected.
