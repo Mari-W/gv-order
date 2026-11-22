@@ -193,3 +193,81 @@ Proof.
   apply elem_of_union in Ho as [Ho|Ho]; apply elem_of_singleton in Ho as ->;
     rewrite elem_of_union, !elem_of_singleton; intros [H|H]; discriminate.
 Qed.
+
+(** ** The composite in the hidden judgment
+
+    Each thread hides its world to the constants of its interface, the
+    constant 0 of ρ, and P-Connect compares the two interface worlds.
+    Their join lies inside W_cli ⊔ W_srv, which is well-founded, so the
+    split program types with hiding ([cs_split_typed]) and is lock free
+    by the soundness of the hidden judgment ([cs_split_lock_free_h]). *)
+
+Lemma pfree_two (o1 o2 : cend) v1 v2 :
+  (o1‾)%cend ≠ o1 → (o1‾)%cend ≠ o2 → (o2‾)%cend ≠ o1 → (o2‾)%cend ≠ o2 → pfree (<[o1 := v1]> {[o2 := v2]}).
+Proof.
+  intros H1 H2 H3 H4 o Ho Hd. rewrite dom_insert_L, dom_singleton_L in Ho, Hd.
+  apply elem_of_union in Ho as [Ho|Ho]; apply elem_of_singleton in Ho as ->;
+    apply elem_of_union in Hd as [Hd|Hd]; apply elem_of_singleton in Hd; auto.
+Qed.
+
+Lemma cli_hterm : ptyped (Some 6) (swrestrict W_cli (iface ΣC TUnit)) ΣC (∅, {[+ t_cli +]}) TUnit.
+Proof.
+  destruct (side_typed true cli Sa Sb oa ob ρ (ρ·0) ltac:(done) cli_box eq_refl eq_refl) as [c Hc].
+  apply (p_term (Some 6) W_cli ΣC ∅ ∅ t_cli TUnit c).
+  - constructor.
+  - intros o. rewrite dom_empty_L. set_solver.
+  - set_solver.
+  - apply pfree_two; done.
+  - set_solver.
+  - assert (tenv_of (fhalf (Some 6)) ΣC ∪ ∅ =
+            <[oa := TE Sa ρ (Some 3) (Some 3)]> {[ob := TE Sb (ρ·0) (Some 3) (Some 3)]}) as ->.
+    { unfold tenv_of, ΣC. by rewrite map_union_empty, fmap_insert, map_fmap_singleton. }
+    exact Hc.
+  - split; [apply W_side_wf|apply W_cs_parts].
+Qed.
+
+Lemma srv_hterm :
+  ptyped (Some 6) (swrestrict W_srv (iface (senv_dual ΣC) TUnit)) (senv_dual ΣC) (∅, {[+ t_srv +]}) TUnit.
+Proof.
+  destruct (side_typed false srv Sb Sa (edual oa) (edual ob) ρ‾ (ρ·0)‾ ltac:(done) srv_box eq_refl eq_refl)
+    as [c Hc].
+  apply (p_term (Some 6) W_srv (senv_dual ΣC) ∅ ∅ t_srv TUnit c).
+  - constructor.
+  - intros o. rewrite dom_empty_L. set_solver.
+  - set_solver.
+  - rewrite senv_dual_ΣC. apply pfree_two; done.
+  - set_solver.
+  - assert (tenv_of (fhalf (Some 6)) (senv_dual ΣC) ∪ ∅ =
+            <[edual oa := TE Sb ρ‾ (Some 3) (Some 3)]> {[edual ob := TE Sa (ρ·0)‾ (Some 3) (Some 3)]}) as ->.
+    { rewrite senv_dual_ΣC. unfold tenv_of. by rewrite map_union_empty, fmap_insert, map_fmap_singleton. }
+    exact Hc.
+  - split; [apply W_side_wf|apply W_cs_parts].
+Qed.
+
+Theorem cs_split_typed : ∃ W, ptyped (Some 6) W ∅ (∅ ∪ ∅ ∪ chans_of ΣC, {[+ t_cli +]} ⊎ {[+ t_srv +]}) TUnit.
+Proof.
+  eexists. apply p_connect.
+  - rewrite (left_id_L ∅ (∪)). exact cli_hterm.
+  - rewrite (left_id_L ∅ (∪)). exact srv_hterm.
+  - apply map_disjoint_empty_l.
+  - apply map_disjoint_empty_l.
+  - intros o Ho. unfold ΣC in *. rewrite dom_insert_L, dom_singleton_L in *.
+    apply elem_of_union in Ho as [Ho|Ho]; apply elem_of_singleton in Ho as ->;
+      rewrite elem_of_union, !elem_of_singleton; intros [H|H]; discriminate.
+  - set_solver.
+  - unfold chans_of. rewrite dom_empty_L. set_solver.
+  - unfold chans_of. rewrite dom_empty_L. set_solver.
+  - set_solver.
+  - set_solver.
+  - set_solver.
+  - apply (swf_sub _ (W_cli ⊔ W_srv)); [|exact W_cs_join_wf]. intros x y. apply join_sub; intros u v; apply swrestrict_lt.
+Qed.
+
+Theorem cs_split_lock_free_h : excluded_middle → functional_choice →
+  lock_free (∅ ∪ ∅ ∪ chans_of ΣC, {[+ t_cli +]} ⊎ {[+ t_srv +]}).
+Proof.
+  intros EM FC. destruct cs_split_typed as [W H]. apply (lf_soundness_h 6 W _ TUnit EM FC H).
+  intros t Ht. apply gmultiset_elem_of_disj_union in Ht as [Ht|Ht]; apply gmultiset_elem_of_singleton in Ht as ->.
+  - unfold t_cli, cli. guard_tac.
+  - unfold t_srv, srv. guard_tac.
+Qed.
