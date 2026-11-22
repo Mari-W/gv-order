@@ -56,6 +56,8 @@ paper/old/*.pdf
 # Working documents and local editor helpers. Kept in the tree, out of the repo.
 /docs/system/
 /docs/examples/
-/tools/
+/tools/*
+!/tools/proof-map/
+/tools/proof-map/.shots/
 
 __pycache__/

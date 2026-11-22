@@ -1,0 +1,268 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "proof-map/1",
+  "title": "Proof map",
+  "description": "An interactive map of a formal development. FORMAT.md explains every field and the TeX and prose markup.",
+  "type": "object",
+  "required": ["format", "title", "sections", "notes"],
+  "additionalProperties": false,
+  "patternProperties": { "^x-": {} },
+  "properties": {
+    "$schema": { "type": "string" },
+    "format": { "const": "proof-map/1" },
+    "title": { "type": "string", "minLength": 1 },
+    "subtitle": { "type": "string" },
+    "source": {
+      "description": "Where the proof code lives. root is relative to the directory of the map file.",
+      "type": "object",
+      "required": ["root"],
+      "additionalProperties": false,
+      "properties": {
+        "root": { "type": "string" },
+        "language": { "enum": ["rocq"], "default": "rocq" },
+        "revision": { "type": "string", "description": "The commit of the proof code the map was last checked against." }
+      }
+    },
+    "tex": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "macros": {
+          "description": "MathJax macros: a body, or [body, number of arguments].",
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "prefixItems": [{ "type": "string" }, { "type": "integer", "minimum": 0, "maximum": 9 }], "items": false, "minItems": 2 }
+            ]
+          }
+        }
+      }
+    },
+    "syntax": {
+      "description": "Highlighting of example code.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "keywords": { "type": "array", "items": { "type": "string" } },
+        "comment": { "type": "array", "items": { "type": "string" }, "description": "Comment delimiters: a line prefix such as \"--\", or an opening and closing pair written \"(* *)\"." }
+      }
+    },
+    "modes": { "$ref": "#/$defs/modes" },
+    "deviationRules": {
+      "description": "Deviations declared once for many items. The page lists them with the conventions, the checker accepts the items they cover.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "reason", "appliesTo"],
+        "additionalProperties": false,
+        "properties": {
+          "kind": { "enum": ["notation", "renamed", "simplified", "omitted"] },
+          "reason": { "type": "string", "minLength": 1 },
+          "appliesTo": {
+            "description": "constructors: notes whose cited names include a constructor of an inductive type. keys: notes whose key matches one of the patterns, with * as a wildcard.",
+            "oneOf": [
+              { "const": "constructors" },
+              { "type": "object", "required": ["keys"], "additionalProperties": false, "properties": { "keys": { "type": "array", "minItems": 1, "items": { "type": "string" } } } }
+            ]
+          }
+        }
+      }
+    },
+    "conventions": {
+      "description": "Symbols fixed for the whole map, introduced before the first section.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["symbol", "meaning"],
+        "additionalProperties": false,
+        "properties": { "symbol": { "type": "string", "description": "TeX" }, "meaning": { "$ref": "#/$defs/prose" } }
+      }
+    },
+    "sections": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/section" } },
+    "notes": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/key" },
+      "additionalProperties": { "$ref": "#/$defs/note" }
+    },
+    "examples": { "type": "array", "items": { "$ref": "#/$defs/example" } },
+    "extensions": {
+      "description": "Code of a private skill: page scripts and checker modules, relative to the map file.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "page": { "type": "array", "items": { "type": "string" } },
+        "check": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_\\-]*$" },
+    "key": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.\\-]*$" },
+    "tex": { "type": "string", "description": "TeX with \\sym{key}{...}, \\inmode{modes}{...}, \\inmodeplain{modes}{...} and \\planned{...}." },
+    "prose": { "type": "string", "description": "Text with $math$, `code`, [[block-id]] or [[block-id|label]] links and \\inmode{modes}{...}." },
+    "modeList": { "type": "array", "items": { "$ref": "#/$defs/id" }, "minItems": 1, "uniqueItems": true },
+    "modes": {
+      "description": "Views of the same map. A block, a note argument, an example or a part of a formula may belong to some modes only.",
+      "type": "object",
+      "required": ["default", "options"],
+      "additionalProperties": false,
+      "properties": {
+        "label": { "type": "string", "description": "What the switch chooses, for screen readers." },
+        "default": { "$ref": "#/$defs/id" },
+        "options": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "required": ["id", "label"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "$ref": "#/$defs/id" },
+              "label": { "type": "string" },
+              "short": { "type": "string", "maxLength": 4 },
+              "description": { "$ref": "#/$defs/prose" },
+              "color": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": { "light": { "type": "string" }, "dark": { "type": "string" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "deviation": {
+      "description": "A place where the display differs from the proof code, or shows something not yet in it. The reason is mandatory and the page shows it.",
+      "type": "object",
+      "required": ["kind", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["notation", "merged", "renamed", "simplified", "omitted", "planned", "unsourced", "other"] },
+        "reason": { "type": "string", "minLength": 1, "description": "Why the display is faithful to the code, or why it is planned. The converter writes REASON MISSING, which the checker rejects." },
+        "part": { "$ref": "#/$defs/tex", "description": "The part of the formula the deviation concerns, when it is not the whole item." },
+        "names": { "type": "array", "items": { "type": "string" }, "description": "The Rocq names the deviation concerns, for renamed and omitted." },
+        "modes": { "$ref": "#/$defs/modeList" }
+      }
+    },
+    "sourceRef": {
+      "type": "object",
+      "required": ["file", "names"],
+      "additionalProperties": false,
+      "properties": {
+        "file": { "type": "string", "description": "Path of a .v file relative to source.root." },
+        "names": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "qualifier": { "type": "string", "description": "Which part of the names is meant, such as one case of a fixpoint." },
+        "reviewed": {
+          "description": "Statement fingerprints at the last human review, written by check.js --stamp.",
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "section": {
+      "type": "object",
+      "required": ["id", "title", "blocks"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-": {} },
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "title": { "type": "string" },
+        "intro": { "$ref": "#/$defs/prose" },
+        "blocks": { "type": "array", "items": { "$ref": "#/$defs/block" } }
+      }
+    },
+    "block": {
+      "type": "object",
+      "required": ["id", "title", "source"],
+      "anyOf": [{ "required": ["formula"] }, { "required": ["table"] }],
+      "additionalProperties": false,
+      "patternProperties": { "^x-": {} },
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "title": { "type": "string" },
+        "formula": { "$ref": "#/$defs/tex" },
+        "table": {
+          "description": "Rows of a label, a formula and a sentence, for overview blocks. The words stay out of the formula.",
+          "type": "object",
+          "required": ["rows"],
+          "additionalProperties": false,
+          "properties": {
+            "rows": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["formula"],
+                "additionalProperties": false,
+                "properties": {
+                  "label": { "type": "string", "description": "A word naming the group the row starts." },
+                  "labelKey": { "$ref": "#/$defs/key", "description": "The note behind the label." },
+                  "formula": { "$ref": "#/$defs/tex" },
+                  "text": { "$ref": "#/$defs/prose" }
+                }
+              }
+            }
+          }
+        },
+        "variants": {
+          "description": "A whole formula for one mode, replacing formula in that mode.",
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/id" },
+          "additionalProperties": { "$ref": "#/$defs/tex" }
+        },
+        "caption": { "$ref": "#/$defs/prose" },
+        "why": { "$ref": "#/$defs/prose" },
+        "breaks": { "$ref": "#/$defs/prose" },
+        "example": { "$ref": "#/$defs/prose" },
+        "modes": { "$ref": "#/$defs/modeList" },
+        "source": { "type": "array", "items": { "$ref": "#/$defs/sourceRef" } },
+        "usedIn": { "type": "array", "items": { "$ref": "#/$defs/id" } },
+        "introduces": { "type": "array", "items": { "type": "string" }, "description": "Metavariables this block introduces, in TeX, such as e or \\Gamma." },
+        "deviations": { "type": "array", "items": { "$ref": "#/$defs/deviation" } }
+      }
+    },
+    "note": {
+      "type": "object",
+      "required": ["title"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-": {} },
+      "properties": {
+        "title": { "type": "string" },
+        "meaning": { "$ref": "#/$defs/prose" },
+        "why": { "$ref": "#/$defs/prose" },
+        "breaks": { "$ref": "#/$defs/prose" },
+        "example": { "$ref": "#/$defs/prose" },
+        "signature": { "$ref": "#/$defs/tex" },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "meaning"],
+            "additionalProperties": false,
+            "properties": { "name": { "$ref": "#/$defs/tex" }, "meaning": { "$ref": "#/$defs/prose" }, "modes": { "$ref": "#/$defs/modeList" } }
+          }
+        },
+        "source": { "type": "array", "items": { "$ref": "#/$defs/sourceRef" } },
+        "usedIn": { "type": "array", "items": { "$ref": "#/$defs/id" } },
+        "deviations": { "type": "array", "items": { "$ref": "#/$defs/deviation" } }
+      }
+    },
+    "example": {
+      "type": "object",
+      "required": ["id", "title"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-": {} },
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "title": { "type": "string" },
+        "lead": { "$ref": "#/$defs/prose" },
+        "code": { "type": "string" },
+        "meaning": { "$ref": "#/$defs/prose" },
+        "modes": { "$ref": "#/$defs/modeList" },
+        "source": { "type": "array", "items": { "$ref": "#/$defs/sourceRef" } },
+        "deviations": { "type": "array", "items": { "$ref": "#/$defs/deviation" } }
+      }
+    }
+  }
+}
