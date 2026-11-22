@@ -206,6 +206,50 @@ reason, and the Rocq name it was checked against. Sections follow page order.
 
 ## Semantic typing
 
+- Whole section, notation. Old: the relation, its notes and signatures wrote
+  the world of the relation as $W$, $W'$, $W_1$, the same letter as the static
+  world. New: $R$, $R'$, $R_1$, as in the types section. The static world $W$
+  stays only where a judgment is read at a static world (`sp-lf`, `sp.allR`).
+  The rest denotation $\mathsf{den}_{R,B}$ became $\mathsf{den}_{Y,Z}$ to free
+  $R$. The order inside the relation hovers to `w.rlt`, not to the static
+  order `w.lt`. Why: rigour (one letter, one meaning) and the Rocq change that
+  splits static worlds from worlds of the relation.
+- `e-rel` (`e-body`). Old: $\forall e.\ e \in E_0$ and the clauses only at
+  $\alpha > 0$. New: the clauses at every index. Note `E.zero` deleted. Why:
+  faithfulness, `Etop n = Eind n`, and a term at index $0$ still meets its
+  stop and ready clauses and its free steps ("A level with nothing below it
+  obliges no step of positive cost"). The old note also cited the missing
+  `Erel_0`. Checked against `Ebody`, `Eind`, `Etop`, `at_cost_E`.
+- `p-rel` (`p-body`). Old: $p \in P_{n+1}$ with a finite level. New: row
+  $\forall p.\ p \in P^{R}_0$ and the clauses at $\alpha > 0$, new note
+  `P.zero`. Caption says so. Checked against `Ptop`, `Pind`, `Pbody`.
+- `fu` (`fu-def`). Old: $\forall e.\ e \in F^N_0$ and clauses at $\alpha >
+  0$. New: clauses at every index, note `fu.zero` deleted (it cited the
+  missing `mk_flevel`). Checked against `FLevA`, `mk_flarg`, `Fdef`.
+- `sj-all` (`sp-lf`). Old: $\Sigma \Vvdash_W p : T \iff \exists N \in
+  \mathbb{N}.\ \forall R \vDash W.\ \forall \alpha.\ \exists a.\ \ldots$. New:
+  $\Sigma \Vvdash^{N}_W p : T \iff \forall R \vDash W.\ \mathsf{ranked}\,R
+  \Rightarrow \forall \alpha.\ \exists a.\ \ldots$, the bound a parameter.
+  Caption adds that the deadlock-free judgment at a static world reads strict
+  models. Notes `sp.lfsem`, `sp.allR`, `sp.exists-before-forall` follow.
+  Checked against `lf_sems`, `lf_sem`, `sem_ptyped_sw`.
+- O-New notes `O-New`, `O-New.grow`. Old: the creation ranks each new tree,
+  and "$R'$ keeps every rank". New: in a strict world the creation adds the
+  facts of $C$ and closes transitively, in a ranked world it ranks the tree.
+  Cites `Erel_new_acyc`, `Erel_new_any`. Notes `P.strict`, `P.clauses`,
+  `rd.above-offered` drop "ranked" where the world is of either kind.
+- Citations that said "not yet in the Rocq" now name the Rocq: `fu.step`
+  (`Fdef`, `Fobl`), `F-New` and `F-New.cnew` (`f_new`, `cnew`), `fu.fsem`
+  (`fsem`), `sp.exists-before-forall` (`exist_prop`, `lf_sem`), `sp.next`
+  (`lf_next`, `own_next`, `world_next`), `sr.FE` (`FuelE`, `FLevA`),
+  `rel.atcost` (`oadd`). Missing names fixed: `FLev` (now `FLevA`), `lb_le`
+  (now `lbx_le`).
+- Captions `sr-reading`, `v-rel`, `e-obl`, `rd`, `p-rel`, `sj-all`, `fu-vs`,
+  `fu`, `fu-obls` introduce $V$, $\Theta$, $w$, $\pi$, $O$, $h$, $\gamma$,
+  $G$, $Y$, $Z$, $\Phi$, $d$, $g$. `sr-reading` says that the deadlock-free
+  relation reads strict worlds and the lock-free threads ranked ones. Why:
+  checker (var-before-intro) and the Rocq change on worlds.
+
 ## Theorems
 
 ## Examples
