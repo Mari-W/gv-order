@@ -96,3 +96,39 @@ definition in `\sym`. The "Also in" chips of the page are going away.
   shown there; it is now plain. New example of two acyclic worlds with a cyclic
   join. Note `w.restrict` declares $\mathsf{root}$ as `croot_in`.
 - Notes `ty.*`, `sty.*`, `ann.*`, `w.*`: "every" to "each" where rhetorical.
+
+## Typing
+
+- Section intro states the one idea of the system (a thread that waits at $x$
+  while it holds an end whose partner acts at $y$ needs $x \prec y$).
+- `t-judgment`: caption links contexts, types, active points, aging; `why`
+  says what the future replaces (a global order on actions).
+- `t-contexts`: **the end type in $\Delta$ was shown as $S_x^{a}$ while the
+  Rocq `tentry` has a credit and tickets.** It now reads $S_x^{a,m}$, as in
+  the counters block, and E-Chan likewise. New example of a derived fact.
+- `t-side`: links to the four rule blocks that use the checks.
+- `t-lf-counters`: caption links annotations, aging, actions, link, closures,
+  spawn, creation, fuel values and the lock-free process relation. `why` now
+  says why one number cannot do both jobs.
+- `t-lf-wf`, `t-agecap`: links; `t-agecap.why` says why idle ends truncate.
+- **The guard appeared twice** (a summary table `t-lf-guard` and the rules
+  `g-guard`). The table block is gone. The rules block now sits where the table
+  was, after the counters, with the summary folded into its caption and the
+  `usedIn` lists merged.
+- `r-base`, `r-fun`, `r-data`, `r-boxes`, `r-ex`, `t-consts`, `r-act`,
+  `r-threads`, `r-new`, `t-subs`, `p-typing`: inline links to the definitions
+  each rule reads (side conditions, active points, session types, payloads,
+  moves, duality, kinds, the judgment, the constants, the value relation, the
+  obligations, readiness, composition). New examples for E-Abs (a closure type
+  and the caller it rejects) and P-Term/P-Connect (the two-thread close).
+- `r-act`: **in the deadlock-free view the premise that the sent value is a
+  subtype of the payload type was invisible**, because the whole premise
+  $T' - 1 \leq T[x\cdot i]$ was lock-free coloured. It now reads
+  $T' \leq T[x\cdot i]$ in the deadlock-free view and $T' - 1 \leq T[x\cdot i]$
+  in the lock-free view. Note `E-Send.floor` rewritten accordingly.
+- `r-new.why` answers three "why not simpler" questions: why not one rule
+  with a position, why fields at all, why hide the root. `r-ex.why` says what
+  hiding buys. `p-typing.why` says what hiding buys for composition.
+- `t-subs.why` says the one reason subtyping exists.
+- 21 nested `\inmode{lf}{\inmode{lf}{…}}` collapsed to one level (no change
+  in either view).
