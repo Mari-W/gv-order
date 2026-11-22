@@ -14,6 +14,7 @@ From GV Require Import examples.LFController soup.SoupRun soup.SoupTau soup.LFAd
 From GV Require Import soup.LFCompose soup.LFTyped lockfree.FairRun.
 From GV Require Import examples.SemBranch static.Inversion relation.Ord relation.ExProp relation.Ranks examples.LFLink compat.Redex static.PointSubst.
 From GV Require Import examples.SinstStuck static.Sinst examples.SharedRoots static.Hiding.
+From GV Require Import soup.LFConnectN examples.Ring.
 
 (** types/Points.v *)
 Print Assumptions pt_dual_dual.
@@ -219,3 +220,16 @@ Print Assumptions shared_hidden.
 Print Assumptions opposite_clash.
 Print Assumptions opposite_compose.
 Print Assumptions opposite_df.
+(** static/ConnectN.v, soup/LFConnectN.v: the n-ary P-Connect, admissible from the binary one *)
+Print Assumptions p_connect_n.
+Print Assumptions connect_n_soundness.
+Print Assumptions connect_n_live_soundness.
+Print Assumptions connect_n_lf_soundness.
+(** examples/Ring.v: Milner's ring, pairwise consistent and cyclic, rejected; the acyclic ring typed *)
+Print Assumptions ring_comps.
+Print Assumptions ring_pairs.
+Print Assumptions ring_cyclic.
+Print Assumptions ring_rejected.
+Print Assumptions ring_rejected_full.
+Print Assumptions ring_typed.
+Print Assumptions ring_df.
