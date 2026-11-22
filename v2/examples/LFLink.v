@@ -42,12 +42,12 @@ Section link.
         {[ld := TE (dual S) x‾ (Some N) (Some N)]} hc_empty [] [] [] [] _ _ _ _ _ _ (Some 0) (Some 0)).
       + split; [exact lk_disj|done].
       + constructor.
-      + apply e_chan, spare_unl. intros y o Hy. by rewrite lookup_nil in Hy.
+      + apply e_chan; [apply spare_unl; intros y o Hy; by rewrite lookup_nil in Hy|solve [done|apply fle_refl|cbn; lia]].
       + intros o. destruct (decide (o = ld)) as [->|Hne].
-        * rewrite lookup_singleton_eq. simpl. split_and!; [done|done|done|lia|f_equal; lia].
+        * rewrite lookup_singleton_eq. simpl. split_and!; [done|done|done|lia|f_equal; lia|lia].
         * by rewrite lookup_singleton_ne.
       + constructor.
-      + apply e_chan, spare_unl. intros y o Hy. by rewrite lookup_nil in Hy.
+      + apply e_chan; [apply spare_unl; intros y o Hy; by rewrite lookup_nil in Hy|solve [done|apply fle_refl|cbn; lia]].
       + apply age_sess. simpl. lia.
     - simpl. lia.
     - simpl. lia.

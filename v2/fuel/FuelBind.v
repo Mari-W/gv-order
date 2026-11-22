@@ -232,11 +232,10 @@ Section obl_bind.
       unfold pnew, cnew in *. rewrite !insert_union_l. apply HC; [| |by intros []|exact (HS j Hj)].
       + rewrite !dom_insert_L. set_solver.
       + rewrite !dom_insert_L. set_solver.
-    - intros (HM & Hs & Hch & Hpar). assert (HMK : fends v ## dom φK) by set_solver.
+    - intros (HM & Hch & Hpar). assert (HMK : fends v ## dom φK) by set_solver.
       split_and!.
       + rewrite dom_union_L. set_solver.
-      + by apply fspare_bind.
-      + unfold fhand. rewrite mres_union_l, (mres_union_l _ φ1) by (rewrite ?HdΠK; done). exact Hch.
+      + rewrite mres_union_l, (mres_union_l _ φ1) by (rewrite ?HdΠK; done). exact Hch.
       + rewrite mrem_union_l, (mrem_union_l _ φ1) by (rewrite ?HdΠK; done).
         intros j Hj. apply (Hcont (LSpawn v) j); [done| | |by intros []|exact (Hpar j Hj)].
         * by rewrite !dom_mrem, HdΠ1.

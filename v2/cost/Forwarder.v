@@ -51,9 +51,10 @@ Lemma tenv_heads_nil : tenv_heads ∅ = ∅.
 Proof. apply set_eq. intros y. rewrite elem_of_tenv_heads. setoid_rewrite lookup_empty. set_solver. Qed.
 
 Lemma fw_typed N o x a m :
+  fle a m →
   typed W_fw N {[o := TE S_fw x a m]} hc_empty [] (∅, None) (fw o) TUnit fw_cost.
 Proof.
-  unfold fw, fw_cost.
+  intros Ham. unfold fw, fw_cost.
   eapply (e_letp W_fw N {[o := TE S_fw x a m]} {[o := TE S_fw x a m]} ∅ ∅ hc_empty [] [] [] [] (∅, None)
             _ _ T_thk _ _).
   - split; [apply map_disjoint_empty_r|by rewrite map_union_empty].
@@ -62,7 +63,7 @@ Proof.
     + reflexivity.
     + simpl. split_and!; done.
     + simpl. rewrite tenv_heads_nil. split_and!; [set_solver|done].
-    + apply e_chan. intros ? Hin. inversion Hin.
+    + apply e_chan; [intros ? Hin; inversion Hin|exact Ham].
   - intros o'. by rewrite lookup_empty.
   - constructor.
   - eapply (e_letu W_fw N ∅ ∅ ∅ ∅ hc_empty _ _ _ _ (∅, None)).
@@ -77,7 +78,6 @@ Proof.
     + eapply e_spawn.
       * apply e_var. split; [done|]. intros [|[|y]] σ' Hne Hy; simpl in Hy; [done|done|].
         rewrite lookup_nil in Hy. done.
-      * simpl. lia.
 Qed.
 
 Theorem fw_ptyped N o x : fptyped N W_fw {[o := (S_fw, x)]} (∅, {[+ fw o +]}) TUnit.
@@ -89,6 +89,6 @@ Proof.
   - apply pfree_singleton.
   - intros o' e' He. apply lookup_singleton_Some in He as [_ <-]. vm_compute. exact I.
   - set_solver.
-  - rewrite map_union_empty. unfold tenv_of. rewrite map_fmap_singleton. apply fw_typed.
+  - rewrite map_union_empty. unfold tenv_of. rewrite map_fmap_singleton. apply fw_typed, fle_refl.
   - apply sw_empty_wok.
 Qed.

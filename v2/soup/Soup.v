@@ -108,6 +108,10 @@ Definition ktick (i j : nat) (M : gset cend) (K : own) : own :=
 Definition khand (M : gset cend) (j : nat) (K : own) : own :=
   kmod (λ o h, if decide (o ∈ M) then Hold j h.(h_pt) (ftick h.(h_ctr)) h.(h_cap) else h) K.
 
+(** The ends M move to thread j at their counters: a spawn is no action. *)
+Definition kspawn (M : gset cend) (j : nat) (K : own) : own :=
+  kmod (λ o h, if decide (o ∈ M) then Hold j h.(h_pt) h.(h_ctr) h.(h_cap) else h) K.
+
 (** An action of thread i on o moves o to y and sets its counter back to
     its tickets. *)
 Definition kact (o : cend) (i : nat) (y : point) (K : own) : own :=
@@ -137,7 +141,7 @@ Definition own_next (tc : tchoice) (ev : event) (K : own) : own :=
                 end in
       match k with
       | PickLink o1 o2 => kmapr (csub o1 o2) (delete o1 (delete o2 K))
-      | PickChild j => match α with LSpawn v => khand (fends v) j K | _ => kn end
+      | PickChild j => match α with LSpawn v => kspawn (fends v) j K | _ => kn end
       | PickNone => kn
       end
   | EvSync i j (SSend o v) => ksync i j o (pt_shift 1 (kpt K o)) (pt_shift 1 (kpt K (edual o))) (fends v) K

@@ -97,6 +97,18 @@ entry records what C would buy.
 
 ### F2. Spawn costs the child nothing (blocks `r-threads`, `fu-obls`)
 
+**Status (2026-11-22, branch fx-cost): done.** `e_spawn` has no credit
+premise, `f_spawn` hands the child `mres (fends v) φ`, and `e_spawn_lam` is
+E-Abs at credit 0. The soundness argument holds in Rocq: `spawn_redex`
+(cost/CostRedex.v) calls the closure at the unchanged counters, which the
+call clause of FV-Arrow accepts at each credit. The ownership update of a
+spawn is `kspawn` (soup/Soup.v), with no tick. The lock-free measure no
+longer falls at a spawn that passes the awaited end on. The criterion now
+inducts on `tRs` (lockfree/TauThread.v), the administrative order of a
+thread with its spawned children, and `lf_stay` (soup/LFAdequacy.v) lets the
+holder become a child of the old holder. `sp_cap` holds because no counter
+rises. No example bound changed.
+
 **Current.** `e_spawn … : typed … e (TLolli ub lb c' TUnit TUnit a) c0 → fle (Some 1) a → …`
 (static/Typing.v:157). F-Spawn (fuel/Fuel.v, `f_spawn`) asks
 $\mathsf{positive}(\Phi|_M)$ and starts the child at $\Phi|_M{\downarrow}$,
@@ -420,6 +432,17 @@ separately only through `slt`, so they are unchanged. Renaming of constants
   and the rules keep it only for the types they produce. A context entry
   $S_x^{5,2}$ is accepted by E-Chan. Make it part of well-formedness or of
   `TSess`.
+  **Status (2026-11-22, branch fx-cost): done, variant "check at the
+  rules".** E-Chan asks `fle a m`, and `thage` asks `fle (te_cr e) (te_tk e)`
+  of each end it ages. `typed_cr_tk` (static/Typing.v) proves that every
+  context that types a term satisfies `cr_tk`, and `fsem_of_cost`,
+  `lf_p_term` and `fw_fsem` lose the hypothesis. A check at E-Chan alone
+  does not suffice, because aging hides the original credit: under E-Abs at
+  credit 3 the entry $S_x^{5,2}$ reaches E-Chan as $S_x^{2,2}$. The variant
+  in the syntax of `TSess` would have to constrain every type, also payload
+  and result types where nothing reads $a \leq m$, and would change every
+  constructor use. The chosen variant adds one rule premise (E-Chan) and
+  one conjunct to one definition (`thage`).
 - **Q3.** `sinsts N ss` has the clause `N = None → Forall (λ s, sty_df s = s) ss`
   (static/Contexts.v:503), a lock-free detail inside a deadlock-free premise,
   needed only so that `typed W None` is conservative. With F12 the clause is

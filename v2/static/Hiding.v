@@ -62,7 +62,7 @@ Section ren.
     induction 1; cbn [ty_ren sty_ren] in *.
     - rewrite tenv_ren_empty. apply e_unit. by apply lenv_unl_ren.
     - rewrite tenv_ren_empty. apply e_var. by apply lenv_only_ren.
-    - unfold tenv_ren. rewrite map_fmap_singleton. apply e_chan. by apply lenv_unl_ren.
+    - unfold tenv_ren. rewrite map_fmap_singleton. apply e_chan; [by apply lenv_unl_ren|done].
     - rewrite abs_fut_ren in IHtyped. eapply e_abs; [|by apply thage_ren|by apply lage_ren|by rewrite tcontr_ren|exact IHtyped].
       rewrite tenv_heads_ren, lenv_heads_ren, lenv_bot_ren, <-set_map_union_L. by apply lbx_below_h_ren.
     - rewrite sf_unionb_ren, set_map_union_L, <-tenv_heads_ren, <-lenv_heads_ren, <-(lenv_bot_ren f Δ2) in IHtyped1.

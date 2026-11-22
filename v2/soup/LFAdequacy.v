@@ -20,8 +20,10 @@
     - The measure of t is the counter of the partner end in K_k, ordered
       by < on ℕ. A step of the holder on another end ticks the counter,
       which F-Tick keeps at 1 or more because the partner is not idle
-      (F-Wait of t and [idle_dual]), and a hand-over passes it on with one
-      unit less. A link of the partner end gives t a new partner, whose
+      (F-Wait of t and [idle_dual]), and a send passes it on with one
+      unit less. A spawn passes the partner end to the child at its
+      counter, and the holder then becomes a child of the old holder
+      ([lf_stay]). A link of the partner end gives t a new partner, whose
       counter lies below the old one by the tickets of the link
       (F-Link, [sp_cap], [sp_tsum], [lgt_tsum_lt]). Every other step keeps
       it.
@@ -325,15 +327,26 @@ Section run.
       congruence.
   Qed.
 
+  (** The measure stays while the holder steps administratively; the
+      holder is the same thread, or a child it spawned with the partner end. *)
+  Definition lf_stay (k t : nat) : Prop :=
+    fu (S k) t = fu k t ∧ (∀ s, wt k t s → s ∉ lparts (l k) → wt (S k) t s) ∧
+    ∀ s, wt k t s → s ∈ lparts (l k) → admin_at (r k) s ∧
+      ∀ s', wt (S k) t s' → s' = s ∨
+        ∃ es es', (r k).2 !! s = Some es ∧ (r (S k)).2 !! s' = Some es' ∧ tRs (cerase es') (cerase es).
+
   (** The measure falls, or stays while the holder steps administratively. *)
-  Lemma lf_fuel k t : npend (r k) t → t ∉ lparts (l k) →
-    fu (S k) t < fu k t ∨
-    (fu (S k) t = fu k t ∧ (∀ s, wt (S k) t s ↔ wt k t s) ∧
-     ∀ s, wt k t s → s ∈ lparts (l k) → admin_at (r k) s).
+  Lemma lf_fuel k t : npend (r k) t → t ∉ lparts (l k) → fu (S k) t < fu k t ∨ lf_stay k t.
   Proof.
-    intros Hp Ht. destruct (npend_end _ _ Hp) as (e & a1 & o & He & Ha & Ho & Hr).
+    intros Hp Ht.
+    assert (Hconv : (fu (S k) t = fu k t ∧ (∀ s, wt (S k) t s ↔ wt k t s) ∧
+       ∀ s, wt k t s → s ∈ lparts (l k) → admin_at (r k) s) → lf_stay k t).
+    { intros (Hf & Hw & Had). split_and!; [done|intros s Hs _; by apply Hw|].
+      intros s Hs Hin. split; [by apply Had|]. intros s' Hs'. left. apply Hw in Hs'.
+      exact (wt_uniq k t s' s Hp Hs' Hs). }
+    destruct (npend_end _ _ Hp) as (e & a1 & o & He & Ha & Ho & Hr).
     destruct (Hmax k) as [(ev & Hl & Hst)|(_ & Heq & Hl)].
-    2: { right. unfold fu, wt. rewrite Heq. rewrite (ak_stutter k Hl).
+    2: { right. apply Hconv. unfold fu, wt. rewrite Heq. rewrite (ak_stutter k Hl).
          split_and!; [done|done|]. intros s _ Hs. rewrite Hl in Hs. simpl in Hs. set_solver. }
     rewrite Hl in Ht. simpl in Ht.
     pose proof (ak_next k ev Hl) as HK.
@@ -368,24 +381,37 @@ Section run.
       by apply (istep_other_eq _ _ _ t e (proj1 Hst) Ht). }
     destruct (istep_event _ _ _ (proj1 Hst)) as [(u & ->)|[(u & c & ->)|[(u & j & v & ->)
       |[(i & j & o' & w & ->)|[(i & j & o' & ->)|[(i & j & o' & b & ->)|[(u & o1 & o2 & ->)|(u & σ & ->)]]]]]]].
-    - right. apply Hright; [(apply Hnl; intros ?????; discriminate)|exact Kh'|].
+    - right. apply Hconv, Hright; [(apply Hnl; intros ?????; discriminate)|exact Kh'|].
       intros Hsu. exact (istep_admin_actor _ _ _ s (proj1 Hst) I Hsu).
-    - right. apply Hright; [(apply Hnl; intros ?????; discriminate)| |].
+    - right. apply Hconv, Hright; [(apply Hnl; intros ?????; discriminate)| |].
       + cbn [own_next]. destruct Hen as [Hp1 Hp2]. unfold knew. pose proof (elem_of_dom_2 _ _ _ Kh') as Hd.
         rewrite !lookup_insert_ne; [done|intros Hx; rewrite <-Hx in Hd; done|intros Hx; rewrite <-Hx in Hd; done].
       + intros Hsu. exact (istep_admin_actor _ _ _ s (proj1 Hst) I Hsu).
-    - destruct (istep_spawn_inv _ _ _ _ _ (proj1 Hst)) as (eu & e' & Heu & Hsu & Hj & Hdom).
+    - destruct (istep_spawn_inv _ _ _ _ _ (proj1 Hst)) as (eu & e' & Heu & Hsu & Hj & Hj' & Hdom).
       destruct (decide (edual o ∈ fends v)) as [HM|HM].
-      + left. apply Hdrop; [(apply Hnl; intros ?????; discriminate)|].
-        assert (s = u) as ->.
+      + (* the partner end goes to the child at its counter: the holder
+           changes to a child of the old one *)
+        right. assert (s = u) as ->.
         { simpl in Hen. exact (owns_unique _ _ _ _ (ex_intro _ h' (conj Kh' Eh')) (Hen _ HM)). }
-        rewrite <-Hq in Heu. pose proof (s_fuel Hs u eu Heu) as HF.
-        destruct (fuel_spawn_hand _ _ _ _ _ HF v e' Hsu) as [_ Hsp].
-        pose proof (fspare_one _ _ _ _ _ _ Hsp HM Hφs Hbusy) as H1.
-        apply (kval_tick _ _ _ h' m (Hold j h'.(h_pt) (ftick h'.(h_ctr)) h'.(h_cap)) Kh' Hm H1); [|done].
-        cbn [own_next]. rewrite lookup_khand, Kh'. simpl. by rewrite decide_True.
-      + right. apply Hright; [(apply Hnl; intros ?????; discriminate)| |].
-        * cbn [own_next]. rewrite lookup_khand, Kh'. simpl. by rewrite decide_False.
+        assert (HK' : own_next (tcs k) (EvSolo u (LSpawn v) (PickChild j)) (s_K (ak k)) !! edual o =
+                      Some (Hold j h'.(h_pt) h'.(h_ctr) h'.(h_cap))).
+        { cbn [own_next]. rewrite lookup_kspawn, Kh'. simpl. by rewrite decide_True. }
+        assert (Hr' : rend (r (S k)) t = Some o) by (apply Hnl; intros ?????; discriminate).
+        assert (Hown_u : ∀ s0, wt k t s0 → s0 = u).
+        { intros s0 (_ & o0 & Ho0 & Hown). rewrite Hr in Ho0. injection Ho0 as <-.
+          exact (owns_unique _ _ _ _ Hown (ex_intro _ h' (conj Kh' Eh'))). }
+        split_and!.
+        * unfold fu. rewrite Hr', Hr, HK. unfold kval. by rewrite HK', Kh'.
+        * intros s0 Hw0 Hs0. exfalso. apply Hs0. rewrite (Hown_u s0 Hw0), Hl. simpl. set_solver.
+        * intros s0 Hw0 Hs0. rewrite (Hown_u s0 Hw0) in Hs0 |- *.
+          split; [apply (istep_admin_actor _ _ _ u (proj1 Hst) I); simpl; set_solver|].
+          intros s' (_ & o0 & Ho0 & Hown). rewrite Hr' in Ho0. injection Ho0 as <-.
+          destruct Hown as (h0 & Kh0 & E0). rewrite HK, HK' in Kh0. injection Kh0 as <-. simpl in E0. subst s'.
+          right. exists eu, (App v EUnit). split_and!; [exact Heu|exact Hj'|].
+          right. destruct (tstep_cerase _ _ _ Hsu) as (x' & Hx' & _). exists (cerase v), x'.
+          split; [exact Hx'|]. unfold cerase. simpl. by rewrite emap_emap.
+      + right. apply Hconv, Hright; [(apply Hnl; intros ?????; discriminate)| |].
+        * cbn [own_next]. rewrite lookup_kspawn, Kh'. simpl. by rewrite decide_False.
         * intros Hsu'. exact (istep_admin_actor _ _ _ s (proj1 Hst) I Hsu').
     - simpl in Hen. destruct Hen as (H1 & H2 & H3).
       destruct (decide (s = i ∨ s = j)) as [Hsij|Hsij].
@@ -412,7 +438,7 @@ Section run.
         * apply (kval_tick _ _ _ h' m h1 Kh' Hm Hm1 Eh1). rewrite lookup_ksync, !decide_False, Kh' in Eh1 by done.
           simpl in Eh1. injection Eh1 as <-. case_decide; [done|]. rewrite decide_True; [done|]. by rewrite Eh'.
         * rewrite lookup_ksync, !decide_False, Kh' in Eh1 by done. done.
-      + right. apply Hright; [(apply Hnl; intros ?????; discriminate)| |].
+      + right. apply Hconv, Hright; [(apply Hnl; intros ?????; discriminate)| |].
         * apply (own_next_keep (tcs k) _ _ s); [split_and!; done|intros ?????; discriminate|simpl; set_solver|done|done].
         * intros Hx. simpl in Hx. exfalso. apply Hsij. set_solver.
     - simpl in Hen. destruct Hen as (H1 & H2).
@@ -438,7 +464,7 @@ Section run.
         apply (kval_tick _ _ _ h' m (htick h') Kh' Hm Hm1); [|done].
         cbn [own_next]. unfold ktick. rewrite lookup_kmod, !lookup_delete_ne by done. rewrite Kh'. simpl.
         rewrite decide_True; [done|]. rewrite Eh'. set_solver.
-      + right. apply Hright; [(apply Hnl; intros ?????; discriminate)| |].
+      + right. apply Hconv, Hright; [(apply Hnl; intros ?????; discriminate)| |].
         * apply (own_next_keep (tcs k) _ _ s); [split; done|intros ?????; discriminate|simpl; set_solver|done|done].
         * intros Hx. simpl in Hx. exfalso. apply Hsij. set_solver.
     - simpl in Hen. destruct Hen as (H1 & H2).
@@ -467,7 +493,7 @@ Section run.
           simpl in Eh1. injection Eh1 as <-. rewrite decide_False by set_solver. rewrite decide_True; [done|].
           by rewrite Eh'.
         * rewrite lookup_ksync, !decide_False, Kh' in Eh1 by done. done.
-      + right. apply Hright; [(apply Hnl; intros ?????; discriminate)| |].
+      + right. apply Hconv, Hright; [(apply Hnl; intros ?????; discriminate)| |].
         * apply (own_next_keep (tcs k) _ _ s); [split; done|intros ?????; discriminate|simpl; set_solver|done|done].
         * intros Hx. simpl in Hx. exfalso. apply Hsij. set_solver.
     - (* a link: no counter changes, the partner of a linked end changes *)
@@ -528,7 +554,7 @@ Section run.
         destruct (Hcap _ r1 Kr1) as [Hc3 _]. rewrite Ekr in Hc3. simpl.
         destruct (h_ctr r1) as [c1|]; simpl in *; lia.
       + (* the link does not touch the partner of t *)
-        right. assert (o ≠ edual o1) as Hn1 by (intros Hx; apply Ne1; by rewrite Hx, edual_edual).
+        right. apply Hconv. assert (o ≠ edual o1) as Hn1 by (intros Hx; apply Ne1; by rewrite Hx, edual_edual).
         assert (Hc : csub o1 o2 o = o) by (apply csub_eq_off; done).
         assert (edual o ≠ edual o1) as Hd by (intros Hx; apply Ho1; by apply edual_inj).
         assert (Hc' : csub o1 o2 (edual o) = edual o) by (apply csub_eq_off; done).

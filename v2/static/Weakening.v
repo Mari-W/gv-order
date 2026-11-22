@@ -484,7 +484,7 @@ Proof.
       assert (x' ≠ x) as Hx'x by (intros ->; done).
       exact (Hun x' U Hx'x Hx'). }
     destruct (decide (unlimited T)) as [HU|HU]; [by eapply e_var, Hk, H1|by eapply e_var, Hk, H2].
-  - by apply e_chan, (lren_unl _ _ _ H Hr).
+  - apply e_chan; [exact (lren_unl _ _ _ H Hr)|done].
   - (* E-Abs *)
     destruct (lren_lage _ _ _ _ _ H1 Hr) as (Δhr & Hc & Hr').
     eapply e_abs; [|done|exact Hc|done|].
@@ -649,9 +649,10 @@ Section let_admissible.
   Qed.
   Lemma lage_0 Δ : lage (Some 0) Δ Δ.
   Proof. induction Δ as [|[σ|] Δ IH]; constructor; auto using tage_0. Qed.
-  Local Lemma thage_0 Θ : thage (Some 0) Θ Θ.
+  Local Lemma thage_0 Θ : cr_tk Θ → thage (Some 0) Θ Θ.
   Proof.
-    intros o. destruct (Θ !! o) as [[S x a m]|]; [|done]. simpl. split_and!; [done|done|done|apply fle_0|by rewrite fsub_0].
+    intros HΘ o. destruct (Θ !! o) as [[S x a m]|] eqn:E; [|done]. simpl.
+    split_and!; [done|done|done|apply fle_0|by rewrite fsub_0|exact (HΘ o _ E)].
   Qed.
   Local Lemma thage_nil c : thage c ∅ ∅.
   Proof. intros o. by rewrite lookup_empty. Qed.
@@ -684,22 +685,23 @@ Section let_admissible.
     - eapply e_pair; [apply tsplit_l|apply lsplit_all| |apply thage_nil|apply lage_lnone| |apply tage_0].
       + by rewrite lheads_lnone, lbot_lnone, sf_union_nil.
       + apply e_unit, lempty_lnone.
-    - eapply e_letu; [apply tsplit_r|apply lsplit_l, lsplit_allr| |apply thage_0|apply lage_0|].
+    - eapply e_letu; [apply tsplit_r|apply lsplit_l, lsplit_allr| |apply thage_0, (typed_cr_tk _ _ _ _ _ _ _ _ _ H2)|apply lage_0|].
       + apply e_var. split; [done|]. intros y σ' Hne Hy. destruct y; [done|].
         by destruct (lnone_lookup_S _ _ _ _ Hy).
       + simpl. by apply typed_weaken_head.
   Qed.
 
   (** E-SpawnLam is admissible (entry 12, generalized arrows): E-Abs at
-      upper point ⊤ and lower point ⊥ with credit 1, then E-Spawn. *)
+      upper point ⊤ and lower point ⊥ with credit 0, then E-Spawn. A spawn
+      is no action, so the child takes the ends at their counters. *)
   Lemma e_spawn_lam W N Θ Θ' Γ Δ Δ' F e c' :
-    thage (Some 1) Θ Θ' → lage (Some 1) Δ Δ' →
+    thage (Some 0) Θ Θ' → lage (Some 0) Δ Δ' →
     typed W N Θ' Γ (Some TUnit :: Δ') (∅, None) e TUnit c' →
     typed W N Θ Γ Δ F (ESpawn (Lam e)) TUnit (Some 0).
   Proof.
     intros Ht Ha H.
-    eapply (e_spawn _ _ _ _ _ _ _ UTop LBot c' (Some 1)); [|simpl; lia].
-    eapply (e_abs _ _ _ _ _ _ _ _ _ _ _ UTop LBot c' (Some 1)); [done|exact Ht|exact Ha|done|exact H].
+    eapply (e_spawn _ _ _ _ _ _ _ UTop LBot c' (Some 0)).
+    eapply (e_abs _ _ _ _ _ _ _ _ _ _ _ UTop LBot c' (Some 0)); [done|exact Ht|exact Ha|done|exact H].
   Qed.
 
   (** D-Let *)

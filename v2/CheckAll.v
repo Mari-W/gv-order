@@ -83,6 +83,7 @@ Print Assumptions fw_ptyped.
 (** cost/CostFund.v *)
 Print Assumptions cost_fundamental.
 Print Assumptions fsem_of_cost.
+Print Assumptions typed_cr_tk.
 Print Assumptions fw_fsem.
 (** compat/Bind.v *)
 Print Assumptions Erel_bind.

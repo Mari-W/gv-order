@@ -16,43 +16,8 @@
 From stdpp Require Import relations.
 From GV Require Export soup.SoupRun.
 
-(** ** The order of one thread with its children *)
-
-Definition tRs (y x : expr) : Prop :=
-  tR y x ∨ ∃ v x', tstep x (LSpawn v) x' ∧ y = cerase (App v EUnit).
-
-(** A step of the erased term comes from a step of the term, with a new
-    name chosen outside X. *)
-Lemma admin_back e α x' (X : gset chan) :
-  tstep (cerase e) α x' → admin_lbl α →
-  ∃ α0 e0, tstep e α0 e0 ∧ admin_lbl α0 ∧ cerase x' = cerase e0 ∧
-    (∀ c, α0 = LNew c → c ∉ X) ∧
-    (∀ v, α = LSpawn v → ∃ v0, α0 = LSpawn v0 ∧ cerase (App v EUnit) = cerase (App v0 EUnit)).
-Proof.
-  intros Hst Hα.
-  destruct (act_step _ _ _ Hst) as (a' & Ha' & Ho). rewrite act_cerase in Ha'.
-  destruct (act e) as [a|] eqn:Ha; [|done]. simpl in Ha'. injection Ha' as <-.
-  assert (∀ α0 e0, tstep e α0 e0 → lerase α0 = lerase α → cerase x' = cerase e0) as Hdet.
-  { intros α0 e0 Hs0 Hl. destruct (tstep_cerase e α0 e0 Hs0) as (x0 & Hx0 & <-).
-    eapply tstep_det_cerase; [exact Hst|exact Hx0|]. by rewrite lerase_idem, Hl. }
-  set (c0 := fresh (X ∪ fchans e)). assert (c0 ∉ X ∪ fchans e) as Hc0 by apply is_fresh.
-  destruct a as [| |v|o|o v|o|o1 o2|o i|o]; simpl in Ho;
-    destruct α as [|c1|w|[| | | | |os]]; simpl in Hα; try contradiction.
-  - destruct (act_offer e ABeta LBeta Ha I) as [e0 He0].
-    exists LBeta, e0. split_and!; [done|done|by apply (Hdet _ _ He0)|intros; discriminate..].
-  - destruct (act_offer e ANew (LNew c0) Ha I) as [e0 He0].
-    exists (LNew c0), e0. split_and!; [done|done| |intros ? [= <-]; set_solver|intros; discriminate].
-    apply (Hdet _ _ He0). done.
-  - destruct (act_offer e (ASpawn v) (LSpawn v) Ha eq_refl) as [e0 He0].
-    simpl in Ho. subst w.
-    exists (LSpawn v), e0. split_and!; [done|done| |intros; discriminate|].
-    + apply (Hdet _ _ He0). simpl. fold cerase. by rewrite cerase_idem.
-    + intros v' [= <-]. exists v. split; [done|]. unfold cerase. simpl. by rewrite emap_emap.
-  - destruct (act_offer e (ALink o1 o2) (LSess (SLink ({[o1]} ∪ {[o2]}))) Ha eq_refl) as [e0 He0].
-    simpl in Ho. subst os. exists (LSess (SLink ({[o1]} ∪ {[o2]}))), e0.
-    split_and!; [done|done| |intros; discriminate|intros; discriminate].
-    apply (Hdet _ _ He0). simpl. f_equal. f_equal. set_solver.
-Qed.
+(** The order [tRs] of one thread with its children and [admin_back]
+    live in lockfree/TauThread.v. *)
 
 (** A thread in E[live] at a positive level, with its children, takes
     no infinite sequence of administrative steps. *)

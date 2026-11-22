@@ -384,9 +384,9 @@ Section clauses.
     tstep e (LSess s) e' → act_end s = Some o → fspare Π φ (dom φ ∖ {[o]}).
   Proof. intros Hst Ho. by destruct (fuel_act s e' o Hst Ho) as (_ & _ & H & _). Qed.
 
-  (** A spawn hands on held ends with a unit to spare. *)
-  Lemma fuel_spawn_hand v e' : tstep e (LSpawn v) e' → fends v ⊆ dom φ ∧ fspare Π φ (fends v).
-  Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (H1 & H2 & _). Qed.
+  (** A spawn hands on held ends. *)
+  Lemma fuel_spawn_hand v e' : tstep e (LSpawn v) e' → fends v ⊆ dom φ.
+  Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (H1 & _). Qed.
 
   (** A link reads the tickets of its ends. *)
   Lemma fuel_link os e' : tstep e (LSess (SLink os)) e' → plink Π os ∧ os ⊆ dom φ ∧ lok N φ os.
@@ -410,7 +410,7 @@ Proof.
   - intros j Hj. by apply Hs, Hlt.
   - intros Hf. destruct (Hs Hf) as (Sn & m1 & m2 & Hm & HS). exists Sn, m1, m2. split; [done|].
     intros j Hj. by apply HS, Hlt.
-  - destruct Hs as (H1 & H2 & H3 & H4). split_and!; [done|done|intros j Hj; by apply H3, Hlt
+  - destruct Hs as (H1 & H3 & H4). split_and!; [done|intros j Hj; by apply H3, Hlt
       |intros j Hj; by apply H4, Hlt].
   - destruct Hs as (Ha & S0 & m' & T & Sc & H1 & H2 & H3 & H4 & H5 & H6).
     split; [done|]. exists S0, m', T, Sc. split_and!; [done..|intros j Hj; by apply H5, Hlt
@@ -481,10 +481,9 @@ Proof.
   - eapply IHn; [done..].
   - intros Hf. destruct (Hs (ffresh_cle _ _ _ _ Hc0 Hf)) as (Sn & m1 & m2 & Hm & HS). exists Sn, m1, m2.
     split; [done|]. eapply IHn; [done|by apply cle_cnew|done].
-  - destruct Hs as (H1 & H2 & H3 & H4). split_and!.
+  - destruct Hs as (H1 & H3 & H4). split_and!.
     + by rewrite <-(cle_dom _ _ Hc0).
-    + by eapply fspare_mono.
-    + eapply IHn; [apply fle_refl|by apply cle_fhand|exact H3].
+    + eapply IHn; [apply fle_refl|by apply cle_mres|exact H3].
     + eapply IHn; [done|by apply cle_mrem|exact H4].
   - destruct Hs as (Ha & S0 & m & T & Sc & H1 & H2 & H3 & H4 & H5 & H6).
     split; [by apply Hact|]. exists S0, m, T, Sc. split_and!; try done.

@@ -197,14 +197,7 @@ Theorem lf_p_term (EM : excluded_middle) W N Σ ΘB C0 t T c :
   lf_sems N W Σ (C0, {[+ t +]}) T.
 Proof.
   intros HW Hp HB HΣ Hd Hty Hg R HR _.
-  assert (cr_tk (tenv_of (fhalf (Some N)) Σ ∪ ΘB)) as Hcr.
-  { intros o te Hte. apply lookup_union_Some_raw in Hte as [Hte|[_ Hte]].
-    - unfold tenv_of in Hte. apply lookup_fmap_Some in Hte as (y & <- & _). apply fle_refl.
-    - assert (ech o ∈ C0) as Hc by (apply HB; by eapply elem_of_dom_2).
-      destruct (Hd _ Hc) as (S & x & m & m' & _ & H1 & H2). destruct o as [c'|c']; simpl in *.
-      + rewrite H1 in Hte. injection Hte as <-. apply fle_refl.
-      + rewrite H2 in Hte. injection Hte as <-. apply fle_refl. }
-  pose proof (fsem_of_cost _ _ _ _ _ _ Hty Hp Hcr) as Hf.
+  pose proof (fsem_of_cost _ _ _ _ _ _ Hty Hp) as Hf.
   apply (lf_soup_term N R Σ ΘB C0 t T); try done.
   intros n. by eapply (typed_live EM W).
 Qed.

@@ -102,9 +102,10 @@ Proof.
 Qed.
 
 Lemma istep_spawn_inv q u j v q' : istep q (EvSolo u (LSpawn v) (PickChild j)) q' →
-  ∃ eu e', q.2 !! u = Some eu ∧ tstep eu (LSpawn v) e' ∧ q.2 !! j = None ∧ dom q'.2 = {[j]} ∪ dom q.2.
+  ∃ eu e', q.2 !! u = Some eu ∧ tstep eu (LSpawn v) e' ∧ q.2 !! j = None ∧
+    q'.2 !! j = Some (App v EUnit) ∧ dom q'.2 = {[j]} ∪ dom q.2.
 Proof.
-  intros Hst. inversion Hst; subst. simpl. exists e, e'. split_and!; [done|done|done|].
+  intros Hst. inversion Hst; subst. simpl. exists e, e'. split_and!; [done|done|done|by rewrite lookup_insert_eq|].
   rewrite !dom_insert_L. apply elem_of_dom_2 in H3. set_solver.
 Qed.
 

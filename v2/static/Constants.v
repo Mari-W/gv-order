@@ -225,13 +225,13 @@ Proof.
 Qed.
 
 Lemma k_spawn W N Γ Δ F ub lb c' a' a :
-  lenv_unl Δ → fle (Some 1) a' →
+  lenv_unl Δ →
   typed W N ∅ Γ Δ F (Lam (ESpawn (Var 0)))
     (TLolli UNone LNone (Some 0) (TLolli ub lb c' TUnit TUnit a') TUnit a)
     (Some 0).
 Proof.
-  intros HΔ Ha. apply eta; [done|done|].
-  eapply e_spawn; [var HΔ|done].
+  intros HΔ. apply eta; [done|done|].
+  eapply e_spawn. var HΔ.
 Qed.
 
 Lemma k_force W N Γ Δ F m k C ub c0 U xs ss a :

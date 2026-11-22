@@ -643,7 +643,7 @@ Proof. induction 1; simpl; constructor; auto using tage_ren. Qed.
 Lemma thage_ren f c Θ Θ' : thage c Θ Θ' → thage c (tenv_ren f Θ) (tenv_ren f Θ').
 Proof.
   intros H o. specialize (H o). unfold tenv_ren. rewrite !lookup_fmap.
-  destruct (Θ !! o), (Θ' !! o); simpl in *; try done. destruct H as (E1 & E2 & E3 & E4 & E5).
+  destruct (Θ !! o), (Θ' !! o); simpl in *; try done. destruct H as (E1 & E2 & E3 & E4 & E5 & E6).
   simpl. by rewrite E1, E2, E3, E5.
 Qed.
 

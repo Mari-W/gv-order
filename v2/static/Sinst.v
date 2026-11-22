@@ -128,7 +128,7 @@ Proof.
     |i Θ Γ Δ F e S0 x S1 S2 a mS c0 Hu Hub H IH
     |Θ Γ Δ F e S0 x S1 S2 a mS c0 Hu Hub H IH
     |Θ Γ Δ F e S x a1 m1 a2 m2 c0 H IH Hl1 Hl2
-    |Θ Γ Δ F e ub lb c' a c0 H IH Hle
+    |Θ Γ Δ F e ub lb c' a c0 H IH
     |Γ Δ F C S m1 m2 HΔ HC Htk HSc
     |Γ Δ F x κf S m1 m2 HΔ Htk HSc
     |Θ Γ Δ F e T T' c c' H IH Hsub Hc HTc
@@ -243,7 +243,7 @@ Lemma thage_sinst σ c Θ Θ' : thage c Θ Θ' → thage c (tenv_sinst σ Θ) (t
 Proof.
   intros H o. specialize (H o). unfold tenv_sinst. rewrite !lookup_fmap.
   destruct (Θ !! o), (Θ' !! o); simpl in *; try done.
-  destruct H as (E1 & E2 & E3 & E4 & E5). unfold tentry_sinst. simpl. by rewrite E1, E2, E3, E5.
+  destruct H as (E1 & E2 & E3 & E4 & E5 & E6). unfold tentry_sinst. simpl. by rewrite E1, E2, E3, E5.
 Qed.
 
 Section with_σ.
@@ -495,7 +495,7 @@ Proof.
     |i Θ Γ Δ F e S0 x S1 S2 a mS c0 Hu Hub H IH
     |Θ Γ Δ F e S0 x S1 S2 a mS c0 Hu Hub H IH
     |Θ Γ Δ F e S x a1 m1 a2 m2 c0 H IH Hl1 Hl2
-    |Θ Γ Δ F e ub lb c' a c0 H IH Hle
+    |Θ Γ Δ F e ub lb c' a c0 H IH
     |Γ Δ F C S m1 m2 HΔ HC Htk HSc
     |Γ Δ F x κf S m1 m2 HΔ Htk HSc
     |Θ Γ Δ F e T T' c c' H IH Hsub Hc HTc
@@ -504,7 +504,7 @@ Proof.
     pose proof (proj1 Hok) as Hσ.
   - rewrite tenv_sinst_empty. by apply e_unit, lenv_unl_sinst.
   - rewrite tenv_sinst_empty. by apply e_var, lenv_only_sinst.
-  - rewrite tenv_sinst_singleton. by apply e_chan, lenv_unl_sinst.
+  - rewrite tenv_sinst_singleton. apply e_chan; [by apply lenv_unl_sinst|done].
   - (* E-Abs *)
     cbn [sinst_ty]. eapply e_abs.
     + rewrite tenv_heads_sinst, lenv_heads_sinst, lenv_bot_sinst. exact Hlb.
@@ -627,7 +627,7 @@ Proof.
     pose proof (IH σ Hok HΘ HΔc) as IH'. cbn [sinst_ty] in IH'. rewrite <-dual_sinst in IH'.
     eapply e_link; [exact IH'|done|done].
   - (* E-Spawn *)
-    eapply e_spawn; [exact (IH σ Hok HΘ HΔc)|done].
+    eapply e_spawn. exact (IH σ Hok HΘ HΔc).
   - (* E-New *)
     rewrite tenv_sinst_empty. cbn [sinst_ty]. rewrite <-dual_sinst.
     apply e_new; [by apply lenv_unl_sinst|done|done|by apply scontr_sinst].

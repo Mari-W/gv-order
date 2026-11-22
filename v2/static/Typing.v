@@ -63,7 +63,7 @@ Inductive typed (W : sworld) (N : fuel) :
       lenv_only Δ x T →
       typed W N ∅ Γ Δ F (Var x) T (Some 0)
   | e_chan Γ Δ F o S x a m :
-      lenv_unl Δ →
+      lenv_unl Δ → fle a m →
       typed W N {[o := TE S x a m]} Γ Δ F (Chan o) (TSess S x a m) (Some 0)
   | e_abs Θ Θh Γ Δ Δh F e T U ub lb c a :
       lbx_below_h W Γ lb (tenv_heads Θ ∪ lenv_heads Δ) (lenv_bot Δ) →
@@ -155,7 +155,6 @@ Inductive typed (W : sworld) (N : fuel) :
       typed W N Θ Γ Δ F (ELink e) TUnit c0
   | e_spawn Θ Γ Δ F e ub lb c' a c0 :
       typed W N Θ Γ Δ F e (TLolli ub lb c' TUnit TUnit a) c0 →
-      fle (Some 1) a →
       typed W N Θ Γ Δ F (ESpawn e) TUnit c0
   | e_new Γ Δ F C S m1 m2 :
       lenv_unl Δ → new_ok N W Γ C → tsum_ok N m1 m2 → scontr S →
@@ -421,4 +420,37 @@ Lemma ptyped_chans N W Σ p T : ptyped N W Σ p T → p.1 ## chans_of Σ.
 Proof.
   induction 1 as [|? ? ? ? ? ? ? ? ? ? _ IH1 _ IH2 ? ? ? ? ? ? ?];
     simpl in *; [done|..]; rewrite !chans_of_union in *; set_solver.
+Qed.
+
+(** ** Credits at most tickets
+
+    Every end of a context that types a term has a credit at most its
+    tickets. An end reaches E-Chan, which asks it, or passes an aging,
+    which asks it before the end loses credit. *)
+
+Lemma cr_tk_empty : cr_tk ∅.
+Proof. intros o te. by rewrite lookup_empty. Qed.
+
+Lemma cr_tk_thage c Θ Θ' : thage c Θ Θ' → cr_tk Θ.
+Proof.
+  intros H o te Hte. specialize (H o). rewrite Hte in H.
+  destruct (Θ' !! o); [by destruct H as (_ & _ & _ & _ & _ & ?)|done].
+Qed.
+
+Lemma cr_tk_tsplit Θ Θ1 Θ2 : tsplit Θ Θ1 Θ2 → cr_tk Θ1 → cr_tk Θ2 → cr_tk Θ.
+Proof.
+  intros [_ ->] H1 H2 o te Hte. apply lookup_union_Some_raw in Hte as [Hte|[_ Hte]]; eauto.
+Qed.
+
+Lemma cr_tk_pinst σ Θ : cr_tk (tenv_pinst σ Θ) → cr_tk Θ.
+Proof.
+  intros H o te Hte. apply (H o (tentry_pinst σ te)). unfold tenv_pinst. by rewrite lookup_fmap, Hte.
+Qed.
+
+Theorem typed_cr_tk W N Θ Γ Δ F e T c : typed W N Θ Γ Δ F e T c → cr_tk Θ.
+Proof.
+  induction 1; try apply cr_tk_empty; try done;
+    try (eapply cr_tk_tsplit; [done|done|by eapply cr_tk_thage]);
+    try (by eapply cr_tk_thage); try (by eapply cr_tk_pinst).
+  intros o' te Hte. apply lookup_singleton_Some in Hte as [<- <-]. simpl. done.
 Qed.
