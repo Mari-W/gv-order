@@ -8,4 +8,4 @@ Check (λ p, ⊢▷ p).
 Check gl_box.
 Check gl_tick_app.
 Check live_fundamental.
-Check live_soundness.
+Check live_soundness_h.

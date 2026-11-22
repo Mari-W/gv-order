@@ -919,7 +919,7 @@ window.MAP = {
       "lf"
      ],
      "rocq": "static/Typing.v: p_term; static/Typing.v: p_connect; static/Typing.v: ptyped, static/FundamentalProc.v: pguard",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=ty.tfree}{\\mathsf{tfree}\\,T}\\quad \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma}\\quad \\htmlData{k=P-Term.wf}{\\htmlData{k=w.lfworld}{\\mathsf{wf}}\\,W}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\quad \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = (S@x)\\annot{^{m}_{m}},\\ \\Theta_B(c^{-}) = (\\overline{S}@\\overline{x})\\annot{^{m'}_{m'}}\\annot{,\\ m + m' \\leq N}} \\\\ \\htmlData{k=P-Term.typed}{\\varnothing ; \\htmlData{k=tp.lift}{\\Sigma\\annot{^{N/2}_{N/2}}}, \\Theta_B \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}} t : T\\annot{\\ !\\ c}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1} (C_1, E_1) : T} \\\\ \\htmlData{k=P-Connect.right}{\\Sigma_2 \\cup \\htmlData{k=P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\htmlData{k=P-Connect.disj}{\\mathsf{disjoint}(\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_1, \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_2, \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, C_1, C_2)}\\quad \\htmlData{k=P-Connect.cutfree}{\\htmlData{k=pfree}{\\mathsf{pfree}}\\,\\Sigma_C} \\\\ \\htmlData{k=P-Connect.wf}{\\htmlData{k=w.lfworld}{\\mathsf{wf}}(\\htmlData{k=w.restrict}{W_1|_S} \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2|_S),\\ S = \\htmlData{k=w.consts}{A_{W_1}} \\cap A_{W_2}}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{\\htmlData{k=P-Connect.join}{W_1 \\htmlData{k=w.join}{\\sqcup} W_2}} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect}\\annraw{\\\\[3ex]}\\annot{\\htmlData{k=tp.lfjudg}{\\Sigma \\Vdash^{N}_W p : T \\iff \\htmlData{k=lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_W p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p}}}\\end{array}",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=ty.tfree}{\\mathsf{tfree}\\,T}\\quad \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma}\\quad \\htmlData{k=P-Term.wf}{\\htmlData{k=w.lfworld}{\\mathsf{wf}}\\,W}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\quad \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = (S@x)\\annot{^{m}_{m}},\\ \\Theta_B(c^{-}) = (\\overline{S}@\\overline{x})\\annot{^{m'}_{m'}}\\annot{,\\ m + m' \\leq N}} \\\\ \\htmlData{k=P-Term.typed}{\\varnothing ; \\htmlData{k=tp.lift}{\\Sigma\\annot{^{N/2}_{N/2}}}, \\Theta_B \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}} t : T\\annot{\\ !\\ c}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}}_{\\htmlData{k=P-Term.hide}{W|_{\\htmlData{k=tp.iface}{\\mathsf{I}(\\Sigma, T)}}}} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1} (C_1, E_1) : T} \\\\ \\htmlData{k=P-Connect.right}{\\Sigma_2 \\cup \\htmlData{k=P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\htmlData{k=P-Connect.disj}{\\mathsf{disjoint}(\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_1, \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_2, \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, C_1, C_2)}\\quad \\htmlData{k=P-Connect.cutfree}{\\htmlData{k=pfree}{\\mathsf{pfree}}\\,\\Sigma_C} \\\\ \\htmlData{k=P-Connect.wf}{\\htmlData{k=w.lfworld}{\\mathsf{wf}}(W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{\\htmlData{k=P-Connect.join}{(W_1 \\htmlData{k=w.join}{\\sqcup} W_2)\\htmlData{k=w.restrict}{|}_{\\htmlData{k=tp.iface}{\\mathsf{I}(\\Sigma_1 \\cup \\Sigma_2, T)}}}} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect}\\annraw{\\\\[3ex]}\\annot{\\htmlData{k=tp.lfjudg}{\\Sigma \\Vdash^{N}_W p : T \\iff \\htmlData{k=lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_W p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p}}}\\end{array}",
      "caption": "P-Term types one thread $t$ that holds both ends of each channel in $C_0$, at dual types and points, over an interface $\\Sigma$ without partner pairs. P-Connect cuts two components at $\\Sigma_C$ against $\\overline{\\Sigma_C}$ and compares only the shared roots of the two worlds. \\annp{Lock-free process typing is process typing at a finite bound $N$ with each thread guarded. \\annp{The ends of a restricted channel have tickets of sum at most $N$, and each interface end has $N/2$.}}",
      "about": {
       "why": "Processes are built from single threads by P-Term and composed by P-Connect.",
@@ -1238,7 +1238,7 @@ window.MAP = {
     {
      "id": "th-sound",
      "title": "Soundness",
-     "rocq": "static/FundamentalProc.v: soundness; soup/LFTyped.v: lf_soundness, lf_soundness_run, lf_soundness_padovani; lockfree/FairRun.v: fair_run_exists, lock_free_padovani",
+     "rocq": "static/FundamentalProc.v: soundness_h, soundness; soup/LFTyped.v: lf_soundness_h, lf_soundness, lf_soundness_run, lf_soundness_padovani; lockfree/FairRun.v: fair_run_exists, lock_free_padovani",
      "modes": [
       "df",
       "lf"
@@ -1252,7 +1252,7 @@ window.MAP = {
     {
      "id": "th-compose",
      "title": "Semantic composition rules",
-     "rocq": "compat/PTerm.v: sem_p_term; compat/ConnectP.v: sem_p_connect; soup/LFCompose.v: lf_p_term, lf_p_connect, join_models, lf_connect_adequacy",
+     "rocq": "compat/PTerm.v: sem_p_term; compat/ConnectP.v: sem_p_connect; static/FundamentalProc.v: sem_p_connect_sw, sem_p_connect_h; soup/LFCompose.v: lf_p_term, lf_p_connect, join_models, lf_connect_adequacy; soup/LFTyped.v: lf_p_connect_h; static/Hiding.v: connect_hidden",
      "modes": [
       "df",
       "lf"
@@ -1269,7 +1269,7 @@ window.MAP = {
     {
      "id": "th-fund-proc",
      "title": "Fundamental theorem",
-     "rocq": "static/FundamentalProc.v: fundamental_proc, live_fundamental_proc; soup/LFTyped.v: lf_fundamental",
+     "rocq": "static/FundamentalProc.v: fundamental_proc_h, live_fundamental_proc_h, fundamental_proc; soup/LFTyped.v: lf_fundamental_h, lf_fundamental; static/Hiding.v: ptyped_full",
      "modes": [
       "df",
       "lf"
@@ -4288,10 +4288,10 @@ window.MAP = {
   "w.restrict": {
    "title": "Restriction $W|_S$",
    "what": "$W|_S$ has the facts $x \\prec_W y$ with roots of $x, y$ in $S$.",
-   "why": "It is the derived order of $W$ on the points of the shared roots $S$, chains through private points included, and the only order a component exposes to another.",
+   "why": "It is the derived order of $W$ on the points of the roots $S$, chains through private points included. Process typing restricts the world of a component to the constants of its interface, and that is the only order it exposes to another.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$W|_{A_1 \\cap A_2}$.",
-   "rocq": "types/Worlds.v: wrestrict",
+   "example": "$W|_{A_1 \\cap A_2}$ and $W|_{\\mathsf{I}(\\Sigma, T)}$.",
+   "rocq": "types/Worlds.v: swrestrict; static/Hiding.v: swrestrict_iff",
    "sig": "\\cdot|_{\\cdot} : \\mathsf{World} \\to \\mathcal{P}(\\mathsf{Root}) \\to \\mathsf{World}",
    "args": [
     {
@@ -4300,7 +4300,7 @@ window.MAP = {
     },
     {
      "name": "S",
-     "meaning": "A set of constants, instantiated with $A_1 \\cap A_2$."
+     "meaning": "A set of constants, the shared roots $A_1 \\cap A_2$ or the constants of an interface."
     }
    ]
   },
@@ -6112,31 +6112,27 @@ window.MAP = {
    ]
   },
   "P-Connect.wf": {
-   "title": "Only the shared part is compared",
-   "what": "$\\mathsf{wf}(W_1|_S \\sqcup W_2|_S)$ for $S = A_{W_1} \\cap A_{W_2}$, the roots of both worlds. $W|_S$ keeps the facts $x \\prec_W y$ derivable in $W$ whose roots lie in $S$.",
-   "why": "Each side is well-founded by its own derivation, so each infinite descending chain of the join meets shared points infinitely often. Checking the orders the two sides induce on those roots is enough, and the join is then well-founded. A component exposes this order and no ranks, and the composite reads both sides at one ranked world. Two components can pick the same private constant, so $S$ can hold a root that no point of $\\Sigma_C$ mentions.",
-   "breaks": "If $W_1$ derives $\\rho \\prec \\overline{\\tau}$ and $W_2$ derives $\\overline{\\tau} \\prec \\rho$, the join has a cycle and two threads each wait on the other although each side alone is ready.",
-   "example": "Two worlds without a common root need no check.",
-   "rocq": "static/Typing.v: p_connect, ptyped_wf; types/Worlds.v: wf_join_iff; examples/SharedRoots.v: shared_not_cut",
-   "sig": "\\mathsf{wf}(W_1|_S \\sqcup W_2|_S),\\ S = A_{W_1} \\cap A_{W_2}",
+   "title": "The two interface orders are compared",
+   "what": "$\\mathsf{wf}(W_1 \\sqcup W_2)$, where $W_1$ and $W_2$ are the worlds of the two components. Each lives on the constants of its own interface, $W_i = W_i|_{I_i}$ with $I_1 = \\mathsf{I}(\\Sigma_1 \\cup \\Sigma_C, T)$ and $I_2 = \\mathsf{I}(\\Sigma_2 \\cup \\overline{\\Sigma_C}, \\ast)$, so the premise reads $\\mathsf{wf}(W_1|_{I_1} \\sqcup W_2|_{I_2})$.",
+   "why": "A component exposes the order its world derives between interface points and no private constant. Two components may pick the same private constant and order it oppositely, and they still compose. The soundness proof renames the private constants of one component apart from the other, and then the two whole worlds share only interface constants, at which they order as the interface worlds do. The overlap condition is not pairwise. Three components can be consistent two at a time and cyclic together, as in Milner's ring, so the composite keeps the joined order for the next P-Connect.",
+   "breaks": "If $W_1$ derives $\\rho \\prec \\overline{\\tau}$ and $W_2$ derives $\\overline{\\tau} \\prec \\rho$ for interface points, the join has a cycle and two threads each wait on the other although each side alone is ready.",
+   "example": "Two components over an empty interface have worlds without constants and need no check.",
+   "rocq": "static/Typing.v: p_connect, ptyped_wf; static/Hiding.v: ptyped_full, connect_hidden, join_vis; examples/SharedRoots.v: shared_hidden, opposite_compose, shared_not_cut",
+   "sig": "\\mathsf{wf}(W_1 \\sqcup W_2)",
    "args": [
     {
-     "name": "A_{W}",
-     "meaning": "the roots of $W$"
-    },
-    {
-     "name": "W|_S",
-     "meaning": "the facts of $\\prec_W$ between points with roots in $S$"
+     "name": "W_1, W_2",
+     "meaning": "the interface worlds of the components"
     }
    ]
   },
   "P-Term.wf": {
    "title": "$\\mathsf{wf}\\,W$",
    "what": "The world of a single thread is well formed and well-founded.",
-   "why": "The world of each process derivation is then well-founded and has a ranked world that satisfies it as a whole. P-Connect checks only the shared part, and the joined world is well-founded again.",
+   "why": "The world of each process derivation is then well-founded, and so is every restriction of it. A full derivation with the same program sits over a world that a ranked world satisfies as a whole.",
    "breaks": "Without it P-Connect would have to check the whole join.",
    "example": "The empty world.",
-   "rocq": "static/Typing.v: p_term",
+   "rocq": "static/Typing.v: p_term, ptyped_wf",
    "sig": "\\mathsf{wf}\\,W",
    "args": [
     {
@@ -6146,17 +6142,51 @@ window.MAP = {
    ]
   },
   "P-Connect.join": {
-   "title": "Result in $W_1 \\sqcup W_2$",
-   "what": "The composite is typed in the join of the two worlds.",
-   "why": "Each component keeps its own facts, and the join contains the facts of both.",
+   "title": "Result in the hidden join",
+   "what": "The composite is typed in $(W_1 \\sqcup W_2)|_{\\mathsf{I}(\\Sigma_1 \\cup \\Sigma_2, T)}$.",
+   "why": "The join keeps the facts of both components. Restricting it to the constants of the outer interface hides the constants of the cut that no outer point mentions, and keeps every fact the join derives between outer points, through the cut too.",
    "breaks": "Nothing. It is a definition.",
-   "example": "Two closes are typed in the join of their two worlds.",
+   "example": "Two closes cut at $c$ type in a world with no constant.",
    "rocq": "static/Typing.v: p_connect",
-   "sig": "W_1 \\sqcup W_2",
+   "sig": "(W_1 \\sqcup W_2)|_{\\mathsf{I}(\\Sigma_1 \\cup \\Sigma_2, T)}",
    "args": [
     {
      "name": "W_1, W_2",
      "meaning": "the worlds of the components"
+    }
+   ]
+  },
+  "P-Term.hide": {
+   "title": "Hiding $W|_{\\mathsf{I}(\\Sigma, T)}$",
+   "what": "The thread world restricted to the constants of its interface and its type.",
+   "why": "The process judgment exposes the order on interface points only. A chain through a private constant becomes a fact between interface points, because the restriction keeps the derived order of $W$. The component type is the pair of $\\Sigma$ and this world.",
+   "breaks": "Without hiding two components that use the same private constant would be compared at it, and a composition that renaming accepts would be refused.",
+   "example": "$\\varnothing \\vdash_{W|_{\\varnothing}} (\\{c\\}, \\{\\mathsf{cl}\\,c^{+} \\parallel \\mathsf{cl}\\,c^{-}\\}) : \\ast$ has a world without constants.",
+   "rocq": "static/Typing.v: p_term; static/Hiding.v: swrestrict_iff, hides_restrict",
+   "sig": "W|_{\\mathsf{I}(\\Sigma, T)}",
+   "args": [
+    {
+     "name": "W",
+     "meaning": "the world of the thread"
+    }
+   ]
+  },
+  "tp.iface": {
+   "title": "$\\mathsf{I}(\\Sigma, T)$",
+   "what": "The constants that occur in the points and session types of $\\Sigma$ and in $T$.",
+   "why": "These are the constants a renaming must fix to leave the interface alone. They contain the roots of the points of $\\Sigma$.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\mathsf{I}(\\{c^{+} \\mapsto \\mathsf{Close}@a\\}, \\ast) = \\{a\\}$.",
+   "rocq": "static/Consts.v: iface",
+   "sig": "\\mathsf{I} : \\mathsf{Env} \\times \\mathsf{Type} \\to \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Root})",
+   "args": [
+    {
+     "name": "\\Sigma",
+     "meaning": "an interface"
+    },
+    {
+     "name": "T",
+     "meaning": "a type"
     }
    ]
   },
@@ -6375,11 +6405,11 @@ window.MAP = {
   },
   "tp.pjudg": {
    "title": "$\\Sigma \\vdash\\annot{\\annot{^{N}}}_{W} p : T$",
-   "what": "The process $p$ is typed over $\\Sigma$ in $W$ at bound $N$ with result $T$, derived by P-Term and P-Connect.",
-   "why": "One judgment serves deadlock freedom at $N = \\infty$ and lock freedom at finite $N$.",
+   "what": "The process $p$ is typed over $\\Sigma$ in $W$ at bound $N$ with result $T$, derived by P-Term and P-Connect. $W$ lives on the constants of $\\mathsf{I}(\\Sigma, T)$, so a component is typed by the pair of $\\Sigma$ and its interface world.",
+   "why": "One judgment serves deadlock freedom at $N = \\infty$ and lock freedom at finite $N$. Its soundness goes through a derivation that keeps whole worlds, with private constants renamed apart.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\varnothing \\vdash\\annot{^{\\infty}}_{W} (\\varnothing, \\{t\\}) : \\ast$.",
-   "rocq": "static/Typing.v: ptyped",
+   "rocq": "static/Typing.v: ptyped, fptyped; static/Hiding.v: ptyped_full, fptyped_ptyped",
    "sig": "\\Sigma \\vdash\\annot{\\annot{^{N}}}_{W} p : T",
    "args": [
     {
@@ -10850,12 +10880,12 @@ window.MAP = {
   },
   "th.fundamental-proc": {
    "title": "Fundamental theorem for processes",
-   "what": "$\\Sigma \\vdash\\annot{^{\\infty}}_{W} p : T$ implies $\\Sigma \\vDash_W p : T$. P-Term asks a well-founded world, and P-Connect keeps the join well-founded, so the derivation gives $\\mathsf{wf}\\,W$ and the theorem reads the relation at the ranked worlds that satisfy $W$.",
-   "why": "It is an induction on the process derivation with the semantic P-Term and P-Connect as cases.",
+   "what": "$\\Sigma \\vdash\\annot{^{\\infty}}_{W} p : T$ implies $\\Sigma \\vDash_{W'} p : T$ for a well-founded world $W'$ that hides to $W$ on $\\mathsf{I}(\\Sigma, T)$. The theorem reads the relation at the ranked worlds that satisfy $W'$.",
+   "why": "The hidden derivation gives a derivation with whole worlds, whose private constants are renamed apart at each P-Connect. Its world $W'$ is well-founded, and the order $W'$ derives between interface points lies in $W$. On that derivation the theorem is an induction with the semantic P-Term and P-Connect as cases.",
    "breaks": "Nothing. It is a definition.",
    "example": "Two threads closing the two ends of $c$.",
-   "rocq": "static/FundamentalProc.v: fundamental_proc",
-   "sig": "\\Sigma \\vdash\\annot{^{\\infty}}_{W} p : T \\Rightarrow \\Sigma \\vDash_W p : T",
+   "rocq": "static/FundamentalProc.v: fundamental_proc_h, fundamental_proc; static/Hiding.v: ptyped_full",
+   "sig": "\\Sigma \\vdash\\annot{^{\\infty}}_{W} p : T \\Rightarrow \\exists W'.\\ \\mathsf{wf}\\,W' \\land W'|_{\\mathsf{I}(\\Sigma, T)} \\subseteq W \\land \\Sigma \\vDash_{W'} p : T",
    "args": [
     {
      "name": "W",
@@ -10877,12 +10907,12 @@ window.MAP = {
   },
   "th.lf-fundamental": {
    "title": "Lock-free fundamental theorem",
-   "what": "$\\Sigma \\Vdash^{N}_{W} p : T$ implies $\\Sigma \\Vvdash_W p : T$.",
+   "what": "$\\Sigma \\Vdash^{N}_{W} p : T$ implies $\\Sigma \\Vvdash_{W'} p : T$ for a well-founded world $W'$ that hides to $W$.",
    "why": "The fuel of each thread comes from its cost typing at finite $N$, and its relation at $kappa_L$ from its guarded typing.",
    "breaks": "Nothing. It is a definition.",
    "example": "The cycle example.",
-   "rocq": "soup/LFTyped.v: lf_fundamental",
-   "sig": "\\Sigma \\Vdash^{N}_{W} p : T \\Rightarrow \\Sigma \\Vvdash_W p : T",
+   "rocq": "soup/LFTyped.v: lf_fundamental_h, lf_fundamental",
+   "sig": "\\Sigma \\Vdash^{N}_{W} p : T \\Rightarrow \\exists W'.\\ \\mathsf{wf}\\,W' \\land W'|_{\\mathsf{I}(\\Sigma, T)} \\subseteq W \\land \\Sigma \\Vvdash_{W'} p : T",
    "args": [
     {
      "name": "W",
@@ -10997,11 +11027,11 @@ window.MAP = {
   },
   "th.lf-p-connect": {
    "title": "P-Connect in the lock-free judgment",
-   "what": "If $\\mathsf{conn}$, $\\Sigma_1 \\cup \\Sigma_C \\Vvdash_{W_1} p_1 : T$ and $\\Sigma_2 \\cup \\Sigma_D \\Vvdash_{W_2} p_2 : \\ast$, then $\\Sigma_1 \\cup \\Sigma_2 \\Vvdash_{W_1 \\sqcup W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T$. With $\\mathsf{wf}\\,W_1$, $\\mathsf{wf}\\,W_2$ and $\\mathsf{wf}\\,(W_1|_S \\sqcup W_2|_S)$ a closed composite is lock free.",
+   "what": "If $\\mathsf{conn}$, $\\Sigma_1 \\cup \\Sigma_C \\Vvdash_{W_1} p_1 : T$ and $\\Sigma_2 \\cup \\Sigma_D \\Vvdash_{W_2} p_2 : \\ast$, then $\\Sigma_1 \\cup \\Sigma_2 \\Vvdash_{W_1 \\sqcup W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T$. With $\\mathsf{wf}\\,W_1$, $\\mathsf{wf}\\,W_2$ and $\\mathsf{wf}\\,(W_1|_S \\sqcup W_2|_S)$ a closed composite is lock free. With hiding the components sit at whole worlds that hide to their interface worlds, with private constants apart, and the premise reads $\\mathsf{wf}$ of the join of the two interface worlds.",
    "why": "Each component is read at the ranked worlds of its own static world. A ranked world $R$ of the join satisfies both. The first component starts at some $R_1 \\sqsupseteq R$, the second is read at $R_1$ and starts at some $R_2 \\sqsupseteq R_1$, and the first moves up to $R_2$ because the relation is monotone in the world. A ranked world of the join exists exactly when the join is well-founded, which the condition on the shared roots gives. Its ranks come from the order of the join, never from the ranks of a component.",
    "breaks": "Two components at fixed ranked worlds $R_1$ and $R_2$ do not compose, because the two rankings may order shared points that no fact relates in opposite directions.",
    "example": "The client at $W_{cli}$ and the server at $W_{srv}$, which share the root $\\rho$, compose over the cut $\\{a, b\\}$.",
-   "rocq": "soup/LFCompose.v: lf_p_connect, lf_soup_connect, join_models, lf_connect_adequacy; examples/LFClientServerSplit.v: cs_split_lock_free",
+   "rocq": "soup/LFCompose.v: lf_p_connect, lf_soup_connect, join_models, lf_connect_adequacy; examples/LFClientServerSplit.v: cs_split_lock_free; soup/LFTyped.v: lf_p_connect_h",
    "sig": "\\mathsf{conn} \\land \\Sigma_1 \\cup \\Sigma_C \\Vvdash_{W_1} p_1 : T \\land \\Sigma_2 \\cup \\Sigma_D \\Vvdash_{W_2} p_2 : \\ast \\Rightarrow \\Sigma_1 \\cup \\Sigma_2 \\Vvdash_{W_1 \\sqcup W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T",
    "args": [
     {
@@ -11074,7 +11104,7 @@ window.MAP = {
    "why": "The fundamental theorem for processes followed by adequacy.",
    "breaks": "Nothing. It is a definition.",
    "example": "The cycle example is deadlock free.",
-   "rocq": "static/FundamentalProc.v: soundness",
+   "rocq": "static/FundamentalProc.v: soundness_h, soundness",
    "sig": "\\varnothing \\vdash\\annot{^{\\infty}}_{W} p : T \\Rightarrow \\mathsf{deadlock\\_free}\\,p",
    "args": [
     {
@@ -11120,7 +11150,7 @@ window.MAP = {
    "why": "The lock-free fundamental theorem followed by lock-free adequacy.",
    "breaks": "Nothing. It is a definition.",
    "example": "The cycle example is lock free.",
-   "rocq": "soup/LFTyped.v: lf_soundness",
+   "rocq": "soup/LFTyped.v: lf_soundness_h, lf_soundness",
    "sig": "\\mathsf{EM} \\land \\mathsf{AC} \\land \\varnothing \\Vdash^{N}_{W} p : T \\Rightarrow \\mathsf{lock\\_free}\\,p",
    "args": [
     {
