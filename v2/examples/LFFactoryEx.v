@@ -22,14 +22,14 @@ Ltac lworker_tac pp j :=
   [lage_tac|];
   eapply e_close with (S0 := SEnd) (x := pt_shift 1 pp); [done|apply ub_below_empty|];
   eapply e_send with (x := pp) (m := 0) (T := TUnit) (Tp := TUnit) (S0 := Sd);
-    [done|exact I|done|cbn; set_solver|apply ub_below_empty| |age_tac|shelve];
+    [done|exact I|split; [done|cbn; set_solver]|apply ub_below_empty| |age_tac|shelve];
   eapply e_pair_; [lsplit_tac EUnit (Var j)|apply e_unit'; spare_tac| | | ];
   [lage_tac|eapply e_var'; [reflexivity|spare_tac]|age_tac].
 
 (** ** mk₀ *)
 
 Lemma mk0l_body Γ n : ∃ c,
-  typed W_fx (Some 4) ∅ (hc_open 0 C0 Γ) (Some TUnit :: Some mk0l_ty :: nones n) (∅, Some (FRest RAll)) mk0_e Tresl c
+  typed W_fx (Some 4) ∅ (hc_open 0 C0 Γ) (Some TUnit :: Some mk0l_ty :: nones n) (∅, Some RAll) mk0_e Tresl c
  .
 Proof.
   eexists _.
@@ -70,7 +70,7 @@ Qed.
 (** ** mk₁ *)
 
 Lemma mk1l_body Γ n : ∃ c,
-  typed W_fx (Some 4) ∅ (hc_open 1 mk1_C Γ) (Some (TSess Sr (pvar 0) (Some 2) (Some 2)) :: Some mk1l_ty :: nones n) (∅, Some (FRest RAll)) mk1_e mk1l_res c.
+  typed W_fx (Some 4) ∅ (hc_open 1 mk1_C Γ) (Some (TSess Sr (pvar 0) (Some 2) (Some 2)) :: Some mk1l_ty :: nones n) (∅, Some RAll) mk1_e mk1l_res c.
 Proof.
   eexists _.
   { unfold mk1_e.

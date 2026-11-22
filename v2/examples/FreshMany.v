@@ -60,16 +60,16 @@ Section body.
 
   Ltac normF :=
     cbn [lenv_bot hbot orb]; rewrite ?lenv_bot_nones; unfold fm_ty, box1;
-    cbn [hbot orb sf_unionb fst snd fs_var fs_bot].
+    cbn [hbot orb sf_unionb fst snd].
 
   Ltac fut x :=
     apply (ub_below_gen _ _ x (pvar 1));
       [ let y := fresh "y" in let Hy := fresh "Hy" in
         intros y Hy; revert Hy; normF; intros Hy; heads_cases Hy; fmf
-      | normF; reflexivity  | right; fmf | normF; reflexivity ].
+      | normF; reflexivity  | right; fmf ].
 
   Lemma fm_body :
-    dftyped W ∅ Γb (Some fm_T :: Some fm_ty :: nones n) (∅, Some (FRest (RAbove (pvar 1)))) fm_e TUnit.
+    dftyped W ∅ Γb (Some fm_T :: Some fm_ty :: nones n) (∅, Some (RAbove (pvar 1))) fm_e TUnit.
   Proof.
     unfold fm_e.
     eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].

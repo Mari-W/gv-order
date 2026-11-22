@@ -582,9 +582,7 @@ Definition hyps_ren (f : nat → nat) (Ψ : hyps) : hyps :=
 Definition hctx_ren (f : nat → nat) (Γ : hctx) : hctx := HCtx (hyps_ren f (hc_hyps Γ)).
 Definition frest_ren (f : nat → nat) (r : frest) : frest :=
   match r with RAbove u => RAbove (pt_ren f u) | RAll => RAll end.
-Definition futrest_ren (f : nat → nat) (o : futrest) : futrest :=
-  match o with FRest r => FRest (frest_ren f r) | FBot o' => FBot (frest_ren f <$> o') end.
-Definition sf_ren (f : nat → nat) (F : sfuture) : sfuture := (set_map (pt_ren f) F.1, futrest_ren f <$> F.2).
+Definition sf_ren (f : nat → nat) (F : sfuture) : sfuture := (set_map (pt_ren f) F.1, frest_ren f <$> F.2).
 
 Lemma tenv_ren_empty f : tenv_ren f ∅ = ∅.
 Proof. apply fmap_empty. Qed.
@@ -651,8 +649,7 @@ Qed.
 
 Lemma sf_unionb_ren f F X b : sf_ren f (sf_unionb F X b) = sf_unionb (sf_ren f F) (set_map (pt_ren f) X) b.
 Proof.
-  destruct F as [X0 o], b; unfold sf_unionb, sf_ren; simpl; rewrite set_map_union_L; [|done].
-  f_equal. f_equal. by destruct o as [[r|[r|]]|].
+  destruct F as [X0 o], b; unfold sf_unionb, sf_ren; simpl; by rewrite set_map_union_L.
 Qed.
 
 Lemma abs_fut_ren f ub : sf_ren f (abs_fut ub) = abs_fut (ub_map (pt_ren f) ub).
@@ -683,7 +680,7 @@ Proof.
       exists (pt_ren f w). split; [apply pt_inst_pshift_ren|]. apply elem_of_map. by exists w.
     + intros (z & -> & Hz)%elem_of_map. apply elem_of_map in Hz as (w & -> & Hw). apply elem_of_map.
       exists (pt_inst (pshift m) w). split; [symmetry; apply pt_inst_pshift_ren|]. apply elem_of_map. by exists w.
-  - rewrite <-!option_fmap_compose. apply option_fmap_ext. intros [[u|]|[[u|]|]]; simpl; try done;
+  - rewrite <-!option_fmap_compose. apply option_fmap_ext. intros [u|]; simpl; try done;
       by rewrite pt_inst_pshift_ren.
 Qed.
 
@@ -794,11 +791,10 @@ Qed.
 Lemma ub_below_s_ren π W Γ ub F :
   ub_below_s W Γ ub F → ub_below_s (sw_ren π W) (hctx_ren (cb_f π) Γ) (pt_ren (cb_f π) <$> ub) (sf_ren (cb_f π) F).
 Proof.
-  destruct ub as [x|]; simpl; [|done]. destruct F as [X o]. unfold sf_ren. simpl. intros (H1 & H2 & H3). split_and!.
+  destruct ub as [x|]; simpl; [|done]. destruct F as [X o]. unfold sf_ren. simpl. intros (H1 & H2). split.
   - intros y Hy. apply elem_of_map in Hy as (y0 & -> & Hy0). by apply slt_ren, H1.
-  - intros r Hr. destruct o as [[r0|[r0|]]|]; simpl in Hr; try done; injection Hr as <-;
+  - intros r Hr. destruct o as [r0|]; simpl in Hr; try done; injection Hr as <-;
       specialize (H2 r0 eq_refl); destruct r0; simpl in *; try done; by apply sle_ren.
-  - by destruct o as [[]|].
 Qed.
 
 Lemma ub_below_u_ren π W Γ ub F :
@@ -828,18 +824,33 @@ Proof.
     by (intros; apply pt_inst_pshift_ren). done.
 Qed.
 
-Lemma cons_open_ren π W Γ m C :
-  cons_open W Γ m C → cons_open (sw_ren π W) (hctx_ren (cb_f π) Γ) m (bcs_ren (cb_f π) C).
-Proof.
-  intros H x y Hxy. rewrite <-hc_open_ren in Hxy. apply slt_ren_inv in Hxy.
-  rewrite !pt_inst_pshift_ren in Hxy. apply H in Hxy. apply (slt_ren π) in Hxy. by rewrite !pt_ren_cb in Hxy.
-Qed.
-
 Lemma wf_new_ren f C : wf_new C → wf_new (bcs_ren f C).
 Proof. unfold wf_new, new_step, bcs_ren. simpl. by rewrite length_fmap. Qed.
 
 Lemma ids_ren f n : pt_ren f <$> ids n = ids n.
 Proof. unfold ids. rewrite <-list_fmap_compose. apply list_fmap_ext. intros. apply pt_ren_pvar. Qed.
+
+(** The bridge condition renames with the environment of C. Its facts
+    speak of variables only. *)
+Lemma outer_pt_ren f m C x : pn_vb (m + length (bc_env C)) (pt_name x) →
+  outer_pt m (bcs_ren f C) x = pt_ren f (outer_pt m C x).
+Proof.
+  intros Hx. unfold outer_pt. rewrite pt_inst_plist_ren, fmap_app, ids_ren.
+  assert (pt_ren f x = x) as ->; [|done].
+  destruct x as [p b o]. unfold pt_ren. simpl in *. by rewrite (pn_ren_vb f _ p Hx).
+Qed.
+
+Lemma bridge_at_ren f m C z y : bridge_at m (bcs_ren f C) z y ↔ bridge_at m C z y.
+Proof. unfold bridge_at, tree_step, cfact_at, bcs_ren. simpl. by rewrite length_fmap. Qed.
+
+Lemma cons_open_ren π W Γ m C :
+  cons_open W Γ m C → cons_open (sw_ren π W) (hctx_ren (cb_f π) Γ) m (bcs_ren (cb_f π) C).
+Proof.
+  intros H z y Hb. apply (proj1 (bridge_at_ren (cb_f π) m C z y)) in Hb.
+  assert (pn_vb (m + length (bc_env C)) (pt_name z) ∧ pn_vb (m + length (bc_env C)) (pt_name y)) as [Hsz Hsy].
+  { destruct Hb as (_ & _ & [[_ [? ?]]|(v & u & [_ [? _]] & _ & _ & [_ [_ ?]])]); by split. }
+  rewrite !outer_pt_ren by done. by apply slt_ren, H.
+Qed.
 
 Lemma tsub_ren π W Γ T T' :
   tsub W Γ T T' → tsub (sw_ren π W) (hctx_ren (cb_f π) Γ) (ty_ren (cb_f π) T) (ty_ren (cb_f π) T').
@@ -905,16 +916,13 @@ Proof.
     { intros p q H. induction H as [p q H|p q r H _ IH]; [apply tc_once; by apply Hn|].
       eapply tc_l; [apply Hn; exact H|exact IH]. }
     intros x Hx Hc'. exact (Hcyc x Hx (Ht x x Hc')).
-  - intros z y (Hz & Hy & Hb).
-    assert (cbridge C z y) as Hb'.
-    { split_and!; [done|done|]. destruct Hb as [Hf|(v & u & Hzv & Hv & Hvu & Huy)]; [left; by apply Hc|right].
-      exists v, u. split_and!; [by apply Hc|done| |by apply Hc].
-      clear -Hn Hvu. induction Hvu as [|x w u H _ IH]; [done|eapply rtc_l; [apply Hn; exact H|done]]. }
-    assert (pn_vb (1 + length (bc_env C)) (pt_name z) ∧ pn_vb (1 + length (bc_env C)) (pt_name y)) as [Hsz Hsy].
-    { destruct Hb' as (_ & _ & [[_ [? ?]]|(v & u & [_ [? _]] & _ & _ & [_ [_ ?]])]); by split. }
-    rewrite !ctx_pt_ren by done. by apply slt_ren, Hbr.
+  - by apply cons_open_ren.
 Qed.
 
 Lemma new_ok_ren π N W Γ C :
   new_ok N W Γ C → new_ok N (sw_ren π W) (hctx_ren (cb_f π) Γ) (bcs_ren (cb_f π) C).
-Proof. destruct N; [apply gen_new_ren|apply acyc_new_ren]. Qed.
+Proof.
+  intros [Ha Hr]. destruct N as [n|].
+  - apply gen_new_ok, gen_new_ren, (new_ok_gen (Some n)); [done|by split].
+  - by apply acyc_new_ok, acyc_new_ren.
+Qed.

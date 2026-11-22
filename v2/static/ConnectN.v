@@ -60,8 +60,6 @@ Inductive pcomps (N : fuel) : list sworld → senv → proc → ty → Prop :=
   | pc_snoc Ws W Σ1 Σ2 ΣC C1 C2 E1 E2 T :
       pcomps N Ws (Σ1 ∪ ΣC) (C1, E1) T →
       ptyped N W (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
-      Σ1 ##ₘ ΣC → Σ2 ##ₘ senv_dual ΣC →
-      (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
       chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
       C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
       pcomps N (Ws ++ [W]) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
@@ -72,7 +70,7 @@ Lemma pcomps_fold N Ws Σ p T :
   pcomps N Ws Σ p T → wok N (sw_joins Ws) →
   ∃ W, ptyped N W Σ p T ∧ (∀ x y, W ⊢ₛ x ≺ y → sw_joins Ws ⊢ₛ x ≺ y) ∧ sw_consts W ⊆ sw_consts (sw_joins Ws).
 Proof.
-  induction 1 as [W Σ p T Hty|Ws W Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH Hty HD1 HD2 Hf H12 H1C H2C HC HC1 HC2];
+  induction 1 as [W Σ p T Hty|Ws W Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH Hty H12 H1C H2C HC HC1 HC2];
     intros HS.
   - exists W. split_and!; [done| |].
     + intros x y. apply sw_lt_mono, swext_joins. set_solver.

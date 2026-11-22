@@ -314,7 +314,7 @@ Lemma d_box W Γ Δ F e m k C ub c U :
   (∀ ss, length ss = k → sinsts None ss →
      dftyped W ∅ (hc_open m C Γ)
        (lenv_pinst (pshift m) (Some (TBox m k C ub c U) :: Δ))
-       (∅, Some (FRest (rest_of ub))) e (sinst_ty (slist ss) U)) →
+       (∅, Some (rest_of ub)) e (sinst_ty (slist ss) U)) →
   dftyped W ∅ Γ Δ F (EBox e) (TBox m k C ub c U).
 Proof.
   intros HΔ HU H2. dfr.
@@ -344,7 +344,8 @@ Lemma d_send W Θ Γ Δ F e S0 x m T S aS mS mS' :
 Proof.
   intros Hu Hsc Hb Hh Hub H. dfr.
   eapply e_send with (T := ty_df T) (m := m) (S := sty_df S);
-    [by rewrite unfoldS_df, Hu|by apply pscoped_df|by rewrite hbot_df|by rewrite payload_at_df, heads_df|done| | |].
+    [by rewrite unfoldS_df, Hu|by apply pscoped_df
+    |split; [by rewrite payload_at_df, hbot_df, hbot_payload_at|by rewrite payload_at_df, heads_df]|done| | |].
   - exact H.
   - apply tage_df.
   - rewrite payload_at_df. apply tsub_refl.
@@ -534,12 +535,13 @@ Proof.
     exact H2.
   - rewrite ty_df_sinst_map, <-ty_inst_df.
     eapply d_force; [done|done|by rewrite length_fmap|by eapply sinsts_df|done|exact IHtyped].
-  - eapply d_send with (T := ty_df T) (S := sty_df S);
-      [by rewrite unfoldS_df, H|by apply pscoped_df|by rewrite hbot_df|by rewrite payload_at_df, heads_df|done|].
+  - destruct H1 as [Hb1 Hh1]. eapply d_send with (T := ty_df T) (S := sty_df S);
+      [by rewrite unfoldS_df, H|by apply pscoped_df|by rewrite hbot_df, <-(hbot_payload_at m T x)
+      |by rewrite payload_at_df, heads_df|done|].
     rewrite payload_at_df. eapply d_conv; [| |exact IHtyped].
     + cbn [ty_df]. rewrite !ty_df_idem.
       apply sub_prod; [|apply tsub_refl].
-      rewrite <-(tage_df_eq _ _ _ H5). by apply tsub_df.
+      rewrite <-(tage_df_eq _ _ _ H4). by apply tsub_df.
     + cbn [tcontr]. intros HC. apply Is_true_andb in HC as [_ HC]. apply Is_true_andb. split; [|done].
       rewrite tcontr_df. unfold payload_at. rewrite tcontr_ty_inst.
       rewrite scontr_df in HC. pose proof (hd_contr _ HC) as Hv. unfold hd in Hv. rewrite H in Hv. apply Hv.

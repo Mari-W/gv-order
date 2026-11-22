@@ -82,7 +82,7 @@ Ltac worker_tac pp j :=
 
 Lemma mk0_body Γ n :
   dftyped W_fx ∅ (hc_open 0 C0 Γ)
-    (Some TUnit :: Some mk0_ty :: nones n) (∅, Some (FRest RAll)) mk0_e Tres.
+    (Some TUnit :: Some mk0_ty :: nones n) (∅, Some RAll) mk0_e Tres.
 Proof.
   unfold mk0_e, let_new.
   eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
@@ -115,7 +115,7 @@ Proof. apply boxg_typed; [contr_tac|contr_tac|reflexivity|apply mk0_body]. Qed.
 
 Lemma mk1_body Γ n :
   dftyped W_fx ∅ (hc_open 1 mk1_C Γ)
-    (Some (TSess Sr (pvar 0) None None) :: Some mk1_ty :: nones n) (∅, Some (FRest RAll)) mk1_e mk1_res.
+    (Some (TSess Sr (pvar 0) None None) :: Some mk1_ty :: nones n) (∅, Some RAll) mk1_e mk1_res.
 Proof.
   unfold mk1_e.
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Pair (Var 0) ENew) EUnit| |].

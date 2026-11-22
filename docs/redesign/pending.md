@@ -103,6 +103,92 @@ gains a section at its end. CheckAll rises from 210 to 227 lines.
   - The why of th.fair-run-exists says that the lock-free theorems are
     not vacuous.
 
+## Report, 2026-11-22, accepted proposals of the content pass (fx-static)
+
+Branch fx-static in .claude/worktrees/fx-static, from redesign at c813418,
+nothing pushed or merged. Commits dba43f9 (F10), 0d1b4c7 (F6, F4), 3702f51
+(map), 9b17ad6 (F8), 0bbb8db (map), 8c557f5 (Q14), 4a0996c (map and the
+status of each proposal in fable-findings.md) and the commit of this report.
+No Admitted, no Axiom, no new Parameter. No syntactic clause in a relation,
+no semantic premise in a typing rule. EM and FC stay on the lock-free side.
+
+Laptop, ~/build-spo-fxs, at the tree of 8c557f5: `make` passes, `make check`
+reports 210 of 210 results closed, `make test` prints the expected forms. No
+test/*.expected file was regenerated. Each commit before it built on its own
+with 210 of 210 (F10, F6 with F4, F8). docs/explorer/check.sh ends with 0
+errors, `xref-missing` 0.
+
+- F10, done. `p_connect`, `fp_connect` and `pc_snoc` lose `Σ1 ##ₘ ΣC`,
+  `Σ2 ##ₘ senv_dual ΣC` and the partner-freedom of $\Sigma_C$. P-Connect has
+  9 premises instead of 12. `chans_disj_map`, `chans_disj_map_dual` and
+  `pfree_union_r` (static/Typing.v) derive them where proofs need them.
+  `lf_p_connect` and `lf_p_connect_h` lose the two map disjointness
+  premises and keep partner-freedom of the cut, which the soup reads and the
+  semantics does not give.
+- F6, done. `new_ok N W Γ C := acyc_new W Γ C ∧ (N ≠ None → well_founded
+  (new_step C) ∧ ∃ Sr, gen_new_rel W Γ C Sr)`. `gen_new_iff` shows the
+  conjunction equal to `gen_new`, and `new_ok_acyc` is a projection.
+  `new_ok_gen`, `gen_new_ok` and `acyc_new_ok` translate.
+- F4, done. `cons_open W Γ m C` is the bridge condition for $m$ bound roots,
+  $m = 0$ included (`in_tree`, `cfact_at`, `tree_step`, `outer_pt`,
+  `bridge_at`). `acyc_new W Γ C = tree_acyclic C ∧ cons_open W Γ 1 C`, and
+  `cons_open_1` relates the instance to `cbridge`. The old form is the lemma
+  `cons_open_conservative` (static/PointSubst.v, the walk `binv`), and it
+  needs the facts of $W$ at constant roots (`facts_const`). So
+  `opened_cons`, `cl2_needs`, `letu_cl2_needs`, `sbv_thread_needs`,
+  `fwd_needs` and `fj_wait_needs` take `facts_const W`, which each process
+  derivation gives through `fptyped_wf`. `cons_tree`, `cons_new` and
+  `cons_gen` lose their `facts_const` premise, and the 15 discharges are
+  `cons_tac`, `apply cons_tree, …` or `apply cons_gen, …`. The partner-set
+  walk of PointSubst.v (section `cons_gen`) is gone. `sbv_rejected`,
+  `sbv_rejected_h`, `Tbad_not_cons`, `ring_rejected*`, `cyc2_rejected*`,
+  `opposite_clash`, `shared_not_cut`, GuardEx, SinstStuck and all examples
+  hold.
+- F8, done. `futrest`, `FBot`, `fs_var` and `fs_bot` are gone. A future is
+  `gset point * option frest` and `sf_unionb F X true := (F.1 ∪ X, Some
+  RAll)`. `ub_below_s` has two conjuncts. `sf_den R F` and `sem_typed` lose
+  the set $B$, and `typed_sem` reads the rest at `ρ ∪ (if b then B' else ∅)`
+  where a premise holds a hidden end (`rest_ok_unionb_b`, `den_unionb`).
+  `hbot` and E-Abs.lb are unchanged.
+- F5, not done. Tickets on interface ends need a third component in `senv`,
+  destructured in 53 files, and a new soup invariant in place of
+  `sp_sigcap` (soup/State.v), which `soup_connect` and `lf_p_term` read.
+  That is a refactor of the lock-free process semantics next to the files of
+  fx-cost.
+- Q6, no change. The Rocq states only `ptyped (Some N)` with `N : nat`. On
+  the map $N \in \mathbb{N}$ is the display of `Some N`.
+- Q7, kept. `typed_sem` needs `sworld_wf W` for `slt_sem`, which
+  instantiates facts of $W$ (`sw_lt_pinst`).
+- Q14, done. `below_ty W Γ x T := hbot T = false ∧ ∀ y, y ∈ heads T → slt W Γ
+  x y` is the one premise of `e_send` at the payload (`hbot_payload_at`).
+  E-Send has 7 premises instead of 8. `d_send` keeps two premises.
+- Q13, not done. `typed_sinst` asks `lenv_contr Δ` and changes the box type
+  in $\Delta$ unless its session variables are bound, so E-Box at the
+  identity instance needs two new premises. The fundamental theorem reads
+  every instance by induction, and an instance made by `typed_sinst` is no
+  subderivation.
+- Q8, not done. Adding `ech o ∈ C` to P-Act-Msg and P-Act-Choice reaches the
+  multiset steps of lang/Process.v, `partner_need` and the progress proof of
+  lang/Safety.v, `compat_enabled` and soup/LFAdequacy.v, and compat/Connect.v.
+  Removing it from P-Act-Close breaks the proofs that read the premise of a
+  close step in soup/LFRunFacts.v, soup/LFEvents.v and soup/SoupRun.v.
+- Q4, kept. Dropping `¬ unlimited T` from E-Open builds through
+  `lren_insert` and fails in cost/Exact.v, where `lsame_pinst_insert` keeps
+  the opened entry linear so that each linear variable of a typed term
+  occurs in it. The attempt is not in the history, and the map now gives
+  this reason.
+
+Map blocks updated: `p-typing` (P-Connect premises, note
+`P-Connect.disj`, note `P-Connect.cutfree` removed), `r-ex` (the bridge
+condition for $\bar\iota$ with the tree order and the bridge, notes
+`E-Open.cons`, `E-Open.entry`, `new.step`, `new.bridge`, `w.tree`), `r-new`
+(`acyc_new` as acyclic plus the bridge condition at one root, `new_ok` with
+the part for ranks in lock-free colour, notes `new.acyc`, `new.ok`,
+`new.gen`, new note `new.rank`, note `new.lemmaC` removed), `t-contexts`,
+`t-side`, `sj-all` (future without $\bot$, notes `tj.F`, `side.ub`,
+`tj.held`, `sj.den`, note `ctx.bot` removed), the E-Send note `E-Send.heads`,
+and the theorem row and note `th.cl2-needs` in `th-terms`.
+
 ## Report, 2026-11-22, deadlock freedom over acyclic worlds
 
 Branch redesign-df in .claude/worktrees/redesign-df, from redesign at

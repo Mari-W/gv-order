@@ -90,7 +90,7 @@ Proof.
   - split; [by apply map_disjoint_singleton_l, lookup_singleton_ne|done].
   - apply lsplit_nil.
   - eapply (e_close _ _ _ _ _ _ _ SEnd); [reflexivity| |].
-    + simpl. split_and!; [|done|done]. intros z Hz.
+    + simpl. split_and!; [|done]. intros z Hz.
       rewrite (left_id_L ∅ (∪)), (right_id_L ∅ (∪)) in Hz.
       apply elem_of_tenv_heads in Hz as (o & e & Ho & ->).
       apply lookup_singleton_Some in Ho as [_ <-]. simpl. by apply sl_w, sw_lt_fact.
@@ -99,7 +99,7 @@ Proof.
     + rewrite lookup_singleton_eq. split_and!; done.
     + by rewrite lookup_singleton_ne.
   - apply lage_nil.
-  - eapply (e_close _ _ _ _ _ _ _ SEnd); [reflexivity|simpl; split_and!; [set_solver|done|done]|].
+  - eapply (e_close _ _ _ _ _ _ _ SEnd); [reflexivity|simpl; split_and!; [set_solver|done]|].
     apply e_chan. intros ? Hin. inversion Hin.
 Qed.
 
@@ -186,10 +186,6 @@ Proof.
   rewrite Ec, chans_of_empty, !(left_id_L ∅ (∪)), Ed in H. unfold comp. apply H; clear H.
   - apply cl2_term; [congruence|cbn; congruence|]. by left.
   - apply cl2_term; [congruence|cbn; congruence|]. right. by rewrite pt_dual_dual.
-  - apply map_disjoint_empty_l.
-  - apply map_disjoint_empty_l.
-  - intros o. unfold ΣC, senv2. rewrite dom_union_L, !dom_singleton_L, !elem_of_union, !elem_of_singleton.
-    intros [->| ->] [E|E]; discriminate.
   - set_solver.
   - set_solver.
   - set_solver.
@@ -217,9 +213,6 @@ Proof.
   apply H; clear H.
   - by apply comp_typed.
   - by apply comp_typed.
-  - apply map_disjoint_empty_l.
-  - apply map_disjoint_empty_l.
-  - intros o. rewrite dom_empty_L. set_solver.
   - set_solver.
   - set_solver.
   - set_solver.

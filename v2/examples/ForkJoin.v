@@ -22,7 +22,8 @@
       (acyc-new) (docs/redesign/check-df-acyclic.md, section 4.1). The
       box hypothesis H is infinite and closed under the descent to a
       child, and the laws of ρ hold an infinite descending chain.
-    - [fj_wait_needs]: every typing of close a; close b at any bound
+    - [fj_wait_needs]: every typing of close a; close b at any bound,
+      over a world whose facts sit at constant roots,
       asks the point of a below the head of b. In the recursive worker
       the child's end sits at the dual of the parent's, so the recursive
       force needs H at an instance whose dual lies below ῑ. Under
@@ -120,14 +121,14 @@ Section worker.
     eapply d_letu; [apply tsplit_empty|lsplit_tac (EClose (Var 3)) EUnit| |].
     { eapply d_close with (S0 := SEnd) (x := ρ·0); [reflexivity| |].
       - cbn [lenv_bot hbot orb]. rewrite lenv_bot_nones. cbn [sf_unionb].
-        split_and!; [|done|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
+        split_and!; [|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
         destruct Hy as [[]|[[]|[->|[->|[[]|[]]]]]];
           apply fj_fact; [apply fj_in|left; done|apply fj_in|right; left; done].
       - eapply d_var'; [reflexivity|]. spare_tac. }
     eapply d_letu; [apply tsplit_empty|lsplit_tac (EClose (Var 1)) EUnit| |].
     { eapply d_close with (S0 := SEnd) (x := ρ·1); [reflexivity| |].
       - cbn [lenv_bot hbot orb]. rewrite lenv_bot_nones. cbn [sf_unionb].
-        split_and!; [|done|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
+        split_and!; [|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
         destruct Hy as [[]|[[]|[->|[[]|[]]]]].
         apply fj_fact; [apply fj_in|right; right; done].
       - eapply d_var'; [reflexivity|]. spare_tac. }
@@ -369,7 +370,7 @@ Lemma fjr_acyc W Γ : acyc_new W Γ (bcs_of fjr_L).
 Proof.
   split.
   - intros x _ Hc. exact (fjr_lt_irrefl x (fjr_tc_lt x x Hc)).
-  - intros z y (Hz & _ & [[Hf _]|(v & u & [Hf _] & _)]); exfalso; apply Hz; unfold in_tree0;
+  - apply cons_open_1. intros z y (Hz & _ & [[Hf _]|(v & u & [Hf _] & _)]); exfalso; apply Hz; unfold in_tree0;
       by destruct (fjH_root _ _ _ Hf) as [-> _].
 Qed.
 
@@ -463,14 +464,14 @@ Section rworker.
     eapply d_letu; [apply tsplit_empty|lsplit_tac (EClose (Var 3)) EUnit| |].
     { eapply d_close with (S0 := SEnd) (x := ρ·0); [reflexivity| |].
       - cbn [lenv_bot hbot orb]. rewrite lenv_bot_nones. cbn [sf_unionb].
-        split_and!; [|done|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
+        split_and!; [|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
         destruct Hy as [[]|[[]|[->|[->|[[]|[]]]]]]; apply fjr_fact;
           [left; left; reflexivity|left; right; left; reflexivity].
       - eapply d_var'; [reflexivity|]. spare_tac. }
     eapply d_letu; [apply tsplit_empty|lsplit_tac (EClose (Var 1)) EUnit| |].
     { eapply d_close with (S0 := SEnd) (x := ρ·1); [reflexivity| |].
       - cbn [lenv_bot hbot orb]. rewrite lenv_bot_nones. cbn [sf_unionb].
-        split_and!; [|done|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
+        split_and!; [|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
         destruct Hy as [[]|[[]|[->|[[]|[]]]]].
         apply fjr_fact. left; right; right; reflexivity.
       - eapply d_var'; [reflexivity|]. spare_tac. }
@@ -518,7 +519,7 @@ Proof.
   eapply d_let; [apply tsplit_empty|apply lsplit_nil| |].
   { apply (d_new_acyc _ _ _ _ (bcs_of fjr_L) SEnd None None None None);
       [apply spare_unl; spare_tac|apply fjr_acyc|contr_tac]. }
-  eapply d_open with (i := 0); [reflexivity|cbn; tauto|apply cons_tree; [by intros ?? []|apply fjr_tree_ends]|].
+  eapply d_open with (i := 0); [reflexivity|cbn; tauto|apply cons_tree, fjr_tree_ends|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
   fold Γr.
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
@@ -643,7 +644,7 @@ Lemma fa_acyc W Γ : acyc_new W Γ (bcs_of fa_L).
 Proof.
   split.
   - intros x _ Hc. exact (fa_lt_irrefl x (fa_tc_lt x x Hc)).
-  - intros z y (Hz & _ & [[Hf _]|(v & u & [Hf _] & _)]); exfalso; apply Hz; unfold in_tree0;
+  - apply cons_open_1. intros z y (Hz & _ & [[Hf _]|(v & u & [Hf _] & _)]); exfalso; apply Hz; unfold in_tree0;
       by destruct (faH_root _ _ _ Hf) as [-> _].
 Qed.
 
@@ -728,7 +729,7 @@ Section fworker.
     eapply d_letp; [apply tsplit_empty|lsplit_tac (ERecv (Var 1)) EUnit| |].
     { eapply d_recv with (x := ρ·0) (m := 0) (T := TUnit) (S0 := Sa); [reflexivity|exact I| |].
       - cbn [lenv_bot hbot orb]. rewrite ?lenv_bot_nones. cbn [sf_unionb].
-        split_and!; [|done|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
+        split_and!; [|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
         repeat match goal with H : _ ∨ _ |- _ => destruct H end; subst; try contradiction.
         eapply sl_trans; [apply sl_po|]. apply fa_fact. left. reflexivity.
       - eapply d_var'; [reflexivity|]. spare_tac. }
@@ -737,7 +738,7 @@ Section fworker.
     eapply d_letu; [apply tsplit_empty|lsplit_tac (EClose (Var 0)) EUnit| |].
     { eapply d_close with (S0 := SEnd) (x := (ρ·0)⁺); [reflexivity| |].
       - cbn [lenv_bot hbot orb]. rewrite ?lenv_bot_nones. cbn [sf_unionb].
-        split_and!; [|done|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
+        split_and!; [|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
         repeat match goal with H : _ ∨ _ |- _ => destruct H end; subst; try contradiction.
         apply fa_fact. left. reflexivity.
       - eapply d_var'; [reflexivity|]. spare_tac. }
@@ -745,7 +746,7 @@ Section fworker.
     { eapply d_send with (x := ρ) (m := 0) (T := TUnit) (S0 := Sy);
         [reflexivity|exact I|done|cbn; set_solver| |].
       { cbn [lenv_bot hbot orb]. rewrite ?lenv_bot_nones. cbn [sf_unionb].
-        split_and!; [|done|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
+        split_and!; [|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
         repeat match goal with H : _ ∨ _ |- _ => destruct H end; subst; contradiction. }
       eapply d_pair; [apply tsplit_empty|lsplit_tac EUnit (Var 4)| |].
       - apply d_unit'. spare_tac.
@@ -791,7 +792,7 @@ Proof.
   eapply d_let; [apply tsplit_empty|apply lsplit_nil| |].
   { apply (d_new_acyc _ _ _ _ (bcs_of fa_L) Sa None None None None);
       [apply spare_unl; spare_tac|apply fa_acyc|contr_tac]. }
-  eapply d_open with (i := 0); [reflexivity|cbn; tauto|apply cons_tree; [by intros ?? []|apply fa_tree_ends]|].
+  eapply d_open with (i := 0); [reflexivity|cbn; tauto|apply cons_tree, fa_tree_ends|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
   fold Γfa.
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
@@ -926,7 +927,7 @@ Lemma fb_acyc W Γ : acyc_new W Γ (bcs_of fb_L).
 Proof.
   split.
   - intros x _ Hc. exact (fb_lt_irrefl x (fb_tc_lt x x Hc)).
-  - intros z y (Hz & _ & [[Hf _]|(v & u & [Hf _] & _)]); exfalso; apply Hz; unfold in_tree0;
+  - apply cons_open_1. intros z y (Hz & _ & [[Hf _]|(v & u & [Hf _] & _)]); exfalso; apply Hz; unfold in_tree0;
       by destruct (fbH_root _ _ _ Hf) as [-> _].
 Qed.
 
@@ -997,7 +998,7 @@ Section bworker.
 
   Local Ltac fbf := apply fb_fact; left; first [left; reflexivity|right; left; reflexivity|right; right; reflexivity].
   Local Ltac rdy := cbn [lenv_bot hbot orb]; rewrite ?lenv_bot_nones; cbn [sf_unionb];
-    split_and!; [|done|done]; let y := fresh "y" in let Hy := fresh "Hy" in
+    split_and!; [|done]; let y := fresh "y" in let Hy := fresh "Hy" in
     intros y Hy; cbn [fst] in Hy; heads_simpl Hy;
     repeat match goal with H : _ ∨ _ |- _ => destruct H end; subst; try contradiction.
 
@@ -1093,7 +1094,7 @@ Proof.
   eapply d_let; [apply tsplit_empty|apply lsplit_nil| |].
   { apply (d_new_acyc _ _ _ _ (bcs_of fb_L) Sa None None None None);
       [apply spare_unl; spare_tac|apply fb_acyc|contr_tac]. }
-  eapply d_open with (i := 0); [reflexivity|cbn; tauto|apply cons_tree; [by intros ?? []|apply fb_tree_ends]|].
+  eapply d_open with (i := 0); [reflexivity|cbn; tauto|apply cons_tree, fb_tree_ends|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
   fold Γfb.
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
@@ -1149,7 +1150,7 @@ Proof. exact (soundness sw_empty _ TUnit fib_term). Qed.
     does not apply to the deadlock-free judgment ([fjr_dftyped]). *)
 Lemma fj_wait_needs W N Θ Γ Δ F c w T k ec ew :
   c ≠ w → typed W N Θ Γ Δ F (LetU (EClose (Chan c)) (EClose (Chan w))) T k →
-  Θ !! c = Some ec → Θ !! w = Some ew → slt W Γ (te_pt ec) (te_pt ew)‾.
+  Θ !! c = Some ec → Θ !! w = Some ew → facts_const W → slt W Γ (te_pt ec) (te_pt ew)‾.
 Proof. apply cl2_needs. Qed.
 
 Print Assumptions fj_deadlock_free.

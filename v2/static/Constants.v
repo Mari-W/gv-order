@@ -29,9 +29,9 @@ Qed.
 
 (** The body of an eta-expansion with upper point u runs below
     everything above u. *)
-Lemma ub_fvar W Γ u : ub_below_s W Γ u (∅, Some (FRest (rest_of u))).
+Lemma ub_fvar W Γ u : ub_below_s W Γ u (∅, Some (rest_of u)).
 Proof.
-  destruct u as [x|]; [|done]. simpl. split; [set_solver|split; [|done]].
+  destruct u as [x|]; [|done]. simpl. split; [set_solver|].
   intros r [= <-]. by left.
 Qed.
 
@@ -171,7 +171,7 @@ Lemma k_send W N Γ Δ F x S0 m T S aS mS Tp Tp' a :
     (TLolli (UPt x) LNone (Some 1) (TProd Tp (TSess S0 x aS mS)) (TSess S x⁺ mS mS) a) (Some 0).
 Proof.
   intros HΔ Hu Hsc Hb Hh Ha Hs HT HA. apply eta; [done|cbn [tcontr]; apply Is_true_andb; split; [|exact HA]; exact HT|].
-  change (Some 1) with (fadd (Some 0) (Some 1)). eapply e_send; [done|done|done| |apply (ub_fvar _ _ (Some x))|var HΔ|exact Ha|exact Hs].
+  change (Some 1) with (fadd (Some 0) (Some 1)). eapply e_send; [done|done|split; [by rewrite hbot_payload_at|]|apply (ub_fvar _ _ (Some x))|var HΔ|exact Ha|exact Hs].
   intros y Hy. by apply Hh.
 Qed.
 

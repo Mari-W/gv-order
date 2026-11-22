@@ -57,7 +57,7 @@ Section body.
 
   Ltac normF :=
     cbn [lenv_bot hbot orb]; rewrite ?lenv_bot_nones; unfold rgl_ty, lbox;
-    cbn [hbot orb sf_unionb fst snd fs_var fs_bot].
+    cbn [hbot orb sf_unionb fst snd].
 
   Ltac fut x :=
     apply (ub_below_gen _ _ x (sh 1 (pvar 0)));
@@ -65,10 +65,10 @@ Section body.
         intros y Hy; revert Hy; normF; unfold payload_at, ty_inst; cbn [pinst_ty]; intros Hy; heads_cases Hy;
         first [rgf | eapply sl_trans; [apply sl_po|rgf]]
       | normF; reflexivity 
-      | first [by left | right; apply sl_po] | normF; reflexivity ].
+      | first [by left | right; apply sl_po] ].
 
   Lemma rgl_body : ∃ c,
-    typed W (Some 8) ∅ Γb (Some rgl_T :: Some rgl_ty :: nones n) (∅, Some (FRest (RAbove (sh 1 (pvar 0))))) rg_e TUnit c.
+    typed W (Some 8) ∅ Γb (Some rgl_T :: Some rgl_ty :: nones n) (∅, Some (RAbove (sh 1 (pvar 0)))) rg_e TUnit c.
   Proof.
     eexists _.
     { unfold rg_e.
@@ -91,7 +91,7 @@ Section body.
       lage_tac.
       eapply e_close with (S0 := SEnd) (x := sh 1 (pvar 1)); [done|apply ub_below_empty|].
       eapply e_send with (x := pvar 1) (m := 1) (T := TSess Schl (pvar 0) (Some 2) (Some 4)) (S0 := dual Schl);
-        [exact unfold_dSchl|exact pscoped_SchlT|done| |apply ub_below_empty| | |].
+        [exact unfold_dSchl|exact pscoped_SchlT|split; [done|]|apply ub_below_empty| | |].
       { intros y Hy. cbn in Hy. apply elem_of_singleton in Hy as ->. rgf. }
       { eapply e_pair_; [lsplit_tac (Var 2) (Var 4)| | | | ].
         { eapply e_var'; [reflexivity|]. spare_tac. }

@@ -399,9 +399,6 @@ Proof.
   rewrite chans_Σx in H. apply H; clear H.
   - exact HP.
   - rewrite Σf_split. apply fwd_term.
-  - exact HΣ.
-  - rewrite Σx_dual. unfold Σy. apply map_disjoint_singleton_l_2. by rewrite lookup_singleton_ne.
-  - intros o. unfold Σx. rewrite dom_singleton_L, !elem_of_singleton. intros ->. discriminate.
   - rewrite ?chans_Σy, ?chans_Σx. set_solver.
   - rewrite ?chans_Σy, ?chans_Σx. set_solver.
   - rewrite ?chans_Σy, ?chans_Σx. set_solver.
@@ -476,9 +473,6 @@ Proof.
   rewrite E in H. apply H; clear H E.
   - exact H1.
   - apply p2_term.
-  - apply map_disjoint_empty_l.
-  - apply map_disjoint_empty_l.
-  - intros o. unfold Σy. rewrite dom_singleton_L, !elem_of_singleton. intros ->. discriminate.
   - unfold chans_of. rewrite dom_empty_L. set_solver.
   - unfold chans_of. rewrite dom_empty_L. set_solver.
   - unfold chans_of. rewrite dom_empty_L. set_solver.
@@ -522,12 +516,12 @@ End inv_recv.
 
 Lemma fwd_needs W N Θ Γ Δ F a b T c ea eb :
   a ≠ b → typed W N Θ Γ Δ F (fwd_t a b) T c →
-  Θ !! a = Some ea → Θ !! b = Some eb → slt W Γ (te_pt ea) (te_pt eb)‾.
+  Θ !! a = Some ea → Θ !! b = Some eb → facts_const W → slt W Γ (te_pt ea) (te_pt eb)‾.
 Proof.
-  intros Hab H Ha Hb. unfold fwd_t in H.
+  intros Hab H Ha Hb Hfc. unfold fwd_t in H.
   apply inv_letp in H as (Θ' & Γ' & Δ' & F' & Θ1 & Θ2 & Θ2' & Δ1 & Δ2 & Δ2' & T1 & T2 & T' & c1 & c2
     & Ho & Hs & _ & H1 & _ & _ & _).
-  destruct (opened_cons _ _ _ _ _ _ _ _ _ Ho) as (σ & Hσl & _ & Hσs).
+  destruct (opened_cons _ _ _ _ _ _ _ _ _ Hfc Ho) as (σ & Hσl & _ & Hσs).
   pose proof (typed_tfacts _ _ _ _ _ _ _ _ _ H1) as [Hd1 _]. simpl in Hd1.
   assert (Θ1 !! a = Some (tentry_pinst σ ea)) as Ha1.
   { eapply tsplit_lookup_l; [done| |by apply Hσl].
@@ -537,7 +531,7 @@ Proof.
   assert (Θ2 !! b = Some (tentry_pinst σ eb)) as Hb2.
   { eapply tsplit_lookup_r; [done| |by apply Hσl]. rewrite <-Hd1. set_solver. }
   apply inv_recv in H1 as (Θ'' & Γ'' & Δ'' & F'' & S0 & x & a0 & mS & c0 & Ho2 & Hub & Hch).
-  destruct (opened_cons _ _ _ _ _ _ _ _ _ Ho2) as (σ2 & Hl2 & Hf2 & Hs2).
+  destruct (opened_cons _ _ _ _ _ _ _ _ _ Hfc Ho2) as (σ2 & Hl2 & Hf2 & Hs2).
   destruct (inv_chan _ _ _ _ _ _ _ _ _ Hch _ _ _ _ eq_refl) as (e & He & Hx).
   rewrite (Hl2 _ _ Ha1) in He. injection He as <-.
   destruct Hub as [Hub _].
@@ -589,8 +583,8 @@ Proof.
     destruct (Hlp (edual o1)) as (S1' & x' & e1' & Hc' & He1' & <-); [rfends_tac|rfends_tac|].
     rewrite (sdual_lookup _ _ _ _ Hc) in Hc'. rewrite (sdual_lookup _ _ _ _ Hd) in Hd'.
     injection Hc' as _ Hx'. injection Hd' as _ Hy'.
-    pose proof (slt_empty_w _ _ _ (fwd_needs _ _ _ _ _ _ _ _ _ _ _ _ o1_o2 Ht He1 He2)) as Ha.
-    pose proof (slt_empty_w _ _ _ (fwd_needs _ _ _ _ _ _ _ _ _ _ _ _ o2o1_dual_ne Hp He2' He1')) as Hb.
+    pose proof (slt_empty_w _ _ _ (fwd_needs _ _ _ _ _ _ _ _ _ _ _ _ o1_o2 Ht He1 He2 (facts_const_wf _ (proj1 (fptyped_wf _ _ _ _ _ H1))))) as Ha.
+    pose proof (slt_empty_w _ _ _ (fwd_needs _ _ _ _ _ _ _ _ _ _ _ _ o2o1_dual_ne Hp He2' He1' (facts_const_wf _ (proj1 (fptyped_wf _ _ _ _ _ H2))))) as Hb.
     rewrite <-Hx', <-Hy', pt_dual_dual in Hb.
     apply (Hirr (te_pt e1)). eapply sw_lt_trans; [eapply sw_lt_mono; [apply swext_join_l|exact Ha]|].
     eapply sw_lt_mono; [apply swext_join_r|exact Hb].
@@ -603,8 +597,8 @@ Proof.
     pose proof (sdual_lookup _ _ _ _ Hc') as Hc2. pose proof (sdual_lookup _ _ _ _ Hd') as Hd2.
     rewrite edual_edual in Hc2, Hd2. rewrite Hc2 in Hc. rewrite Hd2 in Hd.
     injection Hc as _ Hx. injection Hd as _ Hy.
-    pose proof (slt_empty_w _ _ _ (fwd_needs _ _ _ _ _ _ _ _ _ _ _ _ o1_o2 Ht He1 He2)) as Ha.
-    pose proof (slt_empty_w _ _ _ (fwd_needs _ _ _ _ _ _ _ _ _ _ _ _ o2o1_dual_ne Hp He2' He1')) as Hb.
+    pose proof (slt_empty_w _ _ _ (fwd_needs _ _ _ _ _ _ _ _ _ _ _ _ o1_o2 Ht He1 He2 (facts_const_wf _ (proj1 (fptyped_wf _ _ _ _ _ H2))))) as Ha.
+    pose proof (slt_empty_w _ _ _ (fwd_needs _ _ _ _ _ _ _ _ _ _ _ _ o2o1_dual_ne Hp He2' He1' (facts_const_wf _ (proj1 (fptyped_wf _ _ _ _ _ H1))))) as Hb.
     rewrite <-Hx, <-Hy, pt_dual_dual in Ha.
     apply (Hirr (te_pt e2')). eapply sw_lt_trans; [eapply sw_lt_mono; [apply swext_join_l|exact Hb]|].
     eapply sw_lt_mono; [apply swext_join_r|exact Ha].
@@ -1005,9 +999,6 @@ Proof.
         apply map_disjoint_singleton_l_2; by rewrite lookup_singleton_ne).
       apply fwdh_term.
     - apply p1h_term.
-    - unfold Σhy, Σhx. apply map_disjoint_singleton_l_2. by rewrite lookup_singleton_ne.
-    - apply map_disjoint_empty_l.
-    - intros o. unfold Σhx. rewrite dom_singleton_L, !elem_of_singleton. intros ->. discriminate.
     - rewrite ?chans_hy, ?chans_hx, ?chans_empty. set_solver.
     - rewrite ?chans_hy, ?chans_hx, ?chans_empty. set_solver.
     - rewrite ?chans_hy, ?chans_hx, ?chans_empty. set_solver.
@@ -1022,9 +1013,6 @@ Proof.
   rewrite E in H. apply H; clear H E.
   - exact H1.
   - pose proof p2h_term as Hp. rewrite (left_id_L ∅ (∪)) in Hp. exact Hp.
-  - apply map_disjoint_empty_l.
-  - apply map_disjoint_empty_l.
-  - intros o. unfold Σhy. rewrite dom_singleton_L, !elem_of_singleton. intros ->. discriminate.
   - rewrite chans_empty. set_solver.
   - rewrite chans_empty. set_solver.
   - rewrite chans_empty. set_solver.
@@ -1399,9 +1387,6 @@ Proof.
     { rewrite Σxp_dual. unfold Σyp, Σp. apply map_union_comm.
       apply map_disjoint_singleton_l_2. by rewrite lookup_singleton_ne. }
     apply fwdp_term.
-  - exact HΣ.
-  - rewrite Σxp_dual. unfold Σyp. apply map_disjoint_singleton_l_2. by rewrite lookup_singleton_ne.
-  - intros o. unfold Σxp. rewrite dom_singleton_L, !elem_of_singleton. intros ->. discriminate.
   - rewrite ?Ey, ?Ex. set_solver.
   - rewrite ?Ey, ?Ex. set_solver.
   - rewrite ?Ey, ?Ex. set_solver.

@@ -23,16 +23,16 @@ Section body.
 
   Ltac normF :=
     cbn [lenv_bot hbot orb]; rewrite ?lenv_bot_nones; unfold fml_ty, lbox;
-    cbn [hbot orb sf_unionb fst snd fs_var fs_bot].
+    cbn [hbot orb sf_unionb fst snd].
 
   Ltac fut x :=
     apply (ub_below_gen _ _ x (pvar 1));
       [ let y := fresh "y" in let Hy := fresh "Hy" in
         intros y Hy; revert Hy; normF; intros Hy; heads_cases Hy; fmf
-      | normF; reflexivity  | right; fmf | normF; reflexivity ].
+      | normF; reflexivity  | right; fmf ].
 
   Lemma fml_body : ∃ c,
-    typed W (Some 8) ∅ Γb (Some fml_T :: Some fml_ty :: nones n) (∅, Some (FRest (RAbove (pvar 1)))) fm_e TUnit c.
+    typed W (Some 8) ∅ Γb (Some fml_T :: Some fml_ty :: nones n) (∅, Some (RAbove (pvar 1))) fm_e TUnit c.
   Proof.
     eexists _.
     { unfold fm_e.
@@ -77,12 +77,12 @@ Section body.
     eapply e_letu_; [lsplit_tac (EClose (ESend (Pair EUnit (ESend (Pair EUnit (Var 1)))))) EUnit| | | ].
     { eapply e_close with (S0 := SEnd) (x := pt_shift 1 (pt_shift 1 (fmd 0))); [done|fut (fmd 2)|].
       eapply e_send with (x := pt_shift 1 (fmd 0)) (m := 0) (T := TUnit) (Tp := TUnit) (S0 := Sd1);
-        [done|exact I|done|cbn; set_solver|fut (fmd 1)| |age_tac|shelve].
+        [done|exact I|split; [done|cbn; set_solver]|fut (fmd 1)| |age_tac|shelve].
       eapply e_pair_; [lsplit_tac EUnit (ESend (Pair EUnit (Var 1)))| | | | ].
       { apply e_unit'. spare_tac. }
       lage_tac.
       { eapply e_send with (x := fmd 0) (m := 0) (T := TUnit) (Tp := TUnit) (S0 := Sdd);
-          [done|exact I|done|cbn; set_solver|fut (fmd 0)| |age_tac|shelve].
+          [done|exact I|split; [done|cbn; set_solver]|fut (fmd 0)| |age_tac|shelve].
         eapply e_pair_; [lsplit_tac EUnit (Var 1)| | | | ].
         { apply e_unit'. spare_tac. }
         lage_tac.

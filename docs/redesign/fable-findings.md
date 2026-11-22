@@ -169,6 +169,8 @@ does today).
 
 ### F4. One bridge condition for creation and opening (blocks `r-new`, `r-ex`)
 
+**Status (fx-static).** Done. `cons_open W Γ m C` is the bridge condition for $m$ roots (`in_tree`, `cfact_at`, `tree_step`, `outer_pt`, `bridge_at`, static/Contexts.v), including $m = 0$. `acyc_new = tree_acyclic ∧ cons_open W Γ 1 C`, with `cons_open_1` relating the instance to `cbridge`. The old form is `cons_open_conservative` (static/PointSubst.v), which needs the facts of $W$ at constant roots (`facts_const`). So `opened_cons` and the inversions built on it (`cl2_needs`, `letu_cl2_needs`, `sbv_thread_needs`, `fwd_needs`, `fj_wait_needs`) take `facts_const W`, which every process derivation supplies. `cons_tree`, `cons_new` and `cons_gen` lose the `facts_const` premise and become two-line lemmas. The section `cons_gen` of PointSubst.v (the partner-set walk) is replaced by the bridge walk `binv`. `sbv_rejected`, `sbv_rejected_h`, `Tbad_not_cons` and the ring rejections still hold.
+
 **Current.** `cons_open W Γ m C := ∀ x y, slt W (hc_open m C Γ) (shift x) (shift y) → slt W Γ x y`
 (static/Contexts.v:200), a premise of `e_open` (static/Typing.v:179).
 `acyc_new W Γ C := (∀ x, in_tree0 x → ¬ tc (new_step C) x x) ∧ (∀ z y, cbridge C z y → slt W Γ (ctx_pt C z) (ctx_pt C y))`
@@ -198,6 +200,8 @@ root.
 
 ### F5. Interface tickets chosen at P-Term (block `p-typing`)
 
+**Status (fx-static).** Not done. The tickets of an interface end would have to live in `senv`, whose entries `(S, x)` 53 files destructure, and in the soup invariant `sp_sigcap` (soup/State.v), which bounds the cap of an interface end by `fhalf N` and which `soup_connect` and `lf_p_term` read. The change is a refactor of the lock-free process semantics and of `senv`, larger than this pass and close to the files of fx-cost. No commit touches it.
+
 **Current.** `p_term … : … typed W N (tenv_of (fhalf N) Σ ∪ ΘB) … → …`
 (static/Typing.v:354), each interface end at credit and tickets $N/2$.
 `p_connect` cuts $\Sigma_C$ against `senv_dual ΣC` exactly.
@@ -218,6 +222,8 @@ the tickets off $K$, which the new $\Sigma$ would supply.
 **Confidence.** Medium.
 
 ### F6. `gen_new` as `acyc_new` plus rankability (block `r-new`)
+
+**Status (fx-static).** Done. `new_ok N := acyc_new ∧ (N ≠ None → well_founded (new_step C) ∧ ∃ Sr, gen_new_rel)`. `gen_new_iff` proves `gen_new` equal to `acyc_new` plus the part for ranks, `new_ok_acyc` is a projection and `new_ok_gen`, `gen_new_ok` translate. Lemma C stays, as one direction of `gen_new_iff`.
 
 **Current.** `gen_new W Γ C := well_founded (new_step C) ∧ (∀ x y, cfact C x y → ¬ in_tree0 x → ¬ in_tree0 y → slt W Γ …) ∧ ∃ Sr, gen_new_rel W Γ C Sr`
 (static/Contexts.v:245), `new_ok N := match N with None => acyc_new | Some _ => gen_new end`
@@ -262,6 +268,8 @@ map's $\mathsf{ok}_N$ and $\mathsf{new\_ok}_N$ one switch.
 2026-11-22 chose the field form to avoid a `Context` line in 40 files.
 
 ### F8. Drop the $\bot$ flag of the future (blocks `t-contexts`, `t-side`)
+
+**Status (fx-static).** Done. `futrest`, `FBot`, `fs_var`, `fs_bot` are gone, a future is `gset point * option frest`, and `sf_unionb F X true := (F.1 ∪ X, Some RAll)`. The denotation `sf_den R F` and `sem_typed` lose the set $B$. The cases of `typed_sem` that held a set $B'$ for the flag read the rest at `ρ ∪ (if b then B' else ∅)` (`rest_ok_unionb_b`, `den_unionb`). `hbot` and E-Abs.lb are unchanged.
 
 **Current.** `Inductive futrest := FRest (r : frest) | FBot (o : option frest)`
 (static/Contexts.v:102). `sf_unionb F X true := (F.1 ∪ X, Some (FBot (fs_var F.2)))`
@@ -318,6 +326,8 @@ which is a lemma today and a typing obligation in the subset form.
 **Confidence.** High on the simplification, medium on the Rocq cost.
 
 ### F10. Two redundant premises of P-Connect (block `p-typing`)
+
+**Status (fx-static).** Done. `p_connect`, `fp_connect`, `pc_snoc` and `lf_p_connect` lose `Σ1 ##ₘ ΣC` and `Σ2 ##ₘ senv_dual ΣC`. `p_connect`, `fp_connect` and `pc_snoc` also lose the partner-freedom of $\Sigma_C$, which `lf_p_connect` keeps because the soup does not give it. The lemmas `chans_disj_map`, `chans_disj_map_dual` and `pfree_union_r` (static/Typing.v) derive them.
 
 **Current.** `p_connect … : … → Σ1 ##ₘ ΣC → Σ2 ##ₘ senv_dual ΣC → (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) → chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC → …`
 (static/Typing.v:363). `ptyped_pfree : ptyped N W Σ p T → pfree Σ`
@@ -417,18 +427,22 @@ separately only through `slt`, so they are unchanged. Renaming of constants
 - **Q4.** E-Open asks `¬ unlimited T` (static/Typing.v:179) for a reason of
   the renaming lemma. An existential over a box is harmless and cannot be
   opened.
+  **Status (fx-static).** Kept. Dropping the premise builds through the renaming lemma (`lren_insert` needs only the existential linear) and fails in cost/Exact.v. `lsame_pinst_insert` and `typed_vfacts` need the opened entry linear, so that each linear variable of a typed term occurs in it. An existential opened at an unlimited body could otherwise be dropped unused. The reason the map gives is corrected.
 - **Q5.** `ex_wf` at E-Pack (static/Typing.v:173) is justified by the
   algorithmic system (eager opening), not by soundness. A reviewer will ask
   why a declarative rule carries it.
 - **Q6.** The theorems `lf_soundness_h`, `lf_fundamental_h`, `lf_p_term`
   state `N ∈ ℕ` beside `ptyped (Some N)`; one of the two is enough.
+  **Status (fx-static).** No change. The Rocq states only `ptyped (Some N)` with `N : nat`. The map writes $\vdash^{N}$ for both instances, so $N \in \mathbb{N}$ on the theorem rows is the display of `Some N` and stays.
 - **Q7.** `fundamental` and `typed_sem` (static/Fundamental.v:787, 535) take
   `sworld_wf W`. The pass did not find where the proof uses it; `wmodels`
   does not need it. To check.
+  **Status (fx-static).** Kept. `typed_sem` uses `sworld_wf W` through `slt_sem`, which instantiates facts of $W$ by `sw_lt_pinst` and needs them at constant roots. `fundamental` passes it on.
 - **Q8.** P-Act-Msg and P-Act-Choice (lang/Process.v:166, 175) have no
   premise `ech o ∈ C`, P-Act-Close has. Harmless for typed processes (the
   map says why), odd for an untyped semantics, where two threads may
   synchronize on an interface channel.
+  **Status (fx-static).** Not done. Adding `ech o ∈ C` to P-Act-Msg and P-Act-Choice needs it also on the multiset steps of lang/Process.v, in `partner_need` and the progress proof of lang/Safety.v, in `compat_enabled` (soup/LFLocal.v) and its callers in soup/LFAdequacy.v, and in compat/Connect.v. Removing it from P-Act-Close instead breaks the proofs that read the premise of a close step (`HC` in soup/LFRunFacts.v, soup/LFEvents.v and soup/SoupRun.v). Neither is a soundness problem, both change the process semantics that `deadlock_free` and `lock_free` quantify over, and both reach beyond this pass.
 - **Q9.** The link label is a set $\{o_1, o_2\}$ and the event carries the
   ordered pick $(o_1, o_2)$; readiness treats a stuck link as ready
   (`link_t`). A link is thus both an internal step and a session label.
@@ -446,9 +460,11 @@ separately only through `slt`, so they are unchanged. Renaming of constants
   (static/Typing.v:113), a derivation per instance, while `typed_sinst`
   (static/Sinst.v) shows the identity instance suffices. The rule could ask
   the identity instance only.
+  **Status (fx-static).** Not done. `typed_sinst` asks the contexts contractive (`lenv_contr Δ`) and an instance changes the box type in $\Delta$ unless its session variables are bound, so E-Box with the identity instance needs two premises the rule does not have. The fundamental theorem also reads the body at each instance by induction, and an instance obtained by `typed_sinst` is no subderivation.
 - **Q14.** `e_send` has both `hbot T = false` and the heads condition
   (static/Typing.v:125); the map merges them into $x \prec T$. Fine on the map,
   two premises in the Rocq.
+  **Status (fx-static).** Done. `below_ty W Γ x T := hbot T = false ∧ ∀ y ∈ heads T, slt W Γ x y` (static/Contexts.v) is the one premise of `e_send`, at the payload $T[x\cdot i]$ (`hbot_payload_at`). `d_send` keeps its two premises and builds `below_ty`.
 
 ## Check fix reported
 

@@ -175,7 +175,7 @@ Section body.
   Qed.
 
   Lemma ctl_cli_body : ∃ c,
-    typed W (Some 6) ∅ Γc (Some (ctl_T Sa Sb) :: Some (ctl_box Sa Sb) :: nones n) (∅, Some (FRest (RAbove (pvar 2)))) (LetP (Var 0) (LetP (Var 1) (ELet (ESend (Pair EUnit (Var 1)))
+    typed W (Some 6) ∅ Γc (Some (ctl_T Sa Sb) :: Some (ctl_box Sa Sb) :: nones n) (∅, Some (RAbove (pvar 2))) (LetP (Var 0) (LetP (Var 1) (ELet (ESend (Pair EUnit (Var 1)))
         (LetP (ERecv (Var 1)) (LetU (Var 1)
           (App (EForce (Var 8)) (Pair (Pair (Var 2) (Var 0)) (Var 5)))))))) TUnit c.
   Proof.
@@ -188,7 +188,7 @@ Section body.
     lage_tac. 
     eapply e_let_; [lsplit_tac (ESend (Pair EUnit (Var 1))) EUnit| | | ].
     { eapply e_send with (x := pvar 0) (m := 0) (T := TUnit) (Tp := TUnit) (S0 := Sa);
-        [exact unfold_Sa|exact I|done|cbn; set_solver|dfut (pvar 0)| |age_tac|shelve].
+        [exact unfold_Sa|exact I|split; [done|cbn; set_solver]|dfut (pvar 0)| |age_tac|shelve].
       eapply e_pair_; [lsplit_tac EUnit (Var 1)| | | | ].
       { apply e_unit'. spare_tac. }
       lage_tac.
@@ -221,7 +221,7 @@ Section body.
   Qed.
 
   Lemma ctl_srv_body : ∃ c,
-    typed W (Some 6) ∅ Γc (Some (ctl_T Sb Sa) :: Some (ctl_box Sb Sa) :: nones n) (∅, Some (FRest (RAbove (pvar 2)))) (LetP (Var 0) (LetP (Var 1) (LetP (ERecv (Var 1)) (LetU (Var 1)
+    typed W (Some 6) ∅ Γc (Some (ctl_T Sb Sa) :: Some (ctl_box Sb Sa) :: nones n) (∅, Some (RAbove (pvar 2))) (LetP (Var 0) (LetP (Var 1) (LetP (ERecv (Var 1)) (LetU (Var 1)
         (ELet (ESend (Pair EUnit (Var 2)))
           (App (EForce (Var 8)) (Pair (Pair (Var 1) (Var 0)) (Var 5)))))))) TUnit c.
   Proof.
@@ -242,7 +242,7 @@ Section body.
     lage_tac. 
     eapply e_let_; [lsplit_tac (ESend (Pair EUnit (Var 2))) EUnit| | | ].
     { eapply e_send with (x := pvar 1) (m := 0) (T := TUnit) (Tp := TUnit) (S0 := Sa);
-        [exact unfold_Sa|exact I|done|cbn; set_solver|dfut (pvar 1)| |age_tac|shelve].
+        [exact unfold_Sa|exact I|split; [done|cbn; set_solver]|dfut (pvar 1)| |age_tac|shelve].
       eapply e_pair_; [lsplit_tac EUnit (Var 2)| | | | ].
       { apply e_unit'. spare_tac. }
       lage_tac.

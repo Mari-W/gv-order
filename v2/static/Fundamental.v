@@ -9,7 +9,7 @@
     that models the static world W ([wmodels]) and where the instantiated
     hypotheses of Γ hold ([hsat]), reads the rest
     of the future as any set ρ above its instantiated upper point
-    ([rest_ok]), and reads the ⊥ flag as any set B. It is generic in the
+    ([rest_ok]). It is generic in the
     cost table κ and in a predicate G that says which marks L the
     induction carries into a term. Each case is a rule with marks
     [later_*] of compat/LiveRules.v.
@@ -44,18 +44,18 @@ Proof.
     apply (H2 x U0 E). by rewrite <-(unlimited_pinst_iff σ).
 Qed.
 
-(** ** Static futures read through R and B *)
+(** ** Static futures read through R *)
 
-Lemma den_none ρ B : sf_den ρ B (∅, None) = ∅.
+Lemma den_none ρ : sf_den ρ (∅, None) = ∅.
 Proof. unfold sf_den. simpl. set_solver. Qed.
 
-Lemma den_rest ρ B r : sf_den ρ B (∅, Some (FRest r)) = ρ.
+Lemma den_rest ρ r : sf_den ρ (∅, Some r) = ρ.
 Proof. unfold sf_den. simpl. set_solver. Qed.
 
-Lemma den_rest_pinst σ ρ B r : sf_den ρ B (sf_pinst σ (∅, Some (FRest r))) = ρ.
+Lemma den_rest_pinst σ ρ r : sf_den ρ (sf_pinst σ (∅, Some r)) = ρ.
 Proof. unfold sf_den, sf_pinst. simpl. set_solver. Qed.
 
-Lemma den_none_pinst σ ρ B : sf_den ρ B (sf_pinst σ (∅, None)) = ∅.
+Lemma den_none_pinst σ ρ : sf_den ρ (sf_pinst σ (∅, None)) = ∅.
 Proof. unfold sf_den, sf_pinst. simpl. set_solver. Qed.
 
 Lemma rest_ok_unionb W σ F X b ρ :
@@ -65,18 +65,26 @@ Proof.
   unfold sf_unionb in Hu. simpl in Hu. done.
 Qed.
 
+(** Under a hidden end the rest is everything, which takes any set. *)
+Lemma rest_ok_unionb_b W σ F X (b : bool) ρ B' :
+  rest_ok W (sf_pinst σ F) ρ → rest_ok W (sf_pinst σ (sf_unionb F X b)) (ρ ∪ (if b then B' else ∅)).
+Proof.
+  intros H u Hu y Hy. rewrite sf_pinst_unionb in Hu. destruct b; [done|].
+  apply (H u Hu). set_solver.
+Qed.
+
 Lemma rest_ok_mono W W' F ρ : W ⊑ W' → rest_ok W F ρ → rest_ok W' F ρ.
 Proof. intros HW H u Hu y Hy. eapply w_lt_mono; [exact HW|]. by eapply H. Qed.
 
-Lemma den_union ρ B σ F (X : gset point) :
-  sf_den ρ B (sf_pinst σ (sf_unionb F X false)) = sf_den ρ B (sf_pinst σ F) ∪ set_map (D:=gset point) (pt_inst σ) X.
-Proof. by rewrite sf_pinst_unionb, sf_den_unionb, union_empty_r_L. Qed.
+Lemma den_union ρ σ F (X : gset point) :
+  sf_den ρ (sf_pinst σ (sf_unionb F X false)) = sf_den ρ (sf_pinst σ F) ∪ set_map (D:=gset point) (pt_inst σ) X.
+Proof. by rewrite sf_pinst_unionb, sf_den_unionb. Qed.
 
-Lemma den_unionb ρ (B B' : gset point) σ F (X : gset point) (b : bool) :
-  sf_den ρ B (sf_pinst σ F) ∪ set_map (D:=gset point) (pt_inst σ) X ∪ (if b then B' else ∅) ⊆
-  sf_den ρ (B ∪ B') (sf_pinst σ (sf_unionb F X b)).
+Lemma den_unionb ρ (B' : gset point) σ F (X : gset point) (b : bool) :
+  sf_den ρ (sf_pinst σ F) ∪ set_map (D:=gset point) (pt_inst σ) X ∪ (if b then B' else ∅) ⊆
+  sf_den (ρ ∪ (if b then B' else ∅)) (sf_pinst σ (sf_unionb F X b)).
 Proof.
-  rewrite sf_pinst_unionb, sf_den_unionb. unfold sf_den. destruct b, (fs_bot (sf_pinst σ F).2); set_solver.
+  rewrite sf_pinst_unionb, sf_den_unionb. unfold sf_den. destruct b, (sf_pinst σ F).2; simpl; set_solver.
 Qed.
 
 (** ** The hypotheses of Γ, instantiated *)
@@ -113,27 +121,27 @@ Section facts.
     by eapply slt_sem, H.
   Qed.
 
-  Lemma ub_sem σ ρ B Γ ub F :
+  Lemma ub_sem σ ρ Γ ub F :
     hsat W σ Γ → rest_ok W (sf_pinst σ F) ρ → ub_below_s W0 Γ ub F →
-    ub_lt W (pt_inst σ <$> ub) (sf_den ρ B (sf_pinst σ F)).
+    ub_lt W (pt_inst σ <$> ub) (sf_den ρ (sf_pinst σ F)).
   Proof.
-    intros Hs Hr. destruct ub as [x|]; simpl; [|done]. intros (H1 & H2 & H3) y Hy.
-    unfold rest_ok, sf_pinst in Hr. simpl in Hr. rewrite fs_var_pinst in Hr.
-    unfold sf_den, sf_pinst in Hy. simpl in Hy. rewrite fs_bot_pinst, H3, fs_var_pinst in Hy.
-    apply elem_of_union in Hy as [Hy|Hy]; [apply elem_of_union in Hy as [Hy|Hy]|set_solver].
+    intros Hs Hr. destruct ub as [x|]; simpl; [|done]. intros (H1 & H2) y Hy.
+    destruct F as [X o]. unfold rest_ok, sf_pinst in Hr. simpl in Hr.
+    unfold sf_den, sf_pinst in Hy. simpl in Hy, H1, H2.
+    apply elem_of_union in Hy as [Hy|Hy].
     - apply elem_of_map in Hy as (y0 & -> & Hy0). by eapply slt_sem, H1.
-    - destruct (fs_var F.2) as [r|] eqn:Hφ; simpl in Hy; [|set_solver].
+    - destruct o as [r|]; simpl in Hy; [|set_solver].
       specialize (H2 r eq_refl). destruct r as [u|]; [|done]. simpl in H2.
       assert (W ⊢ pt_inst σ u ≺ y) as Hy' by (by apply (Hr (pt_inst σ u))).
       destruct (sle_sem σ Γ x u Hs H2) as [->|Hlt]; [done|by eapply w_lt_trans].
   Qed.
 
-  Lemma ubu_sem σ ρ B Γ ub F :
+  Lemma ubu_sem σ ρ Γ ub F :
     hsat W σ Γ → rest_ok W (sf_pinst σ F) ρ → ub_below_u W0 Γ ub F →
-    ub_ltu W (ub_map (pt_inst σ) ub) (sf_den ρ B (sf_pinst σ F)).
+    ub_ltu W (ub_map (pt_inst σ) ub) (sf_den ρ (sf_pinst σ F)).
   Proof.
     intros Hs Hr. destruct ub as [|x|]; simpl; [done| |].
-    - intros H. exact (ub_sem σ ρ B Γ (Some x) F Hs Hr H).
+    - intros H. exact (ub_sem σ ρ Γ (Some x) F Hs Hr H).
     - intros ->. apply den_none_pinst.
   Qed.
 
@@ -162,13 +170,13 @@ End facts.
     caller's future F' is a rest above the upper point. *)
 Lemma rest_abs W σ ub F' :
   ub_ltu W (ub_map (pt_inst σ) ub) F' →
-  rest_ok W (sf_pinst σ (abs_fut ub)) F' ∧ ∀ B, sf_den F' B (sf_pinst σ (abs_fut ub)) = F'.
+  rest_ok W (sf_pinst σ (abs_fut ub)) F' ∧ sf_den F' (sf_pinst σ (abs_fut ub)) = F'.
 Proof.
   destruct ub as [|x|]; simpl; intros Hub.
-  - split; [by intros u Hu|intros B; apply den_rest_pinst].
-  - split; [|intros B; apply den_rest_pinst].
+  - split; [by intros u Hu|apply den_rest_pinst].
+  - split; [|apply den_rest_pinst].
     intros u Hu. simpl in Hu. injection Hu as <-. exact Hub.
-  - subst F'. split; [by intros u Hu|intros B; apply den_none_pinst].
+  - subst F'. split; [by intros u Hu|apply den_none_pinst].
 Qed.
 
 (** ** Instances under a binder of m points *)
@@ -225,7 +233,7 @@ Section unshift.
   Lemma sf_unshift F : sf_pinst τ (sf_pinst (pshift m) F) = sf_pinst σ F.
   Proof.
     unfold sf_pinst. simpl. f_equal; last first.
-    { destruct F as [X [[[u|]|[[u|]|]]|]]; simpl; by rewrite ?pt_unshift. }
+    { destruct F as [X [[u|]|]]; simpl; by rewrite ?pt_unshift. }
     apply set_eq. intros y.
     rewrite !elem_of_map. setoid_rewrite elem_of_map. split.
     - intros (y0 & -> & z & -> & Hz). exists z. split; [apply pt_unshift|done].
@@ -384,7 +392,7 @@ Proof.
     { destruct Hb as (_ & _ & [[_ Hsc]|(v & u & [_ Hs1] & _ & _ & [_ Hs2])]); [exact Hsc|].
       destruct Hs1, Hs2. by split. }
     pose proof Hb as (Hz & Hy & _).
-    rewrite !ctx_pt_inst by done. by eapply slt_sem, Hbr.
+    rewrite !ctx_pt_inst by done. by eapply slt_sem, (proj1 (cons_open_1 _ _ _) Hbr).
 Qed.
 
 (** The worlds a derivation at N is read at. At N = ∞ the world is
@@ -406,7 +414,7 @@ Lemma new_sem_of N W0 W Γ σ C : sworld_wf W0 → wmodels W W0 → hsat W σ Γ
 Proof.
   intros Hwf HW Hs HK HC. split; [by eapply acyc_new_sem_of, new_ok_acyc|].
   intros Hr. destruct HK as [HS|(_ & [k ->] & _)]; [by destruct (wranked_strict W Hr HS)|].
-  by eapply gen_new_sem_of.
+  eapply gen_new_sem_of; [done|done|done|]. by apply (new_ok_gen (Some k)).
 Qed.
 
 (** ** Identity instances *)
@@ -423,7 +431,7 @@ Proof. induction Δ as [|[T|] Δ IH]; simpl; [done| |by f_equal]. by rewrite pin
 Lemma sf_pinst_pvar F : sf_pinst pvar F = F.
 Proof.
   destruct F as [P o]. unfold sf_pinst. simpl. f_equal; last first.
-  { destruct o as [[[u|]|[[u|]|]]|]; simpl; by rewrite ?pt_inst_pvar. }
+  { destruct o as [[u|]|]; simpl; by rewrite ?pt_inst_pvar. }
   apply set_eq. intros y.
   rewrite elem_of_map. split; [intros (y0 & -> & Hy); by rewrite pt_inst_pvar|].
   intros Hy. exists y. by rewrite pt_inst_pvar.
@@ -530,12 +538,12 @@ Section fund.
 
   Local Ltac fut := etrans; [|apply den_unionb]; rewrite ?set_map_union_L; set_solver.
   Local Ltac rest_tac :=
-    first [ assumption | apply rest_ok_unionb; assumption ].
+    first [ assumption | apply rest_ok_unionb; assumption | apply rest_ok_unionb_b; assumption ].
 
   Theorem typed_sem W N Θ Γ Δ F e T c :
     sworld_wf W → typed W N Θ Γ Δ F e T c →
-    ∀ L, G L e → ∀ W1 σ ρ B, wmodels W1 W → wfit N W1 → hsat W1 σ Γ → rest_ok W1 (sf_pinst σ F) ρ →
-    sem_later κ W1 (tenv_pinst σ Θ) (lenv_pinst σ Δ) L (sf_den ρ B (sf_pinst σ F)) e (pinst_ty σ T).
+    ∀ L, G L e → ∀ W1 σ ρ, wmodels W1 W → wfit N W1 → hsat W1 σ Γ → rest_ok W1 (sf_pinst σ F) ρ →
+    sem_later κ W1 (tenv_pinst σ Θ) (lenv_pinst σ Δ) L (sf_den ρ (sf_pinst σ F)) e (pinst_ty σ T).
   Proof.
     intros Hwf. induction 1 as
       [Γ Δ F HΔ
@@ -550,7 +558,7 @@ Section fund.
       |Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e e1 e2 T1 T2 T c0 c1 c2 Hsp Hl H0 IH0 Hta Hla H1 IH1 H2 IH2
       |Γ Δ F e m k C ub c U HΔ HUc Hb IH
       |Θ Γ Δ F e m k C ub c U xs ss c0 Hxs HC Hss Hsi Hub H IH
-      |Θ Γ Δ F e S0 x m T S aS mS Tp Tp' c0 Hu Hsc Hbot Hh Hub H IH Hag Hsub
+      |Θ Γ Δ F e S0 x m T S aS mS Tp Tp' c0 Hu Hsc [Hbot Hh] Hub H IH Hag Hsub
       |Θ Γ Δ F e S0 x m T S a mS c0 Hu Hsc Hub H IH
       |Θ Γ Δ F e S0 x a mS c0 Hu Hub H IH
       |i Θ Γ Δ F e S0 x S1 S2 a mS c0 Hu Hub H IH
@@ -562,7 +570,7 @@ Section fund.
       |Θ Γ Δ F e T T' c c' H IH Hsub Hc HTc
       |Θ Γ Δ F e lb m C T xs c Hxs HC Hlbx Hexw H IH
       |Θ Γ Δ F e i lb m C T U c Hi Hnu _ H IH];
-      intros L Hgl W1 σ ρ B HW HK Hs Hr; cbn [pinst_ty]; rewrite ?tenv_pinst_empty, ?tenv_pinst_singleton.
+      intros L Hgl W1 σ ρ HW HK Hs Hr; cbn [pinst_ty]; rewrite ?tenv_pinst_empty, ?tenv_pinst_singleton.
     - (* E-Unit *)
       by apply later_unit, lenv_unl_pinst.
     - (* E-Var *)
@@ -577,7 +585,7 @@ Section fund.
         split; [by rewrite lenv_bot_pinst|]. heads_p. rewrite <-set_map_union_L. exact Hlb'.
       + intros W2 F' HW2 Hub'.
         destruct (rest_abs W2 σ ub F' Hub') as [Hr' Hden].
-        pose proof (IH _ (HGlam _ _ Hgl) W2 σ F' B (wmodels_mono _ _ _ HW2 HW) (wfit_mono _ _ _ HW2 HK) (hsat_mono _ _ _ _ HW2 Hs) Hr') as Hb'.
+        pose proof (IH _ (HGlam _ _ Hgl) W2 σ F' (wmodels_mono _ _ _ HW2 HW) (wfit_mono _ _ _ HW2 HK) (hsat_mono _ _ _ _ HW2 Hs) Hr') as Hb'.
         rewrite Hden in Hb'.
         eapply sem_later_ctx; [exact (thage_erase _ _ _ _ Hth)| |exact Hb'].
         apply (lenv_df_pinst_eq σ (Some T :: Δ) (Some T :: Δh)), lenv_df_cons_eq.
@@ -585,11 +593,11 @@ Section fund.
     - (* E-App *)
       destruct (HGapp _ _ _ Hgl) as (L' & Hk & Hg1 & Hg2).
       eapply later_app; [exact Hk|by apply tsplit_pinst|by apply lenv_split_pinst
-                        |exact (ubu_sem W W1 Hwf HW σ ρ B Γ ub F Hs Hr Hub)| |].
-      + intros B'. eapply sem_later_future; [|apply (IH1 L Hg1 W1 σ ρ (B ∪ B') HW HK Hs ltac:(rest_tac))].
+                        |exact (ubu_sem W W1 Hwf HW σ ρ Γ ub F Hs Hr Hub)| |].
+      + intros B'. eapply sem_later_future; [|apply (IH1 L Hg1 W1 σ (ρ ∪ (if lenv_bot Δ2 then B' else ∅)) HW HK Hs ltac:(rest_tac))].
         heads_p. fut.
       + intros B'. eapply sem_later_future; [|eapply sem_later_ctx; [exact (thage_erase _ _ _ _ Hta)
-          |exact (lenv_df_pinst_eq _ _ _ (lage_df_eq _ _ _ Hla))|apply (IH2 L' Hg2 W1 σ ρ (B ∪ B') HW HK Hs ltac:(rest_tac))]].
+          |exact (lenv_df_pinst_eq _ _ _ (lage_df_eq _ _ _ Hla))|apply (IH2 L' Hg2 W1 σ (ρ ∪ (if lb_bot lb then B' else ∅)) HW HK Hs ltac:(rest_tac))]].
         rewrite lb_bot_map. assert (lb_heads (lb_map (pt_inst σ) lb) = set_map (pt_inst σ) (lb_heads lb)) as ->
           by (destruct lb; simpl; set_solver). fut.
     - (* E-Pair *)
@@ -598,15 +606,15 @@ Section fund.
       eapply (sem_later_blind κ _ _ _ _ _ _ (TProd (pinst_ty σ T1) (pinst_ty σ T2))); [|eapply later_pair; [exact Hk|by apply tsplit_pinst|by apply lenv_split_pinst| |]].
       + assert (ty_df (pinst_ty σ T1') = ty_df (pinst_ty σ T1)) as E1 by (by rewrite !ty_df_pinst, Hag).
         cbn [ty_df]. by rewrite E1.
-      + intros B'. eapply sem_later_future; [|apply (IH1 L Hg1 W1 σ ρ (B ∪ B') HW HK Hs ltac:(rest_tac))].
+      + intros B'. eapply sem_later_future; [|apply (IH1 L Hg1 W1 σ (ρ ∪ (if lenv_bot Δ2 then B' else ∅)) HW HK Hs ltac:(rest_tac))].
         heads_p. fut.
       + intros B'. eapply sem_later_future; [|eapply sem_later_ctx; [exact (thage_erase _ _ _ _ Hta)
-          |exact (lenv_df_pinst_eq _ _ _ (lage_df_eq _ _ _ Hla))|apply (IH2 L' Hg2 W1 σ ρ (B ∪ B') HW HK Hs ltac:(rest_tac))]].
+          |exact (lenv_df_pinst_eq _ _ _ (lage_df_eq _ _ _ Hla))|apply (IH2 L' Hg2 W1 σ (ρ ∪ (if hbot T1 then B' else ∅)) HW HK Hs ltac:(rest_tac))]].
         heads_p. fut.
     - (* E-LetU *)
       destruct (HGletu _ _ _ Hgl) as (L' & Hk & Hg1 & Hg2).
       eapply later_letu; [exact Hk|by apply tsplit_pinst|by apply lenv_split_pinst| |].
-      + intros B'. eapply sem_later_future; [|apply (IH1 L Hg1 W1 σ ρ (B ∪ B') HW HK Hs ltac:(rest_tac))].
+      + intros B'. eapply sem_later_future; [|apply (IH1 L Hg1 W1 σ (ρ ∪ (if lenv_bot Δ2 then B' else ∅)) HW HK Hs ltac:(rest_tac))].
         heads_p. fut.
       + eapply sem_later_ctx; [exact (thage_erase _ _ _ _ Hta)
           |exact (lenv_df_pinst_eq _ _ _ (lage_df_eq _ _ _ Hla))|by apply IH2].
@@ -614,26 +622,26 @@ Section fund.
       destruct (HGletp _ _ _ Hgl) as (L' & Hk & Hg1 & Hg2).
       eapply (later_letp κ _ _ _ _ _ _ _ _ _ _ _ _ (pinst_ty σ T1) (pinst_ty σ T2));
         [exact Hk|by apply tsplit_pinst|by apply lenv_split_pinst| |].
-      + intros B'. eapply sem_later_future; [|apply (IH1 L Hg1 W1 σ ρ (B ∪ B') HW HK Hs ltac:(rest_tac))].
+      + intros B'. eapply sem_later_future; [|apply (IH1 L Hg1 W1 σ (ρ ∪ (if lenv_bot Δ2 then B' else ∅)) HW HK Hs ltac:(rest_tac))].
         heads_p. fut.
-      + pose proof (IH2 _ Hg2 W1 σ ρ B HW HK Hs ltac:(rest_tac)) as IH2'.
+      + pose proof (IH2 _ Hg2 W1 σ ρ HW HK Hs ltac:(rest_tac)) as IH2'.
         eapply sem_later_ctx; [exact (thage_erase _ _ _ _ Hta)| |exact IH2'].
         apply (lenv_df_pinst_eq σ (Some T2 :: Some T1 :: Δ2)
           (Some T2 :: Some T1 :: Δ2')), lenv_df_cons_eq, lenv_df_cons_eq.
         exact (lage_df_eq _ _ _ Hla).
     - (* E-Inj *)
-      apply later_inj. destruct i; exact (IH L (HGinj _ _ _ Hgl) W1 σ ρ B HW HK Hs ltac:(rest_tac)).
+      apply later_inj. destruct i; exact (IH L (HGinj _ _ _ Hgl) W1 σ ρ HW HK Hs ltac:(rest_tac)).
     - (* E-Case *)
       destruct (HGcase _ _ _ _ Hgl) as (L' & Hk & Hg0 & Hg1 & Hg2).
       eapply (later_case κ _ _ _ _ _ _ _ _ _ _ _ _ _ (pinst_ty σ T1) (pinst_ty σ T2));
         [exact Hk|by apply tsplit_pinst|by apply lenv_split_pinst| | |].
-      + intros B'. eapply sem_later_future; [|apply (IH0 L Hg0 W1 σ ρ (B ∪ B') HW HK Hs ltac:(rest_tac))].
+      + intros B'. eapply sem_later_future; [|apply (IH0 L Hg0 W1 σ (ρ ∪ (if lenv_bot Δ2 then B' else ∅)) HW HK Hs ltac:(rest_tac))].
         heads_p. fut.
-      + pose proof (IH1 _ Hg1 W1 σ ρ B HW HK Hs ltac:(rest_tac)) as IH'.
+      + pose proof (IH1 _ Hg1 W1 σ ρ HW HK Hs ltac:(rest_tac)) as IH'.
         eapply sem_later_ctx; [exact (thage_erase _ _ _ _ Hta)| |exact IH'].
         apply (lenv_df_pinst_eq σ (Some T1 :: Δ2) (Some T1 :: Δ2')), lenv_df_cons_eq.
         exact (lage_df_eq _ _ _ Hla).
-      + pose proof (IH2 _ Hg2 W1 σ ρ B HW HK Hs ltac:(rest_tac)) as IH'.
+      + pose proof (IH2 _ Hg2 W1 σ ρ HW HK Hs ltac:(rest_tac)) as IH'.
         eapply sem_later_ctx; [exact (thage_erase _ _ _ _ Hta)| |exact IH'].
         apply (lenv_df_pinst_eq σ (Some T2 :: Δ2) (Some T2 :: Δ2')), lenv_df_cons_eq.
         exact (lage_df_eq _ _ _ Hla).
@@ -648,10 +656,10 @@ Section fund.
         by (apply sinsts_inf, (sinsts_df (Some 0)); split; [done|discriminate]).
       assert (hsat W2 (pclose xs m σ) (hc_open m C Γ)) as Hs'.
       { apply hsat_open; [exact Hxs|exact (hsat_mono _ _ _ _ HW2 Hs)|exact HC]. }
-      assert (rest_ok W2 (sf_pinst (pclose xs m σ) (∅, Some (FRest (rest_of ub)))) F') as Hr'.
+      assert (rest_ok W2 (sf_pinst (pclose xs m σ) (∅, Some (rest_of ub))) F') as Hr'.
       { intros u Hu y Hy. destruct ub as [u0|]; simpl in Hu; [|done]. injection Hu as <-.
         simpl in Hub'. rewrite pclose_pt. by apply Hub'. }
-      pose proof (IH (sty_df <$> ss) ltac:(by rewrite length_fmap) Hss' _ Hgb W2 (pclose xs m σ) F' B
+      pose proof (IH (sty_df <$> ss) ltac:(by rewrite length_fmap) Hss' _ Hgb W2 (pclose xs m σ) F'
                     (wmodels_mono _ _ _ HW2 HW) (wfit_mono _ _ _ HW2 HK) Hs' Hr') as Hb'.
       rewrite tenv_pinst_empty, den_rest_pinst, (lenv_unshift _ σ m Hτ) in Hb'.
       rewrite pinst_sinst, pclose_ty in Hb'.
@@ -662,41 +670,40 @@ Section fund.
       subst m. rewrite pinst_sinst, pinst_ty_inst.
       eapply (later_force κ _ _ _ _ _ _ _ _ _ _ _ _ (pt_inst σ <$> xs));
         [by rewrite length_fmap|done|exact (proj1 Hsi)|exact (hold_sem W W1 Hwf HW σ Γ C xs Hs HC)|
-         |exact (IH L (HGop _ _ _ Hgl) W1 σ ρ B HW HK Hs ltac:(rest_tac))].
+         |exact (IH L (HGop _ _ _ Hgl) W1 σ ρ HW HK Hs ltac:(rest_tac))].
       assert (pt_inst σ <$> (pt_inst (plist xs) <$> ub) =
               pt_inst (plist (pt_inst σ <$> xs)) <$> (pt_inst (pup (length xs) σ) <$> ub)) as <-.
       { destruct ub; simpl; [|done]. f_equal. apply pt_inst_plist_inst. }
-      exact (ub_sem W W1 Hwf HW σ ρ B Γ _ F Hs Hr Hub).
+      exact (ub_sem W W1 Hwf HW σ ρ Γ _ F Hs Hr Hub).
     - (* E-Send *)
       rewrite pt_inst_shift.
       eapply (later_send κ _ _ _ _ _ _ _ S0 (pt_inst σ x) m T S aS _ _ Hu).
-      + rewrite <-(pinst_payload_at σ) by done. rewrite hbot_pinst. unfold payload_at, ty_inst.
-        by rewrite hbot_pinst.
+      + rewrite <-(pinst_payload_at σ) by done. by rewrite hbot_pinst.
       + intros y. rewrite <-(pinst_payload_at σ), heads_pinst by done.
         intros (y0 & -> & Hy)%elem_of_map. by eapply slt_sem, Hh.
-      + exact (ub_sem W W1 Hwf HW σ ρ B Γ (Some x) F Hs Hr Hub).
+      + exact (ub_sem W W1 Hwf HW σ ρ Γ (Some x) F Hs Hr Hub).
       + rewrite <-(pinst_payload_at σ) by done.
         eapply (later_conv_tsub κ W Γ σ _ _ _ _ _ _ (TProd Tp (TSess S0 x aS mS)) (TProd (payload_at m T x) (TSess S0 x aS mS)));
-          [exact Hwf| |exact HW|exact Hs|exact (IH L (HGop _ _ _ Hgl) W1 σ ρ B HW HK Hs ltac:(rest_tac))].
+          [exact Hwf| |exact HW|exact Hs|exact (IH L (HGop _ _ _ Hgl) W1 σ ρ HW HK Hs ltac:(rest_tac))].
         cbn [ty_df]. apply sub_prod; [|apply tsub_refl].
         rewrite <-(tage_df_eq _ _ _ Hag). exact (tsub_df _ _ _ _ Hsub).
     - (* E-Recv *)
       rewrite pinst_payload_at, pt_inst_shift by done.
-      eapply later_recv; [exact Hu|exact (ub_sem W W1 Hwf HW σ ρ B Γ (Some x) F Hs Hr Hub)|exact (IH L (HGop _ _ _ Hgl) W1 σ ρ B HW HK Hs ltac:(rest_tac))].
+      eapply later_recv; [exact Hu|exact (ub_sem W W1 Hwf HW σ ρ Γ (Some x) F Hs Hr Hub)|exact (IH L (HGop _ _ _ Hgl) W1 σ ρ HW HK Hs ltac:(rest_tac))].
     - (* E-Close *)
-      eapply later_close; [exact Hu|exact (ub_sem W W1 Hwf HW σ ρ B Γ (Some x) F Hs Hr Hub)|exact (IH L (HGop _ _ _ Hgl) W1 σ ρ B HW HK Hs ltac:(rest_tac))].
+      eapply later_close; [exact Hu|exact (ub_sem W W1 Hwf HW σ ρ Γ (Some x) F Hs Hr Hub)|exact (IH L (HGop _ _ _ Hgl) W1 σ ρ HW HK Hs ltac:(rest_tac))].
     - (* E-Select *)
       rewrite pt_inst_sel.
-      eapply later_select; [exact Hu|exact (ub_sem W W1 Hwf HW σ ρ B Γ (Some x) F Hs Hr Hub)|exact (IH L (HGop _ _ _ Hgl) W1 σ ρ B HW HK Hs ltac:(rest_tac))].
+      eapply later_select; [exact Hu|exact (ub_sem W W1 Hwf HW σ ρ Γ (Some x) F Hs Hr Hub)|exact (IH L (HGop _ _ _ Hgl) W1 σ ρ HW HK Hs ltac:(rest_tac))].
     - (* E-Branch *)
       rewrite !pt_inst_bra.
-      eapply later_branch; [exact Hu|exact (ub_sem W W1 Hwf HW σ ρ B Γ (Some x) F Hs Hr Hub)|].
-      exact (IH L (HGop _ _ _ Hgl) W1 σ ρ B HW HK Hs ltac:(rest_tac)).
+      eapply later_branch; [exact Hu|exact (ub_sem W W1 Hwf HW σ ρ Γ (Some x) F Hs Hr Hub)|].
+      exact (IH L (HGop _ _ _ Hgl) W1 σ ρ HW HK Hs ltac:(rest_tac)).
     - (* E-Link *)
-      pose proof (IH L (HGop _ _ _ Hgl) W1 σ ρ B HW HK Hs ltac:(rest_tac)) as IH'. cbn [pinst_ty] in IH'.
+      pose proof (IH L (HGop _ _ _ Hgl) W1 σ ρ HW HK Hs ltac:(rest_tac)) as IH'. cbn [pinst_ty] in IH'.
       rewrite pt_inst_dual in IH'. eapply later_link, IH'.
     - (* E-Spawn *)
-      pose proof (IH L (HGop _ _ _ Hgl) W1 σ ρ B HW HK Hs ltac:(rest_tac)) as IH'. cbn [pinst_ty] in IH'.
+      pose proof (IH L (HGop _ _ _ Hgl) W1 σ ρ HW HK Hs ltac:(rest_tac)) as IH'. cbn [pinst_ty] in IH'.
       eapply later_spawn, IH'.
     - (* E-New *)
       rewrite pt_inst_dual, pt_inst_pup1_0.
@@ -717,7 +724,7 @@ Section fund.
       destruct (GrelL_pick κ _ _ _ _ _ _ _ _ Hi' ltac:(intros []) HG) as (Θi & HVi & Hk).
       apply Vrel_ex_iff in HVi as (_ & xs & Hxs & HC & HVi).
       pose proof (pclose_shift xs m σ Hxs) as Hτ.
-      pose proof (IH L Hgl W' (pclose xs m σ) ρ B (wmodels_mono _ _ _ HW' HW) (wfit_mono _ _ _ HW' HK)
+      pose proof (IH L Hgl W' (pclose xs m σ) ρ (wmodels_mono _ _ _ HW' HW) (wfit_mono _ _ _ HW' HK)
                     (hsat_open _ _ _ _ _ _ Hxs (hsat_mono _ _ _ _ HW' Hs) HC)
                     ltac:(rewrite (sf_unshift _ σ m Hτ); by eapply rest_ok_mono)) as Hb'.
       rewrite (tenv_unshift _ σ m Hτ), lenv_pinst_insert, (lenv_unshift _ σ m Hτ),
@@ -733,11 +740,11 @@ Definition nomarks (L : nat → bool) (_ : expr) : Prop := ∀ x, L x = false.
 
 Lemma typed_sem_df W N Θ Γ Δ F e T c :
   sworld_wf W → typed W N Θ Γ Δ F e T c →
-  ∀ W1 σ ρ B, wmodels W1 W → wfit N W1 → hsat W1 σ Γ → rest_ok W1 (sf_pinst σ F) ρ →
-  sem_typed_at κ_DF W1 (tenv_pinst σ Θ) (lenv_pinst σ Δ) (sf_den ρ B (sf_pinst σ F)) e (pinst_ty σ T).
+  ∀ W1 σ ρ, wmodels W1 W → wfit N W1 → hsat W1 σ Γ → rest_ok W1 (sf_pinst σ F) ρ →
+  sem_typed_at κ_DF W1 (tenv_pinst σ Θ) (lenv_pinst σ Δ) (sf_den ρ (sf_pinst σ F)) e (pinst_ty σ T).
 Proof.
-  intros Hwf Ht W1 σ ρ B HW HK Hs Hr. apply sem_later_empty.
-  refine (typed_sem κ_DF nomarks _ _ _ _ _ _ _ _ _ _ W N Θ Γ Δ F e T c Hwf Ht ∅ _ W1 σ ρ B HW HK Hs Hr);
+  intros Hwf Ht W1 σ ρ HW HK Hs Hr. apply sem_later_empty.
+  refine (typed_sem κ_DF nomarks _ _ _ _ _ _ _ _ _ _ W N Θ Γ Δ F e T c Hwf Ht ∅ _ W1 σ ρ HW HK Hs Hr);
     [..|done]; unfold nomarks.
   - intros L y H. apply H.
   - intros L b H [|x]; [done|apply H].
@@ -760,11 +767,11 @@ Qed.
 
 Lemma typed_sem_live W N Θ Γ Δ F e T c :
   sworld_wf W → typed W N Θ Γ Δ F e T c → ∅ ⊢▷ e →
-  ∀ W1 σ ρ B, wmodels W1 W → wfit N W1 → hsat W1 σ Γ → rest_ok W1 (sf_pinst σ F) ρ →
-  sem_typed_at κ_L W1 (tenv_pinst σ Θ) (lenv_pinst σ Δ) (sf_den ρ B (sf_pinst σ F)) e (pinst_ty σ T).
+  ∀ W1 σ ρ, wmodels W1 W → wfit N W1 → hsat W1 σ Γ → rest_ok W1 (sf_pinst σ F) ρ →
+  sem_typed_at κ_L W1 (tenv_pinst σ Θ) (lenv_pinst σ Δ) (sf_den ρ (sf_pinst σ F)) e (pinst_ty σ T).
 Proof.
-  intros Hwf Ht Hgd W1 σ ρ B HW HK Hs Hr. apply sem_later_empty.
-  refine (typed_sem κ_L lguard _ _ _ _ _ _ _ _ _ _ W N Θ Γ Δ F e T c Hwf Ht ∅ Hgd W1 σ ρ B HW HK Hs Hr).
+  intros Hwf Ht Hgd W1 σ ρ HW HK Hs Hr. apply sem_later_empty.
+  refine (typed_sem κ_L lguard _ _ _ _ _ _ _ _ _ _ W N Θ Γ Δ F e T c Hwf Ht ∅ Hgd W1 σ ρ HW HK Hs Hr).
   - intros L y H. by inversion H.
   - intros L b H. by inversion H.
   - intros L b H. exists true. split; [by inversion H|]. intros ??????????. apply later_box.
@@ -787,8 +794,8 @@ Qed.
 Theorem fundamental W R Θ Δ F t T :
   sworld_wf W → Θ ; hc_empty ; Δ ⊢^F _ W t : T → wmodels R W → wstrict R → Θ ; Δ ⊨^F _ R t : T.
 Proof.
-  intros HW Ht HR HS ρ B Hr.
-  pose proof (typed_sem_df W None _ hc_empty _ F t _ _ HW Ht R pvar ρ B HR (or_introl HS) (hsat_empty _ _)
+  intros HW Ht HR HS ρ Hr.
+  pose proof (typed_sem_df W None _ hc_empty _ F t _ _ HW Ht R pvar ρ HR (or_introl HS) (hsat_empty _ _)
                 ltac:(by rewrite sf_pinst_pvar)) as H.
   rewrite tenv_pinst_pvar, lenv_pinst_pvar, sf_pinst_pvar, pinst_ty_pvar in H.
   apply sem_later_empty, sem_later_undf, sem_later_empty, H.
@@ -803,8 +810,8 @@ Proof. intros HW Ht HR HS. apply (fundamental W); [done| |done|done]. exact (typ
 Theorem live_fundamental W R Θ Δ F t T :
   sworld_wf W → Θ ; hc_empty ; Δ ⊢^F _ W t : T → ∅ ⊢▷ t → wmodels R W → wstrict R → Θ ; Δ ⊫^F _ R t : T.
 Proof.
-  intros HW Ht Hgd HR HS ρ B Hr.
-  pose proof (typed_sem_live W None _ hc_empty _ F t _ _ HW Ht Hgd R pvar ρ B HR (or_introl HS)
+  intros HW Ht Hgd HR HS ρ Hr.
+  pose proof (typed_sem_live W None _ hc_empty _ F t _ _ HW Ht Hgd R pvar ρ HR (or_introl HS)
                 (hsat_empty _ _) ltac:(by rewrite sf_pinst_pvar)) as H.
   rewrite tenv_pinst_pvar, lenv_pinst_pvar, sf_pinst_pvar, pinst_ty_pvar in H.
   apply sem_later_empty, sem_later_undf, sem_later_empty, H.
@@ -840,10 +847,10 @@ Theorem live_fundamental_ranked (EM : excluded_middle) W R N Θ Δ F t T c :
   sworld_wf W → Θ ; hc_empty ; Δ ⊢^F _{W,Some N} t : T ▷ c → ∅ ⊢▷ t → wmodels R W →
   tenv_df Θ ; lenv_df Δ ⊫^F _ R t : ty_df T.
 Proof.
-  intros HW Ht Hgd HR ρ B Hr.
+  intros HW Ht Hgd HR ρ Hr.
   assert (wfit (Some N) R) as HK.
   { destruct (wkind_dec R) as [Hr'|Hs']; [right; split_and!; [done|by eexists|done]|by left]. }
-  pose proof (typed_sem_live W (Some N) _ hc_empty _ F t _ _ HW Ht Hgd R pvar ρ B HR HK
+  pose proof (typed_sem_live W (Some N) _ hc_empty _ F t _ _ HW Ht Hgd R pvar ρ HR HK
                 (hsat_empty _ _) ltac:(by rewrite sf_pinst_pvar)) as H.
   rewrite tenv_pinst_pvar, lenv_pinst_pvar, sf_pinst_pvar, pinst_ty_pvar in H.
   apply sem_later_empty, sem_later_df, sem_later_empty, H.

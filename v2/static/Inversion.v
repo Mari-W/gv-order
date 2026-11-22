@@ -198,13 +198,13 @@ Proof. destruct e. unfold tentry_pinst, pinst_sty. simpl. by rewrite pt_inst_pva
 Lemma tentry_pinst_comp τ σ e : tentry_pinst τ (tentry_pinst σ e) = tentry_pinst (pt_inst τ ∘ σ) e.
 Proof. destruct e. unfold tentry_pinst, pinst_sty. simpl. by rewrite pt_inst_comp. Qed.
 
-Lemma opened_cons W Θ Γ Δ F Θ' Γ' Δ' F' :
+Lemma opened_cons W Θ Γ Δ F Θ' Γ' Δ' F' : facts_const W →
   opened W Θ Γ Δ F Θ' Γ' Δ' F' →
   ∃ σ, (∀ o e, Θ !! o = Some e → Θ' !! o = Some (tentry_pinst σ e)) ∧
        (∀ y, y ∈ F.1 → pt_inst σ y ∈ F'.1) ∧
        (∀ x y, slt W Γ' (pt_inst σ x) (pt_inst σ y) → slt W Γ x y).
 Proof.
-  induction 1 as [Θ Γ Δ F|Θ Γ Δ F Θ' Γ' Δ' F' i lb m C T Hi Hu Hc _ (σ & Hl & Hf & Hs)].
+  intros Hfc. induction 1 as [Θ Γ Δ F|Θ Γ Δ F Θ' Γ' Δ' F' i lb m C T Hi Hu Hc _ (σ & Hl & Hf & Hs)].
   - exists pvar. split_and!.
     + intros o e ->. by rewrite tentry_pinst_pvar.
     + intros y Hy. by rewrite pt_inst_pvar.
@@ -214,7 +214,7 @@ Proof.
       unfold tenv_pinst. by rewrite lookup_fmap, Ho.
     + intros y Hy. rewrite <-pt_inst_comp. apply Hf. unfold sf_pinst. simpl.
       by apply elem_of_map_2.
-    + intros x y H. rewrite <-!pt_inst_comp in H. by apply Hc, Hs.
+    + intros x y H. rewrite <-!pt_inst_comp in H. by apply (cons_open_conservative W Γ m C Hfc Hc), Hs.
 Qed.
 
 (** ** Processes *)
@@ -265,7 +265,7 @@ Lemma fptyped_two N W Σ C t1 t2 T :
     wok N (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)).
 Proof.
   intros H. remember (C, ({[+ t1 +]} ⊎ {[+ t2 +]})) as p eqn:Hp. destruct H as [W' Σ' ΘB C0' t' T' c|
-    W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T' H1 H2 _ _ _ _ _ _ _ _ _ HS].
+    W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T' H1 H2 _ _ _ _ _ _ HS].
   - exfalso. pose proof (f_equal snd Hp) as HE. simpl in HE.
     assert (size (({[+ t1 +]} ⊎ {[+ t2 +]}) : gmultiset expr) = 1) as Hsz by (by rewrite <-HE, gmultiset_size_singleton).
     rewrite gmultiset_size_disj_union, !gmultiset_size_singleton in Hsz. lia.

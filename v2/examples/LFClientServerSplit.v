@@ -253,10 +253,6 @@ Theorem cs_split_typed : ∃ W, ptyped (Some 6) W ∅ (∅ ∪ ∅ ∪ chans_of 
 Proof.
   eexists. pose proof (p_connect (Some 6) (swrestrict W_cli (iface ΣC TUnit)) (swrestrict W_srv (iface (senv_dual ΣC) TUnit)) ∅ ∅ ΣC ∅ ∅ {[+ t_cli +]} {[+ t_srv +]} TUnit) as H.
   rewrite !(left_id_L ∅ (∪)) in H |- *. apply H; clear H; [rewrite (left_id_L ∅ (∪)); exact cli_hterm|rewrite (left_id_L ∅ (∪)); exact srv_hterm|..].
-  1,2: apply map_disjoint_empty_l.
-  1: { intros o Ho. unfold ΣC in *. rewrite dom_insert_L, dom_singleton_L in *.
-       apply elem_of_union in Ho as [Ho|Ho]; apply elem_of_singleton in Ho as ->;
-         rewrite elem_of_union, !elem_of_singleton; intros [H|H]; discriminate. }
   all: try (rewrite ?chans_of_empty; set_solver).
   apply (swf_sub _ (W_cli ⊔ W_srv)); [|exact W_cs_join_wf]. intros x y. apply join_sub; intros u v; apply swrestrict_lt.
 Qed.

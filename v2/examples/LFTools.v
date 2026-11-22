@@ -185,7 +185,7 @@ Definition lbox (m : nat) (C : bcs) (ub : option point) (T U : ty) : ty :=
 Lemma lbox_typed W N Γ n F m C ub T U e c :
   tcontr T → tcontr U →
   pinst_ty (pshift m) (lbox m C ub T U) = lbox m C ub T U →
-  typed W N ∅ (hc_open m C Γ) (Some T :: Some (lbox m C ub T U) :: nones n) (∅, Some (FRest (rest_of ub))) e U c →
+  typed W N ∅ (hc_open m C Γ) (Some T :: Some (lbox m C ub T U) :: nones n) (∅, Some (rest_of ub)) e U c →
   typed W N ∅ Γ (nones n) F (EBox (Lam e)) (lbox m C ub T U) (Some 0).
 Proof.
   intros HT HU HB He. unfold lbox at 1. eapply e_box.
