@@ -526,8 +526,8 @@ window.MAP = {
     {
      "id": "w-wf",
      "title": "Well-formed and well-founded worlds",
-     "rocq": "types/Worlds.v: sworld_wf, swf, wmodels_exists; static/Contexts.v: wf_new",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=w.wf}{\\mathsf{world\\_wf}\\,W} \\\\\n\\htmlData{k=w.lfworld}{\\mathsf{wf}\\,W \\iff \\prec_W \\text{ is well-founded}} \\\\\n\\htmlData{k=w.wfnew}{\\begin{array}{l} \\mathsf{wf\\_new}\\,\\rho\\,C \\iff (\\forall (x \\prec y) \\in C.\\ y \\in \\htmlData{k=w.tree}{\\mathsf{tree}(\\rho)}) \\\\ \\qquad \\land\\ (C \\cup \\htmlData{k=w.po}{\\mathsf{po}}) \\cap \\mathsf{tree}(\\rho)^{2} \\text{ is well-founded} \\end{array}}\n\\end{array}",
+     "rocq": "types/Worlds.v: sworld_wf, swf, wmodels_exists; static/Contexts.v: wf_new, gen_new",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=w.wf}{\\mathsf{world\\_wf}\\,W} \\\\\n\\htmlData{k=w.lfworld}{\\mathsf{wf}\\,W \\iff \\prec_W \\text{ is well-founded}} \\\\\n\\htmlData{k=w.wfnew}{\\begin{array}{l} \\mathsf{wf\\_new}\\,\\rho\\,C \\iff (\\forall (x \\prec y) \\in C.\\ y \\in \\htmlData{k=w.tree}{\\mathsf{tree}(\\rho)}) \\\\ \\qquad \\land\\ (C \\cup \\htmlData{k=w.po}{\\mathsf{po}}) \\cap \\mathsf{tree}(\\rho)^{2} \\text{ is well-founded} \\end{array}} \\\\\n\\htmlData{k=w.gennew}{\\begin{array}{l} \\mathsf{gen\\_new}\\,\\Gamma\\,\\rho\\,C \\iff (C \\cup \\mathsf{po}) \\cap \\mathsf{tree}(\\rho)^{2} \\text{ is well-founded} \\\\ \\qquad \\land\\ \\forall (z \\prec y) \\in C.\\ z, y \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\Gamma \\vdash z \\prec y \\\\ \\qquad \\land\\ \\exists S \\subseteq \\mathsf{tree}(\\rho) \\times \\mathsf{Point}_{\\Gamma}.\\ \\forall (u \\prec y) \\in C.\\ u \\in \\mathsf{tree}(\\rho),\\ y \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists (u, t) \\in S.\\ \\Gamma \\vdash t \\prec y \\\\ \\qquad\\qquad \\land\\ \\forall (s, t) \\in S.\\ \\forall s' \\prec s \\in C \\cup \\mathsf{po}.\\ \\exists (s', t') \\in S.\\ \\Gamma \\vdash t' \\prec t \\\\ \\qquad\\qquad \\land\\ \\forall (s, t) \\in S.\\ \\forall (z \\prec s) \\in C.\\ z \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\Gamma \\vdash z \\prec t \\end{array}}\n\\end{array}",
      "caption": "P-Term and P-Connect ask a well-founded static world, and E-New asks $\\mathsf{wf\\_new}$ of a creation at a fresh root. No theorem asks anything of the world.",
      "modes": [
       "df",
@@ -822,7 +822,7 @@ window.MAP = {
      "id": "t-consts",
      "title": "Types of constants",
      "rocq": "static/Constants.v: k_send_df, k_recv_df, k_close_df, k_select_df, k_branch_df, k_link_df, k_spawn_df, k_force_df, k_send, k_recv, k_close, k_select, k_branch, k_link, k_spawn, k_force",
-     "tex": "\\begin{array}{lll}\n\\htmlData{k=prim.send}{\\mathsf{send}} & : T[x\\cdot i] \\otimes S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S@\\htmlData{k=pt.shift}{x^{+}} & \\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T,\\ \\htmlData{k=E-Send.heads}{x \\prec T[x\\cdot i]} \\\\\n\\htmlData{k=prim.recv}{\\mathsf{recv}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} T[x\\cdot i] \\otimes S@x^{+} & \\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T \\\\\n\\htmlData{k=prim.close}{\\mathsf{close}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} \\ast & \\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}} \\\\\n\\htmlData{k=prim.select}{\\mathsf{select}}_i & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}} & \\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)} \\\\\n\\htmlData{k=prim.branch}{\\mathsf{branch}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2 & \\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)} \\\\\n\\htmlData{k=prim.link}{\\mathsf{link}} & : \\htmlData{k=E-Link.dual}{S@x \\otimes \\overline{S}@\\overline{x}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.spawn}{\\mathsf{spawn}} & : (\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} \\ast) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.force}{\\mathsf{force}} & : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] & \\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]} \\\\\n\\htmlData{k=syn.new}{\\mathsf{new}} & : \\exists^{\\bot}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ (S@\\pi \\otimes \\overline{S}@\\overline{\\pi}) & \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho), (\\varnothing, x\\cdot\\kappa)\\}},\\ \\htmlData{k=E-New.wf}{\\pi = \\rho \\Rightarrow \\htmlData{k=w.wfnew}{\\mathsf{wf\\_new}}\\,\\rho\\,C},\\ \\htmlData{k=E-New.field}{\\pi = x\\cdot\\kappa \\Rightarrow \\Gamma \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} C}\n\\end{array}",
+     "tex": "\\begin{array}{lll}\n\\htmlData{k=prim.send}{\\mathsf{send}} & : T[x\\cdot i] \\otimes S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S@\\htmlData{k=pt.shift}{x^{+}} & \\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T,\\ \\htmlData{k=E-Send.heads}{x \\prec T[x\\cdot i]} \\\\\n\\htmlData{k=prim.recv}{\\mathsf{recv}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} T[x\\cdot i] \\otimes S@x^{+} & \\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T \\\\\n\\htmlData{k=prim.close}{\\mathsf{close}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} \\ast & \\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}} \\\\\n\\htmlData{k=prim.select}{\\mathsf{select}}_i & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}} & \\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)} \\\\\n\\htmlData{k=prim.branch}{\\mathsf{branch}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2 & \\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)} \\\\\n\\htmlData{k=prim.link}{\\mathsf{link}} & : \\htmlData{k=E-Link.dual}{S@x \\otimes \\overline{S}@\\overline{x}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.spawn}{\\mathsf{spawn}} & : (\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} \\ast) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.force}{\\mathsf{force}} & : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] & \\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]} \\\\\n\\htmlData{k=syn.new}{\\mathsf{new}} & : \\exists^{\\bot}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ (S@\\pi \\otimes \\overline{S}@\\overline{\\pi}) & \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho), (\\varnothing, x\\cdot\\kappa)\\}},\\ \\htmlData{k=E-New.wf}{\\pi = \\rho \\Rightarrow \\htmlData{k=w.gennew}{\\mathsf{gen\\_new}}\\,\\Gamma\\,\\rho\\,C},\\ \\htmlData{k=E-New.field}{\\pi = x\\cdot\\kappa \\Rightarrow \\Gamma \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} C}\n\\end{array}",
      "caption": "Each constant has the type of its eta-expansion $\\lambda y.\\,k\\,y$, for each instance of its variables that meets the side conditions. An action on an end at $x$ has upper point $x$. $\\mathsf{new}$ is a term and is typed by E-New. \\annp{The types are shown without credits, tickets and cost.}",
      "modes": [
       "df",
@@ -879,7 +879,7 @@ window.MAP = {
      "id": "r-new",
      "title": "Creation",
      "rocq": "static/Typing.v: e_new; static/Conservativity.v: d_new",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\quad \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho), (\\varnothing, x\\cdot\\kappa)\\}}\\quad \\htmlData{k=E-New.wf}{\\pi = \\rho \\Rightarrow \\htmlData{k=w.wfnew}{\\mathsf{wf\\_new}}\\,\\rho\\,C}\\quad \\htmlData{k=E-New.field}{\\pi = x\\cdot\\kappa \\Rightarrow \\Gamma \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} C}\\quad \\htmlData{k=E-New.contr}{\\htmlData{k=sty.contr}{\\mathsf{contr}}\\,S}\\annraw{\\quad }\\annot{\\htmlData{k=E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.new}{\\mathsf{new}} : \\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ \\htmlData{k=E-New.dual}{(S@\\pi)\\annot{^{m_1}_{m_1}} \\otimes (\\htmlData{k=sty.dual}{\\overline{S}}@\\overline{\\pi})\\annot{^{m_2}_{m_2}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-New}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\quad \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho), (\\varnothing, x\\cdot\\kappa)\\}}\\quad \\htmlData{k=E-New.wf}{\\pi = \\rho \\Rightarrow \\htmlData{k=w.gennew}{\\mathsf{gen\\_new}}\\,\\Gamma\\,\\rho\\,C}\\quad \\htmlData{k=E-New.field}{\\pi = x\\cdot\\kappa \\Rightarrow \\Gamma \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} C}\\quad \\htmlData{k=E-New.contr}{\\htmlData{k=sty.contr}{\\mathsf{contr}}\\,S}\\annraw{\\quad }\\annot{\\htmlData{k=E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.new}{\\mathsf{new}} : \\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ \\htmlData{k=E-New.dual}{(S@\\pi)\\annot{^{m_1}_{m_1}} \\otimes (\\htmlData{k=sty.dual}{\\overline{S}}@\\overline{\\pi})\\annot{^{m_2}_{m_2}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-New}",
      "caption": "The two ends of a new channel are at a fresh root $\\rho$ and its dual, or at a field $x\\cdot\\kappa$ and its dual. At a fresh root each fact of $C$ ends in the tree of $\\rho$, and $C$ with program order is well-founded on that tree. At a field $\\Gamma$ entails $C$. The lower bound is $\\bot$. \\annp{The creation picks tickets $m_1$ and $m_2$ with $m_1 + m_2 \\leq N$, and each end starts at credit equal to its tickets.}",
      "modes": [
       "df",
@@ -4114,6 +4114,29 @@ window.MAP = {
     }
    ]
   },
+  "w.gennew": {
+   "title": "$\\mathsf{gen\\_new}\\,\\Gamma\\,\\rho\\,C$",
+   "what": "The order of $C$ with program order is well-founded on $\\mathsf{tree}(\\rho)$, and facts of $C$ between context points follow from $\\Gamma$. A relation $S$ pairs points of $\\mathsf{tree}(\\rho)$ with points of $\\Gamma$. Each exit $u \\prec y$ from the tree to a context point has a partner of $u$ below $y$. Partners descend along $C$ with program order, and each entry $z \\prec s$ into a paired point lies below its partner.",
+   "why": "A creation at a fresh root takes the least ranks of the new tree above the context points below the tree. A paired point stays at or below the rank of its partner, so each exit holds in each ranked world that satisfies $\\Gamma$. The same pairs show that opening the existential derives no new fact between points of $\\Gamma$.",
+   "breaks": "Without partners an exit is rejected. Without descent along $C$ a chain of new points below an exit could rise above the context point it must stay below.",
+   "example": "$\\Gamma \\vdash z \\prec y$ and $C = \\{\\rho \\prec y\\}$ with $S = \\{(\\rho, z)\\}$. With $\\Gamma \\vdash z \\prec y$, $\\Gamma \\vdash z' \\prec y'$ and $C = \\{\\rho \\prec y, \\rho \\prec y'\\}$, $S = \\{(\\rho, z), (\\rho, z')\\}$.",
+   "rocq": "static/Contexts.v: gen_new, gen_new_rel, wf_new_gen, wf_new_plus_gen; static/PointSubst.v: cons_gen; compat/Redex.v: Erel_new",
+   "sig": "\\mathsf{gen\\_new} : \\mathsf{Ctx} \\to \\mathsf{PVar} \\to \\mathcal{P}(\\mathsf{Point} \\times \\mathsf{Point}) \\to \\mathsf{Prop}",
+   "args": [
+    {
+     "name": "\\Gamma",
+     "meaning": "The facts of the context of the creation."
+    },
+    {
+     "name": "\\rho",
+     "meaning": "The fresh root."
+    },
+    {
+     "name": "C",
+     "meaning": "The facts of the creation."
+    }
+   ]
+  },
   "w.consts": {
    "title": "Roots $A$",
    "what": "$A$ is the finite set of roots of $W$.",
@@ -5830,12 +5853,12 @@ window.MAP = {
    ]
   },
   "E-New.wf": {
-   "title": "$\\pi = \\rho \\Rightarrow \\mathsf{wf\\_new}\\,\\rho\\,C$",
-   "what": "At a fresh root each fact of $C$ ends in $\\mathsf{tree}(\\rho)$, and $C$ with program order is well-founded on $\\mathsf{tree}(\\rho)$.",
-   "why": "The fundamental theorem ranks the new tree at $\\sigma + \\rho_C$, with $\\sigma$ above each context point that a fact of $C$ puts below the tree and $\\rho_C$ the rank function of $C$ with program order. Facts from context points up into the tree then hold in each ranked world that satisfies $\\Gamma$.",
-   "breaks": "A fact from a new point down to a context point fails when the context point has rank $0$, a rank that a box instance may choose. The growing waiting chain states such a fact in each round.",
-   "example": "$\\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ ends in $\\mathsf{tree}(\\rho)$ and is well-founded.",
-   "rocq": "static/Contexts.v: wf_new; static/Typing.v: e_new",
+   "title": "$\\pi = \\rho \\Rightarrow \\mathsf{gen\\_new}\\,\\Gamma\\,\\rho\\,C$",
+   "what": "At a fresh root $C$ with program order is well-founded on $\\mathsf{tree}(\\rho)$. A fact of $C$ from the tree down to a context point $y$ has a partner in $\\Gamma$ below $y$, as $\\mathsf{gen\\_new}$ states.",
+   "why": "The fundamental theorem ranks the new tree by the least ranks above the context points below the tree. A point with a partner $t$ stays at or below the rank of $t$, so a fact down to $y$ holds in each ranked world that satisfies $\\Gamma$. With no fact down to a context point this is $\\mathsf{wf\\_new}$.",
+   "breaks": "A fact from a new point down to a context point with no partner fails when the context point has rank $0$. The growing waiting chain states such a fact in each round, and its box can state no partner.",
+   "example": "$\\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ needs no partner. $\\{\\rho \\prec y\\}$ under $\\Gamma \\vdash z \\prec y$ has the partner $z$.",
+   "rocq": "static/Contexts.v: gen_new, wf_new_gen; static/Typing.v: e_new; compat/Redex.v: Erel_new",
    "sig": "\\pi = \\rho \\Rightarrow \\mathsf{wf\\_new}\\,\\rho\\,C : \\mathsf{Prop}",
    "args": [
     {

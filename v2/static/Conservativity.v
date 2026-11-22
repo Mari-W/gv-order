@@ -402,7 +402,7 @@ Proof.
 Qed.
 
 Lemma d_new W Γ Δ F C S a1 a2 m1 m2 :
-  lenv_unl Δ → wf_new C → scontr S →
+  lenv_unl Δ → gen_new W Γ C → scontr S →
   dftyped W ∅ Γ Δ F ENew
     (TEx LBot 1 C (TProd (TSess S (pvar 0) a1 m1) (TSess (dual S) (pvar 0)‾ a2 m2))).
 Proof. intros HΔ HC HS. dfr. rewrite sty_df_dual. eapply e_new; [by apply lenv_unl_df|done|done|by rewrite scontr_df]. Qed.

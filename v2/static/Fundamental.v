@@ -307,6 +307,47 @@ Proof.
   apply (Vrel_tsub κ W0 Γ (ty_df T) (ty_df T')); [done|done|by apply (wmodels_mono W1)|by apply (hsat_mono W1)].
 Qed.
 
+(** ** (gen-new₁) in a ranked world
+
+    The static premise of E-New gives its semantic form at every model of
+    W and Γ, partner t read as its instance under σ. *)
+
+Lemma ctx_pt_inst σ C x : pn_vb (1 + length (bc_env C)) (pt_name x) → ¬ in_tree0 x →
+  ctx_pt (bcs_inst σ C) x = pt_inst σ (ctx_pt C x).
+Proof.
+  intros Hs Hx. apply pn_vb_root in Hs as ([|j] & Hj & Hjl); [by destruct Hx|].
+  simpl in Hjl. destruct (lookup_lt_is_Some_2 (bc_env C) j ltac:(lia)) as [e He].
+  unfold ctx_pt. rewrite pt_inst_comp. apply pt_inst_ext_root. intros a Ha.
+  change (pt_root x) with (pn_root (pt_name x)) in Ha. rewrite Hj in Ha. injection Ha as <-.
+  unfold compose, plist. simpl. by rewrite list_lookup_fmap, He.
+Qed.
+
+Lemma new_step_inst σ C : new_step (bcs_inst σ C) = new_step C.
+Proof. destruct C as [env P]. unfold new_step, bcs_inst. simpl. by rewrite length_fmap. Qed.
+
+Lemma cfact_inst σ C x y : cfact (bcs_inst σ C) x y ↔ cfact C x y.
+Proof. destruct C as [env P]. unfold cfact, bcs_inst. simpl. by rewrite length_fmap. Qed.
+
+Lemma gen_new_sem_of W0 W Γ σ C : sworld_wf W0 → wmodels W W0 → hsat W σ Γ →
+  gen_new W0 Γ C → gen_new_sem W (bcs_inst σ C).
+Proof.
+  intros Hwf HW Hs (Hwn & Hcc & Sr & Hex & Hst & Hen).
+  assert (∀ x y, cfact C x y → pn_vb (1 + length (bc_env C)) (pt_name x) ∧ pn_vb (1 + length (bc_env C)) (pt_name y))
+    as Hsc by (intros x y [_ H]; exact H).
+  split_and!.
+  - by rewrite new_step_inst.
+  - intros x y Hf Hx Hy. apply cfact_inst in Hf. destruct (Hsc x y Hf) as [Hsx Hsy].
+    rewrite !ctx_pt_inst by done. by eapply slt_sem, Hcc.
+  - exists (λ u p, ∃ t, Sr u t ∧ p = pt_inst σ t). split_and!.
+    + intros u y Hf Hu Hy. apply cfact_inst in Hf. destruct (Hex u y Hf Hu Hy) as (t & Ht & Hlt).
+      exists (pt_inst σ t). split; [eauto|]. rewrite ctx_pt_inst by (try done; apply (Hsc u y Hf)).
+      by eapply slt_sem.
+    + intros s p s' (t & Ht & ->) Hs'. rewrite new_step_inst in Hs'.
+      destruct (Hst s t s' Ht Hs') as (t' & Ht' & Hlt). exists (pt_inst σ t'). split; [eauto|]. by eapply slt_sem.
+    + intros s p z (t & Ht & ->) Hf Hz. apply cfact_inst in Hf.
+      rewrite ctx_pt_inst by (try done; apply (Hsc z s Hf)). by eapply slt_sem, Hen.
+Qed.
+
 (** ** Identity instances *)
 
 Lemma tenv_pinst_pvar Θ : tenv_pinst pvar Θ = Θ.
@@ -598,7 +639,7 @@ Section fund.
       eapply later_spawn, IH'.
     - (* E-New *)
       rewrite pt_inst_dual, pt_inst_pup1_0.
-      apply later_new; [by apply lenv_unl_pinst|by apply wf_new_inst].
+      apply later_new; [by apply lenv_unl_pinst|by apply (gen_new_sem_of W W1 Γ σ C)].
     - (* E-New at a field *)
       rewrite pt_inst_dual. apply later_new_fld. by apply lenv_unl_pinst.
     - (* E-Sub *)

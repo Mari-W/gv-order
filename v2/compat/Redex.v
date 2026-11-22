@@ -444,26 +444,82 @@ Section redex.
       split; [|by rewrite Hr]. apply elem_of_app. right. apply list_elem_of_fmap. by exists y.
   Qed.
 
-  (** A creation at a fresh root under (wf-new). The creation grows the
-      world by the fresh constant a and by the roots of the context
-      points of C. The tree of a gets the ranks of C with program order,
-      each above the ranks of the context points below it ([rank_base]). *)
+  (** The semantic form of (gen-new₁) in the ranked world W, with the
+      environment of C already instantiated. *)
+  Definition gen_new_sem (W : world) (C : bcs) : Prop :=
+    well_founded (new_step C) ∧
+    (∀ x y, cfact C x y → ¬ in_tree0 x → ¬ in_tree0 y → W ⊢ ctx_pt C x ≺ ctx_pt C y) ∧
+    ∃ Sr : point → point → Prop,
+      (∀ u y, cfact C u y → in_tree0 u → ¬ in_tree0 y → ∃ t, Sr u t ∧ W ⊢ t ≺ ctx_pt C y) ∧
+      (∀ s t s', Sr s t → new_step C s' s → ∃ t', Sr s' t' ∧ W ⊢ t' ≺ t) ∧
+      (∀ s t z, Sr s t → cfact C z s → ¬ in_tree0 z → W ⊢ ctx_pt C z ≺ t).
+
+  Lemma gen_new_sem_mono W W' C : W ⊑ W' → gen_new_sem W C → gen_new_sem W' C.
+  Proof.
+    intros HW (Hwf & Hcc & Sr & Hex & Hst & Hen). split_and!; [done| |exists Sr; split_and!].
+    - intros. eapply w_lt_mono; [exact HW|]. by apply Hcc.
+    - intros u y Hf Hu Hy. destruct (Hex u y Hf Hu Hy) as (t & Ht & H). exists t. split; [done|]. by eapply w_lt_mono.
+    - intros s t s' Ht Hs. destruct (Hst s t s' Ht Hs) as (t' & Ht' & H). exists t'. split; [done|]. by eapply w_lt_mono.
+    - intros. eapply w_lt_mono; [exact HW|]. by eapply Hen.
+  Qed.
+
+  Lemma gen_new_sem_wf_new W C : wf_new C → gen_new_sem W C.
+  Proof.
+    intros [HC Hwf]. split_and!; [done| |exists (λ _ _, False); split_and!; try done].
+    - intros x y [Hf Hs] _ Hy. exfalso. by apply Hy, (HC x y).
+    - intros u y [Hf Hs] _ Hy. exfalso. by apply Hy, (HC u y).
+  Qed.
+
+  (** The ranks of W with offsets at the roots W does not rank rise
+      along W. *)
+  Lemma rk0_lt W x y : W ⊢ x ≺ y →
+    olt (wgrow_rank W (λ y, onat (pt_off y)) x) (wgrow_rank W (λ y, onat (pt_off y)) y).
+  Proof.
+    unfold wgrow_rank. intros [Hp|(Hx & Hy & Hlt)].
+    - pose proof (rin_po W x y Hp) as Hr. destruct (po_root x y Hp) as [_ Ho].
+      destruct (decide (rin W x)) as [Hx|Hx].
+      + rewrite decide_True by tauto. by apply rank_po.
+      + rewrite decide_False by tauto. by apply onat_lt.
+    - by rewrite !decide_True.
+  Qed.
+
+  #[universes(polymorphic)] Lemma rank_base_le R b Hwf x β :
+    ole (b x) β → (∀ y, R y x → olt (rank_base R b Hwf y) β) → ole (rank_base R b Hwf x) β.
+  Proof.
+    intros Hb Hy. unfold rank_base. generalize (Hwf x). intros [h]. cbn [rank_bacc].
+    apply ole_lim_l. intros [|]; [done|]. apply ole_lim_l. intros [y Hr]. cbn [proj1_sig proj2_sig].
+    eapply ole_trans; [apply ole_succ_succ, (rank_bacc_irr R b y _ (Hwf y))|]. exact (Hy y Hr).
+  Qed.
+
+  (** A creation at a fresh root under (gen-new₁). The creation grows
+      the world by the fresh constant a and by the roots of the context
+      points of C. The tree of a gets the least ranks of C with program
+      order above the context points below it ([rank_base]). A point
+      paired with t stays at or below the rank of t, so each exit holds. *)
   Lemma Erel_new aq1 aq2 n W C S F mt1 mt2 :
-    wf_new C →
+    gen_new_sem W C →
     Erel κ n W ∅ (TEx LBot 1 C (TProd (TSess S (pvar 0) aq1 mt1) (TSess (dual S) (pvar 0)‾ aq2 mt2))) F ENew.
   Proof.
-    intros [HC Hwf].
+    intros HG.
     assert (tstep ENew (LNew "") (Pair (Chan ""⁺) (Chan ""⁻))) as Hst
       by (by apply tstep_head, t_act_new).
     apply Erel_S_intro.
     - intros Hi. exact (Hi _ _ Hst).
     - intros W1 _. eapply ready_tau; [exact Hst|done].
     - intros W1 α e' HW1 Hs. destruct (ENew_step _ _ Hs) as (c & -> & ->). simpl. intros _.
+      destruct (gen_new_sem_mono _ _ _ HW1 HG) as (Hwf & Hcc & Sr & Hex & Hstp & Hen).
       destruct (fresh_const W1 (bc_env C)) as (a & Ha1 & Ha2).
       set (π := MkPt (NConst a) true 0).
       set (σ := plist (π :: bc_env C)).
       assert (σ 0 = MkPt (NConst a) true 0) as Hσ by done.
       set (rk0 := wgrow_rank W1 (λ y, onat (pt_off y))).
+      assert (∀ x y, W1 ⊢ x ≺ y → olt (rk0 x) (rk0 y)) as Hrk0.
+      { intros x y. unfold rk0, wgrow_rank. intros [Hp|(Hx & Hy & Hlt)].
+        - pose proof (rin_po W1 x y Hp) as Hr. destruct (po_root x y Hp) as [_ Ho].
+          destruct (decide (rin W1 x)) as [Hx|Hx].
+          + rewrite decide_True by tauto. by apply rank_po.
+          + rewrite decide_False by tauto. by apply onat_lt.
+        - by rewrite !decide_True. }
       set (b0 := λ u0 : point, olim (λ s : {y : point | pt_root y ≠ NConst a ∧ bcs_at C [π] (FLt y (pt_inst σ u0))},
                    osucc (rk0 (proj1_sig s)))).
       set (ρ := λ x, if decide (pt_root x = NConst a) then rank_base (new_step C) b0 Hwf (pt_unroot a x)
@@ -482,36 +538,64 @@ Section redex.
       assert (∀ x, pt_root x ≠ NConst a → w_rank W' x = rk0 x) as Hro.
       { intros x Hx. unfold W'. simpl. unfold rk0, wgrow_rank. case_decide; [done|].
         unfold ρ. by rewrite decide_False. }
+      (* the instance of a point of the tree of 0, and of a context point *)
+      assert (∀ p, in_tree0 p → pt_root (pt_inst σ p) = NConst a ∧ rin W' (pt_inst σ p) ∧
+                w_rank W' (pt_inst σ p) = rank_base (new_step C) b0 Hwf p) as Htr.
+      { intros p Hp. assert (pt_root (pt_inst σ p) = NConst a) as Hr by (rewrite pt_root_inst_var, Hp; done).
+        split_and!; [done|apply wgrow_rin; rewrite Hr; set_solver|].
+        by rewrite (Hra _ Hr), (pt_unroot_inst a σ Hσ p Hp). }
+      assert (∀ p, pn_vb (1 + length (bc_env C)) (pt_name p) → ¬ in_tree0 p →
+                pt_inst σ p = ctx_pt C p ∧ pt_root (pt_inst σ p) ≠ NConst a ∧ rin W' (pt_inst σ p)) as Hout.
+      { intros p Hsp Hp. apply pn_vb_root in Hsp as ([|j] & Hj & Hjl); [by destruct Hp|].
+        simpl in Hjl. destruct (lookup_lt_is_Some_2 (bc_env C) j ltac:(lia)) as [yj Hyj].
+        assert (pt_root (pt_inst σ p) = pt_root yj) as Hr.
+        { rewrite pt_root_inst_var. change (pt_root p) with (pn_root (pt_name p)). rewrite Hj.
+          simpl. unfold σ, plist. simpl. by rewrite Hyj. }
+        split_and!.
+        - unfold ctx_pt. apply pt_inst_ext_root. intros b Hb. change (pt_root p) with (pn_root (pt_name p)) in Hb.
+          rewrite Hj in Hb. injection Hb as <-. done.
+        - rewrite Hr. apply Ha2. by eapply list_elem_of_lookup_2.
+        - apply wgrow_rin. rewrite Hr. apply elem_of_union_r, elem_of_list_to_set.
+          apply list_elem_of_fmap. exists yj. split; [done|]. by eapply list_elem_of_lookup_2. }
+      (* a point paired with t lies at or below the rank of t *)
+      assert (∀ s, in_tree0 s → ∀ t, Sr s t → ole (rank_base (new_step C) b0 Hwf s) (rk0 t)) as Hinv.
+      { intros s. induction (Hwf s) as [s _ IH]. intros Hsin t Ht. apply rank_base_le.
+        - unfold b0. apply ole_lim_l. intros [y [Hyr Hy]]. cbn [proj1_sig].
+          apply bcs_at_iff in Hy as ([z0 s0] & Hf & Hsc & Heq). simpl in Heq. injection Heq as Ey Es.
+          try change (plist ([π] ++ bc_env C)) with σ in Ey, Es. try change (plist (π :: bc_env C)) with σ in Ey, Es.
+          assert (in_tree0 s0) as Hs0.
+          { destruct (decide (in_tree0 s0)) as [?|Hn]; [done|]. exfalso.
+            destruct Hsc as [_ Hsc]. destruct (Hout s0 Hsc Hn) as (_ & Hne & _).
+            apply Hne. rewrite <-Es. by apply Htr. }
+          assert (s0 = s) as ->.
+          { rewrite <-(pt_unroot_inst a σ Hσ s0 Hs0), <-(pt_unroot_inst a σ Hσ s Hsin). by rewrite Es. }
+          assert (¬ in_tree0 z0) as Hz0.
+          { intros Hz. apply Hyr. rewrite Ey. by apply Htr. }
+          destruct Hsc as [Hsz Hss]. destruct (Hout z0 Hsz Hz0) as (Ez & _ & _). rewrite Ey, Ez.
+          apply Hrk0. apply (Hen s t z0 Ht); [split; [done|split; done]|done].
+        - intros s' Hs'. destruct (Hstp s t s' Ht Hs') as (t' & Ht' & Hlt).
+          eapply ole_trans_lt; [apply (IH s' Hs' (proj1 Hs') t' Ht')|]. by apply Hrk0. }
       exists S, π, W'. split; [apply wgrow_ext|].
       apply at_cost_val. apply Vrel_ex_iff. split; [done|]. exists [π]. split_and!; [done| |].
       + intros x y Hf. pose proof Hf as Hf0.
         apply bcs_at_iff in Hf as ([x0 y0] & Hf & Hsc & Heq). simpl in Heq. injection Heq as -> ->.
         try change (plist ([π] ++ bc_env C)) with σ in Hf0 |- *. try change (plist (π :: bc_env C)) with σ in Hf0 |- *.
-        pose proof (HC x0 y0 Hf Hsc) as Hy0. unfold in_tree0 in Hy0.
-        assert (pt_root (pt_inst σ y0) = NConst a) as Hy.
-        { rewrite pt_root_inst_var, Hy0. done. }
-        right. split_and!; [|apply wgrow_rin; rewrite Hy; set_solver|].
-        { destruct (decide (pt_root x0 = NVar 0)) as [Hx0|Hx0].
-          - apply wgrow_rin. rewrite pt_root_inst_var, Hx0. set_solver.
-          - destruct Hsc as [Hs1 _]. apply pn_vb_root in Hs1 as (k & Hk & Hkl).
-            destruct k as [|j]; [unfold pt_root in Hx0; congruence|].
-            simpl in Hkl. destruct (lookup_lt_is_Some_2 (bc_env C) j ltac:(lia)) as [yj Hyj].
-            apply wgrow_rin. rewrite pt_root_inst_var. change (pt_root x0) with (pn_root (pt_name x0)). rewrite Hk.
-            simpl. unfold σ, plist. simpl. rewrite Hyj. apply elem_of_union_r, elem_of_list_to_set.
-            apply list_elem_of_fmap. exists yj. split; [done|]. by eapply list_elem_of_lookup_2. }
-        rewrite (Hra _ Hy), (pt_unroot_inst a σ Hσ y0 Hy0).
-        destruct (decide (pt_root x0 = NVar 0)) as [Hx0|Hx0].
-        * assert (pt_root (pt_inst σ x0) = NConst a) as Hx by (rewrite pt_root_inst_var, Hx0; done).
-          rewrite (Hra _ Hx), (pt_unroot_inst a σ Hσ x0 Hx0). apply rank_base_lt.
-          split; [done|split; [done|left; by split]].
-        * assert (pt_root (pt_inst σ x0) ≠ NConst a) as Hx.
-          { destruct Hsc as [Hs1 _]. apply pn_vb_root in Hs1 as (k & Hk & Hkl).
-            destruct k as [|j]; [unfold pt_root in Hx0; congruence|].
-            simpl in Hkl. destruct (lookup_lt_is_Some_2 (bc_env C) j ltac:(lia)) as [yj Hyj].
-            rewrite pt_root_inst_var. change (pt_root x0) with (pn_root (pt_name x0)). rewrite Hk.
-            simpl. unfold σ, plist. simpl. rewrite Hyj. apply Ha2. by eapply list_elem_of_lookup_2. }
-          rewrite (Hro _ Hx). eapply olt_trans_le; [|apply rank_base_ge].
+        assert (cfact C x0 y0) as Hcf by (split; [done|exact Hsc]).
+        destruct Hsc as [Hsx Hsy].
+        destruct (decide (in_tree0 y0)) as [Hy0|Hy0], (decide (in_tree0 x0)) as [Hx0|Hx0].
+        * destruct (Htr y0 Hy0) as (_ & Hry & Ey). destruct (Htr x0 Hx0) as (_ & Hrx & Ex).
+          right. split_and!; [done|done|]. rewrite Ex, Ey. apply rank_base_lt.
+          split; [done|split; [done|left; exact Hcf]].
+        * destruct (Htr y0 Hy0) as (_ & Hry & Ey). destruct (Hout x0 Hsx Hx0) as (_ & Hx & Hrx).
+          right. split_and!; [done|done|]. rewrite (Hro _ Hx), Ey.
+          eapply olt_trans_le; [|apply rank_base_ge].
           unfold b0, olt. apply (ole_lim_r _ _ (exist _ (pt_inst σ x0) (conj Hx Hf0))). apply ole_refl.
+        * destruct (Htr x0 Hx0) as (_ & Hrx & Ex). destruct (Hout y0 Hsy Hy0) as (Ey & Hy & Hry).
+          destruct (Hex x0 y0 Hcf Hx0 Hy0) as (t & Ht & Hlt).
+          right. split_and!; [done|done|]. rewrite Ex, (Hro _ Hy), Ey.
+          eapply ole_trans_lt; [apply (Hinv x0 Hx0 t Ht)|]. by apply Hrk0.
+        * destruct (Hout x0 Hsx Hx0) as (Ex & _ & _). destruct (Hout y0 Hsy Hy0) as (Ey & _ & _).
+          rewrite Ex, Ey. eapply w_lt_mono; [apply wgrow_ext|]. by apply Hcc.
       + unfold ty_inst. simpl. rewrite pt_inst_dual, !pt_inst_pvar_at. simpl. apply Vrel_newpair.
   Qed.
 

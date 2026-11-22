@@ -57,7 +57,7 @@ Lemma d_new' W Γ Δ F (L : fact → Prop) S a1 a2 mt :
   (∀ y o, Δ !! y = Some o → spare o) → wf_new (bcs_of L) → scontr S →
   dftyped W ∅ Γ Δ F ENew
     (TEx LBot 1 (bcs_of L) (TProd (TSess S (pvar 0) a1 mt) (TSess (dual S) (pvar 0)‾ a2 mt))).
-Proof. intros H HL HS. apply d_new; [by apply spare_unl|done|done]. Qed.
+Proof. intros H HL HS. apply d_new; [by apply spare_unl|by apply wf_new_gen|done]. Qed.
 
 (** A session type of the examples is contractive by computation. *)
 Ltac contr_tac := vm_compute; exact I.

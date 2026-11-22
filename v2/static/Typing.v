@@ -156,7 +156,7 @@ Inductive typed (W : sworld) (N : fuel) :
       fle (Some 1) a →
       typed W N Θ Γ Δ F (ESpawn e) TUnit c0
   | e_new Γ Δ F C S m1 m2 :
-      lenv_unl Δ → wf_new C → tsum_ok N m1 m2 → scontr S →
+      lenv_unl Δ → gen_new W Γ C → tsum_ok N m1 m2 → scontr S →
       typed W N ∅ Γ Δ F ENew
         (TEx LBot 1 C (TProd (TSess S (pvar 0) m1 m1) (TSess (dual S) (pvar 0)‾ m2 m2)))
         (Some 0)

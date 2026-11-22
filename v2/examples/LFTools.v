@@ -53,7 +53,7 @@ Lemma e_new' W N Γ Δ F (L : fact → Prop) S :
   (∀ y o, Δ !! y = Some o → spare o) → wf_new (bcs_of L) → scontr S →
   typed W N ∅ Γ Δ F ENew (TEx LBot 1 (bcs_of L)
     (TProd (TSess S (pvar 0) (fhalf N) (fhalf N)) (TSess (dual S) (pvar 0)‾ (ncap N (fhalf N)) (ncap N (fhalf N))))) (Some 0).
-Proof. intros H HL HS. apply e_new; [by apply spare_unl|done|apply tsum_half|done]. Qed.
+Proof. intros H HL HS. apply e_new; [by apply spare_unl|by apply wf_new_gen|apply tsum_half|done]. Qed.
 
 (** A creation at the field κ of the point x of the end y, ⟨y, new⟩, at
     the tickets m of the anchor and N − m. *)
@@ -74,7 +74,7 @@ Lemma e_new_tk W N Γ Δ F (L : fact → Prop) S m1 m2 :
   (∀ y o, Δ !! y = Some o → spare o) → wf_new (bcs_of L) → tsum_ok N m1 m2 → scontr S →
   typed W N ∅ Γ Δ F ENew (TEx LBot 1 (bcs_of L)
     (TProd (TSess S (pvar 0) m1 m1) (TSess (dual S) (pvar 0)‾ m2 m2))) (Some 0).
-Proof. intros H HL Hm HS. apply e_new; [by apply spare_unl|done|done|done]. Qed.
+Proof. intros H HL Hm HS. apply e_new; [by apply spare_unl|by apply wf_new_gen|done|done]. Qed.
 
 Lemma thage_empty c : thage c ∅ ∅.
 Proof. intros o. by rewrite lookup_empty. Qed.

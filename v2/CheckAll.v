@@ -157,6 +157,10 @@ Print Assumptions lock_free_padovani.
 
 (** static/PointSubst.v, static/Inversion.v: conservativity at E-Open *)
 Print Assumptions cons_new.
+Print Assumptions cons_gen.
+Print Assumptions wf_new_gen.
+Print Assumptions wf_new_plus_gen.
+Print Assumptions gen_new_sem_of.
 Print Assumptions Erel_new.
 Print Assumptions Erel_new_fld.
 Print Assumptions opened_cons.
