@@ -79,7 +79,39 @@ commits a136833 to the head.
     contractivity.
   - Laptop at 5a0f9f4: `make` exit 0, `make test` passes, `make check` 121 of
     121.
-- Item 3, (wf-new⁺) and (gen-new₁). See the end of this report.
+- Item 3, (wf-new⁺) and (gen-new₁). Done in one step (48aef68). E-New at a
+  fresh root asks `gen_new W Γ C` (static/Contexts.v), the (gen-new₁) of
+  check-general-new.md with a relation S between points of the new tree and
+  points of Γ. Its clauses are well-foundedness of C with program order on
+  the tree, Γ ⊢ z ≺ y for facts between context points, a partner below y
+  for each exit u ≺ y, descent of partners along `new_step`, and each entry
+  z ≺ s below the partner of s. A context point of C is `ctx_pt C x`, the
+  variable 1 + j read as the j-th point of `bc_env C`.
+  - (wf-new⁺) is `wf_new_plus` (a map h on a downward closed D) and
+    `wf_new_plus_gen` turns it into (gen-new₁). (wf-new) is
+    `wf_new_gen`. The examples keep proving `wf_new` and pass it through
+    `wf_new_gen` in `d_new'`, `e_new'`, `e_new_tk`.
+  - `cons_gen : facts_const W → gen_new W Γ C → cons_open W Γ 1 C`
+    (static/PointSubst.v) by the invariant `cinv`, which follows a
+    derivation in `hc_open 1 C Γ` through the partners, in four cases by
+    where its two ends lie. `cons_new` stays for the E-Open sites of the
+    examples.
+  - `Erel_new` (compat/Redex.v) takes `gen_new_sem W C`, the same clauses
+    with the order of the ranked world. The construction is that of the
+    third run, `rank_base (new_step C) b0`. The new part is the invariant
+    `Sr s t → rank_base s ≤ rk0 t` by well-founded induction
+    (`rank_base_le`, constructive). Exits then hold by `rk0` rising along
+    W1. `gen_new_sem_of` (Fundamental.v) gives the semantic form from
+    `wmodels W1 W`, `hsat W1 σ Γ` and `slt_sem`, as the E-New case of
+    `typed_sem` has them. O-New and the relation clauses did not change.
+  - Not done. The finite-set version (gen-new), as instructed. A mechanized
+    rejection of rx-chain under (gen-new₁), which check-general-new.md
+    argues by its Proposition 7. No example uses an exit yet, and the
+    two-upper-bound example is not written as a program.
+  - Map (48aef68). New note `w.gennew` in the worlds block, E-New.wf reads
+    `π = ρ ⇒ gen_new Γ ρ C`. Lint counts unchanged.
+  - Local compile of every file and CheckAll (125 results closed). Laptop
+    result below.
 - Map (186308e, 28aa5a5). New note `sty.contr` and premises E-New.contr,
   E-Sub.contr, E-Abs.contr, E-Inj.contr, E-Box.contr, P-Term.contr. E-Box.inst
   cites `typed_sinst`. Sub-Ex shows `Γ, C(ῑ) ⊢ C'(ῑ)` and
