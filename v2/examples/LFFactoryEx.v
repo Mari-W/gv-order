@@ -22,7 +22,7 @@ Ltac lworker_tac pp j :=
   [lage_tac|];
   eapply e_close with (S0 := SEnd) (x := pt_shift 1 pp); [done|apply ub_below_empty|];
   eapply e_send with (x := pp) (m := 0) (T := TUnit) (Tp := TUnit) (S0 := Sd);
-    [done|exact I|done|cbn; set_solver|apply ub_below_empty| |age_tac|shelve];
+    [done|exact I|split; [done|cbn; set_solver]|apply ub_below_empty| |age_tac|shelve];
   eapply e_pair_; [lsplit_tac EUnit (Var j)|apply e_unit'; spare_tac| | | ];
   [lage_tac|eapply e_var'; [reflexivity|spare_tac]|age_tac].
 

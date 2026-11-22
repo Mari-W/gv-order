@@ -123,8 +123,7 @@ Inductive typed (W : sworld) (N : fuel) :
       typed W N Θ Γ Δ F e (TBox m k C ub c U) c0 →
       typed W N Θ Γ Δ F (EForce e) (sinst_ty (slist ss) (ty_inst xs U)) (fadd c0 c)
   | e_send Θ Γ Δ F e S0 x m T S aS mS Tp Tp' c0 :
-      unfoldS S0 = SSeq (SSnd m T) S → pscoped m T → hbot T = false →
-      (∀ y, y ∈ heads (payload_at m T x) → slt W Γ x y) →
+      unfoldS S0 = SSeq (SSnd m T) S → pscoped m T → below_ty W Γ x (payload_at m T x) →
       ub_below_s W Γ (Some x) F →
       typed W N Θ Γ Δ F e (TProd Tp (TSess S0 x aS mS)) c0 →
       tage (Some 1) Tp Tp' → tsub W Γ Tp' (payload_at m T x) →

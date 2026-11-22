@@ -188,7 +188,7 @@ Section body.
     lage_tac. 
     eapply e_let_; [lsplit_tac (ESend (Pair EUnit (Var 1))) EUnit| | | ].
     { eapply e_send with (x := pvar 0) (m := 0) (T := TUnit) (Tp := TUnit) (S0 := Sa);
-        [exact unfold_Sa|exact I|done|cbn; set_solver|dfut (pvar 0)| |age_tac|shelve].
+        [exact unfold_Sa|exact I|split; [done|cbn; set_solver]|dfut (pvar 0)| |age_tac|shelve].
       eapply e_pair_; [lsplit_tac EUnit (Var 1)| | | | ].
       { apply e_unit'. spare_tac. }
       lage_tac.
@@ -242,7 +242,7 @@ Section body.
     lage_tac. 
     eapply e_let_; [lsplit_tac (ESend (Pair EUnit (Var 2))) EUnit| | | ].
     { eapply e_send with (x := pvar 1) (m := 0) (T := TUnit) (Tp := TUnit) (S0 := Sa);
-        [exact unfold_Sa|exact I|done|cbn; set_solver|dfut (pvar 1)| |age_tac|shelve].
+        [exact unfold_Sa|exact I|split; [done|cbn; set_solver]|dfut (pvar 1)| |age_tac|shelve].
       eapply e_pair_; [lsplit_tac EUnit (Var 2)| | | | ].
       { apply e_unit'. spare_tac. }
       lage_tac.

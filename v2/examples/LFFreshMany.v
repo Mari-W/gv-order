@@ -77,12 +77,12 @@ Section body.
     eapply e_letu_; [lsplit_tac (EClose (ESend (Pair EUnit (ESend (Pair EUnit (Var 1)))))) EUnit| | | ].
     { eapply e_close with (S0 := SEnd) (x := pt_shift 1 (pt_shift 1 (fmd 0))); [done|fut (fmd 2)|].
       eapply e_send with (x := pt_shift 1 (fmd 0)) (m := 0) (T := TUnit) (Tp := TUnit) (S0 := Sd1);
-        [done|exact I|done|cbn; set_solver|fut (fmd 1)| |age_tac|shelve].
+        [done|exact I|split; [done|cbn; set_solver]|fut (fmd 1)| |age_tac|shelve].
       eapply e_pair_; [lsplit_tac EUnit (ESend (Pair EUnit (Var 1)))| | | | ].
       { apply e_unit'. spare_tac. }
       lage_tac.
       { eapply e_send with (x := fmd 0) (m := 0) (T := TUnit) (Tp := TUnit) (S0 := Sdd);
-          [done|exact I|done|cbn; set_solver|fut (fmd 0)| |age_tac|shelve].
+          [done|exact I|split; [done|cbn; set_solver]|fut (fmd 0)| |age_tac|shelve].
         eapply e_pair_; [lsplit_tac EUnit (Var 1)| | | | ].
         { apply e_unit'. spare_tac. }
         lage_tac.

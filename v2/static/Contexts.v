@@ -149,6 +149,14 @@ Definition ub_below_s (W : sworld) (Γ : hctx) (ub : option point) (F : sfuture)
               (∀ r, F.2 = Some r → rest_below W Γ x r)
   end.
 
+(** x ≺ T for the payload T of a send: x lies below the dual points of
+    the ends in T, and T holds no end at a hidden point. *)
+Definition below_ty (W : sworld) (Γ : hctx) (x : point) (T : ty) : Prop :=
+  hbot T = false ∧ ∀ y, y ∈ heads T → slt W Γ x y.
+
+Lemma hbot_payload_at m T x : hbot (payload_at m T x) = hbot T.
+Proof. unfold payload_at, ty_inst. apply hbot_pinst. Qed.
+
 (** u ≺ F for the upper point of an arrow (entry 12, generalized arrows).
     No upper point asks nothing, ⊤ asks the empty future. *)
 Definition ub_below_u (W : sworld) (Γ : hctx) (ub : ubound) (F : sfuture) : Prop :=

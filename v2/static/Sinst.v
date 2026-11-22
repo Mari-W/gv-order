@@ -122,7 +122,7 @@ Proof.
     |Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e e1 e2 T1 T2 T c0 c1 c2 Hsp Hl H0 IH0 Hta Hla H1 IH1 H2 IH2
     |Γ Δ F e m k C ub c U HΔ HUc Hb IH
     |Θ Γ Δ F e m k C ub c U xs ss c0 Hxs HC Hss Hsi Hub H IH
-    |Θ Γ Δ F e S0 x m T S aS mS Tp Tp' c0 Hu Hsc Hbot Hh Hub H IH Hag Hsub
+    |Θ Γ Δ F e S0 x m T S aS mS Tp Tp' c0 Hu Hsc [Hbot Hh] Hub H IH Hag Hsub
     |Θ Γ Δ F e S0 x m T S a mS c0 Hu Hsc Hub H IH
     |Θ Γ Δ F e S0 x a mS c0 Hu Hub H IH
     |i Θ Γ Δ F e S0 x S1 S2 a mS c0 Hu Hub H IH
@@ -489,7 +489,7 @@ Proof.
     |Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e e1 e2 T1 T2 T c0 c1 c2 Hsp Hl H0 IH0 Hta Hla H1 IH1 H2 IH2
     |Γ Δ F e m k C ub c U HΔ HUc Hb IH
     |Θ Γ Δ F e m k C ub c U xs ss c0 Hxs HC Hss Hsi Hub H IH
-    |Θ Γ Δ F e S0 x m T S aS mS Tp Tp' c0 Hu Hsc Hbot Hh Hub H IH Hag Hsub
+    |Θ Γ Δ F e S0 x m T S aS mS Tp Tp' c0 Hu Hsc [Hbot Hh] Hub H IH Hag Hsub
     |Θ Γ Δ F e S0 x m T S a mS c0 Hu Hsc Hub H IH
     |Θ Γ Δ F e S0 x a mS c0 Hu Hub H IH
     |i Θ Γ Δ F e S0 x S1 S2 a mS c0 Hu Hub H IH
@@ -586,10 +586,10 @@ Proof.
     destruct (unfoldS_seq_contr _ _ _ HS0 Hu) as [HT HS].
     destruct (unfoldS_sinst_act σ Hσ S0 (SSnd m T) S HS0 I Hu) as (S' & Hu' & HS').
     cbn [sinst_ty]. eapply e_sub; [|apply sub_sess; [exact HS'|apply fle_refl]|apply fle_refl|intros _; by apply scontr_sinst].
-    eapply e_send with (T := sinst_ty σ T) (S := S'); [exact Hu'| | | |exact Hub|exact (IH σ Hok HΘ HΔc)| |].
+    eapply e_send with (T := sinst_ty σ T) (S := S'); [exact Hu'| | |exact Hub|exact (IH σ Hok HΘ HΔc)| |].
     + apply scoped_sinst_mut; [apply Hok|done].
-    + by rewrite hbot_sinst.
-    + intros y Hy. apply Hh. by rewrite <-payload_at_sinst, heads_sinst in Hy.
+    + split; [by rewrite <-payload_at_sinst, hbot_sinst|].
+      intros y Hy. apply Hh. by rewrite <-payload_at_sinst, heads_sinst in Hy.
     + by apply tage_sinst.
     + rewrite <-payload_at_sinst. apply tsub_sinst; [done|done| |].
       * by rewrite (tage_tcontr _ _ _ Hag).

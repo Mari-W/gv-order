@@ -95,10 +95,11 @@ Section ren.
         |by rewrite length_fmap|by apply sinsts_ren| |exact IHtyped].
       rewrite <-option_fmap_compose. apply (ub_below_s_ren π) in H3. rewrite <-option_fmap_compose in H3.
       erewrite option_fmap_ext; [exact H3|]. intros x. simpl. symmetry. apply pt_inst_plist_ren.
-    - rewrite pt_ren_shift. eapply e_send; [by rewrite unfoldS_ren, H|by apply pscoped_ren_mut|by rewrite hbot_ren
-        | |by apply (ub_below_s_ren π W Γ (Some x))|exact IHtyped|by apply tage_ren|].
+    - rewrite pt_ren_shift. destruct H1 as [Hb1 Hh1].
+      eapply e_send; [by rewrite unfoldS_ren, H|by apply pscoped_ren_mut|split; [by rewrite <-ty_ren_payload, hbot_ren|]
+        |by apply (ub_below_s_ren π W Γ (Some x))|exact IHtyped|by apply tage_ren|].
       + intros y Hy. rewrite <-ty_ren_payload, heads_ren in Hy. apply elem_of_map in Hy as (y0 & -> & Hy0).
-        by apply slt_ren, H2.
+        by apply slt_ren, Hh1.
       + rewrite <-ty_ren_payload. by apply (tsub_ren π).
     - rewrite pt_ren_shift, ty_ren_payload. eapply e_recv; [by rewrite unfoldS_ren, H|by apply pscoped_ren_mut
         |by apply (ub_below_s_ren π W Γ (Some x))|exact IHtyped].

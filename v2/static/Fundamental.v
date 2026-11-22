@@ -558,7 +558,7 @@ Section fund.
       |Θ Θ1 Θ2 Θ2' Γ Δ Δ1 Δ2 Δ2' F e e1 e2 T1 T2 T c0 c1 c2 Hsp Hl H0 IH0 Hta Hla H1 IH1 H2 IH2
       |Γ Δ F e m k C ub c U HΔ HUc Hb IH
       |Θ Γ Δ F e m k C ub c U xs ss c0 Hxs HC Hss Hsi Hub H IH
-      |Θ Γ Δ F e S0 x m T S aS mS Tp Tp' c0 Hu Hsc Hbot Hh Hub H IH Hag Hsub
+      |Θ Γ Δ F e S0 x m T S aS mS Tp Tp' c0 Hu Hsc [Hbot Hh] Hub H IH Hag Hsub
       |Θ Γ Δ F e S0 x m T S a mS c0 Hu Hsc Hub H IH
       |Θ Γ Δ F e S0 x a mS c0 Hu Hub H IH
       |i Θ Γ Δ F e S0 x S1 S2 a mS c0 Hu Hub H IH
@@ -678,8 +678,7 @@ Section fund.
     - (* E-Send *)
       rewrite pt_inst_shift.
       eapply (later_send κ _ _ _ _ _ _ _ S0 (pt_inst σ x) m T S aS _ _ Hu).
-      + rewrite <-(pinst_payload_at σ) by done. rewrite hbot_pinst. unfold payload_at, ty_inst.
-        by rewrite hbot_pinst.
+      + rewrite <-(pinst_payload_at σ) by done. by rewrite hbot_pinst.
       + intros y. rewrite <-(pinst_payload_at σ), heads_pinst by done.
         intros (y0 & -> & Hy)%elem_of_map. by eapply slt_sem, Hh.
       + exact (ub_sem W W1 Hwf HW σ ρ Γ (Some x) F Hs Hr Hub).
