@@ -148,3 +148,25 @@ Proof.
     + exists a. split; [by apply list_elem_of_here|]. intros y [->|Hy]%elem_of_cons; [apply ole_refl|].
       apply olt_ole. exact (ole_trans_lt _ _ _ (Hmax y Hy) H).
 Qed.
+
+(** A rank strictly between two ranks and a third one above both is
+    Gödel–Dummett linearity. Take a = sup over P of 1, b = sup over Q of
+    1 and c = sup (a + 1, b + 1). A rank r with a, b ≤ r < c lies at or
+    below a or at or below b, so Q → P or P → Q. The creation of the
+    two-entry example (examples/GenNew.v) needs such an r at every model,
+    so (gen-new) with partner sets has no proof without a classical
+    principle. *)
+Lemma two_below_gd :
+  (∀ a b c : rank_ord, olt a c → olt b c → ∃ r, ole a r ∧ ole b r ∧ olt r c) →
+  ∀ P Q : Prop, (P → Q) ∨ (Q → P).
+Proof.
+  intros H P Q.
+  pose (a := olim (λ _ : P, osucc ozero) : rank_ord).
+  pose (b := olim (λ _ : Q, osucc ozero) : rank_ord).
+  pose (c := olim (λ t : bool, if t then osucc a else osucc b) : rank_ord).
+  destruct (H a b c) as (r & Har & Hbr & [[|] Hr]).
+  - exists true. apply ole_refl.
+  - exists false. apply ole_refl.
+  - right. intros q. destruct (ole_trans _ _ _ Hbr Hr q) as [p _]. exact p.
+  - left. intros p. destruct (ole_trans _ _ _ Har Hr p) as [q _]. exact q.
+Qed.

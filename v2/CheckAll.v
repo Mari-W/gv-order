@@ -195,6 +195,7 @@ Print Assumptions tsub_open_pack.
     middle *)
 Print Assumptions ole_total.
 Print Assumptions list_max_rank.
+Print Assumptions two_below_gd.
 (** examples/GenNew.v: creations with exits, two upper bounds and two
     entries *)
 Print Assumptions tu_gen1.
