@@ -1,5 +1,108 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, 2026-11-22, three open problems (fx-open)
+
+Branch fx-open in .claude/worktrees/fx-open, from redesign at c813418,
+nothing pushed. Commits f4f0a2c, adb13c1, ac3f126 and the commit of
+this report. No Admitted, no Axiom, no new Parameter. No relation and no
+typing rule changed. New files static/ChanRen.v, static/LetVar.v,
+examples/CopycatTwo.v and examples/LetVarCounter.v. static/Inversion.v
+gains a section at its end. CheckAll rises from 210 to 227 lines.
+
+- Problem 1, e versus let x = e in x. Done in the form that holds, with
+  a counterexample to the rest.
+  - `let_intro` (static/LetVar.v). If e types at T, then
+    `ELet e (Var 0)` types at T at the same N, W, Θ, Γ, Δ, F and cost.
+  - The converse is false (`let_var_counter`,
+    examples/LetVarCounter.v). With f : □(∃ι. Unit) in Δ,
+    `let x = force f in x` types at Unit, and `force f` types at Unit
+    for no N, Θ and cost. Every type of `force f` is an existential
+    (`force_types_ex`). E-Open opens an entry of Δ, the let puts the
+    value of e there, and no rule opens the result of a term that is no
+    variable. The same gap shows with a pack at another arity
+    (∃ι. S@ι against ∃ι₁ι₂. S@ι₁) and with a permutation of the bound
+    points, which Sub-Ex does not compare. These two are argued and not
+    mechanized.
+  - `let_elim` is the form that holds. Take Θ and Δ contractive and Δ
+    with no existential entry (`lenv_noex`). A derivation of the let
+    gives e : T1 at the same contexts and at most the same cost,
+    together with the use `let ∗ = u in x` at T over u : T2, x : T1 and
+    unlimited entries. When neither T1 nor T2 is an existential,
+    e : T follows at most at the cost of the let. In the counterexample
+    T1 is ∃ι. Unit, and Δ meets the other hypotheses (`Δcx_noex`,
+    `Δcx_contr`).
+  - Inversion lemmas in static/Inversion.v. `inv_var_ctx` and
+    `inv_unit_ctx` say that a variable or the unit holds no end and sees
+    only unlimited other entries, through E-Open too.
+    `opened_tenv_empty` and `opened_unl_back` carry both facts back
+    along openings. By `inv_var_transfer`, over a Δ with no existential
+    entry the steps of a derivation of x apply to each term of the type
+    of x. static/LetVar.v adds `inv_cont` for the continuation of the
+    let, `inv_cont_noex`, and `inv_pair_prod`, which says that a pair at
+    a product ends with E-Pair under E-Sub.
+  - Why not more. E-Open makes typing non-monotone in Γ, because
+    `cons_open` speaks of every fact that Γ derives. The continuation of
+    the let may open the type of ∗ when it is ∃ι. C. Unit, and that adds
+    C to Γ for the use of x. Moving this use back to e needs a point
+    substitution lemma for derivations. v2 has none. The header of
+    static/PointSubst.v names `typed_pinst`, which does not exist, and
+    `cons_open` does not survive a substitution. So `let_elim` asks T1
+    and T2 not existential for its last step.
+
+- Problem 2, two-sided identity expansion. Done for first-order
+  protocols.
+  - The renaming lemma. `typed_cren` and `fptyped_cren`
+    (static/ChanRen.v) rename channels by an injective h. Ends go by
+    `cmap h`, the keys of Θ and Σ by kmap, restricted channels by
+    set_map and threads by emapE. Points, worlds and types stay.
+    Together with `fptyped_ren` for constants this moves a typed partner
+    from a⁺ at x to b⁺ at y.
+  - `fwdp_expand2` (examples/CopycatTwo.v). Let P over
+    Σ1 ∪ {a⁻ : S(p)‾@x‾} and Q over Σ2 ∪ {a⁺ : S(p)@x} meet each premise
+    of P-Connect at that cut. Let the worlds of P and Q miss the
+    constant 1, and Σ1, Σ2, C1, C2 miss the channel b. Then
+    P ∥ (fwd ∥ Q′) types at the type of P over Σ1 ∪ Σ2, with the
+    constants 0 and 1 of Σ2 swapped. The forwarder `fwdq_t p` holds a⁺
+    at x and b⁻ at y‾ (`fwdq_term`). Q′ is Q with b for a and the
+    constants 0 and 1 swapped.
+  - The world. With the constant 1 sent to 0, each fact of the
+    forwarder at x and y‾ is an equality or program order
+    (`ffacts_collapse`), and no two equalities follow each other. A
+    cycle of W1 ⊔ (W_q ⊔ W2′) then maps to a cycle of W1 ⊔ W2
+    (`J_acyc`). So the new world is acyclic whenever the world of P ∥ Q
+    is, with no condition on the constants that P and Q share.
+  - `fwdp_expand2_df` gives deadlock freedom for a closed P ∥ Q.
+    `fwdp_expand2_example` instantiates it with the partners of
+    examples/Copycat.v.
+  - Limits. N = ∞ only, as for `fwdp_expand`. At a finite N the collapse
+    has to map infinite descending chains, with well-foundedness in
+    place of acyclicity. Not attempted.
+
+- Problem 3, a weakly fair run exists. Done on redesign before this run,
+  so no Rocq change. `fair_run_exists` and `fair_run_exists_proc`
+  (lockfree/FairRun.v, 6e9bcde) build the run by a round robin under
+  dependent choice, with excluded middle to decide whether the target
+  thread is enabled. Both are hypotheses and never axioms.
+  `lf_soundness_run` (soup/LFTyped.v) gives each typed program lock
+  freedom and such a run, and `lf_soundness_padovani` (5bd777a) the
+  reachability form. The entry of stage 6 below that says "not done" is
+  out of date. Excluded middle stays, because dropping it needs a
+  decision procedure for enabledness, and lock-free soundness assumes it
+  anyway. No deadlock-freedom result uses either principle.
+
+- Builds. Local single-file builds throughout. Laptop at f4f0a2c: `make`
+  exit 0, `make check` 217 of 217, `make test` passes. Laptop at ac3f126:
+  `make` exit 0, `make check` 227 of 227, `make test` passes.
+
+- Map (docs/explorer/map.json, ac3f126). check.sh shows 0 errors, no
+  xref-missing and the 65 warnings of c813418.
+  - th-terms gains the row `th.let-var` with a new note. It states
+    `let_intro` and the counterexample, and its why gives `let_elim`.
+  - ex-copycat states the two-sided expansion in its lead, code and
+    meaning, with sources examples/CopycatTwo.v and static/ChanRen.v.
+  - The why of th.fair-run-exists says that the lock-free theorems are
+    not vacuous.
+
 ## Report, 2026-11-22, deadlock freedom over acyclic worlds
 
 Branch redesign-df in .claude/worktrees/redesign-df, from redesign at
