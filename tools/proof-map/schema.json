@@ -233,7 +233,7 @@
         "example": { "$ref": "#/$defs/prose" },
         "modes": { "$ref": "#/$defs/modeList" },
         "source": { "type": "array", "items": { "$ref": "#/$defs/sourceRef" } },
-        "usedIn": { "type": "array", "items": { "$ref": "#/$defs/id" } },
+        "usedIn": { "type": "array", "items": { "$ref": "#/$defs/id" }, "description": "Ids of the blocks and examples that use this one. The page lists them under Used in, and the checker wants each of them to reference this block inline (xref-missing)." },
         "introduces": { "type": "array", "items": { "type": "string" }, "description": "Metavariables this block introduces, in TeX, such as e or \\Gamma." },
         "deviations": { "type": "array", "items": { "$ref": "#/$defs/deviation" } }
       }
@@ -261,6 +261,10 @@
         },
         "source": { "type": "array", "items": { "$ref": "#/$defs/sourceRef" } },
         "usedIn": { "type": "array", "items": { "$ref": "#/$defs/id" } },
+        "def": {
+          "description": "The block that defines the symbol. A click on the symbol elsewhere opens it. Absent: the first block in reading order whose formula hovers the key in the current mode, else in any mode. false: no block, a click only pins.",
+          "oneOf": [{ "$ref": "#/$defs/id" }, { "const": false }]
+        },
         "deviations": { "type": "array", "items": { "$ref": "#/$defs/deviation" } }
       }
     },

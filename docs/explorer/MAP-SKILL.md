@@ -17,7 +17,8 @@ how to edit and check the map.
    is used, in the block or in a block the reader has seen before. No prose inside formulas. The
    prose rules of the author (today `.claude/tools/lint-map.py`) run on every build.
 4. **Cross-links.** Hovers, "used in" lists and links between blocks resolve, also across sections
-   and after blocks are merged.
+   and after blocks are merged. References live inline in the text, and a click on a symbol opens
+   its defining block (2026-11-22).
 5. **Justified deviations.** A map may show a definition differently from the raw code
    (notation, merged clauses, a renamed operator, a planned change). Every such difference carries
    a reason in the JSON, why the display is faithful to the code or why it is planned, and the
@@ -60,6 +61,10 @@ sentences. A block with `"modes": ["lf"]` is a lock-free block of its own, a row
 1. Edit `map.json` directly. `tools/proof-map/FORMAT.md` explains each field and the markup
    (`\sym{key}{…}` for a hover, `\inmode`, `\planned`, `[[block-id]]` links, tables).
 2. Keep the reader-facing rules of `BLOCKS.md` and of part C of `tools/proof-map/SKILL.md`.
+   Cross-references live in the text. A block links what it builds on with `[[block-id]]` at the
+   word that names it, and each defined symbol in a formula carries `\sym`, which a reader clicks
+   to open the defining block. The Used in list of the note panel is an index on top. The warning
+   `xref-missing` of step 2 lists each block whose text does not yet reach a block it uses.
 3. Run `docs/explorer/check.sh`. It must end with `total … ok`. Read the warnings of the steps you
    touched.
 4. Look at the result with `docs/explorer/serve.sh`. Hover each new symbol once, and switch
@@ -76,7 +81,7 @@ extension, and prints one table.
 | Step | What | Fails on |
 |---|---|---|
 | 1 schema | `map.json` against `tools/proof-map/schema.json`, the extension loads | any finding |
-| 2 proof-map | Rocq names exist where cited, hovers have notes, links resolve, deviations have reasons, variables come before use, renamed symbols are declared | errors |
+| 2 proof-map | Rocq names exist where cited, hovers have notes, links resolve, deviations have reasons, variables come before use, renamed symbols are declared, blocks in `usedIn` reference their block inline (`xref-missing`, a warning) | errors |
 | 3 DF-LEAK | nothing of the lock-free view in a formula, caption, table or note a deadlock-free reader reaches | any finding |
 | 4 writing | the prose rules of the base and of `ext/gv-check.js` (from `.claude/tools/lint-map.py`) | errors |
 | 5 MathJax | every formula, table cell, signature, argument and `$…$` of prose renders in both modes | any finding, or mathjax-full missing |

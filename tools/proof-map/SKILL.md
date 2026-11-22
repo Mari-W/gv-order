@@ -17,7 +17,7 @@ checker knows a particular development.
 | `check.js` | The checker. Node, no dependencies, no network. |
 | `lib/rocq-index.js` | Reads names and statements out of `.v` files. Also a command line lookup. |
 | `serve.py` | Serves page and map on localhost, reloads on change. |
-| `shoot.sh`, `test/page-test.js` | Screenshots, and a browser test of hover, pin, copy, filter and overflow. |
+| `shoot.sh`, `test/page-test.js` | Screenshots, and a browser test of hover, pin, click-to-definition, links, copy, filter and overflow. |
 | `convert-explorer.js` | Converts the older explorer format. A template for other converters. |
 | `demo/` | A converted map with a private extension, the worked example below. |
 
@@ -58,6 +58,7 @@ per category with a count and the first findings. Errors make the exit status 1.
 | `mathjax` | error | Fix the TeX. Needs `--mathjax` with a `node_modules` that holds `mathjax-full`. |
 | `unhovered` | warning | Wrap the named symbol or relation in `\sym`. |
 | `var-before-intro` | warning | Introduce the variable earlier, see part C. |
+| `xref-missing` | warning | The block B uses A but its text never reaches A. Add `[[A]]` to the caption or `why` of B, or wrap a symbol that A defines in `\sym`, see part C. |
 | `rename-undeclared` | warning | Use the Rocq name, or add a `renamed` deviation that says why the display differs. |
 | `prose-in-formula`, `bare-word` | warning | Move the words into the caption, set names in `\mathsf`. |
 | `statement-changed` | warning | Reread the Rocq statement, update the block, then stamp it. |
@@ -130,6 +131,22 @@ still need a person. Report the three lists to the author, who does the rewritin
 The checker runs rules 2, 4 and 5 and the lists of the private skill. Stricter house rules, such
 as banned metaphors or quantifiers, belong to the private skill as `proseRules`. A base rule that
 does not fit a project goes into the `disableProse` list of its extension.
+
+### Cross-references
+
+1. A block refers inline to what it builds on. Write `[[block-id]]` or `[[block-id|words]]` in the
+   caption or `why`, at the word that names the thing, as in `the future of [[t-judgment|the typing
+   judgment]]`. A list such as "see also A, B" adds nothing a link at the word does not.
+2. Every symbol in a formula that some block defines carries `\sym{key}{…}`. A reader clicks it to
+   open the defining block. The first block whose formula hovers a key defines it. Set `def` on
+   the note when an earlier block only shows the symbol, such as an overview.
+3. `usedIn` stays the declared list of uses. The note panel shows it under Used in as an index.
+   The checker warns with `xref-missing` for each listed block whose text neither links back nor
+   hovers a symbol defined in the block it uses. The message names both blocks and the keys to
+   hover.
+4. The page underlines each target at rest, dotted for a note and solid for a link or a symbol
+   whose click opens another block. Look at a new block once and check that each symbol a reader
+   might not know has a line under it.
 
 ### Deviations
 
