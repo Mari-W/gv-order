@@ -175,11 +175,11 @@ Lemma typed_live (EM : excluded_middle) W R N Θ t T c n :
   sworld_wf W → ∅ ⊢▷ t → Θ ; hc_empty ; [] ⊢^(∅, None) _{W,Some N} t : T ▷ c → wmodels R W →
   t ∈ E[live]^R _ n⟦tenv_erase Θ ⊢ T⟧^∅.
 Proof.
-  intros HW Hg Hty HR. pose proof (live_fundamental_ranked EM _ _ _ _ _ _ _ _ _ HW Hty Hg HR ∅ ∅ ltac:(by intros u Hu)
+  intros HW Hg Hty HR. pose proof (live_fundamental_ranked EM _ _ _ _ _ _ _ _ _ HW Hty Hg HR ∅ ltac:(by intros u Hu)
     n R ∅ Var (wext_refl _) (map_disjoint_empty_r _) eq_refl) as H.
   rewrite subst_ids, map_union_empty in H.
-  assert (sf_den ∅ ∅ (∅, None) = ∅) as E.
-  { unfold sf_den. simpl. destruct (fs_bot None); set_solver. }
+  assert (sf_den ∅ (∅, None) = ∅) as E.
+  { unfold sf_den. simpl. set_solver. }
   rewrite E in H. apply (Erel_blind _ _ _ _ (ty_df T)); [apply ty_df_idem|].
   refine (Erel_conv _ _ _ _ _ _ _ _ _ H). intros o. unfold tenv_erase, tenv_df. rewrite !lookup_fmap.
   destruct (Θ !! o) as [te|]; constructor. split; [done|]. unfold seqv. simpl. rewrite sty_df_idem. apply sequiv_refl.

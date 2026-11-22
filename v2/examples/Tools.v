@@ -244,7 +244,7 @@ Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.
 
 (** {x} ≺ F for a future with no points and no rest. *)
 Lemma ub_below_empty W Γ x : ub_below_s W Γ x (∅, None).
-Proof. destruct x; simpl; [split_and!; [set_solver|done|done]|done]. Qed.
+Proof. destruct x; simpl; [split; [set_solver|done]|done]. Qed.
 
 (** The same for the upper point of an arrow, ⊤ included. *)
 Lemma ubu_below_empty W Γ ub : ub_below_u W Γ ub (∅, None).
@@ -298,12 +298,12 @@ Ltac heads_simpl H :=
 (** A future (X, everything above u) for an upper point u. *)
 Lemma ub_below_var W Γ x u X :
   (∀ y, y ∈ X → slt W Γ x y) → sle W Γ x u →
-  ub_below_s W Γ (Some x) (X, Some (FRest (RAbove u))).
-Proof. intros HX Hu. split_and!; [done| |done]. simpl. by intros r [= <-]. Qed.
+  ub_below_s W Γ (Some x) (X, Some (RAbove u)).
+Proof. intros HX Hu. split; [done|]. simpl. by intros r [= <-]. Qed.
 
 Lemma ub_below_varb W Γ x u X b :
   b = false → (∀ y, y ∈ X → slt W Γ x y) → sle W Γ x u →
-  ub_below_s W Γ (Some x) (sf_unionb (∅, Some (FRest (RAbove u))) X b).
+  ub_below_s W Γ (Some x) (sf_unionb (∅, Some (RAbove u)) X b).
 Proof.
   intros -> HX Hu. apply ub_below_var; [|done].
   intros y Hy. apply HX. set_solver.

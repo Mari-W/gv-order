@@ -121,14 +121,14 @@ Section worker.
     eapply d_letu; [apply tsplit_empty|lsplit_tac (EClose (Var 3)) EUnit| |].
     { eapply d_close with (S0 := SEnd) (x := ρ·0); [reflexivity| |].
       - cbn [lenv_bot hbot orb]. rewrite lenv_bot_nones. cbn [sf_unionb].
-        split_and!; [|done|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
+        split_and!; [|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
         destruct Hy as [[]|[[]|[->|[->|[[]|[]]]]]];
           apply fj_fact; [apply fj_in|left; done|apply fj_in|right; left; done].
       - eapply d_var'; [reflexivity|]. spare_tac. }
     eapply d_letu; [apply tsplit_empty|lsplit_tac (EClose (Var 1)) EUnit| |].
     { eapply d_close with (S0 := SEnd) (x := ρ·1); [reflexivity| |].
       - cbn [lenv_bot hbot orb]. rewrite lenv_bot_nones. cbn [sf_unionb].
-        split_and!; [|done|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
+        split_and!; [|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
         destruct Hy as [[]|[[]|[->|[[]|[]]]]].
         apply fj_fact; [apply fj_in|right; right; done].
       - eapply d_var'; [reflexivity|]. spare_tac. }
@@ -464,14 +464,14 @@ Section rworker.
     eapply d_letu; [apply tsplit_empty|lsplit_tac (EClose (Var 3)) EUnit| |].
     { eapply d_close with (S0 := SEnd) (x := ρ·0); [reflexivity| |].
       - cbn [lenv_bot hbot orb]. rewrite lenv_bot_nones. cbn [sf_unionb].
-        split_and!; [|done|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
+        split_and!; [|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
         destruct Hy as [[]|[[]|[->|[->|[[]|[]]]]]]; apply fjr_fact;
           [left; left; reflexivity|left; right; left; reflexivity].
       - eapply d_var'; [reflexivity|]. spare_tac. }
     eapply d_letu; [apply tsplit_empty|lsplit_tac (EClose (Var 1)) EUnit| |].
     { eapply d_close with (S0 := SEnd) (x := ρ·1); [reflexivity| |].
       - cbn [lenv_bot hbot orb]. rewrite lenv_bot_nones. cbn [sf_unionb].
-        split_and!; [|done|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
+        split_and!; [|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
         destruct Hy as [[]|[[]|[->|[[]|[]]]]].
         apply fjr_fact. left; right; right; reflexivity.
       - eapply d_var'; [reflexivity|]. spare_tac. }
@@ -729,7 +729,7 @@ Section fworker.
     eapply d_letp; [apply tsplit_empty|lsplit_tac (ERecv (Var 1)) EUnit| |].
     { eapply d_recv with (x := ρ·0) (m := 0) (T := TUnit) (S0 := Sa); [reflexivity|exact I| |].
       - cbn [lenv_bot hbot orb]. rewrite ?lenv_bot_nones. cbn [sf_unionb].
-        split_and!; [|done|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
+        split_and!; [|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
         repeat match goal with H : _ ∨ _ |- _ => destruct H end; subst; try contradiction.
         eapply sl_trans; [apply sl_po|]. apply fa_fact. left. reflexivity.
       - eapply d_var'; [reflexivity|]. spare_tac. }
@@ -738,7 +738,7 @@ Section fworker.
     eapply d_letu; [apply tsplit_empty|lsplit_tac (EClose (Var 0)) EUnit| |].
     { eapply d_close with (S0 := SEnd) (x := (ρ·0)⁺); [reflexivity| |].
       - cbn [lenv_bot hbot orb]. rewrite ?lenv_bot_nones. cbn [sf_unionb].
-        split_and!; [|done|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
+        split_and!; [|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
         repeat match goal with H : _ ∨ _ |- _ => destruct H end; subst; try contradiction.
         apply fa_fact. left. reflexivity.
       - eapply d_var'; [reflexivity|]. spare_tac. }
@@ -746,7 +746,7 @@ Section fworker.
     { eapply d_send with (x := ρ) (m := 0) (T := TUnit) (S0 := Sy);
         [reflexivity|exact I|done|cbn; set_solver| |].
       { cbn [lenv_bot hbot orb]. rewrite ?lenv_bot_nones. cbn [sf_unionb].
-        split_and!; [|done|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
+        split_and!; [|done]. intros y Hy. cbn [fst] in Hy. heads_simpl Hy.
         repeat match goal with H : _ ∨ _ |- _ => destruct H end; subst; contradiction. }
       eapply d_pair; [apply tsplit_empty|lsplit_tac EUnit (Var 4)| |].
       - apply d_unit'. spare_tac.
@@ -998,7 +998,7 @@ Section bworker.
 
   Local Ltac fbf := apply fb_fact; left; first [left; reflexivity|right; left; reflexivity|right; right; reflexivity].
   Local Ltac rdy := cbn [lenv_bot hbot orb]; rewrite ?lenv_bot_nones; cbn [sf_unionb];
-    split_and!; [|done|done]; let y := fresh "y" in let Hy := fresh "Hy" in
+    split_and!; [|done]; let y := fresh "y" in let Hy := fresh "Hy" in
     intros y Hy; cbn [fst] in Hy; heads_simpl Hy;
     repeat match goal with H : _ ∨ _ |- _ => destruct H end; subst; try contradiction.
 

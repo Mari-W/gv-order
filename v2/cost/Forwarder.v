@@ -61,7 +61,7 @@ Proof.
   - eapply (e_recv W_fw N _ _ _ _ _ S_fw x 0 T_thk SEnd).
     + reflexivity.
     + simpl. split_and!; done.
-    + simpl. rewrite tenv_heads_nil. split_and!; [set_solver|done|done].
+    + simpl. rewrite tenv_heads_nil. split_and!; [set_solver|done].
     + apply e_chan. intros ? Hin. inversion Hin.
   - intros o'. by rewrite lookup_empty.
   - constructor.
@@ -69,7 +69,7 @@ Proof.
     + split; [apply map_disjoint_empty_l|by rewrite map_union_empty].
     + apply lsplit_l, lsplit_r, lsplit_nil.
     + eapply (e_close W_fw N _ _ _ _ _ SEnd); [reflexivity| |].
-      * simpl. rewrite tenv_heads_nil. split_and!; [intros y Hy; exfalso; set_solver|done|done].
+      * simpl. rewrite tenv_heads_nil. split_and!; [intros y Hy; exfalso; set_solver|done].
       * apply e_var. split; [done|]. intros [|[|y]] σ' Hne Hy; simpl in Hy; [done|done|].
         rewrite lookup_nil in Hy. done.
     + intros o'. by rewrite lookup_empty.

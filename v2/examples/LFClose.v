@@ -25,7 +25,7 @@ Lemma cl_typed N o x a m :
     (fadd (Some 0) (Some 1)).
 Proof.
   eapply (e_close W_cl (Some N) _ _ _ _ _ SEnd); [reflexivity| |].
-  - simpl. split_and!; [intros y Hy; exfalso; set_solver|done|done].
+  - simpl. split_and!; [intros y Hy; exfalso; set_solver|done].
   - apply e_chan. intros ? Hin. inversion Hin.
 Qed.
 

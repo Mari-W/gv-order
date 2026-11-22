@@ -104,7 +104,7 @@ Lemma cs_box_typed W Γ n F (S1 S2 : sty) e :
   dftyped W ∅ (hc_open 3 cs_C Γ)
     (Some (TSess S2 (pvar 1) None None) :: Some (TSess S1 (pvar 0) None None) ::
      None :: Some (cs_box S1 S2) :: nones n)
-    (∅, Some (FRest (RAbove (pvar 2)))) e TUnit →
+    (∅, Some (RAbove (pvar 2))) e TUnit →
   dftyped W ∅ Γ (nones n) F (EBox (Lam (LetP (Var 0) e))) (cs_box S1 S2).
 Proof.
   intros HS1 HS2 He. eapply d_box.
@@ -169,7 +169,7 @@ Section body.
   Lemma cli_body :
     dftyped W ∅ Γb (Some (TSess Sb (pvar 1) None None) :: Some (TSess Sa (pvar 0) None None) ::
                      None :: Some (cs_box Sa Sb) :: nones n)
-      (∅, Some (FRest (RAbove (pvar 2)))) cli_e TUnit.
+      (∅, Some (RAbove (pvar 2))) cli_e TUnit.
   Proof.
     unfold cli_e.
     eapply d_let; [apply tsplit_empty|lsplit_tac (ESend (Pair EUnit (Var 1))) EUnit| |].
@@ -201,7 +201,7 @@ Section body.
   Lemma srv_body :
     dftyped W ∅ Γb (Some (TSess Sa (pvar 1) None None) :: Some (TSess Sb (pvar 0) None None) ::
                      None :: Some (cs_box Sb Sa) :: nones n)
-      (∅, Some (FRest (RAbove (pvar 2)))) srv_e TUnit.
+      (∅, Some (RAbove (pvar 2))) srv_e TUnit.
   Proof.
     unfold srv_e.
     eapply d_letp;

@@ -314,7 +314,7 @@ Lemma d_box W Γ Δ F e m k C ub c U :
   (∀ ss, length ss = k → sinsts None ss →
      dftyped W ∅ (hc_open m C Γ)
        (lenv_pinst (pshift m) (Some (TBox m k C ub c U) :: Δ))
-       (∅, Some (FRest (rest_of ub))) e (sinst_ty (slist ss) U)) →
+       (∅, Some (rest_of ub)) e (sinst_ty (slist ss) U)) →
   dftyped W ∅ Γ Δ F (EBox e) (TBox m k C ub c U).
 Proof.
   intros HΔ HU H2. dfr.

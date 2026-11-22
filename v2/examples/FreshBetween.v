@@ -45,7 +45,7 @@ Section body.
   Ltac fbf := apply fb_hyp; [unfold fbx_P; fb_disj|simpl; lia].
 
   Lemma fb_body :
-    dftyped W ∅ Γb (Some fb_T :: Some fb_ty :: nones n) (∅, Some (FRest (RAbove (pvar 1))))
+    dftyped W ∅ Γb (Some fb_T :: Some fb_ty :: nones n) (∅, Some (RAbove (pvar 1)))
       (LetP (Var 0) (LetP (Pair (Var 1) ENew) (LetP (Var 0)
         (LetU (ESpawn (Lam (LetU (Var 0) (EClose (Var 1)))))
         (LetU (EClose (Var 3)) (LetU (EClose (Var 1)) (EClose (Var 4))))))))

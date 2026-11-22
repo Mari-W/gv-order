@@ -7,7 +7,8 @@
     - Γ, the facts: box constraints in force with their instances,
     - Δ, a de Bruijn list of optional types T,
     - F, the future, a set of points X with a rest, "everything above u"
-      or "everything", and the ⊥ flag. There are no future variables
+      or "everything". A hidden end makes the rest "everything". There
+      are no future variables
       (entry 14b of docs/redesign/pending.md).
 
     Every fact the judgment reads comes from Γ ⊢ₛ x ≺ y ([slt]), the least
@@ -98,20 +99,14 @@ Definition tenv_of (a : fuel) (Σ : senv) : tenv := (λ e, TE e.1 e.2 a a) <$> �
     of a body with no upper point ([RAll]). *)
 Inductive frest := RAbove (u : point) | RAll.
 
-(** A rest, or the ⊥ flag with or without a rest. *)
-Inductive futrest := FRest (r : frest) | FBot (o : option frest).
-
-Abbreviation sfuture := (gset point * option futrest)%type.
+(** A future is a finite set of points and an optional rest. *)
+Abbreviation sfuture := (gset point * option frest)%type.
 Abbreviation hyps := (list (bcs * list point)).
 
-Definition fs_var (o : option futrest) : option frest :=
-  match o with Some (FRest r) => Some r | Some (FBot o') => o' | None => None end.
-
-Definition fs_bot (o : option futrest) : bool :=
-  match o with Some (FBot _) => true | _ => false end.
-
+(** F extended by X. A hidden end in the extension (b) makes the rest
+    everything, which forbids every action. *)
 Definition sf_unionb (F : sfuture) (X : gset point) (b : bool) : sfuture :=
-  if b then (F.1 ∪ X, Some (FBot (fs_var F.2))) else (F.1 ∪ X, F.2).
+  if b then (F.1 ∪ X, Some RAll) else (F.1 ∪ X, F.2).
 
 (** Γ, the facts of the box constraints in force (A.5). *)
 Record hctx := HCtx { hc_hyps : hyps }.
@@ -151,8 +146,7 @@ Definition ub_below_s (W : sworld) (Γ : hctx) (ub : option point) (F : sfuture)
   match ub with
   | None => True
   | Some x => (∀ y, y ∈ F.1 → slt W Γ x y) ∧
-              (∀ r, fs_var F.2 = Some r → rest_below W Γ x r) ∧
-              fs_bot F.2 = false
+              (∀ r, F.2 = Some r → rest_below W Γ x r)
   end.
 
 (** u ≺ F for the upper point of an arrow (entry 12, generalized arrows).
@@ -471,12 +465,12 @@ Definition rest_of (ub : option point) : frest :=
     everything, and below ⊤ under the empty future. *)
 Definition abs_fut (ub : ubound) : sfuture :=
   match ub with
-  | UNone => (∅, Some (FRest RAll))
-  | UPt u => (∅, Some (FRest (RAbove u)))
+  | UNone => (∅, Some RAll)
+  | UPt u => (∅, Some (RAbove u))
   | UTop => (∅, None)
   end.
 
-Lemma abs_fut_of o : abs_fut (ubound_of o) = (∅, Some (FRest (rest_of o))).
+Lemma abs_fut_of o : abs_fut (ubound_of o) = (∅, Some (rest_of o)).
 Proof. by destruct o. Qed.
 
 
@@ -491,11 +485,8 @@ Definition lenv_pinst (σ : nat → point) (Δ : lenv) : lenv :=
 Definition frest_pinst (σ : nat → point) (r : frest) : frest :=
   match r with RAbove u => RAbove (pt_inst σ u) | RAll => RAll end.
 
-Definition futrest_pinst (σ : nat → point) (o : futrest) : futrest :=
-  match o with FRest r => FRest (frest_pinst σ r) | FBot o' => FBot (frest_pinst σ <$> o') end.
-
 Definition sf_pinst (σ : nat → point) (F : sfuture) : sfuture :=
-  (set_map (pt_inst σ) F.1, futrest_pinst σ <$> F.2).
+  (set_map (pt_inst σ) F.1, frest_pinst σ <$> F.2).
 
 (** ** Aging Γ − c
 

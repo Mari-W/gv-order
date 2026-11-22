@@ -29,7 +29,7 @@ Ltac lworker_tac pp j :=
 (** ** mk₀ *)
 
 Lemma mk0l_body Γ n : ∃ c,
-  typed W_fx (Some 4) ∅ (hc_open 0 C0 Γ) (Some TUnit :: Some mk0l_ty :: nones n) (∅, Some (FRest RAll)) mk0_e Tresl c
+  typed W_fx (Some 4) ∅ (hc_open 0 C0 Γ) (Some TUnit :: Some mk0l_ty :: nones n) (∅, Some RAll) mk0_e Tresl c
  .
 Proof.
   eexists _.
@@ -70,7 +70,7 @@ Qed.
 (** ** mk₁ *)
 
 Lemma mk1l_body Γ n : ∃ c,
-  typed W_fx (Some 4) ∅ (hc_open 1 mk1_C Γ) (Some (TSess Sr (pvar 0) (Some 2) (Some 2)) :: Some mk1l_ty :: nones n) (∅, Some (FRest RAll)) mk1_e mk1l_res c.
+  typed W_fx (Some 4) ∅ (hc_open 1 mk1_C Γ) (Some (TSess Sr (pvar 0) (Some 2) (Some 2)) :: Some mk1l_ty :: nones n) (∅, Some RAll) mk1_e mk1l_res c.
 Proof.
   eexists _.
   { unfold mk1_e.

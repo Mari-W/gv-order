@@ -23,16 +23,16 @@ Section body.
 
   Ltac normF :=
     cbn [lenv_bot hbot orb]; rewrite ?lenv_bot_nones; unfold fml_ty, lbox;
-    cbn [hbot orb sf_unionb fst snd fs_var fs_bot].
+    cbn [hbot orb sf_unionb fst snd].
 
   Ltac fut x :=
     apply (ub_below_gen _ _ x (pvar 1));
       [ let y := fresh "y" in let Hy := fresh "Hy" in
         intros y Hy; revert Hy; normF; intros Hy; heads_cases Hy; fmf
-      | normF; reflexivity  | right; fmf | normF; reflexivity ].
+      | normF; reflexivity  | right; fmf ].
 
   Lemma fml_body : ∃ c,
-    typed W (Some 8) ∅ Γb (Some fml_T :: Some fml_ty :: nones n) (∅, Some (FRest (RAbove (pvar 1)))) fm_e TUnit c.
+    typed W (Some 8) ∅ Γb (Some fml_T :: Some fml_ty :: nones n) (∅, Some (RAbove (pvar 1))) fm_e TUnit c.
   Proof.
     eexists _.
     { unfold fm_e.

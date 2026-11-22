@@ -29,9 +29,9 @@ Qed.
 
 (** The body of an eta-expansion with upper point u runs below
     everything above u. *)
-Lemma ub_fvar W Γ u : ub_below_s W Γ u (∅, Some (FRest (rest_of u))).
+Lemma ub_fvar W Γ u : ub_below_s W Γ u (∅, Some (rest_of u)).
 Proof.
-  destruct u as [x|]; [|done]. simpl. split; [set_solver|split; [|done]].
+  destruct u as [x|]; [|done]. simpl. split; [set_solver|].
   intros r [= <-]. by left.
 Qed.
 

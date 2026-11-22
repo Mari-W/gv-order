@@ -220,20 +220,11 @@ Lemma lenv_pinst_insert σ Δ i T :
   lenv_pinst σ (<[i := Some T]> Δ) = <[i := Some (pinst_ty σ T)]> (lenv_pinst σ Δ).
 Proof. unfold lenv_pinst. by rewrite list_fmap_insert. Qed.
 
-Lemma fs_var_pinst σ o : fs_var (futrest_pinst σ <$> o) = frest_pinst σ <$> fs_var o.
-Proof. by destruct o as [[r|o']|]. Qed.
-
-Lemma fs_bot_pinst σ o : fs_bot (futrest_pinst σ <$> o) = fs_bot o.
-Proof. by destruct o as [[r|o']|]. Qed.
-
 Lemma sf_pinst_unionb σ F X b :
   sf_pinst σ (sf_unionb F X b) = sf_unionb (sf_pinst σ F) (set_map (pt_inst σ) X) b.
-Proof.
-  destruct b; unfold sf_pinst, sf_unionb; simpl; rewrite set_map_union_L; [|done].
-  by rewrite fs_var_pinst.
-Qed.
+Proof. destruct b; unfold sf_pinst, sf_unionb; simpl; by rewrite set_map_union_L. Qed.
 
-Lemma sf_pinst_nil σ o : sf_pinst σ (∅, o) = (∅, futrest_pinst σ <$> o).
+Lemma sf_pinst_nil σ o : sf_pinst σ (∅, o) = (∅, frest_pinst σ <$> o).
 Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.
 
 (** ** Facts *)

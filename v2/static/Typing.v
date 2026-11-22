@@ -115,7 +115,7 @@ Inductive typed (W : sworld) (N : fuel) :
       (∀ ss, length ss = k → sinsts N ss →
          typed W N ∅ (hc_open m C Γ)
            (lenv_pinst (pshift m) (Some (TBox m k C ub c U) :: Δ))
-           (∅, Some (FRest (rest_of ub))) e (sinst_ty (slist ss) U) c) →
+           (∅, Some (rest_of ub)) e (sinst_ty (slist ss) U) c) →
       typed W N ∅ Γ Δ F (EBox e) (TBox m k C ub c U) (Some 0)
   | e_force Θ Γ Δ F e m k C ub c U xs ss c0 :
       length xs = m → hold_at W Γ C xs → length ss = k → sinsts N ss →

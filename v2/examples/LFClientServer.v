@@ -50,7 +50,7 @@ Section body.
   Qed.
 
   Lemma csl_cli : ∃ c,
-    typed W (Some 6) ∅ Γl (Some (csl_T Sa Sb) :: Some (csl_box Sa Sb) :: nones n) (∅, Some (FRest (RAbove (pvar 2)))) (LetP (Var 0) cli_e) TUnit c.
+    typed W (Some 6) ∅ Γl (Some (csl_T Sa Sb) :: Some (csl_box Sa Sb) :: nones n) (∅, Some (RAbove (pvar 2))) (LetP (Var 0) cli_e) TUnit c.
   Proof.
     eexists _.
     { eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
@@ -87,7 +87,7 @@ Section body.
   Qed.
 
   Lemma csl_srv : ∃ c,
-    typed W (Some 6) ∅ Γl (Some (csl_T Sb Sa) :: Some (csl_box Sb Sa) :: nones n) (∅, Some (FRest (RAbove (pvar 2)))) (LetP (Var 0) srv_e) TUnit c.
+    typed W (Some 6) ∅ Γl (Some (csl_T Sb Sa) :: Some (csl_box Sb Sa) :: nones n) (∅, Some (RAbove (pvar 2))) (LetP (Var 0) srv_e) TUnit c.
   Proof.
     eexists _.
     { eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].

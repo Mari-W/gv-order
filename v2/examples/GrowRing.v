@@ -159,7 +159,7 @@ Section body.
 
   Ltac normF :=
     cbn [lenv_bot hbot orb]; rewrite ?lenv_bot_nones; unfold rg_ty, box1;
-    cbn [hbot orb sf_unionb fst snd fs_var fs_bot].
+    cbn [hbot orb sf_unionb fst snd].
 
   Ltac fut x :=
     apply (ub_below_gen _ _ x (sh 1 (pvar 0)));
@@ -167,10 +167,10 @@ Section body.
         intros y Hy; revert Hy; normF; unfold payload_at, ty_inst; cbn [pinst_ty]; intros Hy; heads_cases Hy;
         first [rgf | eapply sl_trans; [apply sl_po|rgf]]
       | normF; reflexivity 
-      | first [by left | right; apply sl_po] | normF; reflexivity ].
+      | first [by left | right; apply sl_po] ].
 
   Lemma rg_body :
-    dftyped W ∅ Γb (Some rg_T :: Some rg_ty :: nones n) (∅, Some (FRest (RAbove (sh 1 (pvar 0))))) rg_e TUnit.
+    dftyped W ∅ Γb (Some rg_T :: Some rg_ty :: nones n) (∅, Some (RAbove (sh 1 (pvar 0)))) rg_e TUnit.
   Proof.
     unfold rg_e.
     eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].

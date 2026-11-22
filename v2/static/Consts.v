@@ -582,9 +582,7 @@ Definition hyps_ren (f : nat → nat) (Ψ : hyps) : hyps :=
 Definition hctx_ren (f : nat → nat) (Γ : hctx) : hctx := HCtx (hyps_ren f (hc_hyps Γ)).
 Definition frest_ren (f : nat → nat) (r : frest) : frest :=
   match r with RAbove u => RAbove (pt_ren f u) | RAll => RAll end.
-Definition futrest_ren (f : nat → nat) (o : futrest) : futrest :=
-  match o with FRest r => FRest (frest_ren f r) | FBot o' => FBot (frest_ren f <$> o') end.
-Definition sf_ren (f : nat → nat) (F : sfuture) : sfuture := (set_map (pt_ren f) F.1, futrest_ren f <$> F.2).
+Definition sf_ren (f : nat → nat) (F : sfuture) : sfuture := (set_map (pt_ren f) F.1, frest_ren f <$> F.2).
 
 Lemma tenv_ren_empty f : tenv_ren f ∅ = ∅.
 Proof. apply fmap_empty. Qed.
@@ -651,8 +649,7 @@ Qed.
 
 Lemma sf_unionb_ren f F X b : sf_ren f (sf_unionb F X b) = sf_unionb (sf_ren f F) (set_map (pt_ren f) X) b.
 Proof.
-  destruct F as [X0 o], b; unfold sf_unionb, sf_ren; simpl; rewrite set_map_union_L; [|done].
-  f_equal. f_equal. by destruct o as [[r|[r|]]|].
+  destruct F as [X0 o], b; unfold sf_unionb, sf_ren; simpl; by rewrite set_map_union_L.
 Qed.
 
 Lemma abs_fut_ren f ub : sf_ren f (abs_fut ub) = abs_fut (ub_map (pt_ren f) ub).
@@ -683,7 +680,7 @@ Proof.
       exists (pt_ren f w). split; [apply pt_inst_pshift_ren|]. apply elem_of_map. by exists w.
     + intros (z & -> & Hz)%elem_of_map. apply elem_of_map in Hz as (w & -> & Hw). apply elem_of_map.
       exists (pt_inst (pshift m) w). split; [symmetry; apply pt_inst_pshift_ren|]. apply elem_of_map. by exists w.
-  - rewrite <-!option_fmap_compose. apply option_fmap_ext. intros [[u|]|[[u|]|]]; simpl; try done;
+  - rewrite <-!option_fmap_compose. apply option_fmap_ext. intros [u|]; simpl; try done;
       by rewrite pt_inst_pshift_ren.
 Qed.
 
@@ -794,11 +791,10 @@ Qed.
 Lemma ub_below_s_ren π W Γ ub F :
   ub_below_s W Γ ub F → ub_below_s (sw_ren π W) (hctx_ren (cb_f π) Γ) (pt_ren (cb_f π) <$> ub) (sf_ren (cb_f π) F).
 Proof.
-  destruct ub as [x|]; simpl; [|done]. destruct F as [X o]. unfold sf_ren. simpl. intros (H1 & H2 & H3). split_and!.
+  destruct ub as [x|]; simpl; [|done]. destruct F as [X o]. unfold sf_ren. simpl. intros (H1 & H2). split.
   - intros y Hy. apply elem_of_map in Hy as (y0 & -> & Hy0). by apply slt_ren, H1.
-  - intros r Hr. destruct o as [[r0|[r0|]]|]; simpl in Hr; try done; injection Hr as <-;
+  - intros r Hr. destruct o as [r0|]; simpl in Hr; try done; injection Hr as <-;
       specialize (H2 r0 eq_refl); destruct r0; simpl in *; try done; by apply sle_ren.
-  - by destruct o as [[]|].
 Qed.
 
 Lemma ub_below_u_ren π W Γ ub F :
