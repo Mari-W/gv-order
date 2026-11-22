@@ -12,7 +12,7 @@
     - [inv_close], [inv_case], [inv_letu], [inv_letp], [inv_pair] and
       [inv_let] for E-Close, E-Case, E-LetU, E-LetP, E-Pair and the
       derived E-Let.
-    - [fptyped_one] and [fptyped_two]: a typed process of one thread ends
+    - [ptyped_one] and [ptyped_two]: a typed process of one thread ends
       with P-Term, a typed process of two threads ends with P-Connect
       over one thread on each side. *)
 
@@ -228,26 +228,26 @@ Proof.
   by rewrite gmultiset_disj_union_right_id.
 Qed.
 
-Lemma fptyped_nonempty N W Σ p T : fptyped N W Σ p T → p.2 ≠ ∅.
+Lemma ptyped_nonempty N W Σ p T : ptyped N W Σ p T → p.2 ≠ ∅.
 Proof. induction 1; simpl; multiset_solver. Qed.
 
 (** A process of one thread ends with P-Term. *)
-Lemma fptyped_one N W Σ C0 t T :
-  fptyped N W Σ (C0, {[+ t +]}) T →
-  ∃ ΘB c, tfree T ∧ (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) ∧ chans_of Σ ## C0 ∧ pfree Σ ∧
+Lemma ptyped_one N W Σ C0 t T :
+  ptyped N W Σ (C0, {[+ t +]}) T →
+  ∃ W' ΘB c, W = swrestrict W' (iface Σ T) ∧ tfree T ∧ (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) ∧ chans_of Σ ## C0 ∧ pfree Σ ∧
     (∀ o e, Σ !! o = Some e → scontr e.1) ∧
     (∀ ch, ch ∈ C0 → ∃ S x m m', tsum_ok N m m' ∧ scontr S ∧
        ΘB !! (ch⁺)%cend = Some (TE S x m m) ∧ ΘB !! (ch⁻)%cend = Some (TE (dual S) x‾ m' m')) ∧
-    typed W N (tenv_of (fhalf N) Σ ∪ ΘB) hc_empty [] (∅, None) t T c ∧
-    (sworld_wf W ∧ wok N W).
+    typed W' N (tenv_of (fhalf N) Σ ∪ ΘB) hc_empty [] (∅, None) t T c ∧
+    (sworld_wf W' ∧ wok N W').
 Proof.
   intros H. remember (C0, {[+ t +]}) as p eqn:Hp. destruct H as [W' Σ' ΘB C0' t' T' c Hf HB HC Hpf HΣc HBs Ht Hs|
     W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T' H1 H2].
   - pose proof (f_equal fst Hp) as H1. pose proof (f_equal snd Hp) as Ht'. simpl in H1, Ht'. subst C0'.
     apply (inj (singletonMS (B := gmultiset expr))) in Ht' as ->.
-    exists ΘB, c. split_and!; try done; apply Hs.
+    exists W', ΘB, c. split_and!; try done; apply Hs.
   - exfalso. pose proof (f_equal snd Hp) as HE. simpl in HE.
-    apply fptyped_nonempty in H1, H2. simpl in *.
+    apply ptyped_nonempty in H1, H2. simpl in *.
     assert (size (E1 ⊎ E2) = 1) as Hsz by (by rewrite HE, gmultiset_size_singleton).
     rewrite gmultiset_size_disj_union in Hsz.
     apply gmultiset_size_non_empty_iff in H1. apply gmultiset_size_non_empty_iff in H2. lia.
@@ -255,14 +255,14 @@ Qed.
 
 (** A process of two threads ends with P-Connect over one thread on each
     side. *)
-Lemma fptyped_two N W Σ C t1 t2 T :
-  fptyped N W Σ (C, ({[+ t1 +]} ⊎ {[+ t2 +]})) T →
+Lemma ptyped_two N W Σ C t1 t2 T :
+  ptyped N W Σ (C, ({[+ t1 +]} ⊎ {[+ t2 +]})) T →
   ∃ W1 W2 Σ1 Σ2 ΣC C1 C2 u1 u2,
-    W = W1 ⊔ W2 ∧ Σ = Σ1 ∪ Σ2 ∧ C = C1 ∪ C2 ∪ chans_of ΣC ∧
+    W = swrestrict (W1 ⊔ W2) (iface Σ T) ∧ Σ = Σ1 ∪ Σ2 ∧ C = C1 ∪ C2 ∪ chans_of ΣC ∧
     (({[+ u1 +]} ⊎ {[+ u2 +]}) : gmultiset expr) = ({[+ t1 +]} ⊎ {[+ t2 +]}) ∧
-    fptyped N W1 (Σ1 ∪ ΣC) (C1, {[+ u1 +]}) T ∧
-    fptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, {[+ u2 +]}) TUnit ∧
-    wok N (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)).
+    ptyped N W1 (Σ1 ∪ ΣC) (C1, {[+ u1 +]}) T ∧
+    ptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, {[+ u2 +]}) TUnit ∧
+    wok N (W1 ⊔ W2).
 Proof.
   intros H. remember (C, ({[+ t1 +]} ⊎ {[+ t2 +]})) as p eqn:Hp. destruct H as [W' Σ' ΘB C0' t' T' c|
     W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T' H1 H2 _ _ _ _ _ _ HS].
@@ -270,7 +270,7 @@ Proof.
     assert (size (({[+ t1 +]} ⊎ {[+ t2 +]}) : gmultiset expr) = 1) as Hsz by (by rewrite <-HE, gmultiset_size_singleton).
     rewrite gmultiset_size_disj_union, !gmultiset_size_singleton in Hsz. lia.
   - pose proof (f_equal fst Hp) as HC0. pose proof (f_equal snd Hp) as HE. simpl in HC0, HE. subst C.
-    pose proof (fptyped_nonempty _ _ _ _ _ H1) as N1. pose proof (fptyped_nonempty _ _ _ _ _ H2) as N2.
+    pose proof (ptyped_nonempty _ _ _ _ _ H1) as N1. pose proof (ptyped_nonempty _ _ _ _ _ H2) as N2.
     simpl in N1, N2.
     assert (size E1 = 1 ∧ size E2 = 1) as [S1 S2].
     { assert (size (E1 ⊎ E2) = 2) as Hsz by (by rewrite HE, gmultiset_size_disj_union, !gmultiset_size_singleton).

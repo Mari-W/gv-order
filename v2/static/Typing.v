@@ -47,10 +47,8 @@
     admissible ([e_let] and [d_let] in static/Weakening.v). [ptyped] is process typing with P-Term and P-Connect
     in the hidden form. The world of a process judgment lives on the
     constants of its interface, and P-Connect compares the two interface
-    orders. [fptyped] keeps the whole world of every derivation. It is
-    the target of the soundness of hiding (static/Hiding.v), and every
-    derivation sits over a well-founded world ([ptyped_wf],
-    [fptyped_wf]). *)
+    orders. Every derivation sits over a well-founded world
+    ([ptyped_wf]). *)
 
 From GV Require Export static.Consts.
 
@@ -210,15 +208,9 @@ Definition dftyped (W : sworld) (Θ : tenv) (Γ : hctx) (Δ : lenv) (F : sfuture
     cut. The constants of a derivation outside its interface are
     private, and two components may pick the same one.
 
-    [fptyped] keeps the whole world. Its P-Connect asks the restrictions
-    of the two worlds to their shared constants S = A_{W1} ∩ A_{W2}
-    well-founded together. Both components sit over well-founded worlds
-    by induction, so the join is well-founded ([wf_join_iff],
-    [fptyped_wf]) and the form of the rule that asks the join
-    well-founded is admissible ([fp_connect_join]). A hidden derivation
-    gives a full one with private constants renamed apart
-    ([ptyped_full], static/Hiding.v), and a full one a hidden one
-    ([fptyped_ptyped]). *)
+    The proof of soundness reads a derivation at a whole world that
+    hides to its world, with private constants renamed apart
+    ([ptyped_sem], static/Hiding.v). *)
 
 Definition chans_of (Σ : senv) : gset chan := set_map ech (dom Σ).
 
@@ -266,24 +258,6 @@ Proof. intros H. apply chans_disj_map. by rewrite chans_of_senv_dual. Qed.
 Lemma pfree_union_r (Σ1 ΣC : senv) : pfree (Σ1 ∪ ΣC) → pfree ΣC.
 Proof. intros H o Ho Hd. apply (H o); rewrite dom_union_L; set_solver. Qed.
 
-Inductive fptyped (N : fuel) : sworld → senv → proc → ty → Prop :=
-  | fp_term W Σ ΘB C0 t T c :
-      tfree T →
-      (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 → pfree Σ →
-      (∀ o e, Σ !! o = Some e → scontr e.1) →
-      (∀ c, c ∈ C0 → ∃ S x m m', tsum_ok N m m' ∧ scontr S ∧
-         ΘB !! (c⁺)%cend = Some (TE S x m m) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ m' m')) →
-      typed W N (tenv_of (fhalf N) Σ ∪ ΘB) hc_empty [] (∅, None) t T c →
-      sworld_wf W ∧ wok N W →
-      fptyped N W Σ (C0, {[+ t +]}) T
-  | fp_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
-      fptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →
-      fptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
-      chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
-      C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
-      wok N (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)) →
-      fptyped N (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
-
 (** ** Notations (Appendix A) *)
 
 Notation "Θ ; Γ ; Δ ⊢^ F '_{' W , N '}' e : T ▷ c" := (typed W N Θ Γ Δ F e T c)
@@ -302,34 +276,6 @@ Lemma wok_join_iff N W1 W2 : sworld_wf W1 → sworld_wf W2 →
     wok N (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)).
 Proof. intros H1 H2. destruct N; [apply wf_join_iff|apply acyc_join_iff]; done. Qed.
 
-(** Every process derivation sits over a well-formed world, acyclic at
-    N = ∞ and well-founded at a finite N. *)
-Lemma fptyped_wf N W Σ p T : fptyped N W Σ p T → sworld_wf W ∧ wok N W.
-Proof.
-  induction 1 as [|W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 _ _ _ _ _ _ HS]; [done|].
-  split; [by apply swjoin_wf; [apply IH1|apply IH2]|].
-  apply (wok_join_iff N W1 W2 (proj1 IH1) (proj1 IH2)). split_and!; [apply IH1|apply IH2|done].
-Qed.
-
-(** P-Connect asking the join well-founded and both worlds well formed
-    is admissible. *)
-Lemma fp_connect_join N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
-  fptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →
-  fptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
-  chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
-  C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
-  sworld_wf W1 → sworld_wf W2 →
-  wok N (W1 ⊔ W2) →
-  fptyped N (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
-Proof.
-  intros H1 H2 H12 H1C H2C HC HC1 HC2 Hw1 Hw2 HS.
-  apply fp_connect; [exact H1|exact H2|exact H12|exact H1C|exact H2C
-    |exact HC|exact HC1|exact HC2|]. by apply (wok_join_iff N W1 W2 Hw1 Hw2).
-Qed.
-
-Lemma fptyped_tfree N W Σ p T : fptyped N W Σ p T → tfree T.
-Proof. induction 1; auto. Qed.
-
 Lemma chans_of_union (Σ1 Σ2 : senv) : chans_of (Σ1 ∪ Σ2) = chans_of Σ1 ∪ chans_of Σ2.
 Proof. unfold chans_of. by rewrite dom_union_L, set_map_union_L. Qed.
 
@@ -347,16 +293,6 @@ Proof.
   - apply (H12 (ech o)); [by apply elem_of_chans_of'|]. rewrite <-ech_edual. by apply elem_of_chans_of'.
   - apply (H12 (ech o)); [|by apply elem_of_chans_of']. rewrite <-ech_edual. by apply elem_of_chans_of'.
   - apply (H2 o); rewrite dom_union_L; set_solver.
-Qed.
-
-Lemma fptyped_pfree N W Σ p T : fptyped N W Σ p T → pfree Σ.
-Proof. induction 1; [done|eauto using pfree_join]. Qed.
-
-(** A typed process restricts no channel of its interface. *)
-Lemma fptyped_chans N W Σ p T : fptyped N W Σ p T → p.1 ## chans_of Σ.
-Proof.
-  induction 1 as [|? ? ? ? ? ? ? ? ? ? _ IH1 _ IH2 ? ? ? ? ? ? ?];
-    simpl in *; [done|..]; rewrite !chans_of_union in *; set_solver.
 Qed.
 
 (** ** Process typing with hiding

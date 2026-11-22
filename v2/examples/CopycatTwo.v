@@ -4,8 +4,8 @@
     Q holds a⁺ : S(p)@x, x the point of constant 0. Then
     P ∥ (fwd ∥ Q') types ([fwdp_expand2]). The forwarder holds a⁺ at x
     and b⁻ : S(p)‾ at y‾, y the point of constant 1, and Q' is Q with
-    the channel a renamed to b ([fptyped_cren], static/ChanRen.v) and
-    the constants 0 and 1 swapped ([fptyped_ren], static/Hiding.v), so
+    the channel a renamed to b ([ptyped_cren], static/ChanRen.v) and
+    the constants 0 and 1 swapped ([ptyped_ren], static/Hiding.v), so
     Q' holds b⁺ : S(p)@y. The cut on a moves to the cuts on a and b.
 
     The forwarder's facts at x and y‾ relate the two roots. Read with the
@@ -154,9 +154,10 @@ Proof. apply ffacts_ffp. intros g Hg. exact Hg. Qed.
 
 Definition fwdq_t (p : proto) : expr := fwdp_t p o1 ob.
 
-Theorem fwdq_term p : fptyped None (W_q p) (Σq p) (∅, {[+ fwdq_t p +]}) TUnit.
+Theorem fwdq_term p :
+  ptyped None (swrestrict (W_q p) (iface (Σq p) TUnit)) (Σq p) (∅, {[+ fwdq_t p +]}) TUnit.
 Proof.
-  apply (fp_term None (W_q p) (Σq p) ∅ ∅ _ TUnit None).
+  apply (p_term None (W_q p) (Σq p) ∅ ∅ _ TUnit None).
   - constructor.
   - intros o. rewrite dom_empty_L. set_solver.
   - set_solver.
@@ -296,44 +297,47 @@ Qed.
     at N = ∞ and well-foundedness at a finite N. *)
 
 Theorem fwdp_expand2_N N p W1 W2 Σ1 Σ2 C1 C2 E1 E2 T :
-  fptyped N (W_q p) (Σq p) (∅, {[+ fwdq_t p +]}) TUnit →
-  fptyped N W1 (Σ1 ∪ Σxp p) (C1, E1) T →
-  fptyped N W2 (Σ2 ∪ senv_dual (Σxp p)) (C2, E2) TUnit →
+  ptyped N (swrestrict (W_q p) (iface (Σq p) TUnit)) (Σq p) (∅, {[+ fwdq_t p +]}) TUnit →
+  ptyped N W1 (Σ1 ∪ Σxp p) (C1, E1) T →
+  ptyped N W2 (Σ2 ∪ senv_dual (Σxp p)) (C2, E2) TUnit →
   Σ1 ##ₘ Σxp p → Σ2 ##ₘ senv_dual (Σxp p) →
   chans_of Σ1 ## chans_of Σ2 → "a" ∉ chans_of Σ1 → "a" ∉ chans_of Σ2 →
   C1 ## C2 → C1 ## chans_of Σ2 ∪ {["a"]} → C2 ## chans_of Σ1 ∪ {["a"]} →
-  wok N (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)) →
+  wok N (W1 ⊔ W2) →
   "b" ∉ chans_of Σ1 → "b" ∉ chans_of Σ2 → "b" ∉ C1 → "b" ∉ C2 →
   1 ∉ sw_consts W1 → 1 ∉ sw_consts W2 →
-  fptyped N (W1 ⊔ (W_q p ⊔ sw_ren sw01 W2)) (Σ1 ∪ senv_ren (cswap 0 1) Σ2)
+  ∃ W, ptyped N W (Σ1 ∪ senv_ren (cswap 0 1) Σ2)
     (C1 ∪ (∅ ∪ C2 ∪ {["b"]}) ∪ {["a"]},
      E1 ⊎ ({[+ fwdq_t p +]} ⊎ emapE (cmap (sswap "a" "b")) E2)) T.
 Proof.
   intros Hfwd HP HQ HD1 HD2 H12 Ha1 Ha2 HC HC1 HC2 HS Hb1 Hb2 HbC1 HbC2 H01 H02.
   set (h := sswap "a" "b"). set (Σ2' := senv_ren (cswap 0 1) Σ2).
-  destruct (fptyped_wf _ _ _ _ _ HP) as [Hw1 Hk1]. destruct (fptyped_wf _ _ _ _ _ HQ) as [Hw2 Hk2].
-  assert (wok N (W1 ⊔ (W_q p ⊔ sw_ren sw01 W2))) as HJ.
-  { apply J_wok; [done|done|done|done|].
-    apply (wok_join_iff N W1 W2 Hw1 Hw2). by split_and!. }
+  set (Wq := swrestrict (W_q p) (iface (Σq p) TUnit)) in Hfwd.
+  destruct (ptyped_wf _ _ _ _ _ HP) as [Hw1 Hk1]. destruct (ptyped_wf _ _ _ _ _ HQ) as [Hw2 Hk2].
+  assert (wok N (W1 ⊔ (W_q p ⊔ sw_ren sw01 W2))) as HJ by (by apply J_wok).
   assert (chans_of Σ2' = chans_of Σ2) as EΣ2 by apply chans_of_ren.
   (* The partner Q', renamed. *)
-  assert (fptyped N (sw_ren sw01 W2) (Σ2' ∪ {[EPos "b" := (pS p, py)]}) (C2, emapE (cmap h) E2) TUnit) as HQ'.
-  { pose proof (fptyped_ren sw01 _ _ _ _ _ HQ) as H. simpl in H.
+  destruct (ptyped_ren sw01 _ _ _ _ _ HQ) as (W2' & HQr & Hs2).
+  assert (ptyped N W2' (Σ2' ∪ {[EPos "b" := (pS p, py)]}) (C2, emapE (cmap h) E2) TUnit) as HQ'.
+  { pose proof HQr as H. simpl in H.
     change (cb_f sw01) with (cswap 0 1) in H.
     rewrite senv_ren_union, Σxp_dual in H. unfold senv_ren at 2 in H. rewrite map_fmap_singleton in H.
     cbn [fst snd] in H. rewrite sty_ren_pS in H.
     replace (pt_ren (cswap 0 1) px) with py in H by reflexivity.
-    pose proof (fptyped_cren h _ _ _ _ _ _ H) as H'. cbn [fst snd] in H'.
+    pose proof (ptyped_cren h _ _ _ _ _ _ H) as H'. cbn [fst snd] in H'.
     rewrite (kmap_union (cmap h)), (kmap_singleton (cmap h)) in H'.
     fold Σ2' in H'. rewrite (kmap_cmap_fix h Σ2') in H'.
     2:{ intros c Hc. rewrite EΣ2 in Hc. unfold h, sswap. repeat case_decide; subst; set_solver. }
     rewrite (set_map_fix h C2) in H'.
     2:{ intros c Hc. unfold h, sswap. repeat case_decide; subst; set_solver. }
     exact H'. }
+  assert (∀ x y, Wq ⊔ W2' ⊢ₛ x ≺ y → W_q p ⊔ sw_ren sw01 W2 ⊢ₛ x ≺ y) as Hs.
+  { intros x y. apply join_sub; [intros ? ?; apply swrestrict_lt|exact Hs2]. }
   (* fwd ∥ Q', cut on b. *)
-  assert (fptyped N (W_q p ⊔ sw_ren sw01 W2) ({[o1 := (pS p, px)]} ∪ Σ2')
+  set (Wfq := swrestrict (Wq ⊔ W2') (iface ({[o1 := (pS p, px)]} ∪ Σ2') TUnit)).
+  assert (ptyped N Wfq ({[o1 := (pS p, px)]} ∪ Σ2')
             (∅ ∪ C2 ∪ chans_of (ΣCb p), {[+ fwdq_t p +]} ⊎ emapE (cmap h) E2) TUnit) as HFQ.
-  { apply fp_connect.
+  { apply p_connect.
     - exact Hfwd.
     - by rewrite ΣCb_dual.
     - rewrite chans_single, EΣ2. set_solver.
@@ -342,12 +346,11 @@ Proof.
     - set_solver.
     - rewrite chans_ΣCb, EΣ2. set_solver.
     - rewrite chans_single, chans_ΣCb. set_solver.
-    - eapply wok_sub; [|exact HJ]. intros x y Hxy. eapply sw_lt_mono; [apply swext_join_r|].
-      by eapply rjoin_lt. }
+    - eapply wok_sub; [|exact HJ]. intros x y Hxy. eapply sw_lt_mono; [apply swext_join_r|]. by apply Hs. }
   rewrite chans_ΣCb in HFQ.
   (* P ∥ (fwd ∥ Q'), cut on a. *)
-  rewrite <-(chans_Σxp p).
-  apply fp_connect.
+  rewrite <-(chans_Σxp p). eexists.
+  apply p_connect.
   - exact HP.
   - rewrite Σxp_dual. rewrite map_union_comm; [exact HFQ|].
     apply disj_single_chans. simpl. by rewrite EΣ2.
@@ -357,29 +360,30 @@ Proof.
   - set_solver.
   - rewrite chans_Σxp, EΣ2. set_solver.
   - rewrite chans_Σxp. set_solver.
-  - eapply wok_sub; [|exact HJ]. intros x y Hxy. by eapply rjoin_lt.
+  - eapply wok_sub; [|exact HJ]. intros x y Hxy. eapply join_sub; [done| |exact Hxy].
+    intros u v Huv. apply Hs. exact (swrestrict_lt _ _ _ _ Huv).
 Qed.
 
 Theorem fwdp_expand2 p W1 W2 Σ1 Σ2 C1 C2 E1 E2 T :
-  fptyped None W1 (Σ1 ∪ Σxp p) (C1, E1) T →
-  fptyped None W2 (Σ2 ∪ senv_dual (Σxp p)) (C2, E2) TUnit →
+  ptyped None W1 (Σ1 ∪ Σxp p) (C1, E1) T →
+  ptyped None W2 (Σ2 ∪ senv_dual (Σxp p)) (C2, E2) TUnit →
   Σ1 ##ₘ Σxp p → Σ2 ##ₘ senv_dual (Σxp p) →
   chans_of Σ1 ## chans_of Σ2 → "a" ∉ chans_of Σ1 → "a" ∉ chans_of Σ2 →
   C1 ## C2 → C1 ## chans_of Σ2 ∪ {["a"]} → C2 ## chans_of Σ1 ∪ {["a"]} →
-  wok None (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)) →
+  wok None (W1 ⊔ W2) →
   "b" ∉ chans_of Σ1 → "b" ∉ chans_of Σ2 → "b" ∉ C1 → "b" ∉ C2 →
   1 ∉ sw_consts W1 → 1 ∉ sw_consts W2 →
-  fptyped None (W1 ⊔ (W_q p ⊔ sw_ren sw01 W2)) (Σ1 ∪ senv_ren (cswap 0 1) Σ2)
+  ∃ W, ptyped None W (Σ1 ∪ senv_ren (cswap 0 1) Σ2)
     (C1 ∪ (∅ ∪ C2 ∪ {["b"]}) ∪ {["a"]},
      E1 ⊎ ({[+ fwdq_t p +]} ⊎ emapE (cmap (sswap "a" "b")) E2)) T.
 Proof. apply fwdp_expand2_N, fwdq_term. Qed.
 
 (** A closed P ∥ Q stays deadlock free with the forwarder in the cut. *)
 Corollary fwdp_expand2_df p W1 W2 C1 C2 E1 E2 T :
-  fptyped None W1 (∅ ∪ Σxp p) (C1, E1) T →
-  fptyped None W2 (∅ ∪ senv_dual (Σxp p)) (C2, E2) TUnit →
+  ptyped None W1 (∅ ∪ Σxp p) (C1, E1) T →
+  ptyped None W2 (∅ ∪ senv_dual (Σxp p)) (C2, E2) TUnit →
   C1 ## C2 → "a" ∉ C1 → "a" ∉ C2 →
-  wok None (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)) →
+  wok None (W1 ⊔ W2) →
   "b" ∉ C1 → "b" ∉ C2 → 1 ∉ sw_consts W1 → 1 ∉ sw_consts W2 →
   deadlock_free (C1 ∪ (∅ ∪ C2 ∪ {["b"]}) ∪ {["a"]},
                  E1 ⊎ ({[+ fwdq_t p +]} ⊎ emapE (cmap (sswap "a" "b")) E2)).
@@ -388,7 +392,10 @@ Proof.
   pose proof (fwdp_expand2 p W1 W2 ∅ ∅ C1 C2 E1 E2 T HP HQ) as H.
   assert (chans_of (∅ : senv) = ∅) as E0 by apply chans_empty.
   rewrite E0 in H. unfold senv_ren in H. rewrite fmap_empty, map_union_empty in H.
-  eapply soundness, H; try done; try apply map_disjoint_empty_l; set_solver.
+  cut (∃ W, ptyped None W ∅ (C1 ∪ (∅ ∪ C2 ∪ {["b"]}) ∪ {["a"]},
+    E1 ⊎ ({[+ fwdq_t p +]} ⊎ emapE (cmap (sswap "a" "b")) E2)) T).
+  { intros [W H']. exact (soundness_h W _ T H'). }
+  apply H; try done; try apply map_disjoint_empty_l; set_solver.
 Qed.
 
 (** ** An instance: the partners of examples/Copycat.v
@@ -402,10 +409,11 @@ Definition p0 : proto := PRcv (PSnd PEnd).
 Lemma Σxp_p0 : Σxp p0 = Σx.
 Proof. reflexivity. Qed.
 
-Lemma p2_term_x : fptyped None sw_empty (∅ ∪ senv_dual (Σxp p0)) (∅, {[+ p2_t o1 +]}) TUnit.
+Lemma p2_term_x : ptyped None (swrestrict sw_empty (iface (∅ ∪ senv_dual (Σxp p0)) TUnit))
+  (∅ ∪ senv_dual (Σxp p0)) (∅, {[+ p2_t o1 +]}) TUnit.
 Proof.
   rewrite (left_id_L ∅ (∪)), Σxp_dual.
-  apply (fp_term None sw_empty _ ∅ ∅ _ TUnit None).
+  apply (p_term None sw_empty _ ∅ ∅ _ TUnit None).
   - constructor.
   - intros o. rewrite dom_empty_L. set_solver.
   - set_solver.
@@ -423,14 +431,14 @@ Example fwdp_expand2_example :
   deadlock_free (∅ ∪ (∅ ∪ ∅ ∪ {["b"]}) ∪ {["a"]},
                  {[+ p1_t (edual o1) +]} ⊎ ({[+ fwdq_t p0 +]} ⊎ emapE (cmap (sswap "a" "b")) {[+ p2_t o1 +]})).
 Proof.
-  apply (fwdp_expand2_df p0 sw_empty sw_empty ∅ ∅ _ _ TUnit).
+  apply (fwdp_expand2_df p0 (swrestrict sw_empty (iface Σx TUnit))
+    (swrestrict sw_empty (iface (∅ ∪ senv_dual (Σxp p0)) TUnit)) ∅ ∅ _ _ TUnit).
   - rewrite (left_id_L ∅ (∪)), Σxp_p0. apply p1_term.
   - apply p2_term_x.
   - set_solver.
   - set_solver.
   - set_solver.
-  - apply swf_wok, swf_bare. intros [u v] [Hf|Hf]; simpl in Hf; destruct Hf as (_ & (a & _ & Ha) & _);
-      unfold swshared in Ha; simpl in Ha; set_solver.
+  - apply wok_join_bare_r; [apply swrestrict_empty_bare|]. apply swf_wok, swf_bare, swrestrict_empty_bare.
   - set_solver.
   - set_solver.
   - simpl. set_solver.

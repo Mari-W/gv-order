@@ -195,7 +195,7 @@ Proof.
   Unshelve. all: first [exact None | simpl; lia | simpl; done].
 Qed.
 
-Theorem rg_lftyped : ∃ N, ∅ ⊩^N _ W_rg (∅, {[+ rg_main +]}) : TUnit.
+Theorem rg_lftyped : ∃ N, ∅ ⊩^N _ (swrestrict W_rg (iface ∅ TUnit)) (∅, {[+ rg_main +]}) : TUnit.
 Proof.
   destruct rgl_typedN as (c & Ht). exists 8.
   eapply lf_main_typed; [apply W_rg_wf|constructor|exact Ht].

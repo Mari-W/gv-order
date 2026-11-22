@@ -80,9 +80,10 @@ Proof.
         rewrite lookup_nil in Hy. done.
 Qed.
 
-Theorem fw_ptyped N o x : fptyped N W_fw {[o := (S_fw, x)]} (∅, {[+ fw o +]}) TUnit.
+Theorem fw_ptyped N o x :
+  ptyped N (swrestrict W_fw (iface {[o := (S_fw, x)]} TUnit)) {[o := (S_fw, x)]} (∅, {[+ fw o +]}) TUnit.
 Proof.
-  eapply (fp_term N W_fw _ ∅ ∅ _ TUnit fw_cost).
+  eapply (p_term N W_fw _ ∅ ∅ _ TUnit fw_cost).
   - constructor.
   - intros o'. rewrite dom_empty_L. set_solver.
   - set_solver.

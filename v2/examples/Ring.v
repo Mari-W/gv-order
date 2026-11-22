@@ -276,12 +276,9 @@ Proof.
   - exact (ring_stuck p' Hp).
 Qed.
 
-(** No world types the ring, with or without hiding. *)
+(** No world types the ring. *)
 Theorem ring_rejected W T : ¬ ptyped None W ∅ (ring_cfg tC) T.
 Proof. intros H. exact (ring_not_df (soundness_h W _ T H)). Qed.
-
-Corollary ring_rejected_full W T : ¬ fptyped None W ∅ (ring_cfg tC) T.
-Proof. intros H. destruct (fptyped_ptyped _ _ _ _ _ H) as (Wi & Hi & _). exact (ring_rejected Wi T Hi). Qed.
 
 (** ** The two-channel cycle
 
@@ -325,10 +322,7 @@ Proof.
   - exact (cyc2_stuck p' Hp).
 Qed.
 
-Theorem cyc2_rejected W T : ¬ fptyped None W ∅ cyc2_cfg T.
-Proof. intros H. exact (cyc2_not_df (soundness W _ T H)). Qed.
-
-Corollary cyc2_rejected_h W T : ¬ ptyped None W ∅ cyc2_cfg T.
+Theorem cyc2_rejected W T : ¬ ptyped None W ∅ cyc2_cfg T.
 Proof. intros H. exact (cyc2_not_df (soundness_h W _ T H)). Qed.
 
 (** ** The acyclic ring *)
