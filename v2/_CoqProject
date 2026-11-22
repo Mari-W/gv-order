@@ -113,6 +113,7 @@ examples/SharedRoots.v
 examples/Ring.v
 examples/GenNew.v
 examples/Copycat.v
+examples/ForkJoin.v
 test/CompatNotations.v
 test/GuardNotations.v
 soup/Idle.v

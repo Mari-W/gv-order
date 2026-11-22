@@ -1,5 +1,52 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, 2026-11-22, fork-join with replies
+
+Branch redesign-fj in .claude/worktrees/redesign-fj, from redesign-fwd at
+8ba07c4, Rocq in c399554, nothing pushed. One new file,
+v2/examples/ForkJoin.v, plus one line in v2/_CoqProject and four
+`Print Assumptions` lines in v2/CheckAll.v. No rule changed. `make check`
+gives 138 of 138 closed.
+
+Recursive fork-join with replies does not type, in the DF judgment or at
+any finite N. One round types, and so does any fixed depth with one box per
+level.
+
+- One round, binary (`fj_dftyped`, `fj_term`, `fj_deadlock_free`). main
+  creates w at a fresh root ρ, keeps the end at ρ and spawns the worker on
+  ρ‾. The worker is a box `□∀ι. H. (End@ι ⊸^⊤ ∗)`. It creates both child
+  channels by E-New-Field at ι·0 and ι·1, spawns the two leaves on the
+  duals, closes c1, then c2, then w. Readiness asks ι·0 ≺ (ι·1)‾ and
+  ι·0 ≺ ῑ for the first close and ι·1 ≺ ῑ for the second. These three facts
+  are H. The laws of ρ state H at ρ‾ (a field is the same from both ends),
+  they meet (wf-new) by the measure (depth = 0, field sum, offset), and
+  main forces the box at ρ‾. P-Term types the closed program over the empty
+  world, and `soundness` gives deadlock freedom. The unary round is the
+  same derivation with one child.
+- The blocking premise is readiness of the wait, together with E-Force at
+  the child. After the spawn the parent runs close c; close w.
+  `fj_wait_needs` (an instance of `cl2_needs` from SemBranch) shows that
+  every typing of that term, at any N, world and context, asks
+  `slt W Γ p ῑ` for the point p of c and the point ι of w. The child holds
+  c at p‾ and forces the same box there, so it needs `hold_at H` at
+  ι′ = p‾ with ῑ′ = p ≺ ῑ. This is the hypothesis of Proposition 7 of
+  check-general-new.md with f(ι) = ῑ. W, Γ and H then have no common model,
+  so main cannot force the box. Every round must lower ῑ, and one H states
+  the same facts for every call.
+- The field route fails for the same reason as the fresh-root route. A
+  field creation adds no fact, so the facts about ι·κ·κ′ that the child
+  needs come from H or from the laws of ρ, and either would have to hold an
+  infinite descent ῑ ≻ ι·κ ≻ ι·κ·κ′ ≻ … . Proposition 7 says that a field
+  creation needs no extension and the proof applies unchanged. A box that
+  may answer at once does not help, because a case split adds no fact.
+- Not mechanized. The rejection of the recursive program as a whole rests
+  on Proposition 7, which is on paper. The depth-d version with d + 1 boxes
+  is not in Rocq. The LF judgment was not tried for the round. Its premises
+  of readiness and E-Force are the same, and `fj_wait_needs` is stated at
+  every N, so the recursion fails there too.
+- Question 3 (binary) is answered by the round above. The recursive binary
+  version fails at the first close, as the unary one does.
+
 ## Report, 2026-11-22, a derived forwarder at independent points (design B)
 
 Branch redesign-fwd in .claude/worktrees/redesign-fwd, from redesign at
