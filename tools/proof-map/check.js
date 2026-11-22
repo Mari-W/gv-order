@@ -50,7 +50,8 @@ describe('note-unused', 'a note no formula, signature or argument refers to');
 describe('var-before-intro', 'a variable is used before a block introduces it, in reading order of a mode');
 describe('prose-in-formula', 'words inside \\text in a formula');
 describe('bare-word', 'a word of three or more letters set as a product of variables');
-describe('dead-link', 'a usedIn entry or a [[link]] names no block or section');
+describe('dead-link', 'a usedIn entry, a note def or a [[link]] names no block or section');
+describe('xref-missing', 'a block listed in usedIn neither links the block it uses nor hovers a symbol defined there');
 describe('mode-unknown', 'a mode that the map does not declare');
 describe('reason-missing', 'a deviation whose reason is missing or reads REASON MISSING');
 describe('planned-no-reason', 'a formula marks a part \\planned but the item has no planned deviation');
@@ -108,6 +109,7 @@ const visibleIn = (x, m) => !x.modes || x.modes.includes(m);
 const sectionIds = new Set(sections.map(s => s.id));
 const linkOk = id => blockById.has(id) || sectionIds.has(id) || examples.some(e => e.id === id);
 for (const { where, it } of items) for (const id of it.usedIn || []) if (!linkOk(id)) report('dead-link', 'error', where, `usedIn names ${id}`);
+for (const [k, n] of Object.entries(notes)) if (typeof n.def === 'string' && !blockById.has(n.def)) report('dead-link', 'error', `note ${k}`, `def names ${n.def}, not a block`);
 function proseFields() {
   const out = [];
   if (MAP.subtitle) out.push(['map subtitle', MAP.subtitle]);
@@ -175,6 +177,44 @@ const usedKeys = new Set();
     if (!notes[x.key]) report('note-missing', 'error', where, x.key);
   }
   for (const k of Object.keys(notes)) if (!usedKeys.has(k)) report('note-unused', 'info', `note ${k}`, notes[k].title || '');
+}
+
+// ---------- inline cross-references ----------
+// The block that defines a note: its def, else the first block in reading order whose formula or
+// table hovers the key in that mode, else the first in any mode. The page uses the same rule for
+// click-to-definition. When A lists B in usedIn, B uses A, and the text of B must reach A inline:
+// a [[A]] link in its caption, notes or table, or a hovered symbol whose defining block is A.
+{
+  const MODES = modeIds.length ? modeIds : [null];
+  const keysOf = (b, mode) => {
+    const texs = [mode ? (b.variants && b.variants[mode]) || b.formula : b.formula, ...(mode ? [] : Object.values(b.variants || {})), ...T.tableFormulas(b, mode)].filter(x => typeof x === 'string');
+    return new Set([...texs.flatMap(t => T.syms(T.resolve(t, mode)).map(x => x.key)), ...T.tableRows(b, mode).map(r => r.labelKey).filter(Boolean)]);
+  };
+  const first = new Map();
+  for (const { b } of blocks) for (const mode of MODES) {
+    if (mode && !visibleIn(b, mode)) continue;
+    for (const k of keysOf(b, mode)) { for (const id of [(mode || '') + '|' + k, '*|' + k]) if (!first.has(id)) first.set(id, b.id); }
+  }
+  const defOf = (k, mode) => notes[k] && notes[k].def !== undefined ? notes[k].def || null : first.get((mode || '') + '|' + k) || first.get('*|' + k) || null;
+  const defines = new Map();
+  for (const k of new Set([...first.keys()].map(x => x.slice(x.indexOf('|') + 1)))) for (const mode of MODES) { const d = defOf(k, mode); if (d) { if (!defines.has(d)) defines.set(d, new Set()); defines.get(d).add(k); } }
+  const textsOf = it => [it.caption, it.why, it.breaks, it.example, it.lead, it.meaning, ...T.tableTexts(it).map(x => x[1]), ...(it.deviations || []).map(d => d.reason)].filter(x => typeof x === 'string');
+  const exById = new Map(examples.map(x => [x.id, x]));
+  for (const { s: sa, b: a } of blocks) for (const u of a.usedIn || []) {
+    const x = blockById.get(u), it = x ? x.b : exById.get(u);
+    if (!it || u === a.id) continue;
+    const texts = textsOf(it);
+    if (texts.some(t => [...t.matchAll(/\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g)].some(m => m[1] === a.id))) continue;
+    let hit = false;
+    for (const mode of MODES) {
+      if (mode && !visibleIn(it, mode)) continue;
+      const keys = new Set([...(x ? keysOf(it, mode) : []), ...texts.flatMap(t => T.proseMath(t, mode).flatMap(m => T.syms(m).map(y => y.key)))]);
+      if ([...keys].some(k => defOf(k, mode) === a.id)) { hit = true; break; }
+    }
+    if (hit) continue;
+    const d = [...(defines.get(a.id) || [])].slice(0, 4);
+    report('xref-missing', 'warning', x ? `${x.s.id}/${u}` : `example ${u}`, `uses ${sa.id}/${a.id} ("${a.title}"): add [[${a.id}]] to its caption or why${d.length ? `, or hover a symbol defined there (${d.join(', ')})` : ''}`);
+  }
 }
 
 // ---------- variables in reading order ----------

@@ -100,6 +100,64 @@ async function main() {
       ok('a used-in link opens the block in its section', at.here && at.top >= 0 && at.top < 400, `${b.id} -> ${to} ${at.hash} top ${at.top}`);
     }
 
+    // 4b. the note of a symbol lists its uses under "Used in", the old labels are gone
+    {
+      await go(`${base}#${sec0.id}`);
+      const r = await evalJS(`(() => { const all = new Set(); let used = false; for (const g of document.querySelectorAll('#content .math [class*="k-"]')) { g.dispatchEvent(new MouseEvent('mouseover', { bubbles: true })); const h = [...document.querySelectorAll('#note .uses dt')].map(d => d.textContent); h.forEach(x => all.add(x)); if (h.includes('Used in') && document.querySelector('#note .uses .chips a')) used = true; } return { used, heads: [...all] }; })()`);
+      ok('the note lists its uses under "Used in", without "Also in" or "Appears in"', r.used && !r.heads.some(h => /Also in|Appears in/.test(h)), r.heads.join(', '));
+    }
+
+    // 4c. affordance: formulas carry underlines, dotted for a note, solid where a click opens the definition
+    {
+      const typingLike = MAP.sections.map(s => s.id).find(id => MAP.sections.find(s => s.id === id).blocks.length > 5) || secs[0];
+      await go(`${base}#${typingLike}`);
+      await sleep(600);
+      const u = await evalJS(`({ dotted: document.querySelectorAll('#content .pm-ul:not(.go)').length, solid: document.querySelectorAll('#content .pm-ul.go').length, go: document.querySelectorAll('#content .pm-go').length, visible: (() => { const l = document.querySelector('#content .pm-ul'); if (!l) return false; const r = l.getBoundingClientRect(); return r.width > 1 && getComputedStyle(l).strokeWidth !== '0px'; })() })`);
+      ok('targets in formulas are underlined, dotted or solid', u.dotted > 0 && u.visible && (u.go === 0 || u.solid > 0), JSON.stringify(u));
+    }
+
+    // 4d. click to definition: a symbol defined in another block opens that block and pins the note,
+    // Back returns, Shift-click pins without moving
+    {
+      let found = null;
+      for (const s of MAP.sections) {
+        await go(`${base}#${s.id}`);
+        found = await evalJS(`(() => { const g = [...document.querySelectorAll('#content .math .pm-go')].find(g => g.getBoundingClientRect().width > 2); if (!g) return null; g.scrollIntoView({ block: 'center' }); const r = g.getBoundingClientRect(); const k = [...g.classList].find(c => c.startsWith('k-')); return { x: r.left + r.width / 2, y: r.top + r.height / 2, from: g.closest('article.block').id, k }; })()`);
+        if (found) { found.sec = s.id; break; }
+      }
+      if (!found) ok('click on a symbol opens its defining block', false, 'no symbol with a definition elsewhere');
+      else {
+        await sleep(300);
+        const click = async (mods = 0) => { for (const type of ['mouseMoved', 'mousePressed', 'mouseReleased']) await send('Input.dispatchMouseEvent', { type, x: found.x, y: found.y, button: 'left', clickCount: 1, modifiers: mods }); };
+        const y0 = await evalJS('scrollY');
+        await click(8);   // Shift
+        await sleep(800);
+        const st = await evalJS(`({ y: scrollY, pinned: document.querySelector('#note .eyebrow span').textContent, hash: location.hash })`);
+        ok('Shift-click pins without moving', st.pinned === 'Pinned' && Math.abs(st.y - y0) < 4, JSON.stringify(st));
+        await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 }); await sleep(200);
+        await click();
+        await sleep(1800);
+        const at = await evalJS(`(() => { const m = location.hash.match(/\\/(.+)$/); const id = m && m[1]; const el = id && document.getElementById('b-' + id); return { hash: location.hash, id, top: el ? Math.round(el.getBoundingClientRect().top) : null, pinned: document.querySelector('#note .eyebrow span').textContent, marks: el ? el.querySelectorAll('rect.pm-box.pin').length : 0 }; })()`);
+        ok('click on a symbol opens its defining block and pins the note', at.id && 'b-' + at.id !== found.from && at.top !== null && at.top >= 0 && at.top < 500 && at.pinned === 'Pinned' && at.marks >= 1, `${found.k} in ${found.from} -> ${JSON.stringify(at)}`);
+        await evalJS('history.back()'); await sleep(1500);
+        const back = await evalJS(`location.hash`);
+        ok('Back returns to the block of the click', back.endsWith('/' + found.from.slice(2)), back);
+      }
+    }
+
+    // 4e. an inline [[link]] in prose opens its block
+    {
+      const withLink = MAP.sections.flatMap(s => s.blocks.map(b => [s, b])).find(([, b]) => /\[\[[^\]|]+/.test(b.caption || '') && !b.modes);
+      if (withLink) {
+        const [s, b] = withLink;
+        await go(`${base}#${s.id}`);
+        const to = await evalJS(`(() => { const a = document.querySelector('#b-${b.id} .caption a.xref[data-jump]'); if (!a) return null; a.click(); return a.dataset.jump; })()`);
+        await sleep(1500);
+        const top = to && await evalJS(`(() => { const el = document.getElementById('b-' + ${JSON.stringify(to)}) || document.getElementById('x-' + ${JSON.stringify(to)}); return el ? Math.round(el.getBoundingClientRect().top) : null; })()`);
+        ok('an inline link in a caption opens its block', !!to && top !== null && top >= 0 && top < 500, `${b.id} -> ${to} top ${top}`);
+      }
+    }
+
     // 5. modes: switching re-renders, mode-only blocks appear
     if (MAP.modes) {
       await go(`${base}&mode=${modes[0]}#${secs[0]}`);

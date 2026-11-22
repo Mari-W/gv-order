@@ -147,11 +147,22 @@ mjx-container.sel { background: color-mix(in srgb, var(--accent) 22%, transparen
 .devs li.missing .reason { color: var(--warn); font-weight: 600; }
 .devs .part { font-size: 0.82rem; color: var(--muted); }
 
-/* hover targets inside formulas */
-.math [class*="k-"], mjx-container [class*="k-"] { cursor: help; }
+/* Targets. At rest every glyph of a target in a formula carries a hairline under it, drawn once
+   for the innermost target that owns the glyph: dotted when the target shows a note, solid when a
+   click also opens the block that defines it. Under the cursor the innermost target gets a box and
+   the targets around it a hairline outline. Prose links are solid, table labels with a note dotted. */
+mjx-container [class*="k-"] { cursor: help; }
+mjx-container .pm-go { cursor: pointer; }
+mjx-container .pm-uls { pointer-events: none; }
+mjx-container .pm-ul { fill: none; stroke: color-mix(in srgb, var(--accent) 70%, transparent); stroke-linecap: round; }
+mjx-container .pm-ul.go { stroke: color-mix(in srgb, var(--accent) 50%, transparent); stroke-linecap: butt; }
 .math rect.pm-hit { fill: transparent; stroke: none; pointer-events: all; }
-.math rect.pm-box { fill: var(--hot-soft); stroke: var(--hot); stroke-width: 14; pointer-events: none; }
-.math rect.pm-box.pin { stroke-width: 30; }
+mjx-container rect.pm-box { fill: var(--hot-soft); stroke: var(--hot); stroke-width: 14; pointer-events: none; }
+mjx-container rect.pm-box.pin { stroke-width: 30; }
+mjx-container rect.pm-box.anc { fill: none; stroke: color-mix(in srgb, var(--hot) 60%, transparent); stroke-width: 1; vector-effect: non-scaling-stroke; }
+a.xref { text-decoration: underline 1px color-mix(in srgb, var(--accent) 45%, transparent); text-underline-offset: 2px; }
+a.xref:hover { text-decoration-color: var(--accent); }
+.ptable .lab.pm-go { cursor: pointer; text-decoration-style: solid; }
 .planned { opacity: 0.6; }
 
 /* note panel */
@@ -180,6 +191,8 @@ aside .uses { margin-top: 16px; }
 aside .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 aside .chips a, aside .chips span { font-size: 0.82rem; color: var(--accent); text-decoration: none; padding: 1px 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); max-width: 100%; overflow-wrap: anywhere; cursor: pointer; }
 aside .chips a:hover { border-color: var(--accent); }
+.eyebrow .hint { font: 400 0.74rem var(--body); letter-spacing: 0; text-transform: none; color: var(--muted); margin-left: auto; padding-left: 10px; text-align: right; }
+.eyebrow .hint + button { margin-left: 8px; }
 aside .placeholder { color: var(--muted); font-size: 0.93rem; }
 aside .devs li { font-size: 0.86rem; }
 
@@ -291,7 +304,8 @@ window.MathJax = {
   let MAP, MODES = [], mode = null, query = '', pinned = null;
   const local = new Map();               // block id -> mode chosen on the block itself
   let blockIndex = new Map();            // block id -> {s, b}
-  const uses = new Map();                // note key -> Map(block id -> {s, b})
+  const firstUse = new Map();            // 'mode|key' -> the first block whose formula hovers key in that mode, '*|key' in any mode
+  const uses = new Map();                // note key -> Map(block id -> {s, b}), the blocks whose formulas hover it
 
   // ---------- markup ----------
   // index just past the group opening at s[open] === '{'
@@ -337,7 +351,9 @@ window.MathJax = {
       .replace(/\[\[([^\]|]+)(?:\|([^\]]*))?\]\]/g, (_, id, label) => {
         const x = blockIndex.get(id); const sec = MAP.sections.find(s => s.id === id);
         const text = label || (x ? x.b.title : sec ? sec.title : id);
-        return x ? `<a href="#${esc(x.s.id)}/${esc(id)}" data-jump="${esc(id)}">${esc(text)}</a>` : sec ? `<a href="#${esc(id)}">${esc(text)}</a>` : esc(text);
+        const e = !x && !sec && (MAP.examples || []).find(e => e.id === id);
+        return x ? `<a class="xref" href="#${esc(x.s.id)}/${esc(id)}" data-jump="${esc(id)}">${esc(text)}</a>` : sec ? `<a class="xref" href="#${esc(id)}">${esc(text)}</a>`
+          : e ? `<a class="xref" href="#examples/${esc(id)}" data-jump="${esc(id)}">${esc(label || e.title)}</a>` : esc(text);
       });
   }
   // example code: keywords and comments from the map
@@ -518,8 +534,81 @@ window.MathJax = {
   const boxesOff = c => document.querySelectorAll('mjx-container rect.pm-box.' + c).forEach(r => r.remove());
   function markAll(key) { boxesOff('pin'); if (key && !key.startsWith('@')) document.querySelectorAll('#content mjx-container .' + CSS.escape(cls(key))).forEach(e => boxOn(e, 'pin')); }
   let hotEl = null;
-  function hot(el) { if (el === hotEl) return; boxesOff('hot'); hotEl = el; if (el) boxOn(el, 'hot'); }
-  function typeset(el) { if (window.MathJax && MathJax.typesetPromise) return MathJax.typesetPromise([el]).then(() => markSel()).catch(() => {}); }
+  // the innermost target under the cursor gets a box, the targets around it a hairline outline
+  function hot(el) {
+    if (el === hotEl) return; boxesOff('hot'); boxesOff('anc'); hotEl = el; if (!el) return;
+    boxOn(el, 'hot');
+    for (let a = el.parentElement && el.parentElement.closest('[class*="k-"]'); a && a.closest('mjx-container'); a = a.parentElement && a.parentElement.closest('[class*="k-"]')) boxOn(a, 'anc');
+  }
+  function typeset(el) { return window.MathJax && MathJax.typesetPromise ? MathJax.typesetPromise([el]).then(() => { markSel(); decorate(el); }).catch(() => {}) : Promise.resolve(); }
+
+  // ---------- definitions and inline references ----------
+  // the keys a block hovers in its formula or table in one mode (null: every mode)
+  function keysOfBlock(b, md) {
+    const rows = ((b.table && b.table.rows) || []).filter(r => md === null || rowShown(r, md));
+    const texs = [md === null ? b.formula : texOf(b, md), ...(md === null ? Object.values(b.variants || {}) : []), ...rows.flatMap(r => cellsOf(r).map(c => c.formula))].filter(x => typeof x === 'string');
+    return new Set([...texs.flatMap(t => [...keysIn(resolve(t, md))]), ...rows.map(r => r.labelKey).filter(Boolean)]);
+  }
+  // the block that defines a note: its def field, else the first block in reading order whose
+  // formula hovers the key in this mode, else the first in any mode. def: false means none.
+  function defOf(key, md = mode) {
+    const n = MAP.notes[key];
+    if (n && n.def !== undefined) return n.def || null;
+    return firstUse.get((md ?? '') + '|' + key) || firstUse.get('*|' + key) || null;
+  }
+  function indexUses() {
+    const ms = MODES.length ? MODES.map(m => m.id) : [null];
+    for (const { s, b } of blockIndex.values()) {
+      for (const md of ms) {
+        if (md !== null && b.modes && !b.modes.includes(md)) continue;
+        for (const k of keysOfBlock(b, md)) { const id = (md ?? '') + '|' + k; if (!firstUse.has(id)) firstUse.set(id, b.id); if (!firstUse.has('*|' + k)) firstUse.set('*|' + k, b.id); }
+      }
+      const texts = ((b.table && b.table.rows) || []).flatMap(r => [r.label, ...cellsOf(r).map(c => c.text)]);
+      for (const k of [...keysOfBlock(b, null), ...texts.flatMap(t => [...keysIn(t)])]) { if (!uses.has(k)) uses.set(k, new Map()); uses.get(k).set(b.id, { s, b }); }
+    }
+  }
+  // marks each target whose click opens another block (.pm-go) and draws the underlines of a formula
+  function decorate(root) {
+    root.querySelectorAll('[class*="k-"]').forEach(t => { const k = keyOf(t); if (!k) return; const d = defOf(k, modeAt(t)); t.classList.toggle('pm-go', !!d && d !== blockAt(t)); });
+    root.querySelectorAll('mjx-container > svg').forEach(underline);
+  }
+  // one hairline under each run of glyphs that belong to the same innermost target, so nested
+  // targets never stack lines. Glyph boxes come from the screen and go back into the coordinates of
+  // the formula, so the lines scale with it.
+  function underline(svg) {
+    const top = svg.querySelector(':scope > g'); if (!top || !svg.querySelector('[class*="k-"]')) return;
+    const old = top.querySelector(':scope > g.pm-uls'); if (old) old.remove();
+    const sr = svg.getBoundingClientRect(); if (!sr.width) return;
+    let inv; try { inv = top.getScreenCTM().inverse(); } catch (e) { return; }
+    const em = sr.width / parseFloat(svg.getAttribute('width')) / 0.442;   // MathJax sizes the SVG in ex
+    const runs = new Map();
+    svg.querySelectorAll('use, path, text').forEach(gl => {
+      if (gl.closest('defs, .pm-uls')) return;
+      const t = gl.closest('[class*="k-"]'); if (!t || !top.contains(t)) return;
+      const r = gl.getBoundingClientRect(); if (!r.width || !r.height) return;
+      if (!runs.has(t)) runs.set(t, []); runs.get(t).push(r);
+    });
+    const ns = 'http://www.w3.org/2000/svg', g = document.createElementNS(ns, 'g'); g.setAttribute('class', 'pm-uls');
+    const pt = svg.createSVGPoint(), to = (x, y) => { pt.x = x; pt.y = y; return pt.matrixTransform(inv); };
+    const px = Math.abs(inv.a) || 1;   // one screen pixel in the units of the formula, for width and dots
+    for (const [t, rs] of runs) {
+      rs.sort((a, b) => a.left - b.left);
+      const segs = [];
+      for (const r of rs) {
+        const s = segs.find(s => r.left - s.right < 0.45 * em && r.top < s.bottom && r.bottom > s.top);
+        if (s) { s.right = Math.max(s.right, r.right); s.top = Math.min(s.top, r.top); s.bottom = Math.max(s.bottom, r.bottom); }
+        else segs.push({ left: r.left, right: r.right, top: r.top, bottom: r.bottom });
+      }
+      const go = t.classList.contains('pm-go');
+      for (const s of segs) {
+        const a = to(s.left + 1, s.bottom + 1.5), b = to(Math.max(s.left + 2, s.right - 1), s.bottom + 1.5);
+        const l = document.createElementNS(ns, 'line');
+        l.setAttribute('x1', a.x); l.setAttribute('y1', a.y); l.setAttribute('x2', b.x); l.setAttribute('y2', b.y);
+        l.setAttribute('class', 'pm-ul' + (go ? ' go' : '')); l.setAttribute('stroke-width', (go ? 1 : 1.3) * px); if (!go) l.setAttribute('stroke-dasharray', `${0.01 * px} ${2.6 * px}`); g.appendChild(l);
+      }
+    }
+    top.insertBefore(g, top.firstChild);
+  }
 
   // ---------- extension hooks ----------
   const ctx = () => ({ map: MAP, mode, esc, prose, plainTeX, modes: MODES });
@@ -646,11 +735,12 @@ window.MathJax = {
     if ((n.source || []).length) h += `<div><dt>Rocq</dt><dd><ul class="refs">${n.source.map(r => `<li>${esc(r.file)}: ${esc(r.names.join(', '))}${r.qualifier ? ` <span class="q">(${esc(r.qualifier)})</span>` : ''}</li>`).join('')}</ul></dd></div>`;
     h += '</dl>';
     const chip = id => { const x = blockIndex.get(id); if (x) return `<a href="#${esc(x.s.id)}/${esc(id)}" data-jump="${esc(id)}">${esc(x.b.title)}</a>`; const e = (MAP.examples || []).find(e => e.id === id); return e ? `<a href="#examples/${esc(id)}" data-jump="${esc(id)}">${esc(e.title)}</a>` : `<span>${esc(id)}</span>`; };
-    if ((n.usedIn || []).length) h += `<div class="uses"><dt>Used in</dt><div class="chips">${n.usedIn.map(chip).join('')}</div></div>`;
-    if (opts.key && uses.has(opts.key)) {
-      const u = [...uses.get(opts.key).keys()].filter(id => id !== opts.from);
-      if (u.length) h += `<div class="uses"><dt>${opts.from ? 'Also in' : 'Appears in'}</dt><div class="chips">${u.map(chip).join('')}</div></div>`;
-    }
+    // a symbol: the block that defines it, then the other blocks whose formulas hover it. A block:
+    // its declared usedIn. Inline links in the text are the primary references, this is the index.
+    const def = opts.key ? defOf(opts.key, md) : null;
+    if (def && def !== opts.from) h += `<div class="uses"><dt>Defined in</dt><div class="chips">${chip(def)}</div></div>`;
+    const used = [...new Set([...(n.usedIn || []), ...(opts.key && uses.has(opts.key) ? uses.get(opts.key).keys() : [])])].filter(id => id !== opts.from && id !== def);
+    if (used.length) h += `<div class="uses"><dt>Used in</dt><div class="chips">${used.map(chip).join('')}</div></div>`;
     return h;
   }
   let shown = null;
@@ -665,7 +755,9 @@ window.MathJax = {
     emit('note', { key, pinned: !!isPinned, mode: md, title: n.title || key, block: from });
     const aside = $('#note');
     aside.classList.remove('empty');
-    aside.innerHTML = `<div class="eyebrow"><span>${isPinned ? 'Pinned' : key.startsWith('@s:') ? 'Section' : 'Hover'}</span>${isPinned ? '<button type="button" id="unpin">Unpin  (Esc)</button>' : ''}</div>` + noteHTML(n, { mode: md, key: key.startsWith('@') ? null : key, from });
+    const d = key.startsWith('@') ? null : defOf(key, md);
+    const hint = isPinned || key.startsWith('@s:') ? '' : d && d !== from ? 'Click opens the definition, Shift-click pins' : 'Click pins';
+    aside.innerHTML = `<div class="eyebrow"><span>${isPinned ? 'Pinned' : key.startsWith('@s:') ? 'Section' : 'Hover'}</span>${hint ? `<span class="hint">${hint}</span>` : ''}${isPinned ? '<button type="button" id="unpin">Unpin  (Esc)</button>' : ''}</div>` + noteHTML(n, { mode: md, key: key.startsWith('@') ? null : key, from });
     typeset(aside);
   }
   function idle(sec) { if (!pinned && !matchMedia('(max-width: 960px)').matches) showNote('@s:' + sec, false); }
@@ -746,14 +838,24 @@ window.MathJax = {
       if (!getSelection().isCollapsed) return;   // a click that ends a selection pins nothing
       const h = e.target.closest('h3[data-block], h3[data-ex]');
       if (h) { pin(h.dataset.block ? '@b:' + h.dataset.block : '@x:' + h.dataset.ex, modeAt(h)); return; }
+      // a symbol: pin its note, and open the block that defines it when that is another block.
+      // Shift- or Alt-click pins without moving.
       const t = e.target.closest('[class*="k-"]');
-      if (t) { const k = keyOf(t); if (k) pin(k, modeAt(t), blockAt(t)); return; }
+      if (t) {
+        const k = keyOf(t); if (!k) return;
+        const md = modeAt(t), from = blockAt(t), d = defOf(k, md);
+        pin(k, md, from);
+        if (d && d !== from && !e.shiftKey && !e.altKey) goTo(d, from);
+        return;
+      }
       const xa = e.target.closest('article.ex'); if (xa) pin('@x:' + xa.id.slice(2), mode);
     });
     content.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('h3[data-block], h3[data-ex]')) e.target.click(); });
     $('#note').addEventListener('click', e => {
       if (e.target.id === 'unpin') { unpin(); return; }
-      const j = e.target.closest('[data-jump]'); if (j) { e.preventDefault(); goTo(j.dataset.jump); }
+      const j = e.target.closest('[data-jump]'); if (j) { e.preventDefault(); goTo(j.dataset.jump); return; }
+      const t = e.target.closest('[class*="k-"]'); const d = t && keyOf(t) && defOf(keyOf(t));
+      if (d) goTo(d);
     });
     $('#modes').addEventListener('click', e => {
       const b = e.target.closest('button[data-mode]'); if (!b) return;
@@ -776,11 +878,13 @@ window.MathJax = {
       clearTimeout(wire.rt); wire.rt = setTimeout(() => { if (Math.abs(innerWidth - lastW) > 0.15 * lastW) { lastW = innerWidth; const y = scrollY; renderSection(); scrollTo(0, y); } }, 250);
     });
   }
-  function goTo(id) {
+  // from: the block the reader leaves, recorded in the history so that Back returns to it
+  function goTo(id, from) {
     const x = blockIndex.get(id), e = (MAP.examples || []).find(e => e.id === id);
     const sec = x ? x.s.id : e ? 'examples' : null; if (!sec) return;
     if (x && !visible(x.b)) { mode = x.b.modes[0]; renderModes(); }
     if (query && !(x ? matches(blockHay(x.b)) : matches(exHay(e)))) { query = ''; $('#q').value = ''; }
+    if (from && blockIndex.has(from)) { history.replaceState(null, '', '#' + route().sec + '/' + from); location.hash = sec + '/' + id; return; }
     if (route().sec !== sec) { location.hash = sec + '/' + id; } else { history.replaceState(null, '', '#' + sec + '/' + id); jump(id); }
   }
 
@@ -812,12 +916,7 @@ window.MathJax = {
     mode = MODES.length ? (MODES.some(m => m.id === want) ? want : MAP.modes.default) : null;
     if (MAP.tex && MAP.tex.macros) { const tex = MathJax.config.tex; tex.macros = Object.assign({}, tex.macros, MAP.tex.macros); MathJax.startup.getComponents(); }
     blockIndex = new Map(MAP.sections.flatMap(s => s.blocks.map(b => [b.id, { s, b }])));
-    for (const { s, b } of blockIndex.values()) {
-      const rows = (b.table && b.table.rows) || [];
-      const cells = rows.flatMap(r => [...cellsOf(r).map(c => c.formula !== undefined ? c.formula : c.text), r.label]);
-      const keys = new Set([b.formula, ...Object.values(b.variants || {}), ...cells].flatMap(t => [...keysIn(t)]).concat(rows.map(r => r.labelKey).filter(Boolean)));
-      for (const k of keys) { if (!uses.has(k)) uses.set(k, new Map()); uses.get(k).set(b.id, { s, b }); }
-    }
+    indexUses();
     for (const src of (base && MAP.extensions && MAP.extensions.page) || []) { try { await script(new URL(src, base).href); } catch (e) { console.warn('extension not loaded', src); } }
     const css = window.ProofMap.exts.map(e => e.css || '').join('\n'); if (css) document.head.insertAdjacentHTML('beforeend', `<style>${css}</style>`);
     modeCSS(); renderModes(); renderTabs(); renderSection.sec = route().sec; renderSection(); wire(); restore(); watch();

@@ -37,14 +37,15 @@ A block shows one definition or one rule group.
 | `caption` | What the formula says, in words. The reader sees it under the formula. |
 | `why`, `breaks`, `example` | The note behind the title. Why the block exists, what fails without it, an instance. |
 | `source` | The Rocq definitions the block shows, as `{file, names, qualifier?, reviewed?}`. Required. An empty list needs an `unsourced` or `planned` deviation. |
-| `usedIn` | Ids of the blocks that use this one. The page lists them as links. |
+| `usedIn` | Ids of the blocks and examples that use this one. The page lists them under Used in, and the checker wants each of them to reference this block inline, see Cross-references. |
 | `introduces` | Metavariables the block introduces beyond what the checker infers. |
 | `modes` | The modes that show the block. Absent means all. |
 | `deviations` | Where the display differs from the code, each with a reason. |
 
 A note explains one hover key. Its fields are `title`, `meaning`, `why`, `breaks`, `example`,
-`signature` (TeX), `args` (`{name, meaning, modes?}`), `source`, `usedIn` and `deviations`. The
-page adds the blocks whose formulas use the key.
+`signature` (TeX), `args` (`{name, meaning, modes?}`), `source`, `usedIn`, `def` and `deviations`.
+`def` names the block that defines the symbol, see Cross-references. The page adds the defining
+block under Defined in and the other blocks whose formulas use the key under Used in.
 
 An example has `id`, `title`, `lead`, `code`, `meaning`, `modes`, `source` and `deviations`.
 
@@ -52,7 +53,7 @@ An example has `id`, `title`, `lead`, `code`, `meaning`, `modes`, `source` and `
 
 | Markup | Effect |
 |---|---|
-| `\sym{key}{X}` | X is a hover target with the note `key`. Targets nest, the innermost wins. |
+| `\sym{key}{X}` | X is a hover target with the note `key`. Targets nest, the innermost wins. A click opens the block that defines `key`. |
 | `\inmode{m1,m2}{X}` | X shows in the listed modes only, in the colour of the mode. |
 | `\inmodeplain{m}{X}` | X shows in the listed modes only, uncoloured. Use it for layout such as `\\` or `\quad` that belongs to a coloured part. |
 | `\planned{X}` | X is not yet in the proof code. The page dims it. The item needs a `planned` deviation. |
@@ -80,6 +81,35 @@ narrow screen the cells stack, each under its column head.
 
 Prose fields take `$math$`, `` `code` ``, `[[block-id]]` and `[[block-id|label]]` links, and
 `\inmode{m}{…}` for words that belong to one mode. A link to a section id works too. Math in prose may hover a note with `\sym{key}{…}`, as in a table cell that reads `$\sym{sj.term}{\vDash}$ and the process relation`.
+
+## Cross-references
+
+Inline references are the primary references of a map. A block refers to what it builds on in its
+own text, in two ways.
+
+- A `[[block-id]]` or `[[block-id|label]]` link in the caption, `why`, `breaks`, `example`, a table
+  cell or a deviation reason. The page draws it as a link with a thin solid underline.
+- A `\sym{key}{…}` target in a formula or in prose math. A click on it opens the block that
+  defines `key`. Every symbol in a formula that some block defines carries `\sym`.
+
+The defining block of a note is its `def`. Without `def` it is the first block in reading order
+whose formula or table hovers the key in the current mode, and else the first in any mode.
+`"def": false` says that no block defines the symbol. Set `def` only where the first use is not
+the definition, such as a symbol an overview shows before its block.
+
+The page shows what responds to the pointer. Each glyph of a formula target carries a hairline
+under it, drawn once for the innermost target that owns the glyph, so nested targets never stack
+lines. The line is dotted when the target only shows a note, and solid when a click also opens a
+block elsewhere. Under the cursor the innermost target gets a filled box and the targets around it
+a thin outline. A table label with a note has a dotted underline. A click on a symbol pins its
+note and opens the defining block, and Back returns. Shift-click or Alt-click pins without
+moving, and a click inside the defining block pins only. Escape unpins.
+
+The note panel keeps an index under Used in, with the blocks that list the item in `usedIn` and
+the blocks whose formulas hover its key. The index helps a reader find uses. The text itself must
+still carry the references. The checker warns with `xref-missing` when block A lists B in `usedIn`
+and the text of B neither links `[[A]]` nor hovers a symbol whose defining block is A. The message
+names B, the block A, and up to four keys A defines.
 
 ## Deviations
 
