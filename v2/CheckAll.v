@@ -13,7 +13,7 @@ From GV Require Import examples.LFFreshMany examples.LFClientServer examples.LFC
 From GV Require Import examples.LFController soup.SoupRun soup.SoupTau soup.LFAdequacy.
 From GV Require Import soup.LFCompose soup.LFTyped lockfree.FairRun.
 From GV Require Import examples.SemBranch static.Inversion relation.Ord relation.ExProp relation.Ranks examples.LFLink compat.Redex static.PointSubst.
-From GV Require Import examples.SinstStuck examples.SharedRoots.
+From GV Require Import examples.SinstStuck examples.SharedRoots static.Hiding.
 
 (** types/Points.v *)
 Print Assumptions pt_dual_dual.
@@ -25,6 +25,15 @@ Print Assumptions wchain_lt_wf.
 (** static/Typing.v *)
 Print Assumptions fptyped_wf.
 Print Assumptions fp_connect_join.
+Print Assumptions ptyped_wf.
+(** static/Hiding.v *)
+Print Assumptions swrestrict_iff.
+Print Assumptions typed_ren.
+Print Assumptions fptyped_ren.
+Print Assumptions join_vis.
+Print Assumptions connect_hidden.
+Print Assumptions ptyped_full.
+Print Assumptions fptyped_ptyped.
 (** static/Conservativity.v *)
 Print Assumptions d_conv.
 Print Assumptions dftyped_typed.
@@ -93,6 +102,11 @@ Print Assumptions live_fundamental_proc.
 Print Assumptions soundness.
 Print Assumptions live_soundness.
 Print Assumptions soundness_source.
+Print Assumptions sem_p_connect_h.
+Print Assumptions fundamental_proc_h.
+Print Assumptions live_fundamental_proc_h.
+Print Assumptions soundness_h.
+Print Assumptions live_soundness_h.
 (** examples/GuardEx.v *)
 Print Assumptions div_not_guarded.
 Print Assumptions pn_fix_not_guarded.
@@ -121,6 +135,8 @@ Print Assumptions cs_lftyped.
 Print Assumptions cs_lock_free.
 (** examples/LFClientServerSplit.v *)
 Print Assumptions cs_split_lock_free.
+Print Assumptions cs_split_typed.
+Print Assumptions cs_split_lock_free_h.
 (** examples/LFFactoryEx.v *)
 Print Assumptions fx_guarded.
 Print Assumptions fx_lftyped.
@@ -157,6 +173,9 @@ Print Assumptions lf_fundamental.
 Print Assumptions lf_soundness.
 Print Assumptions lf_soundness_run.
 Print Assumptions lf_soundness_padovani.
+Print Assumptions lf_p_connect_h.
+Print Assumptions lf_fundamental_h.
+Print Assumptions lf_soundness_h.
 (** lockfree/FairRun.v *)
 Print Assumptions fair_run_exists.
 Print Assumptions fair_run_exists_proc.
@@ -171,6 +190,7 @@ Print Assumptions opened_cons.
 Print Assumptions Tbad_not_cons.
 Print Assumptions sbv_deadlock_free.
 Print Assumptions sbv_rejected.
+Print Assumptions sbv_rejected_h.
 (** relation/Ord.v: ordinals and the transfinite fixpoint *)
 Print Assumptions olt_wf.
 Print Assumptions oadd_lt.
@@ -180,6 +200,10 @@ Print Assumptions wf_iff_wellfounded.
 (** examples/SinstStuck.v: session instantiation does not preserve typing *)
 Print Assumptions inv_chan_sty.
 Print Assumptions typed_sinst_false.
-(** examples/SharedRoots.v: the shared constants of P-Connect are not the roots of the cut *)
+(** examples/SharedRoots.v: the shared constants of P-Connect are not the roots of the cut, and hiding *)
 Print Assumptions shared_not_cut.
 Print Assumptions fact_needs_zero.
+Print Assumptions shared_hidden.
+Print Assumptions opposite_clash.
+Print Assumptions opposite_compose.
+Print Assumptions opposite_df.

@@ -30,7 +30,9 @@
                             constraint states y ≺ x̄ in Wa.
     - [sbv_thread_E], [sbv_deadlock_free] : the same for the variant
                             whose arms read their binder.
-    - [sbv_rejected]      : no world and no bound type the variant. *)
+    - [sbv_rejected]      : no world and no bound type the variant,
+                            in the full judgment and with hiding
+                            ([sbv_rejected_h]). *)
 
 From GV Require Export examples.Tools static.FundamentalProc compat.Redex.
 From GV Require Import static.Inversion cost.Exact.
@@ -610,9 +612,15 @@ Proof.
     eapply sw_lt_mono; [apply swext_join_r|exact Ha].
 Qed.
 
+(** With hiding the variant is rejected too: a hidden derivation is the
+    hiding of a full one ([ptyped_full]). *)
+Theorem sbv_rejected_h N W : ¬ ptyped N W ∅ sbv_config TUnit.
+Proof. intros H. destruct (ptyped_full _ _ _ _ _ H) as (W' & H' & _). exact (sbv_rejected N W' H'). Qed.
+
 Print Assumptions sb_thread_E.
 Print Assumptions sb_deadlock_free.
 Print Assumptions sbv_thread_E.
 Print Assumptions sbv_deadlock_free.
 Print Assumptions Tbad_not_cons.
 Print Assumptions sbv_rejected.
+Print Assumptions sbv_rejected_h.
