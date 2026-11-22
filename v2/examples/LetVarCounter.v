@@ -10,7 +10,7 @@
     from let x = e in x : T ([let_var_counter]), although Δ holds no
     existential and every context is contractive, the setting of
     [let_elim] (static/LetVar.v). There the type T1 of the binder is
-    the existential ∃ι. Unit. *)
+    the existential ∃ι. Unit, the one case [let_elim] leaves out. *)
 
 From GV Require Export static.LetVar examples.Tools.
 
