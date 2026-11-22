@@ -725,3 +725,24 @@ Lemma sinsts_repeat_end N k : sinsts N (repeat SEnd k).
 Proof.
   split; [split|intros _]; induction k; simpl; constructor; auto; done.
 Qed.
+
+(** [teq] is [skle] both ways. *)
+Lemma teq_skle_both A : ∀ B, teq A B → skle A B ∧ skle B A.
+Proof.
+  induction A as [|ub lb c A1 IH1 A2 IH2 a|A1 IH1 A2 IH2|A1 IH1 A2 IH2|n k C ub c A1 IH1|s x a m|lb n C A1 IH1];
+    intros [|ub' lb' c' B1 B2 a'|B1 B2|B1 B2|n' k' C' ub' c' B1|s' x' a' m'|lb' n' C' B1] H;
+    unfold teq in H; simpl in H; try done.
+  - split; constructor.
+  - destruct H as (-> & -> & -> & -> & H1 & H2).
+    destruct (IH1 _ H1), (IH2 _ H2). split; constructor; auto using fle_refl.
+  - destruct H as [H1 H2]. destruct (IH1 _ H1), (IH2 _ H2). split; constructor; auto.
+  - destruct H as [H1 H2]. destruct (IH1 _ H1), (IH2 _ H2). split; constructor; auto.
+  - destruct H as (-> & -> & -> & -> & -> & H). split; constructor; try apply fle_refl.
+    + destruct k'; simpl in *; [done|by left].
+    + destruct k'; simpl in *; [by apply teq_sym|by left].
+  - destruct H as (-> & -> & -> & H). split; constructor; auto using fle_refl, sequiv_sym.
+  - destruct H as (-> & -> & -> & H). destruct (IH1 _ H). split; constructor; auto.
+Qed.
+
+Lemma teq_skle A B : teq A B → skle A B.
+Proof. intros H. exact (proj1 (teq_skle_both A B H)). Qed.

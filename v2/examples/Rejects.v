@@ -272,3 +272,249 @@ Proof.
   intros H. apply fptyped_one in H as (ΘB & c & _ & _ & _ & _ & _ & _ & H & _).
   exact (rx_postpone_rejected _ _ _ _ _ _ _ _ H).
 Qed.
+
+(** ** rx-delegate
+
+      pass = !(f = λ⟨e, x, y⟩. let x = send ⟨e, x⟩ in let ⟨e, y⟩ = recv y in
+                              (force f) ⟨e, x, y⟩)
+      back = !(f = λ⟨x, y⟩. let ⟨e, x⟩ = recv x in let y = send ⟨e, y⟩ in
+                           (force f) ⟨x, y⟩)
+      main = let ⟨e, e′⟩ = new in let ⟨x, x′⟩ = new in let ⟨y, y′⟩ = new in
+             let ∗ = spawn (λ_. close e′) in
+             let ∗ = spawn (λ_. (force back) ⟨x′, y′⟩) in
+             (force pass) ⟨e, ⟨x, y⟩⟩
+
+    The thread of close e′ makes the session of e not idle. E-Send ages
+    the payload by 1, so pass sends e on x at a payload credit p_x below
+    the credit of its parameter e, and back sends the e it received on x′
+    at a payload credit p_y below p_x. The two ends of a channel have dual
+    sessions with the same payloads, so pass receives e on y at credit p_y
+    and passes it to the recursive call, which asks the parameter credit β:
+    β ≤ p_y < p_x < β. β is finite, because main passes e from a new
+    channel with finite tickets. *)
+
+Definition dl_pass : expr :=
+  EBox (Lam (LetP (Var 0) (LetP (Var 0) (ELet (ESend (Pair (Var 3) (Var 1)))
+    (LetP (ERecv (Var 1)) (App (EForce (Var 8)) (Pair (Var 1) (Pair (Var 2) (Var 0))))))))).
+
+Definition dl_back : expr :=
+  EBox (Lam (LetP (Var 0) (LetP (ERecv (Var 1)) (ELet (ESend (Pair (Var 1) (Var 2)))
+    (App (EForce (Var 6)) (Pair (Var 1) (Var 0))))))).
+
+Definition dl_main : expr :=
+  let_new (let_new (let_new (LetU (ESpawn (Lam (EClose (Var 7))))
+    (LetU (ESpawn (Lam (App (EForce dl_back) (Pair (Var 4) (Var 1)))))
+      (App (EForce dl_pass) (Pair (Var 7) (Pair (Var 4) (Var 1)))))))).
+
+(** One let ⟨c, c′⟩ = new of main: the two ends at their types C1, C2. *)
+Local Ltac new_block H S m1 m2 C1 C2 Hnew Htk :=
+  apply sk_letp_inv in H as (?nDx & ?nDx & ?nDx & ?nAx & ?nAx & ?nTx & ?ncx & ?ncx & ?nHsx & Hn & ?nHax & H & _);
+  apply sk_pair_inv in Hn as (?nDx & ?nDx & ?nDx & ?nBx & ?nBx & ?nBx & ?ncx & ?ncx & _ & Hn & _ & _ & Hag & HlA);
+  apply sk_new_inv in Hn as (S & m1 & m2 & _ & Htk & HlB);
+  apply sk_letu_inv in H as (?nDx & ?nDx & ?nDx & ?nTx & ?ncx & ?ncx & ?nHsx & _ & ?nHax & H & _);
+  apply sk_letp_inv in H as (?nDx & ?nDx & ?nDx & C1 & C2 & ?nTx & ?ncx & ?ncx & ?nHsx & Hq & ?nHax & H & _);
+  apply sk_var_anc in Hq; climb Hq; apply anc_top in Hq;
+  apply skle_prod_inv in HlA as [HlA _];
+  pose proof (skle_trans _ _ _ (skle_trans _ _ _ (skle_trans _ _ _ HlB (tage_skle _ _ _ Hag)) HlA) Hq) as Hnew;
+  clear Hag HlA HlB Hq.
+
+Lemma teq_skel_skle A B : teq A B → skle (skel A) (skel B) ∧ skle (skel B) (skel A).
+Proof. intros H. apply teq_skle_both. by apply eqT_skel. Qed.
+
+Lemma dual_seq_snd S m T R : unfoldS S = SSeq (SSnd m T) R → unfoldS (dual S) = SSeq (SRcv m T) (dual R).
+Proof. intros H. by rewrite <-dual_unfoldS, H. Qed.
+
+Lemma dual_seq_rcv S m T R : unfoldS S = SSeq (SRcv m T) R → unfoldS (dual S) = SSeq (SSnd m T) (dual R).
+Proof. intros H. by rewrite <-dual_unfoldS, H. Qed.
+
+Theorem rx_delegate_skel n Δ T c : ¬ sktyped (Some n) Δ dl_main T c.
+Proof.
+  intros H. unfold dl_main, let_new, ELet in H. simpl in H.
+  new_block H Se me me' E1 E2 HnE HtkE.
+  new_block H Sx mx mx' X1 X2 HnX HtkX.
+  new_block H Sy my my' Y1 Y2 HnY HtkY.
+  apply skle_prod_inv in HnE as [HE1 HE2].
+  apply skle_prod_inv in HnX as [HX1 HX2].
+  apply skle_prod_inv in HnY as [HY1 HY2].
+  (* spawn (λ_. close e′): e is not idle *)
+  apply sk_letu_inv in H as (Dqa1 & Dqa2 & Dqa2' & ? & ? & ? & Hsa & Hcl & Haa & H & _).
+  apply sk_spawn_inv in Hcl as (? & ? & ? & Hcl).
+  apply sk_abs_inv in Hcl as (Dqh0 & ? & ? & ? & ? & Hah0 & Hcl & _).
+  apply sk_close_inv in Hcl as (S0 & ? & ? & ? & HS0 & Hv0 & _).
+  apply sk_var_anc in Hv0. climb Hv0. apply anc_top in Hv0.
+  destruct (skle_sess_inv _ _ _ _ _ _ _ _ (skle_trans _ _ _ HE2 Hv0)) as [HdSe _].
+  assert (¬ idle Se) as HSe.
+  { intros HI. apply (end_not_idle S0 HS0). apply (idle_sequiv _ _ HdSe). by apply idle_dual_iff. }
+  (* spawn (λ_. (force back) ⟨x′, y′⟩) *)
+  apply sk_letu_inv in H as (Dqb1 & Dqb2 & Dqb2' & ? & ? & ? & Hsb & Hbk & Hab & H & _).
+  apply sk_spawn_inv in Hbk as (? & ? & ? & Hbk).
+  apply sk_abs_inv in Hbk as (Δhb & ? & ? & ? & ? & Hahb & Hbk & _).
+  apply sk_app_inv in Hbk as (Dqg1 & Dqg2 & Dqg2' & cgb & TargB & UrB & arB & cg1 & cg2 & Hsg & HfB & HagB & HpB & _ & _).
+  apply sk_force_inv in HfB as (kB & cbB' & UB' & ssB & cfB & HlenB & HssB & HboxB & HlRB).
+  assert (sktyped (Some n) Dqg1 dl_back (TBox 0 kB bcs0 None cbB' UB') cfB) as HboxB' by exact HboxB.
+  clear HboxB. unfold dl_back, ELet in HboxB'. simpl in HboxB'.
+  apply sk_box_inv in HboxB' as (kB0 & cbB & UB & _ & HbodyB & HblB).
+  apply skle_box_l in HblB as (? & ? & [= -> -> ->] & _ & HbxB).
+  apply sk_pair_inv in HpB as (Dqh1 & Dqh2 & Dqh2' & Q1 & Q1' & Q2 & ch1 & ch2 & Hsh & Hvx & Hah & Hvy & HagQ & HlQ).
+  apply sk_var_anc in Hvx. climb Hvx. apply anc_top in Hvx.
+  apply sk_var_anc in Hvy. climb Hvy. apply anc_top in Hvy.
+  specialize (HbodyB ssB HlenB HssB).
+  pose proof (boxeq_sinst _ _ _ _ _ HbxB HlenB HssB) as HteqB.
+  apply skle_arr_r in HlRB as (? & RB & ? & ? & HRB & _ & _ & HTRB & _).
+  rewrite HRB in HteqB.
+  apply sk_abs_inv in HbodyB as (ΔhB & PB & ? & ? & ? & HahB & Hbb & HlUB).
+  apply skle_arr_l in HlUB as (? & PB' & ? & ? & HUB & _ & _ & HPB & _).
+  rewrite HUB in HteqB. apply teq_lolli_inv, teq_sym, teq_skle in HteqB.
+  pose proof (skle_trans _ _ _ (skle_trans _ _ _ (skle_trans _ _ _ HlQ HTRB) HteqB) HPB) as HQP.
+  apply skle_prod_l in HQP as (PB1 & PB2 & -> & HPB1 & HPB2).
+  pose proof (skle_trans _ _ _ (skle_trans _ _ _ (skle_trans _ _ _ HX2 Hvx) (tage_skle _ _ _ HagQ)) HPB1) as Hx'.
+  pose proof (skle_trans _ _ _ (skle_trans _ _ _ HY2 Hvy) HPB2) as Hy'.
+  clear HPB1 HPB2.
+  apply skle_sess_l in Hx' as (sB1 & ? & -> & HsB1 & _).
+  apply skle_sess_l in Hy' as (sB2 & ? & -> & HsB2 & _).
+  (* the body of back: λ⟨x, y⟩. let ⟨e, x⟩ = recv x in send ⟨e, y⟩ … *)
+  apply sk_letp_inv in Hbb as (Dqk1 & Dqk2 & Dqk2' & K1 & K2 & ? & ? & ? & Hsk & Hvk & Hak & Hbb & _).
+  apply sk_var_anc in Hvk. climb Hvk. apply anc_top in Hvk.
+  apply skle_prod_inv in Hvk as [HK1 HK2].
+  apply skle_sess_l in HK1 as (sK1 & ? & -> & HsK1 & _).
+  apply skle_sess_l in HK2 as (sK2 & ? & -> & HsK2 & _).
+  apply sk_letp_inv in Hbb as (Dqr1 & Dqr2 & Dqr2' & V1 & V2 & ? & ? & ? & Hsr & Hr & Har & Hbb & _).
+  apply sk_recv_inv in Hr as (S0b & mb & Tpay & ? & ? & ? & ? & HSb & Hrv & HlRv & _).
+  apply sk_var_anc in Hrv. climb Hrv. apply anc_top in Hrv.
+  apply skle_sess_inv in Hrv as [HsKb _].
+  apply skle_prod_inv in HlRv as [HTpay _].
+  apply sk_letp_inv in Hbb as (Dqs1 & Dqs2 & Dqs2' & ? & ? & ? & ? & ? & Hss1 & Hsd & Has1 & _ & _).
+  apply sk_pair_inv in Hsd as (Dqs3 & Dqs4 & Dqs4' & ? & ? & ? & ? & ? & Hss3 & Hsd & _ & _ & _ & _).
+  apply sk_send_inv in Hsd as (S0q & mq & Qpay & ? & ? & ? & Tpb & Tpb' & ? & HSq & Hsp & HagTb & HlTb & _ & _).
+  apply sk_pair_inv in Hsp as (Dqt1 & Dqt2 & Dqt2' & Z1 & Z1' & Z2 & ? & ? & Hst & Hve & Hat & Hvq & HagZ & HlZ).
+  apply sk_var_anc in Hve. climb Hve. apply anc_top in Hve.
+  apply sk_var_anc in Hvq. climb Hvq. apply anc_top in Hvq.
+  apply skle_prod_inv in HlZ as [HZ1 HZ2].
+  pose proof (skle_trans _ _ _ (skle_trans _ _ _ (skle_trans _ _ _ HTpay Hve) (tage_skle _ _ _ HagZ)) HZ1) as HTb.
+  pose proof (skle_sess_inv _ _ _ _ _ _ _ _ (skle_trans _ _ _ Hvq HZ2)) as Hq'.
+  (* (force pass) ⟨e, ⟨x, y⟩⟩ *)
+  apply sk_app_inv in H as (Dqc1 & Dqc2 & Dqc2' & cf & Targ & Ur & ar & cc1 & cc2 & Hsc & Hf & Hac & Hp & _ & _).
+  apply sk_force_inv in Hf as (k & cb' & U' & ss & cfo & Hlen & Hss & Hbox & HlR).
+  assert (sktyped (Some n) Dqc1 dl_pass (TBox 0 k bcs0 None cb' U') cfo) as Hbox' by exact Hbox.
+  clear Hbox. unfold dl_pass, ELet in Hbox'. simpl in Hbox'.
+  apply sk_box_inv in Hbox' as (k0 & cb & U & _ & Hbody & Hbl).
+  apply skle_box_l in Hbl as (? & ? & [= -> -> ->] & _ & Hbx).
+  apply sk_pair_inv in Hp as (Dqd1 & Dqd2 & Dqd2' & Ge & Ge' & G2 & ? & ? & Hsd & Hve' & Had & Hp & HagG & HlG).
+  apply sk_var_anc in Hve'. climb Hve'. apply anc_top in Hve'.
+  apply sk_pair_inv in Hp as (Dqe1 & Dqe2 & Dqe2' & Gx & Gx' & Gy & ? & ? & Hse & Hvx2 & Hae & Hvy2 & HagGx & HlG2).
+  apply sk_var_anc in Hvx2. climb Hvx2. apply anc_top in Hvx2.
+  apply sk_var_anc in Hvy2. climb Hvy2. apply anc_top in Hvy2.
+  specialize (Hbody ss Hlen Hss).
+  pose proof (boxeq_sinst _ _ _ _ _ Hbx Hlen Hss) as Hteq.
+  apply skle_arr_r in HlR as (? & R & ? & ? & HR & _ & _ & HTR & _).
+  rewrite HR in Hteq.
+  apply sk_abs_inv in Hbody as (Δh & P & ? & ? & ? & Hah' & Hb & HlU).
+  apply skle_arr_l in HlU as (c' & P' & U1' & a' & HU & _ & _ & HPP & _).
+  rewrite HU in Hteq. apply teq_lolli_inv, teq_sym, teq_skle in Hteq.
+  pose proof (skle_trans _ _ _ (skle_trans _ _ _ HlG HTR) Hteq) as HGP'.
+  apply skle_prod_l in HGP' as (P1' & P23' & -> & HP1' & HP23').
+  apply skle_prod_l in HPP as (P1 & P23 & -> & HPP1 & HPP23).
+  pose proof (skle_trans _ _ _ (skle_trans _ _ _ (skle_trans _ _ _ HE1 Hve') (tage_skle _ _ _ HagG)) HP1') as He1.
+  apply skle_sess_l in He1 as (sP1' & β & -> & HsP1' & Hβme).
+  apply skle_sess_l in HPP1 as (sP1 & pe & -> & HsP1 & Hpeβ).
+  pose proof (skle_trans _ _ _ HlG2 (skle_trans _ _ _ HP23' HPP23)) as HG23.
+  apply skle_prod_l in HG23 as (P2 & P3 & -> & HP2 & HP3).
+  pose proof (skle_trans _ _ _ (skle_trans _ _ _ (skle_trans _ _ _ HX1 Hvx2) (tage_skle _ _ _ HagGx)) HP2) as Hx2.
+  pose proof (skle_trans _ _ _ (skle_trans _ _ _ HY1 Hvy2) HP3) as Hy2.
+  clear HP2 HP3.
+  apply skle_sess_l in Hx2 as (sP2 & ? & -> & HsP2 & _).
+  apply skle_sess_l in Hy2 as (sP3 & ? & -> & HsP3 & _).
+  apply sinst_inv_lolli in HU as (Ap0 & Bp0 & -> & HA0 & _).
+  symmetry in HA0. apply sinst_inv_prod in HA0 as (Ap01 & Ap02 & -> & HA01 & _).
+  symmetry in HA01. apply sinst_inv_sess in HA01 as (s0 & -> & _).
+  (* the body of pass: λ⟨e, ⟨x, y⟩⟩ *)
+  apply sk_letp_inv in Hb as (Dq1 & Dq2 & Dq2' & T1 & T23 & ? & ? & ? & Hs1 & Hv & Ha1 & Hb & _).
+  apply sk_var_anc in Hv. climb Hv. apply anc_top in Hv.
+  apply skle_prod_inv in Hv as [HT1 HT23].
+  apply skle_sess_l in HT1 as (sT1 & t1 & -> & HsT1 & Ht1).
+  apply sk_letp_inv in Hb as (Dq3 & Dq4 & Dq4' & W1 & W2 & ? & ? & ? & Hs3 & Hv & Ha3 & Hb & _).
+  apply sk_var_anc in Hv. climb Hv. apply anc_top in Hv.
+  destruct (skle_prod_inv _ _ _ _ (skle_trans _ _ _ HT23 Hv)) as [HW1 HW2].
+  apply skle_sess_l in HW1 as (sW1 & ? & -> & HsW1 & _).
+  apply skle_sess_l in HW2 as (sW2 & ? & -> & HsW2 & _).
+  (* let x = send ⟨e, x⟩ *)
+  apply sk_letp_inv in Hb as (Dq5 & Dq6 & Dq6' & ? & ? & ? & ? & ? & Hs5 & Hsd' & Ha5 & Hb & _).
+  apply sk_pair_inv in Hsd' as (Dq7 & Dq8 & Dq8' & ? & ? & ? & ? & ? & Hs7 & Hsd' & _ & _ & _ & _).
+  apply sk_send_inv in Hsd' as (S0x & mx0 & Tpx & ? & ? & ? & Tp & Tp' & ? & HSx & Hsp & HagTp & HlTp & _ & _).
+  apply sk_pair_inv in Hsp as (Dq9 & Dq10 & Dq10' & Ze & Ze' & Zx & ? & ? & Hs9 & Hve2 & Ha9 & Hvx3 & HagZe & HlZe).
+  apply sk_var_anc in Hve2. climb Hve2. apply anc_top in Hve2.
+  apply sk_var_anc in Hvx3. climb Hvx3. apply anc_top in Hvx3.
+  apply skle_prod_inv in HlZe as [HZe HZx].
+  pose proof (skle_trans _ _ _ (skle_trans _ _ _ Hve2 (tage_skle _ _ _ HagZe)) HZe) as HTp.
+  apply skle_sess_l in HTp as (sTp & tp & -> & HsTp & Htp).
+  destruct (skle_sess_inv _ _ _ _ _ _ _ _ (skle_trans _ _ _ Hvx3 HZx)) as [HsX0 _].
+  (* let ⟨e, y⟩ = recv y *)
+  apply sk_letu_inv in Hb as (Dq11 & Dq12 & Dq12' & ? & ? & ? & Hs11 & _ & Ha11 & Hb & _).
+  apply sk_letp_inv in Hb as (Dq13 & Dq14 & Dq14' & J1 & J2 & ? & ? & ? & Hs13 & Hry & Ha13 & Hb & _).
+  apply sk_recv_inv in Hry as (S0y & my0 & Qy & ? & ? & ? & ? & HSy & Hry & HlRy & _).
+  apply sk_var_anc in Hry. climb Hry. apply anc_top in Hry.
+  apply skle_sess_inv in Hry as [HsY0 _].
+  apply skle_prod_inv in HlRy as [HQy _].
+  (* (force f) ⟨e, x, y⟩ *)
+  apply sk_app_inv in Hb as (Dq15 & Dq16 & Dq16' & ? & Targ3 & ? & ? & ? & ? & Hs15 & Hf3 & Ha15 & Hp3 & _ & _).
+  apply sk_force_inv in Hf3 as (k3 & cb3 & U3 & ss3 & ? & _ & _ & Hfv & HlR3).
+  apply sk_var_anc in Hfv. climb Hfv. apply anc_top in Hfv.
+  apply skle_box_l in Hfv as (? & ? & [= -> -> ->] & _ & Hbx3).
+  apply sk_pair_inv in Hp3 as (Dq17 & Dq18 & Dq18' & G1 & G1' & ? & ? & ? & Hs17 & Hvg & Ha17 & _ & HagG1 & HlG1).
+  apply sk_var_anc in Hvg. climb Hvg. apply anc_top in Hvg.
+  apply boxeq_teq, teq_lolli_l in Hbx3 as (A'' & B'' & -> & HA'' & _).
+  apply teq_prod_l in HA'' as (A1'' & A2'' & -> & HA1'' & _).
+  apply teq_sess_l in HA1'' as (s0' & -> & _).
+  simpl in HlR3. apply skle_arr_l in HlR3 as (? & ? & ? & ? & [= _ <- _ _] & _ & _ & HTarg3 & _).
+  apply skle_prod_r in HTarg3 as (Tg1 & Tg2 & -> & HTg1 & _).
+  apply skle_prod_inv in HlG1 as [HlG1 _].
+  pose proof (skle_trans _ _ _ (skle_trans _ _ _ (skle_trans _ _ _ (skle_trans _ _ _ HQy Hvg)
+    (tage_skle _ _ _ HagG1)) HlG1) HTg1) as HQβ.
+  apply skle_sess_r in HQβ as (sq & qy & HQy' & _ & Hβq).
+  (* e is not idle in pass and in back *)
+  assert (¬ idle sTp) as HnTp.
+  { intros HI. apply HSe. apply (idle_sequiv _ _ HsP1'), (idle_sequiv _ _ HsP1), (idle_sequiv _ _ HsT1).
+    by apply (idle_sequiv _ _ HsTp). }
+  apply tage_sess_nonidle in HagTp as [H1tp ->]; [|done].
+  apply skle_sess_l in HlTp as (spx & px & HTpx & HsTpx & Hpx).
+  (* the payload on x: p_x in pass and in back *)
+  assert (sequiv Sx S0x) as HSxX.
+  { eapply sequiv_trans; [exact HsP2|]. eapply sequiv_trans; [exact HsW1|exact HsX0]. }
+  destruct (sequiv_unfold_snd' _ _ _ _ _ HSxX HSx) as (Tx' & Rx' & HSxu & HTx').
+  assert (sequiv (dual Sx) S0b) as HSxB.
+  { eapply sequiv_trans; [exact HsB1|]. eapply sequiv_trans; [exact HsK1|exact HsKb]. }
+  destruct (sequiv_unfold_rcv' _ _ _ _ _ HSxB HSb) as (Tx'' & Rx'' & HSxu' & HTx'').
+  rewrite (dual_seq_snd _ _ _ _ HSxu) in HSxu'. injection HSxu' as <- <-.
+  destruct (teq_skel_skle _ _ (teq_trans _ _ _ (teq_sym _ _ HTx') HTx'')) as [Hpxb _].
+  rewrite HTpx in Hpxb.
+  pose proof (skle_trans _ _ _ Hpxb HTb) as HTb'.
+  apply skle_sess_l in HTb' as (sTb & tb & -> & HsTb & Htb).
+  assert (¬ idle sTb) as HnTb.
+  { intros HI. apply HnTp. apply (idle_sequiv _ _ HsTpx). by apply (idle_sequiv _ _ HsTb). }
+  apply tage_sess_nonidle in HagTb as [H1tb ->]; [|done].
+  (* the payload on y: p_y in back and in pass *)
+  assert (sequiv Sy S0y) as HSyY.
+  { eapply sequiv_trans; [exact HsP3|]. eapply sequiv_trans; [exact HsW2|exact HsY0]. }
+  destruct (sequiv_unfold_rcv' _ _ _ _ _ HSyY HSy) as (Qy' & Ry' & HSyu & HQy1).
+  assert (sequiv (dual Sy) S0q) as HSyB.
+  { eapply sequiv_trans; [exact HsB2|]. eapply sequiv_trans; [exact HsK2|exact (proj1 Hq')]. }
+  destruct (sequiv_unfold_snd' _ _ _ _ _ HSyB HSq) as (Qy'' & Ry'' & HSyu' & HQy2).
+  rewrite (dual_seq_rcv _ _ _ _ HSyu) in HSyu'. injection HSyu' as <- <-.
+  destruct (teq_skel_skle _ _ (teq_trans _ _ _ (teq_sym _ _ HQy1) HQy2)) as [_ Hqb].
+  rewrite HQy' in Hqb.
+  pose proof (skle_trans _ _ _ HlTb Hqb) as Hq.
+  apply skle_sess_inv in Hq as (_ & Hqyb & _).
+  (* β ≤ p_y ≤ t_b − 1 ≤ p_x − 1 ≤ t_p − 2 ≤ t_1 − 2 ≤ p_e − 2 ≤ β − 2, β ≤ me finite *)
+  clear - HtkE Hβme Hpeβ Ht1 Htp H1tp Hpx Htb H1tb Hqyb Hβq.
+  unfold tsum_ok in HtkE.
+  destruct me, me', β, pe, t1, tp, px, tb, qy; simpl in *; lia.
+Qed.
+
+Theorem rx_delegate_rejected n W Θ Γ Δ F T c : ¬ typed W (Some n) Θ Γ Δ F dl_main T c.
+Proof. intros H. apply typed_skel in H. exact (rx_delegate_skel _ _ _ _ H). Qed.
+
+Corollary rx_delegate_proc_rejected n W T : ¬ fptyped (Some n) W ∅ (∅, {[+ dl_main +]}) T.
+Proof.
+  intros H. apply fptyped_one in H as (ΘB & c & _ & _ & _ & _ & _ & _ & H & _).
+  exact (rx_delegate_rejected _ _ _ _ _ _ _ _ H).
+Qed.
