@@ -242,8 +242,8 @@ main: c by new at ρ, e by new at ρ·1, force between at (ρ, ρ·1)`,
     code: `many = !(f = λp. let ⟨c, e⟩ = p in
                  let ⟨d, d′⟩ = new in         -- d at δ
                  let ∗ = spawn (λu. let ∗ = u in
-                                     let ⟨v, d′⟩ = recv d′ in let ∗ = v in
-                                     let ⟨w, d′⟩ = recv d′ in let ∗ = w in close d′) in
+                      let ⟨v, d′⟩ = recv d′ in let ∗ = v in
+                      let ⟨w, d′⟩ = recv d′ in let ∗ = w in close d′) in
                  let ∗ = close c in
                  let ∗ = close (send ⟨∗, send ⟨∗, d⟩⟩) in close e)
 -- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾} ∪ {δ+k ≺ κ, δ+k ≺ κ‾ | k},  δ = ι·0`,
@@ -257,7 +257,8 @@ mk₁  = !(f = λp. let ⟨c, c′⟩ = new in
                 let ∗ = spawn (λv. let ∗ = v in close (send ⟨∗, c⟩)) in ⟨p, c′⟩)
 main = let p = (force mk₀) ∗ in let ⟨p, q⟩ = (force mk₁) p in
        let ∗ = recvclose p in recvclose q
--- mk₀ places c at a fresh ρ with C(ρ) = {ρ‾ ≺ ρ·0, ρ‾⁺ ≺ ρ·0}, mk₁ at ι·0 for p at ι
+-- mk₀ places c at a fresh ρ with C(ρ) = {ρ‾ ≺ ρ·0, ρ‾⁺ ≺ ρ·0}
+-- mk₁ places c at ι·0 for p at ι
 -- mk₀ : □(∗ ⊸ ∃^⊥ ι. C(ι). (?∗.Close)_ι‾)`,
     shows: "The first call creates at a fresh root and the second at a field of the end it receives, two typings of the same creation.",
     rocq: 'examples/FactoryEx.v: fx_typed; examples/LFFactoryEx.v: fx_lftyped, fx_lock_free',
@@ -278,7 +279,8 @@ main = let ⟨e, e′⟩ = new in (force ring) ⟨e, e′⟩`,
     accepts: { df: { ok: true, rocq: 'rg_dftyped, rg_typed' }, live: { ok: true, rocq: 'rg_dftyped, rg_guarded' }, lf: { ok: true, N: 4, rocq: 'rg_lftyped, rg_lock_free' } } },
   { id: 'ex-close', title: 'Two threads closing one channel', modes: ['lf'],
     code: `cl c⁺ ∥ cl c⁻,   cl o = close o
--- each thread by P-Term at every finite N over its end, cut c by P-Connect at exactly dual types`,
+-- each thread by P-Term at every finite N over its end
+-- the cut on c by P-Connect at exactly dual types`,
     shows: "The smallest use of P-Term and P-Connect, cutting $c$ at exactly dual types in a world without facts.",
     rocq: 'examples/LFClose.v: cl_lftyped, cl_lock_free',
     accepts: { lf: { ok: true, N: 'every', rocq: 'cl_lftyped, cl_lock_free' } } },
@@ -363,10 +365,11 @@ link ⟨c⁺, d⁻⟩          -- c⁺ at x, d⁻ at x̄, both at credit N`,
     rocq: 'examples/LFLink.v: lk_new, lk_typed, lk_ok',
     accepts: { lf: { ok: true, N: 'every', rocq: 'lk_typed, lk_ok' } } },
   { id: 'ex-copycat', title: 'Copycat, a forwarder at independent points', modes: ['df', 'live', 'lf'],
-    code: `fwd o₁ o₂ = let ⟨v, o₁⟩ = recv o₁ in let o₂ = send ⟨v, o₂⟩ in     -- o₁ : S_x, o₂ : S̄_y
-            let ⟨w, o₂⟩ = recv o₂ in let o₁ = send ⟨w, o₁⟩ in     -- S = ?∗.!∗.Close
+    code: `-- o₁ : S_x, o₂ : S̄_y, S = ?∗.!∗.Close
+fwd o₁ o₂ = let ⟨v, o₁⟩ = recv o₁ in let o₂ = send ⟨v, o₂⟩ in
+            let ⟨w, o₂⟩ = recv o₂ in let o₁ = send ⟨w, o₁⟩ in
             let ∗ = close o₁ in close o₂
-ring      = fwd(o₁, o₂) ∥ fwd(ō₂, ō₁)                           -- cut on both channels`,
+ring      = fwd(o₁, o₂) ∥ fwd(ō₂, ō₁)        -- cut on both channels`,
     lead: 'A forwarder that holds its two ends at independent points types, and two forwarders in a ring do not.',
     shows: String.raw`Each action of the forwarder asks its point below the dual point of the other end. The five facts are $x \prec \overline{y}$, $y \prec \overline{x^{+}}$, $y^{+} \prec \overline{x^{+}}$, $x^{+} \prec \overline{y^{++}}$ and $x^{++} \prec \overline{y^{++}}$, and [[p-typing|P-Term]] types the forwarder over a world that holds these facts. A process with the forwarder behind one of its ends types at the same interface type when the root of $y$ is no constant of its world. A partner, the forwarder and a second partner compose to a deadlock-free process by [[th-sound]]. A received end as payload is $\eta$-expanded through a channel at the field $y\cdot 0$, and the forwarder extends to each protocol of unit messages that ends in $\mathsf{Close}$. In the ring the first forwarder needs $x \prec \overline{y}$ and the second $\overline{y} \prec x$, so no world, bound or type types the ring.`,
     rocq: 'examples/Copycat.v: fwd_term, fwd_expand, fwd_config_typed, fwd_config_deadlock_free, fwdh_term, fwdh_config_typed, fwdh_config_deadlock_free, fwdp_term, fwdp_expand, fwdp_sem, fwd_needs, ring_rejected, ring_rejected_full',
@@ -392,15 +395,17 @@ wk   = !(f = λw. let ⟨c₁, c₁′⟩ = new in let ⟨c₂, c₂′⟩ = new
     rocq: 'examples/ForkJoin.v: fj_dftyped, fj_term, fj_deadlock_free, fct_term, fib_term, fjr_acyc, fjr_dftyped, fjr_term, fjr_deadlock_free, fct_dftyped, fct_deadlock_free, fib_dftyped, fib_deadlock_free, fj_wait_needs',
     accepts: { df: { ok: true, rocq: 'fjr_dftyped, fjr_deadlock_free' } } },
   { id: 'ex-shared', title: 'Private constants and hiding', modes: ['df', 'live', 'lf'],
-    code: `P(c, d)  = (let ∗ = close c⁺ in close d⁺) ∥ (let ∗ = close c⁻ in close d⁻)   -- c at 0, d at 0·0
-P′(e, f) = (let ∗ = close f⁺ in close e⁺) ∥ (let ∗ = close f⁻ in close e⁻)   -- e at 0, f at 0·0
-main     = P(c, d) ∥ P′(e, f)                                                -- over the empty cut`,
+    code: `-- c and e at the constant 0, d and f at its field 0·0
+P(c, d)  = (let ∗ = close c⁺ in close d⁺) ∥ (let ∗ = close c⁻ in close d⁻)
+P′(e, f) = (let ∗ = close f⁺ in close e⁺) ∥ (let ∗ = close f⁻ in close e⁻)
+main     = P(c, d) ∥ P′(e, f)          -- over the empty cut`,
     lead: 'Two components may use the same private constant in opposite orders and still compose, because process typing hides private constants.',
     shows: String.raw`Each component uses the constant $0$ privately. The first closes of $P(c, d)$ ask $0 \prec \overline{0\cdot 0}$ and $\overline{0} \prec 0\cdot 0$, and $P'(e, f)$ orders the two points the other way round. The whole worlds of the two components join to a cycle at $0$. With [[p-typing|hiding]] each component has a world with no constant, because its interface is empty, so the composition types and is deadlock free. The soundness proof renames the private constants of one component apart from the other.`,
     rocq: 'examples/SharedRoots.v: comp_typed, shared_not_cut, fact_needs_zero, hcomp_typed, shared_hidden, opposite_clash, opposite_compose, opposite_df',
     accepts: { df: { ok: true, rocq: 'opposite_compose, opposite_df' } } },
   { id: 'ex-gennew', title: 'Creations with exits', modes: ['df', 'live', 'lf'],
-    code: `te = let ⟨a, a′⟩ = new in     -- a at ρ, facts ρ·0 ≺ ρ·2 ≺ ρ̄, ρ·1 ≺ ρ·3 ≺ ρ̄, ρ·0 ≺ (ρ·1)‾
+    code: `-- a at ρ with the facts ρ·0 ≺ ρ·2 ≺ ρ̄, ρ·1 ≺ ρ·3 ≺ ρ̄ and ρ·0 ≺ (ρ·1)‾
+te = let ⟨a, a′⟩ = new in
      let ⟨e₁, e₁′⟩ = new in   -- at the field ρ·0
      let ⟨e₂, e₂′⟩ = new in   -- at the field ρ·1
      let ∗ = spawn (λu. close e₁′) in let ∗ = spawn (λu. close e₂′) in

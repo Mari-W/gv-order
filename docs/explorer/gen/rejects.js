@@ -14,8 +14,10 @@ main = let ⟨a, a′⟩ = new in let ⟨b, b′⟩ = new in
     rocq: 'to be mechanized',
     accepts: { lf: { ok: false, part: 'aging' } } },
   { id: 'rx-delegate', title: 'Endless delegation, an end that travels forever', modes: ['lf'],
-    code: `pass = !(f = λ⟨e, x, y⟩. let x = send ⟨e, x⟩ in let ⟨e, y⟩ = recv y in (force f) ⟨e, x, y⟩)
-back = !(f = λ⟨x, y⟩. let ⟨e, x⟩ = recv x in let y = send ⟨e, y⟩ in (force f) ⟨x, y⟩)
+    code: `pass = !(f = λ⟨e, x, y⟩. let x = send ⟨e, x⟩ in let ⟨e, y⟩ = recv y in
+               (force f) ⟨e, x, y⟩)
+back = !(f = λ⟨x, y⟩. let ⟨e, x⟩ = recv x in let y = send ⟨e, y⟩ in
+               (force f) ⟨x, y⟩)
 main = let ⟨e, e′⟩ = new in let ⟨x, x′⟩ = new in let ⟨y, y′⟩ = new in
        let ∗ = spawn (λ_. close e′) in       -- waits for e forever
        let ∗ = spawn (λ_. (force back) ⟨x′, y′⟩) in
@@ -25,7 +27,7 @@ main = let ⟨e, e′⟩ = new in let ⟨x, x′⟩ = new in let ⟨y, y′⟩ =
     accepts: { lf: { ok: false, part: 'payload credit' } } },
   { id: 'rx-relink', title: 'Link refresh, a waiting thread that always faces a fresh end', modes: ['lf'],
     code: `refresh = !(f = λ⟨w, k⟩. let ⟨c, c′⟩ = new in
-                     let ∗ = link ⟨w, c⟩ in          -- the waiting thread now talks to c′
+                     let ∗ = link ⟨w, c⟩ in          -- the waiting end now faces c′
                      let k = send ⟨∗, k⟩ in           -- one step on another channel
                      (force f) ⟨c′, k⟩)
 sink    = !(f = λk. let ⟨u, k⟩ = recv k in let ∗ = u in (force f) k)

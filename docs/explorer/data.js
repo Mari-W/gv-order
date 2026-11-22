@@ -12809,7 +12809,7 @@ window.MAP = {
     "df",
     "lf"
    ],
-   "code": "many = !(f = λp. let ⟨c, e⟩ = p in\n                 let ⟨d, d′⟩ = new in         -- d at δ\n                 let ∗ = spawn (λu. let ∗ = u in\n                                     let ⟨v, d′⟩ = recv d′ in let ∗ = v in\n                                     let ⟨w, d′⟩ = recv d′ in let ∗ = w in close d′) in\n                 let ∗ = close c in\n                 let ∗ = close (send ⟨∗, send ⟨∗, d⟩⟩) in close e)\n-- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾} ∪ {δ+k ≺ κ, δ+k ≺ κ‾ | k},  δ = ι·0",
+   "code": "many = !(f = λp. let ⟨c, e⟩ = p in\n                 let ⟨d, d′⟩ = new in         -- d at δ\n                 let ∗ = spawn (λu. let ∗ = u in\n                      let ⟨v, d′⟩ = recv d′ in let ∗ = v in\n                      let ⟨w, d′⟩ = recv d′ in let ∗ = w in close d′) in\n                 let ∗ = close c in\n                 let ∗ = close (send ⟨∗, send ⟨∗, d⟩⟩) in close e)\n-- C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾} ∪ {δ+k ≺ κ, δ+k ≺ κ‾ | k},  δ = ι·0",
    "shows": "The new end $d$ sends twice and closes while the box holds $e$. The constraint of the box is infinite, one pair of facts for each offset of $\\delta$, so $d$ may act at $\\delta$, $\\delta^{+}$ and $\\delta^{++}$ below the point $\\kappa$ of $e$.",
    "rocq": "examples/FreshMany.v: fm_typed; examples/LFFreshMany.v: fm_lftyped, fm_lock_free",
    "accepts": {
@@ -12836,7 +12836,7 @@ window.MAP = {
     "df",
     "lf"
    ],
-   "code": "mk₀  = !(f = λu. let ∗ = u in let ⟨c, c′⟩ = new in\n                let ∗ = spawn (λv. let ∗ = v in close (send ⟨∗, c⟩)) in c′)\nmk₁  = !(f = λp. let ⟨c, c′⟩ = new in\n                let ∗ = spawn (λv. let ∗ = v in close (send ⟨∗, c⟩)) in ⟨p, c′⟩)\nmain = let p = (force mk₀) ∗ in let ⟨p, q⟩ = (force mk₁) p in\n       let ∗ = recvclose p in recvclose q\n-- mk₀ places c at a fresh ρ with C(ρ) = {ρ‾ ≺ ρ·0, ρ‾⁺ ≺ ρ·0}, mk₁ at ι·0 for p at ι\n-- mk₀ : □(∗ ⊸ ∃^⊥ ι. C(ι). (?∗.Close)_ι‾)",
+   "code": "mk₀  = !(f = λu. let ∗ = u in let ⟨c, c′⟩ = new in\n                let ∗ = spawn (λv. let ∗ = v in close (send ⟨∗, c⟩)) in c′)\nmk₁  = !(f = λp. let ⟨c, c′⟩ = new in\n                let ∗ = spawn (λv. let ∗ = v in close (send ⟨∗, c⟩)) in ⟨p, c′⟩)\nmain = let p = (force mk₀) ∗ in let ⟨p, q⟩ = (force mk₁) p in\n       let ∗ = recvclose p in recvclose q\n-- mk₀ places c at a fresh ρ with C(ρ) = {ρ‾ ≺ ρ·0, ρ‾⁺ ≺ ρ·0}\n-- mk₁ places c at ι·0 for p at ι\n-- mk₀ : □(∗ ⊸ ∃^⊥ ι. C(ι). (?∗.Close)_ι‾)",
    "shows": "Each box creates a channel, spawns a sender on one end and returns the other end. $\\mathsf{mk}_0$ places the channel at a fresh root and returns it packed in an existential. $\\mathsf{mk}_1$ places it at a field of the end it receives. The two boxes type one creation in the two ways E-New allows.",
    "rocq": "examples/FactoryEx.v: fx_typed; examples/LFFactoryEx.v: fx_lftyped, fx_lock_free",
    "accepts": {
@@ -12889,7 +12889,7 @@ window.MAP = {
    "modes": [
     "lf"
    ],
-   "code": "cl c⁺ ∥ cl c⁻,   cl o = close o\n-- each thread by P-Term at every finite N over its end, cut c by P-Connect at exactly dual types",
+   "code": "cl c⁺ ∥ cl c⁻,   cl o = close o\n-- each thread by P-Term at every finite N over its end\n-- the cut on c by P-Connect at exactly dual types",
    "shows": "Two threads each close one end of $c$. P-Term types each thread over its end, and P-Connect cuts $c$ at dual types in a world without facts. It is the smallest use of the two process rules.",
    "rocq": "examples/LFClose.v: cl_lftyped, cl_lock_free",
    "accepts": {
@@ -13091,7 +13091,7 @@ window.MAP = {
     "df",
     "lf"
    ],
-   "code": "fwd o₁ o₂ = let ⟨v, o₁⟩ = recv o₁ in let o₂ = send ⟨v, o₂⟩ in     -- o₁ : S_x, o₂ : S̄_y\n            let ⟨w, o₂⟩ = recv o₂ in let o₁ = send ⟨w, o₁⟩ in     -- S = ?∗.!∗.Close\n            let ∗ = close o₁ in close o₂\nring      = fwd(o₁, o₂) ∥ fwd(ō₂, ō₁)                           -- cut on both channels",
+   "code": "-- o₁ : S_x, o₂ : S̄_y, S = ?∗.!∗.Close\nfwd o₁ o₂ = let ⟨v, o₁⟩ = recv o₁ in let o₂ = send ⟨v, o₂⟩ in\n            let ⟨w, o₂⟩ = recv o₂ in let o₁ = send ⟨w, o₁⟩ in\n            let ∗ = close o₁ in close o₂\nring      = fwd(o₁, o₂) ∥ fwd(ō₂, ō₁)        -- cut on both channels",
    "lead": "A forwarder that holds its two ends at independent points types, and two forwarders in a ring do not.",
    "shows": "Each action of the forwarder asks its point below the dual point of the other end. The five facts are $x \\prec \\overline{y}$, $y \\prec \\overline{x^{+}}$, $y^{+} \\prec \\overline{x^{+}}$, $x^{+} \\prec \\overline{y^{++}}$ and $x^{++} \\prec \\overline{y^{++}}$, and [[p-typing|P-Term]] types the forwarder over a world that holds these facts. A process with the forwarder behind one of its ends types at the same interface type when the root of $y$ is no constant of its world. A partner, the forwarder and a second partner compose to a deadlock-free process by [[th-sound]]. A received end as payload is $\\eta$-expanded through a channel at the field $y\\cdot 0$, and the forwarder extends to each protocol of unit messages that ends in $\\mathsf{Close}$. In the ring the first forwarder needs $x \\prec \\overline{y}$ and the second $\\overline{y} \\prec x$, so no world, bound or type types the ring.",
    "rocq": "examples/Copycat.v: fwd_term, fwd_expand, fwd_config_typed, fwd_config_deadlock_free, fwdh_term, fwdh_config_typed, fwdh_config_deadlock_free, fwdp_term, fwdp_expand, fwdp_sem, fwd_needs, ring_rejected, ring_rejected_full",
@@ -13146,7 +13146,7 @@ window.MAP = {
     "df",
     "lf"
    ],
-   "code": "P(c, d)  = (let ∗ = close c⁺ in close d⁺) ∥ (let ∗ = close c⁻ in close d⁻)   -- c at 0, d at 0·0\nP′(e, f) = (let ∗ = close f⁺ in close e⁺) ∥ (let ∗ = close f⁻ in close e⁻)   -- e at 0, f at 0·0\nmain     = P(c, d) ∥ P′(e, f)                                                -- over the empty cut",
+   "code": "-- c and e at the constant 0, d and f at its field 0·0\nP(c, d)  = (let ∗ = close c⁺ in close d⁺) ∥ (let ∗ = close c⁻ in close d⁻)\nP′(e, f) = (let ∗ = close f⁺ in close e⁺) ∥ (let ∗ = close f⁻ in close e⁻)\nmain     = P(c, d) ∥ P′(e, f)          -- over the empty cut",
    "lead": "Two components may use the same private constant in opposite orders and still compose, because process typing hides private constants.",
    "shows": "Each component uses the constant $0$ privately. The first closes of $P(c, d)$ ask $0 \\prec \\overline{0\\cdot 0}$ and $\\overline{0} \\prec 0\\cdot 0$, and $P'(e, f)$ orders the two points the other way round. The whole worlds of the two components join to a cycle at $0$. With [[p-typing|hiding]] each component has a world with no constant, because its interface is empty, so the composition types and is deadlock free. The soundness proof renames the private constants of one component apart from the other.",
    "rocq": "examples/SharedRoots.v: comp_typed, shared_not_cut, fact_needs_zero, hcomp_typed, shared_hidden, opposite_clash, opposite_compose, opposite_df",
@@ -13164,7 +13164,7 @@ window.MAP = {
     "df",
     "lf"
    ],
-   "code": "te = let ⟨a, a′⟩ = new in     -- a at ρ, facts ρ·0 ≺ ρ·2 ≺ ρ̄, ρ·1 ≺ ρ·3 ≺ ρ̄, ρ·0 ≺ (ρ·1)‾\n     let ⟨e₁, e₁′⟩ = new in   -- at the field ρ·0\n     let ⟨e₂, e₂′⟩ = new in   -- at the field ρ·1\n     let ∗ = spawn (λu. close e₁′) in let ∗ = spawn (λu. close e₂′) in\n     let ∗ = spawn (λu. close a′) in\n     let ⟨d, d′⟩ = new in     -- d at π, C = {ρ·0 ≺ π, ρ·1 ≺ π, π ≺ ρ̄}\n     let ∗ = spawn (λu. let ∗ = close e₁ in let ∗ = close e₂ in close d′) in\n     let ∗ = close d in close a",
+   "code": "-- a at ρ with the facts ρ·0 ≺ ρ·2 ≺ ρ̄, ρ·1 ≺ ρ·3 ≺ ρ̄ and ρ·0 ≺ (ρ·1)‾\nte = let ⟨a, a′⟩ = new in\n     let ⟨e₁, e₁′⟩ = new in   -- at the field ρ·0\n     let ⟨e₂, e₂′⟩ = new in   -- at the field ρ·1\n     let ∗ = spawn (λu. close e₁′) in let ∗ = spawn (λu. close e₂′) in\n     let ∗ = spawn (λu. close a′) in\n     let ⟨d, d′⟩ = new in     -- d at π, C = {ρ·0 ≺ π, ρ·1 ≺ π, π ≺ ρ̄}\n     let ∗ = spawn (λu. let ∗ = close e₁ in let ∗ = close e₂ in close d′) in\n     let ∗ = close d in close a",
    "lead": "A creation may state facts from its new root down to points of the context, which the simple condition on creations forbids.",
    "shows": "The second creation has the exit $\\pi \\prec \\overline{\\rho}$ and the two entries $\\rho\\cdot 0 \\prec \\pi$ and $\\rho\\cdot 1 \\prec \\pi$. No point of the context lies above both entries and below $\\overline{\\rho}$, so $\\mathsf{gen\\_new}$ of [[r-new]] pairs $\\pi$ with the set $\\{\\rho\\cdot 2, \\rho\\cdot 3\\}$. The condition $\\mathsf{wf\\_new}$, each fact ending in the new tree, admits no exit, and under each constraint it accepts the thread after the creation has no typing. A second program needs two partners for one point. Both programs type at $N = \\infty$, where $\\mathsf{gen\\_new}$ implies $\\mathsf{acyc\\_new}$, and are deadlock free.",
    "rocq": "examples/GenNew.v: tu_gen1, tu_dftyped, tu_deadlock_free, tu_rejected_wf_new, te_gen, te_dftyped, te_deadlock_free, te_rejected_wf_new",
@@ -13210,7 +13210,7 @@ window.MAP = {
    "modes": [
     "lf"
    ],
-   "code": "pass = !(f = λ⟨e, x, y⟩. let x = send ⟨e, x⟩ in let ⟨e, y⟩ = recv y in (force f) ⟨e, x, y⟩)\nback = !(f = λ⟨x, y⟩. let ⟨e, x⟩ = recv x in let y = send ⟨e, y⟩ in (force f) ⟨x, y⟩)\nmain = let ⟨e, e′⟩ = new in let ⟨x, x′⟩ = new in let ⟨y, y′⟩ = new in\n       let ∗ = spawn (λ_. close e′) in       -- waits for e forever\n       let ∗ = spawn (λ_. (force back) ⟨x′, y′⟩) in\n       (force pass) ⟨e, x, y⟩                -- e goes back and forth forever",
+   "code": "pass = !(f = λ⟨e, x, y⟩. let x = send ⟨e, x⟩ in let ⟨e, y⟩ = recv y in\n               (force f) ⟨e, x, y⟩)\nback = !(f = λ⟨x, y⟩. let ⟨e, x⟩ = recv x in let y = send ⟨e, y⟩ in\n               (force f) ⟨x, y⟩)\nmain = let ⟨e, e′⟩ = new in let ⟨x, x′⟩ = new in let ⟨y, y′⟩ = new in\n       let ∗ = spawn (λ_. close e′) in       -- waits for e forever\n       let ∗ = spawn (λ_. (force back) ⟨x′, y′⟩) in\n       (force pass) ⟨e, x, y⟩                -- e goes back and forth forever",
    "shows": "Two threads send the end $e$ back and forth forever, and the thread with $e'$ waits. Each send passes $e$ on with its counter one lower. After finitely many sends no credit remains to send $e$ again, so the program has no lock-free typing.",
    "rocq": "to be mechanized",
    "accepts": {
@@ -13227,7 +13227,7 @@ window.MAP = {
    "modes": [
     "lf"
    ],
-   "code": "refresh = !(f = λ⟨w, k⟩. let ⟨c, c′⟩ = new in\n                     let ∗ = link ⟨w, c⟩ in          -- the waiting thread now talks to c′\n                     let k = send ⟨∗, k⟩ in           -- one step on another channel\n                     (force f) ⟨c′, k⟩)\nsink    = !(f = λk. let ⟨u, k⟩ = recv k in let ∗ = u in (force f) k)\nmain = let ⟨w, w′⟩ = new in let ⟨k, k′⟩ = new in\n       let ∗ = spawn (λ_. close w′) in              -- waits forever\n       let ∗ = spawn (λ_. (force sink) k′) in\n       (force refresh) ⟨w, k⟩",
+   "code": "refresh = !(f = λ⟨w, k⟩. let ⟨c, c′⟩ = new in\n                     let ∗ = link ⟨w, c⟩ in          -- the waiting end now faces c′\n                     let k = send ⟨∗, k⟩ in           -- one step on another channel\n                     (force f) ⟨c′, k⟩)\nsink    = !(f = λk. let ⟨u, k⟩ = recv k in let ∗ = u in (force f) k)\nmain = let ⟨w, w′⟩ = new in let ⟨k, k′⟩ = new in\n       let ∗ = spawn (λ_. close w′) in              -- waits forever\n       let ∗ = spawn (λ_. (force sink) k′) in\n       (force refresh) ⟨w, k⟩",
    "shows": "Each round links the partner of the waiting end to a new channel. The waiting thread then faces a new end with a full counter, and no counter decreases to $0$. E-Link asks the credit of the linked end to exceed the partner bound of the new end. After the send that credit is too low for the recursive call, so the program has no lock-free typing.",
    "rocq": "to be mechanized",
    "accepts": {
