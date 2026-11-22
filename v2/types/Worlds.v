@@ -9,12 +9,12 @@
     ranked worlds instead (relation/Ranks.v), and a ranked world models
     a static one when it ranks every fact of it.
 
-    The join W1 ⊔ W2 unions constants and facts. P-Term asks W
-    well-founded ([swf]), and P-Connect asks the restrictions of the two
-    worlds to their shared constants S = A_{W1} ∩ A_{W2} well-founded
-    together. [wf_join_iff] shows that this makes the join well-founded,
-    constructively, by nested accessibility on the amalgam at S and on
-    each side. *)
+    The join W1 ⊔ W2 unions constants and facts. At N = ∞ P-Term asks W
+    acyclic ([sacyc]), at a finite N well-founded ([swf]), and P-Connect
+    asks the restrictions of the two worlds to their shared constants
+    S = A_{W1} ∩ A_{W2} acyclic, or well-founded, together.
+    [acyc_join_iff] and [wf_join_iff] show that this makes the join
+    acyclic, or well-founded, constructively. *)
 
 From GV Require Export relation.Ranks.
 
