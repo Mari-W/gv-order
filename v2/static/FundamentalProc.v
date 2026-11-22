@@ -122,42 +122,42 @@ End proc.
 
 (** ** The theorems of A.3 *)
 
-Theorem fundamental_proc W R Σ p T : Σ ⊢_W p : T → wmodels R W → Σ ⊨_R p : T.
+Theorem fundamental_proc (EM : excluded_middle) W R Σ p T : Σ ⊢_W p : T → wmodels R W → Σ ⊨_R p : T.
 Proof.
   intros Hty HR. refine (proc_gen κ_DF (λ _, True) _ None W Σ p T Hty _ R HR); [|done].
-  intros W' R' N Θ t T' c HW' Ht _ HR'. exact (fundamental_typed W' R' N Θ [] (∅, None) t T' c HW' Ht HR').
+  intros W' R' N Θ t T' c HW' Ht _ HR'. exact (fundamental_typed EM W' R' N Θ [] (∅, None) t T' c HW' Ht HR').
 Qed.
 
-Theorem live_fundamental_proc W R Σ p T : Σ ⊢_W p : T → ⊢▷ p → wmodels R W → Σ ⊫_R p : T.
+Theorem live_fundamental_proc (EM : excluded_middle) W R Σ p T : Σ ⊢_W p : T → ⊢▷ p → wmodels R W → Σ ⊫_R p : T.
 Proof.
   intros Hty Hg HR. refine (proc_gen κ_L (lguard ∅) _ None W Σ p T Hty Hg R HR).
-  intros W' R' N Θ t T' c HW' Ht Hgt HR'. exact (live_fundamental_typed W' R' N Θ [] (∅, None) t T' c HW' Ht Hgt HR').
+  intros W' R' N Θ t T' c HW' Ht Hgt HR'. exact (live_fundamental_typed EM W' R' N Θ [] (∅, None) t T' c HW' Ht Hgt HR').
 Qed.
 
 (** A typed process sits over a well-founded static world, which a ranked
     world models ([wmodels_exists]). *)
-Theorem soundness W p T : ∅ ⊢_W p : T → deadlock_free p.
+Theorem soundness W p T : excluded_middle → ∅ ⊢_W p : T → deadlock_free p.
 Proof.
-  intros Hty. destruct (ptyped_wf _ _ _ _ _ Hty) as [Hwf HW].
+  intros EM Hty. destruct (ptyped_wf _ _ _ _ _ Hty) as [Hwf HW].
   destruct (wmodels_exists W Hwf HW) as [R HR].
-  apply (adequacy R T p). by apply (fundamental_proc W).
+  apply (adequacy R T p). by apply (fundamental_proc EM W).
 Qed.
 
-Theorem live_soundness W p T : ∅ ⊢_W p : T → ⊢▷ p →
+Theorem live_soundness W p T : excluded_middle → ∅ ⊢_W p : T → ⊢▷ p →
   deadlock_free p ∧ no_tau_divergence p.
 Proof.
-  intros Hty Hg. destruct (ptyped_wf _ _ _ _ _ Hty) as [Hwf HW].
+  intros EM Hty Hg. destruct (ptyped_wf _ _ _ _ _ Hty) as [Hwf HW].
   destruct (wmodels_exists W Hwf HW) as [R HR].
-  apply (live_adequacy R T p). by apply (live_fundamental_proc W).
+  apply (live_adequacy R T p). by apply (live_fundamental_proc EM W).
 Qed.
 
 (** One closed thread of the DF judgment, with no creation constraint. *)
-Theorem soundness_source W t T : sworld_wf W → swf W → tfree T → ∅ ; hc_empty ; [] ⊢^(∅, None) _ W t : T →
-  deadlock_free (∅, {[+ t +]}).
+Theorem soundness_source W t T : excluded_middle → sworld_wf W → swf W → tfree T →
+  ∅ ; hc_empty ; [] ⊢^(∅, None) _ W t : T → deadlock_free (∅, {[+ t +]}).
 Proof.
-  intros Hwf HW HT Ht. destruct (wmodels_exists W Hwf HW) as [R HR].
+  intros EM Hwf HW HT Ht. destruct (wmodels_exists W Hwf HW) as [R HR].
   apply (adequacy R T _). intros n.
-  pose proof (fundamental W R ∅ [] (∅, None) t T Hwf Ht HR ∅ ∅ ltac:(by intros u Hu) n R ∅ Var (wext_refl _)
+  pose proof (fundamental EM W R ∅ [] (∅, None) t T Hwf Ht HR ∅ ∅ ltac:(by intros u Hu) n R ∅ Var (wext_refl _)
                 (map_disjoint_empty_r _) eq_refl) as H.
   rewrite subst_ids, map_union_empty, tenv_erase_empty in H.
   assert (sf_den ∅ ∅ (∅, None) = ∅) as E.

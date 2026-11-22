@@ -113,3 +113,38 @@ Section rank_base.
     apply (ole_lim_r _ _ true). apply ole_refl.
   Qed.
 End rank_base.
+
+(** ** The maximum of finitely many ranks, under excluded middle
+
+    Brouwer trees are totally preordered under excluded middle
+    ([ole_total]), so a nonempty finite family of ranks has a largest
+    member ([list_max_rank]). E-New with partner sets needs it
+    (docs/redesign/check-general-new.md, section 6). Without excluded
+    middle the maximum need not exist: two ranks below a limit need not
+    lie below one member of its family. *)
+Lemma ole_total (EM : ∀ P : Prop, P ∨ ¬ P) : ∀ a b : ord, ole a b ∨ olt b a.
+Proof.
+  induction a as [|a IHa|X f IHa]; intros b.
+  - by left.
+  - induction b as [|b IHb|Y g IHb].
+    + right. done.
+    + destruct (IHa b) as [H|H]; [left; exact H|right; exact H].
+    + destruct (EM (∃ y, ole (osucc a) (g y))) as [[y Hy]|Hn].
+      * left. exact (ole_lim_r _ g y Hy).
+      * right. intros y. destruct (IHb y) as [H|H]; [exfalso; eauto|exact H].
+  - destruct (EM (∃ x, olt b (f x))) as [[x Hx]|Hn].
+    + right. exact (olt_trans_le _ _ _ Hx (olt_lim f x)).
+    + left. intros x. destruct (IHa x b) as [H|H]; [done|exfalso; eauto].
+Qed.
+
+Lemma list_max_rank (EM : ∀ P : Prop, P ∨ ¬ P) {A} (r : A → rank_ord) (l : list A) :
+  l ≠ [] → ∃ x, x ∈ l ∧ ∀ y, y ∈ l → ole (r y) (r x).
+Proof.
+  induction l as [|a l IH]; intros Hl; [done|].
+  destruct (decide (l = [])) as [->|Hne].
+  - exists a. split; [by apply list_elem_of_singleton|]. intros y ->%list_elem_of_singleton. apply ole_refl.
+  - destruct (IH Hne) as (x & Hx & Hmax). destruct (ole_total EM (r a) (r x)) as [H|H].
+    + exists x. split; [by apply list_elem_of_further|]. intros y [->|Hy]%elem_of_cons; [done|by apply Hmax].
+    + exists a. split; [by apply list_elem_of_here|]. intros y [->|Hy]%elem_of_cons; [apply ole_refl|].
+      apply olt_ole. exact (ole_trans_lt _ _ _ (Hmax y Hy) H).
+Qed.

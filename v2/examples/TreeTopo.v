@@ -86,12 +86,12 @@ Unshelve. all: try exact None.
 Qed.
 
 Section sem.
-  Context (R : world) (HR : wmodels R (Wa ⊔ Wb)).
+  Context (R : world) (HR : wmodels R (Wa ⊔ Wb)) (EM : excluded_middle).
 
 Lemma leaf_E o x n :
   Erel κ_DF n R (tenv_erase (Θl o x)) TUnit ∅ (EClose (Chan o)).
 Proof.
-  apply (typed_E_df Wa); [apply Wa_wf|by eapply wmodels_ext; [apply swext_join_l|]| |apply leaf_typed].
+  apply (typed_E_df EM Wa); [apply Wa_wf|by eapply wmodels_ext; [apply swext_join_l|]| |apply leaf_typed].
   unfold tenv_df, Θl. by rewrite map_fmap_singleton.
 Qed.
 
@@ -141,7 +141,7 @@ Proof. apply pfree_dual. Qed.
 Lemma mid_P n : Prel κ_DF n R (Sd ∪ Sc) TUnit (∅, {[+ tt_mid +]}).
 Proof.
   rewrite <-ΣC_split.
-  refine (sem_p_term κ_DF n R _ ΣC ∅ ∅ _ TUnit _ (sth_a R HR) (sb_thread_E R HR n)). constructor.
+  refine (sem_p_term κ_DF n R _ ΣC ∅ ∅ _ TUnit _ (sth_a R HR) (sb_thread_E R HR EM n)). constructor.
 Qed.
 
 Lemma sth_leaf o x Σ : tenv_erase (Θl o x) = Σ → pfree Σ → sth Σ Σ ∅ ∅.
@@ -202,8 +202,8 @@ Proof.
 Qed.
 End sem.
 
-Theorem tt_deadlock_free : deadlock_free tt_config.
-Proof. destruct (wmodels_exists _ (proj1 Wab_ok) (proj2 Wab_ok)) as [R HR]. exact (tt_deadlock_free_R R HR). Qed.
+Theorem tt_deadlock_free : excluded_middle → deadlock_free tt_config.
+Proof. intros EM. destruct (wmodels_exists _ (proj1 Wab_ok) (proj2 Wab_ok)) as [R HR]. exact (tt_deadlock_free_R R HR EM). Qed.
 
 Print Assumptions tt_dead_world_wf.
 Print Assumptions tt_deadlock_free.

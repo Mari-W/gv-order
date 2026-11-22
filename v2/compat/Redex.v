@@ -15,6 +15,10 @@
     the payload premises of E-Send. *)
 
 From GV Require Export compat.Blind types.Duality.
+From GV Require lockfree.FairRun.
+
+(** Excluded middle, without the notations of lockfree/FairRun.v. *)
+Notation excluded_middle := lockfree.FairRun.excluded_middle.
 
 (** ** Exact ends and heads of values in V *)
 
@@ -444,23 +448,29 @@ Section redex.
       split; [|by rewrite Hr]. apply elem_of_app. right. apply list_elem_of_fmap. by exists y.
   Qed.
 
-  (** The semantic form of (gen-new₁) in the ranked world W, with the
+  (** The semantic form of (gen-new) in the ranked world W, with the
       environment of C already instantiated. *)
   Definition gen_new_sem (W : world) (C : bcs) : Prop :=
     well_founded (new_step C) ∧
     (∀ x y, cfact C x y → ¬ in_tree0 x → ¬ in_tree0 y → W ⊢ ctx_pt C x ≺ ctx_pt C y) ∧
-    ∃ Sr : point → point → Prop,
-      (∀ u y, cfact C u y → in_tree0 u → ¬ in_tree0 y → ∃ t, Sr u t ∧ W ⊢ t ≺ ctx_pt C y) ∧
-      (∀ s t s', Sr s t → new_step C s' s → ∃ t', Sr s' t' ∧ W ⊢ t' ≺ t) ∧
-      (∀ s t z, Sr s t → cfact C z s → ¬ in_tree0 z → W ⊢ ctx_pt C z ≺ t).
+    ∃ Sr : point → list point → Prop,
+      (∀ s T, Sr s T → T ≠ []) ∧
+      (∀ u y, cfact C u y → in_tree0 u → ¬ in_tree0 y →
+         ∃ T, Sr u T ∧ ∀ t, t ∈ T → W ⊢ t ≺ ctx_pt C y) ∧
+      (∀ s T s', Sr s T → new_step C s' s →
+         ∃ T', Sr s' T' ∧ ∀ t', t' ∈ T' → ∃ t, t ∈ T ∧ W ⊢ t' ≺ t) ∧
+      (∀ s T z, Sr s T → cfact C z s → ¬ in_tree0 z → ∃ t, t ∈ T ∧ W ⊢ ctx_pt C z ≺ t).
 
   Lemma gen_new_sem_mono W W' C : W ⊑ W' → gen_new_sem W C → gen_new_sem W' C.
   Proof.
-    intros HW (Hwf & Hcc & Sr & Hex & Hst & Hen). split_and!; [done| |exists Sr; split_and!].
+    intros HW (Hwf & Hcc & Sr & Hne & Hex & Hst & Hen). split_and!; [done| |exists Sr; split_and!; [done| | |]].
     - intros. eapply w_lt_mono; [exact HW|]. by apply Hcc.
-    - intros u y Hf Hu Hy. destruct (Hex u y Hf Hu Hy) as (t & Ht & H). exists t. split; [done|]. by eapply w_lt_mono.
-    - intros s t s' Ht Hs. destruct (Hst s t s' Ht Hs) as (t' & Ht' & H). exists t'. split; [done|]. by eapply w_lt_mono.
-    - intros. eapply w_lt_mono; [exact HW|]. by eapply Hen.
+    - intros u y Hf Hu Hy. destruct (Hex u y Hf Hu Hy) as (T & HT & H). exists T. split; [done|].
+      intros t Ht. eapply w_lt_mono; [exact HW|]. by apply H.
+    - intros s T s' HT Hs. destruct (Hst s T s' HT Hs) as (T' & HT' & H). exists T'. split; [done|].
+      intros t' Ht'. destruct (H t' Ht') as (t & Ht & Hlt). exists t. split; [done|]. by eapply w_lt_mono.
+    - intros s T z HT Hf Hz. destruct (Hen s T z HT Hf Hz) as (t & Ht & Hlt). exists t. split; [done|].
+      by eapply w_lt_mono.
   Qed.
 
   Lemma gen_new_sem_wf_new W C : wf_new C → gen_new_sem W C.
@@ -491,12 +501,14 @@ Section redex.
     eapply ole_trans; [apply ole_succ_succ, (rank_bacc_irr R b y _ (Hwf y))|]. exact (Hy y Hr).
   Qed.
 
-  (** A creation at a fresh root under (gen-new₁). The creation grows
+  (** A creation at a fresh root under (gen-new). The creation grows
       the world by the fresh constant a and by the roots of the context
       points of C. The tree of a gets the least ranks of C with program
       order above the context points below it ([rank_base]). A point
-      paired with t stays at or below the rank of t, so each exit holds. *)
-  Lemma Erel_new aq1 aq2 n W C S F mt1 mt2 :
+      paired with the set T stays at or below the rank of the largest
+      point of T, so each exit holds. The largest point exists under
+      excluded middle ([list_max_rank]). *)
+  Lemma Erel_new (EM : excluded_middle) aq1 aq2 n W C S F mt1 mt2 :
     gen_new_sem W C →
     Erel κ n W ∅ (TEx LBot 1 C (TProd (TSess S (pvar 0) aq1 mt1) (TSess (dual S) (pvar 0)‾ aq2 mt2))) F ENew.
   Proof.
@@ -507,7 +519,7 @@ Section redex.
     - intros Hi. exact (Hi _ _ Hst).
     - intros W1 _. eapply ready_tau; [exact Hst|done].
     - intros W1 α e' HW1 Hs. destruct (ENew_step _ _ Hs) as (c & -> & ->). simpl. intros _.
-      destruct (gen_new_sem_mono _ _ _ HW1 HG) as (Hwf & Hcc & Sr & Hex & Hstp & Hen).
+      destruct (gen_new_sem_mono _ _ _ HW1 HG) as (Hwf & Hcc & Sr & HnT & Hex & Hstp & Hen).
       destruct (fresh_const W1 (bc_env C)) as (a & Ha1 & Ha2).
       set (π := MkPt (NConst a) true 0).
       set (σ := plist (π :: bc_env C)).
@@ -557,9 +569,11 @@ Section redex.
         - rewrite Hr. apply Ha2. by eapply list_elem_of_lookup_2.
         - apply wgrow_rin. rewrite Hr. apply elem_of_union_r, elem_of_list_to_set.
           apply list_elem_of_fmap. exists yj. split; [done|]. by eapply list_elem_of_lookup_2. }
-      (* a point paired with t lies at or below the rank of t *)
-      assert (∀ s, in_tree0 s → ∀ t, Sr s t → ole (rank_base (new_step C) b0 Hwf s) (rk0 t)) as Hinv.
-      { intros s. induction (Hwf s) as [s _ IH]. intros Hsin t Ht. apply rank_base_le.
+      (* a point paired with T lies at or below the rank of some t ∈ T *)
+      assert (∀ s, in_tree0 s → ∀ T, Sr s T → ∃ t, t ∈ T ∧ ole (rank_base (new_step C) b0 Hwf s) (rk0 t)) as Hinv.
+      { intros s. induction (Hwf s) as [s _ IH]. intros Hsin T HT.
+        destruct (list_max_rank EM rk0 T (HnT s T HT)) as (tm & Htm & Hmax).
+        exists tm. split; [done|]. apply rank_base_le.
         - unfold b0. apply ole_lim_l. intros [y [Hyr Hy]]. cbn [proj1_sig].
           apply bcs_at_iff in Hy as ([z0 s0] & Hf & Hsc & Heq). simpl in Heq. injection Heq as Ey Es.
           try change (plist ([π] ++ bc_env C)) with σ in Ey, Es. try change (plist (π :: bc_env C)) with σ in Ey, Es.
@@ -572,9 +586,12 @@ Section redex.
           assert (¬ in_tree0 z0) as Hz0.
           { intros Hz. apply Hyr. rewrite Ey. by apply Htr. }
           destruct Hsc as [Hsz Hss]. destruct (Hout z0 Hsz Hz0) as (Ez & _ & _). rewrite Ey, Ez.
-          apply Hrk0. apply (Hen s t z0 Ht); [split; [done|split; done]|done].
-        - intros s' Hs'. destruct (Hstp s t s' Ht Hs') as (t' & Ht' & Hlt).
-          eapply ole_trans_lt; [apply (IH s' Hs' (proj1 Hs') t' Ht')|]. by apply Hrk0. }
+          destruct (Hen s T z0 HT) as (t & Ht & Hlt); [split; [done|split; done]|done|].
+          eapply olt_trans_le; [apply Hrk0, Hlt|apply Hmax, Ht].
+        - intros s' Hs'. destruct (Hstp s T s' HT Hs') as (T' & HT' & Hlt).
+          destruct (IH s' Hs' (proj1 Hs') T' HT') as (t' & Ht' & Hle).
+          destruct (Hlt t' Ht') as (t & Ht & Hlt').
+          eapply ole_trans_lt; [exact Hle|]. eapply olt_trans_le; [apply Hrk0, Hlt'|apply Hmax, Ht]. }
       exists S, π, W'. split; [apply wgrow_ext|].
       apply at_cost_val. apply Vrel_ex_iff. split; [done|]. exists [π]. split_and!; [done| |].
       + intros x y Hf. pose proof Hf as Hf0.
@@ -591,9 +608,10 @@ Section redex.
           eapply olt_trans_le; [|apply rank_base_ge].
           unfold b0, olt. apply (ole_lim_r _ _ (exist _ (pt_inst σ x0) (conj Hx Hf0))). apply ole_refl.
         * destruct (Htr x0 Hx0) as (_ & Hrx & Ex). destruct (Hout y0 Hsy Hy0) as (Ey & Hy & Hry).
-          destruct (Hex x0 y0 Hcf Hx0 Hy0) as (t & Ht & Hlt).
+          destruct (Hex x0 y0 Hcf Hx0 Hy0) as (T & HT & Hlt).
+          destruct (Hinv x0 Hx0 T HT) as (t & Ht & Hle).
           right. split_and!; [done|done|]. rewrite Ex, (Hro _ Hy), Ey.
-          eapply ole_trans_lt; [apply (Hinv x0 Hx0 t Ht)|]. by apply Hrk0.
+          eapply ole_trans_lt; [exact Hle|]. by apply Hrk0, Hlt.
         * destruct (Hout x0 Hsx Hx0) as (Ex & _ & _). destruct (Hout y0 Hsy Hy0) as (Ey & _ & _).
           rewrite Ex, Ey. eapply w_lt_mono; [apply wgrow_ext|]. by apply Hcc.
       + unfold ty_inst. simpl. rewrite pt_inst_dual, !pt_inst_pvar_at. simpl. apply Vrel_newpair.

@@ -36,13 +36,6 @@ Qed.
 Lemma senv_heads_empty : senv_heads ∅ = ∅.
 Proof. unfold senv_heads. by rewrite map_to_list_empty. Qed.
 
-Lemma senv_heads_union Θ1 Θ2 y :
-  y ∈ senv_heads (Θ1 ∪ Θ2) → y ∈ senv_heads Θ1 ∨ y ∈ senv_heads Θ2.
-Proof.
-  rewrite !elem_of_senv_heads. intros (o & S & x & Ho & ->).
-  apply lookup_union_Some_raw in Ho as [Ho|[_ Ho]]; [left|right]; eauto.
-Qed.
-
 
 Definition ub_lt (W : world) (ub : option point) (F : gset point) : Prop :=
   match ub with None => True | Some x => ∀ y, y ∈ F → W ⊢ x ≺ y end.

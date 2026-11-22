@@ -252,39 +252,6 @@ Proof.
     rewrite (bcs_unshift _ σ m Hτ), (pclose_ids xs m σ Hm) in Hf. by apply HC.
 Qed.
 
-(** ** The heads of a value
-
-    The ends of a value of T sit at or above the heads of T, unless T
-    carries the ⊥ flag. An end at x has head x‾. An arrow and an
-    existential bound the heads of their ends by their lower point, a
-    product and a sum by the heads of their parts. *)
-
-Lemma Vrel_heads κ n : ∀ T W Θ v, Vrel κ n W Θ T v → hbot T = false →
-  ∀ y, y ∈ senv_heads Θ → ∃ h, h ∈ heads T ∧ w_le W h y.
-Proof.
-  assert (∀ W lb Θ y, lbx_le W lb (senv_heads Θ) → lb ≠ LBot → y ∈ senv_heads Θ →
-            ∃ h, h ∈ lb_heads lb ∧ w_le W h y) as Hlb.
-  { intros W [| |x] Θ y H Hb Hy; simpl in *; [set_solver|done|]. exists x. split; [set_solver|by apply H]. }
-  induction T as [|ub lb c T1 IH1 U IH2 a|T1 IH1 U IH2|T1 IH1 U IH2|m k C ub c U IH|s x a mt|lb m C T IH];
-    intros W Θ v HV Hb y Hy; simpl in Hb |- *.
-  - apply Vrel_unit_iff in HV as [-> _]. rewrite senv_heads_empty in Hy. set_solver.
-  - apply Vrel_lolli_iff in HV as (e & _ & _ & Hl & _). apply (Hlb W lb Θ y Hl); [|done].
-    intros ->. simpl in Hb. discriminate.
-  - apply Vrel_prod_iff in HV as (v1 & v2 & Θ1 & Θ2 & _ & _ & -> & H1 & H2).
-    apply orb_false_iff in Hb as [Hb1 Hb2].
-    apply senv_heads_union in Hy as [Hy|Hy].
-    + destruct (IH1 W Θ1 v1 H1 Hb1 y Hy) as (h & Hh & Hle). exists h. split; [set_solver|done].
-    + destruct (IH2 W Θ2 v2 H2 Hb2 y Hy) as (h & Hh & Hle). exists h. split; [set_solver|done].
-  - apply orb_false_iff in Hb as [Hb1 Hb2].
-    apply Vrel_sum_iff in HV as [(v' & _ & H)|(v' & _ & H)].
-    + destruct (IH1 W Θ v' H Hb1 y Hy) as (h & Hh & Hle). exists h. split; [set_solver|done].
-    + destruct (IH2 W Θ v' H Hb2 y Hy) as (h & Hh & Hle). exists h. split; [set_solver|done].
-  - apply Vrel_box_iff in HV as [-> _]. rewrite senv_heads_empty in Hy. set_solver.
-  - apply Vrel_sess_iff in HV as (o & s' & _ & -> & _). apply elem_of_senv_heads in Hy as (o' & S & x' & Ho & ->).
-    apply lookup_singleton_Some in Ho as [_ [= _ ->]]. exists x'‾. split; [set_solver|by left].
-  - apply Vrel_ex_iff in HV as (Hl & _). apply (Hlb W lb Θ y Hl); [|done]. intros ->. simpl in Hb. discriminate.
-Qed.
-
 (** ** Subtyping in the relation
 
     A value of T is a value of T' when W ; Γ ⊢ T ≤ T' and the facts of Γ
@@ -328,13 +295,15 @@ Proof.
     pose proof (hsat_open W σ Γ m C xs Hxs Hs HC) as Hs'.
     split.
     { destruct Hlo as [->|Hlo]; [done|].
-      rewrite <-pclose_ty in H. pose proof (Vrel_heads κ n _ W Θ v H) as Hh.
+      rewrite <-pclose_ty in H. pose proof (Vrel_heads κ n W Θ _ v H) as Hh.
       rewrite hbot_pinst, heads_pinst in Hh.
       pose proof (pt_unshift _ σ m (pclose_shift xs m σ Hxs)) as Hu.
       destruct lb' as [| |x']; simpl in Hlo |- *; [|done|].
       - destruct Hlo as [Hht Hhb]. apply set_eq. intros y. split; [|set_solver].
-        intros Hy. destruct (Hh Hhb y Hy) as (h & Hin & _). rewrite Hht in Hin. set_solver.
-      - destruct Hlo as [Hle Hhb]. intros y Hy. destruct (Hh Hhb y Hy) as (h & Hin & Hhy).
+        intros (o & S & x & Ho & ->)%elem_of_senv_heads. destruct (Hh Hhb o S x Ho) as (h & Hin & _).
+        rewrite Hht in Hin. set_solver.
+      - destruct Hlo as [Hle Hhb]. intros y (o & S & x & Ho & ->)%elem_of_senv_heads.
+        destruct (Hh Hhb o S x Ho) as (h & Hin & Hhy).
         apply elem_of_map in Hin as (h0 & -> & Hh0).
         eapply w_le_trans; [|exact Hhy]. rewrite <-Hu.
         exact (sle_sem W0 W Hwf HW _ _ _ _ Hs' (Hle h0 Hh0)). }
@@ -352,10 +321,10 @@ Proof.
   apply (Vrel_tsub κ W0 Γ (ty_df T) (ty_df T')); [done|done|by apply (wmodels_mono W1)|by apply (hsat_mono W1)].
 Qed.
 
-(** ** (gen-new₁) in a ranked world
+(** ** (gen-new) in a ranked world
 
     The static premise of E-New gives its semantic form at every model of
-    W and Γ, partner t read as its instance under σ. *)
+    W and Γ, each partner set read as its instance under σ. *)
 
 Lemma ctx_pt_inst σ C x : pn_vb (1 + length (bc_env C)) (pt_name x) → ¬ in_tree0 x →
   ctx_pt (bcs_inst σ C) x = pt_inst σ (ctx_pt C x).
@@ -376,21 +345,26 @@ Proof. destruct C as [env P]. unfold cfact, bcs_inst. simpl. by rewrite length_f
 Lemma gen_new_sem_of W0 W Γ σ C : sworld_wf W0 → wmodels W W0 → hsat W σ Γ →
   gen_new W0 Γ C → gen_new_sem W (bcs_inst σ C).
 Proof.
-  intros Hwf HW Hs (Hwn & Hcc & Sr & Hex & Hst & Hen).
+  intros Hwf HW Hs (Hwn & Hcc & Sr & Hne & Hex & Hst & Hen).
   assert (∀ x y, cfact C x y → pn_vb (1 + length (bc_env C)) (pt_name x) ∧ pn_vb (1 + length (bc_env C)) (pt_name y))
     as Hsc by (intros x y [_ H]; exact H).
   split_and!.
   - by rewrite new_step_inst.
   - intros x y Hf Hx Hy. apply cfact_inst in Hf. destruct (Hsc x y Hf) as [Hsx Hsy].
     rewrite !ctx_pt_inst by done. by eapply slt_sem, Hcc.
-  - exists (λ u p, ∃ t, Sr u t ∧ p = pt_inst σ t). split_and!.
-    + intros u y Hf Hu Hy. apply cfact_inst in Hf. destruct (Hex u y Hf Hu Hy) as (t & Ht & Hlt).
-      exists (pt_inst σ t). split; [eauto|]. rewrite ctx_pt_inst by (try done; apply (Hsc u y Hf)).
-      by eapply slt_sem.
-    + intros s p s' (t & Ht & ->) Hs'. rewrite new_step_inst in Hs'.
-      destruct (Hst s t s' Ht Hs') as (t' & Ht' & Hlt). exists (pt_inst σ t'). split; [eauto|]. by eapply slt_sem.
-    + intros s p z (t & Ht & ->) Hf Hz. apply cfact_inst in Hf.
-      rewrite ctx_pt_inst by (try done; apply (Hsc z s Hf)). by eapply slt_sem, Hen.
+  - exists (λ u P, ∃ T, Sr u T ∧ P = pt_inst σ <$> T). split_and!.
+    + intros s P (T & HT & ->). destruct T as [|t T]; [exfalso; by apply (Hne s [] HT)|cbn; congruence].
+    + intros u y Hf Hu Hy. apply cfact_inst in Hf. destruct (Hex u y Hf Hu Hy) as (T & HT & Hlt).
+      exists (pt_inst σ <$> T). split; [eauto|]. rewrite ctx_pt_inst by (try done; apply (Hsc u y Hf)).
+      intros p (t & -> & Ht)%list_elem_of_fmap. by eapply slt_sem, Hlt.
+    + intros s P s' (T & HT & ->) Hs'. rewrite new_step_inst in Hs'.
+      destruct (Hst s T s' HT Hs') as (T' & HT' & Hlt). exists (pt_inst σ <$> T'). split; [eauto|].
+      intros p (t' & -> & Ht')%list_elem_of_fmap. destruct (Hlt t' Ht') as (t & Ht & Hl).
+      exists (pt_inst σ t). split; [by apply list_elem_of_fmap_2|]. by eapply slt_sem.
+    + intros s P z (T & HT & ->) Hf Hz. apply cfact_inst in Hf.
+      rewrite ctx_pt_inst by (try done; apply (Hsc z s Hf)).
+      destruct (Hen s T z HT Hf Hz) as (t & Ht & Hl).
+      exists (pt_inst σ t). split; [by apply list_elem_of_fmap_2|]. by eapply slt_sem.
 Qed.
 
 (** ** Identity instances *)
@@ -516,7 +490,7 @@ Section fund.
   Local Ltac rest_tac :=
     first [ assumption | apply rest_ok_unionb; assumption ].
 
-  Theorem typed_sem W N Θ Γ Δ F e T c :
+  Theorem typed_sem (EM : excluded_middle) W N Θ Γ Δ F e T c :
     sworld_wf W → typed W N Θ Γ Δ F e T c →
     ∀ L, G L e → ∀ W1 σ ρ B, wmodels W1 W → hsat W1 σ Γ → rest_ok W1 (sf_pinst σ F) ρ →
     sem_later κ W1 (tenv_pinst σ Θ) (lenv_pinst σ Δ) L (sf_den ρ B (sf_pinst σ F)) e (pinst_ty σ T).
@@ -684,7 +658,7 @@ Section fund.
       eapply later_spawn, IH'.
     - (* E-New *)
       rewrite pt_inst_dual, pt_inst_pup1_0.
-      apply later_new; [by apply lenv_unl_pinst|by apply (gen_new_sem_of W W1 Γ σ C)].
+      apply later_new; [done|by apply lenv_unl_pinst|by apply (gen_new_sem_of W W1 Γ σ C)].
     - (* E-New at a field *)
       rewrite pt_inst_dual. apply later_new_fld. by apply lenv_unl_pinst.
     - (* E-Sub *)
@@ -715,13 +689,13 @@ End fund.
 
 Definition nomarks (L : nat → bool) (_ : expr) : Prop := ∀ x, L x = false.
 
-Lemma typed_sem_df W N Θ Γ Δ F e T c :
+Lemma typed_sem_df (EM : excluded_middle) W N Θ Γ Δ F e T c :
   sworld_wf W → typed W N Θ Γ Δ F e T c →
   ∀ W1 σ ρ B, wmodels W1 W → hsat W1 σ Γ → rest_ok W1 (sf_pinst σ F) ρ →
   sem_typed_at κ_DF W1 (tenv_pinst σ Θ) (lenv_pinst σ Δ) (sf_den ρ B (sf_pinst σ F)) e (pinst_ty σ T).
 Proof.
   intros Hwf Ht W1 σ ρ B HW Hs Hr. apply sem_later_empty.
-  refine (typed_sem κ_DF nomarks _ _ _ _ _ _ _ _ _ _ W N Θ Γ Δ F e T c Hwf Ht ∅ _ W1 σ ρ B HW Hs Hr);
+  refine (typed_sem κ_DF nomarks _ _ _ _ _ _ _ _ _ _ EM W N Θ Γ Δ F e T c Hwf Ht ∅ _ W1 σ ρ B HW Hs Hr);
     [..|done]; unfold nomarks.
   - intros L y H. apply H.
   - intros L b H [|x]; [done|apply H].
@@ -742,13 +716,13 @@ Qed.
 
 (** ** The live instance: the marks of the guard *)
 
-Lemma typed_sem_live W N Θ Γ Δ F e T c :
+Lemma typed_sem_live (EM : excluded_middle) W N Θ Γ Δ F e T c :
   sworld_wf W → typed W N Θ Γ Δ F e T c → ∅ ⊢▷ e →
   ∀ W1 σ ρ B, wmodels W1 W → hsat W1 σ Γ → rest_ok W1 (sf_pinst σ F) ρ →
   sem_typed_at κ_L W1 (tenv_pinst σ Θ) (lenv_pinst σ Δ) (sf_den ρ B (sf_pinst σ F)) e (pinst_ty σ T).
 Proof.
   intros Hwf Ht Hgd W1 σ ρ B HW Hs Hr. apply sem_later_empty.
-  refine (typed_sem κ_L lguard _ _ _ _ _ _ _ _ _ _ W N Θ Γ Δ F e T c Hwf Ht ∅ Hgd W1 σ ρ B HW Hs Hr).
+  refine (typed_sem κ_L lguard _ _ _ _ _ _ _ _ _ _ EM W N Θ Γ Δ F e T c Hwf Ht ∅ Hgd W1 σ ρ B HW Hs Hr).
   - intros L y H. by inversion H.
   - intros L b H. by inversion H.
   - intros L b H. exists true. split; [by inversion H|]. intros ??????????. apply later_box.
@@ -763,36 +737,36 @@ Qed.
 
 (** ** The theorems *)
 
-Theorem fundamental W R Θ Δ F t T :
+Theorem fundamental (EM : excluded_middle) W R Θ Δ F t T :
   sworld_wf W → Θ ; hc_empty ; Δ ⊢^F _ W t : T → wmodels R W → Θ ; Δ ⊨^F _ R t : T.
 Proof.
   intros HW Ht HR ρ B Hr.
-  pose proof (typed_sem_df W None _ hc_empty _ F t _ _ HW Ht R pvar ρ B HR (hsat_empty _ _)
+  pose proof (typed_sem_df EM W None _ hc_empty _ F t _ _ HW Ht R pvar ρ B HR (hsat_empty _ _)
                 ltac:(by rewrite sf_pinst_pvar)) as H.
   rewrite tenv_pinst_pvar, lenv_pinst_pvar, sf_pinst_pvar, pinst_ty_pvar in H.
   apply sem_later_empty, sem_later_undf, sem_later_empty, H.
 Qed.
 
 (** The merged judgment at any refill, through its DF erasure. *)
-Theorem fundamental_typed W R N Θ Δ F t T c :
+Theorem fundamental_typed (EM : excluded_middle) W R N Θ Δ F t T c :
   sworld_wf W → Θ ; hc_empty ; Δ ⊢^F _{W,N} t : T ▷ c → wmodels R W →
   tenv_df Θ ; lenv_df Δ ⊨^F _ R t : ty_df T.
-Proof. intros HW Ht HR. apply (fundamental W); [done| |done]. exact (typed_dftyped _ _ _ _ _ _ _ _ _ Ht). Qed.
+Proof. intros HW Ht HR. apply (fundamental EM W); [done| |done]. exact (typed_dftyped _ _ _ _ _ _ _ _ _ Ht). Qed.
 
-Theorem live_fundamental W R Θ Δ F t T :
+Theorem live_fundamental (EM : excluded_middle) W R Θ Δ F t T :
   sworld_wf W → Θ ; hc_empty ; Δ ⊢^F _ W t : T → ∅ ⊢▷ t → wmodels R W → Θ ; Δ ⊫^F _ R t : T.
 Proof.
   intros HW Ht Hgd HR ρ B Hr.
-  pose proof (typed_sem_live W None _ hc_empty _ F t _ _ HW Ht Hgd R pvar ρ B HR
+  pose proof (typed_sem_live EM W None _ hc_empty _ F t _ _ HW Ht Hgd R pvar ρ B HR
                 (hsat_empty _ _) ltac:(by rewrite sf_pinst_pvar)) as H.
   rewrite tenv_pinst_pvar, lenv_pinst_pvar, sf_pinst_pvar, pinst_ty_pvar in H.
   apply sem_later_empty, sem_later_undf, sem_later_empty, H.
 Qed.
 
-Theorem live_fundamental_typed W R N Θ Δ F t T c :
+Theorem live_fundamental_typed (EM : excluded_middle) W R N Θ Δ F t T c :
   sworld_wf W → Θ ; hc_empty ; Δ ⊢^F _{W,N} t : T ▷ c → ∅ ⊢▷ t → wmodels R W →
   tenv_df Θ ; lenv_df Δ ⊫^F _ R t : ty_df T.
 Proof.
-  intros HW Ht Hgd HR. apply (live_fundamental W); [done| |done|done].
+  intros HW Ht Hgd HR. apply (live_fundamental EM W); [done| |done|done].
   exact (typed_dftyped _ _ _ _ _ _ _ _ _ Ht).
 Qed.
