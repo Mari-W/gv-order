@@ -118,7 +118,7 @@ Qed.
     restricted channel, or an offer on free channels. *)
 Lemma istep_single q ev q' C e :
   erase q = (C, {[+ e +]}) → istep q ev q' →
-  (∃ i e', ev = EvSolo i LBeta PickNone ∧ tstep e LBeta e' ∧ erase q' = (C, {[+ e' +]})) ∨
+  (∃ i α e', ev = EvSolo i α PickNone ∧ beta_lbl α ∧ tstep e α e' ∧ erase q' = (C, {[+ e' +]})) ∨
   (∃ i c e', ev = EvSolo i (LNew c) PickNone ∧ tstep e (LNew c) e' ∧ c ∉ C ∧ c ∉ fchans e ∧
      erase q' = (C ∪ {[c]}, {[+ e' +]})) ∨
   (∃ i j v e', ev = EvSolo i (LSpawn v) (PickChild j) ∧ tstep e (LSpawn v) e' ∧
@@ -136,7 +136,7 @@ Proof.
     match goal with H : M !! ?i = Some _ |- _ => pose proof H as Hi; destruct (soup_single _ _ _ _ HM H) as [-> _] end;
     try match goal with H : _ ∉ echans _ |- _ => rewrite HM, echans_singleton in H end;
     unfold erase; simpl.
-  - left. eexists _, _. split_and!; [done|done|]. by erewrite soup_single_upd.
+  - left. eexists _, _, _. split_and!; [done|done|done|]. by erewrite soup_single_upd.
   - right; left. eexists _, _, _. split_and!; [done|done|done|done|]. by erewrite soup_single_upd.
   - do 2 right; left. eexists _, _, _, _. split_and!; [done|done|].
     match goal with H : M !! ?j = None |- _ => rename H into Hj end.
@@ -489,9 +489,11 @@ Qed.
 (** A non-session step of the thread is a τ step of (C, {e}). *)
 Lemma single_tau C e α e' : tstep e α e' → (∀ σ, α ≠ LSess σ) → ∃ p', preduction (C, {[+ e +]}) p'.
 Proof.
-  intros Hs Hα. destruct α as [|c|v|σ].
+  intros Hs Hα. destruct α as [| |c|v|σ].
   - eexists. exists (q1 C e), (EvSolo 0 LBeta PickNone), (C, <[0 := e']> {[0 := e]}). split_and!; [apply erase_q1| |done|done].
-    eapply p_act_beta; [by rewrite lookup_singleton_eq|done].
+    eapply p_act_beta; [by rewrite lookup_singleton_eq|done|by left].
+  - eexists. exists (q1 C e), (EvSolo 0 LForce PickNone), (C, <[0 := e']> {[0 := e]}). split_and!; [apply erase_q1| |done|done].
+    eapply p_act_beta; [by rewrite lookup_singleton_eq|done|by right].
   - set (c' := fresh (C ∪ fchans e)). pose proof (is_fresh (C ∪ fchans e)) as Hf. fold c' in Hf.
     destruct (new_retarget e c e' c' Hs) as [e'' He''].
     eexists. exists (q1 C e), (EvSolo 0 (LNew c') PickNone), (C ∪ {[c']}, <[0 := e'']> {[0 := e]}). split_and!; [apply erase_q1| |done|done].
@@ -508,7 +510,7 @@ Lemma single_link_tau C e os e' o : tstep e (LSess (SLink os)) e' → o ∈ os �
   ∃ p', preduction (C, {[+ e +]}) p'.
 Proof.
   intros Hs Ho Hc. destruct (act_step _ _ _ Hs) as (a & Ha & Hoff).
-  destruct a as [| | | | | |o1 o2| |]; simpl in Hoff; try contradiction. subst os.
+  destruct a as [| | | | | | |o1 o2| |]; simpl in Hoff; try contradiction. subst os.
   assert (∃ o', tstep e (LSess (SLink ({[o]} ∪ {[o']}))) e') as [o' Hs'].
   { apply elem_of_union in Ho as [Ho|Ho]; apply elem_of_singleton in Ho.
     - exists o2. by rewrite Ho.
@@ -521,7 +523,7 @@ Qed.
 Global Instance link_t_dec e : Decision (link_t e).
 Proof.
   destruct (act e) as [a|] eqn:Ha.
-  - destruct a as [| | | | | |o1 o2| |];
+  - destruct a as [| | | | | | |o1 o2| |];
       try (right; intros (os & e' & Hs); destruct (act_step _ _ _ Hs) as (a' & Ha' & Hoff);
            rewrite Ha in Ha'; injection Ha' as <-; simpl in Hoff; done).
     left. destruct (act_offer e (ALink o1 o2) (LSess (SLink ({[o1]} ∪ {[o2]}))) Ha eq_refl) as [e' He']. by eexists _, _.
@@ -536,7 +538,7 @@ Section single_ready.
   Lemma single_stable : stable_p (C, {[+ e +]}) → stable_t e ∧ (link_t e → link_p (C, {[+ e +]})).
   Proof.
     intros Hst. split.
-    - intros α e' Hs'. destruct α as [| | |σ]; [..|by eauto];
+    - intros α e' Hs'. destruct α as [| | | |σ]; [..|by eauto];
         (destruct (single_tau C e _ e' Hs') as [p' Hp']; [done|]; by destruct (Hst p')).
     - intros (os & e' & Hl). destruct (decide (subjs (SLink os) ## C)) as [Hd|Hd].
       + exists os, (C ∖ sentc (SLink os), {[+ e' +]}). by apply single_sess.
@@ -960,7 +962,7 @@ Lemma istep_single_sess q i σ q' C e : erase q = (C, {[+ e +]}) → istep q (Ev
   ∃ e', tstep e (LSess σ) e' ∧ subjs σ ## C ∧ erase q' = (C ∖ sentc σ, {[+ e' +]}).
 Proof.
   intros Hq Hst.
-  destruct (istep_single _ _ _ _ _ Hq Hst) as [(?&?&Heq&_)|[(?&?&?&?&Heq&_)|[(?&?&?&?&?&Heq&_)|
+  destruct (istep_single _ _ _ _ _ Hq Hst) as [(?&?&?&Heq&_)|[(?&?&?&?&Heq&_)|[(?&?&?&?&?&Heq&_)|
     [(?&?&?&?&Heq&_)|(?&?&?&Heq&?&?&?)]]]]; try discriminate.
   injection Heq as <- <-. eauto.
 Qed.
@@ -1008,7 +1010,7 @@ Section core.
   Proof.
     intros Hn0 HT Hs HE Hb Hsp W1 HW1.
     pose proof (Erel_mono κ _ _ _ _ _ _ _ HW1 HE) as HE1.
-    destruct (Hb W1 HW1) as (Hstop & Hready & H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
+    destruct (Hb W1 HW1) as (Hstop & Hready & H1 & H3 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     (** An offer of a stable thread without a link offer. *)
     assert (∀ a, act e = Some a → stable_t e → ¬ link_t e →
               ∃ o, o ∈ dom Σ ∧ offered_p Σ (C, {[+ e +]}) o ∧ offered_t Θ e o ∧
@@ -1027,7 +1029,7 @@ Section core.
     (** A pstep of (C, {e}) is a step of e. *)
     assert (∀ π p', pstep (C, {[+ e +]}) π p' → ¬ irred e) as Hps.
     { intros π p' (q & ev & q' & Hq & Hst & _) Hi.
-      destruct (istep_single _ _ _ _ _ Hq Hst) as [(?&?&_&Hs'&_)|[(?&?&?&_&Hs'&_)|
+      destruct (istep_single _ _ _ _ _ Hq Hst) as [(?&?&?&_&_&Hs'&_)|[(?&?&?&_&Hs'&_)|
         [(?&?&?&?&_&Hs'&_)|[(?&?&?&?&_&Hs'&_)|(?&?&?&_&Hs'&_)]]]]; by eapply Hi. }
     split; [|split; [|unfold Psteps; split_and!]].
     - (* P-Stop *)
@@ -1061,10 +1063,11 @@ Section core.
         intros Hot'. apply Hno'. by rewrite <-(offered_one _ _ _ _ Hot Hot' Hl).
     - (* Q-Admin and Q-Comm *)
       intros q ev q' Hq Hst Hτ.
-      destruct (istep_single _ _ _ _ _ Hq Hst) as [(i & e' & -> & Hs' & ->)|[(i & c & e' & -> & Hs' & HcC & Hce & ->)|
+      destruct (istep_single _ _ _ _ _ Hq Hst) as [(i & α & e' & -> & Hα & Hs' & ->)|[(i & c & e' & -> & Hs' & HcC & Hce & ->)|
         [(i & j & v & e' & -> & Hs' & ->)|
         [(i & o1 & o2 & e' & -> & Hs' & Hc1 & ->)|(i & σ & e' & -> & _)]]]]; cbn [fst ev_cost]; intros Hdisj.
-      + exists W1. split; [apply wext_refl|]. eapply ac_EP; [done|exact Hs|]. by apply H1.
+      + exists W1. split; [apply wext_refl|].
+        destruct Hα as [->| ->]; cbn [ev_cost tcost]; (eapply ac_EP; [done|exact Hs|]); [by apply H1|by apply H3].
       + cbn [fst] in Hdisj. assert (c ∉ chans_of Σ) as HcΣ by (clear -Hdisj; set_solver).
         destruct (H2 c e' Hs' (sth_cfresh _ _ _ _ Hs c HcC HcΣ)) as (S & π & Wn & HWn & HS).
         exists Wn. split; [done|]. eapply ac_EP; [done|by apply sth_new|exact HS].
@@ -1230,7 +1233,7 @@ Section node.
       at_cost_P n (c_spawn κ) (Prel κ) (Prel κ n) W1 Σ T (C, {[+ e' +]} ⊎ {[+ App v EUnit +]}).
   Proof.
     intros HT Hs Hb W1 HW1 v e' Hst.
-    destruct (Hb W1 HW1) as (_ & _ & _ & _ & H4 & _).
+    destruct (Hb W1 HW1) as (_ & _ & _ & _ & _ & H4 & _).
     destruct (H4 _ _ Hst) as (ΘM & Θr & Hd & HΘ & Hth & HA).
     destruct (spawn_split Θ Σ ΘB C ΘM Θr Hs Hd HΘ) as (Hr & HM & Hc & HΣ & HC).
     pose proof (ac_EP κ n IH Xt Xt_P W1 Θr T e' _ _ _ _ HT Hr HA) as [P1 P2].

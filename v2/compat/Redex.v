@@ -176,6 +176,20 @@ Section redex.
       + intros Hc j Hj. eapply Erel_mono; [done|]. by apply HE.
   Qed.
 
+  (** A force step, at cost κ(force). *)
+  Lemma Erel_fstep n W Θ T F e e' :
+    (∀ α e'', tstep e α e'' → α = LForce ∧ e'' = e') → tstep e LForce e' →
+    (∀ j, ole (oadd j (c_force κ)) n → Erel κ j W Θ T F e') → Erel κ n W Θ T F e.
+  Proof.
+    intros Hdet Hst HE. apply Erel_S_intro.
+    - intros Hi. exact (Hi _ _ Hst).
+    - intros W1 _. eapply ready_tau; [exact Hst|done].
+    - intros W1 α e'' HW1 Hs. destruct (Hdet _ _ Hs) as [-> ->]. simpl.
+      split.
+      + intros Hc. eapply Erel_mono; [done|]. apply HE. rewrite Hc. apply ole_refl.
+      + intros Hc j Hj. eapply Erel_mono; [done|]. by apply HE.
+  Qed.
+
   Lemma Erel_app n W Θ1 Θ2 ub lb c T1 U a2 F f w :
     Θ1 ##ₘ Θ2 → ub_ltu W ub F →
     Vrel κ n W Θ1 (TLolli ub lb c T1 U a2) f → Vrel κ n W Θ2 T1 w →
@@ -917,12 +931,9 @@ Section redex.
     Erel κ n W ∅ (sinst_ty (slist ss) (ty_inst xs U)) F (EForce v).
   Proof.
     intros Hxs Hss Hsc HC Hub (_ & e & -> & Hfe & H)%Vrel_box_iff.
-    specialize (H W xs ss (wext_refl W) Hxs Hss Hsc HC).
-    apply (Erel_beta _ _ _ _ _ _ (subst1 (EBox e) e)).
+    apply (Erel_fstep _ _ _ _ _ _ (subst1 (EBox e) e)).
     - intros α e'' Hs. apply op_head_only in Hs; [|done]. inversion Hs; by subst.
     - by apply tstep_head, t_act_force.
-    - apply Vrel_lolli_iff in H as (e0 & He0 & _ & _ & H). injection He0 as <-.
-      intros j Hj. rewrite <-(thunk_app EUnit), <-(map_union_empty ∅).
-      apply H; [apply wext_refl|exact Hj|apply map_disjoint_empty_l|by apply ub_ltu_of|]. by apply Vrel_unit_iff.
+    - intros j Hj. apply (H W xs ss j F (wext_refl W) Hxs Hss Hsc HC Hj). by apply ub_ltu_of.
   Qed.
 End redex.

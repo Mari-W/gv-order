@@ -123,8 +123,8 @@ Proof.
 Qed.
 
 Theorem connect_n_live_soundness Ws p T :
-  pcomps None Ws ∅ p T → sacyc (sw_joins Ws) → ⊢▷ p → deadlock_free p ∧ no_tau_divergence p.
+  pcomps None Ws ∅ p T → sacyc (sw_joins Ws) → deadlock_free p ∧ no_free_divergence p.
 Proof.
-  intros Hp HS Hg. destruct (p_connect_n None Ws ∅ p T Hp HS) as (W & Hty & _).
-  exact (live_soundness_h W p T Hty Hg).
+  intros Hp HS. destruct (p_connect_n None Ws ∅ p T Hp HS) as (W & Hty & _).
+  exact (live_soundness_h W p T Hty).
 Qed.

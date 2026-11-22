@@ -167,7 +167,7 @@ Section body.
   Lemma ctl_self Δ F S1 S2 :
     Δ !! 8 = Some (Some (ctl_box S1 S2)) → (∀ y o, y ≠ 8 → Δ !! y = Some o → spare o) →
     typed W (Some 6) ∅ Γc Δ F (EForce (Var 8)) (TLolli (UPt (pvar 2)) LNone None (TProd (TProd (TSess S1 (sh 1 (pvar 0)) (Some 1) (Some 3)) (TSess S2 (sh 1 (pvar 1)) (Some 2) (Some 3)))
-                (TSess SSkip (pvar 3) (Some 0) (Some 3))) TUnit None) (fadd (Some 0) (Some 0)).
+                (TSess SSkip (pvar 3) (Some 0) (Some 3))) TUnit None) (fadd (Some 0) (Some 1)).
   Proof.
     intros H8 Hs. eapply (lbox_force_eq _ _ _ _ _ _ 4 ctl_C (Some (pvar 2)) (ctl_T S1 S2) TUnit
       (sh 1 (pvar 0) :: sh 1 (pvar 1) :: pvar 2 :: pvar 3 :: [])); [done|apply ctl_hold|done|done|done|].
@@ -357,17 +357,14 @@ Proof.
   Unshelve. all: first [exact None | simpl; lia | simpl; done].
 Qed.
 
-Lemma ctl_guarded : ∅ ⊢▷ ctl_main.
-Proof. unfold ctl_main, ctl_cli, ctl_srv, let_new. guard_tac. Qed.
-
 Theorem ctl_lftyped : ∃ N, ∅ ⊩^N _ W_ctl (∅, {[+ ctl_main +]}) : TUnit.
 Proof.
   destruct ctl_typedN as (c & Ht). exists 6.
-  eapply lf_main_typed; [apply W_ctl_wf|constructor|exact Ht|apply ctl_guarded].
+  eapply lf_main_typed; [apply W_ctl_wf|constructor|exact Ht].
 Qed.
 
 Theorem ctl_lock_free : excluded_middle → functional_choice → lock_free (∅, {[+ ctl_main +]}).
 Proof.
   intros EM FC. destruct ctl_typedN as (c & Ht).
-  eapply (lf_main EM FC); [apply W_ctl_wf|constructor|exact Ht|apply ctl_guarded].
+  eapply (lf_main EM FC); [apply W_ctl_wf|constructor|exact Ht].
 Qed.

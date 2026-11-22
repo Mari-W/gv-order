@@ -360,14 +360,14 @@ Proof.
 Qed.
 
 Lemma force_redex N n m k C ub c U xs ss Π φ d v :
-  length ss = k → sinsts N ss → fle c d →
+  length ss = k → sinsts N ss → fle (fadd (Some 1) c) d →
   v ∈ FV^N _ n⟦RTy (TBox m k C ub c U)⟧(Π, φ) →
   EForce v ∈ F^N _ n⟦RTy (sinst_ty (slist ss) (ty_inst xs U)) ▷ d⟧(Π, φ).
 Proof.
   intros Hl Hs Hcd HV.
   destruct (Vfuel_box_inv _ _ _ _ _ _ _ _ _ _ _ HV) as (e & -> & _ & -> & -> & HF).
-  apply (FuelE_beta _ _ _ _ _ _ [] _ (subst1 (EBox e) e)); [constructor|constructor|].
-  intros j Hj. simpl. eapply FuelE_frame_mono; [exact Hcd|].
+  apply (FuelE_force _ _ _ _ _ (subst1 (EBox e) e)); [constructor|destruct c, d; simpl in *; try done; lia|].
+  intros j Hj. apply (FuelE_frame_mono _ _ _ c); [destruct c as [c|], d as [d|]; unfold ftick, fsub, fadd, fle in *; simpl in *; try done; lia|].
   eapply FuelE_res_mono; [|apply (HF j ss Hj Hl Hs)].
   intros j0 Π0 φ0 w _ Hw. unfold ty_inst. rewrite <-pinst_sinst_comm. by apply Vfuel_pinst.
 Qed.

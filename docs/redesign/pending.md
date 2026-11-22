@@ -1,5 +1,106 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, 2026-11-22, F3 of the content pass (branch fx-guard)
+
+Branch fx-guard in .claude/worktrees/fx-guard, from fx-cost at 8c87168,
+nothing pushed or merged. F3 is done. The guard is gone, a force costs one
+unit, and every file builds. No Admitted, no Axiom, no new Parameter. No
+syntactic clause in a relation and no semantic premise in a typing rule.
+Laptop build in ~/build-spo-fxg: `make` clean, `make check` closes 202 of
+202 results (the guard lemmas left CheckAll, the four GuardEx theorems
+joined it), `make test` matches. Regenerated on purpose:
+test/RelationNotations.expected (`live_adequacy` concludes
+`no_free_divergence`) and test/SoupNotations.expected
+(`soup_no_free_divergence`, the new hypothesis of `lf_thread_progress`).
+
+### The theory
+
+- lang. The label `LForce` and the action `AForce` split off β.
+  P-Act-Beta covers both silent labels (`beta_lbl`). A force is
+  administrative for fairness (`is_admin`). The free steps (`is_free`,
+  `free_lbl`, `ev_free`) are the administrative steps but a force.
+- relation. `c_force` with `1 ≤ c_force` in the cost table, 1 in κ_DF and 1
+  in κ_L. κ_DF needs it too: deadlock-free typing accepts
+  `!(f = force f)`, and at cost 0 the box rule would read the body at the
+  level of the box. The box clause of V reads the body `e[!e]` directly,
+  at each level j with j + κ(force) ≤ n, instead of a thunk at level n. This
+  makes the box rule hold at κ_L without marks (`gen_e_box`,
+  compat/LiveRules.v, one proof for both tables).
+- lockfree. `no_tau_divergence` keeps its meaning and is no longer a
+  consequence of typing. `no_free_divergence` (no divergence by free steps)
+  is what the soup gives (`soup_no_free_divergence`) and what the criterion
+  asks. The stay clause of the criterion asks a free redex (`free_at`).
+- fuel and cost. F-Force (`f_force`) asks positive counters on the held ends
+  that are not idle and on the frame, and ticks them. E-Force has effect
+  `fadd c0 (fadd (Some 1) c)`, and `force_redex` proves F-Force through
+  `FuelE_force`.
+- soup. A force ticks the counters of its thread (`own_next`, `step_force`).
+  In `lf_fuel` a force of the holder of the awaited end lowers the counter of
+  that end, by F-Force and `partner_busy`, so the measure (rank, counter)
+  falls. `lf_adequacy` holds as before.
+- static. `lguard`, `acts`, `kmarks` and `pguard` are deleted, with
+  static/Guard.v and test/GuardNotations.v. The guard premises of
+  `live_fundamental*`, `live_soundness*`, `lf_fundamental*`,
+  `lf_soundness*`, `lf_p_term`, `lf_soundness_source` and the n-ary versions
+  are gone. The live theorems conclude `deadlock_free p ∧
+  no_free_divergence p`. `lf_thread_progress` takes `no_tau_divergence p` as
+  a hypothesis.
+
+### The examples
+
+Every lock-free example keeps its `*_lock_free` theorem at its old bound. A
+force before the argument ages the argument by one, and the smallest fix
+differs per example.
+
+| Example | Bound before | Bound after | Change |
+|---|---|---|---|
+| LFClientServer | 6 | 6 | the self call costs 1; the loop credits fit exactly |
+| LFController | 6 | 6 | same |
+| LFClientServerSplit | 6 | 6 | the interface ends reach the box at credit 2 (`thage_force2`) |
+| LFGrowRing | 8 | 8 | the self call costs 1 |
+| LFFreshBetween | 4 | 4 | tickets 3 and 1 at creation instead of 2 and 2; box at credit 2 of 3 tickets |
+| LFFreshMany | 8 | 8 | tickets 5 and 3 instead of 4 and 4; box at credit 4 of 5 tickets |
+| LFFactoryEx | 4 | 4 | mk₁ takes p at credit 1 (N/2 − 1) |
+
+LFClose, LFCycle and LFLink build unchanged.
+
+### GuardEx (examples/GuardEx.v)
+
+- `div_box_typed`, `pn_fix_typed`, `cx_box_typed`. The three boxes type in
+  the lock-free judgment at each bound, as boxes of cost ∞ that hold no end.
+- `spawn_loop_rejected`. The aging step that rejects `spawn_loop`: aging a
+  non-idle end of finite credit a by the force cost and asking it back at
+  credit a is impossible. The theorem states this core of the rejection. A
+  proof that no derivation of `spawn_loop` exists would need inversion
+  lemmas for E-Box, E-Abs, E-Spawn and E-App through E-Sub, E-Pack and
+  E-Open, which the development does not have.
+
+### Map
+
+docs/explorer/check.sh shows 0 errors and `xref-missing` 0 (65 warnings,
+64 before, all of them pre-existing kinds).
+
+- Removed: the block `g-guard`, the notes `guard.*` and `lfi.guard`, every
+  guard premise in the theorem rows and notes, and every source that named
+  `lguard`, `pguard`, `acts` or a `*_guarded` lemma.
+- `sem-labels` and `sem-head`: the label force, new note `lbl.force`.
+- `ct-costs`: the force row at cost 1 in both tables (and in the
+  deadlock-free variant), κ in ℕ⁷, the condition 1 ≤ κ_force, new notes
+  `ct.force` (with the reason the deadlock-free table needs the cost) and
+  `ct.force-pos`, and `ct.table`, `ct.L`, `ct.DF` updated.
+- `fu-obls`: the rule F-Force, notes `F-Force` and `F-Force.spare`.
+- `r-boxes`: E-Force at effect ε0 · 1 · ε, note `E-Force.one`.
+- `v-rel`: the box clause reads the body one force below, note
+  `V-Box.body` in place of `V-Box.thunk`.
+- `sem-props`: `no_free_divergence`, note `prop.nofree`; `prop.notau` and
+  `ev.admin` updated.
+- `th-chain`, `th-sound`, `th-compose`, `th-fund-proc`, `th-adeq` and
+  `th-terms`: the theorem rows without the guard, the live soundness with
+  `no_free_divergence`, `lf_thread_progress` with `no_tau_divergence p`.
+- Examples `ex-guard-neg` (now "Loops that hold no end", accepted) and
+  `ex-guard-pos` (now "A loop that holds an end", rejected by aging).
+- docs/explorer/BLOCKS.md no longer lists the guard.
+
 ## Report, 2026-11-22, F2 and Q2 of the content pass
 
 Branch fx-cost in .claude/worktrees/fx-cost, from redesign at c813418,

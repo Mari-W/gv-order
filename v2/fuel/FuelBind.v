@@ -74,29 +74,30 @@ Proof. intros Ho. unfold idle_at. by rewrite lookup_union_r'. Qed.
 (** The frame and the context's counters after a step of the hole: an
     action spends one unit of each. *)
 Definition is_act (α : tlabel) : Prop :=
-  match α with LSess s => act_end s ≠ None | _ => False end.
+  match α with LSess s => act_end s ≠ None | LForce => True | _ => False end.
 
 Definition dupd (d : fuel) (α : tlabel) : fuel :=
-  match α with LSess s => match act_end s with Some _ => ftick d | None => d end | _ => d end.
+  match α with LSess s => match act_end s with Some _ => ftick d | None => d end | LForce => ftick d | _ => d end.
 
 Definition kupd (α : tlabel) (φ : cenv) : cenv :=
-  match α with LSess s => match act_end s with Some _ => ctick <$> φ | None => φ end | _ => φ end.
+  match α with LSess s => match act_end s with Some _ => ctick <$> φ | None => φ end | LForce => ctick <$> φ | _ => φ end.
 
 (** The counters of the context's ends that are not idle: each at least c. *)
 Definition fabove (c : fuel) (Π : penv) (φ : cenv) : Prop :=
   ∀ o f, φ !! o = Some f → ¬ idle_at Π o → fle c f.1.
 
 Lemma dom_kupd α φ : dom (kupd α φ) = dom φ.
-Proof. destruct α as [| | |s]; simpl; try done. destruct (act_end s); [apply dom_fmap_L|done]. Qed.
+Proof. destruct α as [| | | |s]; simpl; try done; [apply dom_fmap_L|]. destruct (act_end s); [apply dom_fmap_L|done]. Qed.
 
 Lemma fabove_kupd c Π φ α : fabove c Π φ → fabove (dupd c α) Π (kupd α φ).
 Proof.
-  intros H. destruct α as [| | |s]; simpl; try done. destruct (act_end s); [|done].
-  intros o f Ho Hi. apply lookup_fmap_Some in Ho as (f0 & <- & Ho). apply fle_ftick. by apply (H o f0).
+  intros H. destruct α as [| | | |s]; simpl; try done;
+    [|destruct (act_end s); [|done]];
+    intros o f Ho Hi; apply lookup_fmap_Some in Ho as (f0 & <- & Ho); apply fle_ftick; by apply (H o f0).
 Qed.
 
 Lemma fle_dupd c d α : fle c d → fle (dupd c α) (dupd d α).
-Proof. intros H. destruct α as [| | |s]; simpl; try done. destruct (act_end s); [by apply fle_ftick|done]. Qed.
+Proof. intros H. destruct α as [| | | |s]; simpl; try done; [by apply fle_ftick|]. destruct (act_end s); [by apply fle_ftick|done]. Qed.
 
 Lemma fabove_rename c Π φ (g : cend → cend) Π' φ' :
   kinj g Π → renk g Π Π' → renk g φ φ' → dom Π = dom φ → fabove c Π φ → fabove c Π' φ'.
@@ -170,7 +171,8 @@ Lemma fkont_upd n N σ1 σ c1 d ΠK φK K α :
   (is_act α → fle (Some 1) c1) →
   fkont n N σ1 σ c1 d ΠK φK K → fkont n N σ1 σ (dupd c1 α) (dupd d α) ΠK (kupd α φK) K.
 Proof.
-  intros H1 H. destruct α as [| | |s]; simpl; try done.
+  intros H1 H. destruct α as [| | | |s]; simpl; try done.
+  { apply fkont_tick; [|done]. by apply H1. }
   destruct (act_end s) as [o|] eqn:E; [|done]. apply fkont_tick; [|done].
   apply H1. simpl. by rewrite E.
 Qed.
@@ -222,9 +224,19 @@ Section obl_bind.
     Fobl N El Vl n σ d (Π1 ∪ ΠK) (φ1 ∪ φK) α (efill K e3).
   Proof.
     unfold El, Vl.
-    destruct α as [|c|v|[o w|o w|o|o i|o i|os]]; simpl;
-      unfold f_beta, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link.
+    destruct α as [| |c|v|[o w|o w|o|o i|o i|os]]; simpl;
+      unfold f_beta, f_force, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link.
     - intros H j Hj. apply (Hcont LBeta j Π1 φ1 e3); [done|done|done|by intros []|exact (H j Hj)].
+    - intros (Hs & H1 & H). split_and!.
+      + intros o f Ho Hf Hi. rewrite dom_union_L in Ho.
+        apply lookup_union_Some_raw in Hf as [Hf|[Hn Hf]].
+        * apply (Hs o f); [by eapply elem_of_dom_2|done|]. intros Hi2. apply Hi. apply idle_at_union_l; [|done].
+          rewrite HdΠK. apply elem_of_dom_2 in Hf. set_solver.
+        * eapply fle_trans; [exact H1|]. apply (Hab o f Hf). intros Hi2. apply Hi.
+          apply idle_at_union_r; [|done]. rewrite HdΠ1. by apply not_elem_of_dom.
+      + by eapply fle_trans.
+      + intros j Hj. rewrite map_fmap_union.
+        apply (Hcont LForce j Π1 (ctick <$> φ1) e3); [done|by rewrite dom_fmap_L|by rewrite dom_fmap_L|intros _; done|exact (H j Hj)].
     - intros H Hf. destruct H as (S & m1 & m2 & Hm & HS).
       { destruct Hf as (H1 & H2 & H3 & H4). rewrite dom_union_L in *. unfold ffresh. set_solver. }
       exists S, m1, m2. split; [done|]. destruct Hf as (H1 & H2 & H3 & H4). rewrite !dom_union_L in *.

@@ -16,10 +16,10 @@ lfsoup_step
                    tsum_ok (Some N) (tc_m1 tc) (tc_m2 tc)
                    ∧ s_W a ⊑ s_W (lf_next tc a ev q')
                      ∧ lf_next tc a ev q' ∈ S^{N,W} _ lv⟦∅ ⊢ T⟧
-soup_no_tau_divergence
+soup_no_free_divergence
      : ∀ (N : nat) (W : world) (T : ty) (a : lfstate),
          (∀ n : Ix, a ∈ S^{N,W} _ n⟦∅ ⊢ T⟧)
-         → no_tau_divergence (erase (s_q a))
+         → no_free_divergence (erase (s_q a))
 lf_adequacy
      : excluded_middle
        → functional_choice
@@ -31,9 +31,10 @@ lf_thread_progress
          → ∀ (N : nat) (W : world) (T : ty) (p : proc),
              wranked W
              → ∅ ⊪^N _W p : T
-               → ∀ (r : nat → config) (l : nat → option event),
-                   erase (r 0) = p
-                   → maximal r l → wfair r l → thread_progress_run r l
+               → no_tau_divergence p
+                 → ∀ (r : nat → config) (l : nat → option event),
+                     erase (r 0) = p
+                     → maximal r l → wfair r l → thread_progress_run r l
 λ (N : nat) (W : sworld) (Σ : senv) (p : proc) (T : ty), Σ ⊩^N _ W p : T
      : nat → sworld → senv → proc → ty → Prop
 lf_fundamental

@@ -93,11 +93,11 @@ Proof. apply adequacy_gen. Qed.
 
 (** In κ_L an administrative step costs nothing, so a closed process in
     P at any level admits no infinite sequence of them. *)
-Lemma Prel_acc_live n W T p : olt ozero n → Prel κ_L n W ∅ T p → Acc (λ y x, padmin x y) p.
+Lemma Prel_acc_live n W T p : olt ozero n → Prel κ_L n W ∅ T p → Acc (λ y x, pfstep x y) p.
 Proof.
   intros Hn HP.
-  cut (∀ W Σ T p, Prel κ_L n W Σ T p → Σ = ∅ → Acc (λ y x, padmin x y) p); [eauto|].
-  clear - Hn. refine (Prel_ind κ_L n (λ W Σ T p, Σ = ∅ → Acc (λ y x, padmin x y) p) Hn _).
+  cut (∀ W Σ T p, Prel κ_L n W Σ T p → Σ = ∅ → Acc (λ y x, pfstep x y) p); [eauto|].
+  clear - Hn. refine (Prel_ind κ_L n (λ W Σ T p, Σ = ∅ → Acc (λ y x, pfstep x y) p) Hn _).
   intros W Σ T p H ->. constructor. intros p' (q & ev & q' & Hq & Hst & <- & Had).
   destruct (Pbody_id κ_L _ _ _ _ _ _ _ _ _ H W (wext_refl W)) as (_ & _ & H1 & _).
   assert (ev_tau ev ∧ ev_cost κ_L ev = 0) as [Hτ Hc].
@@ -107,8 +107,10 @@ Proof.
   by apply (A1 Hc).
 Qed.
 
-(** ∅ ⊫_W p : T ⟹ deadlock_free p ∧ no_tau_divergence p. *)
-Theorem live_adequacy W T p : ∅ ⊫_W p : T → deadlock_free p ∧ no_tau_divergence p.
+(** ∅ ⊫_W p : T ⟹ deadlock_free p ∧ no_free_divergence p. A force
+    costs one unit in κ_L, so only the free steps are read inside one
+    level (F3 of docs/redesign/fable-findings.md). *)
+Theorem live_adequacy W T p : ∅ ⊫_W p : T → deadlock_free p ∧ no_free_divergence p.
 Proof.
   intros HP. split; [by eapply adequacy_gen|].
   intros q Hq. apply rtc_nsteps_1 in Hq as [m Hm].

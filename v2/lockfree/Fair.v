@@ -21,6 +21,7 @@ From GV Require Export lang.Safety.
 Definition amap (g : cend → cend) (a : action) : action :=
   match a with
   | ABeta => ABeta
+  | AForce => AForce
   | ANew => ANew
   | ASpawn v => ASpawn (emap g v)
   | ARecv o => ARecv (g o)
@@ -51,6 +52,9 @@ Qed.
 Lemma amap_admin g a : is_admin (amap g a) ↔ is_admin a.
 Proof. by destruct a. Qed.
 
+Lemma amap_free g a : is_free (amap g a) ↔ is_free a.
+Proof. by destruct a. Qed.
+
 Lemma amap_sess g a : is_sess (amap g a) ↔ is_sess a.
 Proof. unfold is_sess. destruct a; simpl; split; eauto. Qed.
 
@@ -61,6 +65,13 @@ Definition pend (q : config) (t : nat) : Prop :=
 
 Definition admin_at (q : config) (t : nat) : Prop :=
   ∃ e a, q.2 !! t = Some e ∧ act e = Some a ∧ is_admin a.
+
+(** A free redex: administrative, and no force. *)
+Definition free_at (q : config) (t : nat) : Prop :=
+  ∃ e a, q.2 !! t = Some e ∧ act e = Some a ∧ is_free a.
+
+Lemma free_at_admin q t : free_at q t → admin_at q t.
+Proof. intros (e & a & ? & ? & ?). exists e, a. split_and!; [done|done|by apply free_admin]. Qed.
 
 Lemma istep_other_pend q ev q' t : istep q ev q' → t ∉ ev_parts ev → pend q t → pend q' t.
 Proof.
@@ -118,9 +129,11 @@ Lemma admin_enabled q t e a :
   (∀ o1 o2, a = ALink o1 o2 → ech o1 ∈ q.1 ∨ ech o2 ∈ q.1) → tenabled q t.
 Proof.
   destruct q as [C M]. intros He Ha Had Hln. simpl in *.
-  destruct a as [| |v|o|o v|o|o1 o2|o i|o]; try done.
+  destruct a as [| | |v|o|o v|o|o1 o2|o i|o]; try done.
   - destruct (act_offer e ABeta LBeta Ha I) as [e' Hs].
-    eexists _, _. split; [split; [by eapply p_act_beta|done]|set_solver].
+    eexists _, _. split; [split; [eapply p_act_beta; [done|done|by left]|done]|set_solver].
+  - destruct (act_offer e AForce LForce Ha I) as [e' Hs].
+    eexists _, _. split; [split; [eapply p_act_beta; [done|done|by right]|done]|set_solver].
   - set (c := fresh (C ∪ echans (soup M))).
     assert (c ∉ C ∪ echans (soup M)) as Hc by apply is_fresh.
     destruct (act_offer e ANew (LNew c) Ha I) as [e' Hs].
@@ -202,5 +215,16 @@ Section runs.
     intros Ht He Ha Had. destruct (Hmax i) as [(ev & Hl & Hs)|(_ & _ & Hl)].
     - rewrite Hl in Ht. by eapply admin_step.
     - rewrite Hl in Ht. set_solver.
+  Qed.
+
+  Lemma run_free_step i t e a :
+    t ∈ lparts (l i) → (r i).2 !! t = Some e → act e = Some a → is_free a →
+    ∃ α e' g, free_lbl α ∧ tstep e α e' ∧ (r (S i)).2 !! t = Some (emap g e').
+  Proof.
+    intros Ht He Ha Hf.
+    destruct (run_admin_step i t e a Ht He Ha (free_admin a Hf)) as (α & e' & g & _ & Hs & Hg).
+    exists α, e', g. split_and!; [|done|done].
+    destruct (act_step _ _ _ Hs) as (a' & Ha' & Ho). rewrite Ha in Ha'. injection Ha' as <-.
+    by apply (offers_free a).
   Qed.
 End runs.

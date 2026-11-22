@@ -50,7 +50,7 @@ Section efacts.
     refine (Erel_ind κ n (λ W Θ T F e, ∀ F', fcover W F' F → Erel κ n W Θ T F' e) _).
     intros W Θ T F e H F' HF. apply Erel_iff. intros W1 HW1.
     pose proof (fcover_mono _ _ _ _ HW1 HF) as HF1.
-    destruct (H W1 HW1) as (Hs & Hr & H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
+    destruct (H W1 HW1) as (Hs & Hr & H1 & H3 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     assert (∀ Wx c Θ0 T0 e', W1 ⊑ Wx →
       at_cost_E n c (Erel κ) (λ W Θ T F e, Erel κ n W Θ T F e ∧
                                      ∀ F', fcover W F' F → Erel κ n W Θ T F' e) Wx Θ0 T0 F e' →
@@ -63,6 +63,7 @@ Section efacts.
     - done.
     - intros Hirr. eapply ready_t_cover; [exact HF1|by apply Hr].
     - intros e' Hst. by apply Hac, H1.
+    - intros e' Hst. by apply Hac, H3.
     - intros c e' Hst Hc. destruct (H2 c e' Hst Hc) as (S & π & Wn & HWn & HS). exists S, π, Wn. split; [done|]. by apply HacW.
     - intros v e' Hst. destruct (H4 v e' Hst) as (ΘM & Θr & A1 & A2 & A4 & A5).
       exists ΘM, Θr. split_and!; [done|done| |by apply Hac].
@@ -94,7 +95,7 @@ Section efacts.
     { intros H Θ F e HE. eapply H; [exact HE|apply wext_refl|done]. }
     refine (Erel_ind κ n _ _). intros W Θ T0 F e H HW ->. apply Erel_iff. intros W1 HW1.
     assert (W0 ⊑ W1) as HW01 by (by eapply wext_trans).
-    destruct (H W1 HW1) as (Hs & Hr & H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
+    destruct (H W1 HW1) as (Hs & Hr & H1 & H3 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     assert (∀ Wx c Θ0 F0 e', W1 ⊑ Wx →
       at_cost_E n c (Erel κ) (λ W Θ T0 F e, Erel κ n W Θ T0 F e ∧
                                      (W0 ⊑ W → T0 = T → Erel κ n W Θ T' F e)) Wx Θ0 T F0 e' →
@@ -108,6 +109,7 @@ Section efacts.
     - intros Hirr. apply HV; [done|apply ole_refl|]. by apply Hs.
     - done.
     - intros e' Hst. by apply Hac, H1.
+    - intros e' Hst. by apply Hac, H3.
     - intros c e' Hst Hc. destruct (H2 c e' Hst Hc) as (S & π & Wn & HWn & HS). exists S, π, Wn. split; [done|]. by apply HacW.
     - intros v e' Hst. destruct (H4 v e' Hst) as (ΘM & Θr & A1 & A2 & A4 & A5).
       exists ΘM, Θr. split_and!; [done|done| |by apply Hac].

@@ -37,11 +37,13 @@ Proof.
   intros Hst Hτ Ht He Ha Ho.
   assert (Hof : ∀ α e', tstep e α e' → offers a1 α).
   { intros α e' Hs. destruct (act_step _ _ _ Hs) as (a' & Ha' & Hoff). rewrite Ha in Ha'. by simplify_eq. }
-  destruct Hst as [C M i e0 e0' Hi Hs|C M i e0 c e0' Hi Hs
+  destruct Hst as [C M i α e0 e0' Hi Hs [-> | ->]|C M i e0 c e0' Hi Hs
     |C M i j e0 v e0' Hi Hs Hj
     |C M i j o' v e0 e0' f f' Hij Hi Hj He0 Hf|C M i j o' e0 e0' f f' Hij Hi Hj He0 Hf HC
     |C M i j o' b e0 e0' f f' Hij Hi Hj He0 Hf|C M i e0 o1 o2 e0' Hi Hs HC
     |C M i e0 σ e0' Hi Hs HC]; simpl in Ht, He |- *.
+  - apply elem_of_singleton in Ht as ->. rewrite He in Hi. injection Hi as <-.
+    pose proof (Hof _ _ Hs) as Hx. by destruct a1.
   - apply elem_of_singleton in Ht as ->. rewrite He in Hi. injection Hi as <-.
     pose proof (Hof _ _ Hs) as Hx. by destruct a1.
   - apply elem_of_singleton in Ht as ->. rewrite He in Hi. injection Hi as <-.
@@ -93,7 +95,7 @@ Definition kval (K : own) (o : cend) : nat :=
 
 Lemma istep_dom q ev q' : istep q ev q' → (∀ u α j, ev ≠ EvSolo u α (PickChild j)) → dom q'.2 = dom q.2.
 Proof.
-  destruct 1 as [C M i e e' Hi|C M i e c e' Hi|C M i j e v e' Hi Hs Hj
+  destruct 1 as [C M i α e e' Hi|C M i e c e' Hi|C M i j e v e' Hi Hs Hj
     |C M i j o v e e' f f' Hij Hi Hj|C M i j o e e' f f' Hij Hi Hj|C M i j o b e e' f f' Hij Hi Hj
     |C M i e o1 o2 e' Hi|C M i e σ e' Hi]; simpl; intros Hns.
   all: try (exfalso; by eapply Hns).
@@ -108,6 +110,10 @@ Proof.
   intros Hst. inversion Hst; subst. simpl. exists e, e'. split_and!; [done|done|done|by rewrite lookup_insert_eq|].
   rewrite !dom_insert_L. apply elem_of_dom_2 in H3. set_solver.
 Qed.
+
+Lemma istep_force_inv q u k q' : istep q (EvSolo u LForce k) q' →
+  ∃ eu e', q.2 !! u = Some eu ∧ tstep eu LForce e'.
+Proof. intros Hst. inversion Hst; subst. simpl. eauto. Qed.
 
 Lemma istep_link_inv q u α o1 o2 q' : istep q (EvSolo u α (PickLink o1 o2)) q' →
   ∃ eu e', q.2 !! u = Some eu ∧ tstep eu (LSess (SLink ({[o1]} ∪ {[o2]}))) e'.
@@ -124,11 +130,23 @@ Lemma istep_admin_actor q ev q' u :
   istep q ev q' → ev_admin ev → u ∈ ev_parts ev → admin_at q u.
 Proof.
   intros Hst Had Hu.
-  destruct Hst as [C M i e e' Hi Hs|C M i e c e' Hi Hs|C M i j e v e' Hi Hs Hj
+  destruct Hst as [C M i α e e' Hi Hs [-> | ->]|C M i e c e' Hi Hs|C M i j e v e' Hi Hs Hj
     |C M i j o v e e' f f' Hij Hi Hj|C M i j o e e' f f' Hij Hi Hj|C M i j o b e e' f f' Hij Hi Hj
     |C M i e o1 o2 e' Hi Hs|C M i e σ e' Hi]; simpl in Had, Hu; try contradiction;
     apply elem_of_singleton in Hu as ->; destruct (admin_of_step _ _ _ Hs I) as (a & Ha & Had');
     by exists e, a.
+Qed.
+
+(** The actor of a free event has a free redex. *)
+Lemma istep_free_actor q ev q' u :
+  istep q ev q' → ev_free ev → u ∈ ev_parts ev → free_at q u.
+Proof.
+  intros Hst Hf Hu.
+  destruct Hst as [C M i α e e' Hi Hs [-> | ->]|C M i e c e' Hi Hs|C M i j e v e' Hi Hs Hj
+    |C M i j o v e e' f f' Hij Hi Hj|C M i j o e e' f f' Hij Hi Hj|C M i j o b e e' f f' Hij Hi Hj
+    |C M i e o1 o2 e' Hi Hs|C M i e σ e' Hi]; simpl in Hf, Hu; try contradiction; try (by destruct Hf);
+    apply elem_of_singleton in Hu as ->; destruct (act_step _ _ _ Hs) as (a & Ha & Hoff);
+    exists e, a; (split; [done|]); (split; [done|]); by apply (proj2 (offers_free a _ Hoff)).
 Qed.
 
 (** The end an actor of a synchronization acts on. *)
@@ -144,7 +162,7 @@ Lemma istep_sync_step q ev q' s es p :
   ∃ σ es', tstep es (LSess σ) es' ∧ act_end σ = Some p.
 Proof.
   intros Hst Hp Hes.
-  destruct Hst as [C M i e e' Hi|C M i e c e' Hi|C M i j e v e' Hi Hs Hj
+  destruct Hst as [C M i α e e' Hi|C M i e c e' Hi|C M i j e v e' Hi Hs Hj
     |C M i j o v e e' f f' Hij Hi Hj He Hf|C M i j o e e' f f' Hij Hi Hj He Hf HC
     |C M i j o b e e' f f' Hij Hi Hj He Hf|C M i e o1 o2 e' Hi|C M i e σ e' Hi]; simpl in Hp, Hes; try done.
   all: destruct (decide (s = i)) as [->|Hsi]; [injection Hp as <-; rewrite Hi in Hes; injection Hes as <-; eauto|].

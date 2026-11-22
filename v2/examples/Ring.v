@@ -249,7 +249,7 @@ Qed.
 Lemma cl2_tstep o1 o2 α e' : tstep (cl2 o1 o2) α e' → α = LSess (SClose o1).
 Proof.
   intros H. apply act_step in H as (a & Ha & Hoff). simpl in Ha. injection Ha as <-.
-  destruct α as [| | |[]]; simpl in Hoff; try done. by subst.
+  destruct α as [| | | |[]]; simpl in Hoff; try done. by subst.
 Qed.
 
 Lemma ring_first e α e' :
@@ -263,7 +263,7 @@ Qed.
 Lemma ring_stuck p' : ¬ preduction (ring_cfg tC) p'.
 Proof.
   intros H. apply pstep_iff in H. remember (ring_cfg tC) as p eqn:Ep. remember PTau as π eqn:Eπ.
-  destruct H as [C E e σ e' Hs _|C E e e' Hs|C E e c e' Hs _ _ _|C E e v e' Hs
+  destruct H as [C E e σ e' Hs _|C E α e e' Hs [-> | ->]|C E e c e' Hs _ _ _|C E e v e' Hs
                 |C E o v e e' f f' Hs Hf|C E o e e' f f' Hs Hf _|C E o b e e' f f' Hs Hf
                 |C E e o1 o2 e' Hs _];
     try discriminate Eπ; injection Ep as _ HE;
@@ -312,7 +312,7 @@ Qed.
 Lemma cyc2_stuck p' : ¬ preduction cyc2_cfg p'.
 Proof.
   intros H. apply pstep_iff in H. remember cyc2_cfg as p eqn:Ep. remember PTau as π eqn:Eπ.
-  destruct H as [C E e σ e' Hs _|C E e e' Hs|C E e c e' Hs _ _ _|C E e v e' Hs
+  destruct H as [C E e σ e' Hs _|C E α e e' Hs [-> | ->]|C E e c e' Hs _ _ _|C E e v e' Hs
                 |C E o v e e' f f' Hs Hf|C E o e e' f f' Hs Hf _|C E o b e e' f f' Hs Hf
                 |C E e o1 o2 e' Hs _];
     try discriminate Eπ; injection Ep as _ HE;

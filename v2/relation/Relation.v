@@ -279,6 +279,9 @@ Section bodies.
     Definition o_beta (e' : expr) : Prop :=
       at_cost_E n (c_beta κ) El X W Θ T F e'.
 
+    Definition o_force (e' : expr) : Prop :=
+      at_cost_E n (c_force κ) El X W Θ T F e'.
+
     Definition o_new (c : chan) (e' : expr) : Prop :=
       cfresh c Θ → ∃ S π W', W ⊑ W' ∧
         at_cost_E n (c_new κ) El X W' (new_env c S π Θ) T F e'.
@@ -322,6 +325,7 @@ Section bodies.
     Definition Eobl (α : tlabel) (e' : expr) : Prop :=
       match α with
       | LBeta => o_beta e'
+      | LForce => o_force e'
       | LNew c => o_new c e'
       | LSpawn v => o_spawn v e'
       | LSess (SSend o w) => o_send o w e'
@@ -336,6 +340,7 @@ Section bodies.
         strictly positively. *)
     Definition Esteps (e : expr) : Prop :=
       (∀ e', tstep e LBeta e' → o_beta e') ∧                          (* O-Beta *)
+      (∀ e', tstep e LForce e' → o_force e') ∧                        (* O-Force *)
       (∀ c e', tstep e (LNew c) e' → o_new c e') ∧                    (* O-New *)
       (∀ v e', tstep e (LSpawn v) e' → o_spawn v e') ∧              (* O-Spawn *)
       (∀ o w e', tstep e (LSess (SSend o w)) e' → o_send o w e') ∧  (* O-Send *)
@@ -348,8 +353,8 @@ Section bodies.
     Lemma Esteps_iff e : Esteps e ↔ ∀ α e', tstep e α e' → Eobl α e'.
     Proof.
       split.
-      - intros (H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10) α e' Hst.
-        destruct α as [|c|v|[o w|o w|o|o i|o i|os]]; simpl; eauto.
+      - intros (H1 & H3 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10) α e' Hst.
+        destruct α as [| |c|v|[o w|o w|o|o i|o i|os]]; simpl; eauto.
       - intros H. split_and!; intros; match goal with Hs : tstep _ ?α ?e' |- _ => exact (H α e' Hs) end.
     Qed.
   End obligations.
@@ -391,11 +396,12 @@ Section bodies.
           (∃ v', v = Inj false v' ∧ Vbody n Vl El k' W Θ T1 v') ∨
           (∃ v', v = Inj true v' ∧ Vbody n Vl El k' W Θ U v')
       | TBox m kk C ub _ U =>
+          (* a force costs κ(force) ≥ 1, so the body is read below n (F3) *)
           Θ = ∅ ∧ ∃ e, v = EBox e ∧ fends e = ∅ ∧                 (* Q14 *)
-            ∀ W' xs ss, W ⊑ W' → length xs = m → length ss = kk → Forall contractive ss ∧ Forall sscoped ss →
-              wholds W' C xs →
-              Vbody n Vl El k' W' ∅
-                (tthunk (pt_inst (plist xs) <$> ub) (sinst_ty (slist ss) (ty_inst xs U))) (thunk e)
+            ∀ W' xs ss j F, W ⊑ W' → length xs = m → length ss = kk → Forall contractive ss ∧ Forall sscoped ss →
+              wholds W' C xs → ole (oadd j (c_force κ)) n →
+              ub_ltu W' (ubound_of (pt_inst (plist xs) <$> ub)) F →
+              El j W' ∅ (sinst_ty (slist ss) (ty_inst xs U)) F (subst1 (EBox e) e)
       | TEx lb m C T1 =>
           lbx_le W lb (senv_heads Θ) ∧
           ∃ xs, length xs = m ∧ wholds W C xs ∧ Vbody n Vl El k' W Θ (ty_inst xs T1) v
@@ -597,8 +603,9 @@ Section maps.
       (f : ∀ W Θ T F e, X1 W Θ T F e → X2 W Θ T F e) W Θ T F e :
     Esteps κ n Vl El VN X1 W Θ T F e → Esteps κ n Vl El VN X2 W Θ T F e.
   Proof.
-    intros (H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
+    intros (H1 & H3 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     split; [intros e' Hs; exact (at_cost_E_map _ _ _ _ _ _ _ _ _ _ (f _ _ _ _ _) (H1 e' Hs))|].
+    split; [intros e' Hs; exact (at_cost_E_map _ _ _ _ _ _ _ _ _ _ (f _ _ _ _ _) (H3 e' Hs))|].
     split.
     { intros c e' Hs Hc. destruct (H2 c e' Hs Hc) as (S & π & W' & HW & HS).
       exists S, π, W'. split; [exact HW|]. exact (at_cost_E_map _ _ _ _ _ _ _ _ _ _ (f _ _ _ _ _) HS). }
@@ -784,11 +791,12 @@ Section mono.
     (∀ W Θ F e, X1 W Θ TUnit F e → X2 W Θ TUnit F e) →
     Esteps κ n Vl1 El1 VN1 X1 W Θ T F e → Esteps κ n Vl2 El2 VN2 X2 W Θ T F e.
   Proof.
-    intros HVl HEl HVN HX HXu (H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
+    intros HVl HEl HVN HX HXu (H1 & H3 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     assert (∀ c W Θ F e, at_cost_E n c El1 X1 W Θ T F e → at_cost_E n c El2 X2 W Θ T F e) as Hac.
     { intros c W0 Θ0 F0 e0. apply at_cost_E_mono; [|apply HX]. intros j Hj. by apply HEl. }
     split_and!.
     - intros e' Hs. apply Hac, H1, Hs.
+    - intros e' Hs. apply Hac, H3, Hs.
     - intros c e' Hs Hc. destruct (H2 c e' Hs Hc) as (S & π & W' & HW & HS).
       exists S, π, W'. split; [done|]. by apply Hac.
     - intros v e' Hs. destruct (H4 v e' Hs) as (ΘM & Θr & A1 & A2 & A4 & A5).
@@ -940,7 +948,10 @@ Section fuel.
         * intros Hg. pose proof (c_give_pos κ Hb0). lia.
     - by setoid_rewrite (λ W Θ T v, IH n Vl1 Vl2 El1 El2 W Θ T v HVl HEl).
     - by setoid_rewrite (λ W Θ T v, IH n Vl1 Vl2 El1 El2 W Θ T v HVl HEl).
-    - by setoid_rewrite (λ W Θ T v, IH n Vl1 Vl2 El1 El2 W Θ T v HVl HEl).
+    - pose proof (c_force_pos κ) as Hc. apply and_iff_compat_l.
+      split; intros (e & -> & Hfe & H); exists e; split_and!; try done;
+        intros W' xs ss j F HW Hxs Hss Hsc HC Hj Hub;
+        (apply HEl; [exact (oadd_lt j (c_force κ) n ltac:(lia) Hj)|]); by apply H.
     - done.
     - by setoid_rewrite (λ W Θ T v, IH n Vl1 Vl2 El1 El2 W Θ T v HVl HEl).
   Qed.
@@ -971,12 +982,7 @@ Section fuel.
         (exists v1, v2, Θ1, Θ2); split_and!; try done; (eapply IH; [..|eassumption]; lia).
     - split; (intros [(v' & -> & Hv)|(v' & -> & Hv)]; [left|right]);
         (exists v'); split; try done; (eapply IH; [..|eassumption]; lia).
-    - assert (∀ xs ss, tsize (tthunk (pt_inst (plist xs) <$> ub) (sinst_ty (slist ss) (ty_inst xs U)))
-                = 2 + tsize U) as Hts.
-      { intros xs ss. rewrite tsize_tthunk. unfold ty_inst. by rewrite tsize_sinst, tsize_pinst. }
-      split; intros (-> & e & -> & Hfe & H); split; try done; (exists e); split_and!; try done;
-        intros W' xs ss HW Hxs Hss Hsc HC; specialize (H W' xs ss HW Hxs Hss Hsc HC);
-        (eapply IH; [..|exact H]); rewrite Hts; lia.
+    - done.
     - done.
     - assert (∀ xs, tsize (ty_inst xs T1) = tsize T1) as Hts.
       { intros xs. unfold ty_inst. by rewrite tsize_pinst. }
@@ -1139,20 +1145,11 @@ Section equations.
   Lemma Vrel_box_iff n W Θ m kk C ub c U v :
     Vrel κ n W Θ (TBox m kk C ub c U) v ↔
     Θ = ∅ ∧ ∃ e, v = EBox e ∧ fends e = ∅ ∧
-      ∀ W' xs ss, W ⊑ W' → length xs = m → length ss = kk → Forall contractive ss ∧ Forall sscoped ss →
-        wholds W' C xs →
-        Vrel κ n W' ∅ (tthunk (pt_inst (plist xs) <$> ub) (sinst_ty (slist ss) (ty_inst xs U)))
-          (thunk e).
-  Proof.
-    rewrite Vrel_unfold. cbn [Vbody tsize].
-    assert (∀ xs ss W' v, Vbody κ n (Vrel κ) (Erel κ) (S (S (S (tsize U)))) W' ∅
-                (tthunk (pt_inst (plist xs) <$> ub) (sinst_ty (slist ss) (ty_inst xs U))) v ↔
-              Vrel κ n W' ∅ (tthunk (pt_inst (plist xs) <$> ub) (sinst_ty (slist ss) (ty_inst xs U))) v)
-      as HF.
-    { intros. symmetry. apply Vrel_fuel. rewrite tsize_tthunk. unfold ty_inst.
-      rewrite tsize_sinst, tsize_pinst. lia. }
-    by setoid_rewrite HF.
-  Qed.
+      ∀ W' xs ss j F, W ⊑ W' → length xs = m → length ss = kk → Forall contractive ss ∧ Forall sscoped ss →
+        wholds W' C xs → ole (oadd j (c_force κ)) n →
+        ub_ltu W' (ubound_of (pt_inst (plist xs) <$> ub)) F →
+        Erel κ j W' ∅ (sinst_ty (slist ss) (ty_inst xs U)) F (subst1 (EBox e) e).
+  Proof. rewrite Vrel_unfold. by cbn [Vbody tsize]. Qed.
 
   Lemma Vrel_ex_iff n W Θ lb m C T1 v :
     Vrel κ n W Θ (TEx lb m C T1) v ↔

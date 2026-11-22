@@ -122,7 +122,7 @@ Section blind.
     cut (∀ W Θ T0 F e, Erel κ n W Θ T0 F e → T0 = T → Erel κ n W Θ T' F e).
     { intros H W Θ F e HE. by eapply H. }
     refine (Erel_ind κ n _ _). intros W Θ T0 F e H ->. apply Erel_iff. intros W1 HW1.
-    destruct (H W1 HW1) as (Hs & Hr & H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
+    destruct (H W1 HW1) as (Hs & Hr & H1 & H3 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     assert (∀ c W Θ F e',
       at_cost_E n c (Erel κ) (λ W Θ T0 F e, Erel κ n W Θ T0 F e ∧
                                      (T0 = T → Erel κ n W Θ T' F e)) W Θ T F e' →
@@ -135,6 +135,7 @@ Section blind.
     - intros Hirr. apply HV; [apply ole_refl|]. by apply Hs.
     - done.
     - intros e' Hst. by apply Hac, H1.
+    - intros e' Hst. by apply Hac, H3.
     - intros c e' Hst Hc. destruct (H2 c e' Hst Hc) as (S & π & Wn & HWn & HS). exists S, π, Wn. split; [done|]. by apply Hac.
     - intros v e' Hst. destruct (H4 v e' Hst) as (ΘM & Θr & A1 & A2 & A4 & A5).
       exists ΘM, Θr. split_and!; [done|done| |by apply Hac].
@@ -201,18 +202,17 @@ Section blind.
       { intros. apply IH; [simpl; lia|done]. }
       by setoid_rewrite E1; setoid_rewrite E2.
     - rewrite !Vrel_box_iff.
-      assert (∀ W' xs ss, length ss = kk' →
-        ∀ v, Vrel κ n W' ∅ (tthunk (pt_inst (plist xs) <$> ub') (sinst_ty (slist ss) (ty_inst xs U))) v ↔
-             Vrel κ n W' ∅ (tthunk (pt_inst (plist xs) <$> ub') (sinst_ty (slist ss) (ty_inst xs U'))) v)
-        as E.
-      { intros W' xs ss Hss v0. apply IH.
-        { rewrite tsize_tthunk. unfold ty_inst. rewrite tsize_sinst, tsize_pinst. simpl. lia. }
-        apply teq_thunk. destruct kk' as [|kk'].
+      assert (∀ xs ss, length ss = kk' →
+        ∀ j W' Θ0 F e0, Erel κ j W' Θ0 (sinst_ty (slist ss) (ty_inst xs U)) F e0 ↔
+             Erel κ j W' Θ0 (sinst_ty (slist ss) (ty_inst xs U')) F e0) as E.
+      { intros xs ss Hss j. apply Erel_teq. intros. apply IH.
+        { unfold ty_inst. rewrite tsize_sinst, tsize_pinst. simpl. lia. }
+        destruct kk' as [|kk'].
         - destruct ss; [|done]. rewrite !sinst_ty_slist_nil, <-!ty_inst_df. by apply teq_pinst.
         - rewrite !ty_df_sinst, <-!ty_inst_df. match goal with H : ty_df U = ty_df U' |- _ => rewrite H end.
           apply teq_refl. }
       split; intros (-> & e & -> & Hfe & H); (split; [done|]); exists e; (split; [done|]); (split; [done|]);
-        intros W' xs ss HW Hxs Hss Hsc HC; specialize (H W' xs ss HW Hxs Hss Hsc HC);
+        intros W' xs ss j F HW Hxs Hss Hsc HC Hj Hub; specialize (H W' xs ss j F HW Hxs Hss Hsc HC Hj Hub);
         by apply E.
     - rewrite !Vrel_sess_iff. split; intros (o & s0 & -> & -> & Hs); exists o, s0;
         split_and!; try done; unfold seqv in *; eapply sequiv_trans; eauto using sequiv_sym.

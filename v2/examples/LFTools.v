@@ -1,7 +1,7 @@
 (** * Tools for lock-free example derivations (stage S9)
 
     A closed program t is lock free by [lf_soundness] when it types at a
-    finite bound N with the empty future, is guarded and lives in a
+    finite bound N with the empty future and lives in a
     well-formed, well-founded static world ([lf_main]). The constraints
     of the creations meet (wf-new) by lexicographic measures
     ([wf_new_lex3], examples/Tools.v). *)
@@ -18,23 +18,22 @@ Notation functional_choice := lockfree.FairRun.functional_choice.
 
 Lemma lf_main_typed N W t T c :
   sworld_wf W ∧ swf W → tfree T → typed W (Some N) ∅ hc_empty [] (∅, None) t T c →
-  ∅ ⊢▷ t → ∅ ⊩^N _ W (∅, {[+ t +]}) : T.
+  ∅ ⊩^N _ W (∅, {[+ t +]}) : T.
 Proof.
-  intros HS Hp Ht Hg. split.
-  - apply (fp_term (Some N) W ∅ ∅ ∅ t T c); [done| | | | | | |done].
-    6: { unfold tenv_of. rewrite fmap_empty, map_union_empty. exact Ht. }
-    + intros o. rewrite dom_empty_L. set_solver.
-    + set_solver.
-    + apply pfree_empty.
-    + intros o e He. by rewrite lookup_empty in He.
-    + set_solver.
-  - intros t' Ht'. simpl in Ht'. apply gmultiset_elem_of_singleton in Ht' as ->. done.
+  intros HS Hp Ht.
+  apply (fp_term (Some N) W ∅ ∅ ∅ t T c); [done| | | | | | |done].
+  6: { unfold tenv_of. rewrite fmap_empty, map_union_empty. exact Ht. }
+  - intros o. rewrite dom_empty_L. set_solver.
+  - set_solver.
+  - apply pfree_empty.
+  - intros o e He. by rewrite lookup_empty in He.
+  - set_solver.
 Qed.
 
 Lemma lf_main (EM : excluded_middle) (FC : functional_choice) N W t T c :
   sworld_wf W ∧ swf W → tfree T → typed W (Some N) ∅ hc_empty [] (∅, None) t T c →
-  ∅ ⊢▷ t → lock_free (∅, {[+ t +]}).
-Proof. intros HS Hp Ht Hg. eapply (lf_soundness N W _ T EM FC), lf_main_typed; eauto. Qed.
+  lock_free (∅, {[+ t +]}).
+Proof. intros HS Hp Ht. eapply (lf_soundness N W _ T EM FC), lf_main_typed; eauto. Qed.
 
 (** ** Rules of the merged judgment with weakening built in *)
 
@@ -151,27 +150,6 @@ Ltac lage_tac :=
   solve [repeat first [ apply lage_nones | apply lage_nil | apply lage_none
                       | apply lage_some; [age_tac|] ]].
 
-Ltac acts_tac :=
-  first [ apply acts_op; exact I
-        | apply acts_op_arg; acts_tac
-        | apply acts_app1; acts_tac | apply acts_app2; acts_tac
-        | apply acts_pair1; acts_tac | apply acts_pair2; acts_tac
-        | apply acts_letu1; acts_tac | apply acts_letu2; acts_tac
-        | apply acts_letp1; acts_tac | apply acts_letp2; acts_tac
-        | apply acts_let1; acts_tac | apply acts_let2; acts_tac ].
-
-(** The guard: an operand that acts clears the marks for the rest. *)
-Ltac guard_tac :=
-  first [ apply gl_var; reflexivity | apply gl_unit | apply gl_chan | apply gl_new
-        | apply gl_lam; guard_tac | apply gl_box; guard_tac
-        | apply gl_op; guard_tac
-        | apply gl_tick_app; [guard_tac|acts_tac|guard_tac] | eapply gl_app; [guard_tac|left; reflexivity|guard_tac]
-        | apply gl_tick_pair; [guard_tac|acts_tac|guard_tac] | eapply gl_pair; [guard_tac|left; reflexivity|guard_tac]
-        | apply gl_tick_letu; [guard_tac|acts_tac|guard_tac] | eapply gl_letu; [guard_tac|left; reflexivity|guard_tac]
-        | apply gl_tick_letp; [guard_tac|acts_tac|guard_tac] | eapply gl_letp; [guard_tac|left; reflexivity|guard_tac]
-        | apply gl_tick_let; [guard_tac|acts_tac|guard_tac] | apply gl_let; guard_tac
-        | apply gl_inj; guard_tac
-        | eapply gl_case; [guard_tac|left; reflexivity|guard_tac|guard_tac] ].
 
 (** ** Boxes of one arrow
 
@@ -205,7 +183,7 @@ Qed.
 Lemma lbox_force W N Γ Δ F e m C ub T U xs c0 :
   length xs = m → hold_at W Γ C xs →
   typed W N ∅ Γ Δ F e (lbox m C ub T U) c0 →
-  typed W N ∅ Γ Δ F (EForce e) (TLolli (ubound_of (pt_inst (plist xs) <$> ub)) LNone None (ty_inst xs T) (ty_inst xs U) None) (fadd c0 (Some 0)).
+  typed W N ∅ Γ Δ F (EForce e) (TLolli (ubound_of (pt_inst (plist xs) <$> ub)) LNone None (ty_inst xs T) (ty_inst xs U) None) (fadd c0 (Some 1)).
 Proof.
   intros Hm HC He. rewrite <-ub_map_of.
   rewrite <-(sinst_nil (TLolli _ _ _ _ _ _)).
@@ -219,5 +197,5 @@ Lemma lbox_force_eq W N Γ Δ F e m C ub T U xs c0 ub' T' U' :
   length xs = m → hold_at W Γ C xs →
   ubound_of (pt_inst (plist xs) <$> ub) = ub' → ty_inst xs T = T' → ty_inst xs U = U' →
   typed W N ∅ Γ Δ F e (lbox m C ub T U) c0 →
-  typed W N ∅ Γ Δ F (EForce e) (TLolli ub' LNone None T' U' None) (fadd c0 (Some 0)).
+  typed W N ∅ Γ Δ F (EForce e) (TLolli ub' LNone None T' U' None) (fadd c0 (Some 1)).
 Proof. intros ?? <- <- <-. by apply lbox_force. Qed.

@@ -58,7 +58,7 @@ Section closure.
     - rewrite !Vrel_sum_iff. intros [(v' & -> & H)|(v' & -> & H)]; [left|right]; exists v';
         (split; [done|]); [eapply (IH T1)|eapply (IH U)]; eauto; simpl; lia.
     - rewrite !Vrel_box_iff. intros (-> & e & -> & Hfe & H). split; [done|]. exists e. split; [done|].
-      split; [done|]. intros W'' xs ss HW'' Hxs Hss Hsc HC. apply H; [by eapply wext_trans|done..].
+      split; [done|]. intros W'' xs ss j F HW'' Hxs Hss Hsc HC Hj Hub. apply H; [by eapply wext_trans|done..].
     - by rewrite !Vrel_sess_iff.
     - rewrite !Vrel_ex_iff. intros (Hlb & xs & Hxs & HC & H). split; [by eapply lbx_le_mono|].
       exists xs. split_and!; [done|by eapply wholds_mono|]. eapply (IH (ty_inst xs T1)); [|done|done].
@@ -103,8 +103,8 @@ Section closure.
     - rewrite !Vrel_sum_iff. intros [(v' & -> & H)|(v' & -> & H)]; [left|right]; exists v';
         (split; [done|]); [eapply (IH T1)|eapply (IH U)]; eauto; simpl; lia.
     - rewrite !Vrel_box_iff. intros (-> & e & -> & Hfe & H). split; [done|]. exists e. split; [done|].
-      split; [done|]. intros W' xs ss HW Hxs Hss Hsc HC. eapply IH; [|by apply H].
-      rewrite tsize_tthunk. unfold ty_inst. rewrite tsize_sinst, tsize_pinst. simpl. lia.
+      split; [done|]. intros W' xs ss j F HW Hxs Hss Hsc HC Hj Hub.
+      apply H; [done..|exact (ole_trans _ _ _ Hj Hmn)|done].
     - by rewrite !Vrel_sess_iff.
     - rewrite !Vrel_ex_iff. intros (Hlb & xs & Hxs & HC & H). split; [done|].
       exists xs. split_and!; [done|done|]. eapply (IH (ty_inst xs T1)); [|done].
@@ -128,7 +128,7 @@ Section closure.
     revert W Θ T F e HE F' HF.
     refine (Erel_ind κ n (λ W Θ T F e, ∀ F', F' ⊆ F → Erel κ m W Θ T F' e) _).
     intros W Θ T F e H F' HF. apply Erel_iff. intros W1 HW1.
-    destruct (H W1 HW1) as (Hs & Hr & H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
+    destruct (H W1 HW1) as (Hs & Hr & H1 & H3 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     (* the continuation after a step of cost c *)
     assert (∀ c W Θ T0 F0 F0' e', F0' ⊆ F0 →
       at_cost_E n c (Erel κ) (λ W Θ T F e, Erel κ n W Θ T F e ∧
@@ -142,6 +142,7 @@ Section closure.
     - intros Hirr. eapply Vrel_down; [exact Hmn|by apply Hs].
     - intros Hirr. eapply ready_t_future; [done|by apply Hr].
     - intros e' Hst. eapply Hac; [done|by apply H1].
+    - intros e' Hst. eapply Hac; [done|by apply H3].
     - intros c e' Hst Hc. destruct (H2 c e' Hst Hc) as (S & π & Wn & HWn & HS).
       exists S, π, Wn. split; [done|]. eapply Hac; [done|exact HS].
     - intros v e' Hst. destruct (H4 v e' Hst) as (ΘM & Θr & A1 & A2 & A4 & A5).

@@ -28,15 +28,16 @@ Theorem lfsoup_step N W T a n ev q' :
     wext (s_W a) (s_W (lf_next tc a ev q')) ∧ lf_next tc a ev q' ∈ S^{N,W} _ lv⟦∅ ⊢ T⟧.
 Proof.
   destruct a as [[C Mq] K Wa]. intros (HWa & A & Π & U & Hs) [Hst Hτ] lv Hlv. cbn [s_q s_W] in *.
-  inversion Hst as [C0 M0 i e e' Hi Hs'|C0 M0 i e c e' Hi Hs' HC Hc
+  inversion Hst as [C0 M0 i α e e' Hi Hs' [-> | ->]|C0 M0 i e c e' Hi Hs' HC Hc
     |C0 M0 i j e v e' Hi Hs' Hj
     |C0 M0 i j o v e e' f f' Hij Hi Hj He Hf|C0 M0 i j o e e' f f' Hij Hi Hj He Hf HC
     |C0 M0 i j o b e e' f f' Hij Hi Hj He Hf|C0 M0 i e o1 o2 e' Hi Hs' HC
     |C0 M0 i e σ e' Hi Hs' HC]; subst.
-  2: { destruct (step_new _ _ lv Hlv _ _ _ _ _ _ _ _ _ Hs i e c e' Hi Hs' HC) as (tn & A' & Π' & Htn & HWn & H).
+  3: { destruct (step_new _ _ lv Hlv _ _ _ _ _ _ _ _ _ Hs i e c e' Hi Hs' HC) as (tn & A' & Π' & Htn & HWn & H).
     exists tn. split; [done|]. split; [done|]. split; [by eapply wext_trans|]. by exists A', Π', U. }
   all: try (exists (tc0 Wa); split; [apply tc0_ok|]; split; [apply wext_refl|]; split; [done|]).
   - exists A, Π, U. exact (step_beta _ _ lv Hlv _ _ _ _ _ _ _ _ _ Hs i e e' Hi Hs').
+  - exists A, Π, U. exact (step_force _ _ lv Hlv _ _ _ _ _ _ _ _ _ Hs i e e' Hi Hs').
   - eexists _, _, _. exact (step_spawn _ _ lv Hlv _ _ _ _ _ _ _ _ _ Hs (tc0 Wa) i j e v e' Hi Hs' Hj).
   - destruct (step_msg _ _ lv Hlv _ _ _ _ _ _ _ _ _ Hs (tc0 Wa) i j e e' f f' o v Hij Hi Hj He Hf) as (A' & Π' & H).
     by exists A', Π', U.

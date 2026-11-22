@@ -42,7 +42,7 @@ Section body.
 
   Lemma csl_self Δ F S1 S2 :
     Δ !! 6 = Some (Some (csl_box S1 S2)) → (∀ y o, y ≠ 6 → Δ !! y = Some o → spare o) →
-    typed W (Some 6) ∅ Γl Δ F (EForce (Var 6)) (TLolli (UPt (pvar 2)) LNone None (TProd (TSess S1 (sh 1 (pvar 0)) (Some 1) (Some 3)) (TSess S2 (sh 1 (pvar 1)) (Some 2) (Some 3))) TUnit None) (fadd (Some 0) (Some 0)).
+    typed W (Some 6) ∅ Γl Δ F (EForce (Var 6)) (TLolli (UPt (pvar 2)) LNone None (TProd (TSess S1 (sh 1 (pvar 0)) (Some 1) (Some 3)) (TSess S2 (sh 1 (pvar 1)) (Some 2) (Some 3))) TUnit None) (fadd (Some 0) (Some 1)).
   Proof.
     intros H6 Hs. eapply (lbox_force_eq _ _ _ _ _ _ 3 cs_C (Some (pvar 2)) (csl_T S1 S2) TUnit
       (sh 1 (pvar 0) :: sh 1 (pvar 1) :: pvar 2 :: [])); [done|apply csl_hold|done|done|done|].
@@ -195,17 +195,14 @@ Proof.
   Unshelve. all: first [exact None | simpl; lia | simpl; done].
 Qed.
 
-Lemma cs_guarded : ∅ ⊢▷ cs_main.
-Proof. unfold cs_main, cli, srv, let_new. guard_tac. Qed.
-
 Theorem cs_lftyped : ∃ N, ∅ ⊩^N _ W_cs (∅, {[+ cs_main +]}) : TUnit.
 Proof.
   destruct csl_typedN as (c & Ht). exists 6.
-  eapply lf_main_typed; [apply W_cs_wf|constructor|exact Ht|apply cs_guarded].
+  eapply lf_main_typed; [apply W_cs_wf|constructor|exact Ht].
 Qed.
 
 Theorem cs_lock_free : excluded_middle → functional_choice → lock_free (∅, {[+ cs_main +]}).
 Proof.
   intros EM FC. destruct csl_typedN as (c & Ht).
-  eapply (lf_main EM FC); [apply W_cs_wf|constructor|exact Ht|apply cs_guarded].
+  eapply (lf_main EM FC); [apply W_cs_wf|constructor|exact Ht].
 Qed.

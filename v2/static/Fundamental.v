@@ -280,14 +280,14 @@ Proof.
     exists v1, v2, Θ1, Θ2. split_and!; eauto.
   - rewrite !Vrel_sum_iff. intros [(v' & -> & H)|(v' & -> & H)]; [left|right]; eauto.
   - rewrite !Vrel_box_iff. intros (-> & e & -> & Hfe & H). split; [done|]. exists e. split_and!; [done|done|].
-    intros W' xs ss HW' Hxs Hss' Hsc HC. specialize (H W' xs ss HW' Hxs Hss' Hsc HC).
+    intros W' xs ss j F HW' Hxs Hss' Hsc HC Hj Hub. specialize (H W' xs ss j F HW' Hxs Hss' Hsc HC Hj Hub).
     destruct kk as [|kk]; simpl in HU.
     2: { destruct HU as [->|(HU & HcU & HcU')]; [done|].
-         eapply Vrel_teq; [|exact H]. apply teq_thunk. apply teq_df.
+         eapply Erel_teq_ty; [|exact H]. apply teq_df.
          unfold ty_inst. apply teq_sinst; [apply scontr_slist, Hsc|by rewrite !tcontr_pinst|by rewrite !tcontr_pinst|].
          by apply teq_pinst, teq_pinst, teq_sym. }
     destruct ss; [|simpl in Hss'; lia]. rewrite !sinst_ty_slist_nil in H |- *.
-    eapply Vrel_teq; [|exact H]. apply teq_thunk. rewrite <-!ty_inst_df. apply teq_pinst.
+    eapply Erel_teq_ty; [|exact H]. rewrite <-!ty_inst_df. apply teq_pinst.
     rewrite !ty_df_pinst. apply teq_pinst. apply teq_df. by apply teq_sym.
   - rewrite !Vrel_sess_iff. intros (o & s0 & -> & -> & Hs0). exists o, s0. split_and!; [done|done|].
     unfold seqv in *. eapply sequiv_trans; [exact Hs0|]. by apply sequiv_df.
@@ -515,14 +515,14 @@ Section fund.
   Context (HGlam : ∀ L b, G L (Lam b) → G (false .: L) b).
   Context (HGbox : ∀ L b, G L (EBox b) → ∃ mk, G (mk .: L) b ∧ box_rule κ L mk).
   Context (HGop : ∀ L k e, G L (Op k e) → G L e).
-  Context (HGapp : ∀ L e1 e2, G L (App e1 e2) → ∃ L', cmarks κ L L' e1 ∧ G L e1 ∧ G L' e2).
-  Context (HGpair : ∀ L e1 e2, G L (Pair e1 e2) → ∃ L', cmarks κ L L' e1 ∧ G L e1 ∧ G L' e2).
-  Context (HGletu : ∀ L e1 e2, G L (LetU e1 e2) → ∃ L', cmarks κ L L' e1 ∧ G L e1 ∧ G L' e2).
+  Context (HGapp : ∀ L e1 e2, G L (App e1 e2) → ∃ L', cmarks L L' e1 ∧ G L e1 ∧ G L' e2).
+  Context (HGpair : ∀ L e1 e2, G L (Pair e1 e2) → ∃ L', cmarks L L' e1 ∧ G L e1 ∧ G L' e2).
+  Context (HGletu : ∀ L e1 e2, G L (LetU e1 e2) → ∃ L', cmarks L L' e1 ∧ G L e1 ∧ G L' e2).
   Context (HGletp : ∀ L e1 e2, G L (LetP e1 e2) →
-             ∃ L', cmarks κ L L' e1 ∧ G L e1 ∧ G (false .: false .: L') e2).
+             ∃ L', cmarks L L' e1 ∧ G L e1 ∧ G (false .: false .: L') e2).
   Context (HGinj : ∀ L b e, G L (Inj b e) → G L e).
   Context (HGcase : ∀ L e e1 e2, G L (Case e e1 e2) →
-             ∃ L', cmarks κ L L' e ∧ G L e ∧ G (false .: L') e1 ∧ G (false .: L') e2).
+             ∃ L', cmarks L L' e ∧ G L e ∧ G (false .: L') e1 ∧ G (false .: L') e2).
 
   Local Ltac heads_p :=
     rewrite ?tenv_heads_pinst, ?lenv_heads_pinst, ?lenv_bot_pinst, ?heads_pinst, ?hbot_pinst,
@@ -727,55 +727,51 @@ Section fund.
   Qed.
 End fund.
 
-(** ** The DF instance: no marks, β costs one *)
+(** ** The instance without marks, at every cost table
+
+    A force costs κ(force) ≥ 1 in every table, so a box reads its body
+    below the level and needs no mark (F3 of
+    docs/redesign/fable-findings.md). *)
 
 Definition nomarks (L : nat → bool) (_ : expr) : Prop := ∀ x, L x = false.
 
-Lemma typed_sem_df W N Θ Γ Δ F e T c :
+Lemma typed_sem_nm κ W N Θ Γ Δ F e T c :
   sworld_wf W → typed W N Θ Γ Δ F e T c →
   ∀ W1 σ ρ B, wmodels W1 W → wfit N W1 → hsat W1 σ Γ → rest_ok W1 (sf_pinst σ F) ρ →
-  sem_typed_at κ_DF W1 (tenv_pinst σ Θ) (lenv_pinst σ Δ) (sf_den ρ B (sf_pinst σ F)) e (pinst_ty σ T).
+  sem_typed_at κ W1 (tenv_pinst σ Θ) (lenv_pinst σ Δ) (sf_den ρ B (sf_pinst σ F)) e (pinst_ty σ T).
 Proof.
   intros Hwf Ht W1 σ ρ B HW HK Hs Hr. apply sem_later_empty.
-  refine (typed_sem κ_DF nomarks _ _ _ _ _ _ _ _ _ _ W N Θ Γ Δ F e T c Hwf Ht ∅ _ W1 σ ρ B HW HK Hs Hr);
+  refine (typed_sem κ nomarks _ _ _ _ _ _ _ _ _ _ W N Θ Γ Δ F e T c Hwf Ht ∅ _ W1 σ ρ B HW HK Hs Hr);
     [..|done]; unfold nomarks.
   - intros L y H. apply H.
   - intros L b H [|x]; [done|apply H].
   - intros L b H. exists false. split; [intros [|x]; [done|apply H]|].
     intros W0 Δ0 F0 e0 m kk C ub c0 U Htf Hu Hb.
     apply (proj2 (sem_later_unmarked _ _ _ _ _ _ _ _ H)).
-    apply (gen_e_box _ _ _ _ _ _ _ _ _ _ _); [simpl; lia|done|done|]. intros W2 xs ss F2 HW2 Hxs Hss Hsc HC Hub.
+    apply (gen_e_box _ _ _ _ _ _ _ _ _ _ _); [done|done|]. intros W2 xs ss F2 HW2 Hxs Hss Hsc HC Hub.
     assert (∀ x, (false .: L) x = false) as HL by (intros [|x]; [done|apply H]).
     apply (proj1 (sem_later_unmarked _ _ _ _ _ _ _ _ HL)). by apply Hb.
   - done.
-  - intros L e1 e2 H. exists L. split_and!; [by left|done|done].
-  - intros L e1 e2 H. exists L. split_and!; [by left|done|done].
-  - intros L e1 e2 H. exists L. split_and!; [by left|done|done].
-  - intros L e1 e2 H. exists L. split_and!; [by left|done|intros [|[|x]]; [done|done|apply H]].
+  - intros L e1 e2 H. exists L. split_and!; [done|done|done].
+  - intros L e1 e2 H. exists L. split_and!; [done|done|done].
+  - intros L e1 e2 H. exists L. split_and!; [done|done|done].
+  - intros L e1 e2 H. exists L. split_and!; [done|done|intros [|[|x]]; [done|done|apply H]].
   - done.
-  - intros L e0 e1 e2 H. exists L. split_and!; [by left|done|intros [|x]; [done|apply H]|intros [|x]; [done|apply H]].
+  - intros L e0 e1 e2 H. exists L. split_and!; [done|done|intros [|x]; [done|apply H]|intros [|x]; [done|apply H]].
 Qed.
 
-(** ** The live instance: the marks of the guard *)
+Lemma typed_sem_df W N Θ Γ Δ F e T c :
+  sworld_wf W → typed W N Θ Γ Δ F e T c →
+  ∀ W1 σ ρ B, wmodels W1 W → wfit N W1 → hsat W1 σ Γ → rest_ok W1 (sf_pinst σ F) ρ →
+  sem_typed_at κ_DF W1 (tenv_pinst σ Θ) (lenv_pinst σ Δ) (sf_den ρ B (sf_pinst σ F)) e (pinst_ty σ T).
+Proof. apply typed_sem_nm. Qed.
 
+(** The live instance: no guard, a force costs one unit. *)
 Lemma typed_sem_live W N Θ Γ Δ F e T c :
-  sworld_wf W → typed W N Θ Γ Δ F e T c → ∅ ⊢▷ e →
+  sworld_wf W → typed W N Θ Γ Δ F e T c →
   ∀ W1 σ ρ B, wmodels W1 W → wfit N W1 → hsat W1 σ Γ → rest_ok W1 (sf_pinst σ F) ρ →
   sem_typed_at κ_L W1 (tenv_pinst σ Θ) (lenv_pinst σ Δ) (sf_den ρ B (sf_pinst σ F)) e (pinst_ty σ T).
-Proof.
-  intros Hwf Ht Hgd W1 σ ρ B HW HK Hs Hr. apply sem_later_empty.
-  refine (typed_sem κ_L lguard _ _ _ _ _ _ _ _ _ _ W N Θ Γ Δ F e T c Hwf Ht ∅ Hgd W1 σ ρ B HW HK Hs Hr).
-  - intros L y H. by inversion H.
-  - intros L b H. by inversion H.
-  - intros L b H. exists true. split; [by inversion H|]. intros ??????????. apply later_box.
-  - intros L k e0 H. by inversion H.
-  - intros L e1 e2 H. inversion H; subst. eexists; split_and!; [|done|done]. apply kmarks_cmarks; [simpl; lia|done].
-  - intros L e1 e2 H. inversion H; subst. eexists; split_and!; [|done|done]. apply kmarks_cmarks; [simpl; lia|done].
-  - intros L e1 e2 H. inversion H; subst. eexists; split_and!; [|done|done]. apply kmarks_cmarks; [simpl; lia|done].
-  - intros L e1 e2 H. inversion H; subst. eexists; split_and!; [|done|done]. apply kmarks_cmarks; [simpl; lia|done].
-  - intros L b0 e0 H. by inversion H.
-  - intros L e0 e1 e2 H. inversion H; subst. eexists; split_and!; [|done|done|done]. apply kmarks_cmarks; [simpl; lia|done].
-Qed.
+Proof. apply typed_sem_nm. Qed.
 
 (** ** The theorems
 
@@ -801,20 +797,20 @@ Theorem fundamental_typed W R N Θ Δ F t T c :
 Proof. intros HW Ht HR HS. apply (fundamental W); [done| |done|done]. exact (typed_dftyped _ _ _ _ _ _ _ _ _ Ht). Qed.
 
 Theorem live_fundamental W R Θ Δ F t T :
-  sworld_wf W → Θ ; hc_empty ; Δ ⊢^F _ W t : T → ∅ ⊢▷ t → wmodels R W → wstrict R → Θ ; Δ ⊫^F _ R t : T.
+  sworld_wf W → Θ ; hc_empty ; Δ ⊢^F _ W t : T → wmodels R W → wstrict R → Θ ; Δ ⊫^F _ R t : T.
 Proof.
-  intros HW Ht Hgd HR HS ρ B Hr.
-  pose proof (typed_sem_live W None _ hc_empty _ F t _ _ HW Ht Hgd R pvar ρ B HR (or_introl HS)
+  intros HW Ht HR HS ρ B Hr.
+  pose proof (typed_sem_live W None _ hc_empty _ F t _ _ HW Ht R pvar ρ B HR (or_introl HS)
                 (hsat_empty _ _) ltac:(by rewrite sf_pinst_pvar)) as H.
   rewrite tenv_pinst_pvar, lenv_pinst_pvar, sf_pinst_pvar, pinst_ty_pvar in H.
   apply sem_later_empty, sem_later_undf, sem_later_empty, H.
 Qed.
 
 Theorem live_fundamental_typed W R N Θ Δ F t T c :
-  sworld_wf W → Θ ; hc_empty ; Δ ⊢^F _{W,N} t : T ▷ c → ∅ ⊢▷ t → wmodels R W → wstrict R →
+  sworld_wf W → Θ ; hc_empty ; Δ ⊢^F _{W,N} t : T ▷ c → wmodels R W → wstrict R →
   tenv_df Θ ; lenv_df Δ ⊫^F _ R t : ty_df T.
 Proof.
-  intros HW Ht Hgd HR HS. apply (live_fundamental W); [done| |done|done|done].
+  intros HW Ht HR HS. apply (live_fundamental W); [done| |done|done].
   exact (typed_dftyped _ _ _ _ _ _ _ _ _ Ht).
 Qed.
 
@@ -837,13 +833,13 @@ Qed.
     at any world. At a ranked world its creations take (gen-new) and
     excluded middle. The lock-free threads use this theorem. *)
 Theorem live_fundamental_ranked (EM : excluded_middle) W R N Θ Δ F t T c :
-  sworld_wf W → Θ ; hc_empty ; Δ ⊢^F _{W,Some N} t : T ▷ c → ∅ ⊢▷ t → wmodels R W →
+  sworld_wf W → Θ ; hc_empty ; Δ ⊢^F _{W,Some N} t : T ▷ c → wmodels R W →
   tenv_df Θ ; lenv_df Δ ⊫^F _ R t : ty_df T.
 Proof.
-  intros HW Ht Hgd HR ρ B Hr.
+  intros HW Ht HR ρ B Hr.
   assert (wfit (Some N) R) as HK.
   { destruct (wkind_dec R) as [Hr'|Hs']; [right; split_and!; [done|by eexists|done]|by left]. }
-  pose proof (typed_sem_live W (Some N) _ hc_empty _ F t _ _ HW Ht Hgd R pvar ρ B HR HK
+  pose proof (typed_sem_live W (Some N) _ hc_empty _ F t _ _ HW Ht R pvar ρ B HR HK
                 (hsat_empty _ _) ltac:(by rewrite sf_pinst_pvar)) as H.
   rewrite tenv_pinst_pvar, lenv_pinst_pvar, sf_pinst_pvar, pinst_ty_pvar in H.
   apply sem_later_empty, sem_later_df, sem_later_empty, H.

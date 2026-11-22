@@ -686,7 +686,7 @@ Proof.
   { intros i Hi. apply elem_of_dom in Hi as [e He]. apply eq_None_not_Some. intros [e' He'].
     eapply (disj_lookup_n M1 M2); eassumption. }
   inversion Hst; subst; simpl in Hp, Hl; try done.
-  - eexists (_, _). split; [eapply p_act_beta; [apply Hlk; [eassumption|set_solver]|eassumption]|]. simpl.
+  - eexists (_, _). split; [eapply p_act_beta; [apply Hlk; [eassumption|set_solver]|eassumption|eassumption]|]. simpl.
     rewrite fmap_emap_id. split; [by rewrite insert_union_l|]. split; [set_solver|]. split; [set_solver|]. apply map_disjoint_dom; rewrite ?dom_fmap_L, ?dom_insert_L; apply map_disjoint_dom in Hd; repeat match goal with H : (M1 ∪ M2) !! _ = None |- _ => apply lookup_union_None in H as [? ?] end; repeat match goal with H : _ !! _ = None |- _ => apply not_elem_of_dom in H end; set_solver.
   - eexists (_, _). split; [eapply p_act_new; [apply Hlk; [eassumption|set_solver]|eassumption|set_solver|]|]. 
     { intros Hc. match goal with H : c ∉ echans _ |- _ => apply H end. rewrite soup_union by done.

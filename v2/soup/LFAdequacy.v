@@ -331,7 +331,7 @@ Section run.
       holder is the same thread, or a child it spawned with the partner end. *)
   Definition lf_stay (k t : nat) : Prop :=
     fu (S k) t = fu k t ∧ (∀ s, wt k t s → s ∉ lparts (l k) → wt (S k) t s) ∧
-    ∀ s, wt k t s → s ∈ lparts (l k) → admin_at (r k) s ∧
+    ∀ s, wt k t s → s ∈ lparts (l k) → free_at (r k) s ∧
       ∀ s', wt (S k) t s' → s' = s ∨
         ∃ es es', (r k).2 !! s = Some es ∧ (r (S k)).2 !! s' = Some es' ∧ tRs (cerase es') (cerase es).
 
@@ -340,7 +340,7 @@ Section run.
   Proof.
     intros Hp Ht.
     assert (Hconv : (fu (S k) t = fu k t ∧ (∀ s, wt (S k) t s ↔ wt k t s) ∧
-       ∀ s, wt k t s → s ∈ lparts (l k) → admin_at (r k) s) → lf_stay k t).
+       ∀ s, wt k t s → s ∈ lparts (l k) → free_at (r k) s) → lf_stay k t).
     { intros (Hf & Hw & Had). split_and!; [done|intros s Hs _; by apply Hw|].
       intros s Hs Hin. split; [by apply Had|]. intros s' Hs'. left. apply Hw in Hs'.
       exact (wt_uniq k t s' s Hp Hs' Hs). }
@@ -360,9 +360,9 @@ Section run.
     assert (Hφs : ctrs (s_K (ak k)) s !! edual o = Some (Some m, h'.(h_cap))).
     { apply lookup_ctrs. exists h'. split_and!; [done|done|]. unfold hctr. by rewrite Hm. }
     assert (Hright : rend (r (S k)) t = Some o →
-       own_next (tcs k) ev (s_K (ak k)) !! edual o = Some h' → (s ∈ ev_parts ev → admin_at (r k) s) →
+       own_next (tcs k) ev (s_K (ak k)) !! edual o = Some h' → (s ∈ ev_parts ev → free_at (r k) s) →
        fu (S k) t = fu k t ∧ (∀ s0, wt (S k) t s0 ↔ wt k t s0) ∧
-       ∀ s0, wt k t s0 → s0 ∈ lparts (l k) → admin_at (r k) s0).
+       ∀ s0, wt k t s0 → s0 ∈ lparts (l k) → free_at (r k) s0).
     { intros Hr' HK' Had. unfold fu, wt. rewrite Hr', Hr, HK. unfold kval. rewrite HK', Kh'.
       split_and!; [done| |].
       - intros s0. split.
@@ -379,14 +379,28 @@ Section run.
     assert (Hnl : (∀ u α o1 o2, ev ≠ EvSolo u α (PickLink o1 o2)) → rend (r (S k)) t = Some o).
     { intros Hne. apply (rend_of _ t e a1 o); [|done|done].
       by apply (istep_other_eq _ _ _ t e (proj1 Hst) Ht). }
-    destruct (istep_event _ _ _ (proj1 Hst)) as [(u & ->)|[(u & c & ->)|[(u & j & v & ->)
+    destruct (istep_event _ _ _ (proj1 Hst)) as [(u & α & -> & [-> | ->])|[(u & c & ->)|[(u & j & v & ->)
       |[(i & j & o' & w & ->)|[(i & j & o' & ->)|[(i & j & o' & b & ->)|[(u & o1 & o2 & ->)|(u & σ & ->)]]]]]]].
     - right. apply Hconv, Hright; [(apply Hnl; intros ?????; discriminate)|exact Kh'|].
-      intros Hsu. exact (istep_admin_actor _ _ _ s (proj1 Hst) I Hsu).
+      intros Hsu. exact (istep_free_actor _ _ _ s (proj1 Hst) ltac:(cbn; discriminate) Hsu).
+    - (* a force: the counters of the actor tick (F-Force) *)
+      destruct (decide (s = u)) as [->|Hsu].
+      + left. apply Hdrop; [(apply Hnl; intros ?????; discriminate)|].
+        destruct (istep_force_inv _ _ _ _ (proj1 Hst)) as (eu & e' & Heu & Hsu).
+        rewrite <-Hq in Heu. pose proof (s_fuel Hs u eu Heu) as HF.
+        pose proof (fuel_force _ _ _ _ _ HF e' Hsu) as Hsp.
+        assert (1 ≤ m) as H1.
+        { eapply (fspare_one _ _ _ (edual o) _ _ Hsp); [by apply elem_of_dom_2 in Hφs|exact Hφs|done]. }
+        apply (kval_tick _ _ _ h' m (htick h') Kh' Hm H1); [|done].
+        cbn [own_next]. unfold ktick. rewrite lookup_kmod, Kh'. simpl.
+        rewrite decide_True; [done|]. rewrite Eh'. set_solver.
+      + right. apply Hconv, Hright; [(apply Hnl; intros ?????; discriminate)| |].
+        * apply (own_next_keep (tcs k) _ _ s); [exact Hen|intros ?????; discriminate|simpl; set_solver|done|done].
+        * intros Hx. simpl in Hx. exfalso. apply Hsu. set_solver.
     - right. apply Hconv, Hright; [(apply Hnl; intros ?????; discriminate)| |].
       + cbn [own_next]. destruct Hen as [Hp1 Hp2]. unfold knew. pose proof (elem_of_dom_2 _ _ _ Kh') as Hd.
         rewrite !lookup_insert_ne; [done|intros Hx; rewrite <-Hx in Hd; done|intros Hx; rewrite <-Hx in Hd; done].
-      + intros Hsu. exact (istep_admin_actor _ _ _ s (proj1 Hst) I Hsu).
+      + intros Hsu. exact (istep_free_actor _ _ _ s (proj1 Hst) ltac:(cbn; discriminate) Hsu).
     - destruct (istep_spawn_inv _ _ _ _ _ (proj1 Hst)) as (eu & e' & Heu & Hsu & Hj & Hj' & Hdom).
       destruct (decide (edual o ∈ fends v)) as [HM|HM].
       + (* the partner end goes to the child at its counter: the holder
@@ -404,7 +418,7 @@ Section run.
         * unfold fu. rewrite Hr', Hr, HK. unfold kval. by rewrite HK', Kh'.
         * intros s0 Hw0 Hs0. exfalso. apply Hs0. rewrite (Hown_u s0 Hw0), Hl. simpl. set_solver.
         * intros s0 Hw0 Hs0. rewrite (Hown_u s0 Hw0) in Hs0 |- *.
-          split; [apply (istep_admin_actor _ _ _ u (proj1 Hst) I); simpl; set_solver|].
+          split; [apply (istep_free_actor _ _ _ u (proj1 Hst) ltac:(cbn; discriminate)); simpl; set_solver|].
           intros s' (_ & o0 & Ho0 & Hown). rewrite Hr' in Ho0. injection Ho0 as <-.
           destruct Hown as (h0 & Kh0 & E0). rewrite HK, HK' in Kh0. injection Kh0 as <-. simpl in E0. subst s'.
           right. exists eu, (App v EUnit). split_and!; [exact Heu|exact Hj'|].
@@ -412,7 +426,7 @@ Section run.
           split; [exact Hx'|]. unfold cerase. simpl. by rewrite emap_emap.
       + right. apply Hconv, Hright; [(apply Hnl; intros ?????; discriminate)| |].
         * cbn [own_next]. rewrite lookup_kspawn, Kh'. simpl. by rewrite decide_False.
-        * intros Hsu'. exact (istep_admin_actor _ _ _ s (proj1 Hst) I Hsu').
+        * intros Hsu'. exact (istep_free_actor _ _ _ s (proj1 Hst) ltac:(cbn; discriminate) Hsu').
     - simpl in Hen. destruct Hen as (H1 & H2 & H3).
       destruct (decide (s = i ∨ s = j)) as [Hsij|Hsij].
       + left. apply Hdrop; [(apply Hnl; intros ?????; discriminate)|].
@@ -562,7 +576,7 @@ Section run.
         * rewrite <-Hc. exact (rend_emap _ t (csub o1 o2) e a1 o He' Ha Ho).
         * cbn [own_next]. change (delete o1 (delete o2 (s_K (ak k)))) with (kdel2 o1 o2 (s_K (ak k))).
           rewrite <-Hc', link_lookup by done. exact Kh'.
-        * intros Hsu'. exact (istep_admin_actor _ _ _ s (proj1 Hst) I Hsu').
+        * intros Hsu'. exact (istep_free_actor _ _ _ s (proj1 Hst) ltac:(cbn; discriminate) Hsu').
     - exfalso. by destruct Hst as [_ Hτ].
   Qed.
 End run.
@@ -612,7 +626,7 @@ Section adequacy.
     - intros k t s. apply (wt_pend N W T a0 r l Ha0 Hmax tcs Hinv Hch HWr).
     - intros k t s. apply (wt_holder N W T a0 r l Ha0 Hmax tcs Hinv Hch HWr).
     - intros k t. apply (lf_local_progress N W T a0 r l Ha0 Hmax tcs Hinv Hch HWr).
-    - exact (soup_no_tau_divergence N W T a Hs).
+    - exact (soup_no_free_divergence N W T a Hs).
     - exact (soup_links_restricted N W T a Hs).
     - intros k t s s'. apply (wt_uniq N W T a0 r l Ha0 Hmax tcs Hinv Hch HWr).
     - intros k t. apply (lf_pers N W T a0 r l Ha0 Hmax tcs Hinv Hch HWr).
@@ -640,15 +654,18 @@ Section adequacy.
   Theorem lf_adequacy N W T p : wranked W → ∅ ⊪^N _ W p : T → lock_free p.
   Proof. intros HWr HP. destruct (lf_sem_state N W ∅ p T HP) as (a & <- & Hs). by apply (lf_adequacy_soup N W T a). Qed.
 
-  (** ∅ ⊪^N _ W p : T ⟹ every weakly fair maximal run makes every
-      thread progress: from every position on, every thread later stops or
-      takes part in a channel step. *)
+  (** ∅ ⊪^N _ W p : T and no τ-divergence ⟹ every weakly fair maximal
+      run makes every thread progress: from every position on, every
+      thread later stops or takes part in a channel step. A force costs
+      one unit, so a loop of forces that holds no end is in the relation,
+      and the hypothesis no_tau_divergence p is no longer a consequence of
+      the judgment (F3 of docs/redesign/fable-findings.md). *)
   Theorem lf_thread_progress N W T p : wranked W →
-    ∅ ⊪^N _ W p : T →
+    ∅ ⊪^N _ W p : T → no_tau_divergence p →
     ∀ r l, erase (r 0) = p → maximal r l → wfair r l → thread_progress_run r l.
   Proof.
-    intros HWr HP. pose proof (lf_adequacy N W T p HWr HP) as Hlf.
+    intros HWr HP Hnd. pose proof (lf_adequacy N W T p HWr HP) as Hlf.
     destruct (lf_sem_state N W ∅ p T HP) as (a & <- & Hs).
-    apply thread_progress; [done|exact (soup_no_tau_divergence N W T a Hs)|exact (soup_links_restricted N W T a Hs)].
+    apply thread_progress; [done|exact Hnd|exact (soup_links_restricted N W T a Hs)].
   Qed.
 End adequacy.

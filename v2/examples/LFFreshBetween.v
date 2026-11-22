@@ -1,7 +1,9 @@
 (** * between is lock free (stage S9)
 
-    The program of examples/FreshBetween.v types at the bound N = 4, so every end has N/2 = 2 tickets. The
-    box takes c and e with credit 2 each. In the body, e loses 1 while c
+    The program of examples/FreshBetween.v types at the bound N = 4. main
+    creates c with tickets 3 and 1, and e at the field of c with the same
+    split, so c and e reach the force at credit 3 and the box after the
+    force (cost 1) at credit 2. The box takes c and e with credit 2 each. In the body, e loses 1 while c
     closes and 1 while d closes, and the thunk loses 1 on d′ at the
     spawn. main forces the box last, so the call of cost ∞ ages nothing.
     The world is a lock-free world by the measure (field sum, offset,
@@ -9,7 +11,7 @@
 
 From GV Require Export examples.LFTools examples.FreshBetween.
 
-Definition fbl_T : ty := TProd (TSess SEnd (pvar 0) (Some 2) (Some 2)) (TSess SEnd (pvar 1) (Some 2) (Some 2)).
+Definition fbl_T : ty := TProd (TSess SEnd (pvar 0) (Some 2) (Some 3)) (TSess SEnd (pvar 1) (Some 2) (Some 3)).
 Definition fbl_ty : ty := lbox 2 fb_C (Some (pvar 1)) fbl_T TUnit.
 
 Section body.
@@ -79,7 +81,7 @@ Proof.
   eexists _.
   { unfold fb_main, let_new.
   eapply e_let_; [apply lsplit_nil| | | ].
-  { eapply (e_new' _ _ _ _ _ _ SEnd); [spare_tac|apply fb_wf_new|contr_tac]. }
+  { eapply (e_new_tk _ _ _ _ _ _ SEnd (Some 3) (Some 1)); [spare_tac|apply fb_wf_new|unfold tsum_ok; simpl; lia|contr_tac]. }
   lage_tac.
   eapply e_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
@@ -110,7 +112,7 @@ Proof.
     eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_app_; [lsplit_tac (EForce fb_box) EUnit|apply ubu_below_empty| | | |shelve].
-  { eapply (lbox_force_eq _ _ _ _ _ _ 2 fb_C (Some (pvar 1)) fbl_T TUnit fb_xs _ (UPt ((pvar 0)·1)) (TProd (TSess SEnd (pvar 0) (Some 2) (Some 2)) (TSess SEnd ((pvar 0)·1) (Some 2) (Some 2))));
+  { eapply (lbox_force_eq _ _ _ _ _ _ 2 fb_C (Some (pvar 1)) fbl_T TUnit fb_xs _ (UPt ((pvar 0)·1)) (TProd (TSess SEnd (pvar 0) (Some 2) (Some 3)) (TSess SEnd ((pvar 0)·1) (Some 2) (Some 3))));
       [done|apply fbl_hold|done|done|done|].
     apply (fbl_box_typed _ _ 7). }
   lage_tac.
@@ -122,17 +124,14 @@ Proof.
   Unshelve. all: first [exact None | simpl; lia | simpl; done].
 Qed.
 
-Lemma fb_guarded : ∅ ⊢▷ fb_main.
-Proof. unfold fb_main, fb_box, let_new. guard_tac. Qed.
-
 Theorem fb_lftyped : ∃ N, ∅ ⊩^N _ W_fb (∅, {[+ fb_main +]}) : TUnit.
 Proof.
   destruct fbl_typedN as (c & Ht). exists 4.
-  eapply lf_main_typed; [apply W_fb_wf|constructor|exact Ht|apply fb_guarded].
+  eapply lf_main_typed; [apply W_fb_wf|constructor|exact Ht].
 Qed.
 
 Theorem fb_lock_free : excluded_middle → functional_choice → lock_free (∅, {[+ fb_main +]}).
 Proof.
   intros EM FC. destruct fbl_typedN as (c & Ht).
-  eapply (lf_main EM FC); [apply W_fb_wf|constructor|exact Ht|apply fb_guarded].
+  eapply (lf_main EM FC); [apply W_fb_wf|constructor|exact Ht].
 Qed.

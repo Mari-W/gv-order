@@ -417,6 +417,35 @@ Proof.
     rewrite <-emap_efill. intros j Hj. by eapply FuelE_rename; [..|apply HF].
 Qed.
 
+(** A force: F-Force at the empty environment of a box redex. *)
+Lemma head_force_emap (g : cend → cend) e e' :
+  head_step e LForce e' → head_step (emap g e) LForce (emap g e').
+Proof.
+  inversion 1; subst; simpl; rewrite ?emap_subst1; simpl. constructor.
+Qed.
+
+Lemma head_force_det e e' α e2 : head_step e LForce e' → tstep e α e2 → α = LForce ∧ e2 = e'.
+Proof.
+  intros Hh Hst. apply tstep_inv in Hst as [Hh2|(f & e0 & e0' & Hf & -> & -> & Hs)].
+  - inversion Hh; subst; inversion Hh2; subst; done.
+  - exfalso. eapply val_no_tstep; [exact Hs|]. by eapply head_redex_val.
+Qed.
+
+Lemma FuelE_force N n σ d e e' :
+  head_step e LForce e' → fle (Some 1) d →
+  (∀ j, olt j n → e' ∈ F^N _ j⟦σ ▷ ftick d⟧(∅, ∅)) → e ∈ F^N _ n⟦σ ▷ d⟧(∅, ∅).
+Proof.
+  intros Hh Hd HF. apply FuelE_eq. intros g Π' φ' Hk1 Hk2 HΠ Hφ.
+  apply renk_empty in HΠ as ->. apply renk_empty in Hφ as ->.
+  pose proof (head_force_emap g _ _ Hh) as Hh'.
+  split.
+  - intros Hv. exfalso. exact (head_not_val _ _ _ Hh' Hv).
+  - intros α e2 Hst. destruct (head_force_det _ _ _ _ Hh' Hst) as [-> ->]. simpl. unfold f_force.
+    split_and!; [intros o f _ Hf; by rewrite lookup_empty in Hf|done|].
+    rewrite fmap_empty. intros j Hj.
+    eapply (FuelE_rename _ _ _ _ ∅ ∅ _ g); [done|done|apply renk_nil|apply renk_nil|by apply HF].
+Qed.
+
 (** ** F5: counters and credits *)
 
 (** [fadd (Some 0) a] after [simpl]. *)
@@ -551,9 +580,10 @@ Proof.
   { intros Hval. pose proof (Hv Hval) as HV.
     apply Vfuel_eq. apply Hσ; [apply ole_refl|]. by apply Vfuel_eq. }
   intros α e' Hst. specialize (Hs α e' Hst).
-  destruct α as [|c|v|[o w|o w|o|o i|o i|os]]; simpl in Hs |- *;
-    unfold f_beta, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link in *.
+  destruct α as [| |c|v|[o w|o w|o|o i|o i|os]]; simpl in Hs |- *;
+    unfold f_beta, f_force, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link in *.
   - by apply IHn.
+  - destruct Hs as (H1 & H2 & H3). split_and!; auto.
   - intros Hf. destruct (Hs Hf) as (Sn & m1 & m2 & Hm & HS). exists Sn, m1, m2. split; [done|]. by apply IHn.
   - destruct Hs as (H1 & H3 & H4). split_and!; auto.
   - destruct Hs as (Ha & S0 & m & T & Sc & H1 & H2 & H3 & H4 & H5 & H6).

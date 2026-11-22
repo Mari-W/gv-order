@@ -34,7 +34,7 @@
       at the empty future, so spawn (λe) needs no rule of its own
       (entry 12). *)
 
-From GV Require Export static.Guard compat.SemTyped compat.Redex compat.EFacts cost.Exact compat.BindActs.
+From GV Require Export compat.SemTyped compat.Redex compat.EFacts cost.Exact compat.BindActs.
 
 (** ** Environments *)
 
@@ -135,34 +135,9 @@ Section rules0.
 End rules0.
 
 
-(** ** Acting terms *)
-
-Lemma acts_not_val e : acts e → ¬ is_val e.
-Proof.
-  induction 1; simpl; intros Hv; rewrite ?andb_True in Hv; destruct_and?; first [done|auto].
-Qed.
-
-Lemma acts_subst e : acts e → ∀ σ, acts (subst σ e).
-Proof. induction 1; intros σ; simpl; first [by constructor; auto|by apply acts_branches]. Qed.
-
-Lemma acts_stable κ e α e' : 1 ≤ c_give κ → acts e → tstep e α e' → tcost κ α = 0 → acts e'.
-Proof.
-  intros Hg Ha Hst. revert Ha. induction Hst as [e α e' Hh|f e α e' Hf Hs IH]; intros Ha Hc.
-  - pose proof (c_take_pos κ).
-    destruct Hh; simpl in Hc; try lia; inversion Ha; subst; try done.
-    all: try (match goal with H : sprim _ |- _ => simpl in H; done end).
-    all: try (by exfalso; eapply acts_not_val; [eassumption|]; simpl; rewrite ?andb_True; auto).
-    all: try (by apply acts_subst).
-    all: try (match goal with H : acts (EBox _) |- _ => inversion H end).
-    all: try (match goal with H : acts (Chan _) |- _ => inversion H end).
-    all: try (match goal with H : acts (Lam _) |- _ => inversion H end).
-  - destruct f; simpl in *; inversion Ha; subst; try (by constructor; auto).
-    all: try (by exfalso; eapply acts_not_val; eauto).
-    all: try (by apply acts_op).
-    all: try (by apply acts_branches).
-Qed.
-
 (** ** Groundings with marks *)
+
+Global Instance marks_empty : Empty (nat → bool) := λ _, false.
 
 Fixpoint GrelL (κ : ctable) (n : Ix) (W : world) (Θ : senv) (Δ : lenv) (L : nat → bool)
     (γ : nat → expr) : Prop :=
@@ -385,16 +360,18 @@ Proof.
   split; intros H n W' Θ' γ HW Hd HG; apply H; try done; by apply GrelL_unmarked.
 Qed.
 
-(** A box at a positive cost of β, unmarked. *)
+(** A box, unmarked. A force costs κ(force) ≥ 1, so the box reads its
+    body below the level, where its self is in V by induction (F3 of
+    docs/redesign/fable-findings.md). *)
 Lemma gen_e_box κ W Δ F e m kk C ub c U :
-  1 ≤ c_beta κ → tfacts ∅ Δ (EBox e) → lenv_unl Δ →
+  tfacts ∅ Δ (EBox e) → lenv_unl Δ →
   (∀ W1 xs ss F', W ⊑ W1 → length xs = m → length ss = kk → Forall contractive ss ∧ Forall sscoped ss →
      wholds W1 C xs → ub_lt W1 (pt_inst (plist xs) <$> ub) F' →
      sem_typed_at κ W1 ∅ (Some (TBox m kk C ub c U) :: Δ) F' e
        (sinst_ty (slist ss) (ty_inst xs U))) →
   sem_typed_at κ W ∅ Δ F (EBox e) (TBox m kk C ub c U).
 Proof.
-  intros Hβ Htf Hu Hbody n W' Θ' γ HW Hd HG.
+  intros Htf Hu Hbody n W' Θ' γ HW Hd HG.
   pose proof (GrelL_fends κ _ _ _ _ _ _ _ _ Htf (proj2 (GrelL_unmarked κ _ _ _ _ _) HG)) as Hx.
   pose proof (GrelL_unl κ _ _ _ _ _ _ Hu (proj2 (GrelL_unmarked κ _ _ _ _ _) HG)) as ->.
   rewrite tenv_erase_empty, map_union_empty. simpl in Hx. rewrite !dom_empty_L, union_empty_r_L in Hx.
@@ -403,31 +380,22 @@ Proof.
   assert (∀ j W2, ole j n → W' ⊑ W2 → Vrel κ j W2 ∅ (TBox m kk C ub c U) (EBox eb)) as Hlob.
   { induction j as [j IH] using oind. intros W2 Hj HW2. apply Vrel_box_iff.
     split; [done|]. exists eb. split_and!; [done|done|].
-    intros W3 xs ss HW3 Hxs Hss Hsc HC. apply Vrel_lolli_iff.
-    exists (rename S (subst1 (EBox eb) eb)). split_and!.
-    - done.
-    - rewrite dom_empty_L, fends_rename. unfold subst1.
-      assert (fends (subst (EBox eb .: Var) eb) ⊆ fends eb ∪ ∅) as Hsub.
-      { apply fends_subst, allfv_forall. intros [|y]; simpl; [rewrite Hx|]; set_solver. }
-      set_solver.
-    - done.
-    - intros W4 j' Θ'' w F' HW4 Hj' _ Hub Hw.
-      apply Vrel_unit_iff in Hw as [-> ->]. rewrite map_union_empty, thunk_app.
-      unfold eb. rewrite subst1_subst.
-      assert (W ⊑ W4) as HW04.
-      { eapply wext_trans; [exact HW|]. eapply wext_trans; [exact HW2|]. by eapply wext_trans. }
-      assert (W' ⊑ W4) as HW'4.
-      { eapply wext_trans; [exact HW2|]. by eapply wext_trans. }
-      assert (Grel κ j' W4 ∅ (Some (TBox m kk C ub c U) :: Δ) (EBox eb .: γ)) as HG'.
-      { exists ∅, ∅. split_and!; [apply map_disjoint_empty_l|by rewrite map_union_empty| |].
-        - assert (olt j' j) as Hjj by (apply (oadd_lt _ (c_beta κ)); [lia|exact Hj']).
-          apply IH; [exact Hjj|exact (ole_trans _ _ _ (olt_ole _ _ Hjj) Hj)|done].
-        - eapply Grel_down; [|eapply Grel_mono; [exact HW'4|exact HG]].
-          exact (ole_trans _ _ _ (oadd_le_l _ _ _ Hj') Hj). }
-      pose proof (Hbody W4 xs ss F' HW04 Hxs Hss Hsc (wholds_mono _ _ _ _ HW4 HC) (proj1 (ub_ltu_of _ _ _) Hub)
-                    j' W4 ∅ (EBox eb .: γ) (wext_refl _)
-                    ltac:(rewrite tenv_erase_empty; apply map_disjoint_empty_l) HG') as Hb.
-      by rewrite tenv_erase_empty, map_union_empty in Hb. }
+    intros W3 xs ss j' F' HW3 Hxs Hss Hsc HC Hj' Hub.
+    assert (W ⊑ W3) as HW03.
+    { eapply wext_trans; [exact HW|]. by eapply wext_trans. }
+    assert (W' ⊑ W3) as HW'3 by (by eapply wext_trans).
+    assert (olt j' j) as Hjj.
+    { pose proof (c_force_pos κ) as Hcf. apply (oadd_lt _ (c_force κ)); [lia|exact Hj']. }
+    assert (Grel κ j' W3 ∅ (Some (TBox m kk C ub c U) :: Δ) (EBox eb .: γ)) as HG'.
+    { exists ∅, ∅. split_and!; [apply map_disjoint_empty_l|by rewrite map_union_empty| |].
+      - apply IH; [exact Hjj|exact (ole_trans _ _ _ (olt_ole _ _ Hjj) Hj)|done].
+      - eapply Grel_down; [|eapply Grel_mono; [exact HW'3|exact HG]].
+        exact (ole_trans _ _ _ (olt_ole _ _ Hjj) Hj). }
+    pose proof (Hbody W3 xs ss F' HW03 Hxs Hss Hsc HC (proj1 (ub_ltu_of _ _ _) Hub)
+                  j' W3 ∅ (EBox eb .: γ) (wext_refl _)
+                  ltac:(rewrite tenv_erase_empty; apply map_disjoint_empty_l) HG') as Hb.
+    rewrite tenv_erase_empty, map_union_empty in Hb.
+    unfold eb. rewrite subst1_subst. exact Hb. }
   apply Hlob; [apply ole_refl|apply wext_refl].
 Qed.
 
@@ -470,36 +438,6 @@ Section later.
         exists h. split; [set_solver|done].
     - intros W'' j Θv v HW' Hj Hdv HV. apply (Hk W'' j Θv v Θ2' γ); [by eapply wext_trans|done| |done|done].
       eapply GrelL_down; [exact Hj|]. by eapply GrelL_mono.
-  Qed.
-
-  (** The hole acts, so its frame runs below the level, with no marks. *)
-  Lemma later_bind_acts (mk : (nat → expr) → frame) W Θ Θ1 Θ2 Δ Δ1 Δ2 L F e t T U :
-    1 ≤ c_give κ → acts e →
-    tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 →
-    (∀ γ, subst γ t = fill_frame (mk γ) (subst γ e)) → (∀ γ, frame_val (mk γ)) →
-    (∀ B, sem_later κ W Θ1 Δ1 L (F ∪ tenv_heads Θ2 ∪ lenv_heads Δ2 ∪ (if lenv_bot Δ2 then B else ∅)) e T) →
-    (∀ W' j Θv v Θ2' γ, W ⊑ W' → tenv_erase Θ2 ##ₘ Θ2' → GrelL κ j W' Θ2' Δ2 ∅ γ →
-       Θv ##ₘ tenv_erase Θ2 ∪ Θ2' → Vrel κ j W' Θv T v →
-       fill_frame (mk γ) v ∈ E[κ]^W' _ j⟦Θv ∪ (tenv_erase Θ2 ∪ Θ2') ⊢ U⟧^F) →
-    sem_later κ W Θ Δ L F t U.
-  Proof.
-    intros Hg Ha Hs Hl Ht Hf He Hk n W' Θ' γ HW Hd HG.
-    destruct (GrelL_split κ _ _ _ _ _ _ _ _ Hl HG) as (Θ1' & Θ2' & Hd' & -> & HG1 & HG2).
-    destruct (env_split _ _ _ _ _ _ Hs Hd' eq_refl Hd) as (Hd1 & Hd2 & Hd12 & ->).
-    rewrite Ht. apply (Erel_bind_acts κ acts n (mk γ) W' _ _ T); [apply acts_not_val
-      |intros ???; by apply acts_stable|by apply acts_subst|done|done| |].
-    - eapply Erel_cover; [|exact (He (senv_heads (tenv_erase Θ2 ∪ Θ2')) n W' Θ1' γ HW Hd1 HG1)].
-      intros y [Hy|Hy]%elem_of_union.
-      { exists y. split; [set_solver|by left]. }
-      destruct (lenv_bot Δ2) eqn:Hb.
-      { exists y. split; [set_solver|by left]. }
-      apply senv_heads_union in Hy as [Hy|Hy].
-      + exists y. split; [|by left]. rewrite senv_heads_erase in Hy. set_solver.
-      + apply elem_of_senv_heads in Hy as (o & S & x & Ho & ->).
-        destruct (GrelL_heads κ _ _ _ _ _ _ HG2 Hb o S x Ho) as (h & Hh & Hle).
-        exists h. split; [set_solver|done].
-    - intros W'' j Θv v HW' Hj Hdv HV. apply (Hk W'' j Θv v Θ2' γ); [by eapply wext_trans|done| |done|done].
-      eapply GrelL_clear; [exact Hj|]. by eapply GrelL_mono.
   Qed.
 
   Lemma later_frame0 (f : frame) W Θ Δ L F e t Targ Tres :
@@ -591,64 +529,10 @@ Section later.
         eapply GrelL_down; [|by eapply GrelL_mono]. exact (oadd_le_l _ _ _ Hj).
   Qed.
 
-  (** A box marks its self, at every cost table. *)
-  Lemma later_box W Δ L F e m kk C ub c U :
-    tfacts ∅ Δ (EBox e) → lenv_unl Δ →
-    (∀ W1 xs ss F', W ⊑ W1 → length xs = m → length ss = kk → Forall contractive ss ∧ Forall sscoped ss →
-       wholds W1 C xs → ub_lt W1 (pt_inst (plist xs) <$> ub) F' →
-       sem_later κ W1 ∅ (Some (TBox m kk C ub c U) :: Δ) (true .: L) F' e
-         (sinst_ty (slist ss) (ty_inst xs U))) →
-    sem_later κ W ∅ Δ L F (EBox e) (TBox m kk C ub c U).
-  Proof.
-    intros Htf Hu Hbody n W' Θ' γ HW Hd HG.
-    pose proof (GrelL_fends κ _ _ _ _ _ _ _ _ Htf HG) as Hx.
-    pose proof (GrelL_unl κ _ _ _ _ _ _ Hu HG) as ->.
-    rewrite tenv_erase_empty, map_union_empty. simpl in Hx. rewrite !dom_empty_L, union_empty_r_L in Hx.
-    set (eb := subst (up γ) e). fold eb in Hx.
-    apply Vrel_Erel.
-    assert (∀ j W2, ole j n → W' ⊑ W2 → Vrel κ j W2 ∅ (TBox m kk C ub c U) (EBox eb)) as Hlob.
-    { induction j as [j IH] using oind. intros W2 Hj HW2. apply Vrel_box_iff.
-      split; [done|]. exists eb. split_and!; [done|done|].
-      intros W3 xs ss HW3 Hxs Hss Hsc HC. apply Vrel_lolli_iff.
-      exists (rename S (subst1 (EBox eb) eb)). split_and!.
-      - done.
-      - rewrite dom_empty_L, fends_rename. unfold subst1.
-        assert (fends (subst (EBox eb .: Var) eb) ⊆ fends eb ∪ ∅) as Hsub.
-        { apply fends_subst, allfv_forall. intros [|y]; simpl; [rewrite Hx|]; set_solver. }
-        set_solver.
-      - done.
-      - intros W4 j' Θ'' w F' HW4 Hj' _ Hub Hw.
-        apply Vrel_unit_iff in Hw as [-> ->]. rewrite map_union_empty, thunk_app.
-        unfold eb. rewrite subst1_subst.
-        assert (W ⊑ W4) as HW04.
-        { eapply wext_trans; [exact HW|]. eapply wext_trans; [exact HW2|]. by eapply wext_trans. }
-        assert (W' ⊑ W4) as HW'4.
-        { eapply wext_trans; [exact HW2|]. by eapply wext_trans. }
-        assert (GrelL κ j' W4 ∅ (Some (TBox m kk C ub c U) :: Δ) (true .: L) (EBox eb .: γ)) as HG'.
-        { simpl. split; [split_and!|].
-          - done.
-          - done.
-          - intros i Hi. apply IH; [exact (olt_trans_le _ _ _ Hi (oadd_le_l _ _ _ Hj'))
-              |exact (ole_trans _ _ _ (olt_ole _ _ (olt_trans_le _ _ _ Hi (oadd_le_l _ _ _ Hj'))) Hj)|done].
-          - eapply GrelL_down; [|eapply GrelL_mono; [exact HW'4|exact HG]].
-            exact (ole_trans _ _ _ (oadd_le_l _ _ _ Hj') Hj). }
-        pose proof (Hbody W4 xs ss F' HW04 Hxs Hss Hsc (wholds_mono _ _ _ _ HW4 HC) (proj1 (ub_ltu_of _ _ _) Hub)
-                      j' W4 ∅ (EBox eb .: γ) (wext_refl _)
-                      ltac:(rewrite tenv_erase_empty; apply map_disjoint_empty_l) HG') as Hb.
-        by rewrite tenv_erase_empty, map_union_empty in Hb. }
-    apply Hlob; [apply ole_refl|apply wext_refl].
-  Qed.
-
-
   (** *** Frames, with or without clearing the marks *)
 
-  (** The marks of the frame: L itself, or none when the hole acts. *)
-  Definition cmarks (L L' : nat → bool) (e : expr) : Prop :=
-    L' = L ∨ (L' = ∅ ∧ 1 ≤ c_give κ ∧ acts e).
-
-  (** The marks of the guard, where an action costs one or more. *)
-  Lemma kmarks_cmarks L L' e : 1 ≤ c_give κ → kmarks L L' e → cmarks L L' e.
-  Proof. intros Hg [->|[-> Ha]]; [by left|by right]. Qed.
+  (** The marks of the frame: L itself. *)
+  Definition cmarks (L L' : nat → bool) (e : expr) : Prop := L' = L.
 
   Lemma later_bind_gen (mk : (nat → expr) → frame) W Θ Θ1 Θ2 Δ Δ1 Δ2 L L' F e t T U :
     cmarks L L' e →
@@ -659,11 +543,7 @@ Section later.
        Θv ##ₘ tenv_erase Θ2 ∪ Θ2' → Vrel κ j W' Θv T v →
        fill_frame (mk γ) v ∈ E[κ]^W' _ j⟦Θv ∪ (tenv_erase Θ2 ∪ Θ2') ⊢ U⟧^F) →
     sem_later κ W Θ Δ L F t U.
-  Proof.
-    intros [->|(-> & Hg & Ha)].
-    - apply later_bind.
-    - by apply later_bind_acts.
-  Qed.
+  Proof. intros ->. apply later_bind. Qed.
 
   Lemma later_app W Θ Θ1 Θ2 Δ Δ1 Δ2 L L' F e1 e2 ub lb c T U aU :
     cmarks L L' e1 → tsplit Θ Θ1 Θ2 → lenv_split Δ Δ1 Δ2 → ub_ltu W ub F →

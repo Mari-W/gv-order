@@ -41,7 +41,7 @@ Lemma s_ev_ends N n W T C Mq K Ws A Π U ev q' :
 Proof.
   intros Hn Hs Hst Hτ.
   pose proof (l_obl _ _ _ _ _ _ _ _ Hs) as Hobl. cbn [s_q s_K] in Hobl.
-  inversion Hst as [C0 M0 i e e' Hi Hs'|C0 M0 i e c e' Hi Hs' HC Hc
+  inversion Hst as [C0 M0 i α e e' Hi Hs' [-> | ->]|C0 M0 i e c e' Hi Hs' HC Hc
     |C0 M0 i j e v e' Hi Hs' Hj
     |C0 M0 i j o v e e' f f' Hij Hi Hj He Hf|C0 M0 i j o e e' f f' Hij Hi Hj He Hf HC
     |C0 M0 i j o b e e' f f' Hij Hi Hj He Hf|C0 M0 i e o1 o2 e' Hi Hs' HC
@@ -88,8 +88,9 @@ Lemma own_next_keep tc ev K t o h :
 Proof.
   intros Hen Hnl Ht Ho Eh.
   destruct ev as [i α [|j|o1 o2]|i j [o' M|o' M|o'|o' b|o' b|os]|i σ];
-    [destruct α as [|c|M|σ]..| | | | | | | ]; simpl in Hen, Ht |- *; try done.
+    [destruct α as [| |c|M|σ]..| | | | | | | ]; simpl in Hen, Ht |- *; try done.
   all: try (exfalso; eapply Hnl; reflexivity).
+  all: try (unfold ktick; rewrite lookup_kmod, Ho; simpl; rewrite decide_False; [done|]; rewrite Eh; set_solver).
   all: try (destruct Hen as [H1 H2]; unfold knew; pose proof (elem_of_dom_2 _ _ _ Ho) as Hd;
     rewrite !lookup_insert_ne; [done|intros <-; done|intros <-; done]).
   - rewrite lookup_kspawn, Ho. simpl. case_decide as Hm; [|done].

@@ -262,7 +262,7 @@ Section rel.
     refine (Erel_ind κ n _ _). intros W Θ T0 F e Hb HT0 Θ' HΘ.
     assert (VC n T0) as HV0 by (destruct HT0 as [->| ->]; done).
     apply Erel_iff. intros W1 HW1.
-    destruct (Hb W1 HW1) as (Hs & Hr & H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
+    destruct (Hb W1 HW1) as (Hs & Hr & H1 & H3 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     assert (∀ Wx c Θa Θb e', senv_eqv Θa Θb →
       at_cost_E n c (Erel κ) (λ W Θ T0 F e, Erel κ n W Θ T0 F e ∧
           (T0 = T ∨ T0 = TUnit → ∀ Θ', senv_eqv Θ Θ' → Erel κ n W Θ' T0 F e))
@@ -276,6 +276,7 @@ Section rel.
     - intros Hi. apply (HV0 _ Θ); [done|]. by apply Hs.
     - intros Hni. eapply ready_t_conv; [exact HΘ|]. by apply Hr.
     - intros e' Hst. apply (Hac _ Θ); [done|]. by apply H1.
+    - intros e' Hst. apply (Hac _ Θ); [done|]. by apply H3.
     - intros c e' Hst Hc.
       destruct (H2 c e' Hst (senv_eqv_cfresh _ _ _ HΘ Hc)) as (S & π & Wn & HWn & HS).
       exists S, π, Wn. split; [done|]. eapply HacW; [|exact HS]. by apply senv_eqv_new_env.

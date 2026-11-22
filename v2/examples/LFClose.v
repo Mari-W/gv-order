@@ -52,8 +52,6 @@ Proof.
   assert (chans_of ΣC = {[c]}) as Ec.
   { unfold chans_of, ΣC. by rewrite dom_singleton_L, set_map_singleton_L. }
   assert (chans_of ∅ = ∅) as E0 by (unfold chans_of; by rewrite dom_empty_L, set_map_empty).
-  split; [|intros t Ht; simpl in Ht; apply gmultiset_elem_of_disj_union in Ht as [Ht|Ht];
-             apply gmultiset_elem_of_singleton in Ht as ->; repeat constructor].
   pose proof (fp_connect (Some N) W_cl W_cl ∅ ∅ ΣC ∅ ∅ {[+ cl (c⁺)%cend +]} {[+ cl (c⁻)%cend +]} TUnit) as H.
   rewrite Ec, E0, !(left_id_L ∅ (∪)) in H. rewrite Ed in H.
   apply H; clear H.

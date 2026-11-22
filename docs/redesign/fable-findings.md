@@ -135,6 +135,15 @@ closures; it needs only that the closure owns its ends. The counter invariant
 
 ### F3. Drop the guard, charge `force` one unit (blocks `g-guard`, `ct-costs`, `fu-obls`)
 
+**Status (2026-11-22, branch fx-guard): done.** The guard is deleted.
+Force has its own label and cost 1 in both tables; κ_DF needs the cost
+because deadlock-free typing accepts `!(f = force f)`. F-Force, E-Force at
+ε0·1·ε, and the box clause of V read one force below the level. Lock-free
+adequacy holds, with the measure falling at a force. Every lock-free example
+keeps its bound. `div_box`, `pn_fix` and `cx_box` type; `spawn_loop_rejected`
+states the aging step that rejects `spawn_loop`. See the report at the top of
+docs/redesign/pending.md on fx-guard.
+
 **Current.** `lguard : (nat → bool) → expr → Prop` with 13 constructors
 (static/Guard.v:63), `acts`, `kmarks L L' e := L' = L ∨ (L' = ∅ ∧ acts e)`
 (static/Guard.v:59), `pguard`. The premises `⊢▷ p` of `lf_fundamental_h`

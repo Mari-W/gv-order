@@ -29,4 +29,4 @@ adequacy
      : ∀ (W : world) (T : ty) (p : proc), ∅ ⊨_W p : T → deadlock_free p
 live_adequacy
      : ∀ (W : world) (T : ty) (p : proc),
-         ∅ ⊫_W p : T → deadlock_free p ∧ no_tau_divergence p
+         ∅ ⊫_W p : T → deadlock_free p ∧ no_free_divergence p
