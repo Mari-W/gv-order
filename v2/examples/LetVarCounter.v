@@ -44,7 +44,7 @@ Proof.
   - apply thage_nil'.
   - repeat constructor.
   - eapply (e_open _ _ _ _ _ _ _ 0 LBot 1 Cnil TUnit TUnit); [done|by intros []| |].
-    + apply (cons_of_hold _ _ _ _ [pvar 0]); [apply facts_const_wf, sw_empty_ok|done|apply hold_cnil].
+    + intros z y (_ & _ & [[Hf _]|(v & u & [Hf _] & _)]); destruct Hf.
     + apply e_var. split; [done|]. intros [|y] σ Hne Hy; [done|]. destruct y as [|y]; [discriminate|].
       destruct y; discriminate.
 Qed.

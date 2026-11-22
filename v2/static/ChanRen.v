@@ -155,7 +155,7 @@ Section cren.
     fptyped N W Σ p T → fptyped N W (kmap g Σ) (set_map h p.1, emapE g p.2) T.
   Proof.
     induction 1 as [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Ht HW
-                   |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 HS];
+                   |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 H12 H1C H2C HC HC1 HC2 HS];
       cbn [fst snd] in *.
     - rewrite emapE_singleton. apply (fp_term N W _ (kmap g ΘB) _ (emap g t) T c).
       + done.
@@ -178,14 +178,10 @@ Section cren.
       + done.
     - rewrite kunion. rewrite !set_map_h_union, <-(chans_of_cren ΣC), emapE_disj_union.
       rewrite !kunion in IH1, IH2. rewrite <-senv_dual_cren in IH2.
-      apply fp_connect; [exact IH1|exact IH2|by apply kdisj|by rewrite senv_dual_cren; apply kdisj
-        | |by rewrite !chans_of_cren; apply set_map_h_disj|by rewrite !chans_of_cren; apply set_map_h_disj
+      apply fp_connect; [exact IH1|exact IH2
+        |by rewrite !chans_of_cren; apply set_map_h_disj|by rewrite !chans_of_cren; apply set_map_h_disj
         |by rewrite !chans_of_cren; apply set_map_h_disj|by apply set_map_h_disj
         |rewrite !chans_of_cren, <-set_map_h_union; by apply set_map_h_disj
         |rewrite !chans_of_cren, <-set_map_h_union; by apply set_map_h_disj|exact HS].
-      intros o Ho Hd. rewrite !kdom in Ho, Hd.
-      apply elem_of_map in Ho as (o' & -> & Ho). rewrite <-cmap_edual in Hd.
-      apply elem_of_map in Hd as (o'' & E & Hd). apply (inj g) in E. subst o''.
-      exact (Hf o' Ho Hd).
   Qed.
 End cren.

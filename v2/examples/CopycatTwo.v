@@ -302,9 +302,6 @@ Proof.
   { apply fp_connect.
     - exact (fwdq_term p).
     - by rewrite ΣCb_dual.
-    - apply map_disjoint_singleton_l_2. unfold ΣCb. by rewrite lookup_singleton_ne.
-    - rewrite ΣCb_dual. apply disj_single_chans. simpl. by rewrite EΣ2.
-    - intros o. unfold ΣCb. rewrite dom_singleton_L, !elem_of_singleton. intros ->. discriminate.
     - rewrite chans_single, EΣ2. set_solver.
     - rewrite chans_single, chans_ΣCb. set_solver.
     - rewrite chans_ΣCb, EΣ2. set_solver.
@@ -320,9 +317,6 @@ Proof.
   - exact HP.
   - rewrite Σxp_dual. rewrite map_union_comm; [exact HFQ|].
     apply disj_single_chans. simpl. by rewrite EΣ2.
-  - exact HD1.
-  - rewrite Σxp_dual. apply disj_single_chans. simpl. by rewrite EΣ2.
-  - intros o. unfold Σxp. rewrite dom_singleton_L, !elem_of_singleton. intros ->. discriminate.
   - by rewrite EΣ2.
   - rewrite chans_Σxp. set_solver.
   - rewrite chans_Σxp, EΣ2. set_solver.
