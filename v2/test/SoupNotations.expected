@@ -37,8 +37,8 @@ lf_thread_progress
      : nat → sworld → senv → proc → ty → Prop
 lf_fundamental
      : excluded_middle
-       → ∀ (N : nat) (W : sworld) (R : world) (Σ : senv) (p : proc) (T : ty),
-           Σ ⊩^N _ W p : T → wmodels R W → Σ ⊪^N _R p : T
+       → ∀ (N : nat) (W : sworld) (Σ : senv) (p : proc) (T : ty),
+           Σ ⊩^N _ W p : T → lf_sems N W Σ p T
 lf_soundness
      : ∀ (N : nat) (W : sworld) (p : proc) (T : ty),
          excluded_middle → functional_choice → ∅ ⊩^N _ W p : T → lock_free p

@@ -16,7 +16,7 @@ live_fundamental
            sworld_wf W
            → Θ ; hc_empty ; Δ ⊢^F _ W t : T
              → ∅ ⊢▷ t → wmodels R W → Θ ; Δ ⊫^F _ R t : T
-live_soundness
+live_soundness_h
      : ∀ (W : sworld) (p : proc) (T : ty),
          excluded_middle
          → ∅ ⊢_W p : T → ⊢▷ p → deadlock_free p ∧ no_tau_divergence p
