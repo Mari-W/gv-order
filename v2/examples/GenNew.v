@@ -188,7 +188,7 @@ Proof.
     eapply d_var'; [reflexivity|]. spare_tac. }
   eapply d_let; [apply tsplit_empty|lsplit_tac ENew EUnit| |].
   { eapply (d_new_gen _ _ _ _ tu_C SEnd None None); [spare_tac|apply tu_gen|contr_tac]. }
-  eapply d_open with (i := 0); [reflexivity|cbn; tauto|apply cons_gen; [by intros ?? []|apply tu_gen]|].
+  eapply d_open with (i := 0); [reflexivity|cbn; tauto|apply cons_gen, tu_gen|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert option_fmap option_map pinst_ty].
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
@@ -323,7 +323,7 @@ Proof.
   { spawn_close 9 ρ0‾. }
   eapply d_let; [apply tsplit_empty|lsplit_tac ENew EUnit| |].
   { eapply (d_new_gen _ _ _ _ te_C SEnd None None); [spare_tac|apply te_gen|contr_tac]. }
-  eapply d_open with (i := 0); [reflexivity|cbn; tauto|apply cons_gen; [by intros ?? []|apply te_gen]|].
+  eapply d_open with (i := 0); [reflexivity|cbn; tauto|apply cons_gen, te_gen|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert option_fmap option_map pinst_ty].
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
@@ -376,7 +376,7 @@ Lemma close_rejected_wf_new W N Γ C Θ Δ F T c od oa ed ea :
   ¬ typed W N Θ (hc_open 1 C Γ) Δ F (cl2 od oa) T c.
 Proof.
   intros Hfc HC Hne Hd Ed Ha Ea H.
-  pose proof (cl2_needs _ _ _ _ _ _ _ _ _ _ _ _ Hne H Hd Ha) as Hlt. rewrite Ed, Ea in Hlt.
+  pose proof (cl2_needs _ _ _ _ _ _ _ _ _ _ _ _ Hne H Hd Ha Hfc) as Hlt. rewrite Ed, Ea in Hlt.
   exact (exit_rejected_wf_new W Γ C Hfc HC Hlt).
 Qed.
 

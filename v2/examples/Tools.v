@@ -184,7 +184,7 @@ Ltac spare_tac :=
 (** The conservativity premise of E-Open at the existential of E-New, in
     a world without facts, from (wf-new) in the hint base [wfnew]. *)
 Create HintDb wfnew.
-Ltac cons_tac := apply cons_new; [by intros ?? []|solve [eauto with wfnew]].
+Ltac cons_tac := apply cons_new; solve [eauto with wfnew].
 
 (** Split by occurrence. An unlimited entry goes to both sides. *)
 Ltac lsplit_go i e1 e2 :=

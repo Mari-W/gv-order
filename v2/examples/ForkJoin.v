@@ -22,7 +22,8 @@
       (acyc-new) (docs/redesign/check-df-acyclic.md, section 4.1). The
       box hypothesis H is infinite and closed under the descent to a
       child, and the laws of ρ hold an infinite descending chain.
-    - [fj_wait_needs]: every typing of close a; close b at any bound
+    - [fj_wait_needs]: every typing of close a; close b at any bound,
+      over a world whose facts sit at constant roots,
       asks the point of a below the head of b. In the recursive worker
       the child's end sits at the dual of the parent's, so the recursive
       force needs H at an instance whose dual lies below ῑ. Under
@@ -369,7 +370,7 @@ Lemma fjr_acyc W Γ : acyc_new W Γ (bcs_of fjr_L).
 Proof.
   split.
   - intros x _ Hc. exact (fjr_lt_irrefl x (fjr_tc_lt x x Hc)).
-  - intros z y (Hz & _ & [[Hf _]|(v & u & [Hf _] & _)]); exfalso; apply Hz; unfold in_tree0;
+  - apply cons_open_1. intros z y (Hz & _ & [[Hf _]|(v & u & [Hf _] & _)]); exfalso; apply Hz; unfold in_tree0;
       by destruct (fjH_root _ _ _ Hf) as [-> _].
 Qed.
 
@@ -518,7 +519,7 @@ Proof.
   eapply d_let; [apply tsplit_empty|apply lsplit_nil| |].
   { apply (d_new_acyc _ _ _ _ (bcs_of fjr_L) SEnd None None None None);
       [apply spare_unl; spare_tac|apply fjr_acyc|contr_tac]. }
-  eapply d_open with (i := 0); [reflexivity|cbn; tauto|apply cons_tree; [by intros ?? []|apply fjr_tree_ends]|].
+  eapply d_open with (i := 0); [reflexivity|cbn; tauto|apply cons_tree, fjr_tree_ends|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
   fold Γr.
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
@@ -643,7 +644,7 @@ Lemma fa_acyc W Γ : acyc_new W Γ (bcs_of fa_L).
 Proof.
   split.
   - intros x _ Hc. exact (fa_lt_irrefl x (fa_tc_lt x x Hc)).
-  - intros z y (Hz & _ & [[Hf _]|(v & u & [Hf _] & _)]); exfalso; apply Hz; unfold in_tree0;
+  - apply cons_open_1. intros z y (Hz & _ & [[Hf _]|(v & u & [Hf _] & _)]); exfalso; apply Hz; unfold in_tree0;
       by destruct (faH_root _ _ _ Hf) as [-> _].
 Qed.
 
@@ -791,7 +792,7 @@ Proof.
   eapply d_let; [apply tsplit_empty|apply lsplit_nil| |].
   { apply (d_new_acyc _ _ _ _ (bcs_of fa_L) Sa None None None None);
       [apply spare_unl; spare_tac|apply fa_acyc|contr_tac]. }
-  eapply d_open with (i := 0); [reflexivity|cbn; tauto|apply cons_tree; [by intros ?? []|apply fa_tree_ends]|].
+  eapply d_open with (i := 0); [reflexivity|cbn; tauto|apply cons_tree, fa_tree_ends|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
   fold Γfa.
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
@@ -926,7 +927,7 @@ Lemma fb_acyc W Γ : acyc_new W Γ (bcs_of fb_L).
 Proof.
   split.
   - intros x _ Hc. exact (fb_lt_irrefl x (fb_tc_lt x x Hc)).
-  - intros z y (Hz & _ & [[Hf _]|(v & u & [Hf _] & _)]); exfalso; apply Hz; unfold in_tree0;
+  - apply cons_open_1. intros z y (Hz & _ & [[Hf _]|(v & u & [Hf _] & _)]); exfalso; apply Hz; unfold in_tree0;
       by destruct (fbH_root _ _ _ Hf) as [-> _].
 Qed.
 
@@ -1093,7 +1094,7 @@ Proof.
   eapply d_let; [apply tsplit_empty|apply lsplit_nil| |].
   { apply (d_new_acyc _ _ _ _ (bcs_of fb_L) Sa None None None None);
       [apply spare_unl; spare_tac|apply fb_acyc|contr_tac]. }
-  eapply d_open with (i := 0); [reflexivity|cbn; tauto|apply cons_tree; [by intros ?? []|apply fb_tree_ends]|].
+  eapply d_open with (i := 0); [reflexivity|cbn; tauto|apply cons_tree, fb_tree_ends|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
   fold Γfb.
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
@@ -1149,7 +1150,7 @@ Proof. exact (soundness sw_empty _ TUnit fib_term). Qed.
     does not apply to the deadlock-free judgment ([fjr_dftyped]). *)
 Lemma fj_wait_needs W N Θ Γ Δ F c w T k ec ew :
   c ≠ w → typed W N Θ Γ Δ F (LetU (EClose (Chan c)) (EClose (Chan w))) T k →
-  Θ !! c = Some ec → Θ !! w = Some ew → slt W Γ (te_pt ec) (te_pt ew)‾.
+  Θ !! c = Some ec → Θ !! w = Some ew → facts_const W → slt W Γ (te_pt ec) (te_pt ew)‾.
 Proof. apply cl2_needs. Qed.
 
 Print Assumptions fj_deadlock_free.

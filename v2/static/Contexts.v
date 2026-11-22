@@ -193,12 +193,35 @@ Definition hc_open (m : nat) (C : bcs) (Γ : hctx) : hctx :=
 Definition ex_wf (W : sworld) (Γ : hctx) (lb : lbound) (m : nat) (C : bcs) (T : ty) : Prop :=
   lbx_below_h W (hc_open m C Γ) (lb_map (pt_inst (pshift m)) lb) (heads T) (hbot T).
 
-(** Conservativity of an opening. The constraint C under m new point
-    variables derives no new fact between points of Γ: a fact between
-    two shifted outer points in [hc_open m C Γ] holds in Γ already
-    (docs/redesign/check-flag-rejection.md, fix (c)). *)
+(** ** The bridge condition
+
+    A constraint C under m bound point variables speaks of the variables
+    0, …, m−1, the roots of a tree, and of the variable m + j, the j-th
+    point of [bc_env C] outside the binder. A bridge of C from z to y
+    joins two outer points, either by a fact of C or by an entry z ≺ v,
+    a path of C and program order in the tree from v to u, and an exit
+    u ≺ y. The bridge condition asks every bridge derived by Γ. It is
+    the premise of E-Open, and with m = 1 the second half of (acyc-new)
+    below. It makes an opening conservative: a fact between two outer
+    points of [hc_open m C Γ] holds in Γ already ([cons_open_conservative],
+    static/PointSubst.v; docs/redesign/check-flag-rejection.md, fix (c)). *)
+Definition in_tree (m : nat) (x : point) : Prop := pn_vb m (pt_name x).
+
+Definition cfact_at (m : nat) (C : bcs) (x y : point) : Prop :=
+  bc_facts C (FLt x y) ∧ fact_scoped (m + length (bc_env C)) (FLt x y).
+
+Definition tree_step (m : nat) (C : bcs) (x y : point) : Prop :=
+  in_tree m x ∧ in_tree m y ∧ (cfact_at m C x y ∨ y = x⁺ ∨ y = x‾⁺).
+
+(** The point of Γ a point of C stands for. The tree points stay. *)
+Definition outer_pt (m : nat) (C : bcs) (x : point) : point := pt_inst (plist (ids m ++ bc_env C)) x.
+
+Definition bridge_at (m : nat) (C : bcs) (z y : point) : Prop :=
+  ¬ in_tree m z ∧ ¬ in_tree m y ∧
+  (cfact_at m C z y ∨ ∃ v u, cfact_at m C z v ∧ in_tree m v ∧ rtc (tree_step m C) v u ∧ cfact_at m C u y).
+
 Definition cons_open (W : sworld) (Γ : hctx) (m : nat) (C : bcs) : Prop :=
-  ∀ x y, slt W (hc_open m C Γ) (pt_inst (pshift m) x) (pt_inst (pshift m) y) → slt W Γ x y.
+  ∀ z y, bridge_at m C z y → slt W Γ (outer_pt m C z) (outer_pt m C y).
 
 (** ** The constraint of a creation at a fresh root (wf-new)
 
@@ -316,9 +339,41 @@ Definition cbridge (C : bcs) (z y : point) : Prop :=
   ¬ in_tree0 z ∧ ¬ in_tree0 y ∧
   (cfact C z y ∨ ∃ v u, cfact C z v ∧ in_tree0 v ∧ rtc (new_step C) v u ∧ cfact C u y).
 
+Definition tree_acyclic (C : bcs) : Prop := ∀ x, in_tree0 x → ¬ tc (new_step C) x x.
+
 Definition acyc_new (W : sworld) (Γ : hctx) (C : bcs) : Prop :=
-  (∀ x, in_tree0 x → ¬ tc (new_step C) x x) ∧
-  (∀ z y, cbridge C z y → slt W Γ (ctx_pt C z) (ctx_pt C y)).
+  tree_acyclic C ∧ cons_open W Γ 1 C.
+
+(** At one root the bridges of [bridge_at] are those of [cbridge]. *)
+Lemma in_tree_1 x : in_tree 1 x ↔ in_tree0 x.
+Proof.
+  unfold in_tree, in_tree0, pt_root. rewrite pn_vb_root. split.
+  - intros (a & -> & Ha). f_equal. lia.
+  - intros ->. eexists. split; [done|lia].
+Qed.
+
+Lemma tree_step_1 C x y : tree_step 1 C x y ↔ new_step C x y.
+Proof. unfold tree_step, new_step, cfact_at. by rewrite !in_tree_1. Qed.
+
+Lemma rtc_tree_step_1 C x y : rtc (tree_step 1 C) x y ↔ rtc (new_step C) x y.
+Proof.
+  split; intros H; induction H as [|x w y Hs _ IH]; try apply rtc_refl;
+    (eapply rtc_l; [apply tree_step_1; exact Hs|exact IH]).
+Qed.
+
+Lemma bridge_at_1 C z y : bridge_at 1 C z y ↔ cbridge C z y.
+Proof.
+  unfold bridge_at, cbridge, cfact_at, cfact. setoid_rewrite in_tree_1.
+  setoid_rewrite rtc_tree_step_1. done.
+Qed.
+
+Lemma cons_open_1 W Γ C :
+  cons_open W Γ 1 C ↔ ∀ z y, cbridge C z y → slt W Γ (ctx_pt C z) (ctx_pt C y).
+Proof.
+  split; intros H z y Hb.
+  - apply bridge_at_1 in Hb. exact (H z y Hb).
+  - apply bridge_at_1 in Hb. exact (H z y Hb).
+Qed.
 
 (** The steps of C stay in the tree of ρ. *)
 Lemma rtc_new_step_tree C v u : in_tree0 v → rtc (new_step C) v u → in_tree0 u.
@@ -329,7 +384,7 @@ Proof. intros Hv Hr. induction Hr as [|v w u (_ & Hw & _) _ IH]; [done|by apply 
     partner sets of (gen-new) walk a bridge down to a fact of Γ. *)
 Lemma gen_new_acyc W Γ C : gen_new W Γ C → acyc_new W Γ C.
 Proof.
-  intros (Hwf & Hcc & Sr & Hne & Hex & Hst & Hen). split.
+  intros (Hwf & Hcc & Sr & Hne & Hex & Hst & Hen). split; [|apply cons_open_1].
   - intros x _ Hx. assert (well_founded (tc (new_step C))) as Htc.
     { intros a. apply (acc_tc (new_step C)), Hwf. }
     induction (Htc x) as [x _ IH]. by apply (IH x).
@@ -354,23 +409,44 @@ Qed.
 Lemma wf_new_acyc W Γ C : wf_new C → acyc_new W Γ C.
 Proof. intros H. by apply gen_new_acyc, wf_new_gen. Qed.
 
+(** (gen-new) is (acyc-new) plus what ranks need, C with program order
+    well-founded on the tree of ρ and a partner relation. The second
+    clause of (gen-new) is the bridge clause of (acyc-new) for bridges
+    of length zero. *)
+Lemma gen_new_iff W Γ C :
+  gen_new W Γ C ↔ acyc_new W Γ C ∧ well_founded (new_step C) ∧ ∃ Sr, gen_new_rel W Γ C Sr.
+Proof.
+  split.
+  - intros H. split; [by apply gen_new_acyc|]. destruct H as (Hwf & _ & HS). by split.
+  - intros ([_ Hbr] & Hwf & HS). split_and!; [done| |done].
+    intros x y Hf Hx Hy. apply (proj1 (cons_open_1 W Γ C) Hbr). split_and!; [done|done|by left].
+Qed.
+
 (** ** The mode of a judgment
 
     One judgment for every bound N. At N = ∞ ([None], the deadlock-free
     and live judgment) E-New asks (acyc-new) and the process rules ask
-    the world acyclic. At a finite N (the lock-free judgment) they ask
-    (gen-new) and the world well-founded. *)
+    the world acyclic. At a finite N (the lock-free judgment) E-New asks
+    in addition C well-founded on the tree of ρ with a partner relation,
+    which is (gen-new) ([gen_new_iff]), and the process rules ask the
+    world well-founded. *)
 Definition new_ok (N : fuel) (W : sworld) (Γ : hctx) (C : bcs) : Prop :=
-  match N with None => acyc_new W Γ C | Some _ => gen_new W Γ C end.
+  acyc_new W Γ C ∧ (N ≠ None → well_founded (new_step C) ∧ ∃ Sr, gen_new_rel W Γ C Sr).
 
 Definition wok (N : fuel) (W : sworld) : Prop :=
   match N with None => sacyc W | Some _ => swf W end.
 
 Lemma new_ok_acyc N W Γ C : new_ok N W Γ C → acyc_new W Γ C.
-Proof. destruct N; [apply gen_new_acyc|done]. Qed.
+Proof. by intros [H _]. Qed.
+
+Lemma new_ok_gen N W Γ C : N ≠ None → new_ok N W Γ C → gen_new W Γ C.
+Proof. intros HN [Ha Hr]. apply gen_new_iff. split; [done|by apply Hr]. Qed.
+
+Lemma acyc_new_ok W Γ C : acyc_new W Γ C → new_ok None W Γ C.
+Proof. intros H. split; [done|by intros []]. Qed.
 
 Lemma gen_new_ok N W Γ C : gen_new W Γ C → new_ok N W Γ C.
-Proof. destruct N; [done|apply gen_new_acyc]. Qed.
+Proof. intros (Ha & Hwf & HS)%gen_new_iff. split; [done|by intros _]. Qed.
 
 Lemma wok_acyc N W : wok N W → sacyc W.
 Proof. destruct N; [apply swf_sacyc|done]. Qed.

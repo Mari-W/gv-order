@@ -384,7 +384,7 @@ Proof.
     { destruct Hb as (_ & _ & [[_ Hsc]|(v & u & [_ Hs1] & _ & _ & [_ Hs2])]); [exact Hsc|].
       destruct Hs1, Hs2. by split. }
     pose proof Hb as (Hz & Hy & _).
-    rewrite !ctx_pt_inst by done. by eapply slt_sem, Hbr.
+    rewrite !ctx_pt_inst by done. by eapply slt_sem, (proj1 (cons_open_1 _ _ _) Hbr).
 Qed.
 
 (** The worlds a derivation at N is read at. At N = ∞ the world is
@@ -406,7 +406,7 @@ Lemma new_sem_of N W0 W Γ σ C : sworld_wf W0 → wmodels W W0 → hsat W σ Γ
 Proof.
   intros Hwf HW Hs HK HC. split; [by eapply acyc_new_sem_of, new_ok_acyc|].
   intros Hr. destruct HK as [HS|(_ & [k ->] & _)]; [by destruct (wranked_strict W Hr HS)|].
-  by eapply gen_new_sem_of.
+  eapply gen_new_sem_of; [done|done|done|]. by apply (new_ok_gen (Some k)).
 Qed.
 
 (** ** Identity instances *)

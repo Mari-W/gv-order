@@ -516,12 +516,12 @@ End inv_recv.
 
 Lemma fwd_needs W N Θ Γ Δ F a b T c ea eb :
   a ≠ b → typed W N Θ Γ Δ F (fwd_t a b) T c →
-  Θ !! a = Some ea → Θ !! b = Some eb → slt W Γ (te_pt ea) (te_pt eb)‾.
+  Θ !! a = Some ea → Θ !! b = Some eb → facts_const W → slt W Γ (te_pt ea) (te_pt eb)‾.
 Proof.
-  intros Hab H Ha Hb. unfold fwd_t in H.
+  intros Hab H Ha Hb Hfc. unfold fwd_t in H.
   apply inv_letp in H as (Θ' & Γ' & Δ' & F' & Θ1 & Θ2 & Θ2' & Δ1 & Δ2 & Δ2' & T1 & T2 & T' & c1 & c2
     & Ho & Hs & _ & H1 & _ & _ & _).
-  destruct (opened_cons _ _ _ _ _ _ _ _ _ Ho) as (σ & Hσl & _ & Hσs).
+  destruct (opened_cons _ _ _ _ _ _ _ _ _ Hfc Ho) as (σ & Hσl & _ & Hσs).
   pose proof (typed_tfacts _ _ _ _ _ _ _ _ _ H1) as [Hd1 _]. simpl in Hd1.
   assert (Θ1 !! a = Some (tentry_pinst σ ea)) as Ha1.
   { eapply tsplit_lookup_l; [done| |by apply Hσl].
@@ -531,7 +531,7 @@ Proof.
   assert (Θ2 !! b = Some (tentry_pinst σ eb)) as Hb2.
   { eapply tsplit_lookup_r; [done| |by apply Hσl]. rewrite <-Hd1. set_solver. }
   apply inv_recv in H1 as (Θ'' & Γ'' & Δ'' & F'' & S0 & x & a0 & mS & c0 & Ho2 & Hub & Hch).
-  destruct (opened_cons _ _ _ _ _ _ _ _ _ Ho2) as (σ2 & Hl2 & Hf2 & Hs2).
+  destruct (opened_cons _ _ _ _ _ _ _ _ _ Hfc Ho2) as (σ2 & Hl2 & Hf2 & Hs2).
   destruct (inv_chan _ _ _ _ _ _ _ _ _ Hch _ _ _ _ eq_refl) as (e & He & Hx).
   rewrite (Hl2 _ _ Ha1) in He. injection He as <-.
   destruct Hub as [Hub _].
@@ -583,8 +583,8 @@ Proof.
     destruct (Hlp (edual o1)) as (S1' & x' & e1' & Hc' & He1' & <-); [rfends_tac|rfends_tac|].
     rewrite (sdual_lookup _ _ _ _ Hc) in Hc'. rewrite (sdual_lookup _ _ _ _ Hd) in Hd'.
     injection Hc' as _ Hx'. injection Hd' as _ Hy'.
-    pose proof (slt_empty_w _ _ _ (fwd_needs _ _ _ _ _ _ _ _ _ _ _ _ o1_o2 Ht He1 He2)) as Ha.
-    pose proof (slt_empty_w _ _ _ (fwd_needs _ _ _ _ _ _ _ _ _ _ _ _ o2o1_dual_ne Hp He2' He1')) as Hb.
+    pose proof (slt_empty_w _ _ _ (fwd_needs _ _ _ _ _ _ _ _ _ _ _ _ o1_o2 Ht He1 He2 (facts_const_wf _ (proj1 (fptyped_wf _ _ _ _ _ H1))))) as Ha.
+    pose proof (slt_empty_w _ _ _ (fwd_needs _ _ _ _ _ _ _ _ _ _ _ _ o2o1_dual_ne Hp He2' He1' (facts_const_wf _ (proj1 (fptyped_wf _ _ _ _ _ H2))))) as Hb.
     rewrite <-Hx', <-Hy', pt_dual_dual in Hb.
     apply (Hirr (te_pt e1)). eapply sw_lt_trans; [eapply sw_lt_mono; [apply swext_join_l|exact Ha]|].
     eapply sw_lt_mono; [apply swext_join_r|exact Hb].
@@ -597,8 +597,8 @@ Proof.
     pose proof (sdual_lookup _ _ _ _ Hc') as Hc2. pose proof (sdual_lookup _ _ _ _ Hd') as Hd2.
     rewrite edual_edual in Hc2, Hd2. rewrite Hc2 in Hc. rewrite Hd2 in Hd.
     injection Hc as _ Hx. injection Hd as _ Hy.
-    pose proof (slt_empty_w _ _ _ (fwd_needs _ _ _ _ _ _ _ _ _ _ _ _ o1_o2 Ht He1 He2)) as Ha.
-    pose proof (slt_empty_w _ _ _ (fwd_needs _ _ _ _ _ _ _ _ _ _ _ _ o2o1_dual_ne Hp He2' He1')) as Hb.
+    pose proof (slt_empty_w _ _ _ (fwd_needs _ _ _ _ _ _ _ _ _ _ _ _ o1_o2 Ht He1 He2 (facts_const_wf _ (proj1 (fptyped_wf _ _ _ _ _ H2))))) as Ha.
+    pose proof (slt_empty_w _ _ _ (fwd_needs _ _ _ _ _ _ _ _ _ _ _ _ o2o1_dual_ne Hp He2' He1' (facts_const_wf _ (proj1 (fptyped_wf _ _ _ _ _ H1))))) as Hb.
     rewrite <-Hx, <-Hy, pt_dual_dual in Ha.
     apply (Hirr (te_pt e2')). eapply sw_lt_trans; [eapply sw_lt_mono; [apply swext_join_l|exact Hb]|].
     eapply sw_lt_mono; [apply swext_join_r|exact Ha].

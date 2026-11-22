@@ -325,9 +325,9 @@ Qed.
 
     A derivation may give the binder of the dead arm an existential type
     whose constraint states y ≺ x̄ over the outer points. No value needs
-    to inhabit it. E-Open asks [cons_open], and opening this existential
-    in Wa would derive y ≺ x̄ between the outer points, which Wa does not
-    derive. *)
+    to inhabit it. E-Open asks [cons_open]. The one fact of the
+    constraint is a bridge between outer points, and Wa does not derive
+    y ≺ x̄. *)
 
 Definition Cbad : bcs := BCs (py :: px‾ :: []) (λ f, f = FLt (pvar 0) (pvar 1)).
 Definition Tbad : ty := TEx LNone 0 Cbad TUnit.
@@ -360,12 +360,11 @@ Proof. intros H. apply Wa_rk in H. unfold rk, py, px, pt_dual in H. simpl in H. 
 
 Lemma Tbad_not_cons : ¬ cons_open Wa hc_empty 0 Cbad.
 Proof.
-  intros Hc. apply Wa_not_yx, slt_empty_w, Hc.
-  rewrite !pt_inst_novar by (intros ?; unfold px, py, pt_dual, pt_root; simpl; congruence).
-  apply fl_h. exists (bcs_inst (pshift 0) Cbad), (ids 0). split; [by left|].
-  exists (FLt py (px‾)). split; [|reflexivity].
-  exists (FLt (pvar 0) (pvar 1)). split_and!; [reflexivity| |reflexivity].
-  split; apply pn_vb_root; eexists; (split; [reflexivity|simpl; lia]).
+  intros Hc. apply Wa_not_yx, slt_empty_w.
+  assert (bridge_at 0 Cbad (pvar 0) (pvar 1)) as Hb.
+  { split; [unfold in_tree; cbn; lia|]. split; [unfold in_tree; cbn; lia|].
+    left. split; [reflexivity|]. cbn. split; lia. }
+  pose proof (Hc _ _ Hb) as H. exact H.
 Qed.
 
 (** ** The variant whose arms read their binder
@@ -464,12 +463,12 @@ Proof. by destruct b. Qed.
 
 Lemma cl2_needs W N Θ Γ Δ F a b T c ea eb :
   a ≠ b → typed W N Θ Γ Δ F (cl2 a b) T c →
-  Θ !! a = Some ea → Θ !! b = Some eb → slt W Γ (te_pt ea) (te_pt eb)‾.
+  Θ !! a = Some ea → Θ !! b = Some eb → facts_const W → slt W Γ (te_pt ea) (te_pt eb)‾.
 Proof.
-  intros Hab H Ha Hb. unfold cl2 in H.
+  intros Hab H Ha Hb Hfc. unfold cl2 in H.
   apply inv_letu in H as (Θ' & Γ' & Δ' & F' & Θ1 & Θ2 & Θ2' & Δ1 & Δ2 & Δ2' & T' & c1 & c2
     & Ho & Hs & _ & H1 & Hage & _ & H2).
-  destruct (opened_cons _ _ _ _ _ _ _ _ _ Ho) as (σ & Hσl & _ & Hσs).
+  destruct (opened_cons _ _ _ _ _ _ _ _ _ Hfc Ho) as (σ & Hσl & _ & Hσs).
   pose proof (typed_tfacts _ _ _ _ _ _ _ _ _ H1) as [Hd1 _].
   pose proof (typed_tfacts _ _ _ _ _ _ _ _ _ H2) as [Hd2 _].
   rewrite (thage_dom _ _ _ Hage) in Hd2. simpl in Hd1, Hd2.
@@ -478,7 +477,7 @@ Proof.
   assert (Θ2 !! b = Some (tentry_pinst σ eb)) as Hb2.
   { eapply tsplit_lookup_r; [done| |by apply Hσl]. rewrite <-Hd1. set_solver. }
   apply inv_close in H1 as (Θ'' & Γ'' & Δ'' & F'' & S0 & x & a0 & mS & c0 & Ho2 & _ & Hub & Hch).
-  destruct (opened_cons _ _ _ _ _ _ _ _ _ Ho2) as (σ2 & Hl2 & Hf2 & Hs2).
+  destruct (opened_cons _ _ _ _ _ _ _ _ _ Hfc Ho2) as (σ2 & Hl2 & Hf2 & Hs2).
   destruct (inv_chan _ _ _ _ _ _ _ _ _ Hch _ _ _ _ eq_refl) as (e & He & Hx).
   rewrite (Hl2 _ _ Ha1) in He. injection He as <-.
   destruct Hub as [Hub _].
@@ -491,38 +490,38 @@ Qed.
 
 Lemma letu_cl2_needs W N Θ Γ Δ F a b T c ea eb :
   a ≠ b → typed W N Θ Γ Δ F (LetU (Var 0) (cl2 a b)) T c →
-  Θ !! a = Some ea → Θ !! b = Some eb → slt W Γ (te_pt ea) (te_pt eb)‾.
+  Θ !! a = Some ea → Θ !! b = Some eb → facts_const W → slt W Γ (te_pt ea) (te_pt eb)‾.
 Proof.
-  intros Hab H Ha Hb.
+  intros Hab H Ha Hb Hfc.
   apply inv_letu in H as (Θ' & Γ' & Δ' & F' & Θ1 & Θ2 & Θ2' & Δ1 & Δ2 & Δ2' & T' & c1 & c2
     & Ho & Hs & _ & H1 & Hage & _ & H2).
-  destruct (opened_cons _ _ _ _ _ _ _ _ _ Ho) as (σ & Hσl & _ & Hσs).
+  destruct (opened_cons _ _ _ _ _ _ _ _ _ Hfc Ho) as (σ & Hσl & _ & Hσs).
   pose proof (typed_tfacts _ _ _ _ _ _ _ _ _ H1) as [Hd1 _]. simpl in Hd1.
   assert (∀ o, o ∉ dom Θ1) as Hn1 by (intros o; rewrite <-Hd1; set_solver).
   destruct (thage_pt _ _ _ _ _ Hage (tsplit_lookup_r _ _ _ _ _ Hs (Hn1 a) (Hσl _ _ Ha)))
     as (ea' & Ha' & Hpa).
   destruct (thage_pt _ _ _ _ _ Hage (tsplit_lookup_r _ _ _ _ _ Hs (Hn1 b) (Hσl _ _ Hb)))
     as (eb' & Hb' & Hpb).
-  pose proof (cl2_needs _ _ _ _ _ _ _ _ _ _ _ _ Hab H2 Ha' Hb') as H.
+  pose proof (cl2_needs _ _ _ _ _ _ _ _ _ _ _ _ Hab H2 Ha' Hb' Hfc) as H.
   rewrite Hpa, Hpb, !te_pt_pinst, <-pt_inst_dual in H. by apply Hσs.
 Qed.
 
 (** The dead arm: the thread asks y ≺ x̄. *)
 Lemma sbv_thread_needs W N Θ Γ Δ F T c ec ed :
   typed W N Θ Γ Δ F sbv_thread T c →
-  Θ !! oc = Some ec → Θ !! od = Some ed → slt W Γ (te_pt ed) (te_pt ec)‾.
+  Θ !! oc = Some ec → Θ !! od = Some ed → facts_const W → slt W Γ (te_pt ed) (te_pt ec)‾.
 Proof.
-  intros H Hc Hd. unfold sbv_thread in H.
+  intros H Hc Hd Hfc. unfold sbv_thread in H.
   apply inv_case in H as (Θ' & Γ' & Δ' & F' & Θ1 & Θ2 & Θ2' & Δ1 & Δ2 & Δ2' & T1 & T2 & T' & c0 & c1 & c2
     & Ho & Hs & _ & H0 & Hage & _ & _ & H2).
-  destruct (opened_cons _ _ _ _ _ _ _ _ _ Ho) as (σ & Hσl & _ & Hσs).
+  destruct (opened_cons _ _ _ _ _ _ _ _ _ Hfc Ho) as (σ & Hσl & _ & Hσs).
   pose proof (typed_tfacts _ _ _ _ _ _ _ _ _ H0) as [Hd0 _]. unfold sb_flag, sb_not in Hd0. simpl in Hd0.
   assert (∀ o, o ∉ dom Θ1) as Hn1 by (intros o; rewrite <-Hd0; set_solver).
   destruct (thage_pt _ _ _ _ _ Hage (tsplit_lookup_r _ _ _ _ _ Hs (Hn1 oc) (Hσl _ _ Hc)))
     as (ec' & Hc' & Hpc).
   destruct (thage_pt _ _ _ _ _ Hage (tsplit_lookup_r _ _ _ _ _ Hs (Hn1 od) (Hσl _ _ Hd)))
     as (ed' & Hd' & Hpd).
-  pose proof (letu_cl2_needs _ _ _ _ _ _ _ _ _ _ _ _ (not_eq_sym oc_od) H2 Hd' Hc') as H.
+  pose proof (letu_cl2_needs _ _ _ _ _ _ _ _ _ _ _ _ (not_eq_sym oc_od) H2 Hd' Hc' Hfc) as H.
   rewrite Hpc, Hpd, !te_pt_pinst, <-pt_inst_dual in H. by apply Hσs.
 Qed.
 
@@ -595,9 +594,9 @@ Proof.
     destruct (Hlp (edual od)) as (Sd' & y' & ed' & Hd' & Hed' & <-); [fends_tac|fends_tac|].
     rewrite (sdual_lookup _ _ _ _ Hc) in Hc'. rewrite (sdual_lookup _ _ _ _ Hd) in Hd'.
     injection Hc' as _ Hx'. injection Hd' as _ Hy'.
-    pose proof (slt_empty_w _ _ _ (sbv_thread_needs _ _ _ _ _ _ _ _ _ _ Ht Hec Hed)) as Ha.
+    pose proof (slt_empty_w _ _ _ (sbv_thread_needs _ _ _ _ _ _ _ _ _ _ Ht Hec Hed (facts_const_wf _ (proj1 (fptyped_wf _ _ _ _ _ H1))))) as Ha.
     pose proof (slt_empty_w _ _ _ (cl2_needs _ _ _ _ _ _ _ _ _ _ _ _
-      ocd_dual_ne Hp Hec' Hed')) as Hb.
+      ocd_dual_ne Hp Hec' Hed' (facts_const_wf _ (proj1 (fptyped_wf _ _ _ _ _ H2))))) as Hb.
     rewrite <-Hx', <-Hy', pt_dual_dual in Hb.
     apply (Hirr (te_pt ed)). eapply sw_lt_trans; [eapply sw_lt_mono; [apply swext_join_l|exact Ha]|].
     eapply sw_lt_mono; [apply swext_join_r|exact Hb].
@@ -610,9 +609,9 @@ Proof.
     pose proof (sdual_lookup _ _ _ _ Hc') as Hc2. pose proof (sdual_lookup _ _ _ _ Hd') as Hd2.
     rewrite edual_edual in Hc2, Hd2. rewrite Hc2 in Hc. rewrite Hd2 in Hd.
     injection Hc as _ Hx. injection Hd as _ Hy.
-    pose proof (slt_empty_w _ _ _ (sbv_thread_needs _ _ _ _ _ _ _ _ _ _ Ht Hec Hed)) as Ha.
+    pose proof (slt_empty_w _ _ _ (sbv_thread_needs _ _ _ _ _ _ _ _ _ _ Ht Hec Hed (facts_const_wf _ (proj1 (fptyped_wf _ _ _ _ _ H2))))) as Ha.
     pose proof (slt_empty_w _ _ _ (cl2_needs _ _ _ _ _ _ _ _ _ _ _ _
-      ocd_dual_ne Hp Hec' Hed')) as Hb.
+      ocd_dual_ne Hp Hec' Hed' (facts_const_wf _ (proj1 (fptyped_wf _ _ _ _ _ H1))))) as Hb.
     rewrite <-Hx, <-Hy, pt_dual_dual in Ha.
     apply (Hirr (te_pt ec')). eapply sw_lt_trans; [eapply sw_lt_mono; [apply swext_join_l|exact Hb]|].
     eapply sw_lt_mono; [apply swext_join_r|exact Ha].
