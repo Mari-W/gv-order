@@ -482,15 +482,15 @@ Section redex.
 
   (** The ranks of W with offsets at the roots W does not rank rise
       along W. *)
-  Lemma rk0_lt W x y : W ⊢ x ≺ y →
+  Lemma rk0_lt W x y : wranked W → W ⊢ x ≺ y →
     olt (wgrow_rank W (λ y, onat (pt_off y)) x) (wgrow_rank W (λ y, onat (pt_off y)) y).
   Proof.
-    unfold wgrow_rank. intros [Hp|(Hx & Hy & Hlt)].
+    unfold wgrow_rank. intros HW [Hp|(Hx & Hy & Hlt)].
     - pose proof (rin_po W x y Hp) as Hr. destruct (po_root x y Hp) as [_ Ho].
       destruct (decide (rin W x)) as [Hx|Hx].
       + rewrite decide_True by tauto. by apply rank_po.
       + rewrite decide_False by tauto. by apply onat_lt.
-    - by rewrite !decide_True.
+    - rewrite !decide_True by done. by apply w_ord_rank.
   Qed.
 
   #[universes(polymorphic)] Lemma rank_base_le R b Hwf x β :
@@ -509,10 +509,10 @@ Section redex.
       point of T, so each exit holds. The largest point exists under
       excluded middle ([list_max_rank]). *)
   Lemma Erel_new (EM : excluded_middle) aq1 aq2 n W C S F mt1 mt2 :
-    gen_new_sem W C →
+    wranked W → gen_new_sem W C →
     Erel κ n W ∅ (TEx LBot 1 C (TProd (TSess S (pvar 0) aq1 mt1) (TSess (dual S) (pvar 0)‾ aq2 mt2))) F ENew.
   Proof.
-    intros HG.
+    intros HR HG.
     assert (tstep ENew (LNew "") (Pair (Chan ""⁺) (Chan ""⁻))) as Hst
       by (by apply tstep_head, t_act_new).
     apply Erel_S_intro.
@@ -520,6 +520,7 @@ Section redex.
     - intros W1 _. eapply ready_tau; [exact Hst|done].
     - intros W1 α e' HW1 Hs. destruct (ENew_step _ _ Hs) as (c & -> & ->). simpl. intros _.
       destruct (gen_new_sem_mono _ _ _ HW1 HG) as (Hwf & Hcc & Sr & HnT & Hex & Hstp & Hen).
+      pose proof (proj1 (wext_ranked _ _ HW1) HR) as HR1.
       destruct (fresh_const W1 (bc_env C)) as (a & Ha1 & Ha2).
       set (π := MkPt (NConst a) true 0).
       set (σ := plist (π :: bc_env C)).
@@ -531,7 +532,7 @@ Section redex.
           destruct (decide (rin W1 x)) as [Hx|Hx].
           + rewrite decide_True by tauto. by apply rank_po.
           + rewrite decide_False by tauto. by apply onat_lt.
-        - by rewrite !decide_True. }
+        - rewrite !decide_True by done. by apply w_ord_rank. }
       set (b0 := λ u0 : point, olim (λ s : {y : point | pt_root y ≠ NConst a ∧ bcs_at C [π] (FLt y (pt_inst σ u0))},
                    osucc (rk0 (proj1_sig s)))).
       set (ρ := λ x, if decide (pt_root x = NConst a) then rank_base (new_step C) b0 Hwf (pt_unroot a x)
@@ -544,11 +545,14 @@ Section redex.
           split; apply rank_base_lt; (split; [done|split; [done|right]]);
             [left|right]; done.
         - split; apply onat_lt; simpl; lia. }
-      set (W' := wgrow W1 B ρ Hρ).
+      set (W' := wgrow W1 HR1 B ρ Hρ).
+      assert (∀ x y, rin W' x → rin W' y → olt (w_rank W' x) (w_rank W' y) → W' ⊢ x ≺ y) as HltW.
+      { intros x y Hx Hy H. right. split_and!; [done|done|]. apply w_ord_rank; [apply wgrow_ranked|done|done|done]. }
       assert (∀ x, pt_root x = NConst a → w_rank W' x = rank_base (new_step C) b0 Hwf (pt_unroot a x)) as Hra.
       { intros x Hx. unfold W'. rewrite wgrow_rank_new; [unfold ρ; by rewrite decide_True|]. unfold rin. rewrite Hx. done. }
       assert (∀ x, pt_root x ≠ NConst a → w_rank W' x = rk0 x) as Hro.
-      { intros x Hx. unfold W'. simpl. unfold rk0, wgrow_rank. case_decide; [done|].
+      { intros x Hx. unfold W'. change (w_rank (wgrow W1 HR1 B ρ Hρ) x) with (wgrow_rank W1 ρ x).
+        unfold rk0, wgrow_rank. case_decide; [done|].
         unfold ρ. by rewrite decide_False. }
       (* the instance of a point of the tree of 0, and of a context point *)
       assert (∀ p, in_tree0 p → pt_root (pt_inst σ p) = NConst a ∧ rin W' (pt_inst σ p) ∧
@@ -601,20 +605,307 @@ Section redex.
         destruct Hsc as [Hsx Hsy].
         destruct (decide (in_tree0 y0)) as [Hy0|Hy0], (decide (in_tree0 x0)) as [Hx0|Hx0].
         * destruct (Htr y0 Hy0) as (_ & Hry & Ey). destruct (Htr x0 Hx0) as (_ & Hrx & Ex).
-          right. split_and!; [done|done|]. rewrite Ex, Ey. apply rank_base_lt.
+          apply HltW; [done|done|]. rewrite Ex, Ey. apply rank_base_lt.
           split; [done|split; [done|left; exact Hcf]].
         * destruct (Htr y0 Hy0) as (_ & Hry & Ey). destruct (Hout x0 Hsx Hx0) as (_ & Hx & Hrx).
-          right. split_and!; [done|done|]. rewrite (Hro _ Hx), Ey.
+          apply HltW; [done|done|]. rewrite (Hro _ Hx), Ey.
           eapply olt_trans_le; [|apply rank_base_ge].
           unfold b0, olt. apply (ole_lim_r _ _ (exist _ (pt_inst σ x0) (conj Hx Hf0))). apply ole_refl.
         * destruct (Htr x0 Hx0) as (_ & Hrx & Ex). destruct (Hout y0 Hsy Hy0) as (Ey & Hy & Hry).
           destruct (Hex x0 y0 Hcf Hx0 Hy0) as (T & HT & Hlt).
           destruct (Hinv x0 Hx0 T HT) as (t & Ht & Hle).
-          right. split_and!; [done|done|]. rewrite Ex, (Hro _ Hy), Ey.
+          apply HltW; [done|done|]. rewrite Ex, (Hro _ Hy), Ey.
           eapply ole_trans_lt; [exact Hle|]. by apply Hrk0, Hlt.
         * destruct (Hout x0 Hsx Hx0) as (Ex & _ & _). destruct (Hout y0 Hsy Hy0) as (Ey & _ & _).
           rewrite Ex, Ey. eapply w_lt_mono; [apply wgrow_ext|]. by apply Hcc.
       + unfold ty_inst. simpl. rewrite pt_inst_dual, !pt_inst_pvar_at. simpl. apply Vrel_newpair.
+  Qed.
+
+  (** ** Creation in a strict world
+
+      The semantic form of (acyc-new) in the world W, with the
+      environment of C already instantiated. *)
+  Definition acyc_new_sem (W : world) (C : bcs) : Prop :=
+    (∀ x, in_tree0 x → ¬ tc (new_step C) x x) ∧
+    (∀ z y, cbridge C z y → W ⊢ ctx_pt C z ≺ ctx_pt C y).
+
+  Lemma acyc_new_sem_mono W W' C : W ⊑ W' → acyc_new_sem W C → acyc_new_sem W' C.
+  Proof. intros HW [H1 H2]. split; [done|]. intros z y Hb. eapply w_lt_mono; [exact HW|]. by apply H2. Qed.
+
+  (** Proposition A of docs/redesign/check-df-acyclic.md. The world of a
+      creation at a fresh root a is the closure of the order of W1, of
+      the facts of C at a and of program order ([aw_W]). A chain of the
+      closure that leaves the tree of a and comes back passes through a
+      bridge, which W1 orders already ([aw_bridge]). The invariant
+      [aw_inv] records the shape of a chain by where its two ends lie,
+      so the closure is irreflexive. Constructive: membership in the
+      tree compares roots. *)
+  Section acyc_world.
+    Context (W1 : world) (C : bcs) (a : nat).
+    Context (Ha1 : NConst a ∉ w_roots W1) (Ha2 : ∀ y, y ∈ bc_env C → pt_root y ≠ NConst a).
+    Context (Hcyc : ∀ x, in_tree0 x → ¬ tc (new_step C) x x).
+    Context (Hbr : ∀ z y, cbridge C z y → W1 ⊢ ctx_pt C z ≺ ctx_pt C y).
+    Context (HS1 : wstrict W1).
+
+    Definition aw_pt : point := MkPt (NConst a) true 0.
+    Definition aw_σ : nat → point := plist (aw_pt :: bc_env C).
+    Definition aw_in (p : point) : Prop := pt_root p = NConst a.
+    Definition aw_env : gset pname := list_to_set (pt_root <$> bc_env C).
+
+    Local Instance aw_in_dec p : Decision (aw_in p).
+    Proof. unfold aw_in. apply _. Defined.
+
+    Lemma aw_σ0 : aw_σ 0 = MkPt (NConst a) true 0.
+    Proof. done. Qed.
+
+    Lemma aw_in_po x y : po x y → aw_in x ↔ aw_in y.
+    Proof. intros Hp. apply po_root in Hp as [Hr _]. unfold aw_in. by rewrite Hr. Qed.
+
+    Lemma aw_tree p : in_tree0 p → aw_in (pt_inst aw_σ p) ∧ pt_unroot a (pt_inst aw_σ p) = p.
+    Proof.
+      intros Hp. split; [unfold aw_in; by rewrite pt_root_inst_var, Hp|].
+      exact (pt_unroot_inst a aw_σ aw_σ0 p Hp).
+    Qed.
+
+    Lemma aw_out p : pn_vb (1 + length (bc_env C)) (pt_name p) → ¬ in_tree0 p →
+      pt_inst aw_σ p = ctx_pt C p ∧ ¬ aw_in (pt_inst aw_σ p) ∧ pt_root (pt_inst aw_σ p) ∈ aw_env.
+    Proof.
+      intros Hsp Hp. apply pn_vb_root in Hsp as ([|j] & Hj & Hjl); [by destruct Hp|].
+      simpl in Hjl. destruct (lookup_lt_is_Some_2 (bc_env C) j ltac:(lia)) as [yj Hyj].
+      assert (pt_root (pt_inst aw_σ p) = pt_root yj) as Hr.
+      { rewrite pt_root_inst_var. change (pt_root p) with (pn_root (pt_name p)). rewrite Hj.
+        simpl. unfold aw_σ, plist. simpl. by rewrite Hyj. }
+      split_and!.
+      - unfold ctx_pt. apply pt_inst_ext_root. intros b Hb. change (pt_root p) with (pn_root (pt_name p)) in Hb.
+        rewrite Hj in Hb. injection Hb as <-. done.
+      - unfold aw_in. rewrite Hr. apply Ha2. by eapply list_elem_of_lookup_2.
+      - rewrite Hr. unfold aw_env. apply elem_of_list_to_set, list_elem_of_fmap. exists yj.
+        split; [done|]. by eapply list_elem_of_lookup_2.
+    Qed.
+
+    Definition aw_t (p q : point) : Prop := aw_in p ∧ aw_in q ∧ new_step C (pt_unroot a p) (pt_unroot a q).
+    Definition aw_entry (z q : point) : Prop :=
+      ∃ z0 v0, cfact C z0 v0 ∧ ¬ in_tree0 z0 ∧ in_tree0 v0 ∧ z = pt_inst aw_σ z0 ∧ q = pt_inst aw_σ v0.
+    Definition aw_exit (p y : point) : Prop :=
+      ∃ u0 y0, cfact C u0 y0 ∧ in_tree0 u0 ∧ ¬ in_tree0 y0 ∧ p = pt_inst aw_σ u0 ∧ y = pt_inst aw_σ y0.
+    Definition aw_step (p q : point) : Prop :=
+      (¬ aw_in p ∧ ¬ aw_in q ∧ W1 ⊢ p ≺ q) ∨ aw_entry p q ∨ aw_exit p q ∨ aw_t p q.
+
+    Lemma aw_rtc_un p q : rtc aw_t p q → rtc (new_step C) (pt_unroot a p) (pt_unroot a q).
+    Proof. induction 1 as [|p q r (_ & _ & H) _ IH]; [done|]. by eapply rtc_l. Qed.
+
+    Lemma aw_tc_un p q : tc aw_t p q → tc (new_step C) (pt_unroot a p) (pt_unroot a q).
+    Proof. induction 1 as [p q (_ & _ & H)|p q r (_ & _ & H) _ IH]; [by apply tc_once|]. by eapply tc_l. Qed.
+
+    Lemma aw_bridge z v u y : aw_entry z v → rtc aw_t v u → aw_exit u y → W1 ⊢ z ≺ y.
+    Proof.
+      intros (z0 & v0 & Hzv & Hz0 & Hv0 & -> & ->) Hvu (u0 & y0 & Huy & Hu0 & Hy0 & -> & ->).
+      pose proof Hzv as [_ [Hsz _]]. pose proof Huy as [_ [_ Hsy]].
+      destruct (aw_out z0 Hsz Hz0) as (Ez & _ & _). destruct (aw_out y0 Hsy Hy0) as (Ey & _ & _).
+      rewrite Ez, Ey. apply Hbr. split_and!; [done|done|right]. exists v0, u0. split_and!; [done|done| |done].
+      apply aw_rtc_un in Hvu. by rewrite (proj2 (aw_tree v0 Hv0)), (proj2 (aw_tree u0 Hu0)) in Hvu.
+    Qed.
+
+    Lemma aw_le_lt x y z : w_le W1 x y → W1 ⊢ y ≺ z → W1 ⊢ x ≺ z.
+    Proof. intros [->|H] H'; [done|by eapply w_lt_trans]. Qed.
+    Lemma aw_lt_le x y z : W1 ⊢ x ≺ y → w_le W1 y z → W1 ⊢ x ≺ z.
+    Proof. intros H [<-|H']; [done|by eapply w_lt_trans]. Qed.
+    Lemma aw_le_trans x y z : w_le W1 x y → w_le W1 y z → w_le W1 x z.
+    Proof. intros [->|H] H'; [done|right; by eapply aw_lt_le]. Qed.
+
+    Definition aw_inv (p q : point) : Prop :=
+      (¬ aw_in p → ¬ aw_in q → W1 ⊢ p ≺ q) ∧
+      (¬ aw_in p → aw_in q → ∃ z v, w_le W1 p z ∧ aw_entry z v ∧ rtc aw_t v q) ∧
+      (aw_in p → ¬ aw_in q → ∃ u y, rtc aw_t p u ∧ aw_exit u y ∧ w_le W1 y q) ∧
+      (aw_in p → aw_in q → tc aw_t p q ∨
+         ∃ u y z v, rtc aw_t p u ∧ aw_exit u y ∧ w_le W1 y z ∧ aw_entry z v ∧ rtc aw_t v q).
+
+    Lemma aw_inv_trans p q r : aw_inv p q → aw_inv q r → aw_inv p r.
+    Proof.
+      intros (A1 & A2 & A3 & A4) (B1 & B2 & B3 & B4).
+      destruct (decide (aw_in q)) as [Hq|Hq]; split_and!.
+      - intros Hp Hr. destruct (A2 Hp Hq) as (z & v & Hpz & He & Hvq).
+        destruct (B3 Hq Hr) as (u & y & Hqu & Hx & Hyr).
+        pose proof (aw_bridge z v u y He (rtc_trans _ _ _ Hvq Hqu) Hx) as Hzy.
+        exact (aw_le_lt _ _ _ Hpz (aw_lt_le _ _ _ Hzy Hyr)).
+      - intros Hp Hr. destruct (A2 Hp Hq) as (z & v & Hpz & He & Hvq).
+        destruct (B4 Hq Hr) as [Hqr|(u & y & z' & v' & Hqu & Hx & Hyz & He' & Hvr)].
+        + exists z, v. split_and!; [done|done|]. eapply rtc_trans; [exact Hvq|by apply tc_rtc].
+        + pose proof (aw_bridge z v u y He (rtc_trans _ _ _ Hvq Hqu) Hx) as Hzy.
+          exists z', v'. split_and!; [|done|done]. right. exact (aw_le_lt _ _ _ Hpz (aw_lt_le _ _ _ Hzy Hyz)).
+      - intros Hp Hr. destruct (B3 Hq Hr) as (u' & y' & Hqu' & Hx' & Hyr).
+        destruct (A4 Hp Hq) as [Hpq|(u & y & z & v & Hpu & Hx & Hyz & He & Hvq)].
+        + exists u', y'. split_and!; [|done|done]. eapply rtc_trans; [by apply tc_rtc|exact Hqu'].
+        + pose proof (aw_bridge z v u' y' He (rtc_trans _ _ _ Hvq Hqu') Hx') as Hzy.
+          exists u, y. split_and!; [done|done|]. right. exact (aw_le_lt _ _ _ Hyz (aw_lt_le _ _ _ Hzy Hyr)).
+      - intros Hp Hr. destruct (A4 Hp Hq) as [Hpq|(u & y & z & v & Hpu & Hx & Hyz & He & Hvq)],
+          (B4 Hq Hr) as [Hqr|(u' & y' & z' & v' & Hqu & Hx' & Hyz' & He' & Hvr)].
+        + left. by eapply tc_transitive.
+        + right. exists u', y', z', v'. split_and!; [|done|done|done|done].
+          eapply rtc_trans; [by apply tc_rtc|exact Hqu].
+        + right. exists u, y, z, v. split_and!; [done|done|done|done|].
+          eapply rtc_trans; [exact Hvq|by apply tc_rtc].
+        + pose proof (aw_bridge z v u' y' He (rtc_trans _ _ _ Hvq Hqu) Hx') as Hzy.
+          right. exists u, y, z', v'. split_and!; [done|done| |done|done].
+          right. exact (aw_le_lt _ _ _ Hyz (aw_lt_le _ _ _ Hzy Hyz')).
+      - intros Hp Hr. eapply w_lt_trans; [by apply A1|by apply B1].
+      - intros Hp Hr. destruct (B2 Hq Hr) as (z & v & Hqz & He & Hvr).
+        exists z, v. split_and!; [|done|done]. right. exact (aw_lt_le _ _ _ (A1 Hp Hq) Hqz).
+      - intros Hp Hr. destruct (A3 Hp Hq) as (u & y & Hpu & Hx & Hyq).
+        exists u, y. split_and!; [done|done|]. right. exact (aw_le_lt _ _ _ Hyq (B1 Hq Hr)).
+      - intros Hp Hr. destruct (A3 Hp Hq) as (u & y & Hpu & Hx & Hyq).
+        destruct (B2 Hq Hr) as (z & v & Hqz & He & Hvr).
+        right. exists u, y, z, v. split_and!; [done|done| |done|done]. exact (aw_le_trans _ _ _ Hyq Hqz).
+    Qed.
+
+    Lemma aw_entry_in z q : aw_entry z q → ¬ aw_in z ∧ aw_in q.
+    Proof.
+      intros (z0 & v0 & [_ [Hs _]] & Hz0 & Hv0 & -> & ->).
+      split; [apply (aw_out z0 Hs Hz0)|apply (aw_tree v0 Hv0)].
+    Qed.
+
+    Lemma aw_exit_in p y : aw_exit p y → aw_in p ∧ ¬ aw_in y.
+    Proof.
+      intros (u0 & y0 & [_ [_ Hs]] & Hu0 & Hy0 & -> & ->).
+      split; [apply (aw_tree u0 Hu0)|apply (aw_out y0 Hs Hy0)].
+    Qed.
+
+    Lemma aw_step_inv p q : aw_step p q → aw_inv p q.
+    Proof.
+      intros [(Hp & Hq & H)|[He|[Hx|Ht]]].
+      - split_and!; intros; first [done|contradiction].
+      - destruct (aw_entry_in p q He) as [Hp Hq]. split_and!; intros; try contradiction.
+        exists p, q. split_and!; [by left|done|done].
+      - destruct (aw_exit_in p q Hx) as [Hp Hq]. split_and!; intros; try contradiction.
+        exists p, q. split_and!; [done|done|by left].
+      - pose proof Ht as (Hp & Hq & _). split_and!; intros; try contradiction. left. by apply tc_once.
+    Qed.
+
+    Lemma aw_tc_inv p q : tc aw_step p q → aw_inv p q.
+    Proof.
+      induction 1 as [p q H|p q r H _ IH]; [by apply aw_step_inv|].
+      eapply aw_inv_trans; [by apply aw_step_inv|exact IH].
+    Qed.
+
+    Lemma aw_inv_irrefl p : ¬ aw_inv p p.
+    Proof.
+      intros (A1 & _ & _ & A4). destruct (decide (aw_in p)) as [Hp|Hp].
+      - destruct (A4 Hp Hp) as [Hc|(u & y & z & v & Hpu & Hx & Hyz & He & Hvp)].
+        + apply aw_tc_un in Hc. exact (Hcyc _ (pt_root_unroot a p Hp) Hc).
+        + pose proof (aw_bridge z v u y He (rtc_trans _ _ _ Hvp Hpu) Hx) as Hzy.
+          exact (w_lt_irrefl W1 z (aw_lt_le _ _ _ Hzy Hyz)).
+      - exact (w_lt_irrefl W1 p (A1 Hp Hp)).
+    Qed.
+
+    Lemma aw_po p q : aw_in p → po p q → tc aw_t p q.
+    Proof.
+      intros Hp H. induction H as [x y Hxy|x y z Hxy Hyz IH].
+      - apply tc_once. assert (aw_in y) as Hy by (apply (aw_in_po x y); [by apply tc_once|done]).
+        split_and!; [done|done|]. split_and!; [exact (pt_root_unroot a x Hp)|exact (pt_root_unroot a y Hy)|].
+        right. destruct Hxy as [->| ->]; [left|right]; done.
+      - assert (aw_in y) as Hy by (apply (aw_in_po x y); [by apply tc_once|done]).
+        eapply tc_l; [|by apply IH].
+        split_and!; [done|done|]. split_and!; [exact (pt_root_unroot a x Hp)|exact (pt_root_unroot a y Hy)|].
+        right. destruct Hxy as [->| ->]; [left|right]; done.
+    Qed.
+
+    Lemma aw_tc_step p q : tc aw_t p q → tc aw_step p q.
+    Proof.
+      induction 1 as [p q H|p q r H _ IH]; [apply tc_once|eapply tc_l; [|exact IH]]; by do 3 right.
+    Qed.
+
+    Definition aw_W : world.
+    Proof.
+      refine (World ({[NConst a]} ∪ aw_env ∪ w_roots W1) (tc aw_step) _ _ _ None _).
+      - intros x y z _ _ _. apply tc_transitive.
+      - intros x _ Hx. exact (aw_inv_irrefl x (aw_tc_inv x x Hx)).
+      - intros x y _ Hp. destruct (decide (aw_in x)) as [Hx|Hx].
+        + by apply aw_tc_step, aw_po.
+        + apply tc_once. left. split_and!; [done| |by apply po_lt].
+          by rewrite <-(aw_in_po x y Hp).
+      - intros ρ x y [=].
+    Defined.
+
+    Lemma aw_W_ext : W1 ⊑ aw_W.
+    Proof.
+      split.
+      - simpl. set_solver.
+      - intros x y Hx Hy H. apply tc_once. left.
+        assert (∀ z, rin W1 z → ¬ aw_in z) as Hn by (intros z Hz Hza; apply Ha1; unfold rin, aw_in in *; congruence).
+        split_and!; [by apply Hn|by apply Hn|]. right. by split_and!.
+      - unfold wk_ext. by rewrite HS1.
+    Qed.
+
+    Lemma aw_W_holds : wholds aw_W C [aw_pt].
+    Proof.
+      intros x y Hf. pose proof Hf as Hf0.
+      apply bcs_at_iff in Hf as ([x0 y0] & Hf & Hsc & Heq). simpl in Heq. injection Heq as -> ->.
+      try change (plist ([aw_pt] ++ bc_env C)) with aw_σ in Hf0 |- *.
+      try change (plist (aw_pt :: bc_env C)) with aw_σ in Hf0 |- *.
+      assert (cfact C x0 y0) as Hcf by (split; [done|exact Hsc]).
+      destruct Hsc as [Hsx Hsy].
+      assert (∀ p, aw_in p → rin aw_W p) as Hrin by (intros p Hp; unfold rin, aw_in in *; simpl; rewrite Hp; set_solver).
+      assert (∀ p, pt_root p ∈ aw_env → rin aw_W p) as Hrout by (intros p Hp; unfold rin; simpl; set_solver).
+      destruct (decide (in_tree0 y0)) as [Hy0|Hy0], (decide (in_tree0 x0)) as [Hx0|Hx0].
+      - destruct (aw_tree x0 Hx0) as [Hx Ex], (aw_tree y0 Hy0) as [Hy Ey].
+        right. split_and!; [by apply Hrin|by apply Hrin|]. apply tc_once. do 3 right.
+        split_and!; [done|done|]. rewrite Ex, Ey. split_and!; [done|done|left; exact Hcf].
+      - destruct (aw_out x0 Hsx Hx0) as (_ & Hx & Hxr). destruct (aw_tree y0 Hy0) as [Hy _].
+        right. split_and!; [by apply Hrout|by apply Hrin|]. apply tc_once. right; left.
+        by exists x0, y0.
+      - destruct (aw_tree x0 Hx0) as [Hx _]. destruct (aw_out y0 Hsy Hy0) as (_ & Hy & Hyr).
+        right. split_and!; [by apply Hrin|by apply Hrout|]. apply tc_once. right; right; left.
+        by exists x0, y0.
+      - destruct (aw_out x0 Hsx Hx0) as (Ex & _ & _). destruct (aw_out y0 Hsy Hy0) as (Ey & _ & _).
+        rewrite Ex, Ey. eapply w_lt_mono; [apply aw_W_ext|]. apply Hbr. split_and!; [done|done|by left].
+    Qed.
+    Lemma aw_exists : ∃ W', W1 ⊑ W' ∧ wholds W' C [aw_pt].
+    Proof. exists aw_W. split; [apply aw_W_ext|apply aw_W_holds]. Qed.
+  End acyc_world.
+
+  (** A creation at a fresh root under (acyc-new), in a strict world,
+      constructively. *)
+  Lemma Erel_new_acyc aq1 aq2 n W C S F mt1 mt2 :
+    wstrict W → acyc_new_sem W C →
+    Erel κ n W ∅ (TEx LBot 1 C (TProd (TSess S (pvar 0) aq1 mt1) (TSess (dual S) (pvar 0)‾ aq2 mt2))) F ENew.
+  Proof.
+    intros HSt HA.
+    assert (tstep ENew (LNew "") (Pair (Chan ""⁺) (Chan ""⁻))) as Hst
+      by (by apply tstep_head, t_act_new).
+    apply Erel_S_intro.
+    - intros Hi. exact (Hi _ _ Hst).
+    - intros W1 _. eapply ready_tau; [exact Hst|done].
+    - intros W1 α e' HW1 Hs. destruct (ENew_step _ _ Hs) as (c & -> & ->). simpl. intros _.
+      destruct (acyc_new_sem_mono _ _ _ HW1 HA) as (Hcyc & Hbr).
+      pose proof (proj1 (wext_strict _ _ HW1) HSt) as HS1.
+      destruct (fresh_const W1 (bc_env C)) as (a & Ha1 & Ha2).
+      destruct (aw_exists W1 C a Ha1 Ha2 Hcyc Hbr HS1) as (W' & Hext & Hh).
+      exists S, (aw_pt a), W'. split; [done|].
+      apply at_cost_val. apply Vrel_ex_iff. split; [done|]. exists [aw_pt a]. split_and!; [done|done|].
+      + unfold ty_inst. simpl. rewrite pt_inst_dual, !pt_inst_pvar_at. simpl. apply Vrel_newpair.
+  Qed.
+
+  (** ** Creation in either kind of world
+
+      A strict world asks (acyc-new), a ranked world (gen-new), which
+      implies (acyc-new) ([gen_new_acyc]). Excluded middle enters only
+      at a ranked world. *)
+  Definition new_sem (W : world) (C : bcs) : Prop :=
+    acyc_new_sem W C ∧ (wranked W → gen_new_sem W C).
+
+  Lemma new_sem_mono W W' C : W ⊑ W' → new_sem W C → new_sem W' C.
+  Proof.
+    intros HW [H1 H2]. split; [by eapply acyc_new_sem_mono|].
+    intros Hr. eapply gen_new_sem_mono; [exact HW|]. apply H2. by apply (wext_ranked W W').
+  Qed.
+
+  Lemma Erel_new_any aq1 aq2 n W C S F mt1 mt2 :
+    (wranked W → excluded_middle) → new_sem W C →
+    Erel κ n W ∅ (TEx LBot 1 C (TProd (TSess S (pvar 0) aq1 mt1) (TSess (dual S) (pvar 0)‾ aq2 mt2))) F ENew.
+  Proof.
+    intros HEM [HA HG]. destruct (wkind_dec W) as [Hr|Hs].
+    - apply Erel_new; [by apply HEM|done|by apply HG].
+    - by apply Erel_new_acyc.
   Qed.
 
   (** ** Force *)

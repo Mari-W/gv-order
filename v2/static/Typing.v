@@ -159,7 +159,7 @@ Inductive typed (W : sworld) (N : fuel) :
       fle (Some 1) a →
       typed W N Θ Γ Δ F (ESpawn e) TUnit c0
   | e_new Γ Δ F C S m1 m2 :
-      lenv_unl Δ → gen_new W Γ C → tsum_ok N m1 m2 → scontr S →
+      lenv_unl Δ → new_ok N W Γ C → tsum_ok N m1 m2 → scontr S →
       typed W N ∅ Γ Δ F ENew
         (TEx LBot 1 C (TProd (TSess S (pvar 0) m1 m1) (TSess (dual S) (pvar 0)‾ m2 m2)))
         (Some 0)
@@ -253,7 +253,7 @@ Inductive fptyped (N : fuel) : sworld → senv → proc → ty → Prop :=
       (∀ c, c ∈ C0 → ∃ S x m m', tsum_ok N m m' ∧ scontr S ∧
          ΘB !! (c⁺)%cend = Some (TE S x m m) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ m' m')) →
       typed W N (tenv_of (fhalf N) Σ ∪ ΘB) hc_empty [] (∅, None) t T c →
-      sworld_wf W ∧ swf W →
+      sworld_wf W ∧ wok N W →
       fptyped N W Σ (C0, {[+ t +]}) T
   | fp_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
       fptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →
@@ -262,7 +262,7 @@ Inductive fptyped (N : fuel) : sworld → senv → proc → ty → Prop :=
       (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
       chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
       C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
-      swf (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)) →
+      wok N (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)) →
       fptyped N (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
 
 (** ** Notations (Appendix A) *)
@@ -277,12 +277,19 @@ Notation "Θ ; Γ ; Δ ⊢^ F '_' W t : T" := (dftyped W Θ Γ Δ F t T)
    t at level 60, T at level 60,
    format "Θ  ;  Γ  ;  Δ  ⊢^ F  '_'  W  t  :  T").
 
-(** Every process derivation sits over a well-formed, well-founded world. *)
-Lemma fptyped_wf N W Σ p T : fptyped N W Σ p T → sworld_wf W ∧ swf W.
+(** The mode premise of a join reduces to the shared constants. *)
+Lemma wok_join_iff N W1 W2 : sworld_wf W1 → sworld_wf W2 →
+  wok N (W1 ⊔ W2) ↔ wok N W1 ∧ wok N W2 ∧
+    wok N (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)).
+Proof. intros H1 H2. destruct N; [apply wf_join_iff|apply acyc_join_iff]; done. Qed.
+
+(** Every process derivation sits over a well-formed world, acyclic at
+    N = ∞ and well-founded at a finite N. *)
+Lemma fptyped_wf N W Σ p T : fptyped N W Σ p T → sworld_wf W ∧ wok N W.
 Proof.
   induction 1 as [|W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 _ _ _ _ _ _ _ _ _ HS]; [done|].
   split; [by apply swjoin_wf; [apply IH1|apply IH2]|].
-  apply (wf_join_iff W1 W2 (proj1 IH1) (proj1 IH2)). split_and!; [apply IH1|apply IH2|done].
+  apply (wok_join_iff N W1 W2 (proj1 IH1) (proj1 IH2)). split_and!; [apply IH1|apply IH2|done].
 Qed.
 
 (** P-Connect asking the join well-founded and both worlds well formed
@@ -295,12 +302,12 @@ Lemma fp_connect_join N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
   chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
   C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
   sworld_wf W1 → sworld_wf W2 →
-  swf (W1 ⊔ W2) →
+  wok N (W1 ⊔ W2) →
   fptyped N (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
 Proof.
   intros H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hw1 Hw2 HS.
   apply fp_connect; [exact H1|exact H2|exact HD1|exact HD2|exact Hf|exact H12|exact H1C|exact H2C
-    |exact HC|exact HC1|exact HC2|]. by apply (wf_join_iff W1 W2 Hw1 Hw2).
+    |exact HC|exact HC1|exact HC2|]. by apply (wok_join_iff N W1 W2 Hw1 Hw2).
 Qed.
 
 Lemma fptyped_tfree N W Σ p T : fptyped N W Σ p T → tfree T.
@@ -351,7 +358,7 @@ Inductive ptyped (N : fuel) : sworld → senv → proc → ty → Prop :=
       (∀ c, c ∈ C0 → ∃ S x m m', tsum_ok N m m' ∧ scontr S ∧
          ΘB !! (c⁺)%cend = Some (TE S x m m) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ m' m')) →
       typed W N (tenv_of (fhalf N) Σ ∪ ΘB) hc_empty [] (∅, None) t T c →
-      sworld_wf W ∧ swf W →
+      sworld_wf W ∧ wok N W →
       ptyped N (swrestrict W (iface Σ T)) Σ (C0, {[+ t +]}) T
   | p_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
       ptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →
@@ -360,7 +367,7 @@ Inductive ptyped (N : fuel) : sworld → senv → proc → ty → Prop :=
       (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
       chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
       C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
-      swf (W1 ⊔ W2) →
+      wok N (W1 ⊔ W2) →
       ptyped N (swrestrict (W1 ⊔ W2) (iface (Σ1 ∪ Σ2) T)) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
 
 Notation "Σ ⊢_ W p : T" := (ptyped None W Σ p T)
@@ -370,12 +377,19 @@ Notation "Σ ⊢_ W p : T" := (ptyped None W Σ p T)
 Lemma swrestrict_swf W S : swf W → swf (swrestrict W S).
 Proof. intros [ρ Hρ]. exists ρ. intros x y H. apply Hρ. exact (swrestrict_lt W S x y H). Qed.
 
-(** Every hidden derivation sits over a well-formed, well-founded world
-    on the constants of its interface. *)
-Lemma ptyped_wf N W Σ p T : ptyped N W Σ p T → sworld_wf W ∧ swf W.
+Lemma swrestrict_sacyc W S : sacyc W → sacyc (swrestrict W S).
+Proof. intros H x Hx. exact (H x (swrestrict_lt W S x x Hx)). Qed.
+
+Lemma swrestrict_wok N W S : wok N W → wok N (swrestrict W S).
+Proof. destruct N; [apply swrestrict_swf|apply swrestrict_sacyc]. Qed.
+
+(** Every hidden derivation sits over a well-formed world on the
+    constants of its interface, acyclic at N = ∞ and well-founded at a
+    finite N. *)
+Lemma ptyped_wf N W Σ p T : ptyped N W Σ p T → sworld_wf W ∧ wok N W.
 Proof.
   destruct 1 as [W Σ ΘB C0 t T c _ _ _ _ _ _ _ [_ HW]|W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ _ _ _ _ _ _ _ _ _ _ HS];
-    (split; [apply swrestrict_wf|by apply swrestrict_swf]).
+    (split; [apply swrestrict_wf|by apply swrestrict_wok]).
 Qed.
 
 Lemma ptyped_consts N W Σ p T : ptyped N W Σ p T → sw_consts W ⊆ iface Σ T.

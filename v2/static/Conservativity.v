@@ -411,11 +411,19 @@ Proof.
   apply (d_abs _ _ _ _ _ _ _ _ _ _ _ _); [done|done|exact H].
 Qed.
 
+(** E-New of the DF judgment asks (acyc-new). *)
+Lemma d_new_acyc W Γ Δ F C S a1 a2 m1 m2 :
+  lenv_unl Δ → acyc_new W Γ C → scontr S →
+  dftyped W ∅ Γ Δ F ENew
+    (TEx LBot 1 C (TProd (TSess S (pvar 0) a1 m1) (TSess (dual S) (pvar 0)‾ a2 m2))).
+Proof. intros HΔ HC HS. dfr. rewrite sty_df_dual. eapply e_new; [by apply lenv_unl_df|done|done|by rewrite scontr_df]. Qed.
+
+(** (gen-new) suffices, through Lemma C ([gen_new_acyc]). *)
 Lemma d_new W Γ Δ F C S a1 a2 m1 m2 :
   lenv_unl Δ → gen_new W Γ C → scontr S →
   dftyped W ∅ Γ Δ F ENew
     (TEx LBot 1 C (TProd (TSess S (pvar 0) a1 m1) (TSess (dual S) (pvar 0)‾ a2 m2))).
-Proof. intros HΔ HC HS. dfr. rewrite sty_df_dual. eapply e_new; [by apply lenv_unl_df|done|done|by rewrite scontr_df]. Qed.
+Proof. intros HΔ HC HS. apply d_new_acyc; [done|by apply gen_new_acyc|done]. Qed.
 
 Lemma d_new_fld W Γ Δ F x κ S a1 a2 m1 m2 :
   lenv_unl Δ → scontr S →
@@ -545,7 +553,7 @@ Proof.
       by (rewrite <-sty_df_dual; exact IHtyped).
     eapply d_link, I.
   - eapply d_spawn, IHtyped.
-  - rewrite sty_df_dual. eapply d_new; [by apply lenv_unl_df|done|by rewrite scontr_df].
+  - rewrite sty_df_dual. eapply d_new_acyc; [by apply lenv_unl_df|by eapply new_ok_acyc|by rewrite scontr_df].
   - rewrite sty_df_dual. eapply d_new_fld; [by apply lenv_unl_df|by rewrite scontr_df].
   - eapply d_conv; [| |exact IHtyped]; rewrite ?tcontr_df; [|done]. rewrite !ty_df_idem. by eapply tsub_df.
   - eapply d_pack; [done|done| | |].

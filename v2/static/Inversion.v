@@ -239,7 +239,7 @@ Lemma fptyped_one N W Σ C0 t T :
     (∀ ch, ch ∈ C0 → ∃ S x m m', tsum_ok N m m' ∧ scontr S ∧
        ΘB !! (ch⁺)%cend = Some (TE S x m m) ∧ ΘB !! (ch⁻)%cend = Some (TE (dual S) x‾ m' m')) ∧
     typed W N (tenv_of (fhalf N) Σ ∪ ΘB) hc_empty [] (∅, None) t T c ∧
-    (sworld_wf W ∧ swf W).
+    (sworld_wf W ∧ wok N W).
 Proof.
   intros H. remember (C0, {[+ t +]}) as p eqn:Hp. destruct H as [W' Σ' ΘB C0' t' T' c Hf HB HC Hpf HΣc HBs Ht Hs|
     W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T' H1 H2].
@@ -262,7 +262,7 @@ Lemma fptyped_two N W Σ C t1 t2 T :
     (({[+ u1 +]} ⊎ {[+ u2 +]}) : gmultiset expr) = ({[+ t1 +]} ⊎ {[+ t2 +]}) ∧
     fptyped N W1 (Σ1 ∪ ΣC) (C1, {[+ u1 +]}) T ∧
     fptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, {[+ u2 +]}) TUnit ∧
-    swf (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)).
+    wok N (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)).
 Proof.
   intros H. remember (C, ({[+ t1 +]} ⊎ {[+ t2 +]})) as p eqn:Hp. destruct H as [W' Σ' ΘB C0' t' T' c|
     W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T' H1 H2 _ _ _ _ _ _ _ _ _ HS].

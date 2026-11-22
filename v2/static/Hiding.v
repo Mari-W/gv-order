@@ -108,7 +108,7 @@ Section ren.
     - rewrite !pt_ren_bra. eapply e_branch; [by rewrite unfoldS_ren, H|by apply (ub_below_s_ren π W Γ (Some x))|exact IHtyped].
     - rewrite dual_ren, pt_ren_dual in IHtyped. eapply e_link; [exact IHtyped|done|done].
     - by eapply e_spawn.
-    - rewrite tenv_ren_empty, dual_ren. apply e_new; [by apply lenv_unl_ren|by apply gen_new_ren|done|by rewrite scontr_ren].
+    - rewrite tenv_ren_empty, dual_ren. apply e_new; [by apply lenv_unl_ren|by apply new_ok_ren|done|by rewrite scontr_ren].
     - rewrite tenv_ren_empty, dual_ren, pt_ren_dual, pt_ren_field. apply e_new_fld; [by apply lenv_unl_ren|done|by rewrite scontr_ren].
     - eapply e_sub; [exact IHtyped|by apply (tsub_ren π)|done|by rewrite !tcontr_ren].
     - rewrite ty_ren_inst in IHtyped. eapply (e_pack _ _ _ _ _ _ _ _ _ _ _ (pt_ren f <$> xs)); [by rewrite length_fmap|by apply hold_at_ren| |by apply ex_wf_ren
@@ -150,6 +150,12 @@ Qed.
 
 Lemma swf_sub W W' : (∀ x y, W ⊢ₛ x ≺ y → W' ⊢ₛ x ≺ y) → swf W' → swf W.
 Proof. intros H [ρ Hρ]. exists ρ. intros x y Hxy. by apply Hρ, H. Qed.
+
+Lemma sacyc_sub W W' : (∀ x y, W ⊢ₛ x ≺ y → W' ⊢ₛ x ≺ y) → sacyc W' → sacyc W.
+Proof. intros H HW x Hx. exact (HW x (H x x Hx)). Qed.
+
+Lemma wok_sub N W W' : (∀ x y, W ⊢ₛ x ≺ y → W' ⊢ₛ x ≺ y) → wok N W' → wok N W.
+Proof. destruct N; [apply swf_sub|apply sacyc_sub]. Qed.
 
 Lemma swshared_ren π W1 W2 : swshared (sw_ren π W1) (sw_ren π W2) = set_map (cb_f π) (swshared W1 W2).
 Proof.
@@ -194,15 +200,15 @@ Proof.
       simpl. rewrite scontr_ren. by rewrite <-dual_ren.
     + pose proof (typed_ren π _ _ _ _ _ _ _ _ _ Ht) as H.
       rewrite tenv_ren_union, tenv_of_ren in H. unfold sf_ren in H. simpl in H. rewrite set_map_empty in H. exact H.
-    + split; [by apply sworld_wf_ren|by apply swf_ren].
+    + split; [by apply sworld_wf_ren|by apply wok_ren].
   - rewrite senv_ren_union in IH1, IH2 |- *. rewrite senv_dual_ren in IH2. simpl in IH2.
     rewrite sw_ren_join, <-(chans_of_ren (cb_f π) ΣC).
     apply fp_connect; [exact IH1|exact IH2|by apply map_disjoint_fmap|by rewrite <-senv_dual_ren; apply map_disjoint_fmap
       |by rewrite dom_senv_ren|by rewrite !chans_of_ren|by rewrite !chans_of_ren|by rewrite !chans_of_ren
       |done|by rewrite !chans_of_ren|by rewrite !chans_of_ren|].
-    rewrite swshared_ren. apply (swf_sub _ (sw_ren π (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)))).
+    rewrite swshared_ren. apply (wok_sub N _ (sw_ren π (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)))).
     + intros x y. apply sw_lt_facts. intros g [Hg|Hg]; [left|right]; by apply swrestrict_ren_facts.
-    + by apply swf_ren.
+    + by apply wok_ren.
 Qed.
 
 (** ** Renaming private constants apart *)
@@ -398,15 +404,15 @@ Qed.
     their hidden worlds do. V1 keeps its private constants off I2, V2
     off V1 and I1. Then V1 and V2 share only constants of I1 ∩ I2, at
     which they order as W1 and W2 do, so the restrictions to the shared
-    constants are well-founded together, and the join hides to the
-    hidden join on every I ⊆ I1 ∪ I2. *)
-Lemma connect_hidden V1 V2 W1 W2 (I1 I2 I : gset nat) :
+    constants are acyclic together (well-founded at a finite N), and
+    the join hides to the hidden join on every I ⊆ I1 ∪ I2. *)
+Lemma connect_hidden N V1 V2 W1 W2 (I1 I2 I : gset nat) :
   sworld_wf V1 → sworld_wf V2 →
   hides V1 I1 W1 → hides V2 I2 W2 →
   (∀ a, a ∈ sw_consts V1 → a ∉ I1 → a ∉ I2) →
   (∀ a, a ∈ sw_consts V2 → a ∉ I2 → a ∉ sw_consts V1 ∪ I1) →
-  I ⊆ I1 ∪ I2 → swf (W1 ⊔ W2) →
-  swf (swrestrict V1 (swshared V1 V2) ⊔ swrestrict V2 (swshared V1 V2)) ∧
+  I ⊆ I1 ∪ I2 → wok N (W1 ⊔ W2) →
+  wok N (swrestrict V1 (swshared V1 V2) ⊔ swrestrict V2 (swshared V1 V2)) ∧
   hides (V1 ⊔ V2) I (swrestrict (W1 ⊔ W2) I).
 Proof.
   intros Hw1 Hw2 [Hc1 Ho1] [Hc2 Ho2] Hav1 Hav2 HI HS.
@@ -434,7 +440,7 @@ Proof.
       { destruct (decide (a ∈ I2)) as [|Hn]; [done|]. pose proof (Hav2 a Ha Hn). set_solver. }
       split; [right; apply Hc2; set_solver|done]. }
   split.
-  - apply (swf_sub _ (W1 ⊔ W2)); [|done].
+  - apply (wok_sub N _ (W1 ⊔ W2)); [|done].
     assert (∀ x y, swstep (swrestrict V1 (swshared V1 V2) ⊔ swrestrict V2 (swshared V1 V2)) x y →
               W1 ⊔ W2 ⊢ₛ x ≺ y) as Hs.
     { intros a b Hs. apply swstep_join_inv in Hs as [Hs|Hs];
@@ -460,7 +466,7 @@ Proof.
   - destruct IH1 as (W1' & Hty1 & Hh1), IH2 as (W2' & Hty2 & Hh2).
     destruct (rename_side _ _ _ _ _ _ (iface (Σ2 ∪ senv_dual ΣC) TUnit) Hty1 Hh1) as (V1 & Hv1 & Hh1' & Hav1).
     destruct (rename_side _ _ _ _ _ _ (sw_consts V1 ∪ iface (Σ1 ∪ ΣC) T) Hty2 Hh2) as (V2 & Hv2 & Hh2' & Hav2).
-    destruct (connect_hidden V1 V2 W1 W2 _ _ (iface (Σ1 ∪ Σ2) T) (proj1 (fptyped_wf _ _ _ _ _ Hv1))
+    destruct (connect_hidden N V1 V2 W1 W2 _ _ (iface (Σ1 ∪ Σ2) T) (proj1 (fptyped_wf _ _ _ _ _ Hv1))
                 (proj1 (fptyped_wf _ _ _ _ _ Hv2)) Hh1' Hh2' Hav1 Hav2 (iface_connect _ _ _ _) HS) as [HR Hh].
     exists (V1 ⊔ V2). split; [by apply fp_connect|exact Hh].
 Qed.
@@ -478,8 +484,8 @@ Proof.
     intros Hfull.
   - exists (swrestrict W (iface Σ T)). split; [by eapply p_term|]. intros x y. apply swrestrict_lt.
   - destruct (IH1 Hty1) as (Wi1 & Hi1 & Hs1), (IH2 Hty2) as (Wi2 & Hi2 & Hs2).
-    assert (swf (W1 ⊔ W2)) as HJ by apply (fptyped_wf _ _ _ _ _ Hfull).
+    assert (wok N (W1 ⊔ W2)) as HJ by apply (fptyped_wf _ _ _ _ _ Hfull).
     exists (swrestrict (Wi1 ⊔ Wi2) (iface (Σ1 ∪ Σ2) T)). split.
-    + eapply p_connect; try done. apply (swf_sub _ (W1 ⊔ W2)); [|done]. intros x y. by apply join_sub.
+    + eapply p_connect; try done. apply (wok_sub N _ (W1 ⊔ W2)); [|done]. intros x y. by apply join_sub.
     + intros x y H. apply swrestrict_lt in H. by eapply join_sub.
 Qed.

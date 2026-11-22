@@ -747,6 +747,12 @@ Proof.
   intros [ρ Hρ]. exists (λ x, ρ (pt_ren (cb_g π) x)). intros x y H. apply Hρ. by apply sw_lt_ren_inv.
 Qed.
 
+Lemma sacyc_ren π W : sacyc W → sacyc (sw_ren π W).
+Proof. intros H x Hx. exact (H _ (sw_lt_ren_inv π W x x Hx)). Qed.
+
+Lemma wok_ren π N W : wok N W → wok N (sw_ren π W).
+Proof. destruct N; [apply swf_ren|apply sacyc_ren]. Qed.
+
 (** ** The fact theory *)
 
 Lemma slt_world W1 W2 Γ x y : (∀ x y, W1 ⊢ₛ x ≺ y → W2 ⊢ₛ x ≺ y) → slt W1 Γ x y → slt W2 Γ x y.
@@ -886,3 +892,29 @@ Proof.
     + intros s T' z (T & HS & ->) Hf Hz. apply Hc in Hf. destruct (H3 s T z HS Hf Hz) as (t & Ht & Hl).
       destruct (Hp _ _ Hf) as [-> _]. exists (pt_ren (cb_f π) t). split; [by apply list_elem_of_fmap_2|by apply slt_ren].
 Qed.
+
+Lemma acyc_new_ren π W Γ C :
+  acyc_new W Γ C → acyc_new (sw_ren π W) (hctx_ren (cb_f π) Γ) (bcs_ren (cb_f π) C).
+Proof.
+  assert (∀ x y, cfact (bcs_ren (cb_f π) C) x y ↔ cfact C x y) as Hc.
+  { intros x y. unfold cfact, bcs_ren. simpl. by rewrite length_fmap. }
+  assert (∀ x y, new_step (bcs_ren (cb_f π) C) x y ↔ new_step C x y) as Hn.
+  { intros x y. unfold new_step, bcs_ren. simpl. by rewrite length_fmap. }
+  intros [Hcyc Hbr]. split.
+  - assert (∀ p q, tc (new_step (bcs_ren (cb_f π) C)) p q → tc (new_step C) p q) as Ht.
+    { intros p q H. induction H as [p q H|p q r H _ IH]; [apply tc_once; by apply Hn|].
+      eapply tc_l; [apply Hn; exact H|exact IH]. }
+    intros x Hx Hc'. exact (Hcyc x Hx (Ht x x Hc')).
+  - intros z y (Hz & Hy & Hb).
+    assert (cbridge C z y) as Hb'.
+    { split_and!; [done|done|]. destruct Hb as [Hf|(v & u & Hzv & Hv & Hvu & Huy)]; [left; by apply Hc|right].
+      exists v, u. split_and!; [by apply Hc|done| |by apply Hc].
+      clear -Hn Hvu. induction Hvu as [|x w u H _ IH]; [done|eapply rtc_l; [apply Hn; exact H|done]]. }
+    assert (pn_vb (1 + length (bc_env C)) (pt_name z) ∧ pn_vb (1 + length (bc_env C)) (pt_name y)) as [Hsz Hsy].
+    { destruct Hb' as (_ & _ & [[_ [? ?]]|(v & u & [_ [? _]] & _ & _ & [_ [_ ?]])]); by split. }
+    rewrite !ctx_pt_ren by done. by apply slt_ren, Hbr.
+Qed.
+
+Lemma new_ok_ren π N W Γ C :
+  new_ok N W Γ C → new_ok N (sw_ren π W) (hctx_ren (cb_f π) Γ) (bcs_ren (cb_f π) C).
+Proof. destruct N; [apply gen_new_ren|apply acyc_new_ren]. Qed.

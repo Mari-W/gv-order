@@ -220,6 +220,26 @@ Qed.
 
 (** ** Well-foundedness of a join at the interface *)
 
+(** ** Acyclic static worlds
+
+    The deadlock-free judgment asks a world acyclic ([sacyc]): no point
+    lies below itself. A well-founded world is acyclic ([swf_sacyc]), and
+    the lock-free judgment keeps well-foundedness. [acyc_join_iff]
+    reduces acyclicity of a join to the shared constants. *)
+Definition sacyc (W : sworld) : Prop := ∀ x, ¬ W ⊢ₛ x ≺ x.
+
+Lemma swf_sacyc W : swf W → sacyc W.
+Proof. intros [ρ Hρ] x H. exact (olt_irrefl _ (Hρ x x H)). Qed.
+
+Lemma sacyc_mono W W' : W ⊑ₛ W' → sacyc W' → sacyc W.
+Proof. intros HW H x Hx. apply (H x). by eapply sw_lt_mono. Qed.
+
+Lemma sacyc_bare W : (∀ g, ¬ sw_facts W g) → sacyc W.
+Proof. intros Hf. apply swf_sacyc, swf_bare, Hf. Qed.
+
+Lemma sw_empty_acyc : sworld_wf sw_empty ∧ sacyc sw_empty.
+Proof. split; [apply sworld_wf_bare|apply sacyc_bare]; intros ? []. Qed.
+
 Section join.
   Context (W1 W2 : sworld).
   Context (H1 : sworld_wf W1) (H2 : sworld_wf W2).
@@ -431,15 +451,82 @@ Section join.
       apply swf_iff. intros x. exact (acc_tc _ x (Hall x)).
   Qed.
 
+
+  (** A chain of the join stays in one world or meets a shared point. *)
+  Lemma join_split x y : J ⊢ₛ x ≺ y →
+    W1 ⊢ₛ x ≺ y ∨ W2 ⊢ₛ x ≺ y ∨ ∃ z, shared z ∧ (x = z ∨ J ⊢ₛ x ≺ z) ∧ (z = y ∨ J ⊢ₛ z ≺ y).
+  Proof.
+    induction 1 as [x y Hs|x w y Hs Hwy IH].
+    - apply jstep_inv in Hs as [Hs|Hs]; [left|right; left]; by apply swstep_lt.
+    - assert (J ⊢ₛ x ≺ w) as Hxw by by apply tc_once.
+      destruct IH as [H|[H|(z & Hz & Hxz & Hzy)]].
+      + apply jstep_inv in Hs as [Hs|Hs]; [left; eapply sw_lt_trans; [by apply swstep_lt|done]|].
+        destruct (lt_zone W1 w y H1 H) as [Hp|[Zw _]].
+        * right; left. eapply sw_lt_trans; [by apply swstep_lt|by apply po_slt].
+        * destruct Hs as [x w Hf|x|x].
+          -- right; right. exists w. split; [apply zone_shared; [done|exact (proj2 (wf_facts _ H2 x w Hf))]|].
+             split; [by right|]. right. by eapply sw_lt_mono; [apply swext_join_l|].
+          -- left. eapply sw_lt_trans; [apply sw_lt_po|done].
+          -- left. eapply sw_lt_trans; [apply sw_lt_dpo|done].
+      + apply jstep_inv in Hs as [Hs|Hs]; [|right; left; eapply sw_lt_trans; [by apply swstep_lt|done]].
+        destruct (lt_zone W2 w y H2 H) as [Hp|[Zw _]].
+        * left. eapply sw_lt_trans; [by apply swstep_lt|by apply po_slt].
+        * destruct Hs as [x w Hf|x|x].
+          -- right; right. exists w. split; [apply zone_shared; [exact (proj2 (wf_facts _ H1 x w Hf))|done]|].
+             split; [by right|]. right. by eapply sw_lt_mono; [apply swext_join_r|].
+          -- right; left. eapply sw_lt_trans; [apply sw_lt_po|done].
+          -- right; left. eapply sw_lt_trans; [apply sw_lt_dpo|done].
+      + right; right. exists z. split; [done|]. split; [|done]. right.
+        destruct Hxz as [<-|Hxz]; [done|]. by eapply sw_lt_trans.
+  Qed.
+
+  (** The join is acyclic iff both worlds are and the two orders
+      restricted to the shared constants are together. A cycle of the
+      join that meets a shared point rotates to start there and is a
+      cycle of the amalgam ([join_shared]). Constructive. *)
+  Theorem acyc_join_iff :
+    sacyc (W1 ⊔ W2) ↔ sacyc W1 ∧ sacyc W2 ∧ sacyc (swrestrict W1 S ⊔ swrestrict W2 S).
+  Proof.
+    split.
+    - intros HJ. split_and!.
+      + exact (sacyc_mono W1 J (swext_join_l _ _) HJ).
+      + exact (sacyc_mono W2 J (swext_join_r _ _) HJ).
+      + intros x Hx. by apply (HJ x), rjoin_lt.
+    - intros (HS1 & HS2 & HSR) x Hx.
+      destruct (join_split x x Hx) as [H|[H|(z & Hz & Hxz & Hzx)]]; [by apply (HS1 x)|by apply (HS2 x)|].
+      assert (J ⊢ₛ z ≺ z) as Hzz.
+      { destruct Hxz as [<-|Hxz], Hzx as [Hzx|Hzx]; [by subst|done|by subst|by eapply sw_lt_trans]. }
+      apply (HSR z), amalgam_lt, join_shared; done.
+  Qed.
+
 End join.
 
-(** ** Ranked worlds *)
+(** ** Worlds of the relation
 
+    A world is a set of roots and a strict order on the points with
+    these roots, which contains program order. It has a kind. A strict
+    world ([wstrict]) carries no rank and is an arbitrary strict partial
+    order. The deadlock-free relation and the live relation of
+    [live_soundness] read strict worlds. A ranked world ([wranked])
+    carries a rank function that gives its order. The threads of the
+    lock-free development read ranked worlds, because lock freedom needs
+    the ranks of a run fixed once chosen ([wchain_lt_wf]).
+
+    Extension keeps the kind and, at a ranked world, every rank. So a
+    world and all its extensions have one kind, and the relation, which
+    quantifies over extensions only, is the relation of that kind
+    (docs/redesign/check-df-acyclic.md, section 3.2). *)
 
 Record world := World {
   w_roots : gset pname;
-  w_rank : point → rank_ord;
-  w_po x : pt_root x ∈ w_roots → olt (w_rank x) (w_rank x⁺) ∧ olt (w_rank x) (w_rank x‾⁺)
+  w_ord : point → point → Prop;
+  w_ord_trans x y z : pt_root x ∈ w_roots → pt_root y ∈ w_roots → pt_root z ∈ w_roots →
+    w_ord x y → w_ord y z → w_ord x z;
+  w_ord_irrefl x : pt_root x ∈ w_roots → ¬ w_ord x x;
+  w_ord_po x y : pt_root x ∈ w_roots → po x y → w_ord x y;
+  w_rk : option (point → rank_ord);
+  w_rk_ord ρ x y : w_rk = Some ρ → pt_root x ∈ w_roots → pt_root y ∈ w_roots →
+    w_ord x y ↔ olt (ρ x) (ρ y)
 }.
 
 (** x is ranked in W: its root is a root of W. *)
@@ -448,8 +535,26 @@ Definition rin (W : world) (x : point) : Prop := pt_root x ∈ w_roots W.
 Global Instance rin_dec W x : Decision (rin W x).
 Proof. unfold rin. apply _. Defined.
 
+Definition wranked (W : world) : Prop := is_Some (w_rk W).
+Definition wstrict (W : world) : Prop := w_rk W = None.
+
+Lemma wkind_dec W : {wranked W} + {wstrict W}.
+Proof. unfold wranked, wstrict. destruct (w_rk W); [left; eauto|by right]. Defined.
+
+Lemma wranked_strict W : wranked W → wstrict W → False.
+Proof. unfold wranked, wstrict. intros [ρ Hρ] H. congruence. Qed.
+
+(** The rank of a point in a ranked world. *)
+Definition w_rank (W : world) (x : point) : rank_ord :=
+  match w_rk W with Some ρ => ρ x | None => onat 0 end.
+
+Lemma w_ord_rank W x y : wranked W → rin W x → rin W y → w_ord W x y ↔ olt (w_rank W x) (w_rank W y).
+Proof.
+  intros [ρ Hρ] Hx Hy. unfold w_rank. rewrite Hρ. by apply (w_rk_ord W ρ).
+Qed.
+
 Definition w_lt (W : world) (x y : point) : Prop :=
-  po x y ∨ (rin W x ∧ rin W y ∧ olt (w_rank W x) (w_rank W y)).
+  po x y ∨ (rin W x ∧ rin W y ∧ w_ord W x y).
 
 Notation "W ⊢ x ≺ y" := (w_lt W x y)
   (at level 74, x at level 60, y at level 60, format "W  ⊢  x  ≺  y").
@@ -459,24 +564,20 @@ Definition w_le (W : world) (x y : point) : Prop := x = y ∨ W ⊢ x ≺ y.
 Lemma rin_po W x y : po x y → rin W x ↔ rin W y.
 Proof. intros Hp. apply po_root in Hp as [Hr _]. unfold rin. by rewrite Hr. Qed.
 
-Lemma rank_po W x y : rin W x → po x y → olt (w_rank W x) (w_rank W y).
+Lemma rank_po W x y : wranked W → rin W x → po x y → olt (w_rank W x) (w_rank W y).
 Proof.
-  intros Hx Hp. induction Hp as [x y Hxy|x y z Hxy Hp IH].
-  - destruct Hxy as [->| ->]; apply (w_po W x Hx).
-  - assert (olt (w_rank W x) (w_rank W y)) as H1 by (destruct Hxy as [->| ->]; apply (w_po W x Hx)).
-    eapply olt_trans; [exact H1|]. apply IH.
-    apply (rin_po _ x y); [by apply tc_once|done].
+  intros HW Hx Hp. apply w_ord_rank; [done|done|by apply (rin_po _ x y)|]. by apply w_ord_po.
 Qed.
 
 Lemma w_lt_trans W x y z : W ⊢ x ≺ y → W ⊢ y ≺ z → W ⊢ x ≺ z.
 Proof.
   intros [Hxy|(Hx & Hy & Hxy)] [Hyz|(Hy' & Hz & Hyz)].
   - left. by eapply po_trans.
-  - right. split_and!; [by apply (rin_po _ x y)|done|].
-    eapply olt_trans; [|exact Hyz]. apply rank_po; [by apply (rin_po _ x y)|done].
-  - right. split_and!; [done|by apply (rin_po _ y z)|].
-    eapply olt_trans; [exact Hxy|]. by apply rank_po.
-  - right. split_and!; [done|done|]. by eapply olt_trans.
+  - assert (rin W x) as Hx by by apply (rin_po _ x y).
+    right. split_and!; [done|done|]. apply (w_ord_trans W x y z); [done|done|done| |done]. by apply w_ord_po.
+  - assert (rin W z) as Hz by by apply (rin_po _ y z).
+    right. split_and!; [done|done|]. apply (w_ord_trans W x y z); [done|done|done|done|]. by apply w_ord_po.
+  - right. split_and!; [done|done|]. by apply (w_ord_trans W x y z).
 Qed.
 
 Lemma po_lt W x y : po x y → W ⊢ x ≺ y.
@@ -487,20 +588,21 @@ Lemma w_lt_dpo W x : W ⊢ x ≺ x‾⁺.
 Proof. left. apply tc_once. by right. Qed.
 
 Lemma w_lt_irrefl W x : ¬ W ⊢ x ≺ x.
-Proof. intros [H|(_ & _ & H)]; [by apply po_irrefl in H|by apply olt_irrefl in H]. Qed.
+Proof. intros [H|(Hx & _ & H)]; [by apply po_irrefl in H|by apply (w_ord_irrefl W x Hx)]. Qed.
 
 (** Every ranked world is well-founded. A descending chain that meets a
     ranked point stays ranked and lowers the rank, and one that does not
-    is program order and lowers the offset. *)
-Lemma w_lt_wf W : well_founded (w_lt W).
+    is program order and lowers the offset. A strict world need not be. *)
+Lemma w_lt_wf W : wranked W → well_founded (w_lt W).
 Proof.
+  intros HW.
   assert (∀ x, rin W x → Acc (w_lt W) x) as Hin.
   { intros x. remember (w_rank W x) as a eqn:Ha. revert x Ha.
     induction a as [a IH] using oind. intros x -> Hx. constructor.
     intros y [Hy|(Hy & _ & Hyx)].
-    - apply (IH (w_rank W y)); [by apply rank_po; [apply (rin_po _ y x)|]|done|].
+    - apply (IH (w_rank W y)); [by apply rank_po; [|apply (rin_po _ y x)|]|done|].
       by apply (rin_po _ y x).
-    - by apply (IH (w_rank W y)). }
+    - apply (IH (w_rank W y)); [|done|done]. by apply w_ord_rank. }
   intros x. induction (po_wf x) as [x _ IH]. constructor. intros y [Hy|(Hy & _ & _)].
   - by apply IH.
   - by apply Hin.
@@ -508,35 +610,63 @@ Qed.
 
 (** ** Extension *)
 
+Definition wk_ext (W : world) (r r' : option (point → rank_ord)) : Prop :=
+  match r, r' with
+  | Some ρ, Some ρ' => ∀ x, rin W x → ρ' x = ρ x
+  | None, None => True
+  | _, _ => False
+  end.
+
 Record wext (W W' : world) : Prop := {
   wext_roots : w_roots W ⊆ w_roots W';
-  wext_rank x : rin W x → w_rank W' x = w_rank W x
+  wext_ord x y : rin W x → rin W y → w_ord W x y → w_ord W' x y;
+  wext_kind : wk_ext W (w_rk W) (w_rk W')
 }.
 
 Notation "W ⊑ W'" := (wext W W') (at level 70).
 
 Lemma wext_refl W : W ⊑ W.
-Proof. by split. Qed.
+Proof. split; [done|auto|]. unfold wk_ext. by destruct (w_rk W). Qed.
 
 Lemma rin_mono W W' x : W ⊑ W' → rin W x → rin W' x.
 Proof. intros HW. unfold rin. apply HW. Qed.
 
 Lemma wext_trans W1 W2 W3 : W1 ⊑ W2 → W2 ⊑ W3 → W1 ⊑ W3.
 Proof.
-  intros H12 H23. split; [etrans; [apply H12|apply H23]|]. intros x Hx.
-  rewrite (wext_rank _ _ H23); [by apply H12|]. by eapply rin_mono.
+  intros [R12 O12 K12] [R23 O23 K23]. split.
+  - by etrans.
+  - intros x y Hx Hy H. apply O23; [by apply R12|by apply R12|]. by apply O12.
+  - unfold wk_ext in *. destruct (w_rk W1), (w_rk W2), (w_rk W3); try done.
+    intros x Hx. rewrite K23; [by apply K12|]. by apply R12.
+Qed.
+
+Lemma wext_ranked W W' : W ⊑ W' → wranked W ↔ wranked W'.
+Proof.
+  intros [_ _ K]. unfold wranked, wk_ext in *. destruct (w_rk W), (w_rk W'); try done.
+  all: split; intros [? ?]; discriminate.
+Qed.
+
+Lemma wext_strict W W' : W ⊑ W' → wstrict W ↔ wstrict W'.
+Proof.
+  intros [_ _ K]. unfold wstrict, wk_ext in *. destruct (w_rk W), (w_rk W'); try done.
+Qed.
+
+Lemma wext_rank W W' x : W ⊑ W' → wranked W → rin W x → w_rank W' x = w_rank W x.
+Proof.
+  intros [_ _ K] [ρ Hρ] Hx. unfold w_rank, wk_ext in *. rewrite Hρ in K |- *.
+  destruct (w_rk W'); [by apply K|done].
 Qed.
 
 Lemma w_lt_mono W W' x y : W ⊑ W' → W ⊢ x ≺ y → W' ⊢ x ≺ y.
 Proof.
   intros HW [H|(Hx & Hy & H)]; [by left|right].
-  split_and!; [by eapply rin_mono|by eapply rin_mono|]. by rewrite !(wext_rank _ _ HW).
+  split_and!; [by eapply rin_mono|by eapply rin_mono|]. by apply (wext_ord _ _ HW).
 Qed.
 
 Lemma w_le_mono W W' x y : W ⊑ W' → w_le W x y → w_le W' x y.
 Proof. intros HW [->|H]; [by left|right; by eapply w_lt_mono]. Qed.
 
-(** ** Ranked worlds that model a static world *)
+(** ** Worlds that model a static world *)
 
 Definition wmodels (R : world) (W : sworld) : Prop :=
   (∀ a, a ∈ sw_consts W → NConst a ∈ w_roots R) ∧ ∀ x y, sw_facts W (FLt x y) → R ⊢ x ≺ y.
@@ -559,10 +689,41 @@ Proof.
   intros HW [Hc Hf]. split; [intros a Ha; apply Hc; by apply HW|]. intros x y H. by apply Hf, (swext_facts _ _ HW).
 Qed.
 
+(** ** Ranked worlds
+
+    [wranked_of B ρ] has the roots B and orders them by the ranks ρ,
+    which rise along program order. *)
+
+Definition ranks_po (B : gset pname) (ρ : point → rank_ord) : Prop :=
+  ∀ x, pt_root x ∈ B → olt (ρ x) (ρ x⁺) ∧ olt (ρ x) (ρ x‾⁺).
+
+Lemma ranks_po_lt B ρ x y : ranks_po B ρ → pt_root x ∈ B → po x y → olt (ρ x) (ρ y).
+Proof.
+  intros Hρ Hx Hp. induction Hp as [x y Hxy|x y z Hxy Hp IH].
+  - destruct Hxy as [->| ->]; apply (Hρ x Hx).
+  - assert (olt (ρ x) (ρ y)) as H1 by (destruct Hxy as [->| ->]; apply (Hρ x Hx)).
+    eapply olt_trans; [exact H1|]. apply IH. destruct Hxy as [->| ->]; exact Hx.
+Qed.
+
+Definition wranked_of (B : gset pname) (ρ : point → rank_ord) (Hρ : ranks_po B ρ) : world.
+Proof.
+  refine (World B (λ x y, olt (ρ x) (ρ y)) _ _ _ (Some ρ) _).
+  - intros x y z _ _ _. apply olt_trans.
+  - intros x _. apply olt_irrefl.
+  - intros x y Hx Hp. by apply (ranks_po_lt B).
+  - intros ρ' x y [= <-] _ _. reflexivity.
+Defined.
+
+Lemma wranked_of_ranked B ρ Hρ : wranked (wranked_of B ρ Hρ).
+Proof. by eexists. Qed.
+
+Lemma wranked_of_rank B ρ Hρ x : w_rank (wranked_of B ρ Hρ) x = ρ x.
+Proof. done. Qed.
+
 (** A rank function of a static world gives a ranked world that models it. *)
 Definition wrank (W : sworld) (ρ : point → rank_ord) (Hρ : ranked (sw_lt W) ρ) : world.
 Proof.
-  refine (World (set_map NConst (sw_consts W)) ρ _).
+  refine (wranked_of (set_map NConst (sw_consts W)) ρ _).
   intros x _. split; apply Hρ; [apply sw_lt_po|apply sw_lt_dpo].
 Defined.
 
@@ -574,53 +735,94 @@ Proof.
   apply Hρ, sw_lt_fact, Hf.
 Qed.
 
-Lemma wmodels_exists W : sworld_wf W → swf W → ∃ R, wmodels R W.
-Proof. intros Hwf [ρ Hρ]. exists (wrank W ρ Hρ). by apply wrank_models. Qed.
+(** A well-founded static world has a ranked model. *)
+Lemma wmodels_exists W : sworld_wf W → swf W → ∃ R, wranked R ∧ wmodels R W.
+Proof.
+  intros Hwf [ρ Hρ]. exists (wrank W ρ Hρ). split; [apply wranked_of_ranked|by apply wrank_models].
+Qed.
 
-(** ** Growing a world by roots
+(** ** Strict worlds
+
+    An acyclic static world is a strict world itself: its constants are
+    the roots and its order is the order. No rank is needed. *)
+
+Definition wstrict_of (W : sworld) (Hac : sacyc W) : world.
+Proof.
+  refine (World (set_map NConst (sw_consts W)) (sw_lt W) _ _ _ None _).
+  - intros x y z _ _ _. apply sw_lt_trans.
+  - intros x _. apply Hac.
+  - intros x y _. apply po_slt.
+  - intros ρ x y [=].
+Defined.
+
+Lemma wstrict_of_strict W Hac : wstrict (wstrict_of W Hac).
+Proof. done. Qed.
+
+Lemma wstrict_of_models W Hac : sworld_wf W → wmodels (wstrict_of W Hac) W.
+Proof.
+  intros Hwf. split; [intros a Ha; simpl; set_solver|]. intros x y Hf. right.
+  destruct (wf_facts _ Hwf x y Hf) as [(a & Ha & Ha') (b & Hb & Hb')].
+  split_and!; [unfold rin; simpl; rewrite Ha; set_solver|unfold rin; simpl; rewrite Hb; set_solver|].
+  apply sw_lt_fact, Hf.
+Qed.
+
+(** An acyclic static world has a strict model, constructively. *)
+Lemma dmodels_exists W : sworld_wf W → sacyc W → ∃ R, wstrict R ∧ wmodels R W.
+Proof. intros Hwf Hac. exists (wstrict_of W Hac). split; [done|by apply wstrict_of_models]. Qed.
+
+(** ** Growing a ranked world by roots
 
     [wgrow W B ρ] ranks the points of the roots in B that W does not rank
-    by ρ, and keeps every rank of W. O-New grows the world this way. *)
-
-Definition ranks_po (B : gset pname) (ρ : point → rank_ord) : Prop :=
-  ∀ x, pt_root x ∈ B → olt (ρ x) (ρ x⁺) ∧ olt (ρ x) (ρ x‾⁺).
+    by ρ, and keeps every rank of W. The lock-free creation grows the
+    world this way. *)
 
 Definition wgrow_rank (W : world) (ρ : point → rank_ord) (x : point) : rank_ord :=
   if decide (rin W x) then w_rank W x else ρ x.
 
-Definition wgrow (W : world) (B : gset pname) (ρ : point → rank_ord) (Hρ : ranks_po B ρ) : world.
+Definition wgrow (W : world) (HW : wranked W) (B : gset pname) (ρ : point → rank_ord) (Hρ : ranks_po B ρ) : world.
 Proof.
-  refine (World (B ∪ w_roots W) (wgrow_rank W ρ) _).
+  refine (wranked_of (B ∪ w_roots W) (wgrow_rank W ρ) _).
   intros x Hx. unfold wgrow_rank.
   assert (rin W x ↔ rin W x⁺) as E1 by (unfold rin, pt_root; done).
   assert (rin W x ↔ rin W x‾⁺) as E2 by (unfold rin, pt_root; done).
   destruct (decide (rin W x)) as [Ha|Ha].
-  - rewrite !decide_True by tauto. by apply w_po.
+  - rewrite !decide_True by tauto. split; apply rank_po; try done; apply tc_once; [by left|by right].
   - rewrite !decide_False by tauto. apply Hρ. apply elem_of_union in Hx as [?|?]; [done|by destruct Ha].
 Defined.
 
-Lemma wgrow_ext W B ρ Hρ : W ⊑ wgrow W B ρ Hρ.
+Lemma wgrow_ext W HW B ρ Hρ : W ⊑ wgrow W HW B ρ Hρ.
 Proof.
-  split; [simpl; set_solver|]. intros x Hx. simpl. unfold wgrow_rank. by rewrite decide_True.
+  split; [simpl; set_solver| |].
+  - intros x y Hx Hy H. simpl. unfold wgrow_rank. rewrite !decide_True by done. by apply w_ord_rank.
+  - unfold wk_ext. change (w_rk (wgrow W HW B ρ Hρ)) with (Some (wgrow_rank W ρ)).
+    destruct HW as [ρW HρW]. rewrite HρW. intros x Hx. unfold wgrow_rank.
+    rewrite decide_True by done. unfold w_rank. by rewrite HρW.
 Qed.
 
-Lemma wgrow_rank_new W B ρ Hρ x : ¬ rin W x → w_rank (wgrow W B ρ Hρ) x = ρ x.
-Proof. intros H. simpl. unfold wgrow_rank. by rewrite decide_False. Qed.
+Lemma wgrow_rank_new W HW B ρ Hρ x : ¬ rin W x → w_rank (wgrow W HW B ρ Hρ) x = ρ x.
+Proof. intros H. change (w_rank (wgrow W HW B ρ Hρ) x) with (wgrow_rank W ρ x). unfold wgrow_rank. by rewrite decide_False. Qed.
 
-Lemma wgrow_rin W B ρ Hρ x : pt_root x ∈ B → rin (wgrow W B ρ Hρ) x.
+Lemma wgrow_rin W HW B ρ Hρ x : pt_root x ∈ B → rin (wgrow W HW B ρ Hρ) x.
 Proof. intros H. unfold rin. simpl. set_solver. Qed.
 
-(** ** A chain of worlds
+Lemma wgrow_ranked W HW B ρ Hρ : wranked (wgrow W HW B ρ Hρ).
+Proof. apply wranked_of_ranked. Qed.
 
-    The worlds of a run only grow. The order of the chain, x ≺ y in some
-    world of it, is well-founded: every rank stays fixed once chosen. *)
+(** ** A chain of ranked worlds
+
+    The worlds of a run only grow. The order of a chain of ranked
+    worlds, x ≺ y in some world of it, is well-founded: every rank stays
+    fixed once chosen. *)
 Section chain.
-  Context (Wc : nat → world) (Hc : ∀ k, Wc k ⊑ Wc (S k)).
+  Context (Wc : nat → world) (Hc : ∀ k, Wc k ⊑ Wc (S k)) (H0 : wranked (Wc 0)).
 
   Lemma wchain_le k j : k ≤ j → Wc k ⊑ Wc j.
   Proof.
     induction 1 as [|j _ IH]; [apply wext_refl|]. eapply wext_trans; [exact IH|apply Hc].
   Qed.
+
+  Lemma wchain_ranked k : wranked (Wc k).
+  Proof. apply (wext_ranked (Wc 0)); [apply wchain_le; lia|done]. Qed.
 
   Definition wchain_lt (x y : point) : Prop := ∃ k, Wc k ⊢ x ≺ y.
 
@@ -635,8 +837,10 @@ Section chain.
       assert (rin (Wc m) x) as Hxm by exact (rin_mono _ _ _ Hk Hx).
       destruct Hym as [Hp|(Hy' & _ & Hlt)].
       - assert (rin (Wc m) y) as Hym by exact (proj2 (rin_po _ y x Hp) Hxm).
-        apply (IH (w_rank (Wc m) y) ltac:(rewrite <-(wext_rank _ _ Hk x Hx); by apply rank_po) m y Hym eq_refl).
-      - apply (IH (w_rank (Wc m) y) ltac:(by rewrite <-(wext_rank _ _ Hk x Hx)) m y Hy' eq_refl). }
+        apply (IH (w_rank (Wc m) y) ltac:(rewrite <-(wext_rank _ _ x Hk (wchain_ranked k) Hx);
+                                          by apply rank_po; [apply wchain_ranked| |]) m y Hym eq_refl).
+      - apply (w_ord_rank _ _ _ (wchain_ranked m) Hy' Hxm) in Hlt.
+        apply (IH (w_rank (Wc m) y) ltac:(by rewrite <-(wext_rank _ _ x Hk (wchain_ranked k) Hx)) m y Hy' eq_refl). }
     intros x. induction (po_wf x) as [x _ IH]. constructor. intros y [j [Hy|(Hy & _ & _)]].
     - by apply IH.
     - by apply (Hin _ j y Hy eq_refl).
@@ -644,4 +848,4 @@ Section chain.
 End chain.
 
 Lemma swf_irrefl W x : swf W → ¬ W ⊢ₛ x ≺ x.
-Proof. intros [ρ Hρ] H. exact (olt_irrefl _ (Hρ x x H)). Qed.
+Proof. intros HW. by apply swf_sacyc. Qed.

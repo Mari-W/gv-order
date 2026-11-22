@@ -536,14 +536,17 @@ Section later.
     apply Vrel_Erel. apply Vrel_sess_iff. exists o, S. split_and!; [done|done|apply seqv_refl].
   Qed.
 
-  Lemma later_new (EM : excluded_middle) W Δ L F C S a1 a2 mt mt2 :
-    lenv_unl Δ → gen_new_sem W C →
+  (** E-New in a world of either kind. Excluded middle enters only at a
+      ranked world ([Erel_new_any]). *)
+  Lemma later_new W Δ L F C S a1 a2 mt mt2 :
+    (wranked W → excluded_middle) → lenv_unl Δ → new_sem W C →
     sem_later κ W ∅ Δ L F ENew
       (TEx LBot 1 C (TProd (TSess S (pvar 0) a1 mt) (TSess (dual S) (pvar 0)‾ a2 mt2))).
   Proof.
-    intros HΔ HC n W' Θ' γ HW Hd HG. simpl.
+    intros HEM HΔ HC n W' Θ' γ HW Hd HG. simpl.
     rewrite (GrelL_unl κ _ _ _ _ _ _ HΔ HG), tenv_erase_empty, map_union_empty.
-    apply Erel_new; [done|]. by eapply gen_new_sem_mono.
+    apply Erel_new_any; [|by eapply new_sem_mono].
+    intros Hr. apply HEM. by apply (wext_ranked W W').
   Qed.
 
   Lemma later_new_fld W Δ L F y S a1 a2 mt mt2 :

@@ -303,6 +303,81 @@ Proof.
     intros u y [Hf Hs] _ Hy. exfalso. by apply Hy, (HC u y).
 Qed.
 
+(** ** The acyclic constraint of a creation (acyc-new)
+
+    docs/redesign/check-df-acyclic.md, section 2.2. A bridge of C from
+    z to y joins two context points, either by a fact of C or by an
+    entry z ≺ v, a path of C and program order in the tree of ρ from v
+    to u, and an exit u ≺ y. (acyc-new) asks C with program order
+    acyclic on the tree of ρ and every bridge derived by Γ. Like
+    (gen-new) it reads [slt], the facts of C and program order. It names
+    no rank, no partner set and no finite set. *)
+Definition cbridge (C : bcs) (z y : point) : Prop :=
+  ¬ in_tree0 z ∧ ¬ in_tree0 y ∧
+  (cfact C z y ∨ ∃ v u, cfact C z v ∧ in_tree0 v ∧ rtc (new_step C) v u ∧ cfact C u y).
+
+Definition acyc_new (W : sworld) (Γ : hctx) (C : bcs) : Prop :=
+  (∀ x, in_tree0 x → ¬ tc (new_step C) x x) ∧
+  (∀ z y, cbridge C z y → slt W Γ (ctx_pt C z) (ctx_pt C y)).
+
+(** The steps of C stay in the tree of ρ. *)
+Lemma rtc_new_step_tree C v u : in_tree0 v → rtc (new_step C) v u → in_tree0 u.
+Proof. intros Hv Hr. induction Hr as [|v w u (_ & Hw & _) _ IH]; [done|by apply IH]. Qed.
+
+(** Lemma C of check-df-acyclic.md: (gen-new) implies (acyc-new),
+    constructively. A well-founded relation has no cycle, and the
+    partner sets of (gen-new) walk a bridge down to a fact of Γ. *)
+Lemma gen_new_acyc W Γ C : gen_new W Γ C → acyc_new W Γ C.
+Proof.
+  intros (Hwf & Hcc & Sr & Hne & Hex & Hst & Hen). split.
+  - intros x _ Hx. assert (well_founded (tc (new_step C))) as Htc.
+    { intros a. apply (acc_tc (new_step C)), Hwf. }
+    induction (Htc x) as [x _ IH]. by apply (IH x).
+  - intros z y (Hz & Hy & [Hf|(v & u & Hzv & Hv & Hvu & Huy)]); [by apply Hcc|].
+    assert (in_tree0 u) as Hu by by apply (rtc_new_step_tree C v u).
+    destruct (Hex u y Huy Hu Hy) as (T & HT & HTy).
+    assert (∀ s, rtc (new_step C) v s → ∀ T, Sr s T →
+              ∃ T0, Sr v T0 ∧ ∀ t0, t0 ∈ T0 → ∃ t, t ∈ T ∧ sle W Γ t0 t) as Hwalk.
+    { clear -Hst. intros s Hs. induction Hs as [v|v v' s Hvv' _ IH]; intros T1 HT1.
+      - exists T1. split; [done|]. intros t0 Ht0. exists t0. split; [done|by left].
+      - destruct (IH T1 HT1) as (T2 & HT2 & H2).
+        destruct (Hst v' T2 v HT2 Hvv') as (T0 & HT0 & H0). exists T0. split; [done|].
+        intros t0 Ht0. destruct (H0 t0 Ht0) as (t2 & Ht2 & Hl0).
+        destruct (H2 t2 Ht2) as (t & Ht & Hle). exists t. split; [done|]. right.
+        destruct Hle as [<-|Hl2]; [done|by eapply sl_trans]. }
+    destruct (Hwalk u Hvu T HT) as (T0 & HT0 & H0).
+    destruct (Hen v T0 z HT0 Hzv Hz) as (t0 & Ht0 & Hzt0).
+    destruct (H0 t0 Ht0) as (t & Ht & Hle). eapply sl_trans; [exact Hzt0|].
+    destruct Hle as [<-|Hl]; [by apply HTy|]. eapply sl_trans; [exact Hl|by apply HTy].
+Qed.
+
+Lemma wf_new_acyc W Γ C : wf_new C → acyc_new W Γ C.
+Proof. intros H. by apply gen_new_acyc, wf_new_gen. Qed.
+
+(** ** The mode of a judgment
+
+    One judgment for every bound N. At N = ∞ ([None], the deadlock-free
+    and live judgment) E-New asks (acyc-new) and the process rules ask
+    the world acyclic. At a finite N (the lock-free judgment) they ask
+    (gen-new) and the world well-founded. *)
+Definition new_ok (N : fuel) (W : sworld) (Γ : hctx) (C : bcs) : Prop :=
+  match N with None => acyc_new W Γ C | Some _ => gen_new W Γ C end.
+
+Definition wok (N : fuel) (W : sworld) : Prop :=
+  match N with None => sacyc W | Some _ => swf W end.
+
+Lemma new_ok_acyc N W Γ C : new_ok N W Γ C → acyc_new W Γ C.
+Proof. destruct N; [apply gen_new_acyc|done]. Qed.
+
+Lemma gen_new_ok N W Γ C : gen_new W Γ C → new_ok N W Γ C.
+Proof. destruct N; [done|apply gen_new_acyc]. Qed.
+
+Lemma wok_acyc N W : wok N W → sacyc W.
+Proof. destruct N; [apply swf_sacyc|done]. Qed.
+
+Lemma swf_wok N W : swf W → wok N W.
+Proof. destruct N; [done|apply swf_sacyc]. Qed.
+
 (** The rest above an optional upper point. *)
 Definition rest_of (ub : option point) : frest :=
   match ub with Some u => RAbove u | None => RAll end.
