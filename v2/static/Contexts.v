@@ -378,6 +378,14 @@ Proof. destruct N; [apply swf_sacyc|done]. Qed.
 Lemma swf_wok N W : swf W → wok N W.
 Proof. destruct N; [done|apply swf_sacyc]. Qed.
 
+(** A well-founded world meets the mode premise at every N. The examples
+    prove well-foundedness by a measure and use this wrapper. *)
+Lemma swf_ok_wok N W : sworld_wf W ∧ swf W → sworld_wf W ∧ wok N W.
+Proof. intros [H1 H2]. split; [done|by apply swf_wok]. Qed.
+
+Lemma sw_empty_wok N : sworld_wf sw_empty ∧ wok N sw_empty.
+Proof. apply swf_ok_wok, sw_empty_ok. Qed.
+
 (** The rest above an optional upper point. *)
 Definition rest_of (ub : option point) : frest :=
   match ub with Some u => RAbove u | None => RAll end.

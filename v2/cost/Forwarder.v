@@ -90,5 +90,5 @@ Proof.
   - intros o' e' He. apply lookup_singleton_Some in He as [_ <-]. vm_compute. exact I.
   - set_solver.
   - rewrite map_union_empty. unfold tenv_of. rewrite map_fmap_singleton. apply fw_typed.
-  - apply sw_empty_ok.
+  - apply sw_empty_wok.
 Qed.

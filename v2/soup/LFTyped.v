@@ -14,7 +14,8 @@
     channel, and P-Connect types the cut at exactly dual types
     ([senv_dual]). The proof reads fsem^N off the typing through
     [fsem_of_cost] and the live relation through
-    [live_fundamental_typed], inside [lf_p_term]. *)
+    [live_fundamental_ranked] on the derivation at Some N, inside
+    [lf_p_term]. The soup reads ranked worlds. *)
 
 From GV Require Import soup.LFAdequacy lockfree.FairRun.
 From GV Require Export soup.LFCompose static.FundamentalProc.
@@ -99,7 +100,7 @@ Theorem lf_p_connect_h N V1 V2 W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
   lf_sems_h N (swrestrict (W1 ⊔ W2) (iface (Σ1 ∪ Σ2) T)) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
 Proof.
   intros Hw1 Hw2 HS1 HS2 H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hh1 Hh2 Hav1 Hav2 HS.
-  destruct (connect_hidden V1 V2 W1 W2 _ _ (iface (Σ1 ∪ Σ2) T) Hw1 Hw2 Hh1 Hh2 Hav1 Hav2
+  destruct (connect_hidden (Some N) V1 V2 W1 W2 _ _ (iface (Σ1 ∪ Σ2) T) Hw1 Hw2 Hh1 Hh2 Hav1 Hav2
               (iface_connect _ _ _ _) HS) as [HR Hh].
   exists (V1 ⊔ V2). split_and!; [by apply swjoin_wf|by apply (wf_join_iff V1 V2 Hw1 Hw2)|exact Hh|].
   by apply lf_p_connect.

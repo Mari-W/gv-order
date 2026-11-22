@@ -10,8 +10,9 @@
     no condition on worlds. It reads the composition as a sequence. The
     i-th component connects to the composite of the components before
     it over the cut Σ_{C,i}, which may hold ends of several earlier
-    components. [p_connect_n] asks one interface check, wf of the join
-    of the n hidden component worlds ([sw_joins]), and gives a hidden
+    components. [p_connect_n] asks one interface check, the join of the
+    n hidden component worlds ([sw_joins]) acyclic at N = ∞ and
+    well-founded at a finite N ([wok]), and gives a hidden
     derivation at a world whose facts are facts of that join restricted
     to the final interface.
 
@@ -68,7 +69,7 @@ Inductive pcomps (N : fuel) : list sworld → senv → proc → ty → Prop :=
 (** The fold. The world of the composite derives only facts of the join
     of its component worlds and holds only their constants. *)
 Lemma pcomps_fold N Ws Σ p T :
-  pcomps N Ws Σ p T → swf (sw_joins Ws) →
+  pcomps N Ws Σ p T → wok N (sw_joins Ws) →
   ∃ W, ptyped N W Σ p T ∧ (∀ x y, W ⊢ₛ x ≺ y → sw_joins Ws ⊢ₛ x ≺ y) ∧ sw_consts W ⊆ sw_consts (sw_joins Ws).
 Proof.
   induction 1 as [W Σ p T Hty|Ws W Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH Hty HD1 HD2 Hf H12 H1C H2C HC HC1 HC2];
@@ -77,7 +78,7 @@ Proof.
     + intros x y. apply sw_lt_mono, swext_joins. set_solver.
     + apply swext_consts, swext_joins. set_solver.
   - destruct IH as (Wa & Hta & Hlt & Hc).
-    { eapply swf_mono; [apply swext_joins_app|exact HS]. }
+    { eapply (wok_sub N); [|exact HS]. intros x y. apply sw_lt_mono, swext_joins_app. }
     assert (∀ x y, Wa ⊔ W ⊢ₛ x ≺ y → sw_joins (Ws ++ [W]) ⊢ₛ x ≺ y) as Hj.
     { intros x y H. eapply sw_lt_mono; [|eapply (join_sub Wa (sw_joins Ws) W W); [exact Hlt|done|exact H]].
       split; simpl.
@@ -87,7 +88,7 @@ Proof.
         + by apply (swext_facts _ _ (swext_joins_app Ws [W])).
         + apply (swext_facts _ _ (swext_joins W (Ws ++ [W]) ltac:(set_solver))), Hg. }
     exists (swrestrict (Wa ⊔ W) (iface (Σ1 ∪ Σ2) T)). split_and!.
-    + apply p_connect; try done. apply (swf_sub _ (sw_joins (Ws ++ [W]))); [exact Hj|exact HS].
+    + apply p_connect; try done. apply (wok_sub N _ (sw_joins (Ws ++ [W]))); [exact Hj|exact HS].
     + intros x y H. by apply Hj, (swrestrict_lt _ (iface (Σ1 ∪ Σ2) T)).
     + simpl. pose proof (swext_consts _ _ (swext_joins_app Ws [W])) as K1.
       pose proof (swext_consts _ _ (swext_joins W (Ws ++ [W]) ltac:(set_solver))) as K2. set_solver.
@@ -95,11 +96,11 @@ Qed.
 
 (** ** The n-ary rule
 
-    One interface check, wf of the join of the n hidden component
+    One interface check, [wok] of the join of the n hidden component
     worlds. The result world says nothing the join, restricted to the
     final interface, does not. *)
 Theorem p_connect_n N Ws Σ p T :
-  pcomps N Ws Σ p T → swf (sw_joins Ws) →
+  pcomps N Ws Σ p T → wok N (sw_joins Ws) →
   ∃ W, ptyped N W Σ p T ∧ ∀ g, sw_facts W g → sw_facts (swrestrict (sw_joins Ws) (iface Σ T)) g.
 Proof.
   intros Hp HS. destruct (pcomps_fold N Ws Σ p T Hp HS) as (W & Hty & Hlt & Hc).
@@ -114,16 +115,16 @@ Qed.
 
 (** ** Soundness through the binary results *)
 
-Theorem connect_n_soundness Ws p T : excluded_middle →
-  pcomps None Ws ∅ p T → swf (sw_joins Ws) → deadlock_free p.
+Theorem connect_n_soundness Ws p T :
+  pcomps None Ws ∅ p T → sacyc (sw_joins Ws) → deadlock_free p.
 Proof.
-  intros EM Hp HS. destruct (p_connect_n None Ws ∅ p T Hp HS) as (W & Hty & _).
-  exact (soundness_h W p T EM Hty).
+  intros Hp HS. destruct (p_connect_n None Ws ∅ p T Hp HS) as (W & Hty & _).
+  exact (soundness_h W p T Hty).
 Qed.
 
-Theorem connect_n_live_soundness Ws p T : excluded_middle →
-  pcomps None Ws ∅ p T → swf (sw_joins Ws) → ⊢▷ p → deadlock_free p ∧ no_tau_divergence p.
+Theorem connect_n_live_soundness Ws p T :
+  pcomps None Ws ∅ p T → sacyc (sw_joins Ws) → ⊢▷ p → deadlock_free p ∧ no_tau_divergence p.
 Proof.
-  intros EM Hp HS Hg. destruct (p_connect_n None Ws ∅ p T Hp HS) as (W & Hty & _).
-  exact (live_soundness_h W p T EM Hty Hg).
+  intros Hp HS Hg. destruct (p_connect_n None Ws ∅ p T Hp HS) as (W & Hty & _).
+  exact (live_soundness_h W p T Hty Hg).
 Qed.

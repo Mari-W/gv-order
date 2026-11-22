@@ -1,7 +1,7 @@
 (** * Shared constants and hiding
 
     The full judgment [fptyped] composes two components at their whole
-    worlds and asks [swf (W1|S ⊔ W2|S)] at S = [swshared W1 W2], the
+    worlds and asks [sacyc (W1|S ⊔ W2|S)] at S = [swshared W1 W2], the
     constants both worlds hold. Repair (a) of the open item in
     docs/redesign/pending.md asked whether S ⊆ the roots of the points
     of the cut Σ_C in every derivation. It fails, and dropping constants
@@ -159,7 +159,7 @@ Proof.
   - set_solver.
   - rewrite map_union_empty. unfold tenv_of, senv2. rewrite map_fmap_union, !map_fmap_singleton.
     by apply cl2_typed.
-  - apply W0_ok.
+  - apply swf_ok_wok, W0_ok.
 Qed.
 
 (** ** One component P(c, d), over the empty interface *)
@@ -198,7 +198,7 @@ Proof.
   - set_solver.
   - apply W0_wf.
   - apply W0_wf.
-  - apply W00_ok.
+  - apply swf_wok, W00_ok.
 Qed.
 
 (** ** Two components over the empty cut share the constant 0 *)
@@ -228,7 +228,7 @@ Proof.
   - set_solver.
   - apply W00_ok.
   - apply W00_ok.
-  - apply swf_meas. intros x y [[H|H]|[H|H]]; by apply W0_facts.
+  - apply swf_wok, swf_meas. intros x y [[H|H]|[H|H]]; by apply W0_facts.
 Qed.
 
 (** ** The constant is used
@@ -279,7 +279,7 @@ Lemma cl2_hterm W o1 o2 x y :
   ptyped None (swrestrict W (iface (senv2 o1 o2 x y) TUnit)) (senv2 o1 o2 x y) (∅, {[+ cl2 o1 o2 +]}) TUnit.
 Proof.
   intros HW Hne Hd Hf. destruct (cl2_prem W o1 o2 x y Hne Hd Hf) as (H1 & H2 & H3 & H4 & H4c & H5 & H6).
-  by eapply p_term.
+  apply (swf_ok_wok None) in HW. by eapply p_term.
 Qed.
 
 (** One component over its own cut ΣC, its two threads at worlds W and
@@ -291,7 +291,7 @@ Lemma hcomp_gen W W' (ΣC : senv) (u1 u2 : expr) Σa Σb :
   swf (W ⊔ W') →
   ptyped None (swrestrict (W ⊔ W') ∅) ∅ (chans_of ΣC, {[+ u1 +]} ⊎ {[+ u2 +]}) TUnit.
 Proof.
-  intros H1 H2 -> -> Hf HS.
+  intros H1 H2 -> -> Hf HS. apply (swf_wok None) in HS.
   pose proof (p_connect None W W' ∅ ∅ ΣC ∅ ∅ {[+ u1 +]} {[+ u2 +]} TUnit H1 H2) as H.
   rewrite chans_of_empty, !(left_id_L ∅ (∪)), iface_empty_unit in H. apply H; clear H; try done.
   all: first [apply map_disjoint_empty_l|set_solver].
@@ -330,7 +330,7 @@ Proof.
                 (comp "c" "d") (comp "e" "f") TUnit) as H.
   assert (senv_dual ∅ = ∅) as Ed by (unfold senv_dual; by rewrite fmap_empty, kmap_empty).
   rewrite Ed, !(left_id_L ∅ (∪)) in H. apply H; clear H; try done; try set_solver.
-  all: first [apply map_disjoint_empty_l|apply swf_bare; intros g [Hg|Hg]; [by apply (F1 g)|by apply (F2 g)]].
+  all: first [apply map_disjoint_empty_l|apply swf_wok, swf_bare; intros g [Hg|Hg]; [by apply (F1 g)|by apply (F2 g)]].
 Qed.
 
 (** ** Two components that order the same private constant oppositely
@@ -388,9 +388,9 @@ Proof.
     + intros a b H. eapply sw_lt_facts; [|exact H]. by intros g [Hg|Hg].
 Qed.
 
-Theorem opposite_clash : ¬ swf ((W0 ⊔ W0) ⊔ (Wop ⊔ Wop)).
+Theorem opposite_clash : ¬ sacyc ((W0 ⊔ W0) ⊔ (Wop ⊔ Wop)).
 Proof.
-  intros HS. apply (swf_irrefl _ p0 HS). eapply sw_lt_trans; apply sw_lt_fact.
+  intros HS. apply (HS p0). eapply sw_lt_trans; apply sw_lt_fact.
   - left. left. by left.
   - right. left. by right.
 Qed.
@@ -404,8 +404,8 @@ Proof.
                 (comp "c" "d") (comp' "e" "f") TUnit) as H.
   assert (senv_dual ∅ = ∅) as Ed by (unfold senv_dual; by rewrite fmap_empty, kmap_empty).
   rewrite Ed, !(left_id_L ∅ (∪)) in H. apply H; clear H; try done; try set_solver.
-  all: first [apply map_disjoint_empty_l|apply swf_bare; intros g [Hg|Hg]; [by apply (F1 g)|by apply (F2 g)]].
+  all: first [apply map_disjoint_empty_l|apply swf_wok, swf_bare; intros g [Hg|Hg]; [by apply (F1 g)|by apply (F2 g)]].
 Qed.
 
-Theorem opposite_df : excluded_middle → deadlock_free (({["c"]} ∪ {["d"]}) ∪ ({["f"]} ∪ {["e"]}) ∪ chans_of ∅, comp "c" "d" ⊎ comp' "e" "f").
-Proof. intros EM. destruct opposite_compose as (W & H). exact (soundness_h W _ TUnit EM H). Qed.
+Theorem opposite_df : deadlock_free (({["c"]} ∪ {["d"]}) ∪ ({["f"]} ∪ {["e"]}) ∪ chans_of ∅, comp "c" "d" ⊎ comp' "e" "f").
+Proof. destruct opposite_compose as (W & H). exact (soundness_h W _ TUnit H). Qed.

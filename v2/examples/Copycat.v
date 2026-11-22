@@ -277,7 +277,7 @@ Proof.
   - set_solver.
   - change (fhalf None) with (None : fuel). rewrite Θf_of, <-Θf_df.
     exact (fwd_dftyped W_f hc_empty o1 o2 px py o1_o2 W_f_facts).
-  - apply W_f_ok.
+  - apply swf_ok_wok, W_f_ok.
 Qed.
 
 (** ** Identity expansion
@@ -349,10 +349,10 @@ Proof.
   assert (pt_off u = pt_off v) as E by lia. rewrite E in Hlt. lia.
 Qed.
 
-Lemma cut_W_f_swf W : swf W → 1 ∉ sw_consts W →
-  swf (swrestrict W (swshared W W_f) ⊔ swrestrict W_f (swshared W W_f)).
+Lemma cut_W_f_wok N W : wok N W → 1 ∉ sw_consts W →
+  wok N (swrestrict W (swshared W W_f) ⊔ swrestrict W_f (swshared W W_f)).
 Proof.
-  intros HW H1. apply swf_iff. apply swf_iff in HW. eapply wf_sub; [|exact HW].
+  intros HW H1. eapply (wok_sub N); [|exact HW].
   assert (∀ u v, swstep (swrestrict W (swshared W W_f) ⊔ swrestrict W_f (swshared W W_f)) u v →
             W ⊢ₛ u ≺ v) as Hs.
   { intros u v Hs. apply swstep_join_inv in Hs as [Hs|Hs].
@@ -408,7 +408,7 @@ Proof.
   - set_solver.
   - rewrite ?chans_Σy, ?chans_Σx. set_solver.
   - set_solver.
-  - apply cut_W_f_swf; [apply (fptyped_wf _ _ _ _ _ HP)|done].
+  - apply cut_W_f_wok; [apply (fptyped_wf _ _ _ _ _ HP)|done].
 Qed.
 
 (** ** A closed run: partner ∥ fwd ∥ partner, deadlock free
@@ -430,7 +430,7 @@ Proof.
     assert (tenv_of None Σx ∪ ∅ = tenv_df {[edual o1 := TE (dual S1) px‾ None None]}) as ->.
     { rewrite map_union_empty. unfold tenv_of, tenv_df, Σx. by rewrite !map_fmap_singleton. }
     apply (p1_dftyped sw_empty hc_empty).
-  - apply sw_empty_ok.
+  - apply sw_empty_wok.
 Qed.
 
 Lemma p2_term : fptyped None sw_empty (senv_dual Σy) (∅, {[+ p2_t (edual o2) +]}) TUnit.
@@ -449,7 +449,7 @@ Proof.
     assert (tenv_of None {[edual o2 := (S1, py‾)]} ∪ ∅ = tenv_df {[edual o2 := TE S1 py‾ None None]}) as ->.
     { rewrite map_union_empty. unfold tenv_of, tenv_df. by rewrite !map_fmap_singleton. }
     apply (p2_dftyped sw_empty hc_empty).
-  - apply sw_empty_ok.
+  - apply sw_empty_wok.
 Qed.
 
 Definition fwd_config : proc :=
@@ -485,12 +485,12 @@ Proof.
   - set_solver.
   - unfold chans_of. rewrite dom_empty_L. set_solver.
   - unfold chans_of. rewrite dom_empty_L. set_solver.
-  - apply swf_bare. intros [u v] [Hf|Hf]; simpl in Hf; destruct Hf as (_ & (a & _ & Ha) & _);
+  - apply swf_wok, swf_bare. intros [u v] [Hf|Hf]; simpl in Hf; destruct Hf as (_ & (a & _ & Ha) & _);
       unfold swshared in Ha; simpl in Ha; set_solver.
 Qed.
 
-Theorem fwd_config_deadlock_free : excluded_middle → deadlock_free fwd_config.
-Proof. intros EM. exact (soundness W_run fwd_config TUnit EM fwd_config_typed). Qed.
+Theorem fwd_config_deadlock_free : deadlock_free fwd_config.
+Proof. exact (soundness W_run fwd_config TUnit fwd_config_typed). Qed.
 
 (** ** The forwarder ring is rejected
 
@@ -562,7 +562,7 @@ Ltac rfends_tac := unfold fwd_t, o1, o2; simpl; set_unfold; intuition congruence
 Theorem ring_rejected_full N W T : ¬ fptyped N W ∅ ring_config T.
 Proof.
   intros H. pose proof (fptyped_wf _ _ _ _ _ H) as [_ HWf].
-  pose proof (λ x, swf_irrefl _ x HWf) as Hirr.
+  pose proof (λ x, wok_acyc N W HWf x) as Hirr.
   apply fptyped_two in H as (W1 & W2 & Σ1 & Σ2 & ΣC & C1 & C2 & u1 & u2 & -> & HΣ & _ & Hu & H1 & H2 & _).
   symmetry in HΣ. pose proof (map_positive_l _ _ HΣ) as ->. rewrite (left_id_L ∅ (∪)) in HΣ. subst Σ2.
   rewrite !(left_id_L ∅ (∪)) in H1, H2.
@@ -806,7 +806,7 @@ Proof.
     assert (tenv_of None Σh ∪ ∅ = tenv_df (Θh o1 o2 px py)) as ->.
     { rewrite map_union_empty. unfold tenv_of, tenv_df, Σh, Θh. by rewrite !map_fmap_union, !map_fmap_singleton. }
     exact (fwdh_dftyped W_h hc_empty o1 o2 px py o1_o2 W_h_facts).
-  - split; [apply W_h_wf|apply W_h_swf].
+  - split; [apply W_h_wf|apply swf_wok, W_h_swf].
 Qed.
 
 (** *** A closed higher-order run, deadlock free
@@ -956,7 +956,7 @@ Proof.
     assert (tenv_of None {[edual o1 := (dual Sh, px‾)]} ∪ ∅ = tenv_df {[edual o1 := TE (dual Sh) px‾ None None]}) as ->.
     { rewrite map_union_empty. unfold tenv_of, tenv_df. by rewrite !map_fmap_singleton. }
     apply p1h_dftyped; apply sl_w, sw_lt_fact; simpl; tauto.
-  - split; [apply W_p1_wf|apply hmono_swf, W_p1_mono].
+  - split; [apply W_p1_wf|apply swf_wok, hmono_swf, W_p1_mono].
 Qed.
 
 Lemma p2h_term : fptyped None W_p2 (∅ ∪ senv_dual Σhy) (∅, {[+ p2h_t (edual o2) +]}) TUnit.
@@ -973,7 +973,7 @@ Proof.
     assert (tenv_of None {[edual o2 := (Sh, py‾)]} ∪ ∅ = tenv_df {[edual o2 := TE Sh py‾ None None]}) as ->.
     { rewrite map_union_empty. unfold tenv_of, tenv_df. by rewrite !map_fmap_singleton. }
     apply p2h_dftyped; apply sl_w, sw_lt_fact; simpl; done.
-  - split; [apply W_p2_wf|apply hmono_swf, W_p2_mono].
+  - split; [apply W_p2_wf|apply swf_wok, hmono_swf, W_p2_mono].
 Qed.
 
 Definition fwdh_config : proc :=
@@ -1014,7 +1014,7 @@ Proof.
     - set_solver.
     - set_solver.
     - set_solver.
-    - apply hmono_swf, hmono_join; apply hmono_restrict; [apply W_h_mono|apply W_p1_mono]. }
+    - apply swf_wok, hmono_swf, hmono_join; apply hmono_restrict; [apply W_h_mono|apply W_p1_mono]. }
   pose proof (fp_connect None (W_h ⊔ W_p1) W_p2 ∅ ∅ Σhy (∅ ∪ ∅ ∪ {["a"]}) ∅
     ({[+ fwdh_t o1 o2 +]} ⊎ {[+ p1h_t (edual o1) +]}) {[+ p2h_t (edual o2) +]} TUnit) as H.
   rewrite !(left_id_L ∅ (∪)), chans_hy in H.
@@ -1031,12 +1031,12 @@ Proof.
   - set_solver.
   - rewrite ?chans_hy, ?chans_empty. set_solver.
   - rewrite chans_empty. set_solver.
-  - apply hmono_swf, hmono_join; apply hmono_restrict;
+  - apply swf_wok, hmono_swf, hmono_join; apply hmono_restrict;
       [apply hmono_join; [apply W_h_mono|apply W_p1_mono]|apply W_p2_mono].
 Qed.
 
-Theorem fwdh_config_deadlock_free : excluded_middle → deadlock_free fwdh_config.
-Proof. intros EM. exact (soundness W_hrun fwdh_config TUnit EM fwdh_config_typed). Qed.
+Theorem fwdh_config_deadlock_free : deadlock_free fwdh_config.
+Proof. exact (soundness W_hrun fwdh_config TUnit fwdh_config_typed). Qed.
 
 (** ** The schema for first-order protocols
 
@@ -1293,7 +1293,7 @@ Proof.
     { rewrite map_union_empty. unfold tenv_of, tenv_df, Σp. rewrite !map_fmap_union, !map_fmap_singleton.
       unfold tentry_df. cbn [te_sty te_pt fst snd]. by rewrite !sty_df_pS. }
     exact (fwdp_dftyped _ _ p o1 o2 px py o1_o2 (W_p_facts p)).
-  - split; [apply W_p_wf|apply W_p_swf].
+  - split; [apply W_p_wf|apply swf_wok, W_p_swf].
 Qed.
 
 (** *** Identity expansion for every first-order protocol
@@ -1356,10 +1356,10 @@ Proof.
   - destruct (pfirst p (pt_off u)), (pfirst p (pt_off v)); lia.
 Qed.
 
-Lemma cut_W_p_swf p W : swf W → 1 ∉ sw_consts W →
-  swf (swrestrict W (swshared W (W_p p)) ⊔ swrestrict (W_p p) (swshared W (W_p p))).
+Lemma cut_W_p_wok N p W : wok N W → 1 ∉ sw_consts W →
+  wok N (swrestrict W (swshared W (W_p p)) ⊔ swrestrict (W_p p) (swshared W (W_p p))).
 Proof.
-  intros HW H1. apply swf_iff. apply swf_iff in HW. eapply wf_sub; [|exact HW].
+  intros HW H1. eapply (wok_sub N); [|exact HW].
   assert (∀ u v, swstep (swrestrict W (swshared W (W_p p)) ⊔ swrestrict (W_p p) (swshared W (W_p p))) u v →
             W ⊢ₛ u ≺ v) as Hs.
   { intros u v Hs. apply swstep_join_inv in Hs as [Hs|Hs].
@@ -1408,17 +1408,17 @@ Proof.
   - set_solver.
   - rewrite ?Ey, ?Ex. set_solver.
   - set_solver.
-  - apply cut_W_p_swf; [apply (fptyped_wf _ _ _ _ _ HP)|done].
+  - apply cut_W_p_wok; [apply (fptyped_wf _ _ _ _ _ HP)|done].
 Qed.
 
 (** The schema is semantically sound at every protocol: the fundamental
-    theorem puts the forwarder process in the relation at every ranked
+    theorem puts the forwarder process in the relation at every strict
     world that models its static world, and such a world exists. *)
-Corollary fwdp_sem (EM : excluded_middle) p R : wmodels R (W_p p) → Σp p ⊨_R (∅, {[+ fwdp_t p o1 o2 +]}) : TUnit.
-Proof. intros HR. exact (fundamental_proc EM (W_p p) R _ _ _ (fwdp_term p) HR). Qed.
+Corollary fwdp_sem p R : wmodels R (W_p p) → wstrict R → Σp p ⊨_R (∅, {[+ fwdp_t p o1 o2 +]}) : TUnit.
+Proof. intros HR HS. exact (fundamental_proc (W_p p) R _ _ _ (fwdp_term p) HR HS). Qed.
 
-Lemma W_p_models p : ∃ R, wmodels R (W_p p).
-Proof. apply wmodels_exists; [apply W_p_wf|apply W_p_swf]. Qed.
+Lemma W_p_models p : ∃ R, wstrict R ∧ wmodels R (W_p p).
+Proof. apply dmodels_exists; [apply W_p_wf|apply swf_sacyc, W_p_swf]. Qed.
 
 (** The concrete forwarder is the schema at ?∗.!∗.Close. *)
 Lemma pS_S1 : pS (PRcv (PSnd PEnd)) = S1.

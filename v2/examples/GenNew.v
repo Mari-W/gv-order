@@ -210,9 +210,9 @@ Proof.
   Unshelve. all: exact None.
 Qed.
 
-Theorem tu_deadlock_free : excluded_middle → deadlock_free (∅, {[+ tu_main +]}).
+Theorem tu_deadlock_free : deadlock_free (∅, {[+ tu_main +]}).
 Proof.
-  intros EM. apply (soundness_source sw_empty tu_main TUnit EM); [apply sw_empty_ok|apply sw_empty_ok|constructor|].
+  apply (soundness_source sw_empty tu_main TUnit); [apply sw_empty_acyc|apply sw_empty_acyc|constructor|].
   exact tu_dftyped.
 Qed.
 
@@ -349,9 +349,9 @@ Proof.
   Unshelve. all: exact None.
 Qed.
 
-Theorem te_deadlock_free : excluded_middle → deadlock_free (∅, {[+ te_main +]}).
+Theorem te_deadlock_free : deadlock_free (∅, {[+ te_main +]}).
 Proof.
-  intros EM. apply (soundness_source sw_empty te_main TUnit EM); [apply sw_empty_ok|apply sw_empty_ok|constructor|].
+  apply (soundness_source sw_empty te_main TUnit); [apply sw_empty_acyc|apply sw_empty_acyc|constructor|].
   exact te_dftyped.
 Qed.
 

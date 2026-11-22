@@ -1,6 +1,6 @@
 (** * Adequacy of the lock-free judgment (stage S8, proposal §2.13, A.3)
 
-      lf_adequacy        : ∅ ⊪^N _ W p : T → lock_free p
+      lf_adequacy        : W ranked → ∅ ⊪^N _ W p : T → lock_free p
       lf_thread_progress : ∅ ⊪^N _ W p : T →
                            every weakly fair maximal run makes every thread progress
 
@@ -46,11 +46,16 @@ Section run.
   Context (Hr0 : s_q a0 = r 0) (Hmax : maximal r l).
   Context (tcs : nat → tchoice) (Hinv : ∀ k n, lf_run_state tcs a0 r l k ∈ S^{N,W} _ n⟦∅ ⊢ T⟧).
   Context (Hwch : ∀ k, wext (s_W (lf_run_state tcs a0 r l k)) (s_W (lf_run_state tcs a0 r l (S k)))).
+  Context (HWr : wranked W).
 
   Local Abbreviation ak k := (lf_run_state tcs a0 r l k).
 
   (** The worlds of the run, a chain. *)
   Definition wk (k : nat) : world := s_W (ak k).
+
+  (** The run starts at a ranked world, so all its worlds are ranked. *)
+  Lemma wk_ranked k : wranked (wk k).
+  Proof. apply (wext_ranked W (wk k)); [exact (proj1 (Hinv k ozero))|exact HWr]. Qed.
 
   Lemma ak_q k : s_q (ak k) = r k.
   Proof. by apply lf_run_state_q. Qed.
@@ -92,7 +97,7 @@ Section run.
     kpt (s_K (ak k)) o = x → ∃ s, rtc (wt k) t s ∧ tenabled (r k) s.
   Proof.
     destruct (ak_inv k (onat 1)) as (A & Π & U & Hs). pose proof (ak_q k) as Hq.
-    intros x. induction x as [x IH] using (well_founded_ind (w_lt_wf (wk k))).
+    intros x. induction x as [x IH] using (well_founded_ind (w_lt_wf (wk k) (wk_ranked k))).
     intros t e a1 o He Ha Ho Hx. rewrite <-Hq in He.
     destruct (s_partner _ _ _ _ _ _ _ _ Hs t e a1 o He Ha Ho) as (s & es & h' & Kh' & Eh' & Hes & Hst).
     assert (Hwt : wt k t s).
@@ -569,25 +574,25 @@ Section adequacy.
   Context (EM : excluded_middle) (FC : functional_choice).
 
   (** The soup alone gives lock freedom. *)
-  Theorem lf_adequacy_soup N W T a :
+  Theorem lf_adequacy_soup N W T a : wranked W →
     (∀ n, a ∈ S^{N,W} _ n⟦∅ ⊢ T⟧) → lock_free (erase (s_q a)).
   Proof.
-    intros Hs r l Hr0 Hmax Hfair.
+    intros HWr Hs r l Hr0 Hmax Hfair.
     destruct (soup_lifting N W T a (r 0) Hs Hr0) as (a0 & Ha0 & Hs0).
     destruct (lfsoup_run EM FC N W T a0 r l Hmax Ha0 Hs0) as (tcs & Hinv & Hch).
     refine (lf_run_criterion (erase (s_q a)) r l Hr0 Hmax Hfair (wt a0 r l tcs) _ _ _ _ _
       nat lt (fu a0 r l tcs) lt_wf _ _ _ point (wchain_lt (wk a0 r l tcs)) (we a0 r l tcs)
-      (wchain_lt_wf _ Hch) _ _).
-    - intros k t s. apply (wt_pend N W T a0 r l Ha0 Hmax tcs Hinv Hch).
-    - intros k t s. apply (wt_holder N W T a0 r l Ha0 Hmax tcs Hinv Hch).
-    - intros k t. apply (lf_local_progress N W T a0 r l Ha0 Hmax tcs Hinv Hch).
+      (wchain_lt_wf _ Hch (wk_ranked N W T a0 r l Ha0 Hmax tcs Hinv Hch HWr 0)) _ _).
+    - intros k t s. apply (wt_pend N W T a0 r l Ha0 Hmax tcs Hinv Hch HWr).
+    - intros k t s. apply (wt_holder N W T a0 r l Ha0 Hmax tcs Hinv Hch HWr).
+    - intros k t. apply (lf_local_progress N W T a0 r l Ha0 Hmax tcs Hinv Hch HWr).
     - exact (soup_no_tau_divergence N W T a Hs).
     - exact (soup_links_restricted N W T a Hs).
-    - intros k t s s'. apply (wt_uniq N W T a0 r l Ha0 Hmax tcs Hinv Hch).
-    - intros k t. apply (lf_pers N W T a0 r l Ha0 Hmax tcs Hinv Hch).
-    - intros k t. apply (lf_fuel N W T a0 r l Ha0 Hmax tcs Hinv Hch).
-    - intros k t. apply (lf_stab N W T a0 r l Ha0 Hmax tcs Hinv Hch).
-    - intros k t s. apply (lf_rank N W T a0 r l Ha0 Hmax tcs Hinv Hch).
+    - intros k t s s'. apply (wt_uniq N W T a0 r l Ha0 Hmax tcs Hinv Hch HWr).
+    - intros k t. apply (lf_pers N W T a0 r l Ha0 Hmax tcs Hinv Hch HWr).
+    - intros k t. apply (lf_fuel N W T a0 r l Ha0 Hmax tcs Hinv Hch HWr).
+    - intros k t. apply (lf_stab N W T a0 r l Ha0 Hmax tcs Hinv Hch HWr).
+    - intros k t s. apply (lf_rank N W T a0 r l Ha0 Hmax tcs Hinv Hch HWr).
   Qed.
 
   (** One soup state for every index. *)
@@ -606,17 +611,17 @@ Section adequacy.
   Qed.
 
   (** ∅ ⊪^N _ W p : T ⟹ lock_free p. *)
-  Theorem lf_adequacy N W T p : ∅ ⊪^N _ W p : T → lock_free p.
-  Proof. intros HP. destruct (lf_sem_state N W ∅ p T HP) as (a & <- & Hs). by apply (lf_adequacy_soup N W T a). Qed.
+  Theorem lf_adequacy N W T p : wranked W → ∅ ⊪^N _ W p : T → lock_free p.
+  Proof. intros HWr HP. destruct (lf_sem_state N W ∅ p T HP) as (a & <- & Hs). by apply (lf_adequacy_soup N W T a). Qed.
 
   (** ∅ ⊪^N _ W p : T ⟹ every weakly fair maximal run makes every
       thread progress: from every position on, every thread later stops or
       takes part in a channel step. *)
-  Theorem lf_thread_progress N W T p :
+  Theorem lf_thread_progress N W T p : wranked W →
     ∅ ⊪^N _ W p : T →
     ∀ r l, erase (r 0) = p → maximal r l → wfair r l → thread_progress_run r l.
   Proof.
-    intros HP. pose proof (lf_adequacy N W T p HP) as Hlf.
+    intros HWr HP. pose proof (lf_adequacy N W T p HWr HP) as Hlf.
     destruct (lf_sem_state N W ∅ p T HP) as (a & <- & Hs).
     apply thread_progress; [done|exact (soup_no_tau_divergence N W T a Hs)|exact (soup_links_restricted N W T a Hs)].
   Qed.

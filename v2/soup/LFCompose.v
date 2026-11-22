@@ -119,7 +119,7 @@ Qed.
     from the joined order ([wmodels_exists]), never from the ranks of a
     component. *)
 Definition lf_sems (N : nat) (W : sworld) (Σ : senv) (p : proc) (T : ty) : Prop :=
-  ∀ R, wmodels R W → Σ ⊪^N _ R p : T.
+  ∀ R, wmodels R W → wranked R → Σ ⊪^N _ R p : T.
 
 (** The rule P-Connect, with the premises of [p_connect]. The soup uses
     the channel conditions only. The second component is read at the
@@ -133,9 +133,9 @@ Theorem lf_p_connect N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
   C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
   lf_sems N (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
 Proof.
-  intros H1 H2 _ _ Hf H12 H1C H2C HC HC1 HC2 R HR. apply lf_soup_connect; try done.
-  - apply H1. by eapply wmodels_ext; [apply swext_join_l|].
-  - intros W' HW'. apply H2. eapply wmodels_mono; [exact HW'|].
+  intros H1 H2 _ _ Hf H12 H1C H2C HC HC1 HC2 R HR Hr. apply lf_soup_connect; try done.
+  - apply H1; [|done]. by eapply wmodels_ext; [apply swext_join_l|].
+  - intros W' HW'. apply H2; [|by apply (wext_ranked R W')]. eapply wmodels_mono; [exact HW'|].
     by eapply wmodels_ext; [apply swext_join_r|].
 Qed.
 
@@ -145,7 +145,7 @@ Qed.
 Lemma join_models W1 W2 :
   sworld_wf W1 → sworld_wf W2 → swf W1 → swf W2 →
   swf (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)) →
-  ∃ R, wmodels R (W1 ⊔ W2).
+  ∃ R, wranked R ∧ wmodels R (W1 ⊔ W2).
 Proof.
   intros Hw1 Hw2 HS1 HS2 HS. apply wmodels_exists; [by apply swjoin_wf|].
   by apply (wf_join_iff W1 W2 Hw1 Hw2).
@@ -168,12 +168,14 @@ Proof.
   - split; [apply wext_refl|]. eexists _, _, _. by apply soup_term.
 Qed.
 
-(** The thread of P-Term, typed at a finite N and guarded, in E[live]. *)
+(** The thread of P-Term, typed at a finite N and guarded, in E[live],
+    by the term theorem on the derivation at N itself
+    ([live_fundamental_ranked]), whose creations take (gen-new). *)
 Lemma typed_live (EM : excluded_middle) W R N Θ t T c n :
-  sworld_wf W → ∅ ⊢▷ t → Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} t : T ▷ c → wmodels R W →
+  sworld_wf W → ∅ ⊢▷ t → Θ ; hc_empty ; [] ⊢^(∅, None) _{W,Some N} t : T ▷ c → wmodels R W →
   t ∈ E[live]^R _ n⟦tenv_erase Θ ⊢ T⟧^∅.
 Proof.
-  intros HW Hg Hty HR. pose proof (live_fundamental_typed EM _ _ _ _ _ _ _ _ _ HW Hty Hg HR ∅ ∅ ltac:(by intros u Hu)
+  intros HW Hg Hty HR. pose proof (live_fundamental_ranked EM _ _ _ _ _ _ _ _ _ HW Hty Hg HR ∅ ∅ ltac:(by intros u Hu)
     n R ∅ Var (wext_refl _) (map_disjoint_empty_r _) eq_refl) as H.
   rewrite subst_ids, map_union_empty in H.
   assert (sf_den ∅ ∅ (∅, None) = ∅) as E.
@@ -194,7 +196,7 @@ Theorem lf_p_term (EM : excluded_middle) W N Σ ΘB C0 t T c :
   ∅ ⊢▷ t →
   lf_sems N W Σ (C0, {[+ t +]}) T.
 Proof.
-  intros HW Hp HB HΣ Hd Hty Hg R HR.
+  intros HW Hp HB HΣ Hd Hty Hg R HR _.
   assert (cr_tk (tenv_of (fhalf (Some N)) Σ ∪ ΘB)) as Hcr.
   { intros o te Hte. apply lookup_union_Some_raw in Hte as [Hte|[_ Hte]].
     - unfold tenv_of in Hte. apply lookup_fmap_Some in Hte as (y & <- & _). apply fle_refl.
@@ -214,8 +216,8 @@ Qed.
 Theorem lf_sems_adequacy (EM : excluded_middle) (FC : functional_choice) N W p T :
   sworld_wf W → swf W → lf_sems N W ∅ p T → lock_free p.
 Proof.
-  intros Hwf HW Hs. destruct (wmodels_exists W Hwf HW) as [R HR].
-  exact (lf_adequacy EM FC N R T p (Hs R HR)).
+  intros Hwf HW Hs. destruct (wmodels_exists W Hwf HW) as (R & Hr & HR).
+  exact (lf_adequacy EM FC N R T p Hr (Hs R HR Hr)).
 Qed.
 
 (** Two closed components over a cut, each at its own static world, are
@@ -230,8 +232,8 @@ Theorem lf_connect_adequacy (EM : excluded_middle) (FC : functional_choice) N W1
   lock_free (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2).
 Proof.
   intros H1 H2 Hf HC HC1 HC2 Hw1 Hw2 HS1 HS2 HS.
-  destruct (join_models W1 W2 Hw1 Hw2 HS1 HS2 HS) as [R HR].
-  apply (lf_adequacy EM FC N R T).
+  destruct (join_models W1 W2 Hw1 Hw2 HS1 HS2 HS) as (R & Hr & HR).
+  apply (lf_adequacy EM FC N R T); [done|].
   pose proof (lf_p_connect N W1 W2 ∅ ∅ ΣC C1 C2 E1 E2 T) as Hc.
   assert (chans_of (∅ : senv) = ∅) as E0 by (unfold chans_of; by rewrite dom_empty_L, set_map_empty).
   rewrite E0, !(left_id_L ∅ (∪)) in Hc.

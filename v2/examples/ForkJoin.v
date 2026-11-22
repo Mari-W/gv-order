@@ -204,11 +204,11 @@ Proof.
   - assert (tenv_of (fhalf None) ∅ ∪ ∅ = tenv_df ∅) as ->.
     { unfold tenv_of, tenv_df. by rewrite !fmap_empty, map_union_empty. }
     apply fj_dftyped.
-  - apply sw_empty_ok.
+  - apply sw_empty_wok.
 Qed.
 
-Theorem fj_deadlock_free : excluded_middle → deadlock_free (∅, {[+ fj_main +]}).
-Proof. intros EM. exact (soundness sw_empty _ TUnit EM fj_term). Qed.
+Theorem fj_deadlock_free : deadlock_free (∅, {[+ fj_main +]}).
+Proof. exact (soundness sw_empty _ TUnit fj_term). Qed.
 
 (** ** Why the recursion does not type
 

@@ -336,18 +336,29 @@ Proof.
   unfold pshift. simpl. intros [=]. lia.
 Qed.
 
-(** Every fact of an opened (wf-new) constraint ends in the tree of 0. *)
-Lemma wf_new_tree0 C x y :
-  wf_new C → bcs_at (bcs_inst (pshift 1) C) (ids 1) (FLt x y) → in_tree0 y.
+(** Every fact of C ends in the tree of the new root. (wf-new) asks it,
+    and so do constraints that satisfy (acyc-new) with no exit and no
+    entry. *)
+Definition tree_ends (C : bcs) : Prop :=
+  ∀ x y, bc_facts C (FLt x y) → fact_scoped (1 + length (bc_env C)) (FLt x y) → in_tree0 y.
+
+(** Every fact of an opened constraint whose facts end in the tree of 0
+    ends there. *)
+Lemma tree_ends_open C x y :
+  tree_ends C → bcs_at (bcs_inst (pshift 1) C) (ids 1) (FLt x y) → in_tree0 y.
 Proof.
-  intros [HC _] Hat. destruct C as [env P].
+  intros HC Hat. destruct C as [env P].
   apply bcs_at_iff in Hat as ([x0 y0] & Hf & Hs & Heq). cbn [bcs_inst bc_env bc_facts] in *.
   rewrite length_fmap in Hs. injection Heq as -> ->.
   pose proof (HC x0 y0 Hf Hs) as Hy0.
   unfold in_tree0 in *. rewrite pt_root_inst_var, Hy0. done.
 Qed.
 
-Lemma slt_open_out W Γ C x y : facts_const W → wf_new C →
+Lemma wf_new_tree0 C x y :
+  wf_new C → bcs_at (bcs_inst (pshift 1) C) (ids 1) (FLt x y) → in_tree0 y.
+Proof. intros [HC _]. by apply tree_ends_open. Qed.
+
+Lemma slt_open_out_te W Γ C x y : facts_const W → tree_ends C →
   slt W (hc_open 1 C Γ) x y → ¬ in_tree0 y →
   ¬ in_tree0 x ∧ ∀ z, slt W Γ (pt_inst (plist [z]) x) (pt_inst (plist [z]) y).
 Proof.
@@ -361,9 +372,22 @@ Proof.
       split; [apply pshift_not_tree0|]. intros z.
       rewrite !pshift_back by done. apply fl_h. by exists C0, ys0.
     + apply list_elem_of_singleton in Hin. injection Hin as -> ->.
-      exfalso. apply Hy. by apply (wf_new_tree0 C x y).
+      exfalso. apply Hy. by apply (tree_ends_open C x y).
   - destruct (IH2 Hy) as [Hw IH2']. destruct (IH1 Hw) as [Hx IH1'].
     split; [done|]. intros z. eapply sl_trans; [apply IH1'|apply IH2'].
+Qed.
+
+Lemma slt_open_out W Γ C x y : facts_const W → wf_new C →
+  slt W (hc_open 1 C Γ) x y → ¬ in_tree0 y →
+  ¬ in_tree0 x ∧ ∀ z, slt W Γ (pt_inst (plist [z]) x) (pt_inst (plist [z]) y).
+Proof. intros Hwf [HC _]. by apply slt_open_out_te. Qed.
+
+(** Conservativity when every fact ends in the tree of the new root. *)
+Lemma cons_tree W Γ C : facts_const W → tree_ends C → cons_open W Γ 1 C.
+Proof.
+  intros Hwf HC x y H.
+  destruct (slt_open_out_te W Γ C _ _ Hwf HC H (pshift_not_tree0 y)) as [_ H'].
+  specialize (H' (pvar 0)). by rewrite !pshift_back in H' by done.
 Qed.
 
 (** Conservativity under (wf-new). *)

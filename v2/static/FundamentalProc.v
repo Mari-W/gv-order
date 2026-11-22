@@ -14,10 +14,11 @@
     by [sem_p_connect], whose side condition [conn] the premises of the
     rule give ([fptyped_conn]). The results
     hold at every fuel N, ⊢_W is the instance N = ∞. The process
-    theorems read a ranked world R that models the static world W
-    ([wmodels]). A process derivation sits over a well-founded static
-    world ([fptyped_wf]), so such an R exists ([wmodels_exists]) and
-    soundness asks nothing of W. *)
+    theorems read a strict world R that models the static world W
+    ([wmodels]). A process derivation at N = ∞ sits over an acyclic
+    static world ([fptyped_wf]), so such an R exists, constructively
+    ([dmodels_exists]), and soundness asks nothing of W and takes no
+    excluded middle (docs/redesign/check-df-acyclic.md). *)
 
 From GV Require Export compat.PTerm static.Fundamental static.Hiding.
 From GV Require Import compat.Conv.
@@ -97,11 +98,11 @@ Qed.
 
     The deadlock-free judgment composes the way the lock-free one does
     (soup/LFCompose.v, [lf_p_connect]). Each component is read at every
-    ranked world that models its own static world, and a ranked world of
-    the join models both. P holds a process itself at a ranked world, with
+    strict world that models its own static world, and a strict world of
+    the join models both. P holds a process itself at a strict world, with
     no starting state, so both components are read at that one world. *)
 Definition sem_ptyped_sw (κ : ctable) (W : sworld) (Σ : senv) (p : proc) (T : ty) : Prop :=
-  ∀ R, wmodels R W → sem_ptyped κ R Σ p T.
+  ∀ R, wmodels R W → wstrict R → sem_ptyped κ R Σ p T.
 
 Lemma sem_p_connect_sw κ W1 W2 Σ1 ΣC Σ2 ΣD p1 p2 T :
   tfree T →
@@ -109,9 +110,9 @@ Lemma sem_p_connect_sw κ W1 W2 Σ1 ΣC Σ2 ΣD p1 p2 T :
   conn Σ1 ΣC p1.1 Σ2 ΣD p2.1 →
   sem_ptyped_sw κ (W1 ⊔ W2) (Σ1 ∪ Σ2) (pconn p1 p2 (chans_of ΣC)) T.
 Proof.
-  intros HT H1 H2 Hc R HR n. apply (sem_p_connect κ n R Σ1 ΣC Σ2 ΣD); [done| | |done].
-  - apply H1. by eapply wmodels_ext; [apply swext_join_l|].
-  - apply H2. by eapply wmodels_ext; [apply swext_join_r|].
+  intros HT H1 H2 Hc R HR HS n. apply (sem_p_connect κ n R Σ1 ΣC Σ2 ΣD); [done| | |done].
+  - apply H1; [|done]. by eapply wmodels_ext; [apply swext_join_l|].
+  - apply H2; [|done]. by eapply wmodels_ext; [apply swext_join_r|].
 Qed.
 
 (** ** One induction for every cost table *)
@@ -119,21 +120,21 @@ Qed.
 Section proc.
   Context (κ : ctable) (G : expr → Prop).
   Context (Hthr : ∀ W R N Θ t T c, sworld_wf W → Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} t : T ▷ c →
-                    G t → wmodels R W → sem_typed κ R (tenv_df Θ) (lenv_df []) (∅, None) t (ty_df T)).
+                    G t → wmodels R W → wstrict R → sem_typed κ R (tenv_df Θ) (lenv_df []) (∅, None) t (ty_df T)).
 
   Lemma proc_gen N W Σ p T : fptyped N W Σ p T → (∀ t, t ∈ p.2 → G t) →
-    ∀ R, wmodels R W → sem_ptyped κ R Σ p T.
+    ∀ R, wmodels R W → wstrict R → sem_ptyped κ R Σ p T.
   Proof.
     induction 1 as
       [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Ht HW
       |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T H1 IH1 H2 IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 HJ];
-      intros HG R HR n; simpl in HG.
+      intros HG R HR HS n; simpl in HG.
     - apply (sem_p_term κ n R _ Σ (tenv_erase ΘB) C0 t T Hp (pterm_sth N Σ ΘB C0 HB HΣ Hpf Hd)).
       assert (G t) as Hg by (apply HG; multiset_solver).
-      apply typed_E. exact (Hthr W R N _ t T c (proj1 HW) Ht Hg HR).
+      apply typed_E. exact (Hthr W R N _ t T c (proj1 HW) Ht Hg HR HS).
     - pose proof (fptyped_conn _ _ _ _ _ _ _ _ _ _ _ H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2) as Hc.
       refine (sem_p_connect κ n R Σ1 ΣC Σ2 (senv_dual ΣC) (C1, E1) (C2, E2) T (fptyped_tfree _ _ _ _ _ H1)
-                (IH1 _ R _ n) (IH2 _ R _ n) Hc).
+                (IH1 _ R _ HS n) (IH2 _ R _ HS n) Hc).
       + intros t Ht; apply HG; simpl; multiset_solver.
       + by eapply wmodels_ext; [apply swext_join_l|].
       + intros t Ht; apply HG; simpl; multiset_solver.
@@ -143,42 +144,42 @@ End proc.
 
 (** ** The theorems of A.3 *)
 
-Theorem fundamental_proc (EM : excluded_middle) W R Σ p T : fptyped None W Σ p T → wmodels R W → Σ ⊨_R p : T.
+Theorem fundamental_proc W R Σ p T : fptyped None W Σ p T → wmodels R W → wstrict R → Σ ⊨_R p : T.
 Proof.
-  intros Hty HR. refine (proc_gen κ_DF (λ _, True) _ None W Σ p T Hty _ R HR); [|done].
-  intros W' R' N Θ t T' c HW' Ht _ HR'. exact (fundamental_typed EM W' R' N Θ [] (∅, None) t T' c HW' Ht HR').
+  intros Hty HR HS. refine (proc_gen κ_DF (λ _, True) _ None W Σ p T Hty _ R HR HS); [|done].
+  intros W' R' N Θ t T' c HW' Ht _ HR' HS'. exact (fundamental_typed W' R' N Θ [] (∅, None) t T' c HW' Ht HR' HS').
 Qed.
 
-Theorem live_fundamental_proc (EM : excluded_middle) W R Σ p T : fptyped None W Σ p T → ⊢▷ p → wmodels R W → Σ ⊫_R p : T.
+Theorem live_fundamental_proc W R Σ p T : fptyped None W Σ p T → ⊢▷ p → wmodels R W → wstrict R → Σ ⊫_R p : T.
 Proof.
-  intros Hty Hg HR. refine (proc_gen κ_L (lguard ∅) _ None W Σ p T Hty Hg R HR).
-  intros W' R' N Θ t T' c HW' Ht Hgt HR'. exact (live_fundamental_typed EM W' R' N Θ [] (∅, None) t T' c HW' Ht Hgt HR').
+  intros Hty Hg HR HS. refine (proc_gen κ_L (lguard ∅) _ None W Σ p T Hty Hg R HR HS).
+  intros W' R' N Θ t T' c HW' Ht Hgt HR' HS'. exact (live_fundamental_typed W' R' N Θ [] (∅, None) t T' c HW' Ht Hgt HR' HS').
 Qed.
 
-(** A typed process sits over a well-founded static world, which a ranked
-    world models ([wmodels_exists]). *)
-Theorem soundness W p T : excluded_middle → fptyped None W ∅ p T → deadlock_free p.
+(** A typed process sits over an acyclic static world, which a strict
+    world models ([dmodels_exists]). *)
+Theorem soundness W p T : fptyped None W ∅ p T → deadlock_free p.
 Proof.
-  intros EM Hty. destruct (fptyped_wf _ _ _ _ _ Hty) as [Hwf HW].
-  destruct (wmodels_exists W Hwf HW) as [R HR].
-  apply (adequacy R T p). by apply (fundamental_proc EM W).
+  intros Hty. destruct (fptyped_wf _ _ _ _ _ Hty) as [Hwf HW].
+  destruct (dmodels_exists W Hwf HW) as (R & HS & HR).
+  apply (adequacy R T p). by apply (fundamental_proc W).
 Qed.
 
-Theorem live_soundness W p T : excluded_middle → fptyped None W ∅ p T → ⊢▷ p →
+Theorem live_soundness W p T : fptyped None W ∅ p T → ⊢▷ p →
   deadlock_free p ∧ no_tau_divergence p.
 Proof.
-  intros EM Hty Hg. destruct (fptyped_wf _ _ _ _ _ Hty) as [Hwf HW].
-  destruct (wmodels_exists W Hwf HW) as [R HR].
-  apply (live_adequacy R T p). by apply (live_fundamental_proc EM W).
+  intros Hty Hg. destruct (fptyped_wf _ _ _ _ _ Hty) as [Hwf HW].
+  destruct (dmodels_exists W Hwf HW) as (R & HS & HR).
+  apply (live_adequacy R T p). by apply (live_fundamental_proc W).
 Qed.
 
 (** One closed thread of the DF judgment, with no creation constraint. *)
-Theorem soundness_source W t T : excluded_middle → sworld_wf W → swf W → tfree T →
+Theorem soundness_source W t T : sworld_wf W → sacyc W → tfree T →
   ∅ ; hc_empty ; [] ⊢^(∅, None) _ W t : T → deadlock_free (∅, {[+ t +]}).
 Proof.
-  intros EM Hwf HW HT Ht. destruct (wmodels_exists W Hwf HW) as [R HR].
+  intros Hwf HW HT Ht. destruct (dmodels_exists W Hwf HW) as (R & HS & HR).
   apply (adequacy R T _). intros n.
-  pose proof (fundamental EM W R ∅ [] (∅, None) t T Hwf Ht HR ∅ ∅ ltac:(by intros u Hu) n R ∅ Var (wext_refl _)
+  pose proof (fundamental W R ∅ [] (∅, None) t T Hwf Ht HR HS ∅ ∅ ltac:(by intros u Hu) n R ∅ Var (wext_refl _)
                 (map_disjoint_empty_r _) eq_refl) as H.
   rewrite subst_ids, map_union_empty, tenv_erase_empty in H.
   assert (sf_den ∅ ∅ (∅, None) = ∅) as E.
@@ -191,60 +192,60 @@ Qed.
 (** ** The hidden judgment
 
     A process typed with hiding is read at a whole world that hides to
-    its world ([sem_ptyped_h]): some well-founded W whose order between
+    its world ([sem_ptyped_h]): some acyclic W whose order between
     interface points lies in the hidden world, with the component in
-    the relation at every ranked world that models W. P-Connect reads
+    the relation at every strict world that models W. P-Connect reads
     the two interface worlds ([sem_p_connect_h]) once the private
     constants of the two whole worlds are apart, which renaming provides
     ([rename_side], static/Hiding.v). The fundamental theorem goes
     through the translation [ptyped_full]. *)
 Definition sem_ptyped_h (κ : ctable) (Wi : sworld) (Σ : senv) (p : proc) (T : ty) : Prop :=
-  ∃ W, sworld_wf W ∧ swf W ∧ hides W (iface Σ T) Wi ∧ sem_ptyped_sw κ W Σ p T.
+  ∃ W, sworld_wf W ∧ sacyc W ∧ hides W (iface Σ T) Wi ∧ sem_ptyped_sw κ W Σ p T.
 
 Theorem sem_p_connect_h κ V1 V2 W1 W2 Σ1 ΣC Σ2 p1 p2 T :
-  tfree T → sworld_wf V1 → sworld_wf V2 → swf V1 → swf V2 →
+  tfree T → sworld_wf V1 → sworld_wf V2 → sacyc V1 → sacyc V2 →
   sem_ptyped_sw κ V1 (Σ1 ∪ ΣC) p1 T → sem_ptyped_sw κ V2 (Σ2 ∪ senv_dual ΣC) p2 TUnit →
   conn Σ1 ΣC p1.1 Σ2 (senv_dual ΣC) p2.1 →
   hides V1 (iface (Σ1 ∪ ΣC) T) W1 → hides V2 (iface (Σ2 ∪ senv_dual ΣC) TUnit) W2 →
   (∀ a, a ∈ sw_consts V1 → a ∉ iface (Σ1 ∪ ΣC) T → a ∉ iface (Σ2 ∪ senv_dual ΣC) TUnit) →
   (∀ a, a ∈ sw_consts V2 → a ∉ iface (Σ2 ∪ senv_dual ΣC) TUnit → a ∉ sw_consts V1 ∪ iface (Σ1 ∪ ΣC) T) →
-  swf (W1 ⊔ W2) →
+  sacyc (W1 ⊔ W2) →
   sem_ptyped_h κ (swrestrict (W1 ⊔ W2) (iface (Σ1 ∪ Σ2) T)) (Σ1 ∪ Σ2) (pconn p1 p2 (chans_of ΣC)) T.
 Proof.
   intros HT Hw1 Hw2 HS1 HS2 H1 H2 Hc Hh1 Hh2 Hav1 Hav2 HS.
-  destruct (connect_hidden V1 V2 W1 W2 _ _ (iface (Σ1 ∪ Σ2) T) Hw1 Hw2 Hh1 Hh2 Hav1 Hav2
+  destruct (connect_hidden None V1 V2 W1 W2 _ _ (iface (Σ1 ∪ Σ2) T) Hw1 Hw2 Hh1 Hh2 Hav1 Hav2
               (iface_connect _ _ _ _) HS) as [HR Hh].
-  exists (V1 ⊔ V2). split_and!; [by apply swjoin_wf|by apply (wf_join_iff V1 V2 Hw1 Hw2)|exact Hh|].
+  exists (V1 ⊔ V2). split_and!; [by apply swjoin_wf|by apply (acyc_join_iff V1 V2 Hw1 Hw2)|exact Hh|].
   by apply (sem_p_connect_sw κ V1 V2 Σ1 ΣC Σ2 (senv_dual ΣC)).
 Qed.
 
-Theorem fundamental_proc_h (EM : excluded_middle) W Σ p T : Σ ⊢_W p : T → sem_ptyped_h κ_DF W Σ p T.
+Theorem fundamental_proc_h W Σ p T : Σ ⊢_W p : T → sem_ptyped_h κ_DF W Σ p T.
 Proof.
   intros Hty. destruct (ptyped_full _ _ _ _ _ Hty) as (W' & Hf & Hh). destruct (fptyped_wf _ _ _ _ _ Hf).
-  exists W'. split_and!; try done. intros R HR. by apply (fundamental_proc EM W').
+  exists W'. split_and!; try done. intros R HR HS. by apply (fundamental_proc W').
 Qed.
 
-Theorem live_fundamental_proc_h (EM : excluded_middle) W Σ p T : Σ ⊢_W p : T → ⊢▷ p → sem_ptyped_h κ_L W Σ p T.
+Theorem live_fundamental_proc_h W Σ p T : Σ ⊢_W p : T → ⊢▷ p → sem_ptyped_h κ_L W Σ p T.
 Proof.
   intros Hty Hg. destruct (ptyped_full _ _ _ _ _ Hty) as (W' & Hf & Hh). destruct (fptyped_wf _ _ _ _ _ Hf).
-  exists W'. split_and!; try done. intros R HR. by apply (live_fundamental_proc EM W').
+  exists W'. split_and!; try done. intros R HR HS. by apply (live_fundamental_proc W').
 Qed.
 
 Theorem adequacy_h W p T : sem_ptyped_h κ_DF W ∅ p T → deadlock_free p.
 Proof.
-  intros (W' & Hwf & HW & _ & Hs). destruct (wmodels_exists W' Hwf HW) as [R HR].
+  intros (W' & Hwf & HW & _ & Hs). destruct (dmodels_exists W' Hwf HW) as (R & HS & HR).
   apply (adequacy R T p). by apply Hs.
 Qed.
 
 Theorem live_adequacy_h W p T : sem_ptyped_h κ_L W ∅ p T → deadlock_free p ∧ no_tau_divergence p.
 Proof.
-  intros (W' & Hwf & HW & _ & Hs). destruct (wmodels_exists W' Hwf HW) as [R HR].
+  intros (W' & Hwf & HW & _ & Hs). destruct (dmodels_exists W' Hwf HW) as (R & HS & HR).
   apply (live_adequacy R T p). by apply Hs.
 Qed.
 
 (** Soundness of the hidden judgment. *)
-Theorem soundness_h W p T : excluded_middle → ∅ ⊢_W p : T → deadlock_free p.
-Proof. intros EM Hty. exact (adequacy_h W p T (fundamental_proc_h EM W ∅ p T Hty)). Qed.
+Theorem soundness_h W p T : ∅ ⊢_W p : T → deadlock_free p.
+Proof. intros Hty. exact (adequacy_h W p T (fundamental_proc_h W ∅ p T Hty)). Qed.
 
-Theorem live_soundness_h W p T : excluded_middle → ∅ ⊢_W p : T → ⊢▷ p → deadlock_free p ∧ no_tau_divergence p.
-Proof. intros EM Hty Hg. exact (live_adequacy_h W p T (live_fundamental_proc_h EM W ∅ p T Hty Hg)). Qed.
+Theorem live_soundness_h W p T : ∅ ⊢_W p : T → ⊢▷ p → deadlock_free p ∧ no_tau_divergence p.
+Proof. intros Hty Hg. exact (live_adequacy_h W p T (live_fundamental_proc_h W ∅ p T Hty Hg)). Qed.
