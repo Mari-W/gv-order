@@ -884,7 +884,7 @@ window.MAP = {
       "df",
       "lf"
      ],
-     "rocq": "static/Contexts.v: tsub, static/Typing.v: e_sub; static/Conservativity.v: d_conv; static/Typing.v: e_sub; static/Conservativity.v: d_conv; static/Weakening.v: e_weak, e_contract, d_weak, d_contract, typed_rename",
+     "rocq": "static/Contexts.v: tsub, static/Typing.v: e_sub; static/Conservativity.v: d_conv; static/Typing.v: e_sub; static/Conservativity.v: d_conv; static/Weakening.v: e_weak, e_contract, d_weak, d_contract, typed_rename, typed_weaken_head, dftyped_rename, dftyped_weaken_head",
      "tex": "\\begin{array}{c}\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-sess}{S \\htmlData{k=sty.sequiv}{\\simeq} S'}\\quad \\annot{\\htmlData{k=tp.sub-credit}{a' \\leq a}}\\end{array}}{\\htmlData{k=sub.tsub}{S_x\\annot{^{a,m}} \\leq {S'}_x\\annot{^{a',m}}}}\\;\\textsf{Sub-Sess} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}\\quad \\annot{\\htmlData{k=tp.sub-credit}{a' \\leq a}} \\\\ \\htmlData{k=tp.sub-var}{\\htmlData{k=sub.tsub}{T_1' \\leq T_1} \\quad \\htmlData{k=sub.tsub}{U \\leq U'}}\\end{array}}{(T_1 \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}[\\varepsilon]\\,U)\\annot{^{a}} \\leq (T_1' \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}[\\varepsilon']\\,U')\\annot{^{a'}}}\\;\\textsf{Sub-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}\\quad \\htmlData{k=tp.sub-teq}{U \\equiv U'}\\quad \\htmlData{k=tp.sub-boxc}{\\bar\\alpha \\neq \\varnothing \\Rightarrow U = U' \\vee \\htmlData{k=sty.contr}{\\mathsf{contr}}\\,U, U'}\\end{array}}{\\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}[\\varepsilon]\\,U) \\leq \\Box(\\ldots[\\varepsilon']\\,U')}\\;\\textsf{Sub-Box} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-ex}{\\Gamma, C(\\bar\\iota) \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} C'(\\bar\\iota)}\\quad \\htmlData{k=tp.sub-exlb}{l' = l \\lor \\Gamma, C(\\bar\\iota) \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} l' \\preccurlyeq T} \\\\ \\htmlData{k=tp.sub-exbody}{\\Gamma, C(\\bar\\iota) \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} T \\leq T'}\\end{array}}{\\Gamma \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} \\htmlData{k=sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l'}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-agg}{\\htmlData{k=sub.tsub}{T_1 \\leq T_1'} \\quad \\htmlData{k=sub.tsub}{T_2 \\leq T_2'}}\\end{array}}{T_1 \\otimes T_2 \\leq T_1' \\otimes T_2' \\qquad T_1 \\oplus T_2 \\leq T_1' \\oplus T_2'}\\;\\textsf{Sub-Prod, Sub-Sum}\\end{array}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\quad \\htmlData{k=sub.tsub}{T \\leq T'}\\quad \\htmlData{k=E-Sub.contr}{\\htmlData{k=sty.contr}{\\mathsf{contr}}\\,T \\Rightarrow \\mathsf{contr}\\,T'}\\annraw{\\quad }\\annot{\\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T'\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon'}}\\;\\textsf{E-Sub}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\quad \\Gamma ; \\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,U}\\quad \\Gamma ; \\Delta, U, U \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta, U \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e[1 \\mapsto 0] : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Contract}\\end{array}\\end{array}",
      "caption": "Subtyping is $\\approx$ on session types. An existential may weaken its constraint to facts that $\\Gamma$ and the constraint entail, and may lower its lower bound $l$ to a bound $l'$ that each head of the body lies at or above. \\annp{Credits may decrease, and costs may increase.} Weakening and contraction are admissible, because they are renamings of variables. Sub-Ex is proved against the clause for existentials of [[v-rel]].",
      "variants": {
@@ -1255,7 +1255,7 @@ window.MAP = {
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\htmlData{k=th.Erel}{E\\annot{[\\kappa]}^{R}_{\\alpha}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\htmlData{k=th.Prel}{P\\annot{[\\kappa]}^{R}_{\\alpha}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.sem-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.conn}{\\mathsf{conn}} \\\\ \\land\\ p_1 \\in \\htmlData{k=th.Prel}{P^{R}_{\\alpha}\\llbracket \\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket} \\\\ \\land\\ p_2 \\in \\htmlData{k=th.Prel}{P^{R}_{\\alpha}\\llbracket \\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.par}{p_1 \\parallel_{\\Sigma_C} p_2} \\in \\htmlData{k=th.Prel}{P^{R}_{\\alpha}\\llbracket \\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.sem-p-connect-sw}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.conn}{\\mathsf{conn}} \\land \\Sigma_1 \\cup \\Sigma_C \\htmlData{k=sj.sw}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}_{W_1} p_1 : T \\\\ \\land\\ \\Sigma_2 \\cup \\Sigma_D \\htmlData{k=sj.sw}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}_{W_2} p_2 : \\ast\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma_1 \\cup \\Sigma_2 \\htmlData{k=sj.sw}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}_{W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land N \\in \\mathbb{N} \\land \\htmlData{k=th.ptermprem}{\\mathsf{pterm}_N(\\Sigma, C_0, t, T)} \\\\ \\land\\ \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sp.lfsem}{\\Vvdash\\annot{^{N}}}_W (C_0, \\{t\\}) : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=th.conn}{\\mathsf{conn}} \\land \\Sigma_1 \\cup \\Sigma_C \\htmlData{k=sp.lfsem}{\\Vvdash\\annot{^{N}}}_{W_1} p_1 : T \\\\ \\land\\ \\Sigma_2 \\cup \\Sigma_D \\htmlData{k=sp.lfsem}{\\Vvdash\\annot{^{N}}}_{W_2} p_2 : \\ast\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma_1 \\cup \\Sigma_2 \\htmlData{k=sp.lfsem}{\\Vvdash\\annot{^{N}}}_{W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T\\end{array}}}\\end{array}",
+     "tex": "\\begin{array}{l}\\htmlData{k=th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\htmlData{k=th.Erel}{E\\annot{[\\kappa]}^{R}_{\\alpha}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\htmlData{k=th.Prel}{P\\annot{[\\kappa]}^{R}_{\\alpha}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.sem-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.conn}{\\mathsf{conn}} \\\\ \\land\\ p_1 \\in \\htmlData{k=th.Prel}{P^{R}_{\\alpha}\\llbracket \\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket} \\\\ \\land\\ p_2 \\in \\htmlData{k=th.Prel}{P^{R}_{\\alpha}\\llbracket \\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.par}{p_1 \\parallel_{\\Sigma_C} p_2} \\in \\htmlData{k=th.Prel}{P^{R}_{\\alpha}\\llbracket \\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.sem-p-connect-sw}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.conn}{\\mathsf{conn}} \\land \\Sigma_1 \\cup \\Sigma_C \\htmlData{k=sj.sw}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}_{W_1} p_1 : T \\\\ \\land\\ \\Sigma_2 \\cup \\Sigma_D \\htmlData{k=sj.sw}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}_{W_2} p_2 : \\ast\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma_1 \\cup \\Sigma_2 \\htmlData{k=sj.sw}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}_{W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land N \\in \\mathbb{N} \\land \\htmlData{k=th.ptermprem}{\\mathsf{pterm}_N(\\Sigma, C_0, t, T)} \\\\ \\land\\ \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sp.lfsem}{\\Vvdash\\annot{^{N}}}_W (C_0, \\{t\\}) : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=th.conn}{\\mathsf{conn}} \\land \\Sigma_1 \\cup \\Sigma_C \\htmlData{k=sp.lfsem}{\\Vvdash\\annot{^{N}}}_{W_1} p_1 : T \\\\ \\land\\ \\Sigma_2 \\cup \\Sigma_D \\htmlData{k=sp.lfsem}{\\Vvdash\\annot{^{N}}}_{W_2} p_2 : \\ast\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma_1 \\cup \\Sigma_2 \\htmlData{k=sp.lfsem}{\\Vvdash\\annot{^{N}}}_{W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soup-term}{\\begin{array}{l}\\begin{array}{l}N \\in \\mathbb{N} \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.chprem}{\\mathsf{chan}_N(\\Sigma, \\Theta_B, C_0)} \\\\ \\land\\ \\forall \\alpha.\\ t \\in \\htmlData{k=th.Erel}{E[\\kappa_L]^{R}_{\\alpha}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}} \\land t \\in \\htmlData{k=sr.FE}{F^{N}_{\\alpha}\\llbracket \\Theta\\annot{^{N}} \\vdash \\mathsf{thread}\\ !\\ \\infty\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sp.lfsem}{\\Vvdash\\annot{^{N}}}_R (C_0, \\{t\\}) : T\\end{array}}}\\end{array}",
      "caption": "A safe thread is a safe process, and two safe processes connected at dual interfaces form a safe process at one world. At static worlds two components compose at the join of their worlds. A component proved safe without typing therefore composes with typed components. \\annp{The same holds for the lock-free judgment at static worlds, whose components are read at each ranked model.}",
      "about": {
       "why": "P-Term and P-Connect hold in the relation, which makes the approach compositional.",
@@ -1272,7 +1272,7 @@ window.MAP = {
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.fundamental-proc}{\\begin{array}{l}\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sj.h}{\\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{h}}_W p : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-proc}{\\begin{array}{l}\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sj.h}{\\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{h}}_W p : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-fundamental}{\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} p : T \\land N \\in \\mathbb{N} \\land \\mathrel{\\htmlData{k=guard.proc}{\\vdash\\!\\triangleright}} p \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sp.lfsemh}{\\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}^{N,h}}_W p : T\\end{array}}}\\end{array}",
+     "tex": "\\begin{array}{l}\\htmlData{k=th.fundamental-proc}{\\begin{array}{l}\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sj.h}{\\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{h}}_W p : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-proc}{\\begin{array}{l}\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sj.h}{\\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{h}}_W p : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-fundamental}{\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} p : T \\land N \\in \\mathbb{N} \\land \\mathrel{\\htmlData{k=guard.proc}{\\vdash\\!\\triangleright}} p \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sp.lfsemh}{\\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}^{N,h}}_W p : T\\end{array}}} \\\\[1.5ex] \\htmlData{k=th.ptyped-full}{\\begin{array}{l}\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\exists W'.\\ \\Sigma \\htmlData{k=tp.fpjudg}{\\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{N,\\mathsf{full}}_{W'}} p : T \\land \\htmlData{k=sj.hides}{W' \\rightsquigarrow_{\\mathsf{I}(\\Sigma, T)} W}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.fptyped-ptyped}{\\begin{array}{l}\\Sigma \\htmlData{k=tp.fpjudg}{\\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{N,\\mathsf{full}}_{W}} p : T \\\\ \\quad\\Longrightarrow\\ \\exists W_i.\\ \\Sigma \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_i} p : T \\land {\\prec_{W_i}} \\subseteq {\\prec_W}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.typed-ren}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} e : T \\\\ \\quad\\Longrightarrow\\ \\pi\\Gamma ; \\pi\\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\pi F}_{\\pi W} e : \\pi T\\end{array}}\\end{array}",
      "caption": "A typed process is in the hidden semantic judgment, at some acyclic whole world that hides to its world. The proof goes through the full judgment with private constants renamed apart, by induction over P-Term and P-Connect with the composition rules. \\annp{Under excluded middle the same holds at a finite bound, with a well-founded whole world and the lock-free judgment.} Its cases are the rules of [[p-typing]] and the composition rules of [[th-compose]].",
      "about": {
       "why": "The fundamental theorem connects typing with the relation.",
@@ -1289,7 +1289,7 @@ window.MAP = {
       "lf"
      ],
      "rocq": "relation/Adequacy.v: adequacy, live_adequacy, adequacy_gen; static/FundamentalProc.v: adequacy_h, live_adequacy_h; soup/LFAdequacy.v: lf_adequacy, lf_thread_progress; soup/LFCompose.v: lf_sems_adequacy; soup/SoupTau.v: soup_no_tau_divergence; soup/SoupRun.v: lfsoup_step",
-     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.adequacy}{\\begin{array}{l}\\varnothing \\htmlData{k=sj.proc}{\\vDash}_R p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}} \\\\[1.5ex] \\htmlData{k=th.adequacy-h}{\\begin{array}{l}\\varnothing \\htmlData{k=sj.h}{\\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{h}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\annot{\\htmlData{k=th.lf-adequacy}{\\begin{array}{l}\\htmlData{k=w.kind}{\\mathsf{ranked}}\\,R \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash\\annot{^{N}}}_R p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-thread-progress}{\\begin{array}{l}\\htmlData{k=w.kind}{\\mathsf{ranked}}\\,R \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash\\annot{^{N}}}_R p : T \\\\ \\quad\\Longrightarrow\\ \\begin{array}{l}\\forall (r, l).\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,(\\htmlData{k=se.run}{r\\,0}) = p \\land \\htmlData{k=prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\htmlData{k=prop.wfair}{\\mathsf{wfair}}\\,(r, l) \\\\ \\quad \\Longrightarrow\\ \\htmlData{k=th.tpr}{\\mathsf{thread\\_progress\\_run}}\\,(r, l)\\end{array}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-sems-adequacy}{\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{FC}} \\land \\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\htmlData{k=w.lfworld}{\\mathsf{wf}}\\,W \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash\\annot{^{N}}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\end{array}}\\end{array}",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.adequacy}{\\begin{array}{l}\\varnothing \\htmlData{k=sj.proc}{\\vDash}_R p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}} \\\\[1.5ex] \\htmlData{k=th.adequacy-h}{\\begin{array}{l}\\varnothing \\htmlData{k=sj.h}{\\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{h}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-sub-df}{\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{FC}} \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.boxfree}{\\mathsf{boxfree}}\\,T \\land \\varnothing \\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}_R p : T \\\\ \\quad\\Longrightarrow\\ \\varnothing \\htmlData{k=sj.proc}{\\vDash}_R p : T\\end{array}}}\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\annot{\\htmlData{k=th.lf-adequacy}{\\begin{array}{l}\\htmlData{k=w.kind}{\\mathsf{ranked}}\\,R \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash\\annot{^{N}}}_R p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-thread-progress}{\\begin{array}{l}\\htmlData{k=w.kind}{\\mathsf{ranked}}\\,R \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash\\annot{^{N}}}_R p : T \\\\ \\quad\\Longrightarrow\\ \\begin{array}{l}\\forall (r, l).\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,(\\htmlData{k=se.run}{r\\,0}) = p \\land \\htmlData{k=prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\htmlData{k=prop.wfair}{\\mathsf{wfair}}\\,(r, l) \\\\ \\quad \\Longrightarrow\\ \\htmlData{k=th.tpr}{\\mathsf{thread\\_progress\\_run}}\\,(r, l)\\end{array}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-sems-adequacy}{\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{FC}} \\land \\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\htmlData{k=w.lfworld}{\\mathsf{wf}}\\,W \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash\\annot{^{N}}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-sems-h-adequacy}{\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{FC}} \\land \\varnothing \\htmlData{k=sp.lfsemh}{\\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}^{N,h}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-tp-gen}{\\begin{array}{l}\\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p \\land \\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}}\\,p \\land \\htmlData{k=th.linksr}{\\mathsf{links\\_restricted}}\\,p \\\\ \\quad\\Longrightarrow\\ \\begin{array}{l}\\forall (r, l).\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,(\\htmlData{k=se.run}{r\\,0}) = p \\land \\htmlData{k=prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\htmlData{k=prop.wfair}{\\mathsf{wfair}}\\,(r, l) \\\\ \\quad \\Longrightarrow\\ \\htmlData{k=th.tpr}{\\mathsf{thread\\_progress\\_run}}\\,(r, l)\\end{array}\\end{array}}}\\end{array}}\\end{array}",
      "caption": "A closed process in the semantic judgment at a world is deadlock free, and so is one in the hidden judgment. \\annp{A closed process in the lock-free judgment at a ranked world is lock free, and each thread progresses on each weakly fair maximal run. At a well-founded static world this needs excluded middle and functional choice.} The proof reads the readiness of [[rd]].",
      "about": {
       "why": "Adequacy connects the relation with the safety property.",
@@ -1318,8 +1318,8 @@ window.MAP = {
       "df",
       "lf"
      ],
-     "rocq": "static/FundamentalProc.v: soundness_source; soup/LFCompose.v: lf_soundness_source; static/Fundamental.v: typed_sem, wfit, fundamental, fundamental_typed, live_fundamental, live_fundamental_typed, live_fundamental_ranked; compat/Bind.v: Erel_bind; cost/CostFund.v: cost_fundamental, fsem_of_cost",
-     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.soundness-source}{\\begin{array}{l}\\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\htmlData{k=w.acyc}{\\mathsf{acyc}}\\,W \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{FC}} \\land \\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\htmlData{k=w.lfworld}{\\mathsf{wf}}\\,W \\land N \\in \\mathbb{N} \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\land\\ \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ c \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}\\\\[3ex]\\begin{array}{l}\\htmlData{k=th.fundamental}{\\begin{array}{l}\\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\htmlData{k=w.sat}{R \\mathrel{\\htmlData{k=sj.proc}{\\vDash}} W} \\land \\htmlData{k=w.kind}{\\mathsf{strict}}\\,R \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}^{F}_R t : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.fundamental-typed}{\\begin{array}{l}\\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\land \\htmlData{k=w.sat}{R \\mathrel{\\htmlData{k=sj.proc}{\\vDash}} W} \\land \\htmlData{k=w.kind}{\\mathsf{strict}}\\,R \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.df}{\\Delta_{df}} \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{F}_R t : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental}{\\begin{array}{l}\\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\land \\htmlData{k=w.sat}{R \\mathrel{\\htmlData{k=sj.proc}{\\vDash}} W} \\land \\htmlData{k=w.kind}{\\mathsf{strict}}\\,R \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{F}_R t : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-typed}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t \\land \\htmlData{k=w.sat}{R \\mathrel{\\htmlData{k=sj.proc}{\\vDash}} W} \\land \\htmlData{k=w.kind}{\\mathsf{strict}}\\,R\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_R t : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-ranked}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ N \\in \\mathbb{N} \\land \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t \\land \\htmlData{k=w.sat}{R \\mathrel{\\htmlData{k=sj.proc}{\\vDash}} W}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_R t : T_{df}\\end{array}}}\\end{array}\\\\[3ex]\\htmlData{k=th.Erel-bind}{\\begin{array}{l}\\begin{array}{l}e \\in \\htmlData{k=th.Erel}{E^{R}_{\\alpha}\\llbracket \\Theta_1 \\vdash T\\rrbracket^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{ap}}\\,\\Theta_2}} \\\\ \\land\\ \\forall R' \\htmlData{k=w.ext}{\\sqsupseteq} R,\\ \\beta \\leq \\alpha,\\ v \\in \\htmlData{k=th.Vrel}{V^{R'}_{\\beta}\\llbracket\\Theta_v \\vdash T\\rrbracket}. \\\\ \\qquad \\htmlData{k=se.frame}{f[v]} \\in \\htmlData{k=th.Erel}{E^{R'}_{\\beta}\\llbracket \\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=se.frame}{f[e]} \\in \\htmlData{k=th.Erel}{E^{R}_{\\alpha}\\llbracket \\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array}}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\htmlData{k=th.cost-fundamental}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=cs.csem}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{N} e : T\\ !\\ \\varepsilon}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.fsem-of-cost}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} e : T\\ !\\ c \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.crle}{\\mathsf{cr}(\\Delta) \\leq N} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\htmlData{k=th.styof}{\\Delta\\annot{^{N}}}\\,e}\\end{array}}\\end{array}}\\end{array}",
+     "rocq": "static/FundamentalProc.v: soundness_source; soup/LFCompose.v: lf_soundness_source; static/Fundamental.v: typed_sem, wfit, fundamental, fundamental_typed, live_fundamental, live_fundamental_typed, live_fundamental_ranked; examples/SemBranch.v: cl2_needs; examples/ForkJoin.v: fj_wait_needs; compat/Bind.v: Erel_bind; cost/CostFund.v: cost_fundamental, fsem_of_cost",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.soundness-source}{\\begin{array}{l}\\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\htmlData{k=w.acyc}{\\mathsf{acyc}}\\,W \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{FC}} \\land \\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\htmlData{k=w.lfworld}{\\mathsf{wf}}\\,W \\land N \\in \\mathbb{N} \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\land\\ \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ c \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}\\\\[3ex]\\begin{array}{l}\\htmlData{k=th.wfit}{\\mathsf{fit}_N\\,R \\iff \\htmlData{k=w.kind}{\\mathsf{strict}}\\,R\\annot{\\ \\lor\\ (\\htmlData{k=w.kind}{\\mathsf{ranked}}\\,R \\land N \\in \\mathbb{N} \\land \\htmlData{k=th.em}{\\mathsf{EM}})}} \\\\[1.5ex] \\htmlData{k=th.fundamental}{\\begin{array}{l}\\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\htmlData{k=w.sat}{R \\mathrel{\\htmlData{k=sj.proc}{\\vDash}} W} \\land \\htmlData{k=w.kind}{\\mathsf{strict}}\\,R \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}^{F}_R t : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.fundamental-typed}{\\begin{array}{l}\\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\land \\htmlData{k=w.sat}{R \\mathrel{\\htmlData{k=sj.proc}{\\vDash}} W} \\land \\htmlData{k=w.kind}{\\mathsf{strict}}\\,R \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.df}{\\Delta_{df}} \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{F}_R t : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental}{\\begin{array}{l}\\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\land \\htmlData{k=w.sat}{R \\mathrel{\\htmlData{k=sj.proc}{\\vDash}} W} \\land \\htmlData{k=w.kind}{\\mathsf{strict}}\\,R \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{F}_R t : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-typed}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t \\land \\htmlData{k=w.sat}{R \\mathrel{\\htmlData{k=sj.proc}{\\vDash}} W} \\land \\htmlData{k=w.kind}{\\mathsf{strict}}\\,R\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_R t : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-ranked}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ N \\in \\mathbb{N} \\land \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t \\land \\htmlData{k=w.sat}{R \\mathrel{\\htmlData{k=sj.proc}{\\vDash}} W}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_R t : T_{df}\\end{array}}}\\end{array}\\\\[3ex]\\htmlData{k=th.cl2-needs}{\\begin{array}{l}a \\neq b \\land \\Delta(a) = S_x \\land \\Delta(b) = {S'}_y \\land \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} \\htmlData{k=syn.letu}{\\mathsf{let}}\\ \\ast = \\htmlData{k=prim.close}{\\mathsf{close}}\\,a\\ \\htmlData{k=syn.letu}{\\mathsf{in}}\\ \\htmlData{k=prim.close}{\\mathsf{close}}\\,b : T \\\\ \\quad\\Longrightarrow\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} x \\prec \\overline{y}\\end{array}}\\\\[3ex]\\htmlData{k=th.Erel-bind}{\\begin{array}{l}\\begin{array}{l}e \\in \\htmlData{k=th.Erel}{E^{R}_{\\alpha}\\llbracket \\Theta_1 \\vdash T\\rrbracket^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{ap}}\\,\\Theta_2}} \\\\ \\land\\ \\forall R' \\htmlData{k=w.ext}{\\sqsupseteq} R,\\ \\beta \\leq \\alpha,\\ v \\in \\htmlData{k=th.Vrel}{V^{R'}_{\\beta}\\llbracket\\Theta_v \\vdash T\\rrbracket}. \\\\ \\qquad \\htmlData{k=se.frame}{f[v]} \\in \\htmlData{k=th.Erel}{E^{R'}_{\\beta}\\llbracket \\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=se.frame}{f[e]} \\in \\htmlData{k=th.Erel}{E^{R}_{\\alpha}\\llbracket \\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array}}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\htmlData{k=th.cost-fundamental}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=cs.csem}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{N} e : T\\ !\\ \\varepsilon}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.fsem-of-cost}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} e : T\\ !\\ c \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.crle}{\\mathsf{cr}(\\Delta) \\leq N} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\htmlData{k=th.styof}{\\Delta\\annot{^{N}}}\\,e}\\end{array}}\\end{array}}\\end{array}",
      "caption": "A closed program is sound as a one-thread process over an acyclic world. Typing a term implies the semantic term judgment at each strict world that models the static world, and $E$ is closed under evaluation frames. \\annp{With the guard a typed term is in the relation at $\\kappa_L$. At a finite bound and under excluded middle this holds at each model, ranked ones included, and a typed term at a finite bound has fuel.}",
      "about": {
       "why": "The proofs of the process results use these lemmas, each proved rule by rule.",
@@ -3560,7 +3560,7 @@ window.MAP = {
    "why": "No partner waits on an idle end. The fuel layer drops for idle ends the checks that counters are at least $1$, so they may be held indefinitely.",
    "breaks": "Nothing. It is a definition.",
    "example": "A control end that is passed around and never used is at $\\mathsf{Skip}$.",
-   "rocq": "types/Types.v: SSkip, idle",
+   "rocq": "types/Types.v: SSkip, idle; soup/Idle.v: idle_dual",
    "sig": "\\mathsf{Skip} \\in \\mathsf{STy}",
    "args": []
   },
@@ -12006,7 +12006,7 @@ window.MAP = {
    "why": "The lock-free judgment chooses $a$ at each index, and the existential property gives one $a$ for every index.",
    "breaks": "Nothing. It is a definition.",
    "example": "The state of two threads closing $c^{+}$ and $c^{-}$.",
-   "rocq": "soup/Soup.v: Soup, lf_sem; soup/SoupRun.v: lfsoup_step, lfsoup_step_all, lfsoup_run",
+   "rocq": "soup/Soup.v: Soup, lf_sem; soup/SoupRun.v: lfsoup_step, lfsoup_step_all, lfsoup_run, lfsoup_isteps",
    "sig": "S^{N,R}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket \\subseteq \\mathsf{LFState}",
    "args": [
     {
@@ -12413,6 +12413,289 @@ window.MAP = {
     }
    ]
   },
+  "th.live-sub-df": {
+   "title": "Live implies deadlock free",
+   "what": "Under excluded middle and functional choice, a closed process in the live judgment at a world $R$, with a result type that holds no end and no box, is in the deadlock-free judgment at $R$.",
+   "why": "The relation at $\\kappa_L$ reads internal steps at cost $0$ and the relation at $\\kappa_{DF}$ at cost $1$. A run of internal steps is finite at $\\kappa_L$, and choice fixes one world for each level after a creation.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "Each guarded process in the live judgment.",
+   "rocq": "compat/LiveDF.v: live_sub_df, boxfree",
+   "sig": "\\mathsf{EM} \\land \\mathsf{FC} \\land \\mathsf{tfree}\\,T \\land \\mathsf{boxfree}\\,T \\land \\varnothing \\mathrel{|\\!\\!\\vDash}_R p : T \\Rightarrow \\varnothing \\vDash_R p : T",
+   "args": [
+    {
+     "name": "R",
+     "meaning": "a world of the relation"
+    },
+    {
+     "name": "p",
+     "meaning": "a closed process $(C, E)$"
+    },
+    {
+     "name": "T",
+     "meaning": "the result type of the main thread"
+    }
+   ]
+  },
+  "th.boxfree": {
+   "title": "$\\mathsf{boxfree}$",
+   "what": "$\\mathsf{boxfree}\\,T$ when no box type occurs in $T$ outside arrows and end types, through products and sums.",
+   "why": "It restricts the result type in the comparison of the live and the deadlock-free relation.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\mathsf{boxfree}(\\ast \\otimes \\ast)$.",
+   "rocq": "compat/LiveDF.v: boxfree",
+   "sig": "\\mathsf{boxfree} : \\mathsf{Ty} \\to \\mathsf{Prop}",
+   "args": [
+    {
+     "name": "T",
+     "meaning": "the result type of the main thread"
+    }
+   ]
+  },
+  "th.lf-sems-h-adequacy": {
+   "title": "Lock-free adequacy for the hidden judgment",
+   "what": "Under excluded middle and functional choice, $\\varnothing \\Vvdash^{N,h}_W p : T$ implies that $p$ is lock free.",
+   "why": "The hidden judgment gives a well-founded whole world, which has a ranked model, and lock-free adequacy applies there.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "The split client and server program.",
+   "rocq": "soup/LFTyped.v: lf_sems_h_adequacy",
+   "sig": "\\mathsf{EM} \\land \\mathsf{FC} \\land \\varnothing \\Vvdash^{N,h}_W p : T \\Rightarrow \\mathsf{lock\\_free}\\,p",
+   "args": [
+    {
+     "name": "W",
+     "meaning": "a static world"
+    },
+    {
+     "name": "N",
+     "meaning": "\\annp{the bound on the tickets of a channel, a natural number for lock freedom}"
+    },
+    {
+     "name": "p",
+     "meaning": "a closed process $(C, E)$"
+    },
+    {
+     "name": "T",
+     "meaning": "the result type of the main thread"
+    }
+   ]
+  },
+  "th.lf-tp-gen": {
+   "title": "Thread progress from lock freedom",
+   "what": "A lock-free process without internal divergence, whose links each restrict a channel, makes each thread progress on each maximal weakly fair run.",
+   "why": "It is the step from lock freedom to progress of every thread, pending or not. Lock-free adequacy establishes its three premises.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "Each lock-free example.",
+   "rocq": "lockfree/ThreadProgress.v: thread_progress; lockfree/TauThread.v: links_restricted, thread_acc",
+   "sig": "\\mathsf{lock\\_free}\\,p \\land \\mathsf{no\\_tau\\_divergence}\\,p \\land \\mathsf{links\\_restricted}\\,p \\Rightarrow \\ldots",
+   "args": [
+    {
+     "name": "p",
+     "meaning": "a closed process $(C, E)$"
+    }
+   ]
+  },
+  "th.linksr": {
+   "title": "$\\mathsf{links\\_restricted}$",
+   "what": "In each reachable process a link acts on at least one end of a restricted channel.",
+   "why": "A link between two interface ends would leave no thread in the process to serve either side, and thread progress would fail for reasons outside the process.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "A link of two ends of channels the process created.",
+   "rocq": "lockfree/TauThread.v: links_restricted",
+   "sig": "\\mathsf{links\\_restricted} : \\mathsf{Proc} \\to \\mathsf{Prop}",
+   "args": [
+    {
+     "name": "p",
+     "meaning": "a closed process $(C, E)$"
+    }
+   ]
+  },
+  "th.wfit": {
+   "title": "Worlds the fundamental theorem reads",
+   "what": "$\\mathsf{fit}_N\\,R$ holds when $R$ is strict, or, under excluded middle, when $R$ is ranked and the bound $N$ is finite.",
+   "why": "The induction behind the fundamental theorems reads each world $R \\vDash W$ that fits the bound. A creation grows a strict world by $\\mathsf{acyc\\_new}$. A ranked world needs $\\mathsf{gen\\_new}$, which holds only at a finite bound, and the choice of the largest of finitely many ranks.",
+   "breaks": "At $N = \\infty$ a ranked world could meet a creation under $\\mathsf{acyc\\_new}$ that has no ranks.",
+   "example": "The deadlock-free theorems use strict worlds, the lock-free ones ranked worlds at a finite bound.",
+   "rocq": "static/Fundamental.v: wfit, typed_sem",
+   "sig": "\\mathsf{fit} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to \\mathsf{World} \\to \\mathsf{Prop}",
+   "args": [
+    {
+     "name": "R",
+     "meaning": "a world of the relation"
+    },
+    {
+     "name": "N",
+     "meaning": "\\annp{the bound on the tickets of a channel, a natural number for lock freedom}"
+    }
+   ]
+  },
+  "tp.fpjudg": {
+   "title": "Full process judgment $\\Sigma \\vdash^{N,\\mathsf{full}}_W p : T$",
+   "what": "Process typing with P-Term and P-Connect that keeps the whole world of each component, with P-Connect checking the restrictions of the two worlds to their shared constants.",
+   "why": "It is the judgment the soundness proof works with, because its worlds have models. The hidden judgment is the one the map shows, and the two type the same processes.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "The two closes over the empty interface at the world with no constant.",
+   "rocq": "static/Typing.v: fptyped, fp_term, fp_connect, fptyped_wf",
+   "sig": "\\Sigma \\vdash^{N,\\mathsf{full}}_W p : T",
+   "args": [
+    {
+     "name": "W",
+     "meaning": "a static world"
+    },
+    {
+     "name": "\\Sigma",
+     "meaning": "the interface of the process"
+    },
+    {
+     "name": "p",
+     "meaning": "a closed process $(C, E)$"
+    },
+    {
+     "name": "T",
+     "meaning": "the result type of the main thread"
+    }
+   ]
+  },
+  "th.ptyped-full": {
+   "title": "From hidden to full derivations",
+   "what": "Each hidden derivation $\\Sigma \\vdash\\annot{\\annot{^{N}}}_W p : T$ gives a full derivation at a whole world $W\\^{\\prime}$ that hides to $W$ on the interface constants.",
+   "why": "At each P-Connect the private constants of one component are renamed apart from the other, so the two whole worlds share only interface constants. No excluded middle and no choice enter the proof.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "The hidden composition of two components with the same private constant.",
+   "rocq": "static/Hiding.v: ptyped_full, connect_hidden, join_vis, cb_avoid",
+   "sig": "\\Sigma \\vdash\\annot{\\annot{^{N}}}_W p : T \\Rightarrow \\exists W'.\\ \\Sigma \\vdash^{N,\\mathsf{full}}_{W'} p : T \\land W' \\rightsquigarrow_{\\mathsf{I}(\\Sigma, T)} W",
+   "args": [
+    {
+     "name": "W",
+     "meaning": "a static world"
+    },
+    {
+     "name": "\\Sigma",
+     "meaning": "the interface of the process"
+    },
+    {
+     "name": "p",
+     "meaning": "a closed process $(C, E)$"
+    },
+    {
+     "name": "T",
+     "meaning": "the result type of the main thread"
+    }
+   ]
+  },
+  "th.fptyped-ptyped": {
+   "title": "From full to hidden derivations",
+   "what": "Each full derivation gives a hidden derivation at a world whose order is contained in the order of the whole world.",
+   "why": "So hiding loses no program.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "Each example typed in the full judgment.",
+   "rocq": "static/Hiding.v: fptyped_ptyped",
+   "sig": "\\Sigma \\vdash^{N,\\mathsf{full}}_W p : T \\Rightarrow \\exists W_i.\\ \\Sigma \\vdash\\annot{\\annot{^{N}}}_{W_i} p : T \\land {\\prec_{W_i}} \\subseteq {\\prec_W}",
+   "args": [
+    {
+     "name": "W",
+     "meaning": "a static world"
+    },
+    {
+     "name": "\\Sigma",
+     "meaning": "the interface of the process"
+    },
+    {
+     "name": "p",
+     "meaning": "a closed process $(C, E)$"
+    },
+    {
+     "name": "T",
+     "meaning": "the result type of the main thread"
+    }
+   ]
+  },
+  "th.typed-ren": {
+   "title": "Renaming constants",
+   "what": "A bijection $\\pi$ on constants maps a derivation at each bound and cost to a derivation of the renamed judgment, and a full process derivation to one of the renamed process judgment.",
+   "why": "The hiding proof renames the private constants of a component apart from another component. The program does not change, because no term mentions a point.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "Renaming the private constant $0$ of one copy of $P(c, d)$ to $1$.",
+   "rocq": "static/Hiding.v: typed_ren, fptyped_ren",
+   "sig": "\\Gamma ; \\Delta \\vdash^{F}_{W} e : T \\Rightarrow \\pi\\Gamma ; \\pi\\Delta \\vdash^{\\pi F}_{\\pi W} e : \\pi T",
+   "args": [
+    {
+     "name": "\\pi",
+     "meaning": "a bijection on constants"
+    },
+    {
+     "name": "W",
+     "meaning": "a static world"
+    }
+   ]
+  },
+  "th.lf-soup-term": {
+   "title": "Semantic P-Term in the lock-free judgment",
+   "what": "A thread that meets the channel premises of P-Term at a finite $N$, is in the relation at $\\kappa_L$ and has fuel at every index is a process in the lock-free judgment at $R$.",
+   "why": "It is P-Term in the lock-free process relation, stated on the relation and fuel of the thread and not on its typing. A thread proved by hand composes with typed ones.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "One thread closing its end $c^{+}$.",
+   "rocq": "soup/LFCompose.v: lf_soup_term; soup/SoupCompose.v: soup_connect",
+   "sig": "\\ldots \\Rightarrow \\Sigma \\Vvdash\\annot{^{N}}_R (C_0, \\{t\\}) : T",
+   "args": [
+    {
+     "name": "R",
+     "meaning": "a world of the relation"
+    },
+    {
+     "name": "N",
+     "meaning": "\\annp{the bound on the tickets of a channel, a natural number for lock freedom}"
+    },
+    {
+     "name": "\\Sigma",
+     "meaning": "the interface of the process"
+    },
+    {
+     "name": "t",
+     "meaning": "the thread"
+    }
+   ]
+  },
+  "th.chprem": {
+   "title": "$\\mathsf{chan}_N(\\Sigma, \\Theta_B, C_0)$",
+   "what": "$\\Theta_B$ holds both ends of each $c \\in C_0$, dual at dual points, each at credit equal to its tickets with tickets of sum at most $N$, and no channel of $\\Sigma$ is in $C_0$. $\\Theta$ is $\\Sigma$ at credit and tickets $N/2$ together with $\\Theta_B$.",
+   "why": "These are the premises of P-Term about restricted channels.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$C_0 = \\varnothing$ for a thread with no private channel.",
+   "rocq": "soup/LFCompose.v: lf_soup_term",
+   "sig": "\\mathsf{chan}_N : \\mathsf{Env} \\to \\mathsf{TEnv} \\to \\mathcal{P}(\\mathsf{Chan}) \\to \\mathsf{Prop}",
+   "args": [
+    {
+     "name": "\\Sigma",
+     "meaning": "the interface of the process"
+    },
+    {
+     "name": "\\Theta_B",
+     "meaning": "the ends of the restricted channels"
+    },
+    {
+     "name": "C_0",
+     "meaning": "the restricted channels"
+    }
+   ]
+  },
+  "th.cl2-needs": {
+   "title": "What two closes ask",
+   "what": "Each typing of $\\mathsf{close}\\,a$ followed by $\\mathsf{close}\\,b$, at each bound, world and context, derives $\\Gamma \\vdash x \\prec \\overline{y}$ for the points $x$ of $a$ and $y$ of $b$.",
+   "why": "The first close waits at $x$ while the thread holds $b$, whose dual point is $\\overline{y}$. This inversion turns a deadlock into a typing failure. It proves the rejections of the creations-with-exits example and the flag program, and in recursive fork-join it asks each child point below the dual point of its parent.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "A thread that closes $c$ at $\\rho$ and then $d$ at $\\rho\\cdot 0$ needs $\\rho \\prec \\overline{\\rho\\cdot 0}$.",
+   "rocq": "examples/SemBranch.v: cl2_needs; examples/ForkJoin.v: fj_wait_needs",
+   "sig": "a \\neq b \\land \\Gamma ; \\Delta \\vdash^{F}_{W} \\mathsf{let}\\ \\ast = \\mathsf{close}\\,a\\ \\mathsf{in}\\ \\mathsf{close}\\,b : T \\Rightarrow \\Gamma \\vdash x \\prec \\overline{y}",
+   "args": [
+    {
+     "name": "a, b",
+     "meaning": "the two ends"
+    },
+    {
+     "name": "x, y",
+     "meaning": "their points"
+    }
+   ]
+  },
   "th.tpr": {
    "title": "$\\mathsf{thread\\_progress\\_run}$",
    "what": "For a run $(r, l)$, $\\mathsf{thread\\_progress\\_run}\\,(r, l)$ holds iff each thread $t$ of each position $i$ later stops or acts. That is, some $j \\geq i$ exists at which $t$ is a value in $r\\,j$ or takes part in the step $l\\,j$ by a session action.",
@@ -12709,12 +12992,12 @@ window.MAP = {
     "lf"
    ],
    "code": "not     = λz. case z of inl w ⇒ inj₂ w | inr w ⇒ inj₁ w\nthread  = case not (inj₂ ∗) of\n            inl w ⇒ let ∗ = w in let ∗ = close c in close d      -- runs\n          | inr w ⇒ let ∗ = w in let ∗ = close d in close c      -- never runs\npartner = let ∗ = close c̄ in close d̄\n-- the process ({c, d}, {thread, partner}), c at x, d at y",
-   "rocq": "examples/SemBranch.v: sbv_thread_E, sbv_deadlock_free, sbv_rejected, Tbad_not_cons",
+   "rocq": "examples/SemBranch.v: sb_thread_E, sb_deadlock_free, sbv_thread_E, sbv_deadlock_free, sbv_rejected, sbv_rejected_h, Tbad_not_cons, cl2_needs",
    "accepts": {
     "df": {
      "ok": false,
      "part": "P-Connect",
-     "rocq": "sbv_rejected, for every world and every bound. E-Open asks cons, so the dead arm needs y ≺ x̄ from its own world, and the joined world has the cycle y ≺ x̄ ≺ y"
+     "rocq": "sbv_rejected and sbv_rejected_h, for every world and every bound. E-Open asks cons, so the dead arm needs y ≺ x̄ from its own world, and the joined world has the cycle y ≺ x̄ ≺ y"
     },
     "sem": {
      "ok": true,
@@ -12748,6 +13031,60 @@ window.MAP = {
    "lead": "Two threads that branch on one flag sent by a third thread are deadlock free. A proof that follows the reductions of the whole process shows it, and a proof that puts each thread into the relation on its own fails."
   },
   {
+   "id": "ex-cs-split",
+   "title": "Client and server as two components",
+   "modes": [
+    "lf"
+   ],
+   "code": "cli ⟨a⁺, b⁺⟩  ∥_{a, b}  srv ⟨a⁻, b⁻⟩      -- a⁺ at ρ, b⁺ at ρ·0, ρ the constant 0\n-- the client in its own static world, the server in another, both at N = 6",
+   "lead": "Two components typed at static worlds of their own compose to a lock-free process.",
+   "shows": "The channels $a$ and $b$ of the client and server example are the cut. Each component is one thread typed by [[p-typing|P-Term]] at $N = 6$ over a static world that holds only the instances of the box constraint that thread uses. The two worlds share the constant $0$, and their join is well-founded by the measure of field sum, offset and depth. The lock-free judgment reads each component at each ranked model of its own world, and [[th-adeq|lock-free adequacy at static worlds]] composes them under excluded middle and functional choice. The hidden judgment types the same composition.",
+   "rocq": "examples/LFClientServerSplit.v: cs_split_lock_free, cs_split_typed, cs_split_lock_free_h; soup/LFCompose.v: lf_connect_adequacy, join_models",
+   "accepts": {
+    "lf": {
+     "ok": true,
+     "N": 6,
+     "rocq": "cs_split_typed, cs_split_lock_free"
+    }
+   }
+  },
+  {
+   "id": "ex-tree",
+   "title": "A tree of three threads",
+   "modes": [
+    "df",
+    "lf"
+   ],
+   "code": "mid = case not (inj₂ ∗) of inl w ⇒ close c; close d | inr w ⇒ close d; close c\na   = close c̄                    -- leaf on c\nb   = close d̄                    -- leaf on d\n-- the process ({c, d}, {mid, a, b}), channel graph a - mid - b",
+   "lead": "The flag thread with one leaf per channel is deadlock free, proved in the relation.",
+   "shows": "The middle thread is the thread of the flag example, and each leaf closes one end. The middle thread is in $E$ by its three $\\beta$ steps and the fundamental theorem for its live arm, and each leaf by the fundamental theorem. [[th-compose|Semantic P-Term and P-Connect]] join the leaf on $c$ to the middle thread and then the leaf on $d$, at one world that models both thread worlds, and adequacy gives deadlock freedom. The leaves ask no fact, so one world can hold both arm facts $x \\prec \\overline{y}$ and $y \\prec \\overline{x}$, and that world is well-founded. A static derivation of the tree from it is not mechanized.",
+   "rocq": "examples/TreeTopo.v: tt_deadlock_free, tt_dead_world_wf",
+   "accepts": {
+    "sem": {
+     "ok": true,
+     "rocq": "tt_deadlock_free"
+    }
+   }
+  },
+  {
+   "id": "ex-link",
+   "title": "A link at full tickets",
+   "modes": [
+    "lf"
+   ],
+   "code": "⟨c⁺, c⁻⟩ = new         -- c⁺ with N tickets, c⁻ with 0\n⟨d⁺, d⁻⟩ = new         -- d⁻ with N tickets, d⁺ with 0\nlink ⟨c⁺, d⁻⟩          -- c⁺ at x, d⁻ at x̄, both at credit N",
+   "lead": "A link types at each bound once each creation chooses how to split its tickets.",
+   "shows": "[[t-lf-counters|E-Link]] asks $a_1 + m_2 > N$ and $a_2 + m_1 > N$. With the tickets of a channel split as $N/2$ and $N - N/2$ the link types at no even $N$. A creation chooses $m_1 + m_2 \\leq N$, so each linked end can hold all $N$ tickets and its partner none. Then $N + N > N$ holds for each $N \\geq 1$, and each channel meets the bound with $N + 0 \\leq N$.",
+   "rocq": "examples/LFLink.v: lk_new, lk_typed, lk_ok",
+   "accepts": {
+    "lf": {
+     "ok": true,
+     "N": "every",
+     "rocq": "lk_typed, lk_ok"
+    }
+   }
+  },
+  {
    "id": "ex-copycat",
    "title": "Copycat, a forwarder at independent points",
    "modes": [
@@ -12757,7 +13094,7 @@ window.MAP = {
    "code": "fwd o₁ o₂ = let ⟨v, o₁⟩ = recv o₁ in let o₂ = send ⟨v, o₂⟩ in     -- o₁ : S_x, o₂ : S̄_y\n            let ⟨w, o₂⟩ = recv o₂ in let o₁ = send ⟨w, o₁⟩ in     -- S = ?∗.!∗.Close\n            let ∗ = close o₁ in close o₂\nring      = fwd(o₁, o₂) ∥ fwd(ō₂, ō₁)                           -- cut on both channels",
    "lead": "A forwarder that holds its two ends at independent points types, and two forwarders in a ring do not.",
    "shows": "Each action of the forwarder asks its point below the dual point of the other end. The five facts are $x \\prec \\overline{y}$, $y \\prec \\overline{x^{+}}$, $y^{+} \\prec \\overline{x^{+}}$, $x^{+} \\prec \\overline{y^{++}}$ and $x^{++} \\prec \\overline{y^{++}}$, and [[p-typing|P-Term]] types the forwarder over a world that holds these facts. A process with the forwarder behind one of its ends types at the same interface type when the root of $y$ is no constant of its world. A partner, the forwarder and a second partner compose to a deadlock-free process by [[th-sound]]. A received end as payload is $\\eta$-expanded through a channel at the field $y\\cdot 0$, and the forwarder extends to each protocol of unit messages that ends in $\\mathsf{Close}$. In the ring the first forwarder needs $x \\prec \\overline{y}$ and the second $\\overline{y} \\prec x$, so no world, bound or type types the ring.",
-   "rocq": "examples/Copycat.v: fwd_term, fwd_expand, fwd_config_deadlock_free, fwdh_term, fwdp_term, fwdp_expand, ring_rejected, ring_rejected_full",
+   "rocq": "examples/Copycat.v: fwd_term, fwd_expand, fwd_config_typed, fwd_config_deadlock_free, fwdh_term, fwdh_config_typed, fwdh_config_deadlock_free, fwdp_term, fwdp_expand, fwdp_sem, fwd_needs, ring_rejected, ring_rejected_full",
    "accepts": {
     "df": {
      "ok": true,
@@ -12775,7 +13112,7 @@ window.MAP = {
    "code": "A  = let ∗ = close c⁻ in close a⁺        -- a at 0, b at 1, c at 2\nB  = let ∗ = close a⁻ in close b⁺\nC  = let ∗ = close b⁻ in close c⁺        -- A ∥ B ∥ C deadlocks\nC′ = let ∗ = close c⁺ in close b⁻        -- A ∥ B ∥ C′ is deadlock free",
    "lead": "Three components that are acyclic two at a time and cyclic together are rejected, because process typing checks the joined order.",
    "shows": "Each thread closes its first end while it holds the second, so the three hidden worlds state $\\overline{c} \\prec \\overline{a}$, $\\overline{a} \\prec \\overline{b}$ and $\\overline{b} \\prec \\overline{c}$. Each two of them join to an acyclic world, and the three together hold the cycle $\\overline{c} \\prec \\overline{a} \\prec \\overline{b} \\prec \\overline{c}$. The ring meets each condition of the [[p-typing|n-ary connect]] but the check on the joined world, and it types at no world because it deadlocks. With $C'$ the third world states $c \\prec b$, the join is well-founded, and the ring types by the n-ary connect and is deadlock free. Two threads that close two channels in opposite orders are rejected the same way.",
-   "rocq": "examples/Ring.v: ring_comps, ring_pairs, ring_cyclic, ring_rejected, ring_rejected_full, ring_typed, ring_df, cyc2_rejected, cyc2_rejected_h",
+   "rocq": "examples/Ring.v: ring_comps, ring_pairs, ring_cyclic, ring_not_df, ring_rejected, ring_rejected_full, ring_typed, ring_df, cyc2_not_df, cyc2_rejected, cyc2_rejected_h",
    "accepts": {
     "df": {
      "ok": false,
@@ -12793,8 +13130,8 @@ window.MAP = {
    ],
    "code": "main = let ⟨w, w′⟩ = new in                      -- w at ρ, facts H at ρ̄\n       let ∗ = spawn (λu. (force wk) w′) in close w\nwk   = !(f = λw. let ⟨c₁, c₁′⟩ = new in let ⟨c₂, c₂′⟩ = new in   -- at ι·0 and ι·1\n             let ∗ = spawn (λu. (force f) c₁′) in\n             let ∗ = spawn (λu. (force f) c₂′) in\n             let ∗ = close c₁ in let ∗ = close c₂ in close w)    -- reply after both",
    "lead": "A worker that forks two copies of itself and waits for their replies is deadlock free at every depth.",
-   "shows": "Each worker holds its end at a point $\\iota$, creates the two child channels at the fields $\\iota\\cdot 0$ and $\\iota\\cdot 1$ and spawns itself on their dual ends. It closes $c_1$, then $c_2$, then $w$, so it needs $\\iota\\cdot 0 \\prec \\overline{\\iota\\cdot 1}$, $\\iota\\cdot 0 \\prec \\overline{\\iota}$ and $\\iota\\cdot 1 \\prec \\overline{\\iota}$. The box hypothesis states these facts at each depth of the tree, and the creation in main orders an infinite descending chain on the tree of $\\rho$, acyclic and not well-founded. At $N = \\infty$ [[r-new|E-New]] asks $\\mathsf{acyc\\_new}$, the program types, and it is deadlock free with no classical hypothesis. At a finite bound E-New asks $\\mathsf{gen\\_new}$, which needs a well-founded order on the tree. One round of fork-join types as well. Padovani's factorial and Fibonacci processes type the same way, with unit messages because the language has no numbers.",
-   "rocq": "examples/ForkJoin.v: fj_dftyped, fj_deadlock_free, fjr_acyc, fjr_dftyped, fjr_term, fjr_deadlock_free, fct_dftyped, fct_deadlock_free, fib_dftyped, fib_deadlock_free, fj_wait_needs",
+   "shows": "Each worker holds its end at a point $\\iota$, creates the two child channels at the fields $\\iota\\cdot 0$ and $\\iota\\cdot 1$ and spawns itself on their dual ends. It closes $c_1$, then $c_2$, then $w$, so it needs $\\iota\\cdot 0 \\prec \\overline{\\iota\\cdot 1}$, $\\iota\\cdot 0 \\prec \\overline{\\iota}$ and $\\iota\\cdot 1 \\prec \\overline{\\iota}$. The box hypothesis states these facts at each depth of the tree, and the creation in main orders an infinite descending chain on the tree of $\\rho$, acyclic and not well-founded. At $N = \\infty$ [[r-new|E-New]] asks $\\mathsf{acyc\\_new}$, the program types, and it is deadlock free with no classical hypothesis. The program has no lock-free typing by this route. Each typing of $\\mathsf{close}\\,c$ followed by $\\mathsf{close}\\,w$, at each bound, asks the point of $c$ below the dual point of $w$ ([[th-terms|what two closes ask]]). The child holds $c$ at that dual point and forces the same box there, so the box hypothesis must descend one level in each round. At a finite bound E-New asks $\\mathsf{gen\\_new}$, whose order on the tree is well-founded, and no box admits the infinite descent. This last step is argued on paper and not mechanized. One round of fork-join types as well. Padovani's factorial and Fibonacci processes type the same way, with unit messages because the language has no numbers.",
+   "rocq": "examples/ForkJoin.v: fj_dftyped, fj_term, fj_deadlock_free, fct_term, fib_term, fjr_acyc, fjr_dftyped, fjr_term, fjr_deadlock_free, fct_dftyped, fct_deadlock_free, fib_dftyped, fib_deadlock_free, fj_wait_needs",
    "accepts": {
     "df": {
      "ok": true,

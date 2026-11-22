@@ -156,7 +156,7 @@ merge('sj-all', 'Semantic judgments', ['sj', 'sp-lf'], {
 order('semantic', ['sr-reading', 'sr-ord', 'ct-costs', 'v-rel', 'e-rel', 'e-obl', 'rd', 'p-rel', 'p-obls', 'fu-vs', 'fu', 'fu-obls', 'fv', 'soup', 'sj-all']);
 
 // ---- theorems ----
-merge('th-terms', 'Lemmas about terms', ['th-sound-src', 'th-fund-term', 'th-bind', 'th-cost'], {
+merge('th-terms', 'Lemmas about terms', ['th-sound-src', 'th-fund-term', 'th-inv', 'th-bind', 'th-cost'], {
   caption: R`The statements the process theorems are built from. A single closed program is sound as a one-thread process. Typing a term implies the semantic term judgment, and $E$ is closed under evaluation frames, which every rule with a subterm uses. \annp{With the guard a typed term is in the relation at $\kappa_L$, and a typed term at a finite counter bound has fuel.}`,
   why: 'They are the per-thread layer under the process results. Each is proved once, rule by rule, and used by the fundamental theorem for processes.'
 });

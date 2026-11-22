@@ -533,3 +533,66 @@ $S_0$, $S_i$, $S_1$, $S_2$ in notes and signatures are gone. A grep for
 `S_<digit>`, `S_0` and `S_i` in gen/*.js finds nothing, so a subscript on a
 protocol always names a point. gen.js 0 errors, no DF-LEAK. lint-map
 unchanged.
+
+## Coverage sweep
+
+Branch redesign-map after the fast-forward to 6688230. Swept every file of
+v2/examples and every Theorem and Corollary of static/, soup/, lockfree/,
+relation/Adequacy.v, cost/CostFund.v and compat/LiveDF.v (150 results; there
+is no soundness/ directory). After the sweep each of the 150 is cited by the
+map. Measured boxes are left out.
+
+Added, theorems section:
+- `th-adeq`: rows `live_sub_df` (EM, FC, a result type with no end and no
+  box, with the new note `th.boxfree`), `lf_sems_h_adequacy`, and
+  `thread_progress` (lock freedom, no internal divergence and
+  `links_restricted` give progress of each thread, note `th.linksr`).
+- `th-terms` (fundamental theorems for terms): a first row defining
+  $\mathsf{fit}_N\,R$ (`wfit`), strict, or ranked at a finite bound under
+  EM in the lock-free view, with the note saying that `typed_sem` reads
+  every model that fits.
+- `th-fund-proc`: rows `ptyped_full`, `fptyped_ptyped` and
+  `typed_ren`/`fptyped_ren`, with a note `tp.fpjudg` for the full judgment
+  $\Sigma \vdash^{N,\mathsf{full}}_W p : T$.
+- `th-compose`: row `lf_soup_term`, semantic P-Term in the lock-free
+  judgment from relation and fuel, with the channel premises
+  $\mathsf{chan}_N$ (note `th.chprem`). `soup_connect` cited in its note.
+- New block `th-inv` "What two closes ask", merged into the lemmas about
+  terms: `cl2_needs` and `fj_wait_needs`.
+
+Added, examples:
+- `ex-cs-split` (LFClientServerSplit: `cs_split_lock_free`,
+  `cs_split_typed`, `cs_split_lock_free_h`).
+- `ex-tree` (TreeTopo: `tt_deadlock_free`, `tt_dead_world_wf`; the static
+  derivation is stated as not mechanized).
+- `ex-link` (LFLink: `lk_new`, `lk_typed`, `lk_ok`).
+- `ex-forkjoin` now says why the recursive program has no lock-free typing
+  by this route: each typing of close c; close w asks the point of c below
+  the dual point of w at every bound (`fj_wait_needs`), the child forces the
+  same box at that dual point, so the box hypothesis must descend in each
+  round, and `gen_new` admits no infinite descent. The last step is marked
+  argued and not mechanized. Cites `fj_term`, `fct_term`, `fib_term`.
+- `ex-flag` cites the plain program (`sb_thread_E`, `sb_deadlock_free`),
+  `sbv_rejected_h` and `cl2_needs`. `ex-ring3` cites `ring_not_df` and
+  `cyc2_not_df`. `ex-copycat` cites `fwd_config_typed`, `fwdh_config_typed`,
+  `fwdh_config_deadlock_free`, `fwdp_sem`, `fwd_needs`.
+
+Checked and already present: `sbv_thread_E`, `sbv_deadlock_free`,
+`sbv_rejected`, `Tbad_not_cons` (ex-flag and E-Open), `opposite_df`
+(ex-shared), `fp_unrealizable` and `fp_gate` (ex-flagpair), GenNew
+(ex-gennew), SinstStuck (ex-sinst).
+
+Cited only, on purpose:
+- `typed_weaken_head`, `dftyped_rename`, `dftyped_weaken_head` (structural
+  lemmas behind the admissible E-Weak, in the r-admis citation).
+- `idle_dual` (in the note of $\mathsf{Skip}$).
+- `lfsoup_isteps` (run construction, in the note of the lock-free process
+  relation), `thread_acc` (in the thread-progress note).
+
+Skipped on purpose: examples/Tools.v, Tools2.v and LFTools.v, which are
+libraries of tactics and helper lemmas with no result of their own.
+
+Checks: gen.js 0 errors, no DF-LEAK. Checker 0 errors, 448 warnings (the
+seven var-before-intro are the subscript false positives of κ_DF and κ_L).
+lint-map 9 metaphor, 308 every/any/all, 1 pronoun ending, 5 long sentences.
+Screenshots of the theorems in both views and of the examples render.

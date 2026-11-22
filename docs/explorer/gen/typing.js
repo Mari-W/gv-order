@@ -286,7 +286,7 @@ T('r-new', 'E-New, E-New-Field', 'static/Typing.v: e_new, e_new_fld; static/Cont
 T('r-struct', 'E-Sub', 'static/Typing.v: e_sub; static/Conservativity.v: d_conv',
   rule('E-Sub', R`${J(R`\Gamma`, R`\Delta`, '', 'F', 'e', 'T', R`\varepsilon`)}${QH}${h('sub.tsub', R`T \leq T'`)}${QH}${h('E-Sub.contr', R`${h('sty.contr', R`\mathsf{contr}`)}\,T \Rightarrow \mathsf{contr}\,T'`)}\annraw{${QH}}\annot{${h('E-Sub.cost', R`\varepsilon \leq \varepsilon'`)}}`, J(R`\Gamma`, R`\Delta`, '', 'F', 'e', R`T'`, R`\varepsilon'`)),
   'A type may lose facts of an existential. In the lock-free mode credits may fall and costs may rise.');
-T('r-admis', 'E-Weak, E-Contract (admissible)', 'static/Weakening.v: e_weak, e_contract, d_weak, d_contract, typed_rename',
+T('r-admis', 'E-Weak, E-Contract (admissible)', 'static/Weakening.v: e_weak, e_contract, d_weak, d_contract, typed_rename, typed_weaken_head, dftyped_rename, dftyped_weaken_head',
   rows(rule('E-Weak', R`${h('E-Weak.drop', R`\Delta' \preceq_{\mathsf{wk}} \Delta`)}${QH}${J(R`\Gamma`, R`\Delta'`, '', 'F', 'e', 'T', R`\varepsilon`)}`, J(R`\Gamma`, R`\Delta`, '', 'F', 'e', 'T', R`\varepsilon`)), rule('E-Contract', R`${h('ty.unlimited', R`\mathsf{unlimited}\,U`)}${QH}${J(R`\Gamma`, R`\Delta, U, U`, '', 'F', 'e', 'T', R`\varepsilon`)}`, J(R`\Gamma`, R`\Delta, U`, '', 'F', R`e[1 \mapsto 0]`, 'T', R`\varepsilon`))),
   'Both are renamings of the variables, the identity and the map $x \\mapsto x - 1$. They hold because E-Unit, E-Var, E-Chan and E-New accept unused entries of unlimited type.');
 T('r-ex', 'E-Pack, E-Open', 'static/Typing.v: e_pack, e_open; static/Conservativity.v: d_pack, d_open',
