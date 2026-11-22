@@ -290,6 +290,54 @@ Proof. intros H. exact (ring_not_df (soundness_h W _ T H)). Qed.
 Corollary ring_rejected_full W T : ¬ fptyped None W ∅ (ring_cfg tC) T.
 Proof. intros H. destruct (fptyped_ptyped _ _ _ _ _ H) as (Wi & Hi & _). exact (ring_rejected Wi T Hi). Qed.
 
+(** ** The two-channel cycle
+
+    close c⁺; close d⁺ ∥ close d⁻; close c⁻ deadlocks. Typed as two
+    components, the first asks the point of c below the head of d and
+    the second the point of d‾ below the head of c‾, so the join holds a
+    cycle. No world types it at N = ∞ ([cyc2_rejected]), through
+    soundness, which reads only acyclicity of worlds. *)
+
+Definition cyc2_cfg : proc :=
+  ({["c"]} ∪ {["d"]}, {[+ cl2 (EPos "c") (EPos "d") +]} ⊎ {[+ cl2 (ENeg "d") (ENeg "c") +]}).
+
+Lemma cyc2_first e α e' :
+  e ∈ ({[+ cl2 (EPos "c") (EPos "d") +]} ⊎ {[+ cl2 (ENeg "d") (ENeg "c") +]} : gmultiset expr) →
+  tstep e α e' → α = LSess (SClose (EPos "c")) ∨ α = LSess (SClose (ENeg "d")).
+Proof.
+  rewrite !gmultiset_elem_of_disj_union, !gmultiset_elem_of_singleton.
+  intros [->| ->] H; apply cl2_tstep in H; auto.
+Qed.
+
+Lemma cyc2_stuck p' : ¬ preduction cyc2_cfg p'.
+Proof.
+  intros H. apply pstep_iff in H. remember cyc2_cfg as p eqn:Ep. remember PTau as π eqn:Eπ.
+  destruct H as [C E e σ e' Hs _|C E e e' Hs|C E e c e' Hs _ _ _|C E e v e' Hs
+                |C E o v e e' f f' Hs Hf|C E o e e' f f' Hs Hf _|C E o b e e' f f' Hs Hf
+                |C E e o1 o2 e' Hs _];
+    try discriminate Eπ; injection Ep as _ HE;
+    (assert (e ∈ ({[+ cl2 (EPos "c") (EPos "d") +]} ⊎ {[+ cl2 (ENeg "d") (ENeg "c") +]} : gmultiset expr)) as He
+       by (rewrite <-HE; multiset_solver));
+    destruct (cyc2_first _ _ _ He Hs) as [Ea|Ea]; try discriminate Ea.
+  all: injection Ea as ->;
+    (assert (f ∈ ({[+ cl2 (EPos "c") (EPos "d") +]} ⊎ {[+ cl2 (ENeg "d") (ENeg "c") +]} : gmultiset expr)) as Hf'
+       by (rewrite <-HE; multiset_solver));
+    destruct (cyc2_first _ _ _ Hf' Hf) as [Eb|Eb]; discriminate Eb.
+Qed.
+
+Theorem cyc2_not_df : ¬ deadlock_free cyc2_cfg.
+Proof.
+  intros H. destruct (H cyc2_cfg (rtc_refl _ _)) as [(v & E & Ep & _)|(p' & Hp)].
+  - injection Ep as Ec _. set_solver.
+  - exact (cyc2_stuck p' Hp).
+Qed.
+
+Theorem cyc2_rejected W T : ¬ fptyped None W ∅ cyc2_cfg T.
+Proof. intros H. exact (cyc2_not_df (soundness W _ T H)). Qed.
+
+Corollary cyc2_rejected_h W T : ¬ ptyped None W ∅ cyc2_cfg T.
+Proof. intros H. exact (cyc2_not_df (soundness_h W _ T H)). Qed.
+
 (** ** The acyclic ring *)
 
 Lemma ring'_comps : pcomps None (HA :: HB :: [HC']) ∅ (ring_cfg tC') TUnit.

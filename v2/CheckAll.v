@@ -232,6 +232,8 @@ Print Assumptions ring_comps.
 Print Assumptions ring_pairs.
 Print Assumptions ring_cyclic.
 Print Assumptions examples.Ring.ring_rejected.
+Print Assumptions cyc2_rejected.
+Print Assumptions cyc2_rejected_h.
 Print Assumptions ring_rejected_full.
 Print Assumptions ring_typed.
 Print Assumptions ring_df.
