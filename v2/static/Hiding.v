@@ -187,7 +187,7 @@ Theorem fptyped_ren π N W Σ p T :
   fptyped N W Σ p T → fptyped N (sw_ren π W) (senv_ren (cb_f π) Σ) p (ty_ren (cb_f π) T).
 Proof.
   induction 1 as [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Ht [Hw HW]
-                 |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 HS].
+                 |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 H12 H1C H2C HC HC1 HC2 HS].
   - apply (fp_term N _ _ (tenv_ren (cb_f π) ΘB) C0 t _ c).
     + by apply tfree_ren.
     + intros o. unfold tenv_ren. by rewrite dom_fmap_L.
@@ -203,8 +203,7 @@ Proof.
     + split; [by apply sworld_wf_ren|by apply wok_ren].
   - rewrite senv_ren_union in IH1, IH2 |- *. rewrite senv_dual_ren in IH2. simpl in IH2.
     rewrite sw_ren_join, <-(chans_of_ren (cb_f π) ΣC).
-    apply fp_connect; [exact IH1|exact IH2|by apply map_disjoint_fmap|by rewrite <-senv_dual_ren; apply map_disjoint_fmap
-      |by rewrite dom_senv_ren|by rewrite !chans_of_ren|by rewrite !chans_of_ren|by rewrite !chans_of_ren
+    apply fp_connect; [exact IH1|exact IH2|by rewrite !chans_of_ren|by rewrite !chans_of_ren|by rewrite !chans_of_ren
       |done|by rewrite !chans_of_ren|by rewrite !chans_of_ren|].
     rewrite swshared_ren. apply (wok_sub N _ (sw_ren π (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)))).
     + intros x y. apply sw_lt_facts. intros g [Hg|Hg]; [left|right]; by apply swrestrict_ren_facts.
@@ -461,7 +460,7 @@ Qed.
 Theorem ptyped_full N W Σ p T : ptyped N W Σ p T → ∃ W', fptyped N W' Σ p T ∧ hides W' (iface Σ T) W.
 Proof.
   induction 1 as [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Ht HW
-                 |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 HS].
+                 |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 H12 H1C H2C HC HC1 HC2 HS].
   - exists W. split; [by eapply fp_term|]. apply hides_restrict, HW.
   - destruct IH1 as (W1' & Hty1 & Hh1), IH2 as (W2' & Hty2 & Hh2).
     destruct (rename_side _ _ _ _ _ _ (iface (Σ2 ∪ senv_dual ΣC) TUnit) Hty1 Hh1) as (V1 & Hv1 & Hh1' & Hav1).
@@ -480,7 +479,7 @@ Theorem fptyped_ptyped N W Σ p T :
 Proof.
   intros Hty. pose proof Hty as Hty'. revert Hty'.
   induction Hty as [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Ht HW
-                   |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T Hty1 IH1 Hty2 IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 HS];
+                   |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T Hty1 IH1 Hty2 IH2 H12 H1C H2C HC HC1 HC2 HS];
     intros Hfull.
   - exists (swrestrict W (iface Σ T)). split; [by eapply p_term|]. intros x y. apply swrestrict_lt.
   - destruct (IH1 Hty1) as (Wi1 & Hi1 & Hs1), (IH2 Hty2) as (Wi2 & Hi2 & Hs2).

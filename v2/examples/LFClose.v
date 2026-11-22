@@ -58,9 +58,6 @@ Proof.
   apply H; clear H.
   - apply cl_term.
   - apply cl_term.
-  - apply map_disjoint_empty_l.
-  - apply map_disjoint_empty_l.
-  - intros o. unfold ΣC. rewrite dom_singleton_L, !elem_of_singleton. intros ->. discriminate.
   - set_solver.
   - set_solver.
   - set_solver.

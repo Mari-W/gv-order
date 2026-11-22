@@ -265,7 +265,7 @@ Lemma fptyped_two N W Σ C t1 t2 T :
     wok N (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)).
 Proof.
   intros H. remember (C, ({[+ t1 +]} ⊎ {[+ t2 +]})) as p eqn:Hp. destruct H as [W' Σ' ΘB C0' t' T' c|
-    W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T' H1 H2 _ _ _ _ _ _ _ _ _ HS].
+    W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T' H1 H2 _ _ _ _ _ _ HS].
   - exfalso. pose proof (f_equal snd Hp) as HE. simpl in HE.
     assert (size (({[+ t1 +]} ⊎ {[+ t2 +]}) : gmultiset expr) = 1) as Hsz by (by rewrite <-HE, gmultiset_size_singleton).
     rewrite gmultiset_size_disj_union, !gmultiset_size_singleton in Hsz. lia.

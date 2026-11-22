@@ -121,19 +121,19 @@ Qed.
 Definition lf_sems (N : nat) (W : sworld) (Σ : senv) (p : proc) (T : ty) : Prop :=
   ∀ R, wmodels R W → wranked R → Σ ⊪^N _ R p : T.
 
-(** The rule P-Connect, with the premises of [p_connect]. The soup uses
-    the channel conditions only. The second component is read at the
+(** The rule P-Connect, with the premises of [p_connect] and the
+    partner-freedom of the cut, which [p_connect] derives from its left
+    premise. The soup uses the channel conditions only. The second component is read at the
     world the first one starts at, so the fresh roots of the two cannot
     collide. *)
 Theorem lf_p_connect N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
   lf_sems N W1 (Σ1 ∪ ΣC) (C1, E1) T → lf_sems N W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
-  Σ1 ##ₘ ΣC → Σ2 ##ₘ senv_dual ΣC →
   (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
   chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
   C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
   lf_sems N (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
 Proof.
-  intros H1 H2 _ _ Hf H12 H1C H2C HC HC1 HC2 R HR Hr. apply lf_soup_connect; try done.
+  intros H1 H2 Hf H12 H1C H2C HC HC1 HC2 R HR Hr. apply lf_soup_connect; try done.
   - apply H1; [|done]. by eapply wmodels_ext; [apply swext_join_l|].
   - intros W' HW'. apply H2; [|by apply (wext_ranked R W')]. eapply wmodels_mono; [exact HW'|].
     by eapply wmodels_ext; [apply swext_join_r|].
@@ -237,7 +237,7 @@ Proof.
   pose proof (lf_p_connect N W1 W2 ∅ ∅ ΣC C1 C2 E1 E2 T) as Hc.
   assert (chans_of (∅ : senv) = ∅) as E0 by (unfold chans_of; by rewrite dom_empty_L, set_map_empty).
   rewrite E0, !(left_id_L ∅ (∪)) in Hc.
-  apply (Hc H1 H2); try done; first [apply map_disjoint_empty_l|set_solver].
+  apply (Hc H1 H2); try done; set_solver.
 Qed.
 
 (** ** One closed thread

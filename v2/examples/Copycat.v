@@ -399,9 +399,6 @@ Proof.
   rewrite chans_Σx in H. apply H; clear H.
   - exact HP.
   - rewrite Σf_split. apply fwd_term.
-  - exact HΣ.
-  - rewrite Σx_dual. unfold Σy. apply map_disjoint_singleton_l_2. by rewrite lookup_singleton_ne.
-  - intros o. unfold Σx. rewrite dom_singleton_L, !elem_of_singleton. intros ->. discriminate.
   - rewrite ?chans_Σy, ?chans_Σx. set_solver.
   - rewrite ?chans_Σy, ?chans_Σx. set_solver.
   - rewrite ?chans_Σy, ?chans_Σx. set_solver.
@@ -476,9 +473,6 @@ Proof.
   rewrite E in H. apply H; clear H E.
   - exact H1.
   - apply p2_term.
-  - apply map_disjoint_empty_l.
-  - apply map_disjoint_empty_l.
-  - intros o. unfold Σy. rewrite dom_singleton_L, !elem_of_singleton. intros ->. discriminate.
   - unfold chans_of. rewrite dom_empty_L. set_solver.
   - unfold chans_of. rewrite dom_empty_L. set_solver.
   - unfold chans_of. rewrite dom_empty_L. set_solver.
@@ -1005,9 +999,6 @@ Proof.
         apply map_disjoint_singleton_l_2; by rewrite lookup_singleton_ne).
       apply fwdh_term.
     - apply p1h_term.
-    - unfold Σhy, Σhx. apply map_disjoint_singleton_l_2. by rewrite lookup_singleton_ne.
-    - apply map_disjoint_empty_l.
-    - intros o. unfold Σhx. rewrite dom_singleton_L, !elem_of_singleton. intros ->. discriminate.
     - rewrite ?chans_hy, ?chans_hx, ?chans_empty. set_solver.
     - rewrite ?chans_hy, ?chans_hx, ?chans_empty. set_solver.
     - rewrite ?chans_hy, ?chans_hx, ?chans_empty. set_solver.
@@ -1022,9 +1013,6 @@ Proof.
   rewrite E in H. apply H; clear H E.
   - exact H1.
   - pose proof p2h_term as Hp. rewrite (left_id_L ∅ (∪)) in Hp. exact Hp.
-  - apply map_disjoint_empty_l.
-  - apply map_disjoint_empty_l.
-  - intros o. unfold Σhy. rewrite dom_singleton_L, !elem_of_singleton. intros ->. discriminate.
   - rewrite chans_empty. set_solver.
   - rewrite chans_empty. set_solver.
   - rewrite chans_empty. set_solver.
@@ -1399,9 +1387,6 @@ Proof.
     { rewrite Σxp_dual. unfold Σyp, Σp. apply map_union_comm.
       apply map_disjoint_singleton_l_2. by rewrite lookup_singleton_ne. }
     apply fwdp_term.
-  - exact HΣ.
-  - rewrite Σxp_dual. unfold Σyp. apply map_disjoint_singleton_l_2. by rewrite lookup_singleton_ne.
-  - intros o. unfold Σxp. rewrite dom_singleton_L, !elem_of_singleton. intros ->. discriminate.
   - rewrite ?Ey, ?Ex. set_solver.
   - rewrite ?Ey, ?Ex. set_solver.
   - rewrite ?Ey, ?Ex. set_solver.

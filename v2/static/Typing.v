@@ -245,6 +245,29 @@ Proof.
   subst. destruct o; discriminate.
 Qed.
 
+(** The side conditions that P-Connect does not ask. Disjoint channels
+    give disjoint maps, and the cut of a partner-free interface is
+    partner-free. *)
+Lemma chans_disj_map (Σ1 Σ2 : senv) : chans_of Σ1 ## chans_of Σ2 → Σ1 ##ₘ Σ2.
+Proof.
+  intros H. apply map_disjoint_dom. intros o H1 H2.
+  apply (H (ech o)); unfold chans_of; apply elem_of_map; by exists o.
+Qed.
+
+Lemma chans_of_senv_dual (Σ : senv) : chans_of (senv_dual Σ) = chans_of Σ.
+Proof.
+  unfold chans_of, senv_dual. rewrite dom_kmap_L by apply _. rewrite dom_fmap_L.
+  apply set_eq. intros c. rewrite elem_of_map. setoid_rewrite elem_of_map. split.
+  - intros (o & -> & o' & -> & Ho). exists o'. split; [by rewrite ech_edual|done].
+  - intros (o & -> & Ho). exists (edual o). split; [by rewrite ech_edual|]. exists o. split; [done|done].
+Qed.
+
+Lemma chans_disj_map_dual (Σ2 ΣC : senv) : chans_of Σ2 ## chans_of ΣC → Σ2 ##ₘ senv_dual ΣC.
+Proof. intros H. apply chans_disj_map. by rewrite chans_of_senv_dual. Qed.
+
+Lemma pfree_union_r (Σ1 ΣC : senv) : pfree (Σ1 ∪ ΣC) → pfree ΣC.
+Proof. intros H o Ho Hd. apply (H o); rewrite dom_union_L; set_solver. Qed.
+
 Inductive fptyped (N : fuel) : sworld → senv → proc → ty → Prop :=
   | fp_term W Σ ΘB C0 t T c :
       tfree T →
@@ -258,8 +281,6 @@ Inductive fptyped (N : fuel) : sworld → senv → proc → ty → Prop :=
   | fp_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
       fptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →
       fptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
-      Σ1 ##ₘ ΣC → Σ2 ##ₘ senv_dual ΣC →
-      (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
       chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
       C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
       wok N (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)) →
@@ -287,7 +308,7 @@ Proof. intros H1 H2. destruct N; [apply wf_join_iff|apply acyc_join_iff]; done. 
     N = ∞ and well-founded at a finite N. *)
 Lemma fptyped_wf N W Σ p T : fptyped N W Σ p T → sworld_wf W ∧ wok N W.
 Proof.
-  induction 1 as [|W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 _ _ _ _ _ _ _ _ _ HS]; [done|].
+  induction 1 as [|W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 _ _ _ _ _ _ HS]; [done|].
   split; [by apply swjoin_wf; [apply IH1|apply IH2]|].
   apply (wok_join_iff N W1 W2 (proj1 IH1) (proj1 IH2)). split_and!; [apply IH1|apply IH2|done].
 Qed.
@@ -297,16 +318,14 @@ Qed.
 Lemma fp_connect_join N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
   fptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →
   fptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
-  Σ1 ##ₘ ΣC → Σ2 ##ₘ senv_dual ΣC →
-  (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
   chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
   C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
   sworld_wf W1 → sworld_wf W2 →
   wok N (W1 ⊔ W2) →
   fptyped N (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
 Proof.
-  intros H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hw1 Hw2 HS.
-  apply fp_connect; [exact H1|exact H2|exact HD1|exact HD2|exact Hf|exact H12|exact H1C|exact H2C
+  intros H1 H2 H12 H1C H2C HC HC1 HC2 Hw1 Hw2 HS.
+  apply fp_connect; [exact H1|exact H2|exact H12|exact H1C|exact H2C
     |exact HC|exact HC1|exact HC2|]. by apply (wok_join_iff N W1 W2 Hw1 Hw2).
 Qed.
 
@@ -338,7 +357,7 @@ Proof. induction 1; [done|eauto using pfree_join]. Qed.
 (** A typed process restricts no channel of its interface. *)
 Lemma fptyped_chans N W Σ p T : fptyped N W Σ p T → p.1 ## chans_of Σ.
 Proof.
-  induction 1 as [|? ? ? ? ? ? ? ? ? ? _ IH1 _ IH2 ? ? ? ? ? ? ? ? ?];
+  induction 1 as [|? ? ? ? ? ? ? ? ? ? _ IH1 _ IH2 ? ? ? ? ? ? ?];
     simpl in *; [done|..]; rewrite !chans_of_union in *; set_solver.
 Qed.
 
@@ -363,8 +382,6 @@ Inductive ptyped (N : fuel) : sworld → senv → proc → ty → Prop :=
   | p_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
       ptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →
       ptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
-      Σ1 ##ₘ ΣC → Σ2 ##ₘ senv_dual ΣC →
-      (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
       chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
       C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
       wok N (W1 ⊔ W2) →
@@ -388,7 +405,7 @@ Proof. destruct N; [apply swrestrict_swf|apply swrestrict_sacyc]. Qed.
     finite N. *)
 Lemma ptyped_wf N W Σ p T : ptyped N W Σ p T → sworld_wf W ∧ wok N W.
 Proof.
-  destruct 1 as [W Σ ΘB C0 t T c _ _ _ _ _ _ _ [_ HW]|W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ _ _ _ _ _ _ _ _ _ _ HS];
+  destruct 1 as [W Σ ΘB C0 t T c _ _ _ _ _ _ _ [_ HW]|W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ _ _ _ _ _ _ _ HS];
     (split; [apply swrestrict_wf|by apply swrestrict_wok]).
 Qed.
 
@@ -403,6 +420,6 @@ Proof. induction 1; [done|eauto using pfree_join]. Qed.
 
 Lemma ptyped_chans N W Σ p T : ptyped N W Σ p T → p.1 ## chans_of Σ.
 Proof.
-  induction 1 as [|? ? ? ? ? ? ? ? ? ? _ IH1 _ IH2 ? ? ? ? ? ? ? ? ?];
+  induction 1 as [|? ? ? ? ? ? ? ? ? ? _ IH1 _ IH2 ? ? ? ? ? ? ?];
     simpl in *; [done|..]; rewrite !chans_of_union in *; set_solver.
 Qed.

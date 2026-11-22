@@ -42,14 +42,14 @@ Qed.
 
 Lemma fptyped_conn N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
   fptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T → fptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
-  Σ1 ##ₘ ΣC → Σ2 ##ₘ senv_dual ΣC →
-  (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
   chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
   C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
   conn Σ1 ΣC C1 Σ2 (senv_dual ΣC) C2.
 Proof.
-  intros H1 H2 D1 D2 Hf H12 H1C H2C HC HC1 HC2.
+  intros H1 H2 H12 H1C H2C HC HC1 HC2.
   pose proof (fptyped_pfree _ _ _ _ _ H1) as F1. pose proof (fptyped_pfree _ _ _ _ _ H2) as F2.
+  pose proof (chans_disj_map _ _ H1C) as D1. pose proof (chans_disj_map_dual _ _ H2C) as D2.
+  assert (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) as Hf by exact (pfree_union_r _ _ F1).
   pose proof (fptyped_chans _ _ _ _ _ H1) as K1. pose proof (fptyped_chans _ _ _ _ _ H2) as K2.
   simpl in K1, K2. rewrite chans_of_union in K1, K2.
   rewrite (cut_dual_chans _ _ (senv_dual_cut ΣC)) in K2.
@@ -127,12 +127,12 @@ Section proc.
   Proof.
     induction 1 as
       [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Ht HW
-      |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T H1 IH1 H2 IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 HJ];
+      |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T H1 IH1 H2 IH2 H12 H1C H2C HC HC1 HC2 HJ];
       intros HG R HR HS n; simpl in HG.
     - apply (sem_p_term κ n R _ Σ (tenv_erase ΘB) C0 t T Hp (pterm_sth N Σ ΘB C0 HB HΣ Hpf Hd)).
       assert (G t) as Hg by (apply HG; multiset_solver).
       apply typed_E. exact (Hthr W R N _ t T c (proj1 HW) Ht Hg HR HS).
-    - pose proof (fptyped_conn _ _ _ _ _ _ _ _ _ _ _ H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2) as Hc.
+    - pose proof (fptyped_conn _ _ _ _ _ _ _ _ _ _ _ H1 H2 H12 H1C H2C HC HC1 HC2) as Hc.
       refine (sem_p_connect κ n R Σ1 ΣC Σ2 (senv_dual ΣC) (C1, E1) (C2, E2) T (fptyped_tfree _ _ _ _ _ H1)
                 (IH1 _ R _ HS n) (IH2 _ R _ HS n) Hc).
       + intros t Ht; apply HG; simpl; multiset_solver.

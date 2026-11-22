@@ -186,10 +186,6 @@ Proof.
   rewrite Ec, chans_of_empty, !(left_id_L ∅ (∪)), Ed in H. unfold comp. apply H; clear H.
   - apply cl2_term; [congruence|cbn; congruence|]. by left.
   - apply cl2_term; [congruence|cbn; congruence|]. right. by rewrite pt_dual_dual.
-  - apply map_disjoint_empty_l.
-  - apply map_disjoint_empty_l.
-  - intros o. unfold ΣC, senv2. rewrite dom_union_L, !dom_singleton_L, !elem_of_union, !elem_of_singleton.
-    intros [->| ->] [E|E]; discriminate.
   - set_solver.
   - set_solver.
   - set_solver.
@@ -217,9 +213,6 @@ Proof.
   apply H; clear H.
   - by apply comp_typed.
   - by apply comp_typed.
-  - apply map_disjoint_empty_l.
-  - apply map_disjoint_empty_l.
-  - intros o. rewrite dom_empty_L. set_solver.
   - set_solver.
   - set_solver.
   - set_solver.

@@ -30,7 +30,7 @@ Theorem lf_fundamental (EM : excluded_middle) N W Σ p T : Σ ⊩^N _ W p : T �
 Proof.
   intros [Hty Hg]. remember (Some N) as N' eqn:EN. revert Hg. induction Hty as
     [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Ht HW
-    |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 HJ];
+    |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T Hty1 IH1 _ IH2 H12 H1C H2C HC HC1 HC2 HJ];
     intros Hg; subst.
   - eapply (lf_p_term EM W); [exact (proj1 HW)|done|done|done| |exact Ht|].
     { intros ch Hch. destruct (Hd ch Hch) as (S & x & m & m' & ? & _ & ?). eauto 10. }
@@ -39,6 +39,7 @@ Proof.
     apply lf_p_connect; try done.
     + apply IH1. intros t Ht; apply Hg; simpl; multiset_solver.
     + apply IH2. intros t Ht; apply Hg; simpl; multiset_solver.
+    + exact (pfree_union_r _ _ (fptyped_pfree _ _ _ _ _ Hty1)).
 Qed.
 
 (** ** Soundness *)
@@ -89,7 +90,6 @@ Definition lf_sems_h (N : nat) (Wi : sworld) (Σ : senv) (p : proc) (T : ty) : P
 Theorem lf_p_connect_h N V1 V2 W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
   sworld_wf V1 → sworld_wf V2 → swf V1 → swf V2 →
   lf_sems N V1 (Σ1 ∪ ΣC) (C1, E1) T → lf_sems N V2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
-  Σ1 ##ₘ ΣC → Σ2 ##ₘ senv_dual ΣC →
   (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
   chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
   C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
@@ -99,7 +99,7 @@ Theorem lf_p_connect_h N V1 V2 W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
   swf (W1 ⊔ W2) →
   lf_sems_h N (swrestrict (W1 ⊔ W2) (iface (Σ1 ∪ Σ2) T)) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
 Proof.
-  intros Hw1 Hw2 HS1 HS2 H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hh1 Hh2 Hav1 Hav2 HS.
+  intros Hw1 Hw2 HS1 HS2 H1 H2 Hf H12 H1C H2C HC HC1 HC2 Hh1 Hh2 Hav1 Hav2 HS.
   destruct (connect_hidden (Some N) V1 V2 W1 W2 _ _ (iface (Σ1 ∪ Σ2) T) Hw1 Hw2 Hh1 Hh2 Hav1 Hav2
               (iface_connect _ _ _ _) HS) as [HR Hh].
   exists (V1 ⊔ V2). split_and!; [by apply swjoin_wf|by apply (wf_join_iff V1 V2 Hw1 Hw2)|exact Hh|].

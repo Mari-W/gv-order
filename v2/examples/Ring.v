@@ -159,9 +159,6 @@ Proof.
     + rewrite Ed. assert ({[EPos "b" := (SEnd, pb)]} ∪ {[ENeg "a" := (SEnd, pa‾)]} = ΣB) as -> by
         (unfold ΣB; rewrite (senv2_comm (ENeg "a")) by done; done).
       apply tB_typed.
-    + by apply map_disjoint_singleton_l, lookup_singleton_ne.
-    + rewrite Ed. by apply map_disjoint_singleton_l, lookup_singleton_ne.
-    + intros o. unfold ΣC. rewrite dom_singleton_L, !elem_of_singleton. intros -> E. discriminate.
     + rewrite !chans_of_singleton. chan_disj.
     + unfold ΣC. rewrite !chans_of_singleton. chan_disj.
     + unfold ΣC. rewrite !chans_of_singleton. chan_disj.
@@ -181,10 +178,6 @@ Proof.
   - apply (pc_snoc None (HA :: [HB]) H ∅ ∅ ΣC {["a"]} ∅ ({[+ tA +]} ⊎ {[+ tB +]}) {[+ t +]} TUnit).
     + rewrite (left_id_L ∅ (∪)). apply ring_two.
     + rewrite (left_id_L ∅ (∪)). unfold ΣC. rewrite senv_dual_senv2. exact Ht.
-    + apply map_disjoint_empty_l.
-    + apply map_disjoint_empty_l.
-    + intros o. unfold ΣC, senv2. rewrite dom_union_L, !dom_singleton_L, !elem_of_union, !elem_of_singleton.
-      intros [->| ->] [E|E]; discriminate.
     + set_solver.
     + rewrite chans_of_empty. set_solver.
     + rewrite chans_of_empty. set_solver.
