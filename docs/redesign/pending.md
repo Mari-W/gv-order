@@ -1,5 +1,86 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, 2026-11-22, three open gaps (fx-gap)
+
+Branch fx-gap in .claude/worktrees/fx-gap, from redesign at 909ef90,
+nothing pushed. Commits 1565a0e, ca8071f, 9672f0d, 4d1b218 and the
+commit of this report. No Admitted, no Axiom, no new Parameter. No
+relation and no typing rule changed. New files static/PointSubstTyped.v,
+static/ConnectNExact.v and examples/CopycatTwoN.v. static/LetVar.v and
+examples/CopycatTwo.v gain sections. ConnectN.v, Typing.v, Contexts.v
+and the definitions fx-static and fx-cost own are untouched. CheckAll
+rises from 227 to 242 lines.
+
+- Gap 1, point substitution for derivations. Done.
+  - `typed_pinst` (static/PointSubstTyped.v). Let W keep its facts at
+    constant roots (`facts_const`) and let Γ' derive σ of each fact of
+    Γ (`hinst W σ Γ Γ'`). A derivation over Θ, Γ, Δ, F at T then gives
+    one over σ(Θ), Γ', σ(Δ), σ(F) at σ(T), at the same N and cost. The
+    binders of E-Box, E-Open and Sub-Ex lift σ to `pup m σ`
+    (`hinst_open`). `typed_open_inst` closes an opening at an instance
+    xs with Γ ⊢ C[xs].
+  - `cons_open` does survive, against the fx-open report, under `hinst`
+    (`cons_open_hinst`). Γ' may derive more than σ(Γ), but a chain of
+    `hc_open m σ(C) Γ'` between outer points enters the new points only
+    through facts of σ(C). Each such stretch is the instance of a chain
+    of `hc_open m C Γ` between outer points, a fact of Γ by `cons_open`.
+    The invariant `ckinv` carries the four cases outer/new. Constructive.
+  - (acyc-new) and (gen-new) survive (`new_ok_hinst`), and so does
+    subtyping (`tsub_hinst`). These read the definitions fx-static
+    changes (F4, F6), so `new_ok_hinst` needs a look after that merge.
+  - `let_elim` (static/LetVar.v) now asks `sworld_wf W` and no longer
+    asks the type T2 of ∗ to be no existential. Its last conjunct reads
+    ¬ is_ex T1 → e : T at no higher cost. The continuation may open
+    ∗ : ∃ιs. C. U and use x under C. The unit packs at witnesses of C
+    (`unit_ex_wit`, through Sub-Ex by `hold_close` and `tsub_close`),
+    and `typed_open_inst` brings the use of x back to Γ, by induction
+    on the existential layers of T2 (`inv_cont_ex`).
+  - The remaining condition on T1 is exactly the counterexample
+    `let_var_counter`, kept as it was. The condition Δ with no
+    existential entry stays. Dropping it would need the inversion of
+    the pair through openings of Δ, not attempted.
+
+- Gap 2, n-ary amalgamation (Q12). Inclusion is the right statement
+  for the restricted join, and the exact world is now named.
+  - `p_connect_n_exact` (static/ConnectNExact.v). The composite types at
+    `sw_fold W1 l`, the fold (((W1 ⊔ W2)|I2 ⊔ W3)|I3 ⊔ …)|I with I the
+    final interface, the world n − 1 binary P-Connects build.
+  - `fold_join_gap`. Worlds W1 = {c0 ≺ a}, W2 = {}, W3 = {a ≺ c1} with
+    a hidden after step 2. The restricted join derives c0 ≺ c1, the fold
+    does not. A hidden constant is private to its composite and a later
+    component may reuse it, so the join identifies two different points.
+    Equality with the restricted join is false, and the n-ary premise
+    asks more than the fold needs. The file header says so. The
+    counterexample is at the level of worlds, not of a typed process.
+
+- Gap 3, two-sided expansion at a finite N. Done, no rule change.
+  - `collapse_swf`, `J_wok` (examples/CopycatTwo.v). The collapse maps a
+    descending chain of the new world to one of the old world, because
+    no two equalities follow each other. The proof follows Acc and is
+    constructive.
+  - `fwdp_expand2_N` holds at every N given the forwarder typed at N.
+    `fwdp_expand2` is now its instance at N = ∞ with `fwdq_term`.
+  - `fb_typed`, `fwdq_term_fin`, `fwdp_expand2_fin`
+    (examples/CopycatTwoN.v). The forwarder schema types at N ≥ 4. An
+    action returns its end at credit N/2 and costs 1, and an end waits
+    for at most two actions, so credits ≥ 1 and tickets ≥ 2 are
+    invariant. No lock-freedom instance was derived.
+
+- Builds. Local single-file builds throughout. LAPTOP_RESULTS
+
+- Map (docs/explorer/map.json, 4d1b218). check.sh shows 0 errors, no
+  xref-missing and the 65 warnings of 909ef90.
+  - th-terms gains the row `th.pinst` with notes `th.pinst` and
+    `th.hinst`, a caption sentence and the source `typed_pinst`.
+  - The note `th.let-var` says the converse holds when x is bound at no
+    existential, and why opening ∗ is fine. Sources gain
+    `unit_ex_wit`, `inv_cont_ex`, `typed_open_inst`.
+  - p-typing, row P-Connect^n, concludes the fold world and keeps the
+    inclusion. The note says why equality fails. Sources gain
+    static/ConnectNExact.v.
+  - ex-copycat states the finite-bound expansion inside the lf mode,
+    with sources examples/CopycatTwoN.v and the collapse lemmas.
+
 ## Report, 2026-11-22, three open problems (fx-open)
 
 Branch fx-open in .claude/worktrees/fx-open, from redesign at c813418,
