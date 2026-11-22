@@ -595,3 +595,197 @@ Proof.
     apply (Hirr (te_pt e2')). eapply sw_lt_trans; [eapply sw_lt_mono; [apply swext_join_l|exact Hb]|].
     eapply sw_lt_mono; [apply swext_join_r|exact Ha].
 Qed.
+
+(** ** A higher-order payload
+
+      Sh = ?(Close@ι₀).Close
+
+    A message on x carries an end at the field x·0. The forwarder cannot
+    send the received end on, because a payload sent on y must sit at
+    y·0 and an end keeps its point. It η-expands the payload instead.
+    It creates a channel at the field y·0 (E-New-Field), sends the end at
+    y·0 on, and forwards the received end at x·0 to the kept end at
+    (y·0)‾. For Close that inner forwarder closes both. The payload ends
+    pass on with facts at their fields.
+
+      fwdh o1 o2 = let (e, o1) = recv o1 in let (c', c) = new_{y·0} in
+                   let o2 = send ⟨c, o2⟩ in
+                   close e; close c'; close o1; close o2
+
+      recv o1 at x       x ≺ y‾
+      send o2 at y       y ≺ (y·0)‾ (the payload) and y ≺ y·0, y ≺ (x⁺)‾,
+                         y ≺ (x·0)‾ (the ends held)
+      close e at x·0     x·0 ≺ y·0, x·0 ≺ (x⁺)‾, x·0 ≺ (y⁺)‾
+      close c' at (y·0)‾ (y·0)‾ ≺ (x⁺)‾, (y·0)‾ ≺ (y⁺)‾
+      close o1 at x⁺     x⁺ ≺ (y⁺)‾ *)
+
+Definition Th : ty := TSess SEnd (pvar 0) None None.
+Definition Sh : sty := SSeq (SRcv 1 Th) SEnd.
+
+Lemma Th_scoped : pscoped 1 Th.
+Proof. cbn. split; [exact I|]. intros a Ha. injection Ha as <-. lia. Qed.
+
+Lemma Sh_contr : scontr Sh.
+Proof. contr_tac. Qed.
+
+Lemma Sh_dual_contr : scontr (dual Sh).
+Proof. contr_tac. Qed.
+
+Definition fwdh_t (o1 o2 : cend) : expr :=
+  LetP (ERecv (Chan o1))
+    (LetP ENew
+      (ELet (ESend (Pair (Var 1) (Chan o2)))
+        (LetU (EClose (Var 4))
+          (LetU (EClose (Var 1))
+            (LetU (EClose (Var 3)) (EClose (Var 0))))))).
+
+Definition fwdh_facts (W : sworld) (Γ : hctx) (x y : point) : Prop :=
+  slt W Γ x (y‾) ∧
+  slt W Γ y ((y·0)‾) ∧ slt W Γ y (y·0) ∧ slt W Γ y (x⁺‾) ∧ slt W Γ y ((x·0)‾) ∧
+  slt W Γ (x·0) (y·0) ∧ slt W Γ (x·0) (x⁺‾) ∧ slt W Γ (x·0) (y⁺‾) ∧
+  slt W Γ ((y·0)‾) (x⁺‾) ∧ slt W Γ ((y·0)‾) (y⁺‾) ∧
+  slt W Γ (x⁺) (y⁺‾).
+
+Ltac fh_tac := match goal with H : fwdh_facts _ _ _ _ |- _ =>
+  destruct H as (?&?&?&?&?&?&?&?&?&?&?); assumption end.
+
+Ltac hz_tac := repeat match goal with H : _ ∨ _ |- _ => destruct H end; subst; try contradiction; fh_tac.
+
+Section typing_h.
+  Context (W : sworld) (Γ : hctx) (o1 o2 : cend) (x y : point).
+  Context (Ho : o1 ≠ o2) (Hf : fwdh_facts W Γ x y).
+
+  Definition Θh : tenv := {[o1 := TE Sh x None None]} ∪ {[o2 := TE (dual Sh) y None None]}.
+
+  Lemma Θh_split : tsplit Θh {[o1 := TE Sh x None None]} {[o2 := TE (dual Sh) y None None]}.
+  Proof. split; [by apply map_disjoint_singleton_l_2; rewrite lookup_singleton_ne|reflexivity]. Qed.
+
+  Lemma fwdh_dftyped : dftyped W Θh Γ [] (∅, None) (fwdh_t o1 o2) TUnit.
+  Proof.
+    unfold fwdh_t.
+    eapply d_letp; [apply Θh_split|apply lsplit_nil| |].
+    { eapply d_recv with (S0 := Sh) (x := x) (m := 1) (T := Th) (S := SEnd);
+        [reflexivity|exact Th_scoped| |apply d_chan, spare_unl; spare_tac].
+      apply ub_below_nil; [reflexivity|]. intros z Hz.
+      rewrite tenv_heads_one in Hz. cbn in Hz. set_unfold in Hz. destruct Hz as [->|Hz]; [fh_tac|set_solver]. }
+    eapply d_letp with (Θ1 := ∅) (Θ2 := {[o2 := TE (dual Sh) y None None]});
+      [split; [apply map_disjoint_empty_l|by rewrite map_empty_union]|lsplit_tac ENew EUnit| |].
+    { apply (d_new_fld _ _ _ _ y 0 SEnd); [apply spare_unl; spare_tac|contr_tac]. }
+    eapply d_let with (Θ1 := {[o2 := TE (dual Sh) y None None]}) (Θ2 := ∅);
+      [split; [apply map_disjoint_empty_r|by rewrite map_union_empty]
+      |lsplit_tac (ESend (Pair (Var 1) (Chan o2))) EUnit| |].
+    { eapply d_send with (S0 := dual Sh) (x := y) (m := 1) (T := Th) (S := SEnd);
+        [reflexivity|exact Th_scoped|reflexivity| | |].
+      - intros z Hz. cbn in Hz. set_unfold in Hz. subst z. fh_tac.
+      - apply ub_below_nil; [reflexivity|]. intros z Hz.
+        rewrite tenv_heads_empty in Hz. cbn in Hz. set_unfold in Hz.
+        hz_tac.
+      - eapply d_pair with (Θ1 := ∅) (Θ2 := {[o2 := TE (dual Sh) y None None]});
+          [split; [apply map_disjoint_empty_l|by rewrite map_empty_union]
+          |lsplit_tac (Var 1) (Chan o2)| |].
+        + eapply d_var'; [reflexivity|]. spare_tac.
+        + apply d_chan, spare_unl. spare_tac. }
+    eapply d_letu; [apply tsplit_empty|lsplit_tac (EClose (Var 4)) EUnit| |].
+    { eapply d_close with (S0 := SEnd) (x := x·0); [reflexivity| |eapply d_var'; [reflexivity|spare_tac]].
+      apply ub_below_nil; [reflexivity|]. intros z Hz.
+      rewrite tenv_heads_empty in Hz. cbn in Hz. set_unfold in Hz.
+      hz_tac. }
+    eapply d_letu; [apply tsplit_empty|lsplit_tac (EClose (Var 1)) EUnit| |].
+    { eapply d_close with (S0 := SEnd) (x := (y·0)‾); [reflexivity| |eapply d_var'; [reflexivity|spare_tac]].
+      apply ub_below_nil; [reflexivity|]. intros z Hz.
+      rewrite tenv_heads_empty in Hz. cbn in Hz. set_unfold in Hz.
+      hz_tac. }
+    eapply d_letu; [apply tsplit_empty|lsplit_tac (EClose (Var 3)) EUnit| |].
+    { eapply d_close with (S0 := SEnd) (x := x⁺); [reflexivity| |eapply d_var'; [reflexivity|spare_tac]].
+      apply ub_below_nil; [reflexivity|]. intros z Hz.
+      rewrite tenv_heads_empty in Hz. cbn in Hz. set_unfold in Hz.
+      hz_tac. }
+    eapply d_close with (S0 := SEnd) (x := y⁺); [reflexivity|apply ub_below_empty|].
+    eapply d_var'; [reflexivity|spare_tac].
+    Unshelve. all: exact None.
+  Qed.
+End typing_h.
+
+(** The higher-order forwarder's world, over the constant roots of [px]
+    and [py] and the fields px·0 and py·0. The potential
+    4·offset + (0 for x, 1 for y, 2 for x·0, 3 for y·0) grows along every
+    fact and every step, so the world is well-founded. *)
+
+Definition fwdh_fact (x y : point) (g : fact) : Prop :=
+  g = FLt x (y‾) ∨
+  g = FLt y ((y·0)‾) ∨ g = FLt y (y·0) ∨ g = FLt y (x⁺‾) ∨ g = FLt y ((x·0)‾) ∨
+  g = FLt (x·0) (y·0) ∨ g = FLt (x·0) (x⁺‾) ∨ g = FLt (x·0) (y⁺‾) ∨
+  g = FLt ((y·0)‾) (x⁺‾) ∨ g = FLt ((y·0)‾) (y⁺‾) ∨
+  g = FLt (x⁺) (y⁺‾).
+
+Definition W_h : sworld := SWorld ({[0]} ∪ {[1]}) (fwdh_fact px py).
+
+Ltac fh_cases H := repeat match type of H with _ ∨ _ => destruct H as [H|H] end.
+
+Lemma W_h_wf : sworld_wf W_h.
+Proof.
+  split; simpl. intros u v H. unfold fwdh_fact in H. fh_cases H;
+    injection H as Hu Hv; subst; split; eexists; (split; [reflexivity|set_solver]).
+Qed.
+
+Definition hcls (n : pname) : nat :=
+  match n with
+  | NConst 1 => 1
+  | NField (NConst 0) 0 0 => 2
+  | NField (NConst 1) 0 0 => 3
+  | _ => 0
+  end.
+
+Lemma hcls_le n : hcls n ≤ 3.
+Proof. unfold hcls. repeat case_match; lia. Qed.
+
+Definition hpot (u : point) : nat := 4 * pt_off u + hcls (pt_name u).
+
+Lemma W_h_step u v : swstep W_h u v → hpot u < hpot v.
+Proof.
+  intros Hs. destruct Hs as [u v H|u|u].
+  - simpl in H. unfold fwdh_fact in H. fh_cases H; injection H as -> ->; vm_compute; lia.
+  - unfold hpot. cbn [pt_shift pt_name pt_off]. pose proof (hcls_le (pt_name u)). lia.
+  - unfold hpot. cbn [pt_shift pt_dual pt_name pt_off]. pose proof (hcls_le (pt_name u)). lia.
+Qed.
+
+Lemma W_h_swf : swf W_h.
+Proof.
+  apply swf_iff.
+  assert (∀ u v, W_h ⊢ₛ u ≺ v → hpot u < hpot v) as Hlt.
+  { intros u v H. induction H as [u v H|u v w H _ IH]; [by apply W_h_step|].
+    apply W_h_step in H. lia. }
+  assert (∀ m u, hpot u = m → Acc (sw_lt W_h) u) as Hacc.
+  { intros m. induction m as [m IH] using lt_wf_ind. intros u <-. constructor.
+    intros v Hv. eapply IH; [apply Hlt, Hv|done]. }
+  intros u. by apply (Hacc (hpot u)).
+Qed.
+
+Lemma W_h_facts : fwdh_facts W_h hc_empty px py.
+Proof. split_and!; apply sl_w, sw_lt_fact; simpl; unfold fwdh_fact; tauto. Qed.
+
+Definition Σh : senv := {[o1 := (Sh, px)]} ∪ {[o2 := (dual Sh, py)]}.
+
+Lemma Σh_pfree : pfree Σh.
+Proof.
+  intros o Ho Hn. unfold Σh in Ho, Hn. rewrite dom_union_L, !dom_singleton_L in Ho, Hn.
+  set_unfold in Ho; set_unfold in Hn. destruct Ho as [->| ->]; simpl in Hn; destruct Hn; discriminate.
+Qed.
+
+(** The higher-order forwarder typed by P-Term over its world. *)
+Theorem fwdh_term : ptyped None W_h Σh (∅, {[+ fwdh_t o1 o2 +]}) TUnit.
+Proof.
+  apply (p_term None W_h Σh ∅ ∅ _ TUnit None).
+  - constructor.
+  - intros o. rewrite dom_empty_L. set_solver.
+  - set_solver.
+  - apply Σh_pfree.
+  - intros o e He. unfold Σh in He. apply lookup_union_Some_raw in He as [He|[_ He]];
+      apply lookup_singleton_Some in He as [_ <-]; [apply Sh_contr|apply Sh_dual_contr].
+  - set_solver.
+  - change (fhalf None) with (None : fuel).
+    assert (tenv_of None Σh ∪ ∅ = tenv_df (Θh o1 o2 px py)) as ->.
+    { rewrite map_union_empty. unfold tenv_of, tenv_df, Σh, Θh. by rewrite !map_fmap_union, !map_fmap_singleton. }
+    exact (fwdh_dftyped W_h hc_empty o1 o2 px py o1_o2 W_h_facts).
+  - split; [apply W_h_wf|apply W_h_swf].
+Qed.
