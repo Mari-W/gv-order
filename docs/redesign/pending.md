@@ -1,5 +1,97 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, run of 2026-11-22 on hiding (repair (b))
+
+Branch redesign-comp, from 0647d1e, commits a1c2c71, 85ee183, 504a06c,
+caea47f and f1e7116, nothing pushed. Only the process-typing part of
+static/Typing.v changed. The expression rules are untouched. 504a06c does
+not build on its own (LFClientServerSplit), caea47f repairs it.
+
+Hiding is sound for both relations, in the restated form.
+
+- The judgment (static/Typing.v). `ptyped` is the process judgment with
+  hiding. P-Term concludes at `swrestrict W (iface Σ T)`. P-Connect asks
+  `swf (W1 ⊔ W2)` of the two component worlds and concludes at
+  `swrestrict (W1 ⊔ W2) (iface (Σ1 ∪ Σ2) T)`. Each component world lives
+  on its interface constants (`ptyped_consts`), so the premise is
+  `swf (W1|I1 ⊔ W2|I2)`. The old judgment is kept as `fptyped`, with
+  `fp_term`, `fp_connect` and the old lemmas renamed. It is the target of
+  the soundness proof. The notation Σ ⊢_W p : T now means `ptyped`.
+- The interface constants (static/Consts.v). `iface Σ T` holds every
+  constant of the points and session types of Σ and of T, a superset of
+  the roots of the points of Σ. A payload type or a box type can name a
+  constant, and the renaming below must fix Σ and T.
+- Item 1. `swrestrict W S` already keeps the derived order between points
+  with roots in S, so a chain through private constants becomes a fact
+  (`swrestrict_iff`, static/Hiding.v). No new definition was needed.
+- Item 2, soundness. The direct semantic form fails to prove. A ranked
+  world R that models W|I may rank interface points a and b at 0 and 1
+  while W puts a private point between them, and no extension of R ranks
+  it, because an extension keeps every rank. So hiding is proved through
+  derivations. `typed_ren` renames the constants of a term derivation by
+  a bijection, `fptyped_ren` a full process derivation. `ptyped_full`
+  turns every hidden derivation into a full one at a world W' that hides
+  to the hidden world (`hides`, the facts W' derives between interface
+  points lie in it). At P-Connect the first component is renamed to keep
+  its private constants off the interface of the second, the second off
+  the whole world of the first (`cb_avoid`, `rename_side`). Then the two
+  worlds share only constants of both interfaces, and `connect_hidden`
+  gives the premise of `fp_connect` and the hiding of the join. Its core
+  is `join_vis`, which shows that a chain of the join changes sides only
+  at shared constants. This covers case 3 of the SharedRoots report,
+  roots the two outer interfaces share. `fptyped_ptyped` is the converse,
+  so hiding loses no program.
+- Both relations. `soundness_h`, `live_soundness_h` and `lf_soundness_h`
+  conclude deadlock freedom and lock freedom from the hidden judgment.
+  `fundamental_proc_h`, `live_fundamental_proc_h` and `lf_fundamental_h`
+  give the semantic judgment at a hidden world (`sem_ptyped_h`,
+  `lf_sems_h`, a well-founded whole world that hides to it).
+- Item 3, semantic P-Connect. `sem_p_connect_h` and `lf_p_connect_h`
+  compose at the interface orders, `swf (W1 ⊔ W2)` of the hidden worlds,
+  given whole worlds whose private constants are apart. That apartness is
+  a hypothesis because the relation has no renaming lemma for constants.
+  The static renaming supplies it inside `ptyped_full`. `sem_p_connect_sw`
+  and `lf_p_connect` are unchanged and still serve the full judgment.
+- Item 4 (examples/SharedRoots.v). `shared_hidden` types P(c, d) ∥ P(e, f)
+  with hiding. Each component sits at a world with no constant and no fact
+  (`hcomp_typed`), so the two compose by their interface worlds.
+  `opposite_compose` is case 2. P'(e, f) closes f first and orders 0
+  oppositely, the whole worlds clash (`opposite_clash`, a cycle at 0), and
+  the hidden composition types and is deadlock free (`opposite_df`).
+  `shared_not_cut` and `fact_needs_zero` stay, stated for `fptyped`.
+  examples/LFClientServerSplit.v adds `cs_split_typed`, the split program
+  in the hidden judgment, and `cs_split_lock_free_h`.
+  `sbv_rejected_h` rejects the flag variant with hiding.
+- Other examples, Inversion.v, Forwarder.v and LFTools.v use `fptyped`,
+  by renaming only.
+- Checks on the laptop, at f1e7116. `make -j8` builds with no error,
+  `make test` passes after test/GuardNotations prints `live_soundness_h`,
+  and `make check` reports 147 of 147 results closed under the global
+  context. No Admitted, no Axiom, no new Parameter.
+- Map (f1e7116). P-Term concludes at W|_{I(Σ, T)}, P-Connect asks
+  wf(W1 ⊔ W2) and concludes at (W1 ⊔ W2)|_{I(Σ1 ∪ Σ2, T)}. New notes
+  `P-Term.hide` (the component type is Σ with its interface world) and
+  `tp.iface`. `P-Connect.wf` explains the interface orders, the renaming
+  and the sentence on Milner's ring. The fundamental theorems and
+  soundness cite the hidden forms. `node docs/explorer/gen/gen.js` reports
+  0 errors.
+- Map changes for the audit (made in f1e7116, no later edits). Typing
+  block, rule P-Term (conclusion world `P-Term.hide`, new notes
+  `P-Term.hide` and `tp.iface`, `P-Term.wf` text). Rule P-Connect (premise
+  `P-Connect.wf` now wf(W1 ⊔ W2) with the interface orders, the renaming
+  and Milner's ring, conclusion `P-Connect.join` at the hidden join), the
+  `p-term` and `p-connect` why texts, note `tp.pjudg` (component type,
+  `fptyped`). Types block, note `w.restrict` and its signature. Theorems
+  blocks th-fund-proc, th-compose and th-sound (rocq references to the
+  `_h` forms, `ptyped_full`, `connect_hidden`), notes
+  `th.fundamental-proc`, `th.lf-fundamental` and their signatures,
+  `th.lf-p-connect`, `th.soundness`, `th.lf-soundness`. Not yet on the
+  map. `fptyped_ptyped` (hiding loses no program), `sem_p_connect_h` as
+  its own row, the examples `shared_hidden`, `opposite_compose`,
+  `opposite_df`, `cs_split_typed`, `sbv_rejected_h`, and the note
+  `w.R7`, which still states the join at the shared constants and is
+  now used only by the full judgment.
+
 ## Report, run of 2026-11-22 on the overlap of P-Connect
 
 Branch redesign-comp, from 97a7a3e, commits 059d27c and 32ee457,
