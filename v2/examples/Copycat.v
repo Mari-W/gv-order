@@ -16,7 +16,22 @@
       send o1 at x⁺    while o2 sits at y⁺⁺    x⁺ ≺ (y⁺⁺)‾
       close o1 at x⁺⁺  while o2 sits at y⁺⁺    x⁺⁺ ≺ (y⁺⁺)‾
 
-    No rule changes. *)
+    No rule changes. The results:
+
+    - [fwd_dftyped], [fwd_term]: the copycat types under the five facts,
+      and as a thread by P-Term over the world [W_f] that holds them.
+    - [fwd_expand]: identity expansion. A process that holds o1‾ at x‾
+      types with the forwarder put behind it, then holding o2 at y.
+    - [fwd_config_deadlock_free]: partner ∥ fwd ∥ partner is typed and
+      deadlock free by the fundamental theorem.
+    - [ring_rejected]: fwd(o1, o2) ∥ fwd(o2‾, o1‾) types at no world, no
+      bound and no type. The facts give x ≺ y‾ ≺ x.
+    - [fwdh_term], [fwdh_config_deadlock_free]: a higher-order payload.
+      The forwarder η-expands the received end through a channel created
+      at the field y·0.
+    - [fb_dftyped], [fwdp_term], [fwdp_expand], [fwdp_sem]: the schema for
+      every first-order protocol (data messages and Close), by induction
+      on the protocol, with identity expansion and semantic soundness. *)
 
 From GV Require Export examples.SemBranch examples.Tools2.
 From GV Require Import static.Inversion cost.Exact.
@@ -40,8 +55,6 @@ Definition fwd_t (o1 o2 : cend) : expr :=
       (LetP (ERecv (Var 0))
         (ELet (ESend (Pair (Var 1) (Var 3)))
           (LetU (EClose (Var 0)) (EClose (Var 1)))))).
-
-Definition sh := pt_shift.
 
 (** The facts of the alternation at the points x and y. *)
 Definition fwd_facts (W : sworld) (Γ : hctx) (x y : point) : Prop :=
@@ -1400,3 +1413,10 @@ Proof. intros HR. exact (fundamental_proc (W_p p) R _ _ _ (fwdp_term p) HR). Qed
 
 Lemma W_p_models p : ∃ R, wmodels R (W_p p).
 Proof. apply wmodels_exists; [apply W_p_wf|apply W_p_swf]. Qed.
+
+(** The concrete forwarder is the schema at ?∗.!∗.Close. *)
+Lemma pS_S1 : pS (PRcv (PSnd PEnd)) = S1.
+Proof. reflexivity. Qed.
+
+Lemma ffp_S1 W Γ x y : ffp W Γ (PRcv (PSnd PEnd)) x y ↔ fwd_facts W Γ x y.
+Proof. unfold fwd_facts. simpl. tauto. Qed.
