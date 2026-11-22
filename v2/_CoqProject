@@ -32,6 +32,7 @@ static/Weakening.v
 static/PointSubst.v
 static/Inversion.v
 static/PointSubstTyped.v
+static/Skeleton.v
 static/Sinst.v
 static/LetVar.v
 test/TypeNotations.v
@@ -120,6 +121,7 @@ examples/CopycatTwo.v
 examples/CopycatTwoN.v
 examples/LetVarCounter.v
 examples/ForkJoin.v
+examples/Rejects.v
 test/CompatNotations.v
 soup/Idle.v
 soup/State.v

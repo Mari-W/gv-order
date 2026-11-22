@@ -1,5 +1,70 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, 2026-11-22, the rejections of the explorer (fx-rejects)
+
+Branch fx-rejects in .claude/worktrees/fx-rejects, from redesign at
+d30372f, nothing pushed or merged. No Admitted, no Axiom, no new
+Parameter. No typing rule and no relation changed. New files
+static/Skeleton.v and examples/Rejects.v. static/Inversion.v gains a
+section at its end. CheckAll gains 18 lines. Laptop build in
+~/build-spo-fxr at 0f5eac8. `make` is clean, `make check` closes 246 of
+246 results, and `make test` matches every expected file.
+
+- The method. A program that names no point is rejected by credits,
+  tickets and session types alone. `typed_skel` (static/Skeleton.v)
+  erases a derivation to the skeleton judgment `sktyped`, which drops Θ,
+  Γ, the future, every point and every premise on facts, and keeps aging,
+  the payload premise of E-Send, `lgt` of E-Link and `tsum_ok` of E-New.
+  E-Pack and E-Open leave the skeleton alone, and E-Sub becomes `skle`.
+  The inversions `sk_*_inv` fold every E-Sub into one `skle` step, and
+  `climb` walks an entry of a context out to the binder of its variable.
+- rx-relink, proved. `rl_refresh_untyped`: the box refresh types at no
+  finite N, in any context. E-Link asks a + m₂ > N of w at credit a and
+  of c with tickets m₂, E-New asks m₂ + m₂′ ≤ N, so a > m₂′. The
+  recursive call passes c′, of credit at most m₂′, where the parameter
+  asks at least a. The send on k plays no part, so the text of the map
+  that blamed the send was imprecise. `rx_relink_rejected` lifts it to
+  main, `rx_relink_proc_rejected` to the process of the one thread.
+- rx-postpone, proved. `rx_postpone_rejected`. close b′ makes the session
+  of b not idle. The receive of each round costs at least 1 and ages b by
+  its cost (`tage_sess_nonidle`), and the recursive call asks the old
+  credit. The credit is finite because main passes b from a new channel.
+  The argument needs main, because the box loop alone types with b at
+  credit ∞ or idle.
+- rx-delegate, proved. `rx_delegate_rejected`. β ≤ p_y < p_x < β, with
+  p_x the payload credit of x in pass, p_y the one of y′ in back, and β
+  the parameter credit of e in pass. The payloads of the two ends of x and
+  of y agree by `sequiv_unfold_snd'`, `sequiv_unfold_rcv'` and
+  `dual_unfoldS`. The argument needs both threads.
+- rx-chain, not mechanized. Proposition 7 of check-general-new.md is a
+  semantic descent over models of W, Γ and the box constraint. A static
+  proof needs facts, `hold_at` of the box at the lower instance and
+  `gen_new_rel`, for both a fresh root and a field, and the skeleton drops
+  exactly these. I found no derivation sketch either, so the program is
+  not shown typable. It stays argued in the map.
+- DF. All four programs are deadlock free, and at N = ∞ `lgt`, `tsum_ok`
+  and every credit premise hold trivially. I expect each to type in the
+  DF judgment and did not prove it, because each needs a world and box
+  constraints.
+- spawn_loop. `spawn_loop_lf_rejected`: no process whose thread forces
+  spawn_loop is in the lock-free judgment, because the guard rejects the
+  box under any marks (`spawn_loop_unguarded`). Without the guard I
+  expect the term to type at a finite N. Spawn costs nothing since F2, and
+  the child may capture c at credit 0. Not proved.
+- Inversion lemmas, static/Inversion.v. `inv_abs`, `inv_app`,
+  `inv_spawn`, `inv_link`, `inv_force`, `inv_box` and `inv_new`, through
+  E-Sub, E-Pack and E-Open, in the style of `inv_close`. static/Skeleton.v
+  adds `sk_var_inv`, `sk_abs_inv`, `sk_app_inv`, `sk_pair_inv`,
+  `sk_letu_inv`, `sk_letp_inv`, `sk_box_inv`, `sk_force_inv`,
+  `sk_send_inv`, `sk_recv_inv`, `sk_close_inv`, `sk_link_inv`,
+  `sk_spawn_inv`, `sk_new_inv` and `sk_unit_inv`, the linearity lemma
+  `sk_occ`, and `teq_skle`.
+- Map. rx-postpone, rx-delegate and rx-relink lose the planned deviation,
+  cite examples/Rejects.v and `typed_skel`, and say proved. rx-chain is
+  unchanged. docs/explorer/check.sh shows 0 errors, `xref-missing` 0 and
+  65 warnings, as before the change. attic/gen/rejects.js names the
+  theorems.
+
 ## Report, 2026-11-22, F3 of the content pass (branch fx-guard)
 
 Branch fx-guard in .claude/worktrees/fx-guard, from fx-cost at 8c87168,

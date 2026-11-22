@@ -377,3 +377,127 @@ Section inversion_var.
     - exfalso. exact (Hn _ _ H I).
   Qed.
 End inversion_var.
+
+(** ** The rules of boxes, closures, spawn, link and new (fx-rejects, 2026-11-22)
+
+    A derivation of λe, e1 e2, spawn e, link e, force e, !e or new ends
+    with the rule of its form under a stack of E-Sub, E-Pack and E-Open.
+    Each lemma states the premises of that rule in a context [opened]
+    from the given one, and forgets the type of the conclusion, as the
+    lemmas above do. The rejections of examples/Rejects.v read the same
+    rules through the credit skeleton of static/Skeleton.v, whose
+    inversions [sk_*_inv] keep the type up to [skle]. *)
+
+Local Ltac inv_open_step :=
+  match goal with IH : ?e0 = _ → ∃ _ _ _ _, _ , He : ?e0 = _ |- _ =>
+    destruct (IH He) as (Θ' & Γ' & Δ' & F' & Ho & Hr);
+    exists Θ', Γ', Δ', F'; split; [by eapply op_step|exact Hr] end.
+
+Section inversion_rules.
+  Context (W : sworld) (N : fuel).
+
+  Lemma inv_abs Θ Γ Δ F e T c :
+    typed W N Θ Γ Δ F (Lam e) T c →
+    ∃ Θ' Γ' Δ' F', opened W Θ Γ Δ F Θ' Γ' Δ' F' ∧
+      ∃ Θh Δh T1 U ub lb c1 a,
+        lbx_below_h W Γ' lb (tenv_heads Θ' ∪ lenv_heads Δ') (lenv_bot Δ') ∧
+        thage a Θ' Θh ∧ lage a Δ' Δh ∧ tcontr T1 ∧
+        typed W N Θh Γ' (Some T1 :: Δh) (abs_fut ub) e U c1.
+  Proof.
+    remember (Lam e) as e0 eqn:He. induction 1; try discriminate.
+    - injection He as <-. eexists _, _, _, _. split; [constructor|]. do 8 eexists. split_and!; done.
+    - by apply IHtyped.
+    - by apply IHtyped.
+    - inv_open_step.
+  Qed.
+
+  Lemma inv_app Θ Γ Δ F e1 e2 T c :
+    typed W N Θ Γ Δ F (App e1 e2) T c →
+    ∃ Θ' Γ' Δ' F', opened W Θ Γ Δ F Θ' Γ' Δ' F' ∧
+      ∃ Θ1 Θ2 Θ2' Δ1 Δ2 Δ2' ub lb c0 T1 U a1 c1 c2,
+        tsplit Θ' Θ1 Θ2 ∧ lenv_split Δ' Δ1 Δ2 ∧ ub_below_u W Γ' ub F' ∧
+        typed W N Θ1 Γ' Δ1 (sf_unionb F' (tenv_heads Θ2 ∪ lenv_heads Δ2) (lenv_bot Δ2)) e1
+          (TLolli ub lb c0 T1 U a1) c1 ∧
+        thage c1 Θ2 Θ2' ∧ lage c1 Δ2 Δ2' ∧
+        typed W N Θ2' Γ' Δ2' (sf_unionb F' (lb_heads lb) (lb_bot lb)) e2 T1 c2 ∧ fle c2 a1.
+  Proof.
+    remember (App e1 e2) as e0 eqn:He. induction 1; try discriminate.
+    - injection He as <- <-. eexists _, _, _, _. split; [constructor|]. do 14 eexists. split_and!; done.
+    - by apply IHtyped.
+    - by apply IHtyped.
+    - inv_open_step.
+  Qed.
+
+  Lemma inv_spawn Θ Γ Δ F e T c :
+    typed W N Θ Γ Δ F (ESpawn e) T c →
+    ∃ Θ' Γ' Δ' F', opened W Θ Γ Δ F Θ' Γ' Δ' F' ∧
+      ∃ ub lb c' a c0, typed W N Θ' Γ' Δ' F' e (TLolli ub lb c' TUnit TUnit a) c0.
+  Proof.
+    remember (ESpawn e) as e0 eqn:He. induction 1; try discriminate.
+    - injection He as <-. eexists _, _, _, _. split; [constructor|]. by do 5 eexists.
+    - by apply IHtyped.
+    - by apply IHtyped.
+    - inv_open_step.
+  Qed.
+
+  Lemma inv_link Θ Γ Δ F e T c :
+    typed W N Θ Γ Δ F (ELink e) T c →
+    ∃ Θ' Γ' Δ' F', opened W Θ Γ Δ F Θ' Γ' Δ' F' ∧
+      ∃ S x a1 m1 a2 m2 c0,
+        typed W N Θ' Γ' Δ' F' e (TProd (TSess S x a1 m1) (TSess (dual S) x‾ a2 m2)) c0 ∧
+        lgt N a1 m2 ∧ lgt N a2 m1.
+  Proof.
+    remember (ELink e) as e0 eqn:He. induction 1; try discriminate.
+    - injection He as <-. eexists _, _, _, _. split; [constructor|]. do 7 eexists. split_and!; done.
+    - by apply IHtyped.
+    - by apply IHtyped.
+    - inv_open_step.
+  Qed.
+
+  Lemma inv_force Θ Γ Δ F e T c :
+    typed W N Θ Γ Δ F (EForce e) T c →
+    ∃ Θ' Γ' Δ' F', opened W Θ Γ Δ F Θ' Γ' Δ' F' ∧
+      ∃ m k C ub cb U xs ss c0,
+        length xs = m ∧ hold_at W Γ' C xs ∧ length ss = k ∧ sinsts N ss ∧
+        ub_below_s W Γ' (pt_inst (plist xs) <$> ub) F' ∧
+        typed W N Θ' Γ' Δ' F' e (TBox m k C ub cb U) c0.
+  Proof.
+    remember (EForce e) as e0 eqn:He. induction 1; try discriminate.
+    - injection He as <-. eexists _, _, _, _. split; [constructor|]. do 9 eexists. split_and!; done.
+    - by apply IHtyped.
+    - by apply IHtyped.
+    - inv_open_step.
+  Qed.
+
+  Lemma inv_box Θ Γ Δ F e T c :
+    typed W N Θ Γ Δ F (EBox e) T c →
+    ∃ Θ' Γ' Δ' F', opened W Θ Γ Δ F Θ' Γ' Δ' F' ∧
+      ∃ m k C ub cb U, Θ' = ∅ ∧ lenv_unl Δ' ∧ tcontr U ∧
+        (∀ ss, length ss = k → sinsts N ss →
+           typed W N ∅ (hc_open m C Γ') (lenv_pinst (pshift m) (Some (TBox m k C ub cb U) :: Δ'))
+             (∅, Some (rest_of ub)) e (sinst_ty (slist ss) U) cb).
+  Proof.
+    remember (EBox e) as e0 eqn:He. induction 1; try discriminate.
+    - injection He as <-. eexists _, _, _, _. split; [constructor|]. do 6 eexists. split_and!; done.
+    - by apply IHtyped.
+    - by apply IHtyped.
+    - inv_open_step.
+  Qed.
+
+  (** new types by E-New at a fresh root, under (wf-new) at N = ∞ and
+      (gen-new) at a finite N ([new_ok]), or by E-New-Field. *)
+  Lemma inv_new Θ Γ Δ F T c :
+    typed W N Θ Γ Δ F ENew T c →
+    ∃ Θ' Γ' Δ' F', opened W Θ Γ Δ F Θ' Γ' Δ' F' ∧
+      Θ' = ∅ ∧ lenv_unl Δ' ∧
+      ((∃ C S m1 m2, new_ok N W Γ' C ∧ tsum_ok N m1 m2 ∧ scontr S) ∨
+       (∃ S m1 m2, tsum_ok N m1 m2 ∧ scontr S)).
+  Proof.
+    remember ENew as e0 eqn:He. induction 1; try discriminate.
+    - eexists _, _, _, _. split; [constructor|]. split_and!; [done|done|]. left. by do 4 eexists.
+    - eexists _, _, _, _. split; [constructor|]. split_and!; [done|done|]. right. by do 3 eexists.
+    - by apply IHtyped.
+    - by apply IHtyped.
+    - inv_open_step.
+  Qed.
+End inversion_rules.

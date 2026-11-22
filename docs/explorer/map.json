@@ -20005,68 +20005,105 @@
   {
    "id": "rx-postpone",
    "title": "Postponement, a holding thread that never serves",
-   "lead": "A deadlock-free program in which one thread waits forever, because the thread holding its dual end never acts on that end. [[t-agecap|Aging]] rejects the program.",
+   "lead": "A deadlock-free program in which one thread waits forever, because the thread holding its dual end never acts on that end. [[t-agecap|Aging]] rejects the program, and the rejection is proved.",
    "code": "chat = !(f = λa. let a = send ⟨∗, a⟩ in (force f) a)\nloop = !(f = λ⟨a, b⟩. let ⟨u, a⟩ = recv a in let ∗ = u in (force f) ⟨a, b⟩)\nmain = let ⟨a, a′⟩ = new in let ⟨b, b′⟩ = new in\n       let ∗ = spawn (λ_. (force chat) a′) in\n       let ∗ = spawn (λ_. close b′) in\n       (force loop) ⟨a, b⟩            -- holds b forever, close b′ waits forever",
-   "meaning": "Main holds $b$ while it runs a loop that never returns, and the thread with $b'$ waits forever while other threads step. Aging requires $c \\leq a$ of each held end that is not idle. The loop has cost $\\infty$, and $b$ has a finite credit, so the program has no lock-free typing.",
+   "meaning": "Main holds $b$ across a loop that never returns, and the thread with $b'$ waits forever while other threads step. The thread of $\\mathsf{close}\\,b'$ makes the session of $b$ not idle. Each round receives on $a$ while it holds $b$, so aging asks the cost of the receive, at least $1$, below the credit of $b$ and lowers that credit by the cost. The recursive call passes $b$ where the parameter asks the old credit. That credit is finite, because $b$ comes from a channel with finite tickets. So no finite bound, world or type gives the program a lock-free typing.",
    "modes": [
     "lf"
-   ],
-   "deviations": [
-    {
-     "kind": "planned",
-     "reason": "To be mechanized."
-    }
    ],
    "x-gv-accepts": {
     "lf": {
      "ok": false,
-     "part": "aging"
+     "part": "aging",
+     "rocq": "rx_postpone_rejected"
     }
-   }
+   },
+   "source": [
+    {
+     "file": "examples/Rejects.v",
+     "names": [
+      "pp_main",
+      "rx_postpone_skel",
+      "rx_postpone_rejected",
+      "rx_postpone_proc_rejected"
+     ]
+    },
+    {
+     "file": "static/Skeleton.v",
+     "names": [
+      "typed_skel"
+     ]
+    }
+   ]
   },
   {
    "id": "rx-delegate",
    "title": "Endless delegation, an end that travels forever",
-   "lead": "A deadlock-free program in which an end is sent back and forth forever while its partner waits. The payload premise of [[r-act|E-Send]] rejects the program.",
+   "lead": "A deadlock-free program in which an end is sent back and forth forever while its partner waits. The payload premise of [[r-act|E-Send]] rejects the program, and the rejection is proved.",
    "code": "pass = !(f = λ⟨e, x, y⟩. let x = send ⟨e, x⟩ in let ⟨e, y⟩ = recv y in\n               (force f) ⟨e, x, y⟩)\nback = !(f = λ⟨x, y⟩. let ⟨e, x⟩ = recv x in let y = send ⟨e, y⟩ in\n               (force f) ⟨x, y⟩)\nmain = let ⟨e, e′⟩ = new in let ⟨x, x′⟩ = new in let ⟨y, y′⟩ = new in\n       let ∗ = spawn (λ_. close e′) in       -- waits for e forever\n       let ∗ = spawn (λ_. (force back) ⟨x′, y′⟩) in\n       (force pass) ⟨e, x, y⟩                -- e goes back and forth forever",
-   "meaning": "Two threads send the end $e$ back and forth forever, and the thread with $e'$ waits. Each send passes $e$ on with its counter one lower. After finitely many sends no credit remains to send $e$ again, so the program has no lock-free typing.",
+   "meaning": "Two threads send the end $e$ back and forth forever, and the thread with $e'$ waits. The thread of $\\mathsf{close}\\,e'$ makes the session of $e$ not idle. E-Send ages the payload by $1$, so $\\mathsf{pass}$ sends $e$ on $x$ at a payload credit $p_x$ below the credit $\\beta$ that its parameter gives $e$. The thread $\\mathsf{back}$ sends the received $e$ on $y'$ at a payload credit $p_y < p_x$. The two ends of a channel have the same payloads, so $\\mathsf{pass}$ receives $e$ at credit $p_y$ and passes it where its parameter asks $\\beta$. Then $\\beta \\leq p_y < p_x < \\beta$, and $\\beta$ is finite because $e$ comes from a channel with finite tickets. So no finite bound, world or type gives the program a lock-free typing.",
    "modes": [
     "lf"
-   ],
-   "deviations": [
-    {
-     "kind": "planned",
-     "reason": "To be mechanized."
-    }
    ],
    "x-gv-accepts": {
     "lf": {
      "ok": false,
-     "part": "payload credit"
+     "part": "payload credit",
+     "rocq": "rx_delegate_rejected"
     }
-   }
+   },
+   "source": [
+    {
+     "file": "examples/Rejects.v",
+     "names": [
+      "dl_main",
+      "rx_delegate_skel",
+      "rx_delegate_rejected",
+      "rx_delegate_proc_rejected"
+     ]
+    },
+    {
+     "file": "static/Skeleton.v",
+     "names": [
+      "typed_skel"
+     ]
+    }
+   ]
   },
   {
    "id": "rx-relink",
    "title": "Link refresh, a waiting thread that always faces a fresh end",
-   "lead": "A deadlock-free program in which links keep replacing the end a thread waits on. The premise of [[r-act|E-Link]] rejects the program.",
+   "lead": "A deadlock-free program in which links keep replacing the end a thread waits on. The premise of [[r-act|E-Link]] rejects the program, and the rejection is proved.",
    "code": "refresh = !(f = λ⟨w, k⟩. let ⟨c, c′⟩ = new in\n                     let ∗ = link ⟨w, c⟩ in          -- the waiting end now faces c′\n                     let k = send ⟨∗, k⟩ in           -- one step on another channel\n                     (force f) ⟨c′, k⟩)\nsink    = !(f = λk. let ⟨u, k⟩ = recv k in let ∗ = u in (force f) k)\nmain = let ⟨w, w′⟩ = new in let ⟨k, k′⟩ = new in\n       let ∗ = spawn (λ_. close w′) in              -- waits forever\n       let ∗ = spawn (λ_. (force sink) k′) in\n       (force refresh) ⟨w, k⟩",
-   "meaning": "Each round links the partner of the waiting end to a new channel. The waiting thread then faces a new end with a full counter, and no counter decreases to $0$. E-Link asks the credit of the linked end to exceed the partner bound of the new end. After the send that credit is too low for the recursive call, so the program has no lock-free typing.",
+   "meaning": "Each round links the partner of the waiting end to a new channel, and the waiting thread then faces a new end with a full counter. E-Link asks $a + m_2 > N$ of the linked end at credit $a$ and the new end $c$ with tickets $m_2$. [[r-new|E-New]] asks $m_2 + m_2' \\leq N$ of the new channel, so $a > m_2'$. The recursive call passes $c'$, of credit at most $m_2'$, where the parameter asks a credit of at least $a$. So the box $\\mathsf{refresh}$ types at no finite bound, and the program has no lock-free typing. The send on $k$ plays no part in the rejection.",
    "modes": [
     "lf"
-   ],
-   "deviations": [
-    {
-     "kind": "planned",
-     "reason": "To be mechanized."
-    }
    ],
    "x-gv-accepts": {
     "lf": {
      "ok": false,
-     "part": "tickets"
+     "part": "tickets",
+     "rocq": "rl_refresh_untyped, rx_relink_rejected"
     }
-   }
+   },
+   "source": [
+    {
+     "file": "examples/Rejects.v",
+     "names": [
+      "rl_main",
+      "rl_refresh_untyped",
+      "rx_relink_rejected",
+      "rx_relink_box_rejected",
+      "rx_relink_proc_rejected"
+     ]
+    },
+    {
+     "file": "static/Skeleton.v",
+     "names": [
+      "typed_skel"
+     ]
+    }
+   ]
   },
   {
    "id": "rx-chain",
