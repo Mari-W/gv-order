@@ -365,7 +365,60 @@ are the headline.
 
 ## Questions for the author
 
+1. Device blocks after the judgment? Recommended: yes, as done. The
+   lock-free blocks (counters, guard, ranked worlds) used $\Delta$,
+   $\Lambda$, $t$ and $\rho$ before the judgment defined them. Rule 4 of
+   BLOCKS.md is changed to match. The alternative keeps them first and
+   defines the notation in their captions.
+2. Worlds of the relation written $R$ throughout? Recommended: yes, as done.
+   The Rocq uses one letter for both kinds, the map now uses $W$ for static
+   worlds and $R$ for worlds of the relation, and the rest denotation moved
+   from $\mathsf{den}_{R,B}$ to $\mathsf{den}_{Y,Z}$.
+3. Term variables written $i$? Recommended: yes, as done. $x$ clashed with
+   points in E-Var next to E-Chan. $i$ also names injections and threads,
+   where it is a subscript or a thread name.
+4. Numeric payload binders? Recommended: keep them. The brief lists "numeric
+   payload indices" as removed, but `SSnd (m : nat) (T : ty)` and
+   `payload_at` still place payload variables at $x\cdot 0, \ldots,
+   x\cdot(m{-}1)$ on this branch. The map follows the Rocq. The fields
+   $\sigma.\kappa$ of the paper would be a planned deviation.
+5. Full judgment as a block? Recommended: no. The hidden judgment is the
+   headline, and the full one appears in notes (`tp.pjudg`,
+   `th.fundamental-proc`) and in the definition of $\vDash^{h}_W$.
+6. Lock-free rejection of recursive fork-join? Recommended: state it as
+   argued, as done. The map says only that `gen_new` asks a well-founded
+   order on the tree. Proposition 7 is on paper.
+7. Overview tables with words (`sr-reading`, `fu-vs`, `soup`)? Recommended:
+   leave them. They cause 40 of the 53 prose-in-formula warnings. Turning
+   them into proof-map tables needs a converter change on mapkit.
+8. "cost" as metaphor? Recommended: whitelist it in lint-map and the private
+   checker. It is the Rocq term for step costs and arrow costs, and it
+   accounts for about 40 of the metaphor hits.
+
 ## Things the map still forgets
+
+- The process-level erasure $\mathsf{fptyped}\,(\mathsf{Some}\,N)
+  \Rightarrow \mathsf{fptyped}\,\mathsf{None}$, which the Rocq does not have
+  either (report of 2026-11-22). `cons_acyc` is likewise open.
+- `live_sub_df` (the live judgment implies the deadlock-free one under EM
+  and FC) is cited nowhere.
+- `wfit`, the world condition of `typed_sem`, appears only in citations.
+- `typed_ren`, `fptyped_ren` and the renaming of private constants have no
+  formula, only the prose of the hiding notes.
+- `fj_wait_needs` and `cl2_needs` (every typing of close a; close b asks the
+  point of a below the head of b) would make a good lemma block for the
+  rejection arguments.
+- Measured boxes (branch redesign-mbox) are left out, as instructed.
+- Rocq comments that are stale, noted and not changed. relation/Ord.v says
+  "The relation and fuel still use the natural-number fixpoint of
+  relation/Sfix.v", but Sfix.v is gone. The report of 2026-11-22 lists
+  comments in relation/Readiness.v, relation/Relation.v and compat/*.v that
+  say "ranked world" where the world has either kind.
+- Checker false positives that remain: subscripts such as $\kappa_{DF}$,
+  $\kappa_L$ and $\Theta_B$ count as the variables $D$, $L$, $B$, the rule
+  name P-Connect$^{n}$ counts as the bare word Connect, and notational
+  renames (51 rename-undeclared) need `renamed` deviations in the overlay,
+  which lives on mapkit.
 
 ## Checker counts before and after
 
@@ -374,22 +427,38 @@ extension of demo/, `--root v2`.
 
 | Category | Before | After |
 |---|---|---|
-| errors | 19 | |
-| name-missing | 13 | |
-| name-elsewhere | 3 | |
-| reason-missing | 3 | |
-| warnings | 729 | |
-| var-before-intro | 106 | |
-| prose-in-formula | 66 | |
-| rename-undeclared | 45 | |
-| bare-word | 10 | |
-| prose:every/any/all | 319 | |
-| prose:metaphor | 175 | |
-| prose:hedge | 6 | |
-| prose:colon | 1 | |
-| prose:pronoun ending | 1 | |
-| info | 11 | |
+| errors | 19 | 0 |
+| name-missing | 13 | 0 |
+| name-elsewhere | 3 | 0 |
+| reason-missing | 3 | 0 |
+| warnings | 729 | 595 |
+| var-before-intro | 106 | 6 |
+| prose-in-formula | 66 | 53 |
+| rename-undeclared | 45 | 51 |
+| bare-word | 10 | 10 |
+| prose:every/any/all | 319 | 305 |
+| prose:metaphor | 175 | 164 |
+| prose:hedge | 6 | 0 |
+| prose:colon | 1 | 0 |
+| prose:pronoun ending | 1 | 1 |
+| prose:sentence > 35 words | 0 | 5 |
+| info | 11 | 8 |
 
 gen.js before: 0 errors, no DF-LEAK, unused notes `O-Spawn.transfer` and
 `fu.oneclock`. lint-map.py before: 163 metaphor, 319 every/any/all, 1 pronoun
 ending, 0 elsewhere.
+
+After, at the last commit of this branch. The six remaining var-before-intro
+are the subscript false positives ($D$, $L$ from $\kappa_{DF}$, $\kappa_L$).
+rename-undeclared rose by six because the new notes show $\mathsf{tc}$,
+$\mathsf{po}$ and $\mathsf{Point}$ next to the Rocq names they cite. The five
+long sentences are counted across a `\annp{...}` boundary, where the
+checker does not split. The map grew from 70 blocks, 525 notes and 17
+examples to 70 blocks, 556 notes and 23 examples (two blocks merged into
+the counters block, one ordinal block added).
+
+gen.js after: 0 errors, no DF-LEAK, no unused note, no dead link. lint-map.py
+after: 164 metaphor, 305 every/any/all, 1 pronoun ending, 5 sentences over
+35 words, 0 semicolons, 0 coined words. MathJax was not run (the checker
+needs `--mathjax` with `mathjax-full`, which is not installed), KaTeX in
+gen.js renders every block, note and caption.
