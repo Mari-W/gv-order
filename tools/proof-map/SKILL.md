@@ -67,7 +67,7 @@ per category with a count and the first findings. Errors make the exit status 1.
 A block introduces the variables in its `introduces` list and the left sides of `::=` in its
 formula. Its caption introduces each variable it sets alone in math, as in `$x$`, `$x, y$` or
 `$i \in S$`. The checker reads blocks in section order, once per mode, and a binder
-such as `\forall x` or `\lambda x.` introduces `x` inside its own formula.
+such as `\forall x` or `\lambda x.` introduces `x` inside its own formula. A name with a subscript in an `introduces` list, such as `\kappa_L` or `\kappa_{DF}`, counts as one symbol across the map, and its subscript as no variable. A subscript in `\mathrm`, `\mathsf` or `\text` is never read as a variable.
 
 `rocq-index.js` parses the sources and needs no compiled files. It finds inductive types,
 constructors, records with their fields, definitions, fixpoints, lemmas, instances, axioms,
@@ -166,6 +166,7 @@ The page hooks are these. Each one returns HTML and receives the item and a cont
 | `blockFooter(block, ctx)` | Under the caption and the deviations of a block. |
 | `exampleHeader(example, ctx)` | Under the title of an example. |
 | `noteRows(note, ctx)` | Extra rows of the note panel, as `[label, html]` pairs. |
+| `event(type, detail, ctx)` | Called when the reader opens a section (`section`), or hovers or pins a note (`note`). Returns nothing. |
 
 The checker module may export these.
 

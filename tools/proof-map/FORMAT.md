@@ -12,7 +12,7 @@ and one for prose.
 | `title`, `subtitle` | title | Shown in the header and the browser tab. |
 | `source` | no | `root` of the Rocq tree, relative to the map file, and optionally the `revision` last checked. |
 | `tex.macros` | no | MathJax macros, `"name": "body"` or `"name": ["body", n]` for `n` arguments. |
-| `syntax` | no | `keywords` and `comment` delimiters for example code, such as `["(* *)", "--"]`. |
+| `syntax` | no | `keywords` and `comment` delimiters for example code, such as `["(* *)", "--"]`, the `operators` characters, and `constructors: true` to mark capitalised names. |
 | `modes` | no | The views of the map, see below. |
 | `conventions` | no | Symbols fixed for the whole map, `{symbol, meaning}`. The symbol may list several letters, such as `i, j`. They count as introduced before the first block. |
 | `deviationRules` | no | Deviations declared once, `{kind, reason, appliesTo}`, see Deviations. |
@@ -32,7 +32,7 @@ A block shows one definition or one rule group.
 |---|---|
 | `id`, `title` | The id is unique across sections, blocks and examples. |
 | `formula` | TeX of the block, with the markup below. A block has a `formula` or a `table`. |
-| `table` | Rows `{label?, labelKey?, formula, text}` for an overview that pairs each formula with a sentence. The label is a word with an optional note, the text is prose. |
+| `table` | An overview that pairs formulas with sentences, see Tables below. |
 | `variants` | A whole formula for one mode, used instead of `formula` in that mode. |
 | `caption` | What the formula says, in words. The reader sees it under the formula. |
 | `why`, `breaks`, `example` | The note behind the title. Why the block exists, what fails without it, an instance. |
@@ -60,10 +60,26 @@ An example has `id`, `title`, `lead`, `code`, `meaning`, `modes`, `source` and `
 Everything else is plain MathJax TeX. Copying a formula yields the TeX of the current mode
 without this markup.
 
+## Tables
+
+A table keeps the words of an overview out of its formulas. Its columns line up across rows.
+
+| Field | Meaning |
+|---|---|
+| `rows` | Each row has an optional `label` (prose) with an optional `labelKey` (a note), and its cells. |
+| `rows[].cells` | Cells `{formula}` or `{text}`, in column order. The last cell of a row spans the columns left over. `{text: ""}` leaves a cell empty. |
+| `rows[].formula`, `rows[].text` | Short form of `cells: [{formula}, {text}]`. |
+| `rows[].modes` | The modes that show the row. The row takes the colour of its mode. |
+| `header` | Column heads (prose), the label column first when the table has one. |
+| `align` | One letter `l`, `c` or `r` per cell column, as in a TeX array. |
+
+A column that holds a sentence takes the room left over, a formula column its natural width. On a
+narrow screen the cells stack, each under its column head.
+
 ## Prose markup
 
 Prose fields take `$math$`, `` `code` ``, `[[block-id]]` and `[[block-id|label]]` links, and
-`\inmode{m}{…}` for words that belong to one mode. A link to a section id works too.
+`\inmode{m}{…}` for words that belong to one mode. A link to a section id works too. Math in prose may hover a note with `\sym{key}{…}`, as in a table cell that reads `$\sym{sj.term}{\vDash}$ and the process relation`.
 
 ## Deviations
 

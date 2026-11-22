@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Drive the page in headless Chrome over the DevTools protocol and check what a reader does:
-// no horizontal overflow at widths from 320 to 1800 CSS pixels (browser zoom shrinks the CSS
+// no horizontal overflow at widths from 320 to 2560 CSS pixels (browser zoom shrinks the CSS
 // width, so this covers zoom levels), hovering a symbol shows its note, a click pins it, the mode
 // switch re-renders, the filter narrows, and a selection copies formulas as TeX.
 //
@@ -43,7 +43,8 @@ async function main() {
     const size = (w, h = 1000) => send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 1, mobile: w < 600 });
     const shot = async name => { if (!shots) return; const r = await send('Page.captureScreenshot', { format: 'png' }); fs.writeFileSync(path.join(shots, name + '.png'), Buffer.from(r.data, 'base64')); };
     const ready = async () => { for (let i = 0; i < 100; i++) { if (await evalJS(`!!document.querySelector('article.block, article.ex') && !!window.MathJax && !!MathJax.tex2svg`)) return; await sleep(200); } throw new Error('page did not render'); };
-    const go = async url => { await send('Page.navigate', { url }); await sleep(400); await ready(); await sleep(500); };
+    // through about:blank, so a change of the hash alone reloads the page and drops the filter
+    const go = async url => { await send('Page.navigate', { url: 'about:blank' }); await sleep(100); await send('Page.navigate', { url }); await sleep(400); await ready(); await sleep(500); };
     await send('Page.enable'); await send('Runtime.enable');
     await send('Browser.grantPermissions', { permissions: ['clipboardReadWrite', 'clipboardSanitizedWrite'] }).catch(() => {});
     const results = [];
@@ -53,7 +54,7 @@ async function main() {
     const secs = [...MAP.sections.map(s => s.id), ...((MAP.examples || []).length ? ['examples'] : [])];
     const modes = MAP.modes ? MAP.modes.options.map(m => m.id) : [null];
     let worst = [];
-    for (const w of [320, 390, 700, 1024, 1400, 1800]) {
+    for (const w of [320, 390, 700, 933, 1024, 1400, 1800, 2100, 2560]) {
       await size(w);
       for (const m of modes) for (const s of secs) {
         await go(`${base}${m ? '&mode=' + m : ''}#${s}`);
@@ -61,7 +62,7 @@ async function main() {
         if (o.sw > o.cw + 1 || o.wide.length) worst.push(`${w}px ${m || ''} ${s}: page ${o.sw}/${o.cw} ${o.wide.join(', ')}`);
       }
     }
-    ok('no horizontal overflow at 320 to 1800 px in every section and mode', !worst.length, worst.slice(0, 6).join(' | '));
+    ok('no horizontal overflow at 320 to 2560 px in every section and mode', !worst.length, worst.slice(0, 6).join(' | '));
 
     // 2. hover a symbol: the note panel shows its title
     await size(1400, 1100);

@@ -135,6 +135,9 @@ mjx-container.sel { background: color-mix(in srgb, var(--accent) 22%, transparen
   .ptable .lab { padding-top: 10px; font-weight: 600; }
   .ptable .cell[data-head]::before { content: attr(data-head); display: block; font: 600 0.66rem var(--body); letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
   .ptable > .cell.rule, .ptable > .lab ~ .cell { border-top: 0; }
+  .ptable .al-r, .ptable .al-c { justify-self: start; text-align: left; }
+  .ptable .al-r mjx-container, .ptable .al-c mjx-container { text-align: left !important; }
+  .ptable .txt:empty { display: none; }
 }
 .caption { color: var(--muted); font-size: 0.95rem; margin: 8px 0 0; max-width: 78ch; }
 .devs { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
@@ -585,7 +588,7 @@ window.MathJax = {
     const align = (t.align || '').split('');
     if (!kind.includes('text')) kind[ncols - 1] = 'text';
     const g = document.createElement('div'); g.className = 'ptable';
-    g.style.setProperty('--cols', (hasLabel ? 'minmax(0, max-content) ' : '') + kind.map(k => k === 'text' ? 'minmax(12ch, 1fr)' : 'minmax(0, max-content)').join(' '));
+    g.style.setProperty('--cols', (hasLabel ? 'minmax(0, max-content) ' : '') + kind.map(k => k === 'text' ? 'minmax(10ch, max-content)' : 'minmax(0, max-content)').join(' '));
     const heads = (t.header || []).slice();
     if (heads.length) {
       heads.forEach(h => { const c = document.createElement('span'); c.className = 'th'; c.innerHTML = prose(h || '', md); g.appendChild(c); });
