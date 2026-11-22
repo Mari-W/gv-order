@@ -55,13 +55,6 @@ Proof. apply fmap_empty. Qed.
 Lemma tenv_erase_singleton o S x a mt : tenv_erase {[o := TE S x a mt]} = {[o := (S, x)]}.
 Proof. unfold tenv_erase. by rewrite map_fmap_singleton. Qed.
 
-Lemma senv_heads_union Θ1 Θ2 y :
-  y ∈ senv_heads (Θ1 ∪ Θ2) → y ∈ senv_heads Θ1 ∨ y ∈ senv_heads Θ2.
-Proof.
-  rewrite !elem_of_senv_heads. intros (o & S & x & Ho & ->).
-  apply lookup_union_Some_raw in Ho as [Ho|[_ Ho]]; [left|right]; eauto.
-Qed.
-
 Lemma senv_heads_empty_iff Θ : senv_heads Θ = ∅ ↔ Θ = ∅.
 Proof.
   split; [|intros ->; apply senv_heads_empty].

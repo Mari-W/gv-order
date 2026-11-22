@@ -252,6 +252,39 @@ Proof.
     rewrite (bcs_unshift _ σ m Hτ), (pclose_ids xs m σ Hm) in Hf. by apply HC.
 Qed.
 
+(** ** The heads of a value
+
+    The ends of a value of T sit at or above the heads of T, unless T
+    carries the ⊥ flag. An end at x has head x‾. An arrow and an
+    existential bound the heads of their ends by their lower point, a
+    product and a sum by the heads of their parts. *)
+
+Lemma Vrel_heads κ n : ∀ T W Θ v, Vrel κ n W Θ T v → hbot T = false →
+  ∀ y, y ∈ senv_heads Θ → ∃ h, h ∈ heads T ∧ w_le W h y.
+Proof.
+  assert (∀ W lb Θ y, lbx_le W lb (senv_heads Θ) → lb ≠ LBot → y ∈ senv_heads Θ →
+            ∃ h, h ∈ lb_heads lb ∧ w_le W h y) as Hlb.
+  { intros W [| |x] Θ y H Hb Hy; simpl in *; [set_solver|done|]. exists x. split; [set_solver|by apply H]. }
+  induction T as [|ub lb c T1 IH1 U IH2 a|T1 IH1 U IH2|T1 IH1 U IH2|m k C ub c U IH|s x a mt|lb m C T IH];
+    intros W Θ v HV Hb y Hy; simpl in Hb |- *.
+  - apply Vrel_unit_iff in HV as [-> _]. rewrite senv_heads_empty in Hy. set_solver.
+  - apply Vrel_lolli_iff in HV as (e & _ & _ & Hl & _). apply (Hlb W lb Θ y Hl); [|done].
+    intros ->. simpl in Hb. discriminate.
+  - apply Vrel_prod_iff in HV as (v1 & v2 & Θ1 & Θ2 & _ & _ & -> & H1 & H2).
+    apply orb_false_iff in Hb as [Hb1 Hb2].
+    apply senv_heads_union in Hy as [Hy|Hy].
+    + destruct (IH1 W Θ1 v1 H1 Hb1 y Hy) as (h & Hh & Hle). exists h. split; [set_solver|done].
+    + destruct (IH2 W Θ2 v2 H2 Hb2 y Hy) as (h & Hh & Hle). exists h. split; [set_solver|done].
+  - apply orb_false_iff in Hb as [Hb1 Hb2].
+    apply Vrel_sum_iff in HV as [(v' & _ & H)|(v' & _ & H)].
+    + destruct (IH1 W Θ v' H Hb1 y Hy) as (h & Hh & Hle). exists h. split; [set_solver|done].
+    + destruct (IH2 W Θ v' H Hb2 y Hy) as (h & Hh & Hle). exists h. split; [set_solver|done].
+  - apply Vrel_box_iff in HV as [-> _]. rewrite senv_heads_empty in Hy. set_solver.
+  - apply Vrel_sess_iff in HV as (o & s' & _ & -> & _). apply elem_of_senv_heads in Hy as (o' & S & x' & Ho & ->).
+    apply lookup_singleton_Some in Ho as [_ [= _ ->]]. exists x'‾. split; [set_solver|by left].
+  - apply Vrel_ex_iff in HV as (Hl & _). apply (Hlb W lb Θ y Hl); [|done]. intros ->. simpl in Hb. discriminate.
+Qed.
+
 (** ** Subtyping in the relation
 
     A value of T is a value of T' when W ; Γ ⊢ T ≤ T' and the facts of Γ
@@ -267,7 +300,7 @@ Proof.
     |Γ T1 U T1' U' _ IH1 _ IH2
     |Γ m kk C ub c U U' c' _ HU
     |Γ s s' x a a' mt Hss _
-    |Γ lb m C C' T T' Hhold _ IH]; intros Hwf σ n W Θ v HW Hs; simpl.
+    |Γ lb lb' m C C' T T' Hhold Hlo _ IH]; intros Hwf σ n W Θ v HW Hs; simpl.
   - done.
   - rewrite !Vrel_lolli_iff. intros (e & -> & Hfe & Hlb & H). exists e. split_and!; [done|done|done|].
     intros W' j Θ' w F HW' Hj Hd Hub Hw.
@@ -291,8 +324,20 @@ Proof.
     rewrite !ty_df_pinst. apply teq_pinst. apply teq_df. by apply teq_sym.
   - rewrite !Vrel_sess_iff. intros (o & s0 & -> & -> & Hs0). exists o, s0. split_and!; [done|done|].
     unfold seqv in *. eapply sequiv_trans; [exact Hs0|]. by apply sequiv_df.
-  - rewrite !Vrel_ex_iff. intros (Hlb & xs & Hxs & HC & H). split; [done|].
+  - rewrite !Vrel_ex_iff. intros (Hlb & xs & Hxs & HC & H).
     pose proof (hsat_open W σ Γ m C xs Hxs Hs HC) as Hs'.
+    split.
+    { destruct Hlo as [->|Hlo]; [done|].
+      rewrite <-pclose_ty in H. pose proof (Vrel_heads κ n _ W Θ v H) as Hh.
+      rewrite hbot_pinst, heads_pinst in Hh.
+      pose proof (pt_unshift _ σ m (pclose_shift xs m σ Hxs)) as Hu.
+      destruct lb' as [| |x']; simpl in Hlo |- *; [|done|].
+      - destruct Hlo as [Hht Hhb]. apply set_eq. intros y. split; [|set_solver].
+        intros Hy. destruct (Hh Hhb y Hy) as (h & Hin & _). rewrite Hht in Hin. set_solver.
+      - destruct Hlo as [Hle Hhb]. intros y Hy. destruct (Hh Hhb y Hy) as (h & Hin & Hhy).
+        apply elem_of_map in Hin as (h0 & -> & Hh0).
+        eapply w_le_trans; [|exact Hhy]. rewrite <-Hu.
+        exact (sle_sem W0 W Hwf HW _ _ _ _ Hs' (Hle h0 Hh0)). }
     exists xs. split_and!; [done| |].
     + pose proof (hold_sem W0 W Hwf HW (pclose xs m σ) _ _ _ Hs' Hhold) as H2.
       by rewrite (bcs_unshift _ σ m (pclose_shift xs m σ Hxs)), (pclose_ids xs m σ Hxs) in H2.

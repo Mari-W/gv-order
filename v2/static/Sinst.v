@@ -331,7 +331,8 @@ Proof.
     destruct H0 as [->|(? & ? & ?)]; [by left|right].
     split_and!; [apply teq_sinst; auto using scontr_iter_sty_up|apply tcontr_sinst; auto using scontr_iter_sty_up..].
   - apply sub_sess; [|done]. by apply sequiv_sinst.
-  - apply sub_ex; auto.
+  - apply sub_ex; auto. destruct H0 as [->|H0]; [by left|right].
+    by rewrite heads_sinst, hbot_sinst.
 Qed.
 
 (** ** A bound on the free session variables *)

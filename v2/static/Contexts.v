@@ -351,12 +351,17 @@ Definition thage (c : fuel) (Θ Θ' : tenv) : Prop :=
     product, a sum and an existential compare their parts. An
     existential may weaken its constraint to one that Γ and the
     constraint entail at the bound points (item 2 of 2026-11-21,
-    finding 6.7 of docs/redesign/algorithmic-plan.md), so
-    e : ∃ιs. C. T types at ∃ιs. C'. T whenever let x = e in x does with
-    the same lower bound. The bodies of the two existentials compare
-    under Γ extended by C. A box with session variables may change its
+    finding 6.7 of docs/redesign/algorithmic-plan.md). The lower bound
+    may stay, or fall to any l′ that Γ and C place below the heads of
+    the body ([lb_lower]), as E-Pack would after an opening (item 1 of
+    2026-11-22). So e : ∃ιs. C. T types at ∃^{l′}ιs. C'. T whenever
+    let x = e in x does by opening x and packing it at ιs. The bodies of
+    the two existentials compare under Γ extended by C. A box with session variables may change its
     result up to ≈ when both results are contractive, because
     contractive instances keep ≈ ([teq_sinst]). *)
+Definition lb_lower (W : sworld) (Γ : hctx) (n : nat) (C : bcs) (lb lb' : lbound) (T : ty) : Prop :=
+  lb' = lb ∨ lbx_below_h W (hc_open n C Γ) (lb_map (pt_inst (pshift n)) lb') (heads T) (hbot T).
+
 Inductive tsub (W : sworld) : hctx → ty → ty → Prop :=
   | sub_unit Γ : tsub W Γ TUnit TUnit
   | sub_arr Γ ub lb c T1 U a c' T1' U' a' :
@@ -371,9 +376,10 @@ Inductive tsub (W : sworld) : hctx → ty → ty → Prop :=
       tsub W Γ (TBox n k C ub c U) (TBox n k C ub c' U')
   | sub_sess Γ s s' x a a' mt :
       sequiv s s' → fle a' a → tsub W Γ (TSess s x a mt) (TSess s' x a' mt)
-  | sub_ex Γ lb n C C' T T' :
+  | sub_ex Γ lb lb' n C C' T T' :
       hold_at W (hc_open n C Γ) (bcs_inst (pshift n) C') (ids n) →
-      tsub W (hc_open n C Γ) T T' → tsub W Γ (TEx lb n C T) (TEx lb n C' T').
+      lb_lower W Γ n C lb lb' T →
+      tsub W (hc_open n C Γ) T T' → tsub W Γ (TEx lb n C T) (TEx lb' n C' T').
 
 (** ** Instances of session variables
 
