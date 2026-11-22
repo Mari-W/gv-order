@@ -1282,6 +1282,9 @@ must do, open questions.
     the decision of 2026-10-29 and touches every link lemma.
   The session recommends B. All on paper, nothing in Rocq, higher-order
   payloads untested. No change without the author's go.
+  Update 2026-11-22 (author). Try B, never C. An agent derives `fwd` with the
+  existing rules on branch redesign-fwd. The n-ary connect is to be ported
+  once hiding lands.
 - **Cross-references everywhere on the map (author 2026-11-19, another
   day).** Every symbol in every formula should be hoverable and lead to
   its definition, which needs a restructure of the generator (one
