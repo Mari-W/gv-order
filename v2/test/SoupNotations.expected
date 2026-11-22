@@ -24,15 +24,16 @@ lf_adequacy
      : excluded_middle
        → functional_choice
          → ∀ (N : nat) (W : world) (T : ty) (p : proc),
-             ∅ ⊪^N _W p : T → lock_free p
+             wranked W → ∅ ⊪^N _W p : T → lock_free p
 lf_thread_progress
      : excluded_middle
        → functional_choice
          → ∀ (N : nat) (W : world) (T : ty) (p : proc),
-             ∅ ⊪^N _W p : T
-             → ∀ (r : nat → config) (l : nat → option event),
-                 erase (r 0) = p
-                 → maximal r l → wfair r l → thread_progress_run r l
+             wranked W
+             → ∅ ⊪^N _W p : T
+               → ∀ (r : nat → config) (l : nat → option event),
+                   erase (r 0) = p
+                   → maximal r l → wfair r l → thread_progress_run r l
 λ (N : nat) (W : sworld) (Σ : senv) (p : proc) (T : ty), Σ ⊩^N _ W p : T
      : nat → sworld → senv → proc → ty → Prop
 lf_fundamental

@@ -833,6 +833,308 @@ Qed.
 Theorem fct_deadlock_free : deadlock_free (∅, {[+ fct_main +]}).
 Proof. exact (soundness sw_empty _ TUnit fct_term). Qed.
 
+(** ** Padovani's fibo
+
+    docs/redesign/check-df-acyclic.md, section 4.3, after Padovani's
+    *fibo?(x, y). (νa)(νb)(fibo!⟨x−1, a⟩ | fibo!⟨x−2, b⟩ | b?(z2).a?(z1).y!⟨z1+z2⟩).
+    The two recursive calls force one box at (ι·0)‾ and (ι·1)‾, two
+    instances, Padovani's polymorphic recursion. The parent receives on
+    b, then on a, then answers on y. With
+    F(x) = {(x·1)⁺ ≺ (x·0)‾, (x·1)⁺ ≺ x‾, (x·0)⁺ ≺ x‾} the box hypothesis
+    and the laws are built as for fact. A fact lowers the depth, or keeps
+    it and goes from a name ending in 1 to one ending in 0, and program
+    order keeps the name and raises the offset, so (acyc-new) holds.
+
+      fib = !(f = λy. let (a, a′) = new_{ι·0} in let (b, b′) = new_{ι·1} in
+                      spawn (λu. (force f) a′); spawn (λu. (force f) b′);
+                      let (z2, b) = recv b in z2; close b;
+                      let (z1, a) = recv a in z1; close a;
+                      let y = send ⟨∗, y⟩ in close y) *)
+
+Definition fbF (x : point) (g : fact) : Prop :=
+  g = FLt (x·1)⁺ (x·0)‾ ∨ g = FLt (x·1)⁺ x‾ ∨ g = FLt (x·0)⁺ x‾.
+Definition fbH (x : point) (g : fact) : Prop :=
+  fbF x g ∨ ∃ w, w ≠ [] ∧ fbF (fpath x w)‾ g.
+
+Lemma fbF_inst σ y g : fbF y g → fbF (pt_inst σ y) (fact_map (pt_inst σ) g).
+Proof.
+  intros [->|[->| ->]]; cbn [fact_map]; rewrite ?pt_inst_dual, ?pt_inst_shift, ?pt_inst_field;
+    [left|right; left|right; right]; reflexivity.
+Qed.
+
+Lemma fbH_inst σ x g : fbH x g → fbH (pt_inst σ x) (fact_map (pt_inst σ) g).
+Proof.
+  intros [H|(w & Hw & H)]; [left; by apply fbF_inst|right].
+  exists w. split; [done|]. rewrite <-fpath_inst, <-pt_inst_dual. by apply fbF_inst.
+Qed.
+
+Lemma fbH_desc x κ g : fbH (x·κ)‾ g → fbH x g.
+Proof.
+  intros [H|(w & Hw & H)]; right.
+  - exists [κ]. split; [done|]. exact H.
+  - exists (κ :: w). split; [done|]. by rewrite fpath_dual in H.
+Qed.
+
+Lemma fbH_root x u v : fbH x (FLt u v) → pt_root u = pt_root x ∧ pt_root v = pt_root x.
+Proof.
+  pose proof (λ w, fpath_root x w) as R.
+  intros [[E|[E|E]]|(w & _ & [E|[E|E]])]; injection E as -> ->; try done; split; apply R.
+Qed.
+
+Lemma fbH_slt W Γ (x : point) u v : pt_root x = NVar 0 →
+  (BCs [] (fbH x), ids 1) ∈ hc_hyps Γ → fbH x (FLt u v) → slt W Γ u v.
+Proof.
+  intros Hx Hin Hf. destruct (fbH_root x u v Hf) as [Hu Hv].
+  eapply (slt_hyp _ _ (fbH x) (ids 1) (FLt u v)); [done|done| |].
+  - split; apply pn_vb_root0; [change (pt_root u = NVar 0)|change (pt_root v = NVar 0)]; congruence.
+  - cbn [fact_map]. change (ids 1) with [ρ]. by rewrite !pt_inst_id0 by congruence.
+Qed.
+
+Definition fb_H : bcs := BCs [] (fbH ρ).
+Definition fb_L : fact → Prop := fbH ρ‾.
+
+(** ** (acyc-new) for the laws: depth falls, then offset rises *)
+
+(** 0 for a name that ends in the field 1, 1 otherwise. *)
+Definition lastf (x : point) : nat :=
+  match pt_name x with NField _ _ 1 => 0 | _ => 1 end.
+
+Definition fb_lt (u v : point) : Prop :=
+  pt_depth v < pt_depth u ∨
+  (pt_depth u = pt_depth v ∧ (lastf u < lastf v ∨ (lastf u = lastf v ∧ pt_off u < pt_off v))).
+
+Lemma fb_lt_trans u v w : fb_lt u v → fb_lt v w → fb_lt u w.
+Proof. unfold fb_lt. lia. Qed.
+
+Lemma fb_lt_irrefl u : ¬ fb_lt u u.
+Proof. unfold fb_lt. lia. Qed.
+
+Lemma fb_step_lt u v : new_step (bcs_of fb_L) u v → fb_lt u v.
+Proof.
+  intros (_ & _ & [[[[E|[E|E]]|(w & _ & [E|[E|E]])] _]|[-> | ->]]);
+    try (injection E as -> ->); unfold fb_lt, pt_depth, lastf; cbn [pt_shift pt_dual pt_field pt_name pt_off pn_depth];
+    first [right; split; [done|left; lia] | left; lia | right; split; [done|right; split; [done|lia]]].
+Qed.
+
+Lemma fb_tc_lt u v : tc (new_step (bcs_of fb_L)) u v → fb_lt u v.
+Proof.
+  induction 1 as [u v H|u v w H _ IH]; [by apply fb_step_lt|].
+  eapply fb_lt_trans; [by apply fb_step_lt|exact IH].
+Qed.
+
+Lemma fb_acyc W Γ : acyc_new W Γ (bcs_of fb_L).
+Proof.
+  split.
+  - intros x _ Hc. exact (fb_lt_irrefl x (fb_tc_lt x x Hc)).
+  - intros z y (Hz & _ & [[Hf _]|(v & u & [Hf _] & _)]); exfalso; apply Hz; unfold in_tree0;
+      by destruct (fbH_root _ _ _ Hf) as [-> _].
+Qed.
+
+Lemma fb_tree_ends : tree_ends (bcs_of fb_L).
+Proof. intros x y Hf _. unfold in_tree0. by destruct (fbH_root _ _ _ Hf) as [_ ->]. Qed.
+
+(** ** The programs *)
+
+
+Definition fib_arr : ty := TLolli UTop LNone None (TSess Sy ρ None None) TUnit None.
+Definition fib_box : ty := TBox 1 0 fb_H None None fib_arr.
+
+Definition fib_body : expr :=
+  LetP ENew (LetP ENew
+    (LetU (ESpawn (Lam (LetU (Var 0) (App (EForce (Var 6)) (Var 3)))))
+    (LetU (ESpawn (Lam (LetU (Var 0) (App (EForce (Var 6)) (Var 1)))))
+    (LetP (ERecv (Var 1))
+    (LetU (Var 1)
+    (LetU (EClose (Var 0))
+    (LetP (ERecv (Var 5))
+    (LetU (Var 1)
+    (LetU (EClose (Var 0))
+    (ELet (ESend (Pair EUnit (Var 8)))
+          (EClose (Var 0)))))))))))).
+
+Definition fib : expr := EBox (Lam fib_body).
+
+Definition fib_main : expr :=
+  let_new (LetU (ESpawn (Lam (LetU (Var 0) (App (EForce fib) (Var 1)))))
+    (LetP (ERecv (Var 1)) (LetU (Var 1) (EClose (Var 0))))).
+
+Lemma fib_box_shift n :
+  lenv_pinst (pshift 1) (Some fib_box :: nones n) = Some fib_box :: nones n.
+Proof. unfold lenv_pinst. rewrite fmap_cons, fmap_replicate. reflexivity. Qed.
+
+Lemma fib_arr_inst x : ty_inst [x] fib_arr = TLolli UTop LNone None (TSess Sy x None None) TUnit None.
+Proof. unfold ty_inst, fib_arr. simpl. by rewrite pt_inst_pvar_at. Qed.
+
+Lemma fib_force_var W Γ Δ F i x :
+  Δ !! i = Some (Some fib_box) → (∀ y o, y ≠ i → Δ !! y = Some o → spare o) →
+  hold_at W Γ fb_H [x] →
+  dftyped W ∅ Γ Δ F (EForce (Var i)) (TLolli UTop LNone None (TSess Sy x None None) TUnit None).
+Proof.
+  intros Hi Hs HC. rewrite <-fib_arr_inst, <-(sinst_nil (ty_inst [x] fib_arr)).
+  eapply d_force with (C := fb_H) (ub := None) (c := None);
+    [done|exact HC|done|split; [split; apply Forall_nil|intros _; apply Forall_nil]|exact I|].
+  by eapply d_var'.
+Qed.
+
+Section bworker.
+  Context (W : sworld) (Γ : hctx).
+  Local Definition Γb_w : hctx := hc_open 1 fb_H Γ.
+
+  Lemma fb_in : (fb_H, ids 1) ∈ hc_hyps Γb_w.
+  Proof. unfold Γb_w, hc_open. simpl. apply elem_of_app. right. by left. Qed.
+
+  Lemma fb_fact u v : fbH ρ (FLt u v) → slt W Γb_w u v.
+  Proof. intros Hf. apply (fbH_slt W Γb_w ρ); [done|apply fb_in|exact Hf]. Qed.
+
+  Lemma fb_desc_hold κ : hold_at W Γb_w fb_H [(ρ·κ)‾].
+  Proof.
+    apply hold_at_nil. intros f Hf _.
+    pose proof (fbH_inst (plist [(ρ·κ)‾]) ρ f Hf) as H.
+    assert (pt_inst (plist [(ρ·κ)‾]) ρ = (ρ·κ)‾) as E by (rewrite pt_inst_pvar_at; reflexivity).
+    rewrite E in H. apply fbH_desc in H.
+    destruct (fact_map (pt_inst (plist [(ρ·κ)‾])) f) as [u v]. by apply fb_fact.
+  Qed.
+
+  Local Ltac fbf := apply fb_fact; left; first [left; reflexivity|right; left; reflexivity|right; right; reflexivity].
+  Local Ltac rdy := cbn [lenv_bot hbot orb]; rewrite ?lenv_bot_nones; cbn [sf_unionb];
+    split_and!; [|done|done]; let y := fresh "y" in let Hy := fresh "Hy" in
+    intros y Hy; cbn [fst] in Hy; heads_simpl Hy;
+    repeat match goal with H : _ ∨ _ |- _ => destruct H end; subst; try contradiction.
+
+  Lemma fib_body_typed n :
+    dftyped W ∅ Γb_w (Some (TSess Sy ρ None None) :: Some fib_box :: nones n)
+      (∅, None) fib_body TUnit.
+  Proof.
+    unfold fib_body.
+    eapply d_letp; [apply tsplit_empty|lsplit_tac ENew EUnit| |].
+    { apply (d_new_fld _ _ _ _ ρ 0 Sa); [apply spare_unl; spare_tac|contr_tac]. }
+    eapply d_letp; [apply tsplit_empty|lsplit_tac ENew EUnit| |].
+    { apply (d_new_fld _ _ _ _ ρ 1 Sa); [apply spare_unl; spare_tac|contr_tac]. }
+    eapply d_letu; [apply tsplit_empty
+                   |lsplit_tac (ESpawn (Lam (LetU (Var 0) (App (EForce (Var 6)) (Var 3))))) EUnit| |].
+    { apply d_spawn_lam.
+      eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
+      { eapply d_var'; [reflexivity|]. spare_tac. }
+      eapply d_app with (ub := UTop); [apply tsplit_empty|lsplit_tac (EForce (Var 6)) EUnit|done| |].
+      + apply fib_force_var; [reflexivity|spare_tac|apply fb_desc_hold].
+      + eapply d_var'; [reflexivity|]. spare_tac. }
+    eapply d_letu; [apply tsplit_empty
+                   |lsplit_tac (ESpawn (Lam (LetU (Var 0) (App (EForce (Var 6)) (Var 1))))) EUnit| |].
+    { apply d_spawn_lam.
+      eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
+      { eapply d_var'; [reflexivity|]. spare_tac. }
+      eapply d_app with (ub := UTop); [apply tsplit_empty|lsplit_tac (EForce (Var 6)) EUnit|done| |].
+      + apply fib_force_var; [reflexivity|spare_tac|apply fb_desc_hold].
+      + eapply d_var'; [reflexivity|]. spare_tac. }
+    eapply d_letp; [apply tsplit_empty|lsplit_tac (ERecv (Var 1)) EUnit| |].
+    { eapply d_recv with (x := ρ·1) (m := 0) (T := TUnit) (S0 := Sa); [reflexivity|exact I| |].
+      - rdy; (eapply sl_trans; [apply sl_po|]); fbf.
+      - eapply d_var'; [reflexivity|]. spare_tac. }
+    eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 1) EUnit| |].
+    { eapply d_var'; [reflexivity|]. spare_tac. }
+    eapply d_letu; [apply tsplit_empty|lsplit_tac (EClose (Var 0)) EUnit| |].
+    { eapply d_close with (S0 := SEnd) (x := (ρ·1)⁺); [reflexivity| |].
+      - rdy; fbf.
+      - eapply d_var'; [reflexivity|]. spare_tac. }
+    eapply d_letp; [apply tsplit_empty|lsplit_tac (ERecv (Var 5)) EUnit| |].
+    { eapply d_recv with (x := ρ·0) (m := 0) (T := TUnit) (S0 := Sa); [reflexivity|exact I| |].
+      - rdy; (eapply sl_trans; [apply sl_po|]); fbf.
+      - eapply d_var'; [reflexivity|]. spare_tac. }
+    eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 1) EUnit| |].
+    { eapply d_var'; [reflexivity|]. spare_tac. }
+    eapply d_letu; [apply tsplit_empty|lsplit_tac (EClose (Var 0)) EUnit| |].
+    { eapply d_close with (S0 := SEnd) (x := (ρ·0)⁺); [reflexivity| |].
+      - rdy; fbf.
+      - eapply d_var'; [reflexivity|]. spare_tac. }
+    eapply d_let; [apply tsplit_empty|lsplit_tac (ESend (Pair EUnit (Var 8))) EUnit| |].
+    { eapply d_send with (x := ρ) (m := 0) (T := TUnit) (S0 := Sy);
+        [reflexivity|exact I|done|cbn; set_solver|rdy|].
+      eapply d_pair; [apply tsplit_empty|lsplit_tac EUnit (Var 8)| |].
+      - apply d_unit'. spare_tac.
+      - eapply d_var'; [reflexivity|]. spare_tac. }
+    eapply d_close with (S0 := SEnd); [reflexivity|apply ub_below_empty|].
+    eapply d_var'; [reflexivity|]. spare_tac.
+    Unshelve. all: exact None.
+  Qed.
+End bworker.
+
+Lemma fib_typed W Γ n F : dftyped W ∅ Γ (nones n) F fib fib_box.
+Proof.
+  eapply d_box.
+  { intros o Ho. apply elem_of_replicate in Ho as [-> _]. by left. }
+  { cbn [tcontr]. repeat (apply Is_true_andb; split); done. }
+  intros ss Hk _. destruct ss; [|done]. rewrite sinst_nil, fib_box_shift.
+  eapply d_abs.
+  { apply lb_below_none. spare_tac. }
+  { done. }
+  apply fib_body_typed.
+Qed.
+
+Definition Γfb : hctx := hc_open 1 (bcs_of fb_L) hc_empty.
+
+Lemma fb_law W u v : fb_L (FLt u v) → slt W Γfb u v.
+Proof. intros Hf. apply (fbH_slt W Γfb ρ‾); [done|unfold Γfb, hc_open; simpl; by left|exact Hf]. Qed.
+
+Lemma fib_force W n F :
+  dftyped W ∅ Γfb (nones n) F (EForce fib) (TLolli UTop LNone None (TSess Sy ρ‾ None None) TUnit None).
+Proof.
+  rewrite <-fib_arr_inst, <-(sinst_nil (ty_inst [ρ‾] fib_arr)).
+  eapply d_force with (C := fb_H) (ub := None) (c := None);
+    [done| |done|split; [split; apply Forall_nil|intros _; apply Forall_nil]|exact I|apply fib_typed].
+  apply hold_at_nil. intros f Hf _.
+  pose proof (fbH_inst (plist [ρ‾]) ρ f Hf) as H.
+  assert (pt_inst (plist [ρ‾]) ρ = ρ‾) as E by (rewrite pt_inst_pvar_at; reflexivity). rewrite E in H.
+  destruct (fact_map (pt_inst (plist [ρ‾])) f) as [u v]. by apply fb_law.
+Qed.
+
+Theorem fib_dftyped : dftyped sw_empty ∅ hc_empty [] (∅, None) fib_main TUnit.
+Proof.
+  unfold fib_main, let_new.
+  eapply d_let; [apply tsplit_empty|apply lsplit_nil| |].
+  { apply (d_new_acyc _ _ _ _ (bcs_of fb_L) Sa None None None None);
+      [apply spare_unl; spare_tac|apply fb_acyc|contr_tac]. }
+  eapply d_open with (i := 0); [reflexivity|cbn; tauto|apply cons_tree; [by intros ?? []|apply fb_tree_ends]|].
+  rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
+  fold Γfb.
+  eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
+  { eapply d_var'; [reflexivity|]. spare_tac. }
+  eapply d_letu; [apply tsplit_empty
+                 |lsplit_tac (ESpawn (Lam (LetU (Var 0) (App (EForce fib) (Var 1))))) EUnit| |].
+  - apply d_spawn_lam.
+    eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
+    { eapply d_var'; [reflexivity|]. spare_tac. }
+    eapply d_app with (ub := UTop); [apply tsplit_empty|lsplit_tac (EForce fib) EUnit|done| |].
+    + apply (fib_force _ 4).
+    + eapply d_var'; [reflexivity|]. spare_tac.
+  - eapply d_letp; [apply tsplit_empty|lsplit_tac (ERecv (Var 1)) EUnit| |].
+    { eapply d_recv with (x := ρ) (m := 0) (T := TUnit) (S0 := Sa); [reflexivity|exact I|apply ub_below_empty|].
+      eapply d_var'; [reflexivity|]. spare_tac. }
+    eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 1) EUnit| |].
+    { eapply d_var'; [reflexivity|]. spare_tac. }
+    eapply d_close with (S0 := SEnd); [reflexivity|apply ub_below_empty|].
+    eapply d_var'; [reflexivity|]. spare_tac.
+  Unshelve. all: exact None.
+Qed.
+
+Theorem fib_term : fptyped None sw_empty ∅ (∅, {[+ fib_main +]}) TUnit.
+Proof.
+  apply (fp_term None sw_empty ∅ ∅ ∅ _ TUnit None).
+  - constructor.
+  - intros o. rewrite dom_empty_L. set_solver.
+  - unfold chans_of. rewrite dom_empty_L. set_solver.
+  - apply pfree_empty.
+  - intros o e He. by rewrite lookup_empty in He.
+  - set_solver.
+  - assert (tenv_of (fhalf None) ∅ ∪ ∅ = tenv_df ∅) as ->.
+    { unfold tenv_of, tenv_df. by rewrite !fmap_empty, map_union_empty. }
+    apply fib_dftyped.
+  - apply sw_empty_wok.
+Qed.
+
+(** Padovani's fact is deadlock free, without excluded middle. *)
+Theorem fib_deadlock_free : deadlock_free (∅, {[+ fib_main +]}).
+Proof. exact (soundness sw_empty _ TUnit fib_term). Qed.
+
 (** ** Why the recursion does not type at a finite N
 
     In the recursive worker the parent closes its child's channel c and
@@ -858,3 +1160,6 @@ Print Assumptions fjr_deadlock_free.
 Print Assumptions fa_acyc.
 Print Assumptions fct_dftyped.
 Print Assumptions fct_deadlock_free.
+Print Assumptions fb_acyc.
+Print Assumptions fib_dftyped.
+Print Assumptions fib_deadlock_free.

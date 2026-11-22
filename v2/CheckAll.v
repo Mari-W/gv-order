@@ -280,3 +280,6 @@ Print Assumptions fjr_deadlock_free.
 Print Assumptions fa_acyc.
 Print Assumptions fct_dftyped.
 Print Assumptions fct_deadlock_free.
+Print Assumptions fb_acyc.
+Print Assumptions fib_dftyped.
+Print Assumptions fib_deadlock_free.

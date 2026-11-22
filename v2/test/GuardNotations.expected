@@ -10,13 +10,11 @@ gl_tick_app
      : ∀ (L : nat → bool) (e1 e2 : expr),
          L ⊢▷ e1 → acts e1 → ∅ ⊢▷ e2 → L ⊢▷ App e1 e2
 live_fundamental
-     : excluded_middle
-       → ∀ (W : sworld) (R : world) (Θ : tenv) (Δ : lenv) 
-           (F : sfuture) (t : expr) (T : ty),
-           sworld_wf W
-           → Θ ; hc_empty ; Δ ⊢^F _ W t : T
-             → ∅ ⊢▷ t → wmodels R W → Θ ; Δ ⊫^F _ R t : T
+     : ∀ (W : sworld) (R : world) (Θ : tenv) (Δ : lenv) 
+         (F : sfuture) (t : expr) (T : ty),
+         sworld_wf W
+         → Θ ; hc_empty ; Δ ⊢^F _ W t : T
+           → ∅ ⊢▷ t → wmodels R W → wstrict R → Θ ; Δ ⊫^F _ R t : T
 live_soundness_h
      : ∀ (W : sworld) (p : proc) (T : ty),
-         excluded_middle
-         → ∅ ⊢_W p : T → ⊢▷ p → deadlock_free p ∧ no_tau_divergence p
+         ∅ ⊢_W p : T → ⊢▷ p → deadlock_free p ∧ no_tau_divergence p
