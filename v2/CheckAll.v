@@ -14,6 +14,7 @@ From GV Require Import examples.LFController soup.SoupRun soup.SoupTau soup.LFAd
 From GV Require Import soup.LFCompose soup.LFTyped lockfree.FairRun.
 From GV Require Import examples.SemBranch static.Inversion relation.Ord relation.ExProp relation.Ranks examples.LFLink compat.Redex static.PointSubst.
 From GV Require Import examples.SinstStuck static.Sinst.
+From GV Require Import examples.Copycat.
 
 (** types/Points.v *)
 Print Assumptions pt_dual_dual.
@@ -185,3 +186,8 @@ Print Assumptions typed_sinst.
 Print Assumptions inv_chan_sty.
 Print Assumptions typed_sinst_false.
 Print Assumptions ss_var_guard.
+(** examples/Copycat.v *)
+Print Assumptions fwd_dftyped.
+Print Assumptions fwd_expand.
+Print Assumptions fwd_config_deadlock_free.
+Print Assumptions ring_rejected.
