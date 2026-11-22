@@ -16,7 +16,7 @@ From GV Require Import examples.SemBranch static.Inversion relation.Ord relation
 From GV Require Import examples.SinstStuck static.Sinst examples.SharedRoots static.Hiding examples.GenNew.
 From GV Require Import soup.LFConnectN examples.Ring.
 From GV Require Import examples.Copycat examples.ForkJoin.
-From GV Require Import static.ChanRen examples.CopycatTwo.
+From GV Require Import static.ChanRen examples.CopycatTwo static.LetVar examples.LetVarCounter.
 
 (** types/Points.v *)
 Print Assumptions pt_dual_dual.
@@ -280,6 +280,19 @@ Print Assumptions J_acyc.
 Print Assumptions fwdp_expand2.
 Print Assumptions fwdp_expand2_df.
 Print Assumptions fwdp_expand2_example.
+(** static/Inversion.v, variables and the unit *)
+Print Assumptions inv_var_ctx.
+Print Assumptions inv_unit_ctx.
+Print Assumptions inv_var_transfer.
+(** static/LetVar.v *)
+Print Assumptions let_intro.
+Print Assumptions inv_cont.
+Print Assumptions inv_pair_prod.
+Print Assumptions let_elim.
+(** examples/LetVarCounter.v *)
+Print Assumptions let_force_typed.
+Print Assumptions force_types_ex.
+Print Assumptions let_var_counter.
 (** examples/ForkJoin.v *)
 Print Assumptions fj_dftyped.
 Print Assumptions fj_term.

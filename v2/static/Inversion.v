@@ -279,3 +279,101 @@ Proof.
     apply gms_size_1 in S1 as [u1 ->]. apply gms_size_1 in S2 as [u2 ->].
     exists W1, W2, Σ1, Σ2, ΣC, C1, C2, u1, u2. split_and!; done.
 Qed.
+
+(** ** Variables and the unit (fx-open, 2026-11-22)
+
+    A variable and the unit hold no end, and every other entry of Δ
+    they see is unlimited ([inv_var_ctx], [inv_unit_ctx]). E-Open opens
+    an entry to a type that is not unlimited, so an opened entry is never
+    one of these. Along openings an empty Θ and an unlimited entry go
+    back to the given context ([opened_tenv_empty], [opened_unl_back]).
+
+    Over a Δ with no existential entry E-Open does not apply, and a
+    derivation of a variable x is E-Var followed by E-Sub and E-Pack.
+    Its steps then apply to any term of the type of x
+    ([inv_var_transfer]). *)
+
+Definition is_ex (T : ty) : Prop := match T with TEx _ _ _ _ => True | _ => False end.
+
+(** No entry of Δ is an existential. *)
+Definition lenv_noex (Δ : lenv) : Prop := ∀ i T, Δ !! i = Some (Some T) → ¬ is_ex T.
+
+Lemma opened_tenv_empty W Θ Γ Δ F Θ' Γ' Δ' F' :
+  opened W Θ Γ Δ F Θ' Γ' Δ' F' → Θ' = ∅ → Θ = ∅.
+Proof.
+  induction 1 as [|Θ Γ Δ F Θ' Γ' Δ' F' i lb m C T _ _ _ _ IH]; [done|].
+  intros H. specialize (IH H). unfold tenv_pinst in IH. by apply fmap_empty_iff in IH.
+Qed.
+
+Lemma opened_unl_back W Θ Γ Δ F Θ' Γ' Δ' F' :
+  opened W Θ Γ Δ F Θ' Γ' Δ' F' → ∀ j,
+  (∀ σ, Δ' !! j = Some (Some σ) → unlimited σ) → ∀ σ, Δ !! j = Some (Some σ) → unlimited σ.
+Proof.
+  induction 1 as [|Θ Γ Δ F Θ' Γ' Δ' F' i lb m C T Hi Hu _ _ IH]; [done|].
+  intros j Hj σ Hσ. specialize (IH j Hj).
+  destruct (decide (j = i)) as [->|Hne].
+  - exfalso. apply Hu, IH. rewrite list_lookup_insert_eq; [done|]. unfold lenv_pinst. rewrite length_fmap. by eapply lookup_lt_Some.
+  - apply (unlimited_pinst_iff (pshift m)). apply IH.
+    rewrite list_lookup_insert_ne by congruence. by rewrite lenv_pinst_lookup, Hσ.
+Qed.
+
+Section inversion_var.
+  Context (W : sworld) (N : fuel).
+
+  Lemma inv_var_ctx Θ Γ Δ F i T c :
+    typed W N Θ Γ Δ F (Var i) T c →
+    Θ = ∅ ∧ (∃ T0, Δ !! i = Some (Some T0)) ∧
+    ∀ j σ, j ≠ i → Δ !! j = Some (Some σ) → unlimited σ.
+  Proof.
+    remember (Var i) as e0 eqn:He. induction 1; try discriminate.
+    - injection He as <-. destruct H as [Hx Hu]. split_and!; eauto.
+    - by apply IHtyped.
+    - by apply IHtyped.
+    - destruct (IHtyped He) as (HΘ & (T0 & Hi0) & Hu). split_and!.
+      + unfold tenv_pinst in HΘ. by apply fmap_empty_iff in HΘ.
+      + destruct (decide (i = i0)) as [->|Hne]; [eauto|].
+        rewrite list_lookup_insert_ne in Hi0 by congruence. rewrite lenv_pinst_lookup in Hi0.
+        destruct (Δ !! i) as [[σ|]|]; simpl in Hi0; [eauto|discriminate|discriminate].
+      + intros j σ Hj Hσ. destruct (decide (j = i0)) as [->|Hne].
+        * exfalso. apply H0. apply (Hu i0 T Hj).
+          rewrite list_lookup_insert_eq; [done|]. unfold lenv_pinst. rewrite length_fmap. by eapply lookup_lt_Some.
+        * apply (unlimited_pinst_iff (pshift m)). apply (Hu j); [done|].
+          rewrite list_lookup_insert_ne by congruence. by rewrite lenv_pinst_lookup, Hσ.
+  Qed.
+
+  Lemma inv_unit_ctx Θ Γ Δ F T c :
+    typed W N Θ Γ Δ F EUnit T c →
+    Θ = ∅ ∧ ∀ j σ, Δ !! j = Some (Some σ) → unlimited σ.
+  Proof.
+    remember EUnit as e0 eqn:He. induction 1; try discriminate.
+    - split; [done|]. intros j σ Hσ. destruct (H (Some σ)) as [?|(U & [= <-] & HU)]; [|done|done].
+      by apply list_elem_of_lookup_2 in Hσ.
+    - by apply IHtyped.
+    - by apply IHtyped.
+    - destruct (IHtyped He) as (HΘ & Hu). split.
+      + unfold tenv_pinst in HΘ. by apply fmap_empty_iff in HΘ.
+      + intros j σ Hσ. destruct (decide (j = i)) as [->|Hne].
+        * exfalso. apply H0. apply (Hu i T).
+          rewrite list_lookup_insert_eq; [done|]. unfold lenv_pinst. rewrite length_fmap. by eapply lookup_lt_Some.
+        * apply (unlimited_pinst_iff (pshift m)). apply (Hu j).
+          rewrite list_lookup_insert_ne by congruence. by rewrite lenv_pinst_lookup, Hσ.
+  Qed.
+
+  Lemma fle_fadd_mono a a' b b' : fle a a' → fle b b' → fle (fadd a b) (fadd a' b').
+  Proof. destruct a, a', b, b'; simpl; lia. Qed.
+
+  Lemma fadd_0_r' a : fadd a (Some 0) = a.
+  Proof. destruct a as [m|]; [simpl; by rewrite Nat.add_0_r|done]. Qed.
+
+  Lemma inv_var_transfer Θ Γ Δ F i T c T0 :
+    typed W N Θ Γ Δ F (Var i) T c → lenv_noex Δ → Δ !! i = Some (Some T0) →
+    ∀ Θe Δe Fe e c0, typed W N Θe Γ Δe Fe e T0 c0 → typed W N Θe Γ Δe Fe e T (fadd c0 c).
+  Proof.
+    remember (Var i) as e0 eqn:He. induction 1; try discriminate; intros Hn Hi Θe Δe Fe e' c0 He'.
+    - injection He as <-. destruct H as [Hx _]. rewrite Hx in Hi. injection Hi as ->.
+      by rewrite fadd_0_r'.
+    - eapply e_sub; [by eapply IHtyped|exact H0|by apply fle_fadd_mono; [apply fle_refl|]|exact H2].
+    - eapply e_pack; [exact H|exact H0|exact H1|exact H2|by eapply IHtyped].
+    - exfalso. exact (Hn _ _ H I).
+  Qed.
+End inversion_var.
