@@ -90,7 +90,7 @@ const ABOUT = {
   'fu-fsem': { why: 'A thread has fuel when it has fuel at every index, starting with every held end at its tickets.', used: ['th-cost', 'sp-inv'] },
   'sp-state': { why: 'The lock-free process relation records who owns each end, its point, its counter and its tickets, and the lock-free judgment chooses this record at each index.', used: ['sp-inv', 'sp-lf'] },
   'sp-inv': { why: 'The lock-free process relation is the lock-free invariant of a whole program, each thread safe and with fuel for the ends it owns.', used: ['sp-lf', 'th-lf-adequacy'] },
-  'sp-lf': { why: 'The lock-free semantic judgment fixes the bound $N$ once and chooses the annotated configuration at each ordinal index. The existential property gives one configuration for every index, which the lock-freedom proof needs.', used: ['th-lf-adequacy', 'th-fund-proc'] },
+  'sp-lf': { why: 'The lock-free semantic judgment fixes the bound $N$ once, reads a process at the ranked worlds of its own static world, so that P-Connect compares two components only at their shared roots, and chooses the annotated configuration at each ordinal index. The existential property gives one configuration for every index, which the lock-freedom proof needs.', used: ['th-lf-adequacy', 'th-fund-proc'] },
   // theorems
   'fu-vs': { why: 'Fuel and the relation are two predicates on one thread. This table shows what each reads and guarantees, and that the lock-free process relation is where they meet.', used: ['fu', 'soup', 'th-chain'] },
   'th-chain': { why: 'The proof in one picture. Each arrow is one theorem below, and the lock-free rows show what lock freedom adds on top of the deadlock-free relation.', used: [] },

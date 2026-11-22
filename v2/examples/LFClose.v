@@ -29,9 +29,9 @@ Proof.
   - apply e_chan. intros ? Hin. inversion Hin.
 Qed.
 
-Lemma cl_term N o x : ptyped (Some N) W_cl {[o := (SEnd, x)]} (∅, {[+ cl o +]}) TUnit.
+Lemma cl_term N o x : fptyped (Some N) W_cl {[o := (SEnd, x)]} (∅, {[+ cl o +]}) TUnit.
 Proof.
-  apply (p_term (Some N) W_cl _ ∅ ∅ _ TUnit (fadd (Some 0) (Some 1))).
+  apply (fp_term (Some N) W_cl _ ∅ ∅ _ TUnit (fadd (Some 0) (Some 1))).
   - constructor.
   - intros o'. rewrite dom_empty_L. set_solver.
   - set_solver.
@@ -53,7 +53,7 @@ Proof.
   assert (chans_of ∅ = ∅) as E0 by (unfold chans_of; by rewrite dom_empty_L, set_map_empty).
   split; [|intros t Ht; simpl in Ht; apply gmultiset_elem_of_disj_union in Ht as [Ht|Ht];
              apply gmultiset_elem_of_singleton in Ht as ->; repeat constructor].
-  pose proof (p_connect (Some N) W_cl W_cl ∅ ∅ ΣC ∅ ∅ {[+ cl (c⁺)%cend +]} {[+ cl (c⁻)%cend +]} TUnit) as H.
+  pose proof (fp_connect (Some N) W_cl W_cl ∅ ∅ ΣC ∅ ∅ {[+ cl (c⁺)%cend +]} {[+ cl (c⁻)%cend +]} TUnit) as H.
   rewrite Ec, E0, !(left_id_L ∅ (∪)) in H. rewrite Ed in H.
   apply H; clear H.
   - apply cl_term.

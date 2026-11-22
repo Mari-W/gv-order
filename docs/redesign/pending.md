@@ -1,5 +1,97 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, run of 2026-11-22 on hiding (repair (b))
+
+Branch redesign-comp, from 0647d1e, commits a1c2c71, 85ee183, 504a06c,
+caea47f and f1e7116, nothing pushed. Only the process-typing part of
+static/Typing.v changed. The expression rules are untouched. 504a06c does
+not build on its own (LFClientServerSplit), caea47f repairs it.
+
+Hiding is sound for both relations, in the restated form.
+
+- The judgment (static/Typing.v). `ptyped` is the process judgment with
+  hiding. P-Term concludes at `swrestrict W (iface Σ T)`. P-Connect asks
+  `swf (W1 ⊔ W2)` of the two component worlds and concludes at
+  `swrestrict (W1 ⊔ W2) (iface (Σ1 ∪ Σ2) T)`. Each component world lives
+  on its interface constants (`ptyped_consts`), so the premise is
+  `swf (W1|I1 ⊔ W2|I2)`. The old judgment is kept as `fptyped`, with
+  `fp_term`, `fp_connect` and the old lemmas renamed. It is the target of
+  the soundness proof. The notation Σ ⊢_W p : T now means `ptyped`.
+- The interface constants (static/Consts.v). `iface Σ T` holds every
+  constant of the points and session types of Σ and of T, a superset of
+  the roots of the points of Σ. A payload type or a box type can name a
+  constant, and the renaming below must fix Σ and T.
+- Item 1. `swrestrict W S` already keeps the derived order between points
+  with roots in S, so a chain through private constants becomes a fact
+  (`swrestrict_iff`, static/Hiding.v). No new definition was needed.
+- Item 2, soundness. The direct semantic form fails to prove. A ranked
+  world R that models W|I may rank interface points a and b at 0 and 1
+  while W puts a private point between them, and no extension of R ranks
+  it, because an extension keeps every rank. So hiding is proved through
+  derivations. `typed_ren` renames the constants of a term derivation by
+  a bijection, `fptyped_ren` a full process derivation. `ptyped_full`
+  turns every hidden derivation into a full one at a world W' that hides
+  to the hidden world (`hides`, the facts W' derives between interface
+  points lie in it). At P-Connect the first component is renamed to keep
+  its private constants off the interface of the second, the second off
+  the whole world of the first (`cb_avoid`, `rename_side`). Then the two
+  worlds share only constants of both interfaces, and `connect_hidden`
+  gives the premise of `fp_connect` and the hiding of the join. Its core
+  is `join_vis`, which shows that a chain of the join changes sides only
+  at shared constants. This covers case 3 of the SharedRoots report,
+  roots the two outer interfaces share. `fptyped_ptyped` is the converse,
+  so hiding loses no program.
+- Both relations. `soundness_h`, `live_soundness_h` and `lf_soundness_h`
+  conclude deadlock freedom and lock freedom from the hidden judgment.
+  `fundamental_proc_h`, `live_fundamental_proc_h` and `lf_fundamental_h`
+  give the semantic judgment at a hidden world (`sem_ptyped_h`,
+  `lf_sems_h`, a well-founded whole world that hides to it).
+- Item 3, semantic P-Connect. `sem_p_connect_h` and `lf_p_connect_h`
+  compose at the interface orders, `swf (W1 ⊔ W2)` of the hidden worlds,
+  given whole worlds whose private constants are apart. That apartness is
+  a hypothesis because the relation has no renaming lemma for constants.
+  The static renaming supplies it inside `ptyped_full`. `sem_p_connect_sw`
+  and `lf_p_connect` are unchanged and still serve the full judgment.
+- Item 4 (examples/SharedRoots.v). `shared_hidden` types P(c, d) ∥ P(e, f)
+  with hiding. Each component sits at a world with no constant and no fact
+  (`hcomp_typed`), so the two compose by their interface worlds.
+  `opposite_compose` is case 2. P'(e, f) closes f first and orders 0
+  oppositely, the whole worlds clash (`opposite_clash`, a cycle at 0), and
+  the hidden composition types and is deadlock free (`opposite_df`).
+  `shared_not_cut` and `fact_needs_zero` stay, stated for `fptyped`.
+  examples/LFClientServerSplit.v adds `cs_split_typed`, the split program
+  in the hidden judgment, and `cs_split_lock_free_h`.
+  `sbv_rejected_h` rejects the flag variant with hiding.
+- Other examples, Inversion.v, Forwarder.v and LFTools.v use `fptyped`,
+  by renaming only.
+- Checks on the laptop, at f1e7116. `make -j8` builds with no error,
+  `make test` passes after test/GuardNotations prints `live_soundness_h`,
+  and `make check` reports 147 of 147 results closed under the global
+  context. No Admitted, no Axiom, no new Parameter.
+- Map (f1e7116). P-Term concludes at W|_{I(Σ, T)}, P-Connect asks
+  wf(W1 ⊔ W2) and concludes at (W1 ⊔ W2)|_{I(Σ1 ∪ Σ2, T)}. New notes
+  `P-Term.hide` (the component type is Σ with its interface world) and
+  `tp.iface`. `P-Connect.wf` explains the interface orders, the renaming
+  and the sentence on Milner's ring. The fundamental theorems and
+  soundness cite the hidden forms. `node docs/explorer/gen/gen.js` reports
+  0 errors.
+- Map changes for the audit (made in f1e7116, no later edits). Typing
+  block, rule P-Term (conclusion world `P-Term.hide`, new notes
+  `P-Term.hide` and `tp.iface`, `P-Term.wf` text). Rule P-Connect (premise
+  `P-Connect.wf` now wf(W1 ⊔ W2) with the interface orders, the renaming
+  and Milner's ring, conclusion `P-Connect.join` at the hidden join), the
+  `p-term` and `p-connect` why texts, note `tp.pjudg` (component type,
+  `fptyped`). Types block, note `w.restrict` and its signature. Theorems
+  blocks th-fund-proc, th-compose and th-sound (rocq references to the
+  `_h` forms, `ptyped_full`, `connect_hidden`), notes
+  `th.fundamental-proc`, `th.lf-fundamental` and their signatures,
+  `th.lf-p-connect`, `th.soundness`, `th.lf-soundness`. Not yet on the
+  map. `fptyped_ptyped` (hiding loses no program), `sem_p_connect_h` as
+  its own row, the examples `shared_hidden`, `opposite_compose`,
+  `opposite_df`, `cs_split_typed`, `sbv_rejected_h`, and the note
+  `w.R7`, which still states the join at the shared constants and is
+  now used only by the full judgment.
+
 ## Report, fifth run of 2026-11-22 on contractivity, Sub-Ex and (gen-new₁)
 
 Branch redesign-clean3 in .claude/worktrees/redesign-s4, nothing pushed,
@@ -125,6 +217,123 @@ agent, soup/LFTyped.v (the P-Term premise pattern, three lines).
   `Γ, C(ῑ) ⊢ T ≤ T'`, Sub-Box the contractive alternative (`tp.sub-boxc`).
   gen.js 0 errors, check.js 0, lint-map 161 metaphor and 316 every/any/all
   (323 before), 0 elsewhere.
+
+## Report, run of 2026-11-22 on the overlap of P-Connect
+
+Branch redesign-comp, from 97a7a3e, commits 059d27c and 32ee457,
+nothing pushed. static/Typing.v and the typing rules are untouched.
+
+Repair (a) of the open item "P-Connect's overlap is the shared constants"
+is false, and no normalization that only drops unused constants saves it.
+examples/SharedRoots.v proves `shared_not_cut`. Each component
+P(c, d) = (cl c⁺; cl d⁺) ∥ (cl c⁻; cl d⁻) puts c at the constant 0 and d at
+0·0, and its first closes ask 0 ≺ (0·0)‾ and 0‾ ≺ 0·0. Both components type
+over the empty interface at the world W0 with the one constant 0 and these
+two facts (`comp_typed`). P(c, d) ∥ P(e, f) then types by P-Connect over
+the empty cut, and 0 ∈ `swshared` although Σ_C has no point.
+`fact_needs_zero` shows that every well-formed world deriving the first
+fact holds 0, so each side uses its 0. Both results are closed under the
+global context.
+
+Three things put a constant into S outside the roots of Σ_C.
+
+- P-Term asks nothing of the constants of W beyond well-formedness and
+  well-foundedness, so a world may hold constants no end mentions. Typing
+  reads W only through ≺_W, never through `sw_consts`, so these could be
+  dropped, but `sw_facts` is a predicate and the constants its facts use
+  are not computable without classical logic.
+- Two components may pick the same private constant, as above. Nothing in
+  `ptyped` keeps them apart, and E-New picks fresh roots only under ∃ in
+  the type, so the static world never records a creation. Renaming apart
+  would need a lemma that renames constants through `typed` and `ptyped`,
+  which the development does not have. The coincidence also costs
+  completeness. If P(e, f) closed d first, its world would order
+  0·0 ≺ 0‾ and (0·0)‾ ≺ 0, the join with W0 would hold the cycle
+  0 ≺ (0·0)‾ ≺ 0, and P-Connect would refuse a composition that renaming
+  0 to 1 in one component accepts (argued, not mechanized).
+- Two outer interfaces may share a root. A thread that receives a pair at
+  x·0 and x·1 and spawns one half leaves ends at a·0 and a·1 in two
+  components, and the cut need not mention a. This sharing is genuine,
+  and P-Connect must compare the facts at a.
+
+Repair (b) is therefore needed, in the form the open item states it. With
+hiding, a component's world lives on the roots of its own interface, so S
+lies in roots(Σ1 ∪ Σ_C) ∩ roots(Σ2 ∪ Σ̄_C), which is the roots of Σ_C
+together with the roots both outer interfaces share. The claim "S ⊆ roots
+of Σ_C" holds after neither repair, because of the third case. The right
+target is "P-Connect compares the two interface orders". Soundness of
+hiding is not checked here. The map cites `shared_not_cut` at P-Connect.wf
+(`node docs/explorer/gen/gen.js`, 0 errors).
+
+## Report, run of 2026-11-21 on compositional lock-free semantics
+
+Branch redesign-comp in .claude/worktrees/redesign-comp, from bb04f3e,
+commits d4858e4 to 6b0995e, nothing pushed. static/Typing.v and the typing
+rules are untouched.
+
+- `lf_sem` (soup/Soup.v, d4858e4) no longer asks `s_W a = W`. It reads
+  `∀ n, ∃ a, erase (s_q a) = p ∧ a ∈ S^{N,W}_n⟦Σ ⊢ T⟧`, and `Soup` keeps
+  `W ⊑ s_W a`, so a state may start at any extension of the ranked world.
+  New `soup_inv_mono`: the soup at one index is monotone in the world it
+  reads its threads at.
+- The judgment at a static world (soup/LFCompose.v). `lf_sems N W Σ p T :=
+  ∀ R, wmodels R W → Σ ⊪^N _R p : T`. `lf_p_term` and `lf_fundamental`
+  conclude `lf_sems`, the latter by an induction with no world argument.
+- Semantic P-Connect. `lf_p_connect : lf_sems N W1 (Σ1 ∪ ΣC) p1 T →
+  lf_sems N W2 (Σ2 ∪ Σ̄C) p2 ∗ → (channel premises) → lf_sems N (W1 ⊔ W2) …`.
+  At a ranked world R of the join, R models W1 and W2. The first component
+  gives a state at some R1 ⊒ R. The second is read at R1, which models W2,
+  and gives a state at R2 ⊒ R1. The soup of the first moves up to R2 by
+  `soup_inv_mono` (`lf_soup_connect`). Reading the second component at R1
+  keeps the fresh roots of the two from colliding, so no renaming of roots
+  is needed.
+- The composite world. `join_models : sworld_wf W1 → sworld_wf W2 → swf W1
+  → swf W2 → swf (W1|S ⊔ W2|S) → ∃ R, wmodels R (W1 ⊔ W2)`, by
+  `wf_join_iff` and `wmodels_exists`. The ranks of R are the rank function
+  of the joined order (check-layers-open.md §2), never the ranks of a
+  component. `lf_sems_adequacy` and `lf_connect_adequacy` (two closed
+  components over a cut, at their own static worlds, with the condition on
+  the shared constants) conclude lock freedom under EM and FC.
+- Why the components are read at every ranked world of their static world,
+  and not at one fixed R1 and R2 each. A ranked world orders two ranked
+  points whenever their ranks differ. So R1 ⊨ W1 may put y ≺ x̄ and
+  R2 ⊨ W2 put x̄ ≺ y for shared points that no fact relates. A thread that
+  holds c⁺ at x and waits on d⁺ at y is ready in R1, its partner that holds
+  d⁻ at ȳ and waits on c⁻ at x̄ is ready in R2, and the composite deadlocks,
+  with W1 = W2 free of facts and `swf (W1|S ⊔ W2|S)` true. A semantic
+  P-Connect from fixed R1 and R2 is therefore unsound, whatever re-ranking
+  of the join is chosen (argued, not mechanized). The universal reading
+  compares the components only through their static worlds, at the shared
+  roots, as the static P-Connect does.
+- Deadlock-free side. It already composes this way. `proc_gen` proves
+  `∀ R, wmodels R W → sem_ptyped κ R Σ p T`, and P holds a process itself at
+  a ranked world with no starting state, so both components are read at one
+  R that models the join. `sem_p_connect_sw` (static/FundamentalProc.v,
+  6b0995e) states it at static worlds, with `sem_ptyped_sw`.
+- Test (5fd3db7). examples/LFClientServerSplit.v splits the client-server
+  program into two components over the cut {a⁺ at ρ, b⁺ at ρ·0}. The client
+  lives in W_cli, the laws `cs_L` at the constant 0 and polarity true, the
+  server in W_srv at polarity false. Each thread is `App (EForce box)
+  (Pair ends)`, typed by P-Term at N = 6, and the box constraint holds by
+  the facts of its own world. The join is well-founded by the measure
+  (field sum, offset, depth) (`swf_lex3`), which gives the condition on
+  the shared constant through `wf_join_iff`. `cs_split_lock_free` follows
+  from `lf_p_term` on each side and `lf_connect_adequacy`.
+- Checks on the laptop. `make -j8` builds with no error, `make test` passes
+  after SoupNotations.expected was regenerated for the new
+  `lf_fundamental`, and `make check` reports 122 of 122 results closed
+  under the global context (new: `lf_soup_connect`, `join_models`,
+  `lf_sems_adequacy`, `lf_connect_adequacy`, `cs_split_lock_free`,
+  `sem_p_connect_sw`). No Admitted, no Axiom, no new Parameter. EM and FC
+  stay hypotheses. Every LF example and `lf_soundness` build unchanged.
+- Map (b0040f4, 6b0995e). The annotated configuration carries its ranked
+  world R_a, the lock-free process relation reads threads at R_a with
+  R ⊑ R_a, the lock-free judgment reads `∀ R ⊨ W`, and the composition
+  block has a row for P-Connect in the lock-free judgment with the note
+  `th.lf-p-connect`. New notes `sp.world` and `sp.allR`. gen.js reports 0
+  errors, check.js 0 mathjax errors, lint-map 0 semicolons, 0 coined words,
+  0 sentences over 35 words, 161 metaphor and 322 every/any/all against 323
+  before.
 
 ## Report, fourth run of 2026-11-21 on typed_sinst and rx-chain
 

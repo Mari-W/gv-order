@@ -45,11 +45,14 @@
     No rule matches the shape of a redex. let x = e1 in e2 is
     the derived form [ELet] of lang/Syntax.v, and E-Let and D-Let are
     admissible ([e_let] and [d_let] in static/Weakening.v). [ptyped] is process typing with P-Term and P-Connect
-    in the two-world form. P-Connect compares the two worlds only at
-    their shared roots, and every derivation sits over a well-founded
-    world ([ptyped_wf]). *)
+    in the hidden form. The world of a process judgment lives on the
+    constants of its interface, and P-Connect compares the two interface
+    orders. [fptyped] keeps the whole world of every derivation. It is
+    the target of the soundness of hiding (static/Hiding.v), and every
+    derivation sits over a well-founded world ([ptyped_wf],
+    [fptyped_wf]). *)
 
-From GV Require Export static.Contexts.
+From GV Require Export static.Consts.
 
 Inductive typed (W : sworld) (N : fuel) :
     tenv → hctx → lenv → sfuture → expr → ty → fuel → Prop :=
@@ -199,11 +202,25 @@ Definition dftyped (W : sworld) (Θ : tenv) (Γ : hctx) (Δ : lenv) (F : sfuture
     tickets N/2, so a cut of P-Connect also meets the bound. P-Term asks
     its world well formed and well-founded.
     P-Connect composes two components typed at their own worlds over the
-    cut Σ_C, and asks only the restrictions of the two worlds to their
-    shared roots S = A_{W1} ∩ A_{W2} well-founded together. Both
-    components sit over well-founded worlds by induction, so the join is
-    well-founded ([wf_join_iff], [ptyped_wf]) and the form of the rule
-    that asks the join well-founded is admissible ([p_connect_join]). *)
+    cut Σ_C.
+
+    [ptyped] hides. P-Term restricts the world of its thread to the
+    constants of the interface Σ and of the type T ([iface]), through
+    the order the world derives ([swrestrict]), so a chain through a
+    private constant becomes a fact between interface points. P-Connect
+    asks the join of the two interface worlds well-founded and hides the
+    cut. The constants of a derivation outside its interface are
+    private, and two components may pick the same one.
+
+    [fptyped] keeps the whole world. Its P-Connect asks the restrictions
+    of the two worlds to their shared constants S = A_{W1} ∩ A_{W2}
+    well-founded together. Both components sit over well-founded worlds
+    by induction, so the join is well-founded ([wf_join_iff],
+    [fptyped_wf]) and the form of the rule that asks the join
+    well-founded is admissible ([fp_connect_join]). A hidden derivation
+    gives a full one with private constants renamed apart
+    ([ptyped_full], static/Hiding.v), and a full one a hidden one
+    ([fptyped_ptyped]). *)
 
 Definition chans_of (Σ : senv) : gset chan := set_map ech (dom Σ).
 
@@ -228,8 +245,8 @@ Proof.
   subst. destruct o; discriminate.
 Qed.
 
-Inductive ptyped (N : fuel) : sworld → senv → proc → ty → Prop :=
-  | p_term W Σ ΘB C0 t T c :
+Inductive fptyped (N : fuel) : sworld → senv → proc → ty → Prop :=
+  | fp_term W Σ ΘB C0 t T c :
       tfree T →
       (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 → pfree Σ →
       (∀ o e, Σ !! o = Some e → scontr e.1) →
@@ -237,16 +254,16 @@ Inductive ptyped (N : fuel) : sworld → senv → proc → ty → Prop :=
          ΘB !! (c⁺)%cend = Some (TE S x m m) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ m' m')) →
       typed W N (tenv_of (fhalf N) Σ ∪ ΘB) hc_empty [] (∅, None) t T c →
       sworld_wf W ∧ swf W →
-      ptyped N W Σ (C0, {[+ t +]}) T
-  | p_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
-      ptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →
-      ptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
+      fptyped N W Σ (C0, {[+ t +]}) T
+  | fp_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
+      fptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →
+      fptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
       Σ1 ##ₘ ΣC → Σ2 ##ₘ senv_dual ΣC →
       (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
       chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
       C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
       swf (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)) →
-      ptyped N (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
+      fptyped N (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
 
 (** ** Notations (Appendix A) *)
 
@@ -260,12 +277,8 @@ Notation "Θ ; Γ ; Δ ⊢^ F '_' W t : T" := (dftyped W Θ Γ Δ F t T)
    t at level 60, T at level 60,
    format "Θ  ;  Γ  ;  Δ  ⊢^ F  '_'  W  t  :  T").
 
-Notation "Σ ⊢_ W p : T" := (ptyped None W Σ p T)
-  (at level 74, W at level 0, p at level 60, T at level 60,
-   format "Σ  ⊢_ W  p  :  T").
-
 (** Every process derivation sits over a well-formed, well-founded world. *)
-Lemma ptyped_wf N W Σ p T : ptyped N W Σ p T → sworld_wf W ∧ swf W.
+Lemma fptyped_wf N W Σ p T : fptyped N W Σ p T → sworld_wf W ∧ swf W.
 Proof.
   induction 1 as [|W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 _ _ _ _ _ _ _ _ _ HS]; [done|].
   split; [by apply swjoin_wf; [apply IH1|apply IH2]|].
@@ -274,23 +287,23 @@ Qed.
 
 (** P-Connect asking the join well-founded and both worlds well formed
     is admissible. *)
-Lemma p_connect_join N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
-  ptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →
-  ptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
+Lemma fp_connect_join N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
+  fptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →
+  fptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
   Σ1 ##ₘ ΣC → Σ2 ##ₘ senv_dual ΣC →
   (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
   chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
   C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
   sworld_wf W1 → sworld_wf W2 →
   swf (W1 ⊔ W2) →
-  ptyped N (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
+  fptyped N (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
 Proof.
   intros H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hw1 Hw2 HS.
-  apply p_connect; [exact H1|exact H2|exact HD1|exact HD2|exact Hf|exact H12|exact H1C|exact H2C
+  apply fp_connect; [exact H1|exact H2|exact HD1|exact HD2|exact Hf|exact H12|exact H1C|exact H2C
     |exact HC|exact HC1|exact HC2|]. by apply (wf_join_iff W1 W2 Hw1 Hw2).
 Qed.
 
-Lemma ptyped_tfree N W Σ p T : ptyped N W Σ p T → tfree T.
+Lemma fptyped_tfree N W Σ p T : fptyped N W Σ p T → tfree T.
 Proof. induction 1; auto. Qed.
 
 Lemma chans_of_union (Σ1 Σ2 : senv) : chans_of (Σ1 ∪ Σ2) = chans_of Σ1 ∪ chans_of Σ2.
@@ -301,20 +314,79 @@ Proof. intros H. unfold chans_of. apply elem_of_map. by exists o. Qed.
 
 (** A typed interface is partner-free: P-Term asks it, and P-Connect
     keeps it, because the cut leaves and chans Σ1 ## chans Σ2. *)
-Lemma ptyped_pfree N W Σ p T : ptyped N W Σ p T → pfree Σ.
+Lemma pfree_join (Σ1 ΣC Σ2 ΣD : senv) : pfree (Σ1 ∪ ΣC) → pfree (Σ2 ∪ ΣD) →
+  chans_of Σ1 ## chans_of Σ2 → pfree (Σ1 ∪ Σ2).
 Proof.
-  assert (∀ Σ1 ΣC Σ2 ΣD : senv, pfree (Σ1 ∪ ΣC) → pfree (Σ2 ∪ ΣD) →
-            chans_of Σ1 ## chans_of Σ2 → pfree (Σ1 ∪ Σ2)) as Hc.
-  { intros Σ1 ΣC Σ2 ΣD H1 H2 H12 o Ho Hd. rewrite dom_union_L in Ho, Hd.
-    apply elem_of_union in Ho as [Ho|Ho]; apply elem_of_union in Hd as [Hd|Hd].
-    - apply (H1 o); rewrite dom_union_L; set_solver.
-    - apply (H12 (ech o)); [by apply elem_of_chans_of'|]. rewrite <-ech_edual. by apply elem_of_chans_of'.
-    - apply (H12 (ech o)); [|by apply elem_of_chans_of']. rewrite <-ech_edual. by apply elem_of_chans_of'.
-    - apply (H2 o); rewrite dom_union_L; set_solver. }
-  induction 1; [done|eauto..].
+  intros H1 H2 H12 o Ho Hd. rewrite dom_union_L in Ho, Hd.
+  apply elem_of_union in Ho as [Ho|Ho]; apply elem_of_union in Hd as [Hd|Hd].
+  - apply (H1 o); rewrite dom_union_L; set_solver.
+  - apply (H12 (ech o)); [by apply elem_of_chans_of'|]. rewrite <-ech_edual. by apply elem_of_chans_of'.
+  - apply (H12 (ech o)); [|by apply elem_of_chans_of']. rewrite <-ech_edual. by apply elem_of_chans_of'.
+  - apply (H2 o); rewrite dom_union_L; set_solver.
 Qed.
 
+Lemma fptyped_pfree N W Σ p T : fptyped N W Σ p T → pfree Σ.
+Proof. induction 1; [done|eauto using pfree_join]. Qed.
+
 (** A typed process restricts no channel of its interface. *)
+Lemma fptyped_chans N W Σ p T : fptyped N W Σ p T → p.1 ## chans_of Σ.
+Proof.
+  induction 1 as [|? ? ? ? ? ? ? ? ? ? _ IH1 _ IH2 ? ? ? ? ? ? ? ? ?];
+    simpl in *; [done|..]; rewrite !chans_of_union in *; set_solver.
+Qed.
+
+(** ** Process typing with hiding
+
+    The world of a process judgment lives on the constants of its
+    interface. P-Term hides the constants of its world outside
+    [iface Σ T], P-Connect compares the two interface worlds and hides
+    the cut. A world restricted to S keeps every fact the world derives
+    between points with roots in S, through private constants too
+    ([swrestrict_iff], static/Hiding.v). *)
+Inductive ptyped (N : fuel) : sworld → senv → proc → ty → Prop :=
+  | p_term W Σ ΘB C0 t T c :
+      tfree T →
+      (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 → pfree Σ →
+      (∀ o e, Σ !! o = Some e → scontr e.1) →
+      (∀ c, c ∈ C0 → ∃ S x m m', tsum_ok N m m' ∧ scontr S ∧
+         ΘB !! (c⁺)%cend = Some (TE S x m m) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ m' m')) →
+      typed W N (tenv_of (fhalf N) Σ ∪ ΘB) hc_empty [] (∅, None) t T c →
+      sworld_wf W ∧ swf W →
+      ptyped N (swrestrict W (iface Σ T)) Σ (C0, {[+ t +]}) T
+  | p_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
+      ptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →
+      ptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
+      Σ1 ##ₘ ΣC → Σ2 ##ₘ senv_dual ΣC →
+      (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
+      chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
+      C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
+      swf (W1 ⊔ W2) →
+      ptyped N (swrestrict (W1 ⊔ W2) (iface (Σ1 ∪ Σ2) T)) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
+
+Notation "Σ ⊢_ W p : T" := (ptyped None W Σ p T)
+  (at level 74, W at level 0, p at level 60, T at level 60,
+   format "Σ  ⊢_ W  p  :  T").
+
+Lemma swrestrict_swf W S : swf W → swf (swrestrict W S).
+Proof. intros [ρ Hρ]. exists ρ. intros x y H. apply Hρ. exact (swrestrict_lt W S x y H). Qed.
+
+(** Every hidden derivation sits over a well-formed, well-founded world
+    on the constants of its interface. *)
+Lemma ptyped_wf N W Σ p T : ptyped N W Σ p T → sworld_wf W ∧ swf W.
+Proof.
+  destruct 1 as [W Σ ΘB C0 t T c _ _ _ _ _ _ _ [_ HW]|W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ _ _ _ _ _ _ _ _ _ _ HS];
+    (split; [apply swrestrict_wf|by apply swrestrict_swf]).
+Qed.
+
+Lemma ptyped_consts N W Σ p T : ptyped N W Σ p T → sw_consts W ⊆ iface Σ T.
+Proof. destruct 1; simpl; set_solver. Qed.
+
+Lemma ptyped_tfree N W Σ p T : ptyped N W Σ p T → tfree T.
+Proof. induction 1; auto. Qed.
+
+Lemma ptyped_pfree N W Σ p T : ptyped N W Σ p T → pfree Σ.
+Proof. induction 1; [done|eauto using pfree_join]. Qed.
+
 Lemma ptyped_chans N W Σ p T : ptyped N W Σ p T → p.1 ## chans_of Σ.
 Proof.
   induction 1 as [|? ? ? ? ? ? ? ? ? ? _ IH1 _ IH2 ? ? ? ? ? ? ? ? ?];

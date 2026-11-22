@@ -9,17 +9,17 @@
       soundness_source      : wf W → tfree T → ∅ ; ∅ ; [] ⊢^(∅, None) _ W t : T →
                                 deadlock_free (∅, {[+ t +]})
 
-    One induction on [ptyped] for every cost table whose threads satisfy
+    One induction on [fptyped] for every cost table whose threads satisfy
     the term-level theorem ([proc_gen]): P-Term by [sem_p_term], P-Connect
     by [sem_p_connect], whose side condition [conn] the premises of the
-    rule give ([ptyped_conn]). The results
+    rule give ([fptyped_conn]). The results
     hold at every fuel N, ⊢_W is the instance N = ∞. The process
     theorems read a ranked world R that models the static world W
     ([wmodels]). A process derivation sits over a well-founded static
-    world ([ptyped_wf]), so such an R exists ([wmodels_exists]) and
+    world ([fptyped_wf]), so such an R exists ([wmodels_exists]) and
     soundness asks nothing of W. *)
 
-From GV Require Export compat.PTerm static.Fundamental.
+From GV Require Export compat.PTerm static.Fundamental static.Hiding.
 From GV Require Import compat.Conv.
 
 (** The guard of a process, ⊢▷ p: every thread t of p has ∅ ⊢▷ t. *)
@@ -39,8 +39,8 @@ Proof.
     split; [done|]. apply seqv_refl.
 Qed.
 
-Lemma ptyped_conn N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
-  ptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T → ptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
+Lemma fptyped_conn N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
+  fptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T → fptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
   Σ1 ##ₘ ΣC → Σ2 ##ₘ senv_dual ΣC →
   (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
   chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
@@ -48,8 +48,8 @@ Lemma ptyped_conn N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
   conn Σ1 ΣC C1 Σ2 (senv_dual ΣC) C2.
 Proof.
   intros H1 H2 D1 D2 Hf H12 H1C H2C HC HC1 HC2.
-  pose proof (ptyped_pfree _ _ _ _ _ H1) as F1. pose proof (ptyped_pfree _ _ _ _ _ H2) as F2.
-  pose proof (ptyped_chans _ _ _ _ _ H1) as K1. pose proof (ptyped_chans _ _ _ _ _ H2) as K2.
+  pose proof (fptyped_pfree _ _ _ _ _ H1) as F1. pose proof (fptyped_pfree _ _ _ _ _ H2) as F2.
+  pose proof (fptyped_chans _ _ _ _ _ H1) as K1. pose proof (fptyped_chans _ _ _ _ _ H2) as K2.
   simpl in K1, K2. rewrite chans_of_union in K1, K2.
   rewrite (cut_dual_chans _ _ (senv_dual_cut ΣC)) in K2.
   constructor; try done.
@@ -93,6 +93,27 @@ Proof.
   destruct (Θ !! o) as [te|]; constructor. split; [done|]. unfold seqv. simpl. rewrite sty_df_idem. apply sequiv_refl.
 Qed.
 
+(** ** P-Connect at static worlds
+
+    The deadlock-free judgment composes the way the lock-free one does
+    (soup/LFCompose.v, [lf_p_connect]). Each component is read at every
+    ranked world that models its own static world, and a ranked world of
+    the join models both. P holds a process itself at a ranked world, with
+    no starting state, so both components are read at that one world. *)
+Definition sem_ptyped_sw (κ : ctable) (W : sworld) (Σ : senv) (p : proc) (T : ty) : Prop :=
+  ∀ R, wmodels R W → sem_ptyped κ R Σ p T.
+
+Lemma sem_p_connect_sw κ W1 W2 Σ1 ΣC Σ2 ΣD p1 p2 T :
+  tfree T →
+  sem_ptyped_sw κ W1 (Σ1 ∪ ΣC) p1 T → sem_ptyped_sw κ W2 (Σ2 ∪ ΣD) p2 TUnit →
+  conn Σ1 ΣC p1.1 Σ2 ΣD p2.1 →
+  sem_ptyped_sw κ (W1 ⊔ W2) (Σ1 ∪ Σ2) (pconn p1 p2 (chans_of ΣC)) T.
+Proof.
+  intros HT H1 H2 Hc R HR n. apply (sem_p_connect κ n R Σ1 ΣC Σ2 ΣD); [done| | |done].
+  - apply H1. by eapply wmodels_ext; [apply swext_join_l|].
+  - apply H2. by eapply wmodels_ext; [apply swext_join_r|].
+Qed.
+
 (** ** One induction for every cost table *)
 
 Section proc.
@@ -100,7 +121,7 @@ Section proc.
   Context (Hthr : ∀ W R N Θ t T c, sworld_wf W → Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} t : T ▷ c →
                     G t → wmodels R W → sem_typed κ R (tenv_df Θ) (lenv_df []) (∅, None) t (ty_df T)).
 
-  Lemma proc_gen N W Σ p T : ptyped N W Σ p T → (∀ t, t ∈ p.2 → G t) →
+  Lemma proc_gen N W Σ p T : fptyped N W Σ p T → (∀ t, t ∈ p.2 → G t) →
     ∀ R, wmodels R W → sem_ptyped κ R Σ p T.
   Proof.
     induction 1 as
@@ -110,8 +131,8 @@ Section proc.
     - apply (sem_p_term κ n R _ Σ (tenv_erase ΘB) C0 t T Hp (pterm_sth N Σ ΘB C0 HB HΣ Hpf Hd)).
       assert (G t) as Hg by (apply HG; multiset_solver).
       apply typed_E. exact (Hthr W R N _ t T c (proj1 HW) Ht Hg HR).
-    - pose proof (ptyped_conn _ _ _ _ _ _ _ _ _ _ _ H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2) as Hc.
-      refine (sem_p_connect κ n R Σ1 ΣC Σ2 (senv_dual ΣC) (C1, E1) (C2, E2) T (ptyped_tfree _ _ _ _ _ H1)
+    - pose proof (fptyped_conn _ _ _ _ _ _ _ _ _ _ _ H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2) as Hc.
+      refine (sem_p_connect κ n R Σ1 ΣC Σ2 (senv_dual ΣC) (C1, E1) (C2, E2) T (fptyped_tfree _ _ _ _ _ H1)
                 (IH1 _ R _ n) (IH2 _ R _ n) Hc).
       + intros t Ht; apply HG; simpl; multiset_solver.
       + by eapply wmodels_ext; [apply swext_join_l|].
@@ -122,13 +143,13 @@ End proc.
 
 (** ** The theorems of A.3 *)
 
-Theorem fundamental_proc W R Σ p T : Σ ⊢_W p : T → wmodels R W → Σ ⊨_R p : T.
+Theorem fundamental_proc W R Σ p T : fptyped None W Σ p T → wmodels R W → Σ ⊨_R p : T.
 Proof.
   intros Hty HR. refine (proc_gen κ_DF (λ _, True) _ None W Σ p T Hty _ R HR); [|done].
   intros W' R' N Θ t T' c HW' Ht _ HR'. exact (fundamental_typed W' R' N Θ [] (∅, None) t T' c HW' Ht HR').
 Qed.
 
-Theorem live_fundamental_proc W R Σ p T : Σ ⊢_W p : T → ⊢▷ p → wmodels R W → Σ ⊫_R p : T.
+Theorem live_fundamental_proc W R Σ p T : fptyped None W Σ p T → ⊢▷ p → wmodels R W → Σ ⊫_R p : T.
 Proof.
   intros Hty Hg HR. refine (proc_gen κ_L (lguard ∅) _ None W Σ p T Hty Hg R HR).
   intros W' R' N Θ t T' c HW' Ht Hgt HR'. exact (live_fundamental_typed W' R' N Θ [] (∅, None) t T' c HW' Ht Hgt HR').
@@ -136,17 +157,17 @@ Qed.
 
 (** A typed process sits over a well-founded static world, which a ranked
     world models ([wmodels_exists]). *)
-Theorem soundness W p T : ∅ ⊢_W p : T → deadlock_free p.
+Theorem soundness W p T : fptyped None W ∅ p T → deadlock_free p.
 Proof.
-  intros Hty. destruct (ptyped_wf _ _ _ _ _ Hty) as [Hwf HW].
+  intros Hty. destruct (fptyped_wf _ _ _ _ _ Hty) as [Hwf HW].
   destruct (wmodels_exists W Hwf HW) as [R HR].
   apply (adequacy R T p). by apply (fundamental_proc W).
 Qed.
 
-Theorem live_soundness W p T : ∅ ⊢_W p : T → ⊢▷ p →
+Theorem live_soundness W p T : fptyped None W ∅ p T → ⊢▷ p →
   deadlock_free p ∧ no_tau_divergence p.
 Proof.
-  intros Hty Hg. destruct (ptyped_wf _ _ _ _ _ Hty) as [Hwf HW].
+  intros Hty Hg. destruct (fptyped_wf _ _ _ _ _ Hty) as [Hwf HW].
   destruct (wmodels_exists W Hwf HW) as [R HR].
   apply (live_adequacy R T p). by apply (live_fundamental_proc W).
 Qed.
@@ -166,3 +187,64 @@ Proof.
   constructor; [by rewrite map_union_empty|intros o; rewrite dom_empty_L; set_solver
     |unfold chans_of; rewrite dom_empty_L; set_solver|apply pfree_empty|intros o Ho; set_solver].
 Qed.
+
+(** ** The hidden judgment
+
+    A process typed with hiding is read at a whole world that hides to
+    its world ([sem_ptyped_h]): some well-founded W whose order between
+    interface points lies in the hidden world, with the component in
+    the relation at every ranked world that models W. P-Connect reads
+    the two interface worlds ([sem_p_connect_h]) once the private
+    constants of the two whole worlds are apart, which renaming provides
+    ([rename_side], static/Hiding.v). The fundamental theorem goes
+    through the translation [ptyped_full]. *)
+Definition sem_ptyped_h (κ : ctable) (Wi : sworld) (Σ : senv) (p : proc) (T : ty) : Prop :=
+  ∃ W, sworld_wf W ∧ swf W ∧ hides W (iface Σ T) Wi ∧ sem_ptyped_sw κ W Σ p T.
+
+Theorem sem_p_connect_h κ V1 V2 W1 W2 Σ1 ΣC Σ2 p1 p2 T :
+  tfree T → sworld_wf V1 → sworld_wf V2 → swf V1 → swf V2 →
+  sem_ptyped_sw κ V1 (Σ1 ∪ ΣC) p1 T → sem_ptyped_sw κ V2 (Σ2 ∪ senv_dual ΣC) p2 TUnit →
+  conn Σ1 ΣC p1.1 Σ2 (senv_dual ΣC) p2.1 →
+  hides V1 (iface (Σ1 ∪ ΣC) T) W1 → hides V2 (iface (Σ2 ∪ senv_dual ΣC) TUnit) W2 →
+  (∀ a, a ∈ sw_consts V1 → a ∉ iface (Σ1 ∪ ΣC) T → a ∉ iface (Σ2 ∪ senv_dual ΣC) TUnit) →
+  (∀ a, a ∈ sw_consts V2 → a ∉ iface (Σ2 ∪ senv_dual ΣC) TUnit → a ∉ sw_consts V1 ∪ iface (Σ1 ∪ ΣC) T) →
+  swf (W1 ⊔ W2) →
+  sem_ptyped_h κ (swrestrict (W1 ⊔ W2) (iface (Σ1 ∪ Σ2) T)) (Σ1 ∪ Σ2) (pconn p1 p2 (chans_of ΣC)) T.
+Proof.
+  intros HT Hw1 Hw2 HS1 HS2 H1 H2 Hc Hh1 Hh2 Hav1 Hav2 HS.
+  destruct (connect_hidden V1 V2 W1 W2 _ _ (iface (Σ1 ∪ Σ2) T) Hw1 Hw2 Hh1 Hh2 Hav1 Hav2
+              (iface_connect _ _ _ _) HS) as [HR Hh].
+  exists (V1 ⊔ V2). split_and!; [by apply swjoin_wf|by apply (wf_join_iff V1 V2 Hw1 Hw2)|exact Hh|].
+  by apply (sem_p_connect_sw κ V1 V2 Σ1 ΣC Σ2 (senv_dual ΣC)).
+Qed.
+
+Theorem fundamental_proc_h W Σ p T : Σ ⊢_W p : T → sem_ptyped_h κ_DF W Σ p T.
+Proof.
+  intros Hty. destruct (ptyped_full _ _ _ _ _ Hty) as (W' & Hf & Hh). destruct (fptyped_wf _ _ _ _ _ Hf).
+  exists W'. split_and!; try done. intros R HR. by apply (fundamental_proc W').
+Qed.
+
+Theorem live_fundamental_proc_h W Σ p T : Σ ⊢_W p : T → ⊢▷ p → sem_ptyped_h κ_L W Σ p T.
+Proof.
+  intros Hty Hg. destruct (ptyped_full _ _ _ _ _ Hty) as (W' & Hf & Hh). destruct (fptyped_wf _ _ _ _ _ Hf).
+  exists W'. split_and!; try done. intros R HR. by apply (live_fundamental_proc W').
+Qed.
+
+Theorem adequacy_h W p T : sem_ptyped_h κ_DF W ∅ p T → deadlock_free p.
+Proof.
+  intros (W' & Hwf & HW & _ & Hs). destruct (wmodels_exists W' Hwf HW) as [R HR].
+  apply (adequacy R T p). by apply Hs.
+Qed.
+
+Theorem live_adequacy_h W p T : sem_ptyped_h κ_L W ∅ p T → deadlock_free p ∧ no_tau_divergence p.
+Proof.
+  intros (W' & Hwf & HW & _ & Hs). destruct (wmodels_exists W' Hwf HW) as [R HR].
+  apply (live_adequacy R T p). by apply Hs.
+Qed.
+
+(** Soundness of the hidden judgment. *)
+Theorem soundness_h W p T : ∅ ⊢_W p : T → deadlock_free p.
+Proof. intros Hty. exact (adequacy_h W p T (fundamental_proc_h W ∅ p T Hty)). Qed.
+
+Theorem live_soundness_h W p T : ∅ ⊢_W p : T → ⊢▷ p → deadlock_free p ∧ no_tau_divergence p.
+Proof. intros Hty Hg. exact (live_adequacy_h W p T (live_fundamental_proc_h W ∅ p T Hty Hg)). Qed.

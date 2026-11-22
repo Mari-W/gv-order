@@ -65,12 +65,21 @@ Notation "a ∈ S^{ N , W } '_' n ⟦ Σ ⊢ T ⟧" := (Soup N W n Σ T a)
   (at level 70, N at level 0, W at level 0, n at level 0, Σ at level 60,
    format "a  ∈  S^{ N , W }  '_'  n ⟦ Σ  ⊢  T ⟧").
 
+(** The soup at one index is monotone in the world it reads its threads at. *)
+Lemma soup_inv_mono N n V V' Σ T a A Π U :
+  wext V V' → soup_inv N n V Σ T a A Π U → soup_inv N n V' Σ T a A Π U.
+Proof.
+  intros HV Hs. constructor; try apply Hs.
+  intros t e He. eapply Erel_mono; [exact HV|]. by apply (sp_rel _ _ _ _ _ _ _ _ _ Hs).
+Qed.
+
 (** ** The lock-free judgment *)
 
-(** A state of the judgment starts at the world W itself, so that two
-    components of P-Connect meet at one world. *)
+(** A state of the judgment starts at any ranked world that extends W
+    ([Soup]). Two components of P-Connect are read at every ranked world
+    that models their static worlds (soup/LFCompose.v, [lf_sems]). *)
 Definition lf_sem (N : nat) (W : world) (Σ : senv) (p : proc) (T : ty) : Prop :=
-  ∀ n, ∃ a, erase (s_q a) = p ∧ s_W a = W ∧ a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧.
+  ∀ n, ∃ a, erase (s_q a) = p ∧ a ∈ S^{N,W} _ n⟦Σ ⊢ T⟧.
 
 Notation "Σ ⊪^ N '_' W p : T" := (lf_sem N W Σ p T)
   (at level 74, N at level 0, W at level 0, p at level 60, T at level 60,
