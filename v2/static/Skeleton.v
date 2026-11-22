@@ -623,3 +623,105 @@ Proof.
     intros a. unfold slist. destruct (ss !! a) as [s|] eqn:E; [|done].
     eapply Forall_lookup_1 in Hc; [exact Hc|exact E].
 Qed.
+
+(** ** Ancestors of an entry
+
+    [anc Δ i X]: the entry i of Δ lies below X in [skle]. An entry of a
+    context in a derivation goes back to an entry of each enclosing
+    context, through splits, which copy it, and agings, which lower it
+    ([anc_split_l], [anc_split_r], [anc_lage]). A use of a variable
+    gives an ancestor at its own context ([sk_var_anc]), and [climb]
+    walks it out to the context where the variable is bound. *)
+
+Definition anc (Δ : lenv) (i : nat) (X : ty) : Prop := ∃ X0, Δ !! i = Some (Some X0) ∧ skle X0 X.
+
+Lemma anc_le Δ i X Y : anc Δ i X → skle X Y → anc Δ i Y.
+Proof. intros (X0 & Hi & Hl) H. exists X0. split; [done|by eapply skle_trans]. Qed.
+
+Lemma split_back_l Δ Δ1 Δ2 i X : lenv_split Δ Δ1 Δ2 → Δ1 !! i = Some (Some X) → Δ !! i = Some (Some X).
+Proof.
+  intros H. revert i. induction H; intros [|i] Hi; simpl in *; simplify_eq; eauto.
+Qed.
+
+Lemma split_back_r Δ Δ1 Δ2 i X : lenv_split Δ Δ1 Δ2 → Δ2 !! i = Some (Some X) → Δ !! i = Some (Some X).
+Proof.
+  intros H. revert i. induction H; intros [|i] Hi; simpl in *; simplify_eq; eauto.
+Qed.
+
+Lemma lage_back c Δ Δ' i X' : lage c Δ Δ' → Δ' !! i = Some (Some X') →
+  ∃ X, Δ !! i = Some (Some X) ∧ tage c X X'.
+Proof.
+  intros H. revert i. induction H as [|Δ Δ' _ IH|σ σ' Δ Δ' Hs _ IH]; intros [|i] Hi; simpl in *; simplify_eq; eauto.
+Qed.
+
+Lemma anc_split_l Δ Δ1 Δ2 i X : lenv_split Δ Δ1 Δ2 → anc Δ1 i X → anc Δ i X.
+Proof. intros Hs (X0 & Hi & Hl). exists X0. split; [by eapply split_back_l|done]. Qed.
+
+Lemma anc_split_r Δ Δ1 Δ2 i X : lenv_split Δ Δ1 Δ2 → anc Δ2 i X → anc Δ i X.
+Proof. intros Hs (X0 & Hi & Hl). exists X0. split; [by eapply split_back_r|done]. Qed.
+
+Lemma anc_lage c Δ Δ' i X : lage c Δ Δ' → anc Δ' i X → anc Δ i X.
+Proof.
+  intros Ha (X0 & Hi & Hl). destruct (lage_back _ _ _ _ _ Ha Hi) as (X1 & Hi1 & Hx).
+  exists X1. split; [done|]. eapply skle_trans; [by eapply tage_skle|done].
+Qed.
+
+Lemma anc_cons o Δ i X : anc (o :: Δ) (S i) X → anc Δ i X.
+Proof. done. Qed.
+
+Lemma anc_top X0 Δ X : anc (Some X0 :: Δ) 0 X → skle X0 X.
+Proof. intros (X1 & [= ->] & Hl). done. Qed.
+
+Lemma sk_var_anc N Δ i T c : sktyped N Δ (Var i) T c → anc Δ i T.
+Proof. intros H. by apply sk_var_inv in H. Qed.
+
+Ltac climb1 H :=
+  lazymatch type of H with
+  | anc ?G _ _ =>
+      first
+        [ match goal with Hs : lenv_split _ G _ |- _ => apply (anc_split_l _ _ _ _ _ Hs) in H end
+        | match goal with Hs : lenv_split _ _ G |- _ => apply (anc_split_r _ _ _ _ _ Hs) in H end
+        | match goal with Ha : lage _ _ G |- _ => apply (anc_lage _ _ _ _ _ Ha) in H end
+        | lazymatch G with _ :: _ => idtac end;
+          lazymatch type of H with anc _ (S _) _ => apply anc_cons in H end ]
+  end.
+
+Ltac climb H := repeat climb1 H.
+
+(** [climb_to H G] stops at the context G. *)
+Ltac climb_to H G :=
+  repeat (lazymatch type of H with anc G _ _ => fail | _ => climb1 H end).
+
+(** ** Views of [teq] and of instances *)
+
+Lemma teq_lolli_l ub lb c A B a U :
+  teq (TLolli ub lb c A B a) U → ∃ A' B', U = TLolli ub lb c A' B' a ∧ teq A A' ∧ teq B B'.
+Proof.
+  intros H. destruct U; simpl in H; try done. destruct H as (-> & -> & -> & -> & HA & HB). eauto.
+Qed.
+
+Lemma teq_prod_l A B U : teq (TProd A B) U → ∃ A' B', U = TProd A' B' ∧ teq A A' ∧ teq B B'.
+Proof. intros H. destruct U; simpl in H; try done. destruct H as [HA HB]. eauto. Qed.
+
+Lemma teq_sess_l s x a m U : teq (TSess s x a m) U → ∃ s', U = TSess s' x a m ∧ sequiv s s'.
+Proof. intros H. destruct U; simpl in H; try done. destruct H as (-> & -> & -> & Hs). eauto. Qed.
+
+Lemma boxeq_teq k U U' : boxeq k U U' → teq U U'.
+Proof. destruct k; simpl; [done|]. intros [->|[H _]]; [apply teq_refl|done]. Qed.
+
+Lemma sinst_inv_lolli σ U ub lb c A B a : sinst_ty σ U = TLolli ub lb c A B a →
+  ∃ A0 B0, U = TLolli ub lb c A0 B0 a ∧ A = sinst_ty σ A0 ∧ B = sinst_ty σ B0.
+Proof. destruct U; simpl; intros H; simplify_eq. eauto. Qed.
+
+Lemma sinst_inv_prod σ U A B : sinst_ty σ U = TProd A B →
+  ∃ A0 B0, U = TProd A0 B0 ∧ A = sinst_ty σ A0 ∧ B = sinst_ty σ B0.
+Proof. destruct U; simpl; intros H; simplify_eq. eauto. Qed.
+
+Lemma sinst_inv_sess σ U s x a m : sinst_ty σ U = TSess s x a m →
+  ∃ s0, U = TSess s0 x a m ∧ s = sinst σ s0.
+Proof. destruct U; simpl; intros H; simplify_eq. eauto. Qed.
+
+Lemma sinsts_repeat_end N k : sinsts N (repeat SEnd k).
+Proof.
+  split; [split|intros _]; induction k; simpl; constructor; auto; done.
+Qed.
