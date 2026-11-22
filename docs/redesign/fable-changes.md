@@ -61,3 +61,38 @@ definition in `\sym`. The "Also in" chips of the page are going away.
   `P-Act-Link`, `P-Act-Msg`: "every" to "each" where it was rhetorical;
   `prop.pend` says what pending means; `P-Act-Msg.why` says why there is no
   $\mathsf{ech}\,o \in C$ premise.
+
+## Types and worlds
+
+- Section intro says why there are two kinds of world (a derivation sees
+  constants, a run sees fresh roots) and that they meet in $R \vDash W$.
+- `ty-grammar`: caption explains $u$ and $l$ in words and links session types,
+  points, active points, annotations, the judgment and the value relation. New
+  example with an end before and after a send and the arrow type of a closure
+  that captured it.
+- `ty-session`: caption explains `unfold`; `why` explains `Skip`, sequencing and
+  why contractivity is asked (links to the contractivity example); new example.
+- `ty-dual`: caption explains $\mathsf{flip}_\alpha$; links to creation, link,
+  composition.
+- `ty-equiv`: caption defines $\simeq$ in words and says who uses $\simeq$ and
+  who $\approx$.
+- `ty-heads`: caption and example explain $\mathsf{ap}$ as "the points at
+  which the partners act next" and why an arrow records one point $l$.
+- `ty-payload`: caption says why sender and receiver compute the same fields.
+- `ty-ann`: the redundant `\inmode{lf}` inside a lock-free block is gone;
+  links to conservativity and the counters block.
+- `ty-kinds`: links P-Term, weakening/contraction, aging, value relation.
+- `w-world`: caption links order, extension and process typing; `why` says why
+  a static world speaks about constants only; new example world with a ranked
+  model in the lock-free view.
+- `w-order`: caption links the order judgment and readiness; `why` justifies
+  $x \prec \overline{x}^{+}$; new example of derived facts.
+- `w-wf`: the deadlock-free caption no longer says "$N = \infty$" (a lock-free
+  notion). `why` says that acyclic and well-founded differ only on infinite
+  worlds and why static worlds are infinite.
+- `w-ext`: the formula now defines $W \sqsubseteq W'$, $W_1 \sqcup W_2$ and
+  $W|_S$ (they were bare symbols). The sentence on acyclic joins was wrapped in
+  `\inmode{lf}` and invisible in the deadlock-free view although the rule is
+  shown there; it is now plain. New example of two acyclic worlds with a cyclic
+  join. Note `w.restrict` declares $\mathsf{root}$ as `croot_in`.
+- Notes `ty.*`, `sty.*`, `ann.*`, `w.*`: "every" to "each" where rhetorical.

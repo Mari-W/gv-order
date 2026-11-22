@@ -492,7 +492,7 @@
   {
    "id": "types",
    "title": "Types and worlds",
-   "intro": "Types give each end a session type and a point. A static world orders the points a typing derivation assumes, and a world of the relation orders the points of a running configuration. \\inmode{lf}{Lock-free types add credits to ends and closures, tickets to ends, and costs to arrows and judgments.}",
+   "intro": "Types give each end a session type and a point. Two kinds of world order points. A static world $W$ orders the points a typing derivation assumes about its constants. A world $R$ of the relation orders the points of a running configuration, fresh roots included, and grows at each creation. The two meet in $R \\vDash W$. \\inmode{lf}{Lock-free types add credits to ends and closures, tickets to ends, and costs to arrows and judgments.}",
    "blocks": [
     {
      "id": "ty-grammar",
@@ -501,8 +501,8 @@
      "variants": {
       "df": "\\begin{array}{rl} T, U ::= & \\sym{ty.unit}{\\ast} \\mid \\sym{ty.arrow}{T \\multimap^{\\sym{ty.arrow.ub}{u}}_{\\sym{ty.arrow.lb}{l}} U} \\mid \\sym{ty.prod}{T \\otimes U} \\mid \\sym{ty.sum}{T \\oplus U} \\mid \\sym{ty.sess}{S_x} \\\\ \\mid & \\sym{ty.box}{\\Box(\\forall \\sym{pt.var}{\\bar\\iota}\\, \\sym{ty.box.svars}{\\bar\\alpha}.\\ \\sym{ty.box.constraint}{C}.\\ \\ast \\multimap^{u} U)} \\mid \\sym{ty.ex}{\\exists^{\\sym{ty.ex.lb}{l}} \\bar\\iota.\\ C.\\ T} \\end{array}"
      },
-     "caption": "$S_x$ is an end with session type $S$ at the point $x$. An arrow has an upper point $u$ and a lower bound $l$, and a box quantifies over points and session types under a constraint $C$. \\inmode{lf}{An arrow and a box have a cost $c$, and an end has tickets $m$. \\inmode{lf}{Credits $a$ appear on ends and on closures, the two kinds of value that hold ends themselves.} \\inmode{lf}{The credit of an end is a lower bound on its counter.} \\inmode{lf}{The credit of a closure is a lower bound on its captured counters and bounds what they lose before a call.}}",
-     "why": "A type says what a value is and, for an end, at which point it waits. \\inmode{lf}{A credit bounds how long the thread holding an end may postpone it.}",
+     "caption": "$S_x$ is an end with [[ty-session|session type]] $S$ at the [[syn-points|point]] $x$, the point at which the end acts next. An arrow has an upper point $u$ and a lower bound $l$, both defined in [[ty-heads]]. $u$ bounds from below where a call may wait, and $l$ bounds from below the dual points of the ends the closure captured. A box quantifies over points and session types under a constraint $C$, a set of facts $x \\prec y$. An existential hides the points of its witness. \\inmode{lf}{An arrow and a box have a cost $c$, and an end has tickets $m$. \\inmode{lf}{Credits $a$ appear on ends and on closures, the two kinds of value that hold ends themselves.} \\inmode{lf}{The credit of an end is a lower bound on its counter.} \\inmode{lf}{The credit of a closure is a lower bound on its captured counters and bounds what they lose before a call.} The numbers are defined in [[ty-ann]].}",
+     "why": "A type says what a value is and, for an end, at which point it waits. The [[t-judgment|typing judgment]] assigns these types, and the [[v-rel|value relation]] gives each type its meaning. \\inmode{lf}{A credit bounds how long the thread holding an end may postpone it.}",
      "source": [
       {
        "file": "types/Types.v",
@@ -514,14 +514,15 @@
      "usedIn": [
       "t-judgment",
       "v-rel"
-     ]
+     ],
+     "example": "A thread that holds $c^{+} : (!\\ast.\\mathsf{Close})_{x}$ sends on $c^{+}$ at $x$ and then holds $c^{+} : \\mathsf{Close}_{x^{+}}$. A closure $\\lambda u.\\,\\mathsf{close}\\,c^{+}$ that captured this end has the type $\\ast \\multimap^{x^{+}}_{\\overline{x^{+}}} \\ast$. Its body waits at $x^{+}$, and the one end it holds has the dual point $\\overline{x^{+}}$."
     },
     {
      "id": "ty-session",
      "title": "Session types",
      "formula": "\\begin{array}{rl}\nS ::= & \\sym{sty.skip}{\\mathsf{Skip}} \\mid \\sym{sty.seq}{S.S} \\mid \\sym{sty.recv}{?(\\bar\\iota.\\ T)} \\mid \\sym{sty.send}{!(\\bar\\iota.\\ T)} \\mid \\sym{sty.plus}{\\oplus(S', S'')} \\\\\n\\mid & \\sym{sty.with}{\\&(S', S'')} \\mid \\sym{sty.close}{\\mathsf{Close}} \\mid \\sym{sty.mu}{\\mu\\alpha.S} \\mid \\sym{sty.var}{\\alpha} \\mid \\sym{sty.vard}{\\overline{\\alpha}}  \\\\\n & \\sym{sty.unfold}{\\mathsf{unfold} : \\mathsf{STy} \\to \\mathsf{STy}} \\qquad \\sym{sty.contr}{\\mathsf{contr} \\subseteq \\mathsf{STy}}\n\\end{array}",
-     "caption": "Session types with sequencing $S.S$ and recursion, read through $\\mathsf{unfold}(S)$. A payload binds point variables $\\bar\\iota$, which stand for the fields of the carrier.",
-     "why": "A session type describes the protocol of one end. The typing rules read its first action after unfolding recursion and leading $\\mathsf{Skip}$.",
+     "caption": "Session types with sequencing $S.S$ and recursion, read through $\\mathsf{unfold}(S)$, which unrolls $\\mu$ and drops leading $\\mathsf{Skip}$ until the first action is on top. A payload binds point variables $\\bar\\iota$, which stand for the fields of the carrier, as [[ty-payload]] explains. [[ty-dual|Duality]] gives the protocol of the other end, and the [[r-act|rules for actions]] read the first action of $\\mathsf{unfold}(S)$.",
+     "why": "A session type describes the protocol of one end. $\\mathsf{Skip}$ and sequencing let a recursion variable occur in the middle of a protocol, so one $\\mu$ types loops whose rounds continue with more actions. Contractivity, $\\mathsf{contr}\\,S$, asks that each recursion passes an action. Without it a session variable of a box could be instantiated with $\\mathsf{Skip}$ and turn a well-typed body into one with no first action, which the example on contractivity shows.",
      "source": [
       {
        "file": "types/Types.v",
@@ -534,14 +535,15 @@
      "usedIn": [
       "ty-dual",
       "r-act"
-     ]
+     ],
+     "example": "$\\mu\\alpha.\\,!\\ast.?\\ast.\\alpha$ sends and receives forever. $(!\\ast.\\mathsf{Skip}).\\mathsf{Close}$ and $!\\ast.\\mathsf{Close}$ are the same protocol."
     },
     {
      "id": "ty-dual",
      "title": "Duality",
      "formula": "\\sym{sty.dual}{\\begin{array}{l}\n\\mathsf{dual}(!P) = ?P \\qquad \\mathsf{dual}(?P) = !P \\qquad \\mathsf{dual}(\\alpha) = \\overline{\\alpha} \\\\\n\\mathsf{dual}(\\oplus(S',S'')) = \\&(\\mathsf{dual}\\,S',\\mathsf{dual}\\,S'') \\\\\n\\mathsf{dual}(S'.S'') = \\mathsf{dual}\\,S'.\\mathsf{dual}\\,S'' \\\\\n\\mathsf{dual}(\\mu\\alpha.S) = \\mu\\alpha.\\,\\sym{sty.flip}{\\mathsf{flip}_\\alpha}(\\mathsf{dual}\\,S)\n\\end{array}}",
-     "caption": "$\\mathsf{dual}$ swaps sending and receiving and keeps each payload $P$, $\\mathsf{Skip}$ and $\\mathsf{Close}$. We write $\\overline{S}$ for $\\mathsf{dual}\\,S$.",
-     "why": "The two ends of a channel follow dual protocols. Creation, linking and composition check duality.",
+     "caption": "$\\mathsf{dual}$ swaps sending and receiving and keeps each payload $P$, $\\mathsf{Skip}$ and $\\mathsf{Close}$. We write $\\overline{S}$ for $\\mathsf{dual}\\,S$. Under a $\\mu$ the variable $\\alpha$ of a [[ty-session|session type]] is replaced by its dual $\\overline{\\alpha}$ and back by $\\mathsf{flip}_\\alpha$, so that $\\overline{\\mu\\alpha.S}$ unrolls to the dual of the unrolling.",
+     "why": "The two ends of a channel follow dual protocols. [[r-new|Creation]], [[r-act|linking]] and [[p-typing|composition]] check duality.",
      "source": [
       {
        "file": "types/Types.v",
@@ -561,8 +563,8 @@
      "id": "ty-equiv",
      "title": "Session equivalence",
      "formula": "\\begin{array}{l}\n\\sym{sty.sequiv}{S \\simeq S'} \\qquad \\sym{sty.seqv}{S \\approx S' \\iff \\sym{ty2.stydf}{\\mathsf{sty\\_df}}(S) \\simeq \\mathsf{sty\\_df}(S')} \\\\\n\\sym{sty.sdual}{\\mathsf{sdual}\\,S\\,S' \\iff S' \\approx \\mathsf{dual}\\,S}\n\\end{array}",
-     "caption": "$S \\simeq S'$ when the two session types describe the same protocol. $\\approx$ is $\\simeq$ after erasing annotations, and $\\mathsf{sdual}$ is duality up to annotations.",
-     "why": "With recursion and $\\mathsf{Skip}$ one protocol has many spellings, and the rules compare session types up to $\\simeq$.",
+     "caption": "$S \\simeq S'$ when the two session types describe the same protocol, the largest relation in which the unfoldings have the same first action and equivalent continuations. $\\approx$ is $\\simeq$ after erasing annotations, and $\\mathsf{sdual}$ is duality up to annotations. [[t-subs|Subtyping]] compares session types by $\\simeq$, and the [[v-rel|value relation]] by $\\approx$.",
+     "why": "With recursion and $\\mathsf{Skip}$ one protocol has many spellings. The relation ignores annotations, so one relation serves each bound.",
      "source": [
       {
        "file": "types/Types.v",
@@ -587,8 +589,8 @@
      "id": "ty-heads",
      "title": "Active points and lower bounds",
      "formula": "\\begin{array}{l}\n\\sym{ty.heads}{\\mathsf{ap}S_x = \\{\\overline{x}\\}} \\qquad \\sym{ty.heads}{\\mathsf{ap}(T \\multimap^{u}_{l} U) = \\mathsf{ap}(\\exists^{l}\\bar\\iota.\\ C.\\ T) = \\{l\\} \\setminus \\{\\cdot\\}} \\\\\n\\sym{ty.heads}{\\mathsf{ap}(T \\otimes U) = \\mathsf{ap}(T \\oplus U) = \\mathsf{ap}(T) \\cup \\mathsf{ap}(U)} \\qquad \\sym{ty.heads}{\\mathsf{ap}(\\ast) = \\mathsf{ap}(\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u} U)) = \\varnothing} \\\\\n\\sym{ty.lbound}{l ::= \\cdot \\mid \\bot \\mid x} \\qquad \\sym{ty.ubound}{u ::= \\cdot \\mid x \\mid \\top} \\qquad \\sym{ty.botord}{x \\not\\prec \\bot \\quad \\bot \\not\\preccurlyeq x}\n\\end{array}",
-     "caption": "$\\mathsf{ap}(T)$ is the set of dual points of the ends in a value of $T$. A thread holding such a value may wait only below these points. Hidden ends contribute $\\bot$, which no fact orders against a point, so a check against a value with hidden ends fails. A lower bound $l$ and an upper point $u$ are a point, absent, or $\\bot$ and $\\top$.",
-     "why": "A thread that waits while it holds a value must wait below the dual points of the ends in that value, and $\\mathsf{ap}$ computes these points from the type.",
+     "caption": "$\\mathsf{ap}(T)$ is the set of dual points of the ends in a value of $T$, the points at which the partners of these ends act next. A thread holding such a value may wait only below these points, which the [[t-side|side conditions]] check. Hidden ends contribute $\\bot$, which no fact orders against a point, so a check against a value with hidden ends fails. A lower bound $l$ and an upper point $u$ are a point, absent, or $\\bot$ and $\\top$. The [[t-judgment|future]] of a thread, the [[r-fun|arrow rules]] and the [[r-ex|existential rules]] read $\\mathsf{ap}$.",
+     "why": "A thread that waits while it holds a value must wait below the dual points of the ends in that value, and $\\mathsf{ap}$ computes these points from the type. A closure type does not list its captured ends, so it records one point $l$ at or below their dual points instead.",
      "source": [
       {
        "file": "types/Types.v",
@@ -609,14 +611,15 @@
       "t-judgment",
       "r-fun",
       "r-ex"
-     ]
+     ],
+     "example": "$\\mathsf{ap}(S_x \\otimes (\\ast \\multimap^{u}_{l} \\ast)) = \\{\\overline{x}, l\\}$. A thread that closes an end at $z$ while it holds this pair needs $z \\prec \\overline{x}$ and $z \\prec l$."
     },
     {
      "id": "ty-payload",
      "title": "Payloads",
      "formula": "\\begin{array}{l}\n\\sym{ty.payload-at}{\\mathsf{payload\\_at}\\,m\\,T\\,x = T[x\\cdot 0, \\ldots, x\\cdot(m{-}1) / \\iota_0, \\ldots, \\iota_{m-1}]} \\\\\n\\sym{ty.pscoped}{\\mathsf{pscoped}\\,\\bar\\iota\\,T}\n\\end{array}",
-     "caption": "A payload $!(\\bar\\iota.\\,T)$ mentions only its own point variables $\\iota_0, \\ldots, \\iota_{m-1}$. A message at the carrier point $x$ places them at the fields $x\\cdot 0, \\ldots, x\\cdot(m{-}1)$.",
-     "why": "A payload is described relative to the end that sends it, so one session type serves each point the end may have.",
+     "caption": "A payload $!(\\bar\\iota.\\,T)$ mentions only its own point variables $\\iota_0, \\ldots, \\iota_{m-1}$. A message at the carrier point $x$ places them at the fields $x\\cdot 0, \\ldots, x\\cdot(m{-}1)$ of [[syn-moves]], the same fields for sender and receiver because $\\overline{x}\\cdot\\kappa = x\\cdot\\kappa$. The [[r-act|rules for send and receive]] and the [[e-obl|obligations]] of the relation instantiate payloads this way.",
+     "why": "A payload is described relative to the end that sends it, so one session type serves each point the end may have. A loop that sends one channel per round therefore needs no fresh point variable per round.",
      "source": [
       {
        "file": "types/Types.v",
@@ -634,9 +637,9 @@
     {
      "id": "ty-ann",
      "title": "Annotations and tickets",
-     "formula": "\\begin{array}{c}\\sym{ann.fuel}{a, c, m, N \\in \\mathbb{N} \\cup \\{\\infty\\} \\qquad \\infty - c = \\infty}\\\\[3ex]\\begin{array}{l}\n\\sym{ty.tickets}{S_x\\inmode{lf}{^{a,m}} \\qquad a \\leq m \\qquad m \\in \\mathbb{N} \\cup \\{\\infty\\}} \\\\\n\\sym{ann.tsum}{\\mathsf{tk}(o) + \\mathsf{tk}(\\overline{o}) \\leq N}\n\\end{array}\\\\[3ex]\\sym{ann.tydf}{\\mathsf{ty\\_df}:\\quad a = c = m = N = \\infty}\\end{array}",
-     "caption": "Credits $a$, costs $c$, tickets $m$ and the bound $N$ are numbers or $\\infty$. An end has $m$ tickets with $a \\leq m$, and the tickets of the two ends of a channel sum to at most $N$, so an end with $m$ tickets has a partner with at most $N - m$. With every annotation at $\\infty$, written $\\mathsf{ty\\_df}$, lock-free typing is deadlock-free typing.",
-     "why": "These are the numbers lock-free typing adds to types and judgments. At $\\infty$ each premise about them holds.",
+     "formula": "\\begin{array}{c}\\sym{ann.fuel}{a, c, m, N \\in \\mathbb{N} \\cup \\{\\infty\\} \\qquad \\infty - c = \\infty}\\\\[3ex]\\begin{array}{l}\n\\sym{ty.tickets}{S_x^{a,m} \\qquad a \\leq m \\qquad m \\in \\mathbb{N} \\cup \\{\\infty\\}} \\\\\n\\sym{ann.tsum}{\\mathsf{tk}(o) + \\mathsf{tk}(\\overline{o}) \\leq N}\n\\end{array}\\\\[3ex]\\sym{ann.tydf}{\\mathsf{ty\\_df}:\\quad a = c = m = N = \\infty}\\end{array}",
+     "caption": "Credits $a$, costs $c$, tickets $m$ and the bound $N$ are numbers or $\\infty$. An end has $m$ tickets with $a \\leq m$, and the tickets of the two ends of a channel sum to at most $N$, so an end with $m$ tickets has a partner with at most $N - m$. With each annotation at $\\infty$, written $\\mathsf{ty\\_df}$, lock-free typing is deadlock-free typing, which [[th-conserv|conservativity]] states. The [[t-lf-counters|counters block]] says what the two numbers of an end do.",
+     "why": "These are the numbers lock-free typing adds to types and judgments. At $\\infty$ each premise about them holds, so the deadlock-free rules are the lock-free rules read at $N = \\infty$.",
      "modes": [
       "lf"
      ],
@@ -676,8 +679,8 @@
      "id": "ty-kinds",
      "title": "Kinds of types",
      "formula": "\\begin{array}{l}\n\\sym{ty.tfree}{\\mathsf{tfree}\\,T \\iff T \\in \\mathcal{T}_{0}, \\qquad \\mathcal{T}_{0} ::= \\ast \\mid \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u} U) \\mid \\mathcal{T}_{0} \\otimes \\mathcal{T}_{0} \\mid \\mathcal{T}_{0} \\oplus \\mathcal{T}_{0}} \\\\\n\\sym{ty.unlimited}{\\mathsf{unlimited}\\,T \\iff \\exists \\bar\\iota, \\bar\\alpha, C, u, U.\\ T = \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u} U)}\n\\end{array}",
-     "caption": "$\\mathsf{tfree}\\,T$ holds for the types whose values hold no end, and P-Term asks it of the result type of a process. $\\mathsf{unlimited}\\,T$ holds for the types that may be copied and dropped.",
-     "why": "Process results hold no end, only unlimited types may be copied or dropped, and values without ends do not age.",
+     "caption": "$\\mathsf{tfree}\\,T$ holds for the types whose values hold no end, and [[p-typing|P-Term]] asks it of the result type of a process. $\\mathsf{unlimited}\\,T$ holds for the types that may be copied and dropped, the box types, which [[t-subs|weakening and contraction]] and the leaves of a derivation read.\\inmode{lf}{ [[t-agecap|Aging]] leaves a $\\mathsf{tfree}$ type unchanged.}",
+     "why": "Process results hold no end, only unlimited types may be copied or dropped, and values without ends do not age. A box holds no end by the [[v-rel|value relation]], so copying it duplicates no end.",
      "source": [
       {
        "file": "types/Types.v",
@@ -697,8 +700,8 @@
      "id": "w-world",
      "title": "Worlds",
      "formula": "\\begin{array}{l}\n\\sym{w.world}{W = (\\sym{w.consts}{A}, \\sym{w.facts}{\\prec_A})} \\\\\n\\sym{w.rworld}{R = (B, \\sym{w.rord}{<_R}\\inmode{lf}{, \\sym{w.kind}{k}})} \\qquad \\sym{w.rord}{{<_R} \\subseteq \\mathsf{Point}_B^{2}} \\qquad \\sym{w.rord}{x \\not<_R x \\quad {<_R} = {<_R}^{+} \\quad \\sym{w.po}{\\mathsf{po}} \\cap \\mathsf{Point}_B^{2} \\subseteq {<_R}}\\inmodeplain{lf}{ \\\\ }\\inmode{lf}{\\sym{w.kind}{k ::= \\mathsf{strict} \\mid \\mathsf{ranked}\\ \\varrho} \\qquad \\sym{w.rank}{\\varrho : \\mathsf{Point} \\to \\mathsf{Ord}} \\qquad \\sym{w.rank}{k = \\mathsf{ranked}\\ \\varrho \\Rightarrow (x <_R y \\iff \\varrho(x) < \\varrho(y))}}\n\\end{array}",
-     "caption": "A static world $W$ has a finite set $A$ of constants and facts $\\prec_A$ between points with roots in $A$. A world $R$ of the relation has a finite set $B$ of roots, constants and fresh roots alike. Its order $<_R$ is a strict partial order on the points $\\mathsf{Point}_B$ with roots in $B$ and contains program order between such points. \\inmode{lf}{A world also has a kind $k$. A strict world is any such order. \\inmode{lf}{A ranked world has a rank function $\\varrho$ into the ordinals, and its order is the order of the ranks.}}",
-     "why": "Typing reads the order of a static world, and the relation reads the order of a world of the relation. The two meet in $R \\vDash W$. \\inmode{lf}{Deadlock freedom inspects one stuck configuration, and a strict order on its finitely many waiting points has a minimal one. \\inmode{lf}{Lock freedom follows one wait through a run whose world grows, and only ranks fixed once chosen keep the union of these worlds well-founded.} \\inmode{lf}{So the deadlock-free results and the guarded results at $\\kappa_L$ read strict worlds and the lock-free threads ranked ones.}}",
+     "caption": "A static world $W$ has a finite set $A$ of constants and facts $\\prec_A$ between [[syn-points|points]] with roots in $A$. A world $R$ of the relation has a finite set $B$ of roots, constants and fresh roots alike. Its order $<_R$ is a strict partial order on the points $\\mathsf{Point}_B$ with roots in $B$ and contains program order between such points. \\inmode{lf}{A world also has a kind $k$. A strict world is any such order. \\inmode{lf}{A ranked world has a rank function $\\varrho$ into the ordinals, and its order is the order of the ranks.}} [[w-order]] defines the orders, [[w-ext]] how worlds grow, and [[p-typing|process typing]] reads a static world.",
+     "why": "Typing reads the order of a static world, and the relation reads the order of a world of the relation. The two meet in $R \\vDash W$. A typing derivation sees only constants, because fresh roots are hidden in existentials, so a static world speaks about constants alone. \\inmode{lf}{Deadlock freedom inspects one stuck configuration, and a strict order on its finitely many waiting points has a minimal one. \\inmode{lf}{Lock freedom follows one wait through a run whose world grows, and only ranks fixed once chosen keep the union of these worlds well-founded.} \\inmode{lf}{So the deadlock-free results and the guarded results at $\\kappa_L$ read strict worlds and the lock-free threads ranked ones.}}",
      "source": [
       {
        "file": "types/Worlds.v",
@@ -716,14 +719,15 @@
       "w-order",
       "w-ext",
       "p-typing"
-     ]
+     ],
+     "example": "The world $W = (\\{1, 2\\}, \\{1 \\prec \\overline{2}\\})$ lets a thread close an end at $1$ while it holds an end at $2$. \\inmode{lf}{A ranked world with $\\varrho(1) = 0$ and $\\varrho(\\overline{2}) = 1$ models $W$.}"
     },
     {
      "id": "w-order",
      "title": "The order of a world",
      "formula": "\\begin{array}{l}\n\\sym{w.lt}{\\begin{array}{l} \\prec_W\\ =\\ \\mathsf{tc}\\big(\\sym{w.ws-fact}{\\prec_A} \\\\ \\qquad\\qquad \\cup\\; \\sym{w.ws-po}{\\{x \\prec x^{+}\\}} \\;\\cup\\; \\sym{w.ws-dpo}{\\{x \\prec \\overline{x}^{+}\\}}\\big) \\end{array}} \\qquad \\sym{w.po}{\\mathsf{po} = \\mathsf{tc}(\\{x \\prec x^{+}\\} \\cup \\{x \\prec \\overline{x}^{+}\\})} \\\\\n\\sym{w.rlt}{R \\vdash x \\prec y \\iff \\mathsf{po}(x, y) \\lor (x, y \\in \\mathsf{Point}_B \\land x <_R y)} \\qquad \\sym{ty2.le}{x \\preceq y \\iff x = y \\lor x \\prec y} \\\\\n\\sym{w.sat}{R \\vDash W \\iff A \\subseteq B \\land \\forall (x \\prec y) \\in {\\prec_A}.\\ R \\vdash x \\prec y}\n\\end{array}",
-     "caption": "$\\prec_W$ is the transitive closure $\\mathsf{tc}$ of the facts of $W$ and of program order $\\mathsf{po}$, generated by $x \\prec x^{+}$ and $x \\prec \\overline{x}^{+}$. A world $R$ orders two points by program order, or by $<_R$ when both roots lie in $B$. $R$ models $W$ when the constants of $W$ are roots of $R$ and each fact of $W$ holds in $R$.",
-     "why": "Besides the stated facts, the order says that an end moves up as its protocol advances. The semantic judgments at a static world $W$ read the relation at each world $R$ that models $W$.",
+     "caption": "$\\prec_W$ is the transitive closure $\\mathsf{tc}$ of the facts of $W$ and of program order $\\mathsf{po}$, generated by $x \\prec x^{+}$ and $x \\prec \\overline{x}^{+}$. A world $R$ orders two points by program order, or by $<_R$ when both roots lie in $B$. $R$ models $W$ when the constants of $W$ are roots of $R$ and each fact of $W$ holds in $R$. The [[t-contexts|order judgment]] of typing reads $\\prec_W$, and [[rd|readiness]] reads $R \\vdash x \\prec y$.",
+     "why": "Besides the stated facts, the order says that an end moves up as its protocol advances. $x \\prec \\overline{x}^{+}$ holds in each run, because the partner acts at $\\overline{x}^{+}$ only after the synchronization at $x$. The semantic judgments at a static world $W$ read the relation at each world $R$ that models $W$.",
      "source": [
       {
        "file": "types/Worlds.v",
@@ -740,14 +744,15 @@
      "usedIn": [
       "t-contexts",
       "rd"
-     ]
+     ],
+     "example": "From $1 \\prec \\overline{2}$ the order derives $1 \\prec \\overline{2}^{+}$ and $1 \\prec 2^{+}$, so a thread that waits at $1$ may hold an end at $2$ in any state of its protocol."
     },
     {
      "id": "w-wf",
      "title": "Acyclic and well-founded worlds",
      "formula": "\\begin{array}{l}\n\\sym{w.wf}{\\mathsf{world\\_wf}\\,W} \\qquad \\sym{w.acyc}{\\mathsf{acyc}\\,W \\iff \\forall x.\\ x \\not\\prec_W x}\\inmodeplain{lf}{ \\qquad }\\inmode{lf}{\\sym{w.lfworld}{\\mathsf{wf}\\,W \\iff \\nexists (x_i)_{i \\in \\mathbb{N}}.\\ \\forall i.\\ x_{i+1} \\prec_W x_i}} \\\\\n\\sym{w.models}{\\mathsf{world\\_wf}\\,W \\land \\mathsf{acyc}\\,W \\Rightarrow \\exists R.\\ \\sym{w.strict}{\\mathsf{strict}}\\,R \\land R \\vDash W}\\inmodeplain{lf}{ \\\\ }\\inmode{lf}{\\sym{w.models}{\\mathsf{world\\_wf}\\,W \\land \\mathsf{wf}\\,W \\Rightarrow \\exists R.\\ \\sym{w.kind}{\\mathsf{ranked}}\\,R \\land R \\vDash W}}\\inmodeplain{lf}{ \\\\ }\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N\\,W = \\begin{cases} \\mathsf{acyc}\\,W & N = \\infty \\\\ \\mathsf{wf}\\,W & N \\in \\mathbb{N} \\end{cases}}}\n\\end{array}",
-     "caption": "Process typing at $N = \\infty$ asks an acyclic static world, and a well-formed acyclic world has a strict model, its own order. \\inmode{lf}{Process typing at a finite bound $N$ asks a well-founded static world, and a well-formed well-founded world has a ranked model. $\\mathsf{ok}_N$ picks the condition by $N$.}",
-     "why": "The world of each process derivation has a model, so the semantic judgment at that world is not vacuous and soundness has a world to start the run in.",
+     "caption": "A well-formed world has only facts between points with roots in $A$. [[p-typing|Process typing]] asks an acyclic static world, and a well-formed acyclic world has a strict model, its own order. \\inmode{lf}{Process typing at a finite bound $N$ asks a well-founded static world instead, and a well-formed well-founded world has a ranked model. $\\mathsf{ok}_N$ picks the condition by $N$.} [[th-sound|Soundness]] and [[th-adeq|adequacy]] start a run in such a model.",
+     "why": "The world of each process derivation has a model, so the semantic judgment at that world is not vacuous and soundness has a world to start the run in. \\inmode{lf}{Acyclic and well-founded differ only on infinite worlds. A box constraint states facts for each round of a loop, so static worlds are infinite, and an acyclic one may hold an infinite descending chain, which the fork-join example uses.}",
      "source": [
       {
        "file": "types/Worlds.v",
@@ -776,9 +781,9 @@
     {
      "id": "w-ext",
      "title": "Extension, growth, join, restriction",
-     "formula": "\\begin{array}{l}\n\\sym{w.ext}{W \\sqsubseteq W'} \\qquad \\sym{w.ext}{R \\sqsubseteq R' \\iff B \\subseteq B' \\land {<_R} \\subseteq {<_{R'}}\\inmode{lf}{\\ \\land\\ \\sym{w.kind}{k \\sqsubseteq k'}}} \\\\\n\\sym{w.grow}{R \\oplus_{a} C = (B \\cup \\{a\\},\\ \\mathsf{tc}({<_R} \\cup C[a] \\cup \\mathsf{po}))}\\inmodeplain{lf}{ \\qquad }\\inmode{lf}{\\sym{w.grow}{R \\oplus (a, \\varrho_a)}} \\\\\n\\sym{w.join}{W_1 \\sqcup W_2} \\qquad \\sym{w.restrict}{W|_S} \\\\\n\\sym{w.R7}{\\begin{array}{l} \\sym{w.acyc}{\\mathsf{acyc}}(W_1 \\sqcup W_2) \\iff {} \\\\ \\qquad \\mathsf{acyc}\\,W_1 \\land \\mathsf{acyc}\\,W_2 \\land \\mathsf{acyc}(W_1|_S \\sqcup W_2|_S),\\ S = A_1 \\cap A_2 \\end{array}}\\inmodeplain{lf}{ \\\\ }\\inmode{lf}{\\sym{w.R7}{\\mathsf{wf}(W_1 \\sqcup W_2) \\iff \\mathsf{wf}\\,W_1 \\land \\mathsf{wf}\\,W_2 \\land \\mathsf{wf}(W_1|_S \\sqcup W_2|_S)}}\n\\end{array}",
-     "caption": "A world extends another when it has at least its roots and its order. A creation at a fresh root $a$ grows a strict world by the facts $C[a]$ of the creation and closes transitively. \\inmode{lf}{Extension keeps the kind and every rank. \\inmode{lf}{A ranked world grows by the ranks $\\varrho_a$ of the new tree.} The join of two static worlds is acyclic exactly when both worlds are and their restrictions to the shared constants $S = A_1 \\cap A_2$ join acyclically.} $W|_S$ keeps the order $W$ derives between points with roots in $S$. \\inmode{lf}{The same holds for well-founded joins.}",
-     "why": "Worlds grow during a run and never lose order, and the relation holds in each larger world. Composition joins two static worlds and checks only what they share.",
+     "formula": "\\begin{array}{l}\n\\sym{w.ext}{W \\sqsubseteq W' \\iff A \\subseteq A' \\land {\\prec_A} \\subseteq {\\prec_{A'}}} \\qquad \\sym{w.ext}{R \\sqsubseteq R' \\iff B \\subseteq B' \\land {<_R} \\subseteq {<_{R'}}\\inmode{lf}{\\ \\land\\ \\sym{w.kind}{k \\sqsubseteq k'}}} \\\\\n\\sym{w.grow}{R \\oplus_{a} C = (B \\cup \\{a\\},\\ \\mathsf{tc}({<_R} \\cup C[a] \\cup \\sym{w.po}{\\mathsf{po}}))}\\inmodeplain{lf}{ \\qquad }\\inmode{lf}{\\sym{w.grow}{R \\oplus (a, \\varrho_a)}} \\\\\n\\sym{w.join}{W_1 \\sqcup W_2 = (A_1 \\cup A_2,\\ {\\prec_{A_1}} \\cup {\\prec_{A_2}})} \\qquad \\sym{w.restrict}{W|_S = (A \\cap S,\\ \\{x \\prec_W y \\mid \\mathsf{root}(x), \\mathsf{root}(y) \\in A \\cap S\\})} \\\\\n\\sym{w.R7}{\\begin{array}{l} \\sym{w.acyc}{\\mathsf{acyc}}(W_1 \\sqcup W_2) \\iff {} \\\\ \\qquad \\mathsf{acyc}\\,W_1 \\land \\mathsf{acyc}\\,W_2 \\land \\mathsf{acyc}(W_1|_S \\sqcup W_2|_S),\\ S = A_1 \\cap A_2 \\end{array}}\\inmodeplain{lf}{ \\\\ }\\inmode{lf}{\\sym{w.R7}{\\sym{w.lfworld}{\\mathsf{wf}}(W_1 \\sqcup W_2) \\iff \\mathsf{wf}\\,W_1 \\land \\mathsf{wf}\\,W_2 \\land \\mathsf{wf}(W_1|_S \\sqcup W_2|_S)}}\n\\end{array}",
+     "caption": "A world extends another when it has at least its roots and its order. A [[r-new|creation]] at a fresh root $a$ grows a strict world by the facts $C[a]$ of the creation and closes transitively. \\inmode{lf}{Extension keeps the kind and each rank. \\inmode{lf}{A ranked world grows by the ranks $\\varrho_a$ of the new tree.}} The join of two static worlds takes the unions, and $W|_S$ keeps the order $W$ derives between points with roots in $S$. The join is acyclic exactly when both worlds are and their restrictions to the shared constants $S = A_1 \\cap A_2$ join acyclically. \\inmode{lf}{The same holds for well-founded joins.} [[p-typing|P-Connect]] joins the worlds of two components, and the [[v-rel|value]], [[e-rel|term]] and [[p-rel|process]] relations quantify over extensions.",
+     "why": "Worlds grow during a run and never lose order, and the relation holds in each larger world. Composition joins two static worlds and checks only what they share. A chain of the join changes sides only at points with shared roots, so a cycle of the join is a cycle of one side or of the joined restrictions.",
      "source": [
       {
        "file": "types/Worlds.v",
@@ -812,7 +817,8 @@
       "v-rel",
       "e-rel",
       "p-rel"
-     ]
+     ],
+     "example": "Two components with the worlds $(\\{1, 2\\}, \\{1 \\prec \\overline{2}\\})$ and $(\\{1, 2\\}, \\{\\overline{2} \\prec 1\\})$ are each acyclic, and their join holds the cycle $1 \\prec \\overline{2} \\prec 1$."
     }
    ]
   },
@@ -5415,7 +5421,7 @@
   "ty.unit": {
    "title": "Unit type $\\ast$",
    "meaning": "The type of $\\ast$, with $V\\llbracket\\Theta \\vdash \\ast\\rrbracket = \\{\\ast\\}$ at $\\Theta = \\varnothing$ and empty otherwise.",
-   "why": "A plain type. $\\mathsf{close}$, $\\mathsf{link}$ and $\\mathsf{spawn}$ return $\\ast$, and every spawned thread returns $\\ast$.",
+   "why": "A plain type. $\\mathsf{close}$, $\\mathsf{link}$ and $\\mathsf{spawn}$ return $\\ast$, and a spawned thread returns $\\ast$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{close}\\,o : \\ast$.",
    "signature": "\\ast \\in \\mathsf{Ty}",
@@ -5503,7 +5509,7 @@
   },
   "ty.arrow.ub": {
    "title": "Upper point $u$",
-   "meaning": "The body is in $E$ under every $F$ with $\\forall y \\in F.\\ u \\prec y$, which every caller must establish.",
+   "meaning": "The body is in $E$ under each $F$ with $\\forall y \\in F.\\ u \\prec y$, which the caller must establish.",
    "why": "The type of a closure does not show its body. The condition $u \\prec F$ places the later actions of the caller above the points where the body may block.",
    "breaks": "Without $u$, a closure that blocks at $x$ with $y \\prec x$ for some later action $y$ of the caller could be called first, and the thread waits on its own later action.",
    "example": "A function that blocks on an end at $\\kappa$ has $u = \\kappa$.",
@@ -5511,7 +5517,7 @@
    "args": [
     {
      "name": "u",
-     "meaning": "A point or absent. The body is in $E$ under every future $F$ with $u \\prec y$ for all $y \\in F$."
+     "meaning": "A point or absent. The body is in $E$ under each future $F$ with $u \\prec y$ for the $y \\in F$."
     }
    ],
    "source": [
@@ -5527,14 +5533,14 @@
   "ty.arrow.lb": {
    "title": "Lower point $l$",
    "meaning": "$\\forall y \\in \\mathsf{ap}(\\Theta).\\ l \\preceq y$ for the captured ends, with $l$ absent iff $\\Theta = \\varnothing$.",
-   "why": "A closure is a held value. A thread blocked at $x$ while holding it needs $x \\prec y$ for every dual point $y$ of the captured ends, and $x \\prec l$ implies these facts.",
+   "why": "A closure is a held value. A thread blocked at $x$ while holding it needs $x \\prec y$ for each dual point $y$ of the captured ends, and $x \\prec l$ implies these facts.",
    "breaks": "Without $l$, a thread blocks at $x$ while it holds a closure with a captured end at $v$ and $x \\not\\prec \\overline{v}$, so the partner of that end may wait on the thread.",
    "example": "A closure capturing $a^{+}$ at $\\rho$ has $l = \\overline{\\rho}$.",
    "signature": "l \\in \\mathsf{Point} \\cup \\{\\cdot\\}",
    "args": [
     {
      "name": "l",
-     "meaning": "A point with $l \\preceq y$ for every dual point $y$ of the captured ends, or $\\cdot$ iff the closure captures no end. Not $\\bot$, which marks hidden points at $\\exists^{\\bot}$."
+     "meaning": "A point with $l \\preceq y$ for each dual point $y$ of the captured ends, or $\\cdot$ iff the closure captures no end. Not $\\bot$, which marks hidden points at $\\exists^{\\bot}$."
     }
    ],
    "source": [
@@ -5572,7 +5578,7 @@
   },
   "ty.credit": {
    "title": "Credit $a$",
-   "meaning": "$a \\in \\mathbb{N} \\cup \\{\\infty\\}$ on an end type $S_x\\inmode{lf}{^{a,m}}$ is a lower bound on the counter of that end. On a closure type $(T \\multimap [c]\\, U)\\inmode{lf}{^{a}}$ every captured end that is not idle has counter at least $a$.",
+   "meaning": "$a \\in \\mathbb{N} \\cup \\{\\infty\\}$ on an end type $S_x^{a,m}$ is a lower bound on the counter of that end. On a closure type $(T \\multimap [c]\\, U)^{a}$ each captured end that is not idle has counter at least $a$.",
    "why": "A counter bounds how many actions of other ends an end may still wait through. Only ends and closures hold ends of their own. A pair, a sum or an existential holds the ends of its parts, and their types have the credits.",
    "breaks": "A send of an end whose counter may be $0$ lets the end be sent on forever while its partner waits.",
    "example": "A fresh end with $m$ tickets has type $S_{\\rho}\\inmode{lf}{^{m,m}}$, credit $m$ and tickets $m$. A closure keeps its credit in the superscript, $(T \\multimap [c]\\, U)\\inmode{lf}{^{a}}$.",
@@ -5676,8 +5682,8 @@
   },
   "ty.box": {
    "title": "Box type",
-   "meaning": "$\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u} U)$ is a replicable thunk, usable at every point instance $\\bar x$ with $C[\\bar x]$ and every session instance $\\bar s$.",
-   "why": "A loop needs fresh points in each round. Quantifying over $\\bar\\iota$ under $\\Box$ gives every call its own instance.",
+   "meaning": "$\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u} U)$ is a replicable thunk, usable at each point instance $\\bar x$ with $C[\\bar x]$ and each session instance $\\bar s$.",
+   "why": "A loop needs fresh points in each round. Quantifying over $\\bar\\iota$ under $\\Box$ gives each call its own instance.",
    "breaks": "Nothing. It is a definition.",
    "example": "A client loop has type $\\Box\\forall\\iota\\,\\kappa\\,\\zeta.\\ C.\\ \\ast \\multimap (S_{\\iota} \\otimes {S'}_{\\kappa} \\multimap^{\\zeta} \\ast)$.",
    "signature": "\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u}[c]\\,U) \\in \\mathsf{Ty}",
@@ -5718,8 +5724,8 @@
   },
   "ty.box.svars": {
    "title": "Session variables $\\bar\\alpha$",
-   "meaning": "$k$ session variables, instantiated at every $\\mathsf{force}$ by session types whose recursion passes an action.",
-   "why": "One box serves every protocol the caller substitutes for $\\bar\\alpha$.",
+   "meaning": "$k$ session variables, instantiated at each $\\mathsf{force}$ by contractive session types.",
+   "why": "One box serves each protocol the caller substitutes for $\\bar\\alpha$.",
    "breaks": "Nothing. It is a definition.",
    "example": "A forwarder box for every protocol $\\alpha$.",
    "signature": "\\bar\\alpha = \\alpha_1, \\ldots, \\alpha_k",
@@ -5742,7 +5748,7 @@
   "ty.box.constraint": {
    "title": "Box constraint $C$",
    "meaning": "A set of facts $x \\prec y$ over $\\bar\\iota$ and outer points, which may be infinite.",
-   "why": "A loop orders the points of all its rounds at once, and an infinite $C$ states the facts of every round.",
+   "why": "A loop orders the points of its rounds at once, and an infinite $C$ states the facts of each round.",
    "breaks": "Without $C$ a box cannot type a loop that waits on one end while it holds another across rounds.",
    "example": "$C$ states $\\iota \\prec \\overline{\\kappa}$ for the points of every round of a client loop.",
    "signature": "C \\subseteq \\{x \\prec y \\mid x, y \\in \\mathsf{Point}\\}",
@@ -5797,7 +5803,7 @@
   },
   "ty.ex.lb": {
    "title": "Lower bound $l$",
-   "meaning": "$l = \\cdot$ when the value holds no end, $l = \\bot$ when its ends are at points unknown outside, and $l = x$ when $x \\preceq y$ for every dual point $y$ of its ends.",
+   "meaning": "$l = \\cdot$ when the value holds no end, $l = \\bot$ when its ends are at points unknown outside, and $l = x$ when $x \\preceq y$ for each dual point $y$ of its ends.",
    "why": "$\\bot$ stands for a fresh point that no fact of the context mentions, and $\\mathsf{hbot}$ propagates $\\bot$.",
    "breaks": "Without $\\bot$, a closure captures an unopened fresh pair and claims a lower point $l$ that no fact of $W$ supports.",
    "example": "$\\mathsf{new} : \\exists^{\\bot}\\ldots$",
@@ -5805,7 +5811,7 @@
    "args": [
     {
      "name": "l",
-     "meaning": "$\\cdot$ for no end, $\\bot$ for ends at unknown points, $x$ when $x \\preceq y$ for every dual point $y$ of the ends."
+     "meaning": "$\\cdot$ for no end, $\\bot$ for ends at unknown points, $x$ when $x \\preceq y$ for each dual point $y$ of the ends."
     }
    ],
    "source": [
@@ -5961,7 +5967,7 @@
   "sty.close": {
    "title": "$\\mathsf{Close}$",
    "meaning": "The next action of the end is $\\mathsf{close}$.",
-   "why": "A plain protocol action. Every finite protocol ends with $\\mathsf{Close}$.",
+   "why": "A plain protocol action. A finite protocol ends with $\\mathsf{Close}$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{Close}_{x^{+}}$ after one send at $x$.",
    "signature": "\\mathsf{Close} \\in \\mathsf{STy}",
@@ -6047,7 +6053,7 @@
   "sty.unfold": {
    "title": "Head normal form",
    "meaning": "$\\mathsf{unfold}(S)$ unrolls $\\mu$ and reassociates sequencing until the first action is on top.",
-   "why": "Every rule reads the first action of a session type, so rules match on $\\mathsf{unfold}(S)$ and need no separate rule for $\\mu$.",
+   "why": "Each rule reads the first action of a session type, so rules match on $\\mathsf{unfold}(S)$ and need no separate rule for $\\mu$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{unfold}(\\mu\\alpha.\\,!\\ast.\\alpha) = !\\ast.(\\mu\\alpha.\\,!\\ast.\\alpha)$.",
    "signature": "\\mathsf{unfold} : \\mathsf{STy} \\to \\mathsf{STy}",
@@ -6107,7 +6113,7 @@
   "sty.dual": {
    "title": "Duality",
    "meaning": "$\\mathsf{dual}$ swaps $!$ with $?$ and $\\oplus$ with $\\&$, keeps payloads, $\\mathsf{Skip}$ and $\\mathsf{Close}$, and $\\overline{S} := \\mathsf{dual}\\,S$.",
-   "why": "The two ends of a channel run $S$ and $\\mathsf{dual}\\,S$, so every send meets a receive.",
+   "why": "The two ends of a channel run $S$ and $\\mathsf{dual}\\,S$, so each send meets a receive.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{dual}(!\\ast.\\mathsf{Close}) = ?\\ast.\\mathsf{Close}$.",
    "signature": "\\mathsf{dual} : \\mathsf{STy} \\to \\mathsf{STy}",
@@ -6180,7 +6186,7 @@
   },
   "ty2.stydf": {
    "title": "$\\mathsf{sty\\_df}$",
-   "meaning": "$\\mathsf{sty\\_df}(S)$ sets every annotation of $S$ to its value at $N = \\infty$.",
+   "meaning": "$\\mathsf{sty\\_df}(S)$ sets each annotation of $S$ to its value at $N = \\infty$.",
    "why": "\\inmode{lf}{The relations at $\\kappa_{DF}$ and at $\\kappa_L$ read no credit, so two protocols that differ only in annotations are equal for them.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{sty\\_df}(!(\\ast^{2}).\\mathsf{Close}) = !(\\ast^{\\infty}).\\mathsf{Close}$.",
@@ -6203,7 +6209,7 @@
   "sty.seqv": {
    "title": "Up to annotations $\\approx$",
    "meaning": "$S \\approx S' \\iff \\mathsf{sty\\_df}(S) \\simeq \\mathsf{sty\\_df}(S')$.",
-   "why": "\\inmode{lf}{The relations at $\\kappa_{DF}$ and at $\\kappa_L$ ignore credits, so one relation serves every counter bound $N$.}",
+   "why": "\\inmode{lf}{The relations at $\\kappa_{DF}$ and at $\\kappa_L$ ignore credits, so one relation serves each counter bound $N$.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$!(\\ast^{2}).\\mathsf{Close} \\approx !(\\ast^{\\infty}).\\mathsf{Close}$.",
    "signature": "\\cdot \\approx \\cdot \\subseteq \\mathsf{STy} \\times \\mathsf{STy}",
@@ -6260,7 +6266,7 @@
   "ty.heads": {
    "title": "$\\mathsf{ap}$",
    "meaning": "$\\mathsf{ap}(T)$ is the set of dual points of the ends a value of $T$ holds. It is $\\{\\overline{x}\\}$ for $S_x$, $\\{l\\}$ for an arrow or existential with bound $l$, and $\\varnothing$ for bound $\\cdot$. For $\\otimes$ and $\\oplus$ it is the union. An existential at $\\bot$ contributes $\\bot$.",
-   "why": "A thread blocked at $u$ while holding a value of $T$ needs $u \\prec y$ for every $y \\in \\mathsf{ap}(T)$, or the partner of a held end may wait on the thread. With $\\bot$ in the set this fails, which is what hidden ends require.",
+   "why": "A thread blocked at $u$ while holding a value of $T$ needs $u \\prec y$ for each $y \\in \\mathsf{ap}(T)$, or the partner of a held end may wait on the thread. With $\\bot$ in the set this fails, which is what hidden ends require.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{ap}(\\mathsf{Close}_{\\rho} \\otimes \\mathsf{Close}_{\\rho\\cdot 0}) = \\{\\overline{\\rho}, \\overline{\\rho\\cdot 0}\\}$ and $\\mathsf{ap}(\\exists^{\\bot}\\iota.\\,C.\\,T) = \\{\\bot\\}$.",
    "signature": "\\mathsf{ap} : \\mathsf{Ty} \\to \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Point} \\cup \\{\\bot\\})",
@@ -6367,7 +6373,7 @@
   },
   "ty.pscoped": {
    "title": "$\\mathsf{pscoped}$",
-   "meaning": "$\\mathsf{pscoped}\\,\\bar\\iota\\,T$ iff every point variable of $T$ is among $\\bar\\iota$.",
+   "meaning": "$\\mathsf{pscoped}\\,\\bar\\iota\\,T$ iff each point variable of $T$ is among $\\bar\\iota$.",
    "why": "A payload mentions only its own point variables, so unrolling a $\\mu$ never captures an outer point.",
    "breaks": "A free outer point inside a $\\mu$-body is captured on unrolling, and point substitution changes its meaning.",
    "example": "$\\mathsf{pscoped}\\,\\iota_0\\,S_{\\iota_0}$.",
@@ -6394,7 +6400,7 @@
   "ann.fuel": {
    "title": "Numbers with $\\infty$",
    "meaning": "Credits, costs, counters, tickets and the bound $N$ range over $\\mathbb{N} \\cup \\{\\infty\\}$, where $\\infty$ means unbounded and $\\infty - c = \\infty$.",
-   "why": "Deadlock-free typing sets every annotation to $\\infty$. Then a held end remains arbitrarily many actions, and the checks on credits hold.",
+   "why": "Deadlock-free typing sets each annotation to $\\infty$. Then a held end remains arbitrarily many actions, and the checks on credits hold.",
    "breaks": "Nothing. It is a definition.",
    "example": "A credit $\\infty$ aged by $3$ stays $\\infty$.",
    "signature": "\\mathbb{N} \\cup \\{\\infty\\}",
@@ -6411,7 +6417,7 @@
    "title": "Tickets $m$",
    "meaning": "$m \\in \\mathbb{N} \\cup \\{\\infty\\}$ on an end type $S_x\\inmode{lf}{^{a,m}}$ bounds the counter of the end from above, and the credit satisfies $a \\leq m$. An action on the end sets its counter back to $m$, and the tickets stay with the end, also in a payload.",
    "why": "The thread holding the partner of an end acts on other ends at most as often as the counter of the partner allows, and the tickets of the partner bound that counter. A link compares the credit of one end with this bound, so the new partner of a waiting thread has a lower counter than the old one.",
-   "breaks": "Without tickets a link can give a waiting thread a partner with a full counter in every round, and the wait never ends.",
+   "breaks": "Without tickets a link can give a waiting thread a partner with a full counter in each round, and the wait never ends.",
    "example": "A new channel at $N = 4$ may give its ends $3$ and $1$ tickets.",
    "signature": "m \\in \\mathbb{N} \\cup \\{\\infty\\}",
    "args": [
@@ -6439,7 +6445,7 @@
   "ann.tsum": {
    "title": "$\\mathsf{tk}(o) + \\mathsf{tk}(\\overline{o}) \\leq N$",
    "meaning": "The tickets of the two ends of a channel sum to at most $N$, the bound of the judgment. An end with $m$ tickets has a partner with at most $N - m$ tickets, a bound read off its own type.",
-   "why": "E-Link compares the credit of each linked end with the partner bound of the other. Then the new partner of each waiting thread has a counter below the counter of the old one, and the measure of lock-free adequacy falls at every link.",
+   "why": "E-Link compares the credit of each linked end with the partner bound of the other. Then the new partner of each waiting thread has a counter below the counter of the old one, and the measure of lock-free adequacy falls at each link.",
    "breaks": "Without the bound no premise of a link relates the counters of ends that other threads hold, and relinking a waiting end forever is accepted.",
    "example": "At $N = 4$ the two ends of a channel have $3$ and $1$ or $2$ and $2$ tickets.",
    "signature": "\\mathsf{tk}(o) + \\mathsf{tk}(\\overline{o}) \\leq N : \\mathsf{Prop}",
@@ -6477,8 +6483,8 @@
   },
   "ann.tydf": {
    "title": "$\\mathsf{ty\\_df}$",
-   "meaning": "$\\mathsf{ty\\_df}(T)$ is $T$ with every annotation at its unbounded value. Credits, costs and tickets become $\\infty$.",
-   "why": "Deadlock-free typing is the annotated typing at counter bound $N = \\infty$ with these annotations. One set of rules then serves both systems, and every premise about annotations holds at $\\infty$.",
+   "meaning": "$\\mathsf{ty\\_df}(T)$ is $T$ with each annotation at its unbounded value. Credits, costs and tickets become $\\infty$.",
+   "why": "Deadlock-free typing is the annotated typing at counter bound $N = \\infty$ with these annotations. One set of rules then serves both systems, and each premise about annotations holds at $\\infty$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{ty\\_df}(S_x^{3}) = S_x^{\\infty}$.",
    "signature": "\\mathsf{ty\\_df} : \\mathsf{Ty} \\to \\mathsf{Ty}",
@@ -6523,7 +6529,7 @@
    "title": "$\\mathsf{tfree}$",
    "meaning": "$\\mathsf{tfree}\\,T$ iff $T$ is built from $\\ast$, boxes, $\\otimes$ and $\\oplus$. A value of such a type holds no end, because $V$ at a box asks $\\Theta = \\varnothing$.",
    "why": "Aging and capture leave an entry at a $\\mathsf{tfree}$ type unchanged. P-Term asks it of the result, so no partner waits on the result of a process.",
-   "breaks": "A main thread that returns an end holds it forever, and its partner waits forever.",
+   "breaks": "A main thread that returns an end holds the end forever, and the partner of that end waits forever.",
    "example": "$\\mathsf{tfree}(\\ast \\otimes \\Box\\ldots)$.",
    "signature": "\\mathsf{tfree} : \\mathsf{Ty} \\to \\mathsf{Prop}",
    "args": [
@@ -6840,7 +6846,7 @@
   },
   "w.ws-po": {
    "title": "$x \\prec x^{+}$",
-   "meaning": "For every $x$, $x \\prec_W x^{+}$.",
+   "meaning": "For each $x$, $x \\prec_W x^{+}$.",
    "why": "An end acts at $x$ before it acts at $x^{+}$, so $\\prec_W$ contains the program order of each end.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\rho \\prec \\rho^{+}$.",
@@ -6848,7 +6854,7 @@
    "args": [
     {
      "name": "x",
-     "meaning": "Any point."
+     "meaning": "A point."
     }
    ],
    "source": [
@@ -6884,15 +6890,15 @@
   },
   "w.ws-dpo": {
    "title": "$x \\prec \\overline{x}^{+}$",
-   "meaning": "For every $x$, $x \\prec_W \\overline{x}^{+}$.",
-   "why": "The fact holds in every run. The action at $x$ synchronizes with the partner at $\\overline{x}$, and the partner acts at $\\overline{x}^{+}$ only afterwards, so $W$ may contain it for free.",
+   "meaning": "For each $x$, $x \\prec_W \\overline{x}^{+}$.",
+   "why": "The fact holds in each run. The action at $x$ synchronizes with the partner at $\\overline{x}$, and the partner acts at $\\overline{x}^{+}$ only afterwards, so $W$ may contain the fact without a premise.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\rho \\prec \\overline{\\rho}^{+}$.",
    "signature": "\\forall x.\\ x \\prec_W \\overline{x}^{+}",
    "args": [
     {
      "name": "x",
-     "meaning": "Any point."
+     "meaning": "A point."
     }
    ],
    "source": [
@@ -6951,7 +6957,7 @@
   },
   "w.ext": {
    "title": "Extension $\\sqsubseteq$",
-   "meaning": "$W \\sqsubseteq W'$ when $A \\subseteq A'$ and each fact of $W$ is a fact of $W'$. \\inmode{lf}{$R \\sqsubseteq R'$ when $B \\subseteq B'$, $R'$ keeps the order of $R$ on the points of $B$, and the kind stays, with every rank unchanged at a ranked world.}",
+   "meaning": "$W \\sqsubseteq W'$ when $A \\subseteq A'$ and each fact of $W$ is a fact of $W'$. $R \\sqsubseteq R'$ when $B \\subseteq B'$ and $R'$ keeps the order of $R$ on the points of $B$\\inmode{lf}{, and the kind stays, with each rank unchanged at a ranked world}.",
    "why": "Each fact true in $R$ stays true in each $R' \\sqsupseteq R$, so the relation is monotone in the world. A world and its extensions have one kind, so the relation at a world reads only worlds of its kind.",
    "breaks": "Nothing. It is a definition.",
    "example": "$R \\sqsubseteq R \\oplus_a C$ and $W \\sqsubseteq W \\sqcup W'$.",
@@ -7060,8 +7066,8 @@
   },
   "w.restrict": {
    "title": "Restriction $W|_S$",
-   "meaning": "$W|_S$ has the facts $x \\prec_W y$ with roots of $x, y$ in $S$.",
-   "why": "It is the derived order of $W$ on the points of the roots $S$, chains through private points included. Process typing restricts the world of a component to the constants of its interface, and that is the only order it exposes to another.",
+   "meaning": "$W|_S$ has the constants $A \\cap S$ and the facts $x \\prec_W y$ with the roots of $x$ and $y$ in $A \\cap S$.",
+   "why": "It is the derived order of $W$ on the points of the roots $S$, chains through private points included. Process typing restricts the world of a component to the constants of its interface, and that is the only order it exposes to another component.",
    "breaks": "Nothing. It is a definition.",
    "example": "$W|_{A_1 \\cap A_2}$ and $W|_{\\mathsf{I}(\\Sigma, T)}$.",
    "signature": "\\cdot|_{\\cdot} : \\mathsf{SWorld} \\to \\mathcal{P}(\\mathbb{N}) \\to \\mathsf{SWorld}",
@@ -7086,6 +7092,21 @@
      "file": "static/Hiding.v",
      "names": [
       "swrestrict_iff"
+     ]
+    },
+    {
+     "file": "types/Worlds.v",
+     "names": [
+      "croot_in"
+     ]
+    }
+   ],
+   "deviations": [
+    {
+     "kind": "renamed",
+     "reason": "$\\mathsf{root}(x) \\in A \\cap S$ is the Rocq predicate `croot_in`, which asks the root of $x$ to be a constant in the set.",
+     "names": [
+      "croot_in"
      ]
     }
    ]
@@ -7189,7 +7210,7 @@
   "w.acyc": {
    "title": "$\\mathsf{acyc}$",
    "meaning": "$\\mathsf{acyc}\\,W$ when no point $x$ has $x \\prec_W x$.",
-   "why": "A static world has a strict model exactly when it is acyclic, its own order on its points. \\inmode{lf}{Process typing at $N = \\infty$ asks for an acyclic world, which is what deadlock freedom needs.}",
+   "why": "A static world has a strict model exactly when it is acyclic, its own order on its points. Process typing asks for an acyclic world, which is what deadlock freedom needs.",
    "breaks": "A cycle $x \\prec_W y \\prec_W x$ has no model, and a semantic judgment at $W$ would hold vacuously.",
    "example": "A world with the facts $\\rho\\cdot 0 \\prec \\rho$, $\\rho\\cdot 0\\cdot 0 \\prec \\rho\\cdot 0$, and so on for each depth, is acyclic and not well-founded.",
    "signature": "\\mathsf{acyc} : \\mathsf{SWorld} \\to \\mathsf{Prop}",
@@ -7237,7 +7258,7 @@
    "deviations": [
     {
      "kind": "renamed",
-     "reason": "$\\mathsf{world\\_wf}$, $\\mathsf{acyc}$ and $\\mathsf{wf}$ stand for `sworld_wf`, `sacyc` and `swf`, without the prefix for static worlds.",
+     "reason": "$\\mathsf{world\\_wf}$, $\\mathsf{acyc}$ and $\\mathsf{wf}$ stand for `sworld_wf`, `sacyc` and `swf`, without the prefix for static worlds. The strict model is `wstrict_of`.",
      "names": [
       "dmodels_exists",
       "wstrict_of",
@@ -7250,7 +7271,7 @@
    "title": "$\\mathsf{ok}_N$",
    "meaning": "$\\mathsf{ok}_N\\,W$ is $\\mathsf{acyc}\\,W$ at $N = \\infty$ and $\\mathsf{wf}\\,W$ at a finite bound $N$.",
    "why": "Process typing asks for $\\mathsf{ok}_N$. At $N = \\infty$ typing serves deadlock freedom and needs a strict model, at a finite $N$ it serves lock freedom and needs a ranked model. Each well-founded world is acyclic.",
-   "breaks": "Asking $\\mathsf{wf}$ at $N = \\infty$ rejects deadlock-free programs whose worlds are acyclic and not well-founded.",
+   "breaks": "Asking $\\mathsf{wf}$ at $N = \\infty$ rejects deadlock-free programs whose worlds are acyclic and not well-founded, such as the recursive fork-join example.",
    "example": "$\\mathsf{ok}_\\infty\\,W = \\mathsf{acyc}\\,W$.",
    "signature": "\\mathsf{ok} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to \\mathsf{SWorld} \\to \\mathsf{Prop}",
    "args": [
