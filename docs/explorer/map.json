@@ -351,14 +351,14 @@
   {
    "id": "semantics",
    "title": "Semantics",
-   "intro": "A thread steps with a label, and a process steps by one or two thread steps. \\inmode{lf}{The section ends with the three properties the theorems establish, deadlock freedom, absence of internal divergence and lock freedom.}",
+   "intro": "The semantics is a labelled transition system in two layers. A thread steps with a label that says what the step does. A process steps by one thread step, or by two thread steps with matching labels on the two ends of one channel. Points never appear, so the semantics is that of an untyped language. \\inmode{lf}{The section ends with the three properties the theorems establish, deadlock freedom, absence of internal divergence and lock freedom.}\\inmodeplain{df}{The section ends with deadlock freedom, the property the theorems establish.}",
    "blocks": [
     {
      "id": "sem-labels",
      "title": "Thread labels",
      "formula": "\\begin{array}{rl}\n\\alpha ::= & \\sym{lbl.beta}{\\beta} \\mid \\sym{lbl.new}{\\mathsf{new}\\,c} \\mid \\sym{lbl.spawn}{\\mathsf{spawn}\\,v} \\mid \\sym{se.slabel}{\\sigma} \\\\\n\\sigma ::= & \\sym{lbl.send}{o!v} \\mid \\sym{lbl.recv}{o?v} \\mid \\sym{lbl.close}{o\\,\\mathsf{end}} \\mid \\sym{lbl.sel}{o \\lhd i} \\mid \\sym{lbl.bra}{o \\rhd i} \\mid \\sym{lbl.link}{\\leftrightarrow\\{o_1,o_2\\}}\n\\end{array}",
-     "caption": "The label $\\beta$ stands for application, unit and pair elimination, case and force. A session label $\\sigma$ is an action offered on an end.",
-     "why": "An internal step needs no other thread. A session label must be matched by the dual label of another thread.",
+     "caption": "The label $\\beta$ stands for application, unit and pair elimination, case and force. A session label $\\sigma$ is an action offered on an end. $\\mathsf{new}\\,c$ names the channel created, and $\\mathsf{spawn}\\,v$ carries the thunk of the new thread. The [[sem-head|head steps]] produce these labels, and the [[sem-proc|process steps]] match the labels of two threads.",
+     "why": "An internal step needs no other thread. A session label must be matched by the dual label of another thread, or offered to the environment. \\inmode{lf}{The [[ct-costs|step costs]] of the relation are a function of the label.}",
      "source": [
       {
        "file": "lang/Semantics.v",
@@ -378,8 +378,8 @@
      "id": "sem-head",
      "title": "Head steps (T-Act rules)",
      "formula": "\\begin{array}{l}\n\\sym{T-Act-App}{(\\lambda e)\\,v \\xrightarrow{\\beta} \\sym{se.subst}{e[v]}} \\qquad \\sym{T-Act-Let}{\\mathsf{let}\\ \\ast = \\ast\\ \\mathsf{in}\\ e \\xrightarrow{\\beta} e \\qquad \\mathsf{let}\\ \\langle a, b\\rangle = \\langle v_1, v_2\\rangle\\ \\mathsf{in}\\ e \\xrightarrow{\\beta} e[v_1, v_2]} \\\\\n\\sym{T-Act-Case}{\\mathsf{case}\\ (\\mathsf{inj}_i\\,v)\\,(e_1)\\,(e_2) \\xrightarrow{\\beta} e_i[v]} \\\\\n\\sym{T-Act-Force}{\\mathsf{force}\\,(!e) \\xrightarrow{\\beta} e[!e]} \\qquad \\sym{T-Act-New}{\\mathsf{new} \\xrightarrow{\\mathsf{new}\\,c} \\langle c^{+}, c^{-}\\rangle} \\\\\n\\sym{T-Act-Spawn}{\\mathsf{spawn}\\,v \\xrightarrow{\\mathsf{spawn}\\,v} \\ast} \\\\\n\\sym{T-Act-Send}{\\mathsf{send}\\,\\langle v, o\\rangle \\xrightarrow{o!v} o} \\\\\n\\sym{T-Act-Recv}{\\mathsf{recv}\\,o \\xrightarrow{o?v} \\langle v, o\\rangle} \\qquad \\sym{T-Act-Close}{\\mathsf{close}\\,o \\xrightarrow{o\\,\\mathsf{end}} \\ast} \\\\\n\\sym{T-Act-Select}{\\mathsf{select}_i\\,o \\xrightarrow{o\\lhd i} o} \\qquad \\sym{T-Act-Branch}{\\mathsf{branch}\\,o \\xrightarrow{o\\rhd i} \\mathsf{inj}_i\\,o} \\\\\n\\sym{T-Act-Link}{\\mathsf{link}\\,\\langle o_1, o_2\\rangle \\xrightarrow{\\leftrightarrow\\{o_1,o_2\\}} \\ast}\n\\end{array}",
-     "caption": "One head step per redex. $\\mathsf{recv}\\,o$ has a step for each value $v$ it may receive.",
-     "why": "Because a receive steps for each possible value, the step of a thread is defined without the other thread of the channel.",
+     "caption": "One head step per redex of the [[syn-terms|term syntax]], with the [[sem-labels|labels]] above. The redexes of the [[syn-prims|constants]] have session labels, $\\mathsf{new}$ and $\\mathsf{spawn}$ their own labels, and the rest $\\beta$. $\\mathsf{recv}\\,o$ has a step for each value $v$ it may receive, and $\\mathsf{branch}\\,o$ one for each side. [[sem-ctx|T-Act-Ctx]] lifts a head step through an evaluation frame.",
+     "why": "Because a receive steps for each possible value, the step of a thread is defined without the other thread of the channel. The process rules then pair a send with the receive of the same value.",
      "source": [
       {
        "file": "lang/Semantics.v",
@@ -397,8 +397,8 @@
      "id": "sem-ctx",
      "title": "Evaluation frames (T-Act-Ctx)",
      "formula": "\\dfrac{\\sym{T-Act-Ctx}{e \\xrightarrow{\\alpha} e'}\\quad \\sym{sem.frameval}{\\mathsf{frame\\_val}\\,f}}{\\sym{se.frame}{f[e]} \\xrightarrow{\\alpha} f[e']}\\;\\textsf{T-Act-Ctx}",
-     "caption": "Steps lift through one evaluation frame $f$ at a time, never under $\\lambda$ or $!$.",
-     "why": "Evaluation is call by value from left to right. A $\\lambda$ or a box delays its body until it is applied or forced.",
+     "caption": "Steps lift through one evaluation frame $f$ at a time, never under $\\lambda$ or $!$. The [[sem-head|head steps]] are the base case.",
+     "why": "Evaluation is call by value from left to right. A $\\lambda$ or a box delays its body until it is applied or forced, so a term has at most one redex and a thread at most one offered action per end.",
      "source": [
       {
        "file": "lang/Semantics.v",
@@ -417,8 +417,8 @@
      "id": "sem-proc",
      "title": "Process steps (P-Act rules)",
      "formula": "\\begin{array}{l}\n\\sym{P-Act-Beta}{M(i) \\xrightarrow{\\beta} e'} \\\\ \\qquad \\Rightarrow\\ (C, \\sym{se.upd}{M[i \\mapsto e']}) \\\\[4pt]\n\\sym{P-Act-New}{M(i) \\xrightarrow{\\mathsf{new}\\,c} e',\\ \\sym{sem.fresh-global}{c \\notin C \\cup \\sym{se.echans}{\\mathsf{echans}(M)}}} \\\\ \\qquad \\Rightarrow\\ (C \\cup \\{c\\}, M[i\\mapsto e']) \\\\[4pt]\n\\sym{P-Act-Spawn}{M(i) \\xrightarrow{\\mathsf{spawn}\\,v} e',\\ j \\notin \\mathsf{dom}\\,M} \\\\ \\qquad \\Rightarrow\\ (C, M[i\\mapsto e'][j \\mapsto v\\,\\ast]) \\\\[4pt]\n\\sym{P-Act-Msg}{M(i) \\xrightarrow{o!v} e',\\ M(j) \\xrightarrow{\\overline{o}?v} f',\\ i \\neq j} \\\\ \\qquad \\Rightarrow\\ (C, M[i\\mapsto e'][j\\mapsto f']) \\\\[4pt]\n\\sym{P-Act-Close}{M(i) \\xrightarrow{o\\,\\mathsf{end}} e',\\ M(j) \\xrightarrow{\\overline{o}\\,\\mathsf{end}} f',\\ i \\neq j,\\ \\sym{end.ech}{\\mathsf{ech}}\\,o \\in C} \\\\ \\qquad \\Rightarrow\\ (C \\setminus \\{\\sym{end.ech}{\\mathsf{ech}}\\,o\\}, M[i\\mapsto e'][j\\mapsto f']) \\\\[4pt]\n\\sym{P-Act-Choice}{M(i) \\xrightarrow{o\\lhd b} e',\\ M(j) \\xrightarrow{\\overline{o}\\rhd b} f',\\ i \\neq j} \\\\ \\qquad \\Rightarrow\\ (C, M[i\\mapsto e'][j\\mapsto f']) \\\\[4pt]\n\\sym{P-Act-Link}{M(i) \\xrightarrow{\\leftrightarrow\\{o_1,o_2\\}} e',\\ \\sym{end.ech}{\\mathsf{ech}}\\,o_1 \\in C} \\\\ \\qquad \\Rightarrow\\ (C\\setminus\\{\\sym{end.ech}{\\mathsf{ech}}\\,o_1\\}, \\sym{link.csub}{\\mathsf{csub}\\,o_1\\,o_2} \\circ M[i\\mapsto e']) \\\\[4pt]\n\\sym{P-Act-Session}{M(i) \\xrightarrow{\\sigma} e',\\ \\sym{se.subj}{\\mathsf{subj}\\,\\sigma} \\cap C = \\varnothing} \\\\ \\qquad \\Rightarrow\\ (C \\setminus \\sym{sem.sentc}{\\mathsf{sentc}\\,\\sigma}, M[i\\mapsto e'])\n\\end{array}",
-     "caption": "Each rule combines the steps of one or two threads into a step of the configuration $(C, M)$.",
-     "why": "A message pairs a send and a receive on the two ends of one channel. Internal steps involve one thread.",
+     "caption": "Each rule combines the [[sem-head|steps]] of one or two threads into a step of the configuration $(C, M)$ of [[syn-procs]]. A $\\beta$ step, a creation and a spawn involve one thread. A message, a close and a choice pair a session [[sem-labels|label]] on $o$ with the dual label on $\\overline{o}$ in another thread. A close of a restricted channel removes the channel from $C$, and a link removes the channel of $o_1$ and renames the other threads by [[syn-csub|$\\mathsf{csub}$]]. P-Act-Session offers an action on an interface channel to the environment, and a send to the environment moves the channels of its payload out of $C$.",
+     "why": "A message pairs a send and a receive on the two ends of one channel. Internal steps involve one thread. Only a close and a link change $C$, so these two rules ask the channel to be restricted. A message or a choice on an interface channel between two threads of the process cannot occur in a typed process, because the interface holds at most one end of a channel.",
      "source": [
       {
        "file": "lang/Process.v",
@@ -437,8 +437,8 @@
      "id": "sem-events",
      "title": "Events",
      "formula": "\\begin{array}{l}\n\\sym{ev.event}{ev ::= \\mathsf{solo}_i\\,\\alpha\\,k \\mid \\mathsf{sync}_{i,j}\\,\\sigma \\mid \\mathsf{offer}_i\\,\\sigma} \\qquad \\sym{ev.pick}{k ::= \\cdot \\mid j \\mid (o_1, o_2)} \\\\\n\\sym{ev.admin}{\\mathsf{admin} = \\{\\mathsf{solo}_i\\,\\alpha\\,k\\}} \\qquad \\sym{ev.tau}{\\tau = \\mathsf{Event} \\setminus \\{\\mathsf{offer}_i\\,\\sigma\\}} \\qquad \\sym{se.parts}{\\mathsf{parts}(ev)}\n\\end{array}",
-     "caption": "An event $ev$ records the threads $\\mathsf{parts}(ev)$ that took part in a step, and the channel or ends of the step. An event in $\\tau$ makes no offer to the environment, and an administrative event involves one thread and no session action.",
-     "why": "\\inmode{lf}{Lock freedom is stated in terms of the threads that take part in steps, which the event of each step records.}",
+     "caption": "An event $ev$ records the threads $\\mathsf{parts}(ev)$ that took part in a [[sem-proc|process step]], and the channel or ends of the step. An event in $\\tau$ makes no offer to the environment, and an administrative event involves one thread and no session action.",
+     "why": "Deadlock freedom reads only $\\tau$ steps, the steps a closed process can take. \\inmode{lf}{Lock freedom is stated in terms of the threads that take part in steps, which the event of each step records.}",
      "source": [
       {
        "file": "lang/Process.v",
@@ -459,8 +459,8 @@
      "id": "sem-props",
      "title": "Properties",
      "formula": "\\begin{array}{l}\n\\sym{prop.terminated}{\\mathsf{terminated}\\,p \\iff p = (\\varnothing, \\{v\\} \\uplus E),\\ E \\subseteq \\{\\ast\\}} \\\\\n\\sym{prop.df}{\\mathsf{deadlock\\_free}\\,p \\iff \\forall p'.\\ p \\sym{se.reach}{\\to^{*}} p' \\Rightarrow \\mathsf{terminated}\\,p' \\lor \\exists p''.\\ p' \\to p''}\n\\inmodeplain{lf}{ \\\\ }\\inmode{lf}{\\sym{prop.notau}{\\mathsf{no\\_tau\\_divergence}\\,p \\iff \\forall q.\\ p \\to^{*} q \\Rightarrow \\sym{se.acc}{\\mathsf{Acc}}\\ \\sym{prop.padmin}{\\to_{\\mathsf{admin}}}\\ q}}\n\\inmodeplain{lf}{ \\\\ }\\inmode{lf}{\\sym{prop.lf}{\\begin{array}{l} \\mathsf{lock\\_free}\\,p \\iff \\forall \\sym{se.run}{(r, l) \\in \\mathsf{Run}}.\\ \\sym{se.r0}{\\sym{proc.erase}{\\mathsf{erase}}(r_0) = p} \\Rightarrow \\sym{prop.maximal}{\\mathsf{maximal}\\,r\\,l} \\Rightarrow \\sym{prop.wfair}{\\mathsf{wfair}\\,r\\,l} \\Rightarrow {} \\\\ \\qquad \\sym{prop.lfrun}{\\forall i\\,t.\\ \\sym{prop.pend}{\\mathsf{pend}(r_i, t)} \\Rightarrow \\exists j \\geq i.\\ t \\in \\sym{se.parts}{\\mathsf{parts}(l_j)}} \\end{array}}}\n\\end{array}",
-     "caption": "\\inmode{lf}{A process is deadlock free when each reachable process has terminated or can step.} \\inmode{lf}{It has no internal divergence when no reachable process runs internal steps forever. A run is a sequence of configurations $r$, and $l$ gives the event between consecutive configurations. \\inmode{lf}{The process is lock free when, on each weakly fair maximal run, each thread $t$ that is pending at some position takes part in a later step.}}",
-     "why": "The theorems establish these properties for typed processes.",
+     "caption": "A process is deadlock free when each process reachable by [[sem-proc|$\\tau$ steps]] has terminated or can step. A terminated process has no restricted channel, a value in its main thread and $\\ast$ in each other thread. \\inmode{lf}{It has no internal divergence when no reachable process runs internal steps forever. A run is a sequence of configurations $r$, and $l$ gives the [[sem-events|event]] between consecutive configurations. \\inmode{lf}{The process is lock free when, on each weakly fair maximal run, each thread $t$ that is pending at some position takes part in a later step. A thread is pending when its next step is a session action.}}",
+     "why": "The theorems establish these properties for typed processes. Deadlock freedom allows one thread to wait forever while others step. \\inmode{lf}{Lock freedom excludes that. It quantifies over weakly fair runs, because without fairness a scheduler could withhold each step from a thread that is able to step.}",
      "source": [
       {
        "file": "lang/Safety.v",
@@ -484,7 +484,8 @@
      "usedIn": [
       "th-adeq",
       "th-sound"
-     ]
+     ],
+     "breaks": "A process in which thread $1$ closes $c^{+}$ and then $d^{+}$ while thread $2$ closes $d^{-}$ and then $c^{-}$ is stuck at once, and it is not deadlock free. \\inmode{lf}{A server that serves one client forever while a second client waits is deadlock free and not lock free.}"
     }
    ]
   },
@@ -1558,12 +1559,12 @@
   {
    "id": "semantic",
    "title": "Semantic typing",
-   "intro": "The logical relation defines when a value, a term and a process are safe, by induction on an ordinal step index. \\inmode{lf}{Typed programs are safe by the fundamental theorems, and safe closed processes are deadlock free by adequacy.} \\inmode{lf}{For lock freedom we read the same relation with other step costs, add fuel to each thread, and combine the two in the lock-free process relation.}",
+   "intro": "The logical relation defines when a value, a term and a process are safe, by induction on an ordinal step index. Typed programs are safe by the fundamental theorems, and safe closed processes are deadlock free by adequacy. \\inmode{lf}{For lock freedom we read the same relation with other step costs, add fuel to each thread, and combine the two in the lock-free process relation.}",
    "blocks": [
     {
      "id": "sr-reading",
      "title": "Reading the relations",
-     "caption": "The relations $V$, $E$ and $P$ relate a value, a term or a process to the environment $\\Theta$ of the ends it owns. The relations are indexed by a world $R$ of the relation, whose order they read, and an ordinal index $\\alpha$. \\inmode{lf}{The deadlock-free relation reads strict worlds.} \\inmode{lf}{The threads of the lock-free process relation read ranked worlds.} A term is safe when it is a safe value, or when it is ready and each of its steps leads to a safe term at every lower index the cost of the step allows. Readiness says that a stuck term waits below the dual points of the ends it holds. Processes are safe in the same way and remain safe when their ends are fused, so composing two safe processes needs no further proof. \\inmode{lf}{Fuel is a second predicate on each thread, which holds the ends $\\Phi$ with their counters and returns within $d$ actions. \\inmode{lf}{The lock-free process relation requires both of every thread.}}",
+     "caption": "The relations $V$, $E$ and $P$ relate a value, a term or a process to the environment $\\Theta$ of the ends it owns. The relations are indexed by a world $R$ of the relation, whose order they read, and an ordinal index $\\alpha$. The deadlock-free relation reads strict worlds. \\inmode{lf}{The threads of the lock-free process relation read ranked worlds.} A term is safe when it is a safe value, or when it is ready and each of its steps leads to a safe term at every lower index the cost of the step allows. Readiness says that a stuck term waits below the dual points of the ends it holds. Processes are safe in the same way and remain safe when their ends are fused, so composing two safe processes needs no further proof. \\inmode{lf}{Fuel is a second predicate on each thread, which holds the ends $\\Phi$ with their counters and returns within $d$ actions. \\inmode{lf}{The lock-free process relation requires both of every thread.}}",
      "why": "Each row says in words what one judgment of this section means.",
      "source": [
       {
@@ -1625,7 +1626,7 @@
      "title": "Ordinal indices",
      "formula": "\\begin{array}{l}\n\\sym{ord.ord}{\\alpha, \\beta ::= 0 \\mid \\alpha + 1 \\mid \\sup_{x \\in X} f(x)} \\qquad \\sym{ord.lt}{\\beta < \\alpha \\iff \\beta + 1 \\leq \\alpha} \\qquad \\sym{ord.wf}{\\nexists (\\alpha_i)_{i \\in \\mathbb{N}}.\\ \\forall i.\\ \\alpha_{i+1} < \\alpha_i} \\\\\n\\sym{ord.add}{\\beta + c = \\beta \\underbrace{+ 1 \\cdots + 1}_{c}} \\qquad \\sym{ord.fix}{\\mathsf{osfix}\\,F\\,\\alpha = F\\,(\\lambda \\beta < \\alpha.\\ \\mathsf{osfix}\\,F\\,\\beta)\\,\\alpha}\\inmodeplain{lf}{ \\\\ }\\inmode{lf}{\\sym{ord.exprop}{\\mathsf{EM} \\land \\mathsf{FC} \\land (\\forall \\alpha.\\ \\exists x.\\ P\\,x\\,\\alpha) \\land (\\beta \\leq \\alpha \\land P\\,x\\,\\alpha \\Rightarrow P\\,x\\,\\beta) \\Rightarrow \\exists x.\\ \\forall \\alpha.\\ P\\,x\\,\\alpha}}\n\\end{array}",
      "caption": "The relation is indexed by ordinals $\\alpha$ and $\\beta$, Brouwer trees whose limits are suprema of families $f$ over index types $X$. Their order is well-founded, so the relation is defined by recursion on the index with $\\mathsf{osfix}$. A step of cost $c$ moves from $\\alpha$ to each index $\\beta$ with $\\beta + c \\leq \\alpha$. \\inmode{lf}{The existential property turns a witness $x$ of a family $P$ at each index into one witness for all indices. \\inmode{lf}{It needs excluded middle and functional choice, and only the lock-free results use it.}}",
-     "why": "Finite step indices cannot fix a choice made at each index once for all indices. \\inmode{lf}{Ordinal indices with limits can, and the deadlock-free proofs read them as they read natural numbers.}",
+     "why": "Finite step indices cannot fix a choice made at each index once for all indices. Ordinal indices with limits can, and the deadlock-free proofs read them as they read natural numbers.",
      "source": [
       {
        "file": "relation/Ord.v",
@@ -1654,7 +1655,7 @@
      "variants": {
       "df": "\\begin{array}{c}\\begin{array}{lc}\n & \\sym{ct.DF}{\\kappa_{DF}} \\\\ \\hline\n\\sym{ct.beta}{\\beta} & 1 \\\\\n\\sym{ct.new}{\\mathsf{new}} & 1 \\\\\n\\sym{ct.spawn}{\\mathsf{spawn}} & 1 \\\\\n\\sym{ct.link}{\\mathsf{link}} & 0 \\\\\n\\sym{ct.give}{\\mathsf{send},\\ \\mathsf{select},\\ \\mathsf{close}} & 0 \\\\\n\\sym{ct.takek}{\\mathsf{recv},\\ \\mathsf{branch}} & 1 \\\\\n\\sym{ct.sync}{\\kappa_{give} + \\kappa_{take}} & 1\n\\end{array}\\end{array}"
      },
-     "caption": "\\inmode{lf}{The number of levels each kind of step consumes in the deadlock-free relation.} \\inmode{lf}{A cost table $\\kappa$ assigns these numbers subject to three conditions. \\inmode{lf}{The lock-free relation uses $\\kappa_L$, in which internal steps are free.}}",
+     "caption": "The number of levels each kind of step consumes in the deadlock-free relation. \\inmode{lf}{A cost table $\\kappa$ assigns these numbers subject to three conditions. \\inmode{lf}{The lock-free relation uses $\\kappa_L$, in which internal steps are free.}}",
      "why": "The costs fix how far the level drops at a step. \\inmode{lf}{A step of cost $0$ is read at the same level, so a thread cannot take infinitely many of them.}",
      "source": [
       {
@@ -1783,7 +1784,7 @@
      "title": "Readiness",
      "formula": "\\begin{array}{c}\\begin{array}{rcl}\n\\sym{sr.ready}{\\mathsf{ready}_R(\\Theta \\mid F, t)} & \\iff & \\sym{rd.stable}{\\mathsf{stable}\\,t} \\Longrightarrow \\sym{rd.value}{\\mathsf{done}} \\land \\sym{rd.below-rest}{\\mathsf{ordered}} \\\\[1ex]\n\\sym{rd.value}{\\mathsf{done}} & \\iff & \\sym{rd.value}{O = \\varnothing \\Rightarrow t \\in \\mathsf{Val}} \\\\\n\\sym{rd.below-rest}{\\mathsf{ordered}} & \\iff & \\sym{rd.link}{\\mathsf{link}\\,t} \\lor {} \\sym{rd.below-rest}{\\forall o \\in O.\\ \\sym{rd.below-held}{(\\forall o' \\in \\mathrm{dom}\\,\\Theta \\setminus O.\\ R \\vdash x_o \\prec \\overline{x_{o'}})} \\land \\sym{rd.below-future}{(\\forall y \\in F.\\ R \\vdash x_o \\prec y)}} \\\\[1ex]\n & & O = \\sym{rd.offered}{\\mathsf{offered}_\\Theta(t)} \\qquad \\Theta(o) = S_{x_o}\n\\end{array}\\\\[3ex]\\begin{array}{rcl}\n\\sym{sr.readyp}{\\mathsf{ready}_R(\\Sigma, p)} & \\iff & \\sym{rd.p-stable}{\\mathsf{stable}\\,p} \\Longrightarrow \\sym{rd.link}{\\mathsf{link}\\,p} \\lor (\\sym{rd.p-term}{\\mathsf{done}} \\land \\sym{rd.above-offered}{\\mathsf{covered}}) \\\\[1ex]\n\\sym{rd.p-term}{\\mathsf{done}} & \\iff & \\sym{rd.p-term}{O = \\varnothing \\Rightarrow \\sym{prop.terminated}{\\mathsf{terminated}}\\,p} \\\\\n\\sym{rd.above-offered}{\\mathsf{covered}} & \\iff & \\sym{rd.above-offered}{\\forall o \\in \\mathrm{dom}\\,\\Sigma \\setminus O.\\ \\exists o' \\in O.\\ R \\vdash x_{o'} \\prec \\overline{x_o}} \\\\[1ex]\n & & O = \\sym{rd.offered}{\\mathsf{offered}_\\Sigma(p)}\n\\end{array}\\end{array}",
      "caption": "Readiness constrains a stuck term, one that can only offer actions. A stuck term has finished when it offers nothing, and each end it offers lies below the dual points of the ends it keeps and below its future. A stuck process is at a link, or has finished when it offers nothing, and each interface end it keeps has an offered end below its dual point. Internal channels have no points. $O$ is the set of ends a stuck term or process offers.",
-     "why": "In a strict order some stuck thread waits at a minimal point, and the thread holding the dual end can act with that thread. \\inmode{lf}{Adequacy uses this argument to derive deadlock freedom from readiness.}",
+     "why": "In a strict order some stuck thread waits at a minimal point, and the thread holding the dual end can act with that thread. Adequacy uses this argument to derive deadlock freedom from readiness.",
      "source": [
       {
        "file": "relation/Readiness.v",
@@ -2316,7 +2317,7 @@
      "variants": {
       "df": "\\begin{array}{c}\\begin{array}{l}\n\\sym{sj.at}{\\Delta \\mathrel{\\sym{sj.term}{\\vDash}}^{X}_R e : T \\iff \\forall n, R' \\mathrel{\\sym{w.ext}{\\sqsupseteq}} R, \\Theta', \\gamma.\\ \\sym{sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\sym{sj.at}{\\sym{sj.grel}{\\gamma \\in G^{R'}_{\\alpha}\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\sym{th.Erel}{E^{R'}_{\\alpha}\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\sym{sj.term}{\\Delta \\vDash^{F}_R e : T \\iff \\forall Y, Z.\\ \\Delta \\vDash^{\\sym{sj.den}{\\mathsf{den}_{Y,Z}(F)}}_R e : T} \\\\\n\\sym{sj.proc}{\\Sigma \\vDash_R p : T \\iff \\forall \\alpha.\\ p \\in \\sym{th.Prel}{P^{R}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket}} \\\\\n\\sym{sj.sw}{\\Sigma \\vDash_W p : T \\iff \\forall R \\vDash W.\\ \\sym{w.strict}{\\mathsf{strict}}\\,R \\Rightarrow \\Sigma \\vDash_R p : T} \\\\\n\\sym{sj.h}{\\Sigma \\vDash^{h}_W p : T \\iff \\exists W'.\\ \\sym{w.wf}{\\mathsf{world\\_wf}}\\,W' \\land \\sym{w.acyc}{\\mathsf{acyc}}\\,W' \\land \\sym{sj.hides}{W' \\rightsquigarrow_{\\sym{tp.iface}{\\mathsf{I}(\\Sigma, T)}} W} \\land \\Sigma \\vDash_{W'} p : T}\n\\end{array}\\end{array}"
      },
-     "caption": "The semantic judgments quantify over ordinal indices, larger worlds and substitutions, and read the static future at each of its denotations. \\inmode{lf}{A semantic judgment at a static world $W$ holds at each world of the relation that models $W$, a strict one for deadlock freedom.} \\inmode{lf}{The lock-free judgment at the bound $N$ holds at each ranked world that models $W$ and chooses the annotated configuration at each index. The creation choice of each channel is an existential inside O-New.} A grounding $\\gamma$ in the relation $G$ on contexts substitutes values for the variables of $\\Delta$, and the sets $Y$ and $Z$ denote the rest and the flag $\\bot$ of a future.",
+     "caption": "The semantic judgments quantify over ordinal indices, larger worlds and substitutions, and read the static future at each of its denotations. A semantic judgment at a static world $W$ holds at each world of the relation that models $W$, a strict one for deadlock freedom. \\inmode{lf}{The lock-free judgment at the bound $N$ holds at each ranked world that models $W$ and chooses the annotated configuration at each index. The creation choice of each channel is an existential inside O-New.} A grounding $\\gamma$ in the relation $G$ on contexts substitutes values for the variables of $\\Delta$, and the sets $Y$ and $Z$ denote the rest and the flag $\\bot$ of a future.",
      "why": "The fundamental theorems conclude the semantic judgments, and adequacy takes a semantic judgment as its premise.",
      "source": [
       {
@@ -2380,13 +2381,13 @@
   {
    "id": "theorems",
    "title": "Theorems",
-   "intro": "\\inmode{lf}{Typed closed processes are deadlock free, and the proof goes through the logical relation.} The section opens with the chain of results and then states each of them for processes. The lemmas about terms come last. \\inmode{lf}{The deadlock-free, hidden and n-ary results take no classical hypothesis.} \\inmode{lf}{The lock-free results stand next to their deadlock-free counterparts and take excluded middle and functional choice as explicit hypotheses.}",
+   "intro": "Typed closed processes are deadlock free, and the proof goes through the logical relation. The section opens with the chain of results and then states each of them for processes. The lemmas about terms come last. The deadlock-free, hidden and n-ary results take no classical hypothesis. \\inmode{lf}{The lock-free results stand next to their deadlock-free counterparts and take excluded middle and functional choice as explicit hypotheses.}",
    "blocks": [
     {
      "id": "th-chain",
      "title": "How the results fit together",
      "formula": "\\begin{array}{rcl}\n\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{\\infty}}_W} p : T & \\overset{\\sym{th.fundamental-proc}{\\textsf{fundamental\\_proc\\_h}}}{\\Longrightarrow} & \\Sigma \\sym{sj.h}{\\mathrel{\\sym{sj.term}{\\vDash}}^{h}}_W p : T \\\\[1ex]\n\\varnothing \\sym{sj.h}{\\mathrel{\\sym{sj.term}{\\vDash}}^{h}}_W p : T & \\overset{\\sym{th.adequacy-h}{\\textsf{adequacy\\_h}}}{\\Longrightarrow} & \\sym{prop.df}{\\mathsf{deadlock\\_free}}\\,p\n\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\sym{th.em}{\\mathsf{EM}} \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_{W\\inmode{lf}{,N}} t : T\\ !\\ c \\land \\sym{guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\land \\sym{w.sat}{R \\mathrel{\\sym{sj.proc}{\\vDash}} W}}\\inmodeplain{lf}{&}\\inmode{lf}{\\overset{\\sym{th.live-fundamental-ranked}{\\textsf{live\\_fundamental\\_ranked}}}{\\Longrightarrow}}\\inmodeplain{lf}{&}\\inmode{lf}{\\sym{th.df}{\\Delta_{df}} \\sym{sj.term}{\\mathrel{\\sym{sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{\\varnothing}_R t : T_{df}}\n\\inmodeplain{lf}{\\\\[1ex]}\\inmode{lf}{\\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_{W\\inmode{lf}{,N}} t : T\\ !\\ c \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\sym{th.crle}{\\mathsf{cr}(\\Delta) \\leq N}}\\inmodeplain{lf}{&}\\inmode{lf}{\\overset{\\sym{th.fsem-of-cost}{\\textsf{fsem\\_of\\_cost}}}{\\Longrightarrow}}\\inmodeplain{lf}{&}\\inmode{lf}{\\sym{fu.fsem}{\\mathsf{fsem}\\,N\\,\\sym{th.styof}{\\Delta\\inmode{lf}{^{N}}}\\,t}}\n\\inmodeplain{lf}{\\\\[1ex]}\\inmode{lf}{\\sym{th.em}{\\mathsf{EM}} \\land \\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{\\inmode{lf}{^{N}}}_W} p : T \\land \\sym{guard.proc}{\\vdash\\!\\triangleright p}}\\inmodeplain{lf}{&}\\inmode{lf}{\\overset{\\sym{th.lf-fundamental}{\\textsf{lf\\_fundamental\\_h}}}{\\Longrightarrow}}\\inmodeplain{lf}{&}\\inmode{lf}{\\Sigma \\sym{sp.lfsemh}{\\mathrel{\\sym{sp.lfsem}{\\Vvdash}}^{N,h}}_W p : T}\n\\inmodeplain{lf}{\\\\[1ex]}\\inmode{lf}{\\sym{w.kind}{\\mathsf{ranked}}\\,R \\land \\varnothing \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_R p : T}\\inmodeplain{lf}{&}\\inmode{lf}{\\overset{\\sym{th.lf-adequacy}{\\textsf{lf\\_adequacy}}}{\\Longrightarrow}}\\inmodeplain{lf}{&}\\inmode{lf}{\\sym{prop.lf}{\\mathsf{lock\\_free}}\\,p}\n\\end{array}",
-     "caption": "\\inmode{lf}{Typing gives the hidden semantic judgment, and that judgment gives deadlock freedom.} \\inmode{lf}{Both steps use the relation $(V, E, P)$ at the step costs $\\kappa_{DF}$ over strict worlds, and neither needs excluded middle.} \\inmode{lf}{Lock freedom uses the same relation at $\\kappa_L$, which excludes internal divergence, together with fuel, over ranked worlds. \\inmode{lf}{The lock-free process relation combines both for each thread.} \\inmode{lf}{Lock-free adequacy measures a wait on $o$ by $\\mu(t) = (\\varrho(\\mathsf{pt}\\,o), f)$, the ordinal rank of the point of $o$ and the counter $f$ of the dual end $\\overline{o}$.} A step of the thread holding $\\overline{o}$ on another end decreases $f$, which F-Count keeps at $1$ or more. \\inmode{lf}{A link gives the waiting thread a partner with a lower counter, by the premise of E-Link and the bound on tickets.} So the thread holding $\\overline{o}$ acts on $\\overline{o}$ after finitely many steps. \\inmode{lf}{Excluded middle enters at the creations under $\\mathsf{gen\\_new}$ and at the existential property of ordinal indices.} The arrows are proved in [[th-fund-proc]], [[th-adeq]] and [[th-terms]].}",
+     "caption": "Typing gives the hidden semantic judgment, and that judgment gives deadlock freedom. \\inmode{lf}{Both steps use the relation $(V, E, P)$ at the step costs $\\kappa_{DF}$ over strict worlds, and neither needs excluded middle.} \\inmode{lf}{Lock freedom uses the same relation at $\\kappa_L$, which excludes internal divergence, together with fuel, over ranked worlds. \\inmode{lf}{The lock-free process relation combines both for each thread.} \\inmode{lf}{Lock-free adequacy measures a wait on $o$ by $\\mu(t) = (\\varrho(\\mathsf{pt}\\,o), f)$, the ordinal rank of the point of $o$ and the counter $f$ of the dual end $\\overline{o}$.} A step of the thread holding $\\overline{o}$ on another end decreases $f$, which F-Count keeps at $1$ or more. \\inmode{lf}{A link gives the waiting thread a partner with a lower counter, by the premise of E-Link and the bound on tickets.} So the thread holding $\\overline{o}$ acts on $\\overline{o}$ after finitely many steps. \\inmode{lf}{Excluded middle enters at the creations under $\\mathsf{gen\\_new}$ and at the existential property of ordinal indices.} The arrows are proved in [[th-fund-proc]], [[th-adeq]] and [[th-terms]].}",
      "why": "Each arrow is one theorem of this section. \\inmode{lf}{The lock-free rows show what lock freedom adds to the deadlock-free proof.}",
      "source": [
       {
@@ -2433,7 +2434,7 @@
      "id": "th-sound",
      "title": "Soundness",
      "formula": "\\begin{array}{l}\\sym{th.soundness}{\\begin{array}{l}\\varnothing \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\sym{prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}} \\\\[1.5ex] \\sym{th.connect-n}{\\begin{array}{l}\\sym{th.pcomps}{\\mathsf{comps}_{\\infty}(\\bar W, p, T)} \\land \\sym{w.acyc}{\\mathsf{acyc}}\\,(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n) \\\\ \\quad\\Longrightarrow\\ \\sym{prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.live-soundness}{\\begin{array}{l}\\varnothing \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{\\infty}}_W} p : T \\land \\sym{guard.proc}{\\vdash\\!\\triangleright p} \\\\ \\quad\\Longrightarrow\\ \\sym{prop.df}{\\mathsf{deadlock\\_free}}\\,p \\land \\sym{prop.notau}{\\mathsf{no\\_tau\\_divergence}}\\,p\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-soundness}{\\begin{array}{l}\\sym{th.em}{\\mathsf{EM}} \\land \\sym{th.ac}{\\mathsf{FC}} \\land \\varnothing \\sym{tp.pjudg}{\\vdash\\inmode{lf}{\\inmode{lf}{^{N}}}_W} p : T \\land N \\in \\mathbb{N} \\land \\mathrel{\\sym{guard.proc}{\\vdash\\!\\triangleright}} p \\\\ \\quad\\Longrightarrow\\ \\sym{prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-connect-n}{\\begin{array}{l}\\sym{th.em}{\\mathsf{EM}} \\land \\sym{th.ac}{\\mathsf{FC}} \\land \\sym{th.pcomps}{\\mathsf{comps}_{N}(\\bar W, p, T)} \\land \\sym{w.lfworld}{\\mathsf{wf}}\\,(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n) \\land \\mathrel{\\sym{guard.proc}{\\vdash\\!\\triangleright}} p \\\\ \\quad\\Longrightarrow\\ \\sym{prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.fair-run-exists}{\\begin{array}{l}\\mathsf{EM} \\land \\sym{th.dc}{\\mathsf{DC}} \\\\ \\quad\\Longrightarrow\\ \\exists (r, l).\\ \\sym{proc.erase}{\\mathsf{erase}}\\,(r\\,0) = p \\land \\sym{prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\sym{prop.wfair}{\\mathsf{wfair}}\\,(r, l)\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-padovani}{\\begin{array}{l}\\begin{array}{l}\\mathsf{EM} \\land \\mathsf{DC} \\land \\sym{prop.lf}{\\mathsf{lock\\_free}}\\,p \\land \\sym{proc.erase}{\\mathsf{erase}}\\,q_0 = p \\\\ \\land\\ q_0 \\to^{*} q \\land \\sym{prop.pend}{\\mathsf{pend}(q, t)}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\exists q_1\\,ev\\,q_2.\\ q \\to^{*} q_1 \\xrightarrow{ev} q_2 \\land t \\in \\sym{se.parts}{\\mathsf{parts}(ev)}\\end{array}}}\\end{array}",
-     "caption": "\\inmode{lf}{A closed typed process is deadlock free, and so is a closed n-ary composite whose hidden worlds join acyclically.} No classical hypothesis enters. \\inmode{lf}{With each thread guarded it also has no internal divergence. \\inmode{lf}{Under excluded middle and functional choice, a closed process typed at a finite bound $N$, with each thread guarded, is lock free.} The proof combines [[th-fund-proc]] and [[th-adeq]] for the rules of [[p-typing]].}",
+     "caption": "A closed typed process is deadlock free, and so is a closed n-ary composite whose hidden worlds join acyclically. No classical hypothesis enters. \\inmode{lf}{With each thread guarded it also has no internal divergence. \\inmode{lf}{Under excluded middle and functional choice, a closed process typed at a finite bound $N$, with each thread guarded, is lock free.} The proof combines [[th-fund-proc]] and [[th-adeq]] for the rules of [[p-typing]].}",
      "why": "These are the main results.",
      "source": [
       {
@@ -2567,7 +2568,7 @@
      "id": "th-adeq",
      "title": "Adequacy",
      "formula": "\\begin{array}{c}\\begin{array}{l}\\sym{th.adequacy}{\\begin{array}{l}\\varnothing \\sym{sj.proc}{\\vDash}_R p : T \\\\ \\quad\\Longrightarrow\\ \\sym{prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}} \\\\[1.5ex] \\sym{th.adequacy-h}{\\begin{array}{l}\\varnothing \\sym{sj.h}{\\mathrel{\\sym{sj.term}{\\vDash}}^{h}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\sym{prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.live-sub-df}{\\begin{array}{l}\\sym{th.em}{\\mathsf{EM}} \\land \\sym{th.ac}{\\mathsf{FC}} \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\sym{th.boxfree}{\\mathsf{boxfree}}\\,T \\land \\varnothing \\sym{sj.proc}{\\mathrel{|\\!\\!\\vDash}}_R p : T \\\\ \\quad\\Longrightarrow\\ \\varnothing \\sym{sj.proc}{\\vDash}_R p : T\\end{array}}}\\end{array}\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\begin{array}{l}\\inmode{lf}{\\sym{th.lf-adequacy}{\\begin{array}{l}\\sym{w.kind}{\\mathsf{ranked}}\\,R \\land \\varnothing \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_R p : T \\\\ \\quad\\Longrightarrow\\ \\sym{prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-thread-progress}{\\begin{array}{l}\\sym{w.kind}{\\mathsf{ranked}}\\,R \\land \\varnothing \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_R p : T \\\\ \\quad\\Longrightarrow\\ \\begin{array}{l}\\forall (r, l).\\ \\sym{proc.erase}{\\mathsf{erase}}\\,(\\sym{se.run}{r\\,0}) = p \\land \\sym{prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\sym{prop.wfair}{\\mathsf{wfair}}\\,(r, l) \\\\ \\quad \\Longrightarrow\\ \\sym{th.tpr}{\\mathsf{thread\\_progress\\_run}}\\,(r, l)\\end{array}\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-sems-adequacy}{\\begin{array}{l}\\sym{th.em}{\\mathsf{EM}} \\land \\sym{th.ac}{\\mathsf{FC}} \\land \\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\sym{w.lfworld}{\\mathsf{wf}}\\,W \\land \\varnothing \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\sym{prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-sems-h-adequacy}{\\begin{array}{l}\\sym{th.em}{\\mathsf{EM}} \\land \\sym{th.ac}{\\mathsf{FC}} \\land \\varnothing \\sym{sp.lfsemh}{\\mathrel{\\sym{sp.lfsem}{\\Vvdash}}^{N,h}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\sym{prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-tp-gen}{\\begin{array}{l}\\sym{prop.lf}{\\mathsf{lock\\_free}}\\,p \\land \\sym{prop.notau}{\\mathsf{no\\_tau\\_divergence}}\\,p \\land \\sym{th.linksr}{\\mathsf{links\\_restricted}}\\,p \\\\ \\quad\\Longrightarrow\\ \\begin{array}{l}\\forall (r, l).\\ \\sym{proc.erase}{\\mathsf{erase}}\\,(\\sym{se.run}{r\\,0}) = p \\land \\sym{prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\sym{prop.wfair}{\\mathsf{wfair}}\\,(r, l) \\\\ \\quad \\Longrightarrow\\ \\sym{th.tpr}{\\mathsf{thread\\_progress\\_run}}\\,(r, l)\\end{array}\\end{array}}}\\end{array}}\\end{array}",
-     "caption": "\\inmode{lf}{A closed process in the semantic judgment at a world is deadlock free, and so is one in the hidden judgment.} \\inmode{lf}{A closed process in the lock-free judgment at a ranked world is lock free, and each thread progresses on each weakly fair maximal run. \\inmode{lf}{At a well-founded static world this needs excluded middle and functional choice.} The proof reads the readiness of [[rd]].}",
+     "caption": "A closed process in the semantic judgment at a world is deadlock free, and so is one in the hidden judgment. \\inmode{lf}{A closed process in the lock-free judgment at a ranked world is lock free, and each thread progresses on each weakly fair maximal run. \\inmode{lf}{At a well-founded static world this needs excluded middle and functional choice.} The proof reads the readiness of [[rd]].}",
      "why": "Adequacy connects the relation with the safety property.",
      "source": [
       {
@@ -3954,7 +3955,7 @@
   "se.echans": {
    "title": "$\\mathsf{echans}(M)$",
    "meaning": "$\\mathsf{echans}(M) = \\bigcup_{i \\in \\mathrm{dom}\\,M} \\mathsf{fchans}(M(i))$, the channels some thread mentions.",
-   "why": "A created channel $c$ satisfies $c \\notin \\mathsf{echans}(M)$, so it differs from every channel a thread mentions.",
+   "why": "A created channel $c$ satisfies $c \\notin \\mathsf{echans}(M)$, so it differs from each channel a thread mentions.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{echans}\\{0 \\mapsto \\mathsf{close}\\,c^{+}, 1 \\mapsto \\mathsf{close}\\,d^{-}\\} = \\{c, d\\}$.",
    "signature": "\\mathsf{echans} : (\\mathbb{N} \\rightharpoonup \\mathsf{Expr}) \\to \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Chan})",
@@ -4025,8 +4026,8 @@
   },
   "se.reach": {
    "title": "Reachability $\\to^{*}$",
-   "meaning": "$p \\to^{*} p'$ when $p$ reaches $p'$ in finitely many $\\tau$ steps.",
-   "why": "A plain definition. \\inmode{lf}{Deadlock freedom and absence of internal divergence quantify over all $p'$ with $p \\to^{*} p'$.}",
+   "meaning": "$p \\to^{*} p'$ when finitely many $\\tau$ steps lead from $p$ to $p'$.",
+   "why": "A plain definition. Deadlock freedom and absence of internal divergence quantify over the $p'$ with $p \\to^{*} p'$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$p \\to^{*} p$ for every $p$.",
    "signature": "\\cdot \\to^{*} \\cdot \\subseteq \\mathsf{Proc} \\times \\mathsf{Proc}",
@@ -4047,10 +4048,10 @@
   },
   "se.acc": {
    "title": "Accessibility $\\mathsf{Acc}$",
-   "meaning": "$\\mathsf{Acc}\\,R\\,q$ holds when every $R$-chain $q = q_0\\,R\\,q_1\\,R \\cdots$ is finite, inductively, when $\\mathsf{Acc}\\,R\\,q'$ for every $q'$ with $q\\,R\\,q'$.",
+   "meaning": "$\\mathsf{Acc}\\,R\\,q$ holds when each $R$-chain $q = q_0\\,R\\,q_1\\,R \\cdots$ is finite, inductively, when $\\mathsf{Acc}\\,R\\,q'$ for each $q'$ with $q\\,R\\,q'$.",
    "why": "It states the absence of infinite $R$-chains from $q$ by induction, so proofs consume it by well-founded induction.",
    "breaks": "Nothing. It is a definition.",
-   "example": "If every administrative chain from $q$ has length at most $2$, then $\\mathsf{Acc}\\ {\\to_{\\mathsf{admin}}}\\ q$.",
+   "example": "If each administrative chain from $q$ has length at most $2$, then $\\mathsf{Acc}\\ {\\to_{\\mathsf{admin}}}\\ q$.",
    "signature": "\\mathsf{Acc} : (X \\to X \\to \\mathsf{Prop}) \\to X \\to \\mathsf{Prop}",
    "args": [
     {
@@ -4074,7 +4075,7 @@
   "se.r0": {
    "title": "The run starts at $p$",
    "meaning": "$r_0$ is the configuration at position $0$ of the run, and $\\mathsf{erase}(r_0) = p$ states that forgetting its thread names gives the process $p$.",
-   "why": "Lock freedom is a property of a process, and runs are sequences of configurations, so the run must start at a configuration of $p$. Any naming of the threads of $p$ is allowed.",
+   "why": "Lock freedom is a property of a process, and runs are sequences of configurations, so the run must start at a configuration of $p$. Each naming of the threads of $p$ is allowed.",
    "breaks": "Nothing. It is a definition.",
    "example": "$r_0 = (\\{c\\}, \\{0 \\mapsto \\mathsf{close}\\,c^{+},\\ 1 \\mapsto \\mathsf{close}\\,c^{-}\\})$ for $p = (\\{c\\}, \\{\\!|\\mathsf{close}\\,c^{+}, \\mathsf{close}\\,c^{-}|\\!\\})$.",
    "signature": "\\mathsf{erase}(r_0) = p",
@@ -4126,7 +4127,7 @@
   "lbl.beta": {
    "title": "$\\beta$ label",
    "meaning": "The label of application, unit and pair elimination, case and force.",
-   "why": "These steps have the same cost $\\kappa(\\beta)$ in each cost table, so one label covers these steps.",
+   "why": "These steps have the same cost in each cost table, so one label covers the five.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{force}\\,(!e) \\xrightarrow{\\beta} e[!e]$.",
    "signature": "\\beta \\in \\mathsf{TLabel}",
@@ -4211,8 +4212,8 @@
   },
   "lbl.recv": {
    "title": "Receive label $o?v$",
-   "meaning": "An offer to receive $v$ on $o$, for every value $v$.",
-   "why": "A receive must meet every send of a partner, so its labels range over all values.",
+   "meaning": "An offer to receive $v$ on $o$, for each value $v$.",
+   "why": "A receive must meet each send of a partner, so its labels range over the values.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{recv}\\,o \\xrightarrow{o?\\ast} \\langle \\ast, o\\rangle$.",
    "signature": "o?v \\in \\mathsf{SLabel}",
@@ -4223,7 +4224,7 @@
     },
     {
      "name": "v",
-     "meaning": "The received value, any value."
+     "meaning": "The received value, one label per value."
     }
    ],
    "source": [
@@ -4439,7 +4440,7 @@
   },
   "T-Act-New": {
    "title": "T-Act-New",
-   "meaning": "$\\mathsf{new} \\xrightarrow{\\mathsf{new}\\,c} \\langle c^{+}, c^{-}\\rangle$ for every $c$, and the process rule picks $c$.",
+   "meaning": "$\\mathsf{new} \\xrightarrow{\\mathsf{new}\\,c} \\langle c^{+}, c^{-}\\rangle$ for each $c$, and the process rule picks $c$.",
    "why": "The step of a single thread cannot determine which channel names are in use. The process rule asks $c \\notin C \\cup \\mathsf{echans}(M)$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{new} \\xrightarrow{\\mathsf{new}\\,c} \\langle c^{+}, c^{-}\\rangle$.",
@@ -4509,7 +4510,7 @@
   },
   "T-Act-Recv": {
    "title": "T-Act-Recv",
-   "meaning": "$\\mathsf{recv}\\,o \\xrightarrow{o?v} \\langle v, o\\rangle$ for every value $v$.",
+   "meaning": "$\\mathsf{recv}\\,o \\xrightarrow{o?v} \\langle v, o\\rangle$ for each value $v$.",
    "why": "The step of a single thread does not depend on what the partner sends, so it has a step for each $v$. The receive obligation quantifies only over $v$ in the value relation at the payload type.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{recv}\\,b \\xrightarrow{b?\\ast} \\langle \\ast, b\\rangle$.",
@@ -4521,7 +4522,7 @@
     },
     {
      "name": "v",
-     "meaning": "Any value, one step for each."
+     "meaning": "One step per value."
     }
    ],
    "source": [
@@ -4816,7 +4817,7 @@
   "P-Act-Msg": {
    "title": "P-Act-Msg",
    "meaning": "$M(i) \\xrightarrow{o!v} e'$, $M(j) \\xrightarrow{\\overline{o}?v} f'$, $i \\neq j$ give $M[i \\mapsto e'][j \\mapsto f']$, with no condition on $C$.",
-   "why": "In a typed process both ends of $c$ are held inside only when $c \\in C$, so dropping the condition $\\mathsf{ech}\\,o \\in C$ adds no step to typed processes.",
+   "why": "In a typed process both ends of a channel are held inside only when the channel is restricted, so a condition $\\mathsf{ech}\\,o \\in C$ would add nothing for typed processes.",
    "breaks": "Nothing. It is a definition.",
    "example": "The client sends on $a$ and the server receives on $a'$.",
    "signature": "(C, M) \\xrightarrow{ev} (C', M') \\subseteq \\mathsf{Config} \\times \\mathsf{Event} \\times \\mathsf{Config}",
@@ -4949,7 +4950,7 @@
   },
   "P-Act-Link": {
    "title": "P-Act-Link",
-   "meaning": "If $M(i) \\xrightarrow{\\leftrightarrow\\{o_1, o_2\\}} e'$ and $\\mathsf{ech}\\,o_1 \\in C$, then $C$ loses $\\mathsf{ech}\\,o_1$ and every thread of $M[i \\mapsto e']$ is renamed by $\\mathsf{csub}\\,o_1\\,o_2$.",
+   "meaning": "If $M(i) \\xrightarrow{\\leftrightarrow\\{o_1, o_2\\}} e'$ and $\\mathsf{ech}\\,o_1 \\in C$, then $C$ loses $\\mathsf{ech}\\,o_1$ and each thread of $M[i \\mapsto e']$ is renamed by $\\mathsf{csub}\\,o_1\\,o_2$.",
    "why": "The label is unordered, so the rule applies with either end as $o_1$ and removes the channel of either end.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{link}\\,\\langle c^{+}, d^{-}\\rangle$ with $c \\in C$.",
@@ -5040,7 +5041,7 @@
   "ev.event": {
    "title": "Event",
    "meaning": "$\\mathsf{solo}_i\\,\\alpha\\,k$ is a step of thread $i$ alone with thread label $\\alpha$. $\\mathsf{sync}_{i,j}\\,\\sigma$ is a step in which thread $i$ takes the send, close or select $\\sigma$ on an end $o$ and thread $j$ the matching receive, close or branch on $\\overline{o}$. $\\mathsf{offer}_i\\,\\sigma$ is an offer of thread $i$ to the environment.",
-   "why": "\\inmode{lf}{Weak fairness asks of each thread $t$ that $t \\in \\mathsf{parts}(l_j)$ for some $j$, so every step names its threads.}",
+   "why": "\\inmode{lf}{Weak fairness asks of each thread $t$ that $t \\in \\mathsf{parts}(l_j)$ for some $j$, so each step names its threads.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{sync}_{0,1}\\,(a^{+}!\\ast)$.",
    "signature": "ev \\in \\mathsf{Event}",
@@ -5109,7 +5110,7 @@
   "ev.admin": {
    "title": "Administrative events",
    "meaning": "\\inmode{lf}{$\\mathsf{admin}$ is the set of solo events $\\mathsf{solo}_i\\,\\alpha\\,k$, the steps by $\\beta$, $\\mathsf{new}$, $\\mathsf{spawn}$ and $\\mathsf{link}$, each of cost $0$ in $\\kappa_L$.}",
-   "why": "They act on no protocol. \\inmode{lf}{Absence of internal divergence states that every chain of them is finite.}",
+   "why": "They act on no protocol. \\inmode{lf}{Absence of internal divergence states that each chain of them is finite.}",
    "breaks": "Nothing. It is a definition.",
    "example": "An unbounded chain of spawns takes only administrative steps.",
    "signature": "\\mathsf{admin} \\subseteq \\mathsf{Event}",
@@ -5124,8 +5125,8 @@
   },
   "ev.tau": {
    "title": "$\\tau$ events",
-   "meaning": "Every event except $\\mathsf{offer}_i\\,\\sigma$, an offer to the environment.",
-   "why": "A closed configuration has no environment, so all its steps are $\\tau$ steps.",
+   "meaning": "Each event except $\\mathsf{offer}_i\\,\\sigma$, an offer to the environment.",
+   "why": "A closed configuration has no environment, so each of its steps is a $\\tau$ step.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{sync}_{0,1}\\,(a^{+}!\\ast)$ is a $\\tau$ event.",
    "signature": "\\tau \\subseteq \\mathsf{Event}",
@@ -5151,8 +5152,8 @@
   },
   "prop.terminated": {
    "title": "$\\mathsf{terminated}$",
-   "meaning": "$\\mathsf{terminated}\\,p$ iff $p = (\\varnothing, \\{\\!|v|\\!\\} \\uplus E)$ with $v$ a value and $e = \\ast$ for every $e \\in E$.",
-   "why": "At the end $C = \\varnothing$, so every channel is used up, and only the main thread returns a value.",
+   "meaning": "$\\mathsf{terminated}\\,p$ iff $p = (\\varnothing, \\{\\!|v|\\!\\} \\uplus E)$ with $v$ a value and $e = \\ast$ for each $e \\in E$.",
+   "why": "At the end $C = \\varnothing$, so each channel is used up, and only the main thread returns a value.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(\\varnothing, \\{\\!|\\ast, \\ast|\\!\\})$.",
    "signature": "\\mathsf{terminated} : \\mathsf{Proc} \\to \\mathsf{Prop}",
@@ -5182,9 +5183,9 @@
   "prop.df": {
    "title": "$\\mathsf{deadlock\\_free}$",
    "meaning": "$\\mathsf{deadlock\\_free}\\,p$ iff for every $p'$ with $p \\to^{*} p'$, $\\mathsf{terminated}\\,p'$ or $p' \\to p''$ for some $p''$.",
-   "why": "\\inmode{lf}{It is the safety property the deadlock-freedom system proves of closed typed processes.}",
+   "why": "It is the safety property the deadlock-free results prove of closed typed processes. A stuck configuration is one that has not terminated and cannot step.",
    "breaks": "Nothing. It is a definition.",
-   "example": "\\inmode{lf}{$(\\{c\\}, \\{\\!|\\mathsf{close}\\,c^{+}, \\mathsf{close}\\,c^{-}|\\!\\})$ is deadlock free.}",
+   "example": "$(\\{c\\}, \\{\\!|\\mathsf{close}\\,c^{+}, \\mathsf{close}\\,c^{-}|\\!\\})$ is deadlock free.",
    "signature": "\\mathsf{deadlock\\_free} : \\mathsf{Proc} \\to \\mathsf{Prop}",
    "args": [
     {
@@ -5259,7 +5260,7 @@
   },
   "prop.lf": {
    "title": "$\\mathsf{lock\\_free}$",
-   "meaning": "For every run $(r, l)$ with $\\mathsf{erase}(r_0) = p$ that is maximal and weakly fair, every thread $t$ pending at a position $i$ has $t \\in \\mathsf{parts}(l_j)$ for some $j \\geq i$.",
+   "meaning": "For each run $(r, l)$ with $\\mathsf{erase}(r_0) = p$ that is maximal and weakly fair, each thread $t$ pending at a position $i$ has $t \\in \\mathsf{parts}(l_j)$ for some $j \\geq i$.",
    "why": "Deadlock freedom allows a thread to wait forever while other threads step. Lock freedom excludes it, and its definition mentions no type.",
    "breaks": "A server that serves one client forever while a second client waits is deadlock free and not lock free.",
    "example": "$(\\{c\\}, \\{\\!|\\mathsf{close}\\,c^{+}, \\mathsf{close}\\,c^{-}|\\!\\})$ is lock free.",
@@ -5297,7 +5298,7 @@
   },
   "prop.maximal": {
    "title": "Maximal run",
-   "meaning": "For every $i$, either $r_i \\to r_{i+1}$ by a $\\tau$ event $l_i$, or $r_i$ has no $\\tau$ step and $r_{i+1} = r_i$.",
+   "meaning": "For each $i$, either $r_i \\to r_{i+1}$ by a $\\tau$ event $l_i$, or $r_i$ has no $\\tau$ step and $r_{i+1} = r_i$.",
    "why": "A run that stutters while a step is possible would satisfy lock freedom vacuously, so the definition quantifies over maximal runs only.",
    "breaks": "Nothing. It is a definition.",
    "example": "A run that stutters at $r_i$ while $r_i$ has a $\\tau$ step is not maximal.",
@@ -5323,7 +5324,7 @@
   },
   "prop.wfair": {
    "title": "Weak fairness",
-   "meaning": "For every position $i$ and thread $t$, there is $j \\geq i$ with $t \\in \\mathsf{parts}(l_j)$ or $t$ disabled at $r_j$.",
+   "meaning": "For each position $i$ and thread $t$, there is $j \\geq i$ with $t \\in \\mathsf{parts}(l_j)$ or $t$ disabled at $r_j$.",
    "why": "Without fairness a scheduler may never run an enabled thread $t$, and no program with two threads is lock free.",
    "breaks": "Nothing. It is a definition.",
    "example": "A run that never schedules an enabled thread is not weakly fair.",
@@ -5357,7 +5358,7 @@
   },
   "prop.pend": {
    "title": "Pending thread",
-   "meaning": "$\\mathsf{pend}(q, t)$ holds when thread $t$ of $q$ has a session label as its next step.",
+   "meaning": "$\\mathsf{pend}(q, t)$ holds when thread $t$ of $q$ has a session label as its next step, so it waits for a partner or for the environment.",
    "why": "Lock freedom guarantees progress exactly to the pending threads.",
    "breaks": "Nothing. It is a definition.",
    "example": "A thread at $\\mathsf{recv}\\,b$ is pending.",
@@ -5383,10 +5384,10 @@
   },
   "prop.lfrun": {
    "title": "$\\mathsf{lf\\_run}$",
-   "meaning": "For every $i$ and $t$, $\\mathsf{pend}(r_i, t)$ implies $t \\in \\mathsf{parts}(l_j)$ for some $j \\geq i$.",
-   "why": "It is the condition on one run, and $\\mathsf{lock\\_free}\\,p$ asks it of every maximal weakly fair run from $p$.",
+   "meaning": "For each $i$ and $t$, $\\mathsf{pend}(r_i, t)$ implies $t \\in \\mathsf{parts}(l_j)$ for some $j \\geq i$.",
+   "why": "It is the condition on one run, and $\\mathsf{lock\\_free}\\,p$ asks it of each maximal weakly fair run from $p$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "Every message the client sends is received by the server at a later position.",
+   "example": "Each message the client sends is received by the server at a later position.",
    "signature": "\\mathsf{lf\\_run} : \\mathsf{Run} \\to \\mathsf{Prop}",
    "args": [
     {
@@ -7125,7 +7126,7 @@
   "w.rord": {
    "title": "Order $<_R$",
    "meaning": "A strict partial order on the points whose roots lie in $B$, irreflexive and transitive, that contains program order between such points.",
-   "why": "\\inmode{lf}{The deadlock-free relation needs nothing more of a world than a strict order.} A stuck configuration has finitely many waiting points, and a strict order on a finite set has a minimal element, the wait that adequacy resolves first.",
+   "why": "The deadlock-free relation needs nothing more of a world than a strict order. A stuck configuration has finitely many waiting points, and a strict order on a finite set has a minimal element, the wait that adequacy resolves first.",
    "breaks": "A cycle $x <_R y <_R x$ would let two threads each wait below the other and both count as ready.",
    "example": "The world after a creation at $\\rho$ with facts $C = \\{\\rho \\prec \\overline{\\rho\\cdot 0}\\}$ orders $\\rho <_R \\overline{\\rho\\cdot 0}$.",
    "signature": "{<_R} \\subseteq \\mathsf{Point}_B \\times \\mathsf{Point}_B",
@@ -7308,7 +7309,7 @@
   "w.strict": {
    "title": "Strict world",
    "meaning": "$\\mathsf{strict}\\,R$ holds of a world of the relation that is an arbitrary strict partial order on its points, with no further structure.",
-   "why": "\\inmode{lf}{The deadlock-free theorems read strict worlds.} A stuck configuration has finitely many waiting points, and a strict order on a finite set has a minimal element, the wait that adequacy resolves first.",
+   "why": "The deadlock-free theorems read strict worlds. A stuck configuration has finitely many waiting points, and a strict order on a finite set has a minimal element, the wait that adequacy resolves first.",
    "breaks": "Nothing. It is a definition.",
    "example": "The model of an acyclic static world by its own order is strict.",
    "signature": "\\mathsf{strict} : \\mathsf{World} \\to \\mathsf{Prop}",
@@ -10595,7 +10596,7 @@
    "meaning": "Components $p_1, \\ldots, p_n$ at hidden worlds $W_1, \\ldots, W_n$. Component $i \\geq 2$ connects over the cut $\\Sigma_{C,i}$ to the composite of the components before it, with the side conditions of P-Connect. One premise reads the worlds, $\\mathsf{ok}_N(W_1 \\sqcup \\cdots \\sqcup W_n)$. The composite types at a world whose facts are facts of the join restricted to its interface.",
    "why": "The rule folds the binary P-Connect. The world of each partial composite derives only facts of the join of its component worlds, so the one interface check gives each binary check. The condition is no conjunction of pairwise conditions.",
    "breaks": "Three threads that each close one end and then the next end round a ring meet each condition but the world check. Their hidden worlds are acyclic in pairs and hold a cycle together, and the ring deadlocks.",
-   "example": "\\inmode{lf}{The ring whose third thread closes its two ends in the other order types and is deadlock free.}",
+   "example": "The ring whose third thread closes its two ends in the other order types and is deadlock free.",
    "signature": "\\mathsf{wf}(W_1 \\sqcup \\cdots \\sqcup W_n)",
    "args": [
     {
@@ -13976,7 +13977,7 @@
   "rd.p-term": {
    "title": "No offer means terminated",
    "meaning": "$(\\forall o.\\ \\neg\\mathsf{offered}_\\Sigma(p, o)) \\Rightarrow \\mathsf{terminated}\\,p$.",
-   "why": "\\inmode{lf}{A stable process that offers nothing to its environment must be finished, which is the deadlock-freedom statement at the process level.}",
+   "why": "A stable process that offers nothing to its environment must be finished, which is the deadlock-freedom statement at the process level.",
    "breaks": "Without it, a stable process blocked on internal ends would satisfy P-Ready.",
    "example": "$(\\varnothing, \\{\\ast\\})$.",
    "signature": "(\\forall o.\\ \\neg\\mathsf{offered}_\\Sigma(p, o)) \\Rightarrow \\mathsf{terminated}\\,p",
@@ -14887,7 +14888,7 @@
   "sj.proc": {
    "title": "$\\Sigma \\vDash_R p : T$",
    "meaning": "$\\forall \\alpha.\\ p \\in P^R_\\alpha\\llbracket\\Sigma \\vdash T\\rrbracket$, over every ordinal index $\\alpha$.",
-   "why": "\\inmode{lf}{Adequacy turns it into deadlock freedom.} \\inmode{lf}{With $\\kappa_L$ it also gives absence of internal divergence.}",
+   "why": "Adequacy turns it into deadlock freedom. \\inmode{lf}{With $\\kappa_L$ it also gives absence of internal divergence.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\varnothing \\vDash_R p : \\ast$.",
    "signature": "\\Sigma \\vDash_{R} p : T",
@@ -17325,10 +17326,10 @@
   },
   "th.adequacy": {
    "title": "Adequacy",
-   "meaning": "\\inmode{lf}{If $\\varnothing \\vDash_R p : T$ at a world $R$ then $p$ is deadlock free.}",
+   "meaning": "If $\\varnothing \\vDash_R p : T$ at a world $R$ then $p$ is deadlock free.",
    "why": "It turns the semantic judgment into the safety property. A stuck closed process has finitely many waiting threads, and readiness puts each wait below the dual points of the waiting thread in the strict order of $R$. A minimal wait has its partner able to act.",
    "breaks": "With a cyclic order the premise would hold for two threads that wait on each other.",
-   "example": "\\inmode{lf}{Two threads closing the two ends of $c$ are deadlock free.}",
+   "example": "Two threads closing the two ends of $c$ are deadlock free.",
    "signature": "\\varnothing \\vDash_R p : T \\Rightarrow \\mathsf{deadlock\\_free}\\,p",
    "args": [
     {
@@ -17893,7 +17894,7 @@
    "meaning": "\\inmode{lf}{$\\varnothing \\vdash\\inmode{lf}{^{\\infty}}_{W} p : T$ implies that $p$ is deadlock free.}",
    "why": "The fundamental theorem for processes followed by adequacy. \\inmode{lf}{No excluded middle and no choice enter the proof.}",
    "breaks": "Nothing. It is a definition.",
-   "example": "\\inmode{lf}{The cycle example is deadlock free.}",
+   "example": "The cycle example is deadlock free.",
    "signature": "\\varnothing \\vdash\\inmode{lf}{^{\\infty}}_{W} p : T \\Rightarrow \\mathsf{deadlock\\_free}\\,p",
    "args": [
     {
@@ -17921,7 +17922,7 @@
   },
   "th.soundness-source": {
    "title": "Soundness for source terms",
-   "meaning": "\\inmode{lf}{For a well-formed acyclic $W$, $\\mathsf{tfree}\\,T$ and $\\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W} t : T$, the process $(\\varnothing, \\{t\\})$ is deadlock free.}",
+   "meaning": "For a well-formed acyclic $W$, $\\mathsf{tfree}\\,T$ and $\\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W} t : T$, the process $(\\varnothing, \\{t\\})$ is deadlock free.",
    "why": "The program is P-Term with $\\Sigma = \\varnothing$ and $C_0 = \\varnothing$. \\inmode{lf}{No excluded middle and no choice enter the proof.}",
    "breaks": "Nothing. It is a definition.",
    "example": "The fork-join examples.",
@@ -18641,7 +18642,7 @@
   },
   "th.adequacy-h": {
    "title": "Adequacy for the hidden judgment",
-   "meaning": "\\inmode{lf}{If $\\varnothing \\vDash^{h}_W p : T$, then $p$ is deadlock free.}",
+   "meaning": "If $\\varnothing \\vDash^{h}_W p : T$, then $p$ is deadlock free.",
    "why": "The hidden judgment gives an acyclic whole world, which has a strict model, and adequacy applies there.",
    "breaks": "Nothing. It is a definition.",
    "example": "The two closes over the empty interface.",

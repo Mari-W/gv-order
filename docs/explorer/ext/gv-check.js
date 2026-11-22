@@ -13,7 +13,7 @@
 
 // the full list of gen/gen.js
 const LEAK = [
-  /lock[- ]free|lock freedom|\\kappa_L|\bfuel\b|\branked\b|excluded middle|functional choice/i,
+  /(?<!dead)lock[- ]free|(?<!dead)lock freedom|\\kappa_L|\bfuel\b|\branked\b|excluded middle|functional choice/i,
   /_(?:\{[^{}]*\}|[A-Za-z])\^\{[^{}]*,/,
   /\^\{\\sym\{[^}]*\}\{[ab]/,
   /\^\{[ab](_|'|\}|\s*\+)/,

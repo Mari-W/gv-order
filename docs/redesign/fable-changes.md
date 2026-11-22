@@ -32,3 +32,32 @@ definition in `\sym`. The "Also in" chips of the page are going away.
   no longer writes $\mathsf{new}_\ell$, a former surface form.
 - `prim.send`, `prim.recv`: a duplicate argument row `S` removed. `prim.select`:
   the argument row says which continuation is which.
+
+## Semantics
+
+- Section intro says what the semantics is (a two-layer labelled transition
+  system) and that points never appear. The deadlock-free view gets its own
+  closing sentence.
+- `sem-labels`, `sem-head`, `sem-ctx`, `sem-proc`, `sem-events`, `sem-props`:
+  inline links to labels, head steps, frames, process steps, events, terms,
+  constants, `csub`, configurations. `sem-proc` caption now walks the eight
+  rules in words, and its `why` says why only close and link ask the channel
+  to be restricted.
+- `sem-props`: the deadlock-freedom sentence is visible in the deadlock-free
+  view (it was wrapped in `\inmode{lf}`), the caption defines a terminated
+  process and a pending thread, and a `breaks` field gives the two-channel
+  cycle as a stuck process and the starving server as deadlock free but not
+  lock free.
+- **Check fix (ext/gv-check.js, one line).** The DF-LEAK regex `lock[- ]free`
+  matched "deadlock free", so 22 deadlock-free sentences across the map had
+  been wrapped in `\inmode{lf}` and were invisible in the deadlock-free view
+  (among them "If $\varnothing \vDash_R p : T$ then $p$ is deadlock free").
+  The regex now reads `(?<!dead)lock[- ]free`, and the 22 sentences are
+  unwrapped (section intros of semantic and theorems, `sr-reading`, `sr-ord`,
+  `ct-costs`, `rd`, `sj-all`, `th-chain`, `th-sound`, `th-adeq`, notes
+  `se.reach`, `w.rord`, `w.strict`, `P-Connect.n`, `rd.p-term`, `sj.proc`,
+  `th.adequacy`, `th.soundness`, `th.soundness-source`, `th.adequacy-h`).
+- Notes `prop.*`, `ev.*`, `se.*`, `lbl.recv`, `T-Act-Recv`, `T-Act-New`,
+  `P-Act-Link`, `P-Act-Msg`: "every" to "each" where it was rhetorical;
+  `prop.pend` says what pending means; `P-Act-Msg.why` says why there is no
+  $\mathsf{ech}\,o \in C$ premise.
