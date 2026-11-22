@@ -110,8 +110,15 @@ commits a136833 to the head.
     two-upper-bound example is not written as a program.
   - Map (48aef68). New note `w.gennew` in the worlds block, E-New.wf reads
     `π = ρ ⇒ gen_new Γ ρ C`. Lint counts unchanged.
-  - Local compile of every file and CheckAll (125 results closed). Laptop
-    result below.
+  - Laptop at 48aef68: `make` exit 0, `make test` passes, `make check` 125 of
+    125.
+
+Plausibility. No Admitted, no Axiom, no new Parameter. The examples build.
+rx-relink, rx-postpone and rx-delegate rest on tickets, aging and payload
+credit, which this run did not touch. S4.18 concerns (fuse), kept. rx-chain
+stays excluded, argued by Proposition 7 of check-general-new.md, not
+mechanized. One edit outside static/ that touches the area of the other
+agent, soup/LFTyped.v (the P-Term premise pattern, three lines).
 - Map (186308e, 28aa5a5). New note `sty.contr` and premises E-New.contr,
   E-Sub.contr, E-Abs.contr, E-Inj.contr, E-Box.contr, P-Term.contr. E-Box.inst
   cites `typed_sinst`. Sub-Ex shows `Γ, C(ῑ) ⊢ C'(ῑ)` and
