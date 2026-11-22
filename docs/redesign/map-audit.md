@@ -365,6 +365,8 @@ are the headline.
 
 ## Questions for the author
 
+Author's answers, 2026-11-22. Keep $R$ for relation worlds and $i$ for term variables. State the lock-free rejection of recursive fork-join as argued. Whitelist "cost" in lint-map.py and the mapkit checker (done, mapkit 4694de6). Leave the three overview tables for Phase C.
+
 1. Device blocks after the judgment? Recommended: yes, as done. The
    lock-free blocks (counters, guard, ranked worlds) used $\Delta$,
    $\Lambda$, $t$ and $\rho$ before the judgment defined them. Rule 4 of
