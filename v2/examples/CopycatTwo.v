@@ -16,9 +16,12 @@
     one is, with no further condition on P and Q than that their worlds
     do not know the constant 1.
 
-    The protocols are the first-order ones of examples/Copycat.v. The
-    judgment is the deadlock-freedom instance N = ∞, as for
-    [fwdp_expand]. *)
+    The protocols are the first-order ones of examples/Copycat.v.
+    [fwdp_expand2_N] holds at every bound N, given the forwarder typed
+    at N. At N = ∞ that is [fwdq_term], and [fwdp_expand2] is the
+    deadlock-freedom instance. At a finite N the collapse carries
+    well-foundedness ([collapse_swf]), and examples/CopycatTwoN.v types
+    the forwarder at every N ≥ 4. *)
 
 From GV Require Export examples.Copycat static.ChanRen.
 
@@ -98,6 +101,25 @@ Section collapse.
   Proof.
     intros HO u Hu. destruct (collapse_path _ _ Hu) as [H|H]; [exact (HO _ H)|exact (idf_irrefl _ H)].
   Qed.
+
+  (** At a finite N the same collapse carries well-foundedness. A point
+      reached by an equality step lies below its target only through a
+      strict step of O, because two equalities never follow each
+      other. *)
+  Lemma collapse_swf : swf O → swf J.
+  Proof.
+    intros HO. apply wf_iff_wellfounded. apply wf_iff_wellfounded in HO.
+    assert (∀ a, Acc (sw_lt O) a → ∀ x, φ x = a → Acc (sw_lt J) x) as Hacc.
+    { intros a Ha. induction Ha as [a _ IH]. intros x <-. constructor. intros y Hy.
+      destruct (collapse_path _ _ Hy) as [H|H]; [by apply (IH (φ y) H)|].
+      constructor. intros z Hz. destruct (collapse_path _ _ Hz) as [H'|H'].
+      - apply (IH (φ z)); [|done]. by rewrite <-(idf_φ _ _ H).
+      - exfalso. exact (idf_chain _ _ _ H' H). }
+    intros x. exact (Hacc (φ x) (HO (φ x)) x eq_refl).
+  Qed.
+
+  Lemma collapse_wok N : wok N O → wok N J.
+  Proof. destruct N; [apply collapse_swf|apply collapse_acyc]. Qed.
 End collapse.
 
 Lemma W_q_step O p u v : swstep (W_q p) u v → O ⊢ₛ φ u ≺ φ v ∨ idf u v.
@@ -110,6 +132,9 @@ Qed.
 
 Lemma W_q_acyc p : sacyc (W_q p).
 Proof. apply (collapse_acyc _ sw_empty); [apply W_q_step|apply sw_empty_acyc]. Qed.
+
+Lemma W_q_wok N p : wok N (W_q p).
+Proof. apply (collapse_wok _ sw_empty); [apply W_q_step|apply sw_empty_wok]. Qed.
 
 (** *** The forwarder as a thread *)
 
@@ -195,6 +220,10 @@ Lemma J_acyc p W1 W2 : sworld_wf W1 → sworld_wf W2 → 1 ∉ sw_consts W1 → 
   sacyc (W1 ⊔ W2) → sacyc (W1 ⊔ (W_q p ⊔ sw_ren sw01 W2)).
 Proof. intros Hw1 Hw2 H1 H2. apply collapse_acyc. intros u v. by apply J_step. Qed.
 
+Lemma J_wok N p W1 W2 : sworld_wf W1 → sworld_wf W2 → 1 ∉ sw_consts W1 → 1 ∉ sw_consts W2 →
+  wok N (W1 ⊔ W2) → wok N (W1 ⊔ (W_q p ⊔ sw_ren sw01 W2)).
+Proof. intros Hw1 Hw2 H1 H2. apply collapse_wok. intros u v. by apply J_step. Qed.
+
 (** The order of a join of restrictions is inside the order of the join. *)
 Lemma rjoin_lt A B S x y : (swrestrict A S ⊔ swrestrict B S) ⊢ₛ x ≺ y → (A ⊔ B) ⊢ₛ x ≺ y.
 Proof.
@@ -260,30 +289,35 @@ Proof.
   intros H. apply map_disjoint_singleton_r_2. apply not_elem_of_dom. by apply not_in_dom_chans.
 Qed.
 
-(** ** Two-sided identity expansion *)
+(** ** Two-sided identity expansion
 
-Theorem fwdp_expand2 p W1 W2 Σ1 Σ2 C1 C2 E1 E2 T :
-  fptyped None W1 (Σ1 ∪ Σxp p) (C1, E1) T →
-  fptyped None W2 (Σ2 ∪ senv_dual (Σxp p)) (C2, E2) TUnit →
+    At any bound N, given the forwarder typed at N. At N = ∞ it is
+    [fwdq_term]. The world premise carries over by [J_wok], acyclicity
+    at N = ∞ and well-foundedness at a finite N. *)
+
+Theorem fwdp_expand2_N N p W1 W2 Σ1 Σ2 C1 C2 E1 E2 T :
+  fptyped N (W_q p) (Σq p) (∅, {[+ fwdq_t p +]}) TUnit →
+  fptyped N W1 (Σ1 ∪ Σxp p) (C1, E1) T →
+  fptyped N W2 (Σ2 ∪ senv_dual (Σxp p)) (C2, E2) TUnit →
   Σ1 ##ₘ Σxp p → Σ2 ##ₘ senv_dual (Σxp p) →
   chans_of Σ1 ## chans_of Σ2 → "a" ∉ chans_of Σ1 → "a" ∉ chans_of Σ2 →
   C1 ## C2 → C1 ## chans_of Σ2 ∪ {["a"]} → C2 ## chans_of Σ1 ∪ {["a"]} →
-  wok None (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)) →
+  wok N (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)) →
   "b" ∉ chans_of Σ1 → "b" ∉ chans_of Σ2 → "b" ∉ C1 → "b" ∉ C2 →
   1 ∉ sw_consts W1 → 1 ∉ sw_consts W2 →
-  fptyped None (W1 ⊔ (W_q p ⊔ sw_ren sw01 W2)) (Σ1 ∪ senv_ren (cswap 0 1) Σ2)
+  fptyped N (W1 ⊔ (W_q p ⊔ sw_ren sw01 W2)) (Σ1 ∪ senv_ren (cswap 0 1) Σ2)
     (C1 ∪ (∅ ∪ C2 ∪ {["b"]}) ∪ {["a"]},
      E1 ⊎ ({[+ fwdq_t p +]} ⊎ emapE (cmap (sswap "a" "b")) E2)) T.
 Proof.
-  intros HP HQ HD1 HD2 H12 Ha1 Ha2 HC HC1 HC2 HS Hb1 Hb2 HbC1 HbC2 H01 H02.
+  intros Hfwd HP HQ HD1 HD2 H12 Ha1 Ha2 HC HC1 HC2 HS Hb1 Hb2 HbC1 HbC2 H01 H02.
   set (h := sswap "a" "b"). set (Σ2' := senv_ren (cswap 0 1) Σ2).
   destruct (fptyped_wf _ _ _ _ _ HP) as [Hw1 Hk1]. destruct (fptyped_wf _ _ _ _ _ HQ) as [Hw2 Hk2].
-  assert (sacyc (W1 ⊔ (W_q p ⊔ sw_ren sw01 W2))) as HJ.
-  { apply J_acyc; [done|done|done|done|].
-    apply (wok_join_iff None W1 W2 Hw1 Hw2). by split_and!. }
+  assert (wok N (W1 ⊔ (W_q p ⊔ sw_ren sw01 W2))) as HJ.
+  { apply J_wok; [done|done|done|done|].
+    apply (wok_join_iff N W1 W2 Hw1 Hw2). by split_and!. }
   assert (chans_of Σ2' = chans_of Σ2) as EΣ2 by apply chans_of_ren.
   (* The partner Q', renamed. *)
-  assert (fptyped None (sw_ren sw01 W2) (Σ2' ∪ {[EPos "b" := (pS p, py)]}) (C2, emapE (cmap h) E2) TUnit) as HQ'.
+  assert (fptyped N (sw_ren sw01 W2) (Σ2' ∪ {[EPos "b" := (pS p, py)]}) (C2, emapE (cmap h) E2) TUnit) as HQ'.
   { pose proof (fptyped_ren sw01 _ _ _ _ _ HQ) as H. simpl in H.
     change (cb_f sw01) with (cswap 0 1) in H.
     rewrite senv_ren_union, Σxp_dual in H. unfold senv_ren at 2 in H. rewrite map_fmap_singleton in H.
@@ -297,10 +331,10 @@ Proof.
     2:{ intros c Hc. unfold h, sswap. repeat case_decide; subst; set_solver. }
     exact H'. }
   (* fwd ∥ Q', cut on b. *)
-  assert (fptyped None (W_q p ⊔ sw_ren sw01 W2) ({[o1 := (pS p, px)]} ∪ Σ2')
+  assert (fptyped N (W_q p ⊔ sw_ren sw01 W2) ({[o1 := (pS p, px)]} ∪ Σ2')
             (∅ ∪ C2 ∪ chans_of (ΣCb p), {[+ fwdq_t p +]} ⊎ emapE (cmap h) E2) TUnit) as HFQ.
   { apply fp_connect.
-    - exact (fwdq_term p).
+    - exact Hfwd.
     - by rewrite ΣCb_dual.
     - apply map_disjoint_singleton_l_2. unfold ΣCb. by rewrite lookup_singleton_ne.
     - rewrite ΣCb_dual. apply disj_single_chans. simpl. by rewrite EΣ2.
@@ -331,6 +365,20 @@ Proof.
   - rewrite chans_Σxp. set_solver.
   - eapply wok_sub; [|exact HJ]. intros x y Hxy. by eapply rjoin_lt.
 Qed.
+
+Theorem fwdp_expand2 p W1 W2 Σ1 Σ2 C1 C2 E1 E2 T :
+  fptyped None W1 (Σ1 ∪ Σxp p) (C1, E1) T →
+  fptyped None W2 (Σ2 ∪ senv_dual (Σxp p)) (C2, E2) TUnit →
+  Σ1 ##ₘ Σxp p → Σ2 ##ₘ senv_dual (Σxp p) →
+  chans_of Σ1 ## chans_of Σ2 → "a" ∉ chans_of Σ1 → "a" ∉ chans_of Σ2 →
+  C1 ## C2 → C1 ## chans_of Σ2 ∪ {["a"]} → C2 ## chans_of Σ1 ∪ {["a"]} →
+  wok None (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)) →
+  "b" ∉ chans_of Σ1 → "b" ∉ chans_of Σ2 → "b" ∉ C1 → "b" ∉ C2 →
+  1 ∉ sw_consts W1 → 1 ∉ sw_consts W2 →
+  fptyped None (W1 ⊔ (W_q p ⊔ sw_ren sw01 W2)) (Σ1 ∪ senv_ren (cswap 0 1) Σ2)
+    (C1 ∪ (∅ ∪ C2 ∪ {["b"]}) ∪ {["a"]},
+     E1 ⊎ ({[+ fwdq_t p +]} ⊎ emapE (cmap (sswap "a" "b")) E2)) T.
+Proof. apply fwdp_expand2_N, fwdq_term. Qed.
 
 (** A closed P ∥ Q stays deadlock free with the forwarder in the cut. *)
 Corollary fwdp_expand2_df p W1 W2 C1 C2 E1 E2 T :

@@ -118,6 +118,7 @@ examples/Ring.v
 examples/GenNew.v
 examples/Copycat.v
 examples/CopycatTwo.v
+examples/CopycatTwoN.v
 examples/LetVarCounter.v
 examples/ForkJoin.v
 test/CompatNotations.v
