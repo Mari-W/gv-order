@@ -107,14 +107,14 @@
   {
    "id": "syntax",
    "title": "Syntax",
-   "intro": "Programs are terms of a call-by-value $\\lambda$-calculus with session-typed channels. Terms never mention points. Points appear in types and in the relation, where they order the waits of threads.",
+   "intro": "Programs are terms of a call-by-value $\\lambda$-calculus with session-typed channels. Terms never mention points. Points appear in types and in the relation, where they order the waits of threads. The map reads top to bottom. Each section uses only what the sections before it define, and each symbol in a formula opens a note on hover.",
    "blocks": [
     {
      "id": "syn-ends",
      "title": "Ends",
      "formula": "\\sym{end.cend}{o ::= c^{+} \\mid c^{-}} \\qquad \\sym{end.dual}{\\overline{c^{+}} = c^{-}\\quad \\overline{c^{-}} = c^{+}} \\qquad \\sym{end.ech}{\\mathsf{ech}(c^{\\pm}) = c}",
-     "caption": "A channel $c$ has the two ends $c^{+}$ and $c^{-}$. An end $o$ belongs to the channel $\\mathsf{ech}\\,o$, and $\\overline{o}$ is the other end of that channel.",
-     "why": "Two threads hold the two ends of a channel. Naming ends instead of channels gives each end its own type and point. \\inmode{lf}{In the lock-free view each end also has its own counter.}",
+     "caption": "A channel $c$ has the two ends $c^{+}$ and $c^{-}$. An end $o$ belongs to the channel $\\mathsf{ech}\\,o$, and $\\overline{o}$ is the other end of that channel. Terms mention ends, never channels, and the [[syn-fends|sets of mentioned ends]] and the [[t-contexts|typing contexts]] are keyed by ends.",
+     "why": "Two threads hold the two ends of a channel. Naming ends instead of channels gives each end its own type and point, so the typing of one thread never reads the type of the other thread. \\inmode{lf}{In the lock-free view each end also has its own counter.}",
      "source": [
       {
        "file": "lang/Syntax.v",
@@ -135,8 +135,8 @@
      "id": "syn-prims",
      "title": "Constants",
      "formula": "\\begin{array}{rl}\nk ::= & \\sym{prim.send}{\\mathsf{send}} \\mid \\sym{prim.recv}{\\mathsf{recv}} \\mid \\sym{prim.close}{\\mathsf{close}} \\mid \\sym{prim.select}{\\mathsf{select}_i} \\mid \\sym{prim.branch}{\\mathsf{branch}} \\\\\n\\mid & \\sym{prim.link}{\\mathsf{link}} \\mid \\sym{prim.spawn}{\\mathsf{spawn}} \\mid \\sym{prim.force}{\\mathsf{force}}\n\\end{array}",
-     "caption": "The operations on channels, threads and boxes are constants $k$. $\\mathsf{send}$ takes a pair of a value and an end, $\\mathsf{link}$ a pair of ends, $\\mathsf{spawn}$ a thunk and $\\mathsf{force}$ a box.",
-     "why": "One term former $k\\,e$ covers every operation, and each constant has a typing rule of its own.",
+     "caption": "The operations on channels, threads and boxes are constants $k$. $\\mathsf{send}$ takes a pair of a value and an end, $\\mathsf{link}$ a pair of ends, $\\mathsf{spawn}$ a thunk and $\\mathsf{force}$ a box. Each constant has one [[sem-head|head step]] and one typing rule, collected as a [[t-consts|type of the constant]].",
+     "why": "One term former $k\\,e$ covers each operation, so the [[syn-terms|term syntax]] has thirteen formers and the semantics one head step per constant.",
      "source": [
       {
        "file": "lang/Syntax.v",
@@ -154,8 +154,8 @@
      "id": "syn-terms",
      "title": "Terms",
      "formula": "\\begin{array}{rl}\ne ::= & \\sym{syn.var}{i} \\mid \\sym{syn.unit}{\\ast} \\mid \\sym{syn.end}{o} \\mid \\sym{syn.lam}{\\lambda e} \\mid \\sym{syn.app}{e_1\\,e_2} \\mid \\sym{syn.pair}{\\langle e_1, e_2\\rangle} \\\\\n\\mid & \\sym{syn.letu}{\\mathsf{let}\\ \\ast = e_1\\ \\mathsf{in}\\ e_2} \\mid \\sym{syn.letp}{\\mathsf{let}\\ \\langle a,b\\rangle = e_1\\ \\mathsf{in}\\ e_2} \\\\\n\\mid & \\sym{syn.inj}{\\mathsf{inj}_i\\,e} \\mid \\sym{syn.case}{\\mathsf{case}\\ e\\,(e_1)\\,(e_2)} \\\\\n\\mid & \\sym{syn.box}{!e} \\mid \\sym{syn.new}{\\mathsf{new}} \\mid \\sym{syn.op}{k\\,e}\n\\end{array}",
-     "caption": "Thirteen term formers. A variable $i$ is a de Bruijn index. $\\lambda e$ and each branch of a $\\mathsf{case}$ bind one variable, and $\\mathsf{let}\\ \\langle a, b\\rangle$ binds two, named $a$ and $b$ for the reader. A box $!e$ binds itself in $e$. A constant $k$ always comes with its argument $e$.",
-     "why": "Typing has one rule per term former and one per constant, and the semantics one head step per redex.",
+     "caption": "Thirteen term formers. A variable $i$ is a de Bruijn index. $\\lambda e$ and each branch of a $\\mathsf{case}$ bind one variable, and $\\mathsf{let}\\ \\langle a, b\\rangle$ binds two, named $a$ and $b$ for the reader. A box $!e$ binds itself in $e$. A [[syn-prims|constant]] $k$ always comes with its argument $e$, so a constant passed as a function is written $\\lambda x.\\,k\\,x$. The one-variable [[syn-let|$\\mathsf{let}$]] is notation.",
+     "why": "Typing has one rule per term former and one per constant, and the semantics one head step per redex. The term syntax has no point and no annotation, so one program has many typings, and the examples choose a typing for each program.",
      "source": [
       {
        "file": "lang/Syntax.v",
@@ -176,7 +176,7 @@
      "title": "Derived let",
      "formula": "\\sym{syn.let}{\\mathsf{let}\\ a = e_1\\ \\mathsf{in}\\ e_2 \\ \\triangleq\\ \\mathsf{let}\\ \\langle a, u\\rangle = \\langle e_1, \\ast\\rangle\\ \\mathsf{in}\\ \\mathsf{let}\\ \\ast = u\\ \\mathsf{in}\\ e_2}",
      "caption": "The one-variable $\\mathsf{let}$ is notation for a pair followed by a unit elimination, with $u$ fresh.",
-     "why": "Examples read better with a one-variable $\\mathsf{let}$. As notation it needs no typing rule of its own.",
+     "why": "Examples read better with a one-variable $\\mathsf{let}$. As notation it needs no typing rule of its own, and its typing follows from [[r-data|E-Pair, E-LetP and E-LetU]].",
      "source": [
       {
        "file": "lang/Syntax.v",
@@ -191,7 +191,7 @@
      "deviations": [
       {
        "kind": "notation",
-       "reason": "Derived form, defined in Syntax.v as an application of a $\\lambda$.",
+       "reason": "Derived form. Syntax.v defines `ELet e1 e2` as `LetP (Pair e1 EUnit) (LetU (Var 0) (rename S e2))`, the pair elimination and unit elimination shown.",
        "names": [
         "ELet"
        ]
@@ -202,8 +202,8 @@
      "id": "syn-values",
      "title": "Values",
      "formula": "\\sym{syn.values}{v ::= \\ast \\mid o \\mid \\lambda e \\mid\\ !e \\mid \\langle v_1, v_2\\rangle \\mid \\mathsf{inj}_i\\,v}",
-     "caption": "Unit, ends, abstractions and boxes are values, and so are pairs and injections of values. A constant applied to a value is a redex, never a value.",
-     "why": "A thread that is a value has finished. The value relation $V$ is defined on values.",
+     "caption": "Unit, ends, abstractions and boxes are values, and so are pairs and injections of values. A constant applied to a value is a redex, never a value. The [[v-rel|value relation]] is defined on values, and the [[e-rel|term relation]] asks a term that cannot step to be a value.",
+     "why": "A thread that is a value has finished.",
      "source": [
       {
        "file": "lang/Syntax.v",
@@ -221,8 +221,8 @@
      "id": "syn-fends",
      "title": "Ends a term mentions",
      "formula": "\\sym{syn.fends}{\\mathsf{fends}(e)} \\qquad \\sym{syn.fchans}{\\mathsf{fchans}(e) = \\mathsf{ech}[\\mathsf{fends}(e)]}",
-     "caption": "$\\mathsf{fends}(e)$ is the set of ends in $e$, and $\\mathsf{fchans}(e)$ the set of their channels.",
-     "why": "The relation reads ownership off terms. A closure or a payload owns exactly the ends in it, and the relation checks this when a value is spawned or sent.",
+     "caption": "$\\mathsf{fends}(e)$ is the set of ends in $e$, and $\\mathsf{fchans}(e)$ the set of their channels, through [[syn-ends|$\\mathsf{ech}$]].",
+     "why": "The relation reads ownership off terms. A closure or a payload owns exactly the ends in it, and the [[v-rel|value relation]] and the [[e-obl|obligations of steps]] check this when a value is spawned or sent.",
      "source": [
       {
        "file": "lang/Syntax.v",
@@ -241,8 +241,8 @@
      "id": "syn-procs",
      "title": "Processes and configurations",
      "formula": "\\begin{array}{l}\n\\sym{proc.proc}{p = (C, E)} \\qquad \\sym{proc.config}{q = (C, M),\\ M : \\mathbb{N} \\rightharpoonup \\mathsf{Expr}} \\\\\n\\sym{proc.erase}{\\mathsf{erase}(C, M) = (C, \\{\\!|\\, M(i) \\mid i \\,|\\!\\})}\n\\end{array}",
-     "caption": "A process $p$ is a finite set $C$ of restricted channels and a finite multiset $E$ of threads. A configuration $q$ names its threads by $i \\in \\mathrm{dom}\\,M$, and $\\mathsf{erase}$ forgets the names.",
-     "why": "A running program is a set of threads together with its private channels. A channel is restricted when both of its ends are inside the process.",
+     "caption": "A process $p$ is a finite set $C$ of restricted channels and a finite multiset $E$ of threads. A configuration $q$ names its threads by $i \\in \\mathrm{dom}\\,M$, and $\\mathsf{erase}$ forgets the names. [[sem-proc|Process steps]] are defined on configurations. [[p-typing|Process typing]] and the [[p-rel|process relation]] speak about processes.",
+     "why": "A running program is a set of threads together with its private channels. A channel is restricted when both of its ends are inside the process. The other ends form the interface of the process with its environment.",
      "source": [
       {
        "file": "lang/Syntax.v",
@@ -268,8 +268,8 @@
      "id": "syn-labels",
      "title": "Field labels",
      "formula": "\\sym{lbl.field}{\\kappa \\in \\mathbb{N}}",
-     "caption": "Field labels $\\kappa$ are natural numbers, and $x\\cdot\\kappa$ is the field $\\kappa$ of the point $x$.",
-     "why": "Fields give payload ends and the continuations of a choice points of their own, each related to the point of the carrier.",
+     "caption": "Field labels $\\kappa$ are natural numbers, and $x\\cdot\\kappa$ is the field $\\kappa$ of the [[syn-points|point]] $x$.",
+     "why": "Fields give payload ends and the continuations of a choice points of their own, each related to the point of the carrier. They are the second place where a [[r-new|creation]] may put a new channel.",
      "source": [
       {
        "file": "lang/Syntax.v",
@@ -287,8 +287,8 @@
      "id": "syn-points",
      "title": "Points",
      "formula": "\\begin{array}{l}\nr ::= \\sym{pt.const}{a} \\mid \\sym{pt.var}{\\iota} \\qquad x ::= r \\mid \\sym{pt.shift}{x^{+}} \\mid \\sym{pt.field}{x\\cdot\\kappa} \\mid \\sym{pt.dual}{\\overline{x}} \\\\\n\\sym{pt.laws}{\\overline{\\overline{x}} = x \\quad \\overline{x}\\cdot\\kappa = x\\cdot\\kappa \\quad \\overline{x^{+}} = \\overline{x}^{+}}\n\\end{array}",
-     "caption": "Points are written $x$, $y$ and $z$. A point $x$ has a root, a constant $a$ or a variable $\\iota$. $\\overline{x}$ flips its polarity, $x^{+}$ raises its offset, and $x\\cdot\\kappa$ is one of its fields.",
-     "why": "Points order the waits of threads. Each end has a point, and a thread may wait at a point only below the points of the ends it still holds.",
+     "caption": "Points are written $x$, $y$ and $z$. A point $x$ has a root, a constant $a$ or a variable $\\iota$. $\\overline{x}$ flips its polarity, $x^{+}$ raises its offset, and $x\\cdot\\kappa$ is one of its fields, with a [[syn-labels|field label]] $\\kappa$. The two ends of a channel are at a point and its dual.",
+     "why": "Points order the waits of threads. Each end has a point, and a thread may wait at a point only below the points of the ends it still holds. A [[w-world|world]] orders points, and the [[t-side|side conditions]] of typing read that order.",
      "source": [
       {
        "file": "types/Points.v",
@@ -302,13 +302,14 @@
       "syn-moves",
       "w-world",
       "t-side"
-     ]
+     ],
+     "example": "A thread that holds $c^{+}$ at $x$ and $d^{+}$ at $y$ and closes $c^{+}$ first waits at $x$ while it holds $d^{+}$. It needs $x \\prec \\overline{y}$, the point of $d^{-}$, because the thread with $d^{-}$ may wait at $\\overline{y}$ for the thread with $d^{+}$."
     },
     {
      "id": "syn-moves",
      "title": "Where an end moves",
      "formula": "\\begin{array}{l}\nx \\;\\mapsto\\; \\sym{pt.shift}{x^{+}} \\qquad \\sym{sx.kappai}{\\kappa_{\\mathsf{false}} = 0 \\quad \\kappa_{\\mathsf{true}} = 1} \\\\\n\\sym{pt.sel}{\\mathsf{sel\\_pt}\\,x\\,i = \\overline{x\\cdot\\kappa_i}} \\qquad \\sym{pt.bra}{\\mathsf{bra\\_pt}\\,x\\,i = x\\cdot\\kappa_i} \\qquad \\sym{pt.payload}{\\mathsf{payload\\_pts}\\,x\\,m = (x\\cdot 0, \\dots, x\\cdot(m-1))}\n\\end{array}",
-     "caption": "An action moves an end from $x$ to $x^{+}$, and a choice moves it to a field of $x$. The $j$-th payload end of a message at $x$ arrives at $x\\cdot j$.",
+     "caption": "An action moves an end from $x$ to $x^{+}$, and a choice moves it to a field of $x$. The $j$-th payload end of a message at $x$ arrives at $x\\cdot j$. The [[r-act|rules for actions]] and the [[ty-payload|payload types]] use these three maps.",
      "why": "The point of an end changes as its protocol advances. One point per end therefore describes a whole protocol, and no action needs a point of its own.",
      "example": "An end at $x$ that sends twice is at $x^{++}$ afterwards.",
      "source": [
@@ -330,7 +331,7 @@
      "id": "syn-csub",
      "title": "Link substitution",
      "formula": "\\sym{link.csub}{\\mathsf{csub}\\,o_1\\,o_2\\,(o) = \\begin{cases} o_2 & o = \\overline{o_1} \\\\ \\overline{o_2} & o = o_1 \\\\ o & o \\notin \\{o_1, \\overline{o_1}\\} \\end{cases}}",
-     "caption": "A link of $o_1$ and $o_2$ renames $\\overline{o_1}$ to $o_2$ in the other threads, so that the two remaining ends form one channel.",
+     "caption": "A link of $o_1$ and $o_2$ renames $\\overline{o_1}$ to $o_2$ in the other threads, so that the two remaining ends form one channel. [[sem-proc|P-Act-Link]] applies the renaming, and [[r-act|E-Link]] asks the two linked ends to be dual.",
      "why": "After a link, the threads holding $\\overline{o_1}$ and $\\overline{o_2}$ communicate with each other directly.",
      "source": [
       {
@@ -2725,7 +2726,7 @@
   "syn.unit": {
    "title": "Unit value $\\ast$",
    "meaning": "The unit value $\\ast$, with $V\\llbracket\\Theta \\vdash \\ast\\rrbracket$ only at $\\Theta = \\varnothing$.",
-   "why": "A plain term former. $\\mathsf{close}$, $\\mathsf{link}$ and $\\mathsf{spawn}$ return $\\ast$, and a terminated process has $\\ast$ in every thread except the main thread.",
+   "why": "A plain term former. $\\mathsf{close}$, $\\mathsf{link}$ and $\\mathsf{spawn}$ return $\\ast$, and in a terminated process each thread but the main thread is $\\ast$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{close}\\,o \\xrightarrow{o\\,\\mathsf{end}} \\ast$.",
    "signature": "\\ast \\in \\mathsf{Val}",
@@ -2762,8 +2763,8 @@
   },
   "syn.lam": {
    "title": "$\\lambda$-abstraction",
-   "meaning": "A one-argument closure $\\lambda e$, a value for every $e$ because no frame has its hole under $\\lambda$.",
-   "why": "A plain term former and the value form of every user function.",
+   "meaning": "A one-argument closure $\\lambda e$, a value for each $e$ because no frame has its hole under $\\lambda$.",
+   "why": "A plain term former and the value form of a user function.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\lambda x.\\,\\mathsf{send}\\,x$ is $\\mathsf{send}$ as a function value.",
    "signature": "\\lambda e \\in \\mathsf{Val}",
@@ -2895,9 +2896,9 @@
   "syn.let": {
    "title": "Derived let",
    "meaning": "$\\mathsf{let}\\ a = e_1\\ \\mathsf{in}\\ e_2 := \\mathsf{let}\\ \\langle a, u\\rangle = \\langle e_1, \\ast\\rangle\\ \\mathsf{in}\\ \\mathsf{let}\\ \\ast = u\\ \\mathsf{in}\\ e_2$ with $u$ fresh.",
-   "why": "The abbreviation binds one variable without a $\\lambda$, so its body keeps every end of the context and the typing needs no lower point $l$ for these ends. It uses only $\\otimes$ and $\\ast$, which every system already has.",
-   "breaks": "Written as $(\\lambda a.\\,e_2)\\,e_1$ instead, the $\\lambda$ must bound the dual points of all ends it captures by one lower point $l$. After $\\mathsf{let}\\ \\langle a, a'\\rangle = \\mathsf{new}_\\ell$ the ends $a, a'$ are at $\\rho$ and $\\overline{\\rho}$, which have no common lower bound, and the body does not type.",
-   "example": "$\\mathsf{let}\\ p = \\mathsf{force}\\,mk\\,\\ast\\ \\mathsf{in}\\ e$ keeps every end of the context in $e$.",
+   "why": "The abbreviation binds one variable without a $\\lambda$, so its body keeps the ends of the context and the typing needs no lower point $l$ for these ends. It uses only $\\otimes$ and $\\ast$.",
+   "breaks": "Written as $(\\lambda a.\\,e_2)\\,e_1$ instead, the $\\lambda$ must bound the dual points of the ends it captures by one lower point $l$. After $\\mathsf{let}\\ \\langle a, a'\\rangle = \\mathsf{new}$ at a fresh root the ends $a, a'$ are at $\\rho$ and $\\overline{\\rho}$, which have no common lower bound, and the body does not type.",
+   "example": "$\\mathsf{let}\\ p = \\mathsf{force}\\,mk\\,\\ast\\ \\mathsf{in}\\ e$ keeps the ends of the context in $e$.",
    "signature": "\\mathsf{let}\\ a = e_1\\ \\mathsf{in}\\ e_2 \\in \\mathsf{Expr}",
    "args": [
     {
@@ -3011,7 +3012,7 @@
    "title": "$\\mathsf{new}$",
    "meaning": "$\\mathsf{new} \\xrightarrow{\\mathsf{new}\\,c} \\langle c^{+}, c^{-}\\rangle$ for a fresh channel $c$. The typing places $c^{+}$ at a fresh root $\\rho$ and $c^{-}$ at $\\overline{\\rho}$ under an existential with a constraint $C$, or at a field $x\\cdot\\kappa$ and its dual with no constraint.",
    "why": "The term names no point. The position and the constraint are part of the type of $\\mathsf{new}$, which the typing derivation chooses. Each ordering of a new channel is therefore available without program syntax.",
-   "breaks": "With the position or the facts in the term, every held end that the facts mention is an argument that $\\mathsf{new}$ takes and returns, because ends are linear.",
+   "breaks": "With the position or the facts in the term, each held end that the facts mention is an argument that $\\mathsf{new}$ takes and returns, because ends are linear.",
    "example": "$\\mathsf{let}\\ \\langle a, a'\\rangle = \\mathsf{new}\\ \\mathsf{in}\\ e$.",
    "signature": "\\mathsf{new} : \\exists^{\\bot}\\rho.\\ C.\\ (S_{\\rho} \\otimes \\overline{S}_{\\overline{\\rho}}) \\mid S_{x\\cdot\\kappa} \\otimes \\overline{S}_{\\overline{x\\cdot\\kappa}}",
    "args": [
@@ -3044,7 +3045,7 @@
   "syn.op": {
    "title": "Constant application $k\\,e$",
    "meaning": "The term $k\\,e$ applies the constant $k$ to its argument $e$. It evaluates $e$ to a value $v$ and then takes the head step of $k$ on $v$. A constant never occurs without its argument, so $k\\,e$ is never a value.",
-   "why": "The constants are the operations on channels, boxes and threads, and one term former covers every constant. Each constant has its own typing rule. A constant passed as a function is written as its $\\eta$-expansion $\\lambda x.\\,k\\,x$.",
+   "why": "The constants are the operations on channels, boxes and threads, and one term former covers each constant. Each constant has its own typing rule. A constant passed as a function is written as its $\\eta$-expansion $\\lambda x.\\,k\\,x$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{send}\\,\\langle \\ast, o\\rangle$ applies $\\mathsf{send}$ to a pair.",
    "signature": "k\\,e \\in \\mathsf{Expr}",
@@ -3092,10 +3093,6 @@
     {
      "name": "T, m",
      "meaning": "The payload type and the number $m$ of point variables it binds, instantiated at the fields $x\\cdot i$."
-    },
-    {
-     "name": "S",
-     "meaning": "The continuation after the action."
     }
    ],
    "source": [
@@ -3132,10 +3129,6 @@
     {
      "name": "T, m",
      "meaning": "The payload type and the number $m$ of point variables it binds, instantiated at the fields $x\\cdot i$."
-    },
-    {
-     "name": "S",
-     "meaning": "The continuation after the action."
     }
    ],
    "source": [
@@ -3191,7 +3184,7 @@
     },
     {
      "name": "S, S', S''",
-     "meaning": "The session type before the action and the chosen continuation."
+     "meaning": "The session type before the action, and its two continuations, $S'$ for $\\mathsf{false}$ and $S''$ for $\\mathsf{true}$."
     }
    ],
    "source": [
@@ -3231,7 +3224,7 @@
   },
   "prim.link": {
    "title": "$\\mathsf{link}$",
-   "meaning": "$\\mathsf{link}\\,\\langle o_1, o_2\\rangle \\xrightarrow{\\leftrightarrow\\{o_1, o_2\\}} \\ast$. The process step removes $\\mathsf{ech}\\,o_1$ and renames every thread by $\\mathsf{csub}\\,o_1\\,o_2$.",
+   "meaning": "$\\mathsf{link}\\,\\langle o_1, o_2\\rangle \\xrightarrow{\\leftrightarrow\\{o_1, o_2\\}} \\ast$. The process step removes $\\mathsf{ech}\\,o_1$ and renames each thread by $\\mathsf{csub}\\,o_1\\,o_2$.",
    "why": "A link forwards a conversation without relaying messages. \\inmode{lf}{It acts on no protocol, so it costs $0$ in both cost tables, and in the fuel layer it lowers no counter.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{link}\\,\\langle c^{+}, d^{-}\\rangle$.",
@@ -3352,7 +3345,7 @@
   },
   "end.cend": {
    "title": "End",
-   "meaning": "An end $o \\in \\{c^{+}, c^{-}\\}$ of a channel $c$, with one entry per end in every environment.",
+   "meaning": "An end $o \\in \\{c^{+}, c^{-}\\}$ of a channel $c$, with one entry per end in an environment.",
    "why": "The two ends have independent names, and $\\mathsf{select}$ and $\\mathsf{branch}$ return the name they received. Hence an environment entry is determined by the end alone.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{new}$ returns $\\langle c^{+}, c^{-}\\rangle$.",
@@ -3375,7 +3368,7 @@
   "end.dual": {
    "title": "Dual end $\\overline{o}$",
    "meaning": "$\\overline{c^{+}} = c^{-}$ and $\\overline{c^{-}} = c^{+}$, so $\\overline{\\overline{o}} = o$.",
-   "why": "A message on $o$ synchronizes with an action on $\\overline{o}$. Every two-thread process step pairs an end with its partner.",
+   "why": "A message on $o$ synchronizes with an action on $\\overline{o}$. Each two-thread process step pairs an end with its dual end.",
    "breaks": "Nothing. It is a definition.",
    "example": "A send on $c^{+}$ meets a receive on $c^{-}$.",
    "signature": "\\overline{\\cdot} : \\mathsf{End} \\to \\mathsf{End}",
@@ -3441,7 +3434,7 @@
   "syn.fchans": {
    "title": "$\\mathsf{fchans}$",
    "meaning": "$\\mathsf{fchans}(e) = \\{\\mathsf{ech}\\,o \\mid o \\in \\mathsf{fends}(e)\\}$.",
-   "why": "A created channel $c$ must satisfy $c \\notin \\mathsf{fchans}(e)$ for every thread $e$, or two channels share a name.",
+   "why": "A created channel $c$ must satisfy $c \\notin \\mathsf{fchans}(e)$ for each thread $e$, or two channels share a name.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{fchans}(\\langle c^{+}, d^{-}\\rangle) = \\{c, d\\}$.",
    "signature": "\\mathsf{fchans} : \\mathsf{Expr} \\to \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Chan})",
@@ -3550,7 +3543,7 @@
   "pt.const": {
    "title": "Root $a$",
    "meaning": "A root $a \\in A$ of the world $W$, either shared with the environment or added to $W$ by the creation of a channel.",
-   "why": "Every point of a held end has a root in $A$. The facts $\\prec_A$ mention only such points.",
+   "why": "Each point of a held end has a root in $A$. The facts $\\prec_A$ mention only such points.",
    "breaks": "Nothing. It is a definition.",
    "example": "Roots $1, 2$ with the fact $1 \\prec \\overline{2}$.",
    "signature": "a \\in \\mathsf{Root}",
@@ -3594,7 +3587,7 @@
   "pt.shift": {
    "title": "Shift $x^{+}$",
    "meaning": "$x^{+}$ raises the offset of $x$ by $1$, so an action on an end at $x$ moves it to $x^{+}$.",
-   "why": "For every $W$ and $x$, $x \\prec_W x^{+}$. Hence the actions of one end are ordered in program order.",
+   "why": "For each $W$ and $x$, $x \\prec_W x^{+}$. Hence the actions of one end are ordered in program order.",
    "breaks": "Nothing. It is a definition.",
    "example": "After $\\mathsf{send}$ at $x$ the end is at $x^{+}$.",
    "signature": "(\\cdot)^{+} : \\mathsf{Point} \\to \\mathsf{Point}",
@@ -3663,7 +3656,7 @@
   },
   "pt.laws": {
    "title": "Point laws",
-   "meaning": "For every $x$ and $\\kappa$, $\\overline{\\overline{x}} = x$, $\\overline{x}\\cdot\\kappa = x\\cdot\\kappa$ and $\\overline{x^{+}} = \\overline{x}^{+}$.",
+   "meaning": "For each $x$ and $\\kappa$, $\\overline{\\overline{x}} = x$, $\\overline{x}\\cdot\\kappa = x\\cdot\\kappa$ and $\\overline{x^{+}} = \\overline{x}^{+}$.",
    "why": "$\\overline{x}\\cdot\\kappa = x\\cdot\\kappa$ makes the payload points $x\\cdot j$ of sender and receiver equal, although the two ends are at $x$ and $\\overline{x}$.",
    "breaks": "If $\\overline{x}\\cdot\\kappa \\neq x\\cdot\\kappa$, the ends of a message are at different points for sender and receiver, and the received value is not in the value relation at its type.",
    "example": "$\\overline{\\rho}\\cdot 0 = \\rho\\cdot 0$.",
@@ -3821,7 +3814,7 @@
   },
   "link.csub": {
    "title": "$\\mathsf{csub}$",
-   "meaning": "$\\mathsf{csub}\\,o_1\\,o_2 = \\{\\overline{o_1} \\mapsto o_2,\\ o_1 \\mapsto \\overline{o_2}\\}$, the identity elsewhere, applied to every thread after a link.",
+   "meaning": "$\\mathsf{csub}\\,o_1\\,o_2 = \\{\\overline{o_1} \\mapsto o_2,\\ o_1 \\mapsto \\overline{o_2}\\}$, the identity elsewhere, applied to each thread after a link.",
    "why": "After the link, the thread holding $\\overline{o_1}$ communicates with the thread holding $\\overline{o_2}$, so it holds $o_2$. The map identifies $\\overline{o_1}$ with $o_2$, so it is no bijection.",
    "breaks": "Nothing. It is a definition.",
    "example": "After $\\mathsf{link}\\,\\langle c^{+}, d^{-}\\rangle$ the thread holding $c^{-}$ holds $d^{-}$.",
