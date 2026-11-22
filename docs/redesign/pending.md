@@ -66,7 +66,10 @@ rises from 227 to 242 lines.
     for at most two actions, so credits ≥ 1 and tickets ≥ 2 are
     invariant. No lock-freedom instance was derived.
 
-- Builds. Local single-file builds throughout. LAPTOP_RESULTS
+- Builds. Local single-file builds throughout. Laptop at 1565a0e:
+  `make` exit 0, `make check` 234 of 234, `make test` passes. Laptop at
+  c913daf (all three gaps and the map): `make` exit 0, `make check`
+  242 of 242, `make test` passes.
 
 - Map (docs/explorer/map.json, 4d1b218). check.sh shows 0 errors, no
   xref-missing and the 65 warnings of 909ef90.
