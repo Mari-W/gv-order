@@ -21,11 +21,12 @@ Lemma lf_main_typed N W t T c :
   ∅ ⊢▷ t → ∅ ⊩^N _ W (∅, {[+ t +]}) : T.
 Proof.
   intros HS Hp Ht Hg. split.
-  - apply (p_term (Some N) W ∅ ∅ ∅ t T c); [done| | | | | |done].
-    5: { unfold tenv_of. rewrite fmap_empty, map_union_empty. exact Ht. }
+  - apply (p_term (Some N) W ∅ ∅ ∅ t T c); [done| | | | | | |done].
+    6: { unfold tenv_of. rewrite fmap_empty, map_union_empty. exact Ht. }
     + intros o. rewrite dom_empty_L. set_solver.
     + set_solver.
     + apply pfree_empty.
+    + intros o e He. by rewrite lookup_empty in He.
     + set_solver.
   - intros t' Ht'. simpl in Ht'. apply gmultiset_elem_of_singleton in Ht' as ->. done.
 Qed.
@@ -49,30 +50,31 @@ Lemma e_unit' W N Γ Δ F : (∀ y o, Δ !! y = Some o → spare o) →
 Proof. intros H. by apply e_unit, spare_unl. Qed.
 
 Lemma e_new' W N Γ Δ F (L : fact → Prop) S :
-  (∀ y o, Δ !! y = Some o → spare o) → wf_new (bcs_of L) →
+  (∀ y o, Δ !! y = Some o → spare o) → wf_new (bcs_of L) → scontr S →
   typed W N ∅ Γ Δ F ENew (TEx LBot 1 (bcs_of L)
     (TProd (TSess S (pvar 0) (fhalf N) (fhalf N)) (TSess (dual S) (pvar 0)‾ (ncap N (fhalf N)) (ncap N (fhalf N))))) (Some 0).
-Proof. intros H HL. apply e_new; [by apply spare_unl|done|apply tsum_half]. Qed.
+Proof. intros H HL HS. apply e_new; [by apply spare_unl|by apply wf_new_gen|apply tsum_half|done]. Qed.
 
 (** A creation at the field κ of the point x of the end y, ⟨y, new⟩, at
     the tickets m of the anchor and N − m. *)
 Lemma e_new_at' W N (Θ : tenv) Γ Δ F (y : nat) κ S0 x a m S :
   Θ = ∅ → fle m N → Δ !! y = Some (Some (TSess S0 x a m)) → (∀ z o, z ≠ y → Δ !! z = Some o → spare o) →
+  scontr S →
   typed W N Θ Γ Δ F (Pair (Var y) ENew)
     (TProd (TSess S0 x a m) (TProd (TSess S (x·κ) m m) (TSess (dual S) (x·κ)‾ (ncap N m) (ncap N m)))) (Some 0).
 Proof.
-  intros -> Hm Hy Hs. rewrite <-(fadd_0_r (Some 0)).
+  intros -> Hm Hy Hs HS. rewrite <-(fadd_0_r (Some 0)).
   eapply (e_pair _ _ ∅ ∅ ∅ ∅); [apply tsplit_empty|apply (lsplit_only y), Hs| |intros o; by rewrite lookup_empty|apply lage_0| |apply tage_0].
   - eapply e_var'; [exact Hy|exact Hs].
-  - apply e_new_fld; [by apply lenv_unl_only|by apply tsum_ncap].
+  - apply e_new_fld; [by apply lenv_unl_only|by apply tsum_ncap|done].
 Qed.
 
 (** E-New at any tickets m1 + m2 ≤ N. *)
 Lemma e_new_tk W N Γ Δ F (L : fact → Prop) S m1 m2 :
-  (∀ y o, Δ !! y = Some o → spare o) → wf_new (bcs_of L) → tsum_ok N m1 m2 →
+  (∀ y o, Δ !! y = Some o → spare o) → wf_new (bcs_of L) → tsum_ok N m1 m2 → scontr S →
   typed W N ∅ Γ Δ F ENew (TEx LBot 1 (bcs_of L)
     (TProd (TSess S (pvar 0) m1 m1) (TSess (dual S) (pvar 0)‾ m2 m2))) (Some 0).
-Proof. intros H HL Hm. apply e_new; [by apply spare_unl|done|done]. Qed.
+Proof. intros H HL Hm HS. apply e_new; [by apply spare_unl|by apply wf_new_gen|done|done]. Qed.
 
 Lemma thage_empty c : thage c ∅ ∅.
 Proof. intros o. by rewrite lookup_empty. Qed.
@@ -129,7 +131,7 @@ Lemma e_sub_sess2 W N Γ Δ F e S1 x S2 y a1 a2 b1 b2 c m1 m2 :
   fle b1 a1 → fle b2 a2 →
   typed W N ∅ Γ Δ F e (TProd (TSess S1 x b1 m1) (TSess S2 y b2 m2)) c.
 Proof.
-  intros He H1 H2. eapply e_sub; [exact He| |apply fle_refl].
+  intros He H1 H2. eapply e_sub; [exact He| |apply fle_refl|intros HC; exact HC].
   apply sub_prod; apply sub_sess; rewrite ?fadd_0_l; auto using sequiv_refl.
 Qed.
 
@@ -181,12 +183,14 @@ Definition lbox (m : nat) (C : bcs) (ub : option point) (T U : ty) : ty :=
   TBox m 0 C None (Some 0) (TLolli (ubound_of ub) LNone None T U None).
 
 Lemma lbox_typed W N Γ n F m C ub T U e c :
+  tcontr T → tcontr U →
   pinst_ty (pshift m) (lbox m C ub T U) = lbox m C ub T U →
   typed W N ∅ (hc_open m C Γ) (Some T :: Some (lbox m C ub T U) :: nones n) (∅, Some (FRest (rest_of ub))) e U c →
   typed W N ∅ Γ (nones n) F (EBox (Lam e)) (lbox m C ub T U) (Some 0).
 Proof.
-  intros HB He. unfold lbox at 1. eapply e_box.
+  intros HT HU HB He. unfold lbox at 1. eapply e_box.
   { intros o Ho. apply elem_of_replicate in Ho as [-> _]. by left. }
+  { cbn [tcontr]. by apply Is_true_andb. }
   intros ss Hk _. destruct ss; [|done]. rewrite sinst_nil.
   rewrite lenv_pinst_cons'. cbn [fmap option_fmap option_map]. fold (lbox m C ub T U).
   rewrite HB, lenv_pinst_nones.
@@ -194,7 +198,8 @@ Proof.
   { apply lb_below_none. spare_tac. }
   { intros o. by rewrite !lookup_empty. }
   { apply lage_some; [apply age_free; constructor|apply lage_nones]. }
-  eapply e_sub; [exact He|apply tsub_refl|apply fle_inf].
+  { done. }
+  eapply e_sub; [exact He|apply tsub_refl|apply fle_inf|by intros].
 Qed.
 
 Lemma lbox_force W N Γ Δ F e m C ub T U xs c0 :

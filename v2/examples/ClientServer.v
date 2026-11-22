@@ -100,17 +100,20 @@ Proof. reflexivity. Qed.
 (** One box body typing for both loops. [e] is the body after the let
     pair, which binds the end at ι at 1 and the end at κ at 0. *)
 Lemma cs_box_typed W Γ n F (S1 S2 : sty) e :
+  scontr S1 → scontr S2 →
   dftyped W ∅ (hc_open 3 cs_C Γ)
     (Some (TSess S2 (pvar 1) None None) :: Some (TSess S1 (pvar 0) None None) ::
      None :: Some (cs_box S1 S2) :: nones n)
     (∅, Some (FRest (RAbove (pvar 2)))) e TUnit →
   dftyped W ∅ Γ (nones n) F (EBox (Lam (LetP (Var 0) e))) (cs_box S1 S2).
 Proof.
-  intros He. eapply d_box.
+  intros HS1 HS2 He. eapply d_box.
   { intros o Ho. apply elem_of_replicate in Ho as [-> _]. by left. }
+  { cbn [tcontr]. repeat (apply Is_true_andb; split); done. }
   intros ss Hk _. destruct ss; [|done]. rewrite sinst_nil, cs_box_shift, lenv_pinst_nones.
   eapply d_abs.
   { apply lb_below_none. spare_tac. }
+  { cbn [tcontr]. repeat (apply Is_true_andb; split); done. }
   eapply d_letp; [apply tsplit_empty| | |].
   - lsplit_tac (Var 0) e.
   - eapply d_var'; [reflexivity|]. spare_tac.
@@ -261,23 +264,23 @@ Proof.
 Qed.
 
 Lemma cli_typed n F : dftyped W_cs ∅ Γm (nones n) F cli (cs_box Sa Sb).
-Proof. apply cs_box_typed, cli_body. Qed.
+Proof. apply cs_box_typed; [contr_tac|contr_tac|apply cli_body]. Qed.
 
 Lemma srv_typed n F : dftyped W_cs ∅ Γm (nones n) F srv (cs_box Sb Sa).
-Proof. apply cs_box_typed, srv_body. Qed.
+Proof. apply cs_box_typed; [contr_tac|contr_tac|apply srv_body]. Qed.
 
 Theorem cs_dftyped : dftyped W_cs ∅ hc_empty [] (∅, None) cs_main TUnit.
 Proof.
   unfold cs_main, let_new.
   eapply d_let; [apply tsplit_empty|apply lsplit_nil| |].
-  { eapply (d_new' _ _ _ _ _ Sa None None); [spare_tac|apply cs_wf_new]. }
+  { eapply (d_new' _ _ _ _ _ Sa None None); [spare_tac|apply cs_wf_new|contr_tac]. }
   eapply d_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
   fold Γm.
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Pair (Var 1) ENew) EUnit| |].
-  { eapply (d_new_at _ _ _ _ _ _ 0 Sa (pvar 0) Sb); [done|reflexivity|]. spare_tac. }
+  { eapply (d_new_at _ _ _ _ _ _ 0 Sa (pvar 0) Sb); [done|reflexivity| |contr_tac]. spare_tac. }
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
   eapply d_letu; [apply tsplit_empty

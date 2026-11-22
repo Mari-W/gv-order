@@ -527,7 +527,7 @@ Lemma side_lookup N W Σ C0 u T :
     ∀ o, o ∈ fends u → edual o ∉ fends u →
       ∃ S x e, Σ !! o = Some (S, x) ∧ Θ !! o = Some e ∧ te_pt e = x.
 Proof.
-  intros H. apply ptyped_one in H as (ΘB & c & _ & HB & _ & _ & HBs & Ht & _).
+  intros H. apply ptyped_one in H as (ΘB & c & _ & HB & _ & _ & _ & HBs & Ht & _).
   pose proof (typed_tfacts _ _ _ _ _ _ _ _ _ Ht) as [Hd _].
   exists (tenv_of (fhalf N) Σ ∪ ΘB), c. split; [done|]. intros o Ho Hn.
   destruct (Σ !! o) as [[S x]|] eqn:HΣ.
@@ -537,7 +537,7 @@ Proof.
     assert (o ∈ dom ΘB) as HoB.
     { rewrite Hd, dom_union_L in Ho. apply elem_of_union in Ho as [Ho|Ho]; [|done].
       unfold tenv_of in Ho. rewrite dom_fmap_L in Ho. by apply not_elem_of_dom in HΣ. }
-    apply HB in HoB. destruct (HBs _ HoB) as (S & x & m & m' & _ & H1 & H2).
+    apply HB in HoB. destruct (HBs _ HoB) as (S & x & m & m' & _ & _ & H1 & H2).
     destruct o; simpl; apply elem_of_dom; eauto.
 Qed.
 

@@ -20,6 +20,7 @@ types/Costs.v
 types/Types.v
 types/Erasure.v
 types/Duality.v
+types/Contractive.v
 static/Contexts.v
 static/Typing.v
 static/Conservativity.v
@@ -27,6 +28,7 @@ static/Constants.v
 static/Weakening.v
 static/PointSubst.v
 static/Inversion.v
+static/Sinst.v
 test/TypeNotations.v
 examples/Tools.v
 examples/ClientServer.v

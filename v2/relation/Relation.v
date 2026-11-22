@@ -392,7 +392,7 @@ Section bodies.
           (∃ v', v = Inj true v' ∧ Vbody n Vl El k' W Θ U v')
       | TBox m kk C ub _ U =>
           Θ = ∅ ∧ ∃ e, v = EBox e ∧ fends e = ∅ ∧                 (* Q14 *)
-            ∀ W' xs ss, W ⊑ W' → length xs = m → length ss = kk → Forall hcontractive ss ∧ Forall sscoped ss →
+            ∀ W' xs ss, W ⊑ W' → length xs = m → length ss = kk → Forall contractive ss ∧ Forall sscoped ss →
               wholds W' C xs →
               Vbody n Vl El k' W' ∅
                 (tthunk (pt_inst (plist xs) <$> ub) (sinst_ty (slist ss) (ty_inst xs U))) (thunk e)
@@ -1139,7 +1139,7 @@ Section equations.
   Lemma Vrel_box_iff n W Θ m kk C ub c U v :
     Vrel κ n W Θ (TBox m kk C ub c U) v ↔
     Θ = ∅ ∧ ∃ e, v = EBox e ∧ fends e = ∅ ∧
-      ∀ W' xs ss, W ⊑ W' → length xs = m → length ss = kk → Forall hcontractive ss ∧ Forall sscoped ss →
+      ∀ W' xs ss, W ⊑ W' → length xs = m → length ss = kk → Forall contractive ss ∧ Forall sscoped ss →
         wholds W' C xs →
         Vrel κ n W' ∅ (tthunk (pt_inst (plist xs) <$> ub) (sinst_ty (slist ss) (ty_inst xs U)))
           (thunk e).

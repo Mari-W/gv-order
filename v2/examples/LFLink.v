@@ -14,7 +14,7 @@
 From GV Require Import examples.LFTools.
 
 Section link.
-  Context (W : sworld) (N : nat) (HN : 1 ≤ N) (S : sty) (x : point).
+  Context (W : sworld) (N : nat) (HN : 1 ≤ N) (S : sty) (HS : scontr S) (x : point).
 
   Definition lc : cend := EPos "c".
   Definition ld : cend := ENeg "d".
@@ -23,7 +23,7 @@ Section link.
     typed W (Some N) ∅ Γ [] (∅, None) ENew (TEx LBot 1 (bcs_of L)
       (TProd (TSess S (pvar 0) (Some N) (Some N)) (TSess (dual S) (pvar 0)‾ (Some 0) (Some 0)))) (Some 0).
   Proof.
-    intros HL. apply e_new_tk; [intros y o Hy; by rewrite lookup_nil in Hy|done|].
+    intros HL. apply e_new_tk; [intros y o Hy; by rewrite lookup_nil in Hy|done| |exact HS].
     unfold tsum_ok. simpl. lia.
   Qed.
 

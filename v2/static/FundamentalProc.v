@@ -64,14 +64,14 @@ Qed.
 
 Lemma pterm_sth N Σ (ΘB : tenv) C0 :
   (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 → pfree Σ →
-  (∀ c, c ∈ C0 → ∃ S x m m', tsum_ok N m m' ∧
+  (∀ c, c ∈ C0 → ∃ S x m m', tsum_ok N m m' ∧ scontr S ∧
      ΘB !! (c⁺)%cend = Some (TE S x m m) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ m' m')) →
   sth (tenv_erase (tenv_of (fhalf N) Σ ∪ ΘB)) Σ (tenv_erase ΘB) C0.
 Proof.
   intros HB HΣ Hf Hd. constructor; [|intros o; unfold tenv_erase; rewrite dom_fmap_L; apply HB|done|done|].
   - unfold tenv_erase, tenv_of. rewrite map_fmap_union, <-map_fmap_compose. f_equal.
     rewrite <-(map_fmap_id Σ) at 2. apply map_fmap_ext. by intros ? [? ?] _.
-  - intros o Ho. destruct (Hd (ech o) Ho) as (S & x & m & m' & _ & H1 & H2). unfold tenv_erase.
+  - intros o Ho. destruct (Hd (ech o) Ho) as (S & x & m & m' & _ & _ & H1 & H2). unfold tenv_erase.
     destruct o as [c|c]; cbn [ech] in H1, H2; simpl.
     + exists S, x, (dual S). rewrite !lookup_fmap, H1, H2. split_and!; [done|done|apply seqv_refl].
     + exists (dual S), x‾, S. rewrite !lookup_fmap, H1, H2. simpl. rewrite pt_dual_dual.
@@ -104,7 +104,7 @@ Section proc.
     ∀ R, wmodels R W → sem_ptyped κ R Σ p T.
   Proof.
     induction 1 as
-      [W Σ ΘB C0 t T c Hp HB HΣ Hpf Hd Ht HW
+      [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Ht HW
       |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T H1 IH1 H2 IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 HJ];
       intros HG R HR n; simpl in HG.
     - apply (sem_p_term κ n R _ Σ (tenv_erase ΘB) C0 t T Hp (pterm_sth N Σ ΘB C0 HB HΣ Hpf Hd)).

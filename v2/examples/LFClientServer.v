@@ -127,13 +127,13 @@ End body.
 Lemma csl_cli_typed Γ n F : typed W_cs (Some 6) ∅ Γ (nones n) F cli (csl_box Sa Sb) (Some 0).
 Proof.
   destruct (csl_cli W_cs Γ n) as (c & Hb).
-  eapply lbox_typed; [reflexivity|exact Hb].
+  eapply lbox_typed; [contr_tac|contr_tac|reflexivity|exact Hb].
 Qed.
 
 Lemma csl_srv_typed Γ n F : typed W_cs (Some 6) ∅ Γ (nones n) F srv (csl_box Sb Sa) (Some 0).
 Proof.
   destruct (csl_srv W_cs Γ n) as (c & Hb).
-  eapply lbox_typed; [reflexivity|exact Hb].
+  eapply lbox_typed; [contr_tac|contr_tac|reflexivity|exact Hb].
 Qed.
 
 Lemma csl_hold_main (b : bool) :
@@ -149,7 +149,7 @@ Proof.
   eexists _.
   { unfold cs_main, let_new.
   eapply e_let_; [apply lsplit_nil| | | ].
-  { eapply (e_new' _ _ _ _ _ _ Sa); [spare_tac|apply cs_wf_new]. }
+  { eapply (e_new' _ _ _ _ _ _ Sa); [spare_tac|apply cs_wf_new|contr_tac]. }
   lage_tac.
   eapply e_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
@@ -158,7 +158,7 @@ Proof.
   { eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_letp_; [lsplit_tac (Pair (Var 1) ENew) EUnit| | | ].
-  { eapply (e_new_at' _ _ _ _ _ _ _ 0 Sa (pvar 0) _ _ Sb); [done|shelve|reflexivity|]. spare_tac. }
+  { eapply (e_new_at' _ _ _ _ _ _ _ 0 Sa (pvar 0) _ _ Sb); [done|shelve|reflexivity| |contr_tac]. spare_tac. }
   lage_tac.
   eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
   { eapply e_var'; [reflexivity|]. spare_tac. }

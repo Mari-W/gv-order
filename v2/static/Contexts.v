@@ -17,7 +17,7 @@
     capture of E-Abs is aging. Credits sit on ends and closures only, so
     both recurse through products, sums and existentials. *)
 
-From GV Require Export types.Types.
+From GV Require Export types.Contractive.
 
 (** ** Environments *)
 
@@ -217,6 +217,61 @@ Definition wf_new (C : bcs) : Prop :=
   (∀ x y, bc_facts C (FLt x y) → fact_scoped (1 + length (bc_env C)) (FLt x y) → in_tree0 y) ∧
   well_founded (new_step C).
 
+(** ** The most general constraint of a creation (gen-new₁)
+
+    docs/redesign/check-general-new.md, section 6, and (wf-new⁺) of
+    check-layers-open.md. A fact of C may also end at a context point,
+    an exit u ≺ y. A relation S pairs points of the tree of ρ with points
+    of Γ, so that each exit has a partner below y, partners descend along
+    C with program order, and each fact z ≺ s into a paired point lies
+    below its partner. Facts between two context points follow from Γ.
+    A context point is the instance [ctx_pt] of a variable 1 + j of C at
+    the j-th point of its environment. The premise reads [slt], the facts
+    of C and program order, and names no rank. *)
+Definition ctx_pt (C : bcs) (x : point) : point := pt_inst (plist (pvar 0 :: bc_env C)) x.
+
+Definition cfact (C : bcs) (x y : point) : Prop :=
+  bc_facts C (FLt x y) ∧ fact_scoped (1 + length (bc_env C)) (FLt x y).
+
+Definition gen_new_rel (W : sworld) (Γ : hctx) (C : bcs) (Sr : point → point → Prop) : Prop :=
+  (∀ u y, cfact C u y → in_tree0 u → ¬ in_tree0 y → ∃ t, Sr u t ∧ slt W Γ t (ctx_pt C y)) ∧
+  (∀ s t s', Sr s t → new_step C s' s → ∃ t', Sr s' t' ∧ slt W Γ t' t) ∧
+  (∀ s t z, Sr s t → cfact C z s → ¬ in_tree0 z → slt W Γ (ctx_pt C z) t).
+
+Definition gen_new (W : sworld) (Γ : hctx) (C : bcs) : Prop :=
+  well_founded (new_step C) ∧
+  (∀ x y, cfact C x y → ¬ in_tree0 x → ¬ in_tree0 y → slt W Γ (ctx_pt C x) (ctx_pt C y)) ∧
+  ∃ Sr, gen_new_rel W Γ C Sr.
+
+(** (wf-new⁺): the partners come from a map h on the points D below an
+    exit, and no fact joins two context points. *)
+Definition wf_new_plus (W : sworld) (Γ : hctx) (C : bcs) : Prop :=
+  well_founded (new_step C) ∧
+  (∀ x y, cfact C x y → in_tree0 x ∨ in_tree0 y) ∧
+  ∃ (D : point → Prop) (h : point → point),
+    (∀ s s', D s → new_step C s' s → D s') ∧
+    (∀ u y, cfact C u y → in_tree0 u → ¬ in_tree0 y → D u ∧ slt W Γ (h u) (ctx_pt C y)) ∧
+    (∀ s s', D s → new_step C s' s → slt W Γ (h s') (h s)) ∧
+    (∀ u z, D u → cfact C z u → ¬ in_tree0 z → slt W Γ (ctx_pt C z) (h u)).
+
+Lemma wf_new_plus_gen W Γ C : wf_new_plus W Γ C → gen_new W Γ C.
+Proof.
+  intros (Hwf & Hin & D & h & HD & Hx & Hs & He). split_and!; [done| |].
+  - intros x y Hf Hx' Hy'. by destruct (Hin x y Hf).
+  - exists (λ u t, D u ∧ t = h u). split_and!.
+    + intros u y Hf Hu Hy. destruct (Hx u y Hf Hu Hy) as [HDu Hlt]. eauto.
+    + intros s t s' [HDs ->] Hst. exists (h s'). split; [split; [by eapply HD|done]|]. by apply Hs.
+    + intros s t z [HDs ->] Hf Hz. by apply He.
+Qed.
+
+Lemma wf_new_gen W Γ C : wf_new C → gen_new W Γ C.
+Proof.
+  intros [HC Hwf]. apply wf_new_plus_gen. split_and!; [done| |].
+  - intros x y [Hf Hs]. right. by apply (HC x y).
+  - exists (λ _, False), id. split_and!; try done.
+    intros u y [Hf Hs] _ Hy. exfalso. by apply Hy, (HC u y).
+Qed.
+
 (** The rest above an optional upper point. *)
 Definition rest_of (ub : option point) : frest :=
   match ub with Some u => RAbove u | None => RAll end.
@@ -289,28 +344,36 @@ Definition thage (c : fuel) (Θ Θ' : tenv) : Prop :=
 
 (** ** Subtyping
 
-    Costs are covariant, arguments contravariant,
+    W ; Γ ⊢ T ≤ T'. Costs are covariant, arguments contravariant,
     results covariant, sessions up to ≈. A credit may fall. At an arrow
     the credit a bounds what the captured counters may lose before a
     call, so it may fall as well (a' ≤ a). A
     product, a sum and an existential compare their parts. An
-    existential may drop facts of its constraint. *)
-Inductive tsub : ty → ty → Prop :=
-  | sub_unit : tsub TUnit TUnit
-  | sub_arr ub lb c T1 U a c' T1' U' a' :
+    existential may weaken its constraint to one that Γ and the
+    constraint entail at the bound points (item 2 of 2026-11-21,
+    finding 6.7 of docs/redesign/algorithmic-plan.md), so
+    e : ∃ιs. C. T types at ∃ιs. C'. T whenever let x = e in x does with
+    the same lower bound. The bodies of the two existentials compare
+    under Γ extended by C. A box with session variables may change its
+    result up to ≈ when both results are contractive, because
+    contractive instances keep ≈ ([teq_sinst]). *)
+Inductive tsub (W : sworld) : hctx → ty → ty → Prop :=
+  | sub_unit Γ : tsub W Γ TUnit TUnit
+  | sub_arr Γ ub lb c T1 U a c' T1' U' a' :
       fle c c' → fle a' a →
-      tsub T1' T1 → tsub U U' →
-      tsub (TLolli ub lb c T1 U a) (TLolli ub lb c' T1' U' a')
-  | sub_prod T1 U T1' U' : tsub T1 T1' → tsub U U' → tsub (TProd T1 U) (TProd T1' U')
-  | sub_sum T1 U T1' U' : tsub T1 T1' → tsub U U' → tsub (TSum T1 U) (TSum T1' U')
-  | sub_box n k C ub c U U' c' :
-      fle c c' → (match k with 0 => teq U U' | S _ => U = U' end) →
-      tsub (TBox n k C ub c U) (TBox n k C ub c' U')
-  | sub_sess s s' x a a' mt :
-      sequiv s s' → fle a' a → tsub (TSess s x a mt) (TSess s' x a' mt)
-  | sub_ex lb n C C' T T' :
-      bc_env C = bc_env C' → (∀ g, bc_facts C' g → bc_facts C g) →
-      tsub T T' → tsub (TEx lb n C T) (TEx lb n C' T').
+      tsub W Γ T1' T1 → tsub W Γ U U' →
+      tsub W Γ (TLolli ub lb c T1 U a) (TLolli ub lb c' T1' U' a')
+  | sub_prod Γ T1 U T1' U' : tsub W Γ T1 T1' → tsub W Γ U U' → tsub W Γ (TProd T1 U) (TProd T1' U')
+  | sub_sum Γ T1 U T1' U' : tsub W Γ T1 T1' → tsub W Γ U U' → tsub W Γ (TSum T1 U) (TSum T1' U')
+  | sub_box Γ n k C ub c U U' c' :
+      fle c c' →
+      (match k with 0 => teq U U' | S _ => U = U' ∨ (teq U U' ∧ tcontr U ∧ tcontr U') end) →
+      tsub W Γ (TBox n k C ub c U) (TBox n k C ub c' U')
+  | sub_sess Γ s s' x a a' mt :
+      sequiv s s' → fle a' a → tsub W Γ (TSess s x a mt) (TSess s' x a' mt)
+  | sub_ex Γ lb n C C' T T' :
+      hold_at W (hc_open n C Γ) (bcs_inst (pshift n) C') (ids n) →
+      tsub W (hc_open n C Γ) T T' → tsub W Γ (TEx lb n C T) (TEx lb n C' T').
 
 (** ** Instances of session variables
 
@@ -318,7 +381,7 @@ Inductive tsub : ty → ty → Prop :=
     annotations of N = ∞, because a derivation at N = ∞ never meets
     another one. *)
 Definition sinsts (N : fuel) (ss : list sty) : Prop :=
-  (Forall hcontractive ss ∧ Forall sscoped ss) ∧ (N = None → Forall (λ s, sty_df s = s) ss).
+  (Forall contractive ss ∧ Forall sscoped ss) ∧ (N = None → Forall (λ s, sty_df s = s) ss).
 
 (** ** The annotations of N = ∞ on contexts *)
 

@@ -127,12 +127,12 @@ Qed.
 Lemma tsplit_dom Θ Θ1 Θ2 : tsplit Θ Θ1 Θ2 → dom Θ = dom Θ1 ∪ dom Θ2.
 Proof. intros [_ ->]. apply dom_union_L. Qed.
 
-Lemma hcontractive_end : hcontractive SEnd.
-Proof. intros [|n]; done. Qed.
+Lemma contractive_end : contractive SEnd.
+Proof. done. Qed.
 
 Lemma sinsts_end N k : sinsts N (repeat SEnd k).
 Proof.
-  split; [split|intros _]; induction k; simpl; constructor; auto; first [apply hcontractive_end|done].
+  split; [split|intros _]; induction k; simpl; constructor; auto; first [apply contractive_end|done].
 Qed.
 
 Theorem typed_tfacts W N Θ Γ Δ F e T c : typed W N Θ Γ Δ F e T c → tfacts Θ Δ e.

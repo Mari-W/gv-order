@@ -40,7 +40,7 @@ Section body.
     { eapply e_var'; [reflexivity|]. spare_tac. }
     lage_tac.
     eapply e_letp_; [lsplit_tac (Pair (Var 1) ENew) EUnit| | | ].
-    { eapply (e_new_at' _ _ _ _ _ _ _ 0 SEnd (pvar 0) _ _ Sdd); [done|shelve|reflexivity|]. spare_tac. }
+    { eapply (e_new_at' _ _ _ _ _ _ _ 0 SEnd (pvar 0) _ _ Sdd); [done|shelve|reflexivity| |contr_tac]. spare_tac. }
     lage_tac.
     eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
     { eapply e_var'; [reflexivity|]. spare_tac. }
@@ -99,7 +99,7 @@ End body.
 Lemma fml_box_typed W Γ n F : typed W (Some 8) ∅ Γ (nones n) F fm_box fml_ty (Some 0).
 Proof.
   destruct (fml_body W Γ n) as (c & Hb).
-  eapply lbox_typed; [reflexivity|exact Hb].
+  eapply lbox_typed; [contr_tac|contr_tac|reflexivity|exact Hb].
 Qed.
 
 Lemma fml_hold : hold_at W_fm (Γnew fm_L) fm_C fm_xs.
@@ -115,7 +115,7 @@ Proof.
   eexists _.
   { unfold fm_main, let_new.
   eapply e_let_; [apply lsplit_nil| | | ].
-  { eapply (e_new' _ _ _ _ _ _ SEnd); [spare_tac|apply fm_wf_new]. }
+  { eapply (e_new' _ _ _ _ _ _ SEnd); [spare_tac|apply fm_wf_new|contr_tac]. }
   lage_tac.
   eapply e_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
@@ -124,7 +124,7 @@ Proof.
   { eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_letp_; [lsplit_tac (Pair (Var 1) ENew) EUnit| | | ].
-  { eapply (e_new_at' _ _ _ _ _ _ _ 1 SEnd (pvar 0) _ _ SEnd); [done|shelve|reflexivity|]. spare_tac. }
+  { eapply (e_new_at' _ _ _ _ _ _ _ 1 SEnd (pvar 0) _ _ SEnd); [done|shelve|reflexivity| |contr_tac]. spare_tac. }
   lage_tac.
   eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
   { eapply e_var'; [reflexivity|]. spare_tac. }

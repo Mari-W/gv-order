@@ -38,7 +38,7 @@ Proof.
   { eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_let_; [lsplit_tac ENew EUnit| | | ].
-  { eapply (e_new' _ _ _ _ _ _ Sd); [spare_tac|apply fx_wf_new]. }
+  { eapply (e_new' _ _ _ _ _ _ Sd); [spare_tac|apply fx_wf_new|contr_tac]. }
   lage_tac.
   eapply e_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_nil', !lenv_pinst_cons', lenv_pinst_nones.
@@ -64,7 +64,7 @@ Qed.
 Lemma mk0l_typed Γ n F : typed W_fx (Some 4) ∅ Γ (nones n) F mk0 mk0l_ty (Some 0).
 Proof.
   destruct (mk0l_body Γ n) as (c & Hb).
-  eapply lbox_typed; [reflexivity|exact Hb].
+  eapply lbox_typed; [contr_tac|contr_tac|reflexivity|exact Hb].
 Qed.
 
 (** ** mk₁ *)
@@ -75,7 +75,7 @@ Proof.
   eexists _.
   { unfold mk1_e.
   eapply e_letp_; [lsplit_tac (Pair (Var 0) ENew) EUnit| | | ].
-  { eapply (e_new_at' _ _ _ _ _ _ _ 0 Sr (pvar 0) _ _ Sd); [done|shelve|reflexivity|]. spare_tac. }
+  { eapply (e_new_at' _ _ _ _ _ _ _ 0 Sr (pvar 0) _ _ Sd); [done|shelve|reflexivity| |contr_tac]. spare_tac. }
   lage_tac.
   eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
   { eapply e_var'; [reflexivity|]. spare_tac. }
@@ -94,7 +94,7 @@ Qed.
 Lemma mk1l_typed Γ n F : typed W_fx (Some 4) ∅ Γ (nones n) F mk1 mk1l_ty (Some 0).
 Proof.
   destruct (mk1l_body Γ n) as (c & Hb).
-  eapply lbox_typed; [reflexivity|exact Hb].
+  eapply lbox_typed; [contr_tac|contr_tac|reflexivity|exact Hb].
 Qed.
 
 (** ** main *)

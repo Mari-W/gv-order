@@ -124,7 +124,7 @@ Lemma e_sub_ctl W N Γ Δ F e S1 x S2 y S3 z a1 a2 a3 b1 b2 b3 c :
   fle b1 a1 → fle b2 a2 → fle b3 a3 →
   typed W N ∅ Γ Δ F e (TProd (TProd (TSess S1 x b1 (Some 3)) (TSess S2 y b2 (Some 3))) (TSess S3 z b3 (Some 3))) c.
 Proof.
-  intros He H1 H2 H3. eapply e_sub; [exact He| |apply fle_refl].
+  intros He H1 H2 H3. eapply e_sub; [exact He| |apply fle_refl|intros HC; exact HC].
   apply sub_prod; [apply sub_prod|]; apply sub_sess; rewrite ?fadd_0_l; auto using sequiv_refl.
 Qed.
 
@@ -270,13 +270,13 @@ End body.
 Lemma ctl_cli_typed Γ n F : typed W_ctl (Some 6) ∅ Γ (nones n) F ctl_cli (ctl_box Sa Sb) (Some 0).
 Proof.
   destruct (ctl_cli_body W_ctl Γ n) as (c & Hb).
-  eapply lbox_typed; [reflexivity|exact Hb].
+  eapply lbox_typed; [contr_tac|contr_tac|reflexivity|exact Hb].
 Qed.
 
 Lemma ctl_srv_typed Γ n F : typed W_ctl (Some 6) ∅ Γ (nones n) F ctl_srv (ctl_box Sb Sa) (Some 0).
 Proof.
   destruct (ctl_srv_body W_ctl Γ n) as (c & Hb).
-  eapply lbox_typed; [reflexivity|exact Hb].
+  eapply lbox_typed; [contr_tac|contr_tac|reflexivity|exact Hb].
 Qed.
 
 Lemma ctl_hold_main (b : bool) :
@@ -294,7 +294,7 @@ Proof.
   eexists _.
   { unfold ctl_main, let_new.
   eapply e_let_; [apply lsplit_nil| | | ].
-  { eapply (e_new' _ _ _ _ _ _ Sa); [spare_tac|apply ctl_wf_new]. }
+  { eapply (e_new' _ _ _ _ _ _ Sa); [spare_tac|apply ctl_wf_new|contr_tac]. }
   lage_tac.
   eapply e_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
@@ -303,13 +303,13 @@ Proof.
   { eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_letp_; [lsplit_tac (Pair (Var 1) ENew) EUnit| | | ].
-  { eapply (e_new_at' _ _ _ _ _ _ _ 0 Sa (pvar 0) _ _ Sb); [done|shelve|reflexivity|]. spare_tac. }
+  { eapply (e_new_at' _ _ _ _ _ _ _ 0 Sa (pvar 0) _ _ Sb); [done|shelve|reflexivity| |contr_tac]. spare_tac. }
   lage_tac.
   eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
   { eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_letp_; [lsplit_tac (Pair (Var 3) ENew) EUnit| | | ].
-  { eapply (e_new_at' _ _ _ _ _ _ _ 2 Sa (pvar 0) _ _ SSkip); [done|shelve|reflexivity|]. spare_tac. }
+  { eapply (e_new_at' _ _ _ _ _ _ _ 2 Sa (pvar 0) _ _ SSkip); [done|shelve|reflexivity| |contr_tac]. spare_tac. }
   lage_tac.
   eapply e_letp_; [lsplit_tac (Var 0) EUnit| | | ].
   { eapply e_var'; [reflexivity|]. spare_tac. }

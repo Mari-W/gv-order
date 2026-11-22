@@ -176,9 +176,9 @@ Qed.
 
 (** ** Session operators *)
 
-Lemma send_redex N n m T S0 S x aS mS Tp Tp' Π φ d v :
+Lemma send_redex N n W Γ m T S0 S x aS mS Tp Tp' Π φ d v :
   unfoldS S0 = SSeq (SSnd m T) S →
-  tage (Some 1) Tp Tp' → tsub Tp' (payload_at m T x) →
+  tage (Some 1) Tp Tp' → tsub W Γ Tp' (payload_at m T x) →
   fle (Some 1) d →
   v ∈ FV^N _ n⟦RTy (TProd Tp (TSess S0 x aS mS))⟧(Π, φ) →
   ESend v ∈ F^N _ n⟦RTy (TSess S x⁺ mS mS) ▷ d⟧(Π, φ).
@@ -211,7 +211,7 @@ Proof.
   - rewrite Hfw, <-HdΠφ, mres_union_self by done. unfold fhand. rewrite HdΠφ, mres_union_self by done.
     rewrite ftick_fminus.
     pose proof (Vfuel_age _ _ _ _ _ _ _ _ Ha Hw) as H1.
-    pose proof (Vfuel_sub _ _ _ _ _ _ _ Hs H1) as H2.
+    pose proof (Vfuel_sub _ _ _ _ _ _ _ _ _ Hs H1) as H2.
     unfold payload_at, ty_inst in H2. apply Vfuel_pinst in H2.
     intros j Hj. apply (Vfuel_down _ _ n); [by apply olt_ole|].
     exact (proj1 (Vfuel_teq _ _ T T' _ _ _ (teq_sym _ _ HT)) H2).

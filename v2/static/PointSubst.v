@@ -160,13 +160,6 @@ Qed.
 Lemma teq_pinst σ T U : teq T U → teq (pinst_ty σ T) (pinst_ty σ U).
 Proof. apply eqT_pinst. Qed.
 
-Lemma tsub_pinst σ T T' : tsub T T' → tsub (pinst_ty σ T) (pinst_ty σ T').
-Proof.
-  intros H. revert σ. induction H; intros σ; simpl; constructor; auto using teq_pinst.
-  - destruct k; [by apply teq_pinst|by subst].
-  - simpl. by rewrite H.
-Qed.
-
 (** ** Contexts *)
 
 Lemma tenv_pinst_empty σ : tenv_pinst σ ∅ = ∅.
@@ -379,6 +372,149 @@ Proof.
   intros Hwf HC x y H.
   destruct (slt_open_out W Γ C _ _ Hwf HC H (pshift_not_tree0 y)) as [_ H'].
   specialize (H' (pvar 0)). by rewrite !pshift_back in H' by done.
+Qed.
+
+(** ** Conservativity under (gen-new₁)
+
+    A derivation in [hc_open 1 C Γ] may enter the tree of the new root
+    through an entry and leave it through an exit. [cinv] follows such a
+    derivation through the partners of S. Between two outer points it
+    gives the fact in Γ, so the opening is conservative ([cons_gen]). *)
+
+Lemma tree0_dec x : Decision (in_tree0 x).
+Proof. unfold in_tree0. apply _. Defined.
+
+Section cons_gen.
+  Context (W : sworld) (Γ : hctx) (C : bcs) (Sr : point → point → Prop).
+  Context (Hfc : facts_const W).
+  Context (Hcc : ∀ x y, cfact C x y → ¬ in_tree0 x → ¬ in_tree0 y → slt W Γ (ctx_pt C x) (ctx_pt C y)).
+  Context (HS : gen_new_rel W Γ C Sr).
+
+  Definition un (x : point) : point := pt_inst (plist [pvar 0]) x.
+
+  Definition cinv (x y : point) : Prop :=
+    (¬ in_tree0 x → ¬ in_tree0 y → slt W Γ (un x) (un y)) ∧
+    (¬ in_tree0 x → in_tree0 y → ∀ t, Sr y t → slt W Γ (un x) t) ∧
+    (in_tree0 x → ¬ in_tree0 y → ∃ t, Sr x t ∧ slt W Γ t (un y)) ∧
+    (in_tree0 x → in_tree0 y → ∀ t, Sr y t → ∃ t', Sr x t' ∧ slt W Γ t' t).
+
+  Lemma cinv_trans x y z : cinv x y → cinv y z → cinv x z.
+  Proof.
+    intros (A1 & A2 & A3 & A4) (B1 & B2 & B3 & B4).
+    destruct (tree0_dec y) as [Hy|Hy]; split_and!.
+    - intros Hx Hz. destruct (B3 Hy Hz) as (t & Ht & H2). eapply sl_trans; [by apply A2|exact H2].
+    - intros Hx Hz t Ht. destruct (B4 Hy Hz t Ht) as (t' & Ht' & H2). eapply sl_trans; [by apply A2|exact H2].
+    - intros Hx Hz. destruct (B3 Hy Hz) as (t & Ht & H2). destruct (A4 Hx Hy t Ht) as (t' & Ht' & H1).
+      exists t'. split; [done|]. by eapply sl_trans.
+    - intros Hx Hz t Ht. destruct (B4 Hy Hz t Ht) as (t1 & Ht1 & H2). destruct (A4 Hx Hy t1 Ht1) as (t' & Ht' & H1).
+      exists t'. split; [done|]. by eapply sl_trans.
+    - intros Hx Hz. eapply sl_trans; [by apply A1|by apply B1].
+    - intros Hx Hz t Ht. eapply sl_trans; [by apply A1|by apply B2].
+    - intros Hx Hz. destruct (A3 Hx Hy) as (t & Ht & H1). exists t. split; [done|]. eapply sl_trans; [exact H1|by apply B1].
+    - intros Hx Hz t Ht. destruct (A3 Hx Hy) as (t' & Ht' & H1). exists t'. split; [done|].
+      eapply sl_trans; [exact H1|by apply B2].
+  Qed.
+
+  Lemma cinv_step s' s : new_step C s' s → cinv s' s.
+  Proof.
+    intros Hst. pose proof Hst as (H1 & H2 & _). split_and!; try done.
+    intros _ _ t Ht. destruct HS as (_ & Hs & _). by apply (Hs s t s').
+  Qed.
+
+  Lemma un_po x : un x⁺ = (un x)⁺.
+  Proof. apply pt_inst_shift. Qed.
+  Lemma un_dpo x : un x‾⁺ = (un x)‾⁺.
+  Proof. unfold un. by rewrite pt_inst_shift, pt_inst_dual. Qed.
+
+  Lemma cinv_swstep x y : swstep W x y → cinv x y.
+  Proof.
+    destruct 1 as [a b Hf|a|a].
+    - destruct (Hfc a b Hf) as [[c1 [Hc1 _]] [c2 [Hc2 _]]].
+      split_and!; try (unfold in_tree0; intros; congruence).
+      intros _ _. unfold un. rewrite !pt_inst_novar by (intros ?; congruence). by apply sl_w, tc_once, ws_fact.
+    - destruct (tree0_dec a) as [Ha|Ha].
+      + apply cinv_step. split_and!; [done|done|by right; left].
+      + split_and!; try (unfold in_tree0 in *; simpl; tauto).
+        intros _ _. rewrite un_po. apply sl_po.
+    - destruct (tree0_dec a) as [Ha|Ha].
+      + apply cinv_step. split_and!; [done|done|by right; right].
+      + split_and!; try (unfold in_tree0 in *; simpl; tauto).
+        intros _ _. rewrite un_dpo. apply sl_w, sw_lt_dpo.
+  Qed.
+
+  Lemma cinv_sw x y : W ⊢ₛ x ≺ y → cinv x y.
+  Proof.
+    induction 1 as [x y Hs|x y z Hs _ IH]; [by apply cinv_swstep|].
+    eapply cinv_trans; [by apply cinv_swstep|exact IH].
+  Qed.
+
+  (** The instance of a scoped point of C in [hc_open 1 C Γ]. *)
+  Definition cinst (p : point) : point :=
+    pt_inst (plist (ids 1 ++ (pt_inst (pshift 1) <$> bc_env C))) p.
+
+  Lemma cinst_tree0 p : in_tree0 p → cinst p = p.
+  Proof.
+    intros Hp. unfold cinst. rewrite (pt_inst_ext_root _ pvar); [apply pt_inst_pvar|].
+    intros a Ha. unfold in_tree0 in Hp. rewrite Hp in Ha. injection Ha as <-. done.
+  Qed.
+
+  Lemma cinst_out p : pn_vb (1 + length (bc_env C)) (pt_name p) → ¬ in_tree0 p →
+    ¬ in_tree0 (cinst p) ∧ un (cinst p) = ctx_pt C p.
+  Proof.
+    intros Hs Hp. apply pn_vb_root in Hs as ([|j] & Hj & Hjl).
+    { exfalso. by apply Hp. }
+    assert (∃ e, bc_env C !! j = Some e) as [e He] by (apply lookup_lt_is_Some_2; lia).
+    assert (cinst p = pt_inst (λ _, pt_inst (pshift 1) e) p) as Ec.
+    { unfold cinst. apply pt_inst_ext_root. intros a Ha. change (pt_root p) with (pn_root (pt_name p)) in Ha.
+      rewrite Hj in Ha. injection Ha as <-. unfold plist. simpl. by rewrite list_lookup_fmap, He. }
+    split.
+    - rewrite Ec. unfold in_tree0. rewrite pt_root_inst_var. change (pt_root p) with (pn_root (pt_name p)).
+      rewrite Hj. simpl. apply pshift_not_tree0.
+    - unfold un, ctx_pt. rewrite Ec, pt_inst_comp. apply pt_inst_ext_root. intros a Ha.
+      change (pt_root p) with (pn_root (pt_name p)) in Ha. rewrite Hj in Ha. injection Ha as <-.
+      unfold compose. rewrite pshift_back by done. unfold plist. simpl. by rewrite He.
+  Qed.
+
+  Lemma cinv_hyp x y : hyp_fact (hc_hyps (hc_open 1 C Γ)) (FLt x y) → cinv x y.
+  Proof.
+    intros (C' & ys & Hin & Hat). simpl in Hin. apply elem_of_app in Hin as [Hin|Hin].
+    - unfold hyps_inst in Hin. apply list_elem_of_fmap in Hin as ([C0 ys0] & Heq & Hin).
+      injection Heq as -> ->.
+      apply bcs_at_inst in Hat as ([u0 v0] & Hat & Heq). injection Heq as -> ->.
+      pose proof (pshift_not_tree0 u0). pose proof (pshift_not_tree0 v0).
+      split_and!; try tauto. intros _ _. unfold un. rewrite !pshift_back by done. apply fl_h. by exists C0, ys0.
+    - apply list_elem_of_singleton in Hin. injection Hin as -> ->.
+      apply bcs_at_iff in Hat as ([x0 y0] & Hf & Hsc & Heq). cbn [bcs_inst bc_env bc_facts length] in *.
+      rewrite length_fmap in Hsc. injection Heq as -> ->.
+      change (cinv (cinst x0) (cinst y0)).
+      assert (cfact C x0 y0) as Hcf by (split; [done|exact Hsc]).
+      destruct Hsc as [Hsx Hsy]. change (length (ids 1)) with 1 in Hsx, Hsy.
+      destruct (tree0_dec x0) as [Hx|Hx], (tree0_dec y0) as [Hy|Hy].
+      + rewrite !cinst_tree0 by done. apply cinv_step. split_and!; [done|done|left; exact Hcf].
+      + rewrite (cinst_tree0 x0) by done. destruct (cinst_out y0 Hsy Hy) as [Hy' Ey].
+        split_and!; try tauto. intros _ _. rewrite Ey. destruct HS as (Hx' & _ & _). by apply Hx'.
+      + rewrite (cinst_tree0 y0) by done. destruct (cinst_out x0 Hsx Hx) as [Hx' Ex].
+        split_and!; try tauto. intros _ _ t Ht. rewrite Ex. destruct HS as (_ & _ & He). by apply (He y0 t x0).
+      + destruct (cinst_out x0 Hsx Hx) as [Hx' Ex], (cinst_out y0 Hsy Hy) as [Hy' Ey].
+        split_and!; try tauto. intros _ _. rewrite Ex, Ey. by apply Hcc.
+  Qed.
+
+  Lemma cinv_slt x y : slt W (hc_open 1 C Γ) x y → cinv x y.
+  Proof.
+    unfold slt. induction 1 as [x y Hw|x y Hf|x y z _ IH1 _ IH2].
+    - by apply cinv_sw.
+    - by apply cinv_hyp.
+    - by eapply cinv_trans.
+  Qed.
+End cons_gen.
+
+(** Conservativity under (gen-new₁). *)
+Lemma cons_gen W Γ C : facts_const W → gen_new W Γ C → cons_open W Γ 1 C.
+Proof.
+  intros Hfc (_ & Hcc & Sr & HS) x y H.
+  destruct (cinv_slt W Γ C Sr Hfc Hcc HS _ _ H) as [H1 _].
+  specialize (H1 (pshift_not_tree0 x) (pshift_not_tree0 y)). unfold un in H1.
+  by rewrite !pshift_back in H1 by done.
 Qed.
 
 (** (wf-new) reads the facts and the number of outer points of C, which

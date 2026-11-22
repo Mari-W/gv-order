@@ -1,5 +1,131 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, fifth run of 2026-11-22 on contractivity, Sub-Ex and (gen-new₁)
+
+Branch redesign-clean3 in .claude/worktrees/redesign-s4, nothing pushed,
+commits a136833 to the head.
+
+- Item 1, contractive session types and `typed_sinst`. Done.
+  - Predicate (types/Contractive.v, a136833). `scontr` and `tcontr` are
+    boolean, mutual over session types and types, and go into payloads. A
+    recursion variable must be reached only through an action, a choice or
+    Close. A session variable does not guard, because an instance may set it
+    to Skip (`ss_var_guard`). µ-variables inside payloads, as in GrowRing's
+    `µα. ?(1, α@ι₀). Close`, sit behind an action and are fine. Closure under
+    renaming, flipping, duality, `sinst` (contractive instances), `pinst`
+    and `ty_df`.
+  - Fuel (5981333). `unrN_sfuel : scontr s → ∃ h, unrN (sfuel s) s = Some h`,
+    with `unrN_mono` and `unrN_unfoldS` (any fuel above `sfuel s` gives
+    `unfoldS s`). `scontr_hcontractive` relates the new predicate to the old
+    one.
+  - ≈ under instances (006c5ce to e1d1f10). A bisimulation up to ≈
+    (`sequiv_upto`), the head of a sequence (`hd_seq`), the laws Skip;S ≈ S,
+    S;Skip ≈ S, associativity, congruence, unfolding of µ, Close and choice
+    distribution, then `sinst_unrN` (an instance commutes with unfolding up
+    to ≈), `unrN_var_uc` (each variable head lowers the count of unguarded
+    variables) and `sequiv_sinst` and `teq_sinst` for contractive types and
+    instances. `unfoldS_sinst_act` gives the payload of an action head of an
+    instance exactly and its continuation up to ≈.
+  - Rules (3d3883e). Contractivity enters at E-New and E-New-Field (the
+    protocol), E-Abs (the argument), E-Inj (the sum), E-Box (the result U,
+    which the body cannot establish because it refers to the box through f),
+    P-Term (Σ and the restricted ends) and E-Sub. E-Sub asks
+    `tcontr T → tcontr T'`. Asking `tcontr T'` outright breaks
+    `typed_to_inf`, which lifts any DF derivation to cost ∞ by E-Sub at the
+    same type and underlies every `d_*` rule. Over contractive contexts the
+    two forms agree (`typed_scontr`). `sinsts` and the instance quantifier
+    of the box clause of the relation (Relation.v, LiveRules.v, Redex.v,
+    Fundamental.v) read `Forall contractive` in place of
+    `Forall hcontractive`. This restricts the instances the relation
+    quantifies over, a type-level condition like the old one, no syntactic
+    clause on terms.
+  - `typed_sinst` (f8d3be6, static/Sinst.v). Over contexts with contractive
+    session types, at contractive, scoped instances (df at N = ∞), a
+    derivation is a derivation of the instantiated judgment.
+    `typed_sinst_slist` is the box form. The box case shifts the instance of
+    the instantiated box past the free session variables of the box and its
+    context (`tfv`, `lfv`, `sinst_above`). The actions use
+    `unfoldS_sinst_*` and close the continuation by E-Sub.
+  - SinstStuck.v keeps `typed_sinst_false` (its context holds the
+    non-contractive s0, so it shows the premise on the context is needed)
+    and adds `ss_var_guard`. Every example builds. The examples prove
+    contractivity by `vm_compute` (`contr_tac`). LFLink takes `scontr S` as a
+    section hypothesis.
+  - Laptop at 186308e: `make` exit 0, `make test` passes, `make check` 121 of
+    121.
+- Item 2, Sub-Ex by entailment. Done for the constraint, the lower bound
+  stays.
+  - `tsub W Γ T T'` (ece7bea). Sub-Ex asks
+    `hold_at W (hc_open n C Γ) (bcs_inst (pshift n) C') (ids n)` and compares
+    the bodies under `hc_open n C Γ`. The old subset rule is the case where
+    each fact of C' is a fact of C (`hold_open_self`). Semantically
+    `Vrel_tsub` (Fundamental.v) reads the facts of C' off C and Γ at the
+    witnesses through `hsat_open` and `hold_sem`. `later_conv` (LiveRules.v)
+    now takes a value-level conversion. `tsub_pinst` is gone, the fuel and
+    cost relations ignore W and Γ.
+  - Relation to `let x = e in x`. Opening x and packing at the opened points
+    gives exactly the constraints C' with
+    `hold_at W (hc_open n C Γ) C'[shifted] (ids n)`, so with the same lower
+    bound e now types wherever `let x = e in x` does. Not mechanized as a
+    theorem about the two programs. Open with pack can also change the
+    lower bound l to one that E-Pack accepts. Sub-Ex keeps l, because the
+    relation reads l against the heads of the ends of the value
+    (`lbx_le W lb (senv_heads Θ)`), and lowering it soundly needs a lemma
+    relating those heads to `heads T`, which does not exist.
+  - Sub-Box (5a0f9f4). For k > 0 the results may differ up to ≡ when both
+    are contractive (`U = U' ∨ (teq U U' ∧ tcontr U ∧ tcontr U')`). The
+    relation case uses `teq_sinst` at the contractive instances the box
+    clause quantifies over. The equality disjunct keeps `tsub_refl` free of
+    contractivity.
+  - Laptop at 5a0f9f4: `make` exit 0, `make test` passes, `make check` 121 of
+    121.
+- Item 3, (wf-new⁺) and (gen-new₁). Done in one step (48aef68). E-New at a
+  fresh root asks `gen_new W Γ C` (static/Contexts.v), the (gen-new₁) of
+  check-general-new.md with a relation S between points of the new tree and
+  points of Γ. Its clauses are well-foundedness of C with program order on
+  the tree, Γ ⊢ z ≺ y for facts between context points, a partner below y
+  for each exit u ≺ y, descent of partners along `new_step`, and each entry
+  z ≺ s below the partner of s. A context point of C is `ctx_pt C x`, the
+  variable 1 + j read as the j-th point of `bc_env C`.
+  - (wf-new⁺) is `wf_new_plus` (a map h on a downward closed D) and
+    `wf_new_plus_gen` turns it into (gen-new₁). (wf-new) is
+    `wf_new_gen`. The examples keep proving `wf_new` and pass it through
+    `wf_new_gen` in `d_new'`, `e_new'`, `e_new_tk`.
+  - `cons_gen : facts_const W → gen_new W Γ C → cons_open W Γ 1 C`
+    (static/PointSubst.v) by the invariant `cinv`, which follows a
+    derivation in `hc_open 1 C Γ` through the partners, in four cases by
+    where its two ends lie. `cons_new` stays for the E-Open sites of the
+    examples.
+  - `Erel_new` (compat/Redex.v) takes `gen_new_sem W C`, the same clauses
+    with the order of the ranked world. The construction is that of the
+    third run, `rank_base (new_step C) b0`. The new part is the invariant
+    `Sr s t → rank_base s ≤ rk0 t` by well-founded induction
+    (`rank_base_le`, constructive). Exits then hold by `rk0` rising along
+    W1. `gen_new_sem_of` (Fundamental.v) gives the semantic form from
+    `wmodels W1 W`, `hsat W1 σ Γ` and `slt_sem`, as the E-New case of
+    `typed_sem` has them. O-New and the relation clauses did not change.
+  - Not done. The finite-set version (gen-new), as instructed. A mechanized
+    rejection of rx-chain under (gen-new₁), which check-general-new.md
+    argues by its Proposition 7. No example uses an exit yet, and the
+    two-upper-bound example is not written as a program.
+  - Map (48aef68). New note `w.gennew` in the worlds block, E-New.wf reads
+    `π = ρ ⇒ gen_new Γ ρ C`. Lint counts unchanged.
+  - Laptop at 48aef68: `make` exit 0, `make test` passes, `make check` 125 of
+    125.
+
+Plausibility. No Admitted, no Axiom, no new Parameter. The examples build.
+rx-relink, rx-postpone and rx-delegate rest on tickets, aging and payload
+credit, which this run did not touch. S4.18 concerns (fuse), kept. rx-chain
+stays excluded, argued by Proposition 7 of check-general-new.md, not
+mechanized. One edit outside static/ that touches the area of the other
+agent, soup/LFTyped.v (the P-Term premise pattern, three lines).
+- Map (186308e, 28aa5a5). New note `sty.contr` and premises E-New.contr,
+  E-Sub.contr, E-Abs.contr, E-Inj.contr, E-Box.contr, P-Term.contr. E-Box.inst
+  cites `typed_sinst`. Sub-Ex shows `Γ, C(ῑ) ⊢ C'(ῑ)` and
+  `Γ, C(ῑ) ⊢ T ≤ T'`, Sub-Box the contractive alternative (`tp.sub-boxc`).
+  gen.js 0 errors, check.js 0, lint-map 161 metaphor and 316 every/any/all
+  (323 before), 0 elsewhere.
+
 ## Report, fourth run of 2026-11-21 on typed_sinst and rx-chain
 
 Branch redesign-clean3 in .claude/worktrees/redesign-s4, nothing pushed,

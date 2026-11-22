@@ -357,7 +357,7 @@ window.MAP = {
      "id": "ty-session",
      "title": "Session types",
      "rocq": "types/Types.v: sty, unfoldS",
-     "tex": "\\begin{array}{rl}\nS ::= & \\htmlData{k=sty.skip}{\\mathsf{Skip}} \\mid \\htmlData{k=sty.seq}{S.S} \\mid \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ T)} \\mid \\htmlData{k=sty.send}{!(\\bar\\iota.\\ T)} \\mid \\htmlData{k=sty.plus}{\\oplus(S_1, S_2)} \\\\\n\\mid & \\htmlData{k=sty.with}{\\&(S_1, S_2)} \\mid \\htmlData{k=sty.close}{\\mathsf{Close}} \\mid \\htmlData{k=sty.mu}{\\mu\\alpha.S} \\mid \\htmlData{k=sty.var}{\\alpha} \\mid \\htmlData{k=sty.vard}{\\overline{\\alpha}}  \\\\\n & \\htmlData{k=sty.unfold}{\\mathsf{unfold} : \\mathsf{STy} \\to \\mathsf{STy}}\n\\end{array}",
+     "tex": "\\begin{array}{rl}\nS ::= & \\htmlData{k=sty.skip}{\\mathsf{Skip}} \\mid \\htmlData{k=sty.seq}{S.S} \\mid \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ T)} \\mid \\htmlData{k=sty.send}{!(\\bar\\iota.\\ T)} \\mid \\htmlData{k=sty.plus}{\\oplus(S_1, S_2)} \\\\\n\\mid & \\htmlData{k=sty.with}{\\&(S_1, S_2)} \\mid \\htmlData{k=sty.close}{\\mathsf{Close}} \\mid \\htmlData{k=sty.mu}{\\mu\\alpha.S} \\mid \\htmlData{k=sty.var}{\\alpha} \\mid \\htmlData{k=sty.vard}{\\overline{\\alpha}}  \\\\\n & \\htmlData{k=sty.unfold}{\\mathsf{unfold} : \\mathsf{STy} \\to \\mathsf{STy}} \\qquad \\htmlData{k=sty.contr}{\\mathsf{contr} \\subseteq \\mathsf{STy}}\n\\end{array}",
      "caption": "Session types with sequencing $S.S$ and recursion, read through $\\mathsf{unfold}(S)$. A payload binds point variables $\\bar\\iota$, which stand for the fields of the carrier.",
      "modes": [
       "df",
@@ -526,8 +526,8 @@ window.MAP = {
     {
      "id": "w-wf",
      "title": "Well-formed and well-founded worlds",
-     "rocq": "types/Worlds.v: sworld_wf, swf, wmodels_exists; static/Contexts.v: wf_new",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=w.wf}{\\mathsf{world\\_wf}\\,W} \\\\\n\\htmlData{k=w.lfworld}{\\mathsf{wf}\\,W \\iff \\prec_W \\text{ is well-founded}} \\\\\n\\htmlData{k=w.wfnew}{\\begin{array}{l} \\mathsf{wf\\_new}\\,\\rho\\,C \\iff (\\forall (x \\prec y) \\in C.\\ y \\in \\htmlData{k=w.tree}{\\mathsf{tree}(\\rho)}) \\\\ \\qquad \\land\\ (C \\cup \\htmlData{k=w.po}{\\mathsf{po}}) \\cap \\mathsf{tree}(\\rho)^{2} \\text{ is well-founded} \\end{array}}\n\\end{array}",
+     "rocq": "types/Worlds.v: sworld_wf, swf, wmodels_exists; static/Contexts.v: wf_new, gen_new",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=w.wf}{\\mathsf{world\\_wf}\\,W} \\\\\n\\htmlData{k=w.lfworld}{\\mathsf{wf}\\,W \\iff \\prec_W \\text{ is well-founded}} \\\\\n\\htmlData{k=w.wfnew}{\\begin{array}{l} \\mathsf{wf\\_new}\\,\\rho\\,C \\iff (\\forall (x \\prec y) \\in C.\\ y \\in \\htmlData{k=w.tree}{\\mathsf{tree}(\\rho)}) \\\\ \\qquad \\land\\ (C \\cup \\htmlData{k=w.po}{\\mathsf{po}}) \\cap \\mathsf{tree}(\\rho)^{2} \\text{ is well-founded} \\end{array}} \\\\\n\\htmlData{k=w.gennew}{\\begin{array}{l} \\mathsf{gen\\_new}\\,\\Gamma\\,\\rho\\,C \\iff (C \\cup \\mathsf{po}) \\cap \\mathsf{tree}(\\rho)^{2} \\text{ is well-founded} \\\\ \\qquad \\land\\ \\forall (z \\prec y) \\in C.\\ z, y \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\Gamma \\vdash z \\prec y \\\\ \\qquad \\land\\ \\exists S \\subseteq \\mathsf{tree}(\\rho) \\times \\mathsf{Point}_{\\Gamma}.\\ \\forall (u \\prec y) \\in C.\\ u \\in \\mathsf{tree}(\\rho),\\ y \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists (u, t) \\in S.\\ \\Gamma \\vdash t \\prec y \\\\ \\qquad\\qquad \\land\\ \\forall (s, t) \\in S.\\ \\forall s' \\prec s \\in C \\cup \\mathsf{po}.\\ \\exists (s', t') \\in S.\\ \\Gamma \\vdash t' \\prec t \\\\ \\qquad\\qquad \\land\\ \\forall (s, t) \\in S.\\ \\forall (z \\prec s) \\in C.\\ z \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\Gamma \\vdash z \\prec t \\end{array}}\n\\end{array}",
      "caption": "P-Term and P-Connect ask a well-founded static world, and E-New asks $\\mathsf{wf\\_new}$ of a creation at a fresh root. No theorem asks anything of the world.",
      "modes": [
       "df",
@@ -754,7 +754,7 @@ window.MAP = {
       "lf"
      ],
      "rocq": "static/Typing.v: e_abs; static/Conservativity.v: d_abs; static/Typing.v: e_app; static/Conservativity.v: d_app",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Abs.fut}{F_u = \\begin{cases} (\\varnothing, {\\uparrow}u) & u \\text{ a point} \\\\ (\\varnothing, {\\uparrow}) & u = \\cdot \\\\ (\\varnothing, \\cdot) & u = \\top \\end{cases}}\\quad \\htmlData{k=E-Abs.lb}{l \\neq \\bot \\Rightarrow l \\preccurlyeq \\Delta} \\\\ \\htmlData{k=E-Abs.body}{\\Gamma ; \\htmlData{k=E-Abs.cap}{\\Delta\\annot{ - a}}, T \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F_u} e : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\lambda e : (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[\\varepsilon]}\\, U)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-Abs}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\htmlData{k=tj.held}{\\triangleleft} \\Delta_2} e_1 : (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[\\varepsilon]}\\, U)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1}} \\\\ \\htmlData{k=E-App.fut2}{\\Gamma ; \\Delta_2\\annot{ \\htmlData{k=age.ctx}{- \\varepsilon_1}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\htmlData{k=tj.held}{\\triangleleft} (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U)\\annot{\\annot{^{a}}}} e_2 : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_2}}\\quad \\htmlData{k=E-App.ub}{u \\prec F}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_1\\,e_2 : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon_2 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{E-App}\\end{array}",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Abs.fut}{F_u = \\begin{cases} (\\varnothing, {\\uparrow}u) & u \\text{ a point} \\\\ (\\varnothing, {\\uparrow}) & u = \\cdot \\\\ (\\varnothing, \\cdot) & u = \\top \\end{cases}}\\quad \\htmlData{k=E-Abs.lb}{l \\neq \\bot \\Rightarrow l \\preccurlyeq \\Delta}\\quad \\htmlData{k=E-Abs.contr}{\\htmlData{k=sty.contr}{\\mathsf{contr}}\\,T} \\\\ \\htmlData{k=E-Abs.body}{\\Gamma ; \\htmlData{k=E-Abs.cap}{\\Delta\\annot{ - a}}, T \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F_u} e : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\lambda e : (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[\\varepsilon]}\\, U)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-Abs}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\htmlData{k=tj.held}{\\triangleleft} \\Delta_2} e_1 : (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}\\annot{[\\varepsilon]}\\, U)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1}} \\\\ \\htmlData{k=E-App.fut2}{\\Gamma ; \\Delta_2\\annot{ \\htmlData{k=age.ctx}{- \\varepsilon_1}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\htmlData{k=tj.held}{\\triangleleft} (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U)\\annot{\\annot{^{a}}}} e_2 : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_2}}\\quad \\htmlData{k=E-App.ub}{u \\prec F}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_1\\,e_2 : U\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon_2 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{E-App}\\end{array}",
      "caption": "E-Abs types the body under everything above the upper point $u$, under everything when there is no $u$, and under the empty future when $u = \\top$. It requires $l$ at or below the dual points of the captured entries unless $l = \\bot$. E-App holds $\\Delta_2$ while $e_1$ runs and the closure while $e_2$ runs, and the call requires $u \\prec F$. \\annp{The closure records the effect of its body. Holding it while $e_2$ runs ages it by the cost of $e_2$.}",
      "about": {
       "why": "A closure delays its body until a call. Its type records the bounds the body needs, and the call site checks them against its own future.",
@@ -773,7 +773,7 @@ window.MAP = {
       "lf"
      ],
      "rocq": "static/Typing.v: e_pair; static/Conservativity.v: d_pair; static/Typing.v: e_letp, e_letu; static/Conservativity.v: d_letp, d_letu; static/Typing.v: e_inj, e_case; static/Conservativity.v: d_inj, d_case",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\htmlData{k=tj.held}{\\triangleleft} \\Delta_2} e_1 : T_1\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1}}\\quad \\htmlData{k=E-Pair.fut2}{\\Gamma ; \\Delta_2\\annot{ \\htmlData{k=age.ctx}{- \\varepsilon_1}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\htmlData{k=tj.held}{\\triangleleft} T_1} e_2 : T_2\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_2}}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\langle e_1, e_2\\rangle : \\annot{(}T_1\\annot{ \\htmlData{k=age.ctx}{- \\varepsilon_2}}\\annot{)} \\otimes T_2\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon_2}}\\;\\textsf{E-Pair}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\htmlData{k=tj.held}{\\triangleleft} \\Delta_2} e_1 : T_1 \\otimes T_2\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1}}\\quad \\htmlData{k=tp.letp}{\\Gamma ; T_2, T_1, \\Delta_2\\annot{ \\htmlData{k=age.ctx}{- \\varepsilon_1}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_2 : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_2}}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.letp}{\\mathsf{let}}\\ \\langle a, b\\rangle = e_1\\ \\htmlData{k=syn.letp}{\\mathsf{in}}\\ e_2 : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon_2}}\\;\\textsf{E-LetP} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\htmlData{k=tj.held}{\\triangleleft} \\Delta_2} e_1 : \\ast\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1}}\\quad \\htmlData{k=tp.letu}{\\Gamma ; \\Delta_2\\annot{ \\htmlData{k=age.ctx}{- \\varepsilon_1}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_2 : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_2}}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.letu}{\\mathsf{let}}\\ \\ast = e_1\\ \\htmlData{k=syn.letu}{\\mathsf{in}}\\ e_2 : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon_2}}\\;\\textsf{E-LetU}\\end{array}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T_i\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.inj}{\\mathsf{inj}_i\\,e} : T_1 \\oplus T_2\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Inj} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\htmlData{k=tj.held}{\\triangleleft} \\Delta_2} e : T_1 \\oplus T_2\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_0}}\\quad \\htmlData{k=E-Case.branches}{\\Gamma ; T_i, \\Delta_2\\annot{ \\htmlData{k=age.ctx}{- \\varepsilon_0}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_i : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_i}}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.case}{\\mathsf{case}}\\ e\\,(e_1)\\,(e_2) : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_0 \\htmlData{k=tj.seq}{\\cdot} \\htmlData{k=tp.max}{\\max}(\\varepsilon_1,\\varepsilon_2)}}\\;\\textsf{E-Case}\\end{array}\\end{array}",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\htmlData{k=tj.held}{\\triangleleft} \\Delta_2} e_1 : T_1\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1}}\\quad \\htmlData{k=E-Pair.fut2}{\\Gamma ; \\Delta_2\\annot{ \\htmlData{k=age.ctx}{- \\varepsilon_1}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\htmlData{k=tj.held}{\\triangleleft} T_1} e_2 : T_2\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_2}}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\langle e_1, e_2\\rangle : \\annot{(}T_1\\annot{ \\htmlData{k=age.ctx}{- \\varepsilon_2}}\\annot{)} \\otimes T_2\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon_2}}\\;\\textsf{E-Pair}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\htmlData{k=tj.held}{\\triangleleft} \\Delta_2} e_1 : T_1 \\otimes T_2\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1}}\\quad \\htmlData{k=tp.letp}{\\Gamma ; T_2, T_1, \\Delta_2\\annot{ \\htmlData{k=age.ctx}{- \\varepsilon_1}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_2 : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_2}}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.letp}{\\mathsf{let}}\\ \\langle a, b\\rangle = e_1\\ \\htmlData{k=syn.letp}{\\mathsf{in}}\\ e_2 : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon_2}}\\;\\textsf{E-LetP} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\htmlData{k=tj.held}{\\triangleleft} \\Delta_2} e_1 : \\ast\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1}}\\quad \\htmlData{k=tp.letu}{\\Gamma ; \\Delta_2\\annot{ \\htmlData{k=age.ctx}{- \\varepsilon_1}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_2 : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_2}}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.letu}{\\mathsf{let}}\\ \\ast = e_1\\ \\htmlData{k=syn.letu}{\\mathsf{in}}\\ e_2 : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_1 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon_2}}\\;\\textsf{E-LetU}\\end{array}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T_i\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\quad \\htmlData{k=E-Inj.contr}{\\htmlData{k=sty.contr}{\\mathsf{contr}}\\,(T_1 \\oplus T_2)}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.inj}{\\mathsf{inj}_i\\,e} : T_1 \\oplus T_2\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Inj} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F \\htmlData{k=tj.held}{\\triangleleft} \\Delta_2} e : T_1 \\oplus T_2\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_0}}\\quad \\htmlData{k=E-Case.branches}{\\Gamma ; T_i, \\Delta_2\\annot{ \\htmlData{k=age.ctx}{- \\varepsilon_0}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e_i : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_i}}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.case}{\\mathsf{case}}\\ e\\,(e_1)\\,(e_2) : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_0 \\htmlData{k=tj.seq}{\\cdot} \\htmlData{k=tp.max}{\\max}(\\varepsilon_1,\\varepsilon_2)}}\\;\\textsf{E-Case}\\end{array}\\end{array}",
      "caption": "E-Pair holds the value of $e_1$ while $e_2$ runs. \\annp{The held value ages by the cost of $e_2$.} The derived $\\mathsf{let}$ is typed by E-Pair, E-LetP and E-LetU. Both branches of a case are typed under one context at one result type.",
      "about": {
       "why": "A pair is the simplest place where a thread holds a value while other code runs, and E-Pair checks the order this requires.",
@@ -790,7 +790,7 @@ window.MAP = {
       "lf"
      ],
      "rocq": "static/Typing.v: e_box; static/Conservativity.v: d_box; static/Typing.v: e_force; static/Conservativity.v: d_force",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Box.self}{B = \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}\\annot{[\\varepsilon]}\\,U)}\\quad \\htmlData{k=E-Box.unl}{\\Delta\\ \\text{unlimited}}\\quad \\htmlData{k=E-Box.fresh}{\\bar\\iota\\ \\text{fresh}}\\quad \\htmlData{k=E-Box.inst}{\\forall \\bar s.\\ \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s} \\\\ \\htmlData{k=E-Box.body}{\\htmlData{k=E-Box.open}{\\Gamma, C(\\bar\\iota)} ; \\htmlData{k=E-Box.self}{\\Delta, f : B} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing,{\\uparrow}u)} e : \\htmlData{k=tp.sinst}{U[\\bar s]}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\ !e : B\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-Box}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\quad \\htmlData{k=E-Box.inst}{\\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s}\\quad \\htmlData{k=E-Force.ub}{u[\\bar x] \\prec F} \\\\ \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}\\annot{[\\varepsilon]}\\,U)\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_0}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.force}{\\mathsf{force}}\\,e : \\htmlData{k=tp.sinst}{U[\\bar s]}\\htmlData{k=tp.pinst}{[\\bar x]}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_0 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{E-Force}\\end{array}",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Box.self}{B = \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}\\annot{[\\varepsilon]}\\,U)}\\quad \\htmlData{k=E-Box.unl}{\\Delta\\ \\text{unlimited}}\\quad \\htmlData{k=E-Box.contr}{\\htmlData{k=sty.contr}{\\mathsf{contr}}\\,U}\\quad \\htmlData{k=E-Box.fresh}{\\bar\\iota\\ \\text{fresh}}\\quad \\htmlData{k=E-Box.inst}{\\forall \\bar s.\\ \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s} \\\\ \\htmlData{k=E-Box.body}{\\htmlData{k=E-Box.open}{\\Gamma, C(\\bar\\iota)} ; \\htmlData{k=E-Box.self}{\\Delta, f : B} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{(\\varnothing,{\\uparrow}u)} e : \\htmlData{k=tp.sinst}{U[\\bar s]}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\ !e : B\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-Box}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\\quad \\htmlData{k=E-Box.inst}{\\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s}\\quad \\htmlData{k=E-Force.ub}{u[\\bar x] \\prec F} \\\\ \\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}\\annot{[\\varepsilon]}\\,U)\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_0}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=prim.force}{\\mathsf{force}}\\,e : \\htmlData{k=tp.sinst}{U[\\bar s]}\\htmlData{k=tp.pinst}{[\\bar x]}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon_0 \\htmlData{k=tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{E-Force}\\end{array}",
      "caption": "E-Box types the body once, with fresh point variables $\\bar\\iota$, the hypothesis $C(\\bar\\iota)$ and a fresh future variable above $u$, for each allowed session instance $\\bar s$. The context is unlimited, because a box may be copied. E-Force picks points $\\bar x$ and session types $\\bar s$, requires $C[\\bar x]$ and $u[\\bar x] \\prec F$, and gives the instantiated result type.",
      "about": {
       "why": "Boxes provide recursion and polymorphism over points and session types. Each force chooses an instance.",
@@ -822,7 +822,7 @@ window.MAP = {
      "id": "t-consts",
      "title": "Types of constants",
      "rocq": "static/Constants.v: k_send_df, k_recv_df, k_close_df, k_select_df, k_branch_df, k_link_df, k_spawn_df, k_force_df, k_send, k_recv, k_close, k_select, k_branch, k_link, k_spawn, k_force",
-     "tex": "\\begin{array}{lll}\n\\htmlData{k=prim.send}{\\mathsf{send}} & : T[x\\cdot i] \\otimes S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S@\\htmlData{k=pt.shift}{x^{+}} & \\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T,\\ \\htmlData{k=E-Send.heads}{x \\prec T[x\\cdot i]} \\\\\n\\htmlData{k=prim.recv}{\\mathsf{recv}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} T[x\\cdot i] \\otimes S@x^{+} & \\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T \\\\\n\\htmlData{k=prim.close}{\\mathsf{close}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} \\ast & \\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}} \\\\\n\\htmlData{k=prim.select}{\\mathsf{select}}_i & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}} & \\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)} \\\\\n\\htmlData{k=prim.branch}{\\mathsf{branch}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2 & \\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)} \\\\\n\\htmlData{k=prim.link}{\\mathsf{link}} & : \\htmlData{k=E-Link.dual}{S@x \\otimes \\overline{S}@\\overline{x}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.spawn}{\\mathsf{spawn}} & : (\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} \\ast) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.force}{\\mathsf{force}} & : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] & \\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]} \\\\\n\\htmlData{k=syn.new}{\\mathsf{new}} & : \\exists^{\\bot}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ (S@\\pi \\otimes \\overline{S}@\\overline{\\pi}) & \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho), (\\varnothing, x\\cdot\\kappa)\\}},\\ \\htmlData{k=E-New.wf}{\\pi = \\rho \\Rightarrow \\htmlData{k=w.wfnew}{\\mathsf{wf\\_new}}\\,\\rho\\,C},\\ \\htmlData{k=E-New.field}{\\pi = x\\cdot\\kappa \\Rightarrow \\Gamma \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} C}\n\\end{array}",
+     "tex": "\\begin{array}{lll}\n\\htmlData{k=prim.send}{\\mathsf{send}} & : T[x\\cdot i] \\otimes S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S@\\htmlData{k=pt.shift}{x^{+}} & \\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T,\\ \\htmlData{k=E-Send.heads}{x \\prec T[x\\cdot i]} \\\\\n\\htmlData{k=prim.recv}{\\mathsf{recv}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} T[x\\cdot i] \\otimes S@x^{+} & \\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T \\\\\n\\htmlData{k=prim.close}{\\mathsf{close}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} \\ast & \\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}} \\\\\n\\htmlData{k=prim.select}{\\mathsf{select}}_i & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}} & \\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)} \\\\\n\\htmlData{k=prim.branch}{\\mathsf{branch}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2 & \\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)} \\\\\n\\htmlData{k=prim.link}{\\mathsf{link}} & : \\htmlData{k=E-Link.dual}{S@x \\otimes \\overline{S}@\\overline{x}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.spawn}{\\mathsf{spawn}} & : (\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} \\ast) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.force}{\\mathsf{force}} & : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] & \\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]} \\\\\n\\htmlData{k=syn.new}{\\mathsf{new}} & : \\exists^{\\bot}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ (S@\\pi \\otimes \\overline{S}@\\overline{\\pi}) & \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho), (\\varnothing, x\\cdot\\kappa)\\}},\\ \\htmlData{k=E-New.wf}{\\pi = \\rho \\Rightarrow \\htmlData{k=w.gennew}{\\mathsf{gen\\_new}}\\,\\Gamma\\,\\rho\\,C},\\ \\htmlData{k=E-New.field}{\\pi = x\\cdot\\kappa \\Rightarrow \\Gamma \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} C}\n\\end{array}",
      "caption": "Each constant has the type of its eta-expansion $\\lambda y.\\,k\\,y$, for each instance of its variables that meets the side conditions. An action on an end at $x$ has upper point $x$. $\\mathsf{new}$ is a term and is typed by E-New. \\annp{The types are shown without credits, tickets and cost.}",
      "modes": [
       "df",
@@ -879,7 +879,7 @@ window.MAP = {
      "id": "r-new",
      "title": "Creation",
      "rocq": "static/Typing.v: e_new; static/Conservativity.v: d_new",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\quad \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho), (\\varnothing, x\\cdot\\kappa)\\}}\\quad \\htmlData{k=E-New.wf}{\\pi = \\rho \\Rightarrow \\htmlData{k=w.wfnew}{\\mathsf{wf\\_new}}\\,\\rho\\,C}\\quad \\htmlData{k=E-New.field}{\\pi = x\\cdot\\kappa \\Rightarrow \\Gamma \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} C}\\annraw{\\quad }\\annot{\\htmlData{k=E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.new}{\\mathsf{new}} : \\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ \\htmlData{k=E-New.dual}{(S@\\pi)\\annot{^{m_1}_{m_1}} \\otimes (\\htmlData{k=sty.dual}{\\overline{S}}@\\overline{\\pi})\\annot{^{m_2}_{m_2}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-New}",
+     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\quad \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho), (\\varnothing, x\\cdot\\kappa)\\}}\\quad \\htmlData{k=E-New.wf}{\\pi = \\rho \\Rightarrow \\htmlData{k=w.gennew}{\\mathsf{gen\\_new}}\\,\\Gamma\\,\\rho\\,C}\\quad \\htmlData{k=E-New.field}{\\pi = x\\cdot\\kappa \\Rightarrow \\Gamma \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} C}\\quad \\htmlData{k=E-New.contr}{\\htmlData{k=sty.contr}{\\mathsf{contr}}\\,S}\\annraw{\\quad }\\annot{\\htmlData{k=E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.new}{\\mathsf{new}} : \\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ \\htmlData{k=E-New.dual}{(S@\\pi)\\annot{^{m_1}_{m_1}} \\otimes (\\htmlData{k=sty.dual}{\\overline{S}}@\\overline{\\pi})\\annot{^{m_2}_{m_2}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-New}",
      "caption": "The two ends of a new channel are at a fresh root $\\rho$ and its dual, or at a field $x\\cdot\\kappa$ and its dual. At a fresh root each fact of $C$ ends in the tree of $\\rho$, and $C$ with program order is well-founded on that tree. At a field $\\Gamma$ entails $C$. The lower bound is $\\bot$. \\annp{The creation picks tickets $m_1$ and $m_2$ with $m_1 + m_2 \\leq N$, and each end starts at credit equal to its tickets.}",
      "modes": [
       "df",
@@ -901,10 +901,10 @@ window.MAP = {
       "lf"
      ],
      "rocq": "static/Contexts.v: tsub, static/Typing.v: e_sub; static/Conservativity.v: d_conv; static/Typing.v: e_sub; static/Conservativity.v: d_conv; static/Weakening.v: e_weak, e_contract, d_weak, d_contract, typed_rename",
-     "tex": "\\begin{array}{c}\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-sess}{S \\htmlData{k=sty.sequiv}{\\simeq} S'}\\quad \\annot{\\htmlData{k=tp.sub-credit}{a' \\leq a}}\\end{array}}{\\htmlData{k=sub.tsub}{(S@x)\\annot{^{a}} \\leq (S'@x)\\annot{^{a'}}}}\\;\\textsf{Sub-Sess} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}\\quad \\annot{\\htmlData{k=tp.sub-credit}{a' \\leq a}} \\\\ \\htmlData{k=tp.sub-var}{\\htmlData{k=sub.tsub}{T_1' \\leq T_1} \\quad \\htmlData{k=sub.tsub}{U \\leq U'}}\\end{array}}{(T_1 \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}[\\varepsilon]\\,U)\\annot{^{a}} \\leq (T_1' \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}[\\varepsilon']\\,U')\\annot{^{a'}}}\\;\\textsf{Sub-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}\\quad \\htmlData{k=tp.sub-teq}{U \\equiv U'}\\end{array}}{\\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}[\\varepsilon]\\,U) \\leq \\Box(\\ldots[\\varepsilon']\\,U')}\\;\\textsf{Sub-Box} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-ex}{\\mathsf{facts}\\,C' \\subseteq \\mathsf{facts}\\,C}\\quad \\htmlData{k=tp.sub-teq}{T \\equiv T'}\\end{array}}{\\htmlData{k=sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-agg}{\\htmlData{k=sub.tsub}{T_1 \\leq T_1'} \\quad \\htmlData{k=sub.tsub}{T_2 \\leq T_2'}}\\end{array}}{T_1 \\otimes T_2 \\leq T_1' \\otimes T_2' \\qquad T_1 \\oplus T_2 \\leq T_1' \\oplus T_2'}\\;\\textsf{Sub-Prod, Sub-Sum}\\end{array}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\quad \\htmlData{k=sub.tsub}{T \\leq T'}\\annraw{\\quad }\\annot{\\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T'\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon'}}\\;\\textsf{E-Sub}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\quad \\Gamma ; \\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,U}\\quad \\Gamma ; \\Delta, U, U \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta, U \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e[1 \\mapsto 0] : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Contract}\\end{array}\\end{array}",
-     "caption": "Subtyping is $\\approx$ on session types, and an existential may drop facts. \\annp{Credits may decrease, and costs may increase.} Weakening and contraction are admissible, because they are renamings of variables.",
+     "tex": "\\begin{array}{c}\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-sess}{S \\htmlData{k=sty.sequiv}{\\simeq} S'}\\quad \\annot{\\htmlData{k=tp.sub-credit}{a' \\leq a}}\\end{array}}{\\htmlData{k=sub.tsub}{(S@x)\\annot{^{a}} \\leq (S'@x)\\annot{^{a'}}}}\\;\\textsf{Sub-Sess} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}\\quad \\annot{\\htmlData{k=tp.sub-credit}{a' \\leq a}} \\\\ \\htmlData{k=tp.sub-var}{\\htmlData{k=sub.tsub}{T_1' \\leq T_1} \\quad \\htmlData{k=sub.tsub}{U \\leq U'}}\\end{array}}{(T_1 \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}[\\varepsilon]\\,U)\\annot{^{a}} \\leq (T_1' \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l}[\\varepsilon']\\,U')\\annot{^{a'}}}\\;\\textsf{Sub-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}\\quad \\htmlData{k=tp.sub-teq}{U \\equiv U'}\\quad \\htmlData{k=tp.sub-boxc}{\\bar\\alpha \\neq \\varnothing \\Rightarrow U = U' \\vee \\htmlData{k=sty.contr}{\\mathsf{contr}}\\,U, U'}\\end{array}}{\\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}[\\varepsilon]\\,U) \\leq \\Box(\\ldots[\\varepsilon']\\,U')}\\;\\textsf{Sub-Box} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-ex}{\\Gamma, C(\\bar\\iota) \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} C'(\\bar\\iota)}\\quad \\htmlData{k=tp.sub-exbody}{\\Gamma, C(\\bar\\iota) \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} T \\leq T'}\\end{array}}{\\Gamma \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} \\htmlData{k=sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-agg}{\\htmlData{k=sub.tsub}{T_1 \\leq T_1'} \\quad \\htmlData{k=sub.tsub}{T_2 \\leq T_2'}}\\end{array}}{T_1 \\otimes T_2 \\leq T_1' \\otimes T_2' \\qquad T_1 \\oplus T_2 \\leq T_1' \\oplus T_2'}\\;\\textsf{Sub-Prod, Sub-Sum}\\end{array}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\quad \\htmlData{k=sub.tsub}{T \\leq T'}\\quad \\htmlData{k=E-Sub.contr}{\\htmlData{k=sty.contr}{\\mathsf{contr}}\\,T \\Rightarrow \\mathsf{contr}\\,T'}\\annraw{\\quad }\\annot{\\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T'\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon'}}\\;\\textsf{E-Sub}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\quad \\Gamma ; \\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,U}\\quad \\Gamma ; \\Delta, U, U \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta, U \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e[1 \\mapsto 0] : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Contract}\\end{array}\\end{array}",
+     "caption": "Subtyping is $\\approx$ on session types, and an existential may weaken its constraint to facts that $\\Gamma$ and the constraint entail. \\annp{Credits may decrease, and costs may increase.} Weakening and contraction are admissible, because they are renamings of variables.",
      "variants": {
-      "df": "\\begin{array}{c}\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-sess}{S \\htmlData{k=sty.seqv}{\\approx} S'}\\end{array}}{\\htmlData{k=sub.tsub}{S@x \\leq S'@x}}\\;\\textsf{Sub-Sess} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-ex}{\\mathsf{facts}\\,C' \\subseteq \\mathsf{facts}\\,C}\\quad \\htmlData{k=tp.sub-teq}{T \\equiv T'}\\end{array}}{\\htmlData{k=sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-agg}{\\htmlData{k=sub.tsub}{T_1 \\leq T_1'} \\quad \\htmlData{k=sub.tsub}{T_2 \\leq T_2'}}\\end{array}}{T_1 \\otimes T_2 \\leq T_1' \\otimes T_2' \\qquad T_1 \\oplus T_2 \\leq T_1' \\oplus T_2'}\\;\\textsf{Sub-Prod, Sub-Sum} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-var}{\\htmlData{k=sub.tsub}{T_1' \\leq T_1} \\quad \\htmlData{k=sub.tsub}{U \\leq U'}}\\end{array}}{T_1 \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U \\leq T_1' \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U'}\\;\\textsf{Sub-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-teq}{U \\equiv U'}\\end{array}}{\\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\leq \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U')}\\;\\textsf{Sub-Box}\\end{array}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\quad \\htmlData{k=sub.tsub}{T \\leq T'}\\annraw{\\quad }\\annot{\\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T'\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon'}}\\;\\textsf{E-Sub}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\quad \\Gamma ; \\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,U}\\quad \\Gamma ; \\Delta, U, U \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta, U \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e[1 \\mapsto 0] : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Contract}\\end{array}\\end{array}"
+      "df": "\\begin{array}{c}\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-sess}{S \\htmlData{k=sty.seqv}{\\approx} S'}\\end{array}}{\\htmlData{k=sub.tsub}{S@x \\leq S'@x}}\\;\\textsf{Sub-Sess} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-ex}{\\Gamma, C(\\bar\\iota) \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} C'(\\bar\\iota)}\\quad \\htmlData{k=tp.sub-exbody}{\\Gamma, C(\\bar\\iota) \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} T \\leq T'}\\end{array}}{\\Gamma \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} \\htmlData{k=sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-agg}{\\htmlData{k=sub.tsub}{T_1 \\leq T_1'} \\quad \\htmlData{k=sub.tsub}{T_2 \\leq T_2'}}\\end{array}}{T_1 \\otimes T_2 \\leq T_1' \\otimes T_2' \\qquad T_1 \\oplus T_2 \\leq T_1' \\oplus T_2'}\\;\\textsf{Sub-Prod, Sub-Sum} \\qquad \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-var}{\\htmlData{k=sub.tsub}{T_1' \\leq T_1} \\quad \\htmlData{k=sub.tsub}{U \\leq U'}}\\end{array}}{T_1 \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U \\leq T_1' \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} U'}\\;\\textsf{Sub-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=tp.sub-teq}{U \\equiv U'}\\quad \\htmlData{k=tp.sub-boxc}{\\bar\\alpha \\neq \\varnothing \\Rightarrow U = U' \\vee \\htmlData{k=sty.contr}{\\mathsf{contr}}\\,U, U'}\\end{array}}{\\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\leq \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U')}\\;\\textsf{Sub-Box}\\end{array}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\quad \\htmlData{k=sub.tsub}{T \\leq T'}\\quad \\htmlData{k=E-Sub.contr}{\\htmlData{k=sty.contr}{\\mathsf{contr}}\\,T \\Rightarrow \\mathsf{contr}\\,T'}\\annraw{\\quad }\\annot{\\htmlData{k=E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T'\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon'}}\\;\\textsf{E-Sub}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\quad \\Gamma ; \\Delta' \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ty.unlimited}{\\mathsf{unlimited}\\,U}\\quad \\Gamma ; \\Delta, U, U \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta, U \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} e[1 \\mapsto 0] : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Contract}\\end{array}\\end{array}"
      },
      "about": {
       "why": "A value may forget facts it does not need. Admissible weakening and contraction keep the rule set free of structural rules.",
@@ -919,7 +919,7 @@ window.MAP = {
       "lf"
      ],
      "rocq": "static/Typing.v: p_term; static/Typing.v: p_connect; static/Typing.v: ptyped, static/FundamentalProc.v: pguard",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=ty.tfree}{\\mathsf{tfree}\\,T}\\quad \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma}\\quad \\htmlData{k=P-Term.wf}{\\htmlData{k=w.lfworld}{\\mathsf{wf}}\\,W}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\quad \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = (S@x)\\annot{^{m}_{m}},\\ \\Theta_B(c^{-}) = (\\overline{S}@\\overline{x})\\annot{^{m'}_{m'}}\\annot{,\\ m + m' \\leq N}} \\\\ \\htmlData{k=P-Term.typed}{\\varnothing ; \\htmlData{k=tp.lift}{\\Sigma\\annot{^{N/2}_{N/2}}}, \\Theta_B \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}} t : T\\annot{\\ !\\ c}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1} (C_1, E_1) : T} \\\\ \\htmlData{k=P-Connect.right}{\\Sigma_2 \\cup \\htmlData{k=P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\htmlData{k=P-Connect.disj}{\\mathsf{disjoint}(\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_1, \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_2, \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, C_1, C_2)}\\quad \\htmlData{k=P-Connect.cutfree}{\\htmlData{k=pfree}{\\mathsf{pfree}}\\,\\Sigma_C} \\\\ \\htmlData{k=P-Connect.wf}{\\htmlData{k=w.lfworld}{\\mathsf{wf}}(\\htmlData{k=w.restrict}{W_1|_S} \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2|_S),\\ S = \\htmlData{k=w.consts}{A_{W_1}} \\cap A_{W_2}}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{\\htmlData{k=P-Connect.join}{W_1 \\htmlData{k=w.join}{\\sqcup} W_2}} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect}\\annraw{\\\\[3ex]}\\annot{\\htmlData{k=tp.lfjudg}{\\Sigma \\Vdash^{N}_W p : T \\iff \\htmlData{k=lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_W p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p}}}\\end{array}",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=ty.tfree}{\\mathsf{tfree}\\,T}\\quad \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma}\\quad \\htmlData{k=P-Term.wf}{\\htmlData{k=w.lfworld}{\\mathsf{wf}}\\,W}\\quad \\htmlData{k=P-Term.contr}{\\htmlData{k=sty.contr}{\\mathsf{contr}}\\,\\Sigma, \\Theta_B}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\quad \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = (S@x)\\annot{^{m}_{m}},\\ \\Theta_B(c^{-}) = (\\overline{S}@\\overline{x})\\annot{^{m'}_{m'}}\\annot{,\\ m + m' \\leq N}} \\\\ \\htmlData{k=P-Term.typed}{\\varnothing ; \\htmlData{k=tp.lift}{\\Sigma\\annot{^{N/2}_{N/2}}}, \\Theta_B \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}} t : T\\annot{\\ !\\ c}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1} (C_1, E_1) : T} \\\\ \\htmlData{k=P-Connect.right}{\\Sigma_2 \\cup \\htmlData{k=P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\htmlData{k=P-Connect.disj}{\\mathsf{disjoint}(\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_1, \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_2, \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, C_1, C_2)}\\quad \\htmlData{k=P-Connect.cutfree}{\\htmlData{k=pfree}{\\mathsf{pfree}}\\,\\Sigma_C} \\\\ \\htmlData{k=P-Connect.wf}{\\htmlData{k=w.lfworld}{\\mathsf{wf}}(\\htmlData{k=w.restrict}{W_1|_S} \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2|_S),\\ S = \\htmlData{k=w.consts}{A_{W_1}} \\cap A_{W_2}}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{\\htmlData{k=P-Connect.join}{W_1 \\htmlData{k=w.join}{\\sqcup} W_2}} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect}\\annraw{\\\\[3ex]}\\annot{\\htmlData{k=tp.lfjudg}{\\Sigma \\Vdash^{N}_W p : T \\iff \\htmlData{k=lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_W p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p}}}\\end{array}",
      "caption": "P-Term types one thread $t$ that holds both ends of each channel in $C_0$, at dual types and points, over an interface $\\Sigma$ without partner pairs. P-Connect cuts two components at $\\Sigma_C$ against $\\overline{\\Sigma_C}$ and compares only the shared roots of the two worlds. \\annp{Lock-free process typing is process typing at a finite bound $N$ with each thread guarded. \\annp{The ends of a restricted channel have tickets of sum at most $N$, and each interface end has $N/2$.}}",
      "about": {
       "why": "Processes are built from single threads by P-Term and composed by P-Connect.",
@@ -3673,6 +3673,21 @@ window.MAP = {
     }
    ]
   },
+  "sty.contr": {
+   "title": "Contractive session types",
+   "what": "$\\mathsf{contr}\\,S$ holds when the variable of each recursion $\\mu\\alpha.S'$ inside $S$, also inside payloads, is reached only through an action, a choice or $\\mathsf{Close}$. A session variable does not guard, because an instance may set it to $\\mathsf{Skip}$.",
+   "why": "On a contractive type $\\mathsf{unfold}$ finds the first action within the fuel the size of the type gives, and $\\simeq$ is kept by substituting contractive types for session variables. The rules ask it where a session type enters a derivation, so a box body typed at one instance is typed at each instance.",
+   "breaks": "Without it $\\alpha.\\mu\\beta.\\beta \\simeq (\\alpha.\\mathsf{Skip}).\\mu\\beta.\\beta$, and their instances at $\\alpha = ?\\ast.(\\mathsf{Skip}.\\mathsf{Skip})$ are not equivalent, so a derivation at one instance gives none at the other.",
+   "example": "$\\mu\\alpha.\\,!\\ast.\\alpha$ and $\\mu\\alpha.\\,?(\\kappa.\\ \\alpha @\\kappa).\\mathsf{Close}$ are contractive, $\\mu\\beta.\\beta$ and $\\mu\\beta.\\,\\alpha.\\beta$ are not.",
+   "rocq": "types/Contractive.v: scontr, tcontr, unrN_sfuel, sequiv_sinst; static/Sinst.v: typed_sinst; examples/SinstStuck.v: typed_sinst_false, ss_var_guard",
+   "sig": "\\mathsf{contr} \\subseteq \\mathsf{STy}",
+   "args": [
+    {
+     "name": "S",
+     "meaning": "A session type, possibly with session variables of a box."
+    }
+   ]
+  },
   "sty.dual": {
    "title": "Duality",
    "what": "$\\mathsf{dual}$ swaps $!$ with $?$ and $\\oplus$ with $\\&$, keeps payloads, $\\mathsf{Skip}$ and $\\mathsf{Close}$, and $\\overline{S} := \\mathsf{dual}\\,S$.",
@@ -4092,6 +4107,29 @@ window.MAP = {
     {
      "name": "\\rho",
      "meaning": "The fresh root, a point variable bound by the existential of $\\mathsf{new}$."
+    },
+    {
+     "name": "C",
+     "meaning": "The facts of the creation."
+    }
+   ]
+  },
+  "w.gennew": {
+   "title": "$\\mathsf{gen\\_new}\\,\\Gamma\\,\\rho\\,C$",
+   "what": "The order of $C$ with program order is well-founded on $\\mathsf{tree}(\\rho)$, and facts of $C$ between context points follow from $\\Gamma$. A relation $S$ pairs points of $\\mathsf{tree}(\\rho)$ with points of $\\Gamma$. Each exit $u \\prec y$ from the tree to a context point has a partner of $u$ below $y$. Partners descend along $C$ with program order, and each entry $z \\prec s$ into a paired point lies below its partner.",
+   "why": "A creation at a fresh root takes the least ranks of the new tree above the context points below the tree. A paired point stays at or below the rank of its partner, so each exit holds in each ranked world that satisfies $\\Gamma$. The same pairs show that opening the existential derives no new fact between points of $\\Gamma$.",
+   "breaks": "Without partners an exit is rejected. Without descent along $C$ a chain of new points below an exit could rise above the context point it must stay below.",
+   "example": "$\\Gamma \\vdash z \\prec y$ and $C = \\{\\rho \\prec y\\}$ with $S = \\{(\\rho, z)\\}$. With $\\Gamma \\vdash z \\prec y$, $\\Gamma \\vdash z' \\prec y'$ and $C = \\{\\rho \\prec y, \\rho \\prec y'\\}$, $S = \\{(\\rho, z), (\\rho, z')\\}$.",
+   "rocq": "static/Contexts.v: gen_new, gen_new_rel, wf_new_gen, wf_new_plus_gen; static/PointSubst.v: cons_gen; compat/Redex.v: Erel_new",
+   "sig": "\\mathsf{gen\\_new} : \\mathsf{Ctx} \\to \\mathsf{PVar} \\to \\mathcal{P}(\\mathsf{Point} \\times \\mathsf{Point}) \\to \\mathsf{Prop}",
+   "args": [
+    {
+     "name": "\\Gamma",
+     "meaning": "The facts of the context of the creation."
+    },
+    {
+     "name": "\\rho",
+     "meaning": "The fresh root."
     },
     {
      "name": "C",
@@ -4984,9 +5022,9 @@ window.MAP = {
    ]
   },
   "sub.tsub": {
-   "title": "Subtyping $T \\leq T'$",
-   "what": "The least relation closed under Sub-Sess, Sub-Arr, Sub-Box, Sub-Ex and componentwise on $\\otimes$ and $\\oplus$, used by E-Sub.",
-   "why": "The branches of $\\mathsf{case}$ and of a received choice need one common type. Every clause weakens what a value guarantees.",
+   "title": "Subtyping $\\Gamma \\vdash T \\leq T'$",
+   "what": "The least relation closed under Sub-Sess, Sub-Arr, Sub-Box, Sub-Ex and componentwise on $\\otimes$ and $\\oplus$, under the facts $\\Gamma$, used by E-Sub and E-Send.",
+   "why": "The branches of $\\mathsf{case}$ and of a received choice need one common type. Each clause weakens what a value guarantees, and Sub-Ex reads the facts of $\\Gamma$.",
    "breaks": "Without E-Sub two branches that create a channel with different facts have no common result type.",
    "example": "$\\exists^{\\bot}\\rho.\\,\\{\\rho \\prec \\overline{\\rho\\cdot 0}\\}.\\,T \\leq \\exists^{\\bot}\\rho.\\,\\varnothing.\\,T$, and $(S@x)^{3} \\leq (S@x)^{1}$ in the lock-free mode.",
    "rocq": "static/Contexts.v: tsub",
@@ -5039,13 +5077,13 @@ window.MAP = {
    ]
   },
   "tp.sub-ex": {
-   "title": "An existential may drop facts",
-   "what": "$\\mathsf{facts}\\,C' \\subseteq \\mathsf{facts}\\,C$, the constraint $C'$ of the supertype states a subset of the facts of $C$ over the same variables.",
-   "why": "E-New states the facts $C$ of a creation in its existential. Two branches of a $\\mathsf{case}$ or two creations that serve one type then agree on the facts both state, by dropping the rest.",
-   "breaks": "Without it, two branches that create a channel with different facts have different result types, and the $\\mathsf{case}$ does not type.",
-   "example": "$\\exists^{\\bot}\\rho.\\,\\{\\rho \\prec \\overline{\\rho\\cdot 0}\\}.\\,T \\leq \\exists^{\\bot}\\rho.\\,\\varnothing.\\,T$.",
-   "rocq": "static/Contexts.v: sub_ex",
-   "sig": "\\mathsf{facts}\\,C' \\subseteq \\mathsf{facts}\\,C",
+   "title": "An existential may weaken its constraint",
+   "what": "$\\Gamma, C(\\bar\\iota) \\vdash C'(\\bar\\iota)$. At the bound variables $\\bar\\iota$, the facts of $\\Gamma$ and of $C$ entail each fact of $C'$.",
+   "why": "E-New states the facts $C$ of a creation in its existential. Two branches of a $\\mathsf{case}$ or two creations that serve one type then agree on facts that both entail. Opening the value and packing it again under $\\Gamma, C(\\bar\\iota)$ gives the same $C'$, so $e$ and $\\mathsf{let}\\ x = e\\ \\mathsf{in}\\ x$ type at the same existentials with the same lower bound.",
+   "breaks": "With subset inclusion only, $e$ does not type at an existential whose facts follow from its own, while $\\mathsf{let}\\ x = e\\ \\mathsf{in}\\ x$ does.",
+   "example": "$\\exists^{\\bot}\\rho.\\,\\{\\rho \\prec \\rho\\cdot 0,\\ \\rho\\cdot 0 \\prec \\rho\\cdot 1\\}.\\,T \\leq \\exists^{\\bot}\\rho.\\,\\{\\rho \\prec \\rho\\cdot 1\\}.\\,T$.",
+   "rocq": "static/Contexts.v: sub_ex; static/Fundamental.v: Vrel_tsub",
+   "sig": "\\Gamma, C(\\bar\\iota) \\vdash C'(\\bar\\iota)",
    "args": [
     {
      "name": "C",
@@ -5053,7 +5091,45 @@ window.MAP = {
     },
     {
      "name": "C'",
-     "meaning": "the constraint of the supertype existential, over the same variables"
+     "meaning": "the constraint of the supertype existential"
+    },
+    {
+     "name": "\\bar\\iota",
+     "meaning": "the bound point variables"
+    }
+   ]
+  },
+  "tp.sub-exbody": {
+   "title": "Bodies under the opened constraint",
+   "what": "$\\Gamma, C(\\bar\\iota) \\vdash T \\leq T'$. The bodies compare under $\\Gamma$ extended by $C$ at the bound variables.",
+   "why": "A nested existential may weaken its constraint by facts of the outer one.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\exists \\rho.\\,C.\\,\\exists \\kappa.\\,\\{\\rho \\prec \\kappa\\}.\\,T \\leq \\exists \\rho.\\,C.\\,\\exists \\kappa.\\,\\varnothing.\\,T$.",
+   "rocq": "static/Contexts.v: sub_ex",
+   "sig": "\\Gamma, C(\\bar\\iota) \\vdash T \\leq T'",
+   "args": [
+    {
+     "name": "T, T'",
+     "meaning": "the bodies of the two existentials"
+    }
+   ]
+  },
+  "tp.sub-boxc": {
+   "title": "Box results with session variables",
+   "what": "When the box has session variables, $U$ and $U'$ are equal or both contractive.",
+   "why": "A box with session variables is used at its instances. Contractive instances keep $\\simeq$ between contractive types, so $U \\equiv U'$ gives $U[\\bar s] \\equiv U'[\\bar s]$ at each allowed $\\bar s$.",
+   "breaks": "Without contractivity two equivalent results can have instances that are not equivalent, as in examples/SinstStuck.v.",
+   "example": "$\\Box(\\forall\\alpha.\\,\\ldots\\,(\\alpha.\\mu\\beta.\\,!\\ast.\\beta)@x) \\leq \\Box(\\forall\\alpha.\\,\\ldots\\,(\\alpha.\\,!\\ast.\\mu\\beta.\\,!\\ast.\\beta)@x)$.",
+   "rocq": "static/Contexts.v: sub_box; types/Contractive.v: teq_sinst",
+   "sig": "\\bar\\alpha \\neq \\varnothing \\Rightarrow U = U' \\vee \\mathsf{contr}\\,U, U'",
+   "args": [
+    {
+     "name": "\\bar\\alpha",
+     "meaning": "the session variables of the box"
+    },
+    {
+     "name": "U, U'",
+     "meaning": "the two results"
     }
    ]
   },
@@ -5341,17 +5417,107 @@ window.MAP = {
    ]
   },
   "E-Box.inst": {
-   "title": "Typed for every instance",
-   "what": "The premise has one derivation of the body for every list $\\bar s$ with $\\mathsf{sinsts}\\,\\bar s$, one session type per session variable $\\bar\\alpha$ of the box.",
-   "why": "A force may pick any allowed $\\bar s$, and the derivation for that $\\bar s$ is the one that justifies the call. Checking every instance up front keeps E-Force a plain lookup. A derivation at one instance does not give one at another, because a session type of the body that is not contractive can separate two instances.",
+   "title": "Typed for each instance",
+   "what": "The premise has one derivation of the body for each list $\\bar s$ with $\\mathsf{sinsts}\\,\\bar s$, one session type per session variable $\\bar\\alpha$ of the box.",
+   "why": "A force may pick an allowed $\\bar s$, and the derivation for that $\\bar s$ justifies the call. Checking the instances up front keeps E-Force a plain lookup. The derivation at the identity instance gives the others, because the session types of the body are contractive and contractive instances keep $\\simeq$.",
    "breaks": "Nothing. It is a definition.",
    "example": "A box with no session variable has exactly one instance, the empty list, so the premise is one derivation.",
-   "rocq": "static/Typing.v: e_box; examples/SinstStuck.v: typed_sinst_false",
+   "rocq": "static/Typing.v: e_box; static/Sinst.v: typed_sinst, typed_sinst_slist; examples/SinstStuck.v: typed_sinst_false",
    "sig": "\\forall \\bar s.\\ \\mathsf{sinsts}\\,\\bar s \\Rightarrow \\ldots",
    "args": [
     {
      "name": "\\bar s",
      "meaning": "a list of session types, one per session variable of the box"
+    }
+   ]
+  },
+  "E-Box.contr": {
+   "title": "Contractive result",
+   "what": "The result type $U$ of the box is contractive.",
+   "why": "The body refers to the box through $f$, so the derivation of the body cannot show $U$ contractive before the box type is fixed.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$U = \\ast$ for a loop that returns nothing.",
+   "rocq": "static/Typing.v: e_box",
+   "sig": "\\mathsf{contr}\\,U",
+   "args": [
+    {
+     "name": "U",
+     "meaning": "the result type of the box"
+    }
+   ]
+  },
+  "E-Abs.contr": {
+   "title": "Contractive argument",
+   "what": "The argument type $T$ of the closure is contractive.",
+   "why": "The argument enters the context of the body, and no other rule checks the argument type.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$T = S_1@\\iota \\otimes S_2@\\kappa$ for the client loop, with $S_1$ and $S_2$ contractive.",
+   "rocq": "static/Typing.v: e_abs",
+   "sig": "\\mathsf{contr}\\,T",
+   "args": [
+    {
+     "name": "T",
+     "meaning": "the argument type of the closure"
+    }
+   ]
+  },
+  "E-Inj.contr": {
+   "title": "Contractive sum",
+   "what": "Both summands of $T_1 \\oplus T_2$ are contractive.",
+   "why": "The summand that $e$ does not produce enters the derivation at this rule.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\mathsf{inj}_1\\,\\ast : \\ast \\oplus (\\mathsf{Close}@x)$.",
+   "rocq": "static/Typing.v: e_inj",
+   "sig": "\\mathsf{contr}\\,(T_1 \\oplus T_2)",
+   "args": [
+    {
+     "name": "T_1, T_2",
+     "meaning": "the two summands"
+    }
+   ]
+  },
+  "E-New.contr": {
+   "title": "Contractive protocol",
+   "what": "The protocol $S$ of the new channel is contractive.",
+   "why": "A creation brings $S$ and $\\overline{S}$ into the derivation.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\mathsf{new}$ at $\\mu\\alpha.\\,!\\ast.\\alpha$ types, at $\\mu\\beta.\\beta$ it does not.",
+   "rocq": "static/Typing.v: e_new, e_new_fld",
+   "sig": "\\mathsf{contr}\\,S",
+   "args": [
+    {
+     "name": "S",
+     "meaning": "the protocol of the new channel"
+    }
+   ]
+  },
+  "E-Sub.contr": {
+   "title": "Subtyping keeps contractivity",
+   "what": "If $T$ is contractive, so is $T'$.",
+   "why": "Subtyping compares session types up to $\\simeq$, and a type equivalent to a contractive one need not be contractive. Over contractive contexts each derived type is contractive, so the premise asks the target contractive.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\mathsf{Close}.\\mu\\beta.\\beta \\simeq \\mathsf{Close}$, and E-Sub does not turn an end at $\\mathsf{Close}$ into one at $\\mathsf{Close}.\\mu\\beta.\\beta$.",
+   "rocq": "static/Typing.v: e_sub; static/Sinst.v: typed_scontr",
+   "sig": "\\mathsf{contr}\\,T \\Rightarrow \\mathsf{contr}\\,T'",
+   "args": [
+    {
+     "name": "T, T'",
+     "meaning": "the derived type and the concluded one"
+    }
+   ]
+  },
+  "P-Term.contr": {
+   "title": "Contractive ends",
+   "what": "The session types of $\\Sigma$ and of the restricted ends $\\Theta_B$ are contractive.",
+   "why": "These are the ends a thread starts with, and they enter its derivation at this rule.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\{o \\mapsto (\\mathsf{Close}, x)\\}$.",
+   "rocq": "static/Typing.v: p_term",
+   "sig": "\\mathsf{contr}\\,\\Sigma, \\Theta_B",
+   "args": [
+    {
+     "name": "\\Sigma, \\Theta_B",
+     "meaning": "the interface and the restricted ends of the thread"
     }
    ]
   },
@@ -5687,12 +5853,12 @@ window.MAP = {
    ]
   },
   "E-New.wf": {
-   "title": "$\\pi = \\rho \\Rightarrow \\mathsf{wf\\_new}\\,\\rho\\,C$",
-   "what": "At a fresh root each fact of $C$ ends in $\\mathsf{tree}(\\rho)$, and $C$ with program order is well-founded on $\\mathsf{tree}(\\rho)$.",
-   "why": "The fundamental theorem ranks the new tree at $\\sigma + \\rho_C$, with $\\sigma$ above each context point that a fact of $C$ puts below the tree and $\\rho_C$ the rank function of $C$ with program order. Facts from context points up into the tree then hold in each ranked world that satisfies $\\Gamma$.",
-   "breaks": "A fact from a new point down to a context point fails when the context point has rank $0$, a rank that a box instance may choose. The growing waiting chain states such a fact in each round.",
-   "example": "$\\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ ends in $\\mathsf{tree}(\\rho)$ and is well-founded.",
-   "rocq": "static/Contexts.v: wf_new; static/Typing.v: e_new",
+   "title": "$\\pi = \\rho \\Rightarrow \\mathsf{gen\\_new}\\,\\Gamma\\,\\rho\\,C$",
+   "what": "At a fresh root $C$ with program order is well-founded on $\\mathsf{tree}(\\rho)$. A fact of $C$ from the tree down to a context point $y$ has a partner in $\\Gamma$ below $y$, as $\\mathsf{gen\\_new}$ states.",
+   "why": "The fundamental theorem ranks the new tree by the least ranks above the context points below the tree. A point with a partner $t$ stays at or below the rank of $t$, so a fact down to $y$ holds in each ranked world that satisfies $\\Gamma$. With no fact down to a context point this is $\\mathsf{wf\\_new}$.",
+   "breaks": "A fact from a new point down to a context point with no partner fails when the context point has rank $0$. The growing waiting chain states such a fact in each round, and its box can state no partner.",
+   "example": "$\\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ needs no partner. $\\{\\rho \\prec y\\}$ under $\\Gamma \\vdash z \\prec y$ has the partner $z$.",
+   "rocq": "static/Contexts.v: gen_new, wf_new_gen; static/Typing.v: e_new; compat/Redex.v: Erel_new",
    "sig": "\\pi = \\rho \\Rightarrow \\mathsf{wf\\_new}\\,\\rho\\,C : \\mathsf{Prop}",
    "args": [
     {
@@ -6543,11 +6709,11 @@ window.MAP = {
   },
   "tp.sinsts": {
    "title": "Allowed session instances $\\mathsf{sinsts}\\,\\bar s$",
-   "what": "The session types a session variable of a box may stand for. Every recursion $\\mu\\alpha.S$ inside each $s \\in \\bar s$, also inside payloads, passes an action before $\\alpha$ recurs, and no payload of $s$ mentions a point free below its binder. \\annp{At $N = \\infty$ each $s$ also has no finite credit.}",
-   "why": "The rules read the first action of a protocol after unfolding. An instance such as $\\mu\\alpha.\\alpha$ has no first action, so substituting it would give an end no rule can type. \\annp{At $N = \\infty$ every annotation in a derivation is $\\infty$, and an instance with a finite credit inside its payloads would bring one in.}",
-   "breaks": "Without the first condition a box with a variable $\\alpha$ could be forced at $\\mu\\alpha.\\alpha$, and an end of type $\\mu\\alpha.\\alpha$ would be stuck with no action to perform.",
-   "example": "$\\mu\\alpha.\\,{!}\\ast.\\alpha$ and $\\mathsf{Close}$ are allowed, $\\mu\\alpha.\\alpha$ and $\\mu\\alpha.\\,\\mathsf{Skip}.\\alpha$ are not.",
-   "rocq": "static/Contexts.v: sinsts; types/Types.v: hcontractive",
+   "what": "The session types a session variable of a box may stand for. Each $s \\in \\bar s$ is contractive, and no payload of $s$ mentions a point free below its binder. \\annp{At $N = \\infty$ each $s$ also has no finite credit.}",
+   "why": "The rules read the first action of a protocol after unfolding, and a contractive instance keeps a contractive type contractive and keeps $\\simeq$. \\annp{At $N = \\infty$ each annotation in a derivation is $\\infty$, and an instance with a finite credit inside its payloads would bring one in.}",
+   "breaks": "Without contractivity a box with a variable $\\alpha$ could be forced at $\\mu\\alpha.\\alpha$, and an end of type $\\mu\\alpha.\\alpha$ would be stuck with no action to perform.",
+   "example": "$\\mu\\alpha.\\,!\\ast.\\alpha$ and $\\mathsf{Close}$ are allowed, $\\mu\\alpha.\\alpha$ and $\\mu\\alpha.\\,\\mathsf{Skip}.\\alpha$ are not.",
+   "rocq": "static/Contexts.v: sinsts; types/Contractive.v: scontr, contractive",
    "sig": "\\mathsf{sinsts} : \\mathsf{Fuel} \\to \\mathsf{Sty}^{*} \\to \\mathsf{Prop}",
    "args": [
     {

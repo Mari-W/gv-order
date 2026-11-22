@@ -48,14 +48,14 @@ Theorem cy_dftyped : dftyped W_cy ∅ hc_empty [] (∅, None) cy_main TUnit.
 Proof.
   unfold cy_main, let_new.
   eapply d_let; [apply tsplit_empty|apply lsplit_nil| |].
-  { eapply (d_new' _ _ _ _ _ SEnd None None); [spare_tac|apply cy_wf_new]. }
+  { eapply (d_new' _ _ _ _ _ SEnd None None); [spare_tac|apply cy_wf_new|contr_tac]. }
   eapply d_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
   fold (Γnew cy_L).
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Pair (Var 1) ENew) EUnit| |].
-  { eapply (d_new_at _ _ _ _ _ _ 0 SEnd (pvar 0) SEnd); [done|reflexivity|]. spare_tac. }
+  { eapply (d_new_at _ _ _ _ _ _ 0 SEnd (pvar 0) SEnd); [done|reflexivity| |contr_tac]. spare_tac. }
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
   eapply d_letu; [apply tsplit_empty|lsplit_tac (ESpawn cy_thunk) EUnit| |].

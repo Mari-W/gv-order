@@ -487,7 +487,7 @@ Proof.
   - by apply e_chan, (lren_unl _ _ _ H Hr).
   - (* E-Abs *)
     destruct (lren_lage _ _ _ _ _ H1 Hr) as (Δhr & Hc & Hr').
-    eapply e_abs; [|done|exact Hc|].
+    eapply e_abs; [|done|exact Hc|done|].
     + by rewrite (lren_heads _ _ _ Hr), (lren_bot _ _ _ Hr).
     + by apply IHtyped, lren_up.
   - (* E-App *)
@@ -514,8 +514,8 @@ Proof.
     + by apply IHtyped2, lren_up.
     + by apply IHtyped3, lren_up.
   - (* E-Box *)
-    eapply e_box; [by eapply lren_unl|].
-    intros ss Hk Hss. apply H1; [done|done|]. by apply lren_pinst, lren_up.
+    eapply e_box; [by eapply lren_unl|done|].
+    intros ss Hk Hss. apply H2; [done|done|]. by apply lren_pinst, lren_up.
   - eapply e_force; eauto.
   - eapply e_send; eauto.
   - eapply e_recv; eauto.
@@ -524,8 +524,8 @@ Proof.
   - eapply e_branch; eauto.
   - eapply e_link; eauto.
   - eapply e_spawn; eauto.
-  - apply e_new; [exact (lren_unl _ _ _ H Hr)|done|done].
-  - apply e_new_fld; [exact (lren_unl _ _ _ H Hr)|done].
+  - apply e_new; [exact (lren_unl _ _ _ H Hr)|done|done|done].
+  - apply e_new_fld; [exact (lren_unl _ _ _ H Hr)|done|done].
   - eapply e_sub; eauto.
   - eapply e_pack; eauto.
   - (* E-Open *)
@@ -699,7 +699,7 @@ Section let_admissible.
   Proof.
     intros Ht Ha H.
     eapply (e_spawn _ _ _ _ _ _ _ UTop LBot c' (Some 1)); [|simpl; lia].
-    eapply (e_abs _ _ _ _ _ _ _ _ _ _ _ UTop LBot c' (Some 1)); [done|exact Ht|exact Ha|exact H].
+    eapply (e_abs _ _ _ _ _ _ _ _ _ _ _ UTop LBot c' (Some 1)); [done|exact Ht|exact Ha|done|exact H].
   Qed.
 
   (** D-Let *)

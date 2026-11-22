@@ -75,7 +75,7 @@ Section body.
     eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
     { eapply d_var'; [reflexivity|]. spare_tac. }
     eapply d_letp; [apply tsplit_empty|lsplit_tac (Pair (Var 1) ENew) EUnit| |].
-    { eapply (d_new_at _ _ _ _ _ _ 0 SEnd (pvar 0) Sdd); [done|reflexivity|]. spare_tac. }
+    { eapply (d_new_at _ _ _ _ _ _ 0 SEnd (pvar 0) Sdd); [done|reflexivity| |contr_tac]. spare_tac. }
     eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
     { eapply d_var'; [reflexivity|]. spare_tac. }
     eapply d_letu; [apply tsplit_empty|lsplit_tac (ESpawn fm_thunk) EUnit| |].
@@ -118,7 +118,7 @@ Section body.
 End body.
 
 Lemma fm_box_typed W Γ n F : dftyped W ∅ Γ (nones n) F fm_box fm_ty.
-Proof. apply box1_typed; [reflexivity|apply fm_body]. Qed.
+Proof. apply box1_typed; [contr_tac|reflexivity|apply fm_body]. Qed.
 
 (** ** main *)
 
@@ -171,14 +171,14 @@ Theorem fm_dftyped : dftyped W_fm ∅ hc_empty [] (∅, None) fm_main TUnit.
 Proof.
   unfold fm_main, let_new.
   eapply d_let; [apply tsplit_empty|apply lsplit_nil| |].
-  { eapply (d_new' _ _ _ _ _ SEnd None None); [spare_tac|apply fm_wf_new]. }
+  { eapply (d_new' _ _ _ _ _ SEnd None None); [spare_tac|apply fm_wf_new|contr_tac]. }
   eapply d_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
   fold (Γnew fm_L).
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Pair (Var 1) ENew) EUnit| |].
-  { eapply (d_new_at _ _ _ _ _ _ 1 SEnd (pvar 0) SEnd); [done|reflexivity|]. spare_tac. }
+  { eapply (d_new_at _ _ _ _ _ _ 1 SEnd (pvar 0) SEnd); [done|reflexivity| |contr_tac]. spare_tac. }
   eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
   { eapply d_var'; [reflexivity|]. spare_tac. }
   eapply d_letu; [apply tsplit_empty|lsplit_tac (ESpawn (Lam (LetU (Var 0) (EClose (Var 5))))) EUnit| |].

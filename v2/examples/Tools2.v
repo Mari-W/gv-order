@@ -60,18 +60,21 @@ Lemma lenv_pinst_cons' σ o Δ :
 Proof. done. Qed.
 
 Lemma box1_typed W Γ n F m C u T e :
+  tcontr T →
   pinst_ty (pshift m) (box1 m C u T) = box1 m C u T →
   dftyped W ∅ (Γbox m C u Γ) (Some T :: Some (box1 m C u T) :: nones n)
     (∅, Some (FRest (RAbove u))) e TUnit →
   dftyped W ∅ Γ (nones n) F (EBox (Lam e)) (box1 m C u T).
 Proof.
-  intros HB He. unfold box1 at 1. eapply d_box.
+  intros HT HB He. unfold box1 at 1. eapply d_box.
   { intros o Ho. apply elem_of_replicate in Ho as [-> _]. by left. }
+  { cbn [tcontr]. by apply Is_true_andb. }
   intros ss Hk _. destruct ss; [|done]. rewrite sinst_nil.
   rewrite lenv_pinst_cons'. cbn [fmap option_fmap option_map]. fold (box1 m C u T).
   rewrite HB, lenv_pinst_nones.
   eapply d_abs.
   { apply lb_below_none. spare_tac. }
+  { done. }
   exact He.
 Qed.
 
@@ -96,17 +99,20 @@ Definition boxg (m : nat) (C : bcs) (ub : option point) (T U : ty) : ty :=
   TBox m 0 C None None (TLolli (ubound_of ub) LNone None T U None).
 
 Lemma boxg_typed W Γ n F m C ub T U e :
+  tcontr T → tcontr U →
   pinst_ty (pshift m) (boxg m C ub T U) = boxg m C ub T U →
   dftyped W ∅ (hc_open m C Γ)
     (Some T :: Some (boxg m C ub T U) :: nones n) (∅, Some (FRest (rest_of ub))) e U →
   dftyped W ∅ Γ (nones n) F (EBox (Lam e)) (boxg m C ub T U).
 Proof.
-  intros HB He. unfold boxg at 1. eapply d_box.
+  intros HT HU HB He. unfold boxg at 1. eapply d_box.
   { intros o Ho. apply elem_of_replicate in Ho as [-> _]. by left. }
+  { cbn [tcontr]. by apply Is_true_andb. }
   intros ss Hk _. destruct ss; [|done]. rewrite sinst_nil.
   rewrite lenv_pinst_cons'. cbn [fmap option_fmap option_map]. fold (boxg m C ub T U).
   rewrite HB, lenv_pinst_nones.
   eapply d_abs; rewrite ?abs_fut_of.
   { apply lb_below_none. spare_tac. }
+  { done. }
   exact He.
 Qed.
