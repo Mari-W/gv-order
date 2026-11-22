@@ -14,7 +14,7 @@ From GV Require Import examples.LFController soup.SoupRun soup.SoupTau soup.LFAd
 From GV Require Import soup.LFCompose soup.LFTyped lockfree.FairRun.
 From GV Require Import examples.SemBranch static.Inversion relation.Ord relation.ExProp relation.Ranks examples.LFLink compat.Redex static.PointSubst.
 From GV Require Import examples.SinstStuck static.Sinst.
-From GV Require Import examples.Copycat.
+From GV Require Import examples.Copycat examples.ForkJoin.
 
 (** types/Points.v *)
 Print Assumptions pt_dual_dual.
@@ -196,3 +196,8 @@ Print Assumptions fwdh_config_deadlock_free.
 Print Assumptions fb_dftyped.
 Print Assumptions fwdp_expand.
 Print Assumptions fwdp_sem.
+(** examples/ForkJoin.v *)
+Print Assumptions fj_dftyped.
+Print Assumptions fj_term.
+Print Assumptions fj_deadlock_free.
+Print Assumptions fj_wait_needs.
