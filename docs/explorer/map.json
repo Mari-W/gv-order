@@ -1276,8 +1276,8 @@
     {
      "id": "r-ex",
      "title": "Existentials",
-     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-Force.hold}{\\Gamma \\mathrel{\\sym{side.hold}{\\vdash}} C[\\bar x]}\\quad \\sym{E-Pack.lb}{l \\preccurlyeq \\sym{tp.pinst}{T[\\bar x]}}\\quad \\sym{E-Pack.wf}{\\Gamma, C \\mathrel{\\sym{ctx.slt}{\\vdash}} l \\preccurlyeq T}\\quad \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T[\\bar x]\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : \\exists^{l}\\bar\\iota.\\,C.\\,T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Pack} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{E-Open.entry}{\\Delta(i) = \\exists^{l}\\bar\\iota.\\,C.\\,T,\\ \\neg\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,T}\\quad \\sym{E-Box.fresh}{\\bar\\iota \\mathrel{\\#} \\Gamma, \\Delta, F}\\quad \\sym{E-Open.cons}{\\mathsf{cons}\\,W\\,\\Gamma\\,m\\,C}\\quad \\sym{E-Open.body}{\\Gamma, C(\\bar\\iota) ; \\Delta[i \\mapsto T] \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : U\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : U\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Open} \\\\[2ex] \\sym{E-Open.cons}{\\mathsf{cons}\\,W\\,\\Gamma\\,m\\,C \\iff \\forall x, y \\in \\mathsf{Point}_{\\Gamma}.\\ (\\Gamma, C(\\bar\\iota) \\mathrel{\\sym{ctx.slt}{\\vdash}} x \\prec y \\Rightarrow \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} x \\prec y),\\ m = |\\bar\\iota|}\\end{array}",
-     "caption": "E-Pack chooses witness points $\\bar x$ with $\\Gamma \\vdash C[\\bar x]$, and the lower bound $l$ must lie at or below the dual points of the packed value by [[t-side]] and [[ty-heads]]. E-Open names the witnesses by fresh point variables $\\bar\\iota$ with the hypothesis $C(\\bar\\iota)$ added to $\\Gamma$ of [[t-contexts]], and asks that the hypothesis derive no new fact between points of $\\Gamma$. The flag variant in the examples tab shows why E-Open asks conservativity. The [[v-rel|value relation]] at an existential is a value of the body at some witness.",
+     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-Force.hold}{\\Gamma \\mathrel{\\sym{side.hold}{\\vdash}} C[\\bar x]}\\quad \\sym{E-Pack.lb}{l \\preccurlyeq \\sym{tp.pinst}{T[\\bar x]}}\\quad \\sym{E-Pack.wf}{\\Gamma, C \\mathrel{\\sym{ctx.slt}{\\vdash}} l \\preccurlyeq T}\\quad \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T[\\bar x]\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : \\exists^{l}\\bar\\iota.\\,C.\\,T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Pack} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{E-Open.entry}{\\Delta(i) = \\exists^{l}\\bar\\iota.\\,C.\\,T,\\ \\neg\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,T}\\quad \\sym{E-Box.fresh}{\\bar\\iota \\mathrel{\\#} \\Gamma, \\Delta, F}\\quad \\sym{E-Open.cons}{\\mathsf{cons}\\,W\\,\\Gamma\\,m\\,C}\\quad \\sym{E-Open.body}{\\Gamma, C(\\bar\\iota) ; \\Delta[i \\mapsto T] \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : U\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : U\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Open} \\\\[2ex] \\sym{new.step}{x \\prec^{\\bar\\iota}_{C} y \\iff x, y \\in \\sym{w.tree}{\\mathsf{tree}}(\\bar\\iota) \\land ((x \\prec y) \\in C \\lor y = x^{+} \\lor y = \\overline{x}^{+})} \\\\[2ex] \\sym{new.bridge}{\\begin{array}{l}\\mathsf{bridge}^{\\bar\\iota}_C(z, y) \\iff z, y \\notin \\mathsf{tree}(\\bar\\iota) \\\\ \\qquad \\land\\ ((z \\prec y) \\in C \\lor \\exists v \\in \\mathsf{tree}(\\bar\\iota), u.\\ (z \\prec v) \\in C \\land v \\mathrel{(\\sym{new.step}{\\prec^{\\bar\\iota}_{C}})^{*}} u \\land (u \\prec y) \\in C)\\end{array}} \\\\[2ex] \\sym{E-Open.cons}{\\mathsf{cons}\\,W\\,\\Gamma\\,m\\,C \\iff \\forall z, y.\\ \\sym{new.bridge}{\\mathsf{bridge}^{\\bar\\iota}_C(z, y)} \\Rightarrow \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} z \\prec y,\\ m = |\\bar\\iota|}\\end{array}",
+     "caption": "E-Pack chooses witness points $\\bar x$ with $\\Gamma \\vdash C[\\bar x]$, and the lower bound $l$ must lie at or below the dual points of the packed value by [[t-side]] and [[ty-heads]]. E-Open names the witnesses by fresh point variables $\\bar\\iota$ with the hypothesis $C(\\bar\\iota)$ added to $\\Gamma$ of [[t-contexts]], and asks $\\Gamma$ to derive each bridge of $C$. A bridge joins two points of $\\Gamma$ through the tree of $\\bar\\iota$, by a fact of $C$ or by an entry, a path in the tree and an exit. This bridge condition makes the opening conservative, so the hypothesis derives no new fact between points of $\\Gamma$. [[r-new|E-New]] asks the same condition at one root. The flag variant in the examples tab shows why E-Open asks the bridge condition. The [[v-rel|value relation]] at an existential is a value of the body at some witness.",
      "why": "An existential hides the points of a created channel behind the facts it states about these points. Hiding buys two things. The context has no name for the new root, so it holds no fact about it, and a creation inside a box needs no point variable in the box type. Conservativity keeps an opened binder that no value inhabits from ordering the points the code already holds.",
      "source": [
       {
@@ -1400,8 +1400,8 @@
     {
      "id": "r-new",
      "title": "Creation",
-     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{E-New.wf}{\\inmodeplain{df}{\\sym{new.acyc}{\\mathsf{acyc\\_new}}}\\inmode{lf}{\\sym{new.ok}{\\mathsf{new\\_ok}_N}}\\,\\Gamma\\,\\rho\\,C}\\quad \\sym{E-New.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,S}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.new}{\\mathsf{new}} : \\exists^{\\sym{E-New.bot}{\\bot}}\\rho.\\ \\sym{E-New.facts}{C}.\\ \\sym{E-New.dual}{\\sym{ty.sess}{S_{\\rho}\\inmode{lf}{^{m_1,m_1}}} \\otimes \\sym{sty.dual}{\\overline{S}}_{\\overline{\\rho}}\\inmode{lf}{^{m_2,m_2}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-New} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{E-New.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,S}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.new}{\\mathsf{new}} : \\sym{E-New.dual}{S_{\\sym{E-New.field}{x\\cdot\\kappa}}\\inmode{lf}{^{m_1,m_1}} \\otimes \\sym{sty.dual}{\\overline{S}}_{\\overline{\\sym{E-New.field}{x\\cdot\\kappa}}}\\inmode{lf}{^{m_2,m_2}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-New-Field} \\\\[2ex] \\sym{new.step}{x \\prec^{\\rho}_{C} y \\iff x, y \\in \\sym{w.tree}{\\mathsf{tree}(\\rho)} \\land ((x \\prec y) \\in C \\lor y = x^{+} \\lor y = \\overline{x}^{+})} \\\\[2ex] \\sym{new.bridge}{\\mathsf{bridge}_C(z, y) \\iff (z \\prec y) \\in C \\lor \\exists v, u.\\ (z \\prec v) \\in C \\land v \\mathrel{(\\sym{new.step}{\\prec^{\\rho}_{C}})^{*}} u \\land (u \\prec y) \\in C} \\\\[2ex] \\sym{new.acyc}{\\begin{array}{l} \\mathsf{acyc\\_new}\\,\\Gamma\\,\\rho\\,C \\iff (\\forall x \\in \\mathsf{tree}(\\rho).\\ \\neg\\, x \\mathrel{(\\sym{new.step}{\\prec^{\\rho}_{C}})^{+}} x) \\\\ \\qquad \\land\\ \\forall z, y \\notin \\mathsf{tree}(\\rho).\\ \\sym{new.bridge}{\\mathsf{bridge}_C(z, y)} \\Rightarrow \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} z \\prec y \\end{array}}\\inmodeplain{lf}{ \\\\[2ex] }\\inmode{lf}{\\sym{new.gen}{\\begin{array}{l} \\mathsf{gen\\_new}\\,\\Gamma\\,\\rho\\,C \\iff \\sym{w.lfworld}{\\mathsf{wf}}(\\sym{new.step}{\\prec^{\\rho}_{C}}) \\land \\forall (z \\prec y) \\in C.\\ z, y \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} z \\prec y \\\\ \\quad \\land\\ \\exists \\mathcal{S} \\subseteq \\mathsf{tree}(\\rho) \\times \\mathcal{P}^{+}_{\\mathrm{fin}}(\\mathsf{Point}_{\\Gamma}). \\\\ \\qquad (\\forall (u \\prec y) \\in C.\\ u \\in \\mathsf{tree}(\\rho),\\ y \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists (u, Y) \\in \\mathcal{S}.\\ \\forall t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} t \\prec y) \\\\ \\qquad \\land\\ (\\forall (s, Y) \\in \\mathcal{S}.\\ \\forall s' \\sym{new.step}{\\prec^{\\rho}_{C}} s.\\ \\exists (s', Y') \\in \\mathcal{S}.\\ \\forall t' \\in Y'.\\ \\exists t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} t' \\prec t) \\\\ \\qquad \\land\\ (\\forall (s, Y) \\in \\mathcal{S}.\\ \\forall (z \\prec s) \\in C.\\ z \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} z \\prec t) \\end{array}}}\\inmodeplain{lf}{ \\\\[2ex] }\\inmode{lf}{\\sym{new.ok}{\\mathsf{new\\_ok}_N = \\begin{cases} \\sym{new.acyc}{\\mathsf{acyc\\_new}} & N = \\infty \\\\ \\sym{new.gen}{\\mathsf{gen\\_new}} & N \\in \\mathbb{N} \\end{cases}} \\qquad \\sym{new.lemmaC}{\\sym{new.gen}{\\mathsf{gen\\_new}}\\,\\Gamma\\,\\rho\\,C \\Rightarrow \\sym{new.acyc}{\\mathsf{acyc\\_new}}\\,\\Gamma\\,\\rho\\,C}}\\end{array}",
-     "caption": "E-New creates a channel at a fresh root $\\rho$ and its [[ty-dual|dual]], hidden in an [[r-ex|existential]] whose constraint $C$ states what the program needs about the new points. The order $\\prec^{\\rho}_{C}$ that $C$ and program order induce on $\\mathsf{tree}(\\rho)$ must have no cycle. A bridge enters the tree from a context point $z$ and leaves it towards a context point $y$, and $\\Gamma$ must derive $z \\prec y$ for each bridge. Then the creation adds no cycle to an acyclic world. E-New-Field creates a channel at a [[syn-labels|field]] $x\\cdot\\kappa$ and its dual, with no constraint, because the order around a field was fixed with its root. The lower bound $\\bot$ records that no fact of the context mentions the new points. \\inmode{lf}{At a finite bound $N$ the premise is $\\mathsf{gen\\_new}$ in place of $\\mathsf{acyc\\_new}$. \\inmode{lf}{It asks $\\prec^{\\rho}_{C}$ well-founded and bounds each tree point $s$ by a finite set $Y$ of context points, so that ranks for the new tree exist in each [[t-lf-wf|ranked world]].} It implies $\\mathsf{acyc\\_new}$. \\inmode{lf}{Each creation picks [[ty-ann|tickets]] $m_1$ and $m_2$ with $m_1 + m_2 \\leq N$, and each end starts at credit equal to its tickets, as the [[t-lf-counters|counters block]] explains.} The fundamental theorem proves E-New against the obligation O-New of [[e-obl]], and the world grows as in [[w-ext]]. The [[t-consts|constants]] have no entry for $\\mathsf{new}$.}",
+     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{E-New.wf}{\\inmodeplain{df}{\\sym{new.acyc}{\\mathsf{acyc\\_new}}}\\inmode{lf}{\\sym{new.ok}{\\mathsf{new\\_ok}_N}}\\,\\Gamma\\,\\rho\\,C}\\quad \\sym{E-New.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,S}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.new}{\\mathsf{new}} : \\exists^{\\sym{E-New.bot}{\\bot}}\\rho.\\ \\sym{E-New.facts}{C}.\\ \\sym{E-New.dual}{\\sym{ty.sess}{S_{\\rho}\\inmode{lf}{^{m_1,m_1}}} \\otimes \\sym{sty.dual}{\\overline{S}}_{\\overline{\\rho}}\\inmode{lf}{^{m_2,m_2}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-New} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{E-New.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,S}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.new}{\\mathsf{new}} : \\sym{E-New.dual}{S_{\\sym{E-New.field}{x\\cdot\\kappa}}\\inmode{lf}{^{m_1,m_1}} \\otimes \\sym{sty.dual}{\\overline{S}}_{\\overline{\\sym{E-New.field}{x\\cdot\\kappa}}}\\inmode{lf}{^{m_2,m_2}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-New-Field} \\\\[2ex] \\sym{new.acyc}{\\mathsf{acyc\\_new}\\,\\Gamma\\,\\rho\\,C \\iff (\\forall x \\in \\sym{w.tree}{\\mathsf{tree}}(\\rho).\\ \\neg\\, x \\mathrel{(\\sym{new.step}{\\prec^{\\rho}_{C}})^{+}} x) \\land \\sym{E-Open.cons}{\\mathsf{cons}\\,W\\,\\Gamma\\,1\\,C}}\\inmodeplain{lf}{ \\\\[2ex] }\\inmode{lf}{\\sym{new.ok}{\\begin{array}{l} \\mathsf{new\\_ok}_N\\,\\Gamma\\,\\rho\\,C \\iff \\sym{new.acyc}{\\mathsf{acyc\\_new}\\,\\Gamma\\,\\rho\\,C} \\land (N \\in \\mathbb{N} \\Rightarrow \\sym{new.rank}{\\begin{array}[t]{l} \\sym{w.lfworld}{\\mathsf{wf}}(\\sym{new.step}{\\prec^{\\rho}_{C}}) \\land \\exists \\mathcal{S} \\subseteq \\mathsf{tree}(\\rho) \\times \\mathcal{P}^{+}_{\\mathrm{fin}}(\\mathsf{Point}_{\\Gamma}). \\\\ \\quad (\\forall (u \\prec y) \\in C.\\ u \\in \\mathsf{tree}(\\rho),\\ y \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists (u, Y) \\in \\mathcal{S}.\\ \\forall t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} t \\prec y) \\\\ \\quad \\land\\ (\\forall (s, Y) \\in \\mathcal{S}.\\ \\forall s' \\sym{new.step}{\\prec^{\\rho}_{C}} s.\\ \\exists (s', Y') \\in \\mathcal{S}.\\ \\forall t' \\in Y'.\\ \\exists t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} t' \\prec t) \\\\ \\quad \\land\\ (\\forall (s, Y) \\in \\mathcal{S}.\\ \\forall (z \\prec s) \\in C.\\ z \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} z \\prec t)) \\end{array}} \\end{array}} \\qquad \\sym{new.gen}{\\mathsf{gen\\_new} \\iff \\mathsf{new\\_ok}_N,\\ N \\in \\mathbb{N}}}\\end{array}",
+     "caption": "E-New creates a channel at a fresh root $\\rho$ and its [[ty-dual|dual]], hidden in an [[r-ex|existential]] whose constraint $C$ states what the program needs about the new points. The order $\\prec^{\\rho}_{C}$ that $C$ and program order induce on $\\mathsf{tree}(\\rho)$ must have no cycle, and $C$ must meet the bridge condition of [[r-ex|E-Open]] at the one root $\\rho$. Then the creation adds no cycle to an acyclic world, and opening its existential is conservative. E-New-Field creates a channel at a [[syn-labels|field]] $x\\cdot\\kappa$ and its dual, with no constraint, because the order around a field was fixed with its root. The lower bound $\\bot$ records that no fact of the context mentions the new points. \\inmode{lf}{At a finite bound $N$ the premise adds to $\\mathsf{acyc\\_new}$ a part for ranks. \\inmode{lf}{It asks $\\prec^{\\rho}_{C}$ well-founded. It bounds each tree point $s$ by a finite set $Y$ of context points, so that ranks for the new tree exist in each [[t-lf-wf|ranked world]].} The premise at a finite bound implies the premise at $N = \\infty$ by projection. \\inmode{lf}{Each creation picks [[ty-ann|tickets]] $m_1$ and $m_2$ with $m_1 + m_2 \\leq N$, and each end starts at credit equal to its tickets, as the [[t-lf-counters|counters block]] explains.} The fundamental theorem proves E-New against the obligation O-New of [[e-obl]], and the world grows as in [[w-ext]]. The [[t-consts|constants]] have no entry for $\\mathsf{new}$.}",
      "why": "Creation places a new channel in the order. One term $\\mathsf{new}$ has two rules for the two places a channel can go. A fresh root needs facts and hides its points, a field needs neither. Why not one rule. A rule with a position would have to take the facts in the term, and because ends are linear each held end the facts mention would have to be passed to $\\mathsf{new}$ and returned. Why fields at all. A channel created to be sent must be placed where the message delivers its payload, the field $x\\cdot j$ of the carrier, and a root with a constraint cannot name that point without a bridge. Why hide the root. A box body that creates a channel per round would otherwise need one point variable per round in the box type.",
      "example": "Two threads that close $c$ and $d$ in the same order type with $d$ at the field $\\rho\\cdot 0$ of the root $\\rho$ of $c$. A creation at a fresh root $\\rho$ with $C = \\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ states the two facts the threads need. $\\prec^{\\rho}_{C}$ has no cycle, and $C$ has no bridge. The cycle example in the examples tab is this program.",
      "source": [
@@ -1483,8 +1483,8 @@
     {
      "id": "p-typing",
      "title": "Process typing",
-     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{ty.tfree}{\\mathsf{tfree}\\,T}\\quad \\sym{pfree}{\\mathsf{pfree}\\,\\Sigma}\\quad \\sym{P-Term.wf}{\\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}\\,W}\\quad \\sym{P-Term.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,\\Sigma, \\Theta_B}\\\\ \\sym{P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\sym{tp.ends}{\\mathsf{ends}}(C_0)}\\quad \\sym{P-Term.disj}{\\sym{tp.chans}{\\mathsf{chans}}\\,\\sym{tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing} \\\\ \\sym{P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = \\sym{ty.sess}{S_x\\inmode{lf}{^{m,m}}},\\ \\Theta_B(c^{-}) = \\sym{ty.sess}{\\overline{S}_{\\overline{x}}\\inmode{lf}{^{m',m'}}}\\inmode{lf}{,\\ m + m' \\leq N}} \\\\ \\sym{P-Term.typed}{\\varnothing ; \\sym{tp.lift}{\\Sigma\\inmode{lf}{^{N/2,N/2}}}, \\Theta_B \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sym{P-Term.future}{(\\varnothing,\\cdot)}} t : T\\inmode{lf}{\\ !\\ c}}\\end{array}}{\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{N}}}_{\\sym{P-Term.hide}{W|_{\\sym{tp.iface}{\\mathsf{I}(\\Sigma, T)}}}} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_1} (C_1, E_1) : T} \\\\ \\sym{P-Connect.right}{\\Sigma_2 \\cup \\sym{P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\sym{P-Connect.disj}{\\mathsf{disjoint}(\\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_1, \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_2, \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, C_1, C_2)}\\quad \\sym{P-Connect.cutfree}{\\sym{pfree}{\\mathsf{pfree}}\\,\\Sigma_C} \\\\ \\sym{P-Connect.wf}{\\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{\\sym{P-Connect.join}{(W_1 \\sym{w.join}{\\sqcup} W_2)\\sym{w.restrict}{|}_{\\sym{tp.iface}{\\mathsf{I}(\\Sigma_1 \\cup \\Sigma_2, T)}}}} \\\\ (C_1 \\cup C_2 \\cup \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\sym{tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect} \\\\[2ex] \\sym{P-Connect.n}{\\dfrac{\\begin{array}{c}\\Sigma_1 \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_1} p_1 : T \\qquad \\Sigma_i \\cup \\overline{\\Sigma_{C,i}} \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_i} p_i : \\ast\\ \\ (2 \\leq i \\leq n) \\\\ \\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n)\\end{array}}{\\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W} \\textstyle\\parallel_i p_i : T,\\ \\ \\sym{w.facts}{\\mathsf{facts}}\\,W \\subseteq \\mathsf{facts}((W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n)|_{\\mathsf{I}(\\Sigma, T)})}\\;\\textsf{P-Connect$^{n}$}}\\end{array}\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\sym{tp.lfjudg}{\\Sigma \\Vdash^{N}_W p : T \\iff \\sym{lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_W p : T \\land \\sym{guard.proc}{\\vdash\\!\\triangleright p}}}\\end{array}",
-     "caption": "P-Term types one thread $t$ that holds both ends of each channel in $C_0$, at [[ty-dual|dual]] types and points, over an interface $\\Sigma$ without partner pairs, with the ends $\\Theta_B$ of these channels. The thread is typed by the [[t-judgment|term judgment]] with no facts and the empty future, so that [[r-base|E-Chan]] closes each end it holds, and its result type is [[ty-kinds|end-free]]. Its world is hidden to the constants of the interface, $W|_{\\mathsf{I}(\\Sigma, T)}$ by the restriction of [[w-ext]]. P-Connect cuts two components at $\\Sigma_C$ against $\\overline{\\Sigma_C}$ and asks the join of their two interface [[w-world|worlds]] acyclic, the condition of [[w-wf]]. The check reads the joined order, never two worlds at a time, so a ring of three threads whose worlds are acyclic in pairs and cyclic together is rejected. The [[syn-procs|process]] of the conclusion restricts the cut channels. \\inmode{lf}{At a finite bound $N$ the worlds must be well-founded in place of acyclic, which [[t-lf-wf]] explains. \\inmode{lf}{Lock-free process typing is process typing at a finite bound with each thread [[g-guard|guarded]].} \\inmode{lf}{The ends of a restricted channel have [[ty-ann|tickets]] of sum at most $N$, and each interface end has $N/2$, as the [[t-lf-counters|counters block]] explains.}} [[th-compose]] proves both rules in the relation, and [[w-wf]] gives the world a model.",
+     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{ty.tfree}{\\mathsf{tfree}\\,T}\\quad \\sym{pfree}{\\mathsf{pfree}\\,\\Sigma}\\quad \\sym{P-Term.wf}{\\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}\\,W}\\quad \\sym{P-Term.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,\\Sigma, \\Theta_B}\\\\ \\sym{P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\sym{tp.ends}{\\mathsf{ends}}(C_0)}\\quad \\sym{P-Term.disj}{\\sym{tp.chans}{\\mathsf{chans}}\\,\\sym{tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing} \\\\ \\sym{P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = \\sym{ty.sess}{S_x\\inmode{lf}{^{m,m}}},\\ \\Theta_B(c^{-}) = \\sym{ty.sess}{\\overline{S}_{\\overline{x}}\\inmode{lf}{^{m',m'}}}\\inmode{lf}{,\\ m + m' \\leq N}} \\\\ \\sym{P-Term.typed}{\\varnothing ; \\sym{tp.lift}{\\Sigma\\inmode{lf}{^{N/2,N/2}}}, \\Theta_B \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sym{P-Term.future}{(\\varnothing,\\cdot)}} t : T\\inmode{lf}{\\ !\\ c}}\\end{array}}{\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{N}}}_{\\sym{P-Term.hide}{W|_{\\sym{tp.iface}{\\mathsf{I}(\\Sigma, T)}}}} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_1} (C_1, E_1) : T} \\\\ \\sym{P-Connect.right}{\\Sigma_2 \\cup \\sym{P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\sym{P-Connect.disj}{\\mathsf{disjoint}(\\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_1, \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_2, \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, C_1, C_2)} \\\\ \\sym{P-Connect.wf}{\\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{\\sym{P-Connect.join}{(W_1 \\sym{w.join}{\\sqcup} W_2)\\sym{w.restrict}{|}_{\\sym{tp.iface}{\\mathsf{I}(\\Sigma_1 \\cup \\Sigma_2, T)}}}} \\\\ (C_1 \\cup C_2 \\cup \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\sym{tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect} \\\\[2ex] \\sym{P-Connect.n}{\\dfrac{\\begin{array}{c}\\Sigma_1 \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_1} p_1 : T \\qquad \\Sigma_i \\cup \\overline{\\Sigma_{C,i}} \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_i} p_i : \\ast\\ \\ (2 \\leq i \\leq n) \\\\ \\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n)\\end{array}}{\\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W} \\textstyle\\parallel_i p_i : T,\\ \\ \\sym{w.facts}{\\mathsf{facts}}\\,W \\subseteq \\mathsf{facts}((W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n)|_{\\mathsf{I}(\\Sigma, T)})}\\;\\textsf{P-Connect$^{n}$}}\\end{array}\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\sym{tp.lfjudg}{\\Sigma \\Vdash^{N}_W p : T \\iff \\sym{lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_W p : T \\land \\sym{guard.proc}{\\vdash\\!\\triangleright p}}}\\end{array}",
+     "caption": "P-Term types one thread $t$ that holds both ends of each channel in $C_0$, at [[ty-dual|dual]] types and points, over an interface $\\Sigma$ without partner pairs, with the ends $\\Theta_B$ of these channels. The thread is typed by the [[t-judgment|term judgment]] with no facts and the empty future, so that [[r-base|E-Chan]] closes each end it holds, and its result type is [[ty-kinds|end-free]]. Its world is hidden to the constants of the interface, $W|_{\\mathsf{I}(\\Sigma, T)}$ by the restriction of [[w-ext]]. P-Connect cuts two components at $\\Sigma_C$ against $\\overline{\\Sigma_C}$. Disjoint channel sets make the maps disjoint, and the left premise makes $\\Sigma_C$ free of partner pairs, so the rule asks neither. It asks the join of their two interface [[w-world|worlds]] acyclic, the condition of [[w-wf]]. The check reads the joined order, never two worlds at a time, so a ring of three threads whose worlds are acyclic in pairs and cyclic together is rejected. The [[syn-procs|process]] of the conclusion restricts the cut channels. \\inmode{lf}{At a finite bound $N$ the worlds must be well-founded in place of acyclic, which [[t-lf-wf]] explains. \\inmode{lf}{Lock-free process typing is process typing at a finite bound with each thread [[g-guard|guarded]].} \\inmode{lf}{The ends of a restricted channel have [[ty-ann|tickets]] of sum at most $N$, and each interface end has $N/2$, as the [[t-lf-counters|counters block]] explains.}} [[th-compose]] proves both rules in the relation, and [[w-wf]] gives the world a model.",
      "why": "Processes are built from single threads by P-Term and composed by P-Connect. Hiding buys compositionality. A component exposes only the order between the points of its interface, so two components that use the same private constant in opposite orders still compose, and the soundness proof renames private constants apart. Without hiding the type of a component would mention points that no other component names.",
      "source": [
       {
@@ -6587,7 +6587,7 @@
   },
   "w.tree": {
    "title": "Tree $\\mathsf{tree}(a)$",
-   "meaning": "The points whose root is $a$, that is $a$, its shifts, its dual and its fields at each depth with their shifts and duals.",
+   "meaning": "The points whose root is $a$, that is $a$, its shifts, its dual and its fields at each depth with their shifts and duals. $\\mathsf{tree}(\\bar\\iota)$ is the union of the trees of the variables $\\bar\\iota$.",
    "why": "A rank function is chosen for the whole tree of a root at once.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\rho\\cdot 0^{+} \\in \\mathsf{tree}(\\rho)$.",
@@ -7416,12 +7416,12 @@
    ]
   },
   "new.step": {
-   "title": "Order on the new tree $\\prec^{\\rho}_{C}$",
-   "meaning": "$x \\prec^{\\rho}_{C} y$ when both points lie in $\\mathsf{tree}(\\rho)$ and $x \\prec y$ is a fact of $C$ or a step of program order.",
-   "why": "A creation at a fresh root must order the new tree consistently. The facts of $C$ inside the tree, together with program order, are what the new tree adds to a world.",
+   "title": "Order on the bound tree $\\prec^{\\bar\\iota}_{C}$",
+   "meaning": "$x \\prec^{\\bar\\iota}_{C} y$ when both points lie in $\\mathsf{tree}(\\bar\\iota)$ and $x \\prec y$ is a fact of $C$ or a step of program order. A creation at a fresh root $\\rho$ reads it at $\\bar\\iota = \\rho$ and writes $\\prec^{\\rho}_{C}$.",
+   "why": "The facts of $C$ inside the tree, together with program order, are what the bound tree adds to a world. A creation must order the new tree without a cycle, and a bridge may pass through the tree along this order.",
    "breaks": "Nothing. It is a definition.",
    "example": "For $C = \\{\\rho \\prec \\overline{\\rho\\cdot 0}\\}$, $\\rho \\prec^{\\rho}_{C} \\overline{\\rho\\cdot 0}$ and $\\rho \\prec^{\\rho}_{C} \\rho^{+}$.",
-   "signature": "\\prec^{\\rho}_{C} \\subseteq \\mathsf{tree}(\\rho)^{2}",
+   "signature": "\\prec^{\\bar\\iota}_{C} \\subseteq \\mathsf{tree}(\\bar\\iota)^{2}",
    "args": [
     {
      "name": "\\rho",
@@ -7443,12 +7443,12 @@
    ]
   },
   "new.bridge": {
-   "title": "Bridge $\\mathsf{bridge}_C(z, y)$",
-   "meaning": "A bridge leads from a context point $z$ to a context point $y$. It is a fact $z \\prec y$ of $C$, or an entry $z \\prec v$ into the tree, a path $v \\mathrel{(\\prec^{\\rho}_{C})^{*}} u$ inside the tree and an exit $u \\prec y$ out of the tree.",
-   "why": "Once the tree is added, each bridge orders $z$ below $y$. The old points must already be ordered that way, or the creation closes a cycle through the new tree.",
+   "title": "Bridge $\\mathsf{bridge}^{\\bar\\iota}_C(z, y)$",
+   "meaning": "A bridge leads from a context point $z$ to a context point $y$. It is a fact $z \\prec y$ of $C$, or an entry $z \\prec v$ into the tree, a path $v \\mathrel{(\\prec^{\\bar\\iota}_{C})^{*}} u$ inside the tree and an exit $u \\prec y$ out of the tree.",
+   "why": "Once the tree is added, each bridge orders $z$ below $y$. The old points must already be ordered that way. Otherwise a creation closes a cycle through the new tree, and an opening adds a fact between old points.",
    "breaks": "A creation with $C = \\{z \\prec \\rho,\\ \\rho \\prec y\\}$ and $\\Gamma \\vdash y \\prec z$ would give the cycle $z \\prec \\rho \\prec y \\prec z$.",
    "example": "$C = \\{z \\prec \\rho,\\ \\rho^{+} \\prec y\\}$ has the bridge $z \\prec \\rho \\prec^{\\rho}_{C} \\rho^{+} \\prec y$.",
-   "signature": "\\mathsf{bridge}_C \\subseteq \\mathsf{Point}_{\\Gamma}^{2}",
+   "signature": "\\mathsf{bridge}^{\\bar\\iota}_C \\subseteq \\mathsf{Point}_{\\Gamma}^{2}",
    "args": [
     {
      "name": "z",
@@ -7463,17 +7463,21 @@
     {
      "file": "static/Contexts.v",
      "names": [
+      "bridge_at",
+      "cfact_at",
+      "outer_pt",
       "cbridge",
       "cfact",
-      "ctx_pt"
+      "ctx_pt",
+      "bridge_at_1"
      ]
     }
    ]
   },
   "new.acyc": {
    "title": "$\\mathsf{acyc\\_new}\\,\\Gamma\\,\\rho\\,C$",
-   "meaning": "The order $\\prec^{\\rho}_{C}$ has no cycle on $\\mathsf{tree}(\\rho)$, and $\\Gamma$ derives $z \\prec y$ for each bridge from $z$ to $y$.",
-   "why": "At a strict world the creation adds the facts of $C$ and closes transitively. A cycle of the result lies inside the new tree or passes through old points, and then a bridge collapses it into a cycle of the old world. So the two clauses keep the grown world strict, constructively. They also make opening the existential conservative over the points of $\\Gamma$ when the facts end in the tree.",
+   "meaning": "The order $\\prec^{\\rho}_{C}$ has no cycle on $\\mathsf{tree}(\\rho)$, and $C$ meets the bridge condition $\\mathsf{cons}\\,W\\,\\Gamma\\,1\\,C$ of E-Open, so $\\Gamma$ derives $z \\prec y$ for each bridge from $z$ to $y$.",
+   "why": "At a strict world the creation adds the facts of $C$ and closes transitively. A cycle of the result lies inside the new tree or passes through old points, and then a bridge collapses it into a cycle of the old world. So the two clauses keep the grown world strict, constructively. The bridge clause is the premise of E-Open at one root, so opening the existential is conservative over the points of $\\Gamma$.",
    "breaks": "Without the bridge clause a creation could order two context points against the context and close a cycle through the new tree.",
    "example": "$C = \\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ has no bridge and no cycle. The fork-join example uses a $C$ whose order on the tree holds an infinite descending chain.",
    "signature": "\\mathsf{acyc\\_new} : \\mathsf{Ctx} \\to \\mathsf{PVar} \\to \\mathcal{P}(\\mathsf{Point}^{2}) \\to \\mathsf{Prop}",
@@ -7496,6 +7500,8 @@
      "file": "static/Contexts.v",
      "names": [
       "acyc_new",
+      "tree_acyclic",
+      "cons_open_1",
       "wf_new_acyc"
      ]
     },
@@ -7508,9 +7514,44 @@
     }
    ]
   },
+  "new.rank": {
+   "title": "The part for ranks",
+   "meaning": "The order $\\prec^{\\rho}_{C}$ is well-founded, and a relation $\\mathcal{S}$ pairs points of $\\mathsf{tree}(\\rho)$ with finite nonempty sets of points of $\\Gamma$. Each exit $u \\prec y$ has a set of $u$ below $y$, sets descend along $\\prec^{\\rho}_{C}$, and each entry $z \\prec s$ into a paired point lies below some point of its set.",
+   "why": "At a ranked world the creation must find ordinal ranks for the new tree in each world that models $\\Gamma$. It takes the least ranks above the context points below the tree. A paired point stays at or below the largest rank in its set, so each exit holds.",
+   "breaks": "The creation in the recursive fork-join program orders an infinite descending chain on the new tree and fails this part.",
+   "example": "$\\Gamma \\vdash z \\prec y$ and $C = \\{\\rho \\prec y\\}$ with $\\mathcal{S} = \\{(\\rho, \\{z\\})\\}$.",
+   "signature": "\\mathsf{wf}(\\prec^{\\rho}_{C}) \\land \\exists \\mathcal{S}.\\ \\ldots",
+   "args": [
+    {
+     "name": "\\mathcal{S}",
+     "meaning": "pairs of a tree point and a finite nonempty set of context points"
+    }
+   ],
+   "source": [
+    {
+     "file": "static/Contexts.v",
+     "names": [
+      "new_ok",
+      "gen_new_rel",
+      "new_step"
+     ]
+    }
+   ],
+   "deviations": [
+    {
+     "kind": "renamed",
+     "reason": "The part for ranks is the second conjunct of `new_ok` at a finite bound. $\\mathsf{tree}(\\rho)$ stands for the points that `in_tree0` describes, and $\\mathsf{Point}_{\\Gamma}$ for the points of the context that `ctx_pt` gives.",
+     "names": [
+      "new_ok",
+      "in_tree0",
+      "ctx_pt"
+     ]
+    }
+   ]
+  },
   "new.gen": {
    "title": "$\\mathsf{gen\\_new}\\,\\Gamma\\,\\rho\\,C$",
-   "meaning": "The order $\\prec^{\\rho}_{C}$ is well-founded, and facts of $C$ between context points follow from $\\Gamma$. A relation $\\mathcal{S}$ pairs points of $\\mathsf{tree}(\\rho)$ with finite nonempty sets of points of $\\Gamma$. Each exit $u \\prec y$ has a set of $u$ below $y$, sets descend along $\\prec^{\\rho}_{C}$, and each entry $z \\prec s$ into a paired point lies below some point of its set.",
+   "meaning": "The premise $\\mathsf{new\\_ok}_N$ at a finite bound, $\\mathsf{acyc\\_new}$ together with the part for ranks. The order $\\prec^{\\rho}_{C}$ is well-founded. A relation $\\mathcal{S}$ pairs points of $\\mathsf{tree}(\\rho)$ with finite nonempty sets of points of $\\Gamma$. Each exit $u \\prec y$ has a set of $u$ below $y$, sets descend along $\\prec^{\\rho}_{C}$, and each entry $z \\prec s$ into a paired point lies below some point of its set.",
    "why": "At a ranked world the creation must find ordinal ranks for the new tree in each world that models $\\Gamma$. It takes the least ranks above the context points below the tree. A paired point stays at or below the largest rank in its set, so each exit holds. Choosing the largest of finitely many ranks needs excluded middle.",
    "breaks": "With single partners in place of sets, a creation with two exits below context points that no common point lies below is rejected.",
    "example": "$\\Gamma \\vdash z \\prec y$ and $C = \\{\\rho \\prec y\\}$ with $\\mathcal{S} = \\{(\\rho, \\{z\\})\\}$. The two-entry example of the examples tab needs the set $\\{\\rho\\cdot 2, \\rho\\cdot 3\\}$.",
@@ -7539,6 +7580,7 @@
      "names": [
       "gen_new",
       "gen_new_rel",
+      "gen_new_iff",
       "gen_new1_gen",
       "wf_new_gen",
       "wf_new_plus_gen"
@@ -7561,9 +7603,9 @@
   },
   "new.ok": {
    "title": "$\\mathsf{new\\_ok}_N$",
-   "meaning": "The premise of E-New at a fresh root, $\\mathsf{acyc\\_new}$ at $N = \\infty$ and $\\mathsf{gen\\_new}$ at a finite bound $N$.",
+   "meaning": "The premise of E-New at a fresh root. It is $\\mathsf{acyc\\_new}$, and at a finite bound $N$ it adds the part for ranks, $\\prec^{\\rho}_{C}$ well-founded with a partner relation $\\mathcal{S}$. At a finite bound it is $\\mathsf{gen\\_new}$, and it implies $\\mathsf{acyc\\_new}$ by projection.",
    "why": "Deadlock-free typing grows strict worlds, which need only that the new tree adds no cycle. Lock-free typing grows ranked worlds, which need ordinals for the new tree.",
-   "breaks": "The creation in the recursive fork-join program orders an infinite descending chain on the new tree. It meets $\\mathsf{acyc\\_new}$ and fails $\\mathsf{gen\\_new}$, which asks $\\prec^{\\rho}_{C}$ well-founded.",
+   "breaks": "The creation in the recursive fork-join program orders an infinite descending chain on the new tree. It meets $\\mathsf{acyc\\_new}$ and fails the part for ranks, which asks $\\prec^{\\rho}_{C}$ well-founded.",
    "example": "At $N = \\infty$ the fork-join example creates under $\\mathsf{acyc\\_new}$.",
    "signature": "\\mathsf{new\\_ok} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to \\mathsf{Ctx} \\to \\mathsf{PVar} \\to \\mathcal{P}(\\mathsf{Point}^{2}) \\to \\mathsf{Prop}",
    "args": [
@@ -7577,40 +7619,9 @@
      "file": "static/Contexts.v",
      "names": [
       "new_ok",
-      "new_ok_acyc"
-     ]
-    }
-   ]
-  },
-  "new.lemmaC": {
-   "title": "Generated creations are acyclic",
-   "meaning": "$\\mathsf{gen\\_new}\\,\\Gamma\\,\\rho\\,C$ implies $\\mathsf{acyc\\_new}\\,\\Gamma\\,\\rho\\,C$, constructively.",
-   "why": "So the premise at a finite bound implies the premise at $N = \\infty$, and an erasure of a lock-free derivation meets the deadlock-free premise. The simple condition $\\mathsf{wf\\_new}\\,C$, each fact ending in the tree and $\\prec^{\\rho}_{C}$ well-founded, implies both.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "Each creation of the client and server loop meets $\\mathsf{wf\\_new}$.",
-   "signature": "\\mathsf{gen\\_new}\\,\\Gamma\\,\\rho\\,C \\Rightarrow \\mathsf{acyc\\_new}\\,\\Gamma\\,\\rho\\,C",
-   "args": [
-    {
-     "name": "\\Gamma",
-     "meaning": "the fact context"
-    },
-    {
-     "name": "\\rho",
-     "meaning": "the fresh root"
-    },
-    {
-     "name": "C",
-     "meaning": "the facts of the creation"
-    }
-   ],
-   "source": [
-    {
-     "file": "static/Contexts.v",
-     "names": [
-      "gen_new_acyc",
-      "wf_new",
-      "wf_new_acyc",
-      "wf_new_gen"
+      "new_ok_acyc",
+      "new_ok_gen",
+      "gen_new_ok"
      ]
     }
    ]
@@ -10153,11 +10164,11 @@
    ]
   },
   "E-Open.cons": {
-   "title": "Conservativity $\\mathsf{cons}\\,W\\,\\Gamma\\,m\\,C$",
-   "meaning": "Each fact $x \\prec y$ between points of $\\Gamma$ that $\\Gamma, C(\\bar\\iota)$ derives, $\\Gamma$ derives already. Opening adds facts about the $m$ fresh points $\\bar\\iota$ and none between old points.",
-   "why": "A dead arm or an uncalled abstraction receives no value, so the type of its binder may state arbitrary facts. Without the premise opening such a binder supplies the arm with an order fact that no world holds. The premise reads only the static order. Each existential that E-New creates under $\\mathsf{gen\\_new}$, or under $\\mathsf{acyc\\_new}$ with its facts ending in the new tree, satisfies the premise.",
+   "title": "Bridge condition $\\mathsf{cons}\\,W\\,\\Gamma\\,m\\,C$",
+   "meaning": "$\\Gamma$ derives $z \\prec y$ for each bridge of $C$ from $z$ to $y$. With the facts of $W$ at constant roots the opening is then conservative. Each fact between points of $\\Gamma$ that $\\Gamma, C(\\bar\\iota)$ derives, $\\Gamma$ derives already, so opening adds facts about the $m$ fresh points $\\bar\\iota$ and none between old points.",
+   "why": "A dead arm or an uncalled abstraction receives no value, so the type of its binder may state arbitrary facts. Without the premise opening such a binder supplies the arm with an order fact that no world holds. The premise reads only the static order. A derivation in the opened context that leaves the points of $\\Gamma$ passes through the tree of $\\bar\\iota$, and each such stretch is a bridge. E-New asks the same condition at one root, so each existential it creates satisfies the premise.",
    "breaks": "Without it the flag variant types. Its dead arm opens a binder whose constraint states $y \\prec \\overline{x}$, and the running arm asks only $x \\prec \\overline{y}$ of the world.",
-   "example": "Opening $\\exists^{\\cdot}.\\,\\{y \\prec \\overline{x}\\}.\\,\\ast$ in a world with only $x \\prec \\overline{y}$ fails the premise.",
+   "example": "Opening $\\exists^{\\cdot}.\\,\\{y \\prec \\overline{x}\\}.\\,\\ast$ in a world with only $x \\prec \\overline{y}$ fails the premise. Its one fact is a bridge that the world does not derive.",
    "signature": "\\mathsf{cons} : \\mathsf{World} \\to \\mathsf{Hyps} \\to \\mathbb{N} \\to \\mathcal{P}(\\mathsf{Point} \\times \\mathsf{Point}) \\to \\mathsf{Prop}",
    "args": [
     {
@@ -10185,12 +10196,15 @@
     {
      "file": "static/Contexts.v",
      "names": [
-      "cons_open"
+      "cons_open",
+      "bridge_at",
+      "cons_open_1"
      ]
     },
     {
      "file": "static/PointSubst.v",
      "names": [
+      "cons_open_conservative",
       "cons_of_hold",
       "cons_gen",
       "cons_tree"
@@ -10455,8 +10469,8 @@
   },
   "P-Connect.disj": {
    "title": "Disjoint channels",
-   "meaning": "$\\mathrm{dom}\\,\\Sigma_1 \\cap \\mathrm{dom}\\,\\Sigma_C = \\varnothing$, $\\mathrm{dom}\\,\\Sigma_2 \\cap \\mathrm{dom}\\,\\overline{\\Sigma_C} = \\varnothing$, the channel sets of $\\Sigma_1$, $\\Sigma_2$, $\\Sigma_C$ are pairwise disjoint, $C_1 \\cap C_2 = \\varnothing$, and each $C_i$ is disjoint from the channels of $\\Sigma_1$, $\\Sigma_2$, $\\Sigma_C$.",
-   "why": "Each channel then belongs to one side. The cut $\\Sigma_C$ is the only channel set both sides use, so composition merges no two channels.",
+   "meaning": "The channel sets of $\\Sigma_1$, $\\Sigma_2$, $\\Sigma_C$ are pairwise disjoint, $C_1 \\cap C_2 = \\varnothing$, and each $C_i$ is disjoint from the channels of $\\Sigma_1$, $\\Sigma_2$, $\\Sigma_C$.",
+   "why": "Each channel then belongs to one side. The cut $\\Sigma_C$ is the only channel set both sides use, so composition merges no two channels. Disjoint domains of $\\Sigma_1$ and $\\Sigma_C$, and of $\\Sigma_2$ and $\\overline{\\Sigma_C}$, follow from disjoint channel sets.",
    "breaks": "Nothing. It is a definition.",
    "example": "Two closes cut at $c$ with $\\Sigma_1 = \\Sigma_2 = \\varnothing$ and $C_1 = C_2 = \\varnothing$.",
    "signature": "\\mathsf{chans}\\,\\Sigma_1, \\mathsf{chans}\\,\\Sigma_2, \\mathsf{chans}\\,\\Sigma_C, C_1, C_2\\ \\mathsf{pairwise\\ disjoint}",
@@ -10464,28 +10478,6 @@
     {
      "name": "C_1, C_2",
      "meaning": "the restricted channels of the components"
-    }
-   ],
-   "source": [
-    {
-     "file": "static/Typing.v",
-     "names": [
-      "p_connect"
-     ]
-    }
-   ]
-  },
-  "P-Connect.cutfree": {
-   "title": "$\\mathsf{pfree}\\,\\Sigma_C$",
-   "meaning": "The cut holds no partner pair.",
-   "why": "The composite interface stays partner-free, which P-Term establishes for single threads.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\Sigma_C = \\{c^{+} \\mapsto \\mathsf{Close}_x\\}$.",
-   "signature": "\\mathsf{pfree}\\,\\Sigma_C",
-   "args": [
-    {
-     "name": "\\Sigma_C",
-     "meaning": "the cut"
     }
    ],
    "source": [
