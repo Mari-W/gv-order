@@ -357,7 +357,7 @@ window.MAP = {
      "id": "ty-session",
      "title": "Session types",
      "rocq": "types/Types.v: sty, unfoldS",
-     "tex": "\\begin{array}{rl}\nS ::= & \\htmlData{k=sty.skip}{\\mathsf{Skip}} \\mid \\htmlData{k=sty.seq}{S.S} \\mid \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ T)} \\mid \\htmlData{k=sty.send}{!(\\bar\\iota.\\ T)} \\mid \\htmlData{k=sty.plus}{\\oplus(S_1, S_2)} \\\\\n\\mid & \\htmlData{k=sty.with}{\\&(S_1, S_2)} \\mid \\htmlData{k=sty.close}{\\mathsf{Close}} \\mid \\htmlData{k=sty.mu}{\\mu\\alpha.S} \\mid \\htmlData{k=sty.var}{\\alpha} \\mid \\htmlData{k=sty.vard}{\\overline{\\alpha}}  \\\\\n & \\htmlData{k=sty.unfold}{\\mathsf{unfold} : \\mathsf{STy} \\to \\mathsf{STy}} \\qquad \\htmlData{k=sty.contr}{\\mathsf{contr} \\subseteq \\mathsf{STy}}\n\\end{array}",
+     "tex": "\\begin{array}{rl}\nS ::= & \\htmlData{k=sty.skip}{\\mathsf{Skip}} \\mid \\htmlData{k=sty.seq}{S.S} \\mid \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ T)} \\mid \\htmlData{k=sty.send}{!(\\bar\\iota.\\ T)} \\mid \\htmlData{k=sty.plus}{\\oplus(S', S'')} \\\\\n\\mid & \\htmlData{k=sty.with}{\\&(S', S'')} \\mid \\htmlData{k=sty.close}{\\mathsf{Close}} \\mid \\htmlData{k=sty.mu}{\\mu\\alpha.S} \\mid \\htmlData{k=sty.var}{\\alpha} \\mid \\htmlData{k=sty.vard}{\\overline{\\alpha}}  \\\\\n & \\htmlData{k=sty.unfold}{\\mathsf{unfold} : \\mathsf{STy} \\to \\mathsf{STy}} \\qquad \\htmlData{k=sty.contr}{\\mathsf{contr} \\subseteq \\mathsf{STy}}\n\\end{array}",
      "caption": "Session types with sequencing $S.S$ and recursion, read through $\\mathsf{unfold}(S)$. A payload binds point variables $\\bar\\iota$, which stand for the fields of the carrier.",
      "modes": [
       "df",
@@ -375,7 +375,7 @@ window.MAP = {
      "id": "ty-dual",
      "title": "Duality",
      "rocq": "types/Types.v: dual, sflip",
-     "tex": "\\htmlData{k=sty.dual}{\\begin{array}{l}\n\\mathsf{dual}(!P) = ?P \\qquad \\mathsf{dual}(?P) = !P \\qquad \\mathsf{dual}(\\alpha) = \\overline{\\alpha} \\\\\n\\mathsf{dual}(\\oplus(S_1,S_2)) = \\&(\\mathsf{dual}\\,S_1,\\mathsf{dual}\\,S_2) \\\\\n\\mathsf{dual}(S_1.S_2) = \\mathsf{dual}\\,S_1.\\mathsf{dual}\\,S_2 \\\\\n\\mathsf{dual}(\\mu\\alpha.S) = \\mu\\alpha.\\,\\htmlData{k=sty.flip}{\\mathsf{flip}_\\alpha}(\\mathsf{dual}\\,S)\n\\end{array}}",
+     "tex": "\\htmlData{k=sty.dual}{\\begin{array}{l}\n\\mathsf{dual}(!P) = ?P \\qquad \\mathsf{dual}(?P) = !P \\qquad \\mathsf{dual}(\\alpha) = \\overline{\\alpha} \\\\\n\\mathsf{dual}(\\oplus(S',S'')) = \\&(\\mathsf{dual}\\,S',\\mathsf{dual}\\,S'') \\\\\n\\mathsf{dual}(S'.S'') = \\mathsf{dual}\\,S'.\\mathsf{dual}\\,S'' \\\\\n\\mathsf{dual}(\\mu\\alpha.S) = \\mu\\alpha.\\,\\htmlData{k=sty.flip}{\\mathsf{flip}_\\alpha}(\\mathsf{dual}\\,S)\n\\end{array}}",
      "caption": "$\\mathsf{dual}$ swaps sending and receiving and keeps each payload $P$, $\\mathsf{Skip}$ and $\\mathsf{Close}$. We write $\\overline{S}$ for $\\mathsf{dual}\\,S$.",
      "modes": [
       "df",
@@ -903,7 +903,7 @@ window.MAP = {
       "lf"
      ],
      "rocq": "static/Typing.v: p_term; static/Typing.v: p_connect; static/ConnectN.v: pcomps, p_connect_n; static/Typing.v: ptyped, static/FundamentalProc.v: pguard",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=ty.tfree}{\\mathsf{tfree}\\,T}\\quad \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma}\\quad \\htmlData{k=P-Term.wf}{\\dfo{\\htmlData{k=w.acyc}{\\mathsf{acyc}}}\\annot{\\htmlData{k=w.wok}{\\mathsf{ok}_N}}\\,W}\\quad \\htmlData{k=P-Term.contr}{\\htmlData{k=sty.contr}{\\mathsf{contr}}\\,\\Sigma, \\Theta_B}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\quad \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = S_x\\annot{^{m,m}},\\ \\Theta_B(c^{-}) = \\overline{S}_{\\overline{x}}\\annot{^{m',m'}}\\annot{,\\ m + m' \\leq N}} \\\\ \\htmlData{k=P-Term.typed}{\\varnothing ; \\htmlData{k=tp.lift}{\\Sigma\\annot{^{N/2}_{N/2}}}, \\Theta_B \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}} t : T\\annot{\\ !\\ c}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}}_{\\htmlData{k=P-Term.hide}{W|_{\\htmlData{k=tp.iface}{\\mathsf{I}(\\Sigma, T)}}}} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1} (C_1, E_1) : T} \\\\ \\htmlData{k=P-Connect.right}{\\Sigma_2 \\cup \\htmlData{k=P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\htmlData{k=P-Connect.disj}{\\mathsf{disjoint}(\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_1, \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_2, \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, C_1, C_2)}\\quad \\htmlData{k=P-Connect.cutfree}{\\htmlData{k=pfree}{\\mathsf{pfree}}\\,\\Sigma_C} \\\\ \\htmlData{k=P-Connect.wf}{\\dfo{\\htmlData{k=w.acyc}{\\mathsf{acyc}}}\\annot{\\htmlData{k=w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{\\htmlData{k=P-Connect.join}{(W_1 \\htmlData{k=w.join}{\\sqcup} W_2)\\htmlData{k=w.restrict}{|}_{\\htmlData{k=tp.iface}{\\mathsf{I}(\\Sigma_1 \\cup \\Sigma_2, T)}}}} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect} \\\\[2ex] \\htmlData{k=P-Connect.n}{\\dfrac{\\begin{array}{c}\\Sigma_1 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1} p_1 : T \\qquad \\Sigma_i \\cup \\overline{\\Sigma_{C,i}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_i} p_i : \\ast\\ \\ (2 \\leq i \\leq n) \\\\ \\dfo{\\htmlData{k=w.acyc}{\\mathsf{acyc}}}\\annot{\\htmlData{k=w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} \\cdots \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_n)\\end{array}}{\\Sigma \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W} \\textstyle\\parallel_i p_i : T,\\ \\ \\htmlData{k=w.facts}{\\mathsf{facts}}\\,W \\subseteq \\mathsf{facts}((W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} \\cdots \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_n)|_{\\mathsf{I}(\\Sigma, T)})}\\;\\textsf{P-Connect$^{n}$}}\\end{array}\\annraw{\\\\[3ex]}\\annot{\\htmlData{k=tp.lfjudg}{\\Sigma \\Vdash^{N}_W p : T \\iff \\htmlData{k=lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_W p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p}}}\\end{array}",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=ty.tfree}{\\mathsf{tfree}\\,T}\\quad \\htmlData{k=pfree}{\\mathsf{pfree}\\,\\Sigma}\\quad \\htmlData{k=P-Term.wf}{\\dfo{\\htmlData{k=w.acyc}{\\mathsf{acyc}}}\\annot{\\htmlData{k=w.wok}{\\mathsf{ok}_N}}\\,W}\\quad \\htmlData{k=P-Term.contr}{\\htmlData{k=sty.contr}{\\mathsf{contr}}\\,\\Sigma, \\Theta_B}\\\\ \\htmlData{k=P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\htmlData{k=tp.ends}{\\mathsf{ends}}(C_0)}\\quad \\htmlData{k=P-Term.disj}{\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\htmlData{k=tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing} \\\\ \\htmlData{k=P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = S_x\\annot{^{m,m}},\\ \\Theta_B(c^{-}) = \\overline{S}_{\\overline{x}}\\annot{^{m',m'}}\\annot{,\\ m + m' \\leq N}} \\\\ \\htmlData{k=P-Term.typed}{\\varnothing ; \\htmlData{k=tp.lift}{\\Sigma\\annot{^{N/2,N/2}}}, \\Theta_B \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\htmlData{k=P-Term.future}{(\\varnothing,\\cdot)}} t : T\\annot{\\ !\\ c}}\\end{array}}{\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}}_{\\htmlData{k=P-Term.hide}{W|_{\\htmlData{k=tp.iface}{\\mathsf{I}(\\Sigma, T)}}}} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1} (C_1, E_1) : T} \\\\ \\htmlData{k=P-Connect.right}{\\Sigma_2 \\cup \\htmlData{k=P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\htmlData{k=P-Connect.disj}{\\mathsf{disjoint}(\\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_1, \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_2, \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, C_1, C_2)}\\quad \\htmlData{k=P-Connect.cutfree}{\\htmlData{k=pfree}{\\mathsf{pfree}}\\,\\Sigma_C} \\\\ \\htmlData{k=P-Connect.wf}{\\dfo{\\htmlData{k=w.acyc}{\\mathsf{acyc}}}\\annot{\\htmlData{k=w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{\\htmlData{k=P-Connect.join}{(W_1 \\htmlData{k=w.join}{\\sqcup} W_2)\\htmlData{k=w.restrict}{|}_{\\htmlData{k=tp.iface}{\\mathsf{I}(\\Sigma_1 \\cup \\Sigma_2, T)}}}} \\\\ (C_1 \\cup C_2 \\cup \\htmlData{k=tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\htmlData{k=tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect} \\\\[2ex] \\htmlData{k=P-Connect.n}{\\dfrac{\\begin{array}{c}\\Sigma_1 \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_1} p_1 : T \\qquad \\Sigma_i \\cup \\overline{\\Sigma_{C,i}} \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W_i} p_i : \\ast\\ \\ (2 \\leq i \\leq n) \\\\ \\dfo{\\htmlData{k=w.acyc}{\\mathsf{acyc}}}\\annot{\\htmlData{k=w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} \\cdots \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_n)\\end{array}}{\\Sigma \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_{W} \\textstyle\\parallel_i p_i : T,\\ \\ \\htmlData{k=w.facts}{\\mathsf{facts}}\\,W \\subseteq \\mathsf{facts}((W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} \\cdots \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_n)|_{\\mathsf{I}(\\Sigma, T)})}\\;\\textsf{P-Connect$^{n}$}}\\end{array}\\annraw{\\\\[3ex]}\\annot{\\htmlData{k=tp.lfjudg}{\\Sigma \\Vdash^{N}_W p : T \\iff \\htmlData{k=lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\htmlData{k=tp.pjudg}{\\vdash}}\\annot{\\annot{^{N}}}_W p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p}}}\\end{array}",
      "caption": "P-Term types one thread $t$ that holds both ends of each channel in $C_0$, at dual types and points, over an interface $\\Sigma$ without partner pairs, with the ends $\\Theta_B$ of these channels. Its world is hidden to the constants of the interface, $W|_{\\mathsf{I}(\\Sigma, T)}$. P-Connect cuts two components at $\\Sigma_C$ against $\\overline{\\Sigma_C}$ and asks the join of their two interface worlds acyclic. The check reads the joined order, never two worlds at a time, so a ring of three threads whose worlds are acyclic in pairs and cyclic together is rejected. \\annp{At a finite bound $N$ the worlds must be well-founded in place of acyclic. Lock-free process typing is process typing at a finite bound with each thread guarded. \\annp{The ends of a restricted channel have tickets of sum at most $N$, and each interface end has $N/2$.} [[th-compose]] proves both rules in the relation, and [[w-wf]] gives the world a model.}",
      "about": {
       "why": "Processes are built from single threads by P-Term and composed by P-Connect.",
@@ -1110,8 +1110,8 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{l|l|l}\n & \\text{the relation} & \\text{fuel} \\\\ \\hline\n\\text{a thread} & e \\in \\htmlData{k=th.Erel}{E^{R}_{\\alpha}\\llbracket \\Theta \\vdash T \\rrbracket^{F}} & e \\in \\htmlData{k=sr.FE}{F^{N}_{\\alpha}\\llbracket \\htmlData{k=fu.Phi}{\\Phi} \\vdash \\sigma\\ !\\ d \\rrbracket} \\\\\n\\text{an end} & o \\mapsto S_x \\text{ in } \\Theta & o \\mapsto S^{f}_{m} \\text{ in } \\Phi \\\\\n\\text{a value} & v \\in \\htmlData{k=th.Vrel}{V^{R}_{\\alpha}\\llbracket \\Theta \\vdash T \\rrbracket} & v \\in \\htmlData{k=sr.FV}{FV^{N}_{\\alpha}\\llbracket \\htmlData{k=fu.Phi}{\\Phi} \\vdash T\\annot{^{a}} \\rrbracket} \\\\\n\\text{a step } \\alpha & \\htmlData{k=sr.obl}{\\mathsf{Obl}_\\alpha(e')} & \\htmlData{k=sr.fobl}{\\mathsf{Fobl}_\\alpha(e')} \\\\\n\\text{rules out} & \\text{a stuck wait, and at } \\kappa_L \\text{ a loop of free steps} & \\text{a wait that never ends} \\\\\n\\text{used in} & \\htmlData{k=sj.term}{\\vDash} \\text{ and the lock-free process relation} & \\text{the lock-free process relation only}\n\\end{array}",
-     "caption": "Fuel is a second predicate on a thread, separate from the relation and with the same shape, a value clause and one obligation per step. The relation gives each end a point, $S_x$, and fuel gives it a counter and tickets, $S^f_m$. The lock-free process relation requires both of each thread. The relation makes a stuck thread ready, and fuel bounds how often the thread holding a dual end acts on other ends first. \\annp{Fuel holds ends $\\Phi$ and returns within $d$ actions.}",
+     "tex": "\\begin{array}{l|l|l}\n & \\text{the relation} & \\text{fuel} \\\\ \\hline\n\\text{a thread} & e \\in \\htmlData{k=th.Erel}{E^{R}_{\\alpha}\\llbracket \\Theta \\vdash T \\rrbracket^{F}} & e \\in \\htmlData{k=sr.FE}{F^{N}_{\\alpha}\\llbracket \\htmlData{k=fu.Phi}{\\Phi} \\vdash \\sigma\\ !\\ d \\rrbracket} \\\\\n\\text{an end} & o \\mapsto S_x \\text{ in } \\Theta & o \\mapsto S^{f,m} \\text{ in } \\Phi \\\\\n\\text{a value} & v \\in \\htmlData{k=th.Vrel}{V^{R}_{\\alpha}\\llbracket \\Theta \\vdash T \\rrbracket} & v \\in \\htmlData{k=sr.FV}{FV^{N}_{\\alpha}\\llbracket \\htmlData{k=fu.Phi}{\\Phi} \\vdash T\\annot{^{a}} \\rrbracket} \\\\\n\\text{a step } \\alpha & \\htmlData{k=sr.obl}{\\mathsf{Obl}_\\alpha(e')} & \\htmlData{k=sr.fobl}{\\mathsf{Fobl}_\\alpha(e')} \\\\\n\\text{rules out} & \\text{a stuck wait, and at } \\kappa_L \\text{ a loop of free steps} & \\text{a wait that never ends} \\\\\n\\text{used in} & \\htmlData{k=sj.term}{\\vDash} \\text{ and the lock-free process relation} & \\text{the lock-free process relation only}\n\\end{array}",
+     "caption": "Fuel is a second predicate on a thread, separate from the relation and with the same shape, a value clause and one obligation per step. The relation gives each end a point, $S_x$, and fuel gives it a counter and tickets, $S^{f,m}$. The lock-free process relation requires both of each thread. The relation makes a stuck thread ready, and fuel bounds how often the thread holding a dual end acts on other ends first. \\annp{Fuel holds ends $\\Phi$ and returns within $d$ actions.}",
      "about": {
       "why": "This table compares what the relation and fuel read and guarantee, and shows that the lock-free process relation is where they meet.",
       "used": [
@@ -1128,7 +1128,7 @@ window.MAP = {
       "lf"
      ],
      "rocq": "fuel/Fuel.v: Fdef, FuelE, FLevA; fuel/Fuel.v: fsem; cost/CostSem.v: csem",
-     "tex": "\\begin{array}{c}\\begin{array}{l}\ne \\in \\htmlData{k=sr.FE}{F^{N}_{\\alpha}\\llbracket \\htmlData{k=fu.Phi}{\\Phi} \\vdash \\htmlData{k=fu.rty}{\\sigma}\\ !\\ \\htmlData{k=fu.frame}{d} \\rrbracket} \\iff \\htmlData{k=fu.rename}{g,\\ \\mathsf{injective}(g|_{\\mathrm{dom}\\,\\Phi})}. \\\\\n\\quad \\htmlData{k=fu.val}{(\\mathsf{stop})\\ g(e) \\in \\mathsf{Val} \\Rightarrow g(e) \\in \\htmlData{k=sr.FV}{FV^{N}_{\\alpha}\\llbracket g\\Phi \\vdash \\sigma \\rrbracket}} \\\\\n\\quad \\htmlData{k=fu.step}{(\\mathsf{step})\\ g(e) \\xrightarrow{\\ell} e' \\Rightarrow \\forall \\beta < \\alpha.\\ \\htmlData{k=sr.fobl}{\\mathsf{Fobl}\\annot{^{N}}_{\\ell}(e')}} \\\\[6pt]\n\\htmlData{k=fu.Phi}{\\Phi : \\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathbb{N} \\times \\mathbb{N},\\quad \\Phi(o) = S^{f}_{m},\\ f \\leq m}\n\\end{array}\\\\[3ex]\\begin{array}{l}\n\\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\Phi\\,e \\iff \\forall \\alpha.\\ e \\in \\htmlData{k=sr.FE}{F^{N}_{\\alpha}\\llbracket \\Phi \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}}\\ !\\ \\infty \\rrbracket}} \\\\\n\\htmlData{k=cs.csem}{\\Delta \\vDash^{N} e : T\\ !\\ \\varepsilon}\n\\end{array}\\end{array}",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\ne \\in \\htmlData{k=sr.FE}{F^{N}_{\\alpha}\\llbracket \\htmlData{k=fu.Phi}{\\Phi} \\vdash \\htmlData{k=fu.rty}{\\sigma}\\ !\\ \\htmlData{k=fu.frame}{d} \\rrbracket} \\iff \\htmlData{k=fu.rename}{g,\\ \\mathsf{injective}(g|_{\\mathrm{dom}\\,\\Phi})}. \\\\\n\\quad \\htmlData{k=fu.val}{(\\mathsf{stop})\\ g(e) \\in \\mathsf{Val} \\Rightarrow g(e) \\in \\htmlData{k=sr.FV}{FV^{N}_{\\alpha}\\llbracket g\\Phi \\vdash \\sigma \\rrbracket}} \\\\\n\\quad \\htmlData{k=fu.step}{(\\mathsf{step})\\ g(e) \\xrightarrow{\\ell} e' \\Rightarrow \\forall \\beta < \\alpha.\\ \\htmlData{k=sr.fobl}{\\mathsf{Fobl}\\annot{^{N}}_{\\ell}(e')}} \\\\[6pt]\n\\htmlData{k=fu.Phi}{\\Phi : \\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathbb{N} \\times \\mathbb{N},\\quad \\Phi(o) = S^{f,m},\\ f \\leq m}\n\\end{array}\\\\[3ex]\\begin{array}{l}\n\\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\Phi\\,e \\iff \\forall \\alpha.\\ e \\in \\htmlData{k=sr.FE}{F^{N}_{\\alpha}\\llbracket \\Phi \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}}\\ !\\ \\infty \\rrbracket}} \\\\\n\\htmlData{k=cs.csem}{\\Delta \\vDash^{N} e : T\\ !\\ \\varepsilon}\n\\end{array}\\end{array}",
      "caption": "Fuel has the shape of the term relation $E$ without the ready clause. $e \\in F^N_n\\llbracket \\Phi \\vdash \\sigma\\ !\\ d\\rrbracket$ says that the thread $e$, which holds the ends $\\Phi$ with their counters and tickets, has fuel for $n$ more steps. When $e$ is a value it is in $FV$ at $\\sigma$. Otherwise each step meets its fuel obligation one level lower. The frame $d$ bounds the actions before the thread returns, and $g$ renames the held ends.",
      "about": {
       "why": "Fuel bounds how often a thread acts on other ends before it acts on an end it holds. Lock-free adequacy measures waits with these counters and tickets.",
@@ -1146,8 +1146,8 @@ window.MAP = {
       "lf"
      ],
      "rocq": "fuel/Fuel.v: f_act, fspare, idle_at, refill, ftick, fhand; fuel/Fuel.v: f_beta, f_new, f_spawn, f_link, plink; fuel/Fuel.v: f_send, f_recv, f_close, f_select, f_branch",
-     "tex": "\\begin{array}{c}\\begin{array}{rcll}\n\\htmlData{k=sr.act}{\\mathsf{act}}\\,o & \\iff & \\htmlData{k=F-Wait}{\\Phi(o) = S^{f}_{m} \\land \\neg \\htmlData{k=fu.idle}{\\mathsf{idle}}\\,S} & \\text{F-Wait} \\\\\n & \\land & \\htmlData{k=F-Tick}{\\htmlData{k=fu.fspare}{\\mathsf{positive}}(\\Phi \\setminus o)} \\land \\htmlData{k=F-Tick.frame}{1 \\leq d} & \\text{F-Count} \\\\[4pt]\n\\htmlData{k=fu.fspare}{\\mathsf{positive}}(\\Phi) & \\iff & \\htmlData{k=fu.fspare}{\\forall o \\mapsto S^{f}_{m} \\in \\Phi.\\ \\neg\\mathsf{idle}\\,S \\Rightarrow 1 \\leq f} \\\\\n\\htmlData{k=fu.tick}{\\Phi{\\downarrow}} & = & \\htmlData{k=fu.tick}{\\{o \\mapsto S^{f \\mathbin{\\dot-} 1}_{m} \\mid o \\mapsto S^{f}_{m} \\in \\Phi\\}} \\\\\n\\htmlData{k=fu.idle}{\\mathsf{idle}}\\,S & \\iff & \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S = \\htmlData{k=sty.skip}{\\mathsf{Skip}}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\htmlData{k=F-Beta}{\\mathsf{Fobl}_{\\beta}(e')}}\\;\\textsf{F-Beta} \\qquad\n\\dfrac{\\begin{array}{c}\\htmlData{k=F-New.fresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Phi} \\Rightarrow \\exists S, m_1, m_2.\\ m_1 + m_2 \\leq N \\land e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\htmlData{k=F-New.cnew}{\\Phi[c^{+} \\mapsto S^{m_1}_{m_1}, c^{-} \\mapsto \\overline{S}^{m_2}_{m_2}]} \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\htmlData{k=F-New}{\\mathsf{Fobl}_{\\mathsf{new}\\,c}(e')}}\\;\\textsf{F-New} \\\\[10pt]\n\\dfrac{\\begin{array}{c}M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(v)\\quad \\htmlData{k=F-Spawn.held}{M \\subseteq \\mathrm{dom}\\,\\Phi}\\quad \\htmlData{k=fu.fspare}{\\mathsf{positive}}(\\Phi|_M) \\\\ \\htmlData{k=F-Spawn.child}{v\\,\\ast \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\htmlData{k=fu.tick}{\\Phi|_M{\\downarrow}} \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}}\\ !\\ \\infty \\rrbracket}} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi \\setminus M \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\htmlData{k=F-Spawn}{\\mathsf{Fobl}_{\\mathsf{spawn}\\,v}(e')}}\\;\\textsf{F-Spawn} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=F-Link.plink}{\\Phi(o_1) = S^{f_1}_{m_1},\\ \\Phi(o_2) = S'^{f_2}_{m_2},\\ o_1 \\neq o_2,\\ S' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{S}}\\quad \\htmlData{k=F-Link.ticket}{f_1 + m_2 > N,\\ f_2 + m_1 > N} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi \\setminus \\{o_1,o_2\\} \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\htmlData{k=F-Link}{\\mathsf{Fobl}_{\\mathsf{link}\\,o_1\\,o_2}(e')}}\\;\\textsf{F-Link}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S_0{}^{f}_{m}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.send}{!(\\bar\\iota.\\ T)}.S\\quad M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(w)\\quad \\htmlData{k=F-Send.notsubj}{o \\notin M \\subseteq \\mathrm{dom}\\,\\Phi}\\quad \\htmlData{k=fu.fspare}{\\mathsf{positive}}(\\Phi|_M) \\\\ \\htmlData{k=F-Send.payload}{w \\in \\htmlData{k=sr.FV}{FV^{N}_{\\beta}\\llbracket \\htmlData{k=fu.tick}{\\Phi|_M{\\downarrow}} \\vdash T \\rrbracket}} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\htmlData{k=fu.tick}{(\\Phi \\setminus M){\\downarrow}}[o \\mapsto S^{m}_{m}] \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\htmlData{k=F-Send}{\\mathsf{Fobl}_{\\mathsf{send}\\,o\\,w}(e')}}\\;\\textsf{F-Send} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S_0{}^{f}_{m}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ T)}.S \\\\ \\htmlData{k=F-Recv.forall}{\\forall \\gamma \\leq \\beta,\\ \\Phi_i \\mathbin{\\#} \\Phi.\\ w \\in \\htmlData{k=sr.FV}{FV^{N}_{\\gamma}\\llbracket \\Phi_i \\vdash T \\rrbracket}} \\Rightarrow e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\gamma}\\llbracket \\htmlData{k=fu.tick}{\\Phi{\\downarrow}}[o \\mapsto S^{m}_{m}] \\cup \\Phi_i \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\htmlData{k=F-Recv}{\\mathsf{Fobl}_{\\mathsf{recv}\\,o\\,w}(e')}}\\;\\textsf{F-Recv} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S_0{}^{f}_{m}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 = \\htmlData{k=sty.close}{\\mathsf{Close}} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\htmlData{k=fu.tick}{(\\Phi \\setminus o){\\downarrow}} \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\htmlData{k=F-Close}{\\mathsf{Fobl}_{\\mathsf{close}\\,o}(e')}}\\;\\textsf{F-Close} \\qquad\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S_0{}^{f}_{m}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S_0 \\in \\{\\oplus(S_1,S_2), \\&(S_1,S_2)\\} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\htmlData{k=fu.tick}{\\Phi{\\downarrow}}[o \\mapsto S_i{}^{m}_{m}] \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\htmlData{k=F-Close}{\\mathsf{Fobl}_{\\mathsf{sel}_i\\,o}(e'),\\ \\mathsf{Fobl}_{\\mathsf{bra}_i\\,o}(e')}}\\;\\textsf{F-Choice}\n\\end{array}\\end{array}",
-     "caption": "An action on $o$ requires $o$ held and not idle, and a positive counter on the other ends that are not idle and on the frame. It uses one unit of the frame, advances the protocol of $o$, resets the counter of $o$ to its tickets $m$ and decrements the other counters, written $\\Phi{\\downarrow}[o \\mapsto S^{m}_{m}]$. Internal steps decrement no counter. A new channel starts each end at its tickets. A send hands the ends of its payload on with their counters minus one. A link lowers no counter and asks the counter of each linked end to exceed the partner bound $N - m$ of the other. A send has a payload value $w$, and $d$ is the frame.",
+     "tex": "\\begin{array}{c}\\begin{array}{rcll}\n\\htmlData{k=sr.act}{\\mathsf{act}}\\,o & \\iff & \\htmlData{k=F-Wait}{\\Phi(o) = S^{f,m} \\land \\neg \\htmlData{k=fu.idle}{\\mathsf{idle}}\\,S} & \\text{F-Wait} \\\\\n & \\land & \\htmlData{k=F-Tick}{\\htmlData{k=fu.fspare}{\\mathsf{positive}}(\\Phi \\setminus o)} \\land \\htmlData{k=F-Tick.frame}{1 \\leq d} & \\text{F-Count} \\\\[4pt]\n\\htmlData{k=fu.fspare}{\\mathsf{positive}}(\\Phi) & \\iff & \\htmlData{k=fu.fspare}{\\forall o \\mapsto S^{f,m} \\in \\Phi.\\ \\neg\\mathsf{idle}\\,S \\Rightarrow 1 \\leq f} \\\\\n\\htmlData{k=fu.tick}{\\Phi{\\downarrow}} & = & \\htmlData{k=fu.tick}{\\{o \\mapsto S^{f \\mathbin{\\dot-} 1}_{m} \\mid o \\mapsto S^{f,m} \\in \\Phi\\}} \\\\\n\\htmlData{k=fu.idle}{\\mathsf{idle}}\\,S & \\iff & \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S = \\htmlData{k=sty.skip}{\\mathsf{Skip}}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\htmlData{k=F-Beta}{\\mathsf{Fobl}_{\\beta}(e')}}\\;\\textsf{F-Beta} \\qquad\n\\dfrac{\\begin{array}{c}\\htmlData{k=F-New.fresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Phi} \\Rightarrow \\exists S, m_1, m_2.\\ m_1 + m_2 \\leq N \\land e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\htmlData{k=F-New.cnew}{\\Phi[c^{+} \\mapsto S^{m_1,m_1}, c^{-} \\mapsto \\overline{S}^{m_2,m_2}]} \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\htmlData{k=F-New}{\\mathsf{Fobl}_{\\mathsf{new}\\,c}(e')}}\\;\\textsf{F-New} \\\\[10pt]\n\\dfrac{\\begin{array}{c}M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(v)\\quad \\htmlData{k=F-Spawn.held}{M \\subseteq \\mathrm{dom}\\,\\Phi}\\quad \\htmlData{k=fu.fspare}{\\mathsf{positive}}(\\Phi|_M) \\\\ \\htmlData{k=F-Spawn.child}{v\\,\\ast \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\htmlData{k=fu.tick}{\\Phi|_M{\\downarrow}} \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}}\\ !\\ \\infty \\rrbracket}} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi \\setminus M \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\htmlData{k=F-Spawn}{\\mathsf{Fobl}_{\\mathsf{spawn}\\,v}(e')}}\\;\\textsf{F-Spawn} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=F-Link.plink}{\\Phi(o_1) = S^{f_1,m_1},\\ \\Phi(o_2) = S'^{f_2,m_2},\\ o_1 \\neq o_2,\\ S' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{S}}\\quad \\htmlData{k=F-Link.ticket}{f_1 + m_2 > N,\\ f_2 + m_1 > N} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi \\setminus \\{o_1,o_2\\} \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\htmlData{k=F-Link}{\\mathsf{Fobl}_{\\mathsf{link}\\,o_1\\,o_2}(e')}}\\;\\textsf{F-Link}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S^{f,m}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S = \\htmlData{k=sty.send}{!(\\bar\\iota.\\ T)}.S'\\quad M = \\htmlData{k=syn.fends}{\\mathsf{fends}}(w)\\quad \\htmlData{k=F-Send.notsubj}{o \\notin M \\subseteq \\mathrm{dom}\\,\\Phi}\\quad \\htmlData{k=fu.fspare}{\\mathsf{positive}}(\\Phi|_M) \\\\ \\htmlData{k=F-Send.payload}{w \\in \\htmlData{k=sr.FV}{FV^{N}_{\\beta}\\llbracket \\htmlData{k=fu.tick}{\\Phi|_M{\\downarrow}} \\vdash T \\rrbracket}} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\htmlData{k=fu.tick}{(\\Phi \\setminus M){\\downarrow}}[o \\mapsto {S'}^{m,m}] \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\htmlData{k=F-Send}{\\mathsf{Fobl}_{\\mathsf{send}\\,o\\,w}(e')}}\\;\\textsf{F-Send} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S^{f,m}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S = \\htmlData{k=sty.recv}{?(\\bar\\iota.\\ T)}.S' \\\\ \\htmlData{k=F-Recv.forall}{\\forall \\gamma \\leq \\beta,\\ \\Phi_i \\mathbin{\\#} \\Phi.\\ w \\in \\htmlData{k=sr.FV}{FV^{N}_{\\gamma}\\llbracket \\Phi_i \\vdash T \\rrbracket}} \\Rightarrow e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\gamma}\\llbracket \\htmlData{k=fu.tick}{\\Phi{\\downarrow}}[o \\mapsto {S'}^{m,m}] \\cup \\Phi_i \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\htmlData{k=F-Recv}{\\mathsf{Fobl}_{\\mathsf{recv}\\,o\\,w}(e')}}\\;\\textsf{F-Recv} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S^{f,m}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S = \\htmlData{k=sty.close}{\\mathsf{Close}} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\htmlData{k=fu.tick}{(\\Phi \\setminus o){\\downarrow}} \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\htmlData{k=F-Close}{\\mathsf{Fobl}_{\\mathsf{close}\\,o}(e')}}\\;\\textsf{F-Close} \\qquad\n\\dfrac{\\begin{array}{c}\\htmlData{k=sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S^{f,m}\\quad \\htmlData{k=sty.unfold}{\\mathsf{unfold}}\\,S \\in \\{\\oplus(S',S''), \\&(S',S'')\\} \\\\ e' \\in \\htmlData{k=sr.FE}{F^{N}_{\\beta}\\llbracket \\htmlData{k=fu.tick}{\\Phi{\\downarrow}}[o \\mapsto \\htmlData{k=sty.choice}{(\\mathsf{if}\\ i\\ \\mathsf{then}\\ S''\\ \\mathsf{else}\\ S')}^{m,m}] \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\htmlData{k=F-Close}{\\mathsf{Fobl}_{\\mathsf{sel}_i\\,o}(e'),\\ \\mathsf{Fobl}_{\\mathsf{bra}_i\\,o}(e')}}\\;\\textsf{F-Choice}\n\\end{array}\\end{array}",
+     "caption": "An action on $o$ requires $o$ held and not idle, and a positive counter on the other ends that are not idle and on the frame. It uses one unit of the frame, advances the protocol of $o$, resets the counter of $o$ to its tickets $m$ and decrements the other counters, written $\\Phi{\\downarrow}[o \\mapsto S^{m,m}]$. Internal steps decrement no counter. A new channel starts each end at its tickets. A send hands the ends of its payload on with their counters minus one. A link lowers no counter and asks the counter of each linked end to exceed the partner bound $N - m$ of the other. A send has a payload value $w$, and $d$ is the frame.",
      "about": {
       "why": "Each kind of step changes the held ends, counters and tickets in one way, the same at each level.",
       "used": [
@@ -1162,7 +1162,7 @@ window.MAP = {
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}S' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} S\\quad \\htmlData{k=FV-Sess.counter}{a \\leq f}\\end{array}}{\\htmlData{k=FV-Sess}{o \\in \\htmlData{k=sr.FV}{FV^{N}_{\\alpha}\\llbracket \\{o \\mapsto S'^{f}_{m}\\} \\vdash S_x\\annot{^{a,m}} \\rrbracket}}}\\;\\textsf{FV-Sess} \\qquad\n\\dfrac{\\begin{array}{c}\\Phi = \\varnothing\\end{array}}{\\htmlData{k=FV-Thread}{v \\in \\htmlData{k=sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}} \\rrbracket}}}\\;\\textsf{FV-Thread} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=FV-Arrow.exact}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\mathrm{dom}\\,\\Phi}\\quad \\htmlData{k=FV-Arrow.floor}{\\Phi(o) = S^{f} \\land \\neg\\htmlData{k=fu.idle}{\\mathsf{idle}}\\,S \\Rightarrow a \\leq f} \\\\ \\forall \\beta < \\alpha,\\ \\htmlData{k=FV-Arrow.call}{\\Phi' \\geq \\Phi - a},\\ u \\in \\htmlData{k=sr.FV}{FV^{N}_{j}\\llbracket \\Phi_u \\vdash T \\rrbracket} \\\\ \\htmlData{k=FV-Arrow.body}{e[u] \\in \\htmlData{k=sr.FE}{F^{N}_{j}\\llbracket \\Phi' \\cup \\Phi_u \\vdash U\\ !\\ c \\rrbracket}}\\end{array}}{\\htmlData{k=FV-Arrow}{\\lambda e \\in \\htmlData{k=sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi \\vdash (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[c]\\, U)\\annot{^{a}} \\rrbracket}}}\\;\\textsf{FV-Arrow} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=FV-Box.noends}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\varnothing} \\\\ \\forall \\beta < \\alpha,\\ \\bar s \\in \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,N \\\\ \\htmlData{k=FV-Box.body}{e[!e] \\in \\htmlData{k=sr.FE}{F^{N}_{j}\\llbracket \\varnothing \\vdash U[\\bar s]\\ !\\ c \\rrbracket}}\\end{array}}{\\htmlData{k=FV-Box}{!e \\in \\htmlData{k=sr.FV}{FV^{N}_{\\alpha}\\llbracket \\varnothing \\vdash \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}[c]\\, U) \\rrbracket}}}\\;\\textsf{FV-Box} \\\\[6pt]\n\\htmlData{k=sr.fvagg}{\\langle v_1, v_2\\rangle \\in \\htmlData{k=sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi_1 \\uplus \\Phi_2 \\vdash T_1 \\otimes T_2 \\rrbracket} \\iff v_i \\in \\htmlData{k=sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi_i \\vdash T_i \\rrbracket}}\n\\end{array}",
+     "tex": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}S' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} S\\quad \\htmlData{k=FV-Sess.counter}{a \\leq f}\\end{array}}{\\htmlData{k=FV-Sess}{o \\in \\htmlData{k=sr.FV}{FV^{N}_{\\alpha}\\llbracket \\{o \\mapsto S'^{f,m}\\} \\vdash S_x\\annot{^{a,m}} \\rrbracket}}}\\;\\textsf{FV-Sess} \\qquad\n\\dfrac{\\begin{array}{c}\\Phi = \\varnothing\\end{array}}{\\htmlData{k=FV-Thread}{v \\in \\htmlData{k=sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}} \\rrbracket}}}\\;\\textsf{FV-Thread} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=FV-Arrow.exact}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\mathrm{dom}\\,\\Phi}\\quad \\htmlData{k=FV-Arrow.floor}{\\Phi(o) = S^{f} \\land \\neg\\htmlData{k=fu.idle}{\\mathsf{idle}}\\,S \\Rightarrow a \\leq f} \\\\ \\forall \\beta < \\alpha,\\ \\htmlData{k=FV-Arrow.call}{\\Phi' \\geq \\Phi - a},\\ u \\in \\htmlData{k=sr.FV}{FV^{N}_{j}\\llbracket \\Phi_u \\vdash T \\rrbracket} \\\\ \\htmlData{k=FV-Arrow.body}{e[u] \\in \\htmlData{k=sr.FE}{F^{N}_{j}\\llbracket \\Phi' \\cup \\Phi_u \\vdash U\\ !\\ c \\rrbracket}}\\end{array}}{\\htmlData{k=FV-Arrow}{\\lambda e \\in \\htmlData{k=sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi \\vdash (T \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}[c]\\, U)\\annot{^{a}} \\rrbracket}}}\\;\\textsf{FV-Arrow} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\htmlData{k=FV-Box.noends}{\\htmlData{k=syn.fends}{\\mathsf{fends}}\\,e = \\varnothing} \\\\ \\forall \\beta < \\alpha,\\ \\bar s \\in \\htmlData{k=tp.sinsts}{\\mathsf{sinsts}}\\,N \\\\ \\htmlData{k=FV-Box.body}{e[!e] \\in \\htmlData{k=sr.FE}{F^{N}_{j}\\llbracket \\varnothing \\vdash U[\\bar s]\\ !\\ c \\rrbracket}}\\end{array}}{\\htmlData{k=FV-Box}{!e \\in \\htmlData{k=sr.FV}{FV^{N}_{\\alpha}\\llbracket \\varnothing \\vdash \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}[c]\\, U) \\rrbracket}}}\\;\\textsf{FV-Box} \\\\[6pt]\n\\htmlData{k=sr.fvagg}{\\langle v_1, v_2\\rangle \\in \\htmlData{k=sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi_1 \\uplus \\Phi_2 \\vdash T_1 \\otimes T_2 \\rrbracket} \\iff v_i \\in \\htmlData{k=sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi_i \\vdash T_i \\rrbracket}}\n\\end{array}",
      "caption": "Values with fuel by recursion on the type. The counter of an end is at least its credit. A closure keeps the counters of its captured ends that are not idle at least at its credit $a$. Its body has fuel at each call whose counters are at least the counters at creation minus $a$. A box holds no end, and its body has fuel at each force.",
      "about": {
       "why": "Values with fuel connect credits in types with counters at run time.",
@@ -1179,7 +1179,7 @@ window.MAP = {
       "lf"
      ],
      "rocq": "soup/State.v: hold, lfstate; soup/State.v: soup_gen, soup/Soup.v: soup_inv, Soup",
-     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\htmlData{k=sp.state}{a = (q, K, R_a)} \\qquad \\htmlData{k=sp.hold}{K : \\mathsf{End} \\rightharpoonup \\mathbb{N} \\times \\mathsf{Point} \\times \\mathbb{N} \\times \\mathbb{N}} \\\\\n\\htmlData{k=sp.next}{\\mathsf{lf\\_next}\\,N\\,(q, K)\\,ev\\,(q', K') \\iff K' \\in \\mathsf{own\\_next}\\,N\\,ev\\,K}\n\\end{array}\\\\[3ex]\\begin{array}{rcll}\na \\in \\htmlData{k=th.soup}{S^{N,R}_\\alpha\\llbracket\\Sigma \\vdash T\\rrbracket} & \\iff & \\htmlData{k=sp.world}{R \\sqsubseteq R_a} \\land \\htmlData{k=sp.exists}{\\exists A, \\Phi}.\\ \\htmlData{k=sp.tfree}{\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T} \\land \\text{for each thread } t \\text{ running } e\\text{,} & \\\\[1ex]\n & & \\quad \\htmlData{k=sp.rel}{e \\in \\htmlData{k=th.Erel}{E[\\kappa_L]^{R_a}_\\alpha\\llbracket A|_t \\vdash U_t\\rrbracket^{\\varnothing}}} & \\text{the relation} \\\\\n & & \\quad \\htmlData{k=sp.fuel}{e \\in \\htmlData{k=sr.FE}{F^{N}_{\\alpha}\\llbracket \\Phi|_t \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}}\\ !\\ \\infty \\rrbracket}} & \\text{fuel} \\\\\n & & \\land\\ \\htmlData{k=sp.own}{\\mathsf{consistent}}(a, A, \\Phi) & \\\\[2ex]\nA,\\ \\Phi & & \\text{the held ends as } o \\mapsto S_x \\text{ for the relation and as } o \\mapsto S^{f}_{m} \\text{ for fuel} & \\\\\nA|_t,\\ \\Phi|_t & & \\text{their restrictions to the ends } K \\text{ gives } t & \\htmlData{k=sp.ty}{U_t \\in \\{T, \\ast\\}} \\\\[2ex]\n\\htmlData{k=sp.own}{\\mathsf{consistent}}(a, A, \\Phi) & \\iff & \\htmlData{k=sp.dom}{\\mathrm{dom}\\,A = \\mathrm{dom}\\,\\Phi = \\mathrm{dom}\\,K} \\land \\htmlData{k=sp.owner}{K(o) = (t, x, f, m) \\Rightarrow t \\in \\mathrm{dom}\\,q} & \\text{owners} \\\\\n & \\land & \\htmlData{k=sp.pts}{K(o) = (t, x, f, m) \\Rightarrow \\exists S, P.\\ A(o) = S_x \\land \\Phi(o) = P^{f}_{m}} \\land \\htmlData{k=sp.fin}{f \\in \\mathbb{N}} \\land \\htmlData{k=sp.cap}{f \\leq m} & \\\\\n & \\land & \\htmlData{k=sp.closed}{o \\in \\mathrm{dom}\\,K \\Rightarrow \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\lor o \\in \\mathrm{dom}\\,\\Sigma} \\land \\htmlData{k=sp.pair}{o \\in \\mathrm{dom}\\,K \\land \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow \\overline{o} \\in \\mathrm{dom}\\,K} & \\text{closed} \\\\\n & \\land & \\htmlData{k=sp.sdual}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\land A(o) = S_x \\land A(\\overline{o}) = {S'}_{x'} \\Rightarrow x' = \\overline{x} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S'} & \\text{dual} \\\\\n & \\land & \\htmlData{k=sp.pdual}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\land \\Phi(o) = P^{f}_{m} \\land \\Phi(\\overline{o}) = P'^{f'}_{m'} \\Rightarrow P' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{P}} & \\\\\n & \\land & \\htmlData{k=sp.tsum}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\land K(o) = (\\_, \\_, \\_, m) \\land K(\\overline{o}) = (\\_, \\_, \\_, m') \\Rightarrow m + m' \\leq N} & \\text{tickets} \\\\\n & \\land & \\htmlData{k=sp.sig}{\\Sigma(o) = S_x \\Rightarrow A(o) = S_x} \\land \\htmlData{k=sp.psig}{\\Phi(o) = S^{f}_{m}} & \\text{interface}\n\\end{array}\\end{array}",
+     "tex": "\\begin{array}{c}\\begin{array}{c}\n\\htmlData{k=sp.state}{a = (q, K, R_a)} \\qquad \\htmlData{k=sp.hold}{K : \\mathsf{End} \\rightharpoonup \\mathbb{N} \\times \\mathsf{Point} \\times \\mathbb{N} \\times \\mathbb{N}} \\\\\n\\htmlData{k=sp.next}{\\mathsf{lf\\_next}\\,N\\,(q, K)\\,ev\\,(q', K') \\iff K' \\in \\mathsf{own\\_next}\\,N\\,ev\\,K}\n\\end{array}\\\\[3ex]\\begin{array}{rcll}\na \\in \\htmlData{k=th.soup}{S^{N,R}_\\alpha\\llbracket\\Sigma \\vdash T\\rrbracket} & \\iff & \\htmlData{k=sp.world}{R \\sqsubseteq R_a} \\land \\htmlData{k=sp.exists}{\\exists A, \\Phi}.\\ \\htmlData{k=sp.tfree}{\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T} \\land \\text{for each thread } t \\text{ running } e\\text{,} & \\\\[1ex]\n & & \\quad \\htmlData{k=sp.rel}{e \\in \\htmlData{k=th.Erel}{E[\\kappa_L]^{R_a}_\\alpha\\llbracket A|_t \\vdash U_t\\rrbracket^{\\varnothing}}} & \\text{the relation} \\\\\n & & \\quad \\htmlData{k=sp.fuel}{e \\in \\htmlData{k=sr.FE}{F^{N}_{\\alpha}\\llbracket \\Phi|_t \\vdash \\htmlData{k=fu.rty}{\\mathsf{thread}}\\ !\\ \\infty \\rrbracket}} & \\text{fuel} \\\\\n & & \\land\\ \\htmlData{k=sp.own}{\\mathsf{consistent}}(a, A, \\Phi) & \\\\[2ex]\nA,\\ \\Phi & & \\text{the held ends as } o \\mapsto S_x \\text{ for the relation and as } o \\mapsto S^{f,m} \\text{ for fuel} & \\\\\nA|_t,\\ \\Phi|_t & & \\text{their restrictions to the ends } K \\text{ gives } t & \\htmlData{k=sp.ty}{U_t \\in \\{T, \\ast\\}} \\\\[2ex]\n\\htmlData{k=sp.own}{\\mathsf{consistent}}(a, A, \\Phi) & \\iff & \\htmlData{k=sp.dom}{\\mathrm{dom}\\,A = \\mathrm{dom}\\,\\Phi = \\mathrm{dom}\\,K} \\land \\htmlData{k=sp.owner}{K(o) = (t, x, f, m) \\Rightarrow t \\in \\mathrm{dom}\\,q} & \\text{owners} \\\\\n & \\land & \\htmlData{k=sp.pts}{K(o) = (t, x, f, m) \\Rightarrow \\exists S, P.\\ A(o) = S_x \\land \\Phi(o) = P^{f,m}} \\land \\htmlData{k=sp.fin}{f \\in \\mathbb{N}} \\land \\htmlData{k=sp.cap}{f \\leq m} & \\\\\n & \\land & \\htmlData{k=sp.closed}{o \\in \\mathrm{dom}\\,K \\Rightarrow \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\lor o \\in \\mathrm{dom}\\,\\Sigma} \\land \\htmlData{k=sp.pair}{o \\in \\mathrm{dom}\\,K \\land \\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\Rightarrow \\overline{o} \\in \\mathrm{dom}\\,K} & \\text{closed} \\\\\n & \\land & \\htmlData{k=sp.sdual}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\land A(o) = S_x \\land A(\\overline{o}) = {S'}_{x'} \\Rightarrow x' = \\overline{x} \\land \\htmlData{k=sty.sdual}{\\mathsf{sdual}}\\,S\\,S'} & \\text{dual} \\\\\n & \\land & \\htmlData{k=sp.pdual}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\land \\Phi(o) = P^{f,m} \\land \\Phi(\\overline{o}) = P'^{f',m'} \\Rightarrow P' \\mathrel{\\htmlData{k=sty.sequiv}{\\simeq}} \\overline{P}} & \\\\\n & \\land & \\htmlData{k=sp.tsum}{\\htmlData{k=end.ech}{\\mathsf{ech}}\\,o \\in C \\land K(o) = (\\_, \\_, \\_, m) \\land K(\\overline{o}) = (\\_, \\_, \\_, m') \\Rightarrow m + m' \\leq N} & \\text{tickets} \\\\\n & \\land & \\htmlData{k=sp.sig}{\\Sigma(o) = S_x \\Rightarrow A(o) = S_x} \\land \\htmlData{k=sp.psig}{\\Phi(o) = S^{f,m}} & \\text{interface}\n\\end{array}\\end{array}",
      "caption": "An annotated configuration $a = (q, K)$ is a configuration $q$ with an ownership map $K$. $K$ gives each held end the thread that holds it, its point, its counter and its tickets. The configuration is in the lock-free process relation at the ordinal index $\\alpha$ when each thread is in $E[\\kappa_L]$ at the ends it owns and has fuel at their counters. $A$ and $\\Phi$ describe the held ends for the relation and for fuel, and $\\mathsf{consistent}$ requires $A$, $\\Phi$ and $K$ to agree. It also bounds each counter by its tickets and the tickets of the two ends of an internal channel by $N$. Fuel occurs only in this definition.",
      "about": {
       "why": "The lock-free process relation combines the relation and the fuel of each thread over one ownership map. Lock-free adequacy reads the points and counters that $K$ records, and the invariant on tickets makes the measure fall at a link.",
@@ -1681,7 +1681,7 @@ window.MAP = {
      "meaning": "The point of the end acted on, also the upper point of the call."
     },
     {
-     "name": "S_0, S_i",
+     "name": "S, S', S''",
      "meaning": "The session type before the action and the chosen continuation."
     }
    ]
@@ -3619,30 +3619,30 @@ window.MAP = {
   },
   "sty.plus": {
    "title": "Internal choice",
-   "what": "$\\oplus(S_1, S_2)$, where the selecting side chooses $i$ and continues with $S_1$ or $S_2$.",
+   "what": "$\\oplus(S', S'')$, where the selecting side chooses $i$ and continues with $S'$ or $S''$.",
    "why": "A plain protocol action. The holding thread decides the continuation.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\oplus(\\mathsf{Close}, !\\ast.\\mathsf{Close})$.",
    "rocq": "types/Types.v: SPlus",
-   "sig": "\\oplus(S_1, S_2) \\in \\mathsf{STy}",
+   "sig": "\\oplus(S', S'') \\in \\mathsf{STy}",
    "args": [
     {
-     "name": "S_1, S_2",
+     "name": "S', S''",
      "meaning": "The continuations for $i = \\mathsf{false}$ and $i = \\mathsf{true}$."
     }
    ]
   },
   "sty.with": {
    "title": "External choice",
-   "what": "$\\&(S_1, S_2)$, where the branching side receives $i$ and continues with $S_1$ or $S_2$.",
+   "what": "$\\&(S', S'')$, where the branching side receives $i$ and continues with $S'$ or $S''$.",
    "why": "A plain protocol action, $\\mathsf{dual}$ of internal choice.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\&(\\mathsf{Close}, ?\\ast.\\mathsf{Close})$.",
    "rocq": "types/Types.v: SWith",
-   "sig": "\\&(S_1, S_2) \\in \\mathsf{STy}",
+   "sig": "\\&(S', S'') \\in \\mathsf{STy}",
    "args": [
     {
-     "name": "S_1, S_2",
+     "name": "S', S''",
      "meaning": "The continuations for the received $i = \\mathsf{false}$ and $i = \\mathsf{true}$."
     }
    ]
@@ -3754,7 +3754,7 @@ window.MAP = {
      "meaning": "A payload, kept unchanged."
     },
     {
-     "name": "S_1, S_2",
+     "name": "S', S''",
      "meaning": "Continuations."
     }
    ]
@@ -5742,7 +5742,7 @@ window.MAP = {
    "what": "The argument type $T$ of the closure is contractive.",
    "why": "The argument enters the context of the body, and no other rule checks the argument type.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$T = S_{\\iota} \\otimes {S'}_{\\kappa}$ for the client loop, with $S_1$ and $S_2$ contractive.",
+   "example": "$T = S_{\\iota} \\otimes {S'}_{\\kappa}$ for the client loop, with $S$ and $S'$ contractive.",
    "rocq": "static/Typing.v: e_abs",
    "sig": "\\mathsf{contr}\\,T",
    "args": [
@@ -5904,7 +5904,7 @@ window.MAP = {
    "what": "$\\mathsf{unfold}(S) = {!}(\\bar\\iota.\\,T).S'$.",
    "why": "Rules read the first action of $S$ after unfolding, so a recursive protocol $\\mu\\alpha.S$ needs no rule of its own.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$S_0 = \\mu\\alpha.\\,{!}\\ast.\\alpha$ unfolds to ${!}\\ast.(\\mu\\alpha.\\,{!}\\ast.\\alpha)$.",
+   "example": "$S = \\mu\\alpha.\\,{!}\\ast.\\alpha$ unfolds to ${!}\\ast.(\\mu\\alpha.\\,{!}\\ast.\\alpha)$.",
    "rocq": "static/Typing.v: e_send",
    "sig": "\\mathsf{unfold}(S) = {!}(\\bar\\iota.\\,T).S'",
    "args": [
@@ -6432,14 +6432,14 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "The client and server main.",
    "rocq": "static/Typing.v: p_term",
-   "sig": "\\varnothing ; \\Sigma^{N/2}_{N/2}, \\Theta_B \\vdash^{(\\varnothing,\\cdot)}_{W\\annot{,N}} t : T\\annot{\\ !\\ c}",
+   "sig": "\\varnothing ; \\Sigma^{N/2,N/2}, \\Theta_B \\vdash^{(\\varnothing,\\cdot)}_{W\\annot{,N}} t : T\\annot{\\ !\\ c}",
    "args": [
     {
      "name": "t",
      "meaning": "the thread"
     },
     {
-     "name": "\\Sigma^{N/2}_{N/2}",
+     "name": "\\Sigma^{N/2,N/2}",
      "meaning": "\\annp{the interface at\\annp{ credit and }tickets $N/2$}"
     }
    ]
@@ -6965,13 +6965,13 @@ window.MAP = {
    ]
   },
   "tp.lift": {
-   "title": "$\\Sigma^{N/2}_{N/2}$",
+   "title": "$\\Sigma^{N/2,N/2}$",
    "what": "\\annp{$\\Sigma$ with every entry at\\annp{ credit and }tickets $N/2$.}",
    "why": "The partner of an interface end belongs to another component. \\annp{Half of $N$ on each side keeps the bound on the tickets of a channel when P-Connect joins the two ends.}",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\{c^{+} \\mapsto \\mathsf{Close}_x\\}^{N/2}_{N/2} = \\{c^{+} \\mapsto \\mathsf{Close}_x\\annot{^{N/2,N/2}}\\}$.",
+   "example": "$\\{c^{+} \\mapsto \\mathsf{Close}_x\\}^{N/2,N/2} = \\{c^{+} \\mapsto \\mathsf{Close}_x\\annot{^{N/2,N/2}}\\}$.",
    "rocq": "static/Typing.v: p_term; static/Contexts.v: tenv_of; types/Costs.v: fhalf",
-   "sig": "\\Sigma^{N/2}_{N/2} : \\mathsf{End} \\rightharpoonup \\mathsf{Sty} \\times \\mathsf{Pt} \\times \\mathsf{Fuel} \\times \\mathsf{Fuel}",
+   "sig": "\\Sigma^{N/2,N/2} : \\mathsf{End} \\rightharpoonup \\mathsf{Sty} \\times \\mathsf{Pt} \\times \\mathsf{Fuel} \\times \\mathsf{Fuel}",
    "args": [
     {
      "name": "\\Sigma",
@@ -8274,7 +8274,7 @@ window.MAP = {
    "what": "$\\Theta[c^{+} \\mapsto S_{\\pi},\\ c^{-} \\mapsto \\overline{S}_{\\overline{\\pi}}]$.",
    "why": "It is the static result of E-New at the witness $\\pi$, and duality of the pair is what the lock-free process relation asks of restricted channels.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{new}$ gives $c^{+} : S_a$ and $c^{-} : \\overline{S}_{\\overline{a}}$.",
+   "example": "$\\mathsf{new}$ gives $c^{+} : S_{\\rho}$ and $c^{-} : \\overline{S}_{\\overline{\\rho}}$.",
    "rocq": "relation/Relation.v: new_env",
    "sig": "\\Theta[c^{+} \\mapsto S_{\\pi},\\ c^{-} \\mapsto \\overline{S}_{\\overline{\\pi}}] \\in \\mathsf{Env}",
    "args": [
@@ -8419,7 +8419,7 @@ window.MAP = {
      "meaning": "the point of the subject, $x \\in \\mathsf{Point}$"
     },
     {
-     "name": "S_0, S",
+     "name": "S, S'",
      "meaning": "the session type of the subject and its continuation after the head"
     },
     {
@@ -8550,7 +8550,7 @@ window.MAP = {
      "meaning": "the point of the subject, $x \\in \\mathsf{Point}$"
     },
     {
-     "name": "S_0, S",
+     "name": "S, S'",
      "meaning": "the session type of the subject and its continuation after the head"
     }
    ]
@@ -9634,15 +9634,15 @@ window.MAP = {
   },
   "fu.Phi": {
    "title": "Held ends $\\Phi$",
-   "what": "$\\Phi$ maps each end the thread holds to its protocol $S$, a session type with annotations, its counter $f$ and its tickets $m \\geq f$, written $o \\mapsto S^{f}_{m}$.",
+   "what": "$\\Phi$ maps each end the thread holds to its protocol $S$, a session type with annotations, its counter $f$ and its tickets $m \\geq f$, written $o \\mapsto S^{f,m}$.",
    "why": "The counter bounds how many actions of the thread holding it may pass before the end acts again, and an action sets it back to $m$. The protocol says when the end is idle and what it sends and receives. Where the relation gives an end a point, fuel gives it a counter and tickets.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\Phi = \\{a \\mapsto S^{3}_{3}\\}$.",
+   "example": "$\\Phi = \\{a \\mapsto S^{3,3}\\}$.",
    "rocq": "fuel/Fuel.v: cenv",
    "sig": "\\Phi : \\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathbb{N} \\times \\mathbb{N}",
    "args": [
     {
-     "name": "S^{f}_{m}",
+     "name": "S^{f,m}",
      "meaning": "the protocol $S$, counter $f$ and tickets $m$ of an end, $f \\leq m$"
     }
    ]
@@ -9652,13 +9652,13 @@ window.MAP = {
    "what": "Every counter of $\\Phi$ lowered by one, truncated at $0$, with the tickets kept.",
    "why": "An action decrements the counters of the other ends of the thread holding it, and a transfer passes counters on one lower. Both use this operation.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\{a \\mapsto S^{3}_{3}, b \\mapsto S'^{1}_{2}\\}{\\downarrow} = \\{a \\mapsto S^{2}_{3}, b \\mapsto S'\\annot{^{0}}_{2}\\}$.",
+   "example": "$\\{a \\mapsto S^{3,3}, b \\mapsto S'^{1,2}\\}{\\downarrow} = \\{a \\mapsto S^{2,3}, b \\mapsto S'^{0,2}\\}$.",
    "rocq": "fuel/Fuel.v: ftick, fhand",
-   "sig": "\\Phi{\\downarrow} = \\{o \\mapsto S^{f \\mathbin{\\dot-} 1}_{m} \\mid o \\mapsto S^{f}_{m} \\in \\Phi\\}",
+   "sig": "\\Phi{\\downarrow} = \\{o \\mapsto S^{f \\mathbin{\\dot-} 1}_{m} \\mid o \\mapsto S^{f,m} \\in \\Phi\\}",
    "args": [
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f,m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     }
    ]
   },
@@ -9718,11 +9718,11 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "An end at $\\mathsf{Skip}$ cannot act.",
    "rocq": "fuel/Fuel.v: f_act",
-   "sig": "\\Phi(o) = S^{f}_{m} \\land \\neg\\mathsf{idle}\\,S",
+   "sig": "\\Phi(o) = S^{f,m} \\land \\neg\\mathsf{idle}\\,S",
    "args": [
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f,m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     },
     {
      "name": "o",
@@ -9741,7 +9741,7 @@ window.MAP = {
    "args": [
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f,m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     },
     {
      "name": "o",
@@ -9798,7 +9798,7 @@ window.MAP = {
     },
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f,m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     },
     {
      "name": "\\sigma",
@@ -9820,7 +9820,7 @@ window.MAP = {
   },
   "F-New": {
    "title": "F-New",
-   "what": "For a fresh $c$, some $S$, $m_1$ and $m_2$ with $m_1 + m_2 \\leq N$ add $c^{+} \\mapsto S^{m_1}_{m_1}$ and $c^{-} \\mapsto \\overline{S}^{m_2}_{m_2}$ to $\\Phi$.",
+   "what": "For a fresh $c$, some $S$, $m_1$ and $m_2$ with $m_1 + m_2 \\leq N$ add $c^{+} \\mapsto S^{m_1,m_1}$ and $c^{-} \\mapsto \\overline{S}^{m_2,m_2}$ to $\\Phi$.",
    "why": "A new channel starts each end at its tickets, the credit E-New gives to the new ends.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{new}$ adds $c^{\\pm}$ at $2$ and $2$ for $N = 4$.",
@@ -9860,18 +9860,18 @@ window.MAP = {
     },
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f,m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     }
    ]
   },
   "F-New.cnew": {
    "title": "New ends at their tickets",
-   "what": "$\\Phi[c^{+} \\mapsto S^{m_1}_{m_1}, c^{-} \\mapsto \\overline{S}^{m_2}_{m_2}]$.",
+   "what": "$\\Phi[c^{+} \\mapsto S^{m_1,m_1}, c^{-} \\mapsto \\overline{S}^{m_2,m_2}]$.",
    "why": "An action sets the counter of an end back to its tickets, and a new end starts there too.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\{c^{+} \\mapsto S^{3}_{3}, c^{-} \\mapsto \\overline{S}^{1}_{1}\\}$ at $N = 4$.",
+   "example": "$\\{c^{+} \\mapsto S^{3,3}, c^{-} \\mapsto \\overline{S}^{1,1}\\}$ at $N = 4$.",
    "rocq": "fuel/Fuel.v: cnew",
-   "sig": "\\Phi[c^{+} \\mapsto S^{m_1}_{m_1}, c^{-} \\mapsto \\overline{S}^{m_2}_{m_2}]",
+   "sig": "\\Phi[c^{+} \\mapsto S^{m_1,m_1}, c^{-} \\mapsto \\overline{S}^{m_2,m_2}]",
    "args": [
     {
      "name": "m_1, m_2",
@@ -9887,7 +9887,7 @@ window.MAP = {
     },
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f,m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     }
    ]
   },
@@ -9936,11 +9936,11 @@ window.MAP = {
    "breaks": "A transfer at counter $0$ under truncation passes $0$ again and an end is passed on forever.",
    "example": "$\\mathsf{positive}(\\{d' \\mapsto S^{1}\\})$.",
    "rocq": "fuel/Fuel.v: fspare",
-   "sig": "\\mathsf{positive}(\\Phi) \\iff \\forall o \\mapsto S^{f}_{m} \\in \\Phi.\\ \\neg\\mathsf{idle}\\,S \\Rightarrow 1 \\leq f",
+   "sig": "\\mathsf{positive}(\\Phi) \\iff \\forall o \\mapsto S^{f,m} \\in \\Phi.\\ \\neg\\mathsf{idle}\\,S \\Rightarrow 1 \\leq f",
    "args": [
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f,m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     }
    ]
   },
@@ -10060,7 +10060,7 @@ window.MAP = {
    "what": "$\\forall \\gamma \\leq \\beta, \\Phi_i.\\ w \\in FV^N_\\gamma\\llbracket\\Phi_i \\vdash T\\rrbracket$.",
    "why": "Every value in $FV$ is exact, so incoming closures hold exactly what they mention.",
    "breaks": "Without exactness, a received closure owning nothing but mentioning an end could not be spawned.",
-   "example": "$\\Phi_i = \\{e \\mapsto S^{2}_{2}\\}$.",
+   "example": "$\\Phi_i = \\{e \\mapsto S^{2,2}\\}$.",
    "rocq": "fuel/Fuel.v: f_recv",
    "sig": "\\forall \\gamma \\leq \\beta, \\Phi_i \\mathbin{\\#} \\Phi.\\ w \\in FV^{N}_{\\gamma}\\llbracket \\Phi_i \\vdash T \\rrbracket \\Rightarrow \\ldots",
    "args": [
@@ -10076,7 +10076,7 @@ window.MAP = {
   },
   "F-Close": {
    "title": "F-Close, F-Select, F-Branch",
-   "what": "Actions that drop $o$ and decrement the rest at a close, or advance the protocol of $o$ to $S_i$ and set it back to its tickets $m$ at a choice.",
+   "what": "Actions that drop $o$ and decrement the rest at a close, or advance the protocol of $o$ to the chosen continuation and set it back to its tickets $m$ at a choice.",
    "why": "They are the fuel forms of O-Close, O-Select and O-Branch, and each is an action, so F-Count applies.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{close}\\,c^{+}$.",
@@ -10113,13 +10113,13 @@ window.MAP = {
    "what": "$o_1 \\neq o_2$, both held, at protocols $S$ and $S' \\simeq \\overline{S}$, with annotations.",
    "why": "After the link the partners form one channel, whose protocols are dual only if the two linked protocols were, and annotations must match for later payload credits.",
    "breaks": "A credit mismatch at a link breaks the payload credit of a later message.",
-   "example": "$c^{+} \\mapsto S^{2}_{3}$ and $d^{-} \\mapsto \\overline{S}^{1}_{3}$.",
+   "example": "$c^{+} \\mapsto S^{2,3}$ and $d^{-} \\mapsto \\overline{S}^{1,3}$.",
    "rocq": "fuel/Fuel.v: plink",
-   "sig": "\\Phi(o_1) = S^{f_1}_{m_1},\\ \\Phi(o_2) = S'^{f_2}_{m_2},\\ o_1 \\neq o_2,\\ S' \\simeq \\overline{S}",
+   "sig": "\\Phi(o_1) = S^{f_1,m_1},\\ \\Phi(o_2) = S'^{f_2,m_2},\\ o_1 \\neq o_2,\\ S' \\simeq \\overline{S}",
    "args": [
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f,m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     },
     {
      "name": "o_1, o_2",
@@ -10155,9 +10155,9 @@ window.MAP = {
    "what": "An end with protocol $S' \\simeq S$, counter $f \\geq a$ and the tickets $m$ of its type.",
    "why": "Credits are lower bounds on counters, and the tickets of the type are those fuel resets the counter to.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$o \\mapsto S^{3}_{3}$ at $S_x\\annot{^{2,3}}$.",
+   "example": "$o \\mapsto S^{3,3}$ at $S_x\\annot{^{2,3}}$.",
    "rocq": "fuel/Fuel.v: Vty TSess",
-   "sig": "o \\in FV^{N}_{\\alpha}\\llbracket \\{o \\mapsto S'^{f}_{m}\\} \\vdash S_x\\annot{^{a,m}} \\rrbracket",
+   "sig": "o \\in FV^{N}_{\\alpha}\\llbracket \\{o \\mapsto S'^{f,m}\\} \\vdash S_x\\annot{^{a,m}} \\rrbracket",
    "args": [
     {
      "name": "o",
@@ -10348,7 +10348,7 @@ window.MAP = {
    "what": "$\\mathsf{fsem}\\,N\\,\\Phi\\,e$ iff $e \\in F^N_\\alpha\\llbracket\\Phi \\vdash \\mathsf{thread}\\ !\\ \\infty\\rrbracket$ for every ordinal $\\alpha$.",
    "why": "It is the fuel of a thread that the lock-free process relation requires, and the cost fundamental theorem derives it from typing. It is the one fuel statement that holds at every index.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{fsem}\\,N\\,\\{c^{+} \\mapsto \\mathsf{Close}^{2}_{2}\\}\\,(\\mathsf{close}\\,c^{+})$.",
+   "example": "$\\mathsf{fsem}\\,N\\,\\{c^{+} \\mapsto \\mathsf{Close}^{2,2}\\}\\,(\\mathsf{close}\\,c^{+})$.",
    "rocq": "fuel/Fuel.v: fsem, FuelE",
    "sig": "\\mathsf{fsem} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to (\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathbb{N} \\times \\mathbb{N}) \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
    "args": [
@@ -10358,7 +10358,7 @@ window.MAP = {
     },
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f,m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     },
     {
      "name": "e",
@@ -10550,7 +10550,7 @@ window.MAP = {
    "what": "$\\forall t.\\ q(t) \\in F^N_\\alpha\\llbracket\\Phi|_t \\vdash \\mathsf{thread}\\ !\\ \\infty\\rrbracket$, where $\\Phi|_t$ is $\\Phi$ on the ends that $K$ gives to $t$.",
    "why": "The counters and tickets of $\\Phi$ are those recorded in $K$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\Phi|_0 = \\{a \\mapsto S^{2}_{3}\\}$.",
+   "example": "$\\Phi|_0 = \\{a \\mapsto S^{2,3}\\}$.",
    "rocq": "soup/State.v: sp_fuel",
    "sig": "e \\in F^{N}_{\\alpha}\\llbracket \\Phi|_t \\vdash \\mathsf{thread}\\ !\\ \\infty \\rrbracket",
    "args": [
@@ -10569,9 +10569,9 @@ window.MAP = {
    "what": "$K(o) = (t, x, f, m)$ implies that $o$ is at $x$ in $A$ and has counter $f$ and tickets $m$ in $\\Phi$.",
    "why": "The relation and fuel read the data that $K$ records.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$A(a) = S_{\\rho}$, $\\Phi(a) = S^{2}_{3}$ and $K(a) = (0, \\rho, 2, 3)$.",
+   "example": "$A(a) = S_{\\rho}$, $\\Phi(a) = S^{2,3}$ and $K(a) = (0, \\rho, 2, 3)$.",
    "rocq": "soup/State.v: sp_pts, ctrs",
-   "sig": "K(o) = (t, x, f, m) \\Rightarrow \\exists S, P.\\ A(o) = S_x \\land \\Phi(o) = P^{f}_{m}",
+   "sig": "K(o) = (t, x, f, m) \\Rightarrow \\exists S, P.\\ A(o) = S_x \\land \\Phi(o) = P^{f,m}",
    "args": [
     {
      "name": "o",
@@ -10590,7 +10590,7 @@ window.MAP = {
    "args": [
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f,m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     },
     {
      "name": "K",
@@ -10669,7 +10669,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Phi(c^{+}) = \\mathsf{Close}^{2}$ and $\\Phi(c^{-}) = \\mathsf{Close}^{1}$.",
    "rocq": "soup/State.v: sp_pdual",
-   "sig": "\\mathsf{ech}\\,o \\in C \\land \\Phi(o) = P^{f}_{m} \\land \\Phi(\\overline{o}) = P'^{f'}_{m'} \\Rightarrow P' \\simeq \\overline{P}",
+   "sig": "\\mathsf{ech}\\,o \\in C \\land \\Phi(o) = P^{f,m} \\land \\Phi(\\overline{o}) = P'^{f',m'} \\Rightarrow P' \\simeq \\overline{P}",
    "args": [
     {
      "name": "P, P'",
@@ -10699,7 +10699,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Sigma(o) = \\mathsf{Close}_x$ and $\\Phi(o) = \\mathsf{Close}^{2}$.",
    "rocq": "soup/State.v: sp_psig",
-   "sig": "\\Sigma(o) = S_x \\Rightarrow \\Phi(o) = S^{f}_{m}",
+   "sig": "\\Sigma(o) = S_x \\Rightarrow \\Phi(o) = S^{f,m}",
    "args": [
     {
      "name": "o",
@@ -10869,7 +10869,7 @@ window.MAP = {
    "what": "The thread holds the ends $\\Phi$, each with counter and tickets, and has fuel at the ordinal index $\\alpha$ to return at $\\sigma$ within $d$ actions.",
    "why": "It bounds postponement per thread, independent of points. It is indexed by $\\alpha$, as $E$ is, so it is written as membership and not as a judgment.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$F^{4}_\\alpha\\llbracket\\{a \\mapsto S^{3}_{3}\\} \\vdash \\mathsf{thread}\\ !\\ \\infty\\rrbracket$.",
+   "example": "$F^{4}_\\alpha\\llbracket\\{a \\mapsto S^{3,3}\\} \\vdash \\mathsf{thread}\\ !\\ \\infty\\rrbracket$.",
    "rocq": "fuel/Fuel.v: FuelE, Fdef, FLevA",
    "sig": "e \\in F^{N}_{\\alpha}\\llbracket \\Phi \\vdash \\sigma\\ !\\ d \\rrbracket",
    "args": [
@@ -10883,7 +10883,7 @@ window.MAP = {
     },
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f,m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     },
     {
      "name": "\\sigma",
@@ -10918,7 +10918,7 @@ window.MAP = {
     },
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f,m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     },
     {
      "name": "\\sigma",
@@ -10945,7 +10945,7 @@ window.MAP = {
     },
     {
      "name": "\\Phi",
-     "meaning": "the held ends, a finite map $o \\mapsto S^{f}_{m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
+     "meaning": "the held ends, a finite map $o \\mapsto S^{f,m}$ from ends to a protocol, a counter $f$ and tickets $m \\geq f$"
     },
     {
      "name": "d",
@@ -12143,10 +12143,10 @@ window.MAP = {
   },
   "th.styof": {
    "title": "$\\Delta\\annot{^{N}}$",
-   "what": "The held ends of $\\Delta$ for fuel, each counter at its tickets. An entry $o \\mapsto S_x\\annot{^{a,m}}$ of $\\Delta$ becomes $o \\mapsto S^{m}_{m}$.",
+   "what": "The held ends of $\\Delta$ for fuel, each counter at its tickets. An entry $o \\mapsto S_x\\annot{^{a,m}}$ of $\\Delta$ becomes $o \\mapsto S^{m,m}$.",
    "why": "Fuel reads protocols, counters and tickets and ignores points and credits. A thread starts with each counter at its tickets.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\{a \\mapsto S_x\\annot{^{2,3}}\\}\\annot{^{N}} = \\{a \\mapsto S^{3}_{3}\\}$.",
+   "example": "$\\{a \\mapsto S_x\\annot{^{2,3}}\\}\\annot{^{N}} = \\{a \\mapsto S^{3,3}\\}$.",
    "rocq": "cost/CostFund.v: fsem_of_cost",
    "sig": "\\Delta\\annot{^{N}} : \\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathbb{N} \\times \\mathbb{N}",
    "args": [

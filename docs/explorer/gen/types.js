@@ -22,8 +22,8 @@ block(s, {
 block(s, {
   id: 'ty-session', title: 'Session types', rocq: 'types/Types.v: sty, unfoldS',
   tex: R`\begin{array}{rl}
-S ::= & ${h('sty.skip', R`\mathsf{Skip}`)} \mid ${h('sty.seq', R`S.S`)} \mid ${h('sty.recv', R`?(\bar\iota.\ T)`)} \mid ${h('sty.send', R`!(\bar\iota.\ T)`)} \mid ${h('sty.plus', R`\oplus(S_1, S_2)`)} \\
-\mid & ${h('sty.with', R`\&(S_1, S_2)`)} \mid ${h('sty.close', R`\mathsf{Close}`)} \mid ${h('sty.mu', R`\mu\alpha.S`)} \mid ${h('sty.var', R`\alpha`)} \mid ${h('sty.vard', R`\overline{\alpha}`)}  \\
+S ::= & ${h('sty.skip', R`\mathsf{Skip}`)} \mid ${h('sty.seq', R`S.S`)} \mid ${h('sty.recv', R`?(\bar\iota.\ T)`)} \mid ${h('sty.send', R`!(\bar\iota.\ T)`)} \mid ${h('sty.plus', R`\oplus(S', S'')`)} \\
+\mid & ${h('sty.with', R`\&(S', S'')`)} \mid ${h('sty.close', R`\mathsf{Close}`)} \mid ${h('sty.mu', R`\mu\alpha.S`)} \mid ${h('sty.var', R`\alpha`)} \mid ${h('sty.vard', R`\overline{\alpha}`)}  \\
  & ${h('sty.unfold', R`\mathsf{unfold} : \mathsf{STy} \to \mathsf{STy}`)} \qquad ${h('sty.contr', R`\mathsf{contr} \subseteq \mathsf{STy}`)}
 \end{array}`,
   caption: 'Session types with sequencing $S.S$, read through $\\mathsf{unfold}(S)$, whose payloads bind point variables $\\bar\\iota$ at the fields of the carrier.'
@@ -32,8 +32,8 @@ block(s, {
   id: 'ty-dual', title: 'Duality', rocq: 'types/Types.v: dual, sflip',
   tex: h('sty.dual', R`\begin{array}{l}
 \mathsf{dual}(!P) = ?P \qquad \mathsf{dual}(?P) = !P \qquad \mathsf{dual}(\alpha) = \overline{\alpha} \\
-\mathsf{dual}(\oplus(S_1,S_2)) = \&(\mathsf{dual}\,S_1,\mathsf{dual}\,S_2) \\
-\mathsf{dual}(S_1.S_2) = \mathsf{dual}\,S_1.\mathsf{dual}\,S_2 \\
+\mathsf{dual}(\oplus(S',S'')) = \&(\mathsf{dual}\,S',\mathsf{dual}\,S'') \\
+\mathsf{dual}(S'.S'') = \mathsf{dual}\,S'.\mathsf{dual}\,S'' \\
 \mathsf{dual}(\mu\alpha.S) = \mu\alpha.\,${h('sty.flip', R`\mathsf{flip}_\alpha`)}(\mathsf{dual}\,S)
 \end{array}`),
   caption: '$\\mathsf{dual}$ keeps payloads $P$, $\\mathsf{Skip}$ and $\\mathsf{Close}$, and $\\overline{S} := \\mathsf{dual}\\,S$.'
@@ -147,8 +147,8 @@ n('sty.skip', '$\\mathsf{Skip}$', 'The empty protocol, and an end at $S$ with $\
 n('sty.seq', 'Sequencing', '$S.S\'$ runs $S$ and then $S\'$, and $\\mathsf{unfold}$ normalizes it to its first action.', 'Sequencing composes protocols, so a recursion variable need not occur in tail position.', DEF, '$(!\\ast).\\mathsf{Close}$.', 'types/Types.v: SSeq');
 n('sty.recv', 'Receive', '$?(\\bar\\iota.\\ T)$ receives a value of $T[x\\cdot 0, \\ldots, x\\cdot(m{-}1)]$ for $\\bar\\iota = \\iota_0, \\ldots, \\iota_{m-1}$ when the end is at $x$.', 'A plain protocol action. The binder $\\bar\\iota$ is no existential, because the points of the payload are determined, the fields of $x$. It lets a message have ends whose points the receiver learns as fields of $x$.', DEF, '$\\mu\\alpha.\\,?(\\kappa.\\ \\alpha_{\\kappa}).\\mathsf{Close}$ receives an end of the same protocol at a field.', 'types/Types.v: SRcv');
 n('sty.send', 'Send', '$!(\\bar\\iota.\\ T)$ sends a value of $T[x\\cdot 0, \\ldots, x\\cdot(m{-}1)]$ for $\\bar\\iota = \\iota_0, \\ldots, \\iota_{m-1}$. The ends of $T$ have their credits, and the sender ages the payload by one transfer.', 'A plain protocol action, $\\mathsf{dual}$ of receive.', DEF, '$!\\ast.\\mathsf{Close}$.', 'types/Types.v: SSnd');
-n('sty.plus', 'Internal choice', '$\\oplus(S_1, S_2)$, where the selecting side chooses $i$ and continues with $S_1$ or $S_2$.', 'A plain protocol action. The holding thread decides the continuation.', DEF, '$\\oplus(\\mathsf{Close}, !\\ast.\\mathsf{Close})$.', 'types/Types.v: SPlus');
-n('sty.with', 'External choice', '$\\&(S_1, S_2)$, where the branching side receives $i$ and continues with $S_1$ or $S_2$.', 'A plain protocol action, $\\mathsf{dual}$ of internal choice.', DEF, '$\\&(\\mathsf{Close}, ?\\ast.\\mathsf{Close})$.', 'types/Types.v: SWith');
+n('sty.plus', 'Internal choice', '$\\oplus(S\', S\'\')$, where the selecting side chooses $i$ and continues with $S\'$ or $S\'\'$.', 'A plain protocol action. The holding thread decides the continuation.', DEF, '$\\oplus(\\mathsf{Close}, !\\ast.\\mathsf{Close})$.', 'types/Types.v: SPlus');
+n('sty.with', 'External choice', '$\\&(S\', S\'\')$, where the branching side receives $i$ and continues with $S\'$ or $S\'\'$.', 'A plain protocol action, $\\mathsf{dual}$ of internal choice.', DEF, '$\\&(\\mathsf{Close}, ?\\ast.\\mathsf{Close})$.', 'types/Types.v: SWith');
 n('sty.close', '$\\mathsf{Close}$', 'The next action of the end is $\\mathsf{close}$.', 'A plain protocol action. Every finite protocol ends with $\\mathsf{Close}$.', DEF, '$\\mathsf{Close}_{x^{+}}$ after one send at $x$.', 'types/Types.v: SEnd');
 n('sty.mu', 'Recursion $\\mu\\alpha.S$', 'A recursive protocol, equal to its unrolling $S[\\mu\\alpha.S/\\alpha]$ up to $\\simeq$.', 'A plain former. Loops run repeating protocols.', DEF, '$\\mu\\alpha.\\,!\\ast.\\alpha$ sends $\\ast$ forever.', 'types/Types.v: SMu');
 n('sty.var', 'Session variable $\\alpha$', 'A recursion variable bound by $\\mu$, or a session variable bound by a box.', 'A plain former. It refers to an enclosing $\\mu\\alpha$ or to a protocol substituted at $\\mathsf{force}$.', DEF, '$\\alpha$ in $\\mu\\alpha.\\,!\\ast.\\alpha$.', 'types/Types.v: SVar');
@@ -229,8 +229,8 @@ sa('sty.skip', R`\mathsf{Skip} \in \mathsf{STy}`, []);
 sa('sty.seq', R`S.S' \in \mathsf{STy}`, [A(R`S, S'`, R`The first and the second protocol.`)]);
 sa('sty.recv', R`?(\bar\iota.\ T) \in \mathsf{STy}`, [A(R`\bar\iota`, R`The point variables of the payload, $\iota_0, \ldots, \iota_{m-1}$, placed at $x\cdot 0, \ldots, x\cdot(m{-}1)$ for the carrier point $x$.`), A('T', R`The payload type.`)]);
 sa('sty.send', R`!(\bar\iota.\ T) \in \mathsf{STy}`, [A(R`\bar\iota`, R`The point variables of the payload, placed at the fields of the carrier point.`), A('T', R`The payload type.`)]);
-sa('sty.plus', R`\oplus(S_1, S_2) \in \mathsf{STy}`, [A(R`S_1, S_2`, R`The continuations for $i = \mathsf{false}$ and $i = \mathsf{true}$.`)]);
-sa('sty.with', R`\&(S_1, S_2) \in \mathsf{STy}`, [A(R`S_1, S_2`, R`The continuations for the received $i = \mathsf{false}$ and $i = \mathsf{true}$.`)]);
+sa('sty.plus', R`\oplus(S', S'') \in \mathsf{STy}`, [A(R`S', S''`, R`The continuations for $i = \mathsf{false}$ and $i = \mathsf{true}$.`)]);
+sa('sty.with', R`\&(S', S'') \in \mathsf{STy}`, [A(R`S', S''`, R`The continuations for the received $i = \mathsf{false}$ and $i = \mathsf{true}$.`)]);
 sa('sty.close', R`\mathsf{Close} \in \mathsf{STy}`, []);
 sa('sty.mu', R`\mu\alpha.S \in \mathsf{STy}`, [A(R`\alpha`, R`The recursion variable, bound in $S$.`), A('S', R`The body.`)]);
 sa('sty.var', R`\alpha \in \mathsf{STy}`, [A(R`\alpha`, R`A variable bound by an enclosing $\mu$ or by a box.`)]);
@@ -238,7 +238,7 @@ sa('sty.vard', R`\overline{\alpha} \in \mathsf{STy}`, [A(R`\alpha`, R`A session 
 sa('sty.choice', R`(\mathsf{if}\ i\ \mathsf{then}\ S''\ \mathsf{else}\ S') \in \mathsf{STy}`, [A('i', R`The choice.`), A(R`S', S''`, R`The continuations of the two branches.`)]);
 sa('sty.contr', R`\mathsf{contr} \subseteq \mathsf{STy}`, [A('S', R`A session type, which may contain session variables of a box.`)]);
 sa('sty.unfold', R`\mathsf{unfold} : \mathsf{STy} \to \mathsf{STy}`, [A('S', R`A contractive session type, $\mathsf{unfold}(S)$ has its first action on top.`)]);
-sa('sty.dual', R`\mathsf{dual} : \mathsf{STy} \to \mathsf{STy}`, [Ss, A('P', R`A payload, kept unchanged.`), A(R`S_1, S_2`, R`Continuations.`)]);
+sa('sty.dual', R`\mathsf{dual} : \mathsf{STy} \to \mathsf{STy}`, [Ss, A('P', R`A payload, kept unchanged.`), A(R`S', S''`, R`Continuations.`)]);
 sa('sty.flip', R`\mathsf{flip}_\alpha : \mathsf{STy} \to \mathsf{STy}`, [A(R`\alpha`, R`The variable of the enclosing $\mu$, whose occurrences $\alpha$ and $\overline{\alpha}$ are swapped.`)]);
 sa('sty.sequiv', R`\cdot \simeq \cdot \subseteq \mathsf{STy} \times \mathsf{STy}`, [A(R`S, S'`, R`Session types, related iff their unfoldings agree on first action and annotations and have related continuations.`)]);
 sa('ty2.stydf', R`\mathsf{sty\_df} : \mathsf{STy} \to \mathsf{STy}`, [Ss]);

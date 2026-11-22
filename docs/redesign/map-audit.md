@@ -520,3 +520,16 @@ Checks: gen.js 0 errors, no DF-LEAK, no unhovered symbol. lint-map.py 9
 metaphor, 305 every/any/all, 1 pronoun ending, 5 sentences over 35 words, 0
 elsewhere. Screenshots of types, typing and semantic typing in both modes
 render every changed formula.
+
+Follow-up, same day. Fuel entries are written $S^{f,m}$ (counter, then
+tickets), as end types carry credit and tickets, and so are the examples
+$S^{3,3}$, $\overline{S}^{m_2,m_2}$, $P^{f,m}$, $\mathsf{Close}^{2,2}$ and the
+interface lift $\Sigma^{N/2,N/2}$. The session-type grammar, duality and the
+choice notes write $\oplus(S', S'')$, $\&(S', S'')$ and $S'.S''$ for the old
+$S_1, S_2$. The fuel rules F-Send, F-Recv, F-Close and F-Choice rename their
+$S_0$ to $S$, its continuation to $S'$, and the chosen branch to
+$(\mathsf{if}\ i\ \mathsf{then}\ S''\ \mathsf{else}\ S')$, and the remaining
+$S_0$, $S_i$, $S_1$, $S_2$ in notes and signatures are gone. A grep for
+`S_<digit>`, `S_0` and `S_i` in gen/*.js finds nothing, so a subscript on a
+protocol always names a point. gen.js 0 errors, no DF-LEAK. lint-map
+unchanged.
