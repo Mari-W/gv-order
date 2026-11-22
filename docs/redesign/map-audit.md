@@ -57,6 +57,61 @@ reason, and the Rocq name it was checked against. Sections follow page order.
 
 ## Types and worlds
 
+- `ty-grammar`, `ty-dual`, `ty-heads`. Captions introduce the cost $c$, the
+  tickets $m$, the payload $P$, and the shapes of $l$ and $u$ before the
+  formulas use them. The ⊥ row of `ty-heads` drops $\Gamma$, old
+  $\Gamma \nvdash x \prec \bot \quad \Gamma \nvdash \bot \preccurlyeq y$, new
+  $x \not\prec \bot \quad \bot \not\preccurlyeq x$, because $\Gamma$ is defined
+  only in the typing section. Why: checker (var-before-intro). Note
+  `ty.botord` follows.
+- `w-world`. Old: $W = (A, \prec_A)$ and a ranked world $R = (A, \varrho)$ with
+  one rank function per root. New: the static world $W = (A, \prec_A)$ and the
+  world of the relation $R = (B, <_R, k)$, a strict partial order on the
+  points $\mathsf{Point}_B$ with roots in $B$ that contains program order. In
+  the lock-free view the kind $k ::= \mathsf{strict} \mid \mathsf{ranked}\
+  \varrho$, with $x <_R y \iff \varrho(x) < \varrho(y)$ at a ranked world.
+  The deadlock-free view hides the kind. Caption and title note explain why
+  there are two kinds (one stuck configuration needs a strict order, one wait
+  across a run needs ranks fixed once chosen). Why: Rocq change (worlds are
+  strict partial orders with a kind field). Checked against `world`,
+  `w_ord`, `w_ord_trans`, `w_ord_irrefl`, `w_ord_po`, `w_rk`, `w_rk_ord`,
+  `wstrict`, `wranked`, `sworld`, `sworld_wf`.
+- `w-order`. Old: $R \vDash x \prec y \iff \varrho(x) < \varrho(y)$ and
+  $R \vDash W \iff \forall x \prec_A y.\ R \vDash x \prec y$. New:
+  $R \vdash x \prec y \iff \mathsf{po}(x, y) \lor (x, y \in \mathsf{Point}_B
+  \land x <_R y)$, $\mathsf{po}$ as its own formula, and $R \vDash W \iff A
+  \subseteq B \land \forall (x \prec y) \in {\prec_A}.\ R \vdash x \prec y$.
+  Why: Rocq change and faithfulness (`wmodels` also asks the constants as
+  roots). Checked against `w_lt`, `po`, `w_le`, `wmodels`, `sw_lt`.
+- `w-wf`. Old title "Well-formed and well-founded worlds", formulas
+  `world_wf`, `wf`, `wf_new`, `gen_new` (with single partners). New title
+  "Acyclic and well-founded worlds": `world_wf`, $\mathsf{acyc}\,W$, the strict
+  model of an acyclic world, and in the lock-free view $\mathsf{wf}\,W$ (now
+  written as the absence of a descending sequence, without `\text`), the
+  ranked model, and $\mathsf{ok}_N$. The creation conditions moved to the
+  E-New block, which uses $\Gamma$ (defined later). Old caption "No theorem
+  asks anything of the world" was false (the LF results ask a ranked world).
+  Checked against `sacyc`, `swf`, `wok`, `dmodels_exists`, `wmodels_exists`,
+  `swf_sacyc`.
+- `w-ext`. Old: extension of ranked worlds by roots and ranks, growth
+  $R \oplus (a, \varrho_a)$, and the well-founded join. New: extension keeps
+  roots and order (and in the lock-free view kind and ranks, $k \sqsubseteq
+  k'$), strict growth $R \oplus_a C = (B \cup \{a\}, \mathsf{tc}({<_R} \cup
+  C[a] \cup \mathsf{po}))$, ranked growth in the lock-free view, and the join
+  rule for $\mathsf{acyc}$ with the $\mathsf{wf}$ rule in the lock-free view.
+  Checked against `wext`, `wk_ext`, `aw_W`, `wgrow`, `acyc_join_iff`,
+  `wf_join_iff`, `wok_join_iff`.
+- Notes. Rewritten `w.world`, `w.rworld`, `w.rank` (one rank function
+  $\varrho : \mathsf{Point} \to \mathsf{Ord}$, not one per root), `w.rlt`,
+  `w.sat`, `w.po`, `w.consts`, `w.facts`, `w.lt`, `w.wf`, `w.lfworld`,
+  `w.ext`, `w.grow`, `w.join`, `w.R7`. New `w.rord`, `w.kind`, `w.acyc`,
+  `w.models`, `w.wok`. Deleted `w.wfnew` and `w.gennew` (replaced in the
+  typing section). Checker findings fixed here: `w_po`, `w_consts`,
+  `w_facts`, `world_wf` did not exist (now `po`, `sw_consts`, `sw_facts`,
+  `sworld_wf`), `wjoin` was cited in the wrong file (now `swjoin`).
+- Syntax caption `syn-points` now introduces $y$ and $z$ as points, which the
+  world formulas use.
+
 ## Typing
 
 ## Semantic typing

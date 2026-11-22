@@ -157,7 +157,7 @@ window.MAP = {
      "title": "Points",
      "rocq": "types/Points.v: pname, point",
      "tex": "\\begin{array}{l}\nr ::= \\htmlData{k=pt.const}{a} \\mid \\htmlData{k=pt.var}{\\iota} \\qquad x ::= r \\mid \\htmlData{k=pt.shift}{x^{+}} \\mid \\htmlData{k=pt.field}{x\\cdot\\kappa} \\mid \\htmlData{k=pt.dual}{\\overline{x}} \\\\\n\\htmlData{k=pt.laws}{\\overline{\\overline{x}} = x \\quad \\overline{x}\\cdot\\kappa = x\\cdot\\kappa \\quad \\overline{x^{+}} = \\overline{x}^{+}}\n\\end{array}",
-     "caption": "A point $x$ has a root, a constant $a$ or a variable $\\iota$. $\\overline{x}$ flips its polarity, $x^{+}$ raises its offset, and $x\\cdot\\kappa$ is one of its fields.",
+     "caption": "Points are written $x$, $y$ and $z$. A point $x$ has a root, a constant $a$ or a variable $\\iota$. $\\overline{x}$ flips its polarity, $x^{+}$ raises its offset, and $x\\cdot\\kappa$ is one of its fields.",
      "modes": [
       "df",
       "lf"
@@ -330,7 +330,7 @@ window.MAP = {
   {
    "id": "types",
    "title": "Types and worlds",
-   "intro": "Types give each end a session type and a point. Worlds order the points, and typing and the relation read the order of one world. \\annp{Lock-free types add credits to ends and closures, tickets to ends, and costs to arrows and judgments.}",
+   "intro": "Types give each end a session type and a point. A static world orders the points a typing derivation assumes, and a world of the relation orders the points of a running configuration. \\annp{Lock-free types add credits to ends and closures, tickets to ends, and costs to arrows and judgments.}",
    "blocks": [
     {
      "id": "ty-grammar",
@@ -340,7 +340,7 @@ window.MAP = {
      "variants": {
       "df": "\\begin{array}{rl} T, U ::= & \\htmlData{k=ty.unit}{\\ast} \\mid \\htmlData{k=ty.arrow}{T \\multimap^{\\htmlData{k=ty.arrow.ub}{u}}_{\\htmlData{k=ty.arrow.lb}{l}} U} \\mid \\htmlData{k=ty.prod}{T \\otimes U} \\mid \\htmlData{k=ty.sum}{T \\oplus U} \\mid \\htmlData{k=ty.sess}{S@x} \\\\ \\mid & \\htmlData{k=ty.box}{\\Box(\\forall \\htmlData{k=pt.var}{\\bar\\iota}\\, \\htmlData{k=ty.box.svars}{\\bar\\alpha}.\\ \\htmlData{k=ty.box.constraint}{C}.\\ \\ast \\multimap^{u} U)} \\mid \\htmlData{k=ty.ex}{\\exists^{\\htmlData{k=ty.ex.lb}{l}} \\bar\\iota.\\ C.\\ T} \\end{array}"
      },
-     "caption": "$S@x$ is an end with session type $S$ at the point $x$. An arrow has an upper point $u$ and a lower bound $l$, and a box quantifies over points and session types under a constraint $C$. \\annp{Credits $a$ appear on ends and on closures, the two kinds of value that hold ends themselves. \\annp{The credit of an end is a lower bound on its counter.} \\annp{The credit of a closure is a lower bound on its captured counters and bounds what they lose before a call.}}",
+     "caption": "$S@x$ is an end with session type $S$ at the point $x$. An arrow has an upper point $u$ and a lower bound $l$, and a box quantifies over points and session types under a constraint $C$. \\annp{An arrow and a box have a cost $c$, and an end has tickets $m$. \\annp{Credits $a$ appear on ends and on closures, the two kinds of value that hold ends themselves.} \\annp{The credit of an end is a lower bound on its counter.} \\annp{The credit of a closure is a lower bound on its captured counters and bounds what they lose before a call.}}",
      "modes": [
       "df",
       "lf"
@@ -376,7 +376,7 @@ window.MAP = {
      "title": "Duality",
      "rocq": "types/Types.v: dual, sflip",
      "tex": "\\htmlData{k=sty.dual}{\\begin{array}{l}\n\\mathsf{dual}(!P) = ?P \\qquad \\mathsf{dual}(?P) = !P \\qquad \\mathsf{dual}(\\alpha) = \\overline{\\alpha} \\\\\n\\mathsf{dual}(\\oplus(S_1,S_2)) = \\&(\\mathsf{dual}\\,S_1,\\mathsf{dual}\\,S_2) \\\\\n\\mathsf{dual}(S_1.S_2) = \\mathsf{dual}\\,S_1.\\mathsf{dual}\\,S_2 \\\\\n\\mathsf{dual}(\\mu\\alpha.S) = \\mu\\alpha.\\,\\htmlData{k=sty.flip}{\\mathsf{flip}_\\alpha}(\\mathsf{dual}\\,S)\n\\end{array}}",
-     "caption": "$\\mathsf{dual}$ swaps sending and receiving and keeps payloads, $\\mathsf{Skip}$ and $\\mathsf{Close}$. We write $\\overline{S}$ for $\\mathsf{dual}\\,S$.",
+     "caption": "$\\mathsf{dual}$ swaps sending and receiving and keeps each payload $P$, $\\mathsf{Skip}$ and $\\mathsf{Close}$. We write $\\overline{S}$ for $\\mathsf{dual}\\,S$.",
      "modes": [
       "df",
       "lf"
@@ -412,8 +412,8 @@ window.MAP = {
      "id": "ty-heads",
      "title": "Active points and lower bounds",
      "rocq": "types/Types.v: heads, hbot, types/Points.v: lbound",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=ty.heads}{\\mathsf{ap}(S@x) = \\{\\overline{x}\\}} \\qquad \\htmlData{k=ty.heads}{\\mathsf{ap}(T \\multimap^{u}_{l} U) = \\mathsf{ap}(\\exists^{l}\\bar\\iota.\\ C.\\ T) = \\{l\\} \\setminus \\{\\cdot\\}} \\\\\n\\htmlData{k=ty.heads}{\\mathsf{ap}(T \\otimes U) = \\mathsf{ap}(T \\oplus U) = \\mathsf{ap}(T) \\cup \\mathsf{ap}(U)} \\qquad \\htmlData{k=ty.heads}{\\mathsf{ap}(\\ast) = \\mathsf{ap}(\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u} U)) = \\varnothing} \\\\\n\\htmlData{k=ty.lbound}{l ::= \\cdot \\mid \\bot \\mid x} \\qquad \\htmlData{k=ty.ubound}{u ::= \\cdot \\mid x \\mid \\top} \\qquad \\htmlData{k=ty.botord}{\\Gamma \\nvdash x \\prec \\bot \\quad \\Gamma \\nvdash \\bot \\preccurlyeq y}\n\\end{array}",
-     "caption": "$\\mathsf{ap}(T)$ is the set of dual points of the ends in a value of $T$. A thread holding such a value may wait only below these points. Hidden ends contribute $\\bot$, which no fact orders against a point, so a check against a value with hidden ends fails.",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=ty.heads}{\\mathsf{ap}(S@x) = \\{\\overline{x}\\}} \\qquad \\htmlData{k=ty.heads}{\\mathsf{ap}(T \\multimap^{u}_{l} U) = \\mathsf{ap}(\\exists^{l}\\bar\\iota.\\ C.\\ T) = \\{l\\} \\setminus \\{\\cdot\\}} \\\\\n\\htmlData{k=ty.heads}{\\mathsf{ap}(T \\otimes U) = \\mathsf{ap}(T \\oplus U) = \\mathsf{ap}(T) \\cup \\mathsf{ap}(U)} \\qquad \\htmlData{k=ty.heads}{\\mathsf{ap}(\\ast) = \\mathsf{ap}(\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u} U)) = \\varnothing} \\\\\n\\htmlData{k=ty.lbound}{l ::= \\cdot \\mid \\bot \\mid x} \\qquad \\htmlData{k=ty.ubound}{u ::= \\cdot \\mid x \\mid \\top} \\qquad \\htmlData{k=ty.botord}{x \\not\\prec \\bot \\quad \\bot \\not\\preccurlyeq x}\n\\end{array}",
+     "caption": "$\\mathsf{ap}(T)$ is the set of dual points of the ends in a value of $T$. A thread holding such a value may wait only below these points. Hidden ends contribute $\\bot$, which no fact orders against a point, so a check against a value with hidden ends fails. A lower bound $l$ and an upper point $u$ are a point, absent, or $\\bot$ and $\\top$.",
      "modes": [
       "df",
       "lf"
@@ -489,15 +489,15 @@ window.MAP = {
     {
      "id": "w-world",
      "title": "Worlds",
-     "rocq": "types/Worlds.v: sworld, world",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=w.world}{W = (\\htmlData{k=w.consts}{A}, \\htmlData{k=w.facts}{\\prec_A})} \\\\\n\\htmlData{k=w.rworld}{R = (A, \\varrho)},\\ \\htmlData{k=w.rank}{\\varrho_a : \\htmlData{k=w.tree}{\\mathsf{tree}(a)} \\to \\mathsf{Ord}}\\ \\text{for}\\ a \\in A \\\\\n\\htmlData{k=w.rank}{\\varrho_a(x) < \\varrho_a(x^{+}),\\ \\varrho_a(x) < \\varrho_a(\\overline{x}^{+})}\n\\end{array}",
-     "caption": "A static world $W$ has a set of roots $A$ and facts $\\prec_A$ between points with roots in $A$. A ranked world $R$ has the same roots and gives the tree of each root ordinal ranks that rise along program order.",
+     "rocq": "types/Worlds.v: sworld, sworld_wf, world, w_rk, wstrict, wranked",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=w.world}{W = (\\htmlData{k=w.consts}{A}, \\htmlData{k=w.facts}{\\prec_A})} \\\\\n\\htmlData{k=w.rworld}{R = (B, \\htmlData{k=w.rord}{<_R}\\annot{, \\htmlData{k=w.kind}{k}})} \\qquad \\htmlData{k=w.rord}{{<_R} \\subseteq \\mathsf{Point}_B^{2}} \\qquad \\htmlData{k=w.rord}{x \\not<_R x \\quad {<_R} = {<_R}^{+} \\quad \\htmlData{k=w.po}{\\mathsf{po}} \\cap \\mathsf{Point}_B^{2} \\subseteq {<_R}}\\annraw{ \\\\ }\\annot{\\htmlData{k=w.kind}{k ::= \\mathsf{strict} \\mid \\mathsf{ranked}\\ \\varrho} \\qquad \\htmlData{k=w.rank}{\\varrho : \\mathsf{Point} \\to \\mathsf{Ord}} \\qquad \\htmlData{k=w.rank}{k = \\mathsf{ranked}\\ \\varrho \\Rightarrow (x <_R y \\iff \\varrho(x) < \\varrho(y))}}\n\\end{array}",
+     "caption": "A static world $W$ has a finite set $A$ of constants and facts $\\prec_A$ between points with roots in $A$. A world $R$ of the relation has a finite set $B$ of roots, constants and fresh roots alike. Its order $<_R$ is a strict partial order on the points $\\mathsf{Point}_B$ with roots in $B$ and contains program order between such points. \\annp{A world also has a kind $k$. A strict world is any such order. A ranked world has a rank function $\\varrho$ into the ordinals, and its order is the order of the ranks.}",
      "modes": [
       "df",
       "lf"
      ],
      "about": {
-      "why": "Typing reads the order of a static world, and the relation reads ranks. Each creation at a fresh root adds a root and ranks its tree.",
+      "why": "Typing reads the order of a static world, and the relation reads the order of a world of the relation. The two meet in $R \\vDash W$. \\annp{Deadlock freedom inspects one stuck configuration, and a strict order on its finitely many waiting points has a minimal one. Lock freedom follows one wait through a run whose world grows, and only ranks fixed once chosen keep the union of these worlds well-founded. So the deadlock-free and live results read strict worlds and the lock-free threads ranked ones.}",
       "used": [
        "w-order",
        "w-ext",
@@ -508,15 +508,15 @@ window.MAP = {
     {
      "id": "w-order",
      "title": "The order of a world",
-     "rocq": "types/Worlds.v: swstep, sw_lt, w_lt, wmodels",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=w.lt}{\\begin{array}{l} \\prec_W\\ =\\ \\mathsf{tc}\\big(\\htmlData{k=w.ws-fact}{\\prec_A} \\\\ \\qquad\\qquad \\cup\\; \\htmlData{k=w.ws-po}{\\{x \\prec x^{+}\\}} \\;\\cup\\; \\htmlData{k=w.ws-dpo}{\\{x \\prec \\overline{x}^{+}\\}}\\big) \\end{array}} \\\\\n\\htmlData{k=ty2.le}{x \\preceq y \\iff x = y \\lor x \\prec_W y} \\\\\n\\htmlData{k=w.rlt}{R \\vDash x \\prec y \\iff \\varrho(x) < \\varrho(y)} \\\\\n\\htmlData{k=w.sat}{R \\vDash W \\iff \\forall x \\prec_A y.\\ R \\vDash x \\prec y}\n\\end{array}",
-     "caption": "$\\prec_W$ is the transitive closure $\\mathsf{tc}$ of the facts together with $x \\prec x^{+}$ and $x \\prec \\overline{x}^{+}$. A ranked world orders points by their ranks, and it satisfies $W$ when each fact of $W$ holds under these ranks.",
+     "rocq": "types/Worlds.v: swstep, sw_lt, po, w_lt, w_le, wmodels",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=w.lt}{\\begin{array}{l} \\prec_W\\ =\\ \\mathsf{tc}\\big(\\htmlData{k=w.ws-fact}{\\prec_A} \\\\ \\qquad\\qquad \\cup\\; \\htmlData{k=w.ws-po}{\\{x \\prec x^{+}\\}} \\;\\cup\\; \\htmlData{k=w.ws-dpo}{\\{x \\prec \\overline{x}^{+}\\}}\\big) \\end{array}} \\qquad \\htmlData{k=w.po}{\\mathsf{po} = \\mathsf{tc}(\\{x \\prec x^{+}\\} \\cup \\{x \\prec \\overline{x}^{+}\\})} \\\\\n\\htmlData{k=w.rlt}{R \\vdash x \\prec y \\iff \\mathsf{po}(x, y) \\lor (x, y \\in \\mathsf{Point}_B \\land x <_R y)} \\qquad \\htmlData{k=ty2.le}{x \\preceq y \\iff x = y \\lor x \\prec y} \\\\\n\\htmlData{k=w.sat}{R \\vDash W \\iff A \\subseteq B \\land \\forall (x \\prec y) \\in {\\prec_A}.\\ R \\vdash x \\prec y}\n\\end{array}",
+     "caption": "$\\prec_W$ is the transitive closure $\\mathsf{tc}$ of the facts of $W$ and of program order $\\mathsf{po}$, generated by $x \\prec x^{+}$ and $x \\prec \\overline{x}^{+}$. A world $R$ orders two points by program order, or by $<_R$ when both roots lie in $B$. $R$ models $W$ when the constants of $W$ are roots of $R$ and each fact of $W$ holds in $R$.",
      "modes": [
       "df",
       "lf"
      ],
      "about": {
-      "why": "Besides the stated facts, the order says that an end moves up as its protocol advances. The semantic judgments at $W$ read the relation at each ranked world that satisfies $W$.",
+      "why": "Besides the stated facts, the order says that an end moves up as its protocol advances. The semantic judgments at a static world $W$ read the relation at each world $R$ that models $W$.",
       "used": [
        "t-contexts",
        "rd"
@@ -525,16 +525,16 @@ window.MAP = {
     },
     {
      "id": "w-wf",
-     "title": "Well-formed and well-founded worlds",
-     "rocq": "types/Worlds.v: sworld_wf, swf, wmodels_exists; static/Contexts.v: wf_new, gen_new",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=w.wf}{\\mathsf{world\\_wf}\\,W} \\\\\n\\htmlData{k=w.lfworld}{\\mathsf{wf}\\,W \\iff \\prec_W \\text{ is well-founded}} \\\\\n\\htmlData{k=w.wfnew}{\\begin{array}{l} \\mathsf{wf\\_new}\\,\\rho\\,C \\iff (\\forall (x \\prec y) \\in C.\\ y \\in \\htmlData{k=w.tree}{\\mathsf{tree}(\\rho)}) \\\\ \\qquad \\land\\ (C \\cup \\htmlData{k=w.po}{\\mathsf{po}}) \\cap \\mathsf{tree}(\\rho)^{2} \\text{ is well-founded} \\end{array}} \\\\\n\\htmlData{k=w.gennew}{\\begin{array}{l} \\mathsf{gen\\_new}\\,\\Gamma\\,\\rho\\,C \\iff (C \\cup \\mathsf{po}) \\cap \\mathsf{tree}(\\rho)^{2} \\text{ is well-founded} \\\\ \\qquad \\land\\ \\forall (z \\prec y) \\in C.\\ z, y \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\Gamma \\vdash z \\prec y \\\\ \\qquad \\land\\ \\exists S \\subseteq \\mathsf{tree}(\\rho) \\times \\mathsf{Point}_{\\Gamma}.\\ \\forall (u \\prec y) \\in C.\\ u \\in \\mathsf{tree}(\\rho),\\ y \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists (u, t) \\in S.\\ \\Gamma \\vdash t \\prec y \\\\ \\qquad\\qquad \\land\\ \\forall (s, t) \\in S.\\ \\forall s' \\prec s \\in C \\cup \\mathsf{po}.\\ \\exists (s', t') \\in S.\\ \\Gamma \\vdash t' \\prec t \\\\ \\qquad\\qquad \\land\\ \\forall (s, t) \\in S.\\ \\forall (z \\prec s) \\in C.\\ z \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\Gamma \\vdash z \\prec t \\end{array}}\n\\end{array}",
-     "caption": "P-Term and P-Connect ask a well-founded static world, and E-New asks $\\mathsf{wf\\_new}$ of a creation at a fresh root. No theorem asks anything of the world.",
+     "title": "Acyclic and well-founded worlds",
+     "rocq": "types/Worlds.v: sworld_wf, sacyc, swf, dmodels_exists, wmodels_exists, swf_sacyc; static/Contexts.v: wok",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=w.wf}{\\mathsf{world\\_wf}\\,W} \\qquad \\htmlData{k=w.acyc}{\\mathsf{acyc}\\,W \\iff \\forall x.\\ x \\not\\prec_W x}\\annraw{ \\qquad }\\annot{\\htmlData{k=w.lfworld}{\\mathsf{wf}\\,W \\iff \\nexists (x_i)_{i \\in \\mathbb{N}}.\\ \\forall i.\\ x_{i+1} \\prec_W x_i}} \\\\\n\\htmlData{k=w.models}{\\mathsf{world\\_wf}\\,W \\land \\mathsf{acyc}\\,W \\Rightarrow \\exists R.\\ \\htmlData{k=w.kind}{\\mathsf{strict}}\\,R \\land R \\vDash W}\\annraw{ \\\\ }\\annot{\\htmlData{k=w.models}{\\mathsf{world\\_wf}\\,W \\land \\mathsf{wf}\\,W \\Rightarrow \\exists R.\\ \\htmlData{k=w.kind}{\\mathsf{ranked}}\\,R \\land R \\vDash W}}\\annraw{ \\\\ }\\annot{\\htmlData{k=w.wok}{\\mathsf{ok}_N\\,W = \\begin{cases} \\mathsf{acyc}\\,W & N = \\infty \\\\ \\mathsf{wf}\\,W & N \\in \\mathbb{N} \\end{cases}}}\n\\end{array}",
+     "caption": "Process typing at $N = \\infty$ asks an acyclic static world, and a well-formed acyclic world has a strict model, its own order. \\annp{Process typing at a finite bound $N$ asks a well-founded static world, and a well-formed well-founded world has a ranked model. $\\mathsf{ok}_N$ picks the condition by $N$.}",
      "modes": [
       "df",
       "lf"
      ],
      "about": {
-      "why": "A static world has a ranked world that satisfies it exactly when its order is well-founded. A creation at a fresh root needs ranks for the new tree in each ranked world that satisfies its context, which $\\mathsf{wf\\_new}$ guarantees.",
+      "why": "The world of each process derivation has a model, so the semantic judgment at that world is not vacuous and soundness has a world to start the run in.",
       "used": [
        "p-typing",
        "th-sound",
@@ -545,15 +545,15 @@ window.MAP = {
     {
      "id": "w-ext",
      "title": "Extension, growth, join, restriction",
-     "rocq": "types/Worlds.v: wext, wgrow, swjoin, swrestrict, wf_join_iff",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=w.ext}{W \\sqsubseteq W'} \\qquad \\htmlData{k=w.ext}{R \\sqsubseteq R'} \\qquad \\htmlData{k=w.grow}{R \\oplus (a, \\varrho_a) = (A \\cup \\{a\\},\\ \\varrho \\cup \\varrho_a)} \\qquad \\htmlData{k=w.join}{W_1 \\sqcup W_2} \\\\\n\\htmlData{k=w.R7}{\\begin{array}{l} \\htmlData{k=w.lfworld}{\\mathsf{wf}}(W_1 \\sqcup W_2) \\iff {} \\\\ \\qquad \\mathsf{wf}\\,W_1 \\land \\mathsf{wf}\\,W_2 \\land \\mathsf{wf}(\\htmlData{k=w.restrict}{W_1|_S} \\sqcup W_2|_S),\\ S = A_1 \\cap A_2 \\end{array}}\n\\end{array}",
-     "caption": "Extension $\\sqsubseteq$, growth $R \\oplus (a, \\varrho_a)$ by the ranks of a fresh root, and the join $\\sqcup$. A join is well-founded when both worlds are and their restrictions to the shared roots $S = A_1 \\cap A_2$ join to a well-founded order.",
+     "rocq": "types/Worlds.v: swext, wext, wk_ext, wgrow, swjoin, swrestrict, swshared, acyc_join_iff, wf_join_iff; compat/Redex.v: aw_W; static/Typing.v: wok_join_iff",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=w.ext}{W \\sqsubseteq W'} \\qquad \\htmlData{k=w.ext}{R \\sqsubseteq R' \\iff B \\subseteq B' \\land {<_R} \\subseteq {<_{R'}}\\annot{\\ \\land\\ \\htmlData{k=w.kind}{k \\sqsubseteq k'}}} \\\\\n\\htmlData{k=w.grow}{R \\oplus_{a} C = (B \\cup \\{a\\},\\ \\mathsf{tc}({<_R} \\cup C[a] \\cup \\mathsf{po}))}\\annraw{ \\qquad }\\annot{\\htmlData{k=w.grow}{R \\oplus (a, \\varrho_a)}} \\\\\n\\htmlData{k=w.join}{W_1 \\sqcup W_2} \\qquad \\htmlData{k=w.restrict}{W|_S} \\\\\n\\htmlData{k=w.R7}{\\begin{array}{l} \\htmlData{k=w.acyc}{\\mathsf{acyc}}(W_1 \\sqcup W_2) \\iff {} \\\\ \\qquad \\mathsf{acyc}\\,W_1 \\land \\mathsf{acyc}\\,W_2 \\land \\mathsf{acyc}(W_1|_S \\sqcup W_2|_S),\\ S = A_1 \\cap A_2 \\end{array}}\\annraw{ \\\\ }\\annot{\\htmlData{k=w.R7}{\\mathsf{wf}(W_1 \\sqcup W_2) \\iff \\mathsf{wf}\\,W_1 \\land \\mathsf{wf}\\,W_2 \\land \\mathsf{wf}(W_1|_S \\sqcup W_2|_S)}}\n\\end{array}",
+     "caption": "A world extends another when it has at least its roots and its order. A creation at a fresh root $a$ grows a strict world by the facts $C[a]$ of the creation and closes transitively. \\annp{Extension keeps the kind and every rank. A ranked world grows by the ranks $\\varrho_a$ of the new tree.} The join of two static worlds is acyclic exactly when both worlds are and their restrictions to the shared constants $S = A_1 \\cap A_2$ join acyclically. $W|_S$ keeps the order $W$ derives between points with roots in $S$. \\annp{The same holds for well-founded joins.}",
      "modes": [
       "df",
       "lf"
      ],
      "about": {
-      "why": "Ranked worlds grow during a run and never change a rank, and the relation holds in each larger world. Composition joins two static worlds and checks only their shared roots.",
+      "why": "Worlds grow during a run and never lose order, and the relation holds in each larger world. Composition joins two static worlds and checks only what they share.",
       "used": [
        "p-typing",
        "v-rel",
@@ -631,13 +631,13 @@ window.MAP = {
     },
     {
      "id": "t-lf-wf",
-     "title": "A well-founded world",
-     "rocq": "types/Worlds.v: wchain_lt_wf; soup/LFAdequacy.v: lf_adequacy",
+     "title": "Ranked worlds",
+     "rocq": "types/Worlds.v: wranked, wchain_lt_wf, wmodels_exists; static/Contexts.v: gen_new, wok; soup/LFAdequacy.v: lf_adequacy",
      "modes": [
       "lf"
      ],
-     "tex": "\\begin{array}{lll}\\htmlData{k=lfi.wf}{\\text{ranks}} & \\htmlData{k=w.rank}{\\varrho_a : \\mathsf{tree}(a) \\to \\mathsf{Ord}} & \\text{a ranked world orders points by ordinals} \\\\[3pt]  & \\htmlData{k=w.wfnew}{\\mathsf{wf\\_new}\\,\\rho\\,C} & \\text{E-New at a fresh root asks a well-founded order on the new tree} \\\\[3pt]  & \\htmlData{k=w.lfworld}{\\mathsf{wf}\\,W} & \\text{P-Term and P-Connect ask a well-founded static world} \\\\[3pt]  & \\htmlData{k=lfi.measure}{\\varrho(\\mathsf{pt}\\,o)} & \\text{lock-free adequacy ranks a waiting thread by the end it waits on}\\end{array}",
-     "caption": "A waiting thread waits on the thread holding its dual end, which may itself wait at a lower point. Points have ordinal ranks, so this chain of waits ends, and the thread at its bottom can act. Typing keeps ranks possible, and lock-free adequacy asks nothing of the world.",
+     "tex": "\\begin{array}{lll}\\htmlData{k=lfi.wf}{\\text{ranks}} & \\htmlData{k=w.rank}{\\varrho : \\mathsf{Point} \\to \\mathsf{Ord}} & \\text{a ranked world orders its points by ordinals} \\\\[3pt]  & \\htmlData{k=new.gen}{\\mathsf{gen\\_new}\\,\\Gamma\\,\\rho\\,C} & \\text{E-New at a fresh root asks that the new tree can be ranked} \\\\[3pt]  & \\htmlData{k=w.lfworld}{\\mathsf{wf}\\,W} & \\text{process typing at a finite bound asks a well-founded static world} \\\\[3pt]  & \\htmlData{k=lfi.measure}{\\varrho(\\mathsf{pt}\\,o)} & \\text{lock-free adequacy ranks a waiting thread by the end it waits on}\\end{array}",
+     "caption": "A waiting thread waits on the thread holding its dual end, which may itself wait at a lower point. Along a run the world grows, and ranks fixed once chosen keep the union of its worlds well-founded. So this chain of waits ends, and the thread at its bottom can act. Typing at a finite bound keeps ranks possible, and lock-free adequacy asks only that the world be ranked.",
      "about": {
       "why": "It rules out a chain of waiting threads that grows forever, each waiting below the previous one.",
       "example": "The growing waiting chain in the Examples tab has no typing, because E-New rejects its creation.",
@@ -822,7 +822,7 @@ window.MAP = {
      "id": "t-consts",
      "title": "Types of constants",
      "rocq": "static/Constants.v: k_send_df, k_recv_df, k_close_df, k_select_df, k_branch_df, k_link_df, k_spawn_df, k_force_df, k_send, k_recv, k_close, k_select, k_branch, k_link, k_spawn, k_force",
-     "tex": "\\begin{array}{lll}\n\\htmlData{k=prim.send}{\\mathsf{send}} & : T[x\\cdot i] \\otimes S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S@\\htmlData{k=pt.shift}{x^{+}} & \\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T,\\ \\htmlData{k=E-Send.heads}{x \\prec T[x\\cdot i]} \\\\\n\\htmlData{k=prim.recv}{\\mathsf{recv}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} T[x\\cdot i] \\otimes S@x^{+} & \\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T \\\\\n\\htmlData{k=prim.close}{\\mathsf{close}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} \\ast & \\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}} \\\\\n\\htmlData{k=prim.select}{\\mathsf{select}}_i & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}} & \\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)} \\\\\n\\htmlData{k=prim.branch}{\\mathsf{branch}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2 & \\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)} \\\\\n\\htmlData{k=prim.link}{\\mathsf{link}} & : \\htmlData{k=E-Link.dual}{S@x \\otimes \\overline{S}@\\overline{x}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.spawn}{\\mathsf{spawn}} & : (\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} \\ast) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.force}{\\mathsf{force}} & : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] & \\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]} \\\\\n\\htmlData{k=syn.new}{\\mathsf{new}} & : \\exists^{\\bot}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ (S@\\pi \\otimes \\overline{S}@\\overline{\\pi}) & \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho), (\\varnothing, x\\cdot\\kappa)\\}},\\ \\htmlData{k=E-New.wf}{\\pi = \\rho \\Rightarrow \\htmlData{k=w.gennew}{\\mathsf{gen\\_new}}\\,\\Gamma\\,\\rho\\,C},\\ \\htmlData{k=E-New.field}{\\pi = x\\cdot\\kappa \\Rightarrow \\Gamma \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} C}\n\\end{array}",
+     "tex": "\\begin{array}{lll}\n\\htmlData{k=prim.send}{\\mathsf{send}} & : T[x\\cdot i] \\otimes S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S@\\htmlData{k=pt.shift}{x^{+}} & \\htmlData{k=E-Send.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {!}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T,\\ \\htmlData{k=E-Send.heads}{x \\prec T[x\\cdot i]} \\\\\n\\htmlData{k=prim.recv}{\\mathsf{recv}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} T[x\\cdot i] \\otimes S@x^{+} & \\htmlData{k=E-Recv.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = {?}(\\bar\\iota.\\,T).S},\\ \\htmlData{k=ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T \\\\\n\\htmlData{k=prim.close}{\\mathsf{close}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} \\ast & \\htmlData{k=E-Close.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\htmlData{k=sty.close}{\\mathsf{Close}}} \\\\\n\\htmlData{k=prim.select}{\\mathsf{select}}_i & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_i@\\htmlData{k=pt.sel}{\\overline{x\\cdot\\kappa_i}} & \\htmlData{k=E-Select.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\oplus(S_1,S_2)} \\\\\n\\htmlData{k=prim.branch}{\\mathsf{branch}} & : S_0@x \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{x} S_1@\\htmlData{k=pt.bra}{x\\cdot\\kappa_1} \\oplus S_2@x\\cdot\\kappa_2 & \\htmlData{k=E-Branch.unfold}{\\htmlData{k=sty.unfold}{\\mathsf{unfold}}(S_0) = \\&(S_1,S_2)} \\\\\n\\htmlData{k=prim.link}{\\mathsf{link}} & : \\htmlData{k=E-Link.dual}{S@x \\otimes \\overline{S}@\\overline{x}} \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.spawn}{\\mathsf{spawn}} & : (\\ast \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u}_{l} \\ast) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}} \\ast & \\\\\n\\htmlData{k=prim.force}{\\mathsf{force}} & : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u} U) \\mathrel{\\htmlData{k=ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] & \\htmlData{k=E-Force.hold}{\\Gamma \\mathrel{\\htmlData{k=side.hold}{\\vdash}} C[\\bar x]}\n\\end{array}",
      "caption": "Each constant has the type of its eta-expansion $\\lambda y.\\,k\\,y$, for each instance of its variables that meets the side conditions. An action on an end at $x$ has upper point $x$. $\\mathsf{new}$ is a term and is typed by E-New. \\annp{The types are shown without credits, tickets and cost.}",
      "modes": [
       "df",
@@ -878,19 +878,20 @@ window.MAP = {
     {
      "id": "r-new",
      "title": "Creation",
-     "rocq": "static/Typing.v: e_new; static/Conservativity.v: d_new",
-     "tex": "\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\quad \\htmlData{k=E-New.pos}{(\\bar\\iota, \\pi) \\in \\{(\\rho, \\rho), (\\varnothing, x\\cdot\\kappa)\\}}\\quad \\htmlData{k=E-New.wf}{\\pi = \\rho \\Rightarrow \\htmlData{k=w.gennew}{\\mathsf{gen\\_new}}\\,\\Gamma\\,\\rho\\,C}\\quad \\htmlData{k=E-New.field}{\\pi = x\\cdot\\kappa \\Rightarrow \\Gamma \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}} C}\\quad \\htmlData{k=E-New.contr}{\\htmlData{k=sty.contr}{\\mathsf{contr}}\\,S}\\annraw{\\quad }\\annot{\\htmlData{k=E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.new}{\\mathsf{new}} : \\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\bar\\iota.\\ \\htmlData{k=E-New.facts}{C}.\\ \\htmlData{k=E-New.dual}{(S@\\pi)\\annot{^{m_1}_{m_1}} \\otimes (\\htmlData{k=sty.dual}{\\overline{S}}@\\overline{\\pi})\\annot{^{m_2}_{m_2}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-New}",
-     "caption": "The two ends of a new channel are at a fresh root $\\rho$ and its dual, or at a field $x\\cdot\\kappa$ and its dual. At a fresh root each fact of $C$ ends in the tree of $\\rho$, and $C$ with program order is well-founded on that tree. At a field $\\Gamma$ entails $C$. The lower bound is $\\bot$. \\annp{The creation picks tickets $m_1$ and $m_2$ with $m_1 + m_2 \\leq N$, and each end starts at credit equal to its tickets.}",
+     "rocq": "static/Typing.v: e_new, e_new_fld; static/Contexts.v: new_ok, acyc_new, cbridge, gen_new, gen_new_rel, new_step, ctx_pt, gen_new_acyc; static/Conservativity.v: d_new",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\quad \\htmlData{k=E-New.wf}{\\dfo{\\htmlData{k=new.acyc}{\\mathsf{acyc\\_new}}}\\annot{\\htmlData{k=new.ok}{\\mathsf{new\\_ok}_N}}\\,\\Gamma\\,\\rho\\,C}\\quad \\htmlData{k=E-New.contr}{\\htmlData{k=sty.contr}{\\mathsf{contr}}\\,S}\\annraw{\\quad }\\annot{\\htmlData{k=E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.new}{\\mathsf{new}} : \\exists^{\\htmlData{k=E-New.bot}{\\bot}}\\rho.\\ \\htmlData{k=E-New.facts}{C}.\\ \\htmlData{k=E-New.dual}{(S@\\rho)\\annot{^{m_1}_{m_1}} \\otimes (\\htmlData{k=sty.dual}{\\overline{S}}@\\overline{\\rho})\\annot{^{m_2}_{m_2}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-New} \\\\[2ex] \\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\quad \\htmlData{k=E-New.contr}{\\htmlData{k=sty.contr}{\\mathsf{contr}}\\,S}\\annraw{\\quad }\\annot{\\htmlData{k=E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\htmlData{k=syn.new}{\\mathsf{new}} : \\htmlData{k=E-New.dual}{(S@\\htmlData{k=E-New.field}{x\\cdot\\kappa})\\annot{^{m_1}_{m_1}} \\otimes (\\htmlData{k=sty.dual}{\\overline{S}}@\\overline{\\htmlData{k=E-New.field}{x\\cdot\\kappa}})\\annot{^{m_2}_{m_2}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-New-Field} \\\\[2ex] \\htmlData{k=new.step}{x \\prec^{\\rho}_{C} y \\iff x, y \\in \\htmlData{k=w.tree}{\\mathsf{tree}(\\rho)} \\land ((x \\prec y) \\in C \\lor y = x^{+} \\lor y = \\overline{x}^{+})} \\\\[2ex] \\htmlData{k=new.bridge}{\\mathsf{bridge}_C(z, y) \\iff (z \\prec y) \\in C \\lor \\exists v, u.\\ (z \\prec v) \\in C \\land v \\mathrel{(\\htmlData{k=new.step}{\\prec^{\\rho}_{C}})^{*}} u \\land (u \\prec y) \\in C} \\\\[2ex] \\htmlData{k=new.acyc}{\\begin{array}{l} \\mathsf{acyc\\_new}\\,\\Gamma\\,\\rho\\,C \\iff (\\forall x \\in \\mathsf{tree}(\\rho).\\ \\neg\\, x \\mathrel{(\\htmlData{k=new.step}{\\prec^{\\rho}_{C}})^{+}} x) \\\\ \\qquad \\land\\ \\forall z, y \\notin \\mathsf{tree}(\\rho).\\ \\htmlData{k=new.bridge}{\\mathsf{bridge}_C(z, y)} \\Rightarrow \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} z \\prec y \\end{array}}\\annraw{ \\\\[2ex] }\\annot{\\htmlData{k=new.gen}{\\begin{array}{l} \\mathsf{gen\\_new}\\,\\Gamma\\,\\rho\\,C \\iff \\htmlData{k=w.lfworld}{\\mathsf{wf}}(\\htmlData{k=new.step}{\\prec^{\\rho}_{C}}) \\land \\forall (z \\prec y) \\in C.\\ z, y \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} z \\prec y \\\\ \\quad \\land\\ \\exists \\mathcal{S} \\subseteq \\mathsf{tree}(\\rho) \\times \\mathcal{P}^{+}_{\\mathrm{fin}}(\\mathsf{Point}_{\\Gamma}). \\\\ \\qquad (\\forall (u \\prec y) \\in C.\\ u \\in \\mathsf{tree}(\\rho),\\ y \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists (u, Y) \\in \\mathcal{S}.\\ \\forall t \\in Y.\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} t \\prec y) \\\\ \\qquad \\land\\ (\\forall (s, Y) \\in \\mathcal{S}.\\ \\forall s' \\htmlData{k=new.step}{\\prec^{\\rho}_{C}} s.\\ \\exists (s', Y') \\in \\mathcal{S}.\\ \\forall t' \\in Y'.\\ \\exists t \\in Y.\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} t' \\prec t) \\\\ \\qquad \\land\\ (\\forall (s, Y) \\in \\mathcal{S}.\\ \\forall (z \\prec s) \\in C.\\ z \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists t \\in Y.\\ \\Gamma \\mathrel{\\htmlData{k=ctx.slt}{\\vdash}} z \\prec t) \\end{array}}}\\annraw{ \\\\[2ex] }\\annot{\\htmlData{k=new.ok}{\\mathsf{new\\_ok}_N = \\begin{cases} \\htmlData{k=new.acyc}{\\mathsf{acyc\\_new}} & N = \\infty \\\\ \\htmlData{k=new.gen}{\\mathsf{gen\\_new}} & N \\in \\mathbb{N} \\end{cases}} \\qquad \\htmlData{k=new.lemmaC}{\\htmlData{k=new.gen}{\\mathsf{gen\\_new}}\\,\\Gamma\\,\\rho\\,C \\Rightarrow \\htmlData{k=new.acyc}{\\mathsf{acyc\\_new}}\\,\\Gamma\\,\\rho\\,C}}\\end{array}",
+     "caption": "E-New creates a channel at a fresh root $\\rho$ and its dual, hidden in an existential whose constraint $C$ states what the program needs about the new points. The order $\\prec^{\\rho}_{C}$ that $C$ and program order induce on $\\mathsf{tree}(\\rho)$ must have no cycle. A bridge enters the tree from a context point $z$ and leaves it towards a context point $y$, and $\\Gamma$ must derive $z \\prec y$ for each bridge. Then the creation adds no cycle to an acyclic world. E-New-Field creates a channel at a field $x\\cdot\\kappa$ and its dual, with no constraint, because the order around a field was fixed with its root. The lower bound $\\bot$ records that no fact of the context reaches the new points. \\annp{At a finite bound $N$ the premise is $\\mathsf{gen\\_new}$ in place of $\\mathsf{acyc\\_new}$. It asks $\\prec^{\\rho}_{C}$ well-founded and bounds each tree point $s$ by a finite set $Y$ of context points, so that ranks for the new tree exist in each ranked world. It implies $\\mathsf{acyc\\_new}$. \\annp{Each creation picks tickets $m_1$ and $m_2$ with $m_1 + m_2 \\leq N$, and each end starts at credit equal to its tickets.}}",
      "modes": [
       "df",
       "lf"
      ],
      "about": {
-      "why": "Creation places a new channel in the order. Later rules may use the facts $C$ about the new points.",
+      "why": "Creation places a new channel in the order. One term $\\mathsf{new}$ has two rules for the two places a channel can go. A fresh root needs facts and hides its points, a field needs neither.",
       "used": [
        "e-obl",
        "w-ext"
-      ]
+      ],
+      "example": "Two threads that close $c$ and $d$ in the same order type with $d$ at the field $\\rho\\cdot 0$ of the root $\\rho$ of $c$. A creation at a fresh root $\\rho$ with $C = \\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ states the two facts the threads need. $\\prec^{\\rho}_{C}$ has no cycle, and $C$ has no bridge."
      }
     },
     {
@@ -1548,20 +1549,24 @@ window.MAP = {
   },
   "syn.new": {
    "title": "$\\mathsf{new}$",
-   "what": "$\\mathsf{new} \\xrightarrow{\\mathsf{new}\\,c} \\langle c^{+}, c^{-}\\rangle$ for a fresh channel $c$. The typing places $c^{+}$ at a position $\\pi$, a fresh root or a field $x\\cdot\\kappa$, places $c^{-}$ at $\\overline{\\pi}$, and states a constraint $C$ on both.",
-   "why": "The term names no point. Position and constraint are part of the existential type of $\\mathsf{new}$, which the typing derivation chooses. Each ordering of a new channel is therefore available without program syntax.",
+   "what": "$\\mathsf{new} \\xrightarrow{\\mathsf{new}\\,c} \\langle c^{+}, c^{-}\\rangle$ for a fresh channel $c$. The typing places $c^{+}$ at a fresh root $\\rho$ and $c^{-}$ at $\\overline{\\rho}$ under an existential with a constraint $C$, or at a field $x\\cdot\\kappa$ and its dual with no constraint.",
+   "why": "The term names no point. The position and the constraint are part of the type of $\\mathsf{new}$, which the typing derivation chooses. Each ordering of a new channel is therefore available without program syntax.",
    "breaks": "With the position or the facts in the term, every held end that the facts mention is an argument that $\\mathsf{new}$ takes and returns, because ends are linear.",
    "example": "$\\mathsf{let}\\ \\langle a, a'\\rangle = \\mathsf{new}\\ \\mathsf{in}\\ e$.",
    "rocq": "lang/Syntax.v: ENew",
-   "sig": "\\mathsf{new} : \\exists^{\\bot}\\bar\\iota.\\ C.\\ (S@\\pi \\otimes \\overline{S}@\\overline{\\pi})",
+   "sig": "\\mathsf{new} : \\exists^{\\bot}\\rho.\\ C.\\ (S@\\rho \\otimes \\overline{S}@\\overline{\\rho}) \\mid S@x\\cdot\\kappa \\otimes \\overline{S}@\\overline{x\\cdot\\kappa}",
    "args": [
     {
-     "name": "\\pi",
-     "meaning": "The position of $c^{+}$, a fresh root $\\rho$ bound by the existential or a field $x\\cdot\\kappa$."
+     "name": "\\rho",
+     "meaning": "The fresh root of $c^{+}$, bound by the existential."
     },
     {
      "name": "C",
-     "meaning": "The facts of the creation, with $\\mathsf{wf\\_new}\\,\\rho\\,C$ at a fresh root and $\\Gamma \\vdash C$ at a field."
+     "meaning": "The facts of the creation at a fresh root."
+    },
+    {
+     "name": "x\\cdot\\kappa",
+     "meaning": "A field, the other position E-New-Field allows."
     },
     {
      "name": "S",
@@ -3853,16 +3858,16 @@ window.MAP = {
   },
   "ty.botord": {
    "title": "$\\bot$ in the order",
-   "what": "No fact relates $\\bot$ to a point, $\\Gamma \\nvdash x \\prec \\bot$ and $\\Gamma \\nvdash \\bot \\preccurlyeq y$.",
+   "what": "No order judgment relates $\\bot$ to a point $x$. Neither $x \\prec \\bot$ nor $\\bot \\preccurlyeq x$ holds.",
    "why": "Hidden ends are at points that no fact outside the existential mentions. A holding thread of such ends can be ordered against nothing, so it may not block.",
    "breaks": "Nothing. It is a definition.",
    "example": "$x \\prec \\{\\overline{\\rho}, \\bot\\}$ fails for every $x$.",
    "rocq": "types/Types.v: hbot; static/Contexts.v: sf_unionb, lbx_below_h",
-   "sig": "\\Gamma \\nvdash x \\prec \\bot,\\ \\Gamma \\nvdash \\bot \\preccurlyeq y",
+   "sig": "x \\not\\prec \\bot,\\ \\bot \\not\\preccurlyeq x",
    "args": [
     {
-     "name": "x, y",
-     "meaning": "points"
+     "name": "x",
+     "meaning": "A point."
     }
    ]
   },
@@ -4018,16 +4023,16 @@ window.MAP = {
   },
   "w.world": {
    "title": "Static world",
-   "what": "$W = (A, \\prec_A)$, roots and facts.",
-   "why": "Typing reads the order $\\prec_W$ that $W$ generates. The relation reads ranked worlds $R$ with $R \\vDash W$, and a creation adds the ranks of its fresh root.",
+   "what": "$W = (A, \\prec_A)$, a finite set $A$ of constants and a set of facts $x \\prec y$ between points whose roots are constants of $A$.",
+   "why": "Typing reads the order $\\prec_W$ that $W$ generates. A static world records what a derivation assumes about its constants and nothing about fresh roots, so it has no ranks.",
    "breaks": "Nothing. It is a definition.",
    "example": "$W$ with $A = \\{1, 2\\}$ and the fact $1 \\prec \\overline{2}$.",
-   "rocq": "types/Worlds.v: world",
-   "sig": "W = (A, \\prec_A) \\in \\mathsf{World}",
+   "rocq": "types/Worlds.v: sworld, sworld_wf",
+   "sig": "W = (A, \\prec_A) \\in \\mathsf{SWorld}",
    "args": [
     {
      "name": "A",
-     "meaning": "The roots."
+     "meaning": "The constants."
     },
     {
      "name": "\\prec_A",
@@ -4036,40 +4041,40 @@ window.MAP = {
    ]
   },
   "w.rworld": {
-   "title": "Ranked world",
-   "what": "$R = (A, \\varrho)$, a finite set $A$ of roots and for each root $a$ a rank function $\\varrho_a$ on $\\mathsf{tree}(a)$.",
-   "why": "The relation reads the order of points through ranks. Ranks are ordinals, so the order of a ranked world is well-founded and acyclic, and no premise on the world remains.",
-   "breaks": "With a symbolic order the union of the worlds of a run may hold an infinite descending chain, and lock-free adequacy then needs a premise that no typing rule checks.",
-   "example": "$R$ with $A = \\{\\rho\\}$ and $\\varrho(\\rho + k) = \\omega \\cdot k$.",
-   "rocq": "types/Worlds.v: world",
-   "sig": "R = (A, \\varrho) \\in \\mathsf{RWorld}",
+   "title": "World of the relation",
+   "what": "$R = (B, <_R, k)$ has a finite set $B$ of roots, a strict partial order $<_R$ on the points with roots in $B$ that contains program order on them, and a kind $k$.",
+   "why": "The relation reads the order of points in $R$. A creation at a fresh root adds that root and orders its tree, so a run passes through a chain of growing worlds.",
+   "breaks": "Without an order on the points of a configuration, readiness could not compare the points two threads wait at.",
+   "example": "The strict world with $B = \\{1, 2\\}$, program order and $1 <_R \\overline{2}$.",
+   "rocq": "types/Worlds.v: world, rin",
+   "sig": "R = (B, <_R, k) \\in \\mathsf{World}",
    "args": [
     {
-     "name": "A",
-     "meaning": "The roots."
+     "name": "B",
+     "meaning": "The roots, constants and fresh roots."
     },
     {
-     "name": "\\varrho",
-     "meaning": "A rank function for the tree of each root."
+     "name": "<_R",
+     "meaning": "A strict partial order on the points with roots in $B$."
+    },
+    {
+     "name": "k",
+     "meaning": "The kind, strict or ranked."
     }
    ]
   },
   "w.rank": {
-   "title": "Rank function $\\varrho_a$",
-   "what": "A map from $\\mathsf{tree}(a)$ to the ordinals with $\\varrho_a(x) < \\varrho_a(x^{+})$ and $\\varrho_a(x) < \\varrho_a(\\overline{x}^{+})$ for each $x$.",
+   "title": "Rank function $\\varrho$",
+   "what": "A map from points to ordinals with $\\varrho(x) < \\varrho(x^{+})$ and $\\varrho(x) < \\varrho(\\overline{x}^{+})$ on the points of the world. At a ranked world it gives the order, $x <_R y \\iff \\varrho(x) < \\varrho(y)$.",
    "why": "A creation at a fresh root ranks the whole tree of the root, fields included, so a later creation at a field finds its ranks fixed and picks nothing. Ordinals leave no room between $\\alpha$ and $\\alpha + 1$, so the room for later fields is fixed at the root.",
    "breaks": "If a root ranked only its own shifts, a field creation could need a rank strictly between $k + 1$ and $k + 2$, and no ordinal exists there.",
    "example": "Client and server rank $\\rho + k$ at $\\omega \\cdot k$ and $\\rho\\cdot 0 + k$ at $\\omega \\cdot k + 1$.",
-   "rocq": "types/Worlds.v: w_rank, w_po",
-   "sig": "\\varrho_a : \\mathsf{tree}(a) \\to \\mathsf{Ord}",
+   "rocq": "types/Worlds.v: w_rank, w_rk_ord, ranks_po, wranked_of",
+   "sig": "\\varrho : \\mathsf{Point} \\to \\mathsf{Ord}",
    "args": [
     {
-     "name": "a",
-     "meaning": "A root of $A$."
-    },
-    {
      "name": "x",
-     "meaning": "A point of $\\mathsf{tree}(a)$."
+     "meaning": "A point."
     }
    ]
   },
@@ -4089,17 +4094,17 @@ window.MAP = {
    ]
   },
   "w.rlt": {
-   "title": "Order of a ranked world",
-   "what": "$R \\vDash x \\prec y$ iff $\\varrho(x) < \\varrho(y)$.",
-   "why": "Readiness and the obligations compare points in the ranked world. The order is transitive and well-founded because $<$ on ordinals is.",
+   "title": "Order of a world $R \\vdash x \\prec y$",
+   "what": "$R \\vdash x \\prec y$ holds when $x$ precedes $y$ in program order, or when both points have roots in $B$ and $x <_R y$.",
+   "why": "Readiness and the obligations compare points with this order. Program order holds in each world, also between points whose root is not yet a root of the world.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\varrho(\\rho) = 0 < \\omega = \\varrho(\\rho\\cdot 1)$ gives $R \\vDash \\rho \\prec \\rho\\cdot 1$.",
-   "rocq": "types/Worlds.v: w_lt, w_lt_wf",
-   "sig": "R \\vDash \\cdot \\prec \\cdot \\subseteq \\mathsf{Point} \\times \\mathsf{Point}",
+   "example": "$R \\vdash \\rho \\prec \\rho^{+}$ in each world $R$.",
+   "rocq": "types/Worlds.v: w_lt, w_lt_irrefl, w_lt_trans, po",
+   "sig": "R \\vdash \\cdot \\prec \\cdot \\subseteq \\mathsf{Point} \\times \\mathsf{Point}",
    "args": [
     {
      "name": "R",
-     "meaning": "A ranked world."
+     "meaning": "A world of the relation."
     },
     {
      "name": "x, y",
@@ -4108,31 +4113,31 @@ window.MAP = {
    ]
   },
   "w.sat": {
-   "title": "Satisfaction $R \\vDash W$",
-   "what": "Each fact of $W$ holds under the ranks of $R$.",
-   "why": "The semantic judgments at a static world $W$ read the relation at each ranked world $R$ with $R \\vDash W$. Static entailment is sound in such $R$, so each fact a derivation uses holds in $R$.",
+   "title": "Model $R \\vDash W$",
+   "what": "$R \\vDash W$ when each constant of $W$ is a root of $R$ and each fact of $W$ holds in $R$.",
+   "why": "The semantic judgments at a static world $W$ read the relation at the worlds $R \\vDash W$. Static entailment is sound in such $R$, so each fact a derivation uses holds there.",
    "breaks": "Nothing. It is a definition.",
-   "example": "A world with no facts is satisfied by each ranked world with its roots.",
-   "rocq": "types/Worlds.v: wmodels",
-   "sig": "\\cdot \\vDash \\cdot \\subseteq \\mathsf{RWorld} \\times \\mathsf{World}",
+   "example": "A static world without facts is modelled by each world whose roots include its constants.",
+   "rocq": "types/Worlds.v: wmodels, wmodels_lt",
+   "sig": "\\cdot \\vDash \\cdot \\subseteq \\mathsf{World} \\times \\mathsf{SWorld}",
    "args": [
     {
      "name": "R",
-     "meaning": "A ranked world."
+     "meaning": "A world of the relation."
     },
     {
      "name": "W",
-     "meaning": "A world."
+     "meaning": "A static world."
     }
    ]
   },
   "w.po": {
    "title": "Program order $\\mathsf{po}$",
-   "what": "The facts $x \\prec x^{+}$ and $x \\prec \\overline{x}^{+}$ for each point $x$.",
-   "why": "A rank function satisfies program order by definition, so a creation must rank program order together with its facts.",
+   "what": "The transitive closure of $x \\prec x^{+}$ and $x \\prec \\overline{x}^{+}$.",
+   "why": "An end acts at $x$ before $x^{+}$, and its partner acts at $\\overline{x}^{+}$ only after the action at $x$. Each world contains program order, and a creation orders program order on the new tree together with its facts.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\rho \\prec \\rho^{+} \\in \\mathsf{po}$.",
-   "rocq": "types/Worlds.v: po, w_po",
+   "example": "$\\rho \\prec \\overline{\\rho}^{++}$ is in $\\mathsf{po}$.",
+   "rocq": "types/Worlds.v: po, w_ord_po",
    "sig": "\\mathsf{po} \\subseteq \\mathsf{Point} \\times \\mathsf{Point}",
    "args": [
     {
@@ -4141,75 +4146,33 @@ window.MAP = {
     }
    ]
   },
-  "w.wfnew": {
-   "title": "$\\mathsf{wf\\_new}\\,\\rho\\,C$",
-   "what": "Each fact of $C$ ends in $\\mathsf{tree}(\\rho)$, and $C$ with program order is well-founded on $\\mathsf{tree}(\\rho)$.",
-   "why": "A creation at a fresh root must find ranks for the new tree in each ranked world that satisfies its context. Facts from context points up into the new tree are met by ranks above the context points below the tree, and ranks inside the tree exist exactly when the order there is well-founded.",
-   "breaks": "A fact from a new point down to a context point fails at a context point of rank $0$. A chain of creations each below the previous one would need an infinite descending chain of ordinals.",
-   "example": "$\\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ satisfies $\\mathsf{wf\\_new}\\,\\rho$.",
-   "rocq": "static/Contexts.v: wf_new, new_step",
-   "sig": "\\mathsf{wf\\_new} : \\mathsf{PVar} \\to \\mathcal{P}(\\mathsf{Point} \\times \\mathsf{Point}) \\to \\mathsf{Prop}",
-   "args": [
-    {
-     "name": "\\rho",
-     "meaning": "The fresh root, a point variable bound by the existential of $\\mathsf{new}$."
-    },
-    {
-     "name": "C",
-     "meaning": "The facts of the creation."
-    }
-   ]
-  },
-  "w.gennew": {
-   "title": "$\\mathsf{gen\\_new}\\,\\Gamma\\,\\rho\\,C$",
-   "what": "The order of $C$ with program order is well-founded on $\\mathsf{tree}(\\rho)$, and facts of $C$ between context points follow from $\\Gamma$. A relation $S$ pairs points of $\\mathsf{tree}(\\rho)$ with points of $\\Gamma$. Each exit $u \\prec y$ from the tree to a context point has a partner of $u$ below $y$. Partners descend along $C$ with program order, and each entry $z \\prec s$ into a paired point lies below its partner.",
-   "why": "A creation at a fresh root takes the least ranks of the new tree above the context points below the tree. A paired point stays at or below the rank of its partner, so each exit holds in each ranked world that satisfies $\\Gamma$. The same pairs show that opening the existential derives no new fact between points of $\\Gamma$.",
-   "breaks": "Without partners an exit is rejected. Without descent along $C$ a chain of new points below an exit could rise above the context point it must stay below.",
-   "example": "$\\Gamma \\vdash z \\prec y$ and $C = \\{\\rho \\prec y\\}$ with $S = \\{(\\rho, z)\\}$. With $\\Gamma \\vdash z \\prec y$, $\\Gamma \\vdash z' \\prec y'$ and $C = \\{\\rho \\prec y, \\rho \\prec y'\\}$, $S = \\{(\\rho, z), (\\rho, z')\\}$.",
-   "rocq": "static/Contexts.v: gen_new, gen_new_rel, wf_new_gen, wf_new_plus_gen; static/PointSubst.v: cons_gen; compat/Redex.v: Erel_new",
-   "sig": "\\mathsf{gen\\_new} : \\mathsf{Ctx} \\to \\mathsf{PVar} \\to \\mathcal{P}(\\mathsf{Point} \\times \\mathsf{Point}) \\to \\mathsf{Prop}",
-   "args": [
-    {
-     "name": "\\Gamma",
-     "meaning": "The facts of the context of the creation."
-    },
-    {
-     "name": "\\rho",
-     "meaning": "The fresh root."
-    },
-    {
-     "name": "C",
-     "meaning": "The facts of the creation."
-    }
-   ]
-  },
   "w.consts": {
-   "title": "Roots $A$",
-   "what": "$A$ is the finite set of roots of $W$.",
-   "why": "Facts mention only points with roots in $A$, and composition compares two worlds through $A_1 \\cap A_2$.",
+   "title": "Constants $A$",
+   "what": "The finite set of constants of $W$, the roots its facts may use.",
+   "why": "Facts mention only points with roots in $A$, and composition compares two worlds through their shared constants $A_1 \\cap A_2$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$A = \\{1, 2\\}$.",
-   "rocq": "types/Worlds.v: w_consts",
-   "sig": "A \\in \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Root})",
+   "rocq": "types/Worlds.v: sw_consts",
+   "sig": "A \\in \\mathcal{P}_{\\mathrm{fin}}(\\mathbb{N})",
    "args": []
   },
   "w.facts": {
    "title": "Facts $\\prec_A$",
-   "what": "A set of facts $x \\prec y$, possibly infinite, between points whose roots lie in $A$.",
-   "why": "They order the channels a component shares with its environment and the channels created so far.",
+   "what": "A set of facts $x \\prec y$, which may be infinite, between points whose roots lie in $A$.",
+   "why": "They order the channels a component shares with its environment.",
    "breaks": "Nothing. It is a definition.",
    "example": "$1 \\prec \\overline{2}$.",
-   "rocq": "types/Worlds.v: w_facts",
+   "rocq": "types/Worlds.v: sw_facts; types/Points.v: fact",
    "sig": "\\prec_A \\subseteq \\mathsf{Point} \\times \\mathsf{Point}",
    "args": []
   },
   "w.lt": {
    "title": "$\\prec_W$",
-   "what": "$\\prec_W$ is the transitive closure of the three generators, and $W \\vdash x \\prec y$ means $x \\prec_W y$.",
-   "why": "A waiting chain combines several facts, so the order is transitive.",
+   "what": "$\\prec_W$ is the transitive closure of the facts of $W$ and of program order.",
+   "why": "A waiting chain combines several facts, so the order is transitive. Typing reads it through $\\Gamma \\vdash x \\prec y$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$W \\vdash x \\prec x^{++}$.",
-   "rocq": "types/Worlds.v: w_lt",
+   "example": "$W \\vdash x \\prec x^{++}$ for each $W$.",
+   "rocq": "types/Worlds.v: sw_lt, swstep",
    "sig": "W \\vdash \\cdot \\prec \\cdot \\subseteq \\mathsf{Point} \\times \\mathsf{Point}",
    "args": [
     {
@@ -4284,12 +4247,12 @@ window.MAP = {
   },
   "w.wf": {
    "title": "$\\mathsf{world\\_wf}$",
-   "what": "$\\mathsf{world\\_wf}\\,W$ iff every fact of $\\prec_A$ relates points with roots in $A$.",
-   "why": "A fact outside $A$ mentions a point no component owns.",
+   "what": "$\\mathsf{world\\_wf}\\,W$ when each fact of $W$ relates points with roots in $A$.",
+   "why": "A fact outside $A$ mentions a point that no component owns, and no world of the relation models such a fact.",
    "breaks": "Nothing. It is a definition.",
-   "example": "A fact $1 \\prec 3$ with $3 \\notin A$ violates the property.",
-   "rocq": "types/Worlds.v: world_wf",
-   "sig": "\\mathsf{world\\_wf} : \\mathsf{World} \\to \\mathsf{Prop}",
+   "example": "A fact $1 \\prec 3$ with $3 \\notin A$ violates the condition.",
+   "rocq": "types/Worlds.v: sworld_wf",
+   "sig": "\\mathsf{world\\_wf} : \\mathsf{SWorld} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
@@ -4299,12 +4262,12 @@ window.MAP = {
   },
   "w.lfworld": {
    "title": "$\\mathsf{wf}$",
-   "what": "$\\mathsf{wf}\\,W$ iff $\\prec_W$ is well-founded, so no infinite chain $\\cdots \\prec x_2 \\prec x_1 \\prec x_0$ exists.",
-   "why": "A static world has a ranked world that satisfies it exactly when its order is well-founded, and the rank function of $\\prec_W$ is that ranked world. P-Term and P-Connect ask it, so the world of each process derivation is well-founded.",
-   "breaks": "A cycle or an infinite descending chain in $\\prec_W$ admits no ranks, and the semantic judgment at $W$ would hold vacuously.",
+   "what": "$\\mathsf{wf}\\,W$ when $\\prec_W$ is well-founded, so no infinite chain $\\cdots \\prec x_2 \\prec x_1 \\prec x_0$ exists.",
+   "why": "A static world has a ranked model exactly when its order is well-founded, and the rank function of $\\prec_W$ is that model. Process typing at a finite bound asks for a well-founded world.",
+   "breaks": "A world whose order holds an infinite descending chain has no ranks, and lock-free adequacy would have no measure.",
    "example": "$W$ with no facts satisfies $\\mathsf{wf}\\,W$.",
    "rocq": "types/Worlds.v: swf, wmodels_exists",
-   "sig": "\\mathsf{wf} : \\mathsf{World} \\to \\mathsf{Prop}",
+   "sig": "\\mathsf{wf} : \\mathsf{SWorld} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
@@ -4314,12 +4277,12 @@ window.MAP = {
   },
   "w.ext": {
    "title": "Extension $\\sqsubseteq$",
-   "what": "$W \\sqsubseteq W'$ iff $A \\subseteq A'$ and each fact of $W$ is a fact of $W'$. For ranked worlds $R \\sqsubseteq R'$ iff $A \\subseteq A'$ and $\\varrho'$ agrees with $\\varrho$ on the trees of $A$.",
-   "why": "No rank changes once chosen, so each fact true in $R$ stays true in each $R' \\sqsupseteq R$, and the relation is monotone in the world.",
+   "what": "$W \\sqsubseteq W'$ when $A \\subseteq A'$ and each fact of $W$ is a fact of $W'$. $R \\sqsubseteq R'$ when $B \\subseteq B'$, $R'$ keeps the order of $R$ on the points of $B$, and the kind stays, with every rank unchanged at a ranked world.",
+   "why": "Each fact true in $R$ stays true in each $R' \\sqsupseteq R$, so the relation is monotone in the world. A world and its extensions have one kind, so the relation at a world reads only worlds of its kind.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$R \\sqsubseteq R \\oplus (a, \\varrho_a)$ and $W \\sqsubseteq W \\sqcup W'$.",
-   "rocq": "types/Worlds.v: swext, wext",
-   "sig": "\\cdot \\sqsubseteq \\cdot \\subseteq \\mathsf{World}^{2} \\cup \\mathsf{RWorld}^{2}",
+   "example": "$R \\sqsubseteq R \\oplus_a C$ and $W \\sqsubseteq W \\sqcup W'$.",
+   "rocq": "types/Worlds.v: swext, wext, wk_ext, wext_trans",
+   "sig": "\\cdot \\sqsubseteq \\cdot \\subseteq \\mathsf{SWorld}^{2} \\cup \\mathsf{World}^{2}",
    "args": [
     {
      "name": "W, W'",
@@ -4327,41 +4290,45 @@ window.MAP = {
     },
     {
      "name": "R, R'",
-     "meaning": "The smaller and the larger ranked world."
+     "meaning": "The smaller and the larger world of the relation."
     }
    ]
   },
   "w.grow": {
-   "title": "Growth $R \\oplus (a, \\varrho_a)$",
-   "what": "$R \\oplus (a, \\varrho_a)$ adds the fresh root $a$ to $A$ and its rank function $\\varrho_a$ to $\\varrho$.",
-   "why": "A creation at a fresh root ranks the new tree, so the ranked world of a run grows with each root creation and never changes a rank. The union of the worlds of a run is one rank assignment, which lock-free adequacy uses as its measure.",
+   "title": "Growth of a world",
+   "what": "A creation at a fresh root $a$ grows $R$. A strict world becomes $R \\oplus_a C$, the transitive closure of its order, the facts $C[a]$ of the creation and program order. A ranked world becomes $R \\oplus (a, \\varrho_a)$, which ranks the tree of $a$ by $\\varrho_a$ and keeps each other rank.",
+   "why": "The world of a run grows with each creation at a fresh root and never loses a fact. At a strict world the closure stays irreflexive when the creation meets $\\mathsf{acyc\\_new}$. At a ranked world the union of the worlds of a run is one rank assignment, which lock-free adequacy uses as its measure.",
    "breaks": "If ranks could change along a run, the measure of a waiting thread could rise.",
-   "example": "$R \\oplus (\\rho, \\varrho_\\rho)$ with $\\varrho_\\rho(x) = \\sigma + \\rho_C(x)$ for $\\sigma$ above each context point below the tree.",
-   "rocq": "types/Worlds.v: wgrow; compat/Redex.v: Erel_new",
-   "sig": "\\cdot \\oplus \\cdot : \\mathsf{RWorld} \\to \\mathsf{Root} \\times (\\mathsf{Point} \\to \\mathsf{Ord}) \\to \\mathsf{RWorld}",
+   "example": "$R \\oplus (\\rho, \\varrho_\\rho)$ with $\\varrho_\\rho(x) = \\sigma + \\varrho_C(x)$ for $\\sigma$ above each context point below the tree.",
+   "rocq": "types/Worlds.v: wgrow, wgrow_ext; compat/Redex.v: aw_W, aw_W_ext, Erel_new_acyc, Erel_new",
+   "sig": "\\cdot \\oplus_{a} \\cdot : \\mathsf{World} \\to \\mathcal{P}(\\mathsf{Point}^{2}) \\to \\mathsf{World}",
    "args": [
     {
      "name": "R",
-     "meaning": "A ranked world."
+     "meaning": "A world."
     },
     {
      "name": "a",
-     "meaning": "The fresh root, $a \\notin A$."
+     "meaning": "The fresh root, $a \\notin B$."
+    },
+    {
+     "name": "C",
+     "meaning": "The facts of the creation, $C[a]$ at the root $a$."
     },
     {
      "name": "\\varrho_a",
-     "meaning": "Its rank function on $\\mathsf{tree}(a)$."
+     "meaning": "At a ranked world, the ranks of $\\mathsf{tree}(a)$."
     }
    ]
   },
   "w.join": {
    "title": "Join $\\sqcup$",
-   "what": "$W_1 \\sqcup W_2$ takes the unions of roots and facts.",
-   "why": "Two components typed in $W_1$ and $W_2$ compose in $W_1 \\sqcup W_2$.",
+   "what": "$W_1 \\sqcup W_2$ takes the unions of constants and facts.",
+   "why": "Process composition joins the worlds of its two components.",
    "breaks": "Nothing. It is a definition.",
    "example": "$W \\sqsubseteq W \\sqcup W'$ and $W' \\sqsubseteq W \\sqcup W'$.",
-   "rocq": "types/Worlds.v: wjoin",
-   "sig": "\\cdot \\sqcup \\cdot : \\mathsf{World} \\to \\mathsf{World} \\to \\mathsf{World}",
+   "rocq": "types/Worlds.v: swjoin",
+   "sig": "\\cdot \\sqcup \\cdot : \\mathsf{SWorld} \\to \\mathsf{SWorld} \\to \\mathsf{SWorld}",
    "args": [
     {
      "name": "W_1, W_2",
@@ -4376,7 +4343,7 @@ window.MAP = {
    "breaks": "Nothing. It is a definition.",
    "example": "$W|_{A_1 \\cap A_2}$ and $W|_{\\mathsf{I}(\\Sigma, T)}$.",
    "rocq": "types/Worlds.v: swrestrict; static/Hiding.v: swrestrict_iff",
-   "sig": "\\cdot|_{\\cdot} : \\mathsf{World} \\to \\mathcal{P}(\\mathsf{Root}) \\to \\mathsf{World}",
+   "sig": "\\cdot|_{\\cdot} : \\mathsf{SWorld} \\to \\mathcal{P}(\\mathbb{N}) \\to \\mathsf{SWorld}",
    "args": [
     {
      "name": "W",
@@ -4384,26 +4351,231 @@ window.MAP = {
     },
     {
      "name": "S",
-     "meaning": "A set of constants, the shared roots $A_1 \\cap A_2$ or the constants of an interface."
+     "meaning": "A set of constants, the shared constants $A_1 \\cap A_2$ or the constants of an interface."
     }
    ]
   },
   "w.R7": {
-   "title": "Well-founded join",
-   "what": "$\\mathsf{wf}(W_1 \\sqcup W_2)$ iff $\\mathsf{wf}\\,W_1$, $\\mathsf{wf}\\,W_2$ and $\\mathsf{wf}(W_1|_S \\sqcup W_2|_S)$ for $S = A_1 \\cap A_2$.",
-   "why": "A descending chain of the join that meets shared points infinitely often gives a descending chain of the amalgam, and one that meets them finitely often ends in one private zone. So well-foundedness of the join is decided on the shared roots alone.",
+   "title": "Acyclic and well-founded joins",
+   "what": "$\\mathsf{acyc}(W_1 \\sqcup W_2)$ iff $\\mathsf{acyc}\\,W_1$, $\\mathsf{acyc}\\,W_2$ and $\\mathsf{acyc}(W_1|_S \\sqcup W_2|_S)$ for $S = A_1 \\cap A_2$. The same holds for $\\mathsf{wf}$ in place of $\\mathsf{acyc}$.",
+   "why": "A chain of the join changes sides only at points with shared roots. A cycle of the join therefore gives a cycle of one side or of the joined restrictions, and a descending chain that meets shared points infinitely often gives one of the joined restrictions. Both proofs are constructive.",
    "breaks": "Nothing. It is a definition.",
-   "example": "Two well-founded worlds with $A_1 \\cap A_2 = \\varnothing$ have a well-founded join.",
-   "rocq": "types/Worlds.v: wf_join_iff",
-   "sig": "\\mathsf{wf}(W_1 \\sqcup W_2) \\iff \\ldots",
+   "example": "Two acyclic worlds with $A_1 \\cap A_2 = \\varnothing$ have an acyclic join.",
+   "rocq": "types/Worlds.v: acyc_join_iff, wf_join_iff; static/Typing.v: wok_join_iff",
+   "sig": "\\mathsf{acyc}(W_1 \\sqcup W_2) \\iff \\mathsf{acyc}\\,W_1 \\land \\mathsf{acyc}\\,W_2 \\land \\mathsf{acyc}(W_1|_S \\sqcup W_2|_S)",
    "args": [
     {
      "name": "W_1, W_2",
-     "meaning": "Two well-formed worlds."
+     "meaning": "Two well-formed static worlds."
     },
     {
      "name": "S",
-     "meaning": "The shared roots $A_1 \\cap A_2$."
+     "meaning": "The shared constants $A_1 \\cap A_2$."
+    }
+   ]
+  },
+  "w.rord": {
+   "title": "Order $<_R$",
+   "what": "A strict partial order on the points whose roots lie in $B$, irreflexive and transitive, that contains program order between such points.",
+   "why": "The deadlock-free relation needs nothing more of a world than a strict order. A stuck configuration has finitely many waiting points, and a strict order on a finite set has a minimal element, the wait that adequacy resolves first.",
+   "breaks": "A cycle $x <_R y <_R x$ would let two threads each wait below the other and both count as ready.",
+   "example": "The world after a creation at $\\rho$ with facts $C = \\{\\rho \\prec \\overline{\\rho\\cdot 0}\\}$ orders $\\rho <_R \\overline{\\rho\\cdot 0}$.",
+   "rocq": "types/Worlds.v: w_ord, w_ord_trans, w_ord_irrefl, w_ord_po",
+   "sig": "{<_R} \\subseteq \\mathsf{Point}_B \\times \\mathsf{Point}_B",
+   "args": [
+    {
+     "name": "B",
+     "meaning": "The roots of $R$."
+    }
+   ]
+  },
+  "w.kind": {
+   "title": "Kind of a world",
+   "what": "A world is $\\mathsf{strict}$, with no ranks, or $\\mathsf{ranked}$ by a rank function $\\varrho$ that gives its order. $k \\sqsubseteq k'$ holds when both kinds are strict, or both are ranked and the ranks of $k'$ agree with those of $k$ on the points of $B$. Extension keeps the kind, so a world and its extensions have one kind.",
+   "why": "Deadlock freedom reads one stuck configuration at a time, and a strict order suffices for that. Lock freedom follows one wait across a whole run, through a chain of growing worlds. Ranks fixed once chosen make the union of that chain well-founded, and lock-free adequacy measures the wait by the rank of its point. The deadlock-free and live theorems read strict worlds, the lock-free threads ranked worlds.",
+   "breaks": "Without ranks the union of the strict worlds of a run could hold an infinite descending chain of points, and a wait could pass down that chain forever.",
+   "example": "A creation in a strict world adds the facts of $C$ and closes transitively. A creation in a ranked world must also find ordinals for the new tree.",
+   "rocq": "types/Worlds.v: w_rk, wstrict, wranked, wk_ext, wchain_lt_wf",
+   "sig": "k \\in \\{\\mathsf{strict}\\} \\cup \\{\\mathsf{ranked}\\ \\varrho \\mid \\varrho : \\mathsf{Point} \\to \\mathsf{Ord}\\}",
+   "args": [
+    {
+     "name": "\\varrho",
+     "meaning": "A rank function."
+    }
+   ]
+  },
+  "w.acyc": {
+   "title": "$\\mathsf{acyc}$",
+   "what": "$\\mathsf{acyc}\\,W$ when no point $x$ has $x \\prec_W x$.",
+   "why": "A static world has a strict model exactly when it is acyclic, its own order on its points. Process typing at $N = \\infty$ asks for an acyclic world, which is what deadlock freedom needs.",
+   "breaks": "A cycle $x \\prec_W y \\prec_W x$ has no model, and a semantic judgment at $W$ would hold vacuously.",
+   "example": "A world with the facts $\\rho\\cdot 0 \\prec \\rho$, $\\rho\\cdot 0\\cdot 0 \\prec \\rho\\cdot 0$, and so on for each depth, is acyclic and not well-founded.",
+   "rocq": "types/Worlds.v: sacyc, swf_sacyc, sacyc_mono, swf_irrefl",
+   "sig": "\\mathsf{acyc} : \\mathsf{SWorld} \\to \\mathsf{Prop}",
+   "args": [
+    {
+     "name": "W",
+     "meaning": "A world."
+    }
+   ]
+  },
+  "w.models": {
+   "title": "Models of a static world",
+   "what": "A well-formed acyclic static world has a strict model, its own order. A well-formed well-founded static world has a ranked model, the rank function of its order.",
+   "why": "The fundamental theorems for processes conclude the semantic judgment at each model, and soundness needs one model to start the run from.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "The empty world is modelled by the strict world with no roots.",
+   "rocq": "types/Worlds.v: dmodels_exists, wstrict_of, wmodels_exists",
+   "sig": "\\mathsf{world\\_wf}\\,W \\land \\mathsf{acyc}\\,W \\Rightarrow \\exists R.\\ \\mathsf{strict}\\,R \\land R \\vDash W",
+   "args": [
+    {
+     "name": "W",
+     "meaning": "A world."
+    }
+   ]
+  },
+  "w.wok": {
+   "title": "$\\mathsf{ok}_N$",
+   "what": "$\\mathsf{ok}_N\\,W$ is $\\mathsf{acyc}\\,W$ at $N = \\infty$ and $\\mathsf{wf}\\,W$ at a finite bound $N$.",
+   "why": "Process typing asks for $\\mathsf{ok}_N$. At $N = \\infty$ typing serves deadlock freedom and needs a strict model, at a finite $N$ it serves lock freedom and needs a ranked model. Each well-founded world is acyclic.",
+   "breaks": "Asking $\\mathsf{wf}$ at $N = \\infty$ rejects deadlock-free programs whose worlds are acyclic and not well-founded.",
+   "example": "$\\mathsf{ok}_\\infty\\,W = \\mathsf{acyc}\\,W$.",
+   "rocq": "static/Contexts.v: wok, swf_wok; static/Typing.v: wok_join_iff",
+   "sig": "\\mathsf{ok} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to \\mathsf{SWorld} \\to \\mathsf{Prop}",
+   "args": [
+    {
+     "name": "N",
+     "meaning": "The bound of the judgment."
+    },
+    {
+     "name": "W",
+     "meaning": "A world."
+    }
+   ]
+  },
+  "new.step": {
+   "title": "Order on the new tree $\\prec^{\\rho}_{C}$",
+   "what": "$x \\prec^{\\rho}_{C} y$ when both points lie in $\\mathsf{tree}(\\rho)$ and $x \\prec y$ is a fact of $C$ or a step of program order.",
+   "why": "A creation at a fresh root must order the new tree consistently. The facts of $C$ inside the tree, together with program order, are what the new tree adds to a world.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "For $C = \\{\\rho \\prec \\overline{\\rho\\cdot 0}\\}$, $\\rho \\prec^{\\rho}_{C} \\overline{\\rho\\cdot 0}$ and $\\rho \\prec^{\\rho}_{C} \\rho^{+}$.",
+   "rocq": "static/Contexts.v: new_step, in_tree0",
+   "sig": "\\prec^{\\rho}_{C} \\subseteq \\mathsf{tree}(\\rho)^{2}",
+   "args": [
+    {
+     "name": "\\rho",
+     "meaning": "the fresh root"
+    },
+    {
+     "name": "C",
+     "meaning": "the facts of the creation"
+    }
+   ]
+  },
+  "new.bridge": {
+   "title": "Bridge $\\mathsf{bridge}_C(z, y)$",
+   "what": "A bridge leads from a context point $z$ to a context point $y$. It is a fact $z \\prec y$ of $C$, or an entry $z \\prec v$ into the tree, a path $v \\mathrel{(\\prec^{\\rho}_{C})^{*}} u$ inside the tree and an exit $u \\prec y$ out of the tree.",
+   "why": "Once the tree is added, each bridge orders $z$ below $y$. The old points must already be ordered that way, or the creation closes a cycle through the new tree.",
+   "breaks": "A creation with $C = \\{z \\prec \\rho,\\ \\rho \\prec y\\}$ and $\\Gamma \\vdash y \\prec z$ would give the cycle $z \\prec \\rho \\prec y \\prec z$.",
+   "example": "$C = \\{z \\prec \\rho,\\ \\rho^{+} \\prec y\\}$ has the bridge $z \\prec \\rho \\prec^{\\rho}_{C} \\rho^{+} \\prec y$.",
+   "rocq": "static/Contexts.v: cbridge, cfact, ctx_pt",
+   "sig": "\\mathsf{bridge}_C \\subseteq \\mathsf{Point}_{\\Gamma}^{2}",
+   "args": [
+    {
+     "name": "z",
+     "meaning": "the context point a bridge starts at"
+    },
+    {
+     "name": "y",
+     "meaning": "the context point it ends at"
+    }
+   ]
+  },
+  "new.acyc": {
+   "title": "$\\mathsf{acyc\\_new}\\,\\Gamma\\,\\rho\\,C$",
+   "what": "The order $\\prec^{\\rho}_{C}$ has no cycle on $\\mathsf{tree}(\\rho)$, and $\\Gamma$ derives $z \\prec y$ for each bridge from $z$ to $y$.",
+   "why": "At a strict world the creation adds the facts of $C$ and closes transitively. A cycle of the result lies inside the new tree or passes through old points, and then a bridge collapses it into a cycle of the old world. So the two clauses keep the grown world strict, constructively. They also make opening the existential conservative over the points of $\\Gamma$ when the facts end in the tree.",
+   "breaks": "Without the bridge clause a creation could order two context points against the context and close a cycle through the new tree.",
+   "example": "$C = \\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ has no bridge and no cycle. The fork-join example uses a $C$ whose order on the tree holds an infinite descending chain.",
+   "rocq": "static/Contexts.v: acyc_new, wf_new_acyc; compat/Redex.v: Erel_new_acyc, aw_W",
+   "sig": "\\mathsf{acyc\\_new} : \\mathsf{Ctx} \\to \\mathsf{PVar} \\to \\mathcal{P}(\\mathsf{Point}^{2}) \\to \\mathsf{Prop}",
+   "args": [
+    {
+     "name": "\\Gamma",
+     "meaning": "the fact context"
+    },
+    {
+     "name": "\\rho",
+     "meaning": "the fresh root"
+    },
+    {
+     "name": "C",
+     "meaning": "the facts of the creation"
+    }
+   ]
+  },
+  "new.gen": {
+   "title": "$\\mathsf{gen\\_new}\\,\\Gamma\\,\\rho\\,C$",
+   "what": "The order $\\prec^{\\rho}_{C}$ is well-founded, and facts of $C$ between context points follow from $\\Gamma$. A relation $\\mathcal{S}$ pairs points of $\\mathsf{tree}(\\rho)$ with finite nonempty sets of points of $\\Gamma$. Each exit $u \\prec y$ has a set of $u$ below $y$, sets descend along $\\prec^{\\rho}_{C}$, and each entry $z \\prec s$ into a paired point lies below some point of its set.",
+   "why": "At a ranked world the creation must find ordinal ranks for the new tree in each world that models $\\Gamma$. It takes the least ranks above the context points below the tree. A paired point stays at or below the largest rank in its set, so each exit holds. Choosing the largest of finitely many ranks needs excluded middle.",
+   "breaks": "With single partners in place of sets, a creation with two exits below context points that no common point lies below is rejected.",
+   "example": "$\\Gamma \\vdash z \\prec y$ and $C = \\{\\rho \\prec y\\}$ with $\\mathcal{S} = \\{(\\rho, \\{z\\})\\}$. The two-entry example of the examples tab needs the set $\\{\\rho\\cdot 2, \\rho\\cdot 3\\}$.",
+   "rocq": "static/Contexts.v: gen_new, gen_new_rel, gen_new1_gen, wf_new_gen, wf_new_plus_gen; compat/Redex.v: Erel_new; relation/Ranks.v: ole_total, two_below_gd",
+   "sig": "\\mathsf{gen\\_new} : \\mathsf{Ctx} \\to \\mathsf{PVar} \\to \\mathcal{P}(\\mathsf{Point}^{2}) \\to \\mathsf{Prop}",
+   "args": [
+    {
+     "name": "\\Gamma",
+     "meaning": "the fact context"
+    },
+    {
+     "name": "\\rho",
+     "meaning": "the fresh root"
+    },
+    {
+     "name": "C",
+     "meaning": "the facts of the creation"
+    },
+    {
+     "name": "\\mathcal{S}",
+     "meaning": "pairs of a tree point and a finite nonempty set of context points"
+    }
+   ]
+  },
+  "new.ok": {
+   "title": "$\\mathsf{new\\_ok}_N$",
+   "what": "The premise of E-New at a fresh root, $\\mathsf{acyc\\_new}$ at $N = \\infty$ and $\\mathsf{gen\\_new}$ at a finite bound $N$.",
+   "why": "Deadlock-free typing grows strict worlds, which need only that the new tree adds no cycle. Lock-free typing grows ranked worlds, which need ordinals for the new tree.",
+   "breaks": "The creation in the recursive fork-join program orders an infinite descending chain on the new tree. It meets $\\mathsf{acyc\\_new}$ and fails $\\mathsf{gen\\_new}$, which asks $\\prec^{\\rho}_{C}$ well-founded.",
+   "example": "At $N = \\infty$ the fork-join example creates under $\\mathsf{acyc\\_new}$.",
+   "rocq": "static/Contexts.v: new_ok, new_ok_acyc",
+   "sig": "\\mathsf{new\\_ok} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to \\mathsf{Ctx} \\to \\mathsf{PVar} \\to \\mathcal{P}(\\mathsf{Point}^{2}) \\to \\mathsf{Prop}",
+   "args": [
+    {
+     "name": "N",
+     "meaning": "the bound of the judgment"
+    }
+   ]
+  },
+  "new.lemmaC": {
+   "title": "Generated creations are acyclic",
+   "what": "$\\mathsf{gen\\_new}\\,\\Gamma\\,\\rho\\,C$ implies $\\mathsf{acyc\\_new}\\,\\Gamma\\,\\rho\\,C$, constructively.",
+   "why": "So the premise at a finite bound implies the premise at $N = \\infty$, and an erasure of a lock-free derivation meets the deadlock-free premise. The simple condition $\\mathsf{wf\\_new}\\,C$, each fact ending in the tree and $\\prec^{\\rho}_{C}$ well-founded, implies both.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "Each creation of the client and server loop meets $\\mathsf{wf\\_new}$.",
+   "rocq": "static/Contexts.v: gen_new_acyc, wf_new, wf_new_acyc, wf_new_gen",
+   "sig": "\\mathsf{gen\\_new}\\,\\Gamma\\,\\rho\\,C \\Rightarrow \\mathsf{acyc\\_new}\\,\\Gamma\\,\\rho\\,C",
+   "args": [
+    {
+     "name": "\\Gamma",
+     "meaning": "the fact context"
+    },
+    {
+     "name": "\\rho",
+     "meaning": "the fresh root"
+    },
+    {
+     "name": "C",
+     "meaning": "the facts of the creation"
     }
    ]
   },
@@ -4525,12 +4697,12 @@ window.MAP = {
    ]
   },
   "lfi.wf": {
-   "title": "A well-founded world, ranks",
-   "what": "A ranked world gives each point an ordinal rank, and $x \\prec y$ holds iff the rank of $x$ is below the rank of $y$. E-New asks $\\mathsf{wf\\_new}$ at a fresh root, P-Term and P-Connect ask $\\mathsf{wf}$ of the static world, and lock-free adequacy has no premise on the world.",
-   "why": "A waiting thread waits on a holding thread whose own waiting point lies lower. Ranks are ordinals, so this chain ends, and someone at the bottom can act.",
-   "breaks": "A waiting chain that grows forever, in the Examples tab, creates each channel below the previous one, and E-New rejects that creation.",
-   "example": "Client and server rank its points below $\\omega^{2} + 2$.",
-   "rocq": "types/Worlds.v: world, w_lt; soup/LFAdequacy.v: lf_adequacy",
+   "title": "Ranked worlds",
+   "what": "A ranked world gives each point an ordinal rank, and $x <_R y$ holds iff the rank of $x$ is below the rank of $y$. E-New asks $\\mathsf{gen\\_new}$ at a fresh root, process typing asks $\\mathsf{wf}$ of the static world, and lock-free adequacy asks only that the world be ranked.",
+   "why": "A waiting thread waits on a holding thread whose own waiting point lies lower. Ranks are ordinals and never change along a run, so this chain ends, and the thread at its bottom can act.",
+   "breaks": "A strict world that grows along a run could hold an infinite descending chain in the union of its worlds, and a wait could pass down it forever.",
+   "example": "Client and server rank their points below $\\omega^{2} + 2$.",
+   "rocq": "types/Worlds.v: wranked, w_lt, wchain_lt_wf; soup/LFAdequacy.v: lf_adequacy",
    "sig": "\\varrho_a : \\mathsf{tree}(a) \\to \\mathsf{Ord}",
    "args": [
     {
@@ -5866,11 +6038,11 @@ window.MAP = {
   },
   "E-New.facts": {
    "title": "The constraint $C$",
-   "what": "A set of facts, possibly infinite, over $\\pi$, its shifts and fields, and points of $\\Gamma$.",
-   "why": "The derivation chooses the facts the new channel needs, and an interval $l \\prec \\pi \\prec u$ is the simplest case. Opening the existential adds $C$ to $\\Gamma$.",
-   "breaks": "With facts limited to finitely many bounds by held ends, a client and server loop that orders the two channels at every round, $\\iota^{+k} \\prec \\overline{\\kappa^{+k}}$ for all $k$, does not type.",
-   "example": "$C = \\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ in the cycle example.",
-   "rocq": "static/Typing.v: e_new",
+   "what": "A set of facts, which may be infinite, over the fresh root $\\rho$, its shifts and fields, and points of $\\Gamma$.",
+   "why": "The derivation chooses the facts the new channel needs, and an interval $l \\prec \\rho \\prec u$ is the simplest case. Opening the existential adds $C$ to $\\Gamma$.",
+   "breaks": "With facts limited to finitely many bounds by held ends, a client and server loop that orders the points of all rounds at once has no typing.",
+   "example": "$C = \\{\\rho \\prec \\overline{\\rho\\cdot 0}\\}$.",
+   "rocq": "static/Typing.v: e_new; types/Points.v: bcs",
    "sig": "C \\subseteq \\mathsf{Point} \\times \\mathsf{Point}",
    "args": [
     {
@@ -5879,34 +6051,19 @@ window.MAP = {
     }
    ]
   },
-  "E-New.pos": {
-   "title": "Position $\\pi$",
-   "what": "Either $\\pi = \\rho$, bound by the existential, or $\\pi = x\\cdot\\kappa$ for a point $x$ of the context.",
-   "why": "A channel created to be sent on an end at $x$ lands at the field $x\\cdot j$ where the receiver expects its $j$-th payload end.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$d$ at $\\iota\\cdot 0$ in the example with a channel between two box arguments.",
-   "rocq": "static/Typing.v: e_new",
-   "sig": "\\pi \\in \\mathsf{Point}",
-   "args": [
-    {
-     "name": "\\rho",
-     "meaning": "the point variable bound by the existential"
-    },
-    {
-     "name": "x, \\kappa",
-     "meaning": "a point of the context and a field label"
-    }
-   ]
-  },
   "E-New.wf": {
-   "title": "$\\pi = \\rho \\Rightarrow \\mathsf{gen\\_new}\\,\\Gamma\\,\\rho\\,C$",
-   "what": "At a fresh root $C$ with program order is well-founded on $\\mathsf{tree}(\\rho)$. A fact of $C$ from the tree down to a context point $y$ has a partner in $\\Gamma$ below $y$, as $\\mathsf{gen\\_new}$ states.",
-   "why": "The fundamental theorem ranks the new tree by the least ranks above the context points below the tree. A point with a partner $t$ stays at or below the rank of $t$, so a fact down to $y$ holds in each ranked world that satisfies $\\Gamma$. With no fact down to a context point this is $\\mathsf{wf\\_new}$.",
-   "breaks": "A fact from a new point down to a context point with no partner fails when the context point has rank $0$. The growing waiting chain states such a fact in each round, and its box can state no partner.",
-   "example": "$\\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ needs no partner. $\\{\\rho \\prec y\\}$ under $\\Gamma \\vdash z \\prec y$ has the partner $z$.",
-   "rocq": "static/Contexts.v: gen_new, wf_new_gen; static/Typing.v: e_new; compat/Redex.v: Erel_new",
-   "sig": "\\pi = \\rho \\Rightarrow \\mathsf{wf\\_new}\\,\\rho\\,C : \\mathsf{Prop}",
+   "title": "$\\mathsf{new\\_ok}_N\\,\\Gamma\\,\\rho\\,C$",
+   "what": "The facts $C$ of a creation at a fresh root meet $\\mathsf{acyc\\_new}$ at $N = \\infty$ and $\\mathsf{gen\\_new}$ at a finite bound.",
+   "why": "The fundamental theorem grows the world by the new tree. A strict world stays strict under $\\mathsf{acyc\\_new}$, and a ranked world finds ranks for the tree under $\\mathsf{gen\\_new}$.",
+   "breaks": "A fact from the tree down to a context point with nothing below it in $\\Gamma$, or a cycle through the tree, would leave no world that satisfies $C$.",
+   "example": "$C = \\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ for the two-channel example.",
+   "rocq": "static/Typing.v: e_new; static/Contexts.v: new_ok",
+   "sig": "\\mathsf{new\\_ok}_N\\,\\Gamma\\,\\rho\\,C : \\mathsf{Prop}",
    "args": [
+    {
+     "name": "\\Gamma",
+     "meaning": "the fact context"
+    },
     {
      "name": "\\rho",
      "meaning": "the fresh root"
@@ -5918,36 +6075,40 @@ window.MAP = {
    ]
   },
   "E-New.field": {
-   "title": "$\\pi = x\\cdot\\kappa \\Rightarrow \\Gamma \\vdash C$",
-   "what": "At a field the context entails each fact of $C$.",
-   "why": "The ranks of a field were fixed with its root, so a field creation picks no rank, and its facts must already hold.",
+   "title": "A field $x\\cdot\\kappa$",
+   "what": "E-New-Field places the new channel at a field $x\\cdot\\kappa$ of a point $x$ and its dual, with no constraint and no existential.",
+   "why": "The order around a field was fixed with its root, so a field creation adds no fact and hides no point. Its ranks in a ranked world were chosen when the root was created.",
    "breaks": "A field creation that stated a new fact could ask a rank that the root left no room for.",
-   "example": "A field creation with $C = \\varnothing$.",
+   "example": "The example with a channel between two box arguments creates $d$ at $\\iota\\cdot 0$.",
    "rocq": "static/Typing.v: e_new_fld",
-   "sig": "\\pi = x\\cdot\\kappa \\Rightarrow \\Gamma \\vdash C : \\mathsf{Prop}",
+   "sig": "x\\cdot\\kappa \\in \\mathsf{Point}",
    "args": [
     {
-     "name": "\\Gamma",
-     "meaning": "the fact context"
+     "name": "x",
+     "meaning": "a point"
     },
     {
-     "name": "C",
-     "meaning": "the facts of the creation"
+     "name": "\\kappa",
+     "meaning": "a field label"
     }
    ]
   },
   "E-New.dual": {
    "title": "Dual pair at its tickets",
-   "what": "\\annp{$c^{+}$ has type $(S@\\pi)^{m_1}_{m_1}$ and $c^{-}$ type $(\\overline{S}@\\overline{\\pi})^{m_2}_{m_2}$, each at credit equal to its tickets.}",
+   "what": "$c^{+}$ has type $(S@\\pi)^{m_1}_{m_1}$ and $c^{-}$ type $(\\overline{S}@\\overline{\\pi})^{m_2}_{m_2}$ for the position $\\pi$, the fresh root or the field. \\annp{Each end starts at credit equal to its tickets.}",
    "why": "\\annp{Fuel starts each counter of a new channel at the tickets of its end\\annp{, and the credits} are lower bounds on these counters.}",
    "breaks": "Nothing. It is a definition.",
-   "example": "$(S@\\pi)^{3}_{3} \\otimes (\\overline{S}@\\overline{\\pi})^{1}_{1}$ at $N = 4$.",
-   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)",
+   "example": "$(S@\\rho)^{3}_{3} \\otimes (\\overline{S}@\\overline{\\rho})^{1}_{1}$ at $N = 4$.",
+   "rocq": "static/Typing.v: e_new, e_new_fld",
    "sig": "(S@\\pi)^{m_1}_{m_1} \\otimes (\\overline{S}@\\overline{\\pi})^{m_2}_{m_2}",
    "args": [
     {
      "name": "S",
-     "meaning": "any session type, chosen by the derivation"
+     "meaning": "the protocol, chosen by the derivation"
+    },
+    {
+     "name": "\\pi",
+     "meaning": "the position, the fresh root $\\rho$ or the field $x\\cdot\\kappa$"
     },
     {
      "name": "m_1, m_2",
@@ -5958,10 +6119,10 @@ window.MAP = {
   "E-New.tickets": {
    "title": "$m_1 + m_2 \\leq N$",
    "what": "The creation picks the tickets of the two new ends with sum at most $N$.",
-   "why": "The invariant on the tickets of a channel holds for every new channel, so E-Link can read the partner bound of an end off its type.",
+   "why": "The bound on the tickets of a channel then holds for each new channel, so E-Link can read the partner bound of an end off its type.",
    "breaks": "Tickets above the bound break the premise of E-Link, which compares a credit with $N - m$.",
    "example": "$m_1 = m_2 = 2$ at $N = 4$.",
-   "rocq": "not yet in the Rocq (docs/redesign/check-links-without-tickets.md, decided 2026-11-21)",
+   "rocq": "types/Costs.v: tsum_ok; static/Typing.v: e_new, e_new_fld",
    "sig": "m_1 + m_2 \\leq N",
    "args": [
     {
