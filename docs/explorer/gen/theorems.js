@@ -160,7 +160,7 @@ srv  = !(g = λp. let ⟨a, b⟩ = p in let ⟨u, a⟩ = recv a in let ∗ = u i
                 let b = send ⟨∗, b⟩ in (force g) ⟨a, b⟩)
 -- both boxes : □∀ι κ ζ. C. ∗ ⊸ (S1@ι ⊗ S2@κ ⊸^ζ ∗)
 -- C = {ι+k ≺ (κ+k)‾, κ+k ≺ (ι+k+1)‾, ι+k ≺ ζ, κ+k ≺ ζ | k}`,
-    shows: "The second $\\mathsf{new}$ places $b$ at $\\rho\\cdot 0$ and states $C$ at $(\\rho, \\rho\\cdot 0, \\rho\\cdot 1)$, the facts the self call at $(\\iota^{+}, \\kappa^{+}, \\zeta)$ needs.",
+    shows: "The second $\\mathsf{new}$ places $b$ at $\\rho\\cdot 0$ and states $C$ at $(\\rho, \\rho\\cdot 0, \\rho\\cdot 1)$, the facts the recursive call at $(\\iota^{+}, \\kappa^{+}, \\zeta)$ needs.",
     rocq: 'examples/ClientServer.v: cs_typed; examples/LFClientServer.v: cs_lftyped, cs_lock_free',
     accepts: { df: { ok: true, rocq: 'cs_dftyped, cs_typed' }, live: { ok: true, rocq: 'cs_dftyped, cs_guarded' }, lf: { ok: true, N: 3, rocq: 'cs_lftyped, cs_lock_free' } } },
   { id: 'ex-cycle', title: 'Cycle', modes: ['df', 'live', 'lf'],
@@ -231,7 +231,7 @@ main = let ⟨e, e′⟩ = new in (force ring) ⟨e, e′⟩`,
 pn_fix      = !(f = λx. (force f) x)                  -- fix λx.x
 cx_box      = !(f = let ∗ = (force f) ∗ in λy. y)     -- recurses before returning
 spawn_loop  = !(f = λc. spawn (λ_. (force f) c))      -- spawns forever`,
-    shows: "Each box uses its self before any session action, so $\\varnothing \\vdash\\!\\triangleright t$ fails for every $t$ listed.",
+    shows: "Each box uses its own variable before any session action, so $\\varnothing \\vdash\\!\\triangleright t$ fails for every $t$ listed.",
     rocq: 'examples/GuardEx.v: div_not_guarded, pn_fix_not_guarded, cx_not_guarded, spawn_loop_not_guarded',
     accepts: { live: { ok: false, part: 'guard', rocq: 'div_not_guarded, pn_fix_not_guarded, cx_not_guarded, spawn_loop_not_guarded' }, lf: { ok: false, part: 'guard', rocq: 'div_not_guarded, pn_fix_not_guarded, cx_not_guarded, spawn_loop_not_guarded' } } },
   { id: 'ex-guard-pos', title: 'Guard acceptances', modes: ['live', 'lf'],
@@ -239,7 +239,7 @@ spawn_loop  = !(f = λc. spawn (λ_. (force f) c))      -- spawns forever`,
 stage = !(f = λin. let ⟨v, in⟩ = recv in in let ∗ = close in in
                   let ⟨a, b⟩ = new in let ∗ = spawn (λ_. (force f) b) in
                   close (send ⟨v, a⟩))                  -- a pipeline stage`,
-    shows: "$\\mathsf{recv}$ acts, so the rest of the body is checked under $\\varnothing$ and the self is unmarked when it is forced.",
+    shows: "$\\mathsf{recv}$ acts, so the rest of the body is checked under $\\varnothing$ and the box variable is unmarked when it is forced.",
     rocq: 'examples/GuardEx.v: loop_guarded, stage_guarded',
     accepts: { live: { ok: true, part: 'guard', rocq: 'loop_guarded, stage_guarded' }, lf: { ok: true, part: 'guard', rocq: 'loop_guarded, stage_guarded' } } },
   { id: 'ex-forwarder', title: 'The spawn forwarder', modes: ['lf'],

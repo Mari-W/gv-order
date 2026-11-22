@@ -20,9 +20,11 @@ the mechanical rules.
 4. **Own blocks only for new notions.** A lock-free block of its own (pink
    background, nothing coloured inside) exists only for a notion without a
    deadlock-free counterpart: annotations and tickets, aging and capture,
-   the guard, fuel and the lock-free process relation. The typing section opens with one such block
-   per device lock freedom adds (credits, tickets, the guard, a well-founded
-   world), each listing its operators with a clickable note and their meaning.
+   the guard, fuel and the lock-free process relation. After the judgment, its
+   contexts and the side conditions, the typing section has one such block per
+   device lock freedom adds (counters with credits and tickets, the guard,
+   ranked worlds), each listing its operators with a clickable note and their
+   meaning. They follow the judgment because they use its notation.
 5. **Theorems follow the proof.** The theorem section opens with the chain of
    results, then the compatibility lemmas, the fundamental theorems, adequacy and
    soundness. Each lock-free result sits in the block of its deadlock-free
@@ -38,8 +40,8 @@ the mechanical rules.
 
 | Section | Blocks |
 |---|---|
-| Types and worlds | types (credits coloured), session types, duality, equivalence, heads, payloads, *annotations and tickets*, kinds, worlds, order, well-formed and well-founded worlds, extension |
-| Typing | *credits*, *tickets*, *the guard*, *a well-founded world*, judgment, contexts, side conditions, *aging and capture*, unit/variables/ends, functions, products/sums/let, boxes, existentials, constants, actions and link, spawn, creation, subtyping and structural rules, process typing, *the guard* |
+| Types and worlds | types (credits coloured), session types, duality, equivalence, heads, payloads, *annotations and tickets*, kinds, worlds (kind coloured), order, acyclic and well-founded worlds, extension |
+| Typing | judgment, contexts, side conditions, *counters, credits and tickets*, *the guard*, *ranked worlds*, *aging*, unit/variables/ends, functions, products/sums/let, boxes, existentials, constants, actions and link, spawn, creation (E-New, E-New-Field), subtyping and structural rules, process typing, *the guard* |
 | Semantic typing | reading guide, step costs, values, terms, obligations of term steps, readiness, processes, obligations of process steps, *relation and fuel side by side*, *fuel*, *fuel obligations*, *values in FV*, *the lock-free process relation*, semantic judgments |
 | Theorems | how the results fit together, bind, composition, fundamental theorems, adequacy, soundness, *conservativity* |
 

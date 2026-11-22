@@ -114,6 +114,96 @@ reason, and the Rocq name it was checked against. Sections follow page order.
 
 ## Typing
 
+- Section order (layout.js, BLOCKS.md). Old: the lock-free device blocks
+  first, then the judgment. New: judgment, contexts, side conditions, then
+  the lock-free device blocks. Why: checker (var-before-intro of $\Delta$,
+  $\Lambda$, $t$, $\rho$), the device blocks use the notation of the
+  judgment. This changes rule 4 of BLOCKS.md, see the questions.
+- `t-lf-counters` (new, lock-free only) replaces `t-lf-credits` and
+  `t-lf-tickets`. Rows: the counter $a \leq f(o) \leq m$ of an end
+  $o : (S@x)^{a}_{m}$, credit, cost, aging, idle ends, tickets, reset by an
+  action, $\mathsf{tk}(o) + \mathsf{tk}(\overline{o}) \leq N$, transfer,
+  capture, spawn, link. Caption explains why there are two numbers (the
+  credit a lower bound the holding thread needs, the tickets an upper bound
+  the waiting thread needs) and derives "at most $N$ links per wait" from
+  E-Link. Worked example at $N = 4$ in the title note. New notes
+  `lfi.counter`, `lfi.link`. Rewritten `lfi.credit`, `lfi.tickets`.
+  Why: brief (merge Credits and Tickets into one Counters block),
+  instructiveness. Checked against `TSess`, `lgt`, `tsum_ok`, `e_link`,
+  `sp_cap`, `sp_tsum` (soup/State.v).
+- `t-lf-wf`. Old title "A well-founded world", rows $\varrho_a :
+  \mathsf{tree}(a) \to \mathsf{Ord}$ and $\mathsf{wf\_new}\,\rho\,C$, caption
+  "lock-free adequacy asks nothing of the world". New title "Ranked worlds",
+  rows $\varrho : \mathsf{Point} \to \mathsf{Ord}$, $\mathsf{gen\_new}$,
+  $\mathsf{wf}\,W$ at a finite bound, the measure. Caption says that ranks
+  fixed once chosen keep the union of the worlds of a run well-founded and
+  that lock-free adequacy asks a ranked world. Note `lfi.wf` follows. Why:
+  Rocq change (`lf_adequacy` takes `wranked W`). Checked against `wranked`,
+  `wchain_lt_wf`, `lf_adequacy`.
+- `t-judgment`, `t-contexts`, `r-boxes`, `g-guard`, `t-lf-guard`. Captions
+  introduce $H$, $X$, $u$, $f$, $B$, $s$, $\Lambda$, $b$, $p$, $t$ before
+  use. The guard formulas write the variable $i$ (old $y$), matching the
+  syntax. $K_{\mathrm{act}}$ became $\mathsf{Act}$. Why: checker
+  (var-before-intro).
+- `r-new`. Old: one rule E-New with the position premise $(\bar\iota, \pi) \in
+  \{(\rho, \rho), (\varnothing, x\cdot\kappa)\}$, $\pi = \rho \Rightarrow
+  \mathsf{gen\_new}\,\Gamma\,\rho\,C$ and $\pi = x\cdot\kappa \Rightarrow
+  \Gamma \vdash C$. New: two rules. E-New at a fresh root asks
+  $\mathsf{acyc\_new}\,\Gamma\,\rho\,C$ in the deadlock-free view and
+  $\mathsf{new\_ok}_N\,\Gamma\,\rho\,C$ in the lock-free view, and returns
+  $\exists^{\bot}\rho.\,C.\,(S@\rho \otimes \overline{S}@\overline{\rho})$.
+  E-New-Field returns the plain pair at $x\cdot\kappa$, with no constraint and
+  no existential. Below the rules: $\prec^{\rho}_{C}$ (new step),
+  $\mathsf{bridge}_C$, $\mathsf{acyc\_new}$, and in the lock-free view
+  $\mathsf{gen\_new}$ with finite nonempty sets $Y$ of context points,
+  $\mathsf{new\_ok}_N$ and Lemma C ($\mathsf{gen\_new} \Rightarrow
+  \mathsf{acyc\_new}$). Caption explains why plain new has two rules, title
+  note example from the two-channel cycle. New notes `new.step`,
+  `new.bridge`, `new.acyc`, `new.gen`, `new.ok`, `new.lemmaC`. Rewritten
+  `E-New.wf`, `E-New.field`, `E-New.facts`, `E-New.dual`, `E-New.tickets`
+  (the last two cited "not yet in the Rocq"). Deleted `E-New.pos`. Why: Rocq
+  change (`e_new` asks `new_ok N`, `e_new_fld` has no constraint, the old map
+  showed (gen-new₁) with single partners). Checked against `e_new`,
+  `e_new_fld`, `new_ok`, `acyc_new`, `cbridge`, `new_step`, `gen_new`,
+  `gen_new_rel`, `gen_new_acyc`.
+- `t-consts`. The row for $\mathsf{new}$ is removed. $\mathsf{new}$ is a term
+  former with its own two rules, and the row repeated the old one-rule form.
+- `t-subs`. Sub-Ex old: premises $\Gamma, C(\bar\iota) \vdash C'(\bar\iota)$
+  and the body, conclusion $\exists^{l} \leq \exists^{l}$. New: added premise
+  $l' = l \lor \Gamma, C(\bar\iota) \vdash l' \preccurlyeq T$, conclusion
+  $\exists^{l} \leq \exists^{l'}$, in both views. Lock-free Sub-Sess now
+  shows the tickets, $(S@x)^{a}_{m} \leq (S'@x)^{a'}_{m}$. New note
+  `tp.sub-exlb`, `tp.sub-ex` cites `tsub_open_pack` and drops the claim
+  about the same lower bound. Why: Rocq change (sixth run), `sub_ex` takes
+  `lb_lower`, `sub_sess` keeps the tickets. Checked against `sub_ex`,
+  `lb_lower`, `sub_sess`, `Vrel_heads`, `Vrel_tsub`, `tsub_open_pack`.
+- `r-ex`. E-Open showed $\neg\mathsf{unlimited}\,T$ only in the lock-free
+  view. It is a premise at every $N$ and is now plain. Note `E-Open.cons`
+  cites `cons_gen`, `cons_tree`, `sbv_rejected` in place of the deleted
+  `cons_law`. Note `E-Pack.wf` loses its colon. Checked against `e_open`,
+  `cons_open`.
+- `p-typing`. P-Term old premise $\mathsf{wf}\,W$, new $\mathsf{acyc}\,W$
+  (deadlock-free view) and $\mathsf{ok}_N\,W$ (lock-free view). P-Connect old
+  $\mathsf{wf}(W_1 \sqcup W_2)$, new $\mathsf{acyc}$ and $\mathsf{ok}_N$ of
+  the join. P-Connectⁿ likewise, and its conclusion old $W \sqsubseteq
+  (W_1 \sqcup \cdots \sqcup W_n)|_{\mathsf{I}(\Sigma, T)}$, new
+  $\mathsf{facts}\,W \subseteq \mathsf{facts}(\ldots)$, because
+  `p_connect_n` states inclusion of facts only. Caption old "compares only
+  the shared roots of the two worlds", new names the hidden world
+  $W|_{\mathsf{I}(\Sigma, T)}$, the join of the interface worlds, and the one
+  sentence on Milner's ring (acyclic in pairs, cyclic together, rejected).
+  Notes `P-Term.wf`, `P-Connect.wf`, `P-Connect.n`, `tp.pjudg` follow, the
+  title note of P-Connect says "check on the joined order" for "strictness
+  check". Why: Rocq change (`wok N` in `p_term`, `p_connect`,
+  `p_connect_n`). Checked against `p_term`, `p_connect`, `wok`, `ptyped_wf`,
+  `p_connect_n`, `ring_rejected`.
+- Wording. "self" of a box became "box variable" or "recursive call" in
+  typing, syntax, semantics, types, the relation and theorem notes, as the
+  paper dropped self.
+- Citations fixed: `lbound_of` (deleted) in `side.lb`, `E-Abs.lb`; `tle`
+  (now `fle`) in `E-Sub.cost`; `tenv_of` and `e_spawn_lam` cited in the right
+  files; `act.refill` no longer says "not yet in the Rocq".
+
 ## Semantic typing
 
 ## Theorems
