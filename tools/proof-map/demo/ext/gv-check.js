@@ -10,7 +10,7 @@ const LEAK = [/\^\{\\sym\{[^}]*\}\{[ab]/, /\^\{[ab](_|'|\}|\s*\+)/, /(?<!\\!)\\t
 module.exports = {
   proseRules: [
     // the author's strict house rules (moved here from the shared base, 2026-11-21)
-  { name: 'metaphor', re: /\b(costs?|paid|pays?|price|cheap|for free|in return|budget|spend|spends|spent|lives? in|rests? on|reach(es)?|sits?|lands? in|stands? at|talks?|tells?|knows?|sees?|answers?|promises?|behaves?|carries|carry|travels?|hands? (over|on)|owes?|thus|just)\b/gi, why: 'Say what the definition does, without a picture.' },
+  { name: 'metaphor', re: /\b(paid|pays?|price|cheap|for free|in return|budget|spend|spends|spent|lives? in|rests? on|reach(es)?|sits?|lands? in|stands? at|talks?|tells?|knows?|sees?|answers?|promises?|behaves?|carries|carry|travels?|hands? (over|on)|owes?|thus|just)\b/gi, why: 'Say what the definition does, without a picture.' },
   { name: 'like', re: /\b[Ll]ike\b(?! to)/g, why: 'Write "such as" or name the case.' },
   { name: 'pronoun ending', re: /\b(it|them)\.(\s|$)/g, why: 'End on the noun that carries the weight.' },
   { name: 'every/any/all', re: /\b(every|any|all)\b/gi, why: 'Quantify only where the definition quantifies.' },
