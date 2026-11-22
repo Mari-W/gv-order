@@ -1049,6 +1049,9 @@ Proof. induction p as [|p IH|p IH]; simpl; rewrite ?IH; done. Qed.
 Lemma pS_contr p : scontr (pS p).
 Proof. induction p as [|p IH|p IH]; cbn [pS scontr tcontr]; rewrite ?IH; try done. Qed.
 
+Lemma sty_df_pS p : sty_df (pS p) = pS p.
+Proof. induction p as [|p IH|p IH]; simpl; rewrite ?IH; done. Qed.
+
 Fixpoint fb (p : proto) : expr :=
   match p with
   | PEnd => LetU (EClose (Var 1)) (EClose (Var 0))
@@ -1112,3 +1115,288 @@ Proof.
     exact (IH (5 + n) (x⁺) (y⁺) Hq).
   Unshelve. all: exact None.
 Qed.
+
+(** *** The schema as a process
+
+    [fwdp p o1 o2] binds the two ends and runs [fb p]. Its world [W_p p]
+    holds exactly the facts p generates at the constant roots of [px] and
+    [py]. The world is well-founded: at offset k the end that acts first
+    in p gets the lower potential, and every other fact raises the
+    offset. *)
+
+Definition fwdp_t (p : proto) (o1 o2 : cend) : expr := LetP (Pair (Chan o1) (Chan o2)) (fb p).
+
+Lemma fwdp_dftyped W Γ p o1 o2 x y : o1 ≠ o2 → ffp W Γ p x y →
+  dftyped W ({[o1 := TE (pS p) x None None]} ∪ {[o2 := TE (pS (pdual p)) y None None]}) Γ [] (∅, None)
+    (fwdp_t p o1 o2) TUnit.
+Proof.
+  intros Ho Hf. unfold fwdp_t.
+  eapply d_letp with (Θ2 := ∅); [split; [apply map_disjoint_empty_r|by rewrite map_union_empty]|apply lsplit_nil| |].
+  { eapply d_pair with (Θ1 := {[o1 := TE (pS p) x None None]}) (Θ2 := {[o2 := TE (pS (pdual p)) y None None]});
+      [split; [by apply map_disjoint_singleton_l_2; rewrite lookup_singleton_ne|reflexivity]
+                   |apply lsplit_nil| |]; apply d_chan, spare_unl; spare_tac. }
+  exact (fb_dftyped W Γ p 0 x y Hf).
+  Unshelve. all: exact None.
+Qed.
+
+Fixpoint ffacts (p : proto) (x y : point) (g : fact) : Prop :=
+  match p with
+  | PEnd => g = FLt x (y‾)
+  | PRcv q => g = FLt x (y‾) ∨ g = FLt y (x⁺‾) ∨ ffacts q (x⁺) (y⁺) g
+  | PSnd q => g = FLt y (x‾) ∨ g = FLt x (y⁺‾) ∨ ffacts q (x⁺) (y⁺) g
+  end.
+
+Lemma ffacts_ffp W Γ p : ∀ x y, (∀ g, ffacts p x y g → sw_facts W g) → ffp W Γ p x y.
+Proof.
+  induction p as [|p IH|p IH]; intros x y H; cbn [ffp ffacts] in *.
+  - apply sl_w, sw_lt_fact, H. done.
+  - split_and!; [apply sl_w, sw_lt_fact, H; tauto|apply sl_w, sw_lt_fact, H; tauto|].
+    apply IH. intros g Hg. apply H. tauto.
+  - split_and!; [apply sl_w, sw_lt_fact, H; tauto|apply sl_w, sw_lt_fact, H; tauto|].
+    apply IH. intros g Hg. apply H. tauto.
+Qed.
+
+Lemma ffacts_roots p : ∀ x y u v, ffacts p x y (FLt u v) →
+  (pt_root u = pt_root x ∨ pt_root u = pt_root y) ∧ (pt_root v = pt_root x ∨ pt_root v = pt_root y).
+Proof.
+  induction p as [|p IH|p IH]; intros x y u v H; cbn [ffacts] in H.
+  - injection H as -> ->. unfold pt_root. simpl. tauto.
+  - destruct H as [H|[H|H]]; [injection H as -> ->; unfold pt_root; simpl; tauto
+      |injection H as -> ->; unfold pt_root; simpl; tauto|].
+    apply IH in H. unfold pt_root in *. simpl in *. exact H.
+  - destruct H as [H|[H|H]]; [injection H as -> ->; unfold pt_root; simpl; tauto
+      |injection H as -> ->; unfold pt_root; simpl; tauto|].
+    apply IH in H. unfold pt_root in *. simpl in *. exact H.
+Qed.
+
+Definition W_p (p : proto) : sworld := SWorld ({[0]} ∪ {[1]}) (ffacts p px py).
+
+Lemma W_p_wf p : sworld_wf (W_p p).
+Proof.
+  split; simpl. intros u v H. apply ffacts_roots in H as [Hu Hv].
+  unfold croot_in. split.
+  - destruct Hu as [Hu|Hu]; [exists 0|exists 1]; rewrite Hu; split; [done|set_solver|done|set_solver].
+  - destruct Hv as [Hv|Hv]; [exists 0|exists 1]; rewrite Hv; split; [done|set_solver|done|set_solver].
+Qed.
+
+(** Does the end at x act first at offset k? *)
+Fixpoint pfirst (p : proto) (k : nat) : bool :=
+  match p, k with
+  | PEnd, _ => true
+  | PRcv _, 0 => true
+  | PSnd _, 0 => false
+  | PRcv q, S k | PSnd q, S k => pfirst q k
+  end.
+
+Definition pbit (f : nat → bool) (u : point) : nat :=
+  match pt_name u with
+  | NConst 0 => if f (pt_off u) then 0 else 1
+  | NConst 1 => if f (pt_off u) then 1 else 0
+  | _ => 0
+  end.
+
+Definition ppot (f : nat → bool) (u : point) : nat := 2 * pt_off u + pbit f u.
+
+Lemma pbit_le f u : pbit f u ≤ 1.
+Proof. unfold pbit. repeat case_match; lia. Qed.
+
+Definition XP (k : nat) : point := MkPt (NConst 0) true k.
+Definition YP (k : nat) : point := MkPt (NConst 1) true k.
+
+Lemma ffacts_ppot p : ∀ k f u v, (∀ j, f (k + j) = pfirst p j) →
+  ffacts p (XP k) (YP k) (FLt u v) → ppot f u < ppot f v.
+Proof.
+  induction p as [|p IH|p IH]; intros k f u v Hf H; cbn [ffacts] in H.
+  - injection H as -> ->. specialize (Hf 0). rewrite Nat.add_0_r in Hf. simpl in Hf.
+    unfold ppot, pbit. simpl. rewrite Hf. lia.
+  - destruct H as [H|[H|H]].
+    + injection H as -> ->. specialize (Hf 0). rewrite Nat.add_0_r in Hf. simpl in Hf.
+      unfold ppot, pbit. simpl. rewrite Hf. lia.
+    + injection H as -> ->. unfold ppot. pose proof (pbit_le f (YP k)).
+      pose proof (pbit_le f (XP k)⁺‾). simpl. lia.
+    + apply (IH (k + 1)); [|exact H]. intros j. rewrite <-Nat.add_assoc. rewrite (Hf (1 + j)). done.
+  - destruct H as [H|[H|H]].
+    + injection H as -> ->. specialize (Hf 0). rewrite Nat.add_0_r in Hf. simpl in Hf.
+      unfold ppot, pbit. simpl. rewrite Hf. lia.
+    + injection H as -> ->. unfold ppot. pose proof (pbit_le f (XP k)).
+      pose proof (pbit_le f (YP k)⁺‾). simpl. lia.
+    + apply (IH (k + 1)); [|exact H]. intros j. rewrite <-Nat.add_assoc. rewrite (Hf (1 + j)). done.
+Qed.
+
+Lemma W_p_step p u v : swstep (W_p p) u v → ppot (pfirst p) u < ppot (pfirst p) v.
+Proof.
+  intros Hs. destruct Hs as [u v H|u|u].
+  - simpl in H. apply (ffacts_ppot p 0); [done|exact H].
+  - unfold ppot. cbn [pt_shift pt_name pt_off]. pose proof (pbit_le (pfirst p) u).
+    pose proof (pbit_le (pfirst p) u⁺). lia.
+  - unfold ppot. cbn [pt_shift pt_dual pt_name pt_off]. pose proof (pbit_le (pfirst p) u).
+    pose proof (pbit_le (pfirst p) u‾⁺). lia.
+Qed.
+
+Lemma W_p_lt p u v : W_p p ⊢ₛ u ≺ v → ppot (pfirst p) u < ppot (pfirst p) v.
+Proof.
+  intros H. induction H as [u v H|u v w H _ IH]; [by apply W_p_step|]. apply W_p_step in H. lia.
+Qed.
+
+Lemma W_p_swf p : swf (W_p p).
+Proof.
+  apply swf_iff.
+  assert (∀ m u, ppot (pfirst p) u = m → Acc (sw_lt (W_p p)) u) as Hacc.
+  { intros m. induction m as [m IH] using lt_wf_ind. intros u <-. constructor.
+    intros v Hv. eapply IH; [apply W_p_lt, Hv|done]. }
+  intros u. by apply (Hacc (ppot (pfirst p) u)).
+Qed.
+
+Lemma W_p_facts p : ffp (W_p p) hc_empty p px py.
+Proof. apply ffacts_ffp. intros g Hg. exact Hg. Qed.
+
+Definition Σp (p : proto) : senv := {[o1 := (pS p, px)]} ∪ {[o2 := (pS (pdual p), py)]}.
+
+Lemma Σp_pfree p : pfree (Σp p).
+Proof.
+  intros o Ho Hn. unfold Σp in Ho, Hn. rewrite dom_union_L, !dom_singleton_L in Ho, Hn.
+  set_unfold in Ho; set_unfold in Hn. destruct Ho as [->| ->]; simpl in Hn; destruct Hn; discriminate.
+Qed.
+
+Theorem fwdp_term p : ptyped None (W_p p) (Σp p) (∅, {[+ fwdp_t p o1 o2 +]}) TUnit.
+Proof.
+  apply (p_term None (W_p p) (Σp p) ∅ ∅ _ TUnit None).
+  - constructor.
+  - intros o. rewrite dom_empty_L. set_solver.
+  - set_solver.
+  - apply Σp_pfree.
+  - intros o e He. unfold Σp in He. apply lookup_union_Some_raw in He as [He|[_ He]];
+      apply lookup_singleton_Some in He as [_ <-]; apply pS_contr.
+  - set_solver.
+  - change (fhalf None) with (None : fuel).
+    assert (tenv_of None (Σp p) ∪ ∅ =
+      tenv_df ({[o1 := TE (pS p) px None None]} ∪ {[o2 := TE (pS (pdual p)) py None None]})) as ->.
+    { rewrite map_union_empty. unfold tenv_of, tenv_df, Σp. rewrite !map_fmap_union, !map_fmap_singleton.
+      unfold tentry_df. cbn [te_sty te_pt fst snd]. by rewrite !sty_df_pS. }
+    exact (fwdp_dftyped _ _ p o1 o2 px py o1_o2 (W_p_facts p)).
+  - split; [apply W_p_wf|apply W_p_swf].
+Qed.
+
+(** *** Identity expansion for every first-order protocol
+
+    The argument of [fwd_expand] with the potential [ppot]: between two
+    points on the root of x the schema's world holds only program order,
+    so P ∥ fwdp types whenever P types and its world does not know the
+    root of y. *)
+
+Lemma pdual_pdual p : pdual (pdual p) = p.
+Proof. induction p as [|p IH|p IH]; simpl; rewrite ?IH; done. Qed.
+
+Lemma ppot_off f u v : pt_name u = pt_name v → pt_off u < pt_off v → ppot f u < ppot f v.
+Proof.
+  intros Hn Ho. unfold ppot. pose proof (pbit_le f u). pose proof (pbit_le f v). lia.
+Qed.
+
+Lemma ffacts_names p : ∀ x y u v, ffacts p x y (FLt u v) →
+  (pt_name u = pt_name x ∨ pt_name u = pt_name y) ∧ (pt_name v = pt_name x ∨ pt_name v = pt_name y).
+Proof.
+  induction p as [|p IH|p IH]; intros x y u v H; cbn [ffacts] in H.
+  - injection H as -> ->. simpl. tauto.
+  - destruct H as [H|[H|H]]; [injection H as -> ->; simpl; tauto|injection H as -> ->; simpl; tauto|].
+    apply IH in H. simpl in H. exact H.
+  - destruct H as [H|[H|H]]; [injection H as -> ->; simpl; tauto|injection H as -> ->; simpl; tauto|].
+    apply IH in H. simpl in H. exact H.
+Qed.
+
+Lemma W_p_lt_inv p u v : W_p p ⊢ₛ u ≺ v →
+  po u v ∨ (nm01 u ∧ nm01 v ∧ ppot (pfirst p) u < ppot (pfirst p) v).
+Proof.
+  assert (∀ u v, swstep (W_p p) u v → po u v ∨ (nm01 u ∧ nm01 v ∧ ppot (pfirst p) u < ppot (pfirst p) v)) as Hs.
+  { intros u' v' H. pose proof (W_p_step _ _ _ H) as Hp.
+    destruct H as [u' v' H|u'|u'].
+    - right. simpl in H. apply ffacts_names in H as [Hu Hv]. unfold nm01. simpl in Hu, Hv. tauto.
+    - left. by apply tc_once; left.
+    - left. by apply tc_once; right. }
+  induction 1 as [u v H|u v w H _ IH]; [by apply Hs|].
+  apply Hs in H. destruct H as [H|(Hu & Hv & H)], IH as [IH|(Hv' & Hw & IH)].
+  - left. by eapply po_trans.
+  - right. destruct (po_name _ _ H) as [Hn Ho]. split_and!; [unfold nm01; by rewrite Hn|done|].
+    pose proof (ppot_off (pfirst p) u v Hn Ho). lia.
+  - right. destruct (po_name _ _ IH) as [Hn Ho]. split_and!; [done|unfold nm01; by rewrite <-Hn|].
+    pose proof (ppot_off (pfirst p) v w Hn Ho). lia.
+  - right. split_and!; [done|done|lia].
+Qed.
+
+Lemma W_p_lt_root0 p u v : W_p p ⊢ₛ u ≺ v → pt_root u = NConst 0 → pt_root v = NConst 0 → po u v.
+Proof.
+  intros H Hu Hv. destruct (W_p_lt_inv _ _ _ H) as [Hp|(Hu' & Hv' & Hlt)]; [done|].
+  assert (pt_name u = NConst 0) as Hu0.
+  { destruct Hu' as [E|E]; [done|]. unfold pt_root in Hu. rewrite E in Hu. discriminate. }
+  assert (pt_name v = NConst 0) as Hv0.
+  { destruct Hv' as [E|E]; [done|]. unfold pt_root in Hv. rewrite E in Hv. discriminate. }
+  apply po_of_off; [by rewrite Hu0, Hv0|].
+  unfold ppot, pbit in Hlt. rewrite Hu0, Hv0 in Hlt.
+  destruct (decide (pt_off u < pt_off v)) as [?|Hge]; [done|]. exfalso.
+  destruct (decide (pt_off u = pt_off v)) as [E|Hne].
+  - rewrite E in Hlt. lia.
+  - destruct (pfirst p (pt_off u)), (pfirst p (pt_off v)); lia.
+Qed.
+
+Lemma cut_W_p_swf p W : swf W → 1 ∉ sw_consts W →
+  swf (swrestrict W (swshared W (W_p p)) ⊔ swrestrict (W_p p) (swshared W (W_p p))).
+Proof.
+  intros HW H1. apply swf_iff. apply swf_iff in HW. eapply wf_sub; [|exact HW].
+  assert (∀ u v, swstep (swrestrict W (swshared W (W_p p)) ⊔ swrestrict (W_p p) (swshared W (W_p p))) u v →
+            W ⊢ₛ u ≺ v) as Hs.
+  { intros u v Hs. apply swstep_join_inv in Hs as [Hs|Hs].
+    - apply (swrestrict_lt W (swshared W (W_p p))). by apply tc_once.
+    - destruct Hs as [u v (Hlt & (a & Ha & Has) & (b & Hb & Hbs))|u|u];
+        [|apply sw_lt_po|apply sw_lt_dpo].
+      apply po_slt, (W_p_lt_root0 p); [done| |].
+      + unfold swshared in Has. simpl in Has. assert (a = 0) as -> by set_solver. done.
+      + unfold swshared in Hbs. simpl in Hbs. assert (b = 0) as -> by set_solver. done. }
+  intros u v H. induction H as [u v H|u v w H _ IH]; [by apply Hs|].
+  eapply sw_lt_trans; [by apply Hs|exact IH].
+Qed.
+
+Definition Σxp (p : proto) : senv := {[edual o1 := (pS (pdual p), px‾)]}.
+Definition Σyp (p : proto) : senv := {[o2 := (pS (pdual p), py)]}.
+
+Lemma Σxp_dual p : senv_dual (Σxp p) = {[o1 := (pS p, px)]}.
+Proof.
+  unfold senv_dual, Σxp. rewrite map_fmap_singleton, kmap_singleton by apply _. simpl.
+  by rewrite pS_dual, pdual_pdual, ?pt_dual_dual.
+Qed.
+
+Theorem fwdp_expand p W Σ C E T :
+  ptyped None W (Σ ∪ Σxp p) (C, E) T →
+  Σ ##ₘ Σxp p → "a" ∉ chans_of Σ → "b" ∉ chans_of Σ → "b" ∉ C → 1 ∉ sw_consts W →
+  ptyped None (W ⊔ W_p p) (Σ ∪ Σyp p) (C ∪ ∅ ∪ {["a"]}, E ⊎ {[+ fwdp_t p o1 o2 +]}) T.
+Proof.
+  intros HP HΣ Ha Hb HbC H1.
+  assert (chans_of (Σxp p) = {["a"]}) as Ex by (unfold Σxp; by rewrite chans_single).
+  assert (chans_of (Σyp p) = {["b"]}) as Ey by (unfold Σyp; by rewrite chans_single).
+  pose proof (ptyped_chans _ _ _ _ _ HP) as HC. simpl in HC.
+  rewrite chans_of_union, Ex in HC.
+  pose proof (p_connect None W (W_p p) Σ (Σyp p) (Σxp p) C ∅ E {[+ fwdp_t p o1 o2 +]} T) as H.
+  rewrite Ex in H. apply H; clear H.
+  - exact HP.
+  - assert (Σyp p ∪ senv_dual (Σxp p) = Σp p) as ->.
+    { rewrite Σxp_dual. unfold Σyp, Σp. apply map_union_comm.
+      apply map_disjoint_singleton_l_2. by rewrite lookup_singleton_ne. }
+    apply fwdp_term.
+  - exact HΣ.
+  - rewrite Σxp_dual. unfold Σyp. apply map_disjoint_singleton_l_2. by rewrite lookup_singleton_ne.
+  - intros o. unfold Σxp. rewrite dom_singleton_L, !elem_of_singleton. intros ->. discriminate.
+  - rewrite ?Ey, ?Ex. set_solver.
+  - rewrite ?Ey, ?Ex. set_solver.
+  - rewrite ?Ey, ?Ex. set_solver.
+  - set_solver.
+  - rewrite ?Ey, ?Ex. set_solver.
+  - set_solver.
+  - apply cut_W_p_swf; [apply (ptyped_wf _ _ _ _ _ HP)|done].
+Qed.
+
+(** The schema is semantically sound at every protocol: the fundamental
+    theorem puts the forwarder process in the relation at every ranked
+    world that models its static world, and such a world exists. *)
+Corollary fwdp_sem p R : wmodels R (W_p p) → Σp p ⊨_R (∅, {[+ fwdp_t p o1 o2 +]}) : TUnit.
+Proof. intros HR. exact (fundamental_proc (W_p p) R _ _ _ (fwdp_term p) HR). Qed.
+
+Lemma W_p_models p : ∃ R, wmodels R (W_p p).
+Proof. apply wmodels_exists; [apply W_p_wf|apply W_p_swf]. Qed.

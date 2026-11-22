@@ -193,3 +193,6 @@ Print Assumptions fwd_config_deadlock_free.
 Print Assumptions ring_rejected.
 Print Assumptions fwdh_term.
 Print Assumptions fwdh_config_deadlock_free.
+Print Assumptions fb_dftyped.
+Print Assumptions fwdp_expand.
+Print Assumptions fwdp_sem.
