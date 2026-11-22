@@ -153,18 +153,18 @@ n("th.conservative", "Conservativity", "The annotated typing judgment at $N = \\
 n("th.typed-dftyped", "Erasure to deadlock-free typing", "For every $N$, erasing the annotations of an annotated derivation gives a deadlock-free derivation.", "Hence every lock-free typing is also a deadlock-free typing.", DEF, "The cycle at $N = 2$ erases to its deadlock-free typing.", "static/Conservativity.v: typed_dftyped");
 n("th.cost-fundamental", "Cost fundamental theorem", "The annotated typing judgment implies the semantic cost judgment $\\Delta \\vDash^{N} e : T\\ !\\ \\varepsilon$.", "It is the cost half of the annotated typing judgment, proved rule by rule.", DEF, "The forwarder $\\mathsf{fw}$.", "cost/CostFund.v: cost_fundamental");
 n("th.fsem-of-cost", "Fuel from cost typing", "If $\\varnothing ; \\Delta \\vdash^{\\varnothing}_{W,N} e : T\\ !\\ c$, $\\mathsf{tfree}\\,T$ and $\\mathsf{cr}(\\Delta) \\leq N$, then $\\mathsf{fsem}\\,N\\,\\Delta^{N}\\,e$.", "P-Term gives every end credit equal to its tickets, so the cost judgment yields the per-thread fuel that lock freedom needs.", "If a closure could mention an end it does not own, the forwarder could receive a closure that owns nothing and would have no fuel after spawning the closure.", "The forwarder $\\mathsf{fw}$.", "cost/CostFund.v: fsem_of_cost");
-n('th.crle', R`$\mathsf{cr}(\Delta) \leq N$`, R`Every credit in $\Delta$ is at most the bound $N$, that is $a \leq N$ for every entry $(S@x)^{a}_{m}$ or $(T \multimap U)^{a}$ of $\Delta$.`, R`A thread starts with every counter at its tickets, which are at most $N$, so its credits may guarantee no more than $N$.`, R`A credit above $N$ would allow more postponement than a fresh counter allows.`, R`$\mathsf{cr}(\{o \mapsto (S@x)^{2}_{3}\}) \leq 4$.`, 'cost/CostFund.v: fsem_of_cost');
+n('th.crle', R`$\mathsf{cr}(\Delta) \leq N$`, R`Every credit in $\Delta$ is at most the bound $N$, that is $a \leq N$ for every entry $S_x^{a,m}$ or $(T \multimap U)^{a}$ of $\Delta$.`, R`A thread starts with every counter at its tickets, which are at most $N$, so its credits may guarantee no more than $N$.`, R`A credit above $N$ would allow more postponement than a fresh counter allows.`, R`$\mathsf{cr}(\{o \mapsto S_x^{2,3}\}) \leq 4$.`, 'cost/CostFund.v: fsem_of_cost');
 n('th.Prel', R`The process relation $P$`, R`$P[\kappa]^{R}_{\alpha}\llbracket\Sigma \vdash T\rrbracket$, the processes in the relation at table $\kappa$, world $R$, ordinal index $\alpha$, interface $\Sigma$ and result $T$.`, R`The semantic process judgment asks membership at every index.`, DEF, R`Two threads closing $c^{+}$ and $c^{-}$ lie in $P^{R}_{\alpha}\llbracket\varnothing \vdash \ast\rrbracket$ for each $\alpha$.`, 'relation/Relation.v: Prel');
-n('th.Erel', R`The term relation $E$`, R`$E[\kappa]^{R}_{\alpha}\llbracket\Theta \vdash T\rrbracket^{F}$ is the set of terms in the relation at cost table $\kappa$, world $R$ and ordinal index $\alpha$, for ends $\Theta$, result $T$ and future $F$.`, R`The semantic term judgment asks membership at each index and for each grounding of the variables.`, DEF, R`$\mathsf{close}\,c^{+} \in E^{R}_{\alpha}\llbracket\{c^{+} \mapsto \mathsf{Close}@x\} \vdash \ast\rrbracket^{\varnothing}$.`, 'relation/Relation.v: Erel');
-n('th.Vrel', R`The value relation $V$`, R`$V^{R}_{\beta}\llbracket\Theta \vdash T\rrbracket$ is the set of values in the relation at world $R$ and ordinal index $\beta$, for ends $\Theta$ and type $T$.`, R`A term in $E$ that is irreducible is a value in $V$.`, DEF, R`$c^{+} \in V^{R}_{\beta}\llbracket\{c^{+} \mapsto \mathsf{Close}@x\} \vdash \mathsf{Close}@x\rrbracket$.`, 'relation/Relation.v: Vrel');
+n('th.Erel', R`The term relation $E$`, R`$E[\kappa]^{R}_{\alpha}\llbracket\Theta \vdash T\rrbracket^{F}$ is the set of terms in the relation at cost table $\kappa$, world $R$ and ordinal index $\alpha$, for ends $\Theta$, result $T$ and future $F$.`, R`The semantic term judgment asks membership at each index and for each grounding of the variables.`, DEF, R`$\mathsf{close}\,c^{+} \in E^{R}_{\alpha}\llbracket\{c^{+} \mapsto \mathsf{Close}_x\} \vdash \ast\rrbracket^{\varnothing}$.`, 'relation/Relation.v: Erel');
+n('th.Vrel', R`The value relation $V$`, R`$V^{R}_{\beta}\llbracket\Theta \vdash T\rrbracket$ is the set of values in the relation at world $R$ and ordinal index $\beta$, for ends $\Theta$ and type $T$.`, R`A term in $E$ that is irreducible is a value in $V$.`, DEF, R`$c^{+} \in V^{R}_{\beta}\llbracket\{c^{+} \mapsto \mathsf{Close}_x\} \vdash \mathsf{Close}_x\rrbracket$.`, 'relation/Relation.v: Vrel');
 n("th.soup", "The lock-free process relation $S^{N,R}_{\\alpha}$", "$a \\in S^{N,R}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket$ holds of an annotated configuration $a$ when each thread of $a$ is in the relation at $\\kappa_L$ and has fuel at the ordinal index $\\alpha$. Ownership, points, counters and tickets are those that $a$ records.", "The lock-free judgment chooses $a$ at each index, and the existential property gives one $a$ for every index.", DEF, "The state of two threads closing $c^{+}$ and $c^{-}$.", "soup/Soup.v: Soup, lf_sem; soup/SoupRun.v: lfsoup_step, lfsoup_step_all, lfsoup_run");
 n("th.qa", "$q_a$", "The configuration of the annotated configuration $a$.", "An annotated configuration is a configuration together with ownership, counters and tickets.", DEF, "$q_a = (C, M)$.", "soup/State.v: s_q");
 n('th.em', R`Excluded middle $\mathsf{EM}$`, R`Each proposition holds or fails, $\forall P.\ P \lor \neg P$, as an explicit hypothesis and no axiom.`, R`It is a hypothesis of the lock-free results only. The existential property of ordinal indices is proved by contradiction, and a creation under $\mathsf{gen\_new}$ takes the largest of finitely many ranks. The deadlock-free, live, hidden and n-ary soundness results take no excluded middle.`, R`Without it a creation at a ranked world cannot pick a rank at or above two given ranks, and the annotated configuration chosen at each index does not give one for all indices.`, R`Transfinite Iris assumes it in its model.`, 'lockfree/FairRun.v: excluded_middle; relation/ExProp.v: exist_prop; relation/Ranks.v: ole_total, two_below_gd');
 n('th.ac', R`Functional choice $\mathsf{FC}$`, R`A total relation contains a function, as an explicit hypothesis and no axiom.`, R`The existential property picks one failing index per witness, and the run picks one creation choice per state and position, from which a recursion builds the states of the run.`, R`Without it the states chosen per index do not form one sequence along the run.`, R`One creation choice per position of a run of the lock-free process relation.`, 'lockfree/FairRun.v: functional_choice; relation/ExProp.v: exist_prop; soup/SoupRun.v: lfsoup_run');
-n("th.conn", "$\\mathsf{conn}$", "The side conditions of P-Connect, with $\\Sigma_D$ the partners of $\\Sigma_C$ dual up to $\\approx$ at dual points.", "They make the composite a process in which every channel belongs to one side.", DEF, "$\\Sigma_C = \\{c^{+} \\mapsto \\mathsf{Close}@x\\}$ and $\\Sigma_D = \\{c^{-} \\mapsto \\mathsf{Close}@\\overline{x}\\}$.", "compat/Connect.v: conn, cut_dual");
+n("th.conn", "$\\mathsf{conn}$", "The side conditions of P-Connect, with $\\Sigma_D$ the partners of $\\Sigma_C$ dual up to $\\approx$ at dual points.", "They make the composite a process in which every channel belongs to one side.", DEF, "$\\Sigma_C = \\{c^{+} \\mapsto \\mathsf{Close}_x\\}$ and $\\Sigma_D = \\{c^{-} \\mapsto \\mathsf{Close}_{\\overline{x}}\\}$.", "compat/Connect.v: conn, cut_dual");
 n("th.par", "$p_1 \\parallel_{\\Sigma_C} p_2$", "The composite $(C_1 \\cup C_2 \\cup \\mathsf{chans}\\,\\Sigma_C, E_1 \\uplus E_2)$ of $p_1 = (C_1, E_1)$ and $p_2 = (C_2, E_2)$.", "After composition the two sides communicate on the cut, which no outside process holds.", DEF, "$\\mathsf{close}\\,c^{+} \\parallel \\mathsf{close}\\,c^{-}$ restricts $c$.", "compat/Connect.v: pconn");
-n("th.df", "Erasure $X_{df}$", "$\\Delta_{df}$ and $T_{df}$ drop every credit, ticket and cost and keep session types, points and facts.", "Deadlock-free typing and the relations read no annotation.", DEF, "$(S@x)^{3}$ erases to $S@x$.", "types/Types.v: ty_df, static/Contexts.v: tenv_df, lenv_df");
-n("th.styof", "$\\Delta^{N}$", "The held ends of $\\Delta$ for fuel, each counter at its tickets. An entry $o \\mapsto (S@x)^{a}_{m}$ of $\\Delta$ becomes $o \\mapsto S^{m}_{m}$.", "Fuel reads protocols, counters and tickets and ignores points and credits. A thread starts with each counter at its tickets.", DEF, "$\\{a \\mapsto (S@x)^{2}_{3}\\}^{N} = \\{a \\mapsto S^{3}_{3}\\}$.", "cost/CostFund.v: fsem_of_cost");
+n("th.df", "Erasure $X_{df}$", "$\\Delta_{df}$ and $T_{df}$ drop every credit, ticket and cost and keep session types, points and facts.", "Deadlock-free typing and the relations read no annotation.", DEF, "$S_x^{3}$ erases to $S_x$.", "types/Types.v: ty_df, static/Contexts.v: tenv_df, lenv_df");
+n("th.styof", "$\\Delta^{N}$", "The held ends of $\\Delta$ for fuel, each counter at its tickets. An entry $o \\mapsto S_x^{a,m}$ of $\\Delta$ becomes $o \\mapsto S^{m}_{m}$.", "Fuel reads protocols, counters and tickets and ignores points and credits. A thread starts with each counter at its tickets.", DEF, "$\\{a \\mapsto S_x^{2,3}\\}^{N} = \\{a \\mapsto S^{3}_{3}\\}$.", "cost/CostFund.v: fsem_of_cost");
 
 n('th.adequacy-h', R`Adequacy for the hidden judgment`, R`If $\varnothing \vDash^{h}_W p : T$, then $p$ is deadlock free.`, R`The hidden judgment gives an acyclic whole world, which has a strict model, and adequacy applies there.`, DEF, R`The two closes over the empty interface.`, 'static/FundamentalProc.v: adequacy_h, live_adequacy_h; types/Worlds.v: dmodels_exists');
 n('th.lf-sems-adequacy', R`Lock-free adequacy at a static world`, R`Under excluded middle and functional choice, if $W$ is well formed and well-founded and $\varnothing \Vvdash^{N}_W p : T$, then $p$ is lock free.`, R`A well-founded static world has a ranked model, at which lock-free adequacy applies.`, DEF, R`The split client and server program, two components at their own static worlds.`, 'soup/LFCompose.v: lf_sems_adequacy, lf_connect_adequacy, join_models');
@@ -189,7 +189,7 @@ cli  = !(f = λp. let ⟨a, b⟩ = p in let a = send ⟨∗, a⟩ in
                 let ⟨u, b⟩ = recv b in let ∗ = u in (force f) ⟨a, b⟩)
 srv  = !(g = λp. let ⟨a, b⟩ = p in let ⟨u, a⟩ = recv a in let ∗ = u in
                 let b = send ⟨∗, b⟩ in (force g) ⟨a, b⟩)
--- both boxes : □∀ι κ ζ. C. ∗ ⊸ (S1@ι ⊗ S2@κ ⊸^ζ ∗)
+-- both boxes : □∀ι κ ζ. C. ∗ ⊸ (S_ι ⊗ S′_κ ⊸^ζ ∗)
 -- C = {ι+k ≺ (κ+k)‾, κ+k ≺ (ι+k+1)‾, ι+k ≺ ζ, κ+k ≺ ζ | k}`,
     shows: "The second $\\mathsf{new}$ places $b$ at $\\rho\\cdot 0$ and states $C$ at $(\\rho, \\rho\\cdot 0, \\rho\\cdot 1)$, the facts the recursive call at $(\\iota^{+}, \\kappa^{+}, \\zeta)$ needs.",
     rocq: 'examples/ClientServer.v: cs_typed; examples/LFClientServer.v: cs_lftyped, cs_lock_free',
@@ -203,7 +203,7 @@ srv  = !(g = λp. let ⟨a, b⟩ = p in let ⟨u, a⟩ = recv a in let ∗ = u i
     rocq: 'examples/Cycle.v: cy_typed; examples/LFCycle.v: cy_lftyped, cy_lock_free',
     accepts: { df: { ok: true, rocq: 'cy_dftyped, cy_typed' }, live: { ok: true, rocq: 'cy_dftyped, cy_guarded' }, lf: { ok: true, N: 2, rocq: 'cy_lftyped, cy_lock_free' } } },
   { id: 'ex-between', title: 'A channel between two box arguments', modes: ['df', 'live', 'lf'],
-    code: `between : □(∀ι κ. C. ∗ ⊸ Close@ι ⊗ Close@κ ⊸^κ ∗)
+    code: `between : □(∀ι κ. C. ∗ ⊸ Close_ι ⊗ Close_κ ⊸^κ ∗)
 between = !(f = λp. let ⟨c, e⟩ = p in
                     let ⟨d, d′⟩ = new in        -- d at ι·0
                     let ∗ = spawn (λu. let ∗ = u in close d′) in
@@ -233,13 +233,13 @@ mk₁  = !(f = λp. let ⟨c, c′⟩ = new in
 main = let p = (force mk₀) ∗ in let ⟨p, q⟩ = (force mk₁) p in
        let ∗ = recvclose p in recvclose q
 -- mk₀ places c at a fresh ρ with C(ρ) = {ρ‾ ≺ ρ·0, ρ‾⁺ ≺ ρ·0}, mk₁ at ι·0 for p at ι
--- mk₀ : □(∗ ⊸ ∃^⊥ ι. C(ι). (?∗.Close)@ι‾)`,
+-- mk₀ : □(∗ ⊸ ∃^⊥ ι. C(ι). (?∗.Close)_ι‾)`,
     shows: "The first call creates at a fresh root and the second at a field of the end it receives, two typings of the same creation.",
     rocq: 'examples/FactoryEx.v: fx_typed; examples/LFFactoryEx.v: fx_lftyped, fx_lock_free',
     accepts: { df: { ok: true, rocq: 'fx_dftyped, fx_typed' }, live: { ok: true, rocq: 'fx_dftyped, fx_guarded' }, lf: { ok: true, N: 2, rocq: 'fx_lftyped, fx_lock_free' } } },
   { id: 'ex-ring', title: 'The growing ring', modes: ['df', 'live', 'lf'],
-    code: `Sch  = µα. ?(κ. α@κ).Close
-ring : □(∀ι₁ ι₂. Cr. ∗ ⊸ (Sch@ι₁ ⊗ S̄ch@ι₂ ⊸^{ι₁+1} ∗))
+    code: `Sch  = µα. ?(κ. α_κ).Close
+ring : □(∀ι₁ ι₂. Cr. ∗ ⊸ (Sch_ι₁ ⊗ S̄ch_ι₂ ⊸^{ι₁+1} ∗))
 ring = !(f = λp. let ⟨x, y⟩ = p in
            let ⟨a, a′⟩ = new in                -- a at ι₂·0
            let ∗ = spawn (λw. let ∗ = w in close (send ⟨a, y⟩)) in
@@ -289,7 +289,7 @@ cli  = !(f = λp. let ⟨q, k⟩ = p in let ⟨a, b⟩ = q in
                 let a = send ⟨∗, a⟩ in let ⟨u, b⟩ = recv b in
                 let ∗ = u in (force f) ⟨⟨a, b⟩, k⟩)
 -- c sits at Skip on each side, an idle end`,
-    shows: "The idle end $k$ at $\\mathsf{Skip}@\\chi$ is held across every round at credit $0$, because $(\\mathsf{Skip}@\\chi)^{a} - c = (\\mathsf{Skip}@\\chi)^{\\max(a - c, 0)}$ asks no $c \\leq a$.",
+    shows: "The idle end $k$ at $\\mathsf{Skip}_{\\chi}$ is held across every round at credit $0$, because $\\mathsf{Skip}_{\\chi}^{a} - c = \\mathsf{Skip}_{\\chi}^{\\max(a - c, 0)}$ asks no $c \\leq a$.",
     rocq: 'examples/LFController.v: ctl_typedN, ctl_guarded, ctl_lftyped, ctl_lock_free',
     accepts: { lf: { ok: true, N: 3, rocq: 'ctl_lftyped' } } },
   { id: 'ex-flag', title: 'Self-computed flag', modes: ['df', 'live', 'lf'],
@@ -314,7 +314,7 @@ B = case z of inl _ ⇒ let ∗ = close ā in close b̄
 // examples of the redesign: forwarder, rings, fork-join, hiding, creations with exits, contractivity
 examples.push(
   { id: 'ex-copycat', title: 'Copycat, a forwarder at independent points', modes: ['df', 'live', 'lf'],
-    code: `fwd o₁ o₂ = let ⟨v, o₁⟩ = recv o₁ in let o₂ = send ⟨v, o₂⟩ in     -- o₁ : S@x, o₂ : S̄@y
+    code: `fwd o₁ o₂ = let ⟨v, o₁⟩ = recv o₁ in let o₂ = send ⟨v, o₂⟩ in     -- o₁ : S_x, o₂ : S̄_y
             let ⟨w, o₂⟩ = recv o₂ in let o₁ = send ⟨w, o₁⟩ in     -- S = ?∗.!∗.Close
             let ∗ = close o₁ in close o₂
 ring      = fwd(o₁, o₂) ∥ fwd(ō₂, ō₁)                           -- cut on both channels`,
@@ -364,11 +364,11 @@ main     = P(c, d) ∥ P′(e, f)                                               
     rocq: 'examples/GenNew.v: tu_gen1, tu_dftyped, tu_deadlock_free, tu_rejected_wf_new, te_gen, te_dftyped, te_deadlock_free, te_rejected_wf_new',
     accepts: { df: { ok: true, rocq: 'te_dftyped, te_deadlock_free' } } },
   { id: 'ex-sinst', title: 'Why session types are contractive', modes: ['df', 'live', 'lf'],
-    code: `s₀ = α ; X        s₁ = (α ; Skip) ; X        X = µβ.β
-c : s₀@x ⊢ c : s₁@x                -- E-Chan and E-Sub, because s₀ ≈ s₁
+    code: `s = α ; X         s′ = (α ; Skip) ; X        X = µβ.β
+c : s_x ⊢ c : s′_x                -- E-Chan and E-Sub, because s ≈ s′
 -- at α := ?∗.(Skip ; Skip) the two instances are not equivalent`,
     lead: 'Without contractivity a derivation at one instance of a session variable gives none at another.',
-    shows: String.raw`$s_0$ and $s_1$ unfold to the same head $\alpha$ followed by $X$, so they are equivalent and E-Sub retypes $c$. At the instance $\alpha := ?\ast.(\mathsf{Skip}.\mathsf{Skip})$ both heads are the same receive, and the two continuations are distinct stuck terms, because the unfolding of $X$ never yields an action. No derivation types $c$ at the instance of $s_1$. A session variable does not guard either, because an instance may set it to $\mathsf{Skip}$. So the rules ask [[ty-session|contractive]] session types where a session type enters a derivation, and a box body typed once is then typed at each instance.`,
+    shows: String.raw`$s$ and $s'$ unfold to the same head $\alpha$ followed by $X$, so they are equivalent and E-Sub retypes $c$. At the instance $\alpha := ?\ast.(\mathsf{Skip}.\mathsf{Skip})$ both heads are the same receive, and the two continuations are distinct stuck terms, because the unfolding of $X$ never yields an action. No derivation types $c$ at the instance of $s'$. A session variable does not guard either, because an instance may set it to $\mathsf{Skip}$. So the rules ask [[ty-session|contractive]] session types where a session type enters a derivation, and a box body typed once is then typed at each instance.`,
     rocq: 'examples/SinstStuck.v: typed_sinst_false, ss_var_guard; static/Sinst.v: typed_sinst; static/Inversion.v: inv_chan_sty' }
 );
 

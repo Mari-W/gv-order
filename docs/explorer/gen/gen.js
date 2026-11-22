@@ -75,7 +75,9 @@ const BRK = /\[(?:\\htmlData\{k=[^}]*\}\{)?c(?:_\{?\w+\}?)?'?\}?\s*;[^\]]*\]/g;
 const REF = /\^\{(N|0)\}/g;
 // a superscript N or 0 on a judgment or on F, P, E, V is an index, elsewhere a refill or credit
 const isIndex = (s, i) => /(Vdash|vDash)\}*$/.test(s.slice(Math.max(0, i - 12), i)) || /(^|[^\\A-Za-z])(FV|F|P|E|V)$/.test(s.slice(Math.max(0, i - 4), i));
-const ann = t => typeof t !== 'string' ? t : t.replace(CRH, m => '\\annot{' + m + '}').replace(CR, '\\annot{^{$1}}')
+// an end type S_x^{a,m}: credit and tickets after the point subscript
+const ENDSUP = /(_(?:\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}|[A-Za-z]))\^\{((?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*,(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*)\}/g;
+const ann = t => typeof t !== 'string' ? t : t.replace(ENDSUP, '$1\\annot{^{$2}}').replace(CRH, m => '\\annot{' + m + '}').replace(CR, '\\annot{^{$1}}')
   .replace(TRI, m => '\\annot{' + m + '}').replace(BRK, m => '\\annot{' + m + '}')
   .replace(/\\vdash(\}*)\^\{(N|\\infty)\}/g, '\\vdash$1\\annot{^{$2}}').replace(/_\{(W(?:_\d)?),(N|\\infty)\}/g, '_{$1\\annot{,$2}}')
   .replace(REF, (m, x, i, s) => isIndex(s, i) ? m : '\\annot{' + m + '}');
@@ -149,7 +151,7 @@ for (const [k, v] of Object.entries(notes)) { if (v.sig) { try { katex.renderToS
 for (const e of examples) if (e.accepts) for (const [m, a] of Object.entries(e.accepts)) { if (!['df', 'sem', 'live', 'lf'].includes(m) || typeof a.ok !== 'boolean') { console.log('BAD-ACCEPTS', e.id, m); errs++; } }
 // nothing about annotations may show in the deadlock-free mode
 {
-  const LEAK = [/\^\{\\htmlData\{k=[^}]*\}\{[ab]/, /\^\{[ab](_|'|\}|\s*\+)/, /(?<!\\!)\\triangleright\}*\s*(c|\\infty|\d)/, /\\vartheta/, /\[c\s*;/, /\\hat\s*1/, /\\mathsf\{(tok|meets|tix|tspawn|tlink|tseq)\}/, /\\vdash\}*\^\{N\}/, /credit/i];
+  const LEAK = [/_(?:\{[^{}]*\}|[A-Za-z])\^\{[^{}]*,/, /\^\{\\htmlData\{k=[^}]*\}\{[ab]/, /\^\{[ab](_|'|\}|\s*\+)/, /(?<!\\!)\\triangleright\}*\s*(c|\\infty|\d)/, /\\vartheta/, /\[c\s*;/, /\\hat\s*1/, /\\mathsf\{(tok|meets|tix|tspawn|tlink|tseq)\}/, /\\vdash\}*\^\{N\}/, /credit/i];
   const leak = (x, where) => { const t = stripAnn(String(x || '')); for (const r of LEAK) if (r.test(t)) { console.log('DF-LEAK', where, r); errs++; return; } };
   for (const s of sections) for (const b of s.blocks) if (b.modes.includes('df')) { leak((b.variants && b.variants.df) || b.tex, b.id); leak(b.caption, b.id + '.caption'); }
   for (const k of dfKeys) { const v = notes[k]; if (!v) continue; for (const f of ['sig', 'what', 'why', 'breaks', 'example']) leak(v[f], k + '.' + f); for (const a of v.args || []) if (!a.ann) leak(a.name + ' ' + a.meaning, k + '.arg'); }

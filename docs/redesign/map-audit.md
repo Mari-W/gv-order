@@ -464,3 +464,59 @@ after: 164 metaphor, 305 every/any/all, 1 pronoun ending, 5 sentences over
 35 words, 0 semicolons, 0 coined words. MathJax was not run (the checker
 needs `--mathjax` with `mathjax-full`, which is not installed), KaTeX in
 gen.js renders every block, note and caption.
+
+## Notation change, end types
+
+The author decided on 2026-11-22 to write the end type $(S@x)^{a}_{m}$ as
+$S_x^{a,m}$. The point goes in the subscript, and the credit and then the
+tickets go in the superscript. The deadlock-free view writes $S_x$. A point
+with a decoration reads $S_{x^{+}}$ or $S_{\overline{x}}$, using the
+$\overline{x}$ of the rest of the map. A protocol that is not one letter is
+parenthesized, as in $(!\ast.\mathsf{Close})_{\rho}$. Closures keep
+$(T \multimap [c]\,U)^{a}$.
+
+- All `@` occurrences in gen/*.js are gone: formulas, captions, notes,
+  signatures, semrel (V-Sess is now $o \in V\llbracket\{o \mapsto
+  S'_x\} \vdash S_x\rrbracket$), and the code of the examples
+  (`Close_ι`, `(?∗.Close)_ι‾`, `Sch_ι₁`). A script rewrote the plain
+  cases. The cases below were renamed by hand. A primed protocol is written
+  $\{S'\}_x$ in the TeX, so that a superscript after it is not a second
+  superscript.
+- Notes `ty.sess`, `ty.credit`, `ty.tickets` and the counter row of
+  `t-lf-counters` describe the notation once.
+- gen.js. The superscript $^{a,m}$ after a point subscript is coloured as a
+  lock-free annotation (`ENDSUP`), and the DF-LEAK check also rejects an
+  uncoloured $_x^{\ldots,\ldots}$.
+
+Clashes, where a subscript on the protocol would stack on the point:
+
+1. Actions (E-Send, E-Recv, E-Close, the constants table, the signatures of
+   the constants, the unfold notes). The type before the action, old $S_0$,
+   is now $S$. Its continuation, old $S$, is now $S'$.
+2. Choices (E-Select, E-Branch, O-Select, O-Branch, the constants). The
+   branches, old $S_1, S_2$, are now $S', S''$. The chosen continuation, old
+   $S_i$, is now $(\mathsf{if}\ i\ \mathsf{then}\ S''\ \mathsf{else}\ S')$,
+   as in the Rocq, with a new note `sty.choice`. The branch points, old
+   $x\cdot\kappa_1$ and $x\cdot\kappa_2$, are now $x\cdot\kappa_{\mathsf{false}}$
+   and $x\cdot\kappa_{\mathsf{true}}$, as `bra_pt` and the syntax block state.
+3. O-Link and its note: old $S_1, S_2$, now $S, S'$.
+4. The head notation `sr.head`: old $\Theta(o) \doteq S@x$ with $\Theta(o) =
+   S_0@x$, now $\Theta(o) \doteq H_x$ with $\Theta(o) = S_x$ and
+   $\mathsf{unfold}\,S = H$.
+5. Example types in notes: $S_1@\iota \otimes S_2@\kappa$ became $S_{\iota}
+   \otimes S'_{\kappa}$ (`ty.prod`, `ty.box`, typing notes), $S_a@\rho$
+   became $S''_{\rho}$ (`tj.Delta`), $S_1@x\cdot\kappa_1$ in a V-Sum note
+   became $S_{x\cdot\kappa_{\mathsf{false}}}$.
+6. Example code: `S1@ι ⊗ S2@κ` became `S_ι ⊗ S′_κ` (client and server), and
+   in the contractivity example `s₀`, `s₁` became `s`, `s′` in code and
+   prose.
+
+Left unchanged, because they are no end types: the session-type grammar
+$\oplus(S_1, S_2)$, and fuel entries $S^{f}_{m}$, whose subscript is the
+tickets. Question for the author: write fuel entries as $S^{f,m}$ too?
+Recommended yes, because a subscript now reads as a point.
+
+Checks: gen.js 0 errors, no DF-LEAK, no unhovered symbol. lint-map.py 9
+metaphor, 305 every/any/all, 1 pronoun ending, 5 sentences over 35 words, 0
+elsewhere. Screenshots of types, typing and semantic typing in both modes
+render every changed formula.

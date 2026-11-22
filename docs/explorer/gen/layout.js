@@ -75,7 +75,7 @@ order('syntax', ['syn-ends', 'syn-prims', 'syn-terms', 'syn-let', 'syn-values', 
 
 // ---- types and worlds ----
 set('ty-grammar', b => {
-  b.caption = R`$S@x$ is an end at the point $x$. \annp{Credits $a$ sit on ends and on closures, the two places where a value holds ends of its own. The credit of an end bounds its counter from below, and the credit of a closure bounds the captured counters from below and bounds what they lose before a call. Pairs, sums, existentials and payloads carry no credit, their ends carry their own.}`;
+  b.caption = R`$S_x$ is an end at the point $x$. \annp{Credits $a$ sit on ends and on closures, the two places where a value holds ends of its own. The credit of an end bounds its counter from below, and the credit of a closure bounds the captured counters from below and bounds what they lose before a call. Pairs, sums, existentials and payloads carry no credit, their ends carry their own.}`;
 });
 drop('ty-credit', 'ty-grammar');
 merge('ty-ann', 'Annotations and tickets', ['ty-annot', 'ty-tix', 'ty-df'], {
