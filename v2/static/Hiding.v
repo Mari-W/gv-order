@@ -342,3 +342,142 @@ Section join_vis.
     by apply Hall.
   Qed.
 End join_vis.
+
+(** ** From hidden derivations to full ones *)
+
+Lemma join_sub A A' B B' x y :
+  (∀ x y, A ⊢ₛ x ≺ y → A' ⊢ₛ x ≺ y) → (∀ x y, B ⊢ₛ x ≺ y → B' ⊢ₛ x ≺ y) →
+  A ⊔ B ⊢ₛ x ≺ y → A' ⊔ B' ⊢ₛ x ≺ y.
+Proof.
+  intros HA HB. assert (∀ x y, swstep (A ⊔ B) x y → A' ⊔ B' ⊢ₛ x ≺ y) as Hs.
+  { intros a b Hs. apply swstep_join_inv in Hs as [Hs|Hs]; apply tc_once in Hs.
+    - eapply sw_lt_mono; [apply swext_join_l|]. by apply HA.
+    - eapply sw_lt_mono; [apply swext_join_r|]. by apply HB. }
+  induction 1 as [x y H|x z y H _ IH]; [by apply Hs|]. eapply sw_lt_trans; [by apply Hs|done].
+Qed.
+
+Lemma pt_ren_fix_croot π I x : (∀ a, a ∈ I → cb_f π a = a) → croot_in I x → pt_ren (cb_g π) x = x.
+Proof.
+  intros HI (a & Ha & HaI). apply pt_ren_fix. intros b Hb. rewrite (pt_consts_root x a Ha) in Hb.
+  apply elem_of_singleton in Hb as ->. rewrite <-(HI a HaI) at 1. apply cb_gf.
+Qed.
+
+(** One component renamed: its private constants leave B, its interface
+    and its hidden world stay. *)
+Lemma rename_side N W' Σ p T W (B : gset nat) :
+  fptyped N W' Σ p T → hides W' (iface Σ T) W →
+  ∃ W'', fptyped N W'' Σ p T ∧ hides W'' (iface Σ T) W ∧
+    ∀ a, a ∈ sw_consts W'' → a ∉ iface Σ T → a ∉ B.
+Proof.
+  intros Hty [Hc Ho]. set (I := iface Σ T).
+  destruct (cb_avoid I (sw_consts W' ∖ I) B ltac:(set_solver)) as (π & HI & HP).
+  assert (∀ b, cb_f π b ∈ I → b ∈ I) as Hback.
+  { intros b Hb. destruct (decide (b ∈ I)) as [|Hn]; [done|]. exfalso.
+    assert (cb_f π (cb_f π b) = cb_f π b) as E by (by apply HI). apply cb_f_inj in E. rewrite E in Hb. done. }
+  exists (sw_ren π W'). split_and!.
+  - pose proof (fptyped_ren π _ _ _ _ _ Hty) as H.
+    rewrite senv_ren_fix, ty_ren_fix in H; [exact H| |]; intros a Ha; apply HI; unfold I, iface; set_solver.
+  - split.
+    + intros a. simpl. rewrite elem_of_intersection, elem_of_map. intros [(b & -> & Hb) Ha].
+      pose proof (Hback b Ha) as HbI. rewrite HI in Ha |- * by done. apply Hc. set_solver.
+    + intros x y Hx Hy H. apply sw_lt_ren_inv in H. rewrite !(pt_ren_fix_croot π I) in H by done. by apply Ho.
+  - intros a. simpl. rewrite elem_of_map. intros (b & -> & Hb) Ha.
+    destruct (decide (b ∈ I)) as [HbI|HbI]; [rewrite HI in Ha by done; done|]. apply HP. set_solver.
+Qed.
+
+Lemma iface_connect Σ1 Σ2 ΣC T :
+  iface (Σ1 ∪ Σ2) T ⊆ iface (Σ1 ∪ ΣC) T ∪ iface (Σ2 ∪ senv_dual ΣC) TUnit.
+Proof.
+  unfold iface. pose proof (senv_consts_union Σ1 Σ2). pose proof (senv_consts_union_l Σ1 ΣC).
+  pose proof (senv_consts_union_l Σ2 (senv_dual ΣC)). set_solver.
+Qed.
+
+(** Two full worlds whose private constants are apart compose when
+    their hidden worlds do. V1 keeps its private constants off I2, V2
+    off V1 and I1. Then V1 and V2 share only constants of I1 ∩ I2, at
+    which they order as W1 and W2 do, so the restrictions to the shared
+    constants are well-founded together, and the join hides to the
+    hidden join on every I ⊆ I1 ∪ I2. *)
+Lemma connect_hidden V1 V2 W1 W2 (I1 I2 I : gset nat) :
+  sworld_wf V1 → sworld_wf V2 →
+  hides V1 I1 W1 → hides V2 I2 W2 →
+  (∀ a, a ∈ sw_consts V1 → a ∉ I1 → a ∉ I2) →
+  (∀ a, a ∈ sw_consts V2 → a ∉ I2 → a ∉ sw_consts V1 ∪ I1) →
+  I ⊆ I1 ∪ I2 → swf (W1 ⊔ W2) →
+  swf (swrestrict V1 (swshared V1 V2) ⊔ swrestrict V2 (swshared V1 V2)) ∧
+  hides (V1 ⊔ V2) I (swrestrict (W1 ⊔ W2) I).
+Proof.
+  intros Hw1 Hw2 [Hc1 Ho1] [Hc2 Ho2] Hav1 Hav2 HI HS.
+  assert (∀ a, a ∈ sw_consts V1 → a ∈ sw_consts V2 → a ∈ I1 ∧ a ∈ I2) as S12.
+  { intros a Ha1 Ha2. destruct (decide (a ∈ I2)) as [Ha|Ha]; [|by destruct (Hav2 a Ha2 Ha); set_solver].
+    destruct (decide (a ∈ I1)) as [Hb|Hb]; [done|by destruct (Hav1 a Ha1 Hb)]. }
+  assert (∀ a, a ∈ sw_consts V1 → a ∈ I2 → a ∈ I1) as A1.
+  { intros a Ha Hi. destruct (decide (a ∈ I1)) as [|Hn]; [done|by destruct (Hav1 a Ha Hn)]. }
+  assert (∀ a, a ∈ sw_consts V2 → a ∈ I1 → a ∈ I2) as A2.
+  { intros a Ha Hi. destruct (decide (a ∈ I2)) as [|Hn]; [done|]. destruct (Hav2 a Ha Hn). set_solver. }
+  assert (∀ x y, croot_in I1 x → croot_in I1 y → V1 ⊢ₛ x ≺ y → W1 ⊔ W2 ⊢ₛ x ≺ y) as Hj1.
+  { intros x y Hx Hy H. eapply sw_lt_mono; [apply swext_join_l|]. by apply Ho1. }
+  assert (∀ x y, croot_in I2 x → croot_in I2 y → V2 ⊢ₛ x ≺ y → W1 ⊔ W2 ⊢ₛ x ≺ y) as Hj2.
+  { intros x y Hx Hy H. eapply sw_lt_mono; [apply swext_join_r|]. by apply Ho2. }
+  assert (sw_consts V1 ∩ swshared V1 V2 ⊆ I1) as HS1.
+  { intros a. unfold swshared. rewrite !elem_of_intersection. intros (Ha & Ha' & Hb). by apply S12. }
+  assert (sw_consts V2 ∩ swshared V1 V2 ⊆ I2) as HS2.
+  { intros a. unfold swshared. rewrite !elem_of_intersection. intros (Ha & Ha' & Hb). by apply S12. }
+  assert (sw_consts (V1 ⊔ V2) ∩ I ⊆ sw_consts (swrestrict (W1 ⊔ W2) I)) as Hcons.
+  { intros a. simpl. rewrite !elem_of_intersection, !elem_of_union. intros [[Ha|Ha] HaI].
+    - assert (a ∈ I1) as Ha1.
+      { destruct (decide (a ∈ I1)) as [|Hn]; [done|]. pose proof (Hav1 a Ha Hn). set_solver. }
+      split; [left; apply Hc1; set_solver|done].
+    - assert (a ∈ I2) as Ha2.
+      { destruct (decide (a ∈ I2)) as [|Hn]; [done|]. pose proof (Hav2 a Ha Hn). set_solver. }
+      split; [right; apply Hc2; set_solver|done]. }
+  split.
+  - apply (swf_sub _ (W1 ⊔ W2)); [|done].
+    assert (∀ x y, swstep (swrestrict V1 (swshared V1 V2) ⊔ swrestrict V2 (swshared V1 V2)) x y →
+              W1 ⊔ W2 ⊢ₛ x ≺ y) as Hs.
+    { intros a b Hs. apply swstep_join_inv in Hs as [Hs|Hs];
+        (destruct Hs as [a b (H & Ha & Hb)|a|a]; [|apply sw_lt_po|apply sw_lt_dpo]).
+      - apply Hj1; [|by eapply croot_in_mono..|done]. by eapply croot_in_mono.
+      - apply Hj2; [|by eapply croot_in_mono..|done]. by eapply croot_in_mono. }
+    intros x y. induction 1 as [x y H|x z y H _ IH]; [by apply Hs|]. eapply sw_lt_trans; [by apply Hs|done].
+  - split; [exact Hcons|]. intros x y Hx Hy H.
+    assert (W1 ⊔ W2 ⊢ₛ x ≺ y) as HJ.
+    { apply (join_vis V1 V2 (W1 ⊔ W2) I1 I2); try done; by eapply croot_in_mono. }
+    destruct (lt_zone (V1 ⊔ V2) x y (swjoin_wf _ _ Hw1 Hw2) H) as [Hp|[Zx Zy]]; [by apply po_slt|].
+    apply sw_lt_fact. simpl. split_and!; [done| |].
+    + eapply croot_in_mono; [|apply (croot_in_same _ _ _ Zx Hx)]. exact Hcons.
+    + eapply croot_in_mono; [|apply (croot_in_same _ _ _ Zy Hy)]. exact Hcons.
+Qed.
+
+(** Every hidden derivation is the hiding of a full derivation. *)
+Theorem ptyped_full N W Σ p T : ptyped N W Σ p T → ∃ W', fptyped N W' Σ p T ∧ hides W' (iface Σ T) W.
+Proof.
+  induction 1 as [W Σ ΘB C0 t T c Hp HB HΣ Hpf Hd Ht HW
+                 |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 HS].
+  - exists W. split; [by eapply fp_term|]. apply hides_restrict, HW.
+  - destruct IH1 as (W1' & Hty1 & Hh1), IH2 as (W2' & Hty2 & Hh2).
+    destruct (rename_side _ _ _ _ _ _ (iface (Σ2 ∪ senv_dual ΣC) TUnit) Hty1 Hh1) as (V1 & Hv1 & Hh1' & Hav1).
+    destruct (rename_side _ _ _ _ _ _ (sw_consts V1 ∪ iface (Σ1 ∪ ΣC) T) Hty2 Hh2) as (V2 & Hv2 & Hh2' & Hav2).
+    destruct (connect_hidden V1 V2 W1 W2 _ _ (iface (Σ1 ∪ Σ2) T) (proj1 (fptyped_wf _ _ _ _ _ Hv1))
+                (proj1 (fptyped_wf _ _ _ _ _ Hv2)) Hh1' Hh2' Hav1 Hav2 (iface_connect _ _ _ _) HS) as [HR Hh].
+    exists (V1 ⊔ V2). split; [by apply fp_connect|exact Hh].
+Qed.
+
+(** ** From full derivations to hidden ones
+
+    Hiding loses no program: every full derivation hides to one whose
+    world derives only facts of the full world. *)
+Theorem fptyped_ptyped N W Σ p T :
+  fptyped N W Σ p T → ∃ Wi, ptyped N Wi Σ p T ∧ ∀ x y, Wi ⊢ₛ x ≺ y → W ⊢ₛ x ≺ y.
+Proof.
+  intros Hty. pose proof Hty as Hty'. revert Hty'.
+  induction Hty as [W Σ ΘB C0 t T c Hp HB HΣ Hpf Hd Ht HW
+                   |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T Hty1 IH1 Hty2 IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 HS];
+    intros Hfull.
+  - exists (swrestrict W (iface Σ T)). split; [by eapply p_term|]. intros x y. apply swrestrict_lt.
+  - destruct (IH1 Hty1) as (Wi1 & Hi1 & Hs1), (IH2 Hty2) as (Wi2 & Hi2 & Hs2).
+    assert (swf (W1 ⊔ W2)) as HJ by apply (fptyped_wf _ _ _ _ _ Hfull).
+    exists (swrestrict (Wi1 ⊔ Wi2) (iface (Σ1 ∪ Σ2) T)). split.
+    + eapply p_connect; try done. apply (swf_sub _ (W1 ⊔ W2)); [|done]. intros x y. by apply join_sub.
+    + intros x y H. apply swrestrict_lt in H. by eapply join_sub.
+Qed.

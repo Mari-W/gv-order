@@ -73,3 +73,48 @@ Corollary lf_soundness_padovani N W p T :
 Proof.
   intros EM DC FC Hty. exact (lock_free_padovani EM DC p (lf_soundness N W p T EM FC Hty)).
 Qed.
+
+(** ** The hidden judgment
+
+    The lock-free reading of a process typed with hiding: a whole world
+    that hides to its world, with the soup at every ranked world that
+    models it ([lf_sems_h]). P-Connect reads the two interface worlds
+    once the private constants are apart ([lf_p_connect_h]), and the
+    fundamental theorem goes through [ptyped_full]. *)
+Definition lf_sems_h (N : nat) (Wi : sworld) (Σ : senv) (p : proc) (T : ty) : Prop :=
+  ∃ W, sworld_wf W ∧ swf W ∧ hides W (iface Σ T) Wi ∧ lf_sems N W Σ p T.
+
+Theorem lf_p_connect_h N V1 V2 W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
+  sworld_wf V1 → sworld_wf V2 → swf V1 → swf V2 →
+  lf_sems N V1 (Σ1 ∪ ΣC) (C1, E1) T → lf_sems N V2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
+  Σ1 ##ₘ ΣC → Σ2 ##ₘ senv_dual ΣC →
+  (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
+  chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
+  C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
+  hides V1 (iface (Σ1 ∪ ΣC) T) W1 → hides V2 (iface (Σ2 ∪ senv_dual ΣC) TUnit) W2 →
+  (∀ a, a ∈ sw_consts V1 → a ∉ iface (Σ1 ∪ ΣC) T → a ∉ iface (Σ2 ∪ senv_dual ΣC) TUnit) →
+  (∀ a, a ∈ sw_consts V2 → a ∉ iface (Σ2 ∪ senv_dual ΣC) TUnit → a ∉ sw_consts V1 ∪ iface (Σ1 ∪ ΣC) T) →
+  swf (W1 ⊔ W2) →
+  lf_sems_h N (swrestrict (W1 ⊔ W2) (iface (Σ1 ∪ Σ2) T)) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
+Proof.
+  intros Hw1 Hw2 HS1 HS2 H1 H2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 Hh1 Hh2 Hav1 Hav2 HS.
+  destruct (connect_hidden V1 V2 W1 W2 _ _ (iface (Σ1 ∪ Σ2) T) Hw1 Hw2 Hh1 Hh2 Hav1 Hav2
+              (iface_connect _ _ _ _) HS) as [HR Hh].
+  exists (V1 ⊔ V2). split_and!; [by apply swjoin_wf|by apply (wf_join_iff V1 V2 Hw1 Hw2)|exact Hh|].
+  by apply lf_p_connect.
+Qed.
+
+Theorem lf_fundamental_h N W Σ p T : ptyped (Some N) W Σ p T → ⊢▷ p → lf_sems_h N W Σ p T.
+Proof.
+  intros Hty Hg. destruct (ptyped_full _ _ _ _ _ Hty) as (W' & Hf & Hh). destruct (fptyped_wf _ _ _ _ _ Hf).
+  exists W'. split_and!; try done. by apply lf_fundamental.
+Qed.
+
+Theorem lf_sems_h_adequacy (EM : excluded_middle) (FC : functional_choice) N W p T :
+  lf_sems_h N W ∅ p T → lock_free p.
+Proof. intros (W' & Hwf & HW & _ & Hs). exact (lf_sems_adequacy EM FC N W' p T Hwf HW Hs). Qed.
+
+(** Lock freedom of the hidden judgment. *)
+Theorem lf_soundness_h N W p T :
+  excluded_middle → functional_choice → ptyped (Some N) W ∅ p T → ⊢▷ p → lock_free p.
+Proof. intros EM FC Hty Hg. exact (lf_sems_h_adequacy EM FC N W p T (lf_fundamental_h N W ∅ p T Hty Hg)). Qed.

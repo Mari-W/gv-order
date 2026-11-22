@@ -19,7 +19,7 @@
     world ([fptyped_wf]), so such an R exists ([wmodels_exists]) and
     soundness asks nothing of W. *)
 
-From GV Require Export compat.PTerm static.Fundamental.
+From GV Require Export compat.PTerm static.Fundamental static.Hiding.
 From GV Require Import compat.Conv.
 
 (** The guard of a process, ⊢▷ p: every thread t of p has ∅ ⊢▷ t. *)
@@ -187,3 +187,64 @@ Proof.
   constructor; [by rewrite map_union_empty|intros o; rewrite dom_empty_L; set_solver
     |unfold chans_of; rewrite dom_empty_L; set_solver|apply pfree_empty|intros o Ho; set_solver].
 Qed.
+
+(** ** The hidden judgment
+
+    A process typed with hiding is read at a whole world that hides to
+    its world ([sem_ptyped_h]): some well-founded W whose order between
+    interface points lies in the hidden world, with the component in
+    the relation at every ranked world that models W. P-Connect reads
+    the two interface worlds ([sem_p_connect_h]) once the private
+    constants of the two whole worlds are apart, which renaming provides
+    ([rename_side], static/Hiding.v). The fundamental theorem goes
+    through the translation [ptyped_full]. *)
+Definition sem_ptyped_h (κ : ctable) (Wi : sworld) (Σ : senv) (p : proc) (T : ty) : Prop :=
+  ∃ W, sworld_wf W ∧ swf W ∧ hides W (iface Σ T) Wi ∧ sem_ptyped_sw κ W Σ p T.
+
+Theorem sem_p_connect_h κ V1 V2 W1 W2 Σ1 ΣC Σ2 p1 p2 T :
+  tfree T → sworld_wf V1 → sworld_wf V2 → swf V1 → swf V2 →
+  sem_ptyped_sw κ V1 (Σ1 ∪ ΣC) p1 T → sem_ptyped_sw κ V2 (Σ2 ∪ senv_dual ΣC) p2 TUnit →
+  conn Σ1 ΣC p1.1 Σ2 (senv_dual ΣC) p2.1 →
+  hides V1 (iface (Σ1 ∪ ΣC) T) W1 → hides V2 (iface (Σ2 ∪ senv_dual ΣC) TUnit) W2 →
+  (∀ a, a ∈ sw_consts V1 → a ∉ iface (Σ1 ∪ ΣC) T → a ∉ iface (Σ2 ∪ senv_dual ΣC) TUnit) →
+  (∀ a, a ∈ sw_consts V2 → a ∉ iface (Σ2 ∪ senv_dual ΣC) TUnit → a ∉ sw_consts V1 ∪ iface (Σ1 ∪ ΣC) T) →
+  swf (W1 ⊔ W2) →
+  sem_ptyped_h κ (swrestrict (W1 ⊔ W2) (iface (Σ1 ∪ Σ2) T)) (Σ1 ∪ Σ2) (pconn p1 p2 (chans_of ΣC)) T.
+Proof.
+  intros HT Hw1 Hw2 HS1 HS2 H1 H2 Hc Hh1 Hh2 Hav1 Hav2 HS.
+  destruct (connect_hidden V1 V2 W1 W2 _ _ (iface (Σ1 ∪ Σ2) T) Hw1 Hw2 Hh1 Hh2 Hav1 Hav2
+              (iface_connect _ _ _ _) HS) as [HR Hh].
+  exists (V1 ⊔ V2). split_and!; [by apply swjoin_wf|by apply (wf_join_iff V1 V2 Hw1 Hw2)|exact Hh|].
+  by apply (sem_p_connect_sw κ V1 V2 Σ1 ΣC Σ2 (senv_dual ΣC)).
+Qed.
+
+Theorem fundamental_proc_h W Σ p T : Σ ⊢_W p : T → sem_ptyped_h κ_DF W Σ p T.
+Proof.
+  intros Hty. destruct (ptyped_full _ _ _ _ _ Hty) as (W' & Hf & Hh). destruct (fptyped_wf _ _ _ _ _ Hf).
+  exists W'. split_and!; try done. intros R HR. by apply (fundamental_proc W').
+Qed.
+
+Theorem live_fundamental_proc_h W Σ p T : Σ ⊢_W p : T → ⊢▷ p → sem_ptyped_h κ_L W Σ p T.
+Proof.
+  intros Hty Hg. destruct (ptyped_full _ _ _ _ _ Hty) as (W' & Hf & Hh). destruct (fptyped_wf _ _ _ _ _ Hf).
+  exists W'. split_and!; try done. intros R HR. by apply (live_fundamental_proc W').
+Qed.
+
+Theorem adequacy_h W p T : sem_ptyped_h κ_DF W ∅ p T → deadlock_free p.
+Proof.
+  intros (W' & Hwf & HW & _ & Hs). destruct (wmodels_exists W' Hwf HW) as [R HR].
+  apply (adequacy R T p). by apply Hs.
+Qed.
+
+Theorem live_adequacy_h W p T : sem_ptyped_h κ_L W ∅ p T → deadlock_free p ∧ no_tau_divergence p.
+Proof.
+  intros (W' & Hwf & HW & _ & Hs). destruct (wmodels_exists W' Hwf HW) as [R HR].
+  apply (live_adequacy R T p). by apply Hs.
+Qed.
+
+(** Soundness of the hidden judgment. *)
+Theorem soundness_h W p T : ∅ ⊢_W p : T → deadlock_free p.
+Proof. intros Hty. exact (adequacy_h W p T (fundamental_proc_h W ∅ p T Hty)). Qed.
+
+Theorem live_soundness_h W p T : ∅ ⊢_W p : T → ⊢▷ p → deadlock_free p ∧ no_tau_divergence p.
+Proof. intros Hty Hg. exact (live_adequacy_h W p T (live_fundamental_proc_h W ∅ p T Hty Hg)). Qed.
