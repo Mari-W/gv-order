@@ -112,7 +112,7 @@ block(s, {
     LFROW('', '', h('act.refill', R`(S@x^{+})^{m}_{m}`), R`an action returns its end with credit $m$`),
     LFROW('', '', h('ann.tsum', R`\mathsf{tk}(o) + \mathsf{tk}(\overline{o}) \leq N`), R`the two ends of a channel have at most $N$ tickets together`),
     LFROW('lfi.hop', 'transfer', h('E-Send.floor', R`T' - 1 \leq T[x\cdot i]`), R`a sent end loses one`),
-    LFROW('', '', h('E-Abs.cap', R`(T \multimap U)^{a} : \Delta - a`), R`the body of a closure sees each captured end at its credit minus $a$`),
+    LFROW('', '', h('E-Abs.cap', R`(T \multimap U)^{a} : \Delta - a`), R`the body of a closure is typed with each captured end at its credit minus $a$`),
     LFROW('', '', h('E-Spawn.credit', R`a \geq 1`), R`a spawned closure has credit at least one, so the ends of the child lose one`),
     LFROW('lfi.link', 'link', h('E-Link.tickets', R`a_1 + m_2 > N,\ a_2 + m_1 > N`), R`the new partner of a waiting end has a lower counter than the old one`)]),
   caption: '',
@@ -181,7 +181,7 @@ block(s, {
 
 // ---- term rules: one form, the lock-free parts marked ----
 const T = (id, title, rocq, tex, caption) => block(s, { id, title, rocq, tex, caption });
-const UNL = h('ctx.empty', R`\Delta\ \text{unlimited}`);
+const UNL = h('ctx.empty', R`\mathsf{unlimited}\,\Delta`);
 
 T('r-unit', 'E-Unit', 'static/Typing.v: e_unit; static/Conservativity.v: d_unit',
   rule('E-Unit', UNL, J(R`\Gamma`, R`\Delta`, '', 'F', R`\ast`, R`\ast`, ZERO)),
@@ -194,9 +194,9 @@ T('r-chan', 'E-Chan', 'static/Typing.v: e_chan; static/Conservativity.v: d_chan'
   'The end $o$ is typed by its own entry.');
 T('r-abs', 'E-Abs', 'static/Typing.v: e_abs; static/Conservativity.v: d_abs',
   rule('E-Abs',
-    R`${h('E-Abs.fut', R`F_u = \begin{cases} (\varnothing, {\uparrow}u) & u \text{ a point} \\ (\varnothing, {\uparrow}) & u = \cdot \\ (\varnothing, \cdot) & u = \top \end{cases}`)}${QH}${h('E-Abs.lb', R`l \neq \bot \Rightarrow l \preccurlyeq \Delta`)}${QH}${h('E-Abs.contr', R`${h('sty.contr', R`\mathsf{contr}`)}\,T`)} \\ ${h('E-Abs.body', J(R`\Gamma`, R`${h('E-Abs.cap', R`\Delta\annot{ - a}`)}, T`, '', R`F_u`, 'e', 'U', R`\varepsilon`))}`,
+    R`${h('E-Abs.fut', R`F_u = \begin{cases} (\varnothing, {\uparrow}u) & u \in \mathsf{Point} \\ (\varnothing, {\uparrow}) & u = \cdot \\ (\varnothing, \cdot) & u = \top \end{cases}`)}${QH}${h('E-Abs.lb', R`l \neq \bot \Rightarrow l \preccurlyeq \Delta`)}${QH}${h('E-Abs.contr', R`${h('sty.contr', R`\mathsf{contr}`)}\,T`)} \\ ${h('E-Abs.body', J(R`\Gamma`, R`${h('E-Abs.cap', R`\Delta\annot{ - a}`)}, T`, '', R`F_u`, 'e', 'U', R`\varepsilon`))}`,
     J(R`\Gamma`, R`\Delta`, '', 'F', R`\lambda e`, ARR('T', 'U', R`\varepsilon`, 'h', 'a'), ZERO)),
-  'The body runs at a later call under everything above $u$, under everything when there is no $u$, and under the empty future when $u = \\top$. The lower point $l$ lies at or below the dual points of the captured entries, and $l = \\bot$ claims no bound. In the lock-free mode the closure records the effect of its body, and the body sees each captured end at its own credit minus $a$.');
+  'The body runs at a later call under everything above $u$, under everything when there is no $u$, and under the empty future when $u = \\top$. The lower point $l$ lies at or below the dual points of the captured entries, and $l = \\bot$ claims no bound. In the lock-free mode the closure records the effect of its body, and the body is typed with each captured end at its own credit minus $a$.');
 T('r-app', 'E-App', 'static/Typing.v: e_app; static/Conservativity.v: d_app',
   rule('E-App',
     R`${h('E-App.fut1', J(R`\Gamma`, R`\Delta_1`, R`\Delta_2`, 'F', R`e_1`, ARR('T', 'U', R`\varepsilon`, 'h', 'a'), R`\varepsilon_1`))} \\ ${h('E-App.fut2', J(R`\Gamma`, AGE(R`\Delta_2`, R`\varepsilon_1`), R`(T \multimap^{u}_{l} U)\annot{^{a}}`, 'F', R`e_2`, 'T', R`\varepsilon_2`))}${QH}${h('E-App.ub', R`u \prec F`)}`,
@@ -219,7 +219,7 @@ T('r-case', 'E-Inj, E-Case', 'static/Typing.v: e_inj, e_case; static/Conservativ
     J(R`\Gamma`, R`\Delta_1, \Delta_2`, '', 'F', R`\mathsf{case}\ e\,(e_1)\,(e_2)`, 'T', R`\varepsilon_0 ${SEQ} ${h('tp.max', R`\max`)}(\varepsilon_1,\varepsilon_2)`))),
   'An injection keeps the context of its argument. Both branches of a case type under one context at one result.');
 T('r-box', 'E-Box', 'static/Typing.v: e_box; static/Conservativity.v: d_box',
-  rule('E-Box', R`${h('E-Box.self', R`B = \Box(\forall \bar\iota\,\bar\alpha.\ C.\ \ast \multimap^{u}\annot{[\varepsilon]}\,U)`)}${QH}${h('E-Box.unl', R`\Delta\ \text{unlimited}`)}${QH}${h('E-Box.contr', R`${h('sty.contr', R`\mathsf{contr}`)}\,U`)}${QH}${h('E-Box.fresh', R`\bar\iota\ \text{fresh}`)}${QH}${h('E-Box.inst', R`\forall \bar s.\ ${h('tp.sinsts', R`\mathsf{sinsts}`)}\,\bar s`)} \\ ${h('E-Box.body', J(h('E-Box.open', R`\Gamma, C(\bar\iota)`), h('E-Box.self', R`\Delta, f : B`), '', R`(\varnothing,{\uparrow}u)`, 'e', h('tp.sinst', R`U[\bar s]`), R`\varepsilon`))}`,
+  rule('E-Box', R`${h('E-Box.self', R`B = \Box(\forall \bar\iota\,\bar\alpha.\ C.\ \ast \multimap^{u}\annot{[\varepsilon]}\,U)`)}${QH}${h('E-Box.unl', R`\mathsf{unlimited}\,\Delta`)}${QH}${h('E-Box.contr', R`${h('sty.contr', R`\mathsf{contr}`)}\,U`)}${QH}${h('E-Box.fresh', R`\bar\iota \mathrel{\#} \Gamma, \Delta, F`)}${QH}${h('E-Box.inst', R`\forall \bar s.\ ${h('tp.sinsts', R`\mathsf{sinsts}`)}\,\bar s`)} \\ ${h('E-Box.body', J(h('E-Box.open', R`\Gamma, C(\bar\iota)`), h('E-Box.self', R`\Delta, f : B`), '', R`(\varnothing,{\uparrow}u)`, 'e', h('tp.sinst', R`U[\bar s]`), R`\varepsilon`))}`,
     J(R`\Gamma`, R`\Delta`, '', 'F', R`\ !e`, 'B', ZERO)),
   'A box $!e$ is a procedure that can be forced many times, and its body calls itself through $f$. A copy of a box must not copy an end, so $\\Delta$ is unlimited. Each force may pick other points for $\\bar\\iota$ and other session types for $\\bar\\alpha$, so the body is typed once with $\\bar\\iota$ fresh and only $C(\\bar\\iota)$ known, and once for every allowed choice $\\bar s$. Its future is everything above $u$, which stands for whatever a caller does after the force.');
 T('r-force', 'E-Force', 'static/Typing.v: e_force; static/Conservativity.v: d_force',
@@ -291,7 +291,7 @@ T('r-admis', 'E-Weak, E-Contract (admissible)', 'static/Weakening.v: e_weak, e_c
   'Both are renamings of the variables, the identity and the map $x \\mapsto x - 1$. They hold because E-Unit, E-Var, E-Chan and E-New accept unused entries of unlimited type.');
 T('r-ex', 'E-Pack, E-Open', 'static/Typing.v: e_pack, e_open; static/Conservativity.v: d_pack, d_open',
   rows(rule('E-Pack', R`${h('E-Force.hold', R`\Gamma \vdash C[\bar x]`)}${QH}${h('E-Pack.lb', R`l \preccurlyeq ${h('tp.pinst', R`T[\bar x]`)}`)}${QH}${h('E-Pack.wf', R`\Gamma, C \vdash l \preccurlyeq T`)}${QH}${J(R`\Gamma`, R`\Delta`, '', 'F', 'e', R`T[\bar x]`, R`\varepsilon`)}`, J(R`\Gamma`, R`\Delta`, '', 'F', 'e', R`\exists^{l}\bar\iota.\,C.\,T`, R`\varepsilon`)),
-    rule('E-Open', R`${h('E-Open.entry', R`\Delta(i) = \exists^{l}\bar\iota.\,C.\,T,\ \neg\mathsf{unlimited}\,T`)}${QH}${h('E-Box.fresh', R`\bar\iota\ \text{fresh}`)}${QH}${h('E-Open.cons', R`\mathsf{cons}\,W\,\Gamma\,m\,C`)}${QH}${h('E-Open.body', J(R`\Gamma, C(\bar\iota)`, R`\Delta[i \mapsto T]`, '', 'F', 'e', 'U', R`\varepsilon`))}`, J(R`\Gamma`, R`\Delta`, '', 'F', 'e', 'U', R`\varepsilon`)),
+    rule('E-Open', R`${h('E-Open.entry', R`\Delta(i) = \exists^{l}\bar\iota.\,C.\,T,\ \neg\mathsf{unlimited}\,T`)}${QH}${h('E-Box.fresh', R`\bar\iota \mathrel{\#} \Gamma, \Delta, F`)}${QH}${h('E-Open.cons', R`\mathsf{cons}\,W\,\Gamma\,m\,C`)}${QH}${h('E-Open.body', J(R`\Gamma, C(\bar\iota)`, R`\Delta[i \mapsto T]`, '', 'F', 'e', 'U', R`\varepsilon`))}`, J(R`\Gamma`, R`\Delta`, '', 'F', 'e', 'U', R`\varepsilon`)),
     h('E-Open.cons', R`\mathsf{cons}\,W\,\Gamma\,m\,C \iff \forall x, y \in \mathsf{Point}_{\Gamma}.\ (\Gamma, C(\bar\iota) \vdash x \prec y \Rightarrow \Gamma \vdash x \prec y),\ m = |\bar\iota|`)),
   'Packing chooses $\\bar x$ with $\\Gamma \\vdash C[\\bar x]$, and opening names the witness by fresh point variables $\\bar\\iota$ with hypothesis $C(\\bar\\iota)$, provided the hypothesis adds no fact between points of $\\Gamma$.');
 
@@ -546,7 +546,7 @@ sa('ctx.hyps', R`(C, \bar x) \in \Gamma`, [A('C', R`a box constraint, a set of f
 sa('ctx.fvarF', R`F = (X, {\uparrow}u)`, [A(R`{\uparrow}u`, R`the rest, everything above $u$`), A('X', R`the known points of the future`)]);
 sa('ctx.bot', R`F = (X, \bot)`, [A(R`\bot`, R`the flag that some held end of the context has a point unknown to the term`), A('X', R`the known points of the future`)]);
 sa('ctx.slt', R`\Gamma \vdash x \prec y \subseteq \mathsf{Hctx} \times \mathsf{Pt} \times \mathsf{Pt}`, [aGa, A('x, y', R`points, the judgment states that $x$ lies strictly below $y$`)]);
-sa('ctx.empty', R`\Delta\ \text{unlimited} \iff \Delta \text{ holds no end} \land \forall i.\ \Delta(i) = \bot \lor \mathsf{unlimited}\,\Delta(i)`, [aDe]);
+sa('ctx.empty', R`\mathsf{unlimited}\,\Delta \iff \forall i.\ \Delta(i) = \bot \lor \mathsf{unlimited}\,\Delta(i)`, [aDe]);
 sa('ctx.only', R`\Delta, x : T`, [A('x', R`the variable or end used`), A('T', R`its type`), A(R`\Delta`, R`the rest of the context, unlimited`)]);
 sa('side.act', R`x \prec F \iff (\forall y \in X.\ \Gamma \vdash x \prec y) \land (F = (X, {\uparrow}u) \Rightarrow \Gamma \vdash x \preccurlyeq u) \land F \neq (X, {\uparrow}) \land F \neq (X, \bot)`, [aX, aF, aGa]);
 sa('act.refill', R`(S@x)^{m}_{m}`, [A('S@x', R`the end after the action, at its new point`), A('m', R`the tickets of the end`)]);
@@ -577,7 +577,7 @@ sa('E-Pair.fut2', R`\Gamma ; \Delta_2 - \varepsilon_1 \vdash^{F \triangleleft T_
 sa('tp.letp', R`\Gamma ; T_2, T_1, \Delta_2 - \varepsilon_1 \vdash^{F} e_2 : T\ !\ \varepsilon_2`, [A(R`T_1 \otimes T_2`, R`the type of $e_1$`)]);
 sa('tp.letu', R`\Gamma ; \Delta_2 - \varepsilon_1 \vdash^{F} e_2 : T\ !\ \varepsilon_2`, [A(R`\Delta_2 - \varepsilon_1`, R`the context of $e_2$ aged by the cost of $e_1$`)]);
 sa('E-Case.branches', R`\Gamma ; T_i, \Delta_2 - \varepsilon_0 \vdash^{F} e_i : T\ !\ \varepsilon_i`, [A('i', R`$1$ or $2$, the branch`), A(R`T_i`, R`the payload of injection $i$ at index $0$`)]);
-sa('E-Box.unl', R`\Delta \text{ holds no end} \land \forall i.\ \Delta(i) = T \Rightarrow \mathsf{unlimited}\,T`, [aDe]);
+sa('E-Box.unl', R`\forall i.\ \Delta(i) = T \Rightarrow \mathsf{unlimited}\,T`, [aDe]);
 sa('E-Box.inst', R`\forall \bar s.\ \mathsf{sinsts}\,\bar s \Rightarrow \ldots`, [A(R`\bar s`, R`a list of session types, one per session variable of the box`)]);
 sa('E-Box.body', R`\Gamma, C(\bar\iota) ; \Delta, f \vdash^{(\varnothing, {\uparrow}u)} e : U[\bar s]\ !\ \varepsilon`, [A(R`\bar\iota`, R`the fresh point variables of the box`), A('f', R`the box itself at index $0$`), A(R`{\uparrow}u`, R`the rest above the upper point of the box`)]);
 sa('E-Box.open', R`\Gamma, C(\bar\iota)`, [A(R`C(\bar\iota)`, R`the constraint at the fresh variables`)]);
@@ -634,7 +634,7 @@ sa('lf.N', R`N \in \mathbb{N}`, [aN]);
 sa('P-Connect.left', R`\Sigma_1 \cup \Sigma_C \vdash^{N}_{W_1} (C_1, E_1) : T`, [A(R`\Sigma_1`, R`the interface kept outside`), A(R`\Sigma_C`, R`the cut, the ends connected to the right component`)]);
 sa('P-Connect.right', R`\Sigma_2 \cup \overline{\Sigma_C} \vdash^{N}_{W_2} (C_2, E_2) : \ast`, [A(R`\Sigma_2`, R`the interface kept outside`), A(R`\overline{\Sigma_C}`, R`the partners of the cut`)]);
 sa('P-Connect.cut', R`\overline{\Sigma_C} = \{\overline{o} \mapsto \overline{S}@\overline{x} \mid (o \mapsto S@x) \in \Sigma_C\}`, [A(R`\Sigma_C`, R`the cut`)]);
-sa('P-Connect.disj', R`\mathsf{chans}\,\Sigma_1, \mathsf{chans}\,\Sigma_2, \mathsf{chans}\,\Sigma_C, C_1, C_2\ \text{pairwise disjoint}`, [A(R`C_1, C_2`, R`the restricted channels of the components`)]);
+sa('P-Connect.disj', R`\mathsf{chans}\,\Sigma_1, \mathsf{chans}\,\Sigma_2, \mathsf{chans}\,\Sigma_C, C_1, C_2\ \mathsf{pairwise\ disjoint}`, [A(R`C_1, C_2`, R`the restricted channels of the components`)]);
 sa('P-Connect.cutfree', R`\mathsf{pfree}\,\Sigma_C`, [A(R`\Sigma_C`, R`the cut`)]);
 sa('P-Connect.wf', R`\mathsf{wf}(W_1 \sqcup W_2)`, [A(R`W_1, W_2`, R`the interface worlds of the components`)]);
 sa('P-Connect.n', R`\mathsf{wf}(W_1 \sqcup \cdots \sqcup W_n)`, [A(R`W_1, \ldots, W_n`, R`the interface worlds of the $n$ components`), A(R`\Sigma_{C,i}`, R`the cut of component $i$ against the composite of the components before it`)]);

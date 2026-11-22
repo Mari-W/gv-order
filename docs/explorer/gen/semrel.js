@@ -132,7 +132,7 @@ block(s, {
 block(s, {
   id: 'v-size', title: 'Recursion of V', rocq: 'relation/Relation.v: tsize, Vtop, RelA; relation/Ord.v: osfix',
   tex: R`\begin{array}{l}
-${h('rel.vsize', R`V_{\alpha}\llbracket\Theta \vdash T\rrbracket \ \text{by recursion on}\ (\alpha, ${h('sr.size', R`\mathsf{size}`)}\,T) \in (\mathsf{Ord} \times \mathbb{N}, <_{\mathrm{lex}})`)} \\
+${h('rel.vsize', R`\mathsf{measure}(V_{\alpha}\llbracket\Theta \vdash T\rrbracket) = (\alpha, ${h('sr.size', R`\mathsf{size}`)}\,T) \in (\mathsf{Ord} \times \mathbb{N}, <_{\mathrm{lex}})`)} \\
 ${h('sr.size', R`\mathsf{size}(\Box(\forall\bar\iota\,\bar\alpha.\,C.\ \ast ${ARR}^{u} U)) = 3 + \mathsf{size}\,U`)} \qquad ${h('sr.size', R`\mathsf{size}(\ast ${ARR}^{u} U) = 2 + \mathsf{size}\,U`)}
 \end{array}`,
   caption: '$V$ at level $n$ recurses on the size of the type inside the level, and the box clause stays inside the recursion.'
