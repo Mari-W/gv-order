@@ -59,6 +59,6 @@ paper/old/*.pdf
 /tools/*
 !/tools/proof-map/
 /tools/proof-map/.shots/
-/tools/proof-map/node_modules/
+/tools/proof-map/node_modules
 
 __pycache__/
