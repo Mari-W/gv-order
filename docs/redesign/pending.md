@@ -1,5 +1,60 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, 2026-11-22, fx-gap, fx-guard and fx-rejects merged into redesign
+
+Three merges on redesign from d30372f, in the approved order, nothing
+pushed. No Admitted, no Axiom, no new Parameter. No relation and no
+typing rule changed by the merges. Each merge was built on the laptop
+in ~/build-spo-main.
+
+| Merge | Commit | make | make check | make test |
+|---|---|---|---|---|
+| fx-gap | ae5f41b | exit 0 | 243 of 243 | passes |
+| fx-guard | dd13f78 | exit 0 | 234 of 234 | passes |
+| fx-rejects | 742543f | exit 0 | 251 of 251 | passes |
+
+- fx-gap on the fx-static and fx-cost rules (static/PointSubstTyped.v).
+  `cons_open` is now the bridge condition, so `cons_open_hinst` has a
+  short proof. σ moves the outer points of C and leaves its facts and
+  its tree alone, so a bridge of σ(C) is the instance of a bridge of C
+  (`outer_pt_inst'`). The invariant `ckinv` and the helpers on new
+  points are deleted. `new_ok_hinst` follows F4 and F6, with
+  `cons_open_hinst` at m = 1 for the second half of (acyc-new).
+  `ub_below_s_hinst`, the lemmas on futures and the E-Box case follow
+  F8. The E-Send case reads `below_ty` (Q14), the E-Chan case the new
+  premise a ≤ m (Q2), the E-Spawn case has no credit premise (F2), and
+  `thage_pinst` carries the new conjunct of aging.
+  examples/CopycatTwoN.v gives E-Chan its premise a ≤ m, the helper
+  `thage_single` asks a ≤ t, and the sends prove `below_ty`. Every
+  theorem statement of fx-gap keeps its strength.
+- fx-guard on the fx-static rules. Fundamental.v, LFCompose.v and
+  LFTyped.v drop the ⊥ flag argument of `sf_den` from the fx-guard
+  side and the map premises of P-Connect from both. LFFactoryEx keeps
+  the credit 1 of fx-guard and the future of F8. Two stale comments on
+  the guard in static/Fundamental.v are fixed.
+- fx-rejects on F3. `sk_force` concludes at `fadd c0 (fadd (Some 1) c)`,
+  the effect of E-Force. The box clause of V does not reach the
+  skeleton. Every rejection of examples/Rejects.v builds unchanged.
+
+Changed statements.
+
+- `force_typed`, `let_force_typed` and the first conjunct of
+  `let_var_counter` (examples/LetVarCounter.v) now conclude at cost 1,
+  not 0, because a force costs one unit. The counterexample keeps its
+  meaning.
+- Dropped `spawn_loop_lf_rejected` and `spawn_loop_unguarded`
+  (examples/Rejects.v). Both read the guard, which F3 removes. The
+  aging core of the rejection stays as `spawn_loop_rejected`
+  (examples/GuardEx.v). A rejection of the whole term without the guard
+  was not attempted.
+
+Map. docs/explorer/check.sh shows 0 errors and 66 warnings after each
+merge. The conflicts in `p-typing` and `th-terms` keep both sides. The
+fold world of P-Connect^n and `th.pinst` from fx-gap, the removal of
+the map premises from fx-static, and the removal of the guard from
+fx-guard. The why of `th.pinst` now explains the bridge condition in
+place of the chain argument.
+
 ## Report, 2026-11-22, the rejections of the explorer (fx-rejects)
 
 Branch fx-rejects in .claude/worktrees/fx-rejects, from redesign at
