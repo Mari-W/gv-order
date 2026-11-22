@@ -15,6 +15,7 @@ From GV Require Import soup.LFCompose soup.LFTyped lockfree.FairRun.
 From GV Require Import examples.SemBranch static.Inversion relation.Ord relation.ExProp relation.Ranks examples.LFLink compat.Redex static.PointSubst.
 From GV Require Import examples.SinstStuck static.Sinst examples.SharedRoots static.Hiding examples.GenNew.
 From GV Require Import soup.LFConnectN examples.Ring.
+From GV Require Import examples.Copycat.
 
 (** types/Points.v *)
 Print Assumptions pt_dual_dual.
@@ -56,7 +57,7 @@ Print Assumptions cs_typed.
 Print Assumptions cy_dftyped.
 Print Assumptions cy_typed.
 (** examples/FreshBetween.v *)
-Print Assumptions fb_dftyped.
+Print Assumptions examples.FreshBetween.fb_dftyped.
 Print Assumptions fb_typed.
 (** examples/FreshMany.v *)
 Print Assumptions fm_dftyped.
@@ -230,7 +231,7 @@ Print Assumptions connect_n_lf_soundness.
 Print Assumptions ring_comps.
 Print Assumptions ring_pairs.
 Print Assumptions ring_cyclic.
-Print Assumptions ring_rejected.
+Print Assumptions examples.Ring.ring_rejected.
 Print Assumptions ring_rejected_full.
 Print Assumptions ring_typed.
 Print Assumptions ring_df.
@@ -256,3 +257,14 @@ Print Assumptions te_not_wf_new.
 Print Assumptions te_dftyped.
 Print Assumptions te_deadlock_free.
 Print Assumptions te_rejected_wf_new.
+(** examples/Copycat.v *)
+Print Assumptions fwd_dftyped.
+Print Assumptions fwd_expand.
+Print Assumptions fwd_config_deadlock_free.
+Print Assumptions examples.Copycat.ring_rejected.
+Print Assumptions examples.Copycat.ring_rejected_full.
+Print Assumptions fwdh_term.
+Print Assumptions fwdh_config_deadlock_free.
+Print Assumptions examples.Copycat.fb_dftyped.
+Print Assumptions fwdp_expand.
+Print Assumptions fwdp_sem.
