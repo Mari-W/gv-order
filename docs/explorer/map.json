@@ -957,10 +957,6 @@
         "text": "the body of a closure is typed with each captured end at its credit minus $a$"
        },
        {
-        "formula": "\\sym{E-Spawn.credit}{a \\geq 1}",
-        "text": "a spawned closure has credit at least one, so the ends of the child lose one"
-       },
-       {
         "formula": "\\sym{E-Link.tickets}{a_1 + m_2 > N,\\ a_2 + m_1 > N}",
         "text": "the new partner of a waiting end has a lower counter than the old one",
         "label": "link",
@@ -968,7 +964,7 @@
        }
       ]
      },
-     "caption": "Each held end $o$ has a counter $f(o)$ at run time, the number of actions the thread holding $o$ may still perform on other ends before it acts on $o$. Typing bounds the counter from both sides with the two numbers of [[ty-ann]]. The credit $a$ is a lower bound, and [[t-agecap|aging]] lowers it with each action elsewhere, so the holding thread postpones $o$ only finitely often. The tickets $m$ are an upper bound, the value an [[r-act|action]] on $o$ resets the counter to. The two ends of a channel have at most $N$ tickets together, so the partner of an end with $m$ tickets has a counter of at most $N - m$. A link acts on no end and gives a waiting thread a new partner. [[r-act|E-Link]] asks $a_1 + m_2 > N$, so the new partner has a lower counter than the old one, and a wait meets at most $N$ links. [[r-fun|Closures]] have a credit for their captured ends, a [[r-threads|spawn]] costs the child one, and a [[r-new|creation]] splits $N$ tickets between the two new ends. The [[fv|values with fuel]] and the [[soup|lock-free process relation]] read these numbers at run time.",
+     "caption": "Each held end $o$ has a counter $f(o)$ at run time, the number of actions the thread holding $o$ may still perform on other ends before it acts on $o$. Typing bounds the counter from both sides with the two numbers of [[ty-ann]]. The credit $a$ is a lower bound, and [[t-agecap|aging]] lowers it with each action elsewhere, so the holding thread postpones $o$ only finitely often. The tickets $m$ are an upper bound, the value an [[r-act|action]] on $o$ resets the counter to. The two ends of a channel have at most $N$ tickets together, so the partner of an end with $m$ tickets has a counter of at most $N - m$. A link acts on no end and gives a waiting thread a new partner. [[r-act|E-Link]] asks $a_1 + m_2 > N$, so the new partner has a lower counter than the old one, and a wait meets at most $N$ links. [[r-fun|Closures]] have a credit for their captured ends. A [[r-threads|spawn]] is no action and costs nothing, so the child takes the captured ends at their counters. A [[r-new|creation]] splits $N$ tickets between the two new ends. The [[fv|values with fuel]] and the [[soup|lock-free process relation]] read these numbers at run time.",
      "why": "The two bounds serve the two threads of a channel. The holding thread needs a lower bound, so that its actions elsewhere stay within the counter. The waiting thread needs an upper bound on the counter of its partner, so that its wait is finite. One number cannot do both. A lower bound alone says nothing about the partner, and an upper bound alone cannot be lowered by aging, because aging must keep a true statement true.",
      "example": "At $N = 4$ a new channel gives its ends $3$ and $1$ tickets. A thread waiting on the end with $3$ tickets faces a partner whose counter is at most $1$, so the partner acts on its end after at most one action elsewhere. A link of that partner with an end at $2$ tickets asks the credit of the partner to exceed $2$, which a counter of $1$ cannot meet.",
      "modes": [
@@ -1375,8 +1371,8 @@
     {
      "id": "r-threads",
      "title": "Spawn",
-     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : (\\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l}\\inmode{lf}{[c']}\\, \\ast)\\inmode{lf}{^{a}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-Spawn.credit}{a \\geq 1}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{prim.spawn}{\\mathsf{spawn}}\\,e : \\ast\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Spawn}\\end{array}",
-     "caption": "E-Spawn spawns a [[r-fun|closure]] value with the ends it captured, at the [[t-consts|type of the constant]]. A written abstraction $\\mathsf{spawn}\\,(\\lambda e)$ types by E-Abs at upper point $\\top$ and lower point $\\bot$, so the child body runs under the empty future. \\inmode{lf}{At [[t-lf-counters|credit]] $a = 1$ the transferred entries age by one.}",
+     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : (\\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l}\\inmode{lf}{[c']}\\, \\ast)\\inmode{lf}{^{a}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{prim.spawn}{\\mathsf{spawn}}\\,e : \\ast\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Spawn}\\end{array}",
+     "caption": "E-Spawn spawns a [[r-fun|closure]] value with the ends it captured, at the [[t-consts|type of the constant]]. A written abstraction $\\mathsf{spawn}\\,(\\lambda e)$ types by E-Abs at upper point $\\top$ and lower point $\\bot$, so the child body runs under the empty future. \\inmode{lf}{A spawn is no action, so the rule asks nothing of the [[t-lf-counters|credit]] $a$, and E-Abs at $a = 0$ followed by E-Spawn passes each captured end at its credit.}",
      "why": "A spawned thread has no code after it, so the child body is typed at the empty future. The parent keeps the ends the closure did not capture, which the [[e-obl|spawn obligation]] of the relation checks against the value.",
      "source": [
       {
@@ -1970,8 +1966,8 @@
     {
      "id": "fu-obls",
      "title": "Fuel obligations",
-     "formula": "\\begin{array}{c}\\begin{array}{rcll}\n\\sym{sr.act}{\\mathsf{act}}\\,o & \\iff & \\sym{F-Wait}{\\Phi(o) = S^{f,m} \\land \\neg \\sym{fu.idle}{\\mathsf{idle}}\\,S} & \\textsf{F-Wait} \\\\\n & \\land & \\sym{F-Tick}{\\sym{fu.fspare}{\\mathsf{positive}}(\\Phi \\setminus o)} \\land \\sym{F-Tick.frame}{1 \\leq d} & \\textsf{F-Count} \\\\[4pt]\n\\sym{fu.fspare}{\\mathsf{positive}}(\\Phi) & \\iff & \\sym{fu.fspare}{\\forall o \\mapsto S^{f,m} \\in \\Phi.\\ \\neg\\mathsf{idle}\\,S \\Rightarrow 1 \\leq f} \\\\\n\\sym{fu.tick}{\\Phi{\\downarrow}} & = & \\sym{fu.tick}{\\{o \\mapsto S^{f \\mathbin{\\dot-} 1}_{m} \\mid o \\mapsto S^{f,m} \\in \\Phi\\}} \\\\\n\\sym{fu.idle}{\\mathsf{idle}}\\,S & \\iff & \\sym{sty.unfold}{\\mathsf{unfold}}\\,S = \\sym{sty.skip}{\\mathsf{Skip}}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\sym{F-Beta}{\\mathsf{Fobl}_{\\beta}(e')}}\\;\\textsf{F-Beta} \\qquad\n\\dfrac{\\begin{array}{c}\\sym{F-New.fresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Phi} \\Rightarrow \\exists S, m_1, m_2.\\ m_1 + m_2 \\leq N \\land e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\sym{F-New.cnew}{\\Phi[c^{+} \\mapsto S^{m_1,m_1}, c^{-} \\mapsto \\overline{S}^{m_2,m_2}]} \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\sym{F-New}{\\mathsf{Fobl}_{\\mathsf{new}\\,c}(e')}}\\;\\textsf{F-New} \\\\[10pt]\n\\dfrac{\\begin{array}{c}M = \\sym{syn.fends}{\\mathsf{fends}}(v)\\quad \\sym{F-Spawn.held}{M \\subseteq \\mathrm{dom}\\,\\Phi}\\quad \\sym{fu.fspare}{\\mathsf{positive}}(\\Phi|_M) \\\\ \\sym{F-Spawn.child}{v\\,\\ast \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\sym{fu.tick}{\\Phi|_M{\\downarrow}} \\vdash \\sym{fu.rty}{\\mathsf{thread}}\\ !\\ \\infty \\rrbracket}} \\\\ e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi \\setminus M \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\sym{F-Spawn}{\\mathsf{Fobl}_{\\mathsf{spawn}\\,v}(e')}}\\;\\textsf{F-Spawn} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{F-Link.plink}{\\Phi(o_1) = S^{f_1,m_1},\\ \\Phi(o_2) = S'^{f_2,m_2},\\ o_1 \\neq o_2,\\ S' \\mathrel{\\sym{sty.sequiv}{\\simeq}} \\overline{S}}\\quad \\sym{F-Link.ticket}{f_1 + m_2 > N,\\ f_2 + m_1 > N} \\\\ e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi \\setminus \\{o_1,o_2\\} \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\sym{F-Link}{\\mathsf{Fobl}_{\\mathsf{link}\\,o_1\\,o_2}(e')}}\\;\\textsf{F-Link}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\sym{sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S^{f,m}\\quad \\sym{sty.unfold}{\\mathsf{unfold}}\\,S = \\sym{sty.send}{!(\\bar\\iota.\\ T)}.S'\\quad M = \\sym{syn.fends}{\\mathsf{fends}}(w)\\quad \\sym{F-Send.notsubj}{o \\notin M \\subseteq \\mathrm{dom}\\,\\Phi}\\quad \\sym{fu.fspare}{\\mathsf{positive}}(\\Phi|_M) \\\\ \\sym{F-Send.payload}{w \\in \\sym{sr.FV}{FV^{N}_{\\beta}\\llbracket \\sym{fu.tick}{\\Phi|_M{\\downarrow}} \\vdash T \\rrbracket}} \\\\ e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\sym{fu.tick}{(\\Phi \\setminus M){\\downarrow}}[o \\mapsto {S'}^{m,m}] \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\sym{F-Send}{\\mathsf{Fobl}_{\\mathsf{send}\\,o\\,w}(e')}}\\;\\textsf{F-Send} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S^{f,m}\\quad \\sym{sty.unfold}{\\mathsf{unfold}}\\,S = \\sym{sty.recv}{?(\\bar\\iota.\\ T)}.S' \\\\ \\sym{F-Recv.forall}{\\forall \\gamma \\leq \\beta,\\ \\Phi_i \\mathbin{\\#} \\Phi.\\ w \\in \\sym{sr.FV}{FV^{N}_{\\gamma}\\llbracket \\Phi_i \\vdash T \\rrbracket}} \\Rightarrow e' \\in \\sym{sr.FE}{F^{N}_{\\gamma}\\llbracket \\sym{fu.tick}{\\Phi{\\downarrow}}[o \\mapsto {S'}^{m,m}] \\cup \\Phi_i \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\sym{F-Recv}{\\mathsf{Fobl}_{\\mathsf{recv}\\,o\\,w}(e')}}\\;\\textsf{F-Recv} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S^{f,m}\\quad \\sym{sty.unfold}{\\mathsf{unfold}}\\,S = \\sym{sty.close}{\\mathsf{Close}} \\\\ e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\sym{fu.tick}{(\\Phi \\setminus o){\\downarrow}} \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\sym{F-Close}{\\mathsf{Fobl}_{\\mathsf{close}\\,o}(e')}}\\;\\textsf{F-Close} \\qquad\n\\dfrac{\\begin{array}{c}\\sym{sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S^{f,m}\\quad \\sym{sty.unfold}{\\mathsf{unfold}}\\,S \\in \\{\\oplus(S',S''), \\&(S',S'')\\} \\\\ e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\sym{fu.tick}{\\Phi{\\downarrow}}[o \\mapsto \\sym{sty.choice}{(\\mathsf{if}\\ i\\ \\mathsf{then}\\ S''\\ \\mathsf{else}\\ S')}^{m,m}] \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\sym{F-Close}{\\mathsf{Fobl}_{\\mathsf{sel}_i\\,o}(e'),\\ \\mathsf{Fobl}_{\\mathsf{bra}_i\\,o}(e')}}\\;\\textsf{F-Choice}\n\\end{array}\\end{array}",
-     "caption": "An action on $o$ requires $o$ held and not idle, and a positive counter on the other ends that are not idle and on the frame. It uses one unit of the frame, advances the protocol of $o$, resets the counter of $o$ to its tickets $m$ and decrements the other counters, written $\\Phi{\\downarrow}[o \\mapsto S^{m,m}]$. Internal steps decrement no counter. A new channel starts each end at its tickets. A send hands the ends of its payload on with their counters minus one, read in [[fv]]. A link lowers no counter and asks the counter of each linked end to exceed the partner bound $N - m$ of the other. A send has a payload value $w$, and $d$ is the frame. [[fu]] asks these obligations at each step.",
+     "formula": "\\begin{array}{c}\\begin{array}{rcll}\n\\sym{sr.act}{\\mathsf{act}}\\,o & \\iff & \\sym{F-Wait}{\\Phi(o) = S^{f,m} \\land \\neg \\sym{fu.idle}{\\mathsf{idle}}\\,S} & \\textsf{F-Wait} \\\\\n & \\land & \\sym{F-Tick}{\\sym{fu.fspare}{\\mathsf{positive}}(\\Phi \\setminus o)} \\land \\sym{F-Tick.frame}{1 \\leq d} & \\textsf{F-Count} \\\\[4pt]\n\\sym{fu.fspare}{\\mathsf{positive}}(\\Phi) & \\iff & \\sym{fu.fspare}{\\forall o \\mapsto S^{f,m} \\in \\Phi.\\ \\neg\\mathsf{idle}\\,S \\Rightarrow 1 \\leq f} \\\\\n\\sym{fu.tick}{\\Phi{\\downarrow}} & = & \\sym{fu.tick}{\\{o \\mapsto S^{f \\mathbin{\\dot-} 1}_{m} \\mid o \\mapsto S^{f,m} \\in \\Phi\\}} \\\\\n\\sym{fu.idle}{\\mathsf{idle}}\\,S & \\iff & \\sym{sty.unfold}{\\mathsf{unfold}}\\,S = \\sym{sty.skip}{\\mathsf{Skip}}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\sym{F-Beta}{\\mathsf{Fobl}_{\\beta}(e')}}\\;\\textsf{F-Beta} \\qquad\n\\dfrac{\\begin{array}{c}\\sym{F-New.fresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Phi} \\Rightarrow \\exists S, m_1, m_2.\\ m_1 + m_2 \\leq N \\land e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\sym{F-New.cnew}{\\Phi[c^{+} \\mapsto S^{m_1,m_1}, c^{-} \\mapsto \\overline{S}^{m_2,m_2}]} \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\sym{F-New}{\\mathsf{Fobl}_{\\mathsf{new}\\,c}(e')}}\\;\\textsf{F-New} \\\\[10pt]\n\\dfrac{\\begin{array}{c}M = \\sym{syn.fends}{\\mathsf{fends}}(v)\\quad \\sym{F-Spawn.held}{M \\subseteq \\mathrm{dom}\\,\\Phi} \\\\ \\sym{F-Spawn.child}{v\\,\\ast \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi|_M \\vdash \\sym{fu.rty}{\\mathsf{thread}}\\ !\\ \\infty \\rrbracket}} \\\\ e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi \\setminus M \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\sym{F-Spawn}{\\mathsf{Fobl}_{\\mathsf{spawn}\\,v}(e')}}\\;\\textsf{F-Spawn} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{F-Link.plink}{\\Phi(o_1) = S^{f_1,m_1},\\ \\Phi(o_2) = S'^{f_2,m_2},\\ o_1 \\neq o_2,\\ S' \\mathrel{\\sym{sty.sequiv}{\\simeq}} \\overline{S}}\\quad \\sym{F-Link.ticket}{f_1 + m_2 > N,\\ f_2 + m_1 > N} \\\\ e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi \\setminus \\{o_1,o_2\\} \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\sym{F-Link}{\\mathsf{Fobl}_{\\mathsf{link}\\,o_1\\,o_2}(e')}}\\;\\textsf{F-Link}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\sym{sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S^{f,m}\\quad \\sym{sty.unfold}{\\mathsf{unfold}}\\,S = \\sym{sty.send}{!(\\bar\\iota.\\ T)}.S'\\quad M = \\sym{syn.fends}{\\mathsf{fends}}(w)\\quad \\sym{F-Send.notsubj}{o \\notin M \\subseteq \\mathrm{dom}\\,\\Phi}\\quad \\sym{fu.fspare}{\\mathsf{positive}}(\\Phi|_M) \\\\ \\sym{F-Send.payload}{w \\in \\sym{sr.FV}{FV^{N}_{\\beta}\\llbracket \\sym{fu.tick}{\\Phi|_M{\\downarrow}} \\vdash T \\rrbracket}} \\\\ e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\sym{fu.tick}{(\\Phi \\setminus M){\\downarrow}}[o \\mapsto {S'}^{m,m}] \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\sym{F-Send}{\\mathsf{Fobl}_{\\mathsf{send}\\,o\\,w}(e')}}\\;\\textsf{F-Send} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S^{f,m}\\quad \\sym{sty.unfold}{\\mathsf{unfold}}\\,S = \\sym{sty.recv}{?(\\bar\\iota.\\ T)}.S' \\\\ \\sym{F-Recv.forall}{\\forall \\gamma \\leq \\beta,\\ \\Phi_i \\mathbin{\\#} \\Phi.\\ w \\in \\sym{sr.FV}{FV^{N}_{\\gamma}\\llbracket \\Phi_i \\vdash T \\rrbracket}} \\Rightarrow e' \\in \\sym{sr.FE}{F^{N}_{\\gamma}\\llbracket \\sym{fu.tick}{\\Phi{\\downarrow}}[o \\mapsto {S'}^{m,m}] \\cup \\Phi_i \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\sym{F-Recv}{\\mathsf{Fobl}_{\\mathsf{recv}\\,o\\,w}(e')}}\\;\\textsf{F-Recv} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S^{f,m}\\quad \\sym{sty.unfold}{\\mathsf{unfold}}\\,S = \\sym{sty.close}{\\mathsf{Close}} \\\\ e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\sym{fu.tick}{(\\Phi \\setminus o){\\downarrow}} \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\sym{F-Close}{\\mathsf{Fobl}_{\\mathsf{close}\\,o}(e')}}\\;\\textsf{F-Close} \\qquad\n\\dfrac{\\begin{array}{c}\\sym{sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S^{f,m}\\quad \\sym{sty.unfold}{\\mathsf{unfold}}\\,S \\in \\{\\oplus(S',S''), \\&(S',S'')\\} \\\\ e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\sym{fu.tick}{\\Phi{\\downarrow}}[o \\mapsto \\sym{sty.choice}{(\\mathsf{if}\\ i\\ \\mathsf{then}\\ S''\\ \\mathsf{else}\\ S')}^{m,m}] \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\sym{F-Close}{\\mathsf{Fobl}_{\\mathsf{sel}_i\\,o}(e'),\\ \\mathsf{Fobl}_{\\mathsf{bra}_i\\,o}(e')}}\\;\\textsf{F-Choice}\n\\end{array}\\end{array}",
+     "caption": "An action on $o$ requires $o$ held and not idle, and a positive counter on the other ends that are not idle and on the frame. It uses one unit of the frame, advances the protocol of $o$, resets the counter of $o$ to its tickets $m$ and decrements the other counters, written $\\Phi{\\downarrow}[o \\mapsto S^{m,m}]$. Internal steps decrement no counter, and a spawn hands the ends of its thunk on at their counters. A new channel starts each end at its tickets. A send hands the ends of its payload on with their counters minus one, read in [[fv]]. A link lowers no counter and asks the counter of each linked end to exceed the partner bound $N - m$ of the other. A send has a payload value $w$, and $d$ is the frame. [[fu]] asks these obligations at each step.",
      "why": "Each kind of step changes the held ends, counters and tickets in one way, the same at each level. The rules of the [[t-lf-counters|counters block]] are their static images, credit for the counter and the same resets, decrements and link condition.",
      "modes": [
       "lf"
@@ -7737,12 +7733,12 @@
    ]
   },
   "lfi.hop": {
-   "title": "Transfers, a passed end loses one",
-   "meaning": "Each transfer of an end to another thread, by a send or a spawn, lowers its counter by $1$. A send asks $T^{\\prime} - 1 \\leq T[x\\cdot i]$ of the payload, a spawned body sees $\\Delta - 1$, and spawning a closure asks its credit $a \\geq 1$.",
-   "why": "Transferring an end is no action on it, so without the loss an end could be sent between threads forever and its partner would never be served.",
+   "title": "Transfers, a sent end loses one",
+   "meaning": "A send lowers the counter of each end of its payload by $1$, and E-Send asks $T^{\\prime} - 1 \\leq T[x\\cdot i]$ of the payload. A spawn lowers no counter, and the child takes the captured ends at their counters.",
+   "why": "Sending an end is no action on it, so without the loss an end could be sent between threads forever and its partner would never be served. A chain of spawns that passes an end on takes only administrative steps, which terminate in the lock-free relation, so a spawn needs no loss.",
    "breaks": "Endless delegation in the Examples tab sends $e$ back and forth forever while $e^{\\prime}$ waits. After finitely many transfers no credit is left to send $e$ again.",
    "example": "An end at credit $3$ can be passed on three times before a thread must act on the end.",
-   "signature": "T' - 1 \\leq T[x\\cdot i],\\ \\Delta - 1,\\ a \\geq 1",
+   "signature": "T' - 1 \\leq T[x\\cdot i]",
    "args": [
     {
      "name": "T'",
@@ -7753,14 +7749,7 @@
     {
      "file": "static/Typing.v",
      "names": [
-      "e_send",
-      "e_spawn"
-     ]
-    },
-    {
-     "file": "static/Weakening.v",
-     "names": [
-      "e_spawn_lam"
+      "e_send"
      ]
     }
    ]
@@ -7859,7 +7848,7 @@
   "lfi.measure": {
    "title": "The measure, rank of the awaited end",
    "meaning": "A pending thread $t$ waiting on the end $o$ is ranked by $\\varrho(\\mathsf{pt}\\,o)$, the ordinal of the point of $o$ in the ranked world of the run, and then by the counter of $\\overline{o}$.",
-   "why": "The thread holding $\\overline{o}$ either acts or waits on an end whose point lies below, so the rank falls along each chain of waits. Within one rank the counter of $\\overline{o}$ falls at each step of that thread on other ends and at each link.",
+   "why": "The thread holding $\\overline{o}$ either acts or waits on an end whose point lies below, so the rank falls along each chain of waits. Within one rank the counter of $\\overline{o}$ falls at each step of that thread on other ends, at each send of $\\overline{o}$ and at each link. A spawn passes $\\overline{o}$ to the child at its counter, and the administrative steps of a thread and its children terminate, so this happens finitely often between two decrements.",
    "breaks": "Without ranks a chain of waits could descend forever along an infinite chain of points.",
    "example": "A thread waiting on $c$ at $\\rho$ with $\\varrho(\\rho) = \\omega$.",
    "signature": "\\varrho(\\mathsf{pt}\\,o) \\in \\mathsf{Ord}",
@@ -9783,31 +9772,6 @@
      "file": "static/Typing.v",
      "names": [
       "e_link"
-     ]
-    }
-   ]
-  },
-  "E-Spawn.credit": {
-   "title": "Closure credit $a \\geq 1$",
-   "meaning": "A spawned closure value has credit $a \\geq 1$.",
-   "why": "Spawning passes on the captured ends with their counters minus $1$. The body was typed at each credit minus $a$, and $a \\geq 1$ covers that loss.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{spawn}\\,f$ with $f$ at credit $1$.",
-   "signature": "a \\geq 1",
-   "args": [
-    {
-     "name": "a",
-     "meaning": "the credit of the closure value spawned",
-     "modes": [
-      "lf"
-     ]
-    }
-   ],
-   "source": [
-    {
-     "file": "static/Typing.v",
-     "names": [
-      "e_spawn"
      ]
     }
    ]
@@ -14976,7 +14940,7 @@
   "fu.tick": {
    "title": "$\\Phi{\\downarrow}$",
    "meaning": "Each counter of $\\Phi$ lowered by one, truncated at $0$, with the tickets kept.",
-   "why": "An action decrements the counters of the other ends of the thread holding it, and a transfer passes counters on one lower. Both use this operation.",
+   "why": "An action decrements the counters of the other ends of the thread holding it, and a send passes the counters of its payload on one lower. Both use this operation.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\{a \\mapsto S^{3,3}, b \\mapsto S'^{1,2}\\}{\\downarrow} = \\{a \\mapsto S^{2,3}, b \\mapsto S'^{0,2}\\}$.",
    "signature": "\\Phi{\\downarrow} = \\{o \\mapsto S^{f \\mathbin{\\dot-} 1}_{m} \\mid o \\mapsto S^{f,m} \\in \\Phi\\}",
@@ -15352,8 +15316,8 @@
   },
   "F-Spawn": {
    "title": "F-Spawn",
-   "meaning": "The child takes $\\Phi|_M{\\downarrow}$ for $M = \\mathsf{fends}(v)$ and runs as a thread, the parent keeps $\\Phi \\setminus M$.",
-   "why": "The split is a function of $v$, so it is the same at each index.",
+   "meaning": "The child takes $\\Phi|_M$ for $M = \\mathsf{fends}(v)$ and runs as a thread, the parent keeps $\\Phi \\setminus M$.",
+   "why": "The split is a function of $v$, so it is the same at each index. A spawn is no action, so no counter falls. The call clause of [[fv|FV-Arrow]] accepts the current counters at each credit, which makes F-Spawn hold for each closure value.",
    "breaks": "Nothing. It is a definition.",
    "example": "The thunk takes $d'$ at $1$ in the cycle.",
    "signature": "\\mathsf{f\\_spawn} : \\mathsf{Val} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
@@ -15405,7 +15369,7 @@
   "fu.fspare": {
    "title": "$\\mathsf{positive}$",
    "meaning": "$\\mathsf{positive}(\\Phi) \\iff$ each end of $\\Phi$ that is not idle has counter at least $1$.",
-   "why": "A transfer passes the counter minus one, so a non-idle end must have a positive counter. A spawn is no action, so this is its only check.",
+   "why": "An action decrements the other counters and a send passes the counters of its payload on minus one, so a non-idle end must have a positive counter. A spawn lowers no counter and asks nothing.",
    "breaks": "A transfer at counter $0$ under truncation passes $0$ again and an end is passed on forever.",
    "example": "$\\mathsf{positive}(\\{d' \\mapsto S^{1}\\})$.",
    "signature": "\\mathsf{positive}(\\Phi) \\iff \\forall o \\mapsto S^{f,m} \\in \\Phi.\\ \\neg\\mathsf{idle}\\,S \\Rightarrow 1 \\leq f",
@@ -15435,11 +15399,11 @@
   },
   "F-Spawn.child": {
    "title": "The child",
-   "meaning": "$v\\,\\ast \\in F^N_\\beta\\llbracket\\Phi|_M{\\downarrow} \\vdash \\mathsf{thread}\\ !\\ \\infty\\rrbracket$.",
+   "meaning": "$v\\,\\ast \\in F^N_\\beta\\llbracket\\Phi|_M \\vdash \\mathsf{thread}\\ !\\ \\infty\\rrbracket$.",
    "why": "The child is a new thread of the lock-free process relation, so it must have thread fuel at exactly the ends and counters the lock-free process relation moves to the child.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(\\lambda u.\\,\\mathsf{close}\\,d')\\,\\ast$.",
-   "signature": "v\\,\\ast \\in F^{N}_{\\beta}\\llbracket \\Phi|_M{\\downarrow} \\vdash \\mathsf{thread}\\ !\\ \\infty \\rrbracket",
+   "signature": "v\\,\\ast \\in F^{N}_{\\beta}\\llbracket \\Phi|_M \\vdash \\mathsf{thread}\\ !\\ \\infty \\rrbracket",
    "args": [
     {
      "name": "v\\,\\ast",

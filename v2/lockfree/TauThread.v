@@ -219,16 +219,61 @@ Definition links_restricted (p : proc) : Prop :=
 Lemma act_cerase e : act (cerase e) = amap (λ _, EPos "") <$> act e.
 Proof. apply act_emap. Qed.
 
-(** An admin-accessible soup has admin-accessible threads. *)
-Lemma padmin_acc_thread p q :
+(** ** The order of one thread with its children *)
+
+Definition tRs (y x : expr) : Prop :=
+  tR y x ∨ ∃ v x', tstep x (LSpawn v) x' ∧ y = cerase (App v EUnit).
+
+(** A step of the erased term comes from a step of the term, with a new
+    name chosen outside X. *)
+Lemma admin_back e α x' (X : gset chan) :
+  tstep (cerase e) α x' → admin_lbl α →
+  ∃ α0 e0, tstep e α0 e0 ∧ admin_lbl α0 ∧ cerase x' = cerase e0 ∧
+    (∀ c, α0 = LNew c → c ∉ X) ∧
+    (∀ v, α = LSpawn v → ∃ v0, α0 = LSpawn v0 ∧ cerase (App v EUnit) = cerase (App v0 EUnit)).
+Proof.
+  intros Hst Hα.
+  destruct (act_step _ _ _ Hst) as (a' & Ha' & Ho). rewrite act_cerase in Ha'.
+  destruct (act e) as [a|] eqn:Ha; [|done]. simpl in Ha'. injection Ha' as <-.
+  assert (∀ α0 e0, tstep e α0 e0 → lerase α0 = lerase α → cerase x' = cerase e0) as Hdet.
+  { intros α0 e0 Hs0 Hl. destruct (tstep_cerase e α0 e0 Hs0) as (x0 & Hx0 & <-).
+    eapply tstep_det_cerase; [exact Hst|exact Hx0|]. by rewrite lerase_idem, Hl. }
+  set (c0 := fresh (X ∪ fchans e)). assert (c0 ∉ X ∪ fchans e) as Hc0 by apply is_fresh.
+  destruct a as [| |v|o|o v|o|o1 o2|o i|o]; simpl in Ho;
+    destruct α as [|c1|w|[| | | | |os]]; simpl in Hα; try contradiction.
+  - destruct (act_offer e ABeta LBeta Ha I) as [e0 He0].
+    exists LBeta, e0. split_and!; [done|done|by apply (Hdet _ _ He0)|intros; discriminate..].
+  - destruct (act_offer e ANew (LNew c0) Ha I) as [e0 He0].
+    exists (LNew c0), e0. split_and!; [done|done| |intros ? [= <-]; set_solver|intros; discriminate].
+    apply (Hdet _ _ He0). done.
+  - destruct (act_offer e (ASpawn v) (LSpawn v) Ha eq_refl) as [e0 He0].
+    simpl in Ho. subst w.
+    exists (LSpawn v), e0. split_and!; [done|done| |intros; discriminate|].
+    + apply (Hdet _ _ He0). simpl. fold cerase. by rewrite cerase_idem.
+    + intros v' [= <-]. exists v. split; [done|]. unfold cerase. simpl. by rewrite emap_emap.
+  - destruct (act_offer e (ALink o1 o2) (LSess (SLink ({[o1]} ∪ {[o2]}))) Ha eq_refl) as [e0 He0].
+    simpl in Ho. subst os. exists (LSess (SLink ({[o1]} ∪ {[o2]}))), e0.
+    split_and!; [done|done| |intros; discriminate|intros; discriminate].
+    apply (Hdet _ _ He0). simpl. f_equal. f_equal. set_solver.
+Qed.
+
+
+(** An admin-accessible soup has admin-accessible threads, their spawned
+    children included. *)
+Lemma padmin_acc_thread_s p q :
   links_restricted p → pred_star p q →
-  Acc (λ y x, padmin x y) q → ∀ E e, q.2 = E ⊎ {[+ e +]} → Acc tR (cerase e).
+  Acc (λ y x, padmin x y) q → ∀ E e, q.2 = E ⊎ {[+ e +]} → Acc tRs (cerase e).
 Proof.
   intros Hlr Hpq Hacc. revert Hpq.
   induction Hacc as [[C E0] _ IH]. intros Hpq E e HE. simpl in HE. subst E0.
   assert (∀ q', padmin (C, E ⊎ {[+ e +]}) q' → pred_star p q') as Hr'.
   { intros q' Hq'. etrans; [exact Hpq|]. apply rtc_once. by apply padmin_preduction. }
-  constructor. intros y (α & x' & Hα & Hst & ->).
+  constructor. intros y [Hy|(v & x' & Hst & ->)].
+  2: { destruct (admin_back e (LSpawn v) x' ∅ Hst ltac:(by cbn)) as (α0 & e0 & Hs0 & _ & _ & _ & Hsp).
+       destruct (Hsp v eq_refl) as (v0 & -> & ->).
+       pose proof (padmin_spawn C E e v0 e0 Hs0) as Hpa.
+       apply (IH _ Hpa (Hr' _ Hpa) (E ⊎ {[+ e0 +]}) (App v0 EUnit)). simpl. multiset_solver. }
+  destruct Hy as (α & x' & Hα & Hst & ->).
   destruct (act_step _ _ _ Hst) as (a' & Ha' & Ho). rewrite act_cerase in Ha'.
   destruct (act e) as [a|] eqn:Ha; [|done]. simpl in Ha'. injection Ha' as <-.
   assert (∀ α0 e0, tstep e α0 e0 → lerase α0 = lerase α → cerase x' = cerase e0) as Hdet.
@@ -260,7 +305,7 @@ Proof.
     simpl in Ho. subst os.
     rewrite (Hdet _ _ He' ltac:(simpl; f_equal; f_equal; set_solver)).
     assert (∀ p1 p2, tstep e (LSess (SLink ({[p1]} ∪ {[p2]}))) e' → ech p1 ∈ C →
-              Acc tR (cerase e')) as Hlk.
+              Acc tRs (cerase e')) as Hlk.
     { intros p1 p2 Hs' Hc'. pose proof (padmin_link C E e p1 p2 e' Hs' Hc') as Hpa.
       rewrite <-(cerase_emap (csub p1 p2) e').
       apply (IH _ Hpa (Hr' _ Hpa) (emapE (csub p1 p2) E)).
@@ -270,12 +315,21 @@ Proof.
     + apply (Hlk o2 o1); [|done]. by rewrite upair_comm.
 Qed.
 
-(** Every thread of every reachable configuration is admin-accessible. *)
+Lemma acc_tR_of_tRs x : Acc tRs x → Acc tR x.
+Proof. induction 1 as [x _ IH]. constructor. intros y Hy. apply IH. by left. Qed.
+
+(** Every thread of every reachable configuration is admin-accessible,
+    with its spawned children. *)
+Theorem thread_acc_s p q s e :
+  links_restricted p → no_tau_divergence p → pred_star p (erase q) →
+  q.2 !! s = Some e → Acc tRs (cerase e).
+Proof.
+  intros Hlr Hnd Hr He.
+  apply (padmin_acc_thread_s p (erase q) Hlr Hr (Hnd _ Hr) (soup (delete s q.2))).
+  simpl. by apply soup_delete.
+Qed.
+
 Theorem thread_acc p q s e :
   links_restricted p → no_tau_divergence p → pred_star p (erase q) →
   q.2 !! s = Some e → Acc tR (cerase e).
-Proof.
-  intros Hlr Hnd Hr He.
-  apply (padmin_acc_thread p (erase q) Hlr Hr (Hnd _ Hr) (soup (delete s q.2))).
-  simpl. by apply soup_delete.
-Qed.
+Proof. intros. apply acc_tR_of_tRs. by eapply thread_acc_s. Qed.

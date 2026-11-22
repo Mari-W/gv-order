@@ -398,7 +398,7 @@ Qed.
 Lemma d_spawn W Θ Γ Δ F e ub lb c' a :
   dftyped W Θ Γ Δ F e (TLolli ub lb c' TUnit TUnit a) →
   dftyped W Θ Γ Δ F (ESpawn e) TUnit.
-Proof. intros H. dfr. eapply e_spawn; [exact H|done]. Qed.
+Proof. intros H. dfr. eapply e_spawn. exact H. Qed.
 
 (** D-SpawnLam is admissible (entry 12): E-Abs at upper point ⊤ and lower
     point ⊥ followed by E-Spawn. *)

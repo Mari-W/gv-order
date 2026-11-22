@@ -77,7 +77,6 @@ Proof.
     + eapply e_spawn.
       * apply e_var. split; [done|]. intros [|[|y]] σ' Hne Hy; simpl in Hy; [done|done|].
         rewrite lookup_nil in Hy. done.
-      * simpl. lia.
 Qed.
 
 Theorem fw_ptyped N o x : fptyped N W_fw {[o := (S_fw, x)]} (∅, {[+ fw o +]}) TUnit.

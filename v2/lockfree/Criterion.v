@@ -15,7 +15,11 @@
     The holder takes part in a later step, by weak fairness when its
     redex is administrative, and by the rank and the outer induction
     when it is blocked. A step of the holder lowers the measure, unless
-    it is administrative, and then it lowers the admin measure.
+    it is administrative, and then it lowers the admin measure. The admin
+    measure is the accessibility of the holder's erased term in [tRs],
+    which includes the spawned children, because a spawn may pass the
+    awaited end to a child at an unchanged counter (F2 of
+    docs/redesign/fable-findings.md).
 
     The port is the old file without [lf_criterion], [fuel_bound],
     [rank_bound] and [waits], which go (quirk A3). Runs label a step with
@@ -95,8 +99,10 @@ Section criterion.
   Context (Hpers : ∀ k t, npend (r k) t → tenabled (r k) t → t ∉ lparts (l k) → tenabled (r (S k)) t).
   Context (Hfuel : ∀ k t, npend (r k) t → t ∉ lparts (l k) →
        Rm (fu (S k) t) (fu k t) ∨
-       (fu (S k) t = fu k t ∧ (∀ s, wt (S k) t s ↔ wt k t s) ∧
-        ∀ s, wt k t s → s ∈ lparts (l k) → admin_at (r k) s)).
+       (fu (S k) t = fu k t ∧ (∀ s, wt k t s → s ∉ lparts (l k) → wt (S k) t s) ∧
+        ∀ s, wt k t s → s ∈ lparts (l k) → admin_at (r k) s ∧
+          ∀ s', wt (S k) t s' → s' = s ∨
+            ∃ es es', (r k).2 !! s = Some es ∧ (r (S k)).2 !! s' = Some es' ∧ tRs (cerase es') (cerase es))).
   Context (E : Type) (R : E → E → Prop) (we : nat → nat → E) (HR : well_founded R).
   Context (Hstab : ∀ k t, npend (r k) t → t ∉ lparts (l k) → we (S k) t = we k t).
   Context (Hrank : ∀ k t s, npend (r k) t → wt k t s → npend (r k) s →
@@ -201,13 +207,13 @@ Section criterion.
     destruct (HLP k0 t (proj1 Hp0)) as (u & Hch & Hen).
     destruct Hch as [|t s u Hw _]; [by apply enabled_fires|].
     destruct (Hwt_holder _ _ _ Hw) as [es Hes].
-    pose proof (thread_acc p (r k0) s es Hlr Hnd (reach k0) Hes) as Hacc.
+    pose proof (thread_acc_s p (r k0) s es Hlr Hnd (reach k0) Hes) as Hacc.
     remember (cerase es) as x eqn:Hx.
-    assert (∀ k, k0 ≤ k → fu k t = n → we k t = e → npend (r k) t → wt k t s →
+    assert (∀ k s, k0 ≤ k → fu k t = n → we k t = e → npend (r k) t → wt k t s →
               ∀ es, (r k).2 !! s = Some es → cerase es = x → ∃ j, k0 ≤ j ∧ t ∈ lparts (l j))
-      as Hinner; [|by apply (Hinner k0 (Nat.le_refl _) Hfu0 Hwe0 Hp0 Hw es Hes)].
-    clear Hes Hx es Hw Hen u. revert x Hacc.
-    induction 1 as [x _ IHx]. intros k Hk Hfu Hwe Hp Hw es Hes Hx.
+      as Hinner; [|by apply (Hinner k0 s (Nat.le_refl _) Hfu0 Hwe0 Hp0 Hw es Hes)].
+    clear Hes Hx es Hw Hen u s. revert x Hacc.
+    induction 1 as [x _ IHx]. intros k s Hk Hfu Hwe Hp Hw es Hes Hx.
     destruct (holder_moves e IHr k t s Hwe Hp Hw) as [(j & Hj & Htj)|(j1 & Hj1 & Hsj1)].
     { exists j. split; [lia|done]. }
     set (Q := λ m, t ∈ lparts (l m) ∨ Rm (fu (S m) t) (fu m t) ∨ s ∈ lparts (l m)).
@@ -237,16 +243,22 @@ Section criterion.
     destruct (Hfuel m t Hpm Htm) as [Hlt|(Hfeq & Hwiff & Hadm)].
     { apply (Hdrop m); [lia|done|done|done|by rewrite <-Hfm]. }
     destruct HQm as [?|[Hlt|Hsm]]; [done|rewrite Hfeq in Hlt; by destruct (wf_irrefl Rm HRm _ Hlt)|].
-    destruct (Hadm s Hwsm Hsm) as (es'' & a & Hes'' & Ha & Had).
+    destruct (Hadm s Hwsm Hsm) as [(es'' & a & Hes'' & Ha & Had) Hnext].
     rewrite Hes' in Hes''. injection Hes'' as <-.
-    destruct (run_admin_step r l Hmax m s es' a Hsm Hes' Ha Had) as (α & e2 & g & Hα & Hst2 & He2).
-    assert (tR (cerase (emap g e2)) x) as HtR
-      by (rewrite cerase_emap, <-Hx'; by eapply tR_step).
     assert (fu (S m) t = n) as Hfn by congruence.
     assert (we (S m) t = e) as Hwn by (by rewrite Hstab).
     assert (npend (r (S m)) t) as Hpn by (by apply run_npend).
-    assert (wt (S m) t s) as Hwsn by (by apply Hwiff).
-    exact (IHx (cerase (emap g e2)) HtR (S m) ltac:(lia) Hfn Hwn Hpn Hwsn (emap g e2) He2 eq_refl).
+    (* the holder after the step: the same thread, or a child it spawned *)
+    destruct (HLP (S m) t (proj1 Hpn)) as (u & Hch & Hen).
+    destruct Hch as [|t s1 u Hw1 _].
+    { destruct (enabled_fires (S m) _ Hpn Hen) as (j & Hj & Htj). exists j. split; [lia|done]. }
+    destruct (Hnext s1 Hw1) as [->|(es1 & es2 & Hes1 & Hes2 & HtRs)].
+    - destruct (run_admin_step r l Hmax m s es' a Hsm Hes' Ha Had) as (α & e2 & g & Hα & Hst2 & He2).
+      assert (tRs (cerase (emap g e2)) x) as HtR
+        by (left; rewrite cerase_emap, <-Hx'; by eapply tR_step).
+      exact (IHx (cerase (emap g e2)) HtR (S m) s ltac:(lia) Hfn Hwn Hpn Hw1 (emap g e2) He2 eq_refl).
+    - rewrite Hes' in Hes1. injection Hes1 as <-. rewrite Hx' in HtRs.
+      exact (IHx (cerase es2) HtRs (S m) s1 ltac:(lia) Hfn Hwn Hpn Hw1 es2 Hes2 eq_refl).
   Qed.
 
   Theorem lf_run_criterion : lf_run r l.

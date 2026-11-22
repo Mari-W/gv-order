@@ -156,7 +156,6 @@ Inductive typed (W : sworld) (N : fuel) :
       typed W N Θ Γ Δ F (ELink e) TUnit c0
   | e_spawn Θ Γ Δ F e ub lb c' a c0 :
       typed W N Θ Γ Δ F e (TLolli ub lb c' TUnit TUnit a) c0 →
-      fle (Some 1) a →
       typed W N Θ Γ Δ F (ESpawn e) TUnit c0
   | e_new Γ Δ F C S m1 m2 :
       lenv_unl Δ → new_ok N W Γ C → tsum_ok N m1 m2 → scontr S →

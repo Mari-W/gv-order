@@ -97,6 +97,18 @@ entry records what C would buy.
 
 ### F2. Spawn costs the child nothing (blocks `r-threads`, `fu-obls`)
 
+**Status (2026-11-22, branch fx-cost): done.** `e_spawn` has no credit
+premise, `f_spawn` hands the child `mres (fends v) φ`, and `e_spawn_lam` is
+E-Abs at credit 0. The soundness argument holds in Rocq: `spawn_redex`
+(cost/CostRedex.v) calls the closure at the unchanged counters, which the
+call clause of FV-Arrow accepts at each credit. The ownership update of a
+spawn is `kspawn` (soup/Soup.v), with no tick. The lock-free measure no
+longer falls at a spawn that passes the awaited end on. The criterion now
+inducts on `tRs` (lockfree/TauThread.v), the administrative order of a
+thread with its spawned children, and `lf_stay` (soup/LFAdequacy.v) lets the
+holder become a child of the old holder. `sp_cap` holds because no counter
+rises. No example bound changed.
+
 **Current.** `e_spawn … : typed … e (TLolli ub lb c' TUnit TUnit a) c0 → fle (Some 1) a → …`
 (static/Typing.v:157). F-Spawn (fuel/Fuel.v, `f_spawn`) asks
 $\mathsf{positive}(\Phi|_M)$ and starts the child at $\Phi|_M{\downarrow}$,

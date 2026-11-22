@@ -92,7 +92,7 @@ Proof.
   all: try (exfalso; eapply Hnl; reflexivity).
   all: try (destruct Hen as [H1 H2]; unfold knew; pose proof (elem_of_dom_2 _ _ _ Ho) as Hd;
     rewrite !lookup_insert_ne; [done|intros <-; done|intros <-; done]).
-  - rewrite lookup_khand, Ho. simpl. case_decide as Hm; [|done].
+  - rewrite lookup_kspawn, Ho. simpl. case_decide as Hm; [|done].
     destruct (Hen o Hm) as (h' & Ho' & <-). rewrite Ho in Ho'. simplify_eq. set_solver.
   - destruct Hen as (H1 & H2 & H3).
     assert (o ≠ o') by ne_tac Ho Eh. assert (o ≠ edual o') by ne_tac Ho Eh.

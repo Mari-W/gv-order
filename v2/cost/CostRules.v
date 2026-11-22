@@ -147,10 +147,10 @@ Proof.
 Qed.
 
 Lemma cost_e_spawn N Θ Δ e ub lb c' a c0 :
-  csem N Θ Δ e (TLolli ub lb c' TUnit TUnit a) c0 → fle (Some 1) a →
+  csem N Θ Δ e (TLolli ub lb c' TUnit TUnit a) c0 →
   csem N Θ Δ (ESpawn e) TUnit c0.
 Proof.
-  intros Hcs Ha. eapply (cost_op _ _ _ _ _ _ _ _ _ Hcs); [apply fle_refl|].
+  intros Hcs. eapply (cost_op _ _ _ _ _ _ _ _ _ Hcs); [apply fle_refl|].
   intros j v Πv φv i Hi HV. by eapply spawn_redex.
 Qed.
 

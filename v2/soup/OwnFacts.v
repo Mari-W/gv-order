@@ -167,6 +167,9 @@ Proof.
   apply kfin_kmod. intros o h Hh. case_decide; [|done]. simpl. by apply ftick_some.
 Qed.
 
+Lemma kfin_kspawn M j K : kfin K → kfin (kspawn M j K).
+Proof. apply kfin_kmod. intros o h Hh. by case_decide. Qed.
+
 Lemma kcap_lookup K o h : K !! o = Some h → kcap K o = h.(h_cap).
 Proof. intros H. unfold kcap. by rewrite H. Qed.
 

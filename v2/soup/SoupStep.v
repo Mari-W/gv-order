@@ -115,6 +115,10 @@ Lemma lookup_khand M j K o :
   khand M j K !! o = (λ h, if decide (o ∈ M) then Hold j h.(h_pt) (ftick h.(h_ctr)) h.(h_cap) else h) <$> K !! o.
 Proof. apply lookup_kmod. Qed.
 
+Lemma lookup_kspawn M j K o :
+  kspawn M j K !! o = (λ h, if decide (o ∈ M) then Hold j h.(h_pt) h.(h_ctr) h.(h_cap) else h) <$> K !! o.
+Proof. apply lookup_kmod. Qed.
+
 
 (** The two invariants on tickets, for a whole map. *)
 Definition kcap_ok (N : fuel) (K : own) : Prop :=
@@ -149,6 +153,10 @@ Proof. apply ktsum_ok_kmod. intros o h. by case_decide. Qed.
 Lemma kcap_ok_khand N M j K : kcap_ok N K → kcap_ok N (khand M j K).
 Proof. apply kcap_ok_kmod. intros o h. case_decide; simpl; split; auto using fle_refl, fle_ftick_le. Qed.
 Lemma ktsum_ok_khand N M j K : ktsum_ok N K → ktsum_ok N (khand M j K).
+Proof. apply ktsum_ok_kmod. intros o h. by case_decide. Qed.
+Lemma kcap_ok_kspawn N M j K : kcap_ok N K → kcap_ok N (kspawn M j K).
+Proof. apply kcap_ok_kmod. intros o h. case_decide; simpl; split; auto using fle_refl. Qed.
+Lemma ktsum_ok_kspawn N M j K : ktsum_ok N K → ktsum_ok N (kspawn M j K).
 Proof. apply ktsum_ok_kmod. intros o h. by case_decide. Qed.
 
 Lemma kcap_ok_delete N o K : kcap_ok N K → kcap_ok N (delete o K).
@@ -308,6 +316,43 @@ Proof.
       { apply lookup_mres_Some. split; [|done]. apply lookup_ctrs. by eexists. }
       congruence.
     + split; [|done]. intros (h' & ? & Ht & _). simplify_eq. by destruct (Hj o h' E).
+Qed.
+
+Lemma kres_kspawn_from {Y : Type} M j K t (m : gmap cend Y) :
+  j ≠ t → kres (kspawn M j K) t m = mrem M (kres K t m).
+Proof.
+  intros Hjt. apply map_eq_some. intros o v. rewrite lookup_mrem_Some, !lookup_kres, lookup_kspawn.
+  destruct (K !! o) as [h|]; simpl; [|naive_solver]. case_decide; naive_solver.
+Qed.
+
+Lemma kres_kspawn_to {Y : Type} M i j K (m : gmap cend Y) :
+  (∀ o h, K !! o = Some h → h.(h_th) ≠ j) → M ⊆ dom (kth K i) →
+  kres (kspawn M j K) j m = mres M (kres K i m).
+Proof.
+  intros Hj HM. apply map_eq_some. intros o v. rewrite lookup_mres_Some, !lookup_kres, lookup_kspawn.
+  destruct (K !! o) as [h|] eqn:E; simpl; [|naive_solver]. case_decide as Ho.
+  - pose proof (HM o Ho) as Hi. apply elem_of_dom_kth in Hi as (h0 & Hh0 & Hi). rewrite E in Hh0.
+    injection Hh0 as <-. naive_solver.
+  - pose proof (Hj o h E). naive_solver.
+Qed.
+
+Lemma ctrs_kspawn_from M j K t : j ≠ t → ctrs (kspawn M j K) t = mrem M (ctrs K t).
+Proof.
+  intros Hjt. apply map_eq_some. intros o f. rewrite lookup_mrem_Some, !lookup_ctrs, lookup_kspawn.
+  destruct (K !! o) as [h|]; simpl; [|naive_solver]. case_decide; naive_solver.
+Qed.
+
+Lemma ctrs_kspawn_to M i j K :
+  (∀ o h, K !! o = Some h → h.(h_th) ≠ j) → M ⊆ dom (kth K i) →
+  ctrs (kspawn M j K) j = mres M (ctrs K i).
+Proof.
+  intros Hj HM. apply map_eq_some. intros o f. rewrite lookup_mres_Some, !lookup_ctrs, lookup_kspawn.
+  destruct (K !! o) as [h|] eqn:E; simpl; [|naive_solver]. case_decide as Ho.
+  - pose proof (HM o Ho) as Hi. apply elem_of_dom_kth in Hi as (h0 & Hh0 & Hi). rewrite E in Hh0.
+    injection Hh0 as <-. split.
+    + intros (h' & [= <-] & _ & <-). split; [|done]. by exists h.
+    + intros [(h' & [= <-] & _ & <-) _]. by eexists.
+  - pose proof (Hj o h E). naive_solver.
 Qed.
 
 (** ** One step, case by case *)
@@ -555,7 +600,7 @@ Section step.
     unfold o_spawn in HE. unfold f_spawn in HF.
     destruct HE as (ΘM & Θr & Hd & HΘ & Hth & Hpar).
     assert (HM : dom ΘM = fends v) by (destruct Hth as (e1 & -> & Hfe & _); exact Hfe).
-    destruct HF as (HMφ & _ & Hch & Hpar').
+    destruct HF as (HMφ & Hch & Hpar').
     destruct (split_mres _ _ _ _ Hd HΘ HM) as [-> ->].
     assert (Hnj : ∀ o h, K !! o = Some h → h.(h_th) ≠ j).
     { intros o h Ho Heq. destruct (s_threads o h Ho) as [? Hx]. congruence. }
@@ -575,9 +620,9 @@ Section step.
     unfold lf_next. cbn [own_next s_K s_q].
     apply soup_build.
     - intros t e1 He1. apply lookup_insert_Some in He1 as [[<- <-]|[Htj He1]].
-      + rewrite decide_True by done. rewrite (kres_khand_to _ i), (kres_khand_to _ i), (ctrs_khand_to _ i) by done.
+      + rewrite decide_True by done. rewrite (kres_kspawn_to _ i), (kres_kspawn_to _ i), (ctrs_kspawn_to _ i) by done.
         split_and!; [exact Hchild|by right|exact (Hch lv Hlv)].
-      + rewrite decide_False by done. rewrite !kres_khand_from, ctrs_khand_from by done.
+      + rewrite decide_False by done. rewrite !kres_kspawn_from, ctrs_kspawn_from by done.
         apply lookup_insert_Some in He1 as [[<- <-]|[Hti He1]].
         * split_and!; [|exact (s_ty Hs i e He)|exact (Hpar' lv Hlv)].
           eapply at_cost_E_live; [|exact Hpar|exact Hlv]. cbn; lia.
@@ -593,18 +638,18 @@ Section step.
             apply elem_of_dom_kth in Hi as (h & Hh & Hhi). apply lookup_ctrs in Hf as (h' & Hh' & Ht & _).
             simplify_eq. }
           destruct (s_other t e1 He1) as [H1 H2]. split_and!; [done|exact (s_ty Hs t e1 He1)|done].
-    - apply map_eq. intros o. rewrite !lookup_fmap, lookup_khand. pose proof (s_pts _ _ _ _ _ _ _ _ Hs o) as Hp.
+    - apply map_eq. intros o. rewrite !lookup_fmap, lookup_kspawn. pose proof (s_pts _ _ _ _ _ _ _ _ Hs o) as Hp.
       cbn [s_K] in Hp. rewrite Hp. destruct (K !! o); simpl; [|done]. by case_decide.
-    - unfold khand. rewrite dom_kmod. apply (sp_dom _ _ _ _ _ _ _ _ _ Hs).
-    - intros o h Ho. rewrite lookup_khand in Ho. apply fmap_Some in Ho as (h0 & Ho & ->).
+    - unfold kspawn. rewrite dom_kmod. apply (sp_dom _ _ _ _ _ _ _ _ _ Hs).
+    - intros o h Ho. rewrite lookup_kspawn in Ho. apply fmap_Some in Ho as (h0 & Ho & ->).
       case_decide; simpl; rewrite !lookup_insert_is_Some'; [by left|].
       destruct (decide (h0.(h_th) = i)); [by right; left|]. right; right. exact (s_threads o h0 Ho).
-    - intros o Ho. unfold khand in Ho. rewrite dom_kmod in Ho. exact (s_closed _ _ _ _ _ _ _ _ Hs o Ho).
-    - intros o Ho. unfold khand in *. rewrite dom_kmod in Ho |- *. exact (s_pair _ _ _ _ _ _ _ _ Hs o Ho).
+    - intros o Ho. unfold kspawn in Ho. rewrite dom_kmod in Ho. exact (s_closed _ _ _ _ _ _ _ _ Hs o Ho).
+    - intros o Ho. unfold kspawn in *. rewrite dom_kmod in Ho |- *. exact (s_pair _ _ _ _ _ _ _ _ Hs o Ho).
     - exact (s_sdual _ _ _ _ _ _ _ _ Hs).
     - exact (s_pdual _ _ _ _ _ _ _ _ Hs).
-    - apply kfin_khand. exact (sp_fin _ _ _ _ _ _ _ _ _ Hs).
-    - apply kcap_ok_khand, s_kcap_ok.
-    - apply ktsum_ok_khand, s_ktsum_ok.
+    - apply kfin_kspawn. exact (sp_fin _ _ _ _ _ _ _ _ _ Hs).
+    - apply kcap_ok_kspawn, s_kcap_ok.
+    - apply ktsum_ok_kspawn, s_ktsum_ok.
   Qed.
 End step.

@@ -128,7 +128,7 @@ Proof.
     |i Θ Γ Δ F e S0 x S1 S2 a mS c0 Hu Hub H IH
     |Θ Γ Δ F e S0 x S1 S2 a mS c0 Hu Hub H IH
     |Θ Γ Δ F e S x a1 m1 a2 m2 c0 H IH Hl1 Hl2
-    |Θ Γ Δ F e ub lb c' a c0 H IH Hle
+    |Θ Γ Δ F e ub lb c' a c0 H IH
     |Γ Δ F C S m1 m2 HΔ HC Htk HSc
     |Γ Δ F x κf S m1 m2 HΔ Htk HSc
     |Θ Γ Δ F e T T' c c' H IH Hsub Hc HTc
@@ -495,7 +495,7 @@ Proof.
     |i Θ Γ Δ F e S0 x S1 S2 a mS c0 Hu Hub H IH
     |Θ Γ Δ F e S0 x S1 S2 a mS c0 Hu Hub H IH
     |Θ Γ Δ F e S x a1 m1 a2 m2 c0 H IH Hl1 Hl2
-    |Θ Γ Δ F e ub lb c' a c0 H IH Hle
+    |Θ Γ Δ F e ub lb c' a c0 H IH
     |Γ Δ F C S m1 m2 HΔ HC Htk HSc
     |Γ Δ F x κf S m1 m2 HΔ Htk HSc
     |Θ Γ Δ F e T T' c c' H IH Hsub Hc HTc
@@ -627,7 +627,7 @@ Proof.
     pose proof (IH σ Hok HΘ HΔc) as IH'. cbn [sinst_ty] in IH'. rewrite <-dual_sinst in IH'.
     eapply e_link; [exact IH'|done|done].
   - (* E-Spawn *)
-    eapply e_spawn; [exact (IH σ Hok HΘ HΔc)|done].
+    eapply e_spawn. exact (IH σ Hok HΘ HΔc).
   - (* E-New *)
     rewrite tenv_sinst_empty. cbn [sinst_ty]. rewrite <-dual_sinst.
     apply e_new; [by apply lenv_unl_sinst|done|done|by apply scontr_sinst].

@@ -333,32 +333,29 @@ Proof.
     intros j Hj. apply FuelE_val; [done|apply Vfuel_unit].
 Qed.
 
+(** F-Spawn at unchanged counters. The call clause of FV-Arrow accepts
+    any counters at least the credit below the current ones, so the
+    current ones themselves, whatever the credit a. *)
 Lemma spawn_redex N n ub lb c' a Π φ d v :
-  fle (Some 1) a →
   v ∈ FV^N _ n⟦RTy (TLolli ub lb c' TUnit TUnit a)⟧(Π, φ) →
   ESpawn v ∈ F^N _ n⟦RTy TUnit ▷ d⟧(Π, φ).
 Proof.
-  intros Ha HV.
- 
+  intros HV.
   eapply FuelE_op; [exact HV|]. intros v' Π' φ' HV' Hv' α e' Hst.
   destruct (Vfuel_lolli_inv _ _ _ _ _ _ _ _ _ _ _ HV') as (e & -> & Hfe & Hd & Hfl & HF).
   op_step Hst. inversion Hst; subst. cbn [Fobl]. unfold f_spawn. simpl fends. rewrite Hfe.
-  assert (∀ o f, φ' !! o = Some f → ¬ idle_at Π' o → fle (Some 1) f.1) as H1.
-  { intros o f Ho Hi. eapply fle_trans; [exact Ha|exact (Hfl o f Ho Hi)]. }
   split_and!.
   - by rewrite Hd.
-  - intros o f _ Ho Hi. by apply (H1 o f).
-  - rewrite mres_self. unfold fhand. rewrite Hd, mres_self.
-   
+  - rewrite mres_self, Hd, mres_self.
     intros j Hj.
     apply (FuelE_beta _ _ _ _ _ _ [] _ (subst1 EUnit e)); [constructor|by apply t_act_app|].
     intros i Hi. simpl.
-    rewrite <-(map_union_empty Π'), <-(map_union_empty (ctick <$> φ')).
+    rewrite <-(map_union_empty Π'), <-(map_union_empty φ').
     eapply FuelE_thread; [constructor|].
-    apply (HF i (ctick <$> φ') ∅ ∅ EUnit (olt_trans _ _ _ Hi Hj));
-      [by rewrite dom_fmap_L| |apply map_disjoint_empty_r|apply map_disjoint_empty_r|apply Vfuel_unit].
-    intros o f f' Ho Ho'. rewrite lookup_fmap, Ho in Ho'. injection Ho' as <-.
-    split; [done|]. unfold ctick, ftick. destruct a as [[|a']|], f as [[f0|] m]; simpl in *; lia.
+    apply (HF i φ' ∅ ∅ EUnit (olt_trans _ _ _ Hi Hj));
+      [done| |apply map_disjoint_empty_r|apply map_disjoint_empty_r|apply Vfuel_unit].
+    intros o f f' Ho Ho'. rewrite Ho in Ho'. injection Ho' as <-.
+    split; [done|]. destruct a as [[|a']|], f as [[f0|] m]; simpl in *; lia.
   - rewrite mrem_self, Hd, mrem_self. intros j Hj. apply FuelE_val; [done|apply Vfuel_unit].
 Qed.
 

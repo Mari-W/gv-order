@@ -149,7 +149,7 @@ Definition idle_at (Π : penv) (o : cend) : Prop := ∃ S, Π !! o = Some S ∧ 
 
 (** The ends X have a unit to spare: every counter on X of an end that is
     not idle is at least 1. F-Tick asks it of the other ends of an action,
-    the hand-over of the ends of a sent or spawned value. *)
+    the hand-over of the ends of a sent value. *)
 Definition fspare (Π : penv) (φ : cenv) (X : gset cend) : Prop :=
   ∀ o f, o ∈ X → φ !! o = Some f → ¬ idle_at Π o → fle (Some 1) f.1.
 
@@ -220,11 +220,11 @@ Section obligations.
     ffresh c Π φ → ∃ S m1 m2, tsum_ok N m1 m2 ∧
       (∀ j, olt j n → El j N σ d (pnew c S Π) (cnew m1 m2 c φ) e').
 
-  (** The child takes the ends of v with one unit less and runs as a
-      thread. *)
+  (** The child takes the ends of v at their counters and runs as a
+      thread. A spawn is no action, so no counter falls. *)
   Definition f_spawn (v e' : expr) : Prop :=
-    fends v ⊆ dom φ ∧ fspare Π φ (fends v) ∧
-    (∀ j, olt j n → El j N RThread None (mres (fends v) Π) (fhand (fends v) φ) (App v EUnit)) ∧
+    fends v ⊆ dom φ ∧
+    (∀ j, olt j n → El j N RThread None (mres (fends v) Π) (mres (fends v) φ) (App v EUnit)) ∧
     (∀ j, olt j n → El j N σ d (mrem (fends v) Π) (mrem (fends v) φ) e').
 
   (** A send hands on held ends other than its subject, at the payload
@@ -387,7 +387,7 @@ Section ext.
       unfold f_beta, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link.
     - apply HE'.
     - intros H Hf. destruct (H Hf) as (S & m1 & m2 & Hm & HS). exists S, m1, m2. split; [done|]. by apply HE'.
-    - intros (H1 & H2 & H3 & H4). split_and!; [done|done|by apply HE'|by apply HE'].
+    - intros (H1 & H3 & H4). split_and!; [done|by apply HE'|by apply HE'].
     - intros (Ha & S0 & m & T & S & H1 & H2 & H3 & H4 & H5 & H6).
       split; [done|]. exists S0, m, T, S. split_and!; try done; [intros j Hj; apply HV; [done|by apply H5]|by apply HE'].
     - intros (Ha & S0 & m & T & S & H1 & H2 & H3).

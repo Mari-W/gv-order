@@ -691,15 +691,16 @@ Section let_admissible.
   Qed.
 
   (** E-SpawnLam is admissible (entry 12, generalized arrows): E-Abs at
-      upper point ⊤ and lower point ⊥ with credit 1, then E-Spawn. *)
+      upper point ⊤ and lower point ⊥ with credit 0, then E-Spawn. A spawn
+      is no action, so the child takes the ends at their counters. *)
   Lemma e_spawn_lam W N Θ Θ' Γ Δ Δ' F e c' :
-    thage (Some 1) Θ Θ' → lage (Some 1) Δ Δ' →
+    thage (Some 0) Θ Θ' → lage (Some 0) Δ Δ' →
     typed W N Θ' Γ (Some TUnit :: Δ') (∅, None) e TUnit c' →
     typed W N Θ Γ Δ F (ESpawn (Lam e)) TUnit (Some 0).
   Proof.
     intros Ht Ha H.
-    eapply (e_spawn _ _ _ _ _ _ _ UTop LBot c' (Some 1)); [|simpl; lia].
-    eapply (e_abs _ _ _ _ _ _ _ _ _ _ _ UTop LBot c' (Some 1)); [done|exact Ht|exact Ha|done|exact H].
+    eapply (e_spawn _ _ _ _ _ _ _ UTop LBot c' (Some 0)).
+    eapply (e_abs _ _ _ _ _ _ _ _ _ _ _ UTop LBot c' (Some 0)); [done|exact Ht|exact Ha|done|exact H].
   Qed.
 
   (** D-Let *)

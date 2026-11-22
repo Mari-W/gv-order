@@ -556,7 +556,7 @@ Section fund.
       |i Θ Γ Δ F e S0 x S1 S2 a mS c0 Hu Hub H IH
       |Θ Γ Δ F e S0 x S1 S2 a mS c0 Hu Hub H IH
       |Θ Γ Δ F e S x a1 m1 a2 m2 c0 H IH Hl1 Hl2
-      |Θ Γ Δ F e ub lb c' a c0 H IH Hle
+      |Θ Γ Δ F e ub lb c' a c0 H IH
       |Γ Δ F C S m1 m2 HΔ HC Htk HSc
       |Γ Δ F x κf S m1 m2 HΔ Htk HSc
       |Θ Γ Δ F e T T' c c' H IH Hsub Hc HTc
