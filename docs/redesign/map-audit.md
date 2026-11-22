@@ -308,6 +308,42 @@ are the headline.
 
 ## Examples
 
+- New `ex-copycat` (Copycat, a forwarder at independent points). The five
+  facts, P-Term, identity expansion (with its condition on the root of $y$),
+  partner ∥ fwd ∥ partner deadlock free, the η-expanded payload at $y\cdot 0$,
+  the schema over protocols of unit messages, and the rejected forwarder
+  ring. Checked against `fwd_term`, `fwd_expand`, `fwd_config_deadlock_free`,
+  `fwdh_term`, `fwdp_term`, `ring_rejected`, `ring_rejected_full`.
+- New `ex-milner` (Milner's ring). Hidden worlds acyclic in pairs
+  (`ring_pairs`), cyclic together (`ring_cyclic`, now stated as
+  ¬ `sacyc`), rejected (`ring_rejected`), the acyclic variant typed by the
+  n-ary connect and deadlock free (`ring_typed`, `ring_df`), the two-channel
+  cycle (`cyc2_rejected`, `cyc2_rejected_h`).
+- New `ex-forkjoin` (recursive fork-join with replies). Typed at $N = \infty$
+  under `acyc_new` and deadlock free with no classical hypothesis
+  (`fjr_acyc`, `fjr_dftyped`, `fjr_deadlock_free`). One round, factorial and
+  Fibonacci named. The finite-bound rejection is not claimed as a theorem,
+  only that `gen_new` asks a well-founded order on the tree.
+- New `ex-shared` (private constants and hiding). `opposite_clash`
+  (¬ `sacyc` of the whole worlds), `opposite_compose`, `opposite_df`,
+  `shared_hidden`, `shared_not_cut`, `fact_needs_zero`.
+- New `ex-gennew` (creations with exits). The two-entry program with the set
+  $\{\rho\cdot 2, \rho\cdot 3\}$ (`te_gen`), the two-upper-bound program
+  (`tu_gen1`), both typed and deadlock free, both rejected after the
+  creation under each `wf_new` constraint (`te_rejected_wf_new`,
+  `tu_rejected_wf_new`).
+- New `ex-sinst` (why session types are contractive), no verdict badge.
+  `typed_sinst_false`, `ss_var_guard`, `typed_sinst`, `inv_chan_sty`.
+- `ex-flag`, `ex-flagpair`. "P-Connect asks a strict join" and "a
+  well-founded join" became "an acyclic join". Checked against `p_connect`,
+  `sbv_rejected`.
+- `rx-chain`. Old: "$\mathsf{wf\_new}$ forbids it ... lock-free soundness
+  assumes a well-founded world", citation text "argued in
+  docs/redesign/check-layers.md ...". New: at a finite bound E-New asks
+  `gen_new`, the rejection is argued and not mechanized (said in the text),
+  citation `gen_new`, `new_ok`, `fj_wait_needs`. Why: Rocq change and the
+  checker (three reason-missing errors came from the old citation text).
+
 ## Questions for the author
 
 ## Things the map still forgets

@@ -312,7 +312,7 @@ window.MAP = {
      "title": "Properties",
      "rocq": "lang/Safety.v: deadlock_free, lockfree/TauThread.v: no_tau_divergence, lockfree/Fair.v: lock_free",
      "tex": "\\begin{array}{l}\n\\htmlData{k=prop.terminated}{\\mathsf{terminated}\\,p \\iff p = (\\varnothing, \\{v\\} \\uplus E),\\ E \\subseteq \\{\\ast\\}} \\\\\n\\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}\\,p \\iff \\forall p'.\\ p \\htmlData{k=se.reach}{\\to^{*}} p' \\Rightarrow \\mathsf{terminated}\\,p' \\lor \\exists p''.\\ p' \\to p''}\n\\annraw{ \\\\ }\\annot{\\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}\\,p \\iff \\forall q.\\ p \\to^{*} q \\Rightarrow \\htmlData{k=se.acc}{\\mathsf{Acc}}\\ \\htmlData{k=prop.padmin}{\\to_{\\mathsf{admin}}}\\ q}}\n\\annraw{ \\\\ }\\annot{\\htmlData{k=prop.lf}{\\begin{array}{l} \\mathsf{lock\\_free}\\,p \\iff \\forall \\htmlData{k=se.run}{(r, l) \\in \\mathsf{Run}}.\\ \\htmlData{k=se.r0}{\\htmlData{k=proc.erase}{\\mathsf{erase}}(r_0) = p} \\Rightarrow \\htmlData{k=prop.maximal}{\\mathsf{maximal}\\,r\\,l} \\Rightarrow \\htmlData{k=prop.wfair}{\\mathsf{wfair}\\,r\\,l} \\Rightarrow {} \\\\ \\qquad \\htmlData{k=prop.lfrun}{\\forall i\\,t.\\ \\htmlData{k=prop.pend}{\\mathsf{pend}(r_i, t)} \\Rightarrow \\exists j \\geq i.\\ t \\in \\htmlData{k=se.parts}{\\mathsf{parts}(l_j)}} \\end{array}}}\n\\end{array}",
-     "caption": "A process is deadlock free when each reachable process has terminated or can step. \\annp{It has no internal divergence when no reachable process runs internal steps forever. A run is a sequence of configurations $r$ with the events $l$ between them. The process is lock free when, on each weakly fair maximal run, each thread $t$ that is pending at some position takes part in a later step.}",
+     "caption": "A process is deadlock free when each reachable process has terminated or can step. \\annp{It has no internal divergence when no reachable process runs internal steps forever. A run is a sequence of configurations $r$, and $l$ gives the event between consecutive configurations. The process is lock free when, on each weakly fair maximal run, each thread $t$ that is pending at some position takes part in a later step.}",
      "modes": [
       "df",
       "lf"
@@ -2445,7 +2445,7 @@ window.MAP = {
   },
   "lbl.link": {
    "title": "Link label $\\leftrightarrow\\{o_1, o_2\\}$",
-   "what": "An unordered pair $\\{o_1, o_2\\}$ of ends, possibly with $o_1 = o_2$.",
+   "what": "An unordered pair $\\{o_1, o_2\\}$ of ends, where $o_1 = o_2$ is allowed.",
    "why": "The label is a set, so one process rule removes the channel of either end.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\leftrightarrow\\{c^{+}, d^{-}\\}$.",
@@ -3485,7 +3485,7 @@ window.MAP = {
   },
   "ty.box.constraint": {
    "title": "Box constraint $C$",
-   "what": "A set of facts $x \\prec y$ over $\\bar\\iota$ and outer points, possibly infinite.",
+   "what": "A set of facts $x \\prec y$ over $\\bar\\iota$ and outer points, which may be infinite.",
    "why": "A loop orders the points of all its rounds at once, and an infinite $C$ states the facts of every round.",
    "breaks": "Without $C$ a box cannot type a loop that waits on one end while it holds another across rounds.",
    "example": "$C$ states $\\iota \\prec \\overline{\\kappa}$ for the points of every round of a client loop.",
@@ -3494,7 +3494,7 @@ window.MAP = {
    "args": [
     {
      "name": "C",
-     "meaning": "A set of facts over $\\bar\\iota$ and outer points, possibly infinite."
+     "meaning": "A set of facts over $\\bar\\iota$ and outer points, which may be infinite."
     }
    ]
   },
@@ -3718,7 +3718,7 @@ window.MAP = {
    "args": [
     {
      "name": "S",
-     "meaning": "A session type, possibly with session variables of a box."
+     "meaning": "A session type, which may contain session variables of a box."
     }
    ]
   },
@@ -4705,7 +4705,7 @@ window.MAP = {
   "lfi.tickets": {
    "title": "Tickets, an upper bound on the counter",
    "what": "An end of type $(S@x)\\annot{^{a}}_{m}$ has tickets $m \\geq a$. An action on the end resets its counter to $m$, so the counter never exceeds $m$. The two ends of a channel have at most $N$ tickets together, so the partner of an end with $m$ tickets has a counter of at most $N - m$.",
-   "why": "A thread waiting on an end needs a bound on the counter of the partner, the number of actions elsewhere before the partner serves it. The tickets of the partner give that bound, and the type of the waiting end shows that bound.",
+   "why": "A thread waiting on an end needs a bound on the counter of the partner, the number of actions elsewhere before the partner serves it. The tickets of the partner give that bound, which the type of the waiting end determines.",
    "breaks": "Without an upper bound a link could give a waiting thread a partner with a counter as large as it likes in each round, and the wait never ends.",
    "example": "At $N = 4$ the ends of a channel may have $3$ and $1$ tickets. The partner of the end with $3$ tickets acts on its end after at most one action elsewhere.",
    "rocq": "types/Types.v: TSess; types/Costs.v: tsum_ok; soup/State.v: sp_cap, sp_tsum",
@@ -6527,7 +6527,7 @@ window.MAP = {
   "P-Connect.wf": {
    "title": "The two interface orders are compared",
    "what": "$\\mathsf{acyc}(W_1 \\sqcup W_2)$ at $N = \\infty$ and $\\mathsf{wf}(W_1 \\sqcup W_2)$ at a finite bound, where $W_1$ and $W_2$ are the worlds of the two components. Each lives on the constants of its own interface, $W_i = W_i|_{I_i}$ with $I_1 = \\mathsf{I}(\\Sigma_1 \\cup \\Sigma_C, T)$ and $I_2 = \\mathsf{I}(\\Sigma_2 \\cup \\overline{\\Sigma_C}, \\ast)$.",
-   "why": "A component exposes the order its world derives between interface points and no private constant. Two components may pick the same private constant and order it oppositely, and they still compose. The soundness proof renames the private constants of one component apart from the other. Then the two whole worlds share only interface constants, at which they order as the interface worlds do. The condition is not pairwise. The ring of three threads in the Examples tab is acyclic two components at a time and cyclic as a whole, so the composite keeps the joined order for the next P-Connect, and the ring is rejected.",
+   "why": "A component exposes the order its world derives between interface points and no private constant. Two components may pick the same private constant and order it oppositely, and they still compose. The soundness proof renames the private constants of one component apart from the other. Then the two whole worlds share only interface constants, at which they order as the interface worlds do. The condition is not pairwise. The ring of three threads in the Examples tab is acyclic two components at a time and cyclic as a whole. The composite therefore keeps the joined order for the next P-Connect, and the ring is rejected.",
    "breaks": "If $W_1$ derives $\\rho \\prec \\overline{\\tau}$ and $W_2$ derives $\\overline{\\tau} \\prec \\rho$ for interface points, the join has a cycle and two threads each wait on the other although each side alone is ready.",
    "example": "Two components over an empty interface have worlds without constants and need no check.",
    "rocq": "static/Typing.v: p_connect, ptyped_wf, wok_join_iff; static/Hiding.v: ptyped_full, connect_hidden, join_vis; examples/SharedRoots.v: shared_hidden, opposite_compose, shared_not_cut; examples/Ring.v: ring_rejected",
@@ -8136,7 +8136,7 @@ window.MAP = {
   "O-New.grow": {
    "title": "Position and world",
    "what": "$\\exists S, \\pi, R'.\\ R \\sqsubseteq R'$. The point $\\pi$ is any point, and $R'$ extends $R$, with the same kind and every rank kept.",
-   "why": "E-New at a fresh root picks a constant $a$ that is no root of $R$ and orders its tree in $R'$ so that $C$ holds there, by the transitive closure in a strict world and by ranks in a ranked world. E-New at a field picks $x\\cdot\\kappa$ and keeps $R$. No order is lost and no rank changes, so the worlds of a run form a chain.",
+   "why": "E-New at a fresh root picks a constant $a$ that is no root of $R$ and orders its tree in $R'$ so that $C$ holds there. A strict world takes the transitive closure, and a ranked world ranks the tree. E-New at a field picks $x\\cdot\\kappa$ and keeps $R$. No order is lost and no rank changes, so the worlds of a run form a chain.",
    "breaks": "If a creation could change a rank, the measure of a waiting thread could rise.",
    "example": "At $\\pi = \\rho$ with $C = \\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ the ranks $\\varrho(\\rho) = 0$ and $\\varrho(\\rho\\cdot 0) = 1$.",
    "rocq": "relation/Relation.v: o_new; types/Worlds.v: wgrow; compat/Redex.v: Erel_new",
@@ -10703,7 +10703,7 @@ window.MAP = {
    "why": "A creation places the new ends at a position, with facts and with tickets of sum at most $N$, each counter at its tickets. An action moves its end to the next point and resets its counter to its tickets. A transfer moves the ends to the receiving thread and decrements their counters. A link renames. None of these depends on the index, and the choices of a creation come from O-New and F-New.",
    "breaks": "Nothing. It is a definition.",
    "example": "One step of the lock-free process relation along an event.",
-   "rocq": "soup/Soup.v: lf_next, own_next, world_next, tchoice",
+   "rocq": "soup/Soup.v: lf_next, own_next, world_next; soup/State.v: tchoice",
    "sig": "\\mathsf{lf\\_next} : \\mathbb{N} \\to \\mathsf{LFState} \\to \\mathsf{Event} \\to \\mathsf{LFState} \\to \\mathsf{Prop}",
    "args": [
     {
@@ -12638,7 +12638,7 @@ window.MAP = {
      "rocq": "sbv_thread_E and sbv_deadlock_free"
     }
    },
-   "shows": "The flag is always $\\mathsf{inj}_1\\,\\ast$, so the thread closes $c$ before $d$. E-Case types both arms in one world. The live arm asks $x \\prec \\overline{y}$ and the partner asks $\\overline{x} \\prec y$. The dead arm asks $y \\prec \\overline{x}$. E-Open adds no fact between points of the old context, so no binder type supplies that fact, and the world of the thread must hold $y \\prec \\overline{x}$. The joined world has the cycle $y \\prec \\overline{x} \\prec y$, and P-Connect asks a strict join. The relation reads only the steps the thread takes. After the $\\beta$ steps the thread is in the live arm, which the fundamental theorem places in $E$ in a world with $x \\prec \\overline{y}$ alone. Semantic P-Connect joins it with the partner, and adequacy gives deadlock freedom.",
+   "shows": "The flag is always $\\mathsf{inj}_1\\,\\ast$, so the thread closes $c$ before $d$. E-Case types both arms in one world. The live arm asks $x \\prec \\overline{y}$ and the partner asks $\\overline{x} \\prec y$. The dead arm asks $y \\prec \\overline{x}$. E-Open adds no fact between points of the old context, so no binder type supplies that fact, and the world of the thread must hold $y \\prec \\overline{x}$. The joined world has the cycle $y \\prec \\overline{x} \\prec y$, and P-Connect asks an acyclic join. The relation reads only the steps the thread takes. After the $\\beta$ steps the thread is in the live arm, which the fundamental theorem places in $E$ in a world with $x \\prec \\overline{y}$ alone. Semantic P-Connect joins it with the partner, and adequacy gives deadlock freedom.",
    "lead": "Only semantic typing shows that a thread branching on a flag it computes itself is deadlock free. Static typing checks the arm that never runs, and that arm closes the two channels in the other order."
   },
   {
@@ -12661,8 +12661,111 @@ window.MAP = {
      "rocq": "argued, no Rocq proof. Thread by thread it fails: fp_unrealizable"
     }
    },
-   "shows": "Both threads get the same flag, so they close $a$ and $b$ in the same order in every run. A received flag is any value of $V$ at $\\ast \\oplus \\ast$, so each thread has to be in $E$ for both flags. With $\\mathsf{inl}$ thread A closes $a$ while it holds $b$ and asks $x \\prec \\overline{y}$. With $\\mathsf{inr}$ thread B closes $\\overline{b}$ while it holds $\\overline{a}$ and asks $\\overline{y} \\prec x$. The join of the two worlds then has a cycle, and P-Connect asks a well-founded join. One such thread alone fits in a well-founded world, the pair does not. The flag travels on an internal channel, so the process relation of the closed process reads only its actual reductions, in which both threads take the same branch. Following them puts the process in $P$ directly.",
+   "shows": "Both threads get the same flag, so they close $a$ and $b$ in the same order in every run. A received flag is any value of $V$ at $\\ast \\oplus \\ast$, so each thread has to be in $E$ for both flags. With $\\mathsf{inl}$ thread A closes $a$ while it holds $b$ and asks $x \\prec \\overline{y}$. With $\\mathsf{inr}$ thread B closes $\\overline{b}$ while it holds $\\overline{a}$ and asks $\\overline{y} \\prec x$. The join of the two worlds then has a cycle, and P-Connect asks an acyclic join. One such thread alone fits in an acyclic world, the pair does not. The flag travels on an internal channel, so the process relation of the closed process reads only its actual reductions, in which both threads take the same branch. Following them puts the process in $P$ directly.",
    "lead": "Two threads that branch on one flag sent by a third thread are deadlock free. A proof that follows the reductions of the whole process shows it, and a proof that puts each thread into the relation on its own fails."
+  },
+  {
+   "id": "ex-copycat",
+   "title": "Copycat, a forwarder at independent points",
+   "modes": [
+    "df",
+    "lf"
+   ],
+   "code": "fwd o₁ o₂ = let ⟨v, o₁⟩ = recv o₁ in let o₂ = send ⟨v, o₂⟩ in     -- o₁ : S@x, o₂ : S̄@y\n            let ⟨w, o₂⟩ = recv o₂ in let o₁ = send ⟨w, o₁⟩ in     -- S = ?∗.!∗.Close\n            let ∗ = close o₁ in close o₂\nring      = fwd(o₁, o₂) ∥ fwd(ō₂, ō₁)                           -- cut on both channels",
+   "lead": "A forwarder that holds its two ends at independent points types, and two forwarders in a ring do not.",
+   "shows": "Each action of the forwarder asks its point below the dual point of the other end. The five facts are $x \\prec \\overline{y}$, $y \\prec \\overline{x^{+}}$, $y^{+} \\prec \\overline{x^{+}}$, $x^{+} \\prec \\overline{y^{++}}$ and $x^{++} \\prec \\overline{y^{++}}$, and P-Term types the forwarder over a world that holds these facts. A process with the forwarder behind one of its ends types at the same interface type when its world does not know the root of $y$. A partner, the forwarder and a second partner compose to a deadlock-free process. A received end as payload is $\\eta$-expanded through a channel at the field $y\\cdot 0$, and the forwarder extends to each protocol of unit messages that ends in $\\mathsf{Close}$. In the ring the first forwarder needs $x \\prec \\overline{y}$ and the second $\\overline{y} \\prec x$, so no world, bound or type types the ring.",
+   "rocq": "examples/Copycat.v: fwd_term, fwd_expand, fwd_config_deadlock_free, fwdh_term, fwdp_term, fwdp_expand, ring_rejected, ring_rejected_full",
+   "accepts": {
+    "df": {
+     "ok": true,
+     "rocq": "fwd_term, fwd_config_deadlock_free"
+    }
+   }
+  },
+  {
+   "id": "ex-milner",
+   "title": "Milner's ring",
+   "modes": [
+    "df",
+    "lf"
+   ],
+   "code": "A  = let ∗ = close c⁻ in close a⁺        -- a at 0, b at 1, c at 2\nB  = let ∗ = close a⁻ in close b⁺\nC  = let ∗ = close b⁻ in close c⁺        -- A ∥ B ∥ C deadlocks\nC′ = let ∗ = close c⁺ in close b⁻        -- A ∥ B ∥ C′ is deadlock free",
+   "lead": "Three components that are acyclic two at a time and cyclic together are rejected, because process typing checks the joined order.",
+   "shows": "Each thread closes its first end while it holds the second, so the three hidden worlds state $\\overline{c} \\prec \\overline{a}$, $\\overline{a} \\prec \\overline{b}$ and $\\overline{b} \\prec \\overline{c}$. Each two of them join to an acyclic world, and the three together hold the cycle $\\overline{c} \\prec \\overline{a} \\prec \\overline{b} \\prec \\overline{c}$. The ring meets each condition of the n-ary connect but the check on the joined world, and it types at no world because it deadlocks. With $C'$ the third world states $c \\prec b$, the join is well-founded, and the ring types by the n-ary connect and is deadlock free. Two threads that close two channels in opposite orders are rejected the same way.",
+   "rocq": "examples/Ring.v: ring_comps, ring_pairs, ring_cyclic, ring_rejected, ring_rejected_full, ring_typed, ring_df, cyc2_rejected, cyc2_rejected_h",
+   "accepts": {
+    "df": {
+     "ok": false,
+     "part": "the joined world",
+     "rocq": "ring_rejected, ring_cyclic"
+    }
+   }
+  },
+  {
+   "id": "ex-forkjoin",
+   "title": "Recursive fork-join with replies",
+   "modes": [
+    "df",
+    "lf"
+   ],
+   "code": "main = let ⟨w, w′⟩ = new in                      -- w at ρ, facts H at ρ̄\n       let ∗ = spawn (λu. (force wk) w′) in close w\nwk   = !(f = λw. let ⟨c₁, c₁′⟩ = new in let ⟨c₂, c₂′⟩ = new in   -- at ι·0 and ι·1\n             let ∗ = spawn (λu. (force f) c₁′) in\n             let ∗ = spawn (λu. (force f) c₂′) in\n             let ∗ = close c₁ in let ∗ = close c₂ in close w)    -- reply after both",
+   "lead": "A worker that forks two copies of itself and waits for their replies is deadlock free at every depth.",
+   "shows": "Each worker holds its end at a point $\\iota$, creates the two child channels at the fields $\\iota\\cdot 0$ and $\\iota\\cdot 1$ and spawns itself on their dual ends. It closes $c_1$, then $c_2$, then $w$, so it needs $\\iota\\cdot 0 \\prec \\overline{\\iota\\cdot 1}$, $\\iota\\cdot 0 \\prec \\overline{\\iota}$ and $\\iota\\cdot 1 \\prec \\overline{\\iota}$. The box hypothesis states these facts at each depth of the tree, and the creation in main orders an infinite descending chain on the tree of $\\rho$, acyclic and not well-founded. At $N = \\infty$ E-New asks $\\mathsf{acyc\\_new}$, the program types, and it is deadlock free with no classical hypothesis. At a finite bound E-New asks $\\mathsf{gen\\_new}$, which needs a well-founded order on the tree. One round of fork-join types as well. Padovani's factorial and Fibonacci processes type the same way, with unit messages because the language has no numbers.",
+   "rocq": "examples/ForkJoin.v: fj_dftyped, fj_deadlock_free, fjr_acyc, fjr_dftyped, fjr_term, fjr_deadlock_free, fct_dftyped, fct_deadlock_free, fib_dftyped, fib_deadlock_free, fj_wait_needs",
+   "accepts": {
+    "df": {
+     "ok": true,
+     "rocq": "fjr_dftyped, fjr_deadlock_free"
+    }
+   }
+  },
+  {
+   "id": "ex-shared",
+   "title": "Private constants and hiding",
+   "modes": [
+    "df",
+    "lf"
+   ],
+   "code": "P(c, d)  = (let ∗ = close c⁺ in close d⁺) ∥ (let ∗ = close c⁻ in close d⁻)   -- c at 0, d at 0·0\nP′(e, f) = (let ∗ = close f⁺ in close e⁺) ∥ (let ∗ = close f⁻ in close e⁻)   -- e at 0, f at 0·0\nmain     = P(c, d) ∥ P′(e, f)                                                -- over the empty cut",
+   "lead": "Two components may use the same private constant in opposite orders and still compose, because process typing hides private constants.",
+   "shows": "Each component uses the constant $0$ privately. The first closes of $P(c, d)$ ask $0 \\prec \\overline{0\\cdot 0}$ and $\\overline{0} \\prec 0\\cdot 0$, and $P'(e, f)$ orders the two points the other way round. The whole worlds of the two components join to a cycle at $0$. With hiding each component sits at a world with no constant, because its interface is empty, so the composition types and is deadlock free. The soundness proof renames the private constants of one component apart from the other.",
+   "rocq": "examples/SharedRoots.v: comp_typed, shared_not_cut, fact_needs_zero, hcomp_typed, shared_hidden, opposite_clash, opposite_compose, opposite_df",
+   "accepts": {
+    "df": {
+     "ok": true,
+     "rocq": "opposite_compose, opposite_df"
+    }
+   }
+  },
+  {
+   "id": "ex-gennew",
+   "title": "Creations with exits",
+   "modes": [
+    "df",
+    "lf"
+   ],
+   "code": "te = let ⟨a, a′⟩ = new in     -- a at ρ, facts ρ·0 ≺ ρ·2 ≺ ρ̄, ρ·1 ≺ ρ·3 ≺ ρ̄, ρ·0 ≺ (ρ·1)‾\n     let ⟨e₁, e₁′⟩ = new in   -- at the field ρ·0\n     let ⟨e₂, e₂′⟩ = new in   -- at the field ρ·1\n     let ∗ = spawn (λu. close e₁′) in let ∗ = spawn (λu. close e₂′) in\n     let ∗ = spawn (λu. close a′) in\n     let ⟨d, d′⟩ = new in     -- d at π, C = {ρ·0 ≺ π, ρ·1 ≺ π, π ≺ ρ̄}\n     let ∗ = spawn (λu. let ∗ = close e₁ in let ∗ = close e₂ in close d′) in\n     let ∗ = close d in close a",
+   "lead": "A creation may state facts from its new root down to points of the context, which the simple condition on creations forbids.",
+   "shows": "The second creation has the exit $\\pi \\prec \\overline{\\rho}$ and the two entries $\\rho\\cdot 0 \\prec \\pi$ and $\\rho\\cdot 1 \\prec \\pi$. No point of the context lies above both entries and below $\\overline{\\rho}$, so $\\mathsf{gen\\_new}$ pairs $\\pi$ with the set $\\{\\rho\\cdot 2, \\rho\\cdot 3\\}$. The condition $\\mathsf{wf\\_new}$, each fact ending in the new tree, admits no exit, and under each constraint it accepts the thread after the creation has no typing. A second program needs two partners for one point. Both programs type at $N = \\infty$, where $\\mathsf{gen\\_new}$ implies $\\mathsf{acyc\\_new}$, and are deadlock free.",
+   "rocq": "examples/GenNew.v: tu_gen1, tu_dftyped, tu_deadlock_free, tu_rejected_wf_new, te_gen, te_dftyped, te_deadlock_free, te_rejected_wf_new",
+   "accepts": {
+    "df": {
+     "ok": true,
+     "rocq": "te_dftyped, te_deadlock_free"
+    }
+   }
+  },
+  {
+   "id": "ex-sinst",
+   "title": "Why session types are contractive",
+   "modes": [
+    "df",
+    "lf"
+   ],
+   "code": "s₀ = α ; X        s₁ = (α ; Skip) ; X        X = µβ.β\nc : s₀@x ⊢ c : s₁@x                -- E-Chan and E-Sub, because s₀ ≈ s₁\n-- at α := ?∗.(Skip ; Skip) the two instances are not equivalent",
+   "lead": "Without contractivity a derivation at one instance of a session variable gives none at another.",
+   "shows": "$s_0$ and $s_1$ unfold to the same head $\\alpha$ followed by $X$, so they are equivalent and E-Sub retypes $c$. At the instance $\\alpha := ?\\ast.(\\mathsf{Skip}.\\mathsf{Skip})$ both heads are the same receive, and the two continuations are distinct stuck terms, because $X$ never reaches an action. No derivation types $c$ at the instance of $s_1$. A session variable does not guard either, because an instance may set it to $\\mathsf{Skip}$. So the rules ask contractive session types where a session type enters a derivation, and a box body typed once is then typed at each instance.",
+   "rocq": "examples/SinstStuck.v: typed_sinst_false, ss_var_guard; static/Sinst.v: typed_sinst; static/Inversion.v: inv_chan_sty"
   },
   {
    "id": "rx-postpone",
@@ -12722,8 +12825,8 @@ window.MAP = {
     "lf"
    ],
    "code": "grow = !(f = λw. let ⟨c, c′⟩ = new in                 -- c below the point of w\n                 let ⟨d, d′⟩ = new in let ∗ = spawn (λ_. recvclose d′) in\n                 let ∗ = close (send ⟨∗, d⟩) in              -- one session action\n                 let ∗ = spawn (λ_. (force f) c′) in\n                 let ∗ = close c in close w)                 -- waits on its child\nmain = let ⟨w, w′⟩ = new in let ∗ = spawn (λ_. close w′) in (force grow) w\n-- every thread waits on the one it spawned, close w′ never proceeds",
-   "shows": "Each thread spawns a child, waits on it, and the child does the same. Each wait is at a point below the point of the previous one, and the chain grows forever. A well-founded world has no infinite descending chain, and lock-free soundness assumes a well-founded world.",
-   "rocq": "argued in docs/redesign/check-layers.md, E-New asks wf_new (static/Contexts.v), not mechanized as a rejection",
+   "shows": "Each thread spawns a child, waits on it, and the child does the same. Each wait is at a point below the point of the previous one, and the chain grows forever. At a finite bound E-New asks $\\mathsf{gen\\_new}$, so the order on each new tree is well-founded and ranks exist for the tree. A fact from a new point down to the point of $w$ needs a context point below that point, and the field route needs the same fact one level lower in each round. The rejection is argued and not mechanized.",
+   "rocq": "static/Contexts.v: gen_new, new_ok; examples/ForkJoin.v: fj_wait_needs",
    "accepts": {
     "lf": {
      "ok": false,
