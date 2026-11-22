@@ -15,7 +15,8 @@ block(s, {
 block(s, {
   id: 'sem-head', title: 'Head steps (T-Act rules)', rocq: 'lang/Semantics.v: head_step',
   tex: R`\begin{array}{l}
-${h('T-Act-App', R`(\lambda e)\,v ${step(R`\beta`)} ${h('se.subst', R`e[v]`)}`)} \\
+${h('T-Act-App', R`(\lambda e)\,v ${step(R`\beta`)} ${h('se.subst', R`e[v]`)}`)} \qquad ${h('T-Act-Let', R`\mathsf{let}\ \ast = \ast\ \mathsf{in}\ e ${step(R`\beta`)} e \qquad \mathsf{let}\ \langle a, b\rangle = \langle v_1, v_2\rangle\ \mathsf{in}\ e ${step(R`\beta`)} e[v_1, v_2]`)} \\
+${h('T-Act-Case', R`\mathsf{case}\ (\mathsf{inj}_i\,v)\,(e_1)\,(e_2) ${step(R`\beta`)} e_i[v]`)} \\
 ${h('T-Act-Force', R`\mathsf{force}\,(!e) ${step(R`\beta`)} e[!e]`)} \qquad ${h('T-Act-New', R`\mathsf{new} ${step(R`\mathsf{new}\,c`)} \langle c^{+}, c^{-}\rangle`)} \\
 ${h('T-Act-Spawn', R`\mathsf{spawn}\,v ${step(R`\mathsf{spawn}\,v`)} \ast`)} \\
 ${h('T-Act-Send', R`\mathsf{send}\,\langle v, o\rangle ${step(R`o!v`)} o`)} \\
@@ -85,6 +86,8 @@ n('lbl.sel', 'Select label $o \\lhd i$', 'An offer to select branch $i$ on $o$.'
 n('lbl.bra', 'Branch label $o \\rhd i$', 'An offer to receive the choice $i$ on $o$, for both $i$.', 'A plain label. $\\mathsf{branch}$ must meet either choice of the partner, so it has a step for each $i$, and the obligation moves $o$ to $x\\cdot\\kappa_i$.', DEF, '$\\mathsf{branch}\\,o$ has the labels $o \\rhd \\mathsf{false}$ and $o \\rhd \\mathsf{true}$.', 'lang/Semantics.v: SBra');
 n('lbl.link', 'Link label $\\leftrightarrow\\{o_1, o_2\\}$', 'An unordered pair $\\{o_1, o_2\\}$ of ends, possibly with $o_1 = o_2$.', 'The label is a set, so one process rule removes the channel of either end.', DEF, '$\\leftrightarrow\\{c^{+}, d^{-}\\}$.', 'lang/Semantics.v: SLink');
 n('T-Act-App', 'T-Act-App', '$(\\lambda e)\\,v \\xrightarrow{\\beta} e[v]$.', 'Call by value. The argument is a value before the body runs.', DEF, '$(\\lambda x.\\,\\mathsf{close}\\,x)\\,c^{+} \\xrightarrow{\\beta} \\mathsf{close}\\,c^{+}$.', 'lang/Semantics.v: t_act_app');
+n('T-Act-Let', 'T-Act-Let-Unit, T-Act-Let-Pair', 'A unit elimination of $\\ast$ continues with its body, and a pair elimination of a pair of values substitutes both components.', 'The two lets sequence code. The derived one-variable $\\mathsf{let}$ takes one step of each.', DEF, '$\\mathsf{let}\\ \\langle a, b\\rangle = \\langle \\ast, c^{+}\\rangle\\ \\mathsf{in}\\ \\mathsf{close}\\,b \\xrightarrow{\\beta} \\mathsf{close}\\,c^{+}$.', 'lang/Semantics.v: t_act_let_unit, t_act_let_pair');
+n('T-Act-Case', 'T-Act-Case-Inl, T-Act-Case-Inr', 'A case of an injected value continues with the branch of its side, the value substituted for the bound variable.', 'The only eliminator of sums. It consumes the result of $\\mathsf{branch}$.', DEF, '$\\mathsf{case}\\ (\\mathsf{inj}_1\\,\\ast)\\,(e_1)\\,(e_2) \\xrightarrow{\\beta} e_1[\\ast]$.', 'lang/Semantics.v: t_act_case_inl, t_act_case_inr');
 n('T-Act-Force', 'T-Act-Force', '$\\mathsf{force}\\,(!e) \\xrightarrow{\\beta} e[!e]$, so the body runs with the box for its self.', 'It is the only rule that unrolls a definition, so recursion and replication go through force steps.', DEF, '$\\mathsf{force}\\,!(f = \\mathsf{force}\\,f)$ steps to itself by $\\beta$ forever.', 'lang/Semantics.v: t_act_force');
 n('T-Act-New', 'T-Act-New', '$\\mathsf{new} \\xrightarrow{\\mathsf{new}\\,c} \\langle c^{+}, c^{-}\\rangle$ for every $c$, and the process rule picks $c$.', 'The step of a single thread cannot determine which channel names are in use. The process rule asks $c \\notin C \\cup \\mathsf{echans}(M)$.', DEF, '$\\mathsf{new} \\xrightarrow{\\mathsf{new}\\,c} \\langle c^{+}, c^{-}\\rangle$.', 'lang/Semantics.v: t_act_new');
 n('T-Act-Spawn', 'T-Act-Spawn', '$\\mathsf{spawn}\\,v \\xrightarrow{\\mathsf{spawn}\\,v} \\ast$.', 'The label contains $v$, so the process rule can start the thread $v\\,\\ast$.', DEF, '$\\mathsf{spawn}\\,(\\lambda u.\\,\\mathsf{close}\\,d\') \\xrightarrow{\\mathsf{spawn}\\,(\\lambda u.\\,\\mathsf{close}\\,d\')} \\ast$.', 'lang/Semantics.v: t_act_spawn');
@@ -153,6 +156,8 @@ sa('lbl.bra', R`o \rhd i \in \mathsf{SLabel}`, [Oa, A('i', R`The received choice
 sa('lbl.link', R`\leftrightarrow\{o_1, o_2\} \in \mathsf{SLabel}`, [A(R`o_1, o_2`, R`The linked ends, an unordered pair.`)]);
 const STEP = R`\cdot \xrightarrow{\cdot} \cdot \subseteq \mathsf{Expr} \times \mathsf{TLabel} \times \mathsf{Expr}`;
 sa('T-Act-App', STEP, [A('e', R`The body of the $\lambda$.`), A('v', R`The argument, a value.`)]);
+sa('T-Act-Let', STEP, [A('e', R`The body.`), A(R`v_1, v_2`, R`The components of the pair, values.`)]);
+sa('T-Act-Case', STEP, [A('v', R`The injected value.`), A(R`e_1, e_2`, R`The branches, each binding $v$.`), A('i', R`The side of the injection.`)]);
 sa('T-Act-Force', STEP, [A('e', R`The body of the box, substituted with the box itself.`)]);
 sa('T-Act-New', STEP, [A('c', R`Any channel name, restricted by the process rule.`)]);
 sa('T-Act-Spawn', STEP, [A('v', R`The thunk.`)]);

@@ -6,17 +6,54 @@ window.MAP = {
    "intro": "Programs are terms of a call-by-value $\\lambda$-calculus with session-typed channels. Terms never mention points. Points appear in types and in the relation, where they order the waits of threads.",
    "blocks": [
     {
-     "id": "syn-terms",
-     "title": "Terms",
-     "rocq": "lang/Syntax.v: expr",
-     "tex": "\\begin{array}{rl}\ne ::= & \\htmlData{k=syn.var}{x} \\mid \\htmlData{k=syn.unit}{\\ast} \\mid \\htmlData{k=syn.end}{o} \\mid \\htmlData{k=syn.lam}{\\lambda e} \\mid \\htmlData{k=syn.app}{e_1\\,e_2} \\mid \\htmlData{k=syn.pair}{\\langle e_1, e_2\\rangle} \\\\\n\\mid & \\htmlData{k=syn.letu}{\\mathsf{let}\\ \\ast = e_1\\ \\mathsf{in}\\ e_2} \\mid \\htmlData{k=syn.letp}{\\mathsf{let}\\ \\langle a,b\\rangle = e_1\\ \\mathsf{in}\\ e_2} \\\\\n\\mid & \\htmlData{k=syn.inj}{\\mathsf{inj}_i\\,e} \\mid \\htmlData{k=syn.case}{\\mathsf{case}\\ e\\,(e_1)\\,(e_2)} \\\\\n\\mid & \\htmlData{k=syn.box}{!e} \\mid \\htmlData{k=syn.new}{\\mathsf{new}} \\mid \\htmlData{k=syn.op}{k}\n\\end{array}",
-     "caption": "Thirteen term formers with de Bruijn variables. A box $!e$ binds itself in $e$, and $k$ ranges over the constants.",
+     "id": "syn-ends",
+     "title": "Ends",
+     "rocq": "lang/Syntax.v: cend, edual, ech",
+     "tex": "\\htmlData{k=end.cend}{o ::= c^{+} \\mid c^{-}} \\qquad \\htmlData{k=end.dual}{\\overline{c^{+}} = c^{-}\\quad \\overline{c^{-}} = c^{+}} \\qquad \\htmlData{k=end.ech}{\\mathsf{ech}(c^{\\pm}) = c}",
+     "caption": "A channel $c$ has the two ends $c^{+}$ and $c^{-}$. An end $o$ belongs to the channel $\\mathsf{ech}\\,o$, and $\\overline{o}$ is the other end of that channel.",
      "modes": [
       "df",
       "lf"
      ],
      "about": {
-      "why": "Typing has one rule per term former, and the semantics one head step per redex.",
+      "why": "Two threads hold the two ends of a channel. Naming ends instead of channels gives each end its own type, point and counter.",
+      "used": [
+       "syn-fends",
+       "syn-csub",
+       "t-contexts"
+      ]
+     }
+    },
+    {
+     "id": "syn-prims",
+     "title": "Constants",
+     "rocq": "lang/Syntax.v: prim",
+     "tex": "\\begin{array}{rl}\nk ::= & \\htmlData{k=prim.send}{\\mathsf{send}} \\mid \\htmlData{k=prim.recv}{\\mathsf{recv}} \\mid \\htmlData{k=prim.close}{\\mathsf{close}} \\mid \\htmlData{k=prim.select}{\\mathsf{select}_i} \\mid \\htmlData{k=prim.branch}{\\mathsf{branch}} \\\\\n\\mid & \\htmlData{k=prim.link}{\\mathsf{link}} \\mid \\htmlData{k=prim.spawn}{\\mathsf{spawn}} \\mid \\htmlData{k=prim.force}{\\mathsf{force}}\n\\end{array}",
+     "caption": "The operations on channels, threads and boxes are constants $k$. $\\mathsf{send}$ takes a pair of a value and an end, $\\mathsf{link}$ a pair of ends, $\\mathsf{spawn}$ a thunk and $\\mathsf{force}$ a box.",
+     "modes": [
+      "df",
+      "lf"
+     ],
+     "about": {
+      "why": "One term former $k\\,e$ covers every operation, and each constant has a typing rule of its own.",
+      "used": [
+       "t-consts",
+       "sem-head"
+      ]
+     }
+    },
+    {
+     "id": "syn-terms",
+     "title": "Terms",
+     "rocq": "lang/Syntax.v: expr",
+     "tex": "\\begin{array}{rl}\ne ::= & \\htmlData{k=syn.var}{i} \\mid \\htmlData{k=syn.unit}{\\ast} \\mid \\htmlData{k=syn.end}{o} \\mid \\htmlData{k=syn.lam}{\\lambda e} \\mid \\htmlData{k=syn.app}{e_1\\,e_2} \\mid \\htmlData{k=syn.pair}{\\langle e_1, e_2\\rangle} \\\\\n\\mid & \\htmlData{k=syn.letu}{\\mathsf{let}\\ \\ast = e_1\\ \\mathsf{in}\\ e_2} \\mid \\htmlData{k=syn.letp}{\\mathsf{let}\\ \\langle a,b\\rangle = e_1\\ \\mathsf{in}\\ e_2} \\\\\n\\mid & \\htmlData{k=syn.inj}{\\mathsf{inj}_i\\,e} \\mid \\htmlData{k=syn.case}{\\mathsf{case}\\ e\\,(e_1)\\,(e_2)} \\\\\n\\mid & \\htmlData{k=syn.box}{!e} \\mid \\htmlData{k=syn.new}{\\mathsf{new}} \\mid \\htmlData{k=syn.op}{k\\,e}\n\\end{array}",
+     "caption": "Thirteen term formers. A variable $i$ is a de Bruijn index. $\\lambda e$ and each branch of a $\\mathsf{case}$ bind one variable, and $\\mathsf{let}\\ \\langle a, b\\rangle$ binds two, named $a$ and $b$ for the reader. A box $!e$ binds itself in $e$. A constant $k$ always comes with its argument $e$.",
+     "modes": [
+      "df",
+      "lf"
+     ],
+     "about": {
+      "why": "Typing has one rule per term former and one per constant, and the semantics one head step per redex.",
       "used": [
        "sem-head",
        "r-base",
@@ -43,29 +80,11 @@ window.MAP = {
      }
     },
     {
-     "id": "syn-prims",
-     "title": "Constants",
-     "rocq": "lang/Syntax.v: prim",
-     "tex": "\\begin{array}{rl}\nk ::= & \\htmlData{k=prim.send}{\\mathsf{send}} \\mid \\htmlData{k=prim.recv}{\\mathsf{recv}} \\mid \\htmlData{k=prim.close}{\\mathsf{close}} \\mid \\htmlData{k=prim.select}{\\mathsf{select}_i} \\mid \\htmlData{k=prim.branch}{\\mathsf{branch}} \\\\\n\\mid & \\htmlData{k=prim.link}{\\mathsf{link}} \\mid \\htmlData{k=prim.spawn}{\\mathsf{spawn}} \\mid \\htmlData{k=prim.force}{\\mathsf{force}}\n\\end{array}",
-     "caption": "The channel operations are constants. $\\mathsf{send}$ takes a pair $\\langle v, o\\rangle$, $\\mathsf{link}$ a pair of ends and $\\mathsf{spawn}$ a thunk.",
-     "modes": [
-      "df",
-      "lf"
-     ],
-     "about": {
-      "why": "As constants applied to values, the channel operations need no syntax of their own, and each has an ordinary function type.",
-      "used": [
-       "t-consts",
-       "sem-head"
-      ]
-     }
-    },
-    {
      "id": "syn-values",
      "title": "Values",
      "rocq": "lang/Syntax.v: is_val",
-     "tex": "\\htmlData{k=syn.values}{v ::= \\ast \\mid o \\mid k \\mid \\lambda e \\mid\\ !e \\mid \\langle v_1, v_2\\rangle \\mid \\mathsf{inj}_i\\,v}",
-     "caption": "Unit, ends, constants, abstractions and boxes are values, and so are pairs and injections of values.",
+     "tex": "\\htmlData{k=syn.values}{v ::= \\ast \\mid o \\mid \\lambda e \\mid\\ !e \\mid \\langle v_1, v_2\\rangle \\mid \\mathsf{inj}_i\\,v}",
+     "caption": "Unit, ends, abstractions and boxes are values, and so are pairs and injections of values. A constant applied to a value is a redex, never a value.",
      "modes": [
       "df",
       "lf"
@@ -75,25 +94,6 @@ window.MAP = {
       "used": [
        "v-rel",
        "e-rel"
-      ]
-     }
-    },
-    {
-     "id": "syn-ends",
-     "title": "Ends",
-     "rocq": "lang/Syntax.v: cend, edual, ech",
-     "tex": "\\htmlData{k=end.cend}{o ::= c^{+} \\mid c^{-}} \\qquad \\htmlData{k=end.dual}{\\overline{c^{+}} = c^{-}\\quad \\overline{c^{-}} = c^{+}} \\qquad \\htmlData{k=end.ech}{\\mathsf{ech}(c^{\\pm}) = c}",
-     "caption": "An end $o$ belongs to the channel $\\mathsf{ech}\\,o$, and $\\overline{o}$ is the other end of that channel.",
-     "modes": [
-      "df",
-      "lf"
-     ],
-     "about": {
-      "why": "Two threads hold the two ends of a channel. Naming ends instead of channels gives each end its own type, point and counter.",
-      "used": [
-       "syn-fends",
-       "syn-csub",
-       "t-contexts"
       ]
      }
     },
@@ -120,7 +120,7 @@ window.MAP = {
      "title": "Processes and configurations",
      "rocq": "lang/Syntax.v: proc, lang/Process.v: config, erase",
      "tex": "\\begin{array}{l}\n\\htmlData{k=proc.proc}{p = (C, E)} \\qquad \\htmlData{k=proc.config}{q = (C, M),\\ M : \\mathbb{N} \\rightharpoonup \\mathsf{Expr}} \\\\\n\\htmlData{k=proc.erase}{\\mathsf{erase}(C, M) = (C, \\{\\!|\\, M(i) \\mid i \\,|\\!\\})}\n\\end{array}",
-     "caption": "A process is a finite set $C$ of restricted channels and a finite multiset $E$ of threads. A configuration names its threads by $i \\in \\mathrm{dom}\\,M$.",
+     "caption": "A process $p$ is a finite set $C$ of restricted channels and a finite multiset $E$ of threads. A configuration $q$ names its threads by $i \\in \\mathrm{dom}\\,M$, and $\\mathsf{erase}$ forgets the names.",
      "modes": [
       "df",
       "lf"
@@ -131,6 +131,24 @@ window.MAP = {
        "sem-proc",
        "p-typing",
        "p-rel"
+      ]
+     }
+    },
+    {
+     "id": "syn-labels",
+     "title": "Field labels",
+     "rocq": "lang/Syntax.v: field",
+     "tex": "\\htmlData{k=lbl.field}{\\kappa \\in \\mathbb{N}}",
+     "caption": "Field labels $\\kappa$ are natural numbers, and $x\\cdot\\kappa$ is the field $\\kappa$ of the point $x$.",
+     "modes": [
+      "df",
+      "lf"
+     ],
+     "about": {
+      "why": "Fields give payload ends and the continuations of a choice points of their own, each related to the point of the carrier.",
+      "used": [
+       "syn-moves",
+       "r-new"
       ]
      }
     },
@@ -169,24 +187,6 @@ window.MAP = {
       "used": [
        "r-act",
        "ty-payload"
-      ]
-     }
-    },
-    {
-     "id": "syn-labels",
-     "title": "Field labels",
-     "rocq": "lang/Syntax.v: field",
-     "tex": "\\htmlData{k=lbl.field}{\\kappa \\in \\mathbb{N}}",
-     "caption": "Field labels $\\kappa$ are natural numbers, and $x\\cdot\\kappa$ is the field $\\kappa$ of the point $x$.",
-     "modes": [
-      "df",
-      "lf"
-     ],
-     "about": {
-      "why": "Fields give payload ends and the continuations of a choice points of their own, each related to the point of the carrier.",
-      "used": [
-       "syn-moves",
-       "r-new"
       ]
      }
     },
@@ -238,7 +238,7 @@ window.MAP = {
      "id": "sem-head",
      "title": "Head steps (T-Act rules)",
      "rocq": "lang/Semantics.v: head_step",
-     "tex": "\\begin{array}{l}\n\\htmlData{k=T-Act-App}{(\\lambda e)\\,v \\xrightarrow{\\beta} \\htmlData{k=se.subst}{e[v]}} \\\\\n\\htmlData{k=T-Act-Force}{\\mathsf{force}\\,(!e) \\xrightarrow{\\beta} e[!e]} \\qquad \\htmlData{k=T-Act-New}{\\mathsf{new} \\xrightarrow{\\mathsf{new}\\,c} \\langle c^{+}, c^{-}\\rangle} \\\\\n\\htmlData{k=T-Act-Spawn}{\\mathsf{spawn}\\,v \\xrightarrow{\\mathsf{spawn}\\,v} \\ast} \\\\\n\\htmlData{k=T-Act-Send}{\\mathsf{send}\\,\\langle v, o\\rangle \\xrightarrow{o!v} o} \\\\\n\\htmlData{k=T-Act-Recv}{\\mathsf{recv}\\,o \\xrightarrow{o?v} \\langle v, o\\rangle} \\qquad \\htmlData{k=T-Act-Close}{\\mathsf{close}\\,o \\xrightarrow{o\\,\\mathsf{end}} \\ast} \\\\\n\\htmlData{k=T-Act-Select}{\\mathsf{select}_i\\,o \\xrightarrow{o\\lhd i} o} \\qquad \\htmlData{k=T-Act-Branch}{\\mathsf{branch}\\,o \\xrightarrow{o\\rhd i} \\mathsf{inj}_i\\,o} \\\\\n\\htmlData{k=T-Act-Link}{\\mathsf{link}\\,\\langle o_1, o_2\\rangle \\xrightarrow{\\leftrightarrow\\{o_1,o_2\\}} \\ast}\n\\end{array}",
+     "tex": "\\begin{array}{l}\n\\htmlData{k=T-Act-App}{(\\lambda e)\\,v \\xrightarrow{\\beta} \\htmlData{k=se.subst}{e[v]}} \\qquad \\htmlData{k=T-Act-Let}{\\mathsf{let}\\ \\ast = \\ast\\ \\mathsf{in}\\ e \\xrightarrow{\\beta} e \\qquad \\mathsf{let}\\ \\langle a, b\\rangle = \\langle v_1, v_2\\rangle\\ \\mathsf{in}\\ e \\xrightarrow{\\beta} e[v_1, v_2]} \\\\\n\\htmlData{k=T-Act-Case}{\\mathsf{case}\\ (\\mathsf{inj}_i\\,v)\\,(e_1)\\,(e_2) \\xrightarrow{\\beta} e_i[v]} \\\\\n\\htmlData{k=T-Act-Force}{\\mathsf{force}\\,(!e) \\xrightarrow{\\beta} e[!e]} \\qquad \\htmlData{k=T-Act-New}{\\mathsf{new} \\xrightarrow{\\mathsf{new}\\,c} \\langle c^{+}, c^{-}\\rangle} \\\\\n\\htmlData{k=T-Act-Spawn}{\\mathsf{spawn}\\,v \\xrightarrow{\\mathsf{spawn}\\,v} \\ast} \\\\\n\\htmlData{k=T-Act-Send}{\\mathsf{send}\\,\\langle v, o\\rangle \\xrightarrow{o!v} o} \\\\\n\\htmlData{k=T-Act-Recv}{\\mathsf{recv}\\,o \\xrightarrow{o?v} \\langle v, o\\rangle} \\qquad \\htmlData{k=T-Act-Close}{\\mathsf{close}\\,o \\xrightarrow{o\\,\\mathsf{end}} \\ast} \\\\\n\\htmlData{k=T-Act-Select}{\\mathsf{select}_i\\,o \\xrightarrow{o\\lhd i} o} \\qquad \\htmlData{k=T-Act-Branch}{\\mathsf{branch}\\,o \\xrightarrow{o\\rhd i} \\mathsf{inj}_i\\,o} \\\\\n\\htmlData{k=T-Act-Link}{\\mathsf{link}\\,\\langle o_1, o_2\\rangle \\xrightarrow{\\leftrightarrow\\{o_1,o_2\\}} \\ast}\n\\end{array}",
      "caption": "One head step per redex. $\\mathsf{recv}\\,o$ has a step for each value $v$ it may receive.",
      "modes": [
       "df",
@@ -294,7 +294,7 @@ window.MAP = {
      "title": "Events",
      "rocq": "lang/Process.v: event, ev_parts, ev_admin, ev_tau",
      "tex": "\\begin{array}{l}\n\\htmlData{k=ev.event}{ev ::= \\mathsf{solo}_i\\,\\alpha\\,k \\mid \\mathsf{sync}_{i,j}\\,\\sigma \\mid \\mathsf{offer}_i\\,\\sigma} \\qquad \\htmlData{k=ev.pick}{k ::= \\cdot \\mid j \\mid (o_1, o_2)} \\\\\n\\htmlData{k=ev.admin}{\\mathsf{admin} = \\{\\mathsf{solo}_i\\,\\alpha\\,k\\}} \\qquad \\htmlData{k=ev.tau}{\\tau = \\mathsf{Event} \\setminus \\{\\mathsf{offer}_i\\,\\sigma\\}} \\qquad \\htmlData{k=se.parts}{\\mathsf{parts}(ev)}\n\\end{array}",
-     "caption": "An event records the threads $\\mathsf{parts}(ev)$ that took part in a step, and the channel or ends of the step.",
+     "caption": "An event $ev$ records the threads $\\mathsf{parts}(ev)$ that took part in a step, and the channel or ends of the step. An event in $\\tau$ makes no offer to the environment, and an administrative event involves one thread and no session action.",
      "modes": [
       "df",
       "lf"
@@ -312,7 +312,7 @@ window.MAP = {
      "title": "Properties",
      "rocq": "lang/Safety.v: deadlock_free, lockfree/TauThread.v: no_tau_divergence, lockfree/Fair.v: lock_free",
      "tex": "\\begin{array}{l}\n\\htmlData{k=prop.terminated}{\\mathsf{terminated}\\,p \\iff p = (\\varnothing, \\{v\\} \\uplus E),\\ E \\subseteq \\{\\ast\\}} \\\\\n\\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}\\,p \\iff \\forall p'.\\ p \\htmlData{k=se.reach}{\\to^{*}} p' \\Rightarrow \\mathsf{terminated}\\,p' \\lor \\exists p''.\\ p' \\to p''}\n\\annraw{ \\\\ }\\annot{\\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}\\,p \\iff \\forall q.\\ p \\to^{*} q \\Rightarrow \\htmlData{k=se.acc}{\\mathsf{Acc}}\\ \\htmlData{k=prop.padmin}{\\to_{\\mathsf{admin}}}\\ q}}\n\\annraw{ \\\\ }\\annot{\\htmlData{k=prop.lf}{\\begin{array}{l} \\mathsf{lock\\_free}\\,p \\iff \\forall \\htmlData{k=se.run}{(r, l) \\in \\mathsf{Run}}.\\ \\htmlData{k=se.r0}{\\htmlData{k=proc.erase}{\\mathsf{erase}}(r_0) = p} \\Rightarrow \\htmlData{k=prop.maximal}{\\mathsf{maximal}\\,r\\,l} \\Rightarrow \\htmlData{k=prop.wfair}{\\mathsf{wfair}\\,r\\,l} \\Rightarrow {} \\\\ \\qquad \\htmlData{k=prop.lfrun}{\\forall i\\,t.\\ \\htmlData{k=prop.pend}{\\mathsf{pend}(r_i, t)} \\Rightarrow \\exists j \\geq i.\\ t \\in \\htmlData{k=se.parts}{\\mathsf{parts}(l_j)}} \\end{array}}}\n\\end{array}",
-     "caption": "A process is deadlock free when each reachable process has terminated or can step. \\annp{It has no internal divergence when no reachable process runs internal steps forever. It is lock free when, on each weakly fair maximal run, a waiting thread later takes part in a step.}",
+     "caption": "A process is deadlock free when each reachable process has terminated or can step. \\annp{It has no internal divergence when no reachable process runs internal steps forever. A run is a sequence of configurations $r$ with the events $l$ between them. The process is lock free when, on each weakly fair maximal run, each thread $t$ that is pending at some position takes part in a later step.}",
      "modes": [
       "df",
       "lf"
@@ -736,7 +736,7 @@ window.MAP = {
       "lf"
      ],
      "rocq": "static/Typing.v: e_unit; static/Conservativity.v: d_unit; static/Typing.v: e_var; static/Conservativity.v: d_var; static/Typing.v: e_chan; static/Conservativity.v: d_chan",
-     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\ast : \\ast\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-Unit}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\Gamma ; \\htmlData{k=ctx.only}{\\Delta, x : T} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} x : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-Var}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\Gamma ; \\htmlData{k=ctx.only}{\\Delta, o : (S@x)\\annot{\\annot{^{a}}}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} o : (S@x)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-Chan}\\end{array}",
+     "tex": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} \\ast : \\ast\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-Unit}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\Gamma ; \\htmlData{k=ctx.only}{\\Delta, i : T} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} i : T\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-Var}\\\\[3ex]\\dfrac{\\begin{array}{c}\\htmlData{k=ctx.empty}{\\Delta\\ \\text{unlimited}}\\end{array}}{\\Gamma ; \\htmlData{k=ctx.only}{\\Delta, o : (S@x)\\annot{\\annot{^{a}}}} \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F} o : (S@x)\\annot{\\annot{^{a}}}\\annot{\\ \\htmlData{k=tj.eff}{!}\\ \\htmlData{k=tj.zero}{0}}}\\;\\textsf{E-Chan}\\end{array}",
      "caption": "$\\ast$ uses no entry of $\\Delta$, and a variable or an end is typed by its own entry. The remaining entries must be unlimited.",
      "about": {
       "why": "Unused unlimited entries are dropped at the leaves of a derivation, so the rules need no weakening rule.",
@@ -1337,16 +1337,16 @@ window.MAP = {
  "notes": {
   "syn.var": {
    "title": "Variable",
-   "what": "A de Bruijn index $x \\in \\mathbb{N}$, the number of binders between the occurrence and its binder.",
-   "why": "A plain term former. With de Bruijn indices, substitution $e[v]$ and renaming need no side condition on fresh names.",
+   "what": "A de Bruijn index $i \\in \\mathbb{N}$, the number of binders between the occurrence and its binder.",
+   "why": "A plain term former. With de Bruijn indices, substitution $e[v]$ and renaming need no side condition on fresh names. Examples write named binders, such as $\\lambda x.\\,x$ for $\\lambda\\,0$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\lambda x.\\,x$ is the identity, where $x$ is the index $0$.",
+   "example": "In $\\lambda e$ the variable $0$ of $e$ is the argument.",
    "rocq": "lang/Syntax.v: Var",
-   "sig": "x \\in \\mathsf{Expr}",
+   "sig": "i \\in \\mathsf{Expr}",
    "args": [
     {
-     "name": "x",
-     "meaning": "A de Bruijn index $x \\in \\mathbb{N}$, the number of binders between the occurrence and its binder."
+     "name": "i",
+     "meaning": "A de Bruijn index $i \\in \\mathbb{N}$, the number of binders between the occurrence and its binder."
     }
    ]
   },
@@ -1570,17 +1570,21 @@ window.MAP = {
    ]
   },
   "syn.op": {
-   "title": "Constant $k$",
-   "what": "A constant $k$ is a value, and $k\\,v$ takes the head step of $k$ on the value $v$.",
-   "why": "The constants are the operations on channels, boxes and threads. Application $k\\,e$ evaluates $e$ first, as each application does.",
+   "title": "Constant application $k\\,e$",
+   "what": "The term $k\\,e$ applies the constant $k$ to its argument $e$. It evaluates $e$ to a value $v$ and then takes the head step of $k$ on $v$. A constant never occurs without its argument, so $k\\,e$ is never a value.",
+   "why": "The constants are the operations on channels, boxes and threads, and one term former covers all of them. Each constant has its own typing rule. A constant passed as a function is written as its $\\eta$-expansion $\\lambda x.\\,k\\,x$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{send}\\,\\langle \\ast, o\\rangle$ applies $\\mathsf{send}$ to a pair.",
-   "rocq": "lang/Syntax.v: Op (the value $k$ is $\\lambda x.\\,k\\,x$)",
-   "sig": "k \\in \\mathsf{Val}",
+   "rocq": "lang/Syntax.v: Op; static/Constants.v: k_send",
+   "sig": "k\\,e \\in \\mathsf{Expr}",
    "args": [
     {
      "name": "k",
      "meaning": "A constant, $k \\in \\mathsf{Const}$."
+    },
+    {
+     "name": "e",
+     "meaning": "Its argument."
     }
    ]
   },
@@ -1762,10 +1766,10 @@ window.MAP = {
   },
   "syn.values": {
    "title": "Values",
-   "what": "$v ::= \\ast \\mid o \\mid k \\mid \\lambda e \\mid\\ !e \\mid \\langle v_1, v_2\\rangle \\mid \\mathsf{inj}_i\\,v$.",
+   "what": "$v ::= \\ast \\mid o \\mid \\lambda e \\mid\\ !e \\mid \\langle v_1, v_2\\rangle \\mid \\mathsf{inj}_i\\,v$.",
    "why": "The results of evaluation. A thread that is a value has finished.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\langle \\ast, c^{+}\\rangle$ and $\\mathsf{send}$ are values.",
+   "example": "$\\langle \\ast, c^{+}\\rangle$ and $\\lambda x.\\,\\mathsf{close}\\,x$ are values, $\\mathsf{close}\\,c^{+}$ is not.",
    "rocq": "lang/Syntax.v: is_val",
    "sig": "v \\in \\mathsf{Val} \\subseteq \\mathsf{Expr}",
    "args": [
@@ -2482,6 +2486,48 @@ window.MAP = {
     {
      "name": "v",
      "meaning": "The argument, a value."
+    }
+   ]
+  },
+  "T-Act-Let": {
+   "title": "T-Act-Let-Unit, T-Act-Let-Pair",
+   "what": "A unit elimination of $\\ast$ continues with its body, and a pair elimination of a pair of values substitutes both components.",
+   "why": "The two lets sequence code. The derived one-variable $\\mathsf{let}$ takes one step of each.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\mathsf{let}\\ \\langle a, b\\rangle = \\langle \\ast, c^{+}\\rangle\\ \\mathsf{in}\\ \\mathsf{close}\\,b \\xrightarrow{\\beta} \\mathsf{close}\\,c^{+}$.",
+   "rocq": "lang/Semantics.v: t_act_let_unit, t_act_let_pair",
+   "sig": "\\cdot \\xrightarrow{\\cdot} \\cdot \\subseteq \\mathsf{Expr} \\times \\mathsf{TLabel} \\times \\mathsf{Expr}",
+   "args": [
+    {
+     "name": "e",
+     "meaning": "The body."
+    },
+    {
+     "name": "v_1, v_2",
+     "meaning": "The components of the pair, values."
+    }
+   ]
+  },
+  "T-Act-Case": {
+   "title": "T-Act-Case-Inl, T-Act-Case-Inr",
+   "what": "A case of an injected value continues with the branch of its side, the value substituted for the bound variable.",
+   "why": "The only eliminator of sums. It consumes the result of $\\mathsf{branch}$.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\mathsf{case}\\ (\\mathsf{inj}_1\\,\\ast)\\,(e_1)\\,(e_2) \\xrightarrow{\\beta} e_1[\\ast]$.",
+   "rocq": "lang/Semantics.v: t_act_case_inl, t_act_case_inr",
+   "sig": "\\cdot \\xrightarrow{\\cdot} \\cdot \\subseteq \\mathsf{Expr} \\times \\mathsf{TLabel} \\times \\mathsf{Expr}",
+   "args": [
+    {
+     "name": "v",
+     "meaning": "The injected value."
+    },
+    {
+     "name": "e_1, e_2",
+     "meaning": "The branches, each binding $v$."
+    },
+    {
+     "name": "i",
+     "meaning": "The side of the injection."
     }
    ]
   },

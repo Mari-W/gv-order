@@ -7,19 +7,19 @@ const INTRO = {}, CAP = {}, WHY = {}, EX = {}, SHOWS = {}, LEAD = {};
 
 // ---- syntax ----
 INTRO.syntax = 'Programs are terms of a call-by-value $\\lambda$-calculus with session-typed channels. Terms never mention points. Points appear in types and in the relation, where they order the waits of threads.';
-CAP['syn-terms'] = 'Thirteen term formers with de Bruijn variables. A box $!e$ binds itself in $e$, and $k$ ranges over the constants.';
-WHY['syn-terms'] = 'Typing has one rule per term former, and the semantics one head step per redex.';
+CAP['syn-terms'] = 'Thirteen term formers. A variable $i$ is a de Bruijn index. $\\lambda e$ and each branch of a $\\mathsf{case}$ bind one variable, and $\\mathsf{let}\\ \\langle a, b\\rangle$ binds two, named $a$ and $b$ for the reader. A box $!e$ binds itself in $e$. A constant $k$ always comes with its argument $e$.';
+WHY['syn-terms'] = 'Typing has one rule per term former and one per constant, and the semantics one head step per redex.';
 CAP['syn-let'] = 'The one-variable $\\mathsf{let}$ is notation for a pair followed by a unit elimination, with $u$ fresh.';
 WHY['syn-let'] = 'Examples read better with a one-variable $\\mathsf{let}$. As notation it needs no typing rule of its own.';
-CAP['syn-prims'] = 'The channel operations are constants. $\\mathsf{send}$ takes a pair $\\langle v, o\\rangle$, $\\mathsf{link}$ a pair of ends and $\\mathsf{spawn}$ a thunk.';
-WHY['syn-prims'] = 'As constants applied to values, the channel operations need no syntax of their own, and each has an ordinary function type.';
-CAP['syn-values'] = 'Unit, ends, constants, abstractions and boxes are values, and so are pairs and injections of values.';
+CAP['syn-prims'] = 'The operations on channels, threads and boxes are constants $k$. $\\mathsf{send}$ takes a pair of a value and an end, $\\mathsf{link}$ a pair of ends, $\\mathsf{spawn}$ a thunk and $\\mathsf{force}$ a box.';
+WHY['syn-prims'] = 'One term former $k\\,e$ covers every operation, and each constant has a typing rule of its own.';
+CAP['syn-values'] = 'Unit, ends, abstractions and boxes are values, and so are pairs and injections of values. A constant applied to a value is a redex, never a value.';
 WHY['syn-values'] = 'A thread that is a value has finished. The value relation $V$ is defined on values.';
-CAP['syn-ends'] = 'An end $o$ belongs to the channel $\\mathsf{ech}\\,o$, and $\\overline{o}$ is the other end of that channel.';
+CAP['syn-ends'] = 'A channel $c$ has the two ends $c^{+}$ and $c^{-}$. An end $o$ belongs to the channel $\\mathsf{ech}\\,o$, and $\\overline{o}$ is the other end of that channel.';
 WHY['syn-ends'] = 'Two threads hold the two ends of a channel. Naming ends instead of channels gives each end its own type, point and counter.';
 CAP['syn-fends'] = '$\\mathsf{fends}(e)$ is the set of ends in $e$, and $\\mathsf{fchans}(e)$ the set of their channels.';
 WHY['syn-fends'] = 'The relation reads ownership off terms. A closure or a payload owns exactly the ends in it, and the relation checks this when a value is spawned or sent.';
-CAP['syn-procs'] = 'A process is a finite set $C$ of restricted channels and a finite multiset $E$ of threads. A configuration names its threads by $i \\in \\mathrm{dom}\\,M$.';
+CAP['syn-procs'] = 'A process $p$ is a finite set $C$ of restricted channels and a finite multiset $E$ of threads. A configuration $q$ names its threads by $i \\in \\mathrm{dom}\\,M$, and $\\mathsf{erase}$ forgets the names.';
 WHY['syn-procs'] = 'A running program is a set of threads together with its private channels. A channel is restricted when both of its ends are inside the process.';
 CAP['syn-points'] = 'A point $x$ has a root, a constant $a$ or a variable $\\iota$. $\\overline{x}$ flips its polarity, $x^{+}$ raises its offset, and $x\\cdot\\kappa$ is one of its fields.';
 WHY['syn-points'] = 'Points order the waits of threads. Each end has a point, and a thread may wait at a point only below the points of the ends it still holds.';
@@ -40,9 +40,9 @@ CAP['sem-ctx'] = 'Steps lift through one evaluation frame $f$ at a time, never u
 WHY['sem-ctx'] = 'Evaluation is call by value from left to right. A $\\lambda$ or a box delays its body until it is applied or forced.';
 CAP['sem-proc'] = 'Each rule combines the steps of one or two threads into a step of the configuration $(C, M)$.';
 WHY['sem-proc'] = 'A message pairs a send and a receive on the two ends of one channel. Internal steps involve one thread.';
-CAP['sem-events'] = 'An event records the threads $\\mathsf{parts}(ev)$ that took part in a step, and the channel or ends of the step.';
+CAP['sem-events'] = 'An event $ev$ records the threads $\\mathsf{parts}(ev)$ that took part in a step, and the channel or ends of the step. An event in $\\tau$ makes no offer to the environment, and an administrative event involves one thread and no session action.';
 WHY['sem-events'] = 'Lock freedom is stated in terms of the threads that take part in steps, which the event of each step records.';
-CAP['sem-props'] = 'A process is deadlock free when each reachable process has terminated or can step. \\annp{It has no internal divergence when no reachable process runs internal steps forever. It is lock free when, on each weakly fair maximal run, a waiting thread later takes part in a step.}';
+CAP['sem-props'] = 'A process is deadlock free when each reachable process has terminated or can step. \\annp{It has no internal divergence when no reachable process runs internal steps forever. A run is a sequence of configurations $r$ with the events $l$ between them. The process is lock free when, on each weakly fair maximal run, each thread $t$ that is pending at some position takes part in a later step.}';
 WHY['sem-props'] = 'The theorems establish these properties for typed processes.';
 
 EX['syn-moves'] = 'An end at $x$ that sends twice is at $x^{++}$ afterwards.';

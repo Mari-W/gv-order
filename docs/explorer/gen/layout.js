@@ -69,6 +69,10 @@ function order(sec, ids) {
 }
 const set = (id, f) => f(locate(id)[1]);
 
+// ---- syntax ----
+// ends and constants before the terms that use them, field labels before points
+order('syntax', ['syn-ends', 'syn-prims', 'syn-terms', 'syn-let', 'syn-values', 'syn-fends', 'syn-procs', 'syn-labels', 'syn-points', 'syn-moves', 'syn-csub']);
+
 // ---- types and worlds ----
 set('ty-grammar', b => {
   b.caption = R`$S@x$ is an end at the point $x$. \annp{Credits $a$ sit on ends and on closures, the two places where a value holds ends of its own. The credit of an end bounds its counter from below, and the credit of a closure bounds the captured counters from below and bounds what they lose before a call. Pairs, sums, existentials and payloads carry no credit, their ends carry their own.}`;

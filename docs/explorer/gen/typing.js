@@ -193,8 +193,8 @@ T('r-unit', 'E-Unit', 'static/Typing.v: e_unit; static/Conservativity.v: d_unit'
   rule('E-Unit', UNL, J(R`\Gamma`, R`\Delta`, '', 'F', R`\ast`, R`\ast`, ZERO)),
   '$\\ast$ uses no entry of $\\Delta$.');
 T('r-var', 'E-Var', 'static/Typing.v: e_var; static/Conservativity.v: d_var',
-  rule('E-Var', UNL, J(R`\Gamma`, h('ctx.only', R`\Delta, x : T`), '', 'F', 'x', 'T', ZERO)),
-  '$x$ is the only entry of the context that is not unlimited.');
+  rule('E-Var', UNL, J(R`\Gamma`, h('ctx.only', R`\Delta, i : T`), '', 'F', 'i', 'T', ZERO)),
+  '$i$ is the only entry of the context that is not unlimited.');
 T('r-chan', 'E-Chan', 'static/Typing.v: e_chan; static/Conservativity.v: d_chan',
   rule('E-Chan', UNL, J(R`\Gamma`, h('ctx.only', R`\Delta, o : (S@x)\annot{^{a}}`), '', 'F', 'o', R`(S@x)\annot{^{a}}`, ZERO)),
   'The end $o$ is typed by its own entry.');
