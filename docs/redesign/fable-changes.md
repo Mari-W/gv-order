@@ -132,3 +132,43 @@ definition in `\sym`. The "Also in" chips of the page are going away.
 - `t-subs.why` says the one reason subtyping exists.
 - 21 nested `\inmode{lf}{\inmode{lf}{…}}` collapsed to one level (no change
   in either view).
+
+## Semantic typing
+
+- Section intro says in two sentences what "safe" means.
+- `sr-reading.why` explains how the relation proves the rules (one
+  compatibility lemma per rule, the fundamental theorem as the induction,
+  adequacy off readiness, and when a premise is justified).
+- `sr-ord.why` tells a reader used to natural-number indices that nothing is
+  lost in the deadlock-free view.
+- `ct-costs.why` says why a send is free and a receive costs one.
+- `v-rel`, `e-rel`, `e-obl`, `rd`, `p-rel`, `p-obls`, `fu-vs`, `fu`,
+  `fu-obls`, `fv`, `soup`, `sj-all`: inline links to the types, values, ends,
+  worlds, costs, rules and the blocks that use each relation. `e-obl.why`
+  says that O-New chooses position and facts inside the relation. `rd` gained
+  an example of two threads that cannot both be ready. `p-rel.why` says what
+  fusion saves. `fu.why` says why fuel is separate from the relation.
+- `sj-all`: **the semantic term judgment bound $n$ and used $\alpha$**; the
+  binder is now $\alpha$ in both views. Caption explains the hidden judgment.
+- Cost subscripts $\kappa_{give}$ etc. are set in `\mathrm` (they were read as
+  products of variables), and the two `\text` labels of `fu-obls` are `\textsf`.
+
+## Theorems
+
+- Section intro and all captions now show the deadlock-free sentences in the
+  deadlock-free view (see the check fix above).
+- `th-chain`: lock-free sentences restructured as siblings, "excluded middle"
+  in the deadlock-free sentence replaced by "a classical hypothesis".
+- `th-sound`, `th-compose`, `th-fund-proc`, `th-adeq`, `th-conserv`,
+  `th-terms`: inline links to properties, events, worlds, ranked worlds,
+  semantic judgments, the process relation, fuel, values with fuel, E-App,
+  frames, annotations. `th-adeq.why` sketches the adequacy argument.
+  `th-compose.why` says what fusion buys and points at the flag example.
+
+## Examples
+
+- Each lead now says what the example demonstrates and links the rules and
+  theorems it uses (E-Box/E-Force, E-New, E-New-Field, side conditions, the
+  guard, aging, E-Send, E-Link, P-Term, P-Connect, composition, adequacy,
+  soundness, the join of worlds, `gen_new`, contractivity).
+- `xref-missing` of the merged checker: 0.
