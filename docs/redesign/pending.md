@@ -1,5 +1,139 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, 2026-11-22, deadlock freedom over acyclic worlds
+
+Branch redesign-df in .claude/worktrees/redesign-df, from redesign at
+ea7f8b2, nothing pushed. Commits 3044719 (design copied from
+redesign-fj), 78bc1ce, c9d6103, 29ddb10, d729cec, 5c5075b, 3ea8e07,
+c959378 and the commit of this report. The design is
+docs/redesign/check-df-acyclic.md. No Admitted, no Axiom, no new
+Parameter. No syntactic clause in a relation, no semantic premise in a
+typing rule.
+
+- Worlds (types/Worlds.v). One record `world` with roots, a strict
+  order `w_ord` on the rooted points that contains program order, and a
+  kind `w_rk : option (point → rank_ord)`. A strict world
+  (`wstrict`, `w_rk = None`) is an arbitrary strict partial order. A
+  ranked world (`wranked`) carries ranks that give its order. Extension
+  `⊑` asks inclusion of roots and order and keeps the kind, and at a
+  ranked world every rank. So a world and its extensions have one kind,
+  and the relation, which quantifies over extensions only, is the
+  relation of that kind. This is the `WorldKind` parameter of the
+  design as a field of the world instead of a type class. It needs no
+  `Context` line in the 40 files that read worlds, and no proof of
+  relation/, compat/ (but Redex.v), cost/ or fuel/ changed. The three
+  instances are κ_DF and κ_L at strict worlds and κ_L at ranked worlds.
+  `w_lt_wf` and `wchain_lt_wf` take a ranked world. `wstrict_of` and
+  `dmodels_exists` model an acyclic static world by itself, with no
+  rank. `wmodels_exists` now also says the model is ranked.
+- Static side.
+  - static/Contexts.v. `cbridge`, `acyc_new` (section 2.2 of the
+    design), `new_ok N` and `wok N` switched on N, Lemma C
+    (`gen_new_acyc`, constructive), `wf_new_acyc`, `new_ok_acyc`,
+    `wok_acyc`, `swf_wok`, the wrapper `swf_ok_wok` and `sw_empty_wok`.
+  - types/Worlds.v. `sacyc`, `swf_sacyc`, `sacyc_mono` and
+    `acyc_join_iff` (with `join_split`, about 50 lines, constructive).
+  - static/Typing.v. E-New asks `new_ok N`, P-Term and both P-Connects
+    ask `wok N`. `fptyped_wf` and `ptyped_wf` return `wok N`
+    (`wok_join_iff`, `swrestrict_wok`).
+  - Followers. static/Consts.v (`acyc_new_ren`, `new_ok_ren`,
+    `sacyc_ren`, `wok_ren`), static/Hiding.v (`wok_sub`,
+    `connect_hidden` takes N), static/Inversion.v,
+    static/Conservativity.v (`d_new_acyc`, `d_new` through Lemma C,
+    the E-New case of `typed_dftyped` through `new_ok_acyc`),
+    static/ConnectN.v, static/PointSubst.v (`tree_ends`,
+    `slt_open_out_te`, `cons_tree`, the opening of an existential whose
+    facts end in the new tree is conservative without (wf-new)).
+- Soundness.
+  - compat/Redex.v. `Erel_new_acyc` is Proposition A, constructive. The
+    world of a creation is the transitive closure of the old order, the
+    facts of C at the fresh root and program order (`aw_W`).
+    Irreflexivity goes through the invariant `aw_inv`, which records a
+    chain by where its ends lie and collapses every bridge with
+    (acyc-new)(ii). `Erel_new` keeps its proof at ranked worlds.
+    `Erel_new_any` dispatches on the kind and takes excluded middle only
+    at a ranked world.
+  - compat/LiveRules.v. `later_new` asks `new_sem` and
+    `wranked W → excluded_middle`.
+  - static/Fundamental.v. `typed_sem` loses its EM hypothesis and reads
+    worlds with `wfit N W`, a strict world, or a ranked one at a finite N
+    under excluded middle. `acyc_new_sem_of`, `new_sem_of`.
+    `fundamental`, `fundamental_typed`, `live_fundamental`,
+    `live_fundamental_typed` take `wstrict R` and no EM. New
+    `live_fundamental_ranked` (EM) reads a derivation at `Some N` at any
+    world, and `sem_later_df`.
+  - static/FundamentalProc.v. `fundamental_proc`,
+    `live_fundamental_proc`, `soundness`, `live_soundness`,
+    `soundness_source` (now `sacyc W`), `fundamental_proc_h`,
+    `live_fundamental_proc_h`, `soundness_h`, `live_soundness_h`,
+    `adequacy_h`, `live_adequacy_h` take no EM. `sem_ptyped_sw` reads
+    strict worlds, `sem_ptyped_h` an acyclic whole world.
+    static/ConnectN.v. `connect_n_soundness` and
+    `connect_n_live_soundness` take `sacyc` and no EM.
+  - Lock-free side. `lf_sems` reads ranked worlds. `typed_live` and
+    `lf_p_term` call `live_fundamental_ranked` on the derivation at
+    `Some N`, no erasure. soup/LFAdequacy.v threads `wranked W`
+    (`wk_ranked`), `lf_adequacy` and `lf_thread_progress` take it. The
+    LF results keep EM and functional choice as before.
+  - `live_sub_df` compiled unchanged. The universe question of section
+    2.3 does not arise.
+- Examples.
+  - Recursive fork-join with replies (examples/ForkJoin.v, `fjr_acyc`,
+    `fjr_dftyped`, `fjr_term`, `fjr_deadlock_free`). The worker is a box
+    that forces itself through its box variable at (ι·0)‾ and (ι·1)‾.
+    The box hypothesis is F(ι) with F((ι·w)‾) for every nonempty word w
+    (`fjH`), closed under the descent (`fjH_desc`). main creates w with
+    the laws H(ρ‾), which hold the infinite chain ρ ≻ ρ·0 ≻ …. (acyc-new)
+    holds by the order offset, then polarity, then depth reversed. The
+    language has no numbers, so the worker has no base case and never
+    replies. The derivation reads no data, so a base case by a case
+    split would not change it.
+  - Padovani's fact (`fa_acyc`, `fct_dftyped`, `fct_deadlock_free`) and
+    fibo (`fb_acyc`, `fib_dftyped`, `fib_deadlock_free`), with unit
+    payloads and no case split, for the same reason. fibo forces one box
+    at two instances. fact orders by depth reversed, then offset, fibo
+    by depth reversed, then the last field, then offset.
+  - The rejections stay. `ring_rejected` and `ring_rejected_full` of
+    Ring.v and of Copycat.v, `sbv_rejected`, and the new `cyc2_rejected`
+    and `cyc2_rejected_h` (the two-channel cycle, examples/Ring.v,
+    through soundness). `opposite_clash` and `ring_cyclic` now state
+    `¬ sacyc`, a stronger rejection.
+  - Every DF example theorem lost its EM hypothesis: `fj_deadlock_free`,
+    `opposite_df`, `ring_df`, `ring_rejected`, `ring_rejected_full`,
+    `sb_deadlock_free`, `sbv_deadlock_free`, `tt_deadlock_free`,
+    `tu_deadlock_free`, `te_deadlock_free`,
+    `fwd_config_deadlock_free`, `fwdh_config_deadlock_free`, `fwdp_sem`
+    (now with `wstrict R`). The others build through `swf_ok_wok`,
+    `swf_wok`, `swf_sacyc` and `sw_empty_wok`. Copycat's
+    `cut_W_f_swf` and `cut_W_p_swf` became `cut_W_f_wok` and
+    `cut_W_p_wok`.
+  - test/GuardNotations.expected and test/SoupNotations.expected are
+    regenerated, for the new statements of `live_fundamental`,
+    `live_soundness_h`, `lf_adequacy` and `lf_thread_progress`.
+- Not done.
+  - The process-level erasure `fptyped (Some N) → fptyped None`. It
+    needs the ticket bookkeeping of `tenv_of (fhalf N)` against
+    `tenv_df`. No result uses it. Lemma C and `swf_wok` give the two
+    premise cases.
+  - `cons_acyc`, conservativity of the opening of an arbitrary
+    (acyc-new) existential with exits, the analogue of `cons_gen`. The
+    examples need only `cons_tree`.
+  - Comments in relation/Readiness.v, relation/Relation.v and
+    compat/*.v that say "ranked world" where the world is now of either
+    kind.
+- Laptop, build of c959378 from a clean tree. `make` exit 0,
+  `make test` passes, `make check` 210 of 210 (198 before, plus four
+  for fork-join, three for fact, three for fibo, two for the cycle).
+- Map changes for the audit (docs/explorer not edited). Worlds are
+  strict partial orders with a kind, ranked only for the lock-free
+  threads. E-New at N = ∞ asks (acyc-new), with bridges, at a finite N
+  (gen-new). P-Term and P-Connect ask acyclic worlds at N = ∞. Lemma C.
+  Proposition A as `Erel_new_acyc`. DF soundness, live soundness,
+  hidden and n-ary soundness without excluded middle. `lf_p_term`
+  through `live_fundamental_ranked`. `soundness_source` asks `sacyc`.
+  New examples fork-join, fact, fibo, two-channel cycle.
+  `opposite_clash` and `ring_cyclic` state `¬ sacyc`.
+
 ## Report, 2026-11-22, merge of redesign-clean3, redesign-fwd and redesign-fj
 
 Branch redesign, from 3b237a1, nothing pushed. Commits 0f9f260 (merge of
