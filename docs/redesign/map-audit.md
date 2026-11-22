@@ -660,3 +660,49 @@ every/any/all, 1 pronoun ending, 17 sentences over 35 words. The rise from 6
 is an artifact of lint-map, which removes `\annp{` but keeps the closing
 brace, so it no longer splits sentences at a lock-free sentence boundary.
 Screenshots of theorems and examples in both views checked.
+
+## Phase C, 2026-11-22: the map as a proof map
+
+The map is one JSON file, `docs/explorer/map.json`, in the proof-map/1 format of
+`tools/proof-map` (merged from branch mapkit). The proof-map page renders it, with
+`docs/explorer/index.html` a link to `tools/proof-map/page/index.html`. The private extension in
+`docs/explorer/ext/` adds the DF/LF checks and the verdict badges, and `serve.sh` serves the new
+page. `docs/explorer/check.sh` runs every check in one command, and `MAP-SKILL.md` says how to
+edit the map and run the check.
+
+`gen/*.js`, their last `data.js` and the old page moved to `docs/explorer/attic/`, next to the
+one-time `migrate.js` and `compare.js`. Nothing reads the attic.
+
+Mechanical changes on top of the conversion, all made by `attic/migrate.js`:
+
+- `sr-reading`, `fu-vs` and `soup` are native tables. Each `\text{..}` of a cell became a
+  sentence with the math in `$..$`. In `soup` the words "for each thread $t$ running $e$," moved
+  from the end of the formula cell to the empty comment column of the same row. The row spacing
+  `\\[3ex]` of the old arrays is gone.
+- 52 notes carry a `renamed` deviation (one `merged`, `fu.Phi`) with a one-line reason, in place of
+  the rename-undeclared warnings. No display name changed.
+- `ct-costs` introduces `\kappa_{DF}` and `\kappa_L`. The checker reads such a name as one symbol,
+  which removes the seven var-before-intro warnings on $D$, $F$ and $L$.
+- Four note fields wrote `W\^{\prime}`, which MathJax rejects. They read `W^{\prime}` now.
+
+The base gained tables with cells, a head row, alignment and rows of one mode, hovers inside the
+math of prose, a MathJax check of prose, arguments and table cells (undefined macros count as
+errors), a cleaner theme and a wider layout, highlighting of operators and capitalised names, a
+page event hook, zoom in `shoot.sh`, and a page test up to 2560 CSS pixels.
+
+`attic/compare.js` compares the old `data.js` with `map.json` mode by mode: 9843 fields, 128
+block views, 571 notes and 26 examples in both modes, hover keys, coloured parts and 3042 words of
+Rocq citations. It finds 0 differences, besides the 8 intended `W^{\prime}` fixes and the 52 added
+deviations.
+
+| step | before errors | before warnings | after errors | after warnings |
+|---|---|---|---|---|
+| 1 schema | 0 | 0 | 0 | 0 |
+| 2 proof-map | 0 | 122 | 0 | 12 |
+| 3 DF-LEAK | 0 | 0 | 0 | 0 |
+| 4 writing | 0 | 334 | 0 | 336 |
+| 5 MathJax | 14 | 0 | 0 | 0 |
+
+Left for the content pass: 310 every/any/all, 16 sentences over 35 words, 9 metaphors, 1 pronoun
+ending, 10 bare words (`Connect`, `give`, `take`, …), and `\text{F-Wait}`, `\text{F-Count}` in
+`fu-obls`, rule names set in `\text`.
