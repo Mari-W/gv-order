@@ -1,5 +1,6 @@
 #!/bin/sh
 # Serve the relation map on localhost at a free random port and open it.
+# index.html is the proof-map page (a link to tools/proof-map/page/index.html), which reads map.json.
 # Usage: docs/explorer/serve.sh   (Ctrl-C stops the server)
 cd "$(dirname "$0")" || exit 1
 exec python3 - <<'EOF'
@@ -19,11 +20,12 @@ def free_port():
 import os
 
 class Handler(http.server.SimpleHTTPRequestHandler):
-    # GET /version answers the modification times of the page and its data;
+    # GET /__version answers the modification times of the page, the map and its extensions;
     # the page polls it and reloads itself when they change.
     def do_GET(self):
-        if self.path.rstrip("/").endswith("/version"):
-            v = ",".join(str(os.stat(f).st_mtime_ns) for f in ("explorer.html", "index.html", "data.js"))
+        if self.path.split("?")[0].rstrip("/").endswith("/__version"):
+            files = ["index.html", "map.json"] + ["ext/" + f for f in sorted(os.listdir("ext"))]
+            v = ",".join(str(os.stat(f).st_mtime_ns) for f in files)
             body = v.encode()
             self.send_response(200)
             self.send_header("Content-Type", "text/plain")
@@ -53,13 +55,18 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
         else:
             self.send_error(404)
+    def end_headers(self):
+        if not self.path.split("?")[0].rstrip("/").endswith("/__version"):
+            self.send_header("Cache-Control", "no-store")
+        super().end_headers()
+
     def log_message(self, *a):
         pass
 
 port = free_port()
 handler = functools.partial(Handler, directory=".")
 with socketserver.TCPServer(("127.0.0.1", port), handler) as httpd:
-    url = f"http://127.0.0.1:{port}/explorer.html"
+    url = f"http://127.0.0.1:{port}/index.html"
     print(f"Relation map at {url}  (Ctrl-C to stop)", flush=True)
     try:
         webbrowser.open(url)
