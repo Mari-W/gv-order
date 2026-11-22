@@ -851,8 +851,8 @@
     {
      "id": "t-contexts",
      "title": "Contexts and the fact theory",
-     "formula": "\\begin{array}{l}\\sym{tj.Delta}{\\Delta : o \\mapsto \\sym{ty.sess}{S_x\\inmode{lf}{^{a,m}}},\\ i \\mapsto T} \\qquad \\sym{ctx.lsplit}{\\Delta = \\Delta_1, \\Delta_2} \\\\ \\sym{tj.Gamma}{\\Gamma = \\sym{ctx.hyps}{(C, \\bar x)^{*}}} \\qquad \\sym{ctx.slt}{\\Gamma \\vdash x \\prec y} \\\\ \\sym{tj.F}{F = (X, \\sym{ctx.fvarF}{{\\uparrow}u \\mid {\\uparrow}} \\mid \\sym{ctx.bot}{\\bot})}\\end{array}",
-     "caption": "The rules read order facts only through $\\Gamma \\vdash x \\prec y$, the least transitive relation containing $\\prec_W$ of [[w-order]] and the facts $C[\\bar x]$ of the instances in $\\Gamma$. $\\Delta$ maps [[syn-ends|ends]] to end types and variables to types, and a split $\\Delta = \\Delta_1, \\Delta_2$ gives each end to one side. The future $F$ is a set $X$ of points with a rest, everything above a point $u$ or everything, or the flag $\\bot$.",
+     "formula": "\\begin{array}{l}\\sym{tj.Delta}{\\Delta : o \\mapsto \\sym{ty.sess}{S_x\\inmode{lf}{^{a,m}}},\\ i \\mapsto T} \\qquad \\sym{ctx.lsplit}{\\Delta = \\Delta_1, \\Delta_2} \\\\ \\sym{tj.Gamma}{\\Gamma = \\sym{ctx.hyps}{(C, \\bar x)^{*}}} \\qquad \\sym{ctx.slt}{\\Gamma \\vdash x \\prec y} \\\\ \\sym{tj.F}{F = (X, \\sym{ctx.fvarF}{{\\uparrow}u \\mid {\\uparrow}})}\\end{array}",
+     "caption": "The rules read order facts only through $\\Gamma \\vdash x \\prec y$, the least transitive relation containing $\\prec_W$ of [[w-order]] and the facts $C[\\bar x]$ of the instances in $\\Gamma$. $\\Delta$ maps [[syn-ends|ends]] to end types and variables to types, and a split $\\Delta = \\Delta_1, \\Delta_2$ gives each end to one side. The future $F$ is a set $X$ of points with a rest, everything above a point $u$ or everything. When the context holds an end at a point unknown to the term, the rest is everything, which forbids each session action.",
      "why": "The rules split $\\Delta$ between subterms and extend $\\Gamma$ under boxes and existentials. A fact enters $\\Gamma$ only through a world or an opened constraint, so the facts a derivation uses are exactly the facts the semantic judgment is read at.",
      "source": [
       {
@@ -878,7 +878,7 @@
     {
      "id": "t-side",
      "title": "Side conditions on points",
-     "formula": "\\begin{array}{l}\\sym{side.ub}{u \\prec F \\iff (\\forall y \\in X.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} u \\prec y) \\land (F = (X, {\\uparrow}v) \\Rightarrow \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} u \\preccurlyeq v) \\land F \\neq (X, {\\uparrow}) \\land F \\neq (X, \\bot)} \\\\ \\sym{side.top}{\\top \\prec F \\iff F = (\\varnothing, \\cdot)} \\qquad \\sym{E-Send.heads}{x \\prec T \\iff \\forall y \\in \\sym{ty.heads}{\\mathsf{ap}}(T).\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} x \\prec y} \\qquad \\sym{side.lb}{l \\preccurlyeq \\Delta \\iff \\forall y \\in \\sym{ty.heads}{\\mathsf{ap}}(\\Delta).\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} l \\preccurlyeq y} \\qquad \\sym{side.hold}{\\Gamma \\vdash C[\\bar x]}\\end{array}",
+     "formula": "\\begin{array}{l}\\sym{side.ub}{u \\prec F \\iff (\\forall y \\in X.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} u \\prec y) \\land (F = (X, {\\uparrow}v) \\Rightarrow \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} u \\preccurlyeq v) \\land F \\neq (X, {\\uparrow})} \\\\ \\sym{side.top}{\\top \\prec F \\iff F = (\\varnothing, \\cdot)} \\qquad \\sym{E-Send.heads}{x \\prec T \\iff \\forall y \\in \\sym{ty.heads}{\\mathsf{ap}}(T).\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} x \\prec y} \\qquad \\sym{side.lb}{l \\preccurlyeq \\Delta \\iff \\forall y \\in \\sym{ty.heads}{\\mathsf{ap}}(\\Delta).\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} l \\preccurlyeq y} \\qquad \\sym{side.hold}{\\Gamma \\vdash C[\\bar x]}\\end{array}",
      "caption": "$u \\prec F$ says that $u$ lies below the [[syn-points|points]] of $F$. $x \\prec T$ says that $x$ lies below the dual points $\\mathsf{ap}(T)$ of the ends in $T$, defined in [[ty-heads]]. $l \\preccurlyeq \\Delta$ says that $l$ lies at or below the dual points of $\\Delta$, and $\\Gamma \\vdash C[\\bar x]$ that the facts of $C$ at $\\bar x$ are derivable in the [[t-contexts|order judgment]].",
      "why": "These are the order checks of typing. A term never waits above a point at which its context acts later, and a thread waits only below the dual points of the values it holds. The [[r-act|actions]], [[r-fun|calls]], [[r-boxes|forces]] and [[r-ex|packs]] use these checks.",
      "breaks": "Without them the type system is plain GV, and the cycle of two threads closing two channels in opposite orders types.",
@@ -2274,11 +2274,11 @@
     {
      "id": "sj-all",
      "title": "Semantic judgments",
-     "formula": "\\begin{array}{c}\\begin{array}{l}\n\\sym{sj.at}{\\Delta \\mathrel{\\sym{sj.term}{\\vDash[\\kappa]}}^{X}_R e : T \\iff \\forall \\alpha, R' \\mathrel{\\sym{w.ext}{\\sqsupseteq}} R, \\Theta', \\gamma.\\ \\sym{sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\sym{sj.at}{\\sym{sj.grel}{\\gamma \\in G[\\kappa]^{R'}_{\\alpha}\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\sym{th.Erel}{E[\\kappa]^{R'}_{\\alpha}\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\sym{sj.term}{\\Delta \\vDash[\\kappa]^{F}_R e : T \\iff \\forall Y, Z.\\ \\Delta \\vDash[\\kappa]^{\\sym{sj.den}{\\mathsf{den}_{Y,Z}(F)}}_R e : T} \\\\\n\\sym{sj.proc}{\\Sigma \\vDash[\\kappa]_R p : T \\iff \\forall \\alpha.\\ p \\in \\sym{th.Prel}{P[\\kappa]^{R}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket}} \\\\\n\\sym{sj.sw}{\\Sigma \\vDash[\\kappa]_W p : T \\iff \\forall R \\vDash W.\\ \\sym{w.strict}{\\mathsf{strict}}\\,R \\Rightarrow \\Sigma \\vDash[\\kappa]_R p : T} \\\\\n\\sym{sj.h}{\\Sigma \\vDash[\\kappa]^{h}_W p : T \\iff \\exists W'.\\ \\sym{w.wf}{\\mathsf{world\\_wf}}\\,W' \\land \\sym{w.acyc}{\\mathsf{acyc}}\\,W' \\land \\sym{sj.hides}{W' \\rightsquigarrow_{\\sym{tp.iface}{\\mathsf{I}(\\Sigma, T)}} W} \\land \\Sigma \\vDash[\\kappa]_{W'} p : T}\n\\end{array}\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\begin{array}{l}\n\\sym{sp.lfsemh}{\\Sigma \\Vvdash^{N,h}_W p : T \\iff \\exists W'.\\ \\mathsf{world\\_wf}\\,W' \\land \\sym{w.lfworld}{\\mathsf{wf}}\\,W' \\land \\sym{sj.hides}{W' \\rightsquigarrow_{\\mathsf{I}(\\Sigma, T)} W} \\land \\Sigma \\Vvdash\\inmode{lf}{^{N}}_{W'} p : T} \\\\\n\\sym{sp.lfsem}{\\Sigma \\Vvdash\\inmode{lf}{^{N}}_W p : T \\iff \\sym{sp.exists-before-forall}{\\sym{sp.allR}{\\forall R \\vDash W.\\ \\sym{w.kind}{\\mathsf{ranked}}\\,R} \\Rightarrow \\forall \\alpha.\\ \\exists a.\\ \\sym{proc.erase}{\\mathsf{erase}}(\\sym{th.qa}{q_a}) = p} \\land a \\in \\sym{th.soup}{S^{N,R}_\\alpha\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}}\\end{array}",
+     "formula": "\\begin{array}{c}\\begin{array}{l}\n\\sym{sj.at}{\\Delta \\mathrel{\\sym{sj.term}{\\vDash[\\kappa]}}^{X}_R e : T \\iff \\forall \\alpha, R' \\mathrel{\\sym{w.ext}{\\sqsupseteq}} R, \\Theta', \\gamma.\\ \\sym{sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\sym{sj.at}{\\sym{sj.grel}{\\gamma \\in G[\\kappa]^{R'}_{\\alpha}\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\sym{th.Erel}{E[\\kappa]^{R'}_{\\alpha}\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\sym{sj.term}{\\Delta \\vDash[\\kappa]^{F}_R e : T \\iff \\forall Y.\\ \\Delta \\vDash[\\kappa]^{\\sym{sj.den}{\\mathsf{den}_{Y}(F)}}_R e : T} \\\\\n\\sym{sj.proc}{\\Sigma \\vDash[\\kappa]_R p : T \\iff \\forall \\alpha.\\ p \\in \\sym{th.Prel}{P[\\kappa]^{R}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket}} \\\\\n\\sym{sj.sw}{\\Sigma \\vDash[\\kappa]_W p : T \\iff \\forall R \\vDash W.\\ \\sym{w.strict}{\\mathsf{strict}}\\,R \\Rightarrow \\Sigma \\vDash[\\kappa]_R p : T} \\\\\n\\sym{sj.h}{\\Sigma \\vDash[\\kappa]^{h}_W p : T \\iff \\exists W'.\\ \\sym{w.wf}{\\mathsf{world\\_wf}}\\,W' \\land \\sym{w.acyc}{\\mathsf{acyc}}\\,W' \\land \\sym{sj.hides}{W' \\rightsquigarrow_{\\sym{tp.iface}{\\mathsf{I}(\\Sigma, T)}} W} \\land \\Sigma \\vDash[\\kappa]_{W'} p : T}\n\\end{array}\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\begin{array}{l}\n\\sym{sp.lfsemh}{\\Sigma \\Vvdash^{N,h}_W p : T \\iff \\exists W'.\\ \\mathsf{world\\_wf}\\,W' \\land \\sym{w.lfworld}{\\mathsf{wf}}\\,W' \\land \\sym{sj.hides}{W' \\rightsquigarrow_{\\mathsf{I}(\\Sigma, T)} W} \\land \\Sigma \\Vvdash\\inmode{lf}{^{N}}_{W'} p : T} \\\\\n\\sym{sp.lfsem}{\\Sigma \\Vvdash\\inmode{lf}{^{N}}_W p : T \\iff \\sym{sp.exists-before-forall}{\\sym{sp.allR}{\\forall R \\vDash W.\\ \\sym{w.kind}{\\mathsf{ranked}}\\,R} \\Rightarrow \\forall \\alpha.\\ \\exists a.\\ \\sym{proc.erase}{\\mathsf{erase}}(\\sym{th.qa}{q_a}) = p} \\land a \\in \\sym{th.soup}{S^{N,R}_\\alpha\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}}\\end{array}",
      "variants": {
-      "df": "\\begin{array}{c}\\begin{array}{l}\n\\sym{sj.at}{\\Delta \\mathrel{\\sym{sj.term}{\\vDash}}^{X}_R e : T \\iff \\forall \\alpha, R' \\mathrel{\\sym{w.ext}{\\sqsupseteq}} R, \\Theta', \\gamma.\\ \\sym{sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\sym{sj.at}{\\sym{sj.grel}{\\gamma \\in G^{R'}_{\\alpha}\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\sym{th.Erel}{E^{R'}_{\\alpha}\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\sym{sj.term}{\\Delta \\vDash^{F}_R e : T \\iff \\forall Y, Z.\\ \\Delta \\vDash^{\\sym{sj.den}{\\mathsf{den}_{Y,Z}(F)}}_R e : T} \\\\\n\\sym{sj.proc}{\\Sigma \\vDash_R p : T \\iff \\forall \\alpha.\\ p \\in \\sym{th.Prel}{P^{R}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket}} \\\\\n\\sym{sj.sw}{\\Sigma \\vDash_W p : T \\iff \\forall R \\vDash W.\\ \\sym{w.strict}{\\mathsf{strict}}\\,R \\Rightarrow \\Sigma \\vDash_R p : T} \\\\\n\\sym{sj.h}{\\Sigma \\vDash^{h}_W p : T \\iff \\exists W'.\\ \\sym{w.wf}{\\mathsf{world\\_wf}}\\,W' \\land \\sym{w.acyc}{\\mathsf{acyc}}\\,W' \\land \\sym{sj.hides}{W' \\rightsquigarrow_{\\sym{tp.iface}{\\mathsf{I}(\\Sigma, T)}} W} \\land \\Sigma \\vDash_{W'} p : T}\n\\end{array}\\end{array}"
+      "df": "\\begin{array}{c}\\begin{array}{l}\n\\sym{sj.at}{\\Delta \\mathrel{\\sym{sj.term}{\\vDash}}^{X}_R e : T \\iff \\forall \\alpha, R' \\mathrel{\\sym{w.ext}{\\sqsupseteq}} R, \\Theta', \\gamma.\\ \\sym{sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\sym{sj.at}{\\sym{sj.grel}{\\gamma \\in G^{R'}_{\\alpha}\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\sym{th.Erel}{E^{R'}_{\\alpha}\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\sym{sj.term}{\\Delta \\vDash^{F}_R e : T \\iff \\forall Y.\\ \\Delta \\vDash^{\\sym{sj.den}{\\mathsf{den}_{Y}(F)}}_R e : T} \\\\\n\\sym{sj.proc}{\\Sigma \\vDash_R p : T \\iff \\forall \\alpha.\\ p \\in \\sym{th.Prel}{P^{R}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket}} \\\\\n\\sym{sj.sw}{\\Sigma \\vDash_W p : T \\iff \\forall R \\vDash W.\\ \\sym{w.strict}{\\mathsf{strict}}\\,R \\Rightarrow \\Sigma \\vDash_R p : T} \\\\\n\\sym{sj.h}{\\Sigma \\vDash^{h}_W p : T \\iff \\exists W'.\\ \\sym{w.wf}{\\mathsf{world\\_wf}}\\,W' \\land \\sym{w.acyc}{\\mathsf{acyc}}\\,W' \\land \\sym{sj.hides}{W' \\rightsquigarrow_{\\sym{tp.iface}{\\mathsf{I}(\\Sigma, T)}} W} \\land \\Sigma \\vDash_{W'} p : T}\n\\end{array}\\end{array}"
      },
-     "caption": "The semantic judgments quantify over ordinal indices, larger worlds and substitutions, and read the static future at each of its denotations. A term is in the [[e-rel|term relation]] under each grounding $\\gamma$ of its variables, and a process in the [[p-rel|process relation]] at each index. A semantic judgment at a static world $W$ holds at each world of the relation that models $W$, a strict one for deadlock freedom. The hidden judgment $\\vDash^{h}_W$ asks some acyclic whole world that hides to $W$, the form the fundamental theorem for processes concludes. \\inmode{lf}{The lock-free judgment at the bound $N$ holds at each ranked world that models $W$ and chooses the annotated configuration of the [[soup|lock-free process relation]] at each index. The creation choice of each channel is an existential inside O-New.} A grounding $\\gamma$ in the relation $G$ on contexts substitutes values for the variables of $\\Delta$, and the sets $Y$ and $Z$ denote the rest and the flag $\\bot$ of a future.",
+     "caption": "The semantic judgments quantify over ordinal indices, larger worlds and substitutions, and read the static future at each of its denotations. A term is in the [[e-rel|term relation]] under each grounding $\\gamma$ of its variables, and a process in the [[p-rel|process relation]] at each index. A semantic judgment at a static world $W$ holds at each world of the relation that models $W$, a strict one for deadlock freedom. The hidden judgment $\\vDash^{h}_W$ asks some acyclic whole world that hides to $W$, the form the fundamental theorem for processes concludes. \\inmode{lf}{The lock-free judgment at the bound $N$ holds at each ranked world that models $W$ and chooses the annotated configuration of the [[soup|lock-free process relation]] at each index. The creation choice of each channel is an existential inside O-New.} A grounding $\\gamma$ in the relation $G$ on contexts substitutes values for the variables of $\\Delta$, and the set $Y$ denotes the rest of a future.",
      "why": "The fundamental theorems conclude the semantic judgments, and adequacy takes a semantic judgment as its premise. The judgment at a static world is what makes a component reusable. It holds at each model of the world, so a component composed with another is read at the joined model.",
      "source": [
       {
@@ -7916,7 +7916,7 @@
    "args": [
     {
      "name": "F \\cup \\mathsf{ap}(H)",
-     "meaning": "$F$ with the dual points of the ends in $H$ added, and the flag $\\bot$ added when $H$ holds an unopened existential at $\\bot$"
+     "meaning": "$F$ with the dual points of the ends in $H$ added, and the rest ${\\uparrow}$ in place of the rest of $F$ when $H$ holds an unopened existential at $\\bot$"
     },
     {
      "name": "H",
@@ -8054,11 +8054,11 @@
   },
   "tj.F": {
    "title": "The future $F$",
-   "meaning": "$F = (X, {\\uparrow}u)$, $(X, {\\uparrow})$, $(X, \\bot)$ or $(X, \\cdot)$ with $X$ the points the context acts at after the term. ${\\uparrow}u$ is the unknown rest above a known point $u$, ${\\uparrow}$ an unknown rest with no bound, and $\\bot$ a rest at hidden points.",
+   "meaning": "$F = (X, {\\uparrow}u)$, $(X, {\\uparrow})$ or $(X, \\cdot)$ with $X$ the points the context acts at after the term. ${\\uparrow}u$ is the unknown rest above a known point $u$, ${\\uparrow}$ an unknown rest with no bound. ${\\uparrow}$ is also the rest when the context holds ends at hidden points.",
    "why": "Each action at $x$ asks $x \\prec F$. Hence a term never waits at a point above a point at which its own context still acts.",
    "breaks": "Without $F$ the thread $\\mathsf{let}\\ \\ast = \\mathsf{close}\\,c\\ \\mathsf{in}\\ \\mathsf{close}\\,d$ types for each placement of $c$ and $d$, and beside a partner that closes $d$ before $c$ both threads wait forever.",
    "example": "$e_1$ of E-App runs under $F \\cup \\mathsf{ap}(\\Delta_2)$.",
-   "signature": "F : \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Pt}) \\times (\\{{\\uparrow}u \\mid u \\in \\mathsf{Pt}\\} + \\{{\\uparrow}, \\bot, \\cdot\\})",
+   "signature": "F : \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Pt}) \\times (\\{{\\uparrow}u \\mid u \\in \\mathsf{Pt}\\} + \\{{\\uparrow}, \\cdot\\})",
    "args": [
     {
      "name": "X",
@@ -8236,33 +8236,6 @@
     }
    ]
   },
-  "ctx.bot": {
-   "title": "The flag $\\bot$ in $F$",
-   "meaning": "$\\bot$ states that the context holds ends at points unknown to the term, which then performs no session action.",
-   "why": "Each action asks $u \\prec F$, which requires $F$ to have no $\\bot$. No point is known to lie below a hidden point, so an action under $\\bot$ could wait above the hidden point.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$e_1$ beside a context that holds an unopened $\\exists^{\\bot}$.",
-   "signature": "F = (X, \\bot)",
-   "args": [
-    {
-     "name": "\\bot",
-     "meaning": "the flag that some held end of the context has a point unknown to the term"
-    },
-    {
-     "name": "X",
-     "meaning": "the known points of the future"
-    }
-   ],
-   "source": [
-    {
-     "file": "static/Contexts.v",
-     "names": [
-      "FBot",
-      "fs_bot"
-     ]
-    }
-   ]
-  },
   "ctx.slt": {
    "title": "$\\Gamma \\vdash x \\prec y$",
    "meaning": "The least transitive relation containing $\\prec_W$ and the facts $C[\\bar x]$ of the instances $(C, \\bar x)$ in $\\Gamma$.",
@@ -8405,11 +8378,11 @@
   },
   "side.ub": {
    "title": "$u \\prec F$",
-   "meaning": "$u \\prec F \\iff (\\forall y \\in X.\\ \\Gamma \\vdash u \\prec y) \\land (F = (X, {\\uparrow}v) \\Rightarrow \\Gamma \\vdash u \\preccurlyeq v)$, and $F$ has neither the rest ${\\uparrow}$ nor $\\bot$, true for absent $u$.",
+   "meaning": "$u \\prec F \\iff (\\forall y \\in X.\\ \\Gamma \\vdash u \\prec y) \\land (F = (X, {\\uparrow}v) \\Rightarrow \\Gamma \\vdash u \\preccurlyeq v)$, and the rest of $F$ is not ${\\uparrow}$, true for absent $u$.",
    "why": "It is the condition $x \\prec F$ of an action, stated for the upper point $u$ up to which a callee may wait.",
    "breaks": "Nothing. It is a definition.",
    "example": "E-App asks $u \\prec F$ of the upper point $u$ of the closure.",
-   "signature": "u \\prec F \\iff (\\forall y \\in X.\\ \\Gamma \\vdash u \\prec y) \\land (F = (X, {\\uparrow}v) \\Rightarrow \\Gamma \\vdash u \\preccurlyeq v) \\land F \\neq (X, {\\uparrow}) \\land F \\neq (X, \\bot)",
+   "signature": "u \\prec F \\iff (\\forall y \\in X.\\ \\Gamma \\vdash u \\prec y) \\land (F = (X, {\\uparrow}v) \\Rightarrow \\Gamma \\vdash u \\preccurlyeq v) \\land F \\neq (X, {\\uparrow})",
    "args": [
     {
      "name": "u",
@@ -14789,20 +14762,16 @@
    ]
   },
   "sj.den": {
-   "title": "$\\mathsf{den}_{Y,Z}(F)$",
-   "meaning": "$\\mathsf{den}_{Y,Z}(F_1, f) = F_1 \\cup Y \\cup Z$, with $Y$ only if $f$ has a rest and $Z$ only if $f$ has the flag $\\bot$. For the rest $ {\\uparrow}u$ each point of $Y$ lies above $u$.",
-   "why": "The rest and the flag $\\bot$ stand for unknown sets of points, so the judgment holds at each choice of these sets.",
+   "title": "$\\mathsf{den}_{Y}(F)$",
+   "meaning": "$\\mathsf{den}_{Y}(F_1, f) = F_1 \\cup Y$, with $Y$ only if $f$ has a rest. For the rest $ {\\uparrow}u$ each point of $Y$ lies above $u$.",
+   "why": "The rest stands for an unknown set of points, so the judgment holds at each choice of this set.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{den}_{Y,Z}(\\varnothing, {\\uparrow}u) = Y$.",
-   "signature": "\\mathsf{den} : \\mathcal{P}(\\mathsf{Point}) \\to \\mathcal{P}(\\mathsf{Point}) \\to \\mathsf{SFuture} \\to \\mathcal{P}(\\mathsf{Point})",
+   "example": "$\\mathsf{den}_{Y}(\\varnothing, {\\uparrow}u) = Y$.",
+   "signature": "\\mathsf{den} : \\mathcal{P}(\\mathsf{Point}) \\to \\mathsf{SFuture} \\to \\mathcal{P}(\\mathsf{Point})",
    "args": [
     {
      "name": "Y",
      "meaning": "the denotation of the rest"
-    },
-    {
-     "name": "Z",
-     "meaning": "the denotation of the flag $\\bot$"
     },
     {
      "name": "F",
@@ -14821,7 +14790,7 @@
   },
   "sj.term": {
    "title": "$\\Delta \\vDash^{F}_R e : T$",
-   "meaning": "$\\forall Y, Z.\\ \\Delta \\vDash^{\\mathsf{den}_{Y,Z}(F)}_R e : T$, with the same context $\\Delta$ as the typing judgment.",
+   "meaning": "$\\forall Y.\\ \\Delta \\vDash^{\\mathsf{den}_{Y}(F)}_R e : T$, with the same context $\\Delta$ as the typing judgment.",
    "why": "It is the conclusion of the fundamental theorem for terms. \\inmode{lf}{The lock-free reading $\\vDash[\\kappa_L]$ uses the table $\\kappa_L$.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\varnothing \\vDash^{\\varnothing}_R e : T$.",
