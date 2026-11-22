@@ -1,5 +1,62 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, 2026-11-22, merge of redesign-clean3, redesign-fwd and redesign-fj
+
+Branch redesign, from 3b237a1, nothing pushed. Commits 0f9f260 (merge of
+redesign-clean3), f24bf4f (static/Consts.v), 18d65cb (expected
+notations), a529af9 (merge of redesign-fwd), a5e99e2 (merge of
+redesign-fj) and the commit of this report.
+
+- Merge of redesign-clean3 (0f9f260, f24bf4f, 18d65cb). Git conflicted in
+  CheckAll.v, _CoqProject, pending.md, soup/LFCompose.v, soup/LFTyped.v,
+  static/FundamentalProc.v and the two expected files.
+  - CheckAll.v and _CoqProject keep both sides.
+  - FundamentalProc.v keeps the full judgment `fptyped None` from hiding
+    and adds the EM hypothesis from the sixth run. LFCompose.v and
+    LFTyped.v keep the hiding form of `lf_p_term` and `lf_fundamental`
+    (conclusion `lf_sems N W`, every ranked world) and add EM.
+  - static/Consts.v. `tsub_ren` proves the new Sub-Ex premise `lb_lower`.
+    The case lb′ = lb is direct. The other case is `ex_wf_ren`, because
+    `lb_lower` unfolds to `ex_wf`. `gen_new_ren` renames the partner sets
+    pointwise. S′ s T′ holds when T′ = π <$> T for some T with S s T.
+  - The expected outputs of `live_soundness_h` and `lf_fundamental` are
+    regenerated from the laptop.
+  - pending.md. The sixth-run report is restored from redesign-clean3.
+- Merge of redesign-fwd (a529af9). Git conflicted in CheckAll.v,
+  _CoqProject and pending.md.
+  - Copycat.v was written against the judgment from before hiding. It now
+    types on the full judgment. The merge renames `ptyped` to `fptyped`,
+    `p_term` to `fp_term` and `p_connect` to `fp_connect`, and the lemmas
+    to `fptyped_wf`, `fptyped_chans` and `fptyped_two`. The structural
+    ring proof is now `ring_rejected_full` (full judgment, every bound).
+    A new corollary `ring_rejected` rejects the ring with hiding through
+    `ptyped_full`, so the name keeps its old statement.
+  - CheckAll.v qualifies the four clashing names
+    `examples.FreshBetween.fb_dftyped`, `examples.Copycat.fb_dftyped`,
+    `examples.Ring.ring_rejected` and `examples.Copycat.ring_rejected`.
+    On redesign-fwd, `Print Assumptions fb_dftyped` in the FreshBetween
+    block printed the Copycat lemma. CheckAll.v also lists
+    `examples.Copycat.ring_rejected_full`.
+- Merge of redesign-fj (a5e99e2). Git conflicted in CheckAll.v only.
+  ForkJoin.v moves to `fptyped` and `fp_term` like Copycat.v.
+- Theorems that gain excluded middle as a hypothesis here, in addition
+  to those of the sixth run. `soundness_h`, `live_soundness_h`,
+  `fundamental_proc_h`, `live_fundamental_proc_h`, `lf_fundamental_h`,
+  the hiding forms of `lf_p_term` and `lf_fundamental`,
+  `connect_n_soundness`, `connect_n_live_soundness`, `opposite_df`,
+  `ring_rejected`, `ring_rejected_full` and `ring_df` of Ring.v,
+  `cli_term` and `srv_term` of LFClientServerSplit.v,
+  `fwd_config_deadlock_free`, `fwdh_config_deadlock_free` and `fwdp_sem`
+  of Copycat.v, and `fj_deadlock_free`. `connect_n_lf_soundness`,
+  `lf_soundness` and `lf_soundness_h` took EM already.
+- Map. No edits. `node docs/explorer/gen/gen.js` reports 0 errors and
+  leaves data.js unchanged.
+- Laptop. After f24bf4f and 18d65cb, `make` exit 0, `make test` passes,
+  `make check` 184 of 184. After a529af9, `make` exit 0, `make check`
+  194 of 194. Final build of a5e99e2 from a clean tree. `make` exit 0,
+  `make test` passes, `make check` 198 of 198.
+- No Admitted, no Axiom, no new Parameter.
+
 ## Report, 2026-11-22, fork-join with replies
 
 Branch redesign-fj in .claude/worktrees/redesign-fj, from redesign-fwd at
