@@ -351,7 +351,7 @@ window.MathJax = {
 
   // one badge per judgment: accepted, rejected, or not attempted
   // each verdict says which judgment it is about and which property that judgment gives
-  const JUDG = [['df', 'statically typed', 'deadlock free'], ['sem', 'semantically typed', 'deadlock free'], ['live', 'typed and guarded', 'live'], ['lf', 'statically typed', 'lock free']];
+  const JUDG = [['df', 'statically typed', 'deadlock free'], ['sem', 'semantically typed', 'deadlock free'], ['lf', 'statically typed', 'lock free']];
   function badges(acc) {
     if (!acc) return '';
     // the deadlock-free mode shows only the deadlock-free verdict

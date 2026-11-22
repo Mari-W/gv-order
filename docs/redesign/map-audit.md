@@ -596,3 +596,67 @@ Checks: gen.js 0 errors, no DF-LEAK. Checker 0 errors, 448 warnings (the
 seven var-before-intro are the subscript false positives of κ_DF and κ_L).
 lint-map 9 metaphor, 308 every/any/all, 1 pronoun ending, 5 long sentences.
 Screenshots of the theorems in both views and of the examples render.
+
+## Classification
+
+Every result, block, note and example is now classified as deadlock freedom
+or lock freedom, and the guarded results at $\kappa_L$ (Rocq `live_*`) count
+as lock freedom.
+
+- **Mode `live` removed.** Source mode lists, the `live` variant of the type
+  grammar, the `live` verdicts of examples and the "typed and guarded, live"
+  badge of the page are gone. gen.js no longer maps `live` to `lf`, and it
+  now fails on any mode other than `df` and `lf` (BAD-MODE).
+- **Examples.**
+  - `ex-ring` (GrowRing). Old lead "A ring of threads that grows forever is
+    lock free" under a deadlock-free badge in the DF view. New: deadlock free
+    in DF, and the lock-free claim only in the LF view. GrowRing proves
+    `rg_dftyped`/`rg_typed` (DF, deadlock freedom through soundness for a
+    single program) and `rg_lftyped`, `rg_lock_free` (LF).
+  - `ex-forkjoin`. The sentences on the missing lock-free typing are
+    lock-free-only.
+  - `ex-sinst`. "A session variable does not guard" became "does not make a
+    recursion contractive", so the word guard means only the lock-free guard.
+  - LF badges showed half the bound. The Rocq types the processes at
+    `exists 6` (client and server), 4 (cycle, channel between box
+    arguments, factory), 8 (channel acting several times, growing ring) and
+    6 (controller). The badges now show these values.
+  - Checked and unchanged: examples proved only deadlock free (copycat,
+    three-thread ring, fork-join, private constants, creations with exits,
+    flag, two flags, tree) say lock free nowhere in the DF view. LF-only
+    examples (two closes, guard, forwarder, controller, split client and
+    server, link, the four rejections) stay out of the DF view.
+- **Theorems and notes.**
+  - The guarded results (`live_soundness_h`, `live_fundamental*`,
+    `live_sub_df`) sit in lock-free rows only, as before.
+  - Reader prose no longer says "live" or "liveness": "the live judgment"
+    became "the semantic judgment at $\kappa_L$", "Live soundness" became
+    "Soundness without internal divergence", "Live fundamental theorem"
+    became "Fundamental theorem at $\kappa_L$", "live arm" became "running
+    arm", "the live table" became "the lock-free table", and the remaining
+    mentions in `ct.table`, `sty.seqv`, `ty2.stydf`, `w.kind`, `w-world`,
+    `guard.proc`, `th.boxfree`, `th.em`, `aK` and the fuel action were
+    reworded.
+  - The full judgment and $\mathsf{fit}$ no longer show the bound $N$ in the
+    DF view (`\vdash^{\mathsf{full}}_W`, $\mathsf{fit}\,R$).
+- **The opposite direction.**
+  - gen.js treats sentences about lock freedom, $\kappa_L$, ranked worlds,
+    fuel, the guard, excluded middle, functional choice, counters and
+    internal divergence as lock-free prose in DF-reachable notes, captions
+    and block title notes. The DF-LEAK check fails on such words left
+    uncoloured.
+  - New note `w.strict` for the strict worlds of the DF view. The DF
+    formulas hovered `strict` to the note on kinds, which explains ranks.
+  - $\kappa_{\mathsf{false}}$, $\kappa_{\mathsf{true}}$ hovered to the guard
+    note through the automatic hover of `\mathsf{true}` and `\mathsf{false}`.
+    The automatic hover is removed and the labels hover to `sx.kappai`.
+  - `syn-ends`, `ty.arrow`, `ct.link`, `ct.takek` keep their lock-free part
+    (counter, cost and credit, the table $\kappa_L$) in lock-free sentences.
+  - Signatures write $\mathbb{N} \cup \{\infty\}$ for the Rocq sort `fuel`,
+    which read as the lock-free fuel.
+
+Checks: gen.js 0 errors, no DF-LEAK, no BAD-MODE. lint-map: 9 metaphor, 308
+every/any/all, 1 pronoun ending, 17 sentences over 35 words. The rise from 6
+is an artifact of lint-map, which removes `\annp{` but keeps the closing
+brace, so it no longer splits sentences at a lock-free sentence boundary.
+Screenshots of theorems and examples in both views checked.

@@ -21,7 +21,7 @@ function section(id, title, intro) {
   return s;
 }
 function block(s, b) {
-  if (!b.modes) b.modes = ['df', 'live', 'lf'];
+  if (!b.modes) b.modes = ['df', 'lf'];
   s.blocks.push(b);
 }
 const rule = (name, prem, concl) =>

@@ -81,9 +81,9 @@ const ann = t => typeof t !== 'string' ? t : t.replace(ENDSUP, '$1\\annot{^{$2}}
   .replace(TRI, m => '\\annot{' + m + '}').replace(BRK, m => '\\annot{' + m + '}')
   .replace(/\\vdash(\}*)\^\{(N|\\infty)\}/g, '\\vdash$1\\annot{^{$2}}').replace(/_\{(W(?:_\d)?),(N|\\infty)\}/g, '_{$1\\annot{,$2}}')
   .replace(REF, (m, x, i, s) => isIndex(s, i) ? m : '\\annot{' + m + '}');
-// one toggle: liveness is deadlock freedom plus the guard, which only lock freedom needs, so live material shows with lock freedom
-const unlive = ms => [...new Set((ms || ['df', 'lf']).map(m => m === 'live' ? 'lf' : m))];
-for (const s of sections) for (const b of s.blocks) { b.modes = unlive(b.modes); if (b.variants) delete b.variants.live; }
+// one toggle: deadlock freedom or lock freedom
+const unlive = ms => [...new Set(ms || ['df', 'lf'])];
+for (const s of sections) for (const b of s.blocks) { b.modes = unlive(b.modes); if (b.modes.some(m => m !== 'df' && m !== 'lf')) { console.log('BAD-MODE', b.id); errs++; } }
 for (const e of examples) e.modes = unlive(e.modes);
 for (const s of sections) for (const b of s.blocks) { b.tex = ann(b.tex); if (b.variants) for (const k of Object.keys(b.variants)) b.variants[k] = ann(b.variants[k]); }
 // in a block with its own deadlock-free form, every hoverable part of the lock-free form whose key the deadlock-free form lacks is a lock-free addition
@@ -105,7 +105,7 @@ for (const s of sections) for (const b of s.blocks) if (b.variants && b.variants
   if (b.variants.lf) b.variants.lf = markNew(b.variants.lf, known); else b.tex = markNew(b.tex, known);
 }
 // prose of notes reachable in the deadlock-free mode: phrases and sentences about annotations become \annp{…}
-const KW = /credit|ticket need|ticket|\\vartheta|\\mathsf\{meets\}|refill|\bfloor\b|\\hat\s*1/i;
+const KW = /credit|ticket need|ticket|\\vartheta|\\mathsf\{meets\}|refill|\bfloor\b|\\hat\s*1|lock[- ]free|lock freedom|\\kappa_L|\branked\b|\bfuel\b|\bguard|excluded middle|functional choice|\bcounters?\b|internal divergence|weak fairness|weakly fair/i;
 const PHR = /,? (?:and|with) (?:its|their|the|a|outer and inner|payload)? ?credits?\b|,? credits? and |,? at (?:payload )?credit \$[^$]*\$/gi;
 const stripAnn = s => { let o = '', i = 0; for (;;) { const m = /\\ann(ot|raw|p)\{/.exec(s.slice(i)); if (!m) return o + s.slice(i); const j = i + m.index; let d = 1, k = j + m[0].length; while (k < s.length && d) { if (s[k] === '\\') { k += 2; continue; } if (s[k] === '{') d++; else if (s[k] === '}') d--; k++; } o += s.slice(i, j); i = k; } };
 function annProse(t) {
@@ -119,7 +119,7 @@ function annProse(t) {
 }
 const dfKeys = new Set();
 for (const s of sections) for (const b of s.blocks) if (b.modes.includes('df')) for (const m of stripAnn(ann((b.variants && b.variants.df) || b.tex)).matchAll(/\\htmlData\{k=([^}]*)\}/g)) dfKeys.add(m[1]);
-for (const s of sections) { s.intro = annProse(ann(s.intro)); for (const b of s.blocks) if (b.modes.includes('df')) b.caption = annProse(ann(b.caption)); }
+for (const s of sections) { s.intro = annProse(ann(s.intro)); for (const b of s.blocks) if (b.modes.includes('df')) { b.caption = annProse(ann(b.caption)); if (b.about) for (const f of ['why', 'breaks', 'example']) b.about[f] = annProse(ann(b.about[f])); } }
 for (const [k, v] of Object.entries(notes)) if (dfKeys.has(k)) {
   for (const f of ['what', 'why', 'breaks', 'example']) v[f] = annProse(v[f]);
   for (const a of v.args || []) if (KW.test(a.meaning)) { const onlyAnn = a.name.split(',').every(x => /^\s*(a|b|c|h|tk|r|\\vartheta)(_\{?\w+\}?)?'*\s*$/.test(x)); if (onlyAnn) a.ann = true; else a.meaning = annProse(a.meaning); }
@@ -148,10 +148,10 @@ const noSig = Object.keys(notes).filter(k => !notes[k].sig);
 console.log('unhovered symbols (HOV=1 lists them)', nHover, '| notes without sig (SIG=1 lists them)', noSig.length);
 if (process.env.SIG) console.log('NOSIG', noSig.join(' '));
 for (const [k, v] of Object.entries(notes)) { if (v.sig) { try { katex.renderToString(v.sig, { trust: true, strict: 'ignore', throwOnError: true, macros: { ...MAC } }); } catch (e) { console.log('KATEX-SIG', k, e.message.slice(0, 120)); errs++; } for (const a of v.args || []) { try { katex.renderToString(a.name, { trust: true, strict: 'ignore', throwOnError: true, macros: { ...MAC } }); } catch (e) { console.log('KATEX-ARG', k, e.message.slice(0, 120)); errs++; } prose(a.meaning, k + '.arg'); } } }
-for (const e of examples) if (e.accepts) for (const [m, a] of Object.entries(e.accepts)) { if (!['df', 'sem', 'live', 'lf'].includes(m) || typeof a.ok !== 'boolean') { console.log('BAD-ACCEPTS', e.id, m); errs++; } }
+for (const e of examples) if (e.accepts) for (const [m, a] of Object.entries(e.accepts)) { if (!['df', 'sem', 'lf'].includes(m) || typeof a.ok !== 'boolean') { console.log('BAD-ACCEPTS', e.id, m); errs++; } }
 // nothing about annotations may show in the deadlock-free mode
 {
-  const LEAK = [/_(?:\{[^{}]*\}|[A-Za-z])\^\{[^{}]*,/, /\^\{\\htmlData\{k=[^}]*\}\{[ab]/, /\^\{[ab](_|'|\}|\s*\+)/, /(?<!\\!)\\triangleright\}*\s*(c|\\infty|\d)/, /\\vartheta/, /\[c\s*;/, /\\hat\s*1/, /\\mathsf\{(tok|meets|tix|tspawn|tlink|tseq)\}/, /\\vdash\}*\^\{N\}/, /credit/i];
+  const LEAK = [/lock[- ]free|lock freedom|\\kappa_L|\bfuel\b|\branked\b|excluded middle|functional choice/i, /_(?:\{[^{}]*\}|[A-Za-z])\^\{[^{}]*,/, /\^\{\\htmlData\{k=[^}]*\}\{[ab]/, /\^\{[ab](_|'|\}|\s*\+)/, /(?<!\\!)\\triangleright\}*\s*(c|\\infty|\d)/, /\\vartheta/, /\[c\s*;/, /\\hat\s*1/, /\\mathsf\{(tok|meets|tix|tspawn|tlink|tseq)\}/, /\\vdash\}*\^\{N\}/, /credit/i];
   const leak = (x, where) => { const t = stripAnn(String(x || '')); for (const r of LEAK) if (r.test(t)) { console.log('DF-LEAK', where, r); errs++; return; } };
   for (const s of sections) for (const b of s.blocks) if (b.modes.includes('df')) { leak((b.variants && b.variants.df) || b.tex, b.id); leak(b.caption, b.id + '.caption'); }
   for (const k of dfKeys) { const v = notes[k]; if (!v) continue; for (const f of ['sig', 'what', 'why', 'breaks', 'example']) leak(v[f], k + '.' + f); for (const a of v.args || []) if (!a.ann) leak(a.name + ' ' + a.meaning, k + '.arg'); }
