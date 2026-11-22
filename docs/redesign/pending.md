@@ -1,5 +1,114 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, 2026-11-22, F11 and F12 merged into redesign, F9 stopped
+
+Approved on 2026-11-22 ("nvm do the last parts"). Nothing pushed, main
+untouched. No Admitted, no Axiom, no new Parameter. No relation changed
+and no typing rule gained a premise.
+
+| Build | Commit | make | make check | make test |
+|---|---|---|---|---|
+| fx-judg, ~/build-spo-judg | 014a2ed | exit 0 | 238 of 238 | passes |
+| redesign after the merge | 7d9224e | same tree as 014a2ed | 238 of 238 | passes |
+
+The merge is `--no-ff` onto dba9fca, the base of fx-judg, so the merged
+tree is the tree of 014a2ed byte for byte (checked with `rev-parse`),
+and the laptop build of fx-judg is the build of the merged tree.
+
+- F11, done. `fptyped` and its two rules `fp_term` and `fp_connect` are
+  gone, and `ptyped` is the one process judgment. `ptyped_sem`
+  (static/Hiding.v) reads a derivation at an acyclic whole world that
+  hides to its world, well-founded at a finite N, for each property of
+  components that P-Term gives, P-Connect composes and extension of
+  worlds keeps. The induction proves the property at each renaming of
+  the whole world, so P-Connect renames the private constants of each
+  side apart (`qren_side`, `connect_hidden`) and the derivation is
+  never renamed. `proc_gen` (static/FundamentalProc.v) and
+  `lf_fundamental_h` (soup/LFTyped.v) are its instances, with
+  `sem_p_term_sw` and `conn_of` as the cases. `ptyped_ren` renames the
+  constants of a process derivation, at a world whose order lies inside
+  the renamed world (`iface_ren`, `ren_consts_mut`), and `ptyped_cren`
+  renames its channels. The inversions are `ptyped_one` and
+  `ptyped_two`.
+- F12, done before this pass. `dftyped` has been the definition
+  `typed W None (tenv_df Θ) Γ (lenv_df Δ) F e (ty_df T) None` since M.1
+  (eaf3af4), and the 25 `d_*` of static/Conservativity.v are lemmas that
+  conclude by the rules `e_*`, not constructors. `typed_dftyped` is the
+  erasure of `typed W N` into the instance N = ∞. No Rocq change.
+- F9, not done. fx-contr exists at 7d9224e with no commit. The reason
+  is below and in the Status line of F9 in fable-findings.md.
+
+Rules removed. 2, `fp_term` and `fp_connect`, with the inductive
+`fptyped`. F12 removes none, because none were left.
+
+Statements that change form.
+
+- Dropped with `fptyped`, each carried by the `ptyped` theorem that
+  already existed. `fundamental_proc`, `live_fundamental_proc`,
+  `soundness`, `live_soundness`, `lf_fundamental`, `lf_soundness`,
+  `fptyped_wf`, `fp_connect_join`, `fptyped_ren`, `ptyped_full`,
+  `fptyped_ptyped`. `fundamental_proc_h`, `live_fundamental_proc_h`,
+  `soundness_h`, `live_soundness_h`, `lf_fundamental_h` and
+  `lf_soundness_h` keep their statements. `lf_soundness_run` and
+  `lf_soundness_padovani` read `⊩`, which is now `ptyped (Some N)`.
+- The rejections state the one judgment. `rx_relink_proc_rejected`,
+  `rx_postpone_proc_rejected`, `rx_delegate_proc_rejected`,
+  `sbv_rejected`, `ring_rejected` (examples/Copycat.v, now proved
+  directly) and `cyc2_rejected` are over `ptyped`. Dropped the
+  duplicates `sbv_rejected_h`, `cyc2_rejected_h` and both
+  `ring_rejected_full`.
+- Positive typings sit at the world of P-Term, `swrestrict W (iface Σ T)`,
+  in place of W. These are `fw_ptyped`, `fwd_term`, `p1_term`,
+  `p2_term`, `fwdh_term`, `p1h_term`, `p2h_term`, `fwdp_term`,
+  `fwdq_term`, `fwdq_term_fin`, `p2_term_x`, `cl_term`, `fj_term`,
+  `fjr_term`, `fct_term`, `fib_term`, `lf_main_typed` and the seven
+  `*_lftyped` of the lock-free examples. `fwd_config_typed`,
+  `fwdh_config_typed` and `cl_lftyped` state an existential world.
+- `fwd_expand` and `fwdp_expand` take P at its world and conclude at the
+  world of P ∥ fwd. `fwdp_expand2_N`, `fwdp_expand2`, `fwdp_expand2_fin`
+  and `fwdp_expand2_df` take P and Q with the premise of P-Connect,
+  `wok N (W1 ⊔ W2)`, in place of the restrictions to the shared
+  constants, and conclude with an existential world. `fwdp_sem` keeps
+  its statement and goes through `sem_p_term_sw` and the new
+  `fwdp_thread`.
+- Dropped the results about the full judgment in examples/SharedRoots.v,
+  `cl2_term`, `comp_typed` and `shared_not_cut`. `fact_needs_zero` and
+  `opposite_clash` still show that whole worlds share private
+  constants.
+
+CheckAll goes from 251 to 238 results, the dropped ones above with
+`ptyped_ren`, `ptyped_sem`, `proc_gen` and `ptyped_cren` added.
+
+Map. docs/explorer/check.sh shows 0 errors and 66 warnings after the
+merge, the count before it. `th-fund-proc` shows `ptyped_sem` and
+`ptyped_ren` in place of the two translations, the notes `tp.fpjudg`,
+`th.ptyped-full` and `th.fptyped-ptyped` are gone, and `th.ptyped-sem`
+and `th.ptyped-ren` are new. `th-sound`, `tp.pjudg`,
+`th.fundamental-proc`, `th.typed-ren`, `sj.h`, `P-Connect.wf` and the
+examples `ex-flag`, `ex-copycat`, `ex-ring3` and `ex-shared` cite the
+names that remain.
+
+F9 stopped on the Rocq cost.
+
+- `ty` and `sty` are one mutual inductive (types/Types.v). A guarded
+  body `SMu {b | ugv 0 b = false}` needs the fixpoint `ugv` inside the
+  definition of `sty`. Rocq has neither induction-recursion nor
+  induction-induction, so the guard cannot sit in the constructor. A
+  subset type of contractive session types at `TSess` or at a payload
+  of `SRcv` and `SSnd` fails the same way.
+- A contractive grammar works. µ takes an action prefix, µα. ?T;S,
+  µα. !T;S, µα. ⊕(S1, S2);S and µα. &(S1, S2);S, four constructors in
+  place of `SMu`. Then the 11 fixpoints on `sty` change, among them
+  `sren`, `sflip`, `dual`, `sinst`, `unroll`, `unrN`, `sty_ren` and
+  `sty_df`, and with them the 41 mutual inductions on `ty` and `sty` in
+  10 files. types/Contractive.v (1071 lines), types/Duality.v and
+  static/Sinst.v are built on the present `SMu`, and contractiveness
+  appears 381 times in 32 files. This is the stop condition of the
+  brief, `unfoldS` and `sinst` rewritten across most files.
+- A cheaper change is not F9. `unfoldS` could read an unguarded µ as a
+  stuck head, so that soundness no longer needs the premises. That
+  changes what unfolding computes and needs a decision of its own.
+
 ## Report, 2026-11-22, fx-gap, fx-guard and fx-rejects merged into redesign
 
 Three merges on redesign from d30372f, in the approved order, nothing
