@@ -277,3 +277,6 @@ Print Assumptions fjr_acyc.
 Print Assumptions fjr_dftyped.
 Print Assumptions fjr_term.
 Print Assumptions fjr_deadlock_free.
+Print Assumptions fa_acyc.
+Print Assumptions fct_dftyped.
+Print Assumptions fct_deadlock_free.
