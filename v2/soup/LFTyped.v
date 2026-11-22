@@ -25,13 +25,13 @@ Notation "Σ ⊩^ N '_' W p : T" := (fptyped (Some N) W Σ p T ∧ ⊢▷ p)
 
 (** ** The fundamental theorem *)
 
-Theorem lf_fundamental N W Σ p T : Σ ⊩^N _ W p : T → lf_sems N W Σ p T.
+Theorem lf_fundamental (EM : excluded_middle) N W Σ p T : Σ ⊩^N _ W p : T → lf_sems N W Σ p T.
 Proof.
   intros [Hty Hg]. remember (Some N) as N' eqn:EN. revert Hg. induction Hty as
     [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Ht HW
     |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 HD1 HD2 Hf H12 H1C H2C HC HC1 HC2 HJ];
     intros Hg; subst.
-  - eapply (lf_p_term W); [exact (proj1 HW)|done|done|done| |exact Ht|].
+  - eapply (lf_p_term EM W); [exact (proj1 HW)|done|done|done| |exact Ht|].
     { intros ch Hch. destruct (Hd ch Hch) as (S & x & m & m' & ? & _ & ?). eauto 10. }
     apply Hg. simpl. multiset_solver.
   - try specialize (IH1 eq_refl). try specialize (IH2 eq_refl).
@@ -49,7 +49,7 @@ Theorem lf_soundness N W p T :
   excluded_middle → functional_choice → ∅ ⊩^N _ W p : T → lock_free p.
 Proof.
   intros EM FC Hty. destruct (fptyped_wf _ _ _ _ _ (proj1 Hty)) as [Hwf HW].
-  exact (lf_sems_adequacy EM FC N W p T Hwf HW (lf_fundamental N W ∅ p T Hty)).
+  exact (lf_sems_adequacy EM FC N W p T Hwf HW (lf_fundamental EM N W ∅ p T Hty)).
 Qed.
 
 (** ** Soundness with a run, and Padovani-style lock freedom
@@ -105,10 +105,10 @@ Proof.
   by apply lf_p_connect.
 Qed.
 
-Theorem lf_fundamental_h N W Σ p T : ptyped (Some N) W Σ p T → ⊢▷ p → lf_sems_h N W Σ p T.
+Theorem lf_fundamental_h (EM : excluded_middle) N W Σ p T : ptyped (Some N) W Σ p T → ⊢▷ p → lf_sems_h N W Σ p T.
 Proof.
   intros Hty Hg. destruct (ptyped_full _ _ _ _ _ Hty) as (W' & Hf & Hh). destruct (fptyped_wf _ _ _ _ _ Hf).
-  exists W'. split_and!; try done. by apply lf_fundamental.
+  exists W'. split_and!; try done. by apply (lf_fundamental EM).
 Qed.
 
 Theorem lf_sems_h_adequacy (EM : excluded_middle) (FC : functional_choice) N W p T :
@@ -118,4 +118,4 @@ Proof. intros (W' & Hwf & HW & _ & Hs). exact (lf_sems_adequacy EM FC N W' p T H
 (** Lock freedom of the hidden judgment. *)
 Theorem lf_soundness_h N W p T :
   excluded_middle → functional_choice → ptyped (Some N) W ∅ p T → ⊢▷ p → lock_free p.
-Proof. intros EM FC Hty Hg. exact (lf_sems_h_adequacy EM FC N W p T (lf_fundamental_h N W ∅ p T Hty Hg)). Qed.
+Proof. intros EM FC Hty Hg. exact (lf_sems_h_adequacy EM FC N W p T (lf_fundamental_h EM N W ∅ p T Hty Hg)). Qed.

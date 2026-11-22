@@ -407,5 +407,5 @@ Proof.
   all: first [apply map_disjoint_empty_l|apply swf_bare; intros g [Hg|Hg]; [by apply (F1 g)|by apply (F2 g)]].
 Qed.
 
-Theorem opposite_df : deadlock_free (({["c"]} ∪ {["d"]}) ∪ ({["f"]} ∪ {["e"]}) ∪ chans_of ∅, comp "c" "d" ⊎ comp' "e" "f").
-Proof. destruct opposite_compose as (W & H). exact (soundness_h W _ TUnit H). Qed.
+Theorem opposite_df : excluded_middle → deadlock_free (({["c"]} ∪ {["d"]}) ∪ ({["f"]} ∪ {["e"]}) ∪ chans_of ∅, comp "c" "d" ⊎ comp' "e" "f").
+Proof. intros EM. destruct opposite_compose as (W & H). exact (soundness_h W _ TUnit EM H). Qed.

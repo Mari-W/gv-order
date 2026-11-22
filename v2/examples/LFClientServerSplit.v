@@ -143,10 +143,10 @@ Qed.
 
 (** ** Each component at its own static world *)
 
-Lemma cli_term : lf_sems 6 W_cli ΣC (∅, {[+ t_cli +]}) TUnit.
+Lemma cli_term (EM : excluded_middle) : lf_sems 6 W_cli ΣC (∅, {[+ t_cli +]}) TUnit.
 Proof.
   destruct (side_typed true cli Sa Sb oa ob ρ (ρ·0) ltac:(done) cli_box eq_refl eq_refl) as [c Hc].
-  apply (lf_p_term W_cli 6 ΣC ∅ ∅ t_cli TUnit c).
+  apply (lf_p_term EM W_cli 6 ΣC ∅ ∅ t_cli TUnit c).
   - apply W_side_wf.
   - constructor.
   - intros o. rewrite dom_empty_L. set_solver.
@@ -163,11 +163,11 @@ Lemma senv_dual_ΣC :
   senv_dual ΣC = <[edual oa := (Sb, ρ‾)]> {[edual ob := (Sa, (ρ·0)‾)]}.
 Proof. unfold senv_dual, ΣC. rewrite fmap_insert, map_fmap_singleton. rewrite kmap_insert; [|apply _]. rewrite kmap_singleton. reflexivity. Qed.
 
-Lemma srv_term : lf_sems 6 W_srv (senv_dual ΣC) (∅, {[+ t_srv +]}) TUnit.
+Lemma srv_term (EM : excluded_middle) : lf_sems 6 W_srv (senv_dual ΣC) (∅, {[+ t_srv +]}) TUnit.
 Proof.
   destruct (side_typed false srv Sb Sa (edual oa) (edual ob) ρ‾ (ρ·0)‾ ltac:(done) srv_box eq_refl eq_refl)
     as [c Hc].
-  apply (lf_p_term W_srv 6 (senv_dual ΣC) ∅ ∅ t_srv TUnit c).
+  apply (lf_p_term EM W_srv 6 (senv_dual ΣC) ∅ ∅ t_srv TUnit c).
   - apply W_side_wf.
   - constructor.
   - intros o. rewrite dom_empty_L. set_solver.
@@ -188,7 +188,7 @@ Theorem cs_split_lock_free : excluded_middle → functional_choice →
   lock_free (∅ ∪ ∅ ∪ chans_of ΣC, {[+ t_cli +]} ⊎ {[+ t_srv +]}).
 Proof.
   intros EM FC. destruct W_cs_parts as (H1 & H2 & HS).
-  apply (lf_connect_adequacy EM FC 6 W_cli W_srv ΣC ∅ ∅ _ _ TUnit cli_term srv_term);
+  apply (lf_connect_adequacy EM FC 6 W_cli W_srv ΣC ∅ ∅ _ _ TUnit (cli_term EM) (srv_term EM));
     [|set_solver|set_solver|set_solver|apply W_side_wf|apply W_side_wf|done|done|done].
   intros o Ho. unfold ΣC in *. rewrite dom_insert_L, dom_singleton_L in *.
   apply elem_of_union in Ho as [Ho|Ho]; apply elem_of_singleton in Ho as ->;

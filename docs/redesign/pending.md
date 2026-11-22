@@ -1,5 +1,141 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, sixth run of 2026-11-22 on Sub-Ex lowering l, (gen-new) with sets and its examples
+
+Branch redesign-clean3 in .claude/worktrees/redesign-s4, nothing pushed,
+commits 09fd0b9 to the head. docs/explorer untouched, the map changes are
+listed at the end.
+
+- Item 1, the heads lemma and Sub-Ex with a lower l. Done (09fd0b9).
+  - The heads lemma existed already. `Vrel_heads` (compat/Redex.v, since
+    S4.4) says that every end o : S@x of a value of T with `hbot T = false`
+    has a head h ∈ `heads T` with `w_le W h x‾`. The fifth run missed it.
+    What was missing is its use in Sub-Ex.
+  - Rule. `sub_ex` takes `lb_lower W Γ n C lb lb' T`, which is `lb' = lb`
+    or `lbx_below_h W (hc_open n C Γ) lb'↑ (heads T) (hbot T)`, the
+    premise E-Pack asks after an opening at the identity instance. ⊥ is
+    always allowed, `LNone` needs no heads and no ⊥ flag, `LPt x'` needs
+    Γ, C ⊢ x' ≼ h for each head h of the body.
+  - `Vrel_tsub` (static/Fundamental.v) reads the heads of the ends off
+    `Vrel_heads` at the witnesses and the facts through `sle_sem` under
+    `hsat_open`. `tsub_df`, `tsub_sinst`, `tsub_refl` and `Vty_sub`
+    (fuel/FuelSub.v) follow.
+  - `tsub_open_pack` (static/Conservativity.v). Opening x : ∃^l ιs. C. T
+    and packing at ιs with C' and l' that Γ and C entail is one step of
+    Sub-Ex. Not done, the theorem about the two programs `e` and
+    `let x = e in x`. Its hard half inverts a derivation of the let
+    through E-Open, E-Pack and E-Sub, and Inversion.v has no lemma for
+    Var or Let with an existential. A pack at points other than ιs is
+    also outside Sub-Ex, which compares bodies at the same instance.
+- Item 2, (gen-new) with finite sets. Done (5ffaf18, 2f5c6e6), with
+  excluded middle as a hypothesis.
+  - Rule. `gen_new_rel` (static/Contexts.v) relates points of the new tree
+    to lists of points of Γ. Every list is nonempty, each exit u ≺ y has a
+    list below y, each point of the list of a step below lies below some
+    point of the list above, each entry z ≺ s lies below some point of
+    the list of s. The old relation is `gen_new1`, and `gen_new1_gen`,
+    `wf_new_plus_gen` (through `wf_new_plus_gen1`) and `wf_new_gen` derive
+    the old premises. The examples keep proving `wf_new`.
+  - `cons_gen` (static/PointSubst.v) carries the sets through `cinv`.
+    Constructive.
+  - `Erel_new` (compat/Redex.v) keeps the construction and proves
+    `Sr s T → ∃ t ∈ T, rank_base s ≤ rk0 t` by well-founded induction,
+    with the t of largest rank from `list_max_rank`.
+  - No constructive proof exists. `two_below_gd` (relation/Ranks.v) shows
+    that a rank r with a, b ≤ r < c for any a, b < c gives
+    (P → Q) ∨ (Q → P) for all P, Q. Take a and b the suprema of 1 over P
+    and over Q, c the supremum of a + 1 and b + 1. The creation of the
+    two-entry example needs exactly such an r at a model where the two
+    entries have ranks a and b and ρ̄ has rank c, so Brouwer suprema do
+    not help. `ole_total` (constructive from excluded middle) gives the
+    largest member of a finite family.
+  - Theorems that gain `excluded_middle` as a hypothesis, none as an
+    axiom. compat/Redex.v `Erel_new`. compat/LiveRules.v `later_new`.
+    static/Fundamental.v `typed_sem`, `typed_sem_df`, `typed_sem_live`,
+    `fundamental`, `fundamental_typed`, `live_fundamental`,
+    `live_fundamental_typed`. static/FundamentalProc.v
+    `fundamental_proc`, `live_fundamental_proc`, `soundness`,
+    `live_soundness`, `soundness_source`. soup/LFCompose.v `typed_live`,
+    `lf_p_term`. soup/LFTyped.v `lf_fundamental`. examples/SemBranch.v
+    `typed_E_df`, `arm_E`, `sb_thread_E`, `partner_E`, `arm_v_E`,
+    `sbv_thread_E`, `sb_deadlock_free(_R)`, `sbv_deadlock_free(_R)`.
+    examples/TreeTopo.v the section lemmas from `leaf_E` on and
+    `tt_deadlock_free`. `lf_soundness`, `lf_soundness_run`,
+    `lf_soundness_padovani` and `lf_soundness_source` had it already.
+    `cost_fundamental`, `fsem_of_cost`, `adequacy` and the typing
+    results stay free of it. The abbreviation `excluded_middle` in
+    compat/Redex.v points to lockfree/FairRun.v, which Redex only
+    Requires, because importing it reopens the scope of ‾ on ends.
+  - test/GuardNotations.expected and test/SoupNotations.expected print
+    the new hypothesis.
+- Item 3, examples/GenNew.v. Done (4667961).
+  - Two upper bounds. `tu_main` creates a at ρ, b at ρ·0, spawns
+    close a′; close b′, creates d at a fresh root π with
+    C = {π ≺ ρ̄, π ≺ (ρ·0)‾}, spawns close d′, closes d, a and b. Γ has
+    ρ·1 ≺ ρ̄ and ρ ≺ (ρ·0)‾, and no point below both. `tu_gen1` proves
+    (gen-new₁) with S = {(π, ρ·1), (π, ρ)}, and `tu_gen` lifts it.
+  - Two entries. `te_main` creates a at ρ, e1 at ρ·0, e2 at ρ·1, spawns
+    the three partners, creates d at π with
+    C = {ρ·0 ≺ π, ρ·1 ≺ π, π ≺ ρ̄}, spawns close e1; close e2; close d′
+    and closes d and a. Γ has ρ·0 ≺ ρ·2 ≺ ρ̄, ρ·1 ≺ ρ·3 ≺ ρ̄ and
+    ρ·0 ≺ (ρ·1)‾. `te_gen` proves (gen-new) with S = {(π, {ρ·2, ρ·3})}.
+  - Both are typed end to end in the DF projection (`tu_dftyped`,
+    `te_dftyped`) at the empty world, and deadlock free by
+    `soundness_source` under excluded middle (`tu_deadlock_free`,
+    `te_deadlock_free`). This is P-Term with Σ = ∅ and C₀ = ∅.
+  - Rejection under (wf-new). `tu_not_wf_new` and `te_not_wf_new`, the
+    constraints of d are not (wf-new). `tu_rejected_wf_new` and
+    `te_rejected_wf_new`, under every constraint C′ with `wf_new C′`, the
+    thread `close d; close a` with d at π and a at ρ has no derivation in
+    `hc_open 1 C′ Γ`, by `cl2_needs` (SemBranch.v) and `slt_open_out`.
+    This is the thread after the creation has reduced, with channel ends
+    in Θ. Not mechanized, that no derivation of `tu_main` exists with
+    every E-New under (wf-new). It needs inversion lemmas for Var, Let,
+    New and Spawn through E-Open and E-Sub, which Inversion.v lacks. I did
+    not prove either constraint outside (wf-new⁺) or (gen-new₁) by a lemma.
+- Laptop at 2f5c6e6: `make` exit 0, `make test` passes, `make check` 142 of
+  142.
+
+Plausibility. No Admitted, no Axiom, no new Parameter. CheckAll lists 142
+results, 17 of them new. The examples build. `soundness` and
+`lf_soundness` print no axiom, `soundness` now takes excluded middle as
+an argument. rx-chain stays excluded by Proposition 7 of
+check-general-new.md, which holds for every sound E-New, (gen-new) with
+sets included. Not mechanized.
+
+Map changes for the audit (docs/explorer/gen).
+
+- typing.js, both Sub-Ex rules (the lines with `rule('Sub-Ex'`). The
+  conclusion reads ∃^{l} ≤ ∃^{l'}, and a new premise
+  `h('tp.sub-exlb', l' = l \vee \Gamma, C(\bar\iota) \vdash l' \preceq \mathsf{heads}\,T)`.
+  New note `tp.sub-exlb`, citing static/Contexts.v `lb_lower`, `sub_ex`,
+  compat/Redex.v `Vrel_heads`, static/Fundamental.v `Vrel_tsub`,
+  static/Conservativity.v `tsub_open_pack`. Note `tp.sub-ex` drops "with
+  the same lower bound".
+- types.js, block `w-wf`, formula `w.gennew` and note `w.gennew` and its
+  signature `sa('w.gennew', …)`. S ⊆ tree(ρ) × P_fin⁺(Point_Γ), the three
+  clauses over sets as in section 4 of check-general-new.md. Example
+  becomes the two-entry example with S = {(π, {ρ·2, ρ·3})}. Citation adds
+  `gen_new1`, `gen_new1_gen`, `wf_new_plus_gen1`, relation/Ranks.v
+  `list_max_rank`, `two_below_gd` and examples/GenNew.v `tu_gen1`,
+  `te_gen`.
+- typing.js, note `E-New.wf`. Partners are sets, the proof takes the
+  partner of largest rank under excluded middle. Citation adds
+  `gen_new1_gen`.
+- theorems.js, `th.soundness`, `th.soundness-source`, the live soundness
+  and fundamental entries (`th.live-fundamental-typed` and the DF
+  fundamental theorem), `th.lf-fundamental` and their `sa(…)` signatures
+  gain EM as a premise, as `th.lf-soundness` shows it. Block `th-chain`
+  and `th-sound` say that DF soundness needs excluded middle since
+  E-New takes partner sets.
+- A new note for the classical step, relation/Ranks.v `ole_total`,
+  `list_max_rank`, `two_below_gd`, linked from `w.gennew`.
+- Examples. examples/GenNew.v with `tu_main` (two upper bounds, needs a
+  relation) and `te_main` (two entries, needs sets), each typed and
+  deadlock free, each rejected after the creation under every (wf-new)
+  constraint.
+- prose.js and rejects.js need no change. rx-chain stays argued.
+
 ## Report, run of 2026-11-22 on the merge of redesign-comp and the n-ary connect
 
 Branch redesign, from 314ddc3, commits e074d5b (merge), 2cb0286 (n-ary

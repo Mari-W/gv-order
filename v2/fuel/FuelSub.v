@@ -99,7 +99,7 @@ Section sub.
                     |Γ0 T1 U T1' U' H1 IH1 H2 IH2
                     |Γ0 m k C ub c U U' c' Hc HU
                     |Γ0 s s' x a a' mt Hss Ha
-                    |Γ0 lb m C C' T T' HC HT IHT];
+                    |Γ0 lb lb' m C C' T T' HC Hlb HT IHT];
       intros Π φ v; simpl.
     - done.
     - intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|done| |].

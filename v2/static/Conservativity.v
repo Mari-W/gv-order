@@ -142,8 +142,17 @@ Proof.
   - apply sub_sum; auto.
   - apply sub_box; [apply fle_refl|]. destruct k; [apply teq_refl|by left].
   - apply sub_sess; [apply sequiv_refl|apply fle_refl].
-  - apply sub_ex; [apply hold_open_self|auto].
+  - apply sub_ex; [apply hold_open_self|by left|auto].
 Qed.
+
+(** Opening x : ∃^l ιs. C. T and packing it at ιs with a constraint C'
+    and a lower bound l′ that Γ and C entail is one step of Sub-Ex, so
+    e and let x = e in x type alike for this pattern. *)
+Lemma tsub_open_pack W Γ lb lb' n C C' T :
+  hold_at W (hc_open n C Γ) (bcs_inst (pshift n) C') (ids n) →
+  lbx_below_h W (hc_open n C Γ) (lb_map (pt_inst (pshift n)) lb') (heads T) (hbot T) →
+  tsub W Γ (TEx lb n C T) (TEx lb' n C' T).
+Proof. intros H1 H2. apply sub_ex; [done|by right|apply tsub_refl]. Qed.
 
 Lemma tsub_df W Γ T T' : tsub W Γ T T' → tsub W Γ (ty_df T) (ty_df T').
 Proof.
@@ -155,7 +164,8 @@ Proof.
   - apply sub_box; [apply fle_refl|]. destruct k; [by apply teq_df|].
     destruct H0 as [->|(? & ? & ?)]; [by left|right]. rewrite !tcontr_df. split_and!; [by apply teq_df|done|done].
   - apply sub_sess; [by apply sequiv_df|apply fle_refl].
-  - by apply sub_ex.
+  - apply sub_ex; [done| |done]. destruct H0 as [->|H0]; [by left|right].
+    by rewrite heads_df, hbot_df.
 Qed.
 
 (** ** Instances of session variables *)

@@ -13,7 +13,7 @@ From GV Require Import examples.LFFreshMany examples.LFClientServer examples.LFC
 From GV Require Import examples.LFController soup.SoupRun soup.SoupTau soup.LFAdequacy.
 From GV Require Import soup.LFCompose soup.LFTyped lockfree.FairRun.
 From GV Require Import examples.SemBranch static.Inversion relation.Ord relation.ExProp relation.Ranks examples.LFLink compat.Redex static.PointSubst.
-From GV Require Import examples.SinstStuck static.Sinst examples.SharedRoots static.Hiding.
+From GV Require Import examples.SinstStuck static.Sinst examples.SharedRoots static.Hiding examples.GenNew.
 From GV Require Import soup.LFConnectN examples.Ring.
 
 (** types/Points.v *)
@@ -187,6 +187,7 @@ Print Assumptions cons_new.
 Print Assumptions cons_gen.
 Print Assumptions wf_new_gen.
 Print Assumptions wf_new_plus_gen.
+Print Assumptions gen_new1_gen.
 Print Assumptions gen_new_sem_of.
 Print Assumptions Erel_new.
 Print Assumptions Erel_new_fld.
@@ -233,3 +234,25 @@ Print Assumptions ring_rejected.
 Print Assumptions ring_rejected_full.
 Print Assumptions ring_typed.
 Print Assumptions ring_df.
+(** static/Fundamental.v and static/Conservativity.v: Sub-Ex lowers the
+    lower bound below the heads of the body *)
+Print Assumptions Vrel_heads.
+Print Assumptions Vrel_tsub.
+Print Assumptions tsub_open_pack.
+(** relation/Ranks.v: the largest of finitely many ranks, under excluded
+    middle *)
+Print Assumptions ole_total.
+Print Assumptions list_max_rank.
+Print Assumptions two_below_gd.
+(** examples/GenNew.v: creations with exits, two upper bounds and two
+    entries *)
+Print Assumptions tu_gen1.
+Print Assumptions tu_not_wf_new.
+Print Assumptions tu_dftyped.
+Print Assumptions tu_deadlock_free.
+Print Assumptions tu_rejected_wf_new.
+Print Assumptions te_gen.
+Print Assumptions te_not_wf_new.
+Print Assumptions te_dftyped.
+Print Assumptions te_deadlock_free.
+Print Assumptions te_rejected_wf_new.

@@ -284,11 +284,11 @@ Proof.
 Qed.
 
 (** No world types the ring, with or without hiding. *)
-Theorem ring_rejected W T : ¬ ptyped None W ∅ (ring_cfg tC) T.
-Proof. intros H. exact (ring_not_df (soundness_h W _ T H)). Qed.
+Theorem ring_rejected W T : excluded_middle → ¬ ptyped None W ∅ (ring_cfg tC) T.
+Proof. intros EM H. exact (ring_not_df (soundness_h W _ T EM H)). Qed.
 
-Corollary ring_rejected_full W T : ¬ fptyped None W ∅ (ring_cfg tC) T.
-Proof. intros H. destruct (fptyped_ptyped _ _ _ _ _ H) as (Wi & Hi & _). exact (ring_rejected Wi T Hi). Qed.
+Corollary ring_rejected_full W T : excluded_middle → ¬ fptyped None W ∅ (ring_cfg tC) T.
+Proof. intros EM H. destruct (fptyped_ptyped _ _ _ _ _ H) as (Wi & Hi & _). exact (ring_rejected Wi T EM Hi). Qed.
 
 (** ** The acyclic ring *)
 
@@ -317,5 +317,5 @@ Qed.
 Theorem ring_typed : ∃ W, ptyped None W ∅ (ring_cfg tC') TUnit.
 Proof. destruct (p_connect_n _ _ _ _ _ ring'_comps ring'_wf) as (W & H & _). by exists W. Qed.
 
-Theorem ring_df : deadlock_free (ring_cfg tC').
-Proof. exact (connect_n_soundness _ _ _ ring'_comps ring'_wf). Qed.
+Theorem ring_df : excluded_middle → deadlock_free (ring_cfg tC').
+Proof. intros EM. exact (connect_n_soundness _ _ _ EM ring'_comps ring'_wf). Qed.

@@ -114,16 +114,16 @@ Qed.
 
 (** ** Soundness through the binary results *)
 
-Theorem connect_n_soundness Ws p T :
+Theorem connect_n_soundness Ws p T : excluded_middle →
   pcomps None Ws ∅ p T → swf (sw_joins Ws) → deadlock_free p.
 Proof.
-  intros Hp HS. destruct (p_connect_n None Ws ∅ p T Hp HS) as (W & Hty & _).
-  exact (soundness_h W p T Hty).
+  intros EM Hp HS. destruct (p_connect_n None Ws ∅ p T Hp HS) as (W & Hty & _).
+  exact (soundness_h W p T EM Hty).
 Qed.
 
-Theorem connect_n_live_soundness Ws p T :
+Theorem connect_n_live_soundness Ws p T : excluded_middle →
   pcomps None Ws ∅ p T → swf (sw_joins Ws) → ⊢▷ p → deadlock_free p ∧ no_tau_divergence p.
 Proof.
-  intros Hp HS Hg. destruct (p_connect_n None Ws ∅ p T Hp HS) as (W & Hty & _).
-  exact (live_soundness_h W p T Hty Hg).
+  intros EM Hp HS Hg. destruct (p_connect_n None Ws ∅ p T Hp HS) as (W & Hty & _).
+  exact (live_soundness_h W p T EM Hty Hg).
 Qed.

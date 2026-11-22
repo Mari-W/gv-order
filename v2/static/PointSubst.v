@@ -374,7 +374,7 @@ Proof.
   specialize (H' (pvar 0)). by rewrite !pshift_back in H' by done.
 Qed.
 
-(** ** Conservativity under (gen-new₁)
+(** ** Conservativity under (gen-new)
 
     A derivation in [hc_open 1 C Γ] may enter the tree of the new root
     through an entry and leave it through an exit. [cinv] follows such a
@@ -385,7 +385,7 @@ Lemma tree0_dec x : Decision (in_tree0 x).
 Proof. unfold in_tree0. apply _. Defined.
 
 Section cons_gen.
-  Context (W : sworld) (Γ : hctx) (C : bcs) (Sr : point → point → Prop).
+  Context (W : sworld) (Γ : hctx) (C : bcs) (Sr : point → list point → Prop).
   Context (Hfc : facts_const W).
   Context (Hcc : ∀ x y, cfact C x y → ¬ in_tree0 x → ¬ in_tree0 y → slt W Γ (ctx_pt C x) (ctx_pt C y)).
   Context (HS : gen_new_rel W Γ C Sr).
@@ -394,31 +394,38 @@ Section cons_gen.
 
   Definition cinv (x y : point) : Prop :=
     (¬ in_tree0 x → ¬ in_tree0 y → slt W Γ (un x) (un y)) ∧
-    (¬ in_tree0 x → in_tree0 y → ∀ t, Sr y t → slt W Γ (un x) t) ∧
-    (in_tree0 x → ¬ in_tree0 y → ∃ t, Sr x t ∧ slt W Γ t (un y)) ∧
-    (in_tree0 x → in_tree0 y → ∀ t, Sr y t → ∃ t', Sr x t' ∧ slt W Γ t' t).
+    (¬ in_tree0 x → in_tree0 y → ∀ T, Sr y T → ∃ t, t ∈ T ∧ slt W Γ (un x) t) ∧
+    (in_tree0 x → ¬ in_tree0 y → ∃ T, Sr x T ∧ ∀ t, t ∈ T → slt W Γ t (un y)) ∧
+    (in_tree0 x → in_tree0 y → ∀ T, Sr y T → ∃ T', Sr x T' ∧ ∀ t', t' ∈ T' → ∃ t, t ∈ T ∧ slt W Γ t' t).
 
   Lemma cinv_trans x y z : cinv x y → cinv y z → cinv x z.
   Proof.
     intros (A1 & A2 & A3 & A4) (B1 & B2 & B3 & B4).
     destruct (tree0_dec y) as [Hy|Hy]; split_and!.
-    - intros Hx Hz. destruct (B3 Hy Hz) as (t & Ht & H2). eapply sl_trans; [by apply A2|exact H2].
-    - intros Hx Hz t Ht. destruct (B4 Hy Hz t Ht) as (t' & Ht' & H2). eapply sl_trans; [by apply A2|exact H2].
-    - intros Hx Hz. destruct (B3 Hy Hz) as (t & Ht & H2). destruct (A4 Hx Hy t Ht) as (t' & Ht' & H1).
-      exists t'. split; [done|]. by eapply sl_trans.
-    - intros Hx Hz t Ht. destruct (B4 Hy Hz t Ht) as (t1 & Ht1 & H2). destruct (A4 Hx Hy t1 Ht1) as (t' & Ht' & H1).
-      exists t'. split; [done|]. by eapply sl_trans.
+    - intros Hx Hz. destruct (B3 Hy Hz) as (T & HT & H2). destruct (A2 Hx Hy T HT) as (t & Ht & H1).
+      eapply sl_trans; [exact H1|by apply H2].
+    - intros Hx Hz T HT. destruct (B4 Hy Hz T HT) as (T' & HT' & H2). destruct (A2 Hx Hy T' HT') as (t' & Ht' & H1).
+      destruct (H2 t' Ht') as (t & Ht & H3). exists t. split; [done|]. by eapply sl_trans.
+    - intros Hx Hz. destruct (B3 Hy Hz) as (T & HT & H2). destruct (A4 Hx Hy T HT) as (T' & HT' & H1).
+      exists T'. split; [done|]. intros t' Ht'. destruct (H1 t' Ht') as (t & Ht & H3).
+      eapply sl_trans; [exact H3|by apply H2].
+    - intros Hx Hz T HT. destruct (B4 Hy Hz T HT) as (T1 & HT1 & H2). destruct (A4 Hx Hy T1 HT1) as (T' & HT' & H1).
+      exists T'. split; [done|]. intros t' Ht'. destruct (H1 t' Ht') as (t1 & Ht1 & H3).
+      destruct (H2 t1 Ht1) as (t & Ht & H4). exists t. split; [done|]. by eapply sl_trans.
     - intros Hx Hz. eapply sl_trans; [by apply A1|by apply B1].
-    - intros Hx Hz t Ht. eapply sl_trans; [by apply A1|by apply B2].
-    - intros Hx Hz. destruct (A3 Hx Hy) as (t & Ht & H1). exists t. split; [done|]. eapply sl_trans; [exact H1|by apply B1].
-    - intros Hx Hz t Ht. destruct (A3 Hx Hy) as (t' & Ht' & H1). exists t'. split; [done|].
-      eapply sl_trans; [exact H1|by apply B2].
+    - intros Hx Hz T HT. destruct (B2 Hy Hz T HT) as (t & Ht & H2). exists t. split; [done|].
+      eapply sl_trans; [by apply A1|exact H2].
+    - intros Hx Hz. destruct (A3 Hx Hy) as (T & HT & H1). exists T. split; [done|].
+      intros t Ht. eapply sl_trans; [by apply H1|by apply B1].
+    - intros Hx Hz T HT. destruct (A3 Hx Hy) as (T' & HT' & H1). exists T'. split; [done|].
+      intros t' Ht'. destruct (B2 Hy Hz T HT) as (t & Ht & H2). exists t. split; [done|].
+      eapply sl_trans; [by apply H1|exact H2].
   Qed.
 
   Lemma cinv_step s' s : new_step C s' s → cinv s' s.
   Proof.
     intros Hst. pose proof Hst as (H1 & H2 & _). split_and!; try done.
-    intros _ _ t Ht. destruct HS as (_ & Hs & _). by apply (Hs s t s').
+    intros _ _ T HT. destruct HS as (_ & _ & Hs & _). by apply (Hs s T s').
   Qed.
 
   Lemma un_po x : un x⁺ = (un x)⁺.
@@ -492,9 +499,9 @@ Section cons_gen.
       destruct (tree0_dec x0) as [Hx|Hx], (tree0_dec y0) as [Hy|Hy].
       + rewrite !cinst_tree0 by done. apply cinv_step. split_and!; [done|done|left; exact Hcf].
       + rewrite (cinst_tree0 x0) by done. destruct (cinst_out y0 Hsy Hy) as [Hy' Ey].
-        split_and!; try tauto. intros _ _. rewrite Ey. destruct HS as (Hx' & _ & _). by apply Hx'.
+        split_and!; try tauto. intros _ _. rewrite Ey. destruct HS as (_ & Hx' & _). by apply Hx'.
       + rewrite (cinst_tree0 y0) by done. destruct (cinst_out x0 Hsx Hx) as [Hx' Ex].
-        split_and!; try tauto. intros _ _ t Ht. rewrite Ex. destruct HS as (_ & _ & He). by apply (He y0 t x0).
+        split_and!; try tauto. intros _ _ T HT. rewrite Ex. destruct HS as (_ & _ & _ & He). by apply (He y0 T x0).
       + destruct (cinst_out x0 Hsx Hx) as [Hx' Ex], (cinst_out y0 Hsy Hy) as [Hy' Ey].
         split_and!; try tauto. intros _ _. rewrite Ex, Ey. by apply Hcc.
   Qed.
@@ -508,7 +515,7 @@ Section cons_gen.
   Qed.
 End cons_gen.
 
-(** Conservativity under (gen-new₁). *)
+(** Conservativity under (gen-new). *)
 Lemma cons_gen W Γ C : facts_const W → gen_new W Γ C → cons_open W Γ 1 C.
 Proof.
   intros Hfc (_ & Hcc & Sr & HS) x y H.

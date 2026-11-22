@@ -210,12 +210,12 @@ Qed.
 
 (** A term typed in the DF projection is in E at the erased environment,
     in every ranked world that models its static world. *)
-Lemma typed_E_df W R Θ t n :
+Lemma typed_E_df (EM : excluded_middle) W R Θ t n :
   sworld_wf W → wmodels R W → tenv_df Θ = Θ → dftyped W Θ hc_empty [] (∅, None) t TUnit →
   Erel κ_DF n R (tenv_erase Θ) TUnit ∅ t.
 Proof.
   intros HW HR Hd Ht. apply (typed_E κ_DF R Θ t TUnit n). rewrite Hd.
-  exact (fundamental W R Θ [] (∅, None) t TUnit HW Ht HR).
+  exact (fundamental EM W R Θ [] (∅, None) t TUnit HW Ht HR).
 Qed.
 
 (** The semantic side reads one ranked world R that models both static
@@ -227,14 +227,14 @@ Section sem.
   Local Lemma HRb : wmodels R Wb.
   Proof. by eapply wmodels_ext; [apply swext_join_r|]. Qed.
 
-Lemma arm_E n : Erel κ_DF n R (tenv_erase Θa) TUnit ∅ (cl2 oc od).
+Lemma arm_E (EM : excluded_middle) n : Erel κ_DF n R (tenv_erase Θa) TUnit ∅ (cl2 oc od).
 Proof.
-  apply (typed_E_df Wa); [apply Wa_wf|apply HRa|apply Θa_df|].
+  apply (typed_E_df EM Wa); [apply Wa_wf|apply HRa|apply Θa_df|].
   apply cl2_typed; [apply oc_od|]. apply sl_w. exact Wa_lt.
 Qed.
 
 (** The thread is in E: three deterministic β steps, then the live arm. *)
-Theorem sb_thread_E n : Erel κ_DF n R (tenv_erase Θa) TUnit ∅ sb_thread.
+Theorem sb_thread_E (EM : excluded_middle) n : Erel κ_DF n R (tenv_erase Θa) TUnit ∅ sb_thread.
 Proof.
   unfold sb_thread, sb_flag, sb_not.
   apply (Erel_det _ _ _ _ _ _ _
@@ -244,13 +244,13 @@ Proof.
   { apply det_beta_case. apply (det_beta_inr EUnit). done. }
   intros j2 _. apply (Erel_det _ _ _ _ _ _ _ (cl2 oc od)).
   { apply (det_beta_inl EUnit). done. }
-  intros j3 _. apply arm_E.
+  intros j3 _. apply (arm_E EM).
 Qed.
 
 (** The partner is in E, typed statically at x̄ ≺ y. *)
-Lemma partner_E n : Erel κ_DF n R (tenv_erase Θb) TUnit ∅ sb_partner.
+Lemma partner_E (EM : excluded_middle) n : Erel κ_DF n R (tenv_erase Θb) TUnit ∅ sb_partner.
 Proof.
-  apply (typed_E_df Wb); [apply Wb_wf|apply HRb|apply Θb_df|].
+  apply (typed_E_df EM Wb); [apply Wb_wf|apply HRb|apply Θb_df|].
   apply cl2_typed; [unfold oc, od; simpl; congruence|]. apply sl_w. exact Wb_lt.
 Qed.
 
@@ -307,14 +307,14 @@ Qed.
 (** The closed process: the thread and the partner over the cut {c, d}. *)
 Definition sb_config : proc := (({["c"]} ∪ {["d"]}), {[+ sb_thread +]} ⊎ {[+ sb_partner +]}).
 
-Lemma sb_deadlock_free_R : deadlock_free sb_config.
+Lemma sb_deadlock_free_R (EM : excluded_middle) : deadlock_free sb_config.
 Proof.
   apply (adequacy R TUnit sb_config). intros n.
   assert (Prel κ_DF n R (∅ ∪ ΣC) TUnit (∅, {[+ sb_thread +]})) as H1.
-  { rewrite (left_id_L ∅ (∪)). refine (sem_p_term κ_DF n R _ ΣC ∅ ∅ _ TUnit _ sth_a (sb_thread_E n)).
+  { rewrite (left_id_L ∅ (∪)). refine (sem_p_term κ_DF n R _ ΣC ∅ ∅ _ TUnit _ sth_a (sb_thread_E EM n)).
     constructor. }
   assert (Prel κ_DF n R (∅ ∪ senv_dual ΣC) TUnit (∅, {[+ sb_partner +]})) as H2.
-  { rewrite (left_id_L ∅ (∪)). refine (sem_p_term κ_DF n R _ _ ∅ ∅ _ TUnit _ sth_b (partner_E n)).
+  { rewrite (left_id_L ∅ (∪)). refine (sem_p_term κ_DF n R _ _ ∅ ∅ _ TUnit _ sth_b (partner_E EM n)).
     constructor. }
   pose proof (sem_p_connect κ_DF n R ∅ ΣC ∅ (senv_dual ΣC) _ _ TUnit ltac:(constructor) H1 H2 sb_conn) as H.
   unfold pconn in H. simpl in H. rewrite chans_ΣC in H. rewrite !(left_id_L ∅ (∪)) in H.
@@ -380,9 +380,9 @@ Definition sbv_thread : expr :=
   Case sb_flag (LetU (Var 0) (cl2 oc od)) (LetU (Var 0) (cl2 od oc)).
 Definition sbv_config : proc := (({["c"]} ∪ {["d"]}), {[+ sbv_thread +]} ⊎ {[+ sb_partner +]}).
 
-Lemma arm_v_E n : Erel κ_DF n R (tenv_erase Θa) TUnit ∅ (LetU EUnit (cl2 oc od)).
+Lemma arm_v_E (EM : excluded_middle) n : Erel κ_DF n R (tenv_erase Θa) TUnit ∅ (LetU EUnit (cl2 oc od)).
 Proof.
-  apply (typed_E_df Wa); [apply Wa_wf|apply HRa|apply Θa_df|].
+  apply (typed_E_df EM Wa); [apply Wa_wf|apply HRa|apply Θa_df|].
   eapply d_letu with (Θ1 := ∅) (Θ2 := Θa).
   - split; [apply map_disjoint_empty_l|by rewrite map_empty_union].
   - apply lsplit_nil.
@@ -391,7 +391,7 @@ Proof.
 Unshelve. all: try exact None.
 Qed.
 
-Theorem sbv_thread_E n : Erel κ_DF n R (tenv_erase Θa) TUnit ∅ sbv_thread.
+Theorem sbv_thread_E (EM : excluded_middle) n : Erel κ_DF n R (tenv_erase Θa) TUnit ∅ sbv_thread.
 Proof.
   unfold sbv_thread, sb_flag, sb_not.
   apply (Erel_det _ _ _ _ _ _ _
@@ -402,17 +402,17 @@ Proof.
   { apply det_beta_case. apply (det_beta_inr EUnit). done. }
   intros j2 _. apply (Erel_det _ _ _ _ _ _ _ (LetU EUnit (cl2 oc od))).
   { apply (det_beta_inl EUnit). done. }
-  intros j3 _. apply arm_v_E.
+  intros j3 _. apply (arm_v_E EM).
 Qed.
 
-Lemma sbv_deadlock_free_R : deadlock_free sbv_config.
+Lemma sbv_deadlock_free_R (EM : excluded_middle) : deadlock_free sbv_config.
 Proof.
   apply (adequacy R TUnit sbv_config). intros n.
   assert (Prel κ_DF n R (∅ ∪ ΣC) TUnit (∅, {[+ sbv_thread +]})) as H1.
-  { rewrite (left_id_L ∅ (∪)). refine (sem_p_term κ_DF n R _ ΣC ∅ ∅ _ TUnit _ sth_a (sbv_thread_E n)).
+  { rewrite (left_id_L ∅ (∪)). refine (sem_p_term κ_DF n R _ ΣC ∅ ∅ _ TUnit _ sth_a (sbv_thread_E EM n)).
     constructor. }
   assert (Prel κ_DF n R (∅ ∪ senv_dual ΣC) TUnit (∅, {[+ sb_partner +]})) as H2.
-  { rewrite (left_id_L ∅ (∪)). refine (sem_p_term κ_DF n R _ _ ∅ ∅ _ TUnit _ sth_b (partner_E n)).
+  { rewrite (left_id_L ∅ (∪)). refine (sem_p_term κ_DF n R _ _ ∅ ∅ _ TUnit _ sth_b (partner_E EM n)).
     constructor. }
   pose proof (sem_p_connect κ_DF n R ∅ ΣC ∅ (senv_dual ΣC) _ _ TUnit ltac:(constructor) H1 H2 sb_conn) as H.
   unfold pconn in H. simpl in H. rewrite chans_ΣC in H. rewrite !(left_id_L ∅ (∪)) in H.
@@ -420,11 +420,11 @@ Proof.
 Qed.
 End sem.
 
-Theorem sb_deadlock_free : deadlock_free sb_config.
-Proof. destruct (wmodels_exists _ (proj1 Wab_ok) (proj2 Wab_ok)) as [R HR]. exact (sb_deadlock_free_R R HR). Qed.
+Theorem sb_deadlock_free : excluded_middle → deadlock_free sb_config.
+Proof. intros EM. destruct (wmodels_exists _ (proj1 Wab_ok) (proj2 Wab_ok)) as [R HR]. exact (sb_deadlock_free_R R HR EM). Qed.
 
-Theorem sbv_deadlock_free : deadlock_free sbv_config.
-Proof. destruct (wmodels_exists _ (proj1 Wab_ok) (proj2 Wab_ok)) as [R HR]. exact (sbv_deadlock_free_R R HR). Qed.
+Theorem sbv_deadlock_free : excluded_middle → deadlock_free sbv_config.
+Proof. intros EM. destruct (wmodels_exists _ (proj1 Wab_ok) (proj2 Wab_ok)) as [R HR]. exact (sbv_deadlock_free_R R HR EM). Qed.
 
 (** ** The static rejection of the variant
 

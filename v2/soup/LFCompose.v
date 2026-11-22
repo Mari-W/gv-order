@@ -169,11 +169,11 @@ Proof.
 Qed.
 
 (** The thread of P-Term, typed at a finite N and guarded, in E[live]. *)
-Lemma typed_live W R N Θ t T c n :
+Lemma typed_live (EM : excluded_middle) W R N Θ t T c n :
   sworld_wf W → ∅ ⊢▷ t → Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} t : T ▷ c → wmodels R W →
   t ∈ E[live]^R _ n⟦tenv_erase Θ ⊢ T⟧^∅.
 Proof.
-  intros HW Hg Hty HR. pose proof (live_fundamental_typed _ _ _ _ _ _ _ _ _ HW Hty Hg HR ∅ ∅ ltac:(by intros u Hu)
+  intros HW Hg Hty HR. pose proof (live_fundamental_typed EM _ _ _ _ _ _ _ _ _ HW Hty Hg HR ∅ ∅ ltac:(by intros u Hu)
     n R ∅ Var (wext_refl _) (map_disjoint_empty_r _) eq_refl) as H.
   rewrite subst_ids, map_union_empty in H.
   assert (sf_den ∅ ∅ (∅, None) = ∅) as E.
@@ -185,7 +185,7 @@ Qed.
 
 (** The rule P-Term: the premises of [p_term] at Some N and a guarded
     thread, read at every ranked world R that models the static world W. *)
-Theorem lf_p_term W N Σ ΘB C0 t T c :
+Theorem lf_p_term (EM : excluded_middle) W N Σ ΘB C0 t T c :
   sworld_wf W → tfree T →
   (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 →
   (∀ c, c ∈ C0 → ∃ S (x : point) m m', tsum_ok (Some N) m m' ∧
@@ -204,7 +204,7 @@ Proof.
       + rewrite H2 in Hte. injection Hte as <-. apply fle_refl. }
   pose proof (fsem_of_cost _ _ _ _ _ _ Hty Hp Hcr) as Hf.
   apply (lf_soup_term N R Σ ΘB C0 t T); try done.
-  intros n. by eapply (typed_live W).
+  intros n. by eapply (typed_live EM W).
 Qed.
 
 (** ** Adequacy at a static world
@@ -252,5 +252,5 @@ Proof.
   rewrite <-E in Hty.
   assert (∀ o, o ∈ dom (∅ : tenv) ↔ ech o ∈ (∅ : gset chan)) as HB by (intros o; rewrite dom_empty_L; set_solver).
   apply (lf_sems_adequacy EM FC N W _ T Hwf HW).
-  exact (lf_p_term W N ∅ ∅ ∅ t T c Hwf Hp HB ltac:(set_solver) ltac:(set_solver) Hty Hg).
+  exact (lf_p_term EM W N ∅ ∅ ∅ t T c Hwf Hp HB ltac:(set_solver) ltac:(set_solver) Hty Hg).
 Qed.

@@ -217,14 +217,15 @@ Definition wf_new (C : bcs) : Prop :=
   (∀ x y, bc_facts C (FLt x y) → fact_scoped (1 + length (bc_env C)) (FLt x y) → in_tree0 y) ∧
   well_founded (new_step C).
 
-(** ** The most general constraint of a creation (gen-new₁)
+(** ** The most general constraint of a creation (gen-new)
 
-    docs/redesign/check-general-new.md, section 6, and (wf-new⁺) of
-    check-layers-open.md. A fact of C may also end at a context point,
-    an exit u ≺ y. A relation S pairs points of the tree of ρ with points
-    of Γ, so that each exit has a partner below y, partners descend along
-    C with program order, and each fact z ≺ s into a paired point lies
-    below its partner. Facts between two context points follow from Γ.
+    docs/redesign/check-general-new.md, section 4. A fact of C may also
+    end at a context point, an exit u ≺ y. A relation S pairs points of
+    the tree of ρ with nonempty finite sets of points of Γ, so that each
+    exit has a partner set below y, each point of a partner set of a
+    step below lies below some point of the partner set above, and each
+    fact z ≺ s into a paired point lies below some point of its partner
+    set. Facts between two context points follow from Γ.
     A context point is the instance [ctx_pt] of a variable 1 + j of C at
     the j-th point of its environment. The premise reads [slt], the facts
     of C and program order, and names no rank. *)
@@ -233,15 +234,42 @@ Definition ctx_pt (C : bcs) (x : point) : point := pt_inst (plist (pvar 0 :: bc_
 Definition cfact (C : bcs) (x y : point) : Prop :=
   bc_facts C (FLt x y) ∧ fact_scoped (1 + length (bc_env C)) (FLt x y).
 
-Definition gen_new_rel (W : sworld) (Γ : hctx) (C : bcs) (Sr : point → point → Prop) : Prop :=
-  (∀ u y, cfact C u y → in_tree0 u → ¬ in_tree0 y → ∃ t, Sr u t ∧ slt W Γ t (ctx_pt C y)) ∧
-  (∀ s t s', Sr s t → new_step C s' s → ∃ t', Sr s' t' ∧ slt W Γ t' t) ∧
-  (∀ s t z, Sr s t → cfact C z s → ¬ in_tree0 z → slt W Γ (ctx_pt C z) t).
+Definition gen_new_rel (W : sworld) (Γ : hctx) (C : bcs) (Sr : point → list point → Prop) : Prop :=
+  (∀ s T, Sr s T → T ≠ []) ∧
+  (∀ u y, cfact C u y → in_tree0 u → ¬ in_tree0 y →
+     ∃ T, Sr u T ∧ ∀ t, t ∈ T → slt W Γ t (ctx_pt C y)) ∧
+  (∀ s T s', Sr s T → new_step C s' s →
+     ∃ T', Sr s' T' ∧ ∀ t', t' ∈ T' → ∃ t, t ∈ T ∧ slt W Γ t' t) ∧
+  (∀ s T z, Sr s T → cfact C z s → ¬ in_tree0 z → ∃ t, t ∈ T ∧ slt W Γ (ctx_pt C z) t).
 
 Definition gen_new (W : sworld) (Γ : hctx) (C : bcs) : Prop :=
   well_founded (new_step C) ∧
   (∀ x y, cfact C x y → ¬ in_tree0 x → ¬ in_tree0 y → slt W Γ (ctx_pt C x) (ctx_pt C y)) ∧
   ∃ Sr, gen_new_rel W Γ C Sr.
+
+(** (gen-new₁): partners are single points, S a relation into points of
+    Γ. It is (gen-new) with singleton sets ([gen_new1_gen]). *)
+Definition gen_new1_rel (W : sworld) (Γ : hctx) (C : bcs) (Sr : point → point → Prop) : Prop :=
+  (∀ u y, cfact C u y → in_tree0 u → ¬ in_tree0 y → ∃ t, Sr u t ∧ slt W Γ t (ctx_pt C y)) ∧
+  (∀ s t s', Sr s t → new_step C s' s → ∃ t', Sr s' t' ∧ slt W Γ t' t) ∧
+  (∀ s t z, Sr s t → cfact C z s → ¬ in_tree0 z → slt W Γ (ctx_pt C z) t).
+
+Definition gen_new1 (W : sworld) (Γ : hctx) (C : bcs) : Prop :=
+  well_founded (new_step C) ∧
+  (∀ x y, cfact C x y → ¬ in_tree0 x → ¬ in_tree0 y → slt W Γ (ctx_pt C x) (ctx_pt C y)) ∧
+  ∃ Sr, gen_new1_rel W Γ C Sr.
+
+Lemma gen_new1_gen W Γ C : gen_new1 W Γ C → gen_new W Γ C.
+Proof.
+  intros (Hwf & Hcc & Sr & Hex & Hst & Hen). split_and!; [done|done|].
+  exists (λ s T, ∃ t, Sr s t ∧ T = [t]). split_and!.
+  - by intros s T (t & _ & ->).
+  - intros u y Hf Hu Hy. destruct (Hex u y Hf Hu Hy) as (t & Ht & Hlt).
+    exists [t]. split; [eauto|]. intros t' ->%list_elem_of_singleton. done.
+  - intros s T s' (t & Ht & ->) Hs. destruct (Hst s t s' Ht Hs) as (t' & Ht' & Hlt).
+    exists [t']. split; [eauto|]. intros t'' ->%list_elem_of_singleton. exists t. split; [by apply list_elem_of_singleton|done].
+  - intros s T z (t & Ht & ->) Hf Hz. exists t. split; [by apply list_elem_of_singleton|]. by apply (Hen s t z).
+Qed.
 
 (** (wf-new⁺): the partners come from a map h on the points D below an
     exit, and no fact joins two context points. *)
@@ -254,7 +282,7 @@ Definition wf_new_plus (W : sworld) (Γ : hctx) (C : bcs) : Prop :=
     (∀ s s', D s → new_step C s' s → slt W Γ (h s') (h s)) ∧
     (∀ u z, D u → cfact C z u → ¬ in_tree0 z → slt W Γ (ctx_pt C z) (h u)).
 
-Lemma wf_new_plus_gen W Γ C : wf_new_plus W Γ C → gen_new W Γ C.
+Lemma wf_new_plus_gen1 W Γ C : wf_new_plus W Γ C → gen_new1 W Γ C.
 Proof.
   intros (Hwf & Hin & D & h & HD & Hx & Hs & He). split_and!; [done| |].
   - intros x y Hf Hx' Hy'. by destruct (Hin x y Hf).
@@ -263,6 +291,9 @@ Proof.
     + intros s t s' [HDs ->] Hst. exists (h s'). split; [split; [by eapply HD|done]|]. by apply Hs.
     + intros s t z [HDs ->] Hf Hz. by apply He.
 Qed.
+
+Lemma wf_new_plus_gen W Γ C : wf_new_plus W Γ C → gen_new W Γ C.
+Proof. intros H. by apply gen_new1_gen, wf_new_plus_gen1. Qed.
 
 Lemma wf_new_gen W Γ C : wf_new C → gen_new W Γ C.
 Proof.
@@ -351,12 +382,17 @@ Definition thage (c : fuel) (Θ Θ' : tenv) : Prop :=
     product, a sum and an existential compare their parts. An
     existential may weaken its constraint to one that Γ and the
     constraint entail at the bound points (item 2 of 2026-11-21,
-    finding 6.7 of docs/redesign/algorithmic-plan.md), so
-    e : ∃ιs. C. T types at ∃ιs. C'. T whenever let x = e in x does with
-    the same lower bound. The bodies of the two existentials compare
-    under Γ extended by C. A box with session variables may change its
+    finding 6.7 of docs/redesign/algorithmic-plan.md). The lower bound
+    may stay, or fall to any l′ that Γ and C place below the heads of
+    the body ([lb_lower]), as E-Pack would after an opening (item 1 of
+    2026-11-22). So e : ∃ιs. C. T types at ∃^{l′}ιs. C'. T whenever
+    let x = e in x does by opening x and packing it at ιs. The bodies of
+    the two existentials compare under Γ extended by C. A box with session variables may change its
     result up to ≈ when both results are contractive, because
     contractive instances keep ≈ ([teq_sinst]). *)
+Definition lb_lower (W : sworld) (Γ : hctx) (n : nat) (C : bcs) (lb lb' : lbound) (T : ty) : Prop :=
+  lb' = lb ∨ lbx_below_h W (hc_open n C Γ) (lb_map (pt_inst (pshift n)) lb') (heads T) (hbot T).
+
 Inductive tsub (W : sworld) : hctx → ty → ty → Prop :=
   | sub_unit Γ : tsub W Γ TUnit TUnit
   | sub_arr Γ ub lb c T1 U a c' T1' U' a' :
@@ -371,9 +407,10 @@ Inductive tsub (W : sworld) : hctx → ty → ty → Prop :=
       tsub W Γ (TBox n k C ub c U) (TBox n k C ub c' U')
   | sub_sess Γ s s' x a a' mt :
       sequiv s s' → fle a' a → tsub W Γ (TSess s x a mt) (TSess s' x a' mt)
-  | sub_ex Γ lb n C C' T T' :
+  | sub_ex Γ lb lb' n C C' T T' :
       hold_at W (hc_open n C Γ) (bcs_inst (pshift n) C') (ids n) →
-      tsub W (hc_open n C Γ) T T' → tsub W Γ (TEx lb n C T) (TEx lb n C' T').
+      lb_lower W Γ n C lb lb' T →
+      tsub W (hc_open n C Γ) T T' → tsub W Γ (TEx lb n C T) (TEx lb' n C' T').
 
 (** ** Instances of session variables
 
