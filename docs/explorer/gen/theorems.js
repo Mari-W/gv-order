@@ -322,7 +322,7 @@ ring      = fwd(o₁, o₂) ∥ fwd(ō₂, ō₁)                           -- c
     shows: String.raw`Each action of the forwarder asks its point below the dual point of the other end. The five facts are $x \prec \overline{y}$, $y \prec \overline{x^{+}}$, $y^{+} \prec \overline{x^{+}}$, $x^{+} \prec \overline{y^{++}}$ and $x^{++} \prec \overline{y^{++}}$, and [[p-typing|P-Term]] types the forwarder over a world that holds these facts. A process with the forwarder behind one of its ends types at the same interface type when the root of $y$ is no constant of its world. A partner, the forwarder and a second partner compose to a deadlock-free process by [[th-sound]]. A received end as payload is $\eta$-expanded through a channel at the field $y\cdot 0$, and the forwarder extends to each protocol of unit messages that ends in $\mathsf{Close}$. In the ring the first forwarder needs $x \prec \overline{y}$ and the second $\overline{y} \prec x$, so no world, bound or type types the ring.`,
     rocq: 'examples/Copycat.v: fwd_term, fwd_expand, fwd_config_deadlock_free, fwdh_term, fwdp_term, fwdp_expand, ring_rejected, ring_rejected_full',
     accepts: { df: { ok: true, rocq: 'fwd_term, fwd_config_deadlock_free' } } },
-  { id: 'ex-milner', title: "Milner's ring", modes: ['df', 'live', 'lf'],
+  { id: 'ex-ring3', title: 'Three-thread ring', modes: ['df', 'live', 'lf'],
     code: `A  = let ∗ = close c⁻ in close a⁺        -- a at 0, b at 1, c at 2
 B  = let ∗ = close a⁻ in close b⁺
 C  = let ∗ = close b⁻ in close c⁺        -- A ∥ B ∥ C deadlocks

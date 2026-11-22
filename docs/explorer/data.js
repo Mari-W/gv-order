@@ -12766,8 +12766,8 @@ window.MAP = {
    }
   },
   {
-   "id": "ex-milner",
-   "title": "Milner's ring",
+   "id": "ex-ring3",
+   "title": "Three-thread ring",
    "modes": [
     "df",
     "lf"
