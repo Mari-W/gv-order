@@ -1,7 +1,9 @@
 (** * many is lock free (stage S9)
 
-    The program of examples/FreshMany.v types at the bound N = 8, so every end has N/2 = 4 tickets. The
-    box takes c and e with credit 4 each. In the body, e loses 1 while c
+    The program of examples/FreshMany.v types at the bound N = 8. main
+    creates c with tickets 5 and 3, and e at the field of c with the same
+    split, so c and e reach the box after the force (cost 1) at credit 4.
+    The box takes c and e with credit 4 each. In the body, e loses 1 while c
     closes and 3 while d sends twice and closes. Each send and receive
     returns its end at credit 4, so the thunk needs no more than the
     refill. main forces the box last. The world is a lock-free world by
@@ -9,7 +11,7 @@
 
 From GV Require Export examples.LFTools examples.FreshMany.
 
-Definition fml_T : ty := TProd (TSess SEnd (pvar 0) (Some 4) (Some 4)) (TSess SEnd (pvar 1) (Some 4) (Some 4)).
+Definition fml_T : ty := TProd (TSess SEnd (pvar 0) (Some 4) (Some 5)) (TSess SEnd (pvar 1) (Some 4) (Some 5)).
 Definition fml_ty : ty := lbox 2 fm_C (Some (pvar 1)) fml_T TUnit.
 
 Section body.
@@ -115,7 +117,7 @@ Proof.
   eexists _.
   { unfold fm_main, let_new.
   eapply e_let_; [apply lsplit_nil| | | ].
-  { eapply (e_new' _ _ _ _ _ _ SEnd); [spare_tac|apply fm_wf_new|contr_tac]. }
+  { eapply (e_new_tk _ _ _ _ _ _ SEnd (Some 5) (Some 3)); [spare_tac|apply fm_wf_new|unfold tsum_ok; simpl; lia|contr_tac]. }
   lage_tac.
   eapply e_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
   rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
@@ -146,7 +148,7 @@ Proof.
     eapply e_var'; [reflexivity|]. spare_tac. }
   lage_tac.
   eapply e_app_; [lsplit_tac (EForce fm_box) EUnit|apply ubu_below_empty| | | |shelve].
-  { eapply (lbox_force_eq _ _ _ _ _ _ 2 fm_C (Some (pvar 1)) fml_T TUnit fm_xs _ (UPt ((pvar 0)·1)) (TProd (TSess SEnd (pvar 0) (Some 4) (Some 4)) (TSess SEnd ((pvar 0)·1) (Some 4) (Some 4))));
+  { eapply (lbox_force_eq _ _ _ _ _ _ 2 fm_C (Some (pvar 1)) fml_T TUnit fm_xs _ (UPt ((pvar 0)·1)) (TProd (TSess SEnd (pvar 0) (Some 4) (Some 5)) (TSess SEnd ((pvar 0)·1) (Some 4) (Some 5))));
       [done|apply fml_hold|done|done|done|].
     apply (fml_box_typed _ _ 7). }
   lage_tac.
@@ -158,17 +160,14 @@ Proof.
   Unshelve. all: first [apply tsub_refl | exact None | simpl; lia | simpl; done].
 Qed.
 
-Lemma fm_guarded : ∅ ⊢▷ fm_main.
-Proof. unfold fm_main, fm_box, fm_e, fm_thunk, let_new. guard_tac. Qed.
-
 Theorem fm_lftyped : ∃ N, ∅ ⊩^N _ W_fm (∅, {[+ fm_main +]}) : TUnit.
 Proof.
   destruct fml_typedN as (c & Ht). exists 8.
-  eapply lf_main_typed; [apply W_fm_wf|constructor|exact Ht|apply fm_guarded].
+  eapply lf_main_typed; [apply W_fm_wf|constructor|exact Ht].
 Qed.
 
 Theorem fm_lock_free : excluded_middle → functional_choice → lock_free (∅, {[+ fm_main +]}).
 Proof.
   intros EM FC. destruct fml_typedN as (c & Ht).
-  eapply (lf_main EM FC); [apply W_fm_wf|constructor|exact Ht|apply fm_guarded].
+  eapply (lf_main EM FC); [apply W_fm_wf|constructor|exact Ht].
 Qed.

@@ -139,7 +139,8 @@ Proof.
     exists W'. split; [done|].
     split.
     + intros Hc. assert (∃ i o1 o2, ev = EvSolo i (LSess (SLink ({[o1]} ∪ {[o2]}))) (PickLink o1 o2)) as (i & o1 & o2 & ->).
-      { clear -Hst Hc Hτ. destruct Hst; simpl in Hc, Hτ; try discriminate; eauto; by unfold ev_tau in Hτ. }
+      { clear -Hst Hc Hτ. destruct Hst as [C0 M0 i0 α0 e0 e0' Hi0 Hs0 [-> | ->]| | | | | | |];
+          simpl in Hc, Hτ; try discriminate; eauto; by unfold ev_tau in Hτ. }
       apply (IHp (erase q')); [|exact HL'].
       unfold ltof. replace (psize p) with (psize (pmap h p)) by (unfold psize, pmap, emapE; simpl; apply msize_emap).
       rewrite <-Hq. by eapply psize_link.

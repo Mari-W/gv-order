@@ -43,7 +43,7 @@ Section body.
   Lemma rgl_call Δ F e X1 Y1 c0 :
     rreach (pvar 0) (pvar 1) X1 Y1 →
     typed W (Some 8) ∅ Γb Δ F e rgl_ty c0 →
-    typed W (Some 8) ∅ Γb Δ F (EForce e) (TLolli (UPt (sh 1 X1)) LNone None (TProd (TSess Schl X1 (Some 0) (Some 4)) (TSess (dual Schl) Y1 (Some 1) (Some 4))) TUnit None) (fadd c0 (Some 0)).
+    typed W (Some 8) ∅ Γb Δ F (EForce e) (TLolli (UPt (sh 1 X1)) LNone None (TProd (TSess Schl X1 (Some 0) (Some 4)) (TSess (dual Schl) Y1 (Some 1) (Some 4))) TUnit None) (fadd c0 (Some 1)).
   Proof.
     intros HR H.
     eapply (lbox_force_eq _ _ _ _ _ _ 2 rg_C (Some (sh 1 (pvar 0))) rgl_T TUnit (X1 :: Y1 :: []));
@@ -195,17 +195,14 @@ Proof.
   Unshelve. all: first [exact None | simpl; lia | simpl; done].
 Qed.
 
-Lemma rg_guarded : ∅ ⊢▷ rg_main.
-Proof. unfold rg_main, ring, rg_e, let_new. guard_tac. Qed.
-
 Theorem rg_lftyped : ∃ N, ∅ ⊩^N _ W_rg (∅, {[+ rg_main +]}) : TUnit.
 Proof.
   destruct rgl_typedN as (c & Ht). exists 8.
-  eapply lf_main_typed; [apply W_rg_wf|constructor|exact Ht|apply rg_guarded].
+  eapply lf_main_typed; [apply W_rg_wf|constructor|exact Ht].
 Qed.
 
 Theorem rg_lock_free : excluded_middle → functional_choice → lock_free (∅, {[+ rg_main +]}).
 Proof.
   intros EM FC. destruct rgl_typedN as (c & Ht).
-  eapply (lf_main EM FC); [apply W_rg_wf|constructor|exact Ht|apply rg_guarded].
+  eapply (lf_main EM FC); [apply W_rg_wf|constructor|exact Ht].
 Qed.

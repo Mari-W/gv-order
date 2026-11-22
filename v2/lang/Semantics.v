@@ -25,7 +25,8 @@ Inductive slabel :=
   | SLink (os : gset cend).                      (* ↔{o1, o2}, an unordered pair *)
 
 Inductive tlabel :=
-  | LBeta                                    (* β, let, case, force *)
+  | LBeta                                    (* β, let, case *)
+  | LForce                                   (* force of a box *)
   | LNew (c : chan)                         (* new creates c *)
   | LSpawn (v : expr)                        (* spawn of the thunk v, moving its ends *)
   | LSess (σ : slabel).
@@ -58,7 +59,7 @@ Inductive head_step : expr → tlabel → expr → Prop :=
       head_step (Case (Inj true v) e1 e2) LBeta (subst1 v e2)
   | t_act_force e :                                     (* T-Act-Force *)
       (* the body resumes with the thunk for its own bound occurrence *)
-      head_step (EForce (EBox e)) LBeta (subst1 (EBox e) e)
+      head_step (EForce (EBox e)) LForce (subst1 (EBox e) e)
   | t_act_new c :                                       (* T-Act-New *)
       head_step ENew (LNew c) (Pair (Chan c⁺) (Chan c⁻))
   | t_act_spawn v :                                     (* T-Act-Spawn *)

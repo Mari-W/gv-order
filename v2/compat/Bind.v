@@ -118,7 +118,7 @@ Section bind.
     assert (∀ W' j Θv v, W1 ⊑ W' → ole j n → Θv ##ₘ Θ2 → Vrel κ j W' Θv T v →
               Erel κ j W' (Θv ∪ Θ2) U F (fill_frame f v)) as HK1.
     { intros W' j Θv v HW' Hj Hd' HV. apply HK; [by eapply wext_trans|done..]. }
-    destruct (Hb W1 HW1) as (Hs & Hr & H1 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
+    destruct (Hb W1 HW1) as (Hs & Hr & H1 & H3 & H2 & H4 & H5 & H6 & H7 & H8 & H9 & H10).
     (* the continuation after a step of cost c *)
     assert (∀ Wx c Θ1' e', W ⊑ Wx → Θ1' ##ₘ Θ2 →
       at_cost_E n c (Erel κ)
@@ -145,6 +145,9 @@ Section bind.
     - (* O-Beta *)
       intros E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
       by apply Hac, H1.
+    - (* O-Force *)
+      intros E' Hst. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
+      by apply Hac, H3.
     - (* O-New *)
       intros c E' Hst [Hc1 Hc2]. destruct (tstep_fill_inv _ _ _ _ Hf Hnv Hst) as (e' & Hst' & ->).
       rewrite dom_union_L in Hc1, Hc2.

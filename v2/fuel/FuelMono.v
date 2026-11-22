@@ -384,6 +384,10 @@ Section clauses.
     tstep e (LSess s) e' → act_end s = Some o → fspare Π φ (dom φ ∖ {[o]}).
   Proof. intros Hst Ho. by destruct (fuel_act s e' o Hst Ho) as (_ & _ & H & _). Qed.
 
+  (** F-Force: every held end that is not idle has a unit to spare. *)
+  Lemma fuel_force e' : tstep e LForce e' → fspare Π φ (dom φ).
+  Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (H1 & _). Qed.
+
   (** A spawn hands on held ends. *)
   Lemma fuel_spawn_hand v e' : tstep e (LSpawn v) e' → fends v ⊆ dom φ.
   Proof. intros Hst. by pose proof (fuel_obl _ _ Hst) as (H1 & _). Qed.
@@ -405,9 +409,10 @@ Proof.
   { intros Hval. pose proof (Hv Hval) as HV.
     apply Vfuel_eq. apply (Vfuel_down _ m n); [done|]. by apply Vfuel_eq. }
   intros α e' Hst. specialize (Hs α e' Hst).
-  destruct α as [|c|v|[o w|o w|o|o i|o i|os]]; simpl in Hs |- *;
-    unfold f_beta, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link in *.
+  destruct α as [| |c|v|[o w|o w|o|o i|o i|os]]; simpl in Hs |- *;
+    unfold f_beta, f_force, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link in *.
   - intros j Hj. by apply Hs, Hlt.
+  - destruct Hs as (H1 & H2 & H3). split_and!; [done|done|intros j Hj; by apply H3, Hlt].
   - intros Hf. destruct (Hs Hf) as (Sn & m1 & m2 & Hm & HS). exists Sn, m1, m2. split; [done|].
     intros j Hj. by apply HS, Hlt.
   - destruct Hs as (H1 & H3 & H4). split_and!; [done|intros j Hj; by apply H3, Hlt
@@ -476,9 +481,13 @@ Proof.
   assert (Hact : ∀ o, f_act d Π' φ0 o → f_act d' Π' φ' o).
   { intros o (H1 & H2 & H3 & H4). split_and!; [done|by rewrite <-(cle_dom _ _ Hc0)| |by eapply fle_trans].
     rewrite <-(cle_dom _ _ Hc0). by eapply fspare_mono. }
-  destruct α as [|c|v|[o w|o w|o|o i|o i|os]]; simpl in Hs |- *;
-    unfold f_beta, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link in *.
+  destruct α as [| |c|v|[o w|o w|o|o i|o i|os]]; simpl in Hs |- *;
+    unfold f_beta, f_force, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link in *.
   - eapply IHn; [done..].
+  - destruct Hs as (H1 & H2 & H3). split_and!.
+    + rewrite <-(cle_dom _ _ Hc0). by eapply fspare_mono.
+    + by eapply fle_trans.
+    + eapply IHn; [exact Hdd|by apply cle_tick|exact H3].
   - intros Hf. destruct (Hs (ffresh_cle _ _ _ _ Hc0 Hf)) as (Sn & m1 & m2 & Hm & HS). exists Sn, m1, m2.
     split; [done|]. eapply IHn; [done|by apply cle_cnew|done].
   - destruct Hs as (H1 & H3 & H4). split_and!.

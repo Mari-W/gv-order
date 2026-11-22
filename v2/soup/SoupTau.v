@@ -1,9 +1,9 @@
 (** * No τ-divergence from the soup (stage S8, proposal §2.12, Q12)
 
-      soup_no_tau_divergence :
-        (∀ n, a ∈ S^{N,W} _ n⟦∅ ⊢ T⟧) → no_tau_divergence (erase (s_q a))
+      soup_no_free_divergence :
+        (∀ n, a ∈ S^{N,W} _ n⟦∅ ⊢ T⟧) → no_free_divergence (erase (s_q a))
 
-    The τ steps of κ_L cost nothing, so the live relation reads them
+    The free steps of κ_L cost nothing, so the live relation reads them
     inside the least fixpoint of one level. A thread in E[live] at a
     positive level therefore admits no infinite sequence of
     administrative steps, its spawned children included, because O-Spawn
@@ -27,12 +27,12 @@ Proof.
   intros W Θ T F e H. destruct (H W (wext_refl W)) as (_ & _ & Hsteps).
   pose proof (proj1 (Esteps_iff _ _ _ _ _ _ _ _ _ _ _) Hsteps) as Hobl. clear H Hsteps.
   constructor. intros y Hy.
-  assert (∀ α x', tstep (cerase e) α x' → admin_lbl α → Acc tRs (cerase x') ∧
+  assert (∀ α x', tstep (cerase e) α x' → free_lbl α → Acc tRs (cerase x') ∧
             ∀ v, α = LSpawn v → Acc tRs (cerase (App v EUnit))) as Hall.
   { intros α x' Hst Hα.
     destruct (admin_back e α x' (set_map ech (dom Θ)) Hst Hα) as (α0 & e0 & Hs0 & Hα0 & -> & Hn1 & Hsp).
     pose proof (Hobl α0 e0 Hs0) as Ho.
-    destruct α0 as [|c|v0|[| | | | |os]]; simpl in Hα0; try contradiction; cbn [Eobl] in Ho.
+    destruct α0 as [| |c|v0|[| | | | |os]]; simpl in Hα0; try contradiction; cbn [Eobl] in Ho.
     - split; [|intros v1 Hα1; destruct (Hsp v1 Hα1) as (? & Heq & _); discriminate Heq]. by destruct (proj1 Ho eq_refl).
     - split; [|intros v1 Hα1; destruct (Hsp v1 Hα1) as (? & Heq & _); discriminate Heq]. unfold o_new in Ho.
       assert (cfresh c Θ) as Hcf.
@@ -138,12 +138,13 @@ Proof.
 Qed.
 
 (** A τ step of a soup is a step of the multiset of its erased threads. *)
-Lemma padmin_mstep p p' : padmin p p' → mstep tRs (cmset p'.2) (cmset p.2).
+Lemma padmin_mstep p p' : pfstep p p' → mstep tRs (cmset p'.2) (cmset p.2).
 Proof.
   intros (q & ev & q' & <- & Hst & <- & Had).
-  destruct Hst as [C M i e e' Hi Hs|C M i e c e' Hi Hs|C M i j e v e' Hi Hs Hj
+  destruct Hst as [C M i α e e' Hi Hs Hα|C M i e c e' Hi Hs|C M i j e v e' Hi Hs Hj
     | | | |C M i e o1 o2 e' Hi Hs HC|]; simpl in Had; try contradiction; unfold erase; cbn [fst snd].
-  - rewrite (soup_update M i e e' Hi), (soup_delete M i e Hi), !cmset_union, !cmset_singleton.
+  - destruct Hα as [->| ->]; [|by destruct Had].
+    rewrite (soup_update M i e e' Hi), (soup_delete M i e Hi), !cmset_union, !cmset_singleton.
     exists (cerase e), {[+ cerase e' +]}, (cmset (soup (delete i M))). split_and!; [done|done|].
     intros y Hy. apply gmultiset_elem_of_singleton in Hy as ->. left. by eapply tR_step; [|exact Hs].
   - rewrite (soup_update M i e e' Hi), (soup_delete M i e Hi), !cmset_union, !cmset_singleton.
@@ -166,16 +167,16 @@ Proof.
 Qed.
 
 Lemma padmin_acc (ME : gmultiset expr) :
-  Acc (mstep tRs) ME → ∀ p, cmset p.2 = ME → Acc (λ y x, padmin x y) p.
+  Acc (mstep tRs) ME → ∀ p, cmset p.2 = ME → Acc (λ y x, pfstep x y) p.
 Proof.
   induction 1 as [ME _ IH]. intros p <-. constructor. intros p' Hpa.
   apply (IH (cmset p'.2)); [by apply padmin_mstep|done].
 Qed.
 
-(** ** No τ-divergence *)
+(** ** No divergence by free steps *)
 
-Theorem soup_no_tau_divergence N W T a :
-  (∀ n, a ∈ S^{N,W} _ n⟦∅ ⊢ T⟧) → no_tau_divergence (erase (s_q a)).
+Theorem soup_no_free_divergence N W T a :
+  (∀ n, a ∈ S^{N,W} _ n⟦∅ ⊢ T⟧) → no_free_divergence (erase (s_q a)).
 Proof.
   intros Hs p Hp. destruct (pred_star_lift _ _ Hp) as (q' & Hq' & <-).
   destruct (lfsoup_isteps N W T (s_q a) q' (λ n, ex_intro _ a (conj eq_refl (Hs n))) Hq' ozero)

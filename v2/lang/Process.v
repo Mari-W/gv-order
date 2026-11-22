@@ -149,12 +149,23 @@ Proof. unfold ev_tau. apply _. Defined.
 Definition ev_admin (ev : event) : Prop :=
   match ev with EvSolo _ _ _ => True | _ => False end.
 
+(** Free events: the administrative events but a force. They cost
+    nothing in the live table. *)
+Definition ev_free (ev : event) : Prop :=
+  match ev with EvSolo _ α _ => α ≠ LForce | _ => False end.
+
+Lemma ev_free_admin ev : ev_free ev → ev_admin ev.
+Proof. by destruct ev. Qed.
+
+(** A silent step of one thread: β or force. *)
+Definition beta_lbl (α : tlabel) : Prop := α = LBeta ∨ α = LForce.
+
 (** ** Process steps (the P-Act rules) *)
 
 Inductive istep : config → event → config → Prop :=
-  | p_act_beta C M i e e' :                            (* P-Act-Beta *)
-      M !! i = Some e → tstep e LBeta e' →
-      istep (C, M) (EvSolo i LBeta PickNone) (C, <[i := e']> M)
+  | p_act_beta C M i α e e' :                          (* P-Act-Beta, P-Act-Force *)
+      M !! i = Some e → tstep e α e' → beta_lbl α →
+      istep (C, M) (EvSolo i α PickNone) (C, <[i := e']> M)
   | p_act_new C M i e c e' :                           (* P-Act-New *)
       (* the new channel is globally fresh *)
       M !! i = Some e → tstep e (LNew c) e' →
@@ -190,7 +201,7 @@ Inductive istep : config → event → config → Prop :=
 
 (** The events of the P-Act rules, one case per rule. *)
 Lemma istep_event q ev q' : istep q ev q' →
-  (∃ i, ev = EvSolo i LBeta PickNone) ∨
+  (∃ i α, ev = EvSolo i α PickNone ∧ beta_lbl α) ∨
   (∃ i c, ev = EvSolo i (LNew c) PickNone) ∨
   (∃ i j v, ev = EvSolo i (LSpawn v) (PickChild j)) ∨
   (∃ i j o v, ev = EvSync i j (SSend o v)) ∨
@@ -223,8 +234,8 @@ Inductive pspec : proc → plabel → proc → Prop :=
   | ps_session C E e σ e' :
       tstep e (LSess σ) e' → subjs σ ## C →
       pspec (C, E ⊎ {[+ e +]}) (PSess σ) (C ∖ sentc σ, E ⊎ {[+ e' +]})
-  | ps_beta C E e e' :
-      tstep e LBeta e' →
+  | ps_beta C E α e e' :
+      tstep e α e' → beta_lbl α →
       pspec (C, E ⊎ {[+ e +]}) PTau (C, E ⊎ {[+ e' +]})
   | ps_new C E e c e' :
       tstep e (LNew c) e' → c ∉ C → c ∉ echans E → c ∉ fchans e →
@@ -248,12 +259,12 @@ Inductive pspec : proc → plabel → proc → Prop :=
 (** A step erases to its multiset view. *)
 Theorem istep_pspec q ev q' : istep q ev q' → pspec (erase q) (ev_plabel ev) (erase q').
 Proof.
-  destruct 1 as [C M i e e' Hi Hst|C M i e c e' Hi Hst HC Hc
+  destruct 1 as [C M i α e e' Hi Hst Hα|C M i e c e' Hi Hst HC Hc
     |C M i j e v e' Hi Hst Hj
     |C M i j o v e e' f f' Hij Hi Hj He Hf|C M i j o e e' f f' Hij Hi Hj He Hf HC
     |C M i j o b e e' f f' Hij Hi Hj He Hf|C M i e o1 o2 e' Hi Hst HC
     |C M i e σ e' Hi Hst HC]; unfold erase; simpl.
-  - rewrite (soup_delete M i e Hi), (soup_update M i e e' Hi). by apply ps_beta.
+  - rewrite (soup_delete M i e Hi), (soup_update M i e e' Hi). by eapply ps_beta.
   - rewrite (soup_update M i e e' Hi). rewrite (soup_delete M i e Hi) in Hc |- *.
     rewrite echans_disj_union, echans_singleton in Hc.
     eapply ps_new; [done|done|set_solver|set_solver].
@@ -274,7 +285,7 @@ Theorem pspec_lift q π p' :
 Proof.
   destruct q as [C M]. unfold erase; simpl. intros H.
   remember (C, soup M) as p0 eqn:Hp0.
-  destruct H as [C0 E e σ e' Hst HC|C0 E e e' Hst|C0 E e c e' Hst HC HcE Hce
+  destruct H as [C0 E e σ e' Hst HC|C0 E α e e' Hst Hα|C0 E e c e' Hst HC HcE Hce
     |C0 E e v e' Hst
     |C0 E o v e e' f f' He Hf|C0 E o e e' f f' He Hf HC
     |C0 E o b e e' f f' He Hf|C0 E e o1 o2 e' Hst HC];

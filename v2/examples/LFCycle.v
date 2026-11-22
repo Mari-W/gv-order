@@ -49,17 +49,14 @@ Proof.
   Unshelve. all: first [exact None | simpl; lia].
 Qed.
 
-Lemma cy_guarded : ∅ ⊢▷ cy_main.
-Proof. unfold cy_main, let_new, cy_thunk. guard_tac. Qed.
-
 Theorem cy_lftyped : ∃ N, ∅ ⊩^N _ W_cy (∅, {[+ cy_main +]}) : TUnit.
 Proof.
   destruct cy_typedN as (c & Ht). exists 4.
-  eapply lf_main_typed; [apply W_cy_wf|constructor|exact Ht|apply cy_guarded].
+  eapply lf_main_typed; [apply W_cy_wf|constructor|exact Ht].
 Qed.
 
 Theorem cy_lock_free : excluded_middle → functional_choice → lock_free (∅, {[+ cy_main +]}).
 Proof.
   intros EM FC. destruct cy_typedN as (c & Ht).
-  eapply (lf_main EM FC); [apply W_cy_wf|constructor|exact Ht|apply cy_guarded].
+  eapply (lf_main EM FC); [apply W_cy_wf|constructor|exact Ht].
 Qed.

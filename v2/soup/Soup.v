@@ -137,6 +137,7 @@ Definition own_next (tc : tchoice) (ev : event) (K : own) : own :=
   | EvSolo i α k =>
       let kn := match α with
                 | LNew c => knew (tc_m1 tc) (tc_m2 tc) i c (tc_pt tc) K
+                | LForce => ktick i i ∅ K
                 | _ => K
                 end in
       match k with

@@ -95,8 +95,22 @@ Ltac crtk_tac :=
   intros ?? Hte; repeat (apply lookup_insert_Some in Hte as [[_ <-]|[_ Hte]]; [simpl; lia|]);
   apply lookup_singleton_Some in Hte as [_ <-]; simpl; lia.
 
+(** The two interface ends lose one unit of credit while the box is
+    forced. *)
+Lemma thage_force2 (o1 o2 : cend) S1 S2 x1 x2 : o1 ≠ o2 →
+  thage (fadd (Some 0) (Some 1)) (<[o1 := TE S1 x1 (Some 3) (Some 3)]> {[o2 := TE S2 x2 (Some 3) (Some 3)]})
+    (<[o1 := TE S1 x1 (Some 2) (Some 3)]> {[o2 := TE S2 x2 (Some 2) (Some 3)]}).
+Proof.
+  intros Hne o. destruct (decide (o = o1)) as [->|H1].
+  { rewrite !lookup_insert_eq. simpl. split_and!; try done; lia. }
+  rewrite !lookup_insert_ne by done. destruct (decide (o = o2)) as [->|H2].
+  - rewrite !lookup_singleton_eq. simpl. split_and!; try done; lia.
+  - by rewrite !lookup_singleton_ne.
+Qed.
+
 (** One side: force the box at the instance xs and apply it to the pair
-    of the two interface ends, which hold 3 tickets and credit 3. *)
+    of the two interface ends, which hold 3 tickets and credit 3, and
+    credit 2 after the force. *)
 Lemma side_typed (b : bool) (bx : expr) S1 S2 (o1 o2 : cend) x1 x2 :
   o1 ≠ o2 →
   (∀ F, typed (W_side b) (Some 6) ∅ hc_empty [] F bx (csl_box S1 S2) (Some 0)) →
@@ -106,7 +120,8 @@ Lemma side_typed (b : bool) (bx : expr) S1 S2 (o1 o2 : cend) x1 x2 :
 Proof.
   intros Ho Hbx -> ->. eexists _.
   set (Θ := <[o1 := TE S1 (pt_polar b ρ) (Some 3) (Some 3)]> {[o2 := TE S2 (pt_polar b (ρ·0)) (Some 3) (Some 3)]}).
-  eapply (e_app (W_side b) (Some 6) Θ ∅ Θ Θ hc_empty [] [] []).
+  set (Θ' := <[o1 := TE S1 (pt_polar b ρ) (Some 2) (Some 3)]> {[o2 := TE S2 (pt_polar b (ρ·0)) (Some 2) (Some 3)]} : tenv).
+  eapply (e_app (W_side b) (Some 6) Θ ∅ Θ Θ' hc_empty [] [] []).
   - split; [apply map_disjoint_empty_l|by rewrite map_empty_union].
   - apply lsplit_nil.
   - apply ubu_below_empty.
@@ -115,16 +130,16 @@ Proof.
       (TProd (TSess S1 (pt_polar b ρ) (Some 1) (Some 3)) (TSess S2 (pt_polar b (ρ·0)) (Some 2) (Some 3))));
       [done|apply csw_hold|by destruct b|by destruct b|done|].
     apply Hbx.
-  - apply thage_zero. unfold Θ. crtk_tac.
+  - apply thage_force2, Ho.
   - apply lage_nil.
   - eapply (e_sub _ _ _ _ _ _ _
-      (TProd (TSess S1 (pt_polar b ρ) (Some 3) (Some 3)) (TSess S2 (pt_polar b (ρ·0)) (Some 3) (Some 3))));
+      (TProd (TSess S1 (pt_polar b ρ) (Some 2) (Some 3)) (TSess S2 (pt_polar b (ρ·0)) (Some 2) (Some 3))));
       [|apply sub_prod; apply sub_sess; [apply sequiv_refl|simpl; lia|apply sequiv_refl|simpl; lia]|apply fle_refl
        |exact (λ H, H)].
-    eapply (e_pair _ _ Θ {[o1 := TE S1 (pt_polar b ρ) (Some 3) (Some 3)]}
-              {[o2 := TE S2 (pt_polar b (ρ·0)) (Some 3) (Some 3)]} {[o2 := TE S2 (pt_polar b (ρ·0)) (Some 3) (Some 3)]}
+    eapply (e_pair _ _ Θ' {[o1 := TE S1 (pt_polar b ρ) (Some 2) (Some 3)]}
+              {[o2 := TE S2 (pt_polar b (ρ·0)) (Some 2) (Some 3)]} {[o2 := TE S2 (pt_polar b (ρ·0)) (Some 2) (Some 3)]}
               hc_empty [] [] [] []).
-    + split; [by apply map_disjoint_singleton_l, lookup_singleton_ne|unfold Θ; by rewrite insert_union_singleton_l].
+    + split; [by apply map_disjoint_singleton_l, lookup_singleton_ne|unfold Θ'; by rewrite insert_union_singleton_l].
     + apply lsplit_nil.
     + apply e_chan; [intros ? Hin; inversion Hin|solve [done|apply fle_refl|cbn; lia]].
     + apply thage_zero. crtk_tac.
@@ -161,7 +176,6 @@ Proof.
             <[oa := TE Sa ρ (Some 3) (Some 3)]> {[ob := TE Sb (ρ·0) (Some 3) (Some 3)]}) as ->.
     { unfold tenv_of, ΣC. by rewrite map_union_empty, fmap_insert, map_fmap_singleton. }
     exact Hc.
-  - unfold t_cli, cli. guard_tac.
 Qed.
 
 Lemma senv_dual_ΣC :
@@ -182,7 +196,6 @@ Proof.
             <[edual oa := TE Sb ρ‾ (Some 3) (Some 3)]> {[edual ob := TE Sa (ρ·0)‾ (Some 3) (Some 3)]}) as ->.
     { rewrite senv_dual_ΣC. unfold tenv_of. by rewrite map_union_empty, fmap_insert, map_fmap_singleton. }
     exact Hc.
-  - unfold t_srv, srv. guard_tac.
 Qed.
 
 (** ** The composite *)
@@ -265,8 +278,5 @@ Qed.
 Theorem cs_split_lock_free_h : excluded_middle → functional_choice →
   lock_free (∅ ∪ ∅ ∪ chans_of ΣC, {[+ t_cli +]} ⊎ {[+ t_srv +]}).
 Proof.
-  intros EM FC. destruct cs_split_typed as [W H]. apply (lf_soundness_h 6 W _ TUnit EM FC H).
-  intros t Ht. apply gmultiset_elem_of_disj_union in Ht as [Ht|Ht]; apply gmultiset_elem_of_singleton in Ht as ->.
-  - unfold t_cli, cli. guard_tac.
-  - unfold t_srv, srv. guard_tac.
+  intros EM FC. destruct cs_split_typed as [W H]. exact (lf_soundness_h 6 W _ TUnit EM FC H).
 Qed.

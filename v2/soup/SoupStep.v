@@ -355,6 +355,37 @@ Proof.
   - pose proof (Hj o h E). naive_solver.
 Qed.
 
+(** The counters of thread i tick, at a force. *)
+Lemma kres_ktick_same {Y : Type} i K t (m : gmap cend Y) : kres (ktick i i ∅ K) t m = kres K t m.
+Proof.
+  apply map_eq_some. intros o v. rewrite !lookup_kres. unfold ktick. rewrite lookup_kmod.
+  destruct (K !! o) as [h|]; simpl; [|naive_solver]. case_decide; unfold htick; naive_solver.
+Qed.
+
+Lemma ctrs_ktick_other i K t : t ≠ i → ctrs (ktick i i ∅ K) t = ctrs K t.
+Proof.
+  intros Ht. apply map_eq_some. intros o f. rewrite !lookup_ctrs. unfold ktick. rewrite lookup_kmod.
+  destruct (K !! o) as [h|]; simpl; [|naive_solver]. case_decide as Hc; [|naive_solver].
+  destruct Hc as [[Hi|Hi] _]; split.
+  - intros (h' & [= <-] & Hth & _). exfalso. simpl in Hth. congruence.
+  - intros (h' & [= <-] & Hth & _). exfalso. congruence.
+  - intros (h' & [= <-] & Hth & _). exfalso. simpl in Hth. congruence.
+  - intros (h' & [= <-] & Hth & _). exfalso. congruence.
+Qed.
+
+Lemma ctrs_ktick_self i K : ctrs (ktick i i ∅ K) i = ctick <$> ctrs K i.
+Proof.
+  apply map_eq_some. intros o f. rewrite lookup_ctrs, lookup_fmap_Some. setoid_rewrite lookup_ctrs.
+  unfold ktick. rewrite lookup_kmod.
+  destruct (K !! o) as [h|]; simpl; [|naive_solver]. case_decide as Hc.
+  - split.
+    + intros (h' & [= <-] & Hth & <-). exists (hctr h). split; [done|]. exists h. by split_and!.
+    + intros (f0 & <- & h' & [= <-] & Hth & <-). exists (htick h). by split_and!.
+  - split.
+    + intros (h' & [= <-] & Hth & <-). exfalso. apply Hc. split; [by left|set_solver].
+    + intros (f0 & <- & h' & [= <-] & Hth & <-). exfalso. apply Hc. split; [by left|set_solver].
+Qed.
+
 (** ** One step, case by case *)
 
 Section step.
@@ -465,6 +496,35 @@ Section step.
   Proof. exact (s_cap _ _ _ _ _ _ _ _ Hs). Qed.
   Lemma s_ktsum_ok : ktsum_ok (Some N) K.
   Proof. exact (s_tsum _ _ _ _ _ _ _ _ Hs). Qed.
+
+  (** P-Act-Force: a force ticks the counters of its thread (F-Force). *)
+  Lemma step_force i e e' :
+    Mq !! i = Some e → tstep e LForce e' →
+    soup_inv N lv W ∅ T (LFState (C, <[i := e']> Mq) (ktick i i ∅ K) Ws) A Π U.
+  Proof.
+    intros He Hst. destruct (s_obl i e _ e' He Hst) as [HE HF]. cbn [Eobl Fobl] in HE, HF.
+    unfold o_force in HE. unfold f_force in HF. destruct HF as (_ & _ & HF).
+    apply (soup_build W Ws C (<[i := e']> Mq) (ktick i i ∅ K) A Π U).
+    - intros t e0 He0. rewrite !kres_ktick_same. apply lookup_insert_Some in He0 as [[<- <-]|[Hne He0]].
+      + rewrite ctrs_ktick_self. split_and!; [eapply at_cost_E_live; [|exact HE|exact Hlv]; cbn; lia|exact (s_ty Hs i e He)|].
+        exact (HF lv Hlv).
+      + rewrite ctrs_ktick_other by done. destruct (s_other t e0 He0) as [H1 H2].
+        split_and!; [done|exact (s_ty Hs t e0 He0)|done].
+    - apply map_eq. intros o. rewrite !lookup_fmap. unfold ktick. rewrite lookup_kmod.
+      pose proof (s_pts _ _ _ _ _ _ _ _ Hs o) as Hp. cbn [s_K] in Hp.
+      rewrite Hp. destruct (K !! o); simpl; [|done]. by case_decide.
+    - unfold ktick. rewrite dom_kmod. apply (sp_dom _ _ _ _ _ _ _ _ _ Hs).
+    - intros o h Ho. unfold ktick in Ho. rewrite lookup_kmod in Ho. apply fmap_Some in Ho as (h0 & Ho & ->).
+      rewrite lookup_insert_is_Some'. case_decide; simpl;
+        (destruct (decide (i = h0.(h_th))) as [Hi|Hi]; [by left|right; exact (s_owner _ _ _ _ _ _ _ _ Hs o h0 Ho)]).
+    - intros o Ho. unfold ktick in Ho. rewrite dom_kmod in Ho. exact (s_closed _ _ _ _ _ _ _ _ Hs o Ho).
+    - intros o Ho. unfold ktick in *. rewrite dom_kmod in Ho |- *. exact (s_pair _ _ _ _ _ _ _ _ Hs o Ho).
+    - exact (s_sdual _ _ _ _ _ _ _ _ Hs).
+    - exact (s_pdual _ _ _ _ _ _ _ _ Hs).
+    - apply kfin_ktick. exact (sp_fin _ _ _ _ _ _ _ _ _ Hs).
+    - apply kcap_ok_ktick, s_kcap_ok.
+    - apply ktsum_ok_ktick, s_ktsum_ok.
+  Qed.
 
   Lemma s_notin_K c : c ∉ C → EPos c ∉ dom K ∧ ENeg c ∉ dom K.
   Proof.

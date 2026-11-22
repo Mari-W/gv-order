@@ -237,7 +237,7 @@ Qed.
 Lemma k_force W N Γ Δ F m k C ub c0 U xs ss a :
   lenv_unl Δ → length xs = m → hold_at W Γ C xs → length ss = k → sinsts N ss → tcontr U →
   typed W N ∅ Γ Δ F (Lam (EForce (Var 0)))
-    (TLolli (ubound_of (pt_inst (plist xs) <$> ub)) LNone (fadd (Some 0) c0) (TBox m k C ub c0 U) (sinst_ty (slist ss) (ty_inst xs U)) a)
+    (TLolli (ubound_of (pt_inst (plist xs) <$> ub)) LNone (fadd (Some 0) (fadd (Some 1) c0)) (TBox m k C ub c0 U) (sinst_ty (slist ss) (ty_inst xs U)) a)
     (Some 0).
 Proof.
   intros HΔ Hxs HC Hk Hss HA. apply eta; [done|exact HA|].

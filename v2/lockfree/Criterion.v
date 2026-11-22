@@ -92,7 +92,7 @@ Section criterion.
   Context (Hwt_pend : ∀ k t s, wt k t s → pend (r k) t).
   Context (Hwt_holder : ∀ k t s, wt k t s → ∃ es, (r k).2 !! s = Some es).
   Context (HLP : ∀ k t, pend (r k) t → ∃ s, rtc (wt k) t s ∧ tenabled (r k) s).
-  Context (Hnd : no_tau_divergence p) (Hlr : links_restricted p).
+  Context (Hnd : no_free_divergence p) (Hlr : links_restricted p).
   Context (M : Type) (Rm : M → M → Prop) (fu : nat → nat → M).
   Context (HRm : well_founded Rm) `{HRm_dec : ∀ x y, Decision (Rm x y)}.
   Context (Huniq : ∀ k t s s', npend (r k) t → wt k t s → wt k t s' → s = s').
@@ -100,7 +100,7 @@ Section criterion.
   Context (Hfuel : ∀ k t, npend (r k) t → t ∉ lparts (l k) →
        Rm (fu (S k) t) (fu k t) ∨
        (fu (S k) t = fu k t ∧ (∀ s, wt k t s → s ∉ lparts (l k) → wt (S k) t s) ∧
-        ∀ s, wt k t s → s ∈ lparts (l k) → admin_at (r k) s ∧
+        ∀ s, wt k t s → s ∈ lparts (l k) → free_at (r k) s ∧
           ∀ s', wt (S k) t s' → s' = s ∨
             ∃ es es', (r k).2 !! s = Some es ∧ (r (S k)).2 !! s' = Some es' ∧ tRs (cerase es') (cerase es))).
   Context (E : Type) (R : E → E → Prop) (we : nat → nat → E) (HR : well_founded R).
@@ -253,9 +253,9 @@ Section criterion.
     destruct Hch as [|t s1 u Hw1 _].
     { destruct (enabled_fires (S m) _ Hpn Hen) as (j & Hj & Htj). exists j. split; [lia|done]. }
     destruct (Hnext s1 Hw1) as [->|(es1 & es2 & Hes1 & Hes2 & HtRs)].
-    - destruct (run_admin_step r l Hmax m s es' a Hsm Hes' Ha Had) as (α & e2 & g & Hα & Hst2 & He2).
+    - destruct (run_free_step r l Hmax m s es' a Hsm Hes' Ha Had) as (α & e2 & g & Hα & Hst2 & He2).
       assert (tRs (cerase (emap g e2)) x) as HtR
-        by (left; rewrite cerase_emap, <-Hx'; by eapply tR_step).
+        by (left; rewrite cerase_emap, <-Hx'; exact (tR_step false _ α _ Hα Hst2)).
       exact (IHx (cerase (emap g e2)) HtR (S m) s ltac:(lia) Hfn Hwn Hpn Hw1 (emap g e2) He2 eq_refl).
     - rewrite Hes' in Hes1. injection Hes1 as <-. rewrite Hx' in HtRs.
       exact (IHx (cerase es2) HtRs (S m) s1 ltac:(lia) Hfn Hwn Hpn Hw1 es2 Hes2 eq_refl).

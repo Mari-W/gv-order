@@ -2,10 +2,10 @@
       Appendix A.3)
 
       fundamental_proc      : Σ ⊢_W p : T → R ⊨ W → Σ ⊨_R p : T
-      live_fundamental_proc : Σ ⊢_W p : T → ⊢▷ p → R ⊨ W → Σ ⊫_R p : T
+      live_fundamental_proc : Σ ⊢_W p : T → R ⊨ W → Σ ⊫_R p : T
       soundness             : ∅ ⊢_W p : T → deadlock_free p
-      live_soundness        : ∅ ⊢_W p : T → ⊢▷ p →
-                                deadlock_free p ∧ no_tau_divergence p
+      live_soundness        : ∅ ⊢_W p : T →
+                                deadlock_free p ∧ no_free_divergence p
       soundness_source      : wf W → tfree T → ∅ ; ∅ ; [] ⊢^(∅, None) _ W t : T →
                                 deadlock_free (∅, {[+ t +]})
 
@@ -23,10 +23,6 @@
 From GV Require Export compat.PTerm static.Fundamental static.Hiding.
 From GV Require Import compat.Conv.
 
-(** The guard of a process, ⊢▷ p: every thread t of p has ∅ ⊢▷ t. *)
-Definition pguard (p : proc) : Prop := ∀ t, t ∈ p.2 → ∅ ⊢▷ t.
-
-Notation "⊢▷ p" := (pguard p) (at level 74, p at level 60, format "⊢▷  p").
 
 (** ** The side conditions of P-Connect from the typing premises *)
 
@@ -150,10 +146,10 @@ Proof.
   intros W' R' N Θ t T' c HW' Ht _ HR' HS'. exact (fundamental_typed W' R' N Θ [] (∅, None) t T' c HW' Ht HR' HS').
 Qed.
 
-Theorem live_fundamental_proc W R Σ p T : fptyped None W Σ p T → ⊢▷ p → wmodels R W → wstrict R → Σ ⊫_R p : T.
+Theorem live_fundamental_proc W R Σ p T : fptyped None W Σ p T → wmodels R W → wstrict R → Σ ⊫_R p : T.
 Proof.
-  intros Hty Hg HR HS. refine (proc_gen κ_L (lguard ∅) _ None W Σ p T Hty Hg R HR HS).
-  intros W' R' N Θ t T' c HW' Ht Hgt HR' HS'. exact (live_fundamental_typed W' R' N Θ [] (∅, None) t T' c HW' Ht Hgt HR' HS').
+  intros Hty HR HS. refine (proc_gen κ_L (λ _, True) _ None W Σ p T Hty _ R HR HS); [|done].
+  intros W' R' N Θ t T' c HW' Ht _ HR' HS'. exact (live_fundamental_typed W' R' N Θ [] (∅, None) t T' c HW' Ht HR' HS').
 Qed.
 
 (** A typed process sits over an acyclic static world, which a strict
@@ -165,10 +161,10 @@ Proof.
   apply (adequacy R T p). by apply (fundamental_proc W).
 Qed.
 
-Theorem live_soundness W p T : fptyped None W ∅ p T → ⊢▷ p →
-  deadlock_free p ∧ no_tau_divergence p.
+Theorem live_soundness W p T : fptyped None W ∅ p T →
+  deadlock_free p ∧ no_free_divergence p.
 Proof.
-  intros Hty Hg. destruct (fptyped_wf _ _ _ _ _ Hty) as [Hwf HW].
+  intros Hty. destruct (fptyped_wf _ _ _ _ _ Hty) as [Hwf HW].
   destruct (dmodels_exists W Hwf HW) as (R & HS & HR).
   apply (live_adequacy R T p). by apply (live_fundamental_proc W).
 Qed.
@@ -225,9 +221,9 @@ Proof.
   exists W'. split_and!; try done. intros R HR HS. by apply (fundamental_proc W').
 Qed.
 
-Theorem live_fundamental_proc_h W Σ p T : Σ ⊢_W p : T → ⊢▷ p → sem_ptyped_h κ_L W Σ p T.
+Theorem live_fundamental_proc_h W Σ p T : Σ ⊢_W p : T → sem_ptyped_h κ_L W Σ p T.
 Proof.
-  intros Hty Hg. destruct (ptyped_full _ _ _ _ _ Hty) as (W' & Hf & Hh). destruct (fptyped_wf _ _ _ _ _ Hf).
+  intros Hty. destruct (ptyped_full _ _ _ _ _ Hty) as (W' & Hf & Hh). destruct (fptyped_wf _ _ _ _ _ Hf).
   exists W'. split_and!; try done. intros R HR HS. by apply (live_fundamental_proc W').
 Qed.
 
@@ -237,7 +233,7 @@ Proof.
   apply (adequacy R T p). by apply Hs.
 Qed.
 
-Theorem live_adequacy_h W p T : sem_ptyped_h κ_L W ∅ p T → deadlock_free p ∧ no_tau_divergence p.
+Theorem live_adequacy_h W p T : sem_ptyped_h κ_L W ∅ p T → deadlock_free p ∧ no_free_divergence p.
 Proof.
   intros (W' & Hwf & HW & _ & Hs). destruct (dmodels_exists W' Hwf HW) as (R & HS & HR).
   apply (live_adequacy R T p). by apply Hs.
@@ -247,5 +243,5 @@ Qed.
 Theorem soundness_h W p T : ∅ ⊢_W p : T → deadlock_free p.
 Proof. intros Hty. exact (adequacy_h W p T (fundamental_proc_h W ∅ p T Hty)). Qed.
 
-Theorem live_soundness_h W p T : ∅ ⊢_W p : T → ⊢▷ p → deadlock_free p ∧ no_tau_divergence p.
-Proof. intros Hty Hg. exact (live_adequacy_h W p T (live_fundamental_proc_h W ∅ p T Hty Hg)). Qed.
+Theorem live_soundness_h W p T : ∅ ⊢_W p : T → deadlock_free p ∧ no_free_divergence p.
+Proof. intros Hty. exact (live_adequacy_h W p T (live_fundamental_proc_h W ∅ p T Hty)). Qed.

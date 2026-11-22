@@ -156,7 +156,7 @@ Qed.
 
 Lemma cost_e_force N Θ Δ e m k C ub c U xs ss c0 :
   length ss = k → sinsts N ss → csem N Θ Δ e (TBox m k C ub c U) c0 →
-  csem N Θ Δ (EForce e) (sinst_ty (slist ss) (ty_inst xs U)) (fadd c0 c).
+  csem N Θ Δ (EForce e) (sinst_ty (slist ss) (ty_inst xs U)) (fadd c0 (fadd (Some 1) c)).
 Proof.
   intros Hl Hs Hcs. eapply (cost_op _ _ _ _ _ _ _ _ _ Hcs); [apply fle_fadd_l'|].
   intros j v Πv φv i Hi HV. eapply force_redex; try done. by apply fle_frame_op.

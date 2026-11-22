@@ -214,6 +214,14 @@ Section obligations.
 
   Definition f_beta (e' : expr) : Prop := (∀ j, olt j n → El j N σ d Π φ e').
 
+  (** F-Force: a force spends one unit like an action on no end. Every
+      held end that is not idle has a unit to spare, and so has the
+      frame, and every counter ticks (F3 of
+      docs/redesign/fable-findings.md). *)
+  Definition f_force (e' : expr) : Prop :=
+    fspare Π φ (dom φ) ∧ fle (Some 1) d ∧
+    (∀ j, olt j n → El j N σ (ftick d) Π (ctick <$> φ) e').
+
   (** A creation chooses the protocol and the tickets m1 and m2 of the
       two new ends, with m1 + m2 ≤ N. *)
   Definition f_new (c : chan) (e' : expr) : Prop :=
@@ -265,6 +273,7 @@ Section obligations.
   Definition Fobl (α : tlabel) (e' : expr) : Prop :=
     match α with
     | LBeta => f_beta e'                                  (* F-Beta *)
+    | LForce => f_force e'                                (* F-Force *)
     | LNew c => f_new c e'                                (* F-New *)
     | LSpawn v => f_spawn v e'                          (* F-Spawn *)
     | LSess (SSend o w) => f_send o w e'                (* F-Send *)
@@ -383,9 +392,10 @@ Section ext.
     assert (HE' : ∀ N σ d Π φ e, (∀ j, olt j n → El1 j N σ d Π φ e) →
                                   ∀ j, olt j n → El2 j N σ d Π φ e)
       by (intros ? ? ? ? ? ? H j Hj; apply HE; [done|by apply H]).
-    destruct α as [|c|v|[o w|o w|o|o i|o i|os]]; simpl;
-      unfold f_beta, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link.
+    destruct α as [| |c|v|[o w|o w|o|o i|o i|os]]; simpl;
+      unfold f_beta, f_force, f_new, f_spawn, f_send, f_recv, f_close, f_select, f_branch, f_link.
     - apply HE'.
+    - intros (H1 & H2 & H3). split_and!; [done|done|by apply HE'].
     - intros H Hf. destruct (H Hf) as (S & m1 & m2 & Hm & HS). exists S, m1, m2. split; [done|]. by apply HE'.
     - intros (H1 & H3 & H4). split_and!; [done|by apply HE'|by apply HE'].
     - intros (Ha & S0 & m & T & S & H1 & H2 & H3 & H4 & H5 & H6).

@@ -9,8 +9,7 @@
                        thread of a reachable configuration can take part
                        in a later step
 
-    Σ ⊩^N _ W p : T is process typing [fptyped] at Some N together with
-    the guard of every thread, ⊢▷ p. N bounds the tickets of every
+    Σ ⊩^N _ W p : T is process typing [fptyped] at Some N. N bounds the tickets of every
     channel, and P-Connect types the cut at exactly dual types
     ([senv_dual]). The proof reads fsem^N off the typing through
     [fsem_of_cost] and the live relation through
@@ -20,7 +19,7 @@
 From GV Require Import soup.LFAdequacy lockfree.FairRun.
 From GV Require Export soup.LFCompose static.FundamentalProc.
 
-Notation "Σ ⊩^ N '_' W p : T" := (fptyped (Some N) W Σ p T ∧ ⊢▷ p)
+Notation "Σ ⊩^ N '_' W p : T" := (fptyped (Some N) W Σ p T)
   (at level 74, N at level 0, W at level 0, p at level 60, T at level 60,
    format "Σ  ⊩^ N  '_'  W  p  :  T").
 
@@ -28,18 +27,14 @@ Notation "Σ ⊩^ N '_' W p : T" := (fptyped (Some N) W Σ p T ∧ ⊢▷ p)
 
 Theorem lf_fundamental (EM : excluded_middle) N W Σ p T : Σ ⊩^N _ W p : T → lf_sems N W Σ p T.
 Proof.
-  intros [Hty Hg]. remember (Some N) as N' eqn:EN. revert Hg. induction Hty as
+  intros Hty. remember (Some N) as N' eqn:EN. induction Hty as
     [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Ht HW
-    |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T Hty1 IH1 _ IH2 H12 H1C H2C HC HC1 HC2 HJ];
-    intros Hg; subst.
-  - eapply (lf_p_term EM W); [exact (proj1 HW)|done|done|done| |exact Ht|].
-    { intros ch Hch. destruct (Hd ch Hch) as (S & x & m & m' & ? & _ & ?). eauto 10. }
-    apply Hg. simpl. multiset_solver.
+    |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T Hty1 IH1 _ IH2 H12 H1C H2C HC HC1 HC2 HJ]; subst.
+  - eapply (lf_p_term EM W); [exact (proj1 HW)|done|done|done| |exact Ht].
+    intros ch Hch. destruct (Hd ch Hch) as (S & x & m & m' & ? & _ & ?). eauto 10.
   - try specialize (IH1 eq_refl). try specialize (IH2 eq_refl).
     apply lf_p_connect; try done.
-    + apply IH1. intros t Ht; apply Hg; simpl; multiset_solver.
-    + apply IH2. intros t Ht; apply Hg; simpl; multiset_solver.
-    + exact (pfree_union_r _ _ (fptyped_pfree _ _ _ _ _ Hty1)).
+    exact (pfree_union_r _ _ (fptyped_pfree _ _ _ _ _ Hty1)).
 Qed.
 
 (** ** Soundness *)
@@ -50,7 +45,7 @@ Qed.
 Theorem lf_soundness N W p T :
   excluded_middle → functional_choice → ∅ ⊩^N _ W p : T → lock_free p.
 Proof.
-  intros EM FC Hty. destruct (fptyped_wf _ _ _ _ _ (proj1 Hty)) as [Hwf HW].
+  intros EM FC Hty. destruct (fptyped_wf _ _ _ _ _ Hty) as [Hwf HW].
   exact (lf_sems_adequacy EM FC N W p T Hwf HW (lf_fundamental EM N W ∅ p T Hty)).
 Qed.
 
@@ -106,9 +101,9 @@ Proof.
   by apply lf_p_connect.
 Qed.
 
-Theorem lf_fundamental_h (EM : excluded_middle) N W Σ p T : ptyped (Some N) W Σ p T → ⊢▷ p → lf_sems_h N W Σ p T.
+Theorem lf_fundamental_h (EM : excluded_middle) N W Σ p T : ptyped (Some N) W Σ p T → lf_sems_h N W Σ p T.
 Proof.
-  intros Hty Hg. destruct (ptyped_full _ _ _ _ _ Hty) as (W' & Hf & Hh). destruct (fptyped_wf _ _ _ _ _ Hf).
+  intros Hty. destruct (ptyped_full _ _ _ _ _ Hty) as (W' & Hf & Hh). destruct (fptyped_wf _ _ _ _ _ Hf).
   exists W'. split_and!; try done. by apply (lf_fundamental EM).
 Qed.
 
@@ -118,5 +113,5 @@ Proof. intros (W' & Hwf & HW & _ & Hs). exact (lf_sems_adequacy EM FC N W' p T H
 
 (** Lock freedom of the hidden judgment. *)
 Theorem lf_soundness_h N W p T :
-  excluded_middle → functional_choice → ptyped (Some N) W ∅ p T → ⊢▷ p → lock_free p.
-Proof. intros EM FC Hty Hg. exact (lf_sems_h_adequacy EM FC N W p T (lf_fundamental_h EM N W ∅ p T Hty Hg)). Qed.
+  excluded_middle → functional_choice → ptyped (Some N) W ∅ p T → lock_free p.
+Proof. intros EM FC Hty. exact (lf_sems_h_adequacy EM FC N W p T (lf_fundamental_h EM N W ∅ p T Hty)). Qed.

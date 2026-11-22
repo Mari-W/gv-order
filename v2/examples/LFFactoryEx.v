@@ -1,8 +1,9 @@
 (** * The factory is lock free (stage S9)
 
     The program of examples/FactoryEx.v types at the bound N = 4, so every end has N/2 = 2 tickets. mk₀
-    returns c′ packed at credit 2 ([Tresl]), mk₁ takes p at credit 2 and
-    returns p and c′ at credit 2. main holds q while it receives on p and
+    returns c′ packed at credit 2 ([Tresl]). main holds p while it forces
+    mk₁, which costs 1, so mk₁ takes p at credit 1 and returns p at credit
+    1 and c′ at credit 2. main holds q while it receives on p and
     closes it, so q loses 2. Each call is followed only by code that
     holds what the call returns, so the arrows may cost ∞. The world is a
     lock-free world by the measure (field sum, depth, offset): both laws
@@ -12,8 +13,8 @@ From GV Require Export examples.LFTools examples.FactoryEx.
 
 Definition Tresl : ty := TEx LBot 1 (bcs_of (fx_L)) (TSess Sr (pvar 0)‾ (Some 2) (Some 2)).
 Definition mk0l_ty : ty := lbox 0 C0 None TUnit Tresl.
-Definition mk1l_res : ty := TProd (TSess Sr (pvar 0) (Some 2) (Some 2)) (TSess Sr ((pvar 0)·0)‾ (Some 2) (Some 2)).
-Definition mk1l_ty : ty := lbox 1 mk1_C None (TSess Sr (pvar 0) (Some 2) (Some 2)) mk1l_res.
+Definition mk1l_res : ty := TProd (TSess Sr (pvar 0) (Some 1) (Some 2)) (TSess Sr ((pvar 0)·0)‾ (Some 2) (Some 2)).
+Definition mk1l_ty : ty := lbox 1 mk1_C None (TSess Sr (pvar 0) (Some 1) (Some 2)) mk1l_res.
 
 (** The worker: send at x, close at x⁺, with no future. *)
 Ltac lworker_tac pp j :=
@@ -70,7 +71,7 @@ Qed.
 (** ** mk₁ *)
 
 Lemma mk1l_body Γ n : ∃ c,
-  typed W_fx (Some 4) ∅ (hc_open 1 mk1_C Γ) (Some (TSess Sr (pvar 0) (Some 2) (Some 2)) :: Some mk1l_ty :: nones n) (∅, Some RAll) mk1_e mk1l_res c.
+  typed W_fx (Some 4) ∅ (hc_open 1 mk1_C Γ) (Some (TSess Sr (pvar 0) (Some 1) (Some 2)) :: Some mk1l_ty :: nones n) (∅, Some RAll) mk1_e mk1l_res c.
 Proof.
   eexists _.
   { unfold mk1_e.
@@ -118,8 +119,8 @@ Proof.
   fold (Γnew fx_L).
   eapply e_letp_; [lsplit_tac (App (EForce mk1) (Var 0)) EUnit| | | ].
   { eapply e_app_; [lsplit_tac (EForce mk1) (Var 0)|apply ubu_below_empty| | | |shelve].
-    { eapply (lbox_force_eq _ _ _ _ _ _ 1 mk1_C None (TSess Sr (pvar 0) (Some 2) (Some 2)) mk1l_res ((pvar 0)‾ :: []) _ UNone (TSess Sr (pvar 0)‾ (Some 2) (Some 2))
-        (TProd (TSess Sr (pvar 0)‾ (Some 2) (Some 2)) (TSess Sr ((pvar 0)·0)‾ (Some 2) (Some 2))));
+    { eapply (lbox_force_eq _ _ _ _ _ _ 1 mk1_C None (TSess Sr (pvar 0) (Some 1) (Some 2)) mk1l_res ((pvar 0)‾ :: []) _ UNone (TSess Sr (pvar 0)‾ (Some 1) (Some 2))
+        (TProd (TSess Sr (pvar 0)‾ (Some 1) (Some 2)) (TSess Sr ((pvar 0)·0)‾ (Some 2) (Some 2))));
         [done| |done|done|done|].
       + apply hold_at_nil. intros f Hf _. destruct Hf as [->| ->]; simpl.
         * apply fx_law; [by left|simpl; lia].
@@ -160,17 +161,14 @@ Proof.
   Unshelve. all: first [exact None | simpl; lia | simpl; done].
 Qed.
 
-Lemma fx_guarded : ∅ ⊢▷ fx_main.
-Proof. unfold fx_main, mk0, mk1, mk0_e, mk1_e, worker, let_new. guard_tac. Qed.
-
 Theorem fx_lftyped : ∃ N, ∅ ⊩^N _ W_fx (∅, {[+ fx_main +]}) : TUnit.
 Proof.
   destruct fxl_typedN as (c & Ht). exists 4.
-  eapply lf_main_typed; [apply W_fx_wf|constructor|exact Ht|apply fx_guarded].
+  eapply lf_main_typed; [apply W_fx_wf|constructor|exact Ht].
 Qed.
 
 Theorem fx_lock_free : excluded_middle → functional_choice → lock_free (∅, {[+ fx_main +]}).
 Proof.
   intros EM FC. destruct fxl_typedN as (c & Ht).
-  eapply (lf_main EM FC); [apply W_fx_wf|constructor|exact Ht|apply fx_guarded].
+  eapply (lf_main EM FC); [apply W_fx_wf|constructor|exact Ht].
 Qed.
