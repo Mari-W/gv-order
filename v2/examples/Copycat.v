@@ -789,3 +789,232 @@ Proof.
     exact (fwdh_dftyped W_h hc_empty o1 o2 px py o1_o2 W_h_facts).
   - split; [apply W_h_wf|apply W_h_swf].
 Qed.
+
+(** *** A closed higher-order run, deadlock free
+
+    The partner of o1 creates a channel at the field of its point, sends
+    one end and closes the other. The partner of o2 receives an end and
+    closes it. Both need facts on their own points only. All three worlds
+    raise the potential [hpot], so every cut is well-founded. *)
+
+Definition p1h_t (o : cend) : expr :=
+  LetP ENew (ELet (ESend (Pair (Var 1) (Chan o))) (LetU (EClose (Var 1)) (EClose (Var 0)))).
+
+Definition p2h_t (o : cend) : expr :=
+  LetP (ERecv (Chan o)) (LetU (EClose (Var 1)) (EClose (Var 0))).
+
+Lemma p1h_dftyped W Γ o z :
+  slt W Γ z ((z·0)‾) → slt W Γ z (z·0) → slt W Γ ((z·0)‾) (z⁺‾) →
+  dftyped W {[o := TE (dual Sh) z None None]} Γ [] (∅, None) (p1h_t o) TUnit.
+Proof.
+  intros H1 H2 H3. unfold p1h_t.
+  eapply d_letp with (Θ1 := ∅) (Θ2 := {[o := TE (dual Sh) z None None]});
+    [split; [apply map_disjoint_empty_l|by rewrite map_empty_union]|apply lsplit_nil| |].
+  { apply (d_new_fld _ _ _ _ z 0 SEnd); [apply spare_unl; spare_tac|contr_tac]. }
+  eapply d_let with (Θ1 := {[o := TE (dual Sh) z None None]}) (Θ2 := ∅);
+    [split; [apply map_disjoint_empty_r|by rewrite map_union_empty]
+    |lsplit_tac (ESend (Pair (Var 1) (Chan o))) EUnit| |].
+  { eapply d_send with (S0 := dual Sh) (x := z) (m := 1) (T := Th) (S := SEnd);
+      [reflexivity|exact Th_scoped|reflexivity| | |].
+    - intros u Hu. cbn in Hu. set_unfold in Hu. by subst u.
+    - apply ub_below_nil; [reflexivity|]. intros u Hu.
+      rewrite tenv_heads_empty in Hu. cbn in Hu. set_unfold in Hu.
+      repeat match goal with H : _ ∨ _ |- _ => destruct H end; subst; try contradiction; done.
+    - eapply d_pair with (Θ1 := ∅) (Θ2 := {[o := TE (dual Sh) z None None]});
+        [split; [apply map_disjoint_empty_l|by rewrite map_empty_union]
+        |lsplit_tac (Var 1) (Chan o)| |].
+      + eapply d_var'; [reflexivity|]. spare_tac.
+      + apply d_chan, spare_unl. spare_tac. }
+  eapply d_letu; [apply tsplit_empty|lsplit_tac (EClose (Var 1)) EUnit| |].
+  { eapply d_close with (S0 := SEnd) (x := (z·0)‾); [reflexivity| |eapply d_var'; [reflexivity|spare_tac]].
+    apply ub_below_nil; [reflexivity|]. intros u Hu.
+    rewrite tenv_heads_empty in Hu. cbn in Hu. set_unfold in Hu.
+    repeat match goal with H : _ ∨ _ |- _ => destruct H end; subst; try contradiction; done. }
+  eapply d_close with (S0 := SEnd) (x := z⁺); [reflexivity|apply ub_below_empty|].
+  eapply d_var'; [reflexivity|spare_tac].
+  Unshelve. all: exact None.
+Qed.
+
+Lemma p2h_dftyped W Γ o z :
+  slt W Γ (z·0) (z⁺‾) →
+  dftyped W {[o := TE Sh z None None]} Γ [] (∅, None) (p2h_t o) TUnit.
+Proof.
+  intros H1. unfold p2h_t.
+  eapply d_letp with (Θ1 := {[o := TE Sh z None None]}) (Θ2 := ∅);
+    [split; [apply map_disjoint_empty_r|by rewrite map_union_empty]|apply lsplit_nil| |].
+  { eapply d_recv with (S0 := Sh) (x := z) (m := 1) (T := Th) (S := SEnd);
+      [reflexivity|exact Th_scoped| |apply d_chan, spare_unl; spare_tac].
+    apply ub_below_nil; [reflexivity|]. intros u Hu.
+    rewrite tenv_heads_empty in Hu. cbn in Hu. set_solver. }
+  eapply d_letu; [apply tsplit_empty|lsplit_tac (EClose (Var 1)) EUnit| |].
+  { eapply d_close with (S0 := SEnd) (x := z·0); [reflexivity| |eapply d_var'; [reflexivity|spare_tac]].
+    apply ub_below_nil; [reflexivity|]. intros u Hu.
+    rewrite tenv_heads_empty in Hu. cbn in Hu. set_unfold in Hu.
+    repeat match goal with H : _ ∨ _ |- _ => destruct H end; subst; try contradiction; done. }
+  eapply d_close with (S0 := SEnd) (x := z⁺); [reflexivity|apply ub_below_empty|].
+  eapply d_var'; [reflexivity|spare_tac].
+  Unshelve. all: exact None.
+Qed.
+
+Definition W_p1 : sworld :=
+  SWorld {[0]} (λ g, g = FLt (px‾) ((px‾·0)‾) ∨ g = FLt (px‾) (px‾·0) ∨ g = FLt ((px‾·0)‾) (px‾⁺‾)).
+Definition W_p2 : sworld := SWorld {[1]} (λ g, g = FLt (py‾·0) (py‾⁺‾)).
+
+Lemma W_p1_wf : sworld_wf W_p1.
+Proof.
+  split; simpl. intros u v H. fh_cases H;
+    injection H as Hu Hv; subst; split; eexists; (split; [reflexivity|set_solver]).
+Qed.
+
+Lemma W_p2_wf : sworld_wf W_p2.
+Proof.
+  split; simpl. intros u v H. injection H as Hu Hv; subst; split; eexists; (split; [reflexivity|set_solver]).
+Qed.
+
+(** Worlds whose steps raise [hpot]. *)
+Definition hmono (W : sworld) : Prop := ∀ u v, swstep W u v → hpot u < hpot v.
+
+Lemma hmono_lt W : hmono W → ∀ u v, W ⊢ₛ u ≺ v → hpot u < hpot v.
+Proof.
+  intros HW u v H. induction H as [u v H|u v w H _ IH]; [by apply HW|]. apply HW in H. lia.
+Qed.
+
+Lemma hmono_swf W : hmono W → swf W.
+Proof.
+  intros HW. apply swf_iff.
+  assert (∀ m u, hpot u = m → Acc (sw_lt W) u) as Hacc.
+  { intros m. induction m as [m IH] using lt_wf_ind. intros u <-. constructor.
+    intros v Hv. eapply IH; [apply (hmono_lt W HW), Hv|done]. }
+  intros u. by apply (Hacc (hpot u)).
+Qed.
+
+Lemma hpot_po u : hpot u < hpot u⁺ ∧ hpot u < hpot u‾⁺.
+Proof. unfold hpot. cbn [pt_shift pt_dual pt_name pt_off]. pose proof (hcls_le (pt_name u)). lia. Qed.
+
+Lemma hmono_facts W : (∀ u v, sw_facts W (FLt u v) → hpot u < hpot v) → hmono W.
+Proof. intros H u v Hs. destruct Hs as [u v Hf|u|u]; [by apply H|apply hpot_po|apply hpot_po]. Qed.
+
+Lemma hmono_join A B : hmono A → hmono B → hmono (A ⊔ B).
+Proof. intros HA HB u v Hs. apply swstep_join_inv in Hs as [Hs|Hs]; [by apply HA|by apply HB]. Qed.
+
+Lemma hmono_restrict W S : hmono W → hmono (swrestrict W S).
+Proof.
+  intros HW. apply hmono_facts. intros u v (Hlt & _ & _). by apply (hmono_lt W HW).
+Qed.
+
+Lemma W_h_mono : hmono W_h.
+Proof. apply hmono_facts. intros u v H. simpl in H. unfold fwdh_fact in H. fh_cases H; injection H as -> ->; vm_compute; lia. Qed.
+
+Lemma W_p1_mono : hmono W_p1.
+Proof. apply hmono_facts. intros u v H. simpl in H. fh_cases H; injection H as -> ->; vm_compute; lia. Qed.
+
+Lemma W_p2_mono : hmono W_p2.
+Proof. apply hmono_facts. intros u v H. simpl in H. injection H as -> ->; vm_compute; lia. Qed.
+
+Definition Σhx : senv := {[o1 := (Sh, px)]}.
+Definition Σhy : senv := {[o2 := (dual Sh, py)]}.
+
+Lemma Σhx_dual : senv_dual Σhx = {[edual o1 := (dual Sh, px‾)]}.
+Proof. unfold senv_dual, Σhx. by rewrite map_fmap_singleton, kmap_singleton by apply _. Qed.
+
+Lemma Σhy_dual : senv_dual Σhy = {[edual o2 := (Sh, py‾)]}.
+Proof.
+  unfold senv_dual, Σhy. rewrite map_fmap_singleton, kmap_singleton by apply _. simpl.
+  by rewrite ?dual_involutive.
+Qed.
+
+Lemma p1h_term : ptyped None W_p1 (∅ ∪ senv_dual Σhx) (∅, {[+ p1h_t (edual o1) +]}) TUnit.
+Proof.
+  rewrite (left_id_L ∅ (∪)), Σhx_dual.
+  apply (p_term None W_p1 _ ∅ ∅ _ TUnit None).
+  - constructor.
+  - intros o. rewrite dom_empty_L. set_solver.
+  - set_solver.
+  - apply pfree_singleton.
+  - intros o e He. apply lookup_singleton_Some in He as [_ <-]. apply Sh_dual_contr.
+  - set_solver.
+  - change (fhalf None) with (None : fuel).
+    assert (tenv_of None {[edual o1 := (dual Sh, px‾)]} ∪ ∅ = tenv_df {[edual o1 := TE (dual Sh) px‾ None None]}) as ->.
+    { rewrite map_union_empty. unfold tenv_of, tenv_df. by rewrite !map_fmap_singleton. }
+    apply p1h_dftyped; apply sl_w, sw_lt_fact; simpl; tauto.
+  - split; [apply W_p1_wf|apply hmono_swf, W_p1_mono].
+Qed.
+
+Lemma p2h_term : ptyped None W_p2 (∅ ∪ senv_dual Σhy) (∅, {[+ p2h_t (edual o2) +]}) TUnit.
+Proof.
+  rewrite (left_id_L ∅ (∪)), Σhy_dual.
+  apply (p_term None W_p2 _ ∅ ∅ _ TUnit None).
+  - constructor.
+  - intros o. rewrite dom_empty_L. set_solver.
+  - set_solver.
+  - apply pfree_singleton.
+  - intros o e He. apply lookup_singleton_Some in He as [_ <-]. apply Sh_contr.
+  - set_solver.
+  - change (fhalf None) with (None : fuel).
+    assert (tenv_of None {[edual o2 := (Sh, py‾)]} ∪ ∅ = tenv_df {[edual o2 := TE Sh py‾ None None]}) as ->.
+    { rewrite map_union_empty. unfold tenv_of, tenv_df. by rewrite !map_fmap_singleton. }
+    apply p2h_dftyped; apply sl_w, sw_lt_fact; simpl; done.
+  - split; [apply W_p2_wf|apply hmono_swf, W_p2_mono].
+Qed.
+
+Definition fwdh_config : proc :=
+  ({["a"]} ∪ {["b"]}, ({[+ fwdh_t o1 o2 +]} ⊎ {[+ p1h_t (edual o1) +]}) ⊎ {[+ p2h_t (edual o2) +]}).
+
+Definition W_hrun : sworld := (W_h ⊔ W_p1) ⊔ W_p2.
+
+Lemma chans_single (o : cend) (v : sty * point) : chans_of {[o := v]} = {[ech o]}.
+Proof. unfold chans_of. by rewrite dom_singleton_L, set_map_singleton_L. Qed.
+
+Lemma chans_empty : chans_of (∅ : senv) = ∅.
+Proof. unfold chans_of. by rewrite dom_empty_L, set_map_empty. Qed.
+
+Lemma chans_hx : chans_of Σhx = {["a"]}.
+Proof. unfold Σhx. by rewrite chans_single. Qed.
+
+Lemma chans_hy : chans_of Σhy = {["b"]}.
+Proof. unfold Σhy. by rewrite chans_single. Qed.
+
+Theorem fwdh_config_typed : ptyped None W_hrun ∅ fwdh_config TUnit.
+Proof.
+  assert (ptyped None (W_h ⊔ W_p1) Σhy (∅ ∪ ∅ ∪ {["a"]}, {[+ fwdh_t o1 o2 +]} ⊎ {[+ p1h_t (edual o1) +]}) TUnit)
+    as H1.
+  { pose proof (p_connect None W_h W_p1 Σhy ∅ Σhx ∅ ∅
+      {[+ fwdh_t o1 o2 +]} {[+ p1h_t (edual o1) +]} TUnit) as H.
+    rewrite (right_id_L ∅ (∪)), chans_hx in H.
+    apply H; clear H.
+    - assert (Σhy ∪ Σhx = Σh) as -> by (unfold Σhy, Σhx, Σh; apply map_union_comm;
+        apply map_disjoint_singleton_l_2; by rewrite lookup_singleton_ne).
+      apply fwdh_term.
+    - apply p1h_term.
+    - unfold Σhy, Σhx. apply map_disjoint_singleton_l_2. by rewrite lookup_singleton_ne.
+    - apply map_disjoint_empty_l.
+    - intros o. unfold Σhx. rewrite dom_singleton_L, !elem_of_singleton. intros ->. discriminate.
+    - rewrite ?chans_hy, ?chans_hx, ?chans_empty. set_solver.
+    - rewrite ?chans_hy, ?chans_hx, ?chans_empty. set_solver.
+    - rewrite ?chans_hy, ?chans_hx, ?chans_empty. set_solver.
+    - set_solver.
+    - set_solver.
+    - set_solver.
+    - apply hmono_swf, hmono_join; apply hmono_restrict; [apply W_h_mono|apply W_p1_mono]. }
+  pose proof (p_connect None (W_h ⊔ W_p1) W_p2 ∅ ∅ Σhy (∅ ∪ ∅ ∪ {["a"]}) ∅
+    ({[+ fwdh_t o1 o2 +]} ⊎ {[+ p1h_t (edual o1) +]}) {[+ p2h_t (edual o2) +]} TUnit) as H.
+  rewrite !(left_id_L ∅ (∪)), chans_hy in H.
+  assert ({["a"]} ∪ ∅ ∪ {["b"]} = ({["a"]} ∪ {["b"]} : gset chan)) as E by set_solver.
+  rewrite E in H. apply H; clear H E.
+  - exact H1.
+  - pose proof p2h_term as Hp. rewrite (left_id_L ∅ (∪)) in Hp. exact Hp.
+  - apply map_disjoint_empty_l.
+  - apply map_disjoint_empty_l.
+  - intros o. unfold Σhy. rewrite dom_singleton_L, !elem_of_singleton. intros ->. discriminate.
+  - rewrite chans_empty. set_solver.
+  - rewrite chans_empty. set_solver.
+  - rewrite chans_empty. set_solver.
+  - set_solver.
+  - rewrite ?chans_hy, ?chans_empty. set_solver.
+  - rewrite chans_empty. set_solver.
+  - apply hmono_swf, hmono_join; apply hmono_restrict;
+      [apply hmono_join; [apply W_h_mono|apply W_p1_mono]|apply W_p2_mono].
+Qed.
+
+Theorem fwdh_config_deadlock_free : deadlock_free fwdh_config.
+Proof. exact (soundness W_hrun fwdh_config TUnit fwdh_config_typed). Qed.
