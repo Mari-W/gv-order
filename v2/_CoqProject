@@ -99,6 +99,7 @@ static/Guard.v
 compat/LiveRules.v
 static/FundamentalProc.v
 static/ConnectN.v
+static/ConnectNExact.v
 examples/GuardEx.v
 examples/LFClose.v
 examples/LFTools.v

@@ -14,7 +14,7 @@ From GV Require Import examples.LFController soup.SoupRun soup.SoupTau soup.LFAd
 From GV Require Import soup.LFCompose soup.LFTyped lockfree.FairRun.
 From GV Require Import examples.SemBranch static.Inversion relation.Ord relation.ExProp relation.Ranks examples.LFLink compat.Redex static.PointSubst.
 From GV Require Import examples.SinstStuck static.Sinst examples.SharedRoots static.Hiding examples.GenNew.
-From GV Require Import soup.LFConnectN examples.Ring.
+From GV Require Import soup.LFConnectN examples.Ring static.ConnectNExact.
 From GV Require Import examples.Copycat examples.ForkJoin.
 From GV Require Import static.ChanRen examples.CopycatTwo static.LetVar examples.LetVarCounter.
 
@@ -228,6 +228,9 @@ Print Assumptions p_connect_n.
 Print Assumptions connect_n_soundness.
 Print Assumptions connect_n_live_soundness.
 Print Assumptions connect_n_lf_soundness.
+(** static/ConnectNExact.v: the exact world of the n-ary P-Connect *)
+Print Assumptions p_connect_n_exact.
+Print Assumptions fold_join_gap.
 (** examples/Ring.v: Milner's ring, pairwise consistent and cyclic, rejected; the acyclic ring typed *)
 Print Assumptions ring_comps.
 Print Assumptions ring_pairs.
