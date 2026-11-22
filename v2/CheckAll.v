@@ -16,6 +16,7 @@ From GV Require Import examples.SemBranch static.Inversion relation.Ord relation
 From GV Require Import examples.SinstStuck static.Sinst examples.SharedRoots static.Hiding examples.GenNew.
 From GV Require Import soup.LFConnectN examples.Ring.
 From GV Require Import examples.Copycat examples.ForkJoin.
+From GV Require Import static.ChanRen examples.CopycatTwo.
 
 (** types/Points.v *)
 Print Assumptions pt_dual_dual.
@@ -270,6 +271,15 @@ Print Assumptions fwdh_config_deadlock_free.
 Print Assumptions examples.Copycat.fb_dftyped.
 Print Assumptions fwdp_expand.
 Print Assumptions fwdp_sem.
+(** static/ChanRen.v *)
+Print Assumptions typed_cren.
+Print Assumptions fptyped_cren.
+(** examples/CopycatTwo.v *)
+Print Assumptions fwdq_term.
+Print Assumptions J_acyc.
+Print Assumptions fwdp_expand2.
+Print Assumptions fwdp_expand2_df.
+Print Assumptions fwdp_expand2_example.
 (** examples/ForkJoin.v *)
 Print Assumptions fj_dftyped.
 Print Assumptions fj_term.
