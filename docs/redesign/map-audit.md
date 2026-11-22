@@ -252,6 +252,60 @@ reason, and the Rocq name it was checked against. Sections follow page order.
 
 ## Theorems
 
+All theorem blocks were rewritten against the statements on this branch. The
+common changes: the deadlock-free, live, hidden and n-ary results lost their
+excluded-middle hypothesis (DF over acyclic worlds), the lock-free results
+take excluded middle and functional choice (old display "EM ∧ AC", now
+"EM ∧ FC", note `th.ac` retitled), semantic judgments name their world ($R$
+for a world of the relation, $W$ for a static world), and the hidden forms
+are the headline.
+
+- New semantic notations used here, defined in the semantic block `sj` and
+  `sp-lf`: $\Sigma \vDash_W p : T$ (all strict models, `sem_ptyped_sw`),
+  $\Sigma \vDash^{h}_W p : T$ (some acyclic whole world hides to $W$,
+  `sem_ptyped_h`), hiding $W' \rightsquigarrow_I W$ (`hides`), and
+  $\Sigma \Vvdash^{N,h}_W p : T$ (`lf_sems_h`). New notes `sj.sw`, `sj.h`,
+  `sj.hides`, `sp.lfsemh`.
+- `th-chain`. Old rows: `fundamental_proc` to $\Sigma \vDash_W$, `adequacy`,
+  `live_fundamental`, `lf_fundamental`, and `EM ∧ AC ∧ ∅ ⊪_W p ⇒ lock_free`
+  by `lf_adequacy`. New rows: `fundamental_proc_h` to $\vDash^{h}_W$,
+  `adequacy_h`, `live_fundamental_ranked` (EM, any model), `fsem_of_cost`,
+  `lf_fundamental_h` (EM, guard) to $\Vvdash^{N,h}_W$, and `lf_adequacy` at a
+  ranked $R$ with no classical hypothesis. Caption says where excluded middle
+  enters. Checked against those names.
+- `th-adeq`. Rows `adequacy` (at $R$), new `adequacy_h`, `lf_adequacy` and
+  `lf_thread_progress` (old premise EM ∧ AC, now $\mathsf{ranked}\,R$, as the
+  Rocq states), new `lf_sems_adequacy` (EM, FC, a well-formed well-founded
+  static world). New notes `th.adequacy-h`, `th.lf-sems-adequacy`.
+- `th-fund-proc`. Rows `fundamental_proc_h`, new `live_fundamental_proc_h`,
+  `lf_fundamental_h` with EM, finite $N$ and the guard (old row
+  $\Sigma \Vdash^{N}_W p : T \Rightarrow \Sigma \Vvdash_W p : T$ without EM).
+  New note `th.live-fundamental-proc`.
+- `th-compose`. Rows over $R$, new `sem_p_connect_sw` at static worlds,
+  `lf_p_term` with EM and the premises $\mathsf{pterm}_N$ (new note
+  `th.ptermprem`), `lf_p_connect` with the bound $N$. New note
+  `th.sem-p-connect-sw`. `th.sem-p-connect` drops "ranked".
+- `th-sound`. Rows `soundness_h`, new `connect_n_soundness` (acyclic join),
+  new `live_soundness_h`, `lf_soundness_h` (EM, FC, finite $N$, guard), new
+  `connect_n_lf_soundness`, `fair_run_exists` (now lock-free only, with
+  $\mathsf{DC}$ hovered to the new note `th.dc`), `lock_free_padovani`. New
+  notes `th.connect-n`, `th.lf-connect-n`, `th.live-soundness`, `th.pcomps`.
+  Old caption "deadlock free in every strict world" and "lock free in every
+  strict and well-founded world" replaced.
+- `th-terms`. `soundness_source` asks a well-formed acyclic world (old: no
+  world premise, and the note said "strict $W$"); `lf_soundness_source` asks
+  EM, FC and a well-founded world. The four term fundamental theorems read
+  each strict $R \vDash W$; new row `live_fundamental_ranked`. Bind over $R$.
+  New note `th.live-fundamental-ranked`.
+- Notes rewritten: `th.adequacy`, `th.lf-adequacy`, `th.lf-thread-progress`,
+  `th.fundamental`, `th.fundamental-typed`, `th.live-fundamental`,
+  `th.live-fundamental-typed`, `th.fundamental-proc`, `th.lf-fundamental`,
+  `th.sem-p-connect`, `th.lf-p-term`, `th.soundness`, `th.soundness-source`,
+  `th.lf-soundness`, `th.lf-soundness-source`, `th.em`, `th.ac`, `th.Prel`,
+  `th.Erel`, `th.Vrel`, and their signatures. `th.em` old "Without it ... the
+  lock-free judgment needs the choice $\chi$ before the index again" (χ is
+  gone), new names the two uses of excluded middle.
+
 ## Examples
 
 ## Questions for the author

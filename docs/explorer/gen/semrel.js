@@ -255,10 +255,12 @@ const SJ = (rel, k) => R`\begin{array}{l}
 ${h('sj.at', R`\Delta ${REL('sj.term', rel)}^{X}_R e : T \iff \forall n, R' ${EXT} R, \Theta', \gamma.\ ${h('sr.tenv-erase', R`|\Delta|`)} \mathbin{\#} \Theta' \land {}`)} \\
 \quad ${h('sj.at', R`${h('sj.grel', R`\gamma \in G${k}^{R'}_{\alpha}\llbracket\Theta' \vdash \Delta\rrbracket`)} \Rightarrow \gamma(e) \in ${h('th.Erel', R`E${k}^{R'}_{\alpha}\llbracket |\Delta| \cup \Theta' \vdash T\rrbracket^{X}`)}`)} \\
 ${h('sj.term', R`\Delta ${rel}^{F}_R e : T \iff \forall Y, Z.\ \Delta ${rel}^{${h('sj.den', R`\mathsf{den}_{Y,Z}(F)`)}}_R e : T`)} \\
-${h('sj.proc', R`\Sigma ${rel}_R p : T \iff \forall \alpha.\ p \in ${h('th.Prel', R`P${k}^{R}_{\alpha}\llbracket\Sigma \vdash T\rrbracket`)}`)}
+${h('sj.proc', R`\Sigma ${rel}_R p : T \iff \forall \alpha.\ p \in ${h('th.Prel', R`P${k}^{R}_{\alpha}\llbracket\Sigma \vdash T\rrbracket`)}`)} \\
+${h('sj.sw', R`\Sigma ${rel}_W p : T \iff \forall R \vDash W.\ ${h('w.kind', R`\mathsf{strict}`)}\,R \Rightarrow \Sigma ${rel}_R p : T`)} \\
+${h('sj.h', R`\Sigma ${rel}^{h}_W p : T \iff \exists W'.\ ${h('w.wf', R`\mathsf{world\_wf}`)}\,W' \land ${h('w.acyc', R`\mathsf{acyc}`)}\,W' \land ${h('sj.hides', R`W' \rightsquigarrow_{${h('tp.iface', R`\mathsf{I}(\Sigma, T)`)}} W`)} \land \Sigma ${rel}_{W'} p : T`)}
 \end{array}`;
 block(s, {
-  id: 'sj', title: 'Semantic judgments', rocq: 'compat/SemTyped.v: Grel, sem_typed_at, sf_den, sem_typed; relation/Adequacy.v: sem_ptyped',
+  id: 'sj', title: 'Semantic judgments', rocq: 'compat/SemTyped.v: Grel, sem_typed_at, sf_den, sem_typed; relation/Adequacy.v: sem_ptyped; static/FundamentalProc.v: sem_ptyped_sw, sem_ptyped_h; static/Hiding.v: hides',
   tex: SJ(R`\vDash[\kappa]`, R`[\kappa]`),
   variants: { df: SJ(R`\vDash`, '') },
   caption: 'The semantic judgments quantify over every level, later world and grounding, and read the static future at every denotation.'
@@ -390,12 +392,17 @@ block(s, {
   id: 'sp-lf', title: 'Lock-free semantic judgment', rocq: 'soup/Soup.v: lf_sem, lf_next, own_next, world_next; soup/State.v: tchoice; soup/LFCompose.v: lf_sems',
   modes: ['lf'],
   tex: R`\begin{array}{l}
+${h('sp.lfsemh', R`\Sigma \Vvdash^{N,h}_W p : T \iff \exists W'.\ \mathsf{world\_wf}\,W' \land ${h('w.lfworld', R`\mathsf{wf}`)}\,W' \land ${h('sj.hides', R`W' \rightsquigarrow_{\mathsf{I}(\Sigma, T)} W`)} \land \Sigma \Vvdash^{N}_{W'} p : T`)} \\
 ${h('sp.lfsem', R`\Sigma \Vvdash^{N}_W p : T \iff ${h('sp.exists-before-forall', R`${h('sp.allR', R`\forall R \vDash W.\ ${h('w.kind', R`\mathsf{ranked}`)}\,R`)} \Rightarrow \forall \alpha.\ \exists a.\ ${h('proc.erase', R`\mathsf{erase}`)}(${h('th.qa', 'q_a')}) = p`)} \land a \in ${h('th.soup', R`S^{N,R}_\alpha\llbracket\Sigma \vdash T\rrbracket`)}`)}
 \end{array}`,
   caption: 'The lock-free semantic judgment at the bound $N$ reads the process at each ranked world $R$ that models the static world $W$, and chooses the annotated configuration at each ordinal index. The configuration starts at a ranked world that extends $R$.'
 });
 
 // ---- notes ----
+n('sj.sw', R`Semantic judgment at a static world`, R`$\Sigma \vDash_W p : T$ holds when $\Sigma \vDash_R p : T$ holds at each strict world $R$ that models the static world $W$.`, R`A typing derivation fixes a static world, and the relation reads worlds of the relation. The semantic judgment at $W$ reads every strict model of $W$, and semantic P-Connect at static worlds composes two components at one model of the join.`, DEF, R`$\varnothing \vDash_{W} p : \ast$ for the empty world $W$.`, 'static/FundamentalProc.v: sem_ptyped_sw, sem_p_connect_sw');
+n('sj.h', R`Hidden semantic judgment`, R`$\Sigma \vDash^{h}_W p : T$ holds when some well-formed acyclic static world $W^{\prime}$ hides to $W$ on the interface constants and $\Sigma \vDash_{W^{\prime}} p : T$.`, R`The hidden typing judgment keeps only the interface order. Its fundamental theorem recovers a whole world through the full judgment, and adequacy needs only some acyclic whole world.`, DEF, R`A component over an empty interface has a hidden world without constants.`, 'static/FundamentalProc.v: sem_ptyped_h, adequacy_h, fundamental_proc_h');
+n('sj.hides', R`Hiding $W^{\prime} \rightsquigarrow_I W$`, R`$W^{\prime} \rightsquigarrow_I W$ when the constants of $W^{\prime}$ in $I$ are constants of $W$, and each order fact $W^{\prime}$ derives between points with roots in $I$ is derived by $W$.`, R`It relates a whole world to the interface world a hidden derivation exposes. Private constants of $W^{\prime}$ outside $I$ stay invisible.`, DEF, R`$W^{\prime} \rightsquigarrow_{\mathsf{I}(\Sigma, T)} W^{\prime}|_{\mathsf{I}(\Sigma, T)}$.`, 'static/Hiding.v: hides, hides_restrict');
+n('sp.lfsemh', R`Hidden lock-free semantic judgment`, R`$\Sigma \Vvdash^{N,h}_W p : T$ holds when some well-formed well-founded static world $W^{\prime}$ hides to $W$ on the interface constants and $\Sigma \Vvdash^{N}_{W^{\prime}} p : T$.`, R`It is the conclusion of the lock-free fundamental theorem for the hidden judgment, the analogue of $\vDash^{h}_W$ with ranked models.`, DEF, R`The split client and server program.`, 'soup/LFTyped.v: lf_sems_h, lf_fundamental_h');
 // cost tables
 n('ct.table', R`Cost table $\kappa$`, R`A sextuple $\kappa \in \mathbb{N}^6$ of costs, one per kind of step.`, R`One relation parametric in $\kappa$ yields both the deadlock-freedom and the liveness relation, so each compatibility proof is done once for all $\kappa$.`, DEF, R`$\kappa_{DF} = (1,1,1,0,0,1)$.`, 'relation/CostTable.v: ctable');
 n('ct.take-pos', R`$1 \leq \kappa_{take}$`, R`Receive and branch cost at least one level.`, R`A receive reads $V$ of its payload negatively at the level of its continuation, so that level is $\beta < \alpha$ and $V_n$ is well defined.`, R`With $\kappa_{take} = 0$, $V_n$ would quantify negatively over $V_n$ and the fixpoint would not exist.`, R`Both tables have $\kappa_{take} = 1$.`, 'relation/CostTable.v: c_take_pos');
@@ -724,7 +731,11 @@ sa('sj.at', R`\Delta \vDash^{X}_{R} e : T`, [A(R`\Delta`, R`the linear context o
 sa('sj.grel', R`\gamma \in G^{R}_{\alpha}\llbracket \Theta \vdash \Delta \rrbracket`, [A(R`\gamma`, R`a substitution $\mathbb{N} \to \mathsf{Expr}$ for the variables of $\Delta$`), aTh, A(R`\Delta`, R`the linear context`)]);
 sa('sj.den', R`\mathsf{den} : \mathcal{P}(\mathsf{Point}) \to \mathcal{P}(\mathsf{Point}) \to \mathsf{SFuture} \to \mathcal{P}(\mathsf{Point})`, [A(R`Y`, R`the denotation of the rest`), A(R`Z`, R`the denotation of the flag $\bot$`), A(R`F`, R`the static future`)]);
 sa('sj.term', R`\Delta \vDash^{F}_{R} e : T`, [A(R`\Delta`, R`the linear context`), A(R`F`, R`the static future`), aW, A(R`e, T`, R`the term and its type`)]);
-sa('sj.proc', R`\Sigma \vDash_{R} p : T`, [aSg, aW, ap, aT]);
+sa('sj.proc', R`\Sigma \vDash_{R} p : T`, [aSg, A('R', R`a world of the relation`), ap, aT]);
+sa('sj.sw', R`\Sigma \vDash_{W} p : T`, [aSg, A('W', R`a static world`), ap, aT]);
+sa('sj.h', R`\Sigma \vDash^{h}_{W} p : T`, [aSg, A('W', R`the hidden static world`), ap, aT]);
+sa('sj.hides', R`W' \rightsquigarrow_I W`, [A(R`W'`, R`a whole static world`), A('I', R`a set of interface constants`), A('W', R`the interface world`)]);
+sa('sp.lfsemh', R`\Sigma \Vvdash^{N,h}_{W} p : T`, [aSg, A('W', R`the hidden static world`), ap, aT]);
 sa('fu.Phi', R`\Phi : \mathsf{End} \rightharpoonup \mathsf{STy} \times \mathbb{N} \times \mathbb{N}`, [A(R`S^{f}_{m}`, R`the protocol $S$, counter $f$ and tickets $m$ of an end, $f \leq m$`)]);
 sa('fu.tick', R`\Phi{\downarrow} = \{o \mapsto S^{f \mathbin{\dot-} 1}_{m} \mid o \mapsto S^{f}_{m} \in \Phi\}`, [aPhi]);
 sa('fu.rty', R`\sigma \in \{T^{a}\} \cup \{\mathsf{thread}\}`, [A(R`T^{a}`, R`a credited type`)]);

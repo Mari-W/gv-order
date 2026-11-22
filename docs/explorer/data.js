@@ -1182,11 +1182,11 @@ window.MAP = {
       "df",
       "lf"
      ],
-     "rocq": "compat/SemTyped.v: Grel, sem_typed_at, sf_den, sem_typed; relation/Adequacy.v: sem_ptyped; soup/Soup.v: lf_sem, lf_next, own_next, world_next; soup/State.v: tchoice; soup/LFCompose.v: lf_sems",
-     "tex": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash[\\kappa]}}^{X}_R e : T \\iff \\forall n, R' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} R, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G[\\kappa]^{R'}_{\\alpha}\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\htmlData{k=th.Erel}{E[\\kappa]^{R'}_{\\alpha}\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Delta \\vDash[\\kappa]^{F}_R e : T \\iff \\forall Y, Z.\\ \\Delta \\vDash[\\kappa]^{\\htmlData{k=sj.den}{\\mathsf{den}_{Y,Z}(F)}}_R e : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash[\\kappa]_R p : T \\iff \\forall \\alpha.\\ p \\in \\htmlData{k=th.Prel}{P[\\kappa]^{R}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\n\\htmlData{k=sp.lfsem}{\\Sigma \\Vvdash\\annot{^{N}}_W p : T \\iff \\htmlData{k=sp.exists-before-forall}{\\htmlData{k=sp.allR}{\\forall R \\vDash W.\\ \\htmlData{k=w.kind}{\\mathsf{ranked}}\\,R} \\Rightarrow \\forall \\alpha.\\ \\exists a.\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}(\\htmlData{k=th.qa}{q_a}) = p} \\land a \\in \\htmlData{k=th.soup}{S^{N,R}_\\alpha\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}}\\end{array}",
+     "rocq": "compat/SemTyped.v: Grel, sem_typed_at, sf_den, sem_typed; relation/Adequacy.v: sem_ptyped; static/FundamentalProc.v: sem_ptyped_sw, sem_ptyped_h; static/Hiding.v: hides; soup/Soup.v: lf_sem, lf_next, own_next, world_next; soup/State.v: tchoice; soup/LFCompose.v: lf_sems",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash[\\kappa]}}^{X}_R e : T \\iff \\forall n, R' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} R, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G[\\kappa]^{R'}_{\\alpha}\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\htmlData{k=th.Erel}{E[\\kappa]^{R'}_{\\alpha}\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Delta \\vDash[\\kappa]^{F}_R e : T \\iff \\forall Y, Z.\\ \\Delta \\vDash[\\kappa]^{\\htmlData{k=sj.den}{\\mathsf{den}_{Y,Z}(F)}}_R e : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash[\\kappa]_R p : T \\iff \\forall \\alpha.\\ p \\in \\htmlData{k=th.Prel}{P[\\kappa]^{R}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket}} \\\\\n\\htmlData{k=sj.sw}{\\Sigma \\vDash[\\kappa]_W p : T \\iff \\forall R \\vDash W.\\ \\htmlData{k=w.kind}{\\mathsf{strict}}\\,R \\Rightarrow \\Sigma \\vDash[\\kappa]_R p : T} \\\\\n\\htmlData{k=sj.h}{\\Sigma \\vDash[\\kappa]^{h}_W p : T \\iff \\exists W'.\\ \\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W' \\land \\htmlData{k=w.acyc}{\\mathsf{acyc}}\\,W' \\land \\htmlData{k=sj.hides}{W' \\rightsquigarrow_{\\htmlData{k=tp.iface}{\\mathsf{I}(\\Sigma, T)}} W} \\land \\Sigma \\vDash[\\kappa]_{W'} p : T}\n\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\n\\htmlData{k=sp.lfsemh}{\\Sigma \\Vvdash^{N,h}_W p : T \\iff \\exists W'.\\ \\mathsf{world\\_wf}\\,W' \\land \\htmlData{k=w.lfworld}{\\mathsf{wf}}\\,W' \\land \\htmlData{k=sj.hides}{W' \\rightsquigarrow_{\\mathsf{I}(\\Sigma, T)} W} \\land \\Sigma \\Vvdash\\annot{^{N}}_{W'} p : T} \\\\\n\\htmlData{k=sp.lfsem}{\\Sigma \\Vvdash\\annot{^{N}}_W p : T \\iff \\htmlData{k=sp.exists-before-forall}{\\htmlData{k=sp.allR}{\\forall R \\vDash W.\\ \\htmlData{k=w.kind}{\\mathsf{ranked}}\\,R} \\Rightarrow \\forall \\alpha.\\ \\exists a.\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}(\\htmlData{k=th.qa}{q_a}) = p} \\land a \\in \\htmlData{k=th.soup}{S^{N,R}_\\alpha\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}}\\end{array}",
      "caption": "The semantic judgments quantify over ordinal indices, larger worlds and substitutions, and read the static future at each of its denotations. A semantic judgment at a static world $W$ holds at each world of the relation that models $W$, a strict one for deadlock freedom. \\annp{The lock-free judgment at the bound $N$ holds at each ranked world that models $W$ and chooses the annotated configuration at each index. The creation choice of each channel is an existential inside O-New.} A grounding $\\gamma$ in the relation $G$ on contexts substitutes values for the variables of $\\Delta$, and the sets $Y$ and $Z$ denote the rest and the flag $\\bot$ of a future.",
      "variants": {
-      "df": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{X}_R e : T \\iff \\forall n, R' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} R, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G^{R'}_{\\alpha}\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\htmlData{k=th.Erel}{E^{R'}_{\\alpha}\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Delta \\vDash^{F}_R e : T \\iff \\forall Y, Z.\\ \\Delta \\vDash^{\\htmlData{k=sj.den}{\\mathsf{den}_{Y,Z}(F)}}_R e : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash_R p : T \\iff \\forall \\alpha.\\ p \\in \\htmlData{k=th.Prel}{P^{R}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket}}\n\\end{array}\\end{array}"
+      "df": "\\begin{array}{c}\\begin{array}{l}\n\\htmlData{k=sj.at}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{X}_R e : T \\iff \\forall n, R' \\mathrel{\\htmlData{k=w.ext}{\\sqsupseteq}} R, \\Theta', \\gamma.\\ \\htmlData{k=sr.tenv-erase}{|\\Delta|} \\mathbin{\\#} \\Theta' \\land {}} \\\\\n\\quad \\htmlData{k=sj.at}{\\htmlData{k=sj.grel}{\\gamma \\in G^{R'}_{\\alpha}\\llbracket\\Theta' \\vdash \\Delta\\rrbracket} \\Rightarrow \\gamma(e) \\in \\htmlData{k=th.Erel}{E^{R'}_{\\alpha}\\llbracket |\\Delta| \\cup \\Theta' \\vdash T\\rrbracket^{X}}} \\\\\n\\htmlData{k=sj.term}{\\Delta \\vDash^{F}_R e : T \\iff \\forall Y, Z.\\ \\Delta \\vDash^{\\htmlData{k=sj.den}{\\mathsf{den}_{Y,Z}(F)}}_R e : T} \\\\\n\\htmlData{k=sj.proc}{\\Sigma \\vDash_R p : T \\iff \\forall \\alpha.\\ p \\in \\htmlData{k=th.Prel}{P^{R}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket}} \\\\\n\\htmlData{k=sj.sw}{\\Sigma \\vDash_W p : T \\iff \\forall R \\vDash W.\\ \\htmlData{k=w.kind}{\\mathsf{strict}}\\,R \\Rightarrow \\Sigma \\vDash_R p : T} \\\\\n\\htmlData{k=sj.h}{\\Sigma \\vDash^{h}_W p : T \\iff \\exists W'.\\ \\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W' \\land \\htmlData{k=w.acyc}{\\mathsf{acyc}}\\,W' \\land \\htmlData{k=sj.hides}{W' \\rightsquigarrow_{\\htmlData{k=tp.iface}{\\mathsf{I}(\\Sigma, T)}} W} \\land \\Sigma \\vDash_{W'} p : T}\n\\end{array}\\end{array}"
      },
      "about": {
       "why": "The fundamental theorems conclude the semantic judgments, and adequacy takes a semantic judgment as its premise.",
@@ -1202,18 +1202,18 @@ window.MAP = {
   {
    "id": "theorems",
    "title": "Theorems",
-   "intro": "Typed closed processes are deadlock free, and the proof goes through the logical relation. The section opens with the chain of results and then states each of them for processes. The lemmas about terms come last. \\annp{The lock-free results sit next to their deadlock-free counterparts.}",
+   "intro": "Typed closed processes are deadlock free, and the proof goes through the logical relation. The section opens with the chain of results and then states each of them for processes. The lemmas about terms come last. The deadlock-free, live, hidden and n-ary results take no classical hypothesis. \\annp{The lock-free results sit next to their deadlock-free counterparts and take excluded middle and functional choice as explicit hypotheses.}",
    "blocks": [
     {
      "id": "th-chain",
      "title": "How the results fit together",
-     "rocq": "static/FundamentalProc.v: fundamental_proc, soundness; relation/Adequacy.v: adequacy; static/Fundamental.v: live_fundamental; cost/CostFund.v: fsem_of_cost; soup/LFTyped.v: lf_fundamental; soup/LFAdequacy.v: lf_adequacy",
+     "rocq": "static/FundamentalProc.v: fundamental_proc_h, adequacy_h, soundness_h; static/Fundamental.v: live_fundamental_ranked; cost/CostFund.v: fsem_of_cost; soup/LFTyped.v: lf_fundamental_h; soup/LFCompose.v: lf_sems_adequacy; soup/LFAdequacy.v: lf_adequacy",
      "modes": [
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{rcl}\n\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T & \\overset{\\htmlData{k=th.fundamental-proc}{\\textsf{fundamental\\_proc}}}{\\Longrightarrow} & \\Sigma \\htmlData{k=sj.proc}{\\vDash}_W p : T \\\\[1ex]\n\\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T & \\overset{\\htmlData{k=th.adequacy}{\\textsf{adequacy}}}{\\Longrightarrow} & \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\n\\annraw{\\\\[3ex]}\\annot{\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ c \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t}}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.live-fundamental}{\\textsf{live\\_fundamental}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{\\varnothing}_W t : T}\n\\annraw{\\\\[1ex]}\\annot{\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ c \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.crle}{\\mathsf{cr}(\\Delta) \\leq N}}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.fsem-of-cost}{\\textsf{fsem\\_of\\_cost}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\htmlData{k=th.styof}{\\Delta\\annot{^{N}}}\\,t}}\n\\annraw{\\\\[1ex]}\\annot{\\Sigma \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.lf-fundamental}{\\textsf{lf\\_fundamental}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\Sigma \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T}\n\\annraw{\\\\[1ex]}\\annot{\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{AC}} \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.lf-adequacy}{\\textsf{lf\\_adequacy}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p}\n\\end{array}",
-     "caption": "Typing implies the semantic judgment, and the semantic judgment implies deadlock freedom. Both steps use the relation $(V, E, P)$ at the step costs $\\kappa_{DF}$. \\annp{Lock freedom uses the same relation at $\\kappa_L$, which excludes internal divergence, together with fuel. The lock-free process relation combines both for each thread. Lock-free adequacy measures a wait on $o$ by $\\mu(t) = (\\varrho(\\mathsf{pt}\\,o), f)$, the ordinal rank of the point of $o$ and the counter $f$ of the dual end $\\overline{o}$. A step of the thread holding $\\overline{o}$ on another end decreases $f$, which F-Count keeps at $1$ or more. \\annp{A link gives the waiting thread a partner with a lower counter, by the premise of E-Link and the invariant on tickets.} Lock-free adequacy takes excluded middle and choice as hypotheses. The thread holding $\\overline{o}$ therefore acts on $\\overline{o}$ after finitely many steps.}",
+     "tex": "\\begin{array}{rcl}\n\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T & \\overset{\\htmlData{k=th.fundamental-proc}{\\textsf{fundamental\\_proc\\_h}}}{\\Longrightarrow} & \\Sigma \\htmlData{k=sj.h}{\\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{h}}_W p : T \\\\[1ex]\n\\varnothing \\htmlData{k=sj.h}{\\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{h}}_W p : T & \\overset{\\htmlData{k=th.adequacy-h}{\\textsf{adequacy\\_h}}}{\\Longrightarrow} & \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\n\\annraw{\\\\[3ex]}\\annot{\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ c \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\land \\htmlData{k=w.sat}{R \\mathrel{\\htmlData{k=sj.proc}{\\vDash}} W}}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.live-fundamental-ranked}{\\textsf{live\\_fundamental\\_ranked}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\htmlData{k=th.df}{\\Delta_{df}} \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{\\varnothing}_R t : T_{df}}\n\\annraw{\\\\[1ex]}\\annot{\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ c \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.crle}{\\mathsf{cr}(\\Delta) \\leq N}}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.fsem-of-cost}{\\textsf{fsem\\_of\\_cost}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\htmlData{k=th.styof}{\\Delta\\annot{^{N}}}\\,t}}\n\\annraw{\\\\[1ex]}\\annot{\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p}}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.lf-fundamental}{\\textsf{lf\\_fundamental\\_h}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\Sigma \\htmlData{k=sp.lfsemh}{\\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}^{N,h}}_W p : T}\n\\annraw{\\\\[1ex]}\\annot{\\htmlData{k=w.kind}{\\mathsf{ranked}}\\,R \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash\\annot{^{N}}}_R p : T}\\annraw{&}\\annot{\\overset{\\htmlData{k=th.lf-adequacy}{\\textsf{lf\\_adequacy}}}{\\Longrightarrow}}\\annraw{&}\\annot{\\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p}\n\\end{array}",
+     "caption": "Typing gives the hidden semantic judgment, and that judgment gives deadlock freedom. Both steps use the relation $(V, E, P)$ at the step costs $\\kappa_{DF}$ over strict worlds, and neither needs excluded middle. \\annp{Lock freedom uses the same relation at $\\kappa_L$, which excludes internal divergence, together with fuel, over ranked worlds. The lock-free process relation combines both for each thread. Lock-free adequacy measures a wait on $o$ by $\\mu(t) = (\\varrho(\\mathsf{pt}\\,o), f)$, the ordinal rank of the point of $o$ and the counter $f$ of the dual end $\\overline{o}$. A step of the thread holding $\\overline{o}$ on another end decreases $f$, which F-Count keeps at $1$ or more. \\annp{A link gives the waiting thread a partner with a lower counter, by the premise of E-Link and the bound on tickets.} So the thread holding $\\overline{o}$ acts on $\\overline{o}$ after finitely many steps. Excluded middle enters at the creations under $\\mathsf{gen\\_new}$ and at the existential property of ordinal indices.}",
      "about": {
       "why": "Each arrow is one theorem of this section. \\annp{The lock-free rows show what lock freedom adds to the deadlock-free proof.}",
       "used": []
@@ -1222,13 +1222,13 @@ window.MAP = {
     {
      "id": "th-sound",
      "title": "Soundness",
-     "rocq": "static/FundamentalProc.v: soundness_h, soundness; soup/LFTyped.v: lf_soundness_h, lf_soundness, lf_soundness_run, lf_soundness_padovani; lockfree/FairRun.v: fair_run_exists, lock_free_padovani",
+     "rocq": "static/FundamentalProc.v: soundness_h, soundness, live_soundness_h, live_soundness; static/ConnectN.v: connect_n_soundness, connect_n_live_soundness; soup/LFTyped.v: lf_soundness_h, lf_soundness, lf_soundness_run, lf_soundness_padovani; soup/LFConnectN.v: connect_n_lf_soundness; lockfree/FairRun.v: fair_run_exists, lock_free_padovani",
      "modes": [
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.soundness}{\\begin{array}{l}\\varnothing \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness}{\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{AC}} \\land \\varnothing \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}} \\\\[1.5ex] \\htmlData{k=th.fair-run-exists}{\\begin{array}{l}\\mathsf{EM} \\land \\mathsf{DC} \\\\ \\quad\\Longrightarrow\\ \\exists (r, l).\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,(r\\,0) = p \\land \\htmlData{k=prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\htmlData{k=prop.wfair}{\\mathsf{wfair}}\\,(r, l)\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-padovani}{\\begin{array}{l}\\begin{array}{l}\\mathsf{EM} \\land \\mathsf{DC} \\land \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p \\land \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,q_0 = p \\\\ \\land\\ q_0 \\to^{*} q \\land \\htmlData{k=prop.pend}{\\mathsf{pend}(q, t)}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\exists q_1\\,ev\\,q_2.\\ q \\to^{*} q_1 \\xrightarrow{ev} q_2 \\land t \\in \\htmlData{k=se.parts}{\\mathsf{parts}(ev)}\\end{array}}}\\end{array}",
-     "caption": "A closed typed process is deadlock free. \\annp{Under excluded middle and choice, a closed process typed at a finite bound $N$, with each thread guarded, is lock free.}",
+     "tex": "\\begin{array}{l}\\htmlData{k=th.soundness}{\\begin{array}{l}\\varnothing \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}} \\\\[1.5ex] \\htmlData{k=th.connect-n}{\\begin{array}{l}\\htmlData{k=th.pcomps}{\\mathsf{comps}_{\\infty}(\\bar W, p, T)} \\land \\htmlData{k=w.acyc}{\\mathsf{acyc}}\\,(W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} \\cdots \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_n) \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-soundness}{\\begin{array}{l}\\varnothing \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p \\land \\htmlData{k=prop.notau}{\\mathsf{no\\_tau\\_divergence}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness}{\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{FC}} \\land \\varnothing \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} p : T \\land N \\in \\mathbb{N} \\land \\mathrel{\\htmlData{k=guard.proc}{\\vdash\\!\\triangleright}} p \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-connect-n}{\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{FC}} \\land \\htmlData{k=th.pcomps}{\\mathsf{comps}_{N}(\\bar W, p, T)} \\land \\htmlData{k=w.lfworld}{\\mathsf{wf}}\\,(W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} \\cdots \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_n) \\land \\mathrel{\\htmlData{k=guard.proc}{\\vdash\\!\\triangleright}} p \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.fair-run-exists}{\\begin{array}{l}\\mathsf{EM} \\land \\htmlData{k=th.dc}{\\mathsf{DC}} \\\\ \\quad\\Longrightarrow\\ \\exists (r, l).\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,(r\\,0) = p \\land \\htmlData{k=prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\htmlData{k=prop.wfair}{\\mathsf{wfair}}\\,(r, l)\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-padovani}{\\begin{array}{l}\\begin{array}{l}\\mathsf{EM} \\land \\mathsf{DC} \\land \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p \\land \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,q_0 = p \\\\ \\land\\ q_0 \\to^{*} q \\land \\htmlData{k=prop.pend}{\\mathsf{pend}(q, t)}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\exists q_1\\,ev\\,q_2.\\ q \\to^{*} q_1 \\xrightarrow{ev} q_2 \\land t \\in \\htmlData{k=se.parts}{\\mathsf{parts}(ev)}\\end{array}}}\\end{array}",
+     "caption": "A closed typed process is deadlock free, and so is a closed n-ary composite whose hidden worlds join acyclically. No classical hypothesis enters. \\annp{With each thread guarded it also has no internal divergence. Under excluded middle and functional choice, a closed process typed at a finite bound $N$, with each thread guarded, is lock free.}",
      "about": {
       "why": "These are the main results."
      }
@@ -1241,8 +1241,8 @@ window.MAP = {
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\htmlData{k=th.Erel}{E\\annot{[\\kappa]}^{W}_{\\alpha}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\htmlData{k=th.Prel}{P\\annot{[\\kappa]}^{W}_{\\alpha}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.sem-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.conn}{\\mathsf{conn}} \\\\ \\land\\ p_1 \\in \\htmlData{k=th.Prel}{P^{W}_{\\alpha}\\llbracket \\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket} \\\\ \\land\\ p_2 \\in \\htmlData{k=th.Prel}{P^{W}_{\\alpha}\\llbracket \\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.par}{p_1 \\parallel_{\\Sigma_C} p_2} \\in \\htmlData{k=th.Prel}{P^{W}_{\\alpha}\\llbracket \\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket}\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-p-term}{\\begin{array}{l}\\Sigma \\mathrel{\\htmlData{k=tp.lfjudg}{\\Vdash}}^{N}_{W} (C_0, \\{t\\}) : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W (C_0, \\{t\\}) : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=th.conn}{\\mathsf{conn}} \\land \\Sigma_1 \\cup \\Sigma_C \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_{W_1} p_1 : T \\\\ \\land\\ \\Sigma_2 \\cup \\Sigma_D \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_{W_2} p_2 : \\ast\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_{W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T\\end{array}}}\\end{array}",
-     "caption": "A safe thread is a safe process, and two safe processes connected at dual interfaces form a safe process. A component proved safe without typing therefore composes with typed components. \\annp{The same holds for the lock-free process relation.}",
+     "tex": "\\begin{array}{l}\\htmlData{k=th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\htmlData{k=th.Erel}{E\\annot{[\\kappa]}^{R}_{\\alpha}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\htmlData{k=th.Prel}{P\\annot{[\\kappa]}^{R}_{\\alpha}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.sem-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.conn}{\\mathsf{conn}} \\\\ \\land\\ p_1 \\in \\htmlData{k=th.Prel}{P^{R}_{\\alpha}\\llbracket \\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket} \\\\ \\land\\ p_2 \\in \\htmlData{k=th.Prel}{P^{R}_{\\alpha}\\llbracket \\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.par}{p_1 \\parallel_{\\Sigma_C} p_2} \\in \\htmlData{k=th.Prel}{P^{R}_{\\alpha}\\llbracket \\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.sem-p-connect-sw}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.conn}{\\mathsf{conn}} \\land \\Sigma_1 \\cup \\Sigma_C \\htmlData{k=sj.sw}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}_{W_1} p_1 : T \\\\ \\land\\ \\Sigma_2 \\cup \\Sigma_D \\htmlData{k=sj.sw}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}_{W_2} p_2 : \\ast\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma_1 \\cup \\Sigma_2 \\htmlData{k=sj.sw}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}_{W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-p-term}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land N \\in \\mathbb{N} \\land \\htmlData{k=th.ptermprem}{\\mathsf{pterm}_N(\\Sigma, C_0, t, T)} \\\\ \\land\\ \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sp.lfsem}{\\Vvdash\\annot{^{N}}}_W (C_0, \\{t\\}) : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-p-connect}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=th.conn}{\\mathsf{conn}} \\land \\Sigma_1 \\cup \\Sigma_C \\htmlData{k=sp.lfsem}{\\Vvdash\\annot{^{N}}}_{W_1} p_1 : T \\\\ \\land\\ \\Sigma_2 \\cup \\Sigma_D \\htmlData{k=sp.lfsem}{\\Vvdash\\annot{^{N}}}_{W_2} p_2 : \\ast\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma_1 \\cup \\Sigma_2 \\htmlData{k=sp.lfsem}{\\Vvdash\\annot{^{N}}}_{W_1 \\mathbin{\\htmlData{k=w.join}{\\sqcup}} W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T\\end{array}}}\\end{array}",
+     "caption": "A safe thread is a safe process, and two safe processes connected at dual interfaces form a safe process at one world. At static worlds two components compose at the join of their worlds. A component proved safe without typing therefore composes with typed components. \\annp{The same holds for the lock-free judgment at static worlds, whose components are read at each ranked model.}",
      "about": {
       "why": "P-Term and P-Connect hold in the relation, which makes the approach compositional.",
       "used": [
@@ -1253,13 +1253,13 @@ window.MAP = {
     {
      "id": "th-fund-proc",
      "title": "Fundamental theorem",
-     "rocq": "static/FundamentalProc.v: fundamental_proc_h, live_fundamental_proc_h, fundamental_proc; soup/LFTyped.v: lf_fundamental_h, lf_fundamental; static/Hiding.v: ptyped_full",
+     "rocq": "static/FundamentalProc.v: fundamental_proc_h, live_fundamental_proc_h, fundamental_proc, live_fundamental_proc; soup/LFTyped.v: lf_fundamental_h, lf_fundamental; static/Hiding.v: ptyped_full, fptyped_ptyped",
      "modes": [
       "df",
       "lf"
      ],
-     "tex": "\\begin{array}{l}\\htmlData{k=th.fundamental-proc}{\\begin{array}{l}\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sj.proc}{\\vDash}_W p : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-fundamental}{\\begin{array}{l}\\Sigma \\htmlData{k=tp.lfjudg}{\\Vdash^{N}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T\\end{array}}}\\end{array}",
-     "caption": "A typed process is in the semantic judgment. The proof is by induction over P-Term and P-Connect and uses the composition rules.",
+     "tex": "\\begin{array}{l}\\htmlData{k=th.fundamental-proc}{\\begin{array}{l}\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sj.h}{\\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{h}}_W p : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-proc}{\\begin{array}{l}\\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{^{\\infty}}_W} p : T \\land \\htmlData{k=guard.proc}{\\vdash\\!\\triangleright p} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sj.h}{\\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{h}}_W p : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-fundamental}{\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\Sigma \\htmlData{k=tp.pjudg}{\\vdash\\annot{\\annot{^{N}}}_W} p : T \\land N \\in \\mathbb{N} \\land \\mathrel{\\htmlData{k=guard.proc}{\\vdash\\!\\triangleright}} p \\\\ \\quad\\Longrightarrow\\ \\Sigma \\htmlData{k=sp.lfsemh}{\\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}^{N,h}}_W p : T\\end{array}}}\\end{array}",
+     "caption": "A typed process is in the hidden semantic judgment, at some acyclic whole world that hides to its world. The proof goes through the full judgment with private constants renamed apart, by induction over P-Term and P-Connect with the composition rules. \\annp{Under excluded middle the same holds at a finite bound, with a well-founded whole world and the lock-free judgment.}",
      "about": {
       "why": "The fundamental theorem connects typing with the relation.",
       "used": [
@@ -1274,9 +1274,9 @@ window.MAP = {
       "df",
       "lf"
      ],
-     "rocq": "relation/Adequacy.v: adequacy, live_adequacy, adequacy_gen; soup/LFAdequacy.v: lf_adequacy, lf_thread_progress; soup/SoupTau.v: soup_no_tau_divergence; soup/SoupRun.v: lfsoup_step",
-     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.adequacy}{\\begin{array}{l}\\varnothing \\htmlData{k=sj.proc}{\\vDash}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\annot{\\htmlData{k=th.lf-adequacy}{\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{AC}} \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-thread-progress}{\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{AC}} \\land \\varnothing \\mathrel{\\htmlData{k=sp.lfsem}{\\Vvdash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\begin{array}{l}\\forall (r, l).\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,(\\htmlData{k=se.run}{r\\,0}) = p \\land \\htmlData{k=prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\htmlData{k=prop.wfair}{\\mathsf{wfair}}\\,(r, l) \\\\ \\quad \\Longrightarrow\\ \\htmlData{k=th.tpr}{\\mathsf{thread\\_progress\\_run}}\\,(r, l)\\end{array}\\end{array}}}\\end{array}}\\end{array}",
-     "caption": "A closed process in the semantic judgment is deadlock free. \\annp{Under excluded middle and choice, a closed process in the lock-free judgment is lock free, and each thread progresses on each weakly fair maximal run.}",
+     "rocq": "relation/Adequacy.v: adequacy, live_adequacy, adequacy_gen; static/FundamentalProc.v: adequacy_h, live_adequacy_h; soup/LFAdequacy.v: lf_adequacy, lf_thread_progress; soup/LFCompose.v: lf_sems_adequacy; soup/SoupTau.v: soup_no_tau_divergence; soup/SoupRun.v: lfsoup_step",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.adequacy}{\\begin{array}{l}\\varnothing \\htmlData{k=sj.proc}{\\vDash}_R p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}} \\\\[1.5ex] \\htmlData{k=th.adequacy-h}{\\begin{array}{l}\\varnothing \\htmlData{k=sj.h}{\\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{h}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\end{array}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\annot{\\htmlData{k=th.lf-adequacy}{\\begin{array}{l}\\htmlData{k=w.kind}{\\mathsf{ranked}}\\,R \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash\\annot{^{N}}}_R p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-thread-progress}{\\begin{array}{l}\\htmlData{k=w.kind}{\\mathsf{ranked}}\\,R \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash\\annot{^{N}}}_R p : T \\\\ \\quad\\Longrightarrow\\ \\begin{array}{l}\\forall (r, l).\\ \\htmlData{k=proc.erase}{\\mathsf{erase}}\\,(\\htmlData{k=se.run}{r\\,0}) = p \\land \\htmlData{k=prop.maximal}{\\mathsf{maximal}}\\,(r, l) \\land \\htmlData{k=prop.wfair}{\\mathsf{wfair}}\\,(r, l) \\\\ \\quad \\Longrightarrow\\ \\htmlData{k=th.tpr}{\\mathsf{thread\\_progress\\_run}}\\,(r, l)\\end{array}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-sems-adequacy}{\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{FC}} \\land \\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\htmlData{k=w.lfworld}{\\mathsf{wf}}\\,W \\land \\varnothing \\htmlData{k=sp.lfsem}{\\Vvdash\\annot{^{N}}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\end{array}}\\end{array}",
+     "caption": "A closed process in the semantic judgment at a world is deadlock free, and so is one in the hidden judgment. \\annp{A closed process in the lock-free judgment at a ranked world is lock free, and each thread progresses on each weakly fair maximal run. At a well-founded static world this needs excluded middle and functional choice.}",
      "about": {
       "why": "Adequacy connects the relation with the safety property.",
       "used": [
@@ -1304,9 +1304,9 @@ window.MAP = {
       "df",
       "lf"
      ],
-     "rocq": "static/FundamentalProc.v: soundness_source; soup/LFCompose.v: lf_soundness_source; static/Fundamental.v: typed_sem, fundamental, fundamental_typed, live_fundamental, live_fundamental_typed; compat/Bind.v: Erel_bind; cost/CostFund.v: cost_fundamental, fsem_of_cost",
-     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.soundness-source}{\\begin{array}{l}\\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{AC}} \\land N \\in \\mathbb{N} \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\land\\ \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ c \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}\\\\[3ex]\\begin{array}{l}\\htmlData{k=th.fundamental}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}^{F}_W t : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.fundamental-typed}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.df}{\\Delta_{df}} \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{F}_W t : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{F}_W t : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-typed}{\\begin{array}{l}\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_W t : T_{df}\\end{array}}}\\end{array}\\\\[3ex]\\htmlData{k=th.Erel-bind}{\\begin{array}{l}\\begin{array}{l}e \\in \\htmlData{k=th.Erel}{E^{W}_{\\alpha}\\llbracket \\Theta_1 \\vdash T\\rrbracket^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{ap}}\\,\\Theta_2}} \\\\ \\land\\ \\forall W' \\htmlData{k=w.ext}{\\sqsupseteq} W,\\ \\beta \\leq \\alpha,\\ v \\in \\htmlData{k=th.Vrel}{V^{W'}_{\\beta}\\llbracket\\Theta_v \\vdash T\\rrbracket}. \\\\ \\qquad \\htmlData{k=se.frame}{f[v]} \\in \\htmlData{k=th.Erel}{E^{W'}_{j}\\llbracket \\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=se.frame}{f[e]} \\in \\htmlData{k=th.Erel}{E^{W}_{\\alpha}\\llbracket \\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array}}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\htmlData{k=th.cost-fundamental}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=cs.csem}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{N} e : T\\ !\\ \\varepsilon}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.fsem-of-cost}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} e : T\\ !\\ c \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.crle}{\\mathsf{cr}(\\Delta) \\leq N} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\htmlData{k=th.styof}{\\Delta\\annot{^{N}}}\\,e}\\end{array}}\\end{array}}\\end{array}",
-     "caption": "A closed program is sound as a one-thread process. Typing a term implies the semantic term judgment, and $E$ is closed under evaluation frames. \\annp{With the guard a typed term is in the relation at $\\kappa_L$, and a typed term at a finite bound $N$ has fuel.}",
+     "rocq": "static/FundamentalProc.v: soundness_source; soup/LFCompose.v: lf_soundness_source; static/Fundamental.v: typed_sem, wfit, fundamental, fundamental_typed, live_fundamental, live_fundamental_typed, live_fundamental_ranked; compat/Bind.v: Erel_bind; cost/CostFund.v: cost_fundamental, fsem_of_cost",
+     "tex": "\\begin{array}{c}\\begin{array}{l}\\htmlData{k=th.soundness-source}{\\begin{array}{l}\\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\htmlData{k=w.acyc}{\\mathsf{acyc}}\\,W \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=th.ac}{\\mathsf{FC}} \\land \\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\htmlData{k=w.lfworld}{\\mathsf{wf}}\\,W \\land N \\in \\mathbb{N} \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\land\\ \\varnothing ; \\varnothing \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ c \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}\\\\[3ex]\\begin{array}{l}\\htmlData{k=th.fundamental}{\\begin{array}{l}\\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\htmlData{k=w.sat}{R \\mathrel{\\htmlData{k=sj.proc}{\\vDash}} W} \\land \\htmlData{k=w.kind}{\\mathsf{strict}}\\,R \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\vDash}}}^{F}_R t : T\\end{array}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.fundamental-typed}{\\begin{array}{l}\\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\land \\htmlData{k=w.sat}{R \\mathrel{\\htmlData{k=sj.proc}{\\vDash}} W} \\land \\htmlData{k=w.kind}{\\mathsf{strict}}\\,R \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=th.df}{\\Delta_{df}} \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{F}_R t : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental}{\\begin{array}{l}\\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\htmlData{k=guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\land \\htmlData{k=w.sat}{R \\mathrel{\\htmlData{k=sj.proc}{\\vDash}} W} \\land \\htmlData{k=w.kind}{\\mathsf{strict}}\\,R \\\\ \\quad\\Longrightarrow\\ \\Delta \\htmlData{k=sj.term}{\\mathrel{\\htmlData{k=sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{F}_R t : T\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-typed}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t \\land \\htmlData{k=w.sat}{R \\mathrel{\\htmlData{k=sj.proc}{\\vDash}} W} \\land \\htmlData{k=w.kind}{\\mathsf{strict}}\\,R\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_R t : T_{df}\\end{array}}}\\annraw{ \\\\[1.5ex] }\\annot{\\htmlData{k=th.live-fundamental-ranked}{\\begin{array}{l}\\begin{array}{l}\\htmlData{k=th.em}{\\mathsf{EM}} \\land \\htmlData{k=w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ N \\in \\mathbb{N} \\land \\varnothing \\mathrel{\\htmlData{k=guard.judg}{\\vdash\\!\\triangleright}} t \\land \\htmlData{k=w.sat}{R \\mathrel{\\htmlData{k=sj.proc}{\\vDash}} W}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\htmlData{k=sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_R t : T_{df}\\end{array}}}\\end{array}\\\\[3ex]\\htmlData{k=th.Erel-bind}{\\begin{array}{l}\\begin{array}{l}e \\in \\htmlData{k=th.Erel}{E^{R}_{\\alpha}\\llbracket \\Theta_1 \\vdash T\\rrbracket^{F \\cup \\htmlData{k=ty.heads}{\\mathsf{ap}}\\,\\Theta_2}} \\\\ \\land\\ \\forall R' \\htmlData{k=w.ext}{\\sqsupseteq} R,\\ \\beta \\leq \\alpha,\\ v \\in \\htmlData{k=th.Vrel}{V^{R'}_{\\beta}\\llbracket\\Theta_v \\vdash T\\rrbracket}. \\\\ \\qquad \\htmlData{k=se.frame}{f[v]} \\in \\htmlData{k=th.Erel}{E^{R'}_{\\beta}\\llbracket \\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=se.frame}{f[e]} \\in \\htmlData{k=th.Erel}{E^{R}_{\\alpha}\\llbracket \\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array}}\\annraw{\\\\[3ex]}\\annot{\\begin{array}{l}\\htmlData{k=th.cost-fundamental}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{F}_{W\\annot{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=cs.csem}{\\Delta \\mathrel{\\htmlData{k=sj.term}{\\vDash}}^{N} e : T\\ !\\ \\varepsilon}\\end{array}} \\\\[1.5ex] \\htmlData{k=th.fsem-of-cost}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\htmlData{k=tp.vdash}{\\vdash}}^{\\varnothing}_{W\\annot{,N}} e : T\\ !\\ c \\land \\htmlData{k=ty.tfree}{\\mathsf{tfree}}\\,T \\land \\htmlData{k=th.crle}{\\mathsf{cr}(\\Delta) \\leq N} \\\\ \\quad\\Longrightarrow\\ \\htmlData{k=fu.fsem}{\\mathsf{fsem}\\,N\\,\\htmlData{k=th.styof}{\\Delta\\annot{^{N}}}\\,e}\\end{array}}\\end{array}}\\end{array}",
+     "caption": "A closed program is sound as a one-thread process over an acyclic world. Typing a term implies the semantic term judgment at each strict world that models the static world, and $E$ is closed under evaluation frames. \\annp{With the guard a typed term is in the relation at $\\kappa_L$. At a finite bound and under excluded middle this holds at each model, ranked ones included, and a typed term at a finite bound has fuel.}",
      "about": {
       "why": "The proofs of the process results use these lemmas, each proved rule by rule.",
       "used": [
@@ -7091,6 +7091,110 @@ window.MAP = {
     }
    ]
   },
+  "sj.sw": {
+   "title": "Semantic judgment at a static world",
+   "what": "$\\Sigma \\vDash_W p : T$ holds when $\\Sigma \\vDash_R p : T$ holds at each strict world $R$ that models the static world $W$.",
+   "why": "A typing derivation fixes a static world, and the relation reads worlds of the relation. The semantic judgment at $W$ reads every strict model of $W$, and semantic P-Connect at static worlds composes two components at one model of the join.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$\\varnothing \\vDash_{W} p : \\ast$ for the empty world $W$.",
+   "rocq": "static/FundamentalProc.v: sem_ptyped_sw, sem_p_connect_sw",
+   "sig": "\\Sigma \\vDash_{W} p : T",
+   "args": [
+    {
+     "name": "\\Sigma",
+     "meaning": "the interface, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+    },
+    {
+     "name": "W",
+     "meaning": "a static world"
+    },
+    {
+     "name": "p",
+     "meaning": "the process, $p = (C, E) \\in \\mathsf{Proc}$"
+    },
+    {
+     "name": "T",
+     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+    }
+   ]
+  },
+  "sj.h": {
+   "title": "Hidden semantic judgment",
+   "what": "$\\Sigma \\vDash^{h}_W p : T$ holds when some well-formed acyclic static world $W^{\\prime}$ hides to $W$ on the interface constants and $\\Sigma \\vDash_{W^{\\prime}} p : T$.",
+   "why": "The hidden typing judgment keeps only the interface order. Its fundamental theorem recovers a whole world through the full judgment, and adequacy needs only some acyclic whole world.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "A component over an empty interface has a hidden world without constants.",
+   "rocq": "static/FundamentalProc.v: sem_ptyped_h, adequacy_h, fundamental_proc_h",
+   "sig": "\\Sigma \\vDash^{h}_{W} p : T",
+   "args": [
+    {
+     "name": "\\Sigma",
+     "meaning": "the interface, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+    },
+    {
+     "name": "W",
+     "meaning": "the hidden static world"
+    },
+    {
+     "name": "p",
+     "meaning": "the process, $p = (C, E) \\in \\mathsf{Proc}$"
+    },
+    {
+     "name": "T",
+     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+    }
+   ]
+  },
+  "sj.hides": {
+   "title": "Hiding $W^{\\prime} \\rightsquigarrow_I W$",
+   "what": "$W^{\\prime} \\rightsquigarrow_I W$ when the constants of $W^{\\prime}$ in $I$ are constants of $W$, and each order fact $W^{\\prime}$ derives between points with roots in $I$ is derived by $W$.",
+   "why": "It relates a whole world to the interface world a hidden derivation exposes. Private constants of $W^{\\prime}$ outside $I$ stay invisible.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "$W^{\\prime} \\rightsquigarrow_{\\mathsf{I}(\\Sigma, T)} W^{\\prime}|_{\\mathsf{I}(\\Sigma, T)}$.",
+   "rocq": "static/Hiding.v: hides, hides_restrict",
+   "sig": "W' \\rightsquigarrow_I W",
+   "args": [
+    {
+     "name": "W'",
+     "meaning": "a whole static world"
+    },
+    {
+     "name": "I",
+     "meaning": "a set of interface constants"
+    },
+    {
+     "name": "W",
+     "meaning": "the interface world"
+    }
+   ]
+  },
+  "sp.lfsemh": {
+   "title": "Hidden lock-free semantic judgment",
+   "what": "$\\Sigma \\Vvdash^{N,h}_W p : T$ holds when some well-formed well-founded static world $W^{\\prime}$ hides to $W$ on the interface constants and $\\Sigma \\Vvdash\\annot{^{N}}_{W^{\\prime}} p : T$.",
+   "why": "It is the conclusion of the lock-free fundamental theorem for the hidden judgment, the analogue of $\\vDash^{h}_W$ with ranked models.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "The split client and server program.",
+   "rocq": "soup/LFTyped.v: lf_sems_h, lf_fundamental_h",
+   "sig": "\\Sigma \\Vvdash^{N,h}_{W} p : T",
+   "args": [
+    {
+     "name": "\\Sigma",
+     "meaning": "the interface, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+    },
+    {
+     "name": "W",
+     "meaning": "the hidden static world"
+    },
+    {
+     "name": "p",
+     "meaning": "the process, $p = (C, E) \\in \\mathsf{Proc}$"
+    },
+    {
+     "name": "T",
+     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+    }
+   ]
+  },
   "ct.table": {
    "title": "Cost table $\\kappa$",
    "what": "A sextuple $\\kappa \\in \\mathbb{N}^6$ of costs, one per kind of step.",
@@ -9392,8 +9496,8 @@ window.MAP = {
      "meaning": "the interface, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
     },
     {
-     "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "name": "R",
+     "meaning": "a world of the relation"
     },
     {
      "name": "p",
@@ -11080,16 +11184,16 @@ window.MAP = {
   },
   "th.adequacy": {
    "title": "Adequacy",
-   "what": "If $\\varnothing \\vDash_W p : T$ then $p$ is deadlock free.",
-   "why": "It turns the semantic judgment into the safety property. The relation reads ranked worlds, whose order has no cycle, so readiness of threads waiting round a cycle never holds and no strictness premise remains.",
+   "what": "If $\\varnothing \\vDash_R p : T$ at a world $R$ then $p$ is deadlock free.",
+   "why": "It turns the semantic judgment into the safety property. A stuck closed process has finitely many waiting threads, and readiness puts each wait below the dual points of the waiting thread in the strict order of $R$. A minimal wait has its partner able to act.",
    "breaks": "With a cyclic order the premise would hold for two threads that wait on each other.",
    "example": "Two threads closing the two ends of $c$ are deadlock free.",
    "rocq": "relation/Adequacy.v: adequacy",
-   "sig": "\\varnothing \\vDash_W p : T \\Rightarrow \\mathsf{deadlock\\_free}\\,p",
+   "sig": "\\varnothing \\vDash_R p : T \\Rightarrow \\mathsf{deadlock\\_free}\\,p",
    "args": [
     {
-     "name": "W",
-     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
+     "name": "R",
+     "meaning": "a world of the relation"
     },
     {
      "name": "p",
@@ -11103,16 +11207,20 @@ window.MAP = {
   },
   "th.lf-adequacy": {
    "title": "Lock-free adequacy",
-   "what": "Under excluded middle and choice, if $\\varnothing \\Vvdash_W p : T$ then $p$ is lock free.",
-   "why": "A pending thread waits for the thread holding the partner of its end. The proof follows this chain of waiting threads and shows it is finite. Its measure ranks a waiting thread by the ordinal $\\varrho(\\mathsf{pt}\\,o)$ of the end $o$ it waits on and then by the counter of the dual end. Ranks are ordinals, so the chain is finite, and a link moves a waiting thread to a partner with a lower counter. The existential property turns the annotated configuration chosen at each ordinal index into one that holds at every index, and the run is then a sequence of such configurations.",
+   "what": "If $R$ is ranked and $\\varnothing \\Vvdash\\annot{^{N}}_R p : T$, then $p$ is lock free.",
+   "why": "A pending thread waits for the thread holding the partner of its end. The proof follows this chain of waiting threads and shows it is finite. Its measure ranks a waiting thread by the ordinal $\\varrho(\\mathsf{pt}\\,o)$ of the end $o$ it waits on and then by the counter of the dual end. Ranks never change along a run, so the chain is finite, and a link moves a waiting thread to a partner with a lower counter.",
    "breaks": "Without ranks an infinite descending chain of points lets a thread wait forever along an infinite chain of holding threads.",
    "example": "Two threads closing the two ends of $c$ are lock free.",
-   "rocq": "soup/LFAdequacy.v: lf_adequacy; types/Worlds.v: wchain_lt_wf",
-   "sig": "\\mathsf{EM} \\land \\mathsf{AC} \\land \\varnothing \\Vvdash_W p : T \\Rightarrow \\mathsf{lock\\_free}\\,p",
+   "rocq": "soup/LFAdequacy.v: lf_adequacy, wk_ranked; types/Worlds.v: wchain_lt_wf",
+   "sig": "\\mathsf{ranked}\\,R \\land \\varnothing \\Vvdash\\annot{^{N}}_R p : T \\Rightarrow \\mathsf{lock\\_free}\\,p",
    "args": [
     {
-     "name": "W",
-     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
+     "name": "R",
+     "meaning": "a world of the relation"
+    },
+    {
+     "name": "N",
+     "meaning": "\\annp{the bound on the tickets of a channel, a natural number for lock freedom}"
     },
     {
      "name": "p",
@@ -11126,16 +11234,16 @@ window.MAP = {
   },
   "th.lf-thread-progress": {
    "title": "Thread progress",
-   "what": "Under the premises of lock-free adequacy, excluded middle and choice included, every run $(r, l)$ with $\\mathsf{erase}(r\\,0) = p$, $\\mathsf{maximal}\\,(r, l)$ and $\\mathsf{wfair}\\,(r, l)$ satisfies $\\mathsf{thread\\_progress\\_run}\\,(r, l)$.",
-   "why": "Every thread eventually returns a value or takes part in a session step, so no thread, pending or not, is postponed forever.",
+   "what": "Under the premises of lock-free adequacy, each run $(r, l)$ with $\\mathsf{erase}(r\\,0) = p$, $\\mathsf{maximal}\\,(r, l)$ and $\\mathsf{wfair}\\,(r, l)$ satisfies $\\mathsf{thread\\_progress\\_run}\\,(r, l)$.",
+   "why": "Each thread eventually returns a value or takes part in a session step, so no thread, pending or not, is postponed forever.",
    "breaks": "Nothing. It is a definition.",
-   "example": "Every lock-free example.",
+   "example": "Each lock-free example.",
    "rocq": "soup/LFAdequacy.v: lf_thread_progress",
    "sig": "\\ldots \\Rightarrow \\forall (r, l).\\ \\mathsf{erase}(r\\,0) = p \\land \\mathsf{maximal}\\,(r, l) \\land \\mathsf{wfair}\\,(r, l) \\Rightarrow \\mathsf{thread\\_progress\\_run}\\,(r, l)",
    "args": [
     {
      "name": "W",
-     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
+     "meaning": "a static world"
     },
     {
      "name": "p",
@@ -11149,16 +11257,20 @@ window.MAP = {
   },
   "th.fundamental": {
    "title": "Fundamental theorem",
-   "what": "$\\varnothing ; \\Delta \\vdash^{F}_{W} t : T$ implies $\\Delta \\vDash^{F}_{W} t : T$.",
-   "why": "Each typing rule has a semantic counterpart that holds at every level, and the theorem is the induction on the derivation.",
+   "what": "If $W$ is well formed and $\\varnothing ; \\Delta \\vdash^{F}_{W} t : T$, then $\\Delta \\vDash^{F}_{R} t : T$ at each strict world $R \\vDash W$.",
+   "why": "Each typing rule has a semantic counterpart that holds at every index, and the theorem is the induction on the derivation. A creation grows the strict world by the facts of $C$. No excluded middle and no choice enter the proof.",
    "breaks": "Nothing. It is a definition.",
    "example": "The main thread of the cycle example satisfies the semantic judgment.",
-   "rocq": "static/Fundamental.v: fundamental",
-   "sig": "\\mathsf{strict}\\,W \\land \\varnothing ; \\Delta \\vdash^{F}_{W} t : T \\Rightarrow \\Delta \\vDash^{F}_{W} t : T",
+   "rocq": "static/Fundamental.v: fundamental, typed_sem, wfit; compat/Redex.v: Erel_new_acyc",
+   "sig": "\\mathsf{world\\_wf}\\,W \\land \\varnothing ; \\Delta \\vdash^{F}_{W} t : T \\land R \\vDash W \\land \\mathsf{strict}\\,R \\Rightarrow \\Delta \\vDash^{F}_{R} t : T",
    "args": [
     {
      "name": "W",
-     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
+     "meaning": "a static world"
+    },
+    {
+     "name": "R",
+     "meaning": "a world of the relation"
     },
     {
      "name": "\\Delta",
@@ -11180,16 +11292,20 @@ window.MAP = {
   },
   "th.fundamental-typed": {
    "title": "Fundamental theorem for annotated typing",
-   "what": "For each $N$, the annotated typing judgment implies the semantic judgment at $\\Delta_{df}$ and $T_{df}$.",
-   "why": "Erasing the annotations of an annotated derivation gives a deadlock-free derivation, to which the fundamental theorem applies.",
+   "what": "For each $N$, the annotated typing judgment implies the semantic judgment at $\\Delta_{df}$ and $T_{df}$, at each strict world that models $W$.",
+   "why": "Erasing the annotations of an annotated derivation gives a deadlock-free derivation, to which the fundamental theorem applies. No excluded middle and no choice enter the proof.",
    "breaks": "Nothing. It is a definition.",
    "example": "The client and server main at $N = \\infty$.",
-   "rocq": "static/Fundamental.v: fundamental_typed",
-   "sig": "\\mathsf{strict}\\,W \\land \\varnothing ; \\Delta \\vdash^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\Rightarrow \\Delta_{df} \\vDash^{F}_{W} t : T_{df}",
+   "rocq": "static/Fundamental.v: fundamental_typed, sem_later_df",
+   "sig": "\\mathsf{world\\_wf}\\,W \\land \\varnothing ; \\Delta \\vdash^{F}_{W\\annot{,N}} t : T\\ !\\ \\varepsilon \\land R \\vDash W \\land \\mathsf{strict}\\,R \\Rightarrow \\Delta_{df} \\vDash^{F}_{R} t : T_{df}",
    "args": [
     {
      "name": "W",
-     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
+     "meaning": "a static world"
+    },
+    {
+     "name": "R",
+     "meaning": "a world of the relation"
     },
     {
      "name": "\\Delta",
@@ -11203,16 +11319,20 @@ window.MAP = {
   },
   "th.live-fundamental": {
    "title": "Live fundamental theorem",
-   "what": "$\\varnothing ; \\Delta \\vdash^{F}_{W} t : T$ and $\\varnothing \\vdash\\!\\triangleright t$ imply $\\Delta \\mathrel{|\\!\\!\\vDash}^{F}_{W} t : T$.",
-   "why": "The guard lets a box recurse only after an action, so every recursive call is read at a lower level, as the least fixpoint of the relation at $kappa_L$ requires.",
+   "what": "$\\varnothing ; \\Delta \\vdash^{F}_{W} t : T$ and $\\varnothing \\vdash\\!\\triangleright t$ imply $\\Delta \\mathrel{|\\!\\!\\vDash}^{F}_{R} t : T$ at each strict world $R \\vDash W$.",
+   "why": "The guard lets a box recurse only after an action, so each recursive call is read at a lower index, as the least fixpoint of the relation at $\\kappa_L$ requires. No excluded middle and no choice enter the proof.",
    "breaks": "Without the guard the statement is false, $!(f = \\mathsf{force}\\,f)$ types and satisfies no live judgment.",
    "example": "The guarded receive loop.",
    "rocq": "static/Fundamental.v: live_fundamental",
-   "sig": "\\mathsf{strict}\\,W \\land \\varnothing ; \\Delta \\vdash^{F}_{W} t : T \\land \\varnothing \\vdash\\!\\triangleright t \\Rightarrow \\Delta \\mathrel{|\\!\\!\\vDash}^{F}_{W} t : T",
+   "sig": "\\mathsf{world\\_wf}\\,W \\land \\varnothing ; \\Delta \\vdash^{F}_{W} t : T \\land \\varnothing \\vdash\\!\\triangleright t \\land R \\vDash W \\land \\mathsf{strict}\\,R \\Rightarrow \\Delta \\mathrel{|\\!\\!\\vDash}^{F}_{R} t : T",
    "args": [
     {
      "name": "W",
-     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
+     "meaning": "a static world"
+    },
+    {
+     "name": "R",
+     "meaning": "a world of the relation"
     },
     {
      "name": "\\Delta",
@@ -11230,8 +11350,8 @@ window.MAP = {
   },
   "th.live-fundamental-typed": {
    "title": "Live fundamental theorem for annotated typing",
-   "what": "The annotated typing judgment with $\\varnothing \\vdash\\!\\triangleright t$ implies the live judgment at erased environments and type.",
-   "why": "Lock-free soundness obtains the relation at $kappa_L$ of each thread from this theorem.",
+   "what": "The annotated typing judgment with $\\varnothing \\vdash\\!\\triangleright t$ implies the live judgment at erased environments and type, at each strict world that models $W$.",
+   "why": "It is the live fundamental theorem after erasure. No excluded middle and no choice enter the proof.",
    "breaks": "Nothing. It is a definition.",
    "example": "A thread typed by P-Term at finite $N$.",
    "rocq": "static/Fundamental.v: live_fundamental_typed",
@@ -11239,7 +11359,7 @@ window.MAP = {
    "args": [
     {
      "name": "W",
-     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
+     "meaning": "a static world"
     },
     {
      "name": "N",
@@ -11253,16 +11373,16 @@ window.MAP = {
   },
   "th.fundamental-proc": {
    "title": "Fundamental theorem for processes",
-   "what": "$\\Sigma \\vdash\\annot{^{\\infty}}_{W} p : T$ implies $\\Sigma \\vDash_{W'} p : T$ for a well-founded world $W'$ that hides to $W$ on $\\mathsf{I}(\\Sigma, T)$. The theorem reads the relation at the ranked worlds that satisfy $W'$.",
-   "why": "The hidden derivation gives a derivation with whole worlds, whose private constants are renamed apart at each P-Connect. Its world $W'$ is well-founded, and the order $W'$ derives between interface points lies in $W$. On that derivation the theorem is an induction with the semantic P-Term and P-Connect as cases.",
+   "what": "$\\Sigma \\vdash\\annot{^{\\infty}}_{W} p : T$ implies $\\Sigma \\vDash^{h}_{W} p : T$. Some well-formed acyclic world $W\\^{\\prime}$ hides to $W$ on $\\mathsf{I}(\\Sigma, T)$, and the process is in the semantic judgment at each strict model of $W\\^{\\prime}$.",
+   "why": "The hidden derivation gives a derivation of the full judgment with whole worlds, whose private constants are renamed apart at each P-Connect. Its world $W\\^{\\prime}$ is acyclic, and the order $W\\^{\\prime}$ derives between interface points lies in $W$. On that derivation the theorem is an induction with the semantic P-Term and P-Connect as cases. No excluded middle and no choice enter the proof.",
    "breaks": "Nothing. It is a definition.",
    "example": "Two threads closing the two ends of $c$.",
-   "rocq": "static/FundamentalProc.v: fundamental_proc_h, fundamental_proc; static/Hiding.v: ptyped_full",
-   "sig": "\\Sigma \\vdash\\annot{^{\\infty}}_{W} p : T \\Rightarrow \\exists W'.\\ \\mathsf{wf}\\,W' \\land W'|_{\\mathsf{I}(\\Sigma, T)} \\subseteq W \\land \\Sigma \\vDash_{W'} p : T",
+   "rocq": "static/FundamentalProc.v: fundamental_proc_h, fundamental_proc, sem_ptyped_h; static/Hiding.v: ptyped_full",
+   "sig": "\\Sigma \\vdash\\annot{^{\\infty}}_{W} p : T \\Rightarrow \\Sigma \\vDash^{h}_{W} p : T",
    "args": [
     {
      "name": "W",
-     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
+     "meaning": "a static world"
     },
     {
      "name": "\\Sigma",
@@ -11280,16 +11400,16 @@ window.MAP = {
   },
   "th.lf-fundamental": {
    "title": "Lock-free fundamental theorem",
-   "what": "$\\Sigma \\Vdash^{N}_{W} p : T$ implies $\\Sigma \\Vvdash_{W'} p : T$ for a well-founded world $W'$ that hides to $W$.",
-   "why": "The fuel of each thread comes from its cost typing at finite $N$, and its relation at $kappa_L$ from its guarded typing.",
+   "what": "Under excluded middle, $\\Sigma \\vdash\\annot{\\annot{^{N}}}_{W} p : T$ at a finite $N$ with each thread guarded implies $\\Sigma \\Vvdash^{N,h}_{W} p : T$. Some well-formed well-founded world $W\\^{\\prime}$ hides to $W$, and the lock-free judgment holds at each ranked model of $W\\^{\\prime}$.",
+   "why": "The fuel of each thread comes from its cost typing at finite $N$, and its relation at $\\kappa_L$ from its guarded typing, read at ranked worlds. Excluded middle enters through the creations under $\\mathsf{gen\\_new}$, which choose the largest of finitely many ranks.",
    "breaks": "Nothing. It is a definition.",
    "example": "The cycle example.",
-   "rocq": "soup/LFTyped.v: lf_fundamental_h, lf_fundamental",
-   "sig": "\\Sigma \\Vdash^{N}_{W} p : T \\Rightarrow \\exists W'.\\ \\mathsf{wf}\\,W' \\land W'|_{\\mathsf{I}(\\Sigma, T)} \\subseteq W \\land \\Sigma \\Vvdash_{W'} p : T",
+   "rocq": "soup/LFTyped.v: lf_fundamental_h, lf_fundamental, lf_sems_h; soup/LFCompose.v: typed_live, lf_p_term",
+   "sig": "\\mathsf{EM} \\land \\Sigma \\vdash\\annot{\\annot{^{N}}}_{W} p : T \\land N \\in \\mathbb{N} \\land \\vdash\\!\\triangleright p \\Rightarrow \\Sigma \\Vvdash^{N,h}_{W} p : T",
    "args": [
     {
      "name": "W",
-     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
+     "meaning": "a static world"
     },
     {
      "name": "\\Sigma",
@@ -11297,7 +11417,7 @@ window.MAP = {
     },
     {
      "name": "N",
-     "meaning": "the bound on the tickets of a channel, a natural number for lock freedom"
+     "meaning": "\\annp{the bound on the tickets of a channel, a natural number for lock freedom}"
     },
     {
      "name": "p",
@@ -11311,12 +11431,12 @@ window.MAP = {
   },
   "th.sem-p-term": {
    "title": "Semantic P-Term",
-   "what": "If $\\mathsf{tfree}\\,T$, $\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C$ and $t \\in E[\\kappa]^{W}_{\\alpha}\\llbracket\\Theta \\vdash T\\rrbracket^{\\varnothing}$, then $(C, \\{t\\}) \\in P[\\kappa]^{W}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket$.",
+   "what": "If $\\mathsf{tfree}\\,T$, $\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C$ and $t \\in E[\\kappa]^{R}_{\\alpha}\\llbracket\\Theta \\vdash T\\rrbracket^{\\varnothing}$, then $(C, \\{t\\}) \\in P[\\kappa]^{R}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket$.",
    "why": "It is P-Term in the relation. When $t$ spawns $v$, the child receives exactly the ends $\\mathsf{fends}(v)$, which $V$ fixes by $\\mathrm{dom}\\,\\Theta = \\mathsf{fends}(v)$, and the proof composes parent and child as P-Connect does.",
    "breaks": "Nothing. It is a definition.",
    "example": "A single thread with $\\Sigma = \\varnothing$ and $C = \\varnothing$.",
    "rocq": "compat/PTerm.v: sem_p_term",
-   "sig": "\\mathsf{tfree}\\,T \\land \\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C \\land t \\in E[\\kappa]^{W}_{\\alpha}\\llbracket\\Theta \\vdash T\\rrbracket^{\\varnothing} \\Rightarrow (C, \\{t\\}) \\in P[\\kappa]^{W}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket",
+   "sig": "\\mathsf{tfree}\\,T \\land \\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C \\land t \\in E[\\kappa]^{R}_{\\alpha}\\llbracket\\Theta \\vdash T\\rrbracket^{\\varnothing} \\Rightarrow (C, \\{t\\}) \\in P[\\kappa]^{R}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket",
    "args": [
     {
      "name": "\\kappa",
@@ -11373,12 +11493,12 @@ window.MAP = {
   },
   "th.sem-p-connect": {
    "title": "Semantic P-Connect",
-   "what": "If $\\mathsf{tfree}\\,T$, $\\mathsf{conn}$, $p_1 \\in P^{W}_{\\alpha}\\llbracket\\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket$ and $p_2 \\in P^{W}_{\\alpha}\\llbracket\\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket$, then $p_1 \\parallel_{\\Sigma_C} p_2 \\in P^{W}_{\\alpha}\\llbracket\\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket$, with both components at one ranked world $W$.",
-   "why": "It is P-Connect in the relation, for each level $n$ and each cost table. The composite reads both components at one ranked world that satisfies both static worlds, so two rankings are never reconciled, and a fresh root of either side is fresh for that world.",
+   "what": "If $\\mathsf{tfree}\\,T$, $\\mathsf{conn}$, $p_1 \\in P^{R}_{\\alpha}\\llbracket\\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket$ and $p_2 \\in P^{R}_{\\alpha}\\llbracket\\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket$, then $p_1 \\parallel_{\\Sigma_C} p_2 \\in P^{R}_{\\alpha}\\llbracket\\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket$, with both components at one world $R$.",
+   "why": "It is P-Connect in the relation, for each index and each cost table. Both components are read at one world, so two orders are never reconciled, and a fresh root of either side is fresh for that world.",
    "breaks": "Nothing. It is a definition.",
    "example": "Two threads closing $c^{+}$ and $c^{-}$, cut at $c$.",
-   "rocq": "compat/ConnectP.v: sem_p_connect; static/FundamentalProc.v: sem_p_connect_sw",
-   "sig": "\\mathsf{tfree}\\,T \\land \\mathsf{conn} \\land p_1 \\in P^{W}_{\\alpha}\\llbracket\\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket \\land p_2 \\in P^{W}_{\\alpha}\\llbracket\\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket \\Rightarrow p_1 \\parallel_{\\Sigma_C} p_2 \\in P^{W}_{\\alpha}\\llbracket\\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket",
+   "rocq": "compat/ConnectP.v: sem_p_connect",
+   "sig": "\\mathsf{tfree}\\,T \\land \\mathsf{conn} \\land p_1 \\in P^{R}_{\\alpha}\\llbracket\\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket \\land p_2 \\in P^{R}_{\\alpha}\\llbracket\\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket \\Rightarrow p_1 \\parallel_{\\Sigma_C} p_2 \\in P^{W}_{\\alpha}\\llbracket\\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket",
    "args": [
     {
      "name": "\\alpha",
@@ -11400,39 +11520,35 @@ window.MAP = {
   },
   "th.lf-p-connect": {
    "title": "P-Connect in the lock-free judgment",
-   "what": "If $\\mathsf{conn}$, $\\Sigma_1 \\cup \\Sigma_C \\Vvdash_{W_1} p_1 : T$ and $\\Sigma_2 \\cup \\Sigma_D \\Vvdash_{W_2} p_2 : \\ast$, then $\\Sigma_1 \\cup \\Sigma_2 \\Vvdash_{W_1 \\sqcup W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T$. With $\\mathsf{wf}\\,W_1$, $\\mathsf{wf}\\,W_2$ and $\\mathsf{wf}\\,(W_1|_S \\sqcup W_2|_S)$ a closed composite is lock free. With hiding the components sit at whole worlds that hide to their interface worlds, with private constants apart, and the premise reads $\\mathsf{wf}$ of the join of the two interface worlds.",
+   "what": "If $\\mathsf{conn}$, $\\Sigma_1 \\cup \\Sigma_C \\Vvdash\\annot{^{N}}_{W_1} p_1 : T$ and $\\Sigma_2 \\cup \\Sigma_D \\Vvdash\\annot{^{N}}_{W_2} p_2 : \\ast$, then $\\Sigma_1 \\cup \\Sigma_2 \\Vvdash\\annot{^{N}}_{W_1 \\sqcup W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T$. With $\\mathsf{wf}\\,W_1$, $\\mathsf{wf}\\,W_2$ and $\\mathsf{wf}\\,(W_1|_S \\sqcup W_2|_S)$ a closed composite is lock free. With hiding the components sit at whole worlds that hide to their interface worlds, with private constants apart, and the premise reads $\\mathsf{wf}$ of the join of the two interface worlds.",
    "why": "Each component is read at the ranked worlds of its own static world. A ranked world $R$ of the join satisfies both. The first component starts at some $R_1 \\sqsupseteq R$, the second is read at $R_1$ and starts at some $R_2 \\sqsupseteq R_1$, and the first moves up to $R_2$ because the relation is monotone in the world. A ranked world of the join exists exactly when the join is well-founded, which the condition on the shared roots gives. Its ranks come from the order of the join, never from the ranks of a component.",
    "breaks": "Two components at fixed ranked worlds $R_1$ and $R_2$ do not compose, because the two rankings may order shared points that no fact relates in opposite directions.",
    "example": "The client at $W_{cli}$ and the server at $W_{srv}$, which share the root $\\rho$, compose over the cut $\\{a, b\\}$.",
    "rocq": "soup/LFCompose.v: lf_p_connect, lf_soup_connect, join_models, lf_connect_adequacy; examples/LFClientServerSplit.v: cs_split_lock_free; soup/LFTyped.v: lf_p_connect_h",
-   "sig": "\\mathsf{conn} \\land \\Sigma_1 \\cup \\Sigma_C \\Vvdash_{W_1} p_1 : T \\land \\Sigma_2 \\cup \\Sigma_D \\Vvdash_{W_2} p_2 : \\ast \\Rightarrow \\Sigma_1 \\cup \\Sigma_2 \\Vvdash_{W_1 \\sqcup W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T",
+   "sig": "\\mathsf{conn} \\land \\Sigma_1 \\cup \\Sigma_C \\Vvdash\\annot{^{N}}_{W_1} p_1 : T \\land \\Sigma_2 \\cup \\Sigma_D \\Vvdash\\annot{^{N}}_{W_2} p_2 : \\ast \\Rightarrow \\Sigma_1 \\cup \\Sigma_2 \\Vvdash\\annot{^{N}}_{W_1 \\sqcup W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T",
    "args": [
     {
      "name": "W_1, W_2",
      "meaning": "the static worlds of the two components"
     },
     {
-     "name": "\\Sigma_C, \\Sigma_D",
-     "meaning": "the cut and its partners"
-    },
-    {
-     "name": "p_1, p_2",
-     "meaning": "the two components"
+     "name": "N",
+     "meaning": "\\annp{the bound on the tickets of a channel, a natural number for lock freedom}"
     }
    ]
   },
   "th.lf-p-term": {
-   "title": "P-Term in the lock-free process relation",
-   "what": "A thread with $\\Sigma \\Vdash^{N}_{W} (C_0, \\{t\\}) : T$ derived by P-Term satisfies $\\Sigma \\Vvdash_W (C_0, \\{t\\}) : T$.",
-   "why": "It is P-Term read in the lock-free process relation.",
+   "title": "P-Term in the lock-free judgment",
+   "what": "Under excluded middle, a thread that meets the premises of P-Term at a finite $N$ and is guarded satisfies $\\Sigma \\Vvdash\\annot{^{N}}_W (C_0, \\{t\\}) : T$.",
+   "why": "It is P-Term read in the lock-free process relation. The relation of the thread at each ranked world comes from the live fundamental theorem at ranked worlds.",
    "breaks": "Nothing. It is a definition.",
    "example": "One thread closing its end $c^{+}$.",
-   "rocq": "soup/LFCompose.v: lf_p_term",
-   "sig": "\\Sigma \\Vdash^{N}_{W} (C_0, \\{t\\}) : T \\Rightarrow \\Sigma \\Vvdash_W (C_0, \\{t\\}) : T",
+   "rocq": "soup/LFCompose.v: lf_p_term, typed_live; static/Fundamental.v: live_fundamental_ranked",
+   "sig": "\\mathsf{EM} \\land N \\in \\mathbb{N} \\land \\mathsf{pterm}_N(\\Sigma, C_0, t, T) \\land \\varnothing \\vdash\\!\\triangleright t \\Rightarrow \\Sigma \\Vvdash\\annot{^{N}}_W (C_0, \\{t\\}) : T",
    "args": [
     {
      "name": "W",
-     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
+     "meaning": "a static world"
     },
     {
      "name": "\\Sigma",
@@ -11450,12 +11566,12 @@ window.MAP = {
   },
   "th.Erel-bind": {
    "title": "Bind",
-   "what": "For every cost table, if $e \\in E^{W}_{\\alpha}\\llbracket\\Theta_1 \\vdash T\\rrbracket^{F \\cup \\mathsf{ap}\\,\\Theta_2}$ and $f[v] \\in E^{W'}_{\\beta}\\llbracket\\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}$ for all $W' \\sqsupseteq W$, $j \\leq n$ and $v \\in V^{W'}_{\\beta}\\llbracket\\Theta_v \\vdash T\\rrbracket$, then $f[e] \\in E^{W}_{\\alpha}\\llbracket\\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}$.",
+   "what": "For every cost table, if $e \\in E^{R}_{\\alpha}\\llbracket\\Theta_1 \\vdash T\\rrbracket^{F \\cup \\mathsf{ap}\\,\\Theta_2}$ and $f[v] \\in E^{R'}_{\\beta}\\llbracket\\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}$ for all $R' \\sqsupseteq R$, $\\beta \\leq \\alpha$ and $v \\in V^{R'}_{\\beta}\\llbracket\\Theta_v \\vdash T\\rrbracket$, then $f[e] \\in E^{R}_{\\alpha}\\llbracket\\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}$.",
    "why": "Every rule with a subterm runs the subterm first. The frame holds $\\Theta_2$ while the hole runs, so the hole must not wait above $\\mathsf{ap}\\,\\Theta_2$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{let}\\ \\ast = \\mathsf{close}\\,c\\ \\mathsf{in}\\ \\mathsf{close}\\,d$ runs $\\mathsf{close}\\,c$ with $\\overline{x_d}$ in its future.",
    "rocq": "compat/Bind.v: Erel_bind",
-   "sig": "e \\in E^{W}_{\\alpha}\\llbracket\\Theta_1 \\vdash T\\rrbracket^{F \\cup \\mathsf{ap}\\,\\Theta_2} \\land (\\forall W' \\sqsupseteq W, \\beta \\leq \\alpha, v.\\ \\ldots) \\Rightarrow f[e] \\in E^{W}_{\\alpha}\\llbracket\\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}",
+   "sig": "e \\in E^{R}_{\\alpha}\\llbracket\\Theta_1 \\vdash T\\rrbracket^{F \\cup \\mathsf{ap}\\,\\Theta_2} \\land (\\forall R' \\sqsupseteq R, \\beta \\leq \\alpha, v.\\ \\ldots) \\Rightarrow f[e] \\in E^{R}_{\\alpha}\\llbracket\\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}",
    "args": [
     {
      "name": "f",
@@ -11474,7 +11590,7 @@ window.MAP = {
   "th.soundness": {
    "title": "Soundness",
    "what": "$\\varnothing \\vdash\\annot{^{\\infty}}_{W} p : T$ implies that $p$ is deadlock free.",
-   "why": "The fundamental theorem for processes followed by adequacy.",
+   "why": "The fundamental theorem for processes followed by adequacy. No excluded middle and no choice enter the proof.",
    "breaks": "Nothing. It is a definition.",
    "example": "The cycle example is deadlock free.",
    "rocq": "static/FundamentalProc.v: soundness_h, soundness",
@@ -11482,7 +11598,7 @@ window.MAP = {
    "args": [
     {
      "name": "W",
-     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
+     "meaning": "a static world"
     },
     {
      "name": "p",
@@ -11496,16 +11612,16 @@ window.MAP = {
   },
   "th.soundness-source": {
    "title": "Soundness for source terms",
-   "what": "For strict $W$, $\\mathsf{tfree}\\,T$ and $\\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W} t : T$, the process $(\\varnothing, \\{t\\})$ is deadlock free.",
-   "why": "A source term creates channels only at fresh roots and at fields of held ends, so it is P-Term with $\\Sigma = \\varnothing$ and $C_0 = \\varnothing$.",
+   "what": "For a well-formed acyclic $W$, $\\mathsf{tfree}\\,T$ and $\\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W} t : T$, the process $(\\varnothing, \\{t\\})$ is deadlock free.",
+   "why": "The program is P-Term with $\\Sigma = \\varnothing$ and $C_0 = \\varnothing$. No excluded middle and no choice enter the proof.",
    "breaks": "Nothing. It is a definition.",
-   "example": "Every deadlock-free example.",
+   "example": "The fork-join examples.",
    "rocq": "static/FundamentalProc.v: soundness_source",
-   "sig": "\\mathsf{tfree}\\,T \\land \\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W} t : T \\Rightarrow \\mathsf{deadlock\\_free}(\\varnothing, \\{t\\})",
+   "sig": "\\mathsf{world\\_wf}\\,W \\land \\mathsf{acyc}\\,W \\land \\mathsf{tfree}\\,T \\land \\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W} t : T \\Rightarrow \\mathsf{deadlock\\_free}(\\varnothing, \\{t\\})",
    "args": [
     {
      "name": "W",
-     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
+     "meaning": "a static world"
     },
     {
      "name": "t",
@@ -11519,20 +11635,20 @@ window.MAP = {
   },
   "th.lf-soundness": {
    "title": "Lock-free soundness",
-   "what": "Under excluded middle and choice, $\\varnothing \\Vdash^{N}_{W} p : T$ implies that $p$ is lock free.",
-   "why": "The lock-free fundamental theorem followed by lock-free adequacy.",
+   "what": "Under excluded middle and functional choice, $\\varnothing \\vdash\\annot{\\annot{^{N}}}_{W} p : T$ at a finite $N$ with each thread guarded implies that $p$ is lock free.",
+   "why": "The lock-free fundamental theorem, a ranked model of the whole world, and lock-free adequacy. The choice fixes one annotated configuration for all indices.",
    "breaks": "Nothing. It is a definition.",
    "example": "The cycle example is lock free.",
    "rocq": "soup/LFTyped.v: lf_soundness_h, lf_soundness",
-   "sig": "\\mathsf{EM} \\land \\mathsf{AC} \\land \\varnothing \\Vdash^{N}_{W} p : T \\Rightarrow \\mathsf{lock\\_free}\\,p",
+   "sig": "\\mathsf{EM} \\land \\mathsf{FC} \\land \\varnothing \\vdash\\annot{\\annot{^{N}}}_{W} p : T \\land N \\in \\mathbb{N} \\land \\vdash\\!\\triangleright p \\Rightarrow \\mathsf{lock\\_free}\\,p",
    "args": [
     {
      "name": "W",
-     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
+     "meaning": "a static world"
     },
     {
      "name": "N",
-     "meaning": "the bound on the tickets of a channel, a natural number for lock freedom"
+     "meaning": "\\annp{the bound on the tickets of a channel, a natural number for lock freedom}"
     },
     {
      "name": "p",
@@ -11546,20 +11662,20 @@ window.MAP = {
   },
   "th.lf-soundness-source": {
    "title": "Lock-free soundness for source terms",
-   "what": "For $W$ with $\\mathsf{wf}\\,W$, $N \\in \\mathbb{N}$, $\\mathsf{tfree}\\,T$, a typing $\\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ c$ and $\\varnothing \\vdash\\!\\triangleright t$, the process $(\\varnothing, \\{t\\})$ is lock free.",
-   "why": "The premises are those of P-Term at finite $N$ with $\\Sigma = \\varnothing$ and $C_0 = \\varnothing$, plus the guard. Lock-free soundness then applies.",
+   "what": "Under excluded middle and functional choice, for a well-formed well-founded $W$, $N \\in \\mathbb{N}$, $\\mathsf{tfree}\\,T$, a typing $\\varnothing ; \\varnothing \\vdash^{\\varnothing}_{W\\annot{,N}} t : T\\ !\\ c$ and $\\varnothing \\vdash\\!\\triangleright t$, the process $(\\varnothing, \\{t\\})$ is lock free.",
+   "why": "The premises are those of P-Term at finite $N$ with $\\Sigma = \\varnothing$ and $C_0 = \\varnothing$, plus the guard.",
    "breaks": "Nothing. It is a definition.",
-   "example": "Every lock-free example.",
+   "example": "Each lock-free example.",
    "rocq": "soup/LFCompose.v: lf_soundness_source",
-   "sig": "\\mathsf{wf}\\,W \\land N \\in \\mathbb{N} \\land \\ldots \\Rightarrow \\mathsf{lock\\_free}(\\varnothing, \\{t\\})",
+   "sig": "\\mathsf{EM} \\land \\mathsf{FC} \\land \\mathsf{world\\_wf}\\,W \\land \\mathsf{wf}\\,W \\land N \\in \\mathbb{N} \\land \\ldots \\Rightarrow \\mathsf{lock\\_free}(\\varnothing, \\{t\\})",
    "args": [
     {
      "name": "W",
-     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
+     "meaning": "a static world"
     },
     {
      "name": "N",
-     "meaning": "the bound on the tickets of a channel, a natural number for lock freedom"
+     "meaning": "\\annp{the bound on the tickets of a channel, a natural number for lock freedom}"
     },
     {
      "name": "t",
@@ -11710,20 +11826,20 @@ window.MAP = {
   },
   "th.Prel": {
    "title": "The process relation $P$",
-   "what": "$P[\\kappa]^{W}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket$, the processes in the relation at table $\\kappa$, world $W$, level $n$, interface $\\Sigma$ and result $T$.",
-   "why": "The semantic process judgment asks membership at every level $n$.",
+   "what": "$P[\\kappa]^{R}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket$, the processes in the relation at table $\\kappa$, world $R$, ordinal index $\\alpha$, interface $\\Sigma$ and result $T$.",
+   "why": "The semantic process judgment asks membership at every index.",
    "breaks": "Nothing. It is a definition.",
-   "example": "Two threads closing $c^{+}$ and $c^{-}$ lie in $P^{W}_{\\alpha}\\llbracket\\varnothing \\vdash \\ast\\rrbracket$ for every $n$.",
+   "example": "Two threads closing $c^{+}$ and $c^{-}$ lie in $P^{R}_{\\alpha}\\llbracket\\varnothing \\vdash \\ast\\rrbracket$ for each $\\alpha$.",
    "rocq": "relation/Relation.v: Prel",
-   "sig": "P[\\kappa]^{W}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket \\subseteq \\mathsf{Proc}",
+   "sig": "P[\\kappa]^{R}_{\\alpha}\\llbracket\\Sigma \\vdash T\\rrbracket \\subseteq \\mathsf{Proc}",
    "args": [
     {
      "name": "\\kappa",
      "meaning": "a cost table, $\\kappa_{DF}$ for deadlock freedom and $\\kappa_L$ for liveness"
     },
     {
-     "name": "W",
-     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
+     "name": "R",
+     "meaning": "a world of the relation"
     },
     {
      "name": "\\alpha",
@@ -11741,20 +11857,20 @@ window.MAP = {
   },
   "th.Erel": {
    "title": "The term relation $E$",
-   "what": "$E[\\kappa]^{W}_{\\alpha}\\llbracket\\Theta \\vdash T\\rrbracket^{F}$ is the set of terms in the relation at cost table $\\kappa$, world $W$ and level $n$, for ends $\\Theta$, result $T$ and future $F$.",
-   "why": "The semantic term judgment asks membership at each level and for each grounding of the variables.",
+   "what": "$E[\\kappa]^{R}_{\\alpha}\\llbracket\\Theta \\vdash T\\rrbracket^{F}$ is the set of terms in the relation at cost table $\\kappa$, world $R$ and ordinal index $\\alpha$, for ends $\\Theta$, result $T$ and future $F$.",
+   "why": "The semantic term judgment asks membership at each index and for each grounding of the variables.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{close}\\,c^{+} \\in E^{W}_{\\alpha}\\llbracket\\{c^{+} \\mapsto \\mathsf{Close}@x\\} \\vdash \\ast\\rrbracket^{\\varnothing}$.",
+   "example": "$\\mathsf{close}\\,c^{+} \\in E^{R}_{\\alpha}\\llbracket\\{c^{+} \\mapsto \\mathsf{Close}@x\\} \\vdash \\ast\\rrbracket^{\\varnothing}$.",
    "rocq": "relation/Relation.v: Erel",
-   "sig": "E[\\kappa]^{W}_{\\alpha}\\llbracket\\Theta \\vdash T\\rrbracket^{F} \\subseteq \\mathsf{Expr}",
+   "sig": "E[\\kappa]^{R}_{\\alpha}\\llbracket\\Theta \\vdash T\\rrbracket^{F} \\subseteq \\mathsf{Expr}",
    "args": [
     {
      "name": "\\kappa",
      "meaning": "a cost table, $\\kappa_{DF}$ for deadlock freedom and $\\kappa_L$ for liveness"
     },
     {
-     "name": "W",
-     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
+     "name": "R",
+     "meaning": "a world of the relation"
     },
     {
      "name": "\\alpha",
@@ -11776,20 +11892,20 @@ window.MAP = {
   },
   "th.Vrel": {
    "title": "The value relation $V$",
-   "what": "$V^{W}_{\\beta}\\llbracket\\Theta \\vdash T\\rrbracket$ is the set of values in the relation at world $W$ and level $j$, for ends $\\Theta$ and type $T$.",
+   "what": "$V^{R}_{\\beta}\\llbracket\\Theta \\vdash T\\rrbracket$ is the set of values in the relation at world $R$ and ordinal index $\\beta$, for ends $\\Theta$ and type $T$.",
    "why": "A term in $E$ that is irreducible is a value in $V$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$c^{+} \\in V^{W}_{\\beta}\\llbracket\\{c^{+} \\mapsto \\mathsf{Close}@x\\} \\vdash \\mathsf{Close}@x\\rrbracket$.",
+   "example": "$c^{+} \\in V^{R}_{\\beta}\\llbracket\\{c^{+} \\mapsto \\mathsf{Close}@x\\} \\vdash \\mathsf{Close}@x\\rrbracket$.",
    "rocq": "relation/Relation.v: Vrel",
-   "sig": "V^{W}_{\\beta}\\llbracket\\Theta \\vdash T\\rrbracket \\subseteq \\mathsf{Val}",
+   "sig": "V^{R}_{\\beta}\\llbracket\\Theta \\vdash T\\rrbracket \\subseteq \\mathsf{Val}",
    "args": [
     {
-     "name": "W",
-     "meaning": "a static world, the semantic judgments read the relation at the ranked worlds that satisfy $W$"
+     "name": "R",
+     "meaning": "a world of the relation"
     },
     {
      "name": "\\beta",
-     "meaning": "the level"
+     "meaning": "the ordinal index"
     },
     {
      "name": "\\Theta",
@@ -11812,7 +11928,7 @@ window.MAP = {
    "args": [
     {
      "name": "N",
-     "meaning": "the bound on the tickets of a channel, a natural number for lock freedom"
+     "meaning": "\\annp{the bound on the tickets of a channel, a natural number for lock freedom}"
     },
     {
      "name": "R",
@@ -11849,11 +11965,11 @@ window.MAP = {
   },
   "th.em": {
    "title": "Excluded middle $\\mathsf{EM}$",
-   "what": "Each proposition holds or fails, $\\forall P.\\ P \\lor \\neg P$, as an explicit hypothesis.",
-   "why": "The existential property of ordinal indices, $\\forall \\alpha.\\ \\exists a$ to $\\exists a.\\ \\forall \\alpha$, is proved by contradiction.",
-   "breaks": "Without it the creation choice cannot be fixed once along a run, and the lock-free judgment needs the choice $\\chi$ before the index again.",
+   "what": "Each proposition holds or fails, $\\forall P.\\ P \\lor \\neg P$, as an explicit hypothesis and no axiom.",
+   "why": "It is a hypothesis of the lock-free results only. The existential property of ordinal indices is proved by contradiction, and a creation under $\\mathsf{gen\\_new}$ takes the largest of finitely many ranks. The deadlock-free, live, hidden and n-ary soundness results take no excluded middle.",
+   "breaks": "Without it a creation at a ranked world cannot pick a rank at or above two given ranks, and the annotated configuration chosen at each index does not give one for all indices.",
    "example": "Transfinite Iris assumes it in its model.",
-   "rocq": "lockfree/FairRun.v: excluded_middle; relation/ExProp.v: exist_prop",
+   "rocq": "lockfree/FairRun.v: excluded_middle; relation/ExProp.v: exist_prop; relation/Ranks.v: ole_total, two_below_gd",
    "sig": "\\mathsf{EM} := \\forall P : \\mathsf{Prop}.\\ P \\lor \\neg P",
    "args": [
     {
@@ -11863,13 +11979,13 @@ window.MAP = {
    ]
   },
   "th.ac": {
-   "title": "Choice $\\mathsf{AC}$",
-   "what": "A total relation contains a function, as an explicit hypothesis.",
-   "why": "The existential property picks one failing index per witness, and the run picks one choice of tickets per state and position, from which a recursion builds the states of the run.",
+   "title": "Functional choice $\\mathsf{FC}$",
+   "what": "A total relation contains a function, as an explicit hypothesis and no axiom.",
+   "why": "The existential property picks one failing index per witness, and the run picks one creation choice per state and position, from which a recursion builds the states of the run.",
    "breaks": "Without it the states chosen per index do not form one sequence along the run.",
-   "example": "One choice of tickets per position of a run of the lock-free process relation.",
+   "example": "One creation choice per position of a run of the lock-free process relation.",
    "rocq": "lockfree/FairRun.v: functional_choice; relation/ExProp.v: exist_prop; soup/SoupRun.v: lfsoup_run",
-   "sig": "\\mathsf{AC} := \\forall R : X \\to Y \\to \\mathsf{Prop}.\\ (\\forall x.\\ \\exists y.\\ R\\,x\\,y) \\Rightarrow \\exists f.\\ \\forall x.\\ R\\,x\\,(f\\,x)",
+   "sig": "\\mathsf{FC} := \\forall X\\,Y\\,(R : X \\to Y \\to \\mathsf{Prop}).\\ (\\forall x.\\ \\exists y.\\ R\\,x\\,y) \\Rightarrow \\exists f.\\ \\forall x.\\ R\\,x\\,(f\\,x)",
    "args": [
     {
      "name": "R",
@@ -11954,6 +12070,263 @@ window.MAP = {
     {
      "name": "\\Delta",
      "meaning": "the linear context of ends and variables"
+    }
+   ]
+  },
+  "th.adequacy-h": {
+   "title": "Adequacy for the hidden judgment",
+   "what": "If $\\varnothing \\vDash^{h}_W p : T$, then $p$ is deadlock free.",
+   "why": "The hidden judgment gives an acyclic whole world, which has a strict model, and adequacy applies there.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "The two closes over the empty interface.",
+   "rocq": "static/FundamentalProc.v: adequacy_h, live_adequacy_h; types/Worlds.v: dmodels_exists",
+   "sig": "\\varnothing \\vDash^{h}_W p : T \\Rightarrow \\mathsf{deadlock\\_free}\\,p",
+   "args": [
+    {
+     "name": "W",
+     "meaning": "a static world"
+    },
+    {
+     "name": "p",
+     "meaning": "a closed process $(C, E)$"
+    },
+    {
+     "name": "T",
+     "meaning": "the result type of the main thread"
+    }
+   ]
+  },
+  "th.lf-sems-adequacy": {
+   "title": "Lock-free adequacy at a static world",
+   "what": "Under excluded middle and functional choice, if $W$ is well formed and well-founded and $\\varnothing \\Vvdash\\annot{^{N}}_W p : T$, then $p$ is lock free.",
+   "why": "A well-founded static world has a ranked model, at which lock-free adequacy applies.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "The split client and server program, two components at their own static worlds.",
+   "rocq": "soup/LFCompose.v: lf_sems_adequacy, lf_connect_adequacy, join_models",
+   "sig": "\\mathsf{EM} \\land \\mathsf{FC} \\land \\mathsf{world\\_wf}\\,W \\land \\mathsf{wf}\\,W \\land \\varnothing \\Vvdash\\annot{^{N}}_W p : T \\Rightarrow \\mathsf{lock\\_free}\\,p",
+   "args": [
+    {
+     "name": "W",
+     "meaning": "a static world"
+    },
+    {
+     "name": "N",
+     "meaning": "\\annp{the bound on the tickets of a channel, a natural number for lock freedom}"
+    },
+    {
+     "name": "p",
+     "meaning": "a closed process $(C, E)$"
+    },
+    {
+     "name": "T",
+     "meaning": "the result type of the main thread"
+    }
+   ]
+  },
+  "th.live-fundamental-ranked": {
+   "title": "Live fundamental theorem at ranked worlds",
+   "what": "Under excluded middle, a derivation at a finite bound $N$ of a guarded term gives the live judgment at erased environments and type, at each world $R \\vDash W$ of either kind.",
+   "why": "The lock-free process relation reads each thread at a ranked world. At a finite bound the creations meet $\\mathsf{gen\\_new}$, which finds ranks for the new tree.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "Each thread of a lock-free example.",
+   "rocq": "static/Fundamental.v: live_fundamental_ranked, wfit; compat/Redex.v: Erel_new_any",
+   "sig": "\\mathsf{EM} \\land \\mathsf{world\\_wf}\\,W \\land \\varnothing ; \\Delta \\vdash^{F}_{W\\annot{,N}} t : T\\ !\\ c \\land \\varnothing \\vdash\\!\\triangleright t \\land R \\vDash W \\Rightarrow \\Delta_{df} \\mathrel{|\\!\\!\\vDash}^{F}_{R} t : T_{df}",
+   "args": [
+    {
+     "name": "W",
+     "meaning": "a static world"
+    },
+    {
+     "name": "R",
+     "meaning": "a world of the relation"
+    },
+    {
+     "name": "N",
+     "meaning": "\\annp{the bound on the tickets of a channel, a natural number for lock freedom}"
+    },
+    {
+     "name": "\\Delta",
+     "meaning": "the linear context of ends and variables"
+    },
+    {
+     "name": "F",
+     "meaning": "the future"
+    }
+   ]
+  },
+  "th.live-fundamental-proc": {
+   "title": "Live fundamental theorem for processes",
+   "what": "$\\Sigma \\vdash\\annot{^{\\infty}}_{W} p : T$ with each thread guarded implies the hidden live judgment at $W$.",
+   "why": "The live counterpart of the fundamental theorem for processes, read at $\\kappa_L$. No excluded middle and no choice enter the proof.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "The guarded receive loop.",
+   "rocq": "static/FundamentalProc.v: live_fundamental_proc_h, live_fundamental_proc",
+   "sig": "\\Sigma \\vdash\\annot{^{\\infty}}_{W} p : T \\land \\vdash\\!\\triangleright p \\Rightarrow \\Sigma \\mathrel{|\\!\\!\\vDash}^{h}_{W} p : T",
+   "args": [
+    {
+     "name": "W",
+     "meaning": "a static world"
+    },
+    {
+     "name": "\\Sigma",
+     "meaning": "the interface of the process"
+    },
+    {
+     "name": "p",
+     "meaning": "a closed process $(C, E)$"
+    },
+    {
+     "name": "T",
+     "meaning": "the result type of the main thread"
+    }
+   ]
+  },
+  "th.sem-p-connect-sw": {
+   "title": "Semantic P-Connect at static worlds",
+   "what": "If $\\mathsf{tfree}\\,T$, $\\mathsf{conn}$, $\\Sigma_1 \\cup \\Sigma_C \\vDash_{W_1} p_1 : T$ and $\\Sigma_2 \\cup \\Sigma_D \\vDash_{W_2} p_2 : \\ast$, then the composite is in the semantic judgment at $W_1 \\sqcup W_2$.",
+   "why": "A strict model of the join models both static worlds, so both components hold there and semantic P-Connect applies at that one world. With hiding the components sit at whole worlds that hide to their interface worlds with private constants apart.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "Two threads closing $c^{+}$ and $c^{-}$.",
+   "rocq": "static/FundamentalProc.v: sem_p_connect_sw, sem_p_connect_h",
+   "sig": "\\mathsf{tfree}\\,T \\land \\mathsf{conn} \\land \\Sigma_1 \\cup \\Sigma_C \\vDash_{W_1} p_1 : T \\land \\Sigma_2 \\cup \\Sigma_D \\vDash_{W_2} p_2 : \\ast \\Rightarrow \\Sigma_1 \\cup \\Sigma_2 \\vDash_{W_1 \\sqcup W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T",
+   "args": [
+    {
+     "name": "W_1, W_2",
+     "meaning": "the static worlds of the components"
+    }
+   ]
+  },
+  "th.connect-n": {
+   "title": "Soundness of the n-ary connect",
+   "what": "If the components $\\bar W, p, T$ of the n-ary connect at $N = \\infty$ are closed and the join of their hidden worlds is acyclic, then $p$ is deadlock free.",
+   "why": "It folds the binary P-Connect through the admissible n-ary rule and applies hidden soundness. No excluded middle and no choice enter the proof.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "The acyclic variant of the ring of three threads.",
+   "rocq": "static/ConnectN.v: connect_n_soundness, connect_n_live_soundness, p_connect_n",
+   "sig": "\\mathsf{comps}_{\\infty}(\\bar W, p, T) \\land \\mathsf{acyc}(W_1 \\sqcup \\cdots \\sqcup W_n) \\Rightarrow \\mathsf{deadlock\\_free}\\,p",
+   "args": [
+    {
+     "name": "\\bar W",
+     "meaning": "the hidden worlds of the components"
+    },
+    {
+     "name": "p",
+     "meaning": "a closed process $(C, E)$"
+    },
+    {
+     "name": "T",
+     "meaning": "the result type of the main thread"
+    }
+   ]
+  },
+  "th.live-soundness": {
+   "title": "Live soundness",
+   "what": "$\\varnothing \\vdash\\annot{^{\\infty}}_{W} p : T$ with each thread guarded implies that $p$ is deadlock free and has no internal divergence.",
+   "why": "The live fundamental theorem for processes followed by adequacy at $\\kappa_L$. No excluded middle and no choice enter the proof.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "The guarded receive loop.",
+   "rocq": "static/FundamentalProc.v: live_soundness_h, live_soundness",
+   "sig": "\\varnothing \\vdash\\annot{^{\\infty}}_{W} p : T \\land \\vdash\\!\\triangleright p \\Rightarrow \\mathsf{deadlock\\_free}\\,p \\land \\mathsf{no\\_tau\\_divergence}\\,p",
+   "args": [
+    {
+     "name": "W",
+     "meaning": "a static world"
+    },
+    {
+     "name": "p",
+     "meaning": "a closed process $(C, E)$"
+    },
+    {
+     "name": "T",
+     "meaning": "the result type of the main thread"
+    }
+   ]
+  },
+  "th.lf-connect-n": {
+   "title": "Lock-free soundness of the n-ary connect",
+   "what": "Under excluded middle and functional choice, closed components at a finite $N$ whose hidden worlds join to a well-founded world, with each thread guarded, compose to a lock-free process.",
+   "why": "The n-ary rule followed by hidden lock-free soundness.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "Three components typed at a finite bound.",
+   "rocq": "soup/LFConnectN.v: connect_n_lf_soundness",
+   "sig": "\\mathsf{EM} \\land \\mathsf{FC} \\land \\mathsf{comps}_{N}(\\bar W, p, T) \\land \\mathsf{wf}(W_1 \\sqcup \\cdots \\sqcup W_n) \\land \\vdash\\!\\triangleright p \\Rightarrow \\mathsf{lock\\_free}\\,p",
+   "args": [
+    {
+     "name": "\\bar W",
+     "meaning": "the hidden worlds of the components"
+    },
+    {
+     "name": "N",
+     "meaning": "\\annp{the bound on the tickets of a channel, a natural number for lock freedom}"
+    },
+    {
+     "name": "p",
+     "meaning": "a closed process $(C, E)$"
+    }
+   ]
+  },
+  "th.dc": {
+   "title": "Dependent choice $\\mathsf{DC}$",
+   "what": "A total relation has an infinite path from each start, as an explicit hypothesis and no axiom.",
+   "why": "A maximal weakly fair run picks one step at each position, which dependent choice provides.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "Round robin over threads picks the next step.",
+   "rocq": "lockfree/FairRun.v: dependent_choice",
+   "sig": "\\mathsf{DC} := \\forall A\\,(R : A \\to A \\to \\mathsf{Prop}).\\ (\\forall x.\\ \\exists y.\\ R\\,x\\,y) \\Rightarrow \\forall x_0.\\ \\exists f.\\ f\\,0 = x_0 \\land \\forall n.\\ R\\,(f\\,n)\\,(f\\,(n{+}1))",
+   "args": [
+    {
+     "name": "R",
+     "meaning": "a total relation"
+    },
+    {
+     "name": "f",
+     "meaning": "an infinite path"
+    }
+   ]
+  },
+  "th.pcomps": {
+   "title": "Components $\\mathsf{comps}_N(\\bar W, p, T)$",
+   "what": "Components $p_1, \\ldots, p_n$ typed at hidden worlds $\\bar W = W_1, \\ldots, W_n$ at the bound $N$, each connected over a cut to the composite of the ones before it, with the side conditions of P-Connect and no condition on worlds.",
+   "why": "It collects the premises of the n-ary connect. The one condition on worlds is checked once, on the join.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "The three threads of the ring.",
+   "rocq": "static/ConnectN.v: pcomps",
+   "sig": "\\mathsf{comps}_N : \\mathsf{SWorld}^{*} \\to \\mathsf{Proc} \\to \\mathsf{Ty} \\to \\mathsf{Prop}",
+   "args": [
+    {
+     "name": "\\bar W",
+     "meaning": "the hidden worlds of the components"
+    },
+    {
+     "name": "N",
+     "meaning": "\\annp{the bound on the tickets of a channel, a natural number for lock freedom}"
+    }
+   ]
+  },
+  "th.ptermprem": {
+   "title": "$\\mathsf{pterm}_N(\\Sigma, C_0, t, T)$",
+   "what": "The premises of P-Term at the bound $N$ for the thread $t$ over the interface $\\Sigma$ with restricted channels $C_0$ and result $T$, except the condition on the world.",
+   "why": "The lock-free judgment reads the thread at each ranked model, so the world needs no condition here.",
+   "breaks": "Nothing. It is a definition.",
+   "example": "One thread closing its end $c^{+}$ with $C_0 = \\varnothing$.",
+   "rocq": "soup/LFCompose.v: lf_p_term",
+   "sig": "\\mathsf{pterm}_N(\\Sigma, C_0, t, T) : \\mathsf{Prop}",
+   "args": [
+    {
+     "name": "\\Sigma",
+     "meaning": "the interface of the process"
+    },
+    {
+     "name": "C_0",
+     "meaning": "the restricted channels"
+    },
+    {
+     "name": "t",
+     "meaning": "the thread"
+    },
+    {
+     "name": "T",
+     "meaning": "the result type of the main thread"
     }
    ]
   },
