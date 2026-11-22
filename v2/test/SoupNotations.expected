@@ -37,10 +37,10 @@ lf_thread_progress
                      → maximal r l → wfair r l → thread_progress_run r l
 λ (N : nat) (W : sworld) (Σ : senv) (p : proc) (T : ty), Σ ⊩^N _ W p : T
      : nat → sworld → senv → proc → ty → Prop
-lf_fundamental
+lf_fundamental_h
      : excluded_middle
        → ∀ (N : nat) (W : sworld) (Σ : senv) (p : proc) (T : ty),
-           Σ ⊩^N _ W p : T → lf_sems N W Σ p T
-lf_soundness
+           Σ ⊩^N _ W p : T → lf_sems_h N W Σ p T
+lf_soundness_h
      : ∀ (N : nat) (W : sworld) (p : proc) (T : ty),
          excluded_middle → functional_choice → ∅ ⊩^N _ W p : T → lock_free p

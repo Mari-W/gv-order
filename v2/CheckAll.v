@@ -27,17 +27,14 @@ Print Assumptions wf_join_iff.
 Print Assumptions wmodels_exists.
 Print Assumptions wchain_lt_wf.
 (** static/Typing.v *)
-Print Assumptions fptyped_wf.
-Print Assumptions fp_connect_join.
 Print Assumptions ptyped_wf.
 (** static/Hiding.v *)
 Print Assumptions swrestrict_iff.
 Print Assumptions typed_ren.
-Print Assumptions fptyped_ren.
 Print Assumptions join_vis.
 Print Assumptions connect_hidden.
-Print Assumptions ptyped_full.
-Print Assumptions fptyped_ptyped.
+Print Assumptions ptyped_ren.
+Print Assumptions ptyped_sem.
 (** static/Conservativity.v *)
 Print Assumptions d_conv.
 Print Assumptions dftyped_typed.
@@ -102,10 +99,7 @@ Print Assumptions live_fundamental.
 Print Assumptions live_fundamental_typed.
 (** static/FundamentalProc.v *)
 Print Assumptions sem_p_connect_sw.
-Print Assumptions fundamental_proc.
-Print Assumptions live_fundamental_proc.
-Print Assumptions soundness.
-Print Assumptions live_soundness.
+Print Assumptions proc_gen.
 Print Assumptions soundness_source.
 Print Assumptions sem_p_connect_h.
 Print Assumptions fundamental_proc_h.
@@ -165,8 +159,6 @@ Print Assumptions lf_connect_adequacy.
 Print Assumptions lf_p_term.
 Print Assumptions lf_soundness_source.
 (** soup/LFTyped.v *)
-Print Assumptions lf_fundamental.
-Print Assumptions lf_soundness.
 Print Assumptions lf_soundness_run.
 Print Assumptions lf_soundness_padovani.
 Print Assumptions lf_p_connect_h.
@@ -191,7 +183,6 @@ Print Assumptions opened_cons.
 Print Assumptions Tbad_not_cons.
 Print Assumptions sbv_deadlock_free.
 Print Assumptions sbv_rejected.
-Print Assumptions sbv_rejected_h.
 (** relation/Ord.v: ordinals and the transfinite fixpoint *)
 Print Assumptions olt_wf.
 Print Assumptions oadd_lt.
@@ -210,7 +201,6 @@ Print Assumptions inv_chan_sty.
 Print Assumptions typed_sinst_false.
 Print Assumptions ss_var_guard.
 (** examples/SharedRoots.v: the shared constants of P-Connect are not the roots of the cut, and hiding *)
-Print Assumptions shared_not_cut.
 Print Assumptions fact_needs_zero.
 Print Assumptions shared_hidden.
 Print Assumptions opposite_clash.
@@ -230,8 +220,6 @@ Print Assumptions ring_pairs.
 Print Assumptions ring_cyclic.
 Print Assumptions examples.Ring.ring_rejected.
 Print Assumptions cyc2_rejected.
-Print Assumptions cyc2_rejected_h.
-Print Assumptions ring_rejected_full.
 Print Assumptions ring_typed.
 Print Assumptions ring_df.
 (** static/Fundamental.v and static/Conservativity.v: Sub-Ex lowers the
@@ -261,7 +249,6 @@ Print Assumptions fwd_dftyped.
 Print Assumptions fwd_expand.
 Print Assumptions fwd_config_deadlock_free.
 Print Assumptions examples.Copycat.ring_rejected.
-Print Assumptions examples.Copycat.ring_rejected_full.
 Print Assumptions fwdh_term.
 Print Assumptions fwdh_config_deadlock_free.
 Print Assumptions examples.Copycat.fb_dftyped.
@@ -269,7 +256,7 @@ Print Assumptions fwdp_expand.
 Print Assumptions fwdp_sem.
 (** static/ChanRen.v *)
 Print Assumptions typed_cren.
-Print Assumptions fptyped_cren.
+Print Assumptions ptyped_cren.
 (** examples/CopycatTwo.v *)
 Print Assumptions fwdq_term.
 Print Assumptions J_acyc.

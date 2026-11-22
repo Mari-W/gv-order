@@ -49,7 +49,7 @@ Proof.
   Unshelve. all: first [exact None | simpl; lia].
 Qed.
 
-Theorem cy_lftyped : ∃ N, ∅ ⊩^N _ W_cy (∅, {[+ cy_main +]}) : TUnit.
+Theorem cy_lftyped : ∃ N, ∅ ⊩^N _ (swrestrict W_cy (iface ∅ TUnit)) (∅, {[+ cy_main +]}) : TUnit.
 Proof.
   destruct cy_typedN as (c & Ht). exists 4.
   eapply lf_main_typed; [apply W_cy_wf|constructor|exact Ht].

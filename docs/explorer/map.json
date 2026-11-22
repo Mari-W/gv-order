@@ -2360,9 +2360,7 @@
        "file": "static/FundamentalProc.v",
        "names": [
         "soundness_h",
-        "soundness",
-        "live_soundness_h",
-        "live_soundness"
+        "live_soundness_h"
        ]
       },
       {
@@ -2376,7 +2374,6 @@
        "file": "soup/LFTyped.v",
        "names": [
         "lf_soundness_h",
-        "lf_soundness",
         "lf_soundness_run",
         "lf_soundness_padovani"
        ]
@@ -2451,31 +2448,28 @@
     {
      "id": "th-fund-proc",
      "title": "Fundamental theorem",
-     "formula": "\\begin{array}{l}\\sym{th.fundamental-proc}{\\begin{array}{l}\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\sym{sj.h}{\\mathrel{\\sym{sj.term}{\\vDash}}^{h}}_W p : T\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.live-fundamental-proc}{\\begin{array}{l}\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\sym{sj.h}{\\mathrel{\\sym{sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{h}}_W p : T\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-fundamental}{\\begin{array}{l}\\sym{th.em}{\\mathsf{EM}} \\land \\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{N}}_W} p : T \\land N \\in \\mathbb{N} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\sym{sp.lfsemh}{\\mathrel{\\sym{sp.lfsem}{\\Vvdash}}^{N,h}}_W p : T\\end{array}}} \\\\[1.5ex] \\sym{th.ptyped-full}{\\begin{array}{l}\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{N}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\exists W'.\\ \\Sigma \\sym{tp.fpjudg}{\\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\mathsf{full}}_{W'}} p : T \\land \\sym{sj.hides}{W' \\rightsquigarrow_{\\mathsf{I}(\\Sigma, T)} W}\\end{array}} \\\\[1.5ex] \\sym{th.fptyped-ptyped}{\\begin{array}{l}\\Sigma \\sym{tp.fpjudg}{\\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\mathsf{full}}_{W}} p : T \\\\ \\quad\\Longrightarrow\\ \\exists W_i.\\ \\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_i} p : T \\land {\\prec_{W_i}} \\subseteq {\\prec_W}\\end{array}} \\\\[1.5ex] \\sym{th.typed-ren}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} e : T \\\\ \\quad\\Longrightarrow\\ \\pi\\Gamma ; \\pi\\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\pi F}_{\\pi W} e : \\pi T\\end{array}}\\end{array}",
-     "caption": "A typed process is in the hidden semantic judgment of [[sj-all]], at some acyclic whole world that hides to its world. The proof goes through the full judgment with private constants renamed apart, by induction over P-Term and P-Connect with the composition rules. The case of P-Term is the fundamental theorem for terms of [[th-terms]]. \\inmode{lf}{Under excluded middle the same holds at a finite bound, with a well-founded whole world and the lock-free judgment.} Its cases are the rules of [[p-typing]] and the composition rules of [[th-compose]].",
+     "formula": "\\begin{array}{l}\\sym{th.fundamental-proc}{\\begin{array}{l}\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\sym{sj.h}{\\mathrel{\\sym{sj.term}{\\vDash}}^{h}}_W p : T\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.live-fundamental-proc}{\\begin{array}{l}\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\Sigma \\sym{sj.h}{\\mathrel{\\sym{sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{h}}_W p : T\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-fundamental}{\\begin{array}{l}\\sym{th.em}{\\mathsf{EM}} \\land \\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{N}}_W} p : T \\land N \\in \\mathbb{N} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\sym{sp.lfsemh}{\\mathrel{\\sym{sp.lfsem}{\\Vvdash}}^{N,h}}_W p : T\\end{array}}} \\\\[1.5ex] \\sym{th.ptyped-sem}{\\begin{array}{l}\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{N}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\exists W'.\\ \\sym{sj.hides}{W' \\rightsquigarrow_{\\mathsf{I}(\\Sigma, T)} W} \\land \\mathsf{Q}(W', \\Sigma, p, T)\\end{array}} \\\\[1.5ex] \\sym{th.ptyped-ren}{\\begin{array}{l}\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{N}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\exists W'.\\ \\pi\\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W'} p : \\pi T \\land {\\prec_{W'}} \\subseteq {\\prec_{\\pi W}}\\end{array}} \\\\[1.5ex] \\sym{th.typed-ren}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} e : T \\\\ \\quad\\Longrightarrow\\ \\pi\\Gamma ; \\pi\\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\pi F}_{\\pi W} e : \\pi T\\end{array}}\\end{array}",
+     "caption": "A typed process is in the hidden semantic judgment of [[sj-all]], at some acyclic whole world that hides to its world. The proof is one induction on the derivation. It reads each component at a whole world under each renaming of its constants, so that P-Connect renames the private constants of one side apart. The case of P-Term is the fundamental theorem for terms of [[th-terms]]. \\inmode{lf}{Under excluded middle the same holds at a finite bound, with a well-founded whole world and the lock-free judgment.} Its cases are the rules of [[p-typing]] and the composition rules of [[th-compose]].",
      "why": "The fundamental theorem connects typing with the relation.",
      "source": [
       {
        "file": "static/FundamentalProc.v",
        "names": [
         "fundamental_proc_h",
-        "live_fundamental_proc_h",
-        "fundamental_proc",
-        "live_fundamental_proc"
+        "live_fundamental_proc_h"
        ]
       },
       {
        "file": "soup/LFTyped.v",
        "names": [
-        "lf_fundamental_h",
-        "lf_fundamental"
+        "lf_fundamental_h"
        ]
       },
       {
        "file": "static/Hiding.v",
        "names": [
-        "ptyped_full",
-        "fptyped_ptyped"
+        "ptyped_sem",
+        "ptyped_ren"
        ]
       }
      ],
@@ -10450,7 +10444,7 @@
     {
      "file": "static/Hiding.v",
      "names": [
-      "ptyped_full",
+      "ptyped_sem",
       "connect_hidden",
       "join_vis"
      ]
@@ -10459,8 +10453,7 @@
      "file": "examples/SharedRoots.v",
      "names": [
       "shared_hidden",
-      "opposite_compose",
-      "shared_not_cut"
+      "opposite_compose"
      ]
     },
     {
@@ -10659,7 +10652,7 @@
   "tp.pjudg": {
    "title": "$\\Sigma \\vdash\\inmode{lf}{^{N}}_{W} p : T$",
    "meaning": "The process $p$ is typed over $\\Sigma$ in $W$ at bound $N$ with result $T$, derived by P-Term and P-Connect. $W$ lives on the constants of $\\mathsf{I}(\\Sigma, T)$, so a component is typed by the pair of $\\Sigma$ and its interface world.",
-   "why": "\\inmode{lf}{One judgment serves deadlock freedom at $N = \\infty$ and lock freedom at finite $N$.} Its soundness goes through the full judgment, which keeps whole worlds with private constants renamed apart. Each hidden derivation gives a full one and each full one a hidden one, so hiding loses no program.",
+   "why": "\\inmode{lf}{One judgment serves deadlock freedom at $N = \\infty$ and lock freedom at finite $N$.} Its soundness reads each component at a whole world that hides to its world, with private constants renamed apart at each P-Connect.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\varnothing \\vdash\\inmode{lf}{^{\\infty}}_{W} (\\varnothing, \\{t\\}) : \\ast$.",
    "signature": "\\Sigma \\vdash\\inmode{lf}{^{N}}_{W} p : T",
@@ -10689,15 +10682,13 @@
     {
      "file": "static/Typing.v",
      "names": [
-      "ptyped",
-      "fptyped"
+      "ptyped"
      ]
     },
     {
      "file": "static/Hiding.v",
      "names": [
-      "ptyped_full",
-      "fptyped_ptyped"
+      "ptyped_sem"
      ]
     }
    ]
@@ -11206,7 +11197,7 @@
   "sj.h": {
    "title": "Hidden semantic judgment",
    "meaning": "$\\Sigma \\vDash^{h}_W p : T$ holds when some well-formed acyclic static world $W^{\\prime}$ hides to $W$ on the interface constants and $\\Sigma \\vDash_{W^{\\prime}} p : T$.",
-   "why": "The hidden typing judgment keeps only the interface order. Its fundamental theorem recovers a whole world through the full judgment, and adequacy needs only some acyclic whole world.",
+   "why": "The hidden typing judgment keeps only the interface order. Its fundamental theorem recovers a whole world by induction on the derivation, and adequacy needs only some acyclic whole world.",
    "breaks": "Nothing. It is a definition.",
    "example": "A component over an empty interface has a hidden world without constants.",
    "signature": "\\Sigma \\vDash^{h}_{W} p : T",
@@ -17190,7 +17181,7 @@
   "th.fundamental-proc": {
    "title": "Fundamental theorem for processes",
    "meaning": "$\\Sigma \\vdash\\inmode{lf}{^{\\infty}}_{W} p : T$ implies $\\Sigma \\vDash^{h}_{W} p : T$. Some well-formed acyclic world $W^{\\prime}$ hides to $W$ on $\\mathsf{I}(\\Sigma, T)$, and the process is in the semantic judgment at each strict model of $W^{\\prime}$.",
-   "why": "The hidden derivation gives a derivation of the full judgment with whole worlds, whose private constants are renamed apart at each P-Connect. Its world $W^{\\prime}$ is acyclic, and the order $W^{\\prime}$ derives between interface points lies in $W$. On that derivation the theorem is an induction with the semantic P-Term and P-Connect as cases. \\inmode{lf}{No excluded middle and no choice enter the proof.}",
+   "why": "One induction on the derivation reads each component at a whole world under each renaming of its constants. At each P-Connect the private constants of one side are renamed apart, the world $W^{\\prime}$ of the composite is acyclic, and the order $W^{\\prime}$ derives between interface points lies in $W$. The cases are the semantic P-Term and P-Connect. \\inmode{lf}{No excluded middle and no choice enter the proof.}",
    "breaks": "Nothing. It is a definition.",
    "example": "Two threads closing the two ends of $c$.",
    "signature": "\\Sigma \\vdash\\inmode{lf}{^{\\infty}}_{W} p : T \\Rightarrow \\Sigma \\vDash^{h}_{W} p : T",
@@ -17217,14 +17208,14 @@
      "file": "static/FundamentalProc.v",
      "names": [
       "fundamental_proc_h",
-      "fundamental_proc",
+      "proc_gen",
       "sem_ptyped_h"
      ]
     },
     {
      "file": "static/Hiding.v",
      "names": [
-      "ptyped_full"
+      "ptyped_sem"
      ]
     }
    ]
@@ -17263,7 +17254,6 @@
      "file": "soup/LFTyped.v",
      "names": [
       "lf_fundamental_h",
-      "lf_fundamental",
       "lf_sems_h"
      ]
     },
@@ -17523,8 +17513,7 @@
     {
      "file": "static/FundamentalProc.v",
      "names": [
-      "soundness_h",
-      "soundness"
+      "soundness_h"
      ]
     }
    ]
@@ -17588,8 +17577,7 @@
     {
      "file": "soup/LFTyped.v",
      "names": [
-      "lf_soundness_h",
-      "lf_soundness"
+      "lf_soundness_h"
      ]
     }
    ]
@@ -18361,8 +18349,7 @@
     {
      "file": "static/FundamentalProc.v",
      "names": [
-      "live_fundamental_proc_h",
-      "live_fundamental_proc"
+      "live_fundamental_proc_h"
      ]
     }
    ]
@@ -18447,8 +18434,7 @@
     {
      "file": "static/FundamentalProc.v",
      "names": [
-      "live_soundness_h",
-      "live_soundness"
+      "live_soundness_h"
      ]
     }
    ]
@@ -18743,118 +18729,10 @@
     }
    ]
   },
-  "tp.fpjudg": {
-   "title": "Full process judgment $\\Sigma \\vdash^{N,\\mathsf{full}}_W p : T$",
-   "meaning": "Process typing with P-Term and P-Connect that keeps the whole world of each component, with P-Connect checking the restrictions of the two worlds to their shared constants.",
-   "why": "It is the judgment the soundness proof works with, because its worlds have models. The hidden judgment is the one the map shows, and the two type the same processes.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "The two closes over the empty interface at the world with no constant.",
-   "signature": "\\Sigma \\vdash^{N,\\mathsf{full}}_W p : T",
-   "args": [
-    {
-     "name": "W",
-     "meaning": "a static world"
-    },
-    {
-     "name": "\\Sigma",
-     "meaning": "the interface of the process"
-    },
-    {
-     "name": "p",
-     "meaning": "a closed process $(C, E)$"
-    },
-    {
-     "name": "T",
-     "meaning": "the result type of the main thread"
-    }
-   ],
-   "source": [
-    {
-     "file": "static/Typing.v",
-     "names": [
-      "fptyped",
-      "fp_term",
-      "fp_connect",
-      "fptyped_wf"
-     ]
-    }
-   ]
-  },
-  "th.ptyped-full": {
-   "title": "From hidden to full derivations",
-   "meaning": "Each hidden derivation $\\Sigma \\vdash\\inmode{lf}{^{N}}_W p : T$ gives a full derivation at a whole world $W^{\\prime}$ that hides to $W$ on the interface constants.",
-   "why": "At each P-Connect the private constants of one component are renamed apart from the other, so the two whole worlds share only interface constants. \\inmode{lf}{No excluded middle and no choice enter the proof.}",
-   "breaks": "Nothing. It is a definition.",
-   "example": "The hidden composition of two components with the same private constant.",
-   "signature": "\\Sigma \\vdash\\inmode{lf}{^{N}}_W p : T \\Rightarrow \\exists W'.\\ \\Sigma \\vdash^{N,\\mathsf{full}}_{W'} p : T \\land W' \\rightsquigarrow_{\\mathsf{I}(\\Sigma, T)} W",
-   "args": [
-    {
-     "name": "W",
-     "meaning": "a static world"
-    },
-    {
-     "name": "\\Sigma",
-     "meaning": "the interface of the process"
-    },
-    {
-     "name": "p",
-     "meaning": "a closed process $(C, E)$"
-    },
-    {
-     "name": "T",
-     "meaning": "the result type of the main thread"
-    }
-   ],
-   "source": [
-    {
-     "file": "static/Hiding.v",
-     "names": [
-      "ptyped_full",
-      "connect_hidden",
-      "join_vis",
-      "cb_avoid"
-     ]
-    }
-   ]
-  },
-  "th.fptyped-ptyped": {
-   "title": "From full to hidden derivations",
-   "meaning": "Each full derivation gives a hidden derivation at a world whose order is contained in the order of the whole world.",
-   "why": "So hiding loses no program.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "Each example typed in the full judgment.",
-   "signature": "\\Sigma \\vdash^{N,\\mathsf{full}}_W p : T \\Rightarrow \\exists W_i.\\ \\Sigma \\vdash\\inmode{lf}{^{N}}_{W_i} p : T \\land {\\prec_{W_i}} \\subseteq {\\prec_W}",
-   "args": [
-    {
-     "name": "W",
-     "meaning": "a static world"
-    },
-    {
-     "name": "\\Sigma",
-     "meaning": "the interface of the process"
-    },
-    {
-     "name": "p",
-     "meaning": "a closed process $(C, E)$"
-    },
-    {
-     "name": "T",
-     "meaning": "the result type of the main thread"
-    }
-   ],
-   "source": [
-    {
-     "file": "static/Hiding.v",
-     "names": [
-      "fptyped_ptyped"
-     ]
-    }
-   ]
-  },
   "th.typed-ren": {
    "title": "Renaming constants",
-   "meaning": "A bijection $\\pi$ on constants maps a derivation at each bound and cost to a derivation of the renamed judgment, and a full process derivation to one of the renamed process judgment.",
-   "why": "The hiding proof renames the private constants of a component apart from another component. The program does not change, because no term mentions a point.",
+   "meaning": "A bijection $\\pi$ on constants maps a derivation at each bound and cost to a derivation of the renamed judgment.",
+   "why": "The P-Term case of the fundamental theorem renames the typing of the thread, and the hiding proof uses it to rename the private constants of a component apart from another component. The program does not change, because no term mentions a point.",
    "breaks": "Nothing. It is a definition.",
    "example": "Renaming the private constant $0$ of one copy of $P(c, d)$ to $1$.",
    "signature": "\\Gamma ; \\Delta \\vdash^{F}_{W} e : T \\Rightarrow \\pi\\Gamma ; \\pi\\Delta \\vdash^{\\pi F}_{\\pi W} e : \\pi T",
@@ -18872,8 +18750,7 @@
     {
      "file": "static/Hiding.v",
      "names": [
-      "typed_ren",
-      "fptyped_ren"
+      "typed_ren"
      ]
     }
    ]
@@ -19309,6 +19186,83 @@
      ]
     }
    ]
+  },
+  "th.ptyped-sem": {
+   "title": "Reading a derivation at a whole world",
+   "meaning": "Let $\\mathsf{Q}$ be a property of components at whole worlds that P-Term gives at the world of its thread, that P-Connect composes at the join, and that each extension of a world keeps. Then each derivation $\\Sigma \\vdash\\inmode{lf}{^{N}}_W p : T$ has a whole world $W^{\\prime}$ that hides to $W$ on $\\mathsf{I}(\\Sigma, T)$ with $\\mathsf{Q}(W^{\\prime}, \\Sigma, p, T)$, and $W^{\\prime}$ is acyclic at $N = \\infty$ \\inmode{lf}{and well-founded at a finite $N$}.",
+   "why": "The induction proves $\\mathsf{Q}$ at each renaming of the whole world. At P-Connect the private constants of one component are renamed apart from the other, so the two whole worlds share only interface constants. The derivation itself is never renamed. \\inmode{lf}{No excluded middle and no choice enter the proof.}",
+   "breaks": "Nothing. It is a lemma about derivations.",
+   "example": "The hidden composition of two components with the same private constant.",
+   "signature": "\\Sigma \\vdash\\inmode{lf}{^{N}}_W p : T \\Rightarrow \\exists W'.\\ W' \\rightsquigarrow_{\\mathsf{I}(\\Sigma, T)} W \\land \\mathsf{Q}(W', \\Sigma, p, T)",
+   "args": [
+    {
+     "name": "W",
+     "meaning": "a static world"
+    },
+    {
+     "name": "\\Sigma",
+     "meaning": "the interface of the process"
+    },
+    {
+     "name": "p",
+     "meaning": "a closed process $(C, E)$"
+    },
+    {
+     "name": "T",
+     "meaning": "the result type of the main thread"
+    }
+   ],
+   "source": [
+    {
+     "file": "static/Hiding.v",
+     "names": [
+      "ptyped_sem",
+      "qren_side",
+      "connect_hidden",
+      "join_vis",
+      "cb_avoid"
+     ]
+    }
+   ]
+  },
+  "th.ptyped-ren": {
+   "title": "Renaming the constants of a process derivation",
+   "meaning": "A bijection $\\pi$ on constants maps a derivation $\\Sigma \\vdash\\inmode{lf}{^{N}}_W p : T$ to a derivation of $\\pi\\Sigma \\vdash\\inmode{lf}{^{N}}_{W^{\\prime}} p : \\pi T$ at a world whose order lies inside the order of $\\pi W$.",
+   "why": "It moves a typed partner from one point to another, as in the two-sided expansion of the forwarder. The program does not change, because no term mentions a point.",
+   "breaks": "Nothing. It is a lemma about derivations.",
+   "example": "Swapping the constants $0$ and $1$ of the partner $Q$ of the copycat.",
+   "signature": "\\Sigma \\vdash\\inmode{lf}{^{N}}_W p : T \\Rightarrow \\exists W'.\\ \\pi\\Sigma \\vdash\\inmode{lf}{^{N}}_{W'} p : \\pi T \\land {\\prec_{W'}} \\subseteq {\\prec_{\\pi W}}",
+   "args": [
+    {
+     "name": "\\pi",
+     "meaning": "a bijection on constants"
+    },
+    {
+     "name": "W",
+     "meaning": "a static world"
+    },
+    {
+     "name": "\\Sigma",
+     "meaning": "the interface of the process"
+    },
+    {
+     "name": "p",
+     "meaning": "a closed process $(C, E)$"
+    },
+    {
+     "name": "T",
+     "meaning": "the result type of the main thread"
+    }
+   ],
+   "source": [
+    {
+     "file": "static/Hiding.v",
+     "names": [
+      "ptyped_ren",
+      "iface_ren"
+     ]
+    }
+   ]
   }
  },
  "examples": [
@@ -19663,7 +19617,6 @@
       "sbv_thread_E",
       "sbv_deadlock_free",
       "sbv_rejected",
-      "sbv_rejected_h",
       "Tbad_not_cons",
       "cl2_needs"
      ]
@@ -19673,7 +19626,7 @@
     "df": {
      "ok": false,
      "part": "P-Connect",
-     "rocq": "sbv_rejected and sbv_rejected_h, for every world and every bound. E-Open asks cons, so the dead arm needs y ≺ x̄ from its own world, and the joined world has the cycle y ≺ x̄ ≺ y"
+     "rocq": "sbv_rejected, for every world and every bound. E-Open asks cons, so the dead arm needs y ≺ x̄ from its own world, and the joined world has the cycle y ≺ x̄ ≺ y"
     },
     "sem": {
      "ok": true,
@@ -19812,8 +19765,7 @@
       "fwdp_expand",
       "fwdp_sem",
       "fwd_needs",
-      "ring_rejected",
-      "ring_rejected_full"
+      "ring_rejected"
      ]
     },
     {
@@ -19841,7 +19793,7 @@
      "file": "static/ChanRen.v",
      "names": [
       "typed_cren",
-      "fptyped_cren"
+      "ptyped_cren"
      ]
     }
    ],
@@ -19867,12 +19819,10 @@
       "ring_cyclic",
       "ring_not_df",
       "ring_rejected",
-      "ring_rejected_full",
       "ring_typed",
       "ring_df",
       "cyc2_not_df",
-      "cyc2_rejected",
-      "cyc2_rejected_h"
+      "cyc2_rejected"
      ]
     }
    ],
@@ -19928,8 +19878,6 @@
     {
      "file": "examples/SharedRoots.v",
      "names": [
-      "comp_typed",
-      "shared_not_cut",
       "fact_needs_zero",
       "hcomp_typed",
       "shared_hidden",

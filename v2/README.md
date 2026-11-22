@@ -156,7 +156,7 @@ point (`Vthunk`), which E-SpawnLam meets (`later_spawn_lam`).
 | static/Guard.v | `acts`, the guard `lguard`, renaming of marks |
 | static/Fundamental.v | `hsat`, instances under binders (`pclose`), contexts up to annotations (`sem_later_ctx`, `sem_later_undf`), `typed_sem` and its instances `typed_sem_df`, `typed_sem_live`, `fundamental`, `fundamental_typed`, `live_fundamental`, `live_fundamental_typed` |
 | examples/GuardEx.v | the guard against Appendix B #12 to #15 and #40, and the C2 stage of B.1 #4 |
-| static/FundamentalProc.v | the side conditions of P-Connect from the typing premises (`ptyped_conn`), one induction on `ptyped` for every cost table (`proc_gen`), `fundamental_proc`, `live_fundamental_proc` (every thread guarded, `pguard`), `soundness`, `live_soundness`, `soundness_source` |
+| static/FundamentalProc.v | the side conditions of P-Connect from the typing premises (`conn_of`), one induction on `ptyped` for every cost table through `ptyped_sem` (`proc_gen`), `fundamental_proc_h`, `live_fundamental_proc_h`, `soundness_h`, `live_soundness_h`, `soundness_source` |
 
 ## Stage S8, the soup and adequacy
 
@@ -205,7 +205,7 @@ on `ptyped`.
 |---|---|
 | soup/SoupCompose.v | `soup_par`, `soup_nu`, `soup_connect`, `soup_term` |
 | soup/LFCompose.v | `soup_lift`, `lf_soup_connect`, `lf_p_connect`, `lf_soup_term`, `typed_live`, `lf_p_term`, `lf_soundness_source` |
-| soup/LFTyped.v | the notation `Σ ⊩^N _ W p : T`, `lf_fundamental`, `lf_soundness` |
+| soup/LFTyped.v | the notation `Σ ⊩^N _ W p : T` for `ptyped (Some N)`, `lf_fundamental_h`, `lf_soundness_h`, `lf_soundness_run`, `lf_soundness_padovani` |
 | examples/LFClose.v | `wfworld_bare`, two threads closing one channel typed by P-Connect, `cl_lock_free` |
 | examples/LFTools.v | `wfworld_measure`, `wfworld_lex3`, `lf_main`, boxes of one arrow at a finite N (`lbox`, `lbox_typed`, `lbox_force`), the rules over Θ = ∅ in derivation order |
 | examples/LFCycle.v | cycle at N = 2, `cy_lock_free` |

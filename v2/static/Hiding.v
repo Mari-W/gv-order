@@ -1,31 +1,31 @@
 (** * Hiding (decision of 2026-11-22, repair (b) of the overlap of P-Connect)
 
     The world of a process judgment lives on the constants of its
-    interface ([ptyped], static/Typing.v). This file proves hiding
-    sound by a translation into the judgment with whole worlds
-    ([fptyped]), whose semantics static/FundamentalProc.v and
-    soup/LFTyped.v give.
+    interface ([ptyped], static/Typing.v). This file reads a derivation
+    at a whole world that hides to its world, which the semantics of
+    static/FundamentalProc.v and soup/LFTyped.v need.
 
       swrestrict_iff  : W|S orders the points with roots in S exactly as
                         W does, through private constants too
       typed_ren       : a bijection of constants renames a derivation of
                         the term judgment
-      fptyped_ren     : and of the full process judgment
-      ptyped_full     : Σ ⊢_W p : T gives a full derivation at some world
-                        W' with W'|iface Σ T inside W
-      fptyped_ptyped  : a full derivation gives a hidden one
+      connect_hidden  : two whole worlds with private constants apart
+                        compose when their hidden worlds do
+      ptyped_sem      : a property of components at whole worlds that
+                        P-Term gives and P-Connect composes holds of
+                        every derivation at some whole world that hides
+                        to its world
 
-    P-Connect of [ptyped] compares the two interface worlds. In the
-    translation the two components may share private constants, so the
+    P-Connect of [ptyped] compares the two interface worlds. The two
+    whole worlds of the components may share private constants, so the
     first is renamed to keep its private constants off the interface of
     the second ([cb_avoid]), and the second to keep its private
     constants off the whole world of the first. Then the two worlds
     share only interface constants of both, at which they order as
-    their interface worlds do, and the full P-Connect applies
-    ([connect_hidden]). The order the join derives between interface
-    points is the order of the join of the interface worlds
-    ([join_vis]), because a chain of the join changes sides only at
-    shared constants. *)
+    their interface worlds do ([connect_hidden]). The order the join
+    derives between interface points is the order of the join of the
+    interface worlds ([join_vis]), because a chain of the join changes
+    sides only at shared constants. *)
 
 From GV Require Export static.Typing.
 
@@ -37,6 +37,32 @@ Lemma swrestrict_iff W S x y :
 Proof.
   intros Hx Hy. split; [apply swrestrict_lt|]. intros H. by apply sw_lt_fact.
 Qed.
+
+(** An order the world derives between points with constants in S
+    survives the restriction to S. *)
+Lemma swrestrict_lt_in W S x y : sworld_wf W → pt_consts x ⊆ S → pt_consts y ⊆ S →
+  W ⊢ₛ x ≺ y → swrestrict W S ⊢ₛ x ≺ y.
+Proof.
+  intros Hwf Hx Hy H. destruct (lt_zone W x y Hwf H) as [Hp|[(a & Ha & Ha') (b & Hb & Hb')]]; [by apply po_slt|].
+  apply swrestrict_iff; [| |done].
+  - exists a. split; [done|]. apply elem_of_intersection. split; [done|]. apply Hx. rewrite (pt_consts_root x a Ha). set_solver.
+  - exists b. split; [done|]. apply elem_of_intersection. split; [done|]. apply Hy. rewrite (pt_consts_root y b Hb). set_solver.
+Qed.
+
+Lemma pt_consts_dual x : pt_consts x‾ = pt_consts x.
+Proof. done. Qed.
+
+(** An order follows from orders that cover the facts. *)
+Lemma sw_lt_by W W' : (∀ x y, sw_facts W (FLt x y) → W' ⊢ₛ x ≺ y) → ∀ x y, W ⊢ₛ x ≺ y → W' ⊢ₛ x ≺ y.
+Proof.
+  intros H. assert (∀ x y, swstep W x y → W' ⊢ₛ x ≺ y) as Hs.
+  { intros x y [x' y' Hf|x'|x']; [by apply H|apply sw_lt_po|apply sw_lt_dpo]. }
+  intros x y. induction 1 as [x y Hxy|x z y Hxz _ IH]; [by apply Hs|]. eapply sw_lt_trans; [by apply Hs|done].
+Qed.
+
+(** The point of an interface end has its constants in the interface. *)
+Lemma senv_pt_iface (Σ : senv) T o S x : Σ !! o = Some (S, x) → pt_consts x ⊆ iface Σ T.
+Proof. intros H a Ha. unfold iface. apply elem_of_union_l, elem_of_senv_consts. eauto 10. Qed.
 
 (** ** Renaming a derivation *)
 
@@ -122,7 +148,7 @@ Section ren.
   Qed.
 End ren.
 
-(** ** Renaming a full process derivation *)
+(** ** Renaming interfaces and worlds *)
 
 Lemma senv_dual_ren f Σ : senv_ren f (senv_dual Σ) = senv_dual (senv_ren f Σ).
 Proof.
@@ -158,6 +184,20 @@ Proof. intros H HW x Hx. exact (HW x (H x x Hx)). Qed.
 Lemma wok_sub N W W' : (∀ x y, W ⊢ₛ x ≺ y → W' ⊢ₛ x ≺ y) → wok N W' → wok N W.
 Proof. destruct N; [apply swf_sub|apply sacyc_sub]. Qed.
 
+(** A world without facts joins any world at no cost. *)
+Lemma wok_join_bare_r N A B : (∀ g, ¬ sw_facts B g) → wok N A → wok N (A ⊔ B).
+Proof.
+  intros HB. apply wok_sub. apply sw_lt_by. intros x y [H|H]; [by apply tc_once, ws_fact|by destruct (HB _ H)].
+Qed.
+
+Lemma wok_join_bare_l N A B : (∀ g, ¬ sw_facts A g) → wok N B → wok N (A ⊔ B).
+Proof.
+  intros HA. apply wok_sub. apply sw_lt_by. intros x y [H|H]; [by destruct (HA _ H)|by apply tc_once, ws_fact].
+Qed.
+
+Lemma swrestrict_empty_bare S g : ¬ sw_facts (swrestrict sw_empty S) g.
+Proof. destruct g as [x y]. intros (_ & (a & _ & Ha) & _). simpl in Ha. set_solver. Qed.
+
 Lemma swshared_ren π W1 W2 : swshared (sw_ren π W1) (sw_ren π W2) = set_map (cb_f π) (swshared W1 W2).
 Proof.
   apply set_eq. intros a. unfold swshared. simpl. rewrite elem_of_intersection, !elem_of_map. split.
@@ -184,31 +224,41 @@ Proof.
   - apply (croot_in_ren_inv π). eapply croot_in_mono; [apply set_map_inter|exact Hy].
 Qed.
 
-Theorem fptyped_ren π N W Σ p T :
-  fptyped N W Σ p T → fptyped N (sw_ren π W) (senv_ren (cb_f π) Σ) p (ty_ren (cb_f π) T).
+(** Two renamings compose. *)
+Lemma bcs_ren_comp f g C : bcs_ren f (bcs_ren g C) = bcs_ren (f ∘ g) C.
 Proof.
-  induction 1 as [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Ht [Hw HW]
-                 |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 H12 H1C H2C HC HC1 HC2 HS].
-  - apply (fp_term N _ _ (tenv_ren (cb_f π) ΘB) C0 t _ c).
-    + by apply tfree_ren.
-    + intros o. unfold tenv_ren. by rewrite dom_fmap_L.
-    + by rewrite chans_of_ren.
-    + by apply pfree_ren.
-    + intros o e. unfold senv_ren. rewrite lookup_fmap. destruct (Σ !! o) as [e0|] eqn:E; [|done].
-      intros [= <-]. simpl. rewrite scontr_ren. exact (HΣc o e0 E).
-    + intros c' Hc'. destruct (Hd c' Hc') as (S & x & m & m' & Hm & HS & H1 & H2).
-      exists (sty_ren (cb_f π) S), (pt_ren (cb_f π) x), m, m'. unfold tenv_ren. rewrite !lookup_fmap, H1, H2.
-      simpl. rewrite scontr_ren. by rewrite <-dual_ren.
-    + pose proof (typed_ren π _ _ _ _ _ _ _ _ _ Ht) as H.
-      rewrite tenv_ren_union, tenv_of_ren in H. unfold sf_ren in H. simpl in H. rewrite set_map_empty in H. exact H.
-    + split; [by apply sworld_wf_ren|by apply wok_ren].
-  - rewrite senv_ren_union in IH1, IH2 |- *. rewrite senv_dual_ren in IH2. simpl in IH2.
-    rewrite sw_ren_join, <-(chans_of_ren (cb_f π) ΣC).
-    apply fp_connect; [exact IH1|exact IH2|by rewrite !chans_of_ren|by rewrite !chans_of_ren|by rewrite !chans_of_ren
-      |done|by rewrite !chans_of_ren|by rewrite !chans_of_ren|].
-    rewrite swshared_ren. apply (wok_sub N _ (sw_ren π (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)))).
-    + intros x y. apply sw_lt_facts. intros g [Hg|Hg]; [left|right]; by apply swrestrict_ren_facts.
-    + by apply wok_ren.
+  destruct C as [env P]. unfold bcs_ren. simpl. f_equal.
+  rewrite <-list_fmap_compose. apply list_fmap_ext. intros. simpl. apply pt_ren_comp.
+Qed.
+
+Lemma ren_comp_mut f g :
+  (∀ T, ty_ren f (ty_ren g T) = ty_ren (f ∘ g) T) ∧ (∀ s, sty_ren f (sty_ren g s) = sty_ren (f ∘ g) s).
+Proof.
+  apply ty_sty_mut_ind; intros; simpl; try congruence.
+  - rewrite ub_map_comp, lb_map_comp, (ub_map_ext _ (pt_ren (f ∘ g))), (lb_map_ext _ (pt_ren (f ∘ g)))
+      by (intros; apply pt_ren_comp). congruence.
+  - rewrite bcs_ren_comp, <-option_fmap_compose, H. f_equal. apply option_fmap_ext. intros. apply pt_ren_comp.
+  - by rewrite pt_ren_comp, H.
+  - rewrite lb_map_comp, (lb_map_ext _ (pt_ren (f ∘ g))), bcs_ren_comp by (intros; apply pt_ren_comp). congruence.
+Qed.
+
+Lemma ty_ren_comp f g T : ty_ren f (ty_ren g T) = ty_ren (f ∘ g) T.
+Proof. apply ren_comp_mut. Qed.
+
+Lemma senv_ren_comp f g Σ : senv_ren f (senv_ren g Σ) = senv_ren (f ∘ g) Σ.
+Proof.
+  unfold senv_ren. rewrite <-map_fmap_compose. apply map_fmap_ext. intros o [s x] _. simpl.
+  rewrite pt_ren_comp. f_equal. apply ren_comp_mut.
+Qed.
+
+Lemma fact_ren_comp f g h : fact_ren f (fact_ren g h) = fact_ren (f ∘ g) h.
+Proof. destruct h. simpl. by rewrite !pt_ren_comp. Qed.
+
+Lemma sw_ren_comp π1 π2 W : sw_ren (cb_comp π1 π2) W ⊑ₛ sw_ren π1 (sw_ren π2 W).
+Proof.
+  split; simpl.
+  - intros a. rewrite !elem_of_map. intros (b & -> & Hb). exists (cb_f π2 b). split; [done|]. set_solver.
+  - intros g Hg. by rewrite fact_ren_comp.
 Qed.
 
 (** ** Renaming private constants apart *)
@@ -370,29 +420,6 @@ Proof.
   apply elem_of_singleton in Hb as ->. rewrite <-(HI a HaI) at 1. apply cb_gf.
 Qed.
 
-(** One component renamed: its private constants leave B, its interface
-    and its hidden world stay. *)
-Lemma rename_side N W' Σ p T W (B : gset nat) :
-  fptyped N W' Σ p T → hides W' (iface Σ T) W →
-  ∃ W'', fptyped N W'' Σ p T ∧ hides W'' (iface Σ T) W ∧
-    ∀ a, a ∈ sw_consts W'' → a ∉ iface Σ T → a ∉ B.
-Proof.
-  intros Hty [Hc Ho]. set (I := iface Σ T).
-  destruct (cb_avoid I (sw_consts W' ∖ I) B ltac:(set_solver)) as (π & HI & HP).
-  assert (∀ b, cb_f π b ∈ I → b ∈ I) as Hback.
-  { intros b Hb. destruct (decide (b ∈ I)) as [|Hn]; [done|]. exfalso.
-    assert (cb_f π (cb_f π b) = cb_f π b) as E by (by apply HI). apply cb_f_inj in E. rewrite E in Hb. done. }
-  exists (sw_ren π W'). split_and!.
-  - pose proof (fptyped_ren π _ _ _ _ _ Hty) as H.
-    rewrite senv_ren_fix, ty_ren_fix in H; [exact H| |]; intros a Ha; apply HI; unfold I, iface; set_solver.
-  - split.
-    + intros a. simpl. rewrite elem_of_intersection, elem_of_map. intros [(b & -> & Hb) Ha].
-      pose proof (Hback b Ha) as HbI. rewrite HI in Ha |- * by done. apply Hc. set_solver.
-    + intros x y Hx Hy H. apply sw_lt_ren_inv in H. rewrite !(pt_ren_fix_croot π I) in H by done. by apply Ho.
-  - intros a. simpl. rewrite elem_of_map. intros (b & -> & Hb) Ha.
-    destruct (decide (b ∈ I)) as [HbI|HbI]; [rewrite HI in Ha by done; done|]. apply HP. set_solver.
-Qed.
-
 Lemma iface_connect Σ1 Σ2 ΣC T :
   iface (Σ1 ∪ Σ2) T ⊆ iface (Σ1 ∪ ΣC) T ∪ iface (Σ2 ∪ senv_dual ΣC) TUnit.
 Proof.
@@ -457,35 +484,209 @@ Proof.
     + eapply croot_in_mono; [|apply (croot_in_same _ _ _ Zy Hy)]. exact Hcons.
 Qed.
 
-(** Every hidden derivation is the hiding of a full derivation. *)
-Theorem ptyped_full N W Σ p T : ptyped N W Σ p T → ∃ W', fptyped N W' Σ p T ∧ hides W' (iface Σ T) W.
+(** ** Renaming a derivation of the process judgment
+
+    A bijection of constants renames a derivation up to its world: the
+    renamed derivation sits at a world whose order lies inside the
+    renamed world ([ptyped_ren]). The constants of a renamed interface
+    are the renamed constants ([iface_ren]). *)
+
+Lemma pt_consts_ren f x : pt_consts (pt_ren f x) = set_map f (pt_consts x).
 Proof.
-  induction 1 as [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Ht HW
-                 |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 H12 H1C H2C HC HC1 HC2 HS].
-  - exists W. split; [by eapply fp_term|]. apply hides_restrict, HW.
-  - destruct IH1 as (W1' & Hty1 & Hh1), IH2 as (W2' & Hty2 & Hh2).
-    destruct (rename_side _ _ _ _ _ _ (iface (Σ2 ∪ senv_dual ΣC) TUnit) Hty1 Hh1) as (V1 & Hv1 & Hh1' & Hav1).
-    destruct (rename_side _ _ _ _ _ _ (sw_consts V1 ∪ iface (Σ1 ∪ ΣC) T) Hty2 Hh2) as (V2 & Hv2 & Hh2' & Hav2).
-    destruct (connect_hidden N V1 V2 W1 W2 _ _ (iface (Σ1 ∪ Σ2) T) (proj1 (fptyped_wf _ _ _ _ _ Hv1))
-                (proj1 (fptyped_wf _ _ _ _ _ Hv2)) Hh1' Hh2' Hav1 Hav2 (iface_connect _ _ _ _) HS) as [HR Hh].
-    exists (V1 ⊔ V2). split; [by apply fp_connect|exact Hh].
+  unfold pt_consts, pn_consts. fold (pt_root x). fold (pt_root (pt_ren f x)). rewrite pt_ren_root.
+  destruct (pt_root x); simpl; set_solver.
 Qed.
 
-(** ** From full derivations to hidden ones
-
-    Hiding loses no program: every full derivation hides to one whose
-    world derives only facts of the full world. *)
-Theorem fptyped_ptyped N W Σ p T :
-  fptyped N W Σ p T → ∃ Wi, ptyped N Wi Σ p T ∧ ∀ x y, Wi ⊢ₛ x ≺ y → W ⊢ₛ x ≺ y.
+Lemma env_consts_ren f xs : env_consts (pt_ren f <$> xs) = set_map f (env_consts xs).
 Proof.
-  intros Hty. pose proof Hty as Hty'. revert Hty'.
-  induction Hty as [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Ht HW
-                   |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T Hty1 IH1 Hty2 IH2 H12 H1C H2C HC HC1 HC2 HS];
-    intros Hfull.
-  - exists (swrestrict W (iface Σ T)). split; [by eapply p_term|]. intros x y. apply swrestrict_lt.
-  - destruct (IH1 Hty1) as (Wi1 & Hi1 & Hs1), (IH2 Hty2) as (Wi2 & Hi2 & Hs2).
-    assert (wok N (W1 ⊔ W2)) as HJ by apply (fptyped_wf _ _ _ _ _ Hfull).
-    exists (swrestrict (Wi1 ⊔ Wi2) (iface (Σ1 ∪ Σ2) T)). split.
-    + eapply p_connect; try done. apply (wok_sub N _ (W1 ⊔ W2)); [|done]. intros x y. by apply join_sub.
-    + intros x y H. apply swrestrict_lt in H. by eapply join_sub.
+  induction xs as [|x xs IH]; [unfold env_consts; simpl; set_solver|].
+  unfold env_consts in *. rewrite !fmap_cons, !union_list_cons, pt_consts_ren, IH. set_solver.
 Qed.
+
+Lemma ren_consts_mut f :
+  (∀ T, ty_consts (ty_ren f T) = set_map f (ty_consts T)) ∧
+  (∀ s, sty_consts (sty_ren f s) = set_map f (sty_consts s)).
+Proof.
+  apply ty_sty_mut_ind; intros; simpl; rewrite ?H, ?H0; try set_solver.
+  - destruct ub, lb; simpl; rewrite ?pt_consts_ren; set_solver.
+  - destruct C as [env P]. unfold bcs_ren. simpl. rewrite env_consts_ren.
+    destruct ub; simpl; rewrite ?pt_consts_ren; set_solver.
+  - rewrite pt_consts_ren. set_solver.
+  - destruct C as [env P]. unfold bcs_ren. simpl. rewrite env_consts_ren.
+    destruct lb; simpl; rewrite ?pt_consts_ren; set_solver.
+Qed.
+
+Lemma senv_consts_ren f Σ : senv_consts (senv_ren f Σ) = set_map f (senv_consts Σ).
+Proof.
+  apply set_eq. intros a. rewrite elem_of_map. setoid_rewrite elem_of_senv_consts. split.
+  - intros (o & s & x & Ho & Ha). unfold senv_ren in Ho. rewrite lookup_fmap in Ho.
+    destruct (Σ !! o) as [[s0 x0]|] eqn:E; [|done]. injection Ho as <- <-.
+    rewrite (proj2 (ren_consts_mut f)), pt_consts_ren in Ha.
+    destruct Ha as [Ha|Ha]; apply elem_of_map in Ha as (b & -> & Hb); exists b; split; eauto 10.
+  - intros (b & -> & o & s & x & Ho & Hb). exists o, (sty_ren f s), (pt_ren f x). split.
+    + unfold senv_ren. by rewrite lookup_fmap, Ho.
+    + rewrite (proj2 (ren_consts_mut f)), pt_consts_ren. set_solver.
+Qed.
+
+Lemma iface_ren f Σ T : iface (senv_ren f Σ) (ty_ren f T) = set_map f (iface Σ T).
+Proof. unfold iface. rewrite senv_consts_ren, (proj1 (ren_consts_mut f)). set_solver. Qed.
+
+(** An order of a renamed world between points with roots in a renamed
+    set survives the restriction to that set. *)
+Lemma ren_restrict_lt π X I x y : sworld_wf X →
+  croot_in (set_map (cb_f π) I) x → croot_in (set_map (cb_f π) I) y →
+  sw_ren π X ⊢ₛ x ≺ y → sw_ren π (swrestrict X I) ⊢ₛ x ≺ y.
+Proof.
+  intros Hwf Hx Hy H. apply sw_lt_ren_inv in H. apply croot_in_ren_inv in Hx, Hy.
+  rewrite <-(pt_ren_cb π x), <-(pt_ren_cb π y). apply sw_lt_ren.
+  destruct (lt_zone X _ _ Hwf H) as [Hp|[Zx Zy]]; [by apply po_slt|].
+  apply swrestrict_iff; [by apply croot_in_same|by apply croot_in_same|done].
+Qed.
+
+Theorem ptyped_ren π N W Σ p T : ptyped N W Σ p T →
+  ∃ W', ptyped N W' (senv_ren (cb_f π) Σ) p (ty_ren (cb_f π) T) ∧ ∀ x y, W' ⊢ₛ x ≺ y → sw_ren π W ⊢ₛ x ≺ y.
+Proof.
+  induction 1 as [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Ht [Hw HW]
+                 |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T Hty1 IH1 Hty2 IH2 H12 H1C H2C HC HC1 HC2 HS].
+  - eexists. split.
+    + apply (p_term N (sw_ren π W) _ (tenv_ren (cb_f π) ΘB) C0 t _ c).
+      * by apply tfree_ren.
+      * intros o. unfold tenv_ren. by rewrite dom_fmap_L.
+      * by rewrite chans_of_ren.
+      * by apply pfree_ren.
+      * intros o e. unfold senv_ren. rewrite lookup_fmap. destruct (Σ !! o) as [e0|] eqn:E; [|done].
+        intros [= <-]. simpl. rewrite scontr_ren. exact (HΣc o e0 E).
+      * intros c' Hc'. destruct (Hd c' Hc') as (S & x & m & m' & Hm & HS & H1 & H2).
+        exists (sty_ren (cb_f π) S), (pt_ren (cb_f π) x), m, m'. unfold tenv_ren. rewrite !lookup_fmap, H1, H2.
+        simpl. rewrite scontr_ren. by rewrite <-dual_ren.
+      * pose proof (typed_ren π _ _ _ _ _ _ _ _ _ Ht) as H.
+        rewrite tenv_ren_union, tenv_of_ren in H. unfold sf_ren in H. simpl in H. rewrite set_map_empty in H. exact H.
+      * split; [by apply sworld_wf_ren|by apply wok_ren].
+    + apply sw_lt_by. intros x y (H & Hx & Hy). rewrite iface_ren in Hx, Hy.
+      apply ren_restrict_lt; [done| | |done]; (eapply croot_in_mono; [|done]); set_solver.
+  - destruct IH1 as (W1' & Hty1' & Hs1), IH2 as (W2' & Hty2' & Hs2).
+    exists (swrestrict (W1' ⊔ W2') (iface (senv_ren (cb_f π) (Σ1 ∪ Σ2)) (ty_ren (cb_f π) T))). split.
+    + rewrite senv_ren_union in Hty1', Hty2' |- *. rewrite senv_dual_ren in Hty2'. simpl in Hty2'.
+      rewrite <-(chans_of_ren (cb_f π) ΣC).
+      apply p_connect; [exact Hty1'|exact Hty2'|by rewrite ?chans_of_ren..|].
+      apply (wok_sub N _ (sw_ren π (W1 ⊔ W2))); [|by apply wok_ren].
+      intros x y Hxy. rewrite sw_ren_join. by eapply join_sub.
+    + apply sw_lt_by. intros x y (H & Hx & Hy). rewrite iface_ren in Hx, Hy.
+      apply ren_restrict_lt; [by apply swjoin_wf; apply ptyped_wf in Hty1, Hty2; [apply Hty1|apply Hty2]
+        | | |rewrite sw_ren_join; by eapply join_sub]; (eapply croot_in_mono; [|done]); set_solver.
+Qed.
+
+(** ** Reading a derivation at a whole world
+
+    A property Q of components at whole worlds that P-Term gives at the
+    world of the thread, that P-Connect composes at the join, and that
+    holds at every extension of a world holds of every derivation at
+    some acyclic whole world that hides to the world of the derivation
+    ([ptyped_sem]). The induction carries Q at every renaming of the
+    whole world ([qren]), so that P-Connect can rename the private
+    constants of each side apart ([qren_side]), as [connect_hidden]
+    asks. The derivation itself is never renamed. *)
+
+Section sem.
+  Context (N : fuel) (Q : sworld → senv → proc → ty → Prop).
+  Context (Hterm : ∀ W Σ ΘB C0 t T c,
+    tfree T → (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 → pfree Σ →
+    (∀ o e, Σ !! o = Some e → scontr e.1) →
+    (∀ c, c ∈ C0 → ∃ S x m m', tsum_ok N m m' ∧ scontr S ∧
+       ΘB !! (c⁺)%cend = Some (TE S x m m) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ m' m')) →
+    typed W N (tenv_of (fhalf N) Σ ∪ ΘB) hc_empty [] (∅, None) t T c →
+    sworld_wf W → wok N W →
+    Q W Σ (C0, {[+ t +]}) T).
+  Context (Hconn : ∀ W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T,
+    Q W1 (Σ1 ∪ ΣC) (C1, E1) T → Q W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
+    tfree T → pfree (Σ1 ∪ ΣC) → pfree (Σ2 ∪ senv_dual ΣC) →
+    C1 ## chans_of (Σ1 ∪ ΣC) → C2 ## chans_of (Σ2 ∪ senv_dual ΣC) →
+    chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
+    C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
+    sworld_wf W1 → sworld_wf W2 → wok N (W1 ⊔ W2) →
+    Q (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T).
+  Context (Hmono : ∀ W W' Σ p T, W ⊑ₛ W' → Q W Σ p T → Q W' Σ p T).
+
+  Definition qren (W : sworld) (Σ : senv) (p : proc) (T : ty) : Prop :=
+    ∀ π, Q (sw_ren π W) (senv_ren (cb_f π) Σ) p (ty_ren (cb_f π) T).
+
+  (** One component renamed: its private constants leave B, its
+      interface and its hidden world stay. *)
+  Lemma qren_side W' Σ p T W (B : gset nat) :
+    qren W' Σ p T → sworld_wf W' → wok N W' → hides W' (iface Σ T) W →
+    ∃ W'', qren W'' Σ p T ∧ sworld_wf W'' ∧ wok N W'' ∧ hides W'' (iface Σ T) W ∧
+      ∀ a, a ∈ sw_consts W'' → a ∉ iface Σ T → a ∉ B.
+  Proof.
+    intros Hq Hw Hk [Hc Ho]. set (I := iface Σ T).
+    destruct (cb_avoid I (sw_consts W' ∖ I) B ltac:(set_solver)) as (π & HI & HP).
+    assert (∀ b, cb_f π b ∈ I → b ∈ I) as Hback.
+    { intros b Hb. destruct (decide (b ∈ I)) as [|Hn]; [done|]. exfalso.
+      assert (cb_f π (cb_f π b) = cb_f π b) as E by (by apply HI). apply cb_f_inj in E. rewrite E in Hb. done. }
+    exists (sw_ren π W'). split_and!.
+    - intros π'. apply (Hmono _ _ _ _ _ (sw_ren_comp π' π W')).
+      pose proof (Hq (cb_comp π' π)) as H. simpl in H.
+      rewrite <-senv_ren_comp, <-ty_ren_comp, (senv_ren_fix (cb_f π) Σ), (ty_ren_fix (cb_f π) T) in H; [exact H| |];
+        intros a Ha; apply HI; unfold I, iface; set_solver.
+    - by apply sworld_wf_ren.
+    - by apply wok_ren.
+    - split.
+      + intros a. simpl. rewrite elem_of_intersection, elem_of_map. intros [(b & -> & Hb) Ha].
+        pose proof (Hback b Ha) as HbI. rewrite HI in Ha |- * by done. apply Hc. set_solver.
+      + intros x y Hx Hy H. apply sw_lt_ren_inv in H. rewrite !(pt_ren_fix_croot π I) in H by done. by apply Ho.
+    - intros a. simpl. rewrite elem_of_map. intros (b & -> & Hb) Ha.
+      destruct (decide (b ∈ I)) as [HbI|HbI]; [rewrite HI in Ha by done; done|]. apply HP. set_solver.
+  Qed.
+
+  Lemma ptyped_qren W Σ p T : ptyped N W Σ p T →
+    ∃ W', qren W' Σ p T ∧ sworld_wf W' ∧ wok N W' ∧ hides W' (iface Σ T) W.
+  Proof.
+    induction 1 as [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Ht [Hw HW]
+                   |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T Hty1 IH1 Hty2 IH2 H12 H1C H2C HC HC1 HC2 HS].
+    - exists W. split_and!; [|done|done|by apply hides_restrict]. intros π.
+      apply (Hterm _ _ (tenv_ren (cb_f π) ΘB) C0 t _ c).
+      + by apply tfree_ren.
+      + intros o. unfold tenv_ren. by rewrite dom_fmap_L.
+      + by rewrite chans_of_ren.
+      + by apply pfree_ren.
+      + intros o e. unfold senv_ren. rewrite lookup_fmap. destruct (Σ !! o) as [e0|] eqn:E; [|done].
+        intros [= <-]. simpl. rewrite scontr_ren. exact (HΣc o e0 E).
+      + intros c' Hc'. destruct (Hd c' Hc') as (S & x & m & m' & Hm & HS & H1 & H2).
+        exists (sty_ren (cb_f π) S), (pt_ren (cb_f π) x), m, m'. unfold tenv_ren. rewrite !lookup_fmap, H1, H2.
+        simpl. rewrite scontr_ren. by rewrite <-dual_ren.
+      + pose proof (typed_ren π _ _ _ _ _ _ _ _ _ Ht) as H.
+        rewrite tenv_ren_union, tenv_of_ren in H. unfold sf_ren in H. simpl in H. rewrite set_map_empty in H. exact H.
+      + by apply sworld_wf_ren.
+      + by apply wok_ren.
+    - destruct IH1 as (W1' & Hq1 & Hw1 & Hk1 & Hh1), IH2 as (W2' & Hq2 & Hw2 & Hk2 & Hh2).
+      destruct (qren_side _ _ _ _ _ (iface (Σ2 ∪ senv_dual ΣC) TUnit) Hq1 Hw1 Hk1 Hh1)
+        as (V1 & Hv1 & Hwv1 & Hkv1 & Hh1' & Hav1).
+      destruct (qren_side _ _ _ _ _ (sw_consts V1 ∪ iface (Σ1 ∪ ΣC) T) Hq2 Hw2 Hk2 Hh2)
+        as (V2 & Hv2 & Hwv2 & Hkv2 & Hh2' & Hav2).
+      destruct (connect_hidden N V1 V2 W1 W2 _ _ (iface (Σ1 ∪ Σ2) T) Hwv1 Hwv2 Hh1' Hh2' Hav1 Hav2
+                  (iface_connect _ _ _ _) HS) as [HR Hh].
+      assert (wok N (V1 ⊔ V2)) as HJ by (apply (wok_join_iff N V1 V2 Hwv1 Hwv2); by split_and!).
+      exists (V1 ⊔ V2). split_and!; [|by apply swjoin_wf|done|exact Hh]. intros π.
+      pose proof (ptyped_pfree _ _ _ _ _ Hty1) as F1. pose proof (ptyped_pfree _ _ _ _ _ Hty2) as F2.
+      pose proof (ptyped_chans _ _ _ _ _ Hty1) as K1. pose proof (ptyped_chans _ _ _ _ _ Hty2) as K2.
+      simpl in K1, K2. pose proof (Hv1 π) as Q1. pose proof (Hv2 π) as Q2. simpl in Q2.
+      rewrite sw_ren_join, senv_ren_union, <-(chans_of_ren (cb_f π) ΣC).
+      rewrite senv_ren_union in Q1. rewrite senv_ren_union, senv_dual_ren in Q2.
+      apply Hconn; [exact Q1|exact Q2|by apply tfree_ren, (ptyped_tfree _ _ _ _ _ Hty1)
+        |rewrite <-senv_ren_union; by apply pfree_ren
+        |rewrite <-senv_dual_ren, <-senv_ren_union; by apply pfree_ren
+        |by rewrite <-senv_ren_union, chans_of_ren
+        |by rewrite <-senv_dual_ren, <-senv_ren_union, chans_of_ren
+        |by rewrite ?chans_of_ren..|by apply sworld_wf_ren|by apply sworld_wf_ren|].
+      rewrite <-sw_ren_join. by apply wok_ren.
+  Qed.
+
+  Theorem ptyped_sem W Σ p T : ptyped N W Σ p T →
+    ∃ W', sworld_wf W' ∧ wok N W' ∧ hides W' (iface Σ T) W ∧ Q W' Σ p T.
+  Proof.
+    intros Hty. destruct (ptyped_qren _ _ _ _ Hty) as (W' & Hq & Hw & Hk & Hh).
+    exists W'. split_and!; [done|done|done|]. pose proof (Hq cb_id) as H. simpl in H.
+    rewrite senv_ren_fix, ty_ren_fix in H by done. eapply Hmono; [|exact H].
+    split; simpl; [intros a; rewrite elem_of_map; set_solver|]. intros [x y] Hg.
+    simpl in Hg. by rewrite !pt_ren_fix in Hg.
+  Qed.
+End sem.

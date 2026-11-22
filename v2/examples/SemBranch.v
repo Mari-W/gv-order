@@ -30,9 +30,7 @@
                             constraint states y ≺ x̄ in Wa.
     - [sbv_thread_E], [sbv_deadlock_free] : the same for the variant
                             whose arms read their binder.
-    - [sbv_rejected]      : no world and no bound type the variant,
-                            in the full judgment and with hiding
-                            ([sbv_rejected_h]). *)
+    - [sbv_rejected]      : no world and no bound type the variant. *)
 
 From GV Require Export examples.Tools static.FundamentalProc compat.Redex.
 From GV Require Import static.Inversion cost.Exact.
@@ -529,14 +527,14 @@ Qed.
     its partner is not restricted, so it sits in the interface, at the
     same point in the thread's Θ. *)
 Lemma side_lookup N W Σ C0 u T :
-  fptyped N W Σ (C0, {[+ u +]}) T →
-  ∃ Θ c, typed W N Θ hc_empty [] (∅, None) u T c ∧
+  ptyped N W Σ (C0, {[+ u +]}) T →
+  ∃ W' Θ c, W = swrestrict W' (iface Σ T) ∧ sworld_wf W' ∧ typed W' N Θ hc_empty [] (∅, None) u T c ∧
     ∀ o, o ∈ fends u → edual o ∉ fends u →
       ∃ S x e, Σ !! o = Some (S, x) ∧ Θ !! o = Some e ∧ te_pt e = x.
 Proof.
-  intros H. apply fptyped_one in H as (ΘB & c & _ & HB & _ & _ & _ & HBs & Ht & _).
+  intros H. apply ptyped_one in H as (W' & ΘB & c & -> & _ & HB & _ & _ & _ & HBs & Ht & [Hw _]).
   pose proof (typed_tfacts _ _ _ _ _ _ _ _ _ Ht) as [Hd _].
-  exists (tenv_of (fhalf N) Σ ∪ ΘB), c. split; [done|]. intros o Ho Hn.
+  exists W', (tenv_of (fhalf N) Σ ∪ ΘB), c. split_and!; [done|done|done|]. intros o Ho Hn.
   destruct (Σ !! o) as [[S x]|] eqn:HΣ.
   - exists S, x, (TE S x (fhalf N) (fhalf N)). split_and!; [done| |done].
     apply lookup_union_Some_l. unfold tenv_of. by rewrite lookup_fmap, HΣ.
@@ -563,11 +561,11 @@ Proof. discriminate. Qed.
 Ltac fends_tac := unfold sbv_thread, sb_partner, sb_flag, sb_not, cl2, oc, od; simpl; set_unfold; intuition congruence.
 
 (** No world and no bound type the closed process of the variant. *)
-Theorem sbv_rejected N W : ¬ fptyped N W ∅ sbv_config TUnit.
+Theorem sbv_rejected N W : ¬ ptyped N W ∅ sbv_config TUnit.
 Proof.
-  intros H. pose proof (fptyped_wf _ _ _ _ _ H) as [_ HWf].
-  pose proof (λ x, wok_acyc N W HWf x) as Hirr.
-  apply fptyped_two in H as (W1 & W2 & Σ1 & Σ2 & ΣC & C1 & C2 & u1 & u2 & -> & HΣ & _ & Hu & H1 & H2 & _).
+  intros H.
+  apply ptyped_two in H as (W1 & W2 & Σ1 & Σ2 & ΣC & C1 & C2 & u1 & u2 & _ & HΣ & _ & Hu & H1 & H2 & HWf).
+  pose proof (λ x, wok_acyc N _ HWf x) as Hirr.
   symmetry in HΣ. pose proof (map_positive_l _ _ HΣ) as ->. rewrite (left_id_L ∅ (∪)) in HΣ. subst Σ2.
   rewrite !(left_id_L ∅ (∪)) in H1, H2.
   assert ((u1 = sbv_thread ∧ u2 = sb_partner) ∨ (u1 = sb_partner ∧ u2 = sbv_thread)) as Hcase.
@@ -586,41 +584,48 @@ Proof.
       apply gmultiset_elem_of_disj_union in Hp. rewrite !gmultiset_elem_of_singleton in Hp.
       destruct Hp as [Hp|Hp]; by apply Hne. }
   destruct Hcase as [[-> ->]|[-> ->]].
-  - destruct (side_lookup _ _ _ _ _ _ H1) as (Θt & ct & Ht & Hlt).
-    destruct (side_lookup _ _ _ _ _ _ H2) as (Θp & cp & Hp & Hlp).
+  - destruct (side_lookup _ _ _ _ _ _ H1) as (W1' & Θt & ct & -> & Hw1 & Ht & Hlt).
+    destruct (side_lookup _ _ _ _ _ _ H2) as (W2' & Θp & cp & -> & Hw2 & Hp & Hlp).
     destruct (Hlt oc) as (Sc & x & ec & Hc & Hec & <-); [fends_tac|fends_tac|].
     destruct (Hlt od) as (Sd & y & ed & Hd & Hed & <-); [fends_tac|fends_tac|].
     destruct (Hlp (edual oc)) as (Sc' & x' & ec' & Hc' & Hec' & <-); [fends_tac|fends_tac|].
     destruct (Hlp (edual od)) as (Sd' & y' & ed' & Hd' & Hed' & <-); [fends_tac|fends_tac|].
+    pose proof (senv_pt_iface _ TUnit _ _ _ Hc) as Ic. pose proof (senv_pt_iface _ TUnit _ _ _ Hd) as Id.
+    pose proof (senv_pt_iface _ TUnit _ _ _ Hc') as Ic'. pose proof (senv_pt_iface _ TUnit _ _ _ Hd') as Id'.
     rewrite (sdual_lookup _ _ _ _ Hc) in Hc'. rewrite (sdual_lookup _ _ _ _ Hd) in Hd'.
     injection Hc' as _ Hx'. injection Hd' as _ Hy'.
-    pose proof (slt_empty_w _ _ _ (sbv_thread_needs _ _ _ _ _ _ _ _ _ _ Ht Hec Hed (facts_const_wf _ (proj1 (fptyped_wf _ _ _ _ _ H1))))) as Ha.
+    pose proof (slt_empty_w _ _ _ (sbv_thread_needs _ _ _ _ _ _ _ _ _ _ Ht Hec Hed (facts_const_wf _ Hw1))) as Ha.
     pose proof (slt_empty_w _ _ _ (cl2_needs _ _ _ _ _ _ _ _ _ _ _ _
-      ocd_dual_ne Hp Hec' Hed' (facts_const_wf _ (proj1 (fptyped_wf _ _ _ _ _ H2))))) as Hb.
+      ocd_dual_ne Hp Hec' Hed' (facts_const_wf _ Hw2))) as Hb.
+    apply (swrestrict_lt_in _ (iface ΣC TUnit)) in Ha;
+      [|done|exact Id|exact Ic].
+    apply (swrestrict_lt_in _ (iface (senv_dual ΣC) TUnit)) in Hb;
+      [|done|exact Ic'|exact Id'].
     rewrite <-Hx', <-Hy', pt_dual_dual in Hb.
     apply (Hirr (te_pt ed)). eapply sw_lt_trans; [eapply sw_lt_mono; [apply swext_join_l|exact Ha]|].
     eapply sw_lt_mono; [apply swext_join_r|exact Hb].
-  - destruct (side_lookup _ _ _ _ _ _ H2) as (Θt & ct & Ht & Hlt).
-    destruct (side_lookup _ _ _ _ _ _ H1) as (Θp & cp & Hp & Hlp).
+  - destruct (side_lookup _ _ _ _ _ _ H2) as (W2' & Θt & ct & -> & Hw2 & Ht & Hlt).
+    destruct (side_lookup _ _ _ _ _ _ H1) as (W1' & Θp & cp & -> & Hw1 & Hp & Hlp).
     destruct (Hlt oc) as (Sc & x & ec & Hc & Hec & <-); [fends_tac|fends_tac|].
     destruct (Hlt od) as (Sd & y & ed & Hd & Hed & <-); [fends_tac|fends_tac|].
     destruct (Hlp (edual oc)) as (Sc' & p & ec' & Hc' & Hec' & <-); [fends_tac|fends_tac|].
     destruct (Hlp (edual od)) as (Sd' & q & ed' & Hd' & Hed' & <-); [fends_tac|fends_tac|].
+    pose proof (senv_pt_iface _ TUnit _ _ _ Hc) as Ic. pose proof (senv_pt_iface _ TUnit _ _ _ Hd) as Id.
+    pose proof (senv_pt_iface _ TUnit _ _ _ Hc') as Ic'. pose proof (senv_pt_iface _ TUnit _ _ _ Hd') as Id'.
     pose proof (sdual_lookup _ _ _ _ Hc') as Hc2. pose proof (sdual_lookup _ _ _ _ Hd') as Hd2.
     rewrite edual_edual in Hc2, Hd2. rewrite Hc2 in Hc. rewrite Hd2 in Hd.
     injection Hc as _ Hx. injection Hd as _ Hy.
-    pose proof (slt_empty_w _ _ _ (sbv_thread_needs _ _ _ _ _ _ _ _ _ _ Ht Hec Hed (facts_const_wf _ (proj1 (fptyped_wf _ _ _ _ _ H2))))) as Ha.
+    pose proof (slt_empty_w _ _ _ (sbv_thread_needs _ _ _ _ _ _ _ _ _ _ Ht Hec Hed (facts_const_wf _ Hw2))) as Ha.
     pose proof (slt_empty_w _ _ _ (cl2_needs _ _ _ _ _ _ _ _ _ _ _ _
-      ocd_dual_ne Hp Hec' Hed' (facts_const_wf _ (proj1 (fptyped_wf _ _ _ _ _ H1))))) as Hb.
+      ocd_dual_ne Hp Hec' Hed' (facts_const_wf _ Hw1))) as Hb.
+    apply (swrestrict_lt_in _ (iface (senv_dual ΣC) TUnit)) in Ha;
+      [|done|exact Id|exact Ic].
+    apply (swrestrict_lt_in _ (iface ΣC TUnit)) in Hb;
+      [|done|exact Ic'|exact Id'].
     rewrite <-Hx, <-Hy, pt_dual_dual in Ha.
     apply (Hirr (te_pt ec')). eapply sw_lt_trans; [eapply sw_lt_mono; [apply swext_join_l|exact Hb]|].
     eapply sw_lt_mono; [apply swext_join_r|exact Ha].
 Qed.
-
-(** With hiding the variant is rejected too: a hidden derivation is the
-    hiding of a full one ([ptyped_full]). *)
-Theorem sbv_rejected_h N W : ¬ ptyped N W ∅ sbv_config TUnit.
-Proof. intros H. destruct (ptyped_full _ _ _ _ _ H) as (W' & H' & _). exact (sbv_rejected N W' H'). Qed.
 
 Print Assumptions sb_thread_E.
 Print Assumptions sb_deadlock_free.
@@ -628,4 +633,3 @@ Print Assumptions sbv_thread_E.
 Print Assumptions sbv_deadlock_free.
 Print Assumptions Tbad_not_cons.
 Print Assumptions sbv_rejected.
-Print Assumptions sbv_rejected_h.

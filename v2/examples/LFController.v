@@ -357,7 +357,7 @@ Proof.
   Unshelve. all: first [exact None | simpl; lia | simpl; done].
 Qed.
 
-Theorem ctl_lftyped : ∃ N, ∅ ⊩^N _ W_ctl (∅, {[+ ctl_main +]}) : TUnit.
+Theorem ctl_lftyped : ∃ N, ∅ ⊩^N _ (swrestrict W_ctl (iface ∅ TUnit)) (∅, {[+ ctl_main +]}) : TUnit.
 Proof.
   destruct ctl_typedN as (c & Ht). exists 6.
   eapply lf_main_typed; [apply W_ctl_wf|constructor|exact Ht].

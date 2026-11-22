@@ -1,12 +1,11 @@
 (** * Shared constants and hiding
 
-    The full judgment [fptyped] composes two components at their whole
-    worlds and asks [sacyc (W1|S ⊔ W2|S)] at S = [swshared W1 W2], the
-    constants both worlds hold. Repair (a) of the open item in
-    docs/redesign/pending.md asked whether S ⊆ the roots of the points
-    of the cut Σ_C in every derivation. It fails, and dropping constants
-    no derivation needs does not save it. The hidden judgment [ptyped]
-    (repair (b)) makes S irrelevant.
+    Two components composed at their whole worlds share every constant
+    both worlds hold, S = [swshared W1 W2]. Repair (a) of the open item
+    in docs/redesign/pending.md asked whether S ⊆ the roots of the
+    points of the cut Σ_C in every derivation. It fails, and dropping
+    constants no derivation needs does not save it. The hidden judgment
+    [ptyped] (repair (b)) makes S irrelevant.
 
     Each component closes two channels of its own in one order,
 
@@ -14,11 +13,9 @@
 
     The first close of each thread waits on the other channel, so E-Close
     asks 0 ≺ (0·0)‾ and 0‾ ≺ 0·0. Both are facts of the world W0 with the
-    one constant 0. [comp_typed] types P(c, d) in [fptyped] over the
-    empty interface at W0 ⊔ W0. Then P(c, d) ∥ P(e, f) types by the full
-    P-Connect over the empty cut ([shared_not_cut]), and 0 is a shared
-    constant although the cut has no point. Any well-formed world that
-    derives the first fact holds 0 ([fact_needs_zero]).
+    one constant 0, and any well-formed world that derives the first
+    fact holds 0 ([fact_needs_zero]). So the whole worlds of P(c, d) and
+    P(e, f) share 0 although the empty cut between them has no point.
 
     With hiding the thread worlds restrict to the interface constant 0,
     and P-Connect over the cut at 0 hides 0. So P(c, d) types over the
@@ -139,29 +136,6 @@ Proof.
     by apply cl2_typed.
 Qed.
 
-Lemma cl2_term o1 o2 x y :
-  o1 ≠ o2 → (o1‾)%cend ≠ o2 → sw_facts W0 (FLt x y‾) →
-  fptyped None W0 (senv2 o1 o2 x y) (∅, {[+ cl2 o1 o2 +]}) TUnit.
-Proof.
-  intros Hne Hd Hf.
-  apply (fp_term None W0 _ ∅ ∅ _ TUnit (fadd (fadd (Some 0) (Some 1)) (fadd (Some 0) (Some 1)))).
-  - constructor.
-  - intros o'. rewrite dom_empty_L. set_solver.
-  - set_solver.
-  - intros o. unfold senv2. rewrite dom_union_L, !dom_singleton_L, !elem_of_union, !elem_of_singleton.
-    assert (∀ o', (o'‾)%cend ≠ o') as Hn by (intros []; discriminate).
-    intros [->| ->] [E|E].
-    + by apply (Hn o1).
-    + by apply Hd.
-    + apply Hd. rewrite <-E. apply edual_edual.
-    + by apply (Hn o2).
-  - apply senv2_contr.
-  - set_solver.
-  - rewrite map_union_empty. unfold tenv_of, senv2. rewrite map_fmap_union, !map_fmap_singleton.
-    by apply cl2_typed.
-  - apply swf_ok_wok, W0_ok.
-Qed.
-
 (** ** One component P(c, d), over the empty interface *)
 
 Definition comp (c d : chan) : gmultiset expr :=
@@ -169,60 +143,6 @@ Definition comp (c d : chan) : gmultiset expr :=
 
 Lemma chans_of_empty : chans_of ∅ = ∅.
 Proof. unfold chans_of. by rewrite dom_empty_L, set_map_empty. Qed.
-
-Lemma comp_typed c d :
-  c ≠ d → fptyped None (W0 ⊔ W0) ∅ (({[c]} ∪ {[d]}), comp c d) TUnit.
-Proof.
-  intros Hcd.
-  set (ΣC := senv2 (c⁺)%cend (d⁺)%cend p0 (p0·0)).
-  assert (senv_dual ΣC = senv2 (c⁻)%cend (d⁻)%cend p0‾ (p0·0)‾) as Ed.
-  { unfold senv_dual, ΣC, senv2. rewrite map_fmap_union, !map_fmap_singleton, kmap_union, !kmap_singleton.
-    done. typeclasses eauto. }
-  assert (chans_of ΣC = ({[c]} ∪ {[d]})) as Ec.
-  { unfold chans_of, ΣC, senv2. rewrite dom_union_L, !dom_singleton_L, set_map_union_L, !set_map_singleton_L.
-    done. }
-  pose proof (fp_connect_join None W0 W0 ∅ ∅ ΣC ∅ ∅ {[+ cl2 (c⁺)%cend (d⁺)%cend +]}
-                {[+ cl2 (c⁻)%cend (d⁻)%cend +]} TUnit) as H.
-  rewrite Ec, chans_of_empty, !(left_id_L ∅ (∪)), Ed in H. unfold comp. apply H; clear H.
-  - apply cl2_term; [congruence|cbn; congruence|]. by left.
-  - apply cl2_term; [congruence|cbn; congruence|]. right. by rewrite pt_dual_dual.
-  - set_solver.
-  - set_solver.
-  - set_solver.
-  - set_solver.
-  - set_solver.
-  - set_solver.
-  - apply W0_wf.
-  - apply W0_wf.
-  - apply swf_wok, W00_ok.
-Qed.
-
-(** ** Two components over the empty cut share the constant 0 *)
-
-Theorem shared_not_cut :
-  fptyped None ((W0 ⊔ W0) ⊔ (W0 ⊔ W0)) ∅
-    (({["c"]} ∪ {["d"]}) ∪ ({["e"]} ∪ {["f"]}) ∪ chans_of ∅, comp "c" "d" ⊎ comp "e" "f") TUnit ∧
-  0 ∈ swshared (W0 ⊔ W0) (W0 ⊔ W0) ∧
-  (∀ x, x ∈ dom (∅ : senv) → False).
-Proof.
-  split_and!; [|unfold swshared; simpl; set_solver|intros x; rewrite dom_empty_L; set_solver].
-  pose proof (fp_connect_join None (W0 ⊔ W0) (W0 ⊔ W0) ∅ ∅ ∅ ({["c"]} ∪ {["d"]}) ({["e"]} ∪ {["f"]})
-                (comp "c" "d") (comp "e" "f") TUnit) as H.
-  assert (senv_dual ∅ = ∅) as Ed by (unfold senv_dual; by rewrite fmap_empty, kmap_empty).
-  rewrite Ed, chans_of_empty, !(left_id_L ∅ (∪)) in H. rewrite chans_of_empty.
-  apply H; clear H.
-  - by apply comp_typed.
-  - by apply comp_typed.
-  - set_solver.
-  - set_solver.
-  - set_solver.
-  - set_solver.
-  - set_solver.
-  - set_solver.
-  - apply W00_ok.
-  - apply W00_ok.
-  - apply swf_wok, swf_meas. intros x y [[H|H]|[H|H]]; by apply W0_facts.
-Qed.
 
 (** ** The constant is used
 

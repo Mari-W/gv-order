@@ -6,10 +6,10 @@
     renamed by [emap (cmap h)] and the keys of Θ by [kmap (cmap h)]
     ([typed_cren]). A typed process stays typed when the keys of its
     interface, its restricted channels and its threads are renamed
-    ([fptyped_cren]). Worlds, points and types do not mention channels,
+    ([ptyped_cren]). Worlds, points and types do not mention channels,
     so they stay. Together with the renaming of constants
-    ([fptyped_ren], static/Hiding.v) this moves a typed partner from one
-    end and point to another (examples/CopycatTwo.v). *)
+    ([ptyped_ren], examples/CopycatTwo.v) this moves a typed partner
+    from one end and point to another. *)
 
 From GV Require Export static.Typing.
 
@@ -149,15 +149,22 @@ Section cren.
   Lemma tenv_of_cren a (Σ : senv) : tenv_of a (kmap g Σ) = kmap g (tenv_of a Σ).
   Proof. unfold tenv_of. by rewrite kfmap. Qed.
 
+  Lemma iface_cren (Σ : senv) T : iface (kmap g Σ) T = iface Σ T.
+  Proof.
+    unfold iface. f_equal. apply set_eq. intros a. rewrite !elem_of_senv_consts. split.
+    - intros (o & s & x & Ho & Ha). apply lk_Some in Ho as (o' & -> & Ho). eauto.
+    - intros (o & s & x & Ho & Ha). exists (g o), s, x. split; [by rewrite lk|done].
+  Qed.
+
   (** ** Processes *)
 
-  Theorem fptyped_cren N W Σ p T :
-    fptyped N W Σ p T → fptyped N W (kmap g Σ) (set_map h p.1, emapE g p.2) T.
+  Theorem ptyped_cren N W Σ p T :
+    ptyped N W Σ p T → ptyped N W (kmap g Σ) (set_map h p.1, emapE g p.2) T.
   Proof.
     induction 1 as [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Ht HW
                    |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 H12 H1C H2C HC HC1 HC2 HS];
       cbn [fst snd] in *.
-    - rewrite emapE_singleton. apply (fp_term N W _ (kmap g ΘB) _ (emap g t) T c).
+    - rewrite emapE_singleton, <-(iface_cren Σ). apply (p_term N W _ (kmap g ΘB) _ (emap g t) T c).
       + done.
       + intros o. rewrite kdom. split.
         * intros Ho. apply elem_of_map in Ho as (o' & -> & Ho). rewrite ech_cmap.
@@ -176,9 +183,9 @@ Section cren.
         * change (ENeg (h c0)) with (g (ENeg c0)). by rewrite lk.
       + rewrite tenv_of_cren, <-kunion. exact (typed_cren _ _ _ _ _ _ _ _ _ Ht).
       + done.
-    - rewrite kunion. rewrite !set_map_h_union, <-(chans_of_cren ΣC), emapE_disj_union.
+    - rewrite <-(iface_cren (Σ1 ∪ Σ2)), kunion. rewrite !set_map_h_union, <-(chans_of_cren ΣC), emapE_disj_union.
       rewrite !kunion in IH1, IH2. rewrite <-senv_dual_cren in IH2.
-      apply fp_connect; [exact IH1|exact IH2
+      apply p_connect; [exact IH1|exact IH2
         |by rewrite !chans_of_cren; apply set_map_h_disj|by rewrite !chans_of_cren; apply set_map_h_disj
         |by rewrite !chans_of_cren; apply set_map_h_disj|by apply set_map_h_disj
         |rewrite !chans_of_cren, <-set_map_h_union; by apply set_map_h_disj

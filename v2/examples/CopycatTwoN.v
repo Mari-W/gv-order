@@ -99,12 +99,13 @@ Qed.
 Lemma div2_ge K : 4 ≤ K → 2 ≤ Nat.div2 K.
 Proof. intros HK. pose proof (Nat.div2_odd K) as E. destruct (Nat.odd K); simpl in E; lia. Qed.
 
-Theorem fwdq_term_fin K p : 4 ≤ K → fptyped (Some K) (W_q p) (Σq p) (∅, {[+ fwdq_t p +]}) TUnit.
+Theorem fwdq_term_fin K p : 4 ≤ K →
+  ptyped (Some K) (swrestrict (W_q p) (iface (Σq p) TUnit)) (Σq p) (∅, {[+ fwdq_t p +]}) TUnit.
 Proof.
   intros HK. pose proof (div2_ge K HK) as Hh. set (h := Nat.div2 K) in Hh.
   destruct (fb_typed (W_q p) hc_empty (Some K) p 0 px pyn (h - 0) (h - 0) h (W_q_facts p) ltac:(lia) ltac:(lia) Hh)
     as [c Hc].
-  apply (fp_term (Some K) (W_q p) (Σq p) ∅ ∅ _ TUnit (fadd (fadd (Some 0) (Some 0)) c)).
+  apply (p_term (Some K) (W_q p) (Σq p) ∅ ∅ _ TUnit (fadd (fadd (Some 0) (Some 0)) c)).
   - constructor.
   - intros o. rewrite dom_empty_L. set_solver.
   - set_solver.
@@ -131,15 +132,15 @@ Qed.
 (** ** Two-sided expansion at a finite bound *)
 
 Theorem fwdp_expand2_fin K p W1 W2 Σ1 Σ2 C1 C2 E1 E2 T : 4 ≤ K →
-  fptyped (Some K) W1 (Σ1 ∪ Σxp p) (C1, E1) T →
-  fptyped (Some K) W2 (Σ2 ∪ senv_dual (Σxp p)) (C2, E2) TUnit →
+  ptyped (Some K) W1 (Σ1 ∪ Σxp p) (C1, E1) T →
+  ptyped (Some K) W2 (Σ2 ∪ senv_dual (Σxp p)) (C2, E2) TUnit →
   Σ1 ##ₘ Σxp p → Σ2 ##ₘ senv_dual (Σxp p) →
   chans_of Σ1 ## chans_of Σ2 → "a" ∉ chans_of Σ1 → "a" ∉ chans_of Σ2 →
   C1 ## C2 → C1 ## chans_of Σ2 ∪ {["a"]} → C2 ## chans_of Σ1 ∪ {["a"]} →
-  wok (Some K) (swrestrict W1 (swshared W1 W2) ⊔ swrestrict W2 (swshared W1 W2)) →
+  wok (Some K) (W1 ⊔ W2) →
   "b" ∉ chans_of Σ1 → "b" ∉ chans_of Σ2 → "b" ∉ C1 → "b" ∉ C2 →
   1 ∉ sw_consts W1 → 1 ∉ sw_consts W2 →
-  fptyped (Some K) (W1 ⊔ (W_q p ⊔ sw_ren sw01 W2)) (Σ1 ∪ senv_ren (cswap 0 1) Σ2)
+  ∃ W, ptyped (Some K) W (Σ1 ∪ senv_ren (cswap 0 1) Σ2)
     (C1 ∪ (∅ ∪ C2 ∪ {["b"]}) ∪ {["a"]},
      E1 ⊎ ({[+ fwdq_t p +]} ⊎ emapE (cmap (sswap "a" "b")) E2)) T.
 Proof. intros HK. apply fwdp_expand2_N, fwdq_term_fin, HK. Qed.

@@ -371,6 +371,8 @@ and for `pcomps` of the n-ary rule.
 
 ### F11. One process judgment (blocks `p-typing`, `th-fund-proc`)
 
+**Status (fx-judg).** Done. `fptyped`, `fp_term`, `fp_connect` and their lemmas are gone, and `ptyped` is the one process judgment. The process fundamental theorems go by one induction on `ptyped` (`ptyped_sem`, static/Hiding.v). It proves a property of components at whole worlds that P-Term gives, P-Connect composes and extension of worlds keeps, at an acyclic whole world that hides to the world of the derivation (well-founded at a finite N). The induction proves the property at each renaming of the whole world, so P-Connect renames the private constants of each side apart (`qren_side`) and the derivation is never renamed. `fundamental_proc_h`, `live_fundamental_proc_h` and `lf_fundamental_h` are its instances. `fptyped_ren` becomes `ptyped_ren`, whose renamed derivation sits at a world with order inside the renamed world, and `fptyped_cren` becomes `ptyped_cren`. The examples type at the hidden world of P-Term or at an existential world.
+
 **Current.** `ptyped` (static/Typing.v:353) and `fptyped` (static/Typing.v:248)
 have the same two rules, the hidden one restricting the world of the
 conclusion and the full one keeping it. `ptyped_full` and `fptyped_ptyped`
@@ -395,6 +397,8 @@ already. The renaming lemma must be available on `ptyped` derivations, which
 **Confidence.** Medium.
 
 ### F12. `dftyped` as the instance $N = \infty$ (blocks `r-*`, `th-conserv`)
+
+**Status (fx-judg).** Done before this pass, no change. `dftyped` has been the definition `typed W None (tenv_df Θ) Γ (lenv_df Δ) F e (ty_df T) None` since M.1 (eaf3af4), and the `d_*` of static/Conservativity.v are lemmas that conclude by the rules `e_*`, not constructors. `typed_dftyped` is the erasure of `typed W N` into the instance N = ∞, and `conservative` states the two directions at N = ∞.
 
 **Current.** `dftyped` (static/Conservativity.v, rules `d_unit` … `d_open`,
 25 constructors) duplicates `typed` without annotations, and `conservative`
