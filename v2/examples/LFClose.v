@@ -21,12 +21,13 @@ Qed.
 Definition cl (o : cend) : expr := EClose (Chan o).
 
 Lemma cl_typed N o x a m :
+  fle a m →
   typed W_cl (Some N) {[o := TE SEnd x a m]} hc_empty [] (∅, None) (cl o) TUnit
     (fadd (Some 0) (Some 1)).
 Proof.
-  eapply (e_close W_cl (Some N) _ _ _ _ _ SEnd); [reflexivity| |].
+  intros Ham. eapply (e_close W_cl (Some N) _ _ _ _ _ SEnd); [reflexivity| |].
   - simpl. split_and!; [intros y Hy; exfalso; set_solver|done|done].
-  - apply e_chan. intros ? Hin. inversion Hin.
+  - apply e_chan; [intros ? Hin; inversion Hin|solve [done|apply fle_refl|cbn; lia]].
 Qed.
 
 Lemma cl_term N o x : fptyped (Some N) W_cl {[o := (SEnd, x)]} (∅, {[+ cl o +]}) TUnit.
@@ -38,7 +39,7 @@ Proof.
   - apply pfree_singleton.
   - intros o' e' He. apply lookup_singleton_Some in He as [_ <-]. done.
   - set_solver.
-  - rewrite map_union_empty. unfold tenv_of. rewrite map_fmap_singleton. apply cl_typed.
+  - rewrite map_union_empty. unfold tenv_of. rewrite map_fmap_singleton. apply cl_typed, fle_refl.
   - apply sw_empty_ok.
 Qed.
 

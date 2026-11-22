@@ -638,7 +638,7 @@
      "id": "ty-ann",
      "title": "Annotations and tickets",
      "formula": "\\begin{array}{c}\\sym{ann.fuel}{a, c, m, N \\in \\mathbb{N} \\cup \\{\\infty\\} \\qquad \\infty - c = \\infty}\\\\[3ex]\\begin{array}{l}\n\\sym{ty.tickets}{S_x^{a,m} \\qquad a \\leq m \\qquad m \\in \\mathbb{N} \\cup \\{\\infty\\}} \\\\\n\\sym{ann.tsum}{\\mathsf{tk}(o) + \\mathsf{tk}(\\overline{o}) \\leq N}\n\\end{array}\\\\[3ex]\\sym{ann.tydf}{\\mathsf{ty\\_df}:\\quad a = c = m = N = \\infty}\\end{array}",
-     "caption": "Credits $a$, costs $c$, tickets $m$ and the bound $N$ are numbers or $\\infty$. An end has $m$ tickets with $a \\leq m$, and the tickets of the two ends of a channel sum to at most $N$, so an end with $m$ tickets has a partner with at most $N - m$. With each annotation at $\\infty$, written $\\mathsf{ty\\_df}$, lock-free typing is deadlock-free typing, which [[th-conserv|conservativity]] states. The [[t-lf-counters|counters block]] says what the two numbers of an end do.",
+     "caption": "Credits $a$, costs $c$, tickets $m$ and the bound $N$ are numbers or $\\infty$. An end has $m$ tickets with $a \\leq m$, and [[r-base|E-Chan]] and [[t-agecap|aging]] keep $a \\leq m$ on each end of a context. The tickets of the two ends of a channel sum to at most $N$, so an end with $m$ tickets has a partner with at most $N - m$. With each annotation at $\\infty$, written $\\mathsf{ty\\_df}$, lock-free typing is deadlock-free typing, which [[th-conserv|conservativity]] states. The [[t-lf-counters|counters block]] says what the two numbers of an end do.",
      "why": "These are the numbers lock-free typing adds to types and judgments. At $\\infty$ each premise about them holds, so the deadlock-free rules are the lock-free rules read at $N = \\infty$.",
      "modes": [
       "lf"
@@ -1125,7 +1125,7 @@
      "id": "t-agecap",
      "title": "Aging",
      "formula": "\\begin{array}{c}\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{age.free}{\\sym{ty.tfree}{\\mathsf{tfree}}\\,T}\\end{array}}{T - c = T}\\;\\textsf{Age-Free} \\qquad \\dfrac{\\begin{array}{c}\\sym{age.credit}{c \\leq a}\\end{array}}{S_x\\inmode{lf}{^{a}} - c = S_x^{a - c}}\\;\\textsf{Age-Credit} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{age.idle}{\\sym{fu.idle}{\\mathsf{idle}}\\,S}\\end{array}}{S_x\\inmode{lf}{^{a}} - c = S_x\\inmode{lf}{^{\\max(a - c, 0)}}}\\;\\textsf{Age-Idle} \\qquad \\dfrac{\\begin{array}{c}\\sym{age.credit}{c \\leq a}\\end{array}}{(T \\mathrel{\\sym{ty.arrow}{\\multimap}} U)\\inmode{lf}{^{a}} - c = (T \\mathrel{\\sym{ty.arrow}{\\multimap}} U)^{a - c}}\\;\\textsf{Age-Arr} \\\\[2ex] \\sym{age.agg}{(T_1 \\otimes T_2) - c = (T_1 - c) \\otimes (T_2 - c) \\qquad (T_1 \\oplus T_2) - c = (T_1 - c) \\oplus (T_2 - c) \\qquad (\\exists^{l}\\bar\\iota.\\,C.\\,T) - c = \\exists^{l}\\bar\\iota.\\,C.\\,(T - c)}\\end{array}\\end{array}",
-     "caption": "$T - c$ lowers the credits of [[ty-ann]] on the ends and closures in $T$ by $c$. It requires $c \\leq a$ for ends that are not idle and for closures, and leaves $\\mathsf{tfree}$ types of [[ty-kinds]] unchanged. A closure at credit $a$ captures its context aged by $a$, so its body is typed with each captured end at its own credit minus $a$. The [[t-judgment|judgment]] ages what is held, and [[r-fun|E-Abs]] and [[r-data|E-Pair]] show the two uses.",
+     "caption": "$T - c$ lowers the credits of [[ty-ann]] on the ends and closures in $T$ by $c$. It requires $c \\leq a$ for ends that are not idle and for closures, and leaves $\\mathsf{tfree}$ types of [[ty-kinds]] unchanged. A closure at credit $a$ captures its context aged by $a$, so its body is typed with each captured end at its own credit minus $a$. The [[t-judgment|judgment]] ages what is held, and [[r-fun|E-Abs]] and [[r-data|E-Pair]] show the two uses. Aging a context of ends also asks $a \\leq m$ of each end before it loses credit, which together with [[r-base|E-Chan]] keeps $a \\leq m$ on each end of a context that types a term.",
      "why": "An action of the thread postpones the ends the thread holds by one step. Aging records this on the types of held values, and capture records it for the ends a closure takes along. An idle end has no partner that waits, so its credit may fall to $0$ without a check, which lets the [[t-lf-counters|counters]] of idle ends stay unbounded across a loop.",
      "modes": [
       "lf"
@@ -1155,8 +1155,8 @@
     {
      "id": "r-base",
      "title": "Unit, variables and ends",
-     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\ast : \\ast\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-Unit}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\end{array}}{\\Gamma ; \\sym{ctx.only}{\\Delta, i : T} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} i : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-Var}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\end{array}}{\\Gamma ; \\sym{ctx.only}{\\Delta, o : \\sym{ty.sess}{S_x\\inmode{lf}{^{a,m}}}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} o : \\sym{ty.sess}{S_x\\inmode{lf}{^{a,m}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-Chan}\\end{array}",
-     "caption": "$\\ast$ uses no entry of $\\Delta$, and a [[syn-terms|variable or an end]] is typed by its own entry. The remaining entries must be unlimited, as [[ty-kinds]] defines.",
+     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\ast : \\ast\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-Unit}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\end{array}}{\\Gamma ; \\sym{ctx.only}{\\Delta, i : T} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} i : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-Var}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-Chan.crtk}{a \\leq m}}\\end{array}}{\\Gamma ; \\sym{ctx.only}{\\Delta, o : \\sym{ty.sess}{S_x\\inmode{lf}{^{a,m}}}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} o : \\sym{ty.sess}{S_x\\inmode{lf}{^{a,m}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-Chan}\\end{array}",
+     "caption": "$\\ast$ uses no entry of $\\Delta$, and a [[syn-terms|variable or an end]] is typed by its own entry. The remaining entries must be unlimited, as [[ty-kinds]] defines. \\inmode{lf}{E-Chan asks that the credit of the end is at most its [[ty-ann|tickets]].}",
      "why": "Unused unlimited entries are dropped at the leaves of a derivation, so the rules need no weakening rule. [[p-typing|P-Term]] closes a derivation at the top.",
      "source": [
       {
@@ -2343,7 +2343,7 @@
     {
      "id": "th-chain",
      "title": "How the results fit together",
-     "formula": "\\begin{array}{rcl}\n\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{\\infty}}_W} p : T & \\overset{\\sym{th.fundamental-proc}{\\textsf{fundamental\\_proc\\_h}}}{\\Longrightarrow} & \\Sigma \\sym{sj.h}{\\mathrel{\\sym{sj.term}{\\vDash}}^{h}}_W p : T \\\\[1ex]\n\\varnothing \\sym{sj.h}{\\mathrel{\\sym{sj.term}{\\vDash}}^{h}}_W p : T & \\overset{\\sym{th.adequacy-h}{\\textsf{adequacy\\_h}}}{\\Longrightarrow} & \\sym{prop.df}{\\mathsf{deadlock\\_free}}\\,p\n\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\sym{th.em}{\\mathsf{EM}} \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_{W\\inmode{lf}{,N}} t : T\\ !\\ c \\land \\sym{guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\land \\sym{w.sat}{R \\mathrel{\\sym{sj.proc}{\\vDash}} W}}\\inmodeplain{lf}{&}\\inmode{lf}{\\overset{\\sym{th.live-fundamental-ranked}{\\textsf{live\\_fundamental\\_ranked}}}{\\Longrightarrow}}\\inmodeplain{lf}{&}\\inmode{lf}{\\sym{th.df}{\\Delta_{df}} \\sym{sj.term}{\\mathrel{\\sym{sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{\\varnothing}_R t : T_{df}}\n\\inmodeplain{lf}{\\\\[1ex]}\\inmode{lf}{\\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_{W\\inmode{lf}{,N}} t : T\\ !\\ c \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\sym{th.crle}{\\mathsf{cr}(\\Delta) \\leq N}}\\inmodeplain{lf}{&}\\inmode{lf}{\\overset{\\sym{th.fsem-of-cost}{\\textsf{fsem\\_of\\_cost}}}{\\Longrightarrow}}\\inmodeplain{lf}{&}\\inmode{lf}{\\sym{fu.fsem}{\\mathsf{fsem}\\,N\\,\\sym{th.styof}{\\Delta\\inmode{lf}{^{N}}}\\,t}}\n\\inmodeplain{lf}{\\\\[1ex]}\\inmode{lf}{\\sym{th.em}{\\mathsf{EM}} \\land \\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{N}}_W} p : T \\land \\sym{guard.proc}{\\vdash\\!\\triangleright p}}\\inmodeplain{lf}{&}\\inmode{lf}{\\overset{\\sym{th.lf-fundamental}{\\textsf{lf\\_fundamental\\_h}}}{\\Longrightarrow}}\\inmodeplain{lf}{&}\\inmode{lf}{\\Sigma \\sym{sp.lfsemh}{\\mathrel{\\sym{sp.lfsem}{\\Vvdash}}^{N,h}}_W p : T}\n\\inmodeplain{lf}{\\\\[1ex]}\\inmode{lf}{\\sym{w.kind}{\\mathsf{ranked}}\\,R \\land \\varnothing \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_R p : T}\\inmodeplain{lf}{&}\\inmode{lf}{\\overset{\\sym{th.lf-adequacy}{\\textsf{lf\\_adequacy}}}{\\Longrightarrow}}\\inmodeplain{lf}{&}\\inmode{lf}{\\sym{prop.lf}{\\mathsf{lock\\_free}}\\,p}\n\\end{array}",
+     "formula": "\\begin{array}{rcl}\n\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{\\infty}}_W} p : T & \\overset{\\sym{th.fundamental-proc}{\\textsf{fundamental\\_proc\\_h}}}{\\Longrightarrow} & \\Sigma \\sym{sj.h}{\\mathrel{\\sym{sj.term}{\\vDash}}^{h}}_W p : T \\\\[1ex]\n\\varnothing \\sym{sj.h}{\\mathrel{\\sym{sj.term}{\\vDash}}^{h}}_W p : T & \\overset{\\sym{th.adequacy-h}{\\textsf{adequacy\\_h}}}{\\Longrightarrow} & \\sym{prop.df}{\\mathsf{deadlock\\_free}}\\,p\n\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\sym{th.em}{\\mathsf{EM}} \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_{W\\inmode{lf}{,N}} t : T\\ !\\ c \\land \\sym{guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\land \\sym{w.sat}{R \\mathrel{\\sym{sj.proc}{\\vDash}} W}}\\inmodeplain{lf}{&}\\inmode{lf}{\\overset{\\sym{th.live-fundamental-ranked}{\\textsf{live\\_fundamental\\_ranked}}}{\\Longrightarrow}}\\inmodeplain{lf}{&}\\inmode{lf}{\\sym{th.df}{\\Delta_{df}} \\sym{sj.term}{\\mathrel{\\sym{sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{\\varnothing}_R t : T_{df}}\n\\inmodeplain{lf}{\\\\[1ex]}\\inmode{lf}{\\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_{W\\inmode{lf}{,N}} t : T\\ !\\ c \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T}\\inmodeplain{lf}{&}\\inmode{lf}{\\overset{\\sym{th.fsem-of-cost}{\\textsf{fsem\\_of\\_cost}}}{\\Longrightarrow}}\\inmodeplain{lf}{&}\\inmode{lf}{\\sym{fu.fsem}{\\mathsf{fsem}\\,N\\,\\sym{th.styof}{\\Delta\\inmode{lf}{^{N}}}\\,t}}\n\\inmodeplain{lf}{\\\\[1ex]}\\inmode{lf}{\\sym{th.em}{\\mathsf{EM}} \\land \\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{N}}_W} p : T \\land \\sym{guard.proc}{\\vdash\\!\\triangleright p}}\\inmodeplain{lf}{&}\\inmode{lf}{\\overset{\\sym{th.lf-fundamental}{\\textsf{lf\\_fundamental\\_h}}}{\\Longrightarrow}}\\inmodeplain{lf}{&}\\inmode{lf}{\\Sigma \\sym{sp.lfsemh}{\\mathrel{\\sym{sp.lfsem}{\\Vvdash}}^{N,h}}_W p : T}\n\\inmodeplain{lf}{\\\\[1ex]}\\inmode{lf}{\\sym{w.kind}{\\mathsf{ranked}}\\,R \\land \\varnothing \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_R p : T}\\inmodeplain{lf}{&}\\inmode{lf}{\\overset{\\sym{th.lf-adequacy}{\\textsf{lf\\_adequacy}}}{\\Longrightarrow}}\\inmodeplain{lf}{&}\\inmode{lf}{\\sym{prop.lf}{\\mathsf{lock\\_free}}\\,p}\n\\end{array}",
      "caption": "Typing gives the hidden semantic judgment, and that judgment gives deadlock freedom. Both steps use the relation $(V, E, P)$ at the step costs $\\kappa_{DF}$ over strict worlds, and neither needs a classical hypothesis. \\inmode{lf}{Lock freedom uses the same relation at $\\kappa_L$, which excludes internal divergence, together with fuel, over ranked worlds, the two columns of [[fu-vs]].} \\inmode{lf}{The lock-free process relation combines both for each thread.} \\inmode{lf}{Lock-free adequacy measures a wait on $o$ by $\\mu(t) = (\\varrho(\\mathsf{pt}\\,o), f)$, the ordinal rank of the point of $o$ and the counter $f$ of the dual end $\\overline{o}$.} \\inmode{lf}{A step of the thread holding $\\overline{o}$ on another end decreases $f$, which F-Count keeps at $1$ or more.} \\inmode{lf}{A link gives the waiting thread a partner with a lower counter, by the premise of E-Link and the bound on tickets.} \\inmode{lf}{So the thread holding $\\overline{o}$ acts on $\\overline{o}$ after finitely many steps.} \\inmode{lf}{Excluded middle enters at the creations under $\\mathsf{gen\\_new}$ and at the existential property of ordinal indices.} The arrows are proved in [[th-fund-proc]], [[th-adeq]] and [[th-terms]].",
      "why": "Each arrow is one theorem of this section. \\inmode{lf}{The lock-free rows show what lock freedom adds to the deadlock-free proof.}",
      "source": [
@@ -2596,7 +2596,7 @@
     {
      "id": "th-terms",
      "title": "Lemmas about terms",
-     "formula": "\\begin{array}{c}\\begin{array}{l}\\sym{th.soundness-source}{\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\sym{w.acyc}{\\mathsf{acyc}}\\,W \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\varnothing ; \\varnothing \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\sym{prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\sym{th.em}{\\mathsf{EM}} \\land \\sym{th.ac}{\\mathsf{FC}} \\land \\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\sym{w.lfworld}{\\mathsf{wf}}\\,W \\land N \\in \\mathbb{N} \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\land\\ \\varnothing ; \\varnothing \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_{W\\inmode{lf}{,N}} t : T\\ !\\ c \\land \\sym{guard.judg}{\\varnothing \\vdash\\!\\triangleright t}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\sym{prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}\\\\[3ex]\\begin{array}{l}\\sym{th.wfit}{\\mathsf{fit}\\inmode{lf}{_N}\\,R \\iff \\sym{w.strict}{\\mathsf{strict}}\\,R\\inmode{lf}{\\ \\lor\\ (\\sym{w.kind}{\\mathsf{ranked}}\\,R \\land N \\in \\mathbb{N} \\land \\sym{th.em}{\\mathsf{EM}})}} \\\\[1.5ex] \\sym{th.fundamental}{\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\sym{w.sat}{R \\mathrel{\\sym{sj.proc}{\\vDash}} W} \\land \\sym{w.strict}{\\mathsf{strict}}\\,R \\\\ \\quad\\Longrightarrow\\ \\Delta \\sym{sj.term}{\\mathrel{\\sym{sj.proc}{\\vDash}}}^{F}_R t : T\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.fundamental-typed}{\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} t : T\\ !\\ \\varepsilon \\land \\sym{w.sat}{R \\mathrel{\\sym{sj.proc}{\\vDash}} W} \\land \\sym{w.strict}{\\mathsf{strict}}\\,R \\\\ \\quad\\Longrightarrow\\ \\sym{th.df}{\\Delta_{df}} \\mathrel{\\sym{sj.term}{\\vDash}}^{F}_R t : T_{df}\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.live-fundamental}{\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\sym{guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\land \\sym{w.sat}{R \\mathrel{\\sym{sj.proc}{\\vDash}} W} \\land \\sym{w.strict}{\\mathsf{strict}}\\,R \\\\ \\quad\\Longrightarrow\\ \\Delta \\sym{sj.term}{\\mathrel{\\sym{sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{F}_R t : T\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.live-fundamental-typed}{\\begin{array}{l}\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ \\varnothing \\mathrel{\\sym{guard.judg}{\\vdash\\!\\triangleright}} t \\land \\sym{w.sat}{R \\mathrel{\\sym{sj.proc}{\\vDash}} W} \\land \\sym{w.strict}{\\mathsf{strict}}\\,R\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\sym{sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_R t : T_{df}\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.live-fundamental-ranked}{\\begin{array}{l}\\begin{array}{l}\\sym{th.em}{\\mathsf{EM}} \\land \\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ N \\in \\mathbb{N} \\land \\varnothing \\mathrel{\\sym{guard.judg}{\\vdash\\!\\triangleright}} t \\land \\sym{w.sat}{R \\mathrel{\\sym{sj.proc}{\\vDash}} W}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\sym{sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_R t : T_{df}\\end{array}}}\\end{array}\\\\[3ex]\\sym{th.cl2-needs}{\\begin{array}{l}a \\neq b \\land \\Delta(a) = S_x \\land \\Delta(b) = {S'}_y \\land \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} \\sym{syn.letu}{\\mathsf{let}}\\ \\ast = \\sym{prim.close}{\\mathsf{close}}\\,a\\ \\sym{syn.letu}{\\mathsf{in}}\\ \\sym{prim.close}{\\mathsf{close}}\\,b : T \\\\ \\quad\\Longrightarrow\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} x \\prec \\overline{y}\\end{array}}\\\\[3ex]\\sym{th.Erel-bind}{\\begin{array}{l}\\begin{array}{l}e \\in \\sym{th.Erel}{E^{R}_{\\alpha}\\llbracket \\Theta_1 \\vdash T\\rrbracket^{F \\cup \\sym{ty.heads}{\\mathsf{ap}}\\,\\Theta_2}} \\\\ \\land\\ \\forall R' \\sym{w.ext}{\\sqsupseteq} R,\\ \\beta \\leq \\alpha,\\ v \\in \\sym{th.Vrel}{V^{R'}_{\\beta}\\llbracket\\Theta_v \\vdash T\\rrbracket}. \\\\ \\qquad \\sym{se.frame}{f[v]} \\in \\sym{th.Erel}{E^{R'}_{\\beta}\\llbracket \\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\sym{se.frame}{f[e]} \\in \\sym{th.Erel}{E^{R}_{\\alpha}\\llbracket \\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array}}\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\begin{array}{l}\\sym{th.cost-fundamental}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\sym{cs.csem}{\\Delta \\mathrel{\\sym{sj.term}{\\vDash}}^{N} e : T\\ !\\ \\varepsilon}\\end{array}} \\\\[1.5ex] \\sym{th.fsem-of-cost}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_{W\\inmode{lf}{,N}} e : T\\ !\\ c \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\sym{th.crle}{\\mathsf{cr}(\\Delta) \\leq N} \\\\ \\quad\\Longrightarrow\\ \\sym{fu.fsem}{\\mathsf{fsem}\\,N\\,\\sym{th.styof}{\\Delta\\inmode{lf}{^{N}}}\\,e}\\end{array}}\\end{array}}\\end{array}",
+     "formula": "\\begin{array}{c}\\begin{array}{l}\\sym{th.soundness-source}{\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\sym{w.acyc}{\\mathsf{acyc}}\\,W \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\varnothing ; \\varnothing \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\sym{prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\sym{th.em}{\\mathsf{EM}} \\land \\sym{th.ac}{\\mathsf{FC}} \\land \\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\sym{w.lfworld}{\\mathsf{wf}}\\,W \\land N \\in \\mathbb{N} \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\land\\ \\varnothing ; \\varnothing \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_{W\\inmode{lf}{,N}} t : T\\ !\\ c \\land \\sym{guard.judg}{\\varnothing \\vdash\\!\\triangleright t}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\sym{prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}\\\\[3ex]\\begin{array}{l}\\sym{th.wfit}{\\mathsf{fit}\\inmode{lf}{_N}\\,R \\iff \\sym{w.strict}{\\mathsf{strict}}\\,R\\inmode{lf}{\\ \\lor\\ (\\sym{w.kind}{\\mathsf{ranked}}\\,R \\land N \\in \\mathbb{N} \\land \\sym{th.em}{\\mathsf{EM}})}} \\\\[1.5ex] \\sym{th.fundamental}{\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\sym{w.sat}{R \\mathrel{\\sym{sj.proc}{\\vDash}} W} \\land \\sym{w.strict}{\\mathsf{strict}}\\,R \\\\ \\quad\\Longrightarrow\\ \\Delta \\sym{sj.term}{\\mathrel{\\sym{sj.proc}{\\vDash}}}^{F}_R t : T\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.fundamental-typed}{\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} t : T\\ !\\ \\varepsilon \\land \\sym{w.sat}{R \\mathrel{\\sym{sj.proc}{\\vDash}} W} \\land \\sym{w.strict}{\\mathsf{strict}}\\,R \\\\ \\quad\\Longrightarrow\\ \\sym{th.df}{\\Delta_{df}} \\mathrel{\\sym{sj.term}{\\vDash}}^{F}_R t : T_{df}\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.live-fundamental}{\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} t : T \\land \\sym{guard.judg}{\\varnothing \\vdash\\!\\triangleright t} \\land \\sym{w.sat}{R \\mathrel{\\sym{sj.proc}{\\vDash}} W} \\land \\sym{w.strict}{\\mathsf{strict}}\\,R \\\\ \\quad\\Longrightarrow\\ \\Delta \\sym{sj.term}{\\mathrel{\\sym{sj.proc}{\\mathrel{|\\!\\!\\vDash}}}}^{F}_R t : T\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.live-fundamental-typed}{\\begin{array}{l}\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ \\varnothing \\mathrel{\\sym{guard.judg}{\\vdash\\!\\triangleright}} t \\land \\sym{w.sat}{R \\mathrel{\\sym{sj.proc}{\\vDash}} W} \\land \\sym{w.strict}{\\mathsf{strict}}\\,R\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\sym{sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_R t : T_{df}\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.live-fundamental-ranked}{\\begin{array}{l}\\begin{array}{l}\\sym{th.em}{\\mathsf{EM}} \\land \\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ N \\in \\mathbb{N} \\land \\varnothing \\mathrel{\\sym{guard.judg}{\\vdash\\!\\triangleright}} t \\land \\sym{w.sat}{R \\mathrel{\\sym{sj.proc}{\\vDash}} W}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\sym{sj.term}{\\mathrel{|\\!\\!\\vDash}}}^{F}_R t : T_{df}\\end{array}}}\\end{array}\\\\[3ex]\\sym{th.cl2-needs}{\\begin{array}{l}a \\neq b \\land \\Delta(a) = S_x \\land \\Delta(b) = {S'}_y \\land \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} \\sym{syn.letu}{\\mathsf{let}}\\ \\ast = \\sym{prim.close}{\\mathsf{close}}\\,a\\ \\sym{syn.letu}{\\mathsf{in}}\\ \\sym{prim.close}{\\mathsf{close}}\\,b : T \\\\ \\quad\\Longrightarrow\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} x \\prec \\overline{y}\\end{array}}\\\\[3ex]\\sym{th.Erel-bind}{\\begin{array}{l}\\begin{array}{l}e \\in \\sym{th.Erel}{E^{R}_{\\alpha}\\llbracket \\Theta_1 \\vdash T\\rrbracket^{F \\cup \\sym{ty.heads}{\\mathsf{ap}}\\,\\Theta_2}} \\\\ \\land\\ \\forall R' \\sym{w.ext}{\\sqsupseteq} R,\\ \\beta \\leq \\alpha,\\ v \\in \\sym{th.Vrel}{V^{R'}_{\\beta}\\llbracket\\Theta_v \\vdash T\\rrbracket}. \\\\ \\qquad \\sym{se.frame}{f[v]} \\in \\sym{th.Erel}{E^{R'}_{\\beta}\\llbracket \\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\sym{se.frame}{f[e]} \\in \\sym{th.Erel}{E^{R}_{\\alpha}\\llbracket \\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array}}\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\begin{array}{l}\\sym{th.cost-fundamental}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\sym{cs.csem}{\\Delta \\mathrel{\\sym{sj.term}{\\vDash}}^{N} e : T\\ !\\ \\varepsilon}\\end{array}} \\\\[1.5ex] \\sym{th.fsem-of-cost}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_{W\\inmode{lf}{,N}} e : T\\ !\\ c \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\quad\\Longrightarrow\\ \\sym{fu.fsem}{\\mathsf{fsem}\\,N\\,\\sym{th.styof}{\\Delta\\inmode{lf}{^{N}}}\\,e}\\end{array}}\\end{array}}\\end{array}",
      "caption": "A closed program is sound as a one-thread process over an acyclic world. Typing a term implies the semantic term judgment of [[sj-all]] at each strict world that models the static world. $E$ is closed under the evaluation frames of [[sem-ctx]], which the case of [[r-fun|E-App]] and the other rules with subterms use. Two closes in sequence need the point of the first below the dual point of the second, which the examples use for rejections. \\inmode{lf}{With the guard a typed term is in the relation at $\\kappa_L$. \\inmode{lf}{At a finite bound and under excluded middle this holds at each model, ranked ones included, and a typed term at a finite bound with the annotations of [[ty-ann]] has [[fu|fuel]], with its values in [[fv]].}}",
      "why": "The proofs of the process results use these lemmas, each proved rule by rule. Each typing rule has one compatibility lemma, and the fundamental theorem is the induction over the derivation.",
      "source": [
@@ -7635,7 +7635,7 @@
   },
   "tj.hage": {
    "title": "$\\mathsf{def}(H - c)$, aging what is held",
-   "meaning": "$H - c$ ages each entry of $H$ by the cost $c$ of $e$. It is defined when each end and closure in $H$ that is not idle has credit at least $c$.",
+   "meaning": "$H - c$ ages each entry of $H$ by the cost $c$ of $e$. It is defined when each end and closure in $H$ that is not idle has credit at least $c$, and on a context of ends when each end has credit at most its tickets.",
    "why": "The thread holds $H$ while $e$ runs, and each of the up to $c$ actions of $e$ lowers the counters of the held ends by $1$.",
    "breaks": "Without it a thread holds an end across unboundedly many actions on other ends, and the partner of that end waits without bound.",
    "example": "$S_x^{2} - 1 = S_x^{1}$ is defined, $S_x\\inmode{lf}{^{0}} - 1$ is not.",
@@ -9772,6 +9772,39 @@
      "file": "static/Typing.v",
      "names": [
       "e_link"
+     ]
+    }
+   ]
+  },
+  "E-Chan.crtk": {
+   "title": "Credit at most tickets, $a \\leq m$",
+   "meaning": "The end that E-Chan reads has credit at most its tickets.",
+   "why": "Each end of a context is typed by E-Chan or aged, and both ask $a \\leq m$. So each context that types a term has $a \\leq m$ on each end, and [[th-terms|fuel from cost typing]] may start each end at its tickets.",
+   "breaks": "Without it $o : S_x^{5,2} \\vdash o : S_x^{5,2}$ types, and no counter lies between the credit $5$ and the tickets $2$.",
+   "example": "$o : S_x^{2,3} \\vdash o : S_x^{2,3}$.",
+   "signature": "a \\leq m",
+   "args": [
+    {
+     "name": "a",
+     "meaning": "the credit of the end",
+     "modes": [
+      "lf"
+     ]
+    },
+    {
+     "name": "m",
+     "meaning": "the tickets of the end",
+     "modes": [
+      "lf"
+     ]
+    }
+   ],
+   "source": [
+    {
+     "file": "static/Typing.v",
+     "names": [
+      "e_chan",
+      "typed_cr_tk"
      ]
     }
    ]
@@ -18133,11 +18166,11 @@
   },
   "th.fsem-of-cost": {
    "title": "Fuel from cost typing",
-   "meaning": "If $\\varnothing ; \\Delta \\vdash^{\\varnothing}_{W\\inmode{lf}{,N}} e : T\\ !\\ c$, $\\mathsf{tfree}\\,T$ and $\\mathsf{cr}(\\Delta) \\leq N$, then $\\mathsf{fsem}\\,N\\,\\Delta\\inmode{lf}{^{N}}\\,e$.",
-   "why": "P-Term gives each end credit equal to its tickets, so the cost judgment yields the per-thread fuel that lock freedom needs.",
+   "meaning": "If $\\varnothing ; \\Delta \\vdash^{\\varnothing}_{W\\inmode{lf}{,N}} e : T\\ !\\ c$ and $\\mathsf{tfree}\\,T$, then $\\mathsf{fsem}\\,N\\,\\Delta\\inmode{lf}{^{N}}\\,e$.",
+   "why": "Typing keeps the credit of each end of $\\Delta$ at most its tickets, so each end may start at its tickets, and the cost judgment yields the per-thread fuel that lock freedom needs.",
    "breaks": "If a closure could mention an end it does not own, the forwarder could receive a closure that owns nothing and would have no fuel after spawning the closure.",
    "example": "The forwarder $\\mathsf{fw}$.",
-   "signature": "\\varnothing ; \\Delta \\vdash^{\\varnothing}_{W\\inmode{lf}{,N}} e : T\\ !\\ c \\land \\mathsf{tfree}\\,T \\land \\mathsf{cr}(\\Delta) \\leq N \\Rightarrow \\mathsf{fsem}\\,N\\,\\Delta\\inmode{lf}{^{N}}\\,e",
+   "signature": "\\varnothing ; \\Delta \\vdash^{\\varnothing}_{W\\inmode{lf}{,N}} e : T\\ !\\ c \\land \\mathsf{tfree}\\,T \\Rightarrow \\mathsf{fsem}\\,N\\,\\Delta\\inmode{lf}{^{N}}\\,e",
    "args": [
     {
      "name": "\\Delta",
@@ -18147,41 +18180,6 @@
    "source": [
     {
      "file": "cost/CostFund.v",
-     "names": [
-      "fsem_of_cost"
-     ]
-    }
-   ]
-  },
-  "th.crle": {
-   "title": "$\\mathsf{cr}(\\Delta) \\leq N$",
-   "meaning": "Each credit in $\\Delta$ is at most the bound $N$, that is $a \\leq N$ for each entry $S_x\\inmode{lf}{^{a,m}}$ or $(T \\multimap U)\\inmode{lf}{^{a}}$ of $\\Delta$.",
-   "why": "A thread starts with each counter at its tickets, which are at most $N$, so its credits may guarantee no more than $N$.",
-   "breaks": "A credit above $N$ would allow more postponement than a fresh counter allows.",
-   "example": "$\\mathsf{cr}(\\{o \\mapsto S_x\\inmode{lf}{^{2,3}}\\}) \\leq 4$.",
-   "signature": "\\mathsf{cr} : \\mathsf{TEnv} \\to \\mathbb{N} \\cup \\{\\infty\\}",
-   "args": [
-    {
-     "name": "\\Delta",
-     "meaning": "a context"
-    },
-    {
-     "name": "N",
-     "meaning": "the bound on the tickets of a channel"
-    }
-   ],
-   "source": [
-    {
-     "file": "cost/CostFund.v",
-     "names": [
-      "fsem_of_cost"
-     ]
-    }
-   ],
-   "deviations": [
-    {
-     "kind": "renamed",
-     "reason": "$\\mathsf{cr}(\\Delta)$ reads the credits of $\\Delta$, a notation of the map with no Rocq function of this name.",
      "names": [
       "fsem_of_cost"
      ]

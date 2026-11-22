@@ -56,15 +56,14 @@ Proof.
     split; [exact (HN o te Hte)|done].
 Qed.
 
-(** A closed thread typed at N, whose ends have credits at most their
-    tickets, satisfies [fsem N] with the session types of its ends,
-    each end at its tickets. *)
+(** A closed thread typed at N satisfies [fsem N] with the session types
+    of its ends, each end at its tickets. Typing keeps every credit at
+    most its tickets ([typed_cr_tk]). *)
 Theorem fsem_of_cost W N Θ e T c :
   Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} e : T ▷ c → tfree T →
-  cr_tk Θ →
   fsem N (te_sty <$> Θ) (tkenv Θ) e.
 Proof.
-  intros Hty Hp HN n.
+  intros Hty Hp n. pose proof (typed_cr_tk _ _ _ _ _ _ _ _ _ Hty) as HN.
   pose proof (cost_fundamental _ _ _ _ _ _ _ _ _ Hty) as Hcs.
   assert (subst Var (emap id e) ∈ F^N _ n⟦RTy T ▷ c⟧((te_sty <$> Θ) ∪ ∅, tkenv Θ ∪ ∅)) as H.
   { apply (Hcs n id Var).
@@ -75,7 +74,6 @@ Qed.
 (** The forwarder of S7.1 satisfies [fsem] at every bound. *)
 Theorem fw_fsem N o m : fsem N {[o := S_fw]} {[o := (m, m)]} (fw o).
 Proof.
-  pose proof (fsem_of_cost W_fw N _ _ _ _ (fw_typed N o (pvar 0) m m) tfree_unit) as H.
+  pose proof (fsem_of_cost W_fw N _ _ _ _ (fw_typed N o (pvar 0) m m (fle_refl _)) tfree_unit) as H.
   unfold tkenv in H. rewrite !map_fmap_singleton in H. apply H.
-  intros o' te Hte. apply lookup_singleton_Some in Hte as [_ <-]. apply fle_refl.
 Qed.

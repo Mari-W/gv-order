@@ -122,7 +122,7 @@ Proof. induction Δ as [|[T|] Δ IH]; simpl; constructor; auto using tage_df. Qe
 Lemma thage_df c Θ : thage c (tenv_df Θ) (tenv_df Θ).
 Proof.
   intros o. unfold tenv_df. rewrite lookup_fmap. destruct (Θ !! o); simpl; [|done].
-  split_and!; try done. apply fle_inf.
+  split_and!; try done; apply fle_inf.
 Qed.
 
 (** ** Subtyping *)
@@ -226,7 +226,7 @@ Lemma d_var W Γ Δ F x T : lenv_only Δ x T → dftyped W ∅ Γ Δ F (Var x) T
 Proof. intros HΔ. dfr. eapply e_var. by eapply lenv_only_df. Qed.
 
 Lemma d_chan W Γ Δ F o S x a a' m m' : lenv_unl Δ → dftyped W {[o := TE S x a m]} Γ Δ F (Chan o) (TSess S x a' m').
-Proof. intros HΔ. dfr. by eapply e_chan, lenv_unl_df. Qed.
+Proof. intros HΔ. dfr. eapply e_chan; [by apply lenv_unl_df|done]. Qed.
 
 Lemma d_abs W Θ Γ Δ F e T U ub lb c a :
   lbx_below_h W Γ lb (tenv_heads Θ ∪ lenv_heads Δ) (lenv_bot Δ) → tcontr T →

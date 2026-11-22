@@ -8,4 +8,4 @@ cost_fundamental
 fsem_of_cost
      : ∀ (W : sworld) (N : fuel) (Θ : tenv) (e : expr) (T : ty) (c : fuel),
          Θ ; hc_empty ; [] ⊢^(∅, None) _{W,N} e : T ▷ c
-         → tfree T → cr_tk Θ → fsem N (te_sty <$> Θ) (tkenv Θ) e
+         → tfree T → fsem N (te_sty <$> Θ) (tkenv Θ) e

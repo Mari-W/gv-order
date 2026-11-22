@@ -1,5 +1,99 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, 2026-11-22, F2 and Q2 of the content pass
+
+Branch fx-cost in .claude/worktrees/fx-cost, from redesign at c813418,
+nothing pushed or merged. Two items of docs/redesign/fable-findings.md,
+each in one commit with its map changes. No Admitted, no Axiom, no new
+Parameter. No syntactic clause in a relation and no semantic premise in a
+typing rule. Laptop build in ~/build-spo-fxc after each item. `make` is
+clean, `make check` closes 210 results (211 after Q2, which adds
+`typed_cr_tk`), and `make test` matches. Only test/CostNotations.expected
+changed, on purpose, because the statement of `fsem_of_cost` lost its
+hypothesis.
+
+### F2, spawn costs nothing (done)
+
+- static/Typing.v. `e_spawn` drops `fle (Some 1) a`. `e_spawn_lam`
+  (static/Weakening.v) is E-Abs at credit 0, with `thage (Some 0)` and
+  `lage (Some 0)`. The callers in Sinst, Constants, Conservativity and
+  cost/Forwarder.v lose the premise.
+- fuel/Fuel.v. `f_spawn` drops `fspare` and gives the child
+  `mres (fends v) φ` instead of `fhand`. FuelBind, FuelMono and
+  FuelValues follow, and `fuel_spawn_hand` returns the inclusion alone.
+- The soundness argument of the findings holds in Rocq.
+  `spawn_redex` (cost/CostRedex.v) calls the closure at the counters it
+  holds. The call clause of FV-Arrow asks `fsub f a ≤ f'`, and `f' = f`
+  meets it at each credit a. `cost_e_spawn` loses its premise.
+- The soup moves the ends of a spawn by `kspawn` (soup/Soup.v), the
+  move of `khand` without the tick, with its lookups in SoupStep and
+  OwnFacts. `step_spawn` uses it. `sp_cap` holds because no counter
+  rises.
+- The lock-free measure. With the decrement gone a spawn that passes the
+  awaited end on keeps the counter, and the holder changes. The criterion
+  (lockfree/Criterion.v) now inducts on the accessibility of the holder's
+  erased term in `tRs`, the administrative order of a thread with its
+  spawned children, moved from soup/SoupTau.v to lockfree/TauThread.v
+  together with `admin_back`. `thread_acc_s` derives it from
+  `no_tau_divergence`, and `thread_acc` follows. The stay clause of
+  `Hfuel` lets the holder become a thread that the old holder spawned,
+  with a smaller term in `tRs`. soup/LFAdequacy.v states it as
+  `lf_stay` and proves the spawn case by the new last conjunct of
+  `istep_spawn_inv`. The measure is unchanged, the pair of rank and
+  counter.
+- Rejections and examples. `ring_rejected*`, `cyc2_rejected*`,
+  `sbv_rejected*`, `opposite_clash`, `shared_not_cut`, GuardEx with
+  `spawn_loop_not_guarded`, and SinstStuck build unchanged. Every
+  `*_lock_free` theorem builds at its old bound. No bound changed.
+- The four unmechanized rejections stay rejected. rx-postpone is
+  rejected by aging across a loop of cost ∞, rx-delegate by the payload
+  credit of E-Send, rx-relink by the tickets of E-Link and rx-chain by
+  E-New. None of the four spawns a held end, so none of these premises
+  reads the spawn decrement. A loop that spawns itself with a held end,
+  the shape `spawn_loop`, stays rejected by the guard, and semantically
+  its spawn chain consists of administrative steps, which
+  `soup_no_tau_divergence` makes finite.
+
+### Q2, credit at most tickets from typing (done)
+
+The variant checks at the rules. E-Chan asks `fle a m`, and `thage` asks
+`fle (te_cr e) (te_tk e)` of each end it ages. `typed_cr_tk`
+(static/Typing.v) proves `cr_tk Θ` for each context that types a term,
+and `fsem_of_cost` loses the hypothesis. Its callers `lf_p_term`
+(soup/LFCompose.v) and `fw_fsem` lose their proofs of it. `fw_typed`
+and `cl_typed` (examples/LFClose.v) now ask `fle a m`.
+
+A check at E-Chan alone does not suffice. Aging hides the original
+credit, so under E-Abs at credit 3 the entry $S_x^{5,2}$ reaches E-Chan as
+$S_x^{2,2}$. Aging is the place where the original credit is still
+visible. The variant in the syntax of `TSess` would constrain every type,
+also payload and result types that nothing reads $a \leq m$ of, and would
+touch every constructor use. The chosen variant has one new rule premise
+(E-Chan) and one new conjunct in one definition (`thage`), against one
+hypothesis of `fsem_of_cost` before. Followers. Weakening's `thage_0` and
+the example's `thage_zero` ask `cr_tk`, which `typed_cr_tk` or a
+computation supplies. The E-Chan leaves of the examples close
+`fle a m` by `fle_refl` or `lia`. No bound changed.
+
+### Map
+
+docs/explorer/check.sh shows 0 errors, `xref-missing` 0, and the same 64
+warnings as before.
+
+- F2. E-Spawn (`r-threads`) without the premise, with a lock-free
+  sentence on credit 0. F-Spawn in `fu-obls` without $\mathsf{positive}$
+  and with the child at $\Phi|_M$. The counters block `t-lf-counters`
+  without the spawn row and with a new sentence. The notes
+  `E-Spawn.credit` (deleted), `lfi.hop`, `F-Spawn`, `F-Spawn.child`,
+  `fu.fspare`, `fu.tick` and `lfi.measure`.
+- Q2. E-Chan in `r-base` with `\inmode{lf}{a \leq m}` and the new note
+  `E-Chan.crtk`. `ty-ann` and `t-agecap` say that E-Chan and aging keep
+  $a \leq m$ on each end of a context, and `tj.hage` names the new
+  condition. `th-chain` and the theorem block of `fsem_of_cost` lose the
+  premise $\mathsf{cr}(\Delta) \leq N$, which also did not match the
+  Rocq (the hypothesis was `cr_tk`), and the note `th.crle` is deleted.
+  `th.fsem-of-cost` follows.
+
 ## Report, 2026-11-22, deadlock freedom over acyclic worlds
 
 Branch redesign-df in .claude/worktrees/redesign-df, from redesign at

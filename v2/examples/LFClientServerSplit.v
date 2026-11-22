@@ -84,11 +84,16 @@ Definition t_srv : expr := App (EForce srv) (Pair (Chan (edual oa)) (Chan (edual
 
 Definition ΣC : senv := <[oa := (Sa, ρ)]> {[ob := (Sb, ρ·0)]}.
 
-Lemma thage_zero Θ : thage (Some 0) Θ Θ.
+Lemma thage_zero Θ : cr_tk Θ → thage (Some 0) Θ Θ.
 Proof.
-  intros o. destruct (Θ !! o) as [[S x a m]|]; [|done]. simpl.
-  split_and!; [done|done|done|destruct a; simpl; lia|by destruct a as [[|]|]].
+  intros HΘ o. destruct (Θ !! o) as [[S x a m]|] eqn:E; [|done]. simpl.
+  split_and!; [done|done|done|destruct a; simpl; lia|by destruct a as [[|]|]|exact (HΘ o _ E)].
 Qed.
+
+Ltac crtk_tac :=
+  let Hte := fresh in
+  intros ?? Hte; repeat (apply lookup_insert_Some in Hte as [[_ <-]|[_ Hte]]; [simpl; lia|]);
+  apply lookup_singleton_Some in Hte as [_ <-]; simpl; lia.
 
 (** One side: force the box at the instance xs and apply it to the pair
     of the two interface ends, which hold 3 tickets and credit 3. *)
@@ -110,7 +115,7 @@ Proof.
       (TProd (TSess S1 (pt_polar b ρ) (Some 1) (Some 3)) (TSess S2 (pt_polar b (ρ·0)) (Some 2) (Some 3))));
       [done|apply csw_hold|by destruct b|by destruct b|done|].
     apply Hbx.
-  - apply thage_zero.
+  - apply thage_zero. unfold Θ. crtk_tac.
   - apply lage_nil.
   - eapply (e_sub _ _ _ _ _ _ _
       (TProd (TSess S1 (pt_polar b ρ) (Some 3) (Some 3)) (TSess S2 (pt_polar b (ρ·0)) (Some 3) (Some 3))));
@@ -121,10 +126,10 @@ Proof.
               hc_empty [] [] [] []).
     + split; [by apply map_disjoint_singleton_l, lookup_singleton_ne|unfold Θ; by rewrite insert_union_singleton_l].
     + apply lsplit_nil.
-    + apply e_chan. intros ? Hin. inversion Hin.
-    + apply thage_zero.
+    + apply e_chan; [intros ? Hin; inversion Hin|solve [done|apply fle_refl|cbn; lia]].
+    + apply thage_zero. crtk_tac.
     + apply lage_nil.
-    + apply e_chan. intros ? Hin. inversion Hin.
+    + apply e_chan; [intros ? Hin; inversion Hin|solve [done|apply fle_refl|cbn; lia]].
     + apply tage_0.
   - apply fle_inf.
 Qed.

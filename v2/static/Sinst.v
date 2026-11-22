@@ -243,7 +243,7 @@ Lemma thage_sinst σ c Θ Θ' : thage c Θ Θ' → thage c (tenv_sinst σ Θ) (t
 Proof.
   intros H o. specialize (H o). unfold tenv_sinst. rewrite !lookup_fmap.
   destruct (Θ !! o), (Θ' !! o); simpl in *; try done.
-  destruct H as (E1 & E2 & E3 & E4 & E5). unfold tentry_sinst. simpl. by rewrite E1, E2, E3, E5.
+  destruct H as (E1 & E2 & E3 & E4 & E5 & E6). unfold tentry_sinst. simpl. by rewrite E1, E2, E3, E5.
 Qed.
 
 Section with_σ.
@@ -504,7 +504,7 @@ Proof.
     pose proof (proj1 Hok) as Hσ.
   - rewrite tenv_sinst_empty. by apply e_unit, lenv_unl_sinst.
   - rewrite tenv_sinst_empty. by apply e_var, lenv_only_sinst.
-  - rewrite tenv_sinst_singleton. by apply e_chan, lenv_unl_sinst.
+  - rewrite tenv_sinst_singleton. apply e_chan; [by apply lenv_unl_sinst|done].
   - (* E-Abs *)
     cbn [sinst_ty]. eapply e_abs.
     + rewrite tenv_heads_sinst, lenv_heads_sinst, lenv_bot_sinst. exact Hlb.

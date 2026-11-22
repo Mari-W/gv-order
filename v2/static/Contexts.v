@@ -28,7 +28,9 @@ Abbreviation tenv := (gmap cend tentry).
 (** cr(Θ) ≤ N on the map: every credit of Θ is at most N. *)
 Definition cr_le (Θ : tenv) (N : fuel) : Prop := ∀ o te, Θ !! o = Some te → fle (te_cr te) N.
 
-(** Every credit of Θ is at most the tickets of its end. *)
+(** Every credit of Θ is at most the tickets of its end. Typing implies
+    it ([typed_cr_tk], static/Typing.v): E-Chan asks a ≤ m of the end it
+    reads, and aging ([thage]) asks it of each end it ages. *)
 Definition cr_tk (Θ : tenv) : Prop := ∀ o te, Θ !! o = Some te → fle (te_cr te) (te_tk te).
 Abbreviation lenv := (list (option ty)).
 
@@ -445,7 +447,7 @@ Definition thage (c : fuel) (Θ Θ' : tenv) : Prop :=
   ∀ o, match Θ !! o, Θ' !! o with
        | None, None => True
        | Some e, Some e' => te_sty e' = te_sty e ∧ te_pt e' = te_pt e ∧ te_tk e' = te_tk e ∧
-                            fle c (te_cr e) ∧ te_cr e' = fsub (te_cr e) c
+                            fle c (te_cr e) ∧ te_cr e' = fsub (te_cr e) c ∧ fle (te_cr e) (te_tk e)
        | _, _ => False
        end.
 
