@@ -45,7 +45,9 @@
       "additionalProperties": false,
       "properties": {
         "keywords": { "type": "array", "items": { "type": "string" } },
-        "comment": { "type": "array", "items": { "type": "string" }, "description": "Comment delimiters: a line prefix such as \"--\", or an opening and closing pair written \"(* *)\"." }
+        "comment": { "type": "array", "items": { "type": "string" }, "description": "Comment delimiters: a line prefix such as \"--\", or an opening and closing pair written \"(* *)\"." },
+        "operators": { "type": "string", "description": "The characters that make up operators and punctuation, highlighted as such." },
+        "constructors": { "type": "boolean", "description": "Highlight identifiers that start with a capital letter, as types and constructors." }
       }
     },
     "modes": { "$ref": "#/$defs/modes" },
@@ -100,7 +102,7 @@
     "id": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_\\-]*$" },
     "key": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.\\-]*$" },
     "tex": { "type": "string", "description": "TeX with \\sym{key}{...}, \\inmode{modes}{...}, \\inmodeplain{modes}{...} and \\planned{...}." },
-    "prose": { "type": "string", "description": "Text with $math$, `code`, [[block-id]] or [[block-id|label]] links and \\inmode{modes}{...}." },
+    "prose": { "type": "string", "description": "Text with $math$ (which may hover a note with \\sym{key}{...}), `code`, [[block-id]] or [[block-id|label]] links and \\inmode{modes}{...}." },
     "modeList": { "type": "array", "items": { "$ref": "#/$defs/id" }, "minItems": 1, "uniqueItems": true },
     "modes": {
       "description": "Views of the same map. A block, a note argument, an example or a part of a formula may belong to some modes only.",
@@ -183,23 +185,37 @@
         "title": { "type": "string" },
         "formula": { "$ref": "#/$defs/tex" },
         "table": {
-          "description": "Rows of a label, a formula and a sentence, for overview blocks. The words stay out of the formula.",
+          "description": "An overview that pairs formulas with sentences, for blocks whose words would otherwise sit in \\text inside a formula. Each row is a label and its cells, and the columns line up across rows.",
           "type": "object",
           "required": ["rows"],
           "additionalProperties": false,
           "properties": {
+            "align": { "type": "string", "pattern": "^[lcr]*$", "description": "Alignment of the cell columns, one letter l, c or r per column after the label, as in a TeX array." },
+            "header": { "type": "array", "items": { "$ref": "#/$defs/prose" }, "description": "Column heads, one per column, the label column first when the table has one." },
             "rows": {
               "type": "array",
               "minItems": 1,
               "items": {
                 "type": "object",
-                "required": ["formula"],
+                "anyOf": [{ "required": ["formula"] }, { "required": ["cells"] }],
                 "additionalProperties": false,
                 "properties": {
-                  "label": { "type": "string", "description": "A word naming the group the row starts." },
+                  "label": { "$ref": "#/$defs/prose", "description": "Words naming the row or the group it starts." },
                   "labelKey": { "$ref": "#/$defs/key", "description": "The note behind the label." },
-                  "formula": { "$ref": "#/$defs/tex" },
-                  "text": { "$ref": "#/$defs/prose" }
+                  "formula": { "$ref": "#/$defs/tex", "description": "Short form of cells [{formula}, {text}]." },
+                  "text": { "$ref": "#/$defs/prose" },
+                  "cells": {
+                    "description": "The cells of the row, each a formula or a sentence. The last cell spans the columns left over.",
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "anyOf": [{ "required": ["formula"] }, { "required": ["text"] }],
+                      "additionalProperties": false,
+                      "properties": { "formula": { "$ref": "#/$defs/tex" }, "text": { "$ref": "#/$defs/prose" } }
+                    }
+                  },
+                  "modes": { "$ref": "#/$defs/modeList", "description": "The modes that show the row, coloured in a mode of its own. Absent means all." }
                 }
               }
             }

@@ -135,13 +135,47 @@ function proseInFormula(s) {
   return out;
 }
 
+// Tables. A row holds a formula and a text, or a list of cells, each a formula or a text.
+const cellsOf = r => r.cells || [{ formula: r.formula }, ...(r.text !== undefined ? [{ text: r.text }] : [])];
+const rowVisible = (r, mode) => mode === null || mode === undefined || !r.modes || r.modes.includes(mode);
+// the rows a reader of one mode sees (all rows for a mode of null)
+const tableRows = (b, mode = null) => ((b.table && b.table.rows) || []).filter(r => rowVisible(r, mode));
+// the formulas of the rows, in reading order
+const tableFormulas = (b, mode = null) => tableRows(b, mode).flatMap(r => cellsOf(r).filter(c => typeof c.formula === 'string').map(c => c.formula));
+// the prose of a table: head, labels and text cells, as [where, text]
+function tableTexts(b) {
+  const out = [];
+  ((b.table && b.table.header) || []).forEach((h, i) => { if (h) out.push(['head ' + (i + 1), h]); });
+  ((b.table && b.table.rows) || []).forEach((r, i) => {
+    if (r.label) out.push(['row ' + (i + 1) + ' label', r.label]);
+    cellsOf(r).forEach((c, j) => { if (typeof c.text === 'string' && c.text.trim()) out.push(['row ' + (i + 1) + (r.cells ? ' cell ' + (j + 1) : ''), c.text]); });
+  });
+  return out;
+}
+// $..$ segments of prose, after resolving the modes
+const proseMath = (t, mode = null) => [...resolve(t, mode).matchAll(/(?<!\\)\$([^$]+)\$/g)].map(m => m[1]);
+
+// Names written as a letter with a subscript, such as \kappa_L or \kappa_{DF}, that a block lists
+// under introduces. The checker reads such a name as one symbol, and its subscript as no variable.
+const compoundNames = blocks => [...new Set(blocks.flatMap(b => (b.introduces || []).filter(v => /_/.test(v)).map(v => v.trim())))];
+function stripNames(s, names) {
+  let out = String(s || '');
+  for (const n of names) {
+    const [head, sub] = n.split(/_(.*)/s);
+    const subRe = sub.replace(/^\{(.*)\}$/s, '$1').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const headRe = head.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + (/^\\[A-Za-z]+$/.test(head) ? '(?![A-Za-z])' : '');
+    out = out.replace(new RegExp(headRe + '\\s*_\\s*(?:\\{\\s*' + subRe + '\\s*\\}' + (sub.replace(/^\{(.*)\}$/s, '$1').length === 1 ? '|' + subRe + '(?![A-Za-z0-9])' : '') + ')', 'g'), ' ');
+  }
+  return out;
+}
+
 // The variables a block introduces: its introduces list, the left-hand sides of ::= in its
 // formula, and the variables its caption sets alone in math, such as $x$, $x, y$ or $i \in S$.
 function introducedBy(b, mode = null) {
   const out = new Set();
   const baseOf = s => { const t = tokens(s).find(x => x.t === 'var'); return t ? t.base : null; };
   for (const v of b.introduces || []) { const x = baseOf(v); if (x) out.add(x); }
-  const f = resolve((mode && b.variants && b.variants[mode]) || b.formula || ((b.table && b.table.rows) || []).map(r => r.formula).join(' '), mode).replace(/\\sym\s*\{[^}]*\}/g, '');
+  const f = resolve((mode && b.variants && b.variants[mode]) || b.formula || tableFormulas(b, mode).join(' '), mode).replace(/\\sym\s*\{[^}]*\}/g, '');
   const VAR = String.raw`(?:\\[A-Za-z]+|[A-Za-z])(?:\s*_\{?[A-Za-z0-9]+\}?|\s*'|\s*\^\{?[A-Za-z0-9+]+\}?)*`;
   for (const m of f.matchAll(new RegExp('(' + VAR + '(?:\\s*,\\s*' + VAR + ')*)\\s*\\}*\\s*(?:&\\s*)?::=', 'g')))
     for (const v of m[1].split(',')) { const x = baseOf(v.replace(/[{}]/g, '')); if (x) out.add(x); }
@@ -156,4 +190,4 @@ function introducedBy(b, mode = null) {
   return out;
 }
 
-module.exports = { introducedBy, closeGroup, arg, resolve, syms, covered, modesMentioned, tokens, variables, words, proseInFormula, GREEK };
+module.exports = { cellsOf, rowVisible, tableRows, tableFormulas, tableTexts, proseMath, compoundNames, stripNames, introducedBy, closeGroup, arg, resolve, syms, covered, modesMentioned, tokens, variables, words, proseInFormula, GREEK };

@@ -11,32 +11,38 @@
    sections), the blocks of one section on the left, the note panel on the right, a bottom sheet
    on narrow screens. Nothing scrolls sideways: formulas shrink to their column. */
 :root {
-  --bg: #f6f4ef;
-  --surface: #fffdf9;
-  --sunk: #f0ede6;
-  --ink: #23262b;
-  --muted: #676c73;
-  --line: #e3dfd6;
-  --line-strong: #cfc9bd;
-  --accent: #35577d;
-  --accent-soft: #e4ebf3;
-  --hot: #b8792a;
-  --hot-soft: #fbefd9;
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --sunk: #eef0f3;
+  --ink: #1c2027;
+  --muted: #5d6470;
+  --line: #e1e4e9;
+  --line-strong: #c9ced6;
+  --accent: #2e5c8a;
+  --accent-soft: #e5edf6;
+  --hot: #b26f12;
+  --hot-soft: #fcefd8;
   --warn: #a8432f;
   --warn-soft: #f8e3dc;
   --plan: #6b6f5a;
+  --code-kw: #8a3f8f;
+  --code-ty: #1f6f6b;
+  --code-op: #5d6470;
   --display: "Source Serif 4", "Iowan Old Style", Georgia, serif;
   --body: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
   --radius: 10px;
+  --shadow: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.05);
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #15171a; --surface: #1c1f23; --sunk: #23272c; --ink: #e7e4dd; --muted: #9da2a8; --line: #2d3137; --line-strong: #3d424a;
-  --accent: #93b4d8; --accent-soft: #24303d; --hot: #e2a95a; --hot-soft: #3a2f1e; --warn: #ec8f78; --warn-soft: #3b2420; --plan: #b5b89f; color-scheme: dark } }
+  --bg: #101317; --surface: #161a1f; --sunk: #1d2228; --ink: #e5e7ea; --muted: #99a1ac; --line: #252b32; --line-strong: #353c46;
+  --accent: #8db3de; --accent-soft: #1d2836; --hot: #e3a750; --hot-soft: #352916; --warn: #ec8f78; --warn-soft: #3b2420; --plan: #b5b89f;
+  --code-kw: #d59ad9; --code-ty: #7fcfc8; --code-op: #99a1ac; --shadow: none; color-scheme: dark } }
 :root[data-theme="dark"] {
-  --bg: #15171a; --surface: #1c1f23; --sunk: #23272c; --ink: #e7e4dd; --muted: #9da2a8; --line: #2d3137; --line-strong: #3d424a;
-  --accent: #93b4d8; --accent-soft: #24303d; --hot: #e2a95a; --hot-soft: #3a2f1e; --warn: #ec8f78; --warn-soft: #3b2420; --plan: #b5b89f; color-scheme: dark }
+  --bg: #101317; --surface: #161a1f; --sunk: #1d2228; --ink: #e5e7ea; --muted: #99a1ac; --line: #252b32; --line-strong: #353c46;
+  --accent: #8db3de; --accent-soft: #1d2836; --hot: #e3a750; --hot-soft: #352916; --warn: #ec8f78; --warn-soft: #3b2420; --plan: #b5b89f;
+  --code-kw: #d59ad9; --code-ty: #7fcfc8; --code-op: #99a1ac; --shadow: none; color-scheme: dark }
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -50,7 +56,7 @@ button { font: inherit; color: inherit; }
 
 /* header */
 header { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); padding-top: env(safe-area-inset-top, 0px); }
-.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding-block: 12px 8px; max-width: 1800px; margin: 0 auto; }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding-block: 12px 8px; max-width: 2400px; margin: 0 auto; }
 .brand { min-width: 0; margin-right: auto; }
 h1 { font: 600 1.3rem/1.2 var(--display); margin: 0; letter-spacing: 0.002em; }
 .brand p { margin: 2px 0 0; color: var(--muted); font-size: 0.86rem; }
@@ -65,7 +71,7 @@ h1 { font: 600 1.3rem/1.2 var(--display); margin: 0; letter-spacing: 0.002em; }
 .icon-btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 5px 8px; cursor: pointer; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; }
 .icon-btn:hover { color: var(--ink); border-color: var(--line-strong); }
 .icon-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.6; }
-nav.tabs { display: flex; flex-wrap: wrap; gap: 2px 4px; max-width: 1800px; margin: 0 auto; padding-bottom: 6px; }
+nav.tabs { display: flex; flex-wrap: wrap; gap: 2px 4px; max-width: 2400px; margin: 0 auto; padding-bottom: 6px; }
 nav.tabs a { font-size: 0.9rem; font-weight: 500; color: var(--muted); text-decoration: none; padding: 4px 10px; border-radius: 6px; }
 nav.tabs a:hover { color: var(--ink); background: var(--sunk); }
 nav.tabs a[aria-current="page"] { color: var(--ink); background: var(--accent-soft); }
@@ -73,7 +79,7 @@ nav.tabs .count { font-size: 0.72rem; color: var(--accent); margin-left: 5px; fo
 nav.tabs a.none { opacity: 0.45; }
 
 /* main grid */
-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 420px); gap: 28px; max-width: 1800px; margin: 0 auto; padding-block: 22px 80px; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) clamp(320px, 27vw, 520px); gap: 28px; max-width: 2400px; margin: 0 auto; padding-block: 22px 80px; }
 @media (max-width: 960px) { main { grid-template-columns: minmax(0, 1fr); padding-bottom: 52vh; } }
 #content { min-width: 0; }
 .intro { font: 1.12rem/1.6 var(--display); max-width: 70ch; margin: 0 0 10px; }
@@ -86,7 +92,7 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 420px)
 .conventions dd { margin: 0; }
 
 /* blocks */
-.block, .ex { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px 14px; margin-bottom: 16px; }
+.block, .ex { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 14px; box-shadow: var(--shadow); }
 .block.only { background: color-mix(in srgb, var(--mc) 6%, var(--surface)); border-color: color-mix(in srgb, var(--mc) 35%, var(--line)); }
 .block.flash, .ex.flash { box-shadow: 0 0 0 2px var(--hot); }
 .bhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
@@ -110,14 +116,26 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 420px)
 .math mjx-container svg { max-width: 100% !important; height: auto !important; }
 mjx-container { user-select: text; }
 mjx-container.sel { background: color-mix(in srgb, var(--accent) 22%, transparent); border-radius: 3px; }
-.ptable { display: grid; grid-template-columns: max-content minmax(0, max-content) minmax(0, 1fr); gap: 8px 18px; align-items: baseline; margin: 12px 0 4px; }
-.ptable .lab { font-family: var(--display); font-size: 0.98rem; color: var(--muted); }
-.ptable .lab[class*="k-"] { cursor: help; border-bottom: 1px dotted var(--line-strong); justify-self: start; }
+.ptable { display: grid; grid-template-columns: var(--cols, max-content minmax(0, 1fr)); gap: 0 20px; align-items: baseline; margin: 12px 0 4px; }
+.ptable > * { padding: 7px 0; min-width: 0; }
+.ptable > .rule { border-top: 1px solid var(--line); }
+.ptable .th { font: 600 0.7rem/1.4 var(--body); letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); padding: 0 0 6px; border-bottom: 1px solid var(--line-strong); align-self: end; }
+.ptable .lab { font-size: 0.92rem; color: var(--muted); }
+.ptable .lab[class*="k-"] { cursor: help; text-decoration: underline dotted var(--line-strong); text-underline-offset: 3px; justify-self: start; }
 .ptable .lab[class*="k-"]:hover, .ptable .lab.hot { color: var(--ink); background: var(--hot-soft); }
 .ptable .math { margin: 0; }
 .ptable .math mjx-container { text-align: left !important; }
 .ptable .txt { font-size: 0.95rem; }
-@media (max-width: 700px) { .ptable { grid-template-columns: max-content minmax(0, 1fr); } .ptable .txt { grid-column: 2; margin-top: -4px; color: var(--muted); } }
+.ptable .al-r { justify-self: end; text-align: right; } .ptable .al-c { justify-self: center; text-align: center; }
+.ptable .al-c mjx-container { text-align: center !important; } .ptable .al-r mjx-container { text-align: right !important; }
+@media (max-width: 700px) {
+  .ptable { grid-template-columns: minmax(0, 1fr) !important; }
+  .ptable > * { grid-column: 1 / -1 !important; padding: 2px 0; }
+  .ptable .th { display: none; }
+  .ptable .lab { padding-top: 10px; font-weight: 600; }
+  .ptable .cell[data-head]::before { content: attr(data-head); display: block; font: 600 0.66rem var(--body); letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+  .ptable > .cell.rule, .ptable > .lab ~ .cell { border-top: 0; }
+}
 .caption { color: var(--muted); font-size: 0.95rem; margin: 8px 0 0; max-width: 78ch; }
 .devs { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
 .devs li { display: flex; gap: 8px; align-items: baseline; font-size: 0.88rem; padding: 6px 10px; border-radius: 8px; background: var(--sunk); }
@@ -127,7 +145,7 @@ mjx-container.sel { background: color-mix(in srgb, var(--accent) 22%, transparen
 .devs .part { font-size: 0.82rem; color: var(--muted); }
 
 /* hover targets inside formulas */
-.math [class*="k-"] { cursor: help; }
+.math [class*="k-"], mjx-container [class*="k-"] { cursor: help; }
 .math rect.pm-hit { fill: transparent; stroke: none; pointer-events: all; }
 .math rect.pm-box { fill: var(--hot-soft); stroke: var(--hot); stroke-width: 14; pointer-events: none; }
 .math rect.pm-box.pin { stroke-width: 30; }
@@ -163,8 +181,10 @@ aside .placeholder { color: var(--muted); font-size: 0.93rem; }
 aside .devs li { font-size: 0.86rem; }
 
 /* examples */
-.ex pre { margin: 10px 0; padding: 10px 12px; background: var(--sunk); border-radius: 8px; white-space: pre-wrap; overflow-wrap: anywhere; font: 0.84rem/1.55 var(--mono); }
-.ex pre .kw { color: var(--accent); font-weight: 500; }
+.ex pre { margin: 10px 0; padding: 12px 14px; background: var(--sunk); border: 1px solid var(--line); border-radius: 8px; white-space: pre-wrap; overflow-wrap: anywhere; font: 0.84rem/1.55 var(--mono); }
+.ex pre .kw { color: var(--code-kw); font-weight: 500; }
+.ex pre .ty { color: var(--code-ty); }
+.ex pre .op { color: var(--code-op); }
 .ex pre .com { color: var(--muted); font-style: italic; }
 .ex pre .num { color: var(--hot); }
 .ex p { margin: 6px 0 0; font-size: 0.95rem; }
@@ -308,7 +328,7 @@ window.MathJax = {
       const inMath = ((before.match(/(?<!\\)\$/g) || []).length % 2) === 1;
       return inMath && !/\$/.test(x) ? `\\class{mode-${m}}{${x}}` : `\u0001${m}\u0002${x}\u0003`;
     });
-    return esc(t)
+    return esc(t.replace(/\\sym\s*\{([^}]*)\}\s*\{/g, (_, k) => `\\class{${cls(k)}}{`))
       .replace(/\u0001([^\u0002]*)\u0002/g, '<span class="mode-$1">').replace(/\u0003/g, '</span>')
       .replace(/`([^`]+)`/g, '<code>$1</code>')
       .replace(/\[\[([^\]|]+)(?:\|([^\]]*))?\]\]/g, (_, id, label) => {
@@ -323,14 +343,18 @@ window.MathJax = {
     const coms = ((MAP.syntax && MAP.syntax.comment) || []).map(c => c.split(' '));
     const rx = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const comRe = coms.map(c => c.length === 2 ? rx(c[0]) + '[\\s\\S]*?' + rx(c[1]) : rx(c[0]) + '[^\\n]*').join('|');
-    const re = new RegExp((comRe ? '(' + comRe + ')|' : '()') + "(\\b[A-Za-z_][A-Za-z0-9_']*\\b)|(\\b\\d+\\b)", 'g');
+    const ops = (MAP.syntax && MAP.syntax.operators) || '';
+    const opRe = ops ? '|([' + [...ops].map(c => c.replace(/[\]\\^-]/g, '\\$&')).join('') + ']+)' : '|(?!)()';
+    const re = new RegExp((comRe ? '(' + comRe + ')|' : '()') + "(\\b[A-Za-z_][A-Za-z0-9_'′]*)|(\\b\\d+\\b)" + opRe, 'gu');
+    const caps = !!(MAP.syntax && MAP.syntax.constructors);
     let out = '', last = 0, m;
     while ((m = re.exec(code))) {
       if (!m[0]) { re.lastIndex++; continue; }
       out += esc(code.slice(last, m.index)); last = re.lastIndex;
       if (m[1]) out += `<span class="com">${esc(m[1])}</span>`;
-      else if (m[2]) out += kw.has(m[2]) ? `<span class="kw">${esc(m[2])}</span>` : esc(m[2]);
-      else out += `<span class="num">${esc(m[3])}</span>`;
+      else if (m[2]) out += kw.has(m[2]) ? `<span class="kw">${esc(m[2])}</span>` : caps && /^[A-Z]/.test(m[2]) ? `<span class="ty">${esc(m[2])}</span>` : esc(m[2]);
+      else if (m[3]) out += `<span class="num">${esc(m[3])}</span>`;
+      else out += `<span class="op">${esc(m[4])}</span>`;
     }
     return out + esc(code.slice(last));
   }
@@ -391,9 +415,9 @@ window.MathJax = {
   function blockHay(b) {
     return hay('b:' + b.id, () => {
       const rows = (b.table && b.table.rows) || [];
-      const texs = [b.formula, ...Object.values(b.variants || {}), ...rows.map(r => r.formula)];
+      const texs = [b.formula, ...Object.values(b.variants || {}), ...rows.flatMap(r => cellsOf(r).map(c => c.formula).filter(x => x !== undefined))];
       const keys = new Set(texs.flatMap(t => [...keysIn(t)]).concat(rows.map(r => r.labelKey).filter(Boolean)));
-      return [b.title, b.caption, b.why, refsText(b.source), ...rows.map(r => (r.label || '') + ' ' + (r.text || '')), ...texs, ...[...keys].map(k => k + ' ' + ((MAP.notes[k] && MAP.notes[k].title) || ''))];
+      return [b.title, b.caption, b.why, refsText(b.source), ...((b.table && b.table.header) || []), ...rows.map(r => (r.label || '') + ' ' + cellsOf(r).map(c => c.text || '').join(' ')), ...texs, ...[...keys].map(k => k + ' ' + ((MAP.notes[k] && MAP.notes[k].title) || ''))];
     });
   }
   const exHay = x => hay('x:' + x.id, () => [x.title, x.lead, x.meaning, x.code, refsText(x.source)]);
@@ -488,14 +512,16 @@ window.MathJax = {
     r.setAttribute('x', b.x - 10); r.setAttribute('y', b.y - 10); r.setAttribute('width', b.width + 20); r.setAttribute('height', b.height + 20);
     r.setAttribute('rx', 70); r.setAttribute('class', 'pm-box ' + c); el.insertBefore(r, el.firstChild);
   }
-  const boxesOff = c => document.querySelectorAll('.math rect.pm-box.' + c).forEach(r => r.remove());
-  function markAll(key) { boxesOff('pin'); if (key && !key.startsWith('@')) document.querySelectorAll('.math .' + CSS.escape(cls(key))).forEach(e => boxOn(e, 'pin')); }
+  const boxesOff = c => document.querySelectorAll('mjx-container rect.pm-box.' + c).forEach(r => r.remove());
+  function markAll(key) { boxesOff('pin'); if (key && !key.startsWith('@')) document.querySelectorAll('#content mjx-container .' + CSS.escape(cls(key))).forEach(e => boxOn(e, 'pin')); }
   let hotEl = null;
   function hot(el) { if (el === hotEl) return; boxesOff('hot'); hotEl = el; if (el) boxOn(el, 'hot'); }
   function typeset(el) { if (window.MathJax && MathJax.typesetPromise) return MathJax.typesetPromise([el]).then(() => markSel()).catch(() => {}); }
 
   // ---------- extension hooks ----------
   const ctx = () => ({ map: MAP, mode, esc, prose, plainTeX, modes: MODES });
+  // extensions may follow what the reader does: event(type, detail, ctx) for section, mode and note
+  const emit = (type, detail) => window.ProofMap.exts.forEach(e => { try { if (typeof e.event === 'function') e.event(type, detail, ctx()); } catch (err) { console.error(err); } });
   const hook = (name, ...a) => window.ProofMap.exts.map(e => { try { return typeof e[name] === 'function' ? e[name](...a, ctx()) || '' : ''; } catch (err) { console.error(err); return ''; } }).join('');
 
   // ---------- deviations ----------
@@ -512,6 +538,7 @@ window.MathJax = {
   function renderSection() {
     const { sec, block } = route(), root = $('#content');
     root.innerHTML = ''; hotEl = null;
+    emit('section', { section: sec, block, mode });
     if (sec === 'examples') renderExamples(root);
     else {
       const s = MAP.sections.find(x => x.id === sec);
@@ -546,17 +573,47 @@ window.MathJax = {
     el.insertAdjacentHTML('beforeend', (b.caption ? `<p class="caption">${prose(b.caption, bm)}</p>` : '') + devList(b.deviations) + hook('blockFooter', b));
     return el;
   }
-  // an overview block: rows of a label, a formula and a sentence
+  // an overview block: rows of a label and cells, each a formula or a sentence, in aligned columns
+  const cellsOf = r => r.cells || [{ formula: r.formula }, ...(r.text !== undefined ? [{ text: r.text }] : [])];
+  const rowShown = (r, md) => !MODES.length || !r.modes || r.modes.includes(md);
   function tableEl(b, md) {
+    const t = b.table, rows = t.rows.filter(r => rowShown(r, md));
+    const hasLabel = t.rows.some(r => r.label || r.labelKey);
+    const ncols = Math.max((t.header || []).length - (hasLabel ? 1 : 0), ...t.rows.map(r => cellsOf(r).length));
+    // a column holding a sentence takes the room left over, a formula column its natural width
+    const kind = Array.from({ length: ncols }, (_, j) => t.rows.some(r => { const cs = cellsOf(r), c = cs[j]; return c && c.text && !(j === cs.length - 1 && cs.length < ncols); }) ? 'text' : 'math');
+    const align = (t.align || '').split('');
+    if (!kind.includes('text')) kind[ncols - 1] = 'text';
     const g = document.createElement('div'); g.className = 'ptable';
-    for (const r of b.table.rows) {
-      const lab = document.createElement('span');
-      lab.className = 'lab' + (r.labelKey ? ' ' + cls(r.labelKey) : ''); lab.textContent = r.label || '';
-      const f = math(r.formula, md);
-      const t = document.createElement('span'); t.className = 'txt'; t.innerHTML = prose(r.text || '', md);
-      g.append(lab, f, t);
+    g.style.setProperty('--cols', (hasLabel ? 'minmax(0, max-content) ' : '') + kind.map(k => k === 'text' ? 'minmax(12ch, 1fr)' : 'minmax(0, max-content)').join(' '));
+    const heads = (t.header || []).slice();
+    if (heads.length) {
+      heads.forEach(h => { const c = document.createElement('span'); c.className = 'th'; c.innerHTML = prose(h || '', md); g.appendChild(c); });
+      for (let j = heads.length; j < ncols + (hasLabel ? 1 : 0); j++) g.appendChild(Object.assign(document.createElement('span'), { className: 'th' }));
     }
-    g.dataset.tex = b.table.rows.map(r => plainTeX(r.formula, md)).join(' \\\\\n');
+    const headOf = j => heads.length ? heads[j + (hasLabel ? 1 : 0)] || '' : '';
+    rows.forEach((r, i) => {
+      const only = r.modes && MODES.length && r.modes.length < MODES.length ? r.modes : null;
+      const mark = el => { if (only) el.classList.add('mode-' + (only.includes(md) ? md : only[0])); if (i) el.classList.add('rule'); return el; };
+      if (hasLabel) {
+        const lab = document.createElement('span');
+        lab.className = 'lab' + (r.labelKey ? ' ' + cls(r.labelKey) : ''); lab.innerHTML = prose(r.label || '', md);
+        g.appendChild(mark(lab));
+      }
+      const cs = cellsOf(r);
+      cs.forEach((c, j) => {
+        let el;
+        if (typeof c.formula === 'string') el = math(c.formula, md);
+        else { el = document.createElement('span'); el.className = 'txt'; el.innerHTML = prose(c.text || '', md); }
+        el.classList.add('cell');
+        if (cs.length === 1 && ncols > 1) el.classList.add('al-c');
+        else if (align[j] === 'r' || align[j] === 'c') el.classList.add('al-' + align[j]);
+        const h = headOf(j); if (h) el.dataset.head = h.replace(/\$/g, '');
+        if (j === cs.length - 1 && cs.length < ncols) el.style.gridColumn = `${j + 1 + (hasLabel ? 1 : 0)} / -1`;
+        g.appendChild(mark(el));
+      });
+    });
+    g.dataset.tex = rows.map(r => cellsOf(r).filter(c => typeof c.formula === 'string').map(c => plainTeX(c.formula, md)).join(' & ')).join(' \\\\\n');
     return g;
   }
   function noMatches(root) {
@@ -602,6 +659,7 @@ window.MathJax = {
     else if (key.startsWith('@x:')) { const x = (MAP.examples || []).find(e => e.id === key.slice(3)); if (!x) return; n = { title: x.title, meaning: [x.lead, x.meaning].filter(Boolean).join(' '), source: x.source, deviations: x.deviations }; }
     else if (key.startsWith('@s:')) { const s = MAP.sections.find(s => s.id === key.slice(3)); n = s ? { title: s.title, meaning: s.intro } : { title: 'Examples', meaning: 'Programs and what the development proves about them. Point at a title for what an example shows.' }; }
     else n = MAP.notes[key] || { title: key, meaning: 'No note for this key.' };
+    emit('note', { key, pinned: !!isPinned, mode: md, title: n.title || key, block: from });
     const aside = $('#note');
     aside.classList.remove('empty');
     aside.innerHTML = `<div class="eyebrow"><span>${isPinned ? 'Pinned' : key.startsWith('@s:') ? 'Section' : 'Hover'}</span>${isPinned ? '<button type="button" id="unpin">Unpin  (Esc)</button>' : ''}</div>` + noteHTML(n, { mode: md, key: key.startsWith('@') ? null : key, from });
@@ -678,7 +736,7 @@ window.MathJax = {
         return;
       }
       const c = e.target.closest('[data-copy]');
-      if (c) { const x = blockIndex.get(c.dataset.copy), bm = blockMode(x.b); copyText(texOf(x.b, bm) ? plainTeX(texOf(x.b, bm), bm) : x.b.table.rows.map(r => plainTeX(r.formula, bm)).join(' \\\\\n')); return; }
+      if (c) { const x = blockIndex.get(c.dataset.copy), bm = blockMode(x.b); copyText(texOf(x.b, bm) ? plainTeX(texOf(x.b, bm), bm) : tableEl(x.b, bm).dataset.tex); return; }
       const j = e.target.closest('[data-jump]');
       if (j) { e.preventDefault(); goTo(j.dataset.jump); return; }
       if (e.target.closest('a, button')) return;
@@ -753,7 +811,8 @@ window.MathJax = {
     blockIndex = new Map(MAP.sections.flatMap(s => s.blocks.map(b => [b.id, { s, b }])));
     for (const { s, b } of blockIndex.values()) {
       const rows = (b.table && b.table.rows) || [];
-      const keys = new Set([b.formula, ...Object.values(b.variants || {}), ...rows.map(r => r.formula)].flatMap(t => [...keysIn(t)]).concat(rows.map(r => r.labelKey).filter(Boolean)));
+      const cells = rows.flatMap(r => [...cellsOf(r).map(c => c.formula !== undefined ? c.formula : c.text), r.label]);
+      const keys = new Set([b.formula, ...Object.values(b.variants || {}), ...cells].flatMap(t => [...keysIn(t)]).concat(rows.map(r => r.labelKey).filter(Boolean)));
       for (const k of keys) { if (!uses.has(k)) uses.set(k, new Map()); uses.get(k).set(b.id, { s, b }); }
     }
     for (const src of (base && MAP.extensions && MAP.extensions.page) || []) { try { await script(new URL(src, base).href); } catch (e) { console.warn('extension not loaded', src); } }

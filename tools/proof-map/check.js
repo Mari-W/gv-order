@@ -92,9 +92,9 @@ const items = [
   ...examples.map(x => ({ kind: 'example', id: x.id, where: `example ${x.id}`, it: x }))
 ];
 const rowsOf = b => (b.table && b.table.rows) || [];
-const formulas = b => [b.formula, ...Object.values(b.variants || {}), ...rowsOf(b).map(r => r.formula)].filter(x => typeof x === 'string');
+const formulas = b => [b.formula, ...Object.values(b.variants || {}), ...T.tableFormulas(b)].filter(x => typeof x === 'string');
 // the formula a reader of one mode sees, a table counting as its formulas one below the other
-const formulaIn = (b, mode) => (mode && b.variants && b.variants[mode]) || b.formula || rowsOf(b).map(r => r.formula).join(' \\\\ ');
+const formulaIn = (b, mode) => (mode && b.variants && b.variants[mode]) || b.formula || T.tableFormulas(b, mode).join(' \\\\ ');
 const visibleIn = (x, m) => !x.modes || x.modes.includes(m);
 
 // ---------- ids, links, modes ----------
@@ -119,7 +119,7 @@ function proseFields() {
     const f = kind === 'block' ? ['caption', 'why', 'breaks', 'example'] : kind === 'note' ? ['title', 'meaning', 'why', 'breaks', 'example'] : ['lead', 'meaning'];
     for (const k of f) if (typeof it[k] === 'string' && it[k].trim()) out.push([`${where}.${k}`, it[k]]);
     for (const a of it.args || []) if (a.meaning) out.push([`${where}.arg ${a.name}`, a.meaning]);
-    rowsOf(it).forEach((r, i) => { if (r.text) out.push([`${where}.row ${i + 1}`, r.text]); });
+    for (const [w, t] of T.tableTexts(it)) out.push([`${where}.${w}`, t]);
     for (const d of it.deviations || []) if (d.reason && d.reason !== 'REASON MISSING') out.push([`${where}.deviation`, d.reason]);
   }
   return out;
@@ -131,6 +131,7 @@ for (const [where, t] of PROSE) for (const m of t.matchAll(/\[\[([^\]|]+)(?:\|[^
   const chk = (where, ms) => { for (const m of ms) if (!known.has(m)) report('mode-unknown', 'error', where, m); };
   for (const { where, it } of items) {
     if (it.modes) chk(where, it.modes);
+    rowsOf(it).forEach((r, i) => { if (r.modes) chk(`${where} row ${i + 1}`, r.modes); });
     if (it.variants) chk(where + ' variants', Object.keys(it.variants));
     for (const a of it.args || []) if (a.modes) chk(where + ' arg', a.modes);
     for (const t of [...formulas(it), it.signature, ...(it.args || []).map(a => a.name)]) if (t) chk(where, T.modesMentioned(t));
@@ -168,6 +169,11 @@ const usedKeys = new Set();
       for (const w of new Set(T.words(t))) report('bare-word', 'warning', where, w);
     }
   }
+  // prose may hover a note inside its math
+  for (const [where, t] of PROSE) for (const seg of T.proseMath(t)) for (const x of T.syms(seg)) {
+    usedKeys.add(x.key);
+    if (!notes[x.key]) report('note-missing', 'error', where, x.key);
+  }
   for (const k of Object.keys(notes)) if (!usedKeys.has(k)) report('note-unused', 'info', `note ${k}`, notes[k].title || '');
 }
 
@@ -175,6 +181,8 @@ const usedKeys = new Set();
 {
   const base = s => { const t = T.tokens(s).find(x => x.t === 'var'); return t ? t.base : s.trim(); };
   const conv = new Set((MAP.conventions || []).flatMap(c => T.tokens(c.symbol).filter(x => x.t === 'var').map(x => x.base)));
+  // names such as \kappa_L that a block introduces count as one symbol, their subscript as no variable
+  const names = T.compoundNames(blocks.map(x => x.b));
   // where each variable is introduced, for the message
   const introAt = new Map();
   for (const { s, b } of blocks) for (const v of T.introducedBy(b)) if (!introAt.has(v)) introAt.set(v, `${s.id}/${b.id}`);
@@ -183,7 +191,7 @@ const usedKeys = new Set();
     const known = new Set(conv);
     for (const { s, b } of blocks) {
       if (mode && !visibleIn(b, mode)) continue;
-      const tex = T.resolve(formulaIn(b, mode), mode);
+      const tex = T.stripNames(T.resolve(formulaIn(b, mode), mode), names);
       const own = T.introducedBy(b, mode);
       const { used, bound } = T.variables(tex);
       for (const v of used.keys()) {
@@ -306,15 +314,22 @@ function mathjax() {
   const { AllPackages } = require(path.join(base, 'input/tex/AllPackages.js'));
   RegisterHTMLHandler(liteAdaptor());
   const macros = Object.assign({}, (MAP.tex && MAP.tex.macros) || {});
-  const doc = MJ.document('', { InputJax: new TeX({ packages: AllPackages, macros, formatError: (j, e) => { throw e; } }), OutputJax: new SVG() });
+  const doc = MJ.document('', { InputJax: new TeX({ packages: AllPackages.filter(p => p !== 'noundefined'), macros, formatError: (j, e) => { throw e; } }), OutputJax: new SVG() });
   const toMJ = (t, m) => T.resolve(t, m, { colour: (x, md) => `\\class{mode-${md}}{${x}}` }).replace(/\\sym\s*\{([^}]*)\}\s*\{/g, (_, k) => `\\class{k-${k.replace(/[^A-Za-z0-9_-]/g, '_')}}{`).replace(/\\planned\s*\{/g, '\\class{planned}{');
   for (const mode of modeIds.length ? modeIds : [null]) for (const { where, it } of items) {
     if (mode && !visibleIn(it, mode)) continue;
     const t = (mode && it.variants && it.variants[mode]) || it.formula;
-    for (const [what, x] of [['formula', t], ['signature', it.signature], ...rowsOf(it).map((r, i) => ['row ' + (i + 1), r.formula])]) {
+    const rows = T.tableRows(it, mode).flatMap((r, i) => T.cellsOf(r).filter(c => typeof c.formula === 'string').map(c => ['row ' + (i + 1), c.formula]));
+    for (const [what, x] of [['formula', t], ['signature', it.signature], ...rows, ...(it.args || []).filter(a => visibleIn(a, mode)).map(a => ['arg', a.name])]) {
       if (!x) continue;
       try { doc.convert(toMJ(x, mode), { display: true }); } catch (e) { report('mathjax', 'error', `${where} ${what}${mode ? ' (' + mode + ')' : ''}`, String(e.message).slice(0, 140)); }
     }
+  }
+  // inline math of prose, conventions and the parts deviations name, as the page typesets it
+  const inline = [...PROSE, ...(MAP.conventions || []).map(c => [`convention ${c.symbol}`, '$' + c.symbol + '$']),
+    ...items.flatMap(({ where, it }) => (it.deviations || []).filter(d => d.part).map(d => [`${where}.deviation part`, '$' + d.part + '$']))];
+  for (const mode of modeIds.length ? modeIds : [null]) for (const [where, t] of inline) for (const seg of T.proseMath(t, mode)) {
+    try { doc.convert(toMJ(seg, mode), { display: false }); } catch (e) { report('mathjax', 'error', `${where}${mode ? ' (' + mode + ')' : ''}`, `$${seg.slice(0, 60)}$: ${String(e.message).slice(0, 120)}`); }
   }
   return true;
 }
