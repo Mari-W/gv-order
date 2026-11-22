@@ -189,7 +189,9 @@ window.MathJax = {
       out += s.slice(i, j) + (mode === 'lf' ? '\u0001' + annp(s.slice(j + 6, k - 1)) + '\u0002' : ''); i = k;
     }
   }
-  const prose = s => esc(annp(s)).replace(/\u0001/g, '<span class="ann">').replace(/\u0002/g, '</span>').replace(/`([^`]+)`/g, '<code>$1</code>');
+  // [[block-id]] and [[block-id|label]] link to a block, the label defaulting to its title
+  const blink = (m, id, label) => { const s = MAP.sections.find(x => x.blocks.some(b => b.id === id)); const b = s && s.blocks.find(b => b.id === id); return b ? `<a class="blink" href="#${s.id}" data-jump="${id}">${label || esc(b.title)}</a>` : (label || id); };
+  const prose = s => esc(annp(s)).replace(/\u0001/g, '<span class="ann">').replace(/\u0002/g, '</span>').replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\[\[([A-Za-z0-9\-]+)(?:\|([^\]]+))?\]\]/g, blink);
   // syntax highlighting for programs in the surface language
   const KW = new Set(['let', 'in', 'new', 'spawn', 'send', 'recv', 'close', 'select', 'branch', 'link', 'force', 'case', 'of', 'inl', 'inr', 'fix', 'box', 'fun', 'if', 'then', 'else', 'end', 'skip', 'rec']);
   function hl(code) {

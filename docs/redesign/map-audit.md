@@ -39,6 +39,15 @@ reason, and the Rocq name it was checked against. Sections follow page order.
   cites `Op` and `k_send` in place of the citation text "(the value $k$ is
   $\lambda x.\,k\,x$)".
 
+- Cross-links (all sections). The page now renders `[[block-id]]` and
+  `[[block-id|label]]` in prose as links to blocks (index.html, `blink`), and
+  gen.js fails on a dead link. Links added: E-New to O-New and growth of
+  worlds, the actions to obligations and readiness, process typing to the
+  composition rules and to models of worlds, Sub-Ex to the value clause,
+  E-Open to the flag example, the theorem captions to the blocks they
+  combine, and the new examples to the rules and theorems they use. This is
+  the same link syntax as proof-map, so the converter passes it through.
+
 ## Semantics
 
 - `sem-head`. New rows T-Act-Let (unit and pair elimination) and T-Act-Case,
@@ -249,6 +258,16 @@ reason, and the Rocq name it was checked against. Sections follow page order.
   $G$, $Y$, $Z$, $\Phi$, $d$, $g$. `sr-reading` says that the deadlock-free
   relation reads strict worlds and the lock-free threads ranked ones. Why:
   checker (var-before-intro) and the Rocq change on worlds.
+
+- `sr-ord` (new block, after the reading guide). Ordinals as Brouwer trees,
+  their order and its well-foundedness, $\beta + c$, $\mathsf{osfix}$, and in
+  the lock-free view the existential property with its EM and FC hypotheses.
+  New notes `ord.ord`, `ord.lt`, `ord.wf`, `ord.add`, `ord.fix`,
+  `ord.exprop`. Why: brief (transfinite indices `ord`, `olt_wf`, `osfix`,
+  `exist_prop` were cited only in passing, `olt_wf` nowhere). Checked against
+  relation/Ord.v and relation/ExProp.v.
+- Notes `O-Spawn.transfer` and `fu.oneclock` deleted. No formula used them
+  (gen.js and the checker reported them unused).
 
 ## Theorems
 

@@ -123,6 +123,14 @@ for (const [k, v] of Object.entries(notes)) if (dfKeys.has(k)) {
   for (const a of v.args || []) if (KW.test(a.meaning)) { const onlyAnn = a.name.split(',').every(x => /^\s*(a|b|c|h|tk|r|\\vartheta)(_\{?\w+\}?)?'*\s*$/.test(x)); if (onlyAnn) a.ann = true; else a.meaning = annProse(a.meaning); }
 }
 for (const v of Object.values(notes)) { for (const f of ['title', 'what', 'why', 'breaks', 'example', 'sig']) v[f] = ann(v[f]); for (const a of v.args || []) { if (/^(a|b)(_\{?\w+\}?)?'*$/.test(a.name) && /credit/i.test(a.meaning)) a.ann = true; a.name = ann(a.name); a.meaning = ann(a.meaning); } }
+// [[block-id]] links in prose must name a block
+{
+  const bids = new Set(sections.flatMap(s => s.blocks.map(b => b.id)));
+  const chk = (t, where) => { if (typeof t !== 'string') return; for (const m of t.matchAll(/\[\[([A-Za-z0-9\-]+)(?:\|[^\]]+)?\]\]/g)) if (!bids.has(m[1])) { console.log('DEAD-LINK', where, m[1]); errs++; } };
+  for (const s of sections) { chk(s.intro, s.id); for (const b of s.blocks) { chk(b.caption, b.id); if (b.about) for (const f of ['why', 'breaks', 'example']) chk(b.about[f], b.id + '.' + f); } }
+  for (const [k, v] of Object.entries(notes)) for (const f of ['what', 'why', 'breaks', 'example']) chk(v[f], k + '.' + f);
+  for (const e of examples) { chk(e.shows, e.id); chk(e.lead, e.id); }
+}
 const out = { sections, notes, examples };
 const file = path.join(__dirname, '..', 'data.js');
 fs.writeFileSync(file, 'window.MAP = ' + JSON.stringify(out, null, 1) + ';\n');

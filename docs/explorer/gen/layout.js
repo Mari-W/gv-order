@@ -153,7 +153,7 @@ merge('soup', 'The lock-free process relation', ['sp-state', 'sp-inv'], {
 merge('sj-all', 'Semantic judgments', ['sj', 'sp-lf'], {
   why: 'The semantic judgments are what the fundamental theorems conclude and what adequacy consumes. \\annp{The lock-free judgment is the lock-free process relation at every ordinal index, with the bound $N$ chosen once and the annotated configuration chosen at each index.}'
 });
-order('semantic', ['sr-reading', 'ct-costs', 'v-rel', 'e-rel', 'e-obl', 'rd', 'p-rel', 'p-obls', 'fu-vs', 'fu', 'fu-obls', 'fv', 'soup', 'sj-all']);
+order('semantic', ['sr-reading', 'sr-ord', 'ct-costs', 'v-rel', 'e-rel', 'e-obl', 'rd', 'p-rel', 'p-obls', 'fu-vs', 'fu', 'fu-obls', 'fv', 'soup', 'sj-all']);
 
 // ---- theorems ----
 merge('th-terms', 'Lemmas about terms', ['th-sound-src', 'th-fund-term', 'th-bind', 'th-cost'], {
