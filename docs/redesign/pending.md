@@ -1,5 +1,120 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, 2026-11-23, slice in the world, stage 1 stopped
+
+Approved by the author on 2026-11-23 ("yeah go ahead"). Branch fx-slice
+from redesign e75a257. Nothing pushed, nothing merged. No change to the
+worlds, the relation or the typing rules. No Admitted, no Axiom, no new
+Parameter.
+
+Verdict. Point linearity fails for typed programs, and no typing
+restriction that keeps every program typable today restores it. Two
+further obstructions, not in check-transfinite-branches.md, block both
+formulations, w_obs inside the world and χ outside the step index. So I
+stopped after stage 1, as the brief asks. Stage 2 is not started. The
+routes at the end avoid the three obstructions as far as I checked them on
+paper. Each needs a design change outside the approved one.
+
+1. Point linearity fails (mechanized, examples/PointReuse.v).
+
+       round i k = let (a, ā) = new in spawn (λu. u; close (select i ā));
+                   case branch a of inl c ⇒ close c | inr c ⇒ close c; k
+       thread    = round l (round r ∗)
+
+   Both creations type by E-New-Field at the field x·0 of the constant
+   point x (`pr_round_typed`), P-Term types the closed program over the
+   empty world (`pr_term`), and the program is deadlock free
+   (`pr_deadlock_free`). Every run receives l at x·0 and then r at x·0, so
+   λ_r of section 4.2 is not a function. Links add no case of their own.
+   Two channels across one pair of points, which a link needs, arise only
+   from two creations at one field or from two restricted channels that
+   P-Term or P-Connect place at one point.
+
+   Freshness of fields loses programs. A field creation inside a box is
+   typed once and runs at every instance a caller forces, so no local
+   premise sees two forces at one instance. And a thread typed in a world
+   whose only fact is x·0 ≺ ȳ, which twice creates at x·0 and closes the
+   new end while it holds y, types today and needs x·0 both times, because
+   no other field carries the fact (argued). Keying the slice by channel
+   clashes with the static guards, which name points, and with the
+   renamings of `Pbody` (`fuse_ok`), which rename channels. Keying it by
+   end, a label oracle carried in each environment entry, removes the need
+   for linearity but not obstruction 2.
+
+2. Vacuous obligations break P-Connect (argued). P hides its restricted
+   channels. `sem_p_connect` (compat/Connect.v) builds the step of an
+   internal synchronization from Q-Select of one component and Q-Branch
+   of the other. Under the slice an obligation whose label disagrees with
+   it holds vacuously, and q_tau cannot read the point of an internal
+   channel to excuse the step. Close R by a thread that selects l on ē
+   and restrict e. At a world whose slice says r at the point z of e, both
+   components are in P, the sender vacuously after select l and T
+   vacuously in arm l. The composite is not, because T in arm l at a world
+   ranked for r is not ready. So the fundamental theorem fails at that
+   slice, and DF reads every program through P (`fundamental_proc_h`,
+   `adequacy_h`, `ptyped_sem`). Section 4.2 assumes the event agrees with
+   the slice ("gets the agreement from the event it follows"). χ outside
+   the step index has the same gap, because P_χ hides its channels as
+   well. LF composes soups (`lf_p_connect`), which keep every channel with
+   its point, so its step lemmas can be restricted to agreeing events.
+
+3. λ_r is circular (argued). The soup fixes one creation choice per
+   creation (`lfsoup_step_all`), and that choice includes the point π of
+   the new channel. With the slice in the world the choice may read the
+   slice, so the points of the exchanges of a run depend on λ, while
+   section 4.2 reads λ_r off those points. Take two creations whose
+   channels carry l and r, and a proof of O-New that puts the l channel at
+   z1 and the r channel at z0 when λ(z0) = l, and the other way round
+   otherwise. A thread that uses z0 and z1 alike admits both placements.
+   No λ then agrees with the run at z0. Choosing the point before the
+   slice, ∃ S π, ∀ λ_new, ∃ W′ at O-New with λ_new on the points of the new
+   channel only, removes the circle, provided no other channel visits
+   those points, which is obstruction 1 again.
+
+What a sound route needs. Not started, each item is the author's decision.
+
+- (a) Decision points that one channel alone visits. With today's point
+  algebra these are the points whose name is a root, ρ, ρ⁺, ρ‾, …, which
+  only the channel created at ρ reaches, provided O-New picks a root only
+  when it is fresh and P-Term and P-Connect place no two channels at one
+  such point. Guards then exist at the first choice of each channel only.
+  The decision in R is such a choice. A branch at x moves to x·κ_i, a
+  field, where E-New-Field creates freely. Later choices need branch
+  points apart from payload fields (proposal §2.3 shares them by design)
+  and E-New-Field restricted to payload fields.
+- (b) No vacuity in P. Either P carries a ghost environment of its
+  restricted channels, so that q_tau can excuse a disagreeing internal
+  step, or DF reads programs through a soup as LF does, or knowledge
+  replaces vacuity. Knowledge is a set K of decided literals carried by E
+  and P. Readiness reads every labelling that extends K, and an exchange
+  adds its literal. No prophecy is needed, but `sem_p_connect` then needs
+  the knowledge of its two components consistent, which P cannot state
+  for two internal channels at one point.
+- (c) For a slice fixed in advance, the creation order ∃ π, ∀ λ_new, ∃ W′
+  of obstruction 3.
+- Option B of check-transfinite-branches.md (ranks chosen late) needs no
+  slice and keeps one order per world, at the cost listed there.
+
+Commits on fx-slice. One, `examples/PointReuse: two exchanges at one point
+in a typed program, slice in the world stage 1 stopped`, with
+examples/PointReuse.v, its entry in _CoqProject and CheckAll.v (3 new
+results), the map example `ex-point-reuse`, this report and a pointer at
+the head of check-transfinite-branches.md.
+
+Builds. The laptop refused ssh (connection refused), so the build ran
+locally in ~/build-spo-slice, a copy of the built tree of fx-branch (same
+sources as e75a257) plus this change. make exit 0, make check 246 of 246 (243 before, plus
+the three new results), make test passes.
+
+Statements that change form. None. Three results are new
+(`pr_round_typed`, `pr_term`, `pr_deadlock_free`). BranchExt is
+unchanged.
+
+R. Not mechanized, neither accepted nor rejected.
+
+Map. docs/explorer/check.sh 0 errors, 66 warnings and 7 info, as before,
+none on the new entry.
+
 ## Report, 2026-11-23, C1 (per-branch worlds at E-Case) stopped at the crux
 
 Approved by the author on 2026-11-23. Branch fx-branch from redesign

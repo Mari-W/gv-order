@@ -12,7 +12,7 @@ From GV Require Import examples.GuardEx examples.LFClose examples.LFCycle exampl
 From GV Require Import examples.LFFreshMany examples.LFClientServer examples.LFClientServerSplit examples.LFFactoryEx examples.LFGrowRing.
 From GV Require Import examples.LFController soup.SoupRun soup.SoupTau soup.LFAdequacy.
 From GV Require Import soup.LFCompose soup.LFTyped lockfree.FairRun.
-From GV Require Import examples.SemBranch examples.BranchExt static.Inversion relation.Ord relation.ExProp relation.Ranks examples.LFLink compat.Redex static.PointSubst.
+From GV Require Import examples.SemBranch examples.BranchExt examples.PointReuse static.Inversion relation.Ord relation.ExProp relation.Ranks examples.LFLink compat.Redex static.PointSubst.
 From GV Require Import examples.SinstStuck static.Sinst examples.SharedRoots static.Hiding examples.GenNew.
 From GV Require Import soup.LFConnectN examples.Ring static.ConnectNExact.
 From GV Require Import examples.Copycat examples.ForkJoin.
@@ -189,6 +189,10 @@ Print Assumptions bx_rejected.
 Print Assumptions bx_left_typed.
 Print Assumptions bx_right_typed.
 Print Assumptions bx_scrut_typed.
+(** examples/PointReuse.v: two exchanges at one point in a typed program *)
+Print Assumptions pr_round_typed.
+Print Assumptions pr_term.
+Print Assumptions pr_deadlock_free.
 (** relation/Ord.v: ordinals and the transfinite fixpoint *)
 Print Assumptions olt_wf.
 Print Assumptions oadd_lt.

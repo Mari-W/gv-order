@@ -7,6 +7,12 @@ The argument is on paper and was not checked in Rocq.
 
 ## Verdict
 
+Correction (fx-slice, 2026-11-23, pending.md). Option A as written below
+does not go through. Point linearity fails for a typed program
+(v2/examples/PointReuse.v), vacuous exchange obligations break P-Connect
+for internal channels, and λ_r of section 4.2 is circular in the creation
+choice.
+
 No. Ordinal step indices with the creation choice inside the relation do not
 give per-branch orders on points created before the branch. Both are already
 in the Rocq on redesign (section 0), and the obstruction is the world, which

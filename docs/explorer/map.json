@@ -19665,6 +19665,29 @@
    }
   },
   {
+   "id": "ex-point-reuse",
+   "title": "Two exchanges at one point",
+   "lead": "A typed thread receives two labels at one point. A map from points to the labels received there cannot describe its run.",
+   "code": "round i k = let (a, ā) = new in\n            let ∗ = spawn (λu. let ∗ = u in close (select i ā)) in\n            let ∗ = case branch a of inl c ⇒ close c | inr c ⇒ close c in k\nthread = round l (round r ∗)\n-- both creations at the field x·0, x the point of the constant 0",
+   "meaning": "Both creations type by E-New-Field at the field $x \\cdot 0$, and E-New-Field asks no freshness of the field. In each round the thread keeps $a$ at $x \\cdot 0$ and gives $\\overline{a}$ at $\\overline{x \\cdot 0}$ to a new thread, which selects. The first round receives $\\mathsf{l}$ at $x \\cdot 0$ and the second receives $\\mathsf{r}$ at the same point. [[p-typing|P-Term]] types the closed program over the empty world, and the program is deadlock free. So a typed program exchanges twice at one point with two different labels, and a labelling of points that the world fixes before the run agrees with at most one of the two exchanges.",
+   "source": [
+    {
+     "file": "examples/PointReuse.v",
+     "names": [
+      "pr_round_typed",
+      "pr_term",
+      "pr_deadlock_free"
+     ]
+    }
+   ],
+   "x-gv-accepts": {
+    "df": {
+     "ok": true,
+     "rocq": "pr_term, pr_deadlock_free"
+    }
+   }
+  },
+  {
    "id": "ex-flagpair",
    "title": "Two threads on one received flag",
    "lead": "Two threads that branch on one flag sent by a third thread are deadlock free. A proof that follows the reductions of the whole process in the [[p-rel|process relation]] shows it, and a proof that puts each thread into the [[e-rel|term relation]] on its own fails.",
