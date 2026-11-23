@@ -1,5 +1,17 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Decision, 2026-11-23, classical hypotheses for lock-free adequacy (relayed)
+
+Relayed from the author by the CLL≺ session, not yet confirmed in this
+session. Excluded middle and dependent choice are acceptable as explicit
+hypotheses of the lock-free adequacy theorem. The transfinite step indices of
+docs/redesign/check-transfinite.md are approved in principle. The creation
+choice then moves inside the relation, and per-branch orders become possible
+for lock freedom too. The port (43 files) is not started. When to start it is
+for the author to decide. Joint plan with CLL≺: per-branch world extensions
+for deadlock freedom first, with the join restriction (docs/redesign/cll-insights.md),
+then transfinite indices for lock freedom.
+
 ## Note, 2026-11-23, insights from CLL≺
 
 The CLL≺ session sent eight points for the logical relation (generated facts, worlds per branch, the safety and liveness split, existential ranks, tickets as finite traces, the forwarder, reuse, decidability). They are in docs/redesign/cll-insights.md with the four things to test here. No code changed.
