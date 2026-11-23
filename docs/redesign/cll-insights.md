@@ -72,3 +72,27 @@ session. No code changed for it.
 - Item 4, existential ranks per branch for the lock-free relation.
 - Item 7, fresh base points per force.
 - Item 5, whether tickets reduce to finite traces with grades as witness.
+
+## Exchange, 2026-11-23
+
+- Exponentials. CLL≺ adopts the shared formulation. Promotion only over
+  ?-handles that hold no addresses, contraction and weakening free, a body
+  schema instantiated at each use. This is our E-Box (`lenv_unl Δ`, the box
+  clause asks Θ = ∅ and `fends e = ∅`) and E-Force (`hold_at W Γ C xs` at the
+  caller). Our rules stay as they are.
+- Tickets. CLL≺ takes tickets as the decidable sufficient check for liveness.
+  Our incompleteness, derived from the rules and not mechanized, is that an
+  end can be handed off at most N times before it is acted on (E-Send ages
+  the payload by 1, credit a ≤ m ≤ N). So a lock-free program that delegates
+  an end k times for a k received at run time types at no fixed N.
+- Composition. CLL≺ adopts our proof route to drop its freshness hypothesis
+  D102. Renaming apart happens in the proof (`ptyped_qren`, `qren_side`,
+  `connect_hidden`), the summary property must be equivariant and monotone.
+- Decidability, reported by CLL≺ and not yet checked there. Liveness of
+  regular CLL≺ derivations with finite traces is Π⁰₂-complete, by a reduction
+  from two-counter machines to recursive networks with choice and unbounded
+  spawning, without links or exponentials
+  (cll-order/.claude/notes/fable-decidability.md). For our language, lock
+  freedom of programs is undecidable already by Rice's theorem, because boxes
+  give general recursion. The CLL≺ result is about a restricted class of
+  regular derivations. The multiplicative fragment is open on their side.
