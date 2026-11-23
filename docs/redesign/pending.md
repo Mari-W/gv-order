@@ -7,8 +7,13 @@ session. Excluded middle and dependent choice are acceptable as explicit
 hypotheses of the lock-free adequacy theorem. The transfinite step indices of
 docs/redesign/check-transfinite.md are approved in principle. The creation
 choice then moves inside the relation, and per-branch orders become possible
-for lock freedom too. The port (43 files) is not started. When to start it is
-for the author to decide. Joint plan with CLL≺: per-branch world extensions
+for lock freedom too. Correction (fx-transfinite, docs/redesign/check-transfinite-branches.md):
+the port is already in redesign (`Ix := ord`, relation/ExProp.v,
+`lfsoup_step_all`), and it does not give per-branch orders on points created
+before the branch. Ranks of a root are fixed at its creation and the relation
+covers both labels of an offer, so the counterexample R (CLL≺ D23) fails at
+every index. The alternative is the slice in the world (option A, about 40
+files) or ranks chosen late (option B). Not decided. Joint plan with CLL≺: per-branch world extensions
 for deadlock freedom first, with the join restriction (docs/redesign/cll-insights.md),
 then transfinite indices for lock freedom.
 
