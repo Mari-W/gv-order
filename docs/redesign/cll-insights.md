@@ -88,14 +88,21 @@ session. No code changed for it.
 - Composition. CLL≺ adopts our proof route to drop its freshness hypothesis
   D102. Renaming apart happens in the proof (`ptyped_qren`, `qren_side`,
   `connect_hidden`), the summary property must be equivariant and monotone.
-- Decidability, reported by CLL≺ and not yet checked there. Liveness of
-  regular CLL≺ derivations with finite traces is Π⁰₂-complete, by a reduction
-  from two-counter machines to recursive networks with choice and unbounded
-  spawning, without links or exponentials
-  (cll-order/.claude/notes/fable-decidability.md). For our language, lock
+- Decidability, checked independently on the CLL≺ side (D112). Liveness of
+  regular CLL≺ derivations with finite traces is undecidable and
+  Π⁰₂-complete, for derivations without links or exponentials. Theorem A
+  reduces two-counter machines to regular derivations that are correct iff
+  the machine halts. Theorem B gets hardness from totality with a guessed
+  input and the upper bound from König's lemma over consistent walks. The
+  proof is in cll-order/paper/main.tex, Def 14.12, Lemmas 14.13 and 14.14,
+  Thms 14.15 and 14.16, Remark 14.17. The check closed four gaps of the first
+  sketch (round numbers end the downward regress, a permanence argument for
+  wrong choices, a missing case, a fixed maximal-parallel schedule in place
+  of fairness). CLL≺ contrasts this with validity of bouncing threads, which
+  is Σ⁰₁-complete (Baelde et al.). The fragment without ⊕ and & is open. For our language, lock
   freedom of programs is undecidable already by Rice's theorem, because boxes
   give general recursion. The CLL≺ result is about a restricted class of
-  regular derivations. The multiplicative fragment is open on their side.
+  regular derivations.
   The same holds inside DF typing. DF typing admits pure divergence and
   general recursion over sums, so a thread can run a two-counter machine and
   then act on an end whose partner waits. That program is lock-free iff the
