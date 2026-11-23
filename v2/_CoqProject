@@ -45,6 +45,7 @@ examples/FreshMany.v
 examples/FactoryEx.v
 examples/GrowRing.v
 examples/SemBranch.v
+examples/BranchExt.v
 examples/FlagPair.v
 examples/TreeTopo.v
 relation/Ord.v

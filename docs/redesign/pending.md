@@ -1,5 +1,95 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, 2026-11-23, C1 (per-branch worlds at E-Case) stopped at the crux
+
+Approved by the author on 2026-11-23. Branch fx-branch from redesign
+f1fb155. Nothing pushed, nothing merged. No typing rule and no relation
+changed. No Admitted, no Axiom, no new Parameter.
+
+Verdict. C1 as planned fails in the current relation at N = ∞ already.
+A rule E-Case that types each arm at its own extension of W and concludes
+at W makes `fundamental` false, for each join restriction proposed in
+cll-insights.md. examples/BranchExt.v proves it.
+
+- The crux. E and P hold in every extension W1 ⊒ W of their world
+  (decision Q9, `Ebody`, `Pbody`), and a world is a strict order. A fact
+  that an arm needs between two old points x and y can be refuted in some
+  W1, because W1 may already hold the opposite fact, fixed by a partner
+  before the label arrives. No extension of W1 then holds the arm's fact,
+  so O-Branch cannot grow the world at the branch step. Whole-world
+  acyclicity is not preserved. Kripke monotonicity is the obstruction,
+  not the key. `wext` keeps old facts, but the relation quantifies over
+  extensions that add facts between old points, and an arm cannot
+  tolerate the opposite one.
+- The witness, `bx_thread` = case branch e of inl w ⇒ close w; close c;
+  close d | inr w ⇒ close w; close d; close c, with e at z, c at x, d at
+  y. The scrutinee types at the base world `bx_W0` (`bx_scrut_typed`),
+  the left arm at `bx_W0` with x ≺ ȳ (`bx_left_typed`), the right arm at
+  `bx_W0` with y ≺ x̄ (`bx_right_typed`). The thread is not in E at the
+  strict world `bx_R`, which models `bx_W0` and adds x̄ ≺ y
+  (`bx_not_E`). Each arm consumes w, c and d and returns ∗, so no point
+  of an arm occurs in the result type, in Δ after the case, in F or in a
+  continuation. Every restriction of the brief admits the thread.
+- Composition. The two threads of CLL≺ counterexamples.md D23 ("branch
+  local checks are unsound") have this shape, and such a rule types each
+  of them at a world without facts between their points. P-Connect then
+  accepts the pair, which deadlocks when the environment sends inl to one
+  and inr to the other. Argued, not mechanized.
+- The sound restriction, facts only between points created in the arm,
+  adds nothing to E-New and E-Open, which already give an arm facts on
+  its own fresh roots. It does not type D23's R either. In R, branch l
+  waits on c while it holds g, whose point is the payload field of f, so
+  its fact x ≺ y·κ is between old roots, and branch r needs y ≺ x·κ.
+- LF verdict. LF cannot share a per-branch rule. Ranked worlds fix ranks
+  at creation (`wk_ext`, `w_rk_ord`), which adds a second obstruction on
+  top of the Kripke one above. The rule is unsound for DF and LF alike.
+- The motivating example R is not mechanized, neither its rejection on
+  redesign nor its acceptance. The current rules reject `bx_thread` at
+  every static world that `bx_R` models (`bx_rejected`, by `fundamental`).
+
+What would type R. The world of a component has to record the facts of
+each resolution of its choices, and composition has to check each
+combination, the slices of CLL≺. Two candidates, both changes of the
+relation and therefore the author's decision.
+
+1. A label oracle. Quantify the relation over a map χ from points to
+   received labels, outside the step index. The branch points
+   bra_pt z i = z·κ_i already name the labels. A static world becomes a
+   family W(χ), E-Case types arm i at the worlds with χ(z) = i, an
+   offer that receives the other label holds vacuously, P-Connect checks
+   W1(χ) ⊔ W2(χ) acyclic for each χ, and adequacy reads χ off the run.
+   This is the alternative of fable-joint-review.md D10. It covers an
+   offer and does not cover a case on data, which no point names.
+2. Reserved pairs. A world records which pairs of points one component
+   alone may still order, extension respects the reservations, and
+   P-Connect rejects two components that reserve interacting pairs.
+   Acyclicity still has to hold for each combination of arms, so this
+   reduces to 1.
+
+Either touches `Ebody`, `Pbody`, O-Branch, Q-Branch, the composition
+lemmas (compat/Connect*.v, compat/PTerm.v), `ptyped_sem`, adequacy and
+the 25 `d_*`. Not started.
+
+Commits on fx-branch. One, `examples/BranchExt: per-branch worlds at
+E-Case fail in the relation`, with examples/BranchExt.v, its entry in
+_CoqProject and CheckAll.v (5 new results), the map example
+`ex-branch-ext` and one clause in the caption of `r-data` ("in one
+world"), and this report.
+
+Builds. The laptop refused ssh for the whole run (banner exchange timed
+out), so the build ran locally in ~/build-spo-br with the same commands.
+make exit 0, make check 243 of 243 (238 before, plus the five new
+results), make test passes.
+
+Statements that change form. None. Five results are new (`bx_not_E`,
+`bx_rejected`, `bx_left_typed`, `bx_right_typed`, `bx_scrut_typed`).
+
+Map. docs/explorer/check.sh 0 errors, 66 warnings and 7 info, none on the
+new entry (the warnings were there before).
+
+Open. The decision between keeping one world per case for the paper and
+a relation with slices. R as an example file, after that decision.
+
 ## Decision, 2026-11-23, classical hypotheses for lock-free adequacy (relayed)
 
 Relayed from the author by the CLL≺ session, not yet confirmed in this

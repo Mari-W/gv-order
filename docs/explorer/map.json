@@ -1184,7 +1184,7 @@
      "id": "r-data",
      "title": "Products, sums and let",
      "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} \\Delta_2} e_1 : T_1\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1}}\\quad \\sym{E-Pair.fut2}{\\Gamma ; \\Delta_2\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_1}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} T_1} e_2 : T_2\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_2}}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\langle e_1, e_2\\rangle : \\inmode{lf}{(}T_1\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_2}}\\inmode{lf}{)} \\otimes T_2\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1 \\sym{tj.seq}{\\cdot} \\varepsilon_2}}\\;\\textsf{E-Pair}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} \\Delta_2} e_1 : T_1 \\otimes T_2\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1}}\\quad \\sym{tp.letp}{\\Gamma ; T_2, T_1, \\Delta_2\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_1}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e_2 : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_2}}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.letp}{\\mathsf{let}}\\ \\langle a, b\\rangle = e_1\\ \\sym{syn.letp}{\\mathsf{in}}\\ e_2 : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1 \\sym{tj.seq}{\\cdot} \\varepsilon_2}}\\;\\textsf{E-LetP} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} \\Delta_2} e_1 : \\ast\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1}}\\quad \\sym{tp.letu}{\\Gamma ; \\Delta_2\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_1}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e_2 : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_2}}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.letu}{\\mathsf{let}}\\ \\ast = e_1\\ \\sym{syn.letu}{\\mathsf{in}}\\ e_2 : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1 \\sym{tj.seq}{\\cdot} \\varepsilon_2}}\\;\\textsf{E-LetU}\\end{array}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T_i\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\quad \\sym{E-Inj.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,(T_1 \\oplus T_2)}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.inj}{\\mathsf{inj}_i\\,e} : T_1 \\oplus T_2\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Inj} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} \\Delta_2} e : T_1 \\oplus T_2\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_0}}\\quad \\sym{E-Case.branches}{\\Gamma ; T_i, \\Delta_2\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_0}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e_i : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_i}}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.case}{\\mathsf{case}}\\ e\\,(e_1)\\,(e_2) : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_0 \\sym{tj.seq}{\\cdot} \\sym{tp.max}{\\max}(\\varepsilon_1,\\varepsilon_2)}}\\;\\textsf{E-Case}\\end{array}\\end{array}",
-     "caption": "E-Pair holds the value of $e_1$ while $e_2$ runs, with the future of [[t-judgment]]. \\inmode{lf}{The held value [[t-agecap|ages]] by the cost of $e_2$.} The derived [[syn-let|$\\mathsf{let}$]] is typed by E-Pair, E-LetP and E-LetU. Both branches of a case are typed under one context at one result type, and the [[r-act|branch]] of a choice is consumed by E-Case. Variables enter $\\Delta$ by E-LetP and E-Case and leave it by [[r-base|E-Var]].",
+     "caption": "E-Pair holds the value of $e_1$ while $e_2$ runs, with the future of [[t-judgment]]. \\inmode{lf}{The held value [[t-agecap|ages]] by the cost of $e_2$.} The derived [[syn-let|$\\mathsf{let}$]] is typed by E-Pair, E-LetP and E-LetU. Both branches of a case are typed under one context at one result type and in one world, and the [[r-act|branch]] of a choice is consumed by E-Case. Variables enter $\\Delta$ by E-LetP and E-Case and leave it by [[r-base|E-Var]].",
      "why": "A pair is the simplest place where a thread holds a value while other code runs, and E-Pair checks the order this requires.",
      "source": [
       {
@@ -19631,6 +19631,36 @@
     "sem": {
      "ok": true,
      "rocq": "sbv_thread_E and sbv_deadlock_free"
+    }
+   }
+  },
+  {
+   "id": "ex-branch-ext",
+   "title": "One world per arm",
+   "lead": "A rule E-Case that types each arm at its own extension of the world and concludes at the old world is unsound. The thread below types by such a rule, and the [[e-rel|term relation]] rejects it at a strict world that models the old world.",
+   "code": "thread = case branch e of\n           inl w ⇒ let ∗ = close w in let ∗ = close c in close d\n         | inr w ⇒ let ∗ = close w in let ∗ = close d in close c\n-- e at z, c at x, d at y",
+   "meaning": "The left arm closes $c$ while it holds $d$ and asks $x \\prec \\overline{y}$. The right arm asks $y \\prec \\overline{x}$. Both arms close $w$ first, so the base world orders $z$ and both branch points of $z$ below $\\overline{x}$ and $\\overline{y}$, with no fact between $x$ and $y$. The scrutinee types at the base world and each arm at the base world with its one fact. Each arm consumes $w$, $c$ and $d$ and returns $\\ast$, so no point of an arm occurs after the case. The strict world $R$ adds $\\overline{x} \\prec y$ and models the base world. When the right label arrives at $R$, the thread closes $d$ while it holds $c$, and readiness asks $y \\prec \\overline{x}$, which $R$ refutes. The term relation holds in each larger world of [[w-ext]], and no extension of $R$ has $y \\prec \\overline{x}$. So the fundamental theorem fails for a rule with arms at separate extensions, and the current rules reject the thread at each world that $R$ models.",
+   "source": [
+    {
+     "file": "examples/BranchExt.v",
+     "names": [
+      "bx_not_E",
+      "bx_rejected",
+      "bx_left_typed",
+      "bx_right_typed",
+      "bx_scrut_typed"
+     ]
+    }
+   ],
+   "x-gv-accepts": {
+    "df": {
+     "ok": false,
+     "part": "E-Case",
+     "rocq": "bx_rejected, at each static world that the strict world bx_R models"
+    },
+    "sem": {
+     "ok": false,
+     "rocq": "bx_not_E"
     }
    }
   },
