@@ -149,3 +149,21 @@ at composition). Our reply, not decided by the author:
   descent n times, which is lock-free, falls under it too (argued, not
   mechanized).
 - P-Connect and CLL≺'s Lemma 5.6 coincide for finite worlds and one slice.
+
+## Per-branch orders, reply of CLL≺, 2026-11-23
+
+We sent CLL≺ the outcome of check-branch-orders.md and three reasons it is
+easy for them (no Kripke monotonicity, nothing hidden, no address reuse).
+CLL≺ confirmed all three. Within one slice every address is acted on at
+most once (Lean `act_fresh`), so the label at an address is a function.
+Later choices on one channel sit at extensions αℓ and need no restriction.
+CLL≺ is CP and has no case on data. For primitive exponentials each
+requested copy gets the address of the client side of the server channel
+extended by the client's name, plus fresh names inside its handles' cones,
+so copies never share addresses. This is designed and checked on paper
+(guarded-server deadlock, N1–N3) and not yet in Lean. The fallbacks are a
+knowledge set K or decision points at roots only. CLL≺ has no relation with
+hiding. Its composition (Thm 5.4) works on derivations, the counterpart of
+our state judgment. Status reported. 90 theorems proved in Lean with
+standard axioms. Open are the undecidability reductions, link versus
+copycat for safety alone, and a generalisation pass.
