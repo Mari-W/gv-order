@@ -29,7 +29,8 @@
       force needs H at an instance whose dual lies below ῑ. Under
       (gen-new), the premise of E-New at a finite N, no box admits that
       descent (docs/redesign/check-general-new.md, Proposition 7), so
-      the lock-free judgment rejects the recursive version.
+      the lock-free judgment rejects the recursive version
+      ([fjr_lf_rejected] in examples/Descent.v).
 
     The channels carry no data, so "recv-or-close" is close throughout. *)
 
@@ -1146,8 +1147,10 @@ Proof. exact (soundness_h _ _ TUnit fib_term). Qed.
     ῑ′ = p ≺ ῑ. Proposition 7 of docs/redesign/check-general-new.md shows
     that W, Γ and H then have no common model of rank, for a field
     creation and for a fresh root alike, so under (gen-new) main cannot
-    force the box. Strict worlds have no least rank, so the argument
-    does not apply to the deadlock-free judgment ([fjr_dftyped]). *)
+    force the box. examples/Descent.v proves it for every derivation
+    ([prop7], [fjr_lf_rejected]). Strict worlds have no least rank, so
+    the argument does not apply to the deadlock-free judgment
+    ([fjr_dftyped]). *)
 Lemma fj_wait_needs W N Θ Γ Δ F c w T k ec ew :
   c ≠ w → typed W N Θ Γ Δ F (LetU (EClose (Chan c)) (EClose (Chan w))) T k →
   Θ !! c = Some ec → Θ !! w = Some ew → facts_const W → slt W Γ (te_pt ec) (te_pt ew)‾.

@@ -18,6 +18,7 @@ From GV Require Import soup.LFConnectN examples.Ring static.ConnectNExact.
 From GV Require Import examples.Copycat examples.ForkJoin.
 From GV Require Import static.ChanRen examples.CopycatTwo static.LetVar examples.LetVarCounter examples.CopycatTwoN.
 From GV Require Import static.Skeleton examples.Rejects.
+From GV Require Import examples.Descent.
 
 (** types/Points.v *)
 Print Assumptions pt_dual_dual.
@@ -326,3 +327,15 @@ Print Assumptions rx_postpone_rejected.
 Print Assumptions rx_postpone_proc_rejected.
 Print Assumptions rx_delegate_rejected.
 Print Assumptions rx_delegate_proc_rejected.
+(** examples/Descent.v *)
+Print Assumptions descent.
+Print Assumptions prop7.
+Print Assumptions prop7_new.
+Print Assumptions prop7_fld.
+Print Assumptions gen_new_ext.
+Print Assumptions rc_grow_no_model.
+Print Assumptions rx_chain_rejected.
+Print Assumptions rx_chain_proc_rejected.
+Print Assumptions wkr_no_model.
+Print Assumptions fjr_lf_rejected.
+Print Assumptions fjr_lf_proc_rejected.
