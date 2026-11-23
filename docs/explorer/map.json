@@ -357,7 +357,7 @@
      "id": "sem-labels",
      "title": "Thread labels",
      "formula": "\\begin{array}{rl}\n\\alpha ::= & \\sym{lbl.beta}{\\beta} \\mid \\sym{lbl.force}{\\mathsf{force}} \\mid \\sym{lbl.new}{\\mathsf{new}\\,c} \\mid \\sym{lbl.spawn}{\\mathsf{spawn}\\,v} \\mid \\sym{se.slabel}{\\sigma} \\\\\n\\sigma ::= & \\sym{lbl.send}{o!v} \\mid \\sym{lbl.recv}{o?v} \\mid \\sym{lbl.close}{o\\,\\mathsf{end}} \\mid \\sym{lbl.sel}{o \\lhd i} \\mid \\sym{lbl.bra}{o \\rhd i} \\mid \\sym{lbl.link}{\\leftrightarrow\\{o_1,o_2\\}}\n\\end{array}",
-     "caption": "The label $\\beta$ stands for application, unit and pair elimination and case, and $\\mathsf{force}$ for the force of a box. A session label $\\sigma$ is an action offered on an end. $\\mathsf{new}\\,c$ names the channel created, and $\\mathsf{spawn}\\,v$ carries the thunk of the new thread. The [[sem-head|head steps]] produce these labels, and the [[sem-proc|process steps]] match the labels of two threads.",
+     "caption": "The label $\\beta$ stands for application, unit and pair elimination and case, and $\\mathsf{force}$ for the force of a box. A session label $\\sigma$ is an action offered on an end. $\\mathsf{new}\\,c$ names the channel created, and $\\mathsf{spawn}\\,v$ records the thunk of the new thread. The [[sem-head|head steps]] produce these labels, and the [[sem-proc|process steps]] match the labels of two threads.",
      "why": "An internal step needs no other thread. A session label must be matched by the dual label of another thread, or offered to the environment. \\inmode{lf}{The [[ct-costs|step costs]] of the relation are a function of the label.}",
      "source": [
       {
@@ -701,7 +701,7 @@
      "title": "Worlds",
      "formula": "\\begin{array}{l}\n\\sym{w.world}{W = (\\sym{w.consts}{A}, \\sym{w.facts}{\\prec_A})} \\\\\n\\sym{w.rworld}{R = (B, \\sym{w.rord}{<_R}\\inmode{lf}{, \\sym{w.kind}{k}})} \\qquad \\sym{w.rord}{{<_R} \\subseteq \\mathsf{Point}_B^{2}} \\qquad \\sym{w.rord}{x \\not<_R x \\quad {<_R} = {<_R}^{+} \\quad \\sym{w.po}{\\mathsf{po}} \\cap \\mathsf{Point}_B^{2} \\subseteq {<_R}}\\inmodeplain{lf}{ \\\\ }\\inmode{lf}{\\sym{w.kind}{k ::= \\mathsf{strict} \\mid \\mathsf{ranked}\\ \\varrho} \\qquad \\sym{w.rank}{\\varrho : \\mathsf{Point} \\to \\mathsf{Ord}} \\qquad \\sym{w.rank}{k = \\mathsf{ranked}\\ \\varrho \\Rightarrow (x <_R y \\iff \\varrho(x) < \\varrho(y))}}\n\\end{array}",
      "caption": "A static world $W$ has a finite set $A$ of constants and facts $\\prec_A$ between [[syn-points|points]] with roots in $A$. A world $R$ of the relation has a finite set $B$ of roots, constants and fresh roots alike. Its order $<_R$ is a strict partial order on the points $\\mathsf{Point}_B$ with roots in $B$ and contains program order between such points. \\inmode{lf}{A world also has a kind $k$. A strict world is any such order. \\inmode{lf}{A ranked world has a rank function $\\varrho$ into the ordinals, and its order is the order of the ranks.}} [[w-order]] defines the orders, [[w-ext]] how worlds grow, and [[p-typing|process typing]] reads a static world.",
-     "why": "Typing reads the order of a static world, and the relation reads the order of a world of the relation. The two meet in $R \\vDash W$. A typing derivation sees only constants, because fresh roots are hidden in existentials, so a static world speaks about constants alone. \\inmode{lf}{Deadlock freedom inspects one stuck configuration, and a strict order on its finitely many waiting points has a minimal one. \\inmode{lf}{Lock freedom follows one wait through a run whose world grows, and only ranks fixed once chosen keep the union of these worlds well-founded.} \\inmode{lf}{So the deadlock-free results and the results at $\\kappa_L$ read strict worlds and the lock-free threads ranked ones.}}",
+     "why": "Typing reads the order of a static world, and the relation reads the order of a world of the relation. The two meet in $R \\vDash W$. A typing derivation names only constants, because fresh roots are hidden in existentials, so a static world speaks about constants alone. \\inmode{lf}{Deadlock freedom inspects one stuck configuration, and a strict order on its finitely many waiting points has a minimal one. \\inmode{lf}{Lock freedom follows one wait through a run whose world grows, and only ranks fixed once chosen keep the union of these worlds well-founded.} \\inmode{lf}{So the deadlock-free results and the results at $\\kappa_L$ read strict worlds and the lock-free threads ranked ones.}}",
      "source": [
       {
        "file": "types/Worlds.v",
@@ -1057,7 +1057,7 @@
      },
      "caption": "A waiting thread waits on the thread holding its dual end, which may itself wait at a lower point. [[r-new|E-New]] at a fresh root $\\rho$ asks that the new tree can be ranked. Along a run the world grows, and ranks fixed once chosen keep the union of its worlds well-founded, as [[w-wf]] states for static worlds. So this chain of waits ends, and the thread at its bottom can act. [[p-typing|Typing at a finite bound]] keeps ranks possible, and [[th-adeq|lock-free adequacy]] asks only that the world be ranked.",
      "why": "It rules out a chain of waiting threads that grows forever, each waiting below the previous one.",
-     "example": "The growing waiting chain in the Examples tab has no typing, because E-New rejects its creation.",
+     "example": "The growing waiting chain in the Examples tab has no typing at a finite bound. Its box would have to call itself at a strictly lower dual point in each round, and ranks admit no infinite descent.",
      "modes": [
       "lf"
      ],
@@ -1482,7 +1482,7 @@
      "id": "sr-reading",
      "title": "Reading the relations",
      "caption": "The relations $V$, $E$ and $P$ relate a value, a term or a process to the environment $\\Theta$ of the ends it owns. The relations are indexed by a world $R$ of the relation of [[w-world]], whose order they read, and an ordinal index $\\alpha$ of [[sr-ord]]. The deadlock-free relation reads strict worlds. \\inmode{lf}{The threads of the lock-free process relation read ranked worlds.} A term is safe when it is a safe value, or when it is ready and each of its steps leads to a safe term at each lower index the cost of the step allows. Readiness says that a stuck term waits below the dual points of the ends it holds. Processes are safe in the same way and remain safe when their ends are fused, so composing two safe processes needs no further proof. The [[v-rel|value]], [[e-rel|term]] and [[p-rel|process]] relations follow. \\inmode{lf}{Fuel is a second predicate on each thread, which holds the ends $\\Phi$ with their counters and returns within $d$ actions. \\inmode{lf}{The lock-free process relation requires both of each thread.}}",
-     "why": "Each row says in words what one judgment of this section means. The relation proves the typing rules as follows. Each rule becomes a lemma, the compatibility lemma, which says that if the subterms are in $E$ then the term is in $E$. The fundamental theorem is the induction over a derivation that applies these lemmas. Adequacy then reads deadlock freedom off readiness. A premise of a rule is justified exactly when its compatibility lemma needs it.",
+     "why": "Each row says in words what one judgment of this section means. The relation proves the typing rules as follows. Each rule becomes a lemma, the compatibility lemma, which says that if the subterms are in $E$ then the term is in $E$. The fundamental theorem is the induction over a derivation that applies these lemmas. Adequacy then reads deadlock freedom off readiness. A premise of a rule is justified exactly when the compatibility lemma of the rule uses the premise.",
      "source": [
       {
        "file": "relation/Relation.v",
@@ -7311,7 +7311,7 @@
   "lfi.link": {
    "title": "Links, at most $N$ per wait",
    "meaning": "E-Link asks $a_1 + m_2 > N$ and $a_2 + m_1 > N$ of linked ends $o_1 : S_x\\inmode{lf}{^{a_1,m_1}}$ and $o_2 : \\overline{S}_{\\overline{x}}\\inmode{lf}{^{a_2,m_2}}$.",
-   "why": "A link replaces the partner of the thread waiting on $\\overline{o_1}$. The old partner $o_1$ had a counter of at least $a_1$. The new partner $\\overline{o_2}$ has at most $N - m_2$ tickets, and $N - m_2 < a_1$, so its counter is lower. Counters lie between $0$ and $N$, so a wait sees at most $N$ links before its partner acts on the end.",
+   "why": "A link replaces the partner of the thread waiting on $\\overline{o_1}$. The old partner $o_1$ had a counter of at least $a_1$. The new partner $\\overline{o_2}$ has at most $N - m_2$ tickets, and $N - m_2 < a_1$, so its counter is lower. Counters lie between $0$ and $N$, so at most $N$ links happen during one wait before its partner acts on the end.",
    "breaks": "Link refresh in the Examples tab relinks the partner of a waiting end to a new channel in each round. Without the premise the new end has a full counter each time, and the wait never ends.",
    "example": "At $N = 4$, linking $o_1$ at credit $3$ with $o_2$ at $2$ tickets meets $3 + 2 > 4$.",
    "signature": "a_1 + m_2 > N \\land a_2 + m_1 > N",
@@ -8840,7 +8840,7 @@
   },
   "E-Abs.cap": {
    "title": "Capture as aging",
-   "meaning": "\\inmode{lf}{The body of a closure\\inmode{lf}{ at credit $a$} sees $\\Delta - a$, each captured end and closure at its own credit minus $a$.}",
+   "meaning": "\\inmode{lf}{The body of a closure\\inmode{lf}{ at credit $a$} is typed under $\\Delta - a$, each captured end and closure at its own credit minus $a$.}",
    "why": "The thread holding the closure performs up to $a$ actions before the call. \\inmode{lf}{The body may therefore assume each captured credit minus $a$.} \\inmode{lf}{Each end keeps its own credit, so an end at $N$ captured next to an end at $1$ stays at $N - a$.}",
    "breaks": "\\inmode{lf}{A single shared credit puts an end at $N$ captured next to an end at $1$ at $0$, and a child that acts on the second end while it holds the first has no typing.}",
    "example": "$a^{+}$\\inmode{lf}{ at credit $3$} in a closure\\inmode{lf}{ at credit $1$} is seen\\inmode{lf}{ at credit $2$}.",
@@ -17377,7 +17377,7 @@
   },
   "th.lf-p-connect": {
    "title": "P-Connect in the lock-free judgment",
-   "meaning": "If $\\mathsf{conn}$, $\\Sigma_1 \\cup \\Sigma_C \\Vvdash\\inmode{lf}{^{N}}_{W_1} p_1 : T$ and $\\Sigma_2 \\cup \\Sigma_D \\Vvdash\\inmode{lf}{^{N}}_{W_2} p_2 : \\ast$, then $\\Sigma_1 \\cup \\Sigma_2 \\Vvdash\\inmode{lf}{^{N}}_{W_1 \\sqcup W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T$. With $\\mathsf{wf}\\,W_1$, $\\mathsf{wf}\\,W_2$ and $\\mathsf{wf}\\,(W_1|_S \\sqcup W_2|_S)$ a closed composite is lock free. With hiding the components sit at whole worlds that hide to their interface worlds, with private constants apart, and the premise reads $\\mathsf{wf}$ of the join of the two interface worlds.",
+   "meaning": "If $\\mathsf{conn}$, $\\Sigma_1 \\cup \\Sigma_C \\Vvdash\\inmode{lf}{^{N}}_{W_1} p_1 : T$ and $\\Sigma_2 \\cup \\Sigma_D \\Vvdash\\inmode{lf}{^{N}}_{W_2} p_2 : \\ast$, then $\\Sigma_1 \\cup \\Sigma_2 \\Vvdash\\inmode{lf}{^{N}}_{W_1 \\sqcup W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T$. With $\\mathsf{wf}\\,W_1$, $\\mathsf{wf}\\,W_2$ and $\\mathsf{wf}\\,(W_1|_S \\sqcup W_2|_S)$ a closed composite is lock free. With hiding the proof reads the components at whole worlds that hide to their interface worlds, with private constants apart, and the premise reads $\\mathsf{wf}$ of the join of the two interface worlds.",
    "why": "Each component is read at the ranked worlds of its own static world. A ranked world $R$ of the join satisfies both. The first component starts at some $R_1 \\sqsupseteq R$, the second is read at $R_1$ and starts at some $R_2 \\sqsupseteq R_1$, and the first moves up to $R_2$ because the relation is monotone in the world. A ranked world of the join exists exactly when the join is well-founded, which the condition on the shared roots gives. Its ranks come from the order of the join, never from the ranks of a component.",
    "breaks": "Two components at fixed ranked worlds $R_1$ and $R_2$ do not compose, because the two rankings may order shared points that no fact relates in opposite directions.",
    "example": "The client at $W_{cli}$ and the server at $W_{srv}$, which share the root $\\rho$, compose over the cut $\\{a, b\\}$.",
@@ -18356,7 +18356,7 @@
   "th.sem-p-connect-sw": {
    "title": "Semantic P-Connect at static worlds",
    "meaning": "If $\\mathsf{tfree}\\,T$, $\\mathsf{conn}$, $\\Sigma_1 \\cup \\Sigma_C \\vDash_{W_1} p_1 : T$ and $\\Sigma_2 \\cup \\Sigma_D \\vDash_{W_2} p_2 : \\ast$, then the composite is in the semantic judgment at $W_1 \\sqcup W_2$.",
-   "why": "A strict model of the join models both static worlds, so both components hold there and semantic P-Connect applies at that one world. With hiding the components sit at whole worlds that hide to their interface worlds with private constants apart.",
+   "why": "A strict model of the join models both static worlds, so both components hold there and semantic P-Connect applies at that one world. With hiding the proof reads the components at whole worlds that hide to their interface worlds with private constants apart.",
    "breaks": "Nothing. It is a theorem.",
    "example": "Two threads closing $c^{+}$ and $c^{-}$.",
    "signature": "\\mathsf{tfree}\\,T \\land \\mathsf{conn} \\land \\Sigma_1 \\cup \\Sigma_C \\vDash_{W_1} p_1 : T \\land \\Sigma_2 \\cup \\Sigma_D \\vDash_{W_2} p_2 : \\ast \\Rightarrow \\Sigma_1 \\cup \\Sigma_2 \\vDash_{W_1 \\sqcup W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T",
@@ -19931,7 +19931,7 @@
     },
     "lf": {
      "ok": false,
-     "part": "E-New",
+     "part": "the box constraint, ranks admit no infinite descent",
      "rocq": "fjr_lf_rejected, fjr_lf_proc_rejected"
     }
    }
@@ -20124,7 +20124,7 @@
   {
    "id": "rx-chain",
    "title": "A waiting chain that grows forever",
-   "lead": "A deadlock-free program in which a chain of waiting threads grows forever. The box cannot call itself one level lower at a finite bound, and the rejection under [[r-new|E-New]] is proved.",
+   "lead": "A deadlock-free program in which a chain of waiting threads grows forever. The box cannot call itself one level lower at a finite bound under the creations of [[r-new|E-New]], and the rejection is proved.",
    "code": "grow = !(f = λw. let ⟨c, c′⟩ = new in                 -- c below the point of w\n                 let ⟨d, d′⟩ = new in let ∗ = spawn (λ_. recvclose d′) in\n                 let ∗ = close (send ⟨∗, d⟩) in              -- one session action\n                 let ∗ = spawn (λ_. (force f) c′) in\n                 let ∗ = close c in close w)                 -- waits on its child\nmain = let ⟨w, w′⟩ = new in let ∗ = spawn (λ_. close w′) in (force grow) w\n-- every thread waits on the one it spawned, close w′ never proceeds",
    "meaning": "Each thread spawns a child, waits on it, and the child does the same. Closing $c$ while the thread holds $w$ asks the point $q$ of $c$ below $\\overline{s}$, where $s$ is the point of $w$. The child holds $c'$ at $\\overline{q}$ and forces the box there, so the box must hold its constraint at an instance whose dual point lies below $\\overline{s}$. The proof reads each derivation at a ranked model of its context. It reads a value through its points, the witnesses of its existentials and the constraint of a box, and E-Sub, E-Pack and E-Open keep this reading. A creation at a fresh root under $\\mathsf{gen\\_new}$ extends each model, with excluded middle as a hypothesis, and a creation at a field keeps the model. So each call of the box at a model leads to a call at an extension with a strictly lower dual point, and ranks admit no infinite descent. No context with a ranked model types the program at a finite bound, and the process of its one thread is not in the lock-free judgment. The argument uses only that each creation extends each ranked model of its context. So each premise of E-New with this property rejects the program as well, which is argued.",
    "modes": [
@@ -20158,7 +20158,7 @@
    "x-gv-accepts": {
     "lf": {
      "ok": false,
-     "part": "E-New",
+     "part": "the box constraint, ranks admit no infinite descent",
      "rocq": "rx_chain_rejected, rx_chain_proc_rejected"
     }
    }
