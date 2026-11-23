@@ -12,7 +12,7 @@ From GV Require Import examples.GuardEx examples.LFClose examples.LFCycle exampl
 From GV Require Import examples.LFFreshMany examples.LFClientServer examples.LFClientServerSplit examples.LFFactoryEx examples.LFGrowRing.
 From GV Require Import examples.LFController soup.SoupRun soup.SoupTau soup.LFAdequacy.
 From GV Require Import soup.LFCompose soup.LFTyped lockfree.FairRun.
-From GV Require Import examples.SemBranch static.Inversion relation.Ord relation.ExProp relation.Ranks examples.LFLink compat.Redex static.PointSubst.
+From GV Require Import examples.SemBranch examples.BranchExt static.Inversion relation.Ord relation.ExProp relation.Ranks examples.LFLink compat.Redex static.PointSubst.
 From GV Require Import examples.SinstStuck static.Sinst examples.SharedRoots static.Hiding examples.GenNew.
 From GV Require Import soup.LFConnectN examples.Ring static.ConnectNExact.
 From GV Require Import examples.Copycat examples.ForkJoin.
@@ -183,6 +183,12 @@ Print Assumptions opened_cons.
 Print Assumptions Tbad_not_cons.
 Print Assumptions sbv_deadlock_free.
 Print Assumptions sbv_rejected.
+(** examples/BranchExt.v: one world per arm of E-Case fails in the relation *)
+Print Assumptions bx_not_E.
+Print Assumptions bx_rejected.
+Print Assumptions bx_left_typed.
+Print Assumptions bx_right_typed.
+Print Assumptions bx_scrut_typed.
 (** relation/Ord.v: ordinals and the transfinite fixpoint *)
 Print Assumptions olt_wf.
 Print Assumptions oadd_lt.
