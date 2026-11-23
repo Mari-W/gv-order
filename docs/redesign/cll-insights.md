@@ -22,9 +22,11 @@ session. No code changed for it.
    is rejected. PCP rejects it for the same reason. Checking only coherent
    pairs of branches is unsound (counterexamples.md). Request for the
    deadlock-free relation: test a branch rule that types each branch at its
-   own extension of W. `wext` on strict worlds only preserves old facts, so
-   the Kripke structure allows this. The fundamental theorem for such a rule is
-   not checked.
+   own extension of W. Refuted (fx-branch, v2/examples/BranchExt.v,
+   `bx_not_E`, `bx_rejected`). E holds at every extension W1 ⊒ W, and a W1 can
+   already hold the opposite of an arm's fact between old points, so the
+   fundamental theorem fails for such a rule at N = None, for every join
+   restriction. Kripke monotonicity is the obstruction.
 
 3. Safety and liveness split (D74). Safe means no cycle in any slice. It gives
    subject reduction, progress, deadlock freedom and the diamond property, and
@@ -123,7 +125,9 @@ at composition). Our reply, not decided by the author:
   at the connect.
 - Per-branch extensions at E-Case and the offer rules need a join
   restriction. The conclusion stays at W and branch facts may only concern
-  points whose use ends in the branch. Tickets are unaffected.
+  points whose use ends in the branch. Tickets are unaffected. Refuted later the same day, see item 2 above. No join
+  restriction makes the rule sound, and the restriction to points created in
+  the arm adds nothing to E-New and E-Open.
 - For lock freedom, ranks fixed at creation forbid opposite orders on older
   points. The way out is transfinite indices (check-transfinite.md), with
   excluded middle and dependent choice. Proposed order of work: per-branch
