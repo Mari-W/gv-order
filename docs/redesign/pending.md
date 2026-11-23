@@ -1,5 +1,9 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Note, 2026-11-23, insights from CLL≺
+
+The CLL≺ session sent eight points for the logical relation (generated facts, worlds per branch, the safety and liveness split, existential ranks, tickets as finite traces, the forwarder, reuse, decidability). They are in docs/redesign/cll-insights.md with the four things to test here. No code changed.
+
 ## Report, 2026-11-22, F11 and F12 merged into redesign, F9 stopped
 
 Approved on 2026-11-22 ("nvm do the last parts"). Nothing pushed, main
