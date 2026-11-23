@@ -1987,7 +1987,7 @@
     {
      "id": "soup",
      "title": "The lock-free process relation",
-     "caption": "An annotated configuration $a = (q, K)$ is a configuration $q$ with an ownership map $K$. $K$ gives each held end the thread that holds it, its point, its counter and its tickets. The configuration is in the lock-free process relation at the ordinal index $\\alpha$ when each thread is in $E[\\kappa_L]$ at the ends it owns and has [[fu|fuel]] at their counters, the two columns of [[fu-vs]]. $A$ and $\\Phi$ describe the held ends for the relation and for fuel, and $\\mathsf{consistent}$ requires $A$, $\\Phi$ and $K$ to agree. It also bounds each counter by its tickets and the tickets of the two ends of an internal channel by $N$, the bound of the [[t-lf-counters|counters block]]. Fuel occurs only in this definition.",
+     "caption": "An annotated configuration $a = (q, K, R_a)$ is a configuration $q$ with an ownership map $K$ and the ranked world $R_a$ of its run so far. $K$ gives each held end the thread that holds it, its point, its counter and its tickets. The configuration is in the lock-free process relation at the ordinal index $\\alpha$ when each thread is in $E[\\kappa_L]$ at the ends it owns and has [[fu|fuel]] at their counters, the two columns of [[fu-vs]]. $A$ and $\\Phi$ describe the held ends for the relation and for fuel, and $\\mathsf{consistent}$ requires $A$, $\\Phi$ and $K$ to agree. It also bounds each counter by its tickets and the tickets of the two ends of an internal channel by $N$, the bound of the [[t-lf-counters|counters block]]. Fuel occurs only in this definition.",
      "why": "The lock-free process relation combines the relation and the fuel of each thread over one ownership map. Lock-free adequacy reads the points and counters that $K$ records, and the invariant on tickets makes the measure fall at a link.",
      "modes": [
       "lf"
@@ -6255,7 +6255,7 @@
    "meaning": "$l ::= \\cdot \\mid \\bot \\mid x$, absent, unknown, or a point.",
    "why": "It records which facts about the points of the hidden ends are available to a holding thread.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$l = \\bot$ for $\\mathsf{new}_\\ell$.",
+   "example": "$l = \\bot$ for the existential of E-New.",
    "signature": "l \\in \\mathsf{LBound} = \\{\\cdot, \\bot\\} \\cup \\mathsf{Point}",
    "source": [
     {
@@ -8258,11 +8258,11 @@
   },
   "side.act": {
    "title": "$x \\prec F$ at an action",
-   "meaning": "For an action at $x$ under $F$, $\\Gamma \\vdash x \\prec y$ for each $y \\in X$, $\\Gamma \\vdash x \\preccurlyeq u$ when the rest of $F$ is ${\\uparrow}u$, and $F$ has neither the rest ${\\uparrow}$ nor $\\bot$.",
+   "meaning": "For an action at $x$ under $F$, $\\Gamma \\vdash x \\prec y$ for each $y \\in X$, $\\Gamma \\vdash x \\preccurlyeq u$ when the rest of $F$ is ${\\uparrow}u$, and the rest of $F$ is not ${\\uparrow}$.",
    "why": "While the term waits at $x$, each point at which its context acts later lies above $x$. This is readiness against the future.",
    "breaks": "Without it a term may wait at $x$ while its context must first act at a point below $x$, and the thread waits on itself through the dual end.",
    "example": "E-Close at $x$ asks $x \\prec F$.",
-   "signature": "x \\prec F \\iff (\\forall y \\in X.\\ \\Gamma \\vdash x \\prec y) \\land (F = (X, {\\uparrow}u) \\Rightarrow \\Gamma \\vdash x \\preccurlyeq u) \\land F \\neq (X, {\\uparrow}) \\land F \\neq (X, \\bot)",
+   "signature": "x \\prec F \\iff (\\forall y \\in X.\\ \\Gamma \\vdash x \\prec y) \\land (F = (X, {\\uparrow}u) \\Rightarrow \\Gamma \\vdash x \\preccurlyeq u) \\land F \\neq (X, {\\uparrow})",
    "args": [
     {
      "name": "x",
@@ -8583,7 +8583,7 @@
   "tp.sub-credit": {
    "title": "Credits may fall",
    "meaning": "$a' \\leq a$ for the credits of an end.",
-   "why": "A credit is a lower bound on the counter of an end, so a smaller credit guarantees less. $\\mathsf{new}$ and each action return credit $N$, and a parameter or a payload asks a fixed credit $b \\leq N$.",
+   "why": "A credit is a lower bound on the counter of an end, so a smaller credit guarantees less. $\\mathsf{new}$ and each action return an end with credit equal to its tickets, and a parameter or a payload asks a fixed credit.",
    "breaks": "Without it a fresh end at credit $N$ fits only a parameter at credit exactly $N$, and no loop that ages an end before its recursive call types.",
    "example": "$S_x^{3} \\leq S_x^{2}$.",
    "signature": "a' \\leq a",
@@ -8813,7 +8813,7 @@
   "E-Abs.lb": {
    "title": "Lower point of a closure",
    "meaning": "$l \\neq \\bot \\Rightarrow l \\preccurlyeq \\Delta$. A point $l$ lies at or below each element of $\\mathsf{ap}(\\Delta)$, and $l = \\bot$ claims no bound.",
-   "why": "A thread holding the closure reads the dual points of its ends only through $l$. A closure at $l = \\bot$ puts $\\bot$ into the future of the thread holding it, so that thread may not wait while it holds the closure, as for $\\exists^{\\bot}$.",
+   "why": "A thread holding the closure reads the dual points of its ends only through $l$. A closure at $l = \\bot$ sets the rest of the future of the thread holding it to ${\\uparrow}$, so that thread may not wait while it holds the closure, as for $\\exists^{\\bot}$.",
    "breaks": "A thread holding ends at the unrelated points $1$ and $2$ has no common lower point. A $\\lambda$ that captures both types at $l = \\bot$ and can then only be spawned or called in tail position.",
    "example": "Capturing $a^{+}$ at $\\rho$ gives $l = \\overline{\\rho}$.",
    "signature": "l \\preccurlyeq \\Delta \\iff \\forall y \\in \\mathsf{ap}(\\Delta).\\ \\Gamma \\vdash l \\preccurlyeq y",
@@ -8989,7 +8989,7 @@
   },
   "E-App.fut1": {
    "title": "The first subterm runs while the rest is held",
-   "meaning": "$e_1$ is typed at the future $F \\triangleleft \\Delta_2$, which is $F \\cup \\mathsf{ap}(\\Delta_2)$, with $\\bot$ added when $\\Delta_2$ has $\\bot$.",
+   "meaning": "$e_1$ is typed at the future $F \\triangleleft \\Delta_2$, which is $F \\cup \\mathsf{ap}(\\Delta_2)$, with the rest ${\\uparrow}$ when $\\Delta_2$ holds ends at hidden points.",
    "why": "The entries of the second subterm are held while $e_1$ runs. Hence $e_1$ must not wait above their dual points.",
    "breaks": "$\\mathsf{let}\\ \\ast = \\mathsf{close}\\,c\\ \\mathsf{in}\\ \\mathsf{close}\\,d$ beside a partner that closes $d$ before $c$ deadlocks. E-LetU rejects the first thread unless $x_c \\prec \\overline{x_d}$.",
    "example": "The cycle example needs $\\rho \\prec \\overline{\\rho\\cdot 0}$ for $\\mathsf{close}\\,c$ while $d$ is held.",
@@ -9755,7 +9755,7 @@
   "E-New.bot": {
    "title": "Lower bound $\\bot$",
    "meaning": "The pair is at a root $\\rho$ that no point of the context is related to.",
-   "why": "$\\exists^{\\bot}$ records that the ends of the value are at points without a known lower bound, and $\\bot$ propagates into each future that holds the value.",
+   "why": "$\\exists^{\\bot}$ records that the ends of the value are at points without a known lower bound, and a future that holds the value has the rest ${\\uparrow}$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{mk}_0$ returns $\\exists^{\\bot}\\iota.\\,C.\\,({?}\\ast.\\mathsf{Close})_{\\overline{\\iota}}$.",
    "signature": "\\exists^{\\bot}",
@@ -10469,7 +10469,7 @@
    "why": "The world of each process derivation then has a model of the right kind, and so has each restriction of that world.",
    "breaks": "Without it P-Connect would have to check the whole join, and a thread world with a cycle would make the semantic judgment vacuous.",
    "example": "The empty world.",
-   "signature": "\\mathsf{wf}\\,W",
+   "signature": "\\mathsf{ok}_N\\,W",
    "args": [
     {
      "name": "W",
@@ -11427,7 +11427,7 @@
   },
   "ct.beta": {
    "title": "Cost $\\kappa_\\beta$",
-   "meaning": "The cost of application, pair and unit elimination, case and force.",
+   "meaning": "The cost of application, pair and unit elimination and case.",
    "why": "An arrow reads its body at each $\\beta < \\alpha$ under $\\kappa_{DF}$. \\inmode{lf}{Under a general table it reads the levels $\\beta$ with $\\beta + \\kappa_\\beta \\leq \\alpha$, which for $\\kappa_L$ include $\\alpha$ itself.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$(\\lambda e)\\,v \\xrightarrow{\\beta} e[v]$ costs $\\kappa_\\beta$.",
@@ -12266,7 +12266,7 @@
    "meaning": "For $l = y$, $\\forall z \\in \\mathsf{ap}\\,\\Theta.\\ y \\preccurlyeq z$, for $l$ absent $\\mathsf{ap}\\,\\Theta = \\varnothing$, and for $l = \\bot$ nothing.",
    "why": "It lets a holding thread bound the actual active points of a packed value by its static active points, which the readiness of a send carrying a packed payload and the compatibility of E-Pack use.",
    "breaks": "Without it, a sender holding a packed payload could not show its offered end below the dual points of the payload ends.",
-   "example": "$\\bot$ for $\\mathsf{new}_\\ell$.",
+   "example": "$l = \\bot$ for the existential that E-New returns, which asks nothing.",
    "signature": "l \\preccurlyeq \\mathsf{ap}\\,\\Theta : \\mathsf{Prop}",
    "args": [
     {
@@ -15974,7 +15974,7 @@
   },
   "sp.owner": {
    "title": "Holding threads exist",
-   "meaning": "$\\forall o.\\ K(o) = (t, \\_, \\_) \\Rightarrow t \\in \\mathrm{dom}\\,q$.",
+   "meaning": "$\\forall o.\\ K(o) = (t, \\_, \\_, \\_) \\Rightarrow t \\in \\mathrm{dom}\\,q$.",
    "why": "A thread waiting on an end needs its partner's holding thread to be a thread of $q$, so the dependency of waiting threads is a relation on threads.",
    "breaks": "Without it, an end could be held by a thread that no longer exists, and its partner would wait forever.",
    "example": "$K(a) = (0, \\rho, 2)$ with $q(0)$ defined.",
@@ -16132,11 +16132,11 @@
   },
   "sp.fin": {
    "title": "Finite counters",
-   "meaning": "$\\forall o.\\ K(o) = (\\_, \\_, f) \\Rightarrow f \\in \\mathbb{N}$.",
+   "meaning": "$\\forall o.\\ K(o) = (\\_, \\_, f, \\_) \\Rightarrow f \\in \\mathbb{N}$.",
    "why": "The termination measure reads each counter as a natural number.",
    "breaks": "Nothing. It is a definition.",
    "example": "$K(a) = (0, \\rho, 2)$.",
-   "signature": "\\forall o.\\ K(o) = (\\_, \\_, f) \\Rightarrow f \\in \\mathbb{N}",
+   "signature": "\\forall o.\\ K(o) = (\\_, \\_, f, \\_) \\Rightarrow f \\in \\mathbb{N}",
    "args": [
     {
      "name": "f",
