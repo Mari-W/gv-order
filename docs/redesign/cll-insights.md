@@ -96,3 +96,7 @@ session. No code changed for it.
   freedom of programs is undecidable already by Rice's theorem, because boxes
   give general recursion. The CLL≺ result is about a restricted class of
   regular derivations. The multiplicative fragment is open on their side.
+  The same holds inside DF typing. DF typing admits pure divergence and
+  general recursion over sums, so a thread can run a two-counter machine and
+  then act on an end whose partner waits. That program is lock-free iff the
+  machine halts.
