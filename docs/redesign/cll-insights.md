@@ -130,3 +130,16 @@ at composition). Our reply, not decided by the author:
   extensions for deadlock freedom first.
 - Static typing is not decidable yet. The algorithmic plan makes it decidable
   relative to the constraint theory and an equivalence oracle.
+
+## Three claims of CLL≺ checked, 2026-11-23
+
+- Force as generation (E-Force adds C[xs] to a summary, P-Connect checks).
+  Sound for deadlock freedom as annotation inference, unsound for lock
+  freedom. Points xs created at run time never reach a composition, and the
+  force check (`hold_at`, `wholds W' C xs` in the box clause) is what rejects
+  the pipeline.
+- The local form of CLL≺'s condition (E) is the box, not E-New. Proposition 7
+  of check-general-new.md (argued): a box cannot force itself at an instance
+  that descends in its schema. rx-chain falls under it for every sound E-New.
+  The descent n times, which is lock-free, falls under it too.
+- P-Connect and CLL≺'s Lemma 5.6 coincide for finite worlds and one slice.
