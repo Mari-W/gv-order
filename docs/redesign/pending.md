@@ -1,5 +1,67 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, 2026-11-23, per-branch orders design check
+
+Approved by the author on 2026-11-23 ("is good i kind of want it. draft
+it"). Branch fx-orders from redesign 80aaef1. Write-up only, in
+docs/redesign/check-branch-orders.md. No Rocq change, nothing pushed,
+nothing merged. A throwaway script outside the repository checked the
+facts of the derivation of R (acyclic per slice, bridges per slice, the
+cycle of the union).
+
+Verdict. The design works for DF and LF. Deadlock freedom has to move
+from P to the state judgment of soup/ that LF already uses.
+
+1. Design. Decision points are the root points of a decision root, which
+   O-New picks fresh and marks, so one channel visits each site and
+   exchanges there once. A world carries its decision roots D, a
+   knowledge set K of literals s:i and one order per slice. It reads
+   x ≺ y when every slice that extends K does. Select and branch at a
+   decision point add their literal. Typing gains guarded facts in
+   constraints, literals in Γ, a decision flag on constraints and one rule
+   E-Offer (case over branch, literal x:i in arm i). E-New-Field, P-Term
+   and P-Connect do not change, and static worlds stay unguarded.
+2. R types at N = ∞ and lies in the relation. main creates e at a
+   decision root z, c at x and f at y. The constraint of f holds
+   x⁺ ≺ y·0 under z:l and y⁺ ≺ x·0 under z:r. Each slice is acyclic, the
+   union is not, and today's E-New rejects the unguarded constraint by
+   the bridge x⁺ ≺ x·0. An LF typing exists with four extra facts in the
+   constraint of c (argued).
+3. Lost programs. None. Today's derivations embed with empty guards. All
+   36 example files and the 24 ex-* map entries type as before, the field
+   creations inside boxes and the "x·0 twice" thread included. The
+   rejection theorems stay true. Their terms contain no offer, so guards
+   erase.
+4. Circularity. Removed. A creation reads only K, and its orders form a
+   family over slices (∃ π, ∀ λ, ∃ W′). Root-only decision sites make λ_r
+   a function that extends every K of the run. A slice in the world stays
+   circular, route stopped.
+5. P-Connect. Knowledge K. Through P it fails, the fx-slice vacuity
+   example recast for K (a world that decides z:r while e is still at z).
+   A ghost environment in P would rebuild the state judgment inside P.
+   Through the state judgment it works, because states keep every channel
+   with its point, follow real runs and compose only initial states.
+   `lf_p_connect` keeps its statement. `fundamental_proc_h`, `adequacy_h`,
+   `sem_p_connect_h` and the live pair change form. `soundness_h` and
+   every `*_deadlock_free` keep theirs. `sem_p_connect` as stated becomes
+   false.
+6. LF. In scope without option B. Ranks per slice, fixed per slice at
+   creation (Lemma F per slice), criterion at λ_r. Open check, whether
+   `gen_new_ext` is uniform in the slice or needs functional choice.
+7. Cost. About 60 files, 18 in substance, stages S0 to S6. First stage
+   S0. DF and live soundness through the state judgment for today's
+   system, no world and no rule change, acceptance `soundness_h` with
+   unchanged statement and the same `make check` count.
+
+Routes stopped, with counterexamples in the document. Slice in the world,
+knowledge through P, knowledge at fields (PointReuse), decision constants
+(a hidden restricted channel at an interface constant), guards on old
+points under a younger decision (R′).
+
+Open for the author. Q1 decision constants (the open D23 with e free),
+Q2 later choices on one channel, Q3 literals from the points of ends, Q4
+keep or retire the P route, Q5 literals for received values.
+
 ## Report, 2026-11-23, slice in the world, stage 1 stopped
 
 Approved by the author on 2026-11-23 ("yeah go ahead"). Branch fx-slice
