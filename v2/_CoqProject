@@ -123,6 +123,7 @@ examples/CopycatTwoN.v
 examples/LetVarCounter.v
 examples/ForkJoin.v
 examples/Rejects.v
+examples/Descent.v
 test/CompatNotations.v
 soup/Idle.v
 soup/State.v

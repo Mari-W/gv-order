@@ -19869,7 +19869,7 @@
    "title": "Recursive fork-join with replies",
    "lead": "A worker that forks two copies of itself and waits for their replies is deadlock free at each depth, by [[r-new|E-New]] under $\\mathsf{acyc\\_new}$ over a world of [[w-wf]] that is acyclic and not well-founded.",
    "code": "main = let ⟨w, w′⟩ = new in                      -- w at ρ, facts H at ρ̄\n       let ∗ = spawn (λu. (force wk) w′) in close w\nwk   = !(f = λw. let ⟨c₁, c₁′⟩ = new in let ⟨c₂, c₂′⟩ = new in   -- at ι·0 and ι·1\n             let ∗ = spawn (λu. (force f) c₁′) in\n             let ∗ = spawn (λu. (force f) c₂′) in\n             let ∗ = close c₁ in let ∗ = close c₂ in close w)    -- reply after both",
-   "meaning": "Each worker holds its end at a point $\\iota$, creates the two child channels at the fields $\\iota\\cdot 0$ and $\\iota\\cdot 1$ and spawns itself on their dual ends. It closes $c_1$, then $c_2$, then $w$, so it needs $\\iota\\cdot 0 \\prec \\overline{\\iota\\cdot 1}$, $\\iota\\cdot 0 \\prec \\overline{\\iota}$ and $\\iota\\cdot 1 \\prec \\overline{\\iota}$. The box hypothesis states these facts at each depth of the tree, and the creation in main orders an infinite descending chain on the tree of $\\rho$, acyclic and not well-founded. At $N = \\infty$ [[r-new|E-New]] asks $\\mathsf{acyc\\_new}$, the program types, and it is deadlock free with no classical hypothesis. \\inmode{lf}{The program has no lock-free typing by this route. Each typing of $\\mathsf{close}\\,c$ followed by $\\mathsf{close}\\,w$, at each bound, asks the point of $c$ below the dual point of $w$ ([[th-terms|what two closes ask]]). The child holds $c$ at that dual point and forces the same box there, so the box hypothesis must descend one level in each round. At a finite bound E-New asks $\\mathsf{gen\\_new}$, whose order on the tree is well-founded, and no box admits the infinite descent. This last step is argued on paper and not mechanized.} One round of fork-join types as well. Padovani's factorial and Fibonacci processes type the same way, with unit messages because the language has no numbers.",
+   "meaning": "Each worker holds its end at a point $\\iota$, creates the two child channels at the fields $\\iota\\cdot 0$ and $\\iota\\cdot 1$ and spawns itself on their dual ends. It closes $c_1$, then $c_2$, then $w$, so it needs $\\iota\\cdot 0 \\prec \\overline{\\iota\\cdot 1}$, $\\iota\\cdot 0 \\prec \\overline{\\iota}$ and $\\iota\\cdot 1 \\prec \\overline{\\iota}$. The box hypothesis states these facts at each depth of the tree, and the creation in main orders an infinite descending chain on the tree of $\\rho$, acyclic and not well-founded. At $N = \\infty$ [[r-new|E-New]] asks $\\mathsf{acyc\\_new}$, the program types, and it is deadlock free with no classical hypothesis. \\inmode{lf}{The program has no lock-free typing. Closing $c_1$ while the worker holds $w$ asks the point of $c_1$ below the dual point of $w$ ([[th-terms|what two closes ask]]). The first child holds $c_1'$ at that dual point and forces the same box there, so the box must hold its constraint one level lower in each round. Ranks admit no infinite descent, so no derivation at a finite bound types the program in a context with a ranked model. The proof takes excluded middle as a hypothesis, as the lock-free fundamental theorem does.} One round of fork-join types as well. Padovani's factorial and Fibonacci processes type the same way, with unit messages because the language has no numbers.",
    "source": [
     {
      "file": "examples/ForkJoin.v",
@@ -19889,12 +19889,26 @@
       "fib_deadlock_free",
       "fj_wait_needs"
      ]
+    },
+    {
+     "file": "examples/Descent.v",
+     "names": [
+      "fj_step",
+      "wkr_no_model",
+      "fjr_lf_rejected",
+      "fjr_lf_proc_rejected"
+     ]
     }
    ],
    "x-gv-accepts": {
     "df": {
      "ok": true,
      "rocq": "fjr_dftyped, fjr_deadlock_free"
+    },
+    "lf": {
+     "ok": false,
+     "part": "E-New",
+     "rocq": "fjr_lf_rejected, fjr_lf_proc_rejected"
     }
    }
   },
@@ -20086,31 +20100,42 @@
   {
    "id": "rx-chain",
    "title": "A waiting chain that grows forever",
-   "lead": "A deadlock-free program in which a chain of waiting threads grows forever. [[r-new|E-New]] under $\\mathsf{gen\\_new}$ rejects the program.",
+   "lead": "A deadlock-free program in which a chain of waiting threads grows forever. The box cannot call itself one level lower at a finite bound, whatever premise [[r-new|E-New]] asks, and the rejection is proved.",
    "code": "grow = !(f = λw. let ⟨c, c′⟩ = new in                 -- c below the point of w\n                 let ⟨d, d′⟩ = new in let ∗ = spawn (λ_. recvclose d′) in\n                 let ∗ = close (send ⟨∗, d⟩) in              -- one session action\n                 let ∗ = spawn (λ_. (force f) c′) in\n                 let ∗ = close c in close w)                 -- waits on its child\nmain = let ⟨w, w′⟩ = new in let ∗ = spawn (λ_. close w′) in (force grow) w\n-- every thread waits on the one it spawned, close w′ never proceeds",
-   "meaning": "Each thread spawns a child, waits on it, and the child does the same. Each wait is at a point below the point of the previous one, and the chain grows forever. At a finite bound E-New asks $\\mathsf{gen\\_new}$, so the order on each new tree is well-founded and ranks exist for the tree. A fact from a new point down to the point of $w$ needs a context point below that point, and the field route needs the same fact one level lower in each round. The rejection is argued and not mechanized.",
+   "meaning": "Each thread spawns a child, waits on it, and the child does the same. Closing $c$ while the thread holds $w$ asks the point $q$ of $c$ below $\\overline{s}$, where $s$ is the point of $w$. The child holds $c'$ at $\\overline{q}$ and forces the box there, so the box must hold its constraint at an instance whose dual point lies below $\\overline{s}$. The proof reads each derivation at a ranked model of its context. It reads a value through its points, the witnesses of its existentials and the constraint of a box, and E-Sub, E-Pack and E-Open keep this reading. A creation at a fresh root under $\\mathsf{gen\\_new}$ extends each model, with excluded middle as a hypothesis, and a creation at a field keeps the model. So each call of the box at a model leads to a call at an extension with a strictly lower dual point, and ranks admit no infinite descent. No context with a ranked model types the program at a finite bound, and the process of its one thread is not in the lock-free judgment. The argument needs only the soundness of each creation, so no premise of E-New admits the program.",
    "modes": [
     "lf"
    ],
    "source": [
+    {
+     "file": "examples/Descent.v",
+     "names": [
+      "rc_main",
+      "rc_step",
+      "rc_grow_no_model",
+      "rx_chain_rejected",
+      "rx_chain_proc_rejected",
+      "close_PV",
+      "child_step",
+      "box_P_never",
+      "descent",
+      "prop7",
+      "gen_new_ext"
+     ]
+    },
     {
      "file": "static/Contexts.v",
      "names": [
       "gen_new",
       "new_ok"
      ]
-    },
-    {
-     "file": "examples/ForkJoin.v",
-     "names": [
-      "fj_wait_needs"
-     ]
     }
    ],
    "x-gv-accepts": {
     "lf": {
      "ok": false,
-     "part": "E-New"
+     "part": "E-New",
+     "rocq": "rx_chain_rejected, rx_chain_proc_rejected"
     }
    }
   }
