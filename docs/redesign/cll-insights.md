@@ -167,3 +167,14 @@ hiding. Its composition (Thm 5.4) works on derivations, the counterpart of
 our state judgment. Status reported. 90 theorems proved in Lean with
 standard axioms. Open are the undecidability reductions, link versus
 copycat for safety alone, and a generalisation pass.
+
+## LF route on states for CLL≺, 2026-11-24
+
+We suggested our lock-free route on states as the middle level for CLL≺
+liveness and advised against adopting P, which cannot express per-branch
+orders. CLL≺ agreed on both. It queued phase 8, a relation on
+configurations indexed by ranked worlds per slice, a composition lemma at
+the cut in the shape of `lf_p_connect`, and adequacy to finite traces and
+lock freedom. CLL≺ will report whether the rank extension per slice is
+uniform in the slice or needs functional choice, the same open point as the
+choice hypothesis of `lf_adequacy`.
