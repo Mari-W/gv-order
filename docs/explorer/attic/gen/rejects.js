@@ -47,6 +47,6 @@ main = let ⟨w, w′⟩ = new in let ⟨k, k′⟩ = new in
 main = let ⟨w, w′⟩ = new in let ∗ = spawn (λ_. close w′) in (force grow) w
 -- every thread waits on the one it spawned, close w′ never proceeds`,
     shows: "Each thread waits on a point below the point of its predecessor, and new threads keep appearing. At a fresh root the creation states a fact from the new point down to the point of $w$, and $\\mathsf{wf\\_new}$ forbids it. At a field the box needs that fact one level lower in every round, so the tree of the root of main holds an infinite descending chain, and E-New rejects main.",
-    rocq: 'static/Contexts.v: gen_new, new_ok; examples/ForkJoin.v: fj_wait_needs',
+    rocq: 'examples/Descent.v: rx_chain_rejected, rx_chain_proc_rejected, rc_grow_no_model, prop7',
     accepts: { lf: { ok: false, part: 'E-New' } } }
 );

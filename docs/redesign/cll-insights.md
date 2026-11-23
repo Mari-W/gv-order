@@ -139,7 +139,9 @@ at composition). Our reply, not decided by the author:
   force check (`hold_at`, `wholds W' C xs` in the box clause) is what rejects
   the pipeline.
 - The local form of CLL≺'s condition (E) is the box, not E-New. Proposition 7
-  of check-general-new.md (argued): a box cannot force itself at an instance
-  that descends in its schema. rx-chain falls under it for every sound E-New.
-  The descent n times, which is lock-free, falls under it too.
+  of check-general-new.md (proved since, `prop7` in v2/examples/Descent.v): a
+  box cannot force itself at an instance that descends in its schema.
+  rx-chain falls under it for every sound E-New (`rx_chain_rejected`). The
+  descent n times, which is lock-free, falls under it too (argued, not
+  mechanized).
 - P-Connect and CLL≺'s Lemma 5.6 coincide for finite worlds and one slice.

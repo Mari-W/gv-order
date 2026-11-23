@@ -1,5 +1,95 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, 2026-11-23, Proposition 7 and rx-chain in Rocq (branch fx-descent)
+
+Approved on 2026-11-23 as item 4 of the joint plan. Branch fx-descent in
+.claude/worktrees/fx-descent, from redesign f1fb155. Nothing pushed, nothing
+merged. No Admitted, no Axiom, no new Parameter. No typing rule and no
+relation changed. Excluded middle appears only as an explicit hypothesis.
+
+| Build | Commit | make | make check | make test |
+|---|---|---|---|---|
+| local fallback, scratch copy of `git archive` | fbe6790 | exit 0, no stack retry | 249 of 249 | passes |
+| laptop, ~/build-spo-desc | not run | | | |
+
+The laptop refused every ssh connection during the run ("Connection closed
+by UNKNOWN port 65535"), so the build ran on this machine from the
+committed tree. The commits after fbe6790 touch docs only.
+
+New file v2/examples/Descent.v, after examples/Rejects.v in _CoqProject.
+CheckAll goes from 238 to 249 results.
+
+- `descent`. A property of points in ranked worlds that reappears at a
+  lower point of an extension holds nowhere. Well-founded induction on the
+  rank of a ranked point and on the offset of an unranked one. Constructive.
+- `prop7`. Proposition 7 in the general form of check-general-new.md §7.
+  The body context Γb = `hc_open m H Γ0`, a context Γc with a map τ of the
+  points of Γb, the hypothesis that each ranked model of W and Γb extends to
+  a model of Γc that agrees through τ, `hold_at` of H at xs′ in Γc and
+  `slt` f(xs′) ≺ f(ιs). Conclusion, W, Γ0 and H have no common ranked model.
+  Constructive. `prop7_new` discharges the extension for one creation at a
+  fresh root under `gen_new`, with excluded middle, and `prop7_fld` for a
+  field creation.
+- `gen_new_ext`. The world construction of `Erel_new`, as a lemma. Each
+  ranked world with `gen_new_sem` of C grows to one that holds C at a fresh
+  point. Takes excluded middle (`list_max_rank`). It is a copy of the proof
+  in compat/Redex.v, which I left untouched. Refactoring `Erel_new` onto it
+  is a possible cleanup.
+- `rx_chain_rejected`. For every n, W with `sworld_wf W`, Θ, Γ, Δ, F, T, c
+  such that W and Γ have a ranked model, `rc_main` has no derivation of
+  `typed W (Some n)`. `rx_chain_proc_rejected` drops the model hypothesis
+  for `ptyped (Some n) W Σ (C0, {[+ rc_main +]}) T`, through `ptyped_one`
+  and `wmodels_exists`. Both take excluded middle.
+- `fjr_lf_rejected` and `fjr_lf_proc_rejected`. The same for the recursive
+  fork-join worker `fjr_main` of examples/ForkJoin.v, which the map called
+  "argued on paper". `fjr_dftyped` types it at N = ∞.
+- `rc_grow_no_model`, `wkr_no_model`. The two boxes can be called at no
+  ranked model (`box_P`), from any typing of the box.
+
+Proof route. Semantic in the models, static in the derivation. The proof
+reads the derivation itself and does not use the fundamental theorem. A
+value of a variable is read through its points only (`pval`, `PV`): the
+point of an end, the witnesses of an existential with its lower bound, the
+constraint and parameter of a box. `spo` closes a property under E-Sub,
+E-Pack and E-Open, and `spo_sem` reads such a stack at a model. An opening
+takes the witnesses the value of the variable carries, the value reads back
+at the given type, and the parameter of an arrow reads forward. So every
+derivation counts, with any packs, openings and weakened existentials, at a
+fresh root or at a field. One round of the body (`box_enter`) creates c at
+q, `close_PV` reads the readiness of close c while w at s is held as q ≺ s̄,
+and `child_step` reads the spawned force as a call of the box with c′ at q̄.
+`box_P_never` applies `descent` to the dual point of the parameter. A
+semantic route through the fundamental theorem does not work. The relation
+does not expose `hold_at` at the recursive force, and at a finite step
+index it only gives descents of bounded length.
+
+Hypotheses. Excluded middle in `gen_new_ext` and everything that creates at
+a fresh root, the same excluded middle as `Erel_new` and the lock-free
+fundamental theorem (`wfit`). The term theorems ask a ranked model of W and
+Γ. A context without one can hold an infinite descending chain below a field
+in its hypotheses, which a field creation in main could use. I did not build
+such a derivation.
+
+The term follows the map code. Each plain new is `let_new`, so a derivation
+may create at a fresh root or at a field. λ_ consumes its unit with
+`LetU (Var 0)`.
+
+Not done.
+
+- Item 3, the descent n times. The language has no numbers, so the variant
+  needs an encoding of the counter, for example a channel of choices, and a
+  second step lemma over Case. Not cheap.
+- That rx-chain types at N = ∞. The theorems would then not be vacuous. Not
+  proved, the map claims deadlock freedom as before.
+
+Map. docs/explorer/check.sh shows 0 errors, 66 warnings and 7 info, the
+counts before the change. rx-chain cites examples/Descent.v, says proved and
+states the argument, `x-gv-accepts.lf.rocq` names the two theorems.
+ex-forkjoin says the program has no lock-free typing and gains an `lf` entry
+in `x-gv-accepts`. attic/gen/rejects.js and attic/gen/prose.js name the
+theorems. check-general-new.md, cll-insights.md and two comments of
+examples/ForkJoin.v mark Proposition 7 as mechanized.
+
 ## Decision, 2026-11-23, classical hypotheses for lock-free adequacy (relayed)
 
 Relayed from the author by the CLL≺ session, not yet confirmed in this

@@ -35,7 +35,8 @@ what was checked and what was not.
    I recommend letting (wf-new⁺) land, then generalizing the function h to a
    relation, which stays constructive and already accepts the two-upper-bound
    example, and adding finite sets only if a program needs them.
-4. rx-chain stays rejected, under every sound E-New. The descent n times is
+4. rx-chain stays rejected, under every sound E-New (proved in
+   v2/examples/Descent.v, see the last section). The descent n times is
    also rejected under every sound E-New, and no premise of E-New can change
    that. The obstruction is the box. A box body cannot statically call itself
    at an instance whose point lies below its own, because a model of the box
@@ -349,9 +350,24 @@ Checked on paper.
 - The two-upper-bound, two-entry and set-needed examples, rx-chain, the
   descent and the bounded descent.
 
+Mechanized afterwards, 2026-11-23, branch fx-descent (v2/examples/Descent.v).
+
+- Proposition 7 as `prop7`, in the general form of section 7. The extension
+  of the models of Γb to Γc is a hypothesis, and `prop7_new` discharges it
+  for a creation at a fresh root under (gen-new) through `gen_new_ext`, the
+  world construction of `Erel_new`, with excluded middle. `prop7_fld` covers
+  a creation at a field. The least-rank argument is `descent`, well-founded
+  induction on the rank of a ranked point and on the offset of an unranked
+  one, without excluded middle.
+- rx-chain, `rx_chain_rejected` and `rx_chain_proc_rejected`, for every
+  derivation, at a fresh root or at a field, in every context with a ranked
+  model, with excluded middle as a hypothesis. The same argument rejects the
+  recursive fork-join worker of examples/ForkJoin.v (`fjr_lf_rejected`).
+- The descent n times is not mechanized. The language has no numbers.
+
 Not checked.
 
-- Anything in Rocq. No statement here is mechanized.
+- Anything else in Rocq.
 - Exactness of (gen-new) for C with infinitely many sources below an exit.
 - Whether the descent n times is in the relation.
 - That the lifted model of Lemma 2 satisfies the side conditions of `wmodels`
