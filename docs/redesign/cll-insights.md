@@ -100,3 +100,26 @@ session. No code changed for it.
   general recursion over sums, so a thread can run a two-counter machine and
   then act on an end whose partner waits. That program is lock-free iff the
   machine halts.
+
+## Shared design proposal, 2026-11-23
+
+CLL≺ proposed two levels for both projects: a global qualitative semantics
+(acyclic slices for deadlock freedom, well-founded slices and finite traces
+for lock freedom) and a local decidable static fragment (boxes with schemas,
+generated facts, one world extension per & branch, tickets, summaries checked
+at composition). Our reply, not decided by the author:
+
+- Three levels, not two. Operational statement, then the relation (semantic,
+  undecidable, compositional by `lf_p_connect`), then the typing. The relation
+  is where lock freedom stops being global.
+- Generate facts locally, check the schema at the force and the joined world
+  at the connect.
+- Per-branch extensions at E-Case and the offer rules need a join
+  restriction. The conclusion stays at W and branch facts may only concern
+  points whose use ends in the branch. Tickets are unaffected.
+- For lock freedom, ranks fixed at creation forbid opposite orders on older
+  points. The way out is transfinite indices (check-transfinite.md), with
+  excluded middle and dependent choice. Proposed order of work: per-branch
+  extensions for deadlock freedom first.
+- Static typing is not decidable yet. The algorithmic plan makes it decidable
+  relative to the constraint theory and an equivalence oracle.
