@@ -1,5 +1,24 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Decisions, 2026-11-24, the questions of fable-final.md (delegated by the author)
+
+The author delegated these decisions ("you take the right decisions").
+
+1. ⊪^N stays for the lock-free process judgment. Renaming the cost
+   judgment would only move notation around, and ⊪^N is the Rocq notation.
+2. The one-order reading of bounds (⊥ and ⊤ around the points, with
+   ⊥ ≺ ⊥ and ⊤ ≺ ⊤) stays. The faithfulness check verified it case by case,
+   and worlds and readiness compare points only.
+3. E-New stays one rule over the triple (p, ρ̄, C), as the author asked for
+   a merged rule earlier.
+4. The static rejection of flagpair gets a proof (branch fx-final).
+5. rx-chain gets `rc_dftyped` and `rc_deadlock_free` (branch fx-final).
+6. Ported now: the bit program, the forwarder with an existential payload
+   and Milner's scheduler (branch fx-final). The PGV, PN and MP translations
+   wait for the algorithmic system.
+7. The recursion measure of V stays out of the formula.
+8. Rocq comments follow the map vocabulary. Identifiers keep their names.
+
 ## Faithfulness check after the Fable pass, 2026-11-24
 
 Branch map-faithful from redesign dd71273. Report in map-cleanup.md under
