@@ -539,3 +539,166 @@ Presentation.
     "two partners $P$ and $Q$"). The forbidden list names "partner end".
     Should the remaining uses go too, in favour of "dual end" and "the
     other component"?
+
+## Review pass, 2026-11-24
+
+Branch map-review from redesign 56ecb51. Content of map.json only. No change
+to the tools, check.sh, index.html, ext/ or the Rocq. I reviewed every field
+that changed since 3ddf5c9 against the Rocq at 56ecb51 and the text rules,
+and swept the whole map for the leftovers and words named in the brief.
+
+### What I fixed
+
+Partner. Every reader-facing "partner" is gone, about 170 occurrences in 160
+sentences. An end on the other side of a channel is now "the dual end", the
+thread there is "the thread holding the dual end" or "the other thread",
+and a process on the other side of a cut is "the component". The note title
+`fuse.partners` now reads "New dual pairs only on $D$" and `rd.below-held`
+"Below the dual points of held ends". The thread named `partner` in the
+code of `ex-flag` is now `other`. The phrase "the partner bound $N - m$ of
+the other" now says "$N - m$ for the tickets $m$ of the other" (r-act,
+fu-obls, F-Link, ann.tsum). Rocq names and the sym id `fuse.partners` keep
+their names.
+
+Undefined symbols.
+
+- `th-chain` wrote $\mu(t) = (\varrho(\mathsf{pt}\,o), f)$ with
+  $\mathsf{pt}$ undefined. It now writes $\mu(t) = (\varrho(x), f)$ and says
+  that the ownership map $K$ of `soup` records the point $x$ of $o$ and the
+  counter $f$ of $\overline{o}$. The row of `t-lf-wf`, the note
+  `lfi.measure` and the note `th.lf-adequacy` use $x$ as well. This matches
+  `we` and `fu` of soup/LFAdequacy.v.
+- `ty-heads` defined ${\vartriangle}x = \{y \mid x \prec y\}$, a set read
+  off the order, while `t-side` and the note `ty.up` define the comparison
+  $x \prec {\vartriangle}u \iff \Gamma \vdash x \preccurlyeq u$, which is
+  `rest_below` and asks more than the set reading. The formula now states
+  the comparison $y \prec {\vartriangle}x \iff y \preccurlyeq x$ with
+  ${\vartriangle}\bot = \mathsf{Point}$ and ${\vartriangle}\top = \varnothing$,
+  and the caption follows.
+- $\Gamma \vdash x \preccurlyeq y$ was used in 40 places and never defined.
+  `t-contexts` now says that it means $x = y$ or $\Gamma \vdash x \prec y$,
+  as `sle` states. `w-order` defined the reflexive order as $\preceq$ while
+  every rule wrote $\preccurlyeq$. The definition, the note `ty2.le` and the
+  notes `ty.arrow.lb` and `ty.ex.lb` now write $\preccurlyeq$.
+- The ordinal index is $\alpha$ everywhere. Notes `rel.lfp`, `E.kripke`,
+  `O-Beta`, `O-Spawn.thunk`, `O-Link.distinct`, `ct.take-pos`,
+  `ct.give-pos`, `ct.spawn`, `ct.link` and `sj.at` still wrote $E_n$, $V_n$,
+  $P_n$ or "level $n$". The convention row for $m, n$ no longer calls $n$
+  the step index.
+- `sp.rel` wrote $K_t(A)$ where the soup table writes $A|_t$.
+
+Leftovers of removed notions.
+
+- Restriction in process typing. The sentence on the rules that restrict
+  each conclusion world is gone from `p-typing` why, `P-Connect.wf` why and
+  `th.ptyped-apart` why, and the second example of `w.restrict` with its
+  `hides` deviation. `P-Term.wf` no longer speaks of restrictions of the
+  world. The sources drop `rptyped_ptyped`, `ptyped_rptyped`,
+  `connect_hidden`, `hides`, `hides_restrict` and `swrestrict_wok`, which
+  only that prose cited. `W|_S` stays, because the join lemma `w.R7` uses
+  it.
+- "The annotations $\eta(o) = (\lfloor N/2 \rfloor, \lfloor N/2 \rfloor)$
+  give back the earlier rule" (p-typing, LF) cited a past design. It now
+  says that under this annotation the ticket premise of P-Connect holds at
+  each cut (`p_connect_half`).
+- Bridges. The deviations of `r-ex`, `E-Open.cons` and `r-new` defined the
+  word "bridge". They now say that the rules check the finite form
+  `cons_open` of $\mathsf{conserv}$, describe the paths `bridge_at` by the
+  Rocq name, and cite `cons_open_iff`.
+- Model. The deviations of `sj.sw` and `sp.allR` spoke of "worlds of the
+  relation that model $W$". They now name the Rocq type `world` and
+  `wmodels`. No R world, $\vDash^{h}$, hidden world, root, ${\uparrow}$ or
+  $F_u$ case split is left. "Transfinite Iris assumes it in its model" in
+  `th.em` is about the Iris model and stays.
+- `ty.heads` deviation said "The paper writes". It says "The map writes".
+
+DF view. I stripped `\inmode{lf}{…}`, `\inmodeplain{lf}{…}`, `\annot`,
+`\annraw` and `\annp` from each DF-visible string, of the blocks, the
+examples and every note that a DF-visible formula, table or signature
+reaches, and searched the rest for credits, tickets, costs, $\eta$, $N$,
+ranks, strict and ranked worlds, $\mathsf{new\_ok}$, $\mathsf{gen\_new}$
+and $\mathsf{ok}_N$.
+
+- $N$ leaked in `t-judgment` caption, `ex-ring`, `ex-forkjoin`,
+  `ex-gennew` ("at $N = \infty$"), `th-sound` formula and the notes
+  `th.connect-n`, `th.pcomps` ($\mathsf{comps}_{\infty}$,
+  $\mathsf{comps}_N$), `tp.pjudg`, `tp.sinsts`, `E-New.dual`, `E-New.wf`,
+  `P-Connect.wf`, `P-Term.wf` and `P-Term.pairs` (the tickets $m, m'$ and
+  $m + m' \leq N$). Each is LF-only now. The args $N$, $m_1, m_2$, $m, m'$
+  and $\varepsilon$ of these notes carry `modes: ["lf"]`.
+- The cost $\varepsilon$ of the judgment and the aging $\Delta - \varepsilon$
+  leaked in the signatures of `E-Abs.body`, `E-App.fut2`, `E-Pair.fut2`,
+  `E-Case.branches`, `E-Box.body`, `E-Open.body`, `tp.letp`, `tp.letu` and
+  `tp.vdash`. The meanings of `tp.letp` and `tp.letu` were LF-only, so the
+  DF reader saw an empty meaning. Both now have a DF text.
+- `th.connect-n` had its whole meaning inside `\inmode{lf}`, so the DF
+  theorem row opened an empty note.
+- Ranks leaked in `E-New.field` breaks, `O-New.grow` (meaning, why,
+  breaks, example, arg) and `w.grow` breaks. Each has a DF text now.
+- $\mathsf{new\_ok}_N$ and $\mathsf{wf}$ leaked in the titles and
+  signatures of `E-New.wf`, `E-New.pos`, `P-Connect.wf` and `P-Connect.n`.
+  They now show $\mathsf{acyc\_new}$ and $\mathsf{cons}$ in DF. The
+  signatures of `P-Connect.wf` and `P-Connect.n` wrote $\mathsf{wf}$ in LF
+  as well, where the rule asks $\mathsf{ok}_N$. They now write
+  $\mathsf{ok}_N$.
+- `tp.lift` signature showed the two annotation components in DF.
+- $\eta$-expansion in `ex-copycat` and `syn.op` used the letter of the
+  interface annotations. Both now say eta-expansion, as `t-consts` does.
+
+Other.
+
+- `ty-equiv` said that subtyping compares session types by $\simeq$. It
+  compares them by $\approx$ in DF and by $\sqsubseteq$ with annotations,
+  as `t-subs` states.
+- `ex-copycat` LF. The lock freedom of the expanded composite
+  (`fwdp_expand2_lf`) takes excluded middle and functional choice. The text
+  says so.
+- `ann.tsum` read "a bound read off its own type" after the rewording,
+  which now names the type of the first end.
+
+Checked and left as they are. Idle ends of $\Theta$ age freely (`t-agecap`,
+`age.idle`). The payload variance of Sub-Sess matches `crT` and `sub_step`
+of types/Types.v. E-New and its field case are one rule with the triple
+$(p, \bar\rho, C)$ (`e_new`, `e_new_fld`). The interface annotations,
+`ptyped_iann_local` and `p_connect_iann` match the LF caption of
+`p-typing`. P-Term concludes at $W$ and P-Connect at $W_1 \sqcup W_2$, the
+fundamental theorems read the derivation's world, and `ptyped_apart` and
+`ptyped_ren` are stated as in static/Hiding.v. The six DF corollaries,
+`fwdp_expand2_lf` and the guard-pos rejection carry the right names.
+
+### Hidden ends and points, not changed
+
+"Hidden" occurs in `ty-heads` (caption and deviation), `w-world` why,
+`t-judgment` (caption and deviation), `t-side` deviation, `r-new` (caption
+and why), `ex-factory` lead, and the notes `ty.arrow` (arg $l$),
+`ty.arrow.lb` (arg), `ty.ex` (arg $\bar\iota$), `ty.heads` (why and
+deviation), `ty.lbound`, `side.lb` deviation, `E-Abs.lb` (arg),
+`E-App.fut1`, and `E-Send.heads` (meaning, why, breaks, deviation).
+
+### Questions for the author
+
+1. Annotations in the DF view. `ty-equiv` (caption and why), the title of
+   `sty.seqv`, `ty2.stydf`, `v-rel` ("up to annotations"), `V-Sess` (arg
+   7), `tp.sub-sess` and `P-Connect.cut` speak of annotations to the DF
+   reader, who has none. In DF, $\approx$ and $\simeq$ coincide. Should the
+   DF view drop the distinction and the word?
+2. `ct-costs` lists $\kappa_L$ in `introduces`, and the list has no mode,
+   so the DF reader sees it. `w-wf` has the title "Consistent and
+   well-founded worlds" in both views. Should titles and `introduces` take
+   modes, or should these entries change?
+3. static/Hiding.v keeps the restricting judgment `rptyped` with
+   `rptyped_ptyped` and `ptyped_rptyped`, and `hides`, `connect_hidden` and
+   `swrestrict_wok` serve only them. The map no longer cites them. Should
+   the Rocq keep them as a reference?
+4. The header of lockfree/Criterion.v says that the measure is the pair of
+   the tickets left and the counter of the partner end. soup/LFAdequacy.v
+   uses the counter alone under the rank, and the map follows it. Is the
+   Criterion.v comment stale?
+5. `source.revision` in map.json still says 9d2c6d4. Should it name the
+   revision the map was last checked against?
+
+### Checks
+
+`docs/explorer/check.sh` ends with 0 errors and the one known warning
+(bare-word Connect in p-typing). The writing step has no warning.
+`tools/proof-map/test/page-test.js` passes 15 of 15.
