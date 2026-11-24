@@ -195,3 +195,195 @@ Warnings left, for pass 2.
 6. The liveness port. Should the map wait for v2 versions of the liveness
    files the brief names, or are compat/LiveDF.v and compat/LiveRules.v the
    intended final form?
+
+## Pass 2, Fable, content and prose
+
+Branch map-pass2 from redesign 08bb92b, which includes pass 1. Content of
+map.json only. No change to the tools, check.sh, index.html, ext/ or the
+Rocq. MathJax ran from a copy of the gitignored tools/proof-map/node_modules
+of the redesign worktree. `node tools/proof-map/test/page-test.js` passes
+16 of 16 after the changes. Every faithfulness fix of pass 1 is kept.
+
+### What I changed, by section
+
+Markup that cost the deadlock-free reader sentences. Several captions nested
+`\inmode{lf}{… \inmode{lf}{…} …}` and put deadlock-free sentences inside the
+outer lock-free wrapper. The deadlock-free view lost three sentences this
+way. `r-new` lost "The fundamental theorem proves E-New against O-New" and
+"The constants have no entry for new", `th-sound` lost "The proof combines
+the fundamental theorem and adequacy", and `th-adeq` lost "The proof reads
+readiness". These sentences now stand outside the lock-free part, and each
+caption has one flat `\inmode{lf}{…}` block at its end. The same flattening
+removes the splitter artefact on `ty-grammar`, `w-world`, `r-new`,
+`p-typing`, `sr-reading`, `sr-ord`, `ct-costs`, `sj-all`, `th-chain`,
+`th-sound`, `th-adeq` and `th-terms`.
+
+Cross-links to examples. The page resolves `[[example-id|words]]` to the
+example, so every "the X example in the examples tab" is now a link. Blocks
+`ty-session`, `w-wf`, `t-lf-wf`, `r-ex`, `r-new`, `p-typing`, `th-sound`,
+`th-compose` and `th-terms`, and the notes `w.wok`, `lfi.link`, `new.acyc`,
+`new.gen`, `new.ok`, `lfi.credit`, `lfi.hop`, `age.ctx`, `tp.sub-boxc`,
+`E-App.fut1`, `E-New.wf`, `P-Connect.wf`, `th.fundamental`,
+`th.lf-fundamental`, `th.soundness`, `th.soundness-source`,
+`th.lf-soundness` and `th.cl2-needs`. The file name in `tp.sub-boxc` is
+gone. The link from `p-typing` to the two-thread close is lock-free only,
+because that example is lock-free only (question 6).
+
+Syntax. `syn-labels` why, the sentence about fields read as "payload ends
+and the continuations of a choice points", now "points of their own to
+payload ends and to the continuations of a choice".
+
+Types and worlds. `w-world` caption, "A strict world is any such order" is
+now "has no further structure". `w-world` why split into four sentences.
+`w-order` example, "in any state of its protocol" is "at each offset".
+
+Typing. The section intro drops "The idea in one sentence." and says "dual
+end" for "partner". `t-subs` caption said subtyping compares session types
+by $\approx$. Sub-Sess uses `sequiv`, which is $\simeq$, as `ty-equiv`
+already said. `t-lf-counters` caption named one of the two E-Link
+inequalities, now both, as `e_link` asks. `r-new` why had three self-posed
+questions ("Why not one rule." and so on), now statements. `t-subs` why,
+"Subtyping exists for one reason." folded into the sentence that gives the
+reason. `r-ex` and `p-typing` why, "Hiding buys" is gone.
+
+Semantic typing. `sr-reading` caption merges the lock-free sentence on
+ranked worlds into the sentence on strict worlds. `sr-ord` caption and why
+say "one witness that serves each index" for "for all indices". `fu-vs`
+why said the process relation "is where they meet", now "requires both".
+`fu-obls` caption ends on "counters" instead of a pronoun.
+
+Theorems. `th-chain` caption is one lock-free paragraph after the two
+deadlock-free arrows and the sentence that names the proofs. `th-sound`
+caption splits the lock-free sentence and states what the fair run gives,
+each pending thread of a reachable configuration takes part in a later step
+(`lf_soundness_padovani`, `lock_free_padovani`). `th-adeq` caption splits
+the 39-word sentence. `th-terms` names the two rejections that use the
+two-close lemma (`cl2_needs` in the flag, `fj_wait_needs` in fork-join).
+
+Notes. 37 quantifier warnings rewritten, "any extension of $R$" to "an
+extension", "ranges over all positions" to "the positions of the run",
+"once for all indices" to "once and used at each index", and so on. Two
+long notes split, `sty.contr.why` and `th.live-sub-df.meaning`.
+`sty.contr.why` no longer calls the recursion bound of `unfoldS` "fuel",
+which is the name of the lock-free predicate, and no longer hides that
+sentence in the lock-free view. It now says "a number of unrollings bounded
+by the size of the type", which is `unrN (sfuel s) s`.
+
+Examples. `ex-gennew` named `gen_new` and `wf_new` in prose, two Rocq names
+of which the deadlock-free view defines neither. The lead and the meaning
+now describe the two conditions in words, and the part about the sets $Y$
+is lock-free only. The meaning adds the fact the close of $d$ asks,
+$\pi \prec \overline{\rho}$, which is what `te_rejected_wf_new` proves
+underivable. `ex-copycat` meaning reordered, the ring rejection follows the
+five facts, then the single expansion, the composite, the expansion between
+two partners, and the acyclicity argument. `ex-link` linked E-Link to the
+counters block, now to `r-act`. `ex-guard-pos` linked E-App to `r-act`, now
+to `r-fun`. `ex-forkjoin` drops a parenthetical. `ex-cs` lead and
+`ex-flagpair` meaning lose "all" and "any".
+
+### Examples checked against the Rocq
+
+I compared the code and the meaning of each example with the definitions
+and theorem statements in its source files. ClientServer, Cycle,
+FreshBetween, FreshMany, FactoryEx, GrowRing, LFClose, GuardEx (the four
+boxes), cost/Forwarder (`fw`, `dead_thunk`, `S_fw`), LFController, SemBranch
+(`sb_not`, `sb_flag`, `sbv_thread`), LFClientServerSplit, TreeTopo, LFLink,
+Copycat with CopycatTwo and CopycatTwoN, Ring (`tA`, `tB`, `tC`, `tC'`),
+ForkJoin (`wk`, `wkr`, `fct`, `fib`), SharedRoots, GenNew (`tu_main`,
+`te_main`), SinstStuck. Each program in the map is the Rocq term up to the
+re-binding sugar `let (a, ⟨b, b′⟩) = new a` for a creation at a field, which
+the map writes as `let ⟨b, b′⟩ = new` with the placement in a comment, and
+up to `recvclose` for a receive of unit followed by a close. The badges
+agree with the theorems, including the bounds $N = 6, 4, 4, 8, 4, 8$ of the
+six lock-free loops. The header of LFController.v says $N = 3$, the lemmas
+use $6$, the map says $6$. Pass 1 compared the `rx-*` examples, PointReuse,
+BranchExt and FlagPair.
+
+### check.sh
+
+Before, at 08bb92b.
+
+| step | errors | warn | info |
+|---|---|---|---|
+| 1 schema | 0 | 0 | 0 |
+| 2 proof-map | 0 | 1 | 7 |
+| 3 DF-LEAK | 0 | 0 | 0 |
+| 4 writing | 0 | 58 | 0 |
+| 5 MathJax | 0 | 0 | 0 |
+| total | 0 | 59 | 7 |
+
+After, at the tip of map-pass2.
+
+| step | errors | warn | info |
+|---|---|---|---|
+| 1 schema | 0 | 0 | 0 |
+| 2 proof-map | 0 | 1 | 7 |
+| 3 DF-LEAK | 0 | 0 | 0 |
+| 4 writing | 0 | 0 | 0 |
+| 5 MathJax | 0 | 0 | 0 |
+| total | 0 | 1 | 7 |
+
+Warnings left, and artefacts met.
+
+- 1 bare-word, "Connect" in `\textsf{P-Connect$^{n}$}` of `p-typing`. The
+  checker reads the rule name as a product of variables. A tool matter, not
+  a content one.
+- The sentence splitter of `tools/proof-map/lib/prose-rules.js` splits at a
+  period followed by white space and a capital letter, `$` or `X`. It does
+  not split before `\inmode` or before a `[[link]]`, so a sentence that ends
+  in `.}` or is followed by a link counts together with the next one. Of the
+  14 long-sentence warnings of pass 1, 8 were this artefact (`ty-grammar`,
+  `r-new` twice, `p-typing`, `sr-reading`, `sj-all`, `th-chain`, one of
+  `th-adeq`). I removed them by moving lock-free sentences to the end of the
+  caption or by merging them into the preceding sentence, which also fixed
+  the lost deadlock-free sentences above. The other 6 were real and are
+  split.
+- The 7 info lines are unchanged. Four uncovered constructors (`NField`,
+  `LSess`, `tstep_head`, `sub_unit`), the unused note `sr.thunk`, the
+  external `Acc`, and no stamped fingerprints.
+
+### Questions for the author
+
+Pass 1's six questions stay open. These are new.
+
+1. Subtyping of session types. Sub-Sess compares by `sequiv` ($\simeq$),
+   which sees the credits and costs inside payload types, while V-Sess
+   relates ends up to `seqv` ($\approx$), which erases them. Two ends whose
+   protocols differ only in a payload credit are related by the value
+   relation but E-Sub cannot retype one as the other. Is the asymmetry
+   intended, or should Sub-Sess use $\approx$ and compare the payload
+   credits by a separate rule?
+2. Interface tickets. P-Term gives each interface end $N/2$ tickets
+   (`fhalf`), while a creation chooses $m_1 + m_2 \leq N$. A link of two
+   interface ends therefore types at no even $N$, which is why the link
+   example creates both channels inside the thread. Should P-Term let the
+   interface ends carry chosen tickets, as creations do?
+3. Field reuse. E-New-Field asks no freshness of the field, so two
+   creations in one thread place channels at the same field $x\cdot 0$
+   (point reuse example). Is this generality wanted, or should a field be
+   creatable once per thread?
+4. Fuel and renaming. Fuel quantifies over a renaming $g$ injective on the
+   held ends, while the relation handles renaming by the fusion clause of
+   $P$. Could fuel drop $g$ and let the lock-free process relation rename
+   through fusion, which would make fuel the term relation without the
+   ready clause and with counters?
+5. Dependent choice in the headline. `lf_soundness_h` concludes
+   `lock_free p`, a statement over weakly fair maximal runs, and such a run
+   exists only under dependent choice (`lf_soundness_run`). Should the
+   soundness block show the run form as the main lock-free result, so that
+   the reader sees the non-vacuous statement first?
+6. The two-thread close as a deadlock-free example. `cl_lftyped N` holds
+   at each bound, $N = \infty$ included, yet `ex-close` is lock-free only.
+   Showing it in both views would give the deadlock-free reader the smallest
+   P-Term and P-Connect example, which the process typing block now links
+   only in the lock-free view.
+7. Three turnstiles for one idea. The map writes the semantic judgment
+   $\vDash$, the judgment at $\kappa_L$ as $|\!\!\vDash$ and the lock-free
+   process judgment as $\Vvdash$, next to $\vDash[\kappa]$ in `sj-all`.
+   Should the two lock-free judgments be written as $\vDash[\kappa_L]$ and
+   $\vDash^{N}$ over the one symbol?
+8. The measure of lock-free adequacy. `th-chain` writes
+   $\mu(t) = (\varrho(\mathsf{pt}\,o), f)$ with $\mathsf{pt}$ undefined on
+   the page. It is the point $K$ records for $o$. Should the lock-free
+   process relation block name that projection, or should the caption say
+   "the point of $o$ in $K$" and drop the symbol?
