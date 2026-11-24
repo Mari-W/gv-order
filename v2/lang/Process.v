@@ -145,7 +145,8 @@ Proof. solve_decision. Defined.
 Global Instance ev_tau_dec ev : Decision (ev_tau ev).
 Proof. unfold ev_tau. apply _. Defined.
 
-(** Administrative events: they cost nothing in the live table (§2.8). *)
+(** Administrative events: the solo events of one thread. Each of them
+    but a force costs nothing in the live table (§2.8). *)
 Definition ev_admin (ev : event) : Prop :=
   match ev with EvSolo _ _ _ => True | _ => False end.
 

@@ -702,3 +702,189 @@ deviation), `ty.lbound`, `side.lb` deviation, `E-Abs.lb` (arg),
 `docs/explorer/check.sh` ends with 0 errors and the one known warning
 (bare-word Connect in p-typing). The writing step has no warning.
 `tools/proof-map/test/page-test.js` passes 15 of 15.
+
+## Faithfulness check, 2026-11-24
+
+Branch map-faithful from redesign dd71273, after the Fable pass. The
+question was whether the map says exactly what the Rocq at HEAD defines
+and proves, with each difference recorded as a deviation whose reason is
+correct. I read each block and theorem row the Fable pass touched, the 61
+notes it changed, the eight examples it changed, and the statement of
+each theorem row by name against v2/. No design change, and no Rocq change
+apart from one stale comment.
+
+### The bounds reading, case by case
+
+The reading is exact for the checks it claims. With $\bot \prec u$ and
+$u \prec \top$ for each bound $u$, $\mathsf{ap}(T)$ is `heads T` plus
+$\bot$ when `hbot T` holds plus $\top$ for each closure or existential at
+`LNone`. $X$ is the Rocq set plus $\bot$ where `sf_unionb` sets `RAll`,
+plus $\top$ where `lb_heads LNone` adds nothing.
+
+- `ub_below_u`. `UNone` is $\bot \prec F$, true for each future. `UTop`
+  asks `F = (∅, None)`, and $\top \prec X \cup {\vartriangle}v$ holds iff
+  $X \subseteq \{\top\}$ and $v = \top$. A map future with $\bot \in X$ is
+  a Rocq future with `RAll`, so both sides agree. `UPt x` is `ub_below_s`.
+- `ub_below_s`. `None` is $\bot$, true. `Some x` asks $x$ below each point
+  of the set and `rest_below`. In the map $x \prec \top$ holds, and
+  $x \prec \bot$ fails exactly where the Rocq has `RAll`. $x \preccurlyeq v$
+  is `sle`, false and true for `RAbove u`, `RAll` and no rest.
+- `below_ty` is `hbot T = false` and $x$ below each head, which is
+  $x \prec \mathsf{ap}(T)$.
+- `lbx_below_h`. `LBot` is $\bot \preccurlyeq \cdot$, true. `LNone` asks no
+  head and no `hbot`, which is $\top \preccurlyeq y$ only for $y = \top$.
+  `LPt x` asks `sle` for each head and no `hbot`, and $x \preccurlyeq \bot$
+  fails.
+- E-App, second premise, holds `sf_unionb F (lb_heads lb) (lb_bot lb)`.
+  At `LNone` the map adds $\top$ to $X$, and $\top \prec \top$ keeps
+  $\top \prec F \cup \{\top\}$ equal to $\top \prec F$.
+- The relation (`ub_ltu`, `lbx_le`) compares bounds with sets of points,
+  and the reading agrees there too.
+
+Where $\bot \prec \bot$ and $\top \prec \top$ must not hold. The worlds
+(`sacyc`, `swf`, the record `world` with `w_ord_irrefl`), readiness
+(`below_rest`, `above_offered`) and the futures of the relation
+(`gset point`) compare points only, and the map writes them with point
+letters. The caption of ty-heads and the note side.top said, however,
+that the orders $\prec_W$ and $\Gamma \vdash$ themselves extend to bounds,
+which reads as if $\prec_W$ were no longer strict. Both now say that a
+comparison of a bound with a point or a set reads the order extended to
+bounds, that the extended order is no strict order, and that the
+conditions on worlds and readiness compare points. Ord-Trans through
+$\bot$ or $\top$ yields no new fact between points, so the order judgment
+between points is unchanged.
+
+One place was not equivalent. sj.den wrote
+$\mathsf{den}_Y(X \cup {\vartriangle}v) = X \cup Y$. That puts $\bot$ and
+$\top$ into a semantic future, and for $\bot \in X$ with $v$ a point it
+restricts $Y$ to points above $v$, where the Rocq (`sf_den`, `rest_ok` at
+`RAll`) takes each finite $Y$. Fixed to $(X \cap \mathsf{Point}) \cup Y$
+with $Y$ unrestricted when $\bot \in X$. The deviations of sj.den and
+t-contexts say so.
+
+The t-side caption said that $\top \prec F$ holds when "$F$ has no point"
+and $v = \top$. With $\bot \in X$ that is false. It now says
+$X \subseteq \{\top\}$.
+
+### Removed Rocq results
+
+No map citation names a removed result (check.sh), and no prose relies on
+one. A search for the restricting judgment, `hides`, `connect_hidden`,
+`join_vis`, `lexlt`, the swrestrict lemmas, "hidden" and the old measure
+of Criterion.v finds nothing.
+
+### Theorem rows by name
+
+Each row matches its Rocq statement, hypotheses included, except these,
+now fixed.
+
+- th-chain. The row of `live_fundamental_ranked` lacked
+  $\mathsf{world\_wf}\,W$ and $N \in \mathbb{N}$, and the row of
+  `lf_fundamental` lacked $N \in \mathbb{N}$.
+- th-compose, `lf_p_term`. The Rocq asks `sworld_wf W`, which neither the
+  row nor $\mathsf{pterm}_N$ stated. Added to the row and to the note.
+- p-typing, P-Term. `p_term` asks `sworld_wf W ∧ wok N W`. The premise
+  showed $\mathsf{cons}\,W$ (or $\mathsf{ok}_N\,W$) alone, while its note
+  spoke of a well-formed world. Premise, title and signature now read
+  $\mathsf{world\_wf}\,W \land \mathsf{cons}\,W$. The title had shown
+  $\mathsf{ok}_N$ in the deadlock-free view as well.
+- `cl2_needs` and `typed_pinst` ask `facts_const W`, the map
+  $\mathsf{world\_wf}\,W$. These are the same condition. `sworld_wf` has
+  the one field `wf_facts`, whose statement is `facts_const`. Not changed.
+
+Checked and correct: `soundness`, `live_soundness`, the three n-ary
+soundness theorems of ConnectN.v and LFConnectN.v, `lf_soundness_run`
+(EM, DC, FC, the run from `fair_run_exists_proc`), `lf_soundness`,
+`lf_soundness_padovani`, `lock_free_padovani`, `fundamental_proc`,
+`live_fundamental_proc`, `lf_fundamental`, `adequacy`, `adequacy_sw`,
+`live_sub_df`, `lf_adequacy`, `lf_thread_progress`, `thread_progress`,
+`lf_sems_adequacy`, `sem_p_term`, `sem_p_connect`, `sem_p_connect_sw`,
+`lf_p_connect`, `lf_soup_term`, `ptyped_apart`, `ptyped_ren`, `typed_ren`,
+`conservative`, `typed_dftyped`, `soundness_source`, `lf_soundness_source`,
+`fundamental`, `fundamental_typed`, `live_fundamental`,
+`live_fundamental_typed`, `Erel_bind`, `cost_fundamental`,
+`fsem_of_cost`, `let_intro`, `let_var_counter`.
+
+### The items of the Fable pass
+
+- Turnstiles. $\vDash[\kappa_L]$ for `⊫` and $\Vvdash^N$ for `lf_sem` are
+  faithful. The deviations on sj.sw and sj.term name $\kappa_L$ and showed
+  in the deadlock-free view. They carry mode lf now. sp.lfsem did not
+  mention the annotations $\eta$ of `lf_semk`. Its deviation does now.
+- `lf_soundness_run` row and note. Correct.
+- Typing-only badges. Correct for ex-guard-neg. The lead of ex-forwarder
+  still said "is lock free" next to a badge that proves no closed program.
+  It now says that the thread types in the lock-free judgment and has fuel
+  at each bound, which `fw_ptyped` and `fw_fsem` state.
+- ex-close in the deadlock-free view. `cl_dftyped` and `cl_deadlock_free`
+  match.
+- r-new. $\mathsf{rankable}_\Gamma(\rho, C)$ is `∃ Sr, gen_new_rel W Γ C Sr`
+  clause by clause, and restricting $\mathcal{S}$ to tree points loses
+  nothing. The caption said that a creation never orders two old points.
+  `cons_open` and the second clause of `gen_new` allow such a fact when
+  $\Gamma$ derives it, so the caption now says "orders two old points only
+  as $\Gamma$ already does".
+- v-rel measure. The deviation of rel.vsize still spoke of "the formula"
+  and of a symbol $\mathsf{measure}$, neither of which appears any more.
+  Rewritten after `RelA`, `Vtop` and `tsize`. Its why was empty in the
+  deadlock-free view and has a deadlock-free sentence now.
+- ord.fix said that $V$, $E$, $P$ and fuel are each one family. In the Rocq
+  $V$, $E$ and $P$ are one family (`RelA` over `larg`) and fuel a second.
+  Fixed, and the deadlock-free view shows the first sentence.
+
+### The deadlock-free view
+
+I resolved each string a deadlock-free reader reaches to its deadlock-free
+form (blocks, examples, deviations without mode lf, and the 386 notes
+their symbols reach, closed under the symbols of notes) and searched for
+lock-free vocabulary and for fields that come out empty.
+
+- $\simeq$ appeared in eleven deadlock-free strings (E-Box.inst,
+  E-Sub.contr, sty.contr, sty.mu, tp.sinsts, tp.sub-boxc, tp.sub-sess,
+  tp.sub-teq), while the deadlock-free ty-equiv defines only $\approx$. On
+  the types of that view the two coincide, so these strings show $\approx$
+  there and $\simeq$ in the lock-free view.
+- Deadlock-free content inside lock-free markup, so that the deadlock-free
+  reader saw nothing. The meaning of th.soundness, the why of
+  V-Arrow.level, the why of O-Send.payload, the first half of the example
+  of sub.tsub, the meaning of ev.admin and the why of ord.fix. Unwrapped.
+- The signatures of V-Arrow.level and O-Recv.forall showed
+  $\beta + \kappa \leq \alpha$ in the deadlock-free view against the
+  meaning $\beta < \alpha$. They switch by mode now.
+- syn-terms said "no annotation" in the deadlock-free view. Moved to lf.
+- E-New.bot said that no point of the context is related to $\rho$. $C$
+  may relate the tree to context points. It now says that no fact of
+  $\Gamma$ mentions a point of the tree.
+
+### The Rocq
+
+lang/Process.v. The comment above `ev_admin` said that administrative
+events cost nothing in the live table. A force costs one there. The
+comment now says that each of them but a force costs nothing. Comment
+only.
+
+### Remaining gaps
+
+- Twenty-two notes have a field whose text is lock-free only, for example
+  ct.new.why, rel.lfp.why, tp.vdash.why and V-Sess.why. The page tests the
+  raw string before it resolves the mode, so the deadlock-free view shows
+  the heading of such a field over an empty body. The fix belongs in `row`
+  of tools/proof-map/page/index.html, outside this pass.
+- The theorem rows write $\vdash^{N}_W$ and leave $\eta$ implicit. This is
+  recorded on sp.lfsem, not on each row.
+- `cl_dftyped` and `cl_lftyped` take an unused argument `x : point`.
+
+### Questions
+
+1. P-Term now shows $\mathsf{world\_wf}\,W \land \mathsf{cons}\,W$. Should
+   well-formedness instead be folded into $\mathsf{cons}$ and
+   $\mathsf{ok}_N$ on the map, with a deviation, to keep the rule short?
+2. The page shows empty field headings in the deadlock-free view. Fix the
+   page, or give each such note a deadlock-free sentence?
+3. Should `cl_dftyped` and `cl_lftyped` drop their unused `x`?
+
+### Checks
+
+`docs/explorer/check.sh` ends with 0 errors and the one known warning
+(bare-word Connect in p-typing). `tools/proof-map/test/page-test.js`
+passes 16 of 16.
