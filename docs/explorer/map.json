@@ -20217,15 +20217,18 @@
   {
    "id": "ex-flagpair",
    "title": "Two threads on one received flag",
-   "lead": "Two threads that branch on one flag sent by a third thread are deadlock free. A proof that follows the reductions of the whole process in the [[p-rel|process relation]] shows it, and a proof that puts each thread into the [[e-rel|term relation]] on its own fails.",
-   "code": "A = case z of inl _ ⇒ let ∗ = close a in close b\n             | inr _ ⇒ let ∗ = close b in close a\nB = case z of inl _ ⇒ let ∗ = close ā in close b̄\n             | inr _ ⇒ let ∗ = close b̄ in close ā\n-- a at x, b at y, both threads receive the same flag z",
-   "meaning": "Both threads get the same flag, so they close $a$ and $b$ in the same order in each run. The received flag is either value of $V$ at $\\ast \\oplus \\ast$, so each thread has to be in $E$ for both flags. With $\\mathsf{inl}$ thread A closes $a$ while it holds $b$ and asks $x \\prec \\overline{y}$. With $\\mathsf{inr}$ thread B closes $\\overline{b}$ while it holds $\\overline{a}$ and asks $\\overline{y} \\prec x$. The join of the two worlds then has a cycle, and P-Connect asks a consistent join. One such thread alone fits in a consistent world, the pair does not. The flag is sent on an internal channel, so the process relation of the closed process reads only its actual reductions, in which both threads take the same branch. Following them puts the process in $P$ directly. This argument and the static rejection have no Rocq proof.",
+   "lead": "Two threads that branch on one flag sent by a third thread are deadlock free. Static typing rejects the process, because [[r-data|E-Case]] types both arms of each thread in one world. A proof that follows the reductions of the whole process in the [[p-rel|process relation]] shows deadlock freedom, and a proof that puts each thread into the [[e-rel|term relation]] on its own fails.",
+   "code": "A = let ⟨z, f′⟩ = recv f in let ∗ = close f′ in\n    case z of inl w ⇒ let ∗ = w in let ∗ = close a in close b\n            | inr w ⇒ let ∗ = w in let ∗ = close b in close a\nB = A with f, a, b replaced by g, ā, b̄\nC = let ∗ = close (send ⟨inj₁ ∗, f̄⟩) in close (send ⟨inj₁ ∗, ḡ⟩)\n-- the process ({a, b, f, g}, {A, B, C}), a at x, b at y",
+   "meaning": "Both threads get the same flag, so they close $a$ and $b$ in the same order in each run. E-Case types both arms of a thread in one world, so A asks $x \\prec \\overline{y}$ and $y \\prec \\overline{x}$, and B asks $\\overline{x} \\prec y$ and $\\overline{y} \\prec x$. A derivation of the process types each thread in a world contained in its own world, with the two ends of each channel at dual points. That world then holds the cycle $x \\prec \\overline{y} \\prec x$, so no bound, annotation or world types the process. In the term relation the received flag is either value of $V$ at $\\ast \\oplus \\ast$, so each thread has to be in $E$ for both flags. With $\\mathsf{inl}$ thread A closes $a$ while it holds $b$ and asks $x \\prec \\overline{y}$. With $\\mathsf{inr}$ thread B closes $\\overline{b}$ while it holds $\\overline{a}$ and asks $\\overline{y} \\prec x$. The join of the two worlds then has a cycle, and P-Connect asks a consistent join. One such thread alone fits in a consistent world, the pair does not. The flag is sent on an internal channel, so the process relation of the closed process reads only its actual reductions, in which both threads take the same branch. Following them puts the process in $P$ directly. This last argument has no Rocq proof.",
    "source": [
     {
      "file": "examples/FlagPair.v",
      "names": [
       "fp_gate",
-      "fp_unrealizable"
+      "fp_unrealizable",
+      "fpv_case_needs",
+      "ptyped_threads",
+      "fp_static_rejected"
      ]
     }
    ],
@@ -20233,7 +20236,7 @@
     "df": {
      "ok": false,
      "part": "P-Connect",
-     "rocq": "argued, no Rocq proof. fp_unrealizable shows that no world holds both threads in E for both flags"
+     "rocq": "fp_static_rejected, for every world, bound and annotation. Each thread asks both orders of its two closes, and the world of the derivation has the cycle x ≺ ȳ ≺ x"
     },
     "sem": {
      "ok": true,
