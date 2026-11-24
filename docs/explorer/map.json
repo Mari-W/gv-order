@@ -20679,7 +20679,7 @@
    "title": "A waiting chain that grows forever",
    "lead": "A deadlock-free program in which a chain of waiting threads grows forever. The box cannot call itself one level lower at a finite bound under the creations of [[r-new|E-New]], and the rejection is proved.",
    "code": "grow = !(f = λw. let ⟨c, c′⟩ = new in                 -- c below the point of w\n                 let ⟨d, d′⟩ = new in let ∗ = spawn (λ_. recvclose d′) in\n                 let ∗ = close (send ⟨∗, d⟩) in              -- one session action\n                 let ∗ = spawn (λ_. (force f) c′) in\n                 let ∗ = close c in close w)                 -- waits on its child\nmain = let ⟨w, w′⟩ = new in let ∗ = spawn (λ_. close w′) in (force grow) w\n-- every thread waits on the one it spawned, close w′ never proceeds",
-   "meaning": "Each thread spawns a child, waits on it, and the child does the same. Closing $c$ while the thread holds $w$ asks the point $q$ of $c$ below $\\overline{s}$, where $s$ is the point of $w$. The child holds $c'$ at $\\overline{q}$ and forces the box there, so the box must hold its constraint at an instance whose dual point lies below $\\overline{s}$. The proof reads each derivation at each ranked world in which the facts of its context hold. It reads a value through its points, the witnesses of its existentials and the constraint of a box, and E-Sub, E-Pack and E-Open keep this reading. A creation at a fresh base under $\\mathsf{gen\\_new}$ extends each such world, with excluded middle as a hypothesis, and a creation at a field keeps the world. So each call of the box at such a world leads to a call at an extension with a strictly lower dual point, and ranks admit no infinite descent. No context whose facts hold in a ranked world types the program at a finite bound, and the process of its one thread is not in the lock-free judgment. The argument uses only that each creation extends each ranked world of its context. So each premise of E-New with this property rejects the program as well, which is argued.",
+   "meaning": "Each thread spawns a child, waits on it, and the child does the same. Closing $c$ while the thread holds $w$ asks the point $q$ of $c$ below $\\overline{s}$, where $s$ is the point of $w$. The child holds $c'$ at $\\overline{q}$ and forces the box there, so the box must hold its constraint at an instance whose dual point lies below $\\overline{s}$. The proof reads each derivation at each ranked world in which the facts of its context hold. It reads a value through its points, the witnesses of its existentials and the constraint of a box, and E-Sub, E-Pack and E-Open keep this reading. A creation at a fresh base under $\\mathsf{gen\\_new}$ extends each such world, with excluded middle as a hypothesis, and a creation at a field keeps the world. So each call of the box at such a world leads to a call at an extension with a strictly lower dual point, and ranks admit no infinite descent. No context whose facts hold in a ranked world types the program at a finite bound, and the process of its one thread is not in the lock-free judgment. The argument uses only that each creation extends each ranked world of its context. So each premise of E-New with this property rejects the program as well, which is argued. At $N = \\infty$ the program types and is deadlock free. The box hypothesis at the point $s$ of $w$ is $H(s) = \\{ t\\cdot 0 \\prec \\overline{t} \\mid t = s \\text{ or } t = \\overline{s\\cdot\\kappa_1\\cdots\\kappa_k},\\ k \\geq 1 \\}$, so $H(\\overline{s\\cdot 0}) \\subseteq H(s)$ and the child forces the box where its hypothesis holds. The thread creates $d$ at a fresh base $\\pi$. Its constraint puts $\\pi$ and $\\pi^{+}$ below each head the thread holds. These heads are $\\overline{s}$, $s\\cdot 0$ and $\\overline{s\\cdot 0}$. main creates $w$ at a fresh base $\\rho$ with the facts $H(\\rho)$, which hold in no ranked world and satisfy $\\mathsf{acyc\\_new}$.",
    "modes": [
     "lf"
    ],
@@ -20706,13 +20706,23 @@
       "gen_new",
       "new_ok"
      ]
+    },
+    {
+     "file": "examples/RxChain.v",
+     "names": [
+      "rcH_desc",
+      "rc_acyc",
+      "rc_C_acyc",
+      "rc_dftyped",
+      "rc_term",
+      "rc_deadlock_free"
+     ]
     }
    ],
    "x-gv-accepts": {
     "df": {
      "ok": true,
-     "part": "argued, no Rocq proof",
-     "rocq": "argued, no Rocq proof"
+     "rocq": "rc_dftyped, rc_deadlock_free"
     },
     "lf": {
      "ok": false,

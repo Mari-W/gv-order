@@ -19,7 +19,7 @@ From GV Require Import examples.Copycat examples.ForkJoin.
 From GV Require Import static.ChanRen examples.CopycatTwo static.LetVar examples.LetVarCounter examples.CopycatTwoN.
 From GV Require Import static.Skeleton examples.Rejects.
 From GV Require Import examples.Descent.
-From GV Require Import examples.FlagPair.
+From GV Require Import examples.FlagPair examples.RxChain.
 
 (** types/Points.v *)
 Print Assumptions pt_dual_dual.
@@ -371,3 +371,9 @@ Print Assumptions fjr_lf_proc_rejected.
 Print Assumptions fp_unrealizable.
 Print Assumptions ptyped_threads.
 Print Assumptions fp_static_rejected.
+(** examples/RxChain.v: rx-chain at N = ∞ *)
+Print Assumptions rc_acyc.
+Print Assumptions rc_C_acyc.
+Print Assumptions rc_dftyped.
+Print Assumptions rc_term.
+Print Assumptions rc_deadlock_free.
