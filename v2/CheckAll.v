@@ -34,12 +34,8 @@ Print Assumptions p_connect_iann.
 (** static/Hiding.v *)
 Print Assumptions swrestrict_iff.
 Print Assumptions typed_ren.
-Print Assumptions join_vis.
-Print Assumptions connect_hidden.
 Print Assumptions ptyped_ren.
 Print Assumptions ptyped_apart.
-Print Assumptions rptyped_ptyped.
-Print Assumptions ptyped_rptyped.
 (** static/Conservativity.v *)
 Print Assumptions d_conv.
 Print Assumptions dftyped_typed.
