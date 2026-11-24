@@ -380,6 +380,94 @@ Proof.
     simpl in *; [done|..]; rewrite !chans_of_union in *; set_solver.
 Qed.
 
+(** ** Locality of the interface annotations
+
+    A derivation reads η at the interface ends of its components, which
+    are the ends of its interface and the ends of the channels it binds.
+    Two annotations that agree there type the same processes. *)
+Lemma ptyped_iann_agree N η W Σ p T : ptyped N η W Σ p T →
+  ∀ η', (∀ o, o ∈ dom Σ ∨ ech o ∈ p.1 → η' o = η o) → ptyped N η' W Σ p T.
+Proof.
+  induction 1 as [W Σ ΘB C0 t T c HT HB HC Hp Hc HC0 Hle Ht HW
+                 |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 H12 H1C H2C HC12 HC1 HC2 Hs HW];
+    intros η' Hag; simpl in *.
+  - apply (p_term N η' W Σ ΘB C0 t T c); try done.
+    + intros o Ho. rewrite (Hag o (or_introl Ho)). by apply Hle.
+    + enough (tenv_ofk η' Σ = tenv_ofk η Σ) as -> by done.
+      apply map_eq. intros o. rewrite !lookup_tenv_ofk. destruct (Σ !! o) eqn:E; [|done].
+      simpl. rewrite (Hag o); [done|left; by eapply elem_of_dom_2].
+  - assert (∀ o, o ∈ dom ΣC → ech o ∈ C1 ∪ C2 ∪ chans_of ΣC) as HcC.
+    { intros o Ho. apply elem_of_union_r. by apply elem_of_chans_of'. }
+    apply p_connect; try done.
+    + apply IH1. intros o [Ho|Ho]; apply Hag.
+      * rewrite dom_union_L in Ho. apply elem_of_union in Ho as [Ho|Ho].
+        -- left. rewrite dom_union_L. set_solver.
+        -- right. by apply HcC.
+      * right. set_solver.
+    + apply IH2. intros o [Ho|Ho]; apply Hag.
+      * rewrite dom_union_L in Ho. apply elem_of_union in Ho as [Ho|Ho].
+        -- left. rewrite dom_union_L. set_solver.
+        -- right. apply elem_of_union_r. rewrite <-(chans_of_senv_dual ΣC). by apply elem_of_chans_of'.
+      * right. set_solver.
+    + intros o Ho. rewrite (Hag o), (Hag (edual o)); [by apply Hs| |].
+      * right. rewrite ech_edual. by apply HcC.
+      * right. by apply HcC.
+Qed.
+
+Lemma ptyped_iann_local N η η' W Σ p T :
+  (∀ o, o ∈ dom Σ ∨ ech o ∈ p.1 → η o = η' o) →
+  ptyped N η W Σ p T ↔ ptyped N η' W Σ p T.
+Proof.
+  intros Hag. split; intros H; eapply ptyped_iann_agree; [exact H| |exact H|].
+  - intros o Ho. symmetry. by apply Hag.
+  - intros o Ho. by apply Hag.
+Qed.
+
+(** Two components typed under their own annotations connect under the
+    annotation that is η1 on the interface ends of the first and η2
+    elsewhere, when the credits of each cut channel sum to at most N. *)
+Definition iann_pick (A : cend → Prop) `{∀ o, Decision (A o)} (η1 η2 : iann) : iann :=
+  λ o, if decide (A o) then η1 o else η2 o.
+
+Lemma p_connect_iann N η1 η2 W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
+  ptyped N η1 W1 (Σ1 ∪ ΣC) (C1, E1) T →
+  ptyped N η2 W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
+  chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
+  C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
+  (∀ o, o ∈ dom ΣC → tsum_ok N (η1 o).2 (η2 (edual o)).2) →
+  wok N (W1 ⊔ W2) →
+  ptyped N (iann_pick (λ o, o ∈ dom (Σ1 ∪ ΣC) ∨ ech o ∈ C1) η1 η2)
+    (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
+Proof.
+  intros D1 D2 H12 H1C H2C HC12 HC1 HC2 Hs HW.
+  pose proof (ptyped_pfree _ _ _ _ _ _ D1) as Hp1.
+  assert (∀ o, o ∈ dom (Σ2 ∪ senv_dual ΣC) ∨ ech o ∈ C2 → ¬ (o ∈ dom (Σ1 ∪ ΣC) ∨ ech o ∈ C1)) as Hdis.
+  { intros o Ho1 Ho2. rewrite !dom_union_L in Ho1, Ho2.
+    assert (o ∈ dom (senv_dual ΣC) → edual o ∈ dom ΣC) as Hd.
+    { unfold senv_dual. rewrite dom_kmap_L by apply _. rewrite dom_fmap_L. rewrite elem_of_map.
+      intros (o' & -> & Ho'). by rewrite edual_edual. }
+    assert (o ∈ dom (senv_dual ΣC) → ech o ∈ chans_of ΣC) as Hdc.
+    { intros H. rewrite <-ech_edual. apply elem_of_chans_of', Hd, H. }
+    destruct Ho1 as [Ho1|Ho1]; [apply elem_of_union in Ho1 as [Ho1|Ho1]|];
+      (destruct Ho2 as [Ho2|Ho2]; [apply elem_of_union in Ho2 as [Ho2|Ho2]|]).
+    - apply (H12 (ech o)); by apply elem_of_chans_of'.
+    - apply (H2C (ech o)); by apply elem_of_chans_of'.
+    - apply (HC1 (ech o)); [done|]. apply elem_of_union_l. by apply elem_of_chans_of'.
+    - apply (H1C (ech o)); [by apply elem_of_chans_of'|by apply Hdc].
+    - pose proof (Hd Ho1). apply (Hp1 (edual o)); rewrite dom_union_L; [set_solver|]. rewrite edual_edual. set_solver.
+    - apply (HC1 (ech o)); [done|]. apply elem_of_union_r. by apply Hdc.
+    - apply (HC2 (ech o)); [done|]. apply elem_of_union_l. by apply elem_of_chans_of'.
+    - apply (HC2 (ech o)); [done|]. apply elem_of_union_r. by apply elem_of_chans_of'.
+    - apply (HC12 (ech o)); done. }
+  apply p_connect; try done.
+  - eapply ptyped_iann_agree; [exact D1|]. intros o Ho. unfold iann_pick. by rewrite decide_True.
+  - eapply ptyped_iann_agree; [exact D2|]. intros o Ho. unfold iann_pick.
+    rewrite decide_False; [done|]. by apply Hdis.
+  - intros o Ho. unfold iann_pick. rewrite decide_True by (left; rewrite dom_union_L; set_solver).
+    rewrite decide_False; [by apply Hs|]. apply Hdis. left. rewrite dom_union_L. apply elem_of_union_r.
+    unfold senv_dual. rewrite dom_kmap_L by apply _. rewrite dom_fmap_L. apply elem_of_map. by exists o.
+Qed.
+
 (** ** Credits at most tickets
 
     Every end of a context that types a term has a credit at most its

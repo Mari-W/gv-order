@@ -29,6 +29,8 @@ Print Assumptions wmodels_exists.
 Print Assumptions wchain_lt_wf.
 (** static/Typing.v *)
 Print Assumptions ptyped_wf.
+Print Assumptions ptyped_iann_local.
+Print Assumptions p_connect_iann.
 (** static/Hiding.v *)
 Print Assumptions swrestrict_iff.
 Print Assumptions typed_ren.
