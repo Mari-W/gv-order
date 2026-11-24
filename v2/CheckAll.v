@@ -179,6 +179,7 @@ Print Assumptions cons_gen.
 Print Assumptions wf_new_gen.
 Print Assumptions wf_new_plus_gen.
 Print Assumptions gen_new1_gen.
+Print Assumptions cons_open_iff.
 Print Assumptions gen_new_sem_of.
 Print Assumptions Erel_new.
 Print Assumptions Erel_new_fld.

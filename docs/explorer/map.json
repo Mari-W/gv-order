@@ -1425,13 +1425,15 @@
        "names": [
         "cons_open",
         "bridge_at",
-        "in_tree"
+        "in_tree",
+        "conserv"
        ]
       },
       {
        "file": "static/PointSubst.v",
        "names": [
-        "cons_open_conservative"
+        "cons_open_conservative",
+        "cons_open_iff"
        ]
       }
      ],
@@ -1442,11 +1444,13 @@
      "deviations": [
       {
        "kind": "notation",
-       "reason": "The Rocq checks conservativity as `cons_open W Γ m C`, the bridge condition. A bridge joins two old points by a fact of $C$. It may also enter the tree by a fact, follow facts of $C$ and program order inside the tree and leave by a fact. `cons_open` asks $\\Gamma$ to derive each bridge. The two conditions are equivalent, because a derivation of $z \\prec y$ between old points leaves the old points only through such bridges. `cons_open_conservative` proves that the bridge condition gives conservativity, for a world whose facts lie at constant bases. The converse holds because each bridge is a derivation in $\\Gamma, C(\\bar\\iota)$. The lemma that states the equivalence is owed in the Rocq.",
+       "reason": "The Rocq checks conservativity as `cons_open W Γ m C`, the bridge condition. A bridge joins two old points by a fact of $C$. It may also enter the tree by a fact, follow facts of $C$ and program order inside the tree and leave by a fact. `cons_open` asks $\\Gamma$ to derive each bridge. `conserv` states conservativity over the points of $\\Gamma$ shifted past the $m$ binders, which are the points outside the tree. `cons_open_iff` proves the two conditions equivalent for a world whose facts lie at constant bases. A derivation of $z \\prec y$ between old points leaves the old points only through bridges, and each bridge is a derivation in $\\Gamma, C(\\bar\\iota)$.",
        "names": [
         "cons_open",
         "bridge_at",
-        "cons_open_conservative"
+        "cons_open_conservative",
+        "conserv",
+        "cons_open_iff"
        ]
       }
      ]
@@ -10300,7 +10304,8 @@
      "names": [
       "cons_open",
       "bridge_at",
-      "cons_open_1"
+      "cons_open_1",
+      "conserv"
      ]
     },
     {
@@ -10309,7 +10314,8 @@
       "cons_open_conservative",
       "cons_of_hold",
       "cons_gen",
-      "cons_tree"
+      "cons_tree",
+      "cons_open_iff"
      ]
     },
     {
@@ -10323,11 +10329,13 @@
    "deviations": [
     {
      "kind": "notation",
-     "reason": "The Rocq checks conservativity as `cons_open W Γ m C`, the bridge condition. A bridge joins two old points by a fact of $C$. It may also enter the tree by a fact, follow facts of $C$ and program order inside the tree and leave by a fact. `cons_open` asks $\\Gamma$ to derive each bridge. The two conditions are equivalent, because a derivation of $z \\prec y$ between old points leaves the old points only through such bridges. `cons_open_conservative` proves that the bridge condition gives conservativity, for a world whose facts lie at constant bases. The converse holds because each bridge is a derivation in $\\Gamma, C(\\bar\\iota)$. The lemma that states the equivalence is owed in the Rocq.",
+     "reason": "The Rocq checks conservativity as `cons_open W Γ m C`, the bridge condition. A bridge joins two old points by a fact of $C$. It may also enter the tree by a fact, follow facts of $C$ and program order inside the tree and leave by a fact. `cons_open` asks $\\Gamma$ to derive each bridge. `conserv` states conservativity over the points of $\\Gamma$ shifted past the $m$ binders, which are the points outside the tree. `cons_open_iff` proves the two conditions equivalent for a world whose facts lie at constant bases. A derivation of $z \\prec y$ between old points leaves the old points only through bridges, and each bridge is a derivation in $\\Gamma, C(\\bar\\iota)$.",
      "names": [
       "cons_open",
       "bridge_at",
-      "cons_open_conservative"
+      "cons_open_conservative",
+      "conserv",
+      "cons_open_iff"
      ]
     }
    ]

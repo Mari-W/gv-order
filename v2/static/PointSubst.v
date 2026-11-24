@@ -600,6 +600,68 @@ Proof.
   by rewrite !pshift_back in H1 by (apply length_ids).
 Qed.
 
+(** The converse. Each bridge of C is a derivation in [hc_open m C Γ]
+    between two points outside the tree: its facts are hypotheses of the
+    opening and its steps in the tree are facts of C or program order. *)
+Lemma unb_shift m q : ¬ in_tree m q → pt_inst (pshift m) (unb m q) = q.
+Proof.
+  intros Hq. unfold unb. rewrite pt_inst_comp, (pt_inst_ext_root _ pvar); [apply pt_inst_pvar|].
+  intros a Ha. destruct (decide (a < m)) as [Hlt|Hge].
+  { exfalso. apply Hq, in_tree_root. by exists a. }
+  unfold compose, plist. rewrite lookup_ge_None_2 by (rewrite length_ids; lia).
+  rewrite pt_inst_pvar_at, length_ids. unfold pshift. f_equal. lia.
+Qed.
+
+Lemma cinst_shift m C p : pn_vb (m + length (bc_env C)) (pt_name p) → ¬ in_tree m p →
+  cinst m C p = pt_inst (pshift m) (outer_pt m C p).
+Proof.
+  intros Hs Hp. destruct (cinst_out m C p Hs Hp) as [Hq Eq].
+  by rewrite <-Eq, unb_shift.
+Qed.
+
+Lemma cfact_open W Γ m C x y : cfact_at m C x y → slt W (hc_open m C Γ) (cinst m C x) (cinst m C y).
+Proof.
+  intros [Hf Hs]. apply fl_h. exists (bcs_inst (pshift m) C), (ids m). split.
+  - simpl. apply elem_of_app. right. by apply list_elem_of_singleton.
+  - apply bcs_at_iff. exists (FLt x y). cbn [bcs_inst bc_env bc_facts].
+    rewrite length_fmap, length_ids. split_and!; [done|done|done].
+Qed.
+
+Lemma tree_steps_open W Γ m C v u : rtc (tree_step m C) v u → sle W (hc_open m C Γ) v u.
+Proof.
+  induction 1 as [v|v w u (Hv & Hw & Hst) _ IH]; [by left|right].
+  assert (slt W (hc_open m C Γ) v w) as Hvw.
+  { destruct Hst as [Hf|[->| ->]].
+    - rewrite <-(cinst_tree m C v Hv), <-(cinst_tree m C w Hw). by apply cfact_open.
+    - apply sl_po.
+    - apply sl_w, sw_lt_dpo. }
+  destruct IH as [<-|IH]; [done|by eapply sl_trans].
+Qed.
+
+Lemma conserv_cons_open W Γ m C : conserv W Γ m C → cons_open W Γ m C.
+Proof.
+  intros Hc z y (Hz & Hy & Hb). apply Hc.
+  assert (∀ p q, cfact_at m C p q → ¬ in_tree m p → cinst m C p = pt_inst (pshift m) (outer_pt m C p)) as Ep.
+  { intros p q [_ [Hp _]] Hn. by apply cinst_shift. }
+  assert (∀ p q, cfact_at m C p q → ¬ in_tree m q → cinst m C q = pt_inst (pshift m) (outer_pt m C q)) as Eq.
+  { intros p q [_ [_ Hq]] Hn. by apply cinst_shift. }
+  destruct Hb as [Hf|(v & u & Hzv & Hv & Hvu & Huy)].
+  - rewrite <-(Ep z y Hf Hz), <-(Eq z y Hf Hy). by apply cfact_open.
+  - rewrite <-(Ep z v Hzv Hz), <-(Eq u y Huy Hy).
+    assert (in_tree m u) as Hu.
+    { clear -Hv Hvu. induction Hvu as [|a b c (_ & Hb & _) _ IH]; [done|by apply IH]. }
+    pose proof (cfact_open W Γ m C z v Hzv) as H1. rewrite (cinst_tree m C v Hv) in H1.
+    pose proof (cfact_open W Γ m C u y Huy) as H2. rewrite (cinst_tree m C u Hu) in H2.
+    eapply sl_trans; [exact H1|]. destruct (tree_steps_open W Γ m C v u Hvu) as [<-|H]; [done|].
+    by eapply sl_trans.
+Qed.
+
+(** Conservativity equals the bridge condition, at m bound variables. *)
+Lemma cons_open_iff W Γ m C : facts_const W → cons_open W Γ m C ↔ conserv W Γ m C.
+Proof.
+  intros Hfc. split; [intros H; exact (cons_open_conservative W Γ m C Hfc H)|apply conserv_cons_open].
+Qed.
+
 (** (wf-new) reads the facts and the number of outer points of C, which
     an instantiation keeps. *)
 Lemma wf_new_inst σ C : wf_new C → wf_new (bcs_inst σ C).

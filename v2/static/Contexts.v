@@ -243,6 +243,14 @@ Definition bridge_at (m : nat) (C : bcs) (z y : point) : Prop :=
 Definition cons_open (W : sworld) (Γ : hctx) (m : nat) (C : bcs) : Prop :=
   ∀ z y, bridge_at m C z y → slt W Γ (outer_pt m C z) (outer_pt m C y).
 
+(** Conservativity, the declarative form of the bridge condition. A fact
+    between two points outside the tree of the m bound variables that
+    [hc_open m C Γ] derives, Γ derives already. The points outside the
+    tree are the shifted points of Γ. Under constant facts of W it is
+    equivalent to [cons_open] ([cons_open_iff], static/PointSubst.v). *)
+Definition conserv (W : sworld) (Γ : hctx) (m : nat) (C : bcs) : Prop :=
+  ∀ x y, slt W (hc_open m C Γ) (pt_inst (pshift m) x) (pt_inst (pshift m) y) → slt W Γ x y.
+
 (** ** The constraint of a creation at a fresh root (wf-new)
 
     The constraint C of E-New at a fresh root speaks of the bound point

@@ -357,14 +357,6 @@ E-Open.cons. The Rocq checks conservativity as `cons_open W Γ m C`, the
 bridge condition, which is equivalent because a derivation of `z ≺ y`
 between old points leaves the old points only through bridges.
 
-### Owed in the Rocq, conservativity equals the bridge condition
-
-A lemma `cons_open W Γ m C ↔ conserv` at m bases, the form E-Open uses
-and E-New uses at one base. One direction is `cons_open_conservative`
-(static/PointSubst.v), under the side condition that the facts of `W`
-lie at constant bases. The converse holds because each bridge is a
-derivation in `hc_open m C Γ`, and is not stated yet.
-
 ## Report, 2026-11-24, payload credit variance and one rule for new
 
 Approved by the author on 2026-11-24 (tasks A and B, then C, "yes 3
