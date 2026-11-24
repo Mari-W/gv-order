@@ -1095,7 +1095,7 @@
      "id": "t-agecap",
      "title": "Aging",
      "formula": "\\begin{array}{c}\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{age.free}{\\sym{ty.tfree}{\\mathsf{tfree}}\\,T}\\end{array}}{T - c = T}\\;\\textsf{Age-Free} \\qquad \\dfrac{\\begin{array}{c}\\sym{age.credit}{c \\leq a}\\end{array}}{S_x\\inmode{lf}{^{a}} - c = S_x^{a - c}}\\;\\textsf{Age-Credit} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{age.idle}{\\sym{fu.idle}{\\mathsf{idle}}\\,S}\\end{array}}{S_x\\inmode{lf}{^{a}} - c = S_x\\inmode{lf}{^{\\max(a - c, 0)}}}\\;\\textsf{Age-Idle} \\qquad \\dfrac{\\begin{array}{c}\\sym{age.credit}{c \\leq a}\\end{array}}{(T \\mathrel{\\sym{ty.arrow}{\\multimap}} U)\\inmode{lf}{^{a}} - c = (T \\mathrel{\\sym{ty.arrow}{\\multimap}} U)^{a - c}}\\;\\textsf{Age-Arr} \\\\[2ex] \\sym{age.agg}{(T_1 \\otimes T_2) - c = (T_1 - c) \\otimes (T_2 - c) \\qquad (T_1 \\oplus T_2) - c = (T_1 - c) \\oplus (T_2 - c) \\qquad (\\exists^{l}\\bar\\iota.\\,C.\\,T) - c = \\exists^{l}\\bar\\iota.\\,C.\\,(T - c)}\\end{array}\\end{array}",
-     "caption": "$T - c$ lowers the credits of [[ty-ann]] on the ends and closures in $T$ by $c$. It requires $c \\leq a$ for ends that are not idle and for closures, and leaves $\\mathsf{tfree}$ types of [[ty-kinds]] unchanged. Age-Idle applies to an end type held by a variable. An entry $o : S_x^{a,m}$ of $\\Delta$ for an end the term names directly ages with $c \\leq a$ even when $S$ is idle. A closure at credit $a$ captures its context aged by $a$, so its body is typed with each captured end at its own credit minus $a$. The [[t-judgment|judgment]] ages what is held, and [[r-fun|E-Abs]] and [[r-data|E-Pair]] show the two uses. Aging a context of ends also asks $a \\leq m$ of each end before it loses credit, which together with [[r-base|E-Chan]] keeps $a \\leq m$ on each end of a context that types a term.",
+     "caption": "$T - c$ lowers the credits of [[ty-ann]] on the ends and closures in $T$ by $c$. It requires $c \\leq a$ for ends that are not idle and for closures, and leaves $\\mathsf{tfree}$ types of [[ty-kinds]] unchanged. Age-Idle applies to an end type held by a variable and to an entry $o : S_x^{a,m}$ of $\\Delta$ for an end the term names directly. A closure at credit $a$ captures its context aged by $a$, so its body is typed with each captured end at its own credit minus $a$. The [[t-judgment|judgment]] ages what is held, and [[r-fun|E-Abs]] and [[r-data|E-Pair]] show the two uses. Aging a context of ends also asks $a \\leq m$ of each end before it loses credit, which together with [[r-base|E-Chan]] keeps $a \\leq m$ on each end of a context that types a term.",
      "why": "An action of the thread postpones the ends the thread holds by one step. Aging records this on the types of held values, and capture records it for the ends a closure takes along. An idle end has no partner that waits, so its credit may fall to $0$ without a check, which lets the [[t-lf-counters|counters]] of idle ends stay unbounded across a loop.",
      "modes": [
       "lf"
@@ -8464,7 +8464,7 @@
   },
   "age.idle": {
    "title": "Aging an idle end",
-   "meaning": "$S_x\\inmode{lf}{^{a}} - c = S_x\\inmode{lf}{^{\\max(a - c, 0)}}$ when $\\mathsf{unfold}(S) = \\mathsf{Skip}$.",
+   "meaning": "$S_x\\inmode{lf}{^{a}} - c = S_x\\inmode{lf}{^{\\max(a - c, 0)}}$ when $\\mathsf{unfold}(S) = \\mathsf{Skip}$, for an end type held by a variable and for an entry $o : S_x^{a,m}$ of a context of ends alike.",
    "why": "No thread acts on an idle end, so no action counter bounds an idle end. Truncation keeps its credit at or below its counter, which decrements and truncates at $0$ in the same way.",
    "breaks": "With $c \\leq a$ required an idle end held across a loop loses credit each round and no finite $N$ types the loop. Keeping the credit instead exceeds the counter after one decrement.",
    "example": "$\\mathsf{Skip}_{\\chi}\\inmode{lf}{^{0}} - 1 = \\mathsf{Skip}_{\\chi}\\inmode{lf}{^{0}}$.",
@@ -8494,7 +8494,8 @@
     {
      "file": "static/Contexts.v",
      "names": [
-      "age_idle"
+      "age_idle",
+      "thage"
      ]
     }
    ]

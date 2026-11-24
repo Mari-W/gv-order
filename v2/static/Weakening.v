@@ -652,7 +652,7 @@ Section let_admissible.
   Local Lemma thage_0 Θ : cr_tk Θ → thage (Some 0) Θ Θ.
   Proof.
     intros HΘ o. destruct (Θ !! o) as [[S x a m]|] eqn:E; [|done]. simpl.
-    split_and!; [done|done|done|apply fle_0|by rewrite fsub_0|exact (HΘ o _ E)].
+    split_and!; [done|done|done|left; apply fle_0|by rewrite fsub_0|exact (HΘ o _ E)].
   Qed.
   Local Lemma thage_nil c : thage c ∅ ∅.
   Proof. intros o. by rewrite lookup_empty. Qed.

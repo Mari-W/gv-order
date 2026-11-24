@@ -93,7 +93,7 @@ Proof.
       apply lookup_singleton_Some in Ho as [_ <-]. simpl. by apply sl_w, sw_lt_fact.
     + apply e_chan; [intros ? Hin; inversion Hin|solve [done|apply fle_refl|cbn; lia]].
   - intros o. destruct (decide (o = o2)) as [->|Ho].
-    + rewrite lookup_singleton_eq. split_and!; done.
+    + rewrite lookup_singleton_eq. split_and!; try done. by left.
     + by rewrite lookup_singleton_ne.
   - apply lage_nil.
   - eapply (e_close _ _ _ _ _ _ _ SEnd); [reflexivity|simpl; split_and!; [set_solver|done]|].

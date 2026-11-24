@@ -518,11 +518,16 @@ Inductive lage (c : fuel) : lenv → lenv → Prop :=
   | lage_none Δ Δ' : lage c Δ Δ' → lage c (None :: Δ) (None :: Δ')
   | lage_some σ σ' Δ Δ' : tage c σ σ' → lage c Δ Δ' → lage c (Some σ :: Δ) (Some σ' :: Δ').
 
+(** Aging a context of ends Θ − c. An end covers c by its credit and
+    loses c. An idle end loses c truncated at 0 and need not cover c, as
+    in [age_idle]. Every end, idle or not, keeps its credit at most its
+    tickets, which [cr_tk] reads. *)
 Definition thage (c : fuel) (Θ Θ' : tenv) : Prop :=
   ∀ o, match Θ !! o, Θ' !! o with
        | None, None => True
        | Some e, Some e' => te_sty e' = te_sty e ∧ te_pt e' = te_pt e ∧ te_tk e' = te_tk e ∧
-                            fle c (te_cr e) ∧ te_cr e' = fsub (te_cr e) c ∧ fle (te_cr e) (te_tk e)
+                            (fle c (te_cr e) ∨ idle (te_sty e)) ∧ te_cr e' = fsub (te_cr e) c ∧
+                            fle (te_cr e) (te_tk e)
        | _, _ => False
        end.
 

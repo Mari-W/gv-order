@@ -310,7 +310,7 @@ Lemma thage_pinst σ c Θ Θ' : thage c Θ Θ' → thage c (tenv_pinst σ Θ) (t
 Proof.
   intros H o. specialize (H o). unfold tenv_pinst. rewrite !lookup_fmap.
   destruct (Θ !! o) as [e|], (Θ' !! o) as [e'|]; simpl; try done.
-  destruct H as (H1 & H2 & H3 & H4 & H5 & H6). unfold tentry_pinst. simpl.
+  destruct H as (H1 & H2 & H3 & H4 & H5 & H6). unfold tentry_pinst, pinst_sty. simpl.
   split_and!; try done; congruence.
 Qed.
 
