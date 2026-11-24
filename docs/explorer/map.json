@@ -20165,7 +20165,7 @@
    "title": "Copycat, a forwarder at independent points",
    "lead": "A forwarder that holds its two ends at independent points types by the [[r-act|action rules]] over a world with five facts, and two forwarders in a ring do not, because [[p-typing|P-Connect]] finds a cycle. Put into the cut of two typed partners, the forwarder keeps the composite typed.",
    "code": "-- o₁ : S_x, o₂ : S̄_y, S = ?∗.!∗.Close\nfwd o₁ o₂ = let ⟨v, o₁⟩ = recv o₁ in let o₂ = send ⟨v, o₂⟩ in\n            let ⟨w, o₂⟩ = recv o₂ in let o₁ = send ⟨w, o₁⟩ in\n            let ∗ = close o₁ in close o₂\nring      = fwd(o₁, o₂) ∥ fwd(ō₂, ō₁)        -- cut on both channels\nP ∥ Q              -- cut on a, Q holds a⁺ at x\nP ∥ fwd(a⁺, b⁻) ∥ Q′ -- Q′ = Q with b for a and the constant of y for that of x",
-   "meaning": "Each action of the forwarder asks its point below the dual point of the other end. The five facts are $x \\prec \\overline{y}$, $y \\prec \\overline{x^{+}}$, $y^{+} \\prec \\overline{x^{+}}$, $x^{+} \\prec \\overline{y^{++}}$ and $x^{++} \\prec \\overline{y^{++}}$, and [[p-typing|P-Term]] types the forwarder over a world that holds these facts. In the ring the first forwarder needs $x \\prec \\overline{y}$ and the second $\\overline{y} \\prec x$, so no world, bound or type types the ring. A process that holds $\\overline{o_1}$ types at the same interface type with the forwarder put behind that end, when the base of $y$ is no constant of its world. A partner, the forwarder and a second partner compose to a deadlock-free process by [[th-sound]]. The forwarder extends to each protocol of unit messages that ends in $\\mathsf{Close}$, and a received end as payload is $\\eta$-expanded through a channel at the field $y\\cdot 0$. Two partners $P$ and $Q$ that type by [[p-typing|P-Connect]] at a cut on $a$ also type with the forwarder between them, holding $a^{+}$ at $x$ and $b^{-}$ at $\\overline{y}$. The partner $Q'$ is $Q$ with the channel $b$ for $a$ and the constant of $y$ for that of $x$, by the renaming of channels and of constants of a typed process. The worlds of $P$ and $Q$ only have to miss the constant of $y$. Read with the base of $y$ sent back to the base of $x$, each fact of the forwarder is an equality or a step of program order, and no two equalities follow each other. So a cycle of the new world maps to a cycle of the world of $P \\parallel Q$, and the new world is consistent. \\inmode{lf}{At each finite bound $N \\geq 4$ the forwarder types and the expansion holds as well. The same reading maps a descending chain of the new world to one of the world of $P \\parallel Q$, so the new world is well-founded when that world is. Each end of the forwarder has $N/2$ credits and waits for at most two actions.}",
+   "meaning": "Each action of the forwarder asks its point below the dual point of the other end. The five facts are $x \\prec \\overline{y}$, $y \\prec \\overline{x^{+}}$, $y^{+} \\prec \\overline{x^{+}}$, $x^{+} \\prec \\overline{y^{++}}$ and $x^{++} \\prec \\overline{y^{++}}$, and [[p-typing|P-Term]] types the forwarder over a world that holds these facts. In the ring the first forwarder needs $x \\prec \\overline{y}$ and the second $\\overline{y} \\prec x$, so no world, bound or type types the ring. A process that holds $\\overline{o_1}$ types at the same interface type with the forwarder put behind that end, when the base of $y$ is no constant of its world. A partner, the forwarder and a second partner compose to a deadlock-free process by [[th-sound]]. The forwarder extends to each protocol of unit messages that ends in $\\mathsf{Close}$, and a received end as payload is $\\eta$-expanded through a channel at the field $y\\cdot 0$. Two partners $P$ and $Q$ that type by [[p-typing|P-Connect]] at a cut on $a$ also type with the forwarder between them, holding $a^{+}$ at $x$ and $b^{-}$ at $\\overline{y}$. The partner $Q'$ is $Q$ with the channel $b$ for $a$ and the constant of $y$ for that of $x$, by the renaming of channels and of constants of a typed process. The worlds of $P$ and $Q$ only have to miss the constant of $y$. Read with the base of $y$ sent back to the base of $x$, each fact of the forwarder is an equality or a step of program order, and no two equalities follow each other. So a cycle of the new world maps to a cycle of the world of $P \\parallel Q$, and the new world is consistent. \\inmode{lf}{At each finite bound $N \\geq 4$ the forwarder types and the expansion holds as well. The same reading maps a descending chain of the new world to one of the world of $P \\parallel Q$, so the new world is well-founded when that world is. Each end of the forwarder has $N/2$ credits and waits for at most two actions. A closed $P \\parallel Q$ typed at $N$ then stays lock free with the forwarder in the cut.}",
    "source": [
     {
      "file": "examples/Copycat.v",
@@ -20202,7 +20202,8 @@
      "names": [
       "fb_typed",
       "fwdq_term_fin",
-      "fwdp_expand2_fin"
+      "fwdp_expand2_fin",
+      "fwdp_expand2_lf"
      ]
     },
     {
@@ -20217,6 +20218,10 @@
     "df": {
      "ok": true,
      "rocq": "fwd_term, fwd_config_deadlock_free"
+    },
+    "lf": {
+     "ok": true,
+     "rocq": "fwdq_term_fin, fwdp_expand2_fin, fwdp_expand2_lf"
     }
    }
   },

@@ -297,6 +297,7 @@ Print Assumptions fwdp_expand2_N.
 Print Assumptions fb_typed.
 Print Assumptions fwdq_term_fin.
 Print Assumptions fwdp_expand2_fin.
+Print Assumptions fwdp_expand2_lf.
 (** static/Inversion.v, variables and the unit *)
 Print Assumptions inv_var_ctx.
 Print Assumptions inv_unit_ctx.
