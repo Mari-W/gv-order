@@ -1,5 +1,16 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Fable pass, 2026-11-24
+
+Branch fable-final from redesign 9497061. Report in fable-final.md. Map:
+bounds with one order, one $\approx$ in the deadlock-free view, one
+turnstile $\vDash[\kappa_L]$, soundness led by the run form, the close
+example in both views, typing-only badges. Rocq: the dead restricting
+judgment and its helpers removed from static/Hiding.v, `lexlt` and
+`swrestrict_wok` removed, `cl_dftyped` and `cl_deadlock_free` added.
+`make check` 273 of 273. Eight questions for the author at the end of the
+report.
+
 ## Main switched to the redesign, 2026-11-24
 
 Approved by the author on 2026-11-24. Main now carries the redesign, and the
