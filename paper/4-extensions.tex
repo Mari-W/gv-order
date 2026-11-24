@@ -13,15 +13,15 @@ the point variables its box binds.
 \begin{example}[The received chain \rocq{ch_main}]
 \label{ex:chain}
   A channel forever receives another channel of its own type. Write
-  $\pslot{\pviA}{0^n}$ for the name
-  $\pslot{\pslot{\pviA}{0}\dots}{0}$, $n$ slots deep. The protocol and
+  $\fld{\pviA}{\flK^n}$ for the name
+  $\fld{\fld{\pviA}{\flK}\dots}{\flK}$ with $n$ fields. The protocol and
   the invariant are
   \begin{align*}
-    \styB &= \tyMu\tvar. \sRecv{(\sAt{\tvar}{\pslot{\pself}{0}})}{\sTerm}
+    \styB &= \tyMu\tvar. \recvp{\pbv}{\sAt{\tvar}{\fld{\pbv}{\flK}}}{\sTerm}
     \\
-    \cstr &= \set{\, \fLt{\poff{\pslot{\pviA}{0^n}}{1}}{\pdual{\pslot{\pviA}{0^{n+1}}}},\
-      \fLt{\poff{\pdual{\pslot{\pviA}{0^n}}}{1}}{\pslot{\pviA}{0^{n+1}}},\
-      \fLt{\pdual{\pslot{\pviA}{0^n}}}{\pdual{\pslot{\pviA}{0^{n+1}}}}
+    \cstr &= \set{\, \fLt{\poff{(\fld{\pviA}{\flK^n})}{1}}{\pdual{\fld{\pviA}{\flK^{n+1}}}},\
+      \fLt{\poff{\pdual{\fld{\pviA}{\flK^n}}}{1}}{\fld{\pviA}{\flK^{n+1}}},\
+      \fLt{\pdual{\fld{\pviA}{\flK^n}}}{\pdual{\fld{\pviA}{\flK^{n+1}}}}
       \;\mid\; n \in \Nat \,}
   \end{align*}
   and the two boxes and the main thread are
@@ -32,16 +32,16 @@ the point variables its box binds.
         \tLet[\chB][\ch_1]{\tApp{\tRecv}{\ch}}{}
       \\ & \quad
         \tSeq{\tApp{\tClos}{\ch_1}}{}
-        \tApp{\tSpawn}{(\tAbsA{\poff{\pslot{\pviA}{0}}{1}}{\pdual{\pslot{\pviA}{0}}}{\tUnit}{\tApp{(\tForceA{\asTm{f}}{\pslot{\pviA}{0}})}{\chB}})}
+        \tApp{\tSpawn}{(\tAbsA{\poff{\fld{\pviA}{\flK}}{1}}{\pdual{\fld{\pviA}{\flK}}}{\tUnit}{\tApp{(\tForceA{\asTm{f}}{\fld{\pviA}{\flK}})}{\chB}})}
       \\
     \asTmId{sch} := {}
       & \tBoxA{\asTm{g}}{\pviA}{\cstr}{}
         \tAbsA{\poff{\pdual{\pviA}}{1}}{}{\ch : \sAt{\dual{\styB}}{\pdual{\pviA}}}{}
-        \tLetS{\tPair{\asTm{e}}{\asTm{e}'}}{\tApp{\tNewC{\pviB}{\fEq{\pviB}{\pslot{\pviA}{0}}}}{\tUnit}}{}
+        \tLetS{\tPair{\asTm{e}}{\asTm{e}'}}{\tApp{\tNewAt{\fld{\pviA}{\flK}}}{\tUnit}}{}
       \\ & \quad
         \tLetS{\ch_1}{\tApp{\tSend}{\tPair{\asTm{e}}{\ch}}}{}
         \tSeq{\tApp{\tClos}{\ch_1}}{}
-        \tApp{\tSpawn}{(\tAbsA{\poff{\pdual{\pslot{\pviA}{0}}}{1}}{\pslot{\pviA}{0}}{\tUnit}{\tApp{(\tForceA{\asTm{g}}{\pslot{\pviA}{0}})}{\asTm{e}'}})}
+        \tApp{\tSpawn}{(\tAbsA{\poff{\pdual{\fld{\pviA}{\flK}}}{1}}{\fld{\pviA}{\flK}}{\tUnit}{\tApp{(\tForceA{\asTm{g}}{\fld{\pviA}{\flK}})}{\asTm{e}'}})}
       \\
     \asTmId{chain} := {}
       & \tLetS{\tPair{\ch}{\ch'}}{\tApp{\tNewC{\pviA}{\cstr}}{\tUnit}}{}
@@ -49,20 +49,20 @@ the point variables its box binds.
         \tApp{(\tForceA{\asTmId{rch}}{\pviA})}{\ch}
   \end{align*}
   The receiver closes $\ch_1$ while it holds $\chB$ at
-  $\pslot{\pviA}{0}$, which gives the first fact. The sender sends $\asTm{e}$
+  $\fld{\pviA}{\flK}$, which gives the first fact. The sender sends $\asTm{e}$
   and closes $\ch_1$ while it keeps $\asTm{e}'$ at
-  $\pdual{\pslot{\pviA}{0}}$, which gives the second, and the payload of
+  $\pdual{\fld{\pviA}{\flK}}$, which gives the second, and the payload of
   its send gives the third. The order is two infinite chains that cross
   between the two ends at every round:
   \[
-    \fLt{\poff{\pviA}{1}}{\pdual{\pslot{\pviA}{0}}}
-      \prec \poff{\pdual{\pslot{\pviA}{0}}}{1}
-      \prec \pslot{\pviA}{0^2}
+    \fLt{\poff{\pviA}{1}}{\pdual{\fld{\pviA}{\flK}}}
+      \prec \poff{\pdual{\fld{\pviA}{\flK}}}{1}
+      \prec \fld{\pviA}{\flK^2}
       \prec \dots
     \qquad
-    \fLt{\poff{\pdual{\pviA}}{1}}{\pslot{\pviA}{0}}
-      \prec \poff{\pslot{\pviA}{0}}{1}
-      \prec \pdual{\pslot{\pviA}{0^2}}
+    \fLt{\poff{\pdual{\pviA}}{1}}{\fld{\pviA}{\flK}}
+      \prec \poff{\fld{\pviA}{\flK}}{1}
+      \prec \pdual{\fld{\pviA}{\flK^2}}
       \prec \dots
   \]
   Each round owns four points, the receive and the close of each end,
@@ -74,8 +74,8 @@ the point variables its box binds.
   takes the other two and is forced at $\pdual{\pviA}$ (\rocq{chs_C}),
   and $\asTmId{chain}$ creates $\ch$ under all three (\rocq{chc_C}).
   The recursive call forces at
-  $\pslot{\pviA}{0}$, so its obligation is
-  $\tysub{\cstr}{\pslot{\pviA}{0}}{\pviA}$, which is $\cstr$ without its
+  $\fld{\pviA}{\flK}$, so its obligation is
+  $\tysub{\cstr}{\fld{\pviA}{\flK}}{\pviA}$, which is $\cstr$ without its
   facts at $n = 0$, hence contained in $\cstr$ (\rocq{ch_sub}). One
   inclusion covers unboundedly many rounds. Nothing is unrolled and
   nothing is induced over.
@@ -84,9 +84,9 @@ the point variables its box binds.
   (\rocq{ch_deadlock_free}).
 
   $\dualv{\tvar}$ earns its place here:
-  $\dual{\styB} = \tyMu\tvar. \sSend{(\sAt{\dualv{\tvar}}{\pslot{\pself}{0}})}{\sTerm}$,
+  $\dual{\styB} = \tyMu\tvar. \sendp{\pbv}{\sAt{\dualv{\tvar}}{\fld{\pbv}{\flK}}}{\sTerm}$,
   so the sender's payload is the dual of its own recursion variable,
-  unfolding gives back $\sSend{(\sAt{\styB}{\pslot{\pself}{0}})}{\sTerm}$,
+  unfolding gives back $\sendp{\pbv}{\sAt{\styB}{\fld{\pbv}{\flK}}}{\sTerm}$,
   and the sender sends a channel at $\styB$ while keeping
   $\dual{\styB}$. With $\dual{\tvar} = \tvar$, duality and unfolding
   stop commuting at this type.
@@ -103,24 +103,25 @@ the point variables its box binds.
 The mechanized core has binary choice as primitive session types
 $\oplus\{\sty_0, \sty_1\}$ and $\&\{\sty_0, \sty_1\}$ with the constants
 $\asTmId{select}_0$, $\asTmId{select}_1$ and $\asTmId{branch}$
-(\rocq{konst_sig}). A choice at $\pntA$ continues at the payload point
-$\pslot{\pntA}{i}$ of the branch $i$ it picks, with $i \in \set{0,1}$.
-The branching end continues at $\pslot{\pntA}{i}$ and the selecting end
-at its partner point $\pdual{\pslot{\pntA}{i}}$ (\rocq{sel_pt},
+(\rocq{konst_sig}). Choice binds no point. A choice at $\pntA$
+continues at the field $\fld{\pntA}{\flL_i}$ of the branch $i$ it picks,
+with $i \in \set{0,1}$, $\flL_0 = \flK$ and $\flL_1 = \flM$.
+The branching end continues at $\fld{\pntA}{\flL_i}$ and the selecting end
+at its partner point $\pdual{\fld{\pntA}{\flL_i}}$ (\rocq{sel_pt},
 \rocq{bra_pt}), so the two ends stay at dual points,
 \begin{align*}
-  \asTmId{select}_i &{}: \forall \pntA.\, \set{\fLt{\pntA}{\pslot{\pntA}{i}}}
+  \asTmId{select}_i &{}: \forall \pntA.\, \set{\fLt{\pntA}{\fld{\pntA}{\flL_i}}}
     \Rightarrow \sAt{\oplus\{\sty_0, \sty_1\}}{\pntA}
-    \lolli{\pntA}{} \sAt{\sty_i}{\pdual{\pslot{\pntA}{i}}}
+    \lolli{\pntA}{} \sAt{\sty_i}{\pdual{\fld{\pntA}{\flL_i}}}
   \\
   \asTmId{branch} &{}: \forall \pntA.\,
-    \set{\fLt{\pntA}{\pdual{\pslot{\pntA}{0}}}, \fLt{\pntA}{\pdual{\pslot{\pntA}{1}}}}
+    \set{\fLt{\pntA}{\pdual{\fld{\pntA}{\flK}}}, \fLt{\pntA}{\pdual{\fld{\pntA}{\flM}}}}
     \Rightarrow \sAt{\&\{\sty_0, \sty_1\}}{\pntA}
-    \lolli{\pntA}{} \lSum{\sAt{\sty_0}{\pslot{\pntA}{0}}}{\sAt{\sty_1}{\pslot{\pntA}{1}}}
+    \lolli{\pntA}{} \lSum{\sAt{\sty_0}{\fld{\pntA}{\flK}}}{\sAt{\sty_1}{\fld{\pntA}{\flM}}}
 \end{align*}
 Each constraint orders $\pntA$ below the heads of the result. The
 placement is the one of the encoding of choice below, where the
-branching end receives an end at $\pslot{\pntA}{i}$ and the selecting
+branching end receives an end at $\fld{\pntA}{\flL_i}$ and the selecting
 end keeps its partner. The two branches get two points, so one branch
 may order a channel below the continuation and the other above it. A
 branch that orders two channels against the other branch types
@@ -143,8 +144,8 @@ while branching consumes one step (\rocq{scost}, \rocq{selects}).
   $D_{\&}=\&\{\sty_0,\sty_1\}$ and
   \[
     (D,\sigma,d,\pntB)\in\set{
-      (D_\oplus,\lSelect{\ch}{i},0,\pdual{\pslot{\pntA}{i}}),
-      (D_{\&},\lBranch{\ch}{i},1,\pslot{\pntA}{i})},\qquad i\in\set{0,1}.
+      (D_\oplus,\lSelect{\ch}{i},0,\pdual{\fld{\pntA}{\flL_i}}),
+      (D_{\&},\lBranch{\ch}{i},1,\fld{\pntA}{\flL_i})},\qquad i\in\set{0,1}.
   \]
   \begin{proofrules}
     \infer*[lab=O-Select / O-Branch]{
@@ -185,7 +186,7 @@ while branching consumes one step (\rocq{scost}, \rocq{selects}).
 \end{figure}
 
 Choice is also encodable from sums and delegation. A selection sends
-$\tInj{i+1}{}$ of a fresh channel whose arm $i$ lies at $\pslot{\pntA}{i}$, and a
+$\tInj{i+1}{}$ of a fresh channel whose arm $i$ lies at $\fld{\pntA}{\flL_i}$, and a
 branch receives and cases (\rocq{sel1_typed}, \rocq{sel2_typed},
 \rocq{branch_typed}, \rocq{choice_deadlock_free}).
 
@@ -193,29 +194,29 @@ branch receives and cases (\rocq{sel1_typed}, \rocq{sel2_typed},
 \label{sec:ext-cfst}
 
 \Cref{fig:cfst-syntax,fig:cfst-typing} give the changed definitions.
-The core abbreviation $\sSend{\payty}{\sty}$ now means
-$\sSeq{\sOut{\payty}}{\sty}$, and $\sRecv{\payty}{\sty}$ means
-$\sSeq{\sIn{\payty}}{\sty}$.
+The core abbreviation $\sendp{\pbv}{\payty}{\sty}$ now means
+$\sSeq{\outp{\pbv}{\payty}}{\sty}$, and $\recvp{\pbv}{\payty}{\sty}$ means
+$\sSeq{\inp{\pbv}{\payty}}{\sty}$.
 
 \begin{figure}[tp]
   \adjustfigure[]
   \rulesection*{Extended syntax and duality (\rocq{ty}, \rocq{dual})}
   \begin{align*}
-    \sty &::= \sSkip\sepr\sSeq{\sty}{\styB}\sepr\sOut{\payty}
-      \sepr\sIn{\payty}\sepr\sTerm\sepr\tyMu\tvar.\sty
+    \sty &::= \sSkip\sepr\sSeq{\sty}{\styB}\sepr\outp{\pbv}{\payty}
+      \sepr\inp{\pbv}{\payty}\sepr\sTerm\sepr\tyMu\tvar.\sty
       \sepr\tvar\sepr\dualv{\tvar}\\
       &\qquad\sepr\oplus\{\sty_0,\sty_1\}\sepr\&\{\sty_0,\sty_1\},\\
     \ty &::= \cdots\sepr\tyBoxS{\pvivec}{\bar\tvar}{\cstr}{\ty},\\
     \dual{\sSkip}&=\sSkip,&
     \dual{\sSeq{\sty}{\styB}}&=\sSeq{\dual{\sty}}{\dual{\styB}},\\
-    \dual{\sOut{\payty}}&=\sIn{\payty},&
-    \dual{\sIn{\payty}}&=\sOut{\payty},\\
+    \dual{\outp{\pbv}{\payty}}&=\inp{\pbv}{\payty},&
+    \dual{\inp{\pbv}{\payty}}&=\outp{\pbv}{\payty},\\
     \dual{\oplus\{\sty_0,\sty_1\}}&=\&\{\dual{\sty_0},\dual{\sty_1}\},&
     \dual{\&\{\sty_0,\sty_1\}}&=\oplus\{\dual{\sty_0},\dual{\sty_1}\}.
   \end{align*}
   The other duality clauses stay as in \cref{fig:types}.
   \rulesection{Head normalization (\rocq{unfoldS}, \rocq{hseq})}
-  Write $o::=\sOut{\payty}\sepr\sIn{\payty}\sepr\tvar\sepr\dualv{\tvar}$.
+  Write $o::=\outp{\pbv}{\payty}\sepr\inp{\pbv}{\payty}\sepr\tvar\sepr\dualv{\tvar}$.
   Normalization exposes a head
   $H::=\sSkip\sepr\sTerm\sepr\sSeq{o}{\sty}
     \sepr\oplus\{\sty_0,\sty_1\}\sepr\&\{\sty_0,\sty_1\}$.
@@ -284,8 +285,7 @@ $\sSeq{\sIn{\payty}}{\sty}$.
   \]
   The point instance is known and both instance lists match their binders.
   \rulesection{Conversion and the relation (\rocq{eqT}, \rocq{Vdef})}
-  \ref{rule:E-Conv} uses the congruence of $\approx$ through types and
-  world aliasing at carrier points. A box binding session variables
+  \ref{rule:E-Conv} uses the congruence of $\approx$ through types. A box binding session variables
   compares its body by syntactic equality (\rocq{eqT}).
   In \ref{rule:V-Box}, quantify also over $\bar\sty$ with $\hc(\sty_i)$
   and apply $[\bar\tvar\mapsto\bar\sty]$ to the instantiated body type.
@@ -298,8 +298,8 @@ $\sSeq{\sIn{\payty}}{\sty}$.
   enters payload types and dualizes an instance under $\dualv{\tvar}$
   (\rocq{sinst_ty}). Payload instantiation remains
   $\payloadAt{\payty}{\pntA}$, and choice still moves the branching end
-  to $\pslot{\pntA}{i}$ and the selecting end to
-  $\pdual{\pslot{\pntA}{i}}$. Send and receive move to $\poff{\pntA}{1}$,
+  to $\fld{\pntA}{\flL_i}$ and the selecting end to
+  $\pdual{\fld{\pntA}{\flL_i}}$. Send and receive move to $\poff{\pntA}{1}$,
   so their schemes in \cref{fig:signatures} use the new sequential
   abbreviation without changing their constraints. The other schemes,
   heads equations, worlds and fact rules stay unchanged.
@@ -319,7 +319,7 @@ A recursive function over a context-free protocol acts at the walks of
 its starting point $\pntA$,
 \[
   \walks(\pntA)=\mu X.\,\set{\pntA}\cup
-    \set{\poff{q}{1},\pslot{q}{i},\pdual{\pslot{q}{i}}\mid q\in X,\ i \in \set{0,1}}
+    \set{\poff{q}{1},\fld{q}{\flL_i},\pdual{\fld{q}{\flL_i}}\mid q\in X,\ i \in \set{0,1}}
 \]
 where $\mu X$ takes the least closed set. A choice step forgets the
 polarity, because a walk passes a branching end and a selecting end
@@ -327,7 +327,7 @@ alike. A ceiling $\zeta$ satisfies
 $\forall q\in\walks(\pviA)\st\fctx\types\fLt{q}{\zeta}$.
 The box constraint also states the facts each choice owes,
 \[
-  \cstr = \set{\fLt{q}{\zeta},\ \fLt{q}{\pslot{q}{i}},\ \fLt{q}{\pdual{\pslot{q}{i}}}
+  \cstr = \set{\fLt{q}{\zeta},\ \fLt{q}{\fld{q}{\flL_i}},\ \fLt{q}{\pdual{\fld{q}{\flL_i}}}
     \mid q \in \mathit{walks}(\pviA),\ i \in \set{0,1}} .
 \]
 The type of $\asTmId{sendTree}$ of \citet{ThiemannV16} has upper bound
@@ -344,7 +344,7 @@ A channel created after a segment call is placed by its creation
 constraint relative to the point the call returns. The program of
 \rocq{si_deadlock_free} orders such a channel against the returned
 channel in both directions, and the program of \rocq{sd_deadlock_free}
-creates it at the payload point of the returned channel and sends it
+creates it at a field of the returned channel and sends it
 there. Both type and are deadlock free.
 % TODO(author): prose
 

@@ -203,9 +203,13 @@ examples `fwd_typed`, `fprod_typed`, `fcons_typed`, `fw_typed`,
 FirstAction theorems, `sched_rev_underivable`, `badlink_underivable`,
 `sched_deadlock_free` and the PGV, PN and MP theorems.
 
-The paper (2-calculus.tex link signature, 7-appendix.tex forwarder and Milner
-scheduler, rejection theorems) still describes main and is not edited on this
-branch.
+The paper is adapted on branch no-eq-paper: no ≡ anywhere, new@x as a second
+typing of new (KTNewAt), link at dual points, worlds (N, ≺), O-New with
+new_place, the forwarder with the existential payload, Milner by new@ι⁺²ᵏ,
+the shift written x⁺ᵏ, actions written !^{ƛσ}(T).S with fields σ.κ
+in place of self[j]. The PGV and PN
+claims of §4b and the mechanization claim of §5 carry the comment
+`% NO-EQ: translation proof pending port`.
 
 ## 5. Step 2 inventory
 

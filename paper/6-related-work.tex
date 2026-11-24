@@ -36,7 +36,7 @@ channel type constructor and asks that the transitive closure of the tag
 relation be a strict partial order. Tags inside a channel type are
 schematic and renamed at each output, and many channels may share one
 tag. Here tags are points, the relation is a constraint, inner tags are
-the payload points $\pslot{\pntA}{j}$, and the renaming is instantiation
+the fields $\fld{\pntA}{\flL}$, and the renaming is instantiation
 at $\tForce$.
 \citet{Kobayashi06} adds the creation order of names to the judgment at
 his rule for $\nu$, and that rule is the closest precedent of a creation
@@ -61,9 +61,9 @@ two bounds as points, and a box holds no channel, which plays the part
 of level $\top$. Their constructor $\lceil t \rceil^n$ delays a shift by
 $n$ inside a type, and the pipe of their equation (3.6) receives a
 channel whose level lies 2 above the level of the carrier. A payload
-here is relative in the same way. It mentions only the points
-$\pslot{\pself}{j}$, and $\payloadAt{\payty}{\pntA}$ places them at the
-carrier $\pntA$. A relative point is a point of the partial order, so a
+here is relative in the same way. It mentions only the fields
+$\fld{\pbv}{\flL}$ of the point $\pbv$ its action binds, and
+$\payloadAt{\payty}{\pntA}$ places them at the carrier $\pntA$. A relative point is a point of the partial order, so a
 constraint orders it against the carrier and against the points of
 other channels, where a level offers one integer offset in one total
 order.
@@ -71,8 +71,8 @@ PolyVGR~\cite{SaffrichT23} names the channels a message carries by an
 existential package $!(\exists \alpha{:}\mathrm{Dom}(N).\, \Sigma; T).S$,
 and the receiver gives each received channel a fresh name. A closure
 that mentions a channel loses its connection to that channel once the
-channel is sent. Both ends here compute the same payload point
-$\pslot{\pntA}{j}$, so facts stated before the send still hold after it.
+channel is sent. Both ends here compute the same field
+$\fld{\pntA}{\flL}$, so facts stated before the send still hold after it.
 PolyVGR names a created channel by an existential result type, as
 $\tNew$ does here.
 PCP~\cite{DardhaG18} and PGV~\cite{KokkeD23} attach one priority in
@@ -112,7 +112,7 @@ channels each unfolding creates.
       & abstract time tags, strict partial order
       & tags renamed at each output
       & inner tags of the channel type
-      & points, $\cstr$, payload points \\
+      & points, $\cstr$, fields \\
     \citet{Kobayashi06}
       & levels in $\Nat \cup \set{\infty}$, creation order on names
       & none

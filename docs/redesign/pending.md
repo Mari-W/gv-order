@@ -1,5 +1,19 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Main switched to the redesign, 2026-11-24
+
+Approved by the author on 2026-11-24. Main now carries the redesign, and the
+old main is branch old-main. The assessment of its 107 commits is in
+main-switch.md. Redesign already held every Rocq commit of main. Only the 9
+paper commits of no-eq-paper were new, and paper/ now carries them. Three
+results of the old development have no v2 counterpart yet and stay open.
+
+1. The PGV, PN and MP translations (theories/pgv, theories/pn, theories/mp).
+2. The old examples v2 lacks, among them the bit program, the forwarder with
+   an existential payload, the cfst examples, Milner's scheduler and the
+   literature examples (main-switch.md, open item 2).
+3. The algorithmic checker, whose successor is algorithmic-plan.md.
+
 ## Map review pass, 2026-11-24
 
 Branch map-review, map.json only. "Partner" is replaced by "dual end", the
