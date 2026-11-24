@@ -4,10 +4,9 @@
     from a dependency relation [wt k t s] between threads at position k,
     a measure under a well-founded decidable order, and a rank under a
     well-founded order. The lock-free judgment supplies all three
-    (soup/LFAdequacy.v): the dependency is ownership of the partner end,
-    the measure is the pair of the tickets left and the counter of the
-    partner end, ordered lexicographically ([lexlt]), and the rank is the
-    point of the end a pending thread offers.
+    (soup/LFAdequacy.v): the dependency is ownership of the dual end,
+    the measure is the counter of the dual end, ordered by < on ℕ, and
+    the rank is the point of the end a pending thread offers.
 
     Proof. For a thread t pending on an end of rank e, by well-founded
     induction on e, then by well-founded induction on the measure, then
@@ -60,23 +59,10 @@ Qed.
 
 (** ** Measures
 
-    A well-founded order is irreflexive. The lexicographic order on pairs
-    of naturals is well founded and decidable. *)
+    A well-founded order is irreflexive. *)
 
 Lemma wf_irrefl {A : Type} (R : A → A → Prop) : well_founded R → ∀ x, ¬ R x x.
 Proof. intros H x. induction (H x) as [x _ IH]. intros Hx. exact (IH x Hx Hx). Qed.
-
-Definition lexlt (x y : nat * nat) : Prop := x.1 < y.1 ∨ (x.1 = y.1 ∧ x.2 < y.2).
-
-Global Instance lexlt_dec x y : Decision (lexlt x y).
-Proof. unfold lexlt. apply _. Defined.
-
-Lemma lexlt_wf : well_founded lexlt.
-Proof.
-  intros [a b]. revert b. induction a as [a IHa] using lt_wf_ind.
-  intros b. induction b as [b IHb] using lt_wf_ind.
-  constructor. intros [c d] [Hlt|[Heq Hlt]]; simpl in *; [by apply IHa|subst c; by apply IHb].
-Qed.
 
 (** The proof reads the dependency of a pending thread on another one
     only through a relation [wt k t s] at each position k: t is pending,

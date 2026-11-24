@@ -300,9 +300,7 @@ Qed.
     unrelated points. The join then has more facts, and the check
     covers them. A derivation renames its constants by any bijection
     ([ptyped_ren], static/Hiding.v), so two components can always be
-    renamed apart before they connect, and every derivation of the
-    judgment that restricted its world to the interface has one here
-    ([rptyped_ptyped], static/Hiding.v). *)
+    renamed apart before they connect ([ptyped_apart]). *)
 Inductive ptyped (N : fuel) (η : iann) : sworld → senv → proc → ty → Prop :=
   | p_term W Σ ΘB C0 t T c :
       tfree T →
@@ -350,15 +348,6 @@ Proof. intros. apply p_connect; try done. intros. apply tsum_fhalf. Qed.
 Notation "Σ ⊢_ W p : T" := (ptyped None (khalf None) W Σ p T)
   (at level 74, W at level 0, p at level 60, T at level 60,
    format "Σ  ⊢_ W  p  :  T").
-
-Lemma swrestrict_swf W S : swf W → swf (swrestrict W S).
-Proof. intros [ρ Hρ]. exists ρ. intros x y H. apply Hρ. exact (swrestrict_lt W S x y H). Qed.
-
-Lemma swrestrict_sacyc W S : sacyc W → sacyc (swrestrict W S).
-Proof. intros H x Hx. exact (H x (swrestrict_lt W S x x Hx)). Qed.
-
-Lemma swrestrict_wok N W S : wok N W → wok N (swrestrict W S).
-Proof. destruct N; [apply swrestrict_swf|apply swrestrict_sacyc]. Qed.
 
 (** Every derivation sits over a well-formed world, acyclic at N = ∞
     and well-founded at a finite N. *)

@@ -40,7 +40,7 @@ this, now in `attic/gen/`.
 
 | Section | Blocks |
 |---|---|
-| Types and worlds | types (credits coloured), session types, duality, equivalence, heads, payloads, *annotations and tickets*, kinds, worlds (kind coloured), order, acyclic and well-founded worlds, extension |
+| Types and worlds | types (credits coloured), session types, duality, equivalence, heads, payloads, *annotations and tickets*, kinds, worlds (kind coloured), order, consistent worlds, extension |
 | Typing | judgment, contexts, side conditions, *counters, credits and tickets*, *ranked worlds*, *aging*, unit/variables/ends, functions, products/sums/let, boxes, existentials, constants, actions and link, spawn, creation (E-New, E-New-Field), subtyping and structural rules, process typing |
 | Semantic typing | reading guide, step costs, values, terms, obligations of term steps, readiness, processes, obligations of process steps, *relation and fuel side by side*, *fuel*, *fuel obligations*, *values in FV*, *the lock-free process relation*, semantic judgments |
 | Theorems | how the results fit together, bind, composition, fundamental theorems, adequacy, soundness, *conservativity* |
