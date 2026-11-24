@@ -14,7 +14,7 @@
     channel at the field ρ·2 of the root. Its world W_ctl is W_cs with
     laws that put the points of a and b below the dual of c's point.
 
-    The controller types under ⊩ at N = 3 and is lock free
+    The controller types under ⊩ at N = 6 and is lock free
     ([ctl_lock_free]). Both boxes have the type
 
       □∀ι κ ζ χ. C. ⟨S1@ι^1 ⊗ S2@κ^2⟩^0 ⊗ Skip@χ^0 ⊸^ζ ∗
@@ -287,7 +287,7 @@ Proof.
   destruct Hf as [->|[->|[->|[->|[->| ->]]]]]; simpl; apply ctl_law_fact; exists k, b; destruct b; pick6.
 Qed.
 
-(** ** main at N = 3 *)
+(** ** main at N = 6 *)
 
 Lemma ctl_typedN : ∃ c, typed W_ctl (Some 6) ∅ hc_empty [] (∅, None) ctl_main TUnit c.
 Proof.
