@@ -140,7 +140,6 @@ Print Assumptions cs_lock_free.
 (** examples/LFClientServerSplit.v *)
 Print Assumptions cs_split_lock_free.
 Print Assumptions cs_split_typed.
-Print Assumptions cs_split_lock_free_typed.
 (** examples/LFFactoryEx.v *)
 Print Assumptions fx_lftyped.
 Print Assumptions fx_lock_free.

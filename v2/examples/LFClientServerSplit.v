@@ -219,8 +219,8 @@ Qed.
 
     Each thread types at its own world, and P-Connect checks their join
     W_cli ⊔ W_srv, which is well-founded. So the split program types
-    ([cs_split_typed]) and is lock free by the soundness of the process
-    judgment ([cs_split_lock_free_typed]). *)
+    ([cs_split_typed]), and [lf_soundness] gives the statement of
+    [cs_split_lock_free] once more. *)
 
 Lemma pfree_two (o1 o2 : cend) v1 v2 :
   (o1‾)%cend ≠ o1 → (o1‾)%cend ≠ o2 → (o2‾)%cend ≠ o1 → (o2‾)%cend ≠ o2 → pfree (<[o1 := v1]> {[o2 := v2]}).
@@ -274,10 +274,4 @@ Proof.
   rewrite !(left_id_L ∅ (∪)) in H |- *. apply H; clear H; [rewrite (left_id_L ∅ (∪)); exact cli_hterm|rewrite (left_id_L ∅ (∪)); exact srv_hterm|..].
   all: try (rewrite ?chans_of_empty; set_solver).
   exact W_cs_join_wf.
-Qed.
-
-Theorem cs_split_lock_free_typed : excluded_middle → functional_choice →
-  lock_free (∅ ∪ ∅ ∪ chans_of ΣC, {[+ t_cli +]} ⊎ {[+ t_srv +]}).
-Proof.
-  intros EM FC. destruct cs_split_typed as [W H]. exact (lf_soundness 6 _ W _ TUnit EM FC H).
 Qed.

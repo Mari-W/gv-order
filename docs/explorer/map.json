@@ -20096,8 +20096,7 @@
      "file": "examples/LFClientServerSplit.v",
      "names": [
       "cs_split_lock_free",
-      "cs_split_typed",
-      "cs_split_lock_free_typed"
+      "cs_split_typed"
      ]
     },
     {
