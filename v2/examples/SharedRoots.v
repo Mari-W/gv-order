@@ -1,31 +1,21 @@
-(** * Shared constants and hiding
+(** * Shared private constants
 
-    Two components composed at their whole worlds share every constant
-    both worlds hold, S = [swshared W1 W2]. Repair (a) of the open item
-    in docs/redesign/pending.md asked whether S ⊆ the roots of the
-    points of the cut Σ_C in every derivation. It fails, and dropping
-    constants no derivation needs does not save it. The hidden judgment
-    [ptyped] (repair (b)) makes S irrelevant.
-
-    Each component closes two channels of its own in one order,
+    Two components may use the same constant for unrelated points.
 
       P(c, d) = (cl c⁺; cl d⁺) ∥ (cl c⁻; cl d⁻),   c at 0, d at 0·0.
 
     The first close of each thread waits on the other channel, so E-Close
     asks 0 ≺ (0·0)‾ and 0‾ ≺ 0·0. Both are facts of the world W0 with the
     one constant 0, and any well-formed world that derives the first
-    fact holds 0 ([fact_needs_zero]). So the whole worlds of P(c, d) and
+    fact holds 0 ([fact_needs_zero]). So the worlds of P(c, d) and
     P(e, f) share 0 although the empty cut between them has no point.
+    Their join is well-founded, and P(c, d) ∥ P(e, f) composes at the
+    two worlds as they are ([shared_compose]).
 
-    With hiding the thread worlds restrict to the interface constant 0,
-    and P-Connect over the cut at 0 hides 0. So P(c, d) types over the
-    empty interface at a world with no constant and no fact
-    ([hcomp_typed]), and P(c, d) ∥ P(e, f) composes because the two
-    interface worlds are well-founded together ([shared_hidden]).
-
-    P'(e, f) closes f first and orders 0 oppositely. The whole worlds of
-    P(c, d) and P'(e, f) hold a cycle at 0 ([opposite_clash]), and with
-    hiding the two compose ([opposite_compose]) to a deadlock-free
+    P'(e, f) closes f first and orders 0 oppositely. The worlds of
+    P(c, d) and P'(e, f) hold a cycle at 0 ([opposite_clash]). Renaming
+    the constant of P'(e, f) first, which leaves its empty interface as
+    it is, the two compose ([opposite_compose]) to a deadlock-free
     process ([opposite_df]). *)
 
 From Stdlib Require Import Wf_nat.
@@ -169,44 +159,36 @@ Proof.
   - simpl in Ha. by injection Ha as ->.
 Qed.
 
-(** ** With hiding the two components share no constant
+(** ** Two components that use the same private constant
 
-    Each thread hides its world to the constants of its interface, here
-    {0}, and P-Connect over the cut at 0 hides 0 as well. So P(c, d)
-    types over the empty interface at a world with no constant and no
-    fact ([hcomp_typed]), and P(c, d) ∥ P(e, f) composes because the two
-    interface worlds, both empty, are well-founded together
-    ([shared_hidden]). *)
-
-Lemma iface_empty_unit : iface ∅ TUnit = ∅.
-Proof. unfold iface, senv_consts. rewrite map_to_list_empty. simpl. set_solver. Qed.
+    Each thread types at W0, so P(c, d) types over the empty interface
+    at W0 ⊔ W0 ([hcomp_typed]). Two such components use the constant 0
+    for unrelated points, and their join is still well-founded, so
+    P(c, d) ∥ P(e, f) composes at their own worlds ([shared_compose]). *)
 
 Lemma swrestrict_empty_facts W g : ¬ sw_facts (swrestrict W ∅) g.
 Proof. destruct g as [x y]. simpl. intros (_ & (a & _ & Ha) & _). set_solver. Qed.
 
-Lemma swrestrict_empty_ok W : sworld_wf (swrestrict W ∅) ∧ swf (swrestrict W ∅).
-Proof. split; [apply swrestrict_wf|apply swf_bare, swrestrict_empty_facts]. Qed.
-
 Lemma cl2_hterm W o1 o2 x y :
   sworld_wf W ∧ swf W → o1 ≠ o2 → (o1‾)%cend ≠ o2 → sw_facts W (FLt x y‾) →
-  ptyped None (khalf None) (swrestrict W (iface (senv2 o1 o2 x y) TUnit)) (senv2 o1 o2 x y) (∅, {[+ cl2 o1 o2 +]}) TUnit.
+  ptyped None (khalf None) W (senv2 o1 o2 x y) (∅, {[+ cl2 o1 o2 +]}) TUnit.
 Proof.
   intros HW Hne Hd Hf. destruct (cl2_prem W o1 o2 x y Hne Hd Hf) as (H1 & H2 & H3 & H4 & H4c & H5 & H6).
   apply (swf_ok_wok None) in HW. by eapply p_term_half.
 Qed.
 
 (** One component over its own cut ΣC, its two threads at worlds W and
-    W' that order the cut. The hidden world has no constant. *)
+    W' that order the cut. *)
 Lemma hcomp_gen W W' (ΣC : senv) (u1 u2 : expr) Σa Σb :
   ptyped None (khalf None) W Σa (∅, {[+ u1 +]}) TUnit → ptyped None (khalf None) W' Σb (∅, {[+ u2 +]}) TUnit →
   Σa = ∅ ∪ ΣC → Σb = ∅ ∪ senv_dual ΣC →
   (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
   swf (W ⊔ W') →
-  ptyped None (khalf None) (swrestrict (W ⊔ W') ∅) ∅ (chans_of ΣC, {[+ u1 +]} ⊎ {[+ u2 +]}) TUnit.
+  ptyped None (khalf None) (W ⊔ W') ∅ (chans_of ΣC, {[+ u1 +]} ⊎ {[+ u2 +]}) TUnit.
 Proof.
   intros H1 H2 -> -> Hf HS. apply (swf_wok None) in HS.
   pose proof (p_connect_half None W W' ∅ ∅ ΣC ∅ ∅ {[+ u1 +]} {[+ u2 +]} TUnit H1 H2) as H.
-  rewrite chans_of_empty, !(left_id_L ∅ (∪)), iface_empty_unit in H. apply H; clear H; try done.
+  rewrite chans_of_empty, !(left_id_L ∅ (∪)) in H. apply H; clear H; try done.
   all: first [apply map_disjoint_empty_l|set_solver].
 Qed.
 
@@ -217,13 +199,13 @@ Proof.
 Qed.
 
 Lemma hcomp_typed c d :
-  c ≠ d → ∃ W, ptyped None (khalf None) W ∅ (({[c]} ∪ {[d]}), comp c d) TUnit ∧ sw_consts W = ∅ ∧ ∀ g, ¬ sw_facts W g.
+  c ≠ d → ptyped None (khalf None) (W0 ⊔ W0) ∅ (({[c]} ∪ {[d]}), comp c d) TUnit.
 Proof.
   intros Hcd. set (ΣC := senv2 (c⁺)%cend (d⁺)%cend p0 (p0·0)).
   assert (chans_of ΣC = ({[c]} ∪ {[d]})) as Ec.
   { unfold chans_of, ΣC, senv2. rewrite dom_union_L, !dom_singleton_L, set_map_union_L, !set_map_singleton_L.
     done. }
-  eexists. split; [|split; [|apply swrestrict_empty_facts]]; [rewrite <-Ec|simpl; apply (right_absorb_L ∅ (∩))]. unfold comp. eapply (hcomp_gen _ _ ΣC).
+  rewrite <-Ec. unfold comp. eapply (hcomp_gen _ _ ΣC).
   - apply (cl2_hterm W0 _ _ p0 (p0·0)); [apply W0_ok|congruence|cbn; congruence|by left].
   - apply (cl2_hterm W0 _ _ p0‾ (p0·0)‾); [apply W0_ok|congruence|cbn; congruence|].
     right. by rewrite pt_dual_dual.
@@ -231,30 +213,32 @@ Proof.
   - rewrite (left_id_L ∅ (∪)). unfold ΣC. by rewrite senv_dual_senv2.
   - intros o. unfold ΣC, senv2. rewrite dom_union_L, !dom_singleton_L, !elem_of_union, !elem_of_singleton.
     intros [->| ->] [E|E]; discriminate.
-  - eapply swf_sub; [|apply W00_ok]. intros a b. apply join_sub; intros u v; apply swrestrict_lt.
+  - apply W00_ok.
 Qed.
 
-Theorem shared_hidden :
+Theorem shared_compose :
   ∃ W, ptyped None (khalf None) W ∅ (({["c"]} ∪ {["d"]}) ∪ ({["e"]} ∪ {["f"]}) ∪ chans_of ∅, comp "c" "d" ⊎ comp "e" "f") TUnit.
 Proof.
-  destruct (hcomp_typed "c" "d") as (W1 & H1 & _ & F1); [done|].
-  destruct (hcomp_typed "e" "f") as (W2 & H2 & _ & F2); [done|].
-  eexists. pose proof (p_connect_half None W1 W2 ∅ ∅ ∅ ({["c"]} ∪ {["d"]}) ({["e"]} ∪ {["f"]})
+  pose proof (hcomp_typed "c" "d" ltac:(done)) as H1. pose proof (hcomp_typed "e" "f" ltac:(done)) as H2.
+  eexists. pose proof (p_connect_half None (W0 ⊔ W0) (W0 ⊔ W0) ∅ ∅ ∅ ({["c"]} ∪ {["d"]}) ({["e"]} ∪ {["f"]})
                 (comp "c" "d") (comp "e" "f") TUnit) as H.
   assert (senv_dual ∅ = ∅) as Ed by (unfold senv_dual; by rewrite fmap_empty, kmap_empty).
   rewrite Ed, !(left_id_L ∅ (∪)) in H. apply H; clear H; try done; try set_solver.
-  all: first [apply map_disjoint_empty_l|apply swf_wok, swf_bare; intros g [Hg|Hg]; [by apply (F1 g)|by apply (F2 g)]].
+  all: try apply map_disjoint_empty_l.
+  apply swf_wok, swf_meas. intros x y [[Hg|Hg]|[Hg|Hg]]; by apply W0_facts.
 Qed.
 
 (** ** Two components that order the same private constant oppositely
 
     P'(e, f) = (cl f⁺; cl e⁺) ∥ (cl f⁻; cl e⁻), e at 0 and f at 0·0,
     closes f first, so its world Wop holds 0·0 ≺ 0‾ and (0·0)‾ ≺ 0. The
-    whole worlds of P(c, d) and P'(e, f) together hold the cycle
-    0 ≺ (0·0)‾ ≺ 0 ([opposite_clash]), so the full P-Connect at these
-    worlds fails. With hiding both components type at worlds with no
-    constant, and P(c, d) ∥ P'(e, f) composes ([opposite_compose]) and
-    is deadlock free ([opposite_df]). *)
+    worlds of P(c, d) and P'(e, f) together hold the cycle
+    0 ≺ (0·0)‾ ≺ 0 ([opposite_clash]), so P-Connect at these two worlds
+    fails. The interface of P'(e, f) is empty, so swapping the
+    constants 0 and 1 renames its derivation to one at a world on the
+    constant 1 ([ptyped_ren]). The two worlds then share no constant,
+    and P(c, d) ∥ P'(e, f) composes ([opposite_compose]) to a
+    deadlock-free process ([opposite_df]). *)
 
 Definition Wop : sworld :=
   SWorld {[0]} (λ g, g = FLt (p0·0) p0‾ ∨ g = FLt (p0·0)‾ p0).
@@ -282,13 +266,13 @@ Definition comp' (e f : chan) : gmultiset expr :=
   {[+ cl2 (f⁺)%cend (e⁺)%cend +]} ⊎ {[+ cl2 (f⁻)%cend (e⁻)%cend +]}.
 
 Lemma hcomp'_typed e f :
-  e ≠ f → ∃ W, ptyped None (khalf None) W ∅ (({[f]} ∪ {[e]}), comp' e f) TUnit ∧ sw_consts W = ∅ ∧ ∀ g, ¬ sw_facts W g.
+  e ≠ f → ptyped None (khalf None) (Wop ⊔ Wop) ∅ (({[f]} ∪ {[e]}), comp' e f) TUnit.
 Proof.
   intros Hef. set (ΣC := senv2 (f⁺)%cend (e⁺)%cend (p0·0) p0).
   assert (chans_of ΣC = ({[f]} ∪ {[e]})) as Ec.
   { unfold chans_of, ΣC, senv2. rewrite dom_union_L, !dom_singleton_L, set_map_union_L, !set_map_singleton_L.
     done. }
-  eexists. split; [|split; [|apply swrestrict_empty_facts]]; [rewrite <-Ec|simpl; apply (right_absorb_L ∅ (∩))]. unfold comp'. eapply (hcomp_gen _ _ ΣC).
+  rewrite <-Ec. unfold comp'. eapply (hcomp_gen _ _ ΣC).
   - apply (cl2_hterm Wop _ _ (p0·0) p0); [apply Wop_ok|congruence|cbn; congruence|by left].
   - apply (cl2_hterm Wop _ _ (p0·0)‾ p0‾); [apply Wop_ok|congruence|cbn; congruence|].
     right. by rewrite pt_dual_dual.
@@ -296,9 +280,8 @@ Proof.
   - rewrite (left_id_L ∅ (∪)). unfold ΣC. by rewrite senv_dual_senv2.
   - intros o. unfold ΣC, senv2. rewrite dom_union_L, !dom_singleton_L, !elem_of_union, !elem_of_singleton.
     intros [->| ->] [E|E]; discriminate.
-  - eapply swf_sub; [|apply (swf_sub _ Wop); [|apply Wop_ok]].
-    + intros a b. apply join_sub; intros u v; apply swrestrict_lt.
-    + intros a b H. eapply sw_lt_facts; [|exact H]. by intros g [Hg|Hg].
+  - apply (swf_sub _ Wop); [|apply Wop_ok].
+    intros a b H. eapply sw_lt_facts; [|exact H]. by intros g [Hg|Hg].
 Qed.
 
 Theorem opposite_clash : ¬ sacyc ((W0 ⊔ W0) ⊔ (Wop ⊔ Wop)).
@@ -308,17 +291,36 @@ Proof.
   - right. left. by right.
 Qed.
 
+(** P'(e, f) renamed by the swap of 0 and 1. *)
+Lemma hcomp'_renamed e f :
+  e ≠ f → ptyped None (khalf None) (sw_ren (cb_swap 0 1) (Wop ⊔ Wop)) ∅ (({[f]} ∪ {[e]}), comp' e f) TUnit.
+Proof.
+  intros Hef. pose proof (ptyped_ren (cb_swap 0 1) _ _ _ _ _ _ (hcomp'_typed e f Hef)) as H.
+  assert (senv_ren (cb_f (cb_swap 0 1)) ∅ = ∅) as E by (unfold senv_ren; by rewrite fmap_empty).
+  rewrite E in H. exact H.
+Qed.
+
 Theorem opposite_compose :
   ∃ W, ptyped None (khalf None) W ∅ (({["c"]} ∪ {["d"]}) ∪ ({["f"]} ∪ {["e"]}) ∪ chans_of ∅, comp "c" "d" ⊎ comp' "e" "f") TUnit.
 Proof.
-  destruct (hcomp_typed "c" "d") as (Wa & H1 & _ & F1); [done|].
-  destruct (hcomp'_typed "e" "f") as (Wb & H2 & _ & F2); [done|].
-  eexists. pose proof (p_connect_half None Wa Wb ∅ ∅ ∅ ({["c"]} ∪ {["d"]}) ({["f"]} ∪ {["e"]})
+  pose proof (hcomp_typed "c" "d" ltac:(done)) as H1. pose proof (hcomp'_renamed "e" "f" ltac:(done)) as H2.
+  set (Wr := sw_ren (cb_swap 0 1) (Wop ⊔ Wop)) in H2.
+  assert (swshared (W0 ⊔ W0) Wr = ∅) as Es.
+  { apply set_eq. intros a. unfold swshared, Wr. simpl. rewrite elem_of_intersection, elem_of_map.
+    split; [|set_solver]. intros [Ha (b & -> & Hb)]. exfalso.
+    assert (b = 0) as -> by set_solver. unfold cswap in Ha. simpl in Ha. set_solver. }
+  assert (swf ((W0 ⊔ W0) ⊔ Wr)) as HS.
+  { apply (wf_join_iff _ _ (proj1 W00_ok)); [unfold Wr; apply sworld_wf_ren, swjoin_wf; apply Wop_ok|].
+    split_and!; [apply W00_ok|unfold Wr; apply swf_ren, (swf_sub _ Wop); [|apply Wop_ok]|].
+    - intros a b H. eapply sw_lt_facts; [|exact H]. by intros g [Hg|Hg].
+    - rewrite Es. apply swf_bare. intros g [Hg|Hg]; exact (swrestrict_empty_facts _ _ Hg). }
+  eexists. pose proof (p_connect_half None (W0 ⊔ W0) Wr ∅ ∅ ∅ ({["c"]} ∪ {["d"]}) ({["f"]} ∪ {["e"]})
                 (comp "c" "d") (comp' "e" "f") TUnit) as H.
   assert (senv_dual ∅ = ∅) as Ed by (unfold senv_dual; by rewrite fmap_empty, kmap_empty).
   rewrite Ed, !(left_id_L ∅ (∪)) in H. apply H; clear H; try done; try set_solver.
-  all: first [apply map_disjoint_empty_l|apply swf_wok, swf_bare; intros g [Hg|Hg]; [by apply (F1 g)|by apply (F2 g)]].
+  all: try apply map_disjoint_empty_l.
+  by apply swf_wok.
 Qed.
 
 Theorem opposite_df : deadlock_free (({["c"]} ∪ {["d"]}) ∪ ({["f"]} ∪ {["e"]}) ∪ chans_of ∅, comp "c" "d" ⊎ comp' "e" "f").
-Proof. destruct opposite_compose as (W & H). exact (soundness_h W _ TUnit H). Qed.
+Proof. destruct opposite_compose as (W & H). exact (soundness W _ TUnit H). Qed.

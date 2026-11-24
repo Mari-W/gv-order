@@ -90,7 +90,7 @@ Section closed.
   Qed.
 
   Lemma lk_term :
-    ptyped (Some N) lk_eta (swrestrict sw_empty (iface Σl TUnit)) Σl (∅, {[+ lk_link +]}) TUnit.
+    ptyped (Some N) lk_eta sw_empty Σl (∅, {[+ lk_link +]}) TUnit.
   Proof.
     apply (p_term (Some N) lk_eta sw_empty Σl ∅ ∅ _ TUnit (fadd (Some 0) (Some 0))).
     - constructor.
@@ -108,7 +108,7 @@ Section closed.
   Qed.
 
   Lemma lk_partner o y : lk_eta o = (Some 0, Some 0) →
-    ptyped (Some N) lk_eta (swrestrict W_cl (iface {[o := (SEnd, y)]} TUnit)) {[o := (SEnd, y)]}
+    ptyped (Some N) lk_eta W_cl {[o := (SEnd, y)]}
       (∅, {[+ cl o +]}) TUnit.
   Proof.
     intros Ho. apply (p_term (Some N) lk_eta W_cl _ ∅ ∅ _ TUnit (fadd (Some 0) (Some 1))).
@@ -141,8 +141,8 @@ Section closed.
   Theorem lk_closed_typed :
     ∃ W, ptyped (Some N) lk_eta W ∅ ({["c"]} ∪ {["d"]}, ({[+ lk_link +]} ⊎ {[+ cl (ENeg "c") +]}) ⊎ {[+ cl (EPos "d") +]}) TUnit.
   Proof.
-    pose proof (p_connect (Some N) lk_eta (swrestrict sw_empty (iface Σl TUnit))
-      (swrestrict W_cl (iface {[ENeg "c" := (SEnd, x‾)]} TUnit)) {[ld := (SEnd, x‾)]} ∅ {[lc := (SEnd, x)]}
+    pose proof (p_connect (Some N) lk_eta sw_empty
+      W_cl {[ld := (SEnd, x‾)]} ∅ {[lc := (SEnd, x)]}
       ∅ ∅ {[+ lk_link +]} {[+ cl (ENeg "c") +]} TUnit) as H1.
     rewrite senv_dual_single, !chans_of_single, chans_of_none, !(right_id_L ∅ (∪)), (left_id_L ∅ (∪)) in H1.
     simpl in H1.
@@ -151,12 +151,11 @@ Section closed.
     assert (Hts : ∀ o, o ∈ dom ({[lc := (SEnd, x)]} : senv) → tsum_ok (Some N) (lk_eta o).2 (lk_eta (edual o)).2).
     { intros o Ho. rewrite dom_singleton_L, elem_of_singleton in Ho. subst o. unfold tsum_ok. simpl. lia. }
     pose proof (H1' Hts) as H1''. clear H1'.
-    assert (Hwk : wok (Some N) (swrestrict sw_empty (iface Σl TUnit) ⊔ swrestrict W_cl (iface {[ENeg "c" := (SEnd, x‾)]} TUnit))).
-    { apply wok_join_bare_r; [apply swrestrict_empty_bare|]. apply swf_wok, swf_bare, swrestrict_empty_bare. }
+    assert (Hwk : wok (Some N) (sw_empty ⊔ W_cl)).
+    { apply swf_wok, swf_bare. intros g [Hg|Hg]; destruct Hg. }
     pose proof (H1'' Hwk) as H1. clear H1''.
-    pose proof (p_connect (Some N) lk_eta (swrestrict (swrestrict sw_empty (iface Σl TUnit)
-        ⊔ swrestrict W_cl (iface {[ENeg "c" := (SEnd, x‾)]} TUnit)) (iface {[ld := (SEnd, x‾)]} TUnit))
-      (swrestrict W_cl (iface {[EPos "d" := (SEnd, x)]} TUnit))
+    pose proof (p_connect (Some N) lk_eta (sw_empty ⊔ W_cl)
+      W_cl
       ∅ ∅ {[ld := (SEnd, x‾)]} (∅ ∪ {["c"]}) ∅ ({[+ lk_link +]} ⊎ {[+ cl (ENeg "c") +]}) {[+ cl (EPos "d") +]} TUnit) as H2.
     rewrite senv_dual_single, !chans_of_single, chans_of_none, !(left_id_L ∅ (∪)), pt_dual_dual in H2.
     simpl in H2. eexists. rewrite <-(left_id_L ∅ (∪) (∅ : senv)). apply H2; clear H2.
@@ -169,12 +168,12 @@ Section closed.
     - set_solver.
     - set_solver.
     - intros o Ho. rewrite dom_singleton_L, elem_of_singleton in Ho. subst o. unfold tsum_ok. simpl. lia.
-    - exact (wok_join_bare_r (Some N) _ _ (swrestrict_empty_bare _) (proj2 (ptyped_wf _ _ _ _ _ _ H1))).
+    - exact (wok_join_bare_r (Some N) _ W_cl ltac:(intros g Hg; exact Hg) (proj2 (ptyped_wf _ _ _ _ _ _ H1))).
   Qed.
 
   Theorem lk_closed_lock_free : excluded_middle → functional_choice →
     lock_free ({["c"]} ∪ {["d"]}, ({[+ lk_link +]} ⊎ {[+ cl (ENeg "c") +]}) ⊎ {[+ cl (EPos "d") +]}).
   Proof.
-    intros EM FC. destruct lk_closed_typed as [W H]. exact (lf_soundness_h N lk_eta W _ TUnit EM FC H).
+    intros EM FC. destruct lk_closed_typed as [W H]. exact (lf_soundness N lk_eta W _ TUnit EM FC H).
   Qed.
 End closed.

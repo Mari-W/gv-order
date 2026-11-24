@@ -215,13 +215,12 @@ Proof.
     rewrite elem_of_union, !elem_of_singleton; intros [H|H]; discriminate.
 Qed.
 
-(** ** The composite in the hidden judgment
+(** ** The composite in the process judgment
 
-    Each thread hides its world to the constants of its interface, the
-    constant 0 of ρ, and P-Connect compares the two interface worlds.
-    Their join lies inside W_cli ⊔ W_srv, which is well-founded, so the
-    split program types with hiding ([cs_split_typed]) and is lock free
-    by the soundness of the hidden judgment ([cs_split_lock_free_h]). *)
+    Each thread types at its own world, and P-Connect checks their join
+    W_cli ⊔ W_srv, which is well-founded. So the split program types
+    ([cs_split_typed]) and is lock free by the soundness of the process
+    judgment ([cs_split_lock_free_typed]). *)
 
 Lemma pfree_two (o1 o2 : cend) v1 v2 :
   (o1‾)%cend ≠ o1 → (o1‾)%cend ≠ o2 → (o2‾)%cend ≠ o1 → (o2‾)%cend ≠ o2 → pfree (<[o1 := v1]> {[o2 := v2]}).
@@ -231,7 +230,7 @@ Proof.
     apply elem_of_union in Hd as [Hd|Hd]; apply elem_of_singleton in Hd; auto.
 Qed.
 
-Lemma cli_hterm : ptyped (Some 6) (khalf (Some 6)) (swrestrict W_cli (iface ΣC TUnit)) ΣC (∅, {[+ t_cli +]}) TUnit.
+Lemma cli_hterm : ptyped (Some 6) (khalf (Some 6)) W_cli ΣC (∅, {[+ t_cli +]}) TUnit.
 Proof.
   destruct (side_typed true cli Sa Sb oa ob ρ (ρ·0) ltac:(done) cli_box eq_refl eq_refl) as [c Hc].
   apply (p_term_half (Some 6) W_cli ΣC ∅ ∅ t_cli TUnit c).
@@ -250,7 +249,7 @@ Proof.
 Qed.
 
 Lemma srv_hterm :
-  ptyped (Some 6) (khalf (Some 6)) (swrestrict W_srv (iface (senv_dual ΣC) TUnit)) (senv_dual ΣC) (∅, {[+ t_srv +]}) TUnit.
+  ptyped (Some 6) (khalf (Some 6)) W_srv (senv_dual ΣC) (∅, {[+ t_srv +]}) TUnit.
 Proof.
   destruct (side_typed false srv Sb Sa (edual oa) (edual ob) ρ‾ (ρ·0)‾ ltac:(done) srv_box eq_refl eq_refl)
     as [c Hc].
@@ -271,14 +270,14 @@ Qed.
 
 Theorem cs_split_typed : ∃ W, ptyped (Some 6) (khalf (Some 6)) W ∅ (∅ ∪ ∅ ∪ chans_of ΣC, {[+ t_cli +]} ⊎ {[+ t_srv +]}) TUnit.
 Proof.
-  eexists. pose proof (p_connect_half (Some 6) (swrestrict W_cli (iface ΣC TUnit)) (swrestrict W_srv (iface (senv_dual ΣC) TUnit)) ∅ ∅ ΣC ∅ ∅ {[+ t_cli +]} {[+ t_srv +]} TUnit) as H.
+  eexists. pose proof (p_connect_half (Some 6) W_cli W_srv ∅ ∅ ΣC ∅ ∅ {[+ t_cli +]} {[+ t_srv +]} TUnit) as H.
   rewrite !(left_id_L ∅ (∪)) in H |- *. apply H; clear H; [rewrite (left_id_L ∅ (∪)); exact cli_hterm|rewrite (left_id_L ∅ (∪)); exact srv_hterm|..].
   all: try (rewrite ?chans_of_empty; set_solver).
-  apply (swf_sub _ (W_cli ⊔ W_srv)); [|exact W_cs_join_wf]. intros x y. apply join_sub; intros u v; apply swrestrict_lt.
+  exact W_cs_join_wf.
 Qed.
 
-Theorem cs_split_lock_free_h : excluded_middle → functional_choice →
+Theorem cs_split_lock_free_typed : excluded_middle → functional_choice →
   lock_free (∅ ∪ ∅ ∪ chans_of ΣC, {[+ t_cli +]} ⊎ {[+ t_srv +]}).
 Proof.
-  intros EM FC. destruct cs_split_typed as [W H]. exact (lf_soundness_h 6 _ W _ TUnit EM FC H).
+  intros EM FC. destruct cs_split_typed as [W H]. exact (lf_soundness 6 _ W _ TUnit EM FC H).
 Qed.

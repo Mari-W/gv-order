@@ -1239,9 +1239,9 @@ Qed.
 Corollary rx_chain_proc_rejected (EM : excluded_middle) n η W Σ C0 T :
   ¬ ptyped (Some n) η W Σ (C0, {[+ rc_main +]}) T.
 Proof.
-  intros H. apply ptyped_one in H as (W' & ΘB & c & _ & _ & _ & _ & _ & _ & _ & _ & Ht & [Hwf Hwk]).
-  destruct (wmodels_exists W' Hwf Hwk) as (R & HR & HW).
-  refine (rx_chain_rejected EM n W' _ _ _ _ _ _ Hwf _ Ht).
+  intros H. apply ptyped_one in H as (ΘB & c & _ & _ & _ & _ & _ & _ & _ & Ht & [Hwf Hwk]).
+  destruct (wmodels_exists W Hwf Hwk) as (R & HR & HW).
+  refine (rx_chain_rejected EM n W _ _ _ _ _ _ Hwf _ Ht).
   exists R, pvar. split_and!; [done|done|apply hsat_empty].
 Qed.
 
@@ -1321,8 +1321,8 @@ Qed.
 Corollary fjr_lf_proc_rejected (EM : excluded_middle) n η W Σ C0 T :
   ¬ ptyped (Some n) η W Σ (C0, {[+ fjr_main +]}) T.
 Proof.
-  intros H. apply ptyped_one in H as (W' & ΘB & c & _ & _ & _ & _ & _ & _ & _ & _ & Ht & [Hwf Hwk]).
-  destruct (wmodels_exists W' Hwf Hwk) as (R & HR & HW).
-  refine (fjr_lf_rejected EM n W' _ _ _ _ _ _ Hwf _ Ht).
+  intros H. apply ptyped_one in H as (ΘB & c & _ & _ & _ & _ & _ & _ & _ & Ht & [Hwf Hwk]).
+  destruct (wmodels_exists W Hwf Hwk) as (R & HR & HW).
+  refine (fjr_lf_rejected EM n W _ _ _ _ _ _ Hwf _ Ht).
   exists R, pvar. split_and!; [done|done|apply hsat_empty].
 Qed.

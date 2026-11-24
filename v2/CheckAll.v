@@ -14,7 +14,7 @@ From GV Require Import examples.LFController soup.SoupRun soup.SoupTau soup.LFAd
 From GV Require Import soup.LFCompose soup.LFTyped lockfree.FairRun.
 From GV Require Import examples.SemBranch examples.BranchExt examples.PointReuse static.Inversion relation.Ord relation.ExProp relation.Ranks examples.LFLink compat.Redex static.PointSubst.
 From GV Require Import examples.SinstStuck static.Sinst examples.SharedRoots static.Hiding examples.GenNew.
-From GV Require Import soup.LFConnectN examples.Ring static.ConnectNExact.
+From GV Require Import soup.LFConnectN examples.Ring.
 From GV Require Import examples.Copycat examples.ForkJoin.
 From GV Require Import static.ChanRen examples.CopycatTwo static.LetVar examples.LetVarCounter examples.CopycatTwoN.
 From GV Require Import static.Skeleton examples.Rejects.
@@ -35,7 +35,9 @@ Print Assumptions typed_ren.
 Print Assumptions join_vis.
 Print Assumptions connect_hidden.
 Print Assumptions ptyped_ren.
-Print Assumptions ptyped_sem.
+Print Assumptions ptyped_apart.
+Print Assumptions rptyped_ptyped.
+Print Assumptions ptyped_rptyped.
 (** static/Conservativity.v *)
 Print Assumptions d_conv.
 Print Assumptions dftyped_typed.
@@ -102,11 +104,11 @@ Print Assumptions live_fundamental_typed.
 Print Assumptions sem_p_connect_sw.
 Print Assumptions proc_gen.
 Print Assumptions soundness_source.
-Print Assumptions sem_p_connect_h.
-Print Assumptions fundamental_proc_h.
-Print Assumptions live_fundamental_proc_h.
-Print Assumptions soundness_h.
-Print Assumptions live_soundness_h.
+Print Assumptions fundamental_proc.
+Print Assumptions live_fundamental_proc.
+Print Assumptions adequacy_sw.
+Print Assumptions soundness.
+Print Assumptions live_soundness.
 (** examples/GuardEx.v *)
 Print Assumptions div_box_typed.
 Print Assumptions pn_fix_typed.
@@ -130,7 +132,7 @@ Print Assumptions cs_lock_free.
 (** examples/LFClientServerSplit.v *)
 Print Assumptions cs_split_lock_free.
 Print Assumptions cs_split_typed.
-Print Assumptions cs_split_lock_free_h.
+Print Assumptions cs_split_lock_free_typed.
 (** examples/LFFactoryEx.v *)
 Print Assumptions fx_lftyped.
 Print Assumptions fx_lock_free.
@@ -164,9 +166,8 @@ Print Assumptions lf_soundness_source.
 (** soup/LFTyped.v *)
 Print Assumptions lf_soundness_run.
 Print Assumptions lf_soundness_padovani.
-Print Assumptions lf_p_connect_h.
-Print Assumptions lf_fundamental_h.
-Print Assumptions lf_soundness_h.
+Print Assumptions lf_fundamental.
+Print Assumptions lf_soundness.
 (** lockfree/FairRun.v *)
 Print Assumptions fair_run_exists.
 Print Assumptions fair_run_exists_proc.
@@ -220,9 +221,9 @@ Print Assumptions typed_sinst.
 Print Assumptions inv_chan_sty.
 Print Assumptions typed_sinst_false.
 Print Assumptions ss_var_guard.
-(** examples/SharedRoots.v: the shared constants of P-Connect are not the roots of the cut, and hiding *)
+(** examples/SharedRoots.v: two components that use one private constant, composed as they are or renamed apart *)
 Print Assumptions fact_needs_zero.
-Print Assumptions shared_hidden.
+Print Assumptions shared_compose.
 Print Assumptions opposite_clash.
 Print Assumptions opposite_compose.
 Print Assumptions opposite_df.
@@ -231,9 +232,6 @@ Print Assumptions p_connect_n.
 Print Assumptions connect_n_soundness.
 Print Assumptions connect_n_live_soundness.
 Print Assumptions connect_n_lf_soundness.
-(** static/ConnectNExact.v: the exact world of the n-ary P-Connect *)
-Print Assumptions p_connect_n_exact.
-Print Assumptions fold_join_gap.
 (** examples/Ring.v: Milner's ring, pairwise consistent and cyclic, rejected; the acyclic ring typed *)
 Print Assumptions ring_comps.
 Print Assumptions ring_pairs.

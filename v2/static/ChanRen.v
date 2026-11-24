@@ -175,7 +175,7 @@ Section cren.
     induction 1 as [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Htk Ht HW
                    |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 H12 H1C H2C HC HC1 HC2 Hts HS];
       cbn [fst snd] in *.
-    - rewrite emapE_singleton, <-(iface_cren Σ). apply (p_term N η' W _ (kmap g ΘB) _ (emap g t) T c).
+    - rewrite emapE_singleton. apply (p_term N η' W _ (kmap g ΘB) _ (emap g t) T c).
       + done.
       + intros o. rewrite kdom. split.
         * intros Ho. apply elem_of_map in Ho as (o' & -> & Ho). rewrite ech_cmap.
@@ -195,7 +195,7 @@ Section cren.
       + intros o Ho. rewrite kdom in Ho. apply elem_of_map in Ho as (o' & -> & Ho). rewrite Hη. by apply Htk.
       + rewrite (tenv_ofk_cren η η' _ Hη), <-kunion. exact (typed_cren _ _ _ _ _ _ _ _ _ Ht).
       + done.
-    - rewrite <-(iface_cren (Σ1 ∪ Σ2)), kunion. rewrite !set_map_h_union, <-(chans_of_cren ΣC), emapE_disj_union.
+    - rewrite kunion. rewrite !set_map_h_union, <-(chans_of_cren ΣC), emapE_disj_union.
       rewrite !kunion in IH1, IH2. rewrite <-senv_dual_cren in IH2.
       apply p_connect; [exact IH1|exact IH2
         |by rewrite !chans_of_cren; apply set_map_h_disj|by rewrite !chans_of_cren; apply set_map_h_disj

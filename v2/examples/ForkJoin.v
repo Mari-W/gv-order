@@ -16,7 +16,7 @@
 
     - [fj_dftyped], [fj_term]: main types, and P-Term types the closed
       program over the empty world.
-    - [fj_deadlock_free]: deadlock freedom by [soundness_h].
+    - [fj_deadlock_free]: deadlock freedom by [soundness].
     - [fjr_dftyped], [fjr_term], [fjr_deadlock_free]: the recursive
       worker types in the deadlock-free judgment, whose E-New asks
       (acyc-new) (docs/redesign/check-df-acyclic.md, section 4.1). The
@@ -200,7 +200,7 @@ Proof.
 Qed.
 
 (** P-Term types the closed program over the empty world. *)
-Theorem fj_term : ptyped None (khalf None) (swrestrict sw_empty (iface ∅ TUnit)) ∅ (∅, {[+ fj_main +]}) TUnit.
+Theorem fj_term : ptyped None (khalf None) sw_empty ∅ (∅, {[+ fj_main +]}) TUnit.
 Proof.
   apply (p_term_half None sw_empty ∅ ∅ ∅ _ TUnit None).
   - constructor.
@@ -216,7 +216,7 @@ Proof.
 Qed.
 
 Theorem fj_deadlock_free : deadlock_free (∅, {[+ fj_main +]}).
-Proof. exact (soundness_h _ _ TUnit fj_term). Qed.
+Proof. exact (soundness _ _ TUnit fj_term). Qed.
 
 (** ** Recursive fork-join with replies
 
@@ -539,7 +539,7 @@ Proof.
 Qed.
 
 (** P-Term types the closed program over the empty world. *)
-Theorem fjr_term : ptyped None (khalf None) (swrestrict sw_empty (iface ∅ TUnit)) ∅ (∅, {[+ fjr_main +]}) TUnit.
+Theorem fjr_term : ptyped None (khalf None) sw_empty ∅ (∅, {[+ fjr_main +]}) TUnit.
 Proof.
   apply (p_term_half None sw_empty ∅ ∅ ∅ _ TUnit None).
   - constructor.
@@ -557,7 +557,7 @@ Qed.
 (** Recursive fork-join with replies is deadlock free, without excluded
     middle. *)
 Theorem fjr_deadlock_free : deadlock_free (∅, {[+ fjr_main +]}).
-Proof. exact (soundness_h _ _ TUnit fjr_term). Qed.
+Proof. exact (soundness _ _ TUnit fjr_term). Qed.
 
 (** ** Padovani's fact
 
@@ -816,7 +816,7 @@ Proof.
   Unshelve. all: exact None.
 Qed.
 
-Theorem fct_term : ptyped None (khalf None) (swrestrict sw_empty (iface ∅ TUnit)) ∅ (∅, {[+ fct_main +]}) TUnit.
+Theorem fct_term : ptyped None (khalf None) sw_empty ∅ (∅, {[+ fct_main +]}) TUnit.
 Proof.
   apply (p_term_half None sw_empty ∅ ∅ ∅ _ TUnit None).
   - constructor.
@@ -833,7 +833,7 @@ Qed.
 
 (** Padovani's fact is deadlock free, without excluded middle. *)
 Theorem fct_deadlock_free : deadlock_free (∅, {[+ fct_main +]}).
-Proof. exact (soundness_h _ _ TUnit fct_term). Qed.
+Proof. exact (soundness _ _ TUnit fct_term). Qed.
 
 (** ** Padovani's fibo
 
@@ -1118,7 +1118,7 @@ Proof.
   Unshelve. all: exact None.
 Qed.
 
-Theorem fib_term : ptyped None (khalf None) (swrestrict sw_empty (iface ∅ TUnit)) ∅ (∅, {[+ fib_main +]}) TUnit.
+Theorem fib_term : ptyped None (khalf None) sw_empty ∅ (∅, {[+ fib_main +]}) TUnit.
 Proof.
   apply (p_term_half None sw_empty ∅ ∅ ∅ _ TUnit None).
   - constructor.
@@ -1135,7 +1135,7 @@ Qed.
 
 (** Padovani's fact is deadlock free, without excluded middle. *)
 Theorem fib_deadlock_free : deadlock_free (∅, {[+ fib_main +]}).
-Proof. exact (soundness_h _ _ TUnit fib_term). Qed.
+Proof. exact (soundness _ _ TUnit fib_term). Qed.
 
 (** ** Why the recursion does not type at a finite N
 

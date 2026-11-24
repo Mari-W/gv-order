@@ -2,7 +2,7 @@
 
     [p_connect_n] (static/ConnectN.v) folds the binary P-Connect, so a
     closed n-ary composition at Some N is lock
-    free by [lf_soundness_h]. *)
+    free by [lf_soundness]. *)
 
 From GV Require Import soup.LFAdequacy.
 From GV Require Export static.ConnectN soup.LFTyped.
@@ -12,5 +12,5 @@ Theorem connect_n_lf_soundness N η Ws p T :
   pcomps (Some N) η Ws ∅ p T → swf (sw_joins Ws) → lock_free p.
 Proof.
   intros EM FC Hp HS. destruct (p_connect_n (Some N) η Ws ∅ p T Hp HS) as (W & Hty & _).
-  exact (lf_soundness_h N η W p T EM FC Hty).
+  exact (lf_soundness N η W p T EM FC Hty).
 Qed.

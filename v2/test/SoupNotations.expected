@@ -38,11 +38,11 @@ lf_thread_progress
 λ (N : nat) (η : iann) (W : sworld) (Σ : senv) (p : proc) (T : ty),
   Σ ⊩^N,η _ W p : T
      : nat → iann → sworld → senv → proc → ty → Prop
-lf_fundamental_h
+lf_fundamental
      : excluded_middle
        → ∀ (N : nat) (η : iann) (W : sworld) (Σ : senv) (p : proc) (T : ty),
-           Σ ⊩^N,η _ W p : T → lf_sems_h N η W Σ p T
-lf_soundness_h
+           Σ ⊩^N,η _ W p : T → lf_sems N η W Σ p T
+lf_soundness
      : ∀ (N : nat) (η : iann) (W : sworld) (p : proc) (T : ty),
          excluded_middle
          → functional_choice → ∅ ⊩^N,η _ W p : T → lock_free p

@@ -124,7 +124,7 @@ Proof.
   Unshelve. all: first [exact None | simpl; lia | simpl; done].
 Qed.
 
-Theorem fb_lftyped : ∃ N, ∅ ⊩^N,(khalf (Some N)) _ (swrestrict W_fb (iface ∅ TUnit)) (∅, {[+ fb_main +]}) : TUnit.
+Theorem fb_lftyped : ∃ N, ∅ ⊩^N,(khalf (Some N)) _ W_fb (∅, {[+ fb_main +]}) : TUnit.
 Proof.
   destruct fbl_typedN as (c & Ht). exists 4.
   eapply lf_main_typed; [apply W_fb_wf|constructor|exact Ht].

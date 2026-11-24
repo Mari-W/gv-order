@@ -44,11 +44,10 @@
     judgment without the cost premises and without aging and capture.
     No rule matches the shape of a redex. let x = e1 in e2 is
     the derived form [ELet] of lang/Syntax.v, and E-Let and D-Let are
-    admissible ([e_let] and [d_let] in static/Weakening.v). [ptyped] is process typing with P-Term and P-Connect
-    in the hidden form. The world of a process judgment lives on the
-    constants of its interface, and P-Connect compares the two interface
-    orders. Every derivation sits over a well-founded world
-    ([ptyped_wf]). *)
+    admissible ([e_let] and [d_let] in static/Weakening.v). [ptyped] is process typing with P-Term and P-Connect.
+    P-Term concludes at the world of its thread, P-Connect at the join
+    of the two component worlds. Every derivation sits over a
+    well-founded world ([ptyped_wf]). *)
 
 From GV Require Export static.Consts.
 
@@ -202,17 +201,12 @@ Definition dftyped (W : sworld) (Θ : tenv) (Γ : hctx) (Δ : lenv) (F : sfuture
     P-Connect composes two components typed at their own worlds over the
     cut Σ_C.
 
-    [ptyped] hides. P-Term restricts the world of its thread to the
-    constants of the interface Σ and of the type T ([iface]), through
-    the order the world derives ([swrestrict]), so a chain through a
-    private constant becomes a fact between interface points. P-Connect
-    asks the join of the two interface worlds well-founded and hides the
-    cut. The constants of a derivation outside its interface are
-    private, and two components may pick the same one.
-
-    The proof of soundness reads a derivation at a whole world that
-    hides to its world, with private constants renamed apart
-    ([ptyped_sem], static/Hiding.v). *)
+    P-Term concludes at the world of its thread. P-Connect asks the
+    join of the two component worlds well-founded (acyclic at N = ∞)
+    and concludes at that join. The constants of a derivation outside
+    its interface are private, and two components may pick the same
+    one. The proof of soundness reads a derivation at its own world
+    ([fundamental_proc], static/FundamentalProc.v). *)
 
 Definition chans_of (Σ : senv) : gset chan := set_map ech (dom Σ).
 
@@ -297,14 +291,18 @@ Proof.
   - apply (H2 o); rewrite dom_union_L; set_solver.
 Qed.
 
-(** ** Process typing with hiding
+(** ** Process typing (2026-11-24, no restriction)
 
-    The world of a process judgment lives on the constants of its
-    interface. P-Term hides the constants of its world outside
-    [iface Σ T], P-Connect compares the two interface worlds and hides
-    the cut. A world restricted to S keeps every fact the world derives
-    between points with roots in S, through private constants too
-    ([swrestrict_iff], static/Hiding.v). *)
+    P-Term concludes at the world of its thread. P-Connect checks the
+    join of the two component worlds and concludes at that join. The
+    check reads only the two component worlds, so the rule stays
+    compositional. Two components may use one private constant for
+    unrelated points. The join then has more facts, and the check
+    covers them. A derivation renames its constants by any bijection
+    ([ptyped_ren], static/Hiding.v), so two components can always be
+    renamed apart before they connect, and every derivation of the
+    judgment that restricted its world to the interface has one here
+    ([rptyped_ptyped], static/Hiding.v). *)
 Inductive ptyped (N : fuel) (η : iann) : sworld → senv → proc → ty → Prop :=
   | p_term W Σ ΘB C0 t T c :
       tfree T →
@@ -315,7 +313,7 @@ Inductive ptyped (N : fuel) (η : iann) : sworld → senv → proc → ty → Pr
       (∀ o, o ∈ dom Σ → fle (η o).2 N) →
       typed W N (tenv_ofk η Σ ∪ ΘB) hc_empty [] (∅, None) t T c →
       sworld_wf W ∧ wok N W →
-      ptyped N η (swrestrict W (iface Σ T)) Σ (C0, {[+ t +]}) T
+      ptyped N η W Σ (C0, {[+ t +]}) T
   | p_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
       ptyped N η W1 (Σ1 ∪ ΣC) (C1, E1) T →
       ptyped N η W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
@@ -323,7 +321,7 @@ Inductive ptyped (N : fuel) (η : iann) : sworld → senv → proc → ty → Pr
       C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
       (∀ o, o ∈ dom ΣC → tsum_ok N (η o).2 (η (edual o)).2) →
       wok N (W1 ⊔ W2) →
-      ptyped N η (swrestrict (W1 ⊔ W2) (iface (Σ1 ∪ Σ2) T)) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
+      ptyped N η (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
 
 (** P-Term and P-Connect with every interface end at credit and tickets
     N/2, the rules before interface annotations. *)
@@ -335,7 +333,7 @@ Lemma p_term_half N W Σ ΘB C0 t T c :
      ΘB !! (c⁺)%cend = Some (TE S x m m) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ m' m')) →
   typed W N (tenv_of (fhalf N) Σ ∪ ΘB) hc_empty [] (∅, None) t T c →
   sworld_wf W ∧ wok N W →
-  ptyped N (khalf N) (swrestrict W (iface Σ T)) Σ (C0, {[+ t +]}) T.
+  ptyped N (khalf N) W Σ (C0, {[+ t +]}) T.
 Proof.
   intros. apply (p_term N (khalf N) W Σ ΘB C0 t T c); try done; [intros; apply fhalf_le|]. by rewrite tenv_ofk_half.
 Qed.
@@ -346,7 +344,7 @@ Lemma p_connect_half N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
   chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
   C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
   wok N (W1 ⊔ W2) →
-  ptyped N (khalf N) (swrestrict (W1 ⊔ W2) (iface (Σ1 ∪ Σ2) T)) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
+  ptyped N (khalf N) (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
 Proof. intros. apply p_connect; try done. intros. apply tsum_fhalf. Qed.
 
 Notation "Σ ⊢_ W p : T" := (ptyped None (khalf None) W Σ p T)
@@ -362,17 +360,13 @@ Proof. intros H x Hx. exact (H x (swrestrict_lt W S x x Hx)). Qed.
 Lemma swrestrict_wok N W S : wok N W → wok N (swrestrict W S).
 Proof. destruct N; [apply swrestrict_swf|apply swrestrict_sacyc]. Qed.
 
-(** Every hidden derivation sits over a well-formed world on the
-    constants of its interface, acyclic at N = ∞ and well-founded at a
-    finite N. *)
+(** Every derivation sits over a well-formed world, acyclic at N = ∞
+    and well-founded at a finite N. *)
 Lemma ptyped_wf N η W Σ p T : ptyped N η W Σ p T → sworld_wf W ∧ wok N W.
 Proof.
-  destruct 1 as [W Σ ΘB C0 t T c _ _ _ _ _ _ _ _ [_ HW]|W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ _ _ _ _ _ _ _ _ HS];
-    (split; [apply swrestrict_wf|by apply swrestrict_wok]).
+  induction 1 as [W Σ ΘB C0 t T c _ _ _ _ _ _ _ _ HW|W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ [Hw1 _] _ [Hw2 _] _ _ _ _ _ _ _ HS];
+    [exact HW|split; [by apply swjoin_wf|exact HS]].
 Qed.
-
-Lemma ptyped_consts N η W Σ p T : ptyped N η W Σ p T → sw_consts W ⊆ iface Σ T.
-Proof. destruct 1; simpl; set_solver. Qed.
 
 Lemma ptyped_tfree N η W Σ p T : ptyped N η W Σ p T → tfree T.
 Proof. induction 1; auto. Qed.

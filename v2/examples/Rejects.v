@@ -128,7 +128,7 @@ Proof. intros H. apply typed_skel in H. exact (rl_refresh_untyped _ _ _ _ H). Qe
 (** A process of the one thread main is untypable too. *)
 Corollary rx_relink_proc_rejected n η W T : ¬ ptyped (Some n) η W ∅ (∅, {[+ rl_main +]}) T.
 Proof.
-  intros H. apply ptyped_one in H as (W' & ΘB & c & _ & _ & _ & _ & _ & _ & _ & _ & H & _).
+  intros H. apply ptyped_one in H as (ΘB & c & _ & _ & _ & _ & _ & _ & _ & H & _).
   exact (rx_relink_rejected _ _ _ _ _ _ _ _ H).
 Qed.
 
@@ -269,7 +269,7 @@ Proof. intros H. apply typed_skel in H. exact (rx_postpone_skel _ _ _ _ H). Qed.
 
 Corollary rx_postpone_proc_rejected n η W T : ¬ ptyped (Some n) η W ∅ (∅, {[+ pp_main +]}) T.
 Proof.
-  intros H. apply ptyped_one in H as (W' & ΘB & c & _ & _ & _ & _ & _ & _ & _ & _ & H & _).
+  intros H. apply ptyped_one in H as (ΘB & c & _ & _ & _ & _ & _ & _ & _ & H & _).
   exact (rx_postpone_rejected _ _ _ _ _ _ _ _ H).
 Qed.
 
@@ -530,6 +530,6 @@ Proof. intros H. apply typed_skel in H. exact (rx_delegate_skel _ _ _ _ H). Qed.
 
 Corollary rx_delegate_proc_rejected n η W T : ¬ ptyped (Some n) η W ∅ (∅, {[+ dl_main +]}) T.
 Proof.
-  intros H. apply ptyped_one in H as (W' & ΘB & c & _ & _ & _ & _ & _ & _ & _ & _ & H & _).
+  intros H. apply ptyped_one in H as (ΘB & c & _ & _ & _ & _ & _ & _ & _ & H & _).
   exact (rx_delegate_rejected _ _ _ _ _ _ _ _ H).
 Qed.
