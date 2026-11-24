@@ -24,7 +24,7 @@
     Q9), so E and P are monotone in the world by definition. A world is
     ranked (types/Worlds.v), so its order is well-founded and needs no
     strictness premise. O-New lets the creation pick the point of the new
-    channel and a grown world, which ranks the roots it needs.
+    channel and a grown world, which ranks the bases it needs.
 
     The relation reads no syntax of a term but the labels of its steps,
     and from a label only the value a send or a spawn moves. V fixes the
@@ -111,7 +111,7 @@ Definition tenv_erase (Θ : tenv) : senv := (λ e, (te_sty e, te_pt e)) <$> Θ.
     a dual pair of the interface ([pfuse h D p], [sdrop D Σ]). P is
     closed under every fusion that commutes with duality, is injective
     on the held ends (the ends of Σ and both ends of every restricted
-    channel) and creates partner pairs only on D ([fuse_ok]). D = ∅ is
+    channel) and creates dual pairs only on D ([fuse_ok]). D = ∅ is
     a renaming ([pren_ok]), h = id internalizes pairs of Σ. *)
 
 (** The channel of the image of c⁺. *)
@@ -129,7 +129,7 @@ Definition pmap (h : cend → cend) (p : proc) : proc := (set_map (gch h) p.1, e
 Definition pheld (Σ : senv) (p : proc) (o : cend) : Prop := o ∈ dom Σ ∨ ech o ∈ p.1.
 
 (** A renaming: injective on the held ends, and no two held ends
-    become partners unless they are. *)
+    become dual unless they are. *)
 Definition pren_ok (h : cend → cend) (Σ : senv) (p : proc) : Prop :=
   dcomm h ∧ (∀ o1 o2, pheld Σ p o1 → pheld Σ p o2 → h o1 = h o2 → o1 = o2) ∧
   (∀ o1 o2, pheld Σ p o1 → pheld Σ p o2 → h o2 = edual (h o1) → o2 = edual o1).
@@ -201,8 +201,8 @@ Qed.
 (** ** Messages at the process level
 
     Q-Send. Θe holds the ends of restricted channels that leave with the
-    message, and Σe the partners of those of them whose partner stays.
-    Those partners join the interface, at the dual type and point. *)
+    message, and Σe the dual ends of those of them whose dual end stays.
+    Those dual ends join the interface, at the dual type and point. *)
 Definition send_split (Σ Σe Θe : senv) : Prop :=
   (∀ o, o ∈ dom Θe → (o ∉ dom Σ) ∧ (edual o ∉ dom Σ)) ∧
   (∀ o, o ∈ dom Σe ↔ edual o ∈ dom Θe ∧ (o ∉ dom Θe)) ∧
@@ -210,7 +210,7 @@ Definition send_split (Σ Σe Θe : senv) : Prop :=
      ∃ S', (Σe ∪ Θe) !! edual o = Some (S', y‾) ∧ sdual S S').
 
 (** Q-Recv. The ends Θ2 a message brings are new to the receiver, and
-    those whose partner the receiver holds or receives with them are
+    those whose dual end the receiver holds or receives with them are
     dual to it. The receiver then holds both ends of the channels
     [recv_back], which become restricted, and their ends leave the
     interface. *)

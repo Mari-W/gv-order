@@ -231,7 +231,7 @@ Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.
 
 (** ** Facts *)
 
-(** The facts of W sit at constant roots, the first half of [sworld_wf]. *)
+(** The facts of W sit at constant bases, the first half of [sworld_wf]. *)
 Definition facts_const (W : sworld) : Prop :=
   ∀ x y, sw_facts W (FLt x y) → croot_in (sw_consts W) x ∧ croot_in (sw_consts W) y.
 
@@ -256,7 +256,7 @@ Proof. intros Hwf. by apply sw_lt_pinst_fc, facts_const_wf. Qed.
     [cons_of_hold]: an opening whose constraint holds at some instance
     derives no new fact between outer points. [cons_new]: the existential
     of E-New meets the bridge condition under (wf-new), because every
-    fact of its constraint ends in the tree of the new root. *)
+    fact of its constraint ends in the tree of the new base. *)
 
 Lemma pshift_back xs m x : length xs = m → pt_inst (plist xs) (pt_inst (pshift m) x) = x.
 Proof.
@@ -328,7 +328,7 @@ Proof.
   unfold pshift. simpl. intros [=]. lia.
 Qed.
 
-(** Every fact of C ends in the tree of the new root. (wf-new) asks it,
+(** Every fact of C ends in the tree of the new base. (wf-new) asks it,
     and so do constraints that satisfy (acyc-new) with no exit and no
     entry. *)
 Definition tree_ends (C : bcs) : Prop :=
@@ -374,7 +374,7 @@ Lemma slt_open_out W Γ C x y : facts_const W → wf_new C →
   ¬ in_tree0 x ∧ ∀ z, slt W Γ (pt_inst (plist [z]) x) (pt_inst (plist [z]) y).
 Proof. intros Hwf [HC _]. by apply slt_open_out_te. Qed.
 
-(** Conservativity when every fact ends in the tree of the new root:
+(** Conservativity when every fact ends in the tree of the new base:
     no fact leaves the tree, so C has no bridge. *)
 Lemma cons_tree W Γ C : tree_ends C → cons_open W Γ 1 C.
 Proof.

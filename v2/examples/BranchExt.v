@@ -44,7 +44,7 @@ Definition oe : cend := EPos "e".
 Definition bx_arm (a b : cend) : expr := LetU (EClose (Var 0)) (cl2 a b).
 Definition bx_thread : expr := Case (EBra (Chan oe)) (bx_arm oc od) (bx_arm od oc).
 
-(** The points: e at z, c at x, d at y, constant roots 0, 1 and 2. *)
+(** The points: e at z, c at x, d at y, constant bases 0, 1 and 2. *)
 Definition qz : point := MkPt (NConst 0) true 0.
 Definition qx : point := MkPt (NConst 1) true 0.
 Definition qy : point := MkPt (NConst 2) true 0.

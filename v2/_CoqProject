@@ -125,6 +125,9 @@ examples/LetVarCounter.v
 examples/ForkJoin.v
 examples/Rejects.v
 examples/Descent.v
+examples/RxChain.v
+examples/BitProgram.v
+examples/MilnerSched.v
 test/CompatNotations.v
 soup/Idle.v
 soup/State.v

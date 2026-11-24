@@ -18,7 +18,7 @@ Definition Γnew (L : fact → Prop) : hctx := hc_open 1 (bcs_of L) hc_empty.
 Lemma Γnew_in L : (bcs_of L, ids 1) ∈ hc_hyps (Γnew L).
 Proof. unfold Γnew, hc_open. simpl. by left. Qed.
 
-(** A fact of L at the opened root. *)
+(** A fact of L at the opened base. *)
 Lemma law_slt W (L : fact → Prop) f x y :
   L f → fact_scoped 1 f → fact_map (pt_inst (plist (ids 1))) f = FLt x y →
   slt W (Γnew L) x y.

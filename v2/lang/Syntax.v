@@ -7,7 +7,7 @@
 
     Primitives are saturated operators [Op k e] and the nullary [ENew].
     [ENew] is plain new. It carries no label, and its type alone places
-    the new channel at a fresh root or at a field (E-New). *)
+    the new channel at a fresh base or at a field (E-New). *)
 
 From stdpp Require Export base strings gmap gmultiset countable.
 
@@ -31,7 +31,7 @@ Qed.
 (** The channel of an end. *)
 Definition ech (o : cend) : chan := match o with EPos c | ENeg c => c end.
 
-(** The partner end ō: the other end of the same channel. *)
+(** The dual end ō: the other end of the same channel. *)
 Definition edual (o : cend) : cend :=
   match o with EPos c => ENeg c | ENeg c => EPos c end.
 
@@ -43,7 +43,7 @@ Lemma ech_edual o : ech (edual o) = ech o.
 Proof. by destruct o. Qed.
 Lemma edual_inj o o' : edual o = edual o' → o = o'.
 Proof. destruct o, o'; simpl; congruence. Qed.
-(** Two ends of one channel are equal or partners. *)
+(** Two ends of one channel are equal or dual. *)
 Lemma ech_eq o o' : ech o = ech o' → o' = o ∨ o' = edual o.
 Proof. destruct o, o'; simpl; intros ->; auto. Qed.
 

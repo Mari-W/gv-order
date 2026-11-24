@@ -20217,15 +20217,18 @@
   {
    "id": "ex-flagpair",
    "title": "Two threads on one received flag",
-   "lead": "Two threads that branch on one flag sent by a third thread are deadlock free. A proof that follows the reductions of the whole process in the [[p-rel|process relation]] shows it, and a proof that puts each thread into the [[e-rel|term relation]] on its own fails.",
-   "code": "A = case z of inl _ ⇒ let ∗ = close a in close b\n             | inr _ ⇒ let ∗ = close b in close a\nB = case z of inl _ ⇒ let ∗ = close ā in close b̄\n             | inr _ ⇒ let ∗ = close b̄ in close ā\n-- a at x, b at y, both threads receive the same flag z",
-   "meaning": "Both threads get the same flag, so they close $a$ and $b$ in the same order in each run. The received flag is either value of $V$ at $\\ast \\oplus \\ast$, so each thread has to be in $E$ for both flags. With $\\mathsf{inl}$ thread A closes $a$ while it holds $b$ and asks $x \\prec \\overline{y}$. With $\\mathsf{inr}$ thread B closes $\\overline{b}$ while it holds $\\overline{a}$ and asks $\\overline{y} \\prec x$. The join of the two worlds then has a cycle, and P-Connect asks a consistent join. One such thread alone fits in a consistent world, the pair does not. The flag is sent on an internal channel, so the process relation of the closed process reads only its actual reductions, in which both threads take the same branch. Following them puts the process in $P$ directly. This argument and the static rejection have no Rocq proof.",
+   "lead": "Two threads that branch on one flag sent by a third thread are deadlock free. Static typing rejects the process, because [[r-data|E-Case]] types both arms of each thread in one world. A proof that follows the reductions of the whole process in the [[p-rel|process relation]] shows deadlock freedom, and a proof that puts each thread into the [[e-rel|term relation]] on its own fails.",
+   "code": "A = let ⟨z, f′⟩ = recv f in let ∗ = close f′ in\n    case z of inl w ⇒ let ∗ = w in let ∗ = close a in close b\n            | inr w ⇒ let ∗ = w in let ∗ = close b in close a\nB = A with f, a, b replaced by g, ā, b̄\nC = let ∗ = close (send ⟨inj₁ ∗, f̄⟩) in close (send ⟨inj₁ ∗, ḡ⟩)\n-- the process ({a, b, f, g}, {A, B, C}), a at x, b at y",
+   "meaning": "Both threads get the same flag, so they close $a$ and $b$ in the same order in each run. E-Case types both arms of a thread in one world, so A asks $x \\prec \\overline{y}$ and $y \\prec \\overline{x}$, and B asks $\\overline{x} \\prec y$ and $\\overline{y} \\prec x$. A derivation of the process types each thread in a world contained in its own world, with the two ends of each channel at dual points. That world then holds the cycle $x \\prec \\overline{y} \\prec x$, so no bound, annotation or world types the process. In the term relation the received flag is either value of $V$ at $\\ast \\oplus \\ast$, so each thread has to be in $E$ for both flags. With $\\mathsf{inl}$ thread A closes $a$ while it holds $b$ and asks $x \\prec \\overline{y}$. With $\\mathsf{inr}$ thread B closes $\\overline{b}$ while it holds $\\overline{a}$ and asks $\\overline{y} \\prec x$. The join of the two worlds then has a cycle, and P-Connect asks a consistent join. One such thread alone fits in a consistent world, the pair does not. The flag is sent on an internal channel, so the process relation of the closed process reads only its actual reductions, in which both threads take the same branch. Following them puts the process in $P$ directly. This last argument has no Rocq proof.",
    "source": [
     {
      "file": "examples/FlagPair.v",
      "names": [
       "fp_gate",
-      "fp_unrealizable"
+      "fp_unrealizable",
+      "fpv_case_needs",
+      "ptyped_threads",
+      "fp_static_rejected"
      ]
     }
    ],
@@ -20233,7 +20236,7 @@
     "df": {
      "ok": false,
      "part": "P-Connect",
-     "rocq": "argued, no Rocq proof. fp_unrealizable shows that no world holds both threads in E for both flags"
+     "rocq": "fp_static_rejected, for every world, bound and annotation. Each thread asks both orders of its two closes, and the world of the derivation has the cycle x ≺ ȳ ≺ x"
     },
     "sem": {
      "ok": true,
@@ -20526,6 +20529,54 @@
    }
   },
   {
+   "id": "ex-bit",
+   "title": "The bit program",
+   "lead": "A thread that branches on a received bit closes two channels in either order. [[r-data|E-Case]] types both arms in one world, and the program types because the two ends of each channel have dual points.",
+   "code": "main = let ⟨e, e′⟩ = new in          -- e at ρ, with the six facts below\n       let ⟨c, c′⟩ = new in          -- at the field ρ·0\n       let ⟨d, d′⟩ = new in          -- at the field ρ·1\n       let ∗ = spawn (λu. close (send ⟨inj₁ ∗, e′⟩)) in\n       let ∗ = spawn (λu. close c′) in let ∗ = spawn (λu. close d′) in\n       let ⟨v, e⟩ = recv e in let ∗ = close e in\n       case v of inl w ⇒ let ∗ = w in let ∗ = close c in close d\n               | inr w ⇒ let ∗ = w in let ∗ = close d in close c",
+   "meaning": "The main thread holds $c$ at $\\rho\\cdot 0$ and $d$ at $\\rho\\cdot 1$, and the dual ends are at $\\overline{\\rho\\cdot 0}$ and $\\overline{\\rho\\cdot 1}$. The arm $\\mathsf{inl}$ closes $c$ while it holds $d$ and asks $\\rho\\cdot 0 \\prec \\overline{\\rho\\cdot 1}$. The arm $\\mathsf{inr}$ asks $\\rho\\cdot 1 \\prec \\overline{\\rho\\cdot 0}$. The receive and the close of $e$ ask $\\rho \\prec \\overline{\\rho\\cdot 0}$ and $\\rho \\prec \\overline{\\rho\\cdot 1}$, and the same two facts at $\\rho^{+}$. The creation of $e$ states these six facts. They end in the tree of $\\rho$, and a rank that counts three per offset, five per field and one for a negative point rises along each fact and along program order. With one point per channel the two arms would ask $\\rho\\cdot 0 \\prec \\rho\\cdot 1$ and $\\rho\\cdot 1 \\prec \\rho\\cdot 0$, a cycle. The program types\\inmode{lf}{ at $N = \\infty$} and is deadlock free.",
+   "source": [
+    {
+     "file": "examples/BitProgram.v",
+     "names": [
+      "bit_main",
+      "bit_wf_new",
+      "bit_dftyped",
+      "bit_deadlock_free"
+     ]
+    }
+   ],
+   "x-gv-accepts": {
+    "df": {
+     "ok": true,
+     "rocq": "bit_dftyped, bit_deadlock_free"
+    }
+   }
+  },
+  {
+   "id": "ex-milner",
+   "title": "Milner's cyclic scheduler",
+   "lead": "Three agents on a ring pass a token and report to their collectors. The six channels have points at one base and its fields. The facts the agents ask rise with the field label, so [[r-new|E-New]] accepts the creation of the base.",
+   "code": "sendclose r = close (send ⟨∗, r⟩)\nrecvclose r = let ⟨u, r⟩ = recv r in let ∗ = u in close r\nA₀ = let ∗ = sendclose c₀ in let ∗ = recvclose d₀ in sendclose a₀   -- main\nAᵢ = let ∗ = recvclose dᵢ in let ∗ = sendclose aᵢ in sendclose cᵢ   -- i = 1, 2, spawned\nPᵢ = recvclose bᵢ                                                 -- i = 0, 1, 2, spawned\n-- c₀, d₁ at ρ   a₁, b₁ at ρ·1   c₁, d₂ at ρ·2\n-- a₂, b₂ at ρ·3   c₂, d₀ at ρ·4   a₀, b₀ at ρ·5",
+   "meaning": "Agent $A_0$ starts the round by sending on $c_0$. Agent $A_i$ waits on $d_i$, reports on $a_i$ and passes the token on $c_i$. The ends $c_i$ and $d_{(i+1) \\bmod 3}$ belong to one channel, which closes the ring. Let $k_0 = \\rho$ and $k_i = \\rho\\cdot i$ for $1 \\leq i \\leq 5$. The sending end of the channel at $k_i$ has the point $k_i$ and the receiving end the point $\\overline{k_i}$. Each agent acts on an end while it holds the ends it uses later. Each such fact has the form $u \\prec v$ with $u \\in \\{k_i, \\overline{k_i}\\}$ and $v \\in \\{k_j, \\overline{k_j}\\}$ for some $i < j$. The close after each action asks the same fact at $u^{+}$. The first creation states these 18 facts, and a rank that reads the field label first rises along each fact and along program order. The scheduler types\\inmode{lf}{ at $N = \\infty$} and is deadlock free.",
+   "source": [
+    {
+     "file": "examples/MilnerSched.v",
+     "names": [
+      "ms_main",
+      "ms_wf_new",
+      "ms_dftyped",
+      "ms_deadlock_free"
+     ]
+    }
+   ],
+   "x-gv-accepts": {
+    "df": {
+     "ok": true,
+     "rocq": "ms_dftyped, ms_deadlock_free"
+    }
+   }
+  },
+  {
    "id": "ex-sinst",
    "title": "Why session types are contractive",
    "lead": "Without contractivity a derivation at one instance of a session variable gives none at another. It shows why [[ty-session|session types]] are contractive and why [[t-subs|Sub-Box]] asks contractivity.",
@@ -20676,7 +20727,7 @@
    "title": "A waiting chain that grows forever",
    "lead": "A deadlock-free program in which a chain of waiting threads grows forever. The box cannot call itself one level lower at a finite bound under the creations of [[r-new|E-New]], and the rejection is proved.",
    "code": "grow = !(f = λw. let ⟨c, c′⟩ = new in                 -- c below the point of w\n                 let ⟨d, d′⟩ = new in let ∗ = spawn (λ_. recvclose d′) in\n                 let ∗ = close (send ⟨∗, d⟩) in              -- one session action\n                 let ∗ = spawn (λ_. (force f) c′) in\n                 let ∗ = close c in close w)                 -- waits on its child\nmain = let ⟨w, w′⟩ = new in let ∗ = spawn (λ_. close w′) in (force grow) w\n-- every thread waits on the one it spawned, close w′ never proceeds",
-   "meaning": "Each thread spawns a child, waits on it, and the child does the same. Closing $c$ while the thread holds $w$ asks the point $q$ of $c$ below $\\overline{s}$, where $s$ is the point of $w$. The child holds $c'$ at $\\overline{q}$ and forces the box there, so the box must hold its constraint at an instance whose dual point lies below $\\overline{s}$. The proof reads each derivation at each ranked world in which the facts of its context hold. It reads a value through its points, the witnesses of its existentials and the constraint of a box, and E-Sub, E-Pack and E-Open keep this reading. A creation at a fresh base under $\\mathsf{gen\\_new}$ extends each such world, with excluded middle as a hypothesis, and a creation at a field keeps the world. So each call of the box at such a world leads to a call at an extension with a strictly lower dual point, and ranks admit no infinite descent. No context whose facts hold in a ranked world types the program at a finite bound, and the process of its one thread is not in the lock-free judgment. The argument uses only that each creation extends each ranked world of its context. So each premise of E-New with this property rejects the program as well, which is argued.",
+   "meaning": "Each thread spawns a child, waits on it, and the child does the same. Closing $c$ while the thread holds $w$ asks the point $q$ of $c$ below $\\overline{s}$, where $s$ is the point of $w$. The child holds $c'$ at $\\overline{q}$ and forces the box there, so the box must hold its constraint at an instance whose dual point lies below $\\overline{s}$. The proof reads each derivation at each ranked world in which the facts of its context hold. It reads a value through its points, the witnesses of its existentials and the constraint of a box, and E-Sub, E-Pack and E-Open keep this reading. A creation at a fresh base under $\\mathsf{gen\\_new}$ extends each such world, with excluded middle as a hypothesis, and a creation at a field keeps the world. So each call of the box at such a world leads to a call at an extension with a strictly lower dual point, and ranks admit no infinite descent. No context whose facts hold in a ranked world types the program at a finite bound, and the process of its one thread is not in the lock-free judgment. The argument uses only that each creation extends each ranked world of its context. So each premise of E-New with this property rejects the program as well, which is argued. At $N = \\infty$ the program types and is deadlock free. The box hypothesis at the point $s$ of $w$ is $H(s) = \\{ t\\cdot 0 \\prec \\overline{t} \\mid t = s \\text{ or } t = \\overline{s\\cdot\\kappa_1\\cdots\\kappa_k},\\ k \\geq 1 \\}$, so $H(\\overline{s\\cdot 0}) \\subseteq H(s)$ and the child forces the box where its hypothesis holds. The thread creates $d$ at a fresh base $\\pi$. Its constraint puts $\\pi$ and $\\pi^{+}$ below each head the thread holds. These heads are $\\overline{s}$, $s\\cdot 0$ and $\\overline{s\\cdot 0}$. main creates $w$ at a fresh base $\\rho$ with the facts $H(\\rho)$, which hold in no ranked world and satisfy $\\mathsf{acyc\\_new}$.",
    "modes": [
     "lf"
    ],
@@ -20703,13 +20754,23 @@
       "gen_new",
       "new_ok"
      ]
+    },
+    {
+     "file": "examples/RxChain.v",
+     "names": [
+      "rcH_desc",
+      "rc_acyc",
+      "rc_C_acyc",
+      "rc_dftyped",
+      "rc_term",
+      "rc_deadlock_free"
+     ]
     }
    ],
    "x-gv-accepts": {
     "df": {
      "ok": true,
-     "part": "argued, no Rocq proof",
-     "rocq": "argued, no Rocq proof"
+     "rocq": "rc_dftyped, rc_deadlock_free"
     },
     "lf": {
      "ok": false,

@@ -1,10 +1,10 @@
 (** * P-Connect, environments of an external send of the composite (stage S4)
 
     p1 sends on its interface end o. It moves the ends Σv1 of its
-    environment and Θe1 of its restricted channels, and the partners Σe1
-    of those of Θe1 whose partner stays join its interface. In the
+    environment and Θe1 of its restricted channels, and the dual ends Σe1
+    of those of Θe1 whose dual end stays join its interface. In the
     composite the moved cut ends are restricted, so they move with Θe,
-    and their partners in p2 join the interface of the composite. The
+    and their dual ends in p2 join the interface of the composite. The
     environments read here are those of the composite's Q-Send, and the
     cut after the send is re-split by the composite's new interface
     ([conn_filter]). *)
@@ -383,8 +383,8 @@ End send_env.
 (** ** Environments of an external receive of the composite
 
     p1 receives Θ2 on an interface end (already retyped in Σ1). An end of
-    Θ2 whose partner lies in Σ2 stays in the interface of p1 and becomes
-    a cut end, its partner the matching end of p2. *)
+    Θ2 whose dual end lies in Σ2 stays in the interface of p1 and becomes
+    a cut end, its dual end the matching end of p2. *)
 Section recv_env.
   #[local] Set Default Proof Using "All".
   Context (Σ1 ΣC Σ2 ΣD : senv) (C1 C2 : gset chan) (Hc : conn Σ1 ΣC C1 Σ2 ΣD C2).

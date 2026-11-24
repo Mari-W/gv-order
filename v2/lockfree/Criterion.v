@@ -68,7 +68,7 @@ Proof. intros H x. induction (H x) as [x _ IH]. intros Hx. exact (IH x Hx Hx). Q
     only through a relation [wt k t s] at each position k: t is pending,
     s is a thread, the chain of dependencies from t reaches an enabled
     thread, and the four clauses below hold of it. The lock-free judgment
-    takes the holder of the partner end in the soup's ownership
+    takes the thread holding the dual end in the soup's ownership
     (soup/LFAdequacy.v), because a term may name an end in code it never
     runs. *)
 Section criterion.

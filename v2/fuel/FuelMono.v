@@ -524,7 +524,7 @@ Lemma FuelE_frame_mono N n σ d d' Π φ e :
   fle d d' → e ∈ F^N _ n⟦σ ▷ d⟧(Π, φ) → e ∈ F^N _ n⟦σ ▷ d'⟧(Π, φ).
 Proof. intros Hd. apply FuelE_mono; [apply cle_refl|done]. Qed.
 
-(** ** Renaming of ends (a link renames the partner of its removed end) *)
+(** ** Renaming of ends (a link renames the dual end of its removed end) *)
 
 Lemma FuelE_rename N n σ d Π φ e (h : cend → cend) Π1 φ1 :
   kinj h Π → kinj h φ → renk h Π Π1 → renk h φ φ1 →

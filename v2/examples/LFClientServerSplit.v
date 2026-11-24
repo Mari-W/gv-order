@@ -3,7 +3,7 @@
       cli ⟨a⁺, b⁺⟩  ∥_{a, b}  srv ⟨a⁻, b⁻⟩
 
     The channels a and b of examples/LFClientServer.v are the cut Σ_C,
-    a⁺ at the constant root ρ and b⁺ at ρ·0. The client forces its box at
+    a⁺ at the constant base ρ and b⁺ at ρ·0. The client forces its box at
     (ρ, ρ·0, ρ·1) and the server at (ρ‾, (ρ·0)‾, ρ·1). Each component
     lives in a static world of its own, which holds the instances of the
     box constraint it uses (the laws [cs_L] at polarity true and false).

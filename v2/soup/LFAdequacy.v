@@ -9,21 +9,21 @@
     the run computes ([lf_run_state]).
 
     - The dependency [wt k t s]: t is pending on an end o and s owns the
-      partner of o in the ownership K_k. Ownership is fixed outside the
+      dual end of o in the ownership K_k. Ownership is fixed outside the
       index, so the holder is unique.
-    - Local progress: the holder of the partner is enabled, or acts on
-      the partner (then the two redexes fit and t is enabled), or waits on
+    - Local progress: the thread holding the dual end is enabled, or acts on
+      the dual end (then the two redexes fit and t is enabled), or waits on
       an end below the end of t (readiness). By well-founded induction on
       the point, ordered by ≺_W.
     - The rank of t is the point of its end in K_k. A thread that does not
       step keeps it, a link renames the end and keeps the point.
-    - The measure of t is the counter of the partner end in K_k, ordered
+    - The measure of t is the counter of the dual end in K_k, ordered
       by < on ℕ. A step of the holder on another end ticks the counter,
-      which F-Tick keeps at 1 or more because the partner is not idle
+      which F-Tick keeps at 1 or more because the dual end is not idle
       (F-Wait of t and [idle_dual]), and a send passes it on with one
-      unit less. A spawn passes the partner end to the child at its
+      unit less. A spawn passes the dual end to the child at its
       counter, and the holder then becomes a child of the old holder
-      ([lf_stay]). A link of the partner end gives t a new partner, whose
+      ([lf_stay]). A link of the dual end gives t a new dual end, whose
       counter lies below the old one by the tickets of the link
       (F-Link, [sp_cap], [sp_tsum], [lgt_tsum_lt]). Every other step keeps
       it.
@@ -284,7 +284,7 @@ Section run.
   Lemma act_end_of a1 o σ : aend a1 = Some o → offers a1 (LSess σ) → act_end σ = Some o.
   Proof. destruct a1, σ; simpl; intros [= <-]; try done; intros; destruct_and?; by subst. Qed.
 
-  (** The partner of a pending end is not idle. *)
+  (** The dual end of a pending end is not idle. *)
   Lemma partner_busy k t e a1 o (A : senv) (Π : penv) U :
     soup_inv N (onat 1) (wk k) ∅ T (ak k) A Π U →
     (r k).2 !! t = Some e → act e = Some a1 → aend a1 = Some o →
@@ -314,7 +314,7 @@ Section run.
   Lemma fspare_one Πs φs X x m c : fspare Πs φs X → x ∈ X → φs !! x = Some (Some m, c) → ¬ idle_at Πs x → 1 ≤ m.
   Proof. intros H Hx Hφ Hi. pose proof (H x (Some m, c) Hx Hφ Hi) as Hle. simpl in Hle. lia. Qed.
 
-  (** The new partner after a link: the partner of o1 now holds o2. *)
+  (** The new dual end after a link: the dual end of o1 now holds o2. *)
   Lemma link_lookup (K : own) o1 o2 a :
     a ≠ o1 → a ≠ o2 → kmapr (csub o1 o2) (kdel2 o1 o2 K) !! csub o1 o2 a = K !! a.
   Proof.
@@ -328,7 +328,7 @@ Section run.
   Qed.
 
   (** The measure stays while the holder steps administratively; the
-      holder is the same thread, or a child it spawned with the partner end. *)
+      holder is the same thread, or a child it spawned with the dual end. *)
   Definition lf_stay (k t : nat) : Prop :=
     fu (S k) t = fu k t ∧ (∀ s, wt k t s → s ∉ lparts (l k) → wt (S k) t s) ∧
     ∀ s, wt k t s → s ∈ lparts (l k) → free_at (r k) s ∧
@@ -403,7 +403,7 @@ Section run.
       + intros Hsu. exact (istep_free_actor _ _ _ s (proj1 Hst) ltac:(cbn; discriminate) Hsu).
     - destruct (istep_spawn_inv _ _ _ _ _ (proj1 Hst)) as (eu & e' & Heu & Hsu & Hj & Hj' & Hdom).
       destruct (decide (edual o ∈ fends v)) as [HM|HM].
-      + (* the partner end goes to the child at its counter: the holder
+      + (* the dual end goes to the child at its counter: the holder
            changes to a child of the old one *)
         right. assert (s = u) as ->.
         { simpl in Hen. exact (owns_unique _ _ _ _ (ex_intro _ h' (conj Kh' Eh')) (Hen _ HM)). }
@@ -510,7 +510,7 @@ Section run.
       + right. apply Hconv, Hright; [(apply Hnl; intros ?????; discriminate)| |].
         * apply (own_next_keep (tcs k) _ _ s); [split; done|intros ?????; discriminate|simpl; set_solver|done|done].
         * intros Hx. simpl in Hx. exfalso. apply Hsij. set_solver.
-    - (* a link: no counter changes, the partner of a linked end changes *)
+    - (* a link: no counter changes, the dual end of a linked end changes *)
       simpl in Ht. assert (t ≠ u) as Htu by set_solver.
       simpl in Hen. destruct Hen as (H1 & H2 & H12).
       destruct (istep_link_inv _ _ _ _ _ _ (proj1 Hst)) as (eu & e' & Heu & Hsu).
@@ -530,7 +530,7 @@ Section run.
       assert (G2 : ctrs (s_K (ak k)) u !! o2 = Some (hctr h2)) by (apply lookup_ctrs; by exists h2).
       destruct (Hlok o1 o2 _ _ eq_refl H12 G1 G2) as [L1 L2]. simpl in L1, L2.
       destruct (decide (edual o = o1)) as [Eo1|Ne1]; [|destruct (decide (edual o = o2)) as [Eo2|Ne2]].
-      + (* t waits on the partner of o1, which now faces the partner of o2 *)
+      + (* t waits on the dual end of o1, which now faces the dual end of o2 *)
         left. subst o1. rewrite Kh' in Kh1. injection Kh1 as <-.
         assert (o2 ≠ edual (edual o)) as Hn2 by (rewrite edual_edual; done).
         assert (Hc : csub (edual o) o2 o = o2) by (unfold csub; rewrite edual_edual, decide_True; done).
@@ -548,7 +548,7 @@ Section run.
         rewrite <-Hc2, link_lookup by done. rewrite Kr2, Kh', Hm.
         destruct (Hcap _ r2 Kr2) as [Hc3 _]. rewrite Ekr in Hc3. simpl.
         destruct (h_ctr r2) as [c2|]; simpl in *; lia.
-      + (* t waits on o2, whose partner is now the partner of o1 *)
+      + (* t waits on o2, whose dual end is now the dual end of o1 *)
         left. subst o2. rewrite Kh' in Kh2. injection Kh2 as <-.
         assert (o ≠ edual o1) as Hn1 by (intros Hx; apply Ne1; by rewrite Hx, edual_edual).
         assert (Hc : csub o1 (edual o) o = o) by (apply csub_eq_off; done).
@@ -567,7 +567,7 @@ Section run.
         rewrite Hlk. rewrite Kr1, Kh', Hm.
         destruct (Hcap _ r1 Kr1) as [Hc3 _]. rewrite Ekr in Hc3. simpl.
         destruct (h_ctr r1) as [c1|]; simpl in *; lia.
-      + (* the link does not touch the partner of t *)
+      + (* the link does not touch the dual end of t *)
         right. apply Hconv. assert (o ≠ edual o1) as Hn1 by (intros Hx; apply Ne1; by rewrite Hx, edual_edual).
         assert (Hc : csub o1 o2 o = o) by (apply csub_eq_off; done).
         assert (edual o ≠ edual o1) as Hd by (intros Hx; apply Ho1; by apply edual_inj).

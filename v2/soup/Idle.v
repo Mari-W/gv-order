@@ -4,7 +4,7 @@
     with [idle_hd] and [idle_sequiv]).
     The soup pairs the protocols of the two ends of a channel up to ≈ and
     duality, and adequacy moves "not idle" from the end a pending thread
-    acts on to its partner. [idle_dual] is the step: S' ≈ dual S gives
+    acts on to its dual end. [idle_dual] is the step: S' ≈ dual S gives
     idle S ↔ idle S'. *)
 
 From GV Require Export fuel.Fuel types.Duality.

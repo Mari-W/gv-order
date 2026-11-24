@@ -1,9 +1,9 @@
 (** * Points (stage S2, proposal §2.3)
 
-    root   r ::= a | ι              a constant, a point variable
+    base   r ::= a | ι              a constant, a point variable
     point  x ::= r | x⁺ | x·κ | x‾
 
-    A point is a name with a polarity and an offset. A name is a root or
+    A point is a name with a polarity and an offset. A name is a base or
     the field (p, b)·κ of the name p at offset b. The dual x‾ flips the
     polarity, the shift x⁺ raises the offset and keeps the polarity, and
     the field x·κ ignores the polarity of x (x‾·κ = x·κ) and is positive
@@ -12,7 +12,7 @@
 
     An action moves an end from x to x⁺, a select of branch i to
     (x·κ_i)‾ and a branch to x·κ_i. The ends a message on x carries sit
-    at the fields x·0, x·1, …, and [new] creates at a fresh root or at a
+    at the fields x·0, x·1, …, and [new] creates at a fresh base or at a
     field x·κ. The continuation of choice i and the i-th payload field share
     a point by design (proposal §2.3). *)
 
@@ -84,7 +84,7 @@ Open Scope point_scope.
 (** y read at polarity b: y for [true], y‾ for [false]. *)
 Definition pt_polar (b : bool) (y : point) : point := if b then y else y‾.
 
-(** The root of a point and the point of a root at offset 0. *)
+(** The base of a point and the point of a base at offset 0. *)
 Fixpoint pn_root (p : pname) : pname :=
   match p with NField q _ _ => pn_root q | r => r end.
 Definition pt_root (x : point) : pname := pn_root (pt_name x).
@@ -187,7 +187,7 @@ Proof. intros H. induction p; simpl; rewrite ?IHp; auto. Qed.
 Lemma pt_inst_ext σ τ x : (∀ a, σ a = τ a) → pt_inst σ x = pt_inst τ x.
 Proof. intros H. unfold pt_inst. by rewrite (pn_inst_ext σ τ). Qed.
 
-(** Only the variables of the root matter. *)
+(** Only the variables of the base matter. *)
 Lemma pn_inst_ext_root σ τ p :
   (∀ a, pn_root p = NVar a → σ a = τ a) → pn_inst σ p = pn_inst τ p.
 Proof. intros H. induction p; simpl in *; rewrite ?IHp; auto. Qed.
@@ -213,7 +213,7 @@ Proof.
   intros a Ha. by destruct (H a).
 Qed.
 
-(** The root of an instance is the root of the instance of the root. *)
+(** The base of an instance is the base of the instance of the base. *)
 Lemma pn_root_inst σ p :
   pt_root (pn_inst σ p) = pt_root (pn_inst σ (pn_root p)).
 Proof. induction p; simpl; try done; by rewrite <-IHp. Qed.
@@ -273,7 +273,7 @@ Proof. by destruct g. Qed.
 Lemma fact_map_ext (f f' : point → point) g : (∀ x, f x = f' x) → fact_map f g = fact_map f' g.
 Proof. intros H. destruct g; simpl; by rewrite !H. Qed.
 
-(** The root of a name is a variable below k. *)
+(** The base of a name is a variable below k. *)
 Fixpoint pn_vb (k : nat) (p : pname) : Prop :=
   match p with
   | NVar a => a < k
@@ -388,7 +388,7 @@ Proof. by destruct o. Qed.
 (** ** The tree of a constant read back as the tree of the variable 0
 
     A creation at a fresh constant a instantiates the variable 0 of its
-    constraint at the root a. [pt_unroot a] inverts that instance on the
+    constraint at the base a. [pt_unroot a] inverts that instance on the
     tree of a, so a rank of the static tree of 0 ranks the tree of a. *)
 Fixpoint pn_unroot (a : nat) (p : pname) : pname :=
   match p with

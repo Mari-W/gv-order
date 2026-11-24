@@ -295,7 +295,7 @@ Proof.
 Qed.
 
 (** A link: the credit of each linked end exceeds what the bound leaves
-    the partner of the other ([lgt]), and the counters are above the
+    the dual end of the other ([lgt]), and the counters are above the
     credits. *)
 Lemma link_redex N n S x a1 m1 a2 m2 Π φ d v :
   lgt N a1 m2 → lgt N a2 m1 →

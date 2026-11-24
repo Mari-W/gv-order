@@ -275,7 +275,7 @@ Proof. intros H. by rewrite <-dual_unfoldS, H. Qed.
 Lemma unfold_dual_with S0 S1 S2 : unfoldS S0 = SWith S1 S2 → unfoldS (dual S0) = SPlus (dual S1) (dual S2).
 Proof. intros H. by rewrite <-dual_unfoldS, H. Qed.
 
-(** The partner of a send receives the same payload type up to ≈. *)
+(** The dual of a send receives the same payload type up to ≈. *)
 Lemma sdual_snd S0 S0' m U S :
   sdual S0 S0' → unfoldS S0 = SSeq (SSnd m U) S →
   ∃ U' S', unfoldS S0' = SSeq (SRcv m U') S' ∧ teq (ty_df U') (ty_df U) ∧ sdual S S'.

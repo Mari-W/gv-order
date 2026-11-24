@@ -3,10 +3,10 @@
     Readiness ready_W excludes circular waiting. It is the readiness of
     theories/relation/Readiness.v with one entry per end. A term with
     future F that is stable and reducible offers some held ends, and every
-    offered end lies below the partner point of every held end it does not
+    offered end lies below the dual point of every held end it does not
     offer, and below every point of F. A process offers some interface
     end, and every interface end it holds and does not offer has an
-    offered end below its partner point. A link redex compares nothing.
+    offered end below its dual point. A link redex compares nothing.
 
     The environments of the relation map an end to a session type at a
     point, S@x, with no credit: Θ and Σ share the type [senv] of

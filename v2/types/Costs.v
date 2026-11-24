@@ -62,7 +62,7 @@ Proof. destruct f, a; simpl; lia. Qed.
     An end type carries its tickets m, an upper bound on the counter of
     the end, with credit a ≤ m. The judgment bound N bounds the tickets
     of the two ends of every channel, tk(o) + tk(ō) ≤ N, so an end with m
-    tickets has a partner with at most N − m. E-Link asks of the two
+    tickets has a dual end with at most N − m. E-Link asks of the two
     linked ends a1 + m2 > N and a2 + m1 > N ([lgt]). At N = ∞ both
     premises hold. Tickets range over ℕ ∪ {∞}, and deadlock-free typing
     puts them at ∞ (decision of 2026-11-21,
@@ -98,7 +98,7 @@ Lemma tsum_ncap N m : fle m N → tsum_ok N m (ncap N m).
 Proof. unfold tsum_ok. destruct N as [k|], m as [m|]; simpl; try lia; done. Qed.
 
 (** Half of the bound, the tickets of an interface end and of the
-    positive end of a channel at a fresh root. *)
+    positive end of a channel at a fresh base. *)
 Definition fhalf (N : fuel) : fuel := (λ k, Nat.div2 k) <$> N.
 
 Lemma fhalf_le N : fle (fhalf N) N.
@@ -115,9 +115,9 @@ Qed.
 
 (** The arithmetic of a link. Let o1, o2 be the linked ends with
     counter c1 and tickets m1, m2, and r1, r2 the tickets of their
-    partners. From c1 + m2 > N, c1 ≤ m1, m1 + r1 ≤ N and m2 + r2 ≤ N
-    the two partners meet the bound together, and the tickets of the
-    partner of o2 lie below c1. *)
+    dual ends. From c1 + m2 > N, c1 ≤ m1, m1 + r1 ≤ N and m2 + r2 ≤ N
+    the two dual ends meet the bound together, and the tickets of the
+    dual end of o2 lie below c1. *)
 Lemma link_tsum N c1 m1 m2 r1 r2 :
   lgt (Some N) c1 m2 → fle c1 m1 → tsum_ok (Some N) m1 r1 → tsum_ok (Some N) m2 r2 →
   tsum_ok (Some N) r1 r2.

@@ -150,7 +150,7 @@ Qed.
 (** ** The classes of an end under a cut
 
     An end lies in at most one of Σ1, ΣC, Σ2, ΣD, the channels C1 and
-    C2, and its partner lies only where the cut puts it. *)
+    C2, and its dual end lies only where the cut puts it. *)
 Section classes.
   Context (Σ1 ΣC Σ2 ΣD : senv) (C1 C2 : gset chan) (Hc : conn Σ1 ΣC C1 Σ2 ΣD C2).
 
@@ -236,7 +236,7 @@ Lemma cls_D Σ1 ΣC Σ2 ΣD C1 C2 o : conn Σ1 ΣC C1 Σ2 ΣD C2 → o ∈ dom �
   edual o ∉ dom Σ2 ∧ edual o ∉ dom ΣD ∧ edual o ∉ dom Σ1 ∧ edual o ∈ dom ΣC.
 Proof. intros Hc. apply (cls_C Σ2 ΣD Σ1 ΣC C2 C1). by apply conn_sym. Qed.
 
-(** A pair of partners in the environment after a receive is a pair
+(** A pair of dual ends in the environment after a receive is a pair
     before it. *)
 Lemma pfree_recv_env (Σ Θ2 : senv) : recv_ok Σ Θ2 → pfree Σ → pfree (recv_env Σ Θ2).
 Proof.

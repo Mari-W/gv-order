@@ -35,7 +35,7 @@
     branch) and sets its counter back to its tickets, every other end of
     an actor ticks, the ends of a sent or spawned value move to the
     receiver or the child with their counters minus one, a close removes
-    both ends, and a link removes its two ends and renames the partner of
+    both ends, and a link removes its two ends and renames the dual end of
     the removed channel ([csub]). No counter changes at a link.
 
     The lock-free judgment is the soup alone (Q12, decided 2026-11-18).

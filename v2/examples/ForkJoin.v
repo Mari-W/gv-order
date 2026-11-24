@@ -7,7 +7,7 @@
 
     One round of binary fork-join. The worker waits for the replies of
     its two children and then answers its parent. main creates w at a
-    fresh root ρ and keeps the end at ρ. The worker holds w′ at ι = ρ‾
+    fresh base ρ and keeps the end at ρ. The worker holds w′ at ι = ρ‾
     and creates both child channels at the fields ι·0 and ι·1 by
     E-New-Field. It keeps the ends at the fields and closes them first,
     so readiness asks ι·0 ≺ (ι·1)‾ and ι·0 ≺ ῑ for the first close and
@@ -23,7 +23,7 @@
       box hypothesis H is infinite and closed under the descent to a
       child, and the laws of ρ hold an infinite descending chain.
     - [fj_wait_needs]: every typing of close a; close b at any bound,
-      over a world whose facts sit at constant roots,
+      over a world whose facts sit at constant bases,
       asks the point of a below the head of b. In the recursive worker
       the child's end sits at the dual of the parent's, so the recursive
       force needs H at an instance whose dual lies below ῑ. Under
@@ -45,7 +45,7 @@ Definition fj_P (g : fact) : Prop :=
   g = FLt (ρ·0) (ρ·1)‾ ∨ g = FLt (ρ·0) ρ‾ ∨ g = FLt (ρ·1) ρ‾.
 Definition fj_H : bcs := BCs [] fj_P.
 
-(** The laws of the root of w, H at ρ‾. A field is the same from both
+(** The laws of the base of w, H at ρ‾. A field is the same from both
     ends, ρ‾·κ = ρ·κ. *)
 Definition fj_L (g : fact) : Prop :=
   g = FLt (ρ·0) (ρ·1)‾ ∨ g = FLt (ρ·0) ρ ∨ g = FLt (ρ·1) ρ.
@@ -237,7 +237,7 @@ Proof. exact (soundness _ _ TUnit fj_term). Qed.
     F(x) = {x·0 ≺ (x·1)‾, x·0 ≺ x‾, x·1 ≺ x‾}. The child of c1 forces the
     box at ι′ = (ι·0)‾. The box hypothesis H(ι) is F(ι) together with
     F((ι·w)‾) for every nonempty word w of fields, so H(ι′) ⊆ H(ι)
-    ([fjH_desc]). main creates w at a fresh root ρ with the laws H(ρ‾),
+    ([fjH_desc]). main creates w at a fresh base ρ with the laws H(ρ‾),
     which descend forever, ρ ≻ ρ·0 ≻ ρ·0·0 ≻ …. (gen-new) rejects them.
     (acyc-new) accepts them ([fjr_acyc]): C with program order is acyclic,
     by the order of offset, then polarity, then depth reversed, and no
@@ -306,7 +306,7 @@ Proof.
   intros a Ha. rewrite Hx in Ha. injection Ha as <-. done.
 Qed.
 
-(** A fact of H at an instance of the hypothesis of the root x. *)
+(** A fact of H at an instance of the hypothesis of the base x. *)
 Lemma fjH_slt W Γ (x : point) u v : pt_root x = NVar 0 →
   (BCs [] (fjH x), ids 1) ∈ hc_hyps Γ → fjH x (FLt u v) → slt W Γ u v.
 Proof.
@@ -318,7 +318,7 @@ Qed.
 
 Definition fjr_H : bcs := BCs [] (fjH ρ).
 
-(** The laws of the root of w, H at ρ‾. *)
+(** The laws of the base of w, H at ρ‾. *)
 Definition fjr_L : fact → Prop := fjH ρ‾.
 
 (** ** (acyc-new) for the laws *)
@@ -1146,7 +1146,7 @@ Proof. exact (soundness _ _ TUnit fib_term). Qed.
     the same box there, so it needs H at an instance ι′ = p‾ with
     ῑ′ = p ≺ ῑ. Proposition 7 of docs/redesign/check-general-new.md shows
     that W, Γ and H then have no common model of rank, for a field
-    creation and for a fresh root alike, so under (gen-new) main cannot
+    creation and for a fresh base alike, so under (gen-new) main cannot
     force the box. examples/Descent.v proves it for every derivation
     ([prop7], [fjr_lf_rejected]). Strict worlds have no least rank, so
     the argument does not apply to the deadlock-free judgment

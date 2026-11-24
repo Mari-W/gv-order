@@ -12,7 +12,7 @@
       of Γb extends to, and there forces the box at an instance xs′
       with H at xs′ and f(xs′) ≺ f(ιs). Then W, Γ0 and H have no common
       ranked model. [prop7_new] discharges the extension for a creation
-      at a fresh root under (gen-new), with excluded middle
+      at a fresh base under (gen-new), with excluded middle
       ([gen_new_ext]), and [prop7_fld] for a field creation.
     - [rx_chain_rejected]: rx-chain has no typing at any finite N, in
       any context that has a ranked model. [rx_chain_proc_rejected]:
@@ -29,7 +29,7 @@
     and the constraint and parameter of a box. E-Sub, E-Pack and E-Open
     keep [PV] ([PV_tsub], [PV_pack], [spo_sem]), so the argument holds
     whatever existentials the derivation packs or opens, at a fresh
-    root or at a field. One round of the box body, read at a model of
+    base or at a field. One round of the box body, read at a model of
     its context ([box_enter]), creates c at a point q, closes c while
     it holds w at s, which asks q ≺ s̄ ([close_PV]), and spawns a child
     that forces the box at an instance where its constraint holds and
@@ -585,7 +585,7 @@ Section spo_sem.
   Qed.
 End spo_sem.
 
-(** ** A creation at a fresh root under (gen-new)
+(** ** A creation at a fresh base under (gen-new)
 
     The world construction of [Erel_new] (compat/Redex.v): every ranked
     world W1 with the semantic (gen-new) of C grows to a world that
@@ -735,7 +735,7 @@ Section values.
     by apply (Hc R); [apply wext_refl|].
   Qed.
 
-  (** A creation, at a fresh root or at a field, yields the two ends of
+  (** A creation, at a fresh base or at a field, yields the two ends of
       a channel at q and q̄, in a world that may grow. *)
   Lemma new_PV (EM : excluded_middle) n Θ Γ Δ F T c R σ γ : typed W (Some n) Θ Γ Δ F ENew T c →
     wranked R → wmodels R W → hsat R σ Γ → PΔ R σ Δ γ →
@@ -1049,7 +1049,7 @@ Section prop7.
       by rewrite E1, E2 in Hlt.
   Qed.
 
-  (** The branch creates at a fresh root under (gen-new). E-Open adds
+  (** The branch creates at a fresh base under (gen-new). E-Open adds
       the constraint C of the creation, and every model extends by
       [gen_new_ext]. *)
   Corollary prop7_new (EM : excluded_middle) Γ0 m H C xs' f :
@@ -1090,7 +1090,7 @@ End prop7.
                        let ∗ = close c in close w)
       main = let ⟨w, w′⟩ = new in let ∗ = spawn (λ_. close w′) in (force grow) w
 
-    Each new is plain, so a derivation may create at a fresh root or at
+    Each new is plain, so a derivation may create at a fresh base or at
     a field. *)
 
 Definition rc_body : expr :=

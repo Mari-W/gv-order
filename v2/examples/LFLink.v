@@ -4,7 +4,7 @@
     the creation tickets fixed at N/2 and N − N/2 it types for no even N
     (docs/redesign/algorithmic-plan.md, finding 6.12). A creation now
     chooses its tickets m1 + m2 ≤ N ([e_new_tk]), so the forwarding end of
-    each of two channels can hold all N tickets and its partner none.
+    each of two channels can hold all N tickets and its dual end none.
 
     - [lk_new]: E-New gives the ends of a channel at N and 0 tickets.
     - [lk_typed]: a thread that holds c⁺ at x and d⁻ at x‾, both at N
@@ -57,8 +57,8 @@ End link.
 (** ** The link closed over its interface
 
     The interface annotations η give the two linked ends c⁺ and d⁻ credit
-    and tickets N and their partners c⁻ and d⁺ none. Each cut then meets
-    the bound, N + 0 ≤ N, and E-Link holds, N + N > N. Each partner
+    and tickets N and their dual ends c⁻ and d⁺ none. Each cut then meets
+    the bound, N + 0 ≤ N, and E-Link holds, N + N > N. Each dual end
     closes its end. The three threads form a closed process at every
     N ≥ 1 ([lk_closed_typed]), which is lock free ([lk_closed_lock_free]).
     With every interface end at N/2 the link asks N/2 + N/2 > N, which

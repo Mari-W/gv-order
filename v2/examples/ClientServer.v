@@ -9,7 +9,7 @@
       srv  = !(g = λp. let (a, b) = p in let (u, a) = recv a in let () = u in
                       let b = send ⟨∗, b⟩ in (force g) ⟨a, b⟩)
 
-    Option (d) of Q2, family laws. a sits at a fresh root ρ of family 0,
+    Option (d) of Q2, family laws. a sits at a fresh base ρ of family 0,
     b at the field ρ·0 (κ = 0), and the ceiling of both loops is ρ·1.
     Both boxes have the one type
 
@@ -35,7 +35,7 @@ Definition cs_P (g : fact) : Prop :=
        g = FLt (sh k (pvar 0)) (pvar 2) ∨ g = FLt (sh k (pvar 1)) (pvar 2).
 Definition cs_C : bcs := BCs [] cs_P.
 
-(** The laws of family 0 over the root r = 0. *)
+(** The laws of family 0 over the base r = 0. *)
 Definition cs_L (g : fact) : Prop :=
   ∃ k (b : bool), let α := pt_polar b (pvar 0) in let β := pt_polar b ((pvar 0)·0) in
     g = FLt (sh k α) (sh k β)‾ ∨ g = FLt (sh k β) (sh (S k) α)‾ ∨

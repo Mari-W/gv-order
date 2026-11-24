@@ -3,9 +3,9 @@
     Facts of a closed soup at a positive index that adequacy reads at
     every position of a run. A thread whose redex is a session action
     other than a link acts on an end o it holds ([s_held_end]). Its
-    readiness puts the point of o below the partner point of every other
-    end it holds ([s_ready]). The partner of o is held by another thread
-    ([s_partner]), and when that thread's redex acts on the partner, the
+    readiness puts the point of o below the dual point of every other
+    end it holds ([s_ready]). The dual end of o is held by another thread
+    ([s_partner]), and when that thread's redex acts on the dual end, the
     two redexes fit and the thread is enabled ([compat_enabled]). A
     thread that holds an end is not a value ([s_value_empty]). *)
 
@@ -173,7 +173,7 @@ Section local.
     - by apply Vrel_unit_iff in HV as [-> _].
   Qed.
 
-  (** Readiness: the end a thread acts on lies below the partner point of
+  (** Readiness: the end a thread acts on lies below the dual point of
       every other end it holds. *)
   Lemma s_ready t e a1 o S0 x o' S' x' :
     q.2 !! t = Some e → act e = Some a1 → aend a1 = Some o →
@@ -198,7 +198,7 @@ Section local.
     intros [_ (σ & e' & Hs' & Hin)]. rewrite (Hsends σ e' Hs') in Hin. apply elem_of_singleton in Hin. done.
   Qed.
 
-  (** The partner of the end a thread acts on is held by another thread. *)
+  (** The dual end of the end a thread acts on is held by another thread. *)
   Lemma s_partner t e a1 o : q.2 !! t = Some e → act e = Some a1 → aend a1 = Some o →
     ∃ s es h', K !! edual o = Some h' ∧ h'.(h_th) = s ∧ q.2 !! s = Some es ∧ s ≠ t.
   Proof.

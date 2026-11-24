@@ -50,7 +50,7 @@ Proof.
   eapply e_letu_; [lsplit_tac (ESpawn (worker 2)) EUnit| | | ].
   { lworker_tac (pvar 0) 2. }
   lage_tac.
-  (* pack c′ at the fresh root *)
+  (* pack c′ at the fresh base *)
   change (pinst_ty (pshift 1) Tresl) with Tresl. unfold Tresl.
   eapply e_pack with (xs := pvar 0 :: []); [done| |exact I|exact I|].
   - apply hold_at_nil. intros f Hf _. destruct Hf as [->| ->]; simpl.

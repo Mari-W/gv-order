@@ -486,7 +486,7 @@ Section inversion_rules.
     - inv_open_step.
   Qed.
 
-  (** new types by E-New at a fresh root, under (wf-new) at N = ∞ and
+  (** new types by E-New at a fresh base, under (wf-new) at N = ∞ and
       (gen-new) at a finite N ([new_ok]), or by E-New-Field. *)
   Lemma inv_new Θ Γ Δ F T c :
     typed W N Θ Γ Δ F ENew T c →

@@ -19,6 +19,7 @@ From GV Require Import examples.Copycat examples.ForkJoin.
 From GV Require Import static.ChanRen examples.CopycatTwo static.LetVar examples.LetVarCounter examples.CopycatTwoN.
 From GV Require Import static.Skeleton examples.Rejects.
 From GV Require Import examples.Descent.
+From GV Require Import examples.FlagPair examples.RxChain examples.BitProgram examples.MilnerSched.
 
 (** types/Points.v *)
 Print Assumptions pt_dual_dual.
@@ -366,3 +367,20 @@ Print Assumptions rx_chain_proc_rejected.
 Print Assumptions wkr_no_model.
 Print Assumptions fjr_lf_rejected.
 Print Assumptions fjr_lf_proc_rejected.
+(** examples/FlagPair.v: two threads on one received flag *)
+Print Assumptions fp_unrealizable.
+Print Assumptions ptyped_threads.
+Print Assumptions fp_static_rejected.
+(** examples/RxChain.v: rx-chain at N = ∞ *)
+Print Assumptions rc_acyc.
+Print Assumptions rc_C_acyc.
+Print Assumptions rc_dftyped.
+Print Assumptions rc_term.
+Print Assumptions rc_deadlock_free.
+(** examples/BitProgram.v, examples/MilnerSched.v: ports from the old development *)
+Print Assumptions bit_wf_new.
+Print Assumptions bit_dftyped.
+Print Assumptions bit_deadlock_free.
+Print Assumptions ms_wf_new.
+Print Assumptions ms_dftyped.
+Print Assumptions ms_deadlock_free.

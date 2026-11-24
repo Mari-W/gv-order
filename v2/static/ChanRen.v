@@ -2,7 +2,7 @@
 
     An injective renaming h of channel names renames every end by
     [cmap h], which keeps the sign of the end and commutes with the
-    partner ([cmap_edual]). A typed term stays typed when its ends are
+    dual ([cmap_edual]). A typed term stays typed when its ends are
     renamed by [emap (cmap h)] and the keys of Θ by [kmap (cmap h)]
     ([typed_cren]). A typed process stays typed when the keys of its
     interface, its restricted channels and its threads are renamed

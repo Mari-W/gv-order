@@ -8,7 +8,7 @@
     the constants 0 and 1 swapped ([ptyped_ren], static/Hiding.v), so
     Q' holds b⁺ : S(p)@y. The cut on a moves to the cuts on a and b.
 
-    The forwarder's facts at x and y‾ relate the two roots. Read with the
+    The forwarder's facts at x and y‾ relate the two bases. Read with the
     constant 1 sent back to 0, each fact is an equality x_k = x_k or
     program order. A cycle of the new world then maps to a cycle of the
     old one, which is P ∥ Q's world, because no two equalities follow
@@ -177,7 +177,7 @@ Qed.
 (** ** The joined world is acyclic when P ∥ Q's world is
 
     J = W1 ⊔ (W_q ⊔ W2'), with W2' the world of Q with 0 and 1 swapped.
-    A fact of W1 or of W2 has no root 1, so φ fixes it, and φ undoes the
+    A fact of W1 or of W2 has no base 1, so φ fixes it, and φ undoes the
     swap on W2'. *)
 
 Definition sw01 : cbij := cb_swap 0 1.

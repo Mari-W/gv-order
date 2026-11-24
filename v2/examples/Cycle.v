@@ -5,7 +5,7 @@
               let () = spawn (λu. let () = u in let () = close c′ in close d′) in
               let () = close c in close d
 
-    c, c′ sit at ρ and ρ‾ for a fresh root ρ, and d, d′ at the field ρ·0
+    c, c′ sit at ρ and ρ‾ for a fresh base ρ, and d, d′ at the field ρ·0
     and (ρ·0)‾. Main closes c while it holds d, so it needs ρ ≺ (ρ·0)‾.
     The thunk closes c′ while it holds d′, so it needs ρ‾ ≺ ρ·0. The
     constraint of the first creation states exactly these two facts. *)
@@ -13,7 +13,7 @@
 From GV Require Export examples.Tools2.
 From GV Require Import static.FundamentalProc.
 
-(** The constraint of the first creation over the new root ι₀. *)
+(** The constraint of the first creation over the new base ι₀. *)
 Definition cy_L (g : fact) : Prop :=
   g = FLt (pvar 0) ((pvar 0)·0)‾ ∨ g = FLt (pvar 0)‾ ((pvar 0)·0).
 
