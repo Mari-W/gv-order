@@ -1365,9 +1365,9 @@
     {
      "id": "r-new",
      "title": "Creation",
-     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{E-New.wf}{\\inmodeplain{df}{\\sym{new.acyc}{\\mathsf{acyc\\_new}}}\\inmode{lf}{\\sym{new.ok}{\\mathsf{new\\_ok}_N}}\\,\\Gamma\\,\\rho\\,C}\\quad \\sym{E-New.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,S}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.new}{\\mathsf{new}} : \\exists^{\\sym{E-New.bot}{\\bot}}\\rho.\\ \\sym{E-New.facts}{C}.\\ \\sym{E-New.dual}{\\sym{ty.sess}{S_{\\rho}\\inmode{lf}{^{m_1,m_1}}} \\otimes \\sym{sty.dual}{\\overline{S}}_{\\overline{\\rho}}\\inmode{lf}{^{m_2,m_2}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-New} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{E-New.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,S}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.new}{\\mathsf{new}} : \\sym{E-New.dual}{S_{\\sym{E-New.field}{x\\cdot\\kappa}}\\inmode{lf}{^{m_1,m_1}} \\otimes \\sym{sty.dual}{\\overline{S}}_{\\overline{\\sym{E-New.field}{x\\cdot\\kappa}}}\\inmode{lf}{^{m_2,m_2}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-New-Field} \\\\[2ex] \\sym{new.acyc}{\\mathsf{acyc\\_new}\\,\\Gamma\\,\\rho\\,C \\iff (\\forall x \\in \\sym{w.tree}{\\mathsf{tree}}(\\rho).\\ \\neg\\, x \\mathrel{(\\sym{new.step}{\\prec^{\\rho}_{C}})^{+}} x) \\land \\sym{E-Open.cons}{\\mathsf{cons}\\,W\\,\\Gamma\\,1\\,C}}\\inmodeplain{lf}{ \\\\[2ex] }\\inmode{lf}{\\sym{new.ok}{\\begin{array}{l} \\mathsf{new\\_ok}_N\\,\\Gamma\\,\\rho\\,C \\iff \\sym{new.acyc}{\\mathsf{acyc\\_new}\\,\\Gamma\\,\\rho\\,C} \\land (N \\in \\mathbb{N} \\Rightarrow \\sym{new.rank}{\\begin{array}[t]{l} \\sym{w.lfworld}{\\mathsf{wf}}(\\sym{new.step}{\\prec^{\\rho}_{C}}) \\land \\exists \\mathcal{S} \\subseteq \\mathsf{tree}(\\rho) \\times \\mathcal{P}^{+}_{\\mathrm{fin}}(\\mathsf{Point}_{\\Gamma}). \\\\ \\quad (\\forall (u \\prec y) \\in C.\\ u \\in \\mathsf{tree}(\\rho),\\ y \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists (u, Y) \\in \\mathcal{S}.\\ \\forall t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} t \\prec y) \\\\ \\quad \\land\\ (\\forall (s, Y) \\in \\mathcal{S}.\\ \\forall s' \\sym{new.step}{\\prec^{\\rho}_{C}} s.\\ \\exists (s', Y') \\in \\mathcal{S}.\\ \\forall t' \\in Y'.\\ \\exists t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} t' \\prec t) \\\\ \\quad \\land\\ (\\forall (s, Y) \\in \\mathcal{S}.\\ \\forall (z \\prec s) \\in C.\\ z \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} z \\prec t)) \\end{array}} \\end{array}} \\qquad \\sym{new.gen}{\\mathsf{gen\\_new} \\iff \\mathsf{new\\_ok}_N,\\ N \\in \\mathbb{N}}}\\end{array}",
-     "caption": "E-New creates a channel at a fresh root $\\rho$ and its [[ty-dual|dual]], hidden in an [[r-ex|existential]] whose constraint $C$ states what the program needs about the new points. The order $\\prec^{\\rho}_{C}$ that $C$ and program order induce on $\\mathsf{tree}(\\rho)$ must have no cycle, and $C$ must meet the bridge condition of [[r-ex|E-Open]] at the one root $\\rho$. Then the creation adds no cycle to an acyclic world, and opening its existential is conservative. E-New-Field creates a channel at a [[syn-labels|field]] $x\\cdot\\kappa$ and its dual, with no constraint, because the order around a field was fixed with its root. The lower bound $\\bot$ records that no fact of the context mentions the new points. The fundamental theorem proves E-New against the obligation O-New of [[e-obl]], and the world grows as in [[w-ext]]. The [[t-consts|constants]] have no entry for $\\mathsf{new}$. \\inmode{lf}{At a finite bound $N$ the premise adds to $\\mathsf{acyc\\_new}$ a part for ranks. It asks $\\prec^{\\rho}_{C}$ well-founded. It bounds each tree point $s$ by a finite set $Y$ of context points, so that ranks for the new tree exist in each [[t-lf-wf|ranked world]]. The premise at a finite bound implies the premise at $N = \\infty$ by projection. Each creation picks [[ty-ann|tickets]] $m_1$ and $m_2$ with $m_1 + m_2 \\leq N$, and each end starts at credit equal to its tickets, as the [[t-lf-counters|counters block]] explains.}",
-     "why": "Creation places a new channel in the order. One term $\\mathsf{new}$ has two rules for the two places a channel can go. A fresh root needs facts and hides its points, a field needs neither. A single rule with the position in the term would have to take the facts in the term. Ends are linear, so each held end the facts mention would have to be passed to $\\mathsf{new}$ and returned. Fields exist because a channel created to be sent must be placed where the message delivers its payload, the field $x\\cdot j$ of the carrier. A root with a constraint cannot name that point without a bridge. The root is hidden because a box body that creates a channel per round would otherwise need one point variable per round in the box type.",
+     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{E-New.pos}{(p, \\bar\\rho, C) \\in \\{(\\rho, \\rho, C) \\mid \\sym{E-New.wf}{\\inmodeplain{df}{\\sym{new.acyc}{\\mathsf{acyc\\_new}}}\\inmode{lf}{\\sym{new.ok}{\\mathsf{new\\_ok}_N}}\\,\\Gamma\\,\\rho\\,C}\\} \\cup \\{(\\sym{E-New.field}{x\\cdot\\kappa}, \\cdot, \\top)\\}} \\\\ \\sym{E-New.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,S}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.new}{\\mathsf{new}} : \\exists^{\\sym{E-New.bot}{\\bot}}\\bar\\rho.\\ \\sym{E-New.facts}{C}.\\ \\sym{E-New.dual}{\\sym{ty.sess}{S_{p}\\inmode{lf}{^{m_1,m_1}}} \\otimes \\sym{sty.dual}{\\overline{S}}_{\\overline{p}}\\inmode{lf}{^{m_2,m_2}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-New} \\qquad \\sym{E-New.vanish}{\\exists^{\\bot}\\cdot.\\ \\top.\\ T = T} \\\\[2ex] \\sym{new.acyc}{\\mathsf{acyc\\_new}\\,\\Gamma\\,\\rho\\,C \\iff (\\forall x \\in \\sym{w.tree}{\\mathsf{tree}}(\\rho).\\ \\neg\\, x \\mathrel{(\\sym{new.step}{\\prec^{\\rho}_{C}})^{+}} x) \\land \\sym{E-Open.cons}{\\mathsf{cons}\\,W\\,\\Gamma\\,1\\,C}}\\inmodeplain{lf}{ \\\\[2ex] }\\inmode{lf}{\\sym{new.ok}{\\begin{array}{l} \\mathsf{new\\_ok}_N\\,\\Gamma\\,\\rho\\,C \\iff \\sym{new.acyc}{\\mathsf{acyc\\_new}\\,\\Gamma\\,\\rho\\,C} \\land (N \\in \\mathbb{N} \\Rightarrow \\sym{new.rank}{\\begin{array}[t]{l} \\sym{w.lfworld}{\\mathsf{wf}}(\\sym{new.step}{\\prec^{\\rho}_{C}}) \\land \\exists \\mathcal{S} \\subseteq \\mathsf{tree}(\\rho) \\times \\mathcal{P}^{+}_{\\mathrm{fin}}(\\mathsf{Point}_{\\Gamma}). \\\\ \\quad (\\forall (u \\prec y) \\in C.\\ u \\in \\mathsf{tree}(\\rho),\\ y \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists (u, Y) \\in \\mathcal{S}.\\ \\forall t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} t \\prec y) \\\\ \\quad \\land\\ (\\forall (s, Y) \\in \\mathcal{S}.\\ \\forall s' \\sym{new.step}{\\prec^{\\rho}_{C}} s.\\ \\exists (s', Y') \\in \\mathcal{S}.\\ \\forall t' \\in Y'.\\ \\exists t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} t' \\prec t) \\\\ \\quad \\land\\ (\\forall (s, Y) \\in \\mathcal{S}.\\ \\forall (z \\prec s) \\in C.\\ z \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} z \\prec t)) \\end{array}} \\end{array}} \\qquad \\sym{new.gen}{\\mathsf{gen\\_new} \\iff \\mathsf{new\\_ok}_N,\\ N \\in \\mathbb{N}}}\\end{array}",
+     "caption": "E-New creates a channel at a point $p$ and its [[ty-dual|dual]] $\\overline{p}$. At a fresh root $\\rho$ the pair is hidden in an [[r-ex|existential]] whose constraint $C$ states what the program needs about the new points. The order $\\prec^{\\rho}_{C}$ that $C$ and program order induce on $\\mathsf{tree}(\\rho)$ must have no cycle, and $C$ must meet the bridge condition of [[r-ex|E-Open]] at the one root $\\rho$. Then the creation adds no cycle to an acyclic world, and opening its existential is conservative. At a [[syn-labels|field]] $x\\cdot\\kappa$ the rule binds no point and states the constraint $\\top$, so the existential vanishes and the pair is the plain product. A field creation adds no facts, because $x\\cdot\\kappa$ is an old point whose facts were fixed with the root of $x$. A field may be used by more than one creation. The lower bound $\\bot$ records that no fact of the context mentions the new points. The fundamental theorem proves E-New against the obligation O-New of [[e-obl]], and the world grows as in [[w-ext]]. The [[t-consts|constants]] have no entry for $\\mathsf{new}$. \\inmode{lf}{At a finite bound $N$ the premise adds to $\\mathsf{acyc\\_new}$ a part for ranks. It asks $\\prec^{\\rho}_{C}$ well-founded. It bounds each tree point $s$ by a finite set $Y$ of context points, so that ranks for the new tree exist in each [[t-lf-wf|ranked world]]. The premise at a finite bound implies the premise at $N = \\infty$ by projection. Each creation picks [[ty-ann|tickets]] $m_1$ and $m_2$ with $m_1 + m_2 \\leq N$, and each end starts at credit equal to its tickets, as the [[t-lf-counters|counters block]] explains.}",
+     "why": "Creation places a new channel in the order. A fresh root needs facts and hides its points, a field needs neither, and the triple $(p, \\bar\\rho, C)$ records which. Taking the position from the term instead would put the facts in the term. Ends are linear, so each held end the facts mention would have to be passed to $\\mathsf{new}$ and returned. Fields exist because a channel created to be sent must be placed where the message delivers its payload, the field $x\\cdot j$ of the carrier. A root with a constraint cannot name that point without a bridge. The root is hidden because a box body that creates a channel per round would otherwise need one point variable per round in the box type.",
      "example": "Two threads that close $c$ and $d$ in the same order type with $d$ at the field $\\rho\\cdot 0$ of the root $\\rho$ of $c$. A creation at a fresh root $\\rho$ with $C = \\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ states the two facts the threads need. $\\prec^{\\rho}_{C}$ has no cycle, and $C$ has no bridge. The [[ex-cycle|cycle]] is this program.",
      "source": [
       {
@@ -1400,6 +1400,16 @@
      "usedIn": [
       "e-obl",
       "w-ext"
+     ],
+     "deviations": [
+      {
+       "kind": "merged",
+       "reason": "The Rocq has two constructors, e_new for a fresh root with a constraint and e_new_fld for a field without one. The map shows one rule whose triple $(p, \\bar\\rho, C)$ picks the case. With no bound point and the constraint $\\top$ the existential is the plain product, so the field case is e_new_fld as stated.",
+       "names": [
+        "e_new",
+        "e_new_fld"
+       ]
+      }
      ]
     },
     {
@@ -9841,8 +9851,8 @@
   },
   "E-New.field": {
    "title": "A field $x\\cdot\\kappa$",
-   "meaning": "E-New-Field places the new channel at a field $x\\cdot\\kappa$ of a point $x$ and its dual, with no constraint and no existential.",
-   "why": "The order around a field was fixed with its root, so a field creation adds no fact and hides no point. \\inmode{lf}{Its ranks in a ranked world were chosen when the root was created.}",
+   "meaning": "The field case of E-New places the new channel at a field $x\\cdot\\kappa$ of a point $x$ and its dual, with the constraint $\\top$ and no bound point.",
+   "why": "The order around a field was fixed with its root, so a field creation adds no fact and hides no point. A field may be used by more than one creation. \\inmode{lf}{Its ranks in a ranked world were chosen when the root was created.}",
    "breaks": "A field creation that stated a new fact could ask a rank that the root left no room for.",
    "example": "The example with a channel between two box arguments creates $d$ at $\\iota\\cdot 0$.",
    "signature": "x\\cdot\\kappa \\in \\mathsf{Point}",
@@ -9867,18 +9877,18 @@
   },
   "E-New.dual": {
    "title": "Dual pair",
-   "meaning": "$c^{+}$ has type $S_{\\pi}\\inmode{lf}{^{m_1,m_1}}$ and $c^{-}$ type $\\overline{S}_{\\overline{\\pi}}\\inmode{lf}{^{m_2,m_2}}$ for the position $\\pi$, the fresh root or the field. \\inmode{lf}{Each end starts at credit equal to its tickets.}",
+   "meaning": "$c^{+}$ has type $S_{p}\\inmode{lf}{^{m_1,m_1}}$ and $c^{-}$ type $\\overline{S}_{\\overline{p}}\\inmode{lf}{^{m_2,m_2}}$ for the position $p$, the fresh root or the field. \\inmode{lf}{Each end starts at credit equal to its tickets.}",
    "why": "\\inmode{lf}{Fuel starts each counter of a new channel at the tickets of its end\\inmode{lf}{, and the credits} are lower bounds on these counters.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$S_{\\rho}\\inmode{lf}{^{3,3}} \\otimes \\overline{S}_{\\overline{\\rho}}\\inmode{lf}{^{1,1}}$ at $N = 4$.",
-   "signature": "S_{\\pi}\\inmode{lf}{^{m_1,m_1}} \\otimes \\overline{S}_{\\overline{\\pi}}\\inmode{lf}{^{m_2,m_2}}",
+   "signature": "S_{p}\\inmode{lf}{^{m_1,m_1}} \\otimes \\overline{S}_{\\overline{p}}\\inmode{lf}{^{m_2,m_2}}",
    "args": [
     {
      "name": "S",
      "meaning": "the protocol, chosen by the derivation"
     },
     {
-     "name": "\\pi",
+     "name": "p",
      "meaning": "the position, the fresh root $\\rho$ or the field $x\\cdot\\kappa$"
     },
     {
@@ -19296,6 +19306,78 @@
       "ssub_dual",
       "ssub_df",
       "ssub_sinst"
+     ]
+    }
+   ]
+  },
+  "E-New.pos": {
+   "title": "Position of a creation",
+   "meaning": "$(p, \\bar\\rho, C)$ is either $(\\rho, \\rho, C)$ for a fresh root $\\rho$ whose facts $C$ meet the premise $\\mathsf{new\\_ok}_N$, or $(x\\cdot\\kappa, \\cdot, \\top)$ for a field $x\\cdot\\kappa$, with no bound point and no facts.",
+   "why": "A fresh root hides its points and states the facts the program needs about the new points. A field is an old point, whose facts were fixed with the root of $x$, so a field creation states nothing and hides nothing. A field may be used by more than one creation.",
+   "breaks": "A field creation that stated a new fact could contradict the facts fixed with the root of $x$.",
+   "example": "$(\\rho, \\rho, \\{\\rho \\prec \\overline{\\rho\\cdot 0}\\})$ for a fresh root, $(\\iota\\cdot 0, \\cdot, \\top)$ for the field $\\iota\\cdot 0$.",
+   "signature": "(p, \\bar\\rho, C) \\in \\{(\\rho, \\rho, C) \\mid \\mathsf{new\\_ok}_N\\,\\Gamma\\,\\rho\\,C\\} \\cup \\{(x\\cdot\\kappa, \\cdot, \\top)\\}",
+   "args": [
+    {
+     "name": "p",
+     "meaning": "the point of the positive end"
+    },
+    {
+     "name": "\\bar\\rho",
+     "meaning": "the bound point, $\\rho$ at a fresh root and none at a field"
+    },
+    {
+     "name": "C",
+     "meaning": "the facts of the creation, $\\top$ at a field"
+    }
+   ],
+   "source": [
+    {
+     "file": "static/Typing.v",
+     "names": [
+      "e_new",
+      "e_new_fld"
+     ]
+    }
+   ],
+   "deviations": [
+    {
+     "kind": "merged",
+     "reason": "The two constructors e_new and e_new_fld are the two cases of the triple.",
+     "names": [
+      "e_new",
+      "e_new_fld"
+     ]
+    }
+   ]
+  },
+  "E-New.vanish": {
+   "title": "An empty existential",
+   "meaning": "$\\exists^{\\bot}\\cdot.\\ \\top.\\ T$ binds no point and states no fact, and it is the type $T$.",
+   "why": "The field case of E-New has nothing to hide, so its result is the product of the two ends.",
+   "breaks": "Nothing. It is a notation.",
+   "example": "$\\exists^{\\bot}\\cdot.\\ \\top.\\ (S_{x\\cdot 0} \\otimes \\overline{S}_{\\overline{x\\cdot 0}}) = S_{x\\cdot 0} \\otimes \\overline{S}_{\\overline{x\\cdot 0}}$.",
+   "signature": "\\exists^{\\bot}\\cdot.\\ \\top.\\ T = T",
+   "args": [
+    {
+     "name": "T",
+     "meaning": "a type"
+    }
+   ],
+   "source": [
+    {
+     "file": "static/Typing.v",
+     "names": [
+      "e_new_fld"
+     ]
+    }
+   ],
+   "deviations": [
+    {
+     "kind": "notation",
+     "reason": "The Rocq types the field case at the product directly, and the map writes it as an existential with no bound point and no facts.",
+     "names": [
+      "e_new_fld"
      ]
     }
    ]
