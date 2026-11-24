@@ -1,5 +1,15 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Faithfulness check after the Fable pass, 2026-11-24
+
+Branch map-faithful from redesign dd71273. Report in map-cleanup.md under
+"Faithfulness check, 2026-11-24". The bounds reading is exact case by
+case. The denotation of a future now drops the bounds of $X$. Theorem rows
+gained missing hypotheses ($\mathsf{world\_wf}$, $N \in \mathbb{N}$), and
+P-Term shows $\mathsf{world\_wf}\,W$. Deadlock-free strings no longer use
+$\simeq$ or hide deadlock-free text in lock-free markup. One stale Rocq
+comment fixed. Three questions.
+
 ## Fable pass, 2026-11-24
 
 Branch fable-final from redesign 9497061. Report in fable-final.md. Map:

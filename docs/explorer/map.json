@@ -155,7 +155,7 @@
      "title": "Terms",
      "formula": "\\begin{array}{rl}\ne ::= & \\sym{syn.var}{i} \\mid \\sym{syn.unit}{\\ast} \\mid \\sym{syn.end}{o} \\mid \\sym{syn.lam}{\\lambda e} \\mid \\sym{syn.app}{e_1\\,e_2} \\mid \\sym{syn.pair}{\\langle e_1, e_2\\rangle} \\\\\n\\mid & \\sym{syn.letu}{\\mathsf{let}\\ \\ast = e_1\\ \\mathsf{in}\\ e_2} \\mid \\sym{syn.letp}{\\mathsf{let}\\ \\langle a,b\\rangle = e_1\\ \\mathsf{in}\\ e_2} \\\\\n\\mid & \\sym{syn.inj}{\\mathsf{inj}_i\\,e} \\mid \\sym{syn.case}{\\mathsf{case}\\ e\\,(e_1)\\,(e_2)} \\\\\n\\mid & \\sym{syn.box}{!e} \\mid \\sym{syn.new}{\\mathsf{new}} \\mid \\sym{syn.op}{k\\,e}\n\\end{array}",
      "caption": "Thirteen term formers. A variable $i$ is a de Bruijn index. $\\lambda e$ and each branch of a $\\mathsf{case}$ bind one variable, and $\\mathsf{let}\\ \\langle a, b\\rangle$ binds two, named $a$ and $b$ for the reader. A box $!e$ binds itself in $e$. A [[syn-prims|constant]] $k$ always comes with its argument $e$, so a constant passed as a function is written $\\lambda x.\\,k\\,x$. The one-variable [[syn-let|$\\mathsf{let}$]] is notation.",
-     "why": "Typing has one rule per term former and one per constant, and the semantics one head step per redex. The term syntax has no point and no annotation, so one program has many typings, and the examples choose a typing for each program.",
+     "why": "Typing has one rule per term former and one per constant, and the semantics one head step per redex. The term syntax has no point\\inmode{lf}{ and no annotation}, so one program has many typings, and the examples choose a typing for each program.",
      "source": [
       {
        "file": "lang/Syntax.v",
@@ -603,7 +603,7 @@
      "id": "ty-heads",
      "title": "Bounds and active points",
      "formula": "\\begin{array}{l}\n\\sym{ty.ubound}{\\sym{ty.lbound}{l}, u, v \\in \\mathsf{Point} \\cup \\{\\bot, \\top\\}} \\qquad \\sym{side.top}{\\bot \\prec u \\qquad u \\prec \\top} \\qquad \\sym{ty.up}{u \\prec {\\vartriangle}v \\iff u \\preccurlyeq v} \\\\\n\\sym{ty.heads}{\\mathsf{ap}(S_x) = \\{\\overline{x}\\}} \\qquad \\sym{ty.heads}{\\mathsf{ap}(T \\multimap^{u}_{l} U) = \\mathsf{ap}(\\exists^{l}\\bar\\iota.\\ C.\\ T) = \\{l\\}} \\\\\n\\sym{ty.heads}{\\mathsf{ap}(T \\otimes U) = \\mathsf{ap}(T \\oplus U) = \\mathsf{ap}(T) \\cup \\mathsf{ap}(U)} \\qquad \\sym{ty.heads}{\\mathsf{ap}(\\ast) = \\mathsf{ap}(\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u} U)) = \\varnothing}\n\\end{array}",
-     "caption": "A lower point $l$, an upper point $u$ and the bound $v$ of a future are a point, $\\bot$ or $\\top$. Each order the rules read, $\\prec_W$ of [[w-order]] and the order judgment of typing, extends to these bounds. $\\bot$ lies below each bound and $\\top$ above each bound, $\\bot$ and $\\top$ included, and $u \\preccurlyeq v$ stays $u = v \\lor u \\prec v$. ${\\vartriangle}v$ stands for the points above $v$, which the term cannot name, and $u$ lies below them when $u \\preccurlyeq v$. $\\mathsf{ap}(T)$ is the set of dual points of the ends in a value of $T$, the points at which the dual ends act next. A thread holding such a value may wait only below these points, which the [[t-side|side conditions]] check. A closure or an existential records one lower point $l$ for the ends it holds. At $l = \\bot$ the type gives no bound, so a thread that holds the value waits nowhere, because no point lies below $\\bot$. At $l = \\top$ the value holds no end, and $\\top$ obstructs no wait, because each point lies below $\\top$. The upper point of a [[r-boxes|box]] is a point or $\\bot$. The [[t-judgment|future]] of a thread, the [[r-fun|arrow rules]] and the [[r-ex|existential rules]] read $\\mathsf{ap}$.",
+     "caption": "A lower point $l$, an upper point $u$ and the bound $v$ of a future are a point, $\\bot$ or $\\top$. A comparison of a bound with a point or with a set of bounds reads $\\prec_W$ of [[w-order]] or the order judgment of typing, extended to bounds. $\\bot$ lies below each bound and $\\top$ above each bound, $\\bot$ and $\\top$ included, and $u \\preccurlyeq v$ stays $u = v \\lor u \\prec v$. Between two points the order is unchanged, and the conditions on worlds and readiness compare points only. ${\\vartriangle}v$ stands for the points above $v$, which the term cannot name, and $u$ lies below them when $u \\preccurlyeq v$. $\\mathsf{ap}(T)$ is the set of dual points of the ends in a value of $T$, the points at which the dual ends act next. A thread holding such a value may wait only below these points, which the [[t-side|side conditions]] check. A closure or an existential records one lower point $l$ for the ends it holds. At $l = \\bot$ the type gives no bound, so a thread that holds the value waits nowhere, because no point lies below $\\bot$. At $l = \\top$ the value holds no end, and $\\top$ obstructs no wait, because each point lies below $\\top$. The upper point of a [[r-boxes|box]] is a point or $\\bot$. The [[t-judgment|future]] of a thread, the [[r-fun|arrow rules]] and the [[r-ex|existential rules]] read $\\mathsf{ap}$.",
      "why": "A thread that waits while it holds a value must wait below the dual points of the ends in that value, and $\\mathsf{ap}$ computes these points from the type. A closure type does not list its captured ends, so it records one bound $l$ at or below their dual points instead. With $\\bot$ and $\\top$ ordered against each bound, one comparison covers a point, a missing bound and a value without ends.",
      "source": [
       {
@@ -971,7 +971,7 @@
      "deviations": [
       {
        "kind": "notation",
-       "reason": "The Rocq future `sfuture` is a pair of a finite set of points and an optional rest, with `frest` = `RAbove u | RAll`. The map writes $X \\cup {\\vartriangle}v$, with $v = u$ for `Some (RAbove u)`, $v = \\bot$ for `Some RAll` and $v = \\top$ for `None`. The map lets $X$ hold the bounds $\\bot$ and $\\top$ as well, where the Rocq sets the rest to `RAll` for a held value with `hbot` and adds nothing for a closure at `LNone`. The rules read a future only through $u \\prec F$ of [[t-side]], the union of [[t-judgment]] and the instantiation of points, and each comparison agrees.",
+       "reason": "The Rocq future `sfuture` is a pair of a finite set of points and an optional rest, with `frest` = `RAbove u | RAll`. The map writes $X \\cup {\\vartriangle}v$, with $v = u$ for `Some (RAbove u)`, $v = \\bot$ for `Some RAll` and $v = \\top$ for `None`. The map lets $X$ hold the bounds $\\bot$ and $\\top$ as well, where the Rocq sets the rest to `RAll` for a held value with `hbot` and adds nothing for a closure at `LNone`. The rules read a future only through $u \\prec F$ of [[t-side]], the union of [[t-judgment]] and the instantiation of points, and each comparison agrees. The semantic judgment of [[sj-all]] denotes a future by a set of points, which drops the bounds of $X$ and reads $\\bot \\in X$ as the rest `RAll`.",
        "names": [
         "sfuture",
         "frest"
@@ -993,7 +993,7 @@
      "id": "t-side",
      "title": "Side conditions on points",
      "formula": "\\begin{array}{l}\\sym{side.ub}{u \\prec X \\iff \\forall y \\in X.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} u \\prec y \\qquad u \\prec X \\cup {\\vartriangle}v \\iff u \\prec X \\land \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} u \\preccurlyeq v} \\\\ \\sym{side.lb}{l \\preccurlyeq X \\iff \\forall y \\in X.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} l \\preccurlyeq y} \\qquad \\sym{E-Send.heads}{x \\prec H \\iff x \\prec \\sym{ty.heads}{\\mathsf{ap}}(H)} \\qquad \\sym{side.lb}{l \\preccurlyeq H \\iff l \\preccurlyeq \\mathsf{ap}(H)} \\qquad \\sym{side.hold}{\\Gamma \\vdash C[\\bar x]}\\end{array}",
-     "caption": "$u \\prec F$ says that the bound $u$ of [[ty-heads]] lies below each point of the future $F$ of [[t-contexts]], below each element of $X$ and at or below $v$. $\\bot$ lies below each bound and $\\top$ above each bound. So $\\bot \\prec F$ holds for each future, and $\\top \\prec F$ holds only when $F$ has no point and $v = \\top$, the future of a thread that acts no more. A [[syn-points|point]] $x$ fails $x \\prec F$ when $\\bot \\in X$ or $v = \\bot$. $l \\preccurlyeq X$ reads the same with $\\preccurlyeq$. For a type or a context $H$, $x \\prec H$ and $l \\preccurlyeq H$ compare with the active points $\\mathsf{ap}(H)$ of [[ty-heads]], the union over the entries of a context. $\\Gamma \\vdash C[\\bar x]$ says that the facts of $C$ at $\\bar x$ are derivable in the [[t-contexts|order judgment]].",
+     "caption": "$u \\prec F$ says that the bound $u$ of [[ty-heads]] lies below each point of the future $F$ of [[t-contexts]], below each element of $X$ and at or below $v$. $\\bot$ lies below each bound and $\\top$ above each bound. So $\\bot \\prec F$ holds for each future, and $\\top \\prec F$ holds only when $X \\subseteq \\{\\top\\}$ and $v = \\top$, the future of a thread that acts no more. A [[syn-points|point]] $x$ fails $x \\prec F$ when $\\bot \\in X$ or $v = \\bot$. $l \\preccurlyeq X$ reads the same with $\\preccurlyeq$. For a type or a context $H$, $x \\prec H$ and $l \\preccurlyeq H$ compare with the active points $\\mathsf{ap}(H)$ of [[ty-heads]], the union over the entries of a context. $\\Gamma \\vdash C[\\bar x]$ says that the facts of $C$ at $\\bar x$ are derivable in the [[t-contexts|order judgment]].",
      "why": "These are the order checks of typing. A term never waits above a point at which its context acts later, and a thread waits only below the dual points of the values it holds. The [[r-act|actions]], [[r-fun|calls]], [[r-boxes|forces]] and [[r-ex|packs]] use these checks.",
      "breaks": "Without them the type system is plain GV, and the cycle of two threads closing two channels in opposite orders types.",
      "source": [
@@ -1570,7 +1570,7 @@
      "id": "r-new",
      "title": "Creation",
      "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{E-New.pos}{(p, \\bar\\rho, C) \\in \\{(\\rho, \\rho, C) \\mid \\sym{E-New.wf}{\\inmodeplain{df}{\\sym{new.acyc}{\\mathsf{acyc\\_new}}}\\inmode{lf}{\\sym{new.ok}{\\mathsf{new\\_ok}_N}}\\,\\Gamma\\,\\rho\\,C}\\} \\cup \\{(\\sym{E-New.field}{x\\cdot\\kappa}, \\cdot, \\top)\\}} \\\\ \\sym{E-New.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,S}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.new}{\\mathsf{new}} : \\exists^{\\sym{E-New.bot}{\\bot}}\\bar\\rho.\\ \\sym{E-New.facts}{C}.\\ \\sym{E-New.dual}{\\sym{ty.sess}{S_{p}\\inmode{lf}{^{m_1,m_1}}} \\otimes \\sym{sty.dual}{\\overline{S}}_{\\overline{p}}\\inmode{lf}{^{m_2,m_2}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-New} \\qquad \\sym{E-New.vanish}{\\exists^{\\bot}\\cdot.\\ \\top.\\ T = T} \\\\[2ex] \\sym{new.step}{x \\prec^{\\rho}_{C} y \\iff x, y \\in \\sym{w.tree}{\\mathsf{tree}}(\\rho) \\land ((x \\prec y) \\in C \\lor y = x^{+} \\lor y = \\overline{x}^{+})} \\\\[2ex] \\sym{new.acyc}{\\mathsf{acyc\\_new}\\,\\Gamma\\,\\rho\\,C \\iff (\\forall x \\in \\sym{w.tree}{\\mathsf{tree}}(\\rho).\\ \\neg\\, x \\mathrel{(\\sym{new.step}{\\prec^{\\rho}_{C}})^{+}} x) \\land \\sym{E-Open.cons}{\\mathsf{conserv}_{\\Gamma}(\\rho, C)}}\\inmodeplain{lf}{ \\\\[2ex] }\\inmode{lf}{\\sym{new.ok}{\\mathsf{new\\_ok}_N\\,\\Gamma\\,\\rho\\,C \\iff \\sym{new.acyc}{\\mathsf{acyc\\_new}\\,\\Gamma\\,\\rho\\,C} \\land (N \\in \\mathbb{N} \\Rightarrow \\sym{w.lfworld}{\\mathsf{wf}}(\\sym{new.step}{\\prec^{\\rho}_{C}}) \\land \\sym{new.rank}{\\mathsf{rankable}_{\\Gamma}(\\rho, C)})} \\qquad \\sym{new.gen}{\\mathsf{gen\\_new} \\iff \\mathsf{new\\_ok}_N,\\ N \\in \\mathbb{N}}}\\end{array}",
-     "caption": "E-New creates a channel at a point $p$ and its [[ty-dual|dual]] $\\overline{p}$. At a fresh base $\\rho$ an [[r-ex|existential]] abstracts the pair whose constraint $C$ states what the program needs about the new points. $\\mathsf{acyc\\_new}$ asks two things of $C$. The order $\\prec^{\\rho}_{C}$ that $C$ and program order induce on the tree of $\\rho$ has no cycle. $C$ is conservative over $\\Gamma$ as in [[r-ex|E-Open]]. A creation may order its new points against old ones and never two old points against each other, because the relation must hold in each extension of the world. Then the creation keeps a consistent world consistent, and opening its existential is conservative. At a [[syn-labels|field]] $x\\cdot\\kappa$ the rule binds no point and states the constraint $\\top$, so the existential vanishes and the pair is the plain product. A field creation adds no facts, because $x\\cdot\\kappa$ is an old point whose facts were fixed with the base of $x$. A field may be used by more than one creation. The lower bound $\\bot$ records that no fact of the context mentions the new points. The fundamental theorem proves E-New against the obligation O-New of [[e-obl]], and the world grows as in [[w-ext]]. The [[t-consts|constants]] have no entry for $\\mathsf{new}$. \\inmode{lf}{At a finite bound $N$ the premise adds to $\\mathsf{acyc\\_new}$ a part for ranks. It asks $\\prec^{\\rho}_{C}$ well-founded and $C$ rankable over $\\Gamma$, which bounds each tree point by a finite set of context points, so that ranks for the new tree exist in each [[t-lf-wf|ranked world]]. The premise at a finite bound implies the premise at $N = \\infty$ by projection. Each creation picks [[ty-ann|tickets]] $m_1$ and $m_2$ with $m_1 + m_2 \\leq N$, and each end starts at credit equal to its tickets, as the [[t-lf-counters|counters block]] explains.}",
+     "caption": "E-New creates a channel at a point $p$ and its [[ty-dual|dual]] $\\overline{p}$. At a fresh base $\\rho$ an [[r-ex|existential]] abstracts the pair whose constraint $C$ states what the program needs about the new points. $\\mathsf{acyc\\_new}$ asks two things of $C$. The order $\\prec^{\\rho}_{C}$ that $C$ and program order induce on the tree of $\\rho$ has no cycle. $C$ is conservative over $\\Gamma$ as in [[r-ex|E-Open]]. A creation may order its new points against old ones and orders two old points only as $\\Gamma$ already does, because the relation must hold in each extension of the world. Then the creation keeps a consistent world consistent, and opening its existential is conservative. At a [[syn-labels|field]] $x\\cdot\\kappa$ the rule binds no point and states the constraint $\\top$, so the existential vanishes and the pair is the plain product. A field creation adds no facts, because $x\\cdot\\kappa$ is an old point whose facts were fixed with the base of $x$. A field may be used by more than one creation. The lower bound $\\bot$ records that no fact of the context mentions the new points. The fundamental theorem proves E-New against the obligation O-New of [[e-obl]], and the world grows as in [[w-ext]]. The [[t-consts|constants]] have no entry for $\\mathsf{new}$. \\inmode{lf}{At a finite bound $N$ the premise adds to $\\mathsf{acyc\\_new}$ a part for ranks. It asks $\\prec^{\\rho}_{C}$ well-founded and $C$ rankable over $\\Gamma$, which bounds each tree point by a finite set of context points, so that ranks for the new tree exist in each [[t-lf-wf|ranked world]]. The premise at a finite bound implies the premise at $N = \\infty$ by projection. Each creation picks [[ty-ann|tickets]] $m_1$ and $m_2$ with $m_1 + m_2 \\leq N$, and each end starts at credit equal to its tickets, as the [[t-lf-counters|counters block]] explains.}",
      "why": "Creation places a new channel in the order. A fresh base needs facts and abstracts its points, a field needs neither, and the triple $(p, \\bar\\rho, C)$ records which. Taking the position from the term instead would put the facts in the term. Ends are linear, so each held end the facts mention would have to be passed to $\\mathsf{new}$ and returned. Fields exist because a channel created to be sent must be placed where the message delivers its payload, the field $x\\cdot j$ of the carrier. A fresh base cannot be that point, because the field already has a base. The base is abstracted because a box body that creates a channel per round would otherwise need one point variable per round in the box type.",
      "example": "Two threads that close $c$ and $d$ in the same order type with $d$ at the field $\\rho\\cdot 0$ of the base $\\rho$ of $c$. A creation at a fresh base $\\rho$ with $C = \\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ states the two facts the threads need. $\\prec^{\\rho}_{C}$ has no cycle, and $C$ orders no two old points. The [[ex-cycle|cycle]] is this program.",
      "source": [
@@ -1671,7 +1671,7 @@
     {
      "id": "p-typing",
      "title": "Process typing",
-     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{ty.tfree}{\\mathsf{tfree}\\,T}\\quad \\sym{pfree}{\\mathsf{pfree}\\,\\Sigma}\\quad \\sym{P-Term.wf}{\\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{cons}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}\\,W}\\quad \\sym{P-Term.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,\\Sigma, \\Theta_B}\\\\ \\sym{P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\sym{tp.ends}{\\mathsf{ends}}(C_0)}\\quad \\sym{P-Term.disj}{\\sym{tp.chans}{\\mathsf{chans}}\\,\\sym{tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing} \\\\ \\sym{P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = \\sym{ty.sess}{S_x\\inmode{lf}{^{m,m}}},\\ \\Theta_B(c^{-}) = \\sym{ty.sess}{\\overline{S}_{\\overline{x}}\\inmode{lf}{^{m',m'}}}\\inmode{lf}{,\\ m + m' \\leq N}} \\\\ \\inmode{lf}{\\sym{P-Term.ann}{\\forall o \\in \\mathrm{dom}\\,\\Sigma.\\ \\eta(o) = (a, m),\\ m \\leq N}} \\\\ \\sym{P-Term.typed}{\\varnothing ; \\sym{tp.lift}{\\Sigma\\inmode{lf}{^{\\eta}}}, \\Theta_B \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sym{P-Term.future}{\\varnothing}} t : T\\inmode{lf}{\\ !\\ c}}\\end{array}}{\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{N,\\eta}}}_{W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W_1} (C_1, E_1) : T} \\\\ \\sym{P-Connect.right}{\\Sigma_2 \\cup \\sym{P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\sym{P-Connect.disj}{\\mathsf{disjoint}(\\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_1, \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_2, \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, C_1, C_2)} \\\\ \\inmode{lf}{\\sym{P-Connect.tsum}{\\forall o \\in \\mathrm{dom}\\,\\Sigma_C.\\ \\eta(o)_2 + \\eta(\\overline{o})_2 \\leq N}} \\inmodeplain{lf}{\\\\} \\sym{P-Connect.wf}{\\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{cons}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{\\sym{P-Connect.join}{W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2}} \\\\ (C_1 \\cup C_2 \\cup \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\sym{tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect} \\\\[2ex] \\sym{P-Connect.n}{\\dfrac{\\begin{array}{c}\\Sigma_1 \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W_1} p_1 : T \\qquad \\Sigma_i \\cup \\overline{\\Sigma_{C,i}} \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W_i} p_i : \\ast\\ \\ (2 \\leq i \\leq n) \\\\ \\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{cons}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n)\\end{array}}{\\begin{array}{c}\\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n} \\textstyle\\parallel_i p_i : T\\end{array}}\\;\\textsf{P-Connect$^{n}$}}\\end{array}\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\sym{tp.lfjudg}{\\Sigma \\Vdash^{N,\\eta}_W p : T \\iff \\sym{lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_W p : T}}\\end{array}",
+     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{ty.tfree}{\\mathsf{tfree}\\,T}\\quad \\sym{pfree}{\\mathsf{pfree}\\,\\Sigma}\\quad \\sym{P-Term.wf}{\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{cons}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}\\,W}\\quad \\sym{P-Term.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,\\Sigma, \\Theta_B}\\\\ \\sym{P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\sym{tp.ends}{\\mathsf{ends}}(C_0)}\\quad \\sym{P-Term.disj}{\\sym{tp.chans}{\\mathsf{chans}}\\,\\sym{tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing} \\\\ \\sym{P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = \\sym{ty.sess}{S_x\\inmode{lf}{^{m,m}}},\\ \\Theta_B(c^{-}) = \\sym{ty.sess}{\\overline{S}_{\\overline{x}}\\inmode{lf}{^{m',m'}}}\\inmode{lf}{,\\ m + m' \\leq N}} \\\\ \\inmode{lf}{\\sym{P-Term.ann}{\\forall o \\in \\mathrm{dom}\\,\\Sigma.\\ \\eta(o) = (a, m),\\ m \\leq N}} \\\\ \\sym{P-Term.typed}{\\varnothing ; \\sym{tp.lift}{\\Sigma\\inmode{lf}{^{\\eta}}}, \\Theta_B \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sym{P-Term.future}{\\varnothing}} t : T\\inmode{lf}{\\ !\\ c}}\\end{array}}{\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{N,\\eta}}}_{W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W_1} (C_1, E_1) : T} \\\\ \\sym{P-Connect.right}{\\Sigma_2 \\cup \\sym{P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\sym{P-Connect.disj}{\\mathsf{disjoint}(\\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_1, \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_2, \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, C_1, C_2)} \\\\ \\inmode{lf}{\\sym{P-Connect.tsum}{\\forall o \\in \\mathrm{dom}\\,\\Sigma_C.\\ \\eta(o)_2 + \\eta(\\overline{o})_2 \\leq N}} \\inmodeplain{lf}{\\\\} \\sym{P-Connect.wf}{\\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{cons}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{\\sym{P-Connect.join}{W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2}} \\\\ (C_1 \\cup C_2 \\cup \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\sym{tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect} \\\\[2ex] \\sym{P-Connect.n}{\\dfrac{\\begin{array}{c}\\Sigma_1 \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W_1} p_1 : T \\qquad \\Sigma_i \\cup \\overline{\\Sigma_{C,i}} \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W_i} p_i : \\ast\\ \\ (2 \\leq i \\leq n) \\\\ \\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{cons}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n)\\end{array}}{\\begin{array}{c}\\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n} \\textstyle\\parallel_i p_i : T\\end{array}}\\;\\textsf{P-Connect$^{n}$}}\\end{array}\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\sym{tp.lfjudg}{\\Sigma \\Vdash^{N,\\eta}_W p : T \\iff \\sym{lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_W p : T}}\\end{array}",
      "caption": "P-Term types one thread $t$ over an interface $\\Sigma$ that holds no two dual ends. The thread holds both ends of each channel in $C_0$ at [[ty-dual|dual]] types and points, and $\\Theta_B$ maps these ends. The thread is typed by the [[t-judgment|term judgment]] with no facts and the empty future, so that [[r-base|E-Chan]] closes each end it holds, and its result type is [[ty-kinds|end-free]]. Its world is the world $W$ of the thread. P-Connect cuts two components at $\\Sigma_C$ against $\\overline{\\Sigma_C}$. Disjoint channel sets make the maps disjoint, and the left premise lets $\\Sigma_C$ hold no two dual ends, so the rule asks neither. It asks the [[w-ext|join]] of their two [[w-world|worlds]] consistent, the condition of [[w-wf]], and the composite has that join as its world. The check reads the joined order, never two worlds at a time, so a ring of three threads whose worlds are consistent in pairs and inconsistent together is rejected. The [[syn-procs|process]] of the conclusion restricts the cut channels. Two components may use one private constant for unrelated points. The join then holds the facts of both components, and the check reads each such fact. [[th-compose]] proves both rules in the relation, and [[w-ext]] gives the world a consistent extension. \\inmode{lf}{Lock-free process typing is process typing at a finite bound $N$. The worlds must then be well-founded in place of consistent, which [[t-lf-wf]] explains. The ends of a restricted channel have [[ty-ann|tickets]] of sum at most $N$. The interface annotations $\\eta$ give each interface end $o$ a credit and tickets $\\eta(o) = (a, m)$ with $m \\leq N$, as the [[t-lf-counters|counters block]] explains. P-Term chooses them as [[r-new|E-New]] chooses the tickets of a new channel. P-Connect asks the tickets of the two ends of each cut channel to sum to at most $N$, the check of E-New, and P-Connect$^{n}$ asks it at each of its cuts. Under the annotation $\\eta(o) = (\\lfloor N/2 \\rfloor, \\lfloor N/2 \\rfloor)$ for each end the ticket premise of P-Connect holds at each cut. A derivation reads $\\eta$ only at the ends of its interface and at the ends of the channels its process restricts, so two annotations that agree there type the same processes. Let two components be typed under annotations $\\eta_1$ and $\\eta_2$ of their own, and let the tickets of the two ends of each cut channel sum to at most $N$. Then they connect under the annotation that is $\\eta_1$ on the ends of the first component and $\\eta_2$ elsewhere. A link of two interface ends types at each $N \\geq 1$, as the [[ex-link|link example]] shows.}",
      "why": "Processes are built from single threads by P-Term and composed by P-Connect. The type of a component is its interface and its world, and P-Connect reads only the two worlds of its premises, so the rule is compositional. A bijection on constants that fixes the interface maps a derivation to a derivation at the renamed world. Two components that order one private constant oppositely compose after one of them is renamed.",
      "source": [
@@ -2535,7 +2535,7 @@
     {
      "id": "th-chain",
      "title": "How the results fit together",
-     "formula": "\\begin{array}{rcl}\n\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{\\infty}}_W} p : T & \\overset{\\sym{th.fundamental-proc}{\\textsf{fundamental\\_proc}}}{\\Longrightarrow} & \\Sigma \\mathrel{\\sym{sj.sw}{\\vDash}}_{W} p : T \\\\[1ex]\n\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\sym{w.acyc}{\\mathsf{cons}}\\,W \\land \\varnothing \\mathrel{\\sym{sj.sw}{\\vDash}}_{W} p : T & \\overset{\\sym{th.adequacy-h}{\\textsf{adequacy\\_sw}}}{\\Longrightarrow} & \\sym{prop.df}{\\mathsf{deadlock\\_free}}\\,p\n\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\sym{th.em}{\\mathsf{EM}} \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_{W\\inmode{lf}{,N}} t : T\\ !\\ c \\land W \\mathrel{\\sym{w.ext}{\\sqsubseteq}} W' \\land \\sym{w.acyc}{\\mathsf{cons}}\\,W'}\\inmodeplain{lf}{&}\\inmode{lf}{\\overset{\\sym{th.live-fundamental-ranked}{\\textsf{live\\_fundamental\\_ranked}}}{\\Longrightarrow}}\\inmodeplain{lf}{&}\\inmode{lf}{\\sym{th.df}{\\Delta_{df}} \\mathrel{\\sym{sj.term}{\\vDash[\\kappa_L]}}^{\\varnothing}_{W'} t : T_{df}}\n\\inmodeplain{lf}{\\\\[1ex]}\\inmode{lf}{\\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_{W\\inmode{lf}{,N}} t : T\\ !\\ c \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T}\\inmodeplain{lf}{&}\\inmode{lf}{\\overset{\\sym{th.fsem-of-cost}{\\textsf{fsem\\_of\\_cost}}}{\\Longrightarrow}}\\inmodeplain{lf}{&}\\inmode{lf}{\\sym{fu.fsem}{\\mathsf{fsem}\\,N\\,\\sym{th.styof}{\\Delta\\inmode{lf}{^{N}}}\\,t}}\n\\inmodeplain{lf}{\\\\[1ex]}\\inmode{lf}{\\sym{th.em}{\\mathsf{EM}} \\land \\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{N}}_W} p : T}\\inmodeplain{lf}{&}\\inmode{lf}{\\overset{\\sym{th.lf-fundamental}{\\textsf{lf\\_fundamental}}}{\\Longrightarrow}}\\inmodeplain{lf}{&}\\inmode{lf}{\\Sigma \\mathrel{\\sym{sp.lfsem}{\\Vvdash}}^{N}_{W} p : T}\n\\inmodeplain{lf}{\\\\[1ex]}\\inmode{lf}{\\sym{w.kind}{\\mathsf{ranked}}\\,W \\land \\forall \\alpha.\\ \\exists a.\\ \\sym{proc.erase}{\\mathsf{erase}}(\\sym{th.qa}{q_a}) = p \\land a \\in \\sym{th.soup}{S^{N,W}_{\\alpha}\\llbracket \\varnothing \\vdash T \\rrbracket}}\\inmodeplain{lf}{&}\\inmode{lf}{\\overset{\\sym{th.lf-adequacy}{\\textsf{lf\\_adequacy}}}{\\Longrightarrow}}\\inmodeplain{lf}{&}\\inmode{lf}{\\sym{prop.lf}{\\mathsf{lock\\_free}}\\,p}\n\\end{array}",
+     "formula": "\\begin{array}{rcl}\n\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{\\infty}}_W} p : T & \\overset{\\sym{th.fundamental-proc}{\\textsf{fundamental\\_proc}}}{\\Longrightarrow} & \\Sigma \\mathrel{\\sym{sj.sw}{\\vDash}}_{W} p : T \\\\[1ex]\n\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\sym{w.acyc}{\\mathsf{cons}}\\,W \\land \\varnothing \\mathrel{\\sym{sj.sw}{\\vDash}}_{W} p : T & \\overset{\\sym{th.adequacy-h}{\\textsf{adequacy\\_sw}}}{\\Longrightarrow} & \\sym{prop.df}{\\mathsf{deadlock\\_free}}\\,p\n\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\sym{th.em}{\\mathsf{EM}} \\land \\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_{W\\inmode{lf}{,N}} t : T\\ !\\ c \\land N \\in \\mathbb{N} \\land W \\mathrel{\\sym{w.ext}{\\sqsubseteq}} W' \\land \\sym{w.acyc}{\\mathsf{cons}}\\,W'}\\inmodeplain{lf}{&}\\inmode{lf}{\\overset{\\sym{th.live-fundamental-ranked}{\\textsf{live\\_fundamental\\_ranked}}}{\\Longrightarrow}}\\inmodeplain{lf}{&}\\inmode{lf}{\\sym{th.df}{\\Delta_{df}} \\mathrel{\\sym{sj.term}{\\vDash[\\kappa_L]}}^{\\varnothing}_{W'} t : T_{df}}\n\\inmodeplain{lf}{\\\\[1ex]}\\inmode{lf}{\\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_{W\\inmode{lf}{,N}} t : T\\ !\\ c \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T}\\inmodeplain{lf}{&}\\inmode{lf}{\\overset{\\sym{th.fsem-of-cost}{\\textsf{fsem\\_of\\_cost}}}{\\Longrightarrow}}\\inmodeplain{lf}{&}\\inmode{lf}{\\sym{fu.fsem}{\\mathsf{fsem}\\,N\\,\\sym{th.styof}{\\Delta\\inmode{lf}{^{N}}}\\,t}}\n\\inmodeplain{lf}{\\\\[1ex]}\\inmode{lf}{\\sym{th.em}{\\mathsf{EM}} \\land \\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{N}}_W} p : T \\land N \\in \\mathbb{N}}\\inmodeplain{lf}{&}\\inmode{lf}{\\overset{\\sym{th.lf-fundamental}{\\textsf{lf\\_fundamental}}}{\\Longrightarrow}}\\inmodeplain{lf}{&}\\inmode{lf}{\\Sigma \\mathrel{\\sym{sp.lfsem}{\\Vvdash}}^{N}_{W} p : T}\n\\inmodeplain{lf}{\\\\[1ex]}\\inmode{lf}{\\sym{w.kind}{\\mathsf{ranked}}\\,W \\land \\forall \\alpha.\\ \\exists a.\\ \\sym{proc.erase}{\\mathsf{erase}}(\\sym{th.qa}{q_a}) = p \\land a \\in \\sym{th.soup}{S^{N,W}_{\\alpha}\\llbracket \\varnothing \\vdash T \\rrbracket}}\\inmodeplain{lf}{&}\\inmode{lf}{\\overset{\\sym{th.lf-adequacy}{\\textsf{lf\\_adequacy}}}{\\Longrightarrow}}\\inmodeplain{lf}{&}\\inmode{lf}{\\sym{prop.lf}{\\mathsf{lock\\_free}}\\,p}\n\\end{array}",
      "caption": "Typing gives the semantic judgment at the world $W$ of the derivation, and that judgment gives deadlock freedom. Both steps use the relation $(V, E, P)$ at the step costs $\\kappa_{DF}$ over consistent worlds, and neither needs a classical hypothesis. The arrows are proved in [[th-fund-proc]], [[th-adeq]] and [[th-terms]]. \\inmode{lf}{Lock freedom uses the same relation at $\\kappa_L$, which excludes divergence by free steps, together with fuel, over ranked worlds, the two columns of [[fu-vs]]. The lock-free process relation combines both for each thread. Lock-free adequacy measures a wait on $o$ by $\\mu(t) = (\\varrho(x), f)$. The ownership map $K$ of [[soup]] records the point $x$ of $o$ and the counter $f$ of the dual end $\\overline{o}$. A step of the thread holding $\\overline{o}$ on another end decreases $f$, which F-Count keeps at $1$ or more. A force of that thread decreases $f$ as well, by F-Force. A link gives the waiting end a dual end with a lower counter, by the premise of E-Link and the bound on tickets. So the thread holding $\\overline{o}$ acts on $\\overline{o}$ after finitely many steps. Excluded middle enters at the creations under $\\mathsf{gen\\_new}$ and at the existential property of ordinal indices.}",
      "why": "Each arrow is one theorem of this section. \\inmode{lf}{The lock-free rows show what lock freedom adds to the deadlock-free proof.}",
      "source": [
@@ -2626,7 +2626,7 @@
     {
      "id": "th-compose",
      "title": "Semantic composition rules",
-     "formula": "\\begin{array}{l}\\sym{th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\sym{th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\sym{th.Erel}{E\\inmode{lf}{[\\kappa]}^{W}_{\\alpha}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\sym{th.Prel}{P\\inmode{lf}{[\\kappa]}^{W}_{\\alpha}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\sym{th.sem-p-connect}{\\begin{array}{l}\\begin{array}{l}\\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\sym{th.conn}{\\mathsf{conn}} \\\\ \\land\\ p_1 \\in \\sym{th.Prel}{P^{W}_{\\alpha}\\llbracket \\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket} \\\\ \\land\\ p_2 \\in \\sym{th.Prel}{P^{W}_{\\alpha}\\llbracket \\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\sym{th.par}{p_1 \\parallel_{\\Sigma_C} p_2} \\in \\sym{th.Prel}{P^{W}_{\\alpha}\\llbracket \\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\sym{th.sem-p-connect-sw}{\\begin{array}{l}\\begin{array}{l}\\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\sym{th.conn}{\\mathsf{conn}} \\land \\Sigma_1 \\cup \\Sigma_C \\mathrel{\\sym{sj.sw}{\\vDash}}_{W_1} p_1 : T \\\\ \\land\\ \\Sigma_2 \\cup \\Sigma_D \\mathrel{\\sym{sj.sw}{\\vDash}}_{W_2} p_2 : \\ast\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\sym{sj.sw}{\\vDash}}_{W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-p-term}{\\begin{array}{l}\\begin{array}{l}\\sym{th.em}{\\mathsf{EM}} \\land N \\in \\mathbb{N} \\land \\sym{th.ptermprem}{\\mathsf{pterm}_N(\\Sigma, C_0, t, T)}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_W (C_0, \\{t\\}) : T\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-p-connect}{\\begin{array}{l}\\begin{array}{l}\\sym{th.conn}{\\mathsf{conn}} \\land \\Sigma_1 \\cup \\Sigma_C \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_{W_1} p_1 : T \\\\ \\land\\ \\Sigma_2 \\cup \\Sigma_D \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_{W_2} p_2 : \\ast\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma_1 \\cup \\Sigma_2 \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_{W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-soup-term}{\\begin{array}{l}\\begin{array}{l}N \\in \\mathbb{N} \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\sym{th.chprem}{\\mathsf{chan}_N(\\Sigma, \\Theta_B, C_0)} \\\\ \\land\\ \\forall \\alpha.\\ t \\in \\sym{th.Erel}{E[\\kappa_L]^{W}_{\\alpha}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}} \\land t \\in \\sym{sr.FE}{F^{N}_{\\alpha}\\llbracket \\Theta\\inmode{lf}{^{N}} \\vdash \\mathsf{thread}\\ !\\ \\infty\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\forall \\alpha.\\ \\exists a.\\ \\sym{proc.erase}{\\mathsf{erase}}(\\sym{th.qa}{q_a}) = (C_0, \\{t\\}) \\land a \\in \\sym{th.soup}{S^{N,W}_{\\alpha}\\llbracket \\Sigma \\vdash T \\rrbracket}\\end{array}}}\\end{array}",
+     "formula": "\\begin{array}{l}\\sym{th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\sym{th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\sym{th.Erel}{E\\inmode{lf}{[\\kappa]}^{W}_{\\alpha}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\sym{th.Prel}{P\\inmode{lf}{[\\kappa]}^{W}_{\\alpha}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\sym{th.sem-p-connect}{\\begin{array}{l}\\begin{array}{l}\\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\sym{th.conn}{\\mathsf{conn}} \\\\ \\land\\ p_1 \\in \\sym{th.Prel}{P^{W}_{\\alpha}\\llbracket \\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket} \\\\ \\land\\ p_2 \\in \\sym{th.Prel}{P^{W}_{\\alpha}\\llbracket \\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\sym{th.par}{p_1 \\parallel_{\\Sigma_C} p_2} \\in \\sym{th.Prel}{P^{W}_{\\alpha}\\llbracket \\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\sym{th.sem-p-connect-sw}{\\begin{array}{l}\\begin{array}{l}\\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\sym{th.conn}{\\mathsf{conn}} \\land \\Sigma_1 \\cup \\Sigma_C \\mathrel{\\sym{sj.sw}{\\vDash}}_{W_1} p_1 : T \\\\ \\land\\ \\Sigma_2 \\cup \\Sigma_D \\mathrel{\\sym{sj.sw}{\\vDash}}_{W_2} p_2 : \\ast\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\sym{sj.sw}{\\vDash}}_{W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-p-term}{\\begin{array}{l}\\begin{array}{l}\\sym{th.em}{\\mathsf{EM}} \\land N \\in \\mathbb{N} \\land \\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\sym{th.ptermprem}{\\mathsf{pterm}_N(\\Sigma, C_0, t, T)}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_W (C_0, \\{t\\}) : T\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-p-connect}{\\begin{array}{l}\\begin{array}{l}\\sym{th.conn}{\\mathsf{conn}} \\land \\Sigma_1 \\cup \\Sigma_C \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_{W_1} p_1 : T \\\\ \\land\\ \\Sigma_2 \\cup \\Sigma_D \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_{W_2} p_2 : \\ast\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma_1 \\cup \\Sigma_2 \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_{W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-soup-term}{\\begin{array}{l}\\begin{array}{l}N \\in \\mathbb{N} \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\sym{th.chprem}{\\mathsf{chan}_N(\\Sigma, \\Theta_B, C_0)} \\\\ \\land\\ \\forall \\alpha.\\ t \\in \\sym{th.Erel}{E[\\kappa_L]^{W}_{\\alpha}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}} \\land t \\in \\sym{sr.FE}{F^{N}_{\\alpha}\\llbracket \\Theta\\inmode{lf}{^{N}} \\vdash \\mathsf{thread}\\ !\\ \\infty\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\forall \\alpha.\\ \\exists a.\\ \\sym{proc.erase}{\\mathsf{erase}}(\\sym{th.qa}{q_a}) = (C_0, \\{t\\}) \\land a \\in \\sym{th.soup}{S^{N,W}_{\\alpha}\\llbracket \\Sigma \\vdash T \\rrbracket}\\end{array}}}\\end{array}",
      "caption": "A safe thread is a safe process, and two safe processes connected at dual interfaces form a safe process at one world, in the [[p-rel|process relation]]. At the worlds of typing two components compose at the join of their worlds. A component proved safe without typing therefore composes with typed components. \\inmode{lf}{The same holds for the lock-free judgment at the worlds of typing, whose components are read at each ranked extension.}",
      "why": "P-Term and P-Connect hold in the relation, which makes the approach compositional. The fusion clause of the process relation is what makes the connect rule a lemma rather than a new induction. The [[ex-flag|self-computed flag]] uses this to combine a thread proved safe by its reductions with typed threads.",
      "source": [
@@ -5257,7 +5257,7 @@
   },
   "ev.admin": {
    "title": "Administrative events",
-   "meaning": "\\inmode{lf}{$\\mathsf{admin}$ is the set of solo events $\\mathsf{solo}_i\\,\\alpha\\,k$, the steps by $\\beta$, $\\mathsf{force}$, $\\mathsf{new}$, $\\mathsf{spawn}$ and $\\mathsf{link}$. Each of them but a force costs $0$ in $\\kappa_L$.}",
+   "meaning": "$\\mathsf{admin}$ is the set of solo events $\\mathsf{solo}_i\\,\\alpha\\,k$, the steps by $\\beta$, $\\mathsf{force}$, $\\mathsf{new}$, $\\mathsf{spawn}$ and $\\mathsf{link}$.\\inmode{lf}{ Each of them but a force costs $0$ in $\\kappa_L$.}",
    "why": "They act on no protocol. \\inmode{lf}{Absence of internal divergence states that each chain of them is finite.}",
    "breaks": "Nothing. It is a definition.",
    "example": "An unbounded chain of spawns takes only administrative steps.",
@@ -6139,7 +6139,7 @@
   },
   "sty.mu": {
    "title": "Recursion $\\mu\\alpha.S$",
-   "meaning": "A recursive protocol, equal to its unrolling $S[\\mu\\alpha.S/\\alpha]$ up to $\\simeq$.",
+   "meaning": "A recursive protocol, equal to its unrolling $S[\\mu\\alpha.S/\\alpha]$ up to $\\inmodeplain{df}{\\approx}\\inmodeplain{lf}{\\simeq}$.",
    "why": "A plain former. Loops run repeating protocols.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mu\\alpha.\\,!\\ast.\\alpha$ sends $\\ast$ forever.",
@@ -6232,8 +6232,8 @@
   "sty.contr": {
    "title": "Contractive session types",
    "meaning": "$\\mathsf{contr}\\,S$ holds when the variable of each recursion $\\mu\\alpha.S'$ inside $S$, also inside payloads, is reached only through an action, a choice or $\\mathsf{Close}$. \\inmode{lf}{A session variable does not guard, because an instance may set it to $\\mathsf{Skip}$.}",
-   "why": "On a contractive type $\\mathsf{unfold}$ finds the first action within a number of unrollings bounded by the size of the type. Substituting contractive types for session variables keeps $\\simeq$. The rules ask it where a session type enters a derivation, so a box body typed at one instance is typed at each instance.",
-   "breaks": "Without it $\\alpha.\\mu\\beta.\\beta \\simeq (\\alpha.\\mathsf{Skip}).\\mu\\beta.\\beta$, and their instances at $\\alpha = ?\\ast.(\\mathsf{Skip}.\\mathsf{Skip})$ are not equivalent, so a derivation at one instance gives none at the other.",
+   "why": "On a contractive type $\\mathsf{unfold}$ finds the first action within a number of unrollings bounded by the size of the type. Substituting contractive types for session variables keeps $\\inmodeplain{df}{\\approx}\\inmodeplain{lf}{\\simeq}$. The rules ask it where a session type enters a derivation, so a box body typed at one instance is typed at each instance.",
+   "breaks": "Without it $\\alpha.\\mu\\beta.\\beta \\inmodeplain{df}{\\approx}\\inmodeplain{lf}{\\simeq} (\\alpha.\\mathsf{Skip}).\\mu\\beta.\\beta$, and their instances at $\\alpha = ?\\ast.(\\mathsf{Skip}.\\mathsf{Skip})$ are not equivalent, so a derivation at one instance gives none at the other.",
    "example": "$\\mu\\alpha.\\,!\\ast.\\alpha$ and $\\mu\\alpha.\\,?(\\kappa.\\ \\alpha_{\\kappa}).\\mathsf{Close}$ are contractive, $\\mu\\beta.\\beta$ and $\\mu\\beta.\\,\\alpha.\\beta$ are not.",
    "signature": "\\mathsf{contr} \\subseteq \\mathsf{STy}",
    "args": [
@@ -8753,7 +8753,7 @@
    "meaning": "The least relation closed under Sub-Sess, Sub-Arr, Sub-Box, Sub-Ex and componentwise on $\\otimes$ and $\\oplus$, under the facts $\\Gamma$, used by E-Sub and E-Send.",
    "why": "The branches of $\\mathsf{case}$ and of a received choice need one common type. Each clause weakens what a value guarantees, and Sub-Ex reads the facts of $\\Gamma$.",
    "breaks": "Without E-Sub two branches that create a channel with different facts have no common result type.",
-   "example": "\\inmode{lf}{$\\exists^{\\bot}\\rho.\\,\\{\\rho \\prec \\overline{\\rho\\cdot 0}\\}.\\,T \\leq \\exists^{\\bot}\\rho.\\,\\varnothing.\\,T$, and $S_x^{3} \\leq S_x^{1}$ in the lock-free mode.}",
+   "example": "$\\exists^{\\bot}\\rho.\\,\\{\\rho \\prec \\overline{\\rho\\cdot 0}\\}.\\,T \\leq \\exists^{\\bot}\\rho.\\,\\varnothing.\\,T$\\inmode{lf}{, and $S_x^{3} \\leq S_x^{1}$ in the lock-free mode}.",
    "signature": "T \\leq T' \\subseteq \\mathsf{Ty} \\times \\mathsf{Ty}",
    "args": [
     {
@@ -8809,7 +8809,7 @@
   "tp.sub-sess": {
    "title": "Session types up to subtyping",
    "meaning": "$S \\approx S'$\\inmode{lf}{ at annotations $\\infty$, and with annotations $S \\sqsubseteq S'$, bisimilar head normal forms whose annotations agree except the credits of payloads}.",
-   "why": "With $\\mathsf{Skip}$, sequencing and $\\mu$ one protocol has many spellings, e.g. $\\mathsf{Skip}.S \\simeq S$. Rules compare protocols by behaviour.\\inmode{lf}{ A received payload may be read at a lower credit and a sent payload may be promised at a higher one, because a credit is a lower bound on a counter.}",
+   "why": "With $\\mathsf{Skip}$, sequencing and $\\mu$ one protocol has many spellings, e.g. $\\mathsf{Skip}.S \\inmodeplain{df}{\\approx}\\inmodeplain{lf}{\\simeq} S$. Rules compare protocols by behaviour.\\inmode{lf}{ A received payload may be read at a lower credit and a sent payload may be promised at a higher one, because a credit is a lower bound on a counter.}",
    "breaks": "Without it an unfolded recursive protocol and its folded form would be different types, and no loop that acts once and recurses would type.",
    "example": "$\\mu\\alpha.\\,!\\ast.\\alpha \\leq\\ !\\ast.\\mu\\alpha.\\,!\\ast.\\alpha$ at the same point.",
    "signature": "S \\sqsubseteq S'",
@@ -8902,7 +8902,7 @@
   "tp.sub-boxc": {
    "title": "Box results with session variables",
    "meaning": "When the box has session variables, $U$ and $U'$ are equal or both contractive.",
-   "why": "A box with session variables is used at its instances. Contractive instances keep $\\simeq$ between contractive types, so $U \\equiv U'$ gives $U[\\bar s] \\equiv U'[\\bar s]$ at each allowed $\\bar s$.",
+   "why": "A box with session variables is used at its instances. Contractive instances keep $\\inmodeplain{df}{\\approx}\\inmodeplain{lf}{\\simeq}$ between contractive types, so $U \\equiv U'$ gives $U[\\bar s] \\equiv U'[\\bar s]$ at each allowed $\\bar s$.",
    "breaks": "Without contractivity two equivalent results can have instances that are not equivalent, as in [[ex-sinst|the example on contractivity]].",
    "example": "$\\Box(\\forall\\alpha.\\,\\ldots\\,(\\alpha.\\mu\\beta.\\,!\\ast.\\beta)_x) \\leq \\Box(\\forall\\alpha.\\,\\ldots\\,(\\alpha.\\,!\\ast.\\mu\\beta.\\,!\\ast.\\beta)_x)$.",
    "signature": "\\bar\\alpha \\neq \\varnothing \\Rightarrow U = U' \\vee \\mathsf{contr}\\,U, U'",
@@ -8983,8 +8983,8 @@
    ]
   },
   "tp.sub-teq": {
-   "title": "Equal up to $\\simeq$",
-   "meaning": "$T \\equiv T'$, the two types have the same shape and their session types are pairwise $\\simeq$.",
+   "title": "Equal up to $\\inmodeplain{df}{\\approx}\\inmodeplain{lf}{\\simeq}$",
+   "meaning": "$T \\equiv T'$, the two types have the same shape and their session types are pairwise $\\inmodeplain{df}{\\approx}\\inmodeplain{lf}{\\simeq}$.",
    "why": "The body of a box and of an existential is compared exactly up to protocol spellings. \\inmode{lf}{Credits inside it are not lowered, because a box is copied and an existential is opened at its own credit.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Box(\\ldots\\,(\\mathsf{Skip}.S)_x) \\leq \\Box(\\ldots\\,S_x)$.",
@@ -8992,7 +8992,7 @@
    "args": [
     {
      "name": "T, T'",
-     "meaning": "types of the same shape whose session types are pairwise $\\simeq$"
+     "meaning": "types of the same shape whose session types are pairwise $\\inmodeplain{df}{\\approx}\\inmodeplain{lf}{\\simeq}$"
     }
    ],
    "source": [
@@ -9077,7 +9077,7 @@
   },
   "side.top": {
    "title": "$\\bot$ below and $\\top$ above each bound",
-   "meaning": "The orders $\\prec_W$ and $\\Gamma \\vdash$ extend to the bounds. $\\bot$ lies below each bound and $\\top$ above each bound, the two included, so $\\bot \\prec \\bot$ and $\\top \\prec \\top$ hold, $\\top \\prec \\bot$ fails, and between points the order is the one of the world or of $\\Gamma$. $\\preccurlyeq$ stays $=$ or $\\prec$. So $x \\preccurlyeq \\top$ holds for each point $x$ and $x \\preccurlyeq \\bot$ for none.",
+   "meaning": "A comparison of a bound with a point or with a set of bounds reads $\\prec_W$ and $\\Gamma \\vdash$ extended to bounds. $\\bot$ lies below each bound and $\\top$ above each bound, the two included, so $\\bot \\prec \\bot$ and $\\top \\prec \\top$ hold, $\\top \\prec \\bot$ fails, and between points the order is the one of the world or of $\\Gamma$. The extended order is no strict order. The rules read it only in the side conditions of typing and at the bounds of the value relation, and the conditions on worlds and readiness compare points. $\\preccurlyeq$ stays $=$ or $\\prec$. So $x \\preccurlyeq \\top$ holds for each point $x$ and $x \\preccurlyeq \\bot$ for none.",
    "why": "One comparison then covers a point, a missing bound and a value without ends. $\\bot$ as a lower point says that the ends may be anywhere, so no point lies below $\\bot$. $\\top$ as a lower point says that there are no ends, so nothing is obstructed. $\\bot$ as an upper point says that a call may wait anywhere, so it asks nothing of the future, and $\\top$ as an upper point admits only the empty future.",
    "breaks": "Nothing. It is a definition.",
    "example": "$x \\prec \\{y, \\bot\\}$ fails for each point $x$, and $\\top \\prec \\{\\top\\} \\cup {\\vartriangle}\\top$ holds.",
@@ -9367,7 +9367,7 @@
   "E-Box.inst": {
    "title": "Typed for each instance",
    "meaning": "The premise has one derivation of the body for each list $\\bar s$ with $\\mathsf{sinsts}\\,\\bar s$, one session type per session variable $\\bar\\alpha$ of the box.",
-   "why": "A force may pick an allowed $\\bar s$, and the derivation for that $\\bar s$ justifies the call. Checking the instances up front keeps E-Force a plain lookup. The derivation at the identity instance gives the others, because the session types of the body are contractive and contractive instances keep $\\simeq$.",
+   "why": "A force may pick an allowed $\\bar s$, and the derivation for that $\\bar s$ justifies the call. Checking the instances up front keeps E-Force a plain lookup. The derivation at the identity instance gives the others, because the session types of the body are contractive and contractive instances keep $\\inmodeplain{df}{\\approx}\\inmodeplain{lf}{\\simeq}$.",
    "breaks": "Nothing. It is a definition.",
    "example": "A box with no session variable has exactly one instance, the empty list, so the premise is one derivation.",
    "signature": "\\forall \\bar s.\\ \\mathsf{sinsts}\\,\\bar s \\Rightarrow \\ldots",
@@ -9491,9 +9491,9 @@
   "E-Sub.contr": {
    "title": "Subtyping keeps contractivity",
    "meaning": "If $T$ is contractive, so is $T'$.",
-   "why": "Subtyping compares session types up to $\\simeq$, and a type equivalent to a contractive one need not be contractive. Over contractive contexts each derived type is contractive, so the premise asks the target contractive.",
+   "why": "Subtyping compares session types up to $\\inmodeplain{df}{\\approx}\\inmodeplain{lf}{\\simeq}$, and a type equivalent to a contractive one need not be contractive. Over contractive contexts each derived type is contractive, so the premise asks the target contractive.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{Close}.\\mu\\beta.\\beta \\simeq \\mathsf{Close}$, and E-Sub does not turn an end at $\\mathsf{Close}$ into one at $\\mathsf{Close}.\\mu\\beta.\\beta$.",
+   "example": "$\\mathsf{Close}.\\mu\\beta.\\beta \\inmodeplain{df}{\\approx}\\inmodeplain{lf}{\\simeq} \\mathsf{Close}$, and E-Sub does not turn an end at $\\mathsf{Close}$ into one at $\\mathsf{Close}.\\mu\\beta.\\beta$.",
    "signature": "\\mathsf{contr}\\,T \\Rightarrow \\mathsf{contr}\\,T'",
    "args": [
     {
@@ -9966,7 +9966,7 @@
   },
   "E-New.bot": {
    "title": "Lower bound $\\bot$",
-   "meaning": "The pair is at a base $\\rho$ that no point of the context is related to.",
+   "meaning": "The pair is at a fresh base $\\rho$, and no fact of $\\Gamma$ mentions a point of its tree.",
    "why": "$\\exists^{\\bot}$ records that the ends of the value are at points without a known lower bound. $\\bot$ enters the active points of the value, so a thread that holds it may not wait.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{mk}_0$ returns $\\exists^{\\bot}\\iota.\\,C.\\,({?}\\ast.\\mathsf{Close})_{\\overline{\\iota}}$.",
@@ -10693,12 +10693,12 @@
    ]
   },
   "P-Term.wf": {
-   "title": "$\\mathsf{ok}_N\\,W$",
+   "title": "$\\mathsf{world\\_wf}\\,W \\land \\inmodeplain{df}{\\mathsf{cons}}\\inmode{lf}{\\mathsf{ok}_N}\\,W$",
    "meaning": "The world of a single thread is well formed, consistent\\inmode{lf}{ at $N = \\infty$ and well-founded at a finite bound}.",
    "why": "The world of each process derivation then has an extension of the right kind.",
    "breaks": "Without it P-Connect would have to check the whole join, and a thread world with a cycle would make the semantic judgment vacuous.",
    "example": "The empty world.",
-   "signature": "\\mathsf{ok}_N\\,W",
+   "signature": "\\mathsf{world\\_wf}\\,W \\land \\inmodeplain{df}{\\mathsf{cons}}\\inmode{lf}{\\mathsf{ok}_N}\\,W",
    "args": [
     {
      "name": "W",
@@ -11097,7 +11097,7 @@
   "tp.sinsts": {
    "title": "Allowed session instances $\\mathsf{sinsts}\\,\\bar s$",
    "meaning": "The session types a session variable of a box may stand for. Each $s \\in \\bar s$ is contractive, and no payload of $s$ mentions a point free below its binder. \\inmode{lf}{At $N = \\infty$ each $s$ also has no finite credit.}",
-   "why": "The rules read the first action of a protocol after unfolding, and a contractive instance keeps a contractive type contractive and keeps $\\simeq$. \\inmode{lf}{At $N = \\infty$ each annotation in a derivation is $\\infty$, and an instance with a finite credit inside its payloads would bring one in.}",
+   "why": "The rules read the first action of a protocol after unfolding, and a contractive instance keeps a contractive type contractive and keeps $\\inmodeplain{df}{\\approx}\\inmodeplain{lf}{\\simeq}$. \\inmode{lf}{At $N = \\infty$ each annotation in a derivation is $\\infty$, and an instance with a finite credit inside its payloads would bring one in.}",
    "breaks": "Without contractivity a box with a variable $\\alpha$ could be forced at $\\mu\\alpha.\\alpha$, and an end of type $\\mu\\alpha.\\alpha$ would be stuck with no action to perform.",
    "example": "$\\mu\\alpha.\\,!\\ast.\\alpha$ and $\\mathsf{Close}$ are allowed, $\\mu\\alpha.\\alpha$ and $\\mu\\alpha.\\,\\mathsf{Skip}.\\alpha$ are not.",
    "signature": "\\mathsf{sinsts} : \\inmode{lf}{(\\mathbb{N} \\cup \\{\\infty\\}) \\to }\\mathsf{Sty}^{*} \\to \\mathsf{Prop}",
@@ -11310,7 +11310,7 @@
   "ord.fix": {
    "title": "$\\mathsf{osfix}$",
    "meaning": "The family defined by well-founded recursion on the index, where $F$ reads the family only strictly below $\\alpha$.",
-   "why": "\\inmode{lf}{$V$, $E$, $P$ and fuel are each one such family, unfolded up to pointwise equivalence.}",
+   "why": "$V$, $E$ and $P$ together are one such family, unfolded up to pointwise equivalence.\\inmode{lf}{ Fuel is a second one.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$V_\\alpha$ reads $V_\\beta$ only for $\\beta < \\alpha$.",
    "signature": "\\mathsf{osfix} : ((\\mathsf{Ord} \\to T) \\to \\mathsf{Ord} \\to T) \\to \\mathsf{Ord} \\to T",
@@ -11405,6 +11405,9 @@
     },
     {
      "kind": "notation",
+     "modes": [
+      "lf"
+     ],
      "reason": "At $\\kappa_L$ the Rocq writes `⊫`. The map writes $\\vDash[\\kappa_L]$, the instance of the family $\\vDash[\\kappa]$, as for terms.",
      "names": [
       "sem_ptyped_sw",
@@ -12163,10 +12166,10 @@
   "V-Arrow.level": {
    "title": "Level of the body",
    "meaning": "The body is read at each level $\\beta < \\alpha$, \\inmode{lf}{and under a general table at the levels $\\beta$ with $\\beta + \\kappa_{\\mathrm{beta}} \\leq \\alpha$.}",
-   "why": "\\inmode{lf}{A $\\beta$-step costs one level in the deadlock-free relation.} \\inmode{lf}{Under $\\kappa_L$, where $\\beta$ is free, the body is read at the levels $\\beta \\leq \\alpha$.}",
+   "why": "A $\\beta$-step costs one level in the deadlock-free relation. \\inmode{lf}{Under $\\kappa_L$, where $\\beta$ is free, the body is read at the levels $\\beta \\leq \\alpha$.}",
    "breaks": "Nothing. It is a definition.",
    "example": "The body of a closure in $V_3$ is read at levels $0$ to $2$.",
-   "signature": "\\beta + \\kappa_\\beta \\leq \\alpha : \\mathsf{Prop}",
+   "signature": "\\inmodeplain{df}{\\beta < \\alpha}\\inmode{lf}{\\beta + \\kappa_\\beta \\leq \\alpha} : \\mathsf{Prop}",
    "args": [
     {
      "name": "\\beta",
@@ -12472,7 +12475,7 @@
   "rel.vsize": {
    "title": "Recursion on $(\\alpha, \\mathsf{size}\\,T)$",
    "meaning": "$V_{\\alpha}$ is defined by well-founded recursion on the ordinal $\\alpha$ and, inside a level, on the size of the type, with the levels built by one fixpoint $\\mathsf{osfix}$. The size counts the constructors of a type, with a box as $3 + \\mathsf{size}\\,U$ and its thunk $\\ast \\multimap^{u} U$ as $2 + \\mathsf{size}\\,U$, so that the box clause reads the thunk at the same level.",
-   "why": "\\inmode{lf}{Under $\\kappa_L$, $V_{\\alpha}$ reads $E_{\\beta}$ and $V_{\\beta}$ at the levels $\\beta \\leq \\alpha$ and at smaller types, and instantiation preserves size.}",
+   "why": "Under $\\kappa_{DF}$, $V_{\\alpha}$ reads $V$ and $E$ at lower levels for closures and boxes, and at smaller types within the level for products, sums and existentials, whose instantiation preserves size. \\inmode{lf}{Under $\\kappa_L$, $V_{\\alpha}$ reads $E_{\\beta}$ and $V_{\\beta}$ at the levels $\\beta \\leq \\alpha$ and at smaller types, and instantiation preserves size.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{size}(\\Box(\\ldots U)) = 3 + \\mathsf{size}\\,U$.",
    "signature": "V : \\mathsf{Ord} \\to \\mathsf{World} \\to \\mathsf{Env} \\to \\mathsf{Ty} \\to \\mathsf{Val} \\to \\mathsf{Prop}",
@@ -12505,7 +12508,7 @@
    "deviations": [
     {
      "kind": "renamed",
-     "reason": "The Rocq builds the levels with `osfix` and measures types with `tsize`, and the formula names the measure and the ordinals $\\mathsf{measure}$ and $\\mathsf{Ord}$.",
+     "reason": "The Rocq builds the levels with `osfix` in `RelA` and measures types with `tsize`, written $\\mathsf{size}$. `Vtop` unfolds `Vbody` with the fuel $\\mathsf{size}\\,T + 1$, which is the recursion on the size within a level.",
      "names": [
       "tsize",
       "Vtop",
@@ -13107,7 +13110,7 @@
   "O-Send.payload": {
    "title": "Payload level",
    "meaning": "$w \\in V_{\\alpha}\\llbracket\\Theta_M \\vdash U[x\\cdot\\bar\\imath]\\rrbracket$, \\inmode{lf}{and $V_{\\beta}$ for $\\beta + \\kappa_{\\mathrm{give}} \\leq \\alpha$ and for $\\beta = 0$ under a general table.}",
-   "why": "\\inmode{lf}{The payload is read at the level of the continuation, because a send costs no level in the deadlock-free relation.} \\inmode{lf}{Under $\\kappa_L$ it costs one.}",
+   "why": "The payload is read at the level of the continuation, because a send costs no level in the deadlock-free relation. \\inmode{lf}{Under $\\kappa_L$ it costs one.}",
    "breaks": "Nothing. It is a definition.",
    "example": "The payload $a$ of $\\mathsf{send}\\,\\langle a, y\\rangle$ at $Y\\cdot 0$.",
    "signature": "w \\in V^{W}_{\\beta}\\llbracket \\Theta_M \\vdash U[x\\cdot\\bar\\imath] \\rrbracket",
@@ -13216,7 +13219,7 @@
    "why": "This negative occurrence of $V$ is at a lower level, so $V$ is well defined. \\inmode{lf}{Under a general table the bound is $\\beta + \\kappa_{\\mathrm{take}} \\leq \\alpha$, and $1 \\leq \\kappa_{\\mathrm{take}}$ keeps $\\beta < \\alpha$.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\forall \\beta\\,\\Theta_{in}$ with $\\beta < \\alpha$.",
-   "signature": "\\forall \\beta \\in \\mathsf{Ord}, \\Theta_{in}.\\ \\beta + \\kappa_{\\mathrm{take}} \\leq \\alpha \\land \\Theta_{in} \\mathbin{\\#} \\Theta \\land w \\in V_{\\beta}\\llbracket\\Theta_{in} \\vdash U[x\\cdot\\bar\\imath]\\rrbracket",
+   "signature": "\\forall \\beta \\in \\mathsf{Ord}, \\Theta_{in}.\\ \\inmodeplain{df}{\\beta < \\alpha}\\inmode{lf}{\\beta + \\kappa_{\\mathrm{take}} \\leq \\alpha} \\land \\Theta_{in} \\mathbin{\\#} \\Theta \\land w \\in V_{\\beta}\\llbracket\\Theta_{in} \\vdash U[x\\cdot\\bar\\imath]\\rrbracket",
    "args": [
     {
      "name": "\\beta",
@@ -14576,7 +14579,7 @@
   },
   "sj.den": {
    "title": "$\\mathsf{den}_{Y}(F)$",
-   "meaning": "$\\mathsf{den}_{Y}(X \\cup {\\vartriangle}v) = X \\cup Y$ for a finite set $Y$ of points above $v$. For $v = \\top$ the set $Y$ is empty, and for $v = \\bot$ it is an arbitrary finite set.",
+   "meaning": "$\\mathsf{den}_{Y}(X \\cup {\\vartriangle}v) = (X \\cap \\mathsf{Point}) \\cup Y$ for a finite set $Y$ of points with $v \\prec y$ for each $y \\in Y$. For $v = \\top$ the set $Y$ is empty, and for $v = \\bot$ it is an arbitrary finite set. For $\\bot \\in X$ the set $Y$ is an arbitrary finite set as well. The bounds $\\bot$ and $\\top$ in $X$ denote no point.",
    "why": "The rest stands for an unknown set of points, so the judgment holds at each choice of this set.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{den}_{Y}({\\vartriangle}u) = Y$.",
@@ -14603,7 +14606,7 @@
    "deviations": [
     {
      "kind": "notation",
-     "reason": "`sf_den Y F` adds $Y$ when $F$ has a rest, and `rest_ok` asks each point of $Y$ above $u$ for the rest `RAbove u`. With no rest the Rocq still quantifies over $Y$ and adds nothing, which the map writes as $Y = \\varnothing$.",
+     "reason": "`sf_den Y F` adds $Y$ when $F$ has a rest, and `rest_ok` asks each point of $Y$ above $u$ for the rest `RAbove u`. With no rest the Rocq still quantifies over $Y$ and adds nothing, which the map writes as $Y = \\varnothing$. The Rocq future has no bounds in its set. A future with $\\bot \\in X$ is the Rocq future with the rest `RAll`, for which `rest_ok` asks nothing of $Y$, as [[t-contexts]] states.",
      "names": [
       "sf_den",
       "rest_ok"
@@ -14647,6 +14650,9 @@
    "deviations": [
     {
      "kind": "notation",
+     "modes": [
+      "lf"
+     ],
      "reason": "The Rocq writes the judgment at $\\kappa_L$ with a turnstile of its own, `⊫`, for `sem_typed κ_L` and `sem_ptyped κ_L`. The map writes $\\vDash[\\kappa_L]$, the instance of the family $\\vDash[\\kappa]$ at $\\kappa_L$, so that one symbol serves each cost table.",
      "names": [
       "sem_typed"
@@ -16390,7 +16396,7 @@
    "deviations": [
     {
      "kind": "notation",
-     "reason": "The Rocq reads `lf_sem` at each ranked world, with the notation $\\Sigma \\Vvdash^{N}_W p : T$. The map writes it out and keeps $\\Sigma \\Vvdash^{N}_W p : T$ for `lf_sems`, the judgment at each ranked extension.",
+     "reason": "The Rocq reads `lf_sem` at each ranked world, with the notation $\\Sigma \\Vvdash^{N}_W p : T$. The map writes it out and keeps $\\Sigma \\Vvdash^{N}_W p : T$ for `lf_sems`, the judgment at each ranked extension. `lf_sems` reads `lf_semk`, the judgment at the annotations $\\eta$ of the interface. The map leaves $\\eta$ implicit here and in the theorem rows, because it is fixed with the interface.",
      "names": [
       "lf_sem",
       "lf_sems"
@@ -17691,7 +17697,7 @@
   },
   "th.soundness": {
    "title": "Soundness",
-   "meaning": "\\inmode{lf}{$\\varnothing \\vdash\\inmode{lf}{^{\\infty}}_{W} p : T$ implies that $p$ is deadlock free.}",
+   "meaning": "$\\varnothing \\vdash\\inmode{lf}{^{\\infty}}_{W} p : T$ implies that $p$ is deadlock free.",
    "why": "The fundamental theorem for processes at the world of the derivation, which is consistent, followed by adequacy. \\inmode{lf}{No excluded middle and no choice enter the proof.}",
    "breaks": "Nothing. It is a theorem.",
    "example": "The [[ex-cycle|cycle]] is deadlock free.",
@@ -18683,7 +18689,7 @@
   },
   "th.ptermprem": {
    "title": "$\\mathsf{pterm}_N(\\Sigma, C_0, t, T)$",
-   "meaning": "The premises of P-Term at the bound $N$ for the thread $t$ over the interface $\\Sigma$ with restricted channels $C_0$ and result $T$, except the condition on the world.",
+   "meaning": "The premises of P-Term at the bound $N$ for the thread $t$ over the interface $\\Sigma$ with restricted channels $C_0$ and result $T$, except the conditions on the world, of which it keeps $\\mathsf{world\\_wf}\\,W$.",
    "why": "The lock-free judgment reads the thread at each ranked extension, so the world needs no condition here.",
    "breaks": "Nothing. It is a definition.",
    "example": "One thread closing its end $c^{+}$ with $C_0 = \\varnothing$.",
@@ -20021,7 +20027,7 @@
   {
    "id": "ex-forwarder",
    "title": "The spawn forwarder",
-   "lead": "A thread that receives closures and spawns them is lock free, because a received closure owns the ends it mentions, by the exactness of the [[v-rel|value relation]] and of [[fv|values with fuel]].",
+   "lead": "A thread that receives closures and spawns them types in the lock-free judgment and has fuel at each counter bound. A received closure owns the ends it mentions, by the exactness of the [[v-rel|value relation]] and of [[fv|values with fuel]].",
    "code": "fw o = let ⟨w, c⟩ = recv o in let ∗ = close c in spawn w\no : ?((∗ ⊸ ∗)^2).Close\ndead_thunk q = λ_. let ∗ = Ω in close q",
    "meaning": "The forwarder receives a closure on $o$ and spawns the closure as a new thread. $\\mathsf{dead\\_thunk}\\,q$ mentions the end $q$ without owning it, so it is not a value in $FV$ and cannot arrive on $o$. Each closure the forwarder receives therefore owns its ends, and $\\mathsf{fw}$ has fuel at each counter bound.",
    "modes": [
