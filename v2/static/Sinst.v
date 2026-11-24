@@ -239,11 +239,16 @@ Proof. induction Δ as [|[T|] Δ IH]; simpl; rewrite ?heads_sinst; congruence. Q
 Lemma lenv_bot_sinst σ Δ : lenv_bot (lenv_sinst σ Δ) = lenv_bot Δ.
 Proof. induction Δ as [|[T|] Δ IH]; simpl; rewrite ?hbot_sinst; congruence. Qed.
 
-Lemma thage_sinst σ c Θ Θ' : thage c Θ Θ' → thage c (tenv_sinst σ Θ) (tenv_sinst σ Θ').
+(** An idle end stays idle under a contractive instance of a
+    contractive session type ([idle_sinst]). *)
+Lemma thage_sinst σ c Θ Θ' : (∀ a, scontr (σ a)) → tenv_contr Θ →
+  thage c Θ Θ' → thage c (tenv_sinst σ Θ) (tenv_sinst σ Θ').
 Proof.
-  intros H o. specialize (H o). unfold tenv_sinst. rewrite !lookup_fmap.
-  destruct (Θ !! o), (Θ' !! o); simpl in *; try done.
-  destruct H as (E1 & E2 & E3 & E4 & E5 & E6). unfold tentry_sinst. simpl. by rewrite E1, E2, E3, E5.
+  intros Hσ HΘ H o. specialize (H o). specialize (HΘ o). unfold tenv_sinst. rewrite !lookup_fmap.
+  destruct (Θ !! o) as [e|], (Θ' !! o); simpl in *; try done.
+  destruct H as (E1 & E2 & E3 & E4 & E5 & E6). unfold tentry_sinst. simpl. rewrite E1, E2, E3, E5.
+  split_and!; try done. destruct E4 as [E4|E4]; [by left|right].
+  apply idle_sinst; [done|exact (HΘ e eq_refl)|done].
 Qed.
 
 Section with_σ.

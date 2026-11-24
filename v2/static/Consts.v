@@ -644,7 +644,7 @@ Lemma thage_ren f c Θ Θ' : thage c Θ Θ' → thage c (tenv_ren f Θ) (tenv_re
 Proof.
   intros H o. specialize (H o). unfold tenv_ren. rewrite !lookup_fmap.
   destruct (Θ !! o), (Θ' !! o); simpl in *; try done. destruct H as (E1 & E2 & E3 & E4 & E5 & E6).
-  simpl. by rewrite E1, E2, E3, E5.
+  simpl. rewrite E1, E2, E3, E5. split_and!; try done. destruct E4 as [E4|E4]; [by left|right; by apply idle_ren].
 Qed.
 
 Lemma sf_unionb_ren f F X b : sf_ren f (sf_unionb F X b) = sf_unionb (sf_ren f F) (set_map (pt_ren f) X) b.

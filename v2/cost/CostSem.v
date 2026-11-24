@@ -341,7 +341,8 @@ Proof.
 Qed.
 
 Lemma thage_lookup c Θ Θ' o te' : thage c Θ Θ' → Θ' !! o = Some te' →
-  ∃ te, Θ !! o = Some te ∧ te_sty te' = te_sty te ∧ te_tk te' = te_tk te ∧ fle c (te_cr te) ∧ te_cr te' = fsub (te_cr te) c.
+  ∃ te, Θ !! o = Some te ∧ te_sty te' = te_sty te ∧ te_tk te' = te_tk te ∧
+    (fle c (te_cr te) ∨ idle (te_sty te)) ∧ te_cr te' = fsub (te_cr te) c.
 Proof. intros H Ho. specialize (H o). rewrite Ho in H. destruct (Θ !! o); naive_solver. Qed.
 
 Lemma thfuel_age c Θ Θ' g Π φ : thage c Θ Θ' → thfuel Θ g Π φ → thfuel Θ' g Π (fminus c <$> φ).
@@ -355,13 +356,16 @@ Proof.
     exists (fminus c f). rewrite lookup_fmap, Hf. split; [done|]. rewrite Hcr, Hm. split; [by apply fle_fsub_mono|done].
 Qed.
 
-Lemma thfuel_age_above c Θ Θ' g Π φ : thage c Θ Θ' → thfuel Θ g Π φ → ∀ o f, φ !! o = Some f → fle c f.1.
+(** An end of Θ that is not idle covers c by its credit, which its
+    counter is at or above. An idle end of Θ ages by truncation. *)
+Lemma thfuel_age_above c Θ Θ' g Π φ : thage c Θ Θ' → thfuel Θ g Π φ → fabove c Π φ.
 Proof.
-  intros Ha Ht o f Ho. pose proof Ht as (Hi & HΠ & Hφ & H).
+  intros Ha Ht o f Ho Hn. pose proof Ht as (Hi & HΠ & Hφ & H).
   destruct (thfuel_lookup Θ g Π φ o Ht ltac:(rewrite <-Hφ; by eapply elem_of_dom_2)) as (o0 & te & -> & Hte).
-  destruct (H o0 te Hte) as (_ & f' & Hf' & Hle & _). rewrite Ho in Hf'. injection Hf' as <-.
+  destruct (H o0 te Hte) as (Hp & f' & Hf' & Hle & _). rewrite Ho in Hf'. injection Hf' as <-.
   specialize (Ha o0). rewrite Hte in Ha. destruct (Θ' !! o0); [|done].
-  destruct Ha as (_ & _ & _ & Hc & _). by eapply fle_trans.
+  destruct Ha as (_ & _ & _ & [Hc|Hid] & _); [by eapply fle_trans|].
+  exfalso. apply Hn. by exists (te_sty te).
 Qed.
 
 Lemma thfuel_cle Θ g Π φ φ' : cle φ φ' → thfuel Θ g Π φ → thfuel Θ g Π φ'.
@@ -447,7 +451,7 @@ Lemma envf_age_above N n c Θ Θ' Δ Δ' g γ Π φ :
   thage c Θ Θ' → lage c Δ Δ' → envf N n Θ Δ g γ Π φ → fabove c Π φ.
 Proof.
   intros HaT HaD (ΠΘ & φΘ & Πγ & φγ & HT & HG & Hd1 & Hd2 & -> & ->).
-  apply fabove_union; [done|apply fabove_of, (thfuel_age_above _ _ _ _ _ _ HaT HT)|exact (gfuel_age_above _ _ _ _ _ HaD _ _ _ HG)].
+  apply fabove_union; [done|exact (thfuel_age_above _ _ _ _ _ _ HaT HT)|exact (gfuel_age_above _ _ _ _ _ HaD _ _ _ HG)].
 Qed.
 
 Lemma envf_rename N n Θ Δ g γ Π φ (g' : cend → cend) Π' φ' :

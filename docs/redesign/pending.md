@@ -1,5 +1,34 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, 2026-11-24, idle ends in Θ
+
+Approved by the author on 2026-11-24. Branch fx-idle from redesign
+3ddf5c9. Nothing pushed, nothing merged.
+
+1. Change. `thage` (static/Contexts.v) asks `fle c (te_cr e) ∨ idle
+   (te_sty e)` of each end in place of `fle c (te_cr e)`. An idle end in
+   Θ now ages to `fsub (te_cr e) c` without covering c, as `age_idle`
+   does for Δ. The conjunct `fle (te_cr e) (te_tk e)` stays for every
+   end, idle ones included, because `cr_tk` and `typed_cr_tk` read it
+   and truncation keeps it.
+2. Semantic side. `thfuel_age_above` (cost/CostSem.v) now concludes
+   `fabove c Π φ`, the form `gfuel_age_above` already has for Δ. An idle
+   end of Θ maps to an idle end of Π through `thfuel`, so `fabove`
+   excuses it. `envf_age_above` keeps its statement. `thfuel_age` needed
+   no change, because `fle_fsub_mono` asks nothing of c.
+3. Statements that changed form, all helpers. `thage_lookup` returns the
+   disjunction. `thfuel_age_above` concludes `fabove`. `thage_sinst`
+   (static/Sinst.v) takes `∀ a, scontr (σ a)` and `tenv_contr Θ`, which
+   every caller has, for `idle_sinst`. No theorem of CheckAll changed.
+4. Proof repairs. `thage_ren` (via `idle_ren`), `thage_pinst`,
+   `thage_df`, `thage_0` in Weakening, one goal in examples/SharedRoots.
+   ChanRen, LetVar, Conservativity's `thage_df_eq`, the fundamental
+   theorems and the compatibility lemmas went through unchanged.
+5. Map. The aging caption and the note on Age-Idle say that the idle
+   exception holds for both forms. check.sh reports 0 errors.
+6. Checks. `make` clean, `make check` 257 of 257 closed, `make test`
+   matches, no expected file regenerated.
+
 ## Report, 2026-11-23, per-branch orders design check
 
 Approved by the author on 2026-11-23 ("is good i kind of want it. draft

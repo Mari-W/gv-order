@@ -122,7 +122,7 @@ Proof. induction Δ as [|[T|] Δ IH]; simpl; constructor; auto using tage_df. Qe
 Lemma thage_df c Θ : thage c (tenv_df Θ) (tenv_df Θ).
 Proof.
   intros o. unfold tenv_df. rewrite lookup_fmap. destruct (Θ !! o); simpl; [|done].
-  split_and!; try done; apply fle_inf.
+  split_and!; try done; try left; apply fle_inf.
 Qed.
 
 (** ** Subtyping *)
