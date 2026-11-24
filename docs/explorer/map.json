@@ -588,8 +588,8 @@
     {
      "id": "ty-heads",
      "title": "Active points and lower bounds",
-     "formula": "\\begin{array}{l}\n\\sym{ty.ubound}{\\sym{ty.lbound}{l}, u \\in \\mathsf{Point} \\cup \\{\\bot, \\top\\}} \\qquad \\sym{ty.up}{{\\uparrow}x = \\{y \\mid x \\prec y\\} \\quad {\\uparrow}\\bot = \\mathsf{Point} \\quad {\\uparrow}\\top = \\varnothing} \\\\\n\\sym{ty.heads}{\\mathsf{ap}S_x = \\{\\overline{x}\\}} \\qquad \\sym{ty.heads}{\\mathsf{ap}(T \\multimap^{u}_{l} U) = \\mathsf{ap}(\\exists^{l}\\bar\\iota.\\ C.\\ T) = \\begin{cases} \\{l\\} & l \\in \\mathsf{Point} \\\\ {\\uparrow}l & l \\in \\{\\bot, \\top\\} \\end{cases}} \\\\\n\\sym{ty.heads}{\\mathsf{ap}(T \\otimes U) = \\mathsf{ap}(T \\oplus U) = \\mathsf{ap}(T) \\cup \\mathsf{ap}(U)} \\qquad \\sym{ty.heads}{\\mathsf{ap}(\\ast) = \\mathsf{ap}(\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u} U)) = \\varnothing}\n\\end{array}",
-     "caption": "A lower point $l$ and an upper point $u$ are a point, $\\bot$ or $\\top$, and ${\\uparrow}u$ is the set of points above $u$, $\\mathsf{Point}$ for $u = \\bot$ and none for $u = \\top$. The upper point of a [[r-boxes|box]] is a point or $\\bot$. $\\mathsf{ap}(T)$ is the set of dual points of the ends in a value of $T$, the points at which the partners of these ends act next. A thread holding such a value may wait only below these points, which the [[t-side|side conditions]] check. A closure or an existential at $l = \\bot$ holds ends at hidden points. Its active points form $\\mathsf{Point}$, so a thread that holds it waits nowhere. At $l = \\top$ it holds no end. The [[t-judgment|future]] of a thread, the [[r-fun|arrow rules]] and the [[r-ex|existential rules]] read $\\mathsf{ap}$.",
+     "formula": "\\begin{array}{l}\n\\sym{ty.ubound}{\\sym{ty.lbound}{l}, u \\in \\mathsf{Point} \\cup \\{\\bot, \\top\\}} \\qquad \\sym{ty.up}{{\\vartriangle}x = \\{y \\mid x \\prec y\\} \\quad {\\vartriangle}\\bot = \\mathsf{Point} \\quad {\\vartriangle}\\top = \\varnothing} \\\\\n\\sym{ty.heads}{\\mathsf{ap}S_x = \\{\\overline{x}\\}} \\qquad \\sym{ty.heads}{\\mathsf{ap}(T \\multimap^{u}_{l} U) = \\mathsf{ap}(\\exists^{l}\\bar\\iota.\\ C.\\ T) = \\begin{cases} \\{l\\} & l \\in \\mathsf{Point} \\\\ {\\vartriangle}l & l \\in \\{\\bot, \\top\\} \\end{cases}} \\\\\n\\sym{ty.heads}{\\mathsf{ap}(T \\otimes U) = \\mathsf{ap}(T \\oplus U) = \\mathsf{ap}(T) \\cup \\mathsf{ap}(U)} \\qquad \\sym{ty.heads}{\\mathsf{ap}(\\ast) = \\mathsf{ap}(\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u} U)) = \\varnothing}\n\\end{array}",
+     "caption": "A lower point $l$ and an upper point $u$ are a point, $\\bot$ or $\\top$, and ${\\vartriangle}u$ reads everything above $u$, $\\mathsf{Point}$ for $u = \\bot$ and nothing for $u = \\top$. The upper point of a [[r-boxes|box]] is a point or $\\bot$. $\\mathsf{ap}(T)$ is the set of dual points of the ends in a value of $T$, the points at which the partners of these ends act next. A thread holding such a value may wait only below these points, which the [[t-side|side conditions]] check. A closure or an existential at $l = \\bot$ holds ends at hidden points. Its active points form $\\mathsf{Point}$, so a thread that holds it waits nowhere. At $l = \\top$ it holds no end. The [[t-judgment|future]] of a thread, the [[r-fun|arrow rules]] and the [[r-ex|existential rules]] read $\\mathsf{ap}$.",
      "why": "A thread that waits while it holds a value must wait below the dual points of the ends in that value, and $\\mathsf{ap}$ computes these points from the type. A closure type does not list its captured ends, so it records one point $l$ at or below their dual points instead.",
      "source": [
       {
@@ -617,7 +617,7 @@
      "deviations": [
       {
        "kind": "notation",
-       "reason": "The Rocq has `heads T`, a finite set of points, and `hbot T`, a flag for hidden ends, and the bounds `lbound` with `LNone`, `LBot`, `LPt x` and `ubound` with `UNone`, `UPt x`, `UTop`. The map writes $\\mathsf{ap}(T)$ for `heads T` with ${\\uparrow}\\bot$ added when `hbot T` holds, $l = \\top$ for `LNone`, $l = \\bot$ for `LBot`, $u = \\bot$ for `UNone` and $u = \\top$ for `UTop`. Each check that reads a bound then is one comparison with a set of points, as [[t-side]] states.",
+       "reason": "The Rocq has `heads T`, a finite set of points, and `hbot T`, a flag for hidden ends, and the bounds `lbound` with `LNone`, `LBot`, `LPt x` and `ubound` with `UNone`, `UPt x`, `UTop`. The map writes $\\mathsf{ap}(T)$ for `heads T` with ${\\vartriangle}\\bot$ added when `hbot T` holds, $l = \\top$ for `LNone`, $l = \\bot$ for `LBot`, $u = \\bot$ for `UNone` and $u = \\top$ for `UTop`. Each check that reads a bound then is one comparison with a set of points, as [[t-side]] states.",
        "names": [
         "heads",
         "hbot",
@@ -893,7 +893,7 @@
      "id": "t-judgment",
      "title": "The typing judgment",
      "formula": "\\begin{array}{l}\\sym{tj.Gamma}{\\Gamma} ; \\sym{tj.Delta}{\\Delta} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sym{tj.F}{F}}_{\\sym{tj.W}{W}\\inmode{lf}{,\\sym{tj.N}{N}}} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon} \\\\ \\sym{tj.held}{F \\triangleleft H = F \\cup \\sym{ty.heads}{\\mathsf{ap}}(H)}\\inmode{lf}{\\ \\land\\ \\sym{tj.hage}{\\mathsf{def}(H - c)}}\\inmodeplain{lf}{ \\\\ }\\inmode{lf}{\\sym{tj.eff}{\\varepsilon = c \\in \\mathbb{N} \\cup \\{\\infty\\}} \\qquad \\sym{tj.seq}{\\varepsilon_1 \\cdot \\varepsilon_2 = c_1 + c_2}}\\inmodeplain{lf}{ \\\\ }\\inmode{lf}{\\sym{tj.zero}{0} \\qquad \\sym{tj.one}{1} \\qquad \\sym{tp.max}{\\max(\\varepsilon_1, \\varepsilon_2)} \\qquad \\sym{E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}",
-     "caption": "$\\Gamma$ holds facts, $\\Delta$ the ends and variables, and $F$ is the future, each defined in [[t-contexts]]. The type $T$ is one of [[ty-grammar]]. A thread that runs $e$ while it holds the values $H$ waits under $F \\triangleleft H$, which adds the [[ty-heads|active points]] of $H$ to the future. A hidden end in $H$ adds ${\\uparrow}\\bot$, and the future becomes $\\mathsf{Point}$. The world $W$ and the bound $N$ stay fixed for a whole derivation, and the rules leave them implicit. \\inmode{lf}{In the lock-free mode $\\varepsilon$ is the cost of $e$, an upper bound on its session actions, and [[t-agecap|aging]] subtracts it from what is held.}",
+     "caption": "$\\Gamma$ holds facts, $\\Delta$ the ends and variables, and $F$ is the future, each defined in [[t-contexts]]. The type $T$ is one of [[ty-grammar]]. A thread that runs $e$ while it holds the values $H$ waits under $F \\triangleleft H$, which adds the [[ty-heads|active points]] of $H$ to the future. A hidden end in $H$ adds ${\\vartriangle}\\bot$, and the future becomes $\\mathsf{Point}$. The world $W$ and the bound $N$ stay fixed for a whole derivation, and the rules leave them implicit. \\inmode{lf}{In the lock-free mode $\\varepsilon$ is the cost of $e$, an upper bound on its session actions, and [[t-agecap|aging]] subtracts it from what is held.}",
      "why": "Several rules run one subterm while the thread holds the values of others. Writing the future as $F \\triangleleft H$ states once what these rules need, the future of the running subterm extended by the active points of the held values. The future replaces a global order on actions. A term is typed against the points its own context will act at, so one derivation serves each context that acts above these points.",
      "example": "E-App runs $e_1$ while holding $\\Delta_2$, written $\\Gamma ; \\Delta_1 \\vdash^{F \\triangleleft \\Delta_2} e_1 : \\ldots$",
      "source": [
@@ -918,7 +918,7 @@
      "deviations": [
       {
        "kind": "notation",
-       "reason": "The Rocq writes $F \\triangleleft H$ as `sf_unionb F (heads H) (hbot H)`, which adds the heads and sets the rest to `RAll` at a hidden end. With ${\\uparrow}\\bot$ for `RAll` and in $\\mathsf{ap}(H)$, that is the union of two sets of points.",
+       "reason": "The Rocq writes $F \\triangleleft H$ as `sf_unionb F (heads H) (hbot H)`, which adds the heads and sets the rest to `RAll` at a hidden end. With ${\\vartriangle}\\bot$ for `RAll` and in $\\mathsf{ap}(H)$, that is the union of two sets of points.",
        "names": [
         "sf_unionb"
        ]
@@ -928,8 +928,8 @@
     {
      "id": "t-contexts",
      "title": "Contexts and the fact theory",
-     "formula": "\\begin{array}{l}\\sym{tj.Delta}{\\Delta : o \\mapsto \\sym{ty.sess}{S_x\\inmode{lf}{^{a,m}}},\\ i \\mapsto T} \\qquad \\sym{ctx.lsplit}{\\Delta = \\Delta_1, \\Delta_2} \\\\ \\sym{tj.Gamma}{\\Gamma ::= \\cdot \\mid \\Gamma, \\sym{ctx.hyps}{C[\\bar x]}} \\qquad \\sym{tj.F}{F = X \\cup \\sym{ctx.fvarF}{{\\uparrow}v}} \\\\[2ex] \\dfrac{\\sym{w.lt}{x \\prec_W y}}{\\sym{ctx.slt}{\\Gamma \\vdash x \\prec y}}\\;\\sym{ctx.fl-w}{\\textsf{Ord-World}} \\qquad \\dfrac{\\sym{ctx.hyps}{C[\\bar x]} \\in \\Gamma \\quad \\sym{ctx.fl-h}{(x \\prec y) \\in C[\\bar x]}}{\\sym{ctx.slt}{\\Gamma \\vdash x \\prec y}}\\;\\sym{ctx.fl-h}{\\textsf{Ord-Fact}} \\qquad \\dfrac{\\sym{ctx.slt}{\\Gamma \\vdash x \\prec y} \\quad \\sym{ctx.slt}{\\Gamma \\vdash y \\prec z}}{\\sym{ctx.slt}{\\Gamma \\vdash x \\prec z}}\\;\\sym{ctx.fl-trans}{\\textsf{Ord-Trans}}\\end{array}",
-     "caption": "$\\Delta$ maps [[syn-ends|ends]] to end types and variables to types, and a split $\\Delta = \\Delta_1, \\Delta_2$ gives each end to one side. $\\Gamma$ is a list of constraints $C$ instantiated at points $\\bar x$, and the rules read order facts only through $\\Gamma \\vdash x \\prec y$. Three rules derive a fact from the order $\\prec_W$ of [[w-order]], which contains program order, from a fact of an instance in $\\Gamma$, or by transitivity. The future $F = X \\cup {\\uparrow}v$ is a finite set $X$ of points and the points above $v$ of [[ty-heads]], where $v$ is a point, $\\bot$ or $\\top$. For $v = \\top$ the context acts only at the points of $X$. When the context holds an end at a point unknown to the term, $v = \\bot$ and the future is $\\mathsf{Point}$, which forbids each session action.",
+     "formula": "\\begin{array}{l}\\sym{tj.Delta}{\\Delta : o \\mapsto \\sym{ty.sess}{S_x\\inmode{lf}{^{a,m}}},\\ i \\mapsto T} \\qquad \\sym{ctx.lsplit}{\\Delta = \\Delta_1, \\Delta_2} \\\\ \\sym{tj.Gamma}{\\Gamma ::= \\cdot \\mid \\Gamma, \\sym{ctx.hyps}{C[\\bar x]}} \\qquad \\sym{tj.F}{F = X \\cup \\sym{ctx.fvarF}{{\\vartriangle}v}} \\\\[2ex] \\dfrac{\\sym{w.lt}{x \\prec_W y}}{\\sym{ctx.slt}{\\Gamma \\vdash x \\prec y}}\\;\\sym{ctx.fl-w}{\\textsf{Ord-World}} \\qquad \\dfrac{\\sym{ctx.hyps}{C[\\bar x]} \\in \\Gamma \\quad \\sym{ctx.fl-h}{(x \\prec y) \\in C[\\bar x]}}{\\sym{ctx.slt}{\\Gamma \\vdash x \\prec y}}\\;\\sym{ctx.fl-h}{\\textsf{Ord-Fact}} \\qquad \\dfrac{\\sym{ctx.slt}{\\Gamma \\vdash x \\prec y} \\quad \\sym{ctx.slt}{\\Gamma \\vdash y \\prec z}}{\\sym{ctx.slt}{\\Gamma \\vdash x \\prec z}}\\;\\sym{ctx.fl-trans}{\\textsf{Ord-Trans}}\\end{array}",
+     "caption": "$\\Delta$ maps [[syn-ends|ends]] to end types and variables to types, and a split $\\Delta = \\Delta_1, \\Delta_2$ gives each end to one side. $\\Gamma$ is a list of constraints $C$ instantiated at points $\\bar x$, and the rules read order facts only through $\\Gamma \\vdash x \\prec y$. Three rules derive a fact from the order $\\prec_W$ of [[w-order]], which contains program order, from a fact of an instance in $\\Gamma$, or by transitivity. The future $F$ says where the thread still acts after the term returns, and an action at $x$ asks $x \\prec F$. It is $F = X \\cup {\\vartriangle}v$, a finite set $X$ of points and everything above $v$ of [[ty-heads]], where $v$ is a point, $\\bot$ or $\\top$. For $v = \\top$ the context acts only at the points of $X$. When the context holds an end at a point unknown to the term, $v = \\bot$ and the future is $\\mathsf{Point}$, which forbids each session action.",
      "why": "The rules split $\\Delta$ between subterms and extend $\\Gamma$ under boxes and existentials. A fact enters $\\Gamma$ only through a world or an opened constraint, so the facts a derivation uses are exactly the facts the semantic judgment is read at.",
      "source": [
       {
@@ -957,7 +957,7 @@
      "deviations": [
       {
        "kind": "notation",
-       "reason": "The Rocq future `sfuture` is a pair of a finite set and an optional rest, with `frest` = `RAbove u | RAll`. The map writes $X \\cup {\\uparrow}v$, with $v = u$ for `Some (RAbove u)`, $v = \\bot$ for `Some RAll` and $v = \\top$ for `None`. The rules read a future only through $u \\prec F$ of [[t-side]], the union of [[t-judgment]] and the instantiation of points, and each reads the pair as this set.",
+       "reason": "The Rocq future `sfuture` is a pair of a finite set and an optional rest, with `frest` = `RAbove u | RAll`. The map writes $X \\cup {\\vartriangle}v$, with $v = u$ for `Some (RAbove u)`, $v = \\bot$ for `Some RAll` and $v = \\top$ for `None`. The rules read a future only through $u \\prec F$ of [[t-side]], the union of [[t-judgment]] and the instantiation of points, and each reads the pair as this set.",
        "names": [
         "sfuture",
         "frest"
@@ -978,8 +978,8 @@
     {
      "id": "t-side",
      "title": "Side conditions on points",
-     "formula": "\\begin{array}{l}\\sym{side.ub}{\\bot \\prec F \\qquad \\top \\prec F \\iff F = \\varnothing \\qquad x \\prec X \\cup {\\uparrow}v \\iff (\\forall y \\in X.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} x \\prec y) \\land \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} x \\preccurlyeq v} \\\\ \\sym{side.lb}{\\bot \\preccurlyeq F \\qquad \\top \\preccurlyeq F \\iff F = \\varnothing \\qquad x \\preccurlyeq X \\cup {\\uparrow}v \\iff (\\forall y \\in X.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} x \\preccurlyeq y) \\land \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} x \\preccurlyeq v} \\\\ \\sym{side.top}{\\Gamma \\vdash x \\preccurlyeq \\top \\qquad \\Gamma \\nvdash x \\preccurlyeq \\bot} \\qquad \\sym{E-Send.heads}{x \\prec H \\iff x \\prec \\sym{ty.heads}{\\mathsf{ap}}(H)} \\qquad \\sym{side.lb}{l \\preccurlyeq H \\iff l \\preccurlyeq \\mathsf{ap}(H)} \\qquad \\sym{side.hold}{\\Gamma \\vdash C[\\bar x]}\\end{array}",
-     "caption": "$u \\prec F$ says that $u$ lies below each point of the future $F$ of [[t-contexts]]. So $\\bot$ lies below each future and $\\top$ only below the empty one, and a [[syn-points|point]] $x$ lies below $X \\cup {\\uparrow}v$ when it lies below each point of $X$ and at or below $v$. Each point lies at or below $\\top$ and none at or below $\\bot$, so $x \\prec F$ fails when $F$ is $\\mathsf{Point}$. $l \\preccurlyeq F$ reads the same with $\\preccurlyeq$. For a type or a context $H$, $x \\prec H$ and $l \\preccurlyeq H$ compare with the active points $\\mathsf{ap}(H)$ of [[ty-heads]], the union over the entries of a context. $\\Gamma \\vdash C[\\bar x]$ says that the facts of $C$ at $\\bar x$ are derivable in the [[t-contexts|order judgment]].",
+     "formula": "\\begin{array}{l}\\sym{side.ub}{\\bot \\prec F \\qquad \\top \\prec F \\iff F = \\varnothing \\qquad x \\prec X \\cup {\\vartriangle}v \\iff (\\forall y \\in X.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} x \\prec y) \\land \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} x \\preccurlyeq v} \\\\ \\sym{side.lb}{\\bot \\preccurlyeq F \\qquad \\top \\preccurlyeq F \\iff F = \\varnothing \\qquad x \\preccurlyeq X \\cup {\\vartriangle}v \\iff (\\forall y \\in X.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} x \\preccurlyeq y) \\land \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} x \\preccurlyeq v} \\\\ \\sym{side.top}{\\Gamma \\vdash x \\preccurlyeq \\top \\qquad \\Gamma \\nvdash x \\preccurlyeq \\bot} \\qquad \\sym{E-Send.heads}{x \\prec H \\iff x \\prec \\sym{ty.heads}{\\mathsf{ap}}(H)} \\qquad \\sym{side.lb}{l \\preccurlyeq H \\iff l \\preccurlyeq \\mathsf{ap}(H)} \\qquad \\sym{side.hold}{\\Gamma \\vdash C[\\bar x]}\\end{array}",
+     "caption": "$u \\prec F$ says that $u$ lies below each point of the future $F$ of [[t-contexts]]. So $\\bot$ lies below each future and $\\top$ only below the empty one, and a [[syn-points|point]] $x$ lies below $X \\cup {\\vartriangle}v$ when it lies below each point of $X$ and at or below $v$. Each point lies at or below $\\top$ and none at or below $\\bot$, so $x \\prec F$ fails when $F$ is $\\mathsf{Point}$. $l \\preccurlyeq F$ reads the same with $\\preccurlyeq$. For a type or a context $H$, $x \\prec H$ and $l \\preccurlyeq H$ compare with the active points $\\mathsf{ap}(H)$ of [[ty-heads]], the union over the entries of a context. $\\Gamma \\vdash C[\\bar x]$ says that the facts of $C$ at $\\bar x$ are derivable in the [[t-contexts|order judgment]].",
      "why": "These are the order checks of typing. A term never waits above a point at which its context acts later, and a thread waits only below the dual points of the values it holds. The [[r-act|actions]], [[r-fun|calls]], [[r-boxes|forces]] and [[r-ex|packs]] use these checks.",
      "breaks": "Without them the type system is plain GV, and the cycle of two threads closing two channels in opposite orders types.",
      "source": [
@@ -1004,7 +1004,7 @@
      "deviations": [
       {
        "kind": "notation",
-       "reason": "The Rocq states these checks by cases on the bounds. `ub_below_u` gives `UNone` no condition, `UPt x` the condition `ub_below_s` and `UTop` the empty future, and `ub_below_s` asks $x$ below each point of the set and `rest_below x r`, which is $x \\preccurlyeq u$ for `RAbove u` and false for `RAll`. `below_ty` asks no hidden end and $x$ below each head. `lbx_below_h` gives `LBot` no condition, `LNone` no head and no hidden end, and `LPt x` the bound $x \\preccurlyeq y$ for each head and no hidden end. With ${\\uparrow}\\bot$ for a hidden end or the rest `RAll`, ${\\uparrow}\\top$ for no rest, $\\bot$ for `UNone` and `LBot`, and $\\top$ for `UTop` and `LNone`, each case is the one comparison shown.",
+       "reason": "The Rocq states these checks by cases on the bounds. `ub_below_u` gives `UNone` no condition, `UPt x` the condition `ub_below_s` and `UTop` the empty future, and `ub_below_s` asks $x$ below each point of the set and `rest_below x r`, which is $x \\preccurlyeq u$ for `RAbove u` and false for `RAll`. `below_ty` asks no hidden end and $x$ below each head. `lbx_below_h` gives `LBot` no condition, `LNone` no head and no hidden end, and `LPt x` the bound $x \\preccurlyeq y$ for each head and no hidden end. With ${\\vartriangle}\\bot$ for a hidden end or the rest `RAll`, ${\\vartriangle}\\top$ for no rest, $\\bot$ for `UNone` and `LBot`, and $\\top$ for `UTop` and `LNone`, each case is the one comparison shown.",
        "names": [
         "ub_below_u",
         "ub_below_s",
@@ -1268,8 +1268,8 @@
     {
      "id": "r-fun",
      "title": "Functions",
-     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-Abs.lb}{l \\preccurlyeq \\Delta}\\quad \\sym{E-Abs.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,T} \\\\ \\sym{E-Abs.body}{\\Gamma ; \\sym{E-Abs.cap}{\\Delta\\inmode{lf}{ - a}}, T \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sym{ty.up}{{\\uparrow}u}} e : U\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\lambda e : (T \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l}\\inmode{lf}{[\\varepsilon]}\\, U)\\inmode{lf}{^{a}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-Abs}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} \\Delta_2} e_1 : (T \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l}\\inmode{lf}{[\\varepsilon]}\\, U)\\inmode{lf}{^{a}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1}} \\\\ \\sym{E-App.fut2}{\\Gamma ; \\Delta_2\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_1}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} (T \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l} U)\\inmode{lf}{^{a}}} e_2 : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_2}}\\quad \\sym{E-App.ub}{u \\prec F}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e_1\\,e_2 : U\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1 \\sym{tj.seq}{\\cdot} \\varepsilon_2 \\sym{tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{E-App}\\end{array}",
-     "caption": "E-Abs types the body of a [[syn-terms|$\\lambda$]] under the future ${\\uparrow}u$ of [[ty-heads]], the points above the upper point $u$, which is $\\mathsf{Point}$ for $u = \\bot$ and the empty future for $u = \\top$. It requires $l$ at or below the active points of the captured entries, using $\\preccurlyeq$ of [[t-side]] and $\\mathsf{ap}$ of [[ty-heads]], which $l = \\bot$ meets always. E-App holds $\\Delta_2$ while $e_1$ runs and the closure while $e_2$ runs, with the future $F \\triangleleft H$ of [[t-judgment]] and the split of $\\Delta$ of [[t-contexts]]. The call requires $u \\prec F$, which $u = \\bot$ meets always and $u = \\top$ only under the empty future. \\inmode{lf}{The closure records the cost of its body. Holding it while $e_2$ runs [[t-agecap|ages]] it by the cost of $e_2$, which needs a credit $a \\geq \\varepsilon_2$, and its [[t-lf-counters|credit]] $a$ ages the captured entries.} The [[v-rel|value relation]] at an arrow is the semantic counterpart.",
+     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-Abs.lb}{l \\preccurlyeq \\Delta}\\quad \\sym{E-Abs.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,T} \\\\ \\sym{E-Abs.body}{\\Gamma ; \\sym{E-Abs.cap}{\\Delta\\inmode{lf}{ - a}}, T \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sym{ty.up}{{\\vartriangle}u}} e : U\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\lambda e : (T \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l}\\inmode{lf}{[\\varepsilon]}\\, U)\\inmode{lf}{^{a}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-Abs}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{E-App.fut1}{\\Gamma ; \\Delta_1 \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} \\Delta_2} e_1 : (T \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l}\\inmode{lf}{[\\varepsilon]}\\, U)\\inmode{lf}{^{a}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1}} \\\\ \\sym{E-App.fut2}{\\Gamma ; \\Delta_2\\inmode{lf}{ \\sym{age.ctx}{- \\varepsilon_1}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F \\sym{tj.held}{\\triangleleft} (T \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l} U)\\inmode{lf}{^{a}}} e_2 : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_2}}\\quad \\sym{E-App.ub}{u \\prec F}\\end{array}}{\\Gamma ; \\Delta_1, \\Delta_2 \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e_1\\,e_2 : U\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_1 \\sym{tj.seq}{\\cdot} \\varepsilon_2 \\sym{tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{E-App}\\end{array}",
+     "caption": "E-Abs types the body of a [[syn-terms|$\\lambda$]] under the future ${\\vartriangle}u$ of [[ty-heads]], everything above the upper point $u$, which is $\\mathsf{Point}$ for $u = \\bot$ and the empty future for $u = \\top$. It requires $l$ at or below the active points of the captured entries, using $\\preccurlyeq$ of [[t-side]] and $\\mathsf{ap}$ of [[ty-heads]], which $l = \\bot$ meets always. E-App holds $\\Delta_2$ while $e_1$ runs and the closure while $e_2$ runs, with the future $F \\triangleleft H$ of [[t-judgment]] and the split of $\\Delta$ of [[t-contexts]]. The call requires $u \\prec F$, which $u = \\bot$ meets always and $u = \\top$ only under the empty future. \\inmode{lf}{The closure records the cost of its body. Holding it while $e_2$ runs [[t-agecap|ages]] it by the cost of $e_2$, which needs a credit $a \\geq \\varepsilon_2$, and its [[t-lf-counters|credit]] $a$ ages the captured entries.} The [[v-rel|value relation]] at an arrow is the semantic counterpart.",
      "why": "A closure delays its body until a call. Its type records the bounds the body needs, and the call site checks them against its own future. The body is typed once, for each future above $u$, instead of once per call site.",
      "source": [
       {
@@ -1304,7 +1304,7 @@
      "deviations": [
       {
        "kind": "notation",
-       "reason": "E-Abs types the body under `abs_fut ub`, which is `(∅, Some RAll)` for `UNone`, `(∅, Some (RAbove u))` for `UPt u` and `(∅, None)` for `UTop`. Each is the future ${\\uparrow}u$ of [[ty-heads]]. Its premise on $l$ is `lbx_below_h`, which is $l \\preccurlyeq \\Delta$ of [[t-side]] in each case, and E-App asks `ub_below_u`, which is $u \\prec F$.",
+       "reason": "E-Abs types the body under `abs_fut ub`, which is `(∅, Some RAll)` for `UNone`, `(∅, Some (RAbove u))` for `UPt u` and `(∅, None)` for `UTop`. Each is the future ${\\vartriangle}u$ of [[ty-heads]]. Its premise on $l$ is `lbx_below_h`, which is $l \\preccurlyeq \\Delta$ of [[t-side]] in each case, and E-App asks `ub_below_u`, which is $u \\prec F$.",
        "names": [
         "e_abs",
         "e_app",
@@ -1350,8 +1350,8 @@
     {
      "id": "r-boxes",
      "title": "Boxes",
-     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-Box.self}{B = \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}\\inmode{lf}{[\\varepsilon]}\\,U)}\\quad \\sym{E-Box.unl}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{E-Box.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,U}\\quad \\sym{E-Box.fresh}{\\bar\\iota \\mathrel{\\#} \\Gamma, \\Delta, F}\\quad \\sym{E-Box.inst}{\\forall \\bar s.\\ \\sym{tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s} \\\\ \\sym{E-Box.body}{\\sym{E-Box.open}{\\Gamma, C(\\bar\\iota)} ; \\sym{E-Box.self}{\\Delta, f : B} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sym{ty.up}{{\\uparrow}u}} e : \\sym{tp.sinst}{U[\\bar s]}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\ !e : B\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-Box}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{E-Force.hold}{\\Gamma \\mathrel{\\sym{side.hold}{\\vdash}} C[\\bar x]}\\quad \\sym{E-Box.inst}{\\sym{tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s}\\quad \\sym{E-Force.ub}{u[\\bar x] \\prec F} \\\\ \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}\\inmode{lf}{[\\varepsilon]}\\,U)\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_0}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{prim.force}{\\mathsf{force}}\\,e : \\sym{tp.sinst}{U[\\bar s]}\\sym{tp.pinst}{[\\bar x]}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_0 \\sym{tj.seq}{\\cdot} \\sym{E-Force.one}{1} \\sym{tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{E-Force}\\end{array}",
-     "caption": "E-Box types the body of a [[syn-terms|box]] once for each allowed list $\\bar s$ of session types $s$. The body is typed with fresh point variables $\\bar\\iota$, the hypothesis $C(\\bar\\iota)$ added to $\\Gamma$ of [[t-contexts]], and the future ${\\uparrow}u$ of the points above the upper point $u$, $\\mathsf{Point}$ for $u = \\bot$. The body refers to the box itself through a variable $f$ of the box type $B$. The context is unlimited, because a box may be copied. E-Force picks points $\\bar x$ and session types $\\bar s$, requires $C[\\bar x]$ and $u[\\bar x] \\prec F$ by [[t-side]], and gives the instantiated result type, which is the [[t-consts|type of the constant]] $\\mathsf{force}$. The [[v-rel|value relation]] at a box asks the same of each instance. \\inmode{lf}{A force costs one unit of effect, so the enclosing rules age what the thread holds across it by one.}",
+     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-Box.self}{B = \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}\\inmode{lf}{[\\varepsilon]}\\,U)}\\quad \\sym{E-Box.unl}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{E-Box.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,U}\\quad \\sym{E-Box.fresh}{\\bar\\iota \\mathrel{\\#} \\Gamma, \\Delta, F}\\quad \\sym{E-Box.inst}{\\forall \\bar s.\\ \\sym{tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s} \\\\ \\sym{E-Box.body}{\\sym{E-Box.open}{\\Gamma, C(\\bar\\iota)} ; \\sym{E-Box.self}{\\Delta, f : B} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sym{ty.up}{{\\vartriangle}u}} e : \\sym{tp.sinst}{U[\\bar s]}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\ !e : B\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-Box}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{E-Force.hold}{\\Gamma \\mathrel{\\sym{side.hold}{\\vdash}} C[\\bar x]}\\quad \\sym{E-Box.inst}{\\sym{tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s}\\quad \\sym{E-Force.ub}{u[\\bar x] \\prec F} \\\\ \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}\\inmode{lf}{[\\varepsilon]}\\,U)\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_0}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{prim.force}{\\mathsf{force}}\\,e : \\sym{tp.sinst}{U[\\bar s]}\\sym{tp.pinst}{[\\bar x]}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_0 \\sym{tj.seq}{\\cdot} \\sym{E-Force.one}{1} \\sym{tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{E-Force}\\end{array}",
+     "caption": "E-Box types the body of a [[syn-terms|box]] once for each allowed list $\\bar s$ of session types $s$. The body is typed with fresh point variables $\\bar\\iota$, the hypothesis $C(\\bar\\iota)$ added to $\\Gamma$ of [[t-contexts]], and the future ${\\vartriangle}u$ of the points above the upper point $u$, $\\mathsf{Point}$ for $u = \\bot$. The body refers to the box itself through a variable $f$ of the box type $B$. The context is unlimited, because a box may be copied. E-Force picks points $\\bar x$ and session types $\\bar s$, requires $C[\\bar x]$ and $u[\\bar x] \\prec F$ by [[t-side]], and gives the instantiated result type, which is the [[t-consts|type of the constant]] $\\mathsf{force}$. The [[v-rel|value relation]] at a box asks the same of each instance. \\inmode{lf}{A force costs one unit of effect, so the enclosing rules age what the thread holds across it by one.}",
      "why": "Boxes provide recursion and polymorphism over points and session types. Each force chooses an instance, so a loop can order the points of its rounds by one constraint that mentions the round through $\\bar\\iota$.",
      "source": [
       {
@@ -1388,7 +1388,7 @@
      "deviations": [
       {
        "kind": "notation",
-       "reason": "The upper point of a box is an optional point in the Rocq, and the map writes $\\bot$ for none. The body runs under `(∅, Some (rest_of ub))`, which is ${\\uparrow}u$. The thunk of a forced box has the arrow upper point `ubound_of ub`, which is $u$ itself, and E-Force asks `ub_below_s`, which is $u[\\bar x] \\prec F$.",
+       "reason": "The upper point of a box is an optional point in the Rocq, and the map writes $\\bot$ for none. The body runs under `(∅, Some (rest_of ub))`, which is ${\\vartriangle}u$. The thunk of a forced box has the arrow upper point `ubound_of ub`, which is $u$ itself, and E-Force asks `ub_below_s`, which is $u[\\bar x] \\prec F$.",
        "names": [
         "e_box",
         "e_force",
@@ -6407,7 +6407,7 @@
    "meaning": "$\\mathsf{ap}(T)$ is the set of dual points of the ends a value of $T$ holds. It is $\\{\\overline{x}\\}$ for $S_x$, $\\{l\\}$ for an arrow or existential at a point $l$, $\\mathsf{Point}$ at $l = \\bot$, and $\\varnothing$ at $l = \\top$. For $\\otimes$ and $\\oplus$ it is the union.",
    "why": "A thread blocked at $u$ while holding a value of $T$ needs $u \\prec \\mathsf{ap}(T)$, or the partner of a held end may wait on the thread. At hidden ends $\\mathsf{ap}(T)$ is $\\mathsf{Point}$ and the check fails, which is what hidden ends require.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{ap}(\\mathsf{Close}_{\\rho} \\otimes \\mathsf{Close}_{\\rho\\cdot 0}) = \\{\\overline{\\rho}, \\overline{\\rho\\cdot 0}\\}$ and $\\mathsf{ap}(\\exists^{\\bot}\\iota.\\,C.\\,T) = {\\uparrow}\\bot$.",
+   "example": "$\\mathsf{ap}(\\mathsf{Close}_{\\rho} \\otimes \\mathsf{Close}_{\\rho\\cdot 0}) = \\{\\overline{\\rho}, \\overline{\\rho\\cdot 0}\\}$ and $\\mathsf{ap}(\\exists^{\\bot}\\iota.\\,C.\\,T) = {\\vartriangle}\\bot$.",
    "signature": "\\mathsf{ap} : \\mathsf{Ty} \\to \\mathcal{P}(\\mathsf{Point})",
    "args": [
     {
@@ -6428,7 +6428,7 @@
    "deviations": [
     {
      "kind": "notation",
-     "reason": "The paper writes $\\mathsf{ap}$ for the Rocq function `heads`, with ${\\uparrow}\\bot$ added when `hbot` marks a hidden end.",
+     "reason": "The paper writes $\\mathsf{ap}$ for the Rocq function `heads`, with ${\\vartriangle}\\bot$ added when `hbot` marks a hidden end.",
      "names": [
       "heads",
       "hbot",
@@ -8138,11 +8138,11 @@
   },
   "tj.F": {
    "title": "The future $F$",
-   "meaning": "$F = X \\cup {\\uparrow}v$ with $X$ the finite set of points the context acts at after the term and $v$ a point, $\\bot$ or $\\top$. ${\\uparrow}u$ is the unknown rest above a known point $u$, ${\\uparrow}\\bot$ an unknown rest with no bound, and ${\\uparrow}\\top$ no rest. ${\\uparrow}\\bot$ is also the rest when the context holds ends at hidden points.",
+   "meaning": "The future says where the thread still acts after the term returns. An action at $x$ is allowed only when $x \\prec F$, below each such point. Usually $F$ is a finite set $X$ of points. The body of a closure runs under ${\\vartriangle}u$, everything above its upper point $u$. In general $F = X \\cup {\\vartriangle}v$ with $v$ a point, $\\bot$ or $\\top$. For $v = \\top$ the future is $X$. For $v = \\bot$ it forbids each action, which is the case when the context holds an end the term cannot name.",
    "why": "Each action at $x$ asks $x \\prec F$. Hence a term never waits at a point above a point at which its own context still acts.",
    "breaks": "Without $F$ the thread $\\mathsf{let}\\ \\ast = \\mathsf{close}\\,c\\ \\mathsf{in}\\ \\mathsf{close}\\,d$ types for each placement of $c$ and $d$, and beside a partner that closes $d$ before $c$ both threads wait forever.",
    "example": "$e_1$ of E-App runs under $F \\cup \\mathsf{ap}(\\Delta_2)$.",
-   "signature": "F = X \\cup {\\uparrow}v,\\ X \\in \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Point}),\\ v \\in \\mathsf{Point} \\cup \\{\\bot, \\top\\}",
+   "signature": "F = X \\cup {\\vartriangle}v,\\ X \\in \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Point}),\\ v \\in \\mathsf{Point} \\cup \\{\\bot, \\top\\}",
    "args": [
     {
      "name": "X",
@@ -8165,7 +8165,7 @@
    "deviations": [
     {
      "kind": "notation",
-     "reason": "`sfuture` is the pair of $X$ and an optional `frest`, written $X \\cup {\\uparrow}v$ as [[t-contexts]] states.",
+     "reason": "`sfuture` is the pair of $X$ and an optional `frest`, written $X \\cup {\\vartriangle}v$ as [[t-contexts]] states.",
      "names": [
       "sfuture",
       "frest"
@@ -8310,16 +8310,16 @@
    ]
   },
   "ctx.fvarF": {
-   "title": "The rest ${\\uparrow}v$ of $F$",
-   "meaning": "The unknown part of a future, the points above $v$. A term may wait at $x$ under ${\\uparrow}v$ when $\\Gamma \\vdash x \\preccurlyeq v$, so always under ${\\uparrow}\\top$ and never under ${\\uparrow}\\bot$.",
-   "why": "In the semantics ${\\uparrow}v$ denotes an arbitrary finite set of points above $v$. Readiness asks $x \\prec y$ of each point $y$ of the future, so a body typed under ${\\uparrow}u$ is correct for each caller future above $u$.",
+   "title": "The rest ${\\vartriangle}v$ of $F$",
+   "meaning": "The part of a future that does not occur in the term, everything above $v$. A term may wait at $x$ under ${\\vartriangle}v$ when $\\Gamma \\vdash x \\preccurlyeq v$, so always under ${\\vartriangle}\\top$ and never under ${\\vartriangle}\\bot$.",
+   "why": "In the semantics ${\\vartriangle}v$ stands for an arbitrary finite set of points above $v$. Readiness asks $x \\prec y$ of each point $y$ of the future, so a body typed under ${\\vartriangle}u$ is correct for each caller future above $u$.",
    "breaks": "A future variable $\\varphi$ with the single fact $u \\prec \\varphi$ says the same, $\\Gamma \\vdash x \\prec \\varphi$ holds exactly when $\\Gamma \\vdash x \\preccurlyeq u$.",
-   "example": "$F = {\\uparrow}u$ for the body of a closure with upper point $u$.",
-   "signature": "F = X \\cup {\\uparrow}v",
+   "example": "$F = {\\vartriangle}u$ for the body of a closure with upper point $u$.",
+   "signature": "F = X \\cup {\\vartriangle}v",
    "args": [
     {
-     "name": "{\\uparrow}v",
-     "meaning": "the rest, the points above $v$"
+     "name": "{\\vartriangle}v",
+     "meaning": "the unknown rest, everything above $v$"
     },
     {
      "name": "X",
@@ -8417,11 +8417,11 @@
   },
   "side.act": {
    "title": "$x \\prec F$ at an action",
-   "meaning": "For an action at $x$ under $F = X \\cup {\\uparrow}v$, $\\Gamma \\vdash x \\prec y$ for each $y \\in X$ and $\\Gamma \\vdash x \\preccurlyeq v$. Under ${\\uparrow}\\bot$ no action types.",
+   "meaning": "For an action at $x$ under $F = X \\cup {\\vartriangle}v$, $\\Gamma \\vdash x \\prec y$ for each $y \\in X$ and $\\Gamma \\vdash x \\preccurlyeq v$. Under ${\\vartriangle}\\bot$ no action types.",
    "why": "While the term waits at $x$, each point at which its context acts later lies above $x$. This is readiness against the future.",
    "breaks": "Without it a term may wait at $x$ while its context must first act at a point below $x$, and the thread waits on itself through the dual end.",
    "example": "E-Close at $x$ asks $x \\prec F$.",
-   "signature": "x \\prec X \\cup {\\uparrow}v \\iff (\\forall y \\in X.\\ \\Gamma \\vdash x \\prec y) \\land \\Gamma \\vdash x \\preccurlyeq v",
+   "signature": "x \\prec X \\cup {\\vartriangle}v \\iff (\\forall y \\in X.\\ \\Gamma \\vdash x \\prec y) \\land \\Gamma \\vdash x \\preccurlyeq v",
    "args": [
     {
      "name": "x",
@@ -8478,11 +8478,11 @@
   },
   "side.ub": {
    "title": "$u \\prec F$",
-   "meaning": "$u$ lies below each point of $F$. $\\bot \\prec F$ always, $\\top \\prec F$ iff $F = \\varnothing$, and $x \\prec X \\cup {\\uparrow}v$ iff $\\Gamma \\vdash x \\prec y$ for each $y \\in X$ and $\\Gamma \\vdash x \\preccurlyeq v$.",
+   "meaning": "$u$ lies below each point of $F$. $\\bot \\prec F$ always, $\\top \\prec F$ iff $F = \\varnothing$, and $x \\prec X \\cup {\\vartriangle}v$ iff $\\Gamma \\vdash x \\prec y$ for each $y \\in X$ and $\\Gamma \\vdash x \\preccurlyeq v$.",
    "why": "It is the condition $x \\prec F$ of an action, stated for the upper point $u$ up to which a callee may wait.",
    "breaks": "Nothing. It is a definition.",
    "example": "E-App asks $u \\prec F$ of the upper point $u$ of the closure.",
-   "signature": "\\bot \\prec F,\\ \\ \\top \\prec F \\iff F = \\varnothing,\\ \\ x \\prec X \\cup {\\uparrow}v \\iff (\\forall y \\in X.\\ \\Gamma \\vdash x \\prec y) \\land \\Gamma \\vdash x \\preccurlyeq v",
+   "signature": "\\bot \\prec F,\\ \\ \\top \\prec F \\iff F = \\varnothing,\\ \\ x \\prec X \\cup {\\vartriangle}v \\iff (\\forall y \\in X.\\ \\Gamma \\vdash x \\prec y) \\land \\Gamma \\vdash x \\preccurlyeq v",
    "args": [
     {
      "name": "u",
@@ -8521,11 +8521,11 @@
   },
   "side.lb": {
    "title": "$l \\preccurlyeq F$",
-   "meaning": "$l$ lies at or below each point of $F$. $\\bot \\preccurlyeq F$ always, $\\top \\preccurlyeq F$ iff $F = \\varnothing$, and $x \\preccurlyeq X \\cup {\\uparrow}v$ iff $\\Gamma \\vdash x \\preccurlyeq y$ for each $y \\in X$ and $\\Gamma \\vdash x \\preccurlyeq v$. For a type or a context $H$, $l \\preccurlyeq H$ is $l \\preccurlyeq \\mathsf{ap}(H)$.",
+   "meaning": "$l$ lies at or below each point of $F$. $\\bot \\preccurlyeq F$ always, $\\top \\preccurlyeq F$ iff $F = \\varnothing$, and $x \\preccurlyeq X \\cup {\\vartriangle}v$ iff $\\Gamma \\vdash x \\preccurlyeq y$ for each $y \\in X$ and $\\Gamma \\vdash x \\preccurlyeq v$. For a type or a context $H$, $l \\preccurlyeq H$ is $l \\preccurlyeq \\mathsf{ap}(H)$.",
    "why": "For a holding thread of a closure, the active points of its ends are bounded only through $l$. Hence $l$ must be a lower bound of those active points.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\overline{\\rho} \\preccurlyeq \\{\\overline{\\rho}\\}$.",
-   "signature": "\\bot \\preccurlyeq F,\\ \\ \\top \\preccurlyeq F \\iff F = \\varnothing,\\ \\ x \\preccurlyeq X \\cup {\\uparrow}v \\iff (\\forall y \\in X.\\ \\Gamma \\vdash x \\preccurlyeq y) \\land \\Gamma \\vdash x \\preccurlyeq v",
+   "signature": "\\bot \\preccurlyeq F,\\ \\ \\top \\preccurlyeq F \\iff F = \\varnothing,\\ \\ x \\preccurlyeq X \\cup {\\vartriangle}v \\iff (\\forall y \\in X.\\ \\Gamma \\vdash x \\preccurlyeq y) \\land \\Gamma \\vdash x \\preccurlyeq v",
    "args": [
     {
      "name": "l",
@@ -9064,10 +9064,10 @@
   },
   "side.top": {
    "title": "$x \\preccurlyeq \\top$ and $x \\not\\preccurlyeq \\bot$",
-   "meaning": "Each point lies at or below $\\top$, and none lies at or below $\\bot$. So $x \\prec X \\cup {\\uparrow}\\top$ reads only $X$, and $x \\prec X \\cup {\\uparrow}\\bot$ fails.",
-   "why": "${\\uparrow}\\top$ is empty and asks nothing. ${\\uparrow}\\bot$ is $\\mathsf{Point}$, $x$ included, and no point lies below itself.",
+   "meaning": "Each point lies at or below $\\top$, and none lies at or below $\\bot$. So $x \\prec X \\cup {\\vartriangle}\\top$ reads only $X$, and $x \\prec X \\cup {\\vartriangle}\\bot$ fails.",
+   "why": "${\\vartriangle}\\top$ is empty and asks nothing. ${\\vartriangle}\\bot$ is $\\mathsf{Point}$, $x$ included, and no point lies below itself.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$x \\prec \\{y\\} \\cup {\\uparrow}\\bot$ fails for each $x$.",
+   "example": "$x \\prec \\{y\\} \\cup {\\vartriangle}\\bot$ fails for each $x$.",
    "signature": "\\Gamma \\vdash x \\preccurlyeq \\top,\\ \\ \\Gamma \\nvdash x \\preccurlyeq \\bot",
    "args": [
     {
@@ -9087,11 +9087,11 @@
   },
   "E-Abs.body": {
    "title": "Body of a $\\lambda$",
-   "meaning": "$e$ is typed under $\\Gamma$, the captured $\\Delta$ extended by the argument $T$, and the future ${\\uparrow}u$, the points above $u$. \\inmode{lf}{In the lock-free mode the captured entries are aged by the credit $a$.}",
+   "meaning": "$e$ is typed under $\\Gamma$, the captured $\\Delta$ extended by the argument $T$, and the future ${\\vartriangle}u$, everything above $u$. \\inmode{lf}{In the lock-free mode the captured entries are aged by the credit $a$.}",
    "why": "The body runs at a later call. It may rely only on its captured entries, its argument and the points above $u$, and E-App establishes $u \\prec F$ at each call. For $u = \\top$ the future is empty, so a closure at $\\top$ is the last code of its thread.",
    "breaks": "Nothing. It is a definition.",
    "example": "The body of the client loop with argument $S_{\\iota} \\otimes {S'}_{\\kappa}$, and $\\lambda e : \\ast \\multimap^{\\top}_{\\bot} \\ast$ for a thunk that is spawned.",
-   "signature": "\\Gamma ; \\Delta\\inmode{lf}{ - a}, T \\vdash^{{\\uparrow}u} e : U\\ !\\ \\varepsilon",
+   "signature": "\\Gamma ; \\Delta\\inmode{lf}{ - a}, T \\vdash^{{\\vartriangle}u} e : U\\ !\\ \\varepsilon",
    "args": [
     {
      "name": "T",
@@ -9123,7 +9123,7 @@
    "deviations": [
     {
      "kind": "notation",
-     "reason": "The future `abs_fut ub` is ${\\uparrow}u$, as [[r-fun]] states.",
+     "reason": "The future `abs_fut ub` is ${\\vartriangle}u$, as [[r-fun]] states.",
      "names": [
       "abs_fut"
      ]
@@ -9505,11 +9505,11 @@
   },
   "E-Box.body": {
    "title": "Body of a box",
-   "meaning": "The body is typed with no end, the fresh point variables $\\bar\\iota$, the hypothesis $C(\\bar\\iota)$, the box as $f$, and the future ${\\uparrow}u$, $\\mathsf{Point}$ when $u = \\bot$.",
+   "meaning": "The body is typed with no end, the fresh point variables $\\bar\\iota$, the hypothesis $C(\\bar\\iota)$, the box as $f$, and the future ${\\vartriangle}u$, $\\mathsf{Point}$ when $u = \\bot$.",
    "why": "Each force instantiates $\\bar\\iota$ and the session variables anew. The body may assume only $C(\\bar\\iota)$ and the points above $u$.",
    "breaks": "Nothing. It is a definition.",
    "example": "The body of the client loop.",
-   "signature": "\\Gamma, C(\\bar\\iota) ; \\Delta, f \\vdash^{{\\uparrow}u} e : U[\\bar s]\\ !\\ \\varepsilon",
+   "signature": "\\Gamma, C(\\bar\\iota) ; \\Delta, f \\vdash^{{\\vartriangle}u} e : U[\\bar s]\\ !\\ \\varepsilon",
    "args": [
     {
      "name": "\\bar\\iota",
@@ -9520,7 +9520,7 @@
      "meaning": "the box itself at index $0$"
     },
     {
-     "name": "{\\uparrow}u",
+     "name": "{\\vartriangle}u",
      "meaning": "the points above the upper point of the box"
     }
    ],
@@ -9694,7 +9694,7 @@
    "deviations": [
     {
      "kind": "notation",
-     "reason": "`below_ty` asks `hbot T = false` and $x$ below each point of `heads T`, which is $x \\prec \\mathsf{ap}(T)$ with ${\\uparrow}\\bot$ for a hidden end.",
+     "reason": "`below_ty` asks `hbot T = false` and $x$ below each point of `heads T`, which is $x \\prec \\mathsf{ap}(T)$ with ${\\vartriangle}\\bot$ for a hidden end.",
      "names": [
       "below_ty",
       "hbot_payload_at",
@@ -10467,7 +10467,7 @@
    "meaning": "A thread at top level runs under the empty future $\\varnothing$.",
    "why": "A thread has no context, so no point lies in its future.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\varnothing = \\varnothing \\cup {\\uparrow}\\top$.",
+   "example": "$\\varnothing = \\varnothing \\cup {\\vartriangle}\\top$.",
    "signature": "F = \\varnothing",
    "args": [
     {
@@ -14477,10 +14477,10 @@
   },
   "sj.den": {
    "title": "$\\mathsf{den}_{Y}(F)$",
-   "meaning": "$\\mathsf{den}_{Y}(X \\cup {\\uparrow}v) = X \\cup Y$ for a finite set $Y$ of points above $v$. For $v = \\top$ the set $Y$ is empty, and for $v = \\bot$ it is an arbitrary finite set.",
+   "meaning": "$\\mathsf{den}_{Y}(X \\cup {\\vartriangle}v) = X \\cup Y$ for a finite set $Y$ of points above $v$. For $v = \\top$ the set $Y$ is empty, and for $v = \\bot$ it is an arbitrary finite set.",
    "why": "The rest stands for an unknown set of points, so the judgment holds at each choice of this set.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{den}_{Y}({\\uparrow}u) = Y$.",
+   "example": "$\\mathsf{den}_{Y}({\\vartriangle}u) = Y$.",
    "signature": "\\mathsf{den} : \\mathcal{P}(\\mathsf{Point}) \\to \\mathsf{SFuture} \\to \\mathcal{P}(\\mathsf{Point})",
    "args": [
     {
@@ -19468,12 +19468,12 @@
    ]
   },
   "ty.up": {
-   "title": "Points above $u$, ${\\uparrow}u$",
-   "meaning": "${\\uparrow}x$ is the set of points above the point $x$, ${\\uparrow}\\bot$ is $\\mathsf{Point}$ and ${\\uparrow}\\top$ is empty.",
-   "why": "A future $X \\cup {\\uparrow}v$ adds the points above $v$ to the finite set $X$. A body typed under ${\\uparrow}u$ is correct for each caller whose future lies above $u$, and in the semantics ${\\uparrow}v$ stands for an arbitrary finite set of points above $v$.",
+   "title": "Everything above $u$, ${\\vartriangle}u$",
+   "meaning": "${\\vartriangle}u$ stands for points that do not occur in the term, about which the rules assume only that they lie above $u$. The rules read it only through $x \\prec {\\vartriangle}u$, which holds iff $\\Gamma \\vdash x \\preccurlyeq u$ for a point $u$, for each $x$ when $u = \\top$, and for no $x$ when $u = \\bot$. It is read as everything above $u$.",
+   "why": "A closure body is typed once for each call, and the continuation of the caller does not occur in it. E-App guarantees only that the caller acts above $u$. The set of points that $\\Gamma$ derives above $u$ would be the wrong condition, because the points of the caller need not occur in $\\Gamma$. In the semantics ${\\vartriangle}u$ stands for an arbitrary finite set of points above $u$. Readiness gets easier as the future shrinks, so the relation asks the same as $\\Gamma \\vdash x \\preccurlyeq u$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\overline{\\rho}^{+} \\in {\\uparrow}\\overline{\\rho}$.",
-   "signature": "{\\uparrow} : \\mathsf{Point} \\cup \\{\\bot, \\top\\} \\to \\mathcal{P}(\\mathsf{Point})",
+   "example": "An action at $u$ itself is allowed under ${\\vartriangle}u$, because $u \\preccurlyeq u$.",
+   "signature": "x \\prec {\\vartriangle}u \\iff \\Gamma \\vdash x \\preccurlyeq u \\qquad x \\prec {\\vartriangle}\\top \\qquad x \\not\\prec {\\vartriangle}\\bot",
    "args": [
     {
      "name": "u",
@@ -19493,7 +19493,7 @@
    "deviations": [
     {
      "kind": "notation",
-     "reason": "The Rocq writes the rest of a future as `RAbove u` for ${\\uparrow}u$, `RAll` for ${\\uparrow}\\bot$ and no rest for ${\\uparrow}\\top$.",
+     "reason": "The Rocq writes the rest of a future as `RAbove u` for ${\\vartriangle}u$, `RAll` for ${\\vartriangle}\\bot$ and no rest for ${\\vartriangle}\\top$.",
      "names": [
       "frest",
       "rest_of",
