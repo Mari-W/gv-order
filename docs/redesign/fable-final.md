@@ -1,7 +1,7 @@
 # Fable pass over v2 and the map, 2026-11-24
 
 Approved by the author on 2026-11-24. Branch fable-final from redesign
-9497061, which equals main. Six commits, nothing pushed, nothing merged.
+9497061, which equals main. Eight commits, nothing pushed, nothing merged.
 No typing rule, no clause of the relation and no theorem statement
 changed, apart from the removed dead results listed below. No Admitted, no
 Axiom, no new Parameter. `make` builds, `make check` reports 273 of 273
