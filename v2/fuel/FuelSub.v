@@ -64,7 +64,7 @@ Section teq.
         by apply (FuelE_teq_below j N U).
       + by subst.
     - destruct Ht as (<- & <- & <- & Hs). intros (o & S' & f & -> & -> & -> & HS & Hf).
-      exists o, S', f. split_and!; try done. by eapply sequiv_trans.
+      exists o, S', f. split_and!; try done. by eapply ssub_sequiv_r.
     - destruct Ht as (<- & <- & <- & H1). apply IHT. done.
   Qed.
 End teq.
@@ -79,6 +79,47 @@ Proof.
   - eapply Vty_teq; [exact HIH|exact Ht|exact H].
   - eapply Vty_teq; [exact HIH|by apply teq_sym|exact H].
 Qed.
+
+(** ** Payloads with lowered credits
+
+    [crT T U] lowers the credits of the ends and closures of T. A value
+    with fuel at T has fuel at U, because a credit is a lower bound on
+    the counters. *)
+
+Lemma Vty_crT n N T : ∀ U Π φ v, crT T U →
+  Vty N (λ j N, FuelE N j) (λ j N, Vfuel N j) n T Π φ v →
+  Vty N (λ j N, FuelE N j) (λ j N, Vfuel N j) n U Π φ v.
+Proof.
+  assert (HIH : ∀ j, olt j n → ∀ N T T' Π φ v, teq T T' →
+    v ∈ FV^N _ j⟦RTy T⟧(Π, φ) ↔ v ∈ FV^N _ j⟦RTy T'⟧(Π, φ)) by (intros; by apply Vfuel_teq).
+  induction T as [|ub lb c T1 IH1 U IH2 a|T1 IH1 T2 IH2|T1 IH1 T2 IH2
+                 |m k C ub c U IHU|s x a mt|lb m C T1 IHT];
+    intros [|ub' lb' c' T1' U' a'|T1' T2'|T1' T2'
+           |m' k' C' ub' c' U'|s' x' a' mt'|lb' m' C' T1'] Π φ v Ht;
+    try (by apply (Vty_teq n HIH N _ _ Π φ v)); simpl in Ht |- *; try contradiction.
+  - destruct Ht as (<- & <- & <- & Ha & H1 & H2).
+    intros (e & -> & Hx & Hd & Hf & H). exists e. split_and!; [done|done|done| |].
+    + intros o f Ho Hi. eapply fle_trans; [exact Ha|]. by apply (Hf o).
+    + intros j φ1 Πu φu u Hj Hd1 Hh1 HΠ Hφ Hu.
+      eapply FuelE_res_mono; [|apply H; try done].
+      * intros m0 Π0 φ0 w Hm0. apply (Vfuel_teq m0 N U U'). done.
+      * intros o f f' Ho Ho'. destruct (Hh1 o f f' Ho Ho') as [E Hle]. split; [done|].
+        eapply fle_trans; [by apply fsub_anti_r|exact Hle].
+      * apply (Vfuel_teq j N T1 T1'); done.
+  - destruct Ht as (H1 & H2).
+    intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & -> & HΠ & Hφ & -> & -> & Hv1 & Hv2).
+    exists v1, v2, Π1, Π2, φ1, φ2. split_and!; try done; [by apply (IH1 T1')|by apply (IH2 T2')].
+  - destruct Ht as (H1 & H2).
+    intros [(v' & -> & Hv)|(v' & -> & Hv)]; [left|right]; exists v'; split; try done;
+      [by apply (IH1 T1')|by apply (IH2 T2')].
+  - destruct Ht as (<- & Ha & <- & Hs). intros (o & S' & f & -> & -> & -> & HS & Hf).
+    exists o, S', f. split_and!; try done; [by eapply ssub_sequiv_r|by eapply fle_trans].
+  - destruct Ht as (<- & <- & <- & H1). apply IHT. done.
+Qed.
+
+Lemma Vfuel_crT n N T U Π φ v : crT T U →
+  v ∈ FV^N _ n⟦RTy T⟧(Π, φ) → v ∈ FV^N _ n⟦RTy U⟧(Π, φ).
+Proof. rewrite !Vfuel_eq. apply Vty_crT. Qed.
 
 (** ** Subtyping *)
 
@@ -127,7 +168,7 @@ Section sub.
         intros m0 Π0 φ0 w Hm0 Hw. apply (Vfuel_teq m0 N (sinst_ty (slist ss) U)); [|done].
         apply teq_sinst; [apply scontr_slist, Hss|done|done|done].
     - intros (o & S' & f & -> & -> & -> & HS & Hf).
-      exists o, S', f. split_and!; try done; [by eapply sequiv_trans|by eapply fle_trans].
+      exists o, S', f. split_and!; try done; [by eapply ssub_trans|by eapply fle_trans].
     - intros Hv. by apply IHT.
   Qed.
 End sub.

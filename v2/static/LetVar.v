@@ -151,8 +151,8 @@ Lemma tage_tsub W c T T' : tage c T T' → ∀ Γ, tsub W Γ T T'.
 Proof.
   induction 1; intros Γ.
   - apply tsub_refl.
-  - apply sub_sess; [apply sequiv_refl|apply fsub_le].
-  - apply sub_sess; [apply sequiv_refl|apply fsub_le].
+  - apply sub_sess; [apply ssub_refl|apply fsub_le].
+  - apply sub_sess; [apply ssub_refl|apply fsub_le].
   - apply sub_arr; [apply fle_refl|apply fsub_le|apply tsub_refl|apply tsub_refl].
   - by apply sub_prod.
   - by apply sub_sum.

@@ -420,6 +420,22 @@ Proof. intros H n. by apply aeq_ren. Qed.
 Lemma teq_ren f T U : teq T U → teq (ty_ren f T) (ty_ren f U).
 Proof. apply eqT_ren, sequiv_ren. Qed.
 
+Lemma crT_ren f T : ∀ U, crT T U → crT (ty_ren f T) (ty_ren f U).
+Proof.
+  induction T; intros [] H; try (exact (teq_ren f _ _ H)); simpl in *; try done.
+  all: destruct_and?; subst; split_and?; auto using teq_ren, sequiv_ren.
+Qed.
+
+Lemma asub_ren f n : ∀ s r, asub n s r → asub n (sty_ren f s) (sty_ren f r).
+Proof.
+  induction n as [|n IH]; intros s r; simpl; [done|]. unfold sub_step. rewrite !hd_ren.
+  destruct (hd s), (hd r); simpl; try done;
+    try (intros (-> & HT & Hs); split_and!; [done|by apply crT_ren|by apply IH]); try (by intros ->); naive_solver.
+Qed.
+
+Lemma ssub_ren f s r : ssub s r → ssub (sty_ren f s) (sty_ren f r).
+Proof. intros H n. by apply asub_ren. Qed.
+
 Lemma ahc_ren f n : ∀ s, ahc n s → ahc n (sty_ren f s).
 Proof.
   induction n as [|n IH]; intros s; simpl; [done|]. unfold hc_step. rewrite hd_ren.
@@ -862,7 +878,7 @@ Proof.
   - by apply sub_sum.
   - apply sub_box; [done|]. destruct k; [by apply teq_ren|].
     destruct H0 as [->|(He & H1 & H2)]; [by left|right]. rewrite !tcontr_ren. split_and!; [by apply teq_ren|done|done].
-  - apply sub_sess; [by apply sequiv_ren|done].
+  - apply sub_sess; [by apply ssub_ren|done].
   - apply sub_ex; [| |by rewrite <-hc_open_ren].
     + apply (hold_at_ren π) in H. by rewrite hc_open_ren, bcs_inst_pshift_ren, ids_ren in H.
     + destruct H0 as [->|H0]; [by left|right]. exact (ex_wf_ren π W Γ lb' n C T H0).

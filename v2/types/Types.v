@@ -528,6 +528,102 @@ Lemma teq_refl T : teq T T.
 Proof. apply eqT_refl, sequiv_refl. Qed.
 Lemma teq_sym T U : teq T U → teq U T.
 Proof. apply eqT_sym, sequiv_sym. Qed.
+Lemma teq_trans' T U V : teq T U → teq U V → teq T V.
+Proof. apply eqT_trans, sequiv_trans. Qed.
+
+(** ** Session subtyping, coinductive through heads
+
+    S ⊑ S′ is ≈ except at the payloads. A received payload may fall in
+    credit and a sent payload may rise. [crT T U] says that U is T with
+    the credits of its ends and closures lowered. Everything else, the
+    tickets, the points, the costs, the arguments and results of closures,
+    boxes and the protocols of payload ends, compares up to ≈. *)
+
+Fixpoint crT (T U : ty) : Prop :=
+  match T, U with
+  | TUnit, TUnit => True
+  | TLolli ub lb c T1 T2 a, TLolli ub' lb' c' U1 U2 a' =>
+      ub = ub' ∧ lb = lb' ∧ c = c' ∧ fle a' a ∧ teq T1 U1 ∧ teq T2 U2
+  | TProd T1 T2, TProd U1 U2 | TSum T1 T2, TSum U1 U2 => crT T1 U1 ∧ crT T2 U2
+  | TBox _ _ _ _ _ _, TBox _ _ _ _ _ _ => teq T U
+  | TSess s x a mt, TSess r y a' mt' => x = y ∧ fle a' a ∧ mt = mt' ∧ sequiv s r
+  | TEx lb n C T1, TEx lb' n' C' U1 => lb = lb' ∧ n = n' ∧ C = C' ∧ crT T1 U1
+  | _, _ => False
+  end.
+
+Lemma crT_refl T : crT T T.
+Proof.
+  induction T; simpl; split_and?; auto using fle_refl, teq_refl, sequiv_refl.
+Qed.
+
+Lemma teq_crT T : ∀ U, teq T U → crT T U.
+Proof.
+  unfold teq. induction T; intros [] H; simpl in *; try done.
+  all: destruct_and?; subst; split_and?; auto using fle_refl.
+Qed.
+
+Lemma crT_trans T : ∀ U V, crT T U → crT U V → crT T V.
+Proof.
+  induction T; intros [] []; simpl; try done.
+  all: intros; destruct_and?; subst; split_and?; eauto using fle_trans, teq_trans', sequiv_trans.
+Qed.
+
+Definition sub_step (τ : sty → sty → Prop) (s r : sty) : Prop :=
+  match hd s, hd r with
+  | HSkip, HSkip | HEnd, HEnd => True
+  | HRcv m T s', HRcv m' U r' => m = m' ∧ crT T U ∧ τ s' r'
+  | HSnd m T s', HSnd m' U r' => m = m' ∧ crT U T ∧ τ s' r'
+  | HVar a s', HVar a' r' | HVarD a s', HVarD a' r' => a = a' ∧ τ s' r'
+  | HPlus s1 s2, HPlus r1 r2 | HWith s1 s2, HWith r1 r2 => τ s1 r1 ∧ τ s2 r2
+  | HStuck u, HStuck v => u = v
+  | _, _ => False
+  end.
+
+Fixpoint asub (n : nat) (s r : sty) : Prop :=
+  match n with 0 => True | S n' => sub_step (asub n') s r end.
+
+(** S ⊑ R. *)
+Definition ssub (s r : sty) : Prop := ∀ n, asub n s r.
+
+Lemma sub_step_mono τ τ' s r : (∀ a b, τ a b → τ' a b) → sub_step τ s r → sub_step τ' s r.
+Proof. unfold sub_step. intros Hτ. hd_cases s; hd_cases r; try done; intuition eauto. Qed.
+
+Lemma ssub_coind (τ : sty → sty → Prop) :
+  (∀ s r, τ s r → sub_step τ s r) → ∀ s r, τ s r → ssub s r.
+Proof.
+  intros Hτ s r Hsr n. revert s r Hsr.
+  induction n as [|n IH]; intros s r Hsr; [done|].
+  eapply sub_step_mono; [exact IH|by apply Hτ].
+Qed.
+
+Lemma ssub_hd s r : ssub s r → sub_step ssub s r.
+Proof.
+  intros H. assert (∀ n, sub_step (asub n) s r) as Hn by (intros n; exact (H (S n))).
+  clear H. unfold sub_step in *.
+  destruct (hd s), (hd r); try (by specialize (Hn 0)).
+  all: pose proof (Hn 0) as H0; destruct_and?; subst; split_and?; try done.
+  all: intros n; specialize (Hn n); naive_solver.
+Qed.
+
+Lemma ssub_refl s : ssub s s.
+Proof.
+  apply (ssub_coind eq); [|done]. intros x _ <-. unfold sub_step.
+  hd_cases x; split_and?; auto using crT_refl.
+Qed.
+
+Lemma ssub_trans s r t : ssub s r → ssub r t → ssub s t.
+Proof.
+  intros H1 H2. apply (ssub_coind (λ x z, ∃ y, ssub x y ∧ ssub y z)); [|eauto].
+  clear. intros x z (y & H1 & H2). apply ssub_hd in H1, H2. unfold sub_step in *.
+  hd_cases x; hd_cases y; try done; hd_cases z; try done; try congruence.
+  all: destruct_and?; subst; split_and?; eauto using crT_trans.
+Qed.
+
+Lemma idle_ssub S S' : ssub S S' → idle S ↔ idle S'.
+Proof.
+  intros H. specialize (H 1). simpl in H. unfold sub_step in H. rewrite !idle_hd.
+  destruct (hd S), (hd S'); naive_solver.
+Qed.
 (** ** Kinds of types *)
 
 (** The types whose variables admit contraction and weakening. *)

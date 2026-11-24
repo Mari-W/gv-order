@@ -125,7 +125,7 @@ Lemma e_sub_ctl W N Γ Δ F e S1 x S2 y S3 z a1 a2 a3 b1 b2 b3 c :
   typed W N ∅ Γ Δ F e (TProd (TProd (TSess S1 x b1 (Some 3)) (TSess S2 y b2 (Some 3))) (TSess S3 z b3 (Some 3))) c.
 Proof.
   intros He H1 H2 H3. eapply e_sub; [exact He| |apply fle_refl|intros HC; exact HC].
-  apply sub_prod; [apply sub_prod|]; apply sub_sess; rewrite ?fadd_0_l; auto using sequiv_refl.
+  apply sub_prod; [apply sub_prod|]; apply sub_sess; rewrite ?fadd_0_l; auto using ssub_refl.
 Qed.
 
 Lemma ctl_fact W Γ x y :

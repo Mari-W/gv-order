@@ -176,10 +176,11 @@ Definition cnew (m1 m2 : fuel) (c : chan) (φ : cenv) : cenv :=
 Definition ffresh (c : chan) (Π : penv) (φ : cenv) : Prop :=
   (EPos c ∉ dom Π) ∧ (ENeg c ∉ dom Π) ∧ (EPos c ∉ dom φ) ∧ (ENeg c ∉ dom φ).
 
-(** The two ends of a link label, held at dual protocols. *)
+(** The two ends of a link label, held at protocols dual up to ⊑,
+    S1 ⊑ dual S2. *)
 Definition plink (Π : penv) (os : gset cend) : Prop :=
   ∃ o1 o2 S1 S2, os = {[o1]} ∪ {[o2]} ∧ o1 ≠ o2 ∧ Π !! o1 = Some S1 ∧ Π !! o2 = Some S2 ∧
-    sequiv S2 (dual S1).
+    ssub S1 (dual S2).
 
 (** The tickets of a link: the counter of each linked end exceeds what the
     bound leaves the partner of the other, a1 + m2 > N and a2 + m1 > N. *)
@@ -296,7 +297,7 @@ Fixpoint Vty (N : fuel) (El : Ix → epred) (Vl : Ix → vpred) (n : Ix)
   match T with
   | TUnit => v = EUnit ∧ Π = ∅ ∧ φ = ∅
   | TSess s _ a m =>
-      ∃ o S' f, v = Chan o ∧ Π = {[o := S']} ∧ φ = {[o := (f, m)]} ∧ sequiv S' s ∧ fle a f
+      ∃ o S' f, v = Chan o ∧ Π = {[o := S']} ∧ φ = {[o := (f, m)]} ∧ ssub S' s ∧ fle a f
   | TLolli _ _ c T1 U a =>
       ∃ e, v = Lam e ∧ fends e = dom Π ∧ dom Π = dom φ ∧
         (∀ o f, φ !! o = Some f → ¬ idle_at Π o → fle a f.1) ∧

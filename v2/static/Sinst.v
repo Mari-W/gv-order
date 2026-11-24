@@ -335,7 +335,7 @@ Proof.
   - apply sub_box; [done|]. destruct k; [simpl; by apply teq_sinst|].
     destruct H0 as [->|(? & ? & ?)]; [by left|right].
     split_and!; [apply teq_sinst; auto using scontr_iter_sty_up|apply tcontr_sinst; auto using scontr_iter_sty_up..].
-  - apply sub_sess; [|done]. by apply sequiv_sinst.
+  - apply sub_sess; [|done]. by apply ssub_sinst.
   - apply sub_ex; auto. destruct H0 as [->|H0]; [by left|right].
     by rewrite heads_sinst, hbot_sinst.
 Qed.
@@ -590,7 +590,7 @@ Proof.
     rename H0 into HTp, H1 into HS0. cbn [tcontr] in HS0.
     destruct (unfoldS_seq_contr _ _ _ HS0 Hu) as [HT HS].
     destruct (unfoldS_sinst_act σ Hσ S0 (SSnd m T) S HS0 I Hu) as (S' & Hu' & HS').
-    cbn [sinst_ty]. eapply e_sub; [|apply sub_sess; [exact HS'|apply fle_refl]|apply fle_refl|intros _; by apply scontr_sinst].
+    cbn [sinst_ty]. eapply e_sub; [|apply sub_sess; [by apply sequiv_ssub|apply fle_refl]|apply fle_refl|intros _; by apply scontr_sinst].
     eapply e_send with (T := sinst_ty σ T) (S := S'); [exact Hu'| | |exact Hub|exact (IH σ Hok HΘ HΔc)| |].
     + apply scoped_sinst_mut; [apply Hok|done].
     + split; [by rewrite <-payload_at_sinst, hbot_sinst|].
@@ -604,7 +604,7 @@ Proof.
     destruct (unfoldS_seq_contr _ _ _ HS0 Hu) as [HT HS].
     destruct (unfoldS_sinst_act σ Hσ S0 (SRcv m T) S HS0 I Hu) as (S' & Hu' & HS').
     cbn [sinst_ty]. rewrite payload_at_sinst.
-    eapply e_sub; [|apply sub_prod; [apply tsub_refl|apply sub_sess; [exact HS'|apply fle_refl]]|apply fle_refl|].
+    eapply e_sub; [|apply sub_prod; [apply tsub_refl|apply sub_sess; [by apply sequiv_ssub|apply fle_refl]]|apply fle_refl|].
     + eapply e_recv with (T := sinst_ty σ T) (S := S'); [exact Hu'| |exact Hub|exact (IH σ Hok HΘ HΔc)].
       apply scoped_sinst_mut; [apply Hok|done].
     + intros _. cbn [tcontr]. apply Is_true_andb. split; [|by apply scontr_sinst].
@@ -618,7 +618,7 @@ Proof.
     destruct (unfoldS_sinst_plus σ Hσ S0 S1 S2 HS0 Hu) as (S1' & S2' & Hu' & E1 & E2).
     eapply e_sub; [eapply (e_select _ _ i) with (S1 := S1') (S2 := S2'); [exact Hu'|exact Hub|exact (IH σ Hok HΘ HΔc)]
       | |apply fle_refl|].
-    + destruct i; cbn [sinst_ty]; apply sub_sess; first [done|apply fle_refl].
+    + destruct i; cbn [sinst_ty]; apply sub_sess; first [by apply sequiv_ssub|apply fle_refl].
     + intros _. destruct i; cbn [sinst_ty tcontr]; by apply scontr_sinst.
   - (* E-Branch *)
     pose proof (typed_scontr _ _ _ _ _ _ _ _ _ H HΘ HΔc) as HS0. cbn [tcontr] in HS0.
@@ -626,7 +626,7 @@ Proof.
     destruct (unfoldS_sinst_with σ Hσ S0 S1 S2 HS0 Hu) as (S1' & S2' & Hu' & E1 & E2).
     eapply e_sub; [eapply e_branch with (S1 := S1') (S2 := S2'); [exact Hu'|exact Hub|exact (IH σ Hok HΘ HΔc)]
       | |apply fle_refl|].
-    + cbn [sinst_ty]. apply sub_sum; apply sub_sess; first [done|apply fle_refl].
+    + cbn [sinst_ty]. apply sub_sum; apply sub_sess; first [by apply sequiv_ssub|apply fle_refl].
     + intros _. cbn [sinst_ty tcontr]. apply Is_true_andb. split; by apply scontr_sinst.
   - (* E-Link *)
     pose proof (IH σ Hok HΘ HΔc) as IH'. cbn [sinst_ty] in IH'. rewrite <-dual_sinst in IH'.

@@ -40,14 +40,14 @@ Proof.
   by rewrite insert_empty.
 Qed.
 
-(** ** Sessions up to ≈ *)
+(** ** Sessions up to ⊑, the protocol held below the type *)
 
 Local Ltac hd_inv Hq Hu :=
-  apply sequiv_step in Hq; unfold eq_step in Hq; rewrite (hd_of _ _ Hu) in Hq; simpl in Hq.
+  apply ssub_hd in Hq; unfold sub_step in Hq; rewrite (hd_of _ _ Hu) in Hq; simpl in Hq.
 
 Lemma sequiv_unfold_snd s S0 m T S :
-  sequiv s S0 → unfoldS S0 = SSeq (SSnd m T) S →
-  ∃ T' S', unfoldS s = SSeq (SSnd m T') S' ∧ teq T' T ∧ sequiv S' S.
+  ssub s S0 → unfoldS S0 = SSeq (SSnd m T) S →
+  ∃ T' S', unfoldS s = SSeq (SSnd m T') S' ∧ crT T T' ∧ ssub S' S.
 Proof.
   intros Hq Hu. hd_inv Hq Hu.
   destruct (hd s) eqn:Hs; simpl in Hq; try done. destruct_and!; subst.
@@ -55,23 +55,23 @@ Proof.
 Qed.
 
 Lemma sequiv_unfold_rcv s S0 m T S :
-  sequiv s S0 → unfoldS S0 = SSeq (SRcv m T) S →
-  ∃ T' S', unfoldS s = SSeq (SRcv m T') S' ∧ teq T' T ∧ sequiv S' S.
+  ssub s S0 → unfoldS S0 = SSeq (SRcv m T) S →
+  ∃ T' S', unfoldS s = SSeq (SRcv m T') S' ∧ crT T' T ∧ ssub S' S.
 Proof.
   intros Hq Hu. hd_inv Hq Hu.
   destruct (hd s) eqn:Hs; simpl in Hq; try done. destruct_and!; subst.
   eexists _, _. split_and!; [|done|done]. by rewrite unfoldS_unview, Hs.
 Qed.
 
-Lemma sequiv_unfold_end s S0 : sequiv s S0 → unfoldS S0 = SEnd → unfoldS s = SEnd.
+Lemma sequiv_unfold_end s S0 : ssub s S0 → unfoldS S0 = SEnd → unfoldS s = SEnd.
 Proof.
   intros Hq Hu. hd_inv Hq Hu.
   destruct (hd s) eqn:Hs; simpl in Hq; try done. by rewrite unfoldS_unview, Hs.
 Qed.
 
 Lemma sequiv_unfold_plus s S0 S1 S2 :
-  sequiv s S0 → unfoldS S0 = SPlus S1 S2 →
-  ∃ S1' S2', unfoldS s = SPlus S1' S2' ∧ sequiv S1' S1 ∧ sequiv S2' S2.
+  ssub s S0 → unfoldS S0 = SPlus S1 S2 →
+  ∃ S1' S2', unfoldS s = SPlus S1' S2' ∧ ssub S1' S1 ∧ ssub S2' S2.
 Proof.
   intros Hq Hu. hd_inv Hq Hu.
   destruct (hd s) eqn:Hs; simpl in Hq; try done. destruct_and!.
@@ -79,8 +79,8 @@ Proof.
 Qed.
 
 Lemma sequiv_unfold_with s S0 S1 S2 :
-  sequiv s S0 → unfoldS S0 = SWith S1 S2 →
-  ∃ S1' S2', unfoldS s = SWith S1' S2' ∧ sequiv S1' S1 ∧ sequiv S2' S2.
+  ssub s S0 → unfoldS S0 = SWith S1 S2 →
+  ∃ S1' S2', unfoldS s = SWith S1' S2' ∧ ssub S1' S1 ∧ ssub S2' S2.
 Proof.
   intros Hq Hu. hd_inv Hq Hu.
   destruct (hd s) eqn:Hs; simpl in Hq; try done. destruct_and!.
@@ -94,11 +94,11 @@ Proof. intros Hs (S' & HS & Hi). rewrite lookup_singleton_eq in HS. injection HS
 
 Lemma Vfuel_sess_inv N n s x a Π φ v mt :
   v ∈ FV^N _ n⟦RTy (TSess s x a mt)⟧(Π, φ) →
-  ∃ o s' f, v = Chan o ∧ Π = {[o := s']} ∧ φ = {[o := (f, mt)]} ∧ sequiv s' s ∧ fle a f.
+  ∃ o s' f, v = Chan o ∧ Π = {[o := s']} ∧ φ = {[o := (f, mt)]} ∧ ssub s' s ∧ fle a f.
 Proof. rewrite Vfuel_eq. simpl. done. Qed.
 
 Lemma Vfuel_sess_intro N n s x a o s' f mt :
-  sequiv s' s → fle a f → Chan o ∈ FV^N _ n⟦RTy (TSess s x a mt)⟧({[o := s']}, {[o := (f, mt)]}).
+  ssub s' s → fle a f → Chan o ∈ FV^N _ n⟦RTy (TSess s x a mt)⟧({[o := s']}, {[o := (f, mt)]}).
 Proof. intros Hs Hf. rewrite Vfuel_eq. simpl. exists o, s', f. by split_and!. Qed.
 
 Lemma Vfuel_prod_inv N n T1 T2 Π φ v :
@@ -214,7 +214,7 @@ Proof.
     pose proof (Vfuel_sub _ _ _ _ _ _ _ _ _ Hs H1) as H2.
     unfold payload_at, ty_inst in H2. apply Vfuel_pinst in H2.
     intros j Hj. apply (Vfuel_down _ _ n); [by apply olt_ole|].
-    exact (proj1 (Vfuel_teq _ _ T T' _ _ _ (teq_sym _ _ HT)) H2).
+    exact (Vfuel_crT _ _ T T' _ _ _ HT H2).
   - rewrite Hfw, <-HdΠφ, mrem_union_self by done. rewrite HdΠφ, mrem_union_self by done.
     rewrite refill_single, insert_singleton, decide_True by done.
     intros j Hj. apply FuelE_val; [done|]. apply Vfuel_sess_intro; [done|apply fle_refl].
@@ -238,7 +238,7 @@ Proof.
   rewrite (map_union_comm {[o := S']}), (map_union_comm {[o := (mS, mS)]}) by (by apply map_disjoint_sym).
   apply Vfuel_pair; [by apply map_disjoint_sym|by apply map_disjoint_sym| |].
   - unfold payload_at, ty_inst. apply (proj2 (Vfuel_pinst _ _ _ _ _ _ _)).
-    exact (proj1 (Vfuel_teq _ _ T' T _ _ _ HT) Hw).
+    exact (Vfuel_crT _ _ T' T _ _ _ HT Hw).
   - apply Vfuel_sess_intro; [done|apply fle_refl].
 Qed.
 
@@ -313,7 +313,8 @@ Proof.
   - exists o1, o2, s1, s2. split_and!; [done|done| | |].
     + by apply lookup_union_Some_l, lookup_singleton_eq.
     + apply lookup_union_Some_r; [done|]. by apply lookup_singleton_eq.
-    + eapply sequiv_trans; [exact Hs2|]. apply sequiv_dual, sequiv_sym, Hs1.
+    + pose proof (ssub_dual _ _ Hs2) as Hd2. rewrite dual_involutive in Hd2.
+      eapply ssub_trans; [exact Hs1|exact Hd2].
   - rewrite dom_union_L, !dom_singleton_L. set_solver.
   - intros p1 p2 q1 q2 Hos Hne' G1 G2.
     assert (Hl : ∀ o p, ({[o1 := (f1, m1)]} ∪ {[o2 := (f2, m2)]} : cenv) !! o = Some p →
@@ -387,8 +388,8 @@ Proof.
   apply Vfuel_pair.
   - by apply map_disjoint_singleton_l, lookup_singleton_ne.
   - by apply map_disjoint_singleton_l, lookup_singleton_ne.
-  - apply Vfuel_sess_intro; [apply sequiv_refl|apply fle_refl].
-  - apply Vfuel_sess_intro; [apply sequiv_refl|apply fle_refl].
+  - apply Vfuel_sess_intro; [apply ssub_refl|apply fle_refl].
+  - apply Vfuel_sess_intro; [apply ssub_refl|apply fle_refl].
 Qed.
 
 Lemma new_redex N n lb C S m1 m2 d :

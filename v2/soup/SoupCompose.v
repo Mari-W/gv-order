@@ -380,7 +380,7 @@ Section nu.
       + exact (sp_pdual _ _ _ _ _ _ _ _ _ Hs o P P' H1 H2 Hc).
       + assert (o ∈ dom K) as Ho by (rewrite <-HdP; by eapply elem_of_dom_2).
         destruct (entries o Ho Hc) as (S0 & x0 & _ & _ & E1 & E2). rewrite E1 in H1. rewrite E2 in H2.
-        injection H1 as <-. injection H2 as <-. apply sequiv_refl.
+        injection H1 as <-. injection H2 as <-. apply ssub_refl.
     - intros o y Hy. apply (sp_sig _ _ _ _ _ _ _ _ _ Hs). by apply lookup_union_Some_l.
     - exact (sp_fin _ _ _ _ _ _ _ _ _ Hs).
     - intros o S x Hy. apply (sp_psig _ _ _ _ _ _ _ _ _ Hs o S x). by apply lookup_union_Some_l.
@@ -527,7 +527,7 @@ Section term.
       simpl in H1, H2. injection H1 as <- <-. injection H2 as <- <-. split; [done|]. apply sequiv_refl.
     - intros o P P' H1 H2 Hc. destruct (restricted o Hc) as (S0 & x0 & m & m' & _ & E1 & E2).
       rewrite lookup_fmap, E1 in H1. rewrite lookup_fmap, E2 in H2. simpl in H1, H2.
-      injection H1 as <-. injection H2 as <-. apply sequiv_refl.
+      injection H1 as <-. injection H2 as <-. apply ssub_refl.
     - intros o [S x] Hy. unfold tenv_erase. rewrite lookup_fmap.
       rewrite (lookup_union_Some_l _ _ o (TE S x (fhalf (Some N)) (fhalf (Some N)))); [done|]. unfold tenv_of. by rewrite lookup_fmap, Hy.
     - intros o h Ho. unfold kterm in Ho. apply lookup_fmap_Some in Ho as (te & <- & Hte). simpl.

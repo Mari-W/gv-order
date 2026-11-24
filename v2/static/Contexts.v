@@ -18,7 +18,7 @@
     capture of E-Abs is aging. Credits sit on ends and closures only, so
     both recurse through products, sums and existentials. *)
 
-From GV Require Export types.Contractive.
+From GV Require Export types.SessSub.
 
 (** ** Environments *)
 
@@ -541,7 +541,9 @@ Definition thage (c : fuel) (Θ Θ' : tenv) : Prop :=
 (** ** Subtyping
 
     W ; Γ ⊢ T ≤ T'. Costs are covariant, arguments contravariant,
-    results covariant, sessions up to ≈. A credit may fall. At an arrow
+    results covariant. Sessions compare by ⊑ ([ssub]), which is ≈ except
+    that a received payload may fall in credit and a sent payload may
+    rise. A credit may fall. At an arrow
     the credit a bounds what the captured counters may lose before a
     call, so it may fall as well (a' ≤ a). A
     product, a sum and an existential compare their parts. An
@@ -571,7 +573,7 @@ Inductive tsub (W : sworld) : hctx → ty → ty → Prop :=
       (match k with 0 => teq U U' | S _ => U = U' ∨ (teq U U' ∧ tcontr U ∧ tcontr U') end) →
       tsub W Γ (TBox n k C ub c U) (TBox n k C ub c' U')
   | sub_sess Γ s s' x a a' mt :
-      sequiv s s' → fle a' a → tsub W Γ (TSess s x a mt) (TSess s' x a' mt)
+      ssub s s' → fle a' a → tsub W Γ (TSess s x a mt) (TSess s' x a' mt)
   | sub_ex Γ lb lb' n C C' T T' :
       hold_at W (hc_open n C Γ) (bcs_inst (pshift n) C') (ids n) →
       lb_lower W Γ n C lb lb' T →

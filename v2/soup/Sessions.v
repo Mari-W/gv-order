@@ -2,10 +2,11 @@
 
     The soup pairs the two ends of an internal channel at dual session
     types up to annotations in the environment of the relation ([sdual])
-    and at dual protocols up to ≈ in the protocol map of the fuel layer.
-    When the two ends act, their continuations are dual again, and the
-    payload types agree. A link joins the partners of its two ends, which
-    are dual again. *)
+    and at protocols P, P′ with dual P ⊑ P′ in the protocol map of the
+    fuel layer. When the two ends act, their continuations are related
+    again, and the receiver reads the payload at a credit no higher than
+    the sender's. A link joins the partners of its two ends, which are
+    related again. *)
 
 From GV Require Export soup.OwnFacts compat.Blind static.PointSubst.
 
@@ -64,34 +65,56 @@ Proof.
   eexists _, _. split_and!; [|done|done]. by rewrite unfoldS_unview, Hs.
 Qed.
 
+Lemma ssub_unfold_rcv s S0 m U S :
+  ssub S0 s → unfoldS S0 = SSeq (SRcv m U) S →
+  ∃ U' S', unfoldS s = SSeq (SRcv m U') S' ∧ crT U U' ∧ ssub S S'.
+Proof.
+  intros Hq Hu. apply ssub_hd in Hq. unfold sub_step in Hq. rewrite (hd_of _ _ Hu) in Hq.
+  simpl in Hq. destruct (hd s) eqn:Hs; simpl in Hq; try done. destruct_and!; subst.
+  eexists _, _. split_and!; [|done|done]. by rewrite unfoldS_unview, Hs.
+Qed.
+
+Lemma ssub_unfold_with s S0 S1 S2 :
+  ssub S0 s → unfoldS S0 = SWith S1 S2 →
+  ∃ S1' S2', unfoldS s = SWith S1' S2' ∧ ssub S1 S1' ∧ ssub S2 S2'.
+Proof.
+  intros Hq Hu. apply ssub_hd in Hq. unfold sub_step in Hq. rewrite (hd_of _ _ Hu) in Hq.
+  simpl in Hq. destruct (hd s) eqn:Hs; simpl in Hq; try done. destruct_and!.
+  eexists _, _. split_and!; [|done|done]. by rewrite unfoldS_unview, Hs.
+Qed.
+
+(** The two ends of a channel hold protocols P and P′ with dual P ⊑ P′.
+    What one end sends, the other receives at a credit no higher. *)
 Lemma pdual_snd P0 P0' m T P m' T' P' :
-  sequiv P0' (dual P0) → unfoldS P0 = SSeq (SSnd m T) P → unfoldS P0' = SSeq (SRcv m' T') P' →
-  m' = m ∧ teq T' T ∧ sequiv P' (dual P).
+  ssub (dual P0) P0' → unfoldS P0 = SSeq (SSnd m T) P → unfoldS P0' = SSeq (SRcv m' T') P' →
+  m' = m ∧ crT T T' ∧ ssub (dual P) P'.
 Proof.
   intros Hd Hu Hu'.
   assert (unfoldS (dual P0) = SSeq (SRcv m T) (dual P)) as Hdu by (by rewrite <-dual_unfoldS, Hu).
-  destruct (sequiv_unfold_rcv _ _ _ _ _ Hd Hdu) as (T'' & P'' & Hu'' & HT & HP).
+  destruct (ssub_unfold_rcv _ _ _ _ _ Hd Hdu) as (T'' & P'' & Hu'' & HT & HP).
   rewrite Hu' in Hu''. simplify_eq. done.
 Qed.
 
 Lemma pdual_plus P0 P0' P1 P2 P1' P2' :
-  sequiv P0' (dual P0) → unfoldS P0 = SPlus P1 P2 → unfoldS P0' = SWith P1' P2' →
-  sequiv P1' (dual P1) ∧ sequiv P2' (dual P2).
+  ssub (dual P0) P0' → unfoldS P0 = SPlus P1 P2 → unfoldS P0' = SWith P1' P2' →
+  ssub (dual P1) P1' ∧ ssub (dual P2) P2'.
 Proof.
   intros Hd Hu Hu'.
   assert (unfoldS (dual P0) = SWith (dual P1) (dual P2)) as Hdu by (by rewrite <-dual_unfoldS, Hu).
-  destruct (sequiv_unfold_with _ _ _ _ Hd Hdu) as (R1 & R2 & Hu'' & H1 & H2).
+  destruct (ssub_unfold_with _ _ _ _ Hd Hdu) as (R1 & R2 & Hu'' & H1 & H2).
   rewrite Hu' in Hu''. simplify_eq. done.
 Qed.
 
-Lemma pdual_sym P P' : sequiv P' (dual P) → sequiv P (dual P').
-Proof.
-  intros H. apply sequiv_dual in H. rewrite dual_involutive in H. by apply sequiv_sym.
-Qed.
+Lemma pdual_sym P P' : ssub (dual P) P' → ssub (dual P') P.
+Proof. intros H. apply ssub_dual in H. by rewrite dual_involutive in H. Qed.
+
+(** The two ends of a link, P ⊑ dual P′. *)
+Lemma plink_sym P P' : ssub P (dual P') → ssub P' (dual P).
+Proof. intros H. apply ssub_dual in H. by rewrite dual_involutive in H. Qed.
 
 Lemma pdual_link P1 P2 R1 R2 :
-  sequiv P2 (dual P1) → sequiv R1 (dual P1) → sequiv R2 (dual P2) → sequiv R2 (dual R1).
+  ssub P1 (dual P2) → ssub (dual P1) R1 → ssub (dual P2) R2 → ssub (dual R1) R2.
 Proof.
-  intros H12 H1 H2. apply sequiv_dual in H12, H1. rewrite dual_involutive in H12, H1.
-  eapply sequiv_trans; [exact H2|]. eapply sequiv_trans; [exact H12|]. by apply sequiv_sym.
+  intros H12 H1 H2. apply pdual_sym in H1.
+  eapply ssub_trans; [exact H1|]. by eapply ssub_trans.
 Qed.

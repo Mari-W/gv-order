@@ -62,7 +62,7 @@ Record soup_gen (N : fuel) (Erl : senv → ty → expr → Prop) (Frl : penv →
   sp_sdual o S x S' x' : A !! o = Some (S, x) → A !! edual o = Some (S', x') →
     ech o ∈ (s_q a).1 → x' = x‾ ∧ sequiv (sty_df S') (sty_df (dual S));
   sp_pdual o P P' : Π !! o = Some P → Π !! edual o = Some P' → ech o ∈ (s_q a).1 →
-    sequiv P' (dual P);
+    ssub (dual P) P';
   sp_sig o y : Σ !! o = Some y → A !! o = Some y;
   sp_fin o h : s_K a !! o = Some h → is_Some h.(h_ctr);
   sp_psig o S x : Σ !! o = Some (S, x) → Π !! o = Some S;
@@ -85,7 +85,7 @@ Definition soup_consistent (N : fuel) (Σ : senv) (a : lfstate) (A : senv) (Π :
   (∀ o, o ∈ dom (s_K a) → ech o ∈ (s_q a).1 → edual o ∈ dom (s_K a)) ∧
   (∀ o S x S' x', A !! o = Some (S, x) → A !! edual o = Some (S', x') →
      ech o ∈ (s_q a).1 → x' = x‾ ∧ sequiv (sty_df S') (sty_df (dual S))) ∧
-  (∀ o P P', Π !! o = Some P → Π !! edual o = Some P' → ech o ∈ (s_q a).1 → sequiv P' (dual P)) ∧
+  (∀ o P P', Π !! o = Some P → Π !! edual o = Some P' → ech o ∈ (s_q a).1 → ssub (dual P) P') ∧
   (∀ o y, Σ !! o = Some y → A !! o = Some y) ∧
   (∀ o h, s_K a !! o = Some h → is_Some h.(h_ctr)) ∧
   (∀ o S x, Σ !! o = Some (S, x) → Π !! o = Some S) ∧

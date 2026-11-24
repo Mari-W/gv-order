@@ -64,7 +64,7 @@ Section link.
     o1 ≠ o2 ∧
     (∃ h, K !! o1 = Some h ∧ h.(h_th) = i) ∧ (∃ h, K !! o2 = Some h ∧ h.(h_th) = i) ∧
     (∃ Sa Sb xa, A !! o1 = Some (Sa, xa) ∧ A !! o2 = Some (Sb, pt_dual xa) ∧ sdual Sa Sb) ∧
-    (∃ Pa Pb, Π !! o1 = Some Pa ∧ Π !! o2 = Some Pb ∧ sequiv Pb (dual Pa)) ∧
+    (∃ Pa Pb, Π !! o1 = Some Pa ∧ Π !! o2 = Some Pb ∧ ssub Pa (dual Pb)) ∧
     e' ∈ E[live]^W _ lv⟦kdel2 o1 o2 (kres K i A) ⊢ U i⟧^∅ ∧
     lok (Some N) (ctrs K i) ({[o1]} ∪ {[o2]}) ∧
     e' ∈ F^(Some N) _ lv⟦RThread ▷ None⟧(kdel2 o1 o2 (kres K i Π), kdel2 o1 o2 (ctrs K i)).
@@ -85,13 +85,13 @@ Section link.
       (split; [done|]); (split; [eauto|]); (split; [eauto|]); split_and!.
     - exists S1, S2, x. done.
     - destruct (pair_set_eq _ _ _ _ Hqs Hq12) as [[-> ->]|[-> ->]]; [by exists P1, P2|].
-      exists P2, P1. split_and!; [done|done|by apply pdual_sym].
+      exists P2, P1. split_and!; [done|done|by apply plink_sym].
     - eapply at_cost_E_live; [|exact HE'|exact Hlv]. cbn; lia.
     - done.
     - exact HF'.
     - exists S2, S1, (pt_dual x). split_and!; [done|by rewrite pt_dual_dual|by apply sdual_sym].
     - destruct (pair_set_eq _ _ _ _ Hqs Hq12) as [[-> ->]|[-> ->]]; [by exists P1, P2|].
-      exists P2, P1. split_and!; [done|done|by apply pdual_sym].
+      exists P2, P1. split_and!; [done|done|by apply plink_sym].
     - eapply at_cost_E_live; [|exact HE'|exact Hlv]. cbn; lia.
     - done.
     - exact HF'.
@@ -173,7 +173,7 @@ Section link.
       + rewrite kmapr_id_ext in H3, H4 by apply csub_self.
         apply lookup_kdel2 in H3 as (_ & _ & H3). apply lookup_kdel2 in H4 as (_ & _ & H4).
         exact (s_pdual _ _ _ _ _ _ _ _ Hs o' Q1 Q2 H3 H4).
-      + refine (link_pair (λ v v', sequiv v' (dual v)) Π o1 o2 H12 Hns _ _ _ o' Q1 Q2 H3 H4).
+      + refine (link_pair (λ v v', ssub (dual v) v') Π o1 o2 H12 Hns _ _ _ o' Q1 Q2 H3 H4).
         * intros P P' HP. by apply pdual_sym.
         * intros a P P' H5 H6. exact (s_pdual _ _ _ _ _ _ _ _ Hs a P P' H5 H6).
         * intros R1 R2 H5 H6.

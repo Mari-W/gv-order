@@ -160,7 +160,7 @@ Definition pp_main : expr :=
       (App (EForce pp_loop) (Pair (Var 4) (Var 1)))))).
 
 Lemma skle_sess_inv s x a m s' x' a' m' :
-  skle (TSess s x a m) (TSess s' x' a' m') → sequiv s s' ∧ fle a' a ∧ m' = m.
+  skle (TSess s x a m) (TSess s' x' a' m') → ssub s s' ∧ fle a' a ∧ m' = m.
 Proof. inversion 1; subst. done. Qed.
 
 Lemma teq_lolli_inv ub lb c A B a ub' lb' c' A' B' a' :
@@ -203,7 +203,7 @@ Proof.
   (* b is not idle *)
   destruct (skle_sess_inv _ _ _ _ _ _ _ _ (skle_trans _ _ _ HC2 Hv0)) as [HdS1 _].
   assert (¬ idle S1) as HS1.
-  { intros HI. apply (end_not_idle S0 HS0). apply (idle_sequiv _ _ HdS1). by apply idle_dual_iff. }
+  { intros HI. apply (end_not_idle S0 HS0). apply (idle_ssub _ _ HdS1). by apply idle_dual_iff. }
   (* (force loop) ⟨a, b⟩ *)
   apply sk_app_inv in H as (Δc1 & Δc2 & Δc2' & cf & Targ & Ur & ar & cc1 & cc2 & Hsc & Hf & Hac & Hp & _ & _).
   apply sk_force_inv in Hf as (k & cb' & U' & ss & cfo & Hlen & Hss & Hbox & HlR).
@@ -234,8 +234,8 @@ Proof.
   apply skle_prod_inv in Hv as [_ Hv].
   apply skle_sess_l in Hv as (sT & t & -> & HsT & Htp).
   assert (¬ idle sT) as HsTi.
-  { intros HI. apply HS1. apply (idle_sequiv _ _ HsR), (idle_sequiv _ _ HsR'), (idle_sequiv _ _ HsP).
-    by apply (idle_sequiv _ _ HsT). }
+  { intros HI. apply HS1. apply (idle_ssub _ _ HsR), (idle_sequiv _ _ HsR'), (idle_ssub _ _ HsP).
+    by apply (idle_ssub _ _ HsT). }
   (* let ⟨u, a⟩ = recv a: b is aged by the cost of the receive *)
   apply sk_letp_inv in Hb as (Δr1 & Δr2 & Δr2' & V1 & V2 & T4' & cr1 & cr2 & Hsr & Hr & Har & Hb & _).
   destruct (pass_r _ _ _ _ _ _ _ _ _ 0 (TSess sT pd t m1) Hsr Hr eq_refl Har eq_refl (λ HF : False, HF))
@@ -321,6 +321,21 @@ Local Ltac new_block H S m1 m2 C1 C2 Hnew Htk :=
 Lemma teq_skel_skle A B : teq A B → skle (skel A) (skel B) ∧ skle (skel B) (skel A).
 Proof. intros H. apply teq_skle_both. by apply eqT_skel. Qed.
 
+(** A payload with lowered credits is [skle] below. *)
+Lemma crT_skel_skle A : ∀ B, crT A B → skle (skel A) (skel B).
+Proof.
+  induction A as [|ub lb c A1 IH1 A2 IH2 a|A1 IH1 A2 IH2|A1 IH1 A2 IH2|n k C ub c A1 IH1|s x a m|lb n C A1 IH1];
+    intros [|ub' lb' c' B1 B2 a'|B1 B2|B1 B2|n' k' C' ub' c' B1|s' x' a' m'|lb' n' C' B1] H;
+    try (by simpl; constructor); try (exact (proj1 (teq_skel_skle _ _ H))); simpl in H; try done.
+  - destruct H as (-> & -> & -> & Ha & H1 & H2). simpl. constructor; [apply fle_refl|done| |].
+    + exact (proj2 (teq_skel_skle _ _ H1)).
+    + exact (proj1 (teq_skel_skle _ _ H2)).
+  - destruct H as [H1 H2]. simpl. constructor; auto.
+  - destruct H as [H1 H2]. simpl. constructor; auto.
+  - destruct H as (-> & Ha & -> & Hs). simpl. constructor; [by apply sequiv_ssub|done].
+  - destruct H as (-> & -> & -> & H). simpl. auto.
+Qed.
+
 Lemma dual_seq_snd S m T R : unfoldS S = SSeq (SSnd m T) R → unfoldS (dual S) = SSeq (SRcv m T) (dual R).
 Proof. intros H. by rewrite <-dual_unfoldS, H. Qed.
 
@@ -344,7 +359,7 @@ Proof.
   apply sk_var_anc in Hv0. climb Hv0. apply anc_top in Hv0.
   destruct (skle_sess_inv _ _ _ _ _ _ _ _ (skle_trans _ _ _ HE2 Hv0)) as [HdSe _].
   assert (¬ idle Se) as HSe.
-  { intros HI. apply (end_not_idle S0 HS0). apply (idle_sequiv _ _ HdSe). by apply idle_dual_iff. }
+  { intros HI. apply (end_not_idle S0 HS0). apply (idle_ssub _ _ HdSe). by apply idle_dual_iff. }
   (* spawn (λ_. (force back) ⟨x′, y′⟩) *)
   apply sk_letu_inv in H as (Dqb1 & Dqb2 & Dqb2' & ? & ? & ? & Hsb & Hbk & Hab & H & _).
   apply sk_spawn_inv in Hbk as (? & ? & ? & Hbk).
@@ -473,34 +488,34 @@ Proof.
   apply skle_sess_r in HQβ as (sq & qy & HQy' & _ & Hβq).
   (* e is not idle in pass and in back *)
   assert (¬ idle sTp) as HnTp.
-  { intros HI. apply HSe. apply (idle_sequiv _ _ HsP1'), (idle_sequiv _ _ HsP1), (idle_sequiv _ _ HsT1).
-    by apply (idle_sequiv _ _ HsTp). }
+  { intros HI. apply HSe. apply (idle_ssub _ _ HsP1'), (idle_ssub _ _ HsP1), (idle_ssub _ _ HsT1).
+    by apply (idle_ssub _ _ HsTp). }
   apply tage_sess_nonidle in HagTp as [H1tp ->]; [|done].
   apply skle_sess_l in HlTp as (spx & px & HTpx & HsTpx & Hpx).
   (* the payload on x: p_x in pass and in back *)
-  assert (sequiv Sx S0x) as HSxX.
-  { eapply sequiv_trans; [exact HsP2|]. eapply sequiv_trans; [exact HsW1|exact HsX0]. }
-  destruct (sequiv_unfold_snd' _ _ _ _ _ HSxX HSx) as (Tx' & Rx' & HSxu & HTx').
-  assert (sequiv (dual Sx) S0b) as HSxB.
-  { eapply sequiv_trans; [exact HsB1|]. eapply sequiv_trans; [exact HsK1|exact HsKb]. }
-  destruct (sequiv_unfold_rcv' _ _ _ _ _ HSxB HSb) as (Tx'' & Rx'' & HSxu' & HTx'').
+  assert (ssub Sx S0x) as HSxX.
+  { eapply ssub_trans; [exact HsP2|]. eapply ssub_trans; [exact HsW1|exact HsX0]. }
+  destruct (ssub_unfold_snd' _ _ _ _ _ HSxX HSx) as (Tx' & Rx' & HSxu & HTx').
+  assert (ssub (dual Sx) S0b) as HSxB.
+  { eapply ssub_trans; [exact HsB1|]. eapply ssub_trans; [exact HsK1|exact HsKb]. }
+  destruct (ssub_unfold_rcv' _ _ _ _ _ HSxB HSb) as (Tx'' & Rx'' & HSxu' & HTx'').
   rewrite (dual_seq_snd _ _ _ _ HSxu) in HSxu'. injection HSxu' as <- <-.
-  destruct (teq_skel_skle _ _ (teq_trans _ _ _ (teq_sym _ _ HTx') HTx'')) as [Hpxb _].
+  pose proof (crT_skel_skle _ _ (crT_trans _ _ _ HTx' HTx'')) as Hpxb.
   rewrite HTpx in Hpxb.
   pose proof (skle_trans _ _ _ Hpxb HTb) as HTb'.
   apply skle_sess_l in HTb' as (sTb & tb & -> & HsTb & Htb).
   assert (¬ idle sTb) as HnTb.
-  { intros HI. apply HnTp. apply (idle_sequiv _ _ HsTpx). by apply (idle_sequiv _ _ HsTb). }
+  { intros HI. apply HnTp. apply (idle_ssub _ _ HsTpx). by apply (idle_ssub _ _ HsTb). }
   apply tage_sess_nonidle in HagTb as [H1tb ->]; [|done].
   (* the payload on y: p_y in back and in pass *)
-  assert (sequiv Sy S0y) as HSyY.
-  { eapply sequiv_trans; [exact HsP3|]. eapply sequiv_trans; [exact HsW2|exact HsY0]. }
-  destruct (sequiv_unfold_rcv' _ _ _ _ _ HSyY HSy) as (Qy' & Ry' & HSyu & HQy1).
-  assert (sequiv (dual Sy) S0q) as HSyB.
-  { eapply sequiv_trans; [exact HsB2|]. eapply sequiv_trans; [exact HsK2|exact (proj1 Hq')]. }
-  destruct (sequiv_unfold_snd' _ _ _ _ _ HSyB HSq) as (Qy'' & Ry'' & HSyu' & HQy2).
+  assert (ssub Sy S0y) as HSyY.
+  { eapply ssub_trans; [exact HsP3|]. eapply ssub_trans; [exact HsW2|exact HsY0]. }
+  destruct (ssub_unfold_rcv' _ _ _ _ _ HSyY HSy) as (Qy' & Ry' & HSyu & HQy1).
+  assert (ssub (dual Sy) S0q) as HSyB.
+  { eapply ssub_trans; [exact HsB2|]. eapply ssub_trans; [exact HsK2|exact (proj1 Hq')]. }
+  destruct (ssub_unfold_snd' _ _ _ _ _ HSyB HSq) as (Qy'' & Ry'' & HSyu' & HQy2).
   rewrite (dual_seq_rcv _ _ _ _ HSyu) in HSyu'. injection HSyu' as <- <-.
-  destruct (teq_skel_skle _ _ (teq_trans _ _ _ (teq_sym _ _ HQy1) HQy2)) as [_ Hqb].
+  pose proof (crT_skel_skle _ _ (crT_trans _ _ _ HQy2 HQy1)) as Hqb.
   rewrite HQy' in Hqb.
   pose proof (skle_trans _ _ _ HlTb Hqb) as Hq.
   apply skle_sess_inv in Hq as (_ & Hqyb & _).

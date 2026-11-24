@@ -86,7 +86,7 @@ Section above.
       apply lookup_singleton_Some in Ho as [<- <-]. simpl. by eapply fle_trans.
     - intros (o' & S' & f' & _ & -> & -> & Hs & _) o f Ho Hn.
       apply lookup_singleton_Some in Ho as [<- <-]. exfalso. apply Hn.
-      exists S'. rewrite lookup_singleton_eq. split; [done|]. by apply (idle_sequiv _ _ Hs).
+      exists S'. rewrite lookup_singleton_eq. split; [done|]. by apply (idle_ssub _ _ Hs).
     - intros (e & _ & _ & _ & Hf & _) o f Ho Hn. eapply fle_trans; [exact Hle|exact (Hf o f Ho Hn)].
     - intros (v1 & v2 & Π1 & Π2 & φ1 & φ2 & _ & HdΠ & _ & -> & -> & Hv1 & Hv2) o f Ho Hn.
       apply lookup_union_Some_raw in Ho as [Ho|[_ Ho]];

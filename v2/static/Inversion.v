@@ -167,18 +167,18 @@ Section inversion.
   Qed.
 
   (** A channel typed at an end type has, in Θ, a session type
-      equivalent to the one of that type. E-Sub changes the session type
-      only up to ≈, and E-Open leaves session types alone. *)
+      below the one of that type by ⊑. E-Sub changes the session type
+      along ⊑, and E-Open leaves session types alone. *)
   Lemma inv_chan_sty Θ Γ Δ F o T c :
     typed W N Θ Γ Δ F (Chan o) T c →
-    ∀ S x a mS, T = TSess S x a mS → ∃ e, Θ !! o = Some e ∧ sequiv (te_sty e) S.
+    ∀ S x a mS, T = TSess S x a mS → ∃ e, Θ !! o = Some e ∧ ssub (te_sty e) S.
   Proof.
     remember (Chan o) as e0 eqn:He. induction 1; try discriminate.
     - injection He as ->. intros S' x' a' m' HT. injection HT as -> -> -> ->.
-      exists (TE S' x' a' m'). split; [by simplify_map_eq|apply sequiv_refl].
+      exists (TE S' x' a' m'). split; [by simplify_map_eq|apply ssub_refl].
     - intros S' x' a' m' ->. inversion H0; subst.
       destruct (IHtyped eq_refl _ _ _ _ eq_refl) as (e' & Hl & Hs).
-      exists e'. split; [done|]. by eapply sequiv_trans.
+      exists e'. split; [done|]. by eapply ssub_trans.
     - intros S' x' a' m' ->. destruct (IHtyped He S' (pt_inst (pshift m) x') a' m' eq_refl) as (e' & Hl & Hs).
       unfold tenv_pinst in Hl. rewrite lookup_fmap in Hl.
       destruct (Θ !! o) as [e0|] eqn:E; [|discriminate]. injection Hl as <-.

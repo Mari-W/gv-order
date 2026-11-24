@@ -298,7 +298,7 @@ Proof.
     eapply Erel_teq_ty; [|exact H]. rewrite <-!ty_inst_df. apply teq_pinst.
     rewrite !ty_df_pinst. apply teq_pinst. apply teq_df. by apply teq_sym.
   - rewrite !Vrel_sess_iff. intros (o & s0 & -> & -> & Hs0). exists o, s0. split_and!; [done|done|].
-    unfold seqv in *. eapply sequiv_trans; [exact Hs0|]. by apply sequiv_df.
+    unfold seqv in *. eapply sequiv_trans; [exact Hs0|]. by apply ssub_df.
   - rewrite !Vrel_ex_iff. intros (Hlb & xs & Hxs & HC & H).
     pose proof (hsat_open W σ Γ m C xs Hxs Hs HC) as Hs'.
     split.

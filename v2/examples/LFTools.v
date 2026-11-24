@@ -131,7 +131,7 @@ Lemma e_sub_sess2 W N Γ Δ F e S1 x S2 y a1 a2 b1 b2 c m1 m2 :
   typed W N ∅ Γ Δ F e (TProd (TSess S1 x b1 m1) (TSess S2 y b2 m2)) c.
 Proof.
   intros He H1 H2. eapply e_sub; [exact He| |apply fle_refl|intros HC; exact HC].
-  apply sub_prod; apply sub_sess; rewrite ?fadd_0_l; auto using sequiv_refl.
+  apply sub_prod; apply sub_sess; rewrite ?fadd_0_l; auto using ssub_refl.
 Qed.
 
 (** ** Tactics *)

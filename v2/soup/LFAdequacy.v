@@ -305,7 +305,7 @@ Section run.
     pose proof (s_pdual _ _ _ _ _ _ _ _ Hs o P P' HP HP') as Hpd.
     intros (S1 & HS1 & Hid). apply lookup_kres in HS1 as [HS1 _]. rewrite HP' in HS1. injection HS1 as <-.
     apply Hni. exists P. split; [apply lookup_kres; split; [done|eauto]|].
-    by apply (idle_dual P P' Hpd).
+    apply (proj1 (idle_dual_self P)). by apply (proj2 (idle_ssub _ _ Hpd)).
   Qed.
 
   Lemma rend_of q t e a1 o : q.2 !! t = Some e → act e = Some a1 → aend a1 = Some o → rend q t = Some o.

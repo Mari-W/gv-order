@@ -134,7 +134,7 @@ Proof.
   - apply lage_nil.
   - eapply (e_sub _ _ _ _ _ _ _
       (TProd (TSess S1 (pt_polar b ρ) (Some 2) (Some 3)) (TSess S2 (pt_polar b (ρ·0)) (Some 2) (Some 3))));
-      [|apply sub_prod; apply sub_sess; [apply sequiv_refl|simpl; lia|apply sequiv_refl|simpl; lia]|apply fle_refl
+      [|apply sub_prod; apply sub_sess; [apply ssub_refl|simpl; lia|apply ssub_refl|simpl; lia]|apply fle_refl
        |exact (λ H, H)].
     eapply (e_pair _ _ Θ' {[o1 := TE S1 (pt_polar b ρ) (Some 2) (Some 3)]}
               {[o2 := TE S2 (pt_polar b (ρ·0)) (Some 2) (Some 3)]} {[o2 := TE S2 (pt_polar b (ρ·0)) (Some 2) (Some 3)]}

@@ -81,7 +81,7 @@ Section soup.
     intros H1 H2. apply (sp_sdual _ _ _ _ _ _ _ _ _ Hs o S x S' x' H1 H2). apply s_closed.
     rewrite <-s_domA. by apply elem_of_dom_2 in H1.
   Qed.
-  Lemma s_pdual o P P' : Π !! o = Some P → Π !! (edual o) = Some P' → sequiv P' (dual P).
+  Lemma s_pdual o P P' : Π !! o = Some P → Π !! (edual o) = Some P' → ssub (dual P) P'.
   Proof.
     intros H1 H2. apply (sp_pdual _ _ _ _ _ _ _ _ _ Hs o P P' H1 H2). apply s_closed.
     rewrite <-s_dom. by apply elem_of_dom_2 in H1.
@@ -468,7 +468,7 @@ Section step.
     (∀ o, o ∈ dom K' → ech o ∈ C') →
     (∀ o, o ∈ dom K' → edual o ∈ dom K') →
     (∀ o S x S' x', A' !! o = Some (S, x) → A' !! edual o = Some (S', x') → x' = pt_dual x ∧ sdual S S') →
-    (∀ o P P', Π' !! o = Some P → Π' !! edual o = Some P' → sequiv P' (dual P)) →
+    (∀ o P P', Π' !! o = Some P → Π' !! edual o = Some P' → ssub (dual P) P') →
     kfin K' → kcap_ok (Some N) K' → ktsum_ok (Some N) K' →
     soup_inv N lv Wx ∅ T (LFState (C', Mq') K' Wy) A' Π' U'.
   Proof.
@@ -589,16 +589,16 @@ Section step.
         * rewrite lookup_insert_eq in H4. rewrite lookup_insert_ne, lookup_insert_eq in H3 by discriminate.
           simplify_eq. split; [by rewrite pt_dual_dual|]. unfold sdual. rewrite dual_involutive. apply seqv_refl.
     - intros o P P' H1 H2.
-      refine (pair_frame (λ _ v v', sequiv v' (dual v)) _ _ ({[EPos c]} ∪ {[ENeg c]}) (cends_dual c)
+      refine (pair_frame (λ _ v v', ssub (dual v) v') _ _ ({[EPos c]} ∪ {[ENeg c]}) (cends_dual c)
         _ _ _ o P P' H1 H2).
       + intros o0 Ho. rewrite !lookup_insert_ne by set_solver. done.
       + intros o0 P1 P2 H3 H4. exact (s_pdual _ _ _ _ _ _ _ _ Hs o0 P1 P2 H3 H4).
       + intros o0 P1 P2 Ho H3 H4.
         apply elem_of_union in Ho as [Ho|Ho]; apply elem_of_singleton in Ho as ->; simpl in H4.
         * rewrite lookup_insert_eq in H3. rewrite lookup_insert_ne, lookup_insert_eq in H4 by discriminate.
-          simplify_eq. apply sequiv_refl.
+          simplify_eq. apply ssub_refl.
         * rewrite lookup_insert_eq in H4. rewrite lookup_insert_ne, lookup_insert_eq in H3 by discriminate.
-          simplify_eq. rewrite dual_involutive. apply sequiv_refl.
+          simplify_eq. rewrite dual_involutive. apply ssub_refl.
     - apply kfin_insert; [by eexists|].
       apply kfin_insert; [by eexists|]. exact (sp_fin _ _ _ _ _ _ _ _ _ Hs).
     - intros o h Ho. apply lookup_insert_Some in Ho as [[<- <-]|[_ Ho]]; [simpl; split; [simpl; lia|simpl; lia]|].
