@@ -15,6 +15,7 @@
     forces the box at (ρ, ρ·1). The laws Λ_0(r) are C at (r, r·1). *)
 
 From GV Require Export examples.Tools2.
+From GV Require Import static.FundamentalProc.
 
 Abbreviation fbd := ((pvar 0)·0).
 
@@ -163,3 +164,7 @@ Qed.
 
 Theorem fb_typed : typed W_fb None ∅ hc_empty [] (∅, None) fb_main TUnit None.
 Proof. apply (dftyped_typed _ _ _ _ _ _ _ fb_dftyped). Qed.
+
+(** Deadlock freedom of the program, by soundness of one closed thread. *)
+Theorem fb_deadlock_free : deadlock_free (∅, {[+ fb_main +]}).
+Proof. exact (soundness_source W_fb fb_main TUnit (proj1 W_fb_wf) (swf_sacyc _ (proj2 W_fb_wf)) ltac:(constructor) fb_dftyped). Qed.

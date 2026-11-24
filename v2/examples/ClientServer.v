@@ -22,6 +22,7 @@
     (r‾, (r·0)‾, r·1). The program types, as §2.5 (d) claims. *)
 
 From GV Require Export examples.Tools.
+From GV Require Import static.FundamentalProc.
 
 Definition Sa : sty := SMu (SSeq (SSnd 0 TUnit) (SVar 0)).
 Definition Sb : sty := SMu (SSeq (SRcv 0 TUnit) (SVar 0)).
@@ -304,3 +305,7 @@ Qed.
 (** The merged judgment at N = ∞ types main, by conservativity. *)
 Theorem cs_typed : typed W_cs None ∅ hc_empty [] (∅, None) cs_main TUnit None.
 Proof. apply (dftyped_typed _ _ _ _ _ _ _ cs_dftyped). Qed.
+
+(** Deadlock freedom of the program, by soundness of one closed thread. *)
+Theorem cs_deadlock_free : deadlock_free (∅, {[+ cs_main +]}).
+Proof. exact (soundness_source W_cs cs_main TUnit (proj1 W_cs_wf) (swf_sacyc _ (proj2 W_cs_wf)) ltac:(constructor) cs_dftyped). Qed.

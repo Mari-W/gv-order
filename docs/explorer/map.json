@@ -1425,13 +1425,15 @@
        "names": [
         "cons_open",
         "bridge_at",
-        "in_tree"
+        "in_tree",
+        "conserv"
        ]
       },
       {
        "file": "static/PointSubst.v",
        "names": [
-        "cons_open_conservative"
+        "cons_open_conservative",
+        "cons_open_iff"
        ]
       }
      ],
@@ -1442,11 +1444,13 @@
      "deviations": [
       {
        "kind": "notation",
-       "reason": "The Rocq checks conservativity as `cons_open W Γ m C`, the bridge condition. A bridge joins two old points by a fact of $C$. It may also enter the tree by a fact, follow facts of $C$ and program order inside the tree and leave by a fact. `cons_open` asks $\\Gamma$ to derive each bridge. The two conditions are equivalent, because a derivation of $z \\prec y$ between old points leaves the old points only through such bridges. `cons_open_conservative` proves that the bridge condition gives conservativity, for a world whose facts lie at constant bases. The converse holds because each bridge is a derivation in $\\Gamma, C(\\bar\\iota)$. The lemma that states the equivalence is owed in the Rocq.",
+       "reason": "The Rocq checks conservativity as `cons_open W Γ m C`, the bridge condition. A bridge joins two old points by a fact of $C$. It may also enter the tree by a fact, follow facts of $C$ and program order inside the tree and leave by a fact. `cons_open` asks $\\Gamma$ to derive each bridge. `conserv` states conservativity over the points of $\\Gamma$ shifted past the $m$ binders, which are the points outside the tree. `cons_open_iff` proves the two conditions equivalent for a world whose facts lie at constant bases. A derivation of $z \\prec y$ between old points leaves the old points only through bridges, and each bridge is a derivation in $\\Gamma, C(\\bar\\iota)$.",
        "names": [
         "cons_open",
         "bridge_at",
-        "cons_open_conservative"
+        "cons_open_conservative",
+        "conserv",
+        "cons_open_iff"
        ]
       }
      ]
@@ -1654,7 +1658,7 @@
      "id": "p-typing",
      "title": "Process typing",
      "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{ty.tfree}{\\mathsf{tfree}\\,T}\\quad \\sym{pfree}{\\mathsf{pfree}\\,\\Sigma}\\quad \\sym{P-Term.wf}{\\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{cons}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}\\,W}\\quad \\sym{P-Term.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,\\Sigma, \\Theta_B}\\\\ \\sym{P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\sym{tp.ends}{\\mathsf{ends}}(C_0)}\\quad \\sym{P-Term.disj}{\\sym{tp.chans}{\\mathsf{chans}}\\,\\sym{tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing} \\\\ \\sym{P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = \\sym{ty.sess}{S_x\\inmode{lf}{^{m,m}}},\\ \\Theta_B(c^{-}) = \\sym{ty.sess}{\\overline{S}_{\\overline{x}}\\inmode{lf}{^{m',m'}}}\\inmode{lf}{,\\ m + m' \\leq N}} \\\\ \\inmode{lf}{\\sym{P-Term.ann}{\\forall o \\in \\mathrm{dom}\\,\\Sigma.\\ \\eta(o) = (a, m),\\ m \\leq N}} \\\\ \\sym{P-Term.typed}{\\varnothing ; \\sym{tp.lift}{\\Sigma\\inmode{lf}{^{\\eta}}}, \\Theta_B \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sym{P-Term.future}{\\varnothing}} t : T\\inmode{lf}{\\ !\\ c}}\\end{array}}{\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{N,\\eta}}}_{W} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W_1} (C_1, E_1) : T} \\\\ \\sym{P-Connect.right}{\\Sigma_2 \\cup \\sym{P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\sym{P-Connect.disj}{\\mathsf{disjoint}(\\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_1, \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_2, \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, C_1, C_2)} \\\\ \\inmode{lf}{\\sym{P-Connect.tsum}{\\forall o \\in \\mathrm{dom}\\,\\Sigma_C.\\ \\eta(o)_2 + \\eta(\\overline{o})_2 \\leq N}} \\inmodeplain{lf}{\\\\} \\sym{P-Connect.wf}{\\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{cons}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{\\sym{P-Connect.join}{W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2}} \\\\ (C_1 \\cup C_2 \\cup \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\sym{tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect} \\\\[2ex] \\sym{P-Connect.n}{\\dfrac{\\begin{array}{c}\\Sigma_1 \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W_1} p_1 : T \\qquad \\Sigma_i \\cup \\overline{\\Sigma_{C,i}} \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W_i} p_i : \\ast\\ \\ (2 \\leq i \\leq n) \\\\ \\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{cons}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n)\\end{array}}{\\begin{array}{c}\\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n} \\textstyle\\parallel_i p_i : T\\end{array}}\\;\\textsf{P-Connect$^{n}$}}\\end{array}\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\sym{tp.lfjudg}{\\Sigma \\Vdash^{N,\\eta}_W p : T \\iff \\sym{lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_W p : T}}\\end{array}",
-     "caption": "P-Term types one thread $t$ that holds both ends of each channel in $C_0$, at [[ty-dual|dual]] types and points, over an interface $\\Sigma$ without partner pairs, with the ends $\\Theta_B$ of these channels. The thread is typed by the [[t-judgment|term judgment]] with no facts and the empty future, so that [[r-base|E-Chan]] closes each end it holds, and its result type is [[ty-kinds|end-free]]. Its world is the world $W$ of the thread. P-Connect cuts two components at $\\Sigma_C$ against $\\overline{\\Sigma_C}$. Disjoint channel sets make the maps disjoint, and the left premise makes $\\Sigma_C$ free of partner pairs, so the rule asks neither. It asks the [[w-ext|join]] of their two [[w-world|worlds]] consistent, the condition of [[w-wf]], and the composite has that join as its world. The check reads the joined order, never two worlds at a time, so a ring of three threads whose worlds are consistent in pairs and inconsistent together is rejected. The [[syn-procs|process]] of the conclusion restricts the cut channels. Two components may use one private constant for unrelated points. The join then holds the facts of both components, and the check reads each such fact. [[th-compose]] proves both rules in the relation, and [[w-ext]] gives the world a consistent extension. \\inmode{lf}{Lock-free process typing is process typing at a finite bound $N$. The worlds must then be well-founded in place of consistent, which [[t-lf-wf]] explains. The ends of a restricted channel have [[ty-ann|tickets]] of sum at most $N$. The interface annotations $\\eta$ give each interface end $o$ a credit and tickets $\\eta(o) = (a, m)$ with $m \\leq N$, as the [[t-lf-counters|counters block]] explains. P-Term chooses them as [[r-new|E-New]] chooses the tickets of a new channel. P-Connect asks the tickets of the two ends of each cut channel to sum to at most $N$, the check of E-New, and P-Connect$^{n}$ asks it at each of its cuts. The annotations $\\eta(o) = (\\lfloor N/2 \\rfloor, \\lfloor N/2 \\rfloor)$ give back the earlier rule. A link of two interface ends types at each $N \\geq 1$, as the [[ex-link|link example]] shows.}",
+     "caption": "P-Term types one thread $t$ that holds both ends of each channel in $C_0$, at [[ty-dual|dual]] types and points, over an interface $\\Sigma$ without partner pairs, with the ends $\\Theta_B$ of these channels. The thread is typed by the [[t-judgment|term judgment]] with no facts and the empty future, so that [[r-base|E-Chan]] closes each end it holds, and its result type is [[ty-kinds|end-free]]. Its world is the world $W$ of the thread. P-Connect cuts two components at $\\Sigma_C$ against $\\overline{\\Sigma_C}$. Disjoint channel sets make the maps disjoint, and the left premise makes $\\Sigma_C$ free of partner pairs, so the rule asks neither. It asks the [[w-ext|join]] of their two [[w-world|worlds]] consistent, the condition of [[w-wf]], and the composite has that join as its world. The check reads the joined order, never two worlds at a time, so a ring of three threads whose worlds are consistent in pairs and inconsistent together is rejected. The [[syn-procs|process]] of the conclusion restricts the cut channels. Two components may use one private constant for unrelated points. The join then holds the facts of both components, and the check reads each such fact. [[th-compose]] proves both rules in the relation, and [[w-ext]] gives the world a consistent extension. \\inmode{lf}{Lock-free process typing is process typing at a finite bound $N$. The worlds must then be well-founded in place of consistent, which [[t-lf-wf]] explains. The ends of a restricted channel have [[ty-ann|tickets]] of sum at most $N$. The interface annotations $\\eta$ give each interface end $o$ a credit and tickets $\\eta(o) = (a, m)$ with $m \\leq N$, as the [[t-lf-counters|counters block]] explains. P-Term chooses them as [[r-new|E-New]] chooses the tickets of a new channel. P-Connect asks the tickets of the two ends of each cut channel to sum to at most $N$, the check of E-New, and P-Connect$^{n}$ asks it at each of its cuts. The annotations $\\eta(o) = (\\lfloor N/2 \\rfloor, \\lfloor N/2 \\rfloor)$ give back the earlier rule. A derivation reads $\\eta$ only at the ends of its interface and at the ends of the channels its process restricts, so two annotations that agree there type the same processes. Let two components be typed under annotations $\\eta_1$ and $\\eta_2$ of their own, and let the tickets of the two ends of each cut channel sum to at most $N$. Then they connect under the annotation that is $\\eta_1$ on the ends of the first component and $\\eta_2$ elsewhere. A link of two interface ends types at each $N \\geq 1$, as the [[ex-link|link example]] shows.}",
      "why": "Processes are built from single threads by P-Term and composed by P-Connect. The type of a component is its interface and its world, and P-Connect reads only the two worlds of its premises, so the rule is compositional. A bijection on constants that fixes the interface maps a derivation to a derivation at the renamed world. Two components that order one private constant oppositely compose after one of them is renamed. The rules that restrict each conclusion world to the interface constants accept no process that these rules reject.",
      "source": [
       {
@@ -1662,7 +1666,9 @@
        "names": [
         "p_term",
         "p_connect",
-        "ptyped"
+        "ptyped",
+        "ptyped_iann_local",
+        "p_connect_iann"
        ]
       },
       {
@@ -10300,7 +10306,8 @@
      "names": [
       "cons_open",
       "bridge_at",
-      "cons_open_1"
+      "cons_open_1",
+      "conserv"
      ]
     },
     {
@@ -10309,7 +10316,8 @@
       "cons_open_conservative",
       "cons_of_hold",
       "cons_gen",
-      "cons_tree"
+      "cons_tree",
+      "cons_open_iff"
      ]
     },
     {
@@ -10323,11 +10331,13 @@
    "deviations": [
     {
      "kind": "notation",
-     "reason": "The Rocq checks conservativity as `cons_open W Γ m C`, the bridge condition. A bridge joins two old points by a fact of $C$. It may also enter the tree by a fact, follow facts of $C$ and program order inside the tree and leave by a fact. `cons_open` asks $\\Gamma$ to derive each bridge. The two conditions are equivalent, because a derivation of $z \\prec y$ between old points leaves the old points only through such bridges. `cons_open_conservative` proves that the bridge condition gives conservativity, for a world whose facts lie at constant bases. The converse holds because each bridge is a derivation in $\\Gamma, C(\\bar\\iota)$. The lemma that states the equivalence is owed in the Rocq.",
+     "reason": "The Rocq checks conservativity as `cons_open W Γ m C`, the bridge condition. A bridge joins two old points by a fact of $C$. It may also enter the tree by a fact, follow facts of $C$ and program order inside the tree and leave by a fact. `cons_open` asks $\\Gamma$ to derive each bridge. `conserv` states conservativity over the points of $\\Gamma$ shifted past the $m$ binders, which are the points outside the tree. `cons_open_iff` proves the two conditions equivalent for a world whose facts lie at constant bases. A derivation of $z \\prec y$ between old points leaves the old points only through bridges, and each bridge is a derivation in $\\Gamma, C(\\bar\\iota)$.",
      "names": [
       "cons_open",
       "bridge_at",
-      "cons_open_conservative"
+      "cons_open_conservative",
+      "conserv",
+      "cons_open_iff"
      ]
     }
    ]
@@ -19618,7 +19628,8 @@
     {
      "file": "examples/ClientServer.v",
      "names": [
-      "cs_typed"
+      "cs_typed",
+      "cs_deadlock_free"
      ]
     },
     {
@@ -19632,7 +19643,7 @@
    "x-gv-accepts": {
     "df": {
      "ok": true,
-     "rocq": "cs_dftyped, cs_typed and W_cs_wf. Deadlock freedom follows by soundness_source and is not stated as a theorem"
+     "rocq": "cs_dftyped, cs_typed, cs_deadlock_free"
     },
     "lf": {
      "ok": true,
@@ -19651,7 +19662,8 @@
     {
      "file": "examples/Cycle.v",
      "names": [
-      "cy_typed"
+      "cy_typed",
+      "cy_deadlock_free"
      ]
     },
     {
@@ -19665,7 +19677,7 @@
    "x-gv-accepts": {
     "df": {
      "ok": true,
-     "rocq": "cy_dftyped, cy_typed and W_cy_wf. Deadlock freedom follows by soundness_source and is not stated as a theorem"
+     "rocq": "cy_dftyped, cy_typed, cy_deadlock_free"
     },
     "lf": {
      "ok": true,
@@ -19684,7 +19696,8 @@
     {
      "file": "examples/FreshBetween.v",
      "names": [
-      "fb_typed"
+      "fb_typed",
+      "fb_deadlock_free"
      ]
     },
     {
@@ -19698,7 +19711,7 @@
    "x-gv-accepts": {
     "df": {
      "ok": true,
-     "rocq": "fb_dftyped, fb_typed and W_fb_wf. Deadlock freedom follows by soundness_source and is not stated as a theorem"
+     "rocq": "fb_dftyped, fb_typed, fb_deadlock_free"
     },
     "lf": {
      "ok": true,
@@ -19717,7 +19730,8 @@
     {
      "file": "examples/FreshMany.v",
      "names": [
-      "fm_typed"
+      "fm_typed",
+      "fm_deadlock_free"
      ]
     },
     {
@@ -19731,7 +19745,7 @@
    "x-gv-accepts": {
     "df": {
      "ok": true,
-     "rocq": "fm_dftyped, fm_typed and W_fm_wf. Deadlock freedom follows by soundness_source and is not stated as a theorem"
+     "rocq": "fm_dftyped, fm_typed, fm_deadlock_free"
     },
     "lf": {
      "ok": true,
@@ -19750,7 +19764,8 @@
     {
      "file": "examples/FactoryEx.v",
      "names": [
-      "fx_typed"
+      "fx_typed",
+      "fx_deadlock_free"
      ]
     },
     {
@@ -19764,7 +19779,7 @@
    "x-gv-accepts": {
     "df": {
      "ok": true,
-     "rocq": "fx_dftyped, fx_typed and W_fx_wf. Deadlock freedom follows by soundness_source and is not stated as a theorem"
+     "rocq": "fx_dftyped, fx_typed, fx_deadlock_free"
     },
     "lf": {
      "ok": true,
@@ -19783,7 +19798,8 @@
     {
      "file": "examples/GrowRing.v",
      "names": [
-      "rg_typed"
+      "rg_typed",
+      "rg_deadlock_free"
      ]
     },
     {
@@ -19797,7 +19813,7 @@
    "x-gv-accepts": {
     "df": {
      "ok": true,
-     "rocq": "rg_dftyped, rg_typed and W_rg_wf. Deadlock freedom follows by soundness_source and is not stated as a theorem"
+     "rocq": "rg_dftyped, rg_typed, rg_deadlock_free"
     },
     "lf": {
      "ok": true,
@@ -19864,8 +19880,8 @@
    "id": "ex-guard-pos",
    "title": "A loop that holds an end",
    "lead": "A loop that holds a non-idle end across its force is rejected by aging.",
-   "code": "spawn_loop  = !(f = λc. spawn (λ_. (force f) c))      -- passes c on forever",
-   "meaning": "The child runs $(\\mathsf{force}\\,f)\\,c$ and holds $c$ while the force runs, so [[r-fun|E-App]] ages the type of $c$ by one. The self call then asks $c$ back at the credit $a$ of the parameter, and credits only fall, so $a \\leq a - 1$, which no finite credit meets unless the protocol of $c$ is idle. Typing keeps $a \\leq m$ on each end, and P-Term and E-New give each end finite tickets. The Rocq proof covers the step on aging, that $a \\leq a - 1$ fails for a finite credit of an end that is not idle. The rest of the rejection is argued.",
+   "code": "spawn_loop  = !(f = λc. spawn (λ_. (force f) c))      -- passes c on forever\nmain        = let ⟨a, a′⟩ = new in let ∗ = spawn (λ_. close a′) in\n              (force spawn_loop) a",
+   "meaning": "The child runs $(\\mathsf{force}\\,f)\\,c$ and holds $c$ while the force runs, so [[r-fun|E-App]] ages the type of $c$ by one. The self call then asks $c$ back at the credit $a$ of the parameter, and credits only fall, so $a \\leq a - 1$, which no finite credit meets unless the protocol of $c$ is idle. Typing keeps $a \\leq m$ on each end, and P-Term and E-New give each end finite tickets. The program $\\mathsf{main}$ passes the loop the end $a$ of a new channel and closes the other end $a'$ in a second thread. So the protocol of $a$ is not idle and its tickets are finite, and $\\mathsf{main}$ types at no finite bound $N$.",
    "modes": [
     "lf"
    ],
@@ -19875,13 +19891,21 @@
      "names": [
       "spawn_loop_rejected"
      ]
+    },
+    {
+     "file": "examples/Rejects.v",
+     "names": [
+      "gp_main_skel",
+      "guard_pos_rejected",
+      "guard_pos_proc_rejected"
+     ]
     }
    ],
    "x-gv-accepts": {
     "lf": {
      "ok": false,
      "part": "aging",
-     "rocq": "spawn_loop_rejected proves the aging step, the rest of the rejection is argued"
+     "rocq": "guard_pos_rejected, guard_pos_proc_rejected, with the aging step spawn_loop_rejected"
     }
    }
   },
@@ -20072,8 +20096,7 @@
      "file": "examples/LFClientServerSplit.v",
      "names": [
       "cs_split_lock_free",
-      "cs_split_typed",
-      "cs_split_lock_free_typed"
+      "cs_split_typed"
      ]
     },
     {
@@ -20149,7 +20172,7 @@
    "title": "Copycat, a forwarder at independent points",
    "lead": "A forwarder that holds its two ends at independent points types by the [[r-act|action rules]] over a world with five facts, and two forwarders in a ring do not, because [[p-typing|P-Connect]] finds a cycle. Put into the cut of two typed partners, the forwarder keeps the composite typed.",
    "code": "-- o₁ : S_x, o₂ : S̄_y, S = ?∗.!∗.Close\nfwd o₁ o₂ = let ⟨v, o₁⟩ = recv o₁ in let o₂ = send ⟨v, o₂⟩ in\n            let ⟨w, o₂⟩ = recv o₂ in let o₁ = send ⟨w, o₁⟩ in\n            let ∗ = close o₁ in close o₂\nring      = fwd(o₁, o₂) ∥ fwd(ō₂, ō₁)        -- cut on both channels\nP ∥ Q              -- cut on a, Q holds a⁺ at x\nP ∥ fwd(a⁺, b⁻) ∥ Q′ -- Q′ = Q with b for a and the constant of y for that of x",
-   "meaning": "Each action of the forwarder asks its point below the dual point of the other end. The five facts are $x \\prec \\overline{y}$, $y \\prec \\overline{x^{+}}$, $y^{+} \\prec \\overline{x^{+}}$, $x^{+} \\prec \\overline{y^{++}}$ and $x^{++} \\prec \\overline{y^{++}}$, and [[p-typing|P-Term]] types the forwarder over a world that holds these facts. In the ring the first forwarder needs $x \\prec \\overline{y}$ and the second $\\overline{y} \\prec x$, so no world, bound or type types the ring. A process that holds $\\overline{o_1}$ types at the same interface type with the forwarder put behind that end, when the base of $y$ is no constant of its world. A partner, the forwarder and a second partner compose to a deadlock-free process by [[th-sound]]. The forwarder extends to each protocol of unit messages that ends in $\\mathsf{Close}$, and a received end as payload is $\\eta$-expanded through a channel at the field $y\\cdot 0$. Two partners $P$ and $Q$ that type by [[p-typing|P-Connect]] at a cut on $a$ also type with the forwarder between them, holding $a^{+}$ at $x$ and $b^{-}$ at $\\overline{y}$. The partner $Q'$ is $Q$ with the channel $b$ for $a$ and the constant of $y$ for that of $x$, by the renaming of channels and of constants of a typed process. The worlds of $P$ and $Q$ only have to miss the constant of $y$. Read with the base of $y$ sent back to the base of $x$, each fact of the forwarder is an equality or a step of program order, and no two equalities follow each other. So a cycle of the new world maps to a cycle of the world of $P \\parallel Q$, and the new world is consistent. \\inmode{lf}{At each finite bound $N \\geq 4$ the forwarder types and the expansion holds as well. The same reading maps a descending chain of the new world to one of the world of $P \\parallel Q$, so the new world is well-founded when that world is. Each end of the forwarder has $N/2$ credits and waits for at most two actions.}",
+   "meaning": "Each action of the forwarder asks its point below the dual point of the other end. The five facts are $x \\prec \\overline{y}$, $y \\prec \\overline{x^{+}}$, $y^{+} \\prec \\overline{x^{+}}$, $x^{+} \\prec \\overline{y^{++}}$ and $x^{++} \\prec \\overline{y^{++}}$, and [[p-typing|P-Term]] types the forwarder over a world that holds these facts. In the ring the first forwarder needs $x \\prec \\overline{y}$ and the second $\\overline{y} \\prec x$, so no world, bound or type types the ring. A process that holds $\\overline{o_1}$ types at the same interface type with the forwarder put behind that end, when the base of $y$ is no constant of its world. A partner, the forwarder and a second partner compose to a deadlock-free process by [[th-sound]]. The forwarder extends to each protocol of unit messages that ends in $\\mathsf{Close}$, and a received end as payload is $\\eta$-expanded through a channel at the field $y\\cdot 0$. Two partners $P$ and $Q$ that type by [[p-typing|P-Connect]] at a cut on $a$ also type with the forwarder between them, holding $a^{+}$ at $x$ and $b^{-}$ at $\\overline{y}$. The partner $Q'$ is $Q$ with the channel $b$ for $a$ and the constant of $y$ for that of $x$, by the renaming of channels and of constants of a typed process. The worlds of $P$ and $Q$ only have to miss the constant of $y$. Read with the base of $y$ sent back to the base of $x$, each fact of the forwarder is an equality or a step of program order, and no two equalities follow each other. So a cycle of the new world maps to a cycle of the world of $P \\parallel Q$, and the new world is consistent. \\inmode{lf}{At each finite bound $N \\geq 4$ the forwarder types and the expansion holds as well. The same reading maps a descending chain of the new world to one of the world of $P \\parallel Q$, so the new world is well-founded when that world is. Each end of the forwarder has $N/2$ credits and waits for at most two actions. A closed $P \\parallel Q$ typed at $N$ then stays lock free with the forwarder in the cut.}",
    "source": [
     {
      "file": "examples/Copycat.v",
@@ -20186,7 +20209,8 @@
      "names": [
       "fb_typed",
       "fwdq_term_fin",
-      "fwdp_expand2_fin"
+      "fwdp_expand2_fin",
+      "fwdp_expand2_lf"
      ]
     },
     {
@@ -20201,6 +20225,10 @@
     "df": {
      "ok": true,
      "rocq": "fwd_term, fwd_config_deadlock_free"
+    },
+    "lf": {
+     "ok": true,
+     "rocq": "fwdq_term_fin, fwdp_expand2_fin, fwdp_expand2_lf"
     }
    }
   },

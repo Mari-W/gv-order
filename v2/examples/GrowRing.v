@@ -26,6 +26,7 @@
     family 0 are Cr at (r, r‾). *)
 
 From GV Require Export examples.Tools2.
+From GV Require Import static.FundamentalProc.
 
 Definition Sch : sty := SMu (SSeq (SRcv 1 (TSess (SVar 0) (pvar 0) None None)) SEnd).
 
@@ -325,3 +326,7 @@ Qed.
 
 Theorem rg_typed : typed W_rg None ∅ hc_empty [] (∅, None) rg_main TUnit None.
 Proof. apply (dftyped_typed _ _ _ _ _ _ _ rg_dftyped). Qed.
+
+(** Deadlock freedom of the program, by soundness of one closed thread. *)
+Theorem rg_deadlock_free : deadlock_free (∅, {[+ rg_main +]}).
+Proof. exact (soundness_source W_rg rg_main TUnit (proj1 W_rg_wf) (swf_sacyc _ (proj2 W_rg_wf)) ltac:(constructor) rg_dftyped). Qed.

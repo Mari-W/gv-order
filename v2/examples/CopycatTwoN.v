@@ -144,3 +144,24 @@ Theorem fwdp_expand2_fin K p W1 W2 Σ1 Σ2 C1 C2 E1 E2 T : 4 ≤ K →
     (C1 ∪ (∅ ∪ C2 ∪ {["b"]}) ∪ {["a"]},
      E1 ⊎ ({[+ fwdq_t p +]} ⊎ emapE (cmap (sswap "a" "b")) E2)) T.
 Proof. intros HK. apply fwdp_expand2_N, fwdq_term_fin, HK. Qed.
+
+(** A closed P ∥ Q typed at a bound K ≥ 4 stays lock free with the
+    forwarder in the cut. *)
+Corollary fwdp_expand2_lf (EM : excluded_middle) (FC : functional_choice) K p W1 W2 C1 C2 E1 E2 T : 4 ≤ K →
+  ptyped (Some K) (khalf (Some K)) W1 (∅ ∪ Σxp p) (C1, E1) T →
+  ptyped (Some K) (khalf (Some K)) W2 (∅ ∪ senv_dual (Σxp p)) (C2, E2) TUnit →
+  C1 ## C2 → "a" ∉ C1 → "a" ∉ C2 →
+  wok (Some K) (W1 ⊔ W2) →
+  "b" ∉ C1 → "b" ∉ C2 → 1 ∉ sw_consts W1 → 1 ∉ sw_consts W2 →
+  lock_free (C1 ∪ (∅ ∪ C2 ∪ {["b"]}) ∪ {["a"]},
+             E1 ⊎ ({[+ fwdq_t p +]} ⊎ emapE (cmap (sswap "a" "b")) E2)).
+Proof.
+  intros HK HP HQ HC Ha1 Ha2 HS Hb1 Hb2 H01 H02.
+  pose proof (fwdp_expand2_fin K p W1 W2 ∅ ∅ C1 C2 E1 E2 T HK HP HQ) as H.
+  assert (chans_of (∅ : senv) = ∅) as E0 by apply chans_empty.
+  rewrite E0 in H. unfold senv_ren in H. rewrite fmap_empty, map_union_empty in H.
+  cut (∃ W, ptyped (Some K) (khalf (Some K)) W ∅ (C1 ∪ (∅ ∪ C2 ∪ {["b"]}) ∪ {["a"]},
+    E1 ⊎ ({[+ fwdq_t p +]} ⊎ emapE (cmap (sswap "a" "b")) E2)) T).
+  { intros [W H']. exact (lf_soundness K (khalf (Some K)) W _ T EM FC H'). }
+  apply H; try done; try apply map_disjoint_empty_l; set_solver.
+Qed.

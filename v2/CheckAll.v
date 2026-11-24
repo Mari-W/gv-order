@@ -29,6 +29,8 @@ Print Assumptions wmodels_exists.
 Print Assumptions wchain_lt_wf.
 (** static/Typing.v *)
 Print Assumptions ptyped_wf.
+Print Assumptions ptyped_iann_local.
+Print Assumptions p_connect_iann.
 (** static/Hiding.v *)
 Print Assumptions swrestrict_iff.
 Print Assumptions typed_ren.
@@ -55,21 +57,27 @@ Print Assumptions k_force_df.
 (** examples/ClientServer.v *)
 Print Assumptions cs_dftyped.
 Print Assumptions cs_typed.
+Print Assumptions cs_deadlock_free.
 (** examples/Cycle.v *)
 Print Assumptions cy_dftyped.
 Print Assumptions cy_typed.
+Print Assumptions cy_deadlock_free.
 (** examples/FreshBetween.v *)
 Print Assumptions examples.FreshBetween.fb_dftyped.
 Print Assumptions fb_typed.
+Print Assumptions fb_deadlock_free.
 (** examples/FreshMany.v *)
 Print Assumptions fm_dftyped.
 Print Assumptions fm_typed.
+Print Assumptions fm_deadlock_free.
 (** examples/FactoryEx.v *)
 Print Assumptions fx_dftyped.
 Print Assumptions fx_typed.
+Print Assumptions fx_deadlock_free.
 (** examples/GrowRing.v *)
 Print Assumptions rg_dftyped.
 Print Assumptions rg_typed.
+Print Assumptions rg_deadlock_free.
 (** relation/Relation.v *)
 Print Assumptions Erel_iff.
 Print Assumptions Vrel_box_iff.
@@ -132,7 +140,6 @@ Print Assumptions cs_lock_free.
 (** examples/LFClientServerSplit.v *)
 Print Assumptions cs_split_lock_free.
 Print Assumptions cs_split_typed.
-Print Assumptions cs_split_lock_free_typed.
 (** examples/LFFactoryEx.v *)
 Print Assumptions fx_lftyped.
 Print Assumptions fx_lock_free.
@@ -179,6 +186,7 @@ Print Assumptions cons_gen.
 Print Assumptions wf_new_gen.
 Print Assumptions wf_new_plus_gen.
 Print Assumptions gen_new1_gen.
+Print Assumptions cons_open_iff.
 Print Assumptions gen_new_sem_of.
 Print Assumptions Erel_new.
 Print Assumptions Erel_new_fld.
@@ -288,6 +296,7 @@ Print Assumptions fwdp_expand2_N.
 Print Assumptions fb_typed.
 Print Assumptions fwdq_term_fin.
 Print Assumptions fwdp_expand2_fin.
+Print Assumptions fwdp_expand2_lf.
 (** static/Inversion.v, variables and the unit *)
 Print Assumptions inv_var_ctx.
 Print Assumptions inv_unit_ctx.
@@ -344,6 +353,9 @@ Print Assumptions rx_postpone_rejected.
 Print Assumptions rx_postpone_proc_rejected.
 Print Assumptions rx_delegate_rejected.
 Print Assumptions rx_delegate_proc_rejected.
+Print Assumptions gp_main_skel.
+Print Assumptions guard_pos_rejected.
+Print Assumptions guard_pos_proc_rejected.
 (** examples/Descent.v *)
 Print Assumptions descent.
 Print Assumptions prop7.
