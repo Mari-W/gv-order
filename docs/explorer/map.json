@@ -19880,8 +19880,8 @@
    "id": "ex-guard-pos",
    "title": "A loop that holds an end",
    "lead": "A loop that holds a non-idle end across its force is rejected by aging.",
-   "code": "spawn_loop  = !(f = λc. spawn (λ_. (force f) c))      -- passes c on forever",
-   "meaning": "The child runs $(\\mathsf{force}\\,f)\\,c$ and holds $c$ while the force runs, so [[r-fun|E-App]] ages the type of $c$ by one. The self call then asks $c$ back at the credit $a$ of the parameter, and credits only fall, so $a \\leq a - 1$, which no finite credit meets unless the protocol of $c$ is idle. Typing keeps $a \\leq m$ on each end, and P-Term and E-New give each end finite tickets. The Rocq proof covers the step on aging, that $a \\leq a - 1$ fails for a finite credit of an end that is not idle. The rest of the rejection is argued.",
+   "code": "spawn_loop  = !(f = λc. spawn (λ_. (force f) c))      -- passes c on forever\nmain        = let ⟨a, a′⟩ = new in let ∗ = spawn (λ_. close a′) in\n              (force spawn_loop) a",
+   "meaning": "The child runs $(\\mathsf{force}\\,f)\\,c$ and holds $c$ while the force runs, so [[r-fun|E-App]] ages the type of $c$ by one. The self call then asks $c$ back at the credit $a$ of the parameter, and credits only fall, so $a \\leq a - 1$, which no finite credit meets unless the protocol of $c$ is idle. Typing keeps $a \\leq m$ on each end, and P-Term and E-New give each end finite tickets. The program $\\mathsf{main}$ passes the loop the end $a$ of a new channel and closes the other end $a'$ in a second thread. So the protocol of $a$ is not idle and its tickets are finite, and $\\mathsf{main}$ types at no finite bound $N$.",
    "modes": [
     "lf"
    ],
@@ -19891,13 +19891,21 @@
      "names": [
       "spawn_loop_rejected"
      ]
+    },
+    {
+     "file": "examples/Rejects.v",
+     "names": [
+      "gp_main_skel",
+      "guard_pos_rejected",
+      "guard_pos_proc_rejected"
+     ]
     }
    ],
    "x-gv-accepts": {
     "lf": {
      "ok": false,
      "part": "aging",
-     "rocq": "spawn_loop_rejected proves the aging step, the rest of the rejection is argued"
+     "rocq": "guard_pos_rejected, guard_pos_proc_rejected, with the aging step spawn_loop_rejected"
     }
    }
   },

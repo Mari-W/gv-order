@@ -14,9 +14,14 @@
       and the partner end with tickets m₂, and E-New asks m₂ + m₂' ≤ N
       of the new channel, so a > m₂'. The recursive call passes the new
       end, of credit at most m₂', where the parameter asks the credit of
-      the linked end, at least a. *)
+      the linked end, at least a.
+
+    The last section rejects the loop [spawn_loop] of examples/GuardEx.v
+    in a closed program ([gp_main_skel], [guard_pos_rejected]), the same
+    way. *)
 
 From GV Require Export static.Skeleton examples.Tools static.FundamentalProc.
+From GV Require Import examples.GuardEx.
 
 Lemma skle_prod_inv A B C D : skle (TProd A B) (TProd C D) → skle A C ∧ skle B D.
 Proof. by inversion 1. Qed.
@@ -532,4 +537,107 @@ Corollary rx_delegate_proc_rejected n η W T : ¬ ptyped (Some n) η W ∅ (∅,
 Proof.
   intros H. apply ptyped_one in H as (ΘB & c & _ & _ & _ & _ & _ & _ & _ & H & _).
   exact (rx_delegate_rejected _ _ _ _ _ _ _ _ H).
+Qed.
+
+(** ** guard-pos, a loop that holds an end
+
+      main = let ⟨a, a′⟩ = new in let ∗ = spawn (λ_. close a′) in
+             (force spawn_loop) a
+
+    with spawn_loop = !(f = λc. spawn (λ_. (force f) c)) of
+    examples/GuardEx.v. The thread of close a′ makes the session of a not
+    idle. The child of each round holds c while the force runs, so aging
+    asks the cost of the force, at least 1, below the credit of c and
+    lowers it by that cost. The recursive call passes c where the
+    parameter asks its old credit, which is finite, because main passes a
+    from a new channel with finite tickets. [spawn_loop_rejected] is the
+    aging step alone. *)
+
+Definition gp_main : expr :=
+  let_new (LetU (ESpawn (Lam (EClose (Var 1)))) (App (EForce spawn_loop) (Var 1))).
+
+Lemma sk_force_cost N Δ e T c : sktyped N Δ (EForce e) T c →
+  ∃ k cb U ss c0, length ss = k ∧ sinsts N ss ∧
+    sktyped N Δ e (TBox 0 k bcs0 None cb U) c0 ∧ skle (sinst_ty (slist ss) U) T ∧
+    fle (fadd c0 (fadd (Some 1) cb)) c.
+Proof.
+  remember (EForce e) as e0 eqn:He. induction 1; try discriminate.
+  - injection He as <-. do 5 eexists. split_and!; try done; [apply skle_refl|apply fle_refl].
+  - destruct (IHsktyped He) as (k & cb & U & ss & cz & Hr). do 5 eexists. destruct_and! Hr.
+    split_and!; try done; [by eapply skle_trans|by eapply fle_trans].
+Qed.
+
+Theorem gp_main_skel n Δ T c : ¬ sktyped (Some n) Δ gp_main T c.
+Proof.
+  intros H. unfold gp_main, let_new, ELet in H. simpl in H.
+  (* let ⟨a, a′⟩ = new *)
+  apply sk_letp_inv in H as (Δ3 & Δ4 & Δ4' & A1 & A2 & T4 & c3 & c4 & Hs3 & Hn & Ha3 & H & _).
+  apply sk_pair_inv in Hn as (Δ5 & Δ6 & Δ6' & B1 & B1' & B2 & c5 & c6 & _ & Hn & _ & _ & Hag & HlA).
+  apply sk_new_inv in Hn as (S1 & m1 & m2 & _ & Htk & HlB).
+  apply sk_letu_inv in H as (Δ7 & Δ8 & Δ8' & T5 & c7 & c8 & Hs7 & _ & Ha7 & H & _).
+  apply sk_letp_inv in H as (Δ9 & Δ10 & Δ10' & C1 & C2 & T6 & c9 & c10 & Hs9 & Hq & Ha9 & H & _).
+  apply sk_var_anc in Hq. climb Hq. apply anc_top in Hq.
+  apply skle_prod_inv in HlA as [HlA _].
+  pose proof (skle_trans _ _ _ (skle_trans _ _ _ (skle_trans _ _ _ HlB (tage_skle _ _ _ Hag)) HlA) Hq) as Hnew.
+  apply skle_prod_inv in Hnew as [HC1 HC2].
+  (* spawn (λ_. close a′) *)
+  apply sk_letu_inv in H as (Δb1 & Δb2 & Δb2' & Tb & cb1 & cb2 & Hsb & Hsp & Hab & H & _).
+  apply sk_spawn_inv in Hsp as (? & ? & ? & Hsp).
+  apply sk_abs_inv in Hsp as (Δh0 & Tu & Uu & cu & au & Hah0 & Hsp & _).
+  apply sk_close_inv in Hsp as (S0 & a0 & mS0 & c0' & HS0 & Hv0 & _).
+  apply sk_var_anc in Hv0. climb Hv0. apply anc_top in Hv0.
+  (* a is not idle *)
+  destruct (skle_sess_inv _ _ _ _ _ _ _ _ (skle_trans _ _ _ HC2 Hv0)) as [HdS1 _].
+  assert (¬ idle S1) as HS1.
+  { intros HI. apply (end_not_idle S0 HS0). apply (idle_ssub _ _ HdS1). by apply idle_dual_iff. }
+  (* (force spawn_loop) a *)
+  apply sk_app_inv in H as (Δc1 & Δc2 & Δc2' & cf & Targ & Ur & ar & cc1 & cc2 & Hsc & Hf & Hac & Hp & _ & _).
+  apply sk_force_inv in Hf as (k & cb' & U' & ss & cfo & Hlen & Hss & Hbox & HlR).
+  apply sk_box_inv in Hbox as (k0 & cb & U & _ & Hbody & Hbl).
+  apply skle_box_l in Hbl as (cb2' & U2 & [= -> -> ->] & _ & Hbx).
+  apply sk_var_anc in Hp. climb Hp. apply anc_top in Hp.
+  apply skle_arr_r in HlR as (cR & R & UR & aR & HR & _ & _ & HTR & _).
+  pose proof (skle_trans _ _ _ HC1 (skle_trans _ _ _ Hp HTR)) as HmR.
+  apply skle_sess_l in HmR as (sR & β & -> & HsR & Hβm).
+  (* the body of spawn_loop at the instance ss of main *)
+  specialize (Hbody ss Hlen Hss).
+  pose proof (boxeq_sinst _ _ _ _ _ Hbx Hlen Hss) as Hteq. rewrite HR in Hteq.
+  apply sk_abs_inv in Hbody as (Δh & P & Ui & ci & a & Hah & Hb & HlU).
+  apply skle_arr_l in HlU as (c' & P' & U1' & a' & HU & _ & _ & HPP & _).
+  rewrite HU in Hteq. apply teq_lolli_inv, teq_sym, teq_sess_l in Hteq as (sR' & -> & HsR').
+  apply skle_sess_l in HPP as (sP & p & -> & HsP & Hpβ).
+  apply sinst_inv_lolli in HU as (A0 & B0 & -> & HA0 & _).
+  symmetry in HA0. apply sinst_inv_sess in HA0 as (s0 & -> & _).
+  assert (¬ idle sP) as HsPi.
+  { intros HI. apply HS1. apply (idle_ssub _ _ HsR), (idle_sequiv _ _ HsR'). by apply (idle_ssub _ _ HsP). }
+  (* spawn (λ_. (force f) c): the closure ages c, and the force ages it again *)
+  apply sk_spawn_inv in Hb as (? & ? & ? & Hb).
+  apply sk_abs_inv in Hb as (Δh1 & Tu1 & Uu1 & cu1 & au1 & Hah1 & Hb & _).
+  destruct (lage_lin _ _ _ 0 _ Hah1 eq_refl) as (X1 & HX1 & HagX1).
+  apply tage_sess_nonidle in HagX1 as [Hau1 ->]; [|done].
+  apply sk_app_inv in Hb as (Δe1 & Δe2 & Δe2' & cs & Targ2 & Ur2 & a2 & ce1 & ce2 & Hse & Hf2 & Hae & Hp2 & _ & _).
+  destruct (pass_r _ (Some Tu1 :: Δh1) _ _ _ _ _ _ _ 1 (TSess sP pd (fsub p au1) m1) Hse Hf2 eq_refl Hae HX1 (λ HF : False, HF))
+    as (X' & HX' & HagX).
+  apply tage_sess_nonidle in HagX as [Hce ->]; [|done].
+  apply sk_force_cost in Hf2 as (k2 & cb3 & U3 & ss2 & cf2 & _ & _ & Hfv & HlR2 & Hcf).
+  apply sk_var_anc in Hfv. climb Hfv. apply anc_top in Hfv.
+  apply skle_box_l in Hfv as (cb4 & U4 & [= -> -> ->] & _ & Hbx2).
+  apply sk_var_inv in Hp2 as (X0 & HX0 & HlX). rewrite HX' in HX0. injection HX0 as <-.
+  apply boxeq_teq, teq_lolli_l in Hbx2 as (A'' & B'' & -> & HA'' & _).
+  apply teq_sess_l in HA'' as (s0' & -> & _).
+  simpl in HlR2. apply skle_arr_l in HlR2 as (? & ? & ? & ? & [= _ <- _ _] & _ & _ & HTarg & _).
+  pose proof (skle_trans _ _ _ HlX HTarg) as Hself.
+  apply skle_sess_inv in Hself as (_ & Hβt & _).
+  (* β ≤ p − au1 − ce1 with 1 ≤ ce1, p ≤ β and β ≤ m1 finite *)
+  clear - Htk Hβm Hpβ Hau1 Hce Hcf Hβt. unfold tsum_ok in Htk.
+  repeat match goal with x : fuel |- _ => destruct x end; simpl in *; lia.
+Qed.
+
+Theorem guard_pos_rejected n W Θ Γ Δ F T c : ¬ typed W (Some n) Θ Γ Δ F gp_main T c.
+Proof. intros H. apply typed_skel in H. exact (gp_main_skel _ _ _ _ H). Qed.
+
+Corollary guard_pos_proc_rejected n η W T : ¬ ptyped (Some n) η W ∅ (∅, {[+ gp_main +]}) T.
+Proof.
+  intros H. apply ptyped_one in H as (ΘB & c & _ & _ & _ & _ & _ & _ & _ & H & _).
+  exact (guard_pos_rejected _ _ _ _ _ _ _ _ H).
 Qed.

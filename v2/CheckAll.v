@@ -354,6 +354,9 @@ Print Assumptions rx_postpone_rejected.
 Print Assumptions rx_postpone_proc_rejected.
 Print Assumptions rx_delegate_rejected.
 Print Assumptions rx_delegate_proc_rejected.
+Print Assumptions gp_main_skel.
+Print Assumptions guard_pos_rejected.
+Print Assumptions guard_pos_proc_rejected.
 (** examples/Descent.v *)
 Print Assumptions descent.
 Print Assumptions prop7.
