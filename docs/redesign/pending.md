@@ -1,5 +1,67 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, 2026-11-24, small results
+
+Approved by the author on 2026-11-24 ("do all uncontroversial stuff
+now"). Branch fx-small from redesign a54995e, one commit per item.
+Nothing pushed, nothing merged. No Admitted, no Axiom, no new Parameter,
+no rule changed, no theorem weakened. `make` builds, `make check` reports
+275 of 275 closed (was 263), `make test` passes, `docs/explorer/check.sh`
+ends with 0 errors and the one known warning (bare-word Connect).
+
+1. Conservativity equals the bridge condition. `conserv W Γ m C`
+   (static/Contexts.v) says that a fact `hc_open m C Γ ⊢ ↑x ≺ ↑y` between
+   shifted points, which are exactly the points outside the tree, gives
+   `Γ ⊢ x ≺ y`. `conserv_cons_open` (static/PointSubst.v) is the converse
+   of `cons_open_conservative` and needs no side condition. Each bridge is
+   a derivation in `hc_open m C Γ` (`cfact_open`, `tree_steps_open`,
+   `cinst_shift`). `cons_open_iff` states the equivalence under
+   `facts_const W`. The owed entry is removed. The deviation on r-ex and
+   E-Open.cons now cites the proof.
+2. Locality of η. `ptyped_iann_agree` and `ptyped_iann_local`
+   (static/Typing.v): if η and η' agree on `dom Σ` and on both ends of
+   every channel of `p.1`, then `ptyped N η W Σ p T ↔ ptyped N η' W Σ p T`.
+   The ends of `p.1` include the cut channels of every P-Connect below.
+   The channels `C0` of P-Term are included too, although η is not read
+   there, because they are part of `p.1` and the condition stays syntactic
+   in p. `p_connect_iann` with `iann_pick`: two components typed under η1
+   and η2 connect under η1 on `dom (Σ1 ∪ ΣC)` and the ends of `C1`, η2
+   elsewhere, given the side conditions of P-Connect and
+   `tsum_ok N (η1 o).2 (η2 (edual o)).2` on the cut. The two regions are
+   disjoint by the side conditions and `pfree` of the left interface. Map:
+   the lock-free part of the p-typing caption.
+3. `cs_deadlock_free`, `cy_deadlock_free`, `fb_deadlock_free`,
+   `fm_deadlock_free`, `fx_deadlock_free`, `rg_deadlock_free`, each
+   `deadlock_free (∅, {[+ main +]})`. The proof is one line through
+   `soundness_source` with `W_*_wf` and `swf_sacyc`, not `soundness`. The
+   examples have term derivations, and `soundness` would need a P-Term
+   wrapper per example (as `fj_term`) for the same statement. The six
+   files now import static.FundamentalProc. The badges cite the theorems.
+4. `fwdp_expand2_lf` (examples/CopycatTwoN.v): a closed P ∥ Q typed at a
+   bound K ≥ 4 stays lock free with the forwarder in the cut, by
+   `fwdp_expand2_fin` and `lf_soundness`. Excluded middle and functional
+   choice are hypotheses, as in `lf_soundness`. The copycat example has an
+   LF badge now.
+5. guard-pos done, flagpair skipped. `gp_main_skel`,
+   `guard_pos_rejected` and `guard_pos_proc_rejected` (examples/Rejects.v)
+   reject `main = let ⟨a, a′⟩ = new in let ∗ = spawn (λ_. close a′) in
+   (force spawn_loop) a` at every finite N, in the style of rx-postpone.
+   The one new lemma is `sk_force_cost`, `sk_force_inv` with the cost
+   bound of F-Force. The map shows main and cites the theorems. flagpair
+   is skipped: its static rejection reads points (the two threads ask
+   x ≺ ȳ and ȳ ≺ x of one world), so the credit skeleton does not apply,
+   and v2 has no point-reading inversion of E-Case and E-Close under
+   subsumption and futures. That is new machinery.
+6. The header of examples/LFController.v and its section title say N = 6.
+7. `cs_split_lock_free_typed` is removed. Only CheckAll and the map cited
+   it. The comment above `cs_split_typed` says that `lf_soundness` gives
+   the statement of `cs_split_lock_free` again.
+
+CheckAll added (13): `ptyped_iann_local`, `p_connect_iann`,
+`cons_open_iff`, the six `*_deadlock_free`, `fwdp_expand2_lf`,
+`gp_main_skel`, `guard_pos_rejected`, `guard_pos_proc_rejected`. Removed
+(1): `cs_split_lock_free_typed`.
+
 ## Report, 2026-11-24, process typing without restriction
 
 Approved by the author on 2026-11-24 ("yeah do it"). Branch fx-norestrict
