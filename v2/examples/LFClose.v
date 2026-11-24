@@ -65,24 +65,24 @@ Proof.
   - apply swf_wok, swf_bare. intros g [Hg|Hg]; destruct Hg.
 Qed.
 
-Theorem cl_lftyped N c (x : point) :
+Theorem cl_lftyped N c :
   ∃ W, ∅ ⊩^N,(khalf (Some N)) _ W ({[c]}, {[+ cl (c⁺)%cend +]} ⊎ {[+ cl (c⁻)%cend +]}) : TUnit.
-Proof. eexists. apply (cl_ptyped (Some N) c x). Qed.
+Proof. eexists. apply (cl_ptyped (Some N) c (MkPt (NConst 0) true 0)). Qed.
 
 (** The same process in the deadlock-free judgment, and deadlock free
     by [soundness]. *)
-Theorem cl_dftyped c (x : point) :
+Theorem cl_dftyped c :
   ∃ W, ∅ ⊢_ W ({[c]}, {[+ cl (c⁺)%cend +]} ⊎ {[+ cl (c⁻)%cend +]}) : TUnit.
-Proof. eexists. apply (cl_ptyped None c x). Qed.
+Proof. eexists. apply (cl_ptyped None c (MkPt (NConst 0) true 0)). Qed.
 
 Theorem cl_deadlock_free c : deadlock_free ({[c]}, {[+ cl (c⁺)%cend +]} ⊎ {[+ cl (c⁻)%cend +]}).
 Proof.
-  destruct (cl_dftyped c (MkPt (NConst 0) true 0)) as [W H]. exact (soundness W _ _ H).
+  destruct (cl_dftyped c) as [W H]. exact (soundness W _ _ H).
 Qed.
 
 Theorem cl_lock_free c : excluded_middle → functional_choice →
   lock_free ({[c]}, {[+ cl (c⁺)%cend +]} ⊎ {[+ cl (c⁻)%cend +]}).
 Proof.
-  intros EM FC. destruct (cl_lftyped 0 c (MkPt (NConst 0) true 0)) as [W H].
+  intros EM FC. destruct (cl_lftyped 0 c) as [W H].
   exact (lf_soundness 0 _ _ _ TUnit EM FC H).
 Qed.
