@@ -31,7 +31,7 @@ Proof. simpl. split_and?; try done; intros a Ha; injection Ha as <-; lia. Qed.
 Definition rgl_T : ty := TProd (TSess Schl (pvar 0) (Some 0) (Some 4)) (TSess (dual Schl) (pvar 1) (Some 1) (Some 4)).
 Definition rgl_ty : ty := lbox 2 rg_C (Some (sh 1 (pvar 0))) rgl_T TUnit.
 
-Ltac tsub_tac := first [apply tsub_refl | apply sub_sess; [apply sequiv_refl|simpl; lia]].
+Ltac tsub_tac := first [apply tsub_refl | apply sub_sess; [apply ssub_refl|simpl; lia]].
 
 Section body.
   Context (W : sworld) (Γ : hctx) (n : nat).
@@ -195,7 +195,7 @@ Proof.
   Unshelve. all: first [exact None | simpl; lia | simpl; done].
 Qed.
 
-Theorem rg_lftyped : ∃ N, ∅ ⊩^N _ (swrestrict W_rg (iface ∅ TUnit)) (∅, {[+ rg_main +]}) : TUnit.
+Theorem rg_lftyped : ∃ N, ∅ ⊩^N,(khalf (Some N)) _ (swrestrict W_rg (iface ∅ TUnit)) (∅, {[+ rg_main +]}) : TUnit.
 Proof.
   destruct rgl_typedN as (c & Ht). exists 8.
   eapply lf_main_typed; [apply W_rg_wf|constructor|exact Ht].

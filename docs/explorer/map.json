@@ -964,7 +964,7 @@
        }
       ]
      },
-     "caption": "Each held end $o$ has a counter $f(o)$ at run time, the number of actions the thread holding $o$ may still perform on other ends before it acts on $o$. Typing bounds the counter from both sides with the two numbers of [[ty-ann]]. The credit $a$ is a lower bound, and [[t-agecap|aging]] lowers it with each action elsewhere, so the holding thread postpones $o$ only finitely often. The tickets $m$ are an upper bound, the value an [[r-act|action]] on $o$ resets the counter to. The two ends of a channel have at most $N$ tickets together, so the partner of an end with $m$ tickets has a counter of at most $N - m$. A link acts on no end and gives a waiting thread a new partner. [[r-act|E-Link]] asks $a_1 + m_2 > N$ and $a_2 + m_1 > N$ of the two linked ends, so the new partner has a lower counter than the old one, and a wait meets at most $N$ links. [[r-fun|Closures]] have a credit for their captured ends. A [[r-threads|spawn]] is no action and costs nothing, so the child takes the captured ends at their counters. A [[r-new|creation]] splits $N$ tickets between the two new ends. The [[fv|values with fuel]] and the [[soup|lock-free process relation]] read these numbers at run time.",
+     "caption": "Each held end $o$ has a counter $f(o)$ at run time, the number of actions the thread holding $o$ may still perform on other ends before it acts on $o$. Typing bounds the counter from both sides with the two numbers of [[ty-ann]]. The credit $a$ is a lower bound, and [[t-agecap|aging]] lowers it with each action elsewhere, so the holding thread postpones $o$ only finitely often. The tickets $m$ are an upper bound, the value an [[r-act|action]] on $o$ resets the counter to. The two ends of a channel have at most $N$ tickets together, so the partner of an end with $m$ tickets has a counter of at most $N - m$. A link acts on no end and gives a waiting thread a new partner. [[r-act|E-Link]] asks $a_1 + m_2 > N$ and $a_2 + m_1 > N$ of the two linked ends, so the new partner has a lower counter than the old one, and a wait meets at most $N$ links. [[r-fun|Closures]] have a credit for their captured ends. A [[r-threads|spawn]] is no action and costs nothing, so the child takes the captured ends at their counters. A [[r-new|creation]] splits $N$ tickets between the two new ends. An interface end takes its credit and tickets from the annotations $\\eta$ of [[p-typing|P-Term]], and P-Connect asks the tickets of the two ends of each cut channel to sum to at most $N$. The [[fv|values with fuel]] and the [[soup|lock-free process relation]] read these numbers at run time.",
      "why": "The two bounds serve the two threads of a channel. The holding thread needs a lower bound, so that its actions elsewhere stay within the counter. The waiting thread needs an upper bound on the counter of its partner, so that its wait is finite. One number cannot do both. A lower bound alone says nothing about the partner, and an upper bound alone cannot be lowered by aging, because aging must keep a true statement true.",
      "example": "At $N = 4$ a new channel gives its ends $3$ and $1$ tickets. A thread waiting on the end with $3$ tickets faces a partner whose counter is at most $1$, so the partner acts on its end after at most one action elsewhere. A link of that partner with an end at $2$ tickets asks the credit of the partner to exceed $2$, which a counter of $1$ cannot meet.",
      "modes": [
@@ -1365,9 +1365,9 @@
     {
      "id": "r-new",
      "title": "Creation",
-     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{E-New.wf}{\\inmodeplain{df}{\\sym{new.acyc}{\\mathsf{acyc\\_new}}}\\inmode{lf}{\\sym{new.ok}{\\mathsf{new\\_ok}_N}}\\,\\Gamma\\,\\rho\\,C}\\quad \\sym{E-New.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,S}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.new}{\\mathsf{new}} : \\exists^{\\sym{E-New.bot}{\\bot}}\\rho.\\ \\sym{E-New.facts}{C}.\\ \\sym{E-New.dual}{\\sym{ty.sess}{S_{\\rho}\\inmode{lf}{^{m_1,m_1}}} \\otimes \\sym{sty.dual}{\\overline{S}}_{\\overline{\\rho}}\\inmode{lf}{^{m_2,m_2}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-New} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{E-New.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,S}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.new}{\\mathsf{new}} : \\sym{E-New.dual}{S_{\\sym{E-New.field}{x\\cdot\\kappa}}\\inmode{lf}{^{m_1,m_1}} \\otimes \\sym{sty.dual}{\\overline{S}}_{\\overline{\\sym{E-New.field}{x\\cdot\\kappa}}}\\inmode{lf}{^{m_2,m_2}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-New-Field} \\\\[2ex] \\sym{new.acyc}{\\mathsf{acyc\\_new}\\,\\Gamma\\,\\rho\\,C \\iff (\\forall x \\in \\sym{w.tree}{\\mathsf{tree}}(\\rho).\\ \\neg\\, x \\mathrel{(\\sym{new.step}{\\prec^{\\rho}_{C}})^{+}} x) \\land \\sym{E-Open.cons}{\\mathsf{cons}\\,W\\,\\Gamma\\,1\\,C}}\\inmodeplain{lf}{ \\\\[2ex] }\\inmode{lf}{\\sym{new.ok}{\\begin{array}{l} \\mathsf{new\\_ok}_N\\,\\Gamma\\,\\rho\\,C \\iff \\sym{new.acyc}{\\mathsf{acyc\\_new}\\,\\Gamma\\,\\rho\\,C} \\land (N \\in \\mathbb{N} \\Rightarrow \\sym{new.rank}{\\begin{array}[t]{l} \\sym{w.lfworld}{\\mathsf{wf}}(\\sym{new.step}{\\prec^{\\rho}_{C}}) \\land \\exists \\mathcal{S} \\subseteq \\mathsf{tree}(\\rho) \\times \\mathcal{P}^{+}_{\\mathrm{fin}}(\\mathsf{Point}_{\\Gamma}). \\\\ \\quad (\\forall (u \\prec y) \\in C.\\ u \\in \\mathsf{tree}(\\rho),\\ y \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists (u, Y) \\in \\mathcal{S}.\\ \\forall t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} t \\prec y) \\\\ \\quad \\land\\ (\\forall (s, Y) \\in \\mathcal{S}.\\ \\forall s' \\sym{new.step}{\\prec^{\\rho}_{C}} s.\\ \\exists (s', Y') \\in \\mathcal{S}.\\ \\forall t' \\in Y'.\\ \\exists t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} t' \\prec t) \\\\ \\quad \\land\\ (\\forall (s, Y) \\in \\mathcal{S}.\\ \\forall (z \\prec s) \\in C.\\ z \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} z \\prec t)) \\end{array}} \\end{array}} \\qquad \\sym{new.gen}{\\mathsf{gen\\_new} \\iff \\mathsf{new\\_ok}_N,\\ N \\in \\mathbb{N}}}\\end{array}",
-     "caption": "E-New creates a channel at a fresh root $\\rho$ and its [[ty-dual|dual]], hidden in an [[r-ex|existential]] whose constraint $C$ states what the program needs about the new points. The order $\\prec^{\\rho}_{C}$ that $C$ and program order induce on $\\mathsf{tree}(\\rho)$ must have no cycle, and $C$ must meet the bridge condition of [[r-ex|E-Open]] at the one root $\\rho$. Then the creation adds no cycle to an acyclic world, and opening its existential is conservative. E-New-Field creates a channel at a [[syn-labels|field]] $x\\cdot\\kappa$ and its dual, with no constraint, because the order around a field was fixed with its root. The lower bound $\\bot$ records that no fact of the context mentions the new points. The fundamental theorem proves E-New against the obligation O-New of [[e-obl]], and the world grows as in [[w-ext]]. The [[t-consts|constants]] have no entry for $\\mathsf{new}$. \\inmode{lf}{At a finite bound $N$ the premise adds to $\\mathsf{acyc\\_new}$ a part for ranks. It asks $\\prec^{\\rho}_{C}$ well-founded. It bounds each tree point $s$ by a finite set $Y$ of context points, so that ranks for the new tree exist in each [[t-lf-wf|ranked world]]. The premise at a finite bound implies the premise at $N = \\infty$ by projection. Each creation picks [[ty-ann|tickets]] $m_1$ and $m_2$ with $m_1 + m_2 \\leq N$, and each end starts at credit equal to its tickets, as the [[t-lf-counters|counters block]] explains.}",
-     "why": "Creation places a new channel in the order. One term $\\mathsf{new}$ has two rules for the two places a channel can go. A fresh root needs facts and hides its points, a field needs neither. A single rule with the position in the term would have to take the facts in the term. Ends are linear, so each held end the facts mention would have to be passed to $\\mathsf{new}$ and returned. Fields exist because a channel created to be sent must be placed where the message delivers its payload, the field $x\\cdot j$ of the carrier. A root with a constraint cannot name that point without a bridge. The root is hidden because a box body that creates a channel per round would otherwise need one point variable per round in the box type.",
+     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{ctx.empty}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{E-New.pos}{(p, \\bar\\rho, C) \\in \\{(\\rho, \\rho, C) \\mid \\sym{E-New.wf}{\\inmodeplain{df}{\\sym{new.acyc}{\\mathsf{acyc\\_new}}}\\inmode{lf}{\\sym{new.ok}{\\mathsf{new\\_ok}_N}}\\,\\Gamma\\,\\rho\\,C}\\} \\cup \\{(\\sym{E-New.field}{x\\cdot\\kappa}, \\cdot, \\top)\\}} \\\\ \\sym{E-New.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,S}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-New.tickets}{m_1 + m_2 \\leq N}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{syn.new}{\\mathsf{new}} : \\exists^{\\sym{E-New.bot}{\\bot}}\\bar\\rho.\\ \\sym{E-New.facts}{C}.\\ \\sym{E-New.dual}{\\sym{ty.sess}{S_{p}\\inmode{lf}{^{m_1,m_1}}} \\otimes \\sym{sty.dual}{\\overline{S}}_{\\overline{p}}\\inmode{lf}{^{m_2,m_2}}}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-New} \\qquad \\sym{E-New.vanish}{\\exists^{\\bot}\\cdot.\\ \\top.\\ T = T} \\\\[2ex] \\sym{new.acyc}{\\mathsf{acyc\\_new}\\,\\Gamma\\,\\rho\\,C \\iff (\\forall x \\in \\sym{w.tree}{\\mathsf{tree}}(\\rho).\\ \\neg\\, x \\mathrel{(\\sym{new.step}{\\prec^{\\rho}_{C}})^{+}} x) \\land \\sym{E-Open.cons}{\\mathsf{cons}\\,W\\,\\Gamma\\,1\\,C}}\\inmodeplain{lf}{ \\\\[2ex] }\\inmode{lf}{\\sym{new.ok}{\\begin{array}{l} \\mathsf{new\\_ok}_N\\,\\Gamma\\,\\rho\\,C \\iff \\sym{new.acyc}{\\mathsf{acyc\\_new}\\,\\Gamma\\,\\rho\\,C} \\land (N \\in \\mathbb{N} \\Rightarrow \\sym{new.rank}{\\begin{array}[t]{l} \\sym{w.lfworld}{\\mathsf{wf}}(\\sym{new.step}{\\prec^{\\rho}_{C}}) \\land \\exists \\mathcal{S} \\subseteq \\mathsf{tree}(\\rho) \\times \\mathcal{P}^{+}_{\\mathrm{fin}}(\\mathsf{Point}_{\\Gamma}). \\\\ \\quad (\\forall (u \\prec y) \\in C.\\ u \\in \\mathsf{tree}(\\rho),\\ y \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists (u, Y) \\in \\mathcal{S}.\\ \\forall t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} t \\prec y) \\\\ \\quad \\land\\ (\\forall (s, Y) \\in \\mathcal{S}.\\ \\forall s' \\sym{new.step}{\\prec^{\\rho}_{C}} s.\\ \\exists (s', Y') \\in \\mathcal{S}.\\ \\forall t' \\in Y'.\\ \\exists t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} t' \\prec t) \\\\ \\quad \\land\\ (\\forall (s, Y) \\in \\mathcal{S}.\\ \\forall (z \\prec s) \\in C.\\ z \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists t \\in Y.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} z \\prec t)) \\end{array}} \\end{array}} \\qquad \\sym{new.gen}{\\mathsf{gen\\_new} \\iff \\mathsf{new\\_ok}_N,\\ N \\in \\mathbb{N}}}\\end{array}",
+     "caption": "E-New creates a channel at a point $p$ and its [[ty-dual|dual]] $\\overline{p}$. At a fresh root $\\rho$ the pair is hidden in an [[r-ex|existential]] whose constraint $C$ states what the program needs about the new points. The order $\\prec^{\\rho}_{C}$ that $C$ and program order induce on $\\mathsf{tree}(\\rho)$ must have no cycle, and $C$ must meet the bridge condition of [[r-ex|E-Open]] at the one root $\\rho$. Then the creation adds no cycle to an acyclic world, and opening its existential is conservative. At a [[syn-labels|field]] $x\\cdot\\kappa$ the rule binds no point and states the constraint $\\top$, so the existential vanishes and the pair is the plain product. A field creation adds no facts, because $x\\cdot\\kappa$ is an old point whose facts were fixed with the root of $x$. A field may be used by more than one creation. The lower bound $\\bot$ records that no fact of the context mentions the new points. The fundamental theorem proves E-New against the obligation O-New of [[e-obl]], and the world grows as in [[w-ext]]. The [[t-consts|constants]] have no entry for $\\mathsf{new}$. \\inmode{lf}{At a finite bound $N$ the premise adds to $\\mathsf{acyc\\_new}$ a part for ranks. It asks $\\prec^{\\rho}_{C}$ well-founded. It bounds each tree point $s$ by a finite set $Y$ of context points, so that ranks for the new tree exist in each [[t-lf-wf|ranked world]]. The premise at a finite bound implies the premise at $N = \\infty$ by projection. Each creation picks [[ty-ann|tickets]] $m_1$ and $m_2$ with $m_1 + m_2 \\leq N$, and each end starts at credit equal to its tickets, as the [[t-lf-counters|counters block]] explains.}",
+     "why": "Creation places a new channel in the order. A fresh root needs facts and hides its points, a field needs neither, and the triple $(p, \\bar\\rho, C)$ records which. Taking the position from the term instead would put the facts in the term. Ends are linear, so each held end the facts mention would have to be passed to $\\mathsf{new}$ and returned. Fields exist because a channel created to be sent must be placed where the message delivers its payload, the field $x\\cdot j$ of the carrier. A root with a constraint cannot name that point without a bridge. The root is hidden because a box body that creates a channel per round would otherwise need one point variable per round in the box type.",
      "example": "Two threads that close $c$ and $d$ in the same order type with $d$ at the field $\\rho\\cdot 0$ of the root $\\rho$ of $c$. A creation at a fresh root $\\rho$ with $C = \\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ states the two facts the threads need. $\\prec^{\\rho}_{C}$ has no cycle, and $C$ has no bridge. The [[ex-cycle|cycle]] is this program.",
      "source": [
       {
@@ -1400,16 +1400,26 @@
      "usedIn": [
       "e-obl",
       "w-ext"
+     ],
+     "deviations": [
+      {
+       "kind": "merged",
+       "reason": "The Rocq has two constructors, e_new for a fresh root with a constraint and e_new_fld for a field without one. The map shows one rule whose triple $(p, \\bar\\rho, C)$ picks the case. With no bound point and the constraint $\\top$ the existential is the plain product, so the field case is e_new_fld as stated.",
+       "names": [
+        "e_new",
+        "e_new_fld"
+       ]
+      }
      ]
     },
     {
      "id": "t-subs",
      "title": "Subtyping and structural rules",
-     "formula": "\\begin{array}{c}\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{tp.sub-sess}{S \\sym{sty.sequiv}{\\simeq} S'}\\quad \\inmode{lf}{\\sym{tp.sub-credit}{a' \\leq a}}\\end{array}}{\\sym{sub.tsub}{S_x\\inmode{lf}{^{a,m}} \\leq {S'}_x\\inmode{lf}{^{a',m}}}}\\;\\textsf{Sub-Sess} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}\\quad \\inmode{lf}{\\sym{tp.sub-credit}{a' \\leq a}} \\\\ \\sym{tp.sub-var}{\\sym{sub.tsub}{T_1' \\leq T_1} \\quad \\sym{sub.tsub}{U \\leq U'}}\\end{array}}{(T_1 \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l}[\\varepsilon]\\,U)\\inmode{lf}{^{a}} \\leq (T_1' \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l}[\\varepsilon']\\,U')\\inmode{lf}{^{a'}}}\\;\\textsf{Sub-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}\\quad \\sym{tp.sub-teq}{U \\equiv U'}\\quad \\sym{tp.sub-boxc}{\\bar\\alpha \\neq \\varnothing \\Rightarrow U = U' \\vee \\sym{sty.contr}{\\mathsf{contr}}\\,U, U'}\\end{array}}{\\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}[\\varepsilon]\\,U) \\leq \\Box(\\ldots[\\varepsilon']\\,U')}\\;\\textsf{Sub-Box} \\qquad \\dfrac{\\begin{array}{c}\\sym{tp.sub-ex}{\\Gamma, C(\\bar\\iota) \\mathrel{\\sym{tp.vdash}{\\vdash}} C'(\\bar\\iota)}\\quad \\sym{tp.sub-exlb}{l' = l \\lor \\Gamma, C(\\bar\\iota) \\mathrel{\\sym{ctx.slt}{\\vdash}} l' \\preccurlyeq T} \\\\ \\sym{tp.sub-exbody}{\\Gamma, C(\\bar\\iota) \\mathrel{\\sym{tp.vdash}{\\vdash}} T \\leq T'}\\end{array}}{\\Gamma \\mathrel{\\sym{tp.vdash}{\\vdash}} \\sym{sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l'}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{tp.sub-agg}{\\sym{sub.tsub}{T_1 \\leq T_1'} \\quad \\sym{sub.tsub}{T_2 \\leq T_2'}}\\end{array}}{T_1 \\otimes T_2 \\leq T_1' \\otimes T_2' \\qquad T_1 \\oplus T_2 \\leq T_1' \\oplus T_2'}\\;\\textsf{Sub-Prod, Sub-Sum}\\end{array}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\quad \\sym{sub.tsub}{T \\leq T'}\\quad \\sym{E-Sub.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,T \\Rightarrow \\mathsf{contr}\\,T'}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T'\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon'}}\\;\\textsf{E-Sub}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\quad \\Gamma ; \\Delta' \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{ty.unlimited}{\\mathsf{unlimited}\\,U}\\quad \\Gamma ; \\Delta, U, U \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta, U \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e[1 \\mapsto 0] : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Contract}\\end{array}\\end{array}",
+     "formula": "\\begin{array}{c}\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{tp.sub-sess}{S \\mathrel{\\sym{sty.ssub}{\\sqsubseteq}} S'}\\quad \\inmode{lf}{\\sym{tp.sub-credit}{a' \\leq a}}\\end{array}}{\\sym{sub.tsub}{S_x\\inmode{lf}{^{a,m}} \\leq {S'}_x\\inmode{lf}{^{a',m}}}}\\;\\textsf{Sub-Sess} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}\\quad \\inmode{lf}{\\sym{tp.sub-credit}{a' \\leq a}} \\\\ \\sym{tp.sub-var}{\\sym{sub.tsub}{T_1' \\leq T_1} \\quad \\sym{sub.tsub}{U \\leq U'}}\\end{array}}{(T_1 \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l}[\\varepsilon]\\,U)\\inmode{lf}{^{a}} \\leq (T_1' \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l}[\\varepsilon']\\,U')\\inmode{lf}{^{a'}}}\\;\\textsf{Sub-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}\\quad \\sym{tp.sub-teq}{U \\equiv U'}\\quad \\sym{tp.sub-boxc}{\\bar\\alpha \\neq \\varnothing \\Rightarrow U = U' \\vee \\sym{sty.contr}{\\mathsf{contr}}\\,U, U'}\\end{array}}{\\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}[\\varepsilon]\\,U) \\leq \\Box(\\ldots[\\varepsilon']\\,U')}\\;\\textsf{Sub-Box} \\qquad \\dfrac{\\begin{array}{c}\\sym{tp.sub-ex}{\\Gamma, C(\\bar\\iota) \\mathrel{\\sym{tp.vdash}{\\vdash}} C'(\\bar\\iota)}\\quad \\sym{tp.sub-exlb}{l' = l \\lor \\Gamma, C(\\bar\\iota) \\mathrel{\\sym{ctx.slt}{\\vdash}} l' \\preccurlyeq T} \\\\ \\sym{tp.sub-exbody}{\\Gamma, C(\\bar\\iota) \\mathrel{\\sym{tp.vdash}{\\vdash}} T \\leq T'}\\end{array}}{\\Gamma \\mathrel{\\sym{tp.vdash}{\\vdash}} \\sym{sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l'}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{tp.sub-agg}{\\sym{sub.tsub}{T_1 \\leq T_1'} \\quad \\sym{sub.tsub}{T_2 \\leq T_2'}}\\end{array}}{T_1 \\otimes T_2 \\leq T_1' \\otimes T_2' \\qquad T_1 \\oplus T_2 \\leq T_1' \\oplus T_2'}\\;\\textsf{Sub-Prod, Sub-Sum}\\end{array}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\quad \\sym{sub.tsub}{T \\leq T'}\\quad \\sym{E-Sub.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,T \\Rightarrow \\mathsf{contr}\\,T'}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T'\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon'}}\\;\\textsf{E-Sub}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\quad \\Gamma ; \\Delta' \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{ty.unlimited}{\\mathsf{unlimited}\\,U}\\quad \\Gamma ; \\Delta, U, U \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta, U \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e[1 \\mapsto 0] : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Contract}\\end{array}\\end{array}",
      "variants": {
       "df": "\\begin{array}{c}\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{tp.sub-sess}{S \\sym{sty.seqv}{\\approx} S'}\\end{array}}{\\sym{sub.tsub}{S_x \\leq {S'}_x}}\\;\\textsf{Sub-Sess} \\qquad \\dfrac{\\begin{array}{c}\\sym{tp.sub-ex}{\\Gamma, C(\\bar\\iota) \\mathrel{\\sym{tp.vdash}{\\vdash}} C'(\\bar\\iota)}\\quad \\sym{tp.sub-exlb}{l' = l \\lor \\Gamma, C(\\bar\\iota) \\mathrel{\\sym{ctx.slt}{\\vdash}} l' \\preccurlyeq T} \\\\ \\sym{tp.sub-exbody}{\\Gamma, C(\\bar\\iota) \\mathrel{\\sym{tp.vdash}{\\vdash}} T \\leq T'}\\end{array}}{\\Gamma \\mathrel{\\sym{tp.vdash}{\\vdash}} \\sym{sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l'}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{tp.sub-agg}{\\sym{sub.tsub}{T_1 \\leq T_1'} \\quad \\sym{sub.tsub}{T_2 \\leq T_2'}}\\end{array}}{T_1 \\otimes T_2 \\leq T_1' \\otimes T_2' \\qquad T_1 \\oplus T_2 \\leq T_1' \\oplus T_2'}\\;\\textsf{Sub-Prod, Sub-Sum} \\qquad \\dfrac{\\begin{array}{c}\\sym{tp.sub-var}{\\sym{sub.tsub}{T_1' \\leq T_1} \\quad \\sym{sub.tsub}{U \\leq U'}}\\end{array}}{T_1 \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l} U \\leq T_1' \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l} U'}\\;\\textsf{Sub-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{tp.sub-teq}{U \\equiv U'}\\quad \\sym{tp.sub-boxc}{\\bar\\alpha \\neq \\varnothing \\Rightarrow U = U' \\vee \\sym{sty.contr}{\\mathsf{contr}}\\,U, U'}\\end{array}}{\\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u} U) \\leq \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u} U')}\\;\\textsf{Sub-Box}\\end{array}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\quad \\sym{sub.tsub}{T \\leq T'}\\quad \\sym{E-Sub.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,T \\Rightarrow \\mathsf{contr}\\,T'}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T'\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon'}}\\;\\textsf{E-Sub}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\quad \\Gamma ; \\Delta' \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{ty.unlimited}{\\mathsf{unlimited}\\,U}\\quad \\Gamma ; \\Delta, U, U \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta, U \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e[1 \\mapsto 0] : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Contract}\\end{array}\\end{array}"
      },
-     "caption": "Subtyping is $\\simeq$ on [[ty-equiv|session types]]. An existential may weaken its constraint to facts that $\\Gamma$ and the constraint entail, and may lower its lower bound $l$ to a bound $l'$ that each head of the body lies at or above. \\inmode{lf}{Credits may decrease, and costs may increase.} Weakening and contraction of [[ty-kinds|unlimited]] entries are admissible, because they are renamings of variables. Sub-Ex is proved against the clause for existentials of [[v-rel]].",
+     "caption": "Subtyping compares [[ty-equiv|session types]] by $\\approx$\\inmode{lf}{, and with annotations by $\\sqsubseteq$, which is $\\simeq$ except that a received payload may lose credit and a sent payload may gain credit}. An existential may weaken its constraint to facts that $\\Gamma$ and the constraint entail, and may lower its lower bound $l$ to a bound $l'$ that each head of the body lies at or above. \\inmode{lf}{Credits may decrease, and costs may increase.} Weakening and contraction of [[ty-kinds|unlimited]] entries are admissible, because they are renamings of variables. Sub-Ex is proved against the clause for existentials of [[v-rel]].",
      "why": "A value may forget facts it does not need. Admissible weakening and contraction keep the rule set free of structural rules. Subtyping exists because two branches of a case, or two creations that serve one parameter, state different facts, and E-Sub brings them to one type.",
      "source": [
       {
@@ -1448,8 +1458,8 @@
     {
      "id": "p-typing",
      "title": "Process typing",
-     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{ty.tfree}{\\mathsf{tfree}\\,T}\\quad \\sym{pfree}{\\mathsf{pfree}\\,\\Sigma}\\quad \\sym{P-Term.wf}{\\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}\\,W}\\quad \\sym{P-Term.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,\\Sigma, \\Theta_B}\\\\ \\sym{P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\sym{tp.ends}{\\mathsf{ends}}(C_0)}\\quad \\sym{P-Term.disj}{\\sym{tp.chans}{\\mathsf{chans}}\\,\\sym{tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing} \\\\ \\sym{P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = \\sym{ty.sess}{S_x\\inmode{lf}{^{m,m}}},\\ \\Theta_B(c^{-}) = \\sym{ty.sess}{\\overline{S}_{\\overline{x}}\\inmode{lf}{^{m',m'}}}\\inmode{lf}{,\\ m + m' \\leq N}} \\\\ \\sym{P-Term.typed}{\\varnothing ; \\sym{tp.lift}{\\Sigma\\inmode{lf}{^{N/2,N/2}}}, \\Theta_B \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sym{P-Term.future}{(\\varnothing,\\cdot)}} t : T\\inmode{lf}{\\ !\\ c}}\\end{array}}{\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{N}}}_{\\sym{P-Term.hide}{W|_{\\sym{tp.iface}{\\mathsf{I}(\\Sigma, T)}}}} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_1} (C_1, E_1) : T} \\\\ \\sym{P-Connect.right}{\\Sigma_2 \\cup \\sym{P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\sym{P-Connect.disj}{\\mathsf{disjoint}(\\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_1, \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_2, \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, C_1, C_2)} \\\\ \\sym{P-Connect.wf}{\\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{\\sym{P-Connect.join}{(W_1 \\sym{w.join}{\\sqcup} W_2)\\sym{w.restrict}{|}_{\\sym{tp.iface}{\\mathsf{I}(\\Sigma_1 \\cup \\Sigma_2, T)}}}} \\\\ (C_1 \\cup C_2 \\cup \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\sym{tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect} \\\\[2ex] \\sym{P-Connect.n}{\\dfrac{\\begin{array}{c}\\Sigma_1 \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_1} p_1 : T \\qquad \\Sigma_i \\cup \\overline{\\Sigma_{C,i}} \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_i} p_i : \\ast\\ \\ (2 \\leq i \\leq n) \\\\ \\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n)\\end{array}}{\\begin{array}{c}\\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W} \\textstyle\\parallel_i p_i : T,\\quad W = (\\cdots((W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2)\\sym{w.restrict}{|}_{\\mathsf{I}_2} \\mathbin{\\sym{w.join}{\\sqcup}} W_3)|_{\\mathsf{I}_3} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n)|_{\\mathsf{I}(\\Sigma, T)} \\\\ \\sym{w.facts}{\\mathsf{facts}}\\,W \\subseteq \\mathsf{facts}((W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n)|_{\\mathsf{I}(\\Sigma, T)})\\end{array}}\\;\\textsf{P-Connect$^{n}$}}\\end{array}\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\sym{tp.lfjudg}{\\Sigma \\Vdash^{N}_W p : T \\iff \\sym{lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_W p : T}}\\end{array}",
-     "caption": "P-Term types one thread $t$ that holds both ends of each channel in $C_0$, at [[ty-dual|dual]] types and points, over an interface $\\Sigma$ without partner pairs, with the ends $\\Theta_B$ of these channels. The thread is typed by the [[t-judgment|term judgment]] with no facts and the empty future, so that [[r-base|E-Chan]] closes each end it holds, and its result type is [[ty-kinds|end-free]]. Its world is hidden to the constants of the interface, $W|_{\\mathsf{I}(\\Sigma, T)}$ by the restriction of [[w-ext]]. P-Connect cuts two components at $\\Sigma_C$ against $\\overline{\\Sigma_C}$. Disjoint channel sets make the maps disjoint, and the left premise makes $\\Sigma_C$ free of partner pairs, so the rule asks neither. It asks the join of their two interface [[w-world|worlds]] acyclic, the condition of [[w-wf]]. The check reads the joined order, never two worlds at a time, so a ring of three threads whose worlds are acyclic in pairs and cyclic together is rejected. The [[syn-procs|process]] of the conclusion restricts the cut channels. [[th-compose]] proves both rules in the relation, and [[w-wf]] gives the world a model. \\inmode{lf}{Lock-free process typing is process typing at a finite bound $N$. The worlds must then be well-founded in place of acyclic, which [[t-lf-wf]] explains. The ends of a restricted channel have [[ty-ann|tickets]] of sum at most $N$, and each interface end has $N/2$, as the [[t-lf-counters|counters block]] explains.}",
+     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{ty.tfree}{\\mathsf{tfree}\\,T}\\quad \\sym{pfree}{\\mathsf{pfree}\\,\\Sigma}\\quad \\sym{P-Term.wf}{\\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}\\,W}\\quad \\sym{P-Term.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,\\Sigma, \\Theta_B}\\\\ \\sym{P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\sym{tp.ends}{\\mathsf{ends}}(C_0)}\\quad \\sym{P-Term.disj}{\\sym{tp.chans}{\\mathsf{chans}}\\,\\sym{tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing} \\\\ \\sym{P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = \\sym{ty.sess}{S_x\\inmode{lf}{^{m,m}}},\\ \\Theta_B(c^{-}) = \\sym{ty.sess}{\\overline{S}_{\\overline{x}}\\inmode{lf}{^{m',m'}}}\\inmode{lf}{,\\ m + m' \\leq N}} \\\\ \\inmode{lf}{\\sym{P-Term.ann}{\\forall o \\in \\mathrm{dom}\\,\\Sigma.\\ \\eta(o) = (a, m),\\ m \\leq N}} \\\\ \\sym{P-Term.typed}{\\varnothing ; \\sym{tp.lift}{\\Sigma\\inmode{lf}{^{\\eta}}}, \\Theta_B \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sym{P-Term.future}{(\\varnothing,\\cdot)}} t : T\\inmode{lf}{\\ !\\ c}}\\end{array}}{\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{N,\\eta}}}_{\\sym{P-Term.hide}{W|_{\\sym{tp.iface}{\\mathsf{I}(\\Sigma, T)}}}} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W_1} (C_1, E_1) : T} \\\\ \\sym{P-Connect.right}{\\Sigma_2 \\cup \\sym{P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\sym{P-Connect.disj}{\\mathsf{disjoint}(\\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_1, \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_2, \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, C_1, C_2)} \\\\ \\inmode{lf}{\\sym{P-Connect.tsum}{\\forall o \\in \\mathrm{dom}\\,\\Sigma_C.\\ \\eta(o)_2 + \\eta(\\overline{o})_2 \\leq N}} \\inmodeplain{lf}{\\\\} \\sym{P-Connect.wf}{\\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{\\sym{P-Connect.join}{(W_1 \\sym{w.join}{\\sqcup} W_2)\\sym{w.restrict}{|}_{\\sym{tp.iface}{\\mathsf{I}(\\Sigma_1 \\cup \\Sigma_2, T)}}}} \\\\ (C_1 \\cup C_2 \\cup \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\sym{tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect} \\\\[2ex] \\sym{P-Connect.n}{\\dfrac{\\begin{array}{c}\\Sigma_1 \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W_1} p_1 : T \\qquad \\Sigma_i \\cup \\overline{\\Sigma_{C,i}} \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W_i} p_i : \\ast\\ \\ (2 \\leq i \\leq n) \\\\ \\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n)\\end{array}}{\\begin{array}{c}\\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W} \\textstyle\\parallel_i p_i : T,\\quad W = (\\cdots((W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2)\\sym{w.restrict}{|}_{\\mathsf{I}_2} \\mathbin{\\sym{w.join}{\\sqcup}} W_3)|_{\\mathsf{I}_3} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n)|_{\\mathsf{I}(\\Sigma, T)} \\\\ \\sym{w.facts}{\\mathsf{facts}}\\,W \\subseteq \\mathsf{facts}((W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n)|_{\\mathsf{I}(\\Sigma, T)})\\end{array}}\\;\\textsf{P-Connect$^{n}$}}\\end{array}\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\sym{tp.lfjudg}{\\Sigma \\Vdash^{N,\\eta}_W p : T \\iff \\sym{lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_W p : T}}\\end{array}",
+     "caption": "P-Term types one thread $t$ that holds both ends of each channel in $C_0$, at [[ty-dual|dual]] types and points, over an interface $\\Sigma$ without partner pairs, with the ends $\\Theta_B$ of these channels. The thread is typed by the [[t-judgment|term judgment]] with no facts and the empty future, so that [[r-base|E-Chan]] closes each end it holds, and its result type is [[ty-kinds|end-free]]. Its world is hidden to the constants of the interface, $W|_{\\mathsf{I}(\\Sigma, T)}$ by the restriction of [[w-ext]]. P-Connect cuts two components at $\\Sigma_C$ against $\\overline{\\Sigma_C}$. Disjoint channel sets make the maps disjoint, and the left premise makes $\\Sigma_C$ free of partner pairs, so the rule asks neither. It asks the join of their two interface [[w-world|worlds]] acyclic, the condition of [[w-wf]]. The check reads the joined order, never two worlds at a time, so a ring of three threads whose worlds are acyclic in pairs and cyclic together is rejected. The [[syn-procs|process]] of the conclusion restricts the cut channels. [[th-compose]] proves both rules in the relation, and [[w-wf]] gives the world a model. \\inmode{lf}{Lock-free process typing is process typing at a finite bound $N$. The worlds must then be well-founded in place of acyclic, which [[t-lf-wf]] explains. The ends of a restricted channel have [[ty-ann|tickets]] of sum at most $N$. The interface annotations $\\eta$ give each interface end $o$ a credit and tickets $\\eta(o) = (a, m)$ with $m \\leq N$, as the [[t-lf-counters|counters block]] explains. P-Term chooses them as [[r-new|E-New]] chooses the tickets of a new channel. P-Connect asks the tickets of the two ends of each cut channel to sum to at most $N$, the check of E-New, and P-Connect$^{n}$ asks it at each of its cuts. The annotations $\\eta(o) = (N/2, N/2)$ give back the earlier rule. A link of two interface ends types at each $N \\geq 1$, as the [[ex-link|link example]] shows.}",
      "why": "Processes are built from single threads by P-Term and composed by P-Connect. Hiding makes components composable. A component exposes only the order between the points of its interface, so two components that use the same private constant in opposite orders still compose, and the soundness proof renames private constants apart. Without hiding the type of a component would mention points that no other component names.",
      "source": [
       {
@@ -1927,7 +1937,7 @@
     {
      "id": "fu-obls",
      "title": "Fuel obligations",
-     "formula": "\\begin{array}{c}\\begin{array}{rcll}\n\\sym{sr.act}{\\mathsf{act}}\\,o & \\iff & \\sym{F-Wait}{\\Phi(o) = S^{f,m} \\land \\neg \\sym{fu.idle}{\\mathsf{idle}}\\,S} & \\textsf{F-Wait} \\\\\n & \\land & \\sym{F-Tick}{\\sym{fu.fspare}{\\mathsf{positive}}(\\Phi \\setminus o)} \\land \\sym{F-Tick.frame}{1 \\leq d} & \\textsf{F-Count} \\\\[4pt]\n\\sym{fu.fspare}{\\mathsf{positive}}(\\Phi) & \\iff & \\sym{fu.fspare}{\\forall o \\mapsto S^{f,m} \\in \\Phi.\\ \\neg\\mathsf{idle}\\,S \\Rightarrow 1 \\leq f} \\\\\n\\sym{fu.tick}{\\Phi{\\downarrow}} & = & \\sym{fu.tick}{\\{o \\mapsto S^{f \\mathbin{\\dot-} 1}_{m} \\mid o \\mapsto S^{f,m} \\in \\Phi\\}} \\\\\n\\sym{fu.idle}{\\mathsf{idle}}\\,S & \\iff & \\sym{sty.unfold}{\\mathsf{unfold}}\\,S = \\sym{sty.skip}{\\mathsf{Skip}}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\sym{F-Beta}{\\mathsf{Fobl}_{\\beta}(e')}}\\;\\textsf{F-Beta} \\qquad\n\\dfrac{\\begin{array}{c}\\sym{F-Force.spare}{\\sym{fu.fspare}{\\mathsf{positive}}(\\Phi) \\land 1 \\leq d} \\\\ e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\sym{fu.tick}{\\Phi{\\downarrow}} \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\sym{F-Force}{\\mathsf{Fobl}_{\\mathsf{force}}(e')}}\\;\\textsf{F-Force} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{F-New.fresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Phi} \\Rightarrow \\exists S, m_1, m_2.\\ m_1 + m_2 \\leq N \\land e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\sym{F-New.cnew}{\\Phi[c^{+} \\mapsto S^{m_1,m_1}, c^{-} \\mapsto \\overline{S}^{m_2,m_2}]} \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\sym{F-New}{\\mathsf{Fobl}_{\\mathsf{new}\\,c}(e')}}\\;\\textsf{F-New} \\\\[10pt]\n\\dfrac{\\begin{array}{c}M = \\sym{syn.fends}{\\mathsf{fends}}(v)\\quad \\sym{F-Spawn.held}{M \\subseteq \\mathrm{dom}\\,\\Phi} \\\\ \\sym{F-Spawn.child}{v\\,\\ast \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi|_M \\vdash \\sym{fu.rty}{\\mathsf{thread}}\\ !\\ \\infty \\rrbracket}} \\\\ e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi \\setminus M \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\sym{F-Spawn}{\\mathsf{Fobl}_{\\mathsf{spawn}\\,v}(e')}}\\;\\textsf{F-Spawn} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{F-Link.plink}{\\Phi(o_1) = S^{f_1,m_1},\\ \\Phi(o_2) = S'^{f_2,m_2},\\ o_1 \\neq o_2,\\ S' \\mathrel{\\sym{sty.sequiv}{\\simeq}} \\overline{S}}\\quad \\sym{F-Link.ticket}{f_1 + m_2 > N,\\ f_2 + m_1 > N} \\\\ e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi \\setminus \\{o_1,o_2\\} \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\sym{F-Link}{\\mathsf{Fobl}_{\\mathsf{link}\\,o_1\\,o_2}(e')}}\\;\\textsf{F-Link}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\sym{sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S^{f,m}\\quad \\sym{sty.unfold}{\\mathsf{unfold}}\\,S = \\sym{sty.send}{!(\\bar\\iota.\\ T)}.S'\\quad M = \\sym{syn.fends}{\\mathsf{fends}}(w)\\quad \\sym{F-Send.notsubj}{o \\notin M \\subseteq \\mathrm{dom}\\,\\Phi}\\quad \\sym{fu.fspare}{\\mathsf{positive}}(\\Phi|_M) \\\\ \\sym{F-Send.payload}{w \\in \\sym{sr.FV}{FV^{N}_{\\beta}\\llbracket \\sym{fu.tick}{\\Phi|_M{\\downarrow}} \\vdash T \\rrbracket}} \\\\ e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\sym{fu.tick}{(\\Phi \\setminus M){\\downarrow}}[o \\mapsto {S'}^{m,m}] \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\sym{F-Send}{\\mathsf{Fobl}_{\\mathsf{send}\\,o\\,w}(e')}}\\;\\textsf{F-Send} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S^{f,m}\\quad \\sym{sty.unfold}{\\mathsf{unfold}}\\,S = \\sym{sty.recv}{?(\\bar\\iota.\\ T)}.S' \\\\ \\sym{F-Recv.forall}{\\forall \\gamma \\leq \\beta,\\ \\Phi_i \\mathbin{\\#} \\Phi.\\ w \\in \\sym{sr.FV}{FV^{N}_{\\gamma}\\llbracket \\Phi_i \\vdash T \\rrbracket}} \\Rightarrow e' \\in \\sym{sr.FE}{F^{N}_{\\gamma}\\llbracket \\sym{fu.tick}{\\Phi{\\downarrow}}[o \\mapsto {S'}^{m,m}] \\cup \\Phi_i \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\sym{F-Recv}{\\mathsf{Fobl}_{\\mathsf{recv}\\,o\\,w}(e')}}\\;\\textsf{F-Recv} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S^{f,m}\\quad \\sym{sty.unfold}{\\mathsf{unfold}}\\,S = \\sym{sty.close}{\\mathsf{Close}} \\\\ e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\sym{fu.tick}{(\\Phi \\setminus o){\\downarrow}} \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\sym{F-Close}{\\mathsf{Fobl}_{\\mathsf{close}\\,o}(e')}}\\;\\textsf{F-Close} \\qquad\n\\dfrac{\\begin{array}{c}\\sym{sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S^{f,m}\\quad \\sym{sty.unfold}{\\mathsf{unfold}}\\,S \\in \\{\\oplus(S',S''), \\&(S',S'')\\} \\\\ e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\sym{fu.tick}{\\Phi{\\downarrow}}[o \\mapsto \\sym{sty.choice}{(\\mathsf{if}\\ i\\ \\mathsf{then}\\ S''\\ \\mathsf{else}\\ S')}^{m,m}] \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\sym{F-Close}{\\mathsf{Fobl}_{\\mathsf{sel}_i\\,o}(e'),\\ \\mathsf{Fobl}_{\\mathsf{bra}_i\\,o}(e')}}\\;\\textsf{F-Choice}\n\\end{array}\\end{array}",
+     "formula": "\\begin{array}{c}\\begin{array}{rcll}\n\\sym{sr.act}{\\mathsf{act}}\\,o & \\iff & \\sym{F-Wait}{\\Phi(o) = S^{f,m} \\land \\neg \\sym{fu.idle}{\\mathsf{idle}}\\,S} & \\textsf{F-Wait} \\\\\n & \\land & \\sym{F-Tick}{\\sym{fu.fspare}{\\mathsf{positive}}(\\Phi \\setminus o)} \\land \\sym{F-Tick.frame}{1 \\leq d} & \\textsf{F-Count} \\\\[4pt]\n\\sym{fu.fspare}{\\mathsf{positive}}(\\Phi) & \\iff & \\sym{fu.fspare}{\\forall o \\mapsto S^{f,m} \\in \\Phi.\\ \\neg\\mathsf{idle}\\,S \\Rightarrow 1 \\leq f} \\\\\n\\sym{fu.tick}{\\Phi{\\downarrow}} & = & \\sym{fu.tick}{\\{o \\mapsto S^{f \\mathbin{\\dot-} 1}_{m} \\mid o \\mapsto S^{f,m} \\in \\Phi\\}} \\\\\n\\sym{fu.idle}{\\mathsf{idle}}\\,S & \\iff & \\sym{sty.unfold}{\\mathsf{unfold}}\\,S = \\sym{sty.skip}{\\mathsf{Skip}}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\sym{F-Beta}{\\mathsf{Fobl}_{\\beta}(e')}}\\;\\textsf{F-Beta} \\qquad\n\\dfrac{\\begin{array}{c}\\sym{F-Force.spare}{\\sym{fu.fspare}{\\mathsf{positive}}(\\Phi) \\land 1 \\leq d} \\\\ e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\sym{fu.tick}{\\Phi{\\downarrow}} \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\sym{F-Force}{\\mathsf{Fobl}_{\\mathsf{force}}(e')}}\\;\\textsf{F-Force} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{F-New.fresh}{c^{\\pm} \\notin \\mathrm{dom}\\,\\Phi} \\Rightarrow \\exists S, m_1, m_2.\\ m_1 + m_2 \\leq N \\land e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\sym{F-New.cnew}{\\Phi[c^{+} \\mapsto S^{m_1,m_1}, c^{-} \\mapsto \\overline{S}^{m_2,m_2}]} \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\sym{F-New}{\\mathsf{Fobl}_{\\mathsf{new}\\,c}(e')}}\\;\\textsf{F-New} \\\\[10pt]\n\\dfrac{\\begin{array}{c}M = \\sym{syn.fends}{\\mathsf{fends}}(v)\\quad \\sym{F-Spawn.held}{M \\subseteq \\mathrm{dom}\\,\\Phi} \\\\ \\sym{F-Spawn.child}{v\\,\\ast \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi|_M \\vdash \\sym{fu.rty}{\\mathsf{thread}}\\ !\\ \\infty \\rrbracket}} \\\\ e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi \\setminus M \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\sym{F-Spawn}{\\mathsf{Fobl}_{\\mathsf{spawn}\\,v}(e')}}\\;\\textsf{F-Spawn} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{F-Link.plink}{\\Phi(o_1) = S^{f_1,m_1},\\ \\Phi(o_2) = S'^{f_2,m_2},\\ o_1 \\neq o_2,\\ S \\mathrel{\\sym{sty.ssub}{\\sqsubseteq}} \\overline{S'}}\\quad \\sym{F-Link.ticket}{f_1 + m_2 > N,\\ f_2 + m_1 > N} \\\\ e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi \\setminus \\{o_1,o_2\\} \\vdash \\sigma\\ !\\ d \\rrbracket}\\end{array}}{\\sym{F-Link}{\\mathsf{Fobl}_{\\mathsf{link}\\,o_1\\,o_2}(e')}}\\;\\textsf{F-Link}\n\\end{array}\\\\[3ex]\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\sym{sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S^{f,m}\\quad \\sym{sty.unfold}{\\mathsf{unfold}}\\,S = \\sym{sty.send}{!(\\bar\\iota.\\ T)}.S'\\quad M = \\sym{syn.fends}{\\mathsf{fends}}(w)\\quad \\sym{F-Send.notsubj}{o \\notin M \\subseteq \\mathrm{dom}\\,\\Phi}\\quad \\sym{fu.fspare}{\\mathsf{positive}}(\\Phi|_M) \\\\ \\sym{F-Send.payload}{w \\in \\sym{sr.FV}{FV^{N}_{\\beta}\\llbracket \\sym{fu.tick}{\\Phi|_M{\\downarrow}} \\vdash T \\rrbracket}} \\\\ e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\sym{fu.tick}{(\\Phi \\setminus M){\\downarrow}}[o \\mapsto {S'}^{m,m}] \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\sym{F-Send}{\\mathsf{Fobl}_{\\mathsf{send}\\,o\\,w}(e')}}\\;\\textsf{F-Send} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S^{f,m}\\quad \\sym{sty.unfold}{\\mathsf{unfold}}\\,S = \\sym{sty.recv}{?(\\bar\\iota.\\ T)}.S' \\\\ \\sym{F-Recv.forall}{\\forall \\gamma \\leq \\beta,\\ \\Phi_i \\mathbin{\\#} \\Phi.\\ w \\in \\sym{sr.FV}{FV^{N}_{\\gamma}\\llbracket \\Phi_i \\vdash T \\rrbracket}} \\Rightarrow e' \\in \\sym{sr.FE}{F^{N}_{\\gamma}\\llbracket \\sym{fu.tick}{\\Phi{\\downarrow}}[o \\mapsto {S'}^{m,m}] \\cup \\Phi_i \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\sym{F-Recv}{\\mathsf{Fobl}_{\\mathsf{recv}\\,o\\,w}(e')}}\\;\\textsf{F-Recv} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S^{f,m}\\quad \\sym{sty.unfold}{\\mathsf{unfold}}\\,S = \\sym{sty.close}{\\mathsf{Close}} \\\\ e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\sym{fu.tick}{(\\Phi \\setminus o){\\downarrow}} \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\sym{F-Close}{\\mathsf{Fobl}_{\\mathsf{close}\\,o}(e')}}\\;\\textsf{F-Close} \\qquad\n\\dfrac{\\begin{array}{c}\\sym{sr.act}{\\mathsf{act}}\\,o\\quad \\Phi(o) = S^{f,m}\\quad \\sym{sty.unfold}{\\mathsf{unfold}}\\,S \\in \\{\\oplus(S',S''), \\&(S',S'')\\} \\\\ e' \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\sym{fu.tick}{\\Phi{\\downarrow}}[o \\mapsto \\sym{sty.choice}{(\\mathsf{if}\\ i\\ \\mathsf{then}\\ S''\\ \\mathsf{else}\\ S')}^{m,m}] \\vdash \\sigma\\ !\\ d \\mathbin{\\dot-} 1 \\rrbracket}\\end{array}}{\\sym{F-Close}{\\mathsf{Fobl}_{\\mathsf{sel}_i\\,o}(e'),\\ \\mathsf{Fobl}_{\\mathsf{bra}_i\\,o}(e')}}\\;\\textsf{F-Choice}\n\\end{array}\\end{array}",
      "caption": "An action on $o$ requires $o$ held and not idle, and a positive counter on the other ends that are not idle and on the frame. It uses one unit of the frame, advances the protocol of $o$, resets the counter of $o$ to its tickets $m$ and decrements the other counters, written $\\Phi{\\downarrow}[o \\mapsto S^{m,m}]$. A force is an action on no end. It asks a positive counter on each held end that is not idle and on the frame, and it decrements each of these counters. The free steps decrement no counter, and a spawn hands the ends of its thunk on at their counters. A new channel starts each end at its tickets. A send hands the ends of its payload on with their counters minus one, read in [[fv]]. A link lowers no counter and asks the counter of each linked end to exceed the partner bound $N - m$ of the other. A send has a payload value $w$, and $d$ is the frame. [[fu]] asks these obligations at each step.",
      "why": "Each kind of step changes the held ends, counters and tickets in one way, the same at each level. The rules of the [[t-lf-counters|counters block]] are their static images, credit for the counter and the same resets, decrements and link condition.",
      "modes": [
@@ -1964,7 +1974,7 @@
     {
      "id": "fv",
      "title": "Values with fuel",
-     "formula": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}S' \\mathrel{\\sym{sty.sequiv}{\\simeq}} S\\quad \\sym{FV-Sess.counter}{a \\leq f}\\end{array}}{\\sym{FV-Sess}{o \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\{o \\mapsto S'^{f,m}\\} \\vdash S_x\\inmode{lf}{^{a,m}} \\rrbracket}}}\\;\\textsf{FV-Sess} \\qquad\n\\dfrac{\\begin{array}{c}\\Phi = \\varnothing\\end{array}}{\\sym{FV-Thread}{v \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi \\vdash \\sym{fu.rty}{\\mathsf{thread}} \\rrbracket}}}\\;\\textsf{FV-Thread} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{FV-Arrow.exact}{\\sym{syn.fends}{\\mathsf{fends}}\\,e = \\mathrm{dom}\\,\\Phi}\\quad \\sym{FV-Arrow.floor}{\\Phi(o) = S^{f} \\land \\neg\\sym{fu.idle}{\\mathsf{idle}}\\,S \\Rightarrow a \\leq f} \\\\ \\forall \\beta < \\alpha,\\ \\sym{FV-Arrow.call}{\\Phi' \\geq \\Phi - a},\\ u \\in \\sym{sr.FV}{FV^{N}_{j}\\llbracket \\Phi_u \\vdash T \\rrbracket} \\\\ \\sym{FV-Arrow.body}{e[u] \\in \\sym{sr.FE}{F^{N}_{j}\\llbracket \\Phi' \\cup \\Phi_u \\vdash U\\ !\\ c \\rrbracket}}\\end{array}}{\\sym{FV-Arrow}{\\lambda e \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi \\vdash (T \\mathrel{\\sym{ty.arrow}{\\multimap}}[c]\\, U)\\inmode{lf}{^{a}} \\rrbracket}}}\\;\\textsf{FV-Arrow} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{FV-Box.noends}{\\sym{syn.fends}{\\mathsf{fends}}\\,e = \\varnothing} \\\\ \\forall \\beta < \\alpha,\\ \\bar s \\in \\sym{tp.sinsts}{\\mathsf{sinsts}}\\,N \\\\ \\sym{FV-Box.body}{e[!e] \\in \\sym{sr.FE}{F^{N}_{j}\\llbracket \\varnothing \\vdash U[\\bar s]\\ !\\ c \\rrbracket}}\\end{array}}{\\sym{FV-Box}{!e \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\varnothing \\vdash \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}[c]\\, U) \\rrbracket}}}\\;\\textsf{FV-Box} \\\\[6pt]\n\\sym{sr.fvagg}{\\langle v_1, v_2\\rangle \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi_1 \\uplus \\Phi_2 \\vdash T_1 \\otimes T_2 \\rrbracket} \\iff v_i \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi_i \\vdash T_i \\rrbracket}}\n\\end{array}",
+     "formula": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}S' \\mathrel{\\sym{sty.ssub}{\\sqsubseteq}} S\\quad \\sym{FV-Sess.counter}{a \\leq f}\\end{array}}{\\sym{FV-Sess}{o \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\{o \\mapsto S'^{f,m}\\} \\vdash S_x\\inmode{lf}{^{a,m}} \\rrbracket}}}\\;\\textsf{FV-Sess} \\qquad\n\\dfrac{\\begin{array}{c}\\Phi = \\varnothing\\end{array}}{\\sym{FV-Thread}{v \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi \\vdash \\sym{fu.rty}{\\mathsf{thread}} \\rrbracket}}}\\;\\textsf{FV-Thread} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{FV-Arrow.exact}{\\sym{syn.fends}{\\mathsf{fends}}\\,e = \\mathrm{dom}\\,\\Phi}\\quad \\sym{FV-Arrow.floor}{\\Phi(o) = S^{f} \\land \\neg\\sym{fu.idle}{\\mathsf{idle}}\\,S \\Rightarrow a \\leq f} \\\\ \\forall \\beta < \\alpha,\\ \\sym{FV-Arrow.call}{\\Phi' \\geq \\Phi - a},\\ u \\in \\sym{sr.FV}{FV^{N}_{j}\\llbracket \\Phi_u \\vdash T \\rrbracket} \\\\ \\sym{FV-Arrow.body}{e[u] \\in \\sym{sr.FE}{F^{N}_{j}\\llbracket \\Phi' \\cup \\Phi_u \\vdash U\\ !\\ c \\rrbracket}}\\end{array}}{\\sym{FV-Arrow}{\\lambda e \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi \\vdash (T \\mathrel{\\sym{ty.arrow}{\\multimap}}[c]\\, U)\\inmode{lf}{^{a}} \\rrbracket}}}\\;\\textsf{FV-Arrow} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{FV-Box.noends}{\\sym{syn.fends}{\\mathsf{fends}}\\,e = \\varnothing} \\\\ \\forall \\beta < \\alpha,\\ \\bar s \\in \\sym{tp.sinsts}{\\mathsf{sinsts}}\\,N \\\\ \\sym{FV-Box.body}{e[!e] \\in \\sym{sr.FE}{F^{N}_{j}\\llbracket \\varnothing \\vdash U[\\bar s]\\ !\\ c \\rrbracket}}\\end{array}}{\\sym{FV-Box}{!e \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\varnothing \\vdash \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}[c]\\, U) \\rrbracket}}}\\;\\textsf{FV-Box} \\\\[6pt]\n\\sym{sr.fvagg}{\\langle v_1, v_2\\rangle \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi_1 \\uplus \\Phi_2 \\vdash T_1 \\otimes T_2 \\rrbracket} \\iff v_i \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi_i \\vdash T_i \\rrbracket}}\n\\end{array}",
      "caption": "Values with fuel by recursion on the type. The counter of an end is at least its [[t-lf-counters|credit]]. A closure keeps the counters of its captured ends that are not idle at least at its credit $a$. Its body has fuel at each call whose counters are at least the counters at creation minus $a$. A box holds no end, and its body has fuel at each force. The [[fu-obls|fuel obligations]] read $FV$ at payloads and thunks.",
      "why": "Values with fuel connect credits in types with counters at run time.",
      "modes": [
@@ -2190,7 +2200,7 @@
           "formula": "\\land"
          },
          {
-          "formula": "\\sym{sp.pdual}{\\sym{end.ech}{\\mathsf{ech}}\\,o \\in C \\land \\Phi(o) = P^{f,m} \\land \\Phi(\\overline{o}) = P'^{f',m'} \\Rightarrow P' \\mathrel{\\sym{sty.sequiv}{\\simeq}} \\overline{P}}"
+          "formula": "\\sym{sp.pdual}{\\sym{end.ech}{\\mathsf{ech}}\\,o \\in C \\land \\Phi(o) = P^{f,m} \\land \\Phi(\\overline{o}) = P'^{f',m'} \\Rightarrow \\overline{P} \\mathrel{\\sym{sty.ssub}{\\sqsubseteq}} P'}"
          }
         ]
        },
@@ -8614,12 +8624,12 @@
    ]
   },
   "tp.sub-sess": {
-   "title": "Session types up to equivalence",
-   "meaning": "$S \\simeq S'$, bisimilar head normal forms with equal annotations, which is $S \\approx S'$ at annotations $\\infty$.",
-   "why": "With $\\mathsf{Skip}$, sequencing and $\\mu$ one protocol has many spellings, e.g. $\\mathsf{Skip}.S \\simeq S$. Rules compare protocols by behaviour.",
+   "title": "Session types up to subtyping",
+   "meaning": "$S \\approx S'$ at annotations $\\infty$\\inmode{lf}{, and with annotations $S \\sqsubseteq S'$, bisimilar head normal forms whose annotations agree except the credits of payloads}.",
+   "why": "With $\\mathsf{Skip}$, sequencing and $\\mu$ one protocol has many spellings, e.g. $\\mathsf{Skip}.S \\simeq S$. Rules compare protocols by behaviour.\\inmode{lf}{ A received payload may be read at a lower credit and a sent payload may be promised at a higher one, because a credit is a lower bound on a counter.}",
    "breaks": "Without it an unfolded recursive protocol and its folded form would be different types, and no loop that acts once and recurses would type.",
    "example": "$\\mu\\alpha.\\,!\\ast.\\alpha \\leq\\ !\\ast.\\mu\\alpha.\\,!\\ast.\\alpha$ at the same point.",
-   "signature": "S \\simeq S'",
+   "signature": "S \\sqsubseteq S'",
    "args": [
     {
      "name": "S, S'",
@@ -8636,7 +8646,7 @@
     {
      "file": "types/Types.v",
      "names": [
-      "sequiv"
+      "ssub"
      ]
     }
    ]
@@ -9841,8 +9851,8 @@
   },
   "E-New.field": {
    "title": "A field $x\\cdot\\kappa$",
-   "meaning": "E-New-Field places the new channel at a field $x\\cdot\\kappa$ of a point $x$ and its dual, with no constraint and no existential.",
-   "why": "The order around a field was fixed with its root, so a field creation adds no fact and hides no point. \\inmode{lf}{Its ranks in a ranked world were chosen when the root was created.}",
+   "meaning": "The field case of E-New places the new channel at a field $x\\cdot\\kappa$ of a point $x$ and its dual, with the constraint $\\top$ and no bound point.",
+   "why": "The order around a field was fixed with its root, so a field creation adds no fact and hides no point. A field may be used by more than one creation. \\inmode{lf}{Its ranks in a ranked world were chosen when the root was created.}",
    "breaks": "A field creation that stated a new fact could ask a rank that the root left no room for.",
    "example": "The example with a channel between two box arguments creates $d$ at $\\iota\\cdot 0$.",
    "signature": "x\\cdot\\kappa \\in \\mathsf{Point}",
@@ -9867,18 +9877,18 @@
   },
   "E-New.dual": {
    "title": "Dual pair",
-   "meaning": "$c^{+}$ has type $S_{\\pi}\\inmode{lf}{^{m_1,m_1}}$ and $c^{-}$ type $\\overline{S}_{\\overline{\\pi}}\\inmode{lf}{^{m_2,m_2}}$ for the position $\\pi$, the fresh root or the field. \\inmode{lf}{Each end starts at credit equal to its tickets.}",
+   "meaning": "$c^{+}$ has type $S_{p}\\inmode{lf}{^{m_1,m_1}}$ and $c^{-}$ type $\\overline{S}_{\\overline{p}}\\inmode{lf}{^{m_2,m_2}}$ for the position $p$, the fresh root or the field. \\inmode{lf}{Each end starts at credit equal to its tickets.}",
    "why": "\\inmode{lf}{Fuel starts each counter of a new channel at the tickets of its end\\inmode{lf}{, and the credits} are lower bounds on these counters.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$S_{\\rho}\\inmode{lf}{^{3,3}} \\otimes \\overline{S}_{\\overline{\\rho}}\\inmode{lf}{^{1,1}}$ at $N = 4$.",
-   "signature": "S_{\\pi}\\inmode{lf}{^{m_1,m_1}} \\otimes \\overline{S}_{\\overline{\\pi}}\\inmode{lf}{^{m_2,m_2}}",
+   "signature": "S_{p}\\inmode{lf}{^{m_1,m_1}} \\otimes \\overline{S}_{\\overline{p}}\\inmode{lf}{^{m_2,m_2}}",
    "args": [
     {
      "name": "S",
      "meaning": "the protocol, chosen by the derivation"
     },
     {
-     "name": "\\pi",
+     "name": "p",
      "meaning": "the position, the fresh root $\\rho$ or the field $x\\cdot\\kappa$"
     },
     {
@@ -10259,15 +10269,15 @@
    "why": "The process judgment has static premises only. Its semantic content comes from the fundamental theorems.",
    "breaks": "Nothing. It is a definition.",
    "example": "The client and server main.",
-   "signature": "\\varnothing ; \\Sigma^{N/2,N/2}, \\Theta_B \\vdash^{(\\varnothing,\\cdot)}_{W\\inmode{lf}{,N}} t : T\\inmode{lf}{\\ !\\ c}",
+   "signature": "\\varnothing ; \\Sigma\\inmode{lf}{^{\\eta}}, \\Theta_B \\vdash^{(\\varnothing,\\cdot)}_{W\\inmode{lf}{,N}} t : T\\inmode{lf}{\\ !\\ c}",
    "args": [
     {
      "name": "t",
      "meaning": "the thread"
     },
     {
-     "name": "\\Sigma^{N/2,N/2}",
-     "meaning": "\\inmode{lf}{the interface at\\inmode{lf}{ credit and }tickets $N/2$}"
+     "name": "\\Sigma\\inmode{lf}{^{\\eta}}",
+     "meaning": "the interface as a context of ends\\inmode{lf}{, each end $o$ at $\\eta(o)$}"
     }
    ],
    "source": [
@@ -10650,12 +10660,12 @@
    ]
   },
   "tp.pjudg": {
-   "title": "$\\Sigma \\vdash\\inmode{lf}{^{N}}_{W} p : T$",
-   "meaning": "The process $p$ is typed over $\\Sigma$ in $W$ at bound $N$ with result $T$, derived by P-Term and P-Connect. $W$ lives on the constants of $\\mathsf{I}(\\Sigma, T)$, so a component is typed by the pair of $\\Sigma$ and its interface world.",
+   "title": "$\\Sigma \\vdash\\inmode{lf}{^{N,\\eta}}_{W} p : T$",
+   "meaning": "The process $p$ is typed over $\\Sigma$ in $W$ at bound $N$\\inmode{lf}{ with interface annotations $\\eta$} with result $T$, derived by P-Term and P-Connect. $W$ lives on the constants of $\\mathsf{I}(\\Sigma, T)$, so a component is typed by the pair of $\\Sigma$ and its interface world.",
    "why": "\\inmode{lf}{One judgment serves deadlock freedom at $N = \\infty$ and lock freedom at finite $N$.} Its soundness reads each component at a whole world that hides to its world, with private constants renamed apart at each P-Connect.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\varnothing \\vdash\\inmode{lf}{^{\\infty}}_{W} (\\varnothing, \\{t\\}) : \\ast$.",
-   "signature": "\\Sigma \\vdash\\inmode{lf}{^{N}}_{W} p : T",
+   "example": "$\\varnothing \\vdash\\inmode{lf}{^{\\infty,\\eta}}_{W} (\\varnothing, \\{t\\}) : \\ast$.",
+   "signature": "\\Sigma \\vdash\\inmode{lf}{^{N,\\eta}}_{W} p : T",
    "args": [
     {
      "name": "\\Sigma",
@@ -10668,6 +10678,13 @@
     {
      "name": "N",
      "meaning": "\\inmode{lf}{the bound on the tickets of a channel, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$}"
+    },
+    {
+     "name": "\\eta",
+     "meaning": "the interface annotations, a credit and tickets for each end",
+     "modes": [
+      "lf"
+     ]
     },
     {
      "name": "p",
@@ -10694,12 +10711,12 @@
    ]
   },
   "tp.lfjudg": {
-   "title": "$\\Sigma \\Vdash^{N}_{W} p : T$",
-   "meaning": "$\\Sigma \\Vdash^{N}_{W} p : T$ iff $N \\in \\mathbb{N}$ and $\\Sigma \\vdash\\inmode{lf}{^{N}}_{W} p : T$.",
+   "title": "$\\Sigma \\Vdash^{N,\\eta}_{W} p : T$",
+   "meaning": "$\\Sigma \\Vdash^{N,\\eta}_{W} p : T$ iff $N \\in \\mathbb{N}$ and $\\Sigma \\vdash\\inmode{lf}{^{N,\\eta}}_{W} p : T$.",
    "why": "Lock freedom needs finite counters. A loop is charged at each force, so no separate check on terms is needed.",
    "breaks": "Nothing. It is a definition.",
    "example": "Two threads closing $c^{+}$ and $c^{-}$, at each $N \\in \\mathbb{N}$.",
-   "signature": "\\Sigma \\Vdash^{N}_{W} p : T \\iff N \\in \\mathbb{N} \\land \\Sigma \\vdash\\inmode{lf}{^{N}}_{W} p : T",
+   "signature": "\\Sigma \\Vdash^{N,\\eta}_{W} p : T \\iff N \\in \\mathbb{N} \\land \\Sigma \\vdash\\inmode{lf}{^{N,\\eta}}_{W} p : T",
    "args": [
     {
      "name": "\\Sigma",
@@ -10780,39 +10797,36 @@
    ]
   },
   "tp.lift": {
-   "title": "$\\Sigma^{N/2,N/2}$",
-   "meaning": "\\inmode{lf}{$\\Sigma$ with each entry at\\inmode{lf}{ credit and }tickets $N/2$.}",
-   "why": "The partner of an interface end belongs to another component. \\inmode{lf}{Half of $N$ on each side keeps the bound on the tickets of a channel when P-Connect joins the two ends.}",
+   "title": "The interface as a context of ends",
+   "meaning": "$\\Sigma$ as a context of ends\\inmode{lf}{, each end $o$ at the credit and tickets $\\eta(o)$}.",
+   "why": "The partner of an interface end belongs to another component. \\inmode{lf}{The annotations of the two ends of a cut channel meet the bound $N$ by the premise of P-Connect.}",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\{c^{+} \\mapsto \\mathsf{Close}_x\\}^{N/2,N/2} = \\{c^{+} \\mapsto \\mathsf{Close}_x\\inmode{lf}{^{N/2,N/2}}\\}$.",
-   "signature": "\\Sigma^{N/2,N/2} : \\mathsf{End} \\rightharpoonup \\mathsf{Sty} \\times \\mathsf{Pt} \\times (\\mathbb{N} \\cup \\{\\infty\\}) \\times (\\mathbb{N} \\cup \\{\\infty\\})",
+   "example": "$\\{c^{+} \\mapsto \\mathsf{Close}_x\\}\\inmode{lf}{^{\\eta}} = \\{c^{+} \\mapsto \\mathsf{Close}_x\\inmode{lf}{^{a,m}}\\}$\\inmode{lf}{ with $\\eta(c^{+}) = (a, m)$}.",
+   "signature": "\\Sigma\\inmode{lf}{^{\\eta}} : \\mathsf{End} \\rightharpoonup \\mathsf{Sty} \\times \\mathsf{Pt} \\times (\\mathbb{N} \\cup \\{\\infty\\}) \\times (\\mathbb{N} \\cup \\{\\infty\\})",
    "args": [
     {
      "name": "\\Sigma",
      "meaning": "the interface, a finite map from the ends the process offers to its environment to $S_x$"
     },
     {
-     "name": "N",
-     "meaning": "\\inmode{lf}{the bound on the tickets of a channel, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$}"
+     "name": "\\eta",
+     "meaning": "the interface annotations, a credit and tickets for each end",
+     "modes": [
+      "lf"
+     ]
     }
    ],
    "source": [
     {
+     "file": "static/Contexts.v",
+     "names": [
+      "tenv_ofk"
+     ]
+    },
+    {
      "file": "static/Typing.v",
      "names": [
       "p_term"
-     ]
-    },
-    {
-     "file": "static/Contexts.v",
-     "names": [
-      "tenv_of"
-     ]
-    },
-    {
-     "file": "types/Costs.v",
-     "names": [
-      "fhalf"
      ]
     }
    ]
@@ -15281,11 +15295,11 @@
   },
   "F-Link.plink": {
    "title": "Dual held ends",
-   "meaning": "$o_1 \\neq o_2$, both held, at protocols $S$ and $S' \\simeq \\overline{S}$, with annotations.",
-   "why": "After the link the partners form one channel, whose protocols are dual only if the two linked protocols were, and annotations must match for later payload credits.",
-   "breaks": "A credit mismatch at a link breaks the payload credit of a later message.",
+   "meaning": "$o_1 \\neq o_2$, both held, at protocols $S$ and $S'$ with $S \\sqsubseteq \\overline{S'}$.",
+   "why": "After the link the partners form one channel. What the partner of $o_1$ sends at some credit, the partner of $o_2$ receives at a credit no higher, because the protocols of the two partners lie below and above $S$ and $\\overline{S'}$ by $\\sqsubseteq$.",
+   "breaks": "With $S'$ and $\\overline{S}$ unrelated a partner receives a payload at a credit that its sender never guaranteed.",
    "example": "$c^{+} \\mapsto S^{2,3}$ and $d^{-} \\mapsto \\overline{S}^{1,3}$.",
-   "signature": "\\Phi(o_1) = S^{f_1,m_1},\\ \\Phi(o_2) = S'^{f_2,m_2},\\ o_1 \\neq o_2,\\ S' \\simeq \\overline{S}",
+   "signature": "\\Phi(o_1) = S^{f_1,m_1},\\ \\Phi(o_2) = S'^{f_2,m_2},\\ o_1 \\neq o_2,\\ S \\sqsubseteq \\overline{S'}",
    "args": [
     {
      "name": "\\Phi",
@@ -15337,8 +15351,8 @@
   },
   "FV-Sess": {
    "title": "$FV$ at $S_x$",
-   "meaning": "An end with protocol $S' \\simeq S$, counter $f \\geq a$ and the tickets $m$ of its type.",
-   "why": "Credits are lower bounds on counters, and the tickets of the type are those fuel resets the counter to.",
+   "meaning": "An end with protocol $S' \\sqsubseteq S$, counter $f \\geq a$ and the tickets $m$ of its type.",
+   "why": "Credits are lower bounds on counters, and the tickets of the type are those fuel resets the counter to. The protocol held at run time lies below the type by $\\sqsubseteq$, so Sub-Sess keeps a value in $FV$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$o \\mapsto S^{3,3}$ at $S_x\\inmode{lf}{^{2,3}}$.",
    "signature": "o \\in FV^{N}_{\\alpha}\\llbracket \\{o \\mapsto S'^{f,m}\\} \\vdash S_x\\inmode{lf}{^{a,m}} \\rrbracket",
@@ -16066,12 +16080,12 @@
    ]
   },
   "sp.pdual": {
-   "title": "Restricted protocols dual",
-   "meaning": "$\\mathsf{ech}\\,o \\in C$, $\\Phi(o) = P^{f}$ and $\\Phi(\\overline{o}) = P'^{f'}$ imply $P' \\simeq \\overline{P}$.",
-   "why": "Lock-free adequacy reads idleness from $\\Phi$, and duality transfers idleness from an end to its dual end.",
+   "title": "Restricted protocols dual up to subtyping",
+   "meaning": "$\\mathsf{ech}\\,o \\in C$, $\\Phi(o) = P^{f}$ and $\\Phi(\\overline{o}) = P'^{f'}$ imply $\\overline{P} \\sqsubseteq P'$.",
+   "why": "Lock-free adequacy reads idleness from $\\Phi$, and $\\sqsubseteq$ and duality transfer idleness from an end to its dual end. What one end sends at some credit, the other end receives at a credit no higher.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Phi(c^{+}) = \\mathsf{Close}^{2}$ and $\\Phi(c^{-}) = \\mathsf{Close}^{1}$.",
-   "signature": "\\mathsf{ech}\\,o \\in C \\land \\Phi(o) = P^{f,m} \\land \\Phi(\\overline{o}) = P'^{f',m'} \\Rightarrow P' \\simeq \\overline{P}",
+   "signature": "\\mathsf{ech}\\,o \\in C \\land \\Phi(o) = P^{f,m} \\land \\Phi(\\overline{o}) = P'^{f',m'} \\Rightarrow \\overline{P} \\sqsubseteq P'",
    "args": [
     {
      "name": "P, P'",
@@ -18797,7 +18811,7 @@
   },
   "th.chprem": {
    "title": "$\\mathsf{chan}_N(\\Sigma, \\Theta_B, C_0)$",
-   "meaning": "$\\Theta_B$ holds both ends of each $c \\in C_0$, dual at dual points, each at credit equal to its tickets with tickets of sum at most $N$, and no channel of $\\Sigma$ is in $C_0$. $\\Theta$ is $\\Sigma$ at credit and tickets $N/2$ together with $\\Theta_B$.",
+   "meaning": "$\\Theta_B$ holds both ends of each $c \\in C_0$, dual at dual points, each at credit equal to its tickets with tickets of sum at most $N$, and no channel of $\\Sigma$ is in $C_0$. $\\Theta$ is $\\Sigma$ at the interface annotations $\\eta$ together with $\\Theta_B$.",
    "why": "These are the premises of P-Term about restricted channels.",
    "breaks": "Nothing. It is a definition.",
    "example": "$C_0 = \\varnothing$ for a thread with no private channel.",
@@ -19260,6 +19274,180 @@
      "names": [
       "ptyped_ren",
       "iface_ren"
+     ]
+    }
+   ]
+  },
+  "sty.ssub": {
+   "title": "Session subtyping $\\sqsubseteq$",
+   "meaning": "The greatest relation with $S \\sqsubseteq S'$ only if $\\mathsf{unfold}(S)$ and $\\mathsf{unfold}(S')$ have the same first action and related continuations. A receive $?(\\bar\\iota.\\,T)$ may become $?(\\bar\\iota.\\,T')$ when $T \\geq_{\\mathrm{cr}} T'$, a send $!(\\bar\\iota.\\,T)$ may become $!(\\bar\\iota.\\,T')$ when $T' \\geq_{\\mathrm{cr}} T$, and the other annotations are equal.",
+   "why": "A credit is a lower bound on a counter. A payload received at some credit is also one at a lower credit, and a payload promised at a higher credit is also one at the credit the protocol asks. At annotations $\\infty$ the relation is $\\simeq$.",
+   "breaks": "Reversing either direction lets a receiver assume a counter that no sender guaranteed, and a thread acts on a payload end after its counter reached $0$.",
+   "example": "$?(S_y^{3}).\\mathsf{Close} \\sqsubseteq\\ ?(S_y^{1}).\\mathsf{Close}$ and $!(S_y^{1}).\\mathsf{Close} \\sqsubseteq\\ !(S_y^{3}).\\mathsf{Close}$.",
+   "signature": "\\cdot \\sqsubseteq \\cdot \\subseteq \\mathsf{STy} \\times \\mathsf{STy}",
+   "args": [
+    {
+     "name": "S, S'",
+     "meaning": "session types with annotations"
+    },
+    {
+     "name": "T \\geq_{\\mathrm{cr}} T'",
+     "meaning": "$T'$ is $T$ with the credit of each end and closure reached through $\\otimes$, $\\oplus$ and $\\exists$ at most the credit at the same place in $T$, and the rest equal up to $\\simeq$"
+    }
+   ],
+   "source": [
+    {
+     "file": "types/Types.v",
+     "names": [
+      "ssub",
+      "sub_step",
+      "crT"
+     ]
+    },
+    {
+     "file": "types/SessSub.v",
+     "names": [
+      "ssub_dual",
+      "ssub_df",
+      "ssub_sinst"
+     ]
+    }
+   ]
+  },
+  "E-New.pos": {
+   "title": "Position of a creation",
+   "meaning": "$(p, \\bar\\rho, C)$ is either $(\\rho, \\rho, C)$ for a fresh root $\\rho$ whose facts $C$ meet the premise $\\mathsf{new\\_ok}_N$, or $(x\\cdot\\kappa, \\cdot, \\top)$ for a field $x\\cdot\\kappa$, with no bound point and no facts.",
+   "why": "A fresh root hides its points and states the facts the program needs about the new points. A field is an old point, whose facts were fixed with the root of $x$, so a field creation states nothing and hides nothing. A field may be used by more than one creation.",
+   "breaks": "A field creation that stated a new fact could contradict the facts fixed with the root of $x$.",
+   "example": "$(\\rho, \\rho, \\{\\rho \\prec \\overline{\\rho\\cdot 0}\\})$ for a fresh root, $(\\iota\\cdot 0, \\cdot, \\top)$ for the field $\\iota\\cdot 0$.",
+   "signature": "(p, \\bar\\rho, C) \\in \\{(\\rho, \\rho, C) \\mid \\mathsf{new\\_ok}_N\\,\\Gamma\\,\\rho\\,C\\} \\cup \\{(x\\cdot\\kappa, \\cdot, \\top)\\}",
+   "args": [
+    {
+     "name": "p",
+     "meaning": "the point of the positive end"
+    },
+    {
+     "name": "\\bar\\rho",
+     "meaning": "the bound point, $\\rho$ at a fresh root and none at a field"
+    },
+    {
+     "name": "C",
+     "meaning": "the facts of the creation, $\\top$ at a field"
+    }
+   ],
+   "source": [
+    {
+     "file": "static/Typing.v",
+     "names": [
+      "e_new",
+      "e_new_fld"
+     ]
+    }
+   ],
+   "deviations": [
+    {
+     "kind": "merged",
+     "reason": "The two constructors e_new and e_new_fld are the two cases of the triple.",
+     "names": [
+      "e_new",
+      "e_new_fld"
+     ]
+    }
+   ]
+  },
+  "E-New.vanish": {
+   "title": "An empty existential",
+   "meaning": "$\\exists^{\\bot}\\cdot.\\ \\top.\\ T$ binds no point and states no fact, and it is the type $T$.",
+   "why": "The field case of E-New has nothing to hide, so its result is the product of the two ends.",
+   "breaks": "Nothing. It is a notation.",
+   "example": "$\\exists^{\\bot}\\cdot.\\ \\top.\\ (S_{x\\cdot 0} \\otimes \\overline{S}_{\\overline{x\\cdot 0}}) = S_{x\\cdot 0} \\otimes \\overline{S}_{\\overline{x\\cdot 0}}$.",
+   "signature": "\\exists^{\\bot}\\cdot.\\ \\top.\\ T = T",
+   "args": [
+    {
+     "name": "T",
+     "meaning": "a type"
+    }
+   ],
+   "source": [
+    {
+     "file": "static/Typing.v",
+     "names": [
+      "e_new_fld"
+     ]
+    }
+   ],
+   "deviations": [
+    {
+     "kind": "notation",
+     "reason": "The Rocq types the field case at the product directly, and the map writes it as an existential with no bound point and no facts.",
+     "names": [
+      "e_new_fld"
+     ]
+    }
+   ]
+  },
+  "P-Term.ann": {
+   "title": "Interface annotations",
+   "meaning": "$\\eta$ maps each end $o$ to a credit and tickets $\\eta(o) = (a, m)$. P-Term asks $m \\leq N$ for each end of $\\Sigma$, and the thread holds $o$ at $S_x^{a,m}$.",
+   "why": "The tickets of an interface end are an upper bound on its counter, and the partner of the end is held by another component. Each component picks the tickets of its interface ends, and P-Connect checks the two sides of each cut against $N$.",
+   "breaks": "With each interface end at $N/2$ a link of two interface ends asks $N/2 + N/2 > N$, so no forwarding component types over an interface.",
+   "example": "$\\eta(c^{+}) = \\eta(d^{-}) = (N, N)$ and $\\eta(c^{-}) = \\eta(d^{+}) = (0, 0)$ for the [[ex-link|link]] closed by its two partners.",
+   "signature": "\\eta : \\mathsf{End} \\to (\\mathbb{N} \\cup \\{\\infty\\}) \\times (\\mathbb{N} \\cup \\{\\infty\\})",
+   "args": [
+    {
+     "name": "\\eta",
+     "meaning": "the interface annotations, a credit and tickets for each end"
+    },
+    {
+     "name": "a, m",
+     "meaning": "the credit and the tickets of the end $o$"
+    }
+   ],
+   "source": [
+    {
+     "file": "static/Typing.v",
+     "names": [
+      "p_term"
+     ]
+    },
+    {
+     "file": "types/Types.v",
+     "names": [
+      "iann"
+     ]
+    },
+    {
+     "file": "static/Contexts.v",
+     "names": [
+      "tenv_ofk"
+     ]
+    }
+   ]
+  },
+  "P-Connect.tsum": {
+   "title": "Tickets at a cut",
+   "meaning": "For each end $o$ of $\\Sigma_C$ the tickets $\\eta(o)_2$ of $o$ and $\\eta(\\overline{o})_2$ of its partner sum to at most $N$.",
+   "why": "P-Connect makes $o$ and $\\overline{o}$ the two ends of one channel, which E-New would have created with tickets of sum at most $N$. A waiting thread then faces a partner with counter at most $N - m$.",
+   "breaks": "Two components that each give a cut end $N$ tickets would let one end wait on a partner with counter up to $N$, beyond what the end bounds.",
+   "example": "$N + 0 \\leq N$ at each of the two cuts of the closed link.",
+   "signature": "\\forall o \\in \\mathrm{dom}\\,\\Sigma_C.\\ \\eta(o)_2 + \\eta(\\overline{o})_2 \\leq N",
+   "args": [
+    {
+     "name": "\\Sigma_C",
+     "meaning": "the cut, the ends of the left component whose partners the right component holds"
+    }
+   ],
+   "source": [
+    {
+     "file": "static/Typing.v",
+     "names": [
+      "p_connect"
+     ]
+    },
+    {
+     "file": "types/Costs.v",
+     "names": [
+      "tsum_ok"
      ]
     }
    ]
@@ -19774,10 +19962,10 @@
   },
   {
    "id": "ex-link",
-   "title": "A link at full tickets",
+   "title": "A link at full tickets, closed over its interface",
    "lead": "A link types at each bound once each creation chooses how to split its tickets, by [[r-new|E-New]] and the premise of [[r-act|E-Link]].",
-   "code": "⟨c⁺, c⁻⟩ = new         -- c⁺ with N tickets, c⁻ with 0\n⟨d⁺, d⁻⟩ = new         -- d⁻ with N tickets, d⁺ with 0\nlink ⟨c⁺, d⁻⟩          -- c⁺ at x, d⁻ at x̄, both at credit N",
-   "meaning": "[[r-act|E-Link]] asks $a_1 + m_2 > N$ and $a_2 + m_1 > N$. With the tickets of a channel split as $N/2$ and $N - N/2$ the link types at no even $N$. A creation chooses $m_1 + m_2 \\leq N$, so each linked end can hold the $N$ tickets of its channel and its dual end none. Then $N + N > N$ holds for each $N \\geq 1$, and each channel meets the bound with $N + 0 \\leq N$.",
+   "code": "⟨c⁺, c⁻⟩ = new         -- c⁺ with N tickets, c⁻ with 0\n⟨d⁺, d⁻⟩ = new         -- d⁻ with N tickets, d⁺ with 0\nlink ⟨c⁺, d⁻⟩          -- c⁺ at x, d⁻ at x̄, both at credit N\n\nlink ⟨c⁺, d⁻⟩ ∥ close c⁻ ∥ close d⁺   -- η(c⁺) = η(d⁻) = (N, N), η(c⁻) = η(d⁺) = (0, 0)",
+   "meaning": "[[r-act|E-Link]] asks $a_1 + m_2 > N$ and $a_2 + m_1 > N$. With the tickets of a channel split as $N/2$ and $N - N/2$ the link types at no even $N$. A creation chooses $m_1 + m_2 \\leq N$, so each linked end can hold the $N$ tickets of its channel and its dual end none. Then $N + N > N$ holds for each $N \\geq 1$, and each channel meets the bound with $N + 0 \\leq N$. The interface annotations of [[p-typing|P-Term]] give the linked ends credit and tickets $N$ and their partners none, so each cut of P-Connect meets $N + 0 \\leq N$. With the two partners closing their ends the link is a closed process, typed and lock free at each $N \\geq 1$.",
    "modes": [
     "lf"
    ],
@@ -19787,15 +19975,18 @@
      "names": [
       "lk_new",
       "lk_typed",
-      "lk_ok"
+      "lk_ok",
+      "lk_closed_typed",
+      "lk_closed_lock_free"
      ]
     }
    ],
    "x-gv-accepts": {
     "lf": {
      "ok": true,
-     "part": "the link typed at each N of at least 1",
-     "rocq": "lk_typed, lk_ok"
+     "N": "every",
+     "part": "the closed link at each N of at least 1",
+     "rocq": "lk_typed, lk_closed_typed, lk_closed_lock_free"
     }
    }
   },

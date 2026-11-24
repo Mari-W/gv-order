@@ -110,9 +110,9 @@ Proof.
   apply d_unit'. intros [|[|[|[|z]]]] o Hz; try (by injection Hz as <-); done.
 Qed.
 
-Theorem pr_term : ptyped None (swrestrict sw_empty (iface ∅ TUnit)) ∅ (∅, {[+ pr_thread +]}) TUnit.
+Theorem pr_term : ptyped None (khalf None) (swrestrict sw_empty (iface ∅ TUnit)) ∅ (∅, {[+ pr_thread +]}) TUnit.
 Proof.
-  apply (p_term None sw_empty ∅ ∅ ∅ _ TUnit None).
+  apply (p_term_half None sw_empty ∅ ∅ ∅ _ TUnit None).
   - constructor.
   - intros o. rewrite dom_empty_L. set_solver.
   - unfold chans_of. rewrite dom_empty_L. set_solver.

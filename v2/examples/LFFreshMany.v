@@ -160,7 +160,7 @@ Proof.
   Unshelve. all: first [apply tsub_refl | exact None | simpl; lia | simpl; done].
 Qed.
 
-Theorem fm_lftyped : ∃ N, ∅ ⊩^N _ (swrestrict W_fm (iface ∅ TUnit)) (∅, {[+ fm_main +]}) : TUnit.
+Theorem fm_lftyped : ∃ N, ∅ ⊩^N,(khalf (Some N)) _ (swrestrict W_fm (iface ∅ TUnit)) (∅, {[+ fm_main +]}) : TUnit.
 Proof.
   destruct fml_typedN as (c & Ht). exists 8.
   eapply lf_main_typed; [apply W_fm_wf|constructor|exact Ht].

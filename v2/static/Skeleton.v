@@ -83,7 +83,7 @@ Inductive skle : ty → ty → Prop :=
   | skl_sum T1 U T1' U' : skle T1 T1' → skle U U' → skle (TSum T1 U) (TSum T1' U')
   | skl_box n k C ub c U U' c' :
       fle c c' → boxeq k U U' → skle (TBox n k C ub c U) (TBox n k C ub c' U')
-  | skl_sess s s' x a a' m : sequiv s s' → fle a' a → skle (TSess s x a m) (TSess s' x a' m)
+  | skl_sess s s' x a a' m : ssub s s' → fle a' a → skle (TSess s x a m) (TSess s' x a' m)
   | skl_ex lb n C T T' : skle T T' → skle (TEx lb n C T) (TEx lb n C T').
 
 Lemma teq_trans T U V : teq T U → teq U V → teq T V.
@@ -101,13 +101,13 @@ Qed.
 
 Lemma skle_refl T : skle T T.
 Proof.
-  induction T; constructor; auto using fle_refl, sequiv_refl, boxeq_refl.
+  induction T; constructor; auto using fle_refl, ssub_refl, boxeq_refl.
 Qed.
 
 Lemma skle_trans T U V : skle T U → skle U V → skle T V.
 Proof.
   revert T V. induction U; intros T0 V H1 H2; inversion H1; subst; inversion H2; subst; constructor;
-    eauto using fle_trans, sequiv_trans, boxeq_trans.
+    eauto using fle_trans, ssub_trans, boxeq_trans.
 Qed.
 
 Lemma tsub_skle W Γ T T' : tsub W Γ T T' → skle (skel T) (skel T').
@@ -129,7 +129,7 @@ Qed.
 
 Lemma tage_skle c T T' : tage c T T' → skle T T'.
 Proof.
-  induction 1; try (constructor; auto using fsub_le, fle_refl, sequiv_refl, skle_refl; done).
+  induction 1; try (constructor; auto using fsub_le, fle_refl, ssub_refl, skle_refl; done).
   apply skle_refl.
 Qed.
 
@@ -148,11 +148,11 @@ Qed.
 (** *** Views of [skle] *)
 
 Lemma skle_sess_l s x a m T :
-  skle (TSess s x a m) T → ∃ s' a', T = TSess s' x a' m ∧ sequiv s s' ∧ fle a' a.
+  skle (TSess s x a m) T → ∃ s' a', T = TSess s' x a' m ∧ ssub s s' ∧ fle a' a.
 Proof. inversion 1; subst. eauto. Qed.
 
 Lemma skle_sess_r s' x a' m T :
-  skle T (TSess s' x a' m) → ∃ s a, T = TSess s x a m ∧ sequiv s s' ∧ fle a' a.
+  skle T (TSess s' x a' m) → ∃ s a, T = TSess s x a m ∧ ssub s s' ∧ fle a' a.
 Proof. inversion 1; subst. eauto. Qed.
 
 Lemma skle_prod_l T1 U T :
@@ -603,6 +603,24 @@ Proof.
   eexists _, _. split; [|done]. by rewrite unfoldS_unview, Hs.
 Qed.
 
+Lemma ssub_unfold_snd' s S0 m T S :
+  ssub s S0 → unfoldS S0 = SSeq (SSnd m T) S →
+  ∃ T' S', unfoldS s = SSeq (SSnd m T') S' ∧ crT T T'.
+Proof.
+  intros Hq Hu. apply ssub_hd in Hq. unfold sub_step in Hq. rewrite (hd_of _ _ Hu) in Hq. simpl in Hq.
+  destruct (hd s) eqn:Hs; simpl in Hq; try done. destruct_and!; subst.
+  eexists _, _. split; [|done]. by rewrite unfoldS_unview, Hs.
+Qed.
+
+Lemma ssub_unfold_rcv' s S0 m T S :
+  ssub s S0 → unfoldS S0 = SSeq (SRcv m T) S →
+  ∃ T' S', unfoldS s = SSeq (SRcv m T') S' ∧ crT T' T.
+Proof.
+  intros Hq Hu. apply ssub_hd in Hq. unfold sub_step in Hq. rewrite (hd_of _ _ Hu) in Hq. simpl in Hq.
+  destruct (hd s) eqn:Hs; simpl in Hq; try done. destruct_and!; subst.
+  eexists _, _. split; [|done]. by rewrite unfoldS_unview, Hs.
+Qed.
+
 Lemma idle_dual_iff S : idle (dual S) ↔ idle S.
 Proof.
   rewrite !idle_hd, hd_dual. destruct (hd S); done.
@@ -740,7 +758,7 @@ Proof.
   - destruct H as (-> & -> & -> & -> & -> & H). split; constructor; try apply fle_refl.
     + destruct k'; simpl in *; [done|by left].
     + destruct k'; simpl in *; [by apply teq_sym|by left].
-  - destruct H as (-> & -> & -> & H). split; constructor; auto using fle_refl, sequiv_sym.
+  - destruct H as (-> & -> & -> & H). split; constructor; auto using fle_refl, sequiv_ssub, sequiv_sym.
   - destruct H as (-> & -> & -> & H). destruct (IH1 _ H). split; constructor; auto.
 Qed.
 

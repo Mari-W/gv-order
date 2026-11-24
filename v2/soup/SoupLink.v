@@ -64,7 +64,7 @@ Section link.
     o1 ≠ o2 ∧
     (∃ h, K !! o1 = Some h ∧ h.(h_th) = i) ∧ (∃ h, K !! o2 = Some h ∧ h.(h_th) = i) ∧
     (∃ Sa Sb xa, A !! o1 = Some (Sa, xa) ∧ A !! o2 = Some (Sb, pt_dual xa) ∧ sdual Sa Sb) ∧
-    (∃ Pa Pb, Π !! o1 = Some Pa ∧ Π !! o2 = Some Pb ∧ sequiv Pb (dual Pa)) ∧
+    (∃ Pa Pb, Π !! o1 = Some Pa ∧ Π !! o2 = Some Pb ∧ ssub Pa (dual Pb)) ∧
     e' ∈ E[live]^W _ lv⟦kdel2 o1 o2 (kres K i A) ⊢ U i⟧^∅ ∧
     lok (Some N) (ctrs K i) ({[o1]} ∪ {[o2]}) ∧
     e' ∈ F^(Some N) _ lv⟦RThread ▷ None⟧(kdel2 o1 o2 (kres K i Π), kdel2 o1 o2 (ctrs K i)).
@@ -85,13 +85,13 @@ Section link.
       (split; [done|]); (split; [eauto|]); (split; [eauto|]); split_and!.
     - exists S1, S2, x. done.
     - destruct (pair_set_eq _ _ _ _ Hqs Hq12) as [[-> ->]|[-> ->]]; [by exists P1, P2|].
-      exists P2, P1. split_and!; [done|done|by apply pdual_sym].
+      exists P2, P1. split_and!; [done|done|by apply plink_sym].
     - eapply at_cost_E_live; [|exact HE'|exact Hlv]. cbn; lia.
     - done.
     - exact HF'.
     - exists S2, S1, (pt_dual x). split_and!; [done|by rewrite pt_dual_dual|by apply sdual_sym].
     - destruct (pair_set_eq _ _ _ _ Hqs Hq12) as [[-> ->]|[-> ->]]; [by exists P1, P2|].
-      exists P2, P1. split_and!; [done|done|by apply pdual_sym].
+      exists P2, P1. split_and!; [done|done|by apply plink_sym].
     - eapply at_cost_E_live; [|exact HE'|exact Hlv]. cbn; lia.
     - done.
     - exact HF'.
@@ -141,7 +141,7 @@ Section link.
         * eapply (FuelE_rename _ _ _ _ _ _ _ (csub o1 o2)); [apply kinj_csub|apply kinj_csub|
             apply kmapr_renk, kinj_csub|apply kmapr_renk, kinj_csub|exact H2].
     - rewrite !fmap_kmapr by apply kinj_csub. f_equal. unfold kdel2. rewrite !fmap_delete. f_equal. f_equal.
-      apply (sp_pts _ _ _ _ _ _ _ _ _ Hs).
+      apply (sp_pts _ _ _ _ _ _ _ _ _ _ Hs).
     - rewrite !dom_kmapr by apply kinj_csub. f_equal. by apply dom_kdel2_eq.
     - intros o' h Ho'. apply kmapr_lookup_inv in Ho' as (a & -> & Ha). apply lookup_kdel2 in Ha as (_ & _ & Ha).
       pose proof (s_threads _ _ _ _ _ _ _ _ _ _ _ Hs a h Ha) as Ht.
@@ -173,14 +173,14 @@ Section link.
       + rewrite kmapr_id_ext in H3, H4 by apply csub_self.
         apply lookup_kdel2 in H3 as (_ & _ & H3). apply lookup_kdel2 in H4 as (_ & _ & H4).
         exact (s_pdual _ _ _ _ _ _ _ _ Hs o' Q1 Q2 H3 H4).
-      + refine (link_pair (λ v v', sequiv v' (dual v)) Π o1 o2 H12 Hns _ _ _ o' Q1 Q2 H3 H4).
+      + refine (link_pair (λ v v', ssub (dual v) v') Π o1 o2 H12 Hns _ _ _ o' Q1 Q2 H3 H4).
         * intros P P' HP. by apply pdual_sym.
         * intros a P P' H5 H6. exact (s_pdual _ _ _ _ _ _ _ _ Hs a P P' H5 H6).
         * intros R1 R2 H5 H6.
           pose proof (s_pdual _ _ _ _ _ _ _ _ Hs o1 Pa R1 HB1 H5) as Hd1.
           pose proof (s_pdual _ _ _ _ _ _ _ _ Hs o2 Pb R2 HB2 H6) as Hd2.
           exact (pdual_link Pa Pb R1 R2 Hpab Hd1 Hd2).
-    - apply kfin_kmapr. unfold kdel2. apply kfin_delete, kfin_delete. exact (sp_fin _ _ _ _ _ _ _ _ _ Hs).
+    - apply kfin_kmapr. unfold kdel2. apply kfin_delete, kfin_delete. exact (sp_fin _ _ _ _ _ _ _ _ _ _ Hs).
     - intros o' h Ho'. apply kmapr_lookup_inv in Ho' as (a & -> & Ha). apply lookup_kdel2 in Ha as (_ & _ & Ha).
       exact (s_kcap_ok _ _ _ _ _ _ _ _ _ _ _ Hs a h Ha).
     - intros o' h h' H3 H4. destruct (decide (o2 = edual o1)) as [->|Hns].

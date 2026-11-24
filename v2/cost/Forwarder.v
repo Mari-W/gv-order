@@ -80,16 +80,23 @@ Proof.
         rewrite lookup_nil in Hy. done.
 Qed.
 
-Theorem fw_ptyped N o x :
-  ptyped N (swrestrict W_fw (iface {[o := (S_fw, x)]} TUnit)) {[o := (S_fw, x)]} (∅, {[+ fw o +]}) TUnit.
+Theorem fw_ptyped N (η : iann) o x : fle (η o).1 (η o).2 → fle (η o).2 N →
+  ptyped N η (swrestrict W_fw (iface {[o := (S_fw, x)]} TUnit)) {[o := (S_fw, x)]} (∅, {[+ fw o +]}) TUnit.
 Proof.
-  eapply (p_term N W_fw _ ∅ ∅ _ TUnit fw_cost).
+  intros Ham HmN.
+  eapply (p_term N η W_fw _ ∅ ∅ _ TUnit fw_cost).
   - constructor.
   - intros o'. rewrite dom_empty_L. set_solver.
   - set_solver.
   - apply pfree_singleton.
   - intros o' e' He. apply lookup_singleton_Some in He as [_ <-]. vm_compute. exact I.
   - set_solver.
-  - rewrite map_union_empty. unfold tenv_of. rewrite map_fmap_singleton. apply fw_typed, fle_refl.
+  - intros o' Ho'. rewrite dom_singleton_L, elem_of_singleton in Ho'. by subst o'.
+  - rewrite map_union_empty.
+    assert (tenv_ofk η {[o := (S_fw, x)]} = {[o := TE S_fw x (η o).1 (η o).2]}) as ->.
+    { apply map_eq. intros o'. rewrite lookup_tenv_ofk. destruct (decide (o' = o)) as [->|Hne].
+      - by rewrite !lookup_singleton_eq.
+      - by rewrite !lookup_singleton_ne. }
+    by apply fw_typed.
   - apply sw_empty_wok.
 Qed.

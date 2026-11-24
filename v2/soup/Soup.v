@@ -49,11 +49,18 @@ From GV Require Export soup.State soup.Idle relation.Adequacy lockfree.ThreadPro
 (** ** The soup at one index
 
     The clauses are the generic record [soup_gen] of soup/State.v at the
-    live relation and at FuelE^N. *)
+    live relation and at FuelE^N, with the interface annotations η.
+    [soup_inv] fixes η to N/2 at every end, which is all a run of a
+    closed process reads ([soup_gen_ann]). *)
+
+Definition soup_invk (N : nat) (η : iann) (n : Ix) (W : world) (Σ : senv) (T : ty) (a : lfstate)
+    (A : senv) (Π : penv) (U : nat → ty) : Prop :=
+  soup_gen (Some N) η (λ Θ U e, e ∈ E[live]^W _ n⟦Θ ⊢ U⟧^∅)
+    (λ Π φ e, e ∈ F^(Some N) _ n⟦RThread ▷ None⟧(Π, φ)) Σ T a A Π U.
 
 Definition soup_inv (N : nat) (n : Ix) (W : world) (Σ : senv) (T : ty) (a : lfstate)
     (A : senv) (Π : penv) (U : nat → ty) : Prop :=
-  soup_gen (Some N) (λ Θ U e, e ∈ E[live]^W _ n⟦Θ ⊢ U⟧^∅)
+  soup_gen (Some N) (khalf (Some N)) (λ Θ U e, e ∈ E[live]^W _ n⟦Θ ⊢ U⟧^∅)
     (λ Π φ e, e ∈ F^(Some N) _ n⟦RThread ▷ None⟧(Π, φ)) Σ T a A Π U.
 
 (** The soup reads its threads at the world of the state, which extends
@@ -70,8 +77,19 @@ Lemma soup_inv_mono N n V V' Σ T a A Π U :
   wext V V' → soup_inv N n V Σ T a A Π U → soup_inv N n V' Σ T a A Π U.
 Proof.
   intros HV Hs. constructor; try apply Hs.
-  intros t e He. eapply Erel_mono; [exact HV|]. by apply (sp_rel _ _ _ _ _ _ _ _ _ Hs).
+  intros t e He. eapply Erel_mono; [exact HV|]. by apply (sp_rel _ _ _ _ _ _ _ _ _ _ Hs).
 Qed.
+
+Lemma soup_invk_mono N η n V V' Σ T a A Π U :
+  wext V V' → soup_invk N η n V Σ T a A Π U → soup_invk N η n V' Σ T a A Π U.
+Proof.
+  intros HV Hs. constructor; try apply Hs.
+  intros t e He. eapply Erel_mono; [exact HV|]. by apply (sp_rel _ _ _ _ _ _ _ _ _ _ Hs).
+Qed.
+
+(** The states of a component over an interface with annotations η. *)
+Definition SoupK (N : nat) (η : iann) (W : world) (n : Ix) (Σ : senv) (T : ty) (a : lfstate) : Prop :=
+  wext W (s_W a) ∧ ∃ A Π U, soup_invk N η n (s_W a) Σ T a A Π U.
 
 (** ** The lock-free judgment *)
 
@@ -84,6 +102,17 @@ Definition lf_sem (N : nat) (W : world) (Σ : senv) (p : proc) (T : ty) : Prop :
 Notation "Σ ⊪^ N '_' W p : T" := (lf_sem N W Σ p T)
   (at level 74, N at level 0, W at level 0, p at level 60, T at level 60,
    format "Σ  ⊪^ N  '_' W  p  :  T").
+
+(** The judgment of a component over an interface with annotations η. *)
+Definition lf_semk (N : nat) (η : iann) (W : world) (Σ : senv) (p : proc) (T : ty) : Prop :=
+  ∀ n, ∃ a, erase (s_q a) = p ∧ SoupK N η W n Σ T a.
+
+(** A closed component does not read its annotations. *)
+Lemma lf_semk_closed N η W p T : lf_semk N η W ∅ p T → ∅ ⊪^N _ W p : T.
+Proof.
+  intros H n. destruct (H n) as (a & Ha & HW & A & Π & U & Hs). exists a. split; [done|].
+  split; [done|]. exists A, Π, U. exact (soup_gen_ann _ _ _ _ _ _ _ _ _ _ Hs).
+Qed.
 
 (** ** The index-free update *)
 

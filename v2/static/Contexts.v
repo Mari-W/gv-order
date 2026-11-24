@@ -18,7 +18,7 @@
     capture of E-Abs is aging. Credits sit on ends and closures only, so
     both recurse through products, sums and existentials. *)
 
-From GV Require Export types.Contractive.
+From GV Require Export types.SessSub.
 
 (** ** Environments *)
 
@@ -93,6 +93,22 @@ Fixpoint lenv_bot (Δ : lenv) : bool :=
 Abbreviation senv := (gmap cend (sty * point)).
 
 Definition tenv_of (a : fuel) (Σ : senv) : tenv := (λ e, TE e.1 e.2 a a) <$> Σ.
+
+(** The context of ends that the interface annotations η give Σ. *)
+Definition tenv_ofk (η : iann) (Σ : senv) : tenv :=
+  map_imap (λ o e, Some (TE e.1 e.2 (η o).1 (η o).2)) Σ.
+
+Lemma lookup_tenv_ofk η Σ o : tenv_ofk η Σ !! o = (λ e, TE e.1 e.2 (η o).1 (η o).2) <$> Σ !! o.
+Proof. unfold tenv_ofk. rewrite map_lookup_imap. by destruct (Σ !! o). Qed.
+
+Lemma dom_tenv_ofk η Σ : dom (tenv_ofk η Σ) = dom Σ.
+Proof.
+  apply set_eq. intros o. rewrite !elem_of_dom, lookup_tenv_ofk.
+  destruct (Σ !! o); simpl; split; intros [? ?]; try done; by eexists.
+Qed.
+
+Lemma tenv_ofk_half N Σ : tenv_ofk (khalf N) Σ = tenv_of (fhalf N) Σ.
+Proof. apply map_eq. intros o. rewrite lookup_tenv_ofk. unfold tenv_of. by rewrite lookup_fmap. Qed.
 
 (** ** Futures and hypotheses *)
 
@@ -541,7 +557,9 @@ Definition thage (c : fuel) (Θ Θ' : tenv) : Prop :=
 (** ** Subtyping
 
     W ; Γ ⊢ T ≤ T'. Costs are covariant, arguments contravariant,
-    results covariant, sessions up to ≈. A credit may fall. At an arrow
+    results covariant. Sessions compare by ⊑ ([ssub]), which is ≈ except
+    that a received payload may fall in credit and a sent payload may
+    rise. A credit may fall. At an arrow
     the credit a bounds what the captured counters may lose before a
     call, so it may fall as well (a' ≤ a). A
     product, a sum and an existential compare their parts. An
@@ -571,7 +589,7 @@ Inductive tsub (W : sworld) : hctx → ty → ty → Prop :=
       (match k with 0 => teq U U' | S _ => U = U' ∨ (teq U U' ∧ tcontr U ∧ tcontr U') end) →
       tsub W Γ (TBox n k C ub c U) (TBox n k C ub c' U')
   | sub_sess Γ s s' x a a' mt :
-      sequiv s s' → fle a' a → tsub W Γ (TSess s x a mt) (TSess s' x a' mt)
+      ssub s s' → fle a' a → tsub W Γ (TSess s x a mt) (TSess s' x a' mt)
   | sub_ex Γ lb lb' n C C' T T' :
       hold_at W (hc_open n C Γ) (bcs_inst (pshift n) C') (ids n) →
       lb_lower W Γ n C lb lb' T →

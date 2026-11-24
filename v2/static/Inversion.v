@@ -167,18 +167,18 @@ Section inversion.
   Qed.
 
   (** A channel typed at an end type has, in Θ, a session type
-      equivalent to the one of that type. E-Sub changes the session type
-      only up to ≈, and E-Open leaves session types alone. *)
+      below the one of that type by ⊑. E-Sub changes the session type
+      along ⊑, and E-Open leaves session types alone. *)
   Lemma inv_chan_sty Θ Γ Δ F o T c :
     typed W N Θ Γ Δ F (Chan o) T c →
-    ∀ S x a mS, T = TSess S x a mS → ∃ e, Θ !! o = Some e ∧ sequiv (te_sty e) S.
+    ∀ S x a mS, T = TSess S x a mS → ∃ e, Θ !! o = Some e ∧ ssub (te_sty e) S.
   Proof.
     remember (Chan o) as e0 eqn:He. induction 1; try discriminate.
     - injection He as ->. intros S' x' a' m' HT. injection HT as -> -> -> ->.
-      exists (TE S' x' a' m'). split; [by simplify_map_eq|apply sequiv_refl].
+      exists (TE S' x' a' m'). split; [by simplify_map_eq|apply ssub_refl].
     - intros S' x' a' m' ->. inversion H0; subst.
       destruct (IHtyped eq_refl _ _ _ _ eq_refl) as (e' & Hl & Hs).
-      exists e'. split; [done|]. by eapply sequiv_trans.
+      exists e'. split; [done|]. by eapply ssub_trans.
     - intros S' x' a' m' ->. destruct (IHtyped He S' (pt_inst (pshift m) x') a' m' eq_refl) as (e' & Hl & Hs).
       unfold tenv_pinst in Hl. rewrite lookup_fmap in Hl.
       destruct (Θ !! o) as [e0|] eqn:E; [|discriminate]. injection Hl as <-.
@@ -228,20 +228,21 @@ Proof.
   by rewrite gmultiset_disj_union_right_id.
 Qed.
 
-Lemma ptyped_nonempty N W Σ p T : ptyped N W Σ p T → p.2 ≠ ∅.
+Lemma ptyped_nonempty N η W Σ p T : ptyped N η W Σ p T → p.2 ≠ ∅.
 Proof. induction 1; simpl; multiset_solver. Qed.
 
 (** A process of one thread ends with P-Term. *)
-Lemma ptyped_one N W Σ C0 t T :
-  ptyped N W Σ (C0, {[+ t +]}) T →
+Lemma ptyped_one N η W Σ C0 t T :
+  ptyped N η W Σ (C0, {[+ t +]}) T →
   ∃ W' ΘB c, W = swrestrict W' (iface Σ T) ∧ tfree T ∧ (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) ∧ chans_of Σ ## C0 ∧ pfree Σ ∧
     (∀ o e, Σ !! o = Some e → scontr e.1) ∧
     (∀ ch, ch ∈ C0 → ∃ S x m m', tsum_ok N m m' ∧ scontr S ∧
        ΘB !! (ch⁺)%cend = Some (TE S x m m) ∧ ΘB !! (ch⁻)%cend = Some (TE (dual S) x‾ m' m')) ∧
-    typed W' N (tenv_of (fhalf N) Σ ∪ ΘB) hc_empty [] (∅, None) t T c ∧
+    (∀ o, o ∈ dom Σ → fle (η o).2 N) ∧
+    typed W' N (tenv_ofk η Σ ∪ ΘB) hc_empty [] (∅, None) t T c ∧
     (sworld_wf W' ∧ wok N W').
 Proof.
-  intros H. remember (C0, {[+ t +]}) as p eqn:Hp. destruct H as [W' Σ' ΘB C0' t' T' c Hf HB HC Hpf HΣc HBs Ht Hs|
+  intros H. remember (C0, {[+ t +]}) as p eqn:Hp. destruct H as [W' Σ' ΘB C0' t' T' c Hf HB HC Hpf HΣc HBs Htk Ht Hs|
     W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T' H1 H2].
   - pose proof (f_equal fst Hp) as H1. pose proof (f_equal snd Hp) as Ht'. simpl in H1, Ht'. subst C0'.
     apply (inj (singletonMS (B := gmultiset expr))) in Ht' as ->.
@@ -255,22 +256,23 @@ Qed.
 
 (** A process of two threads ends with P-Connect over one thread on each
     side. *)
-Lemma ptyped_two N W Σ C t1 t2 T :
-  ptyped N W Σ (C, ({[+ t1 +]} ⊎ {[+ t2 +]})) T →
+Lemma ptyped_two N η W Σ C t1 t2 T :
+  ptyped N η W Σ (C, ({[+ t1 +]} ⊎ {[+ t2 +]})) T →
   ∃ W1 W2 Σ1 Σ2 ΣC C1 C2 u1 u2,
     W = swrestrict (W1 ⊔ W2) (iface Σ T) ∧ Σ = Σ1 ∪ Σ2 ∧ C = C1 ∪ C2 ∪ chans_of ΣC ∧
     (({[+ u1 +]} ⊎ {[+ u2 +]}) : gmultiset expr) = ({[+ t1 +]} ⊎ {[+ t2 +]}) ∧
-    ptyped N W1 (Σ1 ∪ ΣC) (C1, {[+ u1 +]}) T ∧
-    ptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, {[+ u2 +]}) TUnit ∧
+    ptyped N η W1 (Σ1 ∪ ΣC) (C1, {[+ u1 +]}) T ∧
+    ptyped N η W2 (Σ2 ∪ senv_dual ΣC) (C2, {[+ u2 +]}) TUnit ∧
+    (∀ o, o ∈ dom ΣC → tsum_ok N (η o).2 (η (edual o)).2) ∧
     wok N (W1 ⊔ W2).
 Proof.
   intros H. remember (C, ({[+ t1 +]} ⊎ {[+ t2 +]})) as p eqn:Hp. destruct H as [W' Σ' ΘB C0' t' T' c|
-    W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T' H1 H2 _ _ _ _ _ _ HS].
+    W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T' H1 H2 _ _ _ _ _ _ Hts HS].
   - exfalso. pose proof (f_equal snd Hp) as HE. simpl in HE.
     assert (size (({[+ t1 +]} ⊎ {[+ t2 +]}) : gmultiset expr) = 1) as Hsz by (by rewrite <-HE, gmultiset_size_singleton).
     rewrite gmultiset_size_disj_union, !gmultiset_size_singleton in Hsz. lia.
   - pose proof (f_equal fst Hp) as HC0. pose proof (f_equal snd Hp) as HE. simpl in HC0, HE. subst C.
-    pose proof (ptyped_nonempty _ _ _ _ _ H1) as N1. pose proof (ptyped_nonempty _ _ _ _ _ H2) as N2.
+    pose proof (ptyped_nonempty _ _ _ _ _ _ H1) as N1. pose proof (ptyped_nonempty _ _ _ _ _ _ H2) as N2.
     simpl in N1, N2.
     assert (size E1 = 1 ∧ size E2 = 1) as [S1 S2].
     { assert (size (E1 ⊎ E2) = 2) as Hsz by (by rewrite HE, gmultiset_size_disj_union, !gmultiset_size_singleton).

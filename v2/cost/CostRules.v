@@ -36,7 +36,7 @@ Lemma cost_e_chan N Δ o S x a m : lenv_unl Δ → csem N {[o := TE S x a m]} Δ
 Proof.
   intros HΔ n g γ Π φ HE. destruct (envf_single _ _ _ _ _ _ _ _ _ HΔ HE) as (-> & [f m'] & -> & Hf & Hm).
   simpl in Hf, Hm. subst m'.
-  simpl. apply FuelE_val; [done|]. by apply Vfuel_sess_intro; [apply sequiv_refl|].
+  simpl. apply FuelE_val; [done|]. by apply Vfuel_sess_intro; [apply ssub_refl|].
 Qed.
 
 Lemma cost_e_sub N W Γ Θ Δ e T T' c c' :

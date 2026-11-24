@@ -144,6 +144,8 @@ Print Assumptions ctl_lock_free.
 (** examples/LFLink.v *)
 Print Assumptions lk_new.
 Print Assumptions lk_typed.
+Print Assumptions lk_closed_typed.
+Print Assumptions lk_closed_lock_free.
 (** soup/SoupRun.v *)
 Print Assumptions lfsoup_step.
 (** soup/SoupTau.v *)
@@ -204,6 +206,13 @@ Print Assumptions wf_iff_wellfounded.
     instantiation preserves typing over contractive contexts *)
 Print Assumptions unrN_sfuel.
 Print Assumptions sequiv_sinst.
+(** types/SessSub.v and fuel/FuelSub.v: session subtyping, payload
+    credits with variance *)
+Print Assumptions ssub_trans.
+Print Assumptions ssub_dual.
+Print Assumptions ssub_df.
+Print Assumptions ssub_sinst.
+Print Assumptions Vfuel_crT.
 Print Assumptions typed_scontr.
 Print Assumptions typed_sinst.
 (** examples/SinstStuck.v: without contractive contexts instantiation

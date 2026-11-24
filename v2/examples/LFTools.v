@@ -18,10 +18,10 @@ Notation functional_choice := lockfree.FairRun.functional_choice.
 
 Lemma lf_main_typed N W t T c :
   sworld_wf W ∧ swf W → tfree T → typed W (Some N) ∅ hc_empty [] (∅, None) t T c →
-  ∅ ⊩^N _ (swrestrict W (iface ∅ T)) (∅, {[+ t +]}) : T.
+  ∅ ⊩^N,(khalf (Some N)) _ (swrestrict W (iface ∅ T)) (∅, {[+ t +]}) : T.
 Proof.
   intros HS Hp Ht.
-  apply (p_term (Some N) W ∅ ∅ ∅ t T c); [done| | | | | | |done].
+  apply (p_term_half (Some N) W ∅ ∅ ∅ t T c); [done| | | | | | |done].
   6: { unfold tenv_of. rewrite fmap_empty, map_union_empty. exact Ht. }
   - intros o. rewrite dom_empty_L. set_solver.
   - set_solver.
@@ -33,7 +33,7 @@ Qed.
 Lemma lf_main (EM : excluded_middle) (FC : functional_choice) N W t T c :
   sworld_wf W ∧ swf W → tfree T → typed W (Some N) ∅ hc_empty [] (∅, None) t T c →
   lock_free (∅, {[+ t +]}).
-Proof. intros HS Hp Ht. eapply (lf_soundness_h N _ _ T EM FC), lf_main_typed; eauto. Qed.
+Proof. intros HS Hp Ht. eapply (lf_soundness_h N _ _ _ T EM FC), lf_main_typed; eauto. Qed.
 
 (** ** Rules of the merged judgment with weakening built in *)
 
@@ -131,7 +131,7 @@ Lemma e_sub_sess2 W N Γ Δ F e S1 x S2 y a1 a2 b1 b2 c m1 m2 :
   typed W N ∅ Γ Δ F e (TProd (TSess S1 x b1 m1) (TSess S2 y b2 m2)) c.
 Proof.
   intros He H1 H2. eapply e_sub; [exact He| |apply fle_refl|intros HC; exact HC].
-  apply sub_prod; apply sub_sess; rewrite ?fadd_0_l; auto using sequiv_refl.
+  apply sub_prod; apply sub_sess; rewrite ?fadd_0_l; auto using ssub_refl.
 Qed.
 
 (** ** Tactics *)

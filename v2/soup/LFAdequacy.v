@@ -142,7 +142,7 @@ Section run.
   Lemma wt_holder k t s : wt k t s → ∃ es, (r k).2 !! s = Some es.
   Proof.
     intros (_ & o & _ & h & Kh & <-). destruct (ak_inv k ozero) as (A & Π & U & Hs).
-    rewrite <-(ak_q k). exact (sp_owner _ _ _ _ _ _ _ _ _ Hs _ _ Kh).
+    rewrite <-(ak_q k). exact (sp_owner _ _ _ _ _ _ _ _ _ _ Hs _ _ Kh).
   Qed.
 
   Lemma wt_uniq k t s s' : npend (r k) t → wt k t s → wt k t s' → s = s'.
@@ -206,7 +206,7 @@ Section run.
   Lemma closed_at k o t : owns (s_K (ak k)) o t → ech o ∈ (r k).1.
   Proof.
     intros (h & Kh & _). destruct (ak_inv k ozero) as (A & Π & U & Hs). rewrite <-(ak_q k).
-    destruct (sp_closed _ _ _ _ _ _ _ _ _ Hs o (elem_of_dom_2 _ _ _ Kh)) as [?|Hd]; [done|].
+    destruct (sp_closed _ _ _ _ _ _ _ _ _ _ Hs o (elem_of_dom_2 _ _ _ Kh)) as [?|Hd]; [done|].
     by rewrite dom_empty_L in Hd.
   Qed.
 
@@ -305,7 +305,7 @@ Section run.
     pose proof (s_pdual _ _ _ _ _ _ _ _ Hs o P P' HP HP') as Hpd.
     intros (S1 & HS1 & Hid). apply lookup_kres in HS1 as [HS1 _]. rewrite HP' in HS1. injection HS1 as <-.
     apply Hni. exists P. split; [apply lookup_kres; split; [done|eauto]|].
-    by apply (idle_dual P P' Hpd).
+    apply (proj1 (idle_dual_self P)). by apply (proj2 (idle_ssub _ _ Hpd)).
   Qed.
 
   Lemma rend_of q t e a1 o : q.2 !! t = Some e → act e = Some a1 → aend a1 = Some o → rend q t = Some o.
@@ -356,7 +356,7 @@ Section run.
     pose proof He as He0. rewrite <-Hq in He0.
     destruct (s_partner _ _ _ _ _ _ _ _ Hs t e a1 o He0 Ha Ho) as (s & es & h' & Kh' & Eh' & Hes & Hst').
     pose proof (partner_busy k t e a1 o A Π U Hs He Ha Ho s (ex_intro _ h' (conj Kh' Eh'))) as Hbusy.
-    destruct (sp_fin _ _ _ _ _ _ _ _ _ Hs (edual o) h' Kh') as [m Hm].
+    destruct (sp_fin _ _ _ _ _ _ _ _ _ _ Hs (edual o) h' Kh') as [m Hm].
     assert (Hφs : ctrs (s_K (ak k)) s !! edual o = Some (Some m, h'.(h_cap))).
     { apply lookup_ctrs. exists h'. split_and!; [done|done|]. unfold hctr. by rewrite Hm. }
     assert (Hright : rend (r (S k)) t = Some o →
@@ -590,7 +590,7 @@ Proof.
   injection Hq as -> HM. destruct (relabel_map M1 M2 (eq_sym HM)) as (f & g & H1 & H2).
   exists (LFState (C1, M2) (krelabel f K) Wa). split; [done|]. intros n.
   destruct (Hs n) as (HW & A & Π & U & Hsi). split; [done|].
-  exists A, Π, (U ∘ g). exact (soup_relabel _ _ _ _ _ _ M1 M2 _ _ _ _ _ _ f g H1 H2 Hsi).
+  exists A, Π, (U ∘ g). exact (soup_relabel _ _ _ _ _ _ _ M1 M2 _ _ _ _ _ _ f g H1 H2 Hsi).
 Qed.
 
 Lemma soup_links_restricted N W T a :
@@ -644,8 +644,8 @@ Section adequacy.
       as (a & Ha).
     - intros a n1 n2 Hn [H1 (HW & A & Π & U & Hs)]. split; [done|]. split; [done|]. exists A, Π, U.
       constructor; try apply Hs.
-      + intros t e He. eapply Erel_down; [exact Hn|]. by apply (sp_rel _ _ _ _ _ _ _ _ _ Hs).
-      + intros t e He. eapply FuelE_down; [exact Hn|]. by apply (sp_fuel _ _ _ _ _ _ _ _ _ Hs).
+      + intros t e He. eapply Erel_down; [exact Hn|]. by apply (sp_rel _ _ _ _ _ _ _ _ _ _ Hs).
+      + intros t e He. eapply FuelE_down; [exact Hn|]. by apply (sp_fuel _ _ _ _ _ _ _ _ _ _ Hs).
     - intros n. destruct (HP n) as (a & H1 & H2). by exists a.
     - exists a. split; [exact (proj1 (Ha ozero))|]. intros n. exact (proj2 (Ha n)).
   Qed.

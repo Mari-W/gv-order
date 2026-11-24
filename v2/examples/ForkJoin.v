@@ -200,9 +200,9 @@ Proof.
 Qed.
 
 (** P-Term types the closed program over the empty world. *)
-Theorem fj_term : ptyped None (swrestrict sw_empty (iface ∅ TUnit)) ∅ (∅, {[+ fj_main +]}) TUnit.
+Theorem fj_term : ptyped None (khalf None) (swrestrict sw_empty (iface ∅ TUnit)) ∅ (∅, {[+ fj_main +]}) TUnit.
 Proof.
-  apply (p_term None sw_empty ∅ ∅ ∅ _ TUnit None).
+  apply (p_term_half None sw_empty ∅ ∅ ∅ _ TUnit None).
   - constructor.
   - intros o. rewrite dom_empty_L. set_solver.
   - unfold chans_of. rewrite dom_empty_L. set_solver.
@@ -539,9 +539,9 @@ Proof.
 Qed.
 
 (** P-Term types the closed program over the empty world. *)
-Theorem fjr_term : ptyped None (swrestrict sw_empty (iface ∅ TUnit)) ∅ (∅, {[+ fjr_main +]}) TUnit.
+Theorem fjr_term : ptyped None (khalf None) (swrestrict sw_empty (iface ∅ TUnit)) ∅ (∅, {[+ fjr_main +]}) TUnit.
 Proof.
-  apply (p_term None sw_empty ∅ ∅ ∅ _ TUnit None).
+  apply (p_term_half None sw_empty ∅ ∅ ∅ _ TUnit None).
   - constructor.
   - intros o. rewrite dom_empty_L. set_solver.
   - unfold chans_of. rewrite dom_empty_L. set_solver.
@@ -816,9 +816,9 @@ Proof.
   Unshelve. all: exact None.
 Qed.
 
-Theorem fct_term : ptyped None (swrestrict sw_empty (iface ∅ TUnit)) ∅ (∅, {[+ fct_main +]}) TUnit.
+Theorem fct_term : ptyped None (khalf None) (swrestrict sw_empty (iface ∅ TUnit)) ∅ (∅, {[+ fct_main +]}) TUnit.
 Proof.
-  apply (p_term None sw_empty ∅ ∅ ∅ _ TUnit None).
+  apply (p_term_half None sw_empty ∅ ∅ ∅ _ TUnit None).
   - constructor.
   - intros o. rewrite dom_empty_L. set_solver.
   - unfold chans_of. rewrite dom_empty_L. set_solver.
@@ -1118,9 +1118,9 @@ Proof.
   Unshelve. all: exact None.
 Qed.
 
-Theorem fib_term : ptyped None (swrestrict sw_empty (iface ∅ TUnit)) ∅ (∅, {[+ fib_main +]}) TUnit.
+Theorem fib_term : ptyped None (khalf None) (swrestrict sw_empty (iface ∅ TUnit)) ∅ (∅, {[+ fib_main +]}) TUnit.
 Proof.
-  apply (p_term None sw_empty ∅ ∅ ∅ _ TUnit None).
+  apply (p_term_half None sw_empty ∅ ∅ ∅ _ TUnit None).
   - constructor.
   - intros o. rewrite dom_empty_L. set_solver.
   - unfold chans_of. rewrite dom_empty_L. set_solver.

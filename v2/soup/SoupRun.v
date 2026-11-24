@@ -54,8 +54,8 @@ Qed.
 Lemma Soup_down N W T a n m : ole m n → a ∈ S^{N,W} _ n⟦∅ ⊢ T⟧ → a ∈ S^{N,W} _ m⟦∅ ⊢ T⟧.
 Proof.
   intros Hm (HW & A & Π & U & Hs). split; [done|]. exists A, Π, U. constructor; try apply Hs.
-  - intros t e He. eapply Erel_down; [exact Hm|]. by apply (sp_rel _ _ _ _ _ _ _ _ _ Hs).
-  - intros t e He. eapply FuelE_down; [exact Hm|]. by apply (sp_fuel _ _ _ _ _ _ _ _ _ Hs).
+  - intros t e He. eapply Erel_down; [exact Hm|]. by apply (sp_rel _ _ _ _ _ _ _ _ _ _ Hs).
+  - intros t e He. eapply FuelE_down; [exact Hm|]. by apply (sp_fuel _ _ _ _ _ _ _ _ _ _ Hs).
 Qed.
 
 Section classical.

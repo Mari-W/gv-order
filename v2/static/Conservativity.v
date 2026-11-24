@@ -141,7 +141,7 @@ Proof.
   - apply sub_prod; auto.
   - apply sub_sum; auto.
   - apply sub_box; [apply fle_refl|]. destruct k; [apply teq_refl|by left].
-  - apply sub_sess; [apply sequiv_refl|apply fle_refl].
+  - apply sub_sess; [apply ssub_refl|apply fle_refl].
   - apply sub_ex; [apply hold_open_self|by left|auto].
 Qed.
 
@@ -163,7 +163,7 @@ Proof.
   - by apply sub_sum.
   - apply sub_box; [apply fle_refl|]. destruct k; [by apply teq_df|].
     destruct H0 as [->|(? & ? & ?)]; [by left|right]. rewrite !tcontr_df. split_and!; [by apply teq_df|done|done].
-  - apply sub_sess; [by apply sequiv_df|apply fle_refl].
+  - apply sub_sess; [by apply sequiv_ssub, ssub_df|apply fle_refl].
   - apply sub_ex; [done| |done]. destruct H0 as [->|H0]; [by left|right].
     by rewrite heads_df, hbot_df.
 Qed.

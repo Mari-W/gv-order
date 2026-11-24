@@ -54,23 +54,24 @@ Qed.
 
 (** ** The components of an n-ary composition *)
 
-Inductive pcomps (N : fuel) : list sworld → senv → proc → ty → Prop :=
+Inductive pcomps (N : fuel) (η : iann) : list sworld → senv → proc → ty → Prop :=
   | pc_one W Σ p T :
-      ptyped N W Σ p T → pcomps N [W] Σ p T
+      ptyped N η W Σ p T → pcomps N η [W] Σ p T
   | pc_snoc Ws W Σ1 Σ2 ΣC C1 C2 E1 E2 T :
-      pcomps N Ws (Σ1 ∪ ΣC) (C1, E1) T →
-      ptyped N W (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
+      pcomps N η Ws (Σ1 ∪ ΣC) (C1, E1) T →
+      ptyped N η W (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
       chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
       C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
-      pcomps N (Ws ++ [W]) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
+      (∀ o, o ∈ dom ΣC → tsum_ok N (η o).2 (η (edual o)).2) →
+      pcomps N η (Ws ++ [W]) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
 
 (** The fold. The world of the composite derives only facts of the join
     of its component worlds and holds only their constants. *)
-Lemma pcomps_fold N Ws Σ p T :
-  pcomps N Ws Σ p T → wok N (sw_joins Ws) →
-  ∃ W, ptyped N W Σ p T ∧ (∀ x y, W ⊢ₛ x ≺ y → sw_joins Ws ⊢ₛ x ≺ y) ∧ sw_consts W ⊆ sw_consts (sw_joins Ws).
+Lemma pcomps_fold N η Ws Σ p T :
+  pcomps N η Ws Σ p T → wok N (sw_joins Ws) →
+  ∃ W, ptyped N η W Σ p T ∧ (∀ x y, W ⊢ₛ x ≺ y → sw_joins Ws ⊢ₛ x ≺ y) ∧ sw_consts W ⊆ sw_consts (sw_joins Ws).
 Proof.
-  induction 1 as [W Σ p T Hty|Ws W Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH Hty H12 H1C H2C HC HC1 HC2];
+  induction 1 as [W Σ p T Hty|Ws W Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH Hty H12 H1C H2C HC HC1 HC2 Hts];
     intros HS.
   - exists W. split_and!; [done| |].
     + intros x y. apply sw_lt_mono, swext_joins. set_solver.
@@ -97,14 +98,14 @@ Qed.
     One interface check, [wok] of the join of the n hidden component
     worlds. The result world says nothing the join, restricted to the
     final interface, does not. *)
-Theorem p_connect_n N Ws Σ p T :
-  pcomps N Ws Σ p T → wok N (sw_joins Ws) →
-  ∃ W, ptyped N W Σ p T ∧ ∀ g, sw_facts W g → sw_facts (swrestrict (sw_joins Ws) (iface Σ T)) g.
+Theorem p_connect_n N η Ws Σ p T :
+  pcomps N η Ws Σ p T → wok N (sw_joins Ws) →
+  ∃ W, ptyped N η W Σ p T ∧ ∀ g, sw_facts W g → sw_facts (swrestrict (sw_joins Ws) (iface Σ T)) g.
 Proof.
-  intros Hp HS. destruct (pcomps_fold N Ws Σ p T Hp HS) as (W & Hty & Hlt & Hc).
+  intros Hp HS. destruct (pcomps_fold N η Ws Σ p T Hp HS) as (W & Hty & Hlt & Hc).
   exists W. split; [done|]. intros [x y] Hg.
-  pose proof (ptyped_consts _ _ _ _ _ Hty) as Hi.
-  destruct (wf_facts _ (proj1 (ptyped_wf _ _ _ _ _ Hty)) x y Hg) as [(a & Ha & Hax) (b & Hb & Hby)].
+  pose proof (ptyped_consts _ _ _ _ _ _ Hty) as Hi.
+  destruct (wf_facts _ (proj1 (ptyped_wf _ _ _ _ _ _ Hty)) x y Hg) as [(a & Ha & Hax) (b & Hb & Hby)].
   simpl. split_and!.
   - by apply Hlt, sw_lt_fact.
   - exists a. split; [done|]. apply elem_of_intersection. split; [by apply Hc|by apply Hi].
@@ -114,15 +115,15 @@ Qed.
 (** ** Soundness through the binary results *)
 
 Theorem connect_n_soundness Ws p T :
-  pcomps None Ws ∅ p T → sacyc (sw_joins Ws) → deadlock_free p.
+  pcomps None (khalf None) Ws ∅ p T → sacyc (sw_joins Ws) → deadlock_free p.
 Proof.
-  intros Hp HS. destruct (p_connect_n None Ws ∅ p T Hp HS) as (W & Hty & _).
+  intros Hp HS. destruct (p_connect_n None (khalf None) Ws ∅ p T Hp HS) as (W & Hty & _).
   exact (soundness_h W p T Hty).
 Qed.
 
 Theorem connect_n_live_soundness Ws p T :
-  pcomps None Ws ∅ p T → sacyc (sw_joins Ws) → deadlock_free p ∧ no_free_divergence p.
+  pcomps None (khalf None) Ws ∅ p T → sacyc (sw_joins Ws) → deadlock_free p ∧ no_free_divergence p.
 Proof.
-  intros Hp HS. destruct (p_connect_n None Ws ∅ p T Hp HS) as (W & Hty & _).
+  intros Hp HS. destruct (p_connect_n None (khalf None) Ws ∅ p T Hp HS) as (W & Hty & _).
   exact (live_soundness_h W p T Hty).
 Qed.

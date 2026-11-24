@@ -14,8 +14,8 @@
     contractive instance α := ?(∗) ; (Skip ; Skip) the two heads are the
     same receive, and the continuations (Skip ; Skip) ; X and
     ((Skip ; Skip) ; Skip) ; X are distinct terms whose unfolding is
-    stuck, because X never reaches a head. [sequiv] compares stuck terms
-    on the nose, so the instances are not equivalent, and no derivation
+    stuck, because X never reaches a head. [sequiv] and [ssub] compare
+    stuck terms on the nose, so the instances are not related, and no derivation
     types c at the instance of s1 ([inv_chan_sty], [typed_sinst_false]).
     The context of this derivation holds s0, which is not contractive,
     and [typed_sinst] asks the context contractive.
@@ -57,6 +57,9 @@ Qed.
 Lemma ss_inst_not_sequiv : ¬ sequiv (sinst (slist [ss_t]) ss_s0) (sinst (slist [ss_t]) ss_s1).
 Proof. intros H. specialize (H 2). vm_compute in H. destruct H as (_ & _ & H). discriminate H. Qed.
 
+Lemma ss_inst_not_ssub : ¬ ssub (sinst (slist [ss_t]) ss_s0) (sinst (slist [ss_t]) ss_s1).
+Proof. intros H. specialize (H 2). vm_compute in H. destruct H as (_ & _ & H). discriminate H. Qed.
+
 (** E-Chan and E-Sub type c at s1, the instance at [ss_t] of that
     derivation has no typing. *)
 Theorem typed_sinst_false W N Γ F o x a :
@@ -69,9 +72,9 @@ Proof.
   - apply ss_t_sinsts.
   - eapply e_sub; [apply e_chan; [intros ? Hin; inversion Hin|solve [done|apply fle_refl|cbn; lia]]| |apply fle_refl|].
     2: { intros HC. exfalso. vm_compute in HC. exact HC. }
-    apply sub_sess; [apply ss_s0_s1|apply fle_refl].
+    apply sub_sess; [apply sequiv_ssub, ss_s0_s1|apply fle_refl].
   - intros H. simpl in H. destruct (inv_chan_sty _ _ _ _ _ _ _ _ _ H _ _ _ _ eq_refl) as (e & He & Hs).
-    simplify_map_eq. by apply ss_inst_not_sequiv.
+    simplify_map_eq. by apply ss_inst_not_ssub.
 Qed.
 
 (** A session variable does not guard. *)

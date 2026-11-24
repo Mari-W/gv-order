@@ -1,5 +1,101 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, 2026-11-24, payload credit variance and one rule for new
+
+Approved by the author on 2026-11-24 (tasks A and B, then C, "yes 3
+too"). Branch fx-subcr from redesign 515bc40. Nothing pushed, nothing
+merged.
+
+### A. Payload credits with variance in Sub-Sess
+
+1. Relation. `ssub` (S ⊑ S′, types/Types.v) is coinductive through
+   `hd`/`unfoldS` like ≃, with approximants `asub n` over `sub_step`. A
+   receive ?(T) may become ?(T′) when `crT T T′`, a send !(T) may become
+   !(T′) when `crT T′ T`. `crT T U` says that U is T with the credit of
+   each end and closure reached through ⊗, ⊕ and ∃ lowered, the rest up
+   to ≃. Payload tickets, payload points, closure arguments and results,
+   boxes and the protocols of payload ends stay ≃. Closure credits in a
+   payload vary like end credits, because Sub-Arr already lets them fall
+   and fuel reads them as lower bounds only. No polarity index is
+   needed. Each head fixes its own direction, and duality swaps them.
+2. Lemmas (types/SessSub.v). `ssub_refl`, `ssub_trans`, `sequiv_ssub`,
+   `ssub_sequiv_l/r`, `idle_ssub`, `ssub_dual` (S ⊑ R gives dual R ⊑
+   dual S), `ssub_df` (⊑ is ≃ after `sty_df`), `ssub_sinst` (contractive
+   instances, by the up-to technique of `sequiv_sinst`), `ssub_ren`
+   (static/Consts.v). Point instantiation leaves session types alone.
+3. Typing. `sub_sess` asks `ssub s s'`. The comment above `tsub` names ⊑.
+4. Soundness. DF reads `seqv`, so E-Sub goes through `ssub_df`. On the
+   LF side `Vty` at an end reads `ssub S' s`, the run-time protocol below
+   the type. `plink` asks `ssub S1 (dual S2)`. The soup invariant
+   `sp_pdual` asks `ssub (dual P) P'` for the two ends of a restricted
+   channel, so a receiver reads a payload at a credit no higher than its
+   sender's. `Vfuel_crT` (fuel/FuelSub.v) moves a value along `crT`. A
+   link joins partners by dual R1 ⊑ P1 ⊑ dual P2 ⊑ R2 (`pdual_link`). The
+   rejection proofs of examples/Rejects.v survive, because the variance
+   runs along their chain of credits (`crT_skel_skle`). Nothing turned
+   out unsound.
+5. Statements that changed form, all internal. `inv_chan_sty` concludes
+   `ssub`. `skl_sess`, `skle_sess_l/r`, `skle_sess_inv`, `pdual_snd`,
+   `pdual_plus`, `pdual_sym`, `pdual_link`, `sp_pdual`, `s_pdual`,
+   `plink`, `Vfuel_sess_inv`, `Vfuel_sess_intro` and the unfolding
+   lemmas of cost/CostRedex.v read ⊑ and `crT`.
+
+### B. One rule for new on the map
+
+The map shows E-New and E-New-Field as one rule E-New over a triple
+(p, ρ̄, C), either (ρ, ρ, C) under `new_ok` or (x·κ, ·, ⊤), with result
+∃^⊥ρ̄. C. S_p ⊗ S̄_p̄, and ∃^⊥·. ⊤. T = T. The two Rocq constructors stay.
+The merge is a `merged` deviation on the block and on the note of the
+triple. The caption and the notes say that a field creation adds no
+facts, because x·κ is an old point whose facts were fixed with the root
+of x, and that a field may be used by more than one creation.
+
+### C. Interface annotations at P-Term
+
+1. Design. `ptyped N η` takes interface annotations η : cend → fuel ×
+   fuel (`iann`, types/Types.v) as a parameter. P-Term types the thread
+   under `tenv_ofk η Σ ∪ ΘB` and asks (η o).2 ≤ N for each end of Σ. The
+   credit stays at most the tickets by `typed_cr_tk`, so the rule does
+   not ask it. P-Connect asks `tsum_ok N (η o).2 (η (edual o)).2` for
+   each end o of the cut. One η serves a whole derivation, because the
+   ends of distinct components are distinct. Σ keeps its type, so the DF
+   relation is untouched. At N = ∞ both premises hold, and the DF
+   notation fixes η to `khalf None`.
+2. Old derivations. `p_term_half` and `p_connect_half` are the old rules
+   at `khalf N`, (N/2, N/2) at each end. The examples use them unchanged.
+3. LF side. The soup record `soup_gen` takes η, and `sp_sigcap` bounds
+   the tickets of an interface end by (η o).2. `soup_nu` and
+   `soup_connect` get the bound at the cut from the P-Connect premise
+   through `tsum_ok_mono`. A closed run reads no annotation
+   (`soup_gen_ann`, `lf_semk_closed`), so the run files keep `soup_inv`
+   at `khalf`. `soup_invk`, `SoupK`, `lf_semk` and `lf_sems N η` carry η
+   through the composition.
+4. Example. examples/LFLink.v closes the link,
+   link ⟨c⁺, d⁻⟩ ∥ close c⁻ ∥ close d⁺, with η(c⁺) = η(d⁻) = (N, N) and
+   η(c⁻) = η(d⁺) = (0, 0). It types at each N ≥ 1 (`lk_closed_typed`) and
+   is lock free (`lk_closed_lock_free`). The map example ex-link shows it.
+5. Statements that changed form. `ptyped`, `pcomps`, `lf_sems`,
+   `lf_sems_h` and the notation ⊩ take η (Σ ⊩^N,η _W p : T).
+   `lf_soundness_h`, `lf_soundness_run`, `lf_soundness_padovani`,
+   `connect_n_lf_soundness`, `lf_fundamental_h`, `lf_p_term`,
+   `lf_p_connect`, `lf_connect_adequacy` and `lf_sems_adequacy` hold for
+   every η. `lf_p_connect` and `lf_connect_adequacy` take the ticket
+   premise at the cut. `fw_ptyped` holds for every η with
+   (η o).1 ≤ (η o).2 ≤ N. The rejections `rx_relink_proc_rejected`,
+   `rx_postpone_proc_rejected`, `rx_delegate_proc_rejected`,
+   `rx_chain_proc_rejected`, `fjr_lf_proc_rejected`, `ring_rejected`
+   (examples/Copycat.v) and `sbv_rejected` hold for every η, which is
+   stronger than before. The DF theorems keep their statements through
+   the notation at `khalf None`. test/SoupNotations.expected was
+   regenerated on purpose for the new form of ⊩.
+
+### Checks
+
+`make` clean, `make check` 264 of 264 closed (257 before, plus
+`ssub_trans`, `ssub_dual`, `ssub_df`, `ssub_sinst`, `Vfuel_crT`,
+`lk_closed_typed`, `lk_closed_lock_free`), `make test` matches, map check
+0 errors.
+
 ## Report, 2026-11-24, idle ends in Θ
 
 Approved by the author on 2026-11-24. Branch fx-idle from redesign

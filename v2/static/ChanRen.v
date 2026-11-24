@@ -149,6 +149,16 @@ Section cren.
   Lemma tenv_of_cren a (Σ : senv) : tenv_of a (kmap g Σ) = kmap g (tenv_of a Σ).
   Proof. unfold tenv_of. by rewrite kfmap. Qed.
 
+  Lemma tenv_ofk_cren (η η' : iann) (Σ : senv) : (∀ o, η' (g o) = η o) →
+    tenv_ofk η' (kmap g Σ) = kmap g (tenv_ofk η Σ).
+  Proof.
+    intros Hη. apply map_eq. intros o. rewrite lookup_tenv_ofk.
+    destruct (kmap g Σ !! o) as [v|] eqn:E.
+    - apply lk_Some in E as (o' & -> & E). rewrite lk, lookup_tenv_ofk, E. simpl. by rewrite Hη.
+    - simpl. symmetry. apply lk_None. intros i ->. rewrite lookup_tenv_ofk.
+      rewrite lk in E. by rewrite E.
+  Qed.
+
   Lemma iface_cren (Σ : senv) T : iface (kmap g Σ) T = iface Σ T.
   Proof.
     unfold iface. f_equal. apply set_eq. intros a. rewrite !elem_of_senv_consts. split.
@@ -158,13 +168,14 @@ Section cren.
 
   (** ** Processes *)
 
-  Theorem ptyped_cren N W Σ p T :
-    ptyped N W Σ p T → ptyped N W (kmap g Σ) (set_map h p.1, emapE g p.2) T.
+  Theorem ptyped_cren N (η η' : iann) W Σ p T : (∀ o, η' (g o) = η o) →
+    ptyped N η W Σ p T → ptyped N η' W (kmap g Σ) (set_map h p.1, emapE g p.2) T.
   Proof.
-    induction 1 as [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Ht HW
-                   |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 H12 H1C H2C HC HC1 HC2 HS];
+    intros Hη.
+    induction 1 as [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Htk Ht HW
+                   |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH1 _ IH2 H12 H1C H2C HC HC1 HC2 Hts HS];
       cbn [fst snd] in *.
-    - rewrite emapE_singleton, <-(iface_cren Σ). apply (p_term N W _ (kmap g ΘB) _ (emap g t) T c).
+    - rewrite emapE_singleton, <-(iface_cren Σ). apply (p_term N η' W _ (kmap g ΘB) _ (emap g t) T c).
       + done.
       + intros o. rewrite kdom. split.
         * intros Ho. apply elem_of_map in Ho as (o' & -> & Ho). rewrite ech_cmap.
@@ -181,7 +192,8 @@ Section cren.
         exists S, x, m, m'. split_and!; [done|done| |].
         * change (EPos (h c0)) with (g (EPos c0)). by rewrite lk.
         * change (ENeg (h c0)) with (g (ENeg c0)). by rewrite lk.
-      + rewrite tenv_of_cren, <-kunion. exact (typed_cren _ _ _ _ _ _ _ _ _ Ht).
+      + intros o Ho. rewrite kdom in Ho. apply elem_of_map in Ho as (o' & -> & Ho). rewrite Hη. by apply Htk.
+      + rewrite (tenv_ofk_cren η η' _ Hη), <-kunion. exact (typed_cren _ _ _ _ _ _ _ _ _ Ht).
       + done.
     - rewrite <-(iface_cren (Σ1 ∪ Σ2)), kunion. rewrite !set_map_h_union, <-(chans_of_cren ΣC), emapE_disj_union.
       rewrite !kunion in IH1, IH2. rewrite <-senv_dual_cren in IH2.
@@ -189,6 +201,8 @@ Section cren.
         |by rewrite !chans_of_cren; apply set_map_h_disj|by rewrite !chans_of_cren; apply set_map_h_disj
         |by rewrite !chans_of_cren; apply set_map_h_disj|by apply set_map_h_disj
         |rewrite !chans_of_cren, <-set_map_h_union; by apply set_map_h_disj
-        |rewrite !chans_of_cren, <-set_map_h_union; by apply set_map_h_disj|exact HS].
+        |rewrite !chans_of_cren, <-set_map_h_union; by apply set_map_h_disj| |exact HS].
+      intros o Ho. rewrite kdom in Ho. apply elem_of_map in Ho as (o' & -> & Ho).
+      rewrite <-cmap_edual, !Hη. by apply Hts.
   Qed.
 End cren.

@@ -79,7 +79,7 @@ Section sync.
       simplify_eq; congruence. }
     pose proof (HR lv _ ltac:(cbn; exact Hlv) Hdisj HVr) as HEr.
     assert (HVfr : Vfuel (Some N) lv (RTy T3) (mres (fends w) (kres K i Π)) (fhand (fends w) (ctrs K i)) w).
-    { apply (Vfuel_teq lv (Some N) T2 T3); [by apply teq_sym|exact HVf]. }
+    { exact (Vfuel_crT _ _ T2 T3 _ _ _ HT HVf). }
     assert (Hd1 : mres (fends w) (kres K i Π) ##ₘ <[edual o := P']> (kres K j Π)).
     { apply map_disjoint_spec. intros o1 v1 v2 H1 H2. apply lookup_mres_Some in H1 as [H1 Hin].
       destruct (owner_ofΠ _ _ _ H1) as (h1 & Hh1 & Ht1).
@@ -155,7 +155,7 @@ Section sync.
         * rewrite edual_edual, lookup_insert_eq in H6. rewrite lookup_insert_ne, lookup_insert_eq in H5 by done.
           simplify_eq. split; [by rewrite pt_dual_shift, pt_dual_dual|by apply sdual_sym].
     - intros o0 P1 P2 H3 H4.
-      refine (pair_frame (λ _ v v', sequiv v' (dual v)) _ _ ({[o]} ∪ {[edual o]}) HCh _ _ _ o0 P1 P2 H3 H4).
+      refine (pair_frame (λ _ v v', ssub (dual v) v') _ _ ({[o]} ∪ {[edual o]}) HCh _ _ _ o0 P1 P2 H3 H4).
       + intros o1 Ho1. rewrite !lookup_insert_ne by (clear - Ho1; set_solver). done.
       + intros o1 P5 P6 H5 H6. exact (s_pdual _ _ _ _ _ _ _ _ Hs o1 P5 P6 H5 H6).
       + intros o1 P5 P6 Ho1 H5 H6.
@@ -164,7 +164,7 @@ Section sync.
           simplify_eq. done.
         * rewrite edual_edual, lookup_insert_eq in H6. rewrite lookup_insert_ne, lookup_insert_eq in H5 by done.
           simplify_eq. by apply pdual_sym.
-    - apply kfin_ksync; [exact (sp_fin _ _ _ _ _ _ _ _ _ Hs)|exact (s_kcfin _ _ _ _ _ _ _ _ Hs)].
+    - apply kfin_ksync; [exact (sp_fin _ _ _ _ _ _ _ _ _ _ Hs)|exact (s_kcfin _ _ _ _ _ _ _ _ Hs)].
     - apply kcap_ok_ksync; [exact (s_kcap_ok _ _ _ _ _ _ _ _ _ _ _ Hs)|by apply elem_of_dom_2 in Khi|by apply elem_of_dom_2 in Khj].
     - apply ktsum_ok_ksync; [exact (s_ktsum_ok _ _ _ _ _ _ _ _ _ _ _ Hs)|by apply elem_of_dom_2 in Khi|by apply elem_of_dom_2 in Khj].
   Qed.
@@ -234,7 +234,7 @@ Section sync.
     - intros o0 P1 P2 H3 H4. apply lookup_delete_Some in H3 as [_ H3]. apply lookup_delete_Some in H3 as [_ H3].
       apply lookup_delete_Some in H4 as [_ H4]. apply lookup_delete_Some in H4 as [_ H4].
       exact (s_pdual _ _ _ _ _ _ _ _ Hs o0 P1 P2 H3 H4).
-    - apply kfin_ktick, kfin_delete, kfin_delete. exact (sp_fin _ _ _ _ _ _ _ _ _ Hs).
+    - apply kfin_ktick, kfin_delete, kfin_delete. exact (sp_fin _ _ _ _ _ _ _ _ _ _ Hs).
     - apply kcap_ok_ktick, kcap_ok_delete, kcap_ok_delete. exact (s_kcap_ok _ _ _ _ _ _ _ _ _ _ _ Hs).
     - apply ktsum_ok_ktick, ktsum_ok_delete, ktsum_ok_delete. exact (s_ktsum_ok _ _ _ _ _ _ _ _ _ _ _ Hs).
   Qed.
@@ -331,7 +331,7 @@ Section sync.
         * rewrite edual_edual, lookup_insert_eq in H6. rewrite lookup_insert_ne, lookup_insert_eq in H5 by done.
           simplify_eq. split; [by rewrite Hy, pt_dual_dual|by apply sdual_sym, sdual_bsel].
     - intros o0 Q1 Q2 H3 H4.
-      refine (pair_frame (λ _ v v', sequiv v' (dual v)) _ _ ({[o]} ∪ {[edual o]}) HCh _ _ _ o0 Q1 Q2 H3 H4).
+      refine (pair_frame (λ _ v v', ssub (dual v) v') _ _ ({[o]} ∪ {[edual o]}) HCh _ _ _ o0 Q1 Q2 H3 H4).
       + intros o1 Ho1. rewrite !lookup_insert_ne by (clear - Ho1; set_solver). done.
       + intros o1 Q5 Q6 H5 H6. exact (s_pdual _ _ _ _ _ _ _ _ Hs o1 Q5 Q6 H5 H6).
       + intros o1 Q5 Q6 Ho1 H5 H6.
@@ -340,7 +340,7 @@ Section sync.
           simplify_eq. by destruct b.
         * rewrite edual_edual, lookup_insert_eq in H6. rewrite lookup_insert_ne, lookup_insert_eq in H5 by done.
           simplify_eq. apply pdual_sym. by destruct b.
-    - apply kfin_ksync; [exact (sp_fin _ _ _ _ _ _ _ _ _ Hs)|exact (s_kcfin _ _ _ _ _ _ _ _ Hs)].
+    - apply kfin_ksync; [exact (sp_fin _ _ _ _ _ _ _ _ _ _ Hs)|exact (s_kcfin _ _ _ _ _ _ _ _ Hs)].
     - apply kcap_ok_ksync; [exact (s_kcap_ok _ _ _ _ _ _ _ _ _ _ _ Hs)|by apply elem_of_dom_2 in Khi|by apply elem_of_dom_2 in Khj].
     - apply ktsum_ok_ksync; [exact (s_ktsum_ok _ _ _ _ _ _ _ _ _ _ _ Hs)|by apply elem_of_dom_2 in Khi|by apply elem_of_dom_2 in Khj].
   Qed.

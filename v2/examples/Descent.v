@@ -1236,10 +1236,10 @@ Qed.
 
 (** The process of the one thread of rx-chain is not in the lock-free
     judgment. *)
-Corollary rx_chain_proc_rejected (EM : excluded_middle) n W Σ C0 T :
-  ¬ ptyped (Some n) W Σ (C0, {[+ rc_main +]}) T.
+Corollary rx_chain_proc_rejected (EM : excluded_middle) n η W Σ C0 T :
+  ¬ ptyped (Some n) η W Σ (C0, {[+ rc_main +]}) T.
 Proof.
-  intros H. apply ptyped_one in H as (W' & ΘB & c & _ & _ & _ & _ & _ & _ & _ & Ht & [Hwf Hwk]).
+  intros H. apply ptyped_one in H as (W' & ΘB & c & _ & _ & _ & _ & _ & _ & _ & _ & Ht & [Hwf Hwk]).
   destruct (wmodels_exists W' Hwf Hwk) as (R & HR & HW).
   refine (rx_chain_rejected EM n W' _ _ _ _ _ _ Hwf _ Ht).
   exists R, pvar. split_and!; [done|done|apply hsat_empty].
@@ -1318,10 +1318,10 @@ Proof.
   exists σ0, xs. split_and!; [by apply (wext_ranked R R1)|done|done|done|done|done].
 Qed.
 
-Corollary fjr_lf_proc_rejected (EM : excluded_middle) n W Σ C0 T :
-  ¬ ptyped (Some n) W Σ (C0, {[+ fjr_main +]}) T.
+Corollary fjr_lf_proc_rejected (EM : excluded_middle) n η W Σ C0 T :
+  ¬ ptyped (Some n) η W Σ (C0, {[+ fjr_main +]}) T.
 Proof.
-  intros H. apply ptyped_one in H as (W' & ΘB & c & _ & _ & _ & _ & _ & _ & _ & Ht & [Hwf Hwk]).
+  intros H. apply ptyped_one in H as (W' & ΘB & c & _ & _ & _ & _ & _ & _ & _ & _ & Ht & [Hwf Hwk]).
   destruct (wmodels_exists W' Hwf Hwk) as (R & HR & HW).
   refine (fjr_lf_rejected EM n W' _ _ _ _ _ _ Hwf _ Ht).
   exists R, pvar. split_and!; [done|done|apply hsat_empty].

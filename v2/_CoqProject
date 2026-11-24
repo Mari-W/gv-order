@@ -21,6 +21,7 @@ types/Types.v
 types/Erasure.v
 types/Duality.v
 types/Contractive.v
+types/SessSub.v
 static/Contexts.v
 static/Consts.v
 static/Typing.v

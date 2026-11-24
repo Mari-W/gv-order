@@ -543,13 +543,13 @@ Proof.
   apply swrestrict_iff; [by apply croot_in_same|by apply croot_in_same|done].
 Qed.
 
-Theorem ptyped_ren π N W Σ p T : ptyped N W Σ p T →
-  ∃ W', ptyped N W' (senv_ren (cb_f π) Σ) p (ty_ren (cb_f π) T) ∧ ∀ x y, W' ⊢ₛ x ≺ y → sw_ren π W ⊢ₛ x ≺ y.
+Theorem ptyped_ren π N η W Σ p T : ptyped N η W Σ p T →
+  ∃ W', ptyped N η W' (senv_ren (cb_f π) Σ) p (ty_ren (cb_f π) T) ∧ ∀ x y, W' ⊢ₛ x ≺ y → sw_ren π W ⊢ₛ x ≺ y.
 Proof.
-  induction 1 as [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Ht [Hw HW]
-                 |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T Hty1 IH1 Hty2 IH2 H12 H1C H2C HC HC1 HC2 HS].
+  induction 1 as [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Htk Ht [Hw HW]
+                 |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T Hty1 IH1 Hty2 IH2 H12 H1C H2C HC HC1 HC2 Hts HS].
   - eexists. split.
-    + apply (p_term N (sw_ren π W) _ (tenv_ren (cb_f π) ΘB) C0 t _ c).
+    + apply (p_term N η (sw_ren π W) _ (tenv_ren (cb_f π) ΘB) C0 t _ c).
       * by apply tfree_ren.
       * intros o. unfold tenv_ren. by rewrite dom_fmap_L.
       * by rewrite chans_of_ren.
@@ -559,8 +559,9 @@ Proof.
       * intros c' Hc'. destruct (Hd c' Hc') as (S & x & m & m' & Hm & HS & H1 & H2).
         exists (sty_ren (cb_f π) S), (pt_ren (cb_f π) x), m, m'. unfold tenv_ren. rewrite !lookup_fmap, H1, H2.
         simpl. rewrite scontr_ren. by rewrite <-dual_ren.
+      * by rewrite dom_senv_ren.
       * pose proof (typed_ren π _ _ _ _ _ _ _ _ _ Ht) as H.
-        rewrite tenv_ren_union, tenv_of_ren in H. unfold sf_ren in H. simpl in H. rewrite set_map_empty in H. exact H.
+        rewrite tenv_ren_union, tenv_ofk_ren in H. unfold sf_ren in H. simpl in H. rewrite set_map_empty in H. exact H.
       * split; [by apply sworld_wf_ren|by apply wok_ren].
     + apply sw_lt_by. intros x y (H & Hx & Hy). rewrite iface_ren in Hx, Hy.
       apply ren_restrict_lt; [done| | |done]; (eapply croot_in_mono; [|done]); set_solver.
@@ -568,7 +569,7 @@ Proof.
     exists (swrestrict (W1' ⊔ W2') (iface (senv_ren (cb_f π) (Σ1 ∪ Σ2)) (ty_ren (cb_f π) T))). split.
     + rewrite senv_ren_union in Hty1', Hty2' |- *. rewrite senv_dual_ren in Hty2'. simpl in Hty2'.
       rewrite <-(chans_of_ren (cb_f π) ΣC).
-      apply p_connect; [exact Hty1'|exact Hty2'|by rewrite ?chans_of_ren..|].
+      apply p_connect; [exact Hty1'|exact Hty2'|by rewrite ?chans_of_ren..|by rewrite dom_senv_ren|].
       apply (wok_sub N _ (sw_ren π (W1 ⊔ W2))); [|by apply wok_ren].
       intros x y Hxy. rewrite sw_ren_join. by eapply join_sub.
     + apply sw_lt_by. intros x y (H & Hx & Hy). rewrite iface_ren in Hx, Hy.
@@ -588,13 +589,14 @@ Qed.
     asks. The derivation itself is never renamed. *)
 
 Section sem.
-  Context (N : fuel) (Q : sworld → senv → proc → ty → Prop).
+  Context (N : fuel) (η : iann) (Q : sworld → senv → proc → ty → Prop).
   Context (Hterm : ∀ W Σ ΘB C0 t T c,
     tfree T → (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 → pfree Σ →
     (∀ o e, Σ !! o = Some e → scontr e.1) →
     (∀ c, c ∈ C0 → ∃ S x m m', tsum_ok N m m' ∧ scontr S ∧
        ΘB !! (c⁺)%cend = Some (TE S x m m) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ m' m')) →
-    typed W N (tenv_of (fhalf N) Σ ∪ ΘB) hc_empty [] (∅, None) t T c →
+    (∀ o, o ∈ dom Σ → fle (η o).2 N) →
+    typed W N (tenv_ofk η Σ ∪ ΘB) hc_empty [] (∅, None) t T c →
     sworld_wf W → wok N W →
     Q W Σ (C0, {[+ t +]}) T).
   Context (Hconn : ∀ W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T,
@@ -603,6 +605,7 @@ Section sem.
     C1 ## chans_of (Σ1 ∪ ΣC) → C2 ## chans_of (Σ2 ∪ senv_dual ΣC) →
     chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
     C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
+    (∀ o, o ∈ dom ΣC → tsum_ok N (η o).2 (η (edual o)).2) →
     sworld_wf W1 → sworld_wf W2 → wok N (W1 ⊔ W2) →
     Q (W1 ⊔ W2) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T).
   Context (Hmono : ∀ W W' Σ p T, W ⊑ₛ W' → Q W Σ p T → Q W' Σ p T).
@@ -637,11 +640,11 @@ Section sem.
       destruct (decide (b ∈ I)) as [HbI|HbI]; [rewrite HI in Ha by done; done|]. apply HP. set_solver.
   Qed.
 
-  Lemma ptyped_qren W Σ p T : ptyped N W Σ p T →
+  Lemma ptyped_qren W Σ p T : ptyped N η W Σ p T →
     ∃ W', qren W' Σ p T ∧ sworld_wf W' ∧ wok N W' ∧ hides W' (iface Σ T) W.
   Proof.
-    induction 1 as [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Ht [Hw HW]
-                   |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T Hty1 IH1 Hty2 IH2 H12 H1C H2C HC HC1 HC2 HS].
+    induction 1 as [W Σ ΘB C0 t T c Hp HB HΣ Hpf HΣc Hd Htk Ht [Hw HW]
+                   |W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T Hty1 IH1 Hty2 IH2 H12 H1C H2C HC HC1 HC2 Hts HS].
     - exists W. split_and!; [|done|done|by apply hides_restrict]. intros π.
       apply (Hterm _ _ (tenv_ren (cb_f π) ΘB) C0 t _ c).
       + by apply tfree_ren.
@@ -653,8 +656,9 @@ Section sem.
       + intros c' Hc'. destruct (Hd c' Hc') as (S & x & m & m' & Hm & HS & H1 & H2).
         exists (sty_ren (cb_f π) S), (pt_ren (cb_f π) x), m, m'. unfold tenv_ren. rewrite !lookup_fmap, H1, H2.
         simpl. rewrite scontr_ren. by rewrite <-dual_ren.
+      + by rewrite dom_senv_ren.
       + pose proof (typed_ren π _ _ _ _ _ _ _ _ _ Ht) as H.
-        rewrite tenv_ren_union, tenv_of_ren in H. unfold sf_ren in H. simpl in H. rewrite set_map_empty in H. exact H.
+        rewrite tenv_ren_union, tenv_ofk_ren in H. unfold sf_ren in H. simpl in H. rewrite set_map_empty in H. exact H.
       + by apply sworld_wf_ren.
       + by apply wok_ren.
     - destruct IH1 as (W1' & Hq1 & Hw1 & Hk1 & Hh1), IH2 as (W2' & Hq2 & Hw2 & Hk2 & Hh2).
@@ -666,21 +670,21 @@ Section sem.
                   (iface_connect _ _ _ _) HS) as [HR Hh].
       assert (wok N (V1 ⊔ V2)) as HJ by (apply (wok_join_iff N V1 V2 Hwv1 Hwv2); by split_and!).
       exists (V1 ⊔ V2). split_and!; [|by apply swjoin_wf|done|exact Hh]. intros π.
-      pose proof (ptyped_pfree _ _ _ _ _ Hty1) as F1. pose proof (ptyped_pfree _ _ _ _ _ Hty2) as F2.
-      pose proof (ptyped_chans _ _ _ _ _ Hty1) as K1. pose proof (ptyped_chans _ _ _ _ _ Hty2) as K2.
+      pose proof (ptyped_pfree _ _ _ _ _ _ Hty1) as F1. pose proof (ptyped_pfree _ _ _ _ _ _ Hty2) as F2.
+      pose proof (ptyped_chans _ _ _ _ _ _ Hty1) as K1. pose proof (ptyped_chans _ _ _ _ _ _ Hty2) as K2.
       simpl in K1, K2. pose proof (Hv1 π) as Q1. pose proof (Hv2 π) as Q2. simpl in Q2.
       rewrite sw_ren_join, senv_ren_union, <-(chans_of_ren (cb_f π) ΣC).
       rewrite senv_ren_union in Q1. rewrite senv_ren_union, senv_dual_ren in Q2.
-      apply Hconn; [exact Q1|exact Q2|by apply tfree_ren, (ptyped_tfree _ _ _ _ _ Hty1)
+      apply Hconn; [exact Q1|exact Q2|by apply tfree_ren, (ptyped_tfree _ _ _ _ _ _ Hty1)
         |rewrite <-senv_ren_union; by apply pfree_ren
         |rewrite <-senv_dual_ren, <-senv_ren_union; by apply pfree_ren
         |by rewrite <-senv_ren_union, chans_of_ren
         |by rewrite <-senv_dual_ren, <-senv_ren_union, chans_of_ren
-        |by rewrite ?chans_of_ren..|by apply sworld_wf_ren|by apply sworld_wf_ren|].
+        |by rewrite ?chans_of_ren..|by rewrite dom_senv_ren|by apply sworld_wf_ren|by apply sworld_wf_ren|].
       rewrite <-sw_ren_join. by apply wok_ren.
   Qed.
 
-  Theorem ptyped_sem W Σ p T : ptyped N W Σ p T →
+  Theorem ptyped_sem W Σ p T : ptyped N η W Σ p T →
     ∃ W', sworld_wf W' ∧ wok N W' ∧ hides W' (iface Σ T) W ∧ Q W' Σ p T.
   Proof.
     intros Hty. destruct (ptyped_qren _ _ _ _ Hty) as (W' & Hq & Hw & Hk & Hh).

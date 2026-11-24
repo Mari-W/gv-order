@@ -134,7 +134,7 @@ Proof.
   - apply lage_nil.
   - eapply (e_sub _ _ _ _ _ _ _
       (TProd (TSess S1 (pt_polar b ρ) (Some 2) (Some 3)) (TSess S2 (pt_polar b (ρ·0)) (Some 2) (Some 3))));
-      [|apply sub_prod; apply sub_sess; [apply sequiv_refl|simpl; lia|apply sequiv_refl|simpl; lia]|apply fle_refl
+      [|apply sub_prod; apply sub_sess; [apply ssub_refl|simpl; lia|apply ssub_refl|simpl; lia]|apply fle_refl
        |exact (λ H, H)].
     eapply (e_pair _ _ Θ' {[o1 := TE S1 (pt_polar b ρ) (Some 2) (Some 3)]}
               {[o2 := TE S2 (pt_polar b (ρ·0)) (Some 2) (Some 3)]} {[o2 := TE S2 (pt_polar b (ρ·0)) (Some 2) (Some 3)]}
@@ -163,16 +163,17 @@ Qed.
 
 (** ** Each component at its own static world *)
 
-Lemma cli_term (EM : excluded_middle) : lf_sems 6 W_cli ΣC (∅, {[+ t_cli +]}) TUnit.
+Lemma cli_term (EM : excluded_middle) : lf_sems 6 (khalf (Some 6)) W_cli ΣC (∅, {[+ t_cli +]}) TUnit.
 Proof.
   destruct (side_typed true cli Sa Sb oa ob ρ (ρ·0) ltac:(done) cli_box eq_refl eq_refl) as [c Hc].
-  apply (lf_p_term EM W_cli 6 ΣC ∅ ∅ t_cli TUnit c).
+  apply (lf_p_term EM W_cli 6 (khalf (Some 6)) ΣC ∅ ∅ t_cli TUnit c).
   - apply W_side_wf.
   - constructor.
   - intros o. rewrite dom_empty_L. set_solver.
   - set_solver.
+  - intros; apply fhalf_le.
   - set_solver.
-  - assert (tenv_of (fhalf (Some 6)) ΣC ∪ ∅ =
+  - rewrite tenv_ofk_half. assert (tenv_of (fhalf (Some 6)) ΣC ∪ ∅ =
             <[oa := TE Sa ρ (Some 3) (Some 3)]> {[ob := TE Sb (ρ·0) (Some 3) (Some 3)]}) as ->.
     { unfold tenv_of, ΣC. by rewrite map_union_empty, fmap_insert, map_fmap_singleton. }
     exact Hc.
@@ -182,17 +183,18 @@ Lemma senv_dual_ΣC :
   senv_dual ΣC = <[edual oa := (Sb, ρ‾)]> {[edual ob := (Sa, (ρ·0)‾)]}.
 Proof. unfold senv_dual, ΣC. rewrite fmap_insert, map_fmap_singleton. rewrite kmap_insert; [|apply _]. rewrite kmap_singleton. reflexivity. Qed.
 
-Lemma srv_term (EM : excluded_middle) : lf_sems 6 W_srv (senv_dual ΣC) (∅, {[+ t_srv +]}) TUnit.
+Lemma srv_term (EM : excluded_middle) : lf_sems 6 (khalf (Some 6)) W_srv (senv_dual ΣC) (∅, {[+ t_srv +]}) TUnit.
 Proof.
   destruct (side_typed false srv Sb Sa (edual oa) (edual ob) ρ‾ (ρ·0)‾ ltac:(done) srv_box eq_refl eq_refl)
     as [c Hc].
-  apply (lf_p_term EM W_srv 6 (senv_dual ΣC) ∅ ∅ t_srv TUnit c).
+  apply (lf_p_term EM W_srv 6 (khalf (Some 6)) (senv_dual ΣC) ∅ ∅ t_srv TUnit c).
   - apply W_side_wf.
   - constructor.
   - intros o. rewrite dom_empty_L. set_solver.
   - set_solver.
+  - intros; apply fhalf_le.
   - set_solver.
-  - assert (tenv_of (fhalf (Some 6)) (senv_dual ΣC) ∪ ∅ =
+  - rewrite tenv_ofk_half. assert (tenv_of (fhalf (Some 6)) (senv_dual ΣC) ∪ ∅ =
             <[edual oa := TE Sb ρ‾ (Some 3) (Some 3)]> {[edual ob := TE Sa (ρ·0)‾ (Some 3) (Some 3)]}) as ->.
     { rewrite senv_dual_ΣC. unfold tenv_of. by rewrite map_union_empty, fmap_insert, map_fmap_singleton. }
     exact Hc.
@@ -206,7 +208,7 @@ Theorem cs_split_lock_free : excluded_middle → functional_choice →
   lock_free (∅ ∪ ∅ ∪ chans_of ΣC, {[+ t_cli +]} ⊎ {[+ t_srv +]}).
 Proof.
   intros EM FC. destruct W_cs_parts as (H1 & H2 & HS).
-  apply (lf_connect_adequacy EM FC 6 W_cli W_srv ΣC ∅ ∅ _ _ TUnit (cli_term EM) (srv_term EM));
+  apply (lf_connect_adequacy EM FC 6 (khalf (Some 6)) W_cli W_srv ΣC ∅ ∅ _ _ TUnit (cli_term EM) (srv_term EM) (λ _ _, tsum_fhalf (Some 6)));
     [|set_solver|set_solver|set_solver|apply W_side_wf|apply W_side_wf|done|done|done].
   intros o Ho. unfold ΣC in *. rewrite dom_insert_L, dom_singleton_L in *.
   apply elem_of_union in Ho as [Ho|Ho]; apply elem_of_singleton in Ho as ->;
@@ -229,10 +231,10 @@ Proof.
     apply elem_of_union in Hd as [Hd|Hd]; apply elem_of_singleton in Hd; auto.
 Qed.
 
-Lemma cli_hterm : ptyped (Some 6) (swrestrict W_cli (iface ΣC TUnit)) ΣC (∅, {[+ t_cli +]}) TUnit.
+Lemma cli_hterm : ptyped (Some 6) (khalf (Some 6)) (swrestrict W_cli (iface ΣC TUnit)) ΣC (∅, {[+ t_cli +]}) TUnit.
 Proof.
   destruct (side_typed true cli Sa Sb oa ob ρ (ρ·0) ltac:(done) cli_box eq_refl eq_refl) as [c Hc].
-  apply (p_term (Some 6) W_cli ΣC ∅ ∅ t_cli TUnit c).
+  apply (p_term_half (Some 6) W_cli ΣC ∅ ∅ t_cli TUnit c).
   - constructor.
   - intros o. rewrite dom_empty_L. set_solver.
   - set_solver.
@@ -248,11 +250,11 @@ Proof.
 Qed.
 
 Lemma srv_hterm :
-  ptyped (Some 6) (swrestrict W_srv (iface (senv_dual ΣC) TUnit)) (senv_dual ΣC) (∅, {[+ t_srv +]}) TUnit.
+  ptyped (Some 6) (khalf (Some 6)) (swrestrict W_srv (iface (senv_dual ΣC) TUnit)) (senv_dual ΣC) (∅, {[+ t_srv +]}) TUnit.
 Proof.
   destruct (side_typed false srv Sb Sa (edual oa) (edual ob) ρ‾ (ρ·0)‾ ltac:(done) srv_box eq_refl eq_refl)
     as [c Hc].
-  apply (p_term (Some 6) W_srv (senv_dual ΣC) ∅ ∅ t_srv TUnit c).
+  apply (p_term_half (Some 6) W_srv (senv_dual ΣC) ∅ ∅ t_srv TUnit c).
   - constructor.
   - intros o. rewrite dom_empty_L. set_solver.
   - set_solver.
@@ -267,9 +269,9 @@ Proof.
   - split; [apply W_side_wf|apply W_cs_parts].
 Qed.
 
-Theorem cs_split_typed : ∃ W, ptyped (Some 6) W ∅ (∅ ∪ ∅ ∪ chans_of ΣC, {[+ t_cli +]} ⊎ {[+ t_srv +]}) TUnit.
+Theorem cs_split_typed : ∃ W, ptyped (Some 6) (khalf (Some 6)) W ∅ (∅ ∪ ∅ ∪ chans_of ΣC, {[+ t_cli +]} ⊎ {[+ t_srv +]}) TUnit.
 Proof.
-  eexists. pose proof (p_connect (Some 6) (swrestrict W_cli (iface ΣC TUnit)) (swrestrict W_srv (iface (senv_dual ΣC) TUnit)) ∅ ∅ ΣC ∅ ∅ {[+ t_cli +]} {[+ t_srv +]} TUnit) as H.
+  eexists. pose proof (p_connect_half (Some 6) (swrestrict W_cli (iface ΣC TUnit)) (swrestrict W_srv (iface (senv_dual ΣC) TUnit)) ∅ ∅ ΣC ∅ ∅ {[+ t_cli +]} {[+ t_srv +]} TUnit) as H.
   rewrite !(left_id_L ∅ (∪)) in H |- *. apply H; clear H; [rewrite (left_id_L ∅ (∪)); exact cli_hterm|rewrite (left_id_L ∅ (∪)); exact srv_hterm|..].
   all: try (rewrite ?chans_of_empty; set_solver).
   apply (swf_sub _ (W_cli ⊔ W_srv)); [|exact W_cs_join_wf]. intros x y. apply join_sub; intros u v; apply swrestrict_lt.
@@ -278,5 +280,5 @@ Qed.
 Theorem cs_split_lock_free_h : excluded_middle → functional_choice →
   lock_free (∅ ∪ ∅ ∪ chans_of ΣC, {[+ t_cli +]} ⊎ {[+ t_srv +]}).
 Proof.
-  intros EM FC. destruct cs_split_typed as [W H]. exact (lf_soundness_h 6 W _ TUnit EM FC H).
+  intros EM FC. destruct cs_split_typed as [W H]. exact (lf_soundness_h 6 _ W _ TUnit EM FC H).
 Qed.

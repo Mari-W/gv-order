@@ -194,9 +194,11 @@ Definition dftyped (W : sworld) (Θ : tenv) (Γ : hctx) (Δ : lenv) (F : sfuture
     P-Term types one thread over the interface Σ and the ends Θ_B of the
     restricted channels C0, both ends of each, dual at dual points, each
     end at credit equal to its tickets, the tickets of the two ends of a
-    channel summing to at most N. The interface ends sit at credit and
-    tickets N/2, so a cut of P-Connect also meets the bound. P-Term asks
-    its world well formed and well-founded.
+    channel summing to at most N. An interface end o sits at the credit
+    and the tickets η o of the interface annotations η, its tickets at
+    most N, and P-Connect asks the tickets of the two ends of each cut
+    channel to sum to at most N, as E-New does. P-Term asks its world
+    well formed and well-founded.
     P-Connect composes two components typed at their own worlds over the
     cut Σ_C.
 
@@ -303,25 +305,51 @@ Qed.
     the cut. A world restricted to S keeps every fact the world derives
     between points with roots in S, through private constants too
     ([swrestrict_iff], static/Hiding.v). *)
-Inductive ptyped (N : fuel) : sworld → senv → proc → ty → Prop :=
+Inductive ptyped (N : fuel) (η : iann) : sworld → senv → proc → ty → Prop :=
   | p_term W Σ ΘB C0 t T c :
       tfree T →
       (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 → pfree Σ →
       (∀ o e, Σ !! o = Some e → scontr e.1) →
       (∀ c, c ∈ C0 → ∃ S x m m', tsum_ok N m m' ∧ scontr S ∧
          ΘB !! (c⁺)%cend = Some (TE S x m m) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ m' m')) →
-      typed W N (tenv_of (fhalf N) Σ ∪ ΘB) hc_empty [] (∅, None) t T c →
+      (∀ o, o ∈ dom Σ → fle (η o).2 N) →
+      typed W N (tenv_ofk η Σ ∪ ΘB) hc_empty [] (∅, None) t T c →
       sworld_wf W ∧ wok N W →
-      ptyped N (swrestrict W (iface Σ T)) Σ (C0, {[+ t +]}) T
+      ptyped N η (swrestrict W (iface Σ T)) Σ (C0, {[+ t +]}) T
   | p_connect W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
-      ptyped N W1 (Σ1 ∪ ΣC) (C1, E1) T →
-      ptyped N W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
+      ptyped N η W1 (Σ1 ∪ ΣC) (C1, E1) T →
+      ptyped N η W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
       chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
       C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
+      (∀ o, o ∈ dom ΣC → tsum_ok N (η o).2 (η (edual o)).2) →
       wok N (W1 ⊔ W2) →
-      ptyped N (swrestrict (W1 ⊔ W2) (iface (Σ1 ∪ Σ2) T)) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
+      ptyped N η (swrestrict (W1 ⊔ W2) (iface (Σ1 ∪ Σ2) T)) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
 
-Notation "Σ ⊢_ W p : T" := (ptyped None W Σ p T)
+(** P-Term and P-Connect with every interface end at credit and tickets
+    N/2, the rules before interface annotations. *)
+Lemma p_term_half N W Σ ΘB C0 t T c :
+  tfree T →
+  (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 → pfree Σ →
+  (∀ o e, Σ !! o = Some e → scontr e.1) →
+  (∀ c, c ∈ C0 → ∃ S x m m', tsum_ok N m m' ∧ scontr S ∧
+     ΘB !! (c⁺)%cend = Some (TE S x m m) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ m' m')) →
+  typed W N (tenv_of (fhalf N) Σ ∪ ΘB) hc_empty [] (∅, None) t T c →
+  sworld_wf W ∧ wok N W →
+  ptyped N (khalf N) (swrestrict W (iface Σ T)) Σ (C0, {[+ t +]}) T.
+Proof.
+  intros. apply (p_term N (khalf N) W Σ ΘB C0 t T c); try done; [intros; apply fhalf_le|]. by rewrite tenv_ofk_half.
+Qed.
+
+Lemma p_connect_half N W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
+  ptyped N (khalf N) W1 (Σ1 ∪ ΣC) (C1, E1) T →
+  ptyped N (khalf N) W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →
+  chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
+  C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
+  wok N (W1 ⊔ W2) →
+  ptyped N (khalf N) (swrestrict (W1 ⊔ W2) (iface (Σ1 ∪ Σ2) T)) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
+Proof. intros. apply p_connect; try done. intros. apply tsum_fhalf. Qed.
+
+Notation "Σ ⊢_ W p : T" := (ptyped None (khalf None) W Σ p T)
   (at level 74, W at level 0, p at level 60, T at level 60,
    format "Σ  ⊢_ W  p  :  T").
 
@@ -337,22 +365,22 @@ Proof. destruct N; [apply swrestrict_swf|apply swrestrict_sacyc]. Qed.
 (** Every hidden derivation sits over a well-formed world on the
     constants of its interface, acyclic at N = ∞ and well-founded at a
     finite N. *)
-Lemma ptyped_wf N W Σ p T : ptyped N W Σ p T → sworld_wf W ∧ wok N W.
+Lemma ptyped_wf N η W Σ p T : ptyped N η W Σ p T → sworld_wf W ∧ wok N W.
 Proof.
-  destruct 1 as [W Σ ΘB C0 t T c _ _ _ _ _ _ _ [_ HW]|W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ _ _ _ _ _ _ _ HS];
+  destruct 1 as [W Σ ΘB C0 t T c _ _ _ _ _ _ _ _ [_ HW]|W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T _ _ _ _ _ _ _ _ _ HS];
     (split; [apply swrestrict_wf|by apply swrestrict_wok]).
 Qed.
 
-Lemma ptyped_consts N W Σ p T : ptyped N W Σ p T → sw_consts W ⊆ iface Σ T.
+Lemma ptyped_consts N η W Σ p T : ptyped N η W Σ p T → sw_consts W ⊆ iface Σ T.
 Proof. destruct 1; simpl; set_solver. Qed.
 
-Lemma ptyped_tfree N W Σ p T : ptyped N W Σ p T → tfree T.
+Lemma ptyped_tfree N η W Σ p T : ptyped N η W Σ p T → tfree T.
 Proof. induction 1; auto. Qed.
 
-Lemma ptyped_pfree N W Σ p T : ptyped N W Σ p T → pfree Σ.
+Lemma ptyped_pfree N η W Σ p T : ptyped N η W Σ p T → pfree Σ.
 Proof. induction 1; [done|eauto using pfree_join]. Qed.
 
-Lemma ptyped_chans N W Σ p T : ptyped N W Σ p T → p.1 ## chans_of Σ.
+Lemma ptyped_chans N η W Σ p T : ptyped N η W Σ p T → p.1 ## chans_of Σ.
 Proof.
   induction 1 as [|? ? ? ? ? ? ? ? ? ? _ IH1 _ IH2 ? ? ? ? ? ? ?];
     simpl in *; [done|..]; rewrite !chans_of_union in *; set_solver.
