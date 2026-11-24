@@ -20529,6 +20529,54 @@
    }
   },
   {
+   "id": "ex-bit",
+   "title": "The bit program",
+   "lead": "A thread that branches on a received bit closes two channels in either order. [[r-data|E-Case]] types both arms in one world, and the program types because the two ends of each channel have dual points.",
+   "code": "main = let ⟨e, e′⟩ = new in          -- e at ρ, with the six facts below\n       let ⟨c, c′⟩ = new in          -- at the field ρ·0\n       let ⟨d, d′⟩ = new in          -- at the field ρ·1\n       let ∗ = spawn (λu. close (send ⟨inj₁ ∗, e′⟩)) in\n       let ∗ = spawn (λu. close c′) in let ∗ = spawn (λu. close d′) in\n       let ⟨v, e⟩ = recv e in let ∗ = close e in\n       case v of inl w ⇒ let ∗ = w in let ∗ = close c in close d\n               | inr w ⇒ let ∗ = w in let ∗ = close d in close c",
+   "meaning": "The main thread holds $c$ at $\\rho\\cdot 0$ and $d$ at $\\rho\\cdot 1$, and the dual ends are at $\\overline{\\rho\\cdot 0}$ and $\\overline{\\rho\\cdot 1}$. The arm $\\mathsf{inl}$ closes $c$ while it holds $d$ and asks $\\rho\\cdot 0 \\prec \\overline{\\rho\\cdot 1}$. The arm $\\mathsf{inr}$ asks $\\rho\\cdot 1 \\prec \\overline{\\rho\\cdot 0}$. The receive and the close of $e$ ask $\\rho \\prec \\overline{\\rho\\cdot 0}$ and $\\rho \\prec \\overline{\\rho\\cdot 1}$, and the same two facts at $\\rho^{+}$. The creation of $e$ states these six facts. They end in the tree of $\\rho$, and a rank that counts three per offset, five per field and one for a negative point rises along each fact and along program order. With one point per channel the two arms would ask $\\rho\\cdot 0 \\prec \\rho\\cdot 1$ and $\\rho\\cdot 1 \\prec \\rho\\cdot 0$, a cycle. The program types\\inmode{lf}{ at $N = \\infty$} and is deadlock free.",
+   "source": [
+    {
+     "file": "examples/BitProgram.v",
+     "names": [
+      "bit_main",
+      "bit_wf_new",
+      "bit_dftyped",
+      "bit_deadlock_free"
+     ]
+    }
+   ],
+   "x-gv-accepts": {
+    "df": {
+     "ok": true,
+     "rocq": "bit_dftyped, bit_deadlock_free"
+    }
+   }
+  },
+  {
+   "id": "ex-milner",
+   "title": "Milner's cyclic scheduler",
+   "lead": "Three agents on a ring pass a token and report to their collectors. The six channels have points at one base and its fields. The facts the agents ask rise with the field label, so [[r-new|E-New]] accepts the creation of the base.",
+   "code": "sendclose r = close (send ⟨∗, r⟩)\nrecvclose r = let ⟨u, r⟩ = recv r in let ∗ = u in close r\nA₀ = let ∗ = sendclose c₀ in let ∗ = recvclose d₀ in sendclose a₀   -- main\nAᵢ = let ∗ = recvclose dᵢ in let ∗ = sendclose aᵢ in sendclose cᵢ   -- i = 1, 2, spawned\nPᵢ = recvclose bᵢ                                                 -- i = 0, 1, 2, spawned\n-- c₀, d₁ at ρ   a₁, b₁ at ρ·1   c₁, d₂ at ρ·2\n-- a₂, b₂ at ρ·3   c₂, d₀ at ρ·4   a₀, b₀ at ρ·5",
+   "meaning": "Agent $A_0$ starts the round by sending on $c_0$. Agent $A_i$ waits on $d_i$, reports on $a_i$ and passes the token on $c_i$. The ends $c_i$ and $d_{(i+1) \\bmod 3}$ belong to one channel, which closes the ring. Let $k_0 = \\rho$ and $k_i = \\rho\\cdot i$ for $1 \\leq i \\leq 5$. The sending end of the channel at $k_i$ has the point $k_i$ and the receiving end the point $\\overline{k_i}$. Each agent acts on an end while it holds the ends it uses later. Each such fact has the form $u \\prec v$ with $u \\in \\{k_i, \\overline{k_i}\\}$ and $v \\in \\{k_j, \\overline{k_j}\\}$ for some $i < j$. The close after each action asks the same fact at $u^{+}$. The first creation states these 18 facts, and a rank that reads the field label first rises along each fact and along program order. The scheduler types\\inmode{lf}{ at $N = \\infty$} and is deadlock free.",
+   "source": [
+    {
+     "file": "examples/MilnerSched.v",
+     "names": [
+      "ms_main",
+      "ms_wf_new",
+      "ms_dftyped",
+      "ms_deadlock_free"
+     ]
+    }
+   ],
+   "x-gv-accepts": {
+    "df": {
+     "ok": true,
+     "rocq": "ms_dftyped, ms_deadlock_free"
+    }
+   }
+  },
+  {
    "id": "ex-sinst",
    "title": "Why session types are contractive",
    "lead": "Without contractivity a derivation at one instance of a session variable gives none at another. It shows why [[ty-session|session types]] are contractive and why [[t-subs|Sub-Box]] asks contractivity.",
