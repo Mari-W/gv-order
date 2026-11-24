@@ -387,3 +387,155 @@ Pass 1's six questions stay open. These are new.
    the page. It is the point $K$ records for $o$. Should the lock-free
    process relation block name that projection, or should the caption say
    "the point of $o$ in $K$" and drop the symbol?
+
+## Pass 3, Opus, verification
+
+Branch map-pass3 from redesign ab16e8b, which includes passes 1 and 2.
+Content of map.json only. I re-read each of the 96 fields pass 2 changed
+(`git diff 08bb92b ab16e8b`), in its deadlock-free projection and in full,
+and checked the faithfulness changes against v2. MathJax ran from a copy of
+the gitignored tools/proof-map/node_modules of the redesign worktree.
+
+### What pass 2 got right
+
+- The flattened lock-free blocks. In `r-new`, `th-sound`, `th-adeq`,
+  `th-chain`, `th-terms`, `p-typing`, `sr-reading`, `sr-ord`, `ct-costs`,
+  `sj-all`, `ty-grammar` and `w-world` each deadlock-free sentence of 08bb92b
+  shows in the deadlock-free view, and no lock-free sentence leaks into it.
+- The faithfulness changes. Sub-Sess asks `sequiv`, which `ty-equiv` writes
+  $\simeq$ (`sub_sess`). E-Link asks both `lgt N a1 m2` and `lgt N a2 m1`
+  (`e_link`). E-Link is a rule of `r-act` and E-App a rule of `r-fun`. The
+  forwarder sentence of `ex-copycat` matches `fwd_expand`, a process that
+  holds $\overline{o_1}$ types with the forwarder put behind that end. The
+  words of `ex-gennew` match GenNew.v, the second program has the exits
+  $\pi \prec \overline{\rho}$ and $\pi \prec \overline{\rho\cdot 0}$ and pairs
+  $\pi$ with $\rho\cdot 1$ and $\rho$, and both programs type through
+  `d_new_acyc` under $\mathsf{acyc\_new}$. `sty.contr.why` matches
+  `unfoldS`, which unrolls `sfuel s` times.
+- Each new `[[example-id|words]]` link resolves to the example the old text
+  named. Links to lock-free-only examples (`rx-*`, `ex-close`) sit only in
+  lock-free notes, lock-free blocks or `\inmode{lf}`.
+
+### What I fixed
+
+- `th-terms`. The deadlock-free caption said that the rejection of recursive
+  fork-join uses the lemma on two closes. Fork-join types and is deadlock
+  free in that view, and its rejection is lock-free only (`fjr_lf_rejected`).
+  The deadlock-free sentence now names the self-computed flag and the
+  creations with exits, the two users of `cl2_needs` in that view
+  (`sbv_rejected`, `te_rejected_wf_new`). The fork-join use moved into the
+  lock-free part.
+- `th-sound`. Pass 2 wrote that each pending thread of a reachable
+  configuration "takes part in a later step". `lf_padovani` is existential.
+  Some configuration reachable from there has a step in which the thread
+  takes part. The caption now says that.
+- `th-adeq`. "Under the same hypotheses" followed a sentence about a
+  well-founded static world, which `live_sub_df` does not ask. The caption
+  names excluded middle and functional choice again.
+- `ex-cs` lead and note `E-New.facts`. "Orders the points of each round at
+  once" lost the point of the sentence, one constraint for infinitely many
+  rounds. Both now say "its infinitely many rounds at once".
+- `ct-costs`. The deadlock-free caption said "in each table", and cost tables
+  exist only in the lock-free view. The words "in each table" are lock-free
+  now.
+- `ex-link`. "Its partner none" is now "its dual end none".
+- `ex-gennew` lead. "A condition that keeps each fact of E-New inside the new
+  tree" is now two sentences that name exits and say that E-New accepts them
+  and the simpler condition rejects them.
+
+I reverted nothing else. The prose rewrites and sentence splits of pass 2
+keep their meaning.
+
+### Page
+
+`node tools/proof-map/test/page-test.js docs/explorer/map.json` passes 16 of
+16. The light screenshots of `tools/proof-map/shoot.sh` at 1400 pixels show
+each section in both modes. In the theorem section the deadlock-free view
+shows no lock-free sentence, and the lock-free captions of soundness and
+adequacy follow the deadlock-free ones as one coloured paragraph.
+
+### check.sh
+
+At the tip of map-pass3.
+
+| step | errors | warn | info |
+|---|---|---|---|
+| 1 schema | 0 | 0 | 0 |
+| 2 proof-map | 0 | 1 | 7 |
+| 3 DF-LEAK | 0 | 0 | 0 |
+| 4 writing | 0 | 0 | 0 |
+| 5 MathJax | 0 | 0 | 0 |
+| total | 0 | 1 | 7 |
+
+The one warning is the bare word "Connect" in `\textsf{P-Connect$^{n}$}` of
+`p-typing`, a checker artefact. The info lines are the four uncovered
+constructors, the unused note `sr.thunk`, the external `Acc` and the
+unstamped fingerprints. Tool matter for later: the sentence splitter of
+tools/proof-map/lib/prose-rules.js does not split before `\inmode` or
+`[[`, so it counts two sentences as one there.
+
+### Open questions for the author, all three passes
+
+The question of pass 1 on the liveness port is settled. compat/LiveDF.v and
+compat/LiveRules.v are the current files, and the map cites them.
+
+Typing rules.
+
+1. Aging of idle ends. `tage` drops the credit of an idle end type, but
+   `thage` asks $c \leq a$ of each end in $\Theta$, idle or not. Should
+   `thage` get the idle case, so that an idle end named directly ages like
+   one bound to a variable?
+2. Subtyping of session types. Sub-Sess compares by $\simeq$, which sees
+   payload credits, while the value relation uses $\approx$, which erases
+   them. Is it intended that E-Sub cannot retype between two protocols that
+   differ only in a payload credit?
+3. Interface tickets. P-Term gives each interface end $N/2$ tickets, while a
+   creation chooses $m_1 + m_2 \leq N$, so a link of two interface ends types
+   at no even $N$. Should P-Term let interface ends carry chosen tickets?
+4. Field reuse. E-New-Field asks no freshness of the field, so one thread may
+   create two channels at the same field. Is that wanted, or should a field
+   be created once per thread?
+5. Fuel and renaming. Fuel quantifies over a renaming injective on the held
+   ends, while the relation renames through the fusion clause of $P$. Could
+   fuel drop the renaming and leave it to the lock-free process relation?
+
+Rocq results for examples.
+
+6. Six deadlock-free examples (`ex-cs`, `ex-cycle`, `ex-between`, `ex-many`,
+   `ex-factory`, `ex-ring`) prove typing and the world lemma but state no
+   deadlock-freedom theorem. Should each get the one-line corollary of
+   `soundness_source`?
+7. Two rejections are partly argued. `ex-flagpair` has no static rejection
+   theorem and `ex-guard-pos` proves only the step on aging. Should they get
+   full rejection theorems as in Rejects.v?
+8. `ex-guard-neg`, `ex-link` and `ex-forwarder` type open terms and prove no
+   lock freedom of a closed program, yet sit under a lock-free badge. Should
+   the page get a badge for typing alone, or should these examples get
+   closed programs?
+9. `ex-copycat` types the forwarder and the expansion at $N \geq 4$ but has
+   no lock-free badge. Is a lock-freedom corollary for the expanded
+   composite wanted?
+10. The header of LFController.v says $N = 3$ while `ctl_lftyped` and the
+    lemmas use $6$. The map says $6$. Should the comment change?
+
+Presentation.
+
+11. Should the soundness block lead with the run form
+    `lf_soundness_run`, which shows that a weakly fair maximal run exists
+    under dependent choice, so that the reader sees the non-vacuous
+    statement first?
+12. `cl_lftyped N` holds at each bound, $N = \infty$ included, yet `ex-close`
+    is lock-free only. Should it show in both views, as the smallest example
+    of P-Term and P-Connect for the deadlock-free reader?
+13. The map writes $\vDash$, $|\!\!\vDash$ for the judgment at $\kappa_L$ and
+    $\Vvdash$ for the lock-free process judgment. Should the last two become
+    $\vDash[\kappa_L]$ and $\vDash^{N}$?
+14. `th-chain` writes $\mu(t) = (\varrho(\mathsf{pt}\,o), f)$ with
+    $\mathsf{pt}$ undefined on the page. Should the lock-free process
+    relation block define it, or should the caption say "the point of $o$
+    in $K$"?
+15. "Partner" occurs 123 times in map.json, for the thread or end on the
+    other side of a channel ("partner bound $N - m$", "a new partner",
+    "two partners $P$ and $Q$"). The forbidden list names "partner end".
+    Should the remaining uses go too, in favour of "dual end" and "the
+    other component"?
