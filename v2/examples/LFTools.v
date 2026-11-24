@@ -1,6 +1,6 @@
 (** * Tools for lock-free example derivations (stage S9)
 
-    A closed program t is lock free by [lf_soundness_h] when it types at a
+    A closed program t is lock free by [lf_soundness] when it types at a
     finite bound N with the empty future and lives in a
     well-formed, well-founded static world ([lf_main]). The constraints
     of the creations meet (wf-new) by lexicographic measures
@@ -18,7 +18,7 @@ Notation functional_choice := lockfree.FairRun.functional_choice.
 
 Lemma lf_main_typed N W t T c :
   sworld_wf W ∧ swf W → tfree T → typed W (Some N) ∅ hc_empty [] (∅, None) t T c →
-  ∅ ⊩^N,(khalf (Some N)) _ (swrestrict W (iface ∅ T)) (∅, {[+ t +]}) : T.
+  ∅ ⊩^N,(khalf (Some N)) _ W (∅, {[+ t +]}) : T.
 Proof.
   intros HS Hp Ht.
   apply (p_term_half (Some N) W ∅ ∅ ∅ t T c); [done| | | | | | |done].
@@ -33,7 +33,7 @@ Qed.
 Lemma lf_main (EM : excluded_middle) (FC : functional_choice) N W t T c :
   sworld_wf W ∧ swf W → tfree T → typed W (Some N) ∅ hc_empty [] (∅, None) t T c →
   lock_free (∅, {[+ t +]}).
-Proof. intros HS Hp Ht. eapply (lf_soundness_h N _ _ _ T EM FC), lf_main_typed; eauto. Qed.
+Proof. intros HS Hp Ht. eapply (lf_soundness N _ _ _ T EM FC), lf_main_typed; eauto. Qed.
 
 (** ** Rules of the merged judgment with weakening built in *)
 

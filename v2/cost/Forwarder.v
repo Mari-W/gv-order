@@ -81,7 +81,7 @@ Proof.
 Qed.
 
 Theorem fw_ptyped N (η : iann) o x : fle (η o).1 (η o).2 → fle (η o).2 N →
-  ptyped N η (swrestrict W_fw (iface {[o := (S_fw, x)]} TUnit)) {[o := (S_fw, x)]} (∅, {[+ fw o +]}) TUnit.
+  ptyped N η W_fw {[o := (S_fw, x)]} (∅, {[+ fw o +]}) TUnit.
 Proof.
   intros Ham HmN.
   eapply (p_term N η W_fw _ ∅ ∅ _ TUnit fw_cost).

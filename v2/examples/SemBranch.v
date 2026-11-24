@@ -528,13 +528,13 @@ Qed.
     same point in the thread's Θ. *)
 Lemma side_lookup N η W Σ C0 u T :
   ptyped N η W Σ (C0, {[+ u +]}) T →
-  ∃ W' Θ c, W = swrestrict W' (iface Σ T) ∧ sworld_wf W' ∧ typed W' N Θ hc_empty [] (∅, None) u T c ∧
+  ∃ Θ c, sworld_wf W ∧ typed W N Θ hc_empty [] (∅, None) u T c ∧
     ∀ o, o ∈ fends u → edual o ∉ fends u →
       ∃ S x e, Σ !! o = Some (S, x) ∧ Θ !! o = Some e ∧ te_pt e = x.
 Proof.
-  intros H. apply ptyped_one in H as (W' & ΘB & c & -> & _ & HB & _ & _ & _ & HBs & _ & Ht & [Hw _]).
+  intros H. apply ptyped_one in H as (ΘB & c & _ & HB & _ & _ & _ & HBs & _ & Ht & [Hw _]).
   pose proof (typed_tfacts _ _ _ _ _ _ _ _ _ Ht) as [Hd _].
-  exists W', (tenv_ofk η Σ ∪ ΘB), c. split_and!; [done|done|done|]. intros o Ho Hn.
+  exists (tenv_ofk η Σ ∪ ΘB), c. split_and!; [done|done|]. intros o Ho Hn.
   destruct (Σ !! o) as [[S x]|] eqn:HΣ.
   - exists S, x, (TE S x (η o).1 (η o).2). split_and!; [done| |done].
     apply lookup_union_Some_l. by rewrite lookup_tenv_ofk, HΣ.
@@ -584,8 +584,8 @@ Proof.
       apply gmultiset_elem_of_disj_union in Hp. rewrite !gmultiset_elem_of_singleton in Hp.
       destruct Hp as [Hp|Hp]; by apply Hne. }
   destruct Hcase as [[-> ->]|[-> ->]].
-  - destruct (side_lookup _ _ _ _ _ _ _ H1) as (W1' & Θt & ct & -> & Hw1 & Ht & Hlt).
-    destruct (side_lookup _ _ _ _ _ _ _ H2) as (W2' & Θp & cp & -> & Hw2 & Hp & Hlp).
+  - destruct (side_lookup _ _ _ _ _ _ _ H1) as (Θt & ct & Hw1 & Ht & Hlt).
+    destruct (side_lookup _ _ _ _ _ _ _ H2) as (Θp & cp & Hw2 & Hp & Hlp).
     destruct (Hlt oc) as (Sc & x & ec & Hc & Hec & <-); [fends_tac|fends_tac|].
     destruct (Hlt od) as (Sd & y & ed & Hd & Hed & <-); [fends_tac|fends_tac|].
     destruct (Hlp (edual oc)) as (Sc' & x' & ec' & Hc' & Hec' & <-); [fends_tac|fends_tac|].
@@ -597,15 +597,11 @@ Proof.
     pose proof (slt_empty_w _ _ _ (sbv_thread_needs _ _ _ _ _ _ _ _ _ _ Ht Hec Hed (facts_const_wf _ Hw1))) as Ha.
     pose proof (slt_empty_w _ _ _ (cl2_needs _ _ _ _ _ _ _ _ _ _ _ _
       ocd_dual_ne Hp Hec' Hed' (facts_const_wf _ Hw2))) as Hb.
-    apply (swrestrict_lt_in _ (iface ΣC TUnit)) in Ha;
-      [|done|exact Id|exact Ic].
-    apply (swrestrict_lt_in _ (iface (senv_dual ΣC) TUnit)) in Hb;
-      [|done|exact Ic'|exact Id'].
     rewrite <-Hx', <-Hy', pt_dual_dual in Hb.
     apply (Hirr (te_pt ed)). eapply sw_lt_trans; [eapply sw_lt_mono; [apply swext_join_l|exact Ha]|].
     eapply sw_lt_mono; [apply swext_join_r|exact Hb].
-  - destruct (side_lookup _ _ _ _ _ _ _ H2) as (W2' & Θt & ct & -> & Hw2 & Ht & Hlt).
-    destruct (side_lookup _ _ _ _ _ _ _ H1) as (W1' & Θp & cp & -> & Hw1 & Hp & Hlp).
+  - destruct (side_lookup _ _ _ _ _ _ _ H2) as (Θt & ct & Hw2 & Ht & Hlt).
+    destruct (side_lookup _ _ _ _ _ _ _ H1) as (Θp & cp & Hw1 & Hp & Hlp).
     destruct (Hlt oc) as (Sc & x & ec & Hc & Hec & <-); [fends_tac|fends_tac|].
     destruct (Hlt od) as (Sd & y & ed & Hd & Hed & <-); [fends_tac|fends_tac|].
     destruct (Hlp (edual oc)) as (Sc' & p & ec' & Hc' & Hec' & <-); [fends_tac|fends_tac|].
@@ -618,10 +614,6 @@ Proof.
     pose proof (slt_empty_w _ _ _ (sbv_thread_needs _ _ _ _ _ _ _ _ _ _ Ht Hec Hed (facts_const_wf _ Hw2))) as Ha.
     pose proof (slt_empty_w _ _ _ (cl2_needs _ _ _ _ _ _ _ _ _ _ _ _
       ocd_dual_ne Hp Hec' Hed' (facts_const_wf _ Hw1))) as Hb.
-    apply (swrestrict_lt_in _ (iface (senv_dual ΣC) TUnit)) in Ha;
-      [|done|exact Id|exact Ic].
-    apply (swrestrict_lt_in _ (iface ΣC TUnit)) in Hb;
-      [|done|exact Ic'|exact Id'].
     rewrite <-Hx, <-Hy, pt_dual_dual in Ha.
     apply (Hirr (te_pt ec')). eapply sw_lt_trans; [eapply sw_lt_mono; [apply swext_join_l|exact Hb]|].
     eapply sw_lt_mono; [apply swext_join_r|exact Ha].

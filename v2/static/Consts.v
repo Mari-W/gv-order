@@ -1,11 +1,11 @@
-(** * Constants of the syntax and their renaming (hiding, 2026-11-22)
+(** * Constants of the syntax and their renaming (2026-11-22)
 
-    A process judgment lives on the constants of its interface
-    ([iface], the constants that occur in the interface Σ and in the
-    type T). Its world is hidden to them, and the constants of its
-    derivation outside them are private. The soundness of hiding renames
-    the private constants of a component apart from the other component
-    (static/Hiding.v), and this file gives the renaming on the syntax.
+    The interface constants of a process judgment ([iface]) are the
+    constants that occur in the interface Σ and in the type T. The
+    constants of its derivation outside them are private. A renaming of
+    constants renames a derivation (static/Hiding.v), so two components
+    can be renamed apart, and this file gives the renaming on the
+    syntax.
 
     [cbij] is a bijection of constants. [pt_ren f] renames the constant
     at the root of a point, and [ty_ren], [sty_ren] and the maps on

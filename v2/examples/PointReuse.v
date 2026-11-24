@@ -15,7 +15,7 @@
       [pr_thread] are this lemma twice.
     - [pr_dftyped], [pr_term]: the thread types, and P-Term types the
       closed program over the empty world.
-    - [pr_deadlock_free]: deadlock freedom by [soundness_h].
+    - [pr_deadlock_free]: deadlock freedom by [soundness].
 
     So point linearity, at most one exchange per point in a run, fails
     for typed programs. A slice λ : point → option label in the world
@@ -110,7 +110,7 @@ Proof.
   apply d_unit'. intros [|[|[|[|z]]]] o Hz; try (by injection Hz as <-); done.
 Qed.
 
-Theorem pr_term : ptyped None (khalf None) (swrestrict sw_empty (iface ∅ TUnit)) ∅ (∅, {[+ pr_thread +]}) TUnit.
+Theorem pr_term : ptyped None (khalf None) sw_empty ∅ (∅, {[+ pr_thread +]}) TUnit.
 Proof.
   apply (p_term_half None sw_empty ∅ ∅ ∅ _ TUnit None).
   - constructor.
@@ -126,4 +126,4 @@ Proof.
 Qed.
 
 Theorem pr_deadlock_free : deadlock_free (∅, {[+ pr_thread +]}).
-Proof. exact (soundness_h _ _ TUnit pr_term). Qed.
+Proof. exact (soundness _ _ TUnit pr_term). Qed.

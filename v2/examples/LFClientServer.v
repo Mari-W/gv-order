@@ -195,7 +195,7 @@ Proof.
   Unshelve. all: first [exact None | simpl; lia | simpl; done].
 Qed.
 
-Theorem cs_lftyped : ∃ N, ∅ ⊩^N,(khalf (Some N)) _ (swrestrict W_cs (iface ∅ TUnit)) (∅, {[+ cs_main +]}) : TUnit.
+Theorem cs_lftyped : ∃ N, ∅ ⊩^N,(khalf (Some N)) _ W_cs (∅, {[+ cs_main +]}) : TUnit.
 Proof.
   destruct csl_typedN as (c & Ht). exists 6.
   eapply lf_main_typed; [apply W_cs_wf|constructor|exact Ht].

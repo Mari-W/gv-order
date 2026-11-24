@@ -100,7 +100,7 @@ Lemma div2_ge K : 4 ≤ K → 2 ≤ Nat.div2 K.
 Proof. intros HK. pose proof (Nat.div2_odd K) as E. destruct (Nat.odd K); simpl in E; lia. Qed.
 
 Theorem fwdq_term_fin K p : 4 ≤ K →
-  ptyped (Some K) (khalf (Some K)) (swrestrict (W_q p) (iface (Σq p) TUnit)) (Σq p) (∅, {[+ fwdq_t p +]}) TUnit.
+  ptyped (Some K) (khalf (Some K)) (W_q p) (Σq p) (∅, {[+ fwdq_t p +]}) TUnit.
 Proof.
   intros HK. pose proof (div2_ge K HK) as Hh. set (h := Nat.div2 K) in Hh.
   destruct (fb_typed (W_q p) hc_empty (Some K) p 0 px pyn (h - 0) (h - 0) h (W_q_facts p) ltac:(lia) ltac:(lia) Hh)

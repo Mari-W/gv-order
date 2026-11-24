@@ -264,7 +264,7 @@ Proof.
   set_unfold in Ho; set_unfold in Hn. destruct Ho as [->| ->]; simpl in Hn; destruct Hn; discriminate.
 Qed.
 
-Lemma fwd_term : ptyped None (khalf None) (swrestrict W_f (iface Σf TUnit)) Σf (∅, {[+ fwd_t o1 o2 +]}) TUnit.
+Lemma fwd_term : ptyped None (khalf None) W_f Σf (∅, {[+ fwd_t o1 o2 +]}) TUnit.
 Proof.
   apply (p_term_half None W_f Σf ∅ ∅ _ TUnit None).
   - constructor.
@@ -389,13 +389,13 @@ Qed.
 Theorem fwd_expand W Σ C E T :
   ptyped None (khalf None) W (Σ ∪ Σx) (C, E) T →
   Σ ##ₘ Σx → "a" ∉ chans_of Σ → "b" ∉ chans_of Σ → "b" ∉ C → 1 ∉ sw_consts W →
-  ptyped None (khalf None) (swrestrict (W ⊔ swrestrict W_f (iface Σf TUnit)) (iface (Σ ∪ Σy) T)) (Σ ∪ Σy)
+  ptyped None (khalf None) (W ⊔ W_f) (Σ ∪ Σy)
     (C ∪ ∅ ∪ {["a"]}, E ⊎ {[+ fwd_t o1 o2 +]}) T.
 Proof.
   intros HP HΣ Ha Hb HbC H1.
   pose proof (ptyped_chans _ _ _ _ _ _ HP) as HC. simpl in HC.
   rewrite chans_of_union, chans_Σx in HC.
-  pose proof (p_connect_half None W (swrestrict W_f (iface Σf TUnit)) Σ Σy Σx C ∅ E {[+ fwd_t o1 o2 +]} T) as H.
+  pose proof (p_connect_half None W W_f Σ Σy Σx C ∅ E {[+ fwd_t o1 o2 +]} T) as H.
   rewrite chans_Σx in H. apply H; clear H.
   - exact HP.
   - rewrite Σf_split. apply fwd_term.
@@ -406,7 +406,6 @@ Proof.
   - rewrite ?chans_Σy, ?chans_Σx. set_solver.
   - set_solver.
   - destruct (ptyped_wf _ _ _ _ _ _ HP) as [Hw HW].
-    apply (wok_sub None _ (W ⊔ W_f)); [intros x y; apply join_sub; [done|intros ? ?; apply swrestrict_lt]|].
     apply (wok_join_iff None W W_f Hw W_f_wf). split_and!; [done|apply swf_wok, W_f_swf|by apply cut_W_f_wok].
 Qed.
 
@@ -414,9 +413,9 @@ Qed.
 
     The partner of o1 is typed alone over the empty world, [fwd_expand]
     puts the forwarder behind it, and P-Connect adds the partner of o2.
-    The fundamental theorem gives deadlock freedom ([soundness_h]). *)
+    The fundamental theorem gives deadlock freedom ([soundness]). *)
 
-Lemma p1_term : ptyped None (khalf None) (swrestrict sw_empty (iface Σx TUnit)) Σx (∅, {[+ p1_t (edual o1) +]}) TUnit.
+Lemma p1_term : ptyped None (khalf None) sw_empty Σx (∅, {[+ p1_t (edual o1) +]}) TUnit.
 Proof.
   apply (p_term_half None sw_empty Σx ∅ ∅ _ TUnit None).
   - constructor.
@@ -432,7 +431,7 @@ Proof.
   - apply sw_empty_wok.
 Qed.
 
-Lemma p2_term : ptyped None (khalf None) (swrestrict sw_empty (iface (senv_dual Σy) TUnit)) (senv_dual Σy)
+Lemma p2_term : ptyped None (khalf None) sw_empty (senv_dual Σy)
   (∅, {[+ p2_t (edual o2) +]}) TUnit.
 Proof.
   assert (senv_dual Σy = {[edual o2 := (S1, py‾)]}) as ->.
@@ -457,10 +456,9 @@ Definition fwd_config : proc :=
 
 Theorem fwd_config_typed : ∃ W, ptyped None (khalf None) W ∅ fwd_config TUnit.
 Proof.
-  set (Wp2 := swrestrict sw_empty (iface (senv_dual Σy) TUnit)).
-  pose proof (fwd_expand (swrestrict sw_empty (iface Σx TUnit)) ∅ ∅ {[+ p1_t (edual o1) +]} TUnit) as H1.
-  set (Wl := swrestrict (swrestrict sw_empty (iface Σx TUnit) ⊔ swrestrict W_f (iface Σf TUnit))
-               (iface (∅ ∪ Σy) TUnit)) in H1.
+  set (Wp2 := sw_empty).
+  pose proof (fwd_expand sw_empty ∅ ∅ {[+ p1_t (edual o1) +]} TUnit) as H1.
+  set (Wl := sw_empty ⊔ W_f) in H1.
   assert (ptyped None (khalf None) Wl (∅ ∪ Σy) (∅ ∪ ∅ ∪ {["a"]}, {[+ p1_t (edual o1) +]} ⊎ {[+ fwd_t o1 o2 +]}) TUnit) as H1'.
   { apply H1.
     - rewrite (left_id_L ∅ (∪)). apply p1_term.
@@ -483,12 +481,12 @@ Proof.
   - set_solver.
   - unfold chans_of. rewrite dom_empty_L. set_solver.
   - unfold chans_of. rewrite dom_empty_L. set_solver.
-  - apply wok_join_bare_r; [apply swrestrict_empty_bare|]. apply swrestrict_wok.
-    apply wok_join_bare_l; [apply swrestrict_empty_bare|]. apply swrestrict_wok, swf_wok, W_f_swf.
+  - apply wok_join_bare_r; [intros g Hg; exact Hg|].
+    apply wok_join_bare_l; [intros g Hg; exact Hg|]. apply swf_wok, W_f_swf.
 Qed.
 
 Theorem fwd_config_deadlock_free : deadlock_free fwd_config.
-Proof. destruct fwd_config_typed as [W H]. exact (soundness_h W fwd_config TUnit H). Qed.
+Proof. destruct fwd_config_typed as [W H]. exact (soundness W fwd_config TUnit H). Qed.
 
 (** ** The forwarder ring is rejected
 
@@ -579,8 +577,8 @@ Proof.
       apply gmultiset_elem_of_disj_union in Hp. rewrite !gmultiset_elem_of_singleton in Hp.
       destruct Hp as [Hp|Hp]; by apply Hne. }
   destruct Hcase as [[-> ->]|[-> ->]]; subst t1 t2.
-  - destruct (side_lookup _ _ _ _ _ _ _ H1) as (W1' & Θt & ct & -> & Hw1 & Ht & Hlt).
-    destruct (side_lookup _ _ _ _ _ _ _ H2) as (W2' & Θp & cp & -> & Hw2 & Hp & Hlp).
+  - destruct (side_lookup _ _ _ _ _ _ _ H1) as (Θt & ct & Hw1 & Ht & Hlt).
+    destruct (side_lookup _ _ _ _ _ _ _ H2) as (Θp & cp & Hw2 & Hp & Hlp).
     destruct (Hlt o1) as (S & x & e1 & Hc & He1 & <-); [rfends_tac|rfends_tac|].
     destruct (Hlt o2) as (S' & y & e2 & Hd & He2 & <-); [rfends_tac|rfends_tac|].
     destruct (Hlp (edual o2)) as (S2 & y' & e2' & Hd' & He2' & <-); [rfends_tac|rfends_tac|].
@@ -591,12 +589,11 @@ Proof.
     injection Hc' as _ Hx'. injection Hd' as _ Hy'.
     pose proof (slt_empty_w _ _ _ (fwd_needs _ _ _ _ _ _ _ _ _ _ _ _ o1_o2 Ht He1 He2 (facts_const_wf _ Hw1))) as Ha.
     pose proof (slt_empty_w _ _ _ (fwd_needs _ _ _ _ _ _ _ _ _ _ _ _ o2o1_dual_ne Hp He2' He1' (facts_const_wf _ Hw2))) as Hb.
-    eapply swrestrict_lt_in in Ha; [|exact Hw1|exact Ic|exact Id]. eapply swrestrict_lt_in in Hb; [|exact Hw2|exact Id'|exact Ic'].
     rewrite <-Hx', <-Hy', pt_dual_dual in Hb.
     apply (Hirr (te_pt e1)). eapply sw_lt_trans; [eapply sw_lt_mono; [apply swext_join_l|exact Ha]|].
     eapply sw_lt_mono; [apply swext_join_r|exact Hb].
-  - destruct (side_lookup _ _ _ _ _ _ _ H2) as (W2' & Θt & ct & -> & Hw2 & Ht & Hlt).
-    destruct (side_lookup _ _ _ _ _ _ _ H1) as (W1' & Θp & cp & -> & Hw1 & Hp & Hlp).
+  - destruct (side_lookup _ _ _ _ _ _ _ H2) as (Θt & ct & Hw2 & Ht & Hlt).
+    destruct (side_lookup _ _ _ _ _ _ _ H1) as (Θp & cp & Hw1 & Hp & Hlp).
     destruct (Hlt o1) as (S & x & e1 & Hc & He1 & <-); [rfends_tac|rfends_tac|].
     destruct (Hlt o2) as (S' & y & e2 & Hd & He2 & <-); [rfends_tac|rfends_tac|].
     destruct (Hlp (edual o2)) as (S2 & p & e2' & Hd' & He2' & <-); [rfends_tac|rfends_tac|].
@@ -608,7 +605,6 @@ Proof.
     injection Hc as _ Hx. injection Hd as _ Hy.
     pose proof (slt_empty_w _ _ _ (fwd_needs _ _ _ _ _ _ _ _ _ _ _ _ o1_o2 Ht He1 He2 (facts_const_wf _ Hw2))) as Ha.
     pose proof (slt_empty_w _ _ _ (fwd_needs _ _ _ _ _ _ _ _ _ _ _ _ o2o1_dual_ne Hp He2' He1' (facts_const_wf _ Hw1))) as Hb.
-    eapply swrestrict_lt_in in Ha; [|exact Hw2|exact Ic|exact Id]. eapply swrestrict_lt_in in Hb; [|exact Hw1|exact Id'|exact Ic'].
     rewrite <-Hx, <-Hy, pt_dual_dual in Ha.
     apply (Hirr (te_pt e2')). eapply sw_lt_trans; [eapply sw_lt_mono; [apply swext_join_l|exact Hb]|].
     eapply sw_lt_mono; [apply swext_join_r|exact Ha].
@@ -791,7 +787,7 @@ Proof.
 Qed.
 
 (** The higher-order forwarder typed by P-Term over its world. *)
-Theorem fwdh_term : ptyped None (khalf None) (swrestrict W_h (iface Σh TUnit)) Σh (∅, {[+ fwdh_t o1 o2 +]}) TUnit.
+Theorem fwdh_term : ptyped None (khalf None) W_h Σh (∅, {[+ fwdh_t o1 o2 +]}) TUnit.
 Proof.
   apply (p_term_half None W_h Σh ∅ ∅ _ TUnit None).
   - constructor.
@@ -941,7 +937,7 @@ Proof.
   by rewrite ?dual_involutive.
 Qed.
 
-Lemma p1h_term : ptyped None (khalf None) (swrestrict W_p1 (iface (∅ ∪ senv_dual Σhx) TUnit)) (∅ ∪ senv_dual Σhx)
+Lemma p1h_term : ptyped None (khalf None) W_p1 (∅ ∪ senv_dual Σhx)
   (∅, {[+ p1h_t (edual o1) +]}) TUnit.
 Proof.
   rewrite (left_id_L ∅ (∪)), Σhx_dual.
@@ -959,7 +955,7 @@ Proof.
   - split; [apply W_p1_wf|apply swf_wok, hmono_swf, W_p1_mono].
 Qed.
 
-Lemma p2h_term : ptyped None (khalf None) (swrestrict W_p2 (iface (∅ ∪ senv_dual Σhy) TUnit)) (∅ ∪ senv_dual Σhy)
+Lemma p2h_term : ptyped None (khalf None) W_p2 (∅ ∪ senv_dual Σhy)
   (∅, {[+ p2h_t (edual o2) +]}) TUnit.
 Proof.
   rewrite (left_id_L ∅ (∪)), Σhy_dual.
@@ -994,10 +990,10 @@ Proof. unfold Σhy. by rewrite chans_single. Qed.
 
 Theorem fwdh_config_typed : ∃ W, ptyped None (khalf None) W ∅ fwdh_config TUnit.
 Proof.
-  set (Wh := swrestrict W_h (iface Σh TUnit)).
-  set (Wp1 := swrestrict W_p1 (iface (∅ ∪ senv_dual Σhx) TUnit)).
-  set (Wp2 := swrestrict W_p2 (iface (∅ ∪ senv_dual Σhy) TUnit)).
-  set (Wl := swrestrict (Wh ⊔ Wp1) (iface Σhy TUnit)).
+  set (Wh := W_h).
+  set (Wp1 := W_p1).
+  set (Wp2 := W_p2).
+  set (Wl := Wh ⊔ Wp1).
   assert (ptyped None (khalf None) Wl Σhy (∅ ∪ ∅ ∪ {["a"]}, {[+ fwdh_t o1 o2 +]} ⊎ {[+ p1h_t (edual o1) +]}) TUnit)
     as H1.
   { pose proof (p_connect_half None Wh Wp1 Σhy ∅ Σhx ∅ ∅
@@ -1014,7 +1010,7 @@ Proof.
     - set_solver.
     - set_solver.
     - set_solver.
-    - apply swf_wok, hmono_swf, hmono_join; apply hmono_restrict; [apply W_h_mono|apply W_p1_mono]. }
+    - apply swf_wok, hmono_swf, hmono_join; [apply W_h_mono|apply W_p1_mono]. }
   pose proof (p_connect_half None Wl Wp2 ∅ ∅ Σhy (∅ ∪ ∅ ∪ {["a"]}) ∅
     ({[+ fwdh_t o1 o2 +]} ⊎ {[+ p1h_t (edual o1) +]}) {[+ p2h_t (edual o2) +]} TUnit) as H.
   rewrite !(left_id_L ∅ (∪)), chans_hy in H.
@@ -1028,12 +1024,11 @@ Proof.
   - set_solver.
   - rewrite ?chans_hy, ?chans_empty. set_solver.
   - rewrite chans_empty. set_solver.
-  - apply swf_wok, hmono_swf, hmono_join; apply hmono_restrict;
-      [apply hmono_join; apply hmono_restrict; [apply W_h_mono|apply W_p1_mono]|apply W_p2_mono].
+  - apply swf_wok, hmono_swf, hmono_join; [apply hmono_join; [apply W_h_mono|apply W_p1_mono]|apply W_p2_mono].
 Qed.
 
 Theorem fwdh_config_deadlock_free : deadlock_free fwdh_config.
-Proof. destruct fwdh_config_typed as [W H]. exact (soundness_h W fwdh_config TUnit H). Qed.
+Proof. destruct fwdh_config_typed as [W H]. exact (soundness W fwdh_config TUnit H). Qed.
 
 (** ** The schema for first-order protocols
 
@@ -1286,7 +1281,7 @@ Proof.
 Qed.
 
 Theorem fwdp_term p :
-  ptyped None (khalf None) (swrestrict (W_p p) (iface (Σp p) TUnit)) (Σp p) (∅, {[+ fwdp_t p o1 o2 +]}) TUnit.
+  ptyped None (khalf None) (W_p p) (Σp p) (∅, {[+ fwdp_t p o1 o2 +]}) TUnit.
 Proof.
   apply (p_term_half None (W_p p) (Σp p) ∅ ∅ _ TUnit None).
   - constructor.
@@ -1389,7 +1384,7 @@ Qed.
 Theorem fwdp_expand p W Σ C E T :
   ptyped None (khalf None) W (Σ ∪ Σxp p) (C, E) T →
   Σ ##ₘ Σxp p → "a" ∉ chans_of Σ → "b" ∉ chans_of Σ → "b" ∉ C → 1 ∉ sw_consts W →
-  ptyped None (khalf None) (swrestrict (W ⊔ swrestrict (W_p p) (iface (Σp p) TUnit)) (iface (Σ ∪ Σyp p) T)) (Σ ∪ Σyp p)
+  ptyped None (khalf None) (W ⊔ W_p p) (Σ ∪ Σyp p)
     (C ∪ ∅ ∪ {["a"]}, E ⊎ {[+ fwdp_t p o1 o2 +]}) T.
 Proof.
   intros HP HΣ Ha Hb HbC H1.
@@ -1397,7 +1392,7 @@ Proof.
   assert (chans_of (Σyp p) = {["b"]}) as Ey by (unfold Σyp; by rewrite chans_single).
   pose proof (ptyped_chans _ _ _ _ _ _ HP) as HC. simpl in HC.
   rewrite chans_of_union, Ex in HC.
-  pose proof (p_connect_half None W (swrestrict (W_p p) (iface (Σp p) TUnit)) Σ (Σyp p) (Σxp p) C ∅ E
+  pose proof (p_connect_half None W (W_p p) Σ (Σyp p) (Σxp p) C ∅ E
     {[+ fwdp_t p o1 o2 +]} T) as H.
   rewrite Ex in H. apply H; clear H.
   - exact HP.
@@ -1412,7 +1407,6 @@ Proof.
   - rewrite ?Ey, ?Ex. set_solver.
   - set_solver.
   - destruct (ptyped_wf _ _ _ _ _ _ HP) as [Hw HW].
-    apply (wok_sub None _ (W ⊔ W_p p)); [intros x y; apply join_sub; [done|intros ? ?; apply swrestrict_lt]|].
     apply (wok_join_iff None W (W_p p) Hw (W_p_wf p)). split_and!; [done|apply swf_wok, W_p_swf|by apply cut_W_p_wok].
 Qed.
 

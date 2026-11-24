@@ -6,22 +6,19 @@
       ⇒  Σ ⊢_W (C_1 ∪ … ∪ C_n ∪ C_0, E_1 ⊎ … ⊎ E_n) : T
 
     [pcomps N Ws Σ p T] collects the n component derivations at their
-    hidden worlds Ws and the side conditions of each binary step, with
-    no condition on worlds. It reads the composition as a sequence. The
+    worlds Ws and the side conditions of each binary step, with no
+    condition on worlds. It reads the composition as a sequence. The
     i-th component connects to the composite of the components before
     it over the cut Σ_{C,i}, which may hold ends of several earlier
-    components. [p_connect_n] asks one interface check, the join of the
-    n hidden component worlds ([sw_joins]) acyclic at N = ∞ and
-    well-founded at a finite N ([wok]), and gives a hidden
-    derivation at a world whose facts are facts of that join restricted
-    to the final interface.
+    components. [p_connect_n] asks one check, the join of the n
+    component worlds ([sw_joins]) acyclic at N = ∞ and well-founded at
+    a finite N ([wok]), and gives a derivation at a world with the
+    constants and the facts of that join.
 
-    The proof folds the binary P-Connect. At each step the hidden world
-    of the composite so far derives only facts of the join of its
-    component worlds, so every binary premise follows from the one n-ary
-    premise. The fold needs no amalgamation lemma. Its result world may
-    derive fewer facts than the restricted join, because a constant the
-    composite hides at an earlier step drops out of the later checks.
+    The proof folds the binary P-Connect. At each step the world of the
+    composite so far has the constants and the facts of the join of its
+    component worlds, so every binary premise follows from the one
+    n-ary premise. The fold needs no amalgamation lemma.
 
     The condition is no conjunction of pairwise conditions. Milner's
     ring (examples/Ring.v) is pairwise consistent and cyclic as a whole.
@@ -65,52 +62,48 @@ Inductive pcomps (N : fuel) (η : iann) : list sworld → senv → proc → ty �
       (∀ o, o ∈ dom ΣC → tsum_ok N (η o).2 (η (edual o)).2) →
       pcomps N η (Ws ++ [W]) (Σ1 ∪ Σ2) (C1 ∪ C2 ∪ chans_of ΣC, E1 ⊎ E2) T.
 
-(** The fold. The world of the composite derives only facts of the join
-    of its component worlds and holds only their constants. *)
+(** The fold. The world of the composite has the constants and the
+    facts of the join of its component worlds. *)
 Lemma pcomps_fold N η Ws Σ p T :
   pcomps N η Ws Σ p T → wok N (sw_joins Ws) →
-  ∃ W, ptyped N η W Σ p T ∧ (∀ x y, W ⊢ₛ x ≺ y → sw_joins Ws ⊢ₛ x ≺ y) ∧ sw_consts W ⊆ sw_consts (sw_joins Ws).
+  ∃ W, ptyped N η W Σ p T ∧ W ⊑ₛ sw_joins Ws ∧ sw_joins Ws ⊑ₛ W.
 Proof.
   induction 1 as [W Σ p T Hty|Ws W Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH Hty H12 H1C H2C HC HC1 HC2 Hts];
     intros HS.
-  - exists W. split_and!; [done| |].
-    + intros x y. apply sw_lt_mono, swext_joins. set_solver.
-    + apply swext_consts, swext_joins. set_solver.
-  - destruct IH as (Wa & Hta & Hlt & Hc).
+  - exists W. split_and!; [done|apply swext_joins; set_solver|].
+    split; cbn [sw_joins sw_consts sw_facts].
+    + intros a. rewrite elem_of_union_list. intros (A & HA & Ha).
+      apply list_elem_of_fmap in HA as (W' & -> & HW'). apply list_elem_of_singleton in HW' as ->. done.
+    + intros g (W' & HW' & Hg). apply list_elem_of_singleton in HW' as ->. done.
+  - destruct IH as (Wa & Hta & Hle & Hge).
     { eapply (wok_sub N); [|exact HS]. intros x y. apply sw_lt_mono, swext_joins_app. }
-    assert (∀ x y, Wa ⊔ W ⊢ₛ x ≺ y → sw_joins (Ws ++ [W]) ⊢ₛ x ≺ y) as Hj.
-    { intros x y H. eapply sw_lt_mono; [|eapply (join_sub Wa (sw_joins Ws) W W); [exact Hlt|done|exact H]].
-      split; simpl.
-      - pose proof (swext_consts _ _ (swext_joins_app Ws [W])) as K1.
+    assert (Wa ⊔ W ⊑ₛ sw_joins (Ws ++ [W])) as Hj.
+    { split; simpl.
+      - pose proof (swext_consts _ _ Hle) as K0.
+        pose proof (swext_consts _ _ (swext_joins_app Ws [W])) as K1.
         pose proof (swext_consts _ _ (swext_joins W (Ws ++ [W]) ltac:(set_solver))) as K2. set_solver.
       - intros g [Hg|Hg].
-        + by apply (swext_facts _ _ (swext_joins_app Ws [W])).
+        + by apply (swext_facts _ _ (swext_joins_app Ws [W])), (swext_facts _ _ Hle).
         + apply (swext_facts _ _ (swext_joins W (Ws ++ [W]) ltac:(set_solver))), Hg. }
-    exists (swrestrict (Wa ⊔ W) (iface (Σ1 ∪ Σ2) T)). split_and!.
-    + apply p_connect; try done. apply (wok_sub N _ (sw_joins (Ws ++ [W]))); [exact Hj|exact HS].
-    + intros x y H. by apply Hj, (swrestrict_lt _ (iface (Σ1 ∪ Σ2) T)).
-    + simpl. pose proof (swext_consts _ _ (swext_joins_app Ws [W])) as K1.
-      pose proof (swext_consts _ _ (swext_joins W (Ws ++ [W]) ltac:(set_solver))) as K2. set_solver.
+    exists (Wa ⊔ W). split_and!; [|exact Hj|].
+    + apply p_connect; try done. apply (wok_sub N _ (sw_joins (Ws ++ [W]))); [|exact HS].
+      intros x y. by apply sw_lt_mono.
+    + split; cbn [sw_joins sw_consts sw_facts swjoin].
+      * intros a Ha. rewrite fmap_app, union_list_app_L in Ha. simpl in Ha.
+        pose proof (swext_consts _ _ Hge) as K. cbn [sw_joins sw_consts] in K. set_solver.
+      * intros g (W' & HW' & Hg). apply elem_of_app in HW' as [HW'|HW'].
+        -- left. apply (swext_facts _ _ Hge). by exists W'.
+        -- apply list_elem_of_singleton in HW' as ->. by right.
 Qed.
 
 (** ** The n-ary rule
 
-    One interface check, [wok] of the join of the n hidden component
-    worlds. The result world says nothing the join, restricted to the
-    final interface, does not. *)
+    One check, [wok] of the join of the n component worlds. The result
+    world has the constants and the facts of that join. *)
 Theorem p_connect_n N η Ws Σ p T :
   pcomps N η Ws Σ p T → wok N (sw_joins Ws) →
-  ∃ W, ptyped N η W Σ p T ∧ ∀ g, sw_facts W g → sw_facts (swrestrict (sw_joins Ws) (iface Σ T)) g.
-Proof.
-  intros Hp HS. destruct (pcomps_fold N η Ws Σ p T Hp HS) as (W & Hty & Hlt & Hc).
-  exists W. split; [done|]. intros [x y] Hg.
-  pose proof (ptyped_consts _ _ _ _ _ _ Hty) as Hi.
-  destruct (wf_facts _ (proj1 (ptyped_wf _ _ _ _ _ _ Hty)) x y Hg) as [(a & Ha & Hax) (b & Hb & Hby)].
-  simpl. split_and!.
-  - by apply Hlt, sw_lt_fact.
-  - exists a. split; [done|]. apply elem_of_intersection. split; [by apply Hc|by apply Hi].
-  - exists b. split; [done|]. apply elem_of_intersection. split; [by apply Hc|by apply Hi].
-Qed.
+  ∃ W, ptyped N η W Σ p T ∧ W ⊑ₛ sw_joins Ws ∧ sw_joins Ws ⊑ₛ W.
+Proof. apply pcomps_fold. Qed.
 
 (** ** Soundness through the binary results *)
 
@@ -118,12 +111,12 @@ Theorem connect_n_soundness Ws p T :
   pcomps None (khalf None) Ws ∅ p T → sacyc (sw_joins Ws) → deadlock_free p.
 Proof.
   intros Hp HS. destruct (p_connect_n None (khalf None) Ws ∅ p T Hp HS) as (W & Hty & _).
-  exact (soundness_h W p T Hty).
+  exact (soundness W p T Hty).
 Qed.
 
 Theorem connect_n_live_soundness Ws p T :
   pcomps None (khalf None) Ws ∅ p T → sacyc (sw_joins Ws) → deadlock_free p ∧ no_free_divergence p.
 Proof.
   intros Hp HS. destruct (p_connect_n None (khalf None) Ws ∅ p T Hp HS) as (W & Hty & _).
-  exact (live_soundness_h W p T Hty).
+  exact (live_soundness W p T Hty).
 Qed.

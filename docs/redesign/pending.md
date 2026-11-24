@@ -1,5 +1,124 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, 2026-11-24, process typing without restriction
+
+Approved by the author on 2026-11-24 ("yeah do it"). Branch fx-norestrict
+from redesign 6188f63. Nothing pushed, nothing merged. No Admitted, no
+Axiom, no new Parameter. `make` builds, `make check` reports 263 of 263
+closed, `make test` passes (SoupNotations.expected regenerated for the two
+renamed LF theorems). `docs/explorer/check.sh` ends with 0 errors and the
+one known warning (bare-word Connect at P-Connect).
+
+### Why the restriction existed
+
+It came in on 2026-11-22 as repair (b) of the open item "P-Connect's
+overlap is the shared constants" (a1c2c71, 85ee183). Two components may
+pick the same private constant. examples/SharedRoots.v shows P(c, d) and
+P'(e, f), both at the constant 0, ordering it oppositely, so the join of
+their whole worlds has a cycle (`opposite_clash`) and the unrestricted
+P-Connect refused a composition that renaming 0 to 1 accepts. At the
+time there was no renaming lemma for derivations, so the fix was to
+restrict each conclusion world to the interface constants. Soundness
+then needed the existential (`ptyped_sem`, `sem_ptyped_h`, `lf_sems_h`)
+plus renaming apart inside the proof (`qren_side`, `connect_hidden`).
+
+Nothing essential depends on it. The semantic composition lemmas
+(`sem_p_connect_sw`, `lf_p_connect`) already compose at any join with no
+apartness hypothesis, LF well-foundedness comes from `wok` of the
+derivation world, ranks are not involved, P-Connectⁿ exactness only got
+worse with the restriction (`fold_join_gap`), and the rejection theorems
+(Ring, Rejects, SemBranch, Copycat, Descent) quantify over all worlds and
+only got simpler.
+
+### What changed
+
+- static/Typing.v. P-Term concludes at W (premises unchanged), P-Connect
+  keeps exactly `wok N (W1 ⊔ W2)` and the tsum premise and concludes at
+  `W1 ⊔ W2`. `ptyped_wf` now by induction (`swjoin_wf`). `ptyped_consts`
+  removed (false now).
+- static/Hiding.v. `ptyped_ren` is exact: `ptyped W Σ p T →
+  ptyped (sw_ren π W) (πΣ) p (πT)`. New `ptyped_ren_fix`, `hides_ren`,
+  `ptyped_side`, `ptyped_apart` (two derivations renamed by bijections
+  fixing their interfaces share only constants of both interfaces). The
+  old judgment is kept as the reference `rptyped` with
+  `rptyped_ptyped : rptyped W Σ p T → ∃ W', ptyped W' Σ p T ∧ hides W' (iface Σ T) W`
+  (no program typable before becomes untypable) and the converse
+  `ptyped_rptyped : ptyped W Σ p T → ∃ W', rptyped W' Σ p T ∧ ≺_{W'} ⊆ ≺_W`.
+  The `sem` section (`qren`, `qren_side`, `ptyped_qren`, `ptyped_sem`)
+  and `ren_restrict_lt` are gone.
+- static/FundamentalProc.v. `proc_gen` by direct induction. New
+  `fundamental_proc`, `live_fundamental_proc` (at W), `adequacy_sw`,
+  `live_adequacy_sw`, `soundness`, `live_soundness`. Removed
+  `sem_ptyped_h`, `sem_p_connect_h`, `fundamental_proc_h`,
+  `live_fundamental_proc_h`, `adequacy_h`, `live_adequacy_h`,
+  `soundness_h`, `live_soundness_h`.
+- soup/LFTyped.v. `lf_fundamental` (at W), `lf_soundness`. Removed
+  `lf_sems_h`, `lf_p_connect_h`, `lf_fundamental_h`, `lf_sems_h_adequacy`,
+  `lf_soundness_h`.
+- static/ConnectN.v. `p_connect_n` now concludes at a world with the
+  constants and facts of the join (`W ⊑ₛ sw_joins Ws ∧ sw_joins Ws ⊑ₛ W`).
+  static/ConnectNExact.v deleted (`sw_fold`, `p_connect_n_exact`,
+  `fold_join_gap` described the restricted fold only).
+- static/Inversion.v. `ptyped_one` reads the thread at W itself,
+  `ptyped_two` gives `W = W1 ⊔ W2`.
+- Examples. Statements lose `swrestrict … (iface …)`. SharedRoots
+  rewritten: `shared_compose` (was `shared_hidden`) composes two copies
+  of P at their own worlds, `opposite_compose` renames P'(e, f) by the
+  swap of 0 and 1 (`hcomp'_renamed`) before connecting. Ring uses the
+  thread worlds directly. `cs_split_lock_free_h` renamed
+  `cs_split_lock_free_typed`.
+
+### Statements that changed form
+
+- `fundamental_proc_h`, `live_fundamental_proc_h`, `lf_fundamental_h`
+  (∃ W' … hides W' I W ∧ sem at W') become `fundamental_proc`,
+  `live_fundamental_proc`, `lf_fundamental` (sem at W). The intended
+  removal of the existential.
+- `adequacy_h`/`live_adequacy_h` (premise `sem_ptyped_h`) become
+  `adequacy_sw`/`live_adequacy_sw` (premises `sworld_wf W`, `sacyc W`,
+  `sem_ptyped_sw` at W), which is what the map already showed.
+- `soundness_h`, `live_soundness_h`, `lf_soundness_h`: same statements,
+  renamed `soundness`, `live_soundness`, `lf_soundness`.
+- `ptyped_ren`: existential with order inclusion becomes exact (stronger).
+- `p_connect_n`: facts ⊆ restricted join becomes equal to the join (in
+  both directions of ⊑ₛ).
+- `ptyped_one`, `ptyped_two`, examples/SemBranch `side_lookup`: the world
+  equation `W = swrestrict …` disappears.
+- P-Term, P-Connect conclusions and every example statement at
+  `swrestrict W (iface …)` now read W.
+
+### Private constants
+
+P-Connect has no disjointness premise and is sound as is: the joined world
+has more facts and `wok` covers them. Completeness against the old rules
+uses renaming, stated as `ptyped_apart` and used in `rptyped_ptyped`.
+
+### CheckAll (264 → 263)
+
+Removed: `ptyped_sem`, `sem_p_connect_h`, `fundamental_proc_h`,
+`live_fundamental_proc_h`, `soundness_h`, `live_soundness_h`,
+`lf_p_connect_h`, `lf_fundamental_h`, `lf_soundness_h`,
+`p_connect_n_exact`, `fold_join_gap`, `shared_hidden`,
+`cs_split_lock_free_h`. Added: `ptyped_apart`, `rptyped_ptyped`,
+`ptyped_rptyped`, `fundamental_proc`, `live_fundamental_proc`,
+`adequacy_sw`, `soundness`, `live_soundness`, `lf_fundamental`,
+`lf_soundness`, `shared_compose`, `cs_split_lock_free_typed`.
+
+### Map
+
+P-Term and P-Connect conclude at W and W₁ ⊔ W₂, P-Connectⁿ at the join
+(notation deviation for the ⊑ both ways of `p_connect_n`). Note
+P-Term.hide removed, P-Connect.join and P-Connect.wf rewritten, tp.pjudg
+without "lives on the interface constants". th-chain, th-fund-proc,
+th-adeq, th-sound, th-compose cite the new names, state the theorems at
+W, and drop the notation deviations for the written-out existential and
+the simplified/merged deviations of th.adequacy-h and th.lf-sems-adequacy.
+th.ptyped-sem replaced by th.ptyped-apart, th.ptyped-ren exact, w.restrict
+reworded (its `hides` deviation stays, `rptyped_ptyped` uses it). Examples
+ex-shared and ex-cs-split updated. w.facts got a notation deviation for
+$\mathsf{Point}$, because removing the facts display from P-Connectⁿ
+exposed an existing rename warning.
+
 ## Report, 2026-11-24, map: one letter for worlds, no hidden judgment
 
 Approved by the author on 2026-11-24. Branch map-oneworld from redesign

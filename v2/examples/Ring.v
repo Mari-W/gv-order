@@ -6,14 +6,14 @@
 
     with a at the constant 0, b at 1 and c at 2. A thread that closes x
     before y asks x ≺ ȳ, so the thread worlds hold c̄ ≺ ā, ā ≺ b̄ and
-    b̄ ≺ c̄. Each pair of hidden thread worlds is well-founded together
+    b̄ ≺ c̄. Each pair of thread worlds is well-founded together
     ([ring_pairs]), the three together hold the cycle c̄ ≺ ā ≺ b̄ ≺ c̄
     ([ring_cyclic]). The components and cuts of the ring meet every
     condition of the n-ary rule but its world check ([ring_comps]). The
     ring deadlocks, so no world types it ([ring_rejected]).
 
     The acyclic variant C' = cl c⁺; cl b⁻ asks c ≺ b instead of b̄ ≺ c̄.
-    The join of the three hidden worlds is well-founded, the n-ary rule
+    The join of the three worlds is well-founded, the n-ary rule
     types the ring ([ring_typed]), and it is deadlock free ([ring_df]). *)
 
 From GV Require Import soup.LFConnectN examples.SharedRoots.
@@ -38,11 +38,6 @@ Definition WA : sworld := SWorld ({[0]} ∪ {[2]}) (λ g, g = FLt pc‾ pa‾).
 Definition WB : sworld := SWorld ({[0]} ∪ {[1]}) (λ g, g = FLt pa‾ pb‾).
 Definition WC : sworld := SWorld ({[1]} ∪ {[2]}) (λ g, g = FLt pb‾ pc‾).
 Definition WC' : sworld := SWorld ({[1]} ∪ {[2]}) (λ g, g = FLt pc pb).
-
-Definition HA : sworld := swrestrict WA (iface ΣA TUnit).
-Definition HB : sworld := swrestrict WB (iface ΣB TUnit).
-Definition HC : sworld := swrestrict WC (iface ΣCc TUnit).
-Definition HC' : sworld := swrestrict WC' (iface ΣC' TUnit).
 
 (** The closed ring with third thread t. *)
 Definition ring_cfg (t : expr) : proc := ({["a"]} ∪ {["c"]} ∪ {["b"]}, {[+ tA +]} ⊎ {[+ tB +]} ⊎ {[+ t +]}).
@@ -111,16 +106,16 @@ Qed.
 
 (** ** The components *)
 
-Lemma tA_typed : ptyped None (khalf None) HA ΣA (∅, {[+ tA +]}) TUnit.
+Lemma tA_typed : ptyped None (khalf None) WA ΣA (∅, {[+ tA +]}) TUnit.
 Proof. apply cl2_hterm; [apply WA_ok|done|done|reflexivity]. Qed.
 
-Lemma tB_typed : ptyped None (khalf None) HB ΣB (∅, {[+ tB +]}) TUnit.
+Lemma tB_typed : ptyped None (khalf None) WB ΣB (∅, {[+ tB +]}) TUnit.
 Proof. apply cl2_hterm; [apply WB_ok|done|done|reflexivity]. Qed.
 
-Lemma tC_typed : ptyped None (khalf None) HC ΣCc (∅, {[+ tC +]}) TUnit.
+Lemma tC_typed : ptyped None (khalf None) WC ΣCc (∅, {[+ tC +]}) TUnit.
 Proof. apply cl2_hterm; [apply WC_ok|done|done|reflexivity]. Qed.
 
-Lemma tC'_typed : ptyped None (khalf None) HC' ΣC' (∅, {[+ tC' +]}) TUnit.
+Lemma tC'_typed : ptyped None (khalf None) WC' ΣC' (∅, {[+ tC' +]}) TUnit.
 Proof. apply cl2_hterm; [apply WC'_ok|done|done|reflexivity]. Qed.
 
 (** ** The cuts *)
@@ -148,12 +143,12 @@ Proof. by intros H -> ->. Qed.
 
 (** A and B over the cut a: the composite holds c⁻ and b⁺. *)
 Lemma ring_two :
-  pcomps None (khalf None) (HA :: [HB]) (senv2 (ENeg "c") (EPos "b") pc‾ pb) ({["a"]}, {[+ tA +]} ⊎ {[+ tB +]}) TUnit.
+  pcomps None (khalf None) (WA :: [WB]) (senv2 (ENeg "c") (EPos "b") pc‾ pb) ({["a"]}, {[+ tA +]} ⊎ {[+ tB +]}) TUnit.
 Proof.
   set (ΣC := {[EPos "a" := (SEnd, pa)]} : senv).
   assert (senv_dual ΣC = {[ENeg "a" := (SEnd, pa‾)]}) as Ed by (unfold ΣC; by rewrite senv_dual_singleton).
   eapply pcomps_conv.
-  - apply (pc_snoc None (khalf None) [HA] HB {[ENeg "c" := (SEnd, pc‾)]} {[EPos "b" := (SEnd, pb)]} ΣC ∅ ∅
+  - apply (pc_snoc None (khalf None) [WA] WB {[ENeg "c" := (SEnd, pc‾)]} {[EPos "b" := (SEnd, pb)]} ΣC ∅ ∅
              {[+ tA +]} {[+ tB +]} TUnit).
     + apply pc_one, tA_typed.
     + rewrite Ed. assert ({[EPos "b" := (SEnd, pb)]} ∪ {[ENeg "a" := (SEnd, pa‾)]} = ΣB) as -> by
@@ -172,11 +167,11 @@ Qed.
 
 (** The third component over the cut {c, b}. *)
 Lemma ring_three H t :
-  ptyped None (khalf None) H ΣC' (∅, {[+ t +]}) TUnit → pcomps None (khalf None) (HA :: HB :: [H]) ∅ (ring_cfg t) TUnit.
+  ptyped None (khalf None) H ΣC' (∅, {[+ t +]}) TUnit → pcomps None (khalf None) (WA :: WB :: [H]) ∅ (ring_cfg t) TUnit.
 Proof.
   intros Ht. set (ΣC := senv2 (ENeg "c") (EPos "b") pc‾ pb).
   eapply pcomps_conv.
-  - apply (pc_snoc None (khalf None) (HA :: [HB]) H ∅ ∅ ΣC {["a"]} ∅ ({[+ tA +]} ⊎ {[+ tB +]}) {[+ t +]} TUnit).
+  - apply (pc_snoc None (khalf None) (WA :: [WB]) H ∅ ∅ ΣC {["a"]} ∅ ({[+ tA +]} ⊎ {[+ tB +]}) {[+ t +]} TUnit).
     + rewrite (left_id_L ∅ (∪)). apply ring_two.
     + rewrite (left_id_L ∅ (∪)). unfold ΣC. rewrite senv_dual_senv2. exact Ht.
     + set_solver.
@@ -192,51 +187,26 @@ Qed.
 
 (** ** The ring: pairwise consistent, cyclic as a whole *)
 
-Lemma ring_comps : pcomps None (khalf None) (HA :: HB :: [HC]) ∅ (ring_cfg tC) TUnit.
+Lemma ring_comps : pcomps None (khalf None) (WA :: WB :: [WC]) ∅ (ring_cfg tC) TUnit.
 Proof.
   apply ring_three. unfold ΣC'. rewrite (senv2_comm (EPos "c")) by done. apply tC_typed.
 Qed.
 
-Theorem ring_pairs : swf (HA ⊔ HB) ∧ swf (HB ⊔ HC) ∧ swf (HA ⊔ HC).
+Theorem ring_pairs : swf (WA ⊔ WB) ∧ swf (WB ⊔ WC) ∧ swf (WA ⊔ WC).
 Proof.
   split_and!.
-  - apply (swf_sub _ (WA ⊔ WB)); [intros x y; apply join_sub; intros u v; apply swrestrict_lt|].
-    apply (swf_rk _ ((pa‾, 1) :: [(pb‾, 2)])); [rk_ok|]. intros x y [E|E]; injection E as -> ->; rk_tac.
-  - apply (swf_sub _ (WB ⊔ WC)); [intros x y; apply join_sub; intros u v; apply swrestrict_lt|].
-    apply (swf_rk _ ((pb‾, 1) :: [(pc‾, 2)])); [rk_ok|]. intros x y [E|E]; injection E as -> ->; rk_tac.
-  - apply (swf_sub _ (WA ⊔ WC)); [intros x y; apply join_sub; intros u v; apply swrestrict_lt|].
-    apply (swf_rk _ ((pc‾, 1) :: [(pa‾, 2)])); [rk_ok|]. intros x y [E|E]; injection E as -> ->; rk_tac.
+  - apply (swf_rk _ ((pa‾, 1) :: [(pb‾, 2)])); [rk_ok|]. intros x y [E|E]; injection E as -> ->; rk_tac.
+  - apply (swf_rk _ ((pb‾, 1) :: [(pc‾, 2)])); [rk_ok|]. intros x y [E|E]; injection E as -> ->; rk_tac.
+  - apply (swf_rk _ ((pc‾, 1) :: [(pa‾, 2)])); [rk_ok|]. intros x y [E|E]; injection E as -> ->; rk_tac.
 Qed.
 
-(** A fact of the whole world between interface points is a fact of the
-    hidden world. *)
-Lemma hidden_fact W Σ x y (a b : nat) :
-  sw_facts W (FLt x y) → pt_root x = NConst a → pt_root y = NConst b →
-  a ∈ sw_consts W ∩ iface Σ TUnit → b ∈ sw_consts W ∩ iface Σ TUnit →
-  sw_facts (swrestrict W (iface Σ TUnit)) (FLt x y).
-Proof. intros Hf Hx Hy Ha Hb. split_and!; [by apply sw_lt_fact|by exists a|by exists b]. Qed.
-
-Lemma senv2_iface o1 o2 x y a b :
-  o1 ≠ o2 → pt_root x = NConst a → pt_root y = NConst b →
-  a ∈ iface (senv2 o1 o2 x y) TUnit ∧ b ∈ iface (senv2 o1 o2 x y) TUnit.
-Proof.
-  intros Ho Hx Hy. unfold iface. split; apply elem_of_union_l, elem_of_senv_consts.
-  - exists o1, SEnd, x. split; [|right; rewrite (pt_consts_root _ _ Hx); set_solver].
-    unfold senv2. by rewrite lookup_union, lookup_singleton_eq, lookup_singleton_ne.
-  - exists o2, SEnd, y. split; [|right; rewrite (pt_consts_root _ _ Hy); set_solver].
-    unfold senv2. by rewrite lookup_union, lookup_singleton_eq, lookup_singleton_ne.
-Qed.
-
-Theorem ring_cyclic : ¬ sacyc (sw_joins (HA :: HB :: [HC])).
+Theorem ring_cyclic : ¬ sacyc (sw_joins (WA :: WB :: [WC])).
 Proof.
   intros HS. apply (HS pc‾).
-  destruct (senv2_iface (ENeg "c") (EPos "a") pc‾ pa 2 0) as [IA1 IA2]; [done|done|done|].
-  destruct (senv2_iface (ENeg "a") (EPos "b") pa‾ pb 0 1) as [IB1 IB2]; [done|done|done|].
-  destruct (senv2_iface (ENeg "b") (EPos "c") pb‾ pc 1 2) as [IC1 IC2]; [done|done|done|].
   eapply sw_lt_trans; [|eapply sw_lt_trans]; apply sw_lt_fact.
-  - exists HA. split; [set_solver|]. apply (hidden_fact _ _ _ _ 2 0); try done; set_solver.
-  - exists HB. split; [set_solver|]. apply (hidden_fact _ _ _ _ 0 1); try done; set_solver.
-  - exists HC. split; [set_solver|]. apply (hidden_fact _ _ _ _ 1 2); try done; set_solver.
+  - exists WA. split; [set_solver|done].
+  - exists WB. split; [set_solver|done].
+  - exists WC. split; [set_solver|done].
 Qed.
 
 (** ** The ring deadlocks *)
@@ -280,7 +250,7 @@ Qed.
 
 (** No world types the ring. *)
 Theorem ring_rejected W T : ¬ ptyped None (khalf None) W ∅ (ring_cfg tC) T.
-Proof. intros H. exact (ring_not_df (soundness_h W _ T H)). Qed.
+Proof. intros H. exact (ring_not_df (soundness W _ T H)). Qed.
 
 (** ** The two-channel cycle
 
@@ -325,28 +295,26 @@ Proof.
 Qed.
 
 Theorem cyc2_rejected W T : ¬ ptyped None (khalf None) W ∅ cyc2_cfg T.
-Proof. intros H. exact (cyc2_not_df (soundness_h W _ T H)). Qed.
+Proof. intros H. exact (cyc2_not_df (soundness W _ T H)). Qed.
 
 (** ** The acyclic ring *)
 
-Lemma ring'_comps : pcomps None (khalf None) (HA :: HB :: [HC']) ∅ (ring_cfg tC') TUnit.
+Lemma ring'_comps : pcomps None (khalf None) (WA :: WB :: [WC']) ∅ (ring_cfg tC') TUnit.
 Proof. apply ring_three, tC'_typed. Qed.
 
 Definition Wall : sworld :=
   SWorld ({[0]} ∪ {[1]} ∪ {[2]}) (λ g, g = FLt pc‾ pa‾ ∨ g = FLt pa‾ pb‾ ∨ g = FLt pc pb).
 
-Lemma ring'_wf : swf (sw_joins (HA :: HB :: [HC'])).
+Lemma ring'_wf : swf (sw_joins (WA :: WB :: [WC'])).
 Proof.
   apply (swf_sub _ Wall).
   - intros x y. apply sw_lt_steps. intros u v (W & HW & Hf).
-    assert (∀ W0, W0 ⊑ₛ Wall → sw_facts (swrestrict W0 (iface ΣA TUnit)) (FLt u v) ∨
-              sw_facts (swrestrict W0 (iface ΣB TUnit)) (FLt u v) ∨
-              sw_facts (swrestrict W0 (iface ΣC' TUnit)) (FLt u v) → Wall ⊢ₛ u ≺ v) as K.
-    { intros W0 H0 [(Hl & _)|[(Hl & _)|(Hl & _)]]; by eapply sw_lt_mono. }
+    assert (∀ W0, W0 ⊑ₛ Wall → sw_facts W0 (FLt u v) → Wall ⊢ₛ u ≺ v) as K.
+    { intros W0 H0 Hl. apply (sw_lt_mono W0); [done|by apply sw_lt_fact]. }
     rewrite !elem_of_cons, elem_of_nil in HW. destruct HW as [->|[->|[->|[]]]].
-    + apply (K WA); [split; [simpl; set_solver|intros g E; by left]|by left].
-    + apply (K WB); [split; [simpl; set_solver|intros g E; by right; left]|by right; left].
-    + apply (K WC'); [split; [simpl; set_solver|intros g E; by right; right]|by right; right].
+    + apply (K WA); [split; [simpl; set_solver|intros g E; by left]|exact Hf].
+    + apply (K WB); [split; [simpl; set_solver|intros g E; by right; left]|exact Hf].
+    + apply (K WC'); [split; [simpl; set_solver|intros g E; by right; right]|exact Hf].
   - apply (swf_rk _ ((pa‾, 1) :: (pb‾, 2) :: [(pb, 1)])); [rk_ok|].
     intros x y [E|[E|E]]; injection E as -> ->; rk_tac.
 Qed.

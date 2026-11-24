@@ -10,5 +10,5 @@ Check soup_no_free_divergence.
 Check lf_adequacy.
 Check lf_thread_progress.
 Check (λ N η W Σ p T, Σ ⊩^N,η _ W p : T).
-Check lf_fundamental_h.
-Check lf_soundness_h.
+Check lf_fundamental.
+Check lf_soundness.
