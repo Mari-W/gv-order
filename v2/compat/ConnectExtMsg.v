@@ -1,8 +1,8 @@
 (** * P-Connect, external messages of the composite (stage S4)
 
     Q-Send and Q-Recv of the composite. A send of a component can move
-    cut ends, whose partners in the other component then join the
-    interface. A receive can bring ends whose partners lie in the other
+    cut ends, whose dual ends in the other component then join the
+    interface. A receive can bring ends whose dual ends lie in the other
     component, and they become cut ends. Both re-split the cut by the
     composite's new interface (compat/ConnectSendEnv.v). *)
 

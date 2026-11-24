@@ -5,7 +5,7 @@
     and at protocols P, P′ with dual P ⊑ P′ in the protocol map of the
     fuel layer. When the two ends act, their continuations are related
     again, and the receiver reads the payload at a credit no higher than
-    the sender's. A link joins the partners of its two ends, which are
+    the sender's. A link joins the dual ends of its two ends, which are
     related again. *)
 
 From GV Require Export soup.OwnFacts compat.Blind static.PointSubst.
@@ -31,7 +31,7 @@ Proof.
   rewrite Hu' in Hu''. simplify_eq. done.
 Qed.
 
-(** A link: the partners R1 of S1 and R2 of S2 are dual when S1 and S2 are. *)
+(** A link: the duals R1 of S1 and R2 of S2 are dual when S1 and S2 are. *)
 Lemma sdual_link S1 S2 R1 R2 : sdual S1 S2 → sdual S1 R1 → sdual S2 R2 → sdual R1 R2.
 Proof.
   unfold sdual. intros H12 H1 H2.

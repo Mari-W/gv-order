@@ -9,15 +9,15 @@
     of every channel, tk(o) + tk(ō) ≤ N. An end of type (S@x)^a_m has m
     tickets and credit a ≤ m, an action returns its end at credit m, and
     E-Link asks a1 + m2 > N and a2 + m1 > N ([lgt]). A new channel, at a
-    fresh root or at a field, starts its ends at any tickets m1 and m2
+    fresh base or at a field, starts its ends at any tickets m1 and m2
     with m1 + m2 ≤ N ([tsum_ok]). Deadlock-freedom typing is
     the instance N = ∞ ([conservative] in static/Conservativity.v).
 
-    No program mentions a point. Plain [new] creates at a fresh root ρ
+    No program mentions a point. Plain [new] creates at a fresh base ρ
     with a constraint C under (wf-new) and returns the pair under ∃ρ. C
     (E-New), or at a field x·κ of any point x (E-New-Field). A field
     creation picks no constraint, because the facts about x·κ were fixed
-    with the root of x, so its existential would bind nothing and assume
+    with the base of x, so its existential would bind nothing and assume
     only what Γ entails. Every
     primitive has its own rule (E-Send, …, E-Force). A constant k passed as
     a function is its eta-expansion λy. k y, which types by E-Abs over the
@@ -210,14 +210,14 @@ Definition dftyped (W : sworld) (Θ : tenv) (Γ : hctx) (Δ : lenv) (F : sfuture
 
 Definition chans_of (Σ : senv) : gset chan := set_map ech (dom Σ).
 
-(** Σ̄_C, the partner ends at dual types and points. *)
+(** Σ̄_C, the dual ends at dual types and points. *)
 Definition senv_dual (Σ : senv) : senv :=
   kmap edual ((λ e : sty * point, (dual e.1, e.2‾)) <$> Σ).
 
 Global Instance edual_inj : base.Inj eq eq edual.
 Proof. intros o o'. apply edual_inj. Qed.
 
-(** No end of Σ has its partner in Σ. P-Term asks it of the interface: a
+(** No end of Σ has its dual end in Σ. P-Term asks it of the interface: a
     channel whose two ends the thread holds is restricted (decision of
     2026-11-18). *)
 Definition pfree (Σ : senv) : Prop := ∀ o, o ∈ dom Σ → edual o ∉ dom Σ.
@@ -232,8 +232,8 @@ Proof.
 Qed.
 
 (** The side conditions that P-Connect does not ask. Disjoint channels
-    give disjoint maps, and the cut of a partner-free interface is
-    partner-free. *)
+    give disjoint maps, and the cut of a free of dual pairs interface is
+    free of dual pairs. *)
 Lemma chans_disj_map (Σ1 Σ2 : senv) : chans_of Σ1 ## chans_of Σ2 → Σ1 ##ₘ Σ2.
 Proof.
   intros H. apply map_disjoint_dom. intros o H1 H2.
@@ -278,7 +278,7 @@ Proof. unfold chans_of. by rewrite dom_union_L, set_map_union_L. Qed.
 Lemma elem_of_chans_of' o (Σ : senv) : o ∈ dom Σ → ech o ∈ chans_of Σ.
 Proof. intros H. unfold chans_of. apply elem_of_map. by exists o. Qed.
 
-(** A typed interface is partner-free: P-Term asks it, and P-Connect
+(** A typed interface is free of dual pairs: P-Term asks it, and P-Connect
     keeps it, because the cut leaves and chans Σ1 ## chans Σ2. *)
 Lemma pfree_join (Σ1 ΣC Σ2 ΣD : senv) : pfree (Σ1 ∪ ΣC) → pfree (Σ2 ∪ ΣD) →
   chans_of Σ1 ## chans_of Σ2 → pfree (Σ1 ∪ Σ2).

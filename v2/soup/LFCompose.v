@@ -123,9 +123,9 @@ Definition lf_sems (N : nat) (η : iann) (W : sworld) (Σ : senv) (p : proc) (T 
   ∀ R, wmodels R W → wranked R → lf_semk N η R Σ p T.
 
 (** The rule P-Connect, with the premises of [p_connect] and the
-    partner-freedom of the cut, which [p_connect] derives from its left
+    freedom from dual pairs of the cut, which [p_connect] derives from its left
     premise. The soup uses the channel conditions only. The second component is read at the
-    world the first one starts at, so the fresh roots of the two cannot
+    world the first one starts at, so the fresh bases of the two cannot
     collide. *)
 Theorem lf_p_connect N η W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T :
   lf_sems N η W1 (Σ1 ∪ ΣC) (C1, E1) T → lf_sems N η W2 (Σ2 ∪ senv_dual ΣC) (C2, E2) TUnit →

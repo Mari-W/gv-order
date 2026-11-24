@@ -1,7 +1,7 @@
 (** * rx-chain is deadlock free (fx-final, 2026-11-24)
 
       grow = !(f = λw. let ⟨c, c′⟩ = new in             c at ι·0
-                       let ⟨d, d′⟩ = new in             d at a fresh root π
+                       let ⟨d, d′⟩ = new in             d at a fresh base π
                        let ∗ = spawn (λ_. recvclose d′) in
                        let ∗ = close (send ⟨∗, d⟩) in
                        let ∗ = spawn (λ_. (force f) c′) in
@@ -16,11 +16,11 @@
     and closes c while it holds w, so it asks ι·0 ≺ ῑ. The child forces
     the box at (ι·0)‾. The box hypothesis H(ι) is F(ι) = {ι·0 ≺ ῑ}
     together with F((ι·u)‾) for every nonempty word u of fields, so
-    H((ι·0)‾) ⊆ H(ι) ([rcH_desc]). The box creates d at a fresh root π
+    H((ι·0)‾) ⊆ H(ι) ([rcH_desc]). The box creates d at a fresh base π
     with the constraint C that puts π and π⁺ below the three heads it
     holds, ῑ, ι·0 and (ι·0)‾. Every fact of C leaves the tree of π, so
     C has no bridge, and program order alone is acyclic on the tree of
-    π ([rc_C_acyc]). main creates w at a fresh root ρ with the laws
+    π ([rc_C_acyc]). main creates w at a fresh base ρ with the laws
     H(ρ), which descend forever, ρ ≻ ρ·0 ≻ ρ·0·0 ≻ …. (acyc-new) accepts
     them ([rc_acyc]) by the order [fjr_lt] of examples/ForkJoin.v.
 
@@ -216,7 +216,7 @@ Section rbody.
     { apply (d_new_fld _ _ _ _ ρ 0 SEnd None None None None); [apply spare_unl; spare_tac|contr_tac]. }
     eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
     { eapply d_var'; [reflexivity|]. spare_tac. }
-    (* d at a fresh root *)
+    (* d at a fresh base *)
     eapply d_let; [apply tsplit_empty|lsplit_tac ENew EUnit| |].
     { apply (d_new_acyc _ _ _ _ rc_C rc_Sd None None None None); [apply spare_unl; spare_tac|apply rc_C_acyc|contr_tac]. }
     eapply d_open with (i := 0); [reflexivity|cbn; tauto|apply rc_C_acyc|].

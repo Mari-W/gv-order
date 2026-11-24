@@ -151,7 +151,7 @@ Proof.
   destruct (decide (o = o1)) as [B|B]; [by right; left|by right; right].
 Qed.
 
-(** csub o1 o2 is a renaming whenever o2 and its partner are not held,
+(** csub o1 o2 is a renaming whenever o2 and its dual end are not held,
     whatever happens to o1. *)
 Lemma pren_ok_csub_r o1 o2 Σ p :
   ech o2 ≠ ech o1 → ¬ pheld Σ p o2 → ¬ pheld Σ p (edual o2) → pren_ok (csub o1 o2) Σ p.

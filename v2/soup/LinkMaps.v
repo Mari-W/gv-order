@@ -1,9 +1,9 @@
 (** * Ownership after a link (stage S8)
 
     A link of o1 and o2 removes both ends from the linker and renames
-    every other end by [csub o1 o2]: the partner of o1 becomes o2. On the
+    every other end by [csub o1 o2]: the dual end of o1 becomes o2. On the
     ends that remain, [csub o1 o2] is injective, so the parts of every
-    thread are renamed copies of the old parts, and the two partners of
+    thread are renamed copies of the old parts, and the two dual ends of
     the linked ends form one channel. *)
 
 From stdpp Require Import relations.
@@ -103,7 +103,7 @@ Proof. unfold kdel2. apply delete_delete. Qed.
 
     A symmetric relation R holds between the values of the two ends of
     every channel of m. After the link of o1 and o2 it holds of the
-    renamed map, when it holds between the partners of o1 and o2. *)
+    renamed map, when it holds between the dual ends of o1 and o2. *)
 Lemma link_pair {Y : Type} (R : Y → Y → Prop) (m : gmap cend Y) o1 o2 :
   o1 ≠ o2 → o2 ≠ edual o1 →
   (∀ v v', R v v' → R v' v) →
@@ -117,7 +117,7 @@ Proof.
   apply lookup_kdel2 in Ha as (Ha1 & Ha2 & Ha). apply lookup_kdel2 in Hb' as (Hb1 & Hb2 & Hb').
   assert (H21 : o2 ≠ edual o1) by done.
   destruct (decide (a = edual o1)) as [->|Ha3].
-  { (* the partner of o1 now holds o2 *)
+  { (* the dual end of o1 now holds o2 *)
     assert (csub o1 o2 (edual o1) = o2) as Hc by (unfold csub; by rewrite decide_True).
     rewrite Hc in Hb.
     assert (b = edual o2) as ->.

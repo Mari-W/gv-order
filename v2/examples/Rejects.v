@@ -11,7 +11,7 @@
     - rx-relink ([rl_refresh_untyped], [rx_relink_rejected]). The box
       that links the end it was handed to a new channel has no type at
       any finite N. E-Link asks a + m₂ > N of the linked end at credit a
-      and the partner end with tickets m₂, and E-New asks m₂ + m₂' ≤ N
+      and the dual end with tickets m₂, and E-New asks m₂ + m₂' ≤ N
       of the new channel, so a > m₂'. The recursive call passes the new
       end, of credit at most m₂', where the parameter asks the credit of
       the linked end, at least a.

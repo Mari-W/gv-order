@@ -11,7 +11,7 @@
     and srv the dual loop. The control channel c sits at Skip, an idle
     end on each side, and neither loop acts on it. The program is the
     client and server cycle of examples/ClientServer.v with one more
-    channel at the field ρ·2 of the root. Its world W_ctl is W_cs with
+    channel at the field ρ·2 of the base. Its world W_ctl is W_cs with
     laws that put the points of a and b below the dual of c's point.
 
     The controller types under ⊩ at N = 6 and is lock free

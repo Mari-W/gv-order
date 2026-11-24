@@ -126,7 +126,7 @@ Fixpoint pn_fsum (p : pname) : nat :=
 Definition pt_depth (x : point) : nat := pn_depth (pt_name x).
 Definition pt_fsum (x : point) : nat := pn_fsum (pt_name x).
 
-(** (wf-new) for a constraint on the new root alone, by a measure that
+(** (wf-new) for a constraint on the new base alone, by a measure that
     rises along its facts and along program order. *)
 Lemma wf_new_lex3 (L : fact → Prop) (m : point → nat * nat * nat) :
   (∀ x y, L (FLt x y) → in_tree0 x ∧ in_tree0 y) →

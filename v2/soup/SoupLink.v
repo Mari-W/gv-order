@@ -2,10 +2,10 @@
 
     P-Act-Link: thread i links o1 and o2, which it holds at dual points
     and dual session types. The channel of o1 goes, and every thread is
-    renamed by [csub o1 o2], so the partner of o1 now holds o2. The
+    renamed by [csub o1 o2], so the dual end of o1 now holds o2. The
     linker's obligations remove both ends, and its fuel gives the
     tickets of the link ([lok]). Every other thread keeps its term,
-    renamed ([Erel_rename], [FuelE_rename]), and the partners of o1 and
+    renamed ([Erel_rename], [FuelE_rename]), and the dual ends of o1 and
     o2 form one channel ([link_pair]), whose tickets meet the bound
     ([link_tsum]). No counter changes. *)
 

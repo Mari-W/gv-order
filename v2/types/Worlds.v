@@ -2,7 +2,7 @@
 
     W = (A, ≺_A)
       A      a finite set of constants
-      ≺_A    facts between points with constant roots in A
+      ≺_A    facts between points with constant bases in A
 
     ≺_W is the transitive closure of ≺_A, of x ≺ x⁺ and of x ≺ x‾⁺. A
     static world is the world of a typing derivation. The relation reads
@@ -34,7 +34,7 @@ Definition sw_lt (W : sworld) : point → point → Prop := tc (swstep W).
 Notation "W ⊢ₛ x ≺ y" := (sw_lt W x y)
   (at level 74, x at level 60, y at level 60, format "W  ⊢ₛ  x  ≺  y").
 
-(** A constant root in a set. *)
+(** A constant base in a set. *)
 Definition croot_in (S : gset nat) (x : point) : Prop :=
   ∃ a, pt_root x = NConst a ∧ a ∈ S.
 
@@ -44,14 +44,14 @@ Proof.
     [destruct (decide (a ∈ S))|..]; first [left; naive_solver|right; naive_solver].
 Defined.
 
-(** The facts of W relate points with constant roots of W. *)
+(** The facts of W relate points with constant bases of W. *)
 Record sworld_wf (W : sworld) : Prop := {
   wf_facts x y : sw_facts W (FLt x y) → croot_in (sw_consts W) x ∧ croot_in (sw_consts W) y
 }.
 
 (** W is well-founded: ≺_W has a rank function (relation/Ranks.v), so
     no infinite descending chain. P-Term asks it, and [wf_join_iff]
-    reduces it at a join to the shared roots. *)
+    reduces it at a join to the shared bases. *)
 Definition swf (W : sworld) : Prop := wf (sw_lt W).
 
 Lemma swf_iff W : swf W ↔ well_founded (sw_lt W).
@@ -188,7 +188,7 @@ Proof.
 Qed.
 
 (** W restricted to the constants S: the facts of ≺_W between points
-    with constant roots in S. *)
+    with constant bases in S. *)
 Definition swrestrict (W : sworld) (S : gset nat) : sworld :=
   SWorld (sw_consts W ∩ S)
     (λ g, match g with FLt x y => W ⊢ₛ x ≺ y ∧ croot_in (sw_consts W ∩ S) x ∧ croot_in (sw_consts W ∩ S) y end).
@@ -247,7 +247,7 @@ Section join.
   Local Abbreviation J := (W1 ⊔ W2).
   Local Abbreviation S := (swshared W1 W2).
 
-  (** The zone of a world: points whose root it owns. *)
+  (** The zone of a world: points whose base it owns. *)
   Definition zone (W : sworld) (x : point) : Prop := croot_in (sw_consts W) x.
 
   Global Instance zone_dec W x : Decision (zone W x).
@@ -503,8 +503,8 @@ End join.
 
 (** ** Worlds of the relation
 
-    A world is a set of roots and a strict order on the points with
-    these roots, which contains program order. It has a kind. A strict
+    A world is a set of bases and a strict order on the points with
+    these bases, which contains program order. It has a kind. A strict
     world ([wstrict]) carries no rank and is an arbitrary strict partial
     order. The deadlock-free relation and the live relation of
     [live_soundness] read strict worlds. A ranked world ([wranked])
@@ -529,7 +529,7 @@ Record world := World {
     w_ord x y ↔ olt (ρ x) (ρ y)
 }.
 
-(** x is ranked in W: its root is a root of W. *)
+(** x is ranked in W: its base is a base of W. *)
 Definition rin (W : world) (x : point) : Prop := pt_root x ∈ w_roots W.
 
 Global Instance rin_dec W x : Decision (rin W x).
@@ -691,7 +691,7 @@ Qed.
 
 (** ** Ranked worlds
 
-    [wranked_of B ρ] has the roots B and orders them by the ranks ρ,
+    [wranked_of B ρ] has the bases B and orders them by the ranks ρ,
     which rise along program order. *)
 
 Definition ranks_po (B : gset pname) (ρ : point → rank_ord) : Prop :=
@@ -744,7 +744,7 @@ Qed.
 (** ** Strict worlds
 
     An acyclic static world is a strict world itself: its constants are
-    the roots and its order is the order. No rank is needed. *)
+    the bases and its order is the order. No rank is needed. *)
 
 Definition wstrict_of (W : sworld) (Hac : sacyc W) : world.
 Proof.
@@ -770,9 +770,9 @@ Qed.
 Lemma dmodels_exists W : sworld_wf W → sacyc W → ∃ R, wstrict R ∧ wmodels R W.
 Proof. intros Hwf Hac. exists (wstrict_of W Hac). split; [done|by apply wstrict_of_models]. Qed.
 
-(** ** Growing a ranked world by roots
+(** ** Growing a ranked world by bases
 
-    [wgrow W B ρ] ranks the points of the roots in B that W does not rank
+    [wgrow W B ρ] ranks the points of the bases in B that W does not rank
     by ρ, and keeps every rank of W. The lock-free creation grows the
     world this way. *)
 

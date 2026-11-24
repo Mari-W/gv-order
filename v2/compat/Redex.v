@@ -448,7 +448,7 @@ Section redex.
       intros _. exists S, y, W1. split; [apply wext_refl|]. apply at_cost_val, Vrel_newpair.
   Qed.
 
-  (** A constant root that W ranks nowhere and no point of env has. *)
+  (** A constant base that W ranks nowhere and no point of env has. *)
   Lemma fresh_const (W : world) (env : list point) :
     ∃ a, NConst a ∉ w_roots W ∧ ∀ y, y ∈ env → pt_root y ≠ NConst a.
   Proof.
@@ -494,7 +494,7 @@ Section redex.
     - intros u y [Hf Hs] _ Hy. exfalso. by apply Hy, (HC u y).
   Qed.
 
-  (** The ranks of W with offsets at the roots W does not rank rise
+  (** The ranks of W with offsets at the bases W does not rank rise
       along W. *)
   Lemma rk0_lt W x y : wranked W → W ⊢ x ≺ y →
     olt (wgrow_rank W (λ y, onat (pt_off y)) x) (wgrow_rank W (λ y, onat (pt_off y)) y).
@@ -515,8 +515,8 @@ Section redex.
     eapply ole_trans; [apply ole_succ_succ, (rank_bacc_irr R b y _ (Hwf y))|]. exact (Hy y Hr).
   Qed.
 
-  (** A creation at a fresh root under (gen-new). The creation grows
-      the world by the fresh constant a and by the roots of the context
+  (** A creation at a fresh base under (gen-new). The creation grows
+      the world by the fresh constant a and by the bases of the context
       points of C. The tree of a gets the least ranks of C with program
       order above the context points below it ([rank_base]). A point
       paired with the set T stays at or below the rank of the largest
@@ -647,13 +647,13 @@ Section redex.
   Proof. intros HW [H1 H2]. split; [done|]. intros z y Hb. eapply w_lt_mono; [exact HW|]. by apply H2. Qed.
 
   (** Proposition A of docs/redesign/check-df-acyclic.md. The world of a
-      creation at a fresh root a is the closure of the order of W1, of
+      creation at a fresh base a is the closure of the order of W1, of
       the facts of C at a and of program order ([aw_W]). A chain of the
       closure that leaves the tree of a and comes back passes through a
       bridge, which W1 orders already ([aw_bridge]). The invariant
       [aw_inv] records the shape of a chain by where its two ends lie,
       so the closure is irreflexive. Constructive: membership in the
-      tree compares roots. *)
+      tree compares bases. *)
   Section acyc_world.
     Context (W1 : world) (C : bcs) (a : nat).
     Context (Ha1 : NConst a ∉ w_roots W1) (Ha2 : ∀ y, y ∈ bc_env C → pt_root y ≠ NConst a).
@@ -877,7 +877,7 @@ Section redex.
     Proof. exists aw_W. split; [apply aw_W_ext|apply aw_W_holds]. Qed.
   End acyc_world.
 
-  (** A creation at a fresh root under (acyc-new), in a strict world,
+  (** A creation at a fresh base under (acyc-new), in a strict world,
       constructively. *)
   Lemma Erel_new_acyc aq1 aq2 n W C S F mt1 mt2 :
     wstrict W → acyc_new_sem W C →

@@ -8,7 +8,7 @@
              let () = recvclose p in recvclose q
       Λ_0(r) = {r‾ ≺ r·0, r‾⁺ ≺ r·0}
 
-    mk₀ : □(∗ ⊸ ∃^⊥ ι. Λ_0(ι). (?∗.Close)@ι‾) creates at a fresh root,
+    mk₀ : □(∗ ⊸ ∃^⊥ ι. Λ_0(ι). (?∗.Close)@ι‾) creates at a fresh base,
     so the first call needs no point. mk₁ : □∀ζ. {ζ ≺ ζ·0, ζ⁺ ≺ ζ·0}.
     (?∗.Close)@ζ ⊸ (?∗.Close)@ζ ⊗ (?∗.Close)@(ζ·0)‾ anchors the new
     channel at the end it receives. main opens p at ι, calls mk₁ at
@@ -97,7 +97,7 @@ Proof.
   { eapply d_var'; [reflexivity|]. spare_tac. }
   eapply d_letu; [apply tsplit_empty|lsplit_tac (ESpawn (worker 2)) EUnit| |].
   { worker_tac (pvar 0) 2. }
-  (* pack c′ at the fresh root *)
+  (* pack c′ at the fresh base *)
   change (pinst_ty (pshift 1) Tres) with Tres. unfold Tres.
   eapply d_pack with (xs := pvar 0 :: []); [done| |exact I|exact I|].
   - apply hold_at_nil. intros f Hf _. destruct Hf as [->| ->]; simpl.

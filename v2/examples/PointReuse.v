@@ -5,7 +5,7 @@
       pr_thread    = pr_round l (pr_round r ∗)
 
     Both creations type by E-New-Field at the field x·0 of the constant
-    point x, so the end a of each round sits at x·0 and its partner at
+    point x, so the end a of each round sits at x·0 and its dual end at
     (x·0)‾. The first round receives l at x·0, the second receives r at
     x·0. One thread runs both rounds, so every run of the closed program
     exchanges twice at x·0 with different labels.

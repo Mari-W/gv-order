@@ -4,7 +4,7 @@
                               | inr _ ⇒ close b; close a
 
     Thread A runs [fp_case a b] on its ends a at x and b at y, thread B
-    runs [fp_case ā b̄] on the partner ends ā at x̄ and b̄ at ȳ. Both
+    runs [fp_case ā b̄] on the dual ends ā at x̄ and b̄ at ȳ. Both
     branch on a flag that a third party sends them, the same flag to
     both, so in every run they close in the same order and the process
     is deadlock free. Only internal channels are involved, so the process
@@ -18,7 +18,7 @@
     threads at one ranked world.
 
     - [fp_gate]           : a thread in E at close a; close b with b held
-                            asks the point of a below the partner point of b.
+                            asks the point of a below the dual point of b.
     - [fp_unrealizable]   : A and B in E at one ranked world W for both
                             flags contradict the irreflexivity of W.
     - [fp_static_rejected]: the closed process of A, B and a thread that

@@ -27,7 +27,7 @@
     start at their tickets m1 and m2, which the creation chooses with
     m1 + m2 ≤ N. A link moves no counter, and
     the counter of each linked end exceeds what the bound leaves the
-    partner of the other ([lok]). The checks are F-Tick (an action asks
+    dual end of the other ([lok]). The checks are F-Tick (an action asks
     every other counter at least 1, and the frame at least 1), the
     hand-over (every handed counter at least 1), F-Wait (no action on an
     idle end) and F-Link. An idle end is an end whose session type is
@@ -39,7 +39,7 @@
     Q10 (b), see docs/redesign/progress.md for why one clock fails).
 
     FuelE^N is closed under injective renamings of ends (a link renames
-    the partner of the removed end in another thread). [Vfuel] recurses
+    the dual end of the removed end in another thread). [Vfuel] recurses
     on the type. A closure at (T ⊸[c] U)^a has captured counters at least
     a on the ends that are not idle, and for every lower level, counters
     at or above the counters at creation minus a at the same tickets
@@ -183,7 +183,7 @@ Definition plink (Π : penv) (os : gset cend) : Prop :=
     ssub S1 (dual S2).
 
 (** The tickets of a link: the counter of each linked end exceeds what the
-    bound leaves the partner of the other, a1 + m2 > N and a2 + m1 > N. *)
+    bound leaves the dual end of the other, a1 + m2 > N and a2 + m1 > N. *)
 Definition lok (N : fuel) (φ : cenv) (os : gset cend) : Prop :=
   ∀ o1 o2 p1 p2, os = {[o1]} ∪ {[o2]} → o1 ≠ o2 → φ !! o1 = Some p1 → φ !! o2 = Some p2 →
     lgt N p1.1 p2.2 ∧ lgt N p2.1 p1.2.
@@ -265,8 +265,8 @@ Section obligations.
       (∀ j, olt j n → El j N σ (ftick d) (<[o := if i then S2 else S1]> Π) (refill o φ) e').
 
   (** A link forwards held ends whose protocols are dual, and the counter
-      of each exceeds what the bound leaves the partner of the other. The
-      soup reads the duality: after the link the partners of the two ends
+      of each exceeds what the bound leaves the dual end of the other. The
+      soup reads the duality: after the link the dual ends of the two ends
       form one channel (stage S8). *)
   Definition f_link (os : gset cend) (e' : expr) : Prop :=
     plink Π os ∧ os ⊆ dom φ ∧ lok N φ os ∧ (∀ j, olt j n → El j N σ d (mrem os Π) (mrem os φ) e').

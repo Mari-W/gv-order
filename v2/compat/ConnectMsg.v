@@ -1,6 +1,6 @@
 (** * P-Connect, a message across the cut (stage S4)
 
-    The sender holds the cut end o, the receiver its partner. The sender
+    The sender holds the cut end o, the receiver its dual end. The sender
     moves the ends Σv of its environment and Θe of its restricted
     channels, the receiver receives Θ2 = Σv ∪ Θe. Afterwards the sender
     holds E1, the receiver E2, and the cut is re-split by the interface

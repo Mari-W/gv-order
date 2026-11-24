@@ -49,7 +49,7 @@ Definition od : cend := EPos "d".
 Definition sb_thread : expr := Case sb_flag (cl2 oc od) (cl2 od oc).
 Definition sb_partner : expr := cl2 (edual oc) (edual od).
 
-(** The points: c at x and d at y, both constant roots. *)
+(** The points: c at x and d at y, both constant bases. *)
 Definition px : point := MkPt (NConst 0) true 0.
 Definition py : point := MkPt (NConst 1) true 0.
 
@@ -524,7 +524,7 @@ Proof.
 Qed.
 
 (** The ends of one side of P-Connect. An end the thread mentions without
-    its partner is not restricted, so it sits in the interface, at the
+    its dual end is not restricted, so it sits in the interface, at the
     same point in the thread's Θ. *)
 Lemma side_lookup N η W Σ C0 u T :
   ptyped N η W Σ (C0, {[+ u +]}) T →

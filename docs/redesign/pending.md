@@ -1,5 +1,88 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, 2026-11-24, final small Rocq items
+
+Branch fx-final from redesign 339d5c4. Four items, decided by delegation
+on 2026-11-24 (fable-final.md, sections 3 and 4). No Admitted, no Axiom, no
+new Parameter. No typing rule, no clause of the relation and no existing
+theorem statement changed.
+
+1. Flagpair static rejection, done. examples/FlagPair.v gains the typed
+   form of the program. Each thread receives the flag z on its own
+   channel, closes the continuation and branches on z, each arm reading
+   its binder. A third thread sends inj₁ ∗ to both. `fp_static_rejected :
+   ¬ ptyped N η W ∅ fp_config TUnit` holds for every bound, annotation and
+   world. The proof needed one general lemma, `ptyped_threads`. Every
+   thread of a process derivation is typed at a world contained in the
+   world of the derivation, and one map from channels to points gives the
+   point of every end, the negative end at the dual of the positive one.
+   So the proof reads any shape of P-Connect tree, and the three-thread
+   process needs no case split on the tree. `fpv_case_needs` and
+   `fpv_thread_needs` read both arms of E-Case under a scrutinee without
+   ends, through the receive and the close. The map badge of ex-flagpair
+   now cites the theorem. The semantic deadlock freedom stays argued.
+2. rx-chain at N = ∞, done. New file examples/RxChain.v. `rc_dftyped`,
+   `rc_term` and `rc_deadlock_free` (no excluded middle) for `rc_main` of
+   Descent.v. The box hypothesis is H(ι) = {t·0 ≺ t̄ | t = ι or t = (ι·u)‾,
+   u a nonempty word of fields}, closed under descent (`rcH_desc`). c is
+   created at the field ι·0, d at a fresh base π whose constraint puts π
+   and π⁺ below the three heads the thread holds. That constraint only
+   exits the tree of π, so it has no bridge and program order alone is
+   acyclic on the tree (`rc_C_acyc`). main creates w at a fresh base with
+   the laws H(ρ), acyclic by the order `fjr_lt` (`rc_acyc`). The map badge
+   of rx-chain now cites `rc_dftyped, rc_deadlock_free`. The other rx-*
+   programs were not done. They do not go the same way. Each needs its own
+   box typing with a product parameter and an infinite family of facts
+   (postpone, delegate) or a link at N = ∞ (relink), estimated at 150 to
+   300 lines each, so their deadlock-free badges still say argued.
+3. Old examples, two of three done.
+   - The bit program, new file examples/BitProgram.v. e at a fresh base ε,
+     c and d at the fields ε·0 and ε·1. The constraint of e has six facts
+     and satisfies (wf-new) by a rank of offset, depth and polarity
+     (`bit_wf_new`). `bit_dftyped`, `bit_deadlock_free`. Map example
+     ex-bit.
+   - Milner's scheduler, new file examples/MilnerSched.v. The six channels
+     at ρ and its fields ρ·1 … ρ·5, the 18 facts of the first creation rise
+     with the field label (`ms_wf_new`). `ms_dftyped`, `ms_deadlock_free`.
+     Map example ex-milner.
+   - The forwarder with an existential payload, skipped. The old program
+     has three recursive boxes (forwarder, producer, consumer) with
+     two-parameter constraint families over all rounds, an existential
+     payload packed by the forwarder and opened by the consumer, and a
+     main whose second creation relates b to a by entries and exits, so
+     the bridge condition must be shown through the first creation. The
+     old proof is 479 lines over the old judgment. A v2 port is a fresh
+     derivation of all three boxes and of the bridge check, well beyond
+     the cheap ports. A one-round variant without boxes would show the
+     payload binder and the pack and open, but it is a different program,
+     so I did not substitute it.
+   - Lock freedom of the two ports was not attempted. The lock-free
+     derivations need ticket and credit annotations per action (the LF*
+     files run 60 to 370 lines each), which is not cheap.
+4. Comment sweep, done, comments only. "partner end(s)" and "partner
+   point(s)" became "dual end(s)" and "dual point(s)". "partner" meaning
+   the dual end became "dual end" (or "dual" for session types and the
+   end map), "partner-free" became "free of dual pairs", "the holder of
+   the partner end" became "the thread holding the dual end". "root" and
+   "roots" became "base" and "bases" in prose, with "the rank base" in
+   relation/Ranks.v where "base" already meant the base of a rank. Left
+   as they are: "partner" for a partner thread or process
+   (examples/Copycat.v, CopycatTwo.v, SemBranch.v, BranchExt.v,
+   ChanRen.v, LFRunFacts.v), "partner set" and "partner relation" of
+   (gen-new) (static/Contexts.v, relation/Ranks.v, static/Fundamental.v,
+   examples/GenNew.v), "soup", "hidden end", identifiers and names in
+   brackets. No comment said "hidden world".
+
+New results in CheckAll.v (273 before): `fp_unrealizable`,
+`ptyped_threads`, `fp_static_rejected`, `rc_acyc`, `rc_C_acyc`,
+`rc_dftyped`, `rc_term`, `rc_deadlock_free`, `bit_wf_new`, `bit_dftyped`,
+`bit_deadlock_free`, `ms_wf_new`, `ms_dftyped`, `ms_deadlock_free`.
+
+Build: `make -j8` clean after the comment sweep, `make check` 287 of 287
+closed under the global context, `make test` passes. docs/explorer/check.sh
+0 errors, the known bare-word warning only. tools/proof-map/test/page-test.js
+15 passed.
+
 ## Faithfulness check after the Fable pass, 2026-11-24
 
 Branch map-faithful from redesign dd71273. Report in map-cleanup.md under

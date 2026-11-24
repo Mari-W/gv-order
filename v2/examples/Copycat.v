@@ -7,7 +7,7 @@
     The forwarder holds o1 : S@x and o2 : S‾@y for S = ?∗.!∗.Close, at
     two independent points. Link fuses at x and x‾ and stays as it is.
     The copycat alternates, and every action asks the acting point below
-    the head of the other end, the partner point of that end. The facts
+    the head of the other end, the dual point of that end. The facts
     are those the session type generates.
 
       recv o1 at x     while o2 sits at y      x ≺ y‾
@@ -183,9 +183,9 @@ Qed.
 
 (** ** The forwarder's world
 
-    x and y are the constant roots 0 and 1 of [px] and [py]. The world
+    x and y are the constant bases 0 and 1 of [px] and [py]. The world
     holds exactly the five facts. It is well-founded: the potential
-    2·offset + (root + offset mod 2) grows along each fact and along both
+    2·offset + (base + offset mod 2) grows along each fact and along both
     kinds of step, because the side that acts first alternates with the
     offset. *)
 
@@ -284,8 +284,8 @@ Qed.
     A process P that holds o1‾ : S‾@x‾ types after the forwarder is put
     between it and its partner. P ∥ fwd holds o2 : S‾@y instead, at the
     same type, and the partner of P now connects to o2‾ at y‾. The only
-    condition on P's world W is that it does not know the root of y. The
-    forwarder's facts then restrict to program order on the root of x,
+    condition on P's world W is that it does not know the base of y. The
+    forwarder's facts then restrict to program order on the base of x,
     which every world has, so the cut of P-Connect is well-founded
     because W is. *)
 
@@ -331,7 +331,7 @@ Proof.
   - right. split_and!; [done|done|lia].
 Qed.
 
-(** Between two points on the root of x, the forwarder's world holds
+(** Between two points on the base of x, the forwarder's world holds
     only program order. *)
 Lemma W_f_lt_root0 u v : W_f ⊢ₛ u ≺ v → pt_root u = NConst 0 → pt_root v = NConst 0 → po u v.
 Proof.
@@ -720,7 +720,7 @@ Section typing_h.
   Qed.
 End typing_h.
 
-(** The higher-order forwarder's world, over the constant roots of [px]
+(** The higher-order forwarder's world, over the constant bases of [px]
     and [py] and the fields px·0 and py·0. The potential
     4·offset + (0 for x, 1 for y, 2 for x·0, 3 for y·0) grows along every
     fact and every step, so the world is well-founded. *)
@@ -1130,7 +1130,7 @@ Qed.
 (** *** The schema as a process
 
     [fwdp p o1 o2] binds the two ends and runs [fb p]. Its world [W_p p]
-    holds exactly the facts p generates at the constant roots of [px] and
+    holds exactly the facts p generates at the constant bases of [px] and
     [py]. The world is well-founded: at offset k the end that acts first
     in p gets the lower potential, and every other fact raises the
     offset. *)
@@ -1298,9 +1298,9 @@ Qed.
 (** *** Identity expansion for every first-order protocol
 
     The argument of [fwd_expand] with the potential [ppot]: between two
-    points on the root of x the schema's world holds only program order,
+    points on the base of x the schema's world holds only program order,
     so P ∥ fwdp types whenever P types and its world does not know the
-    root of y. *)
+    base of y. *)
 
 Lemma pdual_pdual p : pdual (pdual p) = p.
 Proof. induction p as [|p IH|p IH]; simpl; rewrite ?IH; done. Qed.

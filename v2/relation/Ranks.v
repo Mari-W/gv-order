@@ -75,7 +75,7 @@ Proof. intros H Hρ x y Hxy. by apply Hρ, H. Qed.
 
     [rank_base R b] ranks a well-founded R so that every rank lies at or
     above its base b and rises along R. E-New ranks the tree of a fresh
-    root this way, with the base above the ranks of the context points
+    base this way, with the rank base above the ranks of the context points
     below it. *)
 Section rank_base.
   Context (R : point → point → Prop) (b : point → rank_ord).

@@ -1,7 +1,7 @@
 (** * P-Connect and P-Join (stage S4)
 
     Two components in P over a cut compose. p1 holds the interface Σ1 and
-    the cut ends ΣC, p2 the interface Σ2 and the partners ΣD of the cut
+    the cut ends ΣC, p2 the interface Σ2 and the dual ends ΣD of the cut
     ends, dual up to ≈ at dual points ([cut_dual]). The composite
     restricts the cut channels:
 
@@ -22,7 +22,7 @@ From GV Require Import fuel.FuelMono.
 
 (** [pfree] lives in static/Typing.v, where P-Term asks it. *)
 
-(** ΣD holds the partners of the ends of ΣC, dual up to ≈ at dual
+(** ΣD holds the dual ends of the ends of ΣC, dual up to ≈ at dual
     points. *)
 Definition cut_dual (ΣC ΣD : senv) : Prop :=
   (∀ o, o ∈ dom ΣD ↔ edual o ∈ dom ΣC) ∧
@@ -318,7 +318,7 @@ Proof. intros Hd H1 H2. exact (proj1 (map_disjoint_spec m1 m2) Hd i x y H1 H2). 
 Lemma disj_lookup_n {A} (m1 m2 : gmap nat A) i x y : m1 ##ₘ m2 → m1 !! i = Some x → m2 !! i = Some y → False.
 Proof. intros Hd H1 H2. exact (proj1 (map_disjoint_spec m1 m2) Hd i x y H1 H2). Qed.
 
-(** An offer on a cut end and an offer on its partner meet. *)
+(** An offer on a cut end and an offer on its dual end meet. *)
 Lemma dual_offers κ n W1 T1 T2 X1 X2 Σ1 ΣC Σ2 ΣD q1 q2 o :
   conn Σ1 ΣC q1.1 Σ2 ΣD q2.1 →
   Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) X1 W1 (Σ1 ∪ ΣC) T1 q1 →

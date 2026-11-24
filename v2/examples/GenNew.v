@@ -16,7 +16,7 @@
     Each program is typed end to end and deadlock free by
     [soundness_source]. [tu_rejected_wf_new] and [te_rejected_wf_new]:
     under every constraint that (wf-new) accepts, the opened context
-    derives no fact from the new root to ρ̄, which the close of d asks. *)
+    derives no fact from the new base to ρ̄, which the close of d asks. *)
 
 From GV Require Export examples.Tools2 static.FundamentalProc examples.SemBranch.
 
@@ -47,7 +47,7 @@ Proof.
   intros x. by apply (H (pt_off x)).
 Qed.
 
-(** The root of the new tree has no step below it. *)
+(** The base of the new tree has no step below it. *)
 Lemma new_step_root C s : (∀ x, cfact C x (pvar 0) → in_tree0 x → False) → ¬ new_step C s (pvar 0).
 Proof.
   intros HC (Hs & _ & [[Hf Hsc]|[E|E]]).

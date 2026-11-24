@@ -279,7 +279,7 @@ Definition is_admin (a : action) : Prop :=
   match a with ABeta | AForce | ANew | ASpawn _ | ALink _ _ => True | _ => False end.
 
 (** A free administrative redex costs nothing in the live table. A force
-    is administrative, because it needs no partner, but it costs one unit
+    is administrative, because it needs no dual end, but it costs one unit
     (F3 of docs/redesign/fable-findings.md). *)
 Definition is_free (a : action) : Prop :=
   match a with ABeta | ANew | ASpawn _ | ALink _ _ => True | _ => False end.

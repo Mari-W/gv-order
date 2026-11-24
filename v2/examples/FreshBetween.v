@@ -11,7 +11,7 @@
     the upper point κ bounds both. The constraint is the old [fbx_C]
     with the field ι·0 for δ:
       C = {ι ≺ κ, ι ≺ κ‾, ι ≺ δ‾, δ ≺ κ, δ ≺ κ‾}.
-    main creates c by new_0 at a fresh root ρ, e by new_1 c at ρ·1, and
+    main creates c by new_0 at a fresh base ρ, e by new_1 c at ρ·1, and
     forces the box at (ρ, ρ·1). The laws Λ_0(r) are C at (r, r·1). *)
 
 From GV Require Export examples.Tools2.

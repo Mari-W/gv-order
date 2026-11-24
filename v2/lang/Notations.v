@@ -1,6 +1,6 @@
 (** * Notations of the language layer (stage S1, Appendix A)
 
-    The ends c⁺ and c⁻ of a channel c and the partner end o‾ (the paper's
+    The ends c⁺ and c⁻ of a channel c and the dual end o‾ (the paper's
     ō, see the lexer deviations in docs/redesign/progress.md). Every
     later file of the language layer imports this module, and
     test/LangNotations.v checks that each notation parses and prints as

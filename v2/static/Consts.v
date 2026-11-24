@@ -8,7 +8,7 @@
     syntax.
 
     [cbij] is a bijection of constants. [pt_ren f] renames the constant
-    at the root of a point, and [ty_ren], [sty_ren] and the maps on
+    at the base of a point, and [ty_ren], [sty_ren] and the maps on
     contexts rename every point of a type or a context. Renaming
     commutes with every operation the typing rules apply to points and
     types (instantiation, shift, dual, field, unfolding, session
@@ -100,7 +100,7 @@ Proof. apply pt_ren_inv, cb_gf. Qed.
 Lemma pt_ren_inj π x y : pt_ren (cb_f π) x = pt_ren (cb_f π) y → x = y.
 Proof. intros H. by rewrite <-(pt_ren_cb' π x), H, pt_ren_cb'. Qed.
 
-(** The constants of a point: the constant at its root, if any. *)
+(** The constants of a point: the constant at its base, if any. *)
 Definition pn_consts (p : pname) : gset nat :=
   match pn_root p with NConst a => {[a]} | _ => ∅ end.
 Definition pt_consts (x : point) : gset nat := pn_consts (pt_name x).

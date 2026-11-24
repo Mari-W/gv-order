@@ -5,7 +5,7 @@
 
     σ instantiates point variables. [hinst W σ Γ Γ'] says that Γ'
     derives the instance under σ of every hypothesis of Γ. The world W
-    keeps its facts at constant roots ([facts_const]), which σ leaves
+    keeps its facts at constant bases ([facts_const]), which σ leaves
     alone. Terms mention no point and stay.
 
     Every premise of a rule that reads Γ survives, by [slt_hinst] for

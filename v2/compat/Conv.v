@@ -7,7 +7,7 @@
     ≈ ([Vrel_conv], [Erel_conv], [Prel_conv]), for every cost table.
 
     Composition needs it at a link. A link of a cut end o1 with an
-    interface end o2 hands the partner of o1 the name o2, at the type of
+    interface end o2 hands the dual end of o1 the name o2, at the type of
     o1‾, and the interface keeps o2 at its own type. O-Link and Q-Link
     ask the two types dual up to ≈ only. *)
 

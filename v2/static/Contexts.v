@@ -216,7 +216,7 @@ Definition ex_wf (W : sworld) (Γ : hctx) (lb : lbound) (m : nat) (C : bcs) (T :
 (** ** The bridge condition
 
     A constraint C under m bound point variables speaks of the variables
-    0, …, m−1, the roots of a tree, and of the variable m + j, the j-th
+    0, …, m−1, the bases of a tree, and of the variable m + j, the j-th
     point of [bc_env C] outside the binder. A bridge of C from z to y
     joins two outer points, either by a fact of C or by an entry z ≺ v,
     a path of C and program order in the tree from v to u, and an exit
@@ -251,10 +251,10 @@ Definition cons_open (W : sworld) (Γ : hctx) (m : nat) (C : bcs) : Prop :=
 Definition conserv (W : sworld) (Γ : hctx) (m : nat) (C : bcs) : Prop :=
   ∀ x y, slt W (hc_open m C Γ) (pt_inst (pshift m) x) (pt_inst (pshift m) y) → slt W Γ x y.
 
-(** ** The constraint of a creation at a fresh root (wf-new)
+(** ** The constraint of a creation at a fresh base (wf-new)
 
-    The constraint C of E-New at a fresh root speaks of the bound point
-    variable 0, the new root ρ, and of the points of its environment.
+    The constraint C of E-New at a fresh base speaks of the bound point
+    variable 0, the new base ρ, and of the points of its environment.
     Every fact of C ends in the tree of ρ, so a context point lies only
     below new points, and C with program order is well-founded on the
     tree of ρ. The premise reads no semantics. *)
@@ -372,7 +372,7 @@ Definition tree_acyclic (C : bcs) : Prop := ∀ x, in_tree0 x → ¬ tc (new_ste
 Definition acyc_new (W : sworld) (Γ : hctx) (C : bcs) : Prop :=
   tree_acyclic C ∧ cons_open W Γ 1 C.
 
-(** At one root the bridges of [bridge_at] are those of [cbridge]. *)
+(** At one base the bridges of [bridge_at] are those of [cbridge]. *)
 Lemma in_tree_1 x : in_tree 1 x ↔ in_tree0 x.
 Proof.
   unfold in_tree, in_tree0, pt_root. rewrite pn_vb_root. split.

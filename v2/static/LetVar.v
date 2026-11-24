@@ -11,7 +11,7 @@
     term that is no variable.
 
     [let_elim] is what holds, over a Δ with no existential entry and a
-    world with facts at constant roots. A derivation of the let gives
+    world with facts at constant bases. A derivation of the let gives
     e : T1 at the same contexts and at most the same cost, together
     with the use of x : T1 and ∗ : T2 that builds T. When T1 is no
     existential, e : T itself follows, at most at the cost of the let.

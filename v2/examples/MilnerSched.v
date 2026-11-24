@@ -11,7 +11,7 @@
       recvclose r = let ⟨x, r⟩ = recv r in let ∗ = x in close r
 
     The ring closes because c_i and d_{(i+1) mod 3} are the two ends of
-    one channel. The six channels sit at the root ρ of the first
+    one channel. The six channels sit at the base ρ of the first
     creation and at its fields, the sending end at the point, the
     receiving end at its dual.
 

@@ -172,7 +172,7 @@ Definition lock_free (p : proc) : Prop :=
 (** ** Dependencies
 
     A pending thread t waits for s when s is another thread that mentions
-    the partner of an end of t's redex. [local_progress] says that the
+    the dual end of an end of t's redex. [local_progress] says that the
     chain of waits from every pending thread reaches an enabled
     thread. *)
 

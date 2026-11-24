@@ -18,7 +18,7 @@
     tickets are at most their interface annotations η, which P-Connect
     asks to sum to at most N, so its tickets meet the bound.
 
-    The cut is exact: Σ̄_C holds the partners at the dual session type,
+    The cut is exact: Σ̄_C holds the dual ends at the dual session type,
     as P-Connect types them. The soup pairs the two ends of a restricted
     channel in Π up to ≈ with annotations ([sp_pdual]), and [sp_psig]
     puts an interface end into Π at the session type of its entry. A
@@ -54,7 +54,7 @@ Proof. intros H o H1 H2. apply (H (ech o)); by apply chans_of_elem. Qed.
 Local Instance edual_inj_c : base.Inj eq eq edual.
 Proof. intros o o' H. by rewrite <-(edual_edual o), H, edual_edual. Qed.
 
-(** Σ̄ holds the partner of each end of Σ at the dual type and point. *)
+(** Σ̄ holds the dual end of each end of Σ at the dual type and point. *)
 Lemma senv_dual_lookup (Σ : senv) o S (x : point) : Σ !! o = Some (S, x) → senv_dual Σ !! edual o = Some (dual S, (pt_dual x)).
 Proof. intros H. unfold senv_dual. rewrite lookup_kmap; [by rewrite lookup_fmap, H|apply edual_inj_c]. Qed.
 
@@ -80,7 +80,7 @@ Proof.
     by rewrite edual_edual.
 Qed.
 
-(** The cut Σ_C ∪ Σ̄_C pairs every end with its partner. *)
+(** The cut Σ_C ∪ Σ̄_C pairs every end with its dual end. *)
 Lemma cut_pair (ΣC : senv) o S (x : point) :
   (∀ o, o ∈ dom ΣC → edual o ∉ dom ΣC) →
   (ΣC ∪ senv_dual ΣC) !! o = Some (S, x) → (ΣC ∪ senv_dual ΣC) !! edual o = Some (dual S, (pt_dual x)).

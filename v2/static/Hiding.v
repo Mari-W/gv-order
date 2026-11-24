@@ -6,7 +6,7 @@
     constant. Renaming lets such components compose: a bijection of
     constants maps a derivation to a derivation at the renamed world.
 
-      swrestrict_iff  : W|S orders the points with roots in S exactly as
+      swrestrict_iff  : W|S orders the points with bases in S exactly as
                         W does, through private constants too
       typed_ren       : a bijection of constants renames a derivation of
                         the term judgment

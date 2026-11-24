@@ -2,13 +2,13 @@
 
     A single thread in E at the empty future, over the interface Σ and the
     ends Θ_B of the restricted channels C, both ends of each held as dual
-    pairs at dual points, with Σ partner-free, is in P:
+    pairs at dual points, with Σ free of dual pairs, is in P:
 
       sem_p_term : tfree T → sth Θ Σ Θ_B C → t ∈ E[κ]^W _ n⟦Θ ⊢ T⟧^∅ →
                    (C, {t}) ∈ P[κ]^W _ n⟦Σ ⊢ T⟧
 
     [sth] packs the conditions on the environments: Θ = Σ ∪ Θ_B, the ends
-    of Θ_B are those of C, Σ holds no end of C, Σ is partner-free
+    of Θ_B are those of C, Σ holds no end of C, Σ is free of dual pairs
     ([pfree]), and the ends of Θ_B are dual pairs at dual points
     ([dpairs]).
 
@@ -76,7 +76,7 @@ Section sth.
     split; eapply elem_of_dom_2; eapply sth_lookup_B; eauto.
   Qed.
 
-  (** The thread holds the partner of an end only on a restricted channel. *)
+  (** The thread holds the dual end of an end only on a restricted channel. *)
   Lemma sth_partner Θ Σ ΘB C o : sth Θ Σ ΘB C → o ∈ dom Θ → edual o ∈ dom Θ → ech o ∈ C.
   Proof.
     intros Hs H1 H2. destruct (decide (ech o ∈ C)) as [|Hn]; [done|exfalso].
@@ -167,7 +167,7 @@ Proof. destruct o; simpl; tauto. Qed.
 Section split.
   Context (Θ Σ ΘB : senv) (C : gset chan) (Hs : sth Θ Σ ΘB C).
 
-  (** The part Θs of Θ, its interface, its cut ends (partner outside Θs),
+  (** The part Θs of Θ, its interface, its cut ends (dual end outside Θs),
       its restricted ends and channels. *)
   Context (Θs : senv) (Hsub : Θs ⊆ Θ).
   Definition s_if : senv := filter (λ oe : cend * (sty * point), ech oe.1 ∉ C) Θs.
@@ -718,7 +718,7 @@ Section recv.
     - apply (rcv_C2 o); [by eapply elem_of_dom_2|]. apply (st_dom _ _ _ _ Hs). by eapply elem_of_dom_2.
   Qed.
 
-  (** The channel of an end of Σ ∪ Θ2 is brought back iff its partner is
+  (** The channel of an end of Σ ∪ Θ2 is brought back iff its dual end is
       held as well. *)
   Lemma rcv_back o : o ∈ dom Σ ∪ dom Θ2 → ech o ∈ recv_back Σ Θ2 ↔ edual o ∈ dom Σ ∪ dom Θ2 ∧ (o ∈ dom Θ2 ∨ edual o ∈ dom Θ2).
   Proof.
@@ -1276,7 +1276,7 @@ Proof.
   induction m as [m IH] using oind. by apply pterm_level.
 Qed.
 
-(** P-Term: a single thread in E at the empty future, over Σ partner-free
+(** P-Term: a single thread in E at the empty future, over Σ free of dual pairs
     and the dual pairs Θ_B of its restricted channels, is in P. *)
 Theorem sem_p_term κ n W Θ Σ ΘB C t T :
   tfree T → sth Θ Σ ΘB C → t ∈ E[κ]^W _ n⟦Θ ⊢ T⟧^∅ → (C, {[+ t +]}) ∈ P[κ]^W _ n⟦Σ ⊢ T⟧.
