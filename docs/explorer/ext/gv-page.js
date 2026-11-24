@@ -1,7 +1,8 @@
 // Page extension of the GV relation map (docs/explorer/map.json). Builds on tools/proof-map.
 //
 // 1. Verdict badges on examples. Each example may carry "x-gv-accepts": {df|sem|lf: {ok, N?, part?,
-//    rocq?}}, one verdict per judgment. The deadlock-free mode shows the deadlock-free verdicts only.
+//    rocq?, claim?}}, one verdict per judgment. claim: "typed" shows the typing alone, without the
+//    property. The deadlock-free mode shows the deadlock-free verdicts only.
 // 2. Under docs/explorer/serve.sh, the page posts what the reader points at to /cursor, so the
 //    assistant can follow along (.cursor.json and .cursor.log next to the map).
 ProofMap.register({
@@ -26,7 +27,9 @@ ProofMap.register({
       const st = a.ok === true ? 'yes' : a.ok === false ? 'no' : 'na';
       const at = a.N !== undefined ? ` <span class="nm">at ${a.N === 'every' ? 'every $N$' : '$N = ' + esc(a.N) + '$'}</span>` : '';
       const part = a.part ? ` <span class="nm">(${st === 'no' ? 'fails at ' : ''}${esc(a.part)})</span>` : '';
-      return `<span class="gv-badge ${st} ${m}" title="${esc(a.rocq || '')}"><span class="mk">${st === 'yes' ? '✓' : st === 'no' ? '✗' : '–'}</span>${st === 'no' ? 'not ' : ''}${judg}, <span class="nm">${prop}</span>${at}${part}</span>`;
+      // claim: "typed" shows the typing alone, for an example whose Rocq proves no property of a closed program
+      const prop2 = a.claim === 'typed' ? '' : `, <span class="nm">${prop}</span>`;
+      return `<span class="gv-badge ${st} ${m}" title="${esc(a.rocq || '')}"><span class="mk">${st === 'yes' ? '✓' : st === 'no' ? '✗' : '–'}</span>${st === 'no' ? 'not ' : ''}${judg}${prop2}${at}${part}</span>`;
     }).join('')}</div>`;
   },
   event(type, d, { mode }) {

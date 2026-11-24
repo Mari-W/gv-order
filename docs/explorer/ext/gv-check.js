@@ -86,6 +86,7 @@ module.exports = {
     // verdicts of examples
     for (const x of ctx.examples) for (const [m, a] of Object.entries(x['x-gv-accepts'] || {})) {
       if (!JUDGMENTS.includes(m) || !a || typeof a.ok !== 'boolean') report('gv:accepts', 'error', `example ${x.id}`, m);
+      if (a && a.claim !== undefined && a.claim !== 'typed') report('gv:accepts', 'error', `example ${x.id}`, `${m}: claim ${a.claim}`);
       // the text mixes names and prose: names are the snake_case words
       if (ctx.idx) for (const n of String((a && a.rocq) || '').match(/\b[\p{L}][\p{L}\p{N}']*_[\p{L}\p{N}_']*/gu) || [])
         if (!ctx.idx.byName.has(n)) report('gv:verdict-name', 'error', `example ${x.id} ${m}`, n);
