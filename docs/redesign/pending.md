@@ -1,5 +1,165 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, 2026-11-24, map notation: base, one world, futures as sets
+
+Approved or requested by the author on 2026-11-24 (items 1 to 4, then
+item 5 for conservativity). Branch map-notation from redesign 298c992.
+Map only. No Rocq change and no tool change. Nothing pushed, nothing
+merged. `docs/explorer/check.sh` ends with 0 errors and the one known
+warning (bare-word Connect at P-Connect), and the page test passes 16
+of 16.
+
+### 1. Base instead of root
+
+Reader-facing text and formulas say base. A point is a base followed by
+a path, written `b ::= a | ι` and `x ::= b | x⁺ | x·κ | x̄` in
+syn-points, and `base(x)` is the base of `x`. Interface bases are the
+constants, and `new` creates fresh bases. Rocq names such as `w_roots`,
+`in_tree0` and `croot_in` keep their names in their own fields.
+
+### 2. One notion of world
+
+w-world, w-order, w-wf and w-ext show one notion. A world is a finite
+set of bases with facts between their points. Its order is the
+transitive closure of the facts and program order. It is consistent
+when its order is strict. In the lock-free view a world also has a kind,
+strict or ranked, and a ranked world orders its points as their ranks.
+
+```
+W = (A, ≺_A [, k])                       k ::= strict | ranked ϱ        (LF)
+≺_W = tc(≺_A ∪ {x ≺ x⁺} ∪ {x ≺ x̄⁺})      W ⊢ x ≺ y ⟺ x ≺_W y
+world_wf W ⟺ ≺_A ⊆ Point_A²              cons W ⟺ ∀x. x ⊀_W x
+W ⊑ W′ ⟺ A ⊆ A′ ∧ ≺_W ⊆ ≺_W′ [∧ k ⊑ k′]   R ⊨ W ⟺ A ⊆ A_R ∧ ≺_W ⊆ ≺_R ∧ cons R
+W ⊕_a C = (A ∪ {a}, ≺_A ∪ C[a])          world_wf W ∧ cons W ⇒ W ⊨ W
+```
+
+Typing writes a world over the interface bases, P-Connect asks the
+joined world consistent (well-founded at a finite bound), and the
+relation reads consistent worlds that grow when `new` adds bases. The
+letters stay, `W` for typing and `R` in the relation, and the texts say
+that they are one notion. "Models" stays where a statement needs it and
+means a consistent extension of bases and order. `acyc` is shown as
+`cons`, and "acyclic" as "consistent". In the deadlock-free view
+"strict R" is gone from the theorems, because a model is consistent by
+definition. The lock-free view keeps "strict" for a consistent world
+without ranks.
+
+Deviations recorded. In w-world (`merged`) the Rocq has `sworld` and
+`world`, and a world of the relation is the world whose facts are its
+order, because a strict order containing program order is the order it
+generates, so no generality is lost, and a consistent world of typing is
+its own model (`wstrict_of`). In w-order (`merged`) `sw_lt` and `w_lt` are
+both `≺_W`. In w-ext (`merged`) `swext` asks facts and `wext` orders, the
+map uses orders, `wmodels` is the inclusion of orders by `wmodels_lt`,
+and `aw_W` closes transitively where the map adds facts. In w-wf
+(`renamed`) `cons` is `sacyc`. Notes w.world, w.rlt, w.sat, w.ext,
+w.grow, w.acyc and w.models carry their own reasons. The notes w.rworld
+and w.rord are deleted.
+
+### 3. Futures as sets
+
+Bounds range over `Point ∪ {⊥, ⊤}`. The upper point `u` is `⊥` for
+`UNone`, `x` for `UPt x` and `⊤` for `UTop`. `↑x` is the set of points
+above `x`, `↑⊥ = Point` and `↑⊤ = ∅`. A future is `F = X ∪ ↑v`, with
+`v = u` for `RAbove u`, `v = ⊥` for `RAll` and `v = ⊤` for no rest.
+
+```
+E-Abs   l ≼ Δ    contr T    Γ ; Δ − a, T ⊢^{↑u} e : U ! ε
+        ─────────────────────────────────────────────
+        Γ ; Δ ⊢^F λe : (T ⊸^u_l [ε] U)^a ! 0
+
+E-App   Γ ; Δ₁ ⊢^{F ◁ Δ₂} e₁ : (T ⊸^u_l [ε] U)^a ! ε₁
+        Γ ; Δ₂ − ε₁ ⊢^{F ◁ (T ⊸^u_l U)^a} e₂ : T ! ε₂      u ≺ F
+        ─────────────────────────────────────────────
+        Γ ; Δ₁, Δ₂ ⊢^F e₁ e₂ : U ! ε₁ · ε₂ · ε
+
+u ≺ F   ⊥ ≺ F      ⊤ ≺ F ⟺ F = ∅
+        x ≺ X ∪ ↑v ⟺ (∀y ∈ X. Γ ⊢ x ≺ y) ∧ Γ ⊢ x ≼ v
+        Γ ⊢ x ≼ ⊤      Γ ⊬ x ≼ ⊥
+```
+
+Checked against static/Contexts.v. `ub_below_u` gives `UNone ⇒ True`,
+`UPt x ⇒ ub_below_s`, `UTop ⇒ F = (∅, None)`. `ub_below_s (Some x)`
+asks `x` below each point of the set and `rest_below x r`, which is
+`x ≼ u` for `RAbove u` and `False` for `RAll`. These are the three cases
+above. `abs_fut` is `(∅, Some RAll)`, `(∅, Some (RAbove u))` and
+`(∅, None)`, which is `↑u` in each case, so `F_u` is deleted. The
+actions ask `x ≺ F` (`ub_below_s (Some x)`). `F ◁ H = F ∪ ap(H)` is
+`sf_unionb`, which sets the rest to `RAll` at a hidden end, so `ap(H)`
+adds `↑⊥` for a hidden end and the union absorbs it. E-Let, E-Pair and
+E-Case read the future only through `◁`. The box body runs under
+`(∅, Some (rest_of ub))`, which is `↑u` with the box upper point in
+`Point ∪ {⊥}`. The thunk of a forced box has the arrow upper point
+`ubound_of ub`, which is `u` itself. E-Force asks `u[x̄] ≺ F`
+(`ub_below_s`). The semantic side agrees. `ub_ltu` in V-Arrow is the same
+three cases over a finite set, and `den_Y(X ∪ ↑v) = X ∪ Y` for finite
+`Y` above `v` is `sf_den` with `rest_ok`.
+
+The lower point follows the same notation, because a symmetric form
+exists and removes the special role of `⊥` inside `ap`. `l = ⊥` is
+`LBot`, `l = ⊤` is `LNone`, and `ap` of an arrow or existential at `l`
+is `{l}` for a point and `↑l` otherwise. So `ap(T)` is `heads T` with
+`↑⊥` added when `hbot T` holds. Then `l ≼ F` reads like `u ≺ F` with
+`≼` (`⊥ ≼ F`, `⊤ ≼ F ⟺ F = ∅`, `x ≼ X ∪ ↑v` pointwise), which is
+`lbx_below_h` and `lbx_le` case by case. `x ≺ T` is `x ≺ ap(T)`, which
+is `below_ty`. E-Abs asks `l ≼ Δ` with no `l ≠ ⊥` guard, and V-Arrow
+`l ≼ ap Θ` likewise, because `⊥ ≼ F` always holds. E-Pack, V-Ex and
+Sub-Ex read the same. An arrow written without `u` has `u = ⊥`, and
+without `l` has `l = ⊤`. The note ty.botord is deleted.
+
+Deviations recorded (`notation`) on ty-heads, t-contexts, t-side,
+t-judgment, r-fun and r-boxes, and on the notes ty.up, ty.heads,
+ty.lbound, ty.ubound, tj.F, side.ub, side.lb, E-Send.heads, E-Abs.body
+and sj.den.
+
+### 4. Fact theory in t-contexts
+
+```
+Γ ::= · | Γ, C[x̄]        F = X ∪ ↑v
+
+  x ≺_W y                C[x̄] ∈ Γ   (x ≺ y) ∈ C[x̄]       Γ ⊢ x ≺ y   Γ ⊢ y ≺ z
+──────────── Ord-World   ─────────────────────── Ord-Fact  ──────────────────── Ord-Trans
+ Γ ⊢ x ≺ y                      Γ ⊢ x ≺ y                       Γ ⊢ x ≺ z
+```
+
+These are the constructors `fl_w`, `fl_h` and `fl_trans` of `fl`
+(`slt`). Program order enters through `fl_w`, because `sw_lt` contains
+it, so it needs no rule of its own. Deviation recorded (`notation`) on
+t-contexts, and the three rules have notes ctx.fl-w, ctx.fl-h and
+ctx.fl-trans.
+
+### 5. Conservativity in place of bridges
+
+E-Open asks conservativity, and E-New asks the tree acyclic and
+conservativity. The map shows no bridge.
+
+```
+tree(ῑ) = {x | base(x) ∈ ῑ}
+conserv_Γ(ῑ, C) ⟺ ∀ z, y ∉ tree(ῑ). Γ, C(ῑ) ⊢ z ≺ y ⇒ Γ ⊢ z ≺ y
+acyc_new Γ ρ C ⟺ (∀ x ∈ tree(ρ). ¬ x (≺^ρ_C)⁺ x) ∧ conserv_Γ(ρ, C)
+```
+
+The caption of r-ex explains the tree once (the points with base ρ,
+its steps, its dual side and the fields of channels sent on it) and
+gives the intuition. A creation may order its new points against old
+ones and never two old points against each other, because the relation
+must hold in each extension of the world. The note new.bridge is
+deleted. E-Box asks no such premise in the Rocq, and the map shows
+none there.
+
+Deviation recorded (`notation`) on r-ex, r-new and the note
+E-Open.cons. The Rocq checks conservativity as `cons_open W Γ m C`, the
+bridge condition, which is equivalent because a derivation of `z ≺ y`
+between old points leaves the old points only through bridges.
+
+### Owed in the Rocq, conservativity equals the bridge condition
+
+A lemma `cons_open W Γ m C ↔ conserv` at m bases, the form E-Open uses
+and E-New uses at one base. One direction is `cons_open_conservative`
+(static/PointSubst.v), under the side condition that the facts of `W`
+lie at constant bases. The converse holds because each bridge is a
+derivation in `hc_open m C Γ`, and is not stated yet.
+
 ## Report, 2026-11-24, payload credit variance and one rule for new
 
 Approved by the author on 2026-11-24 (tasks A and B, then C, "yes 3
