@@ -111,16 +111,16 @@ Qed.
 
 (** ** The components *)
 
-Lemma tA_typed : ptyped None HA ΣA (∅, {[+ tA +]}) TUnit.
+Lemma tA_typed : ptyped None (khalf None) HA ΣA (∅, {[+ tA +]}) TUnit.
 Proof. apply cl2_hterm; [apply WA_ok|done|done|reflexivity]. Qed.
 
-Lemma tB_typed : ptyped None HB ΣB (∅, {[+ tB +]}) TUnit.
+Lemma tB_typed : ptyped None (khalf None) HB ΣB (∅, {[+ tB +]}) TUnit.
 Proof. apply cl2_hterm; [apply WB_ok|done|done|reflexivity]. Qed.
 
-Lemma tC_typed : ptyped None HC ΣCc (∅, {[+ tC +]}) TUnit.
+Lemma tC_typed : ptyped None (khalf None) HC ΣCc (∅, {[+ tC +]}) TUnit.
 Proof. apply cl2_hterm; [apply WC_ok|done|done|reflexivity]. Qed.
 
-Lemma tC'_typed : ptyped None HC' ΣC' (∅, {[+ tC' +]}) TUnit.
+Lemma tC'_typed : ptyped None (khalf None) HC' ΣC' (∅, {[+ tC' +]}) TUnit.
 Proof. apply cl2_hterm; [apply WC'_ok|done|done|reflexivity]. Qed.
 
 (** ** The cuts *)
@@ -143,17 +143,17 @@ Ltac chan_disj :=
   repeat match goal with H : _ ∨ _ |- _ => destruct H end; subst; simpl in *;
   first [discriminate|contradiction].
 
-Lemma pcomps_conv N Ws Σ Σ' C C' E T : pcomps N Ws Σ (C, E) T → Σ = Σ' → C = C' → pcomps N Ws Σ' (C', E) T.
+Lemma pcomps_conv N η Ws Σ Σ' C C' E T : pcomps N η Ws Σ (C, E) T → Σ = Σ' → C = C' → pcomps N η Ws Σ' (C', E) T.
 Proof. by intros H -> ->. Qed.
 
 (** A and B over the cut a: the composite holds c⁻ and b⁺. *)
 Lemma ring_two :
-  pcomps None (HA :: [HB]) (senv2 (ENeg "c") (EPos "b") pc‾ pb) ({["a"]}, {[+ tA +]} ⊎ {[+ tB +]}) TUnit.
+  pcomps None (khalf None) (HA :: [HB]) (senv2 (ENeg "c") (EPos "b") pc‾ pb) ({["a"]}, {[+ tA +]} ⊎ {[+ tB +]}) TUnit.
 Proof.
   set (ΣC := {[EPos "a" := (SEnd, pa)]} : senv).
   assert (senv_dual ΣC = {[ENeg "a" := (SEnd, pa‾)]}) as Ed by (unfold ΣC; by rewrite senv_dual_singleton).
   eapply pcomps_conv.
-  - apply (pc_snoc None [HA] HB {[ENeg "c" := (SEnd, pc‾)]} {[EPos "b" := (SEnd, pb)]} ΣC ∅ ∅
+  - apply (pc_snoc None (khalf None) [HA] HB {[ENeg "c" := (SEnd, pc‾)]} {[EPos "b" := (SEnd, pb)]} ΣC ∅ ∅
              {[+ tA +]} {[+ tB +]} TUnit).
     + apply pc_one, tA_typed.
     + rewrite Ed. assert ({[EPos "b" := (SEnd, pb)]} ∪ {[ENeg "a" := (SEnd, pa‾)]} = ΣB) as -> by
@@ -165,17 +165,18 @@ Proof.
     + set_solver.
     + set_solver.
     + set_solver.
+    + intros; apply tsum_fhalf.
   - done.
   - unfold ΣC. rewrite chans_of_singleton. simpl. set_solver.
 Qed.
 
 (** The third component over the cut {c, b}. *)
 Lemma ring_three H t :
-  ptyped None H ΣC' (∅, {[+ t +]}) TUnit → pcomps None (HA :: HB :: [H]) ∅ (ring_cfg t) TUnit.
+  ptyped None (khalf None) H ΣC' (∅, {[+ t +]}) TUnit → pcomps None (khalf None) (HA :: HB :: [H]) ∅ (ring_cfg t) TUnit.
 Proof.
   intros Ht. set (ΣC := senv2 (ENeg "c") (EPos "b") pc‾ pb).
   eapply pcomps_conv.
-  - apply (pc_snoc None (HA :: [HB]) H ∅ ∅ ΣC {["a"]} ∅ ({[+ tA +]} ⊎ {[+ tB +]}) {[+ t +]} TUnit).
+  - apply (pc_snoc None (khalf None) (HA :: [HB]) H ∅ ∅ ΣC {["a"]} ∅ ({[+ tA +]} ⊎ {[+ tB +]}) {[+ t +]} TUnit).
     + rewrite (left_id_L ∅ (∪)). apply ring_two.
     + rewrite (left_id_L ∅ (∪)). unfold ΣC. rewrite senv_dual_senv2. exact Ht.
     + set_solver.
@@ -184,13 +185,14 @@ Proof.
     + set_solver.
     + unfold ΣC. rewrite chans_of_empty, chans_of_senv2. chan_disj.
     + set_solver.
+    + intros; apply tsum_fhalf.
   - by rewrite (left_id_L ∅ (∪)).
   - unfold ΣC. rewrite chans_of_senv2. simpl. set_solver.
 Qed.
 
 (** ** The ring: pairwise consistent, cyclic as a whole *)
 
-Lemma ring_comps : pcomps None (HA :: HB :: [HC]) ∅ (ring_cfg tC) TUnit.
+Lemma ring_comps : pcomps None (khalf None) (HA :: HB :: [HC]) ∅ (ring_cfg tC) TUnit.
 Proof.
   apply ring_three. unfold ΣC'. rewrite (senv2_comm (EPos "c")) by done. apply tC_typed.
 Qed.
@@ -277,7 +279,7 @@ Proof.
 Qed.
 
 (** No world types the ring. *)
-Theorem ring_rejected W T : ¬ ptyped None W ∅ (ring_cfg tC) T.
+Theorem ring_rejected W T : ¬ ptyped None (khalf None) W ∅ (ring_cfg tC) T.
 Proof. intros H. exact (ring_not_df (soundness_h W _ T H)). Qed.
 
 (** ** The two-channel cycle
@@ -322,12 +324,12 @@ Proof.
   - exact (cyc2_stuck p' Hp).
 Qed.
 
-Theorem cyc2_rejected W T : ¬ ptyped None W ∅ cyc2_cfg T.
+Theorem cyc2_rejected W T : ¬ ptyped None (khalf None) W ∅ cyc2_cfg T.
 Proof. intros H. exact (cyc2_not_df (soundness_h W _ T H)). Qed.
 
 (** ** The acyclic ring *)
 
-Lemma ring'_comps : pcomps None (HA :: HB :: [HC']) ∅ (ring_cfg tC') TUnit.
+Lemma ring'_comps : pcomps None (khalf None) (HA :: HB :: [HC']) ∅ (ring_cfg tC') TUnit.
 Proof. apply ring_three, tC'_typed. Qed.
 
 Definition Wall : sworld :=
@@ -349,8 +351,8 @@ Proof.
     intros x y [E|[E|E]]; injection E as -> ->; rk_tac.
 Qed.
 
-Theorem ring_typed : ∃ W, ptyped None W ∅ (ring_cfg tC') TUnit.
-Proof. destruct (p_connect_n _ _ _ _ _ ring'_comps (swf_wok None _ ring'_wf)) as (W & H & _). by exists W. Qed.
+Theorem ring_typed : ∃ W, ptyped None (khalf None) W ∅ (ring_cfg tC') TUnit.
+Proof. destruct (p_connect_n _ _ _ _ _ _ ring'_comps (swf_wok None _ ring'_wf)) as (W & H & _). by exists W. Qed.
 
 Theorem ring_df : deadlock_free (ring_cfg tC').
 Proof. exact (connect_n_soundness _ _ _ ring'_comps (swf_sacyc _ ring'_wf)). Qed.

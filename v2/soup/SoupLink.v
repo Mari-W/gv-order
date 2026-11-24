@@ -141,7 +141,7 @@ Section link.
         * eapply (FuelE_rename _ _ _ _ _ _ _ (csub o1 o2)); [apply kinj_csub|apply kinj_csub|
             apply kmapr_renk, kinj_csub|apply kmapr_renk, kinj_csub|exact H2].
     - rewrite !fmap_kmapr by apply kinj_csub. f_equal. unfold kdel2. rewrite !fmap_delete. f_equal. f_equal.
-      apply (sp_pts _ _ _ _ _ _ _ _ _ Hs).
+      apply (sp_pts _ _ _ _ _ _ _ _ _ _ Hs).
     - rewrite !dom_kmapr by apply kinj_csub. f_equal. by apply dom_kdel2_eq.
     - intros o' h Ho'. apply kmapr_lookup_inv in Ho' as (a & -> & Ha). apply lookup_kdel2 in Ha as (_ & _ & Ha).
       pose proof (s_threads _ _ _ _ _ _ _ _ _ _ _ Hs a h Ha) as Ht.
@@ -180,7 +180,7 @@ Section link.
           pose proof (s_pdual _ _ _ _ _ _ _ _ Hs o1 Pa R1 HB1 H5) as Hd1.
           pose proof (s_pdual _ _ _ _ _ _ _ _ Hs o2 Pb R2 HB2 H6) as Hd2.
           exact (pdual_link Pa Pb R1 R2 Hpab Hd1 Hd2).
-    - apply kfin_kmapr. unfold kdel2. apply kfin_delete, kfin_delete. exact (sp_fin _ _ _ _ _ _ _ _ _ Hs).
+    - apply kfin_kmapr. unfold kdel2. apply kfin_delete, kfin_delete. exact (sp_fin _ _ _ _ _ _ _ _ _ _ Hs).
     - intros o' h Ho'. apply kmapr_lookup_inv in Ho' as (a & -> & Ha). apply lookup_kdel2 in Ha as (_ & _ & Ha).
       exact (s_kcap_ok _ _ _ _ _ _ _ _ _ _ _ Hs a h Ha).
     - intros o' h h' H3 H4. destruct (decide (o2 = edual o1)) as [->|Hns].

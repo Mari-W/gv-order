@@ -39,10 +39,10 @@ Proof. unfold sw_fold. by rewrite foldl_app. Qed.
 (** The n-ary rule at its exact world. Each step restricts to the
     interface of the composite so far, the last one to the final
     interface, and the fold derives only facts of the join. *)
-Theorem p_connect_n_exact N Ws Σ p T :
-  pcomps N Ws Σ p T → wok N (sw_joins Ws) →
+Theorem p_connect_n_exact N η Ws Σ p T :
+  pcomps N η Ws Σ p T → wok N (sw_joins Ws) →
   ∃ W0 l, Ws = W0 :: l.*1 ∧ (l ≠ [] → ∃ l' W', l = l' ++ [(W', iface Σ T)]) ∧
-    ptyped N (sw_fold W0 l) Σ p T ∧ (∀ x y, sw_fold W0 l ⊢ₛ x ≺ y → sw_joins Ws ⊢ₛ x ≺ y).
+    ptyped N η (sw_fold W0 l) Σ p T ∧ (∀ x y, sw_fold W0 l ⊢ₛ x ≺ y → sw_joins Ws ⊢ₛ x ≺ y).
 Proof.
   induction 1 as [W Σ p T Hty|Ws W Σ1 Σ2 ΣC C1 C2 E1 E2 T _ IH Hty HD1 HD2 Hf H12 H1C H2C HC HC1 HC2];
     intros HS.

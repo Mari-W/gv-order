@@ -161,7 +161,7 @@ Proof.
   Unshelve. all: first [exact None | simpl; lia | simpl; done].
 Qed.
 
-Theorem fx_lftyped : ∃ N, ∅ ⊩^N _ (swrestrict W_fx (iface ∅ TUnit)) (∅, {[+ fx_main +]}) : TUnit.
+Theorem fx_lftyped : ∃ N, ∅ ⊩^N,(khalf (Some N)) _ (swrestrict W_fx (iface ∅ TUnit)) (∅, {[+ fx_main +]}) : TUnit.
 Proof.
   destruct fxl_typedN as (c & Ht). exists 4.
   eapply lf_main_typed; [apply W_fx_wf|constructor|exact Ht].

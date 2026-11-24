@@ -58,41 +58,41 @@ Section soup.
   Context (Hs : soup_inv N n W ∅ T a A Π U).
 
   Lemma s_rel t e : (s_q a).2 !! t = Some e → e ∈ E[live]^W _ n⟦kres (s_K a) t A ⊢ U t⟧^∅.
-  Proof. apply (sp_rel _ _ _ _ _ _ _ _ _ Hs). Qed.
+  Proof. apply (sp_rel _ _ _ _ _ _ _ _ _ _ Hs). Qed.
   Lemma s_ty t e : (s_q a).2 !! t = Some e → U t = T ∨ U t = TUnit.
-  Proof. apply (sp_ty _ _ _ _ _ _ _ _ _ Hs). Qed.
+  Proof. apply (sp_ty _ _ _ _ _ _ _ _ _ _ Hs). Qed.
   Lemma s_fuel t e : (s_q a).2 !! t = Some e →
     e ∈ F^(Some N) _ n⟦RThread ▷ None⟧(kres (s_K a) t Π, ctrs (s_K a) t).
-  Proof. apply (sp_fuel _ _ _ _ _ _ _ _ _ Hs). Qed.
+  Proof. apply (sp_fuel _ _ _ _ _ _ _ _ _ _ Hs). Qed.
   Lemma s_pts o : snd <$> A !! o = h_pt <$> s_K a !! o.
-  Proof. rewrite <-!lookup_fmap. f_equal. apply (sp_pts _ _ _ _ _ _ _ _ _ Hs). Qed.
+  Proof. rewrite <-!lookup_fmap. f_equal. apply (sp_pts _ _ _ _ _ _ _ _ _ _ Hs). Qed.
   Lemma s_dom : dom Π = dom (s_K a).
-  Proof. apply (sp_dom _ _ _ _ _ _ _ _ _ Hs). Qed.
+  Proof. apply (sp_dom _ _ _ _ _ _ _ _ _ _ Hs). Qed.
   Lemma s_domA : dom A = dom (s_K a).
-  Proof. rewrite <-(dom_fmap_L snd A), <-(dom_fmap_L h_pt (s_K a)). f_equal. apply (sp_pts _ _ _ _ _ _ _ _ _ Hs). Qed.
+  Proof. rewrite <-(dom_fmap_L snd A), <-(dom_fmap_L h_pt (s_K a)). f_equal. apply (sp_pts _ _ _ _ _ _ _ _ _ _ Hs). Qed.
   Lemma s_owner o h : s_K a !! o = Some h → is_Some ((s_q a).2 !! h.(h_th)).
-  Proof. apply (sp_owner _ _ _ _ _ _ _ _ _ Hs). Qed.
+  Proof. apply (sp_owner _ _ _ _ _ _ _ _ _ _ Hs). Qed.
   Lemma s_closed o : o ∈ dom (s_K a) → ech o ∈ (s_q a).1.
-  Proof. intros H. destruct (sp_closed _ _ _ _ _ _ _ _ _ Hs o H) as [?|Hd]; [done|]. by rewrite dom_empty_L in Hd. Qed.
+  Proof. intros H. destruct (sp_closed _ _ _ _ _ _ _ _ _ _ Hs o H) as [?|Hd]; [done|]. by rewrite dom_empty_L in Hd. Qed.
   Lemma s_pair o : o ∈ dom (s_K a) → (edual o) ∈ dom (s_K a).
-  Proof. intros H. apply (sp_pair _ _ _ _ _ _ _ _ _ Hs o H). by apply s_closed. Qed.
+  Proof. intros H. apply (sp_pair _ _ _ _ _ _ _ _ _ _ Hs o H). by apply s_closed. Qed.
   Lemma s_sdual o S x S' x' : A !! o = Some (S, x) → A !! (edual o) = Some (S', x') → x' = pt_dual x ∧ sdual S S'.
   Proof.
-    intros H1 H2. apply (sp_sdual _ _ _ _ _ _ _ _ _ Hs o S x S' x' H1 H2). apply s_closed.
+    intros H1 H2. apply (sp_sdual _ _ _ _ _ _ _ _ _ _ Hs o S x S' x' H1 H2). apply s_closed.
     rewrite <-s_domA. by apply elem_of_dom_2 in H1.
   Qed.
   Lemma s_pdual o P P' : Π !! o = Some P → Π !! (edual o) = Some P' → ssub (dual P) P'.
   Proof.
-    intros H1 H2. apply (sp_pdual _ _ _ _ _ _ _ _ _ Hs o P P' H1 H2). apply s_closed.
+    intros H1 H2. apply (sp_pdual _ _ _ _ _ _ _ _ _ _ Hs o P P' H1 H2). apply s_closed.
     rewrite <-s_dom. by apply elem_of_dom_2 in H1.
   Qed.
 
 
   Lemma s_cap o h : s_K a !! o = Some h → fle h.(h_ctr) h.(h_cap) ∧ fle h.(h_cap) (Some N).
-  Proof. apply (sp_cap _ _ _ _ _ _ _ _ _ Hs). Qed.
+  Proof. apply (sp_cap _ _ _ _ _ _ _ _ _ _ Hs). Qed.
   Lemma s_tsum o h h' : s_K a !! o = Some h → s_K a !! edual o = Some h' → tsum_ok (Some N) h.(h_cap) h'.(h_cap).
   Proof.
-    intros H1 H2. apply (sp_tsum _ _ _ _ _ _ _ _ _ Hs o h h' H1 H2). apply s_closed. by apply elem_of_dom_2 in H1.
+    intros H1 H2. apply (sp_tsum _ _ _ _ _ _ _ _ _ _ Hs o h h' H1 H2). apply s_closed. by apply elem_of_dom_2 in H1.
   Qed.
   Lemma s_kcfin : kcfin (s_K a).
   Proof. intros o h Ho. destruct (s_cap o h Ho) as [_ H]. destruct (h_cap h); [by eexists|done]. Qed.
@@ -427,23 +427,23 @@ Section step.
     soup_inv N lv W ∅ T (LFState (C', Mq') K Ws) A Π U'.
   Proof.
     intros -> Hdom Ht. unfold soup_inv. constructor; simpl.
-    - apply (sp_tfree _ _ _ _ _ _ _ _ _ Hs).
+    - apply (sp_tfree _ _ _ _ _ _ _ _ _ _ Hs).
     - intros t e He. apply (Ht t e He).
     - intros t e He. apply (Ht t e He).
     - intros t e He. apply (Ht t e He).
-    - apply (sp_pts _ _ _ _ _ _ _ _ _ Hs).
-    - apply (sp_dom _ _ _ _ _ _ _ _ _ Hs).
-    - intros o h Ho. apply Hdom. exact (sp_owner _ _ _ _ _ _ _ _ _ Hs o h Ho).
-    - apply (sp_closed _ _ _ _ _ _ _ _ _ Hs).
-    - apply (sp_pair _ _ _ _ _ _ _ _ _ Hs).
-    - apply (sp_sdual _ _ _ _ _ _ _ _ _ Hs).
-    - apply (sp_pdual _ _ _ _ _ _ _ _ _ Hs).
-    - apply (sp_sig _ _ _ _ _ _ _ _ _ Hs).
-    - apply (sp_fin _ _ _ _ _ _ _ _ _ Hs).
-    - apply (sp_psig _ _ _ _ _ _ _ _ _ Hs).
-    - apply (sp_cap _ _ _ _ _ _ _ _ _ Hs).
-    - apply (sp_tsum _ _ _ _ _ _ _ _ _ Hs).
-    - apply (sp_sigcap _ _ _ _ _ _ _ _ _ Hs).
+    - apply (sp_pts _ _ _ _ _ _ _ _ _ _ Hs).
+    - apply (sp_dom _ _ _ _ _ _ _ _ _ _ Hs).
+    - intros o h Ho. apply Hdom. exact (sp_owner _ _ _ _ _ _ _ _ _ _ Hs o h Ho).
+    - apply (sp_closed _ _ _ _ _ _ _ _ _ _ Hs).
+    - apply (sp_pair _ _ _ _ _ _ _ _ _ _ Hs).
+    - apply (sp_sdual _ _ _ _ _ _ _ _ _ _ Hs).
+    - apply (sp_pdual _ _ _ _ _ _ _ _ _ _ Hs).
+    - apply (sp_sig _ _ _ _ _ _ _ _ _ _ Hs).
+    - apply (sp_fin _ _ _ _ _ _ _ _ _ _ Hs).
+    - apply (sp_psig _ _ _ _ _ _ _ _ _ _ Hs).
+    - apply (sp_cap _ _ _ _ _ _ _ _ _ _ Hs).
+    - apply (sp_tsum _ _ _ _ _ _ _ _ _ _ Hs).
+    - apply (sp_sigcap _ _ _ _ _ _ _ _ _ _ Hs).
   Qed.
 
   (** P-Act-Beta. *)
@@ -473,7 +473,7 @@ Section step.
     soup_inv N lv Wx ∅ T (LFState (C', Mq') K' Wy) A' Π' U'.
   Proof.
     intros Ht Hp Hd Ho Hc Hpr Hsd Hpd Hfin Hcap Hts. unfold soup_inv. constructor; simpl.
-    - apply (sp_tfree _ _ _ _ _ _ _ _ _ Hs).
+    - apply (sp_tfree _ _ _ _ _ _ _ _ _ _ Hs).
     - intros t e He. apply (Ht t e He).
     - intros t e He. apply (Ht t e He).
     - intros t e He. apply (Ht t e He).
@@ -513,7 +513,7 @@ Section step.
     - apply map_eq. intros o. rewrite !lookup_fmap. unfold ktick. rewrite lookup_kmod.
       pose proof (s_pts _ _ _ _ _ _ _ _ Hs o) as Hp. cbn [s_K] in Hp.
       rewrite Hp. destruct (K !! o); simpl; [|done]. by case_decide.
-    - unfold ktick. rewrite dom_kmod. apply (sp_dom _ _ _ _ _ _ _ _ _ Hs).
+    - unfold ktick. rewrite dom_kmod. apply (sp_dom _ _ _ _ _ _ _ _ _ _ Hs).
     - intros o h Ho. unfold ktick in Ho. rewrite lookup_kmod in Ho. apply fmap_Some in Ho as (h0 & Ho & ->).
       rewrite lookup_insert_is_Some'. case_decide; simpl;
         (destruct (decide (i = h0.(h_th))) as [Hi|Hi]; [by left|right; exact (s_owner _ _ _ _ _ _ _ _ Hs o h0 Ho)]).
@@ -521,7 +521,7 @@ Section step.
     - intros o Ho. unfold ktick in *. rewrite dom_kmod in Ho |- *. exact (s_pair _ _ _ _ _ _ _ _ Hs o Ho).
     - exact (s_sdual _ _ _ _ _ _ _ _ Hs).
     - exact (s_pdual _ _ _ _ _ _ _ _ Hs).
-    - apply kfin_ktick. exact (sp_fin _ _ _ _ _ _ _ _ _ Hs).
+    - apply kfin_ktick. exact (sp_fin _ _ _ _ _ _ _ _ _ _ Hs).
     - apply kcap_ok_ktick, s_kcap_ok.
     - apply ktsum_ok_ktick, s_ktsum_ok.
   Qed.
@@ -566,8 +566,8 @@ Section step.
       + rewrite !decide_False by done. rewrite !Hdel by done.
         rewrite (ctrs_notin _ _ (ENeg c)), ctrs_notin by done.
         destruct (s_other t e0 He0) as [H1 H2]. split_and!; [by eapply Erel_mono|exact (s_ty Hs t e0 He0)|done].
-    - rewrite !fmap_insert. simpl. f_equal. f_equal. apply (sp_pts _ _ _ _ _ _ _ _ _ Hs).
-    - rewrite !dom_insert_L. by rewrite (sp_dom _ _ _ _ _ _ _ _ _ Hs).
+    - rewrite !fmap_insert. simpl. f_equal. f_equal. apply (sp_pts _ _ _ _ _ _ _ _ _ _ Hs).
+    - rewrite !dom_insert_L. by rewrite (sp_dom _ _ _ _ _ _ _ _ _ _ Hs).
     - intros o h Ho. apply lookup_insert_Some in Ho as [[<- <-]|[_ Ho]].
       { simpl. rewrite lookup_insert_eq. by eexists. }
       apply lookup_insert_Some in Ho as [[<- <-]|[_ Ho]].
@@ -600,7 +600,7 @@ Section step.
         * rewrite lookup_insert_eq in H4. rewrite lookup_insert_ne, lookup_insert_eq in H3 by discriminate.
           simplify_eq. rewrite dual_involutive. apply ssub_refl.
     - apply kfin_insert; [by eexists|].
-      apply kfin_insert; [by eexists|]. exact (sp_fin _ _ _ _ _ _ _ _ _ Hs).
+      apply kfin_insert; [by eexists|]. exact (sp_fin _ _ _ _ _ _ _ _ _ _ Hs).
     - intros o h Ho. apply lookup_insert_Some in Ho as [[<- <-]|[_ Ho]]; [simpl; split; [simpl; lia|simpl; lia]|].
       apply lookup_insert_Some in Ho as [[<- <-]|[_ Ho]]; [simpl; split; [simpl; lia|]|exact (s_kcap_ok o h Ho)].
       simpl; lia.
@@ -700,7 +700,7 @@ Section step.
           destruct (s_other t e1 He1) as [H1 H2]. split_and!; [done|exact (s_ty Hs t e1 He1)|done].
     - apply map_eq. intros o. rewrite !lookup_fmap, lookup_kspawn. pose proof (s_pts _ _ _ _ _ _ _ _ Hs o) as Hp.
       cbn [s_K] in Hp. rewrite Hp. destruct (K !! o); simpl; [|done]. by case_decide.
-    - unfold kspawn. rewrite dom_kmod. apply (sp_dom _ _ _ _ _ _ _ _ _ Hs).
+    - unfold kspawn. rewrite dom_kmod. apply (sp_dom _ _ _ _ _ _ _ _ _ _ Hs).
     - intros o h Ho. rewrite lookup_kspawn in Ho. apply fmap_Some in Ho as (h0 & Ho & ->).
       case_decide; simpl; rewrite !lookup_insert_is_Some'; [by left|].
       destruct (decide (h0.(h_th) = i)); [by right; left|]. right; right. exact (s_threads o h0 Ho).
@@ -708,7 +708,7 @@ Section step.
     - intros o Ho. unfold kspawn in *. rewrite dom_kmod in Ho |- *. exact (s_pair _ _ _ _ _ _ _ _ Hs o Ho).
     - exact (s_sdual _ _ _ _ _ _ _ _ Hs).
     - exact (s_pdual _ _ _ _ _ _ _ _ Hs).
-    - apply kfin_kspawn. exact (sp_fin _ _ _ _ _ _ _ _ _ Hs).
+    - apply kfin_kspawn. exact (sp_fin _ _ _ _ _ _ _ _ _ _ Hs).
     - apply kcap_ok_kspawn, s_kcap_ok.
     - apply ktsum_ok_kspawn, s_ktsum_ok.
   Qed.

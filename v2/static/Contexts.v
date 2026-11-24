@@ -94,6 +94,22 @@ Abbreviation senv := (gmap cend (sty * point)).
 
 Definition tenv_of (a : fuel) (Σ : senv) : tenv := (λ e, TE e.1 e.2 a a) <$> Σ.
 
+(** The context of ends that the interface annotations η give Σ. *)
+Definition tenv_ofk (η : iann) (Σ : senv) : tenv :=
+  map_imap (λ o e, Some (TE e.1 e.2 (η o).1 (η o).2)) Σ.
+
+Lemma lookup_tenv_ofk η Σ o : tenv_ofk η Σ !! o = (λ e, TE e.1 e.2 (η o).1 (η o).2) <$> Σ !! o.
+Proof. unfold tenv_ofk. rewrite map_lookup_imap. by destruct (Σ !! o). Qed.
+
+Lemma dom_tenv_ofk η Σ : dom (tenv_ofk η Σ) = dom Σ.
+Proof.
+  apply set_eq. intros o. rewrite !elem_of_dom, lookup_tenv_ofk.
+  destruct (Σ !! o); simpl; split; intros [? ?]; try done; by eexists.
+Qed.
+
+Lemma tenv_ofk_half N Σ : tenv_ofk (khalf N) Σ = tenv_of (fhalf N) Σ.
+Proof. apply map_eq. intros o. rewrite lookup_tenv_ofk. unfold tenv_of. by rewrite lookup_fmap. Qed.
+
 (** ** Futures and hypotheses *)
 
 (** The unknown rest of a future: everything above u, the future of a

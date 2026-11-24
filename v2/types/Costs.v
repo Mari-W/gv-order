@@ -91,6 +91,9 @@ Proof. by destruct m1, m2. Qed.
 Lemma tsum_ok_comm N m1 m2 : tsum_ok N m1 m2 → tsum_ok N m2 m1.
 Proof. unfold tsum_ok. destruct N, m1, m2; simpl; lia. Qed.
 
+Lemma tsum_ok_mono N m1 m2 m1' m2' : fle m1 m1' → fle m2 m2' → tsum_ok N m1' m2' → tsum_ok N m1 m2.
+Proof. unfold tsum_ok. destruct N, m1, m2, m1', m2'; simpl; lia. Qed.
+
 Lemma tsum_ncap N m : fle m N → tsum_ok N m (ncap N m).
 Proof. unfold tsum_ok. destruct N as [k|], m as [m|]; simpl; try lia; done. Qed.
 
@@ -103,6 +106,12 @@ Proof. destruct N as [k|]; simpl; [|done]. rewrite Nat.div2_div. apply Nat.Div0.
 
 Lemma tsum_half N : tsum_ok N (fhalf N) (ncap N (fhalf N)).
 Proof. apply tsum_ncap, fhalf_le. Qed.
+
+Lemma tsum_fhalf N : tsum_ok N (fhalf N) (fhalf N).
+Proof.
+  unfold tsum_ok, fhalf. destruct N as [k|]; simpl; [|done].
+  rewrite Nat.div2_div. pose proof (Nat.Div0.mul_div_le k 2). lia.
+Qed.
 
 (** The arithmetic of a link. Let o1, o2 be the linked ends with
     counter c1 and tickets m1, m2, and r1, r2 the tickets of their

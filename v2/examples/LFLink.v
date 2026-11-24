@@ -53,3 +53,128 @@ Section link.
     - simpl. lia.
   Qed.
 End link.
+
+(** ** The link closed over its interface
+
+    The interface annotations η give the two linked ends c⁺ and d⁻ credit
+    and tickets N and their partners c⁻ and d⁺ none. Each cut then meets
+    the bound, N + 0 ≤ N, and E-Link holds, N + N > N. Each partner
+    closes its end. The three threads form a closed process at every
+    N ≥ 1 ([lk_closed_typed]), which is lock free ([lk_closed_lock_free]).
+    With every interface end at N/2 the link asks N/2 + N/2 > N, which
+    no N meets. *)
+
+From GV Require Import examples.LFClose.
+
+Section closed.
+  Context (N : nat) (HN : 1 ≤ N) (x : point).
+
+  Definition lk_eta : iann :=
+    λ o, if decide (o = lc ∨ o = ld) then (Some N, Some N) else (Some 0, Some 0).
+
+  Definition lk_link : expr := ELink (Pair (Chan lc) (Chan ld)).
+
+  Definition Σl : senv := {[ld := (SEnd, x‾)]} ∪ {[lc := (SEnd, x)]}.
+
+  Lemma lk_tenv : tenv_ofk lk_eta Σl ∪ ∅ = Θl N SEnd x.
+  Proof.
+    rewrite map_union_empty. apply map_eq. intros o. rewrite lookup_tenv_ofk. unfold Σl, Θl.
+    destruct (decide (o = lc)) as [->|H1]; [|destruct (decide (o = ld)) as [->|H2]].
+    - rewrite lookup_union_r by (by rewrite lookup_singleton_ne).
+      rewrite lookup_union_l' by (by rewrite lookup_singleton_eq). rewrite !lookup_singleton_eq. simpl.
+      unfold lk_eta. repeat case_decide; try done; exfalso; tauto.
+    - rewrite lookup_union_l' by (by rewrite lookup_singleton_eq).
+      rewrite lookup_union_r by (by rewrite lookup_singleton_ne). rewrite !lookup_singleton_eq. simpl.
+      unfold lk_eta. repeat case_decide; try done; exfalso; tauto.
+    - rewrite !lookup_union_r by (by rewrite lookup_singleton_ne). by rewrite !lookup_singleton_ne.
+  Qed.
+
+  Lemma lk_term :
+    ptyped (Some N) lk_eta (swrestrict sw_empty (iface Σl TUnit)) Σl (∅, {[+ lk_link +]}) TUnit.
+  Proof.
+    apply (p_term (Some N) lk_eta sw_empty Σl ∅ ∅ _ TUnit (fadd (Some 0) (Some 0))).
+    - constructor.
+    - intros o. rewrite dom_empty_L. set_solver.
+    - set_solver.
+    - intros o Ho Hd. unfold Σl in Ho, Hd. rewrite dom_union_L, !dom_singleton_L in Ho, Hd.
+      apply elem_of_union in Ho as [Ho|Ho]; apply elem_of_singleton in Ho as ->;
+        apply elem_of_union in Hd as [Hd|Hd]; apply elem_of_singleton in Hd; discriminate Hd.
+    - intros o e He. unfold Σl in He. apply lookup_union_Some_raw in He as [He|[_ He]];
+        apply lookup_singleton_Some in He as [_ <-]; exact I.
+    - set_solver.
+    - intros o _. unfold lk_eta. case_decide; simpl; lia.
+    - rewrite lk_tenv. exact (lk_typed sw_empty N HN SEnd x).
+    - apply sw_empty_ok.
+  Qed.
+
+  Lemma lk_partner o y : lk_eta o = (Some 0, Some 0) →
+    ptyped (Some N) lk_eta (swrestrict W_cl (iface {[o := (SEnd, y)]} TUnit)) {[o := (SEnd, y)]}
+      (∅, {[+ cl o +]}) TUnit.
+  Proof.
+    intros Ho. apply (p_term (Some N) lk_eta W_cl _ ∅ ∅ _ TUnit (fadd (Some 0) (Some 1))).
+    - constructor.
+    - intros o'. rewrite dom_empty_L. set_solver.
+    - set_solver.
+    - apply pfree_singleton.
+    - intros o' e' He. apply lookup_singleton_Some in He as [_ <-]. done.
+    - set_solver.
+    - intros o' Ho'. rewrite dom_singleton_L, elem_of_singleton in Ho'. subst o'. rewrite Ho. simpl. lia.
+    - rewrite map_union_empty.
+      assert (tenv_ofk lk_eta {[o := (SEnd, y)]} = {[o := TE SEnd y (Some 0) (Some 0)]}) as ->.
+      { apply map_eq. intros o'. rewrite lookup_tenv_ofk. destruct (decide (o' = o)) as [->|Hne].
+        - rewrite !lookup_singleton_eq. simpl. by rewrite Ho.
+        - by rewrite !lookup_singleton_ne. }
+      apply cl_typed, fle_refl.
+    - apply sw_empty_ok.
+  Qed.
+
+  Lemma chans_of_single o v : chans_of ({[o := v]} : senv) = {[ech o]}.
+  Proof. unfold chans_of. by rewrite dom_singleton_L, set_map_singleton_L. Qed.
+
+  Lemma chans_of_none : chans_of (∅ : senv) = ∅.
+  Proof. unfold chans_of. by rewrite dom_empty_L, set_map_empty. Qed.
+
+  Lemma senv_dual_single o S y : senv_dual {[o := (S, y)]} = {[edual o := (dual S, y‾)]}.
+  Proof. unfold senv_dual. by rewrite map_fmap_singleton, kmap_singleton. Qed.
+
+  (** link ⟨c⁺, d⁻⟩ ∥ close c⁻ ∥ close d⁺, closed at N. *)
+  Theorem lk_closed_typed :
+    ∃ W, ptyped (Some N) lk_eta W ∅ ({["c"]} ∪ {["d"]}, ({[+ lk_link +]} ⊎ {[+ cl (ENeg "c") +]}) ⊎ {[+ cl (EPos "d") +]}) TUnit.
+  Proof.
+    pose proof (p_connect (Some N) lk_eta (swrestrict sw_empty (iface Σl TUnit))
+      (swrestrict W_cl (iface {[ENeg "c" := (SEnd, x‾)]} TUnit)) {[ld := (SEnd, x‾)]} ∅ {[lc := (SEnd, x)]}
+      ∅ ∅ {[+ lk_link +]} {[+ cl (ENeg "c") +]} TUnit) as H1.
+    rewrite senv_dual_single, !chans_of_single, chans_of_none, !(right_id_L ∅ (∪)), (left_id_L ∅ (∪)) in H1.
+    simpl in H1.
+    pose proof (H1 lk_term (lk_partner (ENeg "c") x‾ eq_refl) ltac:(set_solver) ltac:(set_solver)
+      ltac:(set_solver) ltac:(set_solver) ltac:(set_solver) ltac:(set_solver)) as H1'. clear H1.
+    assert (Hts : ∀ o, o ∈ dom ({[lc := (SEnd, x)]} : senv) → tsum_ok (Some N) (lk_eta o).2 (lk_eta (edual o)).2).
+    { intros o Ho. rewrite dom_singleton_L, elem_of_singleton in Ho. subst o. unfold tsum_ok. simpl. lia. }
+    pose proof (H1' Hts) as H1''. clear H1'.
+    assert (Hwk : wok (Some N) (swrestrict sw_empty (iface Σl TUnit) ⊔ swrestrict W_cl (iface {[ENeg "c" := (SEnd, x‾)]} TUnit))).
+    { apply wok_join_bare_r; [apply swrestrict_empty_bare|]. apply swf_wok, swf_bare, swrestrict_empty_bare. }
+    pose proof (H1'' Hwk) as H1. clear H1''.
+    pose proof (p_connect (Some N) lk_eta (swrestrict (swrestrict sw_empty (iface Σl TUnit)
+        ⊔ swrestrict W_cl (iface {[ENeg "c" := (SEnd, x‾)]} TUnit)) (iface {[ld := (SEnd, x‾)]} TUnit))
+      (swrestrict W_cl (iface {[EPos "d" := (SEnd, x)]} TUnit))
+      ∅ ∅ {[ld := (SEnd, x‾)]} (∅ ∪ {["c"]}) ∅ ({[+ lk_link +]} ⊎ {[+ cl (ENeg "c") +]}) {[+ cl (EPos "d") +]} TUnit) as H2.
+    rewrite senv_dual_single, !chans_of_single, chans_of_none, !(left_id_L ∅ (∪)), pt_dual_dual in H2.
+    simpl in H2. eexists. rewrite <-(left_id_L ∅ (∪) (∅ : senv)). apply H2; clear H2.
+    - exact H1.
+    - apply (lk_partner (EPos "d") x eq_refl).
+    - set_solver.
+    - set_solver.
+    - set_solver.
+    - set_solver.
+    - set_solver.
+    - set_solver.
+    - intros o Ho. rewrite dom_singleton_L, elem_of_singleton in Ho. subst o. unfold tsum_ok. simpl. lia.
+    - exact (wok_join_bare_r (Some N) _ _ (swrestrict_empty_bare _) (proj2 (ptyped_wf _ _ _ _ _ _ H1))).
+  Qed.
+
+  Theorem lk_closed_lock_free : excluded_middle → functional_choice →
+    lock_free ({["c"]} ∪ {["d"]}, ({[+ lk_link +]} ⊎ {[+ cl (ENeg "c") +]}) ⊎ {[+ cl (EPos "d") +]}).
+  Proof.
+    intros EM FC. destruct lk_closed_typed as [W H]. exact (lf_soundness_h N lk_eta W _ TUnit EM FC H).
+  Qed.
+End closed.

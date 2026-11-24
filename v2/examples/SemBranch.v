@@ -526,22 +526,22 @@ Qed.
 (** The ends of one side of P-Connect. An end the thread mentions without
     its partner is not restricted, so it sits in the interface, at the
     same point in the thread's Θ. *)
-Lemma side_lookup N W Σ C0 u T :
-  ptyped N W Σ (C0, {[+ u +]}) T →
+Lemma side_lookup N η W Σ C0 u T :
+  ptyped N η W Σ (C0, {[+ u +]}) T →
   ∃ W' Θ c, W = swrestrict W' (iface Σ T) ∧ sworld_wf W' ∧ typed W' N Θ hc_empty [] (∅, None) u T c ∧
     ∀ o, o ∈ fends u → edual o ∉ fends u →
       ∃ S x e, Σ !! o = Some (S, x) ∧ Θ !! o = Some e ∧ te_pt e = x.
 Proof.
-  intros H. apply ptyped_one in H as (W' & ΘB & c & -> & _ & HB & _ & _ & _ & HBs & Ht & [Hw _]).
+  intros H. apply ptyped_one in H as (W' & ΘB & c & -> & _ & HB & _ & _ & _ & HBs & _ & Ht & [Hw _]).
   pose proof (typed_tfacts _ _ _ _ _ _ _ _ _ Ht) as [Hd _].
-  exists W', (tenv_of (fhalf N) Σ ∪ ΘB), c. split_and!; [done|done|done|]. intros o Ho Hn.
+  exists W', (tenv_ofk η Σ ∪ ΘB), c. split_and!; [done|done|done|]. intros o Ho Hn.
   destruct (Σ !! o) as [[S x]|] eqn:HΣ.
-  - exists S, x, (TE S x (fhalf N) (fhalf N)). split_and!; [done| |done].
-    apply lookup_union_Some_l. unfold tenv_of. by rewrite lookup_fmap, HΣ.
+  - exists S, x, (TE S x (η o).1 (η o).2). split_and!; [done| |done].
+    apply lookup_union_Some_l. by rewrite lookup_tenv_ofk, HΣ.
   - exfalso. apply Hn. rewrite Hd, dom_union_L. apply elem_of_union_r.
     assert (o ∈ dom ΘB) as HoB.
     { rewrite Hd, dom_union_L in Ho. apply elem_of_union in Ho as [Ho|Ho]; [|done].
-      unfold tenv_of in Ho. rewrite dom_fmap_L in Ho. by apply not_elem_of_dom in HΣ. }
+      rewrite dom_tenv_ofk in Ho. by apply not_elem_of_dom in HΣ. }
     apply HB in HoB. destruct (HBs _ HoB) as (S & x & m & m' & _ & _ & H1 & H2).
     destruct o; simpl; apply elem_of_dom; eauto.
 Qed.
@@ -561,10 +561,10 @@ Proof. discriminate. Qed.
 Ltac fends_tac := unfold sbv_thread, sb_partner, sb_flag, sb_not, cl2, oc, od; simpl; set_unfold; intuition congruence.
 
 (** No world and no bound type the closed process of the variant. *)
-Theorem sbv_rejected N W : ¬ ptyped N W ∅ sbv_config TUnit.
+Theorem sbv_rejected N η W : ¬ ptyped N η W ∅ sbv_config TUnit.
 Proof.
   intros H.
-  apply ptyped_two in H as (W1 & W2 & Σ1 & Σ2 & ΣC & C1 & C2 & u1 & u2 & _ & HΣ & _ & Hu & H1 & H2 & HWf).
+  apply ptyped_two in H as (W1 & W2 & Σ1 & Σ2 & ΣC & C1 & C2 & u1 & u2 & _ & HΣ & _ & Hu & H1 & H2 & _ & HWf).
   pose proof (λ x, wok_acyc N _ HWf x) as Hirr.
   symmetry in HΣ. pose proof (map_positive_l _ _ HΣ) as ->. rewrite (left_id_L ∅ (∪)) in HΣ. subst Σ2.
   rewrite !(left_id_L ∅ (∪)) in H1, H2.
@@ -584,8 +584,8 @@ Proof.
       apply gmultiset_elem_of_disj_union in Hp. rewrite !gmultiset_elem_of_singleton in Hp.
       destruct Hp as [Hp|Hp]; by apply Hne. }
   destruct Hcase as [[-> ->]|[-> ->]].
-  - destruct (side_lookup _ _ _ _ _ _ H1) as (W1' & Θt & ct & -> & Hw1 & Ht & Hlt).
-    destruct (side_lookup _ _ _ _ _ _ H2) as (W2' & Θp & cp & -> & Hw2 & Hp & Hlp).
+  - destruct (side_lookup _ _ _ _ _ _ _ H1) as (W1' & Θt & ct & -> & Hw1 & Ht & Hlt).
+    destruct (side_lookup _ _ _ _ _ _ _ H2) as (W2' & Θp & cp & -> & Hw2 & Hp & Hlp).
     destruct (Hlt oc) as (Sc & x & ec & Hc & Hec & <-); [fends_tac|fends_tac|].
     destruct (Hlt od) as (Sd & y & ed & Hd & Hed & <-); [fends_tac|fends_tac|].
     destruct (Hlp (edual oc)) as (Sc' & x' & ec' & Hc' & Hec' & <-); [fends_tac|fends_tac|].
@@ -604,8 +604,8 @@ Proof.
     rewrite <-Hx', <-Hy', pt_dual_dual in Hb.
     apply (Hirr (te_pt ed)). eapply sw_lt_trans; [eapply sw_lt_mono; [apply swext_join_l|exact Ha]|].
     eapply sw_lt_mono; [apply swext_join_r|exact Hb].
-  - destruct (side_lookup _ _ _ _ _ _ H2) as (W2' & Θt & ct & -> & Hw2 & Ht & Hlt).
-    destruct (side_lookup _ _ _ _ _ _ H1) as (W1' & Θp & cp & -> & Hw1 & Hp & Hlp).
+  - destruct (side_lookup _ _ _ _ _ _ _ H2) as (W2' & Θt & ct & -> & Hw2 & Ht & Hlt).
+    destruct (side_lookup _ _ _ _ _ _ _ H1) as (W1' & Θp & cp & -> & Hw1 & Hp & Hlp).
     destruct (Hlt oc) as (Sc & x & ec & Hc & Hec & <-); [fends_tac|fends_tac|].
     destruct (Hlt od) as (Sd & y & ed & Hd & Hed & <-); [fends_tac|fends_tac|].
     destruct (Hlp (edual oc)) as (Sc' & p & ec' & Hc' & Hec' & <-); [fends_tac|fends_tac|].

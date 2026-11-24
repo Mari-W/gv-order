@@ -59,15 +59,20 @@ Qed.
 
 (** ** The thread of P-Term *)
 
-Lemma pterm_sth N Σ (ΘB : tenv) C0 :
+Lemma tenv_erase_ofk η Σ : tenv_erase (tenv_ofk η Σ) = Σ.
+Proof.
+  apply map_eq. intros o. unfold tenv_erase. rewrite lookup_fmap, lookup_tenv_ofk.
+  by destruct (Σ !! o) as [[? ?]|].
+Qed.
+
+Lemma pterm_sth N η Σ (ΘB : tenv) C0 :
   (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 → pfree Σ →
   (∀ c, c ∈ C0 → ∃ S x m m', tsum_ok N m m' ∧ scontr S ∧
      ΘB !! (c⁺)%cend = Some (TE S x m m) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ m' m')) →
-  sth (tenv_erase (tenv_of (fhalf N) Σ ∪ ΘB)) Σ (tenv_erase ΘB) C0.
+  sth (tenv_erase (tenv_ofk η Σ ∪ ΘB)) Σ (tenv_erase ΘB) C0.
 Proof.
   intros HB HΣ Hf Hd. constructor; [|intros o; unfold tenv_erase; rewrite dom_fmap_L; apply HB|done|done|].
-  - unfold tenv_erase, tenv_of. rewrite map_fmap_union, <-map_fmap_compose. f_equal.
-    rewrite <-(map_fmap_id Σ) at 2. apply map_fmap_ext. by intros ? [? ?] _.
+  - unfold tenv_erase at 1. rewrite map_fmap_union. f_equal. apply tenv_erase_ofk.
   - intros o Ho. destruct (Hd (ech o) Ho) as (S & x & m & m' & _ & _ & H1 & H2). unfold tenv_erase.
     destruct o as [c|c]; cbn [ech] in H1, H2; simpl.
     + exists S, x, (dual S). rewrite !lookup_fmap, H1, H2. split_and!; [done|done|apply seqv_refl].
@@ -126,24 +131,24 @@ Section proc.
                     wmodels R W → wstrict R → sem_typed κ R (tenv_df Θ) (lenv_df []) (∅, None) t (ty_df T)).
 
   (** P-Term at the whole world of the thread. *)
-  Lemma sem_p_term_sw N W Σ ΘB C0 t T c :
+  Lemma sem_p_term_sw N η W Σ ΘB C0 t T c :
     tfree T → (∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) → chans_of Σ ## C0 → pfree Σ →
     (∀ c, c ∈ C0 → ∃ S x m m', tsum_ok N m m' ∧ scontr S ∧
        ΘB !! (c⁺)%cend = Some (TE S x m m) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) x‾ m' m')) →
-    typed W N (tenv_of (fhalf N) Σ ∪ ΘB) hc_empty [] (∅, None) t T c → sworld_wf W →
+    typed W N (tenv_ofk η Σ ∪ ΘB) hc_empty [] (∅, None) t T c → sworld_wf W →
     sem_ptyped_sw κ W Σ (C0, {[+ t +]}) T.
   Proof.
     intros Hp HB HΣ Hpf Hd Ht Hw R HR HS n.
-    apply (sem_p_term κ n R _ Σ (tenv_erase ΘB) C0 t T Hp (pterm_sth N Σ ΘB C0 HB HΣ Hpf Hd)).
+    apply (sem_p_term κ n R _ Σ (tenv_erase ΘB) C0 t T Hp (pterm_sth N η Σ ΘB C0 HB HΣ Hpf Hd)).
     apply typed_E. exact (Hthr W R N _ t T c Hw Ht HR HS).
   Qed.
 
-  Lemma proc_gen N W Σ p T : ptyped N W Σ p T →
+  Lemma proc_gen N η W Σ p T : ptyped N η W Σ p T →
     ∃ W', sworld_wf W' ∧ wok N W' ∧ hides W' (iface Σ T) W ∧ sem_ptyped_sw κ W' Σ p T.
   Proof.
     apply ptyped_sem.
-    - intros W' Σ' ΘB C0 t T' c Hp HB HΣ Hpf _ Hd Ht Hw _. by eapply sem_p_term_sw.
-    - intros W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T' H1 H2 HT F1 F2 K1 K2 H12 H1C H2C HC HC1 HC2 _ _ _.
+    - intros W' Σ' ΘB C0 t T' c Hp HB HΣ Hpf _ Hd _ Ht Hw _. by eapply sem_p_term_sw.
+    - intros W1 W2 Σ1 Σ2 ΣC C1 C2 E1 E2 T' H1 H2 HT F1 F2 K1 K2 H12 H1C H2C HC HC1 HC2 _ _ _ _.
       exact (sem_p_connect_sw κ W1 W2 Σ1 ΣC Σ2 (senv_dual ΣC) (C1, E1) (C2, E2) T' HT H1 H2
                (conn_of Σ1 Σ2 ΣC C1 C2 F1 F2 K1 K2 H12 H1C H2C HC HC1 HC2)).
     - intros W1 W2 Σ' p' T' Hx H R HR HS. apply H; [by eapply wmodels_ext|done].
@@ -198,14 +203,14 @@ Qed.
 Theorem fundamental_proc_h W Σ p T : Σ ⊢_W p : T → sem_ptyped_h κ_DF W Σ p T.
 Proof.
   intros Hty. destruct (proc_gen κ_DF (λ W' R' N Θ t T' c HW' Ht HR' HS',
-    fundamental_typed W' R' N Θ [] (∅, None) t T' c HW' Ht HR' HS') None W Σ p T Hty) as (W' & ? & ? & ? & ?).
+    fundamental_typed W' R' N Θ [] (∅, None) t T' c HW' Ht HR' HS') None (khalf None) W Σ p T Hty) as (W' & ? & ? & ? & ?).
   by exists W'.
 Qed.
 
 Theorem live_fundamental_proc_h W Σ p T : Σ ⊢_W p : T → sem_ptyped_h κ_L W Σ p T.
 Proof.
   intros Hty. destruct (proc_gen κ_L (λ W' R' N Θ t T' c HW' Ht HR' HS',
-    live_fundamental_typed W' R' N Θ [] (∅, None) t T' c HW' Ht HR' HS') None W Σ p T Hty) as (W' & ? & ? & ? & ?).
+    live_fundamental_typed W' R' N Θ [] (∅, None) t T' c HW' Ht HR' HS') None (khalf None) W Σ p T Hty) as (W' & ? & ? & ? & ?).
   by exists W'.
 Qed.
 

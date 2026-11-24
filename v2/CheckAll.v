@@ -144,6 +144,8 @@ Print Assumptions ctl_lock_free.
 (** examples/LFLink.v *)
 Print Assumptions lk_new.
 Print Assumptions lk_typed.
+Print Assumptions lk_closed_typed.
+Print Assumptions lk_closed_lock_free.
 (** soup/SoupRun.v *)
 Print Assumptions lfsoup_step.
 (** soup/SoupTau.v *)

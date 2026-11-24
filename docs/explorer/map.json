@@ -964,7 +964,7 @@
        }
       ]
      },
-     "caption": "Each held end $o$ has a counter $f(o)$ at run time, the number of actions the thread holding $o$ may still perform on other ends before it acts on $o$. Typing bounds the counter from both sides with the two numbers of [[ty-ann]]. The credit $a$ is a lower bound, and [[t-agecap|aging]] lowers it with each action elsewhere, so the holding thread postpones $o$ only finitely often. The tickets $m$ are an upper bound, the value an [[r-act|action]] on $o$ resets the counter to. The two ends of a channel have at most $N$ tickets together, so the partner of an end with $m$ tickets has a counter of at most $N - m$. A link acts on no end and gives a waiting thread a new partner. [[r-act|E-Link]] asks $a_1 + m_2 > N$ and $a_2 + m_1 > N$ of the two linked ends, so the new partner has a lower counter than the old one, and a wait meets at most $N$ links. [[r-fun|Closures]] have a credit for their captured ends. A [[r-threads|spawn]] is no action and costs nothing, so the child takes the captured ends at their counters. A [[r-new|creation]] splits $N$ tickets between the two new ends. The [[fv|values with fuel]] and the [[soup|lock-free process relation]] read these numbers at run time.",
+     "caption": "Each held end $o$ has a counter $f(o)$ at run time, the number of actions the thread holding $o$ may still perform on other ends before it acts on $o$. Typing bounds the counter from both sides with the two numbers of [[ty-ann]]. The credit $a$ is a lower bound, and [[t-agecap|aging]] lowers it with each action elsewhere, so the holding thread postpones $o$ only finitely often. The tickets $m$ are an upper bound, the value an [[r-act|action]] on $o$ resets the counter to. The two ends of a channel have at most $N$ tickets together, so the partner of an end with $m$ tickets has a counter of at most $N - m$. A link acts on no end and gives a waiting thread a new partner. [[r-act|E-Link]] asks $a_1 + m_2 > N$ and $a_2 + m_1 > N$ of the two linked ends, so the new partner has a lower counter than the old one, and a wait meets at most $N$ links. [[r-fun|Closures]] have a credit for their captured ends. A [[r-threads|spawn]] is no action and costs nothing, so the child takes the captured ends at their counters. A [[r-new|creation]] splits $N$ tickets between the two new ends. An interface end takes its credit and tickets from the annotations $\\eta$ of [[p-typing|P-Term]], and P-Connect asks the tickets of the two ends of each cut channel to sum to at most $N$. The [[fv|values with fuel]] and the [[soup|lock-free process relation]] read these numbers at run time.",
      "why": "The two bounds serve the two threads of a channel. The holding thread needs a lower bound, so that its actions elsewhere stay within the counter. The waiting thread needs an upper bound on the counter of its partner, so that its wait is finite. One number cannot do both. A lower bound alone says nothing about the partner, and an upper bound alone cannot be lowered by aging, because aging must keep a true statement true.",
      "example": "At $N = 4$ a new channel gives its ends $3$ and $1$ tickets. A thread waiting on the end with $3$ tickets faces a partner whose counter is at most $1$, so the partner acts on its end after at most one action elsewhere. A link of that partner with an end at $2$ tickets asks the credit of the partner to exceed $2$, which a counter of $1$ cannot meet.",
      "modes": [
@@ -1458,8 +1458,8 @@
     {
      "id": "p-typing",
      "title": "Process typing",
-     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{ty.tfree}{\\mathsf{tfree}\\,T}\\quad \\sym{pfree}{\\mathsf{pfree}\\,\\Sigma}\\quad \\sym{P-Term.wf}{\\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}\\,W}\\quad \\sym{P-Term.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,\\Sigma, \\Theta_B}\\\\ \\sym{P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\sym{tp.ends}{\\mathsf{ends}}(C_0)}\\quad \\sym{P-Term.disj}{\\sym{tp.chans}{\\mathsf{chans}}\\,\\sym{tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing} \\\\ \\sym{P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = \\sym{ty.sess}{S_x\\inmode{lf}{^{m,m}}},\\ \\Theta_B(c^{-}) = \\sym{ty.sess}{\\overline{S}_{\\overline{x}}\\inmode{lf}{^{m',m'}}}\\inmode{lf}{,\\ m + m' \\leq N}} \\\\ \\sym{P-Term.typed}{\\varnothing ; \\sym{tp.lift}{\\Sigma\\inmode{lf}{^{N/2,N/2}}}, \\Theta_B \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sym{P-Term.future}{(\\varnothing,\\cdot)}} t : T\\inmode{lf}{\\ !\\ c}}\\end{array}}{\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{N}}}_{\\sym{P-Term.hide}{W|_{\\sym{tp.iface}{\\mathsf{I}(\\Sigma, T)}}}} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_1} (C_1, E_1) : T} \\\\ \\sym{P-Connect.right}{\\Sigma_2 \\cup \\sym{P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\sym{P-Connect.disj}{\\mathsf{disjoint}(\\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_1, \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_2, \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, C_1, C_2)} \\\\ \\sym{P-Connect.wf}{\\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{\\sym{P-Connect.join}{(W_1 \\sym{w.join}{\\sqcup} W_2)\\sym{w.restrict}{|}_{\\sym{tp.iface}{\\mathsf{I}(\\Sigma_1 \\cup \\Sigma_2, T)}}}} \\\\ (C_1 \\cup C_2 \\cup \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\sym{tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect} \\\\[2ex] \\sym{P-Connect.n}{\\dfrac{\\begin{array}{c}\\Sigma_1 \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_1} p_1 : T \\qquad \\Sigma_i \\cup \\overline{\\Sigma_{C,i}} \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W_i} p_i : \\ast\\ \\ (2 \\leq i \\leq n) \\\\ \\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n)\\end{array}}{\\begin{array}{c}\\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_{W} \\textstyle\\parallel_i p_i : T,\\quad W = (\\cdots((W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2)\\sym{w.restrict}{|}_{\\mathsf{I}_2} \\mathbin{\\sym{w.join}{\\sqcup}} W_3)|_{\\mathsf{I}_3} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n)|_{\\mathsf{I}(\\Sigma, T)} \\\\ \\sym{w.facts}{\\mathsf{facts}}\\,W \\subseteq \\mathsf{facts}((W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n)|_{\\mathsf{I}(\\Sigma, T)})\\end{array}}\\;\\textsf{P-Connect$^{n}$}}\\end{array}\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\sym{tp.lfjudg}{\\Sigma \\Vdash^{N}_W p : T \\iff \\sym{lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N}}_W p : T}}\\end{array}",
-     "caption": "P-Term types one thread $t$ that holds both ends of each channel in $C_0$, at [[ty-dual|dual]] types and points, over an interface $\\Sigma$ without partner pairs, with the ends $\\Theta_B$ of these channels. The thread is typed by the [[t-judgment|term judgment]] with no facts and the empty future, so that [[r-base|E-Chan]] closes each end it holds, and its result type is [[ty-kinds|end-free]]. Its world is hidden to the constants of the interface, $W|_{\\mathsf{I}(\\Sigma, T)}$ by the restriction of [[w-ext]]. P-Connect cuts two components at $\\Sigma_C$ against $\\overline{\\Sigma_C}$. Disjoint channel sets make the maps disjoint, and the left premise makes $\\Sigma_C$ free of partner pairs, so the rule asks neither. It asks the join of their two interface [[w-world|worlds]] acyclic, the condition of [[w-wf]]. The check reads the joined order, never two worlds at a time, so a ring of three threads whose worlds are acyclic in pairs and cyclic together is rejected. The [[syn-procs|process]] of the conclusion restricts the cut channels. [[th-compose]] proves both rules in the relation, and [[w-wf]] gives the world a model. \\inmode{lf}{Lock-free process typing is process typing at a finite bound $N$. The worlds must then be well-founded in place of acyclic, which [[t-lf-wf]] explains. The ends of a restricted channel have [[ty-ann|tickets]] of sum at most $N$, and each interface end has $N/2$, as the [[t-lf-counters|counters block]] explains.}",
+     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{ty.tfree}{\\mathsf{tfree}\\,T}\\quad \\sym{pfree}{\\mathsf{pfree}\\,\\Sigma}\\quad \\sym{P-Term.wf}{\\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}\\,W}\\quad \\sym{P-Term.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,\\Sigma, \\Theta_B}\\\\ \\sym{P-Term.C0}{\\mathrm{dom}\\,\\Theta_B = \\sym{tp.ends}{\\mathsf{ends}}(C_0)}\\quad \\sym{P-Term.disj}{\\sym{tp.chans}{\\mathsf{chans}}\\,\\sym{tp.Sigma}{\\Sigma} \\cap C_0 = \\varnothing} \\\\ \\sym{P-Term.pairs}{\\forall c \\in C_0.\\ \\Theta_B(c^{+}) = \\sym{ty.sess}{S_x\\inmode{lf}{^{m,m}}},\\ \\Theta_B(c^{-}) = \\sym{ty.sess}{\\overline{S}_{\\overline{x}}\\inmode{lf}{^{m',m'}}}\\inmode{lf}{,\\ m + m' \\leq N}} \\\\ \\inmode{lf}{\\sym{P-Term.ann}{\\forall o \\in \\mathrm{dom}\\,\\Sigma.\\ \\eta(o) = (a, m),\\ m \\leq N}} \\\\ \\sym{P-Term.typed}{\\varnothing ; \\sym{tp.lift}{\\Sigma\\inmode{lf}{^{\\eta}}}, \\Theta_B \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sym{P-Term.future}{(\\varnothing,\\cdot)}} t : T\\inmode{lf}{\\ !\\ c}}\\end{array}}{\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{N,\\eta}}}_{\\sym{P-Term.hide}{W|_{\\sym{tp.iface}{\\mathsf{I}(\\Sigma, T)}}}} (C_0, \\{t\\}) : T}\\;\\textsf{P-Term}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{P-Connect.left}{\\Sigma_1 \\cup \\Sigma_C \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W_1} (C_1, E_1) : T} \\\\ \\sym{P-Connect.right}{\\Sigma_2 \\cup \\sym{P-Connect.cut}{\\overline{\\Sigma_C}} \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W_2} (C_2, E_2) : \\ast} \\\\ \\sym{P-Connect.disj}{\\mathsf{disjoint}(\\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_1, \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_2, \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, C_1, C_2)} \\\\ \\inmode{lf}{\\sym{P-Connect.tsum}{\\forall o \\in \\mathrm{dom}\\,\\Sigma_C.\\ \\eta(o)_2 + \\eta(\\overline{o})_2 \\leq N}} \\inmodeplain{lf}{\\\\} \\sym{P-Connect.wf}{\\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2)}\\end{array}}{\\begin{array}{c}\\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{\\sym{P-Connect.join}{(W_1 \\sym{w.join}{\\sqcup} W_2)\\sym{w.restrict}{|}_{\\sym{tp.iface}{\\mathsf{I}(\\Sigma_1 \\cup \\Sigma_2, T)}}}} \\\\ (C_1 \\cup C_2 \\cup \\sym{tp.chans}{\\mathsf{chans}}\\,\\Sigma_C, E_1 \\mathbin{\\sym{tp.msunion}{\\uplus}} E_2) : T\\end{array}}\\;\\textsf{P-Connect} \\\\[2ex] \\sym{P-Connect.n}{\\dfrac{\\begin{array}{c}\\Sigma_1 \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W_1} p_1 : T \\qquad \\Sigma_i \\cup \\overline{\\Sigma_{C,i}} \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W_i} p_i : \\ast\\ \\ (2 \\leq i \\leq n) \\\\ \\inmodeplain{df}{\\sym{w.acyc}{\\mathsf{acyc}}}\\inmode{lf}{\\sym{w.wok}{\\mathsf{ok}_N}}(W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n)\\end{array}}{\\begin{array}{c}\\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_{W} \\textstyle\\parallel_i p_i : T,\\quad W = (\\cdots((W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2)\\sym{w.restrict}{|}_{\\mathsf{I}_2} \\mathbin{\\sym{w.join}{\\sqcup}} W_3)|_{\\mathsf{I}_3} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n)|_{\\mathsf{I}(\\Sigma, T)} \\\\ \\sym{w.facts}{\\mathsf{facts}}\\,W \\subseteq \\mathsf{facts}((W_1 \\mathbin{\\sym{w.join}{\\sqcup}} \\cdots \\mathbin{\\sym{w.join}{\\sqcup}} W_n)|_{\\mathsf{I}(\\Sigma, T)})\\end{array}}\\;\\textsf{P-Connect$^{n}$}}\\end{array}\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\sym{tp.lfjudg}{\\Sigma \\Vdash^{N,\\eta}_W p : T \\iff \\sym{lf.N}{N \\in \\mathbb{N}} \\land \\Sigma \\mathrel{\\sym{tp.pjudg}{\\vdash}}\\inmode{lf}{^{N,\\eta}}_W p : T}}\\end{array}",
+     "caption": "P-Term types one thread $t$ that holds both ends of each channel in $C_0$, at [[ty-dual|dual]] types and points, over an interface $\\Sigma$ without partner pairs, with the ends $\\Theta_B$ of these channels. The thread is typed by the [[t-judgment|term judgment]] with no facts and the empty future, so that [[r-base|E-Chan]] closes each end it holds, and its result type is [[ty-kinds|end-free]]. Its world is hidden to the constants of the interface, $W|_{\\mathsf{I}(\\Sigma, T)}$ by the restriction of [[w-ext]]. P-Connect cuts two components at $\\Sigma_C$ against $\\overline{\\Sigma_C}$. Disjoint channel sets make the maps disjoint, and the left premise makes $\\Sigma_C$ free of partner pairs, so the rule asks neither. It asks the join of their two interface [[w-world|worlds]] acyclic, the condition of [[w-wf]]. The check reads the joined order, never two worlds at a time, so a ring of three threads whose worlds are acyclic in pairs and cyclic together is rejected. The [[syn-procs|process]] of the conclusion restricts the cut channels. [[th-compose]] proves both rules in the relation, and [[w-wf]] gives the world a model. \\inmode{lf}{Lock-free process typing is process typing at a finite bound $N$. The worlds must then be well-founded in place of acyclic, which [[t-lf-wf]] explains. The ends of a restricted channel have [[ty-ann|tickets]] of sum at most $N$. The interface annotations $\\eta$ give each interface end $o$ a credit and tickets $\\eta(o) = (a, m)$ with $m \\leq N$, as the [[t-lf-counters|counters block]] explains. P-Term chooses them as [[r-new|E-New]] chooses the tickets of a new channel. P-Connect asks the tickets of the two ends of each cut channel to sum to at most $N$, the check of E-New, and P-Connect$^{n}$ asks it at each of its cuts. The annotations $\\eta(o) = (N/2, N/2)$ give back the earlier rule. A link of two interface ends types at each $N \\geq 1$, as the [[ex-link|link example]] shows.}",
      "why": "Processes are built from single threads by P-Term and composed by P-Connect. Hiding makes components composable. A component exposes only the order between the points of its interface, so two components that use the same private constant in opposite orders still compose, and the soundness proof renames private constants apart. Without hiding the type of a component would mention points that no other component names.",
      "source": [
       {
@@ -10269,15 +10269,15 @@
    "why": "The process judgment has static premises only. Its semantic content comes from the fundamental theorems.",
    "breaks": "Nothing. It is a definition.",
    "example": "The client and server main.",
-   "signature": "\\varnothing ; \\Sigma^{N/2,N/2}, \\Theta_B \\vdash^{(\\varnothing,\\cdot)}_{W\\inmode{lf}{,N}} t : T\\inmode{lf}{\\ !\\ c}",
+   "signature": "\\varnothing ; \\Sigma\\inmode{lf}{^{\\eta}}, \\Theta_B \\vdash^{(\\varnothing,\\cdot)}_{W\\inmode{lf}{,N}} t : T\\inmode{lf}{\\ !\\ c}",
    "args": [
     {
      "name": "t",
      "meaning": "the thread"
     },
     {
-     "name": "\\Sigma^{N/2,N/2}",
-     "meaning": "\\inmode{lf}{the interface at\\inmode{lf}{ credit and }tickets $N/2$}"
+     "name": "\\Sigma\\inmode{lf}{^{\\eta}}",
+     "meaning": "the interface as a context of ends\\inmode{lf}{, each end $o$ at $\\eta(o)$}"
     }
    ],
    "source": [
@@ -10660,12 +10660,12 @@
    ]
   },
   "tp.pjudg": {
-   "title": "$\\Sigma \\vdash\\inmode{lf}{^{N}}_{W} p : T$",
-   "meaning": "The process $p$ is typed over $\\Sigma$ in $W$ at bound $N$ with result $T$, derived by P-Term and P-Connect. $W$ lives on the constants of $\\mathsf{I}(\\Sigma, T)$, so a component is typed by the pair of $\\Sigma$ and its interface world.",
+   "title": "$\\Sigma \\vdash\\inmode{lf}{^{N,\\eta}}_{W} p : T$",
+   "meaning": "The process $p$ is typed over $\\Sigma$ in $W$ at bound $N$\\inmode{lf}{ with interface annotations $\\eta$} with result $T$, derived by P-Term and P-Connect. $W$ lives on the constants of $\\mathsf{I}(\\Sigma, T)$, so a component is typed by the pair of $\\Sigma$ and its interface world.",
    "why": "\\inmode{lf}{One judgment serves deadlock freedom at $N = \\infty$ and lock freedom at finite $N$.} Its soundness reads each component at a whole world that hides to its world, with private constants renamed apart at each P-Connect.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\varnothing \\vdash\\inmode{lf}{^{\\infty}}_{W} (\\varnothing, \\{t\\}) : \\ast$.",
-   "signature": "\\Sigma \\vdash\\inmode{lf}{^{N}}_{W} p : T",
+   "example": "$\\varnothing \\vdash\\inmode{lf}{^{\\infty,\\eta}}_{W} (\\varnothing, \\{t\\}) : \\ast$.",
+   "signature": "\\Sigma \\vdash\\inmode{lf}{^{N,\\eta}}_{W} p : T",
    "args": [
     {
      "name": "\\Sigma",
@@ -10678,6 +10678,13 @@
     {
      "name": "N",
      "meaning": "\\inmode{lf}{the bound on the tickets of a channel, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$}"
+    },
+    {
+     "name": "\\eta",
+     "meaning": "the interface annotations, a credit and tickets for each end",
+     "modes": [
+      "lf"
+     ]
     },
     {
      "name": "p",
@@ -10704,12 +10711,12 @@
    ]
   },
   "tp.lfjudg": {
-   "title": "$\\Sigma \\Vdash^{N}_{W} p : T$",
-   "meaning": "$\\Sigma \\Vdash^{N}_{W} p : T$ iff $N \\in \\mathbb{N}$ and $\\Sigma \\vdash\\inmode{lf}{^{N}}_{W} p : T$.",
+   "title": "$\\Sigma \\Vdash^{N,\\eta}_{W} p : T$",
+   "meaning": "$\\Sigma \\Vdash^{N,\\eta}_{W} p : T$ iff $N \\in \\mathbb{N}$ and $\\Sigma \\vdash\\inmode{lf}{^{N,\\eta}}_{W} p : T$.",
    "why": "Lock freedom needs finite counters. A loop is charged at each force, so no separate check on terms is needed.",
    "breaks": "Nothing. It is a definition.",
    "example": "Two threads closing $c^{+}$ and $c^{-}$, at each $N \\in \\mathbb{N}$.",
-   "signature": "\\Sigma \\Vdash^{N}_{W} p : T \\iff N \\in \\mathbb{N} \\land \\Sigma \\vdash\\inmode{lf}{^{N}}_{W} p : T",
+   "signature": "\\Sigma \\Vdash^{N,\\eta}_{W} p : T \\iff N \\in \\mathbb{N} \\land \\Sigma \\vdash\\inmode{lf}{^{N,\\eta}}_{W} p : T",
    "args": [
     {
      "name": "\\Sigma",
@@ -10790,39 +10797,36 @@
    ]
   },
   "tp.lift": {
-   "title": "$\\Sigma^{N/2,N/2}$",
-   "meaning": "\\inmode{lf}{$\\Sigma$ with each entry at\\inmode{lf}{ credit and }tickets $N/2$.}",
-   "why": "The partner of an interface end belongs to another component. \\inmode{lf}{Half of $N$ on each side keeps the bound on the tickets of a channel when P-Connect joins the two ends.}",
+   "title": "The interface as a context of ends",
+   "meaning": "$\\Sigma$ as a context of ends\\inmode{lf}{, each end $o$ at the credit and tickets $\\eta(o)$}.",
+   "why": "The partner of an interface end belongs to another component. \\inmode{lf}{The annotations of the two ends of a cut channel meet the bound $N$ by the premise of P-Connect.}",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\{c^{+} \\mapsto \\mathsf{Close}_x\\}^{N/2,N/2} = \\{c^{+} \\mapsto \\mathsf{Close}_x\\inmode{lf}{^{N/2,N/2}}\\}$.",
-   "signature": "\\Sigma^{N/2,N/2} : \\mathsf{End} \\rightharpoonup \\mathsf{Sty} \\times \\mathsf{Pt} \\times (\\mathbb{N} \\cup \\{\\infty\\}) \\times (\\mathbb{N} \\cup \\{\\infty\\})",
+   "example": "$\\{c^{+} \\mapsto \\mathsf{Close}_x\\}\\inmode{lf}{^{\\eta}} = \\{c^{+} \\mapsto \\mathsf{Close}_x\\inmode{lf}{^{a,m}}\\}$\\inmode{lf}{ with $\\eta(c^{+}) = (a, m)$}.",
+   "signature": "\\Sigma\\inmode{lf}{^{\\eta}} : \\mathsf{End} \\rightharpoonup \\mathsf{Sty} \\times \\mathsf{Pt} \\times (\\mathbb{N} \\cup \\{\\infty\\}) \\times (\\mathbb{N} \\cup \\{\\infty\\})",
    "args": [
     {
      "name": "\\Sigma",
      "meaning": "the interface, a finite map from the ends the process offers to its environment to $S_x$"
     },
     {
-     "name": "N",
-     "meaning": "\\inmode{lf}{the bound on the tickets of a channel, $N \\in \\mathbb{N} \\cup \\{\\infty\\}$}"
+     "name": "\\eta",
+     "meaning": "the interface annotations, a credit and tickets for each end",
+     "modes": [
+      "lf"
+     ]
     }
    ],
    "source": [
     {
+     "file": "static/Contexts.v",
+     "names": [
+      "tenv_ofk"
+     ]
+    },
+    {
      "file": "static/Typing.v",
      "names": [
       "p_term"
-     ]
-    },
-    {
-     "file": "static/Contexts.v",
-     "names": [
-      "tenv_of"
-     ]
-    },
-    {
-     "file": "types/Costs.v",
-     "names": [
-      "fhalf"
      ]
     }
    ]
@@ -18807,7 +18811,7 @@
   },
   "th.chprem": {
    "title": "$\\mathsf{chan}_N(\\Sigma, \\Theta_B, C_0)$",
-   "meaning": "$\\Theta_B$ holds both ends of each $c \\in C_0$, dual at dual points, each at credit equal to its tickets with tickets of sum at most $N$, and no channel of $\\Sigma$ is in $C_0$. $\\Theta$ is $\\Sigma$ at credit and tickets $N/2$ together with $\\Theta_B$.",
+   "meaning": "$\\Theta_B$ holds both ends of each $c \\in C_0$, dual at dual points, each at credit equal to its tickets with tickets of sum at most $N$, and no channel of $\\Sigma$ is in $C_0$. $\\Theta$ is $\\Sigma$ at the interface annotations $\\eta$ together with $\\Theta_B$.",
    "why": "These are the premises of P-Term about restricted channels.",
    "breaks": "Nothing. It is a definition.",
    "example": "$C_0 = \\varnothing$ for a thread with no private channel.",
@@ -19381,6 +19385,72 @@
      ]
     }
    ]
+  },
+  "P-Term.ann": {
+   "title": "Interface annotations",
+   "meaning": "$\\eta$ maps each end $o$ to a credit and tickets $\\eta(o) = (a, m)$. P-Term asks $m \\leq N$ for each end of $\\Sigma$, and the thread holds $o$ at $S_x^{a,m}$.",
+   "why": "The tickets of an interface end are an upper bound on its counter, and the partner of the end is held by another component. Each component picks the tickets of its interface ends, and P-Connect checks the two sides of each cut against $N$.",
+   "breaks": "With each interface end at $N/2$ a link of two interface ends asks $N/2 + N/2 > N$, so no forwarding component types over an interface.",
+   "example": "$\\eta(c^{+}) = \\eta(d^{-}) = (N, N)$ and $\\eta(c^{-}) = \\eta(d^{+}) = (0, 0)$ for the [[ex-link|link]] closed by its two partners.",
+   "signature": "\\eta : \\mathsf{End} \\to (\\mathbb{N} \\cup \\{\\infty\\}) \\times (\\mathbb{N} \\cup \\{\\infty\\})",
+   "args": [
+    {
+     "name": "\\eta",
+     "meaning": "the interface annotations, a credit and tickets for each end"
+    },
+    {
+     "name": "a, m",
+     "meaning": "the credit and the tickets of the end $o$"
+    }
+   ],
+   "source": [
+    {
+     "file": "static/Typing.v",
+     "names": [
+      "p_term"
+     ]
+    },
+    {
+     "file": "types/Types.v",
+     "names": [
+      "iann"
+     ]
+    },
+    {
+     "file": "static/Contexts.v",
+     "names": [
+      "tenv_ofk"
+     ]
+    }
+   ]
+  },
+  "P-Connect.tsum": {
+   "title": "Tickets at a cut",
+   "meaning": "For each end $o$ of $\\Sigma_C$ the tickets $\\eta(o)_2$ of $o$ and $\\eta(\\overline{o})_2$ of its partner sum to at most $N$.",
+   "why": "P-Connect makes $o$ and $\\overline{o}$ the two ends of one channel, which E-New would have created with tickets of sum at most $N$. A waiting thread then faces a partner with counter at most $N - m$.",
+   "breaks": "Two components that each give a cut end $N$ tickets would let one end wait on a partner with counter up to $N$, beyond what the end bounds.",
+   "example": "$N + 0 \\leq N$ at each of the two cuts of the closed link.",
+   "signature": "\\forall o \\in \\mathrm{dom}\\,\\Sigma_C.\\ \\eta(o)_2 + \\eta(\\overline{o})_2 \\leq N",
+   "args": [
+    {
+     "name": "\\Sigma_C",
+     "meaning": "the cut, the ends of the left component whose partners the right component holds"
+    }
+   ],
+   "source": [
+    {
+     "file": "static/Typing.v",
+     "names": [
+      "p_connect"
+     ]
+    },
+    {
+     "file": "types/Costs.v",
+     "names": [
+      "tsum_ok"
+     ]
+    }
+   ]
   }
  },
  "examples": [
@@ -19892,10 +19962,10 @@
   },
   {
    "id": "ex-link",
-   "title": "A link at full tickets",
+   "title": "A link at full tickets, closed over its interface",
    "lead": "A link types at each bound once each creation chooses how to split its tickets, by [[r-new|E-New]] and the premise of [[r-act|E-Link]].",
-   "code": "⟨c⁺, c⁻⟩ = new         -- c⁺ with N tickets, c⁻ with 0\n⟨d⁺, d⁻⟩ = new         -- d⁻ with N tickets, d⁺ with 0\nlink ⟨c⁺, d⁻⟩          -- c⁺ at x, d⁻ at x̄, both at credit N",
-   "meaning": "[[r-act|E-Link]] asks $a_1 + m_2 > N$ and $a_2 + m_1 > N$. With the tickets of a channel split as $N/2$ and $N - N/2$ the link types at no even $N$. A creation chooses $m_1 + m_2 \\leq N$, so each linked end can hold the $N$ tickets of its channel and its dual end none. Then $N + N > N$ holds for each $N \\geq 1$, and each channel meets the bound with $N + 0 \\leq N$.",
+   "code": "⟨c⁺, c⁻⟩ = new         -- c⁺ with N tickets, c⁻ with 0\n⟨d⁺, d⁻⟩ = new         -- d⁻ with N tickets, d⁺ with 0\nlink ⟨c⁺, d⁻⟩          -- c⁺ at x, d⁻ at x̄, both at credit N\n\nlink ⟨c⁺, d⁻⟩ ∥ close c⁻ ∥ close d⁺   -- η(c⁺) = η(d⁻) = (N, N), η(c⁻) = η(d⁺) = (0, 0)",
+   "meaning": "[[r-act|E-Link]] asks $a_1 + m_2 > N$ and $a_2 + m_1 > N$. With the tickets of a channel split as $N/2$ and $N - N/2$ the link types at no even $N$. A creation chooses $m_1 + m_2 \\leq N$, so each linked end can hold the $N$ tickets of its channel and its dual end none. Then $N + N > N$ holds for each $N \\geq 1$, and each channel meets the bound with $N + 0 \\leq N$. The interface annotations of [[p-typing|P-Term]] give the linked ends credit and tickets $N$ and their partners none, so each cut of P-Connect meets $N + 0 \\leq N$. With the two partners closing their ends the link is a closed process, typed and lock free at each $N \\geq 1$.",
    "modes": [
     "lf"
    ],
@@ -19905,15 +19975,18 @@
      "names": [
       "lk_new",
       "lk_typed",
-      "lk_ok"
+      "lk_ok",
+      "lk_closed_typed",
+      "lk_closed_lock_free"
      ]
     }
    ],
    "x-gv-accepts": {
     "lf": {
      "ok": true,
-     "part": "the link typed at each N of at least 1",
-     "rocq": "lk_typed, lk_ok"
+     "N": "every",
+     "part": "the closed link at each N of at least 1",
+     "rocq": "lk_typed, lk_closed_typed, lk_closed_lock_free"
     }
    }
   },

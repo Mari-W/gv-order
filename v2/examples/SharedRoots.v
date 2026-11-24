@@ -189,23 +189,23 @@ Proof. split; [apply swrestrict_wf|apply swf_bare, swrestrict_empty_facts]. Qed.
 
 Lemma cl2_hterm W o1 o2 x y :
   sworld_wf W ∧ swf W → o1 ≠ o2 → (o1‾)%cend ≠ o2 → sw_facts W (FLt x y‾) →
-  ptyped None (swrestrict W (iface (senv2 o1 o2 x y) TUnit)) (senv2 o1 o2 x y) (∅, {[+ cl2 o1 o2 +]}) TUnit.
+  ptyped None (khalf None) (swrestrict W (iface (senv2 o1 o2 x y) TUnit)) (senv2 o1 o2 x y) (∅, {[+ cl2 o1 o2 +]}) TUnit.
 Proof.
   intros HW Hne Hd Hf. destruct (cl2_prem W o1 o2 x y Hne Hd Hf) as (H1 & H2 & H3 & H4 & H4c & H5 & H6).
-  apply (swf_ok_wok None) in HW. by eapply p_term.
+  apply (swf_ok_wok None) in HW. by eapply p_term_half.
 Qed.
 
 (** One component over its own cut ΣC, its two threads at worlds W and
     W' that order the cut. The hidden world has no constant. *)
 Lemma hcomp_gen W W' (ΣC : senv) (u1 u2 : expr) Σa Σb :
-  ptyped None W Σa (∅, {[+ u1 +]}) TUnit → ptyped None W' Σb (∅, {[+ u2 +]}) TUnit →
+  ptyped None (khalf None) W Σa (∅, {[+ u1 +]}) TUnit → ptyped None (khalf None) W' Σb (∅, {[+ u2 +]}) TUnit →
   Σa = ∅ ∪ ΣC → Σb = ∅ ∪ senv_dual ΣC →
   (∀ o, o ∈ dom ΣC → (o‾)%cend ∉ dom ΣC) →
   swf (W ⊔ W') →
-  ptyped None (swrestrict (W ⊔ W') ∅) ∅ (chans_of ΣC, {[+ u1 +]} ⊎ {[+ u2 +]}) TUnit.
+  ptyped None (khalf None) (swrestrict (W ⊔ W') ∅) ∅ (chans_of ΣC, {[+ u1 +]} ⊎ {[+ u2 +]}) TUnit.
 Proof.
   intros H1 H2 -> -> Hf HS. apply (swf_wok None) in HS.
-  pose proof (p_connect None W W' ∅ ∅ ΣC ∅ ∅ {[+ u1 +]} {[+ u2 +]} TUnit H1 H2) as H.
+  pose proof (p_connect_half None W W' ∅ ∅ ΣC ∅ ∅ {[+ u1 +]} {[+ u2 +]} TUnit H1 H2) as H.
   rewrite chans_of_empty, !(left_id_L ∅ (∪)), iface_empty_unit in H. apply H; clear H; try done.
   all: first [apply map_disjoint_empty_l|set_solver].
 Qed.
@@ -217,7 +217,7 @@ Proof.
 Qed.
 
 Lemma hcomp_typed c d :
-  c ≠ d → ∃ W, ptyped None W ∅ (({[c]} ∪ {[d]}), comp c d) TUnit ∧ sw_consts W = ∅ ∧ ∀ g, ¬ sw_facts W g.
+  c ≠ d → ∃ W, ptyped None (khalf None) W ∅ (({[c]} ∪ {[d]}), comp c d) TUnit ∧ sw_consts W = ∅ ∧ ∀ g, ¬ sw_facts W g.
 Proof.
   intros Hcd. set (ΣC := senv2 (c⁺)%cend (d⁺)%cend p0 (p0·0)).
   assert (chans_of ΣC = ({[c]} ∪ {[d]})) as Ec.
@@ -235,11 +235,11 @@ Proof.
 Qed.
 
 Theorem shared_hidden :
-  ∃ W, ptyped None W ∅ (({["c"]} ∪ {["d"]}) ∪ ({["e"]} ∪ {["f"]}) ∪ chans_of ∅, comp "c" "d" ⊎ comp "e" "f") TUnit.
+  ∃ W, ptyped None (khalf None) W ∅ (({["c"]} ∪ {["d"]}) ∪ ({["e"]} ∪ {["f"]}) ∪ chans_of ∅, comp "c" "d" ⊎ comp "e" "f") TUnit.
 Proof.
   destruct (hcomp_typed "c" "d") as (W1 & H1 & _ & F1); [done|].
   destruct (hcomp_typed "e" "f") as (W2 & H2 & _ & F2); [done|].
-  eexists. pose proof (p_connect None W1 W2 ∅ ∅ ∅ ({["c"]} ∪ {["d"]}) ({["e"]} ∪ {["f"]})
+  eexists. pose proof (p_connect_half None W1 W2 ∅ ∅ ∅ ({["c"]} ∪ {["d"]}) ({["e"]} ∪ {["f"]})
                 (comp "c" "d") (comp "e" "f") TUnit) as H.
   assert (senv_dual ∅ = ∅) as Ed by (unfold senv_dual; by rewrite fmap_empty, kmap_empty).
   rewrite Ed, !(left_id_L ∅ (∪)) in H. apply H; clear H; try done; try set_solver.
@@ -282,7 +282,7 @@ Definition comp' (e f : chan) : gmultiset expr :=
   {[+ cl2 (f⁺)%cend (e⁺)%cend +]} ⊎ {[+ cl2 (f⁻)%cend (e⁻)%cend +]}.
 
 Lemma hcomp'_typed e f :
-  e ≠ f → ∃ W, ptyped None W ∅ (({[f]} ∪ {[e]}), comp' e f) TUnit ∧ sw_consts W = ∅ ∧ ∀ g, ¬ sw_facts W g.
+  e ≠ f → ∃ W, ptyped None (khalf None) W ∅ (({[f]} ∪ {[e]}), comp' e f) TUnit ∧ sw_consts W = ∅ ∧ ∀ g, ¬ sw_facts W g.
 Proof.
   intros Hef. set (ΣC := senv2 (f⁺)%cend (e⁺)%cend (p0·0) p0).
   assert (chans_of ΣC = ({[f]} ∪ {[e]})) as Ec.
@@ -309,11 +309,11 @@ Proof.
 Qed.
 
 Theorem opposite_compose :
-  ∃ W, ptyped None W ∅ (({["c"]} ∪ {["d"]}) ∪ ({["f"]} ∪ {["e"]}) ∪ chans_of ∅, comp "c" "d" ⊎ comp' "e" "f") TUnit.
+  ∃ W, ptyped None (khalf None) W ∅ (({["c"]} ∪ {["d"]}) ∪ ({["f"]} ∪ {["e"]}) ∪ chans_of ∅, comp "c" "d" ⊎ comp' "e" "f") TUnit.
 Proof.
   destruct (hcomp_typed "c" "d") as (Wa & H1 & _ & F1); [done|].
   destruct (hcomp'_typed "e" "f") as (Wb & H2 & _ & F2); [done|].
-  eexists. pose proof (p_connect None Wa Wb ∅ ∅ ∅ ({["c"]} ∪ {["d"]}) ({["f"]} ∪ {["e"]})
+  eexists. pose proof (p_connect_half None Wa Wb ∅ ∅ ∅ ({["c"]} ∪ {["d"]}) ({["f"]} ∪ {["e"]})
                 (comp "c" "d") (comp' "e" "f") TUnit) as H.
   assert (senv_dual ∅ = ∅) as Ed by (unfold senv_dual; by rewrite fmap_empty, kmap_empty).
   rewrite Ed, !(left_id_L ∅ (∪)) in H. apply H; clear H; try done; try set_solver.

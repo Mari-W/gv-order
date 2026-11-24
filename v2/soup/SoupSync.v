@@ -164,7 +164,7 @@ Section sync.
           simplify_eq. done.
         * rewrite edual_edual, lookup_insert_eq in H6. rewrite lookup_insert_ne, lookup_insert_eq in H5 by done.
           simplify_eq. by apply pdual_sym.
-    - apply kfin_ksync; [exact (sp_fin _ _ _ _ _ _ _ _ _ Hs)|exact (s_kcfin _ _ _ _ _ _ _ _ Hs)].
+    - apply kfin_ksync; [exact (sp_fin _ _ _ _ _ _ _ _ _ _ Hs)|exact (s_kcfin _ _ _ _ _ _ _ _ Hs)].
     - apply kcap_ok_ksync; [exact (s_kcap_ok _ _ _ _ _ _ _ _ _ _ _ Hs)|by apply elem_of_dom_2 in Khi|by apply elem_of_dom_2 in Khj].
     - apply ktsum_ok_ksync; [exact (s_ktsum_ok _ _ _ _ _ _ _ _ _ _ _ Hs)|by apply elem_of_dom_2 in Khi|by apply elem_of_dom_2 in Khj].
   Qed.
@@ -234,7 +234,7 @@ Section sync.
     - intros o0 P1 P2 H3 H4. apply lookup_delete_Some in H3 as [_ H3]. apply lookup_delete_Some in H3 as [_ H3].
       apply lookup_delete_Some in H4 as [_ H4]. apply lookup_delete_Some in H4 as [_ H4].
       exact (s_pdual _ _ _ _ _ _ _ _ Hs o0 P1 P2 H3 H4).
-    - apply kfin_ktick, kfin_delete, kfin_delete. exact (sp_fin _ _ _ _ _ _ _ _ _ Hs).
+    - apply kfin_ktick, kfin_delete, kfin_delete. exact (sp_fin _ _ _ _ _ _ _ _ _ _ Hs).
     - apply kcap_ok_ktick, kcap_ok_delete, kcap_ok_delete. exact (s_kcap_ok _ _ _ _ _ _ _ _ _ _ _ Hs).
     - apply ktsum_ok_ktick, ktsum_ok_delete, ktsum_ok_delete. exact (s_ktsum_ok _ _ _ _ _ _ _ _ _ _ _ Hs).
   Qed.
@@ -340,7 +340,7 @@ Section sync.
           simplify_eq. by destruct b.
         * rewrite edual_edual, lookup_insert_eq in H6. rewrite lookup_insert_ne, lookup_insert_eq in H5 by done.
           simplify_eq. apply pdual_sym. by destruct b.
-    - apply kfin_ksync; [exact (sp_fin _ _ _ _ _ _ _ _ _ Hs)|exact (s_kcfin _ _ _ _ _ _ _ _ Hs)].
+    - apply kfin_ksync; [exact (sp_fin _ _ _ _ _ _ _ _ _ _ Hs)|exact (s_kcfin _ _ _ _ _ _ _ _ Hs)].
     - apply kcap_ok_ksync; [exact (s_kcap_ok _ _ _ _ _ _ _ _ _ _ _ Hs)|by apply elem_of_dom_2 in Khi|by apply elem_of_dom_2 in Khj].
     - apply ktsum_ok_ksync; [exact (s_ktsum_ok _ _ _ _ _ _ _ _ _ _ _ Hs)|by apply elem_of_dom_2 in Khi|by apply elem_of_dom_2 in Khj].
   Qed.

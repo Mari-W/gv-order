@@ -14,8 +14,9 @@
     one ranked world. Both sides share the bound N. No clause compares
     the points of two threads. The ownership and the
     result types are the unions of the two sides, split by the thread
-    ids of the first. A channel of the cut joins two interface ends of
-    at most N/2 tickets each, so its tickets meet the bound.
+    ids of the first. A channel of the cut joins two interface ends whose
+    tickets are at most their interface annotations η, which P-Connect
+    asks to sum to at most N, so its tickets meet the bound.
 
     The cut is exact: Σ̄_C holds the partners at the dual session type,
     as P-Connect types them. The soup pairs the two ends of a restricted
@@ -93,19 +94,19 @@ Qed.
 (** ** The facts of one soup *)
 
 Section facts.
-  Context (N : nat) (n : Ix) (W : world) (Σ : senv) (T : ty) (a : lfstate) (A : senv) (Π : penv) (U : nat → ty).
-  Context (Hs : soup_inv N n W Σ T a A Π U).
+  Context (N : nat) (η : iann) (n : Ix) (W : world) (Σ : senv) (T : ty) (a : lfstate) (A : senv) (Π : penv) (U : nat → ty).
+  Context (Hs : soup_invk N η n W Σ T a A Π U).
 
   Lemma soup_dom_A : dom A = dom (s_K a).
   Proof.
-    pose proof (f_equal dom (sp_pts _ _ _ _ _ _ _ _ _ Hs)) as H. by rewrite !dom_fmap_L in H.
+    pose proof (f_equal dom (sp_pts _ _ _ _ _ _ _ _ _ _ Hs)) as H. by rewrite !dom_fmap_L in H.
   Qed.
 
   Lemma soup_dom_P : dom Π = dom (s_K a).
-  Proof. exact (sp_dom _ _ _ _ _ _ _ _ _ Hs). Qed.
+  Proof. exact (sp_dom _ _ _ _ _ _ _ _ _ _ Hs). Qed.
 
   Lemma soup_owner o h : s_K a !! o = Some h → h.(h_th) ∈ dom (s_q a).2.
-  Proof. intros Ho. apply elem_of_dom. exact (sp_owner _ _ _ _ _ _ _ _ _ Hs o h Ho). Qed.
+  Proof. intros Ho. apply elem_of_dom. exact (sp_owner _ _ _ _ _ _ _ _ _ _ Hs o h Ho). Qed.
 End facts.
 
 (** ** Unions of ownership *)
@@ -135,27 +136,27 @@ Definition tsel {Y : Type} (X : gset nat) (f g : nat → Y) : nat → Y :=
 (** ** Parallel composition *)
 
 Section par.
-  Context (N : nat) (n : Ix) (W : world) (Σa Σb : senv) (T : ty) (C1 C2 : gset chan)
+  Context (N : nat) (η : iann) (n : Ix) (W : world) (Σa Σb : senv) (T : ty) (C1 C2 : gset chan)
     (M1 M2 : gmap nat expr) (K1 K2 : own) (Ws1 Ws2 Ws : world)
     (A1 A2 : senv) (Π1 Π2 : penv) (U1 U2 : nat → ty).
-  Context (Hs1 : soup_inv N n W Σa T (LFState (C1, M1) K1 Ws1) A1 Π1 U1).
-  Context (Hs2 : soup_inv N n W Σb TUnit (LFState (C2, M2) K2 Ws2) A2 Π2 U2).
+  Context (Hs1 : soup_invk N η n W Σa T (LFState (C1, M1) K1 Ws1) A1 Π1 U1).
+  Context (Hs2 : soup_invk N η n W Σb TUnit (LFState (C2, M2) K2 Ws2) A2 Π2 U2).
   Context (HM : M1 ##ₘ M2) (HΣ : dom Σa ## dom Σb) (HC : C1 ## C2)
     (HC1 : C1 ## chans_of Σb) (HC2 : C2 ## chans_of Σa).
 
   Local Lemma cl1 o : o ∈ dom K1 → ech o ∈ C1 ∨ o ∈ dom Σa.
-  Proof. exact (sp_closed _ _ _ _ _ _ _ _ _ Hs1 o). Qed.
+  Proof. exact (sp_closed _ _ _ _ _ _ _ _ _ _ Hs1 o). Qed.
   Local Lemma cl2 o : o ∈ dom K2 → ech o ∈ C2 ∨ o ∈ dom Σb.
-  Proof. exact (sp_closed _ _ _ _ _ _ _ _ _ Hs2 o). Qed.
+  Proof. exact (sp_closed _ _ _ _ _ _ _ _ _ _ Hs2 o). Qed.
 
   Local Lemma dA1 : dom A1 = dom K1.
-  Proof. exact (soup_dom_A _ _ _ _ _ _ _ _ _ Hs1). Qed.
+  Proof. exact (soup_dom_A _ _ _ _ _ _ _ _ _ _ Hs1). Qed.
   Local Lemma dA2 : dom A2 = dom K2.
-  Proof. exact (soup_dom_A _ _ _ _ _ _ _ _ _ Hs2). Qed.
+  Proof. exact (soup_dom_A _ _ _ _ _ _ _ _ _ _ Hs2). Qed.
   Local Lemma dP1 : dom Π1 = dom K1.
-  Proof. exact (soup_dom_P _ _ _ _ _ _ _ _ _ Hs1). Qed.
+  Proof. exact (soup_dom_P _ _ _ _ _ _ _ _ _ _ Hs1). Qed.
   Local Lemma dP2 : dom Π2 = dom K2.
-  Proof. exact (soup_dom_P _ _ _ _ _ _ _ _ _ Hs2). Qed.
+  Proof. exact (soup_dom_P _ _ _ _ _ _ _ _ _ _ Hs2). Qed.
 
   Local Lemma Kdisj : K1 ##ₘ K2.
   Proof.
@@ -173,9 +174,9 @@ Section par.
   Proof. apply map_disjoint_dom. rewrite dP1, dP2. apply map_disjoint_dom, Kdisj. Qed.
 
   Local Lemma th1 o h : K1 !! o = Some h → h.(h_th) ∈ dom M1.
-  Proof. exact (soup_owner _ _ _ _ _ _ _ _ _ Hs1 o h). Qed.
+  Proof. exact (soup_owner _ _ _ _ _ _ _ _ _ _ Hs1 o h). Qed.
   Local Lemma th2 o h : K2 !! o = Some h → h.(h_th) ∈ dom M2.
-  Proof. exact (soup_owner _ _ _ _ _ _ _ _ _ Hs2 o h). Qed.
+  Proof. exact (soup_owner _ _ _ _ _ _ _ _ _ _ Hs2 o h). Qed.
 
   Local Lemma kres1 {Y : Type} (m1 m2 : gmap cend Y) t :
     dom m1 = dom K1 → t ∈ dom M1 → kres (K1 ∪ K2) t (m1 ∪ m2) = kres K1 t m1.
@@ -223,97 +224,97 @@ Section par.
   Proof. intros H1 H2 H. apply elem_of_dom_2 in H. by rewrite dom_union_L, <-H1, <-H2, <-dom_union_L. Qed.
 
   Theorem soup_par :
-    soup_inv N n W (Σa ∪ Σb) T
+    soup_invk N η n W (Σa ∪ Σb) T
       (LFState (C1 ∪ C2, M1 ∪ M2) (K1 ∪ K2) Ws)
       (A1 ∪ A2) (Π1 ∪ Π2) (tsel (dom M1) U1 U2).
   Proof.
-    unfold soup_inv. constructor; simpl.
-    - exact (sp_tfree _ _ _ _ _ _ _ _ _ Hs1).
+    unfold soup_invk. constructor; simpl.
+    - exact (sp_tfree _ _ _ _ _ _ _ _ _ _ Hs1).
     - intros t e He. unfold tsel. apply (lookup_union_Some _ _ _ _ HM) in He as [He|He].
       + assert (t ∈ dom M1) as Ht by (by eapply elem_of_dom_2). rewrite decide_True by done.
         rewrite kres1 by (done || exact dA1).
-        exact (sp_rel _ _ _ _ _ _ _ _ _ Hs1 t e He).
+        exact (sp_rel _ _ _ _ _ _ _ _ _ _ Hs1 t e He).
       + assert (t ∈ dom M2) as Ht by (by eapply elem_of_dom_2).
         assert (t ∉ dom M1) as Ht1 by (apply (map_disjoint_dom M1 M2) in HM; set_solver).
         rewrite decide_False by done. rewrite kres2 by (done || exact Adisj || exact dA2).
-        exact (sp_rel _ _ _ _ _ _ _ _ _ Hs2 t e He).
+        exact (sp_rel _ _ _ _ _ _ _ _ _ _ Hs2 t e He).
     - intros t e He. unfold tsel. apply (lookup_union_Some _ _ _ _ HM) in He as [He|He].
-      + rewrite decide_True by (by eapply elem_of_dom_2). exact (sp_ty _ _ _ _ _ _ _ _ _ Hs1 t e He).
+      + rewrite decide_True by (by eapply elem_of_dom_2). exact (sp_ty _ _ _ _ _ _ _ _ _ _ Hs1 t e He).
       + assert (t ∉ dom M1) as Ht1.
         { apply (map_disjoint_dom M1 M2) in HM. apply elem_of_dom_2 in He. set_solver. }
-        rewrite decide_False by done. right. by destruct (sp_ty _ _ _ _ _ _ _ _ _ Hs2 t e He).
+        rewrite decide_False by done. right. by destruct (sp_ty _ _ _ _ _ _ _ _ _ _ Hs2 t e He).
     - intros t e He. apply (lookup_union_Some _ _ _ _ HM) in He as [He|He].
       + assert (t ∈ dom M1) as Ht by (by eapply elem_of_dom_2).
         rewrite kres1, ctrs1 by (done || exact dP1).
-        exact (sp_fuel _ _ _ _ _ _ _ _ _ Hs1 t e He).
+        exact (sp_fuel _ _ _ _ _ _ _ _ _ _ Hs1 t e He).
       + assert (t ∈ dom M2) as Ht by (by eapply elem_of_dom_2).
         rewrite kres2, ctrs2 by (done || exact Pdisj || exact dP2).
-        exact (sp_fuel _ _ _ _ _ _ _ _ _ Hs2 t e He).
-    - rewrite !map_fmap_union. f_equal; [exact (sp_pts _ _ _ _ _ _ _ _ _ Hs1)|exact (sp_pts _ _ _ _ _ _ _ _ _ Hs2)].
+        exact (sp_fuel _ _ _ _ _ _ _ _ _ _ Hs2 t e He).
+    - rewrite !map_fmap_union. f_equal; [exact (sp_pts _ _ _ _ _ _ _ _ _ _ Hs1)|exact (sp_pts _ _ _ _ _ _ _ _ _ _ Hs2)].
     - rewrite !dom_union_L. f_equal; [exact dP1|exact dP2].
     - intros o h Ho. rewrite lookup_union_is_Some. apply lookup_union_Some_raw in Ho as [Ho|[_ Ho]].
-      + left. exact (sp_owner _ _ _ _ _ _ _ _ _ Hs1 o h Ho).
-      + right. exact (sp_owner _ _ _ _ _ _ _ _ _ Hs2 o h Ho).
+      + left. exact (sp_owner _ _ _ _ _ _ _ _ _ _ Hs1 o h Ho).
+      + right. exact (sp_owner _ _ _ _ _ _ _ _ _ _ Hs2 o h Ho).
     - intros o. rewrite dom_union_L, elem_of_union. intros [Ho|Ho].
       + destruct (cl1 o Ho); [left; set_solver|right; set_solver].
       + destruct (cl2 o Ho); [left; set_solver|right; set_solver].
     - intros o Ho Hc. apply elem_of_union in Hc as [Hc|Hc].
-      + pose proof (side1 o Ho Hc) as H1. pose proof (sp_pair _ _ _ _ _ _ _ _ _ Hs1 o H1 Hc) as H.
+      + pose proof (side1 o Ho Hc) as H1. pose proof (sp_pair _ _ _ _ _ _ _ _ _ _ Hs1 o H1 Hc) as H.
         rewrite dom_union_L. set_solver.
-      + destruct (side2 o Ho Hc) as [H2 _]. pose proof (sp_pair _ _ _ _ _ _ _ _ _ Hs2 o H2 Hc) as H.
+      + destruct (side2 o Ho Hc) as [H2 _]. pose proof (sp_pair _ _ _ _ _ _ _ _ _ _ Hs2 o H2 Hc) as H.
         rewrite dom_union_L. set_solver.
     - intros o S x S' x' H1 H2 Hc.
       pose proof (dom_K_of _ _ _ _ dA1 dA2 H1) as Ho. pose proof (dom_K_of _ _ _ _ dA1 dA2 H2) as Ho'.
       apply elem_of_union in Hc as [Hc|Hc].
       + assert (ech (edual o) ∈ C1) as Hc' by by rewrite ech_edual.
-        apply (sp_sdual _ _ _ _ _ _ _ _ _ Hs1 o S x S' x'); [| |done].
+        apply (sp_sdual _ _ _ _ _ _ _ _ _ _ Hs1 o S x S' x'); [| |done].
         * apply (union_lookup_in_l _ _ _ _ H1). rewrite dA1. by apply side1.
         * apply (union_lookup_in_l _ _ _ _ H2). rewrite dA1. by apply side1.
       + assert (ech (edual o) ∈ C2) as Hc' by by rewrite ech_edual.
-        apply (sp_sdual _ _ _ _ _ _ _ _ _ Hs2 o S x S' x'); [| |done].
+        apply (sp_sdual _ _ _ _ _ _ _ _ _ _ Hs2 o S x S' x'); [| |done].
         * apply (union_lookup_out_l _ _ _ _ H1). rewrite dA1. by apply side2.
         * apply (union_lookup_out_l _ _ _ _ H2). rewrite dA1. by apply side2.
     - intros o P P' H1 H2 Hc.
       pose proof (dom_K_of _ _ _ _ dP1 dP2 H1) as Ho. pose proof (dom_K_of _ _ _ _ dP1 dP2 H2) as Ho'.
       apply elem_of_union in Hc as [Hc|Hc].
       + assert (ech (edual o) ∈ C1) as Hc' by by rewrite ech_edual.
-        apply (sp_pdual _ _ _ _ _ _ _ _ _ Hs1 o P P'); [| |done].
+        apply (sp_pdual _ _ _ _ _ _ _ _ _ _ Hs1 o P P'); [| |done].
         * apply (union_lookup_in_l _ _ _ _ H1). rewrite dP1. by apply side1.
         * apply (union_lookup_in_l _ _ _ _ H2). rewrite dP1. by apply side1.
       + assert (ech (edual o) ∈ C2) as Hc' by by rewrite ech_edual.
-        apply (sp_pdual _ _ _ _ _ _ _ _ _ Hs2 o P P'); [| |done].
+        apply (sp_pdual _ _ _ _ _ _ _ _ _ _ Hs2 o P P'); [| |done].
         * apply (union_lookup_out_l _ _ _ _ H1). rewrite dP1. by apply side2.
         * apply (union_lookup_out_l _ _ _ _ H2). rewrite dP1. by apply side2.
     - intros o y Hy. apply lookup_union_Some_raw in Hy as [Hy|[_ Hy]].
-      + apply lookup_union_Some_l. exact (sp_sig _ _ _ _ _ _ _ _ _ Hs1 o y Hy).
-      + apply lookup_union_Some_r; [exact Adisj|]. exact (sp_sig _ _ _ _ _ _ _ _ _ Hs2 o y Hy).
+      + apply lookup_union_Some_l. exact (sp_sig _ _ _ _ _ _ _ _ _ _ Hs1 o y Hy).
+      + apply lookup_union_Some_r; [exact Adisj|]. exact (sp_sig _ _ _ _ _ _ _ _ _ _ Hs2 o y Hy).
     - intros o h Ho. apply lookup_union_Some_raw in Ho as [Ho|[_ Ho]].
-      + exact (sp_fin _ _ _ _ _ _ _ _ _ Hs1 o h Ho).
-      + exact (sp_fin _ _ _ _ _ _ _ _ _ Hs2 o h Ho).
+      + exact (sp_fin _ _ _ _ _ _ _ _ _ _ Hs1 o h Ho).
+      + exact (sp_fin _ _ _ _ _ _ _ _ _ _ Hs2 o h Ho).
     - intros o S x Hy. apply lookup_union_Some_raw in Hy as [Hy|[_ Hy]].
-      + apply lookup_union_Some_l. exact (sp_psig _ _ _ _ _ _ _ _ _ Hs1 o S x Hy).
-      + apply lookup_union_Some_r; [exact Pdisj|]. exact (sp_psig _ _ _ _ _ _ _ _ _ Hs2 o S x Hy).
+      + apply lookup_union_Some_l. exact (sp_psig _ _ _ _ _ _ _ _ _ _ Hs1 o S x Hy).
+      + apply lookup_union_Some_r; [exact Pdisj|]. exact (sp_psig _ _ _ _ _ _ _ _ _ _ Hs2 o S x Hy).
     - intros o h Ho. apply lookup_union_Some_raw in Ho as [Ho|[_ Ho]].
-      + exact (sp_cap _ _ _ _ _ _ _ _ _ Hs1 o h Ho).
-      + exact (sp_cap _ _ _ _ _ _ _ _ _ Hs2 o h Ho).
+      + exact (sp_cap _ _ _ _ _ _ _ _ _ _ Hs1 o h Ho).
+      + exact (sp_cap _ _ _ _ _ _ _ _ _ _ Hs2 o h Ho).
     - intros o h h' H1 H2 Hc.
       assert (o ∈ dom (K1 ∪ K2)) as Ho by (apply elem_of_dom_2 in H1; done).
       apply elem_of_union in Hc as [Hc|Hc].
       + assert (ech (edual o) ∈ C1) as Hc' by by rewrite ech_edual.
         assert (edual o ∈ dom (K1 ∪ K2)) as Ho' by (apply elem_of_dom_2 in H2; done).
-        apply (sp_tsum _ _ _ _ _ _ _ _ _ Hs1 o h h'); [| |done].
+        apply (sp_tsum _ _ _ _ _ _ _ _ _ _ Hs1 o h h'); [| |done].
         * apply (union_lookup_in_l _ _ _ _ H1). by apply side1.
         * apply (union_lookup_in_l _ _ _ _ H2). by apply side1.
       + assert (ech (edual o) ∈ C2) as Hc' by by rewrite ech_edual.
         assert (edual o ∈ dom (K1 ∪ K2)) as Ho' by (apply elem_of_dom_2 in H2; done).
-        apply (sp_tsum _ _ _ _ _ _ _ _ _ Hs2 o h h'); [| |done].
+        apply (sp_tsum _ _ _ _ _ _ _ _ _ _ Hs2 o h h'); [| |done].
         * apply (union_lookup_out_l _ _ _ _ H1). by apply side2.
         * apply (union_lookup_out_l _ _ _ _ H2). by apply side2.
     - intros o h HΣo Ho. rewrite dom_union_L in HΣo. apply lookup_union_Some_raw in Ho as [Ho|[Hn Ho]].
-      + apply elem_of_union in HΣo as [HΣo|HΣo]; [exact (sp_sigcap _ _ _ _ _ _ _ _ _ Hs1 o h HΣo Ho)|].
+      + apply elem_of_union in HΣo as [HΣo|HΣo]; [exact (sp_sigcap _ _ _ _ _ _ _ _ _ _ Hs1 o h HΣo Ho)|].
         exfalso. destruct (cl1 o (elem_of_dom_2 _ _ _ Ho)) as [Hc1|Hd1];
           [apply (HC1 (ech o)); [done|by apply chans_of_elem]|set_solver].
-      + apply elem_of_union in HΣo as [HΣo|HΣo]; [|exact (sp_sigcap _ _ _ _ _ _ _ _ _ Hs2 o h HΣo Ho)].
+      + apply elem_of_union in HΣo as [HΣo|HΣo]; [|exact (sp_sigcap _ _ _ _ _ _ _ _ _ _ Hs2 o h HΣo Ho)].
         exfalso. destruct (cl2 o (elem_of_dom_2 _ _ _ Ho)) as [Hc2|Hd2];
           [apply (HC2 (ech o)); [done|by apply chans_of_elem]|set_solver].
   Qed.
@@ -322,9 +323,10 @@ End par.
 (** ** Restriction *)
 
 Section nu.
-  Context (N : nat) (n : Ix) (W : world) (Σ ΣR : senv) (T : ty) (C : gset chan) (M : gmap nat expr)
+  Context (N : nat) (η : iann) (n : Ix) (W : world) (Σ ΣR : senv) (T : ty) (C : gset chan) (M : gmap nat expr)
     (K : own) (Ws : world) (A : senv) (Π : penv) (U : nat → ty).
-  Context (Hs : soup_inv N n W (Σ ∪ ΣR) T (LFState (C, M) K Ws) A Π U).
+  Context (Hs : soup_invk N η n W (Σ ∪ ΣR) T (LFState (C, M) K Ws) A Π U).
+  Context (HtsR : ∀ o, o ∈ dom ΣR → tsum_ok (Some N) (η o).2 (η (edual o)).2).
   Context (HCR : C ## chans_of ΣR) (HΣR : chans_of Σ ## chans_of ΣR)
     (Hpair : ∀ o S (x : point), ΣR !! o = Some (S, x) → ΣR !! edual o = Some (dual S, (pt_dual x))).
 
@@ -337,7 +339,7 @@ Section nu.
   (** A held end of a restricted channel of Σ_R is an end of Σ_R. *)
   Local Lemma side o : o ∈ dom K → ech o ∈ chans_of ΣR → o ∈ dom ΣR.
   Proof.
-    intros Ho Hc. destruct (sp_closed _ _ _ _ _ _ _ _ _ Hs o Ho) as [H|H]; simpl in H.
+    intros Ho Hc. destruct (sp_closed _ _ _ _ _ _ _ _ _ _ Hs o Ho) as [H|H]; simpl in H.
     - exfalso. by apply (HCR (ech o)).
     - rewrite dom_union_L, elem_of_union in H. destruct H as [H|H]; [|done].
       exfalso. apply (HΣR (ech o)); [by apply chans_of_elem|done].
@@ -349,50 +351,50 @@ Section nu.
   Proof.
     intros Ho Hc. apply side, elem_of_dom in Ho as [[S x] HR]; [|done].
     pose proof (Hpair o S x HR) as HR'. exists S, x. split_and!.
-    - exact (sp_sig _ _ _ _ _ _ _ _ _ Hs o _ (lookup_R o _ HR)).
-    - exact (sp_sig _ _ _ _ _ _ _ _ _ Hs _ _ (lookup_R _ _ HR')).
-    - exact (sp_psig _ _ _ _ _ _ _ _ _ Hs o S x (lookup_R o _ HR)).
-    - exact (sp_psig _ _ _ _ _ _ _ _ _ Hs _ _ _ (lookup_R _ _ HR')).
+    - exact (sp_sig _ _ _ _ _ _ _ _ _ _ Hs o _ (lookup_R o _ HR)).
+    - exact (sp_sig _ _ _ _ _ _ _ _ _ _ Hs _ _ (lookup_R _ _ HR')).
+    - exact (sp_psig _ _ _ _ _ _ _ _ _ _ Hs o S x (lookup_R o _ HR)).
+    - exact (sp_psig _ _ _ _ _ _ _ _ _ _ Hs _ _ _ (lookup_R _ _ HR')).
   Qed.
 
-  Theorem soup_nu : soup_inv N n W Σ T (LFState (C ∪ chans_of ΣR, M) K Ws) A Π U.
+  Theorem soup_nu : soup_invk N η n W Σ T (LFState (C ∪ chans_of ΣR, M) K Ws) A Π U.
   Proof.
-    pose proof (soup_dom_A _ _ _ _ _ _ _ _ _ Hs) as HdA. pose proof (soup_dom_P _ _ _ _ _ _ _ _ _ Hs) as HdP.
-    simpl in HdA, HdP. unfold soup_inv. constructor; simpl.
-    - exact (sp_tfree _ _ _ _ _ _ _ _ _ Hs).
-    - exact (sp_rel _ _ _ _ _ _ _ _ _ Hs).
-    - exact (sp_ty _ _ _ _ _ _ _ _ _ Hs).
-    - exact (sp_fuel _ _ _ _ _ _ _ _ _ Hs).
-    - exact (sp_pts _ _ _ _ _ _ _ _ _ Hs).
-    - exact (sp_dom _ _ _ _ _ _ _ _ _ Hs).
-    - exact (sp_owner _ _ _ _ _ _ _ _ _ Hs).
-    - intros o Ho. destruct (sp_closed _ _ _ _ _ _ _ _ _ Hs o Ho) as [H|H]; simpl in H; [left; set_solver|].
+    pose proof (soup_dom_A _ _ _ _ _ _ _ _ _ _ Hs) as HdA. pose proof (soup_dom_P _ _ _ _ _ _ _ _ _ _ Hs) as HdP.
+    simpl in HdA, HdP. unfold soup_invk. constructor; simpl.
+    - exact (sp_tfree _ _ _ _ _ _ _ _ _ _ Hs).
+    - exact (sp_rel _ _ _ _ _ _ _ _ _ _ Hs).
+    - exact (sp_ty _ _ _ _ _ _ _ _ _ _ Hs).
+    - exact (sp_fuel _ _ _ _ _ _ _ _ _ _ Hs).
+    - exact (sp_pts _ _ _ _ _ _ _ _ _ _ Hs).
+    - exact (sp_dom _ _ _ _ _ _ _ _ _ _ Hs).
+    - exact (sp_owner _ _ _ _ _ _ _ _ _ _ Hs).
+    - intros o Ho. destruct (sp_closed _ _ _ _ _ _ _ _ _ _ Hs o Ho) as [H|H]; simpl in H; [left; set_solver|].
       rewrite dom_union_L, elem_of_union in H. destruct H as [H|H]; [by right|].
       left. apply elem_of_union_r. by apply chans_of_elem.
-    - intros o Ho Hc. apply elem_of_union in Hc as [Hc|Hc]; [exact (sp_pair _ _ _ _ _ _ _ _ _ Hs o Ho Hc)|].
+    - intros o Ho Hc. apply elem_of_union in Hc as [Hc|Hc]; [exact (sp_pair _ _ _ _ _ _ _ _ _ _ Hs o Ho Hc)|].
       destruct (entries o Ho Hc) as (S & x & _ & H & _). rewrite <-HdA. by eapply elem_of_dom_2.
     - intros o S x S' x' H1 H2 Hc. apply elem_of_union in Hc as [Hc|Hc].
-      + exact (sp_sdual _ _ _ _ _ _ _ _ _ Hs o S x S' x' H1 H2 Hc).
+      + exact (sp_sdual _ _ _ _ _ _ _ _ _ _ Hs o S x S' x' H1 H2 Hc).
       + assert (o ∈ dom K) as Ho by (rewrite <-HdA; by eapply elem_of_dom_2).
         destruct (entries o Ho Hc) as (S0 & x0 & E1 & E2 & _). rewrite E1 in H1. rewrite E2 in H2.
         injection H1 as <- <-. injection H2 as <- <-. split; [done|]. apply sequiv_refl.
     - intros o P P' H1 H2 Hc. apply elem_of_union in Hc as [Hc|Hc].
-      + exact (sp_pdual _ _ _ _ _ _ _ _ _ Hs o P P' H1 H2 Hc).
+      + exact (sp_pdual _ _ _ _ _ _ _ _ _ _ Hs o P P' H1 H2 Hc).
       + assert (o ∈ dom K) as Ho by (rewrite <-HdP; by eapply elem_of_dom_2).
         destruct (entries o Ho Hc) as (S0 & x0 & _ & _ & E1 & E2). rewrite E1 in H1. rewrite E2 in H2.
         injection H1 as <-. injection H2 as <-. apply ssub_refl.
-    - intros o y Hy. apply (sp_sig _ _ _ _ _ _ _ _ _ Hs). by apply lookup_union_Some_l.
-    - exact (sp_fin _ _ _ _ _ _ _ _ _ Hs).
-    - intros o S x Hy. apply (sp_psig _ _ _ _ _ _ _ _ _ Hs o S x). by apply lookup_union_Some_l.
-    - exact (sp_cap _ _ _ _ _ _ _ _ _ Hs).
-    - intros o h h' H1 H2 Hc. apply elem_of_union in Hc as [Hc|Hc]; [exact (sp_tsum _ _ _ _ _ _ _ _ _ Hs o h h' H1 H2 Hc)|].
+    - intros o y Hy. apply (sp_sig _ _ _ _ _ _ _ _ _ _ Hs). by apply lookup_union_Some_l.
+    - exact (sp_fin _ _ _ _ _ _ _ _ _ _ Hs).
+    - intros o S x Hy. apply (sp_psig _ _ _ _ _ _ _ _ _ _ Hs o S x). by apply lookup_union_Some_l.
+    - exact (sp_cap _ _ _ _ _ _ _ _ _ _ Hs).
+    - intros o h h' H1 H2 Hc. apply elem_of_union in Hc as [Hc|Hc]; [exact (sp_tsum _ _ _ _ _ _ _ _ _ _ Hs o h h' H1 H2 Hc)|].
       assert (o ∈ dom K) as Ho by (by eapply elem_of_dom_2).
       assert (edual o ∈ dom K) as Ho' by (by eapply elem_of_dom_2).
-      apply tsum_halves.
-      + apply (sp_sigcap _ _ _ _ _ _ _ _ _ Hs o h); [|done]. rewrite dom_union_L. apply elem_of_union_r. by apply side.
-      + apply (sp_sigcap _ _ _ _ _ _ _ _ _ Hs (edual o) h'); [|done]. rewrite dom_union_L. apply elem_of_union_r.
+      eapply tsum_ok_mono; [| |apply (HtsR o), side; done].
+      + apply (sp_sigcap _ _ _ _ _ _ _ _ _ _ Hs o h); [|done]. rewrite dom_union_L. apply elem_of_union_r. by apply side.
+      + apply (sp_sigcap _ _ _ _ _ _ _ _ _ _ Hs (edual o) h'); [|done]. rewrite dom_union_L. apply elem_of_union_r.
         apply side; [done|by rewrite ech_edual].
-    - intros o h HΣo Ho. apply (sp_sigcap _ _ _ _ _ _ _ _ _ Hs o h); [|done]. rewrite dom_union_L. set_solver.
+    - intros o h HΣo Ho. apply (sp_sigcap _ _ _ _ _ _ _ _ _ _ Hs o h); [|done]. rewrite dom_union_L. set_solver.
   Qed.
 End nu.
 
@@ -400,18 +402,19 @@ End nu.
 
 (** The two components of P-Connect over the cut Σ_C, with the side
     conditions of [p_connect] (static/Typing.v), both at one ranked world. *)
-Theorem soup_connect N n W Σ1 Σ2 ΣC T C1 C2 M1 M2 K1 K2 Ws1 Ws2 Ws A1 A2 Π1 Π2 U1 U2 :
-  soup_inv N n W (Σ1 ∪ ΣC) T (LFState (C1, M1) K1 Ws1) A1 Π1 U1 →
-  soup_inv N n W (Σ2 ∪ senv_dual ΣC) TUnit (LFState (C2, M2) K2 Ws2) A2 Π2 U2 →
+Theorem soup_connect N η n W Σ1 Σ2 ΣC T C1 C2 M1 M2 K1 K2 Ws1 Ws2 Ws A1 A2 Π1 Π2 U1 U2 :
+  soup_invk N η n W (Σ1 ∪ ΣC) T (LFState (C1, M1) K1 Ws1) A1 Π1 U1 →
+  soup_invk N η n W (Σ2 ∪ senv_dual ΣC) TUnit (LFState (C2, M2) K2 Ws2) A2 Π2 U2 →
+  (∀ o, o ∈ dom ΣC → tsum_ok (Some N) (η o).2 (η (edual o)).2) →
   M1 ##ₘ M2 →
   (∀ o, o ∈ dom ΣC → edual o ∉ dom ΣC) →
   chans_of Σ1 ## chans_of Σ2 → chans_of Σ1 ## chans_of ΣC → chans_of Σ2 ## chans_of ΣC →
   C1 ## C2 → C1 ## chans_of Σ2 ∪ chans_of ΣC → C2 ## chans_of Σ1 ∪ chans_of ΣC →
-  soup_inv N n W (Σ1 ∪ Σ2) T
+  soup_invk N η n W (Σ1 ∪ Σ2) T
     (LFState (C1 ∪ C2 ∪ chans_of ΣC, M1 ∪ M2) (K1 ∪ K2) Ws)
     (A1 ∪ A2) (Π1 ∪ Π2) (tsel (dom M1) U1 U2).
 Proof.
-  intros Hs1 Hs2 HM Hf H12 H1C H2C HC HC1 HC2.
+  intros Hs1 Hs2 Hts HM Hf H12 H1C H2C HC HC1 HC2.
   set (ΣD := senv_dual ΣC).
   assert (chans_of ΣD = chans_of ΣC) as HD by apply chans_of_senv_dual.
   assert (dom ΣC ## dom ΣD) as HCD.
@@ -419,12 +422,14 @@ Proof.
   assert (ΣC ##ₘ Σ2) as HC2m by (apply map_disjoint_dom, chans_dom_disj; set_solver).
   assert ((Σ1 ∪ ΣC) ∪ (Σ2 ∪ ΣD) = (Σ1 ∪ Σ2) ∪ (ΣC ∪ ΣD)) as Heq.
   { rewrite <-!(assoc_L (∪)). f_equal. rewrite !(assoc_L (∪)). f_equal. by apply map_union_comm. }
-  pose proof (soup_par N n W (Σ1 ∪ ΣC) (Σ2 ∪ ΣD) T C1 C2 M1 M2 K1 K2 Ws1 Ws2 Ws A1 A2 Π1 Π2 U1 U2
+  pose proof (soup_par N η n W (Σ1 ∪ ΣC) (Σ2 ∪ ΣD) T C1 C2 M1 M2 K1 K2 Ws1 Ws2 Ws A1 A2 Π1 Π2 U1 U2
     Hs1 Hs2 HM) as Hp.
   rewrite Heq in Hp.
   assert (chans_of (ΣC ∪ ΣD) = chans_of ΣC) as Hcu.
   { rewrite chans_of_union, HD. set_solver. }
-  rewrite <-Hcu. apply (soup_nu _ _ _ _ (ΣC ∪ ΣD)).
+  rewrite <-Hcu. apply (soup_nu _ η _ _ _ (ΣC ∪ ΣD)).
+  2: { intros o Ho. rewrite dom_union_L in Ho. apply elem_of_union in Ho as [Ho|Ho]; [by apply Hts|].
+       subst ΣD. apply dom_senv_dual in Ho. apply tsum_ok_comm. rewrite <-(edual_edual o) at 2. by apply Hts. }
   - apply Hp; [|done| |].
     + rewrite !dom_union_L. pose proof (chans_dom_disj Σ1 Σ2 H12). pose proof (chans_dom_disj Σ1 ΣC H1C).
       pose proof (chans_dom_disj Σ1 ΣD ltac:(by rewrite HD)). pose proof (chans_dom_disj Σ2 ΣC H2C).
@@ -443,8 +448,9 @@ Qed.
 Definition kterm (Θ : tenv) : own := (λ te, Hold 0 (te_pt te) (te_tk te) (te_tk te)) <$> Θ.
 
 Section term.
-  Context (N : nat) (n : Ix) (W : world) (Σ : senv) (ΘB : tenv) (C0 : gset chan) (t : expr) (T : ty).
-  Local Abbreviation Θ := (tenv_of (fhalf (Some N)) Σ ∪ ΘB).
+  Context (N : nat) (η : iann) (n : Ix) (W : world) (Σ : senv) (ΘB : tenv) (C0 : gset chan) (t : expr) (T : ty).
+  Local Abbreviation Θ := (tenv_ofk η Σ ∪ ΘB).
+  Context (Htk : ∀ o, o ∈ dom Σ → fle (η o).2 (Some N)).
   Context (Hp : tfree T) (HB : ∀ o, o ∈ dom ΘB ↔ ech o ∈ C0) (HΣ : chans_of Σ ## C0)
     (Hd : ∀ c, c ∈ C0 → ∃ S (x : point) m m', tsum_ok (Some N) m m' ∧
        ΘB !! (c⁺)%cend = Some (TE S x m m) ∧ ΘB !! (c⁻)%cend = Some (TE (dual S) (pt_dual x) m' m'))
@@ -471,7 +477,7 @@ Section term.
   (** An end of a restricted channel is an end of Θ_B, at its entry. *)
   Local Lemma lookup_B o : ech o ∈ C0 → Θ !! o = ΘB !! o.
   Proof.
-    intros Hc. apply lookup_union_r. unfold tenv_of. rewrite lookup_fmap.
+    intros Hc. apply lookup_union_r. rewrite lookup_tenv_ofk.
     destruct (Σ !! o) eqn:E; [|done]. exfalso. apply (HΣ (ech o)); [|done].
     apply chans_of_elem. by eapply elem_of_dom_2.
   Qed.
@@ -487,15 +493,16 @@ Section term.
       split_and!; [by apply tsum_ok_comm|done|done].
   Qed.
 
-  (** Every end of Θ has tickets at most N, finite, and an end of Σ has
-      N/2. *)
+  (** Every end of Θ has tickets at most N, finite, and an end o of Σ
+      has the tickets of η o. *)
   Local Lemma tk_bound o te : Θ !! o = Some te → fle (te_tk te) (Some N) ∧ is_Some (te_tk te).
   Proof.
     intros Ho. destruct (Σ !! o) as [[S x]|] eqn:E.
-    - rewrite (lookup_union_Some_l _ _ o (TE S x (fhalf (Some N)) (fhalf (Some N)))) in Ho;
-        [|unfold tenv_of; by rewrite lookup_fmap, E].
-      injection Ho as <-. cbn [te_tk]. split; [exact (fhalf_le (Some N))|by eexists].
-    - apply lookup_union_Some_raw in Ho as [Ho|[_ Ho]]; [unfold tenv_of in Ho; by rewrite lookup_fmap, E in Ho|].
+    - rewrite (lookup_union_Some_l _ _ o (TE S x (η o).1 (η o).2)) in Ho;
+        [|by rewrite lookup_tenv_ofk, E].
+      injection Ho as <-. cbn [te_tk]. pose proof (Htk o ltac:(by eapply elem_of_dom_2)) as Hk.
+      split; [done|]. destruct (η o).2; [by eexists|done].
+    - apply lookup_union_Some_raw in Ho as [Ho|[_ Ho]]; [by rewrite lookup_tenv_ofk, E in Ho|].
       assert (ech o ∈ C0) as Hc by (apply HB; by eapply elem_of_dom_2).
       rewrite <-(lookup_B o Hc) in Ho.
       destruct (restricted o Hc) as (S & x & m & m' & Hm & H1 & _). rewrite H1 in Ho. injection Ho as <-.
@@ -503,13 +510,13 @@ Section term.
   Qed.
 
   Theorem soup_term :
-    soup_inv N n W Σ T (LFState (C0, {[0 := t]}) (kterm Θ) W)
+    soup_invk N η n W Σ T (LFState (C0, {[0 := t]}) (kterm Θ) W)
       (tenv_erase Θ) (te_sty <$> Θ) (λ _, T).
   Proof.
     assert (dom (tenv_erase Θ) = dom Θ) as HdA by (unfold tenv_erase; apply dom_fmap_L).
     assert (dom (te_sty <$> Θ) = dom Θ) as HdP by apply dom_fmap_L.
     assert (dom (kterm Θ) = dom Θ) as HdK by (unfold kterm; apply dom_fmap_L).
-    unfold soup_inv. constructor; cbn [s_q s_K fst snd].
+    unfold soup_invk. constructor; cbn [s_q s_K fst snd].
     - done.
     - intros t' e Ht'. apply lookup_singleton_Some in Ht' as [<- <-]. by rewrite kres_term.
     - by left.
@@ -519,7 +526,7 @@ Section term.
     - intros o h Ho. unfold kterm in Ho. apply lookup_fmap_Some in Ho as (te & <- & _). simpl.
       rewrite lookup_singleton_eq. by eexists.
     - intros o Ho. rewrite HdK, dom_union_L, elem_of_union in Ho. destruct Ho as [Ho|Ho].
-      + right. unfold tenv_of in Ho. by rewrite dom_fmap_L in Ho.
+      + right. by rewrite dom_tenv_ofk in Ho.
       + left. by apply HB.
     - intros o Ho Hc. rewrite HdK, dom_union_L. apply elem_of_union_r, HB. by rewrite ech_edual.
     - intros o S x S' x' H1 H2 Hc. destruct (restricted o Hc) as (S0 & x0 & m & m' & _ & E1 & E2).
@@ -529,11 +536,11 @@ Section term.
       rewrite lookup_fmap, E1 in H1. rewrite lookup_fmap, E2 in H2. simpl in H1, H2.
       injection H1 as <-. injection H2 as <-. apply ssub_refl.
     - intros o [S x] Hy. unfold tenv_erase. rewrite lookup_fmap.
-      rewrite (lookup_union_Some_l _ _ o (TE S x (fhalf (Some N)) (fhalf (Some N)))); [done|]. unfold tenv_of. by rewrite lookup_fmap, Hy.
+      rewrite (lookup_union_Some_l _ _ o (TE S x (η o).1 (η o).2)); [done|]. by rewrite lookup_tenv_ofk, Hy.
     - intros o h Ho. unfold kterm in Ho. apply lookup_fmap_Some in Ho as (te & <- & Hte). simpl.
       exact (proj2 (tk_bound o te Hte)).
     - intros o S x Hy. rewrite lookup_fmap.
-      rewrite (lookup_union_Some_l _ _ o (TE S x (fhalf (Some N)) (fhalf (Some N)))); [done|]. unfold tenv_of. by rewrite lookup_fmap, Hy.
+      rewrite (lookup_union_Some_l _ _ o (TE S x (η o).1 (η o).2)); [done|]. by rewrite lookup_tenv_ofk, Hy.
     - intros o h Ho. unfold kterm in Ho. apply lookup_fmap_Some in Ho as (te & <- & Hte). simpl.
       split; [apply fle_refl|exact (proj1 (tk_bound o te Hte))].
     - intros o h h' H1 H2 Hc. destruct (restricted o Hc) as (S0 & x0 & m & m' & Hm & E1 & E2).
@@ -541,8 +548,8 @@ Section term.
       simpl in H1, H2. injection H1 as <-. injection H2 as <-. done.
     - intros o h HΣo Ho. apply elem_of_dom in HΣo as [[S x] Hy].
       unfold kterm in Ho. rewrite lookup_fmap in Ho.
-      rewrite (lookup_union_Some_l _ _ o (TE S x (fhalf (Some N)) (fhalf (Some N)))) in Ho;
-        [|unfold tenv_of; by rewrite lookup_fmap, Hy].
+      rewrite (lookup_union_Some_l _ _ o (TE S x (η o).1 (η o).2)) in Ho;
+        [|by rewrite lookup_tenv_ofk, Hy].
       simpl in Ho. injection Ho as <-. apply fle_refl.
   Qed.
 End term.

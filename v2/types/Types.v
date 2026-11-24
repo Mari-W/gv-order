@@ -531,6 +531,14 @@ Proof. apply eqT_sym, sequiv_sym. Qed.
 Lemma teq_trans' T U V : teq T U → teq U V → teq T V.
 Proof. apply eqT_trans, sequiv_trans. Qed.
 
+(** ** Interface annotations
+
+    A credit and tickets for each end of an interface, and the
+    annotations that give every end N/2. *)
+Definition iann : Type := cend → fuel * fuel.
+
+Definition khalf (N : fuel) : iann := λ _, (fhalf N, fhalf N).
+
 (** ** Session subtyping, coinductive through heads
 
     S ⊑ S′ is ≈ except at the payloads. A received payload may fall in

@@ -609,6 +609,15 @@ Proof. apply map_fmap_union. Qed.
 Lemma tenv_of_ren f a Σ : tenv_ren f (tenv_of a Σ) = tenv_of a (senv_ren f Σ).
 Proof. unfold tenv_ren, tenv_of, senv_ren. rewrite <-!map_fmap_compose. by apply map_fmap_ext. Qed.
 
+Lemma tenv_ofk_ren f η Σ : tenv_ren f (tenv_ofk η Σ) = tenv_ofk η (senv_ren f Σ).
+Proof.
+  apply map_eq. intros o. unfold tenv_ren, senv_ren. rewrite lookup_fmap, !lookup_tenv_ofk, lookup_fmap.
+  by destruct (Σ !! o).
+Qed.
+
+Lemma dom_senv_ren f Σ : dom (senv_ren f Σ) = dom Σ.
+Proof. apply dom_fmap_L. Qed.
+
 Lemma tsplit_ren f Θ Θ1 Θ2 : tsplit Θ Θ1 Θ2 → tsplit (tenv_ren f Θ) (tenv_ren f Θ1) (tenv_ren f Θ2).
 Proof. intros [Hd ->]. split; [by apply map_disjoint_fmap|apply tenv_ren_union]. Qed.
 

@@ -26,9 +26,9 @@ Proof.
 Qed.
 
 Lemma cl_term N o x :
-  ptyped (Some N) (swrestrict W_cl (iface {[o := (SEnd, x)]} TUnit)) {[o := (SEnd, x)]} (∅, {[+ cl o +]}) TUnit.
+  ptyped (Some N) (khalf (Some N)) (swrestrict W_cl (iface {[o := (SEnd, x)]} TUnit)) {[o := (SEnd, x)]} (∅, {[+ cl o +]}) TUnit.
 Proof.
-  apply (p_term (Some N) W_cl _ ∅ ∅ _ TUnit (fadd (Some 0) (Some 1))).
+  apply (p_term_half (Some N) W_cl _ ∅ ∅ _ TUnit (fadd (Some 0) (Some 1))).
   - constructor.
   - intros o'. rewrite dom_empty_L. set_solver.
   - set_solver.
@@ -40,7 +40,7 @@ Proof.
 Qed.
 
 Theorem cl_lftyped N c (x : point) :
-  ∃ W, ∅ ⊩^N _ W ({[c]}, {[+ cl (c⁺)%cend +]} ⊎ {[+ cl (c⁻)%cend +]}) : TUnit.
+  ∃ W, ∅ ⊩^N,(khalf (Some N)) _ W ({[c]}, {[+ cl (c⁺)%cend +]} ⊎ {[+ cl (c⁻)%cend +]}) : TUnit.
 Proof.
   set (ΣC := {[(c⁺)%cend := (SEnd, x)]} : senv).
   assert (senv_dual ΣC = {[(c⁻)%cend := (SEnd, x‾)]}) as Ed.
@@ -48,7 +48,7 @@ Proof.
   assert (chans_of ΣC = {[c]}) as Ec.
   { unfold chans_of, ΣC. by rewrite dom_singleton_L, set_map_singleton_L. }
   assert (chans_of ∅ = ∅) as E0 by (unfold chans_of; by rewrite dom_empty_L, set_map_empty).
-  pose proof (p_connect (Some N) (swrestrict W_cl (iface ΣC TUnit)) (swrestrict W_cl (iface (senv_dual ΣC) TUnit))
+  pose proof (p_connect_half (Some N) (swrestrict W_cl (iface ΣC TUnit)) (swrestrict W_cl (iface (senv_dual ΣC) TUnit))
     ∅ ∅ ΣC ∅ ∅ {[+ cl (c⁺)%cend +]} {[+ cl (c⁻)%cend +]} TUnit) as H.
   rewrite Ec, E0, !(left_id_L ∅ (∪)) in H. rewrite Ed in H.
   eexists. apply H; clear H.
@@ -67,5 +67,5 @@ Theorem cl_lock_free c : excluded_middle → functional_choice →
   lock_free ({[c]}, {[+ cl (c⁺)%cend +]} ⊎ {[+ cl (c⁻)%cend +]}).
 Proof.
   intros EM FC. destruct (cl_lftyped 0 c (MkPt (NConst 0) true 0)) as [W H].
-  exact (lf_soundness_h 0 _ _ TUnit EM FC H).
+  exact (lf_soundness_h 0 _ _ _ TUnit EM FC H).
 Qed.
