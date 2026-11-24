@@ -120,6 +120,8 @@ Print Assumptions cx_box_typed.
 Print Assumptions spawn_loop_rejected.
 (** examples/LFClose.v *)
 Print Assumptions cl_lftyped.
+Print Assumptions cl_dftyped.
+Print Assumptions cl_deadlock_free.
 Print Assumptions cl_lock_free.
 (** examples/LFCycle.v *)
 Print Assumptions cy_lftyped.
