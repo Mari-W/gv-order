@@ -12,10 +12,12 @@ $\fLt{\pntA}{\poff{\pdual{\pntA}}{1}}$ to program order. A set of
 hatted facts is therefore acyclic exactly when its priorities are, and
 every fact a gate asks is among the expanded ones. The world
 $\wrld_{\mathrm{PGV}}$ and the top-level constraint of the second
-translation identify every point of the image with its partner point,
-$\fEq{\pntA}{\pdual{\pntA}}$. The gate then compares a blocking point
-with the points of the held ends, as a priority check does.
+translation rank every point of the image and its partner point alike.
+% NO-EQ: translation proof pending port
+The gate then compares a blocking point with the points of the held
+ends, as a priority check does.
 
+% NO-EQ: translation proof pending port
 \begin{theorem}[A fragment of PGV \rocq{pgv_deadlock_free_source}]
 \label{thm:pgv}
   Every closed program of type $\tyUnit$ of the fragment of
@@ -67,7 +69,9 @@ adds $q < \mathit{pr}(\ty)$ there. \ref{rule:E-Pair} types the right
 component under $\frm$ grown by $\heads(\ty)$, which is that premise.
 PGV with both premises rejects both programs for every choice of the
 fragment's predicate (\rocq{cx1_rejected}, \rocq{cx2_rejected}).
+% NO-EQ: translation proof pending port
 
+% NO-EQ: translation proof pending port
 The theorem covers monotone sessions. A falling session, whose
 priorities decrease along a channel, types in repaired PGV
 (\rocq{fall2_typed}, \rocq{fallxy_typed}). The program of
@@ -75,11 +79,13 @@ priorities decrease along a channel, types in repaired PGV
 session types alone, and its typing in \OurLang\ is not mechanized.
 % TODO(author): falling sessions open
 
+% NO-EQ: translation proof pending port
 Example~2.1 of \citet{KokkeD23} is among the mechanized programs
 (\rocq{pgv_ex21_deadlock_free}), and so are a delegation program
 (\rocq{pgv_deleg_deadlock_free}) and a forwarding program
 (\rocq{pgv_link_deadlock_free}) of our own.
 
+% NO-EQ: translation proof pending port
 \begin{theorem}[Padovani and Novara \rocq{pn_deadlock_free_source}]
 \label{thm:pn}
   Every closed program of type unit of \citet{PadovaniN15}, typed in
@@ -112,6 +118,7 @@ Example~2.1 of \citet{KokkeD23} is among the mechanized programs
   body.
 \end{proof}
 
+% NO-EQ: translation proof pending port
 Their $\asTmId{fibo}$ and their signal pipe are mechanized
 (\rocq{fibo_deadlock_free_src}, \rocq{pipe_deadlock_free_src}), and so
 are three fixes whose body is no $\lambda$
@@ -134,7 +141,9 @@ constraint $\cstr$ over the point variables of a $\Box$ states the facts
 its instances owe, and a $\tForce$ at any instance that satisfies
 $\cstr$ is legal, so the one constraint the translation writes covers
 every shift the source takes, the unboundedly many of a recursive
-definition included (\rocq{PNWorld.Crel}, \rocq{PNWorld.crel_hold}). A $\Box$ binds the
+definition included (\rocq{PNWorld.Crel}, \rocq{PNWorld.crel_hold}).
+% NO-EQ: translation proof pending port
+A $\Box$ binds the
 $\forall$ and holds no channel, which is the part their level $\top$
 plays.
 
@@ -142,7 +151,9 @@ The context-free system of \citet{MordidoP} assigns priorities to the
 actions of a context-free session type. We relate it to \OurLang\
 informally. A priority becomes a point, the sequence of priorities their
 $\asTmId{new}$ assigns to a channel becomes the offsets of its two end
-points, which the translation identifies, and
+points, which the translation identifies,
+% NO-EQ: translation proof pending port
+and
 their top effect becomes a ceiling (\cref{sec:ext-cfst}). Their examples
 type here, the tree channel (\rocq{tree_deadlock_free}), the two streams
 (\rocq{client_typed}, \rocq{newclient_typed}) and the repaired classic

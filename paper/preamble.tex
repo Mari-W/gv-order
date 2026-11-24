@@ -230,6 +230,11 @@
 \NewDocumentCommand\sSeq{mm}{{#1}\mathbin{\color{cTy};}{#2}}
 \NewDocumentCommand\sOut{m}{{\color{cTy}!}{#1}}
 \NewDocumentCommand\sIn{m}{{\color{cTy}?}{#1}}
+% actions that bind their point: !^{ƛξ}(A).S and ?^{ƛξ}(A).S, ξ scoped over A
+\NewDocumentCommand\outp{mm}{{{\color{cTy}!}^{{\color{cTy}\lambdabar}#1}(#2)}}
+\NewDocumentCommand\inp{mm}{{{\color{cTy}?}^{{\color{cTy}\lambdabar}#1}(#2)}}
+\NewDocumentCommand\sendp{mmm}{{\outp{#1}{#2}{\color{cTy}.}{#3}}}
+\NewDocumentCommand\recvp{mmm}{{\inp{#1}{#2}{\color{cTy}.}{#3}}}
 \NewDocumentCommand\tyBoxS{mmmm}{\tyBox{#1\,#2}{#3}{#4}}
 \DeclareMathOperator{\nf}{nf}
 \DeclareMathOperator{\hc}{hc}
@@ -295,7 +300,12 @@
 \DeclareMetaVar\fctx{Ty}{\Gamma}
 \DeclareMetaVar\ubd{Ty}{u}
 \DeclareSortSymbol\pviA{Ty}{\mathord}{\iota}
-\DeclareSortSymbol\pviB{Ty}{\mathord}{\kappa}
+\DeclareSortSymbol\pviB{Ty}{\mathord}{\rho}
+% the point an action binds, and field labels
+\DeclareSortSymbol\pbv{Ty}{\mathord}{\xi}
+\def\flK{{\color{cTy}\kappa}}
+\def\flM{{\color{cTy}\delta}}
+\def\flL{{\color{cTy}\ell}}
 \DeclareSortSymbol\pfv{Ty}{\mathord}{\varphi}
 \DeclareSortSymbol\pnode{Ty}{\mathord}{\nu}
 \DeclareMetaVar\lbd{Ty}{l}
@@ -306,18 +316,17 @@
 \def\pAbs{{\color{cTy}\cdot}}
 \def\pvivec{{\color{cTy}\bar{\iota}}}
 \def\pntvec{{\color{cTy}\bar{x}}}
-\colorlet{cSelf}{ForestGreen}
-\def\pself{{\color{cSelf}\mathsf{self}}}
 % the partner point of an end (end points, appendix)
 \NewDocumentCommand\pdual{m}{{\color{cTy}\overline{#1}}}
 % both ends of a channel: x̂ ≺ ŷ stands for the four end facts
 \NewDocumentCommand\phat{m}{{\color{cTy}\widehat{#1}}}
-% x + k, x[j] (payload point), x ≺ y, x ≡ y, {ℓ} ≼ N
-\NewDocumentCommand\poff{mm}{{#1}\mathbin{{\color{cTy}+}}{#2}}
-\NewDocumentCommand\pslot{mm}{{#1}\mathopen{\color{cTy}[}{#2}\mathclose{\color{cTy}]}}
-\let\ppay\pslot
+% x⁺ᵏ (the k-th shift, x⁺ for k = 1), x ≺ y, {ℓ} ≼ N
+\ExplSyntaxOn
+\NewDocumentCommand\poff{mm}{{#1}^{{\color{cTy}+}\str_if_eq:nnF{#2}{1}{#2}}}
+\ExplSyntaxOff
+% x.κ, the field κ of the point x (postfix, read left to right with ⁺)
+\NewDocumentCommand\fld{mm}{{#1}{\color{cTy}.}{#2}}
 \NewDocumentCommand\fLt{mm}{{#1}\mathrel{{\color{cTy}\prec}}{#2}}
-\NewDocumentCommand\fEq{mm}{{#1}\mathrel{{\color{cTy}\equiv}}{#2}}
 \NewDocumentCommand\fLe{mm}{{#1}\mathrel{{\color{cTy}\preccurlyeq}}{#2}}
 \DeclareMathOperator{\heads}{heads}
 \DeclareMathOperator{\rootof}{root}
@@ -327,12 +336,14 @@
 \NewDocumentCommand\tyBox{mmm}{{{\color{cTy}\Box}(\mathord{\color{cTy}\forall}#1{\color{cTy}.}\,#2{\color{cTy}.}\,#3)}}
 \NewDocumentCommand\tyEx{mmmm}{{\mathord{\color{cTy}\exists}^{#1}#2{\color{cTy}.}\,#3{\color{cTy}.}\,#4}}
 \NewDocumentCommand\tysub{mmm}{{#1}\mathopen{{\color{cTy}[}}#3\mathrel{\color{cTy}\mapsto}#2\mathclose{{\color{cTy}]}}}
-\NewDocumentCommand\payloadAt{mm}{{#1}[#2/\pself]}
+\NewDocumentCommand\payloadAt{mm}{{#1}[#2/\pbv]}
 \DeclareMetaVar\payty{Ty}{A}
 % new, spawn, boxes, force, and the future-indexed judgment
 \def\tNew{\tOp{new}}
 \def\tSpawn{\tOp{spawn}}
 \NewDocumentCommand\tNewC{mm}{{\tNew\,#1\,\mathopen{{\color{cTm}\{}}#2\mathclose{{\color{cTm}\}}}}}
+% new@x: new at a point the context knows
+\NewDocumentCommand\tNewAt{m}{\mathord{{\color{cTm}\mathsf{new}}{\color{cTy}@}{#1}}}
 \NewDocumentCommand\tBoxP{mm}{{{\color{cTm}!}#1{\color{cTm}.}\,#2}}
 \NewDocumentCommand\tBoxA{mmmm}{{{\color{cTm}!}#1\,\mathord{\color{cTy}\forall}#2\,\mathopen{{\color{cTm}\{}}#3\mathclose{{\color{cTm}\}}}{\color{cTm}.}\,#4}}
 \NewDocumentCommand\tForceA{mm}{{\tForce\,#1\,[#2]}}
