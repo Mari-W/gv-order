@@ -19628,7 +19628,8 @@
     {
      "file": "examples/ClientServer.v",
      "names": [
-      "cs_typed"
+      "cs_typed",
+      "cs_deadlock_free"
      ]
     },
     {
@@ -19642,7 +19643,7 @@
    "x-gv-accepts": {
     "df": {
      "ok": true,
-     "rocq": "cs_dftyped, cs_typed and W_cs_wf. Deadlock freedom follows by soundness_source and is not stated as a theorem"
+     "rocq": "cs_dftyped, cs_typed, cs_deadlock_free"
     },
     "lf": {
      "ok": true,
@@ -19661,7 +19662,8 @@
     {
      "file": "examples/Cycle.v",
      "names": [
-      "cy_typed"
+      "cy_typed",
+      "cy_deadlock_free"
      ]
     },
     {
@@ -19675,7 +19677,7 @@
    "x-gv-accepts": {
     "df": {
      "ok": true,
-     "rocq": "cy_dftyped, cy_typed and W_cy_wf. Deadlock freedom follows by soundness_source and is not stated as a theorem"
+     "rocq": "cy_dftyped, cy_typed, cy_deadlock_free"
     },
     "lf": {
      "ok": true,
@@ -19694,7 +19696,8 @@
     {
      "file": "examples/FreshBetween.v",
      "names": [
-      "fb_typed"
+      "fb_typed",
+      "fb_deadlock_free"
      ]
     },
     {
@@ -19708,7 +19711,7 @@
    "x-gv-accepts": {
     "df": {
      "ok": true,
-     "rocq": "fb_dftyped, fb_typed and W_fb_wf. Deadlock freedom follows by soundness_source and is not stated as a theorem"
+     "rocq": "fb_dftyped, fb_typed, fb_deadlock_free"
     },
     "lf": {
      "ok": true,
@@ -19727,7 +19730,8 @@
     {
      "file": "examples/FreshMany.v",
      "names": [
-      "fm_typed"
+      "fm_typed",
+      "fm_deadlock_free"
      ]
     },
     {
@@ -19741,7 +19745,7 @@
    "x-gv-accepts": {
     "df": {
      "ok": true,
-     "rocq": "fm_dftyped, fm_typed and W_fm_wf. Deadlock freedom follows by soundness_source and is not stated as a theorem"
+     "rocq": "fm_dftyped, fm_typed, fm_deadlock_free"
     },
     "lf": {
      "ok": true,
@@ -19760,7 +19764,8 @@
     {
      "file": "examples/FactoryEx.v",
      "names": [
-      "fx_typed"
+      "fx_typed",
+      "fx_deadlock_free"
      ]
     },
     {
@@ -19774,7 +19779,7 @@
    "x-gv-accepts": {
     "df": {
      "ok": true,
-     "rocq": "fx_dftyped, fx_typed and W_fx_wf. Deadlock freedom follows by soundness_source and is not stated as a theorem"
+     "rocq": "fx_dftyped, fx_typed, fx_deadlock_free"
     },
     "lf": {
      "ok": true,
@@ -19793,7 +19798,8 @@
     {
      "file": "examples/GrowRing.v",
      "names": [
-      "rg_typed"
+      "rg_typed",
+      "rg_deadlock_free"
      ]
     },
     {
@@ -19807,7 +19813,7 @@
    "x-gv-accepts": {
     "df": {
      "ok": true,
-     "rocq": "rg_dftyped, rg_typed and W_rg_wf. Deadlock freedom follows by soundness_source and is not stated as a theorem"
+     "rocq": "rg_dftyped, rg_typed, rg_deadlock_free"
     },
     "lf": {
      "ok": true,

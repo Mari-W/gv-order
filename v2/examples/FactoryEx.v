@@ -16,6 +16,7 @@
     (ι·0)‾. The laws at ι give both facts. *)
 
 From GV Require Export examples.Tools2.
+From GV Require Import static.FundamentalProc.
 
 Definition Sd : sty := SSeq (SSnd 0 TUnit) SEnd.
 Definition Sr : sty := SSeq (SRcv 0 TUnit) SEnd.
@@ -197,3 +198,7 @@ Qed.
 
 Theorem fx_typed : typed W_fx None ∅ hc_empty [] (∅, None) fx_main TUnit None.
 Proof. apply (dftyped_typed _ _ _ _ _ _ _ fx_dftyped). Qed.
+
+(** Deadlock freedom of the program, by soundness of one closed thread. *)
+Theorem fx_deadlock_free : deadlock_free (∅, {[+ fx_main +]}).
+Proof. exact (soundness_source W_fx fx_main TUnit (proj1 W_fx_wf) (swf_sacyc _ (proj2 W_fx_wf)) ltac:(constructor) fx_dftyped). Qed.

@@ -17,6 +17,7 @@
     (r, r·1). *)
 
 From GV Require Export examples.Tools2.
+From GV Require Import static.FundamentalProc.
 
 Abbreviation fmd k := (pt_shift k ((pvar 0)·0)).
 
@@ -203,3 +204,7 @@ Qed.
 
 Theorem fm_typed : typed W_fm None ∅ hc_empty [] (∅, None) fm_main TUnit None.
 Proof. apply (dftyped_typed _ _ _ _ _ _ _ fm_dftyped). Qed.
+
+(** Deadlock freedom of the program, by soundness of one closed thread. *)
+Theorem fm_deadlock_free : deadlock_free (∅, {[+ fm_main +]}).
+Proof. exact (soundness_source W_fm fm_main TUnit (proj1 W_fm_wf) (swf_sacyc _ (proj2 W_fm_wf)) ltac:(constructor) fm_dftyped). Qed.

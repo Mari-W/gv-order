@@ -11,6 +11,7 @@
     constraint of the first creation states exactly these two facts. *)
 
 From GV Require Export examples.Tools2.
+From GV Require Import static.FundamentalProc.
 
 (** The constraint of the first creation over the new root ι₀. *)
 Definition cy_L (g : fact) : Prop :=
@@ -78,3 +79,7 @@ Qed.
 
 Theorem cy_typed : typed W_cy None ∅ hc_empty [] (∅, None) cy_main TUnit None.
 Proof. apply (dftyped_typed _ _ _ _ _ _ _ cy_dftyped). Qed.
+
+(** Deadlock freedom of the program, by soundness of one closed thread. *)
+Theorem cy_deadlock_free : deadlock_free (∅, {[+ cy_main +]}).
+Proof. exact (soundness_source W_cy cy_main TUnit (proj1 W_cy_wf) (swf_sacyc _ (proj2 W_cy_wf)) ltac:(constructor) cy_dftyped). Qed.
