@@ -6,7 +6,7 @@
  "source": {
   "root": "../../v2",
   "language": "rocq",
-  "revision": "9d2c6d4"
+  "revision": "deffac9"
  },
  "tex": {
   "macros": {
@@ -20513,6 +20513,11 @@
     "lf"
    ],
    "x-gv-accepts": {
+    "df": {
+     "ok": true,
+     "part": "argued, no Rocq proof",
+     "rocq": "argued, no Rocq proof"
+    },
     "lf": {
      "ok": false,
      "part": "aging",
@@ -20547,6 +20552,11 @@
     "lf"
    ],
    "x-gv-accepts": {
+    "df": {
+     "ok": true,
+     "part": "argued, no Rocq proof",
+     "rocq": "argued, no Rocq proof"
+    },
     "lf": {
      "ok": false,
      "part": "payload credit",
@@ -20581,6 +20591,11 @@
     "lf"
    ],
    "x-gv-accepts": {
+    "df": {
+     "ok": true,
+     "part": "argued, no Rocq proof",
+     "rocq": "argued, no Rocq proof"
+    },
     "lf": {
      "ok": false,
      "part": "tickets",
@@ -20641,6 +20656,11 @@
     }
    ],
    "x-gv-accepts": {
+    "df": {
+     "ok": true,
+     "part": "argued, no Rocq proof",
+     "rocq": "argued, no Rocq proof"
+    },
     "lf": {
      "ok": false,
      "part": "the box constraint, ranks admit no infinite descent",
