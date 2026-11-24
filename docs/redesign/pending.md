@@ -1,5 +1,19 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Decision, 2026-11-24, per-branch orders parked
+
+The author accepts per-branch orders as a limitation of the logical
+relation for now. The program R, in which an offer picks the order of two
+old channels, is a CP process outside the relation (`bx_not_E`), so the
+relation does not subsume CP or GV. The way out is described in
+check-branch-orders.md. It needs a knowledge set K in the world and works
+only through the state judgment, because a world fixed before the choice
+makes vacuous obligations break P-Connect. Composition at the level of P
+stays a fixed requirement. Full subsumption would also need later choices
+on one channel (Q2), case on data (Q5) and decision points at constants
+(Q1). Point reuse stays. Linear points alone would not unblock the design,
+because the vacuity at P-Connect is independent of them.
+
 ## Report, 2026-11-24, process typing without restriction
 
 Approved by the author on 2026-11-24 ("yeah do it"). Branch fx-norestrict
