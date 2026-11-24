@@ -1,5 +1,91 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Report, 2026-11-24, map: one letter for worlds, no hidden judgment
+
+Approved by the author on 2026-11-24. Branch map-oneworld from redesign
+b00d6b3. Map only. No Rocq change and no tool change. Nothing pushed,
+nothing merged. `docs/explorer/check.sh` ends with 0 errors and the one
+known warning (bare-word Connect at P-Connect), and the page test passes
+16 of 16.
+
+### 1. W for every world
+
+The letter R is gone for worlds. V, E, P, G, S, readiness and the
+Kripke clauses read `V^W_α`, `ready_W`, `∀W' ⊒ W`, and the soup state is
+`a = (q, K, W_a)` with `W ⊑ W_a`. R stays only where it names a relation
+(`Acc R`, FC, DC). The note "Model R ⊨ W" is gone. Every `R ⊨ W` now
+reads `W ⊑ W' ∧ cons W'`, and "model" in prose became "consistent
+extension" or "ranked extension". `w.models` states `dmodels_exists` as
+`world_wf W ∧ cons W ⟹ ∃W' ⊒ W. cons W'` (LF adds `strict W'`, and the
+LF line `world_wf W ∧ wf W ⟹ ∃W' ⊒ W. ranked W'`).
+
+One letter forces one choice. The Rocq has two process judgments, both
+with the notation `Σ ⊨_W p : T`: `sem_ptyped` at one world of the
+relation and `sem_ptyped_sw` at every world that models a world of
+typing. The map keeps `Σ ⊨_W p : T` for `sem_ptyped_sw` and writes
+`sem_ptyped` out as `∀α. p ∈ P^W_α⟦Σ ⊢ T⟧`. The same holds in LF for
+`lf_sems` (`Σ ⊩^N_W p : T`) against `lf_sem`/`lf_semk`, written
+`∀α. ∃a. erase(q_a) = p ∧ a ∈ S^{N,W}_α⟦Σ ⊢ T⟧`.
+
+```
+Σ ⊨_W p : T  ⟺  ∀W' ⊒ W. cons W' [∧ strict W'] ⟹ ∀α. p ∈ P^{W'}_α⟦Σ ⊢ T⟧
+Σ ⊩^N_W p : T ⟺ ∀W' ⊒ W. ranked W' ⟹ ∀α. ∃a. erase(q_a) = p ∧ a ∈ S^{N,W'}_α⟦Σ ⊢ T⟧   (LF)
+```
+
+### 2. No hidden judgment
+
+`⊨^h`, `|⊨^h` and `⊩^{N,h}` are gone, with their notes (sj.h, sp.lfsemh,
+sj.hides). `W' ⇝_I W` is now `W'|_I ⊑ W`, recorded on the restriction
+note. The statements:
+
+```
+fundamental_proc_h       Σ ⊢_W p : T ⟹ ∃W'. world_wf W' ∧ cons W' ∧ W'|_{I(Σ,T)} ⊑ W ∧ Σ ⊨_{W'} p : T
+live_fundamental_proc_h  the same with Σ |⊨_{W'} p : T                                  (LF)
+lf_fundamental_h         EM ∧ Σ ⊢^N_W p : T ∧ N ∈ ℕ ⟹ ∃W'. world_wf W' ∧ wf W' ∧ W'|_{I(Σ,T)} ⊑ W ∧ Σ ⊩^N_{W'} p : T   (LF)
+ptyped_sem               Σ ⊢^N_W p : T ⟹ ∃W'. W'|_{I(Σ,T)} ⊑ W ∧ Q(W', Σ, p, T)
+adequacy                 cons W ∧ (∀α. p ∈ P^W_α⟦∅ ⊢ T⟧) ⟹ deadlock_free p
+adequacy_h               world_wf W ∧ cons W ∧ ∅ ⊨_W p : T ⟹ deadlock_free p
+fundamental              world_wf W ∧ ∅;Δ ⊢^F_W t : T ∧ W ⊑ W' ∧ cons W' [∧ strict W'] ⟹ Δ ⊨^F_{W'} t : T
+lf_adequacy              ranked W ∧ (∀α. ∃a. erase(q_a) = p ∧ a ∈ S^{N,W}_α⟦∅ ⊢ T⟧) ⟹ lock_free p   (LF)
+```
+
+The th-fund-proc caption and note say why in one sentence: process
+typing restricts its world to the interface, so the theorem recovers a
+whole world that contains the facts about restricted channels. The
+lock-free row `lf_sems_h_adequacy` is merged into `lf_sems_adequacy`,
+because it only unpacks the existential.
+
+Reader-facing text no longer says hide, hides, hiding or hidden world.
+The existential sense moved to "abstracts" (E-New, ty-grammar, r-ex).
+"Hidden end" and "hidden point" (the `hbot` flag, ends at abstracted
+points) stay, because they name ends of an existential and no world.
+Rocq names such as `hides`, `sem_ptyped_h`, `connect_hidden` and
+`static/Hiding.v` stay in sources and deviation reasons.
+
+### Deviations recorded
+
+- w.ext (merged): `wmodels`/`wmodels_lt` shown as `W ⊑ W'` with `cons W'`.
+- w-ext block: the model reason rewritten for the extension reading.
+- w.restrict (notation): `hides W' I W` is `W'|_I ⊑ W`, `hides_restrict`
+  the case `W = W'|_I`.
+- sj.sw (notation): `wmodels` as consistent extensions, `sem_ptyped`
+  written out so that `⊨_W` names one judgment.
+- sj.proc (notation): `sem_ptyped`, Rocq notation `Σ ⊨_W p : T`, written
+  out.
+- sp.allR, sp.lfsem (notation): ranked models as ranked extensions,
+  `lf_sem` written out.
+- th.fundamental-proc, th.live-fundamental-proc, th.lf-fundamental
+  (notation): `sem_ptyped_h`/`lf_sems_h` written out as the existential.
+- th.ptyped-sem (notation): `hides` as `W'|_I ⊑ W`.
+- th.adequacy (notation): `sem_ptyped` at a world of the relation,
+  consistent by its type.
+- th.adequacy-h (simplified): the premise `sem_ptyped_h` is an
+  existential whose restriction the proof never reads, so the map states
+  the theorem at the consistent world itself.
+- th.lf-sems-adequacy (merged): `lf_sems_h_adequacy` folded in.
+- th.lf-adequacy, th.lf-soup-term (notation): `lf_sem`/`lf_semk` written
+  out.
+
 ## Report, 2026-11-24, map notation: base, one world, futures as sets
 
 Approved or requested by the author on 2026-11-24 (items 1 to 4, then
