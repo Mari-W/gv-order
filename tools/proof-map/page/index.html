@@ -724,7 +724,8 @@ window.MathJax = {
   // ---------- the note panel ----------
   function noteHTML(n, opts = {}) {
     const md = opts.mode || mode;
-    const row = (t, v, c) => v && String(v).trim() ? `<div><dt>${t}</dt><dd${c ? ` class="${c}"` : ''}>${prose(v, md)}</dd></div>` : '';
+    // a field whose text lives only in other modes resolves to nothing here, so the row is left out
+    const row = (t, v, c) => v && resolve(v, md).trim() ? `<div><dt>${t}</dt><dd${c ? ` class="${c}"` : ''}>${prose(v, md)}</dd></div>` : '';
     const args = (n.args || []).filter(a => !a.modes || !MODES.length || a.modes.includes(md));
     let h = `<h2>${prose(n.title, md)}</h2><dl>`;
     if (n.signature) h += `<div><dt>Signature</dt><dd class="sig">$\\displaystyle ${esc(plainTeX(n.signature, md))}$</dd></div>`;
