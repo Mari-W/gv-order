@@ -1,5 +1,13 @@
 # Pending changes: the map leads, the Rocq follows
 
+## Map review pass, 2026-11-24
+
+Branch map-review, map.json only. "Partner" is replaced by "dual end", the
+undefined $\mathsf{pt}$ and $\Gamma \vdash x \preccurlyeq y$ are defined,
+the leftovers of the restricting process judgment and of bridges are gone,
+and the DF view no longer shows $N$, costs, tickets or ranks. Report and
+five questions in map-cleanup.md under "Review pass, 2026-11-24".
+
 ## Decision, 2026-11-24, per-branch orders parked
 
 The author accepts per-branch orders as a limitation of the logical
