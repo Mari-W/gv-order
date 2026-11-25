@@ -10,7 +10,7 @@ This repository holds the Rocq mechanization, a map of its definitions and
 theorems, and the paper draft.
 
 - The map, a browsable page of every rule, relation and theorem with links
-  into the Rocq, is at <https://mari-w.github.io/gv-order/>.
+  into the Rocq, is at <https://mariusweidner.de/gv-order/>.
 - The development has no axioms and no admitted proofs. Lock freedom assumes
   excluded middle and functional choice, and the theorems state these as
   hypotheses.
