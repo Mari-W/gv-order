@@ -119,6 +119,7 @@ aside details.rocq summary { cursor: pointer; color: var(--muted); font-size: 0.
 .math { margin: 10px 0 4px; min-width: 0; }
 .math mjx-container[display="true"] { display: block !important; margin: 0 !important; max-width: 100%; min-width: 0 !important; text-align: center; }
 .math mjx-container svg { max-width: 100% !important; height: auto !important; }
+.math[data-split] > mjx-container + mjx-container { margin-top: 0.9em !important; }
 mjx-container { user-select: text; }
 mjx-container.sel { background: color-mix(in srgb, var(--accent) 22%, transparent); border-radius: 3px; }
 .ptable { display: grid; grid-template-columns: var(--cols, max-content minmax(0, 1fr)); gap: 0 20px; align-items: baseline; margin: 12px 0 4px; }
@@ -491,8 +492,9 @@ window.MathJax = {
         const opt = /^\s*\[[^\]]*\]/.exec(body.slice(i)); if (opt) i += opt[0].length;
         last = i; i--; continue;
       }
-      if (body.startsWith('\\begin{', i)) { depth++; i += 6; continue; }
-      if (body.startsWith('\\end{', i)) { depth--; i += 4; continue; }
+      // \begin{env} and \end{env} change the depth once, their braces not at all
+      if (body.startsWith('\\begin{', i)) { depth++; i = body.indexOf('}', i); continue; }
+      if (body.startsWith('\\end{', i)) { depth--; i = body.indexOf('}', i); continue; }
       if (c === '\\') { i++; continue; }
       if (c === '{') depth++; else if (c === '}') depth--;
     }
