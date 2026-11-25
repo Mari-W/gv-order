@@ -3897,3 +3897,25 @@ must do, open questions.
       process in their relation is in our P, and composes with typed code
       by sem_p_connect. Open: which points the tree induces, and whether
       their interface readiness implies above_offered.
+
+## 2026-11-25, no-fus (branch no-fus, analysis only)
+
+- The link case of renaming for a fusion-free P is not blocked. It closes
+  with a simulation that relates occurrences, not names, and with a
+  changed map h' when the image link removes a different restricted
+  channel. Details in docs/redesign/no-fus.md.
+- Still needed is a theorem for internalizing, a join of two interface ends
+  into a restricted channel. It needs tfree T and pfree Σ, and its proof is
+  a single-process copy of the cross synchronization and readiness argument
+  of P-Connect. Estimate 2500 to 3000 lines. No Rocq change landed. Waiting
+  for the author's go before building it.
+
+## 2026-11-25, no-fus implementation (branch no-fus)
+
+- P has no fusion quantifier. `Prel_gfuse` (compat/Fusion.v) proves the
+  closure of P under fusion as a theorem, closed under the global context.
+  Premises: no restricted channel in Σ, tfree T, pfree Σ, always.
+- Open on the branch: the adaptation of ConnectCtx, ConnectP, ConnectLink
+  (plan and drafts in docs/redesign/no-fus.md and no-fus-downstream/), the
+  full build, the map. The branch does not build past compat/Fusion.v yet.
+
