@@ -1,7 +1,8 @@
 # Removing fusion from P (branch no-fus), 2026-11-25
 
-Status: analysis done, no Rocq change landed. The branch `no-fus` sits at
-redesign 4eec960 plus this note. The baseline build of that commit is green.
+Status: done on branch no-fus-port. P has no fusion quantifier, the
+closure is the theorem `Prel_gfuse`, and the whole build is green (section
+"Downstream adaptation" at the end).
 
 ## The link case is not blocked
 
@@ -154,20 +155,44 @@ those of p.
   (`fwd_sync`, by `hd_ok_sync`); `chain` descends along `above_offered` to
   an offered end outside D, which stops on the finite set of points.
 
-What is still open on this branch (the build is not green).
+## Downstream adaptation, 2026-11-25 (branch no-fus-port)
 
-1. ConnectCtx and ConnectP. The composite's own fusion goes (identity).
-   cctx's `G1W0` and `G2W0` should take the renaming form (D = ∅, the only
-   one their call sites use, 12 calls in ConnectExt, ConnectExtMsg,
-   ConnectSteps, ConnectLink), so that pfree of the source follows from
-   conn. ConnectP then uses `Prel_ind_fuse`, which needs Φ1 and Φ2 closed
-   under ≈ of the interface (`conn_conv`). Drafts of the new `step`,
-   `fuse_side_chans` and `conn_conv`: docs/redesign/no-fus-downstream/.
-2. ConnectLink: the six uses of `Prel_rename` need the fside premise,
-   which the conn of the new composite gives.
-3. ConnectFuse.v becomes dead and goes. PTerm's `sth_fuse` is dead.
-   CheckAll, full build, map (docs/redesign/no-fus-map.py, the author's
-   script), check.sh, page test.
+The branch builds. No admit and no axiom are left.
+
+- cctx (compat/ConnectCtx.v). `G1W0` and `G2W0` take the renaming form,
+  `fuse_ok h ∅` with `sdrop ∅` and `pfuse h ∅`. All 12 call sites passed
+  D = ∅ and only drop that argument. The fusion `h1 D1` of the other
+  component in `G2W0` stays general, because ConnectLink passes
+  `{[ech o2]}` there. `HP1` and `HP2` stay general and follow from
+  `Prel_fuse`.
+- Side conditions. `conn_fside1` and `conn_fside2` read fside of a
+  component from conn. `ren_fside1` and `ren_fside2` read fside of the
+  source of a renaming from conn of the renamed composite (`pfree_kren`
+  reflects pfree through h). `fside_sub` passes fside to a smaller
+  interface. `conn_conv` reads conn up to ≈.
+- ConnectP. The composite's own fusion is gone, `step` gives the clauses
+  of the composite at Σ1 ∪ Σ2 by `pc_clauses` over the original cut.
+  `ind1` and `ind2` use `Prel_ind_fuse`. Φ1 and Φ2 keep the equation on
+  the interface, and `Φ1_conv`, `Φ2_conv` show them closed under ≈ by
+  `senv_eqv_split`, `conn_conv` and `Prel_conv`.
+- ConnectLink. The six renamings take fside from conn, the two in
+  `ren_comp1` and `ren_comp2` from the conn of the stepped component and
+  the four in the link cases from the conn of the cut through
+  `fside_sub`.
+- ConnectFuse.v and PTerm's section `fuse` (`sth_fuse`, `fs_res`,
+  `pfuse_single`) are deleted. `node_gen` calls `core` at Θ and e
+  themselves.
+- `Pclauses_id_fuse` (relation/Relation.v) is now unused. It stays,
+  because deleting it recompiles Fusion.v.
+
+Statements. No theorem of the soundness chain changed. `Prel_fuse` and
+`Prel_rename` gained the premise `fside`. Both are used only inside
+P-Connect (ConnectP.v, ConnectLink.v), where conn gives it.
+
+Map. The author's no-fus-map.py applied. The captions of the relations
+section and of p-rel now say renaming keeps processes safe and name the
+side conditions of `Prel_gfuse`. check.sh has 0 errors, the page test
+passes 15 of 15.
 
 Lines: Relation.v −42/+29 (net), Occ.v +265, Fusion.v +3000, small edits in
 Rename.v, Conv.v, Connect.v, LiveDF.v, Closure.v, PTerm.v.

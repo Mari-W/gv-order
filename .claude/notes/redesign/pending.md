@@ -3919,3 +3919,14 @@ must do, open questions.
   (plan and drafts in docs/redesign/no-fus.md and no-fus-downstream/), the
   full build, the map. The branch does not build past compat/Fusion.v yet.
 
+
+## 2026-11-25, no-fus downstream (branch no-fus-port)
+
+- ConnectCtx, ConnectP and ConnectLink use `Prel_gfuse` and
+  `Prel_ind_fuse`. cctx's G1W0 and G2W0 take the renaming form.
+  ConnectFuse.v and `sth_fuse` are gone. Details in
+  .claude/notes/redesign/no-fus.md, section "Downstream adaptation".
+- No statement of the soundness chain changed. `Prel_fuse` and
+  `Prel_rename` gained the premise fside, used only inside P-Connect.
+- Map updated by the author's no-fus-map.py, check.sh 0 errors, page test
+  15 of 15.
