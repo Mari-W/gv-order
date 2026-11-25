@@ -436,7 +436,9 @@ Section rel.
     kren h Θ ##ₘ Θw → Vrel κ n W Θw T1 w →
     ∃ h' w0 Θ0, Vrel κ n W Θ0 T1 w0 ∧ Θ ##ₘ Θ0 ∧ emap h' w0 = w ∧
       (∀ o, ech o ∈ X → h' o = h o) ∧ kinj h' (Θ ∪ Θ0) ∧
-      kren h' (Θ ∪ Θ0) = kren h Θ ∪ Θw ∧ (dcomm h → dcomm h').
+      kren h' (Θ ∪ Θ0) = kren h Θ ∪ Θw ∧ (dcomm h → dcomm h') ∧
+      (∀ o, o ∈ dom Θ0 → ech o ∉ X) ∧
+      (∀ o, o ∈ dom Θ0 → edual (h' o) ∈ dom Θw → edual o ∈ dom Θ0).
   Proof.
     intros HV Hk HX Hd Hw.
     pose proof (Vrel_exact κ _ _ _ _ _ Hw) as Hex.
@@ -478,6 +480,10 @@ Section rel.
       + f_equal. apply kren_id. intros o Ho. apply Hback, Ho.
       + eapply kinj_sub; [|exact Hk']. rewrite dom_union_L. set_solver.
     - done.
+    - intros o Ho. rewrite kren_dom in Ho by done. apply elem_of_map in Ho as (o1 & -> & Ho1).
+      rewrite ech_cmap. apply K1. apply elem_of_map. by exists o1.
+    - intros o Ho Hd'. rewrite kren_dom in Ho |- * by done. apply elem_of_map in Ho as (o1 & -> & Ho1).
+      rewrite Hback in Hd' by done. apply elem_of_map. exists (edual o1). split; [by rewrite cmap_edual|done].
   Qed.
 
   (** One level of V, given E where the arrow reads it. *)

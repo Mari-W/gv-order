@@ -66,7 +66,7 @@ Definition gfuse (h : cend → cend) (D : gset chan) (Σ : senv) (p q : proc) : 
   fuse_ok h D Σ p ∧ q.1 = set_map (gch h) p.1 ∪ D ∧ mcrel (hrel h Σ p.1) p.2 q.2.
 
 Definition fside (D : gset chan) (Σ : senv) (T : ty) (p : proc) : Prop :=
-  p.1 ## chans_of Σ ∧ (D ≠ ∅ → tfree T ∧ pfree Σ).
+  p.1 ## chans_of Σ ∧ tfree T ∧ pfree Σ.
 
 Lemma gfuse_pfuse h D Σ p : fuse_ok h D Σ p → gfuse h D Σ p (pfuse h D p).
 Proof.
@@ -309,7 +309,7 @@ Section clauses.
     intros Hpc Hst Hτ Hc HC' HD' Hf' HΣ. destruct HC as (_ & _ & H1 & _).
     destruct (H1 pc ev0 pc' Hpc Hst Hτ HC') as (W' & HW' & A). exists W'. split; [done|].
     rewrite <-Hc. eapply at_cost_transfer; [done|done| |exact Hf'|exact HΣ|exact A].
-    split; [done|]. intros HD. by apply Hs, HD'.
+    split; [done|apply Hs].
   Qed.
 
   Local Lemma gfuse_same M M' : mrel R M M' →
@@ -773,7 +773,7 @@ Section clauses.
     destruct (H7 _ _ _ _ (erase_p M HM) Hst) as (o1 & o2 & S1 & S2 & x0 & Eos & No & L1 & L2 & Hsd & A).
     simpl in A. rewrite difference_empty_L in A.
     assert (D ≠ ∅) as HDne by set_solver.
-    destruct (proj2 Hs HDne) as [HT Hpf].
+    destruct (proj2 Hs) as [HT Hpf].
     assert (a1 ∈ dom Σ ∧ a2 ∈ dom Σ) as [Ha1 Ha2].
     { assert (a1 ∈ ({[o1]} ∪ {[o2]} : gset cend)) as A1 by (rewrite <-Eos; set_solver).
       assert (a2 ∈ ({[o1]} ∪ {[o2]} : gset cend)) as A2 by (rewrite <-Eos; set_solver).
@@ -828,7 +828,7 @@ Section clauses.
     { intros x Hx Hx'. apply HdΣ' in Hx as [Hx _]. apply HdΣ' in Hx' as [Hx' _]. by apply (Hpf x). }
     set (D' := D ∖ {[ech y1]}).
     assert (fside D' Σ' T (C, soup (<[i := f]> M))) as Hs'.
-    { split; [|by intros _]. simpl. intros c Hc Hc'. apply (HC1 c Hc).
+    { split; [|exact (conj (proj1 (proj2 Hs)) Hpf')]. simpl. intros c Hc Hc'. apply (HC1 c Hc).
       apply chans_of_elem in Hc' as (x & Hx & <-). apply elem_of_chans_of. by apply HdΣ'. }
     assert (set_map (gch h) C ∪ D' = q.1 ∖ {[ech y1]}) as ECh.
     { rewrite Eq1. unfold D'. set_solver. }
@@ -1135,7 +1135,7 @@ Section clauses.
     intros H1 H2. split.
     - simpl. intros c Hc Hc'. apply (HC1 c); [set_solver|]. apply chans_of_elem in Hc' as (o & Ho & <-).
       apply elem_of_chans_of. set_solver.
-    - intros HD. destruct (proj2 Hs HD) as [HT Hpf]. split; [done|]. intros o Ho Ho'. apply (Hpf o); set_solver.
+    - destruct (proj2 Hs) as [HT Hpf]. split; [done|]. intros o Ho Ho'. apply (Hpf o); set_solver.
   Qed.
 
   Local Lemma off_close M M' i y e' e1' : soup M = p.2 → mrel R M M' → M' !! i = Some e' →
@@ -1598,7 +1598,7 @@ Section clauses.
         + by apply (HΣC b).
         + by apply (HΣC o); [apply Fr|].
         + apply Nc. apply Lfw. exists (edual o). split; [right; by apply Ss2|by rewrite ech_edual].
-      - intros HD'. destruct (proj2 Hs) as [HT Hpf]; [intros ->; apply HD'; unfold D'; set_solver|].
+      - destruct (proj2 Hs) as [HT Hpf].
         split; [done|]. intros o Ho Ho'. apply DΣ1 in Ho, Ho'.
         destruct Ho as [->|[Ho|Ho]], Ho' as [Ho'|[Ho'|Ho']].
         + by apply (edual_ne b).
@@ -1692,7 +1692,7 @@ Section clauses.
     - split.
       + intros c Hc Hc'. apply (HC1 c Hc). apply chans_of_elem in Hc' as (o & Ho & <-). apply elem_of_chans_of.
         by apply DΣ2 in Ho as [? _].
-      + intros HD'. destruct (proj2 Hs) as [HT Hpf]; [intros E0; rewrite E0 in HD; by apply not_elem_of_empty in HD|]. split; [done|].
+      + destruct (proj2 Hs) as [HT Hpf]. split; [done|].
         intros o Ho Ho'. apply DΣ2 in Ho as [Ho _]. apply DΣ2 in Ho' as [Ho' _]. by apply (Hpf o).
     - split_and!.
       + apply fuse_ok_sub.
@@ -1751,7 +1751,7 @@ Section clauses.
       - right. apply hinj; [by left|by left|by rewrite Ebb, E0, edual_edual]. }
     split_and!.
     - split; [simpl; intros c Hc Hc'; apply (HC1 c Hc); unfold chans_of in *; by rewrite <-DΣ2|].
-      intros HD'. destruct (proj2 Hs HD') as [HT Hpf]. split; [done|]. intros o. rewrite DΣ2. apply Hpf.
+      destruct (proj2 Hs) as [HT Hpf]. split; [done|]. intros o. rewrite DΣ2. apply Hpf.
     - split_and!; [|apply Eq1|].
       + apply fuse_ok_sub; [by rewrite DΣ2|done|done|by intros; right|].
         intros o Ho. destruct (Hdp o Ho) as (T1 & y & T2 & K3 & K4 & Hs3).
@@ -1834,7 +1834,7 @@ Section clauses.
     assert (ech b' ∉ p.1) as Nb' by (intros Hp; apply (notD b' Hp); by rewrite Ebb, ech_edual).
     assert (b ≠ b') as Nbb by (intros <-; apply (edual_ne (h b)); by rewrite <-Ebb).
     assert (D ≠ ∅) as HDne by (intros E0; rewrite E0 in HD; by apply not_elem_of_empty in HD).
-    destruct (proj2 Hs HDne) as [HT Hpf].
+    destruct (proj2 Hs) as [HT Hpf].
     pose proof HC as (_ & _ & _ & H2 & _).
     assert (istep (p.1, M) (EvOffer i (SSend b w)) (p.1 ∖ fchans w, <[i := e1]> M)) as St1.
     { eapply p_act_session; [done|done|]. simpl. intros c A B. apply elem_of_singleton in A as ->. done. }
@@ -2008,6 +2008,305 @@ Section clauses.
       (<[j := g1]> (<[i := e1]> M)) (<[j := g1']> (<[i := e1']> M'))) as (F & G & EΣq); try done.
     - apply mrel_insert; [apply mrel_insert|]; done.
     - rewrite <-EΣq. exact (HL jj L5 W1 _ T _ _ h D _ P2 F G (senv_eqv_refl _)).
+  Qed.
+
+
+  (** ** Receives of q *)
+
+  (** The value q receives is pulled back to fresh channels; a received
+      end whose dual end q holds becomes a channel of D. *)
+  Local Lemma off_recv M M' i y w' e' e1' : soup M = p.2 → mrel R M M' → M' !! i = Some e' →
+    tstep e' (LSess (SRecv y w')) e1' → ech y ∉ q.1 →
+    ∃ S0 x m U S, Σq !! y = Some (S0, x) ∧ unfoldS S0 = SSeq (SRcv m U) S ∧
+      ∀ j Θ2', ole (oadd j (c_take κ)) n → set_map ech (dom Θ2') ## q.1 ∖ ∅ →
+        recv_ok (<[y := (S, x⁺)]> Σq) Θ2' → Vrel κ j W1 Θ2' (payload_at m U x) w' →
+        Prel κ j W1 (recv_env (<[y := (S, x⁺)]> Σq) Θ2') T
+          ((q.1 ∖ ∅) ∪ recv_back (<[y := (S, x⁺)]> Σq) Θ2', soup (<[i := e1']> M')).
+  Proof.
+    intros HM Hr Hi Hs' Ny. destruct (mrel_lookup_r R M M' i e' Hr Hi) as (e & He & Hc).
+    destruct (thread_back R e e' _ e1' Hc Hs') as (a & a' & Ha & Ha' & Har & Ho').
+    destruct a'; simpl in Ho'; try done. destruct Ho' as [-> Hw'].
+    destruct a as [| | | |b| | | | |]; simpl in Har; try done.
+    destruct (act_offer e (ARecv b) (LSess (SRecv b w')) Ha (conj eq_refl Hw')) as [f0 Hf0].
+    destruct (subj_iface M i e _ f0 b y HM He Hf0 eq_refl Har Ny) as (Hb & -> & Nb & ND).
+    assert (∀ w0 f, tstep e (LSess (SRecv b w0)) f →
+      istep (p.1, M) (EvOffer i (SRecv b w0)) (p.1 ∖ ∅, <[i := f]> M)) as Hst.
+    { intros w0 f Hff. eapply p_act_session; [done|exact Hff|]. simpl. intros c A B. apply elem_of_singleton in A as ->. done. }
+    pose proof HC as (_ & _ & _ & _ & H3 & _).
+    destruct (H3 _ _ _ _ _ (erase_p M HM) (Hst _ _ Hf0)) as (S0 & x & m & U & S & Lb & U0 & _).
+    exists S0, x, m, U, S. split_and!; [by apply lookupq|done|].
+    intros j Θ2' Hj Hdj HokQ HV.
+    set (Σ' := <[b := (S, x⁺)]> Σ). set (Σq' := <[h b := (S, x⁺)]> Σq).
+    assert (Σq' = sdrop D (kren h Σ')) as EΣq' by (unfold Σq', Σ'; by rewrite kren_sdrop_insert).
+    set (X := p.1 ∪ chans_of Σ ∪ echans (soup M) ∪ q.1).
+    assert (kren h Σ ##ₘ Θ2') as Hd2.
+    { apply map_disjoint_spec. intros o' v1 v2 A B. destruct (kren_lookup_inv _ _ _ _ A) as (u & -> & Au).
+      destruct (decide (ech (h u) ∈ D)) as [HD'|HD'].
+      - apply (Hdj (ech (h u))); [apply elem_of_map; exists (h u); split; [done|by eapply elem_of_dom_2]|].
+        rewrite difference_empty_L, Eq1. by apply elem_of_union_r.
+      - apply (proj1 HokQ (h u)); [by eapply elem_of_dom_2|]. unfold Σq'. rewrite dom_insert_L.
+        apply elem_of_union_r. apply elem_of_dom. eexists. by apply lookupq. }
+    destruct (pull_value κ j W1 (payload_at m U x) h Σ Θ2' w' X (proj1 (rename_level κ j _)) Hk)
+      as (h' & w0 & Θ0 & HV0 & HdΣ0 & Ew0 & Hext & Hk' & Hren & Hd' & Hfr & Hcl); [|done|done|].
+    { intros c (o & -> & Ho)%elem_of_map. unfold X. apply elem_of_union_l, elem_of_union_l, elem_of_union_r.
+      by apply elem_of_chans_of. }
+    pose proof (Vrel_exact κ _ _ _ _ _ HV0) as Hf0d.
+    assert (∀ o, o ∈ dom Θ0 → ech o ∉ p.1 ∧ ech o ∉ chans_of Σ ∧ ech o ∉ echans (soup M) ∧ ech o ∉ q.1) as Fr.
+    { intros o Ho. pose proof (Hfr o Ho) as N. unfold X in N. set_solver. }
+    (* the step of p receiving w0 *)
+    set (Rs := λ o o', (o ∈ dom Σ ∨ edual o ∈ dom Σ ∨ ech o ∈ p.1 → o' = h o) ∧ (o ∈ dom Θ0 ∨ edual o ∈ dom Θ0 → o' = h' o)).
+    assert (crel Rs e e') as Hcs.
+    { apply (crel_mono R); [|done]. intros o o' Ho Hoo'. split; [done|]. intros Ho0.
+      exfalso. assert (∃ o0, o0 ∈ dom Θ0 ∧ ech o0 = ech o) as (o0 & Ho0' & E0).
+      { destruct Ho0 as [?|?]; [by exists o|exists (edual o); by rewrite ech_edual]. }
+      apply (proj1 (proj2 (proj2 (Fr o0 Ho0')))). apply elem_of_echans. exists e.
+      split; [apply elem_of_soup; eauto|]. apply elem_of_fchans. rewrite E0. eauto. }
+    assert (crel Rs w0 w') as Hcw.
+    { rewrite <-Ew0. apply crel_emap. intros o Ho. rewrite <-Hf0d in Ho. split; [|by intros _].
+      intros Hh. exfalso. destruct (Fr o Ho) as (F1 & F2 & _). destruct Hh as [A|[A|A]].
+      - apply F2. by apply elem_of_chans_of.
+      - apply F2. rewrite <-ech_edual. by apply elem_of_chans_of.
+      - done. }
+    destruct (thread_fwd Rs e e' (ARecv b) (LSess (SRecv b w0)) (LSess (SRecv (h b) w')) e1' Hcs Ha) as (f & Hff & Hcf);
+      [split; [done|by eapply Vrel_val]|done|done|].
+    destruct (H3 _ _ _ _ _ (erase_p M HM) (Hst _ _ Hff)) as (S0' & x' & m' & U' & S'' & Lb' & U0' & AR).
+    rewrite Lb in Lb'. injection Lb' as <- <-. rewrite U0 in U0'. injection U0' as <- <- <-.
+    (* the pulled back environment *)
+    assert (∀ o, o ∈ dom Σ → h' o = h o) as HhΣ.
+    { intros o Ho. apply Hext. unfold X. apply elem_of_union_l, elem_of_union_l, elem_of_union_r. by apply elem_of_chans_of. }
+    assert (∀ o v, Θ0 !! o = Some v → Θ2' !! h' o = Some v) as L02.
+    { intros o v Hv. assert (kren h' (Σ ∪ Θ0) !! h' o = Some v) as A.
+      { apply kren_lookup; [done|]. by apply lookup_union_Some_r. }
+      rewrite Hren in A. apply lookup_union_Some_raw in A as [A|[_ A]]; [|done]. exfalso.
+      destruct (kren_lookup_inv _ _ _ _ A) as (u & Eu & Au). rewrite <-HhΣ in Eu by (by eapply elem_of_dom_2).
+      assert (o = u) as -> by (apply (Hk' o u v v); [by apply lookup_union_Some_r|by apply lookup_union_Some_l|done]).
+      exact (proj1 (map_disjoint_spec Σ Θ0) HdΣ0 u _ _ Au Hv). }
+    assert (∀ y2 v, Θ2' !! y2 = Some v → ∃ o, y2 = h' o ∧ Θ0 !! o = Some v) as L20.
+    { intros y2 v Hv. assert ((kren h Σ ∪ Θ2') !! y2 = Some v) as A by (apply lookup_union_Some_r; done).
+      rewrite <-Hren in A. destruct (kren_lookup_inv _ _ _ _ A) as (o & -> & Ao).
+      apply lookup_union_Some_raw in Ao as [Ao|[_ Ao]]; [|eauto]. exfalso.
+      rewrite HhΣ in Hv by (by eapply elem_of_dom_2).
+      apply (proj1 (map_disjoint_spec (kren h Σ) Θ2') Hd2 (h o) v v); [apply kren_lookup; [apply Hk|done]|exact Hv]. }
+    assert (dcomm h') as Hdh' by (apply Hd'; apply Hd).
+    assert (∀ y2, y2 ∈ dom Θ2' → ech y2 ∉ q.1) as Nq2.
+    { intros y2 Hy2 Hq. apply (Hdj (ech y2)); [by apply elem_of_map_2|]. by rewrite difference_empty_L. }
+    assert (∀ y2, y2 ∈ dom Θ2' → y2 ∉ dom Σq') as NΣq2 by (intros y2 Hy2; by apply (proj1 HokQ)).
+    assert (dom Σ' = dom Σ) as DΣ'.
+    { unfold Σ'. rewrite dom_insert_L. apply set_eq. intros o. rewrite elem_of_union, elem_of_singleton. naive_solver. }
+    assert (∀ o, o ∈ dom Θ0 → o ∉ dom Σ ∧ edual o ∉ dom Σ) as FΣ.
+    { intros o Ho. destruct (Fr o Ho) as (_ & F2 & _). split; intros A; apply F2; [|rewrite <-ech_edual]; by apply elem_of_chans_of. }
+    assert (∀ o v, Θ0 !! o = Some v → Θ2' !! h' o = Some v) as L02' by done.
+    assert (∀ o, o ∈ dom Θ0 → h' o ∈ dom Θ2') as D02 by (intros o [v Hv]%elem_of_dom; eapply elem_of_dom_2, L02; eauto).
+    (* recv_ok on the side of p *)
+    assert (recv_ok Σ' Θ0) as Hok0.
+    { split.
+      - intros o Ho. rewrite DΣ'. by apply FΣ.
+      - intros o S1 y1 S1' y1' Q1 Q2. assert (o ∈ dom Θ0) as Ho by (by eapply elem_of_dom_2).
+        apply lookup_union_Some_raw in Q2 as [Q2|[_ Q2]].
+        { exfalso. apply (proj2 (FΣ o Ho)). rewrite <-DΣ'. by eapply elem_of_dom_2. }
+        apply (proj2 HokQ (h' o) S1 y1 S1' y1'); [by apply L02|].
+        apply lookup_union_Some_raw. right. split.
+        + apply not_elem_of_dom. intros A. apply (NΣq2 (edual (h' o))); [|done].
+          rewrite <-Hdh'. apply D02. by eapply elem_of_dom_2.
+        + rewrite <-Hdh'. by apply L02. }
+    assert (set_map ech (dom Θ0) ## p.1) as Hdj0 by (intros c (o & -> & Ho)%elem_of_map; by apply Fr).
+    pose proof (AR j Θ0 Hj Hdj0 Hok0 HV0) as P2. unfold erase in P2. simpl in P2.
+    (* the new channels of D *)
+    set (RB := set_map (λ o, ech (h' o)) (filter (λ o, edual (h' o) ∈ dom Σq') (dom Θ0)) : gset chan).
+    assert (∀ c, c ∈ RB ↔ ∃ o, o ∈ dom Θ0 ∧ ech (h' o) = c ∧ edual (h' o) ∈ dom Σq') as LRB.
+    { intros c. unfold RB. rewrite elem_of_map. setoid_rewrite elem_of_filter. naive_solver. }
+    set (D' := D ∪ RB).
+    set (Σ2 := recv_env Σ' Θ0). set (C2 := (p.1 ∖ ∅) ∪ recv_back Σ' Θ0).
+    assert (∀ u, u ∈ dom Σ → edual u ∉ dom Θ0) as NΣ0.
+    { intros u Hu A. apply (proj2 (FΣ (edual u) A)). by rewrite edual_edual. }
+    assert (∀ u v, Σ2 !! u = Some v ↔ Σ' !! u = Some v ∨ (Θ0 !! u = Some v ∧ edual u ∉ dom Θ0)) as LΣ2.
+    { intros u v. unfold Σ2. rewrite (recv_env_lookup' _ _ _ _ Hok0). split.
+      - intros [[A _]|[A [_ B]]]; [by left|by right].
+      - intros [A|[A B]].
+        + left. split; [done|]. apply NΣ0. rewrite <-DΣ'. by eapply elem_of_dom_2.
+        + right. split_and!; [done| |done]. rewrite DΣ'. by apply FΣ; eapply elem_of_dom_2. }
+    assert (∀ u, u ∈ dom Σ2 → u ∈ dom Σ ∨ u ∈ dom Θ0) as DΣ2.
+    { intros u [v Hv]%elem_of_dom. apply LΣ2 in Hv as [A|[A _]]; [left; rewrite <-DΣ'|right]; by eapply elem_of_dom_2. }
+    assert (∀ c, c ∈ recv_back Σ' Θ0 ↔ ∃ o, o ∈ dom Θ0 ∧ ech o = c ∧ edual o ∈ dom Θ0) as LRb.
+    { intros c. rewrite recv_back_elem'. split; [|naive_solver]. intros (o & A & B & [C|C]); [|eauto].
+      exfalso. apply (proj2 (FΣ o A)). by rewrite <-DΣ'. }
+    assert (∀ u, pheld Σ2 (C2, ∅) u → pheld Σ p u ∨ u ∈ dom Θ0) as Hph2.
+    { intros u [Hu|Hu]; [destruct (DΣ2 u Hu); [left; by left|by right]|]. unfold C2 in Hu.
+      simpl in Hu. rewrite difference_empty_L in Hu. apply elem_of_union in Hu as [Hu|Hu]; [left; by right|right].
+      apply LRb in Hu as (o & Ho & Eo & Ho'). apply ech_eq in Eo as [<-| ->]; [done|done]. }
+    assert (∀ u, pheld Σ p u → h' u = h u) as Hhp.
+    { intros u [Hu|Hu]; apply Hext; unfold X; [apply elem_of_union_l, elem_of_union_l, elem_of_union_r; by apply elem_of_chans_of|set_solver]. }
+    assert (∀ u, u ∈ dom Θ0 → ech (h' u) ∉ q.1) as N0q by (intros u Hu; apply Nq2, D02, Hu).
+    assert (∀ u, pheld Σ p u → u ∈ dom Θ0 → False) as Np0.
+    { intros u [Hu|Hu] Hu0; [by apply (proj1 (FΣ u Hu0))|by apply (proj1 (Fr u Hu0))]. }
+    assert (∀ u o, pheld Σ p u → o ∈ dom Θ0 → ech (h u) = ech (h' o) → u ∈ dom Σ ∧ ech (h u) ∉ D ∧ h u ∈ dom Σq) as Hcross.
+    { intros u o Hu Ho E. destruct Hu as [Hu|Hu].
+      - assert (ech (h u) ∉ D) as ND'.
+        { intros HDu. apply (N0q o Ho). rewrite <-E, Eq1. by apply elem_of_union_r. }
+        split_and!; [done|done|]. apply elem_of_dom in Hu as [v Hv]. apply elem_of_dom. exists v. by apply lookupq.
+      - exfalso. apply (N0q o Ho). rewrite <-E, Eq1, gch_ech. apply elem_of_union_l. by apply elem_of_map_2. }
+    assert (dom Σq ⊆ dom Σq') as DΣq by (unfold Σq'; rewrite dom_insert_L; set_solver).
+    assert (fuse_ok h' D' Σ2 (C2, ∅)) as Hok2.
+    { destruct Hok as (A1 & A2 & A3 & A4 & A5). split_and!.
+      - done.
+      - intros u1 u2 B1 B2 E. destruct (Hph2 u1 B1) as [P1|P1], (Hph2 u2 B2) as [P2'|P2'].
+        + rewrite !Hhp in E by done. by apply A2.
+        + exfalso. rewrite Hhp in E by done. apply (N0q u2 P2'). rewrite <-E.
+          destruct (decide (u1 ∈ dom Σ)) as [Hu1|Hu1].
+          * exfalso. apply elem_of_dom in Hu1 as [v Hv]. apply elem_of_dom in P2' as [v' Hv'].
+            apply (proj1 (map_disjoint_spec (kren h Σ) Θ2') Hd2 (h u1) v v'); [apply kren_lookup; [apply Hk|done]|by rewrite E; apply L02].
+          * destruct P1 as [?|P1]; [done|]. rewrite Eq1, gch_ech. apply elem_of_union_l. by apply elem_of_map_2.
+        + exfalso. rewrite (Hhp u2) in E by done. apply (N0q u1 P1). rewrite E.
+          destruct (decide (u2 ∈ dom Σ)) as [Hu2|Hu2].
+          * exfalso. apply elem_of_dom in Hu2 as [v Hv]. apply elem_of_dom in P1 as [v' Hv'].
+            apply (proj1 (map_disjoint_spec (kren h Σ) Θ2') Hd2 (h u2) v v'); [apply kren_lookup; [apply Hk|done]|by rewrite <-E; apply L02].
+          * destruct P2' as [?|P2']; [done|]. rewrite Eq1, gch_ech. apply elem_of_union_l. by apply elem_of_map_2.
+        + apply elem_of_dom in P1 as [v1 V1]. apply elem_of_dom in P2' as [v2 V2].
+          apply (Hk' u1 u2 v1 v2); [by apply lookup_union_Some_r|by apply lookup_union_Some_r|done].
+      - intros u1 u2 B1 B2 E. destruct (Hph2 u1 B1) as [P1|P1], (Hph2 u2 B2) as [P2'|P2'].
+        + rewrite !Hhp in E by done. destruct (A3 u1 u2 P1 P2' E) as [?|?]; [by left|right; rewrite (Hhp u1) by done; by apply elem_of_union_l].
+        + right. rewrite (Hhp u1) in E |- * by done. destruct (Hcross u1 u2 P1 P2') as (Hu1 & _ & Hq1); [by rewrite E, ech_edual|].
+          apply elem_of_union_r, LRB. exists u2. split_and!; [done|by rewrite E, ech_edual|rewrite E, edual_edual; by apply DΣq].
+        + right. rewrite (Hhp u2) in E by done. destruct (Hcross u2 u1 P2' P1) as (Hu2 & _ & Hq2); [by rewrite E, ech_edual|].
+          apply elem_of_union_r, LRB. exists u1. split_and!; [done|done|rewrite <-E; by apply DΣq].
+        + left. assert (edual u1 ∈ dom Θ0) as Hd1.
+          { apply Hcl; [done|]. rewrite <-E. by apply D02. }
+          apply elem_of_dom in P2' as [v2 V2]. apply elem_of_dom in Hd1 as [v1 V1].
+          apply (Hk' u2 (edual u1) v2 v1); [by apply lookup_union_Some_r|by apply lookup_union_Some_r|by rewrite Hdh'].
+      - intros c Hc1 Hc2. simpl in Hc2. apply elem_of_map in Hc2 as (u & -> & Hu).
+        unfold C2 in Hu. rewrite difference_empty_L in Hu. apply elem_of_union in Hu as [Hu|Hu].
+        + assert (gch h' u = gch h u) as Eg by (unfold gch; rewrite Hhp; [done|by right]).
+          rewrite Eg in Hc1. apply elem_of_union in Hc1 as [Hc1|Hc1]; [apply (A4 _ Hc1); by apply elem_of_map_2|].
+          apply LRB in Hc1 as (o & Ho & Eo & _). apply (N0q o Ho). rewrite Eo, Eq1. apply elem_of_union_l. by apply elem_of_map_2.
+        + apply LRb in Hu as (o & Ho & <- & Ho'). unfold gch in Hc1.
+          assert (ech (h' (EPos (ech o))) = ech (h' o)) as Eo.
+          { destruct o as [c0|c0]; simpl; [done|]. change (ENeg c0) with (edual (EPos c0)). by rewrite Hdh', ech_edual. }
+          rewrite Eo in Hc1. apply elem_of_union in Hc1 as [Hc1|Hc1].
+          * apply (N0q o Ho). rewrite Eq1. by apply elem_of_union_r.
+          * apply LRB in Hc1 as (o2 & Ho2 & E2 & Hq2). symmetry in E2. apply ech_eq in E2 as [E2|E2].
+            -- apply (NΣq2 (edual (h' o2))); [|done]. rewrite E2, <-Hdh'. by apply D02.
+            -- apply (NΣq2 (edual (h' o2))); [|done]. rewrite E2, edual_edual. by apply D02.
+      - intros o' Ho'. assert (kinj h' Σ2) as K2.
+        { apply (kinj_sub h' (Σ ∪ Θ0)); [|done]. intros u Hu. rewrite dom_union_L, elem_of_union. by apply DΣ2. }
+        apply elem_of_union in Ho' as [HoD|HoRB].
+        + destruct (A5 o' HoD) as (T1 & z & T2 & K3 & K4 & Hs3). exists T1, z, T2.
+          assert (∀ o'' v, kren h Σ !! o'' = Some v → ech o'' ∈ D → kren h' Σ2 !! o'' = Some v) as Hmv.
+          { intros o'' v A HD'. destruct (kren_lookup_inv _ _ _ _ A) as (u & -> & Au).
+            assert (u ≠ b) as Nub by (intros ->; done).
+            rewrite <-(Hhp u) by (left; by eapply elem_of_dom_2). apply kren_lookup; [done|]. apply LΣ2. left.
+            unfold Σ'. by rewrite lookup_insert_ne. }
+          split_and!; [by apply Hmv|apply Hmv; [done|by rewrite ech_edual]|done].
+        + apply LRB in HoRB as (o & Ho & Eo & Hq). apply elem_of_dom in Hq as [[S1' y1'] Hq]. pose proof Hq as Hq0.
+          rewrite EΣq' in Hq. apply sdrop_lookup in Hq as [Hq NDq]. destruct (kren_lookup_inv _ _ _ _ Hq) as (u & Eu & Lu).
+          apply elem_of_dom in Ho as [[S1 y1] Lo] .
+          destruct (proj2 HokQ (h' o) S1 y1 S1' y1') as [Ey Hsy]; [by apply L02| |].
+          { by apply lookup_union_Some_l. }
+          subst y1'.
+          assert (u ∈ dom Σ) as Hu by (rewrite <-DΣ'; by eapply elem_of_dom_2).
+          assert (Σ2 !! u = Some (S1', y1‾)) as LuΣ2 by (apply LΣ2; by left).
+          assert (Σ2 !! o = Some (S1, y1)) as LoΣ2.
+          { apply LΣ2. right. split; [done|]. intros A. apply (NΣq2 (edual (h' o))).
+            - rewrite <-Hdh'. by apply D02.
+            - by eapply elem_of_dom_2. }
+          assert (h' u = edual (h' o)) as Ehu by (rewrite Hhp by (by left); by rewrite Eu).
+          apply ech_eq in Eo as [-> | ->].
+          * exists S1, y1, S1'. split_and!; [by apply kren_lookup|rewrite <-Ehu; by apply kren_lookup|done].
+          * exists S1', y1‾, S1. rewrite edual_edual, pt_dual_dual. split_and!; [rewrite <-Ehu; by apply kren_lookup|by apply kren_lookup|by apply sdual_sym]. }
+    assert (kinj h' Σ2) as K2.
+    { apply (kinj_sub h' (Σ ∪ Θ0)); [|done]. intros u Hu. rewrite dom_union_L, elem_of_union. by apply DΣ2. }
+    assert (∀ u, u ∈ dom Σ2 → u ∈ dom Σ ∨ (u ∈ dom Θ0 ∧ edual u ∉ dom Θ0)) as DΣ2'.
+    { intros u [v Hv]%elem_of_dom. apply LΣ2 in Hv as [A|[A B]]; [left; rewrite <-DΣ'|right; split]; [by eapply elem_of_dom_2..|done]. }
+    assert (∀ u, (u ∈ dom Σ ∨ edual u ∈ dom Σ ∨ ech u ∈ p.1) → h' u = h u) as Hhd.
+    { intros u [Hu|[Hu|Hu]]; [apply Hhp; by left| |apply Hhp; by right].
+      apply edual_inj. rewrite <-!Hdh', <-Hd. apply Hhp. by left. }
+    assert (∀ u, u ∈ dom Σ2 ∨ edual u ∈ dom Σ2 ∨ ech u ∈ C2 →
+      (u ∈ dom Σ ∨ edual u ∈ dom Σ ∨ ech u ∈ p.1) ∨ (u ∈ dom Θ0 ∨ edual u ∈ dom Θ0)) as Hhd2.
+    { intros u [Hu|[Hu|Hu]].
+      - destruct (DΣ2' u Hu) as [?|[? _]]; [left; by left|right; by left].
+      - destruct (DΣ2' _ Hu) as [?|[? _]]; [left; right; by left|right; by right].
+      - unfold C2 in Hu. rewrite difference_empty_L in Hu. apply elem_of_union in Hu as [Hu|Hu]; [left; right; by right|].
+        apply LRb in Hu as (o & Ho & Eo & Ho'). right. apply ech_eq in Eo as [<-| ->]; [by left|by left]. }
+    apply (HL j (c_take_lt κ n j Hj) W1 Σ2 T (C2, soup (<[i := f]> M)) _ h' D' _ P2).
+    - split_and!.
+      + simpl. intros c Zc Zc'. apply chans_of_elem in Zc' as (u & Hu & <-). unfold C2 in Zc.
+        rewrite difference_empty_L in Zc. destruct (DΣ2' u Hu) as [Hu'|[Hu' Nu]].
+        * apply elem_of_union in Zc as [Zc|Zc].
+          -- apply (HC1 (ech u) Zc). by apply elem_of_chans_of.
+          -- apply LRb in Zc as (o & Ho & Eo & _). apply (proj1 (proj2 (Fr o Ho))). rewrite Eo. by apply elem_of_chans_of.
+        * apply elem_of_union in Zc as [Zc|Zc]; [by apply (proj1 (Fr u Hu'))|].
+          apply LRb in Zc as (o & Ho & Eo & Ho'). apply ech_eq in Eo as [<-| ->]; [done|by rewrite edual_edual in Nu].
+      + by destruct (proj2 Hs).
+      + destruct (proj2 Hs) as [_ Hpf]. intros u Hu Hu'.
+        destruct (DΣ2' u Hu) as [A|[A B]], (DΣ2' _ Hu') as [A'|[A' B']].
+        * by apply (Hpf u).
+        * by apply (NΣ0 u).
+        * by apply (proj2 (FΣ u A)).
+        * by rewrite edual_edual in B'.
+    - split_and!.
+      + eapply fuse_ok_proc; [|exact Hok2]. done.
+      + simpl. apply set_eq. intros c. rewrite !elem_of_union, difference_empty_L, recv_back_elem'.
+        unfold C2. rewrite set_map_union_L, difference_empty_L, elem_of_union, Eq1, elem_of_union.
+        assert (∀ x0, x0 ∈ p.1 → gch h' x0 = gch h x0) as Eg.
+        { intros x0 Hx0. unfold gch. rewrite Hhp; [done|by right]. }
+        assert (set_map (gch h') p.1 = (set_map (gch h) p.1 : gset chan)) as ->.
+        { apply set_eq. intros c0. rewrite !elem_of_map. split; intros (x0 & -> & Hx0); exists x0; by rewrite Eg. }
+        rewrite (elem_of_map (gch h') (recv_back Σ' Θ0)). unfold D'. rewrite elem_of_union. split.
+        * intros [[A|A]|(y2 & Hy2 & <- & B)]; [by left; left|by right; left|].
+          apply elem_of_dom in Hy2 as [v Hv]. destruct (L20 _ _ Hv) as (o & -> & Lo).
+          destruct B as [B|B].
+          -- right. right. apply LRB. exists o. split_and!; [by eapply elem_of_dom_2|done|done].
+          -- left. right. exists (ech o). split; [apply (ech_gch h' o Hdh')|].
+             apply LRb. exists o. split_and!; [by eapply elem_of_dom_2|done|]. apply Hcl; [by eapply elem_of_dom_2|done].
+        * intros [[A|(x0 & -> & Hx0)]|[A|A]]; [by left; left| |by left; right|].
+          -- apply LRb in Hx0 as (o & Ho & <- & Ho'). right. exists (h' o). split_and!; [by apply D02| |].
+             ++ apply (ech_gch h' o Hdh').
+             ++ right. rewrite <-Hdh'. by apply D02.
+          -- apply LRB in A as (o & Ho & <- & B). right. exists (h' o). split_and!; [by apply D02|done|by left].
+      + apply mcrel_of_mrel. apply mrel_insert.
+        * apply (mrel_mono_in R); [|done]. intros e0 o o' (k0 & Hk0) Ho Hoo' Ho2.
+          assert (¬ (o ∈ dom Θ0 ∨ edual o ∈ dom Θ0)) as Nf.
+          { intros Hfr0. assert (∃ o0, o0 ∈ dom Θ0 ∧ ech o0 = ech o) as (o0 & Ho0 & E0).
+            { destruct Hfr0 as [?|?]; [by exists o|exists (edual o); by rewrite ech_edual]. }
+            apply (proj1 (proj2 (proj2 (Fr o0 Ho0)))). apply elem_of_echans. exists e0.
+            split; [apply elem_of_soup; eauto|]. apply elem_of_fchans. rewrite E0. eauto. }
+          destruct (Hhd2 o Ho2) as [A|A]; [|done]. rewrite Hhd by done. by apply Hoo'.
+        * apply (crel_mono Rs); [|done]. intros o o' _ [A B] Ho2. destruct (Hhd2 o Ho2) as [C|C]; [|by apply B].
+          rewrite Hhd by done. by apply A.
+    - assert (kinj h Σ') as KΣ' by (apply (kinj_sub h Σ); [by rewrite DΣ'|apply Hk]).
+      assert (∀ o', o' ∈ dom Σq' → o' ∈ dom Θ2' → False) as NQ by (intros o' A B; by apply (NΣq2 o')).
+      cut (sdrop D' (kren h' Σ2) = recv_env Σq' Θ2'); [intros ->; apply senv_eqv_refl|].
+      apply map_eq. intros o'. apply option_eq. intros v. rewrite sdrop_lookup, (recv_env_lookup' Σq' Θ2' o' v HokQ).
+      unfold D'. rewrite elem_of_union. split.
+      + intros [L N]. apply Decidable.not_or in N as [N1 N2].
+        destruct (kren_lookup_inv _ _ _ _ L) as (u & -> & Lu). apply LΣ2 in Lu as [Lu|[Lu Nu]].
+        * assert (u ∈ dom Σ) as Hu by (rewrite <-DΣ'; by eapply elem_of_dom_2).
+          rewrite Hhp by (by left). rewrite Hhp in N1, N2 by (by left). left. split.
+          -- rewrite EΣq'. apply sdrop_lookup. split; [by apply kren_lookup|done].
+          -- intros A. apply elem_of_dom in A as [v' A]. destruct (L20 _ _ A) as (o & Eo & Ao). apply N2. apply LRB.
+             exists o. split_and!; [by eapply elem_of_dom_2|by rewrite <-Eo, ech_edual|].
+             rewrite <-Eo, edual_edual. apply elem_of_dom. exists v. rewrite EΣq'. apply sdrop_lookup. split; [by apply kren_lookup|done].
+        * right. split_and!.
+          -- by apply L02.
+          -- intros A. apply N2. apply LRB. exists u. split_and!; [by eapply elem_of_dom_2|done|done].
+          -- intros A. apply Nu. apply Hcl; [by eapply elem_of_dom_2|done].
+      + intros [[L N]|[L [N1 N2]]].
+        * pose proof L as L'. rewrite EΣq' in L'. apply sdrop_lookup in L' as [L' ND'].
+          destruct (kren_lookup_inv _ _ _ _ L') as (u & -> & Lu).
+          assert (u ∈ dom Σ) as Hu by (rewrite <-DΣ'; by eapply elem_of_dom_2).
+          split.
+          -- rewrite <-(Hhp u) by (by left). apply kren_lookup; [done|]. apply LΣ2. by left.
+          -- intros [HD'|HRB]; [done|]. apply LRB in HRB as (o & Ho & Eo & Hq). symmetry in Eo. apply ech_eq in Eo as [Eo|Eo].
+             ++ apply (NQ (h u)); [by eapply elem_of_dom_2|]. rewrite <-Eo. by apply D02.
+             ++ apply N. rewrite <-Eo. by apply D02.
+        * apply elem_of_dom_2 in L as L0. apply elem_of_dom in L0 as [v0 L0]. destruct (L20 _ _ L) as (u & -> & Lu).
+          assert (edual u ∉ dom Θ0) as Nu by (intros A; apply N2; rewrite <-Hdh'; by apply D02).
+          split.
+          -- apply kren_lookup; [done|]. apply LΣ2. by right.
+          -- intros [HD'|HRB].
+             ++ apply (N0q u); [by eapply elem_of_dom_2|]. rewrite Eq1. by apply elem_of_union_r.
+             ++ apply LRB in HRB as (o & Ho & Eo & Hq). symmetry in Eo. apply ech_eq in Eo as [Eo|Eo].
+                ** apply N1. by rewrite <-Eo.
+                ** apply (NQ (h' u)); [by rewrite Eo, edual_edual in Hq|by eapply elem_of_dom_2].
   Qed.
 
   Local Lemma at_cost_sync X Σ' T' q' : (∀ jj, ole (oadd jj (c_give κ + c_take κ)) n → Prel κ jj W1 Σ' T' q') →
