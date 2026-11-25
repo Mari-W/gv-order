@@ -261,6 +261,10 @@
         },
         "source": { "type": "array", "items": { "$ref": "#/$defs/sourceRef" } },
         "usedIn": { "type": "array", "items": { "$ref": "#/$defs/id" } },
+        "assumes": {
+          "description": "Axioms the cited theorem takes as hypotheses, shown as tags instead of conjuncts in the formula.",
+          "type": "array", "items": { "enum": ["EM", "FC", "DC"] }
+        },
         "def": {
           "description": "The block that defines the symbol. A click on the symbol elsewhere opens it. Absent: the first block in reading order whose formula hovers the key in the current mode, else in any mode. false: no block, a click only pins.",
           "oneOf": [{ "$ref": "#/$defs/id" }, { "const": false }]

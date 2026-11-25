@@ -107,6 +107,7 @@ aside details.rocq summary { cursor: pointer; color: var(--muted); font-size: 0.
 .tag { font: 600 0.66rem/1.5 var(--body); letter-spacing: 0.06em; text-transform: uppercase; padding: 0 6px; border-radius: 4px; border: 1px solid currentColor; white-space: nowrap; }
 .tag.mode { color: var(--mc); }
 .tag.planned { color: var(--plan); border-style: dashed; }
+.tag.ax { color: var(--muted); text-transform: none; }
 .tag.dev { color: var(--muted); }
 .tag.missing { color: var(--warn); }
 .mini { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
@@ -553,6 +554,9 @@ window.MathJax = {
   }
   function typeset(el) { return window.MathJax && MathJax.typesetPromise ? MathJax.typesetPromise([el]).then(() => { texify(el); markSel(); decorate(el); }).catch(() => {}) : Promise.resolve(); }
 
+  // axioms a theorem takes as hypotheses: tags on its block and a row in its note
+  const AXIOM = { EM: 'excluded middle', FC: 'functional choice', DC: 'dependent choice' };
+  const assumesOf = (b, md) => [...new Set([...keysOfBlock(b, md)].flatMap(k => (MAP.notes[k] && MAP.notes[k].assumes) || []))].sort();
   // ---------- definitions and inline references ----------
   // the keys a block hovers in its formula or table in one mode (null: every mode)
   function keysOfBlock(b, md) {
@@ -668,6 +672,7 @@ window.MathJax = {
     el.className = 'block' + (only ? ' only' : ''); el.id = 'b-' + b.id;
     if (only) el.dataset.mc = only[0];
     const tags = (only ? only.map(m => `<span class="tag mode" data-mc="${esc(m)}">${esc((modeOf(m) || {}).short || m)}</span>`).join('') : '')
+      + assumesOf(b, bm).map(x => `<span class="tag ax" title="${esc(AXIOM[x] || x)}, assumed by a theorem of this block">${esc(x)}</span>`).join('')
       + [...new Set((b.deviations || []).map(d => d.kind))].map(k => { const m = (b.deviations || []).some(d => d.kind === k && missing(d)); return `<span class="tag ${k === 'planned' ? 'planned' : m ? 'missing' : 'dev'}" title="${esc(m ? 'Reason missing' : 'The reason is in the note of the block, click its title')}">${esc(KIND[k] || k)}</span>`; }).join('');
     const flip = differs(b) ? `<span class="mini" role="group" aria-label="Show this block in">${MODES.map(m => `<button type="button" data-flip="${esc(b.id)}" data-m="${esc(m.id)}" data-mc="${esc(m.id)}" aria-pressed="${bm === m.id}" title="${esc(m.label)}">${esc(m.short || m.label)}</button>`).join('')}</span>` : '';
     el.innerHTML = `<div class="bhead"><h3 data-block="${esc(b.id)}" tabindex="0">${esc(b.title)}</h3><span class="tools">${tags}${hook('blockTags', b)}${flip}${b.source && b.source.length ? `<button class="tbtn" type="button" data-src aria-pressed="false" title="Show where this is in the Rocq">${ICON.code}</button>` : ''}<button class="tbtn" type="button" data-copy="${esc(b.id)}" title="Copy the TeX of this formula">${ICON.copy}</button><a class="tbtn" href="#${esc(s.id)}/${esc(b.id)}" title="Link to this block">${ICON.link}</a></span></div>`;
@@ -743,6 +748,7 @@ window.MathJax = {
     if (args.length) h += `<div><dt>Arguments</dt><dd><ul class="args">${args.map(a => `<li>$${esc(toMJ(a.name, md))}$ ${prose(a.meaning, md)}</li>`).join('')}</ul></dd></div>`;
     h += row('Meaning', n.meaning) + row('Why', n.why) + row('Without it', n.breaks, 'breaks') + row('Example', n.example);
     for (const [label, html] of window.ProofMap.exts.flatMap(e => { try { return (e.noteRows && e.noteRows(n, ctx())) || []; } catch (err) { return []; } })) h += `<div><dt>${esc(label)}</dt><dd>${html}</dd></div>`;
+    if ((n.assumes || []).length) h += `<div><dt>Assumes</dt><dd>${n.assumes.map(x => `<span class="tag ax" title="${esc(AXIOM[x] || x)}">${esc(x)}</span> ${esc(AXIOM[x] || '')}`).join('<br>')}</dd></div>`;
     if ((n.deviations || []).length) h += `<div><dt>Differs from the code</dt><dd>${devList(n.deviations)}</dd></div>`;
     if ((n.source || []).length) h += `<div><dd><details class="rocq"><summary>Rocq</summary><ul class="refs">${n.source.map(r => `<li>${esc(r.file)}: ${esc(r.names.join(', '))}${r.qualifier ? ` <span class="q">(${esc(r.qualifier)})</span>` : ''}</li>`).join('')}</ul></details></dd></div>`;
     h += '</dl>';
