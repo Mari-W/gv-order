@@ -1942,8 +1942,8 @@
     {
      "id": "rd",
      "title": "Readiness",
-     "formula": "\\begin{array}{c}\\begin{array}{rcl}\n\\sym{sr.ready}{\\mathsf{ready}_W(\\Theta \\mid F, t)} & \\iff & \\sym{rd.stable}{\\mathsf{stable}\\,t} \\Longrightarrow \\sym{rd.value}{\\mathsf{done}} \\land \\sym{rd.below-rest}{\\mathsf{ordered}} \\\\[1ex]\n\\sym{rd.value}{\\mathsf{done}} & \\iff & \\sym{rd.value}{O = \\varnothing \\Rightarrow t \\in \\mathsf{Val}} \\\\\n\\sym{rd.below-rest}{\\mathsf{ordered}} & \\iff & \\sym{rd.link}{\\mathsf{link}\\,t} \\lor {} \\sym{rd.below-rest}{\\forall o \\in O.\\ \\sym{rd.below-held}{(\\forall o' \\in \\mathrm{dom}\\,\\Theta \\setminus O.\\ W \\vdash x_o \\prec \\overline{x_{o'}})} \\land \\sym{rd.below-future}{(\\forall y \\in F.\\ W \\vdash x_o \\prec y)}} \\\\[1ex]\n & & O = \\sym{rd.offered}{\\mathsf{offered}_\\Theta(t)} \\qquad \\Theta(o) = S_{x_o}\n\\end{array}\\\\[3ex]\\begin{array}{rcl}\n\\sym{sr.readyp}{\\mathsf{ready}_W(\\Sigma, p)} & \\iff & \\sym{rd.p-stable}{\\mathsf{stable}\\,p} \\Longrightarrow \\sym{rd.link}{\\mathsf{link}\\,p} \\lor (\\sym{rd.p-term}{\\mathsf{done}} \\land \\sym{rd.above-offered}{\\mathsf{covered}}) \\\\[1ex]\n\\sym{rd.p-term}{\\mathsf{done}} & \\iff & \\sym{rd.p-term}{O = \\varnothing \\Rightarrow \\sym{prop.terminated}{\\mathsf{terminated}}\\,p} \\\\\n\\sym{rd.above-offered}{\\mathsf{covered}} & \\iff & \\sym{rd.above-offered}{\\forall o \\in \\mathrm{dom}\\,\\Sigma \\setminus O.\\ \\exists o' \\in O.\\ W \\vdash x_{o'} \\prec \\overline{x_o}} \\\\[1ex]\n & & O = \\sym{rd.offered}{\\mathsf{offered}_\\Sigma(p)}\n\\end{array}\\end{array}",
-     "caption": "Readiness constrains a stuck term, one that can only offer actions. A stuck term has finished when it offers nothing, and each end it offers lies below the dual points of the ends it keeps and below its future, in the order $W \\vdash x \\prec y$ of [[w-order]]. A stuck process is at a link, or has finished when it offers nothing, and each interface end it keeps has an offered end below its dual point. Internal channels have no points. $O$ is the set of ends a stuck term or process offers. The [[e-rel|term relation]] and the [[p-rel|process relation]] ask readiness of each reducible term and process.",
+     "formula": "\\begin{array}{rcl}\n\\sym{sr.ready}{\\mathsf{ready}_W(\\Theta \\mid F, t)} & \\iff & \\sym{rd.stable}{\\mathsf{stable}\\,t} \\Rightarrow \\sym{rd.value}{(O = \\varnothing \\Rightarrow t \\in \\mathsf{Val})} \\land (\\sym{rd.link}{\\mathsf{link}\\,t} \\lor \\sym{rd.below-rest}{\\Theta|_O \\prec_W \\sym{rd.below-held}{\\overline{\\Theta \\setminus O}} \\cup \\sym{rd.below-future}{F}}) \\\\[1.5ex]\n\\sym{sr.readyp}{\\mathsf{ready}_W(\\Sigma, p)} & \\iff & \\sym{rd.p-stable}{\\mathsf{stable}\\,p} \\Rightarrow \\sym{rd.link}{\\mathsf{link}\\,p} \\lor \\big(\\sym{rd.p-term}{(O = \\varnothing \\Rightarrow \\sym{prop.terminated}{\\mathsf{terminated}}\\,p)} \\land \\sym{rd.above-offered}{\\forall y \\in \\overline{\\Sigma \\setminus O}.\\ \\exists x \\in \\Sigma|_O.\\ W \\vdash x \\prec y}\\big) \\\\[1.5ex]\n & & O = \\sym{rd.offered}{\\mathsf{offered}(t)} \\qquad O = \\sym{rd.offered}{\\mathsf{offered}(p)}\n\\end{array}",
+     "caption": "A stuck term offers below everything it keeps and below its future. A stuck process has an offer below each end it keeps. $O$ is the set of ends a stuck term or process offers. $\\Theta|_O$ is the set of points of the offered ends, $\\Theta \\setminus O$ the set of points of the ends kept but not offered, and the bar takes dual points. $A \\prec_W B$ holds when $W \\vdash x \\prec y$ for each $x \\in A$ and $y \\in B$, in the order of [[w-order]]. Internal channels have no points. The [[e-rel|term relation]] and the [[p-rel|process relation]] ask readiness of each reducible term and process.",
      "why": "In a strict order some stuck thread waits at a minimal point, and the thread holding the dual end can act with that thread. Adequacy uses this argument to derive deadlock freedom from readiness. This is the semantic form of the [[t-side|side conditions]] of typing.",
      "source": [
       {
@@ -13572,8 +13572,8 @@
    ]
   },
   "rd.offered": {
-   "title": "$\\mathsf{offered}_\\Theta(t, o)$",
-   "meaning": "$o \\in \\mathrm{dom}\\,\\Theta \\land \\exists \\sigma, t'.\\ t \\xrightarrow{\\sigma} t' \\land o \\in \\mathsf{subj}\\,\\sigma$.",
+   "title": "$\\mathsf{offered}(t)$",
+   "meaning": "The ends $o \\in \\mathrm{dom}\\,\\Theta$ with $t \\xrightarrow{\\sigma} t'$ for some label $\\sigma$ whose subject contains $o$. For a process, the same with $\\Sigma$ and $p$.",
    "why": "Each end has its own entry, so the offered ends are read off the labels.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{recv}\\,b$ offers $b$.",
@@ -13602,8 +13602,8 @@
    ]
   },
   "rd.value": {
-   "title": "No offer means a value",
-   "meaning": "$(\\forall o.\\ \\neg\\mathsf{offered}_\\Theta(t, o)) \\Rightarrow t \\in \\mathsf{Val}$.",
+   "title": "$O = \\varnothing \\Rightarrow t \\in \\mathsf{Val}$",
+   "meaning": "A stable term that offers no end it holds is a value.",
    "why": "A stable term offering only ends it does not hold would be stuck.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{close}\\,q$ with $q \\notin \\mathrm{dom}\\,\\Theta$ is not ready.",
@@ -13625,7 +13625,7 @@
    "deviations": [
     {
      "kind": "renamed",
-     "reason": "$\\mathsf{done}$ labels the first conjunct of `ready_t`, and $\\mathsf{Val}$ is the set of terms that `is_val` accepts.",
+     "reason": "$\\mathsf{Val}$ is the set of terms that `is_val` accepts, and $O = \\varnothing$ stands for $\\forall o.\\ \\neg$`offered_t`$\\,\\Theta\\,t\\,o$.",
      "names": [
       "ready_t"
      ]
@@ -13660,7 +13660,7 @@
   },
   "rd.below-rest": {
    "title": "$\\mathsf{below\\_rest}$",
-   "meaning": "Each offered end at $x$ lies below the dual point of each held end it does not offer and below each point of $F$.",
+   "meaning": "$\\Theta|_O \\prec_W \\overline{\\Theta \\setminus O} \\cup F$. Each offered end lies below the dual point of each end kept but not offered and below each point of $F$.",
    "why": "It excludes circular waiting, because a waiting thread's offer is minimal among what it holds and what its context still does.",
    "breaks": "Client and server each blocked on their second channel while holding the first, under a cyclic order.",
    "example": "Closing $c$ at $\\rho$ while $d$ is held at $\\rho\\cdot 0$ needs $\\rho \\prec \\overline{\\rho\\cdot 0}$.",
@@ -13694,7 +13694,7 @@
    "deviations": [
     {
      "kind": "renamed",
-     "reason": "$\\mathsf{ordered}$ labels the condition `below_rest`.",
+     "reason": "$\\Theta|_O \\prec_W \\overline{\\Theta \\setminus O} \\cup F$ writes `below_rest` with sets of points in place of its two quantified clauses.",
      "names": [
       "below_rest"
      ]
@@ -13702,12 +13702,12 @@
    ]
   },
   "rd.below-held": {
-   "title": "Below the dual points of held ends",
-   "meaning": "$\\forall o' \\notin O.\\ \\Theta(o') = {S'}_{x'} \\Rightarrow W \\vdash x \\prec \\overline{x'}$.",
+   "title": "$\\overline{\\Theta \\setminus O}$",
+   "meaning": "The dual points of the ends held but not offered.",
    "why": "The dual end of a held end acts at $\\overline{x'}$, so the offered end is served before anyone waits on the held ends.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\rho \\prec \\overline{\\rho\\cdot 0}$.",
-   "signature": "\\forall o' \\notin O.\\ \\Theta(o') = {S'}_{x'} \\Rightarrow W \\vdash x \\prec \\overline{x'}",
+   "signature": "\\overline{\\Theta \\setminus O} = \\{\\overline{x'} \\mid \\Theta(o') = {S'}_{x'},\\ o' \\notin O\\}",
    "args": [
     {
      "name": "x",
@@ -13728,12 +13728,12 @@
    ]
   },
   "rd.below-future": {
-   "title": "Below the future",
-   "meaning": "$\\forall y \\in F.\\ W \\vdash x \\prec y$.",
+   "title": "The future $F$",
+   "meaning": "The points at which the context acts after the term returns. Each offered end lies below each point of $F$.",
    "why": "The context acts at the points of $F$ after the term returns.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\kappa \\prec y$ for each $y$ above the upper point in $\\mathsf{between}$.",
-   "signature": "\\forall y \\in F.\\ W \\vdash x \\prec y",
+   "signature": "F \\subseteq \\mathsf{Point}",
    "args": [
     {
      "name": "x",
@@ -13776,8 +13776,8 @@
    ]
   },
   "rd.p-term": {
-   "title": "No offer means terminated",
-   "meaning": "$(\\forall o.\\ \\neg\\mathsf{offered}_\\Sigma(p, o)) \\Rightarrow \\mathsf{terminated}\\,p$.",
+   "title": "$O = \\varnothing \\Rightarrow \\mathsf{terminated}\\,p$",
+   "meaning": "A stable process that offers no interface end has terminated.",
    "why": "A stable process that offers nothing to its environment must be finished, which is the deadlock-freedom statement at the process level.",
    "breaks": "Without it, a stable process blocked on internal ends would satisfy P-Ready.",
    "example": "$(\\varnothing, \\{\\ast\\})$.",
@@ -13803,7 +13803,7 @@
    "deviations": [
     {
      "kind": "renamed",
-     "reason": "$\\mathsf{done}$ labels the first conjunct of `ready_p`.",
+     "reason": "$O = \\varnothing$ stands for $\\forall o.\\ \\neg$`offered_p`$\\,\\Sigma\\,p\\,o$.",
      "names": [
       "ready_p"
      ]
@@ -13812,7 +13812,7 @@
   },
   "rd.above-offered": {
    "title": "$\\mathsf{above\\_offered}$",
-   "meaning": "Each interface end at $x$ that is not offered has an offered end at $x'$ with $W \\vdash x' \\prec \\overline{x}$.",
+   "meaning": "$\\forall y \\in \\overline{\\Sigma \\setminus O}.\\ \\exists x \\in \\Sigma|_O.\\ W \\vdash x \\prec y$. Each interface end kept but not offered has an offered end below its dual point.",
    "why": "The environment can always serve some offered end first, so composing two ready processes over one world keeps one of them able to move.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{above\\_offered}\\,W\\,\\Sigma\\,O$.",
@@ -13846,7 +13846,7 @@
    "deviations": [
     {
      "kind": "renamed",
-     "reason": "$\\mathsf{covered}$ labels the condition `above_offered`.",
+     "reason": "The map quantifies over the dual points $\\overline{\\Sigma \\setminus O}$ and the points $\\Sigma|_O$, where `above_offered` quantifies over the ends.",
      "names": [
       "above_offered"
      ]
