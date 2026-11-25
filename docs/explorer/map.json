@@ -497,9 +497,9 @@
     {
      "id": "ty-grammar",
      "title": "Types",
-     "formula": "\\begin{array}{rl}\nT, U ::= & \\sym{ty.unit}{\\ast} \\mid \\sym{ty.arrow}{(T \\multimap^{\\sym{ty.arrow.ub}{u}}_{\\sym{ty.arrow.lb}{l}}\\inmode{lf}{[\\sym{ty.arrow.cost}{c}]}\\, U)\\inmode{lf}{^{\\sym{ty.credit}{a}}}} \\mid \\sym{ty.prod}{T \\otimes U} \\mid \\sym{ty.sum}{T \\oplus U} \\mid \\sym{ty.sess}{S_x\\inmode{lf}{^{\\sym{ty.credit}{a},\\sym{ty.tickets}{m}}}} \\\\\n\\mid & \\sym{ty.box}{\\Box(\\forall \\sym{pt.var}{\\bar\\iota}\\, \\sym{ty.box.svars}{\\bar\\alpha}.\\ \\sym{ty.box.constraint}{C}.\\ \\ast \\multimap^{u}\\inmode{lf}{[c]}\\, U)} \\mid \\sym{ty.ex}{\\exists^{\\sym{ty.ex.lb}{l}} \\bar\\iota.\\ C.\\ T}\n\\end{array}",
+     "formula": "\\begin{array}{rl}\nT, U ::= & \\sym{ty.unit}{\\ast} \\mid \\sym{ty.arrow}{(T \\multimap^{\\sym{ty.arrow.ub}{u}}_{\\sym{ty.arrow.lb}{l}}\\inmode{lf}{[\\sym{ty.arrow.cost}{c}]}\\, U)\\inmode{lf}{^{\\sym{ty.credit}{a}}}} \\mid \\sym{ty.prod}{T \\otimes U} \\mid \\sym{ty.sum}{T \\oplus U} \\mid \\sym{ty.sess}{S_x\\inmode{lf}{^{\\sym{ty.credit}{a},\\sym{ty.tickets}{m}}}} \\\\\n\\mid & \\sym{ty.box}{\\Box(\\forall \\sym{pt.var}{\\bar\\iota}\\, \\sym{ty.box.svars}{\\bar Z}.\\ \\sym{ty.box.constraint}{C}.\\ \\ast \\multimap^{u}\\inmode{lf}{[c]}\\, U)} \\mid \\sym{ty.ex}{\\exists^{\\sym{ty.ex.lb}{l}} \\bar\\iota.\\ C.\\ T}\n\\end{array}",
      "variants": {
-      "df": "\\begin{array}{rl} T, U ::= & \\sym{ty.unit}{\\ast} \\mid \\sym{ty.arrow}{T \\multimap^{\\sym{ty.arrow.ub}{u}}_{\\sym{ty.arrow.lb}{l}} U} \\mid \\sym{ty.prod}{T \\otimes U} \\mid \\sym{ty.sum}{T \\oplus U} \\mid \\sym{ty.sess}{S_x} \\\\ \\mid & \\sym{ty.box}{\\Box(\\forall \\sym{pt.var}{\\bar\\iota}\\, \\sym{ty.box.svars}{\\bar\\alpha}.\\ \\sym{ty.box.constraint}{C}.\\ \\ast \\multimap^{u} U)} \\mid \\sym{ty.ex}{\\exists^{\\sym{ty.ex.lb}{l}} \\bar\\iota.\\ C.\\ T} \\end{array}"
+      "df": "\\begin{array}{rl} T, U ::= & \\sym{ty.unit}{\\ast} \\mid \\sym{ty.arrow}{T \\multimap^{\\sym{ty.arrow.ub}{u}}_{\\sym{ty.arrow.lb}{l}} U} \\mid \\sym{ty.prod}{T \\otimes U} \\mid \\sym{ty.sum}{T \\oplus U} \\mid \\sym{ty.sess}{S_x} \\\\ \\mid & \\sym{ty.box}{\\Box(\\forall \\sym{pt.var}{\\bar\\iota}\\, \\sym{ty.box.svars}{\\bar Z}.\\ \\sym{ty.box.constraint}{C}.\\ \\ast \\multimap^{u} U)} \\mid \\sym{ty.ex}{\\exists^{\\sym{ty.ex.lb}{l}} \\bar\\iota.\\ C.\\ T} \\end{array}"
      },
      "caption": "$S_x$ is an end with [[ty-session|session type]] $S$ at the [[syn-points|point]] $x$, the point at which the end acts next. An arrow has an upper point $u$ and a lower point $l$, both defined in [[ty-heads]]. $u$ bounds from above where a call may wait, and $l$ bounds from below the dual points of the ends the closure captured. An arrow written without $u$ has $u = \\bot$, and without $l$ has $l = \\top$. A box quantifies over points and session types under a constraint $C$, a set of facts $x \\prec y$. An existential abstracts the points of its witness. \\inmode{lf}{An arrow and a box have a cost $c$, and an end has tickets $m$. Credits $a$ appear on ends and on closures, the two kinds of value that hold ends themselves. The credit of an end is a lower bound on its counter. The credit of a closure is a lower bound on its captured counters and bounds what they lose before a call. The numbers are defined in [[ty-ann]].}",
      "why": "A type says what a value is and, for an end, at which point it waits. The [[t-judgment|typing judgment]] assigns these types, and the [[v-rel|value relation]] gives each type its meaning. \\inmode{lf}{A credit bounds how long the thread holding an end may postpone it.}",
@@ -515,12 +515,15 @@
       "t-judgment",
       "v-rel"
      ],
-     "example": "A thread that holds $c^{+} : (!\\ast.\\mathsf{Close})_{x}$ sends on $c^{+}$ at $x$ and then holds $c^{+} : \\mathsf{Close}_{x^{+}}$. A closure $\\lambda u.\\,\\mathsf{close}\\,c^{+}$ that captured this end has the type $\\ast \\multimap^{x^{+}}_{\\overline{x^{+}}} \\ast$. Its body waits at $x^{+}$, and the one end it holds has the dual point $\\overline{x^{+}}$."
+     "example": "A thread that holds $c^{+} : (!\\ast.\\mathsf{Close})_{x}$ sends on $c^{+}$ at $x$ and then holds $c^{+} : \\mathsf{Close}_{x^{+}}$. A closure $\\lambda u.\\,\\mathsf{close}\\,c^{+}$ that captured this end has the type $\\ast \\multimap^{x^{+}}_{\\overline{x^{+}}} \\ast$. Its body waits at $x^{+}$, and the one end it holds has the dual point $\\overline{x^{+}}$.",
+     "introduces": [
+      "Z"
+     ]
     },
     {
      "id": "ty-session",
      "title": "Session types",
-     "formula": "\\begin{array}{rl}\nS ::= & \\sym{sty.skip}{\\mathsf{Skip}} \\mid \\sym{sty.seq}{S.S} \\mid \\sym{sty.recv}{?(\\bar\\iota.\\ T)} \\mid \\sym{sty.send}{!(\\bar\\iota.\\ T)} \\mid \\sym{sty.plus}{\\oplus(S', S'')} \\\\\n\\mid & \\sym{sty.with}{\\&(S', S'')} \\mid \\sym{sty.close}{\\mathsf{Close}} \\mid \\sym{sty.mu}{\\mu\\alpha.S} \\mid \\sym{sty.var}{\\alpha} \\mid \\sym{sty.vard}{\\overline{\\alpha}}  \\\\\n & \\sym{sty.unfold}{\\mathsf{unfold} : \\mathsf{STy} \\to \\mathsf{STy}} \\qquad \\sym{sty.contr}{\\mathsf{contr} \\subseteq \\mathsf{STy}}\n\\end{array}",
+     "formula": "\\begin{array}{rl}\nS ::= & \\sym{sty.skip}{\\mathsf{Skip}} \\mid \\sym{sty.seq}{S.S} \\mid \\sym{sty.recv}{?(\\bar\\iota.\\ T)} \\mid \\sym{sty.send}{!(\\bar\\iota.\\ T)} \\mid \\sym{sty.plus}{\\oplus(S', S'')} \\\\\n\\mid & \\sym{sty.with}{\\&(S', S'')} \\mid \\sym{sty.close}{\\mathsf{Close}} \\mid \\sym{sty.mu}{\\mu Z.S} \\mid \\sym{sty.var}{Z} \\mid \\sym{sty.vard}{\\overline{Z}}  \\\\\n & \\sym{sty.unfold}{\\mathsf{unfold} : \\mathsf{STy} \\to \\mathsf{STy}} \\qquad \\sym{sty.contr}{\\mathsf{contr} \\subseteq \\mathsf{STy}}\n\\end{array}",
      "caption": "Session types with sequencing $S.S$ and recursion, read through $\\mathsf{unfold}(S)$, which unrolls $\\mu$ and drops leading $\\mathsf{Skip}$ until the first action is on top. A payload binds point variables $\\bar\\iota$, which stand for the fields of the carrier, as [[ty-payload]] explains. [[ty-dual|Duality]] gives the protocol of the other end, and the [[r-act|rules for actions]] read the first action of $\\mathsf{unfold}(S)$.",
      "why": "A session type describes the protocol of one end. $\\mathsf{Skip}$ and sequencing let a recursion variable occur in the middle of a protocol, so one $\\mu$ types loops whose rounds continue with more actions. Contractivity, $\\mathsf{contr}\\,S$, asks that each recursion passes an action. Without it a session variable of a box could be instantiated with $\\mathsf{Skip}$ and turn a well-typed body into one with no first action, as [[ex-sinst|the example on contractivity]] shows.",
      "source": [
@@ -536,13 +539,13 @@
       "ty-dual",
       "r-act"
      ],
-     "example": "$\\mu\\alpha.\\,!\\ast.?\\ast.\\alpha$ sends and receives forever. $(!\\ast.\\mathsf{Skip}).\\mathsf{Close}$ and $!\\ast.\\mathsf{Close}$ are the same protocol."
+     "example": "$\\mu Z.\\,!\\ast.?\\ast.Z$ sends and receives forever. $(!\\ast.\\mathsf{Skip}).\\mathsf{Close}$ and $!\\ast.\\mathsf{Close}$ are the same protocol."
     },
     {
      "id": "ty-dual",
      "title": "Duality",
-     "formula": "\\sym{sty.dual}{\\begin{array}{l}\n\\mathsf{dual}(!P) = ?P \\qquad \\mathsf{dual}(?P) = !P \\qquad \\mathsf{dual}(\\alpha) = \\overline{\\alpha} \\\\\n\\mathsf{dual}(\\oplus(S',S'')) = \\&(\\mathsf{dual}\\,S',\\mathsf{dual}\\,S'') \\\\\n\\mathsf{dual}(S'.S'') = \\mathsf{dual}\\,S'.\\mathsf{dual}\\,S'' \\\\\n\\mathsf{dual}(\\mu\\alpha.S) = \\mu\\alpha.\\,\\sym{sty.flip}{\\mathsf{flip}_\\alpha}(\\mathsf{dual}\\,S)\n\\end{array}}",
-     "caption": "$\\mathsf{dual}$ swaps sending and receiving and keeps each payload $P$, $\\mathsf{Skip}$ and $\\mathsf{Close}$. We write $\\overline{S}$ for $\\mathsf{dual}\\,S$. Under a $\\mu$ the variable $\\alpha$ of a [[ty-session|session type]] is replaced by its dual $\\overline{\\alpha}$ and back by $\\mathsf{flip}_\\alpha$, so that $\\overline{\\mu\\alpha.S}$ unrolls to the dual of the unrolling.",
+     "formula": "\\sym{sty.dual}{\\begin{array}{l}\n\\mathsf{dual}(!P) = ?P \\qquad \\mathsf{dual}(?P) = !P \\qquad \\mathsf{dual}(Z) = \\overline{Z} \\\\\n\\mathsf{dual}(\\oplus(S',S'')) = \\&(\\mathsf{dual}\\,S',\\mathsf{dual}\\,S'') \\\\\n\\mathsf{dual}(S'.S'') = \\mathsf{dual}\\,S'.\\mathsf{dual}\\,S'' \\\\\n\\mathsf{dual}(\\mu Z.S) = \\mu Z.\\,\\sym{sty.flip}{\\mathsf{flip}_Z}(\\mathsf{dual}\\,S)\n\\end{array}}",
+     "caption": "$\\mathsf{dual}$ swaps sending and receiving and keeps each payload $P$, $\\mathsf{Skip}$ and $\\mathsf{Close}$. We write $\\overline{S}$ for $\\mathsf{dual}\\,S$. Under a $\\mu$ the variable $Z$ of a [[ty-session|session type]] is replaced by its dual $\\overline{Z}$ and back by $\\mathsf{flip}_Z$, so that $\\overline{\\mu Z.S}$ unrolls to the dual of the unrolling.",
      "why": "The two ends of a channel follow dual protocols. [[r-new|Creation]], [[r-act|linking]] and [[p-typing|composition]] check duality.",
      "source": [
       {
@@ -602,7 +605,7 @@
     {
      "id": "ty-heads",
      "title": "Bounds and active points",
-     "formula": "\\begin{array}{l}\n\\sym{ty.ubound}{\\sym{ty.lbound}{l}, u, v \\in \\mathsf{Point} \\cup \\{\\bot, \\top\\}} \\qquad \\sym{side.top}{\\bot \\prec u \\qquad u \\prec \\top} \\qquad \\sym{ty.up}{u \\prec {\\vartriangle}v \\iff u \\preccurlyeq v} \\\\\n\\sym{ty.heads}{\\mathsf{ap}(S_x) = \\{\\overline{x}\\}} \\qquad \\sym{ty.heads}{\\mathsf{ap}(T \\multimap^{u}_{l} U) = \\mathsf{ap}(\\exists^{l}\\bar\\iota.\\ C.\\ T) = \\{l\\}} \\\\\n\\sym{ty.heads}{\\mathsf{ap}(T \\otimes U) = \\mathsf{ap}(T \\oplus U) = \\mathsf{ap}(T) \\cup \\mathsf{ap}(U)} \\qquad \\sym{ty.heads}{\\mathsf{ap}(\\ast) = \\mathsf{ap}(\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u} U)) = \\varnothing}\n\\end{array}",
+     "formula": "\\begin{array}{l}\n\\sym{ty.ubound}{\\sym{ty.lbound}{l}, u, v \\in \\mathsf{Point} \\cup \\{\\bot, \\top\\}} \\qquad \\sym{side.top}{\\bot \\prec u \\qquad u \\prec \\top} \\qquad \\sym{ty.up}{u \\prec {\\vartriangle}v \\iff u \\preccurlyeq v} \\\\\n\\sym{ty.heads}{\\mathsf{ap}(S_x) = \\{\\overline{x}\\}} \\qquad \\sym{ty.heads}{\\mathsf{ap}(T \\multimap^{u}_{l} U) = \\mathsf{ap}(\\exists^{l}\\bar\\iota.\\ C.\\ T) = \\{l\\}} \\\\\n\\sym{ty.heads}{\\mathsf{ap}(T \\otimes U) = \\mathsf{ap}(T \\oplus U) = \\mathsf{ap}(T) \\cup \\mathsf{ap}(U)} \\qquad \\sym{ty.heads}{\\mathsf{ap}(\\ast) = \\mathsf{ap}(\\Box(\\forall\\bar\\iota\\,\\bar Z.\\ C.\\ \\ast \\multimap^{u} U)) = \\varnothing}\n\\end{array}",
      "caption": "A lower point $l$, an upper point $u$ and the bound $v$ of a future are a point, $\\bot$ or $\\top$. A comparison of a bound with a point or with a set of bounds reads $\\prec_W$ of [[w-order]] or the order judgment of typing, extended to bounds. $\\bot$ lies below each bound and $\\top$ above each bound, $\\bot$ and $\\top$ included, and $u \\preccurlyeq v$ stays $u = v \\lor u \\prec v$. Between two points the order is unchanged, and the conditions on worlds and readiness compare points only. ${\\vartriangle}v$ stands for the points above $v$, which the term cannot name, and $u$ lies below them when $u \\preccurlyeq v$. $\\mathsf{ap}(T)$ is the set of dual points of the ends in a value of $T$, the points at which the dual ends act next. A thread holding such a value may wait only below these points, which the [[t-side|side conditions]] check. A closure or an existential records one lower point $l$ for the ends it holds. At $l = \\bot$ the type gives no bound, so a thread that holds the value waits nowhere, because no point lies below $\\bot$. At $l = \\top$ the value holds no end, and $\\top$ obstructs no wait, because each point lies below $\\top$. The upper point of a [[r-boxes|box]] is a point or $\\bot$. The [[t-judgment|future]] of a thread, the [[r-fun|arrow rules]] and the [[r-ex|existential rules]] read $\\mathsf{ap}$.",
      "why": "A thread that waits while it holds a value must wait below the dual points of the ends in that value, and $\\mathsf{ap}$ computes these points from the type. A closure type does not list its captured ends, so it records one bound $l$ at or below their dual points instead. With $\\bot$ and $\\top$ ordered against each bound, one comparison covers a point, a missing bound and a value without ends.",
      "source": [
@@ -706,7 +709,7 @@
     {
      "id": "ty-kinds",
      "title": "Kinds of types",
-     "formula": "\\begin{array}{l}\n\\sym{ty.tfree}{\\mathsf{tfree}\\,T \\iff T \\in \\mathcal{T}_{0}, \\qquad \\mathcal{T}_{0} ::= \\ast \\mid \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u} U) \\mid \\mathcal{T}_{0} \\otimes \\mathcal{T}_{0} \\mid \\mathcal{T}_{0} \\oplus \\mathcal{T}_{0}} \\\\\n\\sym{ty.unlimited}{\\mathsf{unlimited}\\,T \\iff \\exists \\bar\\iota, \\bar\\alpha, C, u, U.\\ T = \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u} U)}\n\\end{array}",
+     "formula": "\\begin{array}{l}\n\\sym{ty.tfree}{\\mathsf{tfree}\\,T \\iff T \\in \\mathcal{T}_{0}, \\qquad \\mathcal{T}_{0} ::= \\ast \\mid \\Box(\\forall\\bar\\iota\\,\\bar Z.\\ C.\\ \\ast \\multimap^{u} U) \\mid \\mathcal{T}_{0} \\otimes \\mathcal{T}_{0} \\mid \\mathcal{T}_{0} \\oplus \\mathcal{T}_{0}} \\\\\n\\sym{ty.unlimited}{\\mathsf{unlimited}\\,T \\iff \\exists \\bar\\iota, \\bar Z, C, u, U.\\ T = \\Box(\\forall\\bar\\iota\\,\\bar Z.\\ C.\\ \\ast \\multimap^{u} U)}\n\\end{array}",
      "caption": "$\\mathsf{tfree}\\,T$ holds for the types whose values hold no end, and [[p-typing|P-Term]] asks it of the result type of a process. $\\mathsf{unlimited}\\,T$ holds for the types that may be copied and dropped, the box types, which [[t-subs|weakening and contraction]] and the leaves of a derivation read.\\inmode{lf}{ [[t-agecap|Aging]] leaves a $\\mathsf{tfree}$ type unchanged.}",
      "why": "Process results hold no end, and only unlimited types may be copied or dropped.\\inmode{lf}{ Values without ends do not age.} A box holds no end by the [[v-rel|value relation]], so copying it duplicates no end.",
      "source": [
@@ -1372,7 +1375,7 @@
     {
      "id": "r-boxes",
      "title": "Boxes",
-     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-Box.self}{B = \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}\\inmode{lf}{[\\varepsilon]}\\,U)}\\quad \\sym{E-Box.unl}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{E-Box.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,U}\\quad \\sym{E-Box.fresh}{\\bar\\iota \\mathrel{\\#} \\Gamma, \\Delta, F}\\quad \\sym{E-Box.inst}{\\forall \\bar s.\\ \\sym{tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s} \\\\ \\sym{E-Box.body}{\\sym{E-Box.open}{\\Gamma, C(\\bar\\iota)} ; \\sym{E-Box.self}{\\Delta, f : B} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sym{ty.up}{{\\vartriangle}u}} e : \\sym{tp.sinst}{U[\\bar s]}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\ !e : B\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-Box}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{E-Force.hold}{\\Gamma \\mathrel{\\sym{side.hold}{\\vdash}} C[\\bar x]}\\quad \\sym{E-Box.inst}{\\sym{tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s}\\quad \\sym{E-Force.ub}{u[\\bar x] \\prec F} \\\\ \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}\\inmode{lf}{[\\varepsilon]}\\,U)\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_0}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{prim.force}{\\mathsf{force}}\\,e : \\sym{tp.sinst}{U[\\bar s]}\\sym{tp.pinst}{[\\bar x]}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_0 \\sym{tj.seq}{\\cdot} \\sym{E-Force.one}{1} \\sym{tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{E-Force}\\end{array}",
+     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-Box.self}{B = \\Box(\\forall \\bar\\iota\\,\\bar Z.\\ C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}\\inmode{lf}{[\\varepsilon]}\\,U)}\\quad \\sym{E-Box.unl}{\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,\\Delta}\\quad \\sym{E-Box.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,U}\\quad \\sym{E-Box.fresh}{\\bar\\iota \\mathrel{\\#} \\Gamma, \\Delta, F}\\quad \\sym{E-Box.inst}{\\forall \\bar s.\\ \\sym{tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s} \\\\ \\sym{E-Box.body}{\\sym{E-Box.open}{\\Gamma, C(\\bar\\iota)} ; \\sym{E-Box.self}{\\Delta, f : B} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sym{ty.up}{{\\vartriangle}u}} e : \\sym{tp.sinst}{U[\\bar s]}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\ !e : B\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\sym{tj.zero}{0}}}\\;\\textsf{E-Box}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{E-Force.hold}{\\Gamma \\mathrel{\\sym{side.hold}{\\vdash}} C[\\bar x]}\\quad \\sym{E-Box.inst}{\\sym{tp.sinsts}{\\mathsf{sinsts}}\\,\\bar s}\\quad \\sym{E-Force.ub}{u[\\bar x] \\prec F} \\\\ \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : \\Box(\\forall\\bar\\iota\\,\\bar Z.\\ C.\\ \\ast\\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}\\inmode{lf}{[\\varepsilon]}\\,U)\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_0}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} \\sym{prim.force}{\\mathsf{force}}\\,e : \\sym{tp.sinst}{U[\\bar s]}\\sym{tp.pinst}{[\\bar x]}\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon_0 \\sym{tj.seq}{\\cdot} \\sym{E-Force.one}{1} \\sym{tj.seq}{\\cdot} \\varepsilon}}\\;\\textsf{E-Force}\\end{array}",
      "caption": "E-Box types the body of a [[syn-terms|box]] once for each allowed list $\\bar s$ of session types $s$. The body is typed with fresh point variables $\\bar\\iota$, the hypothesis $C(\\bar\\iota)$ added to $\\Gamma$ of [[t-contexts]], and the future ${\\vartriangle}u$ of the points above the upper point $u$. Under ${\\vartriangle}\\bot$ no action types. The body refers to the box itself through a variable $f$ of the box type $B$. The context is unlimited, because a box may be copied. E-Force picks points $\\bar x$ and session types $\\bar s$, requires $C[\\bar x]$ and $u[\\bar x] \\prec F$ by [[t-side]], and gives the instantiated result type, which is the [[t-consts|type of the constant]] $\\mathsf{force}$. The [[v-rel|value relation]] at a box asks the same of each instance. \\inmode{lf}{A force costs one unit of effect, so the enclosing rules age what the thread holds across it by one.}",
      "why": "Boxes provide recursion and polymorphism over points and session types. Each force chooses an instance, so a loop can order the points of its rounds by one constraint that mentions the round through $\\bar\\iota$.",
      "source": [
@@ -1480,7 +1483,7 @@
     {
      "id": "t-consts",
      "title": "Types of constants",
-     "formula": "\\begin{array}{lll}\n\\sym{prim.send}{\\mathsf{send}} & : T[x\\cdot i] \\otimes \\sym{ty.sess}{S_x} \\mathrel{\\sym{ty.arrow}{\\multimap}}^{x} {S'}_{\\sym{pt.shift}{x^{+}}} & \\sym{E-Send.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = {!}(\\bar\\iota.\\,T).S'},\\ \\sym{ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T,\\ \\sym{E-Send.heads}{x \\prec T[x\\cdot i]} \\\\\n\\sym{prim.recv}{\\mathsf{recv}} & : \\sym{ty.sess}{S_x} \\mathrel{\\sym{ty.arrow}{\\multimap}}^{x} T[x\\cdot i] \\otimes \\sym{ty.sess}{{S'}_{x}^{+}} & \\sym{E-Recv.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = {?}(\\bar\\iota.\\,T).S'},\\ \\sym{ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T \\\\\n\\sym{prim.close}{\\mathsf{close}} & : \\sym{ty.sess}{S_x} \\mathrel{\\sym{ty.arrow}{\\multimap}}^{x} \\ast & \\sym{E-Close.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = \\sym{sty.close}{\\mathsf{Close}}} \\\\\n\\sym{prim.select}{\\mathsf{select}}_i & : \\sym{ty.sess}{S_x} \\mathrel{\\sym{ty.arrow}{\\multimap}}^{x} \\sym{sty.choice}{(\\mathsf{if}\\ i\\ \\mathsf{then}\\ S''\\ \\mathsf{else}\\ S')}_{\\sym{pt.sel}{\\overline{x\\cdot\\kappa_i}}} & \\sym{E-Select.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = \\oplus(S',S'')} \\\\\n\\sym{prim.branch}{\\mathsf{branch}} & : \\sym{ty.sess}{S_x} \\mathrel{\\sym{ty.arrow}{\\multimap}}^{x} {S'}_{\\sym{pt.bra}{x\\cdot\\sym{sx.kappai}{\\kappa_{\\mathsf{false}}}}} \\oplus {S''}_{x\\cdot\\sym{sx.kappai}{\\kappa_{\\mathsf{true}}}} & \\sym{E-Branch.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = \\&(S',S'')} \\\\\n\\sym{prim.link}{\\mathsf{link}} & : \\sym{E-Link.dual}{\\sym{ty.sess}{S_x} \\otimes \\sym{ty.sess}{\\overline{S}_{\\overline{x}}}} \\mathrel{\\sym{ty.arrow}{\\multimap}} \\ast & \\\\\n\\sym{prim.spawn}{\\mathsf{spawn}} & : (\\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l} \\ast) \\mathrel{\\sym{ty.arrow}{\\multimap}} \\ast & \\\\\n\\sym{prim.force}{\\mathsf{force}} & : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\mathrel{\\sym{ty.arrow}{\\multimap}}^{u} U) \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] & \\sym{E-Force.hold}{\\Gamma \\mathrel{\\sym{side.hold}{\\vdash}} C[\\bar x]}\n\\end{array}",
+     "formula": "\\begin{array}{lll}\n\\sym{prim.send}{\\mathsf{send}} & : T[x\\cdot i] \\otimes \\sym{ty.sess}{S_x} \\mathrel{\\sym{ty.arrow}{\\multimap}}^{x} {S'}_{\\sym{pt.shift}{x^{+}}} & \\sym{E-Send.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = {!}(\\bar\\iota.\\,T).S'},\\ \\sym{ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T,\\ \\sym{E-Send.heads}{x \\prec T[x\\cdot i]} \\\\\n\\sym{prim.recv}{\\mathsf{recv}} & : \\sym{ty.sess}{S_x} \\mathrel{\\sym{ty.arrow}{\\multimap}}^{x} T[x\\cdot i] \\otimes \\sym{ty.sess}{{S'}_{x}^{+}} & \\sym{E-Recv.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = {?}(\\bar\\iota.\\,T).S'},\\ \\sym{ty.pscoped}{\\mathsf{pscoped}}\\,\\bar\\iota\\,T \\\\\n\\sym{prim.close}{\\mathsf{close}} & : \\sym{ty.sess}{S_x} \\mathrel{\\sym{ty.arrow}{\\multimap}}^{x} \\ast & \\sym{E-Close.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = \\sym{sty.close}{\\mathsf{Close}}} \\\\\n\\sym{prim.select}{\\mathsf{select}}_i & : \\sym{ty.sess}{S_x} \\mathrel{\\sym{ty.arrow}{\\multimap}}^{x} \\sym{sty.choice}{(\\mathsf{if}\\ i\\ \\mathsf{then}\\ S''\\ \\mathsf{else}\\ S')}_{\\sym{pt.sel}{\\overline{x\\cdot\\kappa_i}}} & \\sym{E-Select.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = \\oplus(S',S'')} \\\\\n\\sym{prim.branch}{\\mathsf{branch}} & : \\sym{ty.sess}{S_x} \\mathrel{\\sym{ty.arrow}{\\multimap}}^{x} {S'}_{\\sym{pt.bra}{x\\cdot\\sym{sx.kappai}{\\kappa_{\\mathsf{false}}}}} \\oplus {S''}_{x\\cdot\\sym{sx.kappai}{\\kappa_{\\mathsf{true}}}} & \\sym{E-Branch.unfold}{\\sym{sty.unfold}{\\mathsf{unfold}}(S) = \\&(S',S'')} \\\\\n\\sym{prim.link}{\\mathsf{link}} & : \\sym{E-Link.dual}{\\sym{ty.sess}{S_x} \\otimes \\sym{ty.sess}{\\overline{S}_{\\overline{x}}}} \\mathrel{\\sym{ty.arrow}{\\multimap}} \\ast & \\\\\n\\sym{prim.spawn}{\\mathsf{spawn}} & : (\\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l} \\ast) \\mathrel{\\sym{ty.arrow}{\\multimap}} \\ast & \\\\\n\\sym{prim.force}{\\mathsf{force}} & : \\Box(\\forall\\bar\\iota\\,\\bar Z.\\ C.\\ \\ast\\mathrel{\\sym{ty.arrow}{\\multimap}}^{u} U) \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u[\\bar x]} U[\\bar s][\\bar x] & \\sym{E-Force.hold}{\\Gamma \\mathrel{\\sym{side.hold}{\\vdash}} C[\\bar x]}\n\\end{array}",
      "caption": "Each [[syn-prims|constant]] has the type of its eta-expansion $\\lambda y.\\,k\\,y$, for each instance of its variables that meets the side conditions. An action on an end at $x$ has upper point $x$, and an arrow written without upper point has $u = \\bot$. $\\mathsf{new}$ is a term and is typed by [[r-new|E-New]]. The table summarizes the rules in [[r-act]], [[r-threads]] and [[r-boxes]]. \\inmode{lf}{The types are shown without credits, tickets and cost.}",
      "why": "Constants are values and therefore need types. The upper point $x$ means that a caller may apply an action at $x$ only while its future lies above $x$.",
      "source": [
@@ -1636,9 +1639,9 @@
     {
      "id": "t-subs",
      "title": "Subtyping and structural rules",
-     "formula": "\\begin{array}{c}\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{tp.sub-sess}{S \\mathrel{\\sym{sty.ssub}{\\sqsubseteq}} S'}\\quad \\inmode{lf}{\\sym{tp.sub-credit}{a' \\leq a}}\\end{array}}{\\sym{sub.tsub}{S_x\\inmode{lf}{^{a,m}} \\leq {S'}_x\\inmode{lf}{^{a',m}}}}\\;\\textsf{Sub-Sess} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}\\quad \\inmode{lf}{\\sym{tp.sub-credit}{a' \\leq a}} \\\\ \\sym{tp.sub-var}{\\sym{sub.tsub}{T_1' \\leq T_1} \\quad \\sym{sub.tsub}{U \\leq U'}}\\end{array}}{(T_1 \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l}\\inmode{lf}{[\\varepsilon]}\\,U)\\inmode{lf}{^{a}} \\leq (T_1' \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l}\\inmode{lf}{[\\varepsilon']}\\,U')\\inmode{lf}{^{a'}}}\\;\\textsf{Sub-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}\\quad \\sym{tp.sub-teq}{U \\equiv U'}\\quad \\sym{tp.sub-boxc}{\\bar\\alpha \\neq \\varnothing \\Rightarrow U = U' \\vee \\sym{sty.contr}{\\mathsf{contr}}\\,U, U'}\\end{array}}{\\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}\\inmode{lf}{[\\varepsilon]}\\,U) \\leq \\Box(\\ldots\\inmode{lf}{[\\varepsilon']}\\,U')}\\;\\textsf{Sub-Box} \\qquad \\dfrac{\\begin{array}{c}\\sym{tp.sub-ex}{\\Gamma, C(\\bar\\iota) \\mathrel{\\sym{tp.vdash}{\\vdash}} C'(\\bar\\iota)}\\quad \\sym{tp.sub-exlb}{l' = l \\lor \\Gamma, C(\\bar\\iota) \\mathrel{\\sym{ctx.slt}{\\vdash}} l' \\preccurlyeq T} \\\\ \\sym{tp.sub-exbody}{\\Gamma, C(\\bar\\iota) \\mathrel{\\sym{tp.vdash}{\\vdash}} T \\leq T'}\\end{array}}{\\Gamma \\mathrel{\\sym{tp.vdash}{\\vdash}} \\sym{sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l'}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{tp.sub-agg}{\\sym{sub.tsub}{T_1 \\leq T_1'} \\quad \\sym{sub.tsub}{T_2 \\leq T_2'}}\\end{array}}{T_1 \\otimes T_2 \\leq T_1' \\otimes T_2' \\qquad T_1 \\oplus T_2 \\leq T_1' \\oplus T_2'}\\;\\textsf{Sub-Prod, Sub-Sum}\\end{array}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\quad \\sym{sub.tsub}{T \\leq T'}\\quad \\sym{E-Sub.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,T \\Rightarrow \\mathsf{contr}\\,T'}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T'\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon'}}\\;\\textsf{E-Sub}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\quad \\Gamma ; \\Delta' \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{ty.unlimited}{\\mathsf{unlimited}\\,U}\\quad \\Gamma ; \\Delta, U, U \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta, U \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e[1 \\mapsto 0] : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Contract}\\end{array}\\end{array}",
+     "formula": "\\begin{array}{c}\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{tp.sub-sess}{S \\mathrel{\\sym{sty.ssub}{\\sqsubseteq}} S'}\\quad \\inmode{lf}{\\sym{tp.sub-credit}{a' \\leq a}}\\end{array}}{\\sym{sub.tsub}{S_x\\inmode{lf}{^{a,m}} \\leq {S'}_x\\inmode{lf}{^{a',m}}}}\\;\\textsf{Sub-Sess} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}\\quad \\inmode{lf}{\\sym{tp.sub-credit}{a' \\leq a}} \\\\ \\sym{tp.sub-var}{\\sym{sub.tsub}{T_1' \\leq T_1} \\quad \\sym{sub.tsub}{U \\leq U'}}\\end{array}}{(T_1 \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l}\\inmode{lf}{[\\varepsilon]}\\,U)\\inmode{lf}{^{a}} \\leq (T_1' \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l}\\inmode{lf}{[\\varepsilon']}\\,U')\\inmode{lf}{^{a'}}}\\;\\textsf{Sub-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}\\quad \\sym{tp.sub-teq}{U \\equiv U'}\\quad \\sym{tp.sub-boxc}{\\bar Z \\neq \\varnothing \\Rightarrow U = U' \\vee \\sym{sty.contr}{\\mathsf{contr}}\\,U, U'}\\end{array}}{\\Box(\\forall \\bar\\iota\\,\\bar Z.\\ C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}\\inmode{lf}{[\\varepsilon]}\\,U) \\leq \\Box(\\ldots\\inmode{lf}{[\\varepsilon']}\\,U')}\\;\\textsf{Sub-Box} \\qquad \\dfrac{\\begin{array}{c}\\sym{tp.sub-ex}{\\Gamma, C(\\bar\\iota) \\mathrel{\\sym{tp.vdash}{\\vdash}} C'(\\bar\\iota)}\\quad \\sym{tp.sub-exlb}{l' = l \\lor \\Gamma, C(\\bar\\iota) \\mathrel{\\sym{ctx.slt}{\\vdash}} l' \\preccurlyeq T} \\\\ \\sym{tp.sub-exbody}{\\Gamma, C(\\bar\\iota) \\mathrel{\\sym{tp.vdash}{\\vdash}} T \\leq T'}\\end{array}}{\\Gamma \\mathrel{\\sym{tp.vdash}{\\vdash}} \\sym{sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l'}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{tp.sub-agg}{\\sym{sub.tsub}{T_1 \\leq T_1'} \\quad \\sym{sub.tsub}{T_2 \\leq T_2'}}\\end{array}}{T_1 \\otimes T_2 \\leq T_1' \\otimes T_2' \\qquad T_1 \\oplus T_2 \\leq T_1' \\oplus T_2'}\\;\\textsf{Sub-Prod, Sub-Sum}\\end{array}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\quad \\sym{sub.tsub}{T \\leq T'}\\quad \\sym{E-Sub.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,T \\Rightarrow \\mathsf{contr}\\,T'}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T'\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon'}}\\;\\textsf{E-Sub}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\quad \\Gamma ; \\Delta' \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{ty.unlimited}{\\mathsf{unlimited}\\,U}\\quad \\Gamma ; \\Delta, U, U \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta, U \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e[1 \\mapsto 0] : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Contract}\\end{array}\\end{array}",
      "variants": {
-      "df": "\\begin{array}{c}\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{tp.sub-sess}{S \\sym{sty.seqv}{\\approx} S'}\\end{array}}{\\sym{sub.tsub}{S_x \\leq {S'}_x}}\\;\\textsf{Sub-Sess} \\qquad \\dfrac{\\begin{array}{c}\\sym{tp.sub-ex}{\\Gamma, C(\\bar\\iota) \\mathrel{\\sym{tp.vdash}{\\vdash}} C'(\\bar\\iota)}\\quad \\sym{tp.sub-exlb}{l' = l \\lor \\Gamma, C(\\bar\\iota) \\mathrel{\\sym{ctx.slt}{\\vdash}} l' \\preccurlyeq T} \\\\ \\sym{tp.sub-exbody}{\\Gamma, C(\\bar\\iota) \\mathrel{\\sym{tp.vdash}{\\vdash}} T \\leq T'}\\end{array}}{\\Gamma \\mathrel{\\sym{tp.vdash}{\\vdash}} \\sym{sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l'}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{tp.sub-agg}{\\sym{sub.tsub}{T_1 \\leq T_1'} \\quad \\sym{sub.tsub}{T_2 \\leq T_2'}}\\end{array}}{T_1 \\otimes T_2 \\leq T_1' \\otimes T_2' \\qquad T_1 \\oplus T_2 \\leq T_1' \\oplus T_2'}\\;\\textsf{Sub-Prod, Sub-Sum} \\qquad \\dfrac{\\begin{array}{c}\\sym{tp.sub-var}{\\sym{sub.tsub}{T_1' \\leq T_1} \\quad \\sym{sub.tsub}{U \\leq U'}}\\end{array}}{T_1 \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l} U \\leq T_1' \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l} U'}\\;\\textsf{Sub-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{tp.sub-teq}{U \\equiv U'}\\quad \\sym{tp.sub-boxc}{\\bar\\alpha \\neq \\varnothing \\Rightarrow U = U' \\vee \\sym{sty.contr}{\\mathsf{contr}}\\,U, U'}\\end{array}}{\\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u} U) \\leq \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u} U')}\\;\\textsf{Sub-Box}\\end{array}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\quad \\sym{sub.tsub}{T \\leq T'}\\quad \\sym{E-Sub.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,T \\Rightarrow \\mathsf{contr}\\,T'}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T'\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon'}}\\;\\textsf{E-Sub}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\quad \\Gamma ; \\Delta' \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{ty.unlimited}{\\mathsf{unlimited}\\,U}\\quad \\Gamma ; \\Delta, U, U \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta, U \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e[1 \\mapsto 0] : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Contract}\\end{array}\\end{array}"
+      "df": "\\begin{array}{c}\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{tp.sub-sess}{S \\sym{sty.seqv}{\\approx} S'}\\end{array}}{\\sym{sub.tsub}{S_x \\leq {S'}_x}}\\;\\textsf{Sub-Sess} \\qquad \\dfrac{\\begin{array}{c}\\sym{tp.sub-ex}{\\Gamma, C(\\bar\\iota) \\mathrel{\\sym{tp.vdash}{\\vdash}} C'(\\bar\\iota)}\\quad \\sym{tp.sub-exlb}{l' = l \\lor \\Gamma, C(\\bar\\iota) \\mathrel{\\sym{ctx.slt}{\\vdash}} l' \\preccurlyeq T} \\\\ \\sym{tp.sub-exbody}{\\Gamma, C(\\bar\\iota) \\mathrel{\\sym{tp.vdash}{\\vdash}} T \\leq T'}\\end{array}}{\\Gamma \\mathrel{\\sym{tp.vdash}{\\vdash}} \\sym{sub.tsub}{\\exists^{l}\\bar\\iota.\\,C.\\,T \\leq \\exists^{l'}\\bar\\iota.\\,C'.\\,T'}}\\;\\textsf{Sub-Ex} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{tp.sub-agg}{\\sym{sub.tsub}{T_1 \\leq T_1'} \\quad \\sym{sub.tsub}{T_2 \\leq T_2'}}\\end{array}}{T_1 \\otimes T_2 \\leq T_1' \\otimes T_2' \\qquad T_1 \\oplus T_2 \\leq T_1' \\oplus T_2'}\\;\\textsf{Sub-Prod, Sub-Sum} \\qquad \\dfrac{\\begin{array}{c}\\sym{tp.sub-var}{\\sym{sub.tsub}{T_1' \\leq T_1} \\quad \\sym{sub.tsub}{U \\leq U'}}\\end{array}}{T_1 \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l} U \\leq T_1' \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l} U'}\\;\\textsf{Sub-Arr} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{tp.sub-teq}{U \\equiv U'}\\quad \\sym{tp.sub-boxc}{\\bar Z \\neq \\varnothing \\Rightarrow U = U' \\vee \\sym{sty.contr}{\\mathsf{contr}}\\,U, U'}\\end{array}}{\\Box(\\forall \\bar\\iota\\,\\bar Z.\\ C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u} U) \\leq \\Box(\\forall \\bar\\iota\\,\\bar Z.\\ C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u} U')}\\;\\textsf{Sub-Box}\\end{array}\\\\[3ex]\\dfrac{\\begin{array}{c}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\quad \\sym{sub.tsub}{T \\leq T'}\\quad \\sym{E-Sub.contr}{\\sym{sty.contr}{\\mathsf{contr}}\\,T \\Rightarrow \\mathsf{contr}\\,T'}\\inmodeplain{lf}{\\quad }\\inmode{lf}{\\sym{E-Sub.cost}{\\varepsilon \\leq \\varepsilon'}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T'\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon'}}\\;\\textsf{E-Sub}\\\\[3ex]\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-Weak.drop}{\\Delta' \\preceq_{\\mathsf{wk}} \\Delta}\\quad \\Gamma ; \\Delta' \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Weak} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{ty.unlimited}{\\mathsf{unlimited}\\,U}\\quad \\Gamma ; \\Delta, U, U \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta, U \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e[1 \\mapsto 0] : T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Contract}\\end{array}\\end{array}"
      },
      "caption": "Subtyping compares [[ty-equiv|session types]] by $\\approx$\\inmode{lf}{, and with annotations by $\\sqsubseteq$, which is $\\simeq$ except that a received payload may lose credit and a sent payload may gain credit}. An existential may weaken its constraint to facts that $\\Gamma$ and the constraint entail, and may lower its lower bound $l$ to a bound $l'$ that each head of the body lies at or above. \\inmode{lf}{Credits may decrease, and costs may increase.} Weakening and contraction of [[ty-kinds|unlimited]] entries are admissible, because they are renamings of variables. Sub-Ex is proved against the clause for existentials of [[v-rel]].",
      "why": "A value may forget facts it does not need. Admissible weakening and contraction keep the rule set free of structural rules. Subtyping exists because two branches of a case, or two creations that serve one parameter, state different facts, and E-Sub brings them to one type.",
@@ -1866,7 +1869,7 @@
     {
      "id": "v-rel",
      "title": "The value relation",
-     "formula": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\phantom{x}\\end{array}}{\\sym{V-Unit}{\\ast \\in \\sym{th.Vrel}{V^{W}_{\\alpha}\\llbracket \\varnothing \\vdash \\ast \\rrbracket}}}\\;\\textsf{V-Unit} \\qquad \\dfrac{\\begin{array}{c}S' \\mathrel{\\sym{sty.seqv}{\\approx}} S\\end{array}}{\\sym{V-Sess}{o \\in \\sym{th.Vrel}{V^{W}_{\\alpha}\\llbracket \\sym{V-Sess.exact}{\\{o \\mapsto \\sym{ty.sess}{{S'}_x}\\}} \\vdash \\sym{ty.sess}{S_x} \\rrbracket}}}\\;\\textsf{V-Sess} \\\\[2ex]\n\\dfrac{\\begin{array}{c}v_1 \\in \\sym{th.Vrel}{V^{W}_{\\alpha}\\llbracket \\Theta_1 \\vdash T_1 \\rrbracket}\\quad v_2 \\in \\sym{th.Vrel}{V^{W}_{\\alpha}\\llbracket \\Theta_2 \\vdash T_2 \\rrbracket}\\end{array}}{\\sym{V-Prod}{\\langle v_1, v_2\\rangle \\in \\sym{th.Vrel}{V^{W}_{\\alpha}\\llbracket \\sym{V-Prod.split}{\\Theta_1 \\mathbin{\\sym{ctx.tsplit}{\\uplus}} \\Theta_2} \\vdash T_1 \\otimes T_2 \\rrbracket}}}\\;\\textsf{V-Prod} \\qquad \\dfrac{\\begin{array}{c}v \\in \\sym{th.Vrel}{V^{W}_{\\alpha}\\llbracket \\Theta \\vdash T_i \\rrbracket}\\end{array}}{\\sym{V-Sum}{\\sym{syn.inj}{\\mathsf{inj}_i}\\,v \\in \\sym{th.Vrel}{V^{W}_{\\alpha}\\llbracket \\Theta \\vdash T_1 \\oplus T_2 \\rrbracket}}}\\;\\textsf{V-Sum}\n\\end{array}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{V-Arrow.exact}{\\mathrm{dom}\\,\\Theta = \\sym{syn.fends}{\\mathsf{fends}}(e)}\\quad \\sym{V-Arrow.lb}{l \\mathrel{\\sym{ty2.le}{\\preccurlyeq}} \\sym{ty.heads}{\\mathsf{ap}}\\,\\Theta} \\\\ \\sym{V-Arrow.kripke}{\\forall W' \\mathrel{\\sym{w.ext}{\\sqsupseteq}} W},\\ \\sym{V-Arrow.level}{\\inmodeplain{df}{\\beta < \\alpha}\\inmode{lf}{\\beta + \\kappa_{\\beta} \\leq \\alpha}},\\ \\Theta' \\mathbin{\\#} \\Theta,\\ \\sym{V-Arrow.ub}{F,\\ \\sym{w.rlt}{W' \\vdash u \\prec F}}. \\\\ w \\in \\sym{th.Vrel}{V^{W'}_{\\beta}\\llbracket \\Theta' \\vdash T \\rrbracket} \\ \\Longrightarrow\\ \\sym{V-Arrow.body}{e[w] \\in \\sym{th.Erel}{E^{W'}_{\\beta}\\llbracket \\Theta \\cup \\Theta' \\vdash U \\rrbracket^{F}}}\\end{array}}{\\lambda e \\in \\sym{th.Vrel}{V^{W}_{\\alpha}\\llbracket \\Theta \\vdash T \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l} U \\rrbracket}}\\;\\textsf{V-Arrow}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{V-Box.empty}{\\Theta = \\varnothing}\\quad \\sym{V-Box.noends}{\\sym{syn.fends}{\\mathsf{fends}}(e) = \\varnothing} \\\\ \\sym{V-Box.kripke}{\\forall W' \\mathrel{\\sym{w.ext}{\\sqsupseteq}} W},\\ \\sym{V-Box.inst}{\\bar x,\\ W' \\vdash C[\\bar x]},\\ \\sym{V-Box.hc}{\\bar s,\\ \\mathsf{contractive}\\,\\bar s,\\ \\mathsf{scoped}\\,\\bar s}.\\quad \\sym{V-Box.body}{\\forall \\beta, F.\\ \\beta + \\kappa_{\\mathrm{force}} \\leq \\alpha \\land u[\\bar x] \\prec F \\Rightarrow e[!e] \\in \\sym{th.Erel}{E^{W'}_{\\beta}\\llbracket \\varnothing \\vdash U[\\bar s][\\bar x] \\rrbracket^{F}}}\\end{array}}{!e \\in \\sym{th.Vrel}{V^{W}_{\\alpha}\\llbracket \\varnothing \\vdash \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\,C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u} U) \\rrbracket}}\\;\\textsf{V-Box}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{V-Ex.lb}{l \\mathrel{\\sym{ty2.le}{\\preccurlyeq}} \\sym{ty.heads}{\\mathsf{ap}}\\,\\Theta}\\quad \\sym{V-Ex.witness}{W \\vdash C[\\bar x]}\\quad v \\in \\sym{th.Vrel}{V^{W}_{\\alpha}\\llbracket \\Theta \\vdash T[\\bar x] \\rrbracket}\\end{array}}{v \\in \\sym{th.Vrel}{V^{W}_{\\alpha}\\llbracket \\Theta \\vdash \\exists^{l}\\bar\\iota.\\,C.\\,T \\rrbracket}}\\;\\textsf{V-Ex}\\end{array}",
+     "formula": "\\begin{array}{c}\\begin{array}{c}\n\\dfrac{\\begin{array}{c}\\phantom{x}\\end{array}}{\\sym{V-Unit}{\\ast \\in \\sym{th.Vrel}{V^{W}_{\\alpha}\\llbracket \\varnothing \\vdash \\ast \\rrbracket}}}\\;\\textsf{V-Unit} \\qquad \\dfrac{\\begin{array}{c}S' \\mathrel{\\sym{sty.seqv}{\\approx}} S\\end{array}}{\\sym{V-Sess}{o \\in \\sym{th.Vrel}{V^{W}_{\\alpha}\\llbracket \\sym{V-Sess.exact}{\\{o \\mapsto \\sym{ty.sess}{{S'}_x}\\}} \\vdash \\sym{ty.sess}{S_x} \\rrbracket}}}\\;\\textsf{V-Sess} \\\\[2ex]\n\\dfrac{\\begin{array}{c}v_1 \\in \\sym{th.Vrel}{V^{W}_{\\alpha}\\llbracket \\Theta_1 \\vdash T_1 \\rrbracket}\\quad v_2 \\in \\sym{th.Vrel}{V^{W}_{\\alpha}\\llbracket \\Theta_2 \\vdash T_2 \\rrbracket}\\end{array}}{\\sym{V-Prod}{\\langle v_1, v_2\\rangle \\in \\sym{th.Vrel}{V^{W}_{\\alpha}\\llbracket \\sym{V-Prod.split}{\\Theta_1 \\mathbin{\\sym{ctx.tsplit}{\\uplus}} \\Theta_2} \\vdash T_1 \\otimes T_2 \\rrbracket}}}\\;\\textsf{V-Prod} \\qquad \\dfrac{\\begin{array}{c}v \\in \\sym{th.Vrel}{V^{W}_{\\alpha}\\llbracket \\Theta \\vdash T_i \\rrbracket}\\end{array}}{\\sym{V-Sum}{\\sym{syn.inj}{\\mathsf{inj}_i}\\,v \\in \\sym{th.Vrel}{V^{W}_{\\alpha}\\llbracket \\Theta \\vdash T_1 \\oplus T_2 \\rrbracket}}}\\;\\textsf{V-Sum}\n\\end{array}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{V-Arrow.exact}{\\mathrm{dom}\\,\\Theta = \\sym{syn.fends}{\\mathsf{fends}}(e)}\\quad \\sym{V-Arrow.lb}{l \\mathrel{\\sym{ty2.le}{\\preccurlyeq}} \\sym{ty.heads}{\\mathsf{ap}}\\,\\Theta} \\\\ \\sym{V-Arrow.kripke}{\\forall W' \\mathrel{\\sym{w.ext}{\\sqsupseteq}} W},\\ \\sym{V-Arrow.level}{\\inmodeplain{df}{\\beta < \\alpha}\\inmode{lf}{\\beta + \\kappa_{\\beta} \\leq \\alpha}},\\ \\Theta' \\mathbin{\\#} \\Theta,\\ \\sym{V-Arrow.ub}{F,\\ \\sym{w.rlt}{W' \\vdash u \\prec F}}. \\\\ w \\in \\sym{th.Vrel}{V^{W'}_{\\beta}\\llbracket \\Theta' \\vdash T \\rrbracket} \\ \\Longrightarrow\\ \\sym{V-Arrow.body}{e[w] \\in \\sym{th.Erel}{E^{W'}_{\\beta}\\llbracket \\Theta \\cup \\Theta' \\vdash U \\rrbracket^{F}}}\\end{array}}{\\lambda e \\in \\sym{th.Vrel}{V^{W}_{\\alpha}\\llbracket \\Theta \\vdash T \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}_{l} U \\rrbracket}}\\;\\textsf{V-Arrow}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{V-Box.empty}{\\Theta = \\varnothing}\\quad \\sym{V-Box.noends}{\\sym{syn.fends}{\\mathsf{fends}}(e) = \\varnothing} \\\\ \\sym{V-Box.kripke}{\\forall W' \\mathrel{\\sym{w.ext}{\\sqsupseteq}} W},\\ \\sym{V-Box.inst}{\\bar x,\\ W' \\vdash C[\\bar x]},\\ \\sym{V-Box.hc}{\\bar s,\\ \\mathsf{contractive}\\,\\bar s,\\ \\mathsf{scoped}\\,\\bar s}.\\quad \\sym{V-Box.body}{\\forall \\beta, F.\\ \\beta + \\kappa_{\\mathrm{force}} \\leq \\alpha \\land u[\\bar x] \\prec F \\Rightarrow e[!e] \\in \\sym{th.Erel}{E^{W'}_{\\beta}\\llbracket \\varnothing \\vdash U[\\bar s][\\bar x] \\rrbracket^{F}}}\\end{array}}{!e \\in \\sym{th.Vrel}{V^{W}_{\\alpha}\\llbracket \\varnothing \\vdash \\Box(\\forall\\bar\\iota\\,\\bar Z.\\,C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u} U) \\rrbracket}}\\;\\textsf{V-Box}\\\\[3ex]\\dfrac{\\begin{array}{c}\\sym{V-Ex.lb}{l \\mathrel{\\sym{ty2.le}{\\preccurlyeq}} \\sym{ty.heads}{\\mathsf{ap}}\\,\\Theta}\\quad \\sym{V-Ex.witness}{W \\vdash C[\\bar x]}\\quad v \\in \\sym{th.Vrel}{V^{W}_{\\alpha}\\llbracket \\Theta \\vdash T[\\bar x] \\rrbracket}\\end{array}}{v \\in \\sym{th.Vrel}{V^{W}_{\\alpha}\\llbracket \\Theta \\vdash \\exists^{l}\\bar\\iota.\\,C.\\,T \\rrbracket}}\\;\\textsf{V-Ex}\\end{array}",
      "caption": "Each rule is one clause of $V$ at a type of [[ty-grammar]], by recursion on the ordinal index and, within a level, on the type, the measure $\\sym{rel.vsize}{(\\alpha, \\sym{sr.size}{\\mathsf{size}}\\,T)}$. $\\Theta$ maps exactly the ends the [[syn-values|value]] owns, $\\mathrm{dom}\\,\\Theta = \\mathsf{fends}(v)$ of [[syn-fends]]. An end is related at a session type [[ty-equiv|up to $\\approx$]]. A closure is safe when its body is safe in each larger world of [[w-ext]], at each lower level, for each argument $w$ and each future of the caller above $u$. This is the semantic form of [[r-fun|E-Abs]]. A thunk, the closure that [[r-threads|$\\mathsf{spawn}$]] runs, is read at the empty future. A box owns no end, and it is safe when its unrolled body $e[!e]$ is safe at each instance, as [[r-boxes|E-Force]] may pick, at each level a force below. An existential value is a value of the body at witness points whose facts hold, as [[r-ex|E-Pack]] states.",
      "why": "The clauses for closures and boxes quantify over larger worlds and lower levels. This quantification makes the relation compositional. A closure received from another component is safe in the joined world because it was safe in each extension of its own.",
      "source": [
@@ -2253,7 +2256,7 @@
     {
      "id": "fv",
      "title": "Values with fuel",
-     "formula": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}S' \\mathrel{\\sym{sty.ssub}{\\sqsubseteq}} S\\quad \\sym{FV-Sess.counter}{a \\leq f}\\end{array}}{\\sym{FV-Sess}{o \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\{o \\mapsto S'^{f,m}\\} \\vdash S_x\\inmode{lf}{^{a,m}} \\rrbracket}}}\\;\\textsf{FV-Sess} \\qquad\n\\dfrac{\\begin{array}{c}\\Phi = \\varnothing\\end{array}}{\\sym{FV-Thread}{v \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi \\vdash \\sym{fu.rty}{\\mathsf{thread}} \\rrbracket}}}\\;\\textsf{FV-Thread} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{FV-Arrow.exact}{\\sym{syn.fends}{\\mathsf{fends}}\\,e = \\mathrm{dom}\\,\\Phi}\\quad \\sym{FV-Arrow.floor}{\\Phi(o) = S^{f} \\land \\neg\\sym{fu.idle}{\\mathsf{idle}}\\,S \\Rightarrow a \\leq f} \\\\ \\forall \\beta < \\alpha,\\ \\sym{FV-Arrow.call}{\\Phi' \\geq \\Phi - a},\\ u \\in \\sym{sr.FV}{FV^{N}_{\\beta}\\llbracket \\Phi_u \\vdash T \\rrbracket} \\\\ \\sym{FV-Arrow.body}{e[u] \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi' \\cup \\Phi_u \\vdash U\\ !\\ c \\rrbracket}}\\end{array}}{\\sym{FV-Arrow}{\\lambda e \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi \\vdash (T \\mathrel{\\sym{ty.arrow}{\\multimap}}[c]\\, U)\\inmode{lf}{^{a}} \\rrbracket}}}\\;\\textsf{FV-Arrow} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{FV-Box.noends}{\\sym{syn.fends}{\\mathsf{fends}}\\,e = \\varnothing} \\\\ \\forall \\beta < \\alpha,\\ \\bar s \\in \\sym{tp.sinsts}{\\mathsf{sinsts}}\\,N \\\\ \\sym{FV-Box.body}{e[!e] \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\varnothing \\vdash U[\\bar s]\\ !\\ c \\rrbracket}}\\end{array}}{\\sym{FV-Box}{!e \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\varnothing \\vdash \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}[c]\\, U) \\rrbracket}}}\\;\\textsf{FV-Box} \\\\[6pt]\n\\sym{sr.fvagg}{\\langle v_1, v_2\\rangle \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi_1 \\uplus \\Phi_2 \\vdash T_1 \\otimes T_2 \\rrbracket} \\iff v_i \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi_i \\vdash T_i \\rrbracket}}\n\\end{array}",
+     "formula": "\\begin{array}{c}\n\\dfrac{\\begin{array}{c}S' \\mathrel{\\sym{sty.ssub}{\\sqsubseteq}} S\\quad \\sym{FV-Sess.counter}{a \\leq f}\\end{array}}{\\sym{FV-Sess}{o \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\{o \\mapsto S'^{f,m}\\} \\vdash S_x\\inmode{lf}{^{a,m}} \\rrbracket}}}\\;\\textsf{FV-Sess} \\qquad\n\\dfrac{\\begin{array}{c}\\Phi = \\varnothing\\end{array}}{\\sym{FV-Thread}{v \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi \\vdash \\sym{fu.rty}{\\mathsf{thread}} \\rrbracket}}}\\;\\textsf{FV-Thread} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{FV-Arrow.exact}{\\sym{syn.fends}{\\mathsf{fends}}\\,e = \\mathrm{dom}\\,\\Phi}\\quad \\sym{FV-Arrow.floor}{\\Phi(o) = S^{f} \\land \\neg\\sym{fu.idle}{\\mathsf{idle}}\\,S \\Rightarrow a \\leq f} \\\\ \\forall \\beta < \\alpha,\\ \\sym{FV-Arrow.call}{\\Phi' \\geq \\Phi - a},\\ u \\in \\sym{sr.FV}{FV^{N}_{\\beta}\\llbracket \\Phi_u \\vdash T \\rrbracket} \\\\ \\sym{FV-Arrow.body}{e[u] \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\Phi' \\cup \\Phi_u \\vdash U\\ !\\ c \\rrbracket}}\\end{array}}{\\sym{FV-Arrow}{\\lambda e \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi \\vdash (T \\mathrel{\\sym{ty.arrow}{\\multimap}}[c]\\, U)\\inmode{lf}{^{a}} \\rrbracket}}}\\;\\textsf{FV-Arrow} \\\\[10pt]\n\\dfrac{\\begin{array}{c}\\sym{FV-Box.noends}{\\sym{syn.fends}{\\mathsf{fends}}\\,e = \\varnothing} \\\\ \\forall \\beta < \\alpha,\\ \\bar s \\in \\sym{tp.sinsts}{\\mathsf{sinsts}}\\,N \\\\ \\sym{FV-Box.body}{e[!e] \\in \\sym{sr.FE}{F^{N}_{\\beta}\\llbracket \\varnothing \\vdash U[\\bar s]\\ !\\ c \\rrbracket}}\\end{array}}{\\sym{FV-Box}{!e \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\varnothing \\vdash \\Box(\\forall\\bar\\iota\\,\\bar Z.\\ C.\\ \\ast \\mathrel{\\sym{ty.arrow}{\\multimap}}^{u}[c]\\, U) \\rrbracket}}}\\;\\textsf{FV-Box} \\\\[6pt]\n\\sym{sr.fvagg}{\\langle v_1, v_2\\rangle \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi_1 \\uplus \\Phi_2 \\vdash T_1 \\otimes T_2 \\rrbracket} \\iff v_i \\in \\sym{sr.FV}{FV^{N}_{\\alpha}\\llbracket \\Phi_i \\vdash T_i \\rrbracket}}\n\\end{array}",
      "caption": "Values with fuel by recursion on the type. The counter of an end is at least its [[t-lf-counters|credit]]. A closure keeps the counters of its captured ends that are not idle at least at its credit $a$. Its body has fuel at each call whose counters are at least the counters at creation minus $a$. A box holds no end, and its body has fuel at each force. The [[fu-obls|fuel obligations]] read $FV$ at payloads and thunks.",
      "why": "Values with fuel connect credits in types with counters at run time.",
      "modes": [
@@ -3433,10 +3436,10 @@
    "why": "A plain constant. It is the only use of a box, and a loop calls itself by $\\mathsf{force}$ of its own box variable.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{force}\\,f\\,\\langle a, b\\rangle$ runs the loop $f$ again.",
-   "signature": "\\mathsf{force} : \\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast\\multimap^{u} U) \\multimap^{u[\\bar x]} U[\\bar s][\\bar x]",
+   "signature": "\\mathsf{force} : \\Box(\\forall\\bar\\iota\\,\\bar Z.\\ C.\\ \\ast\\multimap^{u} U) \\multimap^{u[\\bar x]} U[\\bar s][\\bar x]",
    "args": [
     {
-     "name": "\\bar\\iota, \\bar\\alpha",
+     "name": "\\bar\\iota, \\bar Z",
      "meaning": "The point and session variables of the box."
     },
     {
@@ -5844,18 +5847,18 @@
   },
   "ty.box": {
    "title": "Box type",
-   "meaning": "$\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u} U)$ is a replicable thunk, usable at each point instance $\\bar x$ with $C[\\bar x]$ and each session instance $\\bar s$.",
+   "meaning": "$\\Box(\\forall\\bar\\iota\\,\\bar Z.\\ C.\\ \\ast \\multimap^{u} U)$ is a replicable thunk, usable at each point instance $\\bar x$ with $C[\\bar x]$ and each session instance $\\bar s$.",
    "why": "A loop needs fresh points in each round. Quantifying over $\\bar\\iota$ under $\\Box$ gives each call its own instance.",
    "breaks": "Nothing. It is a definition.",
    "example": "A client loop has type $\\Box\\forall\\iota\\,\\kappa\\,\\zeta.\\ C.\\ \\ast \\multimap (S_{\\iota} \\otimes {S'}_{\\kappa} \\multimap^{\\zeta} \\ast)$.",
-   "signature": "\\Box(\\forall\\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u}\\inmode{lf}{[c]}\\,U) \\in \\mathsf{Ty}",
+   "signature": "\\Box(\\forall\\bar\\iota\\,\\bar Z.\\ C.\\ \\ast \\multimap^{u}\\inmode{lf}{[c]}\\,U) \\in \\mathsf{Ty}",
    "args": [
     {
      "name": "\\bar\\iota",
      "meaning": "$m$ point variables, instantiated at each $\\mathsf{force}$ by points $\\bar x$ with $C[\\bar x]$."
     },
     {
-     "name": "\\bar\\alpha",
+     "name": "\\bar Z",
      "meaning": "$k$ session variables, instantiated at each $\\mathsf{force}$."
     },
     {
@@ -5888,12 +5891,12 @@
    ]
   },
   "ty.box.svars": {
-   "title": "Session variables $\\bar\\alpha$",
+   "title": "Session variables $\\bar Z$",
    "meaning": "$k$ session variables, instantiated at each $\\mathsf{force}$ by contractive session types.",
-   "why": "One box serves each protocol the caller substitutes for $\\bar\\alpha$.",
+   "why": "One box serves each protocol the caller substitutes for $\\bar Z$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "A forwarder box for each protocol $\\alpha$.",
-   "signature": "\\bar\\alpha = \\alpha_1, \\ldots, \\alpha_k",
+   "example": "A forwarder box for each protocol $Z$.",
+   "signature": "\\bar Z = Z_1, \\ldots, Z_k",
    "args": [
     {
      "name": "k",
@@ -6038,7 +6041,7 @@
    "meaning": "$?(\\bar\\iota.\\ T)$ receives a value of $T[x\\cdot 0, \\ldots, x\\cdot(m{-}1)]$ for $\\bar\\iota = \\iota_0, \\ldots, \\iota_{m-1}$ when the end is at $x$.",
    "why": "A plain protocol action. The binder $\\bar\\iota$ is no existential, because the points of the payload are determined, the fields of $x$. It lets a message have ends whose points the receiver learns as fields of $x$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mu\\alpha.\\,?(\\kappa.\\ \\alpha_{\\kappa}).\\mathsf{Close}$ receives an end of the same protocol at a field.",
+   "example": "$\\mu Z.\\,?(\\kappa.\\ Z_{\\kappa}).\\mathsf{Close}$ receives an end of the same protocol at a field.",
    "signature": "?(\\bar\\iota.\\ T) \\in \\mathsf{STy}",
    "args": [
     {
@@ -6146,15 +6149,15 @@
    ]
   },
   "sty.mu": {
-   "title": "Recursion $\\mu\\alpha.S$",
-   "meaning": "A recursive protocol, equal to its unrolling $S[\\mu\\alpha.S/\\alpha]$ up to $\\inmodeplain{df}{\\approx}\\inmodeplain{lf}{\\simeq}$.",
+   "title": "Recursion $\\mu Z.S$",
+   "meaning": "A recursive protocol, equal to its unrolling $S[\\mu Z.S/Z]$ up to $\\inmodeplain{df}{\\approx}\\inmodeplain{lf}{\\simeq}$.",
    "why": "A plain former. Loops run repeating protocols.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mu\\alpha.\\,!\\ast.\\alpha$ sends $\\ast$ forever.",
-   "signature": "\\mu\\alpha.S \\in \\mathsf{STy}",
+   "example": "$\\mu Z.\\,!\\ast.Z$ sends $\\ast$ forever.",
+   "signature": "\\mu Z.S \\in \\mathsf{STy}",
    "args": [
     {
-     "name": "\\alpha",
+     "name": "Z",
      "meaning": "The recursion variable, bound in $S$."
     },
     {
@@ -6172,15 +6175,15 @@
    ]
   },
   "sty.var": {
-   "title": "Session variable $\\alpha$",
+   "title": "Session variable $Z$",
    "meaning": "A recursion variable bound by $\\mu$, or a session variable bound by a box.",
-   "why": "A plain former. It refers to an enclosing $\\mu\\alpha$ or to a protocol substituted at $\\mathsf{force}$.",
+   "why": "A plain former. It refers to an enclosing $\\mu Z$ or to a protocol substituted at $\\mathsf{force}$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\alpha$ in $\\mu\\alpha.\\,!\\ast.\\alpha$.",
-   "signature": "\\alpha \\in \\mathsf{STy}",
+   "example": "$Z$ in $\\mu Z.\\,!\\ast.Z$.",
+   "signature": "Z \\in \\mathsf{STy}",
    "args": [
     {
-     "name": "\\alpha",
+     "name": "Z",
      "meaning": "A variable bound by an enclosing $\\mu$ or by a box."
     }
    ],
@@ -6194,16 +6197,16 @@
    ]
   },
   "sty.vard": {
-   "title": "Dual variable $\\overline{\\alpha}$",
-   "meaning": "$\\mathsf{dual}(\\alpha) = \\overline{\\alpha}$, and substituting $s$ for $\\alpha$ substitutes $\\mathsf{dual}\\,s$ for $\\overline{\\alpha}$.",
-   "why": "The dual of a protocol substituted for $\\alpha$ is known only after substitution, so $\\overline{\\alpha}$ defers the dual.",
+   "title": "Dual variable $\\overline{Z}$",
+   "meaning": "$\\mathsf{dual}(Z) = \\overline{Z}$, and substituting $s$ for $Z$ substitutes $\\mathsf{dual}\\,s$ for $\\overline{Z}$.",
+   "why": "The dual of a protocol substituted for $Z$ is known only after substitution, so $\\overline{Z}$ defers the dual.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{dual}\\,\\alpha = \\overline{\\alpha}$.",
-   "signature": "\\overline{\\alpha} \\in \\mathsf{STy}",
+   "example": "$\\mathsf{dual}\\,Z = \\overline{Z}$.",
+   "signature": "\\overline{Z} \\in \\mathsf{STy}",
    "args": [
     {
-     "name": "\\alpha",
-     "meaning": "A session variable, $\\overline{\\alpha}$ stands for $\\mathsf{dual}$ of its instance."
+     "name": "Z",
+     "meaning": "A session variable, $\\overline{Z}$ stands for $\\mathsf{dual}$ of its instance."
     }
    ],
    "source": [
@@ -6220,7 +6223,7 @@
    "meaning": "$\\mathsf{unfold}(S)$ unrolls $\\mu$ and reassociates sequencing until the first action is on top.",
    "why": "Each rule reads the first action of a session type, so rules match on $\\mathsf{unfold}(S)$ and need no separate rule for $\\mu$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{unfold}(\\mu\\alpha.\\,!\\ast.\\alpha) = !\\ast.(\\mu\\alpha.\\,!\\ast.\\alpha)$.",
+   "example": "$\\mathsf{unfold}(\\mu Z.\\,!\\ast.Z) = !\\ast.(\\mu Z.\\,!\\ast.Z)$.",
    "signature": "\\mathsf{unfold} : \\sym{type.STy}{\\mathsf{STy}} \\to \\sym{type.STy}{\\mathsf{STy}}",
    "args": [
     {
@@ -6239,10 +6242,10 @@
   },
   "sty.contr": {
    "title": "Contractive session types",
-   "meaning": "$\\mathsf{contr}\\,S$ holds when the variable of each recursion $\\mu\\alpha.S'$ inside $S$, also inside payloads, is reached only through an action, a choice or $\\mathsf{Close}$. \\inmode{lf}{A session variable does not guard, because an instance may set it to $\\mathsf{Skip}$.}",
+   "meaning": "$\\mathsf{contr}\\,S$ holds when the variable of each recursion $\\mu Z.S'$ inside $S$, also inside payloads, is reached only through an action, a choice or $\\mathsf{Close}$. \\inmode{lf}{A session variable does not guard, because an instance may set it to $\\mathsf{Skip}$.}",
    "why": "On a contractive type $\\mathsf{unfold}$ finds the first action within a number of unrollings bounded by the size of the type. Substituting contractive types for session variables keeps $\\inmodeplain{df}{\\approx}\\inmodeplain{lf}{\\simeq}$. The rules ask it where a session type enters a derivation, so a box body typed at one instance is typed at each instance.",
-   "breaks": "Without it $\\alpha.\\mu\\beta.\\beta \\inmodeplain{df}{\\approx}\\inmodeplain{lf}{\\simeq} (\\alpha.\\mathsf{Skip}).\\mu\\beta.\\beta$, and their instances at $\\alpha = ?\\ast.(\\mathsf{Skip}.\\mathsf{Skip})$ are not equivalent, so a derivation at one instance gives none at the other.",
-   "example": "$\\mu\\alpha.\\,!\\ast.\\alpha$ and $\\mu\\alpha.\\,?(\\kappa.\\ \\alpha_{\\kappa}).\\mathsf{Close}$ are contractive, $\\mu\\beta.\\beta$ and $\\mu\\beta.\\,\\alpha.\\beta$ are not.",
+   "breaks": "Without it $Z.\\mu Z'.Z' \\inmodeplain{df}{\\approx}\\inmodeplain{lf}{\\simeq} (Z.\\mathsf{Skip}).\\mu Z'.Z'$, and their instances at $Z = ?\\ast.(\\mathsf{Skip}.\\mathsf{Skip})$ are not equivalent, so a derivation at one instance gives none at the other.",
+   "example": "$\\mu Z.\\,!\\ast.Z$ and $\\mu Z.\\,?(\\kappa.\\ Z_{\\kappa}).\\mathsf{Close}$ are contractive, $\\mu Z'.Z'$ and $\\mu Z'.\\,Z.Z'$ are not.",
    "signature": "\\mathsf{contr} \\subseteq \\mathsf{STy}",
    "args": [
     {
@@ -6306,16 +6309,16 @@
    ]
   },
   "sty.flip": {
-   "title": "$\\mathsf{flip}_\\alpha$",
-   "meaning": "$\\mathsf{flip}_\\alpha$ swaps $\\alpha$ and $\\overline{\\alpha}$ for the variable bound by the enclosing $\\mu$.",
-   "why": "In $\\mu\\alpha.S$ the variable $\\alpha$ names the whole protocol. After dualizing $S$, the occurrences $\\overline{\\alpha}$ must name $\\mathsf{dual}(\\mu\\alpha.S)$, which is $\\alpha$ again.",
+   "title": "$\\mathsf{flip}_Z$",
+   "meaning": "$\\mathsf{flip}_Z$ swaps $Z$ and $\\overline{Z}$ for the variable bound by the enclosing $\\mu$.",
+   "why": "In $\\mu Z.S$ the variable $Z$ names the whole protocol. After dualizing $S$, the occurrences $\\overline{Z}$ must name $\\mathsf{dual}(\\mu Z.S)$, which is $Z$ again.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{dual}(\\mu\\alpha.\\,!\\ast.\\alpha) = \\mu\\alpha.\\,?\\ast.\\alpha$.",
-   "signature": "\\mathsf{flip}_\\alpha : \\sym{type.STy}{\\mathsf{STy}} \\to \\sym{type.STy}{\\mathsf{STy}}",
+   "example": "$\\mathsf{dual}(\\mu Z.\\,!\\ast.Z) = \\mu Z.\\,?\\ast.Z$.",
+   "signature": "\\mathsf{flip}_Z : \\sym{type.STy}{\\mathsf{STy}} \\to \\sym{type.STy}{\\mathsf{STy}}",
    "args": [
     {
-     "name": "\\alpha",
-     "meaning": "The variable of the enclosing $\\mu$, whose occurrences $\\alpha$ and $\\overline{\\alpha}$ are swapped."
+     "name": "Z",
+     "meaning": "The variable of the enclosing $\\mu$, whose occurrences $Z$ and $\\overline{Z}$ are swapped."
     }
    ],
    "source": [
@@ -6332,7 +6335,7 @@
    "meaning": "The greatest relation with $S \\simeq S'$ only if $\\mathsf{unfold}(S)$ and $\\mathsf{unfold}(S')$ have the same first action, with equal annotations, and equivalent continuations.",
    "why": "One protocol has many spellings, unrolled or not. Rules compare protocols up to $\\simeq$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mu\\alpha.\\,!\\ast.\\alpha \\simeq !\\ast.\\mu\\alpha.\\,!\\ast.\\alpha$.",
+   "example": "$\\mu Z.\\,!\\ast.Z \\simeq !\\ast.\\mu Z.\\,!\\ast.Z$.",
    "signature": "\\cdot \\simeq \\cdot \\subseteq \\mathsf{STy} \\times \\mathsf{STy}",
    "args": [
     {
@@ -6376,7 +6379,7 @@
    "meaning": "$S \\approx S'$ when $\\mathsf{unfold}(S)$ and $\\mathsf{unfold}(S')$ have the same first action and equivalent continuations. \\inmode{lf}{With annotations, $S \\approx S' \\iff \\mathsf{sty\\_df}(S) \\simeq \\mathsf{sty\\_df}(S')$, the equivalence after erasing them.}",
    "why": "One protocol has many spellings, unrolled or not, and the rules and the relation compare protocols up to $\\approx$. \\inmode{lf}{The relations at $\\kappa_{DF}$ and at $\\kappa_L$ ignore credits, so one relation serves each counter bound $N$.}",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mu\\alpha.\\,!\\ast.\\alpha \\approx\\ !\\ast.\\mu\\alpha.\\,!\\ast.\\alpha$\\inmode{lf}{, and $!(\\ast^{2}).\\mathsf{Close} \\approx !(\\ast^{\\infty}).\\mathsf{Close}$}.",
+   "example": "$\\mu Z.\\,!\\ast.Z \\approx\\ !\\ast.\\mu Z.\\,!\\ast.Z$\\inmode{lf}{, and $!(\\ast^{2}).\\mathsf{Close} \\approx !(\\ast^{\\infty}).\\mathsf{Close}$}.",
    "signature": "\\cdot \\approx \\cdot \\subseteq \\mathsf{STy} \\times \\mathsf{STy}",
    "args": [
     {
@@ -6493,7 +6496,7 @@
    "meaning": "$\\mathsf{payload\\_at}\\,m\\,T\\,x = T[x\\cdot 0, \\ldots, x\\cdot(m{-}1) / \\iota_0, \\ldots, \\iota_{m-1}]$.",
    "why": "$\\overline{x}\\cdot j = x\\cdot j$, so sender at $x$ and receiver at $\\overline{x}$ compute the same payload type.",
    "breaks": "Nothing. It is a definition.",
-   "example": "A payload $\\alpha_{\\iota_0}$ sent at $Y$ has type $\\alpha_{Y\\cdot 0}$.",
+   "example": "A payload $Z_{\\iota_0}$ sent at $Y$ has type $Z_{Y\\cdot 0}$.",
    "signature": "\\mathsf{payload\\_at} : \\mathbb{N} \\to \\sym{type.Ty}{\\mathsf{Ty}} \\to \\sym{type.Point}{\\mathsf{Point}} \\to \\sym{type.Ty}{\\mathsf{Ty}}",
    "args": [
     {
@@ -8839,7 +8842,7 @@
    "meaning": "$S \\approx S'$\\inmode{lf}{ at annotations $\\infty$, and with annotations $S \\sqsubseteq S'$, bisimilar head normal forms whose annotations agree except the credits of payloads}.",
    "why": "With $\\mathsf{Skip}$, sequencing and $\\mu$ one protocol has many spellings, e.g. $\\mathsf{Skip}.S \\inmodeplain{df}{\\approx}\\inmodeplain{lf}{\\simeq} S$. Rules compare protocols by behaviour.\\inmode{lf}{ A received payload may be read at a lower credit and a sent payload may be promised at a higher one, because a credit is a lower bound on a counter.}",
    "breaks": "Without it an unfolded recursive protocol and its folded form would be different types, and no loop that acts once and recurses would type.",
-   "example": "$\\mu\\alpha.\\,!\\ast.\\alpha \\leq\\ !\\ast.\\mu\\alpha.\\,!\\ast.\\alpha$ at the same point.",
+   "example": "$\\mu Z.\\,!\\ast.Z \\leq\\ !\\ast.\\mu Z.\\,!\\ast.Z$ at the same point.",
    "signature": "S \\sqsubseteq S'",
    "args": [
     {
@@ -8932,11 +8935,11 @@
    "meaning": "When the box has session variables, $U$ and $U'$ are equal or both contractive.",
    "why": "A box with session variables is used at its instances. Contractive instances keep $\\inmodeplain{df}{\\approx}\\inmodeplain{lf}{\\simeq}$ between contractive types, so $U \\equiv U'$ gives $U[\\bar s] \\equiv U'[\\bar s]$ at each allowed $\\bar s$.",
    "breaks": "Without contractivity two equivalent results can have instances that are not equivalent, as in [[ex-sinst|the example on contractivity]].",
-   "example": "$\\Box(\\forall\\alpha.\\,\\ldots\\,(\\alpha.\\mu\\beta.\\,!\\ast.\\beta)_x) \\leq \\Box(\\forall\\alpha.\\,\\ldots\\,(\\alpha.\\,!\\ast.\\mu\\beta.\\,!\\ast.\\beta)_x)$.",
-   "signature": "\\bar\\alpha \\neq \\varnothing \\Rightarrow U = U' \\vee \\mathsf{contr}\\,U, U'",
+   "example": "$\\Box(\\forall Z.\\,\\ldots\\,(Z.\\mu Z'.\\,!\\ast.Z')_x) \\leq \\Box(\\forall Z.\\,\\ldots\\,(Z.\\,!\\ast.\\mu Z'.\\,!\\ast.Z')_x)$.",
+   "signature": "\\bar Z \\neq \\varnothing \\Rightarrow U = U' \\vee \\mathsf{contr}\\,U, U'",
    "args": [
     {
-     "name": "\\bar\\alpha",
+     "name": "\\bar Z",
      "meaning": "the session variables of the box"
     },
     {
@@ -9394,7 +9397,7 @@
   },
   "E-Box.inst": {
    "title": "Typed for each instance",
-   "meaning": "The premise has one derivation of the body for each list $\\bar s$ with $\\mathsf{sinsts}\\,\\bar s$, one session type per session variable $\\bar\\alpha$ of the box.",
+   "meaning": "The premise has one derivation of the body for each list $\\bar s$ with $\\mathsf{sinsts}\\,\\bar s$, one session type per session variable $\\bar Z$ of the box.",
    "why": "A force may pick an allowed $\\bar s$, and the derivation for that $\\bar s$ justifies the call. Checking the instances up front keeps E-Force a plain lookup. The derivation at the identity instance gives the others, because the session types of the body are contractive and contractive instances keep $\\inmodeplain{df}{\\approx}\\inmodeplain{lf}{\\simeq}$.",
    "breaks": "Nothing. It is a definition.",
    "example": "A box with no session variable has exactly one instance, the empty list, so the premise is one derivation.",
@@ -9498,7 +9501,7 @@
    "meaning": "The protocol $S$ of the new channel is contractive.",
    "why": "A creation brings $S$ and $\\overline{S}$ into the derivation.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{new}$ at $\\mu\\alpha.\\,!\\ast.\\alpha$ types, at $\\mu\\beta.\\beta$ it does not.",
+   "example": "$\\mathsf{new}$ at $\\mu Z.\\,!\\ast.Z$ types, at $\\mu\\beta.\\beta$ it does not.",
    "signature": "\\mathsf{contr}\\,S",
    "args": [
     {
@@ -9624,7 +9627,7 @@
    "why": "This is recursion. \\inmode{lf}{A box holds no end, so it has no credit.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$(\\mathsf{force}\\,f)\\,\\langle a, b\\rangle$ calls the box variable $f$.",
-   "signature": "f : \\Box(\\forall \\bar\\iota\\,\\bar\\alpha.\\ C.\\ \\ast \\multimap^{u}\\inmode{lf}{[\\varepsilon]}\\,U)",
+   "signature": "f : \\Box(\\forall \\bar\\iota\\,\\bar Z.\\ C.\\ \\ast \\multimap^{u}\\inmode{lf}{[\\varepsilon]}\\,U)",
    "args": [
     {
      "name": "f",
@@ -9692,9 +9695,9 @@
   "E-Send.unfold": {
    "title": "Send head",
    "meaning": "$\\mathsf{unfold}(S) = {!}(\\bar\\iota.\\,T).S'$.",
-   "why": "Rules read the first action of $S$ after unfolding, so a recursive protocol $\\mu\\alpha.S$ needs no rule of its own.",
+   "why": "Rules read the first action of $S$ after unfolding, so a recursive protocol $\\mu Z.S$ needs no rule of its own.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$S = \\mu\\alpha.\\,{!}\\ast.\\alpha$ unfolds to ${!}\\ast.(\\mu\\alpha.\\,{!}\\ast.\\alpha)$.",
+   "example": "$S = \\mu Z.\\,{!}\\ast.Z$ unfolds to ${!}\\ast.(\\mu Z.\\,{!}\\ast.Z)$.",
    "signature": "\\mathsf{unfold}(S) = {!}(\\bar\\iota.\\,T).S'",
    "args": [
     {
@@ -9798,7 +9801,7 @@
    "meaning": "$\\mathsf{unfold}(S) = {?}(\\bar\\iota.\\,T).S'$.",
    "why": "Rules read the first action of $S$ after unfolding, so recursive protocols need no rule of their own.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mu\\alpha.\\,{?}\\ast.\\alpha$ unfolds to ${?}\\ast.(\\mu\\alpha.\\,{?}\\ast.\\alpha)$.",
+   "example": "$\\mu Z.\\,{?}\\ast.Z$ unfolds to ${?}\\ast.(\\mu Z.\\,{?}\\ast.Z)$.",
    "signature": "\\mathsf{unfold}(S) = {?}(\\bar\\iota.\\,T).S'",
    "args": [
     {
@@ -11094,12 +11097,12 @@
    "meaning": "Replaces the session variables of $U$ by the session types $\\bar s$.",
    "why": "A box is polymorphic in its session variables, and each force chooses an instance.",
    "breaks": "Nothing. It is a definition.",
-   "example": "${\\alpha}_x[\\mathsf{Close}] = \\mathsf{Close}_x$.",
+   "example": "${Z}_x[\\mathsf{Close}] = \\mathsf{Close}_x$.",
    "signature": "U[\\bar s]",
    "args": [
     {
      "name": "U",
-     "meaning": "a type over the session variables $\\bar\\alpha$"
+     "meaning": "a type over the session variables $\\bar Z$"
     },
     {
      "name": "\\bar s",
@@ -11119,8 +11122,8 @@
    "title": "Allowed session instances $\\mathsf{sinsts}\\,\\bar s$",
    "meaning": "The session types a session variable of a box may stand for. Each $s \\in \\bar s$ is contractive, and no payload of $s$ mentions a point free below its binder. \\inmode{lf}{At $N = \\infty$ each $s$ also has no finite credit.}",
    "why": "The rules read the first action of a protocol after unfolding, and a contractive instance keeps a contractive type contractive and keeps $\\inmodeplain{df}{\\approx}\\inmodeplain{lf}{\\simeq}$. \\inmode{lf}{At $N = \\infty$ each annotation in a derivation is $\\infty$, and an instance with a finite credit inside its payloads would bring one in.}",
-   "breaks": "Without contractivity a box with a variable $\\alpha$ could be forced at $\\mu\\alpha.\\alpha$, and an end of type $\\mu\\alpha.\\alpha$ would be stuck with no action to perform.",
-   "example": "$\\mu\\alpha.\\,!\\ast.\\alpha$ and $\\mathsf{Close}$ are allowed, $\\mu\\alpha.\\alpha$ and $\\mu\\alpha.\\,\\mathsf{Skip}.\\alpha$ are not.",
+   "breaks": "Without contractivity a box with a variable $Z$ could be forced at $\\mu Z.Z$, and an end of type $\\mu Z.Z$ would be stuck with no action to perform.",
+   "example": "$\\mu Z.\\,!\\ast.Z$ and $\\mathsf{Close}$ are allowed, $\\mu Z.Z$ and $\\mu Z.\\,\\mathsf{Skip}.Z$ are not.",
    "signature": "\\mathsf{sinsts} : \\inmode{lf}{(\\mathbb{N} \\cup \\{\\infty\\}) \\to }\\sym{type.Sty}{\\mathsf{Sty}}^{*} \\to \\mathsf{Prop}",
    "args": [
     {
@@ -13082,7 +13085,7 @@
    "meaning": "$\\Theta(o) \\doteq H_x$ states $\\Theta(o) = S_x$ for some $S$ with $\\mathsf{unfold}\\,S = H$.",
    "why": "Each obligation reads the first action of the subject end after unfolding, so the notation states it once.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\Theta(o) \\doteq {!}(\\bar\\iota.\\,\\ast).\\mathsf{Close}_x$ for $\\Theta(o) = (\\mu\\alpha.\\,{!}\\ast.\\mathsf{Close})_x$.",
+   "example": "$\\Theta(o) \\doteq {!}(\\bar\\iota.\\,\\ast).\\mathsf{Close}_x$ for $\\Theta(o) = (\\mu Z.\\,{!}\\ast.\\mathsf{Close})_x$.",
    "signature": "\\Theta(o) \\doteq H_x \\iff \\exists S.\\ \\Theta(o) = S_x \\land \\mathsf{unfold}\\,S = H",
    "args": [
     {
