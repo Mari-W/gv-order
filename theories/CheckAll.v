@@ -95,6 +95,8 @@ Print Assumptions fw_fsem.
 Print Assumptions Erel_bind.
 (** compat/LiveDF.v *)
 Print Assumptions live_sub_df.
+(** compat/Fusion.v *)
+Print Assumptions Prel_gfuse.
 (** compat/ConnectP.v *)
 Print Assumptions sem_p_connect.
 (** compat/PTerm.v *)

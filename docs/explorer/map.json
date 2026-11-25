@@ -1781,7 +1781,7 @@
     {
      "id": "sr-reading",
      "title": "Reading the relations",
-     "caption": "The relations $V$, $E$ and $P$ relate a value, a term or a process to the environment $\\Theta$ of the ends it owns. The relations are indexed by a consistent [[w-world|world]] $W$, whose order they read, and an ordinal index $\\alpha$ of [[sr-ord]]. Each world $W' \\sqsupseteq W$ they quantify over is consistent as well\\inmode{lf}{, strict in the deadlock-free relation and ranked in the threads of the lock-free process relation}. A term is safe when it is a safe value, or when it is ready and each of its steps leads to a safe term at each lower index the cost of the step allows. Readiness says that a stuck term waits below the dual points of the ends it holds. Processes are safe in the same way and remain safe when their ends are fused, so composing two safe processes needs no further proof. The [[v-rel|value]], [[e-rel|term]] and [[p-rel|process]] relations follow. \\inmode{lf}{Fuel is a second predicate on each thread, which holds the ends $\\Phi$ with their counters and returns within $d$ actions. The lock-free process relation requires both of each thread.}",
+     "caption": "The relations $V$, $E$ and $P$ relate a value, a term or a process to the environment $\\Theta$ of the ends it owns. The relations are indexed by a consistent [[w-world|world]] $W$, whose order they read, and an ordinal index $\\alpha$ of [[sr-ord]]. Each world $W' \\sqsupseteq W$ they quantify over is consistent as well\\inmode{lf}{, strict in the deadlock-free relation and ranked in the threads of the lock-free process relation}. A term is safe when it is a safe value, or when it is ready and each of its steps leads to a safe term at each lower index the cost of the step allows. Readiness says that a stuck term waits below the dual points of the ends it holds. Processes are safe in the same way. They remain safe when their ends are renamed, which the proof that two safe processes compose uses. The [[v-rel|value]], [[e-rel|term]] and [[p-rel|process]] relations follow. \\inmode{lf}{Fuel is a second predicate on each thread, which holds the ends $\\Phi$ with their counters and returns within $d$ actions. The lock-free process relation requires both of each thread.}",
      "why": "Each row says in words what one judgment of this section means. The relation proves the typing rules as follows. Each rule becomes a lemma, the compatibility lemma, which says that if the subterms are in $E$ then the term is in $E$. The fundamental theorem is the induction over a derivation that applies these lemmas. Adequacy then reads deadlock freedom off readiness. A premise of a rule is justified exactly when the compatibility lemma of the rule uses the premise.",
      "source": [
       {
@@ -2047,9 +2047,9 @@
     {
      "id": "p-rel",
      "title": "The process relation",
-     "formula": "\\begin{array}{c}\\begin{array}{l}\n\\sym{P.zero}{\\forall p.\\ p \\in \\sym{th.Prel}{P^{W}_{0}\\llbracket \\Sigma \\vdash T \\rrbracket}} \\\\\np \\in \\sym{th.Prel}{P^{W}_{\\alpha}\\llbracket \\Sigma \\vdash T \\rrbracket},\\ \\alpha > 0 \\iff \\sym{P.strict}{\\forall W' \\mathrel{\\sym{w.ext}{\\sqsupseteq}} W}.\\ \\sym{P.fuse}{\\forall (h, D) \\in \\sym{sr.fuseok}{\\mathsf{Fus}}(\\Sigma, p)}.\\ \\sym{P.clauses}{\\mathsf{clauses}_{W'}}(\\sym{sr.pfuse}{(h, D) \\cdot \\Sigma}, \\sym{sr.pfuse}{(h, D) \\cdot p}) \\\\[1ex]\n\\sym{P.clauses}{\\mathsf{clauses}_{W'}(\\Sigma', p')} \\iff \\\\\n\\quad \\sym{P-Stop}{(\\mathsf{stop})\\ \\sym{sr.pirred}{\\mathsf{pirred}}\\,p' \\Rightarrow p' = (\\varnothing, \\{v\\} \\mathbin{\\sym{tp.msunion}{\\uplus}} E) \\land v \\in \\sym{th.Vrel}{V^{W'}_{\\alpha}\\llbracket \\Sigma' \\vdash T \\rrbracket} \\land E \\subseteq \\{\\ast\\}} \\\\\n\\quad \\sym{P-Ready}{(\\mathsf{ready})\\ \\neg\\mathsf{pirred}\\,p' \\Rightarrow \\sym{sr.readyp}{\\mathsf{ready}_{W'}(\\Sigma', p')}} \\\\\n\\quad \\sym{P-Step}{(\\mathsf{step})\\ p' \\xrightarrow{ev} p'' \\Rightarrow \\sym{sr.pobl}{\\mathsf{Pobl}_{ev}(p'')}} \\qquad \\sym{rel.lfp}{(\\mathsf{lfp})}\n\\end{array}\\\\[3ex]\\begin{array}{rcll}\n\\sym{sr.fuseok}{(h, D) \\in \\mathsf{Fus}(\\Sigma, (C, E))} & \\iff & \\sym{fuse.dcomm}{\\forall o.\\ h(\\overline{o}) = \\overline{h(o)}} \\\\\n & \\land & \\sym{fuse.inj}{\\forall o_1, o_2 \\in \\mathsf{held}.\\ h(o_1) = h(o_2) \\Rightarrow o_1 = o_2} \\\\\n & \\land & \\sym{fuse.partners}{\\forall o_1, o_2 \\in \\mathsf{held}.\\ h(o_2) = \\overline{h(o_1)} \\Rightarrow o_2 = \\overline{o_1} \\lor \\sym{end.ech}{\\mathsf{ech}}(h\\,o_1) \\in D} \\\\\n & \\land & \\sym{fuse.D}{D \\cap \\sym{sr.gch}{\\mathsf{gch}_h}[C] = \\varnothing} \\land \\sym{fuse.dpairs}{\\mathsf{dpairs}\\,D\\,(h\\,\\Sigma)} \\\\[1ex]\n\\sym{sr.held}{\\mathsf{held}} & = & \\sym{sr.held}{\\{o \\mid o \\in \\mathrm{dom}\\,\\Sigma \\lor \\sym{end.ech}{\\mathsf{ech}}\\,o \\in C\\}} \\\\\n\\sym{sr.gch}{\\mathsf{gch}_h(c)} & = & \\sym{sr.gch}{\\sym{end.ech}{\\mathsf{ech}}(h(c^{+}))} \\\\\n\\sym{sr.sdrop}{(h, D) \\cdot \\Sigma} & = & \\sym{sr.sdrop}{\\{h(o) \\mapsto y \\mid o \\mapsto y \\in \\Sigma,\\ \\sym{end.ech}{\\mathsf{ech}}(h\\,o) \\notin D\\}} \\\\\n\\sym{sr.pfuse}{(h, D) \\cdot (C, E)} & = & \\sym{sr.pfuse}{(\\mathsf{gch}_h[C] \\cup D,\\ h[E])} \\\\\n\\sym{fuse.dpairs}{\\mathsf{dpairs}\\,D\\,\\Sigma} & \\iff & \\sym{fuse.dpairs}{\\sym{end.ech}{\\mathsf{ech}}\\,o \\in D \\Rightarrow \\Sigma(o) = S_x \\land \\Sigma(\\overline{o}) = {S'}_{\\overline{x}} \\land \\sym{sty.sdual}{\\mathsf{sdual}}\\,S\\,S'}\n\\end{array}\\end{array}",
-     "caption": "A [[syn-procs|process]] at an index $\\alpha > 0$ satisfies the three clauses of a term, stop, [[rd|ready]] and step with the [[p-obls|process obligations]]. It does so in each larger world of [[w-ext]] and after each admissible fusion of its held ends. At index $0$ it holds of each process. A terminated process has a [[v-rel|value]] in its main thread. An admissible fusion $(h, D)$ renames held ends by a map $h$ injectively, except for the new pairs it restricts in $D$. [[sem-proc|Process steps]] drive the step clause, and [[sr-reading]] says the clauses in words.",
-     "why": "Composition fuses ends of two processes. Building fusion into the relation lets the semantic P-Connect hold without further proof. The alternative, a relation closed under composition by a separate lemma, needs an induction over the steps of two processes at once, which fusion avoids.",
+     "formula": "\\begin{array}{l}\n\\sym{P.zero}{\\forall p.\\ p \\in \\sym{th.Prel}{P^{W}_{0}\\llbracket \\Sigma \\vdash T \\rrbracket}} \\\\\np \\in \\sym{th.Prel}{P^{W}_{\\alpha}\\llbracket \\Sigma \\vdash T \\rrbracket},\\ \\alpha > 0 \\iff \\sym{P.strict}{\\forall W' \\mathrel{\\sym{w.ext}{\\sqsupseteq}} W}. \\\\\n\\quad \\sym{P-Stop}{(\\mathsf{stop})\\ \\sym{sr.pirred}{\\mathsf{pirred}}\\,p \\Rightarrow p = (\\varnothing, \\{v\\} \\mathbin{\\sym{tp.msunion}{\\uplus}} E) \\land v \\in \\sym{th.Vrel}{V^{W'}_{\\alpha}\\llbracket \\Sigma \\vdash T \\rrbracket} \\land E \\subseteq \\{\\ast\\}} \\\\\n\\quad \\sym{P-Ready}{(\\mathsf{ready})\\ \\neg\\mathsf{pirred}\\,p \\Rightarrow \\sym{sr.readyp}{\\mathsf{ready}_{W'}(\\Sigma, p)}} \\\\\n\\quad \\sym{P-Step}{(\\mathsf{step})\\ p \\xrightarrow{ev} p' \\Rightarrow \\sym{sr.pobl}{\\mathsf{Pobl}_{ev}(p')}} \\qquad \\sym{rel.lfp}{(\\mathsf{lfp})}\n\\end{array}",
+     "caption": "A [[syn-procs|process]] at an index $\\alpha > 0$ satisfies the three clauses of a term, stop, [[rd|ready]] and step with the [[p-obls|process obligations]], in each larger world of [[w-ext]]. At index $0$ it holds of each process. A terminated process has a [[v-rel|value]] in its main thread. [[sem-proc|Process steps]] drive the step clause, and [[sr-reading]] says the clauses in words. Renaming the ends a process holds and restricting the dual pairs that the renaming creates in its interface preserve the relation, for a process at a primitive type without dual pairs in its interface.",
+     "why": "The relation reads a process only at its interface. The semantic P-Connect is proved by an induction over the steps of both components.",
      "source": [
       {
        "file": "relation/Relation.v",
@@ -2057,13 +2057,13 @@
         "Pbody",
         "Pclauses",
         "Pind",
-        "Ptop",
-        "fuse_ok",
-        "pheld",
-        "pfuse",
-        "sdrop",
-        "dpairs",
-        "gch"
+        "Ptop"
+       ]
+      },
+      {
+       "file": "compat/Fusion.v",
+       "names": [
+        "Prel_gfuse"
        ]
       }
      ],
@@ -2582,9 +2582,9 @@
     {
      "id": "th-compose",
      "title": "Semantic composition rules",
-     "formula": "\\begin{array}{l}\\sym{th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\sym{th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\sym{th.Erel}{E\\inmode{lf}{[\\kappa]}^{W}_{\\alpha}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\sym{th.Prel}{P\\inmode{lf}{[\\kappa]}^{W}_{\\alpha}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\sym{th.sem-p-connect-sw}{\\begin{array}{l}\\begin{array}{l}\\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\sym{th.conn}{\\mathsf{conn}} \\land \\Sigma_1 \\cup \\Sigma_C \\mathrel{\\sym{sj.sw}{\\vDash}}_{W_1} p_1 : T \\\\ \\land\\ \\Sigma_2 \\cup \\Sigma_D \\mathrel{\\sym{sj.sw}{\\vDash}}_{W_2} p_2 : \\ast\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\sym{sj.sw}{\\vDash}}_{W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2} \\sym{th.par}{p_1 \\parallel_{\\Sigma_C} p_2} : T\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-p-term}{\\begin{array}{l}\\begin{array}{l}N \\in \\mathbb{N} \\land \\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\sym{th.ptermprem}{\\mathsf{pterm}_N(\\Sigma, C_0, t, T)}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_W (C_0, \\{t\\}) : T\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-p-connect}{\\begin{array}{l}\\begin{array}{l}\\sym{th.conn}{\\mathsf{conn}} \\land \\Sigma_1 \\cup \\Sigma_C \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_{W_1} p_1 : T \\\\ \\land\\ \\Sigma_2 \\cup \\Sigma_D \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_{W_2} p_2 : \\ast\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma_1 \\cup \\Sigma_2 \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_{W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T\\end{array}}}\\end{array}",
+     "formula": "\\begin{array}{l}\\sym{th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\sym{th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\sym{th.Erel}{E\\inmode{lf}{[\\kappa]}^{W}_{\\alpha}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\sym{th.Prel}{P\\inmode{lf}{[\\kappa]}^{W}_{\\alpha}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\sym{th.sem-p-connect-sw}{\\begin{array}{l}\\begin{array}{l}\\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\sym{th.conn}{\\mathsf{conn}} \\land \\Sigma_1 \\cup \\Sigma_C \\mathrel{\\sym{sj.sw}{\\vDash}}_{W_1} p_1 : T \\\\ \\land\\ \\Sigma_2 \\cup \\overline{\\Sigma_C} \\mathrel{\\sym{sj.sw}{\\vDash}}_{W_2} p_2 : \\ast\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\sym{sj.sw}{\\vDash}}_{W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2} \\sym{th.par}{p_1 \\parallel_{\\Sigma_C} p_2} : T\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-p-term}{\\begin{array}{l}\\begin{array}{l}N \\in \\mathbb{N} \\land \\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\sym{th.ptermprem}{\\mathsf{pterm}_N(\\Sigma, C_0, t, T)}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_W (C_0, \\{t\\}) : T\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-p-connect}{\\begin{array}{l}\\begin{array}{l}\\sym{th.conn}{\\mathsf{conn}} \\land \\Sigma_1 \\cup \\Sigma_C \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_{W_1} p_1 : T \\\\ \\land\\ \\Sigma_2 \\cup \\overline{\\Sigma_C} \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_{W_2} p_2 : \\ast\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma_1 \\cup \\Sigma_2 \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_{W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T\\end{array}}}\\end{array}",
      "caption": "A safe thread is a safe process, and two safe processes connected at dual interfaces form a safe process at the join of their worlds, in the [[p-rel|process relation]]. A component proved safe without typing therefore composes with typed components. \\inmode{lf}{The same holds for the lock-free judgment.}",
-     "why": "P-Term and P-Connect hold in the relation, which makes the approach compositional. The fusion clause of the process relation is what makes the connect rule a lemma rather than a new induction. The [[ex-flag|self-computed flag]] uses this to combine a thread proved safe by its reductions with typed threads.",
+     "why": "P-Term and P-Connect hold in the relation, which makes the approach compositional. The connect rule is proved by an induction over the steps of both components. The [[ex-flag|self-computed flag]] uses this to combine a thread proved safe by its reductions with typed threads.",
      "source": [
       {
        "file": "compat/PTerm.v",
@@ -13707,9 +13707,9 @@
    ]
   },
   "P.clauses": {
-   "title": "$\\mathsf{clauses}_{W'}(\\Sigma', p')$",
-   "meaning": "The stop, ready and step clauses of $p'$ at the interface $\\Sigma'$ in the world $W'$.",
-   "why": "$P$ asks them after each fusion, and a term asks the same three of itself.",
+   "title": "$\\mathsf{clauses}_{W'}(\\Sigma, p)$",
+   "meaning": "The stop, ready and step clauses of $p$ at the interface $\\Sigma$ in the world $W'$.",
+   "why": "$P$ asks them in each larger world, and a term asks the same three of itself.",
    "breaks": "Nothing. It is a definition.",
    "example": "A finished process $(\\varnothing, \\{v\\})$ meets them when $v \\in V$.",
    "signature": "\\mathsf{clauses}_{W'} : \\sym{type.Env}{\\mathsf{Env}} \\to \\sym{type.Proc}{\\mathsf{Proc}} \\to \\mathsf{Prop}",
@@ -13719,12 +13719,12 @@
      "meaning": "the later world"
     },
     {
-     "name": "\\Sigma'",
-     "meaning": "the interface after the fusion"
+     "name": "\\Sigma",
+     "meaning": "the interface"
     },
     {
-     "name": "p'",
-     "meaning": "the process after the fusion"
+     "name": "p",
+     "meaning": "the process"
     }
    ],
    "source": [
@@ -13736,43 +13736,17 @@
     }
    ]
   },
-  "P.fuse": {
-   "title": "Closed under fusions",
-   "meaning": "Each unfolding holds at $(h, D)\\cdot\\Sigma$ and $(h, D)\\cdot p$ for each $(h, D) \\in \\mathsf{Fus}(\\Sigma, p)$.",
-   "why": "Renaming, internalizing a pair of interface ends and the renaming done by a link are fusions, and closure by definition makes each of them a projection.",
-   "breaks": "With renamings alone, a link could join two unrelated interface ends into one channel and composition would fail.",
-   "example": "$h = \\mathsf{id}$ internalizes pairs, $D = \\varnothing$ renames.",
-   "signature": "\\forall (h, D) \\in \\mathsf{Fus}(\\Sigma, p).\\ \\ldots",
-   "args": [
-    {
-     "name": "h",
-     "meaning": "a map of ends"
-    },
-    {
-     "name": "D",
-     "meaning": "the channels the fusion restricts"
-    }
-   ],
-   "source": [
-    {
-     "file": "relation/Relation.v",
-     "names": [
-      "Pbody"
-     ]
-    }
-   ]
-  },
   "P-Stop": {
    "title": "P-Stop",
-   "meaning": "$\\mathsf{pirred}\\,p' \\Rightarrow \\exists v, E.\\ p' = (\\varnothing, \\{v\\} \\uplus E) \\land v \\in V\\llbracket\\Sigma' \\vdash T\\rrbracket \\land \\forall e \\in E.\\ e = \\ast$.",
+   "meaning": "$\\mathsf{pirred}\\,p \\Rightarrow \\exists v, E.\\ p = (\\varnothing, \\{v\\} \\uplus E) \\land v \\in V\\llbracket\\Sigma \\vdash T\\rrbracket \\land \\forall e \\in E.\\ e = \\ast$.",
    "why": "An irreducible process in $P$ has no restricted channel left, its main thread returned a value in $V$ and each other thread returned $\\ast$, which is the definition of terminated.",
    "breaks": "Without it, a process stuck with restricted channels would be in $P$, and adequacy would fail.",
    "example": "$(\\varnothing, \\{\\ast, \\ast\\})$ at $T = \\ast$.",
-   "signature": "\\mathsf{pirred}\\,p' \\Rightarrow \\exists v, E.\\ p' = (\\varnothing, \\{v\\} \\uplus E) \\land \\ldots",
+   "signature": "\\mathsf{pirred}\\,p \\Rightarrow \\exists v, E.\\ p = (\\varnothing, \\{v\\} \\uplus E) \\land \\ldots",
    "args": [
     {
-     "name": "p'",
-     "meaning": "the fused process"
+     "name": "p",
+     "meaning": "the process"
     },
     {
      "name": "v",
@@ -13803,15 +13777,15 @@
   },
   "P-Ready": {
    "title": "P-Ready",
-   "meaning": "$\\neg\\mathsf{pirred}\\,p' \\Rightarrow \\mathsf{ready}_{W'}(\\Sigma', p')$.",
+   "meaning": "$\\neg\\mathsf{pirred}\\,p \\Rightarrow \\mathsf{ready}_{W'}(\\Sigma, p)$.",
    "why": "Readiness of processes excludes circular waiting across the interface.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{ready}_{W'}(\\Sigma', p')$.",
-   "signature": "\\neg\\mathsf{pirred}\\,p' \\Rightarrow \\mathsf{ready}_{W'}(\\Sigma', p')",
+   "example": "$\\mathsf{ready}_{W'}(\\Sigma, p)$.",
+   "signature": "\\neg\\mathsf{pirred}\\,p \\Rightarrow \\mathsf{ready}_{W'}(\\Sigma, p)",
    "args": [
     {
-     "name": "\\Sigma', p'",
-     "meaning": "the fused interface and process"
+     "name": "\\Sigma, p",
+     "meaning": "the interface and the process"
     },
     {
      "name": "W'",
@@ -13838,14 +13812,14 @@
   },
   "P-Step": {
    "title": "P-Step",
-   "meaning": "Each step $p' \\xrightarrow{ev} p''$ meets $\\mathsf{Pobl}_{ev}$. A process steps when some numbering of its threads steps, $p \\xrightarrow{ev} p' \\iff \\exists q, q'.\\ \\mathsf{erase}\\,q = p \\land q \\xrightarrow{ev} q' \\land \\mathsf{erase}\\,q' = p'$.",
+   "meaning": "Each step $p \\xrightarrow{ev} p'$ meets $\\mathsf{Pobl}_{ev}$. A process steps when some numbering of its threads steps, $p \\xrightarrow{ev} p' \\iff \\exists q, q'.\\ \\mathsf{erase}\\,q = p \\land q \\xrightarrow{ev} q' \\land \\mathsf{erase}\\,q' = p'$.",
    "why": "The obligations read the event and the result, and no thread number. \\inmode{lf}{Thread numbers matter only to the lock-free process relation, which records the thread holding each end.}",
    "breaks": "Nothing. It is a definition.",
    "example": "A message between two threads meets Q-Tau.",
-   "signature": "\\forall ev, p''.\\ p' \\xrightarrow{ev} p'' \\Rightarrow \\mathsf{Pobl}_{ev}(p'')",
+   "signature": "\\forall ev, p'.\\ p \\xrightarrow{ev} p' \\Rightarrow \\mathsf{Pobl}_{ev}(p')",
    "args": [
     {
-     "name": "p''",
+     "name": "p'",
      "meaning": "the process after the step"
     },
     {
@@ -13867,146 +13841,6 @@
      "reason": "$(\\mathsf{step})$ labels the clause that `Psteps` states.",
      "names": [
       "Psteps"
-     ]
-    }
-   ]
-  },
-  "fuse.dcomm": {
-   "title": "$h$ commutes with duality",
-   "meaning": "$\\forall o.\\ h(\\overline{o}) = \\overline{h(o)}$.",
-   "why": "Restricted channels and the dual ends added by Q-Send and Q-Recv enter $P$ as pairs, which $h$ must map to pairs.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{csub}\\,o_1\\,o_2$ commutes with duality.",
-   "signature": "\\forall o.\\ h(\\overline{o}) = \\overline{h(o)}",
-   "args": [
-    {
-     "name": "h",
-     "meaning": "the map of ends"
-    }
-   ],
-   "source": [
-    {
-     "file": "relation/Relation.v",
-     "names": [
-      "dcomm"
-     ]
-    }
-   ]
-  },
-  "fuse.inj": {
-   "title": "Injective on held ends",
-   "meaning": "$\\forall o_1, o_2 \\in \\mathsf{held}.\\ h(o_1) = h(o_2) \\Rightarrow o_1 = o_2$.",
-   "why": "$\\mathsf{csub}$ of a link identifies $\\overline{o_1}$ and $o_2$, so $h$ is no bijection, but it is injective on the held ends of the other component.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{csub}$ is injective on the other side's held ends.",
-   "signature": "\\forall o_1, o_2 \\in \\mathsf{held}.\\ h(o_1) = h(o_2) \\Rightarrow o_1 = o_2",
-   "args": [
-    {
-     "name": "o_1, o_2",
-     "meaning": "held ends of $p$"
-    }
-   ],
-   "source": [
-    {
-     "file": "relation/Relation.v",
-     "names": [
-      "fuse_ok"
-     ]
-    }
-   ],
-   "deviations": [
-    {
-     "kind": "renamed",
-     "reason": "$\\mathsf{held}$ is the set of ends that `pheld` accepts in `fuse_ok`.",
-     "names": [
-      "fuse_ok"
-     ]
-    }
-   ]
-  },
-  "fuse.partners": {
-   "title": "New dual pairs only on $D$",
-   "meaning": "$h(o_2) = \\overline{h(o_1)} \\Rightarrow o_2 = \\overline{o_1} \\lor \\mathsf{ech}(h\\,o_1) \\in D$.",
-   "why": "Two held ends become the two ends of one channel only if they were or their channel is restricted by the fusion.",
-   "breaks": "Without it, $h$ joins unrelated interface ends into one channel, and composition fails.",
-   "example": "$D = \\varnothing$ creates no new pair.",
-   "signature": "h(o_2) = \\overline{h(o_1)} \\Rightarrow o_2 = \\overline{o_1} \\lor \\mathsf{ech}(h\\,o_1) \\in D",
-   "args": [
-    {
-     "name": "o_1, o_2",
-     "meaning": "held ends of $p$"
-    },
-    {
-     "name": "D",
-     "meaning": "the channels the fusion restricts"
-    }
-   ],
-   "source": [
-    {
-     "file": "relation/Relation.v",
-     "names": [
-      "fuse_ok"
-     ]
-    }
-   ],
-   "deviations": [
-    {
-     "kind": "renamed",
-     "reason": "$\\mathsf{held}$ is the set of ends that `pheld` accepts in `fuse_ok`.",
-     "names": [
-      "fuse_ok"
-     ]
-    }
-   ]
-  },
-  "fuse.D": {
-   "title": "$D \\cap \\mathsf{gch}_h[C] = \\varnothing$",
-   "meaning": "The channels restricted by the fusion are not images of channels already restricted.",
-   "why": "Composition splits a fused process into its two sides, and this condition keeps the two restricted sets $\\mathsf{gch}_h[C_i] \\cup D_i$ disjoint from each other and from the interface.",
-   "breaks": "Without it, a restricted channel could be restricted again as a new pair, and the split of the fused composite fails.",
-   "example": "$D \\mathbin{\\#} \\mathsf{gch}_h[C]$.",
-   "signature": "D \\cap \\mathsf{gch}_h[C] = \\varnothing",
-   "args": [
-    {
-     "name": "D",
-     "meaning": "the channels the fusion restricts"
-    },
-    {
-     "name": "C",
-     "meaning": "the restricted channels of $p$"
-    }
-   ],
-   "source": [
-    {
-     "file": "relation/Relation.v",
-     "names": [
-      "fuse_ok"
-     ]
-    }
-   ]
-  },
-  "fuse.dpairs": {
-   "title": "$\\mathsf{dpairs}\\,D\\,\\Sigma$",
-   "meaning": "Both ends of each channel of $D$ are in $\\Sigma$, at dual points and dual types.",
-   "why": "They become restricted, and restricted channels are dual pairs.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "Internalizing $c$ with $\\Sigma(c^{+}) = S_x$ and $\\Sigma(c^{-}) = \\overline{S}_{\\overline{x}}$.",
-   "signature": "\\mathsf{dpairs} : \\mathcal{P}_{\\mathrm{fin}}(\\sym{type.Chan}{\\mathsf{Chan}}) \\to \\sym{type.Env}{\\mathsf{Env}} \\to \\mathsf{Prop}",
-   "args": [
-    {
-     "name": "D",
-     "meaning": "the channels"
-    },
-    {
-     "name": "\\Sigma",
-     "meaning": "the interface, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
-    }
-   ],
-   "source": [
-    {
-     "file": "relation/Relation.v",
-     "names": [
-      "dpairs"
      ]
     }
    ]
@@ -16427,110 +16261,6 @@
     }
    ]
   },
-  "sr.fuseok": {
-   "title": "$(h, D) \\in \\mathsf{Fus}(\\Sigma, p)$",
-   "meaning": "$(h, D)$ is an admissible fusion of the held ends of $p$ with interface $\\Sigma$.",
-   "why": "One notion covers renaming, internalizing pairs and the renaming of a link.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$(\\mathsf{id}, \\varnothing) \\in \\mathsf{Fus}(\\Sigma, p)$.",
-   "signature": "\\mathsf{Fus}(\\Sigma, p) \\subseteq (\\mathsf{End} \\to \\mathsf{End}) \\times \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Chan})",
-   "args": [
-    {
-     "name": "h",
-     "meaning": "the map of ends"
-    },
-    {
-     "name": "D",
-     "meaning": "the channels restricted by the fusion"
-    },
-    {
-     "name": "\\Sigma",
-     "meaning": "the interface, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
-    },
-    {
-     "name": "p",
-     "meaning": "the process, $p = (C, E) \\in \\sym{type.Proc}{\\mathsf{Proc}}$"
-    }
-   ],
-   "source": [
-    {
-     "file": "relation/Relation.v",
-     "names": [
-      "fuse_ok"
-     ]
-    }
-   ]
-  },
-  "sr.sdrop": {
-   "title": "$(h, D)\\cdot\\Sigma$",
-   "meaning": "$\\Sigma$ renamed by $h$, without the ends of the channels $D$, in the Rocq $\\mathsf{sdrop}\\,D\\,(h\\,\\Sigma)$.",
-   "why": "The channels of $D$ become restricted and leave the interface.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$(\\mathsf{id}, \\{c\\})\\cdot\\{c^{+}, c^{-}, d^{+}\\} = \\{d^{+}\\}$.",
-   "signature": "(h, D)\\cdot\\Sigma : \\sym{type.Env}{\\mathsf{Env}}",
-   "args": [
-    {
-     "name": "h",
-     "meaning": "the map of ends"
-    },
-    {
-     "name": "D",
-     "meaning": "the channels"
-    },
-    {
-     "name": "\\Sigma",
-     "meaning": "the interface, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
-    }
-   ],
-   "source": [
-    {
-     "file": "relation/Relation.v",
-     "names": [
-      "sdrop",
-      "kren"
-     ]
-    }
-   ]
-  },
-  "sr.pfuse": {
-   "title": "$(h, D)\\cdot p$",
-   "meaning": "$p$ renamed by $h$ with the channels $D$ added to the restricted set, in the Rocq $\\mathsf{pfuse}\\,h\\,D\\,p$.",
-   "why": "It is the process after the fusion.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$(\\mathsf{id}, \\{c\\})\\cdot(C, E) = (C \\cup \\{c\\}, E)$.",
-   "signature": "(h, D)\\cdot p : \\sym{type.Proc}{\\mathsf{Proc}}",
-   "args": [
-    {
-     "name": "h",
-     "meaning": "the map of ends"
-    },
-    {
-     "name": "D",
-     "meaning": "the new restricted channels"
-    },
-    {
-     "name": "p",
-     "meaning": "the process, $p = (C, E) \\in \\sym{type.Proc}{\\mathsf{Proc}}$"
-    }
-   ],
-   "source": [
-    {
-     "file": "relation/Relation.v",
-     "names": [
-      "pfuse"
-     ]
-    }
-   ],
-   "deviations": [
-    {
-     "kind": "renamed",
-     "reason": "$(h, D) \\cdot p$ is `pfuse h D p`, which renames the channels with `gch h`.",
-     "names": [
-      "pfuse"
-     ]
-    }
-   ]
-  },
   "sr.pirred": {
    "title": "$\\mathsf{pirred}\\,p$",
    "meaning": "$p$ takes no process step.",
@@ -16549,58 +16279,6 @@
      "file": "lang/Process.v",
      "names": [
       "pirred"
-     ]
-    }
-   ]
-  },
-  "sr.held": {
-   "title": "Held ends",
-   "meaning": "$\\mathsf{held} = \\{o \\mid o \\in \\mathrm{dom}\\,\\Sigma \\lor \\mathsf{ech}\\,o \\in C\\}$.",
-   "why": "A process holds its interface ends and both ends of each restricted channel.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "For $\\Sigma = \\{d^{+}\\}$ and $C = \\{c\\}$, $\\mathsf{held} = \\{d^{+}, c^{+}, c^{-}\\}$.",
-   "signature": "\\mathsf{held} \\subseteq \\mathsf{End}",
-   "args": [
-    {
-     "name": "\\Sigma",
-     "meaning": "the interface, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
-    },
-    {
-     "name": "C",
-     "meaning": "the restricted channels"
-    }
-   ],
-   "source": [
-    {
-     "file": "relation/Relation.v",
-     "names": [
-      "pheld"
-     ]
-    }
-   ]
-  },
-  "sr.gch": {
-   "title": "$\\mathsf{gch}_h$",
-   "meaning": "$\\mathsf{gch}_h(c) = \\mathsf{ech}(h(c^{+}))$, the channel map induced by $h$.",
-   "why": "Restricted sets are sets of channels, so $h$ acts on them through its action on $c^{+}$.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\mathsf{gch}_{\\mathsf{id}}(c) = c$.",
-   "signature": "\\mathsf{gch}_h : \\sym{type.Chan}{\\mathsf{Chan}} \\to \\sym{type.Chan}{\\mathsf{Chan}}",
-   "args": [
-    {
-     "name": "h",
-     "meaning": "the map of ends"
-    },
-    {
-     "name": "c",
-     "meaning": "a channel"
-    }
-   ],
-   "source": [
-    {
-     "file": "relation/Relation.v",
-     "names": [
-      "gch"
      ]
     }
    ]
