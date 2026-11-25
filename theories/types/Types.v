@@ -1,487 +1,179 @@
-(** * Types, session types, duality, environments (§2.2, Fig. 5 top)
+(** * Types with points, credits and costs (stage S2, proposal §2.5, §2.17)
 
-    T, U ::= ∗ | T ⊸^β_λ U | T ⊗ U | T ⊕ U | S@ι | □(∀ιs αs. C. T) | ∃^ℓ ιs. C. T
-    S    ::= Skip | S;S | ?P | !P | ⊕(S, S) | &(S, S) | Close | µα.S | α | α̅
-                                                    P ::= ∃ιs. T
-    (context-free session types, K1 of docs/extensions/context-free.md)
-    β, λ ::= ι, optional (absent bounds are left out, sharp edges 149)
-    ℓ    ::= absent | ι | ⊥   (⊥ the unknown point)
-    ι    ::= (p, b)       p ::= a | point variable | (p, b)[i]   (no channels) *)
+    T, U ::= ∗ | (T ⊸^u_l[c] U)^a | T ⊗ U | T ⊕ U | (S@x)^a_m
+           | □(∀ιs αs. C. ∗ ⊸^u[c] U) | ∃^lb ιs. C. T
+    S    ::= Skip | S;S | ?(∃ιs. T) | !(∃ιs. T) | ⊕(S, S) | &(S, S)
+           | Close | µα.S | α | α‾
 
-From stdpp Require Import base strings gmap countable.
-From LRGV Require Export lang.Syntax.
+    The upper point u of an arrow is a point, none, or ⊤ ([ubound]), its
+    lower point l is a point, none, or ⊥ ([lbound]) (entry 12,
+    generalized arrows).
 
+    Session types are the context-free session types of the old
+    development, read through their head normal form [unfoldS]. There is
+    no point type: programs never mention a point (decision Q1).
 
-(** Instantiation of point variables. A name denotes the point at
-    offset 0; the offset of a point adds on top. *)
-Fixpoint pn_inst (σ : nat → point) (p : pname) : point :=
-  match p with
-  | NConst a => Pt (NConst a) 0
-  | NVar a => σ a
-  | NPayload p b i => pt_payload (pt_shift b (pn_inst σ p)) i
-  end.
+    Decision Q11 puts the cost annotations of the cost judgment into the
+    types. A credit a sits only where ends sit (decision of 2026-11-19):
+    on an end (S@x)^a_m, a lower bound on its counter, and on a closure
+    (T ⊸ U)^a, a lower bound on the counters of the ends it captured
+    and the most those counters may lose before a call (decision of
+    2026-11-20, per-end capture). Products, sums, existentials, box results and
+    payloads carry no credit, their ends carry their own. An end also
+    carries its tickets m, an upper bound on its counter, and every action
+    on the end sets the counter back to m (decision of 2026-11-21). The
+    arrow carries a cost c, and the box the cost of one force. The
+    deadlock-freedom
+    relations ignore every annotation. [ty_df] sets them to the values
+    of the instance N = ∞. *)
 
-Definition pt_inst (σ : nat → point) (x : point) : point :=
-  pt_polar (pt_pol x) (pt_shift (pt_off x) (pn_inst σ (pt_name x))).
-
-(** Lifting an instantiation under a binder of m point variables. *)
-Definition pup (m : nat) (σ : nat → point) : nat → point :=
-  λ a, if decide (a < m) then pvar a
-       else pt_inst (λ a', pvar (a' + m)) (σ (a - m)).
-
-(** The instantiation that sends the variable i to the i-th point of
-    a list, and shifts the variables beyond it down. *)
-Definition plist (xs : list point) : nat → point :=
-  λ a, match xs !! a with Some x => x | None => pvar (a - length xs) end.
-
-(** The points x[0], …, x[m-1] of a point x. *)
-Definition payload_pts (x : point) (m : nat) : list point :=
-  (λ i, pt_payload x i) <$> seq 0 m.
-
-(** Facts of a constraint: x ≺ y (sharp edges 65). Branch no-eq has
-    no ≡ facts (sharp edges 159). *)
-Inductive fact := FLt (x y : point).
-
-Definition fact_map (f : point → point) (g : fact) : fact :=
-  match g with FLt x y => FLt (f x) (f y) end.
-
-(** g holds when its ≺ holds in [lt]. The argument [eq] is unused. *)
-Definition fact_holds (eq lt : point → point → Prop) (g : fact) : Prop :=
-  match g with FLt x y => lt x y end.
-
-(** Two facts with related points. *)
-Definition fact_rel (R : point → point → Prop) (g g' : fact) : Prop :=
-  match g, g' with
-  | FLt x y, FLt x' y' => R x x' ∧ R y y'
-  end.
-
-(** The root of a name is a variable below k. *)
-Fixpoint pn_vb (k : nat) (p : pname) : Prop :=
-  match p with
-  | NConst _ => False | NVar a => a < k | NPayload q _ _ => pn_vb k q
-  end.
-
-Definition fact_scoped (k : nat) (g : fact) : Prop :=
-  match g with FLt x y => pn_vb k (pt_name x) ∧ pn_vb k (pt_name y) end.
-
-(** The constraint of a box (sharp edges 65): any set of positive facts,
-    finite or infinite. It is a closure: the facts [bc_facts] speak of
-    variables only, 0, …, n-1 for the box's ιs and n + j for the j-th
-    point of [bc_env], which lives outside the binder and carries the
-    outer point variables and constants. Substitution and renaming act
-    on [bc_env] alone and never touch the predicate, so their equations
-    hold by computation on lists, without functional extensionality.
-    The roots of a constraint are the finitely many roots of [bc_env].
-    A fact whose variables lie beyond n + |bc_env| is not part of C. *)
-Record bcs := BCs { bc_env : list point; bc_facts : fact → Prop }.
-
-(** The lower bound of an existential (sharp edges 97, 103, 149).
-    [LNone] is no bound, the value holds no channel. [LBot] is ⊥, the
-    unknown point: the value holds channels at points not known from
-    outside, and no point lies below ⊥. [LPt x] says that every
-    channel of the value lies at or above x. ⊥ is no point. It occurs
-    only here, and a future that holds such a value carries a flag
-    instead (static/FactTheory.v). The lower bound of an arrow is an
-    optional point, [None] when the closure holds no channel, and its
-    upper bound is an optional point, [None] when a call never blocks. *)
-Inductive lbound := LNone | LBot | LPt (x : point).
-
-Definition lb_map (f : point → point) (lb : lbound) : lbound :=
-  match lb with LPt x => LPt (f x) | LNone => LNone | LBot => LBot end.
-
-Lemma lb_map_ext f g lb : (∀ x, f x = g x) → lb_map f lb = lb_map g lb.
-Proof. intros H. destruct lb; simpl; by rewrite ?H. Qed.
-
-Lemma lb_map_comp f g lb : lb_map f (lb_map g lb) = lb_map (f ∘ g) lb.
-Proof. by destruct lb. Qed.
-
-Lemma lb_map_id f lb : (∀ x, f x = x) → lb_map f lb = lb.
-Proof. intros H. destruct lb; simpl; by rewrite ?H. Qed.
-
-(** ** Types
-
-    The arrow carries an optional upper point β ([None]: the call
-    never blocks) and an optional lower point λ ([None]: the closure
-    holds nothing). □ binds n point variables, so ∀ occurs only directly
-    under □ (sharp edges 109). ∃ binds n, and a
-    payload binds m. Session types are unannotated: the only points
-    inside them are those of payloads, all bound by the payload's ∃, so
-    point instantiation never enters a session type. *)
+From GV Require Export types.Costs types.Worlds.
 
 Inductive ty :=
-  | TUnit                          (* ∗ *)
-  | TLolli (ub lb : option point) (T U : ty)
-                                   (* T ⊸^ub_lb U *)
-  | TProd (T U : ty)               (* T ⊗ U *)
-  | TSum (T U : ty)                (* T ⊕ U *)
-  | TBox (n k : nat) (C : bcs) (T : ty)
-                                   (* □(∀ι₀ … ιₙ₋₁ α₀ … αₖ₋₁. C. T) — unlimited
-                                      (replicable) values. T is a thunk
-                                      type ∗ ⊸^u U, so the upper point
-                                      u lives on the arrow under the
-                                      binder (sharp edges 52, 63); the
-                                      constraint C is a set of facts
-                                      x ≺ y and x ≡ y over the ιs and
-                                      outer points (sharp edges 65).
-                                      The αs are the session variables
-                                      0, …, k-1 of T (K6, sharp edges 73) *)
-
-  | TSess (S : sty) (x : point)   (* S@x *)
+  | TUnit
+  | TLolli (ub : ubound) (lb : lbound) (c : fuel) (T U : ty) (a : fuel)
+  | TProd (T U : ty)
+  | TSum (T U : ty)
+  | TBox (n k : nat) (C : bcs) (ub : option point) (c : fuel) (U : ty)
+  | TSess (S : sty) (x : point) (a : fuel) (m : fuel)
   | TEx (lb : lbound) (n : nat) (C : bcs) (T : ty)
-                                   (* ∃^ℓ ι₀ … ιₙ₋₁. C. T — existential
-                                      points (sharp edges 97, 103): the
-                                      value lies in T at some known
-                                      instance meeting C, and its
-                                      channels lie at or above the lower
-                                      bound ℓ, which is absent, ⊥ or a point *)
-  | TPt (x : point)                (* the singleton type of the point value x
-                                      (syntactic points, sharp edges 173) *)
 with sty :=
-  | SRcv (m : nat) (T : ty)        (* ?(∃ι₀ … ιₘ₋₁. T), no continuation *)
-  | SSnd (m : nat) (T : ty)        (* !(∃ι₀ … ιₘ₋₁. T), no continuation *)
-  | SEnd                           (* Close *)
-  | SMu (S : sty)                  (* µα.S — binds one session variable *)
-  | SVar (a : nat)                 (* α — de Bruijn *)
-  | SVarD (a : nat)                (* α̅ — the dual of what α stands for;
-                                      never written in source types, it
-                                      enters only through [dual] *)
-  | SSkip                          (* Skip *)
-  | SSeq (S1 S2 : sty)             (* S₁;S₂ *)
-  | SPlus (S1 S2 : sty)            (* ⊕(S₁, S₂): select a branch *)
-  | SWith (S1 S2 : sty).           (* &(S₁, S₂): offer both branches *)
+  | SRcv (m : nat) (T : ty)   (* ?(∃ι₀…ιₘ₋₁. T) *)
+  | SSnd (m : nat) (T : ty)   (* !(∃ι₀…ιₘ₋₁. T) *)
+  | SEnd                                 (* Close *)
+  | SMu (S : sty)                        (* µα.S *)
+  | SVar (a : nat)                       (* α *)
+  | SVarD (a : nat)                      (* α‾, enters through [dual] *)
+  | SSkip
+  | SSeq (S1 S2 : sty)
+  | SPlus (S1 S2 : sty)
+  | SWith (S1 S2 : sty).
 
 Scheme ty_mut_ind := Induction for ty Sort Prop
   with sty_mut_ind := Induction for sty Sort Prop.
 Combined Scheme ty_sty_mut_ind from ty_mut_ind, sty_mut_ind.
 
+Notation "S @ x ^ a ; m" := (TSess S x a m) (at level 20, x at level 2, a at level 0, m at level 0, format "S @ x ^ a ; m").
+
 (** ** Point instantiation
 
-    T[σ]: instantiate the free point variables of T. Session types are
-    left alone (see above), so this is a plain recursion on [ty]. *)
-
-(** C[σ]: the outer points of C instantiated. *)
-Definition bcs_inst (σ : nat → point) (C : bcs) : bcs :=
-  BCs (pt_inst σ <$> bc_env C) (bc_facts C).
-
-(** The facts of C under its binder of n point variables: the ιs are
-    the variables 0, …, n-1 and the outer points are shifted past them. *)
-Definition bcs_open (n : nat) (C : bcs) (g : fact) : Prop :=
-  ∃ f, bc_facts C f ∧ fact_scoped (n + length (bc_env C)) f ∧
-    g = fact_map (pt_inst (pup n (plist (bc_env C)))) f.
-
-(** C holds at the instance xs: every fact of C[xs/ιs] holds, ≺ in [lt]
-    and ≡ in [eq] (sharp edges 65). *)
-Definition bcs_hold (eq lt : point → point → Prop) (C : bcs) (xs : list point) : Prop :=
-  ∀ g, bcs_open (length xs) C g → fact_holds eq lt (fact_map (pt_inst (plist xs)) g).
-
-Lemma bcs_hold_mono (eq eq' lt lt' : point → point → Prop) C xs :
-  (∀ x y, eq x y → eq' x y) → (∀ x y, lt x y → lt' x y) →
-  bcs_hold eq lt C xs → bcs_hold eq' lt' C xs.
-Proof. intros He Hl H g Hg. specialize (H g Hg). destruct g; simpl in *; auto. Qed.
-
-Lemma fact_map_ext (f f' : point → point) g :
-  (∀ x, f x = f' x) → fact_map f g = fact_map f' g.
-Proof. intros H. destruct g; simpl; by rewrite !H. Qed.
-
-Lemma fact_map_comp (f f' : point → point) g :
-  fact_map f (fact_map f' g) = fact_map (f ∘ f') g.
-Proof. by destruct g. Qed.
-
-(** Substitution of the outer points is the image of the open facts
-    under the lifted substitution. *)
-Section bcs_open.
-  Local Lemma bpt_shift_0 x : pt_shift 0 x = x.
-  Proof. destruct x as [p b o]. unfold pt_shift. simpl. f_equal. lia. Qed.
-
-  Local Lemma bpt_inst_pvar σ a : pt_inst σ (pvar a) = σ a.
-  Proof. unfold pt_inst, pvar. simpl. apply bpt_shift_0. Qed.
-
-  Local Lemma bpt_inst_shift σ n x : pt_inst σ (pt_shift n x) = pt_shift n (pt_inst σ x).
-  Proof.
-    destruct x as [p b o]. unfold pt_inst, pt_shift. simpl.
-    destruct (pn_inst σ p). destruct b; unfold pt_polar, pt_dual; simpl; f_equal; lia.
-  Qed.
-
-  Local Lemma bpt_inst_dual σ x : pt_inst σ (pt_dual x) = pt_dual (pt_inst σ x).
-  Proof.
-    destruct x as [p b o]. unfold pt_inst. simpl.
-    destruct b; simpl; [done|by rewrite pt_dual_dual].
-  Qed.
-
-  Local Lemma bpn_inst_comp τ σ p : pt_inst τ (pn_inst σ p) = pn_inst (pt_inst τ ∘ σ) p.
-  Proof.
-    induction p as [a|a|p IH b i]; simpl; [done|done|].
-    assert (∀ x, pt_inst τ (pt_payload x i) = pt_payload (pt_inst τ x) i) as Hs
-      by (intros [q [] o]; reflexivity).
-    by rewrite Hs, bpt_inst_shift, IH.
-  Qed.
-
-  Local Lemma bpt_inst_comp τ σ x : pt_inst τ (pt_inst σ x) = pt_inst (pt_inst τ ∘ σ) x.
-  Proof.
-    destruct x as [n b o]. unfold pt_inst at 2 3. simpl.
-    destruct b; simpl; [|rewrite bpt_inst_dual]; by rewrite bpt_inst_shift, bpn_inst_comp.
-  Qed.
-
-  Local Lemma bpt_inst_ext_vb k σ τ x :
-    pn_vb k (pt_name x) → (∀ a, a < k → σ a = τ a) → pt_inst σ x = pt_inst τ x.
-  Proof.
-    intros Hx H. destruct x as [p bb o]. unfold pt_inst. simpl in *. do 2 f_equal.
-    induction p as [a|a|p IH b i]; simpl in *; [done|by apply H|by rewrite IH..].
-  Qed.
-
-  Local Lemma bpt_inst_ext σ τ x : (∀ a, σ a = τ a) → pt_inst σ x = pt_inst τ x.
-  Proof.
-    intros H. destruct x as [p bb o]. unfold pt_inst. simpl. do 2 f_equal.
-    induction p as [a|a|p IH b i]; simpl; [done|apply H|by rewrite IH..].
-  Qed.
-
-  Local Lemma bpup_plist σ n env a :
-    a < n + length env →
-    pup n (plist (pt_inst σ <$> env)) a = pt_inst (pup n σ) (pup n (plist env) a).
-  Proof.
-    intros Ha. unfold pup at 1 3. destruct (decide (a < n)).
-    - rewrite bpt_inst_pvar. unfold pup. by rewrite decide_True.
-    - unfold plist. rewrite list_lookup_fmap.
-      destruct (lookup_lt_is_Some_2 env (a - n)) as [e He]; [lia|]. rewrite He. simpl.
-      rewrite !bpt_inst_comp. apply bpt_inst_ext. intros b. simpl.
-      rewrite bpt_inst_pvar. unfold pup. rewrite decide_False by lia.
-      by replace (b + n - n) with b by lia.
-  Qed.
-
-  Lemma bcs_open_inst σ n C g :
-    bcs_open n (bcs_inst σ C) g ↔ ∃ g0, bcs_open n C g0 ∧ g = fact_map (pt_inst (pup n σ)) g0.
-  Proof.
-    destruct C as [env P]. unfold bcs_open, bcs_inst; simpl. rewrite length_fmap.
-    assert (∀ f, fact_scoped (n + length env) f →
-              fact_map (pt_inst (pup n (plist (pt_inst σ <$> env)))) f
-              = fact_map (pt_inst (pup n σ)) (fact_map (pt_inst (pup n (plist env))) f)) as E.
-    { intros f Hf. rewrite fact_map_comp.
-      assert (∀ x, pn_vb (n + length env) (pt_name x) →
-                pt_inst (pup n (plist (pt_inst σ <$> env))) x
-                = (pt_inst (pup n σ) ∘ pt_inst (pup n (plist env))) x) as Ex.
-      { intros x Hx. simpl. rewrite bpt_inst_comp. apply (bpt_inst_ext_vb _ _ _ _ Hx).
-        intros a Ha. by apply bpup_plist. }
-      destruct f; simpl in *; destruct Hf; f_equal; auto. }
-    split.
-    - intros (f & Hf & Hs & ->). exists (fact_map (pt_inst (pup n (plist env))) f).
-      split; [by exists f|]. by apply E.
-    - intros (g0 & (f & Hf & Hs & ->) & ->). exists f. split_and!; [done|done|].
-      symmetry. by apply E.
-  Qed.
-End bcs_open.
+    Session types carry no free point variable (see [pinst_sty]). *)
 
 Fixpoint pinst_ty (σ : nat → point) (T : ty) : ty :=
   match T with
   | TUnit => TUnit
-  | TLolli ub lb T1 U =>
-      TLolli (pt_inst σ <$> ub) (pt_inst σ <$> lb)
-        (pinst_ty σ T1) (pinst_ty σ U)
+  | TLolli ub lb c T1 U a =>
+      TLolli (ub_map (pt_inst σ) ub) (lb_map (pt_inst σ) lb) c (pinst_ty σ T1) (pinst_ty σ U) a
   | TProd T1 U => TProd (pinst_ty σ T1) (pinst_ty σ U)
   | TSum T1 U => TSum (pinst_ty σ T1) (pinst_ty σ U)
-  | TBox n k C T1 =>
-      TBox n k (bcs_inst σ C) (pinst_ty (pup n σ) T1)
-  | TSess s x => TSess s (pt_inst σ x)
+  | TBox n k C ub c U =>
+      TBox n k (bcs_inst σ C) (pt_inst (pup n σ) <$> ub) c (pinst_ty (pup n σ) U)
+  | TSess s x a mt => TSess s (pt_inst σ x) a mt
   | TEx lb n C T1 =>
       TEx (lb_map (pt_inst σ) lb) n (bcs_inst σ C) (pinst_ty (pup n σ) T1)
-  | TPt x => TPt (pt_inst σ x)
   end.
 
-(** T[xs/ιs]: instantiate the ∀ of a □ (or the ∃ of a payload) with a
-    list of points. *)
+(** Point instantiation leaves session types alone. A payload ∃ιs.T is
+    point-closed below its own binder ([sscoped], checked where a payload
+    is read, at E-Send and E-Recv), so no outer point occurs in a session
+    type. Instantiation then commutes with unfolding and with session
+    substitution, which pass no point binder. *)
+Definition pinst_sty (σ : nat → point) (s : sty) : sty := s.
+
+(** T[xs/ιs]. *)
 Definition ty_inst (xs : list point) (T : ty) : ty := pinst_ty (plist xs) T.
 
-(** The payload ∃ι₀ … ιₘ₋₁. T at the point x: P[x] = T[x[i]/ιᵢ]. *)
+(** The payload ∃ι₀…ιₘ₋₁. T at the carrier x: T[x·i/ιᵢ]. *)
 Definition payload_at (m : nat) (T : ty) (x : point) : ty :=
   ty_inst (payload_pts x m) T.
 
-(** x̄[i] = x[i], so the payload at x̄ is the payload at x. *)
-Lemma payload_pts_dual x m : payload_pts (pt_dual x) m = payload_pts x m.
-Proof. done. Qed.
-Lemma payload_at_dual m T x : payload_at m T (pt_dual x) = payload_at m T x.
+Lemma payload_at_dual m T x : payload_at m T x‾ = payload_at m T x.
 Proof. done. Qed.
 
-(** Composition and identity of point instantiation on types. The
-    relation instantiates the ∃ of [TEx] by composing substitutions
-    (relation/LogicalRelation.v, sharp edges 73). *)
-Section tinst.
-  Local Lemma tpt_shift_0 x : pt_shift 0 x = x.
-  Proof. destruct x as [p b o]. unfold pt_shift. simpl. f_equal. lia. Qed.
+Lemma pinst_ty_ext T : ∀ σ τ, (∀ a, σ a = τ a) → pinst_ty σ T = pinst_ty τ T.
+Proof.
+  induction T; intros σ τ H1; simpl; try done.
+  - rewrite (IHT1 σ τ), (IHT2 σ τ) by done.
+    rewrite (ub_map_ext (pt_inst σ) (pt_inst τ)), (lb_map_ext (pt_inst σ) (pt_inst τ))
+      by (intros; by apply pt_inst_ext). done.
+  - by rewrite (IHT1 σ τ), (IHT2 σ τ).
+  - by rewrite (IHT1 σ τ), (IHT2 σ τ).
+  - rewrite (IHT (pup n σ) (pup n τ)) by (intros; by apply pup_ext).
+    rewrite (bcs_inst_ext σ τ) by done.
+    rewrite !(option_fmap_ext (pt_inst (pup n σ)) (pt_inst (pup n τ)))
+      by (intros; apply pt_inst_ext; intros; by apply pup_ext). done.
+  - by rewrite (pt_inst_ext σ τ).
+  - rewrite (IHT (pup n σ) (pup n τ)) by (intros; by apply pup_ext).
+    rewrite (bcs_inst_ext σ τ), (lb_map_ext _ (pt_inst τ)) by first [done|intros; by apply pt_inst_ext]. done.
+Qed.
+Lemma pinst_ty_comp T : ∀ σ τ, pinst_ty τ (pinst_ty σ T) = pinst_ty (pt_inst τ ∘ σ) T.
+Proof.
+  induction T; intros σ τ; simpl; try done.
+  - rewrite IHT1, IHT2, ub_map_comp, lb_map_comp.
+    rewrite (ub_map_ext (pt_inst τ ∘ pt_inst σ) (pt_inst (pt_inst τ ∘ σ))),
+      (lb_map_ext (pt_inst τ ∘ pt_inst σ) (pt_inst (pt_inst τ ∘ σ)))
+      by (intros; apply pt_inst_comp). done.
+  - by rewrite IHT1, IHT2.
+  - by rewrite IHT1, IHT2.
+  - rewrite IHT, bcs_inst_comp, <-option_fmap_compose.
+    rewrite (pinst_ty_ext T _ (pup n (pt_inst τ ∘ σ))) by (intros; apply pup_comp).
+    rewrite (option_fmap_ext (pt_inst (pup n τ) ∘ pt_inst (pup n σ)) (pt_inst (pup n (pt_inst τ ∘ σ))))
+      by (intros; simpl; rewrite pt_inst_comp; apply pt_inst_ext; intros; apply pup_comp). done.
+  - by rewrite pt_inst_comp.
+  - rewrite IHT, bcs_inst_comp, lb_map_comp.
+    rewrite (pinst_ty_ext T _ (pup n (pt_inst τ ∘ σ))) by (intros; apply pup_comp).
+    rewrite (lb_map_ext (pt_inst τ ∘ pt_inst σ) (pt_inst (pt_inst τ ∘ σ))) by (intros; apply pt_inst_comp).
+    done.
+Qed.
+Lemma pinst_ty_pvar T : pinst_ty pvar T = T.
+Proof.
+  induction T; simpl; try done.
+  - rewrite IHT1, IHT2, ub_map_id, lb_map_id by apply pt_inst_pvar. done.
+  - by rewrite IHT1, IHT2.
+  - by rewrite IHT1, IHT2.
+  - rewrite (pinst_ty_ext T _ pvar), IHT by apply pup_pvar. rewrite bcs_inst_pvar.
+    destruct ub; simpl; [|done]. rewrite (pt_inst_ext _ pvar), pt_inst_pvar by apply pup_pvar. done.
+  - by rewrite pt_inst_pvar.
+  - rewrite (pinst_ty_ext T _ pvar), IHT by apply pup_pvar. rewrite bcs_inst_pvar.
+    by rewrite lb_map_id by apply pt_inst_pvar.
+Qed.
+(** ** Point-closed payloads
 
-  Lemma tpt_inst_pvar_at σ a : pt_inst σ (pvar a) = σ a.
-  Proof. unfold pt_inst, pvar. simpl. apply tpt_shift_0. Qed.
+    [pscoped k T]: every point variable of T is below k (binders of T
+    raise k), and every payload of every session type in T is
+    point-closed below its own binder. *)
+Definition pt_pscoped (k : nat) (x : point) : Prop :=
+  ∀ a, pt_root x = NVar a → a < k.
 
-  Local Lemma tpt_inst_shift σ n x : pt_inst σ (pt_shift n x) = pt_shift n (pt_inst σ x).
-  Proof.
-    destruct x as [p b o]. unfold pt_inst, pt_shift. simpl.
-    destruct (pn_inst σ p). destruct b; unfold pt_polar, pt_dual; simpl; f_equal; lia.
-  Qed.
-
-  Lemma tpt_inst_dual σ x : pt_inst σ (pt_dual x) = pt_dual (pt_inst σ x).
-  Proof.
-    destruct x as [p b o]. unfold pt_inst. simpl.
-    destruct b; simpl; [done|by rewrite pt_dual_dual].
-  Qed.
-
-  Local Lemma tpn_inst_comp τ σ p : pt_inst τ (pn_inst σ p) = pn_inst (pt_inst τ ∘ σ) p.
-  Proof.
-    induction p as [a|a|p IH b i]; simpl; [done|done|].
-    assert (∀ x, pt_inst τ (pt_payload x i) = pt_payload (pt_inst τ x) i) as Hs
-      by (intros [q [] o]; reflexivity).
-    by rewrite Hs, tpt_inst_shift, IH.
-  Qed.
-
-  Lemma tpt_inst_comp τ σ x : pt_inst τ (pt_inst σ x) = pt_inst (pt_inst τ ∘ σ) x.
-  Proof.
-    destruct x as [n b o]. unfold pt_inst at 2 3. simpl.
-    destruct b; simpl; [|rewrite tpt_inst_dual]; by rewrite tpt_inst_shift, tpn_inst_comp.
-  Qed.
-
-  Lemma tpt_inst_ext σ τ x : (∀ a, σ a = τ a) → pt_inst σ x = pt_inst τ x.
-  Proof.
-    intros H. destruct x as [p bb o]. unfold pt_inst. simpl. do 2 f_equal.
-    induction p as [a|a|p IH b i]; simpl; [done|apply H|by rewrite IH..].
-  Qed.
-
-  Lemma tpt_inst_pvar x : pt_inst pvar x = x.
-  Proof.
-    destruct x as [p bb o]. unfold pt_inst. simpl.
-    assert (pn_inst pvar p = Pt p 0) as ->;
-      [|destruct bb; unfold pt_polar, pt_shift, pt_dual; simpl; f_equal; lia].
-    induction p as [a|a|p IH b i]; simpl; [done|done|by rewrite IH..].
-  Qed.
-
-  Lemma tpup_ext n σ τ a : (∀ b, σ b = τ b) → pup n σ a = pup n τ a.
-  Proof. intros H. unfold pup. by rewrite H. Qed.
-
-  Lemma tpup_pvar n a : pup n pvar a = pvar a.
-  Proof.
-    unfold pup. destruct (decide (a < n)); [done|].
-    rewrite tpt_inst_pvar_at. unfold pvar. f_equal. f_equal. lia.
-  Qed.
-
-  Lemma tpup_comp τ σ n a : pt_inst (pup n τ) (pup n σ a) = pup n (pt_inst τ ∘ σ) a.
-  Proof.
-    unfold pup at 2 3. destruct (decide (a < n)).
-    - rewrite tpt_inst_pvar_at. unfold pup. by rewrite decide_True.
-    - change ((pt_inst τ ∘ σ) (a - n)) with (pt_inst τ (σ (a - n))).
-      rewrite !tpt_inst_comp. apply tpt_inst_ext. intros b. simpl.
-      rewrite tpt_inst_pvar_at. unfold pup. rewrite decide_False by lia.
-      by replace (b + n - n) with b by lia.
-  Qed.
-
-  Lemma tbcs_ext σ τ C : (∀ a, σ a = τ a) → bcs_inst σ C = bcs_inst τ C.
-  Proof.
-    intros H. destruct C as [env P]. unfold bcs_inst. simpl. f_equal.
-    apply list_fmap_ext. intros _ x _. by apply tpt_inst_ext.
-  Qed.
-
-  Lemma tbcs_comp τ σ C : bcs_inst τ (bcs_inst σ C) = bcs_inst (pt_inst τ ∘ σ) C.
-  Proof.
-    destruct C as [env P]. unfold bcs_inst. simpl. f_equal.
-    rewrite <-list_fmap_compose. apply list_fmap_ext. intros _ x _. apply tpt_inst_comp.
-  Qed.
-
-  Lemma tbcs_pvar C : bcs_inst pvar C = C.
-  Proof.
-    destruct C as [env P]. unfold bcs_inst. simpl. f_equal.
-    rewrite <-(list_fmap_id env) at 2. apply list_fmap_ext. intros _ x _. apply tpt_inst_pvar.
-  Qed.
-
-  Lemma tinst_ext T : ∀ σ τ, (∀ a, σ a = τ a) → pinst_ty σ T = pinst_ty τ T.
-  Proof.
-    induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n k C T1 IH | s x
-                   | lb n C T1 IH | x]; intros σ τ H; simpl.
-    - done.
-    - f_equal; [destruct ub; simpl; f_equal; auto using tpt_inst_ext
-               |destruct lb; simpl; f_equal; auto using tpt_inst_ext|auto|auto].
-    - f_equal; auto.
-    - f_equal; auto.
-    - f_equal; [by apply tbcs_ext|]. apply IH. intros a. by apply tpup_ext.
-    - f_equal. by apply tpt_inst_ext.
-    - f_equal; [destruct lb; simpl; f_equal; auto using tpt_inst_ext|by apply tbcs_ext|].
-      apply IH. intros a. by apply tpup_ext.
-    - f_equal. by apply tpt_inst_ext.
-  Qed.
-
-  Lemma tinst_comp T : ∀ τ σ, pinst_ty τ (pinst_ty σ T) = pinst_ty (pt_inst τ ∘ σ) T.
-  Proof.
-    induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n k C T1 IH | s x
-                   | lb n C T1 IH | x]; intros τ σ; simpl.
-    - done.
-    - f_equal; [destruct ub; simpl; f_equal; auto using tpt_inst_comp
-               |destruct lb; simpl; f_equal; auto using tpt_inst_comp|auto|auto].
-    - f_equal; auto.
-    - f_equal; auto.
-    - f_equal; [apply tbcs_comp|]. rewrite IH. apply tinst_ext. intros a. apply tpup_comp.
-    - f_equal. apply tpt_inst_comp.
-    - f_equal; [destruct lb; simpl; f_equal; auto using tpt_inst_comp|apply tbcs_comp|].
-      rewrite IH. apply tinst_ext. intros a. apply tpup_comp.
-    - f_equal. apply tpt_inst_comp.
-  Qed.
-
-  Lemma tinst_pvar T : pinst_ty pvar T = T.
-  Proof.
-    induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n k C T1 IH | s x
-                   | lb n C T1 IH | x]; simpl.
-    - done.
-    - f_equal; [destruct ub; simpl; f_equal; auto using tpt_inst_pvar
-               |destruct lb; simpl; f_equal; auto using tpt_inst_pvar|auto|auto].
-    - f_equal; auto.
-    - f_equal; auto.
-    - f_equal; [apply tbcs_pvar|]. rewrite (tinst_ext _ _ pvar); [done|apply tpup_pvar].
-    - f_equal. apply tpt_inst_pvar.
-    - f_equal; [destruct lb; simpl; f_equal; auto using tpt_inst_pvar|apply tbcs_pvar|].
-      rewrite (tinst_ext _ _ pvar); [done|apply tpup_pvar].
-    - f_equal. apply tpt_inst_pvar.
-  Qed.
-End tinst.
-
-(** Induction on types in which the body of an existential is available
-    at every instance (sharp edges 73): the value relation reads an
-    existential at the instance of its witness. *)
-Fixpoint tsize (T : ty) : nat :=
+Fixpoint pscoped (k : nat) (T : ty) : Prop :=
   match T with
-  | TUnit | TSess _ _ | TPt _ => 1
-  | TLolli _ _ T1 U | TProd T1 U | TSum T1 U => S (tsize T1 + tsize U)
-  | TBox _ _ _ T1 | TEx _ _ _ T1 => S (tsize T1)
+  | TUnit => True
+  | TLolli ub lb _ T1 U _ =>
+      (∀ x, ub = UPt x → pt_pscoped k x) ∧ (∀ x, lb = LPt x → pt_pscoped k x) ∧
+      pscoped k T1 ∧ pscoped k U
+  | TProd T1 U | TSum T1 U => pscoped k T1 ∧ pscoped k U
+  | TBox n _ C ub _ U =>
+      Forall (pt_pscoped k) (bc_env C) ∧ (∀ x, ub = Some x → pt_pscoped (n + k) x) ∧ pscoped (n + k) U
+  | TSess s x _ _ => sscoped s ∧ pt_pscoped k x
+  | TEx lb n C T1 =>
+      (∀ x, lb = LPt x → pt_pscoped k x) ∧ Forall (pt_pscoped k) (bc_env C) ∧ pscoped (n + k) T1
+  end
+with sscoped (s : sty) : Prop :=
+  match s with
+  | SRcv m T | SSnd m T => pscoped m T
+  | SMu s' => sscoped s'
+  | SSeq s1 s2 | SPlus s1 s2 | SWith s1 s2 => sscoped s1 ∧ sscoped s2
+  | _ => True
   end.
 
-Lemma tsize_pinst T : ∀ σ, tsize (pinst_ty σ T) = tsize T.
-Proof. induction T; intros σ; simpl; auto. Qed.
+(** ** Heads and the ⊥ flag
 
-Lemma ty_ind_ex (P : ty → Prop) :
-  P TUnit →
-  (∀ ub lb T, P T → ∀ U, P U → P (TLolli ub lb T U)) →
-  (∀ T, P T → ∀ U, P U → P (TProd T U)) →
-  (∀ T, P T → ∀ U, P U → P (TSum T U)) →
-  (∀ n k C T, P T → P (TBox n k C T)) →
-  (∀ s x, P (TSess s x)) →
-  (∀ lb n C T, (∀ σ, P (pinst_ty σ T)) → P (TEx lb n C T)) →
-  (∀ x, P (TPt x)) →
-  ∀ T, P T.
-Proof.
-  intros H1 H2 H3 H4 H5 H6 H7 H8.
-  enough (∀ m T, tsize T < m → P T) as H by (intros T; apply (H (S (tsize T))); lia).
-  induction m as [|m IH]; intros T HT; [lia|].
-  destruct T; simpl in HT.
-  - done.
-  - apply H2; apply IH; lia.
-  - apply H3; apply IH; lia.
-  - apply H4; apply IH; lia.
-  - apply H5; apply IH; lia.
-  - apply H6.
-  - apply H7. intros σ. apply IH. rewrite tsize_pinst. lia.
-  - apply H8.
-Qed.
-
-(** ** Heads
-
-    The points at which a value of the type is next used:
-    heads(S@ι) = {ῑ}, heads(T ⊸^β_λ U) = {λ} (∅ without λ), ∅ for ∗ and □.
-    The head of an end is the point of its partner end (end points,
-    docs/extensions/end-points.md): a thread blocked at u that holds an
-    end at v owes u ≺ v̄. Lower bounds λ and ℓ already live among these
-    partner points. *)
+    heads(S@x) = {x‾}: a thread blocked at u that holds an end at v owes
+    u ≺ v‾. The lower point of an arrow and of an existential are heads.
+    An arrow whose lower point is ⊥ (entry 12) raises the flag as well:
+    it claims no bound on the ends it captured.
+    The ⊥ flag says a value may hold an unopened existential whose ends
+    sit at points not known from outside. *)
 
 Definition opt_heads (o : option point) : gset point :=
   match o with Some x => {[x]} | None => ∅ end.
@@ -491,47 +183,45 @@ Definition lb_heads (lb : lbound) : gset point :=
 
 Fixpoint heads (T : ty) : gset point :=
   match T with
-  | TUnit | TBox _ _ _ _ | TPt _ => ∅
-  | TLolli _ lb _ _ => opt_heads lb
+  | TUnit | TBox _ _ _ _ _ _ => ∅
+  | TLolli _ lb _ _ _ _ => lb_heads lb
   | TProd T1 U | TSum T1 U => heads T1 ∪ heads U
-  | TSess _ x => {[pt_dual x]}
+  | TSess _ x _ _ => {[x‾]}
   | TEx lb _ _ _ => lb_heads lb
   end.
 
-(** The ⊥ flag of a type (sharp edges 103): a value of the type may
-    hold an unopened existential with lower bound ⊥, whose channels lie
-    at points not known from outside. heads(T) is the set of points of
-    the heads of T, and the flag is the rest. *)
 Fixpoint hbot (T : ty) : bool :=
   match T with
   | TProd T1 U | TSum T1 U => hbot T1 || hbot U
-  | TEx LBot _ _ _ => true
+  | TEx LBot _ _ _ | TLolli _ LBot _ _ _ _ => true
   | _ => false
   end.
 
 Lemma hbot_pinst σ T : hbot (pinst_ty σ T) = hbot T.
-Proof. induction T; simpl; try done; try congruence. by destruct lb. Qed.
+Proof. induction T; simpl; try done; try congruence; by destruct lb. Qed.
 
-(** ** Session-type substitution (§4.3)
+Lemma opt_heads_pinst σ o : opt_heads (pt_inst σ <$> o) = set_map (pt_inst σ) (opt_heads o).
+Proof. destruct o; simpl; set_solver. Qed.
 
-    Equi-recursive types identify µα.S with its unfolding S[µα.S/α],
-    so the unfolding has to be computed. A session variable may occur
-    anywhere a session type may, including inside the payload of a
-    communication, so renaming and substitution traverse [ty] and
-    [sty] mutually. Term variables and session variables live in
-    separate namespaces; [upren] from Syntax.v is reused for the
-    latter's shifts. *)
+Lemma heads_pinst σ T : heads (pinst_ty σ T) = set_map (pt_inst σ) (heads T).
+Proof.
+  induction T; simpl; rewrite ?set_map_union_L, ?IHT1, ?IHT2; try set_solver.
+  - destruct lb; simpl; set_solver.
+  - rewrite set_map_singleton_L. by rewrite pt_inst_dual.
+  - destruct lb; simpl; set_solver.
+Qed.
+
+(** ** Session substitution, duality, unfolding (ported) *)
 
 Fixpoint sren_ty (r : nat → nat) (T : ty) : ty :=
   match T with
   | TUnit => TUnit
-  | TLolli ub lb T1 U => TLolli ub lb (sren_ty r T1) (sren_ty r U)
+  | TLolli ub lb c T1 U a => TLolli ub lb c (sren_ty r T1) (sren_ty r U) a
   | TProd T1 U => TProd (sren_ty r T1) (sren_ty r U)
   | TSum T1 U => TSum (sren_ty r T1) (sren_ty r U)
-  | TBox n k C T1 => TBox n k C (sren_ty (Nat.iter k upren r) T1)
-  | TSess s x => TSess (sren r s) x
+  | TBox n k C ub c U => TBox n k C ub c (sren_ty (Nat.iter k upren r) U)
+  | TSess s x a mt => TSess (sren r s) x a mt
   | TEx lb n C T1 => TEx lb n C (sren_ty r T1)
-  | TPt x => TPt x
   end
 with sren (r : nat → nat) (s : sty) : sty :=
   match s with
@@ -547,24 +237,16 @@ with sren (r : nat → nat) (s : sty) : sty :=
   | SWith s1 s2 => SWith (sren r s1) (sren r s2)
   end.
 
-(** ** Polarity flip
-
-    [sflip k] swaps α ↔ α̅ at de Bruijn level k and leaves every other
-    variable alone. Duality uses it to fix up the variable a µ binds:
-    in [dual (SMu s)] the binder's meaning changes from the protocol
-    to its dual, so occurrences that kept denoting the original
-    protocol must switch polarity. *)
-
+(** [sflip k] swaps α ↔ α‾ at level k. *)
 Fixpoint sflip_ty (k : nat) (T : ty) : ty :=
   match T with
   | TUnit => TUnit
-  | TLolli ub lb T1 U => TLolli ub lb (sflip_ty k T1) (sflip_ty k U)
+  | TLolli ub lb c T1 U a => TLolli ub lb c (sflip_ty k T1) (sflip_ty k U) a
   | TProd T1 U => TProd (sflip_ty k T1) (sflip_ty k U)
   | TSum T1 U => TSum (sflip_ty k T1) (sflip_ty k U)
-  | TBox n kk C T1 => TBox n kk C (sflip_ty (kk + k) T1)
-  | TSess s x => TSess (sflip k s) x
+  | TBox n kk C ub c U => TBox n kk C ub c (sflip_ty (kk + k) U)
+  | TSess s x a mt => TSess (sflip k s) x a mt
   | TEx lb n C T1 => TEx lb n C (sflip_ty k T1)
-  | TPt x => TPt x
   end
 with sflip (k : nat) (s : sty) : sty :=
   match s with
@@ -580,24 +262,7 @@ with sflip (k : nat) (s : sty) : sty :=
   | SWith s1 s2 => SWith (sflip k s1) (sflip k s2)
   end.
 
-(** ** Session duality: swaps the direction of communication.
-
-    Polarized duality after Gay, Thiemann and Vasconcelos, "Duality of
-    Session Types: The Final Cut". Payloads are left alone — ?T.S and
-    !T.S carry the same T — and variables carry a polarity:
-
-      dual α = α̅    dual α̅ = α    dual (µα.S) = µα. flip₀ (dual S)
-      dual Skip = Skip    dual (S₁;S₂) = dual S₁; dual S₂
-      dual ⊕(S₁, S₂) = &(dual S₁, dual S₂)    dual &(S₁, S₂) = ⊕(dual S₁, dual S₂)
-
-    The flip at the binder makes tail occurrences ("continue as
-    myself") come out as α again, while payload occurrences come out
-    as α̅ and keep denoting the *original* protocol. The naive
-    dual α = α is unsound here: for µα.!(α).α, unrolling then
-    dualizing gives payload µα.!(α).α, dualizing then unrolling gives
-    payload µα.?(α).α. With polarities the two orders agree —
-    [dual_unfoldS] below, unconditionally. *)
-
+(** Polarized duality (Gay, Thiemann and Vasconcelos). Payloads stay. *)
 Fixpoint dual (s : sty) : sty :=
   match s with
   | SRcv m T => SSnd m T
@@ -612,21 +277,17 @@ Fixpoint dual (s : sty) : sty :=
   | SWith s1 s2 => SPlus (dual s1) (dual s2)
   end.
 
-(** Substituting under α̅ dualizes the substituend, matching its
-    reading as "the dual of what α stands for". *)
-
 Definition sty_up (σ : nat → sty) : nat → sty := SVar 0 .: (sren S ∘ σ).
 
 Fixpoint sinst_ty (σ : nat → sty) (T : ty) : ty :=
   match T with
   | TUnit => TUnit
-  | TLolli ub lb T1 U => TLolli ub lb (sinst_ty σ T1) (sinst_ty σ U)
+  | TLolli ub lb c T1 U a => TLolli ub lb c (sinst_ty σ T1) (sinst_ty σ U) a
   | TProd T1 U => TProd (sinst_ty σ T1) (sinst_ty σ U)
   | TSum T1 U => TSum (sinst_ty σ T1) (sinst_ty σ U)
-  | TBox n k C T1 => TBox n k C (sinst_ty (Nat.iter k sty_up σ) T1)
-  | TSess s x => TSess (sinst σ s) x
+  | TBox n k C ub c U => TBox n k C ub c (sinst_ty (Nat.iter k sty_up σ) U)
+  | TSess s x a mt => TSess (sinst σ s) x a mt
   | TEx lb n C T1 => TEx lb n C (sinst_ty σ T1)
-  | TPt x => TPt x
   end
 with sinst (σ : nat → sty) (s : sty) : sty :=
   match s with
@@ -642,36 +303,11 @@ with sinst (σ : nat → sty) (s : sty) : sty :=
   | SWith s1 s2 => SWith (sinst σ s1) (sinst σ s2)
   end.
 
-(** One-step unrolling: µα.s ↦ s[µα.s/α]. *)
 Definition unroll (s : sty) : sty := sinst (SMu s .: SVar) s.
 
-(** ** Head normal form (K3 of docs/extensions/context-free.md)
+Definition slist (ss : list sty) : nat → sty :=
+  λ a, match ss !! a with Some s => s | None => SVar (a - length ss) end.
 
-    The relation reads a session type only through its head normal
-    form unr(S) (Thiemann and Vasconcelos 2016, §3.3 and Lemma 3.8),
-    whose cases are
-
-      Skip | !P;S′ | ?P;S′ | α;S′ | α̅;S′ | ⊕(S₁, S₂) | &(S₁, S₂) | Close
-
-    A lone !P, ?P or variable is read as itself followed by Skip, a
-    choice followed by S distributes S into its branches, and Close;S
-    is Close (K2: after a close the entry leaves the environment, so S
-    is never read). unr unrolls µ and descends into the left of ;
-    until such a head appears.
-
-    unr terminates on contractive types only, so [unrN] counts fuel and
-    returns [None] when it runs out. [unfoldS] runs it with the fuel
-    [sfuel S] and returns S itself when no head appears. A stuck type is
-    never in head form ([unrN_shape]), so the relation's clauses, which
-    all match on a head, relate nothing at it. We call S contractive when
-    [unfoldS S] is a head ([contractive]), which is "unr(S) is defined"
-    of Lemma 3.8. On a closed type that is contractive in the sense of
-    Fig. 3 of the paper, unr never reaches a recursion variable, so it
-    explores only the syntax of S and the fuel suffices. That
-    characterization is not mechanized. *)
-
-(** S₁;S₂ for a head S₁ other than Skip: the continuation joins the
-    head's own, and a choice takes it into both branches. *)
 Definition hseq (h s2 : sty) : sty :=
   match h with
   | SSeq o SSkip => SSeq o s2
@@ -704,7 +340,6 @@ Fixpoint unrN (k : nat) (s : sty) : option sty :=
       end
   end.
 
-(** The fuel: one per ; and µ on the spine of the type. *)
 Fixpoint sfuel (s : sty) : nat :=
   match s with
   | SSeq a b => S (sfuel a + sfuel b)
@@ -712,102 +347,12 @@ Fixpoint sfuel (s : sty) : nat :=
   | _ => 1
   end.
 
+(** unr(S), the head normal form, or S itself when none appears. *)
 Definition unfoldS (s : sty) : sty :=
   match unrN (sfuel s) s with Some h => h | None => s end.
 
-(** The heads. *)
-Definition satom (o : sty) : Prop :=
-  match o with SRcv _ _ | SSnd _ _ | SVar _ | SVarD _ => True | _ => False end.
-
-Definition hnf_shape (h : sty) : Prop :=
-  match h with
-  | SSkip | SEnd | SPlus _ _ | SWith _ _ => True
-  | SSeq o _ => satom o
-  | _ => False
-  end.
-
-Definition contractive (s : sty) : Prop := hnf_shape (unfoldS s).
-
-Lemma hseq_shape h s2 : hnf_shape h → h ≠ SSkip → hnf_shape (hseq h s2).
-Proof.
-  destruct h as [| | | | | | |o r| |]; simpl; try done.
-  destruct r; done.
-Qed.
-
-Lemma unrN_shape k : ∀ s h, unrN k s = Some h → hnf_shape h.
-Proof.
-  induction k as [|k IH]; intros s h Hs; [done|].
-  destruct s; simpl in Hs; try (injection Hs as <-; done); [by eapply IH|].
-  destruct (unrN k s1) as [h1|] eqn:E1; [|done].
-  pose proof (IH _ _ E1) as Hh1.
-  destruct h1 as [| | | | | | |o r| |]; try (exact (IH _ _ Hs)); simpl in Hh1; try done;
-    injection Hs as <-; simpl; try done; destruct r; done.
-Qed.
-
-Lemma unrN_mono k : ∀ k' s h, unrN k s = Some h → k ≤ k' → unrN k' s = Some h.
-Proof.
-  induction k as [|k IH]; intros k' s h Hs Hk; [done|].
-  destruct k' as [|k']; [lia|]. destruct s; simpl in *; try done.
-  - apply IH; [done|lia].
-  - destruct (unrN k s1) as [h1|] eqn:E1; [|done].
-    rewrite (IH k' _ _ E1) by lia.
-    destruct h1; try done. apply IH; [done|lia].
-Qed.
-
-(** A head is its own normal form. *)
-Lemma sfuel_pos s : 1 ≤ sfuel s.
-Proof. destruct s; simpl; lia. Qed.
-
-Lemma unrN_hd k s : hnf_shape s → sfuel s ≤ k → unrN k s = Some s.
-Proof.
-  intros Hs Hk. destruct s as [| | | | | | |o r| |]; simpl in *; try done;
-    destruct k as [|k]; try lia; try done.
-  pose proof (sfuel_pos o). destruct k as [|k]; [lia|].
-  destruct o; simpl; try done; destruct r; done.
-Qed.
-
-Lemma unrN_hd_fuel u : hnf_shape u → unrN (sfuel u) u = Some u.
-Proof.
-  intros Hu. by apply unrN_hd.
-Qed.
-
-Lemma unfoldS_hd u : hnf_shape u → unfoldS u = u.
-Proof. intros Hu. unfold unfoldS. by rewrite unrN_hd_fuel. Qed.
-
-Lemma unfoldS_rcv m T s : unfoldS (SSeq (SRcv m T) s) = SSeq (SRcv m T) s.
-Proof. by apply unfoldS_hd. Qed.
-
-Lemma unfoldS_snd m T s : unfoldS (SSeq (SSnd m T) s) = SSeq (SSnd m T) s.
-Proof. by apply unfoldS_hd. Qed.
-
-Lemma unfoldS_plus a b : unfoldS (SPlus a b) = SPlus a b.
-Proof. by apply unfoldS_hd. Qed.
-
-Lemma unfoldS_with a b : unfoldS (SWith a b) = SWith a b.
-Proof. by apply unfoldS_hd. Qed.
-
-Lemma unfoldS_end : unfoldS SEnd = SEnd.
-Proof. done. Qed.
-
-(** [unfoldS] either reaches a head or leaves the type alone. *)
-Lemma unfoldS_cases s : (unrN (sfuel s) s = Some (unfoldS s) ∧ hnf_shape (unfoldS s)) ∨
-                        (unrN (sfuel s) s = None ∧ unfoldS s = s).
-Proof.
-  unfold unfoldS. destruct (unrN (sfuel s) s) as [h|] eqn:E; [left|by right].
-  split; [done|]. by eapply unrN_shape.
-Qed.
-
-(** A head that [unfoldS] returns is the one every larger fuel gives. *)
-Lemma unfoldS_unrN s k : hnf_shape (unfoldS s) → sfuel s ≤ k → unrN k s = Some (unfoldS s).
-Proof.
-  intros Hh Hk. destruct (unfoldS_cases s) as [[E _]|[E Es]].
-  - by eapply unrN_mono.
-  - exfalso. rewrite Es in Hh. by rewrite unrN_hd_fuel in E.
-Qed.
-
-(** The view of a head and hereditary contractiveness (SessionEquiv.v
-    reads ≈ through them; konst_ty asks force's session instances to be
-    hereditarily contractive, K6). *)
+(** An idle end: its session type is Skip, so no thread acts on it. *)
+Definition idle (S : sty) : Prop := unfoldS S = SSkip.
 
 Inductive hview :=
   | HSkip
@@ -849,7 +394,6 @@ Definition unview (h : hview) : sty :=
 Lemma unview_view u : unview (view u) = u.
 Proof. destruct u as [| | | | | | |o r| |]; try done. by destruct o. Qed.
 
-(** The head of S. *)
 Definition hd (s : sty) : hview := view (unfoldS s).
 
 Lemma unfoldS_unview s : unfoldS s = unview (hd s).
@@ -871,1050 +415,273 @@ Fixpoint ahc (n : nat) (s : sty) : Prop :=
 
 Definition hcontractive (s : sty) : Prop := ∀ n, ahc n s.
 
-(** ** Closedness of session variables *)
+(** ** Session equivalence, coinductive through heads (ported)
 
-Fixpoint sclosed_ty (k : nat) (T : ty) : Prop :=
-  match T with
-  | TUnit => True
-  | TLolli _ _ T1 U | TProd T1 U | TSum T1 U =>
-      sclosed_ty k T1 ∧ sclosed_ty k U
-  | TBox _ kk _ T1 => sclosed_ty (kk + k) T1
-  | TSess s _ => sclosed k s
-  | TEx _ _ _ T1 => sclosed_ty k T1
-  | TPt _ => True
-  end
-with sclosed (k : nat) (s : sty) : Prop :=
-  match s with
-  | SRcv _ T | SSnd _ T => sclosed_ty k T
-  | SEnd | SSkip => True
-  | SMu s' => sclosed (S k) s'
-  | SVar a | SVarD a => a < k
-  | SSeq s1 s2 | SPlus s1 s2 | SWith s1 s2 => sclosed k s1 ∧ sclosed k s2
+    Annotations compare on the nose, sessions by the parameter. *)
+
+Fixpoint eqT (ρ : sty → sty → Prop) (T U : ty) : Prop :=
+  match T, U with
+  | TUnit, TUnit => True
+  | TLolli ub lb c T1 T2 a, TLolli ub' lb' c' U1 U2 a' =>
+      ub = ub' ∧ lb = lb' ∧ c = c' ∧ a = a' ∧
+      eqT ρ T1 U1 ∧ eqT ρ T2 U2
+  | TProd T1 T2, TProd U1 U2 | TSum T1 T2, TSum U1 U2 =>
+      eqT ρ T1 U1 ∧ eqT ρ T2 U2
+  | TBox n k C ub c T1, TBox n' k' C' ub' c' U1 =>
+      n = n' ∧ k = k' ∧ C = C' ∧ ub = ub' ∧ c = c' ∧
+      match k with 0 => eqT ρ T1 U1 | S _ => T1 = U1 end
+  | TSess s x a mt, TSess r y a' mt' => x = y ∧ a = a' ∧ mt = mt' ∧ ρ s r
+  | TEx lb n C T1, TEx lb' n' C' U1 => lb = lb' ∧ n = n' ∧ C = C' ∧ eqT ρ T1 U1
+  | _, _ => False
   end.
 
-(** A box binds k session variables: the session substitutions lift
-    under it k times, as under k µ's. *)
-Lemma sty_up_ext σ σ' : (∀ a, σ a = σ' a) → ∀ a, sty_up σ a = sty_up σ' a.
-Proof. intros H [|a]; simpl; [done|]. unfold compose. by rewrite H. Qed.
+Definition eq_step (τ : sty → sty → Prop) (s r : sty) : Prop :=
+  match hd s, hd r with
+  | HSkip, HSkip | HEnd, HEnd => True
+  | HRcv m T s', HRcv m' U r' | HSnd m T s', HSnd m' U r' =>
+      m = m' ∧ eqT τ T U ∧ τ s' r'
+  | HVar a s', HVar a' r' | HVarD a s', HVarD a' r' => a = a' ∧ τ s' r'
+  | HPlus s1 s2, HPlus r1 r2 | HWith s1 s2, HWith r1 r2 => τ s1 r1 ∧ τ s2 r2
+  | HStuck u, HStuck v => u = v
+  | _, _ => False
+  end.
 
-Lemma iter_sty_up_ext k σ σ' :
-  (∀ a, σ a = σ' a) → ∀ a, Nat.iter k sty_up σ a = Nat.iter k sty_up σ' a.
-Proof. revert σ σ'. induction k as [|k IH]; intros σ σ' H; simpl; [done|]. by apply sty_up_ext, IH. Qed.
+Fixpoint aeq (n : nat) (s r : sty) : Prop :=
+  match n with 0 => True | S n' => eq_step (aeq n') s r end.
 
-Lemma sinst_ext_mut :
-  (∀ T σ σ', (∀ a, σ a = σ' a) → sinst_ty σ T = sinst_ty σ' T) ∧
-  (∀ s σ σ', (∀ a, σ a = σ' a) → sinst σ s = sinst σ' s).
+(** S ≈ R. *)
+Definition sequiv (s r : sty) : Prop := ∀ n, aeq n s r.
+Definition teq (T U : ty) : Prop := eqT sequiv T U.
+
+Lemma eqT_mono ρ ρ' T : ∀ U,
+  (∀ s r, ρ s r → ρ' s r) → eqT ρ T U → eqT ρ' T U.
+Proof. induction T; intros [] Hρ; simpl; repeat case_match; naive_solver. Qed.
+
+Lemma eqT_refl ρ T : (∀ s, ρ s s) → eqT ρ T T.
+Proof. intros Hρ. induction T; simpl; repeat case_match; split_and?; auto. Qed.
+
+Lemma eqT_sym ρ T : ∀ U, (∀ s r, ρ s r → ρ r s) → eqT ρ T U → eqT ρ U T.
+Proof. induction T; intros [] Hρ; simpl; repeat case_match; naive_solver. Qed.
+
+Lemma eqT_trans ρ T : ∀ U V,
+  (∀ s r t, ρ s r → ρ r t → ρ s t) → eqT ρ T U → eqT ρ U V → eqT ρ T V.
+Proof. induction T; intros [] []; simpl; repeat case_match; naive_solver. Qed.
+
+Ltac hd_cases s := destruct (hd s) as [|?m ?T ?s'|?m ?T ?s'|?a ?s'|?a ?s'|?s1 ?s2|?s1 ?s2| |?u].
+
+Lemma eq_step_mono τ τ' s r : (∀ a b, τ a b → τ' a b) → eq_step τ s r → eq_step τ' s r.
 Proof.
-  apply ty_sty_mut_ind; intros; simpl; f_equal; auto.
-  - apply H. by apply iter_sty_up_ext.
-  - apply H. by apply sty_up_ext.
+  unfold eq_step. intros Hτ. hd_cases s; hd_cases r; try done; intuition eauto using eqT_mono.
 Qed.
 
-Definition sinst_ext := proj2 sinst_ext_mut.
-
-(** The identity substitution leaves a type alone. *)
-Lemma sinst_id_mut :
-  (∀ T σ, (∀ a, σ a = SVar a) → sinst_ty σ T = T) ∧
-  (∀ s σ, (∀ a, σ a = SVar a) → sinst σ s = s).
+Lemma sequiv_coind (τ : sty → sty → Prop) :
+  (∀ s r, τ s r → eq_step τ s r) → ∀ s r, τ s r → sequiv s r.
 Proof.
-  assert (∀ σ, (∀ a, σ a = SVar a) → ∀ a, sty_up σ a = SVar a) as Hup
-    by (intros σ H [|a]; simpl; [done|]; unfold compose; by rewrite H).
-  assert (∀ k σ, (∀ a, σ a = SVar a) → ∀ a, Nat.iter k sty_up σ a = SVar a) as Hit.
-  { induction k as [|k IH]; intros σ H; simpl; [done|]. apply Hup. by apply IH. }
-  apply ty_sty_mut_ind; intros; simpl; f_equal; eauto.
-  all: by rewrite H.
+  intros Hτ s r Hsr n. revert s r Hsr.
+  induction n as [|n IH]; intros s r Hsr; [done|].
+  eapply eq_step_mono; [exact IH|by apply Hτ].
 Qed.
 
-(** ** The flip algebra
-
-    [sflip k] is an involution, distinct levels commute, and it
-    commutes with [dual] — everything a polarity swap should be. *)
-
-Lemma sflip_sflip_mut :
-  (∀ T k, sflip_ty k (sflip_ty k T) = T) ∧
-  (∀ s k, sflip k (sflip k s) = s).
+Lemma aeq_refl n : ∀ s, aeq n s s.
 Proof.
-  apply ty_sty_mut_ind; intros; simpl; f_equal; auto;
-    repeat (case_decide; simpl); congruence.
+  induction n as [|n IH]; intros s; [done|].
+  unfold aeq; fold aeq. unfold eq_step.
+  hd_cases s; try done; split_and!; auto using eqT_refl.
 Qed.
 
-Definition sflip_sflip := proj2 sflip_sflip_mut.
-
-Lemma sflip_comm_mut :
-  (∀ T j k, j ≠ k → sflip_ty j (sflip_ty k T) = sflip_ty k (sflip_ty j T)) ∧
-  (∀ s j k, j ≠ k → sflip j (sflip k s) = sflip k (sflip j s)).
+Lemma aeq_sym n : ∀ s r, aeq n s r → aeq n r s.
 Proof.
-  apply ty_sty_mut_ind; intros; simpl; try (f_equal; auto with lia; done);
-    try (f_equal; apply H; lia);
-    repeat (case_decide; simpl); congruence.
+  induction n as [|n IH]; intros s r H; [done|].
+  unfold aeq in *; fold aeq in *. unfold eq_step in *.
+  hd_cases s; hd_cases r; try done; try (by symmetry);
+    intuition (subst; eauto using eqT_sym).
 Qed.
 
-Definition sflip_comm := proj2 sflip_comm_mut.
-
-Lemma sflip_dual s : ∀ j, sflip j (dual s) = dual (sflip j s).
+Lemma aeq_trans n : ∀ s r t, aeq n s r → aeq n r t → aeq n s t.
 Proof.
-  induction s as [m T|m T| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; intros j; simpl; f_equal;
-    auto.
-  - rewrite <-IH. apply sflip_comm. lia.
-  - repeat (case_decide; simpl); congruence.
-  - repeat (case_decide; simpl); congruence.
+  induction n as [|n IH]; intros s r t H1 H2; [done|].
+  unfold aeq in *; fold aeq in *. unfold eq_step in *.
+  hd_cases s; hd_cases r; try done; hd_cases t; try done; try congruence;
+    intuition (subst; eauto using eqT_trans).
 Qed.
 
-Lemma sfuel_sflip s : ∀ k, sfuel (sflip k s) = sfuel s.
+Lemma sequiv_refl s : sequiv s s.
+Proof. intros n. apply aeq_refl. Qed.
+Lemma sequiv_sym s r : sequiv s r → sequiv r s.
+Proof. intros H n. by apply aeq_sym. Qed.
+Lemma sequiv_trans s r t : sequiv s r → sequiv r t → sequiv s t.
+Proof. intros H1 H2 n. by eapply aeq_trans. Qed.
+
+Lemma idle_hd S : idle S ↔ hd S = HSkip.
 Proof.
-  induction s as [m T|m T| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; intros k; simpl; auto;
-    try case_decide; done.
+  unfold idle, hd. split; [by intros ->|].
+  intros H. rewrite <-(unview_view (unfoldS S)), H. done.
 Qed.
 
-Lemma dual_involutive s : dual (dual s) = s.
+Lemma idle_sequiv S S' : sequiv S S' → idle S ↔ idle S'.
 Proof.
-  induction s as [m T|m T| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; simpl; f_equal; auto.
-  rewrite <-sflip_dual, sflip_sflip. exact IH.
+  intros H. specialize (H 1). simpl in H. unfold eq_step in H. rewrite !idle_hd.
+  destruct (hd S), (hd S'); naive_solver.
 Qed.
 
-Lemma sfuel_dual s : sfuel (dual s) = sfuel s.
+Lemma teq_refl T : teq T T.
+Proof. apply eqT_refl, sequiv_refl. Qed.
+Lemma teq_sym T U : teq T U → teq U T.
+Proof. apply eqT_sym, sequiv_sym. Qed.
+Lemma teq_trans' T U V : teq T U → teq U V → teq T V.
+Proof. apply eqT_trans, sequiv_trans. Qed.
+
+(** ** Interface annotations
+
+    A credit and tickets for each end of an interface, and the
+    annotations that give every end N/2. *)
+Definition iann : Type := cend → fuel * fuel.
+
+Definition khalf (N : fuel) : iann := λ _, (fhalf N, fhalf N).
+
+(** ** Session subtyping, coinductive through heads
+
+    S ⊑ S′ is ≈ except at the payloads. A received payload may fall in
+    credit and a sent payload may rise. [crT T U] says that U is T with
+    the credits of its ends and closures lowered. Everything else, the
+    tickets, the points, the costs, the arguments and results of closures,
+    boxes and the protocols of payload ends, compares up to ≈. *)
+
+Fixpoint crT (T U : ty) : Prop :=
+  match T, U with
+  | TUnit, TUnit => True
+  | TLolli ub lb c T1 T2 a, TLolli ub' lb' c' U1 U2 a' =>
+      ub = ub' ∧ lb = lb' ∧ c = c' ∧ fle a' a ∧ teq T1 U1 ∧ teq T2 U2
+  | TProd T1 T2, TProd U1 U2 | TSum T1 T2, TSum U1 U2 => crT T1 U1 ∧ crT T2 U2
+  | TBox _ _ _ _ _ _, TBox _ _ _ _ _ _ => teq T U
+  | TSess s x a mt, TSess r y a' mt' => x = y ∧ fle a' a ∧ mt = mt' ∧ sequiv s r
+  | TEx lb n C T1, TEx lb' n' C' U1 => lb = lb' ∧ n = n' ∧ C = C' ∧ crT T1 U1
+  | _, _ => False
+  end.
+
+Lemma crT_refl T : crT T T.
 Proof.
-  induction s as [m T|m T| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; simpl; auto.
-  by rewrite sfuel_sflip, IH.
+  induction T; simpl; split_and?; auto using fle_refl, teq_refl, sequiv_refl.
 Qed.
 
-(** ** Flip versus renaming and substitution
-
-    [sflip k ∘ sren r] pushes through as [sren r ∘ sflip j] when r
-    maps exactly the preimage of k to k ([sflip_sren_iff_mut]) and
-    vanishes when nothing maps to k ([sflip_sren_ne_mut]). *)
-
-Lemma upren_iff r j k : (∀ a, r a = k ↔ a = j) → ∀ a, upren r a = S k ↔ a = S j.
+Lemma teq_crT T : ∀ U, teq T U → crT T U.
 Proof.
-  intros H0 [|a]; simpl; unfold compose.
-  - split; intros Heq; exfalso; lia.
-  - destruct (H0 a) as [Hf Hb]. split; intros Heq.
-    + f_equal. apply Hf. lia.
-    + f_equal. apply Hb. lia.
+  unfold teq. induction T; intros [] H; simpl in *; try done.
+  all: destruct_and?; subst; split_and?; auto using fle_refl.
 Qed.
 
-Lemma iter_upren_iff kk r j k :
-  (∀ a, r a = k ↔ a = j) → ∀ a, Nat.iter kk upren r a = kk + k ↔ a = kk + j.
+Lemma crT_trans T : ∀ U V, crT T U → crT U V → crT T V.
 Proof.
-  revert r. induction kk as [|kk IH]; intros r H; simpl; [done|].
-  apply (upren_iff (Nat.iter kk upren r) (kk + j) (kk + k)). by apply IH.
+  induction T; intros [] []; simpl; try done.
+  all: intros; destruct_and?; subst; split_and?; eauto using fle_trans, teq_trans', sequiv_trans.
 Qed.
 
-Lemma upren_ne r k : (∀ a, r a ≠ k) → ∀ a, upren r a ≠ S k.
-Proof. intros H0 [|a]; simpl; [lia|]. unfold compose. specialize (H0 a). lia. Qed.
+Definition sub_step (τ : sty → sty → Prop) (s r : sty) : Prop :=
+  match hd s, hd r with
+  | HSkip, HSkip | HEnd, HEnd => True
+  | HRcv m T s', HRcv m' U r' => m = m' ∧ crT T U ∧ τ s' r'
+  | HSnd m T s', HSnd m' U r' => m = m' ∧ crT U T ∧ τ s' r'
+  | HVar a s', HVar a' r' | HVarD a s', HVarD a' r' => a = a' ∧ τ s' r'
+  | HPlus s1 s2, HPlus r1 r2 | HWith s1 s2, HWith r1 r2 => τ s1 r1 ∧ τ s2 r2
+  | HStuck u, HStuck v => u = v
+  | _, _ => False
+  end.
 
-Lemma iter_upren_ne kk r k : (∀ a, r a ≠ k) → ∀ a, Nat.iter kk upren r a ≠ kk + k.
+Fixpoint asub (n : nat) (s r : sty) : Prop :=
+  match n with 0 => True | S n' => sub_step (asub n') s r end.
+
+(** S ⊑ R. *)
+Definition ssub (s r : sty) : Prop := ∀ n, asub n s r.
+
+Lemma sub_step_mono τ τ' s r : (∀ a b, τ a b → τ' a b) → sub_step τ s r → sub_step τ' s r.
+Proof. unfold sub_step. intros Hτ. hd_cases s; hd_cases r; try done; intuition eauto. Qed.
+
+Lemma ssub_coind (τ : sty → sty → Prop) :
+  (∀ s r, τ s r → sub_step τ s r) → ∀ s r, τ s r → ssub s r.
 Proof.
-  revert r. induction kk as [|kk IH]; intros r H; simpl; [done|].
-  apply (upren_ne (Nat.iter kk upren r) (kk + k)). by apply IH.
+  intros Hτ s r Hsr n. revert s r Hsr.
+  induction n as [|n IH]; intros s r Hsr; [done|].
+  eapply sub_step_mono; [exact IH|by apply Hτ].
 Qed.
 
-Lemma sflip_sren_iff_mut :
-  (∀ T j k r, (∀ a, r a = k ↔ a = j) →
-     sflip_ty k (sren_ty r T) = sren_ty r (sflip_ty j T)) ∧
-  (∀ s j k r, (∀ a, r a = k ↔ a = j) →
-     sflip k (sren r s) = sren r (sflip j s)).
+Lemma ssub_hd s r : ssub s r → sub_step ssub s r.
 Proof.
-  apply ty_sty_mut_ind; intros; simpl; f_equal; eauto.
-  - apply H. by apply iter_upren_iff.
-  - apply H. by apply upren_iff.
-  - destruct (H a) as [Hf Hb].
-    repeat (case_decide; simpl); try done; exfalso; naive_solver.
-  - destruct (H a) as [Hf Hb].
-    repeat (case_decide; simpl); try done; exfalso; naive_solver.
+  intros H. assert (∀ n, sub_step (asub n) s r) as Hn by (intros n; exact (H (S n))).
+  clear H. unfold sub_step in *.
+  destruct (hd s), (hd r); try (by specialize (Hn 0)).
+  all: pose proof (Hn 0) as H0; destruct_and?; subst; split_and?; try done.
+  all: intros n; specialize (Hn n); naive_solver.
 Qed.
 
-Lemma sflip_sren_ne_mut :
-  (∀ T k r, (∀ a, r a ≠ k) → sflip_ty k (sren_ty r T) = sren_ty r T) ∧
-  (∀ s k r, (∀ a, r a ≠ k) → sflip k (sren r s) = sren r s).
+Lemma ssub_refl s : ssub s s.
 Proof.
-  apply ty_sty_mut_ind; intros; simpl; f_equal; eauto.
-  - apply H. by apply iter_upren_ne.
-  - apply H. by apply upren_ne.
-  - case_decide; [naive_solver|done].
-  - case_decide; [naive_solver|done].
+  apply (ssub_coind eq); [|done]. intros x _ <-. unfold sub_step.
+  hd_cases x; split_and?; auto using crT_refl.
 Qed.
 
-Lemma dual_sren s : ∀ r, dual (sren r s) = sren r (dual s).
+Lemma ssub_trans s r t : ssub s r → ssub r t → ssub s t.
 Proof.
-  induction s as [m T|m T| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; intros r; simpl; f_equal;
-    auto.
-  rewrite IH. apply (proj2 sflip_sren_iff_mut).
-  intros [|a]; simpl; unfold compose; split; intros; simplify_eq; done.
+  intros H1 H2. apply (ssub_coind (λ x z, ∃ y, ssub x y ∧ ssub y z)); [|eauto].
+  clear. intros x z (y & H1 & H2). apply ssub_hd in H1, H2. unfold sub_step in *.
+  hd_cases x; hd_cases y; try done; hd_cases z; try done; try congruence.
+  all: destruct_and?; subst; split_and?; eauto using crT_trans.
 Qed.
 
-(** [sflip k] slides through a substitution that is the identity at k
-    and flip-invariant elsewhere — [sty_up]-lifted substitutions are. *)
-
-Lemma sty_up_flip σ k :
-  σ k = SVar k → (∀ a, a ≠ k → sflip k (σ a) = σ a) →
-  sty_up σ (S k) = SVar (S k) ∧ ∀ a, a ≠ S k → sflip (S k) (sty_up σ a) = sty_up σ a.
+Lemma idle_ssub S S' : ssub S S' → idle S ↔ idle S'.
 Proof.
-  intros H0 H1. split.
-  - simpl. unfold compose. by rewrite H0.
-  - intros [|a] Ha; simpl; [done|]. unfold compose.
-    rewrite (proj2 sflip_sren_iff_mut _ k) by (intros; lia).
-    rewrite H1; [done|lia].
+  intros H. specialize (H 1). simpl in H. unfold sub_step in H. rewrite !idle_hd.
+  destruct (hd S), (hd S'); naive_solver.
 Qed.
+(** ** Kinds of types *)
 
-Lemma iter_sty_up_flip kk σ k :
-  σ k = SVar k → (∀ a, a ≠ k → sflip k (σ a) = σ a) →
-  Nat.iter kk sty_up σ (kk + k) = SVar (kk + k) ∧
-  ∀ a, a ≠ kk + k → sflip (kk + k) (Nat.iter kk sty_up σ a) = Nat.iter kk sty_up σ a.
-Proof.
-  intros H0 H1. induction kk as [|kk [IH0 IH1]]; simpl; [done|].
-  exact (sty_up_flip _ _ IH0 IH1).
-Qed.
-
-Lemma sflip_sinst_mut :
-  (∀ T k σ, σ k = SVar k → (∀ a, a ≠ k → sflip k (σ a) = σ a) →
-     sflip_ty k (sinst_ty σ T) = sinst_ty σ (sflip_ty k T)) ∧
-  (∀ s k σ, σ k = SVar k → (∀ a, a ≠ k → sflip k (σ a) = σ a) →
-     sflip k (sinst σ s) = sinst σ (sflip k s)).
-Proof.
-  apply ty_sty_mut_ind; intros; simpl; f_equal; eauto.
-  - destruct (iter_sty_up_flip k σ k0 H0 H1). by apply H.
-  - destruct (sty_up_flip σ k H0 H1). by apply H.
-  - case_decide; simplify_eq; simpl.
-    + rewrite H. simpl. case_decide; [done|lia].
-    + by rewrite H0.
-  - case_decide; simplify_eq; simpl.
-    + rewrite H. simpl. case_decide; [done|lia].
-    + rewrite sflip_dual. by rewrite H0.
-Qed.
-
-(** ** Duality versus substitution and unfolding
-
-    With polarized variables, duality commutes with substitution on
-    the nose — same σ on both sides, no closedness needed. *)
-
-Lemma dual_sinst s : ∀ σ, dual (sinst σ s) = sinst σ (dual s).
-Proof.
-  induction s as [m T|m T| |s IH|a|a| |s1 IH1 s2 IH2|s1 IH1 s2 IH2|s1 IH1 s2 IH2]; intros σ; simpl; f_equal;
-    auto.
-  - rewrite IH. apply (proj2 sflip_sinst_mut); [done|].
-    intros [|a] Ha; simpl; [lia|]. unfold compose.
-    apply (proj2 sflip_sren_ne_mut). intros; lia.
-  - apply dual_involutive.
-Qed.
-
-(** Flipping the head variable of the term matches dualizing what the
-    substitution feeds it. *)
-
-Lemma sty_up_dual σ σ' k :
-  σ' k = dual (σ k) → (∀ a, a ≠ k → σ' a = σ a) →
-  sty_up σ' (S k) = dual (sty_up σ (S k)) ∧ ∀ a, a ≠ S k → sty_up σ' a = sty_up σ a.
-Proof.
-  intros H0 H1. split.
-  - simpl. unfold compose. by rewrite H0, dual_sren.
-  - intros [|a] Ha; simpl; [done|]. unfold compose. rewrite H1; [done|lia].
-Qed.
-
-Lemma iter_sty_up_dual kk σ σ' k :
-  σ' k = dual (σ k) → (∀ a, a ≠ k → σ' a = σ a) →
-  Nat.iter kk sty_up σ' (kk + k) = dual (Nat.iter kk sty_up σ (kk + k)) ∧
-  ∀ a, a ≠ kk + k → Nat.iter kk sty_up σ' a = Nat.iter kk sty_up σ a.
-Proof.
-  intros H0 H1. induction kk as [|kk [IH0 IH1]]; simpl; [done|].
-  exact (sty_up_dual _ _ _ IH0 IH1).
-Qed.
-
-Lemma sinst_sflip_dual_mut :
-  (∀ T k σ σ', σ' k = dual (σ k) → (∀ a, a ≠ k → σ' a = σ a) →
-     sinst_ty σ T = sinst_ty σ' (sflip_ty k T)) ∧
-  (∀ s k σ σ', σ' k = dual (σ k) → (∀ a, a ≠ k → σ' a = σ a) →
-     sinst σ s = sinst σ' (sflip k s)).
-Proof.
-  apply ty_sty_mut_ind; intros; simpl; f_equal; eauto.
-  - destruct (iter_sty_up_dual k σ σ' k0 H0 H1). by apply H.
-  - destruct (sty_up_dual σ σ' k H0 H1). by apply H.
-  - case_decide; simplify_eq; simpl.
-    + by rewrite H, dual_involutive.
-    + by rewrite H0.
-  - case_decide; simplify_eq; simpl.
-    + by rewrite H.
-    + by rewrite H0.
-Qed.
-
-(** The two ends of a µ unroll in lockstep: unrolling substitutes
-    µα.s at α and dual (µα.s) at α̅, which is exactly the reading
-    [dual] gave the two polarities. *)
-
-Lemma dual_unroll s : dual (unroll s) = unroll (sflip 0 (dual s)).
-Proof.
-  unfold unroll. rewrite dual_sinst.
-  apply (proj2 sinst_sflip_dual_mut); [done|].
-  intros [|a] Ha; [lia|done].
-Qed.
-
-Lemma dual_hseq h s2 : dual (hseq h s2) = hseq (dual h) (dual s2).
-Proof. destruct h as [| | | | | | |o r| |]; simpl; try done. by destruct r. Qed.
-
-Lemma dual_skip_iff h : dual h = SSkip ↔ h = SSkip.
-Proof. split; [|by intros ->]. by destruct h. Qed.
-
-Lemma dual_unrN k : ∀ s, unrN k (dual s) = dual <$> unrN k s.
-Proof.
-  induction k as [|k IH]; intros s; simpl; [done|].
-  destruct s as [m T|m T| |b|a|a| |s1 s2|s1 s2|s1 s2]; simpl; try done.
-  - by rewrite <-dual_unroll, IH.
-  - rewrite IH. destruct (unrN k s1) as [h|]; simpl; [|done].
-    destruct h as [| | | | | | |h1 h2| |]; simpl; try apply IH; try done.
-    destruct h2; done.
-Qed.
-
-(** The property CONNECT needs: the two ends of a session unfold in
-    lockstep — unconditionally, thanks to the polarized dual. *)
-Lemma dual_unfoldS s : dual (unfoldS s) = unfoldS (dual s).
-Proof.
-  unfold unfoldS. rewrite sfuel_dual, dual_unrN.
-  by destruct (unrN (sfuel s) s).
-Qed.
-
-Lemma hnf_shape_dual h : hnf_shape (dual h) ↔ hnf_shape h.
-Proof. destruct h as [| | | | | | |o r| |]; simpl; try done. by destruct o. Qed.
-
-Lemma contractive_dual s : contractive (dual s) ↔ contractive s.
-Proof. unfold contractive. by rewrite <-dual_unfoldS, hnf_shape_dual. Qed.
-
-(** ** Primitive types: possible return types of threads. *)
-
-Inductive prim : ty → Prop :=
-  | prim_unit : prim TUnit
-  | prim_prod U V : prim U → prim V → prim (TProd U V)
-  | prim_sum U V : prim U → prim V → prim (TSum U V)
-  | prim_box n k C ub U : prim U → prim (TBox n k C (TLolli ub None TUnit U)).
-
-(** ** Unlimited types
-
-    The types whose variables admit contraction and weakening. The
-    structural rules of Fig. 4 ([lsplit_unl], [lwk_drop]) and the
-    relevance conjunct of semantic typing are stated against this
-    predicate rather than against a single modality, so that adding
-    one is a matter of extending the match below. *)
-
+(** The types whose variables admit contraction and weakening. *)
 Definition unlimited (T : ty) : Prop :=
-  match T with TBox _ _ _ _ | TPt _ => True | _ => False end.
+  match T with TBox _ _ _ _ _ _ => True | _ => False end.
 
-(** ** Session environments: finite maps from channels to session
-    types at points, c : S@x, x the channel's current point. Each
-    action on c moves x to x + 1.
-    This is the process-level Σ, one end per channel.
+(** Finite evidence that a type holds no end. It carries no credit, so
+    aging and capture leave it alone. *)
+Inductive tfree : ty → Prop :=
+  | tfree_unit : tfree TUnit
+  | tfree_box n k C ub c U : tfree (TBox n k C ub c U)
+  | tfree_prod T U : tfree T → tfree U → tfree (TProd T U)
+  | tfree_sum T U : tfree T → tfree U → tfree (TSum T U).
 
-    Splitting Σ = Σ1, Σ2 is disjoint union of the underlying maps. *)
+Lemma unlimited_tfree T : unlimited T → tfree T.
+Proof. destruct T; try done. intros _. constructor. Qed.
 
-(** A notation rather than a definition, so that stdpp's map lemmas
-    apply by keyed unification without unfolding. *)
-Notation senv := (gmap chan (sty * point)).
+Lemma unlimited_pinst σ U : unlimited U → unlimited (pinst_ty σ U).
+Proof. by destruct U. Qed.
 
-(** Σ assigns c a session type whose *unfolding* is u, at point k,
-    over the rest Σ1. Every clause of the logical relation that inspects a session
-    type goes through this, which is what makes the relation respect
-    µα.S = S[µα.S/α] without ever comparing environments up to that
-    equation: the stored type is whatever it is, and only its head
-    normal form is matched. On a non-contractive type [unfoldS] leaves
-    a µ or a variable in head position, so no clause applies. *)
-Definition senv_hd (Σ : senv) (c : chan) (u : sty) (k : point)
-    (Σ1 : senv) : Prop :=
-  ∃ s, Σ = <[c := (s, k)]> Σ1 ∧ unfoldS s = u.
+(** ** The annotations of the instance N = ∞
 
-(** An empty environment assigns nothing. *)
-Lemma senv_hd_not_empty c u k Σ1 : ¬ senv_hd ∅ c u k Σ1.
-Proof. intros (s & Heq & _). exact (insert_non_empty _ _ _ (eq_sym Heq)). Qed.
+    [ty_df] sets every credit inside a type to ∞, every cost to ∞, every
+    ticket to ∞. *)
 
-Lemma senv_hd_dom Σ c u k Σ1 :
-  senv_hd Σ c u k Σ1 → dom Σ = {[c]} ∪ dom Σ1.
-Proof. intros (s & -> & _). by rewrite dom_insert_L. Qed.
-
-(** ** Term-level environments
-
-    Θ may hold both ends of a channel (both carry the channel's one
-    name): after [new], and after receiving the other end of a channel
-    the thread already holds. An entry of Θ is a channel with one end
-    ([One]) or two ([Both]); the two ends of a [Both] are unordered,
-    and that they are dual at the same point is stated where it is needed
-    ([Coequal.tenv_dual]). The process-level Σ embeds as [One]s. *)
-
-Inductive ends :=
-  | One (e : sty * point)
-  | Both (e1 e2 : sty * point).
-
-Notation tenv := (gmap chan ends).
-
-Definition tenv_of (Σ : senv) : tenv := One <$> Σ.
-
-(** Entries, one per end, keyed by the channel and a side bit (the
-    second end of a [Both] is side [true]). Keys keep two equal ends of
-    a channel apart: ready counts entries, not names. *)
-Notation ekey := (chan * bool)%type.
-
-Definition tenv_entry (Θ : tenv) (k : ekey) : option (sty * point) :=
-  match Θ !! k.1, k.2 with
-  | Some (One e), false => Some e
-  | Some (Both e _), false => Some e
-  | Some (Both _ e), true => Some e
-  | _, _ => None
+Fixpoint ty_df (T : ty) : ty :=
+  match T with
+  | TUnit => TUnit
+  | TLolli ub lb _ T1 U _ => TLolli ub lb None (ty_df T1) (ty_df U) None
+  | TProd T1 U => TProd (ty_df T1) (ty_df U)
+  | TSum T1 U => TSum (ty_df T1) (ty_df U)
+  | TBox n k C ub _ U => TBox n k C ub None (ty_df U)
+  | TSess s x _ _ => TSess (sty_df s) x None None
+  | TEx lb n C T1 => TEx lb n C (ty_df T1)
+  end
+with sty_df (s : sty) : sty :=
+  match s with
+  | SRcv m T => SRcv m (ty_df T)
+  | SSnd m T => SSnd m (ty_df T)
+  | SMu s' => SMu (sty_df s')
+  | SSeq s1 s2 => SSeq (sty_df s1) (sty_df s2)
+  | SPlus s1 s2 => SPlus (sty_df s1) (sty_df s2)
+  | SWith s1 s2 => SWith (sty_df s1) (sty_df s2)
+  | s => s
   end.
 
-(** The point of the entry c : S@x, x. *)
-Definition entry_head (k : ekey) (e : sty * point) : point := e.2.
-
-(** The heads of an entry are partner points: heads(c : S@x) = {x̄}. *)
-Definition ends_heads (c : chan) (o : ends) : gset point :=
-  match o with
-  | One e => {[pt_dual e.2]}
-  | Both e1 e2 => {[pt_dual e1.2; pt_dual e2.2]}
-  end.
-
-Definition tenv_heads (Θ : tenv) : gset point :=
-  map_fold (λ c o X, ends_heads c o ∪ X) ∅ Θ.
-
-(** Θ = Θ1, c : e. *)
-Definition tenv_ext (Θ1 : tenv) (c : chan) (e : sty * point) (Θ : tenv)
-    : Prop :=
-  (Θ1 !! c = None ∧ Θ = <[c := One e]> Θ1) ∨
-  (∃ e', Θ1 !! c = Some (One e') ∧
-     (Θ = <[c := Both e e']> Θ1 ∨ Θ = <[c := Both e' e]> Θ1)).
-
-(** The term-level [senv_hd]: Θ = Θ1, c : S@x with S unfolding to u. *)
-Definition tenv_hd (Θ : tenv) (c : chan) (u : sty) (k : point) (Θ1 : tenv)
-    : Prop :=
-  ∃ s, tenv_ext Θ1 c (s, k) Θ ∧ unfoldS s = u.
-
-(** The ends an environment holds (syntactic points, sharp edges 173):
-    the end of an entry c : S@x is (c, pt_pol x). The two ends of a
-    channel sit at dual points, so the polarity bit tells them apart
-    and the environment needs no key of its own for an end. *)
-Definition ends_ends (c : chan) (o : ends) : gset cend :=
-  match o with
-  | One e => {[(c, pt_pol e.2)]}
-  | Both e1 e2 => {[(c, pt_pol e1.2); (c, pt_pol e2.2)]}
-  end.
-
-Definition tenv_ends (Θ : tenv) : gset cend :=
-  map_fold (λ c o X, ends_ends c o ∪ X) ∅ Θ.
-
-Lemma elem_of_tenv_ends Θ o :
-  o ∈ tenv_ends Θ ↔ ∃ c eo, Θ !! c = Some eo ∧ o ∈ ends_ends c eo.
-Proof.
-  unfold tenv_ends. revert o.
-  apply (map_fold_weak_ind (λ r m, ∀ o, o ∈ r ↔ ∃ c eo, m !! c = Some eo ∧
-                                   o ∈ ends_ends c eo)).
-  - intros o. split; [set_solver|]. intros (c & eo & H & _).
-    by rewrite lookup_empty in H.
-  - intros i eo m r Hi IH o. rewrite elem_of_union, IH. split.
-    + intros [Ho|(c & eo' & Hc & Ho)].
-      * exists i, eo. by rewrite lookup_insert_eq.
-      * exists c, eo'. rewrite lookup_insert_ne; [done|]. intros ->. congruence.
-    + intros (c & eo' & Hc & Ho). destruct (decide (c = i)) as [->|Hne].
-      * rewrite lookup_insert_eq in Hc. injection Hc as ->. by left.
-      * right. rewrite lookup_insert_ne in Hc by done. eauto.
-Qed.
-
-Lemma elem_of_tenv_ends_entry Θ o :
-  o ∈ tenv_ends Θ ↔ ∃ k e, tenv_entry Θ k = Some e ∧ o = (k.1, pt_pol e.2).
-Proof.
-  rewrite elem_of_tenv_ends. split.
-  - intros (c & eo & Hc & Ho). destruct eo as [e|e1 e2]; simpl in Ho.
-    + apply elem_of_singleton in Ho as ->. exists (c, false), e.
-      unfold tenv_entry. simpl. by rewrite Hc.
-    + apply elem_of_union in Ho as [->%elem_of_singleton| ->%elem_of_singleton].
-      * exists (c, false), e1. unfold tenv_entry. simpl. by rewrite Hc.
-      * exists (c, true), e2. unfold tenv_entry. simpl. by rewrite Hc.
-  - intros ([c b] & e & He & ->). unfold tenv_entry in He. simpl in He.
-    destruct (Θ !! c) as [[f|f1 f2]|] eqn:Hc, b; simplify_eq; exists c; eexists;
-      (split; [done|]); simpl; set_solver.
-Qed.
-
-Lemma tenv_ends_empty : tenv_ends ∅ = ∅.
-Proof. apply set_eq. intros o. rewrite elem_of_tenv_ends. set_solver. Qed.
-
-Lemma tenv_ends_singleton_one c e : tenv_ends {[c := One e]} = {[(c, pt_pol e.2)]}.
-Proof.
-  apply set_eq. intros o. rewrite elem_of_tenv_ends. split.
-  - intros (c' & eo & Hc & Ho). apply lookup_singleton_Some in Hc as [<- <-]. done.
-  - intros Ho. exists c, (One e). by rewrite lookup_singleton_eq.
-Qed.
-
-(** Θ fits the term e (E-Fit, sharp edges 173): Θ holds exactly the ends
-    e mentions, and the two ends of a channel Θ holds both of differ in
-    polarity. *)
-Definition tenv_fit (Θ : tenv) (e : expr) : Prop :=
-  tenv_ends Θ = fends e ∧
-  ∀ c e1 e2, Θ !! c = Some (Both e1 e2) → pt_pol e1.2 ≠ pt_pol e2.2.
-
-(** Θ = Θ1, Θ2: pointwise, and only defined where the overlap is one
-    end on each side. *)
-Inductive ends_join : option ends → option ends → option ends → Prop :=
-  | ends_join_none : ends_join None None None
-  | ends_join_l o : ends_join (Some o) None (Some o)
-  | ends_join_r o : ends_join None (Some o) (Some o)
-  | ends_join_both e1 e2 :
-      ends_join (Some (One e1)) (Some (One e2)) (Some (Both e1 e2))
-  | ends_join_both' e1 e2 :
-      ends_join (Some (One e1)) (Some (One e2)) (Some (Both e2 e1)).
-
-Definition tenv_join (Θ Θ1 Θ2 : tenv) : Prop :=
-  ∀ c, ends_join (Θ1 !! c) (Θ2 !! c) (Θ !! c).
-
-Lemma tenv_join_dom Θ Θ1 Θ2 :
-  tenv_join Θ Θ1 Θ2 → dom Θ = dom Θ1 ∪ dom Θ2.
-Proof.
-  intros H. apply set_eq. intros c. rewrite elem_of_union, !elem_of_dom.
-  pose proof (H c) as Hc.
-  destruct (Θ1 !! c), (Θ2 !! c), (Θ !! c); inversion Hc;
-    split; intros; try (by left); try (by right); try done;
-    destruct_or?; by destruct select (is_Some None).
-Qed.
-
-Lemma tenv_ends_dom Θ : set_map fst (tenv_ends Θ) = dom Θ.
-Proof.
-  apply set_eq. intros c. rewrite elem_of_map, elem_of_dom. split.
-  - intros (o & -> & Ho). apply elem_of_tenv_ends in Ho as (c' & eo & Hc & Ho).
-    destruct eo; simpl in Ho; [apply elem_of_singleton in Ho as ->
-      |apply elem_of_union in Ho as [->%elem_of_singleton| ->%elem_of_singleton]];
-      simpl; by eexists.
-  - intros [eo Hc]. destruct eo as [e|e1 e2].
-    + exists (c, pt_pol e.2). split; [done|]. apply elem_of_tenv_ends.
-      exists c, (One e). split; [done|]. simpl. set_solver.
-    + exists (c, pt_pol e1.2). split; [done|]. apply elem_of_tenv_ends.
-      exists c, (Both e1 e2). split; [done|]. simpl. set_solver.
-Qed.
-
-Lemma tenv_join_ends Θ Θ1 Θ2 :
-  tenv_join Θ Θ1 Θ2 → tenv_ends Θ = tenv_ends Θ1 ∪ tenv_ends Θ2.
-Proof.
-  intros H. apply set_eq. intros o. rewrite elem_of_union, !elem_of_tenv_ends. split.
-  - intros (c & eo & Hc & Ho). pose proof (H c) as Hj. rewrite Hc in Hj.
-    inversion Hj as [|eo' H1 H2|eo' H1 H2|e1 e2 H1 H2|e1 e2 H1 H2]; subst.
-    + left. eauto.
-    + right. eauto.
-    + simpl in Ho. apply elem_of_union in Ho as [Ho|Ho].
-      * left. exists c, (One e1). split; [done|]. done.
-      * right. exists c, (One e2). split; [done|]. done.
-    + simpl in Ho. apply elem_of_union in Ho as [Ho|Ho].
-      * right. exists c, (One e2). split; [done|]. done.
-      * left. exists c, (One e1). split; [done|]. done.
-  - intros [(c & eo & Hc & Ho)|(c & eo & Hc & Ho)]; pose proof (H c) as Hj; rewrite Hc in Hj.
-    + inversion Hj as [|eo' H1 H2|eo' H1 H2|e1 e2 H1 H2|e1 e2 H1 H2]; subst;
-        eexists c, _; (split; [done|]); simpl; set_solver.
-    + inversion Hj as [|eo' H1 H2|eo' H1 H2|e1 e2 H1 H2|e1 e2 H1 H2]; subst;
-        eexists c, _; (split; [done|]); simpl; set_solver.
-Qed.
-
-Lemma tenv_join_empty Θ : tenv_join Θ ∅ ∅ → Θ = ∅.
-Proof.
-  intros H. apply map_empty. intros c. specialize (H c).
-  rewrite !lookup_empty in H. by inversion H.
-Qed.
-
-(** The root name of a point: ι[i] belongs to the name of ι
-    (relation/Worlds.v uses it for the support of a world). *)
-Fixpoint pn_root (p : pname) : pname :=
-  match p with
-  | NPayload q _ _ => pn_root q
-  | _ => p
-  end.
-
-Definition pt_root (x : point) : pname := pn_root (pt_name x).
-
-(** ** Constraints of a fresh point (sharp edges 93, 97)
-
-    A constraint C of one variable ι (the variable 0) whose every fact
-    relates a point of the fresh channel to an outer point. A point of
-    the fresh channel has the root ι, so it is ι+k, (ι+b)[i]+k and so on.
-    [fresh_lo C u p] is the fact u ≺ p with p on the fresh channel,
-    [fresh_hi C q v] the fact q ≺ v. [fresh_outer C u] reads an outer
-    point in the context of the rule. C may be infinite. [ple p q]: p
-    and q have one name and the offset of p is at most that of q. *)
-
-Definition fresh_lo (C : bcs) (u p : point) : Prop :=
-  bc_facts C (FLt u p) ∧ fact_scoped (S (length (bc_env C))) (FLt u p) ∧
-  pt_root p = NVar 0 ∧ pt_root u ≠ NVar 0.
-
-Definition fresh_hi (C : bcs) (q v : point) : Prop :=
-  bc_facts C (FLt q v) ∧ fact_scoped (S (length (bc_env C))) (FLt q v) ∧
-  pt_root q = NVar 0 ∧ pt_root v ≠ NVar 0.
-
-Definition fresh_lt (C : bcs) : Prop :=
-  ∀ f, bc_facts C f → fact_scoped (S (length (bc_env C))) f →
-    (∃ u p, f = FLt u p ∧ fresh_lo C u p) ∨ (∃ q v, f = FLt q v ∧ fresh_hi C q v).
-
-Definition fresh_outer (C : bcs) (u : point) : point := pt_inst (plist (pvar 0 :: bc_env C)) u.
-
-(** ** Program order
-
-    x ≺ x+1, closed under transitivity. It holds in every world, and a
-    size that rises along successors makes it irreflexive. *)
-Inductive ppo : point → point → Prop :=
-  | ppo_po x : ppo x (pt_shift 1 x)
-  | ppo_dpo x : ppo x (pt_shift 1 (pt_dual x))     (* x ≺ x̄+1, end points *)
-  | ppo_trans x y z : ppo x y → ppo y z → ppo x z.
-
-Fixpoint pn_size (p : pname) : nat :=
-  match p with
-  | NConst _ | NVar _ => 0
-  | NPayload q b _ => pn_size q + b + 1
-  end.
-
-Definition pt_size (x : point) : nat := pn_size (pt_name x) + pt_off x.
-
-Lemma ppo_size x y : ppo x y → pt_size x < pt_size y.
-Proof.
-  unfold pt_size. induction 1; simpl; [lia|lia|lia].
-Qed.
-
-Lemma ppo_irrefl x : ¬ ppo x x.
-Proof. intros H%ppo_size. lia. Qed.
-
-Lemma ppo_root x y : ppo x y → pt_root x = pt_root y.
-Proof. induction 1; [done|done|congruence]. Qed.
-
-Lemma ppo_same x y : pt_name x = pt_name y → pt_off x < pt_off y → ppo x y.
-Proof.
-  intros Hn Ho. destruct x as [p c a], y as [q c' b]; simpl in *. subst q.
-  assert (∀ d a0 k, ppo (MkPt p d a0) (MkPt p d (a0 + S k))) as Hsame.
-  { intros d a0 k. induction k as [|k IH].
-    - exact (ppo_po (MkPt p d a0)).
-    - eapply ppo_trans; [exact IH|].
-      replace (a0 + S (S k)) with (a0 + S k + 1) by lia. exact (ppo_po (MkPt p d (a0 + S k))). }
-  destruct (decide (c = c')) as [<-|Hc].
-  - replace b with (a + S (b - a - 1)) by lia. apply Hsame.
-  - assert (c' = negb c) as -> by (destruct c, c'; done).
-    assert (ppo (MkPt p c a) (MkPt p (negb c) (a + 1))) as H1 by exact (ppo_dpo (MkPt p c a)).
-    destruct (decide (b = a + 1)) as [->|Hb]; [done|].
-    eapply ppo_trans; [exact H1|]. replace b with (a + 1 + S (b - a - 2)) by lia. apply Hsame.
-Qed.
-
-(** A map on points that commutes with successor preserves program
-    order. *)
-Lemma ppo_map (f : point → point) x y :
-  (∀ z, f (pt_shift 1 z) = pt_shift 1 (f z)) →
-  (∀ z, f (pt_dual z) = pt_dual (f z)) →
-  ppo x y → ppo (f x) (f y).
-Proof.
-  intros Hs Hd. induction 1 as [z|z|];
-    [rewrite Hs; apply ppo_po|rewrite Hs, Hd; apply ppo_dpo|by eapply ppo_trans].
-Qed.
-
-(** p at or before v in program order. *)
-Definition ple (p v : point) : Prop := p = v ∨ ppo p v.
-
-Lemma ple_same p v : pt_name p = pt_name v → pt_pol p = pt_pol v → pt_off p ≤ pt_off v → ple p v.
-Proof.
-  intros Hn Hp Ho. destruct (decide (pt_off p = pt_off v)) as [E|E].
-  - left. destruct p, v. simpl in *. by subst.
-  - right. apply ppo_same; [done|lia].
-Qed.
-
-(** ** The form of a fresh constraint (sharp edges 93, 94)
-
-    C is of the allowed form ([fresh_ok]) when its facts are ≺ facts
-    that enter ι from an outer point or leave it to one ([fresh_lt]).
-    [fresh_between plt C] is the condition on the context, the
-    betweenness of sharp edges 94. On main C could also hold one alias
-    ι ≡ w (sharp edges 104). Branch no-eq has no alias, and new@w is the
-    primitive [KTNewAt] (sharp edges 159). *)
-
-(** Branch no-eq: the alias case is gone, so the allowed form is the
-    ≺ form of sharp edges 93 and the condition is betweenness. *)
-Definition fresh_ok (C : bcs) : Prop := fresh_lt C.
-
-Definition fresh_between (plt : point → point → Prop) (C : bcs) : Prop :=
-  fresh_lt C → ∀ u p q v, fresh_lo C u p → fresh_hi C q v → ple p q →
-    plt (fresh_outer C u) (fresh_outer C v).
-
-(** The form of C reads only its facts and the length of its
-    environment, so renaming and instantiating the outer points keeps it. *)
-Section fresh_shape.
-  Context (C C' : bcs) (Hf : bc_facts C = bc_facts C') (Hl : length (bc_env C) = length (bc_env C')).
-
-  Lemma fresh_lo_shape u p : fresh_lo C u p ↔ fresh_lo C' u p.
-  Proof. unfold fresh_lo. by rewrite Hf, Hl. Qed.
-
-  Lemma fresh_hi_shape q v : fresh_hi C q v ↔ fresh_hi C' q v.
-  Proof. unfold fresh_hi. by rewrite Hf, Hl. Qed.
-
-
-  Lemma fresh_lt_shape : fresh_lt C → fresh_lt C'.
-  Proof.
-    intros H f Hf' Hs. rewrite <-Hf in Hf'. rewrite <-Hl in Hs.
-    destruct (H f Hf' Hs) as [(u & p & -> & Hu)|(q & v & -> & Hv)].
-    - left. exists u, p. split; [done|]. by apply fresh_lo_shape.
-    - right. exists q, v. split; [done|]. by apply fresh_hi_shape.
-  Qed.
-
-  Lemma fresh_ok_shape : fresh_ok C → fresh_ok C'.
-  Proof. apply fresh_lt_shape. Qed.
-End fresh_shape.
-
-(** Without an alias, [fresh_between] is the betweenness of sharp
-    edges 94. *)
-Lemma fresh_between_lt (plt : point → point → Prop) C :
-  fresh_lt C →
-  (∀ u p q v, fresh_lo C u p → fresh_hi C q v → ple p q → plt (fresh_outer C u) (fresh_outer C v)) →
-  fresh_between plt C.
-Proof.
-  intros HC Hbt _. exact Hbt.
-Qed.
-
-Lemma fresh_between_mono (plt plt' : point → point → Prop) C :
-  (∀ x y, plt x y → plt' x y) → fresh_between plt C → fresh_between plt' C.
-Proof. intros H H1 HC u p q v Hu Hv Hpq. eauto. Qed.
-
-(** ** The closure of a set of facts
-
-    [geq E] is the least congruence for successor and x ↦ x[i] that
-    contains E, and [glt E L] the least transitive relation that
-    contains L and program order and is closed under [geq E]. They are
-    the fact theory read as a closure. relation/Worlds.v builds the
-    world [wgen] from them. *)
-
-Inductive geq (E : point → point → Prop) : point → point → Prop :=
-  | geq_base x y : E x y → geq E x y
-  | geq_refl x : geq E x x
-  | geq_sym x y : geq E x y → geq E y x
-  | geq_trans x y z : geq E x y → geq E y z → geq E x z
-  | geq_shift x y : geq E x y → geq E (pt_shift 1 x) (pt_shift 1 y)
-  | geq_payload x y i : geq E x y → geq E (pt_payload x i) (pt_payload y i)
-  | geq_dual x y : geq E x y → geq E (pt_dual x) (pt_dual y).
-
-Inductive glt (E L : point → point → Prop) : point → point → Prop :=
-  | glt_base x y : L x y → glt E L x y
-  | glt_po x : glt E L x (pt_shift 1 x)
-  | glt_eq x x' y y' : geq E x x' → glt E L x' y' → geq E y' y → glt E L x y
-  | glt_trans x y z : glt E L x y → glt E L y z → glt E L x z
-  | glt_dpo x : glt E L x (pt_shift 1 (pt_dual x)).
-
-(** ** Creation constraints (static-system.md §5, sharp edges 105)
-
-    The constraint C of [new] is a box constraint of one variable ι, the
-    variable 0. Its facts relate points of ι to each other and to outer
-    points, by ≺ and by ≡, finitely or infinitely many. [cc_up R] reads
-    the facts of the context Γ under the binder of ι, so the outer points
-    shift past it. [cc_eq] and [cc_lt] add the facts of C, which is
-    Γ + C. The judgment Γ ⊢ … is the closure [geq], [glt].
-
-    [cc_ok] asks two things. Acyclic: every cycle of Γ + C comes from a
-    cycle of Γ, so Γ + C ⊬ p ≺ p whenever Γ is acyclic. Conservative:
-    Γ + C derives a fact between two points without root ι only when Γ
-    derives it. The semantic proof extends a world by the facts of C at
-    the fresh name, and conservativity is what makes that a fresh
-    extension ⊑ₒ (relation/Creation.v). *)
-
-(** The definitions take the number n of fresh variables. [new] creates
-    one (n = 1), and a program starts under a creation constraint C₀
-    over its n top-level variables, read against the empty context
-    (static/Fundamental.v, sharp edges 148). *)
-Definition cc_up_at (n : nat) (R : point → point → Prop) : point → point → Prop :=
-  λ x y, ∃ x0 y0, R x0 y0 ∧ x = pt_inst (λ a, pvar (a + n)) x0 ∧ y = pt_inst (λ a, pvar (a + n)) y0.
-
-Definition cc_eq_at (n : nat) (peq : point → point → Prop) (C : bcs) : point → point → Prop :=
-  λ x y, cc_up_at n peq x y.
-
-Definition cc_lt_at (n : nat) (plt : point → point → Prop) (C : bcs) : point → point → Prop :=
-  λ x y, cc_up_at n plt x y ∨ bcs_open n C (FLt x y).
-
-Definition cc_acyclic_at (n : nat) (peq plt : point → point → Prop) (C : bcs) : Prop :=
-  ∀ p, glt (cc_eq_at n peq C) (cc_lt_at n plt C) p p →
-    ∃ x, glt (cc_up_at n peq) (cc_up_at n plt) x x.
-
-Definition cc_conservative_at (n : nat) (peq plt : point → point → Prop) (C : bcs) : Prop :=
-  (∀ x y, ¬ pn_vb n (pt_name x) → ¬ pn_vb n (pt_name y) →
-     geq (cc_eq_at n peq C) x y → geq (cc_up_at n peq) x y) ∧
-  (∀ x y, ¬ pn_vb n (pt_name x) → ¬ pn_vb n (pt_name y) →
-     glt (cc_eq_at n peq C) (cc_lt_at n plt C) x y → glt (cc_up_at n peq) (cc_up_at n plt) x y).
-
-Definition cc_ok_at (n : nat) (peq plt : point → point → Prop) (C : bcs) : Prop :=
-  cc_acyclic_at n peq plt C ∧ cc_conservative_at n peq plt C.
-
-Notation cc_up := (cc_up_at 1).
-Notation cc_eq := (cc_eq_at 1).
-Notation cc_lt := (cc_lt_at 1).
-Notation cc_acyclic := (cc_acyclic_at 1).
-
-Definition cc_conservative (peq plt : point → point → Prop) (C : bcs) : Prop :=
-  (∀ x y, pt_root x ≠ NVar 0 → pt_root y ≠ NVar 0 →
-     geq (cc_eq peq C) x y → geq (cc_up peq) x y) ∧
-  (∀ x y, pt_root x ≠ NVar 0 → pt_root y ≠ NVar 0 →
-     glt (cc_eq peq C) (cc_lt plt C) x y → glt (cc_up peq) (cc_up plt) x y).
-
-Definition cc_ok (peq plt : point → point → Prop) (C : bcs) : Prop :=
-  cc_acyclic peq plt C ∧ cc_conservative peq plt C.
-
-(** The root of a point is variable 0 exactly when its name lies below 1. *)
-Lemma pn_vb_1 p : pn_vb 1 p ↔ pn_root p = NVar 0.
-Proof.
-  induction p as [a|a|q IH o i]; simpl; [split; [done|discriminate]| |done].
-  split; [intros ?; f_equal; lia|intros [= ->]; lia].
-Qed.
-
-(** A creation constraint over n fresh variables in a context whose
-    order is [peq], [plt] and whose known points are [pk]: [cc_ok_at]
-    and every outer point known. new asks it at n = 1
-    ([creation_ok_1]), a program asks it for C₀ against the empty
-    context (static/Fundamental.v). *)
-Definition creation_ok (n : nat) (peq plt : point → point → Prop) (pk : point → Prop)
-    (C : bcs) : Prop :=
-  cc_ok_at n peq plt C ∧ Forall pk (bc_env C).
-
-(** [cc_ok] is the case of one fresh variable. *)
-Lemma cc_ok_at_1 peq plt C : cc_ok_at 1 peq plt C ↔ cc_ok peq plt C.
-Proof.
-  assert (∀ x, ¬ pn_vb 1 (pt_name x) ↔ pt_root x ≠ NVar 0) as E.
-  { intros x. unfold pt_root. rewrite pn_vb_1. done. }
-  unfold cc_ok_at, cc_ok, cc_conservative_at, cc_conservative.
-  split; intros (Ha & He & Hl); (split; [done|split]); intros x y Hx Hy;
-    [apply He|apply Hl|apply He|apply Hl]; by apply E.
-Qed.
-
-Lemma creation_ok_1 peq plt pk C :
-  creation_ok 1 peq plt pk C ↔ cc_ok peq plt C ∧ Forall pk (bc_env C).
-Proof. unfold creation_ok. by rewrite cc_ok_at_1. Qed.
-
-(** T[ss/αs]: the session variable i goes to the i-th session type of a
-    list, the variables beyond it shift down (K6). *)
-Definition slist (ss : list sty) : nat → sty :=
-  λ a, match ss !! a with Some s => s | None => SVar (a - length ss) end.
-
-Lemma sinst_slist_nil T : sinst_ty (slist []) T = T.
-Proof. apply sinst_id_mut. intros a. unfold slist. simpl. f_equal. lia. Qed.
-
-(** The branch a selection or a branch label picks: S₁ for false. *)
-Definition sbranch (b : bool) (S1 S2 : sty) : sty := if b then S2 else S1.
-
-Lemma sbranch_map (f : sty → sty) b S1 S2 : f (sbranch b S1 S2) = sbranch b (f S1) (f S2).
-Proof. by destruct b. Qed.
-
-(** ** Constants as constrained type-indexed schemes (sharp edges 147)
-
-    An instance of a constant's signature is a type, a constraint and a
-    list of points that must be known ([konst_sig]). The constraint is a
-    set of point facts that the meta level computes from the type, in
-    the language of box constraints (≺ and ≡ only). E-Const proves it
-    from the fact context, exactly as force proves its box's constraint
-    at the instance. No constant reads the order in its signature. *)
-
-(** Every fact of G holds, ≺ in [lt] and ≡ in [eq]. *)
-Definition facts_hold (eq lt : point → point → Prop) (G : fact → Prop) : Prop :=
-  ∀ g, G g → fact_holds eq lt g.
-
-Lemma facts_hold_mono (eq eq' lt lt' : point → point → Prop) G :
-  (∀ x y, eq x y → eq' x y) → (∀ x y, lt x y → lt' x y) →
-  facts_hold eq lt G → facts_hold eq' lt' G.
-Proof. intros He Hl H g Hg. specialize (H g Hg). destruct g; simpl in *; auto. Qed.
-
-(** C[xs/ιs], the facts of C at the instance xs. *)
-Definition bcs_at (C : bcs) (xs : list point) : fact → Prop :=
-  λ g, ∃ g0, bcs_open (length xs) C g0 ∧ g = fact_map (pt_inst (plist xs)) g0.
-
-Lemma facts_hold_bcs_at eq lt C xs : facts_hold eq lt (bcs_at C xs) ↔ bcs_hold eq lt C xs.
-Proof.
-  split.
-  - intros H g Hg. apply H. by exists g.
-  - intros H g (g0 & Hg0 & ->). by apply H.
-Qed.
-
-(** {x} ≺ H as a set of facts. *)
-Definition below_all (x : point) (H : gset point) : fact → Prop :=
-  λ g, ∃ h, h ∈ H ∧ g = FLt x h.
-
-(** The signatures (spec §9; arrows without a bound leave it out).
-
-    spawn  : (∗ ⊸^β_λ ∗) ⊸ ∗
-    send   : (P[ι] ⊗ (!P;S)@ι) ⊸^ι S@(ι+1)       {ι ≺ h ∣ h ∈ heads(P[ι])}, no instance at the ⊥ flag
-    recv   : (?P;S)@ι ⊸^ι P[ι] ⊗ S@(ι+1)
-    close  : Close@ι ⊸^ι ∗
-    selectᵢ : ⊕(S₁, S₂)@ι ⊸^ι Sᵢ@(ι[i])‾         {ι ≺ ι[i]}           (K11, end points)
-    branch : &(S₁, S₂)@ι ⊸^ι S₁@ι[0] + S₂@ι[1]   {ι ≺ (ι[0])‾, ι ≺ (ι[1])‾}
-    link   : S@ι ⊗ dual S@ῑ ⊸ ∗                    (never blocks, sharp edges 68; no-eq: the ends at ι and ῑ)
-
-    With end points the selecting end continues at the dual payload
-    point (ι[i])‾ and the branching end at ι[i], so the two ends stay at
-    dual points. This is the placement of the encoding of choice, where
-    the brancher receives the end at ι[i] and the selector keeps its
-    partner (examples/ChoiceEnc.v).
-    force  : □(∀ιs αs. C. ∗ ⊸^u T) ⊸^{u[ιs′/ιs]} T[ιs′/ιs][ss/αs]
-             C[ιs′/ιs], ιs′ known, every s ∈ ss hereditarily contractive   (52, 58, 63, 73) *)
-Inductive konst_sig : konst → ty → (fact → Prop) → list point → Prop :=
-  | KSSpawn ub lb :
-      konst_sig KSpawn (TLolli None None (TLolli ub lb TUnit TUnit) TUnit) (λ _, False) []
-  | KSSend m T S x :
-      hbot T = false →
-      konst_sig KSend
-        (TLolli (Some x) None
-           (TProd (payload_at m T x) (TSess (SSeq (SSnd m T) S) x))
-           (TSess S (pt_shift 1 x)))
-        (below_all x (heads (payload_at m T x))) []
-  | KSRecv m T S x :
-      konst_sig KRecv
-        (TLolli (Some x) None
-           (TSess (SSeq (SRcv m T) S) x)
-           (TProd (payload_at m T x) (TSess S (pt_shift 1 x))))
-        (λ _, False) []
-  | KSClos x :
-      konst_sig KClos (TLolli (Some x) None (TSess SEnd x) TUnit) (λ _, False) []
-  | KSSel1 S1 S2 x :
-      konst_sig KSel1
-        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_dual (pt_payload x 0))))
-        (λ g, g = FLt x (pt_payload x 0)) []
-  | KSSel2 S1 S2 x :
-      konst_sig KSel2
-        (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_dual (pt_payload x 1))))
-        (λ g, g = FLt x (pt_payload x 1)) []
-  | KSBra S1 S2 x :
-      konst_sig KBra
-        (TLolli (Some x) None (TSess (SWith S1 S2) x)
-           (TSum (TSess S1 (pt_payload x 0)) (TSess S2 (pt_payload x 1))))
-        (λ g, g = FLt x (pt_dual (pt_payload x 0)) ∨ g = FLt x (pt_dual (pt_payload x 1))) []
-  | KSLink S x :
-      konst_sig KLink
-        (TLolli None None (TProd (TSess S x) (TSess (dual S) (pt_dual x))) TUnit)
-        (λ _, False) []
-  | KSForce n k C ub T xs ss :
-      length xs = n → length ss = k → Forall hcontractive ss →
-      konst_sig KForce
-        (TLolli (pt_inst (plist xs) <$> ub) None (TBox n k C (TLolli ub None TUnit T))
-           (sinst_ty (slist ss) (ty_inst xs T)))
-        (bcs_at C xs) xs.
-
-(** E-Const reads a constant at an instance whose constraint holds and
-    whose points are known. new and the two point constants are outside
-    the schemes. Under the constant world (sharp edges 172) new places
-    the channel at a point the order already knows, and the program
-    names that point by a point value (syntactic points, sharp edges
-    173):
-
-    new    : pt x ⊸ S@x ⊗ dual S@x̄              x known
-    pay i  : pt x ⊸ pt x[i]                      x[i] known
-    succ   : pt x ⊸ pt (x + 1)                   x + 1 known
-
-    The existential signature new : ∗ ⊸ ∃^⊥ι. C. S@ι ⊗ dual S@ῑ, which
-    grew the world by a fresh point, is gone. A channel created at the
-    top level of a program is a point variable of the program's
-    hypotheses, and the run starts in a world that places it
-    ([soundness_created], static/Fundamental.v).
-
-    The order is given as two relations, the world G generates for
-    typing and a world W for the logical relation. [pk] says which
-    points the order knows. force asks its instance known (sharp edges
-    65), and new its point (sharp edges 49, 105). *)
-Inductive konst_ty (peq plt : point → point → Prop) (pk : point → Prop)
-    : konst → ty → Prop :=
-  | KTSig k T G xs :
-      konst_sig k T G xs → facts_hold peq plt G → Forall pk xs →
-      konst_ty peq plt pk k T
-  | KTNewAt S x :
-      pk x →
-      konst_ty peq plt pk KNew
-        (TLolli None None (TPt x) (TProd (TSess S x) (TSess (dual S) (pt_dual x))))
-  | KTPay i x :
-      pk (pt_payload x i) →
-      konst_ty peq plt pk (KPay i) (TLolli None None (TPt x) (TPt (pt_payload x i)))
-  | KTSucc x :
-      pk (pt_shift 1 x) →
-      konst_ty peq plt pk KSucc (TLolli None None (TPt x) (TPt (pt_shift 1 x))).
-
-(** The instances one constant at a time. *)
-Section konst_intro.
-  Context (peq plt : point → point → Prop) (pk : point → Prop).
-
-  Lemma KTSpawn ub lb :
-    konst_ty peq plt pk KSpawn (TLolli None None (TLolli ub lb TUnit TUnit) TUnit).
-  Proof. eapply KTSig; [constructor|by intros ?|constructor]. Qed.
-
-  Lemma KTSend m T S x :
-    (if hbot T then False else ∀ h, h ∈ heads (payload_at m T x) → plt x h) →
-    konst_ty peq plt pk KSend
-      (TLolli (Some x) None
-         (TProd (payload_at m T x) (TSess (SSeq (SSnd m T) S) x))
-         (TSess S (pt_shift 1 x))).
-  Proof.
-    intros H. destruct (hbot T) eqn:Hb; [done|].
-    eapply KTSig; [by constructor| |constructor]. intros g (h & Hh & ->). by apply H.
-  Qed.
-
-  Lemma KTRecv m T S x :
-    konst_ty peq plt pk KRecv
-      (TLolli (Some x) None
-         (TSess (SSeq (SRcv m T) S) x)
-         (TProd (payload_at m T x) (TSess S (pt_shift 1 x)))).
-  Proof. eapply KTSig; [constructor|by intros ?|constructor]. Qed.
-
-  Lemma KTClos x : konst_ty peq plt pk KClos (TLolli (Some x) None (TSess SEnd x) TUnit).
-  Proof. eapply KTSig; [constructor|by intros ?|constructor]. Qed.
-
-  Lemma KTSel1 S1 S2 x :
-    plt x (pt_payload x 0) →
-    konst_ty peq plt pk KSel1
-      (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_dual (pt_payload x 0)))).
-  Proof. intros H. eapply KTSig; [constructor| |constructor]. by intros g ->. Qed.
-
-  Lemma KTSel2 S1 S2 x :
-    plt x (pt_payload x 1) →
-    konst_ty peq plt pk KSel2
-      (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_dual (pt_payload x 1)))).
-  Proof. intros H. eapply KTSig; [constructor| |constructor]. by intros g ->. Qed.
-
-  Lemma KTBra S1 S2 x :
-    plt x (pt_dual (pt_payload x 0)) → plt x (pt_dual (pt_payload x 1)) →
-    konst_ty peq plt pk KBra
-      (TLolli (Some x) None (TSess (SWith S1 S2) x)
-         (TSum (TSess S1 (pt_payload x 0)) (TSess S2 (pt_payload x 1)))).
-  Proof. intros H0 H1. eapply KTSig; [constructor| |constructor]. by intros g [->| ->]. Qed.
-
-  Lemma KTLink S x :
-    konst_ty peq plt pk KLink
-      (TLolli None None (TProd (TSess S x) (TSess (dual S) (pt_dual x))) TUnit).
-  Proof. eapply KTSig; [constructor|by intros ?|constructor]. Qed.
-
-  Lemma KTForce n k C ub T xs ss :
-    length xs = n → bcs_hold peq plt C xs → Forall pk xs →
-    length ss = k → Forall hcontractive ss →
-    konst_ty peq plt pk KForce
-      (TLolli (pt_inst (plist xs) <$> ub) None (TBox n k C (TLolli ub None TUnit T))
-         (sinst_ty (slist ss) (ty_inst xs T))).
-  Proof.
-    intros Hn HC HK Hk Hs. eapply KTSig; [by constructor|by apply facts_hold_bcs_at|done].
-  Qed.
-End konst_intro.
-
-(** Case analysis on a typed constant, one case per constant. *)
-Lemma konst_ty_case (peq plt : point → point → Prop) (pk : point → Prop)
-    (P : konst → ty → Prop) :
-  (∀ ub lb, P KSpawn (TLolli None None (TLolli ub lb TUnit TUnit) TUnit)) →
-  (∀ m T S x, (if hbot T then False else ∀ h, h ∈ heads (payload_at m T x) → plt x h) →
-     P KSend (TLolli (Some x) None
-                (TProd (payload_at m T x) (TSess (SSeq (SSnd m T) S) x))
-                (TSess S (pt_shift 1 x)))) →
-  (∀ m T S x, P KRecv (TLolli (Some x) None
-                         (TSess (SSeq (SRcv m T) S) x)
-                         (TProd (payload_at m T x) (TSess S (pt_shift 1 x))))) →
-  (∀ x, P KClos (TLolli (Some x) None (TSess SEnd x) TUnit)) →
-  (∀ S1 S2 x, plt x (pt_payload x 0) →
-     P KSel1 (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S1 (pt_dual (pt_payload x 0))))) →
-  (∀ S1 S2 x, plt x (pt_payload x 1) →
-     P KSel2 (TLolli (Some x) None (TSess (SPlus S1 S2) x) (TSess S2 (pt_dual (pt_payload x 1))))) →
-  (∀ S1 S2 x, plt x (pt_dual (pt_payload x 0)) → plt x (pt_dual (pt_payload x 1)) →
-     P KBra (TLolli (Some x) None (TSess (SWith S1 S2) x)
-               (TSum (TSess S1 (pt_payload x 0)) (TSess S2 (pt_payload x 1))))) →
-  (∀ S x, P KLink (TLolli None None (TProd (TSess S x) (TSess (dual S) (pt_dual x))) TUnit)) →
-  (∀ n k C ub T xs ss, length xs = n → bcs_hold peq plt C xs → Forall pk xs →
-     length ss = k → Forall hcontractive ss →
-     P KForce (TLolli (pt_inst (plist xs) <$> ub) None (TBox n k C (TLolli ub None TUnit T))
-                 (sinst_ty (slist ss) (ty_inst xs T)))) →
-  (∀ S x, pk x → P KNew (TLolli None None (TPt x) (TProd (TSess S x) (TSess (dual S) (pt_dual x))))) →
-  (∀ i x, pk (pt_payload x i) → P (KPay i) (TLolli None None (TPt x) (TPt (pt_payload x i)))) →
-  (∀ x, pk (pt_shift 1 x) → P KSucc (TLolli None None (TPt x) (TPt (pt_shift 1 x)))) →
-  ∀ k T, konst_ty peq plt pk k T → P k T.
-Proof.
-  intros Hsp Hsd Hrv Hcl Hs1 Hs2 Hbr Hln Hfo Hna Hpy Hsc k T
-    [k' T' G xs Hsig HG HK|S x Hx|i x Hx|x Hx];
-    [|by apply Hna|by apply Hpy|by apply Hsc].
-  destruct Hsig as [| m T0 S x Hb| | | | | | |n kk C ub T0 xs ss Hn Hk Hs]; auto.
-  - apply Hsd. rewrite Hb. intros h Hh. apply (HG (FLt x h)). by exists h.
-  - apply Hs1. by apply (HG (FLt _ _)).
-  - apply Hs2. by apply (HG (FLt _ _)).
-  - apply Hbr; [apply (HG (FLt _ _)); by left|apply (HG (FLt _ _)); by right].
-  - eapply Hfo; [done|by apply facts_hold_bcs_at|done|done|done].
-Qed.
+Lemma df_mut_idem : (∀ T, ty_df (ty_df T) = ty_df T) ∧ (∀ s, sty_df (sty_df s) = sty_df s).
+Proof. apply ty_sty_mut_ind; intros; simpl; congruence. Qed.
+
+Lemma ty_df_idem T : ty_df (ty_df T) = ty_df T.
+Proof. apply df_mut_idem. Qed.
+Lemma sty_df_idem s : sty_df (sty_df s) = sty_df s.
+Proof. apply df_mut_idem. Qed.

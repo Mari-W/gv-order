@@ -1,87 +1,85 @@
-(** * cycle: typable
+(** * cycle (proposal Appendix B.1)
 
-    cycle = let (c, c′) = new ∗ in let (d, d′) = new ∗ in
-            let () = spawn (λu. let () = u in let () = close c′ in close d′) in
-            let () = close c in close d
+      cycle = let (c, c′) = new_0 in
+              let (c, ⟨d, d′⟩) = new_0 c in
+              let () = spawn (λu. let () = u in let () = close c′ in close d′) in
+              let () = close c in close d
 
-    c, c′ : Close@(a,0) and d, d′ : Close@(b,0). Both threads close c
-    while they hold d, so both need (a,0) ≺ (b,0).
-    The paper's P-Connect over {c, d} is here the closed program that
-    creates both channels.
+    c, c′ sit at ρ and ρ‾ for a fresh base ρ, and d, d′ at the field ρ·0
+    and (ρ·0)‾. Main closes c while it holds d, so it needs ρ ≺ (ρ·0)‾.
+    The thunk closes c′ while it holds d′, so it needs ρ‾ ≺ ρ·0. The
+    constraint of the first creation states exactly these two facts. *)
 
-    The program types under the hypotheses of its two top-level points
-    ([cycle_Ψ]). c is created with no fact and d with the creation
-    constraint γ ≺ ε, where γ and ε are the points of c and d (sharp
-    edges 105, 172).
+From GV Require Export examples.Tools2.
+From GV Require Import static.FundamentalProc.
 
-    With end points the thunk holds c′ and d′ at γ̄ and ε̄. Its gate asks
-    γ̄ ≺ ε, the main thread's gate asks γ ≺ ε̄, and the upper point ε̄ of
-    the thunk asks γ̄ ≺ ε̄. The constraint of d is {γ, γ̄} ≺ {ε, ε̄}
-    ([freshp_bcs]). *)
+(** The constraint of the first creation over the new base ι₀. *)
+Definition cy_L (g : fact) : Prop :=
+  g = FLt (pvar 0) ((pvar 0)·0)‾ ∨ g = FLt (pvar 0)‾ ((pvar 0)·0).
 
-From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export examples.FreshTools.
+Definition W_cy : sworld := sw_empty.
 
-Set Default Proof Using "All".
-
-Definition cycle_thunk : expr :=
-  Lam (LetU (Var 0) (LetU (App EClos (Var 3)) (App EClos (Var 1)))).
-
-Definition cycle_main : expr :=
-  let_new_pair_at (EPt (pconst 1)) (let_new_pair_at (EPt (pconst 0))
-    (LetU (App ESpawn cycle_thunk) (LetU (App EClos (Var 3)) (App EClos (Var 1))))).
-
-Definition cycle_Lc : list (point * bool) :=
-  [(pconst 1, true); (pconst 1, false); (pt_dual (pconst 1), true); (pt_dual (pconst 1), false)].
-
-Definition cycle_Ψ : hyps :=
-  ([] ++ [(fresh_bcs [] [], [pconst 1])]) ++ [(freshp_bcs cycle_Lc [], [pconst 0])].
-
-Lemma cycle_created : created (Wpo []) cycle_Ψ.
+Lemma cy_wf_new : wf_new (bcs_of cy_L).
 Proof.
-  apply created_p; [apply created_lh; [constructor|constructor|set_solver|fresh_const]| | |fresh_const].
-  { cbn. repeat (apply Forall_cons; split; [eapply skn_inst; [by left|by left|done]|]). by apply Forall_nil. }
-  { intros l h b _ Hh. by apply elem_of_nil in Hh. }
+  apply (wf_new_lex3 _ (λ x, (pt_depth x, pt_off x, 0))).
+  - intros x y [E|E]; injection E as -> ->; split; reflexivity.
+  - intros x. unfold lex3, pt_depth. simpl. lia.
+  - intros x y [E|E]; injection E as -> ->; unfold lex3, pt_depth; simpl; lia.
+Qed.
+#[global] Hint Resolve cy_wf_new : wfnew.
+
+Lemma W_cy_wf : sworld_wf W_cy ∧ swf W_cy.
+Proof. apply sw_empty_ok. Qed.
+
+Definition cy_thunk : expr := Lam (LetU (Var 0) (LetU (EClose (Var 5)) (EClose (Var 1)))).
+
+Definition cy_main : expr :=
+  let_new (LetP (Pair (Var 1) ENew) (LetP (Var 0)
+    (LetU (ESpawn cy_thunk) (LetU (EClose (Var 3)) (EClose (Var 1)))))).
+
+Abbreviation Γc := (Γnew cy_L).
+
+Lemma cy_law1 : slt W_cy Γc (pvar 0) ((pvar 0)·0)‾.
+Proof. eapply (law_slt _ _ (FLt (pvar 0) ((pvar 0)·0)‾)); [by left|simpl; lia|fact_eq]. Qed.
+
+Lemma cy_law2 : slt W_cy Γc (pvar 0)‾ ((pvar 0)·0).
+Proof. eapply (law_slt _ _ (FLt (pvar 0)‾ ((pvar 0)·0))); [by right|simpl; lia|fact_eq]. Qed.
+
+Theorem cy_dftyped : dftyped W_cy ∅ hc_empty [] (∅, None) cy_main TUnit.
+Proof.
+  unfold cy_main, let_new.
+  eapply d_let; [apply tsplit_empty|apply lsplit_nil| |].
+  { eapply (d_new' _ _ _ _ _ SEnd None None); [spare_tac|apply cy_wf_new|contr_tac]. }
+  eapply d_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
+  rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
+  fold (Γnew cy_L).
+  eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
+  { eapply d_var'; [reflexivity|]. spare_tac. }
+  eapply d_letp; [apply tsplit_empty|lsplit_tac (Pair (Var 1) ENew) EUnit| |].
+  { eapply (d_new_at _ _ _ _ _ _ 0 SEnd (pvar 0) SEnd); [done|reflexivity| |contr_tac]. spare_tac. }
+  eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
+  { eapply d_var'; [reflexivity|]. spare_tac. }
+  eapply d_letu; [apply tsplit_empty|lsplit_tac (ESpawn cy_thunk) EUnit| |].
+  - eapply d_spawn_lam.
+    eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
+    { eapply d_var'; [reflexivity|]. spare_tac. }
+    eapply d_letu; [apply tsplit_empty|lsplit_tac (EClose (Var 5)) EUnit| |].
+    + eapply d_close with (S0 := SEnd) (x := (pvar 0)‾); [done| |eapply d_var'; [reflexivity|spare_tac]].
+      apply ub_below_nil; [bot_false|]. intros y Hy. heads_cases Hy.
+      rewrite pt_dual_dual. apply cy_law2.
+    + eapply d_close with (S0 := SEnd) (x := ((pvar 0)·0)‾); [done|apply ub_below_empty|].
+      eapply d_var'; [reflexivity|]. spare_tac.
+  - eapply d_letu; [apply tsplit_empty|lsplit_tac (EClose (Var 3)) EUnit| |].
+    + eapply d_close with (S0 := SEnd) (x := pvar 0); [done| |eapply d_var'; [reflexivity|spare_tac]].
+      apply ub_below_nil; [bot_false|]. intros y Hy. heads_cases Hy. apply cy_law1.
+    + eapply d_close with (S0 := SEnd) (x := (pvar 0)·0); [done|apply ub_below_empty|].
+      eapply d_var'; [reflexivity|]. spare_tac.
+  Unshelve. all: exact None.
 Qed.
 
-Lemma cycle_typed : styped ∅ cycle_Ψ [] (∅, None) cycle_main TUnit.
-Proof.
-  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs. pose proof (proj1 HWs) as HW.
-  set (W := Wpo []) in *. unfold cycle_main, let_new_pair_at, cycle_Ψ.
-  new_top HWs SEnd (pconst 1). new_top HWs SEnd (pconst 0).
-  set (Lc := cycle_Lc).
-  fresh_clean.
-  set (Ψ := [(fresh_bcs [] [], [pconst 1]); (freshp_bcs Lc [], [pconst 0])]).
-  assert (∀ l b, (l, b) ∈ Lc → slt W Ψ l (pt_polar b (pconst 0))) as HL.
-  { intros l b Hl. by apply (slt_freshp_l W Ψ Lc [] (pconst 0)); [right; left|]. }
-  assert (slt W Ψ (pconst 1) (pconst 0)) as Hγε by (apply (HL (pconst 1) true); set_solver).
-  assert (slt W Ψ (pconst 1) (pt_dual (pconst 0))) as Hγε'.
-  { apply (HL (pconst 1) false); set_solver. }
-  assert (slt W Ψ (pt_dual (pconst 1)) (pconst 0)) as Hγ'ε.
-  { apply (HL (pt_dual (pconst 1)) true); set_solver. }
-  assert (slt W Ψ (pt_dual (pconst 1)) (pt_dual (pconst 0))) as Hγ'ε'.
-  { apply (HL (pt_dual (pconst 1)) false); set_solver. }
-  tstep.
-  { tstep.
-    - eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pconst 0))) (Some (pconst 1)) 0); [set_solver| |].
-      { intros y Hy. mem_cases Hy; first [apply sle_refl, HW|right; done]. }
-      cbn. tstep; [tstep|]. cbn. tstep.
-      + tstep; [tstep|apply KTClos|done|].
-        apply ubs_intro; [intros y Hy; mem_cases Hy; done|].
-        exists (pt_dual (pconst 0)). split; [done|]. right. done.
-      + tstep; [tstep|apply KTClos|done|].
-        apply ubs_intro; [intros y Hy; mem_cases Hy|].
-        exists (pt_dual (pconst 0)). split; [done|]. apply sle_refl, HW.
-    - apply KTSpawn.
-    - done.
-    - apply ubs_none. }
-  cbn. tstep.
-  { tstep; [tstep|apply KTClos|done|]. apply ubs_intro; [|done].
-    intros y Hy. mem_cases Hy. done. }
-  tstep; [tstep|apply KTClos|done|]. apply ubs_intro; [intros y Hy; mem_cases Hy|done].
-Qed.
+Theorem cy_typed : typed W_cy None ∅ hc_empty [] (∅, None) cy_main TUnit None.
+Proof. apply (dftyped_typed _ _ _ _ _ _ _ cy_dftyped). Qed.
 
-Lemma cycle_deadlock_free : deadlock_free (∅, {[+ cycle_main +]}).
-Proof.
-  apply (soundness_created_s cycle_Ψ _ TUnit cycle_created); [constructor|apply cycle_typed].
-Qed.
+(** Deadlock freedom of the program, by soundness of one closed thread. *)
+Theorem cy_deadlock_free : deadlock_free (∅, {[+ cy_main +]}).
+Proof. exact (soundness_source W_cy cy_main TUnit (proj1 W_cy_wf) (swf_sacyc _ (proj2 W_cy_wf)) ltac:(constructor) cy_dftyped). Qed.

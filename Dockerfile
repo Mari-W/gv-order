@@ -1,8 +1,8 @@
 # Builds the whole development from a clean Ubuntu image and checks the
-# assumptions of its claims.  See ARTIFACT.md.
+# assumptions of its claims.  See README.md.
 #
-#   docker build -t spo-lr-df .
-#   docker run --rm -it spo-lr-df          # a shell in the built tree
+#   docker build -t gv-order .
+#   docker run --rm -it gv-order            # a shell in the built tree
 #
 # BASE selects the base image (for a registry mirror, e.g.
 # --build-arg BASE=public.ecr.aws/docker/library/ubuntu:24.04).
@@ -27,16 +27,16 @@ RUN opam init --bare --disable-sandboxing --no-setup \
  && opam repo add rocq-released https://rocq-prover.org/opam/released \
  && opam clean -a -c -s --logs
 
-# The dependencies at the versions of spo-lr-df.opam.locked: rocq-core
+# The dependencies at the versions of gv-order.opam.locked: rocq-core
 # 9.2.0, rocq-stdlib 9.2.0, rocq-stdpp 1.13.0 and theirs.
-COPY --chown=rocq spo-lr-df.opam spo-lr-df.opam.locked /home/rocq/deps/
+COPY --chown=rocq gv-order.opam gv-order.opam.locked /home/rocq/deps/
 RUN opam install --deps-only --locked /home/rocq/deps \
  && opam list \
  && opam clean -a -c -s --logs
 
 # The development.
-COPY --chown=rocq . /home/rocq/spo-lr-df
-WORKDIR /home/rocq/spo-lr-df
+COPY --chown=rocq . /home/rocq/gv-order
+WORKDIR /home/rocq/gv-order
 RUN eval "$(opam env)" \
  && ulimit -s 1000000 \
  && (make -j"$(nproc)" || make -j"$(nproc)") \

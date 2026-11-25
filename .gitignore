@@ -11,7 +11,8 @@ Makefile.coq*
 .Makefile.d
 Makefile.conf
 .coqdeps.d
-.claude/
+.claude/*
+!.claude/notes/
 .DS_Store
 /_opam
 .vscode

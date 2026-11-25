@@ -1,65 +1,33 @@
-(** * The lock-freedom criterion (lock-freedom plan §3.3)
+(** * The lock-freedom criterion (stage S8, port of theories/lockfree/Criterion.v)
 
-    [lf_criterion] derives [lock_free] from four hypotheses: local
-    progress in every reachable state, [no_tau_divergence], and the two
-    bounds [fuel_bound] and [rank_bound] on runs. The bounds are
-    abstract. [lf_criterion] reads the fuel as a natural number.
-    [lf_run_criterion] takes any measure under a well-founded decidable
-    order, and adequacy (LFAdequacy.v) instantiates it with the pair of
-    the tickets left in the configuration and the fuel, ordered
-    lexicographically ([lexlt], plan §18.4).
+    [lf_run_criterion] derives [lf_run] of one weakly fair maximal run
+    from a dependency relation [wt k t s] between threads at position k,
+    a measure under a well-founded decidable order, and a rank under a
+    well-founded order. The lock-free judgment supplies all three
+    (soup/LFAdequacy.v): the dependency is ownership of the dual end,
+    the measure is the counter of the dual end, ordered by < on ℕ, and
+    the rank is the point of the end a pending thread offers.
 
     Proof. For a thread t pending on an end of rank e, by well-founded
-    induction on e, then by well-founded induction on the measure of the
-    partner end, then by induction on the admin measure of its holder s
-    (TauThread.v). Local progress gives the holder. The holder takes
-    part in a later step, by weak fairness when its redex is
-    administrative, and by the rank hypothesis and the outer induction
+    induction on e, then by well-founded induction on the measure, then
+    by induction on the admin measure of the holder s ([thread_acc]).
+    The holder takes part in a later step, by weak fairness when its
+    redex is administrative, and by the rank and the outer induction
     when it is blocked. A step of the holder lowers the measure, unless
-    it is administrative, and then it lowers the admin measure. When t
-    itself is enabled, its offer persists and weak fairness fires it. *)
+    it is administrative, and then it lowers the admin measure. The admin
+    measure is the accessibility of the holder's erased term in [tRs],
+    which includes the spawned children, because a spawn may pass the
+    awaited end to a child at an unchanged counter (F2 of
+    .claude/notes/redesign/fable-findings.md).
 
-From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export lockfree.Fair lockfree.TauThread.
+    The port is the old file without [lf_criterion], [fuel_bound],
+    [rank_bound] and [waits], which go (quirk A3). Runs label a step with
+    an optional event, so "t takes part at k" reads [t ∈ lparts (l k)]. *)
 
-(** ** The bounds
-
-    [fuel_bound]. fu k t is the fuel of the partner of the end that the
-    pending thread t waits on, at position k. While t waits, every step
-    either lowers it, or keeps the holders of the partner end and lets
-    them take only administrative steps. So a holder acts on the partner
-    end within fu k t of its own steps on other entries, or it blocks.
-    Two linearity clauses come with it. The holder is unique, and an
-    enabled pending thread stays enabled until it takes part (an offer
-    persists until it fires). Both hold of well-typed configurations
-    and are not facts of the untyped semantics.
-
-    [rank_bound]. A well-founded relation R on ends and the end we k t
-    that t waits on at position k. The end of a waiting thread does
-    not change while it waits. A pending holder of the partner end
-    waits on a smaller end, unless t is already enabled.
-
-    All clauses speak of threads whose redex is a session action other
-    than a link ([npend]). A pending link is administrative, and weak
-    fairness fires it (stage 2b, plan §15.5). *)
+From stdpp Require Import relations.
+From GV Require Export lockfree.TauThread.
 
 Definition npend (q : config) (t : nat) : Prop := pend q t ∧ ¬ admin_at q t.
-
-Definition fuel_bound (r : nat → config) (l : nat → gset nat) : Prop :=
-  ∃ fu : nat → nat → nat,
-    (∀ k t s s', npend (r k) t → waits (r k) t s → waits (r k) t s' → s = s') ∧
-    (∀ k t, npend (r k) t → enabled (r k) t → t ∉ l k → enabled (r (S k)) t) ∧
-    (∀ k t, npend (r k) t → t ∉ l k →
-       fu (S k) t < fu k t ∨
-       (fu (S k) t = fu k t ∧ (∀ s, waits (r (S k)) t s ↔ waits (r k) t s) ∧
-        ∀ s, waits (r k) t s → s ∈ l k → admin_at (r k) s)).
-
-Definition rank_bound (r : nat → config) (l : nat → gset nat) : Prop :=
-  ∃ (E : Type) (R : E → E → Prop) (we : nat → nat → E),
-    well_founded R ∧
-    (∀ k t, npend (r k) t → t ∉ l k → we (S k) t = we k t) ∧
-    (∀ k t s, npend (r k) t → waits (r k) t s → npend (r k) s →
-       enabled (r k) t ∨ R (we k s) (we k t)).
 
 Lemma is_admin_dec a : {is_admin a} + {¬ is_admin a}.
 Proof. destruct a; simpl; auto. Defined.
@@ -91,51 +59,40 @@ Qed.
 
 (** ** Measures
 
-    A well-founded order is irreflexive. The lexicographic order on pairs
-    of naturals is well founded and decidable. *)
+    A well-founded order is irreflexive. *)
 
 Lemma wf_irrefl {A : Type} (R : A → A → Prop) : well_founded R → ∀ x, ¬ R x x.
 Proof. intros H x. induction (H x) as [x _ IH]. intros Hx. exact (IH x Hx Hx). Qed.
 
-Definition lexlt (x y : nat * nat) : Prop := x.1 < y.1 ∨ (x.1 = y.1 ∧ x.2 < y.2).
-
-Global Instance lexlt_dec x y : Decision (lexlt x y).
-Proof. unfold lexlt. apply _. Defined.
-
-Lemma lexlt_wf : well_founded lexlt.
-Proof.
-  intros [a b]. revert b. induction a as [a IHa] using lt_wf_ind.
-  intros b. induction b as [b IHb] using lt_wf_ind.
-  constructor. intros [c d] [Hlt|[Heq Hlt]]; simpl in *; [by apply IHa|subst c; by apply IHb].
-Qed.
-
 (** The proof reads the dependency of a pending thread on another one
     only through a relation [wt k t s] at each position k: t is pending,
     s is a thread, the chain of dependencies from t reaches an enabled
-    thread, and the four clauses below hold of it. [lf_criterion] takes
-    [wt k] = [waits (r k)]. The lock-free judgment takes the holder of
-    the partner end in the soup's environments (LFAdequacy.v), because a
-    term may name an end in code it never runs. *)
+    thread, and the four clauses below hold of it. The lock-free judgment
+    takes the thread holding the dual end in the soup's ownership
+    (soup/LFAdequacy.v), because a term may name an end in code it never
+    runs. *)
 Section criterion.
-  Context (p : proc) (r : nat → config) (l : nat → gset nat).
+  Context (p : proc) (r : nat → config) (l : nat → option event).
   Context (Hr0 : erase (r 0) = p) (Hmax : maximal r l) (Hfair : wfair r l).
   Context (wt : nat → nat → nat → Prop).
   Context (Hwt_pend : ∀ k t s, wt k t s → pend (r k) t).
   Context (Hwt_holder : ∀ k t s, wt k t s → ∃ es, (r k).2 !! s = Some es).
-  Context (HLP : ∀ k t, pend (r k) t → ∃ s, rtc (wt k) t s ∧ enabled (r k) s).
-  Context (Hnd : no_tau_divergence p) (Hlr : links_restricted p).
+  Context (HLP : ∀ k t, pend (r k) t → ∃ s, rtc (wt k) t s ∧ tenabled (r k) s).
+  Context (Hnd : no_free_divergence p) (Hlr : links_restricted p).
   Context (M : Type) (Rm : M → M → Prop) (fu : nat → nat → M).
   Context (HRm : well_founded Rm) `{HRm_dec : ∀ x y, Decision (Rm x y)}.
   Context (Huniq : ∀ k t s s', npend (r k) t → wt k t s → wt k t s' → s = s').
-  Context (Hpers : ∀ k t, npend (r k) t → enabled (r k) t → t ∉ l k → enabled (r (S k)) t).
-  Context (Hfuel : ∀ k t, npend (r k) t → t ∉ l k →
+  Context (Hpers : ∀ k t, npend (r k) t → tenabled (r k) t → t ∉ lparts (l k) → tenabled (r (S k)) t).
+  Context (Hfuel : ∀ k t, npend (r k) t → t ∉ lparts (l k) →
        Rm (fu (S k) t) (fu k t) ∨
-       (fu (S k) t = fu k t ∧ (∀ s, wt (S k) t s ↔ wt k t s) ∧
-        ∀ s, wt k t s → s ∈ l k → admin_at (r k) s)).
+       (fu (S k) t = fu k t ∧ (∀ s, wt k t s → s ∉ lparts (l k) → wt (S k) t s) ∧
+        ∀ s, wt k t s → s ∈ lparts (l k) → free_at (r k) s ∧
+          ∀ s', wt (S k) t s' → s' = s ∨
+            ∃ es es', (r k).2 !! s = Some es ∧ (r (S k)).2 !! s' = Some es' ∧ tRs (cerase es') (cerase es))).
   Context (E : Type) (R : E → E → Prop) (we : nat → nat → E) (HR : well_founded R).
-  Context (Hstab : ∀ k t, npend (r k) t → t ∉ l k → we (S k) t = we k t).
+  Context (Hstab : ∀ k t, npend (r k) t → t ∉ lparts (l k) → we (S k) t = we k t).
   Context (Hrank : ∀ k t s, npend (r k) t → wt k t s → npend (r k) s →
-       enabled (r k) t ∨ R (we k s) (we k t)).
+       tenabled (r k) t ∨ R (we k s) (we k t)).
 
   Lemma reach k : pred_star p (erase (r k)).
   Proof. rewrite <-Hr0. by apply (run_reach r l Hmax). Qed.
@@ -143,19 +100,19 @@ Section criterion.
   (** A property that persists while t does not take part, and that
       keeps t enabled, makes t take part. *)
   Lemma fair_persist t k (P : nat → Prop) :
-    P k → (∀ m, k ≤ m → P m → t ∉ l m → P (S m)) → (∀ m, P m → enabled (r m) t) →
-    ∃ j, k ≤ j ∧ t ∈ l j.
+    P k → (∀ m, k ≤ m → P m → t ∉ lparts (l m) → P (S m)) → (∀ m, P m → tenabled (r m) t) →
+    ∃ j, k ≤ j ∧ t ∈ lparts (l j).
   Proof.
     intros Hk Hstep Hen. destruct (Hfair t k) as (j & Hkj & [Hj|Hj]); [eauto|].
-    assert (∀ m, k ≤ m → m ≤ j → (∃ j', k ≤ j' ∧ t ∈ l j') ∨ P m) as Hscan.
+    assert (∀ m, k ≤ m → m ≤ j → (∃ j', k ≤ j' ∧ t ∈ lparts (l j')) ∨ P m) as Hscan.
     { intros m Hkm Hmj. induction Hkm as [|m Hkm IH]; [by right|].
       destruct IH as [?|HP]; [lia|by left|].
-      destruct (decide (t ∈ l m)) as [Ht|Ht]; [left; exists m; split; [lia|done]|].
+      destruct (decide (t ∈ lparts (l m))) as [Ht|Ht]; [left; exists m; split; [lia|done]|].
       right. by apply Hstep. }
     destruct (Hscan j Hkj (Nat.le_refl _)) as [?|HP]; [done|]. by destruct (Hj (Hen _ HP)).
   Qed.
 
-  Lemma run_npend k t : t ∉ l k → npend (r k) t → npend (r (S k)) t.
+  Lemma run_npend k t : t ∉ lparts (l k) → npend (r k) t → npend (r (S k)) t.
   Proof.
     intros Ht [Hp Hna]. split; [by apply (run_pend r l Hmax)|].
     intros (e' & a' & He' & Ha' & Had). apply Hna.
@@ -165,16 +122,16 @@ Section criterion.
     exists e, a. split_and!; [done|done|]. by apply (amap_admin g).
   Qed.
 
-  Lemma enabled_fires k t : npend (r k) t → enabled (r k) t → ∃ j, k ≤ j ∧ t ∈ l j.
+  Lemma enabled_fires k t : npend (r k) t → tenabled (r k) t → ∃ j, k ≤ j ∧ t ∈ lparts (l j).
   Proof.
-    intros Hp He. apply (fair_persist t k (λ m, npend (r m) t ∧ enabled (r m) t)).
+    intros Hp He. apply (fair_persist t k (λ m, npend (r m) t ∧ tenabled (r m) t)).
     - done.
     - intros m _ [Hpm Hem] Ht. split; [by apply run_npend|by apply Hpers].
     - by intros m [_ ?].
   Qed.
 
   (** An administrative redex fires by weak fairness. *)
-  Lemma admin_fires k s : admin_at (r k) s → ∃ j, k ≤ j ∧ s ∈ l j.
+  Lemma admin_fires k s : admin_at (r k) s → ∃ j, k ≤ j ∧ s ∈ lparts (l j).
   Proof.
     intros Had. apply (fair_persist s k (λ m, admin_at (r m) s)).
     - done.
@@ -188,16 +145,16 @@ Section criterion.
   (** Step A. The holder of a waiting thread takes part later, unless
       the waiting thread does. *)
   Lemma holder_moves e
-      (IHr : ∀ e', R e' e → ∀ k s, we k s = e' → npend (r k) s → ∃ j, k ≤ j ∧ s ∈ l j)
+      (IHr : ∀ e', R e' e → ∀ k s, we k s = e' → npend (r k) s → ∃ j, k ≤ j ∧ s ∈ lparts (l j))
       k t s :
     we k t = e → npend (r k) t → wt k t s →
-    (∃ j, k ≤ j ∧ t ∈ l j) ∨ (∃ j, k ≤ j ∧ s ∈ l j).
+    (∃ j, k ≤ j ∧ t ∈ lparts (l j)) ∨ (∃ j, k ≤ j ∧ s ∈ lparts (l j)).
   Proof.
     intros Hwe Hp Hw.
     destruct (HLP k t (proj1 Hp)) as (u & Hch & Hen).
     destruct Hch as [|t s1 u Hw1 Hch]; [left; by apply enabled_fires|].
     rewrite <-(Huniq k t s s1 Hp Hw Hw1) in Hch.
-    assert (enabled (r k) s ∨ pend (r k) s) as Hs.
+    assert (tenabled (r k) s ∨ pend (r k) s) as Hs.
     { destruct Hch as [|s s2 u Hw2 _]; [by left|right; by eapply Hwt_pend]. }
     pose proof Hw as Hw0.
     destruct (Hwt_holder k t s Hw) as [es Hes].
@@ -214,20 +171,20 @@ Section criterion.
         * left. by apply enabled_fires.
         * right. apply (IHr (we k s)); [by rewrite <-Hwe|done|done].
     - exfalso. destruct Hs as [Hen'|(es' & a' & Hes' & Ha' & _)].
-      + destruct (enabled_act _ _ _ Hen' Hes) as [a' Ha']. congruence.
+      + destruct (tenabled_act _ _ _ Hen' Hes) as [a' Ha']. congruence.
       + congruence.
   Qed.
 
   (** The core: well-founded induction on the measure and induction on
       the admin measure of the holder, for a fixed rank. *)
   Lemma core e
-      (IHr : ∀ e', R e' e → ∀ k s, we k s = e' → npend (r k) s → ∃ j, k ≤ j ∧ s ∈ l j) :
-    ∀ n k t, fu k t = n → we k t = e → npend (r k) t → ∃ j, k ≤ j ∧ t ∈ l j.
+      (IHr : ∀ e', R e' e → ∀ k s, we k s = e' → npend (r k) s → ∃ j, k ≤ j ∧ s ∈ lparts (l j)) :
+    ∀ n k t, fu k t = n → we k t = e → npend (r k) t → ∃ j, k ≤ j ∧ t ∈ lparts (l j).
   Proof.
     intros n. induction n as [n IHn] using (well_founded_ind HRm). intros k0 t Hfu0 Hwe0 Hp0.
     (* a drop of the measure at any later position closes the goal *)
-    assert (∀ m, k0 ≤ m → npend (r m) t → we m t = e → t ∉ l m → Rm (fu (S m) t) n →
-              ∃ j, k0 ≤ j ∧ t ∈ l j) as Hdrop.
+    assert (∀ m, k0 ≤ m → npend (r m) t → we m t = e → t ∉ lparts (l m) → Rm (fu (S m) t) n →
+              ∃ j, k0 ≤ j ∧ t ∈ lparts (l j)) as Hdrop.
     { intros m Hm Hpm Hwm Ht Hlt.
       destruct (IHn (fu (S m) t) Hlt (S m) t eq_refl) as (j & Hj & Htj).
       - rewrite Hstab; done.
@@ -236,16 +193,16 @@ Section criterion.
     destruct (HLP k0 t (proj1 Hp0)) as (u & Hch & Hen).
     destruct Hch as [|t s u Hw _]; [by apply enabled_fires|].
     destruct (Hwt_holder _ _ _ Hw) as [es Hes].
-    pose proof (thread_acc p (r k0) s es Hlr Hnd (reach k0) Hes) as Hacc.
+    pose proof (thread_acc_s p (r k0) s es Hlr Hnd (reach k0) Hes) as Hacc.
     remember (cerase es) as x eqn:Hx.
-    assert (∀ k, k0 ≤ k → fu k t = n → we k t = e → npend (r k) t → wt k t s →
-              ∀ es, (r k).2 !! s = Some es → cerase es = x → ∃ j, k0 ≤ j ∧ t ∈ l j)
-      as Hinner; [|by apply (Hinner k0 (Nat.le_refl _) Hfu0 Hwe0 Hp0 Hw es Hes)].
-    clear Hes Hx es Hw Hen u. revert x Hacc.
-    induction 1 as [x _ IHx]. intros k Hk Hfu Hwe Hp Hw es Hes Hx.
+    assert (∀ k s, k0 ≤ k → fu k t = n → we k t = e → npend (r k) t → wt k t s →
+              ∀ es, (r k).2 !! s = Some es → cerase es = x → ∃ j, k0 ≤ j ∧ t ∈ lparts (l j))
+      as Hinner; [|by apply (Hinner k0 s (Nat.le_refl _) Hfu0 Hwe0 Hp0 Hw es Hes)].
+    clear Hes Hx es Hw Hen u s. revert x Hacc.
+    induction 1 as [x _ IHx]. intros k s Hk Hfu Hwe Hp Hw es Hes Hx.
     destruct (holder_moves e IHr k t s Hwe Hp Hw) as [(j & Hj & Htj)|(j1 & Hj1 & Hsj1)].
     { exists j. split; [lia|done]. }
-    set (Q := λ m, t ∈ l m ∨ Rm (fu (S m) t) (fu m t) ∨ s ∈ l m).
+    set (Q := λ m, t ∈ lparts (l m) ∨ Rm (fu (S m) t) (fu m t) ∨ s ∈ lparts (l m)).
     assert (∀ m, Decision (Q m)) by (intros m; unfold Q; apply _).
     destruct (first_hit Q k j1 Hj1 (or_intror (or_intror Hsj1))) as (m & Hm & HQm & Hfirst).
     (* the invariant up to m *)
@@ -256,8 +213,8 @@ Section criterion.
       - split_and!; [done|done|done|done|]. by exists es.
       - destruct IH as (Hpm & Hwm & Hfm & Hwsm & es' & Hes' & Hx'); [lia|].
         assert (¬ Q m') as HnQ by (apply Hfirst; lia).
-        assert (t ∉ l m') as Htm by (intros ?; apply HnQ; by left).
-        assert (s ∉ l m') as Hsm by (intros ?; apply HnQ; by right; right).
+        assert (t ∉ lparts (l m')) as Htm by (intros ?; apply HnQ; by left).
+        assert (s ∉ lparts (l m')) as Hsm by (intros ?; apply HnQ; by right; right).
         destruct (Hfuel m' t Hpm Htm) as [Hlt|(Hfeq & Hwiff & _)];
           [destruct HnQ; by right; left|].
         split_and!.
@@ -268,20 +225,26 @@ Section criterion.
         + destruct (run_other r l Hmax m' s es' Hsm Hes') as [g Hg].
           exists (emap g es'). split; [done|]. by rewrite cerase_emap. }
     destruct (Hinv m ltac:(lia) (Nat.le_refl _)) as (Hpm & Hwm & Hfm & Hwsm & es' & Hes' & Hx').
-    destruct (decide (t ∈ l m)) as [Htm|Htm]; [exists m; split; [lia|done]|].
+    destruct (decide (t ∈ lparts (l m))) as [Htm|Htm]; [exists m; split; [lia|done]|].
     destruct (Hfuel m t Hpm Htm) as [Hlt|(Hfeq & Hwiff & Hadm)].
     { apply (Hdrop m); [lia|done|done|done|by rewrite <-Hfm]. }
     destruct HQm as [?|[Hlt|Hsm]]; [done|rewrite Hfeq in Hlt; by destruct (wf_irrefl Rm HRm _ Hlt)|].
-    destruct (Hadm s Hwsm Hsm) as (es'' & a & Hes'' & Ha & Had).
+    destruct (Hadm s Hwsm Hsm) as [(es'' & a & Hes'' & Ha & Had) Hnext].
     rewrite Hes' in Hes''. injection Hes'' as <-.
-    destruct (run_admin_step r l Hmax m s es' a Hsm Hes' Ha Had) as (α & e2 & g & Hα & Hst2 & He2).
-    assert (tR (cerase (emap g e2)) x) as HtR
-      by (rewrite cerase_emap, <-Hx'; by eapply tR_step).
     assert (fu (S m) t = n) as Hfn by congruence.
     assert (we (S m) t = e) as Hwn by (by rewrite Hstab).
     assert (npend (r (S m)) t) as Hpn by (by apply run_npend).
-    assert (wt (S m) t s) as Hwsn by (by apply Hwiff).
-    exact (IHx (cerase (emap g e2)) HtR (S m) ltac:(lia) Hfn Hwn Hpn Hwsn (emap g e2) He2 eq_refl).
+    (* the holder after the step: the same thread, or a child it spawned *)
+    destruct (HLP (S m) t (proj1 Hpn)) as (u & Hch & Hen).
+    destruct Hch as [|t s1 u Hw1 _].
+    { destruct (enabled_fires (S m) _ Hpn Hen) as (j & Hj & Htj). exists j. split; [lia|done]. }
+    destruct (Hnext s1 Hw1) as [->|(es1 & es2 & Hes1 & Hes2 & HtRs)].
+    - destruct (run_free_step r l Hmax m s es' a Hsm Hes' Ha Had) as (α & e2 & g & Hα & Hst2 & He2).
+      assert (tRs (cerase (emap g e2)) x) as HtR
+        by (left; rewrite cerase_emap, <-Hx'; exact (tR_step false _ α _ Hα Hst2)).
+      exact (IHx (cerase (emap g e2)) HtR (S m) s ltac:(lia) Hfn Hwn Hpn Hw1 (emap g e2) He2 eq_refl).
+    - rewrite Hes' in Hes1. injection Hes1 as <-. rewrite Hx' in HtRs.
+      exact (IHx (cerase es2) HtRs (S m) s1 ltac:(lia) Hfn Hwn Hpn Hw1 es2 Hes2 eq_refl).
   Qed.
 
   Theorem lf_run_criterion : lf_run r l.
@@ -290,27 +253,9 @@ Section criterion.
     destruct (decide (admin_at (r i) t)) as [Had|Hna].
     { by apply admin_fires. }
     assert (npend (r i) t) as Hnp by done. clear Hp Hna.
-    cut (∀ e k s, we k s = e → npend (r k) s → ∃ j, k ≤ j ∧ s ∈ l j); [eauto|].
+    cut (∀ e k s, we k s = e → npend (r k) s → ∃ j, k ≤ j ∧ s ∈ lparts (l j)); [eauto|].
     intros e. induction (HR e) as [e _ IHr]. intros k s Hwe Hps.
     exact (core e IHr (fu k s) k s eq_refl Hwe Hps).
   Qed.
 End criterion.
 
-(** ** The criterion *)
-
-Theorem lf_criterion p :
-  (∀ r l, erase (r 0) = p → maximal r l → ∀ k, local_progress (r k)) →
-  no_tau_divergence p → links_restricted p →
-  (∀ r l, erase (r 0) = p → maximal r l → fuel_bound r l) →
-  (∀ r l, erase (r 0) = p → maximal r l → rank_bound r l) →
-  lock_free p.
-Proof.
-  intros HLP Hnd Hlr Hfb Hrb r l Hr0 Hmax Hfair.
-  destruct (Hfb r l Hr0 Hmax) as (fu & Huniq & Hpers & Hfuel).
-  destruct (Hrb r l Hr0 Hmax) as (E & R & we & HR & Hstab & Hrank).
-  refine (lf_run_criterion p r l Hr0 Hmax Hfair (λ k, waits (r k)) _ _ _ Hnd Hlr
-    nat lt fu lt_wf Huniq Hpers Hfuel E R we HR Hstab Hrank).
-  - intros k t s Hw. by eapply waits_pend.
-  - intros k t s (_ & _ & _ & _ & _ & es & _ & _ & _ & _ & Hes & _). by exists es.
-  - intros k t Hp. by apply (HLP r l Hr0 Hmax k).
-Qed.

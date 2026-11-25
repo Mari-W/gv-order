@@ -1,10 +1,10 @@
 {
  "$schema": "../../tools/proof-map/schema.json",
  "format": "proof-map/1",
- "title": "GV Relation Map",
- "subtitle": "Definitions, rules and theorems of the v2 development",
+ "title": "GV≺",
+ "subtitle": "Definitions, rules and theorems of the Rocq development",
  "source": {
-  "root": "../../v2",
+  "root": "../../theories",
   "language": "rocq",
   "revision": "deffac9"
  },

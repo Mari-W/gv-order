@@ -211,7 +211,7 @@ const map = {
   $schema: path.relative(path.dirname(path.resolve(outFile)), path.join(__dirname, 'schema.json')),
   format: 'proof-map/1',
   title: 'GV Relation Map',
-  subtitle: 'Definitions, rules and theorems of the v2 development',
+  subtitle: 'Definitions, rules and theorems of the Rocq development',
   source: root ? { root, language: 'rocq' } : undefined,
   tex: { macros: { llbracket: '[\\![', rrbracket: ']\\!]' } },
   syntax: {

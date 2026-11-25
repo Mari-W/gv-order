@@ -1,217 +1,192 @@
-(** * Milner's cyclic scheduler of Dardha and Gay: typable
+(** * Milner's cyclic scheduler (fx-final, 2026-11-24)
 
-    Example 1 of Dardha and Gay (dardha2018new p. 3), the whole program,
-    with k = 3 agents. Each agent A_i sits on a ring and has a spoke to
-    its own collector P_i.
+    The port of theories/examples/MilnerSched.v on old-main, Example 1
+    of Dardha and Gay with k = 3 agents. Agent A_i sits on a ring and
+    reports to its collector P_i.
 
-      Sched = (ν a_i b_i)(ν c_i d_{(i+1) mod 3})
-                (A_0 | A_1 | A_2 | P_0 | P_1 | P_2)
-      A_0 = c_0[n_0]. d_0(x_0). a_0[m_0]. close_0
-      A_i = d_i(x_i). a_i[m_i]. c_i[n_i]. close_i     for 0 < i < 3
-      P_i = b_i(y_i). Q_i
+      A_0 = let ∗ = sendclose c_0 in let ∗ = recvclose d_0 in sendclose a_0   (main)
+      A_i = let ∗ = recvclose d_i in let ∗ = sendclose a_i in sendclose c_i   (spawned)
+      P_i = recvclose b_i                                                     (spawned)
+      sendclose r = close (send ⟨∗, r⟩)
+      recvclose r = let ⟨x, r⟩ = recv r in let ∗ = x in close r
 
-    A_0 starts the round by sending on c_0, waits for the token on d_0,
-    reports to its collector on a_0 and stops. Every other agent waits
-    on d_i, reports on a_i and passes the token on c_i. The ring is
-    closed by c_i and d_{(i+1) mod 3} being the two ends of one channel,
-    so A_0 reads on d_0 what A_2 wrote on c_2.
+    The ring closes because c_i and d_{(i+1) mod 3} are the two ends of
+    one channel. The six channels sit at the base ρ of the first
+    creation and at its fields, the sending end at the point, the
+    receiving end at its dual.
 
-    Here:
+      c_0, d_1 : ρ      a_1, b_1 : ρ·1    c_1, d_2 : ρ·2
+      a_2, b_2 : ρ·3    c_2, d_0 : ρ·4    a_0, b_0 : ρ·5
 
-      A_0 = let () = close (send ⟨∗, c_0⟩) in                      (main)
-            let () = recvclose d_0 in close (send ⟨∗, a_0⟩)
-      A_i = let () = recvclose d_i in                              (spawned)
-            let () = close (send ⟨∗, a_i⟩) in close (send ⟨∗, c_i⟩)
-      P_i = recvclose b_i                                          (spawned)
-      recvclose r = let (x, r) = recv r in let () = x in close r
+    Each agent acts on an end while it holds the ends it uses later. A_1
+    asks ρ̄ ≺ (ρ·1)‾, ρ̄ ≺ (ρ·2)‾ and ρ·1 ≺ (ρ·2)‾, A_2 asks
+    (ρ·2)‾ ≺ (ρ·3)‾, (ρ·2)‾ ≺ (ρ·4)‾ and ρ·3 ≺ (ρ·4)‾, and A_0 asks
+    ρ ≺ ρ·4, ρ ≺ (ρ·5)‾ and (ρ·4)‾ ≺ (ρ·5)‾, each also at the shift of
+    its lower point for the close. The first creation states these 18
+    facts. They rise with the field label, so a rank that reads the
+    label first satisfies (wf-new) ([ms_wf_new]). This is the order of
+    the priorities of Dardha and Gay for the scheduler.
 
-      c_i, a_i : (!∗.Close)@…        d_i, b_i : (?∗.Close)@…
+    - [ms_dftyped]      : the program types at N = ∞ over the empty world.
+    - [ms_deadlock_free]: the closed program is deadlock free. *)
 
-    Simplifications. The calculus has no integers, so the token n_i, the
-    result m_i and the received values x_i, y_i are ∗ and the message
-    types are !∗.Close and ?∗.Close. The continuation Q_i of a collector
-    is ∗, so P_i reads the result and closes. Dardha and Gay's close_i
-    is the session end, which here is the [close] after each
-    communication. The program runs one round, as theirs does.
+From GV Require Export examples.GenNew.
 
-    Points. The six channels sit at the points of one root. The first
-    [new] creates the ring channel of A_0 at the top-level point ι, a
-    point variable of the program's hypotheses with the empty creation
-    constraint ([ms_Ψ], sharp edges 172). Every later channel is created
-    by [t_new_at] at ι+2k, a point the hypothesis of ι makes known. With end points the two ends of a channel sit at x and x̄;
-    the sending end of each channel is the one at x. Reading the two
-    ends of a channel as one root:
+(** ** The program *)
 
-      c_0, d_1 : ι      a_1, b_1 : ι+2    c_1, d_2 : ι+4
-      a_2, b_2 : ι+6    c_2, d_0 : ι+8    a_0, b_0 : ι+10
+Definition sendclose (r : expr) : expr := EClose (ESend (Pair EUnit r)).
+Definition recvclose (r : expr) : expr := LetP (ERecv r) (LetU (Var 1) (EClose (Var 0))).
 
-    Every fact the derivation needs is ι+j ≺ ι+k with j < k, which
-    program order gives ([slt_po_lt]). This is the order of Dardha and
-    Gay's priorities for Sched (dardha2018new p. 9), which for k = 3
-    reads d_1 : 0, a_1 : 1, c_1 : 2, d_2 : 2, a_2 : 3, c_2 : 4, d_0 : 4,
-    a_0 : 5, with c_0 : 0 and b_i at the priority of a_i. Two of their
-    priorities coincide for the two ends of one channel, and one point
-    here carries both ends.
-
-    The reversed agent is rejected. If A_0 waits on d_0 before sending
-    on c_0 the derivation asks ι+8 ≺ ι, while A_1 asks ι ≺ ι+4 and A_2
-    asks ι+4 ≺ ι+8, and the three give a cycle
-    ([ms_rev_underivable], examples/Rejected.v).
-
-    examples/Scheduler.v has a reduced variant, three agents without
-    collectors and one of them a [link]. *)
-
-From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export examples.LitTools.
-
-Set Default Proof Using "All".
-
-(** The agents. The innermost body of the six [new]s sees
-    b_0 at 0, a_0 at 1, d_0 at 2, c_2 at 3, b_2 at 4, a_2 at 5,
-    d_2 at 6, c_1 at 7, b_1 at 8, a_1 at 9, d_1 at 10, c_0 at 11.
-    A thunk shifts them all by one. *)
-
+(** After the six creations: b₀ 0, a₀ 1, d₀ 2, c₂ 3, b₂ 4, a₂ 5, d₂ 6,
+    c₁ 7, b₁ 8, a₁ 9, d₁ 10, c₀ 11. A thunk shifts them by one. *)
 Definition ms_ag1 : expr :=
-  Lam (LetU (Var 0)
-    (LetU (recvclose (Var 11)) (LetU (sendclose (Var 10)) (sendclose (Var 8))))).
-
+  Lam (LetU (Var 0) (LetU (recvclose (Var 11)) (LetU (sendclose (Var 10)) (sendclose (Var 8))))).
 Definition ms_ag2 : expr :=
-  Lam (LetU (Var 0)
-    (LetU (recvclose (Var 7)) (LetU (sendclose (Var 6)) (sendclose (Var 4))))).
-
+  Lam (LetU (Var 0) (LetU (recvclose (Var 7)) (LetU (sendclose (Var 6)) (sendclose (Var 4))))).
 Definition ms_col0 : expr := Lam (LetU (Var 0) (recvclose (Var 1))).
 Definition ms_col1 : expr := Lam (LetU (Var 0) (recvclose (Var 9))).
 Definition ms_col2 : expr := Lam (LetU (Var 0) (recvclose (Var 5))).
-
 Definition ms_ag0 : expr :=
   LetU (sendclose (Var 11)) (LetU (recvclose (Var 2)) (sendclose (Var 1))).
 
 Definition ms_main : expr :=
-  let_new_pair_at (EPt (pconst 0)) (let_new_pair_at (EPt (pc 0 2)) (let_new_pair_at (EPt (pc 0 4))
-  (let_new_pair_at (EPt (pc 0 6)) (let_new_pair_at (EPt (pc 0 8)) (let_new_pair_at (EPt (pc 0 10))
-    (LetU (App ESpawn ms_ag1)
-      (LetU (App ESpawn ms_ag2)
-        (LetU (App ESpawn ms_col0)
-          (LetU (App ESpawn ms_col1)
-            (LetU (App ESpawn ms_col2) ms_ag0)))))))))).
+  let_new (LetP ENew (LetP ENew (LetP ENew (LetP ENew (LetP ENew
+    (LetU (ESpawn ms_ag1)
+      (LetU (ESpawn ms_ag2)
+        (LetU (ESpawn ms_col0)
+          (LetU (ESpawn ms_col1)
+            (LetU (ESpawn ms_col2) ms_ag0)))))))))).
 
-(** Program order between the two ends of one root: ι+j ≺ ι+k and
-    ι+j ≺ ῑ+k for j < k, at either polarity of ι+j. With end points
-    the gates compare with partner points, which sit at the other
-    polarity. *)
-Lemma ms_slt_po W Ψ a b b' j k : world_wf W → j < k → slt W Ψ (MkPt a b j) (MkPt a b' k).
+(** ** The constraint of the first creation *)
+
+Definition Sm : sty := SSeq (SSnd 0 TUnit) SEnd.
+
+Definition msk (i : nat) : point := match i with 0 => pvar 0 | _ => (pvar 0)·i end.
+
+(** The lower points of the agents, at offset 0 or 1, below the upper points. *)
+Definition ms_base (g : fact) : Prop :=
+  g = FLt (pvar 0)‾ (msk 1)‾ ∨ g = FLt (pvar 0)‾ (msk 2)‾ ∨ g = FLt (msk 1) (msk 2)‾ ∨
+  g = FLt (msk 2)‾ (msk 3)‾ ∨ g = FLt (msk 2)‾ (msk 4)‾ ∨ g = FLt (msk 3) (msk 4)‾ ∨
+  g = FLt (pvar 0) (msk 4) ∨ g = FLt (pvar 0) (msk 5)‾ ∨ g = FLt (msk 4)‾ (msk 5)‾.
+
+Definition ms_L (g : fact) : Prop :=
+  ∃ x y, ms_base (FLt x y) ∧ (g = FLt x y ∨ g = FLt x⁺ y).
+
+(** Ten per field label, three per offset, one more for a negative point. *)
+Definition ms_rank (x : point) : nat * nat * nat :=
+  (10 * pt_fsum x + 3 * pt_off x + (if pt_pol x then 0 else 1), 0, 0).
+
+Lemma ms_wf_new : wf_new (bcs_of ms_L).
 Proof.
-  intros HW H.
-  assert (∀ m d d', slt W Ψ (MkPt a d m) (MkPt a d' (S m))) as Hs.
-  { intros m [] [];
-      [pose proof (slt_po W Ψ (MkPt a true m) HW) as G|pose proof (sl_dpo W Ψ (MkPt a true m)) as G
-      |pose proof (sl_dpo W Ψ (MkPt a false m)) as G|pose proof (slt_po W Ψ (MkPt a false m) HW) as G];
-      unfold pt_shift, pt_dual in G; simpl in G; rewrite Nat.add_1_r in G; exact G. }
-  revert b'. induction H as [|k _ IH]; intros b'; [apply Hs|].
-  eapply sl_trans; [apply (IH true)|apply Hs].
+  apply (wf_new_lex3 _ ms_rank).
+  - intros u v (x & y & [E|[E|[E|[E|[E|[E|[E|[E|E]]]]]]]] & [E'|E']); injection E as -> ->;
+      injection E' as -> ->; split; reflexivity.
+  - intros [p [] o]; unfold ms_rank, pt_shift, pt_dual, pt_fsum, lex3; simpl; lia.
+  - intros u v (x & y & [E|[E|[E|[E|[E|[E|[E|[E|E]]]]]]]] & [E'|E']); injection E as -> ->;
+      injection E' as -> ->; vm_compute; lia.
 Qed.
+#[global] Hint Resolve ms_wf_new : wfnew.
 
-Lemma ms_sle_po W Ψ a b b' j k : world_wf W → j < k ∨ (j = k ∧ b = b') → sle W Ψ (MkPt a b j) (MkPt a b' k).
+Ltac ms_disj := hnf; repeat first [left; reflexivity | right]; reflexivity.
+Ltac ms_fact x y :=
+  apply law_slt'; [first [exists x, y; split; [ms_disj|left; reflexivity]
+                         |exists x, y; split; [ms_disj|right; reflexivity]]|cbn; lia].
+Ltac ms_any :=
+  first [ ms_fact ((pvar 0)‾) ((msk 1)‾) | ms_fact ((pvar 0)‾) ((msk 2)‾) | ms_fact (msk 1) ((msk 2)‾)
+        | ms_fact ((msk 2)‾) ((msk 3)‾) | ms_fact ((msk 2)‾) ((msk 4)‾) | ms_fact (msk 3) ((msk 4)‾)
+        | ms_fact ((pvar 0)) (msk 4) | ms_fact ((pvar 0)) ((msk 5)‾) | ms_fact ((msk 4)‾) ((msk 5)‾) ].
+
+(** ** The derivation *)
+
+(** recvclose on the end y at x, with the lower point x and its shift
+    below the future. *)
+Ltac ms_ub :=
+  apply ub_below_novar;
+    [intros ? Hy; cbn [sf_unionb fst snd lenv_bot hbot orb] in Hy; heads_cases Hy; ms_any|reflexivity].
+
+Ltac ms_recvclose y pp :=
+  unfold recvclose;
+  eapply d_letp; [apply tsplit_empty|lsplit_tac (ERecv (Var y)) EUnit| |];
+  [ eapply d_recv with (x := pp) (m := 0) (T := TUnit) (S0 := dual Sm);
+      [done|exact I| |eapply d_var'; [reflexivity|spare_tac]];
+    ms_ub
+  | eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 1) EUnit| |];
+    [ eapply d_var'; [reflexivity|]; spare_tac
+    | eapply d_close with (S0 := SEnd) (x := pp⁺); [done| |eapply d_var'; [reflexivity|spare_tac]];
+      first [apply ub_below_empty|ms_ub] ] ].
+
+Ltac ms_sendclose y pp :=
+  unfold sendclose;
+  eapply d_close with (S0 := SEnd) (x := pp⁺); [done| |];
+  [ first [apply ub_below_empty|ms_ub]
+  | eapply d_send with (x := pp) (m := 0) (T := TUnit) (S0 := Sm);
+      [done|exact I|done|cbn; set_solver| |];
+    [ first [apply ub_below_empty|ms_ub]
+    | eapply d_pair; [apply tsplit_empty|lsplit_tac EUnit (Var y)
+                     |apply d_unit'; spare_tac|eapply d_var'; [reflexivity|spare_tac]] ] ].
+
+Ltac ms_fld κ :=
+  eapply d_letp; [apply tsplit_empty|lsplit_tac ENew EUnit| |];
+  [apply (d_new_fld _ _ _ _ (pvar 0) κ Sm None None None None); [apply spare_unl; spare_tac|contr_tac]|].
+
+Theorem ms_dftyped : dftyped sw_empty ∅ hc_empty [] (∅, None) ms_main TUnit.
 Proof.
-  intros HW [H|[-> ->]]; [right; by apply ms_slt_po|apply sle_refl, HW].
-Qed.
-
-Ltac ms_future HW := intros ? Hy; mem_cases Hy; (apply ms_slt_po; [exact HW|cbn; lia]).
-Ltac ms_fvar HW u := exists u; split; [done|apply ms_sle_po; [exact HW|cbn; first [left; lia|right; split; [lia|done]]]].
-Ltac ms_lb HW := intros ? Hy; mem_cases Hy; (apply ms_sle_po; [exact HW|cbn; first [left; lia|right; split; [lia|done]]]).
-Ltac ms_gate HW u := apply ubs_intro; [ms_future HW|ms_fvar HW u].
-Ltac ms_gate0 HW := apply ubs_intro; [ms_future HW|done].
-
-(** A send and a close on one channel at (0, j), inside a λ whose upper
-    point is (0, u). *)
-Ltac ms_send HW j u :=
-  unfold sendclose; tstep;
-  [ tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pc 0 j)); cbn; set_solver|done|];
-    ms_gate HW (pc 0 u)
-  | apply KTClos
-  | done
-  | ms_gate HW (pc 0 u) ].
-
-(** A receive and a close on one channel, inside such a λ. *)
-Ltac ms_recv HW U :=
-  unfold recvclose; tstep;
-  [ tstep; [tstep|apply KTRecv|kscope|]; ms_gate HW U
-  | cbn; tstep; [tstep|]; cbn; tstep; [tstep|apply KTClos|done|];
-    ms_gate HW U ].
-
-Definition ms_Ψ : hyps := [] ++ [(fresh_bcs [] [], [pconst 0])].
-
-Lemma ms_created : created (Wpo []) ms_Ψ.
-Proof. apply created_lh; [constructor|constructor|set_solver|fresh_const]. Qed.
-
-Lemma ms_typed : styped ∅ ms_Ψ [] (∅, None) ms_main TUnit.
-Proof.
-  apply styped_Wpo. pose proof Wpo_nil_strict' as HWs.
-  pose proof (proj1 HWs) as HW. set (W := Wpo []) in *. unfold ms_main, let_new_pair_at, ms_Ψ.
-  (* the ring channel of A_0 at the top-level ι, then five channels at ι+2k *)
-  new_top HWs Sd (pconst 0).
-  fresh_clean.
-  apply (t_new_at W _ _ _ _ _ _ _ Sd (pc 0 2) HWs);
-    [ground|eapply skn_inst; [by left|by left|done]|]. cbn.
-  apply (t_new_at W _ _ _ _ _ _ _ Sd (pc 0 4) HWs);
-    [ground|eapply skn_inst; [by left|by left|done]|]. cbn.
-  apply (t_new_at W _ _ _ _ _ _ _ Sd (pc 0 6) HWs);
-    [ground|eapply skn_inst; [by left|by left|done]|]. cbn.
-  apply (t_new_at W _ _ _ _ _ _ _ Sd (pc 0 8) HWs);
-    [ground|eapply skn_inst; [by left|by left|done]|]. cbn.
-  apply (t_new_at W _ _ _ _ _ _ _ Sd (pc 0 10) HWs);
-    [ground|eapply skn_inst; [by left|by left|done]|]. cbn.
-  (* A_1: recv d_1 at ι, send a_1 at ι+2, send c_1 at ι+4 *)
-  tstep.
-  { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 0 5)) (Some (pc 0 0)) 0);
-      [set_solver|ms_lb HW|].
-    cbn. tstep; [tstep|]. cbn. tstep; [ms_recv HW (pc 0 5)|].
-    cbn. tstep; [ms_send HW 2 5|ms_send HW 4 5]. }
-  (* A_2: recv d_2 at ι+4, send a_2 at ι+6, send c_2 at ι+8 *)
-  cbn. tstep.
-  { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pc 0 9)) (Some (pc 0 4)) 0);
-      [set_solver|ms_lb HW|].
-    cbn. tstep; [tstep|]. cbn. tstep; [ms_recv HW (pc 0 9)|].
-    cbn. tstep; [ms_send HW 6 9|ms_send HW 8 9]. }
-  (* the collectors: recv b_i *)
-  cbn. tstep.
-  { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pc 0 11))) (Some (pc 0 10)) 0);
-      [set_solver|ms_lb HW|].
-    cbn. tstep; [tstep|]. cbn. ms_recv HW (pt_dual (pc 0 11)). }
-  cbn. tstep.
-  { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pc 0 3))) (Some (pc 0 2)) 0);
-      [set_solver|ms_lb HW|].
-    cbn. tstep; [tstep|]. cbn. ms_recv HW (pt_dual (pc 0 3)). }
-  cbn. tstep.
-  { tstep; [|apply KTSpawn|done|apply ubs_none].
-    eapply (tv_lam W HW _ _ _ _ _ TUnit TUnit (Some (pt_dual (pc 0 7))) (Some (pc 0 6)) 0);
-      [set_solver|ms_lb HW|].
-    cbn. tstep; [tstep|]. cbn. ms_recv HW (pt_dual (pc 0 7)). }
-  (* A_0: send c_0 at ι, recv d_0 at ι+8, send a_0 at ι+10 *)
-  cbn. unfold ms_ag0. tstep.
-  { unfold sendclose. tstep.
-    - tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pc 0 0)); cbn; set_solver|done|].
-      ms_gate0 HW.
-    - apply KTClos.
-    - done.
-    - ms_gate0 HW. }
-  cbn. tstep.
-  { unfold recvclose. tstep.
-    - tstep; [tstep|apply KTRecv|kscope|]. ms_gate0 HW.
-    - cbn. tstep; [tstep|]. cbn. tstep; [tstep|apply KTClos|done|]. ms_gate0 HW. }
-  cbn. unfold sendclose. tstep.
-  - tstep; [tstep; tstep|apply (KTSend _ _ _ 0 TUnit SEnd (pc 0 10)); cbn; set_solver|done|].
-    ms_gate0 HW.
-  - apply KTClos.
-  - done.
-  - ms_gate0 HW.
+  unfold ms_main, let_new.
+  eapply d_let; [apply tsplit_empty|apply lsplit_nil| |].
+  { eapply (d_new' _ _ _ _ ms_L Sm None None); [spare_tac|apply ms_wf_new|contr_tac]. }
+  eapply d_open with (i := 0); [reflexivity|cbn; tauto|cons_tac|].
+  rewrite tenv_pinst_empty, sf_pinst_empty. cbn [lenv_pinst fmap list_fmap insert list_insert].
+  fold (Γnew ms_L).
+  eapply d_letp; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
+  { eapply d_var'; [reflexivity|]. spare_tac. }
+  ms_fld 1. ms_fld 2. ms_fld 3. ms_fld 4. ms_fld 5.
+  eapply d_letu; [apply tsplit_empty|lsplit_tac (ESpawn ms_ag1) EUnit| |].
+  { apply d_spawn_lam.
+    eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
+    { eapply d_var'; [reflexivity|]. spare_tac. }
+    eapply d_letu; [apply tsplit_empty|lsplit_tac (recvclose (Var 11)) EUnit| |].
+    { ms_recvclose 11 ((pvar 0)‾). }
+    eapply d_letu; [apply tsplit_empty|lsplit_tac (sendclose (Var 10)) EUnit| |].
+    { ms_sendclose 10 (msk 1). }
+    ms_sendclose 8 (msk 2). }
+  eapply d_letu; [apply tsplit_empty|lsplit_tac (ESpawn ms_ag2) EUnit| |].
+  { apply d_spawn_lam.
+    eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
+    { eapply d_var'; [reflexivity|]. spare_tac. }
+    eapply d_letu; [apply tsplit_empty|lsplit_tac (recvclose (Var 7)) EUnit| |].
+    { ms_recvclose 7 ((msk 2)‾). }
+    eapply d_letu; [apply tsplit_empty|lsplit_tac (sendclose (Var 6)) EUnit| |].
+    { ms_sendclose 6 (msk 3). }
+    ms_sendclose 4 (msk 4). }
+  eapply d_letu; [apply tsplit_empty|lsplit_tac (ESpawn ms_col0) EUnit| |].
+  { apply d_spawn_lam.
+    eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
+    { eapply d_var'; [reflexivity|]. spare_tac. }
+    ms_recvclose 1 ((msk 5)‾). }
+  eapply d_letu; [apply tsplit_empty|lsplit_tac (ESpawn ms_col1) EUnit| |].
+  { apply d_spawn_lam.
+    eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
+    { eapply d_var'; [reflexivity|]. spare_tac. }
+    ms_recvclose 9 ((msk 1)‾). }
+  eapply d_letu; [apply tsplit_empty|lsplit_tac (ESpawn ms_col2) EUnit| |].
+  { apply d_spawn_lam.
+    eapply d_letu; [apply tsplit_empty|lsplit_tac (Var 0) EUnit| |].
+    { eapply d_var'; [reflexivity|]. spare_tac. }
+    ms_recvclose 5 ((msk 3)‾). }
+  unfold ms_ag0.
+  eapply d_letu; [apply tsplit_empty|lsplit_tac (sendclose (Var 11)) EUnit| |].
+  { ms_sendclose 11 ((pvar 0)). }
+  eapply d_letu; [apply tsplit_empty|lsplit_tac (recvclose (Var 2)) EUnit| |].
+  { ms_recvclose 2 ((msk 4)‾). }
+  ms_sendclose 1 (msk 5).
+  Unshelve. all: exact None.
 Qed.
 
 Theorem ms_deadlock_free : deadlock_free (∅, {[+ ms_main +]}).
 Proof.
-  apply (soundness_created_s ms_Ψ _ TUnit ms_created); [constructor|apply ms_typed].
+  apply (soundness_source sw_empty ms_main TUnit); [apply sw_empty_acyc|apply sw_empty_acyc|constructor|].
+  exact ms_dftyped.
 Qed.
+
+Print Assumptions ms_dftyped.
+Print Assumptions ms_deadlock_free.

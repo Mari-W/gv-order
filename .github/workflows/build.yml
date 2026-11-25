@@ -1,6 +1,6 @@
 # Build the development and check that its claims are axiom free.
 # The opam switch (OCaml 5.3.0, rocq-core 9.2.0, rocq-stdlib 9.2.0,
-# rocq-stdpp 1.13.0, from spo-lr-df.opam.locked) is cached between runs.
+# rocq-stdpp 1.13.0, from gv-order.opam.locked) is cached between runs.
 name: build
 
 on:
@@ -38,7 +38,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ~/.opam
-          key: opam-${{ runner.os }}-ocaml-5.3.0-${{ hashFiles('spo-lr-df.opam', 'spo-lr-df.opam.locked') }}
+          key: opam-${{ runner.os }}-ocaml-5.3.0-${{ hashFiles('gv-order.opam', 'gv-order.opam.locked') }}
 
       - name: Create opam switch
         if: steps.opam-cache.outputs.cache-hit != 'true'
@@ -74,13 +74,10 @@ jobs:
           eval "$(opam env)"
           make check
 
-      - name: Upload assumption report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: assumption-report
-          path: _build/check/report.txt
-          if-no-files-found: ignore
+      - name: Notation tests
+        run: |
+          eval "$(opam env)"
+          make test
 
   docker:
     if: github.event_name == 'workflow_dispatch' && inputs.docker
@@ -89,4 +86,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Docker build (builds and runs make check)
-        run: docker build -t spo-lr-df .
+        run: docker build -t gv-order .

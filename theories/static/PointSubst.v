@@ -1,1162 +1,678 @@
-(** * Point substitution (spec §9, sharp edges 56, 57, 65)
+(** * Point substitution (stage S2)
 
-    Substituting points for point variables in types, constraints,
-    environments, hypotheses and futures, and the transport of every
-    fact of the static system along a substitution. *)
+    The lemmas on points, constraints, types and contexts that
+    [typed_pinst] (static/PointSubstTyped.v) uses: a derivation over Γ
+    instantiates along σ to a derivation over any Γ' that proves the
+    instantiated hypotheses of Γ ([hinst]). Terms mention no point and
+    stay. Session types carry no
+    free point variable, so σ leaves them alone and commutes with
+    unfolding and session substitution. A payload read at E-Send and
+    E-Recv is point-closed below its binder ([pscoped]), so σ moves only
+    its carrier ([pinst_payload_at]). The binders E-Box and E-Open lift σ
+    to [pup m σ] over the context [hc_open m C Γ]. *)
 
-From stdpp Require Import base strings gmap gmultiset relations.
-From LRGV Require Export static.FactTheory.
+From GV Require Export static.Weakening.
 
-(** Branch no-eq: [w_eq W] abbreviates equality and leaves W untyped. *)
-Implicit Types W : world.
+(** ** Points and constraints *)
 
-
-Set Default Proof Using "All".
-
-(** ** Point substitution (sharp edges 56, 57)
-
-    The body of a box is typed once, with the box's ιs as the point
-    variables 0, …, m-1 and every outer point variable shifted past
-    them. [typed_sem_rules] substitutes points for the variables. A
-    payload ∃ιs.T is scoped: its points are constants or among its m
-    binders, so substitution commutes with [payload_at]. *)
-
-Definition pshift (m : nat) : nat → point := λ a, pvar (a + m).
-
-Lemma pt_shift_0 x : pt_shift 0 x = x.
-Proof. destruct x as [p b o]. unfold pt_shift. simpl. f_equal. lia. Qed.
-
-Lemma pt_inst_pvar_at σ a : pt_inst σ (pvar a) = σ a.
-Proof. unfold pt_inst, pvar. simpl. apply pt_shift_0. Qed.
-
-Lemma pt_inst_shift σ n x : pt_inst σ (pt_shift n x) = pt_shift n (pt_inst σ x).
+(** Instantiating below m binders, then closing them with σ(xs), is
+    closing them with xs, then instantiating. *)
+Lemma plist_pup σ xs a :
+  pt_inst (plist (pt_inst σ <$> xs)) (pup (length xs) σ a) = pt_inst σ (plist xs a).
 Proof.
-  destruct x as [p b o]. unfold pt_inst, pt_shift. simpl.
-  destruct (pn_inst σ p). destruct b; unfold pt_polar, pt_dual; simpl; f_equal; lia.
+  unfold pup. case_decide.
+  - rewrite pt_inst_pvar_at. unfold plist. rewrite list_lookup_fmap, length_fmap.
+    destruct (xs !! a) eqn:E; [done|]. apply lookup_ge_None in E. lia.
+  - rewrite pt_inst_comp. unfold plist at 2. rewrite lookup_ge_None_2 by lia.
+    rewrite pt_inst_pvar_at. rewrite (pt_inst_ext _ pvar), pt_inst_pvar; [done|].
+    intros b. unfold compose. rewrite pt_inst_pvar_at. apply plist_shift. by rewrite length_fmap.
 Qed.
 
-Lemma pt_inst_dual σ x : pt_inst σ (pt_dual x) = pt_dual (pt_inst σ x).
-Proof. destruct x as [p [] o]; unfold pt_inst; simpl; [done|by rewrite pt_dual_dual]. Qed.
-
-Lemma pt_inst_payload σ x i : pt_inst σ (pt_payload x i) = pt_payload (pt_inst σ x) i.
-Proof. destruct x as [p [] o]; reflexivity. Qed.
-
-Lemma pt_name_inst σ x : pt_name (pt_inst σ x) = pt_name (pn_inst σ (pt_name x)).
-Proof. destruct x as [p [] o]; done. Qed.
-
-Lemma pn_inst_comp τ σ p : pt_inst τ (pn_inst σ p) = pn_inst (pt_inst τ ∘ σ) p.
+Lemma pinst_ty_inst σ xs T :
+  pinst_ty σ (ty_inst xs T) = ty_inst (pt_inst σ <$> xs) (pinst_ty (pup (length xs) σ) T).
 Proof.
-  induction p as [a|a|p IH b i]; simpl; [done|done|].
-  by rewrite pt_inst_payload, pt_inst_shift, IH.
+  unfold ty_inst. rewrite !pinst_ty_comp. apply pinst_ty_ext. intros a. unfold compose.
+  by rewrite plist_pup.
 Qed.
 
-Lemma pt_inst_comp τ σ x : pt_inst τ (pt_inst σ x) = pt_inst (pt_inst τ ∘ σ) x.
+Lemma pt_inst_plist_inst σ xs u :
+  pt_inst σ (pt_inst (plist xs) u) = pt_inst (plist (pt_inst σ <$> xs)) (pt_inst (pup (length xs) σ) u).
 Proof.
-  destruct x as [n b o]. unfold pt_inst at 2 3. simpl.
-  destruct b; simpl; [|rewrite pt_inst_dual]; by rewrite pt_inst_shift, pn_inst_comp.
+  rewrite !pt_inst_comp. apply pt_inst_ext. intros a. unfold compose. by rewrite plist_pup.
 Qed.
 
-Lemma pn_inst_ext_root σ τ p :
-  (∀ a, pn_root p = NVar a → σ a = τ a) → pn_inst σ p = pn_inst τ p.
-Proof. induction p as [a|a|p IH b i]; simpl; intros H; [done|by apply H|by rewrite IH..]. Qed.
+Lemma pt_inst_sel σ x i : pt_inst σ (sel_pt x i) = sel_pt (pt_inst σ x) i.
+Proof. unfold sel_pt. by rewrite pt_inst_dual, pt_inst_field. Qed.
 
-Lemma pt_inst_ext_root σ τ x :
-  (∀ a, pt_root x = NVar a → σ a = τ a) → pt_inst σ x = pt_inst τ x.
-Proof. intros H. unfold pt_inst. do 2 f_equal. by apply pn_inst_ext_root. Qed.
+Lemma pt_inst_bra σ x i : pt_inst σ (bra_pt x i) = bra_pt (pt_inst σ x) i.
+Proof. unfold bra_pt. by rewrite pt_inst_field. Qed.
 
-Lemma pt_inst_ext σ τ x : (∀ a, σ a = τ a) → pt_inst σ x = pt_inst τ x.
-Proof. intros H. apply pt_inst_ext_root. auto. Qed.
-
-Lemma pn_inst_pvar p : pn_inst pvar p = Pt p 0.
-Proof. induction p as [a|a|p IH b i]; simpl; [done|done|by rewrite IH..]. Qed.
-
-Lemma pt_inst_pvar x : pt_inst pvar x = x.
+Lemma fact_map_ext_scoped k σ τ g :
+  fact_scoped k g → (∀ a, a < k → σ a = τ a) → fact_map (pt_inst σ) g = fact_map (pt_inst τ) g.
 Proof.
-  destruct x as [p b o]. unfold pt_inst. simpl. rewrite pn_inst_pvar.
-  destruct b; unfold pt_polar, pt_dual, pt_shift; simpl; f_equal; lia.
+  destruct g as [x y]. intros [Hx Hy] H. simpl. f_equal; apply pt_inst_ext_root; intros a Ha.
+  - apply H. apply pn_vb_root in Hx as (b & Hb & ?). unfold pt_root in Ha. congruence.
+  - apply H. apply pn_vb_root in Hy as (b & Hb & ?). unfold pt_root in Ha. congruence.
 Qed.
 
-Lemma pn_inst_const σ p a : pn_root p = NConst a → pn_inst σ p = Pt p 0.
+Lemma plist_open xs env a :
+  a < length xs + length env →
+  pt_inst (plist xs) (pup (length xs) (plist env) a) = plist (xs ++ env) a.
 Proof.
-  induction p as [a'|a'|p IH b i]; simpl; intros H; [done|done|by rewrite (IH H)..].
+  intros Ha. unfold pup. case_decide.
+  - rewrite pt_inst_pvar_at. unfold plist. rewrite lookup_app_l by lia.
+    destruct (xs !! a) eqn:E; [done|]. apply lookup_ge_None in E. lia.
+  - rewrite pt_inst_comp. rewrite (pt_inst_ext _ pvar), pt_inst_pvar.
+    + unfold plist. rewrite lookup_app_r by lia.
+      destruct (env !! (a - length xs)) eqn:E; [done|]. apply lookup_ge_None in E. lia.
+    + intros b. unfold compose. rewrite pt_inst_pvar_at. by apply plist_shift.
 Qed.
 
-Lemma pt_inst_const σ x a : pt_root x = NConst a → pt_inst σ x = x.
+Lemma bcs_at_iff C xs g :
+  bcs_at C xs g ↔ ∃ f0, bc_facts C f0 ∧ fact_scoped (length xs + length (bc_env C)) f0 ∧
+    g = fact_map (pt_inst (plist (xs ++ bc_env C))) f0.
 Proof.
-  destruct x as [p b o]. intros H. unfold pt_inst. simpl. rewrite (pn_inst_const σ p a H).
-  destruct b; unfold pt_polar, pt_dual, pt_shift; simpl; f_equal; lia.
-Qed.
-
-
-(** Lifting composes, and the identity lifts to itself. *)
-Lemma pup_ext n σ τ a : (∀ b, σ b = τ b) → pup n σ a = pup n τ a.
-Proof. intros H. unfold pup. by rewrite H. Qed.
-
-Lemma pup_pvar n a : pup n pvar a = pvar a.
-Proof.
-  unfold pup. destruct (decide (a < n)); [done|].
-  rewrite pt_inst_pvar_at. unfold pvar. f_equal. f_equal. lia.
-Qed.
-
-Lemma pup_comp τ σ n a : pt_inst (pup n τ) (pup n σ a) = pup n (pt_inst τ ∘ σ) a.
-Proof.
-  unfold pup at 2 3. destruct (decide (a < n)).
-  - rewrite pt_inst_pvar_at. unfold pup. by rewrite decide_True.
-  - change ((pt_inst τ ∘ σ) (a - n)) with (pt_inst τ (σ (a - n))).
-    rewrite !pt_inst_comp. apply pt_inst_ext. intros b. simpl.
-    rewrite pt_inst_pvar_at. unfold pup. rewrite decide_False by lia.
-    by replace (b + n - n) with b by lia.
-Qed.
-
-Lemma bcs_comp τ σ C : bcs_inst τ (bcs_inst σ C) = bcs_inst (pt_inst τ ∘ σ) C.
-Proof.
-  destruct C as [env P]. unfold bcs_inst. simpl. f_equal.
-  rewrite <-list_fmap_compose. apply list_fmap_ext. intros _ x _. apply pt_inst_comp.
-Qed.
-
-Lemma bcs_pvar C : bcs_inst pvar C = C.
-Proof.
-  destruct C as [env P]. unfold bcs_inst. simpl. f_equal.
-  rewrite <-(list_fmap_id env) at 2. apply list_fmap_ext. intros _ x _. apply pt_inst_pvar.
-Qed.
-
-Lemma pinst_ty_ext T : ∀ σ τ, (∀ a, σ a = τ a) → pinst_ty σ T = pinst_ty τ T.
-Proof. apply tinst_ext. Qed.
-
-Lemma pinst_ty_comp T : ∀ τ σ, pinst_ty τ (pinst_ty σ T) = pinst_ty (pt_inst τ ∘ σ) T.
-Proof. apply tinst_comp. Qed.
-
-Lemma pinst_ty_pvar T : pinst_ty pvar T = T.
-Proof. apply tinst_pvar. Qed.
-
-(** Point instances leave session types alone, so they commute with
-    session instances. *)
-Lemma pinst_sinst σ τ T : pinst_ty σ (sinst_ty τ T) = sinst_ty τ (pinst_ty σ T).
-Proof.
-  revert σ τ. induction T; intros σ τ; simpl; f_equal; auto.
-Qed.
-
-(** Instantiating a list after lifting past it. *)
-Lemma plist_shift xs m b : length xs = m → plist xs (b + m) = pvar b.
-Proof.
-  intros Hxs. unfold plist. rewrite lookup_ge_None_2 by lia.
-  unfold pvar. f_equal. f_equal. lia.
-Qed.
-
-Lemma plist_pup_shift xs m σ a :
-  length xs = m → pt_inst (pt_inst (plist xs) ∘ pup m σ) (pshift m a) = σ a.
-Proof.
-  intros Hxs. unfold pshift. rewrite pt_inst_pvar_at. simpl.
-  unfold pup. rewrite decide_False by lia. replace (a + m - m) with a by lia.
-  rewrite pt_inst_comp. transitivity (pt_inst pvar (σ a)); [|apply pt_inst_pvar].
-  apply pt_inst_ext. intros b. simpl. rewrite pt_inst_pvar_at. by apply plist_shift.
-Qed.
-
-Lemma plist_pup_comm xs n σ a :
-  length xs = n →
-  pt_inst (plist (pt_inst σ <$> xs)) (pup n σ a) = pt_inst σ (plist xs a).
-Proof.
-  intros Hxs. unfold pup. destruct (decide (a < n)).
-  - rewrite pt_inst_pvar_at. unfold plist.
-    destruct (lookup_lt_is_Some_2 xs a) as [x Hx]; [lia|].
-    by rewrite list_lookup_fmap, Hx.
-  - assert (plist xs a = pvar (a - n)) as ->.
-    { unfold plist. rewrite lookup_ge_None_2 by lia. by rewrite Hxs. }
-    rewrite pt_inst_pvar_at, pt_inst_comp.
-    transitivity (pt_inst pvar (σ (a - n))); [|apply pt_inst_pvar].
-    apply pt_inst_ext. intros b. simpl. rewrite pt_inst_pvar_at.
-    apply plist_shift. by rewrite length_fmap.
-Qed.
-
-(** ** Constraints under substitution (sharp edges 65)
-
-    C[σ] at xs[σ] holds when C at xs does: the facts of the one are the
-    facts of the other, substituted ([bcs_open_inst]). *)
-
-Lemma plist_pup_inst xs σ z :
-  pt_inst (plist (pt_inst σ <$> xs)) (pt_inst (pup (length xs) σ) z)
-  = pt_inst σ (pt_inst (plist xs) z).
-Proof.
-  rewrite !pt_inst_comp. apply pt_inst_ext. intros a. unfold compose.
-  by apply plist_pup_comm.
-Qed.
-
-Lemma bcs_hold_inst (eq eq' lt lt' : point → point → Prop) σ C xs :
-  (∀ x y, eq x y → eq' (pt_inst σ x) (pt_inst σ y)) →
-  (∀ x y, lt x y → lt' (pt_inst σ x) (pt_inst σ y)) →
-  bcs_hold eq lt C xs → bcs_hold eq' lt' (bcs_inst σ C) (pt_inst σ <$> xs).
-Proof.
-  intros He Hl H g Hg. rewrite length_fmap in Hg.
-  apply bcs_open_inst in Hg as (g0 & Hg0 & ->). specialize (H g0 Hg0).
-  destruct g0; simpl in *; rewrite !plist_pup_inst; auto.
-Qed.
-
-(** A constraint without outer points: its open facts are its scoped
-    facts. *)
-Lemma bcs_open_nil n P g : bcs_open n (BCs [] P) g ↔ P g ∧ fact_scoped n g.
-Proof.
-  unfold bcs_open. simpl. rewrite Nat.add_0_r.
-  assert (∀ f, fact_map (pt_inst (pup n (plist []))) f = f) as E.
-  { intros f. transitivity (fact_map id f); [|by destruct f].
-    apply fact_map_ext. intros x. unfold id. rewrite <-(pt_inst_pvar x) at 2.
-    apply pt_inst_ext. intros a. unfold pup. destruct (decide (a < n)); [done|].
-    unfold plist. simpl. rewrite pt_inst_pvar_at. unfold pvar. f_equal. f_equal. lia. }
   split.
-  - intros (f & Hf & Hs & ->). by rewrite E.
-  - intros [Hg Hs]. exists g. by rewrite E.
+  - intros (g0 & (f0 & Hf & Hs & ->) & ->). exists f0. split_and!; [done|done|].
+    rewrite fact_map_comp, (fact_map_ext _ (pt_inst (pt_inst (plist xs) ∘ pup (length xs) (plist (bc_env C)))))
+      by (intros; apply pt_inst_comp).
+    apply fact_map_ext_scoped with (k := length xs + length (bc_env C)); [done|].
+    intros a Ha. unfold compose. by apply plist_open.
+  - intros (f0 & Hf & Hs & ->). eexists. split; [exists f0; split_and!; [done|done|done]|].
+    symmetry. rewrite fact_map_comp, (fact_map_ext _ (pt_inst (pt_inst (plist xs) ∘ pup (length xs) (plist (bc_env C)))))
+      by (intros; apply pt_inst_comp).
+    apply fact_map_ext_scoped with (k := length xs + length (bc_env C)); [done|].
+    intros a Ha. unfold compose. by apply plist_open.
 Qed.
 
-Lemma bcs_hold_intro (eq lt : point → point → Prop) P xs :
-  (∀ g, P g → fact_scoped (length xs) g → fact_holds eq lt (fact_map (pt_inst (plist xs)) g)) →
-  bcs_hold eq lt (BCs [] P) xs.
-Proof. intros H g Hg. apply bcs_open_nil in Hg as [? ?]. auto. Qed.
-
-(** A recursive call. The force at ys gets C[ys/ιs] from the body's
-    own hypothesis (C, xs) when every fact of the instance is a fact of
-    the hypothesis, C[ys/ιs] ⊆ C[xs/ιs] (sharp edges 65). No rule of
-    its own is needed. *)
-Lemma bcs_hold_sub W Ψ C xs ys :
-  (C, xs) ∈ Ψ →
-  (∀ g, bcs_open (length ys) C g → ∃ g', bcs_open (length xs) C g' ∧
-     fact_map (pt_inst (plist ys)) g = fact_map (pt_inst (plist xs)) g') →
-  bcs_hold (seqs W Ψ) (slt W Ψ) C ys.
+Lemma plist_inst_lookup σ l a :
+  a < length l → plist (pt_inst σ <$> l) a = pt_inst σ (plist l a).
 Proof.
-  intros Hg H g Hg0. destruct (H g Hg0) as (g' & Hg' & ->).
-  exact (hyp_in_fact W Ψ C xs Hg g' Hg').
+  intros Ha. unfold plist. rewrite list_lookup_fmap.
+  destruct (l !! a) eqn:E; [done|]. apply lookup_ge_None in E. lia.
 Qed.
 
-Lemma pn_vb_root k p a : pn_vb k p → pn_root p = NVar a → a < k.
-Proof. induction p as [b|b|q IH b i]; simpl; [done|congruence|exact IH..]. Qed.
-
-Lemma pt_inst_ids k x : pn_vb k (pt_name x) → pt_inst (plist (ids k)) x = x.
+Lemma bcs_at_inst τ C xs g :
+  bcs_at (bcs_inst τ C) (pt_inst τ <$> xs) g ↔ ∃ g0, bcs_at C xs g0 ∧ g = fact_map (pt_inst τ) g0.
 Proof.
-  intros Hx. rewrite <-(pt_inst_pvar x) at 2. apply pt_inst_ext_root. intros a Ha.
-  pose proof (pn_vb_root _ _ _ Hx Ha) as Hlt. unfold plist, ids.
-  by rewrite list_lookup_fmap, lookup_seq_lt by done.
+  destruct C as [env P]. rewrite bcs_at_iff. setoid_rewrite bcs_at_iff. simpl.
+  rewrite !length_fmap, <-fmap_app.
+  assert (∀ f0, fact_scoped (length xs + length env) f0 →
+            fact_map (pt_inst (plist (pt_inst τ <$> xs ++ env))) f0 =
+            fact_map (pt_inst τ) (fact_map (pt_inst (plist (xs ++ env))) f0)) as Heq.
+  { intros f0 Hs. symmetry. rewrite fact_map_comp, (fact_map_ext _ (pt_inst (pt_inst τ ∘ plist (xs ++ env))))
+      by (intros; apply pt_inst_comp).
+    apply fact_map_ext_scoped with (k := length xs + length env); [done|].
+    intros a Ha. unfold compose. symmetry. apply plist_inst_lookup. rewrite length_app. lia. }
+  split.
+  - intros (f0 & Hf & Hs & ->). eexists. split; [exists f0; split_and!; [done|done|done]|].
+    by apply Heq.
+  - intros (g0 & (f0 & Hf & Hs & ->) & ->). exists f0. split_and!; [done|done|]. by rewrite Heq.
 Qed.
 
-Lemma pn_vb_inst k ys p :
-  Forall (λ y, pn_vb k (pt_name y)) ys → pn_vb (length ys) p →
-  pn_vb k (pt_name (pn_inst (plist ys) p)).
+(** ** Types *)
+
+Lemma pscoped_ext T : ∀ k σ τ, pscoped k T → (∀ a, a < k → σ a = τ a) → pinst_ty σ T = pinst_ty τ T.
 Proof.
-  intros Hys. induction p as [b|b|q IH b i]; simpl; [done| |exact IH..].
-  intros Hb. unfold plist. destruct (lookup_lt_is_Some_2 ys b) as [y Hy]; [done|].
-  rewrite Hy. rewrite Forall_lookup in Hys. exact (Hys b y Hy).
-Qed.
-
-Lemma fact_scoped_inst k ys g :
-  Forall (λ y, pn_vb k (pt_name y)) ys → fact_scoped (length ys) g →
-  fact_scoped k (fact_map (pt_inst (plist ys)) g).
-Proof.
-  intros Hys. destruct g as [x y]; simpl; intros [Hx Hy];
-    rewrite !pt_name_inst; split; by apply pn_vb_inst.
-
-Qed.
-
-(** The recursive call for a constraint without outer points, whose
-    body hypothesis is C at its own ιs: C[ys/ιs] ⊆ C. *)
-Lemma bcs_hold_self W Ψ P ys :
-  (BCs [] P, ids (length ys)) ∈ Ψ → Forall (λ y, pn_vb (length ys) (pt_name y)) ys →
-  (∀ g, P g → fact_scoped (length ys) g → P (fact_map (pt_inst (plist ys)) g)) →
-  bcs_hold (seqs W Ψ) (slt W Ψ) (BCs [] P) ys.
-Proof.
-  intros Hg Hys H. apply (bcs_hold_sub W Ψ _ (ids (length ys))); [done|].
-  intros g Hg0. apply bcs_open_nil in Hg0 as [HP Hs].
-  exists (fact_map (pt_inst (plist ys)) g).
-  pose proof (fact_scoped_inst _ _ _ Hys Hs) as Hs'. split.
-  - unfold ids. rewrite length_fmap, length_seq. apply bcs_open_nil. split; [by apply H|done].
-  - destruct (fact_map (pt_inst (plist ys)) g) as [x y]; simpl in *;
-      destruct Hs' as [Hx Hy]; by rewrite !pt_inst_ids.
-Qed.
-
-Lemma hyps_comp τ σ Ψ : hyps_inst τ (hyps_inst σ Ψ) = hyps_inst (pt_inst τ ∘ σ) Ψ.
-Proof.
-  unfold hyps_inst. rewrite <-list_fmap_compose. apply list_fmap_ext. intros _ [C xs] _. simpl.
-  rewrite bcs_comp. f_equal.
-  rewrite <-list_fmap_compose. apply list_fmap_ext. intros _ x _. apply pt_inst_comp.
-Qed.
-
-Lemma hyps_inst_ext σ τ Ψ : (∀ a, σ a = τ a) → hyps_inst σ Ψ = hyps_inst τ Ψ.
-Proof.
-  intros H. unfold hyps_inst. apply list_fmap_ext. intros _ [C xs] _. simpl. f_equal.
-  - by apply bcs_inst_ext.
-  - apply list_fmap_ext. intros _ x _. by apply pt_inst_ext.
-Qed.
-
-Lemma ids_pup m σ : pt_inst (pup m σ) <$> ids m = ids m.
-Proof.
-  unfold ids. rewrite <-list_fmap_compose. apply list_fmap_ext. intros i x Hx. simpl.
-  rewrite pt_inst_pvar_at. unfold pup. apply lookup_seq in Hx as [-> ?].
-  by rewrite decide_True by lia.
-Qed.
-
-Lemma ids_plist xs τ : pt_inst (pt_inst (plist xs) ∘ pup (length xs) τ) <$> ids (length xs) = xs.
-Proof.
-  unfold ids. rewrite <-list_fmap_compose. apply list_eq. intros i. rewrite list_lookup_fmap.
-  destruct (decide (i < length xs)).
-  - rewrite lookup_seq_lt by done. simpl. rewrite pt_inst_pvar_at.
-    change (Some (pt_inst (plist xs) (pup (length xs) τ i)) = xs !! i). unfold pup.
-    rewrite decide_True by done. rewrite pt_inst_pvar_at. unfold plist.
-    destruct (lookup_lt_is_Some_2 xs i) as [x Hx]; [done|]. by rewrite Hx.
-  - rewrite lookup_seq_ge by lia. simpl. by rewrite lookup_ge_None_2 by lia.
-Qed.
-
-Lemma pn_root_inst σ p :
-  pt_root (pn_inst σ p) = match pn_root p with NVar a => pt_root (σ a) | q => q end.
-Proof. induction p as [a|a|p IH b i]; simpl; [done|done|exact IH..]. Qed.
-
-Lemma pt_root_inst σ x :
-  pt_root (pt_inst σ x) = match pt_root x with NVar a => pt_root (σ a) | q => q end.
-Proof. destruct x as [p [] o]; exact (pn_root_inst σ p). Qed.
-
-(** A hypothesis fact, substituted, is a fact of the substituted hypothesis. *)
-Lemma hyp_fact_inst (eq lt : point → point → Prop) (pk : point → Prop) σ Ψ g :
-  hyps_hold eq lt pk (hyps_inst σ Ψ) → hyp_fact Ψ g → fact_holds eq lt (fact_map (pt_inst σ) g).
-Proof.
-  intros H (C & xs & Hg & g0 & Hg0 & ->).
-  assert ((bcs_inst σ C, pt_inst σ <$> xs) ∈ hyps_inst σ Ψ) as Hg'.
-  { unfold hyps_inst. apply list_elem_of_fmap. by exists (C, xs). }
-  destruct (H _ _ Hg') as [HC _].
-  assert (bcs_open (length (pt_inst σ <$> xs)) (bcs_inst σ C)
-            (fact_map (pt_inst (pup (length xs) σ)) g0)) as Ho.
-  { rewrite length_fmap. apply bcs_open_inst. by exists g0. }
-  specialize (HC _ Ho). destruct g0; simpl in *; by rewrite <-!plist_pup_inst.
-Qed.
-
-Lemma hyps_hold_inst (eq eq' lt lt' : point → point → Prop) (pk pk' : point → Prop) σ Ψ :
-  (∀ x y, eq x y → eq' (pt_inst σ x) (pt_inst σ y)) →
-  (∀ x y, lt x y → lt' (pt_inst σ x) (pt_inst σ y)) → (∀ x, pk x → pk' (pt_inst σ x)) →
-  hyps_hold eq lt pk Ψ → hyps_hold eq' lt' pk' (hyps_inst σ Ψ).
-Proof.
-  intros He Hl Hk H C xs Hg. unfold hyps_inst in Hg.
-  apply list_elem_of_fmap in Hg as ([C0 xs0] & Eg & Hg). injection Eg as -> ->.
-  destruct (H C0 xs0 Hg) as [H1 H2]. split; [by eapply bcs_hold_inst|].
-  apply Forall_fmap. eapply Forall_impl; [exact H2|]. intros x Hx. by apply Hk.
-Qed.
-
-Lemma skn_pinst W (pk : point → Prop) σ Ψ x :
-  world_wf W → (∀ x y, pt_root x = pt_root y → pk x → pk y) → (∀ x, pt_known W x → pk x) →
-  (∀ C xs, (C, xs) ∈ hyps_inst σ Ψ → Forall pk xs) → skn W Ψ x → pk (pt_inst σ x).
-Proof.
-  intros HW Hr Hk H [Hx|(C & xs & y & Hg & Hy & E)].
-  - destruct (wf_names_const _ HW _ Hx) as [a Ha]. rewrite (pt_inst_const σ x a Ha). by apply Hk.
-  - assert ((bcs_inst σ C, pt_inst σ <$> xs) ∈ hyps_inst σ Ψ) as Hg'
-      by (unfold hyps_inst; apply list_elem_of_fmap; by exists (C, xs)).
-    pose proof (H _ _ Hg') as Hf. rewrite Forall_forall in Hf.
-    apply (Hr (pt_inst σ y)); [by rewrite !pt_root_inst, E|].
-    apply Hf. by apply list_elem_of_fmap_2.
-Qed.
-
-(** ** Point scoping: every point variable lies below k *)
-
-Definition pt_scoped (k : nat) (x : point) : Prop := ∀ a, pt_root x = NVar a → a < k.
-
-Definition opt_scoped (k : nat) (o : option point) : Prop :=
-  match o with Some x => pt_scoped k x | None => True end.
-
-Definition lb_scoped (k : nat) (lb : lbound) : Prop :=
-  match lb with LPt x => pt_scoped k x | _ => True end.
-
-(** The outer points of a constraint live outside its binder. *)
-Definition bcs_scoped (k : nat) (C : bcs) : Prop := Forall (pt_scoped k) (bc_env C).
-
-Fixpoint pscoped (k : nat) (T : ty) : Prop :=
-  match T with
-  | TUnit => True
-  | TLolli ub lb T1 U => opt_scoped k ub ∧ opt_scoped k lb ∧ pscoped k T1 ∧ pscoped k U
-  | TProd T1 U | TSum T1 U => pscoped k T1 ∧ pscoped k U
-  | TBox n _ C T1 => bcs_scoped k C ∧ pscoped (n + k) T1
-  | TSess _ x => pt_scoped k x
-  | TEx lb n C T1 => lb_scoped k lb ∧ bcs_scoped k C ∧ pscoped (n + k) T1
-  | TPt x => pt_scoped k x
-  end.
-
-Lemma pinst_ty_ext_scoped T : ∀ k σ τ,
-  pscoped k T → (∀ a, a < k → σ a = τ a) → pinst_ty σ T = pinst_ty τ T.
-Proof.
-  assert (∀ k σ τ x, pt_scoped k x → (∀ a, a < k → σ a = τ a) →
-            pt_inst σ x = pt_inst τ x) as Hpt.
+  assert (∀ k σ τ x, pt_pscoped k x → (∀ a, a < k → σ a = τ a) → pt_inst σ x = pt_inst τ x) as Hpt.
   { intros k σ τ x Hx H. apply pt_inst_ext_root. intros a Ha. by apply H, Hx. }
-  assert (∀ k n σ τ, (∀ a, a < k → σ a = τ a) → ∀ a, a < n + k → pup n σ a = pup n τ a) as Hup.
-  { intros k n σ τ H a Ha. unfold pup. destruct (decide (a < n)); [done|].
-    rewrite H; [done|lia]. }
-  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n kk C T1 IH | s x
-                 | lb n C T1 IH | x];
-    intros k σ τ HT H; simpl in *.
-  - done.
-  - destruct HT as (Hub & Hlb & H1 & H2).
-    f_equal; [destruct ub; simpl in *; [f_equal; eauto|done]
-             |destruct lb; simpl in *; [f_equal; eauto|done]|eauto|eauto].
-  - destruct HT. f_equal; eauto.
-  - destruct HT. f_equal; eauto.
-  - destruct HT as (HC & H1). f_equal.
-    + unfold bcs_inst. f_equal. apply list_fmap_ext. intros i x Hx.
-      unfold bcs_scoped in HC. rewrite Forall_forall in HC. eapply Hpt; [|exact H].
-      apply HC. by eapply list_elem_of_lookup_2.
-    + eapply IH; [done|]. by apply Hup.
+  assert (∀ k σ τ, (∀ a, a < k → σ a = τ a) → ∀ n a, a < n + k → pup n σ a = pup n τ a) as Hup.
+  { intros k σ τ H n a Ha. unfold pup. case_decide; [done|]. rewrite H by lia. done. }
+  induction T; intros k0 σ τ HT H; simpl in *; destruct_and?; try done.
+  - f_equal; try by eauto.
+    + destruct ub; simpl; try done. f_equal. eauto.
+    + destruct lb; simpl; try done. f_equal. eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal.
+    + destruct C as [env P]. unfold bcs_inst. simpl in *. f_equal.
+      apply list_fmap_ext. intros i x Hi. eapply Hpt; [|done].
+      by eapply Forall_lookup_1.
+    + destruct ub; simpl; [|done]. f_equal. eapply Hpt; [by eauto|]. by apply Hup.
+    + eapply IHT; [done|]. by apply Hup.
   - f_equal. eauto.
-  - destruct HT as (Hlb & HC & H1). f_equal.
-    + destruct lb; simpl in *; [done|done|f_equal; eauto].
-    + unfold bcs_inst. f_equal. apply list_fmap_ext. intros i x Hx.
-      unfold bcs_scoped in HC. rewrite Forall_forall in HC. eapply Hpt; [|exact H].
-      apply HC. by eapply list_elem_of_lookup_2.
-    + eapply IH; [done|]. by apply Hup.
-  - f_equal. eauto.
+  - f_equal.
+    + destruct lb; simpl; try done. f_equal. eauto.
+    + destruct C as [env P]. unfold bcs_inst. simpl in *. f_equal.
+      apply list_fmap_ext. intros i x Hi. eapply Hpt; [|done].
+      by eapply Forall_lookup_1.
+    + eapply IHT; [done|]. by apply Hup.
 Qed.
 
-Lemma payload_pinst σ m T x :
+Lemma pinst_payload_at σ m T x :
   pscoped m T → pinst_ty σ (payload_at m T x) = payload_at m T (pt_inst σ x).
 Proof.
   intros HT. unfold payload_at, ty_inst. rewrite pinst_ty_comp.
-  apply (pinst_ty_ext_scoped T m); [done|]. intros a Ha. simpl. unfold plist, payload_pts.
-  rewrite !list_lookup_fmap, !lookup_seq_lt by done. simpl. apply pt_inst_payload.
+  apply (pscoped_ext T m); [done|]. intros a Ha. unfold compose.
+  assert (∀ y, payload_pts y m !! a = Some (y·a)) as Hl.
+  { intros y. unfold payload_pts. rewrite list_lookup_fmap, lookup_seq_lt by done. done. }
+  rewrite (plist_lookup _ _ _ (Hl x)), (plist_lookup _ _ _ (Hl (pt_inst σ x))). apply pt_inst_field.
 Qed.
 
-(** E-Const asks the payload of send and recv to be scoped by its m
-    binders (§4: "P ::= ∃ιs. T, all points of T bound"). *)
-Definition kscoped (k : konst) (T : ty) : Prop :=
-  match k, T with
-  | KSend, TLolli _ _ (TProd _ (TSess (SSeq (SSnd m P) _) _)) _ => pscoped m P
-  | KRecv, TLolli _ _ (TSess (SSeq (SRcv m P) _) _) _ => pscoped m P
-  | _, _ => True
-  end.
+Lemma pinst_sinst T : ∀ σ τ, pinst_ty σ (sinst_ty τ T) = sinst_ty τ (pinst_ty σ T).
+Proof. induction T; intros σ τ; simpl; congruence. Qed.
 
-Lemma opt_heads_pinst σ o : opt_heads (pt_inst σ <$> o) = set_map (pt_inst σ) (opt_heads o).
-Proof. destruct o; simpl; [by rewrite set_map_singleton_L|by rewrite set_map_empty]. Qed.
-
-Lemma heads_pinst σ T : heads (pinst_ty σ T) = set_map (pt_inst σ) (heads T).
+Lemma eqT_pinst ρ T : ∀ U σ, eqT ρ T U → eqT ρ (pinst_ty σ T) (pinst_ty σ U).
 Proof.
-  induction T as [| ub lb T1 IH1 U IH2 | T1 IH1 U IH2 | T1 IH1 U IH2 | n k C T1 IH | s x
-                 | lb n C T1 IH | x];
-    simpl.
-  - by rewrite set_map_empty.
-  - apply opt_heads_pinst.
-  - by rewrite IH1, IH2, set_map_union_L.
-  - by rewrite IH1, IH2, set_map_union_L.
-  - by rewrite set_map_empty.
-  - by rewrite set_map_singleton_L, pt_inst_dual.
-  - destruct lb; simpl; [by rewrite set_map_empty|by rewrite set_map_empty|by rewrite set_map_singleton_L].
-  - by rewrite set_map_empty.
+  induction T; intros [] σ H; simpl in *; try done.
+  all: destruct_and?; subst; split_and?; eauto.
+  all: repeat case_match; subst; eauto.
 Qed.
 
-(** ** Facts survive substitution
+Lemma teq_pinst σ T U : teq T U → teq (pinst_ty σ T) (pinst_ty σ U).
+Proof. apply eqT_pinst. Qed.
 
-    A world knows constants only (wf_names_const). A fact about a point
-    with a variable root is reflexivity or program order, and both hold
-    of any instance. *)
-
-Definition node_inst (σ : nat → point) (a : node) : node :=
-  match a with NP x => NP (pt_inst σ x) | NV φ => NV φ end.
-
-Definition ends_pinst (σ : nat → point) (o : ends) : ends :=
-  match o with
-  | One e => One (e.1, pt_inst σ e.2)
-  | Both e1 e2 => Both (e1.1, pt_inst σ e1.2) (e2.1, pt_inst σ e2.2)
-  end.
-
-Definition tenv_pinst (σ : nat → point) (Θ : tenv) : tenv := ends_pinst σ <$> Θ.
-
-Lemma tenv_comp_pinst (R R' : point → point → Prop) σ Θ Θ1 Θ2 :
-  (∀ x y, R x y → R' (pt_inst σ x) (pt_inst σ y)) → tenv_comp R Θ Θ1 Θ2 →
-  tenv_comp R' (tenv_pinst σ Θ) (tenv_pinst σ Θ1) (tenv_pinst σ Θ2).
-Proof.
-  intros HR [Hj Hd]. split.
-  - intros c. unfold tenv_pinst. rewrite !lookup_fmap. pose proof (Hj c) as Hc.
-    destruct (Θ1 !! c), (Θ2 !! c), (Θ !! c); inversion Hc; subst; simpl; constructor.
-  - intros c e1 e2 H1 H2. unfold tenv_pinst in H1, H2. rewrite lookup_fmap in H1, H2.
-    destruct (Θ1 !! c) as [[e1'|]|] eqn:E1; simplify_eq/=.
-    destruct (Θ2 !! c) as [[e2'|]|] eqn:E2; simplify_eq/=.
-    destruct (Hd c e1' e2' E1 E2) as [He Hs]. split; [|done]. rewrite <-pt_inst_dual. by apply HR.
-Qed.
-
-
-(** ** General constraints of E-NewFresh (sharp edges 93)
-
-    A constraint C of one variable ι (the variable 0) whose every fact
-    relates a point of the fresh channel to an outer point. A point of
-    the fresh channel has the root ι, so it is ι+k, (ι+b)[i]+k and so on.
-    [fresh_lo C u p] is the fact u ≺ p with p on the fresh channel,
-    [fresh_hi C q v] the fact q ≺ v. [fresh_outer C u] reads an outer
-    point in the context of the rule. C may be infinite. *)
-
-(** [fresh_lo], [fresh_hi], [fresh_ok] and [fresh_outer] live in
-    types/Types.v, because the existential signature of new reads them. *)
-
-Lemma fresh_lo_inst σ C u p : fresh_lo (bcs_inst σ C) u p ↔ fresh_lo C u p.
-Proof. unfold fresh_lo. simpl. by rewrite length_fmap. Qed.
-
-Lemma fresh_hi_inst σ C q v : fresh_hi (bcs_inst σ C) q v ↔ fresh_hi C q v.
-Proof. unfold fresh_hi. simpl. by rewrite length_fmap. Qed.
-
-Lemma fresh_ok_inst σ C : fresh_ok C → fresh_ok (bcs_inst σ C).
-Proof. apply fresh_ok_shape; [done|]. simpl. by rewrite length_fmap. Qed.
-
-Lemma fresh_lt_inst σ C : fresh_lt (bcs_inst σ C) → fresh_lt C.
-Proof. apply fresh_lt_shape; [done|]. simpl. by rewrite length_fmap. Qed.
-
-
-Lemma pn_vb_var k p : pn_vb k p → ∃ b, pn_root p = NVar b ∧ b < k.
-Proof. induction p as [c|b|q IH b' i]; simpl; [done|by exists b|exact IH]. Qed.
-
-Lemma pt_inst_outer σ d d' env u :
-  pn_vb (S (length env)) (pt_name u) → pt_root u ≠ NVar 0 →
-  pt_inst (plist (d :: (pt_inst σ <$> env))) u = pt_inst σ (pt_inst (plist (d' :: env)) u).
-Proof.
-  intros Hs Hr. rewrite pt_inst_comp. apply pt_inst_ext_root. intros b Hb.
-  pose proof (pn_vb_root _ _ _ Hs Hb) as Hlt.
-  destruct b as [|j]; [done|]. unfold compose, plist. simpl. rewrite list_lookup_fmap.
-  destruct (lookup_lt_is_Some_2 env j) as [y Hy]; [lia|]. by rewrite Hy.
-Qed.
-
-Lemma fresh_outer_inst σ C u :
-  pn_vb (S (length (bc_env C))) (pt_name u) → pt_root u ≠ NVar 0 →
-  fresh_outer (bcs_inst σ C) u = pt_inst σ (fresh_outer C u).
-Proof. intros Hs Hr. unfold fresh_outer. simpl. by apply pt_inst_outer. Qed.
-
-(** ** Creation constraints at the static level (sharp edges 105)
-
-    Under the binder of new the outer points shift past ι. [cc_ok]
-    moves along a substitution of the outer points ([cc_ok_pinst]),
-    and the two earlier forms of the constraint, the ≺ facts of
-    sharp edges 93 with betweenness and the alias ι ≡ w of sharp edges
-    104, are special cases ([cc_ok_fresh]). *)
-
-Lemma pup1_0 σ : pup 1 σ 0 = pvar 0.
-Proof. unfold pup. by rewrite decide_True by lia. Qed.
-
-Lemma pt_inst_new τ p : τ 0 = pvar 0 → pt_root p = NVar 0 → pt_inst τ p = p.
-Proof.
-  intros H0 Hp. rewrite <-(pt_inst_pvar p) at 2. apply pt_inst_ext_root. intros a Ha.
-  rewrite Hp in Ha. injection Ha as <-. done.
-Qed.
-
-Lemma pt_inst_old τ x : (∀ a, τ (S a) = pvar (S a)) → pt_root x ≠ NVar 0 → pt_inst τ x = x.
-Proof.
-  intros H Hx. rewrite <-(pt_inst_pvar x) at 2. apply pt_inst_ext_root. intros [|a] Ha; [done|]. apply H.
-Qed.
-
-Lemma pt_root_up x : pt_root (pt_inst (λ a, pvar (a + 1)) x) ≠ NVar 0.
-Proof. rewrite pt_root_inst. destruct (pt_root x) as [c|a|q b i]; simpl; [done|intros [=]; lia|done]. Qed.
-
-Lemma up_pup σ x :
-  pt_inst (pup 1 σ) (pt_inst (λ a, pvar (a + 1)) x) = pt_inst (λ a, pvar (a + 1)) (pt_inst σ x).
-Proof.
-  rewrite !pt_inst_comp. apply pt_inst_ext. intros a. unfold compose. rewrite pt_inst_pvar_at.
-  unfold pup. rewrite decide_False by lia. by replace (a + 1 - 1) with a by lia.
-Qed.
-
-Lemma cc_open_outer C u : pt_root u ≠ NVar 0 →
-  pt_inst (pup 1 (plist (bc_env C))) u = pt_inst (λ a, pvar (a + 1)) (fresh_outer C u).
-Proof.
-  intros Hr. unfold fresh_outer. rewrite pt_inst_comp. apply pt_inst_ext_root. intros [|j] Hj; [done|].
-  unfold compose, pup. rewrite decide_False by lia. replace (S j - 1) with j by lia.
-  unfold plist. simpl. done.
-Qed.
-
-Lemma cc_ok_pinst σ peq plt peq' plt' C :
-  (∀ x y, peq x y → peq' (pt_inst σ x) (pt_inst σ y)) →
-  (∀ x y, plt x y → plt' (pt_inst σ x) (pt_inst σ y)) →
-  cc_ok peq plt C → cc_ok peq' plt' (bcs_inst σ C).
-Proof.
-  intros He Hl. apply (cc_ok_transfer peq plt peq' plt' C (bcs_inst σ C) (pt_inst (pup 1 σ))).
-  - intros x. apply pt_inst_shift.
-  - intros x i. apply pt_inst_payload.
-  - intros x. apply pt_inst_dual.
-  - intros p Hp. rewrite pt_inst_new; [done|apply pup1_0|done].
-  - intros x Hx. rewrite pt_root_inst. destruct (pt_root x) as [c|[|k]|q b i]; try done.
-
-    unfold pup. rewrite decide_False by lia. apply pt_root_up.
-  - intros p q Hp Hq. rewrite !pt_inst_new; [done|apply pup1_0|done|apply pup1_0|done].
-  - intros y Hy. exists y. split; [done|]. apply pt_inst_new; [apply pup1_0|done].
-  - intros x y (x0 & y0 & H & -> & ->). apply geq_base.
-    exists (pt_inst σ x0), (pt_inst σ y0). rewrite !up_pup. auto.
-  - intros x y (x0 & y0 & H & -> & ->). apply glt_base.
-    exists (pt_inst σ x0), (pt_inst σ y0). rewrite !up_pup. auto.
-  - intros g Hg. by apply bcs_open_inst.
-Qed.
-
-(** The constraints of sharp edges 93 are acyclic and conservative.
-    The model keeps the points of ι apart and betweenness closes every
-    path through ι. (The alias form of sharp edges 104 is gone on
-    branch no-eq.) *)
-Lemma cc_ok_fresh peq plt C : fresh_ok C → fresh_between plt C → cc_ok peq plt C.
-Proof.
-  set (op := pt_inst (pup 1 (plist (bc_env C)))).
-  assert (∀ p, pt_root p = NVar 0 → op p = p) as Hnew.
-  { intros p Hp. apply pt_inst_new; [apply pup1_0|done]. }
-  assert (∀ u, pt_root u ≠ NVar 0 → pt_root (op u) ≠ NVar 0) as Hold.
-  { intros u Hu. unfold op. rewrite cc_open_outer by done. apply pt_root_up. }
-  intros HC Hb1.
-  - apply (cc_model peq plt C id pofs
-      (λ u' p', ∃ u p, fresh_lo C u p ∧ u' = op u ∧ p' = op p)
-      (λ q' v', ∃ q v, fresh_hi C q v ∧ q' = op q ∧ v' = op v)).
-    + done.
-    + done.
-    + done.
-    + intros x y i E. unfold id in *. by subst.
-    + done.
-    + apply pofs_trans.
-    + intros p _. apply pofs_shift.
-    + intros p _. unfold pofs, pt_shift. simpl. split; [done|lia].
-    + apply pofs_irrefl.
-    + intros u' p' q' v' (u & p & Hu & -> & ->) (q & v & Hv & -> & ->) Hpq.
-      pose proof Hu as (_ & _ & Hp0 & Hu0). pose proof Hv as (_ & _ & Hq0 & Hv0).
-      rewrite (Hnew p Hp0), (Hnew q Hq0) in Hpq.
-      unfold op. rewrite !cc_open_outer by done. apply cc_up_lt. apply (Hb1 HC u p q v Hu Hv).
-      destruct Hpq as [->|Hp]; [by left|right; by apply pofs_ppo].
-    + intros a b (f & Hf & Hs & E).
-      destruct (HC f Hf Hs) as [(u & p & -> & Hu)|(q & v & -> & Hv)]; injection E as -> ->; unfold id.
-      * pose proof Hu as (_ & _ & Hp0 & Hu0). right; left. split_and!; [by apply Hold|by rewrite Hnew|].
-        exists (op u), (op p). split_and!; [by exists u, p|left; apply geq_refl|by left].
-      * pose proof Hv as (_ & _ & Hq0 & Hv0). right; right; left.
-        split_and!; [by rewrite Hnew|by apply Hold|].
-        exists (op q), (op v). split_and!; [by exists q, v|by left|left; apply geq_refl].
-Qed.
-
-Section transfer.
-  Context (W W1 : world) (σ : nat → point).
-  Context (HW : world_wf W) (HW1 : wext W W1).
-
-  Lemma pinst_eq x y : w_eq W x y → w_eq W1 (pt_inst σ x) (pt_inst σ y).
-  Proof.
-    intros Hxy. pose proof (wext_wf _ _ HW1) as Hwf.
-    destruct (wf_eq_supp _ HW x y Hxy) as [->|[Hx Hy]]; [apply (wf_eq_refl _ Hwf)|].
-    destruct (wf_names_const _ HW _ Hx) as [a Ha]. destruct (wf_names_const _ HW _ Hy) as [b Hb].
-    rewrite (pt_inst_const σ x a Ha), (pt_inst_const σ y b Hb).
-    destruct HW1 as (_ & He & Hl & _). auto.
-  Qed.
-
-  Lemma pinst_lt x y : w_lt W x y → w_lt W1 (pt_inst σ x) (pt_inst σ y).
-  Proof.
-    intros Hxy. pose proof (wext_wf _ _ HW1) as Hwf.
-    destruct (wf_lt_supp _ HW x y Hxy) as [Hp|[Hx Hy]].
-    - apply (wf_lt_ppo _ _ _ Hwf). revert Hp. apply ppo_map.
-      + intros z. apply pt_inst_shift.
-      + intros z. apply pt_inst_dual.
-    - destruct (wf_names_const _ HW _ Hx) as [a Ha]. destruct (wf_names_const _ HW _ Hy) as [b Hb].
-      rewrite (pt_inst_const σ x a Ha), (pt_inst_const σ y b Hb).
-    destruct HW1 as (_ & He & Hl & _). auto.
-  Qed.
-
-  Lemma konst_ty_pinst (peq peq' plt plt' : point → point → Prop) (pk pk' : point → Prop) k T :
-    (∀ x y, peq x y → peq' (pt_inst σ x) (pt_inst σ y)) →
-    (∀ x y, plt x y → plt' (pt_inst σ x) (pt_inst σ y)) →
-    (∀ x, pk x → pk' (pt_inst σ x)) →
-    kscoped k T → konst_ty peq plt pk k T →
-    konst_ty peq' plt' pk' k (pinst_ty σ T).
-  Proof.
-    intros Heq Hlt Hpk Hk.
-    induction 1 as [ub lb|m P S x Hh|m P S x|x|S1 S2 x H1|S1 S2 x H1|S1 S2 x H1 H2|S x
-                  |n kk C ub P xs ss Hxs HC HK Hss Hsc|S x Hx|i x Hx|x Hx] using konst_ty_case;
-
-      simpl in *.
-    - apply KTSpawn.
-    - rewrite payload_pinst, pt_inst_shift by done. apply KTSend. destruct (hbot P); [done|].
-      intros h Hh'. rewrite <-payload_pinst, heads_pinst in Hh' by done.
-      apply elem_of_map in Hh' as (h0 & -> & Hh0). by apply Hlt, Hh.
-    - rewrite payload_pinst, pt_inst_shift by done. apply KTRecv.
-    - apply KTClos.
-    - rewrite pt_inst_dual, pt_inst_payload. apply KTSel1. rewrite <-pt_inst_payload. by apply Hlt.
-    - rewrite pt_inst_dual, pt_inst_payload. apply KTSel2. rewrite <-pt_inst_payload. by apply Hlt.
-    - rewrite !pt_inst_payload. apply KTBra; rewrite <-pt_inst_payload, <-pt_inst_dual; by apply Hlt.
-    - rewrite pt_inst_dual. apply KTLink.
-    - assert (∀ a, pt_inst (plist (pt_inst σ <$> xs)) (pup n σ a) = pt_inst σ (plist xs a))
-        as Hc by (intros a; by apply plist_pup_comm).
-      assert (pt_inst (plist (pt_inst σ <$> xs)) <$> (pt_inst (pup n σ) <$> ub) =
-              pt_inst σ <$> (pt_inst (plist xs) <$> ub)) as E1.
-      { destruct ub; simpl; [|done]. f_equal. rewrite !pt_inst_comp.
-        apply pt_inst_ext. intros a. apply Hc. }
-      assert (ty_inst (pt_inst σ <$> xs) (pinst_ty (pup n σ) P) = pinst_ty σ (ty_inst xs P)) as E2.
-      { unfold ty_inst. rewrite !pinst_ty_comp. apply pinst_ty_ext. intros a. apply Hc. }
-      rewrite pinst_sinst, <-E1, <-E2. apply KTForce; [by rewrite length_fmap| | |done|done].
-      + by apply (bcs_hold_inst peq _ plt).
-      + apply Forall_fmap. eapply Forall_impl; [exact HK|]. intros x Hx. by apply Hpk.
-    - rewrite pt_inst_dual. apply KTNewAt. by apply Hpk.
-    - rewrite pt_inst_payload. apply KTPay. rewrite <-pt_inst_payload. by apply Hpk.
-    - rewrite pt_inst_shift. apply KTSucc. rewrite <-pt_inst_shift. by apply Hpk.
-  Qed.
-
-  Lemma skn_pinst_known Ψ x :
-    hyps_hold (w_eq W1) (w_lt W1) (pt_known W1) (hyps_inst σ Ψ) → skn W Ψ x → pt_known W1 (pt_inst σ x).
-  Proof.
-    intros HΨ. apply (skn_pinst W (pt_known W1) σ Ψ x HW).
-    - intros y z E. unfold pt_known. by rewrite E.
-    - intros y Hy. destruct HW1 as [HN _]. unfold pt_known in *. clear -HN Hy. set_solver.
-    - intros C xs Hg. by destruct (HΨ C xs Hg).
-  Qed.
-
-  Lemma skn_pinst_s Ψ Ψ' x :
-    hyps_hold (seqs W1 Ψ') (slt W1 Ψ') (skn W1 Ψ') (hyps_inst σ Ψ) → skn W Ψ x → skn W1 Ψ' (pt_inst σ x).
-  Proof.
-    intros HΨ. apply (skn_pinst W (skn W1 Ψ') σ Ψ x HW).
-    - intros y z E. by apply skn_root.
-    - intros y Hy. left. destruct HW1 as [HN _]. unfold pt_known in *. clear -HN Hy. set_solver.
-    - intros C xs Hg. by destruct (HΨ C xs Hg).
-  Qed.
-
-  (** Facts derived from W and the hypotheses Ψ survive into W₁ when
-      the hypotheses hold there (sharp edges 58). One lemma maps a
-      derivation of the fact theory along σ (sharp edges 64, 65). *)
-
-  Lemma fl_pinst Ψ Ψ' Φ Φ' :
-    hyps_hold (seqs W1 Ψ') (slt W1 Ψ') (skn W1 Ψ') (hyps_inst σ Ψ) →
-    (∀ φ u, Φ !! φ = Some (Some u) → fl (FCtx W1 Ψ' Φ') (NP (pt_inst σ u)) (NV φ)) →
-    (∀ x y, seqs W Ψ x y → seqs W1 Ψ' (pt_inst σ x) (pt_inst σ y)) ∧
-    (∀ a b, fl (FCtx W Ψ Φ) a b → fl (FCtx W1 Ψ' Φ') (node_inst σ a) (node_inst σ b)).
-  Proof.
-    intros HΨ HΦ. apply (fl_map (FCtx W Ψ Φ) (seqs W1 Ψ') _ (pt_inst σ) (node_inst σ)); simpl.
-    - intros x y H. apply se_w. by apply pinst_eq.
-    - intros x. apply se_refl.
-    - intros x y. apply se_sym.
-    - intros x y z. apply se_trans.
-    - intros x y H. rewrite !pt_inst_shift. by apply se_shift.
-    - intros x y i H. rewrite !pt_inst_payload. by apply se_payload.
-    - intros x y H. apply (fl_w (FCtx W1 Ψ' Φ')). by apply pinst_lt.
-    - intros x y Hxy. apply fl_points. exact (hyp_fact_inst _ _ _ σ Ψ (FLt x y) HΨ Hxy).
-    - exact HΦ.
-    - intros x x' b Hx H. exact (fl_eql (FCtx W1 Ψ' Φ') _ _ _ Hx H).
-    - intros a y y' H Hy. exact (fl_eqr (FCtx W1 Ψ' Φ') _ _ _ H Hy).
-    - intros a y b. exact (fl_trans (FCtx W1 Ψ' Φ') _ _ _).
-    - intros x. rewrite pt_inst_shift. apply (fl_po (FCtx W1 Ψ' Φ')).
-    - intros x y H. rewrite !pt_inst_dual. by apply se_dual.
-    - intros x. rewrite pt_inst_shift, pt_inst_dual. apply (fl_dpo (FCtx W1 Ψ' Φ')).
-  Qed.
-
-
-
-  Lemma seqs_pinst_s Ψ Ψ' x y :
-    hyps_hold (seqs W1 Ψ') (slt W1 Ψ') (skn W1 Ψ') (hyps_inst σ Ψ) →
-    seqs W Ψ x y → seqs W1 Ψ' (pt_inst σ x) (pt_inst σ y).
-  Proof.
-    intros HΨ. exact (proj1 (fl_pinst Ψ Ψ' ∅ ∅ HΨ (λ φ u Hu, ltac:(by rewrite lookup_empty in Hu))) x y).
-  Qed.
-
-  Lemma slt_pinst_s Ψ Ψ' x y :
-    hyps_hold (seqs W1 Ψ') (slt W1 Ψ') (skn W1 Ψ') (hyps_inst σ Ψ) → slt W Ψ x y → slt W1 Ψ' (pt_inst σ x) (pt_inst σ y).
-  Proof.
-    intros HΨ H. exact (proj2 (fl_pinst Ψ Ψ' ∅ ∅ HΨ (λ φ u Hu, ltac:(by rewrite lookup_empty in Hu))) _ _ H).
-  Qed.
-
-  (** The ground case: the target is the world W₁ itself. *)
-  Lemma hyps_hold_ground Ψ :
-    hyps_hold (w_eq W1) (w_lt W1) (pt_known W1) (hyps_inst σ Ψ) →
-    hyps_hold (seqs W1 []) (slt W1 []) (skn W1 []) (hyps_inst σ Ψ).
-  Proof.
-    apply hyps_hold_mono; [intros ? ? ?; by apply se_w|intros ? ? ?; by apply sl_w|intros ? ?; by left].
-  Qed.
-
-  Lemma seqs_pinst Ψ x y :
-    hyps_hold (w_eq W1) (w_lt W1) (pt_known W1) (hyps_inst σ Ψ) → seqs W Ψ x y → w_eq W1 (pt_inst σ x) (pt_inst σ y).
-  Proof.
-    intros HΨ H. apply (seqs_nil _ _ _ (wext_wf _ _ HW1)). apply (seqs_pinst_s Ψ); [|done].
-    by apply hyps_hold_ground.
-  Qed.
-
-  Lemma slt_pinst Ψ x y :
-    hyps_hold (w_eq W1) (w_lt W1) (pt_known W1) (hyps_inst σ Ψ) → slt W Ψ x y → w_lt W1 (pt_inst σ x) (pt_inst σ y).
-  Proof.
-    intros HΨ H. apply (slt_nil _ _ _ (wext_wf _ _ HW1)). apply (slt_pinst_s Ψ); [|done].
-    by apply hyps_hold_ground.
-  Qed.
-
-  Lemma sle_pinst Ψ x y :
-    hyps_hold (w_eq W1) (w_lt W1) (pt_known W1) (hyps_inst σ Ψ) → sle W Ψ x y → w_le W1 (pt_inst σ x) (pt_inst σ y).
-  Proof. intros HΨ [H|H]; [left; by apply (seqs_pinst Ψ)|right; by apply (slt_pinst Ψ)]. Qed.
-
-  Lemma sle_pinst_s Ψ Ψ' x y :
-    hyps_hold (seqs W1 Ψ') (slt W1 Ψ') (skn W1 Ψ') (hyps_inst σ Ψ) → sle W Ψ x y → sle W1 Ψ' (pt_inst σ x) (pt_inst σ y).
-  Proof. intros HΨ [H|H]; [left; by apply (seqs_pinst_s Ψ)|right; by apply (slt_pinst_s Ψ)]. Qed.
-
-  Lemma lb_below_h_pinst Ψ lb H :
-    hyps_hold (w_eq W1) (w_lt W1) (pt_known W1) (hyps_inst σ Ψ) →
-    lb_below_h W Ψ lb H → lb_below W1 (pt_inst σ <$> lb) (set_map (pt_inst σ) H).
-  Proof.
-    intros HΨ. destruct lb as [x|]; simpl.
-    - intros Hl y Hy. apply elem_of_map in Hy as (y0 & -> & Hy0). by apply (sle_pinst Ψ), Hl.
-    - intros ->. apply set_map_empty.
-  Qed.
-
-  Lemma lb_below_h_pinst_s Ψ Ψ' lb H :
-    hyps_hold (seqs W1 Ψ') (slt W1 Ψ') (skn W1 Ψ') (hyps_inst σ Ψ) →
-    lb_below_h W Ψ lb H → lb_below_h W1 Ψ' (pt_inst σ <$> lb) (set_map (pt_inst σ) H).
-  Proof.
-    intros HΨ. destruct lb as [x|]; simpl.
-    - intros Hl y Hy. apply elem_of_map in Hy as (y0 & -> & Hy0). by apply (sle_pinst_s Ψ), Hl.
-    - intros ->. apply set_map_empty.
-  Qed.
-
-  Lemma lbx_below_h_pinst Ψ lb H b :
-    hyps_hold (w_eq W1) (w_lt W1) (pt_known W1) (hyps_inst σ Ψ) →
-    lbx_below_h W Ψ lb H b → lbx_below W1 (lb_map (pt_inst σ) lb) (set_map (pt_inst σ) H) b.
-  Proof.
-    intros HΨ. destruct lb as [| |x]; simpl; [|done|].
-    - intros [-> ->]. split; [apply set_map_empty|done].
-    - intros [Hl ->]. split; [|done]. intros y Hy. apply elem_of_map in Hy as (y0 & -> & Hy0).
-      by apply (sle_pinst Ψ), Hl.
-  Qed.
-
-  Lemma lbx_below_h_pinst_s Ψ Ψ' lb H b :
-    hyps_hold (seqs W1 Ψ') (slt W1 Ψ') (skn W1 Ψ') (hyps_inst σ Ψ) →
-    lbx_below_h W Ψ lb H b → lbx_below_h W1 Ψ' (lb_map (pt_inst σ) lb) (set_map (pt_inst σ) H) b.
-  Proof.
-    intros HΨ. destruct lb as [| |x]; simpl; [|done|].
-    - intros [-> ->]. split; [apply set_map_empty|done].
-    - intros [Hl ->]. split; [|done]. intros y Hy. apply elem_of_map in Hy as (y0 & -> & Hy0).
-      by apply (sle_pinst_s Ψ), Hl.
-  Qed.
-
-  (** Composition of environments reads Γ ⊢ ≡ (sharp edges 65). *)
-  Lemma tenv_comp_pinst_g Ψ Θ Θ1 Θ2 :
-    hyps_hold (w_eq W1) (w_lt W1) (pt_known W1) (hyps_inst σ Ψ) → tenv_comp (seqs W Ψ) Θ Θ1 Θ2 →
-    tenv_comp (w_eq W1) (tenv_pinst σ Θ) (tenv_pinst σ Θ1) (tenv_pinst σ Θ2).
-  Proof. intros HΨ. apply tenv_comp_pinst. intros x y. by apply (seqs_pinst Ψ). Qed.
-
-  Lemma tenv_comp_pinst_s Ψ Ψ' Θ Θ1 Θ2 :
-    hyps_hold (seqs W1 Ψ') (slt W1 Ψ') (skn W1 Ψ') (hyps_inst σ Ψ) → tenv_comp (seqs W Ψ) Θ Θ1 Θ2 →
-    tenv_comp (seqs W1 Ψ') (tenv_pinst σ Θ) (tenv_pinst σ Θ1) (tenv_pinst σ Θ2).
-  Proof. intros HΨ. apply tenv_comp_pinst. intros x y. by apply (seqs_pinst_s Ψ). Qed.
-
-  (** E-Conv up to Γ ⊢ ≡ survives substitution (sharp edges 67). *)
-  Lemma steq_pinst_s Ψ Ψ' T : ∀ U,
-    hyps_hold (seqs W1 Ψ') (slt W1 Ψ') (skn W1 Ψ') (hyps_inst σ Ψ) →
-    steq W Ψ T U → steq W1 Ψ' (pinst_ty σ T) (pinst_ty σ U).
-  Proof.
-    intros U HΨ. revert U. induction T; intros [] H; simpl in *; try done.
-    - destruct H as (Hu & Hl & ? & ?). split_and!; auto.
-      + destruct ub, ub0; simpl in *; try done. by apply (seqs_pinst_s Ψ).
-      + destruct lb, lb0; simpl in *; try done. by apply (seqs_pinst_s Ψ).
-    - destruct H. split; auto.
-    - destruct H. split; auto.
-    - exact (eqT_pinst seq _ _ σ H).
-    - destruct H as [? ?]. split; [by apply (seqs_pinst_s Ψ)|done].
-    - destruct H as (<- & <- & <- & ?). split_and!; [done|done|done|by apply eqT_pinst].
-    - by subst.
-  Qed.
-
-  Lemma steq_teqW Ψ T : ∀ U,
-    hyps_hold (w_eq W1) (w_lt W1) (pt_known W1) (hyps_inst σ Ψ) →
-    steq W Ψ T U → teqW W1 (pinst_ty σ T) (pinst_ty σ U).
-  Proof.
-    pose proof (wext_wf _ _ HW1) as HW1'.
-    intros U HΨ. revert U. induction T; intros [] H; simpl in *; try done.
-    - destruct H as (Hu & Hl & ? & ?). split_and!; auto.
-      + destruct ub, ub0; simpl in *; try done.
-        apply (w_eq_pteqW _ HW1'). by apply (seqs_pinst Ψ).
-      + destruct lb, lb0; simpl in *; try done.
-        apply (w_eq_pteqW _ HW1'). by apply (seqs_pinst Ψ).
-    - destruct H. split; auto.
-    - destruct H. split; auto.
-    - apply (teq_teqW _ (pinst_ty σ (TBox _ _ _ _)) (pinst_ty σ (TBox _ _ _ _))).
-      exact (eqT_pinst seq _ _ σ H).
-    - destruct H as [? ?]. split; [|done].
-      apply (w_eq_pteqW _ HW1'). by apply (seqs_pinst Ψ).
-    - destruct H as (<- & <- & <- & ?). split_and!; [|done|apply bcs_rel_refl|].
-      + destruct lb; simpl; [done|done|by left].
-      + apply teq_teqW. by apply eqT_pinst.
-    - subst. by left.
-  Qed.
-End transfer.
-
-(** ** Substitution in environments, hypotheses and futures *)
-
-Definition lenv_pinst (σ : nat → point) (Δ : lenv) : lenv := fmap (M:=option) (pinst_ty σ) <$> Δ.
-
-Definition fhyps_pinst (σ : nat → point) (Φ : fhyps) : fhyps := fmap (M:=option) (pt_inst σ) <$> Φ.
-
-Definition sf_pinst (σ : nat → point) (F : sfuture) : sfuture := (set_map (pt_inst σ) F.1, F.2).
-
-Lemma unlimited_pinst σ U : unlimited U → unlimited (pinst_ty σ U).
-Proof. by destruct U. Qed.
-
-Lemma lenv_heads_pinst σ Δ : lenv_heads (lenv_pinst σ Δ) = set_map (pt_inst σ) (lenv_heads Δ).
-Proof.
-  induction Δ as [|[T|] Δ IH]; simpl.
-  - by rewrite set_map_empty.
-  - by rewrite IH, heads_pinst, set_map_union_L.
-  - done.
-Qed.
-
-Lemma lenv_empty_pinst σ Δ : lenv_empty Δ → lenv_empty (lenv_pinst σ Δ).
-Proof.
-  intros HΔ o Ho. apply list_elem_of_fmap in Ho as (o' & -> & Ho'). by rewrite (HΔ o' Ho').
-Qed.
-
-Lemma lenv_unl_pinst σ Δ : lenv_unl Δ → lenv_unl (lenv_pinst σ Δ).
-Proof.
-  intros HΔ o Ho. apply list_elem_of_fmap in Ho as (o' & -> & Ho').
-  destruct (HΔ o' Ho') as [->|(U & -> & HU)]; [by left|right].
-  exists (pinst_ty σ U). split; [done|by apply unlimited_pinst].
-Qed.
-
-Lemma lenv_pinst_lookup σ Δ x : lenv_pinst σ Δ !! x = fmap (pinst_ty σ) <$> Δ !! x.
-Proof. unfold lenv_pinst. apply list_lookup_fmap. Qed.
-
-Lemma lenv_only_pinst σ Δ x T : lenv_only Δ x T → lenv_only (lenv_pinst σ Δ) x (pinst_ty σ T).
-Proof.
-  intros [Hx Hu]. split.
-  - by rewrite lenv_pinst_lookup, Hx.
-  - intros y T' Hy. rewrite lenv_pinst_lookup in Hy.
-    destruct (Δ !! y) as [[T0|]|] eqn:E; simplify_eq/=.
-    destruct (Hu y T0 E) as [-> ->]. done.
-Qed.
-
-Lemma lenv_split_pinst σ Δ Δ1 Δ2 :
-  lenv_split Δ Δ1 Δ2 → lenv_split (lenv_pinst σ Δ) (lenv_pinst σ Δ1) (lenv_pinst σ Δ2).
-Proof. induction 1; simpl; constructor; auto using unlimited_pinst. Qed.
-
-Lemma lenv_wk_pinst σ Δ' Δ : lenv_wk Δ' Δ → lenv_wk (lenv_pinst σ Δ') (lenv_pinst σ Δ).
-Proof. induction 1; simpl; constructor; auto using unlimited_pinst. Qed.
-
-Lemma lenv_pinst_ext σ τ Δ : (∀ a, σ a = τ a) → lenv_pinst σ Δ = lenv_pinst τ Δ.
-Proof.
-  intros H. unfold lenv_pinst. apply list_fmap_ext. intros i [T|] _; simpl; [|done].
-  f_equal. by apply pinst_ty_ext.
-Qed.
-
-Lemma lenv_pinst_comp τ σ Δ : lenv_pinst τ (lenv_pinst σ Δ) = lenv_pinst (pt_inst τ ∘ σ) Δ.
-Proof.
-  unfold lenv_pinst. rewrite <-list_fmap_compose. apply list_fmap_ext.
-  intros i [T|] _; simpl; [|done]. f_equal. apply pinst_ty_comp.
-Qed.
-
-Lemma lenv_pinst_pvar Δ : lenv_pinst pvar Δ = Δ.
-Proof.
-  induction Δ as [|[T|] Δ IH]; simpl; [done| |]; rewrite IH; [|done].
-  by rewrite pinst_ty_pvar.
-Qed.
-
-Lemma ends_heads_pinst σ c o :
-  ends_heads c (ends_pinst σ o) = set_map (pt_inst σ) (ends_heads c o).
-Proof. destruct o; simpl; rewrite <-?pt_inst_dual; set_solver. Qed.
-
-Lemma tenv_heads_pinst σ Θ : tenv_heads (tenv_pinst σ Θ) = set_map (pt_inst σ) (tenv_heads Θ).
-Proof.
-  apply set_eq. intros x. rewrite elem_of_map, elem_of_tenv_heads. split.
-  - intros (c & o & Hc & Hx). unfold tenv_pinst in Hc. rewrite lookup_fmap in Hc.
-    destruct (Θ !! c) as [o0|] eqn:Ho; [|done]. injection Hc as <-.
-    rewrite ends_heads_pinst in Hx.
-    apply elem_of_map in Hx as (x0 & -> & Hx0). exists x0. split; [done|].
-    apply elem_of_tenv_heads. eauto.
-  - intros (x0 & -> & Hx0). apply elem_of_tenv_heads in Hx0 as (c & o & Hc & Hx).
-    exists c, (ends_pinst σ o). split.
-    + unfold tenv_pinst. by rewrite lookup_fmap, Hc.
-    + rewrite ends_heads_pinst. by apply elem_of_map_2.
-Qed.
-
-Lemma tenv_pinst_pvar Θ : tenv_pinst pvar Θ = Θ.
-Proof.
-  apply map_eq. intros c. unfold tenv_pinst. rewrite lookup_fmap.
-  destruct (Θ !! c) as [[[s x]|[s1 x1] [s2 x2]]|]; simpl; rewrite ?pt_inst_pvar; done.
-Qed.
-
-Lemma sf_pinst_union σ F X : sf_pinst σ (sf_union F X) = sf_union (sf_pinst σ F) (set_map (pt_inst σ) X).
-Proof. unfold sf_pinst, sf_union. simpl. by rewrite set_map_union_L. Qed.
-
-Lemma sf_pinst_unionb σ F X b :
-  sf_pinst σ (sf_unionb F X b) = sf_unionb (sf_pinst σ F) (set_map (pt_inst σ) X) b.
-Proof. destruct b; unfold sf_unionb, sf_pinst, sf_union; simpl; by rewrite set_map_union_L. Qed.
-
-Lemma lenv_bot_pinst σ Δ : lenv_bot (lenv_pinst σ Δ) = lenv_bot Δ.
-Proof. induction Δ as [|[T|] Δ IH]; simpl; [done| |done]. by rewrite hbot_pinst, IH. Qed.
-
-Lemma sf_pinst_pvar F : sf_pinst pvar F = F.
-Proof.
-  destruct F as [P o]. unfold sf_pinst. simpl. f_equal.
-  apply set_eq. intros x. rewrite elem_of_map. split.
-  - intros (y & -> & Hy). by rewrite pt_inst_pvar.
-  - intros Hx. exists x. by rewrite pt_inst_pvar.
-Qed.
-
-Lemma ub_below_s_pinst W W1 σ Ψ Ψ' Φ ub F :
-  world_wf W → wext W W1 → hyps_hold (seqs W1 Ψ') (slt W1 Ψ') (skn W1 Ψ') (hyps_inst σ Ψ) → ub_below_s W Ψ Φ ub F →
-  ub_below_s W1 Ψ' (fhyps_pinst σ Φ) (pt_inst σ <$> ub) (sf_pinst σ F).
-Proof.
-  intros HW HW1 HΨ. destruct ub as [x|]; [|done]. intros (HP & Hφ & Hb).
-  assert (∀ a b, fl (FCtx W Ψ Φ) a b →
-            fl (FCtx W1 Ψ' (fhyps_pinst σ Φ)) (node_inst σ a) (node_inst σ b)) as Hm.
-  { refine (proj2 (fl_pinst W W1 σ HW HW1 Ψ Ψ' Φ _ HΨ _)). intros φ u Hu.
-    apply (fl_v (FCtx W1 Ψ' (fhyps_pinst σ Φ))). simpl.
-    unfold fhyps_pinst. by rewrite lookup_fmap, Hu. }
-  split_and!.
-  - intros y Hy. destruct F as [P o]. simpl in *.
-    apply elem_of_map in Hy as (y0 & -> & Hy0). exact (Hm _ _ (HP y0 Hy0)).
-  - intros φ Hφ'. destruct F as [P o]. simpl in *. exact (Hm _ _ (Hφ φ Hφ')).
-  - done.
-Qed.
+(** ** Contexts *)
 
 Lemma tenv_pinst_empty σ : tenv_pinst σ ∅ = ∅.
 Proof. apply fmap_empty. Qed.
 
-Lemma sf_pinst_fresh σ φ : sf_pinst σ (∅, Some (FVar φ)) = (∅, Some (FVar φ)).
+Lemma tenv_pinst_singleton σ o S x a mt :
+  tenv_pinst σ {[o := TE S x a mt]} = {[o := TE S (pt_inst σ x) a mt]}.
+Proof. unfold tenv_pinst. by rewrite map_fmap_singleton. Qed.
+
+Lemma tsplit_pinst σ Θ Θ1 Θ2 :
+  tsplit Θ Θ1 Θ2 → tsplit (tenv_pinst σ Θ) (tenv_pinst σ Θ1) (tenv_pinst σ Θ2).
+Proof.
+  intros [Hd ->]. split; [by apply map_disjoint_fmap|]. unfold tenv_pinst. by rewrite map_fmap_union.
+Qed.
+
+Lemma tenv_heads_pinst σ Θ : tenv_heads (tenv_pinst σ Θ) = set_map (pt_inst σ) (tenv_heads Θ).
+Proof.
+  apply set_eq. intros y. rewrite elem_of_map, elem_of_tenv_heads. unfold tenv_pinst.
+  setoid_rewrite elem_of_tenv_heads. setoid_rewrite lookup_fmap. split.
+  - intros (o & e & He & ->). destruct (Θ !! o) as [e0|] eqn:E; simplify_eq/=.
+    exists (te_pt e0)‾. split; [symmetry; apply pt_inst_dual|]. eauto.
+  - intros (y0 & -> & o & e & He & ->). exists o, (tentry_pinst σ e). rewrite He.
+    split; [done|]. apply pt_inst_dual.
+Qed.
+
+Lemma lenv_only_pinst σ Δ x T :
+  lenv_only Δ x T → lenv_only (lenv_pinst σ Δ) x (pinst_ty σ T).
+Proof.
+  intros [Hx Hy]. split; [by rewrite lenv_pinst_lookup, Hx|].
+  intros y σ' Hne Hσ. rewrite lenv_pinst_lookup in Hσ.
+  destruct (Δ !! y) as [[T0|]|] eqn:E; simplify_eq/=.
+  apply unlimited_pinst, (Hy y _ Hne E).
+Qed.
+
+Lemma lenv_split_pinst σ Δ Δ1 Δ2 :
+  lenv_split Δ Δ1 Δ2 → lenv_split (lenv_pinst σ Δ) (lenv_pinst σ Δ1) (lenv_pinst σ Δ2).
+Proof.
+  induction 1; simpl; constructor; try done. by apply unlimited_pinst.
+Qed.
+
+Lemma lenv_unl_pinst σ Δ : lenv_unl Δ → lenv_unl (lenv_pinst σ Δ).
+Proof.
+  intros H o Ho. unfold lenv_pinst in Ho. apply list_elem_of_fmap in Ho as (o' & -> & Ho').
+  destruct (H o' Ho') as [->|(U & -> & HU)]; [by left|right].
+  eexists _. split; [done|]. by apply unlimited_pinst.
+Qed.
+
+Lemma lenv_heads_pinst σ Δ : lenv_heads (lenv_pinst σ Δ) = set_map (pt_inst σ) (lenv_heads Δ).
+Proof.
+  induction Δ as [|[T|] Δ IH]; simpl; [by rewrite set_map_empty|..|done].
+  by rewrite set_map_union_L, heads_pinst, IH.
+Qed.
+
+Lemma lenv_bot_pinst σ Δ : lenv_bot (lenv_pinst σ Δ) = lenv_bot Δ.
+Proof. induction Δ as [|[T|] Δ IH]; simpl; rewrite ?hbot_pinst; congruence. Qed.
+
+Lemma lenv_pinst_insert σ Δ i T :
+  lenv_pinst σ (<[i := Some T]> Δ) = <[i := Some (pinst_ty σ T)]> (lenv_pinst σ Δ).
+Proof. unfold lenv_pinst. by rewrite list_fmap_insert. Qed.
+
+Lemma sf_pinst_unionb σ F X b :
+  sf_pinst σ (sf_unionb F X b) = sf_unionb (sf_pinst σ F) (set_map (pt_inst σ) X) b.
+Proof. destruct b; unfold sf_pinst, sf_unionb; simpl; by rewrite set_map_union_L. Qed.
+
+Lemma sf_pinst_nil σ o : sf_pinst σ (∅, o) = (∅, frest_pinst σ <$> o).
 Proof. unfold sf_pinst. simpl. by rewrite set_map_empty. Qed.
 
-(** ** Composition and extensionality for environments and futures *)
+(** ** Facts *)
 
-Lemma tenv_pinst_comp τ σ Θ : tenv_pinst τ (tenv_pinst σ Θ) = tenv_pinst (pt_inst τ ∘ σ) Θ.
+(** The facts of W sit at constant bases, the first half of [sworld_wf]. *)
+Definition facts_const (W : sworld) : Prop :=
+  ∀ x y, sw_facts W (FLt x y) → croot_in (sw_consts W) x ∧ croot_in (sw_consts W) y.
+
+Lemma facts_const_wf W : sworld_wf W → facts_const W.
+Proof. intros Hwf. exact (wf_facts _ Hwf). Qed.
+
+Lemma sw_lt_pinst_fc W σ x y : facts_const W → W ⊢ₛ x ≺ y → W ⊢ₛ pt_inst σ x ≺ pt_inst σ y.
 Proof.
-  apply map_eq. intros c. unfold tenv_pinst. rewrite !lookup_fmap.
-  destruct (Θ !! c) as [[[s x]|[s1 x1] [s2 x2]]|]; simpl; rewrite ?pt_inst_comp; done.
+  intros Hwf. apply tc_congruence. intros a b Hs.
+  destruct Hs as [a b Hf|a|a].
+  - destruct (Hwf a b Hf) as [[c [Hc _]] [d [Hd _]]].
+    rewrite !pt_inst_novar by (intros ?; congruence). by apply ws_fact.
+  - rewrite pt_inst_shift. apply ws_po.
+  - rewrite pt_inst_shift, pt_inst_dual. apply ws_dpo.
 Qed.
 
-Lemma tenv_pinst_ext σ τ Θ : (∀ a, σ a = τ a) → tenv_pinst σ Θ = tenv_pinst τ Θ.
+Lemma sw_lt_pinst W σ x y : sworld_wf W → W ⊢ₛ x ≺ y → W ⊢ₛ pt_inst σ x ≺ pt_inst σ y.
+Proof. intros Hwf. by apply sw_lt_pinst_fc, facts_const_wf. Qed.
+
+(** ** Instances and the bridge condition
+
+    [cons_of_hold]: an opening whose constraint holds at some instance
+    derives no new fact between outer points. [cons_new]: the existential
+    of E-New meets the bridge condition under (wf-new), because every
+    fact of its constraint ends in the tree of the new base. *)
+
+Lemma pshift_back xs m x : length xs = m → pt_inst (plist xs) (pt_inst (pshift m) x) = x.
 Proof.
-  intros H. apply map_eq. intros c. unfold tenv_pinst. rewrite !lookup_fmap.
-  destruct (Θ !! c) as [[[s x]|[s1 x1] [s2 x2]]|]; simpl;
-    rewrite ?(pt_inst_ext σ τ); done.
+  intros Hl. rewrite pt_inst_comp, (pt_inst_ext _ pvar); [apply pt_inst_pvar|].
+  intros a. unfold compose, pshift. rewrite pt_inst_pvar_at. by apply plist_shift.
 Qed.
 
-Lemma sf_pinst_comp τ σ F : sf_pinst τ (sf_pinst σ F) = sf_pinst (pt_inst τ ∘ σ) F.
+Lemma slt_inst W Γ Γ' τ x y : facts_const W → slt W Γ' x y →
+  (∀ u v, hyp_fact (hc_hyps Γ') (FLt u v) → slt W Γ (pt_inst τ u) (pt_inst τ v)) →
+  slt W Γ (pt_inst τ x) (pt_inst τ y).
 Proof.
-  destruct F as [P o]. unfold sf_pinst. simpl. f_equal.
-  apply set_eq. intros x. rewrite !elem_of_map. split.
-  - intros (y & -> & Hy). apply elem_of_map in Hy as (z & -> & Hz).
-    exists z. by rewrite pt_inst_comp.
-  - intros (z & -> & Hz). exists (pt_inst σ z). rewrite pt_inst_comp.
-    split; [done|]. by apply elem_of_map_2.
+  intros Hwf H Hh. unfold slt in H. induction H as [x y Hw|x y Hf|x y z _ IH1 _ IH2].
+  - apply sl_w. by apply sw_lt_pinst_fc.
+  - by apply Hh.
+  - eapply sl_trans; [apply IH1|apply IH2].
 Qed.
 
-Lemma sf_pinst_ext σ τ F : (∀ a, σ a = τ a) → sf_pinst σ F = sf_pinst τ F.
+Lemma length_ids m : length (ids m) = m.
+Proof. unfold ids. by rewrite length_fmap, length_seq. Qed.
+
+Lemma ids_lookup m a : a < m → ids m !! a = Some (pvar a).
+Proof. intros Ha. unfold ids. rewrite list_lookup_fmap, lookup_seq_lt by done. done. Qed.
+
+Lemma cons_of_hold W Γ m C xs : facts_const W → length xs = m → hold_at W Γ C xs →
+  ∀ x y, slt W (hc_open m C Γ) (pt_inst (pshift m) x) (pt_inst (pshift m) y) → slt W Γ x y.
 Proof.
-  intros H. destruct F as [P o]. unfold sf_pinst. simpl. f_equal.
-  apply set_eq. intros x. rewrite !elem_of_map.
-  split; intros (y & -> & Hy); exists y; by rewrite (pt_inst_ext σ τ).
+  intros Hwf Hl HC x y H.
+  rewrite <-(pshift_back xs m x), <-(pshift_back xs m y) by done.
+  apply (slt_inst W Γ (hc_open m C Γ)); [done|done|].
+  intros u v (C' & ys & Hin & Hat). simpl in Hin. apply elem_of_app in Hin as [Hin|Hin].
+  - unfold hyps_inst in Hin. apply list_elem_of_fmap in Hin as ([C0 ys0] & Heq & Hin).
+    injection Heq as -> ->.
+    apply bcs_at_inst in Hat as ([u0 v0] & Hat & Heq). injection Heq as -> ->.
+    rewrite !pshift_back by done. apply fl_h. by exists C0, ys0.
+  - apply list_elem_of_singleton in Hin. injection Hin as -> ->.
+    apply HC. destruct C as [env P]. apply bcs_at_iff in Hat as (f0 & Hf & Hs & Heq).
+    apply bcs_at_iff. simpl in *. rewrite length_ids, length_fmap in Hs.
+    exists f0. split_and!; [done|by rewrite Hl|].
+    change (FLt (pt_inst (plist xs) u) (pt_inst (plist xs) v)) with (fact_map (pt_inst (plist xs)) (FLt u v)).
+    rewrite Heq, fact_map_comp, (fact_map_ext _ (pt_inst (pt_inst (plist xs) ∘ plist (ids m ++ (pt_inst (pshift m) <$> env)))))
+      by (intros; apply pt_inst_comp).
+    apply fact_map_ext_scoped with (k := m + length env); [done|].
+    intros a Ha. unfold compose. unfold plist at 2 3.
+    destruct (decide (a < m)) as [Hm|Hm].
+    + rewrite lookup_app_l by (by rewrite length_ids). rewrite ids_lookup by done.
+      rewrite lookup_app_l by lia. rewrite pt_inst_pvar_at. unfold plist.
+      destruct (xs !! a) eqn:E; [done|]. apply lookup_ge_None in E. lia.
+    + rewrite lookup_app_r by (rewrite length_ids; lia). rewrite lookup_app_r by lia.
+      rewrite length_ids, list_lookup_fmap, Hl.
+      destruct (env !! (a - m)) eqn:E; simpl.
+      * by apply pshift_back.
+      * apply lookup_ge_None in E. lia.
 Qed.
 
-(** ** The hypothesis of E-NewFresh (sharp edges 90)
-
-    [fresh_bcs L H] is the constraint of one point variable ι (the
-    variable 0 under the binder) with the facts l ≺ ι for l ∈ L and
-    ι ≺ h for h ∈ H. The points of L and H are its outer points. *)
-
-Definition fresh_facts (nL nH : nat) (f : fact) : Prop :=
-  (∃ i, i < nL ∧ f = FLt (pvar (S i)) (pvar 0)) ∨
-  (∃ j, j < nH ∧ f = FLt (pvar 0) (pvar (S (nL + j)))).
-
-Definition fresh_bcs (L H : list point) : bcs :=
-  BCs (L ++ H) (fresh_facts (length L) (length H)).
-
-Lemma bcs_inst_fresh σ L H :
-  bcs_inst σ (fresh_bcs L H) = fresh_bcs (pt_inst σ <$> L) (pt_inst σ <$> H).
-Proof. unfold bcs_inst, fresh_bcs. simpl. by rewrite fmap_app, !length_fmap. Qed.
-
-(** An outer point, opened under one binder and instantiated by [x],
-    is itself. *)
-Lemma pt_inst_open1 x env i y :
-  env !! i = Some y →
-  pt_inst (plist [x]) (pt_inst (pup 1 (plist env)) (pvar (S i))) = y.
+(** A chain of the world never leaves the tree of the variable 0. *)
+Lemma sw_lt_tree0 W x y : facts_const W → W ⊢ₛ x ≺ y → in_tree0 x → in_tree0 y.
 Proof.
-  intros Hy. rewrite pt_inst_pvar_at. unfold pup. rewrite decide_False by lia.
-  replace (S i - 1) with i by lia. unfold plist at 2. rewrite Hy.
-  rewrite pt_inst_comp. rewrite <-(pt_inst_pvar y) at 2. apply pt_inst_ext.
-  intros b. simpl. rewrite pt_inst_pvar_at. unfold plist. simpl.
-  replace (b + 1) with (S b) by lia. simpl.
-  unfold pvar. f_equal. f_equal. lia.
+  intros Hwf. induction 1 as [x y Hs|x y z Hs _ IH]; intros Hx.
+  - destruct Hs as [x y Hf|x|x]; [|done|done].
+    destruct (Hwf x y Hf) as [[c [Hc _]] _]. unfold in_tree0 in Hx. congruence.
+  - apply IH. destruct Hs as [x y Hf|x|x]; [|done|done].
+    destruct (Hwf x y Hf) as [[c [Hc _]] _]. unfold in_tree0 in Hx. congruence.
 Qed.
 
-Lemma pt_inst_open1_0 x env :
-  pt_inst (plist [x]) (pt_inst (pup 1 (plist env)) (pvar 0)) = x.
+Lemma pshift_not_tree0 x : ¬ in_tree0 (pt_inst (pshift 1) x).
 Proof.
-  rewrite pt_inst_pvar_at. unfold pup. rewrite decide_True by lia.
-  rewrite pt_inst_pvar_at. done.
+  unfold in_tree0. rewrite pt_root_inst_var. unfold pt_root at 2.
+  induction (pt_name x) as [a|a|p IH b κ]; simpl; try done.
+  unfold pshift. simpl. intros [=]. lia.
 Qed.
 
-(** The facts of [fresh_bcs L H] at the instance [x] are L ≺ x ≺ H. *)
-Lemma fresh_open x L H g :
-  (∃ g0, bcs_open 1 (fresh_bcs L H) g0 ∧ g = fact_map (pt_inst (plist [x])) g0) ↔
-  (∃ l, l ∈ L ∧ g = FLt l x) ∨ (∃ h, h ∈ H ∧ g = FLt x h).
+(** Every fact of C ends in the tree of the new base. (wf-new) asks it,
+    and so do constraints that satisfy (acyc-new) with no exit and no
+    entry. *)
+Definition tree_ends (C : bcs) : Prop :=
+  ∀ x y, bc_facts C (FLt x y) → fact_scoped (1 + length (bc_env C)) (FLt x y) → in_tree0 y.
+
+(** Every fact of an opened constraint whose facts end in the tree of 0
+    ends there. *)
+Lemma tree_ends_open C x y :
+  tree_ends C → bcs_at (bcs_inst (pshift 1) C) (ids 1) (FLt x y) → in_tree0 y.
 Proof.
-  split.
-  - intros (g0 & (f & Hf & Hs & ->) & ->).
-    destruct Hf as [(i & Hi & ->)|(j & Hj & ->)]; simpl.
-    + left. destruct (lookup_lt_is_Some_2 L i Hi) as [l Hl]. exists l.
-      split; [by eapply list_elem_of_lookup_2|].
-      rewrite (pt_inst_open1 x (L ++ H) i l) by (by apply lookup_app_l_Some).
-      by rewrite pt_inst_open1_0.
-    + right. destruct (lookup_lt_is_Some_2 H j Hj) as [h Hh]. exists h.
-      split; [by eapply list_elem_of_lookup_2|].
-      rewrite (pt_inst_open1 x (L ++ H) (length L + j) h).
-      * by rewrite pt_inst_open1_0.
-      * rewrite lookup_app_r by lia. by replace (length L + j - length L) with j by lia.
-  - intros [(l & Hl & ->)|(h & Hh & ->)].
-    + apply list_elem_of_lookup_1 in Hl as [i Hi].
-      exists (FLt (pt_inst (pup 1 (plist (L ++ H))) (pvar (S i)))
-                  (pt_inst (pup 1 (plist (L ++ H))) (pvar 0))). split.
-      * exists (FLt (pvar (S i)) (pvar 0)). split_and!; [|simpl|done].
-        -- left. exists i. split; [by eapply lookup_lt_Some|done].
-        -- pose proof (lookup_lt_Some _ _ _ Hi). rewrite length_app. lia.
-      * simpl. rewrite pt_inst_open1_0. rewrite (pt_inst_open1 x (L ++ H) i l); [done|].
-        by apply lookup_app_l_Some.
-    + apply list_elem_of_lookup_1 in Hh as [j Hj].
-      exists (FLt (pt_inst (pup 1 (plist (L ++ H))) (pvar 0))
-                  (pt_inst (pup 1 (plist (L ++ H))) (pvar (S (length L + j))))). split.
-      * exists (FLt (pvar 0) (pvar (S (length L + j)))). split_and!; [|simpl|done].
-        -- right. exists j. split; [by eapply lookup_lt_Some|done].
-        -- pose proof (lookup_lt_Some _ _ _ Hj). rewrite length_app. lia.
-      * simpl. rewrite pt_inst_open1_0. rewrite (pt_inst_open1 x (L ++ H) (length L + j) h); [done|].
-        rewrite lookup_app_r by lia. by replace (length L + j - length L) with j by lia.
+  intros HC Hat. destruct C as [env P].
+  apply bcs_at_iff in Hat as ([x0 y0] & Hf & Hs & Heq). cbn [bcs_inst bc_env bc_facts] in *.
+  rewrite length_fmap in Hs. injection Heq as -> ->.
+  pose proof (HC x0 y0 Hf Hs) as Hy0.
+  unfold in_tree0 in *. rewrite pt_root_inst_var, Hy0. done.
 Qed.
 
-Lemma fresh_hold (eq lt : point → point → Prop) x L H :
-  Forall (λ l, lt l x) L → Forall (λ h, lt x h) H → bcs_hold eq lt (fresh_bcs L H) [x].
+Lemma wf_new_tree0 C x y :
+  wf_new C → bcs_at (bcs_inst (pshift 1) C) (ids 1) (FLt x y) → in_tree0 y.
+Proof. intros [HC _]. by apply tree_ends_open. Qed.
+
+Lemma slt_open_out_te W Γ C x y : facts_const W → tree_ends C →
+  slt W (hc_open 1 C Γ) x y → ¬ in_tree0 y →
+  ¬ in_tree0 x ∧ ∀ z, slt W Γ (pt_inst (plist [z]) x) (pt_inst (plist [z]) y).
 Proof.
-  intros HL HH g Hg.
-  destruct (proj1 (fresh_open x L H (fact_map (pt_inst (plist [x])) g)) (ex_intro _ g (conj Hg eq_refl)))
-    as [(l & Hl & E)|(h & Hh & E)]; rewrite E; simpl.
-  - rewrite Forall_forall in HL. by apply HL.
-  - rewrite Forall_forall in HH. by apply HH.
+  intros Hwf HC H. unfold slt in H. induction H as [x y Hw|x y Hf|x y w _ IH1 _ IH2]; intros Hy.
+  - split; [intros Hx; by apply Hy, (sw_lt_tree0 W x y)|].
+    intros z. apply sl_w. by apply sw_lt_pinst_fc.
+  - destruct Hf as (C' & ys & Hin & Hat). simpl in Hin. apply elem_of_app in Hin as [Hin|Hin].
+    + unfold hyps_inst in Hin. apply list_elem_of_fmap in Hin as ([C0 ys0] & Heq & Hin).
+      injection Heq as -> ->.
+      apply bcs_at_inst in Hat as ([u0 v0] & Hat & Heq). injection Heq as -> ->.
+      split; [apply pshift_not_tree0|]. intros z.
+      rewrite !pshift_back by done. apply fl_h. by exists C0, ys0.
+    + apply list_elem_of_singleton in Hin. injection Hin as -> ->.
+      exfalso. apply Hy. by apply (tree_ends_open C x y).
+  - destruct (IH2 Hy) as [Hw IH2']. destruct (IH1 Hw) as [Hx IH1'].
+    split; [done|]. intros z. eapply sl_trans; [apply IH1'|apply IH2'].
 Qed.
 
-Lemma fresh_outer_skn W Ψ C u :
-  Forall (skn W Ψ) (bc_env C) → pn_vb (S (length (bc_env C))) (pt_name u) → pt_root u ≠ NVar 0 →
-  skn W Ψ (fresh_outer C u).
+Lemma slt_open_out W Γ C x y : facts_const W → wf_new C →
+  slt W (hc_open 1 C Γ) x y → ¬ in_tree0 y →
+  ¬ in_tree0 x ∧ ∀ z, slt W Γ (pt_inst (plist [z]) x) (pt_inst (plist [z]) y).
+Proof. intros Hwf [HC _]. by apply slt_open_out_te. Qed.
+
+(** Conservativity when every fact ends in the tree of the new base:
+    no fact leaves the tree, so C has no bridge. *)
+Lemma cons_tree W Γ C : tree_ends C → cons_open W Γ 1 C.
 Proof.
-  intros HK Hs Hr. destruct (pn_vb_var _ _ Hs) as ([|j] & Hb & Hlt); [done|].
-  destruct (lookup_lt_is_Some_2 (bc_env C) j) as [y Hy]; [lia|].
-  apply (skn_root W Ψ y); [|rewrite Forall_lookup in HK; by apply (HK j)].
-  unfold fresh_outer. rewrite pt_root_inst. unfold pt_root at 2. rewrite Hb.
-  unfold plist. simpl. by rewrite Hy.
+  intros HC z y (_ & Hy & Hb). exfalso. apply Hy, in_tree_1.
+  destruct Hb as [[Hf Hs]|(v & u & _ & _ & _ & [Hf Hs])]; by apply (HC _ _ Hf Hs).
 Qed.
 
-Lemma fresh_lo_skn W Ψ C u p : Forall (skn W Ψ) (bc_env C) → fresh_lo C u p → skn W Ψ (fresh_outer C u).
-Proof. intros HK (_ & [Hs _] & _ & Hr). by apply fresh_outer_skn. Qed.
+(** Conservativity under (wf-new). *)
+Lemma cons_new W Γ C : wf_new C → cons_open W Γ 1 C.
+Proof. intros [HC _]. by apply cons_tree. Qed.
 
-Lemma fresh_hi_skn W Ψ C q v : Forall (skn W Ψ) (bc_env C) → fresh_hi C q v → skn W Ψ (fresh_outer C v).
-Proof. intros HK (_ & [_ Hs] & _ & Hr). by apply fresh_outer_skn. Qed.
+(** Conservativity under (gen-new), the bridge half of Lemma C. *)
+Lemma cons_gen W Γ C : gen_new W Γ C → cons_open W Γ 1 C.
+Proof. intros H. apply (gen_new_acyc _ _ _ H). Qed.
 
-Lemma pt_inst_unshift x z : pt_inst (plist [x]) (pt_inst (λ a', pvar (a' + 1)) z) = z.
+(** ** Conservativity of an opening
+
+    A derivation in [hc_open m C Γ] may enter the tree of the m bound
+    variables through an entry and leave it through an exit. [binv]
+    follows such a derivation. Each stretch through the tree is a bridge,
+    so between two outer points it gives the fact in Γ
+    ([cons_open_conservative]). *)
+
+Lemma in_tree_root m x : in_tree m x ↔ ∃ a, pt_root x = NVar a ∧ a < m.
+Proof. unfold in_tree, pt_root. apply pn_vb_root. Qed.
+
+Lemma in_tree_dec m x : Decision (in_tree m x).
+Proof. unfold in_tree. induction (pt_name x); simpl; apply _. Defined.
+
+Lemma pshift_not_tree m x : ¬ in_tree m (pt_inst (pshift m) x).
 Proof.
-  rewrite pt_inst_comp. rewrite <-(pt_inst_pvar z) at 2. apply pt_inst_ext.
-  intros b. simpl. rewrite pt_inst_pvar_at. unfold plist. simpl.
-  replace (b + 1) with (S b) by lia. simpl. unfold pvar. f_equal. f_equal. lia.
+  rewrite in_tree_root, pt_root_inst_var. intros (a & Ha & Hlt). revert Ha.
+  unfold pt_root at 2. induction (pt_name x) as [b|b|p IH b κ]; simpl; try done.
+  unfold pshift. simpl. intros [= Hb]. lia.
 Qed.
 
-Lemma open1_comp x env f :
-  fact_map (pt_inst (plist [x])) (fact_map (pt_inst (pup 1 (plist env))) f)
-  = fact_map (pt_inst (plist (x :: env))) f.
+Section cons_bridge.
+  Context (W : sworld) (Γ : hctx) (m : nat) (C : bcs).
+  Context (Hfc : facts_const W).
+  Context (Hbr : cons_open W Γ m C).
+
+  Local Notation tin := (in_tree m).
+  Local Notation tstep := (tree_step m C).
+  Local Notation op := (outer_pt m C).
+
+  Definition unb (x : point) : point := pt_inst (plist (ids m)) x.
+
+  Definition binv (x y : point) : Prop :=
+    (¬ tin x → ¬ tin y → slt W Γ (unb x) (unb y)) ∧
+    (¬ tin x → tin y → ∃ z v, ¬ tin z ∧ sle W Γ (unb x) (op z) ∧ cfact_at m C z v ∧ tin v ∧ rtc tstep v y) ∧
+    (tin x → ¬ tin y → ∃ u y', rtc tstep x u ∧ cfact_at m C u y' ∧ ¬ tin y' ∧ sle W Γ (op y') (unb y)) ∧
+    (tin x → tin y → rtc tstep x y ∨
+       ∃ u y' z v, rtc tstep x u ∧ cfact_at m C u y' ∧ ¬ tin y' ∧ sle W Γ (op y') (op z) ∧
+         ¬ tin z ∧ cfact_at m C z v ∧ tin v ∧ rtc tstep v y).
+
+  Lemma sle_slt a b c : sle W Γ a b → slt W Γ b c → slt W Γ a c.
+  Proof. intros [<-|H1] H2; [done|by eapply sl_trans]. Qed.
+  Lemma slt_sle a b c : slt W Γ a b → sle W Γ b c → slt W Γ a c.
+  Proof. intros H1 [<-|H2]; [done|by eapply sl_trans]. Qed.
+  Lemma sle_sle a b c : sle W Γ a b → sle W Γ b c → sle W Γ a c.
+  Proof. intros [<-|H1] H2; [done|right; by eapply slt_sle]. Qed.
+
+  Lemma bridge_slt z v u y : ¬ tin z → cfact_at m C z v → tin v → rtc tstep v u → cfact_at m C u y → ¬ tin y →
+    slt W Γ (op z) (op y).
+  Proof.
+    intros Hz Hzv Hv Hvu Huy Hy. apply Hbr. split; [done|split; [done|right]].
+    exists v, u. exact (conj Hzv (conj Hv (conj Hvu Huy))).
+  Qed.
+
+  Lemma binv_trans a b c : binv a b → binv b c → binv a c.
+  Proof.
+    intros (A1 & A2 & A3 & A4) (B1 & B2 & B3 & B4).
+    destruct (in_tree_dec m b) as [Hb|Hb]; split_and!.
+    - intros Ha Hc. destruct (A2 Ha Hb) as (z & v & Hz & H1 & Hzv & Hv & Hvb).
+      destruct (B3 Hb Hc) as (u & y & Hbu & Huy & Hy & H2).
+      eapply slt_sle; [eapply sle_slt; [exact H1|]|exact H2].
+      apply (bridge_slt z v u y); try done. etrans; [exact Hvb|exact Hbu].
+    - intros Ha Hc. destruct (A2 Ha Hb) as (z & v & Hz & H1 & Hzv & Hv & Hvb).
+      destruct (B4 Hb Hc) as [Hbc|(u & y & z' & v' & Hbu & Huy & Hy & H2 & Hz' & Hzv' & Hv' & Hvc)].
+      + exists z, v. refine (conj Hz (conj H1 (conj Hzv (conj Hv _)))). etrans; [exact Hvb|exact Hbc].
+      + exists z', v'. refine (conj Hz' (conj _ (conj Hzv' (conj Hv' Hvc)))).
+        right. eapply sle_slt; [exact H1|]. eapply slt_sle; [|exact H2].
+        apply (bridge_slt z v u y); try done. etrans; [exact Hvb|exact Hbu].
+    - intros Ha Hc. destruct (B3 Hb Hc) as (u2 & y2 & Hbu2 & Huy2 & Hy2 & H2).
+      destruct (A4 Ha Hb) as [Hab|(u & y & z & v & Hau & Huy & Hy & H1 & Hz & Hzv & Hv & Hvb)].
+      + exists u2, y2. refine (conj _ (conj Huy2 (conj Hy2 H2))). etrans; [exact Hab|exact Hbu2].
+      + exists u, y. refine (conj Hau (conj Huy (conj Hy _))). right.
+        eapply sle_slt; [exact H1|]. eapply slt_sle; [|exact H2].
+        apply (bridge_slt z v u2 y2); try done. etrans; [exact Hvb|exact Hbu2].
+    - intros Ha Hc.
+      destruct (A4 Ha Hb) as [Hab|(u & y & z & v & Hau & Huy & Hy & H1 & Hz & Hzv & Hv & Hvb)];
+        destruct (B4 Hb Hc) as [Hbc|(u2 & y2 & z2 & v2 & Hbu2 & Huy2 & Hy2 & H2 & Hz2 & Hzv2 & Hv2 & Hvc)].
+      + left. etrans; [exact Hab|exact Hbc].
+      + right. exists u2, y2, z2, v2.
+        refine (conj _ (conj Huy2 (conj Hy2 (conj H2 (conj Hz2 (conj Hzv2 (conj Hv2 Hvc))))))).
+        etrans; [exact Hab|exact Hbu2].
+      + right. exists u, y, z, v.
+        refine (conj Hau (conj Huy (conj Hy (conj H1 (conj Hz (conj Hzv (conj Hv _))))))).
+        etrans; [exact Hvb|exact Hbc].
+      + right. exists u, y, z2, v2.
+        refine (conj Hau (conj Huy (conj Hy (conj _ (conj Hz2 (conj Hzv2 (conj Hv2 Hvc))))))).
+        right. eapply sle_slt; [exact H1|]. eapply slt_sle; [|exact H2].
+        apply (bridge_slt z v u2 y2); try done. etrans; [exact Hvb|exact Hbu2].
+    - intros Ha Hc. eapply sl_trans; [exact (A1 Ha Hb)|exact (B1 Hb Hc)].
+    - intros Ha Hc. destruct (B2 Hb Hc) as (z & v & Hz & H2 & Hrest). exists z, v.
+      refine (conj Hz (conj _ Hrest)). right. eapply slt_sle; [exact (A1 Ha Hb)|exact H2].
+    - intros Ha Hc. destruct (A3 Ha Hb) as (u & y & Hau & Huy & Hy & H1). exists u, y.
+      refine (conj Hau (conj Huy (conj Hy _))). right. eapply sle_slt; [exact H1|exact (B1 Hb Hc)].
+    - intros Ha Hc. right. destruct (A3 Ha Hb) as (u & y & Hau & Huy & Hy & H1).
+      destruct (B2 Hb Hc) as (z & v & Hz & H2 & Hzv & Hv & Hvc).
+      exists u, y, z, v. refine (conj Hau (conj Huy (conj Hy (conj _ (conj Hz (conj Hzv (conj Hv Hvc))))))).
+      eapply sle_sle; [exact H1|exact H2].
+  Qed.
+
+  Lemma binv_tstep s s' : tstep s s' → binv s s'.
+  Proof.
+    intros Hst. pose proof Hst as (H1 & H2 & _). split_and!; try tauto.
+    intros _ _. left. by apply rtc_once.
+  Qed.
+
+  Lemma binv_swstep x y : swstep W x y → binv x y.
+  Proof.
+    destruct 1 as [a b Hf|a|a].
+    - destruct (Hfc a b Hf) as [[c1 [Hc1 _]] [c2 [Hc2 _]]].
+      assert (¬ tin a) as Ha by (rewrite in_tree_root; intros (? & ? & _); congruence).
+      assert (¬ tin b) as Hb by (rewrite in_tree_root; intros (? & ? & _); congruence).
+      split_and!; try tauto.
+      intros _ _. unfold unb. rewrite !pt_inst_novar by (intros ?; congruence). by apply sl_w, tc_once, ws_fact.
+    - destruct (in_tree_dec m a) as [Ha|Ha].
+      + apply binv_tstep. split; [done|split; [done|by right; left]].
+      + split_and!; try (unfold in_tree in *; simpl; tauto).
+        intros _ _. unfold unb. rewrite pt_inst_shift. apply sl_po.
+    - destruct (in_tree_dec m a) as [Ha|Ha].
+      + apply binv_tstep. split; [done|split; [done|by right; right]].
+      + split_and!; try (unfold in_tree in *; simpl; tauto).
+        intros _ _. unfold unb. rewrite pt_inst_shift, pt_inst_dual. apply sl_w, sw_lt_dpo.
+  Qed.
+
+  Lemma binv_sw x y : W ⊢ₛ x ≺ y → binv x y.
+  Proof.
+    induction 1 as [x y Hs|x y z Hs _ IH]; [by apply binv_swstep|].
+    eapply binv_trans; [by apply binv_swstep|exact IH].
+  Qed.
+
+  (** The instance of a scoped point of C in [hc_open m C Γ]. *)
+  Definition cinst (p : point) : point :=
+    pt_inst (plist (ids m ++ (pt_inst (pshift m) <$> bc_env C))) p.
+
+  Lemma cinst_tree p : tin p → cinst p = p.
+  Proof.
+    intros Hp. unfold cinst. rewrite (pt_inst_ext_root _ pvar); [apply pt_inst_pvar|].
+    intros a Ha. apply in_tree_root in Hp as (b & Hb & Hbm). rewrite Hb in Ha. injection Ha as <-.
+    unfold plist. rewrite lookup_app_l by (rewrite length_ids; lia). by rewrite ids_lookup.
+  Qed.
+
+  Lemma cinst_out p : pn_vb (m + length (bc_env C)) (pt_name p) → ¬ tin p →
+    ¬ tin (cinst p) ∧ unb (cinst p) = op p.
+  Proof.
+    intros Hs Hp. apply pn_vb_root in Hs as (a & Ha & Hal).
+    assert (m ≤ a) as Hm.
+    { destruct (decide (a < m)) as [Hlt|]; [|lia]. exfalso. apply Hp, in_tree_root.
+      exists a. split; [exact Ha|exact Hlt]. }
+    assert (∃ e, bc_env C !! (a - m) = Some e) as [e He] by (apply lookup_lt_is_Some_2; lia).
+    assert (cinst p = pt_inst (λ _, pt_inst (pshift m) e) p) as Ec.
+    { unfold cinst. apply pt_inst_ext_root. intros b Hb. change (pt_root p) with (pn_root (pt_name p)) in Hb.
+      rewrite Ha in Hb. injection Hb as <-. unfold plist. rewrite lookup_app_r by (rewrite length_ids; lia).
+      rewrite length_ids, list_lookup_fmap, He. done. }
+    split.
+    - rewrite Ec. intros H. apply (pshift_not_tree m e). apply in_tree_root in H as (b & Hb & Hbm).
+      apply in_tree_root. exists b. split; [|done].
+      rewrite <-Hb, (pt_root_inst_var _ p). change (pt_root p) with (pn_root (pt_name p)). by rewrite Ha.
+    - unfold unb, outer_pt. rewrite Ec, pt_inst_comp. apply pt_inst_ext_root. intros b Hb.
+      change (pt_root p) with (pn_root (pt_name p)) in Hb. rewrite Ha in Hb. injection Hb as <-.
+      unfold compose. rewrite pshift_back by (apply length_ids). unfold plist.
+      rewrite lookup_app_r by (rewrite length_ids; lia). rewrite length_ids, He. done.
+  Qed.
+
+  Lemma binv_hyp x y : hyp_fact (hc_hyps (hc_open m C Γ)) (FLt x y) → binv x y.
+  Proof.
+    intros (C' & ys & Hin & Hat). simpl in Hin. apply elem_of_app in Hin as [Hin|Hin].
+    - unfold hyps_inst in Hin. apply list_elem_of_fmap in Hin as ([C0 ys0] & Heq & Hin).
+      injection Heq as -> ->.
+      apply bcs_at_inst in Hat as ([u0 v0] & Hat & Heq). injection Heq as -> ->.
+      pose proof (pshift_not_tree m u0). pose proof (pshift_not_tree m v0).
+      split_and!; try tauto. intros _ _. unfold unb. rewrite !pshift_back by (apply length_ids).
+      apply fl_h. by exists C0, ys0.
+    - apply list_elem_of_singleton in Hin. injection Hin as -> ->.
+      apply bcs_at_iff in Hat as ([x0 y0] & Hf & Hsc & Heq). cbn [bcs_inst bc_env bc_facts] in *.
+      rewrite length_fmap, length_ids in Hsc. injection Heq as -> ->.
+      change (binv (cinst x0) (cinst y0)).
+      assert (cfact_at m C x0 y0) as Hcf by (split; [done|exact Hsc]).
+      destruct Hsc as [Hsx Hsy].
+      destruct (in_tree_dec m x0) as [Hx|Hx], (in_tree_dec m y0) as [Hy|Hy].
+      + rewrite !cinst_tree by done. apply binv_tstep. split; [done|split; [done|left; exact Hcf]].
+      + rewrite (cinst_tree x0) by done. destruct (cinst_out y0 Hsy Hy) as [Hy' Ey].
+        split_and!; try tauto. intros _ _. exists x0, y0. rewrite Ey.
+        refine (conj (rtc_refl _ _) (conj Hcf (conj Hy _))). by left.
+      + rewrite (cinst_tree y0) by done. destruct (cinst_out x0 Hsx Hx) as [Hx' Ex].
+        split_and!; try tauto. intros _ _. exists x0, y0. rewrite Ex.
+        refine (conj Hx (conj _ (conj Hcf (conj Hy (rtc_refl _ _))))). by left.
+      + destruct (cinst_out x0 Hsx Hx) as [Hx' Ex], (cinst_out y0 Hsy Hy) as [Hy' Ey].
+        split_and!; try tauto. intros _ _. rewrite Ex, Ey. apply Hbr.
+        split; [done|split; [done|left; exact Hcf]].
+  Qed.
+
+  Lemma binv_slt x y : slt W (hc_open m C Γ) x y → binv x y.
+  Proof.
+    unfold slt. induction 1 as [x y Hw|x y Hf|x y z _ IH1 _ IH2].
+    - by apply binv_sw.
+    - by apply binv_hyp.
+    - by eapply binv_trans.
+  Qed.
+End cons_bridge.
+
+(** The bridge condition makes an opening conservative: a fact between
+    two shifted outer points in [hc_open m C Γ] holds in Γ already. *)
+Lemma cons_open_conservative W Γ m C : facts_const W → cons_open W Γ m C →
+  ∀ x y, slt W (hc_open m C Γ) (pt_inst (pshift m) x) (pt_inst (pshift m) y) → slt W Γ x y.
 Proof.
-  assert (∀ z, pt_inst (plist [x]) (pt_inst (pup 1 (plist env)) z) = pt_inst (plist (x :: env)) z)
-    as E.
-  { intros z. rewrite pt_inst_comp. apply pt_inst_ext. intros b. unfold compose, pup.
-    destruct (decide (b < 1)).
-    - assert (b = 0) as -> by lia. by rewrite pt_inst_pvar_at.
-    - rewrite pt_inst_unshift. destruct b as [|b]; [lia|]. replace (S b - 1) with b by lia.
-      unfold plist. simpl. destruct (env !! b); [done|]. unfold pvar. repeat f_equal. }
-  destruct f; simpl; by rewrite !E.
+  intros Hfc Hbr x y H.
+  destruct (binv_slt W Γ m C Hfc Hbr _ _ H) as [H1 _].
+  specialize (H1 (pshift_not_tree m x) (pshift_not_tree m y)). unfold unb in H1.
+  by rewrite !pshift_back in H1 by (apply length_ids).
 Qed.
 
-Lemma bcs_hold_fresh_intro (eq lt : point → point → Prop) C x :
-  (∀ f, bc_facts C f → fact_scoped (S (length (bc_env C))) f →
-     fact_holds eq lt (fact_map (pt_inst (plist (x :: bc_env C))) f)) →
-  bcs_hold eq lt C [x].
-Proof. intros H g (f & Hf & Hs & ->). rewrite open1_comp. by apply H. Qed.
-
-(** A fact of a hypothesis (C, [x]) read off its raw fact. *)
-Lemma slt_hyp_fresh W Ψ C x u v :
-  (C, [x]) ∈ Ψ → bc_facts C (FLt u v) → fact_scoped (S (length (bc_env C))) (FLt u v) →
-  slt W Ψ (pt_inst (plist (x :: bc_env C)) u) (pt_inst (plist (x :: bc_env C)) v).
+(** The converse. Each bridge of C is a derivation in [hc_open m C Γ]
+    between two points outside the tree: its facts are hypotheses of the
+    opening and its steps in the tree are facts of C or program order. *)
+Lemma unb_shift m q : ¬ in_tree m q → pt_inst (pshift m) (unb m q) = q.
 Proof.
-  intros Hg Hf Hs. apply sl_h. exists C, [x]. split; [done|].
-  exists (fact_map (pt_inst (pup 1 (plist (bc_env C)))) (FLt u v)). split.
-  - exists (FLt u v). split_and!; [done|done|done].
-  - by rewrite open1_comp.
+  intros Hq. unfold unb. rewrite pt_inst_comp, (pt_inst_ext_root _ pvar); [apply pt_inst_pvar|].
+  intros a Ha. destruct (decide (a < m)) as [Hlt|Hge].
+  { exfalso. apply Hq, in_tree_root. by exists a. }
+  unfold compose, plist. rewrite lookup_ge_None_2 by (rewrite length_ids; lia).
+  rewrite pt_inst_pvar_at, length_ids. unfold pshift. f_equal. lia.
 Qed.
+
+Lemma cinst_shift m C p : pn_vb (m + length (bc_env C)) (pt_name p) → ¬ in_tree m p →
+  cinst m C p = pt_inst (pshift m) (outer_pt m C p).
+Proof.
+  intros Hs Hp. destruct (cinst_out m C p Hs Hp) as [Hq Eq].
+  by rewrite <-Eq, unb_shift.
+Qed.
+
+Lemma cfact_open W Γ m C x y : cfact_at m C x y → slt W (hc_open m C Γ) (cinst m C x) (cinst m C y).
+Proof.
+  intros [Hf Hs]. apply fl_h. exists (bcs_inst (pshift m) C), (ids m). split.
+  - simpl. apply elem_of_app. right. by apply list_elem_of_singleton.
+  - apply bcs_at_iff. exists (FLt x y). cbn [bcs_inst bc_env bc_facts].
+    rewrite length_fmap, length_ids. split_and!; [done|done|done].
+Qed.
+
+Lemma tree_steps_open W Γ m C v u : rtc (tree_step m C) v u → sle W (hc_open m C Γ) v u.
+Proof.
+  induction 1 as [v|v w u (Hv & Hw & Hst) _ IH]; [by left|right].
+  assert (slt W (hc_open m C Γ) v w) as Hvw.
+  { destruct Hst as [Hf|[->| ->]].
+    - rewrite <-(cinst_tree m C v Hv), <-(cinst_tree m C w Hw). by apply cfact_open.
+    - apply sl_po.
+    - apply sl_w, sw_lt_dpo. }
+  destruct IH as [<-|IH]; [done|by eapply sl_trans].
+Qed.
+
+Lemma conserv_cons_open W Γ m C : conserv W Γ m C → cons_open W Γ m C.
+Proof.
+  intros Hc z y (Hz & Hy & Hb). apply Hc.
+  assert (∀ p q, cfact_at m C p q → ¬ in_tree m p → cinst m C p = pt_inst (pshift m) (outer_pt m C p)) as Ep.
+  { intros p q [_ [Hp _]] Hn. by apply cinst_shift. }
+  assert (∀ p q, cfact_at m C p q → ¬ in_tree m q → cinst m C q = pt_inst (pshift m) (outer_pt m C q)) as Eq.
+  { intros p q [_ [_ Hq]] Hn. by apply cinst_shift. }
+  destruct Hb as [Hf|(v & u & Hzv & Hv & Hvu & Huy)].
+  - rewrite <-(Ep z y Hf Hz), <-(Eq z y Hf Hy). by apply cfact_open.
+  - rewrite <-(Ep z v Hzv Hz), <-(Eq u y Huy Hy).
+    assert (in_tree m u) as Hu.
+    { clear -Hv Hvu. induction Hvu as [|a b c (_ & Hb & _) _ IH]; [done|by apply IH]. }
+    pose proof (cfact_open W Γ m C z v Hzv) as H1. rewrite (cinst_tree m C v Hv) in H1.
+    pose proof (cfact_open W Γ m C u y Huy) as H2. rewrite (cinst_tree m C u Hu) in H2.
+    eapply sl_trans; [exact H1|]. destruct (tree_steps_open W Γ m C v u Hvu) as [<-|H]; [done|].
+    by eapply sl_trans.
+Qed.
+
+(** Conservativity equals the bridge condition, at m bound variables. *)
+Lemma cons_open_iff W Γ m C : facts_const W → cons_open W Γ m C ↔ conserv W Γ m C.
+Proof.
+  intros Hfc. split; [intros H; exact (cons_open_conservative W Γ m C Hfc H)|apply conserv_cons_open].
+Qed.
+
+(** (wf-new) reads the facts and the number of outer points of C, which
+    an instantiation keeps. *)
+Lemma wf_new_inst σ C : wf_new C → wf_new (bcs_inst σ C).
+Proof. destruct C as [env P]. unfold wf_new, new_step, bcs_inst. simpl. by rewrite length_fmap. Qed.
+
+(** ** The substitution lemma *)
+
+Lemma pt_inst_pup1_0 σ : pt_inst (pup 1 σ) (pvar 0) = pvar 0.
+Proof. rewrite pt_inst_pvar_at. unfold pup. by rewrite decide_True by lia. Qed.
+
+Local Ltac heads_p :=
+  rewrite ?tenv_heads_pinst, ?lenv_heads_pinst, ?lenv_bot_pinst, ?heads_pinst, ?hbot_pinst,
+    ?opt_heads_pinst, <-?set_map_union_L, <-?sf_pinst_unionb.
+

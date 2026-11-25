@@ -2,9 +2,9 @@
  "$schema": "../schema.json",
  "format": "proof-map/1",
  "title": "GV Relation Map",
- "subtitle": "Definitions, rules and theorems of the v2 development",
+ "subtitle": "Definitions, rules and theorems of the Rocq development",
  "source": {
-  "root": "../../../v2",
+  "root": "../../../theories",
   "language": "rocq"
  },
  "tex": {
@@ -129,7 +129,7 @@
      "deviations": [
       {
        "kind": "planned",
-       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
+       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (.claude/notes/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
       }
      ]
     },
@@ -290,7 +290,7 @@
      "deviations": [
       {
        "kind": "planned",
-       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
+       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (.claude/notes/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
       }
      ]
     },
@@ -384,7 +384,7 @@
      "deviations": [
       {
        "kind": "planned",
-       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
+       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (.claude/notes/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
       }
      ]
     },
@@ -409,7 +409,7 @@
      "deviations": [
       {
        "kind": "planned",
-       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
+       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (.claude/notes/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
       }
      ]
     },
@@ -455,7 +455,7 @@
      "deviations": [
       {
        "kind": "planned",
-       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
+       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (.claude/notes/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
       }
      ]
     },
@@ -543,7 +543,7 @@
      "deviations": [
       {
        "kind": "planned",
-       "reason": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
+       "reason": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (.claude/notes/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
       }
      ]
     },
@@ -644,7 +644,7 @@
      "deviations": [
       {
        "kind": "planned",
-       "reason": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
+       "reason": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (.claude/notes/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
       }
      ]
     },
@@ -752,7 +752,7 @@
      "deviations": [
       {
        "kind": "planned",
-       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
+       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (.claude/notes/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
       }
      ]
     },
@@ -778,7 +778,7 @@
      "deviations": [
       {
        "kind": "planned",
-       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
+       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (.claude/notes/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
       }
      ]
     },
@@ -830,7 +830,7 @@
      "deviations": [
       {
        "kind": "planned",
-       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
+       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (.claude/notes/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
       }
      ]
     }
@@ -926,7 +926,7 @@
      "deviations": [
       {
        "kind": "planned",
-       "reason": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
+       "reason": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (.claude/notes/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
       }
      ]
     },
@@ -1162,7 +1162,7 @@
      "deviations": [
       {
        "kind": "planned",
-       "reason": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
+       "reason": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (.claude/notes/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
       }
      ]
     },
@@ -1199,7 +1199,7 @@
      "deviations": [
       {
        "kind": "planned",
-       "reason": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
+       "reason": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (.claude/notes/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
       }
      ]
     },
@@ -1262,7 +1262,7 @@
      "deviations": [
       {
        "kind": "planned",
-       "reason": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
+       "reason": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (.claude/notes/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
       }
      ]
     },
@@ -1390,7 +1390,7 @@
      "deviations": [
       {
        "kind": "planned",
-       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
+       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (.claude/notes/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
       }
      ]
     },
@@ -1456,7 +1456,7 @@
      "deviations": [
       {
        "kind": "planned",
-       "reason": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
+       "reason": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (.claude/notes/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
       }
      ]
     },
@@ -1487,7 +1487,7 @@
      "deviations": [
       {
        "kind": "planned",
-       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
+       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (.claude/notes/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field."
       }
      ]
     },
@@ -1533,7 +1533,7 @@
      "deviations": [
       {
        "kind": "planned",
-       "reason": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
+       "reason": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (.claude/notes/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
       }
      ]
     },
@@ -1700,7 +1700,7 @@
      "deviations": [
       {
        "kind": "planned",
-       "reason": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
+       "reason": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (.claude/notes/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
       }
      ]
     },
@@ -1759,7 +1759,7 @@
      "deviations": [
       {
        "kind": "planned",
-       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field. Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
+       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (.claude/notes/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field. Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (.claude/notes/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
       }
      ]
     },
@@ -1977,7 +1977,7 @@
      "deviations": [
       {
        "kind": "planned",
-       "reason": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (docs/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
+       "reason": "Generalized arrows (upper point ⊤, lower point ⊥) and per-end capture are planned (.claude/notes/redesign/pending.md, entry 12). The Rocq still has the floor h with capture, E-SpawnLam and V-Thunk."
       }
      ]
     },
@@ -2014,7 +2014,7 @@
      "deviations": [
       {
        "kind": "planned",
-       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field. The creation choice χ is a proposal of 2026-11-20."
+       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (.claude/notes/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field. The creation choice χ is a proposal of 2026-11-20."
       }
      ]
     },
@@ -2061,7 +2061,7 @@
      "deviations": [
       {
        "kind": "planned",
-       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (docs/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field. The creation choice χ is a proposal of 2026-11-20."
+       "reason": "Plain new, with position and facts in its type and worlds that grow, is planned (.claude/notes/redesign/pending.md, entry 2). The Rocq creates with new_ℓ at generated roots of families with laws Λ_ℓ fixed in the world, and with new_κ at a field. The creation choice χ is a proposal of 2026-11-20."
       }
      ]
     }
@@ -4992,7 +4992,7 @@
    "deviations": [
     {
      "kind": "planned",
-     "reason": "Not yet in the Rocq, see docs/redesign/pending.md, entry 12."
+     "reason": "Not yet in the Rocq, see .claude/notes/redesign/pending.md, entry 12."
     }
    ]
   },
@@ -6413,7 +6413,7 @@
    "deviations": [
     {
      "kind": "planned",
-     "reason": "Not yet in the Rocq, see docs/redesign/pending.md, entry 2. The Rocq creates with new_ℓ and new_κ over generated roots."
+     "reason": "Not yet in the Rocq, see .claude/notes/redesign/pending.md, entry 2. The Rocq creates with new_ℓ and new_κ over generated roots."
     }
    ]
   },
@@ -7883,7 +7883,7 @@
    "deviations": [
     {
      "kind": "planned",
-     "reason": "Not yet in the Rocq, see docs/redesign/pending.md, entry 12."
+     "reason": "Not yet in the Rocq, see .claude/notes/redesign/pending.md, entry 12."
     }
    ]
   },
@@ -7907,7 +7907,7 @@
    "deviations": [
     {
      "kind": "planned",
-     "reason": "Not yet in the Rocq, see docs/redesign/pending.md, entry 12."
+     "reason": "Not yet in the Rocq, see .claude/notes/redesign/pending.md, entry 12."
     }
    ]
   },
@@ -7927,7 +7927,7 @@
    "deviations": [
     {
      "kind": "planned",
-     "reason": "Not yet in the Rocq, see docs/redesign/pending.md, entry 12."
+     "reason": "Not yet in the Rocq, see .claude/notes/redesign/pending.md, entry 12."
     }
    ]
   },
@@ -10693,7 +10693,7 @@
    "deviations": [
     {
      "kind": "planned",
-     "reason": "Not yet in the Rocq, see docs/redesign/pending.md, entry 12."
+     "reason": "Not yet in the Rocq, see .claude/notes/redesign/pending.md, entry 12."
     }
    ]
   },
@@ -14104,7 +14104,7 @@
    "deviations": [
     {
      "kind": "planned",
-     "reason": "Not yet in the Rocq, see docs/redesign/pending.md, entry 12."
+     "reason": "Not yet in the Rocq, see .claude/notes/redesign/pending.md, entry 12."
     }
    ]
   },
@@ -14832,7 +14832,7 @@
    "deviations": [
     {
      "kind": "planned",
-     "reason": "Not yet in the Rocq, see docs/redesign/pending.md, entry 2."
+     "reason": "Not yet in the Rocq, see .claude/notes/redesign/pending.md, entry 2."
     }
    ]
   },
@@ -14856,7 +14856,7 @@
    "deviations": [
     {
      "kind": "planned",
-     "reason": "Not yet in the Rocq, see docs/redesign/pending.md, entry 2."
+     "reason": "Not yet in the Rocq, see .claude/notes/redesign/pending.md, entry 2."
     }
    ]
   },
@@ -16963,7 +16963,7 @@
     "df": {
      "ok": false,
      "part": "P-Connect",
-     "rocq": "argued in docs/redesign/semantic-example.md, no Rocq proof"
+     "rocq": "argued in .claude/notes/redesign/semantic-example.md, no Rocq proof"
     },
     "sem": {
      "ok": true,

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Check the relation map in one command: docs/explorer/check.sh [--list CATEGORY|--list]
 #
-# Runs tools/proof-map/check.js once on map.json against v2/ with the private extension in ext/,
+# Runs tools/proof-map/check.js once on map.json against theories/ with the private extension in ext/,
 # and prints one table with five steps in order:
 #   1 schema       the JSON against tools/proof-map/schema.json, and the extension loads
 #   2 proof-map    names against the Rocq sources, hovers, links, deviations, variables
@@ -24,7 +24,7 @@ if [ "$1" = "--list" ]; then list="--list"; [ -n "$2" ] && list="--list $2"; fi
 mj=""
 [ -f "$pm/node_modules/mathjax-full/js/mathjax.js" ] && mj="--mathjax $pm/node_modules"
 # shellcheck disable=SC2086
-node "$pm/check.js" "${MAP_FILE:-$here/map.json}" --root "$repo/v2" --json "$tmp/findings.json" $mj $list --max 0 > "$tmp/out.txt"
+node "$pm/check.js" "${MAP_FILE:-$here/map.json}" --root "$repo/theories" --json "$tmp/findings.json" $mj $list --max 0 > "$tmp/out.txt"
 status=$?
 [ -f "$tmp/findings.json" ] || { cat "$tmp/out.txt"; echo "check.js failed (status $status)"; exit 2; }
 [ -n "$list" ] && sed -n '/^errors\|^warnings\|^info/,$p' "$tmp/out.txt" | grep -v '^ *… ' | sed '$d'
