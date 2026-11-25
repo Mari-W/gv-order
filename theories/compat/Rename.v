@@ -738,7 +738,7 @@ Theorem Erel_rename κ n W Θ T F e h :
   kinj h Θ → e ∈ E[κ]^W _ n⟦Θ ⊢ T⟧^F → emap h e ∈ E[κ]^W _ n⟦kren h Θ ⊢ T⟧^F.
 Proof. intros Hk He. by apply (rename_level κ n T). Qed.
 
-(** ** P under a renaming: a projection of the clause (rename) *)
+(** ** Facts about renamings and fusions of processes (their closure theorem is in compat/Fusion.v) *)
 
 Lemma ech_gch h o : dcomm h → ech (h o) = gch h (ech o).
 Proof.
@@ -894,22 +894,6 @@ Section fuse_compose.
           rewrite <-Gd. split_and!; [by apply kren_lookup; [apply kinj_g|]|by apply kren_lookup; [apply kinj_g|]|done].
   Qed.
 End fuse_compose.
-
-(** The clause (fuse) as a projection: a fusion of a process in P is in P. *)
-Theorem Prel_fuse κ n W Σ T p h D :
-  fuse_ok h D Σ p → p ∈ P[κ]^W _ n⟦Σ ⊢ T⟧ → pfuse h D p ∈ P[κ]^W _ n⟦sdrop D (kren h Σ) ⊢ T⟧.
-Proof.
-  intros Hh HP. rewrite Prel_iff in HP. apply Prel_iff. intros Hn0 W1 HW1 g D' Hg.
-  rewrite (fuse_sdrop_compose h g D D' Σ p Hh Hg), (pfuse_compose h g D D' Σ p Hh Hg).
-  apply HP; [done|done|]. by apply fuse_ok_compose.
-Qed.
-
-(** Decision Q16 for P, D = ∅. *)
-Theorem Prel_rename κ n W Σ T p h :
-  pren_ok h Σ p → p ∈ P[κ]^W _ n⟦Σ ⊢ T⟧ → pmap h p ∈ P[κ]^W _ n⟦kren h Σ ⊢ T⟧.
-Proof.
-  intros Hh HP. rewrite <-pfuse_empty, <-(sdrop_empty (kren h Σ)). by apply Prel_fuse; [apply pren_fuse_ok|].
-Qed.
 
 (** ** The link substitution renames the other component (P-Connect)
 

@@ -439,15 +439,8 @@ Section prel.
     apply Prel_iff. intros Hn0. revert W Σ T p HP Σ' HΣ0.
     refine (Prel_ind κ n (λ W Σ T p, ∀ Σ', senv_eqv Σ Σ' →
       Pbody κ n (Vrel κ) (Prel κ) (Vrel κ n) (Prel κ n) W Σ' T p) Hn0 _).
-    intros W Σ T p Hb Σ' HΣ. intros W1 HW1 h D Hh.
-    pose proof (fuse_ok_conv h D Σ Σ' p HΣ Hh) as Hh0.
-    destruct (Hb W1 HW1 h D Hh0) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
-    assert (senv_eqv (sdrop D (kren h Σ)) (sdrop D (kren h Σ'))) as HΣh
-      by (apply senv_eqv_sdrop, senv_eqv_kren; [by eapply fuse_ok_kinj|done]).
-    clear Hb HΣ Hh Hh0.
-    remember (pfuse h D p) as p0 eqn:Ep. remember (sdrop D (kren h Σ)) as Σ0 eqn:EΣ.
-    remember (sdrop D (kren h Σ')) as Σ0' eqn:EΣ'.
-    clear Ep EΣ EΣ' p Σ Σ' h D. rename p0 into p, Σ0 into Σ, Σ0' into Σ', HΣh into HΣ.
+    intros W Σ T p Hb Σ' HΣ. intros W1 HW1.
+    destruct (Hb W1 HW1) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
     assert (∀ Wx c Σa Σb p', senv_eqv Σa Σb →
       at_cost_P n c (Prel κ) (λ W Σ T p, Prel κ n W Σ T p ∧
           (∀ Σ', senv_eqv Σ Σ' → Pbody κ n (Vrel κ) (Prel κ) (Vrel κ n) (Prel κ n) W Σ' T p)) Wx Σa T p' →

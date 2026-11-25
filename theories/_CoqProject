@@ -79,8 +79,10 @@ compat/SemTyped.v
 compat/Redex.v
 compat/LiveDF.v
 compat/Rename.v
+compat/Occ.v
 compat/Conv.v
 compat/Connect.v
+compat/Fusion.v
 compat/ConnectCtx.v
 compat/ConnectSteps.v
 compat/ConnectSplit.v

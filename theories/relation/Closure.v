@@ -183,8 +183,8 @@ Section closure.
     apply Prel_iff. intros Hm0. assert (olt ozero n) as Hn0 by exact (olt_trans_le _ _ _ Hm0 Hmn).
     revert W Σ T p HP.
     refine (Prel_ind κ n (λ W Σ T p, Pbody κ m (Vrel κ) (Prel κ) (Vrel κ m) (Prel κ m) W Σ T p) Hn0 _).
-    intros W Σ T p H. intros W1 HW1 h D Hh.
-    destruct (H W1 HW1 h D Hh) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
+    intros W Σ T p H. intros W1 HW1.
+    destruct (H W1 HW1) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
     assert (∀ c W Σ T0 p', at_cost_P n c (Prel κ)
         (λ W Σ T p, Prel κ n W Σ T p ∧ Pbody κ m (Vrel κ) (Prel κ) (Vrel κ m) (Prel κ m) W Σ T p)
         W Σ T0 p' →

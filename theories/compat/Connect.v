@@ -705,36 +705,6 @@ Proof.
     simpl. split; [f_equal; [set_solver|by rewrite insert_union_l, map_fmap_union]|]. split; [set_solver|]. split; [set_solver|]. apply map_disjoint_dom; rewrite ?dom_fmap_L, ?dom_insert_L; apply map_disjoint_dom in Hd; repeat match goal with H : (M1 ∪ M2) !! _ = None |- _ => apply lookup_union_None in H as [? ?] end; repeat match goal with H : _ !! _ = None |- _ => apply not_elem_of_dom in H end; set_solver.
 Qed.
 
-(** ** Induction over the steps of cost 0, closed under fusion *)
-
-Definition Φfuse (Φ : prel) : prel :=
-  λ W Σ T p, ∀ h D, fuse_ok h D Σ p → Φ W (sdrop D (kren h Σ)) T (pfuse h D p).
-
-Lemma Pbody_fuse κ n Vl Pl VN X W Σ T p h D :
-  fuse_ok h D Σ p → Pbody κ n Vl Pl VN X W Σ T p → Pbody κ n Vl Pl VN X W (sdrop D (kren h Σ)) T (pfuse h D p).
-Proof.
-  intros Hh HP W1 HW1 g D' Hg.
-  rewrite (fuse_sdrop_compose h g D D' Σ p Hh Hg), (pfuse_compose h g D D' Σ p Hh Hg).
-  apply HP; [done|]. by apply fuse_ok_compose.
-Qed.
-
-Lemma Prel_ind_fuse κ n (Φ : prel) : olt ozero n →
-  (∀ W Σ T p,
-     Pbody κ n (Vrel κ) (Prel κ) (Vrel κ n)
-       (λ W Σ T p, Prel κ n W Σ T p ∧ Φfuse Φ W Σ T p) W Σ T p →
-     Φ W Σ T p) →
-  ∀ W Σ T p, Prel κ n W Σ T p → Φfuse Φ W Σ T p.
-Proof.
-  intros H0 Hind. refine (Prel_ind κ n _ H0 _). intros W Σ T p Hb h D Hh.
-  apply Hind. by apply Pbody_fuse.
-Qed.
-
-Lemma Φfuse_id (Φ : prel) W Σ T p : Φfuse Φ W Σ T p → Φ W Σ T p.
-Proof.
-  intros H. pose proof (H id ∅ (fuse_ok_id Σ p)) as H'.
-  by rewrite sdrop_empty, kren_id_map, pfuse_empty, pmap_id in H'.
-Qed.
-
 (** ** Renamings that fix every held end *)
 
 Lemma csub_dcomm_all o1 o2 : dcomm (csub o1 o2).

@@ -108,11 +108,13 @@ Definition tenv_erase (Θ : tenv) : senv := (λ e, (te_sty e, te_pt e)) <$> Θ.
     kmap h Θ, for an h injective on the ends of Θ) and a process
     ([pmap h p], its restricted channels through [gch h]). A fusion
     renames by h and restricts the channels D, whose two ends h makes
-    a dual pair of the interface ([pfuse h D p], [sdrop D Σ]). P is
-    closed under every fusion that commutes with duality, is injective
-    on the held ends (the ends of Σ and both ends of every restricted
-    channel) and creates dual pairs only on D ([fuse_ok]). D = ∅ is
-    a renaming ([pren_ok]), h = id internalizes pairs of Σ. *)
+    a dual pair of the interface ([pfuse h D p], [sdrop D Σ]). [fuse_ok]
+    asks h to commute with duality, to be injective on the held ends
+    (the ends of Σ and both ends of every restricted channel) and to
+    create dual pairs only on D. D = ∅ is a renaming ([pren_ok]),
+    h = id internalizes pairs of Σ. These notions are no part of P. The
+    closure of P under them is the theorem [Prel_gfuse]
+    (compat/Fusion.v). *)
 
 (** The channel of the image of c⁺. *)
 Definition gch (g : cend → cend) (c : chan) : chan := ech (g (EPos c)).
@@ -495,13 +497,14 @@ Section bodies.
     (¬ pirred p → ready _ W1(Σ, p)) ∧                           (* P-Ready *)
     Psteps n Vl Pl VN X W1 Σ T p.                               (* P-Step *)
 
-  (** One unfolding of P at level n, in every W1 ⊒ W and under every
-      fusion of the held ends (decision Q16, refined). Every ranked world
-      is acyclic, so the strictness premise of S4.15 is gone. *)
+  (** One unfolding of P at level n, in every W1 ⊒ W. Every ranked world
+      is acyclic, so the strictness premise of S4.15 is gone. The clauses
+      are read at Σ and p themselves. Renaming the held ends and
+      internalizing dual pairs are theorems (compat/Fusion.v), no part of
+      the definition. *)
   Definition Pbody (n : Ix) (Vl : Ix → vrel) (Pl : Ix → prel) (VN : vrel) (X : prel)
       (W : world) (Σ : senv) (T : ty) (p : proc) : Prop :=
-    ∀ W1, W ⊑ W1 → ∀ h D, fuse_ok h D Σ p →                   (* (fuse) *)
-      Pclauses n Vl Pl VN X W1 (sdrop D (kren h Σ)) T (pfuse h D p).
+    ∀ W1, W ⊑ W1 → Pclauses n Vl Pl VN X W1 Σ T p.
 
   Inductive Pind (n : Ix) (Vl : Ix → vrel) (Pl : Ix → prel) (VN : vrel) : prel :=
     | PIntro W Σ T p :
@@ -699,9 +702,9 @@ Section maps.
       (f : ∀ W Σ T p, X1 W Σ T p → X2 W Σ T p) W Σ T p :
     Pbody κ n Vl Pl VN X1 W Σ T p → Pbody κ n Vl Pl VN X2 W Σ T p.
   Proof.
-    intros H W1 HW h D Hh. destruct (H W1 HW h D Hh) as (A & B & C).
+    intros H W1 HW. destruct (H W1 HW) as (A & B & C).
     split; [exact A|]. split; [exact B|].
-    exact (Psteps_mapX n Vl Pl VN X1 X2 f W1 (sdrop D (kren h Σ)) T (pfuse h D p) C).
+    exact (Psteps_mapX n Vl Pl VN X1 X2 f W1 Σ T p C).
   Defined.
 
   Lemma Pind_ind' n Vl Pl VN (Φ : prel) :
@@ -879,7 +882,7 @@ Section mono.
     (∀ W Σ p, X1 W Σ T p → X2 W Σ T p) →
     Pbody κ n Vl1 Pl1 VN1 X1 W Σ T p → Pbody κ n Vl2 Pl2 VN2 X2 W Σ T p.
   Proof.
-    intros HVl HPl HVN HX H W1 HW h D Hh. destruct (H W1 HW h D Hh) as (A & B & C).
+    intros HVl HPl HVN HX H W1 HW. destruct (H W1 HW) as (A & B & C).
     split_and!; [|done|by eapply Psteps_mono].
     intros Hirr. destruct (A Hirr) as (v & E & Hp & Hv & HE).
     exists v, E. split_and!; [done|by apply HVN|done].
@@ -1224,13 +1227,16 @@ Section equations.
       |intros ? ? ? ? H; exact H|].
     intros ? ? ? [H1 H2]; split; [apply (proj2 (Prel_unfold n _ _ _ _)); intros _; exact H1|exact H2].
   Qed.
-  (** The clauses at the identity renaming. *)
+  (** The clauses of the identity fusion are the clauses. *)
+  Lemma Pclauses_id_fuse n Vl Pl VN X W1 Σ T p :
+    Pclauses κ n Vl Pl VN X W1 (sdrop ∅ (kren id Σ)) T (pfuse id ∅ p) →
+    Pclauses κ n Vl Pl VN X W1 Σ T p.
+  Proof. by rewrite pfuse_empty, sdrop_empty, kren_id_map, pmap_id. Qed.
+
+  (** The clauses in a later world. *)
   Lemma Pbody_id n Vl Pl VN X W Σ T p :
     Pbody κ n Vl Pl VN X W Σ T p → ∀ W1, W ⊑ W1 → Pclauses κ n Vl Pl VN X W1 Σ T p.
-  Proof.
-    intros H W1 HW. pose proof (H W1 HW id ∅ (fuse_ok_id Σ p)) as H'.
-    by rewrite pfuse_empty, sdrop_empty, kren_id_map, pmap_id in H'.
-  Qed.
+  Proof. done. Qed.
 
   Lemma Prel_clauses n W Σ T p :
     olt ozero n → Prel κ n W Σ T p → ∀ W1, W ⊑ W1 →

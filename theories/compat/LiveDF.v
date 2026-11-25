@@ -114,11 +114,10 @@ Proof.
   induction n as [n IHn] using oind. intros W T p HT Hb.
   revert W.
   induction p as [p IHp] using (well_founded_induction (well_founded_ltof _ psize)).
-  intros W HL. apply Prel_iff. intros Hn0 W1 HW1 h D Hh.
+  intros W HL. apply Prel_iff. intros Hn0 W1 HW1.
   assert (∀ m, olt ozero m → Pbody κ_L m (Vrel κ_L) (Prel κ_L) (Vrel κ_L m) (Prel κ_L m) W ∅ T p) as HB
     by (intros m Hm; by apply Prel_iff).
-  pose proof (λ m Hm, HB m Hm W1 HW1 h D Hh) as HC.
-  rewrite (fuse_ok_empty _ _ _ Hh), pfuse_empty, kren_empty, sdrop_empty in HC |- *.
+  pose proof (λ m Hm, HB m Hm W1 HW1) as HC.
   destruct (HC (onat 1) (onat_lt 0 1 ltac:(lia))) as (Hs & Hr & H1 & H2 & H3 & H4 & H5 & H6 & H7).
   split; [|split; [|unfold Psteps; split_and!]].
   - intros Hirr. destruct (Hs Hirr) as (v & E & -> & Hv & HE). exists v, E.
@@ -142,8 +141,7 @@ Proof.
       { clear -Hst Hc Hτ. destruct Hst as [C0 M0 i0 α0 e0 e0' Hi0 Hs0 [-> | ->]| | | | | | |];
           simpl in Hc, Hτ; try discriminate; eauto; by unfold ev_tau in Hτ. }
       apply (IHp (erase q')); [|exact HL'].
-      unfold ltof. replace (psize p) with (psize (pmap h p)) by (unfold psize, pmap, emapE; simpl; apply msize_emap).
-      rewrite <-Hq. by eapply psize_link.
+      unfold ltof. rewrite <-Hq. by eapply psize_link.
     + intros Hc j Hj. eapply (IHn j (oadd_lt _ _ _ Hc Hj)); [done|done|]. intros m. apply HL'.
   - intros q i o w q' Hq Hst. exfalso.
     destruct (H2 q i o w q' Hq Hst) as (? & ? & ? & ? & ? & ? & ? & ? & ? & A & _).
