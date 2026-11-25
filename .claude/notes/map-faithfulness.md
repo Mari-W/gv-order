@@ -1,6 +1,6 @@
 # Faithfulness of the map
 
-Generated from docs/explorer/map.json at 7eb53c34 by map-faithfulness.py. Do not edit by hand.
+Generated from docs/explorer/map.json at 459c3861 by map-faithfulness.py. Do not edit by hand.
 
 check.sh confirms that every cited Rocq name exists. No tool compares a formula with the statement it cites. The formulas are checked by hand. The differences below are the recorded ones.
 
@@ -9,7 +9,7 @@ check.sh confirms that every cited Rocq name exists. No tool compares a formula 
 | other | 1 |
 | simplified | 6 |
 | merged | 12 |
-| renamed | 48 |
+| renamed | 45 |
 | notation | 42 |
 
 ## Statements with no Rocq counterpart (other, 1)
@@ -40,7 +40,7 @@ check.sh confirms that every cited Rocq name exists. No tool compares a formula 
 - **note E-New.pos** (`e_new`, `e_new_fld`). The two constructors e_new and e_new_fld are the two cases of the triple.
 - **note sp.delta** (`sp_pts`, `sp_dom`). The Rocq keeps an environment `A` of the relation and a protocol map `Π` of fuel, chosen per index, and the counters and tickets in `K`. `sp_pts` and `sp_dom` give the three maps one domain and the points of `K`, so one map $\Delta$ states the three maps.
 
-## Renamed (renamed, 48)
+## Renamed (renamed, 45)
 
 - **block w-wf** (`sacyc`). $\mathsf{cons}$ is `sacyc`. A world is consistent exactly when its order has no cycle.
 - **block w-wf** (`swf`). $\mathsf{ranked}$ for a world of typing is `swf`, which is `wf` of relation/Ranks.v at the order of the world, the existence of a rank function.
@@ -77,8 +77,6 @@ check.sh confirms that every cited Rocq name exists. No tool compares a formula 
 - **note P-Stop** (`Pclauses`). $(\mathsf{stop})$ labels the first clause of `Pclauses`.
 - **note P-Ready** (`Pclauses`). $(\mathsf{ready})$ labels the second clause of `Pclauses`, and $\mathsf{pirred}$ is the Rocq predicate `pirred`.
 - **note P-Step** (`Psteps`). $(\mathsf{step})$ labels the clause that `Psteps` states.
-- **note fuse.inj** (`fuse_ok`). $\mathsf{held}$ is the set of ends that `pheld` accepts in `fuse_ok`.
-- **note fuse.partners** (`fuse_ok`). $\mathsf{held}$ is the set of ends that `pheld` accepts in `fuse_ok`.
 - **note Q-Link** (`q_close`, `q_select`, `q_branch`, `q_link`). Q-Close, Q-Select, Q-Branch and Q-Link are the clauses `q_close`, `q_select`, `q_branch` and `q_link`, shown as the term obligations they repeat.
 - **note fu.rty** (`rty`). $\mathsf{thread}$ is the constructor `RThread` of `rty`.
 - **note fu.val** (`Fdef`). $(\mathsf{stop})$ labels the value clause of `Fdef`, and $\mathsf{Val}$ is the set of terms that `is_val` accepts.
@@ -88,7 +86,6 @@ check.sh confirms that every cited Rocq name exists. No tool compares a formula 
 - **note sp.hold** (`hold`). $K$ maps an end to a record `hold` of thread, point, counter and tickets, shown as a tuple in $\mathbb{N} \times \mathsf{Point} \times \mathbb{N} \times \mathbb{N}$.
 - **note sp.own** (`soup_consistent`). $\mathsf{wa}$ names the conjuncts of `soup_consistent` other than `sp_pts` and `sp_dom`, which $\Delta : K$ states.
 - **note sr.FE** (`FuelE`, `Fdef`, `FLevA`). $\mathsf{thread}$ is the constructor `RThread` of `rty`, the result of a thread.
-- **note sr.pfuse** (`pfuse`). $(h, D) \cdot p$ is `pfuse h D p`, which renames the channels with `gch h`.
 - **note new.wf** (`new_ok`). $\mathsf{wf}$ is `well_founded` of the Rocq standard library, which `new_ok` applies to `new_step C`.
 
 ## Notation (notation, 42)
