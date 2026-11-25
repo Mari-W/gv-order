@@ -94,7 +94,7 @@ Section extmsg.
     at_cost_P n c (Prel κ) (Prel κ n) W1 (Σ1' ∪ Σ2') T (pconn p1' q2 (chans_of ΣC')).
   Proof.
     intros [A0 A1] -> E2 Hc'. split.
-    - intros Hz. pose proof (G1 p1' _ id ∅ Σ1' ΣC' Σ2' ΣD' q2 (A0 Hz) (fuse_ok_id _ _)) as HG.
+    - intros Hz. pose proof (G1 p1' _ id Σ1' ΣC' Σ2' ΣD' q2 (A0 Hz) (fuse_ok_id _ _)) as HG.
       rewrite sdrop_empty, kren_id_map, pfuse_empty, pmap_id in HG. apply HG; [done| |done].
       rewrite <-E2. by apply HP2id.
     - intros Hz j Hj. apply (L j (oadd_lt _ _ _ Hz Hj) Σ1' ΣC' Σ2' ΣD'); [by apply A1| |done].
@@ -108,7 +108,7 @@ Section extmsg.
     at_cost_P n c (Prel κ) (Prel κ n) W1 (Σ1' ∪ Σ2') T (pconn q1 p2' (chans_of ΣC')).
   Proof.
     intros [A0 A1] -> E1 Hc'. split.
-    - intros Hz. pose proof (G2 p2' _ id ∅ Σ1' ΣC' Σ2' ΣD' id ∅ (A0 Hz) (fuse_ok_id _ _)) as HG.
+    - intros Hz. pose proof (G2 p2' _ id Σ1' ΣC' Σ2' ΣD' id ∅ (A0 Hz) (fuse_ok_id _ _)) as HG.
       rewrite !sdrop_empty, !kren_id_map, !pfuse_empty, !pmap_id in HG.
       apply HG; [done|apply fuse_ok_id|by rewrite E1|done].
     - intros Hz j Hj. apply (L j (oadd_lt _ _ _ Hz Hj) Σ1' ΣC' Σ2' ΣD'); [|by apply A1|done].

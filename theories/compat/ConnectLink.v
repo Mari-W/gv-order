@@ -108,10 +108,10 @@ Section links.
     { pose proof (HP2 h ∅ (pren_fuse_ok _ _ _ Hok2)) as H. rewrite sdrop_empty, E2, pfuse_empty in H.
       by eapply Prel_mono. }
     rewrite <-HK. split.
-    - intros Hc0. pose proof (cc_G1W CC W' p1' (Σ1 ∪ ΣC) h ∅ Σ1 (kren h ΣC) Σ2 (kren h ΣD) (pmap h q2) HW' (A0 Hc0) (pren_fuse_ok _ _ _ Hok1)) as HG.
+    - intros Hc0. pose proof (cc_G1W CC W' p1' (Σ1 ∪ ΣC) h Σ1 (kren h ΣC) Σ2 (kren h ΣD) (pmap h q2) HW' (A0 Hc0) (pren_fuse_ok _ _ _ Hok1)) as HG.
       rewrite sdrop_empty, pfuse_empty in HG. apply HG; [done|done|done].
     - intros Hc0 j Hj. apply (cc_LW CC j W' (oadd_lt _ _ _ Hc0 Hj) Σ1 (kren h ΣC) Σ2 (kren h ΣD)); [|eapply Prel_down; [|exact P2]; exact (olt_ole _ _ (oadd_lt _ _ _ Hc0 Hj))|done].
-      rewrite <-E1. apply Prel_rename; [done|by apply A1].
+      rewrite <-E1. apply Prel_rename; [done|exact (conn_fside1 _ _ _ _ _ _ p1' ∅ T HT eq_refl Hc1)|by apply A1].
   Qed.
 
   (** A renaming of the composite after a step of p2 alone. *)
@@ -137,9 +137,9 @@ Section links.
     { apply chans_of_kren; [by destruct Hok|]. intros a b va vb Ha Hb. apply Hok; apply pheld_pconn_1; left;
         rewrite dom_union_L; apply elem_of_union_r; by eapply elem_of_dom_2. }
     rewrite <-HK. split.
-    - intros Hc0. pose proof (cc_G2W CC W' p2' (Σ2 ∪ ΣD) h ∅ Σ1 (kren h ΣC) Σ2 (kren h ΣD) h ∅ HW' (A0 Hc0) (pren_fuse_ok _ _ _ Hok2)) as HG.
+    - intros Hc0. pose proof (cc_G2W CC W' p2' (Σ2 ∪ ΣD) h Σ1 (kren h ΣC) Σ2 (kren h ΣD) h ∅ HW' (A0 Hc0) (pren_fuse_ok _ _ _ Hok2)) as HG.
       rewrite !sdrop_empty, !pfuse_empty in HG. apply HG; [done|by apply pren_fuse_ok|done|done].
-    - intros Hc0 j Hj. apply (cc_LW CC j W' (oadd_lt _ _ _ Hc0 Hj) Σ1 (kren h ΣC) Σ2 (kren h ΣD)); [|rewrite <-E2; apply Prel_rename; [done|by apply A1]|done].
+    - intros Hc0 j Hj. apply (cc_LW CC j W' (oadd_lt _ _ _ Hc0 Hj) Σ1 (kren h ΣC) Σ2 (kren h ΣD)); [|rewrite <-E2; apply Prel_rename; [done|exact (conn_fside2 _ _ _ _ _ _ p2' ∅ TUnit tfree_unit eq_refl Hc2)|by apply A1]|done].
       pose proof (HP1 h ∅ (pren_fuse_ok _ _ _ Hok1)) as H. rewrite sdrop_empty, E1, pfuse_empty in H.
       eapply Prel_mono; [exact HW'|]. eapply Prel_down; [|exact H]. exact (olt_ole _ _ (oadd_lt _ _ _ Hc0 Hj)).
   Qed.
@@ -329,10 +329,11 @@ Section links.
       { unfold erase, pconn. cbn [fst snd]. rewrite Es. f_equal. unfold pmap. simpl. rewrite G1e, G2e, HK1.
         clear -Hn1 Hn1'. cc_set_solver. }
       rewrite <-EI. destruct A' as [A0 A1]. split.
-      + intros Hz. pose proof (G1 p1' _ h ∅ (delete o2 Σ1) (delete o1 ΣC) (<[o2 := (S2, y‾)]> Σ2) (delete (edual o1) ΣD) (pmap h q2) (A0 Hz) (pren_fuse_ok _ _ _ Hok1)) as HG.
+      + intros Hz. pose proof (G1 p1' _ h (delete o2 Σ1) (delete o1 ΣC) (<[o2 := (S2, y‾)]> Σ2) (delete (edual o1) ΣD) (pmap h q2) (A0 Hz) (pren_fuse_ok _ _ _ Hok1)) as HG.
         rewrite sdrop_empty, pfuse_empty, Hk1 in HG. apply HG; [exact E1|exact P2|]. rewrite Hc1'. unfold pmap, p1', erase. simpl. by rewrite G2e.
       + intros Hz j Hj. apply (L j (oadd_lt _ _ _ Hz Hj) (delete o2 Σ1) (delete o1 ΣC) (<[o2 := (S2, y‾)]> Σ2) (delete (edual o1) ΣD)).
-        * rewrite <-E1, <-Hk1. apply Prel_rename; [done|by apply A1].
+        * rewrite <-E1, <-Hk1. apply Prel_rename; [done| |by apply A1].
+          eapply fside_sub; [exact (conn_fside1 _ _ _ _ _ _ q1 ∅ T HT eq_refl Hc)| |done]. rewrite !dom_delete_L. cc_set_solver.
         * eapply Prel_down; [|exact P2]. exact (olt_ole _ _ (oadd_lt _ _ _ Hz Hj)).
         * rewrite Hc1'. unfold pmap, p1', erase. simpl. by rewrite G2e.
     - (* o2 is a cut end of p1 *)
@@ -406,10 +407,11 @@ Section links.
         destruct (decide (c = ech o2)) as [->|?]; cc_set_solver. }
       pose proof (HP2 h {[ech o2]} Hok2) as P2. rewrite ES in P2.
       destruct A' as [A0 A1]. split.
-      + intros Hz. pose proof (G1 p1' _ h ∅ Σ1 (delete o1 (delete o2 ΣC)) Σ2 (delete (edual o1) (delete (edual o2) ΣD)) (pfuse h {[ech o2]} q2) (A0 Hz) (pren_fuse_ok _ _ _ Hok1)) as HG.
+      + intros Hz. pose proof (G1 p1' _ h Σ1 (delete o1 (delete o2 ΣC)) Σ2 (delete (edual o1) (delete (edual o2) ΣD)) (pfuse h {[ech o2]} q2) (A0 Hz) (pren_fuse_ok _ _ _ Hok1)) as HG.
         rewrite sdrop_empty, pfuse_empty, Hk1 in HG. apply HG; [exact E1|exact P2|]. rewrite Hc1'. unfold pfuse, p1', erase. simpl. by rewrite G2e.
       + intros Hz j Hj. apply (L j (oadd_lt _ _ _ Hz Hj) Σ1 (delete o1 (delete o2 ΣC)) Σ2 (delete (edual o1) (delete (edual o2) ΣD))).
-        * rewrite <-E1, <-Hk1. apply Prel_rename; [done|by apply A1].
+        * rewrite <-E1, <-Hk1. apply Prel_rename; [done| |by apply A1].
+          eapply fside_sub; [exact (conn_fside1 _ _ _ _ _ _ q1 ∅ T HT eq_refl Hc)| |done]. rewrite !dom_delete_L. cc_set_solver.
         * eapply Prel_down; [|exact P2]. exact (olt_ole _ _ (oadd_lt _ _ _ Hz Hj)).
         * rewrite Hc1'. unfold pfuse, p1', erase. simpl. by rewrite G2e.
   Qed.
@@ -498,13 +500,14 @@ Section links.
         clear -Hn1 Hn1'. cc_set_solver. }
       revert EI. generalize (Σ1 ∪ Σ2). intros Σx EI. destruct A' as [A0 A1]. split.
       + intros Hz. apply (Prel_conv _ _ _ _ _ _ _ EI).
-        pose proof (G2 p2' _ h ∅ Σ1' (delete (edual o1) ΣC) (delete o2 Σ2) (delete o1 ΣD) h ∅ (A0 Hz) (pren_fuse_ok _ _ _ Hok2)) as HG.
+        pose proof (G2 p2' _ h Σ1' (delete (edual o1) ΣC) (delete o2 Σ2) (delete o1 ΣD) h ∅ (A0 Hz) (pren_fuse_ok _ _ _ Hok2)) as HG.
         rewrite !sdrop_empty, !pfuse_empty, Hk2, Kh in HG. apply HG; [exact E2|by apply pren_fuse_ok|unfold Σ1'; by rewrite insert_union_l|].
         rewrite Hc2'. unfold pmap, p2', erase. simpl. by rewrite G1e.
       + intros Hz j Hj. apply (Prel_conv _ _ _ _ _ _ _ EI).
         apply (L j (oadd_lt _ _ _ Hz Hj) Σ1' (delete (edual o1) ΣC) (delete o2 Σ2) (delete o1 ΣD)).
         * eapply Prel_down; [|exact P1]. exact (olt_ole _ _ (oadd_lt _ _ _ Hz Hj)).
-        * rewrite <-E2, <-Hk2. apply Prel_rename; [done|by apply A1].
+        * rewrite <-E2, <-Hk2. apply Prel_rename; [done| |by apply A1].
+          eapply fside_sub; [exact (conn_fside2 _ _ _ _ _ _ q2 ∅ TUnit tfree_unit eq_refl Hc)| |done]. rewrite !dom_delete_L. cc_set_solver.
         * rewrite Hc2'. unfold pmap, p2', erase. simpl. by rewrite G1e.
     - (* o2 is a cut end of p2 *)
       pose proof (cls_C _ _ _ _ _ _ Hcs o2 D2) as Co2.
@@ -579,12 +582,13 @@ Section links.
         destruct (decide (c = ech o2)) as [->|?]; cc_set_solver. }
       pose proof (HP1 h {[ech o2]} Hok1) as P1. rewrite ES in P1.
       destruct A' as [A0 A1]. split.
-      + intros Hz. pose proof (G2 p2' _ h ∅ Σ1 (delete (edual o1) (delete (edual o2) ΣC)) Σ2 (delete o1 (delete o2 ΣD)) h {[ech o2]} (A0 Hz) (pren_fuse_ok _ _ _ Hok2)) as HG.
+      + intros Hz. pose proof (G2 p2' _ h Σ1 (delete (edual o1) (delete (edual o2) ΣC)) Σ2 (delete o1 (delete o2 ΣD)) h {[ech o2]} (A0 Hz) (pren_fuse_ok _ _ _ Hok2)) as HG.
         rewrite sdrop_empty, pfuse_empty, Hk2 in HG. apply HG; [exact E2|exact Hok1|exact ES|].
         rewrite Hc2'. unfold pfuse, p2', erase. simpl. by rewrite G1e.
       + intros Hz j Hj. apply (L j (oadd_lt _ _ _ Hz Hj) Σ1 (delete (edual o1) (delete (edual o2) ΣC)) Σ2 (delete o1 (delete o2 ΣD))).
         * eapply Prel_down; [|exact P1]. exact (olt_ole _ _ (oadd_lt _ _ _ Hz Hj)).
-        * rewrite <-E2, <-Hk2. apply Prel_rename; [done|by apply A1].
+        * rewrite <-E2, <-Hk2. apply Prel_rename; [done| |by apply A1].
+          eapply fside_sub; [exact (conn_fside2 _ _ _ _ _ _ q2 ∅ TUnit tfree_unit eq_refl Hc)| |done]. rewrite !dom_delete_L. cc_set_solver.
         * rewrite Hc2'. unfold pfuse, p2', erase. simpl. by rewrite G1e.
   Qed.
 End links.

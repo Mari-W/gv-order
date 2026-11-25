@@ -94,7 +94,6 @@ compat/ConnectTau.v
 compat/ConnectExt.v
 compat/ConnectSendEnv.v
 compat/ConnectExtMsg.v
-compat/ConnectFuse.v
 compat/ConnectP.v
 compat/RenameInd.v
 compat/PTerm.v

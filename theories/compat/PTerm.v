@@ -14,9 +14,7 @@
 
     The proof is a strong induction on the level and, inside it, an
     induction over the steps of cost 0 whose predicate is closed under
-    renaming ([Erel_ind_ren]). The clause (fuse) of P reads a fusion of
-    the thread as the renamed thread over a fused interface ([sth_fuse]).
-    A spawn splits the environment of the thread by O-Spawn: the channels
+    renaming ([Erel_ind_ren]). A spawn splits the environment of the thread by O-Spawn: the channels
     with one end on each side become the cut of P-Connect, which composes
     the parent and the child ([spawn_split], [conn_all]). *)
 
@@ -309,83 +307,6 @@ Proof.
     + intros [[[_ Hc]|[_ Hc]]|Hc]; [done|done|]. apply elem_of_chans_of_iff in Hc as (o & -> & Ho).
       unfold s_cut in Ho. apply elem_of_dom_filter in Ho as (v & _ & Hc & _). done.
 Qed.
-
-(** ** A fusion of a single thread *)
-
-Section fuse.
-  Context (Θ Σ ΘB : senv) (C : gset chan) (e : expr) (Hs : sth Θ Σ ΘB C).
-  Context (h : cend → cend) (D : gset chan) (Hf : fuse_ok h D Σ (C, {[+ e +]})).
-
-  Lemma fs_held o : o ∈ dom Θ → pheld Σ (C, {[+ e +]}) o.
-  Proof.
-    intros Ho. rewrite (st_env _ _ _ _ Hs), dom_union_L in Ho. unfold pheld. simpl.
-    apply elem_of_union in Ho as [Ho|Ho]; [by left|right]. by apply (st_dom _ _ _ _ Hs).
-  Qed.
-
-  Lemma fs_kinj : kinj h Θ.
-  Proof.
-    destruct Hf as (_ & Hi & _). intros o1 o2 v1 v2 H1 H2 Heq.
-    apply Hi; [apply fs_held|apply fs_held|done]; by eapply elem_of_dom_2.
-  Qed.
-
-  Definition fs_res : senv := kren h ΘB ∪ filter (λ oe : cend * (sty * point), ech oe.1 ∈ D) (kren h Σ).
-
-  Lemma pfuse_single : pfuse h D (C, {[+ e +]}) = (set_map (gch h) C ∪ D, {[+ emap h e +]}).
-  Proof. unfold pfuse. cbn [fst snd]. by rewrite emapE_singleton. Qed.
-
-  Lemma sth_fuse : sth (kren h Θ) (sdrop D (kren h Σ)) fs_res (set_map (gch h) C ∪ D).
-  Proof.
-    destruct Hf as (Hdc & Hi & Hp & HD & HDp).
-    pose proof fs_kinj as Hk.
-    assert (kinj h Σ) as KΣ by (eapply kinj_sub; [|exact Hk]; rewrite (st_env _ _ _ _ Hs), dom_union_L; set_solver).
-    assert (kinj h ΘB) as KB by (eapply kinj_sub; [|exact Hk]; rewrite (st_env _ _ _ _ Hs), dom_union_L; set_solver).
-    assert (kren h Σ ##ₘ kren h ΘB) as Hdisj.
-    { apply kren_disjoint; [by rewrite <-(st_env _ _ _ _ Hs)|exact (sth_disj _ _ _ _ Hs)]. }
-    (** The image of an end of a restricted channel. *)
-    simpl in HD.
-    assert (∀ o', ech o' ∈ (set_map (gch h) C : gset chan) → ∃ o0, ech o0 ∈ C ∧ h o0 = o') as Himg.
-    { intros o' Ho'. apply elem_of_map in Ho' as (c & Hc & HcC). unfold gch in Hc.
-      destruct (ech_inj_dual o' (h (EPos c)) Hc) as [-> | ->]; [exists (EPos c); done|].
-      exists (ENeg c). split; [done|]. change (ENeg c) with (edual (EPos c)). by rewrite Hdc. }
-    constructor.
-    - rewrite (st_env _ _ _ _ Hs), kren_union by (by rewrite <-(st_env _ _ _ _ Hs)).
-      unfold fs_res, sdrop. apply map_eq. intros o. rewrite !lookup_union, !map_lookup_filter.
-      destruct (kren h Σ !! o) eqn:E1, (kren h ΘB !! o) eqn:E2; simpl; repeat (case_guard; simpl); try done.
-      all: exfalso; by apply (proj1 (map_disjoint_spec _ _) Hdisj o _ _ E1 E2).
-    - intros o. unfold fs_res. rewrite dom_union_L, elem_of_union, elem_of_dom_filter, elem_of_union. split.
-      + intros [Ho|(v & Hv & Hc)]; [left|right; done].
-        rewrite kren_dom in Ho by done. apply elem_of_map in Ho as (o0 & -> & Ho0).
-        rewrite ech_gch by done. apply elem_of_map. exists (ech o0). split; [done|]. by apply (st_dom _ _ _ _ Hs).
-      + intros [Ho|Ho].
-        * left. destruct (Himg o Ho) as (o0 & Hc & <-). rewrite kren_dom by done. apply elem_of_map.
-          exists o0. split; [done|]. by apply (st_dom _ _ _ _ Hs).
-        * right. destruct (HDp o Ho) as (S & x & S' & H1 & _). eauto.
-    - intros c H1 H2. apply elem_of_chans_of_iff in H1 as (o & -> & Ho). unfold sdrop in Ho.
-      apply elem_of_dom_filter in Ho as (v & Hv & HnD). simpl in HnD.
-      apply elem_of_union in H2 as [H2|H2]; [|done].
-      destruct (Himg o H2) as (o0 & Hc & Heq). destruct (kren_lookup_inv _ _ _ _ Hv) as (o1 & -> & Ho1).
-      assert (o1 = o0) as ->.
-      { apply Hi; [left; by eapply elem_of_dom_2|right; simpl; done|done]. }
-      apply (st_disj _ _ _ _ Hs (ech o0)); [apply elem_of_chans_of; by eapply elem_of_dom_2|done].
-    - intros o Ho Hd. unfold sdrop in Ho, Hd. apply elem_of_dom_filter in Ho as (v1 & V1 & N1), Hd as (v2 & V2 & N2).
-      simpl in N1, N2. destruct (kren_lookup_inv _ _ _ _ V1) as (o1 & -> & O1).
-      destruct (kren_lookup_inv _ _ _ _ V2) as (o2 & Heq & O2).
-      destruct (Hp o1 o2) as [->|HD']; [left; by eapply elem_of_dom_2|left; by eapply elem_of_dom_2|done| |done].
-      apply (st_free _ _ _ _ Hs o1); by eapply elem_of_dom_2.
-    - intros o Ho. apply elem_of_union in Ho as [Ho|Ho].
-      + destruct (Himg o Ho) as (o0 & Hc & <-).
-        destruct (st_pairs _ _ _ _ Hs o0 Hc) as (S & x & S' & H1 & H2 & Hdu).
-        exists S, x, S'. unfold fs_res. rewrite <-Hdc. split_and!; [| |done]; apply lookup_union_Some_l; by apply kren_lookup.
-      + destruct (HDp o Ho) as (S & x & S' & H1 & H2 & Hdu). exists S, x, S'.
-        assert (∀ o', ech o' ∈ D → kren h ΘB !! o' = None) as HN.
-        { intros o' Hd'. destruct (kren h ΘB !! o') eqn:E; [|done]. exfalso.
-          destruct (kren_lookup_inv _ _ _ _ E) as (o0 & -> & O0). apply (HD (ech (h o0))); [done|].
-          rewrite ech_gch by done. apply elem_of_map. exists (ech o0). split; [done|].
-          apply (st_dom _ _ _ _ Hs). by eapply elem_of_dom_2. }
-        unfold fs_res. split_and!; [| |done]; rewrite lookup_union_r by (apply HN; by rewrite ?ech_edual);
-          apply map_lookup_filter_Some; split; [done| |done|]; simpl; by rewrite ?ech_edual.
-  Qed.
-End fuse.
 
 (** ** The environments after a step *)
 
@@ -1176,22 +1097,17 @@ Section node.
   Lemma Xt_E W Θ T F e : Ebody κ n (Vrel κ) (Erel κ) (Vrel κ n) Xt W Θ T F e → Erel κ n W Θ T F e.
   Proof. intros Hb. apply Erel_iff. revert Hb. apply Ebody_mapX. by intros ? ? ? ? ? [? _]. Qed.
 
-  (** The fusions of a single thread, given its spawns. *)
+  (** A single thread is in P, given its spawns. *)
   Lemma node_gen W Θ T e :
     Ebody κ n (Vrel κ) (Erel κ) (Vrel κ n) Xt W Θ T ∅ e →
     (∀ h Σ ΘB C, kinj h Θ → tfree T → sth (kren h Θ) Σ ΘB C → ∀ W1, W ⊑ W1 → ∀ v e', tstep (emap h e) (LSpawn v) e' →
        at_cost_P n (c_spawn κ) (Prel κ) (Prel κ n) W1 Σ T (C, {[+ e' +]} ⊎ {[+ App v EUnit +]})) →
     Φt W Θ T ∅ e.
   Proof.
-    intros Hb Hsp _ HT Σ ΘB C Hs. apply Prel_iff. intros Hn0 W1 HW1. apply Pclauses_id_fuse.
-    pose proof (fuse_ok_id Σ (C, {[+ e +]})) as Hf. revert Hf.
-    generalize (∅ : gset chan) as D. generalize (@id cend) as h. intros h D Hf. rewrite pfuse_single.
-    pose proof (Xt_E _ _ _ _ _ Hb) as HE. pose proof (fs_kinj Θ Σ ΘB C e Hs h D Hf) as Hk.
-    pose proof (sth_fuse Θ Σ ΘB C e Hs h D Hf) as Hs'.
-    refine (core κ n IH Xt Xt_ren Xt_P W (kren h Θ) T (emap h e) _ _ _ Hn0 HT Hs' _ _ _ W1 HW1).
-    - by apply Erel_rename.
-    - by apply Ebody_rename; [apply Xt_ren| | |].
-    - intros W2 HW2. exact (Hsp h _ _ _ Hk HT Hs' W2 HW2).
+    intros Hb Hsp _ HT Σ ΘB C Hs. apply Prel_iff. intros Hn0 W1 HW1.
+    pose proof (Xt_E _ _ _ _ _ Hb) as HE.
+    pose proof (Hsp id Σ ΘB C (kinj_id Θ) HT) as Hsp'. rewrite kren_id_map, emap_id in Hsp'.
+    exact (core κ n IH Xt Xt_ren Xt_P W Θ T e Σ ΘB C Hn0 HT Hs HE Hb (Hsp' Hs) W1 HW1).
   Qed.
 
   (** A thread whose redex is a β-redex spawns nothing. *)

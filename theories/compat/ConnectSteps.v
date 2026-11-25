@@ -74,7 +74,7 @@ Section core.
       - unfold erase. simpl. rewrite chans_of_union in Hfr. simpl in Hfr. cc_set_solver. }
     exists W'. split; [done|]. split.
     - intros Hc0. pose proof (A0 Hc0) as HX.
-      pose proof (cc_G1W CC W' (erase q1') (Σ1 ∪ ΣC) id ∅ Σ1 ΣC Σ2 ΣD (pmap (ev_ren ev) q2) HW' HX (fuse_ok_id _ _)) as HG.
+      pose proof (cc_G1W CC W' (erase q1') (Σ1 ∪ ΣC) id Σ1 ΣC Σ2 ΣD (pmap (ev_ren ev) q2) HW' HX (fuse_ok_id _ _)) as HG.
       rewrite sdrop_empty, kren_id_map, pfuse_empty, pmap_id in HG.
       apply HG; [done|eapply Prel_mono; [exact HW'|by apply HP2r]|done].
     - intros Hc0 j Hj. apply (cc_LW CC j W' (oadd_lt _ _ _ Hc0 Hj) Σ1 ΣC Σ2 ΣD); [by apply A1|eapply Prel_mono; [exact HW'|apply HP2r; [done|done|exact (olt_ole _ _ (oadd_lt _ _ _ Hc0 Hj))]]|done].
@@ -120,7 +120,7 @@ Section core.
       - unfold erase. simpl. rewrite chans_of_union in Hfr. simpl in Hfr. cc_set_solver. }
     exists W'. split; [done|]. split.
     - intros Hc0. pose proof (A0 Hc0) as HX.
-      pose proof (cc_G2W CC W' (erase q2') (Σ2 ∪ ΣD) id ∅ Σ1 ΣC Σ2 ΣD (ev_ren ev) ∅ HW' HX (fuse_ok_id _ _)) as HG.
+      pose proof (cc_G2W CC W' (erase q2') (Σ2 ∪ ΣD) id Σ1 ΣC Σ2 ΣD (ev_ren ev) ∅ HW' HX (fuse_ok_id _ _)) as HG.
       rewrite !sdrop_empty, !pfuse_empty, kren_id_map, pmap_id, Hk in HG.
       apply HG; [done|by apply pren_fuse_ok|done|done].
     - intros Hc0 j Hj. apply (cc_LW CC j W' (oadd_lt _ _ _ Hc0 Hj) Σ1 ΣC Σ2 ΣD); [eapply Prel_mono; [exact HW'|apply HP1r; [done|done|exact (olt_ole _ _ (oadd_lt _ _ _ Hc0 Hj))]]|by apply A1|done].
