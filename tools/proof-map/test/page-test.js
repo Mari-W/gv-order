@@ -137,8 +137,8 @@ async function main() {
         await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 }); await sleep(200);
         await click();
         await sleep(1800);
-        const at = await evalJS(`(() => { const m = location.hash.match(/\\/(.+)$/); const id = m && m[1]; const el = id && document.getElementById('b-' + id); return { hash: location.hash, id, top: el ? Math.round(el.getBoundingClientRect().top) : null, pinned: document.querySelector('#note .eyebrow span').textContent, marks: el ? el.querySelectorAll('rect.pm-box.pin').length : 0 }; })()`);
-        ok('click on a symbol opens its defining block and pins the note', at.id && 'b-' + at.id !== found.from && at.top !== null && at.top >= 0 && at.top < 500 && at.pinned === 'Pinned' && at.marks >= 1, `${found.k} in ${found.from} -> ${JSON.stringify(at)}`);
+        const at = await evalJS(`(() => { const m = location.hash.match(/\\/(.+)$/); const id = m && m[1]; const el = id && document.getElementById('b-' + id); return { hash: location.hash, id, top: el ? Math.round(el.getBoundingClientRect().top) : null, pinned: document.querySelector('#note .eyebrow span').textContent, marks: el ? el.querySelectorAll('rect.pm-box.pin').length : 0, end: Math.ceil(scrollY + innerHeight) >= document.documentElement.scrollHeight - 2 }; })()`);
+        ok('click on a symbol opens its defining block and pins the note', at.id && 'b-' + at.id !== found.from && at.top !== null && at.top >= 0 && (at.top < 500 || at.end) && at.pinned === 'Pinned' && at.marks >= 1, `${found.k} in ${found.from} -> ${JSON.stringify(at)}`);
         await evalJS('history.back()'); await sleep(1500);
         const back = await evalJS(`location.hash`);
         ok('Back returns to the block of the click', back.endsWith('/' + found.from.slice(2)), back);
@@ -151,10 +151,11 @@ async function main() {
       if (withLink) {
         const [s, b] = withLink;
         await go(`${base}#${s.id}`);
-        const to = await evalJS(`(() => { const a = document.querySelector('#b-${b.id} .caption a.xref[data-jump]'); if (!a) return null; a.click(); return a.dataset.jump; })()`);
+        await evalJS(`document.querySelector('#b-${b.id} h3[data-block]').click()`); await sleep(400);
+        const to = await evalJS(`(() => { const a = document.querySelector('#note a.xref[data-jump]'); if (!a) return null; a.click(); return a.dataset.jump; })()`);
         await sleep(1500);
         const top = to && await evalJS(`(() => { const el = document.getElementById('b-' + ${JSON.stringify(to)}) || document.getElementById('x-' + ${JSON.stringify(to)}); return el ? Math.round(el.getBoundingClientRect().top) : null; })()`);
-        ok('an inline link in a caption opens its block', !!to && top !== null && top >= 0 && top < 500, `${b.id} -> ${to} top ${top}`);
+        ok('an inline link in a block note opens its block', !!to && top !== null && top >= 0 && top < 500, `${b.id} -> ${to} top ${top}`);
       }
     }
 
@@ -193,8 +194,9 @@ async function main() {
     if (dev) {
       const [s, b] = dev;
       await go(`${base}${b.modes ? '&mode=' + b.modes[0] : ''}#${s.id}/${b.id}`);
-      const n = await evalJS(`document.querySelectorAll('#b-${b.id} .devs li').length`);
-      ok('deviation reasons show under the block', n === b.deviations.length, `${b.id}: ${n}`);
+      await evalJS(`document.querySelector('#b-${b.id} h3[data-block]').click()`); await sleep(400);
+      const n = await evalJS(`document.querySelectorAll('#note .devs li').length`);
+      ok('deviation reasons show in the note of the block', n === b.deviations.length, `${b.id}: ${n}`);
     }
 
     // 9. phone width and dark theme screenshots

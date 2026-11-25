@@ -2902,7 +2902,7 @@
    "args": [
     {
      "name": "o",
-     "meaning": "An end $o \\in \\mathsf{End}$, one of $c^{+}, c^{-}$ for a channel $c$."
+     "meaning": "An end $o \\in \\sym{type.End}{\\mathsf{End}}$, one of $c^{+}, c^{-}$ for a channel $c$."
     }
    ],
    "source": [
@@ -2924,7 +2924,7 @@
    "args": [
     {
      "name": "e",
-     "meaning": "The body, $e \\in \\mathsf{Expr}$, with the argument as index $0$."
+     "meaning": "The body, $e \\in \\sym{type.Expr}{\\mathsf{Expr}}$, with the argument as index $0$."
     }
    ],
    "source": [
@@ -2978,7 +2978,7 @@
    "args": [
     {
      "name": "e_1, e_2",
-     "meaning": "Subterms, $e_1, e_2 \\in \\mathsf{Expr}$."
+     "meaning": "Subterms, $e_1, e_2 \\in \\sym{type.Expr}{\\mathsf{Expr}}$."
     }
    ],
    "source": [
@@ -3064,7 +3064,7 @@
     },
     {
      "name": "e_1, e_2",
-     "meaning": "Subterms, $e_1, e_2 \\in \\mathsf{Expr}$."
+     "meaning": "Subterms, $e_1, e_2 \\in \\sym{type.Expr}{\\mathsf{Expr}}$."
     }
    ],
    "source": [
@@ -3524,7 +3524,7 @@
    "why": "A message on $o$ synchronizes with an action on $\\overline{o}$. Each two-thread process step pairs an end with its dual end.",
    "breaks": "Nothing. It is a definition.",
    "example": "A send on $c^{+}$ meets a receive on $c^{-}$.",
-   "signature": "\\overline{\\cdot} : \\mathsf{End} \\to \\mathsf{End}",
+   "signature": "\\overline{\\cdot} : \\sym{type.End}{\\mathsf{End}} \\to \\sym{type.End}{\\mathsf{End}}",
    "args": [
     {
      "name": "o",
@@ -3546,7 +3546,7 @@
    "why": "Restricted sets $C$ and the subjects of an offer are sets of channels, so the rules map ends to channels by $\\mathsf{ech}$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{ech}(c^{-}) = c$.",
-   "signature": "\\mathsf{ech} : \\mathsf{End} \\to \\mathsf{Chan}",
+   "signature": "\\mathsf{ech} : \\sym{type.End}{\\mathsf{End}} \\to \\sym{type.Chan}{\\mathsf{Chan}}",
    "args": [
     {
      "name": "o",
@@ -3568,7 +3568,7 @@
    "why": "The value relation asks $\\mathrm{dom}\\,\\Theta = \\mathsf{fends}(\\lambda e)$ of a closure and $\\mathsf{fends}(e) = \\varnothing$ of a box. Hence for $v$ in $V$ at $\\Theta$ the ends a send or spawn of $v$ moves are $\\mathrm{dom}\\,\\Theta = \\mathsf{fends}(v)$, and ownership follows the syntax of values.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{fends}(\\lambda u.\\,\\mathsf{close}\\,a) = \\{a\\}$.",
-   "signature": "\\mathsf{fends} : \\mathsf{Expr} \\to \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{End})",
+   "signature": "\\mathsf{fends} : \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathcal{P}_{\\mathrm{fin}}(\\sym{type.End}{\\mathsf{End}})",
    "args": [
     {
      "name": "e",
@@ -3590,7 +3590,7 @@
    "why": "A created channel $c$ must satisfy $c \\notin \\mathsf{fchans}(e)$ for each thread $e$, or two channels share a name.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{fchans}(\\langle c^{+}, d^{-}\\rangle) = \\{c, d\\}$.",
-   "signature": "\\mathsf{fchans} : \\mathsf{Expr} \\to \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Chan})",
+   "signature": "\\mathsf{fchans} : \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathcal{P}_{\\mathrm{fin}}(\\sym{type.Chan}{\\mathsf{Chan}})",
    "args": [
     {
      "name": "e",
@@ -3673,7 +3673,7 @@
    "why": "Steps are defined once, on configurations. A process $p$ steps to $p'$ when some $q$ with $\\mathsf{erase}(q) = p$ steps to some $q'$ with $\\mathsf{erase}(q') = p'$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{erase}(C, \\{0 \\mapsto e, 1 \\mapsto f\\}) = (C, \\{\\!|\\,e, f\\,|\\!\\})$.",
-   "signature": "\\mathsf{erase} : \\mathsf{Config} \\to \\mathsf{Proc}",
+   "signature": "\\mathsf{erase} : \\sym{type.Config}{\\mathsf{Config}} \\to \\sym{type.Proc}{\\mathsf{Proc}}",
    "args": [
     {
      "name": "(C, M)",
@@ -3743,7 +3743,7 @@
    "why": "For each $W$ and $x$, $x \\prec_W x^{+}$. Hence the actions of one end are ordered in program order.",
    "breaks": "Nothing. It is a definition.",
    "example": "After $\\mathsf{send}$ at $x$ the end is at $x^{+}$.",
-   "signature": "(\\cdot)^{+} : \\mathsf{Point} \\to \\mathsf{Point}",
+   "signature": "(\\cdot)^{+} : \\sym{type.Point}{\\mathsf{Point}} \\to \\sym{type.Point}{\\mathsf{Point}}",
    "args": [
     {
      "name": "x",
@@ -3765,7 +3765,7 @@
    "why": "The $j$-th payload end of a message at $x$ is at $x\\cdot j$, and the continuation of choice $i$ at $x\\cdot\\kappa_i$. $\\mathsf{new}$ may place a channel at the same fields, so a channel created to be sent is at the field where the message delivers its payload.",
    "breaks": "With a separate sort of point for created channels, a reply channel created to be sent is away from the payload field, and request and reply programs do not type.",
    "example": "$\\mathsf{new}$ at the position $\\rho\\cdot 0$ places $d^{+}$ at $\\rho\\cdot 0$ and $d^{-}$ at $\\overline{\\rho\\cdot 0}$.",
-   "signature": "(\\cdot)\\cdot\\kappa : \\mathsf{Point} \\times \\mathbb{N} \\to \\mathsf{Point}",
+   "signature": "(\\cdot)\\cdot\\kappa : \\sym{type.Point}{\\mathsf{Point}} \\times \\mathbb{N} \\to \\sym{type.Point}{\\mathsf{Point}}",
    "args": [
     {
      "name": "x",
@@ -3791,7 +3791,7 @@
    "why": "A thread blocked at $u$ that holds an end at $v$ must satisfy $u \\prec \\overline{v}$, the point of the dual end.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{new}$ places $c^{+}$ at $\\rho$ and $c^{-}$ at $\\overline{\\rho}$.",
-   "signature": "\\overline{\\cdot} : \\mathsf{Point} \\to \\mathsf{Point}",
+   "signature": "\\overline{\\cdot} : \\sym{type.Point}{\\mathsf{Point}} \\to \\sym{type.Point}{\\mathsf{Point}}",
    "args": [
     {
      "name": "x",
@@ -3871,7 +3871,7 @@
    "why": "Selecting end and branching end continue at the two sides $\\overline{x\\cdot\\kappa_i}$ and $x\\cdot\\kappa_i$ of one field.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{select}_{\\mathsf{false}}\\,o$ at $x$ continues at $\\overline{x\\cdot 0}$.",
-   "signature": "\\mathsf{sel\\_pt} : \\mathsf{Point} \\to \\mathbb{B} \\to \\mathsf{Point}",
+   "signature": "\\mathsf{sel\\_pt} : \\sym{type.Point}{\\mathsf{Point}} \\to \\mathbb{B} \\to \\sym{type.Point}{\\mathsf{Point}}",
    "args": [
     {
      "name": "x",
@@ -3897,7 +3897,7 @@
    "why": "It is $\\overline{\\mathsf{sel\\_pt}\\,x\\,i}$, the dual point of the selecting side.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{branch}$ at $\\overline{x}$ continues at $x\\cdot\\kappa_i$.",
-   "signature": "\\mathsf{bra\\_pt} : \\mathsf{Point} \\to \\mathbb{B} \\to \\mathsf{Point}",
+   "signature": "\\mathsf{bra\\_pt} : \\sym{type.Point}{\\mathsf{Point}} \\to \\mathbb{B} \\to \\sym{type.Point}{\\mathsf{Point}}",
    "args": [
     {
      "name": "x",
@@ -3923,7 +3923,7 @@
    "why": "$\\overline{x}\\cdot j = x\\cdot j$, so sender at $x$ and receiver at $\\overline{x}$ compute the same points for the delivered ends.",
    "breaks": "Nothing. It is a definition.",
    "example": "A message on $y$ at $Y$ delivers its end at $Y\\cdot 0$.",
-   "signature": "\\mathsf{payload\\_pts} : \\mathsf{Point} \\to \\mathbb{N} \\to \\mathsf{Point}^{*}",
+   "signature": "\\mathsf{payload\\_pts} : \\sym{type.Point}{\\mathsf{Point}} \\to \\mathbb{N} \\to \\sym{type.Point}{\\mathsf{Point}}^{*}",
    "args": [
     {
      "name": "x",
@@ -3971,7 +3971,7 @@
    "why": "After the link, the thread holding $\\overline{o_1}$ communicates with the thread holding $\\overline{o_2}$, so it holds $o_2$. The map identifies $\\overline{o_1}$ with $o_2$, so it is no bijection.",
    "breaks": "Nothing. It is a definition.",
    "example": "After $\\mathsf{link}\\,\\langle c^{+}, d^{-}\\rangle$ the thread holding $c^{-}$ holds $d^{-}$.",
-   "signature": "\\mathsf{csub} : \\mathsf{End} \\to \\mathsf{End} \\to \\mathsf{End} \\to \\mathsf{End}",
+   "signature": "\\mathsf{csub} : \\sym{type.End}{\\mathsf{End}} \\to \\sym{type.End}{\\mathsf{End}} \\to \\sym{type.End}{\\mathsf{End}} \\to \\sym{type.End}{\\mathsf{End}}",
    "args": [
     {
      "name": "o_1, o_2",
@@ -4001,7 +4001,7 @@
    "args": [
     {
      "name": "o",
-     "meaning": "The end the offer acts on, $o \\in \\mathsf{End}$."
+     "meaning": "The end the offer acts on, $o \\in \\sym{type.End}{\\mathsf{End}}$."
     },
     {
      "name": "v",
@@ -4027,7 +4027,7 @@
    "why": "A plain definition. Application, the two lets, case and force step by substitution.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(\\mathsf{close}\\,x)[c^{+}] = \\mathsf{close}\\,c^{+}$.",
-   "signature": "\\cdot[\\cdot] : \\mathsf{Expr} \\to \\mathsf{Val} \\to \\mathsf{Expr}",
+   "signature": "\\cdot[\\cdot] : \\sym{type.Expr}{\\mathsf{Expr}} \\to \\sym{type.Val}{\\mathsf{Val}} \\to \\sym{type.Expr}{\\mathsf{Expr}}",
    "args": [
     {
      "name": "e",
@@ -4053,7 +4053,7 @@
    "why": "A plain definition. The frames fix where the next step of a term happens.",
    "breaks": "Nothing. It is a definition.",
    "example": "For $f = \\mathsf{let}\\ \\ast = \\square\\ \\mathsf{in}\\ e_2$, $f[\\mathsf{close}\\,c^{+}] = \\mathsf{let}\\ \\ast = \\mathsf{close}\\,c^{+}\\ \\mathsf{in}\\ e_2$.",
-   "signature": "\\cdot[\\cdot] : \\mathsf{Frame} \\to \\mathsf{Expr} \\to \\mathsf{Expr}",
+   "signature": "\\cdot[\\cdot] : \\sym{type.Frame}{\\mathsf{Frame}} \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\sym{type.Expr}{\\mathsf{Expr}}",
    "args": [
     {
      "name": "f",
@@ -4080,7 +4080,7 @@
    "why": "A plain definition.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\{0 \\mapsto e\\}[0 \\mapsto e'] = \\{0 \\mapsto e'\\}$.",
-   "signature": "\\cdot[\\cdot \\mapsto \\cdot] : (\\mathbb{N} \\rightharpoonup \\mathsf{Expr}) \\to \\mathbb{N} \\to \\mathsf{Expr} \\to (\\mathbb{N} \\rightharpoonup \\mathsf{Expr})",
+   "signature": "\\cdot[\\cdot \\mapsto \\cdot] : (\\mathbb{N} \\rightharpoonup \\sym{type.Expr}{\\mathsf{Expr}}) \\to \\mathbb{N} \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to (\\mathbb{N} \\rightharpoonup \\sym{type.Expr}{\\mathsf{Expr}})",
    "args": [
     {
      "name": "M",
@@ -4110,7 +4110,7 @@
    "why": "A created channel $c$ satisfies $c \\notin \\mathsf{echans}(M)$, so it differs from each channel a thread mentions.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{echans}\\{0 \\mapsto \\mathsf{close}\\,c^{+}, 1 \\mapsto \\mathsf{close}\\,d^{-}\\} = \\{c, d\\}$.",
-   "signature": "\\mathsf{echans} : (\\mathbb{N} \\rightharpoonup \\mathsf{Expr}) \\to \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Chan})",
+   "signature": "\\mathsf{echans} : (\\mathbb{N} \\rightharpoonup \\sym{type.Expr}{\\mathsf{Expr}}) \\to \\mathcal{P}_{\\mathrm{fin}}(\\sym{type.Chan}{\\mathsf{Chan}})",
    "args": [
     {
      "name": "M",
@@ -4132,7 +4132,7 @@
    "why": "An offer to the environment requires $\\mathsf{subj}\\,\\sigma \\cap C = \\varnothing$, so it uses only interface channels.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{subj}(o?v) = \\{\\mathsf{ech}\\,o\\}$.",
-   "signature": "\\mathsf{subj} : \\mathsf{SLabel} \\to \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Chan})",
+   "signature": "\\mathsf{subj} : \\sym{type.SLabel}{\\mathsf{SLabel}} \\to \\mathcal{P}_{\\mathrm{fin}}(\\sym{type.Chan}{\\mathsf{Chan}})",
    "args": [
     {
      "name": "\\sigma",
@@ -4154,7 +4154,7 @@
    "why": "A thread takes part in a step iff it is in $\\mathsf{parts}$ of its event. \\inmode{lf}{Weak fairness and lock freedom ask whether $t \\in \\mathsf{parts}(l_j)$ for some position $j$.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{parts}(\\mathsf{sync}_{0,1}\\,(a^{+}!\\ast)) = \\{0, 1\\}$.",
-   "signature": "\\mathsf{parts} : \\mathsf{Event} \\to \\mathcal{P}_{\\mathrm{fin}}(\\mathbb{N})",
+   "signature": "\\mathsf{parts} : \\sym{type.Event}{\\mathsf{Event}} \\to \\mathcal{P}_{\\mathrm{fin}}(\\mathbb{N})",
    "args": [
     {
      "name": "ev",
@@ -4346,7 +4346,7 @@
    "args": [
     {
      "name": "o",
-     "meaning": "The end the offer acts on, $o \\in \\mathsf{End}$."
+     "meaning": "The end the offer acts on, $o \\in \\sym{type.End}{\\mathsf{End}}$."
     },
     {
      "name": "v",
@@ -4372,7 +4372,7 @@
    "args": [
     {
      "name": "o",
-     "meaning": "The end the offer acts on, $o \\in \\mathsf{End}$."
+     "meaning": "The end the offer acts on, $o \\in \\sym{type.End}{\\mathsf{End}}$."
     },
     {
      "name": "v",
@@ -4398,7 +4398,7 @@
    "args": [
     {
      "name": "o",
-     "meaning": "The end the offer acts on, $o \\in \\mathsf{End}$."
+     "meaning": "The end the offer acts on, $o \\in \\sym{type.End}{\\mathsf{End}}$."
     }
    ],
    "source": [
@@ -4420,7 +4420,7 @@
    "args": [
     {
      "name": "o",
-     "meaning": "The end the offer acts on, $o \\in \\mathsf{End}$."
+     "meaning": "The end the offer acts on, $o \\in \\sym{type.End}{\\mathsf{End}}$."
     },
     {
      "name": "i",
@@ -4446,7 +4446,7 @@
    "args": [
     {
      "name": "o",
-     "meaning": "The end the offer acts on, $o \\in \\mathsf{End}$."
+     "meaning": "The end the offer acts on, $o \\in \\sym{type.End}{\\mathsf{End}}$."
     },
     {
      "name": "i",
@@ -4818,7 +4818,7 @@
    "why": "It fixes left-to-right evaluation, so each term has at most one redex position.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{frame\\_val}(v_1\\,\\square)$ requires $v_1$ to be a value.",
-   "signature": "\\mathsf{frame\\_val} : \\mathsf{Frame} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{frame\\_val} : \\sym{type.Frame}{\\mathsf{Frame}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "f",
@@ -5174,7 +5174,7 @@
    "why": "These are the channels a message to the environment moves out of the process.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{sentc}(o!d^{+}) = \\{d\\}$.",
-   "signature": "\\mathsf{sentc} : \\mathsf{SLabel} \\to \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Chan})",
+   "signature": "\\mathsf{sentc} : \\sym{type.SLabel}{\\mathsf{SLabel}} \\to \\mathcal{P}_{\\mathrm{fin}}(\\sym{type.Chan}{\\mathsf{Chan}})",
    "args": [
     {
      "name": "\\sigma",
@@ -5308,7 +5308,7 @@
    "why": "At the end $C = \\varnothing$, so each channel is used up, and only the main thread returns a value.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(\\varnothing, \\{\\!|\\ast, \\ast|\\!\\})$.",
-   "signature": "\\mathsf{terminated} : \\mathsf{Proc} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{terminated} : \\sym{type.Proc}{\\mathsf{Proc}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "p",
@@ -5338,7 +5338,7 @@
    "why": "It is the safety property the deadlock-free results prove of closed typed processes. A stuck configuration is one that has not terminated and cannot step.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(\\{c\\}, \\{\\!|\\mathsf{close}\\,c^{+}, \\mathsf{close}\\,c^{-}|\\!\\})$ is deadlock free.",
-   "signature": "\\mathsf{deadlock\\_free} : \\mathsf{Proc} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{deadlock\\_free} : \\sym{type.Proc}{\\mathsf{Proc}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "p",
@@ -5368,7 +5368,7 @@
    "why": "A thread that loops on internal steps never takes part in a session step. Typing no longer gives this property, because a loop of forces that holds no end types, and [[th-adeq|thread progress]] takes it as a hypothesis.",
    "breaks": "$\\mathsf{force}\\,!(f = \\mathsf{force}\\,f)$ takes force steps forever.",
    "example": "$\\mathsf{force}\\,!(f = \\mathsf{force}\\,f)$ violates the property.",
-   "signature": "\\mathsf{no\\_tau\\_divergence} : \\mathsf{Proc} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{no\\_tau\\_divergence} : \\sym{type.Proc}{\\mathsf{Proc}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "p",
@@ -5416,7 +5416,7 @@
    "why": "Deadlock freedom allows a thread to wait forever while other threads step. Lock freedom excludes it, and its definition mentions no type.",
    "breaks": "A server that serves one client forever while a second client waits is deadlock free and not lock free.",
    "example": "$(\\{c\\}, \\{\\!|\\mathsf{close}\\,c^{+}, \\mathsf{close}\\,c^{-}|\\!\\})$ is lock free.",
-   "signature": "\\mathsf{lock\\_free} : \\mathsf{Proc} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{lock\\_free} : \\sym{type.Proc}{\\mathsf{Proc}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "p",
@@ -5424,7 +5424,7 @@
     },
     {
      "name": "(r, l)",
-     "meaning": "A run, $r_i \\in \\mathsf{Config}$ the configuration and $l_i$ the event or stutter at position $i \\in \\mathbb{N}$."
+     "meaning": "A run, $r_i \\in \\sym{type.Config}{\\mathsf{Config}}$ the configuration and $l_i$ the event or stutter at position $i \\in \\mathbb{N}$."
     },
     {
      "name": "i",
@@ -5454,11 +5454,11 @@
    "why": "A run that stutters while a step is possible would satisfy lock freedom vacuously, so the definition quantifies over maximal runs only.",
    "breaks": "Nothing. It is a definition.",
    "example": "A run that stutters at $r_i$ while $r_i$ has a $\\tau$ step is not maximal.",
-   "signature": "\\mathsf{maximal} : \\mathsf{Run} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{maximal} : \\sym{type.Run}{\\mathsf{Run}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "(r, l)",
-     "meaning": "A run, $r_i \\in \\mathsf{Config}$ the configuration and $l_i$ the event or stutter at position $i \\in \\mathbb{N}$."
+     "meaning": "A run, $r_i \\in \\sym{type.Config}{\\mathsf{Config}}$ the configuration and $l_i$ the event or stutter at position $i \\in \\mathbb{N}$."
     },
     {
      "name": "i",
@@ -5480,11 +5480,11 @@
    "why": "Without fairness a scheduler may never run an enabled thread $t$, and no program with two threads is lock free.",
    "breaks": "Nothing. It is a definition.",
    "example": "A run that never schedules an enabled thread is not weakly fair.",
-   "signature": "\\mathsf{wfair} : \\mathsf{Run} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{wfair} : \\sym{type.Run}{\\mathsf{Run}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "(r, l)",
-     "meaning": "A run, $r_i \\in \\mathsf{Config}$ the configuration and $l_i$ the event or stutter at position $i \\in \\mathbb{N}$."
+     "meaning": "A run, $r_i \\in \\sym{type.Config}{\\mathsf{Config}}$ the configuration and $l_i$ the event or stutter at position $i \\in \\mathbb{N}$."
     },
     {
      "name": "i",
@@ -5514,7 +5514,7 @@
    "why": "Lock freedom guarantees progress exactly to the pending threads.",
    "breaks": "Nothing. It is a definition.",
    "example": "A thread at $\\mathsf{recv}\\,b$ is pending.",
-   "signature": "\\mathsf{pend} : \\mathsf{Config} \\to \\mathbb{N} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{pend} : \\sym{type.Config}{\\mathsf{Config}} \\to \\mathbb{N} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "q",
@@ -5540,11 +5540,11 @@
    "why": "It is the condition on one run, and $\\mathsf{lock\\_free}\\,p$ asks it of each maximal weakly fair run from $p$.",
    "breaks": "Nothing. It is a definition.",
    "example": "Each message the client sends is received by the server at a later position.",
-   "signature": "\\mathsf{lf\\_run} : \\mathsf{Run} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{lf\\_run} : \\sym{type.Run}{\\mathsf{Run}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "(r, l)",
-     "meaning": "A run, $r_i \\in \\mathsf{Config}$ the configuration and $l_i$ the event or stutter at position $i \\in \\mathbb{N}$."
+     "meaning": "A run, $r_i \\in \\sym{type.Config}{\\mathsf{Config}}$ the configuration and $l_i$ the event or stutter at position $i \\in \\mathbb{N}$."
     },
     {
      "name": "i, t",
@@ -6217,7 +6217,7 @@
    "why": "Each rule reads the first action of a session type, so rules match on $\\mathsf{unfold}(S)$ and need no separate rule for $\\mu$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{unfold}(\\mu\\alpha.\\,!\\ast.\\alpha) = !\\ast.(\\mu\\alpha.\\,!\\ast.\\alpha)$.",
-   "signature": "\\mathsf{unfold} : \\mathsf{STy} \\to \\mathsf{STy}",
+   "signature": "\\mathsf{unfold} : \\sym{type.STy}{\\mathsf{STy}} \\to \\sym{type.STy}{\\mathsf{STy}}",
    "args": [
     {
      "name": "S",
@@ -6277,7 +6277,7 @@
    "why": "The two ends of a channel run $S$ and $\\mathsf{dual}\\,S$, so each send meets a receive.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{dual}(!\\ast.\\mathsf{Close}) = ?\\ast.\\mathsf{Close}$.",
-   "signature": "\\mathsf{dual} : \\mathsf{STy} \\to \\mathsf{STy}",
+   "signature": "\\mathsf{dual} : \\sym{type.STy}{\\mathsf{STy}} \\to \\sym{type.STy}{\\mathsf{STy}}",
    "args": [
     {
      "name": "S",
@@ -6307,7 +6307,7 @@
    "why": "In $\\mu\\alpha.S$ the variable $\\alpha$ names the whole protocol. After dualizing $S$, the occurrences $\\overline{\\alpha}$ must name $\\mathsf{dual}(\\mu\\alpha.S)$, which is $\\alpha$ again.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{dual}(\\mu\\alpha.\\,!\\ast.\\alpha) = \\mu\\alpha.\\,?\\ast.\\alpha$.",
-   "signature": "\\mathsf{flip}_\\alpha : \\mathsf{STy} \\to \\mathsf{STy}",
+   "signature": "\\mathsf{flip}_\\alpha : \\sym{type.STy}{\\mathsf{STy}} \\to \\sym{type.STy}{\\mathsf{STy}}",
    "args": [
     {
      "name": "\\alpha",
@@ -6351,7 +6351,7 @@
    "why": "\\inmode{lf}{The relations at $\\kappa_{DF}$ and at $\\kappa_L$ read no credit, so two protocols that differ only in annotations are equal for them.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{sty\\_df}(!(\\ast^{2}).\\mathsf{Close}) = !(\\ast^{\\infty}).\\mathsf{Close}$.",
-   "signature": "\\mathsf{sty\\_df} : \\mathsf{STy} \\to \\mathsf{STy}",
+   "signature": "\\mathsf{sty\\_df} : \\sym{type.STy}{\\mathsf{STy}} \\to \\sym{type.STy}{\\mathsf{STy}}",
    "args": [
     {
      "name": "S",
@@ -6404,7 +6404,7 @@
    "why": "The relation pairs the two ends of a channel by $\\mathsf{sdual}$, consistent with comparing by $\\approx$.",
    "breaks": "Nothing. It is a definition.",
    "example": "A link of ends at $S$ and $S'$ asks $\\mathsf{sdual}\\,S\\,S'$.",
-   "signature": "\\mathsf{sdual} : \\mathsf{STy} \\to \\mathsf{STy} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{sdual} : \\sym{type.STy}{\\mathsf{STy}} \\to \\sym{type.STy}{\\mathsf{STy}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "S",
@@ -6430,7 +6430,7 @@
    "why": "A thread blocked at $u$ while holding a value of $T$ needs $u \\prec \\mathsf{ap}(T)$, or the thread holding the dual end of a held end may wait on the blocked thread. With $\\bot \\in \\mathsf{ap}(T)$ the check fails for each point $u$, which is what a value without a lower bound requires.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{ap}(\\mathsf{Close}_{\\rho} \\otimes \\mathsf{Close}_{\\rho\\cdot 0}) = \\{\\overline{\\rho}, \\overline{\\rho\\cdot 0}\\}$ and $\\mathsf{ap}(\\exists^{\\bot}\\iota.\\,C.\\,T) = \\{\\bot\\}$.",
-   "signature": "\\mathsf{ap} : \\mathsf{Ty} \\to \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Point} \\cup \\{\\bot, \\top\\})",
+   "signature": "\\mathsf{ap} : \\sym{type.Ty}{\\mathsf{Ty}} \\to \\mathcal{P}_{\\mathrm{fin}}(\\sym{type.Point}{\\mathsf{Point}} \\cup \\{\\bot, \\top\\})",
    "args": [
     {
      "name": "T",
@@ -6490,7 +6490,7 @@
    "why": "$\\overline{x}\\cdot j = x\\cdot j$, so sender at $x$ and receiver at $\\overline{x}$ compute the same payload type.",
    "breaks": "Nothing. It is a definition.",
    "example": "A payload $\\alpha_{\\iota_0}$ sent at $Y$ has type $\\alpha_{Y\\cdot 0}$.",
-   "signature": "\\mathsf{payload\\_at} : \\mathbb{N} \\to \\mathsf{Ty} \\to \\mathsf{Point} \\to \\mathsf{Ty}",
+   "signature": "\\mathsf{payload\\_at} : \\mathbb{N} \\to \\sym{type.Ty}{\\mathsf{Ty}} \\to \\sym{type.Point}{\\mathsf{Point}} \\to \\sym{type.Ty}{\\mathsf{Ty}}",
    "args": [
     {
      "name": "m",
@@ -6520,7 +6520,7 @@
    "why": "A payload mentions only its own point variables, so unrolling a $\\mu$ never captures an outer point.",
    "breaks": "A free outer point inside a $\\mu$-body is captured on unrolling, and point substitution changes its meaning.",
    "example": "$\\mathsf{pscoped}\\,\\iota_0\\,S_{\\iota_0}$.",
-   "signature": "\\mathsf{pscoped} : \\mathsf{PVar}^{*} \\to \\mathsf{Ty} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{pscoped} : \\sym{type.PVar}{\\mathsf{PVar}}^{*} \\to \\sym{type.Ty}{\\mathsf{Ty}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "\\bar\\iota",
@@ -6630,7 +6630,7 @@
    "why": "Deadlock-free typing is the annotated typing at counter bound $N = \\infty$ with these annotations. One set of rules then serves both systems, and each premise about annotations holds at $\\infty$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{ty\\_df}(S_x^{3}) = S_x^{\\infty}$.",
-   "signature": "\\mathsf{ty\\_df} : \\mathsf{Ty} \\to \\mathsf{Ty}",
+   "signature": "\\mathsf{ty\\_df} : \\sym{type.Ty}{\\mathsf{Ty}} \\to \\sym{type.Ty}{\\mathsf{Ty}}",
    "args": [
     {
      "name": "T",
@@ -6652,7 +6652,7 @@
    "why": "$V$ at a box type asks $\\Theta = \\varnothing$, so copying or dropping the value duplicates or loses no end.",
    "breaks": "Nothing. It is a definition.",
    "example": "The variable of a box is unlimited.",
-   "signature": "\\mathsf{unlimited} : \\mathsf{Ty} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{unlimited} : \\sym{type.Ty}{\\mathsf{Ty}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "T",
@@ -6674,7 +6674,7 @@
    "why": "\\inmode{lf}{Aging and capture leave an entry at a $\\mathsf{tfree}$ type unchanged. }P-Term asks it of the result, so no thread waits on an end in the result of a process.",
    "breaks": "A main thread that returns an end holds the end forever, and the thread holding the dual end waits forever.",
    "example": "$\\mathsf{tfree}(\\ast \\otimes \\Box\\ldots)$.",
-   "signature": "\\mathsf{tfree} : \\mathsf{Ty} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{tfree} : \\sym{type.Ty}{\\mathsf{Ty}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "T",
@@ -6733,7 +6733,7 @@
    "why": "A creation at a fresh base ranks the whole tree of the base, fields included, so a later creation at a field finds its ranks fixed and picks nothing. Ordinals leave no room between $\\alpha$ and $\\alpha + 1$, so the room for later fields is fixed at the base.",
    "breaks": "If a base ranked only its own shifts, a field creation could need a rank strictly between $k + 1$ and $k + 2$, and no ordinal exists there.",
    "example": "Client and server rank $\\rho + k$ at $\\omega \\cdot k$ and $\\rho\\cdot 0 + k$ at $\\omega \\cdot k + 1$.",
-   "signature": "\\varrho : \\mathsf{Point} \\to \\mathsf{Ord}",
+   "signature": "\\varrho : \\sym{type.Point}{\\mathsf{Point}} \\to \\sym{type.Ord}{\\mathsf{Ord}}",
    "args": [
     {
      "name": "x",
@@ -6758,7 +6758,7 @@
    "why": "A creation orders the tree of its fresh base, and conservativity compares the points outside the tree. \\inmode{lf}{A rank function is chosen for the whole tree of a base at once.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\rho\\cdot 0^{+} \\in \\mathsf{tree}(\\rho)$.",
-   "signature": "\\mathsf{tree} : \\mathsf{Base} \\to \\mathcal{P}(\\mathsf{Point})",
+   "signature": "\\mathsf{tree} : \\sym{type.Base}{\\mathsf{Base}} \\to \\mathcal{P}(\\sym{type.Point}{\\mathsf{Point}})",
    "args": [
     {
      "name": "a",
@@ -7035,7 +7035,7 @@
    "why": "A fact outside $A$ mentions a point that no component owns, and no world of a run has that point among its bases.",
    "breaks": "Nothing. It is a definition.",
    "example": "A fact $1 \\prec 3$ with $3 \\notin A$ violates the condition.",
-   "signature": "\\mathsf{world\\_wf} : \\mathsf{World} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{world\\_wf} : \\sym{type.World}{\\mathsf{World}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
@@ -7057,7 +7057,7 @@
    "why": "A world has a ranked extension exactly when its order is well-founded, and the rank function of $\\prec_W$ gives the ranks. Process typing at a finite bound asks for a well-founded world.",
    "breaks": "A world whose order holds an infinite descending chain has no ranks, and lock-free adequacy would have no measure.",
    "example": "$W$ with no facts satisfies $\\mathsf{wf}\\,W$.",
-   "signature": "\\mathsf{wf} : \\mathsf{World} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{wf} : \\sym{type.World}{\\mathsf{World}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
@@ -7134,7 +7134,7 @@
    "why": "The world of a run grows with each creation at a fresh base and never loses a fact. The grown world stays consistent when the creation meets $\\mathsf{acyc\\_new}$. \\inmode{lf}{At a ranked world the union of the worlds of a run is one rank assignment, which lock-free adequacy uses as its measure.}",
    "breaks": "Nothing. It is a definition.\\inmode{lf}{ If ranks could change along a run, the measure of a waiting thread could rise.}",
    "example": "\\inmode{lf}{$W \\oplus (\\rho, \\varrho_\\rho)$ with $\\varrho_\\rho(x) = \\sigma + \\varrho_C(x)$ for $\\sigma$ above each context point below the tree.}",
-   "signature": "\\cdot \\oplus_{a} \\cdot : \\mathsf{World} \\to \\mathsf{Bcs} \\to \\mathsf{World}",
+   "signature": "\\cdot \\oplus_{a} \\cdot : \\sym{type.World}{\\mathsf{World}} \\to \\mathsf{Bcs} \\to \\sym{type.World}{\\mathsf{World}}",
    "args": [
     {
      "name": "W",
@@ -7195,7 +7195,7 @@
    "why": "Process composition joins the worlds of its two components.",
    "breaks": "Nothing. It is a definition.",
    "example": "$W \\sqsubseteq W \\sqcup W'$ and $W' \\sqsubseteq W \\sqcup W'$.",
-   "signature": "\\cdot \\sqcup \\cdot : \\mathsf{World} \\to \\mathsf{World} \\to \\mathsf{World}",
+   "signature": "\\cdot \\sqcup \\cdot : \\sym{type.World}{\\mathsf{World}} \\to \\sym{type.World}{\\mathsf{World}} \\to \\sym{type.World}{\\mathsf{World}}",
    "args": [
     {
      "name": "W_1, W_2",
@@ -7217,7 +7217,7 @@
    "why": "It is the derived order of $W$ on the points of the bases $S$, chains through private points included. The consistency of a join reduces to the restrictions of the two worlds to their shared bases.",
    "breaks": "Nothing. It is a definition.",
    "example": "$W|_{A_1 \\cap A_2}$ in the consistency of a join.",
-   "signature": "\\cdot|_{\\cdot} : \\mathsf{World} \\to \\mathcal{P}(\\mathbb{N}) \\to \\mathsf{World}",
+   "signature": "\\cdot|_{\\cdot} : \\sym{type.World}{\\mathsf{World}} \\to \\mathcal{P}(\\mathbb{N}) \\to \\sym{type.World}{\\mathsf{World}}",
    "args": [
     {
      "name": "W",
@@ -7297,7 +7297,7 @@
    "why": "Deadlock freedom reads one stuck configuration at a time, and a strict order suffices for that. Lock freedom follows one wait across a whole run, through a chain of growing worlds. Ranks fixed once chosen make the union of that chain well-founded, and lock-free adequacy measures the wait by the rank of its point. The deadlock-free theorems and the theorems at $\\kappa_L$ read strict worlds, the lock-free threads ranked worlds.",
    "breaks": "Without ranks the union of the strict worlds of a run could hold an infinite descending chain of points, and a wait could pass down that chain forever.",
    "example": "A creation in a strict world adds the facts of $C$. A creation in a ranked world must also find ordinals for the new tree.",
-   "signature": "k \\in \\{\\mathsf{strict}\\} \\cup \\{\\mathsf{ranked}\\ \\varrho \\mid \\varrho : \\mathsf{Point} \\to \\mathsf{Ord}\\}",
+   "signature": "k \\in \\{\\mathsf{strict}\\} \\cup \\{\\mathsf{ranked}\\ \\varrho \\mid \\varrho : \\sym{type.Point}{\\mathsf{Point}} \\to \\sym{type.Ord}{\\mathsf{Ord}}\\}",
    "args": [
     {
      "name": "\\varrho",
@@ -7323,7 +7323,7 @@
    "why": "A world has a consistent extension exactly when it is consistent itself. Process typing asks for a consistent world, which is what deadlock freedom needs, and the relation reads consistent worlds.",
    "breaks": "A world with a cycle $x \\prec_W y \\prec_W x$ has no consistent extension, and a semantic judgment at $W$ would hold vacuously.",
    "example": "A world with the facts $\\rho\\cdot 0 \\prec \\rho$, $\\rho\\cdot 0\\cdot 0 \\prec \\rho\\cdot 0$, and so on for each depth, is consistent\\inmode{lf}{ and not well-founded}.",
-   "signature": "\\mathsf{cons} : \\mathsf{World} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{cons} : \\sym{type.World}{\\mathsf{World}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
@@ -7401,7 +7401,7 @@
    "why": "Process typing asks for $\\mathsf{ok}_N$. At $N = \\infty$ typing serves deadlock freedom and needs a consistent extension, at a finite $N$ it serves lock freedom and needs a ranked extension. Each well-founded world is consistent.",
    "breaks": "Asking $\\mathsf{wf}$ at $N = \\infty$ rejects deadlock-free programs whose worlds are consistent and not well-founded, such as [[ex-forkjoin|recursive fork-join]].",
    "example": "$\\mathsf{ok}_\\infty\\,W = \\mathsf{cons}\\,W$.",
-   "signature": "\\mathsf{ok} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to \\mathsf{World} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{ok} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to \\sym{type.World}{\\mathsf{World}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "N",
@@ -7461,7 +7461,7 @@
    "why": "\\inmode{lf}{The deadlock-free theorems read strict worlds. A stuck configuration has finitely many waiting points, and a strict order on a finite set has a minimal element, the wait that adequacy resolves first.}",
    "breaks": "Nothing. It is a definition.",
    "example": "\\inmode{lf}{A well-formed consistent world of typing is strict.}",
-   "signature": "\\mathsf{strict} : \\mathsf{World} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{strict} : \\sym{type.World}{\\mathsf{World}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
@@ -7485,7 +7485,7 @@
    "why": "The two bounds serve two threads. The holding thread needs a lower bound, so that its actions elsewhere stay within the counter. The waiting thread needs an upper bound on the counter of the dual end, so that its wait is finite. An action on the end resets the counter to $m$, and each other action lowers it by one.",
    "breaks": "Nothing. It is a definition.",
    "example": "An end $S_x\\inmode{lf}{^{2,3}}$ has a counter of $2$ or $3$.",
-   "signature": "f : \\mathsf{End} \\rightharpoonup \\mathbb{N}",
+   "signature": "f : \\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\mathbb{N}",
    "args": [
     {
      "name": "o",
@@ -7621,7 +7621,7 @@
    "why": "The creation adds the facts of $C$ to a consistent world. A cycle of the result lies inside the new tree, which the first clause excludes, or passes through old points. A cycle through old points gives a fact between two old points in $\\Gamma, C[\\rho]$, which conservativity turns into a cycle of the old world. So the two clauses keep the grown world consistent. The second clause is the premise of E-Open at one base, so opening the existential is conservative over the points of $\\Gamma$.",
    "breaks": "Without conservativity a creation could order two context points against the context and close a cycle through the new tree.",
    "example": "$C = \\{\\rho \\prec \\overline{\\rho\\cdot 0},\\ \\overline{\\rho} \\prec \\rho\\cdot 0\\}$ has no cycle and orders no two old points. [[ex-forkjoin|Recursive fork-join]] uses a $C$ whose order on the tree holds an infinite descending chain.",
-   "signature": "\\mathsf{acyc\\_new} : \\mathsf{Ctx} \\to \\mathsf{PVar} \\to \\mathcal{P}(\\mathsf{Point}^{2}) \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{acyc\\_new} : \\sym{type.Ctx}{\\mathsf{Ctx}} \\to \\sym{type.PVar}{\\mathsf{PVar}} \\to \\mathcal{P}(\\sym{type.Point}{\\mathsf{Point}}^{2}) \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "\\Gamma",
@@ -7697,7 +7697,7 @@
    "why": "At a ranked world the creation must find ordinal ranks for the new tree in each ranked world in which the facts of $\\Gamma$ hold. It takes the least ranks above the context points below the tree. A paired point stays at or below the largest rank in its set, so each exit holds. Choosing the largest of finitely many ranks needs excluded middle.",
    "breaks": "With single context points in place of the sets $Y$, a creation with two exits below context points that no common point lies below is rejected.",
    "example": "$\\Gamma \\vdash z \\prec y$ and $C = \\{\\rho \\prec y\\}$ with $\\mathcal{S} = \\{(\\rho, \\{z\\})\\}$. The [[ex-gennew|creation with two entries]] needs the set $\\{\\rho\\cdot 2, \\rho\\cdot 3\\}$.",
-   "signature": "\\mathsf{gen\\_new} : \\mathsf{Ctx} \\to \\mathsf{PVar} \\to \\mathcal{P}(\\mathsf{Point}^{2}) \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{gen\\_new} : \\sym{type.Ctx}{\\mathsf{Ctx}} \\to \\sym{type.PVar}{\\mathsf{PVar}} \\to \\mathcal{P}(\\sym{type.Point}{\\mathsf{Point}}^{2}) \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "\\Gamma",
@@ -7749,7 +7749,7 @@
    "why": "Deadlock-free typing grows strict worlds, which need only that the new tree adds no cycle. Lock-free typing grows ranked worlds, which need ordinals for the new tree.",
    "breaks": "The creation in the recursive fork-join program orders an infinite descending chain on the new tree. It meets $\\mathsf{acyc\\_new}$ and fails the part for ranks, which asks $\\prec^{\\rho}_{C}$ well-founded.",
    "example": "At $N = \\infty$ [[ex-forkjoin|recursive fork-join]] creates under $\\mathsf{acyc\\_new}$.",
-   "signature": "\\mathsf{new\\_ok} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to \\mathsf{Ctx} \\to \\mathsf{PVar} \\to \\mathcal{P}(\\mathsf{Point}^{2}) \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{new\\_ok} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to \\sym{type.Ctx}{\\mathsf{Ctx}} \\to \\sym{type.PVar}{\\mathsf{PVar}} \\to \\mathcal{P}(\\sym{type.Point}{\\mathsf{Point}}^{2}) \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "N",
@@ -7956,7 +7956,7 @@
    "why": "A waiting thread waits on a holding thread whose own waiting point lies lower. Ranks are ordinals and never change along a run, so this chain ends, and the thread at its bottom can act.",
    "breaks": "A strict world that grows along a run could hold an infinite descending chain in the union of its worlds, and a wait could pass down it forever.",
    "example": "Client and server rank their points below $\\omega^{2} + 2$.",
-   "signature": "\\varrho_a : \\mathsf{tree}(a) \\to \\mathsf{Ord}",
+   "signature": "\\varrho_a : \\mathsf{tree}(a) \\to \\sym{type.Ord}{\\mathsf{Ord}}",
    "args": [
     {
      "name": "a",
@@ -8144,7 +8144,7 @@
    "why": "Ends and variables split the same way between two subterms, so one context holds both. A split puts an empty entry at index $i$ in the half that does not own variable $i$, so no index shifts.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Delta = a : {S''}_{\\rho}\\inmode{lf}{^{N}},\\ 0 : S_{\\iota} \\otimes {S'}_{\\kappa}$.",
-   "signature": "\\Delta : (\\mathsf{End} \\rightharpoonup_{\\mathrm{fin}} \\mathsf{Ty}) \\times \\mathsf{Ty}_{\\bot}^{*}",
+   "signature": "\\Delta : (\\sym{type.End}{\\mathsf{End}} \\rightharpoonup_{\\mathrm{fin}} \\sym{type.Ty}{\\mathsf{Ty}}) \\times \\sym{type.Ty}{\\mathsf{Ty}}_{\\bot}^{*}",
    "args": [
     {
      "name": "o",
@@ -8208,7 +8208,7 @@
    "why": "Each point fact a rule uses comes from $\\prec_W$ or from $\\Gamma$. Typing is monotone in $W$, so a program typed in $W$ is typed in each world with more facts.",
    "breaks": "Nothing. It is a definition.",
    "example": "E-Open asks $\\mathsf{conserv}_{\\Gamma}(\\bar\\iota, C)$ over $\\prec_W$.",
-   "signature": "W : \\mathsf{World}",
+   "signature": "W : \\sym{type.World}{\\mathsf{World}}",
    "args": [
     {
      "name": "W",
@@ -10837,7 +10837,7 @@
    "why": "A process is typed against its interface, and composition cuts interface ends against each other.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Sigma = \\{c^{+} \\mapsto \\mathsf{Close}_x\\}$.",
-   "signature": "\\Sigma : \\mathsf{End} \\rightharpoonup_{\\mathrm{fin}} \\mathsf{Sty} \\times \\mathsf{Pt}",
+   "signature": "\\Sigma : \\sym{type.End}{\\mathsf{End}} \\rightharpoonup_{\\mathrm{fin}} \\sym{type.Sty}{\\mathsf{Sty}} \\times \\sym{type.Pt}{\\mathsf{Pt}}",
    "args": [
     {
      "name": "o",
@@ -10949,7 +10949,7 @@
    "why": "Restricted sets are sets of channels, so disjointness is stated on channels.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{chans}\\,\\{c^{+}, d^{-}\\} = \\{c, d\\}$.",
-   "signature": "\\mathsf{chans} : (\\mathsf{End} \\rightharpoonup X) \\to \\mathcal{P}(\\mathsf{Chan})",
+   "signature": "\\mathsf{chans} : (\\sym{type.End}{\\mathsf{End}} \\rightharpoonup X) \\to \\mathcal{P}(\\sym{type.Chan}{\\mathsf{Chan}})",
    "args": [
     {
      "name": "\\Sigma",
@@ -10975,7 +10975,7 @@
    "why": "A restricted channel contributes both its ends.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{ends}(\\{c\\}) = \\{c^{+}, c^{-}\\}$.",
-   "signature": "\\mathsf{ends} : \\mathcal{P}(\\mathsf{Chan}) \\to \\mathcal{P}(\\mathsf{End})",
+   "signature": "\\mathsf{ends} : \\mathcal{P}(\\sym{type.Chan}{\\mathsf{Chan}}) \\to \\mathcal{P}(\\sym{type.End}{\\mathsf{End}})",
    "args": [
     {
      "name": "C",
@@ -10997,7 +10997,7 @@
    "why": "The dual end of an interface end belongs to another component. \\inmode{lf}{The annotations of the two ends of a cut channel meet the bound $N$ by the premise of P-Connect.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\{c^{+} \\mapsto \\mathsf{Close}_x\\}\\inmode{lf}{^{\\eta}} = \\{c^{+} \\mapsto \\mathsf{Close}_x\\inmode{lf}{^{a,m}}\\}$\\inmode{lf}{ with $\\eta(c^{+}) = (a, m)$}.",
-   "signature": "\\Sigma\\inmode{lf}{^{\\eta}} : \\mathsf{End} \\rightharpoonup \\mathsf{Sty} \\times \\mathsf{Pt}\\inmode{lf}{ \\times (\\mathbb{N} \\cup \\{\\infty\\}) \\times (\\mathbb{N} \\cup \\{\\infty\\})}",
+   "signature": "\\Sigma\\inmode{lf}{^{\\eta}} : \\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.Sty}{\\mathsf{Sty}} \\times \\sym{type.Pt}{\\mathsf{Pt}}\\inmode{lf}{ \\times (\\mathbb{N} \\cup \\{\\infty\\}) \\times (\\mathbb{N} \\cup \\{\\infty\\})}",
    "args": [
     {
      "name": "\\Sigma",
@@ -11113,7 +11113,7 @@
    "why": "The rules read the first action of a protocol after unfolding, and a contractive instance keeps a contractive type contractive and keeps $\\inmodeplain{df}{\\approx}\\inmodeplain{lf}{\\simeq}$. \\inmode{lf}{At $N = \\infty$ each annotation in a derivation is $\\infty$, and an instance with a finite credit inside its payloads would bring one in.}",
    "breaks": "Without contractivity a box with a variable $\\alpha$ could be forced at $\\mu\\alpha.\\alpha$, and an end of type $\\mu\\alpha.\\alpha$ would be stuck with no action to perform.",
    "example": "$\\mu\\alpha.\\,!\\ast.\\alpha$ and $\\mathsf{Close}$ are allowed, $\\mu\\alpha.\\alpha$ and $\\mu\\alpha.\\,\\mathsf{Skip}.\\alpha$ are not.",
-   "signature": "\\mathsf{sinsts} : \\inmode{lf}{(\\mathbb{N} \\cup \\{\\infty\\}) \\to }\\mathsf{Sty}^{*} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{sinsts} : \\inmode{lf}{(\\mathbb{N} \\cup \\{\\infty\\}) \\to }\\sym{type.Sty}{\\mathsf{Sty}}^{*} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "N",
@@ -11221,7 +11221,7 @@
    "why": "A composite process runs the threads of both components side by side.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\{t_1\\} \\uplus \\{t_2\\} = \\{t_1, t_2\\}$.",
-   "signature": "\\uplus : \\mathcal{M}(\\mathsf{Expr}) \\times \\mathcal{M}(\\mathsf{Expr}) \\to \\mathcal{M}(\\mathsf{Expr})",
+   "signature": "\\uplus : \\mathcal{M}(\\sym{type.Expr}{\\mathsf{Expr}}) \\times \\mathcal{M}(\\sym{type.Expr}{\\mathsf{Expr}}) \\to \\mathcal{M}(\\sym{type.Expr}{\\mathsf{Expr}})",
    "args": [
     {
      "name": "E_1, E_2",
@@ -11303,7 +11303,7 @@
    "why": "A step of cost $c > 0$ at index $\\alpha$ reads its successor at each $\\beta$ with $\\beta + c \\leq \\alpha$, which lies strictly below $\\alpha$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\omega + 2$.",
-   "signature": "+ : \\mathsf{Ord} \\to \\mathbb{N} \\to \\mathsf{Ord}",
+   "signature": "+ : \\sym{type.Ord}{\\mathsf{Ord}} \\to \\mathbb{N} \\to \\sym{type.Ord}{\\mathsf{Ord}}",
    "args": [
     {
      "name": "c",
@@ -11326,7 +11326,7 @@
    "why": "$V$, $E$ and $P$ together are one such family, unfolded up to pointwise equivalence.\\inmode{lf}{ Fuel is a second one.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$V_\\alpha$ reads $V_\\beta$ only for $\\beta < \\alpha$.",
-   "signature": "\\mathsf{osfix} : ((\\mathsf{Ord} \\to T) \\to \\mathsf{Ord} \\to T) \\to \\mathsf{Ord} \\to T",
+   "signature": "\\mathsf{osfix} : ((\\sym{type.Ord}{\\mathsf{Ord}} \\to T) \\to \\sym{type.Ord}{\\mathsf{Ord}} \\to T) \\to \\sym{type.Ord}{\\mathsf{Ord}} \\to T",
    "args": [
     {
      "name": "F",
@@ -11384,7 +11384,7 @@
    "args": [
     {
      "name": "\\Sigma",
-     "meaning": "the interface, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the interface, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "W",
@@ -11392,11 +11392,11 @@
     },
     {
      "name": "p",
-     "meaning": "the process, $p = (C, E) \\in \\mathsf{Proc}$"
+     "meaning": "the process, $p = (C, E) \\in \\sym{type.Proc}{\\mathsf{Proc}}$"
     },
     {
      "name": "T",
-     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+     "meaning": "the type, $T \\in \\sym{type.Ty}{\\mathsf{Ty}}$"
     }
    ],
    "source": [
@@ -11732,7 +11732,7 @@
    "why": "Both threads of a synchronization step at once, so the step of the process costs the sum of both costs.",
    "breaks": "Nothing. It is a definition.",
    "example": "A message costs $1$ under $\\kappa_{DF}$\\inmode{lf}{ and $2$ under $\\kappa_L$}.",
-   "signature": "\\kappa(\\cdot) : \\mathsf{Event} \\to \\mathbb{N}",
+   "signature": "\\kappa(\\cdot) : \\sym{type.Event}{\\mathsf{Event}} \\to \\mathbb{N}",
    "args": [
     {
      "name": "\\kappa",
@@ -11807,7 +11807,7 @@
    "why": "\\inmode{lf}{A least fixpoint admits only finite sequences of cost-$0$ steps, so under $\\kappa_L$ no term in $E_\\alpha$ diverges internally.}",
    "breaks": "A greatest fixpoint would admit $!(f = \\mathsf{force}\\,f)$, which takes only $\\beta$ steps.",
    "example": "Induction on $E_\\alpha$ is induction on cost-$0$ steps.",
-   "signature": "X : \\mathsf{World} \\to \\mathsf{Env} \\to \\mathsf{Ty} \\to \\mathcal{P}(\\mathsf{Point}) \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "X : \\sym{type.World}{\\mathsf{World}} \\to \\sym{type.Env}{\\mathsf{Env}} \\to \\sym{type.Ty}{\\mathsf{Ty}} \\to \\mathcal{P}(\\sym{type.Point}{\\mathsf{Point}}) \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "X",
@@ -11851,7 +11851,7 @@
     },
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "\\alpha",
@@ -11859,11 +11859,11 @@
     },
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "T",
-     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+     "meaning": "the type, $T \\in \\sym{type.Ty}{\\mathsf{Ty}}$"
     },
     {
      "name": "v",
@@ -11897,7 +11897,7 @@
     },
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "\\alpha",
@@ -11905,11 +11905,11 @@
     },
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "T",
-     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+     "meaning": "the type, $T \\in \\sym{type.Ty}{\\mathsf{Ty}}$"
     },
     {
      "name": "v",
@@ -11944,11 +11944,11 @@
    "args": [
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "o",
-     "meaning": "the subject end, $o \\in \\mathsf{End}$"
+     "meaning": "the subject end, $o \\in \\sym{type.End}{\\mathsf{End}}$"
     },
     {
      "name": "{S'}_x",
@@ -11982,7 +11982,7 @@
     },
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "\\alpha",
@@ -11990,11 +11990,11 @@
     },
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "T",
-     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+     "meaning": "the type, $T \\in \\sym{type.Ty}{\\mathsf{Ty}}$"
     },
     {
      "name": "v",
@@ -12025,7 +12025,7 @@
    "args": [
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "\\Theta_i",
@@ -12059,7 +12059,7 @@
     },
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "\\alpha",
@@ -12067,11 +12067,11 @@
     },
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "T",
-     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+     "meaning": "the type, $T \\in \\sym{type.Ty}{\\mathsf{Ty}}$"
     },
     {
      "name": "v",
@@ -12102,7 +12102,7 @@
    "args": [
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "e",
@@ -12132,7 +12132,7 @@
     },
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     }
    ],
    "source": [
@@ -12160,7 +12160,7 @@
    "args": [
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "W'",
@@ -12310,7 +12310,7 @@
    "args": [
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     }
    ],
    "source": [
@@ -12356,7 +12356,7 @@
    "args": [
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "W'",
@@ -12387,7 +12387,7 @@
     },
     {
      "name": "\\bar x",
-     "meaning": "the point instance, $\\bar x \\in \\mathsf{Point}^m$"
+     "meaning": "the point instance, $\\bar x \\in \\sym{type.Point}{\\mathsf{Point}}^m$"
     }
    ],
    "source": [
@@ -12409,7 +12409,7 @@
    "args": [
     {
      "name": "\\bar s",
-     "meaning": "the session instance, $\\bar s \\in \\mathsf{STy}^k$"
+     "meaning": "the session instance, $\\bar s \\in \\sym{type.STy}{\\mathsf{STy}}^k$"
     }
    ],
    "source": [
@@ -12442,7 +12442,7 @@
     },
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     }
    ],
    "source": [
@@ -12491,7 +12491,7 @@
    "why": "Under $\\kappa_{DF}$, $V_{\\alpha}$ reads $V$ and $E$ at lower levels for closures and boxes, and at smaller types within the level for products, sums and existentials, whose instantiation preserves size. \\inmode{lf}{Under $\\kappa_L$, $V_{\\alpha}$ reads $E_{\\beta}$ and $V_{\\beta}$ at the levels $\\beta \\leq \\alpha$ and at smaller types, and instantiation preserves size.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{size}(\\Box(\\ldots U)) = 3 + \\mathsf{size}\\,U$.",
-   "signature": "V : \\mathsf{Ord} \\to \\mathsf{World} \\to \\mathsf{Env} \\to \\mathsf{Ty} \\to \\mathsf{Val} \\to \\mathsf{Prop}",
+   "signature": "V : \\sym{type.Ord}{\\mathsf{Ord}} \\to \\sym{type.World}{\\mathsf{World}} \\to \\sym{type.Env}{\\mathsf{Env}} \\to \\sym{type.Ty}{\\mathsf{Ty}} \\to \\sym{type.Val}{\\mathsf{Val}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "\\alpha",
@@ -12564,7 +12564,7 @@
    "args": [
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "W'",
@@ -12697,11 +12697,11 @@
    "why": "A $\\beta$ step changes no end, and the compatibility of each elimination rule discharges it by reading the redex at the same environment.",
    "breaks": "Nothing. It is a definition.",
    "example": "\\inmode{lf}{Under $\\kappa_L$ a $\\beta$ step stays at index $\\alpha$.}",
-   "signature": "\\mathsf{o\\_beta} : \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{o\\_beta} : \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "\\alpha",
@@ -12709,11 +12709,11 @@
     },
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "T",
-     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+     "meaning": "the type, $T \\in \\sym{type.Ty}{\\mathsf{Ty}}$"
     },
     {
      "name": "F",
@@ -12721,7 +12721,7 @@
     },
     {
      "name": "e, e'",
-     "meaning": "a term and its successor, $e, e' \\in \\mathsf{Expr}$"
+     "meaning": "a term and its successor, $e, e' \\in \\sym{type.Expr}{\\mathsf{Expr}}$"
     }
    ],
    "source": [
@@ -12739,11 +12739,11 @@
    "why": "It is the semantic counterpart of E-New. The creation picks the point and grows the world by the bases it needs. For a fresh base the fundamental theorem adds the base and the facts of $C$ to the world. \\inmode{lf}{In a ranked world it ranks the new tree above each context point below the tree, and the existential property of ordinal indices fixes the choice once per creation.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{new}$ in the cycle.",
-   "signature": "\\mathsf{o\\_new} : \\mathsf{Chan} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{o\\_new} : \\sym{type.Chan}{\\mathsf{Chan}} \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "\\alpha",
@@ -12751,11 +12751,11 @@
     },
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "T",
-     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+     "meaning": "the type, $T \\in \\sym{type.Ty}{\\mathsf{Ty}}$"
     },
     {
      "name": "F",
@@ -12763,7 +12763,7 @@
     },
     {
      "name": "e, e'",
-     "meaning": "a term and its successor, $e, e' \\in \\mathsf{Expr}$"
+     "meaning": "a term and its successor, $e, e' \\in \\sym{type.Expr}{\\mathsf{Expr}}$"
     },
     {
      "name": "c",
@@ -12814,7 +12814,7 @@
     },
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     }
    ],
    "source": [
@@ -12900,11 +12900,11 @@
    "why": "Exactness of $V$ fixes $\\mathrm{dom}\\,\\Theta_M = \\mathsf{fends}(v)$, so the split is the same at each level.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{spawn}\\,(\\lambda\\_.\\,\\mathsf{close}\\,d')$ gives the child $\\{d'\\}$.",
-   "signature": "\\mathsf{o\\_spawn} : \\mathsf{Val} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{o\\_spawn} : \\sym{type.Val}{\\mathsf{Val}} \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "\\alpha",
@@ -12912,11 +12912,11 @@
     },
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "T",
-     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+     "meaning": "the type, $T \\in \\sym{type.Ty}{\\mathsf{Ty}}$"
     },
     {
      "name": "F",
@@ -12924,7 +12924,7 @@
     },
     {
      "name": "e, e'",
-     "meaning": "a term and its successor, $e, e' \\in \\mathsf{Expr}$"
+     "meaning": "a term and its successor, $e, e' \\in \\sym{type.Expr}{\\mathsf{Expr}}$"
     },
     {
      "name": "v",
@@ -13004,11 +13004,11 @@
    "why": "Exactness of $V$ fixes $\\mathrm{dom}\\,\\Theta_M = \\mathsf{fends}(w)$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{send}\\,\\langle a, y\\rangle$ in the growing ring.",
-   "signature": "\\mathsf{o\\_send} : \\mathsf{End} \\to \\mathsf{Val} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{o\\_send} : \\sym{type.End}{\\mathsf{End}} \\to \\sym{type.Val}{\\mathsf{Val}} \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "\\alpha",
@@ -13016,11 +13016,11 @@
     },
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "T",
-     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+     "meaning": "the type, $T \\in \\sym{type.Ty}{\\mathsf{Ty}}$"
     },
     {
      "name": "F",
@@ -13028,11 +13028,11 @@
     },
     {
      "name": "e, e'",
-     "meaning": "a term and its successor, $e, e' \\in \\mathsf{Expr}$"
+     "meaning": "a term and its successor, $e, e' \\in \\sym{type.Expr}{\\mathsf{Expr}}$"
     },
     {
      "name": "o",
-     "meaning": "the subject end, $o \\in \\mathsf{End}$"
+     "meaning": "the subject end, $o \\in \\sym{type.End}{\\mathsf{End}}$"
     },
     {
      "name": "w",
@@ -13040,7 +13040,7 @@
     },
     {
      "name": "x",
-     "meaning": "the point of the subject, $x \\in \\mathsf{Point}$"
+     "meaning": "the point of the subject, $x \\in \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "S, S'",
@@ -13096,7 +13096,7 @@
    "args": [
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "o",
@@ -13152,7 +13152,7 @@
    "args": [
     {
      "name": "o",
-     "meaning": "the subject end, $o \\in \\mathsf{End}$"
+     "meaning": "the subject end, $o \\in \\sym{type.End}{\\mathsf{End}}$"
     },
     {
      "name": "x^{+}",
@@ -13174,11 +13174,11 @@
    "why": "The value that arrives is unknown when the receiver is typed, so it continues for each value its type admits, and the compatibility of E-Recv pairs this with the sender's O-Send.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{let}\\ \\langle u, b\\rangle = \\mathsf{recv}\\,b\\ \\mathsf{in}\\ \\ldots$",
-   "signature": "\\mathsf{o\\_recv} : \\mathsf{End} \\to \\mathsf{Val} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{o\\_recv} : \\sym{type.End}{\\mathsf{End}} \\to \\sym{type.Val}{\\mathsf{Val}} \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "\\alpha",
@@ -13186,11 +13186,11 @@
     },
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "T",
-     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+     "meaning": "the type, $T \\in \\sym{type.Ty}{\\mathsf{Ty}}$"
     },
     {
      "name": "F",
@@ -13198,11 +13198,11 @@
     },
     {
      "name": "e, e'",
-     "meaning": "a term and its successor, $e, e' \\in \\mathsf{Expr}$"
+     "meaning": "a term and its successor, $e, e' \\in \\sym{type.Expr}{\\mathsf{Expr}}$"
     },
     {
      "name": "o",
-     "meaning": "the subject end, $o \\in \\mathsf{End}$"
+     "meaning": "the subject end, $o \\in \\sym{type.End}{\\mathsf{End}}$"
     },
     {
      "name": "w",
@@ -13210,7 +13210,7 @@
     },
     {
      "name": "x",
-     "meaning": "the point of the subject, $x \\in \\mathsf{Point}$"
+     "meaning": "the point of the subject, $x \\in \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "S, S'",
@@ -13284,11 +13284,11 @@
    "why": "After the close nobody holds $o$, which matches the restriction removed by the process rule.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{close}\\,c^{+}$.",
-   "signature": "\\mathsf{o\\_close} : \\mathsf{End} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{o\\_close} : \\sym{type.End}{\\mathsf{End}} \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "\\alpha",
@@ -13296,11 +13296,11 @@
     },
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "T",
-     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+     "meaning": "the type, $T \\in \\sym{type.Ty}{\\mathsf{Ty}}$"
     },
     {
      "name": "F",
@@ -13308,11 +13308,11 @@
     },
     {
      "name": "e, e'",
-     "meaning": "a term and its successor, $e, e' \\in \\mathsf{Expr}$"
+     "meaning": "a term and its successor, $e, e' \\in \\sym{type.Expr}{\\mathsf{Expr}}$"
     },
     {
      "name": "o",
-     "meaning": "the subject end, $o \\in \\mathsf{End}$"
+     "meaning": "the subject end, $o \\in \\sym{type.End}{\\mathsf{End}}$"
     }
    ],
    "source": [
@@ -13330,11 +13330,11 @@
    "why": "The selecting end keeps its name and moves to the dual side of the field of choice $i$, where E-Select places the end.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{select}_{\\mathsf{true}}\\,o$.",
-   "signature": "\\mathsf{o\\_select} : \\mathsf{End} \\to \\mathbb{B} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{o\\_select} : \\sym{type.End}{\\mathsf{End}} \\to \\mathbb{B} \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "\\alpha",
@@ -13342,11 +13342,11 @@
     },
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "T",
-     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+     "meaning": "the type, $T \\in \\sym{type.Ty}{\\mathsf{Ty}}$"
     },
     {
      "name": "F",
@@ -13354,11 +13354,11 @@
     },
     {
      "name": "e, e'",
-     "meaning": "a term and its successor, $e, e' \\in \\mathsf{Expr}$"
+     "meaning": "a term and its successor, $e, e' \\in \\sym{type.Expr}{\\mathsf{Expr}}$"
     },
     {
      "name": "o",
-     "meaning": "the subject end, $o \\in \\mathsf{End}$"
+     "meaning": "the subject end, $o \\in \\sym{type.End}{\\mathsf{End}}$"
     },
     {
      "name": "i",
@@ -13380,11 +13380,11 @@
    "why": "The branching end moves to the field of choice $i$, the dual point of the selecting side.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{branch}\\,o$.",
-   "signature": "\\mathsf{o\\_branch} : \\mathsf{End} \\to \\mathbb{B} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{o\\_branch} : \\sym{type.End}{\\mathsf{End}} \\to \\mathbb{B} \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "\\alpha",
@@ -13392,11 +13392,11 @@
     },
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "T",
-     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+     "meaning": "the type, $T \\in \\sym{type.Ty}{\\mathsf{Ty}}$"
     },
     {
      "name": "F",
@@ -13404,11 +13404,11 @@
     },
     {
      "name": "e, e'",
-     "meaning": "a term and its successor, $e, e' \\in \\mathsf{Expr}$"
+     "meaning": "a term and its successor, $e, e' \\in \\sym{type.Expr}{\\mathsf{Expr}}$"
     },
     {
      "name": "o",
-     "meaning": "the subject end, $o \\in \\mathsf{End}$"
+     "meaning": "the subject end, $o \\in \\sym{type.End}{\\mathsf{End}}$"
     },
     {
      "name": "i",
@@ -13430,11 +13430,11 @@
    "why": "After the link $\\overline{o_1}$ and $\\overline{o_2}$ form one channel, which is well typed only if $o_1$ and $o_2$ were dual.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{link}\\,\\langle c^{+}, d^{-}\\rangle$.",
-   "signature": "\\mathsf{o\\_link} : \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{End}) \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{o\\_link} : \\mathcal{P}_{\\mathrm{fin}}(\\sym{type.End}{\\mathsf{End}}) \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "\\alpha",
@@ -13442,11 +13442,11 @@
     },
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "T",
-     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+     "meaning": "the type, $T \\in \\sym{type.Ty}{\\mathsf{Ty}}$"
     },
     {
      "name": "F",
@@ -13454,7 +13454,7 @@
     },
     {
      "name": "e, e'",
-     "meaning": "a term and its successor, $e, e' \\in \\mathsf{Expr}$"
+     "meaning": "a term and its successor, $e, e' \\in \\sym{type.Expr}{\\mathsf{Expr}}$"
     },
     {
      "name": "\\{o_1, o_2\\}",
@@ -13524,7 +13524,7 @@
    "why": "Readiness constrains only terms that wait for another thread.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{recv}\\,b$ is stable, $(\\lambda x.x)\\,\\ast$ is not.",
-   "signature": "\\mathsf{stable} : \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{stable} : \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "t",
@@ -13546,11 +13546,11 @@
    "why": "Each end has its own entry, so the offered ends are read off the labels.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{recv}\\,b$ offers $b$.",
-   "signature": "\\mathsf{offered} : \\mathsf{Env} \\to \\mathsf{Expr} \\to \\mathsf{End} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{offered} : \\sym{type.Env}{\\mathsf{Env}} \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\sym{type.End}{\\mathsf{End}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "t",
@@ -13617,7 +13617,7 @@
    "why": "A link step at process level needs no other thread, so a link never waits and readiness need not order the link.",
    "breaks": "Asking the order of a link would reject each link next to an end held at an unrelated point, and E-Link has no order premise.",
    "example": "$\\mathsf{link}\\,\\langle c^{+}, d^{-}\\rangle$.",
-   "signature": "\\mathsf{link} : \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{link} : \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "t",
@@ -13643,15 +13643,15 @@
    "why": "It excludes circular waiting, because a waiting thread's offer is minimal among what it holds and what its context still does.",
    "breaks": "Client and server each blocked on their second channel while holding the first, under a cyclic order.",
    "example": "Closing $c$ at $\\rho$ while $d$ is held at $\\rho\\cdot 0$ needs $\\rho \\prec \\overline{\\rho\\cdot 0}$.",
-   "signature": "\\mathsf{below\\_rest} : \\mathsf{World} \\to \\mathsf{Env} \\to (\\mathsf{End} \\to \\mathsf{Prop}) \\to \\mathcal{P}(\\mathsf{Point}) \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{below\\_rest} : \\sym{type.World}{\\mathsf{World}} \\to \\sym{type.Env}{\\mathsf{Env}} \\to (\\sym{type.End}{\\mathsf{End}} \\to \\mathsf{Prop}) \\to \\mathcal{P}(\\sym{type.Point}{\\mathsf{Point}}) \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "A",
@@ -13738,11 +13738,11 @@
    "why": "A process with an internal step is not waiting, and readiness speaks only of waiting processes.",
    "breaks": "Nothing. It is a definition.",
    "example": "A thread at an external $\\mathsf{recv}$.",
-   "signature": "\\mathsf{stable} : \\mathsf{Proc} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{stable} : \\sym{type.Proc}{\\mathsf{Proc}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "p",
-     "meaning": "the process, $p = (C, E) \\in \\mathsf{Proc}$"
+     "meaning": "the process, $p = (C, E) \\in \\sym{type.Proc}{\\mathsf{Proc}}$"
     }
    ],
    "source": [
@@ -13764,11 +13764,11 @@
    "args": [
     {
      "name": "\\Sigma",
-     "meaning": "the interface, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the interface, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "p",
-     "meaning": "the process, $p = (C, E) \\in \\mathsf{Proc}$"
+     "meaning": "the process, $p = (C, E) \\in \\sym{type.Proc}{\\mathsf{Proc}}$"
     }
    ],
    "source": [
@@ -13795,15 +13795,15 @@
    "why": "The environment can always serve some offered end first, so composing two ready processes over one world keeps one of them able to move.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{above\\_offered}\\,W\\,\\Sigma\\,(\\mathsf{offered}\\,p)$.",
-   "signature": "\\mathsf{above\\_offered} : \\mathsf{World} \\to \\mathsf{Env} \\to (\\mathsf{End} \\to \\mathsf{Prop}) \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{above\\_offered} : \\sym{type.World}{\\mathsf{World}} \\to \\sym{type.Env}{\\mathsf{Env}} \\to (\\sym{type.End}{\\mathsf{End}} \\to \\mathsf{Prop}) \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "\\Sigma",
-     "meaning": "the interface, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the interface, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "o, x",
@@ -13842,7 +13842,7 @@
    "args": [
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "W'",
@@ -13864,7 +13864,7 @@
    "why": "$P$ asks them after each fusion, and a term asks the same three of itself.",
    "breaks": "Nothing. It is a definition.",
    "example": "A finished process $(\\varnothing, \\{v\\})$ meets them when $v \\in V$.",
-   "signature": "\\mathsf{clauses}_{W'} : \\mathsf{Env} \\to \\mathsf{Proc} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{clauses}_{W'} : \\sym{type.Env}{\\mathsf{Env}} \\to \\sym{type.Proc}{\\mathsf{Proc}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W'",
@@ -14143,7 +14143,7 @@
    "why": "They become restricted, and restricted channels are dual pairs.",
    "breaks": "Nothing. It is a definition.",
    "example": "Internalizing $c$ with $\\Sigma(c^{+}) = S_x$ and $\\Sigma(c^{-}) = \\overline{S}_{\\overline{x}}$.",
-   "signature": "\\mathsf{dpairs} : \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Chan}) \\to \\mathsf{Env} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{dpairs} : \\mathcal{P}_{\\mathrm{fin}}(\\sym{type.Chan}{\\mathsf{Chan}}) \\to \\sym{type.Env}{\\mathsf{Env}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "D",
@@ -14151,7 +14151,7 @@
     },
     {
      "name": "\\Sigma",
-     "meaning": "the interface, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the interface, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     }
    ],
    "source": [
@@ -14169,11 +14169,11 @@
    "why": "Administrative steps and internal synchronizations are one clause. A creation among them may grow the world.",
    "breaks": "Nothing. It is a definition.",
    "example": "A message between two threads costs one level\\inmode{lf}{, and $\\kappa_{\\mathrm{give}} + \\kappa_{\\mathrm{take}}$ under a general table}.",
-   "signature": "\\mathsf{q\\_tau} : \\mathsf{Event} \\to \\mathsf{Proc} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{q\\_tau} : \\sym{type.Event}{\\mathsf{Event}} \\to \\sym{type.Proc}{\\mathsf{Proc}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "\\alpha",
@@ -14181,11 +14181,11 @@
     },
     {
      "name": "\\Sigma",
-     "meaning": "the interface, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the interface, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "T",
-     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+     "meaning": "the type, $T \\in \\sym{type.Ty}{\\mathsf{Ty}}$"
     },
     {
      "name": "p, p'",
@@ -14211,11 +14211,11 @@
    "why": "It is O-Send at the process level, and the compatibility of P-Term discharges it from O-Send of the thread.",
    "breaks": "Nothing. It is a definition.",
    "example": "Sending a restricted end $d^{+}$ puts $d^{-}$ into the interface.",
-   "signature": "\\mathsf{q\\_send} : \\mathsf{End} \\to \\mathsf{Val} \\to \\mathsf{Proc} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{q\\_send} : \\sym{type.End}{\\mathsf{End}} \\to \\sym{type.Val}{\\mathsf{Val}} \\to \\sym{type.Proc}{\\mathsf{Proc}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "\\alpha",
@@ -14223,11 +14223,11 @@
     },
     {
      "name": "\\Sigma",
-     "meaning": "the interface, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the interface, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "T",
-     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+     "meaning": "the type, $T \\in \\sym{type.Ty}{\\mathsf{Ty}}$"
     },
     {
      "name": "p, p'",
@@ -14235,7 +14235,7 @@
     },
     {
      "name": "o",
-     "meaning": "the subject end, $o \\in \\mathsf{End}$"
+     "meaning": "the subject end, $o \\in \\sym{type.End}{\\mathsf{End}}$"
     },
     {
      "name": "w",
@@ -14305,11 +14305,11 @@
    "why": "The dual end of an extruded end becomes an interface end, and the interface must record its type and point.",
    "breaks": "Without it, the process would keep an end its interface does not mention, and P-Stop could not hold.",
    "example": "$\\Sigma_e = \\{d^{-}\\}$.",
-   "signature": "\\mathsf{send\\_split} : \\mathsf{Env} \\to \\mathsf{Env} \\to \\mathsf{Env} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{send\\_split} : \\sym{type.Env}{\\mathsf{Env}} \\to \\sym{type.Env}{\\mathsf{Env}} \\to \\sym{type.Env}{\\mathsf{Env}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "\\Sigma",
-     "meaning": "the interface, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the interface, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "\\Sigma_e",
@@ -14357,11 +14357,11 @@
    "why": "It is O-Recv at the process level, and composition feeds one component's Q-Send into the other's Q-Recv.",
    "breaks": "Nothing. It is a definition.",
    "example": "Receiving $d^{-}$ while holding $d^{+}$ restricts $d$.",
-   "signature": "\\mathsf{q\\_recv} : \\mathsf{End} \\to \\mathsf{Val} \\to \\mathsf{Proc} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{q\\_recv} : \\sym{type.End}{\\mathsf{End}} \\to \\sym{type.Val}{\\mathsf{Val}} \\to \\sym{type.Proc}{\\mathsf{Proc}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "\\alpha",
@@ -14369,11 +14369,11 @@
     },
     {
      "name": "\\Sigma",
-     "meaning": "the interface, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the interface, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "T",
-     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+     "meaning": "the type, $T \\in \\sym{type.Ty}{\\mathsf{Ty}}$"
     },
     {
      "name": "p, p'",
@@ -14381,7 +14381,7 @@
     },
     {
      "name": "o",
-     "meaning": "the subject end, $o \\in \\mathsf{End}$"
+     "meaning": "the subject end, $o \\in \\sym{type.End}{\\mathsf{End}}$"
     },
     {
      "name": "w",
@@ -14415,11 +14415,11 @@
    "why": "Composition delivers one component's payload only under this condition, and it is what makes a newly restricted pair dual.",
    "breaks": "Without the duality conjunct, receiving the dual end of a held end at a mismatched type would restrict an ill-typed channel.",
    "example": "$\\mathsf{recv\\_ok}\\,\\Sigma\\,\\Theta_2$.",
-   "signature": "\\mathsf{recv\\_ok} : \\mathsf{Env} \\to \\mathsf{Env} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{recv\\_ok} : \\sym{type.Env}{\\mathsf{Env}} \\to \\sym{type.Env}{\\mathsf{Env}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "\\Sigma",
-     "meaning": "the interface, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the interface, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "\\Theta_2",
@@ -14441,11 +14441,11 @@
    "why": "Both ends of such a channel are now in the process, so it is restricted, as the interface holds no two dual ends.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{recv\\_back}\\,\\Sigma\\,\\{d^{-}\\} = \\{d\\}$ for $d^{+} \\in \\mathrm{dom}\\,\\Sigma$.",
-   "signature": "\\mathsf{recv\\_back} : \\mathsf{Env} \\to \\mathsf{Env} \\to \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{Chan})",
+   "signature": "\\mathsf{recv\\_back} : \\sym{type.Env}{\\mathsf{Env}} \\to \\sym{type.Env}{\\mathsf{Env}} \\to \\mathcal{P}_{\\mathrm{fin}}(\\sym{type.Chan}{\\mathsf{Chan}})",
    "args": [
     {
      "name": "\\Sigma",
-     "meaning": "the interface, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the interface, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "\\Theta_2",
@@ -14467,11 +14467,11 @@
    "why": "Internal ends leave the interface, and the rest of $\\Theta_2$ joins the interface.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{recv\\_env}\\,\\Sigma\\,\\Theta_2$.",
-   "signature": "\\mathsf{recv\\_env} : \\mathsf{Env} \\to \\mathsf{Env} \\to \\mathsf{Env}",
+   "signature": "\\mathsf{recv\\_env} : \\sym{type.Env}{\\mathsf{Env}} \\to \\sym{type.Env}{\\mathsf{Env}} \\to \\sym{type.Env}{\\mathsf{Env}}",
    "args": [
     {
      "name": "\\Sigma",
-     "meaning": "the interface, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the interface, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "\\Theta_2",
@@ -14497,7 +14497,7 @@
    "args": [
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "\\alpha",
@@ -14505,11 +14505,11 @@
     },
     {
      "name": "\\Sigma",
-     "meaning": "the interface, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the interface, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "T",
-     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+     "meaning": "the type, $T \\in \\sym{type.Ty}{\\mathsf{Ty}}$"
     },
     {
      "name": "p, p'",
@@ -14580,11 +14580,11 @@
    "args": [
     {
      "name": "\\gamma",
-     "meaning": "a substitution $\\mathbb{N} \\to \\mathsf{Expr}$ for the variables of $\\Delta$"
+     "meaning": "a substitution $\\mathbb{N} \\to \\sym{type.Expr}{\\mathsf{Expr}}$ for the variables of $\\Delta$"
     },
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "\\Delta",
@@ -14606,7 +14606,7 @@
    "why": "The rest stands for an unknown set of points, so the judgment holds at each choice of this set.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{den}_{Y}({\\vartriangle}u) = Y$.",
-   "signature": "\\mathsf{den} : \\mathcal{P}(\\mathsf{Point}) \\to \\mathsf{SFuture} \\to \\mathcal{P}(\\mathsf{Point})",
+   "signature": "\\mathsf{den} : \\mathcal{P}(\\sym{type.Point}{\\mathsf{Point}}) \\to \\mathsf{SFuture} \\to \\mathcal{P}(\\sym{type.Point}{\\mathsf{Point}})",
    "args": [
     {
      "name": "Y",
@@ -14655,7 +14655,7 @@
     },
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "e, T",
@@ -14693,7 +14693,7 @@
    "args": [
     {
      "name": "\\Sigma",
-     "meaning": "the interface, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the interface, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "W",
@@ -14701,11 +14701,11 @@
     },
     {
      "name": "p",
-     "meaning": "the process, $p = (C, E) \\in \\mathsf{Proc}$"
+     "meaning": "the process, $p = (C, E) \\in \\sym{type.Proc}{\\mathsf{Proc}}$"
     },
     {
      "name": "T",
-     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+     "meaning": "the type, $T \\in \\sym{type.Ty}{\\mathsf{Ty}}$"
     }
    ],
    "source": [
@@ -14779,7 +14779,7 @@
    "why": "The counter bounds how many actions of the thread holding it may pass before the end acts again, and an action sets it back to $m$. The protocol says when the end is idle and what it sends and receives. Where the relation gives an end a point, fuel gives it a counter and tickets.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Phi = \\{a \\mapsto S^{3,3}\\}$.",
-   "signature": "\\Phi : \\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathbb{N} \\times \\mathbb{N}",
+   "signature": "\\Phi : \\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\mathbb{N} \\times \\mathbb{N}",
    "args": [
     {
      "name": "S^{f,m}",
@@ -14833,7 +14833,7 @@
    "why": "A link renames the dual end of a removed end in another thread, so fuel must remain renaming.",
    "breaks": "A renaming that merges two held ends would merge their counters.",
    "example": "$g = \\{c^{+} \\mapsto d^{+}\\}$ on $\\Phi = \\{c^{+} \\mapsto S^{2}\\}$.",
-   "signature": "g : \\mathsf{End} \\to \\mathsf{End} \\text{ injective on } \\mathrm{dom}\\,\\Phi",
+   "signature": "g : \\sym{type.End}{\\mathsf{End}} \\to \\sym{type.End}{\\mathsf{End}} \\text{ injective on } \\mathrm{dom}\\,\\Phi",
    "args": [
     {
      "name": "g",
@@ -14942,7 +14942,7 @@
     },
     {
      "name": "o",
-     "meaning": "the subject end, $o \\in \\mathsf{End}$"
+     "meaning": "the subject end, $o \\in \\sym{type.End}{\\mathsf{End}}$"
     }
    ],
    "source": [
@@ -14968,7 +14968,7 @@
     },
     {
      "name": "o",
-     "meaning": "the subject end, $o \\in \\mathsf{End}$"
+     "meaning": "the subject end, $o \\in \\sym{type.End}{\\mathsf{End}}$"
     }
    ],
    "source": [
@@ -15009,7 +15009,7 @@
    "why": "Idleness removes the checks $\\geq 1$ and never changes how a counter evolves, so counters stay index-free. The typing ages idle ends by truncation at $0$, matching counters that decrement down to $0$.",
    "breaks": "An idle end whose credit stayed fixed while its counter decrements would exceed its counter.",
    "example": "$\\mathsf{idle}\\,\\mathsf{Skip}$.",
-   "signature": "\\mathsf{idle} : \\mathsf{STy} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{idle} : \\sym{type.STy}{\\mathsf{STy}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "S",
@@ -15037,7 +15037,7 @@
    "why": "A $\\beta$ step changes no counter and costs one index.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(\\lambda x.\\,x)\\,\\ast$.",
-   "signature": "\\mathsf{f\\_beta} : \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{f\\_beta} : \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "N",
@@ -15092,7 +15092,7 @@
    "why": "A new channel starts each end at its tickets, the credit E-New gives to the new ends.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{new}$ adds $c^{\\pm}$ at $2$ and $2$ for $N = 4$.",
-   "signature": "\\mathsf{f\\_new} : \\mathsf{Chan} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{f\\_new} : \\sym{type.Chan}{\\mathsf{Chan}} \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "c",
@@ -15187,7 +15187,7 @@
    "why": "The split is a function of $v$, so it is the same at each index. A spawn is no action, so no counter falls. The call clause of [[fv|FV-Arrow]] accepts the current counters at each credit, which makes F-Spawn hold for each closure value.",
    "breaks": "Nothing. It is a definition.",
    "example": "The thunk takes $d'$ at $1$ in the cycle.",
-   "signature": "\\mathsf{f\\_spawn} : \\mathsf{Val} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{f\\_spawn} : \\sym{type.Val}{\\mathsf{Val}} \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "v",
@@ -15296,11 +15296,11 @@
    "why": "A send is an action, so F-Count applies, and a transfer, so $\\mathsf{positive}$ applies.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{send}\\,\\langle a, y\\rangle$ in the growing ring.",
-   "signature": "\\mathsf{f\\_send} : \\mathsf{End} \\to \\mathsf{Val} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{f\\_send} : \\sym{type.End}{\\mathsf{End}} \\to \\sym{type.Val}{\\mathsf{Val}} \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "o",
-     "meaning": "the subject end, $o \\in \\mathsf{End}$"
+     "meaning": "the subject end, $o \\in \\sym{type.End}{\\mathsf{End}}$"
     },
     {
      "name": "w",
@@ -15342,7 +15342,7 @@
     },
     {
      "name": "o",
-     "meaning": "the subject end, $o \\in \\mathsf{End}$"
+     "meaning": "the subject end, $o \\in \\sym{type.End}{\\mathsf{End}}$"
     }
    ],
    "source": [
@@ -15386,11 +15386,11 @@
    "why": "The receiver continues for each value its type admits, and the lock-free process relation supplies the sender's transferred ends.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{recv}\\,b$ in the client loop.",
-   "signature": "\\mathsf{f\\_recv} : \\mathsf{End} \\to \\mathsf{Val} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{f\\_recv} : \\sym{type.End}{\\mathsf{End}} \\to \\sym{type.Val}{\\mathsf{Val}} \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "o",
-     "meaning": "the subject end, $o \\in \\mathsf{End}$"
+     "meaning": "the subject end, $o \\in \\sym{type.End}{\\mathsf{End}}$"
     },
     {
      "name": "w",
@@ -15442,11 +15442,11 @@
    "why": "They are the fuel forms of O-Close, O-Select and O-Branch, and each is an action, so F-Count applies.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{close}\\,c^{+}$.",
-   "signature": "\\mathsf{f\\_close}, \\mathsf{f\\_select}, \\mathsf{f\\_branch} : \\mathsf{End} \\to \\ldots \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{f\\_close}, \\mathsf{f\\_select}, \\mathsf{f\\_branch} : \\sym{type.End}{\\mathsf{End}} \\to \\ldots \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "o",
-     "meaning": "the subject end, $o \\in \\mathsf{End}$"
+     "meaning": "the subject end, $o \\in \\sym{type.End}{\\mathsf{End}}$"
     },
     {
      "name": "i",
@@ -15470,7 +15470,7 @@
    "why": "The link lowers no counter. Its premise gives the dual end a waiting thread faces after the link a lower counter than before.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{link}\\,\\langle c^{+}, d^{-}\\rangle$ with counters $3$ and $3$ and tickets $3$ and $3$ at $N = 4$.",
-   "signature": "\\mathsf{f\\_link} : \\mathcal{P}_{\\mathrm{fin}}(\\mathsf{End}) \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{f\\_link} : \\mathcal{P}_{\\mathrm{fin}}(\\sym{type.End}{\\mathsf{End}}) \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "\\{o_1, o_2\\}",
@@ -15552,7 +15552,7 @@
    "args": [
     {
      "name": "o",
-     "meaning": "the subject end, $o \\in \\mathsf{End}$"
+     "meaning": "the subject end, $o \\in \\sym{type.End}{\\mathsf{End}}$"
     },
     {
      "name": "S_x, a, m",
@@ -15826,7 +15826,7 @@
    "why": "It is the fuel of a thread that the lock-free process relation requires, and the cost fundamental theorem derives it from typing. It is the one fuel statement that holds at each index.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{fsem}\\,N\\,\\{c^{+} \\mapsto \\mathsf{Close}^{2,2}\\}\\,(\\mathsf{close}\\,c^{+})$.",
-   "signature": "\\mathsf{fsem} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to (\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathbb{N} \\times \\mathbb{N}) \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{fsem} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to (\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\mathbb{N} \\times \\mathbb{N}) \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "N",
@@ -15988,7 +15988,7 @@
    "why": "One map records the data the measure and the invariant on tickets read.",
    "breaks": "Nothing. It is a definition.",
    "example": "$K(a) = (0, \\rho, 2, 3)$.",
-   "signature": "K : \\mathsf{End} \\rightharpoonup \\mathbb{N} \\times \\mathsf{Point} \\times \\mathbb{N} \\times \\mathbb{N}",
+   "signature": "K : \\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\mathbb{N} \\times \\sym{type.Point}{\\mathsf{Point}} \\times \\mathbb{N} \\times \\mathbb{N}",
    "args": [
     {
      "name": "t, x, f, m",
@@ -16019,7 +16019,7 @@
    "why": "O-New and F-New choose the session type of a new channel in separate existentials, so the protocols in $\\Phi$ are not determined by $A$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$A = \\{c^{+} \\mapsto \\mathsf{Close}_x\\}$ and $\\Phi = \\{c^{+} \\mapsto \\mathsf{Close}^{2}\\}$.",
-   "signature": "\\exists A \\in \\mathsf{Env}, \\Phi, U : \\mathbb{N} \\to \\mathsf{Ty}",
+   "signature": "\\exists A \\in \\mathsf{Env}, \\Phi, U : \\mathbb{N} \\to \\sym{type.Ty}{\\mathsf{Ty}}",
    "args": [
     {
      "name": "A",
@@ -16053,7 +16053,7 @@
    "args": [
     {
      "name": "T",
-     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+     "meaning": "the type, $T \\in \\sym{type.Ty}{\\mathsf{Ty}}$"
     }
    ],
    "source": [
@@ -16225,7 +16225,7 @@
     },
     {
      "name": "\\Sigma",
-     "meaning": "the interface, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the interface, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     }
    ],
    "source": [
@@ -16335,7 +16335,7 @@
    "args": [
     {
      "name": "o",
-     "meaning": "the subject end, $o \\in \\mathsf{End}$"
+     "meaning": "the subject end, $o \\in \\sym{type.End}{\\mathsf{End}}$"
     }
    ],
    "source": [
@@ -16379,7 +16379,7 @@
    "args": [
     {
      "name": "\\Sigma",
-     "meaning": "the interface, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the interface, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "W",
@@ -16387,11 +16387,11 @@
     },
     {
      "name": "p",
-     "meaning": "the process, $p = (C, E) \\in \\mathsf{Proc}$"
+     "meaning": "the process, $p = (C, E) \\in \\sym{type.Proc}{\\mathsf{Proc}}$"
     },
     {
      "name": "T",
-     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+     "meaning": "the type, $T \\in \\sym{type.Ty}{\\mathsf{Ty}}$"
     },
     {
      "name": "N",
@@ -16469,7 +16469,7 @@
    "why": "A creation places the new ends at a position, with facts and with tickets of sum at most $N$, each counter at its tickets. An action moves its end to the next point and resets its counter to its tickets. A transfer moves the ends to the receiving thread and decrements their counters. A link renames. None of these depends on the index, and the choices of a creation come from O-New and F-New.",
    "breaks": "Nothing. It is a definition.",
    "example": "One step of the lock-free process relation along an event.",
-   "signature": "\\mathsf{lf\\_next} : \\mathbb{N} \\to \\mathsf{LFState} \\to \\mathsf{Event} \\to \\mathsf{LFState} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{lf\\_next} : \\mathbb{N} \\to \\sym{type.LFState}{\\mathsf{LFState}} \\to \\sym{type.Event}{\\mathsf{Event}} \\to \\sym{type.LFState}{\\mathsf{LFState}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "N",
@@ -16559,7 +16559,7 @@
    "why": "Lock-free adequacy reads the thread holding an end, its point and its counter from $K$, and concludes that the dual end of an internal end is held by some thread at the dual protocol.",
    "breaks": "Without it a thread could wait on an end whose dual end no thread holds, and the chain of waits in the proof of adequacy would break off.",
    "example": "Two threads closing $c^{+}$ and $c^{-}$, each holding one end, with $C = \\{c\\}$.",
-   "signature": "\\mathsf{consistent} : \\mathsf{LFState} \\to \\mathsf{Env} \\to (\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathbb{N} \\times \\mathbb{N}) \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{consistent} : \\sym{type.LFState}{\\mathsf{LFState}} \\to \\sym{type.Env}{\\mathsf{Env}} \\to (\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\mathbb{N} \\times \\mathbb{N}) \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "a",
@@ -16692,11 +16692,11 @@
    "why": "Send, receive, close, select and branch share this premise.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{act}\\,a$ at $\\Phi = \\{a \\mapsto S\\inmode{lf}{^{0}}, b \\mapsto S'^{1}\\}$ holds.",
-   "signature": "\\mathsf{act} : \\mathsf{End} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{act} : \\sym{type.End}{\\mathsf{End}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "o",
-     "meaning": "the subject end, $o \\in \\mathsf{End}$"
+     "meaning": "the subject end, $o \\in \\sym{type.End}{\\mathsf{End}}$"
     },
     {
      "name": "\\Phi",
@@ -16722,7 +16722,7 @@
    "why": "Forcing $!e$ steps to $e[!e]$, which the thunk delays by one $\\lambda$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{thunk}(\\mathsf{force}\\,f) = \\lambda\\_.\\,\\mathsf{force}\\,(!\\mathsf{force}\\,f)$.",
-   "signature": "\\mathsf{thunk} : \\mathsf{Expr} \\to \\mathsf{Val}",
+   "signature": "\\mathsf{thunk} : \\sym{type.Expr}{\\mathsf{Expr}} \\to \\sym{type.Val}{\\mathsf{Val}}",
    "args": [
     {
      "name": "e",
@@ -16744,11 +16744,11 @@
    "why": "It orders the clauses of $V$ within a level.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{size}\\,\\ast = 1$.",
-   "signature": "\\mathsf{size} : \\mathsf{Ty} \\to \\mathbb{N}",
+   "signature": "\\mathsf{size} : \\sym{type.Ty}{\\mathsf{Ty}} \\to \\mathbb{N}",
    "args": [
     {
      "name": "T",
-     "meaning": "the type, $T \\in \\mathsf{Ty}$"
+     "meaning": "the type, $T \\in \\sym{type.Ty}{\\mathsf{Ty}}$"
     }
    ],
    "source": [
@@ -16766,7 +16766,7 @@
    "why": "Values and stuck terms are irreducible.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{irred}\\,\\ast$.",
-   "signature": "\\mathsf{irred} : \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{irred} : \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "e",
@@ -16788,15 +16788,15 @@
    "why": "It excludes circular waiting.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{ready}_W(\\{c^{+} \\mapsto \\mathsf{Close}_{\\rho}\\} \\mid \\varnothing, \\mathsf{close}\\,c^{+})$.",
-   "signature": "\\mathsf{ready} : \\mathsf{World} \\to \\mathsf{Env} \\to \\mathcal{P}(\\mathsf{Point}) \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{ready} : \\sym{type.World}{\\mathsf{World}} \\to \\sym{type.Env}{\\mathsf{Env}} \\to \\mathcal{P}(\\sym{type.Point}{\\mathsf{Point}}) \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "\\Theta",
-     "meaning": "the environment, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the environment, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "F",
@@ -16822,19 +16822,19 @@
    "why": "It excludes circular waiting across the interface.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{ready}_W(\\varnothing, (\\varnothing, \\{\\ast\\}))$.",
-   "signature": "\\mathsf{ready} : \\mathsf{World} \\to \\mathsf{Env} \\to \\mathsf{Proc} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{ready} : \\sym{type.World}{\\mathsf{World}} \\to \\sym{type.Env}{\\mathsf{Env}} \\to \\sym{type.Proc}{\\mathsf{Proc}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
-     "meaning": "the world, $W \\in \\mathsf{World}$"
+     "meaning": "the world, $W \\in \\sym{type.World}{\\mathsf{World}}$"
     },
     {
      "name": "\\Sigma",
-     "meaning": "the interface, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the interface, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "p",
-     "meaning": "the process, $p = (C, E) \\in \\mathsf{Proc}$"
+     "meaning": "the process, $p = (C, E) \\in \\sym{type.Proc}{\\mathsf{Proc}}$"
     }
    ],
    "source": [
@@ -16852,7 +16852,7 @@
    "why": "Each label has its own obligation, read off the label.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{Obl}_{\\beta}(e') = $ O-Beta.",
-   "signature": "\\mathsf{Obl} : \\mathsf{TLabel} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{Obl} : \\sym{type.TLabel}{\\mathsf{TLabel}} \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "\\ell",
@@ -16878,7 +16878,7 @@
    "why": "Each event has its own obligation, read off the event.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{Pobl}_{ev}$ is Q-Tau for an internal event.",
-   "signature": "\\mathsf{Pobl} : \\mathsf{Event} \\to \\mathsf{Proc} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{Pobl} : \\sym{type.Event}{\\mathsf{Event}} \\to \\sym{type.Proc}{\\mathsf{Proc}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "ev",
@@ -16904,7 +16904,7 @@
    "why": "Each label has its own fuel update.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{Fobl}$ of a send is F-Send.",
-   "signature": "\\mathsf{Fobl}\\inmode{lf}{^{N}} : \\mathsf{TLabel} \\to \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{Fobl}\\inmode{lf}{^{N}} : \\sym{type.TLabel}{\\mathsf{TLabel}} \\to \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "N",
@@ -16946,11 +16946,11 @@
     },
     {
      "name": "\\Sigma",
-     "meaning": "the interface, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the interface, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "p",
-     "meaning": "the process, $p = (C, E) \\in \\mathsf{Proc}$"
+     "meaning": "the process, $p = (C, E) \\in \\sym{type.Proc}{\\mathsf{Proc}}$"
     }
    ],
    "source": [
@@ -16968,7 +16968,7 @@
    "why": "The channels of $D$ become restricted and leave the interface.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(\\mathsf{id}, \\{c\\})\\cdot\\{c^{+}, c^{-}, d^{+}\\} = \\{d^{+}\\}$.",
-   "signature": "(h, D)\\cdot\\Sigma : \\mathsf{Env}",
+   "signature": "(h, D)\\cdot\\Sigma : \\sym{type.Env}{\\mathsf{Env}}",
    "args": [
     {
      "name": "h",
@@ -16980,7 +16980,7 @@
     },
     {
      "name": "\\Sigma",
-     "meaning": "the interface, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the interface, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     }
    ],
    "source": [
@@ -16999,7 +16999,7 @@
    "why": "It is the process after the fusion.",
    "breaks": "Nothing. It is a definition.",
    "example": "$(\\mathsf{id}, \\{c\\})\\cdot(C, E) = (C \\cup \\{c\\}, E)$.",
-   "signature": "(h, D)\\cdot p : \\mathsf{Proc}",
+   "signature": "(h, D)\\cdot p : \\sym{type.Proc}{\\mathsf{Proc}}",
    "args": [
     {
      "name": "h",
@@ -17011,7 +17011,7 @@
     },
     {
      "name": "p",
-     "meaning": "the process, $p = (C, E) \\in \\mathsf{Proc}$"
+     "meaning": "the process, $p = (C, E) \\in \\sym{type.Proc}{\\mathsf{Proc}}$"
     }
    ],
    "source": [
@@ -17038,11 +17038,11 @@
    "why": "P-Stop applies exactly to irreducible processes.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{pirred}\\,(\\varnothing, \\{\\ast\\})$.",
-   "signature": "\\mathsf{pirred} : \\mathsf{Proc} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{pirred} : \\sym{type.Proc}{\\mathsf{Proc}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "p",
-     "meaning": "the process, $p = (C, E) \\in \\mathsf{Proc}$"
+     "meaning": "the process, $p = (C, E) \\in \\sym{type.Proc}{\\mathsf{Proc}}$"
     }
    ],
    "source": [
@@ -17064,7 +17064,7 @@
    "args": [
     {
      "name": "\\Sigma",
-     "meaning": "the interface, a finite map $\\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathsf{Point}$"
+     "meaning": "the interface, a finite map $\\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\sym{type.Point}{\\mathsf{Point}}$"
     },
     {
      "name": "C",
@@ -17086,7 +17086,7 @@
    "why": "Restricted sets are sets of channels, so $h$ acts on them through its action on $c^{+}$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{gch}_{\\mathsf{id}}(c) = c$.",
-   "signature": "\\mathsf{gch}_h : \\mathsf{Chan} \\to \\mathsf{Chan}",
+   "signature": "\\mathsf{gch}_h : \\sym{type.Chan}{\\mathsf{Chan}} \\to \\sym{type.Chan}{\\mathsf{Chan}}",
    "args": [
     {
      "name": "h",
@@ -17112,7 +17112,7 @@
    "why": "\\inmode{lf}{$E$ reads ends only, and no credit.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$|c^{+} : S_{\\rho}^{3},\\ 0 : T| = \\{c^{+} \\mapsto S_{\\rho}\\}$.",
-   "signature": "|\\cdot| : \\mathsf{Ctx} \\to \\mathsf{Env}",
+   "signature": "|\\cdot| : \\sym{type.Ctx}{\\mathsf{Ctx}} \\to \\sym{type.Env}{\\mathsf{Env}}",
    "args": [
     {
      "name": "\\Delta",
@@ -17550,7 +17550,7 @@
    "why": "These are the environment premises of P-Term, as the semantic proof uses these premises.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\Sigma = \\varnothing$ and $C = \\varnothing$ for a source program.",
-   "signature": "\\mathsf{sth} : \\mathsf{Env} \\to \\mathsf{Env} \\to \\mathsf{Env} \\to \\mathcal{P}(\\mathsf{Chan}) \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{sth} : \\sym{type.Env}{\\mathsf{Env}} \\to \\sym{type.Env}{\\mathsf{Env}} \\to \\sym{type.Env}{\\mathsf{Env}} \\to \\mathcal{P}(\\sym{type.Chan}{\\mathsf{Chan}}) \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "\\Theta",
@@ -18156,7 +18156,7 @@
    "why": "An annotated configuration is a configuration together with ownership, counters and tickets.",
    "breaks": "Nothing. It is a definition.",
    "example": "$q_a = (C, M)$.",
-   "signature": "q_a : \\mathsf{Config}",
+   "signature": "q_a : \\sym{type.Config}{\\mathsf{Config}}",
    "args": [
     {
      "name": "a",
@@ -18364,7 +18364,7 @@
    "why": "Fuel reads protocols, counters and tickets and ignores points and credits. A thread starts with each counter at its tickets.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\{a \\mapsto S_x\\inmode{lf}{^{2,3}}\\}\\inmode{lf}{^{N}} = \\{a \\mapsto S^{3,3}\\}$.",
-   "signature": "\\Delta\\inmode{lf}{^{N}} : \\mathsf{End} \\rightharpoonup \\mathsf{STy} \\times \\mathbb{N} \\times \\mathbb{N}",
+   "signature": "\\Delta\\inmode{lf}{^{N}} : \\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\mathbb{N} \\times \\mathbb{N}",
    "args": [
     {
      "name": "\\Delta",
@@ -18687,7 +18687,7 @@
    "why": "It collects the premises of the n-ary connect. The one condition on worlds is checked once, on the join.",
    "breaks": "Nothing. It is a definition.",
    "example": "The three threads of the ring.",
-   "signature": "\\mathsf{comps}\\inmode{lf}{_N} : \\mathsf{World}^{*} \\to \\mathsf{Proc} \\to \\mathsf{Ty} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{comps}\\inmode{lf}{_N} : \\sym{type.World}{\\mathsf{World}}^{*} \\to \\sym{type.Proc}{\\mathsf{Proc}} \\to \\sym{type.Ty}{\\mathsf{Ty}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "\\bar W",
@@ -18781,7 +18781,7 @@
    "why": "It restricts the result type in the comparison of the relations at $\\kappa_L$ and at $\\kappa_{DF}$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{boxfree}(\\ast \\otimes \\ast)$.",
-   "signature": "\\mathsf{boxfree} : \\mathsf{Ty} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{boxfree} : \\sym{type.Ty}{\\mathsf{Ty}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "T",
@@ -18832,7 +18832,7 @@
    "why": "A link between two interface ends would leave no thread in the process to serve either side, and thread progress would fail for reasons outside the process.",
    "breaks": "Nothing. It is a definition.",
    "example": "A link of two ends of channels the process created.",
-   "signature": "\\mathsf{links\\_restricted} : \\mathsf{Proc} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{links\\_restricted} : \\sym{type.Proc}{\\mathsf{Proc}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "p",
@@ -18854,7 +18854,7 @@
    "why": "\\inmode{lf}{The induction behind the fundamental theorems reads each consistent extension $W'$ of $W$ that fits the bound. A creation grows a strict world under $\\mathsf{acyc\\_new}$. A ranked world needs $\\mathsf{gen\\_new}$, which holds only at a finite bound, and the choice of the largest of finitely many ranks.}",
    "breaks": "\\inmode{lf}{At $N = \\infty$ a ranked world could meet a creation under $\\mathsf{acyc\\_new}$ that has no ranks.}",
    "example": "\\inmode{lf}{The deadlock-free theorems use strict worlds, the lock-free ones ranked worlds at a finite bound.}",
-   "signature": "\\mathsf{fit} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to \\mathsf{World} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{fit} : (\\mathbb{N} \\cup \\{\\infty\\}) \\to \\sym{type.World}{\\mathsf{World}} \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "W",
@@ -18930,7 +18930,7 @@
    "why": "These are the premises of P-Term about restricted channels.",
    "breaks": "Nothing. It is a definition.",
    "example": "$C_0 = \\varnothing$ for a thread with no private channel.",
-   "signature": "\\mathsf{chan}_N : \\mathsf{Env} \\to \\mathsf{TEnv} \\to \\mathcal{P}(\\mathsf{Chan}) \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{chan}_N : \\sym{type.Env}{\\mathsf{Env}} \\to \\sym{type.TEnv}{\\mathsf{TEnv}} \\to \\mathcal{P}(\\sym{type.Chan}{\\mathsf{Chan}}) \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "\\Sigma",
@@ -19014,7 +19014,7 @@
    "why": "It states lock freedom per run for each thread, including the threads that are not pending. A thread that is neither stopped nor acting forever would be postponed without end.",
    "breaks": "Nothing. It is a definition.",
    "example": "In a run of two threads closing $c^{+}$ and $c^{-}$, both threads take part in the close step.",
-   "signature": "\\mathsf{thread\\_progress\\_run} : (\\mathbb{N} \\to \\mathsf{Config}) \\to (\\mathbb{N} \\to \\mathsf{Event}_{\\bot}) \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{thread\\_progress\\_run} : (\\mathbb{N} \\to \\sym{type.Config}{\\mathsf{Config}}) \\to (\\mathbb{N} \\to \\sym{type.Event}{\\mathsf{Event}}_{\\bot}) \\to \\mathsf{Prop}",
    "args": [
     {
      "name": "(r, l)",
@@ -19201,7 +19201,7 @@
    "why": "A loop goes through a force. A thread that loops while it holds a non-idle end exhausts the counter of that end, so the thread holding the dual end waits a finite time.",
    "breaks": "With a free force, a thread could loop forever while the thread holding its dual end waits, and lock-free adequacy would fail.",
    "example": "$\\mathsf{force}\\,f$ holding $d$ at counter $2$ continues with $d$ at counter $1$.",
-   "signature": "\\mathsf{f\\_force} : \\mathsf{Expr} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{f\\_force} : \\sym{type.Expr}{\\mathsf{Expr}} \\to \\mathsf{Prop}",
    "source": [
     {
      "file": "fuel/Fuel.v",
@@ -19299,7 +19299,7 @@
    "why": "It is what the relation at $\\kappa_L$ gives, because free steps cost nothing there. The proof of lock-free adequacy asks it of the thread that holds an awaited end.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{force}\\,!(f = \\mathsf{force}\\,f)$ has the property, because each of its steps is a force.",
-   "signature": "\\mathsf{no\\_free\\_divergence} : \\mathsf{Proc} \\to \\mathsf{Prop}",
+   "signature": "\\mathsf{no\\_free\\_divergence} : \\sym{type.Proc}{\\mathsf{Proc}} \\to \\mathsf{Prop}",
    "source": [
     {
      "file": "lockfree/TauThread.v",
@@ -19430,7 +19430,7 @@
    "why": "The tickets of an interface end are an upper bound on its counter, and its dual end is held by another component. Each component picks the tickets of its interface ends, and P-Connect checks the two sides of each cut against $N$.",
    "breaks": "With each interface end at $N/2$ a link of two interface ends asks $N/2 + N/2 > N$, so no forwarding component types over an interface.",
    "example": "$\\eta(c^{+}) = \\eta(d^{-}) = (N, N)$ and $\\eta(c^{-}) = \\eta(d^{+}) = (0, 0)$ for the [[ex-link|link]] closed by two threads that close the dual ends.",
-   "signature": "\\eta : \\mathsf{End} \\to (\\mathbb{N} \\cup \\{\\infty\\}) \\times (\\mathbb{N} \\cup \\{\\infty\\})",
+   "signature": "\\eta : \\sym{type.End}{\\mathsf{End}} \\to (\\mathbb{N} \\cup \\{\\infty\\}) \\times (\\mathbb{N} \\cup \\{\\infty\\})",
    "args": [
     {
      "name": "\\eta",
@@ -19649,6 +19649,126 @@
      ]
     }
    ]
+  },
+  "type.Expr": {
+   "title": "$\\mathsf{Expr}$",
+   "meaning": "The terms of the language.",
+   "def": "syn-terms"
+  },
+  "type.Val": {
+   "title": "$\\mathsf{Val}$",
+   "meaning": "The values, the terms that do not step.",
+   "def": "syn-values"
+  },
+  "type.End": {
+   "title": "$\\mathsf{End}$",
+   "meaning": "The ends of channels, $c^{+}$ and $c^{-}$.",
+   "def": "syn-ends"
+  },
+  "type.Chan": {
+   "title": "$\\mathsf{Chan}$",
+   "meaning": "The channel names.",
+   "def": "syn-ends"
+  },
+  "type.Point": {
+   "title": "$\\mathsf{Point}$",
+   "meaning": "The points at which ends act.",
+   "def": "syn-points"
+  },
+  "type.Pt": {
+   "title": "$\\mathsf{Pt}$",
+   "meaning": "The points at which ends act.",
+   "def": "syn-points"
+  },
+  "type.PVar": {
+   "title": "$\\mathsf{PVar}$",
+   "meaning": "The point variables.",
+   "def": "syn-points"
+  },
+  "type.Proc": {
+   "title": "$\\mathsf{Proc}$",
+   "meaning": "The processes, a set of restricted channels with a multiset of threads.",
+   "def": "syn-procs"
+  },
+  "type.Config": {
+   "title": "$\\mathsf{Config}$",
+   "meaning": "The configurations, processes whose threads have numbers.",
+   "def": "syn-procs"
+  },
+  "type.Event": {
+   "title": "$\\mathsf{Event}$",
+   "meaning": "The events of process steps.",
+   "def": "sem-events"
+  },
+  "type.Run": {
+   "title": "$\\mathsf{Run}$",
+   "meaning": "The runs of a configuration.",
+   "def": "sem-props"
+  },
+  "type.TLabel": {
+   "title": "$\\mathsf{TLabel}$",
+   "meaning": "The labels of thread steps.",
+   "def": "sem-labels"
+  },
+  "type.SLabel": {
+   "title": "$\\mathsf{SLabel}$",
+   "meaning": "The session labels, the actions of a thread on its ends.",
+   "def": "sem-labels"
+  },
+  "type.Frame": {
+   "title": "$\\mathsf{Frame}$",
+   "meaning": "The evaluation frames.",
+   "def": "sem-ctx"
+  },
+  "type.Ty": {
+   "title": "$\\mathsf{Ty}$",
+   "meaning": "The types.",
+   "def": "ty-grammar"
+  },
+  "type.STy": {
+   "title": "$\\mathsf{STy}$",
+   "meaning": "The session types.",
+   "def": "ty-session"
+  },
+  "type.Sty": {
+   "title": "$\\mathsf{Sty}$",
+   "meaning": "The session types.",
+   "def": "ty-session"
+  },
+  "type.Env": {
+   "title": "$\\mathsf{Env}$",
+   "meaning": "The environments of the relation, finite maps from ends to a session type and a point.",
+   "def": "sr-reading"
+  },
+  "type.TEnv": {
+   "title": "$\\mathsf{TEnv}$",
+   "meaning": "The typing environments of ends.",
+   "def": "t-judgment"
+  },
+  "type.Ctx": {
+   "title": "$\\mathsf{Ctx}$",
+   "meaning": "The static contexts of facts.",
+   "def": "t-contexts"
+  },
+  "type.World": {
+   "title": "$\\mathsf{World}$",
+   "meaning": "The worlds, bases with facts.",
+   "def": "w-world"
+  },
+  "type.Base": {
+   "title": "$\\mathsf{Base}$",
+   "meaning": "The bases of a world.",
+   "def": "w-world"
+  },
+  "type.Ord": {
+   "title": "$\\mathsf{Ord}$",
+   "meaning": "The ordinal indices of the relation.",
+   "def": "sr-ord"
+  },
+  "type.LFState": {
+   "title": "$\\mathsf{LFState}$",
+   "meaning": "The states of the lock-free process relation.",
+   "def": "soup"
   }
  },
  "examples": [

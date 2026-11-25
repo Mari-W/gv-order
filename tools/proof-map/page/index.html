@@ -100,6 +100,10 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) clamp(320px, 27vw, 5
 .bhead h3:hover { color: var(--accent); }
 .bhead .tools { margin-left: auto; display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .src { display: block; font: 0.74rem/1.4 var(--mono); color: var(--muted); margin-top: 2px; overflow-wrap: anywhere; }
+article.block > .src, article.ex > .src { display: none; margin-top: 8px; }
+article.block.showsrc > .src, article.ex.showsrc > .src { display: block; }
+.tbtn[aria-pressed="true"] { color: var(--accent); }
+aside details.rocq summary { cursor: pointer; color: var(--muted); font-size: 0.85rem; }
 .tag { font: 600 0.66rem/1.5 var(--body); letter-spacing: 0.06em; text-transform: uppercase; padding: 0 6px; border-radius: 4px; border: 1px solid currentColor; white-space: nowrap; }
 .tag.mode { color: var(--mc); }
 .tag.planned { color: var(--plan); border-style: dashed; }
@@ -254,7 +258,8 @@ window.MathJax = {
   const params = new URLSearchParams(location.search);
   const ICON = {
     copy: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5"/></svg>',
-    link: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 9.5a3 3 0 0 0 4.2 0l2.6-2.6a3 3 0 0 0-4.2-4.2L8 3.8"/><path d="M9.5 6.5a3 3 0 0 0-4.2 0L2.7 9.1a3 3 0 0 0 4.2 4.2L8 12.2"/></svg>'
+    link: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 9.5a3 3 0 0 0 4.2 0l2.6-2.6a3 3 0 0 0-4.2-4.2L8 3.8"/><path d="M9.5 6.5a3 3 0 0 0-4.2 0L2.7 9.1a3 3 0 0 0 4.2 4.2L8 12.2"/></svg>',
+    code: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4 2 8l3.5 4"/><path d="M10.5 4 14 8l-3.5 4"/></svg>'
   };
 
   // ---------- theme ----------
@@ -540,7 +545,13 @@ window.MathJax = {
     boxOn(el, 'hot');
     for (let a = el.parentElement && el.parentElement.closest('[class*="k-"]'); a && a.closest('mjx-container'); a = a.parentElement && a.parentElement.closest('[class*="k-"]')) boxOn(a, 'anc');
   }
-  function typeset(el) { return window.MathJax && MathJax.typesetPromise ? MathJax.typesetPromise([el]).then(() => { markSel(); decorate(el); }).catch(() => {}) : Promise.resolve(); }
+  function unclass(s) {
+    for (;;) { const m = /\\class\s*\{[^}]*\}\s*\{/.exec(s); if (!m) return s; const open = m.index + m[0].length - 1, k = close(s, open); s = s.slice(0, m.index) + s.slice(open + 1, k - 1) + s.slice(k); }
+  }
+  function texify(el) {
+    try { for (const it of MathJax.startup.document.getMathItemsWithin(el)) if (it.typesetRoot && !it.typesetRoot.hasAttribute('data-tex')) it.typesetRoot.setAttribute('data-tex', unclass(it.math)); } catch (e) {}
+  }
+  function typeset(el) { return window.MathJax && MathJax.typesetPromise ? MathJax.typesetPromise([el]).then(() => { texify(el); markSel(); decorate(el); }).catch(() => {}) : Promise.resolve(); }
 
   // ---------- definitions and inline references ----------
   // the keys a block hovers in its formula or table in one mode (null: every mode)
@@ -657,12 +668,12 @@ window.MathJax = {
     el.className = 'block' + (only ? ' only' : ''); el.id = 'b-' + b.id;
     if (only) el.dataset.mc = only[0];
     const tags = (only ? only.map(m => `<span class="tag mode" data-mc="${esc(m)}">${esc((modeOf(m) || {}).short || m)}</span>`).join('') : '')
-      + [...new Set((b.deviations || []).map(d => d.kind))].map(k => { const m = (b.deviations || []).some(d => d.kind === k && missing(d)); return `<span class="tag ${k === 'planned' ? 'planned' : m ? 'missing' : 'dev'}" title="${esc(m ? 'Reason missing' : 'See the reason below the block')}">${esc(KIND[k] || k)}</span>`; }).join('');
+      + [...new Set((b.deviations || []).map(d => d.kind))].map(k => { const m = (b.deviations || []).some(d => d.kind === k && missing(d)); return `<span class="tag ${k === 'planned' ? 'planned' : m ? 'missing' : 'dev'}" title="${esc(m ? 'Reason missing' : 'The reason is in the note of the block, click its title')}">${esc(KIND[k] || k)}</span>`; }).join('');
     const flip = differs(b) ? `<span class="mini" role="group" aria-label="Show this block in">${MODES.map(m => `<button type="button" data-flip="${esc(b.id)}" data-m="${esc(m.id)}" data-mc="${esc(m.id)}" aria-pressed="${bm === m.id}" title="${esc(m.label)}">${esc(m.short || m.label)}</button>`).join('')}</span>` : '';
-    el.innerHTML = `<div class="bhead"><h3 data-block="${esc(b.id)}" tabindex="0">${esc(b.title)}</h3><span class="tools">${tags}${hook('blockTags', b)}${flip}<button class="tbtn" type="button" data-copy="${esc(b.id)}" title="Copy the TeX of this formula">${ICON.copy}</button><a class="tbtn" href="#${esc(s.id)}/${esc(b.id)}" title="Link to this block">${ICON.link}</a></span></div>`
-      + (b.source && b.source.length ? `<code class="src">${esc(refLine(b.source))}</code>` : '');
+    el.innerHTML = `<div class="bhead"><h3 data-block="${esc(b.id)}" tabindex="0">${esc(b.title)}</h3><span class="tools">${tags}${hook('blockTags', b)}${flip}${b.source && b.source.length ? `<button class="tbtn" type="button" data-src aria-pressed="false" title="Show where this is in the Rocq">${ICON.code}</button>` : ''}<button class="tbtn" type="button" data-copy="${esc(b.id)}" title="Copy the TeX of this formula">${ICON.copy}</button><a class="tbtn" href="#${esc(s.id)}/${esc(b.id)}" title="Link to this block">${ICON.link}</a></span></div>`;
     if (b.table && !texOf(b, bm)) el.appendChild(tableEl(b, bm)); else el.appendChild(math(texOf(b, bm), bm));
-    el.insertAdjacentHTML('beforeend', (b.caption ? `<p class="caption">${prose(b.caption, bm)}</p>` : '') + devList(b.deviations) + hook('blockFooter', b));
+    // the text of a block lives in its note (click the title), the box holds the formula
+    el.insertAdjacentHTML('beforeend', (b.source && b.source.length ? `<code class="src">${esc(refLine(b.source))}</code>` : '') + hook('blockFooter', b));
     return el;
   }
   // an overview block: rows of a label and cells, each a formula or a sentence, in aligned columns
@@ -716,7 +727,7 @@ window.MathJax = {
     const xs = (MAP.examples || []).filter(x => visible(x) && matches(exHay(x)));
     for (const x of xs) {
       const only = onlyMode(x);
-      root.insertAdjacentHTML('beforeend', `<article class="ex${only ? ' block only' : ''}" id="x-${esc(x.id)}"${only ? ` data-mc="${esc(only[0])}"` : ''}><div class="bhead"><h3 data-ex="${esc(x.id)}" tabindex="0">${esc(x.title)}</h3><span class="tools">${only ? only.map(m => `<span class="tag mode" data-mc="${esc(m)}">${esc((modeOf(m) || {}).short || m)}</span>`).join('') : ''}<a class="tbtn" href="#examples/${esc(x.id)}" title="Link to this example">${ICON.link}</a></span></div>${x.source && x.source.length ? `<code class="src">${esc(refLine(x.source))}</code>` : ''}${hook('exampleHeader', x)}${x.lead ? `<p class="lead">${prose(x.lead)}</p>` : ''}${x.code ? `<pre>${highlight(x.code)}</pre>` : ''}${x.meaning ? `<p>${prose(x.meaning)}</p>` : ''}${devList(x.deviations)}</article>`);
+      root.insertAdjacentHTML('beforeend', `<article class="ex${only ? ' block only' : ''}" id="x-${esc(x.id)}"${only ? ` data-mc="${esc(only[0])}"` : ''}><div class="bhead"><h3 data-ex="${esc(x.id)}" tabindex="0">${esc(x.title)}</h3><span class="tools">${only ? only.map(m => `<span class="tag mode" data-mc="${esc(m)}">${esc((modeOf(m) || {}).short || m)}</span>`).join('') : ''}${x.source && x.source.length ? `<button class="tbtn" type="button" data-src aria-pressed="false" title="Show where this is in the Rocq">${ICON.code}</button>` : ''}<a class="tbtn" href="#examples/${esc(x.id)}" title="Link to this example">${ICON.link}</a></span></div>${hook('exampleHeader', x)}${x.lead ? `<p class="lead">${prose(x.lead)}</p>` : ''}${x.code ? `<pre>${highlight(x.code)}</pre>` : ''}${x.meaning ? `<p>${prose(x.meaning)}</p>` : ''}${devList(x.deviations)}${x.source && x.source.length ? `<code class="src">${esc(refLine(x.source))}</code>` : ''}</article>`);
     }
     if (!xs.length) noMatches(root);
   }
@@ -728,12 +739,12 @@ window.MathJax = {
     const row = (t, v, c) => v && resolve(v, md).trim() ? `<div><dt>${t}</dt><dd${c ? ` class="${c}"` : ''}>${prose(v, md)}</dd></div>` : '';
     const args = (n.args || []).filter(a => !a.modes || !MODES.length || a.modes.includes(md));
     let h = `<h2>${prose(n.title, md)}</h2><dl>`;
-    if (n.signature) h += `<div><dt>Signature</dt><dd class="sig">$\\displaystyle ${esc(plainTeX(n.signature, md))}$</dd></div>`;
-    if (args.length) h += `<div><dt>Arguments</dt><dd><ul class="args">${args.map(a => `<li>$${esc(plainTeX(a.name, md))}$ ${prose(a.meaning, md)}</li>`).join('')}</ul></dd></div>`;
+    if (n.signature) h += `<div><dt>Signature</dt><dd class="sig">$\\displaystyle ${esc(toMJ(n.signature, md))}$</dd></div>`;
+    if (args.length) h += `<div><dt>Arguments</dt><dd><ul class="args">${args.map(a => `<li>$${esc(toMJ(a.name, md))}$ ${prose(a.meaning, md)}</li>`).join('')}</ul></dd></div>`;
     h += row('Meaning', n.meaning) + row('Why', n.why) + row('Without it', n.breaks, 'breaks') + row('Example', n.example);
     for (const [label, html] of window.ProofMap.exts.flatMap(e => { try { return (e.noteRows && e.noteRows(n, ctx())) || []; } catch (err) { return []; } })) h += `<div><dt>${esc(label)}</dt><dd>${html}</dd></div>`;
     if ((n.deviations || []).length) h += `<div><dt>Differs from the code</dt><dd>${devList(n.deviations)}</dd></div>`;
-    if ((n.source || []).length) h += `<div><dt>Rocq</dt><dd><ul class="refs">${n.source.map(r => `<li>${esc(r.file)}: ${esc(r.names.join(', '))}${r.qualifier ? ` <span class="q">(${esc(r.qualifier)})</span>` : ''}</li>`).join('')}</ul></dd></div>`;
+    if ((n.source || []).length) h += `<div><dd><details class="rocq"><summary>Rocq</summary><ul class="refs">${n.source.map(r => `<li>${esc(r.file)}: ${esc(r.names.join(', '))}${r.qualifier ? ` <span class="q">(${esc(r.qualifier)})</span>` : ''}</li>`).join('')}</ul></details></dd></div>`;
     h += '</dl>';
     const chip = id => { const x = blockIndex.get(id); if (x) return `<a href="#${esc(x.s.id)}/${esc(id)}" data-jump="${esc(id)}">${esc(x.b.title)}</a>`; const e = (MAP.examples || []).find(e => e.id === id); return e ? `<a href="#examples/${esc(id)}" data-jump="${esc(id)}">${esc(e.title)}</a>` : `<span>${esc(id)}</span>`; };
     // a symbol: the block that defines it, then the other blocks whose formulas hover it. A block:
@@ -831,6 +842,8 @@ window.MathJax = {
         if (pinned) { markAll(pinned); shown = null; showNote(pinned, true, blockMode(x.b)); }
         return;
       }
+      const sb = e.target.closest('[data-src]');
+      if (sb) { const a = sb.closest('article'); const on = a.classList.toggle('showsrc'); sb.setAttribute('aria-pressed', on); return; }
       const c = e.target.closest('[data-copy]');
       if (c) { const x = blockIndex.get(c.dataset.copy), bm = blockMode(x.b); copyText(texOf(x.b, bm) ? plainTeX(texOf(x.b, bm), bm) : tableEl(x.b, bm).dataset.tex); return; }
       const j = e.target.closest('[data-jump]');
@@ -855,8 +868,8 @@ window.MathJax = {
     $('#note').addEventListener('click', e => {
       if (e.target.id === 'unpin') { unpin(); return; }
       const j = e.target.closest('[data-jump]'); if (j) { e.preventDefault(); goTo(j.dataset.jump); return; }
-      const t = e.target.closest('[class*="k-"]'); const d = t && keyOf(t) && defOf(keyOf(t));
-      if (d) goTo(d);
+      const t = e.target.closest('[class*="k-"]'), k = t && keyOf(t); if (!k) return;
+      const d = defOf(k); pin(k, mode); if (d && !e.shiftKey && !e.altKey) goTo(d);
     });
     $('#modes').addEventListener('click', e => {
       const b = e.target.closest('button[data-mode]'); if (!b) return;
