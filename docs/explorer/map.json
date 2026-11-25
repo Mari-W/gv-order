@@ -356,7 +356,7 @@
     {
      "id": "sem-labels",
      "title": "Thread labels",
-     "formula": "\\begin{array}{rl}\n\\alpha ::= & \\sym{lbl.beta}{\\beta} \\mid \\sym{lbl.force}{\\mathsf{force}} \\mid \\sym{lbl.new}{\\mathsf{new}\\,c} \\mid \\sym{lbl.spawn}{\\mathsf{spawn}\\,v} \\mid \\sym{se.slabel}{\\sigma} \\\\\n\\sigma ::= & \\sym{lbl.send}{o!v} \\mid \\sym{lbl.recv}{o?v} \\mid \\sym{lbl.close}{o\\,\\mathsf{end}} \\mid \\sym{lbl.sel}{o \\lhd i} \\mid \\sym{lbl.bra}{o \\rhd i} \\mid \\sym{lbl.link}{\\leftrightarrow\\{o_1,o_2\\}}\n\\end{array}",
+     "formula": "\\begin{array}{rl}\n\\ell ::= & \\sym{lbl.beta}{\\beta} \\mid \\sym{lbl.force}{\\mathsf{force}} \\mid \\sym{lbl.new}{\\mathsf{new}\\,c} \\mid \\sym{lbl.spawn}{\\mathsf{spawn}\\,v} \\mid \\sym{se.slabel}{\\sigma} \\\\\n\\sigma ::= & \\sym{lbl.send}{o!v} \\mid \\sym{lbl.recv}{o?v} \\mid \\sym{lbl.close}{o\\,\\mathsf{end}} \\mid \\sym{lbl.sel}{o \\lhd i} \\mid \\sym{lbl.bra}{o \\rhd i} \\mid \\sym{lbl.link}{\\leftrightarrow\\{o_1,o_2\\}}\n\\end{array}",
      "caption": "The label $\\beta$ stands for application, unit and pair elimination and case, and $\\mathsf{force}$ for the force of a box. A session label $\\sigma$ is an action offered on an end. $\\mathsf{new}\\,c$ names the channel created, and $\\mathsf{spawn}\\,v$ records the thunk of the new thread. The [[sem-head|head steps]] produce these labels, and the [[sem-proc|process steps]] match the labels of two threads.",
      "why": "An internal step needs no other thread. A session label must be matched by the dual label of another thread, or offered to the environment. \\inmode{lf}{The [[ct-costs|step costs]] of the relation are a function of the label.}",
      "source": [
@@ -396,7 +396,7 @@
     {
      "id": "sem-ctx",
      "title": "Evaluation frames (T-Act-Ctx)",
-     "formula": "\\dfrac{\\sym{T-Act-Ctx}{e \\xrightarrow{\\alpha} e'}\\quad \\sym{sem.frameval}{\\mathsf{frame\\_val}\\,f}}{\\sym{se.frame}{f[e]} \\xrightarrow{\\alpha} f[e']}\\;\\textsf{T-Act-Ctx}",
+     "formula": "\\dfrac{\\sym{T-Act-Ctx}{e \\xrightarrow{\\ell} e'}\\quad \\sym{sem.frameval}{\\mathsf{frame\\_val}\\,f}}{\\sym{se.frame}{f[e]} \\xrightarrow{\\ell} f[e']}\\;\\textsf{T-Act-Ctx}",
      "caption": "Steps lift through one evaluation frame $f$ at a time, never under $\\lambda$ or $!$. The [[sem-head|head steps]] are the base case.",
      "why": "Evaluation is call by value from left to right. A $\\lambda$ or a box delays its body until it is applied or forced, so a term has at most one redex and a thread at most one offered action per end.",
      "source": [
@@ -436,7 +436,7 @@
     {
      "id": "sem-events",
      "title": "Events",
-     "formula": "\\begin{array}{l}\n\\sym{ev.event}{ev ::= \\mathsf{solo}_i\\,\\alpha\\,k \\mid \\mathsf{sync}_{i,j}\\,\\sigma \\mid \\mathsf{offer}_i\\,\\sigma} \\qquad \\sym{ev.pick}{k ::= \\cdot \\mid j \\mid (o_1, o_2)} \\\\\n\\sym{ev.admin}{\\mathsf{admin} = \\{\\mathsf{solo}_i\\,\\alpha\\,k\\}} \\qquad \\sym{ev.tau}{\\tau = \\mathsf{Event} \\setminus \\{\\mathsf{offer}_i\\,\\sigma\\}} \\qquad \\sym{se.parts}{\\mathsf{parts}(ev)}\n\\end{array}",
+     "formula": "\\begin{array}{l}\n\\sym{ev.event}{ev ::= \\mathsf{solo}_i\\,\\ell\\,k \\mid \\mathsf{sync}_{i,j}\\,\\sigma \\mid \\mathsf{offer}_i\\,\\sigma} \\qquad \\sym{ev.pick}{k ::= \\cdot \\mid j \\mid (o_1, o_2)} \\\\\n\\sym{ev.admin}{\\mathsf{admin} = \\{\\mathsf{solo}_i\\,\\ell\\,k\\}} \\qquad \\sym{ev.tau}{\\tau = \\mathsf{Event} \\setminus \\{\\mathsf{offer}_i\\,\\sigma\\}} \\qquad \\sym{se.parts}{\\mathsf{parts}(ev)}\n\\end{array}",
      "caption": "An event $ev$ records the threads $\\mathsf{parts}(ev)$ that took part in a [[sem-proc|process step]], and the channel or ends of the step. An event in $\\tau$ makes no offer to the environment, and an administrative event involves one thread and no session action.",
      "why": "Deadlock freedom reads only $\\tau$ steps, the steps a closed process can take. \\inmode{lf}{Lock freedom is stated in terms of the threads that take part in steps, which the event of each step records.}",
      "source": [
@@ -951,8 +951,8 @@
     {
      "id": "t-contexts",
      "title": "Contexts and the fact theory",
-     "formula": "\\begin{array}{l}\\sym{tj.Delta}{\\Delta : o \\mapsto \\sym{ty.sess}{S_x\\inmode{lf}{^{a,m}}},\\ i \\mapsto T} \\qquad \\sym{ctx.lsplit}{\\Delta = \\Delta_1, \\Delta_2} \\\\ \\sym{tj.Gamma}{\\Gamma ::= \\cdot \\mid \\Gamma, \\sym{ctx.hyps}{C[\\bar x]}} \\qquad \\sym{tj.F}{F = X \\cup \\sym{ctx.fvarF}{{\\vartriangle}v}} \\\\[2ex] \\dfrac{\\sym{w.lt}{x \\prec_W y}}{\\sym{ctx.slt}{\\Gamma \\vdash x \\prec y}}\\;\\sym{ctx.fl-w}{\\textsf{Ord-World}} \\qquad \\dfrac{\\sym{ctx.hyps}{C[\\bar x]} \\in \\Gamma \\quad \\sym{ctx.fl-h}{(x \\prec y) \\in C[\\bar x]}}{\\sym{ctx.slt}{\\Gamma \\vdash x \\prec y}}\\;\\sym{ctx.fl-h}{\\textsf{Ord-Fact}} \\qquad \\dfrac{\\sym{ctx.slt}{\\Gamma \\vdash x \\prec y} \\quad \\sym{ctx.slt}{\\Gamma \\vdash y \\prec z}}{\\sym{ctx.slt}{\\Gamma \\vdash x \\prec z}}\\;\\sym{ctx.fl-trans}{\\textsf{Ord-Trans}}\\end{array}",
-     "caption": "$\\Delta$ maps [[syn-ends|ends]] to end types and variables to types, and a split $\\Delta = \\Delta_1, \\Delta_2$ gives each end to one side. $\\Gamma$ is a list of constraints $C$ instantiated at points $\\bar x$, and the rules read order facts only through $\\Gamma \\vdash x \\prec y$. Three rules derive a fact from the order $\\prec_W$ of [[w-order]], which contains program order, from a fact of an instance in $\\Gamma$, or by transitivity. $\\Gamma \\vdash x \\preccurlyeq y$ means $x = y$ or $\\Gamma \\vdash x \\prec y$. The future $F$ says where the thread still acts after the term returns, and an action at $x$ asks $x \\prec F$. It is $F = X \\cup {\\vartriangle}v$, a finite set $X$ of [[ty-heads|bounds]] and the points above $v$, where $v$ is a point, $\\bot$ or $\\top$. For $v = \\top$ the context acts only at the points of $X$. When the context holds an end at a point the term cannot name, $\\bot \\in X$ or $v = \\bot$, and no session action types, because no point lies below $\\bot$.",
+     "formula": "\\begin{array}{l}\\sym{tj.Delta}{\\Delta : o \\mapsto \\sym{ty.sess}{S_x\\inmode{lf}{^{a,m}}},\\ i \\mapsto T} \\qquad \\sym{ctx.lsplit}{\\Delta = \\Delta_1, \\Delta_2} \\\\ \\sym{tj.Gamma}{\\Gamma ::= \\cdot \\mid \\Gamma, \\sym{ctx.hyps}{C[\\bar x]}} \\qquad \\sym{tj.F}{F = X \\cup \\sym{ctx.fvarF}{{\\vartriangle}v}} \\\\[2ex] \\dfrac{\\sym{w.lt}{x \\prec_W y}}{\\sym{ctx.slt}{\\Gamma \\vdash_W x \\prec y}}\\;\\sym{ctx.fl-w}{\\textsf{Ord-World}} \\qquad \\dfrac{\\sym{ctx.hyps}{C[\\bar x]} \\in \\Gamma \\quad \\sym{ctx.fl-h}{(x \\prec y) \\in C[\\bar x]}}{\\sym{ctx.slt}{\\Gamma \\vdash_W x \\prec y}}\\;\\sym{ctx.fl-h}{\\textsf{Ord-Fact}} \\qquad \\dfrac{\\sym{ctx.slt}{\\Gamma \\vdash_W x \\prec y} \\quad \\sym{ctx.slt}{\\Gamma \\vdash_W y \\prec z}}{\\sym{ctx.slt}{\\Gamma \\vdash x \\prec z}}\\;\\sym{ctx.fl-trans}{\\textsf{Ord-Trans}}\\end{array}",
+     "caption": "$\\Delta$ maps [[syn-ends|ends]] to end types and variables to types, and a split $\\Delta = \\Delta_1, \\Delta_2$ gives each end to one side. $\\Gamma$ is a list of constraints $C$ instantiated at points $\\bar x$, and the rules read order facts only through $\\Gamma \\vdash_W x \\prec y$. Three rules derive a fact from the order $\\prec_W$ of [[w-order]], which contains program order, from a fact of an instance in $\\Gamma$, or by transitivity. $\\Gamma \\vdash_W x \\preccurlyeq y$ means $x = y$ or $\\Gamma \\vdash_W x \\prec y$. The future $F$ says where the thread still acts after the term returns, and an action at $x$ asks $x \\prec F$. It is $F = X \\cup {\\vartriangle}v$, a finite set $X$ of [[ty-heads|bounds]] and the points above $v$, where $v$ is a point, $\\bot$ or $\\top$. For $v = \\top$ the context acts only at the points of $X$. When the context holds an end at a point the term cannot name, $\\bot \\in X$ or $v = \\bot$, and no session action types, because no point lies below $\\bot$.",
      "why": "The rules split $\\Delta$ between subterms and extend $\\Gamma$ under boxes and existentials. A fact enters $\\Gamma$ only through a world or an opened constraint, so the facts a derivation uses are exactly the facts the semantic judgment is read at.",
      "source": [
       {
@@ -976,7 +976,7 @@
       "r-boxes",
       "r-ex"
      ],
-     "example": "Under $\\Gamma = \\cdot, \\{\\iota \\prec \\overline{\\kappa}\\}[1, 2]$ the judgment $\\Gamma \\vdash 1 \\prec \\overline{2}^{+}$ holds. Ord-Fact gives $1 \\prec \\overline{2}$, Ord-World gives program order $\\overline{2} \\prec \\overline{2}^{+}$, and Ord-Trans joins the two facts.",
+     "example": "Under $\\Gamma = \\cdot, \\{\\iota \\prec \\overline{\\kappa}\\}[1, 2]$ the judgment $\\Gamma \\vdash_W 1 \\prec \\overline{2}^{+}$ holds. Ord-Fact gives $1 \\prec \\overline{2}$, Ord-World gives program order $\\overline{2} \\prec \\overline{2}^{+}$, and Ord-Trans joins the two facts.",
      "deviations": [
       {
        "kind": "notation",
@@ -1001,7 +1001,7 @@
     {
      "id": "t-side",
      "title": "Side conditions on points",
-     "formula": "\\begin{array}{l}\\sym{side.ub}{u \\prec X \\iff \\forall y \\in X.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} u \\prec y \\qquad u \\prec X \\cup {\\vartriangle}v \\iff u \\prec X \\land \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} u \\preccurlyeq v} \\\\ \\sym{side.lb}{l \\preccurlyeq X \\iff \\forall y \\in X.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} l \\preccurlyeq y} \\qquad \\sym{E-Send.heads}{x \\prec H \\iff x \\prec \\sym{ty.heads}{\\mathsf{ap}}(H)} \\qquad \\sym{side.lb}{l \\preccurlyeq H \\iff l \\preccurlyeq \\mathsf{ap}(H)} \\qquad \\sym{side.hold}{\\Gamma \\vdash C[\\bar x]}\\end{array}",
+     "formula": "\\begin{array}{l}\\sym{side.ub}{u \\prec X \\iff \\forall y \\in X.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash_W}} u \\prec y \\qquad u \\prec X \\cup {\\vartriangle}v \\iff u \\prec X \\land \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash_W}} u \\preccurlyeq v} \\\\ \\sym{side.lb}{l \\preccurlyeq X \\iff \\forall y \\in X.\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash_W}} l \\preccurlyeq y} \\qquad \\sym{E-Send.heads}{x \\prec H \\iff x \\prec \\sym{ty.heads}{\\mathsf{ap}}(H)} \\qquad \\sym{side.lb}{l \\preccurlyeq H \\iff l \\preccurlyeq \\mathsf{ap}(H)} \\qquad \\sym{side.hold}{\\Gamma \\vdash C[\\bar x]}\\end{array}",
      "caption": "$u \\prec F$ says that the bound $u$ of [[ty-heads]] lies below each point of the future $F$ of [[t-contexts]], below each element of $X$ and at or below $v$. $\\bot$ lies below each bound and $\\top$ above each bound. So $\\bot \\prec F$ holds for each future, and $\\top \\prec F$ holds only when $X \\subseteq \\{\\top\\}$ and $v = \\top$, the future of a thread that acts no more. A [[syn-points|point]] $x$ fails $x \\prec F$ when $\\bot \\in X$ or $v = \\bot$. $l \\preccurlyeq X$ reads the same with $\\preccurlyeq$. For a type or a context $H$, $x \\prec H$ and $l \\preccurlyeq H$ compare with the active points $\\mathsf{ap}(H)$ of [[ty-heads]], the union over the entries of a context. $\\Gamma \\vdash C[\\bar x]$ says that the facts of $C$ at $\\bar x$ are derivable in the [[t-contexts|order judgment]].",
      "why": "These are the order checks of typing. A term never waits above a point at which its context acts later, and a thread waits only below the dual points of the values it holds. The [[r-act|actions]], [[r-fun|calls]], [[r-boxes|forces]] and [[r-ex|packs]] use these checks.",
      "breaks": "Without them the type system is plain GV, and the cycle of two threads closing two channels in opposite orders types.",
@@ -1425,7 +1425,7 @@
     {
      "id": "r-ex",
      "title": "Existentials",
-     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-Force.hold}{\\Gamma \\mathrel{\\sym{side.hold}{\\vdash}} C[\\bar x]}\\quad \\sym{E-Pack.lb}{l \\preccurlyeq \\sym{tp.pinst}{T[\\bar x]}}\\quad \\sym{E-Pack.wf}{\\Gamma, C \\mathrel{\\sym{ctx.slt}{\\vdash}} l \\preccurlyeq T}\\quad \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T[\\bar x]\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : \\exists^{l}\\bar\\iota.\\,C.\\,T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Pack} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{E-Open.entry}{\\Delta(i) = \\exists^{l}\\bar\\iota.\\,C.\\,T,\\ \\neg\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,T}\\quad \\sym{E-Box.fresh}{\\bar\\iota \\mathrel{\\#} \\Gamma, \\Delta, F}\\quad \\sym{E-Open.cons}{\\mathsf{conserv}_{\\Gamma}(\\bar\\iota, C)}\\quad \\sym{E-Open.body}{\\Gamma, C(\\bar\\iota) ; \\Delta[i \\mapsto T] \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : U\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : U\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Open} \\\\[2ex] \\sym{w.tree}{\\mathsf{tree}(\\bar\\iota) = \\{x \\mid \\mathsf{base}(x) \\in \\bar\\iota\\}} \\\\[2ex] \\sym{E-Open.cons}{\\mathsf{conserv}_{\\Gamma}(\\bar\\iota, C) \\iff \\forall z, y \\notin \\mathsf{tree}(\\bar\\iota).\\ \\Gamma, C(\\bar\\iota) \\mathrel{\\sym{ctx.slt}{\\vdash}} z \\prec y \\Rightarrow \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} z \\prec y}\\end{array}",
+     "formula": "\\begin{array}{c}\\dfrac{\\begin{array}{c}\\sym{E-Force.hold}{\\Gamma \\mathrel{\\sym{side.hold}{\\vdash_W}} C[\\bar x]}\\quad \\sym{E-Pack.lb}{l \\preccurlyeq \\sym{tp.pinst}{T[\\bar x]}}\\quad \\sym{E-Pack.wf}{\\Gamma, C \\mathrel{\\sym{ctx.slt}{\\vdash_W}} l \\preccurlyeq T}\\quad \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : T[\\bar x]\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : \\exists^{l}\\bar\\iota.\\,C.\\,T\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Pack} \\\\[2ex] \\dfrac{\\begin{array}{c}\\sym{E-Open.entry}{\\Delta(i) = \\exists^{l}\\bar\\iota.\\,C.\\,T,\\ \\neg\\sym{ty.unlimited}{\\mathsf{unlimited}}\\,T}\\quad \\sym{E-Box.fresh}{\\bar\\iota \\mathrel{\\#} \\Gamma, \\Delta, F}\\quad \\sym{E-Open.cons}{\\mathsf{conserv}_{\\Gamma}(\\bar\\iota, C)}\\quad \\sym{E-Open.body}{\\Gamma, C(\\bar\\iota) ; \\Delta[i \\mapsto T] \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : U\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\end{array}}{\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F} e : U\\inmode{lf}{\\ \\sym{tj.eff}{!}\\ \\varepsilon}}\\;\\textsf{E-Open} \\\\[2ex] \\sym{w.tree}{\\mathsf{tree}(\\bar\\iota) = \\{x \\mid \\mathsf{base}(x) \\in \\bar\\iota\\}} \\\\[2ex] \\sym{E-Open.cons}{\\mathsf{conserv}_{\\Gamma}(\\bar\\iota, C) \\iff \\forall z, y \\notin \\mathsf{tree}(\\bar\\iota).\\ \\Gamma, C(\\bar\\iota) \\mathrel{\\sym{ctx.slt}{\\vdash}} z \\prec y \\Rightarrow \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash_W}} z \\prec y}\\end{array}",
      "caption": "E-Pack chooses witness points $\\bar x$ with $\\Gamma \\vdash C[\\bar x]$, and the lower bound $l$ must lie at or below the dual points of the packed value by [[t-side]] and [[ty-heads]]. E-Open names the witnesses by fresh point variables $\\bar\\iota$ with the hypothesis $C(\\bar\\iota)$ added to $\\Gamma$ of [[t-contexts]]. The tree $\\mathsf{tree}(\\bar\\iota)$ is the set of points whose [[syn-points|base]] is one of the $\\bar\\iota$, such as $\\iota$, its steps $\\iota^{+}$, its dual side $\\overline{\\iota}$ and the fields $\\iota\\cdot\\kappa$ of channels sent on $\\iota$. The points outside the tree are the old points. E-Open asks $C$ conservative over $\\Gamma$, so the hypothesis derives no fact between two old points that $\\Gamma$ does not derive. A hypothesis may order the new points against old ones and never two old points against each other, because the relation must hold in each extension of the world. [[r-new|E-New]] asks the same condition at one base. The [[ex-flag|self-computed flag]] shows why E-Open asks conservativity. The [[v-rel|value relation]] at an existential is a value of the body at some witness.",
      "why": "An existential abstracts the points of a created channel and keeps only the facts it states about these points. The abstraction has two effects. The context has no name for the new base, so it holds no fact about it, and a creation inside a box needs no point variable in the box type. Conservativity keeps an opened binder that no value inhabits from ordering the points the code already holds.",
      "source": [
@@ -1783,8 +1783,8 @@
     {
      "id": "sr-ord",
      "title": "Ordinal indices",
-     "formula": "\\begin{array}{l}\n\\sym{ord.ord}{\\alpha, \\beta ::= 0 \\mid \\alpha + 1 \\mid \\sup_{x \\in X} f(x)} \\qquad \\sym{ord.lt}{\\beta < \\alpha \\iff \\beta + 1 \\leq \\alpha} \\qquad \\sym{ord.wf}{\\nexists (\\alpha_i)_{i \\in \\mathbb{N}}.\\ \\forall i.\\ \\alpha_{i+1} < \\alpha_i} \\\\\n\\sym{ord.add}{\\beta + c = \\beta \\underbrace{+ 1 \\cdots + 1}_{c}} \\qquad \\sym{ord.fix}{\\mathsf{osfix}\\,F\\,\\alpha = F\\,(\\lambda \\beta < \\alpha.\\ \\mathsf{osfix}\\,F\\,\\beta)\\,\\alpha}\\inmodeplain{lf}{ \\\\ }\\inmode{lf}{\\sym{ord.exprop}{\\mathsf{EM} \\land \\mathsf{FC} \\land (\\forall \\alpha.\\ \\exists x.\\ P\\,x\\,\\alpha) \\land (\\beta \\leq \\alpha \\land P\\,x\\,\\alpha \\Rightarrow P\\,x\\,\\beta) \\Rightarrow \\exists x.\\ \\forall \\alpha.\\ P\\,x\\,\\alpha}}\n\\end{array}",
-     "caption": "The relation is indexed by ordinals $\\alpha$ and $\\beta$, Brouwer trees whose limits are suprema of families $f$ over index types $X$. Their order is well-founded, so the relation is defined by recursion on the index with $\\mathsf{osfix}$. A step of cost $c$ from [[ct-costs]] moves from $\\alpha$ to each index $\\beta$ with $\\beta + c \\leq \\alpha$. \\inmode{lf}{The existential property turns a witness $x$ of a family $P$ at each index into one witness that serves each index. It needs excluded middle and functional choice, and only the lock-free results use it.}",
+     "formula": "\\begin{array}{l}\n\\sym{ord.ord}{\\alpha, \\beta ::= 0 \\mid \\alpha + 1 \\mid \\sup_{x \\in X} f(x)} \\qquad \\sym{ord.lt}{\\beta < \\alpha \\iff \\beta + 1 \\leq \\alpha} \\qquad \\sym{ord.wf}{\\nexists (\\alpha_i)_{i \\in \\mathbb{N}}.\\ \\forall i.\\ \\alpha_{i+1} < \\alpha_i} \\\\\n\\sym{ord.add}{\\beta + c = \\beta \\underbrace{+ 1 \\cdots + 1}_{c}} \\inmodeplain{lf}{ \\\\ }\\inmode{lf}{\\sym{ord.exprop}{\\mathsf{EM} \\land \\mathsf{FC} \\land (\\forall \\alpha.\\ \\exists x.\\ P\\,x\\,\\alpha) \\land (\\beta \\leq \\alpha \\land P\\,x\\,\\alpha \\Rightarrow P\\,x\\,\\beta) \\Rightarrow \\exists x.\\ \\forall \\alpha.\\ P\\,x\\,\\alpha}}\n\\end{array}",
+     "caption": "The relation is indexed by ordinals $\\alpha$ and $\\beta$, Brouwer trees whose limits are suprema of families $f$ over index types $X$. Their order is well-founded, so the relation is defined by well-founded recursion on the index. A step of cost $c$ from [[ct-costs]] moves from $\\alpha$ to each index $\\beta$ with $\\beta + c \\leq \\alpha$. \\inmode{lf}{The existential property turns a witness $x$ of a family $P$ at each index into one witness that serves each index. It needs excluded middle and functional choice, and only the lock-free results use it.}",
      "why": "A reader used to natural-number step indices loses nothing. The deadlock-free proofs read the ordinals as they read natural numbers, and a step of cost one at $\\alpha + 1$ reads its successor at $\\alpha$. \\inmode{lf}{Finite step indices cannot turn a choice made at each index into one choice that serves each index, and the lock-free judgment chooses an annotated configuration at each index.}",
      "source": [
       {
@@ -2773,7 +2773,7 @@
     {
      "id": "th-terms",
      "title": "Lemmas about terms",
-     "formula": "\\begin{array}{c}\\begin{array}{l}\\sym{th.soundness-source}{\\begin{array}{l}\\sym{w.acyc}{\\mathsf{cons}}\\,W \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\varnothing ; \\varnothing \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\sym{prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\sym{th.em}{\\mathsf{EM}} \\land \\sym{th.ac}{\\mathsf{FC}} \\land \\sym{w.lfworld}{\\mathsf{wf}}\\,W \\land N \\in \\mathbb{N} \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\land\\ \\varnothing ; \\varnothing \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_{W\\inmode{lf}{,N}} t : T\\ !\\ c\\end{array} \\\\ \\quad\\Longrightarrow\\ \\sym{prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}\\\\[3ex]\\begin{array}{l}\\inmode{lf}{\\sym{th.wfit}{\\mathsf{fit}_N\\,W \\iff \\sym{w.strict}{\\mathsf{strict}}\\,W\\ \\lor\\ (\\sym{w.kind}{\\mathsf{ranked}}\\,W \\land N \\in \\mathbb{N} \\land \\sym{th.em}{\\mathsf{EM}})}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\sym{th.fundamental}{\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} t : T \\land W \\mathrel{\\sym{w.ext}{\\sqsubseteq}} W' \\land \\sym{w.acyc}{\\mathsf{cons}}\\,W'\\inmode{lf}{ \\land \\sym{w.strict}{\\mathsf{strict}}\\,W'} \\\\ \\quad\\Longrightarrow\\ \\Delta \\mathrel{\\sym{sj.term}{\\vDash}}^{F}_{W'} t : T\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.fundamental-typed}{\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} t : T\\ !\\ \\varepsilon \\land W \\mathrel{\\sym{w.ext}{\\sqsubseteq}} W' \\land \\sym{w.acyc}{\\mathsf{cons}}\\,W' \\land \\sym{w.strict}{\\mathsf{strict}}\\,W' \\\\ \\quad\\Longrightarrow\\ \\sym{th.df}{\\Delta_{df}} \\mathrel{\\sym{sj.term}{\\vDash}}^{F}_{W'} t : T_{df}\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.live-fundamental}{\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} t : T \\land W \\mathrel{\\sym{w.ext}{\\sqsubseteq}} W' \\land \\sym{w.acyc}{\\mathsf{cons}}\\,W' \\land \\sym{w.strict}{\\mathsf{strict}}\\,W' \\\\ \\quad\\Longrightarrow\\ \\Delta \\mathrel{\\sym{sj.term}{\\vDash[\\kappa_L]}}^{F}_{W'} t : T\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.live-fundamental-typed}{\\begin{array}{l}\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ W \\mathrel{\\sym{w.ext}{\\sqsubseteq}} W' \\land \\sym{w.acyc}{\\mathsf{cons}}\\,W' \\land \\sym{w.strict}{\\mathsf{strict}}\\,W'\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\sym{sj.term}{\\vDash[\\kappa_L]}}^{F}_{W'} t : T_{df}\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.live-fundamental-ranked}{\\begin{array}{l}\\begin{array}{l}\\sym{th.em}{\\mathsf{EM}} \\land \\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ N \\in \\mathbb{N} \\land W \\mathrel{\\sym{w.ext}{\\sqsubseteq}} W' \\land \\sym{w.acyc}{\\mathsf{cons}}\\,W'\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\sym{sj.term}{\\vDash[\\kappa_L]}}^{F}_{W'} t : T_{df}\\end{array}}}\\end{array}\\\\[3ex]\\sym{th.cl2-needs}{\\begin{array}{l}a \\neq b \\land \\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\Delta(a) = S_x \\land \\Delta(b) = {S'}_y \\land \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} \\sym{syn.letu}{\\mathsf{let}}\\ \\ast = \\sym{prim.close}{\\mathsf{close}}\\,a\\ \\sym{syn.letu}{\\mathsf{in}}\\ \\sym{prim.close}{\\mathsf{close}}\\,b : T \\\\ \\quad\\Longrightarrow\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash}} x \\prec \\overline{y}\\end{array}}\\\\[3ex]\\sym{th.Erel-bind}{\\begin{array}{l}\\begin{array}{l}e \\in \\sym{th.Erel}{E^{W}_{\\alpha}\\llbracket \\Theta_1 \\vdash T\\rrbracket^{F \\cup \\sym{ty.heads}{\\mathsf{ap}}\\,\\Theta_2}} \\\\ \\land\\ \\forall W' \\sym{w.ext}{\\sqsupseteq} W,\\ \\beta \\leq \\alpha,\\ v \\in \\sym{th.Vrel}{V^{W'}_{\\beta}\\llbracket\\Theta_v \\vdash T\\rrbracket}. \\\\ \\qquad \\sym{se.frame}{f[v]} \\in \\sym{th.Erel}{E^{W'}_{\\beta}\\llbracket \\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\sym{se.frame}{f[e]} \\in \\sym{th.Erel}{E^{W}_{\\alpha}\\llbracket \\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array}}\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\begin{array}{l}\\sym{th.cost-fundamental}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\sym{cs.csem}{\\Delta \\mathrel{\\sym{sj.term}{\\vDash}}^{N} e : T\\ !\\ \\varepsilon}\\end{array}} \\\\[1.5ex] \\sym{th.fsem-of-cost}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_{W\\inmode{lf}{,N}} e : T\\ !\\ c \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\quad\\Longrightarrow\\ \\sym{fu.fsem}{\\mathsf{fsem}\\,N\\,\\sym{th.styof}{\\Delta\\inmode{lf}{^{N}}}\\,e}\\end{array}}\\end{array}}\\\\[3ex]\\sym{th.let-var}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} e : T \\\\ \\quad\\Longrightarrow\\ \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} \\sym{syn.let}{\\mathsf{let}}\\ x = e\\ \\sym{syn.let}{\\mathsf{in}}\\ x : T \\\\[1.5ex]f : \\sym{ty.box}{\\Box}\\,\\sym{ty.ex}{\\exists}\\iota.\\,\\sym{ty.unit}{\\ast} \\mathrel{\\sym{tp.vdash}{\\vdash}} \\sym{syn.let}{\\mathsf{let}}\\ x = \\sym{prim.force}{\\mathsf{force}}\\,f\\ \\sym{syn.let}{\\mathsf{in}}\\ x : \\ast \\\\ \\quad\\land\\ f : \\Box\\,\\exists\\iota.\\,\\ast \\mathrel{\\not\\vdash} \\mathsf{force}\\,f : \\ast\\end{array}}\\\\[3ex]\\sym{th.pinst}{\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\sym{th.hinst}{\\Gamma' \\vdash \\sigma(\\Gamma)} \\ \\land\\ \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} e : T \\\\ \\quad\\Longrightarrow\\ \\Gamma' ; \\sigma(\\Delta) \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sigma(F)}_{W} e : \\sigma(T)\\end{array}}\\end{array}",
+     "formula": "\\begin{array}{c}\\begin{array}{l}\\sym{th.soundness-source}{\\begin{array}{l}\\sym{w.acyc}{\\mathsf{cons}}\\,W \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\varnothing ; \\varnothing \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_W t : T \\\\ \\quad\\Longrightarrow\\ \\sym{prop.df}{\\mathsf{deadlock\\_free}}(\\varnothing, \\{t\\})\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-soundness-source}{\\begin{array}{l}\\begin{array}{l}\\sym{th.em}{\\mathsf{EM}} \\land \\sym{th.ac}{\\mathsf{FC}} \\land \\sym{w.lfworld}{\\mathsf{wf}}\\,W \\land N \\in \\mathbb{N} \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\land\\ \\varnothing ; \\varnothing \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_{W\\inmode{lf}{,N}} t : T\\ !\\ c\\end{array} \\\\ \\quad\\Longrightarrow\\ \\sym{prop.lf}{\\mathsf{lock\\_free}}(\\varnothing, \\{t\\})\\end{array}}}\\end{array}\\\\[3ex]\\begin{array}{l}\\inmode{lf}{\\sym{th.wfit}{\\mathsf{fit}_N\\,W \\iff \\sym{w.strict}{\\mathsf{strict}}\\,W\\ \\lor\\ (\\sym{w.kind}{\\mathsf{ranked}}\\,W \\land N \\in \\mathbb{N} \\land \\sym{th.em}{\\mathsf{EM}})}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\sym{th.fundamental}{\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} t : T \\land W \\mathrel{\\sym{w.ext}{\\sqsubseteq}} W' \\land \\sym{w.acyc}{\\mathsf{cons}}\\,W'\\inmode{lf}{ \\land \\sym{w.strict}{\\mathsf{strict}}\\,W'} \\\\ \\quad\\Longrightarrow\\ \\Delta \\mathrel{\\sym{sj.term}{\\vDash}}^{F}_{W'} t : T\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.fundamental-typed}{\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} t : T\\ !\\ \\varepsilon \\land W \\mathrel{\\sym{w.ext}{\\sqsubseteq}} W' \\land \\sym{w.acyc}{\\mathsf{cons}}\\,W' \\land \\sym{w.strict}{\\mathsf{strict}}\\,W' \\\\ \\quad\\Longrightarrow\\ \\sym{th.df}{\\Delta_{df}} \\mathrel{\\sym{sj.term}{\\vDash}}^{F}_{W'} t : T_{df}\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.live-fundamental}{\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} t : T \\land W \\mathrel{\\sym{w.ext}{\\sqsubseteq}} W' \\land \\sym{w.acyc}{\\mathsf{cons}}\\,W' \\land \\sym{w.strict}{\\mathsf{strict}}\\,W' \\\\ \\quad\\Longrightarrow\\ \\Delta \\mathrel{\\sym{sj.term}{\\vDash[\\kappa_L]}}^{F}_{W'} t : T\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.live-fundamental-typed}{\\begin{array}{l}\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ W \\mathrel{\\sym{w.ext}{\\sqsubseteq}} W' \\land \\sym{w.acyc}{\\mathsf{cons}}\\,W' \\land \\sym{w.strict}{\\mathsf{strict}}\\,W'\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\sym{sj.term}{\\vDash[\\kappa_L]}}^{F}_{W'} t : T_{df}\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.live-fundamental-ranked}{\\begin{array}{l}\\begin{array}{l}\\sym{th.em}{\\mathsf{EM}} \\land \\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ N \\in \\mathbb{N} \\land W \\mathrel{\\sym{w.ext}{\\sqsubseteq}} W' \\land \\sym{w.acyc}{\\mathsf{cons}}\\,W'\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Delta_{df} \\mathrel{\\sym{sj.term}{\\vDash[\\kappa_L]}}^{F}_{W'} t : T_{df}\\end{array}}}\\end{array}\\\\[3ex]\\sym{th.cl2-needs}{\\begin{array}{l}a \\neq b \\land \\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\Delta(a) = S_x \\land \\Delta(b) = {S'}_y \\land \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} \\sym{syn.letu}{\\mathsf{let}}\\ \\ast = \\sym{prim.close}{\\mathsf{close}}\\,a\\ \\sym{syn.letu}{\\mathsf{in}}\\ \\sym{prim.close}{\\mathsf{close}}\\,b : T \\\\ \\quad\\Longrightarrow\\ \\Gamma \\mathrel{\\sym{ctx.slt}{\\vdash_W}} x \\prec \\overline{y}\\end{array}}\\\\[3ex]\\sym{th.Erel-bind}{\\begin{array}{l}\\begin{array}{l}e \\in \\sym{th.Erel}{E^{W}_{\\alpha}\\llbracket \\Theta_1 \\vdash T\\rrbracket^{F \\cup \\sym{ty.heads}{\\mathsf{ap}}\\,\\Theta_2}} \\\\ \\land\\ \\forall W' \\sym{w.ext}{\\sqsupseteq} W,\\ \\beta \\leq \\alpha,\\ v \\in \\sym{th.Vrel}{V^{W'}_{\\beta}\\llbracket\\Theta_v \\vdash T\\rrbracket}. \\\\ \\qquad \\sym{se.frame}{f[v]} \\in \\sym{th.Erel}{E^{W'}_{\\beta}\\llbracket \\Theta_v \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\sym{se.frame}{f[e]} \\in \\sym{th.Erel}{E^{W}_{\\alpha}\\llbracket \\Theta_1 \\cup \\Theta_2 \\vdash U\\rrbracket^{F}}\\end{array}}\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\begin{array}{l}\\sym{th.cost-fundamental}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\sym{cs.csem}{\\Delta \\mathrel{\\sym{sj.term}{\\vDash}}^{N} e : T\\ !\\ \\varepsilon}\\end{array}} \\\\[1.5ex] \\sym{th.fsem-of-cost}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_{W\\inmode{lf}{,N}} e : T\\ !\\ c \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\quad\\Longrightarrow\\ \\sym{fu.fsem}{\\mathsf{fsem}\\,N\\,\\sym{th.styof}{\\Delta\\inmode{lf}{^{N}}}\\,e}\\end{array}}\\end{array}}\\\\[3ex]\\sym{th.let-var}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} e : T \\\\ \\quad\\Longrightarrow\\ \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} \\sym{syn.let}{\\mathsf{let}}\\ x = e\\ \\sym{syn.let}{\\mathsf{in}}\\ x : T \\\\[1.5ex]f : \\sym{ty.box}{\\Box}\\,\\sym{ty.ex}{\\exists}\\iota.\\,\\sym{ty.unit}{\\ast} \\mathrel{\\sym{tp.vdash}{\\vdash}} \\sym{syn.let}{\\mathsf{let}}\\ x = \\sym{prim.force}{\\mathsf{force}}\\,f\\ \\sym{syn.let}{\\mathsf{in}}\\ x : \\ast \\\\ \\quad\\land\\ f : \\Box\\,\\exists\\iota.\\,\\ast \\mathrel{\\not\\vdash} \\mathsf{force}\\,f : \\ast\\end{array}}\\\\[3ex]\\sym{th.pinst}{\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\sym{th.hinst}{\\Gamma' \\vdash \\sigma(\\Gamma)} \\ \\land\\ \\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} e : T \\\\ \\quad\\Longrightarrow\\ \\Gamma' ; \\sigma(\\Delta) \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\sigma(F)}_{W} e : \\sigma(T)\\end{array}}\\end{array}",
      "caption": "A closed program is sound as a one-thread process over a consistent world. Typing a term implies the semantic term judgment of [[sj-all]] at each consistent extension of its world. $E$ is closed under the evaluation frames of [[sem-ctx]], which the case of [[r-fun|E-App]] and the other rules with subterms use. Two closes in sequence need the point of the first below the dual point of the second, which the rejections of the [[ex-flag|self-computed flag]] and of the [[ex-gennew|creations with exits]] use. A term bound to $x$ and returned types wherever the term itself types, and the converse fails for a forced box of an existential. A derivation stays a derivation when a substitution $\\sigma$ instantiates its point variables, over each context $\\Gamma'$ that derives the instantiated facts. \\inmode{lf}{The rejection of [[ex-forkjoin|recursive fork-join]] at a finite bound uses the same lemma. A typed term is in the relation at $\\kappa_L$. At a finite bound and under excluded middle this holds at each consistent extension, ranked ones included. A typed term at a finite bound with the annotations of [[ty-ann]] has [[fu|fuel]], with its values in [[fv]].}",
      "why": "The proofs of the process results use these lemmas, each proved rule by rule. Each typing rule has one compatibility lemma, and the fundamental theorem is the induction over the derivation.",
      "source": [
@@ -4150,7 +4150,7 @@
   },
   "se.parts": {
    "title": "Participants $\\mathsf{parts}(ev)$",
-   "meaning": "$\\mathsf{parts}(\\mathsf{sync}_{i,j}\\,\\sigma) = \\{i, j\\}$, $\\mathsf{parts}(\\mathsf{solo}_i\\,\\alpha\\,k) = \\mathsf{parts}(\\mathsf{offer}_i\\,\\sigma) = \\{i\\}$, and $\\mathsf{parts}(\\bot) = \\varnothing$ for a stutter. A spawn names only the parent $i$.",
+   "meaning": "$\\mathsf{parts}(\\mathsf{sync}_{i,j}\\,\\sigma) = \\{i, j\\}$, $\\mathsf{parts}(\\mathsf{solo}_i\\,\\ell\\,k) = \\mathsf{parts}(\\mathsf{offer}_i\\,\\sigma) = \\{i\\}$, and $\\mathsf{parts}(\\bot) = \\varnothing$ for a stutter. A spawn names only the parent $i$.",
    "why": "A thread takes part in a step iff it is in $\\mathsf{parts}$ of its event. \\inmode{lf}{Weak fairness and lock freedom ask whether $t \\in \\mathsf{parts}(l_j)$ for some position $j$.}",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{parts}(\\mathsf{sync}_{0,1}\\,(a^{+}!\\ast)) = \\{0, 1\\}$.",
@@ -4784,18 +4784,18 @@
   },
   "T-Act-Ctx": {
    "title": "T-Act-Ctx",
-   "meaning": "If $e \\xrightarrow{\\alpha} e'$ and $\\mathsf{frame\\_val}\\,f$, then $f[e] \\xrightarrow{\\alpha} f[e']$.",
+   "meaning": "If $e \\xrightarrow{\\ell} e'$ and $\\mathsf{frame\\_val}\\,f$, then $f[e] \\xrightarrow{\\ell} f[e']$.",
    "why": "No frame has its hole under $\\lambda$ or $!$, so the bodies of closures and boxes take no step before they are called.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{let}\\ \\ast = \\mathsf{close}\\,c^{+}\\ \\mathsf{in}\\ e$ steps when $\\mathsf{close}\\,c^{+}$ does.",
-   "signature": "\\dfrac{e \\xrightarrow{\\alpha} e' \\quad \\mathsf{frame\\_val}\\,f}{f[e] \\xrightarrow{\\alpha} f[e']}",
+   "signature": "\\dfrac{e \\xrightarrow{\\ell} e' \\quad \\mathsf{frame\\_val}\\,f}{f[e] \\xrightarrow{\\ell} f[e']}",
    "args": [
     {
      "name": "e, e'",
      "meaning": "The term in the hole before and after the step."
     },
     {
-     "name": "\\alpha",
+     "name": "\\ell",
      "meaning": "The label, passed through unchanged."
     },
     {
@@ -6907,7 +6907,7 @@
   "w.lt": {
    "title": "$\\prec_W$",
    "meaning": "$\\prec_W$ is the transitive closure of the facts of $W$ and of program order.",
-   "why": "A waiting chain combines several facts, so the order is transitive. Typing reads it through $\\Gamma \\vdash x \\prec y$.",
+   "why": "A waiting chain combines several facts, so the order is transitive. Typing reads it through $\\Gamma \\vdash_W x \\prec y$.",
    "breaks": "Nothing. It is a definition.",
    "example": "$W \\vdash x \\prec x^{++}$ for each $W$.",
    "signature": "W \\vdash \\cdot \\prec \\cdot \\subseteq \\mathsf{Point} \\times \\mathsf{Point}",
@@ -7545,11 +7545,11 @@
   },
   "tp.sub-exlb": {
    "title": "The lower bound may fall",
-   "meaning": "$l^{\\prime} = l$, or $\\Gamma, C(\\bar\\iota) \\vdash l^{\\prime} \\preccurlyeq T$, the premise of E-Pack after opening at the bound variables. $l^{\\prime} = \\bot$ meets it always, and $l^{\\prime} = \\top$ asks that $T$ holds no end.",
+   "meaning": "$l^{\\prime} = l$, or $\\Gamma, C(\\bar\\iota) \\vdash_W l^{\\prime} \\preccurlyeq T$, the premise of E-Pack after opening at the bound variables. $l^{\\prime} = \\bot$ meets it always, and $l^{\\prime} = \\top$ asks that $T$ holds no end.",
    "why": "The relation reads the lower bound against the heads of the ends of the value, and each such end has a head among the heads of $T$. So a lower bound below each head of $T$ is sound, as packing after an opening allows.",
    "breaks": "Without it an opened and repacked value could take a lower bound that $e$ itself could not, and $e$ and $\\mathsf{let}\\ x = e\\ \\mathsf{in}\\ x$ would type differently.",
    "example": "$\\exists^{\\overline{\\rho}}\\iota.\\,C.\\,S_{\\rho} \\leq \\exists^{\\bot}\\iota.\\,C.\\,S_{\\rho}$.",
-   "signature": "l' = l \\lor \\Gamma, C(\\bar\\iota) \\vdash l' \\preccurlyeq T",
+   "signature": "l' = l \\lor \\Gamma, C(\\bar\\iota) \\vdash_W l' \\preccurlyeq T",
    "args": [
     {
      "name": "l, l'",
@@ -7660,8 +7660,8 @@
    "meaning": "A relation $\\mathcal{S}$ pairs points of $\\mathsf{tree}(\\rho)$ with finite nonempty sets of points of $\\Gamma$. Each exit $u \\prec y$ of $C$, from a tree point $u$ to a context point $y$, has a set of $u$ below $y$. The sets descend along $\\prec^{\\rho}_{C}$. Each entry $z \\prec s$ of $C$, from a context point $z$ into a paired tree point $s$, lies below some point of the set of $s$.",
    "why": "At a ranked world the creation must find ordinal ranks for the new tree in each ranked world in which the facts of $\\Gamma$ hold. It takes the least ranks above the context points below the tree. A paired point stays at or below the largest rank in its set, so each exit holds.",
    "breaks": "The creation in the recursive fork-join program orders an infinite descending chain on the new tree and fails this part.",
-   "example": "$\\Gamma \\vdash z \\prec y$ and $C = \\{\\rho \\prec y\\}$ with $\\mathcal{S} = \\{(\\rho, \\{z\\})\\}$.",
-   "signature": "\\mathsf{rankable}_{\\Gamma}(\\rho, C) \\iff \\exists \\mathcal{S} \\subseteq \\mathsf{tree}(\\rho) \\times \\mathcal{P}^{+}_{\\mathrm{fin}}(\\mathsf{Point}_{\\Gamma}). (\\forall (u \\prec y) \\in C.\\ u \\in \\mathsf{tree}(\\rho),\\ y \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists (u, Y) \\in \\mathcal{S}.\\ \\forall t \\in Y.\\ \\Gamma \\vdash t \\prec y) \\land\\ (\\forall (s, Y) \\in \\mathcal{S}.\\ \\forall s' \\prec^{\\rho}_{C} s.\\ \\exists (s', Y') \\in \\mathcal{S}.\\ \\forall t' \\in Y'.\\ \\exists t \\in Y.\\ \\Gamma \\vdash t' \\prec t) \\land\\ (\\forall (s, Y) \\in \\mathcal{S}.\\ \\forall (z \\prec s) \\in C.\\ z \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists t \\in Y.\\ \\Gamma \\vdash z \\prec t))",
+   "example": "$\\Gamma \\vdash_W z \\prec y$ and $C = \\{\\rho \\prec y\\}$ with $\\mathcal{S} = \\{(\\rho, \\{z\\})\\}$.",
+   "signature": "\\mathsf{rankable}_{\\Gamma}(\\rho, C) \\iff \\exists \\mathcal{S} \\subseteq \\mathsf{tree}(\\rho) \\times \\mathcal{P}^{+}_{\\mathrm{fin}}(\\mathsf{Point}_{\\Gamma}). (\\forall (u \\prec y) \\in C.\\ u \\in \\mathsf{tree}(\\rho),\\ y \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists (u, Y) \\in \\mathcal{S}.\\ \\forall t \\in Y.\\ \\Gamma \\vdash_W t \\prec y) \\land\\ (\\forall (s, Y) \\in \\mathcal{S}.\\ \\forall s' \\prec^{\\rho}_{C} s.\\ \\exists (s', Y') \\in \\mathcal{S}.\\ \\forall t' \\in Y'.\\ \\exists t \\in Y.\\ \\Gamma \\vdash_W t' \\prec t) \\land\\ (\\forall (s, Y) \\in \\mathcal{S}.\\ \\forall (z \\prec s) \\in C.\\ z \\notin \\mathsf{tree}(\\rho) \\Rightarrow \\exists t \\in Y.\\ \\Gamma \\vdash_W z \\prec t))",
    "args": [
     {
      "name": "\\mathcal{S}",
@@ -7696,7 +7696,7 @@
    "meaning": "The premise $\\mathsf{new\\_ok}_N$ at a finite bound, $\\mathsf{acyc\\_new}$ together with the part for ranks. The order $\\prec^{\\rho}_{C}$ is well-founded. A relation $\\mathcal{S}$ pairs points of $\\mathsf{tree}(\\rho)$ with finite nonempty sets of points of $\\Gamma$. Each exit $u \\prec y$ has a set of $u$ below $y$, sets descend along $\\prec^{\\rho}_{C}$, and each entry $z \\prec s$ into a paired point lies below some point of its set.",
    "why": "At a ranked world the creation must find ordinal ranks for the new tree in each ranked world in which the facts of $\\Gamma$ hold. It takes the least ranks above the context points below the tree. A paired point stays at or below the largest rank in its set, so each exit holds. Choosing the largest of finitely many ranks needs excluded middle.",
    "breaks": "With single context points in place of the sets $Y$, a creation with two exits below context points that no common point lies below is rejected.",
-   "example": "$\\Gamma \\vdash z \\prec y$ and $C = \\{\\rho \\prec y\\}$ with $\\mathcal{S} = \\{(\\rho, \\{z\\})\\}$. The [[ex-gennew|creation with two entries]] needs the set $\\{\\rho\\cdot 2, \\rho\\cdot 3\\}$.",
+   "example": "$\\Gamma \\vdash_W z \\prec y$ and $C = \\{\\rho \\prec y\\}$ with $\\mathcal{S} = \\{(\\rho, \\{z\\})\\}$. The [[ex-gennew|creation with two entries]] needs the set $\\{\\rho\\cdot 2, \\rho\\cdot 3\\}$.",
    "signature": "\\mathsf{gen\\_new} : \\sym{type.Ctx}{\\mathsf{Ctx}} \\to \\sym{type.PVar}{\\mathsf{PVar}} \\to \\mathcal{P}(\\sym{type.Point}{\\mathsf{Point}}^{2}) \\to \\mathsf{Prop}",
    "args": [
     {
@@ -7771,7 +7771,7 @@
   "tj.Gamma": {
    "title": "$\\Gamma$, facts",
    "meaning": "$\\Gamma$ is a list of instantiated constraints, $\\Gamma ::= \\cdot \\mid \\Gamma, C[\\bar x]$.",
-   "why": "Each order fact a rule may use beyond $\\prec_W$ is recorded in $\\Gamma$. The derivable facts are exactly the judgments $\\Gamma \\vdash x \\prec y$.",
+   "why": "Each order fact a rule may use beyond $\\prec_W$ is recorded in $\\Gamma$. The derivable facts are exactly the judgments $\\Gamma \\vdash_W x \\prec y$.",
    "breaks": "Nothing. It is a definition.",
    "example": "In the body of the client loop $\\Gamma$ holds $C[\\iota, \\kappa, \\zeta]$.",
    "signature": "\\Gamma ::= \\cdot \\mid \\Gamma, C[\\bar x]",
@@ -8340,9 +8340,9 @@
   },
   "ctx.fvarF": {
    "title": "The rest ${\\vartriangle}v$ of $F$",
-   "meaning": "The part of a future that does not occur in the term, everything above $v$. A term may wait at $x$ under ${\\vartriangle}v$ when $\\Gamma \\vdash x \\preccurlyeq v$, so always under ${\\vartriangle}\\top$ and never under ${\\vartriangle}\\bot$.",
+   "meaning": "The part of a future that does not occur in the term, everything above $v$. A term may wait at $x$ under ${\\vartriangle}v$ when $\\Gamma \\vdash_W x \\preccurlyeq v$, so always under ${\\vartriangle}\\top$ and never under ${\\vartriangle}\\bot$.",
    "why": "In the semantics ${\\vartriangle}v$ stands for an arbitrary finite set of points above $v$. Readiness asks $x \\prec y$ of each point $y$ of the future, so a body typed under ${\\vartriangle}u$ is correct for each caller future above $u$.",
-   "breaks": "A future variable $\\varphi$ with the single fact $u \\prec \\varphi$ says the same, $\\Gamma \\vdash x \\prec \\varphi$ holds exactly when $\\Gamma \\vdash x \\preccurlyeq u$.",
+   "breaks": "A future variable $\\varphi$ with the single fact $u \\prec \\varphi$ says the same, $\\Gamma \\vdash_W x \\prec \\varphi$ holds exactly when $\\Gamma \\vdash_W x \\preccurlyeq u$.",
    "example": "$F = {\\vartriangle}u$ for the body of a closure with upper point $u$.",
    "signature": "F = X \\cup {\\vartriangle}v",
    "args": [
@@ -8366,13 +8366,17 @@
    ]
   },
   "ctx.slt": {
-   "title": "$\\Gamma \\vdash x \\prec y$",
+   "title": "$\\Gamma \\vdash_W x \\prec y$",
    "meaning": "The least relation closed under Ord-World, Ord-Fact and Ord-Trans, so the least transitive relation containing $\\prec_W$ and the facts of the instances $C[\\bar x]$ in $\\Gamma$.",
-   "why": "Each order fact a typing rule reads is a judgment $\\Gamma \\vdash x \\prec y$.",
+   "why": "Each order fact a typing rule reads is a judgment $\\Gamma \\vdash_W x \\prec y$.",
    "breaks": "Nothing. It is a definition.",
-   "example": "$\\Gamma \\vdash x \\prec x^{+}$ for each $\\Gamma$ and $x$.",
-   "signature": "\\Gamma \\vdash x \\prec y \\subseteq \\mathsf{Hctx} \\times \\mathsf{Pt} \\times \\mathsf{Pt}",
+   "example": "$\\Gamma \\vdash_W x \\prec x^{+}$ for each $\\Gamma$ and $x$.",
+   "signature": "\\Gamma \\vdash_W x \\prec y \\subseteq \\mathsf{World} \\times \\mathsf{Hctx} \\times \\mathsf{Pt} \\times \\mathsf{Pt}",
    "args": [
+    {
+     "name": "W",
+     "meaning": "the world of the derivation, whose order Ord-World reads"
+    },
     {
      "name": "\\Gamma",
      "meaning": "the facts, instantiated constraints $C[\\bar x]$"
@@ -8446,11 +8450,11 @@
   },
   "side.act": {
    "title": "$x \\prec F$ at an action",
-   "meaning": "For an action at $x$ under $F = X \\cup {\\vartriangle}v$, $\\Gamma \\vdash x \\prec y$ for each $y \\in X$ and $\\Gamma \\vdash x \\preccurlyeq v$. With $\\bot \\in X$ or $v = \\bot$ no action types.",
+   "meaning": "For an action at $x$ under $F = X \\cup {\\vartriangle}v$, $\\Gamma \\vdash_W x \\prec y$ for each $y \\in X$ and $\\Gamma \\vdash_W x \\preccurlyeq v$. With $\\bot \\in X$ or $v = \\bot$ no action types.",
    "why": "While the term waits at $x$, each point at which its context acts later lies above $x$. This is readiness against the future.",
    "breaks": "Without it a term may wait at $x$ while its context must first act at a point below $x$, and the thread waits on itself through the dual end.",
    "example": "E-Close at $x$ asks $x \\prec F$.",
-   "signature": "x \\prec X \\cup {\\vartriangle}v \\iff (\\forall y \\in X.\\ \\Gamma \\vdash x \\prec y) \\land \\Gamma \\vdash x \\preccurlyeq v",
+   "signature": "x \\prec X \\cup {\\vartriangle}v \\iff (\\forall y \\in X.\\ \\Gamma \\vdash_W x \\prec y) \\land \\Gamma \\vdash x \\preccurlyeq v",
    "args": [
     {
      "name": "x",
@@ -8507,11 +8511,11 @@
   },
   "side.ub": {
    "title": "$u \\prec F$",
-   "meaning": "$u$ lies below each point of $F$. For $F = X \\cup {\\vartriangle}v$ this is $\\Gamma \\vdash u \\prec y$ for each $y \\in X$ and $\\Gamma \\vdash u \\preccurlyeq v$, with $\\bot$ below and $\\top$ above each bound. So $\\bot \\prec F$ holds always, $\\top \\prec F$ only when $X \\subseteq \\{\\top\\}$ and $v = \\top$, and $x \\prec F$ fails for a point $x$ when $\\bot \\in X$ or $v = \\bot$.",
+   "meaning": "$u$ lies below each point of $F$. For $F = X \\cup {\\vartriangle}v$ this is $\\Gamma \\vdash_W u \\prec y$ for each $y \\in X$ and $\\Gamma \\vdash_W u \\preccurlyeq v$, with $\\bot$ below and $\\top$ above each bound. So $\\bot \\prec F$ holds always, $\\top \\prec F$ only when $X \\subseteq \\{\\top\\}$ and $v = \\top$, and $x \\prec F$ fails for a point $x$ when $\\bot \\in X$ or $v = \\bot$.",
    "why": "It is the condition $x \\prec F$ of an action, stated for the upper point $u$ up to which a callee may wait.",
    "breaks": "Nothing. It is a definition.",
    "example": "E-App asks $u \\prec F$ of the upper point $u$ of the closure.",
-   "signature": "u \\prec X \\iff \\forall y \\in X.\\ \\Gamma \\vdash u \\prec y \\qquad u \\prec X \\cup {\\vartriangle}v \\iff u \\prec X \\land \\Gamma \\vdash u \\preccurlyeq v",
+   "signature": "u \\prec X \\iff \\forall y \\in X.\\ \\Gamma \\vdash_W u \\prec y \\qquad u \\prec X \\cup {\\vartriangle}v \\iff u \\prec X \\land \\Gamma \\vdash_W u \\preccurlyeq v",
    "args": [
     {
      "name": "u",
@@ -8558,7 +8562,7 @@
    "why": "For a holding thread of a closure, the active points of its ends are bounded only through $l$. Hence $l$ must be a lower bound of those active points.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\overline{\\rho} \\preccurlyeq \\{\\overline{\\rho}\\}$.",
-   "signature": "l \\preccurlyeq X \\iff \\forall y \\in X.\\ \\Gamma \\vdash l \\preccurlyeq y",
+   "signature": "l \\preccurlyeq X \\iff \\forall y \\in X.\\ \\Gamma \\vdash_W l \\preccurlyeq y",
    "args": [
     {
      "name": "l",
@@ -8591,11 +8595,11 @@
   },
   "side.hold": {
    "title": "$\\Gamma \\vdash C[\\bar x]$",
-   "meaning": "For each fact $y \\prec z$ of $C$ instantiated at $\\bar x$, $\\Gamma \\vdash y \\prec z$.",
+   "meaning": "For each fact $y \\prec z$ of $C$ instantiated at $\\bar x$, $\\Gamma \\vdash_W y \\prec z$.",
    "why": "E-Force and E-Pack choose an instance $\\bar x$, and the box body or the packed value relies on $C[\\bar x]$.",
    "breaks": "Nothing. It is a definition.",
    "example": "The recursive call of the client loop instantiates $C$ at $(\\iota^{+}, \\kappa^{+}, \\zeta)$.",
-   "signature": "\\Gamma \\vdash C[\\bar x] \\iff \\forall (y \\prec z) \\in C[\\bar x].\\ \\Gamma \\vdash y \\prec z",
+   "signature": "\\Gamma \\vdash_W C[\\bar x] \\iff \\forall (y \\prec z) \\in C[\\bar x].\\ \\Gamma \\vdash_W y \\prec z",
    "args": [
     {
      "name": "C",
@@ -9709,7 +9713,7 @@
   },
   "E-Send.heads": {
    "title": "$x \\prec T$, the action point below a held value",
-   "meaning": "$x \\prec T$ is $x \\prec \\mathsf{ap}(T)$, so $\\Gamma \\vdash x \\prec y$ for each dual point $y$ of an end in $T$. If $T$ holds a closure or an existential at the lower point $\\bot$, then $\\bot \\in \\mathsf{ap}(T)$ and the check fails.",
+   "meaning": "$x \\prec T$ is $x \\prec \\mathsf{ap}(T)$, so $\\Gamma \\vdash_W x \\prec y$ for each dual point $y$ of an end in $T$. If $T$ holds a closure or an existential at the lower point $\\bot$, then $\\bot \\in \\mathsf{ap}(T)$ and the check fails.",
    "why": "A thread waiting at $x$ while it holds a value of $T$ does not offer the ends in $T$, so readiness asks $x$ below the dual point of each. Ends behind the lower point $\\bot$ have no known dual point, so a thread holding them may not wait.",
    "breaks": "Without $\\bot$ in the active points, $\\mathsf{send}\\,\\langle p, o\\rangle$ with the unopened pair $p$ of a $\\mathsf{new}$ types, and the sender waits while holding ends at points nothing orders.",
    "example": "The growing ring needs $Y \\prec \\overline{Y\\cdot 0}$ for the payload $a$ of the send on $y$ at $Y$.",
@@ -10253,7 +10257,7 @@
    "why": "The condition reads the type alone. It makes opening at the binder complete for each lower bound, so the algorithmic system can open eagerly.",
    "breaks": "Without it an existential at a point lower bound may be packed at one instance and need a later instance to be repacked, and no single place to open it is best.",
    "example": "$\\exists^{\\bot}\\iota.\\,C.\\,T$ is always well formed.",
-   "signature": "\\Gamma, C \\vdash l \\preccurlyeq T",
+   "signature": "\\Gamma, C \\vdash_W l \\preccurlyeq T",
    "args": [
     {
      "name": "l",
@@ -10333,7 +10337,7 @@
    "why": "A dead arm or an uncalled abstraction receives no value, so the type of its binder may state arbitrary facts. Without the premise opening such a binder supplies the arm with an order fact that no world holds. The premise reads only the static order. E-New asks the same condition at one base, so each existential it creates satisfies the premise.",
    "breaks": "Without it the flag variant types. Its dead arm opens a binder whose constraint states $y \\prec \\overline{x}$, and the running arm asks only $x \\prec \\overline{y}$ of the world.",
    "example": "Opening $\\exists^{\\top}.\\,\\{y \\prec \\overline{x}\\}.\\,\\ast$ in a world with only $x \\prec \\overline{y}$ fails the premise. Its one fact orders two old points, and the world does not derive $y \\prec \\overline{x}$.",
-   "signature": "\\mathsf{conserv}_{\\Gamma}(\\bar\\iota, C) \\iff \\forall z, y \\notin \\mathsf{tree}(\\bar\\iota).\\ \\Gamma, C(\\bar\\iota) \\vdash z \\prec y \\Rightarrow \\Gamma \\vdash z \\prec y",
+   "signature": "\\mathsf{conserv}_{\\Gamma}(\\bar\\iota, C) \\iff \\forall z, y \\notin \\mathsf{tree}(\\bar\\iota).\\ \\Gamma, C(\\bar\\iota) \\vdash_W z \\prec y \\Rightarrow \\Gamma \\vdash z \\prec y",
    "args": [
     {
      "name": "\\Gamma",
@@ -11320,29 +11324,6 @@
     }
    ]
   },
-  "ord.fix": {
-   "title": "$\\mathsf{osfix}$",
-   "meaning": "The family defined by well-founded recursion on the index, where $F$ reads the family only strictly below $\\alpha$.",
-   "why": "$V$, $E$ and $P$ together are one such family, unfolded up to pointwise equivalence.\\inmode{lf}{ Fuel is a second one.}",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$V_\\alpha$ reads $V_\\beta$ only for $\\beta < \\alpha$.",
-   "signature": "\\mathsf{osfix} : ((\\sym{type.Ord}{\\mathsf{Ord}} \\to T) \\to \\sym{type.Ord}{\\mathsf{Ord}} \\to T) \\to \\sym{type.Ord}{\\mathsf{Ord}} \\to T",
-   "args": [
-    {
-     "name": "F",
-     "meaning": "one level of the family"
-    }
-   ],
-   "source": [
-    {
-     "file": "relation/Ord.v",
-     "names": [
-      "osfix",
-      "osfix_unfold"
-     ]
-    }
-   ]
-  },
   "ord.exprop": {
    "title": "The existential property",
    "meaning": "Under excluded middle and functional choice, a family $P\\,x\\,\\alpha$ closed downwards in $\\alpha$ with a witness at each index has one witness that serves each index.",
@@ -11728,27 +11709,33 @@
   },
   "ct.sync": {
    "title": "Cost of an event $\\kappa(ev)$",
-   "meaning": "$\\kappa(ev)$ is the cost of the step kind of $ev$, and $\\kappa_{\\mathrm{give}} + \\kappa_{\\mathrm{take}}$ for a synchronization.",
-   "why": "Both threads of a synchronization step at once, so the step of the process costs the sum of both costs.",
+   "meaning": "An event of one thread costs the entry of the table for its label, for instance $\\kappa(\\mathsf{solo}_i\\,\\beta\\,k) = \\kappa_\\beta$. A synchronization joins the giving action of one thread, a send, select or close, with the taking action of another, a receive or branch, and costs $\\kappa_{\\mathrm{give}} + \\kappa_{\\mathrm{take}}$. An offer to the environment costs the entry of its action.",
+   "why": "Both threads of a synchronization step at once, so the process step costs the two entries together. In $\\kappa_{DF}$ the sum is $0 + 1 = 1$\\inmode{lf}{, in $\\kappa_L$ it is $1 + 1 = 2$}.",
    "breaks": "Nothing. It is a definition.",
-   "example": "A message costs $1$ under $\\kappa_{DF}$\\inmode{lf}{ and $2$ under $\\kappa_L$}.",
-   "signature": "\\kappa(\\cdot) : \\sym{type.Event}{\\mathsf{Event}} \\to \\mathbb{N}",
+   "example": "A message between two threads costs $1$ under $\\kappa_{DF}$\\inmode{lf}{ and $2$ under $\\kappa_L$}.",
+   "signature": "\\kappa(\\mathsf{solo}_i\\,\\ell\\,k) = \\kappa_{\\ell} \\qquad \\kappa(\\mathsf{sync}_{i,j}\\,\\sigma) = \\kappa_{\\mathrm{give}} + \\kappa_{\\mathrm{take}} \\qquad \\kappa(\\mathsf{offer}_i\\,\\sigma) = \\kappa_{\\sigma}",
    "args": [
     {
-     "name": "\\kappa",
-     "meaning": "the cost table",
-     "modes": [
-      "lf"
-     ]
+     "name": "\\kappa_{\\ell}",
+     "meaning": "the entry of the table for the kind of the label $\\ell$, one of $\\kappa_\\beta, \\kappa_{\\mathrm{force}}, \\kappa_{\\mathrm{new}}, \\kappa_{\\mathrm{spawn}}, \\kappa_{\\mathrm{link}}, \\kappa_{\\mathrm{give}}, \\kappa_{\\mathrm{take}}$"
     },
     {
      "name": "ev",
-     "meaning": "an event of the instrumented semantics"
+     "meaning": "an event of the instrumented semantics, $\\mathsf{solo}$, $\\mathsf{sync}$ or $\\mathsf{offer}$"
     }
    ],
    "source": [
     {
      "file": "relation/CostTable.v",
+     "names": [
+      "ev_cost"
+     ]
+    }
+   ],
+   "deviations": [
+    {
+     "kind": "renamed",
+     "reason": "$\\kappa_\\ell$ is `tcost κ ℓ` and $\\kappa_\\sigma$ is `scost κ σ`.",
      "names": [
       "ev_cost"
      ]
@@ -13520,7 +13507,7 @@
   },
   "rd.stable": {
    "title": "$\\mathsf{stable}\\,t$",
-   "meaning": "$\\forall \\alpha, t'.\\ t \\xrightarrow{\\alpha} t' \\Rightarrow \\alpha \\text{ is a session label}$.",
+   "meaning": "$\\forall \\ell, t'.\\ t \\xrightarrow{\\ell} t' \\Rightarrow \\ell \\text{ is a session label}$.",
    "why": "Readiness constrains only terms that wait for another thread.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{recv}\\,b$ is stable, $(\\lambda x.x)\\,\\ast$ is not.",
@@ -16762,7 +16749,7 @@
   },
   "sr.irred": {
    "title": "$\\mathsf{irred}\\,e$",
-   "meaning": "$e$ takes no step, $\\neg\\exists \\alpha, e'.\\ e \\xrightarrow{\\alpha} e'$.",
+   "meaning": "$e$ takes no step, $\\neg\\exists \\ell, e'.\\ e \\xrightarrow{\\ell} e'$.",
    "why": "Values and stuck terms are irreducible.",
    "breaks": "Nothing. It is a definition.",
    "example": "$\\mathsf{irred}\\,\\ast$.",
@@ -18965,11 +18952,11 @@
   },
   "th.cl2-needs": {
    "title": "What two closes ask",
-   "meaning": "Each typing of $\\mathsf{close}\\,a$ followed by $\\mathsf{close}\\,b$, at each bound and context and over each world whose facts relate points at its constants, derives $\\Gamma \\vdash x \\prec \\overline{y}$ for the points $x$ of $a$ and $y$ of $b$.",
+   "meaning": "Each typing of $\\mathsf{close}\\,a$ followed by $\\mathsf{close}\\,b$, at each bound and context and over each world whose facts relate points at its constants, derives $\\Gamma \\vdash_W x \\prec \\overline{y}$ for the points $x$ of $a$ and $y$ of $b$.",
    "why": "The first close waits at $x$ while the thread holds $b$, whose dual point is $\\overline{y}$. This inversion turns a deadlock into a typing failure. Through an opening it reads the conservativity premise of E-Open over such a world. It proves the rejections of the [[ex-gennew|creations with exits]] and of the [[ex-flag|self-computed flag]], and in [[ex-forkjoin|recursive fork-join]] it asks each child point below the dual point of its parent.",
    "breaks": "Nothing. It is a theorem.",
    "example": "A thread that closes $c$ at $\\rho$ and then $d$ at $\\rho\\cdot 0$ needs $\\rho \\prec \\overline{\\rho\\cdot 0}$.",
-   "signature": "a \\neq b \\land \\mathsf{world\\_wf}\\,W \\land \\Gamma ; \\Delta \\vdash^{F}_{W} \\mathsf{let}\\ \\ast = \\mathsf{close}\\,a\\ \\mathsf{in}\\ \\mathsf{close}\\,b : T \\Rightarrow \\Gamma \\vdash x \\prec \\overline{y}",
+   "signature": "a \\neq b \\land \\mathsf{world\\_wf}\\,W \\land \\Gamma ; \\Delta \\vdash^{F}_{W} \\mathsf{let}\\ \\ast = \\mathsf{close}\\,a\\ \\mathsf{in}\\ \\mathsf{close}\\,b : T \\Rightarrow \\Gamma \\vdash_W x \\prec \\overline{y}",
    "args": [
     {
      "name": "a, b",
@@ -19492,11 +19479,11 @@
   },
   "ty.up": {
    "title": "The points above $v$, ${\\vartriangle}v$",
-   "meaning": "${\\vartriangle}v$ stands for points that do not occur in the term, about which the rules assume only that they lie above $v$. The rules read it only through $u \\prec {\\vartriangle}v$, which holds iff $\\Gamma \\vdash u \\preccurlyeq v$. So each bound lies below ${\\vartriangle}\\top$, a point $x$ lies below ${\\vartriangle}\\bot$ never, and $\\bot$ always.",
-   "why": "A closure body is typed once for each call, and the body does not contain the continuation of the caller. E-App guarantees only that the caller acts above the upper point $u$ of the closure. The set of points that $\\Gamma$ derives above $u$ would be the wrong condition, because the points of the caller need not occur in $\\Gamma$. In the semantics ${\\vartriangle}u$ stands for an arbitrary finite set of points above $u$. Readiness gets easier as the future shrinks, so the relation asks the same as $\\Gamma \\vdash u \\preccurlyeq v$.",
+   "meaning": "${\\vartriangle}v$ stands for points that do not occur in the term, about which the rules assume only that they lie above $v$. The rules read it only through $u \\prec {\\vartriangle}v$, which holds iff $\\Gamma \\vdash_W u \\preccurlyeq v$. So each bound lies below ${\\vartriangle}\\top$, a point $x$ lies below ${\\vartriangle}\\bot$ never, and $\\bot$ always.",
+   "why": "A closure body is typed once for each call, and the body does not contain the continuation of the caller. E-App guarantees only that the caller acts above the upper point $u$ of the closure. The set of points that $\\Gamma$ derives above $u$ would be the wrong condition, because the points of the caller need not occur in $\\Gamma$. In the semantics ${\\vartriangle}u$ stands for an arbitrary finite set of points above $u$. Readiness gets easier as the future shrinks, so the relation asks the same as $\\Gamma \\vdash_W u \\preccurlyeq v$.",
    "breaks": "Nothing. It is a definition.",
    "example": "An action at $u$ itself is allowed under ${\\vartriangle}u$, because $u \\preccurlyeq u$.",
-   "signature": "u \\prec {\\vartriangle}v \\iff \\Gamma \\vdash u \\preccurlyeq v",
+   "signature": "u \\prec {\\vartriangle}v \\iff \\Gamma \\vdash_W u \\preccurlyeq v",
    "args": [
     {
      "name": "v",
@@ -19536,8 +19523,8 @@
    "meaning": "A fact of the order $\\prec_W$ of the world holds under each $\\Gamma$.",
    "why": "The world states what the derivation assumes about the constants of its interface, and its order contains program order.",
    "breaks": "Without it no derivation reads the world, and no thread holds two ends in sequence.",
-   "example": "$\\Gamma \\vdash x \\prec x^{+}$ for each $\\Gamma$ and $x$.",
-   "signature": "x \\prec_W y \\Rightarrow \\Gamma \\vdash x \\prec y",
+   "example": "$\\Gamma \\vdash_W x \\prec x^{+}$ for each $\\Gamma$ and $x$.",
+   "signature": "x \\prec_W y \\Rightarrow \\Gamma \\vdash_W x \\prec y",
    "args": [
     {
      "name": "x, y",
@@ -19559,7 +19546,7 @@
    "why": "A box body and the scope of an opened existential refer to their points only through these instances.",
    "breaks": "Without it a box body could use no fact of its constraint.",
    "example": "$\\cdot, \\{\\iota \\prec \\overline{\\kappa}\\}[1, 2] \\vdash 1 \\prec \\overline{2}$.",
-   "signature": "C[\\bar x] \\in \\Gamma \\land (x \\prec y) \\in C[\\bar x] \\Rightarrow \\Gamma \\vdash x \\prec y",
+   "signature": "C[\\bar x] \\in \\Gamma \\land (x \\prec y) \\in C[\\bar x] \\Rightarrow \\Gamma \\vdash_W x \\prec y",
    "args": [
     {
      "name": "C[\\bar x]",
@@ -19582,7 +19569,7 @@
    "why": "A waiting chain combines facts of the world and of several instances.",
    "breaks": "Nothing. It is a definition.",
    "example": "$1 \\prec \\overline{2}$ and $\\overline{2} \\prec \\overline{2}^{+}$ give $1 \\prec \\overline{2}^{+}$.",
-   "signature": "\\Gamma \\vdash x \\prec y \\land \\Gamma \\vdash y \\prec z \\Rightarrow \\Gamma \\vdash x \\prec z",
+   "signature": "\\Gamma \\vdash_W x \\prec y \\land \\Gamma \\vdash y \\prec z \\Rightarrow \\Gamma \\vdash x \\prec z",
    "args": [
     {
      "name": "x, y, z",
