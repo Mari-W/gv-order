@@ -2498,4 +2498,530 @@ Section clauses.
     - by eapply tau_link.
   Qed.
 
+  (** ** Stability and readiness
+
+      A τ step of p yields one of q, and so does an offer of p on an end
+      whose image is no end of a channel of D. *)
+
+  Local Lemma HCq' o : ech o ∈ p.1 → ech (h o) ∈ (set_map (gch h) p.1 : gset chan).
+  Proof. intros Ho. rewrite gch_ech. by apply elem_of_map_2. Qed.
+
+  Local Lemma fwd_act M M' i e : mrel R M M' → M !! i = Some e →
+    ∀ a, act e = Some a → ∃ e' a', M' !! i = Some e' ∧ crel R e e' ∧ act e' = Some a' ∧ arel R a a'.
+  Proof.
+    intros Hr He a Ha. destruct (mrel_lookup R M M' i e Hr He) as (e' & He' & Hc).
+    destruct (crel_act R e e' Hc) as [[E _]|(a0 & a' & E & Ha' & Har)]; [congruence|].
+    rewrite Ha in E. injection E as <-. eauto 10.
+  Qed.
+
+  Local Lemma fwd_tau M M' ev pc' : soup M = p.2 → mrel R M M' → istep (p.1, M) ev pc' → ev_tau ev →
+    ∃ ev' qc', istep (q.1, M') ev' qc' ∧ ev_tau ev'.
+  Proof.
+    intros HM Hr Hst Hτ. remember (p.1, M) as pc0 eqn:Epc.
+    destruct Hst as [C0 M0 i α e e1 Hi Hs0 Hα|C0 M0 i e c e1 Hi Hs0 Hc0 HcE|C0 M0 i j e v e1 Hi Hs0 Hj
+      |C0 M0 i j o v e e1 g g1 Hij Hi Hj He0 Hg0|C0 M0 i j o e e1 g g1 Hij Hi Hj He0 Hg0 HCo
+      |C0 M0 i j o k e e1 g g1 Hij Hi Hj He0 Hg0|C0 M0 i e o1 o2 e1 Hi Hs0 HCo|C0 M0 i e σ e1 Hi Hs0 HCo];
+      try (by unfold ev_tau in Hτ); injection Epc as -> ->.
+    - destruct (act_step _ _ _ Hs0) as (a & Ha & Hoa). destruct (fwd_act M M' i e Hr Hi a Ha) as (e' & a' & Hi' & _ & Ha' & Har).
+      destruct (act_offer e' a' α Ha') as [e1' He1']; [destruct Hα as [-> | ->]; destruct a; simpl in Hoa; try done; destruct a'; simpl in Har; done|].
+      eexists _, _. split; [by eapply p_act_beta|done].
+    - destruct (act_step _ _ _ Hs0) as (a & Ha & Hoa). apply offers_new in Hoa as ->.
+      destruct (fwd_act M M' i e Hr Hi ANew Ha) as (e' & a' & Hi' & _ & Ha' & Har). destruct a'; simpl in Har; try done.
+      destruct (exist_fresh (q.1 ∪ echans (soup M'))) as [c' Hc'].
+      destruct (act_offer e' ANew (LNew c') Ha' I) as [e1' He1'].
+      eexists _, _. split; [eapply p_act_new; [done|done|set_solver|set_solver]|done].
+    - destruct (act_step _ _ _ Hs0) as (a & Ha & Hoa). destruct a; simpl in Hoa; try done. subst.
+      destruct (fwd_act M M' i e Hr Hi _ Ha) as (e' & a' & Hi' & _ & Ha' & Har). destruct a'; simpl in Har; try done.
+      destruct (act_offer e' (ASpawn v0) (LSpawn v0) Ha' eq_refl) as [e1' He1'].
+      eexists _, _. split; [eapply p_act_spawn; [done|done|by apply (mrel_none R M M' j Hr)]|done].
+    - pose proof (subj_held M i e _ e1 o HM Hi He0 eq_refl) as Ho.
+      pose proof (subj_held M j g _ g1 (edual o) HM Hj Hg0 eq_refl) as Ho'.
+      destruct (act_step _ _ _ He0) as (a & Ha & Hoa). apply offers_send in Hoa as ->.
+      destruct (act_step _ _ _ Hg0) as (c & Hc1 & Hoc). apply offers_recv in Hoc as ->.
+      destruct (fwd_act M M' i e Hr Hi _ Ha) as (e' & a' & Hi' & _ & Ha' & Har). destruct a'; simpl in Har; try done.
+      destruct (fwd_act M M' j g Hr Hj _ Hc1) as (g' & c' & Hj' & _ & Hc' & Hcr). destruct c'; simpl in Hcr; try done.
+      destruct Har as [Ro Rv]. rename o0 into y, v0 into v'.
+      assert (y = h o) as -> by (apply Ro, hd_of, Ho).
+      assert (o1 = edual (h o)) as -> by (rewrite <-Hd; apply Hcr, hd_of, Ho').
+      assert (is_val v') as Hv' by (eapply act_send_val; exact Ha').
+      destruct (act_offer e' _ (LSess (SSend (h o) v')) Ha' (conj eq_refl eq_refl)) as [e1' He1'].
+      destruct (act_offer g' _ (LSess (SRecv (edual (h o)) v')) Hc' (conj eq_refl Hv')) as [g1' Hg1'].
+      eexists _, _. split; [by eapply p_act_msg|done].
+    - pose proof (subj_held M i e _ e1 o HM Hi He0 eq_refl) as Ho.
+      pose proof (subj_held M j g _ g1 (edual o) HM Hj Hg0 eq_refl) as Ho'.
+      destruct (act_step _ _ _ He0) as (a & Ha & Hoa). apply offers_close in Hoa as ->.
+      destruct (act_step _ _ _ Hg0) as (c & Hc1 & Hoc). apply offers_close in Hoc as ->.
+      destruct (fwd_act M M' i e Hr Hi _ Ha) as (e' & a' & Hi' & _ & Ha' & Har). destruct a'; simpl in Har; try done.
+      destruct (fwd_act M M' j g Hr Hj _ Hc1) as (g' & c' & Hj' & _ & Hc' & Hcr). destruct c'; simpl in Hcr; try done.
+      rename o0 into y.
+      assert (y = h o) as -> by (apply Har, hd_of, Ho).
+      assert (o1 = edual (h o)) as -> by (rewrite <-Hd; apply Hcr, hd_of, Ho').
+      destruct (act_offer e' _ (LSess (SClose (h o))) Ha' eq_refl) as [e1' He1'].
+      destruct (act_offer g' _ (LSess (SClose (edual (h o)))) Hc' eq_refl) as [g1' Hg1'].
+      eexists _, _. split; [eapply p_act_close; try done|done]. rewrite Eq1. apply elem_of_union_l. by apply HCq'.
+    - pose proof (subj_held M i e _ e1 o HM Hi He0 eq_refl) as Ho.
+      pose proof (subj_held M j g _ g1 (edual o) HM Hj Hg0 eq_refl) as Ho'.
+      destruct (act_step _ _ _ He0) as (a & Ha & Hoa). apply offers_sel in Hoa as ->.
+      destruct (act_step _ _ _ Hg0) as (c & Hc1 & Hoc). apply offers_bra in Hoc as ->.
+      destruct (fwd_act M M' i e Hr Hi _ Ha) as (e' & a' & Hi' & _ & Ha' & Har). destruct a'; simpl in Har; try done.
+      destruct (fwd_act M M' j g Hr Hj _ Hc1) as (g' & c' & Hj' & _ & Hc' & Hcr). destruct c'; simpl in Hcr; try done.
+      destruct Har as [Ro <-]. rename o0 into y.
+      assert (y = h o) as -> by (apply Ro, hd_of, Ho).
+      assert (o1 = edual (h o)) as -> by (rewrite <-Hd; apply Hcr, hd_of, Ho').
+      destruct (act_offer e' _ (LSess (SSel (h o) k)) Ha' (conj eq_refl eq_refl)) as [e1' He1'].
+      destruct (act_offer g' _ (LSess (SBra (edual (h o)) k)) Hc' eq_refl) as [g1' Hg1'].
+      eexists _, _. split; [by eapply p_act_choice|done].
+    - destruct (act_step _ _ _ Hs0) as (a & Ha & Hoa). destruct (offers_link _ _ Hoa) as (b1 & b2 & -> & Eb).
+      destruct (fwd_act M M' i e Hr Hi _ Ha) as (e' & a' & Hi' & _ & Ha' & Har).
+      destruct a' as [| | |v0|o0|o0 v0|o0|z1 z2|o0 k0|o0]; simpl in Har; try done.
+      destruct Har as [R1 R2].
+      assert (∃ z, (z = z1 ∨ z = z2) ∧ ech z ∈ q.1) as (z & Ez & Hz).
+      { assert (o1 = b1 ∨ o1 = b2) as [<-|<-] by (assert (o1 ∈ ({[b1]} ∪ {[b2]} : gset cend)) by (rewrite <-Eb; set_solver); set_solver).
+        - exists z1. split; [by left|]. rewrite (R1 (or_intror (or_intror HCo))). rewrite Eq1. apply elem_of_union_l. by apply HCq'.
+        - exists z2. split; [by right|]. rewrite (R2 (or_intror (or_intror HCo))). rewrite Eq1. apply elem_of_union_l. by apply HCq'. }
+      destruct (act_offer e' _ (LSess (SLink ({[z1]} ∪ {[z2]}))) Ha' eq_refl) as [e1' He1'].
+      destruct Ez as [->| ->].
+      + eexists _, _. split; [by eapply p_act_link|done].
+      + eexists _, _. split; [eapply p_act_link; [done|by rewrite (comm_L (∪))|done]|done].
+  Qed.
+
+  Local Lemma eraseq M' : soup M' = q.2 → erase (q.1, M') = q.
+  Proof. intros HM. unfold erase. simpl. rewrite HM. by destruct q. Qed.
+
+  Local Lemma not_stable_q M' ev qc' : soup M' = q.2 → istep (q.1, M') ev qc' → ev_tau ev → ¬ stable_p q.
+  Proof. intros HM Hst Hτ Hstb. apply (Hstb (erase qc')). exists (q.1, M'), ev, qc'. split_and!; [by apply eraseq|done|done|exact Hτ]. Qed.
+
+  (** An offer of p on an end of Σ whose image is no end of D is an offer
+      of q, unless q takes a τ step. *)
+  Local Lemma fwd_off M M' i σ pc' o : soup M = p.2 → soup M' = q.2 → mrel R M M' →
+    istep (p.1, M) (EvOffer i σ) pc' → o ∈ sends σ → o ∈ dom Σ → ech (h o) ∉ D →
+    offered_p Σq q (h o) ∨ ¬ stable_p q.
+  Proof.
+    intros HM HM' Hr Hst Ho HoΣ ND'. remember (p.1, M) as pc0 eqn:Epc. remember (EvOffer i σ) as ev eqn:Eev.
+    destruct Hst; try discriminate. injection Epc as -> ->. injection Eev as -> ->.
+    rename e into e0, e' into e1, H into Hi, H0 into Hs0, H1 into Hsj.
+    assert (ech (h o) ∉ q.1) as Nq.
+    { rewrite Eq1. intros [A|A]%elem_of_union; [|done]. apply elem_of_map in A as (c & Ec & Hc0).
+      apply (HC1 c Hc0). rewrite <-(hd_chan o c (or_introl HoΣ) Hc0 Ec). by apply elem_of_chans_of. }
+    assert (h o ∈ dom Σq) as HoΣq by (apply elem_of_dom in HoΣ as [v Hv]; apply elem_of_dom; exists v; by apply lookupq).
+    destruct (act_step _ _ _ Hs0) as (a & Ha & Hoa). destruct (fwd_act M M' i e0 Hr Hi a Ha) as (e' & a' & Hi' & _ & Ha' & Har).
+    destruct (act_offer e' a' (alabel a') Ha' (offers_alabel a')) as [e1' He1'].
+    assert (∀ σ', alabel a' = LSess σ' → h o ∈ sends σ' → subjs σ' ## q.1 → offered_p Σq q (h o)) as Hoff.
+    { intros σ' Ea Hos Hsj'. split; [done|]. exists σ', (erase (q.1 ∖ sentc σ', <[i := e1']> M')). split; [|done].
+      exists (q.1, M'), (EvOffer i σ'), (q.1 ∖ sentc σ', <[i := e1']> M'). split_and!; [by apply eraseq| |done|done].
+      eapply p_act_session; [done|by rewrite <-Ea|done]. }
+    destruct σ as [o1 w|o1 w|o1|o1 k|o1 k|os]; simpl in Ho.
+    1-5: apply elem_of_singleton in Ho as ->;
+      assert (∃ y σ', R o1 y ∧ alabel a' = LSess σ' ∧ sends σ' = {[y]} ∧ subjs σ' = {[ech y]}) as (y & σ' & Ry & Ea & Es & Esj)
+        by (destruct a; simpl in Hoa; try done; destruct a'; simpl in Har; try done;
+            repeat (match goal with H : _ ∧ _ |- _ => destruct H end); subst; eexists _, _;
+            split_and!; [eassumption|reflexivity|reflexivity|reflexivity]);
+      left; rewrite (Ry (hd_of o1 (or_intror HoΣ))) in Es, Esj;
+      apply (Hoff σ' Ea); [rewrite Es; set_solver|rewrite Esj; set_solver].
+    destruct (offers_link _ _ Hoa) as (b1 & b2 & -> & Eb).
+    destruct a' as [| | |v0|o0|o0 v0|o0|z1 z2|o0 k0|o0]; simpl in Har; try done. destruct Har as [R1 R2].
+    assert (o = b1 ∨ o = b2) as Ob by (rewrite Eb in Ho; set_solver).
+    assert (b1 ∈ dom Σ ∨ ech b1 ∈ p.1 → z1 = h b1) as E1 by (intros [?|?]; apply R1; [left|right; right]; done).
+    assert (b2 ∈ dom Σ ∨ ech b2 ∈ p.1 → z2 = h b2) as E2 by (intros [?|?]; apply R2; [left|right; right]; done).
+    destruct (decide (ech z1 ∈ q.1)) as [Q1|Q1].
+    { right. eapply (not_stable_q M' (EvSolo i (LSess (SLink ({[z1]} ∪ {[z2]}))) (PickLink z1 z2))); [done| |done].
+      by eapply p_act_link. }
+    destruct (decide (ech z2 ∈ q.1)) as [Q2|Q2].
+    { right. eapply (not_stable_q M' (EvSolo i (LSess (SLink ({[z2]} ∪ {[z1]}))) (PickLink z2 z1))); [done| |done].
+      eapply p_act_link; [done|by rewrite (comm_L (∪) {[z2]})|done]. }
+    left. apply (Hoff (SLink ({[z1]} ∪ {[z2]}))); [done| |simpl; rewrite set_map_union_L, !set_map_singleton_L; set_solver].
+    simpl. destruct Ob as [->| ->]; [rewrite <-E1 by (by left)|rewrite <-E2 by (by left)]; set_solver.
+  Qed.
+
+  Local Lemma offers_sends' a σ σ' : offers a (LSess σ) → offers a (LSess σ') → sends σ = sends σ'.
+  Proof. destruct a, σ, σ'; simpl; intros; destruct_and?; subst; done. Qed.
+
+  Local Lemma offered_lift M o : soup M = p.2 → offered_p Σ p o →
+    ∃ i σ pc', istep (p.1, M) (EvOffer i σ) pc' ∧ o ∈ sends σ.
+  Proof.
+    intros HM [_ (σ & p' & Hps & Ho)]. rewrite <-(erase_p M HM) in Hps.
+    destruct (pstep_lift _ _ _ Hps) as (ev & pc' & Hst & Hl & _). destruct ev; try discriminate.
+    injection Hl as ->. eauto.
+  Qed.
+
+  Local Lemma offer_thread M i σ pc' : istep (p.1, M) (EvOffer i σ) pc' →
+    ∃ e e1, M !! i = Some e ∧ tstep e (LSess σ) e1.
+  Proof.
+    intros Hst. remember (p.1, M) as pc0 eqn:Epc. remember (EvOffer i σ) as ev eqn:Eev.
+    destruct Hst; try discriminate. injection Epc as -> ->. injection Eev as -> ->. eauto.
+  Qed.
+
+  (** A link of p on an end whose image lies on a channel of q is a τ step of q. *)
+  Local Lemma link_q M M' i e e1 os o : soup M' = q.2 → mrel R M M' → M !! i = Some e →
+    tstep e (LSess (SLink os)) e1 → o ∈ os → o ∈ dom Σ → ech (h o) ∈ q.1 → ¬ stable_p q.
+  Proof.
+    intros HM' Hr Hi Hs0 Ho HoΣ Hq. destruct (act_step _ _ _ Hs0) as (a & Ha & Hoa).
+    destruct (offers_link _ _ Hoa) as (b1 & b2 & -> & Eb).
+    destruct (fwd_act M M' i e Hr Hi _ Ha) as (e' & a' & Hi' & _ & Ha' & Har).
+    destruct a' as [| | |v0|o0|o0 v0|o0|z1 z2|o0 k0|o0]; simpl in Har; try done. destruct Har as [R1 R2].
+    destruct (act_offer e' _ (LSess (SLink ({[z1]} ∪ {[z2]}))) Ha' eq_refl) as [e1' He1'].
+    assert (o = b1 ∨ o = b2) as [->| ->] by (rewrite Eb in Ho; set_solver).
+    - rewrite <-(R1 (or_introl HoΣ)) in Hq. eapply (not_stable_q M' (EvSolo i _ (PickLink z1 z2))); [done| |done].
+      by eapply p_act_link.
+    - rewrite <-(R2 (or_introl HoΣ)) in Hq. eapply (not_stable_q M' (EvSolo i _ (PickLink z2 z1))); [done| |done].
+      eapply p_act_link; [done|by rewrite (comm_L (∪) {[z2]})|done].
+  Qed.
+
+  (** Offers on the two ends of a channel of D meet in q. *)
+  Local Lemma fwd_sync M M' i j σ1 σ2 pc1 pc2 o o' : soup M = p.2 → soup M' = q.2 → mrel R M M' →
+    istep (p.1, M) (EvOffer i σ1) pc1 → istep (p.1, M) (EvOffer j σ2) pc2 →
+    o ∈ sends σ1 → o' ∈ sends σ2 → o ∈ dom Σ → o' ∈ dom Σ → ech (h o) ∈ D → h o' = edual (h o) → ¬ stable_p q.
+  Proof.
+    intros HM HM' Hr S1 S2 Ho1 Ho2 HoΣ Ho'Σ HD Eo'.
+    assert (ech (h o) ∈ q.1) as Hq by (rewrite Eq1; by apply elem_of_union_r).
+    destruct (offer_thread M i σ1 pc1 S1) as (e & e1 & Hi & He).
+    destruct (offer_thread M j σ2 pc2 S2) as (g & g1 & Hj & Hg).
+    destruct (sends_ssubj _ _ Ho1) as [[os ->]|E1]; [by eapply (link_q M M' i e e1 os o)|].
+    destruct (sends_ssubj _ _ Ho2) as [[os ->]|E2].
+    { eapply (link_q M M' j g g1 os o'); try done. by rewrite Eo', ech_edual. }
+    pose proof HC as (_ & _ & HS).
+    destruct (Psteps_head κ n _ _ _ _ _ _ _ _ HS (p.1, M) i σ1 pc1 o (erase_p M HM) S1 E1) as (S0 & x & L1 & D1).
+    destruct (Psteps_head κ n _ _ _ _ _ _ _ _ HS (p.1, M) j σ2 pc2 o' (erase_p M HM) S2 E2) as (S0' & x' & L2 & D2).
+    destruct (Hdp (h o) HD) as (T1 & z & T2 & K3 & K4 & Hs3).
+    apply (kren_lookup_held h Σ o) in K3; [|apply Hk|done]. rewrite L1 in K3. injection K3 as <- <-.
+    rewrite <-Eo' in K4. apply (kren_lookup_held h Σ o') in K4; [|apply Hk|done]. rewrite L2 in K4. injection K4 as <- ->.
+    assert (sync σ1 σ2) as Hsy by (eapply hd_ok_sync; [exact Hs3|exact D1|exact D2|congruence|congruence]).
+    assert (i ≠ j) as Hij.
+    { intros ->. rewrite Hi in Hj. injection Hj as <-. destruct (act_step _ _ _ He) as (a & Ha & Hoa).
+      destruct (act_step _ _ _ Hg) as (a2 & Ha2 & Hoa2). rewrite Ha in Ha2. injection Ha2 as <-.
+      pose proof (offers_sends' a σ1 σ2 Hoa Hoa2) as Es.
+      destruct σ1, σ2; simpl in E1, E2, Es; try discriminate; injection E1 as ->; injection E2 as ->;
+        (assert (o = o') as <- by set_solver); apply (edual_ne (h o)); by rewrite <-Eo'. }
+    destruct (act_step _ _ _ He) as (a & Ha & Hoa). destruct (act_step _ _ _ Hg) as (c & Hc1 & Hoc).
+    destruct (fwd_act M M' i e Hr Hi _ Ha) as (e' & a' & Hi' & _ & Ha' & Har).
+    destruct (fwd_act M M' j g Hr Hj _ Hc1) as (g' & c' & Hj' & _ & Hc' & Hcr).
+    assert (hd o ∧ hd o') as [Hho Hho'] by (split; left; done).
+    destruct σ1 as [o1 w|o1 w|o1|o1 k|o1 k|], σ2 as [o2 w2|o2 w2|o2|o2 k2|o2 k2|]; simpl in Hsy; try done;
+      simpl in E1, E2; injection E1 as ->; injection E2 as ->.
+    - apply offers_send in Hoa as ->. apply offers_recv in Hoc as ->.
+      destruct a' as [| | |v0|o0|y v'|o0|z1 z2|o0 k0|o0]; simpl in Har; try done. destruct Har as [Ry _].
+      destruct c' as [| | |v0|y'|o0 v0|o0|z1 z2|o0 k0|o0]; simpl in Hcr; try done.
+      rewrite (Ry Hho) in Ha'. rewrite (Hcr Hho'), Eo' in Hc'.
+      assert (is_val v') as Hv' by (eapply act_send_val; exact Ha').
+      destruct (act_offer e' _ (LSess (SSend (h o) v')) Ha' (conj eq_refl eq_refl)) as [e1' He1'].
+      destruct (act_offer g' _ (LSess (SRecv (edual (h o)) v')) Hc' (conj eq_refl Hv')) as [g1' Hg1'].
+      eapply (not_stable_q M' (EvSync i j (SSend (h o) v'))); [done| |done]. by eapply p_act_msg.
+    - apply offers_recv in Hoa as ->. apply offers_send in Hoc as ->.
+      destruct a' as [| | |v0|y|o0 v0|o0|z1 z2|o0 k0|o0]; simpl in Har; try done.
+      destruct c' as [| | |v0|o0|y' v'|o0|z1 z2|o0 k0|o0]; simpl in Hcr; try done. destruct Hcr as [Ry' _].
+      rewrite (Har Hho) in Ha'. rewrite (Ry' Hho'), Eo' in Hc'.
+      assert (is_val v') as Hv' by (eapply act_send_val; exact Hc').
+      destruct (act_offer g' _ (LSess (SSend (edual (h o)) v')) Hc' (conj eq_refl eq_refl)) as [g1' Hg1'].
+      destruct (act_offer e' _ (LSess (SRecv (h o) v')) Ha' (conj eq_refl Hv')) as [e1' He1'].
+      eapply (not_stable_q M' (EvSync j i (SSend (edual (h o)) v'))); [done| |done].
+      eapply p_act_msg; [done|done|done|done|]. by rewrite edual_edual.
+    - apply offers_close in Hoa as ->. apply offers_close in Hoc as ->.
+      destruct a' as [| | |v0|o0|o0 v0|y|z1 z2|o0 k0|o0]; simpl in Har; try done.
+      destruct c' as [| | |v0|o0|o0 v0|y'|z1 z2|o0 k0|o0]; simpl in Hcr; try done.
+      rewrite (Har Hho) in Ha'. rewrite (Hcr Hho'), Eo' in Hc'.
+      destruct (act_offer e' _ (LSess (SClose (h o))) Ha' eq_refl) as [e1' He1'].
+      destruct (act_offer g' _ (LSess (SClose (edual (h o)))) Hc' eq_refl) as [g1' Hg1'].
+      eapply (not_stable_q M' (EvSync i j (SClose (h o)))); [done| |done]. by eapply p_act_close.
+    - apply offers_sel in Hoa as ->. apply offers_bra in Hoc as ->.
+      destruct a' as [| | |v0|o0|o0 v0|o0|z1 z2|y k'|o0]; simpl in Har; try done. destruct Har as [Ry <-].
+      destruct c' as [| | |v0|o0|o0 v0|o0|z1 z2|o0 k0|y']; simpl in Hcr; try done.
+      rewrite (Ry Hho) in Ha'. rewrite (Hcr Hho'), Eo' in Hc'.
+      destruct (act_offer e' _ (LSess (SSel (h o) k)) Ha' (conj eq_refl eq_refl)) as [e1' He1'].
+      destruct (act_offer g' _ (LSess (SBra (edual (h o)) k)) Hc' eq_refl) as [g1' Hg1'].
+      eapply (not_stable_q M' (EvSync i j (SSel (h o) k))); [done| |done]. by eapply p_act_choice.
+    - apply offers_bra in Hoa as ->. apply offers_sel in Hoc as ->.
+      destruct a' as [| | |v0|o0|o0 v0|o0|z1 z2|o0 k0|y]; simpl in Har; try done.
+      destruct c' as [| | |v0|o0|o0 v0|o0|z1 z2|y' k'|o0]; simpl in Hcr; try done. destruct Hcr as [Ry' <-].
+      rewrite (Har Hho) in Ha'. rewrite (Ry' Hho'), Eo' in Hc'.
+      destruct (act_offer g' _ (LSess (SSel (edual (h o)) k2)) Hc' (conj eq_refl eq_refl)) as [g1' Hg1'].
+      destruct (act_offer e' _ (LSess (SBra (h o) k2)) Ha' eq_refl) as [e1' He1'].
+      eapply (not_stable_q M' (EvSync j i (SSel (edual (h o)) k2))); [done| |done].
+      eapply p_act_choice; [done|done|done|done|]. by rewrite edual_edual.
+  Qed.
+
+  Local Lemma chain M M' : soup M = p.2 → soup M' = q.2 → mrel R M M' →
+    above_offered W1 Σ (offered_p Σ p) → stable_p q →
+    ∀ y, Acc (λ a b, a ∈ pts Σ ∧ W1 ⊢ a ≺ b) y → ∀ o S0, Σ !! o = Some (S0, y) → offered_p Σ p o → ech (h o) ∈ D →
+    ∃ o2 S2 y2, Σ !! o2 = Some (S2, y2) ∧ offered_p Σ p o2 ∧ ech (h o2) ∉ D ∧ W1 ⊢ y2 ≺ y.
+  Proof.
+    intros HM HM' Hr Hab Hstq y Hacc. induction Hacc as [y _ IH]. intros o S0 Lo Hoff HD.
+    destruct (Hdp (h o) HD) as (T1 & z & T2 & K3 & K4 & Hs3).
+    apply (kren_lookup_held h Σ o) in K3; [|apply Hk|by eapply elem_of_dom_2]. rewrite Lo in K3. injection K3 as <- <-.
+    destruct (kren_lookup_inv _ _ _ _ K4) as (o' & Eo' & Lo').
+    assert (¬ offered_p Σ p o') as Noff.
+    { intros Hoff'. destruct (offered_lift M o HM Hoff) as (i & σ1 & pc1 & S1 & Ho1).
+      destruct (offered_lift M o' HM Hoff') as (j & σ2 & pc2 & S2 & Ho2).
+      apply (fwd_sync M M' i j σ1 σ2 pc1 pc2 o o' HM HM' Hr S1 S2 Ho1 Ho2); try done;
+        [by eapply elem_of_dom_2|by eapply elem_of_dom_2]. }
+    destruct (Hab o' T2 y‾ Lo' Noff) as (o2 & S2 & y2 & Hoff2 & Lo2 & Hlt). rewrite pt_dual_dual in Hlt.
+    destruct (decide (ech (h o2) ∈ D)) as [HD2|HD2]; [|by exists o2, S2, y2].
+    destruct (IH y2 (conj (pts_elem _ _ _ _ Lo2) Hlt) o2 S2 Lo2 Hoff2 HD2) as (o3 & S3 & y3 & Lo3 & Hoff3 & HD3 & Hlt3).
+    exists o3, S3, y3. split_and!; [done|done|done|]. by eapply w_lt_trans.
+  Qed.
+
+  (** An offered end of p has an offered end of p below or at its point
+      whose image is no end of D. *)
+  Local Lemma chain' M M' o S0 y : soup M = p.2 → soup M' = q.2 → mrel R M M' →
+    above_offered W1 Σ (offered_p Σ p) → stable_p q → Σ !! o = Some (S0, y) → offered_p Σ p o →
+    ∃ o2 S2 y2, Σ !! o2 = Some (S2, y2) ∧ offered_p Σ p o2 ∧ ech (h o2) ∉ D ∧ (y2 = y ∨ W1 ⊢ y2 ≺ y).
+  Proof.
+    intros HM HM' Hr Hab Hstq Lo Hoff. destruct (decide (ech (h o) ∈ D)) as [HD|HD]; [|exists o, S0, y; eauto].
+    destruct (chain M M' HM HM' Hr Hab Hstq y (finite_lt_acc W1 (pts Σ) y) o S0 Lo Hoff HD) as (o2 & S2 & y2 & ?).
+    exists o2, S2, y2. naive_solver.
+  Qed.
+
+  Local Lemma fwd_link M M' i os pc' : soup M = p.2 → soup M' = q.2 → mrel R M M' →
+    istep (p.1, M) (EvOffer i (SLink os)) pc' → link_p q ∨ ¬ stable_p q.
+  Proof.
+    intros HM HM' Hr Hst. pose proof HC as (_ & _ & _ & _ & _ & _ & _ & _ & H7).
+    destruct (H7 _ _ _ _ (erase_p M HM) Hst) as (o1 & o2 & S1 & S2 & x0 & Eos & _ & L1 & L2 & _).
+    destruct (offer_thread M i _ pc' Hst) as (e & e1 & Hi & He).
+    destruct (act_step _ _ _ He) as (a & Ha & Hoa). destruct (offers_link _ _ Hoa) as (b1 & b2 & -> & Eb).
+    destruct (fwd_act M M' i e Hr Hi _ Ha) as (e' & a' & Hi' & _ & Ha' & Har).
+    destruct a' as [| | |v0|o0|o0 v0|o0|z1 z2|o0 k0|o0]; simpl in Har; try done. destruct Har as [R1 R2].
+    assert (b1 ∈ dom Σ ∧ b2 ∈ dom Σ) as [Hb1 Hb2].
+    { destruct (upair_cases b1 b2 o1 o2 (eq_trans (eq_sym Eb) Eos)) as [[-> ->]|[-> ->]]; split; by eapply elem_of_dom_2. }
+    destruct (act_offer e' _ (LSess (SLink ({[z1]} ∪ {[z2]}))) Ha' eq_refl) as [e1' He1'].
+    destruct (decide (ech z1 ∈ q.1)) as [Q1|Q1].
+    { right. eapply (not_stable_q M' (EvSolo i _ (PickLink z1 z2))); [done| |done]. by eapply p_act_link. }
+    destruct (decide (ech z2 ∈ q.1)) as [Q2|Q2].
+    { right. eapply (not_stable_q M' (EvSolo i _ (PickLink z2 z1))); [done| |done].
+      eapply p_act_link; [done|by rewrite (comm_L (∪) {[z2]})|done]. }
+    left. exists ({[z1]} ∪ {[z2]}), (erase (q.1 ∖ ∅, <[i := e1']> M')).
+    exists (q.1, M'), (EvOffer i (SLink ({[z1]} ∪ {[z2]}))), (q.1 ∖ ∅, <[i := e1']> M').
+    split_and!; [by apply eraseq| |done|done]. eapply p_act_session; [done|done|].
+    simpl. rewrite set_map_union_L, !set_map_singleton_L. set_solver.
+  Qed.
+
+  Local Lemma stable_pq M M' : soup M = p.2 → soup M' = q.2 → mrel R M M' → stable_p q → stable_p p.
+  Proof.
+    intros HM HM' Hr Hstq p' Hps. unfold preduction in Hps. rewrite <-(erase_p M HM) in Hps.
+    destruct (pstep_lift _ _ _ Hps) as (ev & pc' & Hst & Hl & _).
+    destruct (fwd_tau M M' ev pc' HM Hr Hst Hl) as (ev' & qc' & Hst' & Hτ').
+    by apply (not_stable_q M' ev' qc' HM' Hst' Hτ').
+  Qed.
+
+  Local Lemma crel_noends e e' : crel R e e' → fends e = ∅ → e' = e.
+  Proof.
+    intros Hc He. rewrite (crel_emap_eq e e' Hc) by (intros o Ho; set_solver).
+    rewrite <-(emap_id e) at 2. apply emap_ext_on. intros o Ho. set_solver.
+  Qed.
+
+  (** When p stops, so does q, and they agree. *)
+  Local Lemma pirred_q : pirred p → q = p ∧ Σq = ∅ ∧ Σ = ∅.
+  Proof.
+    intros Hi. destruct HC as (Hs0 & _ & _). destruct (Hs0 Hi) as (v & E & Ep & Hv & HE).
+    pose proof (Vrel_tfree_empty κ _ _ _ _ _ (proj1 (proj2 Hs)) Hv) as EΣ.
+    assert (D = ∅) as HD0.
+    { apply dpairs_empty. rewrite <-(kren_empty h), <-EΣ. apply Hdp. }
+    assert (∀ e, e ∈ p.2 → fends e = ∅) as Hnoe.
+    { intros e He. rewrite Ep in He. simpl in He. apply gmultiset_elem_of_disj_union in He as [He|He].
+      - apply gmultiset_elem_of_singleton in He as ->. by rewrite <-(Vrel_exact κ _ _ _ _ _ Hv), EΣ, dom_empty_L.
+      - by rewrite (HE e He). }
+    split_and!; [|by rewrite HD0, EΣ, kren_empty, sdrop_empty|done].
+    destruct Hm as (M0 & M0' & HM0 & HM0' & Hr0).
+    assert (M0' = M0) as EM.
+    { apply map_eq. intros k0. specialize (Hr0 k0). destruct (M0 !! k0) as [e|] eqn:E0, (M0' !! k0) as [e'|]; try done.
+      f_equal. apply (crel_noends e e' Hr0). apply Hnoe. rewrite <-HM0. apply elem_of_soup. eauto. }
+    rewrite (surjective_pairing q), (surjective_pairing p). f_equal.
+    - rewrite Eq1, HD0, Ep. simpl. set_solver.
+    - by rewrite <-HM0', EM, HM0.
+  Qed.
+
+  Local Lemma offer_q qc i σ qc' : erase qc = q → istep qc (EvOffer i σ) qc' →
+    ∃ M M' e' e1', soup M = p.2 ∧ mrel R M M' ∧ M' !! i = Some e' ∧ tstep e' (LSess σ) e1' ∧
+      subjs σ ## q.1 ∧ qc' = (q.1 ∖ sentc σ, <[i := e1']> M').
+  Proof.
+    intros Hq Hst. remember (EvOffer i σ) as ev eqn:Eev. destruct Hst; try discriminate. injection Eev as -> ->.
+    destruct (lift' C M Hq) as (-> & M0 & HM0 & Hr0). exists M0, M, e, e'. split_and!; done.
+  Qed.
+
+  (** The clauses of q. *)
+  Lemma clauses_q : Pclauses κ n (Vrel κ) (Prel κ) (Vrel κ n) Xt W1 Σq T q.
+  Proof.
+    destruct (soup_surj q.2) as [M' HM'].
+    destruct (lift (q.1, M') (eraseq M' HM')) as (M & HMe & Hr). simpl in Hr.
+    assert (soup M = p.2) as HM by (by rewrite <-HMe).
+    pose proof HC as (Hstop & Hrdy & _).
+    assert (∀ o, offered_p Σ p o → ech (h o) ∉ D → offered_p Σq q (h o) ∨ ¬ stable_p q) as Hfo.
+    { intros o Hoff ND'. destruct (offered_lift M o HM Hoff) as (i & σ & pc' & Hst & Ho).
+      apply (fwd_off M M' i σ pc' o HM HM' Hr Hst Ho); [by destruct Hoff|done]. }
+    assert (∀ i os pc', istep (p.1, M) (EvOffer i (SLink os)) pc' → link_p q ∨ ¬ stable_p q) as Hfl
+      by (intros; by eapply fwd_link).
+    assert (link_p p → stable_p q → link_p q) as Hll.
+    { intros (os & p'' & Hps2) Sq. rewrite <-(erase_p M HM) in Hps2.
+      destruct (pstep_lift _ _ _ Hps2) as (ev & pc2 & Hst2 & Hl2 & _). destruct ev; try discriminate.
+      injection Hl2 as ->. by destruct (Hfl _ _ _ Hst2). }
+    (* an offer of p meets a step of q *)
+    assert (∀ i σ pc' o, istep (p.1, M) (EvOffer i σ) pc' → ssubj σ = Some o → stable_p q →
+      (∀ o', offered_p Σq q o' → False) → (link_p q → False) → False) as Hcon.
+    { intros i σ pc' o Hst Eo Sq Noq Nlq. pose proof (offer_held M i σ pc' o HM Hst Eo) as HoΣ.
+      assert (offered_p Σ p o) as Hoffo.
+      { split; [done|]. exists σ, (erase pc'). split.
+        - exists (p.1, M), (EvOffer i σ), pc'. split_and!; [by apply erase_p|done|done|done].
+        - destruct σ; simpl in Eo; try discriminate; injection Eo as ->; simpl; set_solver. }
+      destruct (decide (ech (h o) ∈ D)) as [HD|ND'].
+      - assert (¬ pirred p) as Nip.
+        { intros Hip. destruct Hoffo as [_ (σ' & p'' & Hps & _)]. by apply (Hip _ _ Hps). }
+        destruct (Hrdy Nip (stable_pq M M' HM HM' Hr Sq)) as [Hl|[_ HB]]; [by apply Nlq, Hll|].
+        apply elem_of_dom in HoΣ as [[S0 y] Lo].
+        destruct (chain' M M' o S0 y HM HM' Hr HB Sq Lo Hoffo) as (o2 & S2 & y2 & Lo2 & Hoff2 & ND2 & _).
+        destruct (Hfo o2 Hoff2 ND2); [by apply (Noq (h o2))|done].
+      - destruct (Hfo o Hoffo ND'); [by apply (Noq (h o))|done]. }
+    assert (pirred q → pirred p) as Hpirr.
+    { intros Hiq π p' Hps. assert (stable_p q) as Sq by (intros p'' H; exact (Hiq PTau p'' H)).
+      assert (∀ o, offered_p Σq q o → False) as Noq by (intros o [_ (σ & q' & Hq & _)]; exact (Hiq _ q' Hq)).
+      assert (link_p q → False) as Nlq by (intros (os & q' & Hq); exact (Hiq _ q' Hq)).
+      pose proof Hps as Hps'. rewrite <-(erase_p M HM) in Hps'. destruct (pstep_lift _ _ _ Hps') as (ev & pc' & Hst & Hl & _).
+      destruct ev as [i α k|i j σ|i σ].
+      - destruct (fwd_tau M M' _ pc' HM Hr Hst eq_refl) as (ev' & qc' & Hst' & Hτ'). by apply (not_stable_q M' ev' qc' HM' Hst' Hτ').
+      - destruct (fwd_tau M M' _ pc' HM Hr Hst eq_refl) as (ev' & qc' & Hst' & Hτ'). by apply (not_stable_q M' ev' qc' HM' Hst' Hτ').
+      - destruct σ as [o0 w0|o0 w0|o0|o0 k0|o0 k0|os]; try (by apply (Hcon i _ pc' o0 Hst eq_refl Sq Noq Nlq)).
+        by destruct (Hfl i os pc' Hst). }
+    split; [|split].
+    - (* P-Stop *)
+      intros Hiq. pose proof (Hpirr Hiq) as Hip. destruct (pirred_q Hip) as (Eq & EΣq & EΣ).
+      destruct (Hstop Hip) as (v & E & Ep & Hv & HE). exists v, E. split_and!; [by rewrite Eq|..|done].
+      rewrite EΣq. by rewrite EΣ in Hv.
+    - (* P-Ready *)
+      intros Hniq Sq. assert (¬ pirred p) as Hnip by (intros Hip; destruct (pirred_q Hip) as (Eq & _); apply Hniq; by rewrite Eq).
+      destruct (Hrdy Hnip (stable_pq M M' HM HM' Hr Sq)) as [Hl|[HA HB]]; [left; by apply Hll|right].
+      split.
+      + intros Hno. exfalso. apply Hnip.
+        assert (∀ o, ¬ offered_p Σ p o) as Hnop.
+        { intros o Hoff. destruct Hoff as [HoΣ Hex]. apply elem_of_dom in HoΣ as [[S0 y] Lo].
+          destruct (chain' M M' o S0 y HM HM' Hr HB Sq Lo (conj (elem_of_dom_2 _ _ _ Lo) Hex)) as (o2 & S2 & y2 & Lo2 & Hoff2 & ND2 & _).
+          destruct (Hfo o2 Hoff2 ND2); [by apply (Hno (h o2))|done]. }
+        destruct (HA Hnop) as (v & E & Ep & Hv & HE). apply all_vals_pirred. intros e He. rewrite Ep in He. simpl in He.
+        apply gmultiset_elem_of_disj_union in He as [He|He]; [by apply gmultiset_elem_of_singleton in He as ->|].
+        by rewrite (HE e He).
+      + intros o' S x Lo' Noff. destruct (lookupq_inv o' _ Lo') as (o & -> & Lo & ND').
+        assert (¬ offered_p Σ p o) as Noffp by (intros Hoff; by destruct (Hfo o Hoff ND')).
+        destruct (HB o S x Lo Noffp) as (o1 & S1 & y1 & Hoff1 & Lo1 & Hlt1).
+        destruct (chain' M M' o1 S1 y1 HM HM' Hr HB Sq Lo1 Hoff1) as (o2 & S2 & y2 & Lo2 & Hoff2 & ND2 & Hle).
+        destruct (Hfo o2 Hoff2 ND2) as [Hq|Hq]; [|done].
+        exists (h o2), S2, y2. split_and!; [done|by apply lookupq|]. destruct Hle as [->|Hle]; [done|by eapply w_lt_trans].
+    - (* P-Step *)
+      split_and!.
+      + intros qc ev qc' Hq Hst Hτ. exact (tau_clause qc ev qc' Hq Hst Hτ).
+      + intros qc i o w qc' Hq Hst. destruct (offer_q qc i _ qc' Hq Hst) as (M0 & M0' & e' & e1' & HM0 & Hr0 & Hi & Hs0 & Hsj & ->).
+        apply (off_send M0 M0' i o w e' e1'); try done. simpl in Hsj. set_solver.
+      + intros qc i o w qc' Hq Hst. destruct (offer_q qc i _ qc' Hq Hst) as (M0 & M0' & e' & e1' & HM0 & Hr0 & Hi & Hs0 & Hsj & ->).
+        destruct (off_recv M0 M0' i o w e' e1') as (S0 & x & m & U & S & A1 & A2 & A3); try done; [simpl in Hsj; set_solver|].
+        exists S0, x, m, U, S. split_and!; [done|done|]. intros j Θ2 Hj Hdj Hok' HV. apply A3; try done.
+        by rewrite difference_empty_L.
+      + intros qc i o qc' Hq Hst. destruct (offer_q qc i _ qc' Hq Hst) as (M0 & M0' & e' & e1' & HM0 & Hr0 & Hi & Hs0 & Hsj & ->).
+        apply (off_close M0 M0' i o e' e1'); try done. simpl in Hsj. set_solver.
+      + intros qc i o b qc' Hq Hst. destruct (offer_q qc i _ qc' Hq Hst) as (M0 & M0' & e' & e1' & HM0 & Hr0 & Hi & Hs0 & Hsj & ->).
+        apply (off_sel M0 M0' i o b e' e1'); try done. simpl in Hsj. set_solver.
+      + intros qc i o b qc' Hq Hst. destruct (offer_q qc i _ qc' Hq Hst) as (M0 & M0' & e' & e1' & HM0 & Hr0 & Hi & Hs0 & Hsj & ->).
+        apply (off_bra M0 M0' i o b e' e1'); try done. simpl in Hsj. set_solver.
+      + intros qc i os qc' Hq Hst. destruct (offer_q qc i _ qc' Hq Hst) as (M0 & M0' & e' & e1' & HM0 & Hr0 & Hi & Hs0 & Hsj & ->).
+        destruct (tstep_link_shape _ _ _ Hs0) as (y1 & y2 & ->).
+        apply (off_link M0 M0' i y1 y2 e' e1'); try done.
+  Qed.
 End clauses.
+
+(** ** The theorem *)
+
+Section theorem.
+  Context (κ : ctable).
+
+  Lemma Prel_gfuse_lvl n : fclosed (Prel κ n) (Prel κ n).
+  Proof.
+    induction n as [n IHn] using oind.
+    intros W Σ T p q h D Σ' HP Hs Hf HΣ.
+    apply (Prel_conv κ n W (sdrop D (kren h Σ)) Σ' T q HΣ). clear Σ' HΣ.
+    apply Prel_iff. intros Hn0. revert W Σ T p HP q h D Hs Hf.
+    refine (Prel_ind κ n (λ W Σ T p, ∀ q h D, fside D Σ T p → gfuse h D Σ p q →
+      Pbody κ n (Vrel κ) (Prel κ) (Vrel κ n) (Prel κ n) W (sdrop D (kren h Σ)) T q) Hn0 _).
+    intros W Σ T p B q h D Hs Hf W1 HW1.
+    eapply (clauses_q κ n Hn0 (λ W Σ T p, Prel κ n W Σ T p ∧ (∀ q h D, fside D Σ T p → gfuse h D Σ p q →
+      Pbody κ n (Vrel κ) (Prel κ) (Vrel κ n) (Prel κ n) W (sdrop D (kren h Σ)) T q)) (Prel κ n)).
+    - intros j Hj. by apply IHn.
+    - intros W' Σ0 T0 p0 q0 h0 D0 Σ0' [_ Hb] Hs0 Hf0 HΣ0. apply (Prel_conv κ n W' _ Σ0' T0 q0 HΣ0).
+      apply Prel_iff. intros _. by apply Hb.
+    - by intros ? ? ? ? [? _].
+    - exact Hf.
+    - exact Hs.
+    - by apply B.
+  Qed.
+
+  (** Decision no-fus: P is closed under fusion, as a theorem. *)
+  Theorem Prel_gfuse n W Σ T p q h D :
+    p ∈ P[κ]^W _ n⟦Σ ⊢ T⟧ → fside D Σ T p → gfuse h D Σ p q →
+    q ∈ P[κ]^W _ n⟦sdrop D (kren h Σ) ⊢ T⟧.
+  Proof. intros HP Hs Hf. eapply (Prel_gfuse_lvl n); [done|done|done|apply senv_eqv_refl]. Qed.
+
+  Theorem Prel_fuse n W Σ T p h D :
+    fuse_ok h D Σ p → fside D Σ T p → p ∈ P[κ]^W _ n⟦Σ ⊢ T⟧ → pfuse h D p ∈ P[κ]^W _ n⟦sdrop D (kren h Σ) ⊢ T⟧.
+  Proof. intros Hh Hs HP. apply (Prel_gfuse n W Σ T p); [done|done|by apply gfuse_pfuse]. Qed.
+
+  (** Renaming the held ends. *)
+  Theorem Prel_rename n W Σ T p h :
+    pren_ok h Σ p → fside ∅ Σ T p → p ∈ P[κ]^W _ n⟦Σ ⊢ T⟧ → pmap h p ∈ P[κ]^W _ n⟦kren h Σ ⊢ T⟧.
+  Proof.
+    intros Hh Hs HP. rewrite <-(pfuse_empty h p), <-(sdrop_empty (kren h Σ)).
+    apply Prel_fuse; [by apply pren_fuse_ok|done|done].
+  Qed.
+End theorem.
+
+(** ** Induction over the steps of cost 0, closed under fusion (P-Connect) *)
+
+Lemma senv_eqv_trans (Θ1 Θ2 Θ3 : senv) : senv_eqv Θ1 Θ2 → senv_eqv Θ2 Θ3 → senv_eqv Θ1 Θ3.
+Proof.
+  intros H1 H2 o. specialize (H1 o). specialize (H2 o).
+  inversion H1 as [a b [E1 S1] Ea Eb|Ea Eb]; inversion H2 as [b' c [E2 S2] Eb' Ec|Eb' Ec]; try congruence; constructor.
+  rewrite <-Eb in Eb'. injection Eb' as <-. split; [congruence|by eapply seqv_trans].
+Qed.
+
+Lemma gfuse_conv h D Σ Σ' p q : senv_eqv Σ Σ' → gfuse h D Σ' p q → gfuse h D Σ p q.
+Proof.
+  intros HΣ (Hh & Eq & Hm). split_and!; [by eapply fuse_ok_conv|done|].
+  eapply mcrel_mono; [|exact Hm]. intros e e' _. apply crel_mono. intros o o' _ H Ho. apply H.
+  unfold hrel in *. by rewrite <-!(senv_eqv_dom _ _ HΣ).
+Qed.
+
+Definition Φfuse (Φ : prel) : prel :=
+  λ W Σ T p, ∀ h D q Σ', fside D Σ T p → gfuse h D Σ p q → senv_eqv (sdrop D (kren h Σ)) Σ' → Φ W Σ' T q.
+
+Section fuse_ind.
+  Context (κ : ctable).
+
+  Lemma Φfuse_closed n (Φ : prel) :
+    fclosed (λ W Σ T p, Prel κ n W Σ T p ∧ Φfuse Φ W Σ T p) (λ W Σ T p, Prel κ n W Σ T p ∧ Φfuse Φ W Σ T p).
+  Proof.
+    intros W Σ T p q h D Σ1 [HP HΦ] Hs Hf HΣ1. split; [by eapply Prel_gfuse_lvl|].
+    intros h2 D2 r Σ'' Hs2 Hf2 HΣ''.
+    assert (gfuse h2 D2 (sdrop D (kren h Σ)) q r) as Hf2' by (by eapply gfuse_conv).
+    destruct (gfuse_compose h h2 D D2 Σ p q r Hf Hf2') as [Hf' Eenv].
+    apply (HΦ (h2 ∘ h) (D2 ∪ set_map (gch h2) D) r Σ''); [exact Hs|exact Hf'|]. rewrite <-Eenv.
+    eapply senv_eqv_trans; [|exact HΣ'']. apply senv_eqv_sdrop, senv_eqv_kren; [|done].
+    destruct Hf2' as (Hh2 & _). by eapply fuse_ok_kinj.
+  Qed.
+
+  Lemma Pbody_gfuse n (X : prel) W Σ T p q h D : olt ozero n → fclosed X X →
+    (∀ W Σ T p, X W Σ T p → Prel κ n W Σ T p) → fside D Σ T p → gfuse h D Σ p q →
+    Pbody κ n (Vrel κ) (Prel κ) (Vrel κ n) X W Σ T p →
+    Pbody κ n (Vrel κ) (Prel κ) (Vrel κ n) X W (sdrop D (kren h Σ)) T q.
+  Proof.
+    intros Hn HX HXP Hs Hf B W1 HW1.
+    eapply (clauses_q κ n Hn X X); [intros j Hj; apply Prel_gfuse_lvl|done|done|exact Hf|exact Hs|by apply B].
+  Qed.
+
+  Lemma Prel_ind_fuse n (Φ : prel) : olt ozero n →
+    (∀ W Σ Σ' T p, senv_eqv Σ Σ' → Φ W Σ T p → Φ W Σ' T p) →
+    (∀ W Σ T p, Pbody κ n (Vrel κ) (Prel κ) (Vrel κ n) (λ W Σ T p, Prel κ n W Σ T p ∧ Φfuse Φ W Σ T p) W Σ T p →
+      Φ W Σ T p) →
+    ∀ W Σ T p, Prel κ n W Σ T p → Φfuse Φ W Σ T p.
+  Proof.
+    intros Hn HΦc Hind. refine (Prel_ind κ n _ Hn _). intros W Σ T p B h D q Σ' Hs Hf HΣ'.
+    apply (HΦc _ _ Σ' _ _ HΣ'). apply Hind.
+    apply (Pbody_gfuse n _ W Σ T p q h D Hn (Φfuse_closed n Φ)); [by intros ? ? ? ? [? _]|done|done|done].
+  Qed.
+
+  Lemma Φfuse_id (Φ : prel) W Σ T p : fside ∅ Σ T p → Φfuse Φ W Σ T p → Φ W Σ T p.
+  Proof.
+    intros Hs H. apply (H id ∅ p Σ Hs (gfuse_id Σ p)). rewrite sdrop_empty, kren_id_map. apply senv_eqv_refl.
+  Qed.
+End fuse_ind.

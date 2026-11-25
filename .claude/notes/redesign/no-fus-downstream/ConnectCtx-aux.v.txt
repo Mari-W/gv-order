@@ -1,0 +1,37 @@
+(** ** Side conditions of a fused component *)
+
+(** A fused component whose composite satisfies [conn] keeps its
+    restricted channels apart from its interface. *)
+Lemma fuse_side_chans h D (Σa : senv) (p : proc) Σ1' ΣC' Σ2' ΣD' C2 :
+  fuse_ok h D Σa p → sdrop D (kren h Σa) = Σ1' ∪ ΣC' → conn Σ1' ΣC' (pfuse h D p).1 Σ2' ΣD' C2 →
+  p.1 ## chans_of Σa.
+Proof.
+  intros (Hd & Hi & Hp & HD & Hdp) EΣ Hc c Hc1 Hc2. destruct Hc as [_ _ _ _ _ _ _ _ _ _ HC1 _].
+  apply chans_of_elem in Hc2 as (u & Hu & <-).
+  assert (gch h (ech u) ∈ (pfuse h D p).1) as Hg by (simpl; apply elem_of_union_l; by apply elem_of_map_2).
+  destruct (decide (ech (h u) ∈ D)) as [HuD|HuD].
+  - apply (HD (ech (h u)) HuD). rewrite (ech_gch h u Hd). by apply elem_of_map_2.
+  - apply (HC1 (gch h (ech u)) Hg). rewrite <-(ech_gch h u Hd).
+    assert (h u ∈ dom (Σ1' ∪ ΣC')) as Hin.
+    { rewrite <-EΣ. apply elem_of_dom in Hu as [v Hv]. apply elem_of_dom. exists v. apply sdrop_lookup.
+      split; [|done]. apply kren_lookup; [by eapply fuse_ok_kinj; split_and!|done]. }
+    rewrite dom_union_L, elem_of_union in Hin. rewrite <-(elem_of_union (chans_of Σ1' ∪ chans_of Σ2')) .
+    destruct Hin as [Hin|Hin]; [left; left|right]; by apply elem_of_chans_of.
+Qed.
+
+(** [conn] reads types only up to ≈. *)
+Lemma conn_conv Σ1 ΣC Σ2 ΣD C1 C2 Σ1' ΣC' :
+  senv_eqv Σ1 Σ1' → senv_eqv ΣC ΣC' → conn Σ1' ΣC' C1 Σ2 ΣD C2 → conn Σ1 ΣC C1 Σ2 ΣD C2.
+Proof.
+  intros E1 EC [Hd1 Hd2 [Hcd Hct] Hf1 Hf2 HfC H12 H1C H2C HCC HC1 HC2].
+  rewrite <-!(chans_of_conv _ _ E1), <-!(chans_of_conv _ _ EC) in *.
+  constructor; try done.
+  - apply map_disjoint_dom. rewrite (senv_eqv_dom _ _ E1), (senv_eqv_dom _ _ EC). by apply map_disjoint_dom.
+  - split.
+    + intros o. rewrite Hcd. by rewrite (senv_eqv_dom _ _ EC).
+    + intros o S x Ho. destruct (senv_eqv_lookup _ _ _ _ _ EC Ho) as (S0 & Ho' & HS).
+      destruct (Hct o S0 x Ho') as (S' & L & Hsd). exists S'. split; [done|].
+      eapply sdual_conv; [exact Hsd|by apply seqv_sym|apply seqv_refl].
+  - intros o. rewrite (senv_eqv_dom _ _ E1). apply Hf1.
+  - intros o. rewrite (senv_eqv_dom _ _ EC). apply HfC.
+Qed.
