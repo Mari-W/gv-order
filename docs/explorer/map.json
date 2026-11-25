@@ -2614,6 +2614,16 @@
      ],
      "usedIn": [
       "th-fund-proc"
+     ],
+     "deviations": [
+      {
+       "kind": "notation",
+       "reason": "The Rocq states P-Connect with a second interface $\\Sigma_D$ and asks in `conn` that $\\Sigma_D$ has the domain of $\\Sigma_C$ with dual types up to $\\approx$. The map writes $\\overline{\\Sigma_C}$ for it.",
+       "names": [
+        "conn",
+        "sem_p_connect_sw"
+       ]
+      }
      ]
     },
     {

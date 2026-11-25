@@ -1,6 +1,6 @@
 # Faithfulness of the map
 
-Generated from docs/explorer/map.json at 459c3861 by map-faithfulness.py. Do not edit by hand.
+Generated from docs/explorer/map.json at 522e2ec3 by map-faithfulness.py. Do not edit by hand.
 
 check.sh confirms that every cited Rocq name exists. No tool compares a formula with the statement it cites. The formulas are checked by hand. The differences below are the recorded ones.
 
@@ -10,7 +10,7 @@ check.sh confirms that every cited Rocq name exists. No tool compares a formula 
 | simplified | 6 |
 | merged | 12 |
 | renamed | 45 |
-| notation | 42 |
+| notation | 43 |
 
 ## Statements with no Rocq counterpart (other, 1)
 
@@ -88,7 +88,7 @@ check.sh confirms that every cited Rocq name exists. No tool compares a formula 
 - **note sr.FE** (`FuelE`, `Fdef`, `FLevA`). $\mathsf{thread}$ is the constructor `RThread` of `rty`, the result of a thread.
 - **note new.wf** (`new_ok`). $\mathsf{wf}$ is `well_founded` of the Rocq standard library, which `new_ok` applies to `new_step C`.
 
-## Notation (notation, 42)
+## Notation (notation, 43)
 
 - **block syn-let** (`ELet`). Derived form. Syntax.v defines `ELet e1 e2` as `LetP (Pair e1 EUnit) (LetU (Var 0) (rename S e2))`, the pair elimination and unit elimination shown.
 - **block ty-equiv** (`seqv`, `sequiv`, `sty_df`). The deadlock-free view shows one equivalence, $\approx$ for `seqv`. `seqv` compares two session types after `sty_df`, which is the identity on the types of that view, so `seqv` and `sequiv` coincide there. The lock-free view shows both.
@@ -104,6 +104,7 @@ check.sh confirms that every cited Rocq name exists. No tool compares a formula 
 - **block r-new** (`acyc_new`, `cons_open`, `cbridge`). The second clause of `acyc_new` is `cons_open W Γ 1 C`, the finite form of $\mathsf{conserv}_{\Gamma}(\rho, C)$ at one base, as [[r-ex]] states.
 - **block fu** (`Fobl`). $e'\ \mathsf{at}\ \Phi'\ !\ d'$ abbreviates the premise that each obligation of `Fobl` states for its successor, `FuelE` at each lower level.
 - **block fu-obls** (`refill`, `fhand`, `mres`, `mrem`). $\Phi{\downarrow}[o \mapsto S^{m,m}]$ is `refill o φ` with the protocol of $o$ updated in the map `Π`, and $\Phi_M{\downarrow}$ is `fhand`. $\Phi = \Phi_M \uplus \Phi_r$ with $\mathrm{dom}\,\Phi_M = \mathsf{fends}(v)$ states the inclusion of `fends v` in the held ends and the maps `mres` and `mrem`.
+- **block th-compose** (`conn`, `sem_p_connect_sw`). The Rocq states P-Connect with a second interface $\Sigma_D$ and asks in `conn` that $\Sigma_D$ has the domain of $\Sigma_C$ with dual types up to $\approx$. The map writes $\overline{\Sigma_C}$ for it.
 - **note ty.ubound** (`ubound`). `UNone` is $\bot$, `UPt x` is $x$ and `UTop` is $\top$.
 - **note ty.heads** (`heads`, `hbot`, `lb_heads`). The map writes $\mathsf{ap}$ for the Rocq function `heads`, with $\bot$ added when `hbot` holds and $\top$ added for a closure or existential at `LNone`, whose `lb_heads` is empty.
 - **note ty.lbound** (`lbound`). `LBot` is $\bot$, `LNone` is $\top$ and `LPt x` is $x$.
