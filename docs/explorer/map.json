@@ -451,8 +451,7 @@
       }
      ],
      "usedIn": [
-      "sem-props",
-      "th-adeq"
+      "sem-props"
      ]
     },
     {
@@ -2135,8 +2134,7 @@
      ],
      "usedIn": [
       "fu",
-      "soup",
-      "th-chain"
+      "soup"
      ],
      "table": {
       "header": [
@@ -2347,8 +2345,7 @@
       }
      ],
      "usedIn": [
-      "fu-obls",
-      "th-terms"
+      "fu-obls"
      ]
     },
     {
@@ -2562,36 +2559,6 @@
    "intro": "Typed closed processes are deadlock free, and the proof goes through the logical relation. The section opens with the chain of results and then states each of them for processes. The lemmas about terms come last. The deadlock-free results take no classical hypothesis. \\inmode{lf}{The lock-free results stand next to their deadlock-free counterparts, and a tag on each names the classical hypotheses it takes.}",
    "blocks": [
     {
-     "id": "th-chain",
-     "title": "How the results fit together",
-     "formula": "\\begin{array}{rcl}\n\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{\\infty}}_W} p : T & \\overset{\\sym{th.fundamental-proc}{\\textsf{fundamental\\_proc}}}{\\Longrightarrow} & \\Sigma \\mathrel{\\sym{sj.sw}{\\vDash}}_{W} p : T \\\\[1ex]\n\\sym{w.acyc}{\\mathsf{cons}}\\,W \\land \\varnothing \\mathrel{\\sym{sj.sw}{\\vDash}}_{W} p : T & \\overset{\\sym{th.adequacy-h}{\\textsf{adequacy\\_sw}}}{\\Longrightarrow} & \\sym{prop.df}{\\mathsf{deadlock\\_free}}\\,p\n\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\Sigma \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{N}}_W} p : T \\land N \\in \\mathbb{N}}\\inmodeplain{lf}{&}\\inmode{lf}{\\overset{\\sym{th.lf-fundamental}{\\textsf{lf\\_fundamental}}}{\\Longrightarrow}}\\inmodeplain{lf}{&}\\inmode{lf}{\\Sigma \\mathrel{\\sym{sp.lfsem}{\\Vvdash}}^{N}_{W} p : T}\n\\inmodeplain{lf}{\\\\[1ex]}\\inmode{lf}{\\sym{w.lfworld}{\\mathsf{ranked}}\\,W \\land \\varnothing \\mathrel{\\sym{sp.lfsem}{\\Vvdash}}^{N}_{W} p : T}\\inmodeplain{lf}{&}\\inmode{lf}{\\overset{\\sym{th.lf-sems-adequacy}{\\textsf{lf\\_sems\\_adequacy}}}{\\Longrightarrow}}\\inmodeplain{lf}{&}\\inmode{lf}{\\sym{prop.lf}{\\mathsf{lock\\_free}}\\,p}\n\\end{array}",
-     "caption": "Typing gives the semantic judgment at the world $W$ of the derivation, and that judgment gives deadlock freedom. Both steps use the relation $(V, E, P)$ at the step costs $\\kappa_{DF}$ over consistent worlds, and neither needs a classical hypothesis. The arrows are proved in [[th-fund-proc]] and [[th-adeq]], and the case of P-Term uses [[th-terms]]. \\inmode{lf}{Lock freedom takes the same two steps at a finite bound over ranked worlds. It uses the relation at $\\kappa_L$, which excludes divergence by free steps, together with fuel, the two columns of [[fu-vs]]. The lock-free process relation combines both for each thread. Lock-free adequacy measures a wait on $o$ by $\\mu(t) = (\\varrho(x), f)$. The ownership map $K$ of [[soup]] records the point $x$ of $o$ and the counter $f$ of the dual end $\\overline{o}$. A step of the thread holding $\\overline{o}$ on another end decreases $f$, which F-Count keeps at $1$ or more. A force of that thread decreases $f$ as well, by F-Force. A link gives the waiting end a dual end with a lower counter, by the premise of E-Link and the bound on tickets. So the thread holding $\\overline{o}$ acts on $\\overline{o}$ after finitely many steps. Excluded middle enters at the creations under $\\mathsf{gen\\_new}$ and at the existential property of ordinal indices.}",
-     "why": "Each arrow is one theorem of this section.",
-     "source": [
-      {
-       "file": "static/FundamentalProc.v",
-       "names": [
-        "fundamental_proc",
-        "adequacy_sw",
-        "soundness"
-       ]
-      },
-      {
-       "file": "soup/LFTyped.v",
-       "names": [
-        "lf_fundamental",
-        "lf_soundness"
-       ]
-      },
-      {
-       "file": "soup/LFCompose.v",
-       "names": [
-        "lf_sems_adequacy"
-       ]
-      }
-     ]
-    },
-    {
      "id": "th-sound",
      "title": "Soundness",
      "formula": "\\begin{array}{l}\\sym{th.soundness}{\\begin{array}{l}\\varnothing \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{\\infty}}_W} p : T \\\\ \\quad\\Longrightarrow\\ \\sym{prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-soundness}{\\begin{array}{l}\\varnothing \\sym{tp.pjudg}{\\vdash\\inmode{lf}{^{N}}_W} p : T \\land N \\in \\mathbb{N} \\\\ \\quad\\Longrightarrow\\ \\sym{prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\end{array}",
@@ -2615,8 +2582,8 @@
     {
      "id": "th-compose",
      "title": "Semantic composition rules",
-     "formula": "\\begin{array}{l}\\sym{th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\sym{th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\sym{th.Erel}{E\\inmode{lf}{[\\kappa]}^{W}_{\\alpha}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\sym{th.Prel}{P\\inmode{lf}{[\\kappa]}^{W}_{\\alpha}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\sym{th.sem-p-connect}{\\begin{array}{l}\\begin{array}{l}\\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\sym{th.conn}{\\mathsf{conn}} \\\\ \\land\\ p_1 \\in \\sym{th.Prel}{P^{W}_{\\alpha}\\llbracket \\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket} \\\\ \\land\\ p_2 \\in \\sym{th.Prel}{P^{W}_{\\alpha}\\llbracket \\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\sym{th.par}{p_1 \\parallel_{\\Sigma_C} p_2} \\in \\sym{th.Prel}{P^{W}_{\\alpha}\\llbracket \\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\sym{th.sem-p-connect-sw}{\\begin{array}{l}\\begin{array}{l}\\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\sym{th.conn}{\\mathsf{conn}} \\land \\Sigma_1 \\cup \\Sigma_C \\mathrel{\\sym{sj.sw}{\\vDash}}_{W_1} p_1 : T \\\\ \\land\\ \\Sigma_2 \\cup \\Sigma_D \\mathrel{\\sym{sj.sw}{\\vDash}}_{W_2} p_2 : \\ast\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\sym{sj.sw}{\\vDash}}_{W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-p-term}{\\begin{array}{l}\\begin{array}{l}N \\in \\mathbb{N} \\land \\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\sym{th.ptermprem}{\\mathsf{pterm}_N(\\Sigma, C_0, t, T)}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_W (C_0, \\{t\\}) : T\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-p-connect}{\\begin{array}{l}\\begin{array}{l}\\sym{th.conn}{\\mathsf{conn}} \\land \\Sigma_1 \\cup \\Sigma_C \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_{W_1} p_1 : T \\\\ \\land\\ \\Sigma_2 \\cup \\Sigma_D \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_{W_2} p_2 : \\ast\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma_1 \\cup \\Sigma_2 \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_{W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T\\end{array}}}\\end{array}",
-     "caption": "A safe thread is a safe process, and two safe processes connected at dual interfaces form a safe process at one world, in the [[p-rel|process relation]]. At the worlds of typing two components compose at the join of their worlds. A component proved safe without typing therefore composes with typed components. \\inmode{lf}{The same holds for the lock-free judgment at the worlds of typing, whose components are read at each ranked extension.}",
+     "formula": "\\begin{array}{l}\\sym{th.sem-p-term}{\\begin{array}{l}\\begin{array}{l}\\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\sym{th.sth}{\\mathsf{sth}\\,\\Theta\\,\\Sigma\\,\\Theta_B\\,C} \\\\ \\land\\ t \\in \\sym{th.Erel}{E\\inmode{lf}{[\\kappa]}^{W}_{\\alpha}\\llbracket \\Theta \\vdash T\\rrbracket^{\\varnothing}}\\end{array} \\\\ \\quad\\Longrightarrow\\ (C, \\{t\\}) \\in \\sym{th.Prel}{P\\inmode{lf}{[\\kappa]}^{W}_{\\alpha}\\llbracket \\Sigma \\vdash T\\rrbracket}\\end{array}} \\\\[1.5ex] \\sym{th.sem-p-connect-sw}{\\begin{array}{l}\\begin{array}{l}\\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\land \\sym{th.conn}{\\mathsf{conn}} \\land \\Sigma_1 \\cup \\Sigma_C \\mathrel{\\sym{sj.sw}{\\vDash}}_{W_1} p_1 : T \\\\ \\land\\ \\Sigma_2 \\cup \\Sigma_D \\mathrel{\\sym{sj.sw}{\\vDash}}_{W_2} p_2 : \\ast\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma_1 \\cup \\Sigma_2 \\mathrel{\\sym{sj.sw}{\\vDash}}_{W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2} \\sym{th.par}{p_1 \\parallel_{\\Sigma_C} p_2} : T\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-p-term}{\\begin{array}{l}\\begin{array}{l}N \\in \\mathbb{N} \\land \\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\sym{th.ptermprem}{\\mathsf{pterm}_N(\\Sigma, C_0, t, T)}\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_W (C_0, \\{t\\}) : T\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-p-connect}{\\begin{array}{l}\\begin{array}{l}\\sym{th.conn}{\\mathsf{conn}} \\land \\Sigma_1 \\cup \\Sigma_C \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_{W_1} p_1 : T \\\\ \\land\\ \\Sigma_2 \\cup \\Sigma_D \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_{W_2} p_2 : \\ast\\end{array} \\\\ \\quad\\Longrightarrow\\ \\Sigma_1 \\cup \\Sigma_2 \\sym{sp.lfsem}{\\Vvdash\\inmode{lf}{^{N}}}_{W_1 \\mathbin{\\sym{w.join}{\\sqcup}} W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T\\end{array}}}\\end{array}",
+     "caption": "A safe thread is a safe process, and two safe processes connected at dual interfaces form a safe process at the join of their worlds, in the [[p-rel|process relation]]. A component proved safe without typing therefore composes with typed components. \\inmode{lf}{The same holds for the lock-free judgment.}",
      "why": "P-Term and P-Connect hold in the relation, which makes the approach compositional. The fusion clause of the process relation is what makes the connect rule a lemma rather than a new induction. The [[ex-flag|self-computed flag]] uses this to combine a thread proved safe by its reductions with typed threads.",
      "source": [
       {
@@ -2676,8 +2643,8 @@
     {
      "id": "th-adeq",
      "title": "Adequacy",
-     "formula": "\\begin{array}{c}\\begin{array}{l}\\sym{th.adequacy}{\\begin{array}{l}\\sym{w.acyc}{\\mathsf{cons}}\\,W \\land \\sym{sj.proc}{\\forall \\alpha.\\ p \\in \\sym{th.Prel}{P^{W}_{\\alpha}\\llbracket \\varnothing \\vdash T \\rrbracket}} \\\\ \\quad\\Longrightarrow\\ \\sym{prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}} \\\\[1.5ex] \\sym{th.adequacy-h}{\\begin{array}{l}\\sym{w.acyc}{\\mathsf{cons}}\\,W \\land \\varnothing \\mathrel{\\sym{sj.sw}{\\vDash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\sym{prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\end{array}\\inmodeplain{lf}{\\\\[3ex]}\\inmode{lf}{\\begin{array}{l}\\sym{th.lf-adequacy}{\\begin{array}{l}\\sym{w.kind}{\\mathsf{ranked}}\\,W \\land \\forall \\alpha.\\ \\exists a.\\ \\sym{proc.erase}{\\mathsf{erase}}(\\sym{th.qa}{q_a}) = p \\land a \\in \\sym{th.soup}{S^{N,W}_{\\alpha}\\llbracket \\varnothing \\vdash T \\rrbracket} \\\\ \\quad\\Longrightarrow\\ \\sym{prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}} \\\\[1.5ex] \\sym{th.lf-sems-adequacy}{\\begin{array}{l}\\sym{w.lfworld}{\\mathsf{ranked}}\\,W \\land \\varnothing \\mathrel{\\sym{sp.lfsem}{\\Vvdash}}^{N}_W p : T \\\\ \\quad\\Longrightarrow\\ \\sym{prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}\\end{array}}\\end{array}",
-     "caption": "A closed process in the process relation at each index at a consistent world is deadlock free. So is a closed process in the semantic judgment of [[sj-all]] at a well-formed consistent world, which is its own consistent extension by [[w-ext]]. The proof reads the readiness of [[rd]]. \\inmode{lf}{A closed process in the [[soup|lock-free process relation]] at each index at a [[t-lf-wf|ranked world]] is lock free, as [[sem-props]] defines over the [[sem-events|events]] of a run. The measure is the rank of the awaited point and the counter that the relation records. So is a closed process in the lock-free judgment at a ranked world of typing. The Rocq also derives that each thread progresses on each weakly fair maximal run when $p$ has no internal divergence.}",
+     "formula": "\\begin{array}{l}\\sym{th.adequacy-h}{\\begin{array}{l}\\sym{w.acyc}{\\mathsf{cons}}\\,W \\land \\varnothing \\mathrel{\\sym{sj.sw}{\\vDash}}_W p : T \\\\ \\quad\\Longrightarrow\\ \\sym{prop.df}{\\mathsf{deadlock\\_free}}\\,p\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.lf-sems-adequacy}{\\begin{array}{l}\\sym{w.lfworld}{\\mathsf{ranked}}\\,W \\land \\varnothing \\mathrel{\\sym{sp.lfsem}{\\Vvdash}}^{N}_W p : T \\\\ \\quad\\Longrightarrow\\ \\sym{prop.lf}{\\mathsf{lock\\_free}}\\,p\\end{array}}}\\end{array}",
+     "caption": "A closed process in the semantic judgment of [[sj-all]] at a consistent world is deadlock free. The proof reads the readiness of [[rd]]. \\inmode{lf}{A closed process in the lock-free judgment at a [[t-lf-wf|ranked world]] is lock free, as [[sem-props]] defines. The measure is the rank of the awaited point and the counter of the [[soup|lock-free process relation]].}",
      "why": "Adequacy connects the relation with the safety property. In a stuck configuration each thread is ready, so each offered end lies below the dual points of the ends its thread keeps. A minimal offered point then has its dual end offered too, and the two threads can step.",
      "source": [
       {
@@ -2713,8 +2680,8 @@
     {
      "id": "th-conserv",
      "title": "Conservativity",
-     "formula": "\\begin{array}{l}\\inmode{lf}{\\sym{th.conservative}{\\begin{array}{l}(\\exists \\varepsilon.\\ \\Gamma;\\sym{th.df}{\\Delta_{df}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,\\infty}} e : T_{df}\\ !\\ \\varepsilon) \\\\ \\quad\\iff\\ \\Gamma ; \\Delta_{df} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} e : T_{df}\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.typed-dftyped}{\\begin{array}{l}\\Gamma ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} e : T\\ !\\ \\varepsilon \\\\ \\quad\\Longrightarrow\\ \\Gamma ; \\Delta_{df} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_W e : T_{df}\\end{array}}}\\end{array}",
-     "caption": "The annotated judgment at $N = \\infty$, with the annotations of [[ty-ann]] at $\\infty$, types the same terms as deadlock-free typing, and erasing the annotations of a lock-free typing gives a deadlock-free typing.",
+     "formula": "\\begin{array}{l}\\inmode{lf}{\\sym{th.conservative}{\\begin{array}{l}(\\exists \\varepsilon.\\ \\Gamma;\\sym{th.df}{\\Delta_{df}} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,\\infty}} e : T_{df}\\ !\\ \\varepsilon) \\\\ \\quad\\iff\\ \\Gamma ; \\Delta_{df} \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} e : T_{df}\\end{array}}}\\end{array}",
+     "caption": "The annotated judgment at $N = \\infty$, with the annotations of [[ty-ann]] at $\\infty$, types the same terms as deadlock-free typing. Erasing the annotations of a lock-free typing gives a deadlock-free typing.",
      "why": "Lock-free typing therefore rejects no deadlock-free program.",
      "modes": [
       "lf"
@@ -2733,8 +2700,8 @@
     {
      "id": "th-terms",
      "title": "Fundamental theorem for terms",
-     "formula": "\\begin{array}{l}\\sym{th.fundamental}{\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} t : T \\land W \\mathrel{\\sym{w.ext}{\\sqsubseteq}} W' \\land \\sym{w.acyc}{\\mathsf{cons}}\\,W'\\inmode{lf}{ \\land \\sym{w.strict}{\\mathsf{strict}}\\,W'} \\\\ \\quad\\Longrightarrow\\ \\Delta \\mathrel{\\sym{sj.term}{\\vDash}}^{F}_{W'} t : T\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.live-fundamental-ranked}{\\begin{array}{l}\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ N \\in \\mathbb{N} \\land W \\mathrel{\\sym{w.ext}{\\sqsubseteq}} W' \\land \\sym{w.acyc}{\\mathsf{cons}}\\,W'\\end{array} \\\\ \\quad\\Longrightarrow\\ \\sym{th.df}{\\Delta_{df}} \\mathrel{\\sym{sj.term}{\\vDash[\\kappa_L]}}^{F}_{W'} t : T_{df}\\end{array}}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.fsem-of-cost}{\\begin{array}{l}\\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{\\varnothing}_{W\\inmode{lf}{,N}} e : T\\ !\\ c \\land \\sym{ty.tfree}{\\mathsf{tfree}}\\,T \\\\ \\quad\\Longrightarrow\\ \\sym{fu.fsem}{\\mathsf{fsem}\\,N\\,\\sym{th.styof}{\\Delta\\inmode{lf}{^{N}}}\\,e}\\end{array}}}\\end{array}",
-     "caption": "A typed term is in the semantic term judgment of [[sj-all]] at each consistent extension of its world. The proof is one induction on the derivation, with one compatibility lemma per rule. \\inmode{lf}{A term typed at a finite bound is in the judgment at $\\kappa_L$ at each consistent extension, strict or ranked, and it has [[fu|fuel]] with its values in [[fv]], under the annotations of [[ty-ann]]. The Rocq also proves the forms at $\\kappa_L$ over strict worlds, the forms for annotated typing and the cost judgment behind fuel.}",
+     "formula": "\\begin{array}{l}\\sym{th.fundamental}{\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W} t : T \\land W \\mathrel{\\sym{w.ext}{\\sqsubseteq}} W' \\land \\sym{w.acyc}{\\mathsf{cons}}\\,W'\\inmode{lf}{ \\land \\sym{w.strict}{\\mathsf{strict}}\\,W'} \\\\ \\quad\\Longrightarrow\\ \\Delta \\mathrel{\\sym{sj.term}{\\vDash}}^{F}_{W'} t : T\\end{array}}\\inmodeplain{lf}{ \\\\[1.5ex] }\\inmode{lf}{\\sym{th.live-fundamental-ranked}{\\begin{array}{l}\\begin{array}{l}\\sym{w.wf}{\\mathsf{world\\_wf}}\\,W \\land \\varnothing ; \\Delta \\mathrel{\\sym{tp.vdash}{\\vdash}}^{F}_{W\\inmode{lf}{,N}} t : T\\ !\\ \\varepsilon \\\\ \\land\\ N \\in \\mathbb{N} \\land W \\mathrel{\\sym{w.ext}{\\sqsubseteq}} W' \\land \\sym{w.acyc}{\\mathsf{cons}}\\,W'\\end{array} \\\\ \\quad\\Longrightarrow\\ \\sym{th.df}{\\Delta_{df}} \\mathrel{\\sym{sj.term}{\\vDash[\\kappa_L]}}^{F}_{W'} t : T_{df}\\end{array}}}\\end{array}",
+     "caption": "A typed term is in the semantic term judgment of [[sj-all]] at each consistent extension of its world. The proof is one induction on the derivation. \\inmode{lf}{A term typed at a finite bound is in the judgment at $\\kappa_L$, and it has [[fu|fuel]] under the annotations of [[ty-ann]].}",
      "why": "The case of P-Term in the fundamental theorem for processes is this theorem.",
      "source": [
       {
@@ -16682,99 +16649,6 @@
     }
    ]
   },
-  "th.adequacy": {
-   "title": "Adequacy",
-   "meaning": "If $W$ is consistent and $p \\in P^W_\\alpha\\llbracket\\varnothing \\vdash T\\rrbracket$ for each ordinal index $\\alpha$, then $p$ is deadlock free.",
-   "why": "It turns the semantic judgment into the safety property. A stuck closed process has finitely many waiting threads, and readiness puts each wait below the dual points of the waiting thread in the strict order of $W$. At a minimal wait the thread holding the dual end can act.",
-   "breaks": "With a cyclic order the premise would hold for two threads that wait on each other.",
-   "example": "Two threads closing the two ends of $c$ are deadlock free.",
-   "signature": "\\mathsf{cons}\\,W \\land (\\forall \\alpha.\\ p \\in P^{W}_{\\alpha}\\llbracket \\varnothing \\vdash T \\rrbracket) \\Rightarrow \\mathsf{deadlock\\_free}\\,p",
-   "args": [
-    {
-     "name": "W",
-     "meaning": "a consistent world"
-    },
-    {
-     "name": "p",
-     "meaning": "a closed process $(C, E)$"
-    },
-    {
-     "name": "T",
-     "meaning": "the result type of the main thread"
-    }
-   ],
-   "source": [
-    {
-     "file": "relation/Adequacy.v",
-     "names": [
-      "adequacy"
-     ]
-    }
-   ],
-   "deviations": [
-    {
-     "kind": "notation",
-     "reason": "The Rocq states the premise as `sem_ptyped`, with the notation $\\varnothing \\vDash_W p : T$, at a world of the relation, which is consistent by its type.",
-     "names": [
-      "adequacy"
-     ]
-    }
-   ]
-  },
-  "th.lf-adequacy": {
-   "title": "Lock-free adequacy",
-   "meaning": "If $W$ is ranked and each ordinal index $\\alpha$ has an annotated configuration $a \\in S^{N,W}_{\\alpha}\\llbracket\\varnothing \\vdash T\\rrbracket$ with $\\mathsf{erase}(q_a) = p$, then $p$ is lock free.",
-   "why": "A pending thread waits for the thread holding the dual end of its end. The proof follows this chain of waiting threads and shows it is finite. Its measure ranks a waiting thread by the ordinal $\\varrho(x)$ of the point $x$ of the end $o$ it waits on and then by the counter of the dual end. Ranks never change along a run, so the chain is finite, and a link gives a waiting end a dual end with a lower counter.",
-   "breaks": "Without ranks an infinite descending chain of points lets a thread wait forever along an infinite chain of holding threads.",
-   "example": "Two threads closing the two ends of $c$ are lock free.",
-   "signature": "\\mathsf{ranked}\\,W \\land (\\forall \\alpha.\\ \\exists a.\\ \\mathsf{erase}(q_a) = p \\land a \\in S^{N,W}_{\\alpha}\\llbracket \\varnothing \\vdash T \\rrbracket) \\Rightarrow \\mathsf{lock\\_free}\\,p",
-   "args": [
-    {
-     "name": "W",
-     "meaning": "a ranked world"
-    },
-    {
-     "name": "N",
-     "meaning": "\\inmode{lf}{the bound on the tickets of a channel, a natural number for lock freedom}"
-    },
-    {
-     "name": "p",
-     "meaning": "a closed process $(C, E)$"
-    },
-    {
-     "name": "T",
-     "meaning": "the result type of the main thread"
-    }
-   ],
-   "source": [
-    {
-     "file": "soup/LFAdequacy.v",
-     "names": [
-      "lf_adequacy",
-      "wk_ranked"
-     ]
-    },
-    {
-     "file": "types/Worlds.v",
-     "names": [
-      "wchain_lt_wf"
-     ]
-    }
-   ],
-   "deviations": [
-    {
-     "kind": "notation",
-     "reason": "The Rocq states the premise as `lf_sem`, with the notation $\\varnothing \\Vvdash^{N}_W p : T$. The map writes it out, because $\\Vvdash^{N}_W$ names the judgment at each ranked extension of [[sj-all]].",
-     "names": [
-      "lf_adequacy"
-     ]
-    }
-   ],
-   "assumes": [
-    "EM",
-    "FC"
-   ]
-  },
   "th.fundamental": {
    "title": "Fundamental theorem",
    "meaning": "If $W$ is well formed and $\\varnothing ; \\Delta \\vdash^{F}_{W} t : T$, then $\\Delta \\vDash^{F}_{W'} t : T$ at each consistent extension $W'$ of $W$\\inmode{lf}{ that is strict}.",
@@ -16984,40 +16858,6 @@
     }
    ]
   },
-  "th.sem-p-connect": {
-   "title": "Semantic P-Connect",
-   "meaning": "If $\\mathsf{tfree}\\,T$, $\\mathsf{conn}$, $p_1 \\in P^{W}_{\\alpha}\\llbracket\\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket$ and $p_2 \\in P^{W}_{\\alpha}\\llbracket\\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket$, then $p_1 \\parallel_{\\Sigma_C} p_2 \\in P^{W}_{\\alpha}\\llbracket\\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket$, with both components at one world $W$.",
-   "why": "It is P-Connect in the relation, for each index and each cost table. Both components are read at one world, so two orders are never reconciled, and a fresh base of either side is fresh for that world.",
-   "breaks": "Nothing. It is a theorem.",
-   "example": "Two threads closing $c^{+}$ and $c^{-}$, cut at $c$.",
-   "signature": "\\mathsf{tfree}\\,T \\land \\mathsf{conn} \\land p_1 \\in P^{W}_{\\alpha}\\llbracket\\Sigma_1 \\cup \\Sigma_C \\vdash T\\rrbracket \\land p_2 \\in P^{W}_{\\alpha}\\llbracket\\Sigma_2 \\cup \\Sigma_D \\vdash \\ast\\rrbracket \\Rightarrow p_1 \\parallel_{\\Sigma_C} p_2 \\in P^{W}_{\\alpha}\\llbracket\\Sigma_1 \\cup \\Sigma_2 \\vdash T\\rrbracket",
-   "args": [
-    {
-     "name": "\\alpha",
-     "meaning": "the level, an ordinal"
-    },
-    {
-     "name": "W",
-     "meaning": "\\inmode{lf}{one ranked world for both components}"
-    },
-    {
-     "name": "\\Sigma_C, \\Sigma_D",
-     "meaning": "the cut and its dual ends"
-    },
-    {
-     "name": "p_1, p_2",
-     "meaning": "the two components"
-    }
-   ],
-   "source": [
-    {
-     "file": "compat/ConnectP.v",
-     "names": [
-      "sem_p_connect"
-     ]
-    }
-   ]
-  },
   "th.lf-p-connect": {
    "title": "P-Connect in the lock-free judgment",
    "meaning": "If $\\mathsf{conn}$, $\\Sigma_1 \\cup \\Sigma_C \\Vvdash\\inmode{lf}{^{N}}_{W_1} p_1 : T$ and $\\Sigma_2 \\cup \\Sigma_D \\Vvdash\\inmode{lf}{^{N}}_{W_2} p_2 : \\ast$, then $\\Sigma_1 \\cup \\Sigma_2 \\Vvdash\\inmode{lf}{^{N}}_{W_1 \\sqcup W_2} p_1 \\parallel_{\\Sigma_C} p_2 : T$. With $W_1$, $W_2$ and $W_1|_S \\sqcup W_2|_S$ ranked, a closed composite is lock free. The fundamental theorem for processes applies it at the worlds of the two components.",
@@ -17217,50 +17057,6 @@
      "file": "static/Conservativity.v",
      "names": [
       "conservative"
-     ]
-    }
-   ]
-  },
-  "th.typed-dftyped": {
-   "title": "Erasure to deadlock-free typing",
-   "meaning": "For each $N$, erasing the annotations of an annotated derivation gives a deadlock-free derivation.",
-   "why": "Hence each lock-free typing is also a deadlock-free typing.",
-   "breaks": "Nothing. It is a theorem.",
-   "example": "The cycle at $N = 2$ erases to its deadlock-free typing.",
-   "signature": "\\Gamma ; \\Delta \\vdash^{F}_{W\\inmode{lf}{,N}} e : T\\ !\\ \\varepsilon \\Rightarrow \\Gamma ; \\Delta_{df} \\vdash^{F}_{W} e : T_{df}",
-   "args": [
-    {
-     "name": "N",
-     "meaning": "a bound on tickets"
-    }
-   ],
-   "source": [
-    {
-     "file": "static/Conservativity.v",
-     "names": [
-      "typed_dftyped"
-     ]
-    }
-   ]
-  },
-  "th.fsem-of-cost": {
-   "title": "Fuel from cost typing",
-   "meaning": "If $\\varnothing ; \\Delta \\vdash^{\\varnothing}_{W\\inmode{lf}{,N}} e : T\\ !\\ c$ and $\\mathsf{tfree}\\,T$, then $\\mathsf{fsem}\\,N\\,\\Delta\\inmode{lf}{^{N}}\\,e$.",
-   "why": "Typing keeps the credit of each end of $\\Delta$ at most its tickets, so each end may start at its tickets, and the cost judgment yields the per-thread fuel that lock freedom needs.",
-   "breaks": "If a closure could mention an end it does not own, the forwarder could receive a closure that owns nothing and would have no fuel after spawning the closure.",
-   "example": "The forwarder $\\mathsf{fw}$.",
-   "signature": "\\varnothing ; \\Delta \\vdash^{\\varnothing}_{W\\inmode{lf}{,N}} e : T\\ !\\ c \\land \\mathsf{tfree}\\,T \\Rightarrow \\mathsf{fsem}\\,N\\,\\Delta\\inmode{lf}{^{N}}\\,e",
-   "args": [
-    {
-     "name": "\\Delta",
-     "meaning": "the ends of the thread with their credits and tickets"
-    }
-   ],
-   "source": [
-    {
-     "file": "cost/CostFund.v",
-     "names": [
-      "fsem_of_cost"
      ]
     }
    ]
@@ -17531,28 +17327,6 @@
      "names": [
       "tenv_df",
       "lenv_df"
-     ]
-    }
-   ]
-  },
-  "th.styof": {
-   "title": "$\\Delta\\inmode{lf}{^{N}}$",
-   "meaning": "The held ends of $\\Delta$ for fuel, each counter at its tickets. An entry $o \\mapsto S_x\\inmode{lf}{^{a,m}}$ of $\\Delta$ becomes $o \\mapsto S^{m,m}$.",
-   "why": "Fuel reads protocols, counters and tickets and ignores points and credits. A thread starts with each counter at its tickets.",
-   "breaks": "Nothing. It is a definition.",
-   "example": "$\\{a \\mapsto S_x\\inmode{lf}{^{2,3}}\\}\\inmode{lf}{^{N}} = \\{a \\mapsto S^{3,3}\\}$.",
-   "signature": "\\Delta\\inmode{lf}{^{N}} : \\sym{type.End}{\\mathsf{End}} \\rightharpoonup \\sym{type.STy}{\\mathsf{STy}} \\times \\mathbb{N} \\times \\mathbb{N}",
-   "args": [
-    {
-     "name": "\\Delta",
-     "meaning": "the linear context of ends and variables"
-    }
-   ],
-   "source": [
-    {
-     "file": "cost/CostFund.v",
-     "names": [
-      "fsem_of_cost"
      ]
     }
    ]
