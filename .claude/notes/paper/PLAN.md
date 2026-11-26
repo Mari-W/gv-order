@@ -9,6 +9,52 @@ figures against the changed blocks by hand. Paragraph slots are `% PAR:`
 comments, gaps are `% GAP:`. This plan and the previews live in
 .claude/notes/paper/ (paper/ holds only build inputs).
 
+## Revision 4 (branch paper-rev4)
+
+State. Branch paper-rev4 from main (ae11fd2b). `make -C paper` passes, no
+undefined references, `make -C paper check` passes. 40 pages (41 before),
+body pages 1 to 15 with the references from page 15 (16 before), appendix
+from page 17. Previews of pages 2 to 15 in .claude/notes/paper/preview/.
+Goal of the revision: the body defines less, stays true, and points to the
+appendix for the precise form. Where the older sections below disagree with
+this section, this section holds.
+
+### Simplifications
+
+| # | body now | the body omits | where the precise form is |
+|---|---|---|---|
+| 1 | conv:implicit keeps one bullet (disjoint contexts) and one sentence: a derivation uses only well-formed types and instances (contractive session types, payloads that mention only their own point variables) and binds only fresh point variables. E-Box reads `∀ s̄` | the separate bullets for contractivity, payload scoping, freshness, the set Inst | App. ty-session (contr), ty-payload (pscoped), r-boxes (sinsts, freshness) |
+| 2 | def:side defines Γ ⊢_W x ≺ y in one sentence as the transitive closure of ≺_W and the facts of the instances in Γ, ≼ and Γ ⊢ C[x̄] in one sentence | the three closure rules Ord-World, Ord-Fact, Ord-Trans | App. t-contexts |
+| 3 | a future F is a set of points, x ≺ F says x lies below each point of F, F ◁ H = F ∪ ap(H), x ≺ H and l ≼ H compare with each active point of H, the body of a closure runs under △u with x ≺ △u iff Γ ⊢ x ≼ u, one sentence says the general form also admits ⊥ and ⊤. den_Y(F) of def:sem-judgments is "the finite set F stands for when Y stands for △u" | F = X ∪ △v, X a finite set of bounds, the cases ⊥ ≺ F and ⊥ ∈ X ∨ v = ⊥ ⇒ x ⊀ F, the three cases of den_Y | App. t-contexts, t-side, sj-all |
+| 4 | no η. Interface ends carry their annotations in Σ (o : S_x^{a,m}, shaded). Judgment Σ ⊢^N_W p : T. P-Term types t under Σ, Θ_B and asks tk(o) ≤ N on Σ. P-Connect asks tk(o) + tk(ō) ≤ N on Σ_C, and the dual interface carries credits and tickets of its own. Anatomy tables of def:proc-judgment and def:lf-ann lose the η row, conv:lf no longer names η, prop:flag-rejected quantifies over N and W, thm:lf-fundamental (2) and thm:lf drop η | the interface annotation η, tk_η, Σ^η | App. p-typing (η, P-Term.ann, P-Connect.tsum). Faithful because a derivation reads η only at its interface ends and restricted ends (ptyped_iann_local, p_connect_iann) |
+| 5 | def:proc-judgment glosses the conditions in one item each: tfree T (built from ∗, boxes, products and sums, so its values hold no ends), pfree Σ (never both ends of a channel), pairs (Θ_B holds exactly the two ends of each channel of C₀ at dual points and protocols, shaded: credit equal to tickets, tickets summing to at most N), the dual interface and p₁ ∥_{Σ_C} p₂ (runs both, restricts the channels of Σ_C) in one item, tk(o) in one shaded item. tfree moved here from def:side | the formulas of pfree, chans, Σ̄, ∥_Σ, pairs, ends(C₀), the grammar 𝒯₀ | App. p-typing, ty-kinds |
+| 6 | def:creation in words: new points of ῑ (base in ῑ) and old points, acyc (C among the new points plus program order x ≺ x⁺, x ≺ x̄⁺ has no cycle), conserv (each fact between old points that Γ, C(ῑ) derives, Γ derives alone), rankable shaded (C and program order well-founded on the new points, plus a relation pairing new points with finite nonempty sets of old points: each fact u ≺ y from a new to an old point pairs u with a set below y, each new point one step below a paired point gets a set whose points lie below points of the set above, each fact z ≺ s from an old point lies below a point of each set of s). def:ranked no longer restates rankable | tree(ῑ), ≺^ρ_C, the formulas | App. r-new, r-ex. Checked against acyc_new, tree_acyclic, new_step, conserv, new_ok, gen_new_rel in theories/static/Contexts.v |
+| 7 | fig:typing-core shows E-App, E-Case, E-Send, E-Close, E-Link; fig:typing-orders shows E-New and E-Box. Captions gloss E-Abs (body under △u, l ≼ Δ), E-New-Field (channel at a field x·κ of any point, no facts), E-Force (points x̄ with Γ ⊢ C[x̄] and u[x̄] ≺ F), E-Open (opens a held existential, assumes its constraint, conservative over Γ), E-Pack. def:oracles names E-Force and E-Open with appendix references | the rules E-Abs, E-New-Field, E-Force, E-Open | App. r-fun, r-new, r-boxes, r-ex |
+| 8 | §3 has two examples: ex:milner-typed and ex:cs. ex:forkjoin moved to §5.3 (sec:lf-ranked), where its slot uses it. ex:bit cut to the appendix with its slot kept | the listings of ex-bit and ex-forkjoin in §3 | App. app:ex-bit; ex:forkjoin in §5.3 |
+| 9 | def:rel-anatomy says once that the side conditions of §3 are read in W with ≺_W for Γ ⊢_W, and states the convention that a closure or box owns exactly the ends in its body. The future of the relation is a finite set of points. Instances s̄ are well formed as in conv:implicit | the re-reading of W ⊢ u ≺ F, l ≼_W H, W ⊢ C[x̄]; the premises dom Θ = fends(e) of V-Arrow and fends(e) = ∅ of V-Box; Inst in V-Box | App. v-rel, syn-fends |
+| 10 | def:readiness in words, three cases for terms (value; offers a held end and is at a link; offers a held end and the point of each offered end lies below the dual point of each held end it does not offer and each point of F) and three for processes (at a link; terminated with empty interface; offers an interface end and each interface end it does not offer has an offered end below its dual point) | the formulas with stable, offered, Θ|_A, Θ \ A, A ≺_W B | App. rd. Checked against ready_t, below_rest, ready_p, above_offered in theories/relation/Readiness.v, the case split is equivalent (a value has no step, and with nothing offered above_offered holds only for the empty interface) |
+| 11 | def:proc-conds is two items in words, what a send (gives away the restricted ends Θ_e of its payload, each with its dual at dual point and protocol, the duals that stay join the interface as Σ_e) and a receive (adds the arriving ends, an arriving end that meets its dual sits at the dual point with a dual protocol, the channel becomes restricted and both ends leave the interface) do. The names opened, matches, closed, iface stay on the clauses and in Q-Send, Q-Recv | the four formulas | App. p-obls (send_split, recv_ok, recv_back, recv_env) |
+
+### Corrections made on the way (needed to keep the body true after item 4)
+
+- thm:lf-compose (2) now has the premise tk(o) + tk(ō) ≤ N for o ∈ dom Σ_C.
+  `lf_p_connect` asks it, the earlier body left it out.
+- def:lf-rel and def:lf-judgment now read the interface annotations: each
+  end of Σ carries the point and protocol of its entry and at most the
+  tickets of that entry (`sp_sigcap`). The earlier body said "at most
+  ⌊N/2⌋ tickets", which is `Soup` and `lf_sem` (η fixed to N/2), while
+  thm:lf-fundamental (2) cites `lf_fundamental`, whose conclusion is
+  `lf_sems` with η. The definitions now cite `SoupK` and `lf_sems`.
+
+### What could not be put in words faithfully in one phrase
+
+- rankable needs three clauses about a relation of partner sets, so its
+  shaded item in def:creation is one long sentence rather than one phrase.
+- The ⊥ and ⊤ cases of futures stay a pointer ("the general form also
+  admits the bounds ⊥ and ⊤"). The body reading "F is a set of points" is
+  exact only for futures without bounds. △u is not read as a set: x ≺ △u is
+  defined as Γ ⊢ x ≼ u, because "below every point above u" is weaker.
+
 ## Revision 3 (branch paper-rev3)
 
 State. `make -C paper` passes, no undefined references, no overfull boxes,
