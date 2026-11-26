@@ -218,3 +218,16 @@ Section complete.
     intros (t & <- & Ht). by apply (proj1 (algo_sound W N)).
   Qed.
 End complete.
+
+(** The deadlock-freedom instance, N = ∞ with the annotations of N = ∞. *)
+Corollary algo_iff_df W Θ Γ Δ F e T :
+  tenv_contr Θ → lenv_contr Δ →
+  dftyped W Θ Γ Δ F e T ↔
+  ∃ t, erase t = e ∧ syn W None (tenv_df Θ) Γ (lenv_df Δ) F t (ty_df T) None.
+Proof.
+  intros HΘ HΔ. unfold dftyped. apply algo_iff.
+  - intros o te. unfold tenv_df. rewrite lookup_fmap. destruct (Θ !! o) as [e0|] eqn:E; [|done].
+    intros [= <-]. simpl. rewrite scontr_df. by apply (HΘ o e0).
+  - intros i T0. unfold lenv_df. rewrite list_lookup_fmap. destruct (Δ !! i) as [[T1|]|] eqn:E; try done.
+    intros [= <-]. rewrite tcontr_df. by apply (HΔ i T1).
+Qed.

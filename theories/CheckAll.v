@@ -391,6 +391,7 @@ Print Assumptions ms_deadlock_free.
 Print Assumptions algo_sound.
 Print Assumptions algo_complete.
 Print Assumptions algo_iff.
+Print Assumptions algo_iff_df.
 (** algorithmic/Oracles.v, algorithmic/Decide.v *)
 Print Assumptions tsub_dec.
 Print Assumptions alg_sound.
