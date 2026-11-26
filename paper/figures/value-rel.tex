@@ -23,7 +23,7 @@
   \end{rules}
   \begin{rules}
     \infer*[lab=V-Arrow]
-      {\mathrm{dom}\,\cTheta = \fends(\tm) \\ l \preccurlyeq_W \ap(\cTheta) \\\\
+      {l \preccurlyeq_W \ap(\cTheta) \\\\
        \forall W' \sqsupseteq W,\ \ixs < \ix,\ F,\ \cTheta',\ \valB. \\\\
        W' \vdash u \prec F \land \valB \in \Vrel{W'}{\ixs}{\cTheta'}{\ty} \\\\
        \Rightarrow\ \tm[\valB/b] \in \Erel{W'}{\ixs}{\cTheta \cup \cTheta'}{\tyB}{F}}
@@ -31,8 +31,7 @@
     \label{rule:V-Arrow}
     \and
     \infer*[lab=V-Box]
-      {\fends(\tm) = \varnothing \\\\
-       \forall W' \sqsupseteq W,\ \bar x,\ \bar s \in \Inst,\ \ixs < \ix,\ F. \\\\
+      {\forall W' \sqsupseteq W,\ \bar x,\ \bar s,\ \ixs < \ix,\ F. \\\\
        W' \vdash C[\bar x] \land W' \vdash u[\bar x] \prec F \\\\
        \Rightarrow\ \tm[\tbox{f}{\tm}/f] \in \Erel{W'}{\ixs}{\varnothing}{\tyB[\bar s][\bar x]}{F}}
       {\tbox{f}{\tm} \in \Vrel{W}{\ix}{\varnothing}{\tyBox(\tyforall\bar\iota\,\bar \tvar{}.\,C.\ \tyunit \tymultimap^{u} \tyB)}}
