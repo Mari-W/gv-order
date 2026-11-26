@@ -18,13 +18,13 @@
   \end{rules}
   \begin{rules}
     \infer*[lab=E-Box]
-      {B = \tyBox(\forall \bar\iota\,\bar Z.\ C.\ \ast \tymultimap^{u}\lf{[\varepsilon]}\,\tyB) \\ \unl\,\lenv \\\\
+      {B = \tyBox(\tyforall \bar\iota\,\bar \tvar{}.\ C.\ \tyunit \tymultimap^{u}\lf{[\varepsilon]}\,\tyB) \\ \unl\,\lenv \\\\
        \forall \bar s \in \Inst.\ \tyj{\cGamma, C(\bar\iota)}{\lenv, f : B}{\up{u}}{\tm}{\tyB[\bar s]}\eff{\varepsilon}}
       {\tyj{\cGamma}{\lenv}{F}{\tbox{f}{\tm}}{B}\eff{0}}
     \label{rule:E-Box}
     \and
     \infer*[lab=E-Force]
-      {\tyj{\cGamma}{\lenv}{F}{\tm}{\tyBox(\forall \bar\iota\,\bar Z.\ C.\ \ast \tymultimap^{u}\lf{[\varepsilon]}\,\tyB)}\eff{\varepsilon_0} \\\\
+      {\tyj{\cGamma}{\lenv}{F}{\tm}{\tyBox(\tyforall \bar\iota\,\bar \tvar{}.\ C.\ \tyunit \tymultimap^{u}\lf{[\varepsilon]}\,\tyB)}\eff{\varepsilon_0} \\\\
        \cGamma \vdash C[\bar x] \\ u[\bar x] \prec F}
       {\tyj{\cGamma}{\lenv}{F}{\tforce\,\tm}{\tyB[\bar s][\bar x]}\eff{\varepsilon_0 + 1 + \varepsilon}}
     \label{rule:E-Force}

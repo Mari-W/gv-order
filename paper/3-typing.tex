@@ -24,10 +24,10 @@ A shaded part $\lf{X}$ belongs to the lock-free instance at a finite bound $N$ a
 
 \begin{convention}[Implicit premises]
 \label{conv:implicit}
-The rules of \cref{sec:rules,sec:creation,sec:proc-typing} are read under the following premises, which the Rocq rules state explicitly (\cref{app:typing}).
+The rules of \cref{sec:rules,sec:creation,sec:proc-typing} are read under the following premises (\cref{app:typing}).
 \begin{itemize}
   \item Contexts combined in one rule are disjoint.
-  \item Every session type that enters a derivation is contractive (\cref{app:ty-session}). In the Rocq this is a premise of \ruleref{E-Abs}, E-Inj, \ruleref{E-Box}, \ruleref{E-New} and \ruleref{P-Term}.
+  \item Every session type that enters a derivation is contractive (\cref{app:ty-session}).
   \item A payload $!(\bar\iota.\,\ty)$ or $?(\bar\iota.\,\ty)$ mentions no point variable besides $\bar\iota$ (\cref{app:ty-payload}).
   \item The point variables $\bar\iota$ bound by \ruleref{E-Box} and \ruleref{E-Open} are fresh for $\cGamma$, $\lenv$, $F$ and the result type.
   \item $\Inst$ is the set of lists $\bar s$ of contractive session types whose payloads mention only their own point variables, the instances of \ruleref{E-Box} and \ruleref{E-Force}.
@@ -62,11 +62,11 @@ with the components
 \label{def:side}
 Kinds of types and contexts.
 \begin{gather*}
-  \unl\,\ty \iff \exists \bar\iota, \bar Z, C, u, \tyB.\ \ty = \tyBox(\forall \bar\iota\,\bar Z.\ C.\ \ast \tymultimap^{u} \tyB)
+  \unl\,\ty \iff \exists \bar\iota, \bar \tvar{}, C, u, \tyB.\ \ty = \tyBox(\tyforall \bar\iota\,\bar \tvar{}.\ C.\ \tyunit \tymultimap^{u} \tyB)
   \qquad
   \unl\,\lenv \iff \forall (z : \ty) \in \lenv.\ \unl\,\ty \\
-  \tfree\,\ty \iff \ty \in \mathcal{\ty}_0 \qquad
-  \mathcal{\ty}_0 ::= \ast \mid \tyBox(\forall \bar\iota\,\bar Z.\ C.\ \ast \tymultimap^{u} \tyB) \mid \mathcal{\ty}_0 \tyotimes \mathcal{\ty}_0 \mid \mathcal{\ty}_0 \tyoplus \mathcal{\ty}_0
+  \tfree\,\ty \iff \ty \in \mathcal{T}_0 \qquad
+  \mathcal{T}_0 ::= \tyunit \mid \tyBox(\tyforall \bar\iota\,\bar \tvar{}.\ C.\ \tyunit \tymultimap^{u} \tyB) \mid \mathcal{T}_0 \tyotimes \mathcal{T}_0 \mid \mathcal{T}_0 \tyoplus \mathcal{T}_0
 \end{gather*}
 The order judgment $\cGamma \vdash_W x \prec y$ is the least relation with (\cref{app:t-contexts})
 \begin{gather*}
@@ -200,7 +200,8 @@ with $\lf{\tk_\eta(o) = m}$, and $\lf{\senv^{\eta}}$ maps $o$ to $\sty_x^{a,m}$ 
   \chans\,\senv &= \{c \mid c^{+} \in \mathrm{dom}\,\senv \lor c^{-} \in \mathrm{dom}\,\senv\} \qquad
   \dual{\senv} = \{\dual{o} : \dual{\sty}_{\dual{x}} \mid (o : \sty_x) \in \senv\} \\
   (C_1, E_1) \cpar{\senv} (C_2, E_2) &= (C_1 \cup C_2 \cup \chans\,\senv,\ E_1 \uplus E_2) \\
-  \pairs^{\lf{N}}(\cTheta_B, C_0) &\iff \mathrm{dom}\,\cTheta_B = \ends(C_0) \land \forall c \in C_0.\ \cTheta_B(c^{+}) = \sty_x\lf{^{m,m}} \land \cTheta_B(c^{-}) = \dual{\sty}_{\dual{x}}\lf{^{m',m'}} \lf{{}\land m + m' \leq N}
+  \pairs^{\lf{N}}(\cTheta_B, C_0) &\iff \mathrm{dom}\,\cTheta_B = \ends(C_0) \land \forall c \in C_0. \\
+  &\phantom{{}\iff{}} \cTheta_B(c^{+}) = \sty_x\lf{^{m,m}} \land \cTheta_B(c^{-}) = \dual{\sty}_{\dual{x}}\lf{^{m',m'}} \lf{{}\land m + m' \leq N}
 \end{align*}
 where $\ends(C_0) = \{c^{+}, c^{-} \mid c \in C_0\}$.
 \end{definition}

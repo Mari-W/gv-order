@@ -8,14 +8,14 @@
   \begin{array}{@{}r@{\ \ }c@{\ \ }l@{\qquad}r@{}}
     o & ::= & c^{+} \mid c^{-} & \text{ends, } \dual{c^{\pm}} = c^{\mp}\\[2pt]
     k & ::= & \tsend \mid \trecv \mid \tclose \mid \tselect_i \mid \tbranch \mid \tlink \mid \tspawn \mid \tforce & \text{constants}\\[2pt]
-    \tm & ::= & a \mid \ast \mid o \mid \tlam{a}{\tm} \mid \tm_1\,\tm_2 \mid \tpair{\tm_1}{\tm_2}
+    \tm & ::= & a \mid \tunit \mid o \mid \tlam{a}{\tm} \mid \tm_1\,\tm_2 \mid \tpair{\tm_1}{\tm_2}
               \mid \tletu{\tm_1}{\tm_2} \mid \tletp{a}{b}{\tm_1}{\tm_2} & \text{terms}\\
       & \mid & \tinj_i\,\tm \mid \tcasee{\tm}{a}{\tm_1}{a}{\tm_2} \mid \tbox{f}{\tm} \mid \tnew \mid k\,\tm & \\[2pt]
-    \val & ::= & \ast \mid o \mid \tlam{a}{\tm} \mid \tbox{f}{\tm} \mid \tpair{\val_1}{\val_2} \mid \tinj_i\,\val & \text{values}\\[2pt]
+    \val & ::= & \tunit \mid o \mid \tlam{a}{\tm} \mid \tbox{f}{\tm} \mid \tpair{\val_1}{\val_2} \mid \tinj_i\,\val & \text{values}\\[2pt]
     \proc & ::= & (C, E) & \text{processes}
   \end{array}
   \]
-  \[ \tletv{a}{\tm_1}{\tm_2} \;\triangleq\; \tletp{a}{u}{\tpair{\tm_1}{\ast}}{\tletu{u}{\tm_2}} \qquad (u \text{ fresh}) \]
+  \[ \tletv{a}{\tm_1}{\tm_2} \;\triangleq\; \tletp{a}{u}{\tpair{\tm_1}{\tunit}}{\tletu{u}{\tm_2}} \qquad (u \text{ fresh}) \]
   \figrule
   \Description{Grammar of ends, constants, terms, values and processes.}
   \caption{Syntax of \OurLang. A process is a set $C$ of restricted channels and a multiset $E$ of threads. Term steps $e \xrightarrow{\ell} e'$ and process steps $p \to p'$ are standard (\cref{app:sem-head,app:sem-proc}).}

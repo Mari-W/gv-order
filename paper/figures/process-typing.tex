@@ -13,7 +13,7 @@
     \and
     \infer*[lab=P-Connect]
       {\senv_1 \cup \senv_C \vdash_{W_1}^{\lf{N,\eta}} \proc_1 : \ty \\
-       \senv_2 \cup \dual{\senv_C} \vdash_{W_2}^{\lf{N,\eta}} \proc_2 : \ast \\\\
+       \senv_2 \cup \dual{\senv_C} \vdash_{W_2}^{\lf{N,\eta}} \proc_2 : \tyunit \\\\
        \lf{\forall o \in \mathrm{dom}\,\senv_C.\ \tk_{\eta}(o) + \tk_{\eta}(\dual{o}) \leq N} \\
        \lfalt{\cons}{\ranked}(W_1 \wjoin W_2)}
       {\senv_1 \cup \senv_2 \vdash_{W_1 \wjoin W_2}^{\lf{N,\eta}} \proc_1 \cpar{\senv_C} \proc_2 : \ty}

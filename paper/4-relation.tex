@@ -9,16 +9,16 @@
 \label{def:rel-anatomy}
 The relations have the forms
 \[
-  v \in \Vrel{W}{\alpha}{\cTheta}{\ty} \qquad
-  \tm \in \Erel{W}{\alpha}{\cTheta}{\ty}{F} \qquad
-  \proc \in \Prel{W}{\alpha}{\senv}{\ty}
+  v \in \Vrel{W}{\ix}{\cTheta}{\ty} \qquad
+  \tm \in \Erel{W}{\ix}{\cTheta}{\ty}{F} \qquad
+  \proc \in \Prel{W}{\ix}{\senv}{\ty}
 \]
 with the components
 \begin{center}
 \small
 \begin{tabular}{@{}l@{\quad}l@{}}
   $W$ & world whose order the relation reads \\
-  $\alpha$ & ordinal index (\cref{app:sr-ord}) \\
+  $\ix$ & ordinal index (\cref{app:sr-ord}) \\
   $\cTheta$ & owned ends, each with its end type $\sty_x$ \\
   $\senv$ & interface of the process \\
   $\ty$ & type of the value \\
@@ -45,7 +45,8 @@ $W \vdash x \prec y$ is $x \ordW y$, and $W \vdash u \prec F$, $l \preccurlyeq_W
 \begin{definition}[Readiness \rocq{ready_t} \rocq{ready_p}]
 \label{def:readiness}
 \begin{align*}
-  \ready_W(\cTheta \mid F, t) &\iff \mathsf{stable}\,t \Rightarrow \big(\cTheta|_{\offered\,t} = \varnothing \Rightarrow t \in \mathsf{Val}\big) \land \big(\mathsf{link}\,t \lor \cTheta|_{\offered\,t} \ordW \dual{\cTheta \setminus \offered\,t} \cup F\big) \\
+  \ready_W(\cTheta \mid F, t) &\iff \mathsf{stable}\,t \Rightarrow \big(\cTheta|_{\offered\,t} = \varnothing \Rightarrow t \in \mathsf{Val}\big) \\
+  &\phantom{{}\iff{}} \land \big(\mathsf{link}\,t \lor \cTheta|_{\offered\,t} \ordW \dual{\cTheta \setminus \offered\,t} \cup F\big) \\
   \ready_W(\senv, \proc) &\iff \mathsf{stable}\,\proc \Rightarrow \mathsf{link}\,\proc \lor \big(\big(\senv|_{\offered\,\proc} = \varnothing \Rightarrow \terminated\,\proc\big) \\
   &\phantom{{}\iff{}} \land \forall y \in \dual{\senv \setminus \offered\,\proc}.\ \exists x \in \senv|_{\offered\,\proc}.\ x \ordW y\big)
 \end{align*}
@@ -66,7 +67,7 @@ $W \vdash x \prec y$ is $x \ordW y$, and $W \vdash u \prec F$, $l \preccurlyeq_W
 
 \begin{lemma}[Bind \rocq{Erel_bind}]
 \label{lem:bind}
-Let $\mathcal{E}$ be an evaluation context (\cref{app:sem-ctx}) whose ends are $\cTheta_2$. If $\tm \in \Erel{W}{\alpha}{\cTheta_1}{\ty}{F \cup \ap(\cTheta_2)}$, and $\mathcal{E}[v] \in \Erel{W'}{\beta}{\cTheta_v \cup \cTheta_2}{\tyB}{F}$ for each $W' \sqsupseteq W$, $\beta \leq \alpha$ and $v \in \Vrel{W'}{\beta}{\cTheta_v}{\ty}$, then $\mathcal{E}[\tm] \in \Erel{W}{\alpha}{\cTheta_1 \cup \cTheta_2}{\tyB}{F}$.
+Let $\mathcal{E}$ be an evaluation context (\cref{app:sem-ctx}) whose ends are $\cTheta_2$. If $\tm \in \Erel{W}{\ix}{\cTheta_1}{\ty}{F \cup \ap(\cTheta_2)}$, and $\mathcal{E}[v] \in \Erel{W'}{\ixs}{\cTheta_v \cup \cTheta_2}{\tyB}{F}$ for each $W' \sqsupseteq W$, $\ixs \leq \ix$ and $v \in \Vrel{W'}{\ixs}{\cTheta_v}{\ty}$, then $\mathcal{E}[\tm] \in \Erel{W}{\ix}{\cTheta_1 \cup \cTheta_2}{\tyB}{F}$.
 \end{lemma}
 
 \subsection{Processes}
@@ -108,11 +109,11 @@ Let $\ech(o)$ be the channel of the end $o$ and $\mathsf{sdual}\,S\,S'$ say that
 \label{def:sem-judgments}
 \begin{align*}
   \lenv \semt^{F}_{W} \tm : \ty &\iff \forall Y.\ \lenv \semt^{\mathsf{den}_Y(F)}_{W} \tm : \ty \\
-  \lenv \semt^{X}_{W} \tm : \ty &\iff \forall \alpha, W' \sqsupseteq W, \cTheta', \gamma.\ \gamma \in G^{W'}_{\alpha}\llbracket \cTheta' \vdash \lenv \rrbracket \Rightarrow \gamma(\tm) \in \Erel{W'}{\alpha}{|\lenv| \cup \cTheta'}{\ty}{X} \\
-  \senv \semt_{W} \proc : \ty &\iff \forall W' \sqsupseteq W.\ \cons\,W' \Rightarrow \forall \alpha.\ \proc \in \Prel{W'}{\alpha}{\senv}{\ty}
+  \lenv \semt^{X}_{W} \tm : \ty &\iff \forall \ix, W' \sqsupseteq W, \cTheta', \gamma.\ \gamma \in G^{W'}_{\ix}\llbracket \cTheta' \vdash \lenv \rrbracket \Rightarrow \gamma(\tm) \in \Erel{W'}{\ix}{|\lenv| \cup \cTheta'}{\ty}{X} \\
+  \senv \semt_{W} \proc : \ty &\iff \forall W' \sqsupseteq W.\ \cons\,W' \Rightarrow \forall \ix.\ \proc \in \Prel{W'}{\ix}{\senv}{\ty}
 \end{align*}
 \begin{itemize}
-  \item $\gamma \in G^{W}_{\alpha}\llbracket \cTheta' \vdash \lenv \rrbracket$: $\gamma$ substitutes for each variable of $\lenv$ a value in $V$ at its type, and these values own $\cTheta'$.
+  \item $\gamma \in G^{W}_{\ix}\llbracket \cTheta' \vdash \lenv \rrbracket$: $\gamma$ substitutes for each variable of $\lenv$ a value in $V$ at its type, and these values own $\cTheta'$.
   \item $|\lenv|$: the ends of $\lenv$.
   \item $\mathsf{den}_Y(F)$ for $F = X \cup \up{v}$: $X \cup Y$ for a finite set $Y$ of points above $v$, any finite $Y$ when $\bot \in X$ (\cref{app:sj-all}).
 \end{itemize}
@@ -126,8 +127,8 @@ Let $\ech(o)$ be the channel of the end $o$ and $\mathsf{sdual}\,S\,S'$ say that
 \label{thm:compose}
 Let $\tfree\,\ty$.
 \begin{enumerate}
-  \item If $\pfree\,\senv$, $\pairs(\cTheta_B, C_0)$ and $t \in \Erel{W}{\alpha}{\senv \cup \cTheta_B}{\ty}{\varnothing}$, then $(C_0, \{t\}) \in \Prel{W}{\alpha}{\senv}{\ty}$.
-  \item If $\pfree\,\senv_1$, $\pfree\,\senv_2$, $\pfree\,\senv_C$, $\senv_1 \cup \senv_C \semt_{W_1} \proc_1 : \ty$ and $\senv_2 \cup \dual{\senv_C} \semt_{W_2} \proc_2 : \ast$, then $\senv_1 \cup \senv_2 \semt_{W_1 \wjoin W_2} \proc_1 \cpar{\senv_C} \proc_2 : \ty$.
+  \item If $\pfree\,\senv$, $\pairs(\cTheta_B, C_0)$ and $t \in \Erel{W}{\ix}{\senv \cup \cTheta_B}{\ty}{\varnothing}$, then $(C_0, \{t\}) \in \Prel{W}{\ix}{\senv}{\ty}$.
+  \item If $\pfree\,\senv_1$, $\pfree\,\senv_2$, $\pfree\,\senv_C$, $\senv_1 \cup \senv_C \semt_{W_1} \proc_1 : \ty$ and $\senv_2 \cup \dual{\senv_C} \semt_{W_2} \proc_2 : \tyunit$, then $\senv_1 \cup \senv_2 \semt_{W_1 \wjoin W_2} \proc_1 \cpar{\senv_C} \proc_2 : \ty$.
 \end{enumerate}
 \end{theorem}
 % PAR: semantic P-Connect, components at their own worlds, joined world | example: ex-flag | figure/rule: thm:compose, fig:composition-example | map: th-compose, w-ext
@@ -149,15 +150,16 @@ Let $a \neq b$ be ends with $\lenv(a) = \sty_x$ and $\lenv(b) = \sty'_y$. If $\c
 
 \begin{proposition}[The flag is untypable \rocq{sbv_rejected}]
 \label{prop:flag-rejected}
-For all $N$, $\eta$ and $W$, $\neg\ \varnothing \vdash^{\lf{N,\eta}}_{W} (\{c, d\}, \{\mathit{thread}, \mathit{other}\}) : \ast$.
+For all $N$, $\eta$ and $W$,
+\[ \neg\ \varnothing \vdash^{\lf{N,\eta}}_{W} (\{c, d\}, \{\mathit{thread}, \mathit{other}\}) : \tyunit. \]
 \end{proposition}
 % PAR: the cycle xbar < y < xbar in the joined world, no world and no bound | example: ex-flag | figure/rule: prop:flag-rejected, fig:composition-example | map: p-typing, t-lemmas
 
 % PAR: semantic acceptance, the thread in E without a typing derivation, three beta steps reach the running arm, the fundamental theorem types the running arm in W_a | example: ex-flag | figure/rule: prop:flag-semantic | map: e-rel, th-terms
 \begin{proposition}[The flag thread is safe \rocq{sbv_thread_E}]
 \label{prop:flag-semantic}
-Let $W_a = (\{x, y\}, \{x \prec \dual{y}\})$ and $W_b = (\{x, y\}, \{\dual{x} \prec y\})$. For each consistent $W \sqsupseteq W_a \wjoin W_b$ and each $\alpha$,
-\[ \mathit{thread} \in \Erel{W}{\alpha}{\{c \mapsto \Close_x,\ d \mapsto \Close_y\}}{\ast}{\varnothing}. \]
+Let $W_a = (\{x, y\}, \{x \prec \dual{y}\})$ and $W_b = (\{x, y\}, \{\dual{x} \prec y\})$. For each consistent $W \sqsupseteq W_a \wjoin W_b$ and each $\ix$,
+\[ \mathit{thread} \in \Erel{W}{\ix}{\{c \mapsto \Close_x,\ d \mapsto \Close_y\}}{\ast}{\varnothing}. \]
 \end{proposition}
 
 \begin{corollary}[The flag is deadlock free \rocq{sbv_deadlock_free}]

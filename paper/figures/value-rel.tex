@@ -3,48 +3,48 @@
 % beta + kappa <= alpha is in the appendix (PLAN.md, simplifications).
 \begin{figure}[tbp]
   \small
-  \judghead{Values}{\val \in \Vrel{W}{\alpha}{\cTheta}{\ty}}
+  \judghead{Values}{\val \in \Vrel{W}{\ix}{\cTheta}{\ty}}
   \begin{rules}
-    \infer*[lab=V-Unit]{ }{\ast \in \Vrel{W}{\alpha}{\varnothing}{\ast}}
+    \infer*[lab=V-Unit]{ }{\tunit \in \Vrel{W}{\ix}{\varnothing}{\tyunit}}
     \label{rule:V-Unit}
     \and
-    \infer*[lab=V-Sess]{\sty' \approx \sty}{o \in \Vrel{W}{\alpha}{\{o \mapsto \sty'_x\}}{\sty_x}}
+    \infer*[lab=V-Sess]{\sty' \approx \sty}{o \in \Vrel{W}{\ix}{\{o \mapsto \sty'_x\}}{\sty_x}}
     \label{rule:V-Sess}
     \and
     \infer*[lab=V-Prod]
-      {\val_1 \in \Vrel{W}{\alpha}{\cTheta_1}{\ty_1} \\ \val_2 \in \Vrel{W}{\alpha}{\cTheta_2}{\ty_2}}
-      {\tpair{\val_1}{\val_2} \in \Vrel{W}{\alpha}{\cTheta_1 \uplus \cTheta_2}{\ty_1 \tyotimes \ty_2}}
+      {\val_1 \in \Vrel{W}{\ix}{\cTheta_1}{\ty_1} \\ \val_2 \in \Vrel{W}{\ix}{\cTheta_2}{\ty_2}}
+      {\tpair{\val_1}{\val_2} \in \Vrel{W}{\ix}{\cTheta_1 \uplus \cTheta_2}{\ty_1 \tyotimes \ty_2}}
     \label{rule:V-Prod}
     \and
     \infer*[lab=V-Sum]
-      {\val \in \Vrel{W}{\alpha}{\cTheta}{\ty_i}}
-      {\tinj_i\,\val \in \Vrel{W}{\alpha}{\cTheta}{\ty_1 \tyoplus \ty_2}}
+      {\val \in \Vrel{W}{\ix}{\cTheta}{\ty_i}}
+      {\tinj_i\,\val \in \Vrel{W}{\ix}{\cTheta}{\ty_1 \tyoplus \ty_2}}
     \label{rule:V-Sum}
   \end{rules}
   \begin{rules}
     \infer*[lab=V-Arrow]
       {\mathrm{dom}\,\cTheta = \fends(\tm) \\ l \preccurlyeq_W \ap(\cTheta) \\\\
-       \forall W' \sqsupseteq W,\ \beta < \alpha,\ F,\ \cTheta',\ \valB.\ \
-       W' \vdash u \prec F \land \valB \in \Vrel{W'}{\beta}{\cTheta'}{\ty}
-       \ \Rightarrow\ \tm[\valB/b] \in \Erel{W'}{\beta}{\cTheta \cup \cTheta'}{\tyB}{F}}
-      {\tlam{b}{\tm} \in \Vrel{W}{\alpha}{\cTheta}{\ty \arr{u}{l} \tyB}}
+       \forall W' \sqsupseteq W,\ \ixs < \ix,\ F,\ \cTheta',\ \valB. \\\\
+       W' \vdash u \prec F \land \valB \in \Vrel{W'}{\ixs}{\cTheta'}{\ty} \\\\
+       \Rightarrow\ \tm[\valB/b] \in \Erel{W'}{\ixs}{\cTheta \cup \cTheta'}{\tyB}{F}}
+      {\tlam{b}{\tm} \in \Vrel{W}{\ix}{\cTheta}{\ty \arr{u}{l} \tyB}}
     \label{rule:V-Arrow}
     \and
     \infer*[lab=V-Box]
       {\fends(\tm) = \varnothing \\\\
-       \forall W' \sqsupseteq W,\ \bar x,\ \bar s \in \Inst,\ \beta < \alpha,\ F.\ \
-       W' \vdash C[\bar x] \land W' \vdash u[\bar x] \prec F
-       \ \Rightarrow\ \tm[\tbox{f}{\tm}/f] \in \Erel{W'}{\beta}{\varnothing}{\tyB[\bar s][\bar x]}{F}}
-      {\tbox{f}{\tm} \in \Vrel{W}{\alpha}{\varnothing}{\tyBox(\forall\bar\iota\,\bar Z.\,C.\ \ast \tymultimap^{u} \tyB)}}
+       \forall W' \sqsupseteq W,\ \bar x,\ \bar s \in \Inst,\ \ixs < \ix,\ F. \\\\
+       W' \vdash C[\bar x] \land W' \vdash u[\bar x] \prec F \\\\
+       \Rightarrow\ \tm[\tbox{f}{\tm}/f] \in \Erel{W'}{\ixs}{\varnothing}{\tyB[\bar s][\bar x]}{F}}
+      {\tbox{f}{\tm} \in \Vrel{W}{\ix}{\varnothing}{\tyBox(\tyforall\bar\iota\,\bar \tvar{}.\,C.\ \tyunit \tymultimap^{u} \tyB)}}
     \label{rule:V-Box}
     \and
     \infer*[lab=V-Ex]
-      {l \preccurlyeq_W \ap(\cTheta) \\ W \vdash C[\bar x] \\ \val \in \Vrel{W}{\alpha}{\cTheta}{\ty[\bar x]}}
-      {\val \in \Vrel{W}{\alpha}{\cTheta}{\tyexists^{l}\bar\iota.\,C.\,\ty}}
+      {l \preccurlyeq_W \ap(\cTheta) \\ W \vdash C[\bar x] \\ \val \in \Vrel{W}{\ix}{\cTheta}{\ty[\bar x]}}
+      {\val \in \Vrel{W}{\ix}{\cTheta}{\tyexists^{l}\bar\iota.\,C.\,\ty}}
     \label{rule:V-Ex}
   \end{rules}
   \figrule
   \Description{Inference rules for the value relation, one per type constructor.}
-  \caption{The value relation, by recursion on $\alpha$ and then on $T$, under \cref{def:rel-anatomy}. Each rule is one clause, and $W' \sqsupseteq W$ ranges over the larger worlds of \cref{fig:worlds}.}
+  \caption{The value relation, by recursion on $\ix$ and then on $T$, under \cref{def:rel-anatomy}. Each rule is one clause, and $W' \sqsupseteq W$ ranges over the larger worlds of \cref{fig:worlds}.}
   \label{fig:value-rel}
 \end{figure}

@@ -170,8 +170,26 @@ LFP_TAG = r'(\mathsf{lfp})'
 LFP_TEXT = r'(\text{least fixed point over steps of cost } 0)'
 
 
+# Presentation only. The paper writes type variables as alpha (macro \tvar)
+# and ordinal indices as beta and gamma (macros \ix and \ixs), so the map's
+# Z, alpha and beta are renamed here. A beta that names a beta step keeps
+# its letter.
+STEP_BETA = [r'\xrightarrow{\beta}', r'\mathsf{Obl}_{\beta}', r'\mathsf{Fobl}_{\beta}',
+             r'\kappa_\beta', r'\kappa_{\beta}', r'\mathsf{Obl}_\beta']
+
+
+def rename_vars(s):
+    for pat in STEP_BETA:
+        s = s.replace(pat, pat.replace(r'\beta', '@STEPBETA@'))
+    s = re.sub(r'(^|\n)(\s*)\\beta(\s*&)', lambda m: m.group(1) + m.group(2) + '@STEPBETA@' + m.group(3), s)
+    s = re.sub(r'\\beta(?![A-Za-z])', lambda m: r'\ixs', s)
+    s = re.sub(r'\\alpha(?![A-Za-z])', lambda m: r'\ix', s)
+    s = re.sub(r'(?<![A-Za-z\\])Z(?![A-Za-z])', lambda m: r'{\tvar}', s)
+    return s.replace('@STEPBETA@', r'\beta')
+
+
 def tex(s, mode):
-    return strip_sym(resolve(s or '', mode)).replace(LFP_TAG, LFP_TEXT)
+    return rename_vars(strip_sym(resolve(s or '', mode)).replace(LFP_TAG, LFP_TEXT))
 
 
 # ---------------------------------------------------------------- splitting
@@ -315,7 +333,7 @@ def prose(s, mode='both'):
             part = part.replace('&', '\\&').replace('%', '\\%').replace('#', '\\#')
             part = re.sub(r'(?<!\\)_', r'\\_', part)
             out.append(part)
-    return shade_words(''.join(out))
+    return shade_words(rename_vars(''.join(out)))
 
 
 def split_words(s):

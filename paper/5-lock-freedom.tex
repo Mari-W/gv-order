@@ -114,11 +114,11 @@ $\ranked\,W$ implies $\cons\,W$ (\cref{app:w-wf}). At a finite $N$, \ruleref{P-T
 % PAR: mechanization insight, relation and fuel kept as two fixed points, not merged | example: - | figure/rule: def:fuel | map: fu-vs
 \begin{definition}[Fuel \rocq{FuelE}]
 \label{def:fuel}
-Fuel has the form $\tm \in \Fuel{N}{\alpha}{\cPhi}{\sigma\ !\ d}$ with the components
+Fuel has the form $\tm \in \Fuel{N}{\ix}{\cPhi}{\sigma\ !\ d}$ with the components
 \begin{center}
 \small
 \begin{tabular}{@{}l@{\quad}l@{}}
-  $N$, $\alpha$ & bound and ordinal index \\
+  $N$, $\ix$ & bound and ordinal index \\
   $\cPhi$ & held ends, each with its protocol $\sty$, counter $f$ and tickets $m$, written $\sty^{f,m}$ \\
   $\sigma$ & shape of the result \\
   $d$ & frame, the number of actions left before $\tm$ returns
@@ -127,7 +127,7 @@ Fuel has the form $\tm \in \Fuel{N}{\alpha}{\cPhi}{\sigma\ !\ d}$ with the compo
 An end is idle when $\unfold(\sty) = \Skip$. Fuel reads no point and no world and has no readiness clause.
 \begin{itemize}
   \item (stop) A value $\tm$ has fuel at its counters. An end has a counter at least its credit, a closure keeps the counters of its captured ends that are not idle at least at its credit, and a box holds no end (\cref{app:fv}).
-  \item (step) Each step $\tm \xrightarrow{\ell} \tm'$ changes the held ends as its obligation in \cref{fig:term-rel} does, and the successor has fuel at each $\beta < \alpha$ with the counters, tickets and frame below.
+  \item (step) Each step $\tm \xrightarrow{\ell} \tm'$ changes the held ends as its obligation in \cref{fig:term-rel} does, and the successor has fuel at each $\ixs < \ix$ with the counters, tickets and frame below.
   \item An action on $o$ asks $d \geq 1$ and a positive counter on each other held end that is not idle. The successor sees the frame $d - 1$, those counters lowered by one and the counter of $o$ reset to its tickets.
   \item A force asks the same positive counters and $d \geq 1$, and lowers every counter and the frame by one.
   \item A send hands the ends of its payload on with their counters lowered by one. A creation starts its two ends at tickets $m_1$ and $m_2$ with $m_1 + m_2 \leq N$, each counter at its tickets. A link of two ends with counters $f_1, f_2$ and tickets $m_1, m_2$ asks $f_1 + m_2 > N$ and $f_2 + m_1 > N$. A $\beta$ step, a spawn and a link change no counter (\cref{app:fu-obls}).
@@ -149,11 +149,11 @@ An annotated configuration is $a = (q, K, W_a)$ with
   $W_a$ & ranked world of the run so far
 \end{tabular}
 \end{center}
-$a \in \LFrel{N,W}{\alpha}{\senv}{\ty}$ holds when $W \sqsubseteq W_a$, $\tfree\,\ty$, $K$ fits $q$ and $\senv$ (\cref{app:soup}), and for some session type and protocol per held end each thread $\tm = q(t)$ has
+$a \in \LFrel{N,W}{\ix}{\senv}{\ty}$ holds when $W \sqsubseteq W_a$, $\tfree\,\ty$, $K$ fits $q$ and $\senv$ (\cref{app:soup}), and for some session type and protocol per held end each thread $\tm = q(t)$ has
 \[
-  \tm \in E[\kappa_L]^{W_a}_{\alpha}\llbracket \cTheta_t \vdash \tyB_t \rrbracket^{\varnothing}
+  \tm \in E[\kappa_L]^{W_a}_{\ix}\llbracket \cTheta_t \vdash \tyB_t \rrbracket^{\varnothing}
   \qquad\text{and}\qquad
-  \tm \in \Fuel{N}{\alpha}{\cPhi_t}{\mathsf{thread}\ !\ \infty}
+  \tm \in \Fuel{N}{\ix}{\cPhi_t}{\mathsf{thread}\ !\ \infty}
 \]
 \begin{itemize}
   \item $\cTheta_t$, $\cPhi_t$: the ends $K$ gives $t$, at their points and at their counters and tickets.
@@ -167,7 +167,7 @@ $a \in \LFrel{N,W}{\alpha}{\senv}{\ty}$ holds when $W \sqsubseteq W_a$, $\tfree\
 \begin{definition}[Lock-free judgment \rocq{lf_sem}]
 \label{def:lf-judgment}
 \[
-  \senv \semlf^{N}_{W} \proc : \ty \iff \forall W' \sqsupseteq W.\ \ranked\,W' \Rightarrow \forall \alpha.\ \exists a = (q, K, W_a).\ \mathsf{erase}(q) = \proc \land a \in \LFrel{N,W'}{\alpha}{\senv}{\ty}
+  \senv \semlf^{N}_{W} \proc : \ty \iff \forall W' \sqsupseteq W.\ \ranked\,W' \Rightarrow \forall \ix.\ \exists a = (q, K, W_a).\ \mathsf{erase}(q) = \proc \land a \in \LFrel{N,W'}{\ix}{\senv}{\ty}
 \]
 \end{definition}
 
@@ -177,7 +177,7 @@ $a \in \LFrel{N,W}{\alpha}{\senv}{\ty}$ holds when $W \sqsubseteq W_a$, $\tfree\
 Let $N \in \mathbb{N}$.
 \begin{enumerate}
   \item If the premises of \ruleref{P-Term} at $N$ hold apart from $\ranked\,W$, then $\senv \semlf^{N}_{W} (C_0, \{t\}) : \ty$.
-  \item If $\pfree\,\senv_1$, $\pfree\,\senv_2$, $\pfree\,\senv_C$, $\senv_1 \cup \senv_C \semlf^{N}_{W_1} \proc_1 : \ty$ and $\senv_2 \cup \dual{\senv_C} \semlf^{N}_{W_2} \proc_2 : \ast$, then $\senv_1 \cup \senv_2 \semlf^{N}_{W_1 \wjoin W_2} \proc_1 \cpar{\senv_C} \proc_2 : \ty$.
+  \item If $\pfree\,\senv_1$, $\pfree\,\senv_2$, $\pfree\,\senv_C$, $\senv_1 \cup \senv_C \semlf^{N}_{W_1} \proc_1 : \ty$ and $\senv_2 \cup \dual{\senv_C} \semlf^{N}_{W_2} \proc_2 : \tyunit$, then $\senv_1 \cup \senv_2 \semlf^{N}_{W_1 \wjoin W_2} \proc_1 \cpar{\senv_C} \proc_2 : \ty$.
 \end{enumerate}
 \end{theorem}
 

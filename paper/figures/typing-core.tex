@@ -31,13 +31,13 @@
     \and
     \infer*[lab=E-Close]
       {\unfold(\sty) = \Close \\ x \prec F \\\\ \tyj{\cGamma}{\lenv}{F}{\tm}{\sty_x\lf{^{a,m}}}\eff{\varepsilon}}
-      {\tyj{\cGamma}{\lenv}{F}{\tclose\,\tm}{\ast}\eff{\varepsilon + 1}}
+      {\tyj{\cGamma}{\lenv}{F}{\tclose\,\tm}{\tyunit}\eff{\varepsilon + 1}}
     \label{rule:E-Close}
     \and
     \infer*[lab=E-Link]
       {\tyj{\cGamma}{\lenv}{F}{\tm}{\sty_x\lf{^{a_1,m_1}} \tyotimes \dual{\sty}_{\dual{x}}\lf{^{a_2,m_2}}}\eff{\varepsilon} \\\\
        \lf{a_1 + m_2 > N} \\ \lf{a_2 + m_1 > N}}
-      {\tyj{\cGamma}{\lenv}{F}{\tlink\,\tm}{\ast}\eff{\varepsilon}}
+      {\tyj{\cGamma}{\lenv}{F}{\tlink\,\tm}{\tyunit}\eff{\varepsilon}}
     \label{rule:E-Link}
   \end{rules}
   \figrule
