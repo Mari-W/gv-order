@@ -10,7 +10,7 @@
            \mid \Box(\forall \bar\iota\,\bar Z.\ C.\ \ast \multimap^{u}\lf{[c]}\, U) \mid \exists^{l}\bar\iota.\ C.\ T \\[2pt]
     S & ::= & \Skip \mid S.S \mid \sRecvT{\bar\iota}{T} \mid \sSend{\bar\iota}{T} \mid \oplus(S', S'') \mid \&(S', S'')
            \mid \Close \mid \mu Z.S \mid Z \mid \dual{Z} \\[2pt]
-    C & \subseteq & \{x \prec y \mid x, y \in \Point\} \qquad \text{a constraint, a finite or infinite set of facts}
+    C & \subseteq & \{x \prec y \mid x, y \in \Point\}
   \end{array}
   \]
   \judghead{Bounds, active points and payload instantiation}{\ap(T) \quad \payload{T}{x}}
@@ -25,6 +25,6 @@
   \]
   \figrule
   \Description{Grammar of types and session types, bounds, active points and payload instantiation.}
-  \caption{Types. Shaded parts belong to the lock-free instance (\cref{sec:lf-annotations}). An arrow written without $u$ has $u = \bot$, one without $l$ has $l = \top$. Duality $\dual{S}$, equivalence $S \approx S'$, $\unfold$ and contractivity are standard (\cref{app:ty-dual,app:ty-equiv,app:ty-session}).}
+  \caption{Types, under \cref{conv:lf}. A constraint $C$ is a finite or infinite set of facts, an arrow written without $u$ has $u = \bot$ and one without $l$ has $l = \top$, and duality $\dual{S}$, equivalence $S \approx S'$, $\unfold$ and contractivity are standard (\cref{app:ty-dual,app:ty-equiv,app:ty-session}).}
   \label{fig:types}
 \end{figure}

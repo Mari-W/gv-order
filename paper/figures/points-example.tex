@@ -1,46 +1,55 @@
-% (a) the points and facts of map example ex-cycle (its code comments).
+% (a) the threads, ends and points of map example ex-milner (its code
+% comments), the numbers give the order in which each agent acts.
 % (b) where a payload end arrives, from syn-moves and E-Send/E-Recv, with
 % the shape of ex-ring (a created at the field x.0 and sent on y at x).
 \begin{figure}[tb]
   \centering
-  \begin{subfigure}[b]{0.5\linewidth}
+  \begin{subfigure}[b]{\linewidth}
     \centering
     \begin{tikzpicture}[x=1cm, y=1cm]
-      \node[enddot, label={[endlabel]left:$c : \rho$}] (c) at (0, 0.7) {};
-      \node[enddot, label={[endlabel]left:$d : \fld{\rho}{0}$}] (d) at (0, -0.7) {};
-      \node[enddot, label={[endlabel]right:$c' : \dual{\rho}$}] (c') at (3.4, 0.7) {};
-      \node[enddot, label={[endlabel]right:$d' : \dual{\fld{\rho}{0}}$}] (d') at (3.4, -0.7) {};
-      \begin{scope}[on background layer]
-        \node[thread, fit=(c)(d), minimum width=1.9cm, xshift=-0.55cm, label={[threadlabel]above:main}] {};
-        \node[thread, fit=(c')(d'), minimum width=1.9cm, xshift=0.55cm, label={[threadlabel]above:spawned}] {};
-      \end{scope}
-      \draw[chan] (c) -- (c');
-      \draw[chan] (d) -- (d');
-      \draw[fact] (c) -- (d');
-      \draw[fact] (c') -- (d);
-      \node[font=\small] at (1.7, -1.55) {$C = \{\rho \prec \dual{\fld{\rho}{0}},\ \dual{\rho} \prec \fld{\rho}{0}\}$};
+      \foreach \i/\xx/\d/\c/\a/\b/\nd/\nc/\na in {%
+          0/0/{\dual{\fld{\rho}{4}}}/{\rho}/{\fld{\rho}{5}}/{\dual{\fld{\rho}{5}}}/2/1/3,%
+          1/4.5/{\dual{\rho}}/{\fld{\rho}{2}}/{\fld{\rho}{1}}/{\dual{\fld{\rho}{1}}}/1/3/2,%
+          2/9/{\dual{\fld{\rho}{2}}}/{\fld{\rho}{4}}/{\fld{\rho}{3}}/{\dual{\fld{\rho}{3}}}/1/3/2} {
+        \node[enddot, label={[endlabel, name=dl\i, anchor=south west, xshift=-3pt, yshift=1pt]above:\ordn{\nd}\,$d_{\i} : \d$}] (d\i) at (\xx - 1.6, 0) {};
+        \node[enddot, label={[endlabel, name=cl\i, anchor=north east, xshift=3pt, yshift=-1pt]below:\ordn{\nc}\,$c_{\i} : \c$}] (c\i) at (\xx + 1.6, 0) {};
+        \node[enddot, label={[endlabel, name=al\i]right:\ordn{\na}\,$a_{\i} : \a$}] (a\i) at (\xx - 0.3, 0.95) {};
+        \node[enddot, label={[endlabel, name=bl\i]right:$b_{\i} : \b$}] (b\i) at (\xx - 0.3, 2.0) {};
+        \begin{scope}[on background layer]
+          \node[thread, fit=(d\i)(c\i)(a\i)(dl\i)(cl\i)(al\i), inner xsep=4pt, inner ysep=3pt] (A\i) {};
+          \node[thread, fit=(b\i)(bl\i), inner sep=4pt] (P\i) {};
+        \end{scope}
+        \node[threadlabel, anchor=north west] at (A\i.north west) {$A_{\i}$};
+        \node[threadlabel, anchor=east] at (P\i.west) {$P_{\i}$};
+        \draw[chan] (a\i) -- (b\i);
+      }
+      \draw[chan] (c0) -- (d1);
+      \draw[chan] (c1) -- (d2);
+      \draw[chan, rounded corners=6pt] (c2) -- ++(0.45, 0) -- ++(0, -1.05) -| ([xshift=-0.45cm]d0.center) -- (d0);
     \end{tikzpicture}
-    \Description{Two pictures of threads as boxes with their ends as dots labelled by points. Arrows show order facts and a payload end moving with a message.}
-  \caption{Cycle (\cref{ex:cycle})}
-    \label{fig:points-example:cycle}
-  \end{subfigure}\hfill
-  \begin{subfigure}[b]{0.47\linewidth}
+    \caption{The scheduler of \cref{ex:milner} after its creations and spawns}
+    \label{fig:points-example:milner}
+  \end{subfigure}
+
+  \medskip
+  \begin{subfigure}[b]{\linewidth}
     \centering
     \begin{tikzpicture}[x=1cm, y=1cm]
-      \node[enddot, label={[endlabel]left:$y : x$}] (y) at (0, 0.7) {};
-      \node[enddot, label={[endlabel]left:$a : \fld{x}{0}$}] (a) at (0, -0.7) {};
-      \node[enddot, label={[endlabel]right:$\dual{y} : \dual{x}$}] (yb) at (2.7, 0.7) {};
-      \node[ghostdot, label={[endlabel]right:$a : \fld{x}{0}$}] (a2) at (2.7, -0.7) {};
+      \node[enddot, label={[endlabel]left:$o : x$}] (y) at (0, 0.6) {};
+      \node[enddot, label={[endlabel]left:$o' : \fld{x}{0}$}] (a) at (0, -0.4) {};
+      \node[enddot, label={[endlabel]right:$\dual{o} : \dual{x}$}] (yb) at (3.6, 0.6) {};
+      \node[ghostdot, label={[endlabel]right:$o' : \fld{\dual{x}}{0} = \fld{x}{0}$}] (a2) at (3.6, -0.4) {};
       \begin{scope}[on background layer]
-        \node[thread, fit=(y)(a), minimum width=1.9cm, xshift=-0.55cm, label={[threadlabel]above:sender}] {};
-        \node[thread, fit=(yb)(a2), minimum width=1.9cm, xshift=0.55cm, label={[threadlabel]above:receiver}] {};
+        \node[thread, fit=(y)(a), minimum width=2.2cm, xshift=-0.6cm, label={[threadlabel]above:sender}] {};
+        \node[thread, fit=(yb)(a2), minimum width=3.6cm, xshift=1.3cm, label={[threadlabel]above:receiver}] {};
       \end{scope}
       \draw[chan] (y) -- (yb);
-      \draw[msg] (a) to[bend right=18] node[factlabel, below, text=black] {$\tsend\,\tpair{a}{y}$ on $y$ at $x$} (a2);
+      \draw[msg] (a) -- node[factlabel, below=2pt] {$\tsend\,\tpair{o'}{o}$} (a2);
     \end{tikzpicture}
-    \caption{A payload end arrives at $\fld{x}{0} = \fld{\dual{x}}{0}$}
+    \caption{A payload end $o'$ sent on $o$ at $x$ arrives at the field $\fld{x}{0}$}
     \label{fig:points-example:payload}
   \end{subfigure}
-  \caption{Points of ends and facts of a world}
+  \Description{Panel (a) shows three agent threads in a row and a collector thread above each. Each end is a dot labelled with its name and point. Dotted lines join the two ends of a channel, and the last channel returns from the third agent to the first. Small numbers give the order in which an agent acts on its ends. Panel (b) shows a sender and a receiver, and an arrow carries a payload end to the receiver.}
+  \caption{Points of ends. Boxes are threads, dots are ends labelled $o : x$ with their point $x$, dotted lines join the two ends of a channel, a number in parentheses gives the order in which a thread acts on its end, and the hollow dot is an end after it arrived with the message drawn as an arrow.}
   \label{fig:points-example}
 \end{figure}

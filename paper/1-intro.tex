@@ -3,33 +3,30 @@
 
 % PAR: deadlock freedom, global property, compositional typing hard | example: - | figure/rule: - | map: sem-props
 % PAR: GV and CP, tree topologies, one channel per cut | example: ex-close | figure/rule: - | map: -
-% PAR: priorities, PCP PGV, cyclic structures, numeric annotations | example: ex-cycle | figure/rule: - | map: -
-% PAR: our idea, points on ends, order between points, worlds | example: ex-cycle | figure/rule: fig:points-example | map: syn-points, w-world
-% PAR: semantic typing, logical relation, typing rules as lemmas, programs outside the type system | example: ex-flag | figure/rule: ex:flag | map: th-compose, th-adeq
+% PAR: priorities, PCP PGV, cyclic structures, numeric annotations | example: ex-milner | figure/rule: ex:milner | map: -
+% PAR: running example, Milner's cyclic scheduler, three agents on a ring, each reports to a collector, the canonical cyclic process structure, rejected by tree systems, typed by priority systems | example: ex-milner | figure/rule: ex:milner | map: r-new
+% PAR: our idea, points on ends, order between points, worlds, the scheduler's six channels at one base and its fields, facts rise along the ring | example: ex-milner | figure/rule: fig:points-example, fig:world-example | map: syn-points, w-world
 
-\begin{example}[Self-computed flag \rocq{sbv_deadlock_free}]
-\label{ex:flag}
-\input{gen/examples/ex-flag}
-\[
-  x \prec \overline{y}\ \text{(running arm)} \qquad
-  \overline{x} \prec y\ \text{(other)} \qquad
-  y \prec \overline{x}\ \text{(arm that never runs)}
-\]
-% PAR: running example, thread computes its own flag, E-Case types both arms in one world | example: ex-flag | figure/rule: E-Case, P-Connect | map: r-data, p-typing
-% PAR: static rejection, cycle y < xbar < y in the joined world | example: ex-flag | figure/rule: fig:composition-example | map: p-typing, t-lemmas
-% PAR: semantic acceptance, thread in E without typing, P-Connect lemma, adequacy | example: ex-flag | figure/rule: thm:compose, thm:adequacy | map: th-compose, th-adeq
+\begin{example}[Milner's cyclic scheduler \rocq{ms_deadlock_free}]
+\label{ex:milner}
+\input{gen/examples/ex-milner}
+% PAR: reading the listing, A_0 starts the token, A_i waits on d_i, reports on a_i, passes on c_i, P_i collects, the ring closes because c_i and d_(i+1) are one channel | example: ex-milner | figure/rule: fig:points-example | map: r-new
+% PAR: the comments give the point of each end, used from section 2 on | example: ex-milner | figure/rule: fig:points-example | map: syn-points
 \end{example}
+
+% PAR: semantic typing, logical relation, typing rules as lemmas, a program outside the type system typed by hand and composed, forward pointer to the self-computed flag in sec:compose | example: ex-flag | figure/rule: ex:flag | map: th-compose, th-adeq
 
 % PAR: lock freedom, second level, same figures with coloured additions | example: rx-postpone | figure/rule: fig:typing-core | map: sem-props, th-sound
 % PAR: context-free session types in the base system | example: ex-ring | figure/rule: fig:types | map: ty-session
 
 % PAR: contributions | example: - | figure/rule: - | map: -
 \begin{itemize}
-  \item % PAR: contribution, GV with orders between points, context-free session types, typing rules | example: ex-cycle | figure/rule: sec:typing | map: r-new, r-act, p-typing
-  \item % PAR: contribution, compositional logical relation, semantic P-Term and P-Connect, fundamental theorem, adequacy | example: ex-flag | figure/rule: sec:relation | map: th-compose, th-fund-proc, th-adeq
-  \item % PAR: contribution, lock freedom by annotations, ranked worlds, fuel | example: rx-postpone | figure/rule: sec:lock-freedom | map: t-lf-counters, t-lf-wf, fu, soup
-  \item % PAR: contribution, subsumption of priority and tree systems by example | example: ex-milner | figure/rule: sec:related | map: -
-  \item % PAR: contribution, mechanization in Rocq, assumptions EM and FC for lock freedom only | example: - | figure/rule: sec:mechanization | map: th-sound
+  \item % PAR: contribution, GV with orders between points, context-free session types, typing rules, the scheduler typed | example: ex-milner | figure/rule: sec:typing | map: r-new, r-act, p-typing
+  \item % PAR: contribution, compositional logical relation, semantic P-Term and P-Connect, fundamental theorem, adequacy, deadlock freedom theorem, the flag typed semantically | example: ex-flag | figure/rule: sec:relation, thm:df | map: th-compose, th-fund-proc, th-adeq
+  \item % PAR: contribution, lock freedom by credits and tickets, ranked worlds, fuel, lock freedom theorem | example: ex-cycle | figure/rule: sec:lock-freedom, thm:lf | map: t-lf-counters, t-lf-wf, fu, soup
+  \item % PAR: contribution, algorithmic typing sound, complete over contractive contexts, decidable relative to oracles | example: - | figure/rule: sec:algorithmic | map: alg-thms
+  \item % PAR: contribution, comparison with priority systems by example, which programs of other systems GV-prec types, what it does not cover, see sec:limitations | example: ex-milner | figure/rule: sec:related, sec:limitations | map: -
+  \item % PAR: contribution, mechanization in Rocq, every definition and theorem linked, no axioms for deadlock freedom, EM and FC for lock freedom | example: - | figure/rule: thm:df, thm:lf | map: th-sound
 \end{itemize}
 
 % PAR: outline | example: - | figure/rule: - | map: -

@@ -1,58 +1,71 @@
 \section{Lock Freedom}
 \label{sec:lock-freedom}
 
-% PAR: section overview, the coloured parts of the earlier figures, no new rules | example: - | figure/rule: fig:typing-core, fig:term-rel | map: ty-ann
-% Option A of PLAN.md. This section explains the colour of fig:props,
-% fig:worlds, fig:types, fig:judgment, fig:typing-core, fig:typing-orders,
-% fig:process-typing, fig:value-rel, fig:term-rel, fig:proc-rel and of
-% the theorems of sec:compose and sec:fundamental. Figures that exist only
-% here are the lock-free blocks of the map.
+% PAR: section overview, the shaded parts of the earlier figures (conv:lf), no new rules, thm:lf mirrors thm:df | example: - | figure/rule: conv:lf, thm:lf | map: ty-ann
 
 \subsection{Orders Say on Whom, Counters Say How Long}
 \label{sec:lf-why}
 
-% PAR: lock freedom, every pending action eventually takes part, weak fairness | example: - | figure/rule: fig:props | map: sem-props
+% PAR: lock freedom, every pending action eventually takes part, weak fairness | example: - | figure/rule: def:lf | map: sem-props
 \begin{definition}[Lock freedom \rocq{lock_free}]
 \label{def:lf}
-A run $(r, l)$ of $p$ is a sequence of configurations $r_0 r_1 \ldots$ with $\mathsf{erase}(r_0) = p$, where $l_i$ is the event of the step from $r_i$ to $r_{i+1}$, or none when $r_{i+1} = r_i$. A configuration names its threads, and $\mathsf{parts}(l_i)$ is the set of threads that take part in the event.
+\[
+  \lfree\,p \iff \forall (r, l).\ \mathsf{maximal}\,r\,l \land \mathsf{wfair}\,r\,l \Rightarrow
+  \forall i, t.\ \mathsf{pend}(r_i, t) \Rightarrow \exists j \geq i.\ t \in \mathsf{parts}(l_j)
+\]
 \begin{itemize}
-  \item A run is maximal when $r_{i+1} = r_i$ only where $r_i$ has no internal step.
-  \item A run is weakly fair when for each position $i$ and thread $t$ there is a $j \geq i$ at which $t$ takes part or cannot step.
-  \item A thread $t$ is pending at $r_i$ when its next step is a session action.
-  \item $p$ is lock free when on each maximal weakly fair run each pending thread takes part in a later event (\cref{app:sem-props}).
-  \[
-    \lfree\,p \iff \forall (r, l).\ \mathsf{maximal}\,r\,l \land \mathsf{wfair}\,r\,l \Rightarrow
-    \forall i, t.\ \mathsf{pend}(r_i, t) \Rightarrow \exists j \geq i.\ t \in \mathsf{parts}(l_j)
-  \]
+  \item $(r, l)$: a run of $p$, configurations $r_0 r_1 \ldots$ with $\mathsf{erase}(r_0) = p$ and events $l_i$ from $r_i$ to $r_{i+1}$, none when $r_{i+1} = r_i$.
+  \item $\mathsf{parts}(l_i)$: the threads that take part in $l_i$.
+  \item $\mathsf{maximal}\,r\,l$: $r_{i+1} = r_i$ only where $r_i$ has no internal step.
+  \item $\mathsf{wfair}\,r\,l$: for each $i$ and thread $t$ some $j \geq i$ has $t \in \mathsf{parts}(l_j)$ or $t$ unable to step at $r_j$.
+  \item $\mathsf{pend}(r_i, t)$: the next step of $t$ at $r_i$ is a session action (\cref{app:sem-props}).
 \end{itemize}
 \end{definition}
-% PAR: order alone gives only deadlock freedom, a server postpones one end forever | example: rx-postpone | figure/rule: fig:props | map: sem-props, t-agecap
-% PAR: counters alone do not exclude cyclic waits | example: ex-cycle | figure/rule: fig:props | map: t-lf-counters
+% PAR: order alone gives only deadlock freedom, a server postpones one end forever | example: rx-postpone | figure/rule: ex:postpone | map: sem-props, t-agecap
+% PAR: counters alone do not exclude cyclic waits | example: ex-milner | figure/rule: - | map: t-lf-counters
 % GAP: no map example for "counters alone admit a cyclic wait"
-% PAR: neither alone suffices, both in one judgment | example: - | figure/rule: fig:lf-counters | map: t-lf-counters, fu-vs
+% PAR: neither alone suffices, both in one judgment | example: - | figure/rule: def:lf-ann | map: t-lf-counters, fu-vs
 
 \begin{example}[Postponement \rocq{rx_postpone_rejected}]
 \label{ex:postpone}
 \input{gen/examples/rx-postpone}
-% PAR: deadlock free, not lock free, aging rejects | example: rx-postpone | figure/rule: fig:aging | map: t-agecap
+% PAR: deadlock free, not lock free, aging rejects | example: rx-postpone | figure/rule: app:t-agecap | map: t-agecap
 \end{example}
 
-\subsection{Annotations: Bound, Credits, Tickets, Costs}
+\subsection{Credits, Tickets and Costs}
 \label{sec:lf-annotations}
 
-% PAR: LF typing = DF typing + annotations, bound N, credit a, tickets m, cost | example: - | figure/rule: fig:types, fig:judgment | map: ty-grammar, t-judgment, ty-ann
-\input{figures/lf-counters}
+% PAR: LF typing = DF typing + annotations, the shaded parts of every figure | example: - | figure/rule: conv:lf, def:lf-ann | map: ty-grammar, t-judgment, ty-ann
+\begin{definition}[Lock-free annotations \rocq{tsum_ok} \rocq{tage}]
+\label{def:lf-ann}
+Each held end $o$ has a counter $f(o)$ at run time, the number of actions its thread may still perform on other ends before it acts on $o$. The annotations bound it.
+\begin{center}
+\small
+\begin{tabular}{@{}l@{\quad}l@{}}
+  $o : S_x^{a,m}$ & point $x$, credit $a \leq f(o)$, tickets $\tk(o) = m \geq f(o)$ \\
+  $(T \arr{u}{l}[c]\, U)^{a}$ & latent cost $c$ of the body, credit $a$ of the captured ends \\
+  $e : T\ !\ \varepsilon$ & cost $\varepsilon$, an upper bound on the actions $e$ performs before it returns \\
+  $\Delta - \varepsilon$ & aging, subtracts $\varepsilon$ from each credit in $\Delta$ (\cref{app:t-agecap}) \\
+  $N$ & bound, $\tk(o) + \tk(\dual{o}) \leq N$ for the two ends of a channel \\
+  $\eta(o) = (a, m)$ & credit and tickets of an interface end $o$
+\end{tabular}
+\end{center}
+An action on $o$ resets $f(o)$ to $m$ and lowers the counters of the other held ends by one. Every annotation is in $\mathbb{N} \cup \{\infty\}$, and $\infty - c = \infty$.
+\end{definition}
 
-% PAR: counter of an end between credit and tickets | example: - | figure/rule: fig:lf-counters | map: t-lf-counters
-% PAR: aging, what is held while e runs loses c, idle ends lose credit without check | example: ex-controller | figure/rule: fig:aging | map: t-agecap
-\input{figures/aging}
+% PAR: worked example, the cycle at N = 4, two tickets per end, closing c costs one, the credit of d falls from 2 to 1 and so does its counter | example: ex-cycle | figure/rule: fig:lf-example | map: t-lf-counters, t-agecap
+\begin{example}[Cycle at $N = 4$ \rocq{cy_lock_free}]
+\label{ex:cycle}
+\input{gen/examples/ex-cycle}
+\end{example}
+\input{figures/lf-example}
 
-% PAR: coloured parts of E-App, E-Pair, E-Case, sequencing of effects | example: - | figure/rule: fig:typing-core | map: r-fun, r-data
-% PAR: actions refill to m, cost one | example: - | figure/rule: E-Send, E-Recv | map: r-act
+% PAR: shaded parts of E-App, E-Pair, E-Case, sequencing of costs | example: - | figure/rule: fig:typing-core | map: r-fun, r-data
+% PAR: actions reset to m, cost one | example: ex-cycle | figure/rule: E-Send, E-Close | map: r-act
 % PAR: payload credit, a sent end loses one | example: rx-delegate | figure/rule: E-Send | map: r-act
 % PAR: link tickets, a1 + m2 > N | example: rx-relink | figure/rule: E-Link | map: r-act
-% PAR: creation splits the tickets, m1 + m2 <= N | example: ex-link | figure/rule: E-New | map: r-new
-% PAR: loops charged one force, loops that hold an end | example: ex-guard-neg, ex-guard-pos | figure/rule: E-Force, fig:aging | map: r-boxes, t-agecap
+% PAR: creation splits the tickets, m1 + m2 <= N | example: ex-cycle | figure/rule: E-New | map: r-new
+% PAR: loops charged one force, loops that hold an end | example: ex-guard-neg, ex-guard-pos | figure/rule: E-Force | map: r-boxes, t-agecap
 % PAR: process typing at N and eta | example: - | figure/rule: fig:process-typing | map: p-typing
 % PAR: erasure gives DF typing, conservativity | example: - | figure/rule: thm:conserv | map: th-conserv
 
@@ -71,95 +84,127 @@ Let every credit, cost and ticket in $\Delta$ and $T$ be $\infty$. Then $\Gamma 
 % PAR: tickets premise of E-Link rejects | example: rx-relink | figure/rule: app:rx-relink, E-Link | map: r-act
 
 % Listing in the appendix (app:ex-controller), cut from the body for space.
-% PAR: idle end held across an unbounded loop, credit truncated | example: ex-controller | figure/rule: app:ex-controller, Age-Idle | map: t-agecap
+% PAR: idle end held across an unbounded loop, credit truncated by aging | example: ex-controller | figure/rule: app:ex-controller, app:t-agecap | map: t-agecap
 
 \subsection{Ranked Worlds}
 \label{sec:lf-ranked}
 
-% PAR: consistent worlds become ranked worlds, ordinal ranks, well-founded | example: - | figure/rule: fig:worlds, fig:ranked | map: w-world, w-wf, t-lf-wf
+% PAR: consistent worlds become ranked worlds, ordinal ranks, well-founded | example: ex-milner | figure/rule: def:ranked, fig:world-example | map: w-world, w-wf, t-lf-wf
 \begin{definition}[Ranked worlds \rocq{wranked}]
 \label{def:ranked}
-Lock freedom needs worlds whose order admits no infinite descent.
-\begin{itemize}
-  \item A world $W$ is ranked when some rank function $\varrho : \Point \to \mathsf{Ord}$ into the ordinals has $\varrho(x) < \varrho(y)$ whenever $x \ordW y$. A ranked world is consistent, and the two notions differ only on infinite worlds (\cref{app:w-wf}).
-  \item At a finite bound $N$, \ruleref{P-Term}, \ruleref{P-Connect} and the semantic process judgments ask ranked worlds wherever \cref{sec:typing,sec:relation} ask consistent ones.
-  \item The premise $\rankable_{\Gamma}(\rho, C)$ of \ruleref{E-New} holds when $\prec^{\rho}_{C}$ is well-founded and each exit of $C$, a fact from a point of $\tree(\rho)$ down to a context point, is witnessed by a finite set of context points above the tree point, with these sets descending along $\prec^{\rho}_{C}$. Then every ranked world in which the facts of $\Gamma$ hold has ranks for the new tree (\cref{app:r-new}).
-\end{itemize}
+\begin{gather*}
+  \ranked\,W \iff \exists \varrho : \Point \to \mathsf{Ord}.\ \forall x, y.\ x \ordW y \Rightarrow \varrho(x) < \varrho(y)
+\end{gather*}
+$\ranked\,W$ implies $\cons\,W$ (\cref{app:w-wf}). At a finite $N$, \ruleref{P-Term}, \ruleref{P-Connect} and the lock-free judgment read $\ranked$ where \cref{sec:typing,sec:relation} read $\cons$ (\cref{conv:lf}). $\rankable_{\Gamma}(\rho, C)$ of \cref{def:creation} bounds each exit of $C$, a fact from a point of $\tree(\rho)$ down to a context point, by a finite set of context points above the tree point, with these sets descending along $\prec^{\rho}_{C}$ (\cref{app:r-new}).
 \end{definition}
-% PAR: they differ only on infinite worlds | example: ex-forkjoin | figure/rule: fig:worlds | map: w-wf
+% PAR: the scheduler's world is ranked, ranks read the field label first | example: ex-milner | figure/rule: fig:world-example | map: t-lf-wf
+% PAR: they differ only on infinite worlds | example: ex-forkjoin | figure/rule: def:ranked | map: w-wf
 % PAR: new_ok_N, the new tree rankable | example: ex-gennew | figure/rule: E-New | map: r-new
 % PAR: recursive fork-join, infinite descending chain, typable in DF, no LF typing | example: ex-forkjoin | figure/rule: ex:forkjoin | map: r-new, t-lemmas
 % PAR: a waiting chain that grows forever | example: rx-chain | figure/rule: E-New | map: r-new
 
 % Listing in the appendix (app:rx-chain), cut from the body for space.
-% PAR: ranks admit no infinite descent, rejected at a finite bound | example: rx-chain | figure/rule: app:rx-chain, fig:ranked | map: t-lf-wf
+% PAR: ranks admit no infinite descent, rejected at a finite bound | example: rx-chain | figure/rule: app:rx-chain, def:ranked | map: t-lf-wf
 
 \subsection{The Lock-Free Relation}
 \label{sec:lf-relation}
 
 % PAR: cost table kappa_L, the same E | example: - | figure/rule: fig:term-rel | map: ct-costs, e-rel
-% PAR: fuel the only new relation, counters, tickets, no world, no readiness | example: - | figure/rule: fig:fuel | map: fu, fu-vs
+% PAR: fuel the only new relation, counters, tickets, no world, no readiness | example: ex-cycle | figure/rule: def:fuel | map: fu, fu-vs
+% PAR: mechanization insight, relation and fuel kept as two fixed points, not merged | example: - | figure/rule: def:fuel | map: fu-vs
 \begin{definition}[Fuel \rocq{FuelE}]
 \label{def:fuel}
-A fuel context $\Phi$ gives each held end its protocol $S$, counter $f$ and tickets $m$, written $S^{f,m}$. An end is idle when $\unfold(S) = \Skip$. The thread $e$ has fuel, $e \in \Fuel{N}{\alpha}{\Phi}{\sigma\ !\ d}$, when it returns a value of $\sigma$ within $d$ session actions in the following sense. Fuel has no readiness clause, and it reads no point and no world.
+Fuel has the form $e \in \Fuel{N}{\alpha}{\Phi}{\sigma\ !\ d}$ with the components
+\begin{center}
+\small
+\begin{tabular}{@{}l@{\quad}l@{}}
+  $N$, $\alpha$ & bound and ordinal index \\
+  $\Phi$ & held ends, each with its protocol $S$, counter $f$ and tickets $m$, written $S^{f,m}$ \\
+  $\sigma$ & shape of the result \\
+  $d$ & frame, the number of actions left before $e$ returns
+\end{tabular}
+\end{center}
+An end is idle when $\unfold(S) = \Skip$. Fuel reads no point and no world and has no readiness clause.
 \begin{itemize}
   \item (stop) A value $e$ has fuel at its counters. An end has a counter at least its credit, a closure keeps the counters of its captured ends that are not idle at least at its credit, and a box holds no end (\cref{app:fv}).
-  \item (step) Each step $e \xrightarrow{\ell} e'$ changes the held ends as its obligation in \cref{def:obligations} does, and the successor has fuel at each $\beta < \alpha$ with the counters, tickets and frame below.
+  \item (step) Each step $e \xrightarrow{\ell} e'$ changes the held ends as its obligation in \cref{fig:term-rel} does, and the successor has fuel at each $\beta < \alpha$ with the counters, tickets and frame below.
   \item An action on $o$ asks $d \geq 1$ and a positive counter on each other held end that is not idle. The successor sees the frame $d - 1$, those counters lowered by one and the counter of $o$ reset to its tickets.
   \item A force asks the same positive counters and $d \geq 1$, and lowers every counter and the frame by one.
   \item A send hands the ends of its payload on with their counters lowered by one. A creation starts its two ends at tickets $m_1$ and $m_2$ with $m_1 + m_2 \leq N$, each counter at its tickets. A link of two ends with counters $f_1, f_2$ and tickets $m_1, m_2$ asks $f_1 + m_2 > N$ and $f_2 + m_1 > N$. A $\beta$ step, a spawn and a link change no counter (\cref{app:fu-obls}).
 \end{itemize}
 \end{definition}
-% PAR: fuel obligations, force lowers every counter, act needs positive counters | example: ex-guard-neg | figure/rule: F-Force, F-Send | map: fu-obls
+% PAR: fuel obligations, force lowers every counter, act needs positive counters | example: ex-guard-neg | figure/rule: def:fuel | map: fu-obls
 % PAR: link in fuel, counters fall | example: ex-link | figure/rule: app:fu-obls | map: fu-obls
 % PAR: received closures own their ends, exactness | example: ex-forwarder | figure/rule: app:fv | map: fv
 
-% PAR: LF process relation = E at kappa_L plus fuel under one ownership map | example: - | figure/rule: fig:soup | map: soup
+% PAR: LF process relation = E at kappa_L plus fuel under one ownership map | example: ex-cycle | figure/rule: def:lf-rel | map: soup
 \begin{definition}[Lock-free process relation \rocq{Soup}]
 \label{def:lf-rel}
-An annotated configuration $a = (q, K, W_a)$ has a configuration $q$, an ownership map $K$ with $K(o) = (t, x, f, m)$ for the owner $t$, point $x$, counter $f$ and tickets $m$ of each held end $o$, and the ranked world $W_a$ of the run so far. Then $a \in \LFrel{N,W}{\alpha}{\Sigma}{T}$ holds when $W \sqsubseteq W_a$, $T$ holds no end, $K$ fits $q$ and $\Sigma$ (\cref{app:soup}), and for some choice of a session type and a protocol per held end each thread $e = q(t)$ is
+An annotated configuration is $a = (q, K, W_a)$ with
+\begin{center}
+\small
+\begin{tabular}{@{}l@{\quad}l@{}}
+  $q$ & configuration, threads with names \\
+  $K$ & ownership map, $K(o) = (t, x, f, m)$ the owner, point, counter and tickets of each held end $o$ \\
+  $W_a$ & ranked world of the run so far
+\end{tabular}
+\end{center}
+$a \in \LFrel{N,W}{\alpha}{\Sigma}{T}$ holds when $W \sqsubseteq W_a$, $\tfree\,T$, $K$ fits $q$ and $\Sigma$ (\cref{app:soup}), and for some session type and protocol per held end each thread $e = q(t)$ has
+\[
+  e \in E[\kappa_L]^{W_a}_{\alpha}\llbracket \Theta_t \vdash U_t \rrbracket^{\varnothing}
+  \qquad\text{and}\qquad
+  e \in \Fuel{N}{\alpha}{\Phi_t}{\mathsf{thread}\ !\ \infty}
+\]
 \begin{itemize}
-  \item in the relation, $e \in E[\kappa_L]^{W_a}_{\alpha}\llbracket \Theta_t \vdash U_t \rrbracket^{\varnothing}$, with $\Theta_t$ the ends that $K$ gives $t$ at their points, and
-  \item in fuel, $e \in \Fuel{N}{\alpha}{\Phi_t}{\mathsf{thread}\ !\ \infty}$, with $\Phi_t$ the same ends at their counters and tickets,
+  \item $\Theta_t$, $\Phi_t$: the ends $K$ gives $t$, at their points and at their counters and tickets.
+  \item $U_t$: $T$ for the main thread and $\ast$ otherwise.
+  \item $E[\kappa_L]$: the term relation of \cref{fig:term-rel} under the cost table $\kappa_L$, which charges $1$ for $\tforce$ and each session action and $0$ for $\beta$, $\tnew$, $\tspawn$ and $\tlink$ (\cref{app:ct-costs}).
+  \item $K$ fits $q$ and $\Sigma$: each held end belongs to a thread of $q$ and is restricted in $q$ or listed in $\Sigma$, both ends of a restricted channel are held at dual points and dual protocols with tickets of sum at most $N$, each counter is at most its tickets and each ticket count at most $N$, and each end of $\Sigma$ carries its entry of $\Sigma$ with at most $\lfloor N/2 \rfloor$ tickets.
 \end{itemize}
-where $U_t$ is $T$ for the main thread and $\ast$ otherwise. $\kappa_L$ is the cost table that charges one for a force and for each session action and nothing for a $\beta$ step, a creation, a spawn or a link (\cref{app:ct-costs}). $K$ fits $q$ and $\Sigma$ when each held end belongs to a thread of $q$ and is restricted in $q$ or listed in $\Sigma$, both ends of a restricted channel are held at dual points and dual protocols with tickets of sum at most $N$, each counter is at most its tickets and each ticket count at most $N$, and each end of $\Sigma$ carries its entry of $\Sigma$ with at most $\lfloor N/2 \rfloor$ tickets.
 \end{definition}
 
-% PAR: lock-free judgment over ranked extensions | example: - | figure/rule: fig:proc-rel | map: sj-all
+% PAR: lock-free judgment over ranked extensions | example: - | figure/rule: def:lf-judgment | map: sj-all
 \begin{definition}[Lock-free judgment \rocq{lf_sem}]
 \label{def:lf-judgment}
-$\Sigma \semlf^{N}_{W} p : T$ holds when for each ranked $W' \sqsupseteq W$ and each $\alpha$ some annotated configuration $a = (q, K, W_a)$ with $\mathsf{erase}(q) = p$ is in $\LFrel{N,W'}{\alpha}{\Sigma}{T}$.
+\[
+  \Sigma \semlf^{N}_{W} p : T \iff \forall W' \sqsupseteq W.\ \ranked\,W' \Rightarrow \forall \alpha.\ \exists a = (q, K, W_a).\ \mathsf{erase}(q) = p \land a \in \LFrel{N,W'}{\alpha}{\Sigma}{T}
+\]
 \end{definition}
 
-% PAR: lock-free composition of two components at own worlds | example: ex-cs-split | figure/rule: thm:compose | map: th-compose, w-ext
+% PAR: lock-free composition of two components at own worlds | example: ex-cs-split | figure/rule: thm:lf-compose | map: th-compose, w-ext
 \begin{theorem}[Lock-free composition \rocq{lf_p_term} \rocq{lf_p_connect}]
 \label{thm:lf-compose}
 Let $N \in \mathbb{N}$.
 \begin{enumerate}
   \item If the premises of \ruleref{P-Term} at $N$ hold apart from $\ranked\,W$, then $\Sigma \semlf^{N}_{W} (C_0, \{t\}) : T$.
-  \item If the channels of $\Sigma_1$, $\Sigma_2$, $\Sigma_C$, $C_1$ and $C_2$ are pairwise disjoint, $\Sigma_1 \cup \Sigma_C \semlf^{N}_{W_1} p_1 : T$ and $\Sigma_2 \cup \dual{\Sigma_C} \semlf^{N}_{W_2} p_2 : \ast$, then $\Sigma_1 \cup \Sigma_2 \semlf^{N}_{W_1 \wjoin W_2} p_1 \parallel_{\Sigma_C} p_2 : T$.
+  \item If $\pfree\,\Sigma_1$, $\pfree\,\Sigma_2$, $\pfree\,\Sigma_C$, $\Sigma_1 \cup \Sigma_C \semlf^{N}_{W_1} p_1 : T$ and $\Sigma_2 \cup \dual{\Sigma_C} \semlf^{N}_{W_2} p_2 : \ast$, then $\Sigma_1 \cup \Sigma_2 \semlf^{N}_{W_1 \wjoin W_2} p_1 \cpar{\Sigma_C} p_2 : T$.
 \end{enumerate}
 \end{theorem}
 
-% PAR: coloured lines of thm:fundamental-terms, thm:fundamental-proc, thm:adequacy, thm:soundness | example: ex-cs | figure/rule: sec:fundamental | map: th-terms, th-fund-proc, th-adeq, th-sound
+% PAR: shaded lines of thm:fundamental-terms, thm:fundamental-proc, thm:adequacy | example: ex-cs | figure/rule: sec:fundamental | map: th-terms, th-fund-proc, th-adeq
 \begin{theorem}[Lock-free fundamental theorems and adequacy \rocq{live_fundamental_ranked} \rocq{lf_fundamental} \rocq{lf_sems_adequacy}]
 \label{thm:lf-fundamental}
 Let $N \in \mathbb{N}$.
 \begin{enumerate}
   \item If $\varnothing ; \Delta \vdash^{F}_{W,N} t : T\ !\ \varepsilon$, then $|\Delta| \semt[\kappa_L]^{F}_{W'} t : |T|$ for each consistent $W' \sqsupseteq W$, where $|{\cdot}|$ erases the annotations and $\semt[\kappa_L]$ is the term judgment of \cref{def:sem-judgments} over $E[\kappa_L]$.
-  \item If $\Sigma \vdash^{N}_{W} p : T$, then $\Sigma \semlf^{N}_{W} p : T$.
-  \item If $W$ is ranked and $\varnothing \semlf^{N}_{W} p : T$, then $p$ is lock free.
+  \item If $\Sigma \vdash^{N,\eta}_{W} p : T$, then $\Sigma \semlf^{N}_{W} p : T$.
+  \item If $\ranked\,W$ and $\varnothing \semlf^{N}_{W} p : T$, then $p$ is lock free.
 \end{enumerate}
 \end{theorem}
+% PAR: adequacy measure, rank of the awaited point plus counter | example: - | figure/rule: def:ranked, def:lf-rel | map: t-lf-wf, th-adeq
 
-\begin{corollary}[Lock-free soundness \rocq{lf_soundness}]
-\label{thm:lf-soundness}
-If $N \in \mathbb{N}$ and $\varnothing \vdash^{N}_{W} p : T$, then $p$ is lock free.
-\end{corollary}
-% PAR: adequacy measure, rank of the awaited point plus counter | example: - | figure/rule: fig:ranked | map: t-lf-wf, th-adeq
-% PAR: classical assumptions, excluded middle and functional choice for the lock-free theorems only | example: ex-ring | figure/rule: thm:adequacy | map: sr-ord, th-sound
+\subsection{Lock Freedom of Well-Typed Programs}
+\label{sec:lf-theorem}
+
+% PAR: the main theorem, mirror of thm:df, corollary of thm:lf-fundamental (2) and (3) | example: ex-cycle | figure/rule: thm:lf, thm:df | map: th-sound
+\begin{theorem}[Lock freedom \rocq{lf_soundness}]
+\label{thm:lf}
+Every closed process that is well typed at a finite bound is lock free. Assume excluded middle and functional choice. If $N \in \mathbb{N}$ and $\varnothing \vdash^{N,\eta}_{W} p : T$, then $p$ is lock free (\cref{def:lf}).
+\end{theorem}
+% PAR: footnote slot, excluded middle and functional choice enter only here and in thm:lf-fundamental, deadlock freedom needs neither | example: - | figure/rule: thm:lf, thm:df | map: sr-ord, th-sound
+% PAR: the cycle is lock free at N = 4 | example: ex-cycle | figure/rule: ex:cycle, thm:lf | map: th-sound
 
 % Listing in the appendix (app:ex-cs-split), cut from the body for space.
-% PAR: worlds of their own, join well-founded, lock-free composition | example: ex-cs-split | figure/rule: app:ex-cs-split, thm:compose | map: th-compose
+% PAR: worlds of their own, join ranked, lock-free composition | example: ex-cs-split | figure/rule: app:ex-cs-split, thm:lf-compose | map: th-compose
 
 \FloatBarrier

@@ -5,24 +5,22 @@
   \judghead{Typing processes}{\Sigma \vdash_{W}^{\lf{N,\eta}} p : T}
   \begin{rules}
     \infer*[lab=P-Term]
-      {\text{$T$ holds no end} \\ \text{$\Sigma$ holds no two dual ends} \\ \cons\,W \\\\
-       \text{$\Theta_B$ types exactly the ends of the channels $C_0$, each pair as $c^{+} : S_x\lf{^{m,m}},\ c^{-} : \dual{S}_{\dual{x}}\lf{^{m',m'}}$} \\\\
-       \lf{m + m' \leq N \text{ for each } c \in C_0} \\
-       \tyj{\varnothing}{\Sigma\lf{^{\eta}}, \Theta_B}{\varnothing}{t}{T}\eff{c}}
+      {\tfree\,T \\ \pfree\,\Sigma \\ \lfalt{\cons}{\ranked}\,W \\ \pairs^{\lf{N}}(\Theta_B, C_0) \\\\
+       \lf{\forall o \in \mathrm{dom}\,\Sigma.\ \tk_\eta(o) \leq N} \\
+       \tyj{\varnothing}{\Sigma\lf{^{\eta}}, \Theta_B}{\varnothing}{t}{T}\eff{\varepsilon}}
       {\Sigma \vdash_{W}^{\lf{N,\eta}} (C_0, \{t\}) : T}
     \label{rule:P-Term}
     \and
     \infer*[lab=P-Connect]
-      {\Sigma_1 \cup \Sigma_C \vdash_{W_1}^{\lf{N,\eta}} (C_1, E_1) : T \\
-       \Sigma_2 \cup \dual{\Sigma_C} \vdash_{W_2}^{\lf{N,\eta}} (C_2, E_2) : \ast \\\\
-       \text{the channels of $\Sigma_1$, $\Sigma_2$, $\Sigma_C$, $C_1$ and $C_2$ are pairwise disjoint} \\
-       \lf{\mathsf{tk}_{\eta}(o) + \mathsf{tk}_{\eta}(\dual{o}) \leq N \text{ for each } o \in \Sigma_C} \\
-       \cons(W_1 \wjoin W_2)}
-      {\Sigma_1 \cup \Sigma_2 \vdash_{W_1 \wjoin W_2}^{\lf{N,\eta}} (C_1 \cup C_2 \cup \mathsf{chans}\,\Sigma_C,\ E_1 \uplus E_2) : T}
+      {\Sigma_1 \cup \Sigma_C \vdash_{W_1}^{\lf{N,\eta}} p_1 : T \\
+       \Sigma_2 \cup \dual{\Sigma_C} \vdash_{W_2}^{\lf{N,\eta}} p_2 : \ast \\\\
+       \lf{\forall o \in \mathrm{dom}\,\Sigma_C.\ \tk_{\eta}(o) + \tk_{\eta}(\dual{o}) \leq N} \\
+       \lfalt{\cons}{\ranked}(W_1 \wjoin W_2)}
+      {\Sigma_1 \cup \Sigma_2 \vdash_{W_1 \wjoin W_2}^{\lf{N,\eta}} p_1 \cpar{\Sigma_C} p_2 : T}
     \label{rule:P-Connect}
   \end{rules}
   \figrule
   \Description{Inference rules P-Term and P-Connect.}
-  \caption{Process typing, under \cref{conv:implicit}. $\Sigma$ maps the interface ends to end types. $\dual{\Sigma_C}$ types the dual ends of $\Sigma_C$ at the dual types and points, $\mathsf{chans}\,\Sigma_C$ is the set of their channels. In the lock-free instance $\eta(o) = (a, m)$ gives each interface end its credit and tickets, $\Sigma^{\eta}$ annotates $\Sigma$ with them, $\mathsf{tk}_\eta(o) = m$, and $\cons$ reads $\ranked$ at a finite $N$ (\cref{def:ranked}). The $n$-ary rule P-Connect$^n$ is in \cref{app:p-typing}.}
+  \caption{Process typing, under \cref{conv:lf,conv:implicit}. $\tfree$ is defined in \cref{def:side}, $\pfree$, $\pairs$, $\dual{\Sigma_C}$ and $\cpar{\Sigma_C}$ in \cref{def:proc-judgment}, and the $n$-ary rule P-Connect$^n$ is in \cref{app:p-typing}.}
   \label{fig:process-typing}
 \end{figure}

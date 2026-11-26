@@ -1,26 +1,28 @@
-% The facts of map example ex-flag (meaning and code comments). Optional
-% figure (PLAN.md).
+% The facts of map example ex-flag (meaning and code comments), and of
+% theories/examples/SemBranch.v (Wa holds x < ybar, Wb holds xbar < y).
 \begin{figure}[tb]
   \centering
   \begin{tikzpicture}[x=1cm, y=1cm]
-    \node[enddot, label={[endlabel]left:$c : x$}] (c) at (0, 0.7) {};
-    \node[enddot, label={[endlabel]left:$d : y$}] (d) at (0, -0.7) {};
-    \node[enddot, label={[endlabel]right:$\dual{c} : \dual{x}$}] (cb) at (5.2, 0.7) {};
-    \node[enddot, label={[endlabel]right:$\dual{d} : \dual{y}$}] (db) at (5.2, -0.7) {};
+    \node[enddot, label={[endlabel]left:$c : x$}] (c) at (0, 1.0) {};
+    \node[enddot, label={[endlabel]left:$d : y$}] (d) at (0, -1.0) {};
+    \node[enddot, label={[endlabel]right:$\dual{c} : \dual{x}$}] (cb) at (6, 1.0) {};
+    \node[enddot, label={[endlabel]right:$\dual{d} : \dual{y}$}] (db) at (6, -1.0) {};
     \begin{scope}[on background layer]
-      \node[thread, fit=(c)(d), minimum width=2.2cm, xshift=-0.7cm, label={[threadlabel]above:thread, world $W_1$}] {};
-      \node[thread, fit=(cb)(db), minimum width=2.2cm, xshift=0.7cm, label={[threadlabel]above:other, world $W_2$}] {};
+      \node[thread, fit=(c)(d), minimum width=2.3cm, xshift=-0.75cm, label={[threadlabel]above:thread, world $W_a$}] {};
+      \node[thread, fit=(cb)(db), minimum width=2.3cm, xshift=0.75cm, label={[threadlabel]above:other, world $W_b$}] {};
     \end{scope}
     \draw[chan] (c) -- (cb);
     \draw[chan] (d) -- (db);
-    \draw[fact] (c) -- (db);
-    \draw[fact] (cb) to[bend left=10] (d);
-    \draw[deadfact] (d) to[bend left=10] (cb);
-    \node[font=\small, align=center] at (2.6, -1.6)
-      {$x \prec \dual{y}$ (running arm) \quad $\dual{x} \prec y$ (other) \quad
-       $y \prec \dual{x}$ (arm that never runs, dashed)};
+    \draw[factA] (c) to node[factlabel, pos=0.8] {$x \prec \dual{y}$} (db);
+    \draw[factC] (cb) to[bend right=16] node[factlabel, pos=0.8] {$\dual{x} \prec y$} (d);
+    \draw[factB] (d) to[bend right=16] node[factlabel, pos=0.8] {$y \prec \dual{x}$} (cb);
+    \begin{scope}[shift={(-0.9, -2.1)}]
+      \draw[factA] (0, 0) -- (0.4, 0); \node[legend] at (0.45, 0) {running arm, in $W_a$};
+      \draw[factC] (3.0, 0) -- (3.4, 0); \node[legend] at (3.45, 0) {other, in $W_b$};
+      \draw[factB] (5.5, 0) -- (5.9, 0); \node[legend] at (5.95, 0) {arm that never runs};
+    \end{scope}
   \end{tikzpicture}
-  \Description{Two components with their ends and the facts of their worlds. Two facts in opposite directions form a cycle.}
-  \caption{The joined world $W_1 \wjoin W_2$ of the flag (\cref{ex:flag})}
+  \Description{Two threads with two channels between them. Three arrows give the facts that the two threads need. The arrows between d and the dual of c point in opposite directions and form a cycle.}
+  \caption{The facts of the flag (\cref{ex:flag}). An arrow from $x$ to $y$ is a fact $x \prec y$, and the dashed fact, which \ruleref{E-Case} asks for the arm that never runs, closes the cycle $\dual{x} \prec y \prec \dual{x}$ in the joined world.}
   \label{fig:composition-example}
 \end{figure}

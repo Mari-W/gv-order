@@ -3,7 +3,7 @@
 % r-ex. E-Pack is in the appendix.
 \begin{figure}[tbp]
   \small
-  \judghead{Creation, boxes and existentials}{\Gamma ; \Delta \vdash^{F}_{W\lf{,N}} e : T \eff{\varepsilon}}
+  \judghead{Creation, boxes and existentials}{\Gamma ; \Delta \vdash^{F}_{\lf{N}} e : T \eff{\varepsilon}}
   \begin{rules}
     \infer*[lab=E-New]
       {\unl\,\Delta \\ \acyc_{\rho}(C) \\ \conserv_{\Gamma}(\rho, C) \\\\
@@ -19,7 +19,7 @@
   \begin{rules}
     \infer*[lab=E-Box]
       {B = \Box(\forall \bar\iota\,\bar Z.\ C.\ \ast \multimap^{u}\lf{[\varepsilon]}\,U) \\ \unl\,\Delta \\\\
-       \tyj{\Gamma, C(\bar\iota)}{\Delta, f : B}{\up{u}}{e}{U[\bar s]}\eff{\varepsilon}\ \ \text{for every instance $\bar s$}}
+       \forall \bar s \in \Inst.\ \tyj{\Gamma, C(\bar\iota)}{\Delta, f : B}{\up{u}}{e}{U[\bar s]}\eff{\varepsilon}}
       {\tyj{\Gamma}{\Delta}{F}{\tbox{f}{e}}{B}\eff{0}}
     \label{rule:E-Box}
     \and
@@ -30,13 +30,13 @@
     \label{rule:E-Force}
     \and
     \infer*[lab=E-Open]
-      {\Delta(a) = \exists^{l}\bar\iota.\ C.\ T \\ \text{$T$ is no box type} \\ \conserv_{\Gamma}(\bar\iota, C) \\\\
+      {\Delta(a) = \exists^{l}\bar\iota.\ C.\ T \\ \neg\,\unl\,T \\ \conserv_{\Gamma}(\bar\iota, C) \\\\
        \tyj{\Gamma, C(\bar\iota)}{\Delta[a \mapsto T]}{F}{e}{U}\eff{\varepsilon}}
       {\tyj{\Gamma}{\Delta}{F}{e}{U}\eff{\varepsilon}}
     \label{rule:E-Open}
   \end{rules}
   \figrule
   \Description{Inference rules E-New, E-New-Field, E-Box, E-Force and E-Open.}
-  \caption{Creation, recursion and existentials, under \cref{conv:implicit}. $\acyc$, $\conserv$ and $\tree$ are in \cref{def:creation}, $\rankable$ in \cref{def:ranked}. E-Pack is in \cref{app:r-ex}.}
+  \caption{Creation, recursion and existentials, under \cref{conv:lf,conv:implicit}. $\acyc$, $\conserv$ and $\rankable$ are defined in \cref{def:creation}, $\Inst$ in \cref{conv:implicit}, and E-Pack is in \cref{app:r-ex}.}
   \label{fig:typing-orders}
 \end{figure}

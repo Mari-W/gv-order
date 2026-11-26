@@ -1,0 +1,23 @@
+% Worked example of the lock-free annotations: the main thread of map
+% example ex-cycle at N = 4 (theories/examples/LFCycle.v, cy_typedN with
+% e_new' and e_new_at' of examples/LFTools.v: tickets N/2 = 2 per end).
+% Types from E-New, E-LetU, E-Close and Age-Credit; counters from the
+% fuel obligations of an action (def:fuel).
+\begin{figure}[tb]
+  \small
+  \centering
+  \begin{tabular}{@{}l@{\qquad}l@{\qquad}l@{\qquad}c@{\qquad}c@{}}
+    \toprule
+    after the line & $c$ & $d$ & cost & $f(d)$ \\
+    \midrule
+    $\tletp{c}{c'}{\tnew}{}$ & $\Close_{\rho}^{2,2}$ & & $0$ & \\
+    $\tletp{d}{d'}{\tnew}{}$ & $\Close_{\rho}^{2,2}$ & $\Close_{\fld{\rho}{0}}^{2,2}$ & $0$ & $2$ \\
+    $\tletu{\tspawn\,(\ldots)}{}$ & $\Close_{\rho}^{2,2}$ & $\Close_{\fld{\rho}{0}}^{2,2}$ & $0$ & $2$ \\
+    $\tletu{\tclose\,c}{}$ & & $\Close_{\fld{\rho}{0}}^{1,2}$ & $1$ & $1$ \\
+    $\tclose\,d$ & & & $1$ & \\
+    \bottomrule
+  \end{tabular}
+  \Description{A table with one row per line of the main thread of the cycle, giving the annotated types of the ends c and d, the cost of the line and the counter of d.}
+  \caption{The main thread of \cref{ex:cycle} at $N = 4$. Each row gives the types of $c$ and $d$ after the line, the cost of the line and the counter $f(d)$ at run time, so closing $c$ ages the credit of $d$ from $2$ to $1$ and lowers $f(d)$ from $2$ to $1$.}
+  \label{fig:lf-example}
+\end{figure}

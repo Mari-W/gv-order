@@ -1,6 +1,8 @@
 % Common TikZ styles of the paper's pictures: threads as boxes, ends as dots
 % labelled with their points, facts as arrows in the keyword colour,
 % channels as dotted lines.
+% The order in which a thread acts on an end, set before the end's label.
+\DeclareRobustCommand{\ordn}[1]{{\scriptsize\sffamily\color{black!55}(#1)}}
 \tikzset{
   thread/.style={draw=black!45, fill=black!4, rounded corners=3pt, inner sep=6pt},
   threadlabel/.style={font=\scriptsize\scshape, text=black!70},
@@ -12,4 +14,11 @@
   chan/.style={black!45, densely dotted, thick},
   msg/.style={-{Stealth[length=5pt]}, thick, black!70, rounded corners=4pt},
   factlabel/.style={font=\scriptsize, fill=white, inner sep=1pt},
+  ordlabel/.style={font=\scriptsize\sffamily, text=black!55, inner sep=1pt},
+  ptnode/.style={font=\small, inner sep=2pt},
+  endname/.style={font=\scriptsize, text=black!60, inner sep=1pt},
+  factA/.style={-{Stealth[length=5pt]}, thick, kwcolor},
+  factB/.style={-{Stealth[length=5pt]}, thick, lfcolor, densely dashed},
+  factC/.style={-{Stealth[length=5pt]}, thick, black!70, dash dot},
+  legend/.style={font=\scriptsize, anchor=west, inner sep=1pt},
 }

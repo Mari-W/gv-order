@@ -1,53 +1,97 @@
 \section{Typing Cyclic Process Structures}
 \label{sec:typing}
 
-% PAR: section overview, typing reads the order, deadlock-free rules, coloured parts in sec:lock-freedom | example: ex-cycle | figure/rule: fig:typing-core | map: t-judgment
+% PAR: section overview, typing reads the order of a world, the scheduler typed step by step, shaded parts belong to lock freedom | example: ex-milner | figure/rule: fig:typing-core | map: t-judgment
 
 \subsection{Types and Context-Free Session Types}
 \label{sec:types}
 
-% PAR: end type S_x, point in the subscript | example: ex-cycle | figure/rule: fig:types | map: ty-grammar
+% PAR: end type S_x, point in the subscript, the scheduler's ends at the protocol !*.Close at their points | example: ex-milner | figure/rule: fig:types | map: ty-grammar
 \input{figures/types}
 
-% PAR: arrow with upper point u and lower point l | example: ex-cycle | figure/rule: fig:types | map: ty-grammar, ty-heads
+% PAR: arrow with upper point u and lower point l | example: ex-milner | figure/rule: fig:types | map: ty-grammar, ty-heads
 % PAR: boxes quantify over points and session variables under a constraint, existentials | example: ex-cs | figure/rule: fig:types | map: ty-grammar
-% PAR: context-free session types, Skip, sequencing, mu, unfold, contractive, standard pointer Thiemann Vasconcelos | example: ex-ring | figure/rule: fig:types | map: ty-session, ty-equiv
+% PAR: context-free session types, Skip, sequencing, mu, unfold, contractive, standard pointer Thiemann Vasconcelos, the scheduler's protocol uses sequencing | example: ex-milner | figure/rule: fig:types | map: ty-session, ty-equiv
 % PAR: duality, flip of session variables | example: - | figure/rule: app:ty-dual | map: ty-dual
-% PAR: payload binders, payload_at, pscoped | example: ex-ring | figure/rule: app:ty-payload | map: ty-payload
-% PAR: active points ap, bounds bot and top | example: - | figure/rule: fig:types | map: ty-heads
-% GAP: no map program uses sequencing S.S (ex-sinst uses it only in types, ex-ring uses mu, ex-controller uses Skip in the lock-free view)
-% PAR: contractivity, why session instances must be contractive | example: ex-sinst | figure/rule: app:ex-sinst, Sub-Box | map: ty-session, t-subs
+% PAR: payload binders, payload instantiation, pscoped | example: ex-ring | figure/rule: app:ty-payload | map: ty-payload
+% PAR: active points ap, bounds bot and top | example: ex-milner | figure/rule: fig:types | map: ty-heads
+% PAR: mechanization insight, contractivity needed at session instances, a box instantiated at a non-contractive session type gets stuck | example: ex-sinst | figure/rule: app:ex-sinst, Sub-Box | map: ty-session, t-subs
 
-\begin{convention}[Premises left implicit]
+\begin{convention}[Lock-free parts]
+\label{conv:lf}
+A shaded part $\lf{X}$ belongs to the lock-free instance at a finite bound $N$ and is $\infty$ in the deadlock-free instance. A replacement $\lfalt{X}{Y}$ reads $X$ in the deadlock-free instance and $Y$ in the lock-free one. The shaded annotations are the credit $a$ and the tickets $m$ of an end type $S_x^{a,m}$, the credit $a$ and the latent cost $[c]$ of a closure, the cost $\varepsilon$ of a term, the bound $N$ and the interface annotation $\eta$ (\cref{def:lf-ann}). $\Delta - \varepsilon$ ages $\Delta$, it subtracts the credits used (\cref{app:t-agecap}). $\ranked\,W$ asks ordinal ranks that grow along $\ordW$ (\cref{def:ranked}).
+\end{convention}
+
+\begin{convention}[Implicit premises]
 \label{conv:implicit}
 The rules of \cref{sec:rules,sec:creation,sec:proc-typing} are read under the following premises, which the Rocq rules state explicitly (\cref{app:typing}).
 \begin{itemize}
-  \item Every session type that enters a derivation is contractive. Each recursion $\mu Z.S$ passes an action, a choice or $\Close$ before it reaches $Z$, so $\unfold$ always finds a first action (\cref{app:ty-session}). In the Rocq this is a premise of \ruleref{E-Abs}, E-Inj, \ruleref{E-Box}, \ruleref{E-New} and \ruleref{P-Term}.
+  \item Contexts combined in one rule are disjoint.
+  \item Every session type that enters a derivation is contractive (\cref{app:ty-session}). In the Rocq this is a premise of \ruleref{E-Abs}, E-Inj, \ruleref{E-Box}, \ruleref{E-New} and \ruleref{P-Term}.
   \item A payload $!(\bar\iota.\,T)$ or $?(\bar\iota.\,T)$ mentions no point variable besides $\bar\iota$ (\cref{app:ty-payload}).
   \item The point variables $\bar\iota$ bound by \ruleref{E-Box} and \ruleref{E-Open} are fresh for $\Gamma$, $\Delta$, $F$ and the result type.
-  \item The instances $\bar s$ of \ruleref{E-Box} and \ruleref{E-Force} are contractive session types whose payloads mention only their own point variables.
+  \item $\Inst$ is the set of lists $\bar s$ of contractive session types whose payloads mention only their own point variables, the instances of \ruleref{E-Box} and \ruleref{E-Force}.
 \end{itemize}
 \end{convention}
 
 \subsection{The Typing Judgment}
 \label{sec:judgment}
 
-% PAR: judgment Gamma, Delta, future F, world W | example: ex-cycle | figure/rule: fig:judgment | map: t-judgment
-\begin{definition}[Typing judgment, futures and side conditions]
+% PAR: judgment, what each component records, the agent A_1 of the scheduler as the running instance | example: ex-milner | figure/rule: def:judgment | map: t-judgment
+\begin{definition}[Typing judgment \rocq{typed}]
 \label{def:judgment}
-The judgment $\Gamma ; \Delta \vdash^{F}_{W} e : T$ types the term $e$ under the facts $\Gamma$, holding the ends and variables $\Delta$, with the future $F$, in the world $W$. The rules leave $W$ implicit, because it is fixed for a whole derivation.
-\begin{itemize}
-  \item Contexts. $\Delta$ maps ends $o$ to end types $S_x$ and variables to types. $\Delta_1, \Delta_2$ splits $\Delta$ so that each end and each variable goes to one side. $\unl\,\Delta$ holds when every entry of $\Delta$ is a box type. $\Gamma$ is a list of constraints $C[\bar x]$, each instantiated at points $\bar x$.
-  \item Order judgment. $\Gamma \vdash_W x \prec y$ holds when $x \prec y$ follows by transitivity from the order $\ordW$ and the facts of the instances in $\Gamma$ (rules Ord-World, Ord-Fact and Ord-Trans in \cref{app:t-contexts}). $\Gamma \vdash_W x \preccurlyeq y$ adds the case $x = y$, and $\Gamma \vdash C[\bar x]$ holds when each fact of $C$ at $\bar x$ is derivable.
-  \item Futures. A future $F = X \cup \up{v}$ is a finite set $X$ of bounds together with all points above a bound $v$. It records where the thread acts after $e$ returns. $F \held H = F \cup \ap(H)$ is the future of a subterm that runs while the thread holds the entries $H$.
-  \item Side conditions. $u \prec F$ holds when $\Gamma \vdash_W u \prec y$ for each $y \in X$ and $\Gamma \vdash_W u \preccurlyeq v$. For a type or a context $H$, $x \prec H$ and $l \preccurlyeq H$ compare $x$ or $l$ with each point of $\ap(H)$ in the same way. With $\bot$ below and $\top$ above every bound, $\bot \prec F$ always holds and $x \prec F$ fails for every point $x$ as soon as $\bot \in X$ or $v = \bot$.
-  \item Subtyping. $T \leq U$ compares session types up to $\approx$, weakens the constraint of an existential and is covariant in the usual places (\cref{app:t-subs}).
-\end{itemize}
+The typing judgment has the form
+\[ \Gamma ; \Delta \vdash^{F}_{W\lf{,N}} e : T \eff{\varepsilon} \]
+with the components
+\begin{center}
+\small
+\begin{tabular}{@{}l@{\quad}l@{}}
+  $\Gamma$ & facts the thread assumes, a list of instances $C[\bar x]$ of constraints \\
+  $\Delta$ & held context, ends $o : S_x$ and variables $a : T$ \\
+  $F$ & future, the points at which the thread acts after $e$ returns \\
+  $W$ & world, fixed for a whole derivation and left implicit in the rules \\
+  $e : T$ & the term and its type \\
+  $\lf{N}$ & bound on the tickets of the two ends of a channel \\
+  $\lf{\varepsilon}$ & cost, the number of actions $e$ performs before it returns
+\end{tabular}
+\end{center}
 \end{definition}
-% PAR: future F, what the context does afterwards, F extended by the active points of the rest | example: ex-cycle | figure/rule: fig:judgment | map: t-judgment, t-contexts
-% PAR: fact theory, hypotheses from boxes and existentials, Ord rules | example: ex-cs | figure/rule: Ord-World, Ord-Fact, Ord-Trans | map: t-contexts
-% PAR: side conditions u < F, x < H, l below H | example: ex-cycle | figure/rule: fig:judgment | map: t-side
-% PAR: without side conditions plain GV and the reversed cycle types | example: ex-cycle | figure/rule: fig:judgment | map: t-side
+
+% PAR: future F, what the context does afterwards, F extended by the active points of the rest | example: ex-milner | figure/rule: def:side | map: t-judgment, t-contexts
+\begin{definition}[Contexts, futures and side conditions \rocq{slt}]
+\label{def:side}
+Kinds of types and contexts.
+\begin{gather*}
+  \unl\,T \iff \exists \bar\iota, \bar Z, C, u, U.\ T = \Box(\forall \bar\iota\,\bar Z.\ C.\ \ast \multimap^{u} U)
+  \qquad
+  \unl\,\Delta \iff \forall (z : T) \in \Delta.\ \unl\,T \\
+  \tfree\,T \iff T \in \mathcal{T}_0 \qquad
+  \mathcal{T}_0 ::= \ast \mid \Box(\forall \bar\iota\,\bar Z.\ C.\ \ast \multimap^{u} U) \mid \mathcal{T}_0 \otimes \mathcal{T}_0 \mid \mathcal{T}_0 \oplus \mathcal{T}_0
+\end{gather*}
+The order judgment $\Gamma \vdash_W x \prec y$ is the least relation with (\cref{app:t-contexts})
+\begin{gather*}
+  x \ordW y \Rightarrow \Gamma \vdash_W x \prec y
+  \qquad
+  C[\bar x] \in \Gamma \land (y \prec z) \in C[\bar x] \Rightarrow \Gamma \vdash_W y \prec z \\
+  \Gamma \vdash_W x \prec y \land \Gamma \vdash_W y \prec z \Rightarrow \Gamma \vdash_W x \prec z \\
+  \Gamma \vdash_W x \preccurlyeq y \iff x = y \lor \Gamma \vdash_W x \prec y
+  \qquad
+  \Gamma \vdash_W C[\bar x] \iff \forall (y \prec z) \in C[\bar x].\ \Gamma \vdash_W y \prec z
+\end{gather*}
+Futures and side conditions, for a type or a context $H$.
+\begin{gather*}
+  F = X \cup \up{v} \qquad F \held H = F \cup \ap(H) \\
+  u \prec F \iff (\forall y \in X.\ \Gamma \vdash_W u \prec y) \land \Gamma \vdash_W u \preccurlyeq v \\
+  x \prec H \iff \forall y \in \ap(H).\ \Gamma \vdash_W x \prec y
+  \qquad
+  l \preccurlyeq H \iff \forall y \in \ap(H).\ \Gamma \vdash_W l \preccurlyeq y \\
+  \bot \prec F \qquad\quad \bot \in X \lor v = \bot \ \Rightarrow\ x \not\prec F
+\end{gather*}
+Here $X$ is a finite set of bounds, $\up{v}$ the set of all points above the bound $v$, $\Delta_1, \Delta_2$ splits a context, and $T \leq U$ is subtyping (\cref{app:t-subs}).
+\end{definition}
+% PAR: fact theory, hypotheses from boxes and existentials, Ord rules | example: ex-cs | figure/rule: def:side, app:t-contexts | map: t-contexts
+% PAR: side conditions u < F, x < H, l below H, the first action of A_1 asks rho-bar below the duals of the points of a_1 and c_1 | example: ex-milner | figure/rule: def:side | map: t-side
+% PAR: without side conditions plain GV and the scheduler with one agent reversed types | example: ex-milner | figure/rule: def:side | map: t-side
 
 \subsection{Typing Rules}
 \label{sec:rules}
@@ -57,12 +101,31 @@ The judgment $\Gamma ; \Delta \vdash^{F}_{W} e : T$ types the term $e$ under the
 
 % PAR: E-App, call waits at most at u, u < F | example: - | figure/rule: E-App | map: r-fun
 % PAR: E-Pair, left component typed under the future extended by the right | example: - | figure/rule: app:r-data | map: r-data
-% PAR: E-Send, E-Recv, E-Close, act at x, x < F, payload above x | example: ex-cycle | figure/rule: E-Send, E-Close | map: r-act, t-consts
+% PAR: E-Send, E-Recv, E-Close, act at x, x < F, payload above x, the agents of the scheduler send and close | example: ex-milner | figure/rule: E-Send, E-Close | map: r-act, t-consts
 % PAR: choice in the core, select to the dual field, branch to fields | example: ex-point-reuse | figure/rule: app:r-act | map: r-act, syn-moves
 % PAR: E-Case types both arms in one world, dual points make both orders typable | example: ex-bit | figure/rule: E-Case | map: r-data
+% PAR: mechanization insight, one world per arm of a case is unsound, E-Case reads one world | example: ex-branch-ext | figure/rule: E-Case, app:ex-branch-ext | map: r-data, e-rel
 % PAR: E-Link, dual types at dual points | example: ex-copycat | figure/rule: E-Link | map: r-act
-% PAR: E-Spawn, thunk | example: ex-cycle | figure/rule: app:r-threads | map: r-threads
+% PAR: E-Spawn, thunk, the scheduler spawns five threads | example: ex-milner | figure/rule: app:r-threads | map: r-threads
 % PAR: subtyping and structural rules, pointer to appendix | example: - | figure/rule: app:typing | map: t-subs
+
+\begin{example}[The scheduler typed \rocq{ms_dftyped}]
+\label{ex:milner-typed}
+\begin{gather*}
+  S_m = {!}\ast.\Close \qquad
+  c_i : (S_m)_{x},\ d_{i+1} : (\dual{S_m})_{\dual{x}} \qquad
+  a_i : (S_m)_{y},\ b_i : (\dual{S_m})_{\dual{y}} \\
+  \tnew : \exists^{\bot}\rho.\ C_m.\ (S_m)_{\rho} \otimes (\dual{S_m})_{\dual{\rho}} \qquad
+  C_m = \{x \prec y,\ \pplus{x} \prec y \mid (x \prec y) \in B\} \\
+  B = \begin{array}[t]{@{}l@{\qquad}l@{}}
+    \{\dual{\rho} \prec \dual{\fld{\rho}{1}},\ \dual{\rho} \prec \dual{\fld{\rho}{2}},\ \fld{\rho}{1} \prec \dual{\fld{\rho}{2}}, & (A_1) \\
+    \phantom{\{}\dual{\fld{\rho}{2}} \prec \dual{\fld{\rho}{3}},\ \dual{\fld{\rho}{2}} \prec \dual{\fld{\rho}{4}},\ \fld{\rho}{3} \prec \dual{\fld{\rho}{4}}, & (A_2) \\
+    \phantom{\{}\rho \prec \fld{\rho}{4},\ \rho \prec \dual{\fld{\rho}{5}},\ \dual{\fld{\rho}{4}} \prec \dual{\fld{\rho}{5}}\} & (A_0)
+  \end{array}
+\end{gather*}
+% PAR: reading the display, x and y the points of the listing, indices modulo 3, the first creation binds rho under C_m, each agent acts at x while it holds the ends at y and z, so it asks x below their duals, three facts per agent and their shifts for the close, 18 facts, the facts of fig:world-example | example: ex-milner | figure/rule: E-Close, fig:world-example | map: r-act, r-new
+% PAR: the remaining five channels are created at the fields rho.1 to rho.5 and add no facts | example: ex-milner | figure/rule: E-New-Field | map: r-new
+\end{example}
 
 \begin{example}[The bit program \rocq{bit_deadlock_free}]
 \label{ex:bit}
@@ -76,24 +139,25 @@ The judgment $\Gamma ; \Delta \vdash^{F}_{W} e : T$ types the term $e$ under the
 \subsection{Creation and Recursion}
 \label{sec:creation}
 
-% PAR: E-New, fresh base with a constraint or a field of a held point | example: ex-factory | figure/rule: E-New | map: r-new
+% PAR: E-New, fresh base with a constraint or a field of a held point, the scheduler's first creation and its five field creations | example: ex-milner | figure/rule: E-New, E-New-Field | map: r-new
 \input{figures/typing-orders}
 
-% PAR: acyc_new, acyclic in the new tree, conservative over the context | example: ex-cycle | figure/rule: E-New | map: r-new, r-ex
-\begin{definition}[Creation constraints \rocq{acyc_new}]
+% PAR: acyc_new, acyclic in the new tree, conservative over the context, the scheduler's constraint acyclic because its facts rise with the field label | example: ex-milner | figure/rule: def:creation, fig:world-example | map: r-new, r-ex
+\begin{definition}[Creation constraints \rocq{acyc_new} \rocq{new_ok}]
 \label{def:creation}
-The tree $\tree(\bar\iota)$ of the bases $\bar\iota$ is the set of points whose base is one of $\bar\iota$, such as $\iota$, $\pplus{\iota}$, $\dual{\iota}$ and the fields $\fld{\iota}{\kappa}$ with their steps and duals.
-\begin{itemize}
-  \item Order on the new tree. $x \prec^{\rho}_{C} y$ holds for $x, y \in \tree(\rho)$ when $(x \prec y) \in C$, $y = \pplus{x}$ or $y = \pplus{\dual{x}}$.
-  \item Acyclic. $\acyc_{\rho}(C)$ holds when no point of $\tree(\rho)$ lies below itself in the transitive closure of $\prec^{\rho}_{C}$.
-  \item Conservative. $\conserv_{\Gamma}(\bar\iota, C)$ holds when the hypothesis $C(\bar\iota)$ orders two points outside the tree only as $\Gamma$ already does. For all $z, y \notin \tree(\bar\iota)$, $\Gamma, C(\bar\iota) \vdash_W z \prec y$ implies $\Gamma \vdash_W z \prec y$.
-\end{itemize}
+The tree of the bases $\bar\iota$ is $\tree(\bar\iota) = \{x \mid \base(x) \in \bar\iota\}$, the points built from $\bar\iota$ by $\pplus{\cdot}$, $\fld{\cdot}{\kappa}$ and $\dual{\cdot}$.
+\begin{align*}
+  x \prec^{\rho}_{C} y &\iff x, y \in \tree(\rho) \land \big((x \prec y) \in C \lor y = \pplus{x} \lor y = \pplus{\dual{x}}\big) \\
+  \acyc_{\rho}(C) &\iff \forall x \in \tree(\rho).\ \neg\, x \mathrel{(\prec^{\rho}_{C})^{+}} x \\
+  \conserv_{\Gamma}(\bar\iota, C) &\iff \forall z, y \notin \tree(\bar\iota).\ \Gamma, C(\bar\iota) \vdash_W z \prec y \Rightarrow \Gamma \vdash_W z \prec y
+\end{align*}
+$\lf{\rankable_{\Gamma}(\rho, C)}$ holds when $\prec^{\rho}_{C}$ is well-founded and each ranked world in which the facts of $\Gamma$ hold has ranks for $\tree(\rho)$ (\cref{def:ranked}, \cref{app:r-new}).
 \end{definition}
 % PAR: exits, facts from the new base down to the context | example: ex-gennew | figure/rule: E-New | map: r-new
+% PAR: mechanization insight, points are reused, a field creation may repeat, no labelling of points fixed before the run | example: ex-point-reuse | figure/rule: E-New-Field, app:ex-point-reuse | map: r-new, rd
 % PAR: boxes, recursion, infinitely many facts in one constraint | example: ex-cs | figure/rule: E-Box, E-Force | map: r-boxes
 % PAR: creation inside a box at a field of an argument point | example: ex-between | figure/rule: E-New, E-Box | map: r-new, r-boxes
 % PAR: existentials abstract the points of a fresh base, E-Open conservative | example: ex-factory | figure/rule: E-Open, app:r-ex | map: r-ex
-% PAR: one base and its fields, Milner scheduler, 18 facts | example: ex-milner | figure/rule: E-New | map: r-new
 % PAR: recursive fork-join, consistent world that is not well-founded, typable here | example: ex-forkjoin | figure/rule: E-New, E-Box | map: r-new, w-wf
 
 \begin{example}[Client and server cycle \rocq{cs_deadlock_free}]
@@ -105,12 +169,6 @@ The tree $\tree(\bar\iota)$ of the bases $\bar\iota$ is the set of points whose 
 % Listing in the appendix (app:ex-factory), cut from the body for space.
 % PAR: one creation, two typings, existential at a fresh base or field of a held end | example: ex-factory | figure/rule: app:ex-factory, E-New, E-Pack | map: r-new, r-ex
 
-\begin{example}[Milner's cyclic scheduler \rocq{ms_deadlock_free}]
-\label{ex:milner}
-\input{gen/examples/ex-milner}
-% PAR: six channels at one base and its fields, facts rise with the field label | example: ex-milner | figure/rule: E-New | map: r-new
-\end{example}
-
 \begin{example}[Recursive fork-join with replies \rocq{fjr_deadlock_free}]
 \label{ex:forkjoin}
 \input{gen/examples/ex-forkjoin}
@@ -120,18 +178,39 @@ The tree $\tree(\bar\iota)$ of the bases $\bar\iota$ is the set of points whose 
 \subsection{Typing Processes}
 \label{sec:proc-typing}
 
-% PAR: P-Term, one thread, restricted channels, consistent world | example: ex-close | figure/rule: P-Term | map: p-typing
+% PAR: process judgment, interface, world, one thread or a composition | example: ex-milner | figure/rule: def:proc-judgment | map: p-typing
+\begin{definition}[Process judgment \rocq{ptyped}]
+\label{def:proc-judgment}
+The process judgment has the form
+\[ \Sigma \vdash^{\lf{N,\eta}}_{W} p : T \]
+with the components
+\begin{center}
+\small
+\begin{tabular}{@{}l@{\quad}l@{}}
+  $\Sigma$ & interface, an end type $S_x$ for each free end of $p$ \\
+  $W$ & world of $p$ \\
+  $p : T$ & the process and the type of the value of its main thread \\
+  $\lf{N}$ & bound on the tickets of the two ends of a channel \\
+  $\lf{\eta}$ & credit and tickets $\eta(o) = (a, m)$ of each interface end $o$
+\end{tabular}
+\end{center}
+with $\lf{\tk_\eta(o) = m}$, and $\lf{\Sigma^{\eta}}$ maps $o$ to $S_x^{a,m}$ for $(o : S_x) \in \Sigma$ and $\eta(o) = (a, m)$. The rules use
+\begin{align*}
+  \pfree\,\Sigma &\iff \forall o \in \mathrm{dom}\,\Sigma.\ \dual{o} \notin \mathrm{dom}\,\Sigma \\
+  \chans\,\Sigma &= \{c \mid c^{+} \in \mathrm{dom}\,\Sigma \lor c^{-} \in \mathrm{dom}\,\Sigma\} \qquad
+  \dual{\Sigma} = \{\dual{o} : \dual{S}_{\dual{x}} \mid (o : S_x) \in \Sigma\} \\
+  (C_1, E_1) \cpar{\Sigma} (C_2, E_2) &= (C_1 \cup C_2 \cup \chans\,\Sigma,\ E_1 \uplus E_2) \\
+  \pairs^{\lf{N}}(\Theta_B, C_0) &\iff \mathrm{dom}\,\Theta_B = \ends(C_0) \land \forall c \in C_0.\ \Theta_B(c^{+}) = S_x\lf{^{m,m}} \land \Theta_B(c^{-}) = \dual{S}_{\dual{x}}\lf{^{m',m'}} \lf{{}\land m + m' \leq N}
+\end{align*}
+where $\ends(C_0) = \{c^{+}, c^{-} \mid c \in C_0\}$.
+\end{definition}
+
+% PAR: P-Term, one thread, restricted channels, consistent world, the scheduler's main thread before it runs | example: ex-milner | figure/rule: P-Term | map: p-typing
 \input{figures/process-typing}
 
-% PAR: P-Connect, cut on any set of channels, joined world consistent | example: ex-close | figure/rule: P-Connect, fig:worlds | map: p-typing, w-ext
+% PAR: P-Connect, cut on any set of channels, joined world consistent | example: ex-milner | figure/rule: P-Connect, fig:worlds | map: p-typing, w-ext
 % PAR: joined world checked as a whole, three components consistent in pairs | example: ex-ring3 | figure/rule: P-Connect | map: p-typing, w-ext
 % PAR: private constants, renaming | example: ex-shared | figure/rule: P-Connect | map: p-typing, th-fund-proc
-% PAR: static rejection of the flag, lemma on two closes | example: ex-flag | figure/rule: lem:two-closes | map: t-lemmas, p-typing
-
-\begin{lemma}[Two closes \rocq{cl2_needs}]
-\label{lem:two-closes}
-Let $a \neq b$ be ends with $\Delta(a) = S_x$ and $\Delta(b) = S'_y$. If $\Gamma ; \Delta \vdash^{F}_{W} \tletu{\tclose\,a}{\tclose\,b} : T$, then $\Gamma \vdash_W x \prec \dual{y}$.
-\end{lemma}
 
 % Listing in the appendix (app:ex-ring3), cut from the body for space.
 % PAR: consistent two at a time, inconsistent together | example: ex-ring3 | figure/rule: app:ex-ring3, P-Connect | map: p-typing, w-ext
