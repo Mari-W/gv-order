@@ -2,7 +2,7 @@
 \leavevmode\par\nobreak\noindent
 \begin{minipage}{\linewidth}
 \begin{maplisting}
-\lstcmt{-- o₁ : S_x, o₂ : _y, S = ?∗.!∗.Close}
+\lstcmt{-- o₁ : S_x, o₂ : \ensuremath{\bar{S}}_y, S = ?∗.!∗.Close}
 fwd o₁ o₂ = \lstkw{let} ⟨v, o₁⟩ = \lstkw{recv} o₁ \lstkw{in} \lstkw{let} o₂ = \lstkw{send} ⟨v, o₂⟩ \lstkw{in}
             \lstkw{let} ⟨w, o₂⟩ = \lstkw{recv} o₂ \lstkw{in} \lstkw{let} o₁ = \lstkw{send} ⟨w, o₁⟩ \lstkw{in}
             \lstkw{let} ∗ = \lstkw{close} o₁ \lstkw{in} \lstkw{close} o₂

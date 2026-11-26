@@ -4,7 +4,7 @@
 \begin{maplisting}
 ⟨c⁺, c⁻⟩ = \lstkw{new}         \lstcmt{-- c⁺ with N tickets, c⁻ with 0}
 ⟨d⁺, d⁻⟩ = \lstkw{new}         \lstcmt{-- d⁻ with N tickets, d⁺ with 0}
-\lstkw{link} ⟨c⁺, d⁻⟩          \lstcmt{-- c⁺ at x, d⁻ at , both at credit N}
+\lstkw{link} ⟨c⁺, d⁻⟩          \lstcmt{-- c⁺ at x, d⁻ at \ensuremath{\bar{x}}, both at credit N}
 
 \lstkw{link} ⟨c⁺, d⁻⟩ ∥ \lstkw{close} c⁻ ∥ \lstkw{close} d⁺   \lstcmt{-- η(c⁺) = η(d⁻) = (N, N), η(c⁻) = η(d⁺) = (0, 0)}
 \end{maplisting}

@@ -2,7 +2,7 @@
 \leavevmode\par\nobreak\noindent
 \begin{minipage}{\linewidth}
 \begin{maplisting}
-main = \lstkw{let} ⟨w, w′⟩ = \lstkw{new} \lstkw{in}                      \lstcmt{-- w at ρ, facts H at }
+main = \lstkw{let} ⟨w, w′⟩ = \lstkw{new} \lstkw{in}                      \lstcmt{-- w at ρ, facts H at \ensuremath{\bar{ρ}}}
        \lstkw{let} ∗ = \lstkw{spawn} (λu. (\lstkw{force} wk) w′) \lstkw{in} \lstkw{close} w
 wk   = !(f = λw. \lstkw{let} ⟨c₁, c₁′⟩ = \lstkw{new} \lstkw{in} \lstkw{let} ⟨c₂, c₂′⟩ = \lstkw{new} \lstkw{in}   \lstcmt{-- at ι·0 and ι·1}
              \lstkw{let} ∗ = \lstkw{spawn} (λu. (\lstkw{force} f) c₁′) \lstkw{in}

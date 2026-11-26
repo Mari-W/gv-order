@@ -3,7 +3,7 @@
 \begin{minipage}{\linewidth}
 \begin{maplisting}
 Sch  = µα. ?(κ. α_κ).Close
-ring : □(∀ι₁ ι₂. Cr. ∗ ⊸ (Sch_ι₁ ⊗ ch_ι₂ ⊸^\textbraceleft{}ι₁+1\textbraceright{} ∗))
+ring : □(∀ι₁ ι₂. Cr. ∗ ⊸ (Sch_ι₁ ⊗ \ensuremath{\bar{S}}ch_ι₂ ⊸^\textbraceleft{}ι₁+1\textbraceright{} ∗))
 ring = !(f = λp. \lstkw{let} ⟨x, y⟩ = p \lstkw{in}
            \lstkw{let} ⟨a, a′⟩ = \lstkw{new} \lstkw{in}                \lstcmt{-- a at ι₂·0}
            \lstkw{let} ∗ = \lstkw{spawn} (λw. \lstkw{let} ∗ = w \lstkw{in} \lstkw{close} (\lstkw{send} ⟨a, y⟩)) \lstkw{in}

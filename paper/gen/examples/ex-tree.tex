@@ -3,8 +3,8 @@
 \begin{minipage}{\linewidth}
 \begin{maplisting}
 mid = \lstkw{case} not (inj₂ ∗) \lstkw{of} \lstkw{inl} w ⇒ \lstkw{close} c; \lstkw{close} d | \lstkw{inr} w ⇒ \lstkw{close} d; \lstkw{close} c
-a   = \lstkw{close}                     \lstcmt{-- leaf on c}
-b   = \lstkw{close}                     \lstcmt{-- leaf on d}
+a   = \lstkw{close} \ensuremath{\bar{c}}                    \lstcmt{-- leaf on c}
+b   = \lstkw{close} \ensuremath{\bar{d}}                    \lstcmt{-- leaf on d}
 \lstcmt{-- the process (\textbraceleft{}c, d\textbraceright{}, \textbraceleft{}mid, a, b\textbraceright{}), channel graph a - mid - b}
 \end{maplisting}
 \end{minipage}

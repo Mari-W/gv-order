@@ -6,7 +6,7 @@ not     = λz. \lstkw{case} z \lstkw{of} \lstkw{inl} w ⇒ inj₂ w | \lstkw{inr
 thread  = \lstkw{case} not (inj₂ ∗) \lstkw{of}
             \lstkw{inl} w ⇒ \lstkw{let} ∗ = w \lstkw{in} \lstkw{let} ∗ = \lstkw{close} c \lstkw{in} \lstkw{close} d      \lstcmt{-- runs}
           | \lstkw{inr} w ⇒ \lstkw{let} ∗ = w \lstkw{in} \lstkw{let} ∗ = \lstkw{close} d \lstkw{in} \lstkw{close} c      \lstcmt{-- never runs}
-other   = \lstkw{let} ∗ = \lstkw{close}  \lstkw{in} \lstkw{close} 
+other   = \lstkw{let} ∗ = \lstkw{close} \ensuremath{\bar{c}} \lstkw{in} \lstkw{close} \ensuremath{\bar{d}}
 \lstcmt{-- the process (\textbraceleft{}c, d\textbraceright{}, \textbraceleft{}thread, other\textbraceright{}), c at x, d at y}
 \end{maplisting}
 \end{minipage}

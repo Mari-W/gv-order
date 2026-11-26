@@ -5,8 +5,8 @@
 A = \lstkw{let} ⟨z, f′⟩ = \lstkw{recv} f \lstkw{in} \lstkw{let} ∗ = \lstkw{close} f′ \lstkw{in}
     \lstkw{case} z \lstkw{of} \lstkw{inl} w ⇒ \lstkw{let} ∗ = w \lstkw{in} \lstkw{let} ∗ = \lstkw{close} a \lstkw{in} \lstkw{close} b
             | \lstkw{inr} w ⇒ \lstkw{let} ∗ = w \lstkw{in} \lstkw{let} ∗ = \lstkw{close} b \lstkw{in} \lstkw{close} a
-B = A with f, a, b replaced by g, ā, 
-C = \lstkw{let} ∗ = \lstkw{close} (\lstkw{send} ⟨inj₁ ∗, ⟩) \lstkw{in} \lstkw{close} (\lstkw{send} ⟨inj₁ ∗, ḡ⟩)
+B = A with f, a, b replaced by g, ā, \ensuremath{\bar{b}}
+C = \lstkw{let} ∗ = \lstkw{close} (\lstkw{send} ⟨inj₁ ∗, \ensuremath{\bar{f}}⟩) \lstkw{in} \lstkw{close} (\lstkw{send} ⟨inj₁ ∗, ḡ⟩)
 \lstcmt{-- the process (\textbraceleft{}a, b, f, g\textbraceright{}, \textbraceleft{}A, B, C\textbraceright{}), a at x, b at y}
 \end{maplisting}
 \end{minipage}
