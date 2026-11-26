@@ -157,4 +157,5 @@ algorithmic/Algo.v
 algorithmic/Sound.v
 algorithmic/Complete.v
 algorithmic/Oracles.v
+algorithmic/Decide.v
 CheckAll.v
