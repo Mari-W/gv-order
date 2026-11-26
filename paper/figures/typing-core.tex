@@ -7,7 +7,7 @@
   \begin{rules}
     \infer*[lab=E-App]
       {\tyj{\cGamma}{\lenv_1}{F \held \lenv_2}{\tm_1}{(\ty \arr{u}{l}\lf{[\varepsilon]}\, \tyB)\lf{^{a}}}\eff{\varepsilon_1} \\\\
-       \tyj{\cGamma}{\lenv_2\lf{-\varepsilon_1}}{F \held (\ty \arr{u}{l} \tyB)\lf{^{a}}}{\tm_2}{\ty}\eff{\varepsilon_2} \\ u \prec F}
+       \tyj{\cGamma}{\lenv_2\lf{-\varepsilon_1}}{F \held (\ty \arr{u}{l} \tyB)\lf{^{a}}}{\tm_2}{\ty}\eff{\varepsilon_2} \\ u \prec F \\ \lf{\varepsilon_2 \leq a}}
       {\tyj{\cGamma}{\lenv_1, \lenv_2}{F}{\tm_1\,\tm_2}{\tyB}\eff{\varepsilon_1 + \varepsilon_2 + \varepsilon}}
     \label{rule:E-App}
     \and
@@ -37,6 +37,6 @@
   \end{rules}
   \figrule
   \Description{Inference rules E-App, E-Case, E-Send, E-Close and E-Link.}
-  \caption{Selected typing rules, under \cref{conv:lf,conv:implicit}. E-Abs types a closure body under $\up{u}$ with $l \preccurlyeq \lenv$ for the captured context $\lenv$ (\cref{app:r-fun}), and E-Unit, E-Var, E-Chan, E-Pair, E-LetP, E-LetU, E-Inj, E-Recv, E-Select, E-Branch, E-Spawn and the subtyping rule E-Sub are in \cref{app:typing}.}
+  \caption{Selected typing rules, under \cref{conv:lf,conv:implicit}. E-Abs types a closure body under $\up{u}$ with $l \preccurlyeq \lenv$ for the captured context $\lenv$ (\cref{app:r-fun}), and E-Unit, E-Var, E-Chan, E-Pair, E-LetP, E-LetU, E-Inj, E-Recv, E-Select, E-Branch, E-Spawn and the subtyping rule E-Sub are in \cref{app:r-base,app:r-data,app:r-act,app:r-threads,app:t-subs}.}
   \label{fig:typing-core}
 \end{figure}
