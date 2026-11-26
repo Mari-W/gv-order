@@ -4,22 +4,22 @@
 % PAR: section overview, semantic typing of untyped terms and processes, rules as lemmas | example: ex-flag | figure/rule: app:sr-reading | map: sr-reading
 % PAR: standard step-indexed machinery, pointer, ordinal indices, transfinite because of receives | example: - | figure/rule: app:semantic | map: sr-ord
 
-% Cut for space, the table sr-reading is in the appendix (app:sr-reading).
-
 \subsection{Values}
 \label{sec:value-rel}
 
-\begin{figure}[tp]
-  \centering
-  \maprow{\maprule{V-Sess}}
-  \maprow{\maprule{V-Arrow}}
-  \maprow{\maprule{V-Box}}
-  \caption{Selected rules of the value relation (all rules in \cref{app:semantic})}
-  \label{fig:value-rel}
-  % FIG: map v-rel rules V-Sess, V-Arrow, V-Box (V-Ex in the appendix) | DF explained in sec:value-rel | LF parts (index step kappa_beta) explained in sec:lf-relation
-\end{figure}
-
 % PAR: exact ownership, a value owns exactly the ends Theta | example: ex-close | figure/rule: V-Sess | map: v-rel
+\begin{definition}[Value relation \rocq{Vrel}]
+\label{def:value-rel}
+$\Vrel{W}{\alpha}{\Theta}{T}$ is the set of values that own exactly the ends of $\Theta$ and are safe at $T$ in the world $W$ at the ordinal index $\alpha$ (\cref{app:sr-ord}). It is defined by recursion on $\alpha$ and $T$. Unit, pairs and injections are related componentwise (\cref{app:v-rel}).
+\begin{itemize}
+  \item An end. $o \in \Vrel{W}{\alpha}{\{o \mapsto S'_x\}}{S_x}$ when $S' \approx S$.
+  \item A closure. $\tlam{b}{e} \in \Vrel{W}{\alpha}{\Theta}{T \arr{u}{l} U}$ when $\mathrm{dom}\,\Theta = \fends(e)$, $l \preccurlyeq \ap(\Theta)$, and for each $W' \sqsupseteq W$, $\beta < \alpha$, future $F$ with $W' \vdash u \prec F$ and argument $w \in \Vrel{W'}{\beta}{\Theta'}{T}$ with $\Theta'$ disjoint from $\Theta$,
+  \[ e[w/b] \in \Erel{W'}{\beta}{\Theta \cup \Theta'}{U}{F}. \]
+  \item A box. $\tbox{f}{e} \in \Vrel{W}{\alpha}{\varnothing}{\Box(\forall\bar\iota\,\bar Z.\,C.\ \ast \multimap^{u} U)}$ when $e$ holds no end, and for each $W' \sqsupseteq W$, points $\bar x$ with $W' \vdash C[\bar x]$, session types $\bar s$, $\beta < \alpha$ and future $F$ with $u[\bar x] \prec F$,
+  \[ e[\tbox{f}{e}/f] \in \Erel{W'}{\beta}{\varnothing}{U[\bar s][\bar x]}{F}. \]
+  \item An existential. $v \in \Vrel{W}{\alpha}{\Theta}{\exists^{l}\bar\iota.\,C.\,T}$ when $l \preccurlyeq \ap(\Theta)$ and $v \in \Vrel{W}{\alpha}{\Theta}{T[\bar x]}$ for some $\bar x$ with $W \vdash C[\bar x]$.
+\end{itemize}
+\end{definition}
 % PAR: V-Arrow, each extension of the world, future F above u | example: - | figure/rule: V-Arrow | map: v-rel
 % PAR: V-Box, every instance of the constraint at every extension | example: ex-cs | figure/rule: V-Box | map: v-rel
 % PAR: V-Ex, witness points in the world | example: ex-factory | figure/rule: app:v-rel | map: v-rel
@@ -27,112 +27,120 @@
 \subsection{Terms and Readiness}
 \label{sec:term-rel}
 
-\begin{figure}[tp]
-  \centering
-  \maprow{\mapblock{e-rel}}
-  \maprow{\mapblock{rd}}
-  \maprow{\mapblock{ct-costs}}
-  \maprow{\maprule{O-New}}
-  \maprow{\maprule{O-Send}}
-  \caption{The term relation, readiness, step costs and selected obligations}
-  \label{fig:term-rel}
-  % FIG: map e-rel, rd, ct-costs, e-obl rules O-New, O-Send (O-Recv in the appendix) | DF explained in sec:term-rel and sec:proc-rel (process readiness) | LF parts (cost table kappa_L, index arithmetic) explained in sec:lf-relation
-\end{figure}
+% PAR: readiness, a stuck term offers only ends whose points lie below the dual points of the rest and F | example: ex-cycle | figure/rule: fig:term-rel | map: rd
+\begin{definition}[Readiness \rocq{ready_t} \rocq{ready_p}]
+\label{def:readiness}
+A term or process is stable when each of its steps is a session action, and it offers the ends on which it can act.
+\begin{itemize}
+  \item $\ready_W(\Theta \mid F, t)$ holds when a stable $t$ that offers no end of $\Theta$ is a value, and a stable $t$ is at a link or offers only ends whose points lie below the dual points of the other ends of $\Theta$ and below $F$.
+  \item $\ready_W(\Sigma, p)$ holds when a stable $p$ is at a link, or it is terminated when it offers no end of $\Sigma$ and for each other end of $\Sigma$ some offered end lies below its dual point.
+\end{itemize}
+\end{definition}
 
 % PAR: term relation, stop, ready, step, least fixpoint, each extension of the world | example: ex-flag | figure/rule: fig:term-rel | map: e-rel
-% PAR: readiness, a stuck term offers only ends whose points lie below the dual points of the rest and F | example: ex-cycle | figure/rule: fig:term-rel | map: rd
+\begin{definition}[Term relation \rocq{Erel}]
+\label{def:term-rel}
+$e \in \Erel{W}{\alpha}{\Theta}{T}{F}$ holds when, in each world $W' \sqsupseteq W$,
+\begin{itemize}
+  \item (stop) an irreducible $e$ is a value in $\Vrel{W'}{\alpha}{\Theta}{T}$,
+  \item (ready) a reducible $e$ satisfies $\ready_{W'}(\Theta \mid F, e)$,
+  \item (step) each step $e \xrightarrow{\ell} e'$ meets the obligation $\Obl_\ell(e')$ of \cref{def:obligations}.
+\end{itemize}
+An obligation reads the successor $e'$, holding $\Theta'$, in $\Erel{W'}{\beta}{\Theta'}{T}{F}$ for each $\beta$ with $\beta + \kappa(\ell) \leq \alpha$. A step of cost $\kappa(\ell) = 0$ keeps the index, and the relation is the least fixed point of the three clauses for such steps. The costs $\kappa$ are in \cref{app:ct-costs}.
+\end{definition}
+
 % PAR: obligations per label, O-New grows the world, O-Send splits ownership, O-Recv | example: ex-cycle | figure/rule: O-New, O-Send | map: e-obl
+\begin{definition}[Obligations \rocq{Eobl}]
+\label{def:obligations}
+Let $e$ hold $\Theta$ and let $\Theta(o) = S_x$ with $\unfold(S)$ the action of the step on $o$.
+\begin{itemize}
+  \item A $\beta$ step keeps $\Theta$.
+  \item A creation $\tnew\,c$ with $c^{\pm}$ fresh grows the world. For some $S$, point $\pi$ and $W' \sqsupseteq W$ the successor holds $\Theta[c^{+} \mapsto S_{\pi},\ c^{-} \mapsto \dual{S}_{\dual{\pi}}]$ at $W'$.
+  \item A send $o!w$ with $\unfold(S) = \sSend{\bar\iota}{U}.S'$ gives away the payload. The rest of $\Theta$ splits as $\Theta_M \uplus \Theta_r$ with $w \in \Vrel{W}{\alpha}{\Theta_M}{\payload{U}{x}}$, and the successor holds $\Theta_r[o \mapsto S'_{\pplus{x}}]$.
+  \item A receive $o?w$ with $\unfold(S) = \sRecvT{\bar\iota}{U}.S'$ is safe for each value that may arrive. For each $\beta < \alpha$ and $w \in \Vrel{W}{\beta}{\Theta_{in}}{\payload{U}{x}}$ with $\Theta_{in}$ disjoint from $\Theta$, the successor is in $\Erel{W}{\beta}{\Theta[o \mapsto S'_{\pplus{x}}] \cup \Theta_{in}}{T}{F}$.
+\end{itemize}
+Spawn, close, choice and link are in \cref{app:e-obl}.
+\end{definition}
 % PAR: step costs, free steps keep the index | example: - | figure/rule: fig:term-rel | map: ct-costs
 % PAR: bind lemma, evaluation frames, future F extended by the held rest | example: - | figure/rule: lem:bind | map: e-bind
 
 \begin{lemma}[Bind \rocq{Erel_bind}]
 \label{lem:bind}
-\[ \mapblock{e-bind} \]
+Let $e \in \Erel{W}{\alpha}{\Theta_1}{T}{F \cup \ap(\Theta_2)}$, and let $\mathcal{E}[v] \in \Erel{W'}{\beta}{\Theta_v \cup \Theta_2}{U}{F}$ for each $W' \sqsupseteq W$, $\beta \leq \alpha$ and $v \in \Vrel{W'}{\beta}{\Theta_v}{T}$. Then $\mathcal{E}[e] \in \Erel{W}{\alpha}{\Theta_1 \cup \Theta_2}{U}{F}$.
 \end{lemma}
 
 \subsection{Processes}
 \label{sec:proc-rel}
 
-\begin{figure}[tp]
-  \centering
-  \maprow{\mapblock{p-rel}}
-  \maprow{\mapblock{sj-all}}
-  \caption{The process relation and the semantic judgments}
-  \label{fig:proc-rel}
-  % FIG: map p-rel, sj-all | DF explained in sec:proc-rel | LF parts (strict worlds, lock-free judgment) explained in sec:lf-relation
-\end{figure}
-
 % PAR: process relation, stop with a terminated process, ready, step per event | example: ex-close | figure/rule: fig:proc-rel | map: p-rel
+\begin{definition}[Process relation \rocq{Prel}]
+\label{def:proc-rel}
+Every process is in $\Prel{W}{0}{\Sigma}{T}$. For $\alpha > 0$, $p \in \Prel{W}{\alpha}{\Sigma}{T}$ holds when, in each world $W' \sqsupseteq W$,
+\begin{itemize}
+  \item (stop) an irreducible $p$ is $(\varnothing, \{v\} \uplus E)$ with $E \subseteq \{\ast\}$ and $v \in \Vrel{W'}{\alpha}{\Sigma}{T}$,
+  \item (ready) a reducible $p$ satisfies $\ready_{W'}(\Sigma, p)$,
+  \item (step) each step $p \xrightarrow{ev} p'$ meets the process obligation of $ev$, which repeats the term obligation with $\Sigma$ in place of $\Theta$ and moves payload ends across the interface (\cref{app:p-obls}).
+\end{itemize}
+\end{definition}
 % PAR: process readiness, some offered point below each other dual point | example: ex-cycle | figure/rule: fig:term-rel | map: rd
 % PAR: process obligations, send and receive across the cut, pointer to appendix | example: - | figure/rule: app:semantic | map: p-obls
+
 % PAR: semantic judgments for terms and processes, consistent extensions | example: - | figure/rule: fig:proc-rel | map: sj-all
+\begin{definition}[Semantic judgments \rocq{sem_typed} \rocq{sem_ptyped_sw}]
+\label{def:sem-judgments}
+The judgments quantify over indices and larger worlds.
+\begin{itemize}
+  \item $\Delta \semt^{F}_{W} e : T$ holds when for each $\alpha$ and $W' \sqsupseteq W$, each substitution $\gamma$ of related values for the variables of $\Delta$, and each choice of points for the open part $\up{v}$ of $F$, $\gamma(e) \in \Erel{W'}{\alpha}{\Theta}{T}{F}$, where $\Theta$ holds the ends of $\Delta$ and of $\gamma$ (\cref{app:sj-all}).
+  \item $\Sigma \semt_{W} p : T$ holds when $p \in \Prel{W'}{\alpha}{\Sigma}{T}$ for each $\alpha$ and each consistent $W' \sqsupseteq W$.
+\end{itemize}
+\end{definition}
 
 \subsection{Compositionality}
 \label{sec:compose}
 
-\begin{theorem}[Semantic P-Term and P-Connect \rocq{sem_p_term} \rocq{sem_p_connect}]
-\label{thm:compose}
-\[ \mapblock{th-compose} \]
-\end{theorem}
-
 % PAR: semantic P-Term, a thread in E with an interface | example: ex-flag | figure/rule: thm:compose | map: th-compose
+\begin{theorem}[Semantic P-Term and P-Connect \rocq{sem_p_term} \rocq{sem_p_connect_sw}]
+\label{thm:compose}
+Let $T$ hold no end.
+\begin{enumerate}
+  \item If $\Sigma$, $\Theta_B$ and $C$ meet the interface premises of \ruleref{P-Term} and $t \in \Erel{W}{\alpha}{\Sigma \cup \Theta_B}{T}{\varnothing}$, then $(C, \{t\}) \in \Prel{W}{\alpha}{\Sigma}{T}$.
+  \item If the side conditions of \ruleref{P-Connect} hold, $\Sigma_1 \cup \Sigma_C \semt_{W_1} p_1 : T$ and $\Sigma_2 \cup \dual{\Sigma_C} \semt_{W_2} p_2 : \ast$, then $\Sigma_1 \cup \Sigma_2 \semt_{W_1 \wjoin W_2} p_1 \parallel_{\Sigma_C} p_2 : T$, where $(C_1, E_1) \parallel_{\Sigma_C} (C_2, E_2) = (C_1 \cup C_2 \cup \mathsf{chans}\,\Sigma_C,\ E_1 \uplus E_2)$.
+\end{enumerate}
+\end{theorem}
 % PAR: semantic P-Connect, components at their own worlds, joined world | example: ex-flag | figure/rule: thm:compose, fig:composition-example | map: th-compose, w-ext
 % PAR: the flag thread in E at every index without a typing derivation, three beta steps, live arm | example: ex-flag | figure/rule: ex:flag | map: e-rel, th-terms
 % PAR: composition of the flag thread and its partner, adequacy | example: ex-flag | figure/rule: thm:adequacy | map: th-compose, th-adeq
 % PAR: a tree of three threads | example: ex-tree | figure/rule: thm:compose | map: th-compose
 % PAR: limit, a whole-process proof where per-thread proofs fail | example: ex-flagpair | figure/rule: fig:proc-rel | map: p-rel, e-rel
 
-% Optional figure, see PLAN.md. Facts from the meaning of ex-flag.
-\begin{figure}[tp]
-  \centering
-  \begin{tikzpicture}[
-      comp/.style={draw, rounded corners, minimum width=3.2cm, minimum height=2.4cm},
-      endpt/.style={font=\small},
-      fact/.style={-{Stealth}, thick, blue!60!black},
-      dead/.style={-{Stealth}, thick, dashed, red!70!black},
-      cut/.style={densely dotted}]
-    \node[comp, label=above:{\small thread, world $W_1$}] (t) at (0,0) {};
-    \node[comp, label=above:{\small other, world $W_2$}] (o) at (5,0) {};
-    \node[endpt] (c)  at (0,0.6)  {$c : x$};
-    \node[endpt] (d)  at (0,-0.6) {$d : y$};
-    \node[endpt] (cb) at (5,0.6)  {$\overline{c} : \overline{x}$};
-    \node[endpt] (db) at (5,-0.6) {$\overline{d} : \overline{y}$};
-    \draw[cut] (c) -- node[above, font=\scriptsize] {cut} (cb);
-    \draw[cut] (d) -- (db);
-    \draw[fact] (c.south east) to[bend left=10] node[pos=0.3, above, font=\scriptsize] {$x \prec \overline{y}$} (db.north west);
-    \draw[fact] (cb.south west) to[bend right=10] node[pos=0.3, above, font=\scriptsize] {$\overline{x} \prec y$} (d.north east);
-    \draw[dead] (d.south east) to[bend right=25] node[below, font=\scriptsize] {$y \prec \overline{x}$ (arm that never runs)} (cb.south);
-  \end{tikzpicture}
-  \caption{Composition by P-Connect, the joined world $W_1 \sqcup W_2$}
-  \label{fig:composition-example}
-  % FIG: example ex-flag | explained in sec:compose and sec:proc-typing | LF parts none | optional
-\end{figure}
+\input{figures/composition-example}
 
 \subsection{Fundamental Theorems and Adequacy}
 \label{sec:fundamental}
 
+% PAR: fundamental theorem for terms, every typing rule a compatibility lemma | example: - | figure/rule: thm:fundamental-terms | map: th-terms
 \begin{theorem}[Fundamental theorem for terms \rocq{fundamental}]
 \label{thm:fundamental-terms}
-\[ \mapblock{th-terms} \]
+If $\varnothing ; \Delta \vdash^{F}_{W} t : T$, then $\Delta \semt^{F}_{W'} t : T$ for each consistent $W' \sqsupseteq W$.
 \end{theorem}
 
+% PAR: fundamental theorem for processes, P-Term and P-Connect by thm:compose | example: ex-close | figure/rule: thm:fundamental-proc | map: th-fund-proc
 \begin{theorem}[Fundamental theorem for processes \rocq{fundamental_proc}]
 \label{thm:fundamental-proc}
-\[ \mapblock{th-fund-proc} \]
+If $\Sigma \vdash_{W} p : T$, then $\Sigma \semt_{W} p : T$.
 \end{theorem}
 
-\begin{theorem}[Adequacy \rocq{adequacy}]
-\label{thm:adequacy}
-\[ \mapblock{th-adeq} \]
-\end{theorem}
-
-\begin{theorem}[Soundness \rocq{soundness}]
-\label{thm:soundness}
-\[ \mapblock{th-sound} \]
-\end{theorem}
-
-% PAR: fundamental theorem for terms, every typing rule a compatibility lemma | example: - | figure/rule: thm:fundamental-terms | map: th-terms
-% PAR: fundamental theorem for processes, P-Term and P-Connect by thm:compose | example: ex-close | figure/rule: thm:fundamental-proc | map: th-fund-proc
 % PAR: adequacy, consistent world, deadlock freedom | example: ex-flag | figure/rule: thm:adequacy | map: th-adeq
+\begin{theorem}[Adequacy \rocq{adequacy_sw}]
+\label{thm:adequacy}
+If $\cons\,W$ and $\varnothing \semt_{W} p : T$, then $p$ is deadlock free.
+\end{theorem}
+
 % PAR: soundness of the type system as a corollary | example: ex-cycle | figure/rule: thm:soundness | map: th-sound
+\begin{corollary}[Soundness \rocq{soundness}]
+\label{thm:soundness}
+If $\varnothing \vdash_{W} p : T$, then $p$ is deadlock free.
+\end{corollary}
 % PAR: a ring that grows forever, soundness over an infinite consistent world | example: ex-ring | figure/rule: thm:soundness | map: th-terms
+
+\FloatBarrier
