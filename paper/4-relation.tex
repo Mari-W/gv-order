@@ -111,7 +111,7 @@ The formulas are in \cref{app:p-obls}.
 \label{thm:compose}
 Let $\tfree\,\ty$.
 \begin{enumerate}
-  \item If $\pfree\,\senv$, $\pairs(\cTheta_B, C_0)$ and $t \in \Erel{W}{\ix}{\senv \cup \cTheta_B}{\ty}{\varnothing}$, then $(C_0, \{t\}) \in \Prel{W}{\ix}{\senv}{\ty}$.
+  \item If $\pfree\,\senv$, $\pairs(\cTheta_B, C_0)$ and $\tm \in \Erel{W}{\ix}{\senv \cup \cTheta_B}{\ty}{\varnothing}$, then $(C_0, \{\tm\}) \in \Prel{W}{\ix}{\senv}{\ty}$.
   \item If $\pfree\,\senv_1$, $\pfree\,\senv_2$, $\pfree\,\senv_C$, $\senv_1 \cup \senv_C \semt_{W_1} \proc_1 : \ty$ and $\senv_2 \cup \dual{\senv_C} \semt_{W_2} \proc_2 : \tyunit$, then $\senv_1 \cup \senv_2 \semt_{W_1 \wjoin W_2} \proc_1 \cpar{\senv_C} \proc_2 : \ty$.
 \end{enumerate}
 \end{theorem}
@@ -160,7 +160,7 @@ $(\{c, d\}, \{\mathit{thread}, \mathit{other}\})$ is deadlock free.
 % PAR: fundamental theorem for terms, every typing rule a compatibility lemma | example: - | figure/rule: thm:fundamental-terms | map: th-terms
 \begin{theorem}[Fundamental theorem for terms \rocq{fundamental}]
 \label{thm:fundamental-terms}
-If $\varnothing ; \lenv \vdash^{F}_{W} t : \ty$, then $\lenv \semt^{F}_{W'} t : \ty$ for each consistent $W' \sqsupseteq W$.
+If $\varnothing ; \lenv \vdash^{F}_{W} \tm : \ty$, then $\lenv \semt^{F}_{W'} \tm : \ty$ for each consistent $W' \sqsupseteq W$.
 \end{theorem}
 
 % PAR: fundamental theorem for processes, P-Term and P-Connect by thm:compose | example: ex-milner | figure/rule: thm:fundamental-proc | map: th-fund-proc

@@ -63,28 +63,28 @@ F-New & $\displaystyle \mathsf{f\_new} : \mathsf{Chan} \to {\mathsf{Expr}} \to \
 New ends at their tickets & $\displaystyle {\cPhi}[c^{+} \mapsto {\color{cTy}S}^{m_1,m_1}, c^{-} \mapsto \overline{{\color{cTy}S}}^{m_2,m_2}]$ \\
 Fresh against the thread & $\displaystyle c^{\pm} \notin \mathrm{dom}\,{\cPhi}$ \\
 F-Recv & $\displaystyle \mathsf{f\_recv} : \mathsf{End} \to {\mathsf{Val}} \to {\mathsf{Expr}} \to \mathsf{Prop}$ \\
-Each incoming value & $\displaystyle \forall \gamma, {\cPhi}_{in}.\ \gamma < \beta,\ {\cPhi}_{in} \mathbin{\#} {\cPhi},\ {\color{cTm}w} \in FV^{N}_{\gamma}\llbracket {\cPhi}_{in} \vdash {\color{cTy}T} \rrbracket \Rightarrow \ldots$ \\
+Each incoming value & $\displaystyle \forall \gamma, {\cPhi}_{in}.\ \gamma < \beta,\ {\cPhi}_{in} \mathbin{\#} {\cPhi},\ {\color{cTm}w} \in ZV^{N}_{\gamma}\llbracket {\cPhi}_{in} \vdash {\color{cTy}T} \rrbracket \Rightarrow \ldots$ \\
 F-Select & $\displaystyle \mathsf{f\_select} : \mathsf{End} \to \mathbb{B} \to {\mathsf{Expr}} \to \mathsf{Prop}$ \\
 F-Send & $\displaystyle \mathsf{f\_send} : \mathsf{End} \to {\mathsf{Val}} \to {\mathsf{Expr}} \to \mathsf{Prop}$ \\
 ${\cPhi} \setminus o = {\cPhi}_M \uplus {\cPhi}_r$ & $\displaystyle {\cPhi} \setminus o = {\cPhi}_M \uplus {\cPhi}_r,\ \mathrm{dom}\,{\cPhi}_M = \mathsf{fends}({\color{cTm}w})$ \\
-Payload in $FV$ & $\displaystyle \forall \gamma < \beta.\ {\color{cTm}w} \in FV^{N}_{\gamma}\llbracket {\cPhi}_M{\downarrow} \vdash {\color{cTy}T} \rrbracket$ \\
+Payload in $ZV$ & $\displaystyle \forall \gamma < \beta.\ {\color{cTm}w} \in ZV^{N}_{\gamma}\llbracket {\cPhi}_M{\downarrow} \vdash {\color{cTy}T} \rrbracket$ \\
 F-Spawn & $\displaystyle \mathsf{f\_spawn} : \mathsf{Val} \to {\mathsf{Expr}} \to \mathsf{Prop}$ \\
-The child & $\displaystyle \forall \gamma < \beta.\ {\color{cTm}v}\,\ast \in F^{N}_{\gamma}\llbracket {\cPhi}_M \vdash \mathsf{thread}\ !\ \infty \rrbracket$ \\
+The child & $\displaystyle \forall \gamma < \beta.\ {\color{cTm}v}\,\ast \in Z^{N}_{\gamma}\llbracket {\cPhi}_M \vdash \mathsf{thread}\ !\ \infty \rrbracket$ \\
 ${\cPhi} = {\cPhi}_M \uplus {\cPhi}_r$ & $\displaystyle {\cPhi} = {\cPhi}_M \uplus {\cPhi}_r,\ \mathrm{dom}\,{\cPhi}_M = \mathsf{fends}({\color{cTm}v})$ \\
 F-Count & $\displaystyle \mathsf{positive}({\cPhi} \setminus o)$ \\
 $1 \leq d$ & $\displaystyle 1 \leq d$ \\
 F-Wait & $\displaystyle {\cPhi}(o) = {\color{cTy}S}^{f,m} \land \neg\mathsf{idle}\,{\color{cTy}S}$ \\
-$FV$ at an arrow & $\displaystyle {\color{cTm}\lambda} {\color{cTm}e} \in FV^{N}_{\beta}\llbracket {\cPhi} \vdash ({\color{cTy}T} \tymultimap \lfadd{[c; h]}\, {\color{cTy}U})^{\lfadd{a}} \rrbracket$ \\
-Counters of the body & $\displaystyle {\color{cTm}e}[u] \in F^{N}_{\gamma}\llbracket {\cPhi}' \cup {\cPhi}_u \vdash {\color{cTy}U}\ !\ c \rrbracket$ \\
+$ZV$ at an arrow & $\displaystyle {\color{cTm}\lambda} {\color{cTm}e} \in ZV^{N}_{\beta}\llbracket {\cPhi} \vdash ({\color{cTy}T} \tymultimap \lfadd{[c; h]}\, {\color{cTy}U})^{\lfadd{a}} \rrbracket$ \\
+Counters of the body & $\displaystyle {\color{cTm}e}[u] \in Z^{N}_{\gamma}\llbracket {\cPhi}' \cup {\cPhi}_u \vdash {\color{cTy}U}\ !\ c \rrbracket$ \\
 ${\cPhi}' \geq {\cPhi} - a$ & $\displaystyle \forall o.\ {\cPhi}(o) = {\color{cTy}S}^{f} \Rightarrow {\cPhi}'(o) = {\color{cTy}S}^{f'} \land f' \geq f - a$ \\
 $\mathsf{fends}\,{\color{cTm}e} = \mathrm{dom}\,{\cPhi}$ & $\displaystyle \mathsf{fends}\,{\color{cTm}e} = \mathrm{dom}\,{\cPhi}$ \\
 Counters $\geq a$ & $\displaystyle {\cPhi}(o) = {\color{cTy}S}^{f} \Rightarrow h + a \leq f$ \\
-$FV$ at a box & $\displaystyle !{\color{cTm}e} \in FV^{N}_{\beta}\llbracket \varnothing \vdash \tyBox(\ldots) \rrbracket$ \\
-Body per force & $\displaystyle {\color{cTm}e}[!{\color{cTm}e}] \in F^{N}_{\gamma}\llbracket \varnothing \vdash {\color{cTy}U}[\bar s]\ !\ c \rrbracket$ \\
+$ZV$ at a box & $\displaystyle !{\color{cTm}e} \in ZV^{N}_{\beta}\llbracket \varnothing \vdash \tyBox(\ldots) \rrbracket$ \\
+Body per force & $\displaystyle {\color{cTm}e}[!{\color{cTm}e}] \in Z^{N}_{\gamma}\llbracket \varnothing \vdash {\color{cTy}U}[\bar s]\ !\ c \rrbracket$ \\
 $\mathsf{fends}\,{\color{cTm}e} = \varnothing$ & $\displaystyle \mathsf{fends}\,{\color{cTm}e} = \varnothing$ \\
-$FV$ at ${\color{cTy}S}_x$ & $\displaystyle o \in FV^{N}_{\beta}\llbracket \{o \mapsto {\color{cTy}S}'^{f,m}\} \vdash {\color{cTy}S}_x^{\lfadd{a,m}} \rrbracket$ \\
+$ZV$ at ${\color{cTy}S}_x$ & $\displaystyle o \in ZV^{N}_{\beta}\llbracket \{o \mapsto {\color{cTy}S}'^{f,m}\} \vdash {\color{cTy}S}_x^{\lfadd{a,m}} \rrbracket$ \\
 $a \leq f$ & $\displaystyle a \leq f$ \\
-Thread result & $\displaystyle {\color{cTm}v} \in FV^{N}_{\beta}\llbracket {\cPhi} \vdash \mathsf{thread} \rrbracket$ \\
+Thread result & $\displaystyle {\color{cTm}v} \in ZV^{N}_{\beta}\llbracket {\cPhi} \vdash \mathsf{thread} \rrbracket$ \\
 O-Beta & $\displaystyle \mathsf{o\_beta} : \mathsf{Expr} \to \mathsf{Prop}$ \\
 O-Branch & $\displaystyle \mathsf{o\_branch} : \mathsf{End} \to \mathbb{B} \to {\mathsf{Expr}} \to \mathsf{Prop}$ \\
 O-Close & $\displaystyle \mathsf{o\_close} : \mathsf{End} \to {\mathsf{Expr}} \to \mathsf{Prop}$ \\
@@ -106,45 +106,43 @@ ${\cTheta} \setminus o = {\cTheta}_M \uplus {\cTheta}_r$ & $\displaystyle {\cThe
 O-Spawn & $\displaystyle \mathsf{o\_spawn} : \mathsf{Val} \to {\mathsf{Expr}} \to \mathsf{Prop}$ \\
 ${\cTheta} = {\cTheta}_M \uplus {\cTheta}_r$ & $\displaystyle \exists {\cTheta}_M, {\cTheta}_r.\ {\cTheta} = {\cTheta}_M \uplus {\cTheta}_r$ \\
 ${\color{cTm}v} \in V^{W}_{\beta}\llbracket{\cTheta}_M \vdash \ast \tymultimap ^{\top}_{\bot} \ast\rrbracket$ & $\displaystyle {\color{cTm}v} \in V^{W}_{\beta}\llbracket{\cTheta}_M \vdash \ast \tymultimap ^{\top}_{\bot} \ast\rrbracket$ \\
-P-Act-Beta & $\displaystyle (C, M) \xrightarrow{ev} (C', M') \subseteq \mathsf{Config} \times \mathsf{Event} \times \mathsf{Config}$ \\
-P-Act-Choice & $\displaystyle (C, M) \xrightarrow{ev} (C', M') \subseteq \mathsf{Config} \times \mathsf{Event} \times \mathsf{Config}$ \\
-P-Act-Close & $\displaystyle (C, M) \xrightarrow{ev} (C', M') \subseteq \mathsf{Config} \times \mathsf{Event} \times \mathsf{Config}$ \\
-P-Act-Link & $\displaystyle (C, M) \xrightarrow{ev} (C', M') \subseteq \mathsf{Config} \times \mathsf{Event} \times \mathsf{Config}$ \\
-P-Act-Msg & $\displaystyle (C, M) \xrightarrow{ev} (C', M') \subseteq \mathsf{Config} \times \mathsf{Event} \times \mathsf{Config}$ \\
-P-Act-New & $\displaystyle (C, M) \xrightarrow{ev} (C', M') \subseteq \mathsf{Config} \times \mathsf{Event} \times \mathsf{Config}$ \\
-P-Act-Session & $\displaystyle (C, M) \xrightarrow{ev} (C', M') \subseteq \mathsf{Config} \times \mathsf{Event} \times \mathsf{Config}$ \\
-P-Act-Spawn & $\displaystyle (C, M) \xrightarrow{ev} (C', M') \subseteq \mathsf{Config} \times \mathsf{Event} \times \mathsf{Config}$ \\
+P-Act-Beta & $\displaystyle (C, E) \xrightarrow{ev} (C', E') \subseteq \mathsf{Proc} \times \mathsf{Event} \times \mathsf{Proc}$ \\
+P-Act-Choice & $\displaystyle (C, E) \xrightarrow{ev} (C', E') \subseteq \mathsf{Proc} \times \mathsf{Event} \times \mathsf{Proc}$ \\
+P-Act-Close & $\displaystyle (C, E) \xrightarrow{ev} (C', E') \subseteq \mathsf{Proc} \times \mathsf{Event} \times \mathsf{Proc}$ \\
+P-Act-Link & $\displaystyle (C, E) \xrightarrow{ev} (C', E') \subseteq \mathsf{Proc} \times \mathsf{Event} \times \mathsf{Proc}$ \\
+P-Act-Msg & $\displaystyle (C, E) \xrightarrow{ev} (C', E') \subseteq \mathsf{Proc} \times \mathsf{Event} \times \mathsf{Proc}$ \\
+P-Act-New & $\displaystyle (C, E) \xrightarrow{ev} (C', E') \subseteq \mathsf{Proc} \times \mathsf{Event} \times \mathsf{Proc}$ \\
+P-Act-Session & $\displaystyle (C, E) \xrightarrow{ev} (C', E') \subseteq \mathsf{Proc} \times \mathsf{Event} \times \mathsf{Proc}$ \\
+P-Act-Spawn & $\displaystyle (C, E) \xrightarrow{ev} (C', E') \subseteq \mathsf{Proc} \times \mathsf{Event} \times \mathsf{Proc}$ \\
 Exact dual cut $\overline{{\senv}_C}$ & $\displaystyle \overline{{\senv}_C} = \{\overline{o} \mapsto \overline{{\color{cTy}S}}_{\overline{x}} \mid (o \mapsto {\color{cTy}S}_x) \in {\senv}_C\}$ \\
-Disjoint channels & $\displaystyle \mathsf{chans}\,{\senv}_1, \mathsf{chans}\,{\senv}_2, \mathsf{chans}\,{\senv}_C, C_1, C_2\ \mathsf{pairwise\ disjoint}$ \\
 Result at the join & $\displaystyle W_1 \sqcup W_2$ \\
 Left component & $\displaystyle {\senv}_1 \cup {\senv}_C \vdash^{\lfadd{N}}_{W_1} (C_1, E_1) : {\color{cTy}T}$ \\
 The n-ary connect, admissible & $\displaystyle \lfalt{\mathsf{cons}}{\mathsf{ok}_N}(W_1 \sqcup \cdots \sqcup W_n)$ \\
 Right component at $\ast$ & $\displaystyle {\senv}_2 \cup \overline{{\senv}_C} \vdash^{\lfadd{N}}_{W_2} (C_2, E_2) : \ast$ \\
-Tickets at a cut & $\displaystyle \forall o \in \mathrm{dom}\,{\senv}_C.\ \eta(o)_2 + \eta(\overline{o})_2 \leq N$ \\
+Tickets at a cut & $\displaystyle \forall o \in \mathrm{dom}\,{\senv}_C.\ \mathsf{tk}(o) + \mathsf{tk}(\overline{o}) \leq N$ \\
 The join of the two worlds is checked & $\displaystyle \lfalt{\mathsf{cons}}{\mathsf{ranked}}(W_1 \sqcup W_2)$ \\
-P-Ready & $\displaystyle \neg\mathsf{pirred}\,p \Rightarrow \mathsf{ready}_{W'}({\senv}, p)$ \\
-P-Step & $\displaystyle \forall ev, p'.\ p \xrightarrow{ev} p' \Rightarrow \mathsf{Pobl}_{ev}(p')$ \\
-P-Stop & $\displaystyle \mathsf{pirred}\,p \Rightarrow \exists {\color{cTm}v}, E.\ p = (\varnothing, \{{\color{cTm}v}\} \uplus E) \land \ldots$ \\
-$\mathrm{dom}\,{\cTheta}_B = \mathsf{ends}(C_0)$ & $\displaystyle \forall o.\ o \in \mathrm{dom}\,{\cTheta}_B \iff \mathsf{ech}(o) \in C_0$ \\
-Interface annotations & $\displaystyle \eta : \mathsf{End} \to (\mathbb{N} \cup \{\infty\}) \times (\mathbb{N} \cup \{\infty\})$ \\
+P-Ready & $\displaystyle \neg\mathsf{pirred}\,P \Rightarrow \mathsf{ready}_{W'}({\senv}, P)$ \\
+P-Step & $\displaystyle \forall ev, P'.\ P \xrightarrow{ev} P' \Rightarrow \mathsf{Pobl}_{ev}(P')$ \\
+P-Stop & $\displaystyle \mathsf{pirred}\,P \Rightarrow P = (\varnothing, E) \land \exists t.\ E(t) \in V\llbracket{\senv} \vdash {\color{cTy}T}\rrbracket \land \ldots$ \\
+$\mathrm{dom}\,{\cTheta}_B = \mathsf{ends}(C_0)$ & $\displaystyle \forall o.\ o \in \mathrm{dom}\,{\cTheta}_B \iff \mathsf{chan}(o) \in C_0$ \\
+Interface tickets & $\displaystyle \forall o \in \mathrm{dom}\,{\senv}.\ \mathsf{tk}(o) \leq N$ \\
 Contractive ends & $\displaystyle \mathsf{contr}\,{\senv}, {\cTheta}_B$ \\
-$\mathsf{chans}\,{\senv} \cap C_0 = \varnothing$ & $\displaystyle \mathsf{chans}\,{\senv} \cap C_0 = \varnothing$ \\
 Empty future & $\displaystyle F = \varnothing$ \\
-Restricted pairs dual & $\displaystyle \forall c \in C_0.\ \exists {\color{cTy}S}\,x\lfadd{\,m\,m'}.\ {\cTheta}_B(c^{+}) = {\color{cTy}S}_x^{\lfadd{m,m}} \land {\cTheta}_B(c^{-}) = \overline{{\color{cTy}S}}_{\overline{x}}^{\lfadd{m',m'}}\lfadd{ \land m + m' \leq N}$ \\
-Thread typing & $\displaystyle \varnothing ; {\senv}^{\lfadd{\eta}}, {\cTheta}_B \vdash^{\varnothing}_{W\lfadd{,N}} t : {\color{cTy}T}\lfadd{\ !\ c}$ \\
+$\mathsf{pairs}^{\lfadd{N}}({\cTheta}_B, C_0)$ & $\displaystyle \forall c \in C_0.\ \exists {\color{cTy}S}\,x\lfadd{\,m\,m'}.\ {\cTheta}_B(c^{+}) = {\color{cTy}S}_x^{\lfadd{m,m}} \land {\cTheta}_B(c^{-}) = \overline{{\color{cTy}S}}_{\overline{x}}^{\lfadd{m',m'}}\lfadd{ \land m + m' \leq N}$ \\
+Thread typing & $\displaystyle \varnothing ; {\senv}, {\cTheta}_B \vdash^{\varnothing}_{W\lfadd{,N}} t : {\color{cTy}T}\lfadd{\ !\ c}$ \\
 $\lfalt{\mathsf{cons}}{\mathsf{ranked}}\,W$ & $\displaystyle \lfalt{\mathsf{cons}}{\mathsf{ranked}}\,W$ \\
-$\mathsf{clauses}_{W'}({\senv}, p)$ & $\displaystyle \mathsf{clauses}_{W'} : \mathsf{Env} \to {\mathsf{Proc}} \to \mathsf{Prop}$ \\
+$\mathsf{clauses}_{W'}({\senv}, P)$ & $\displaystyle \mathsf{clauses}_{W'} : \mathsf{Env} \to {\mathsf{Proc}} \to \mathsf{Prop}$ \\
 Later worlds & $\displaystyle \forall W' \sqsupseteq W.\ \ldots$ \\
-Index $0$ & $\displaystyle p \in P^{W}_{0}\llbracket {\senv} \vdash {\color{cTy}T} \rrbracket$ \\
+Index $0$ & $\displaystyle P \in P^{W}_{0}\llbracket {\senv} \vdash {\color{cTy}T} \rrbracket$ \\
 Q-Close, Q-Select, Q-Branch, Q-Link & $\displaystyle \mathsf{q\_close}, \mathsf{q\_select}, \mathsf{q\_branch}, \mathsf{q\_link}$ \\
 Q-Recv & $\displaystyle \mathsf{q\_recv} : \mathsf{End} \to {\mathsf{Val}} \to {\mathsf{Proc}} \to \mathsf{Prop}$ \\
-$\mathsf{recv\_back}$ & $\displaystyle \mathsf{recv\_back} : \mathsf{Env} \to {\mathsf{Env}} \to \mathcal{P}_{\mathrm{fin}}(\mathsf{Chan})$ \\
-$\mathsf{recv\_env}$ & $\displaystyle \mathsf{recv\_env} : \mathsf{Env} \to {\mathsf{Env}} \to {\mathsf{Env}}$ \\
-$\mathsf{recv\_ok}$ & $\displaystyle \mathsf{recv\_ok} : \mathsf{Env} \to {\mathsf{Env}} \to \mathsf{Prop}$ \\
+$\mathsf{closed}$ & $\displaystyle \mathsf{closed} : \mathsf{Env} \to {\mathsf{Env}} \to \mathcal{P}_{\mathrm{fin}}(\mathsf{Chan})$ \\
+$\mathsf{iface}$ & $\displaystyle \mathsf{iface} : \mathsf{Env} \to {\mathsf{Env}} \to {\mathsf{Env}}$ \\
+$\mathsf{matches}$ & $\displaystyle \mathsf{matches} : \mathsf{Env} \to {\mathsf{Env}} \to \mathsf{Prop}$ \\
 Q-Send & $\displaystyle \mathsf{q\_send} : \mathsf{End} \to {\mathsf{Val}} \to {\mathsf{Proc}} \to \mathsf{Prop}$ \\
 ${\senv}_e$ joins the interface & $\displaystyle {\senv}_e \in \mathsf{Env}$ \\
-$\mathsf{send\_split}$ & $\displaystyle \mathsf{send\_split} : \mathsf{Env} \to {\mathsf{Env}} \to {\mathsf{Env}} \to \mathsf{Prop}$ \\
-Extruded ends ${\cTheta}_e$ & $\displaystyle \mathrm{dom}\,{\cTheta}_e = \{o' \in \mathsf{fends}({\color{cTm}w}) \mid \mathsf{ech}(o') \in C\}$ \\
+$\mathsf{opened}$ & $\displaystyle \mathsf{opened} : \mathsf{Env} \to {\mathsf{Env}} \to {\mathsf{Env}} \to \mathsf{Prop}$ \\
+Extruded ends ${\cTheta}_e$ & $\displaystyle \mathrm{dom}\,{\cTheta}_e = \{o' \in \mathsf{fends}({\color{cTm}w}) \mid \mathsf{chan}(o') \in C\}$ \\
 Q-Tau & $\displaystyle \mathsf{q\_tau} : \mathsf{Event} \to {\mathsf{Proc}} \to \mathsf{Prop}$ \\
 T-Act-App & $\displaystyle \cdot \xrightarrow{\cdot} \cdot \subseteq \mathsf{Expr} \times \mathsf{TLabel} \times \mathsf{Expr}$ \\
 T-Act-Branch & $\displaystyle \cdot \xrightarrow{\cdot} \cdot \subseteq \mathsf{Expr} \times \mathsf{TLabel} \times \mathsf{Expr}$ \\
@@ -218,13 +216,13 @@ ${\cGamma} \vdash_W x \prec y$ & $\displaystyle {\cGamma} \vdash_W x \prec y \su
 ${\cTheta} = {\cTheta}_1 \uplus {\cTheta}_2$ & $\displaystyle {\cTheta} = {\cTheta}_1 \uplus {\cTheta}_2 \iff \mathrm{dom}\,{\cTheta}_1 \cap \mathrm{dom}\,{\cTheta}_2 = \varnothing \land {\cTheta} = {\cTheta}_1 \cup {\cTheta}_2$ \\
 End & $\displaystyle o \in \mathsf{End} = \{c^{+}, c^{-} \mid c \in \mathsf{Chan}\}$ \\
 Dual end $\overline{o}$ & $\displaystyle \overline{\cdot} : \mathsf{End} \to {\mathsf{End}}$ \\
-Channel of an end & $\displaystyle \mathsf{ech} : \mathsf{End} \to {\mathsf{Chan}}$ \\
+Channel of an end & $\displaystyle \mathsf{chan} : \mathsf{End} \to {\mathsf{Chan}}$ \\
 Administrative events & $\displaystyle \mathsf{admin} \subseteq \mathsf{Event}$ \\
 Event & $\displaystyle ev \in \mathsf{Event}$ \\
 Pick $k$ & $\displaystyle k \in \mathbb{N}_{\bot} \cup \mathsf{End} \times \mathsf{End}$ \\
 $\tau$ events & $\displaystyle \tau \subseteq \mathsf{Event}$ \\
 Held ends ${\cPhi}$ & $\displaystyle {\cPhi} : \mathsf{End} \rightharpoonup {\mathsf{STy}} \times \mathbb{N} \times \mathbb{N}$ \\
-${\color{cTm}e}'\ \mathsf{at}\ {\cPhi}'\ !\ d'$ & $\displaystyle {\color{cTm}e}'\ \mathsf{at}\ {\cPhi}'\ !\ d' \iff \forall \gamma < \beta.\ {\color{cTm}e}' \in F^{N}_{\gamma}\llbracket {\cPhi}' \vdash \sigma\ !\ d' \rrbracket$ \\
+${\color{cTm}e}'\ \mathsf{at}\ {\cPhi}'\ !\ d'$ & $\displaystyle {\color{cTm}e}'\ \mathsf{at}\ {\cPhi}'\ !\ d' \iff \forall \gamma < \beta.\ {\color{cTm}e}' \in Z^{N}_{\gamma}\llbracket {\cPhi}' \vdash \sigma\ !\ d' \rrbracket$ \\
 Cost bound $d$ & $\displaystyle d \in \mathbb{N} \cup \{\infty\}$ \\
 $\mathsf{fsem}$ & $\displaystyle \mathsf{fsem} : (\mathbb{N} \cup \{\infty\}) \to (\mathsf{End} \rightharpoonup {\mathsf{STy}} \times \mathbb{N} \times \mathbb{N}) \to {\mathsf{Expr}} \to \mathsf{Prop}$ \\
 $\mathsf{positive}$ & $\displaystyle \mathsf{positive}({\cPhi}) \iff \forall o \mapsto {\color{cTy}S}^{f,m} \in {\cPhi}.\ \neg\mathsf{idle}\,{\color{cTy}S} \Rightarrow 1 \leq f$ \\
@@ -233,7 +231,7 @@ $\mathsf{idle}$ & $\displaystyle \mathsf{idle} : \mathsf{STy} \to \mathsf{Prop}$
 Result $\sigma$ & $\displaystyle \sigma \in \{{\color{cTy}T}^{\lfadd{a}}\} \cup \{\mathsf{thread}\}$ \\
 (step) & $\displaystyle \forall \ell, {\color{cTm}e}'.\ {\color{cTm}e} \xrightarrow{\ell} {\color{cTm}e}' \Rightarrow \mathsf{Fobl}_{\ell}({\color{cTm}e}')$ \\
 ${\cPhi}{\downarrow}$ & $\displaystyle {\cPhi}{\downarrow} = \{o \mapsto {\color{cTy}S}^{f \mathbin{\dot-} 1,\,m} \mid o \mapsto {\color{cTy}S}^{f,m} \in {\cPhi}\}$ \\
-$(\mathsf{stop})$ & $\displaystyle {\color{cTm}e} \in \mathsf{Val} \Rightarrow {\color{cTm}e} \in FV^{N}_{\beta}\llbracket {\cPhi} \vdash \sigma \rrbracket$ \\
+$(\mathsf{stop})$ & $\displaystyle {\color{cTm}e} \in \mathsf{Val} \Rightarrow {\color{cTm}e} \in ZV^{N}_{\beta}\llbracket {\cPhi} \vdash \sigma \rrbracket$ \\
 $\beta$ label & $\displaystyle \beta \in \mathsf{TLabel}$ \\
 Branch label $o \rhd i$ & $\displaystyle o \rhd i \in \mathsf{SLabel}$ \\
 Close label $o\,\mathsf{end}$ & $\displaystyle o\,\mathsf{end} \in \mathsf{SLabel}$ \\
@@ -275,9 +273,8 @@ $\kw{recv}$ & $\displaystyle \kw{recv} : {\color{cTy}S}_x \tymultimap ^{x} {\col
 $\kw{select}_i$ & $\displaystyle \kw{select}_i : {\color{cTy}S}_x \tymultimap ^{x} (\mathsf{if}\ i\ \mathsf{then}\ {\color{cTy}S}''\ \mathsf{else}\ {\color{cTy}S}')_{\overline{x\cdot\kappa_i}}$ \\
 $\kw{send}$ & $\displaystyle \kw{send} : {\color{cTy}T}[x\cdot i] \tyotimes  {\color{cTy}S}_x \tymultimap ^{x} {{\color{cTy}S}'}_{x^{+}}$ \\
 $\kw{spawn}$ & $\displaystyle \kw{spawn} : (\ast \tymultimap ^{u}_{l} \ast) \tymultimap  \ast$ \\
-Configuration & $\displaystyle q = (C, M) \in \mathsf{Config} = \mathcal{P}_{\mathrm{fin}}(\mathsf{Chan}) \times (\mathbb{N} \rightharpoonup_{\mathrm{fin}} \mathsf{Expr})$ \\
-$\mathsf{erase}$ & $\displaystyle \mathsf{erase} : \mathsf{Config} \to {\mathsf{Proc}}$ \\
-Process $(C, E)$ & $\displaystyle p = (C, E) \in \mathsf{Proc} = \mathcal{P}_{\mathrm{fin}}(\mathsf{Chan}) \times \mathcal{M}_{\mathrm{fin}}(\mathsf{Expr})$ \\
+Process $P = (C, E)$ & $\displaystyle P = (C, E) \in \mathsf{Proc} = \mathcal{P}_{\mathrm{fin}}(\mathsf{Chan}) \times (\mathbb{N} \rightharpoonup_{\mathrm{fin}} \mathsf{Expr})$ \\
+$P \sim P'$ & $\displaystyle P \sim P' \iff C = C' \land \exists \pi.\ \forall t.\ E(t) = E'(\pi(t))$ \\
 $\mathsf{deadlock\_free}$ & $\displaystyle \mathsf{deadlock\_free} : \mathsf{Proc} \to \mathsf{Prop}$ \\
 $\mathsf{lock\_free}$ & $\displaystyle \mathsf{lock\_free} : \mathsf{Proc} \to \mathsf{Prop}$ \\
 $\mathsf{lf\_run}$ & $\displaystyle \mathsf{lf\_run} : \mathsf{Run} \to \mathsf{Prop}$ \\
@@ -285,7 +282,7 @@ Maximal run & $\displaystyle \mathsf{maximal} : \mathsf{Run} \to \mathsf{Prop}$ 
 $\mathsf{no\_free\_divergence}$ & $\displaystyle \mathsf{no\_free\_divergence} : \mathsf{Proc} \to \mathsf{Prop}$ \\
 $\mathsf{no\_tau\_divergence}$ & $\displaystyle \mathsf{no\_tau\_divergence} : \mathsf{Proc} \to \mathsf{Prop}$ \\
 Administrative step & $\displaystyle \cdot \to_{\mathsf{admin}} \cdot \subseteq \mathsf{Proc} \times \mathsf{Proc}$ \\
-Pending thread & $\displaystyle \mathsf{pend} : \mathsf{Config} \to \mathbb{N} \to \mathsf{Prop}$ \\
+Pending thread & $\displaystyle \mathsf{pend} : \mathsf{Proc} \to \mathbb{N} \to \mathsf{Prop}$ \\
 $\mathsf{terminated}$ & $\displaystyle \mathsf{terminated} : \mathsf{Proc} \to \mathsf{Prop}$ \\
 Weak fairness & $\displaystyle \mathsf{wfair} : \mathsf{Run} \to \mathsf{Prop}$ \\
 Branch continuation & $\displaystyle \mathsf{bra\_pt} : \mathsf{Point} \to \mathbb{B} \to {\mathsf{Point}}$ \\
@@ -303,26 +300,26 @@ $\overline{{\cTheta} \setminus \mathsf{offered}\,t}$ & $\displaystyle \overline{
 $\mathsf{below\_rest}$ & $\displaystyle \mathsf{below\_rest} : \mathsf{World} \to {\mathsf{Env}} \to (\mathsf{End} \to \mathsf{Prop}) \to \mathcal{P}(\mathsf{Point}) \to \mathsf{Prop}$ \\
 $\kw{link}\,t$ & $\displaystyle \kw{link} : \mathsf{Expr} \to \mathsf{Prop}$ \\
 $\mathsf{offered}\,t$ & $\displaystyle \mathsf{offered} : \mathsf{Env} \to {\mathsf{Expr}} \to {\mathsf{End}} \to \mathsf{Prop}$ \\
-$\mathsf{stable}\,p$ & $\displaystyle \mathsf{stable} : \mathsf{Proc} \to \mathsf{Prop}$ \\
-${\senv}|_{\mathsf{offered}\,p} = \varnothing \Rightarrow \mathsf{terminated}\,p$ & $\displaystyle (\forall o.\ \neg\mathsf{offered}_{\senv}(p, o)) \Rightarrow \mathsf{terminated}\,p$ \\
+$\mathsf{stable}\,P$ & $\displaystyle \mathsf{stable} : \mathsf{Proc} \to \mathsf{Prop}$ \\
+${\senv}|_{\mathsf{offered}\,P} = \varnothing \Rightarrow \mathsf{terminated}\,P$ & $\displaystyle (\forall o.\ \neg\mathsf{offered}_{\senv}(P, o)) \Rightarrow \mathsf{terminated}\,P$ \\
 $\mathsf{stable}\,t$ & $\displaystyle \mathsf{stable} : \mathsf{Expr} \to \mathsf{Prop}$ \\
 ${\cTheta}|_{\mathsf{offered}\,t} = \varnothing \Rightarrow t \in \mathsf{Val}$ & $\displaystyle (\forall o.\ \neg\mathsf{offered}_{\cTheta}(t, o)) \Rightarrow t \in \mathsf{Val}$ \\
 ${\color{cTm}e}'$ at ${\cTheta}'$ & $\displaystyle {\color{cTm}e}' \mathsf{at}\ {\cTheta}' : \mathsf{Prop}$ \\
 Least fixpoint $X$ & $\displaystyle X : \mathsf{World} \to {\mathsf{Env}} \to {\mathsf{Ty}} \to \mathcal{P}(\mathsf{Point}) \to {\mathsf{Expr}} \to \mathsf{Prop}$ \\
 Recursion on $(\beta, \mathsf{size}\,{\color{cTy}T})$ & $\displaystyle V : \mathsf{Ord} \to {\mathsf{World}} \to {\mathsf{Env}} \to {\mathsf{Ty}} \to {\mathsf{Val}} \to \mathsf{Prop}$ \\
 Accessibility $\mathsf{Acc}$ & $\displaystyle \mathsf{Acc} : (X \to X \to \mathsf{Prop}) \to X \to \mathsf{Prop}$ \\
-$\mathsf{echans}(M)$ & $\displaystyle \mathsf{echans} : (\mathbb{N} \rightharpoonup {\mathsf{Expr}}) \to \mathcal{P}_{\mathrm{fin}}(\mathsf{Chan})$ \\
+$\mathsf{echans}(E)$ & $\displaystyle \mathsf{echans} : (\mathbb{N} \rightharpoonup {\mathsf{Expr}}) \to \mathcal{P}_{\mathrm{fin}}(\mathsf{Chan})$ \\
 Frame filling $f[{\color{cTm}e}]$ & $\displaystyle \cdot[\cdot] : \mathsf{Frame} \to {\mathsf{Expr}} \to {\mathsf{Expr}}$ \\
 Participants $\mathsf{parts}(ev)$ & $\displaystyle \mathsf{parts} : \mathsf{Event} \to \mathcal{P}_{\mathrm{fin}}(\mathbb{N})$ \\
-The run starts at $p$ & $\displaystyle \mathsf{erase}(r_0) = p$ \\
+The run starts at $P$ & $\displaystyle r_0 = P$ \\
 Reachability $\to^{*}$ & $\displaystyle \cdot \to^{*} \cdot \subseteq \mathsf{Proc} \times \mathsf{Proc}$ \\
-Runs $r$ and $l$ & $\displaystyle (r, l) \in \mathsf{Run} = (\mathbb{N} \to \mathsf{Config}) \times (\mathbb{N} \to \mathsf{Event}_{\bot})$ \\
+Runs $r$ and $l$ & $\displaystyle (r, l) \in \mathsf{Run} = (\mathbb{N} \to \mathsf{Proc}) \times (\mathbb{N} \to \mathsf{Event}_{\bot})$ \\
 Session label $\sigma$ & $\displaystyle \sigma \in \mathsf{SLabel} \subseteq \mathsf{TLabel}$ \\
 Subjects $\mathsf{subj}\,\sigma$ & $\displaystyle \mathsf{subj} : \mathsf{SLabel} \to \mathcal{P}_{\mathrm{fin}}(\mathsf{Chan})$ \\
 Substitution ${\color{cTm}e}[{\color{cTm}v}]$ & $\displaystyle \cdot[\cdot] : \mathsf{Expr} \to {\mathsf{Val}} \to {\mathsf{Expr}}$ \\
-Map update $M[i \mapsto {\color{cTm}e}]$ & $\displaystyle \cdot[\cdot \mapsto \cdot] : (\mathbb{N} \rightharpoonup {\mathsf{Expr}}) \to \mathbb{N} \to {\mathsf{Expr}} \to (\mathbb{N} \rightharpoonup {\mathsf{Expr}})$ \\
+Map update $E[i \mapsto {\color{cTm}e}]$ & $\displaystyle \cdot[\cdot \mapsto \cdot] : (\mathbb{N} \rightharpoonup {\mathsf{Expr}}) \to \mathbb{N} \to {\mathsf{Expr}} \to (\mathbb{N} \rightharpoonup {\mathsf{Expr}})$ \\
 $\mathsf{frame\_val}$ & $\displaystyle \mathsf{frame\_val} : \mathsf{Frame} \to \mathsf{Prop}$ \\
-Global freshness & $\displaystyle c \notin C \cup \mathsf{echans}(M)$ \\
+Global freshness & $\displaystyle c \notin C \cup \mathsf{echans}(E)$ \\
 $\mathsf{sentc}$ & $\displaystyle \mathsf{sentc} : \mathsf{SLabel} \to \mathcal{P}_{\mathrm{fin}}(\mathsf{Chan})$ \\
 $x \prec F$ at an action & $\displaystyle x \prec X \cup {\vartriangle}{\color{cTm}v} \iff (\forall y \in X.\ {\cGamma} \vdash_W x \prec y) \land {\cGamma} \vdash x \preccurlyeq {\color{cTm}v}$ \\
 ${\cGamma} \vdash C[\bar x]$ & $\displaystyle {\cGamma} \vdash_W C[\bar x] \iff \forall (y \prec z) \in C[\bar x].\ {\cGamma} \vdash_W y \prec z$ \\
@@ -332,34 +329,34 @@ $u \prec F$ & $\displaystyle u \prec X \iff \forall y \in X.\ {\cGamma} \vdash_W
 Judgment at a set of points $X$ & $\displaystyle {\lenv} \vDash^{X}_{W} {\color{cTm}e} : {\color{cTy}T}$ \\
 $\mathsf{den}_{Y}(F)$ & $\displaystyle \mathsf{den} : \mathcal{P}(\mathsf{Point}) \to \mathsf{SFuture} \to \mathcal{P}(\mathsf{Point})$ \\
 Grounding $\gamma \in G\llbracket{\cTheta} \vdash {\lenv}\rrbracket$ & $\displaystyle \gamma \in G^{W}_{\beta}\llbracket {\cTheta} \vdash {\lenv} \rrbracket$ \\
-The process relation at each index & $\displaystyle \forall \beta.\ p \in P^{W}_{\beta}\llbracket {\senv} \vdash {\color{cTy}T} \rrbracket$ \\
-Semantic judgment at a world & $\displaystyle {\senv} \vDash_{W} p : {\color{cTy}T}$ \\
+The process relation at each index & $\displaystyle \forall \beta.\ P \in P^{W}_{\beta}\llbracket {\senv} \vdash {\color{cTy}T} \rrbracket$ \\
+Semantic judgment at a world & $\displaystyle {\senv} \vDash_{W} P : {\color{cTy}T}$ \\
 ${\lenv} \vDash^{F}_W {\color{cTm}e} : {\color{cTy}T}$ & $\displaystyle {\lenv} \vDash^{F}_{W} {\color{cTm}e} : {\color{cTy}T}$ \\
 $\forall W' \sqsupseteq W$ & $\displaystyle \forall W' \in \mathsf{World}.\ W \sqsubseteq W' \land \mathsf{ranked}\,W' \Rightarrow \ldots$ \\
 Annotations ${\lenv} : K$ & $\displaystyle {\lenv} : \mathsf{End} \rightharpoonup (\mathsf{STy} \times {\mathsf{Point}}) \times (\mathsf{STy} \times \mathbb{N} \times \mathbb{N})$ \\
 Chosen per level & $\displaystyle \exists {\lenv} : K,\ {\color{cTy}U} : \mathbb{N} \to {\mathsf{Ty}}$ \\
-$\forall \beta$ before $\exists a$ & $\displaystyle \exists N \in \mathbb{N}.\ \forall \beta.\ \exists a.\ \mathsf{erase}(q_a) = p \land \ldots$ \\
-Each thread keeps its counters & $\displaystyle {\color{cTm}e} \in F^{N}_{\beta}\llbracket {\lenv}^{F}_t \vdash \mathsf{thread}\ !\ \infty \rrbracket$ \\
+$\forall \beta$ before $\exists a$ & $\displaystyle \exists N \in \mathbb{N}.\ \forall \beta.\ \exists a.\ P_a \sim P \land \ldots$ \\
+Each thread keeps its counters & $\displaystyle {\color{cTm}e} \in Z^{N}_{\beta}\llbracket {\lenv}^{Z}_t \vdash \mathsf{thread}\ !\ \infty \rrbracket$ \\
 $K(o) = (t, x, f, m)$ & $\displaystyle K : \mathsf{End} \rightharpoonup \mathbb{N} \times {\mathsf{Point}} \times \mathbb{N} \times \mathbb{N}$ \\
-${\senv} \Vvdash^{\lfadd{N}}_W p : {\color{cTy}T}$ & $\displaystyle {\senv} \Vvdash^{\lfadd{N}}_{W} p : {\color{cTy}T}$ \\
+${\senv} \Vvdash^{\lfadd{N}}_W P : {\color{cTy}T}$ & $\displaystyle {\senv} \Vvdash^{\lfadd{N}}_{W} P : {\color{cTy}T}$ \\
 Well annotated, $\mathsf{wa}^{N}_{{\senv}}(a, {\lenv})$ & $\displaystyle \mathsf{wa}^{N}_{{\senv}} : \mathsf{LFState} \to (\mathsf{End} \rightharpoonup (\mathsf{STy} \times {\mathsf{Point}}) \times (\mathsf{STy} \times \mathbb{N} \times \mathbb{N})) \to \mathsf{Prop}$ \\
-Each thread in the relation at $\kappa_L$ & $\displaystyle \forall t, {\color{cTm}e}.\ q(t) = {\color{cTm}e} \Rightarrow {\color{cTm}e} \in E[\kappa_L]^{W_a}_{\beta}\llbracket {\lenv}^{E}_t \vdash {\color{cTy}U}_t \rrbracket^{\varnothing}$ \\
-Annotated configuration $a = (q, K, W_a)$ & $\displaystyle a = (q, K, W_a) \in \mathsf{Config} \times \mathsf{Own} \times \mathsf{RWorld}$ \\
+Each thread in the relation at $\kappa_L$ & $\displaystyle \forall t, {\color{cTm}e}.\ P_a(t) = {\color{cTm}e} \Rightarrow {\color{cTm}e} \in E[\kappa_L]^{W_a}_{\beta}\llbracket {\lenv}^{E}_t \vdash {\color{cTy}U}_t \rrbracket^{\varnothing}$ \\
+Annotated process $a = (P_a, K, W_a)$ & $\displaystyle a = (P_a, K, W_a) \in \mathsf{Proc} \times \mathsf{Own} \times \mathsf{RWorld}$ \\
 $\mathsf{tfree}\,{\color{cTy}T}$ & $\displaystyle \mathsf{tfree}\,{\color{cTy}T}$ \\
 ${\color{cTy}U}_t \in \{{\color{cTy}T}, \ast\}$ & $\displaystyle {\color{cTy}U}_t \in \{{\color{cTy}T}, \ast\}$ \\
 $W \sqsubseteq W_a$ & $\displaystyle W \sqsubseteq W_a$ \\
-Counter relation $F^N_\beta\llbracket{\cPhi} \vdash \sigma\ !\ d\rrbracket$ & $\displaystyle {\color{cTm}e} \in F^{N}_{\beta}\llbracket {\cPhi} \vdash \sigma\ !\ d \rrbracket$ \\
-Counters of values, $FV^N_{\beta}\llbracket{\cPhi} \vdash \sigma\rrbracket$ & $\displaystyle {\color{cTm}v} \in FV^{N}_{\beta}\llbracket {\cPhi} \vdash \sigma \rrbracket$ \\
+Counter relation $Z^N_\beta\llbracket{\cPhi} \vdash \sigma\ !\ d\rrbracket$ & $\displaystyle {\color{cTm}e} \in Z^{N}_{\beta}\llbracket {\cPhi} \vdash \sigma\ !\ d \rrbracket$ \\
+Counters of values, $ZV^N_{\beta}\llbracket{\cPhi} \vdash \sigma\rrbracket$ & $\displaystyle {\color{cTm}v} \in ZV^{N}_{\beta}\llbracket {\cPhi} \vdash \sigma \rrbracket$ \\
 $\mathsf{act}\,o$ & $\displaystyle \mathsf{act}\,o \iff {\cPhi}(o) = {\color{cTy}S}^{f,m} \land \neg\mathsf{idle}\,{\color{cTy}S} \land \mathsf{positive}({\cPhi} \setminus o) \land 1 \leq d$ \\
 $\mathsf{Fobl}_\ell({\color{cTm}e}')$ & $\displaystyle \mathsf{Fobl} : \mathsf{TLabel} \to {\mathsf{Expr}} \to \mathsf{Prop}$ \\
-Products, sums and existentials in $FV$ & $\displaystyle FV \text{ at } \tyotimes , \tyoplus , \exists$ \\
+Products, sums and existentials in $FV$ & $\displaystyle ZV\ \mathsf{at}\  \tyotimes , \tyoplus , \exists$ \\
 Head of an end ${\cTheta}(o) \doteq H_x$ & $\displaystyle {\cTheta}(o) \doteq H_x \iff \exists {\color{cTy}S}.\ {\cTheta}(o) = {\color{cTy}S}_x \land \mathsf{unfold}\,{\color{cTy}S} = H$ \\
 $\mathsf{irred}\,{\color{cTm}e}$ & $\displaystyle \mathsf{irred} : \mathsf{Expr} \to \mathsf{Prop}$ \\
 $\mathsf{Obl}_\ell({\color{cTm}e}')$ & $\displaystyle \mathsf{Obl} : \mathsf{TLabel} \to {\mathsf{Expr}} \to \mathsf{Prop}$ \\
-$\mathsf{pirred}\,p$ & $\displaystyle \mathsf{pirred} : \mathsf{Proc} \to \mathsf{Prop}$ \\
-$\mathsf{Pobl}_{ev}(p')$ & $\displaystyle \mathsf{Pobl} : \mathsf{Event} \to {\mathsf{Proc}} \to \mathsf{Prop}$ \\
+$\mathsf{pirred}\,P$ & $\displaystyle \mathsf{pirred} : \mathsf{Proc} \to \mathsf{Prop}$ \\
+$\mathsf{Pobl}_{ev}(P')$ & $\displaystyle \mathsf{Pobl} : \mathsf{Event} \to {\mathsf{Proc}} \to \mathsf{Prop}$ \\
 $\mathsf{ready}_W({\cTheta} \mid F, t)$ & $\displaystyle \mathsf{ready} : \mathsf{World} \to {\mathsf{Env}} \to \mathcal{P}(\mathsf{Point}) \to {\mathsf{Expr}} \to \mathsf{Prop}$ \\
-$\mathsf{ready}_W({\senv}, p)$ & $\displaystyle \mathsf{ready} : \mathsf{World} \to {\mathsf{Env}} \to {\mathsf{Proc}} \to \mathsf{Prop}$ \\
+$\mathsf{ready}_W({\senv}, P)$ & $\displaystyle \mathsf{ready} : \mathsf{World} \to {\mathsf{Env}} \to {\mathsf{Proc}} \to \mathsf{Prop}$ \\
 $\mathsf{size}\,{\color{cTy}T}$ & $\displaystyle \mathsf{size} : \mathsf{Ty} \to \mathbb{N}$ \\
 $|{\lenv}|$ & $\displaystyle |\cdot| : \mathsf{Ctx} \to {\mathsf{Env}}$ \\
 $\mathsf{thunk}({\color{cTm}e})$ & $\displaystyle \mathsf{thunk} : \mathsf{Expr} \to {\mathsf{Val}}$ \\
@@ -405,27 +402,27 @@ The term relation $E$ & $\displaystyle E\lfadd{[\kappa]}^{W}_{\beta}\llbracket{\
 Bind & $\displaystyle {\color{cTm}e} \in E^{W}_{\beta}\llbracket{\cTheta}_1 \vdash {\color{cTy}T}\rrbracket^{F \cup \mathsf{ap}\,{\cTheta}_2} \land (\forall W' \sqsupseteq W, \gamma \leq \beta, {\color{cTm}v}.\ \ldots) \Rightarrow f[{\color{cTm}e}] \in E^{W}_{\beta}\llbracket{\cTheta}_1 \cup {\cTheta}_2 \vdash {\color{cTy}U}\rrbracket^{F}$ \\
 The process relation $P$ & $\displaystyle P\lfadd{[\kappa]}^{W}_{\beta}\llbracket{\senv} \vdash {\color{cTy}T}\rrbracket \subseteq \mathsf{Proc}$ \\
 The value relation $V$ & $\displaystyle V^{W}_{\gamma}\llbracket{\cTheta} \vdash {\color{cTy}T}\rrbracket \subseteq \mathsf{Val}$ \\
-Adequacy at a world of typing & $\displaystyle \mathsf{world\_wf}\,W \land \mathsf{cons}\,W \land \varnothing \vDash_W p : {\color{cTy}T} \Rightarrow \mathsf{deadlock\_free}\,p$ \\
+Adequacy at a world of typing & $\displaystyle \mathsf{world\_wf}\,W \land \mathsf{cons}\,W \land \varnothing \vDash_W P : {\color{cTy}T} \Rightarrow \mathsf{deadlock\_free}\,P$ \\
 What two closes ask & $\displaystyle a \neq b \land \mathsf{world\_wf}\,W \land {\cGamma} ; {\lenv} \vdash^{F}_{W} \kw{let}\ \ast = \kw{close}\,a\ \kw{in}\ \kw{close}\,b : {\color{cTy}T} \Rightarrow {\cGamma} \vdash_W x \prec \overline{y}$ \\
 $\mathsf{conn}$ & $\displaystyle \mathsf{conn}\,{\senv}_1\,{\senv}_C\,C_1\,{\senv}_2\,{\senv}_D\,C_2$ \\
 Conservativity & $\displaystyle (\exists \varepsilon.\ \ldots \vdash^{F}_{W\lfadd{,\infty}} {\color{cTm}e} : {\color{cTy}T}_{df}\ !\ \varepsilon) \iff \ldots \vdash^{F}_{W} {\color{cTm}e} : {\color{cTy}T}_{df}$ \\
 Erasure $X_{df}$ & $\displaystyle X \mapsto X_{df}$ \\
 Fundamental theorem & $\displaystyle \mathsf{world\_wf}\,W \land \varnothing ; {\lenv} \vdash^{F}_{W} t : {\color{cTy}T} \land W \sqsubseteq W' \land \mathsf{cons}\,W'\lfadd{ \land \mathsf{strict}\,W'} \Rightarrow {\lenv} \vDash^{F}_{W'} t : {\color{cTy}T}$ \\
-Fundamental theorem for processes & $\displaystyle {\senv} \vdash^{\lfadd{\infty}}_{W} p : {\color{cTy}T} \Rightarrow {\senv} \vDash_{W} p : {\color{cTy}T}$ \\
+Fundamental theorem for processes & $\displaystyle {\senv} \vdash^{\lfadd{\infty}}_{W} P : {\color{cTy}T} \Rightarrow {\senv} \vDash_{W} P : {\color{cTy}T}$ \\
 ${\cGamma}' \vdash \sigma({\cGamma})$ & $\displaystyle {\cGamma}' \vdash \sigma({\cGamma}) \subseteq \mathsf{Hctx} \times (\mathbb{N} \to \mathsf{Pt}) \times \mathsf{Hctx}$ \\
-Lock-free fundamental theorem & $\displaystyle {\senv} \vdash^{\lfadd{N}}_{W} p : {\color{cTy}T} \land N \in \mathbb{N} \Rightarrow {\senv} \Vvdash^{N}_{W} p : {\color{cTy}T}$ \\
-P-Connect in the lock-free judgment & $\displaystyle \mathsf{conn} \land {\senv}_1 \cup {\senv}_C \Vvdash^{\lfadd{N}}_{W_1} p_1 : {\color{cTy}T} \land {\senv}_2 \cup {\senv}_D \Vvdash^{\lfadd{N}}_{W_2} p_2 : \ast \Rightarrow {\senv}_1 \cup {\senv}_2 \Vvdash^{\lfadd{N}}_{W_1 \sqcup W_2} p_1 \parallel_{{\senv}_C} p_2 : {\color{cTy}T}$ \\
+Lock-free fundamental theorem & $\displaystyle {\senv} \vdash^{\lfadd{N}}_{W} P : {\color{cTy}T} \land N \in \mathbb{N} \Rightarrow {\senv} \Vvdash^{N}_{W} P : {\color{cTy}T}$ \\
+P-Connect in the lock-free judgment & $\displaystyle \mathsf{conn} \land {\senv}_1 \cup {\senv}_C \Vvdash^{\lfadd{N}}_{W_1} P_1 : {\color{cTy}T} \land {\senv}_2 \cup {\senv}_D \Vvdash^{\lfadd{N}}_{W_2} P_2 : \ast \land \forall o \in \mathrm{dom}\,{\senv}_C.\ \mathsf{tk}(o) + \mathsf{tk}(\overline{o}) \leq N \Rightarrow {\senv}_1 \cup {\senv}_2 \Vvdash^{\lfadd{N}}_{W_1 \sqcup W_2} P_1 \parallel_{{\senv}_C} P_2 : {\color{cTy}T}$ \\
 P-Term in the lock-free judgment & $\displaystyle N \in \mathbb{N} \land \mathsf{world\_wf}\,W \land \mathsf{pterm}_N({\senv}, C_0, t, {\color{cTy}T}) \Rightarrow {\senv} \Vvdash^{\lfadd{N}}_W (C_0, \{t\}) : {\color{cTy}T}$ \\
-Lock-free adequacy at a world of typing & $\displaystyle \mathsf{ranked}\,W \land \varnothing \Vvdash^{\lfadd{N}}_W p : {\color{cTy}T} \Rightarrow \mathsf{lock\_free}\,p$ \\
-Lock-free soundness & $\displaystyle \varnothing \vdash^{\lfadd{N}}_{W} p : {\color{cTy}T} \land N \in \mathbb{N} \Rightarrow \mathsf{lock\_free}\,p$ \\
+Lock-free adequacy at a world of typing & $\displaystyle \mathsf{ranked}\,W \land \varnothing \Vvdash^{\lfadd{N}}_W P : {\color{cTy}T} \Rightarrow \mathsf{lock\_free}\,P$ \\
+Lock-free soundness & $\displaystyle \varnothing \vdash^{\lfadd{N}}_{W} P : {\color{cTy}T} \land N \in \mathbb{N} \Rightarrow \mathsf{lock\_free}\,P$ \\
 Fundamental theorem for lock-free typing & $\displaystyle \mathsf{world\_wf}\,W \land \varnothing ; {\lenv} \vdash^{F}_{W\lfadd{,N}} t : {\color{cTy}T}\ !\ c \land N \in \mathbb{N} \land W \sqsubseteq W' \land \mathsf{cons}\,W' \Rightarrow {\lenv}_{df} \mathrel{\vDash[\kappa_L]}^{F}_{W'} t : {\color{cTy}T}_{df}$ \\
-$p_1 \parallel_{{\senv}_C} p_2$ & $\displaystyle p_1 \parallel_{{\senv}_C} p_2 = (C_1 \cup C_2 \cup \mathsf{chans}\,{\senv}_C, E_1 \uplus E_2)$ \\
+$P_1 \parallel_{{\senv}_C} P_2$ & $\displaystyle P_1 \parallel_{{\senv}_C} P_2 = (C_1 \cup C_2 \cup \mathsf{chans}\,{\senv}_C, E_1 \uplus E_2)$ \\
 Point substitution & $\displaystyle \mathsf{world\_wf}\,W \land {\cGamma}' \vdash \sigma({\cGamma}) \land {\cGamma} ; {\lenv} \vdash {\color{cTm}e} : {\color{cTy}T} \Rightarrow {\cGamma}' ; \sigma({\lenv}) \vdash {\color{cTm}e} : \sigma({\color{cTy}T})$ \\
 $\mathsf{pterm}_N({\senv}, C_0, t, {\color{cTy}T})$ & $\displaystyle \mathsf{pterm}_N({\senv}, C_0, t, {\color{cTy}T}) : \mathsf{Prop}$ \\
-$q_a$ & $\displaystyle q_a : \mathsf{Config}$ \\
-Semantic P-Connect at the worlds of typing & $\displaystyle \mathsf{tfree}\,{\color{cTy}T} \land \mathsf{conn} \land {\senv}_1 \cup {\senv}_C \vDash_{W_1} p_1 : {\color{cTy}T} \land {\senv}_2 \cup {\senv}_D \vDash_{W_2} p_2 : \ast \Rightarrow {\senv}_1 \cup {\senv}_2 \vDash_{W_1 \sqcup W_2} p_1 \parallel_{{\senv}_C} p_2 : {\color{cTy}T}$ \\
+$P_a$ & $\displaystyle P_a : \mathsf{Proc}$ \\
+Semantic P-Connect at the worlds of typing & $\displaystyle \mathsf{tfree}\,{\color{cTy}T} \land \mathsf{conn} \land {\senv}_1 \cup {\senv}_C \vDash_{W_1} P_1 : {\color{cTy}T} \land {\senv}_2 \cup {\senv}_D \vDash_{W_2} P_2 : \ast \Rightarrow {\senv}_1 \cup {\senv}_2 \vDash_{W_1 \sqcup W_2} P_1 \parallel_{{\senv}_C} P_2 : {\color{cTy}T}$ \\
 Semantic P-Term & $\displaystyle \mathsf{tfree}\,{\color{cTy}T} \land \mathsf{sth}\,{\cTheta}\,{\senv}\,{\cTheta}_B\,C \land t \in E\lfadd{[\kappa]}^{W}_{\beta}\llbracket{\cTheta} \vdash {\color{cTy}T}\rrbracket^{\varnothing} \Rightarrow (C, \{t\}) \in P\lfadd{[\kappa]}^{W}_{\beta}\llbracket{\senv} \vdash {\color{cTy}T}\rrbracket$ \\
-Soundness & $\displaystyle \varnothing \vdash^{\lfadd{\infty}}_{W} p : {\color{cTy}T} \Rightarrow \mathsf{deadlock\_free}\,p$ \\
+Soundness & $\displaystyle \varnothing \vdash^{\lfadd{\infty}}_{W} P : {\color{cTy}T} \Rightarrow \mathsf{deadlock\_free}\,P$ \\
 The lock-free process relation $S^{N,W}_{\beta}$ & $\displaystyle S^{N,W}_{\beta}\llbracket{\senv} \vdash {\color{cTy}T}\rrbracket \subseteq \mathsf{LFState}$ \\
 $\mathsf{sth}\,{\cTheta}\,{\senv}\,{\cTheta}_B\,C$ & $\displaystyle \mathsf{sth} : \mathsf{Env} \to {\mathsf{Env}} \to {\mathsf{Env}} \to \mathcal{P}(\mathsf{Chan}) \to \mathsf{Prop}$ \\
 ${\lenv}$, the linear context & $\displaystyle {\lenv} : (\mathsf{End} \rightharpoonup_{\mathrm{fin}} \mathsf{Ty}) \times {\mathsf{Ty}}_{\bot}^{*}$ \\
@@ -439,17 +436,15 @@ Holding $F \triangleleft H$ & $\displaystyle F \triangleleft H = F \cup \mathsf{
 One action $1$ & $\displaystyle 1 \in \mathsf{Eff}$ \\
 Sequencing $\varepsilon_1 \cdot \varepsilon_2$ & $\displaystyle \cdot : \mathsf{Eff} \times \mathsf{Eff} \rightharpoonup \mathsf{Eff}$ \\
 No effect $0$ & $\displaystyle 0 \in \mathsf{Eff}$ \\
-The interface ${\senv}$ & $\displaystyle {\senv} : \mathsf{End} \rightharpoonup_{\mathrm{fin}} \mathsf{Sty} \times {\mathsf{Pt}}$ \\
 $\mathsf{chans}\,{\senv}$ & $\displaystyle \mathsf{chans} : (\mathsf{End} \rightharpoonup X) \to \mathcal{P}(\mathsf{Chan})$ \\
 $\mathsf{ends}(C)$ & $\displaystyle \mathsf{ends} : \mathcal{P}(\mathsf{Chan}) \to \mathcal{P}(\mathsf{End})$ \\
 Body of a pair elimination & $\displaystyle {\cGamma} ; {\color{cTy}T}_2, {\color{cTy}T}_1, {\lenv}_2\lfadd{ - \varepsilon_1} \vdash^{F} {\color{cTm}e}_2 : {\color{cTy}T}\lfadd{\ !\ \varepsilon_2}$ \\
 Body of a unit elimination & $\displaystyle {\cGamma} ; {\lenv}_2\lfadd{ - \varepsilon_1} \vdash^{F} {\color{cTm}e}_2 : {\color{cTy}T}\lfadd{\ !\ \varepsilon_2}$ \\
-${\senv} \Vdash^{N,\eta}_{W} p : {\color{cTy}T}$ & $\displaystyle {\senv} \Vdash^{N,\eta}_{W} p : {\color{cTy}T} \iff N \in \mathbb{N} \land {\senv} \vdash^{\lfadd{N,\eta}}_{W} p : {\color{cTy}T}$ \\
-The interface as a context of ends & $\displaystyle {\senv}^{\lfadd{\eta}} : \mathsf{End} \rightharpoonup {\mathsf{Sty}} \times {\mathsf{Pt}}\lfadd{ \times (\mathbb{N} \cup \{\infty\}) \times (\mathbb{N} \cup \{\infty\})}$ \\
+${\senv} \Vdash^{N}_{W} P : {\color{cTy}T}$ & $\displaystyle {\senv} \Vdash^{N}_{W} P : {\color{cTy}T} \iff N \in \mathbb{N} \land {\senv} \vdash^{\lfadd{N}}_{W} P : {\color{cTy}T}$ \\
 $\max(\varepsilon_1, \varepsilon_2)$ & $\displaystyle \max : \mathsf{Eff} \times \mathsf{Eff} \to \mathsf{Eff}$ \\
-Multiset union $E_1 \uplus E_2$ & $\displaystyle \uplus : \mathcal{M}(\mathsf{Expr}) \times \mathcal{M}(\mathsf{Expr}) \to \mathcal{M}(\mathsf{Expr})$ \\
+Union of threads $E_1 \uplus E_2$ & $\displaystyle \uplus : (\mathbb{N} \rightharpoonup {\mathsf{Expr}}) \times (\mathbb{N} \rightharpoonup {\mathsf{Expr}}) \to (\mathbb{N} \rightharpoonup {\mathsf{Expr}})$ \\
 Point instance ${\color{cTy}T}[\bar x]$ & $\displaystyle {\color{cTy}T}[\bar x]$ \\
-${\senv} \vdash^{\lfadd{N,\eta}}_{W} p : {\color{cTy}T}$ & $\displaystyle {\senv} \vdash^{\lfadd{N,\eta}}_{W} p : {\color{cTy}T}$ \\
+${\senv} \vdash^{\lfadd{N}}_{W} P : {\color{cTy}T}$ & $\displaystyle {\senv} \vdash^{\lfadd{N}}_{W} P : {\color{cTy}T}$ \\
 Session instance ${\color{cTy}U}[\bar s]$ & $\displaystyle {\color{cTy}U}[\bar s]$ \\
 Allowed session instances $\mathsf{sinsts}\,\bar s$ & $\displaystyle \mathsf{sinsts} : \lfadd{(\mathbb{N} \cup \{\infty\}) \to }\mathsf{Sty}^{*} \to \mathsf{Prop}$ \\
 Products and sums & $\displaystyle {\color{cTy}T}_1 \leq {\color{cTy}T}_1' \land {\color{cTy}T}_2 \leq {\color{cTy}T}_2'$ \\
@@ -461,6 +456,7 @@ The lower bound may fall & $\displaystyle l' = l \lor {\cGamma}, C(\bar\iota) \v
 Session types up to subtyping & $\displaystyle {\color{cTy}S} \sqsubseteq {\color{cTy}S}'$ \\
 Equal up to $\lfalt{\approx}{\simeq}$ & $\displaystyle {\color{cTy}T} \equiv {\color{cTy}T}'$ \\
 Variance & $\displaystyle {\color{cTy}T}_1' \leq {\color{cTy}T}_1 \land {\color{cTy}U} \leq {\color{cTy}U}'$ \\
+\lfw{$\mathsf{tk}(o)$} & $\displaystyle \mathsf{tk}(o) = m \iff {\senv}(o) = {\color{cTy}S}_x^{a,m}$ \\
 The term turnstile $\vdash$ & $\displaystyle {\cGamma} ; {\lenv} \vdash^{F} {\color{cTm}e} : {\color{cTy}T}\lfadd{\ !\ \varepsilon}$ \\
 Arrow & $\displaystyle ({\color{cTy}T} \tymultimap ^{u}_{l}\lfadd{[c]}\,{\color{cTy}U})^{\lfadd{a}} \in \mathsf{Ty}$ \\
 Arrow cost $c$ & $\displaystyle c \in \mathbb{N} \cup \{\infty\}$ \\

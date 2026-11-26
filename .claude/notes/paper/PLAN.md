@@ -9,6 +9,114 @@ figures against the changed blocks by hand. Paragraph slots are `% PAR:`
 comments, gaps are `% GAP:`. This plan and the previews live in
 .claude/notes/paper/ (paper/ holds only build inputs).
 
+## Revision 6 (branch paper-rev6)
+
+State. Branch paper-rev6 from main (3479b882). Where older sections
+disagree with this one, this one holds.
+
+### Processes have named threads (simplification)
+
+One kind of process, from §2 on: P = (C, E) with C the restricted channels
+and E a finite map from thread names t to terms, P(t) = E(t). The body has
+no configuration q, no annotated configuration over q and no erase.
+(C, {e₁, …, eₙ}) is the process whose threads have distinct names (P-Term,
+prop:flag-rejected, P-Stop of fig:term-rel). def:runs ends with one
+sentence: typing and the relations read only the restricted channels and
+the terms. P₁ ∥ P₂ composes at disjoint thread names (def:proc-judgment).
+The lock-free relation reads a = (P_a, K, W_a), and def:lf-judgment asks
+P_a ∼ P, "P_a is P with its threads renamed" (app:syn-procs).
+
+Checked against the Rocq.
+
+| body | Rocq | why it is faithful |
+|---|---|---|
+| process P = (C, E) | `config` (lang/Process.v), `gset chan * gmap nat expr` | the same type |
+| P —ev→ P' | `istep`, the only definition of process steps | the same relation |
+| typing, P⟦·⟧, readiness, obligations, sem. judgments of P | stated for `proc` (multiset), read at `erase P` | they read only C and the terms; the soup steps of `erase P` are the erasures of the steps of P (`istep_pspec`, `pspec_lift`, `pstep` is defined as the erasure) |
+| deadlock free P | `deadlock_free (erase P)` | equivalent by the same two lemmas |
+| lock free P, runs from r₀ = P | `lock_free (erase P)`, runs from any r₀ with `erase r₀ = erase P` | the Rocq form implies the body form (take r₀ = P), and the theorems conclude the Rocq form |
+| P_a ∼ P | `erase (s_q a) = p` in `lf_sem` | same multiset of terms iff a bijection of thread names maps one map to the other |
+| P₁ ∥ P₂ at disjoint names | `pconn`, multiset sum | the union erases to the sum |
+
+### Deadlock and lock freedom in §2 (task 2)
+
+def:runs (§2.1) introduces steps with events and parts(ev), internal events
+and closed steps, runs, maximal, weakly fair and pending, in words with
+appendix pointers (app:sem-proc, app:sem-events). def:df, also labelled
+def:lf, states terminated, deadlock-free and lock-free side by side. §5
+refers back (its first slot says so), def:lf is gone from §5, thm:lf still
+cites def:lf. Shading: none. By conv:lf a shade marks the annotations and
+premises of the lock-free instance of typing at a finite N. Deadlock
+freedom and lock freedom are properties of untyped processes, so both stay
+unshaded. The map keeps lock freedom in its lock-free view (its modes are
+views, not the shading convention), so the generated appendix shades the
+lock_free line of sem-props. The map now has runs beside the events
+(sem-events "Events and runs").
+
+### Renames (task 3)
+
+| was | now | where |
+|---|---|---|
+| p, p', p₁, p₂ (processes) | P, P', P₁, P₂, and Q (`\procB`) for a second process | `\proc` in lrlight.sty, body, figures, map |
+| q, configurations, q_a | P, P_a | body def:lf-rel, def:lf-judgment, map |
+| M (thread map) | E | map sem-proc, P-Act-*, se.echans, se.upd |
+| counter relation F^N_β⟦Φ ⊢ σ ! d⟧, FV | Z^N_β⟦…⟧, ZV | `\Fuel` in notation.tex, map fu, fu-obls, fv, soup, notes |
+| raw t for a thread term in P-Term, thm:compose, thm:fundamental-terms, thm:lf-compose, thm:lf-fundamental | e (`\tm`) | t is now a thread name |
+
+Clash check. Q appears only in rule names (Q-Tau, Q-Send, Q-Recv, Q-Link),
+no set or relation uses Q. P is also the name of the process relation
+P^W_β⟦Σ ⊢ T⟧, as V and E are; "P ∈ P⟦…⟧" reads like "e ∈ E⟦…⟧". Z is
+not used elsewhere in the map or the paper. The collector threads of
+Milner's scheduler are called P₀, P₁, P₂ in the listing and in
+fig:points-example; they are code names, left as they are (open question
+for the author whether to rename them).
+
+The renames were done in the map itself (scripts
+.claude/notes/map-procs-P.py and map-procs-P-2.py) with deviations:
+syn-procs (merged proc/config/erase, notation ∼), proc.proc, proc.same,
+se.r0 (simplified, run from r₀ = P), sp.lfsem (P_a ∼ P), tp.msunion
+(union at disjoint names), fu (letter Z), one deviationRule for every
+definition the Rocq states on `proc`. Notes proc.config, proc.erase,
+type.Config are gone.
+
+### Map backport
+
+The presentation changes of revisions 3 to 5 and of "Presentation
+simplifications", checked one by one against docs/explorer/map.json.
+Applied by .claude/notes/map-backport-rev3-5.py (after map-procs-P.py and
+map-procs-P-2.py). Where the map is the detailed reference and the paper
+only moves a formula to the appendix, the map keeps the formula and takes
+the paper's names. Every departure from the Rocq has a deviation.
+
+| change (revision) | map | why |
+|---|---|---|
+| Milner's scheduler leads (r3.1) | applied, ex-milner is the first example | |
+| no words inside rules (r3.2) | already so, no \text words in rule premises. P-Term reads pairs^N(Θ_B, C₀), defined below the rules | |
+| anatomies (r3.3) | not applied | the map's notes give each component, an anatomy table would repeat them |
+| disjointness by one convention (r3.5, D) | applied to P-Term, P-Connect, Q-Tau, Q-Recv. Convention "∪, ⊎", deviationRule kind omitted. Notes P-Term.disj, P-Connect.disj, tp.Sigma removed | the conjuncts inside the definitions of opened and matches stay, they define named predicates |
+| V, E, P, obligations as rules (r3.6) | applied. V, obligations, process obligations were rules. E is now rule E, P the rules P-Zero and P | |
+| "(lfp)" replaced by the inductive reading at a fixed index (C) | applied. Tag gone from e-rel and p-rel, captions and note rel.lfp say it. map2tex.py no longer rewrites the tag | |
+| opened, matches, closed, iface (D) | applied, renamed with deviations on Q-Send.split, Q-Recv.ok, Q-Recv.back, Q-Recv.env | |
+| ech is chan (E) | applied, deviation on end.ech | |
+| α, β, γ letters (G) | already in the map (revision 5) | |
+| futures as sets of points (r4.3) | applied as one sentence in t-contexts. The general form F = X ∪ △v stays the definition | the map is the reference for the general form |
+| η dropped, annotations in Σ (r4.4) | applied. P-Term asks tk(o) ≤ N, P-Connect tk(o) + tk(ō) ≤ N, ⊢^N without η, note tp.tk added, tp.lift removed. Deviation on p-typing (iann, tenv_ofk, ptyped_iann_local, p_connect_iann) | |
+| P-Term premises tfree, pfree, pairs glossed (r4.5) | applied for pairs (named predicate with its definition). tfree and pfree were named already | |
+| acyc, conserv, rankable explained (r4.6) | already. Notes new.acyc, E-Open.cons, new.rank state them in the paper's terms | |
+| E-Abs, E-New-Field, E-Force, E-Open only in captions (r4.7) | not applied | the map shows every rule, the paper only hides them |
+| readiness and process conditions in words (r4.10, r4.11) | not applied | the map keeps the formulas, its captions say the cases in words already |
+| E-App premise ε₂ ≤ a (r5) | already (map-eapp-premise.py) | |
+| lock-free composition asks tk(o) + tk(ō) ≤ N (r4 correction) | applied to th-compose and note th.lf-p-connect | `lf_p_connect` asks `tsum_ok` |
+| interface tickets bounded by Σ (r4 correction) | applied to sp.own, deviation names soup_invk, SoupK, khalf. soup sources list SoupK, soup_invk | |
+| signal and wait (r3 E, map2tex rename) | applied in the example code with deviations. map2tex.py CODE_RENAME dropped, signal and wait stay keywords | |
+| counters and cost wording (r5) | already, checked: no fuel, aging or frame (other than evaluation frames) in the prose | |
+| worlds and points wording (r3 E) | partly. The map's ex-milner still says "the first creation states these 18 facts" | the paper's fig:world-example counts the nine facts of ms_base without shifts. Which count the map should give is left to the author |
+| named variables, ρ constants, select_i, ε₁ + ε₂, contractivity and freshness in conv:implicit, E-Case one premise, value relation by reference (Presentation simplifications) | not applied | presentation devices of the body, the map is the detailed reference and keeps the separate premises |
+
+Checks after the backport: docs/explorer/check.sh 0 errors (one warning,
+bare-word Connect, as before), page-test 15 passed, map-faithfulness.py
+regenerated.
+
 ## Revision 5 (branch paper-rev5)
 
 State. Branch paper-rev5 from main (cde8ae7f). `make -C paper` builds

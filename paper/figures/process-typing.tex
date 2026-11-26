@@ -8,8 +8,8 @@
     \infer*[lab=P-Term]
       {\tfree\,\ty \\ \pfree\,\senv \\ \lfalt{\cons}{\ranked}\,W \\ \pairs^{\lf{N}}(\cTheta_B, C_0) \\\\
        \lf{\forall \eo{} \in \mathrm{dom}\,\senv.\ \tk(\eo{}) \leq N} \\
-       \tyj{\varnothing}{\senv, \cTheta_B}{\varnothing}{t}{\ty}\eff{\varepsilon}}
-      {\senv \vdash_{W}^{\lf{N}} (C_0, \{t\}) : \ty}
+       \tyj{\varnothing}{\senv, \cTheta_B}{\varnothing}{\tm}{\ty}\eff{\varepsilon}}
+      {\senv \vdash_{W}^{\lf{N}} (C_0, \{\tm\}) : \ty}
     \label{rule:P-Term}
     \and
     \infer*[lab=P-Connect]
