@@ -6,7 +6,7 @@
 \lstkw{wait} r = \lstkw{let} ⟨u, r⟩ = \lstkw{recv} r \lstkw{in} \lstkw{let} ∗ = u \lstkw{in} \lstkw{close} r
 A₀ = \lstkw{let} ∗ = \lstkw{signal} c₀ \lstkw{in} \lstkw{let} ∗ = \lstkw{wait} d₀ \lstkw{in} \lstkw{signal} a₀   \lstcmt{-- main}
 Aᵢ = \lstkw{let} ∗ = \lstkw{wait} dᵢ \lstkw{in} \lstkw{let} ∗ = \lstkw{signal} aᵢ \lstkw{in} \lstkw{signal} cᵢ   \lstcmt{-- i = 1, 2, spawned}
-Pᵢ = \lstkw{wait} bᵢ                                                 \lstcmt{-- i = 0, 1, 2, spawned}
+Rᵢ = \lstkw{wait} bᵢ                                                 \lstcmt{-- i = 0, 1, 2, spawned}
 \lstcmt{-- c₀, d₁ at ρ   a₁, b₁ at ρ·1   c₁, d₂ at ρ·2}
 \lstcmt{-- a₂, b₂ at ρ·3   c₂, d₀ at ρ·4   a₀, b₀ at ρ·5}
 \end{maplisting}
