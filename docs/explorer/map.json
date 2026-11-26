@@ -3012,7 +3012,8 @@
        "file": "algorithmic/Complete.v",
        "names": [
         "algo_complete",
-        "algo_iff"
+        "algo_iff",
+        "algo_iff_df"
        ]
       },
       {

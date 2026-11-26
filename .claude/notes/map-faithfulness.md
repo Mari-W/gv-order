@@ -1,6 +1,6 @@
 # Faithfulness of the map
 
-Generated from docs/explorer/map.json at b43618f3 by map-faithfulness.py. Do not edit by hand.
+Generated from docs/explorer/map.json at d8cde00f by map-faithfulness.py. Do not edit by hand.
 
 check.sh confirms that every cited Rocq name exists. No tool compares a formula with the statement it cites. The formulas are checked by hand. The differences below are the recorded ones.
 

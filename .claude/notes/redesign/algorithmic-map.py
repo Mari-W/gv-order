@@ -164,7 +164,7 @@ blocks = [
   'formula': thms,
   'caption': r"Soundness. A synthesized type is a declarative type of the erasure, at the same contexts\inmode{lf}{ and cost}. Completeness. Over a contractive context a declarative derivation for $e$ gives an annotation of $e$ that synthesizes the same type\inmode{lf}{ and cost}. Decidability. The function $\mathsf{alg}$ computes synthesis and checking by recursion on $t$ and returns exactly the derivable results, so each judgment is decidable relative to the [[alg-oracles|oracles]] and has at most one result. The three theorems hold at each bound $N$, so for both instances.",
   'why': r"Together they make the algorithmic system an implementation of the declarative one for annotated programs. A program typed by P-Term starts from contractive ends and no variables, so completeness covers the programs that P-Term types.",
-  'source': [src('algorithmic/Sound.v', ['algo_sound']), src('algorithmic/Complete.v', ['algo_complete', 'algo_iff']), src('algorithmic/Decide.v', ['alg', 'alg_sound', 'alg_complete', 'syn_dec', 'chk_dec', 'syn_det', 'chk_det', 'typed_annot_dec'])],
+  'source': [src('algorithmic/Sound.v', ['algo_sound']), src('algorithmic/Complete.v', ['algo_complete', 'algo_iff', 'algo_iff_df']), src('algorithmic/Decide.v', ['alg', 'alg_sound', 'alg_complete', 'syn_dec', 'chk_dec', 'syn_det', 'chk_det', 'typed_annot_dec'])],
   'deviations': [{'kind': 'notation', 'reason': r"Completeness is stated for each weakening of $\Delta$ by unlimited entries (`algo_complete`), and `algo_complete_at` is the form shown. The contractive context is `tenv_contr Θ` and `lenv_contr Δ`.", 'names': ['algo_complete']}]},
 ]
 
