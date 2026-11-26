@@ -4,7 +4,7 @@
 all: main.pdf
 
 # The citation table must exist before LaTeX runs.
-main.pdf: rocqrefs.tex gen/defs.tex $(wildcard *.tex) $(wildcard *.sty) main.bib
+main.pdf: rocqrefs.tex gen/defs.tex $(wildcard *.tex) $(wildcard figures/*.tex) $(wildcard *.sty) main.bib
 	latexmk -pdf -interaction=nonstopmode main.tex
 
 # The figures, rules, examples and the appendix come from the proof map.
