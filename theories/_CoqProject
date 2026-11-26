@@ -156,4 +156,5 @@ algorithmic/Annot.v
 algorithmic/Algo.v
 algorithmic/Sound.v
 algorithmic/Complete.v
+algorithmic/Oracles.v
 CheckAll.v
