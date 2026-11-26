@@ -1,7 +1,7 @@
 % Creation, boxes, existentials. From map blocks r-new (one rule there with
 % a triple, two constructors e_new and e_new_fld in the Rocq), r-boxes,
 % r-ex. E-Pack is in the appendix.
-\begin{figure}[tb]
+\begin{figure}[tbp]
   \small
   \judghead{Creation, boxes and existentials}{\Gamma ; \Delta \vdash^{F}_{W\lf{,N}} e : T \eff{\varepsilon}}
   \begin{rules}
@@ -36,6 +36,7 @@
     \label{rule:E-Open}
   \end{rules}
   \figrule
+  \Description{Inference rules E-New, E-New-Field, E-Box, E-Force and E-Open.}
   \caption{Typing rules for creation, recursion and existentials}
   \label{fig:typing-orders}
 \end{figure}

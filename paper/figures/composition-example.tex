@@ -13,10 +13,14 @@
     \end{scope}
     \draw[chan] (c) -- (cb);
     \draw[chan] (d) -- (db);
-    \draw[fact] (c) -- node[factlabel, pos=0.2, above, sloped] {$x \prec \dual{y}$} (db);
-    \draw[fact] (cb) to[bend left=12] node[factlabel, pos=0.8, above, sloped] {$\dual{x} \prec y$} (d);
-    \draw[deadfact] (d) to[bend right=12] node[factlabel, pos=0.8, below, sloped] {$y \prec \dual{x}$, arm that never runs} (cb);
+    \draw[fact] (c) -- (db);
+    \draw[fact] (cb) to[bend left=10] (d);
+    \draw[deadfact] (d) to[bend left=10] (cb);
+    \node[font=\small, align=center] at (2.6, -1.6)
+      {$x \prec \dual{y}$ (running arm) \quad $\dual{x} \prec y$ (other) \quad
+       $y \prec \dual{x}$ (arm that never runs, dashed)};
   \end{tikzpicture}
+  \Description{Two components with their ends and the facts of their worlds. Two facts in opposite directions form a cycle.}
   \caption{The joined world $W_1 \wjoin W_2$ of the flag (\cref{ex:flag})}
   \label{fig:composition-example}
 \end{figure}

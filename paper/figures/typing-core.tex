@@ -1,7 +1,7 @@
 % Selected typing rules. From map blocks r-fun (E-Abs, E-App), r-data
 % (E-Case), r-act (E-Send, E-Close, E-Link). Contractivity premises are
 % left to the convention of sec:types (PLAN.md, presentation).
-\begin{figure}[tb]
+\begin{figure}[tbp]
   \small
   \judghead{Typing terms}{\Gamma ; \Delta \vdash^{F}_{W\lf{,N}} e : T \eff{\varepsilon}}
   \begin{rules}
@@ -41,6 +41,7 @@
     \label{rule:E-Link}
   \end{rules}
   \figrule
+  \Description{Inference rules E-Abs, E-App, E-Case, E-Send, E-Close and E-Link.}
   \caption{Selected typing rules (all rules in \cref{app:typing})}
   \label{fig:typing-core}
 \end{figure}

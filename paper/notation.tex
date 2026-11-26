@@ -2,7 +2,10 @@
 % definitions in the sections use these macros. The appendix keeps the
 % TeX of the proof map (gen/*.tex, mapmacros.tex).
 
+% Floats never precede their place in the text (flafter) and never cross a
+% section boundary (\FloatBarrier at the end of each section file).
 \RequirePackage{placeins}
+\RequirePackage{flafter}
 
 % ------------------------------------------------------------------ colour
 % Term keywords carry one quiet colour (kwcolor, from mapmacros.tex). Types,
@@ -99,3 +102,8 @@
 \DeclareRobustCommand{\figrule}{{\color{black!35}\hrule}}
 % A rule name as a link to its figure.
 \DeclareRobustCommand{\ruleref}[1]{\ref{rule:#1}}
+% Float placement. Two tall rule figures never share the top of one page
+% with an unbreakable listing below them.
+\renewcommand{\topfraction}{0.7}
+\renewcommand{\textfraction}{0.2}
+\renewcommand{\floatpagefraction}{0.7}

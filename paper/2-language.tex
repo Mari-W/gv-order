@@ -23,11 +23,10 @@
 \begin{definition}[Deadlock freedom \rocq{deadlock_free}]
 \label{def:df}
 A process is terminated when it has no restricted channel, a value in its main thread and $\ast$ in every other thread. It is deadlock free when every process it reaches is terminated or can step.
-\[
-  \terminated\,p \iff p = (\varnothing, \{v\} \uplus E) \land E \subseteq \{\ast\}
-  \qquad
+\begin{gather*}
+  \terminated\,p \iff p = (\varnothing, \{v\} \uplus E) \land E \subseteq \{\ast\} \\
   \dfree\,p \iff \forall p'.\ p \to^{*} p' \Rightarrow \terminated\,p' \lor \exists p''.\ p' \to p''
-\]
+\end{gather*}
 \end{definition}
 % GAP: sem-props shows the reversed cycle only in its breaks text, no map example with a listing for the deadlocked process
 
