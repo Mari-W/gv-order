@@ -22,10 +22,10 @@ with the components
   $\cTheta$ & owned ends, each with its end type $\sty_x$ \\
   $\senv$ & interface of the process \\
   $\ty$ & type of the value \\
-  $F$ & future of the term, as in \cref{def:side}
+  $F$ & future of the term, a finite set of points
 \end{tabular}
 \end{center}
-$W \vdash x \prec y$ is $x \ordW y$, and $W \vdash u \prec F$, $l \preccurlyeq_W H$ and $W \vdash C[\bar x]$ read \cref{def:side} with $\ordW$ in place of $\cGamma \vdash_W$. $\ap(\cTheta)$ is the set of dual points of the ends of $\cTheta$, $\fends(\tm)$ the set of ends in $\tm$ (\cref{app:syn-fends}), and $\cTheta(o) \doteq \sty_x$ compares up to $\unfold$.
+The side conditions of \cref{sec:typing} are read in $W$, with $\ordW$ in place of $\cGamma \vdash_W$. A closure or a box owns exactly the ends in its body, and $\fends(\tm)$ is the set of ends in $\tm$ (\cref{app:syn-fends}). $\ap(\cTheta)$ is the set of dual points of the ends of $\cTheta$, instances $\bar s$ are well formed as in \cref{conv:implicit}, and $\cTheta(o) \doteq \sty_x$ compares up to $\unfold$.
 \end{definition}
 
 \subsection{Values}
@@ -44,17 +44,18 @@ $W \vdash x \prec y$ is $x \ordW y$, and $W \vdash u \prec F$, $l \preccurlyeq_W
 % PAR: readiness, a stuck term offers only ends whose points lie below the dual points of the rest and F, A_1 waiting on d_1 | example: ex-milner | figure/rule: def:readiness | map: rd
 \begin{definition}[Readiness \rocq{ready_t} \rocq{ready_p}]
 \label{def:readiness}
-\begin{align*}
-  \ready_W(\cTheta \mid F, t) &\iff \mathsf{stable}\,t \Rightarrow \big(\cTheta|_{\offered\,t} = \varnothing \Rightarrow t \in \mathsf{Val}\big) \\
-  &\phantom{{}\iff{}} \land \big(\mathsf{link}\,t \lor \cTheta|_{\offered\,t} \ordW \dual{\cTheta \setminus \offered\,t} \cup F\big) \\
-  \ready_W(\senv, \proc) &\iff \mathsf{stable}\,\proc \Rightarrow \mathsf{link}\,\proc \lor \big(\big(\senv|_{\offered\,\proc} = \varnothing \Rightarrow \terminated\,\proc\big) \\
-  &\phantom{{}\iff{}} \land \forall y \in \dual{\senv \setminus \offered\,\proc}.\ \exists x \in \senv|_{\offered\,\proc}.\ x \ordW y\big)
-\end{align*}
+A term or process offers an end when it can take a session step on that end. A term is stable when each of its steps is a session action.
+$\ready_W(\cTheta \mid F, t)$ holds when $t$ is not stable or one of the following holds (\cref{app:rd}).
 \begin{itemize}
-  \item $\mathsf{stable}\,t$: every step of $t$ is a session action.
-  \item $\offered\,t$: the set of ends on which $t$ can act. $\mathsf{link}\,t$: $t$ is at a link.
-  \item $\cTheta|_A$: the points of the ends of $\cTheta$ in $A$. $\cTheta \setminus A$: the points of the other ends. $\dual{B}$: the dual points of $B$.
-  \item $A \ordW B$: $x \ordW y$ for each $x \in A$ and $y \in B$.
+  \item $t$ is a value.
+  \item $t$ offers an end of $\cTheta$ and is at a link.
+  \item $t$ offers an end of $\cTheta$, and the point of each end of $\cTheta$ it offers lies below, in $\ordW$, the dual point of each end of $\cTheta$ it does not offer and each point of $F$.
+\end{itemize}
+A process is stable when it has no internal step, and $\ready_W(\senv, \proc)$ holds when $\proc$ is not stable or one of the following holds.
+\begin{itemize}
+  \item $\proc$ is at a link.
+  \item $\proc$ is terminated and $\senv$ is empty.
+  \item $\proc$ offers an end of $\senv$, and each end of $\senv$ that $\proc$ does not offer has below its dual point, in $\ordW$, the point of an end of $\senv$ that $\proc$ offers.
 \end{itemize}
 \end{definition}
 
@@ -76,31 +77,14 @@ Let $\mathcal{E}$ be an evaluation context (\cref{app:sem-ctx}) whose ends are $
 % PAR: process relation, stop with a terminated process, ready, step per event | example: ex-milner | figure/rule: P | map: p-rel
 % PAR: process readiness, some offered point below each other dual point | example: ex-milner | figure/rule: def:readiness | map: rd
 % PAR: process obligations, internal steps keep Sigma, send and receive across the interface, a sent end of a restricted channel hands its dual to the interface, an arriving end may meet its dual inside | example: - | figure/rule: fig:proc-obl | map: p-obls
-\begin{definition}[Conditions of a message with the environment \rocq{send_split} \rocq{recv_ok}]
+\begin{definition}[Messages across the interface \rocq{send_split} \rocq{recv_ok}]
 \label{def:proc-conds}
-Let $\ech(o)$ be the channel of the end $o$ and $\mathsf{sdual}\,S\,S'$ say that $S'$ is dual to $S$ up to $\approx$ (\cref{app:ty-dual}).
+Let $\proc = (C, E)$ exchange a message with its environment on an end of its interface $\senv$, and let $\senv'$ be $\senv$ after the move of that end.
 \begin{itemize}
-  \item A send gives away the ends $\cTheta_e$ of restricted channels, and the dual of each one that stays in $\proc$ becomes an interface end in $\senv_e$, at the dual point and a dual protocol.
-  \[
-    \mathsf{opened}(\senv_e, \cTheta_e) \iff
-    \begin{array}[t]{@{}l@{}}
-      \mathrm{dom}\,\senv_e = \{\dual{o} \mid o \in \mathrm{dom}\,\cTheta_e,\ \dual{o} \notin \mathrm{dom}\,\cTheta_e\} \\
-      {} \land \forall (o : \sty_y) \in \cTheta_e.\ \exists \sty'.\ (\senv_e \cup \cTheta_e)(\dual{o}) = \sty'_{\dual{y}} \land \mathsf{sdual}\,\sty\,\sty'
-    \end{array}
-  \]
-  \item An arriving end whose dual the receiver already holds or receives sits at the dual point with a dual protocol.
-  \[
-    \mathsf{matches}(\senv', \cTheta_2) \iff \forall (o : \sty_y) \in \cTheta_2.\ (\senv' \cup \cTheta_2)(\dual{o}) = \sty'_{y'} \Rightarrow y' = \dual{y} \land \mathsf{sdual}\,\sty\,\sty'
-  \]
-  \item The channels whose two ends the receiver now holds become restricted.
-  \[
-    \mathsf{closed}(\senv', \cTheta_2) = \{\ech(o) \mid o \in \mathrm{dom}\,\cTheta_2,\ \dual{o} \in \mathrm{dom}\,\senv' \cup \mathrm{dom}\,\cTheta_2\}
-  \]
-  \item The other ends form the new interface.
-  \[
-    \mathsf{iface}(\senv', \cTheta_2) = \{(o : \sty_y) \in \senv' \mid \dual{o} \notin \mathrm{dom}\,\cTheta_2\} \cup \{(o : \sty_y) \in \cTheta_2 \mid \dual{o} \notin \mathrm{dom}\,\senv' \cup \mathrm{dom}\,\cTheta_2\}
-  \]
+  \item A send gives away the ends $\cTheta_e$ of restricted channels in its payload. Each end of $\cTheta_e$ and its dual sit at dual points with dual protocols, and each dual that stays in $\proc$ joins the interface in $\senv_e$, $\mathsf{opened}(\senv_e, \cTheta_e)$.
+  \item A receive adds the arriving ends $\cTheta_2$ to the interface. An arriving end whose dual the receiver holds or receives sits at the dual point with a dual protocol, $\mathsf{matches}(\senv', \cTheta_2)$, its channel becomes restricted, $\mathsf{closed}(\senv', \cTheta_2)$, and both ends leave the new interface $\mathsf{iface}(\senv', \cTheta_2)$.
 \end{itemize}
+The formulas are in \cref{app:p-obls}.
 \end{definition}
 \input{figures/proc-obl}
 
@@ -115,7 +99,7 @@ Let $\ech(o)$ be the channel of the end $o$ and $\mathsf{sdual}\,S\,S'$ say that
 \begin{itemize}
   \item $\gamma \in G^{W}_{\ix}\llbracket \cTheta' \vdash \lenv \rrbracket$: $\gamma$ substitutes for each variable of $\lenv$ a value in $V$ at its type, and these values own $\cTheta'$.
   \item $|\lenv|$: the ends of $\lenv$.
-  \item $\mathsf{den}_Y(F)$ for $F = X \cup \up{v}$: $X \cup Y$ for a finite set $Y$ of points above $v$, any finite $Y$ when $\bot \in X$ (\cref{app:sj-all}).
+  \item $\mathsf{den}_Y(F)$ is the finite set of points that $F$ stands for when the finite set $Y$ stands for its part $\up{u}$ (\cref{app:sj-all}).
 \end{itemize}
 \end{definition}
 
@@ -150,8 +134,8 @@ Let $a \neq b$ be ends with $\lenv(a) = \sty_x$ and $\lenv(b) = \sty'_y$. If $\c
 
 \begin{proposition}[The flag is untypable \rocq{sbv_rejected}]
 \label{prop:flag-rejected}
-For all $N$, $\eta$ and $W$,
-\[ \neg\ \varnothing \vdash^{\lf{N,\eta}}_{W} (\{c, d\}, \{\mathit{thread}, \mathit{other}\}) : \tyunit. \]
+For all $N$ and $W$,
+\[ \neg\ \varnothing \vdash^{\lf{N}}_{W} (\{c, d\}, \{\mathit{thread}, \mathit{other}\}) : \tyunit. \]
 \end{proposition}
 % PAR: the cycle xbar < y < xbar in the joined world, no world and no bound | example: ex-flag | figure/rule: prop:flag-rejected, fig:composition-example | map: p-typing, t-lemmas
 

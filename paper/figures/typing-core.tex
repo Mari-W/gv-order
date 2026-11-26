@@ -1,15 +1,10 @@
-% Selected typing rules. From map blocks r-fun (E-Abs, E-App), r-data
+% Selected typing rules. From map blocks r-fun (E-App), r-data
 % (E-Case), r-act (E-Send, E-Close, E-Link). Contractivity premises are
 % left to the convention of sec:types (PLAN.md, presentation).
 \begin{figure}[tbp]
   \small
   \judghead{Typing terms}{\cGamma ; \lenv \vdash^{F}_{\lf{N}} \tm : \ty \eff{\varepsilon}}
   \begin{rules}
-    \infer*[lab=E-Abs]
-      {l \preccurlyeq \lenv \\ \tyj{\cGamma}{\lenv\lf{-a}, b : \ty}{\up{u}}{\tm}{\tyB}\eff{\varepsilon}}
-      {\tyj{\cGamma}{\lenv}{F}{\tlam{b}{\tm}}{(\ty \arr{u}{l}\lf{[\varepsilon]}\, \tyB)\lf{^{a}}}\eff{0}}
-    \label{rule:E-Abs}
-    \and
     \infer*[lab=E-App]
       {\tyj{\cGamma}{\lenv_1}{F \held \lenv_2}{\tm_1}{(\ty \arr{u}{l}\lf{[\varepsilon]}\, \tyB)\lf{^{a}}}\eff{\varepsilon_1} \\\\
        \tyj{\cGamma}{\lenv_2\lf{-\varepsilon_1}}{F \held (\ty \arr{u}{l} \tyB)\lf{^{a}}}{\tm_2}{\ty}\eff{\varepsilon_2} \\ u \prec F}
@@ -41,7 +36,7 @@
     \label{rule:E-Link}
   \end{rules}
   \figrule
-  \Description{Inference rules E-Abs, E-App, E-Case, E-Send, E-Close and E-Link.}
-  \caption{Selected typing rules, under \cref{conv:lf,conv:implicit}. E-Unit, E-Var, E-Chan, E-Pair, E-LetP, E-LetU, E-Inj, E-Recv, E-Select, E-Branch, E-Spawn, E-Pack and the subtyping rule E-Sub are in \cref{app:typing}.}
+  \Description{Inference rules E-App, E-Case, E-Send, E-Close and E-Link.}
+  \caption{Selected typing rules, under \cref{conv:lf,conv:implicit}. E-Abs types a closure body under $\up{u}$ with $l \preccurlyeq \lenv$ for the captured context $\lenv$ (\cref{app:r-fun}), and E-Unit, E-Var, E-Chan, E-Pair, E-LetP, E-LetU, E-Inj, E-Recv, E-Select, E-Branch, E-Spawn and the subtyping rule E-Sub are in \cref{app:typing}.}
   \label{fig:typing-core}
 \end{figure}
