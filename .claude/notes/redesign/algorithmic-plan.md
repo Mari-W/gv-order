@@ -1,5 +1,59 @@
 # Algorithmic typing, a plan
 
+## 2026-11-26. Section 6 against main at 39b7f18b
+
+Branch algorithmic. Each finding of section 6 read again against
+theories/static (Typing.v, Contexts.v, Inversion.v, Constants.v, Sinst.v) and
+types (Points.v, Worlds.v, Types.v, Costs.v).
+
+- 6.1 fixed. `sinsts` asks `contractive` and `sscoped` of every instance, and
+  `typed_sinst` (static/Sinst.v) instantiates a derivation over contractive
+  contexts at any instance with `sinst_ok`. So a box body checked at one
+  instance types at all of them when the box context is contractive. The
+  instance to check at maps the k box variables to fresh variables above
+  every free session variable of the box context, the instance that the E-Box
+  case of `typed_sinst` itself uses. The identity instance is wrong when the
+  context has free session variables, because `slist` shifts the outer
+  variables down by k.
+- 6.2 holds. E-Open binds de Bruijn point variables that no term names. The
+  algorithmic layer makes the opening a node of the annotated term,
+  `open x : U in a`, and annotations inside a use the shifted de Bruijn
+  points, the opened ones at 0 to m − 1. This is the `unpack` fix of 6.2. The
+  node also fixes where E-Open applies.
+- 6.3 changed. Plain `new` has two rules now. E-New creates at a fresh base
+  with a constraint C under `new_ok` and returns `∃^⊥ ρ. C. (S@ρ)^{m1} ⊗
+  (S̄@ρ̄)^{m2}`. E-New-Field creates at `x·κ` for any point x and any field κ,
+  with no constraint. Neither the constraint nor the position is in the term.
+  The annotated term carries them, `new[C, S, m1, m2]` and
+  `new[x·κ, S, m1, m2]`. The static premise on existential types landed as
+  `ex_wf`, a premise of E-Pack, and Sub-Ex gained `lb_lower`. Types in
+  contexts are still not asked well formed, so a λ may bind an existential
+  whose lower bound is not below its body, and the η-law for existentials
+  still fails for such an entry. With E-Open placement annotated, this no
+  longer blocks completeness.
+- 6.4 holds. `cs_P`, `fmx_P` and `rg_P` are still infinite. It concerns the
+  oracles, which are parameters here.
+- 6.5 holds as written. The algorithm splits by occurrence. A linear entry
+  goes to the side whose erased term mentions it. An unlimited entry, which is
+  a box, goes to both sides. A box has no heads, no ⊥ flag and ages to itself,
+  so this split is complete by weakening.
+- 6.6 holds. `eqT` compares credits, tickets and costs on the nose. In the
+  algorithm every number is a literal of an annotation or computed from one,
+  so every call of the equivalence oracle is on ground types.
+- 6.7 fixed. Sub-Ex asks the target constraint entailed under the source
+  (`hold_at` under `hc_open`) and lets the lower bound fall by `lb_lower`.
+- 6.8 holds. The algorithm takes `force[xs, ss]`.
+- 6.9 holds. A λ is checked against its arrow.
+- 6.10 holds. P-Term asks `∃ S x m m'` for each restricted channel. The
+  algorithm stops at terms.
+- 6.11 holds, and `new_ok` adds one more such premise. At finite N it asks a
+  partner relation `∃ Sr, gen_new_rel W Γ C Sr`.
+- 6.12 fixed. Creation takes any tickets with `tsum_ok N m1 m2`.
+- 6.13. `typed_sinst` exists. `tsub_trans` and type-keeping generation lemmas
+  are still missing. The algorithm below needs neither, because E-Sub is an
+  annotation node and the switch from checking to synthesis is the only other
+  place where subtyping enters.
+
 2026-11-21, branch redesign. A plan, not the system. No Rocq change. It reads
 the declarative judgment of redesign-clean3 at 933ca2e
 (.claude/worktrees/redesign-s4, v2/static/Typing.v, Contexts.v, Inversion.v,
